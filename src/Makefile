@@ -415,17 +415,17 @@ LIBS_PROF_rs6000		= -lpl   #?
 CFLAGS_cc_SERIAL_rs6000        	= -O4 -qtune=auto  # -O4 automatically invokes -qarch=auto
 
 # MPI
-CFLAGS_mpcc_MPI_rs6000        	= -O4 -qtune=auto  # -O4 automatically invokes -qarch=auto
+CFLAGS_mpcc_MPI_rs6000        	= -O3 -qtune=auto  # -O4 automatically invokes -qarch=auto
 CFLAGS_mpcc_MPI_rs6000_DEBUG  	= -g 
 CFLAGS_mpcc_MPI_rs6000_PROF   	= -p 
 
 # OpenMP
-#CFLAGS_xlc_OMP_rs6000	 	= -O4 -qtune=auto -qsmp=omp 
+CFLAGS_xlc_OMP_rs6000	 	= -O4 -qtune=auto -qsmp=omp 
 #CFLAGS_cc_OMP_SR8000_DEBUG	= -omp -par=1 -O2 -g
 #CFLAGS_cc_OMP_SR8000_PROF   	= -Xfuncmonitor
 
 # MPI + OpenMP
-#CFLAGS_mpicc_OMPI_SR8000	= -omp -par -O4 +Op -msg=e
+CFLAGS_mpicc_OMPI_SR8000	= -omp -par -O4 +Op -msg=e
 #CFLAGS_mpicc_OMPI_SR8000_DEBUG 	= -omp -par -O2 -g
 #CFLAGS_mpicc_OMPI_SR8000_PROF  	= -Xfuncmonitor
 

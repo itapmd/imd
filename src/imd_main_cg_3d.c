@@ -255,7 +255,7 @@ real fonedim ( real alpha)  /* sets the global variables epot,fnorm correspondin
 
 /* calculates the forcenorm
    the forces have to be calculated before!   */
-void  calc_fnorm(void)
+void  calc_fnorm( void)
 {
   int k;
   real tmp_fnorm=0.0;
@@ -299,8 +299,8 @@ void  calc_fnorm(void)
     }
   }
 #ifdef MPI
-/* add up results from different CPUs */
-  MPI_Allreduce( &tmp_fnorm, &fnorm, 1, MPI_REAL, MPI_SUM, cpugrid);
+  /* add up results from different CPUs */
+  MPI_Allreduce( &tmp_fnorm, &fnorm, 1, REAL, MPI_SUM, cpugrid);
 #else
   fnorm = tmp_fnorm;
 #endif
@@ -375,9 +375,9 @@ void calc_fnorm_g_h(void)
   }
 #ifdef MPI
 /* find the maximum from all CPUs */
-  MPI_Allreduce( &tmp_fmax2, &fmax2, 1, MPI_REAL, MPI_MAX, cpugrid);
+  MPI_Allreduce( &tmp_fmax2, &fmax2, 1, REAL, MPI_MAX, cpugrid);
 /* add up results from different CPUs */
-  MPI_Allreduce( &tmp_fnorm, &fnorm, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &tmp_fnorm, &fnorm, 1, REAL, MPI_SUM, cpugrid);
 #else
   fnorm = tmp_fnorm;
   fmax2 = tmp_fmax2;
