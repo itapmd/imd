@@ -656,7 +656,6 @@ void write_distrib(int steps)
     if (virvo_io==1) {
       sprintf(fnamepot,"%s.%u.pot.rvf",outfilename,fzhlr);
       sprintf(fnamekin,"%s.%u.kin.rvf",outfilename,fzhlr);
-      sprintf(fnameminmax,"%s.minmax_for_rvf",outfilename);
     } else {
       sprintf(fnamepot,"%s.%u.pot.dist",outfilename,fzhlr);
       sprintf(fnamekin,"%s.%u.kin.dist",outfilename,fzhlr);
