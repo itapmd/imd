@@ -139,7 +139,11 @@ void fix_cells_by_cell(void)
 	to_cpu   = cpu_coord( global_cell_coord( coord ));
 	from_cpu = cpu_coord( global_cell_coord( opposite ));
 
+#ifndef MONOLJ
 	tag = PTR_3D_VV(CELL_TAG, coord, cell_dim);
+#else
+	tag = ORT_TAG;
+#endif
 	p   = PTR_3D_VV(cell_array, coord, cell_dim);
 
 	if (to_cpu != myid) {
@@ -249,7 +253,7 @@ void send_atoms_by_cell()
 
 void send_cell_force(cell *p, int to_cpu, int tag)
 {
-#ifdef PACX
+#if defined(PACX) || defined(MONOLJ)
   MPI_Send( &(p->n), 1,           MPI_INT, to_cpu, tag + SIZE_TAG, cpugrid);
 #endif
   MPI_Send( p->ort, DIM * p->n, MPI_REAL, to_cpu, tag + ORT_TAG, cpugrid);
@@ -272,7 +276,7 @@ void recv_cell_force(cell *p, int from_cpu,int tag)
   int newsize;
   MPI_Status status;
 
-#ifdef PACX
+#if defined(PACX) || defined(MONOLJ)
   MPI_Recv( &size, 1, MPI_INT, from_cpu, tag + SIZE_TAG , cpugrid, &status );
 #else
   MPI_Probe( from_cpu, tag + ORT_TAG, cpugrid, &status );
@@ -357,7 +361,12 @@ void send_recv_cell(int i, int j, int k, int l, int m, int n)
   from_cpu = cpu_coord(global_cell_coord(neighbour));
 
   /* Calculate tag */
+
+#ifndef MONOLJ
   tag = PTR_3D_VV(CELL_TAG,neighbour,cell_dim);
+#else
+  tag = ORT_TAG;
+#endif
 
   /* DEBUG */
   if (myid == to_cpu) 

@@ -1,10 +1,4 @@
 /******************************************************************************
-*
-* imd_io.c -- IO routines for the imd package
-*
-******************************************************************************/
-
-/******************************************************************************
 * $RCSfile$
 * $Revision$
 * $Date$
@@ -12,601 +6,144 @@
 
 #include "imd.h"
 
-
-/******************************************************************************
-*
-* read_atoms - reads atoms and velocities into the cell-array
-*
-* The file format is flat ascii, one atom per line, lines beginning
-* with '#' denote comments. Each line consists of
-*
-* number type mass x y z vx vy vz rest
-*
-* where
-*
-* number   is an arbitrary integer number assigned to each atom
-* type     is the atom's index to the potenital table
-* mass     is the mass of the atom
-* x,y,z    are the atom's coordinates
-* vx,vy,vz are the atom's velocity
-* rest     is ignored until end of line
-*
-******************************************************************************/
-
-void read_atoms(str255 infilename)
+void write_pic_cell( cell *p, FILE *out ) 
 {
-  cell *input;
-  FILE *infile;
-  char buf[512];
-  int p;
-  vektor pos;
-  vektor vau;
+    struct { 
+        float    pos_x, pos_y, pos_z, E_kin, E_pot;
+        integer  type;
+    } picbuf;
+
+    real px, py, pz;
+    int i;
+
+    for (i = 0;i < p->n; ++i) {
+        picbuf.pos_x = (float) p->ort X(i);
+        picbuf.pos_y = (float) p->ort Y(i);
+        picbuf.pos_z = (float) p->ort Z(i);
+        if ( pic_ur.x != (real)0 ) /*if pic_ur still 0, write everything */
+        if ( (picbuf.pos_x < pic_ll.x) || (picbuf.pos_x > pic_ur.x) ||
+             (picbuf.pos_y < pic_ll.y) || (picbuf.pos_y > pic_ur.y) ||
+             (picbuf.pos_z < pic_ll.z) || (picbuf.pos_z > pic_ur.z) ) continue;
+        px = p->impuls X(i);
+        py = p->impuls Y(i);
+        pz = p->impuls Z(i);
+#ifndef MONOLJ
+        picbuf.E_kin = (float) ( (px*px + py*py + pz*pz) / (2 * p->masse[i]) );
 #ifdef DISLOC
-  FILE *reffile;
-  int pref;
-  char refbuf[512];
-  real refeng, fdummy;
-  int refn, idummy;
-  vektor3d refpos;
-#endif
-  real m;
-  int i,s,n;
-  cell *to;
-  ivektor cellc;
-  int to_cpu;
-  int addnumber = 0;
-
-  /* allocate num_sort on all CPUs */
-  if ((num_sort=calloc(ntypes,sizeof(int)))==NULL) {
-      error("cannot allocate memory for num_sort\n");
-  };
-
-#ifdef MPI
-  /* Try opening a per cpu file first when parallel_output is active */
-  if (1==parallel_input) {
-    sprintf(buf,"%s.%u",infilename,myid); 
-    infile = fopen(buf,"r");
-    /* When each cpu reads only part of the atoms, we have to add the
-       number of atoms together to get the correct natoms. We set a
-       flag here */
-    if (NULL!=infile) addnumber=1;
-  } else if (0!=myid) {
-    recv_atoms(); 
-    /* If CPU 0 found velocities in its data, no initialisation is done */
-    MPI_Bcast( &natoms,       1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( num_sort, ntypes, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( &do_maxwell,   1, MPI_INT, 0, MPI_COMM_WORLD);
-    return;
-  };
-
-  if ((1!=parallel_input) || (NULL==infile))
-    infile = fopen(infilename,"r");
-
+        if (Epot_diff==1) {
+          picbuf.E_pot = (float) p->pot_eng[i] - p->Epot_ref[i];
+        } else
 #else
-  infile = fopen(infilename,"r");
-#ifdef DISLOC
-  reffile = fopen(reffilename,"r");
+        picbuf.E_pot = (float) p->pot_eng[i];
 #endif
-#endif
-  if (NULL==infile) error("Cannot open atoms file.");
-
-#ifdef DISLOC
-  if (NULL==reffile) error("Cannot open reference file.");
-#endif
-
- /* Set up 1 atom input cell */
-  input = (cell *) malloc(sizeof(cell));
-  if (0==input) error("Cannot allocate input cell.");
-  input->n_max=0;
-  alloc_cell(input, 1);
-
-  natoms=0;
-#ifdef SHOCK
-  do_maxwell=1;
-#else
-  do_maxwell=0;
-#endif
-
-  /* Read the input file line by line */
-  while(!feof(infile)) {
-
-    buf[0] = (char) NULL;
-    fgets(buf,sizeof(buf),infile);
-    while ('#'==buf[1]) fgets(buf,sizeof(buf),infile); /* eat comments */
-
-#ifdef DISLOC
-    refbuf[0] = (char) NULL;
-    fgets(refbuf,sizeof(refbuf),reffile);
-    while ('#'==refbuf[1]) fgets(refbuf,sizeof(refbuf),reffile); /* eat comments */
-#endif
-
-  /* Should use temporary variable */
-#ifdef MONOLJ
-
-#ifdef DOUBLE
-    p = sscanf(buf,"%lf %lf %lf %lf %lf %lf",
-	       &pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);  
-#else
-    p = sscanf(buf,"%f %f %f %f %f %f",
-	      &pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);  
-#endif
-
-#ifndef NOPBC
-    pos = back_into_box(pos);
-#endif
-
-    if (p>0) {
-      switch( p ) {
-      case(3):
-	do_maxwell=1;
-	input->n = 1;
-	input->ort    X(0) = pos.x;
-	input->ort    Y(0) = pos.y;
-	input->ort    Z(0) = pos.z;
-	input->impuls X(0) = 0;
-	input->impuls Y(0) = 0;
-	input->impuls Z(0) = 0;
-	input->kraft  X(0) = 0;
-	input->kraft  Y(0) = 0;
-	input->kraft  Z(0) = 0;
-	break;
-      case(6):
-	input->n = 1;
-	input->ort    X(0) = pos.x;
-	input->ort    Y(0) = pos.y;
-	input->ort    Z(0) = pos.z;
-	input->impuls X(0) = vau.x;
-	input->impuls Y(0) = vau.y;
-	input->impuls Z(0) = vau.z;
-	input->kraft  X(0) = 0;
-	input->kraft  Y(0) = 0;
-	input->kraft  Z(0) = 0;
-	break;
-      default:
-	error("Incomplete line in atoms file.");
-      };
-#else /* not MONOLJ */
-
-#ifdef DISLOC
-#ifdef DOUBLE
-    p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf %lf",
-	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z, &refeng);
-    pref = sscanf(refbuf,"%d %d %lf %lf %lf %lf",
-	      &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refpos.z);
-#else
-    p = sscanf(buf,"%d %d %f %f %f %f %f %f %f %f",
-	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z, &refeng);  
-    pref = sscanf(refbuf,"%d %d %f %f %f %f",
-	      &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refpos.z);
-#endif
-    if ((ABS(refn)) != (ABS(n))) {printf("%d %d\n", n, refn); error("Numbers in infile and reffile are different.\n");}
-
-#else
-#ifdef DOUBLE
-    p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf",
-	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);  
-#else
-    p = sscanf(buf,"%d %d %f %f %f %f %f %f %f",
-	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);  
-#endif
-#endif
-
-#ifndef NOPBC
-    pos = back_into_box(pos);
-#endif
-
-    if (0>=m) error("Mass zero or negative.\n");
-    if (p>0) {
-      switch( p ) {
-      case(6):      /* n, m, s, ort */
-#ifdef DISLOC
-        calc_Epot_ref=1;
-#endif
-	do_maxwell=1;
-	input->n = 1;
-	input->nummer[0] = n;
-	input->sorte[0] = s;
-	input->masse[0] = m;
-	input->ort    X(0) = pos.x;
-	input->ort    Y(0) = pos.y;
-	input->ort    Z(0) = pos.z;
-	input->impuls X(0) = 0;
-	input->impuls Y(0) = 0;
-	input->impuls Z(0) = 0;
-	input->kraft  X(0) = 0;
-	input->kraft  Y(0) = 0;
-	input->kraft  Z(0) = 0;
-	break;
-      case(9):      /* n, m, s, ort, vau */
-#ifdef DISLOC
-        calc_Epot_ref=1;
-#endif
-	input->n = 1;
-	input->nummer[0] = n;
-	input->sorte[0] = s;
-	input->masse[0] = m;
-	input->ort    X(0) = pos.x;
-	input->ort    Y(0) = pos.y;
-	input->ort    Z(0) = pos.z;
-	input->impuls X(0) = vau.x * m;
-	input->impuls Y(0) = vau.y * m;
-	input->impuls Z(0) = vau.z * m;
-	input->kraft  X(0) = 0;
-	input->kraft  Y(0) = 0;
-	input->kraft  Z(0) = 0;
-	break;
-
-#ifdef DISLOC
-      case(7):     /* n, m, s, ort, pot_ref, ort_ref */
-	do_maxwell=1;
-	input->n = 1;
-	input->nummer[0] = n;
-	input->sorte[0] = s;
-	input->masse[0] = m;
-	input->ort    X(0) = pos.x;
-	input->ort    Y(0) = pos.y;
-	input->ort    Z(0) = pos.z;
-	input->impuls X(0) = 0;
-	input->impuls Y(0) = 0;
-	input->impuls Z(0) = 0;
-	input->kraft  X(0) = 0;
-	input->kraft  Y(0) = 0;
-	input->kraft  Z(0) = 0;
-	input->Epot_ref[0] = vau.x; /* vau.x misused as potengref ! */
-	input->ort_ref X(0) = refpos.x;
-	input->ort_ref Y(0) = refpos.y;
-	input->ort_ref Z(0) = refpos.z;
-	break;
-      case(10):     /* n, m, s, ort, vau, pot_ref, ort_ref */
-	input->n = 1;
-	input->nummer[0] = n;
-	input->sorte[0] = s;
-	input->masse[0] = m;
-	input->ort    X(0) = pos.x;
-	input->ort    Y(0) = pos.y;
-	input->ort    Z(0) = pos.z;
-	input->impuls X(0) = vau.x * m;
-	input->impuls Y(0) = vau.y * m;
-	input->impuls Z(0) = vau.z * m;
-	input->kraft  X(0) = 0;
-	input->kraft  Y(0) = 0;
-	input->kraft  Z(0) = 0;
-	input->Epot_ref[0] = refeng;
-	input->ort_ref X(0) = refpos.x;
-	input->ort_ref Y(0) = refpos.y;
-	input->ort_ref Z(0) = refpos.z;
-	break;
-#endif
-      default:
-	error("Incomplete line in atoms file.");
-      };
+        picbuf.type  = (integer) p->sorte[i];
+        fwrite( &picbuf, sizeof( picbuf ), 1, out ); 
 #endif /* MONOLJ */
-
-      cellc = cell_coord(pos.x,pos.y,pos.z);
-
-#ifdef MPI
-
-      to_cpu = cpu_coord(cellc);
-      
-      if ((myid != to_cpu) && (1!=parallel_input)) {
-        natoms++;
-#ifndef MONOLJ
-        num_sort[input->sorte[0]]++;
-#else
-        num_sort[0]++;
-#endif
-	MPI_Ssend( input->ort,     DIM, MPI_REAL,to_cpu,ORT_TAG,    cpugrid);
-#ifdef DISLOC
-	MPI_Ssend( input->ort_ref, DIM, MPI_REAL,to_cpu,ORT_REF_TAG,cpugrid);
-	MPI_Ssend( input->Epot_ref,1,MPI_REAL,to_cpu,POT_REF_TAG,cpugrid);
-#endif
-#ifndef MONOLJ
-	MPI_Ssend( input->sorte,  1, SHORT    , to_cpu, SORTE_TAG , cpugrid);
-	MPI_Ssend( input->masse,  1, MPI_REAL , to_cpu, MASSE_TAG , cpugrid);
-        MPI_Ssend( input->nummer, 1, INTEGER  , to_cpu, NUMMER_TAG, cpugrid);
-#endif
-	MPI_Ssend( input->impuls,DIM, MPI_REAL, to_cpu, IMPULS_TAG, cpugrid);
-      } else if (to_cpu==myid) {
-        natoms++;  
-#ifndef MONOLJ
-        num_sort[input->sorte[0]]++;
-#else
-        num_sort[0]++;
-#endif
-	cellc = local_cell_coord(pos.x,pos.y,pos.z);
-	move_atom(cellc, input, 0);
-      };
-#else /* not MPI */
-      natoms++;  
-#ifndef MONOLJ
-      num_sort[input->sorte[0]]++;
-#else
-      num_sort[0]++;
-#endif
-      move_atom(cellc, input, 0);
-#endif
-    };
-  };
-
-  fclose(infile);  
-
-#ifdef MPI
-
-/* Tell other CPUs that reading atoms is finished. (tag==0) */
-  if (1!=parallel_input)
-    for (s=1; s<num_cpus; s++)
-      MPI_Ssend( input->ort, 3, MPI_REAL, s, 0, cpugrid);
-
-  /* Add the number of atoms read (and kept) by each CPU */
-  if (1==parallel_input) {
-    MPI_Allreduce( &natoms, &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
-    natoms = addnumber;
-    for (i=0; i<ntypes; i++) {
-      MPI_Allreduce( &num_sort[i], &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
-      num_sort[i] = addnumber;
-    };
-  } else { /* broadcast if serial io */
-    MPI_Bcast( &natoms ,      1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( num_sort, ntypes, MPI_INT, 0, MPI_COMM_WORLD);
-  };
-
-  /* If CPU 0 found velocities in its data, no initialisation is done */
-  MPI_Bcast( &do_maxwell , 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-#endif /* MPI */
-
-  /* print number of atoms */
-  if (0==myid) {
-    printf("Read structure with %d atoms.\n",natoms);
-    addnumber=num_sort[0];
-    printf("num_sort = [ %u",num_sort[0]);
-    for (i=1; i<ntypes; i++) {
-      printf(", %u",num_sort[i]);
-      addnumber+=num_sort[i];
-    };
-    printf(" ],  total = %u\n",addnumber);
-  }
+    }
 }
 
 
-#ifdef MPI
-
-/******************************************************************************
-*
-*  recv_atoms
-*
-*  recveive atoms one at a time from CPU 0 
-*
-*  this is only used when parallel_input==0
-*
-******************************************************************************/
-
-void recv_atoms(void)
+void write_vrml_cell( cell *p, FILE *out ) 
 {
-  cell *input, *target;
-  MPI_Status status;
-  ivektor cellc;
-  ivektor local_cellc;
 
-  printf("Node %d listening.\n",myid);
+    real px, py, pz, E_pot, E_kin;
+    real red, green, blue;
+    int i, ind;
+    real tabred[5],tabgreen[5],tabblue[5];
 
-  input = (cell *) malloc(sizeof(cell));
-  if (0==input) error("Cannot allocate input cell.");
-  input->n_max = 0;
-  alloc_cell(input,1);
+/*  Original table from RUS - we use more saturation
 
-  while ( 1 ) {
+    tabred[0] = 0.10; tabgreen[0] = 0.20; tabblue[0] = 0.50;
+    tabred[1] = 0.05; tabgreen[1] = 0.75; tabblue[1] = 0.75;
+    tabred[2] = 0.10; tabgreen[2] = 0.50; tabblue[2] = 0.25;
+    tabred[3] = 0.75; tabgreen[3] = 0.75; tabblue[3] = 0.05;
+    tabred[4] = 0.75; tabgreen[4] = 0.05; tabblue[4] = 0.05; */
 
-    MPI_Recv(input->ort,  DIM, MPI_REAL, 0, MPI_ANY_TAG   , cpugrid, &status );
-
-    if ((0 != status.MPI_TAG) && (ORT_TAG != status.MPI_TAG)) 
-       error("Messages mixed up.");
-
-    if ( 0 == status.MPI_TAG ) break;
+    tabred[0] = 0.02; tabgreen[0] = 0.02; tabblue[0] = 0.45;
+    tabred[1] = 0.03; tabgreen[1] = 0.23; tabblue[1] = 0.23;
+    tabred[2] = 0.02; tabgreen[2] = 0.45; tabblue[2] = 0.02;
+    tabred[3] = 0.23; tabgreen[3] = 0.23; tabblue[3] = 0.03;
+    tabred[4] = 0.45; tabgreen[4] = 0.02; tabblue[4] = 0.02; 
+  
+    for (i = 0;i < p->n; ++i) {
+        px = p->impuls X(i);
+        py = p->impuls Y(i);
+        pz = p->impuls Z(i);
+#ifndef MONOLJ
+        E_kin = (float) ( (px*px + py*py + pz*pz) / (2 * p->masse[i]) );
+#else
+        E_kin = (float) ( (px*px + py*py + pz*pz) / 2 );
+#endif
 
 #ifndef MONOLJ
-    MPI_Recv(input->sorte,  1, SHORT,     0, SORTE_TAG , cpugrid, &status );
-    MPI_Recv(input->masse,  1, MPI_REAL,  0, MASSE_TAG , cpugrid, &status );
-    MPI_Recv(input->nummer, 1, INTEGER,   0, NUMMER_TAG, cpugrid, &status );
-#endif
-    MPI_Recv(input->impuls,DIM, MPI_REAL, 0, IMPULS_TAG, cpugrid, &status );
 #ifdef DISLOC
-    MPI_Recv(input->Epot_ref,1, MPI_REAL, 0, POT_REF_TAG, cpugrid, &status);
-    MPI_Recv(input->ort_ref, DIM, MPI_REAL, 0, ORT_REF_TAG,  cpugrid, &status);
+	if (p->sorte[i] == dpotsorte) {
+    	  E_pot = (float) p->pot_eng[i] - p->Epot_ref[i];
+	  if (E_pot < min_dpot) continue;
+	}
+#else
+        E_pot = (float) (p->pot_eng[i]+35)/82;
 #endif
+#else
+	E_pot=0;
+#endif
+	ind = (int)(E_pot * 3.9999);
+	ind = (ind -120)/4;
+	if (ind < -1) continue;
+	if (ind > 3) continue;
 
-    local_cellc = local_cell_coord(input->ort X(0),input->ort Y(0),
-                                   input->ort Z(0));
-    target = PTR_3D_VV(cell_array,local_cellc,cell_dim);
+        /* Get RBG values from linear interpolation */
+	red = -4.0 * (tabred[ind] - tabred[ind+1]) * E_pot + (tabred[ind] * (ind+1) - ind * tabred[ind+1] );
 
-    /* See if we need some space */
-    if (target->n >= target->n_max) alloc_cell(target,target->n_max+CSTEP);
+	green = -4.0 * (tabgreen[ind] - tabgreen[ind+1]) * E_pot + (tabgreen[ind] * (ind+1) - ind * tabgreen[ind+1] );
 
-    target->ort X(target->n)    = input->ort X(0);
-    target->ort Y(target->n)    = input->ort Y(0);
-    target->ort Z(target->n)    = input->ort Z(0);
-    target->impuls X(target->n) = input->impuls X(0);
-    target->impuls Y(target->n) = input->impuls Y(0);
-    target->impuls Z(target->n) = input->impuls Z(0);
+        blue = -4.0 * (tabblue[ind] - tabblue[ind+1]) * E_pot + (tabblue[ind] * (ind+1) - ind * tabblue[ind+1] );
+
+        fprintf(out, "  Separator {\n");
+	fprintf(out, "    Material { diffuseColor %f %f %f }\n", red, green, blue);
+        fprintf(out, "    Translation { translation %f %f %f }\n", p->ort X(i), p->ort Y(i), p->ort Z(i));
 #ifndef MONOLJ
-    target->nummer[target->n] = input->nummer[0];
-    target->masse[target->n]  = input->masse[0];
-    target->sorte[target->n]  = input->sorte[0];
+	fprintf(out, "    Sphere { radius %f }\n", (float)((p->sorte[i] + 1)*.3));
+	fprintf(out, " }\n"); 
 #endif
-#ifdef DISLOC
-    target->Epot_ref[target->n]  = input->Epot_ref[0];
-    target->ort_ref X(target->n) = input->ort_ref X(0);
-    target->ort_ref Y(target->n) = input->ort_ref Y(0);
-    target->ort_ref Z(target->n) = input->ort_ref Z(0);
-#endif
-    ++target->n;
-
-  }
-  printf("Node %d leaves listen.\n",myid);
-}
-
-#endif /* MPI */ 
-
-
-/******************************************************************************
-*
-* write_properties writes selected properties to *.eng file
-*
-******************************************************************************/
-
-void write_properties(int steps)
-{
-  FILE *out;
-  str255 fname;
-  int i;
-  real  vol; 
-  real part_kin_energy;
-  real part_pot_energy; 
-
-  /* Energiefile schreiben */
-  sprintf(fname,"%s.eng",outfilename);
-
-  /* Groessen pro Tln ausgeben */
-#ifdef MC
-  part_pot_energy = mc_epot_part();
-#else
-  part_pot_energy =                tot_pot_energy / natoms;
-  part_kin_energy = ( 2.0 / 3.0 )* tot_kin_energy / natoms;
-#endif
-  vol = volume / natoms;
-
-  out = fopen(fname,"a");
-  if (NULL == out) error("Cannot open properties file.");
-
-  fprintf(out, "%10.4e", (double)(steps * timestep));
-  fprintf(out," %10.4e", (double)part_pot_energy);
-#ifndef MC
-  fprintf(out," %10.4e", (double)part_kin_energy);
-  fprintf(out," %10.4e", (double)pressure);
-#ifdef TRANSPORT
-  fprintf(out," %10.4e", (double)heat_cond); 
-#endif
-#else
-  fprintf(out," %10.4e", (double)(mc_accept/(real)mc_count));
-  mc_accept = (real)0;
-  mc_count  = 0;
-#endif
-  fprintf(out," %10.4e", (double)vol);
-
-#ifdef PAXTEST
-  if (ensemble==ENS_NPT_AXIAL) {
-    fprintf(out," %10.4e %10.4e %10.4e", 
-                  (double) stress.x, (double) stress.y, (double) stress.z );
-    fprintf(out," %10.4e %10.4e %10.4e", 
-                  (double) box_x.x,  (double) box_y.y,  (double) box_z.z );
-  };
-#endif
-  putc('\n',out);
-
-  fclose(out);
+      }
 }
 
 
-#ifdef MSQD
-
-/******************************************************************************
-*
-* write_msqd writes mean square displacement to *.msqd file
-*
-******************************************************************************/
-
-void write_msqd(int steps)
-
-{
-  FILE *out;
-  str255 fname;
-  int i;
-
-  sprintf(fname,"%s.msqd",outfilename);
-  out = fopen(fname,"a");
-  if (NULL == out) error("Cannot open msqd file.");
-
-  fprintf(out, "%10.4e", (double)(steps * timestep));
-  for (i=0; i<ntypes; i++) {
-    fprintf(out," %10.4e", (double)(msqd_global[i] / num_sort[i]));
-  };
-  putc('\n',out);
-
-  fclose(out);
-
-}
-
-#endif
-
-/******************************************************************************
-*
-* write_config writes a configuration to a numbered file
-* also creates a checkpoint
-*
-******************************************************************************/
-
-void write_config(int steps)
-
-#ifdef MONOLJ
-#define WRITE_CELL     for (i = 0;i < p->n; ++i) \
-             fprintf(out,"%12f %12f %12f %12f %12f %12f\n",\
-	     p->ort X(i),\
-	     p->ort Y(i),\
-	     p->ort Z(i),\
-	     p->impuls X(i),\
-	     p->impuls Y(i),\
-	     p->impuls Z(i) )
-#else
-/* Makro to write data of cell p to file out */
-#define WRITE_CELL     for (i = 0;i < p->n; ++i) \
-             fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f %12f %12f\n",\
-	     p->nummer[i],\
-	     p->sorte[i],\
-	     p->masse[i],\
-	     p->ort X(i),\
-	     p->ort Y(i),\
-	     p->ort Z(i),\
-	     p->impuls X(i) / p->masse[i],\
-	     p->impuls Y(i) / p->masse[i],\
-	     p->impuls Z(i) / p->masse[i],\
-             p->pot_eng[i]) 
-#endif
-
+void write_pictures_raw(int steps)
 { 
   FILE *out;
+
   str255 fname;
   int fzhlr;
   cell *p,*q;
   int i,j,k,l,m,tag;
 
   /* Dateiname fuer Ausgabedatei erzeugen */
-#ifdef MIKSHEAR
-  fzhlr = steps;
-#else
-  fzhlr = steps / rep_interval;
-#endif
+  fzhlr = steps / pic_interval;
 
 #ifdef MPI  
-  if (1==parallel_output)
-    sprintf(fname,"%s.%u.%u",outfilename,fzhlr,myid);
+  if (0<parallel_output)
+    sprintf(fname,"%s.%u.%u.pic",outfilename,fzhlr,myid);
   else
 #endif
-    sprintf(fname,"%s.%u",outfilename,fzhlr);
+    sprintf(fname,"%s.%u.pic",outfilename,fzhlr);
+
 
 #ifdef MPI
 
-  if (1==parallel_output) {
+  if (0<parallel_output) {
 
     /* Ausgabedatei oeffnen */
     out = fopen(fname,"w");
     if (NULL == out) error("Cannot open output file for config.");
 
 
-    for (j = 1; j < cell_dim.x-1; ++j )
-      for (k = 1; k < cell_dim.y-1; ++k )
-	for (l = 1; l < cell_dim.z-1; ++l ) {
- 	  p = PTR_3D_V(cell_array, j, k, l, cell_dim);
-	  WRITE_CELL;
+    for (i = 1; i < cell_dim.x-1; ++i )
+      for (j = 1; j < cell_dim.y-1; ++j )
+        for (k = 1; k < cell_dim.z-1; ++k ) {
+ 	  p = PTR_3D_V(cell_array, i, j, k, cell_dim);
+	  write_pic_cell( p, out );
 	};
     
     fclose(out);
@@ -622,44 +159,45 @@ void write_config(int steps)
       /* Write data on CPU 0 */
 
       /* Write own data */
-      for (j = 1; j < cell_dim.x-1; ++j )
-	for (k = 1; k < cell_dim.y-1; ++k )
-	  for (l = 1; l < cell_dim.z-1; ++l ) {
-	    p = PTR_3D_V(cell_array, j, k, l, cell_dim);
-	    WRITE_CELL;
-	  };
+    for (i = 1; i < cell_dim.x-1; ++i )
+      for (j = 1; j < cell_dim.y-1; ++j )
+        for (k = 1; k < cell_dim.z-1; ++k ) {
+	  p = PTR_3D_V(cell_array, i, j, k, cell_dim);
+	  write_pic_cell( p, out );
+	};
 
       /* Receive data from other cpus and write that */
-      p   = PTR_3D_V(cell_array, 0, 0, 0, cell_dim);
+      p   = PTR_2D_V(cell_array, 0, 0, cell_dim);
       for ( m = 1; m < num_cpus; ++m)
-	for (j = 1; j < cell_dim.x-1; ++j )
-	  for (k = 1; k < cell_dim.y-1; ++k )
-	    for (l = 1; l < cell_dim.z-1; ++l ) {
+        for (i = 1; i < cell_dim.x-1; ++i )
+          for (j = 1; j < cell_dim.y-1; ++j )
+            for (k = 1; k < cell_dim.z-1; ++k ) {
 #ifndef MONOLJ
-	      tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
+	      tag = PTR_3D_V(CELL_TAG, i, j, k, cell_dim);
 	      recv_cell( p, m, tag );
 #else
 	      recv_cell( p, m, ORT_TAG );
 #endif
-	      WRITE_CELL;
+	      write_pic_cell( p, out );
 	    };
 
       fclose(out);      
-    } else { 
+    } else {
       /* Send data to cpu 0 */
-      for (j = 1; j < cell_dim.x-1; ++j )
-	for (k = 1; k < cell_dim.y-1; ++k )
-	  for (l = 1; l < cell_dim.z-1; ++l ) {
-	    p   = PTR_3D_V(cell_array, j, k, l, cell_dim);
+        for (i = 1; i < cell_dim.x-1; ++i )
+          for (j = 1; j < cell_dim.y-1; ++j )
+            for (k = 1; k < cell_dim.z-1; ++k ) {
+      	      p   = PTR_3D_V(cell_array, i, j, k, cell_dim);
 #ifndef MONOLJ
-	    tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
-	    send_cell( p, 0, tag );
+	      tag = PTR_3D_V(CELL_TAG, i, j, k, cell_dim);
+	      send_cell( p, 0, tag );
 #else
-	    send_cell( p, 0, ORT_TAG );
+	      send_cell( p, 0, ORT_TAG );
 #endif
-	  };
+	    };
     };
-  };
+  }
+
 #else
 
   /* Ausgabedatei oeffnen */
@@ -673,570 +211,651 @@ void write_config(int steps)
 		     cell_dim.y-1,
 		     cell_dim.z-1,
 		     cell_dim);
-       ++p ) 
-
-    WRITE_CELL;
+       ++p ) {
+    write_pic_cell( p , out );
+  };
 
   fclose(out);  
 
 #endif
 
-  /* write iteration file */
-  sprintf(fname,"%s.%u.itr",outfilename,fzhlr);
-
-  out = fopen(fname,"w");
-  if (NULL == out) error("Cannot write checkpoint file.");
-
-  fprintf(out,"startstep \t%d\n",steps);
-  fprintf(out,"box_x \t%f %f %f\n",box_x.x,box_x.y,box_x.z);
-  fprintf(out,"box_y \t%f %f %f\n",box_y.x,box_y.y,box_y.z);
-  fprintf(out,"box_z \t%f %f %f\n",box_z.x,box_z.y,box_z.z);
-  fprintf(out,"starttemp \t%f\n",temperature);
-
-#ifdef NPT
-  if (ensemble==ENS_NPT_ISO) {
-    fprintf(out,"pressure_ext \t%f\n",pressure_ext.x);
-  };
-  if (ensemble==ENS_NPT_AXIAL) {
-    fprintf(out,"pressure_ext \t%f %f %f\n",
-            pressure_ext.x,pressure_ext.y,pressure_ext.z);
-  };
-#endif /* NPT */
-
-  fclose(out);
-
-}
-
-
-#ifdef DISLOC
-
-/******************************************************************************
-*
-* write_demmaps writes a differential energy map to file *.dem.x
-*
-******************************************************************************/
-
-void write_demmaps(int steps)
-
-#ifdef MONOLJ
-#define WRITE_CELL     for (i = 0;i < p->n; ++i) \
-             fprintf(out,"%12f %12f %12f %12f %12f %12f\n",\
-             p->ort X(i),\
-             p->ort Y(i),\
-	     p->ort Z(i),\
-	     p->impuls X(i),\
-	     p->impuls Y(i),\
-	     p->impuls Z(i) )
-#else
-
-#define WRITE_CELL_DEM     for (i = 0;i < p->n; ++i) {\
-             if (p->sorte[i] == dpotsorte) {\
-               dpot = p->pot_eng[i] - p->Epot_ref[i];\
-               if (dpot > min_dpot)\
-                 fprintf(demout,"%12f %12f %12f %12f\n",\
-	         p->ort X(i),\
-	         p->ort Y(i),\
-	         p->ort Z(i),\
-                 dpot);\
-	     }\
-          }
-#endif
-
-{ 
-  FILE *demout;
-  str255 demfname;
-  int fzhlr;
-  cell *p,*q;
-  int i,j,k,l,m,tag;
-  real dpot;
-
-  /* Dateiname fuer Ausgabedatei erzeugen */
-  fzhlr = steps;
-  sprintf(demfname,"%s.dem.%u",outfilename,fzhlr);
-
-#ifdef MPI
-
-  if (0==myid) {
-
-  /* Ausgabedatei oeffnen */
-  demout = fopen(demfname,"w");
-  if (NULL == demout) error("Cannot open output file for dem.");
-
-  /* Write data on CPU 0 */
-
-  /* Write own data */
-  for (j = 1; j < cell_dim.x-1; ++j )
-    for (k = 1; k < cell_dim.y-1; ++k )
-      for (l = 1; l < cell_dim.z-1; ++l ) {
-	p = PTR_3D_V(cell_array, j, k, l, cell_dim);
-	WRITE_CELL_DEM;
-      };
-
-  /* Receive data from other cpus and write that */
-  p   = PTR_3D_V(cell_array, 0, 0, 0, cell_dim);
-    for ( m = 1; m < num_cpus; ++m)
-      for (j = 1; j < cell_dim.x-1; ++j )
-        for (k = 1; k < cell_dim.y-1; ++k )
-          for (l = 1; l < cell_dim.z-1; ++l ) {
-#ifndef MONOLJ
-            tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
-            recv_cell( p, m, tag );
-#else
-            recv_cell( p, m, POT_REF_TAG );
-#endif
-	    WRITE_CELL_DEM;
-	  };
-
-  fclose(demout);      
-
-  } else { 
-  /* Send data to cpu 0 */
-  for (j = 1; j < cell_dim.x-1; ++j )
-    for (k = 1; k < cell_dim.y-1; ++k )
-      for (l = 1; l < cell_dim.z-1; ++l ) {
-        p   = PTR_3D_V(cell_array, j, k, l, cell_dim);
-#ifndef MONOLJ
-        tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
-        send_cell( p, 0, tag );
-#else
-        send_cell( p, 0, POT_REF_TAG );
-#endif
-      };
-  };
-
-#else
-
-  /* Ausgabedatei oeffnen */
-  demout = fopen(demfname,"w");
-  if (NULL == demout) error("Cannot open output file for dem.");
-
-  for (p = cell_array; 
-       p <= PTR_3D_V(cell_array,
-		     cell_dim.x-1,
-		     cell_dim.y-1,
-		     cell_dim.z-1,
-		     cell_dim);
-       ++p ) {
-    WRITE_CELL_DEM;
-  }
-
-  fclose(demout);
-
-#endif
-
 }
 
 /******************************************************************************
 *
-* write_dspmaps writes a differential displacement map to file *.ddm.x
+* write_pictures writes bitmap pictures of configuration
 *
 ******************************************************************************/
 
-void write_dspmaps(int steps)
+void write_pictures_bins(int steps)
 
-#ifdef MONOLJ
-#define WRITE_CELL     for (i = 0;i < p->n; ++i) \
-             fprintf(out,"%12f %12f %12f %12f %12f %12f\n",\
-             p->ort X(i),\
-             p->ort Y(i),\
-	     p->ort Z(i),\
-	     p->impuls X(i),\
-	     p->impuls Y(i),\
-	     p->impuls Z(i) )
-#else
-
-#define WRITE_CELL_DDM     for (i = 0;i < p->n; ++i) {\
-             dx = p->ort X(i) - p->ort_ref X(i);\
-             dy = p->ort Y(i) - p->ort_ref Y(i);\
-             dz = p->ort Z(i) - p->ort_ref Z(i);\
-             if ((dx < boxx)&&(dy < boxy)&&(dz < boxz))\
-               fprintf(ddmout,"%12f %12f %12f %12f %12f %12f\n",\
-	       p->ort X(i),\
-	       p->ort Y(i),\
-	       p->ort Z(i),\
-               dx,\
-               dy,\
-               dz);\
-          }
-#endif
-
-{ 
-  FILE *ddmout;
-  str255 ddmfname;
-  int fzhlr;
-  cell *p,*q;
-  int i,j,k,l,m,tag;
-  real dx, dy, dz, boxx, boxy, boxz;
-
-  /* Dateiname fuer Ausgabedatei erzeugen */
-  fzhlr = steps;
-  sprintf(ddmfname,"%s.dsp.%u",outfilename,fzhlr);
-
-  /* 1/2 of the boxlength, this is not correct for non-cartesian boxes ! */
-  boxx = box_x.x/2;
-  boxy = box_y.y/2;
-  boxz = box_z.z/2;
-
-#ifdef MPI
-
-  if (0==myid) {
-
-  /* Ausgabedatei oeffnen */
-  ddmout = fopen(ddmfname,"w");
-  if (NULL == ddmout) error("Cannot open output file for ddm.");
-
-  /* Write data on CPU 0 */
-
-  /* Write own data */
-  for (j = 1; j < cell_dim.x-1; ++j )
-    for (k = 1; k < cell_dim.y-1; ++k )
-      for (l = 1; l < cell_dim.z-1; ++l ) {
-	p = PTR_3D_V(cell_array, j, k, l, cell_dim);
-	WRITE_CELL_DDM;
-	}
-      };
-
-  /* Receive data from other cpus and write that */
-  p   = PTR_3D_V(cell_array, 0, 0, 0, cell_dim);
-    for ( m = 1; m < num_cpus; ++m)
-      for (j = 1; j < cell_dim.x-1; ++j )
-        for (k = 1; k < cell_dim.y-1; ++k )
-          for (l = 1; l < cell_dim.z-1; ++l ) {
-#ifndef MONOLJ
-            tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
-            recv_cell( p, m, tag );
-#else
-            recv_cell( p, m, ORT_REF_TAG );
-#endif
-	    WRITE_CELL_DDM;
-	    }
-	  };
-
-  fclose(ddmout);      
-
-  } else { 
-  /* Send data to cpu 0 */
-  for (j = 1; j < cell_dim.x-1; ++j )
-    for (k = 1; k < cell_dim.y-1; ++k )
-      for (l = 1; l < cell_dim.z-1; ++l ) {
-        p   = PTR_3D_V(cell_array, j, k, l, cell_dim);
-#ifndef MONOLJ
-        tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
-        send_cell( p, 0, tag );
-#else
-        send_cell( p, 0, ORT_REF_TAG );
-#endif
-      };
-  };
-
-#else
-
-  /* Ausgabedatei oeffnen */
-  ddmout = fopen(ddmfname,"w");
-  if (NULL == ddmout) error("Cannot open output file for ddm.");
-
-  for (p = cell_array; 
-       p <= PTR_3D_V(cell_array,
-		     cell_dim.x-1,
-		     cell_dim.y-1,
-		     cell_dim.z-1,
-		     cell_dim);
-       ++p ) {
-    WRITE_CELL_DDM;
-
-    }
-
-  fclose(ddmout);
-
-#endif
-}
-
-
-
-/******************************************************************************
-*
-* update_ort_ref updates ort_ref
-*
-******************************************************************************/
-
-void update_ort_ref(void)
-
-{ 
-  cell *p,*q;
-  int i,j,k,l,m,tag;
-  real dx, dy, dz, boxx, boxy, boxz;
-
-#ifdef MPI
-
-  if (0==myid) {
-
-  /* Update own data */
-  for (j = 1; j < cell_dim.x-1; ++j )
-    for (k = 1; k < cell_dim.y-1; ++k )
-      for (l = 1; l < cell_dim.z-1; ++l ) {
-	p = PTR_3D_V(cell_array, j, k, l, cell_dim);
-	for (i = 0;i < p->n; ++i) {
-	  p->ort_ref X(i) = p->ort X(i);
-	  p->ort_ref Y(i) = p->ort Y(i);
-	  p->ort_ref Z(i) = p->ort Z(i);
-	}
-      };
-
-  /* Receive data from other cpus and Update that */
-  p   = PTR_3D_V(cell_array, 0, 0, 0, cell_dim);
-    for ( m = 1; m < num_cpus; ++m)
-      for (j = 1; j < cell_dim.x-1; ++j )
-        for (k = 1; k < cell_dim.y-1; ++k )
-          for (l = 1; l < cell_dim.z-1; ++l ) {
-#ifndef MONOLJ
-            tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
-            recv_cell( p, m, tag );
-#else
-            recv_cell( p, m, ORT_REF_TAG );
-#endif
-	    for (i = 0;i < p->n; ++i) {
-	      p->ort_ref X(i) = p->ort X(i);
-	      p->ort_ref Y(i) = p->ort Y(i);
-	      p->ort_ref Z(i) = p->ort Z(i);
-	    }
-	  };
-
-  } else { 
-  /* Send data to cpu 0 */
-  for (j = 1; j < cell_dim.x-1; ++j )
-    for (k = 1; k < cell_dim.y-1; ++k )
-      for (l = 1; l < cell_dim.z-1; ++l ) {
-        p   = PTR_3D_V(cell_array, j, k, l, cell_dim);
-#ifndef MONOLJ
-        tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
-        send_cell( p, 0, tag );
-#else
-        send_cell( p, 0, ORT_REF_TAG );
-#endif
-      };
-  };
-
-#else
-
-  for (p = cell_array; 
-       p <= PTR_3D_V(cell_array,
-		     cell_dim.x-1,
-		     cell_dim.y-1,
-		     cell_dim.z-1,
-		     cell_dim);
-       ++p ) {
-    for (i = 0;i < p->n; ++i) {
-      p->ort_ref X(i) = p->ort X(i);
-      p->ort_ref Y(i) = p->ort Y(i);
-      p->ort_ref Z(i) = p->ort Z(i);
-    }
-  }
-
-#endif
-
-}
-
-#endif /* DISLOC */
-
-/******************************************************************************
-*
-* write_distrib write spatial distribution of potential and kinetice energy
-*
-******************************************************************************/
-
-void write_distrib(int steps)
+#define XRES 720
+#define YRES 576
+#define SFACTOR 1.0
+#define NUMPIX  5
 
 {
-  FILE *outpot, *outkin, *outminmax;
-  str255 fnamepot, fnamekin, fnameminmax;
-  size_t size, count_pot, count_kin;
+
   vektor scale;
-  ivektor coord;
+
+  shortint redbit  [YRES][XRES];
+  shortint greenbit[YRES][XRES];
+  shortint bluebit [YRES][XRES];
+
+#ifdef MPI
+  shortint sum_red[YRES][XRES];
+  shortint sum_green[YRES][XRES];
+  shortint sum_blue[YRES][XRES];
+  ivektor3d maxcoord,mincoord;
+#endif
+
+  char buf[3*XRES];
+
+  real xshift, yshift;
+
+  str255 fname;
+  int fzhlr;
+  int i,j,k,r,s,t;
+  real phi;
+  real val;
   cell *p;
-  float *pot;
-  float *kin;
-  shortint *num;
-  float minpot, maxpot, minkin, maxkin;
-  int fzhlr,i,j,r,s,t;
-  static float    *pot_hist_local=NULL;
-  static float    *kin_hist_local=NULL;
-  static shortint *num_hist_local=NULL;
-#ifdef MPI
-  static float    *pot_hist_global=NULL;
-  static float    *kin_hist_global=NULL;
-  static shortint *num_hist_global=NULL;
-#endif
-  float *pot_hist, *kin_hist;
-  shortint *num_hist;
+  real red,green,blue;
+  real xmin, xmax, ymin, ymax;
+  FILE *out;
+  vektor3d a, b;
+  ivektor3d coord,pixcoord;
+  real tabred[5],tabgreen[5],tabblue[5];
+  int ind;
+  int pix;
+  int np;
+  int ia, ib;
 
-  size = dist_dim.x * dist_dim.y * dist_dim.z;
-  /* allocate histogram arrays */
-  if (NULL==pot_hist_local) {
-    pot_hist_local = (float *) malloc(size*sizeof(float));
-    if (NULL==pot_hist_local) 
-      error("Cannot allocate distrib array.");
-  }
-  if (NULL==kin_hist_local) {
-    kin_hist_local = (float *) malloc(size*sizeof(float));
-    if (NULL==kin_hist_local) 
-      error("Cannot allocate distrib array.");
-  }
-  if (NULL==num_hist_local) {
-    num_hist_local = (shortint *) malloc(size*sizeof(shortint));
-    if (NULL==num_hist_local) 
-      error("Cannot allocate distrib array.");
-  }
-#ifdef MPI
-  if (NULL==pot_hist_global) {
-    pot_hist_global = (float *) malloc(size*sizeof(float));
-    if (NULL==pot_hist_global) 
-      error("Cannot allocate distrib array.");
-  }
-  if (NULL==kin_hist_global) {
-    kin_hist_global = (float *) malloc(size*sizeof(float));
-    if (NULL==kin_hist_global) 
-      error("Cannot allocate distrib array.");
-  }
-  if (NULL==num_hist_global) {
-    num_hist_global = (shortint *) malloc(size*sizeof(shortint));
-    if (NULL==num_hist_global) 
-      error("Cannot allocate distrib array.");
-  }
-#endif
+  /* normalize view_dir */
+  val = sqrt(view_dir.x*view_dir.x+view_dir.y*view_dir.y
+             +view_dir.z*view_dir.z);
+  view_dir.x /= val;
+  view_dir.y /= val;
+  view_dir.z /= val;
 
-  for (i=0; i<size; i++) {
-    pot_hist_local[i]=0.0;
-    kin_hist_local[i]=0.0;
-    num_hist_local[i]=0;
-  }
+  /* base vectors normal to view_dir */
+  a.x = - view_dir.y;
+  a.y = view_dir.x;
+  a.z = 0;
+  a.x /= sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
+  a.y /= sqrt(a.x*a.x + a.y*a.y + a.z*a.z);
+
+  b.x = -view_dir.x*view_dir.z;
+  b.y = view_dir.y*view_dir.z;
+  b.z = view_dir.x*view_dir.x + view_dir.y*view_dir.y;
+  b.x /= sqrt(b.x*b.x + b.y*b.y + b.z*b.z);
+  b.y /= sqrt(b.x*b.x + b.y*b.y + b.z*b.z);
+  b.z /= sqrt(b.x*b.x + b.y*b.y + b.z*b.z);
+
+  /* minimal and maximal values out of box vectors */
+  xmin = 0;
+  ymin = 0;
+  xmax = box_x.x;
+  ymax = box_y.y;
+  ia = (int)floor(box_x.x*b.x + box_y.y*b.y + box_z.z*b.z);
+  ib = (int)floor(box_x.x*b.x + box_y.y*b.y + box_z.z*b.z);
+  if (ia < xmin) xmin = ia;
+  if (ib < ymin) ymin = ib;
+  if (ia > xmax) xmax = ia;
+  if (ib > ymax) ymax = ib;
+  ia = (int)floor(box_x.x*a.x + box_y.y*a.y);
+  ib = (int)floor(box_x.x*b.x + box_y.y*b.y);
+  if (ia < xmin) xmin = ia;
+  if (ib < ymin) ymin = ib;
+  if (ia > xmax) xmax = ia;
+  if (ib > ymax) ymax = ib;
+  ia = (int)floor(box_x.x*a.x + box_z.z*a.z);
+  ib = (int)floor(box_x.x*b.x + box_z.z*b.z);
+  if (ia < xmin) xmin = ia;
+  if (ib < ymin) ymin = ib;
+  if (ia > xmax) xmax = ia;
+  if (ib > ymax) ymax = ib;
+  ia = (int)floor(box_y.y*a.y + box_z.z*a.z);
+  ib = (int)floor(box_y.y*b.y + box_z.z*b.z);
+  if (ia < xmin) xmin = ia;
+  if (ib < ymin) ymin = ib;
+  if (ia > xmax) xmax = ia;
+  if (ib > ymax) ymax = ib;
+  ia = (int)floor(box_x.x*a.x);
+  ib = (int)floor(box_x.x*b.x);
+  if (ia < xmin) xmin = ia;
+  if (ib < ymin) ymin = ib;
+  if (ia > xmax) xmax = ia;
+  if (ib > ymax) ymax = ib;
+  ia = (int)floor(box_z.z*a.z);
+  ib = (int)floor(box_z.z*b.z);
+  if (ia < xmin) xmin = ia;
+  if (ib < ymin) ymin = ib;
+  if (ia > xmax) xmax = ia;
+  if (ib > ymax) ymax = ib;
+  
+  /* the dist bins are orthogonal boxes in space */
+
+  xshift = -xmin;
+  yshift = -ymin;
+  scale.x = XRES / (xmax-xmin);
+  scale.y = YRES / (ymax-ymin);
+
+  /* kinetic energy first */
 
   /* create filename */
   /* Dateiname fuer Ausgabedatei erzeugen */
-  fzhlr = steps / dis_interval;
+  fzhlr = steps / pic_interval;
 
-  sprintf(fnamepot,"%s.%u.pot.dist",outfilename,fzhlr);
-  sprintf(fnamekin,"%s.%u.kin.dist",outfilename,fzhlr);
-  sprintf(fnameminmax,"%s.minmax.dist",outfilename);
+  sprintf(fname,"%s.%u.kin.ppm",outfilename,fzhlr);
 
-  /* the dist bins are orthogonal boxes in space */
-  scale = box_x; 
-  if (scale.x < box_y.x) scale.x = box_y.x; 
-  if (scale.y < box_y.y) scale.y = box_y.y; 
-  if (scale.z < box_y.z) scale.z = box_y.z; 
+  /* Zero bitmap */
+  for (j=0; j<YRES; j++ ) {
+    for (i=0; i<XRES; i++ ) {
+      bluebit[j][i]  = 0;
+      greenbit[j][i] = 0;
+      redbit[j][i]   = 0;
+    };
+  };
+
+  /* Color lookup table */
+
+
+
+/*  Original table from RUS - we use more saturation
+
+    tabred[0] = 0.10; tabgreen[0] = 0.20; tabblue[0] = 0.50;
+    tabred[1] = 0.05; tabgreen[1] = 0.75; tabblue[1] = 0.75;
+    tabred[2] = 0.10; tabgreen[2] = 0.50; tabblue[2] = 0.25;
+    tabred[3] = 0.75; tabgreen[3] = 0.75; tabblue[3] = 0.05;
+    tabred[4] = 0.75; tabgreen[4] = 0.05; tabblue[4] = 0.05; */
+
+    tabred[0] = 0.02; tabgreen[0] = 0.02; tabblue[0] = 0.45;
+    tabred[1] = 0.03; tabgreen[1] = 0.23; tabblue[1] = 0.23;
+    tabred[2] = 0.02; tabgreen[2] = 0.45; tabblue[2] = 0.02;
+    tabred[3] = 0.23; tabgreen[3] = 0.23; tabblue[3] = 0.03;
+    tabred[4] = 0.45; tabgreen[4] = 0.02; tabblue[4] = 0.02; 
+
+  /* loop over all atoms */
+    for ( r = cellmin.x; r < cellmax.x; ++r )
+      for ( s = cellmin.y; s < cellmax.y; ++s )
+        for ( t = cellmin.z; t < cellmax.z; ++t ) {
+      
+   	  p = PTR_3D_V(cell_array, r, s, t, cell_dim);
+
+	  for (i = 0;i < p->n; ++i) {
+          if ( (p->ort X(i) < conf_llf.x) || (p->ort X(i) > conf_urb.x) ||
+               (p->ort Y(i) < conf_llf.y) || (p->ort Y(i) > conf_urb.y) ||
+               (p->ort Z(i) < conf_llf.z) || (p->ort Z(i) > conf_urb.z) )
+            continue;
+          coord.x = (int)floor((p->ort X(i)*a.x + p->ort Y(i)*a.y + p->ort Z(i)*a.z + xshift)*scale.x);
+          coord.y = (int)floor((p->ort X(i)*b.x + p->ort Y(i)*b.y + p->ort Z(i)*b.z + yshift)*scale.y);
+
+	  /* Check bounds */
+	  if ((coord.x >= NUMPIX) && (coord.x < (XRES-NUMPIX)) &&
+              (coord.y >= NUMPIX) && (coord.y < (YRES-NUMPIX))) { 
+	  
+             coord.y = YRES - coord.y; /* in pic: from top to bottom */
+#ifndef MONOLJ
+             val = SPRODN(p->impuls,i,p->impuls,i) / (2*p->masse[i]);
+#endif
+             /* Scale Value to [0..1]   */
+	     val = (val - ecut_kin.x) / (ecut_kin.y - ecut_kin.x);
+             val = val > 1.0 ? 1.0 : val;
+             val = val < 0.0 ? 0.0 : val;
+#ifndef MONOLJ
+             np  = NUMPIX * (1 + p->sorte[i]);
+#else
+             np  = NUMPIX;
+#endif
+             /* Get index into table */
+	     ind = (int)(val * 3.9999);
+
+             /* Get RBG values from linear interpolation */
+	     red = -4.0 * (tabred[ind] - tabred[ind+1]) * val + 
+	         (tabred[ind] * (ind+1) - ind * tabred[ind+1] );
+
+	     green = -4.0 * (tabgreen[ind] - tabgreen[ind+1]) * val +
+                 (tabgreen[ind] * (ind+1) - ind * tabgreen[ind+1] );
+
+             blue = -4.0 * (tabblue[ind] - tabblue[ind+1]) * val +
+                 (tabblue[ind] * (ind+1) - ind * tabblue[ind+1] );
+
+             /* Set & Copy Pixel */
+             for (j=-np;j<np;++j)
+               for (k=-np;k<np;++k) {
+                 if (k*k + j*j > np*np) continue;
+                 pixcoord.x = coord.x + j;
+                 pixcoord.y = coord.y + k;
+		 
+                 pix =  redbit  [pixcoord.y][pixcoord.x] + (SFACTOR * 255 * red  );
+                 redbit  [pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+	      
+                 pix = bluebit [pixcoord.y][pixcoord.x] + (SFACTOR * 255 * blue );
+                 bluebit [pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+
+                 pix = greenbit[pixcoord.y][pixcoord.x] + (SFACTOR * 255 * green);
+                 greenbit[pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+
+             }; /* for k */
+          }; /* if */
+       }; /* for i */
+    }; /* for r */
+
+#ifdef MPI
+/* Add the bitmaps */
+   MPI_Reduce( redbit,   sum_red,   XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
+   MPI_Reduce( greenbit, sum_green, XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
+   MPI_Reduce( bluebit , sum_blue,  XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
+
+if (0==myid) { 
+
+/* Clip max value bitmap, create white background */
+   for (j=0; j<YRES; j++ ) {
+     for (i=0; i<XRES; i++ ) { 
+
+      redbit[j][i]   = sum_red[j][i]   < 255 ? sum_red[j][i]   : 200;
+      greenbit[j][i] = sum_green[j][i] < 255 ? sum_green[j][i] : 200;
+      bluebit[j][i]  = sum_blue[j][i]  < 255 ? sum_blue[j][i]  : 200;
+    };
+  }; 
+
   
-  if (scale.x < box_z.x) scale.x = box_z.x; 
-  if (scale.y < box_z.y) scale.y = box_z.y; 
-  if (scale.z < box_z.z) scale.z = box_z.z; 
+};
+#endif
 
-  scale.x = dist_dim.x / scale.x;
-  scale.y = dist_dim.y / scale.y;
-  scale.z = dist_dim.z / scale.z;
+  for (j=0; j<YRES; j++ ) 
+    for (i=0; i<XRES; i++ ) 
+/* background white */
+      if ((0==redbit[j][i]) && (0==greenbit[j][i]) && (0==bluebit[j][i])) {
+         redbit[j][i]   = 250;
+         greenbit[j][i] = 250;
+         bluebit[j][i]  = 250;
+      };
+
+  /* write ppm file */
+
+#ifdef MPI
+  if (0==myid) {
+#endif
+
+  out = fopen(fname,"w");
+  if (NULL == out) error("Can`t open bitmap file.");
+
+  fprintf(out,"P6 %d %d 255\n", XRES, YRES);
+
+
+  for (j=0; j<YRES; j++ ) {
+    for (i=0; i<XRES; i++ ) {
+      buf[3*i  ] = (char) redbit[j][i];
+      buf[3*i+1] = (char) greenbit[j][i];
+      buf[3*i+2] = (char) bluebit[j][i];
+    };
+    fwrite(buf, sizeof(char), 3*XRES, out);
+  };
+
+  fclose(out);
+
+#ifdef MPI
+ };
+#endif
+
+/* Potential energy second */
+
+
+  /* create filename */
+
+  sprintf(fname,"%s.%u.pot.ppm",outfilename,fzhlr);
+
+
+  /* Zero bitmap */
+  for (j=0; j<YRES; j++ ) {
+    for (i=0; i<XRES; i++ ) {
+      bluebit[j][i]  = 0;
+      greenbit[j][i] = 0;
+      redbit[j][i]   = 0;
+    };
+  };
 
   /* loop over all atoms */
   for ( r = cellmin.x; r < cellmax.x; ++r )
     for ( s = cellmin.y; s < cellmax.y; ++s )
-      for ( t = cellmin.z; t < cellmax.z; ++t ) {
+      for ( t = cellmin.z; t < cellmax.z; ++t )
+      {
+
 	p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-        for (i = 0;i < p->n; ++i) {
-          coord.x = (int) (p->ort X(i) * scale.x);
-          coord.y = (int) (p->ort Y(i) * scale.y);
-          coord.z = (int) (p->ort Z(i) * scale.z);
+
+	for (i = 0;i < p->n; ++i) {
+          if ( (p->ort X(i) < conf_llf.x) || (p->ort X(i) > conf_urb.x) ||
+               (p->ort Y(i) < conf_llf.y) || (p->ort Y(i) > conf_urb.y) ||
+               (p->ort Z(i) < conf_llf.z) || (p->ort Z(i) > conf_urb.z) )
+            continue;
+          coord.x = (int)floor((p->ort X(i)*a.x + p->ort Y(i)*a.y + p->ort Z(i)*a.z + xshift)*scale.x);
+          coord.y = (int)floor((p->ort X(i)*b.x + p->ort Y(i)*b.y + p->ort Z(i)*b.z + yshift)*scale.y);
 	  /* Check bounds */
-	  if (coord.x<0          ) coord.x = 0;
-          if (coord.x>=dist_dim.x) coord.x = dist_dim.x-1;
-          if (coord.y<0          ) coord.y = 0;
-          if (coord.y>=dist_dim.y) coord.y = dist_dim.y-1;
-          if (coord.z<0          ) coord.z = 0;
-          if (coord.z>=dist_dim.z) coord.z = dist_dim.z-1;
-          /* Add up distribution */
-          pot = PTR_3D_VV(pot_hist_local, coord, dist_dim);
-          kin = PTR_3D_VV(kin_hist_local, coord, dist_dim);
-          num = PTR_3D_VV(num_hist_local, coord, dist_dim);
-          (*num)++;
+	  if ((coord.x>=NUMPIX) && (coord.x<(XRES-NUMPIX)) &&
+	      (coord.y>=NUMPIX) && (coord.y<(YRES-NUMPIX))) {
+
 #ifndef MONOLJ
 #ifdef DISLOC
-          if (Epot_diff==1) {
-            *pot += p->pot_eng[i] - p->Epot_ref[i];
-          } else
+	if (p->sorte[i] == dpotsorte) {
+	  val = p->pot_eng[i] - p->Epot_ref[i];
+	  if (val < min_dpot) continue;
+	}
 #else
-          *pot += p->pot_eng[i];
+	  val = p->pot_eng[i];
 #endif
+#endif /* MONOLJ */
+          /* Scale Value to [0..1]   */
+	  val = (val - ecut_pot.x) / (ecut_pot.y - ecut_pot.x);
+/* Values that are not in the interval are set to MINIMUM */
+          val = val > 1.0 ? 0.0 : val;
+          val = val < 0.0 ? 0.0 : val;
+#ifndef MONOLJ
+          np = NUMPIX * (1 + p->sorte[i]);
+/*          np  = (int)floor(p->ort X(i)*view_dir.x+p->ort Y(i)*view_dir.y+p->ort Z(i)*view_dir.z)*NUMPIX * (1 + p->sorte[i]);
+*/
+#endif /* MONOLJ */
+/* Defects in potential energy are rather point-like, so we enlarge all
+Pixels not in the default interval
+          if ((val<1.0) && (val>0.0)) np = 3 * NUMPIX; else np = NUMPIX; */
 
-	  *kin += SPRODN(p->impuls,i,p->impuls,i) / (2*p->masse[i]);
-#else
-          *kin += SPRODN(p->impuls,i,p->impuls,i) / 2;
-#endif
-        };
+          /* Get index into table */
+	  ind = (int)(val * 3.9999);
+
+	  red = -4.0 * (tabred[ind] - tabred[ind+1]) * val + 
+	    (tabred[ind] * (ind+1) - ind * tabred[ind+1] );
+
+	  green = -4.0 * (tabgreen[ind] - tabgreen[ind+1]) * val + 
+	    (tabgreen[ind] * (ind+1) - ind * tabgreen[ind+1] );
+
+          blue = -4.0 * (tabblue[ind] - tabblue[ind+1]) * val + 
+	    (tabblue[ind] * (ind+1) - ind * tabblue[ind+1] );
+
+          /* Set & Copy Pixel */
+          for (j=-np;j<np;++j)
+             for (k=-np;k<np;++k) {
+               if (k*k + j*j > np*np) continue;
+              pixcoord.x = coord.x + j;
+              pixcoord.y = coord.y + k;
+
+              if ((pixcoord.y<YRES) && (pixcoord.x<XRES)) {
+
+                 pix =  redbit  [pixcoord.y][pixcoord.x] + (SFACTOR * 255 * red  );
+                 redbit  [pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+	      
+                 pix = bluebit [pixcoord.y][pixcoord.x] + (SFACTOR * 255 * blue );
+                 bluebit [pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+
+                 pix = greenbit[pixcoord.y][pixcoord.x] + (SFACTOR * 255 * green);
+                 greenbit[pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+              };
+           }; 
+	};
+       };
+    };
+
+#ifdef MPI
+/* Add the bitmaps */
+   MPI_Reduce( redbit,   sum_red,   XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
+   MPI_Reduce( greenbit, sum_green, XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
+   MPI_Reduce( bluebit , sum_blue,  XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
+
+if (0==myid) { 
+
+/* Clip max value bitmap, create white background */
+   for (j=0; j<YRES; j++ ) {
+     for (i=0; i<XRES; i++ ) { 
+
+      redbit[j][i]   = sum_red[j][i]   < 255 ? sum_red[j][i]   : 200;
+      greenbit[j][i] = sum_green[j][i] < 255 ? sum_green[j][i] : 200;
+      bluebit[j][i]  = sum_blue[j][i]  < 255 ? sum_blue[j][i]  : 200;
+    };
+  }; 
+
+  for (j=0; j<YRES; j++ )
+    for (i=0; i<XRES; i++ ) 
+/* background white */
+      if ((0==redbit[j][i]) && (0==greenbit[j][i]) && (0==bluebit[j][i])) {
+         redbit[j][i]   = 250;
+         greenbit[j][i] = 250;
+         bluebit[j][i]  = 250;
       };
+  
+};
+#endif
+
+  /* write ppm file */
 
 #ifdef MPI
-  MPI_Reduce(pot_hist_local,pot_hist_global,size,MPI_FLOAT,MPI_SUM,0,cpugrid);
-  MPI_Reduce(kin_hist_local,kin_hist_global,size,MPI_FLOAT,MPI_SUM,0,cpugrid);
-  MPI_Reduce(num_hist_local,num_hist_global,size,    SHORT,MPI_SUM,0,cpugrid);
-  pot_hist=pot_hist_global;
-  kin_hist=kin_hist_global;
-  num_hist=num_hist_global;
+  if (0==myid) {
+#endif
+
+  out = fopen(fname,"w");
+  if (NULL == out) error("Can`t open bitmap file.");
+
+  fprintf(out,"P6 %d %d 255\n", XRES, YRES);
+
+
+  for (j=0; j<YRES; j++ ) {
+    for (i=0; i<XRES; i++ ) {
+      buf[3*i  ] = (char) redbit[j][i];
+      buf[3*i+1] = (char) greenbit[j][i];
+      buf[3*i+2] = (char) bluebit[j][i];
+    };
+    fwrite(buf, sizeof(char), 3*XRES, out);
+  };
+
+  fclose(out);
+
+#ifdef MPI
+ };
+#endif
+}
+
+void write_vrmls(int steps)
+{ 
+  FILE *out;
+
+  str255 fname;
+  int fzhlr;
+  cell *p,*q;
+  int i,j,k,l,m,tag;
+  real phi;
+
+  /* Dateiname fuer Ausgabedatei erzeugen */
+  fzhlr = steps / pic_interval;
+  phi = acos(-view_dir.z / sqrt(view_dir.x*view_dir.x+view_dir.y*view_dir.y+view_dir.z*view_dir.z));
+  
+#ifdef MPI  
+  if (0<parallel_output)
+    sprintf(fname,"%s.%u.%u.wrl",outfilename,fzhlr,myid);
+  else
+#endif
+    sprintf(fname,"%s.%u.wrl",outfilename,fzhlr);
+
+
+#ifdef MPI
+
+  if (0<parallel_output) {
+
+    /* Ausgabedatei oeffnen */
+    out = fopen(fname,"w");
+    if (NULL == out) error("Cannot open output file for config.");
+    fprintf(out, "#VRML V1.0 ascii\n\n");
+    fprintf(out, "DEF StartPers PerspectiveCamera {\n");
+    fprintf(out, "position 0 0 0\n");
+    fprintf(out, "orientation 1 1 1 0\n");
+    fprintf(out, "focalDistance 10\n");
+    fprintf(out, "}\n\n");
+    fprintf(out, "Separator {\n");
+
+    for (i = 1; i < cell_dim.x-1; ++i )
+      for (j = 1; j < cell_dim.y-1; ++j )
+        for (k = 1; k < cell_dim.z-1; ++k ) {
+ 	  p = PTR_3D_V(cell_array, i, j, k, cell_dim);
+	  write_vrml_cell( p, out );
+	};
+    
+    fprintf(out, "}\n");
+    fclose(out);
+
+  } else {
+
+    if (0==myid) {
+
+      /* Ausgabedatei oeffnen */
+      out = fopen(fname,"w");
+      if (NULL == out) error("Cannot open output file for config.");
+      fprintf(out, "#VRML V1.0 ascii\n\n");
+      fprintf(out, "DEF StartPers PerspectiveCamera {\n");
+      fprintf(out, "position 2.5 2.5 15\n");
+      fprintf(out, "orientation 0 0 1 0\n");
+      fprintf(out, "focalDistance 10\n");
+      fprintf(out, "}\n\n");
+      fprintf(out, "Separator {\n");
+
+
+      /* Write data on CPU 0 */
+
+      /* Write own data */
+    for (i = 1; i < cell_dim.x-1; ++i )
+      for (j = 1; j < cell_dim.y-1; ++j )
+        for (k = 1; k < cell_dim.z-1; ++k ) {
+	  p = PTR_3D_V(cell_array, i, j, k, cell_dim);
+	  write_vrml_cell( p, out );
+	};
+
+      /* Receive data from other cpus and write that */
+      p   = PTR_3D_V(cell_array, 0, 0, 0, cell_dim);
+      for ( m = 1; m < num_cpus; ++m)
+        for (i = 1; i < cell_dim.x-1; ++i )
+          for (j = 1; j < cell_dim.y-1; ++j )
+            for (k = 1; k < cell_dim.z-1; ++k ) {
+#ifndef MONOLJ
+	      tag = PTR_3D_V(CELL_TAG, i, j, k, cell_dim);
+	      recv_cell( p, m, tag );
 #else
-  pot_hist=pot_hist_local;
-  kin_hist=kin_hist_local;
-  num_hist=num_hist_local;
+	      recv_cell( p, m, ORT_TAG );
+#endif
+	      write_vrml_cell( p, out );
+	    };
+
+      fprintf(out, "}\n");
+      fclose(out);      
+    } else { 
+      /* Send data to cpu 0 */
+        for (i = 1; i < cell_dim.x-1; ++i )
+          for (j = 1; j < cell_dim.y-1; ++j )
+            for (k = 1; k < cell_dim.z-1; ++k ) {
+      	      p   = PTR_3D_V(cell_array, i, j, k, cell_dim);
+#ifndef MONOLJ
+	      tag = PTR_3D_V(CELL_TAG, i, j, k, cell_dim);
+	      send_cell( p, 0, tag );
+#else
+	      send_cell( p, 0, ORT_TAG );
+#endif
+	    };
+    };
+  };
+#else
+
+  /* Ausgabedatei oeffnen */
+  out = fopen(fname,"w");
+  if (NULL == out) error("Cannot open output file for config.");
+  fprintf(out, "#VRML V1.0 ascii\n\n");
+  fprintf(out, "Separator {\n");
+  if (projection)
+    fprintf(out, "  PerspectiveCamera {\n");
+  else
+    fprintf(out, "  OrthographicCamera {\n");
+  fprintf(out, "  position %f %f %f\n", view_pos.x, view_pos.y, view_pos.z);
+  fprintf(out, "  orientation %f %f 0 %f\n", view_dir.y, -view_dir.x, phi);
+  fprintf(out, "  focalDistance 1\n");
+  fprintf(out, "  }\n");
+  fprintf(out, "  Separator {\n");
+  fprintf(out, "    Material { diffuseColor 1 1 1 transparency 0.7 }\n");
+  fprintf(out, "    Translation { translation %f %f %f }\n", box_x.x/2, box_y.y/2, box_z.z/2);
+  fprintf(out, "    Cube { width %f depth %f height %f }\n", box_x.x, box_y.y, box_z.z);
+  fprintf(out, "  }\n");
+  fprintf(out, "  Separator {\n");
+  fprintf(out, "    Material { diffuseColor 1 0 0 }\n");
+  fprintf(out, "    Translation { translation 0 0 %f }\n", box_z.z/2);
+  fprintf(out, "    Rotation { rotation 1 0 0 1.5707963 }\n");
+  fprintf(out, "    Cylinder { radius .1 height %f}\n", box_z.z*1.1);
+  fprintf(out, "  }\n");
+  fprintf(out, "  Separator {\n");
+  fprintf(out, "    Material { diffuseColor 0 1 0}\n");
+  fprintf(out, "    Translation { translation %f 0 0 }\n", box_x.x/2);
+  fprintf(out, "    Rotation { rotation 0 0 -1 1.5707963 }\n");
+  fprintf(out, "    Cylinder { radius .1 height %f}\n", box_x.x*1.1);
+  fprintf(out, "  }\n");
+  fprintf(out, "  Separator {\n");
+  fprintf(out, "    Material { diffuseColor 0 0 1 }\n");
+  fprintf(out, "    Translation { translation 0 %f 0 }\n", box_y.y/2);
+  fprintf(out, "    Cylinder { radius .1 height %f}\n", box_y.y*1.1);
+  fprintf(out, "  }\n");
+  fprintf(out, "  Separator {\n");
+  fprintf(out, "    Material { diffuseColor 1 0 0 }\n");
+  fprintf(out, "    Translation { translation 0 0 %f }\n", box_z.z*1.1);
+  fprintf(out, "    Rotation { rotation 1 0 0 1.5707963 }\n");
+  fprintf(out, "    Cone { radius .1 height 1}\n");
+  fprintf(out, "  }\n");
+  fprintf(out, "  Separator {\n");
+  fprintf(out, "    Material { diffuseColor 0 1 0}\n");
+  fprintf(out, "    Translation { translation %f 0 0 }\n", box_x.x*1.1);
+  fprintf(out, "    Rotation { rotation 0 0 -1 1.5707963 }\n");
+  fprintf(out, "    Cone { radius .1 height 1}\n");
+  fprintf(out, "  }\n");
+  fprintf(out, "  Separator {\n");
+  fprintf(out, "    Material { diffuseColor 0 0 1 }\n");
+  fprintf(out, "    Translation { translation 0 %f 0 }\n", box_y.y*1.1);
+  fprintf(out, "    Cone { radius .1 height 1}\n");
+  fprintf(out, "  }\n");
+  fprintf(out, "  Separator {\n");
+  fprintf(out, "    Material { diffuseColor 1 0 0 }\n");
+  fprintf(out, "    Translation { translation 0 0 %f }\n", box_z.z*1.1);
+  fprintf(out, "    Rotation { rotation 1 0 0 1.5707963 }\n");
+  fprintf(out, "    AsciiText { string \"z\"}\n");
+  fprintf(out, "  }\n");
+  fprintf(out, "  Separator {\n");
+  fprintf(out, "    Material { diffuseColor 0 1 0}\n");
+  fprintf(out, "    Translation { translation %f 0 0 }\n", box_x.x*1.1);
+  fprintf(out, "    Rotation { rotation 0 0 -1 1.5707963 }\n");
+  fprintf(out, "    AsciiText { string \"x\"}\n");
+  fprintf(out, "  }\n");
+  fprintf(out, "  Separator {\n");
+  fprintf(out, "    Material { diffuseColor 0 0 1 }\n");
+  fprintf(out, "    Translation { translation 0 %f 0 }\n", box_y.y*1.1);
+  fprintf(out, "    AsciiText { string \"y\"}\n");
+  fprintf(out, "  }\n");
+
+
+
+
+  for (p = cell_array; 
+       p <= PTR_3D_V(cell_array,
+		     cell_dim.x-1,
+		     cell_dim.y-1,
+		     cell_dim.z-1,
+		     cell_dim);
+       ++p ) {
+    write_vrml_cell( p , out );
+  };
+
+  fprintf(out, "}\n");
+  fclose(out);  
+
 #endif
 
-#ifdef MPI
-  if (0==myid) 
-#endif
-  {
-    outpot = fopen(fnamepot,"w");
-    if (NULL == outpot) error("Cannot open pot distrib file.");
-    outkin = fopen(fnamekin,"w");
-    if (NULL == outkin) error("Cannot open kin distrib file.");
+}
 
-    for (i=0; i<size; i++) {
-      if (num_hist[i]>0) {
-         pot_hist[i] /= num_hist[i];
-         kin_hist[i] /= num_hist[i];
-      }
-    }
 
-    j=0;
-    while (num_hist[j]==0) j++;
-    minpot = pot_hist[j];
-    maxpot = pot_hist[j];
-    minkin = kin_hist[j];
-    maxkin = kin_hist[j];
-    for (i=j+1; i<size; i++) {
-      if (num_hist[i]>0) {
-        if (maxpot<pot_hist[i]) maxpot=pot_hist[i];
-        if (minpot>pot_hist[i]) minpot=pot_hist[i];
-        if (maxkin<kin_hist[i]) maxkin=kin_hist[i];
-        if (minkin>kin_hist[i]) minkin=kin_hist[i];
-      }
-    }
-
-    outminmax = fopen(fnameminmax, "a");
-    fprintf(outminmax, "%d %f %f %f %f\n", 
-            fzhlr, minpot, maxpot, minkin, maxkin);
-    fclose(outminmax);
-
-    if (dist_binary_io) {
-      count_pot=fwrite(pot_hist, sizeof(float), size, outpot);
-      count_kin=fwrite(kin_hist, sizeof(float), size, outkin);
-      if ((count_pot!=size) || (count_kin!=size)) {
-        fprintf(stderr,"dist write incomplete - cnt_pot = %d, cnt_kin = %d\n", 
-                count_pot, count_kin );
-      }
-    } else {
-      for ( r = 0; r < dist_dim.x; ++r )
-        for ( s = 0; s < dist_dim.y; ++s )
-	  for ( t = 0; t < dist_dim.z; ++t ) {
-            pot = PTR_3D_V(pot_hist, r, s, t, dist_dim);
-            kin = PTR_3D_V(kin_hist, r, s, t, dist_dim);
-            fprintf(outpot,"%f\n", *pot);
-            fprintf(outkin,"%f\n", *kin);
-          };
-    }
-
-    fclose(outpot);
-    fclose(outkin);
-  }
+void write_pictures( steps )
+{
+  switch (pic_type) {
+    case 0: write_pictures_raw ( steps ); break;
+    case 1: break;
+    case 2: write_pictures_bins( steps ); break;
+    case 3: write_vrmls( steps ); break;
+  };
 }
