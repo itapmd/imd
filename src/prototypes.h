@@ -74,7 +74,8 @@ void shutdown_mpi(void);
 void setup_buffers(void);
 void empty_mpi_buffers(void);
 #ifdef SR
-int isendrecv_buf(msgbuf *send, int to_cpu, msgbuf *recv, int from_cpu, MPI_Status *status);
+int  sendrecv_buf(msgbuf *send, int to_cpu, 
+                  msgbuf *recv, int from_cpu, MPI_Status *status);
 #else
 int  irecv_buf(msgbuf *b, int from_cpu, MPI_Request *req);
 int  isend_buf(msgbuf *b, int to_cpu,   MPI_Request *req);
