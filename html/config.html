@@ -146,6 +146,10 @@ are supported:</p>
 <tr><td>_bcc        </td><td> bcc crystal (3D)                       </td></tr>
 <tr><td>_nacl       </td><td> NaCl crystal structure (3D)            </td></tr>
 <tr><td>_b2         </td><td> crystal with B2 (CsCl) structure (3D)  </td></tr>
+<tr><td>_cu3au      </td><td> Cu<sub>3</sub>Au structure 
+			      (L1<sub>2</sub>) (3D)                  </td></tr>
+<tr><td>_cuau3      </td><td> CuAu<sub>3</sub> structure 
+			      (L1<sub>2</sub>) (3D)                  </td></tr>
 <tr><td>_diamond    </td><td> cubic diamond structure (3D)           </td></tr>
 <tr><td>_zincblende </td><td> zincblende structure (3D)              </td></tr>
 <tr><td>_lav        </td><td> C15 Laves structure (3D)               </td></tr>
@@ -161,15 +165,14 @@ the masses of the different atoms types can be specified with
 the parameter <tt>masses</tt>, which requires <tt>ntypes</tt>
 real values.</p>
 
-<p>
-For the cubic crystal structures _fcc, _bcc, _nacl, _b2, _diamond,
-_zincblende, and _lav, the three components of the parameter
-<tt>box_param</tt> specify the number of conventional cubic unit
-cells in each direction. The size of such a cubic unit cell is
-given by the parameter <tt>box_unit</tt>, which defaults to 
+<p> For the cubic crystal structures _fcc, _bcc, _nacl, _b2, _cu3au,
+_cuau3, _diamond, _zincblende, and _lav, the three components of the
+parameter <tt>box_param</tt> specify the number of conventional cubic
+unit cells in each direction. The size of such a cubic unit cell is
+given by the parameter <tt>box_unit</tt>, which defaults to
 <tt>1.0</tt>. So, in order to obtain an FCC crystal with nearest
-neighbor distance <tt>sqrt(2)</tt>, <tt>box_unit</tt> must be set 
-to <tt>2.0</tt>.</p>
+neighbor distance <tt>sqrt(2)</tt>, <tt>box_unit</tt> must be set to
+<tt>2.0</tt>.</p>
 
 <p>
 For the C15 Laves structure _lav, the three box parameters 
