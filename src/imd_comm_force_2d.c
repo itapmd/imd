@@ -540,7 +540,7 @@ void pack_forces( msgbuf *b, int j, int k )
     b->data[ b->n++ ] = HEATCOND(from,i);
 #endif
 #ifdef STRESS_TENS
-    b->data[ b->n++ ] = PRESSTENS(fromi,xx);
+    b->data[ b->n++ ] = PRESSTENS(from,i,xx);
     b->data[ b->n++ ] = PRESSTENS(from,i,yy);
     b->data[ b->n++ ] = PRESSTENS(from,i,xy);
 #endif
