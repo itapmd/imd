@@ -93,7 +93,8 @@ void calc_forces(void)
       pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
       pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
       pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
-      do_forces(cell_array + P->np, cell_array + P->nq, pbc);
+      do_forces(cell_array + P->np, cell_array + P->nq, pbc,
+                &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
     }
   }
 
@@ -111,7 +112,8 @@ void calc_forces(void)
       pbc.y = -(P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y);
       pbc.z = -(P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z);
       if (P->np != P->nq) 
-        do_forces(cell_array + P->nq, cell_array + P->np, pbc);
+        do_forces(cell_array + P->nq, cell_array + P->np, pbc,
+                  &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
     }
   }
 
@@ -127,7 +129,8 @@ void calc_forces(void)
       pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
       pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
       pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
-      do_forces_eam2(cell_array + P->np, cell_array + P->nq, pbc);
+      do_forces_eam2(cell_array + P->np, cell_array + P->nq, pbc,
+                     &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
     }
   }
 
@@ -144,7 +147,8 @@ void calc_forces(void)
       pbc.y = -(P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y);
       pbc.z = -(P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z);
       if (P->np != P->nq)
-        do_forces_eam2(cell_array + P->nq, cell_array + P->np, pbc);
+        do_forces_eam2(cell_array + P->nq, cell_array + P->np, pbc,
+                       &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
     }
   }
 #endif /* EAM2 */
@@ -154,7 +158,7 @@ void calc_forces(void)
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
   for (k=0; k<ncells; ++k) {
-    do_forces2(cell_array + k);
+    do_forces2(cell_array+k, &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
   }
 #endif
 

@@ -8,9 +8,10 @@
 
 #include "imd.h"
 
-/* do_forces_uniax, risc version */
+/* do_forces_uniax */
 
-void do_forces(cell *p, cell *q, vektor pbc)
+void do_forces(cell *p, cell *q, vektor pbc, real *Epot, 
+               real *Virial, real *Vir_x, real *Vir_y, real *Vir_z)
 
 {
   int i, j ;
@@ -117,7 +118,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
 
 	p->pot_eng[i] += pot12;
 	q->pot_eng[j] += pot12;
-        tot_pot_energy += pot12;
+        *Epot         += pot12;
 
         tmp_vir_vect.x += r12.x * force12.x ;
         tmp_vir_vect.y += r12.y * force12.y ;
@@ -131,10 +132,10 @@ void do_forces(cell *p, cell *q, vektor pbc)
 
   }; /* for i */
 
-  vir_x  += tmp_vir_vect.x;
-  vir_y  += tmp_vir_vect.y;
-  vir_z  += tmp_vir_vect.z;
-  virial += tmp_virial ;
+  *Vir_x  += tmp_vir_vect.x;
+  *Vir_y  += tmp_vir_vect.y;
+  *Vir_z  += tmp_vir_vect.z;
+  *Virial += tmp_virial ;
 
 } /* do_forces_uniax */
 

@@ -21,16 +21,14 @@
 *
 ******************************************************************************/
 
-void do_forces(cell *p, cell *q, vektor pbc)
-
+void do_forces(cell *p, cell *q, vektor pbc, real *Epot, 
+               real *Virial, real *Vir_x, real *Vir_y, real *Vir_z)
 {
   int i,j,k;
   vektor d;
   vektor tmp_d;
   vektor force;
   real radius2;
-  vektor tmp_forces;
-  real tmp_energy;
   real tmp_virial;
 #ifdef P_AXIAL
   vektor tmp_vir_vect;
@@ -143,7 +141,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
         p->pot_eng[i] += pot_zwi;
 #endif
 #endif
-        tot_pot_energy += pot_zwi;
+        *Epot   += pot_zwi;
 
 #ifdef P_AXIAL
         tmp_vir_vect.x -= d.x * force.x;
@@ -239,16 +237,16 @@ void do_forces(cell *p, cell *q, vektor pbc)
 #endif
 
 #ifdef P_AXIAL
-  vir_x  += tmp_vir_vect.x;
-  vir_y  += tmp_vir_vect.y;
-  virial += tmp_vir_vect.x;
-  virial += tmp_vir_vect.y;
+  *Vir_x  += tmp_vir_vect.x;
+  *Vir_y  += tmp_vir_vect.y;
+  *Virial += tmp_vir_vect.x;
+  *Virial += tmp_vir_vect.y;
 #ifndef TWOD
-  vir_z  += tmp_vir_vect.z;
-  virial += tmp_vir_vect.z;
+  *Vir_z  += tmp_vir_vect.z;
+  *Virial += tmp_vir_vect.z;
 #endif
 #else
-  virial += tmp_virial;
+  *Virial += tmp_virial;
 #endif 
 #endif /* TERSOFF */ 
 

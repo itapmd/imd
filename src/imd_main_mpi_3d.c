@@ -40,7 +40,7 @@
 void calc_forces(void)
 {
   int n, k;
-  real tmpvec1[5], tmpvec2[5];
+  real tmpvec1[5], tmpvec2[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
 
   /* clear global accumulation variables */
   tot_pot_energy = 0.0;
@@ -118,7 +118,8 @@ void calc_forces(void)
       pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
       pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
       pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
-      do_forces(cell_array + P->np, cell_array + P->nq, pbc);
+      do_forces(cell_array + P->np, cell_array + P->nq, pbc,
+                &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
     }
   }
 
@@ -136,7 +137,8 @@ void calc_forces(void)
       pbc.y = -(P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y);
       pbc.z = -(P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z);
       if (P->np != P->nq)
-        do_forces(cell_array + P->nq, cell_array + P->np, pbc);
+        do_forces(cell_array + P->nq, cell_array + P->np, pbc,
+                  &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
     }
   }
 #endif
@@ -165,15 +167,6 @@ void calc_forces(void)
      the force loop also on the other half of the neighbours for the 
      cells on the surface of the CPU */
 
-  /* potential energy and virial are already complete; to avoid double
-     counting, we keep a copy of the current value, which we use later */
-
-  tmpvec1[0] = tot_pot_energy;
-  tmpvec1[1] = vir_x;
-  tmpvec1[2] = vir_y;
-  tmpvec1[3] = vir_z;
-  tmpvec1[4] = virial;
-
   /* compute forces for remaining pairs of cells */
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
@@ -186,16 +179,12 @@ void calc_forces(void)
       pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
       pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
       pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
-      do_forces(cell_array + P->np, cell_array + P->nq, pbc);
+      /* potential energy and virial are already complete;          */
+      /* to avoid double counting, we update only the dummy tmpvec2 */
+      do_forces(cell_array + P->np, cell_array + P->nq, pbc,
+                tmpvec2, tmpvec2+1, tmpvec2+2, tmpvec2+3, tmpvec2+4);
     }
   }
-
-  /* use the previously saved values of potential energy and virial */
-  tot_pot_energy = tmpvec1[0];
-  vir_x          = tmpvec1[1];
-  vir_y          = tmpvec1[2];
-  vir_z          = tmpvec1[3];
-  virial         = tmpvec1[4];
 
 #endif  /* ... ifndef AR */
 
@@ -204,7 +193,8 @@ void calc_forces(void)
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
   for (k=0; k<ncells; ++k) {
-    do_forces2(cell_array + CELLS(k));
+    do_forces2(cell_array + CELLS(k)
+               &tot_kin_energy, &virial, &vir_x, &vir_y, &vir_z);
   }
 #endif
 
@@ -224,7 +214,8 @@ void calc_forces(void)
       pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
       pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
       pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
-      do_forces_eam2(cell_array + P->np, cell_array + P->nq, pbc);
+      do_forces_eam2(cell_array + P->np, cell_array + P->nq, pbc,
+                     &tot_kin_energy, &virial, &vir_x, &vir_y, &vir_z);
     }
   }
 
@@ -241,18 +232,12 @@ void calc_forces(void)
       pbc.y = -(P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y);
       pbc.z = -(P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z);
       if (P->np != P->nq)
-        do_forces_eam2(cell_array + P->nq, cell_array + P->np, pbc);
+        do_forces_eam2(cell_array + P->nq, cell_array + P->np, pbc,
+                       &tot_kin_energy, &virial, &vir_x, &vir_y, &vir_z);
     }
   }
 
 #endif /* EAM2 */
-
-  /* potential energy and virial are already complete; we save them away */
-  tmpvec1[0] = tot_pot_energy;
-  tmpvec1[1] = vir_x;
-  tmpvec1[2] = vir_y;
-  tmpvec1[3] = vir_z;
-  tmpvec1[4] = virial;
 
 #if defined(EAM2) && !defined(AR)
 
@@ -272,20 +257,29 @@ void calc_forces(void)
       pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
       pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
       pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
-      do_forces_eam2(cell_array + P->np, cell_array + P->nq, pbc);
+      /* potential energy and virial are already complete;          */
+      /* to avoid double counting, we update only the dummy tmpvec2 */
+      do_forces_eam2(cell_array + P->np, cell_array + P->nq, pbc,
+                     tmpvec2, tmpvec2+1, tmpvec2+2, tmpvec2+3, tmpvec2+4);
     }
   }
 
 #endif /* EAM2 and not AR */
 
   /* sum up results of different CPUs */
+  tmpvec1[0] = tot_pot_energy;
+  tmpvec1[1] = virial;
+  tmpvec1[2] = vir_x;
+  tmpvec1[3] = vir_y;
+  tmpvec1[4] = vir_z;
+
   MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid); 
 
   tot_pot_energy = tmpvec2[0];
-  vir_x          = tmpvec2[1];
-  vir_y          = tmpvec2[2];
-  vir_z          = tmpvec2[3];
-  virial         = tmpvec2[4];
+  virial         = tmpvec2[1];
+  vir_x          = tmpvec2[2];
+  vir_y          = tmpvec2[3];
+  vir_z          = tmpvec2[4];
 
 }
 

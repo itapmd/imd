@@ -66,7 +66,8 @@ void calc_forces(void)
       P = pairs[n]+k;
       pbc.x = P->ipbc[0] * box_x.x + P->ipbc[1] * box_y.x;
       pbc.y = P->ipbc[0] * box_x.y + P->ipbc[1] * box_y.y;
-      do_forces(cell_array + P->np, cell_array + P->nq, pbc);
+      do_forces(cell_array + P->np, cell_array + P->nq, pbc,
+                &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
     }
   }
 }

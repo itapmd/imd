@@ -40,7 +40,8 @@
 * -------------------------------------------------------------------- */
 
 /* -------------------------------------------- */
-void do_forces(cell *p, cell *q, vektor pbc)
+void do_forces(cell *p, cell *q, vektor pbc, real *Epot, 
+               real *Virial, real *Vir_x, real *Vir_y, real *Vir_z)
 
 /* Part 1: calc of pair potential and its derivative 
 *  and save the eam neighbors */
@@ -145,7 +146,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
 	q->pot_eng[j]  += pot_zwi;
 	p->pot_eng[i]  += pot_zwi;
 #endif
-        tot_pot_energy += pot_zwi;
+        *Epot          += pot_zwi;
 
 #ifdef P_AXIAL
         tmp_vir_vect.x -= d.x * d.x * pot_grad;
@@ -239,22 +240,23 @@ void do_forces(cell *p, cell *q, vektor pbc)
   if (is_short==1) printf("\n Short distance! r2: %f\n",r2_short);
 
 #ifdef P_AXIAL
-  vir_x  += tmp_vir_vect.x;
-  vir_y  += tmp_vir_vect.y;
-  virial += tmp_vir_vect.x;
-  virial += tmp_vir_vect.y;
+  *Vir_x  += tmp_vir_vect.x;
+  *Vir_y  += tmp_vir_vect.y;
+  *Virial += tmp_vir_vect.x;
+  *Virial += tmp_vir_vect.y;
 #ifndef TWOD
-  vir_z  += tmp_vir_vect.z;
-  virial += tmp_vir_vect.z;
+  *Vir_z  += tmp_vir_vect.z;
+  *Virial += tmp_vir_vect.z;
 #endif
 #else
-  virial += tmp_virial;
+  *Virial += tmp_virial;
 #endif
 
 } /* do_forces_eam_1 */
 
 /* -------------------------------------------- */
-void do_forces2(cell *p)
+void do_forces2(cell *p, real *Epot, real *Virial, 
+                real *Vir_x, real *Vir_y, real *Vir_z)
 
 /* Part 2: calc of cohesive potential function 
 *
@@ -388,19 +390,19 @@ void do_forces2(cell *p)
   } /* for i */
 
   /* total energy: pair potential + cohesive function */
-  tot_pot_energy  -= eam_A * eam_cf;
+  *Epot  -= eam_A * eam_cf;
 
 #ifdef P_AXIAL
-  vir_x  += tmp_vir_vect.x;
-  vir_y  += tmp_vir_vect.y;
-  virial += tmp_vir_vect.x;
-  virial += tmp_vir_vect.y;
+  *Vir_x  += tmp_vir_vect.x;
+  *Vir_y  += tmp_vir_vect.y;
+  *Virial += tmp_vir_vect.x;
+  *Virial += tmp_vir_vect.y;
 #ifndef TWOD
-  vir_z  += tmp_vir_vect.z;
-  virial += tmp_vir_vect.z;
+  *Vir_z  += tmp_vir_vect.z;
+  *Virial += tmp_vir_vect.z;
 #endif
 #else
-  virial += tmp_virial;
+  *Virial += tmp_virial;
 #endif
 
 } /* do_forces_eam_2 */

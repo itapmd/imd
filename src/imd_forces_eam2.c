@@ -35,7 +35,8 @@
 *    doesn't use 'actio = reactio' !!!!
 ******************************************************************************/
 
-void do_forces(cell *p, cell *q, vektor pbc)     
+void do_forces(cell *p, cell *q, vektor pbc, real *Epot, 
+               real *Virial, real *Vir_x, real *Vir_y, real *Vir_z)     
 {
   int i,j,k;
   vektor d;
@@ -211,8 +212,8 @@ void do_forces(cell *p, cell *q, vektor pbc)
 	  p->kraft Z(i) += force.z;
 #endif
 
-	  p->pot_eng[i]  += pot_zwi; 
-	  tot_pot_energy += pot_zwi;
+	  p->pot_eng[i] += pot_zwi; 
+	  *Epot         += pot_zwi;
 
 #ifdef DEBUG_INFO
 	  if (p->nummer[i]==NR){
@@ -307,16 +308,16 @@ void do_forces(cell *p, cell *q, vektor pbc)
   }; /* for i */
   
 #ifdef P_AXIAL
-  vir_x  += tmp_vir_vect.x;
-  vir_y  += tmp_vir_vect.y;
-  virial += tmp_vir_vect.x;
-  virial += tmp_vir_vect.y;
+  *Vir_x  += tmp_vir_vect.x;
+  *Vir_y  += tmp_vir_vect.y;
+  *Virial += tmp_vir_vect.x;
+  *Virial += tmp_vir_vect.y;
 #ifndef TWOD
-  vir_z  += tmp_vir_vect.z;
-  virial += tmp_vir_vect.z;
+  *Vir_z  += tmp_vir_vect.z;
+  *Virial += tmp_vir_vect.z;
 #endif
 #else
-  virial += tmp_virial;
+  *Virial += tmp_virial;
 #endif  
 
 
@@ -329,7 +330,8 @@ void do_forces(cell *p, cell *q, vektor pbc)
    uses Phi(r2), Rho(r2), F(rho) and it's derivatives
 */
 
-void do_forces_eam2(cell *p, cell *q, vektor pbc)
+void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot, 
+                    real *Virial, real *Vir_x, real *Vir_y, real *Vir_z)
 {
   int i,j,k;
   vektor d;
@@ -470,7 +472,7 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc)
 	                  eam2_f_interpol_fac4 * eam2_f_i_k4 ;
 	    
 	    p->pot_eng[i]  += eam2_energy;
-	    tot_pot_energy += eam2_energy;
+	    *Epot          += eam2_energy;
 
 #ifdef ATOMNR
 	   if (p->nummer[i]==ATOMNR){
@@ -678,16 +680,16 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc)
   }; /* for i */
 
 #ifdef P_AXIAL
-  vir_x  += tmp_vir_vect.x;
-  vir_y  += tmp_vir_vect.y;
-  virial += tmp_vir_vect.x;
-  virial += tmp_vir_vect.y;
+  *Vir_x  += tmp_vir_vect.x;
+  *Vir_y  += tmp_vir_vect.y;
+  *Virial += tmp_vir_vect.x;
+  *Virial += tmp_vir_vect.y;
 #ifndef TWOD
-  vir_z  += tmp_vir_vect.z;
-  virial += tmp_vir_vect.z;
+  *Vir_z  += tmp_vir_vect.z;
+  *Virial += tmp_vir_vect.z;
 #endif
 #else
-  virial += tmp_virial;
+  *Virial += tmp_virial;
 #endif 
 
 } /* eam2_do_forces2 */

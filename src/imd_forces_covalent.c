@@ -21,7 +21,8 @@
 *
 ******************************************************************************/
 
-void do_forces2(cell *p)
+void do_forces2(cell *p, real *Epot, real *Virial, 
+                real *Vir_x, real *Vir_y, real *Vir_z)
 {
   static real   *r2 = NULL, *r = NULL, *pot = NULL, *grad = NULL;
   static vektor *d  = NULL;
@@ -89,9 +90,9 @@ void do_forces2(cell *p)
         tmp_grad  = ttbp_constant[p_typ] * 2 * tmp;
 
         /* smoothing potential, total potential */
-        tmp_f2          = pot[j] * pot[k];
-        pot_zwi         = tmp_pot * tmp_f2;
-        tot_pot_energy += pot_zwi;
+        tmp_f2   = pot[j]  * pot[k];
+        pot_zwi  = tmp_pot * tmp_f2;
+        *Epot   += pot_zwi;
 
         /* forces */
         tmp   = -tmp_f2 * tmp_grad / (r[j] * r[k]);
@@ -141,14 +142,14 @@ void do_forces2(cell *p)
   } /* i */
 
 #ifdef P_AXIAL
-  vir_x  += tmp_vir_vect.x;
-  virial += tmp_vir_vect.x;
-  vir_y  += tmp_vir_vect.y;
-  virial += tmp_vir_vect.y;
-  vir_z  += tmp_vir_vect.z;
-  virial += tmp_vir_vect.z;
+  *Vir_x  += tmp_vir_vect.x;
+  *Virial += tmp_vir_vect.x;
+  *Vir_y  += tmp_vir_vect.y;
+  *Virial += tmp_vir_vect.y;
+  *Vir_z  += tmp_vir_vect.z;
+  *Virial += tmp_vir_vect.z;
 #else
-  virial += tmp_virial;
+  *Virial += tmp_virial;
 #endif
 
 }
@@ -163,7 +164,8 @@ void do_forces2(cell *p)
 *
 ******************************************************************************/
 
-void do_forces2(cell *p)
+void do_forces2(cell *p, real *Epot, real *Virial, 
+                real *Vir_x, real *Vir_y, real *Vir_z)
 {
   static real   *r = NULL, *fc = NULL, *dfc = NULL;
   static vektor *d  = NULL;
@@ -294,8 +296,8 @@ void do_forces2(cell *p)
 
       b_ij  = ter_chi[p_typ][j_typ] * pow( 1 + tmp_4, -1 / ( 2 * ters_n[p_typ] ));
 
-      pot_zwi         = phi_r - b_ij * phi_a;
-      tot_pot_energy += fc[j] * pot_zwi;
+      pot_zwi  = phi_r - b_ij * phi_a;
+      *Epot   += fc[j] * pot_zwi;
 
       if ( zeta == 0.0 )   /* only one neighbor of i */
 	tmp_5 = 0.0;
@@ -368,14 +370,14 @@ void do_forces2(cell *p)
   } /* i */
 
 #ifdef P_AXIAL
-  vir_x  += tmp_vir_vect.x;
-  virial += tmp_vir_vect.x;
-  vir_y  += tmp_vir_vect.y;
-  virial += tmp_vir_vect.y;
-  vir_z  += tmp_vir_vect.z;
-  virial += tmp_vir_vect.z;
+  *Vir_x  += tmp_vir_vect.x;
+  *Virial += tmp_vir_vect.x;
+  *Vir_y  += tmp_vir_vect.y;
+  *Virial += tmp_vir_vect.y;
+  *Vir_z  += tmp_vir_vect.z;
+  *Virial += tmp_vir_vect.z;
 #else
-  virial += tmp_virial;
+  *Virial += tmp_virial;
 #endif
 
 }

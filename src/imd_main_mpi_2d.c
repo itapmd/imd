@@ -34,8 +34,8 @@
 
 void calc_forces(void)
 {
-  int    n, k;
-  real   tmpvec1[4], tmpvec2[4];
+  int  n, k;
+  real tmpvec1[4], tmpvec2[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
 
   /* clear global accumulation variables */
   tot_pot_energy = 0.0;
@@ -83,15 +83,10 @@ void calc_forces(void)
       P = pairs[n] + k;
       pbc.x = P->ipbc[0] * box_x.x + P->ipbc[1] * box_y.x;
       pbc.y = P->ipbc[0] * box_x.y + P->ipbc[1] * box_y.y;
-      do_forces(cell_array + P->np, cell_array + P->nq, pbc);
+      do_forces(cell_array + P->np, cell_array + P->nq, pbc,
+                &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
     }
   }
-
-  /* potential energy and virial are already complete; we save them away */
-  tmpvec1[0] = tot_pot_energy;
-  tmpvec1[1] = vir_x;
-  tmpvec1[2] = vir_y;
-  tmpvec1[3] = virial;
 
 #ifndef AR
 
@@ -110,18 +105,27 @@ void calc_forces(void)
       P = pairs[n] + k;
       pbc.x = P->ipbc[0] * box_x.x + P->ipbc[1] * box_y.x;
       pbc.y = P->ipbc[0] * box_x.y + P->ipbc[1] * box_y.y;
-      do_forces(cell_array + P->np, cell_array + P->nq, pbc);
+      /* potential energy and virial are already complete;          */
+      /* to avoid double counting, we update only the dummy tmpvec2 */
+      do_forces(cell_array + P->np, cell_array + P->nq, pbc,
+                tmpvec2, tmpvec2+1, tmpvec2+2, tmpvec2+3, tmpvec2+4);
     }
   }
 
 #endif /* AR */
 
+  /* sum up results of different CPUs */
+  tmpvec1[0] = tot_pot_energy;
+  tmpvec1[1] = virial;
+  tmpvec1[2] = vir_x;
+  tmpvec1[3] = vir_y;
+
   MPI_Allreduce( tmpvec1, tmpvec2, 4, REAL, MPI_SUM, cpugrid); 
 
   tot_pot_energy = tmpvec2[0];
-  vir_x          = tmpvec2[1];
-  vir_y          = tmpvec2[2];
-  virial         = tmpvec2[3];
+  virial         = tmpvec2[1];
+  vir_x          = tmpvec2[2];
+  vir_y          = tmpvec2[3];
 
 }
 
