@@ -17,6 +17,10 @@
 #define USE_SOCKETS
 #endif
 
+#ifndef DEBUG
+#define DEBUG
+#endif
+
 #include "imd.h" 
 #include "socket_io.h"
 
@@ -402,7 +406,7 @@ void vis_write_atoms_buf(int *len, int tag)
       WriteFull( soc, (void *) &num, sizeof(integer) );  
       WriteFull( soc, (void *) sock_buf_at, *len * sizeof(float) );
 #ifdef DEBUG
-      printf("Send block of %d atoms\n", num);
+      printf("Sent block of %d atoms\n", num);
 #endif
     }
   }

@@ -33,7 +33,7 @@ void write_distrib(int steps)
   static dist_t dist;
   int flag, fzhlr;
 
-  /* backup if hist_ur is not set */
+  /* backup if dist_ur is not set */
   if (0.0==dist_ur.x) {
     dist_ur.x = box_x.x;
     dist_ur.y = box_y.y;

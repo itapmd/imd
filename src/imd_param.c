@@ -1737,7 +1737,7 @@ void check_parameters_complete()
         }
 #endif
 #ifdef USE_SOCKETS
-  if (display_host[0]=='\0') {
+  if ((!server_socket) && (display_host[0]=='\0')) {
     error("display_host name or IP address missing.");
   }
 #endif
