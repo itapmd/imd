@@ -55,7 +55,7 @@ void move_atom(ivektor cellc, cell *from, int index)
 #ifndef TWOD
   to->impuls Z(to->n) = from->impuls Z(index); 
 #endif
-    
+#ifndef MONOLJ    
   to->masse[to->n] = from->masse[index]; 
   to->sorte[to->n] = from->sorte[index]; 
   to->nummer[to->n] = from->nummer[index]; 
@@ -75,7 +75,7 @@ void move_atom(ivektor cellc, cell *from, int index)
   to->refpos Z(to->n) = from->refpos Z(index);
 #endif
 #endif
-
+#endif
   ++to->n;
 
   /* Delete atom in original cell */
@@ -101,7 +101,7 @@ void move_atom(ivektor cellc, cell *from, int index)
 #ifndef TWOD
     from->impuls Z(index) = from->impuls Z(from->n); 
 #endif
-
+#ifndef MONOLJ
     from->masse[index] = from->masse[from->n]; 
     from->sorte[index] = from->sorte[from->n]; 
     from->nummer[index] = from->nummer[from->n]; 
@@ -119,6 +119,7 @@ void move_atom(ivektor cellc, cell *from, int index)
     from->refpos Y(index) = from->refpos Y(from->n);
 #ifndef TWOD
     from->refpos Z(index) = from->refpos Z(from->n);
+#endif
 #endif
 #endif
   };

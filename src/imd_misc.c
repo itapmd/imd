@@ -499,7 +499,9 @@ void generate_atoms(str255 mode)
 #else /* 3D */
   if (0 == strcmp(mode,".fcc")) {          /* fcc */
     init_cubic();
+#ifndef MONOLJ
     init_cells();
+#endif
     generate_fcc(0);
   } else if (0 == strcmp(mode,".nacl")) {  /* NaCl */
     init_cubic();

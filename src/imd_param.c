@@ -426,6 +426,20 @@ void getparamfile(char *paramfname, int sim)
       getparam("endtemp",&end_temp,PARAM_REAL,1,1);
     }
 #endif
+#if MONOLJ
+    else if (strcasecmp(token,"r2_cut")==0) {
+      /* cutoff radius */
+      getparam("r2_cut",&r2_cut,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"cellsize")==0) {
+      /* cell dimension */
+      getparam("cellsize",&cellsz,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"initsize")==0) {
+      /* initial cell size */
+      getparam("initsize",&initsz,PARAM_INT,1,1);
+    }
+#endif
 #if AND
     else if (strcasecmp(token,"tempintv")==0) {
       /* temperature interval */
@@ -1013,6 +1027,11 @@ void broadcast_params() {
 
 #if defined(AND) || defined(NVT) || defined(NPT)
   MPI_Bcast( &end_temp , 1 , MPI_REAL,  0, MPI_COMM_WORLD); 
+#endif
+#ifdef MONOLJ
+  MPI_Bcast( &r2_cut     , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &cellsz      , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &initsz, 1, INTEGER, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef AND

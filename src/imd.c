@@ -99,6 +99,7 @@ void main(int argc, char **argv)
 #endif
 
 #ifdef MONOLJ
+  init_cells();
   r2_cut = tmp;
 #endif
 

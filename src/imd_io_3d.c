@@ -1121,6 +1121,7 @@ void write_distrib(int steps)
           kin = PTR_3D_VV(kin_hist_local, coord, dist_dim);
           num = PTR_3D_VV(num_hist_local, coord, dist_dim);
           (*num)++;
+#ifndef MONOLJ
 #ifdef DISLOC
           if (Epot_diff==1) {
             *pot += p->pot_eng[i] - p->Epot_ref[i];
@@ -1129,7 +1130,6 @@ void write_distrib(int steps)
           *pot += p->pot_eng[i];
 #endif
 
-#ifndef MONOLJ
 	  *kin += SPRODN(p->impuls,i,p->impuls,i) / (2*p->masse[i]);
 #else
           *kin += SPRODN(p->impuls,i,p->impuls,i) / 2;

@@ -27,8 +27,8 @@
 /* define USE_CLOCK to use clock() instead of times() */
 
 #ifdef MONOLJ
-/* #define SAVEMEM
-   #undef AR */
+#define SAVEMEM
+#undef AR
 #endif
 
 /******************************************************************************

@@ -27,6 +27,7 @@ void write_pic_cell( cell *p, FILE *out )
         px = p->impuls X(i);
         py = p->impuls Y(i);
         pz = p->impuls Z(i);
+#ifndef MONOLJ
         picbuf.E_kin = (float) ( (px*px + py*py + pz*pz) / (2 * p->masse[i]) );
 #ifdef DISLOC
         if (Epot_diff==1) {
@@ -37,6 +38,7 @@ void write_pic_cell( cell *p, FILE *out )
 #endif
         picbuf.type  = (integer) p->sorte[i];
         fwrite( &picbuf, sizeof( picbuf ), 1, out ); 
+#endif /* MONOLJ */
     }
 }
 
@@ -67,7 +69,13 @@ void write_vrml_cell( cell *p, FILE *out )
         px = p->impuls X(i);
         py = p->impuls Y(i);
         pz = p->impuls Z(i);
+#ifndef MONOLJ
         E_kin = (float) ( (px*px + py*py + pz*pz) / (2 * p->masse[i]) );
+#else
+        E_kin = (float) ( (px*px + py*py + pz*pz) / 2 );
+#endif
+
+#ifndef MONOLJ
 #ifdef DISLOC
 	if (p->sorte[i] == dpotsorte) {
     	  E_pot = (float) p->pot_eng[i] - p->Epot_ref[i];
@@ -75,6 +83,9 @@ void write_vrml_cell( cell *p, FILE *out )
 	}
 #else
         E_pot = (float) (p->pot_eng[i]+35)/82;
+#endif
+#else
+	E_pot=0;
 #endif
 	ind = (int)(E_pot * 3.9999);
 	ind = (ind -120)/4;
@@ -91,8 +102,11 @@ void write_vrml_cell( cell *p, FILE *out )
         fprintf(out, "  Separator {\n");
 	fprintf(out, "    Material { diffuseColor %f %f %f }\n", red, green, blue);
         fprintf(out, "    Translation { translation %f %f %f }\n", p->ort X(i), p->ort Y(i), p->ort Z(i));
+#ifndef MONOLJ
 	fprintf(out, "    Sphere { radius %f }\n", (float)((p->sorte[i] + 1)*.3));
-	fprintf(out, " }\n"); }
+	fprintf(out, " }\n"); 
+#endif
+      }
 }
 
 
@@ -373,13 +387,18 @@ void write_pictures_bins(int steps)
               (coord.y >= NUMPIX) && (coord.y < (YRES-NUMPIX))) { 
 	  
              coord.y = YRES - coord.y; /* in pic: from top to bottom */
+#ifndef MONOLJ
              val = SPRODN(p->impuls,i,p->impuls,i) / (2*p->masse[i]);
-
+#endif
              /* Scale Value to [0..1]   */
 	     val = (val - ecut_kin.x) / (ecut_kin.y - ecut_kin.x);
              val = val > 1.0 ? 1.0 : val;
              val = val < 0.0 ? 0.0 : val;
+#ifndef MONOLJ
              np  = NUMPIX * (1 + p->sorte[i]);
+#else
+             np  = NUMPIX;
+#endif
              /* Get index into table */
 	     ind = (int)(val * 3.9999);
 
@@ -508,6 +527,7 @@ if (0==myid) {
 	  if ((coord.x>=NUMPIX) && (coord.x<(XRES-NUMPIX)) &&
 	      (coord.y>=NUMPIX) && (coord.y<(YRES-NUMPIX))) {
 
+#ifndef MONOLJ
 #ifdef DISLOC
 	if (p->sorte[i] == dpotsorte) {
 	  val = p->pot_eng[i] - p->Epot_ref[i];
@@ -516,15 +536,17 @@ if (0==myid) {
 #else
 	  val = p->pot_eng[i];
 #endif
-
+#endif /* MONOLJ */
           /* Scale Value to [0..1]   */
 	  val = (val - ecut_pot.x) / (ecut_pot.y - ecut_pot.x);
 /* Values that are not in the interval are set to MINIMUM */
           val = val > 1.0 ? 0.0 : val;
           val = val < 0.0 ? 0.0 : val;
+#ifndef MONOLJ
           np = NUMPIX * (1 + p->sorte[i]);
 /*          np  = (int)floor(p->ort X(i)*view_dir.x+p->ort Y(i)*view_dir.y+p->ort Z(i)*view_dir.z)*NUMPIX * (1 + p->sorte[i]);
 */
+#endif /* MONOLJ */
 /* Defects in potential energy are rather point-like, so we enlarge all
 Pixels not in the default interval
           if ((val<1.0) && (val>0.0)) np = 3 * NUMPIX; else np = NUMPIX; */
