@@ -556,6 +556,12 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"ntypes")==0) {
       /* number of atom types */
       getparam("ntypes",&ntypes,PARAM_INT,1,1);
+#ifdef MONO
+      if (ntypes!=1) error("this executable is for monoatomic systems only!");
+#endif
+#ifdef BINARY
+      if (ntypes!=2) error("this executable is for binary systems only!");
+#endif
       /*if there are no virtual atoms*/
       if (vtypes==0) vtypes=ntypes;
       restrictions=(vektor*)realloc(restrictions,vtypes*DIM*sizeof(real));
