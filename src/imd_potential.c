@@ -25,6 +25,14 @@
 
 #include "imd.h"
 
+#ifdef  DOUBLE
+#define FORMAT1 "%lf"
+#define FORMAT3 "%lf %lf %lf"
+#else
+#define FORMAT1 "%f"
+#define FORMAT3 "%f %f %f"
+#endif
+
 /*****************************************************************************
 *
 *  read potential table; choose format according to header
@@ -46,20 +54,13 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols )
 
     /* open file */
     infile = fopen(filename,"r");
-    if (NULL == infile) {
-      sprintf(msg,"Could not open file %s\n",filename);
-      error(msg);
-    }
+    if (NULL == infile) error_str("Could not open file %s\n",filename);
 
     /* read the header */
     do {
       /* read one line */
       res=fgets(buffer,1024,infile);
-      if (NULL == res) {
-        sprintf(msg,"Unexpected end of file in %s",filename);
-        error(msg);
-      }
-
+      if (NULL == res) error_str("Unexpected end of file in %s",filename);
       /* see if it is a header line */
       if (buffer[0]=='#') {
         have_header = 1;
@@ -68,26 +69,19 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols )
         /* see if it is the format line */
         if (buffer[1]=='F') {
           /* format complete? */
-          if (2!=sscanf( (const char*)(buffer+2), "%d%d", &format, &size )) {
-            sprintf(msg,"Corrupted format header line in file %s",filename);
-            error(msg);
-          }
+          if (2!=sscanf( (const char*)(buffer+2), "%d%d", &format, &size ))
+            error_str("Corrupted format header line in file %s",filename);
           /* right number of columns? */
-          if (size!=ncols) {
-            sprintf(msg,"Wrong number of data columns in file %s",filename);
-            error(msg);
-          }
+          if (size!=ncols) 
+            error_str("Wrong number of data columns in file %s",filename);
           /* recognized format? */
-          if ((format!=1) && (format!=2)) {
-            sprintf(msg,"Unrecognized format specified for file %s",filename);
-            error(msg);
-          }
+          if ((format!=1) && (format!=2)) 
+            error_str("Unrecognized format specified for file %s",filename);
           have_format=1;
 	}
       } else if (have_header) { 
         /* header does not end properly */
-        sprintf(msg,"Corrupted header in file %s",filename);
-        error(msg);
+        error_str("Corrupted header in file %s",filename);
       } else {
         /* we have no header, stop reading further */
 	end_header=1;
@@ -95,10 +89,8 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols )
     } while (!end_header);
 
     /* did we have a format in the header */
-    if ((have_header) && (!have_format)) {
-      sprintf(msg,"Format not specified in header of file %s",filename);
-      error(msg);
-    }
+    if ((have_header) && (!have_format))
+      error_str("Format not specified in header of file %s",filename);
 
     /* rewind if there was no header */
     if (!have_header) rewind(infile);
@@ -118,15 +110,11 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols )
   pt->step     = (real *) malloc(size*sizeof(real));
   pt->invstep  = (real *) malloc(size*sizeof(real));
   if ((pt->begin   == NULL) || (pt->end == NULL) || (pt->step == NULL) || 
-      (pt->invstep == NULL)) {
-    sprintf(msg,"Cannot allocate info block for function table %s.",filename);
-    error(msg);
-  }
+      (pt->invstep == NULL))
+    error_str("Cannot allocate info block for function table %s.",filename);
 
   /* catch the case where potential is identically zero */
-  for (i=0; i<size; ++i) {
-    pt->end[i] = 0.0;
-  }
+  for (i=0; i<size; ++i) pt->end[i] = 0.0;
 
   /* read table only on master processor? */
   if ((0==myid) || (1==parallel_input)) {
@@ -181,10 +169,8 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename, FILE *infile)
   pt->maxsteps = PSTEP;
   tablesize = ncols * pt->maxsteps;
   pt->table = (real *) malloc(tablesize*sizeof(real));
-  if (NULL==pt->table) {
-    sprintf(msg,"Cannot allocate memory for function table %s.",filename);
-    error(msg);
-  }
+  if (NULL==pt->table)
+    error_str("Cannot allocate memory for function table %s.",filename);
 
   /* input loop */
   while (!feof(infile)) {
@@ -194,25 +180,15 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename, FILE *infile)
       pt->maxsteps += PSTEP;
       tablesize = ncols * pt->maxsteps;
       pt->table = (real *) realloc(pt->table, tablesize*sizeof(real));
-      if (NULL==pt->table) {
-        sprintf(msg,"Cannot extend memory for function table %s.",filename);
-        error(msg);
-      }
+      if (NULL==pt->table)
+        error_str("Cannot extend memory for function table %s.",filename);
     }
 
     /*  read in potential */
-#ifdef DOUBLE
-    if ( 1 != fscanf(infile,"%lf",&r2) ) break;
-#else
-    if ( 1 != fscanf(infile,"%f",&r2) ) break;
-#endif
+    if (1 != fscanf(infile,FORMAT1,&r2)) break;
     if (npot==0) r2_start = r2;  /* catch first value */
     for (i=0; i<ncols; ++i) {
-#ifdef DOUBLE
-      if (( 1 != fscanf(infile,"%lf", &val)) && (myid==0)) 
-#else
-      if (( 1 != fscanf(infile,"%f", &val)) && (myid==0)) 
-#endif
+      if ((1 != fscanf(infile,FORMAT1, &val)) && (myid==0)) 
         error("Line incomplete in potential file.");
       *PTR_2D(pt->table,npot,i,pt->maxsteps,ncols) = val;
       if (val!=0.0) pt->end[i] = r2; /* catch last non-zero value */
@@ -260,10 +236,8 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename, FILE *infile)
       pt->maxsteps += PSTEP;
       tablesize = ncols * pt->maxsteps;
       pt->table = (real *) realloc(pt->table, tablesize*sizeof(real));
-      if (NULL==pt->table) {
-        sprintf(msg,"Cannot extend memory for function table %s.",filename);
-        error(msg);
-      }
+      if (NULL==pt->table)
+        error_str("Cannot extend memory for function table %s.",filename);
     }
     for (i=0; i<ncols; ++i)
       *PTR_2D(pt->table,npot,i,pt->table,ncols) 
@@ -293,23 +267,14 @@ void read_pot_table2(pot_table_t *pt, int ncols, char *filename, FILE *infile)
   int i, k, *len;
   int tablesize;
   real val, numstep;
-  str255 msg;
 
   len = (int  *) malloc(ncols * sizeof(real));
   if (len==NULL) error("allocation failed in read_pot_table");
 
   /* read the info block of the function table */
   for(i=0; i<ncols; i++) {
-#ifdef DOUBLE
-    if (3 != fscanf(infile, "%lf %lf %lf",
-#else
-    if (3 != fscanf(infile, "%f %f %f",
-#endif
-                  &pt->begin[i], &pt->end[i], &pt->step[i])) {
-      if (0==myid) { 
-        sprintf(msg, "Info line in %s corrupt.", filename);
-        error(msg);
-      }
+    if (3!=fscanf(infile, FORMAT3, &pt->begin[i], &pt->end[i], &pt->step[i])) {
+      if (0==myid) error_str("Info line in %s corrupt.", filename);
     }
     if (ncols==ntypes*ntypes) cellsz = MAX(cellsz,pt->end[i]);
     pt->invstep[i] = 1.0 / pt->step[i];
@@ -330,23 +295,14 @@ void read_pot_table2(pot_table_t *pt, int ncols, char *filename, FILE *infile)
   /* allow some extra values at the end for interpolation */
   tablesize = ncols * (pt->maxsteps+3);
   pt->table = (real *) malloc(tablesize * sizeof(real));
-  if (NULL==pt->table) {
-    sprintf(msg,"Cannot allocate memory for function table %s.",filename);
-    error(msg);
-  }
+  if (NULL==pt->table)
+    error_str("Cannot allocate memory for function table %s.",filename);
 
   /* input loop */
   for (i=0; i<ncols; i++) {
     for (k=0; k<len[i]; k++) {
-#ifdef DOUBLE
-      if (1 != fscanf(infile,"%lf", &val)) {
-#else
-      if (1 != fscanf(infile,"%f", &val)) {
-#endif
-        if (0==myid) {
-          sprintf(msg, "wrong format in file %s.", filename);
-          error(msg);
-        }
+      if (1 != fscanf(infile,FORMAT1, &val)) {
+        if (0==myid) error_str("wrong format in file %s.", filename);
       }
       *PTR_2D(pt->table,k,i,pt->maxsteps,ncols) = val;
     }
@@ -755,9 +711,8 @@ void pair_int3(real *pot, real *grad, int *is_short, pot_table_t *pt,
   int  k;
 
   /* check for distances shorter than minimal distance in table */
-  /* we need one extra value at the lower end for interpolation */
   r2a = MIN(r2,pt->end[col]);
-  r2a = r2a - pt->begin[col] - pt->step[col];
+  r2a = r2a - pt->begin[col];
   if (r2a < 0) {
     r2a = 0;
     *is_short = 1;
@@ -765,7 +720,7 @@ void pair_int3(real *pot, real *grad, int *is_short, pot_table_t *pt,
 
   /* indices into potential table */
   istep = pt->invstep[col];
-  k     = (int) (r2a * istep);
+  k     = MAX( (int) (r2a * istep), 1 );
   chi   = (r2a - k * pt->step[col]) * istep;
 
   /* factors for the interpolation */
@@ -845,9 +800,8 @@ void val_func3(real *val, int *is_short, pot_table_t *pt,
   int  k;
 
   /* check for distances shorter than minimal distance in table */
-  /* we need one extra value at the lower end for interpolation */
   r2a = MIN(r2,pt->end[col]);
-  r2a = r2a - pt->begin[col] - pt->step[col];
+  r2a = r2a - pt->begin[col];
   if (r2a < 0) {
     r2a = 0;
     *is_short = 1;
@@ -855,7 +809,7 @@ void val_func3(real *val, int *is_short, pot_table_t *pt,
 
   /* indices into potential table */
   istep = pt->invstep[col];
-  k     = (int) (r2a * istep);
+  k     = MAX( (int) (r2a * istep), 1 );
   chi   = (r2a - k * pt->step[col]) * istep;
 
   /* factors for the interpolation */
@@ -928,9 +882,8 @@ void deriv_func3(real *grad, int *is_short, pot_table_t *pt,
   int  k;
 
   /* check for distances shorter than minimal distance in table */
-  /* we need one extra value at the lower end for interpolation */
   r2a = MIN(r2,pt->end[col]);
-  r2a = r2a - pt->begin[col] - pt->step[col];
+  r2a = r2a - pt->begin[col];
   if (r2a < 0) {
     r2a = 0;
     *is_short = 1;
@@ -938,7 +891,7 @@ void deriv_func3(real *grad, int *is_short, pot_table_t *pt,
 
   /* indices into potential table */
   istep = pt->invstep[col];
-  k     = (int) (r2a * istep);
+  k     = MAX( (int) (r2a * istep), 1 );
   chi   = (r2a - k * pt->step[col]) * istep;
 
   /* factors for the interpolation of the 1. derivative */

@@ -197,9 +197,8 @@
   int  k;                                                                    \
                                                                              \
   /* check for distances shorter than minimal distance in table */           \
-  /* we need one extra value at the lower end for interpolation */           \
   r2a = MIN((r2),(pt).end[col]);                                             \
-  r2a = r2a - (pt).begin[col] - (pt).step[col];                              \
+  r2a = r2a - (pt).begin[col];                                               \
   if (r2a < 0) {                                                             \
     r2a = 0;                                                                 \
     is_short = 1;                                                            \
@@ -207,7 +206,7 @@
                                                                              \
   /* indices into potential table */                                         \
   istep = (pt).invstep[col];                                                 \
-  k     = POS_TRUNC(r2a * istep);                                            \
+  k     = MAX( POS_TRUNC(r2a * istep), 1 );                                  \
   chi   = (r2a - k * (pt).step[col]) * istep;                                \
                                                                              \
   /* factors for the interpolation */                                        \
@@ -285,9 +284,8 @@
   int  k;                                                                    \
                                                                              \
   /* check for distances shorter than minimal distance in table */           \
-  /* we need one extra value at the lower end for interpolation */           \
   r2a = MIN((r2),(pt).end[col]);                                             \
-  r2a = r2a - (pt).begin[col] - (pt).step[col];                              \
+  r2a = r2a - (pt).begin[col];                                               \
   if (r2a < 0) {                                                             \
     r2a = 0;                                                                 \
     is_short = 1;                                                            \
@@ -295,7 +293,7 @@
                                                                              \
   /* indices into potential table */                                         \
   istep = (pt).invstep[col];                                                 \
-  k     = POS_TRUNC(r2a * istep);                                            \
+  k     = MAX( POS_TRUNC(r2a * istep), 1 );                                  \
   chi   = (r2a - k * (pt).step[col]) * istep;                                \
                                                                              \
   /* factors for the interpolation */                                        \
@@ -366,9 +364,8 @@
   int  k;                                                                    \
                                                                              \
   /* check for distances shorter than minimal distance in table */           \
-  /* we need one extra value at the lower end for interpolation */           \
   r2a = MIN((r2),(pt).end[col]);                                             \
-  r2a = r2a - (pt).begin[col] - (pt).step[col];                              \
+  r2a = r2a - (pt).begin[col];                                               \
   if (r2a < 0) {                                                             \
     r2a = 0;                                                                 \
     is_short = 1;                                                            \
@@ -376,7 +373,7 @@
                                                                              \
   /* indices into potential table */                                         \
   istep = (pt).invstep[col];                                                 \
-  k     = POS_TRUNC(r2a * istep);                                            \
+  k     = MAX( POS_TRUNC(r2a * istep), 1 );                                  \
   chi   = (r2a - k * (pt).step[col]) * istep;                                \
                                                                              \
   /* factors for the interpolation of the 1. derivative */                   \
