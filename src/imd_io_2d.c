@@ -431,9 +431,20 @@ void write_itr_file(int fzhlr, int steps)
   fprintf(out,"startstep \t%d\n",steps+1);
   fprintf(out,"box_x \t%f %f\n",box_x.x,box_x.y);
   fprintf(out,"box_y \t%f %f\n",box_y.x,box_y.y);
-  fprintf(out,"starttemp \t%f\n",temperature);
-#if defined(NVT) || defined(NPT) || defined(STM) 
-  fprintf(out,"eta \t%f\n",eta);
+
+#if defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
+  /* if we have temperature control, write external temperature and eta */
+  if (((ensemble==ENS_NVT)     || (ensemble==ENS_NPT_AXIAL) || 
+       (ensemble==ENS_NPT_ISO) || (ensemble==ENS_STM) || 
+       (ensemble==ENS_FRAC))   && (isq_tau_eta>0)) {
+    fprintf(out,"starttemp \t%f\n",temperature);
+    fprintf(out,"eta \t%f\n",eta);
+  }
+#endif
+
+#ifdef AND
+  /* with Anderson thermostat, write external temperature */
+  if (tmp_interval>0) fprintf(out,"starttemp \t%f\n",temperature);
 #endif
 
 #ifdef FBC
@@ -443,11 +454,12 @@ void write_itr_file(int fzhlr, int steps)
 #endif
 
 #ifdef NPT
-  if (ensemble==ENS_NPT_ISO) {
+  /* if we have pressure control, write external pressure and xi */
+  if ((ensemble==ENS_NPT_ISO) && (isq_tau_xi>0)) {
     fprintf(out,"pressure_start \t%f\n",pressure_ext.x);
     fprintf(out,"xi \t%f\n",xi.x);
   }
-  if (ensemble==ENS_NPT_AXIAL) {
+  if ((ensemble==ENS_NPT_AXIAL) && (isq_tau_xi>0)) {
     fprintf(out,"pressure_start \t%f %f\n",pressure_ext.x,pressure_ext.y);
     fprintf(out,"xi \t%f %f\n",xi.x,xi.y);
   }
