@@ -215,10 +215,13 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename, FILE *infile)
   r2_step = (r2 - r2_start) / (npot-1);
 
   if (0==myid) {
-    printf("Read potential %s with %d lines.\n",filename,npot);
-    printf("Starts at r2_start: %f, r_start: %f\n",r2_start,sqrt(r2_start));
-    printf("Ends at r2_end:     %f, r_end:   %f\n",r2,      sqrt(r2));
-    printf("Step is r2_step:    %f\n",r2_step);
+    if (ncols==ntypes) {
+      printf("Read tabulated function %s for %d atoms types.\n",
+             filename,ncols);
+    } else {
+      printf("Read tabulated function %s for %d pairs of atoms types.\n",
+             filename,ncols);
+    }
   }
 
   /* fill info block, and shift potential to zero */
@@ -227,19 +230,23 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename, FILE *infile)
     pt->step[i] = r2_step;
     pt->invstep[i] = 1.0 / r2_step;
     delta = *PTR_2D(pt->table,(npot-1),i,pt->maxsteps,ncols);
-    if (delta!=0.0) {
-      if (0==myid)
-        printf("Potential %1d%1d shifted by %f\n",
-               (i/ntypes),(i%ntypes),delta);
-      for (k=0; k<npot; ++k) *PTR_2D(pt->table,k,i,pt->table,ncols) -= delta;
-    } else {
-      pt->end[i] += r2_step;
+    /* do not shift embedding energy of EAM */
+    if (ncols==ntypes*ntypes) {
+      if (delta!=0.0) {
+        if (0==myid)
+          printf("Potential %1d%1d shifted by %f\n",
+                 (i/ntypes),(i%ntypes),delta);
+        for (k=0; k<npot; ++k) *PTR_2D(pt->table,k,i,pt->table,ncols) -= delta;
+      } else {
+        pt->end[i] += r2_step;
+      }
     }
     if (ncols==ntypes*ntypes) cellsz = MAX(cellsz,pt->end[i]);
   }
   if (0==myid) printf("\n");
 
-  /* The interpolation uses k+1 and k+2, so we add zeros at end of table */
+  /* The interpolation uses k+1 and k+2, so we make a few copies 
+     of the last value at the end of the table */
   for (k=1; k<=5; ++k) {
     /* still some space left? */ 
     if (((npot%PSTEP) == 0) && (npot>0)) {
@@ -252,7 +259,8 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename, FILE *infile)
       }
     }
     for (i=0; i<ncols; ++i)
-      *PTR_2D(pt->table,npot,i,pt->table,ncols) = 0.0;
+      *PTR_2D(pt->table,npot,i,pt->table,ncols) 
+          = *PTR_2D(pt->table,npot-1,i,pt->table,ncols);
     ++npot;
   }
 }

@@ -891,8 +891,8 @@ void getparamfile(char *paramfname, int sim)
       getparam("lindef_z",&lindef_z,PARAM_REAL,DIM,DIM);
     }
 #endif
-#endif
-#if defined(DEFORM)
+#endif /* HOMDEF */
+#ifdef DEFORM
     else if (strcasecmp(token,"ekin_threshold")==0) {
       /* shear epsilon criterium, see imd_shear_new.c */
       getparam("ekin_threshold",&ekin_threshold,PARAM_REAL,1,1);
@@ -910,41 +910,40 @@ void getparamfile(char *paramfname, int sim)
       getparam("strip_width",&strip_width,PARAM_REAL,1,1);
     }
 #ifdef GLOKDEFORM
-else if (strcasecmp(token,"fnorm_threshold")==0) {
+    else if (strcasecmp(token,"fnorm_threshold")==0) {
       /* criterium to contiune deformation */
       getparam("fnorm_threshold",&fnorm_threshold,PARAM_REAL,1,1);
     }
 #endif
-
-#endif
+#endif /* DEFORM */
 #ifdef CG
-else if (strcasecmp(token,"cg_threshold")==0) {
+    else if (strcasecmp(token,"cg_threshold")==0) {
       /* criterium to contiune relaxation */
       getparam("cg_threshold",&cg_threshold,PARAM_REAL,1,1);
-}
-else if (strcasecmp(token,"cg_maxsteps")==0) {
+    }
+    else if (strcasecmp(token,"cg_maxsteps")==0) {
       /* max steps of relaxation */
       getparam("cg_maxsteps",&cg_maxsteps,PARAM_INT,1,1);
-}
-else if (strcasecmp(token,"linmin_maxsteps")==0) {
+    }
+    else if (strcasecmp(token,"linmin_maxsteps")==0) {
       /* max steps to find min in one direction */
       getparam("linmin_maxsteps",&linmin_maxsteps,PARAM_INT,1,1);
-}
-else if (strcasecmp(token,"linmin_tol")==0) {
+    }
+    else if (strcasecmp(token,"linmin_tol")==0) {
       /* tolerance to stop min search in one direction */
       getparam("linmin_tol",&linmin_tol,PARAM_REAL,1,1);
-}
-else if (strcasecmp(token,"linmin_dmax")==0) {
+    }
+    else if (strcasecmp(token,"linmin_dmax")==0) {
       /* max. length of trial step in 1d minimum search */
       getparam("linmin_dmax",&linmin_dmax,PARAM_REAL,1,1);
-}
+    }
 #ifndef DEFORM
-   else if (strcasecmp(token,"annealsteps")==0) {
+    else if (strcasecmp(token,"annealsteps")==0) {
       /* max nr of steps between shears */
       getparam("annealsteps",&annealsteps,PARAM_INT,1,1);
-   }
+    }
 #endif
-#endif
+#endif /* CG */
 #ifdef SHOCK
     else if (strcasecmp(token,"shock_strip")==0) { 
       /* shock strip width (in x dir.) */
