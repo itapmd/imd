@@ -618,7 +618,7 @@ void getparamfile(char *paramfname, int sim)
       getparam("endtemp",&end_temp,PARAM_REAL,1,1);
     }
 #endif
-#if defined(STM) || defined(FRAC)
+#if defined(STM) || defined(FRAC) || defined(FTG)
     else if (strcasecmp(token,"stadium")==0) {
       getparam("stadium",&stadium,PARAM_REAL,2,2);
     }
@@ -720,6 +720,10 @@ void getparamfile(char *paramfname, int sim)
        /* Damping prefactor gamma_bar */
 	getparam("gamma_bar",&gamma_bar,PARAM_REAL,1,1);
     }
+    else if (strcasecmp(token,"gamma_min")==0) { 
+       /* minimal damping prefactor gamma_bar */
+	getparam("gamma_min",&gamma_min,PARAM_REAL,1,1);
+    }
     else if (strcasecmp(token,"gamma_damp")==0) { /* actual Damping factor */
 	getparam("gamma_damp",&gamma_damp,PARAM_REAL,1,1);
     }
@@ -727,6 +731,10 @@ void getparamfile(char *paramfname, int sim)
 	/* damping mode for stadium geometry */
 	getparam("dampingmode",&dampingmode,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token,"delta_ftg")==0) {
+      /* damping mode for stadium geometry */
+      getparam("delta_ftg",&delta_ftg,PARAM_REAL,1,1);
+    } 
 #endif
 #ifdef FTG
     else if (strcasecmp(token,"Tleft")==0) {
@@ -1416,7 +1424,7 @@ void check_parameters_complete()
   pair_int_monolj(&monolj_shift,&tmp,monolj_r2_cut);
 #endif
 
-#ifdef FRAC
+#if defined(FRAC) || defined(FTG) 
   if (stadium2.x==0 && stadium2.y==0 ){
     stadium2.x = box_x.x/2.0;
     stadium2.y = box_y.y/2.0;
@@ -1660,7 +1668,7 @@ void broadcast_params() {
 #endif
 #endif
 
-#if defined(STM) || defined(FRAC)
+#if defined(STM) || defined(FRAC) || defined(FTG)
   MPI_Bcast( &stadium,          2 , REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &stadium2,         2 , REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &center,           2 , REAL, 0, MPI_COMM_WORLD); 
@@ -1707,8 +1715,12 @@ void broadcast_params() {
   MPI_Bcast( &dotepsilon0   , 1, REAL   , 0, MPI_COMM_WORLD); 
   MPI_Bcast( &expansionmode , 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &gamma_bar     , 1, REAL   , 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &gamma_min     , 1, REAL   , 0, MPI_COMM_WORLD); 
   MPI_Bcast( &gamma_damp    , 1, REAL   , 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dampingmode   , 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &delta_ftg     , 1, REAL   , 0, MPI_COMM_WORLD); 
+
+
 #endif
 
 #ifdef FTG

@@ -1223,8 +1223,8 @@ void move_atoms_frac(void)
 
     for (i=0; i<p->n; ++i) {
 	
-	/* dampingmode == 2 -> global viscous damping !!!! */
-	if(dampingmode == 2){ 
+	/* if half axis in x-direction is zero: global viscous damping ! */
+	if(stadium.x <= 0.0){ 
 	    f = 1.0; 
 	} else {
 	    /* Calculate stadium function f */
@@ -1361,8 +1361,7 @@ void move_atoms_frac(void)
 
   /* time evolution of constraints */
   /* dampingmode: 0 -> viscous damping (default); 
-                  1 -> Nose-Hoover; 
-		  2 -> global viscous damping */
+                  1 -> Nose-Hoover; */
 
   if(dampingmode == 1){
       gamma_damp += timestep * (E_kin_damp2 / ttt - 1.0) * gamma_bar;
@@ -1404,6 +1403,7 @@ void move_atoms_ftg(void)
   real reibung, reibung_y, eins_d_reib, eins_d_reib_y;
   real epsilontmp, eins_d_epsilontmp;
   int slice;
+  real gamma_tmp;
 
   /* alloc vector versions of E_kin and  ftgtmpvect*/
   if (NULL==E_kin_1) {
@@ -1461,14 +1461,52 @@ void move_atoms_ftg(void)
 
     for (i=0; i<p->n; ++i) {
 	
+      sort = VSORTE(p,i);
+
       /* calc slice */
-      tmp = p->ort X(i)/box_x.x;
+      tmp = p->ort X(i)/box_x.x; 
       slice = (int) (nslices *tmp);
       if (slice<0)        slice = 0;
       if (slice>=nslices) slice = nslices-1;;      
+     
+      /* if half axis in y-direction is given: local viscous damping !!! */
+      if(stadium.y != 0.0){ 
 
+	/* calc desired temperature */
+	temperature = Tleft + (Tright-Tleft) * (nslices*tmp - nslices_Left)
+	  /(nslices - nslices_Left - nslices_Right);
+	if (temperature < Tleft ) temperature = Tleft;
+	if (temperature > Tright) temperature = Tright;
+	
+	/* calc kinetic "temperature" for actual atom */
+	tmp  = SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+#ifdef TWOD
+	tmp2 = ( (restrictions + sort)->x + 
+		 (restrictions + sort)->y   );
+#else
+	tmp2 = ( (restrictions + sort)->x + 
+		 (restrictions + sort)->y +  
+		 (restrictions + sort)->z  );
+#endif
+	if(tmp2!=0) tmp /= (real)tmp2;
+	
+	/* calc damping factor form position */
+	gamma_tmp = (fabs(p->ort Y(i)-center.y) - stadium.y)/
+	  (stadium2.y-stadium.y);
+	if ( gamma_tmp < 0.0)  gamma_tmp = 0.0;
+	if ( gamma_tmp > 1.0)  gamma_tmp = 1.0;
+	
+	/* smooth the gamma_tmp funktion*/
+	gamma_tmp = .5 * (1 + sin(-M_PI/2.0 + M_PI*gamma_tmp));
+	
+	/* to share the code with the non local version we overwrite 
+	 the gamma values every timestep */
+	*(gamma_ftg+slice)  = (gamma_min + gamma_bar * gamma_tmp) 
+	  * MASSE(p,i) * (tmp-temperature) 
+	  / sqrt(SQR(tmp) + SQR(temperature/delta_ftg));     
+      } 
 
-      sort = VSORTE(p,i);
+      
       /* add up degrees of freedom  considering restriction vector  */
 #ifdef TWOD
       *(ninslice + slice) += ( (restrictions + sort)->x + 
@@ -1478,8 +1516,8 @@ void move_atoms_ftg(void)
 			       (restrictions + sort)->y +  
 			       (restrictions + sort)->z  );
 #endif
-	
-       	/* twice the old kinetic energy */
+      
+      /* twice the old kinetic energy */
       *(E_kin_1 + slice) +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
 	
 #ifdef FBC
@@ -1599,14 +1637,14 @@ void move_atoms_ftg(void)
     /* time evolution of constraints */
     /* dampingmode: 0 -> viscous damping (default); 
        1 -> Nose-Hoover; */
-    if(0 != ttt){
-      if (dampingmode == 1) {
-	*(gamma_ftg+j) += timestep * ( *(E_kin_2+j) / ttt - 1.0) * gamma_bar;
-      } else { 
-	*(gamma_ftg+j)  =            (1.0 - ttt /  *(E_kin_2+j)) * gamma_bar;
-      }
-    } else {
+    if(0.0 == ttt){
       *(gamma_ftg+j)  = 0.0;
+    } 
+    else if (dampingmode == 1) {
+      *(gamma_ftg+j) += timestep * ( *(E_kin_2+j) / ttt - 1.0) * gamma_bar;
+    } 
+    else if (dampingmode == 0) {
+      *(gamma_ftg+j)  =            (1.0 - ttt /  *(E_kin_2+j)) * gamma_bar;    
     }
   }
 

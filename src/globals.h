@@ -308,25 +308,32 @@ EXTERN vektor lindef_z INIT(nullvektor);  /*  |  matrix      */
 EXTERN real   epsilon  INIT(0.0);         /* shear factor in x-direction */
 #endif
 
-#if defined(FRAC) || defined(STM)
+#if defined(FRAC) || defined(STM) || defined(FTG) 
+EXTERN vektor center  INIT(nullvektor);     /* center of stadium */
 EXTERN vektor stadium  INIT(nullvektor);     /* half axes of Damping stadium */
 EXTERN vektor stadium2 INIT(nullvektor);     /* half axes where the max. 
 						damping factor  is reached  */
-EXTERN vektor center  INIT(nullvektor);     /* center of stadium */
+#endif
+
+#if defined(FRAC) || defined(STM) 
 EXTERN real   E_kin_stadium INIT(0.0);      /* kin energy of the stadium */
 EXTERN int    n_stadium INIT(0);            /* number of transl. degrees 
 					       of freedom in the stadium */
 #endif
 
 #if defined(FRAC) || defined(FTG)  
-EXTERN real gamma_damp INIT(0.0);         /* Damping prefactor */
-EXTERN real gamma_bar INIT(0.0);          /* Damping factor */
-EXTERN int  dampingmode  INIT(0);         /* damping mode  1: Nose-Hoover*/
-                                          /*               0: viscous damping*/
+EXTERN real gamma_damp  INIT(0.0);        /* Damping factor */
+EXTERN real gamma_min  INIT(0.0);        /* minimal Damping factor */
+EXTERN real gamma_bar   INIT(0.0);        /* Damping prefactor */
+EXTERN int  dampingmode INIT(0);          /* damping mode  */
+                                          /* 0: ramped viscous damping       */
+                                          /* 1: Nose-Hoover           */
+EXTERN real delta_ftg   INIT(10.0);        /* free parameter in calculation 
+					    of local temperature */
 
 EXTERN real dotepsilon INIT(0.0);         /* strain rate for crack loading */
 EXTERN real dotepsilon0 INIT(0.0);        /* initial strain rate */
-EXTERN int  expansionmode INIT(1);        /* loading */
+EXTERN int  expansionmode INIT(1);        /* mode for loading */
 #endif
 
 #ifdef FRAC
