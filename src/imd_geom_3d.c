@@ -626,7 +626,7 @@ void make_cell_lists_vec(void)
                 CN->nq[nn] = r*cell_dim.y*cell_dim.z + s*cell_dim.z + t;
               else
                 CN->nq[nn] = -1;
-              n++;
+              nn++;
 	    }
         CN++;
       }
