@@ -57,11 +57,6 @@ int main(int argc, char **argv)
   /* initialize random number generator */
   srand48(seed);
 
-  /* initialize socket I/O */
-#ifdef USE_SOCKETS
-  if (myid == 0) init_client();
-#endif
-
 #ifdef PAIR_POT
   /* read pair potential file - also used for TTBP, EAM2, and EWALD */
   read_pot_table(&pair_pot,potfilename,ntypes*ntypes);
@@ -127,6 +122,11 @@ int main(int argc, char **argv)
 
 #ifdef OMP
   printf("\nComputing with %d thread(s).\n\n",omp_get_max_threads());
+#endif
+
+  /* initialize socket I/O */
+#ifdef USE_SOCKETS
+  if (myid == 0) init_socket();
 #endif
 
   start = steps_min;  /* keep starting step number */

@@ -495,6 +495,7 @@ EXTERN int do_press_calc INIT(0);           /* flag whether to do press calc */
 
 /* I/O via sockets */
 #ifdef USE_SOCKETS
+EXTERN int server_socket INIT(0);          /* socket mode: client or server */
 EXTERN int socket_int INIT(1);               /* interval for reading socket */
 EXTERN unsigned short baseport INIT(31913);  /* base port for VolIMD socket */
 EXTERN char display_host[256] INIT("");      /* name of controlling machine */

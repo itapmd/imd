@@ -279,8 +279,8 @@ void send_cell(cell *p, int to_cpu, int tag);
 #endif
 
 #ifdef USE_SOCKETS
-void init_client(void);
-int  connect_server(void);
+void init_socket(void);
+int  connect_visualization(void);
 void close_socket(void);
 void check_socket(void);
 void vis_init(void);

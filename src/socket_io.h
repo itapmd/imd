@@ -62,6 +62,6 @@ atoms_flag_t at_send_flags;            /* atoms send flags */
 atoms_flag_t at_filt_flags;            /* atoms filter flags */
 atoms_filt_t at_filt_max, at_filt_min; /* atoms filter minima and maxima */
 
-integer atlen;                      /* number of data items per atom */
-int soc;                            /* socket parameter after data request */
-unsigned long varIP;                /* IP number of visualization server */
+integer atlen;                         /* number of data items per atom */
+int soc=-1;                            /* socket file descriptor */
+unsigned long varIP;                   /* IP number of visualization server */

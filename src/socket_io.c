@@ -23,60 +23,83 @@
 
 /*****************************************************************************
 *
-* init_client, if the simulation acts as client (executed only on MPI rank 0)
+*  init_socket (executed only on MPI rank 0)
 *
 *****************************************************************************/
 
-void init_client() 
+void init_socket() 
 {
-  str255 hostname;
+  static int done = 0;
+  str255 hostname, msg;
 
-  /* determine baseport */
-  fprintf(stderr, "baseport is %d\n", baseport);fflush(stderr);
-  baseport = htons(baseport); /* we need it in network byte order */
+  /* IMD acts as server */
+  if ((server_socket) && (!done)) {
+ 
+    /* determine simulation host (the one with MPI rank 0 */
+    if (gethostname(hostname,255)) {
+      error("Cannot determine simulation host name");
+    } else {
+      fprintf(stderr, "Simulation host is %s\n", hostname); 
+    }
 
-  /* determine display host */
-  varIP = GetIP(display_host);
-  if (varIP==0) {
-    error("gethostbyname() failed, check display_host or specify IP number\n");
-  } 
-  else {
-    printf("display host is %s\n", display_host);
+    /* open server socket */
+    fprintf(stderr, "Opening server socket on port %d ... ", baseport);
+    soc = OpenServerSocket(htons(baseport));
+    if (soc < 1) error("Cannot open server socket");
+    fcntl(soc, F_SETFL, O_NONBLOCK);
   }
 
-  /* determine simulation host (the one with MPI rank 0 */
-  if (gethostname(hostname,255)) {
-    error("Cannot determine simulation host name");
-  } else {
-    printf("simulation host is %s\n", hostname);
+  /* IMD acts as client */
+  if ((!server_socket) && (!done)) {
+
+    /* determine display host */
+    varIP = GetIP(display_host);
+    if (varIP==0) {
+      sprintf(msg, "Cannot find display_host %s", display_host);
+      error(msg);
+    }
+
+    /* info message */
+    fprintf(stderr, "Acting as client, display host is %s, baseport %d\n",
+            display_host, baseport);
+    fflush(stderr);
+   
+    /* we need baseport in network byte order */
+    baseport = htons(baseport);   
   }
+
+  /* do initialization only once */
+  done = 1;
 }
 
 
 /*****************************************************************************
 *
-*  Try to connect to the visualization server
+*  Connect to visualization (executed only on MPI rank 0)
 *
 *****************************************************************************/
 
-int connect_server() {
-
+int connect_visualization()
+{
   unsigned char byte;
   int flag = 0;
-  
-  /* try to connect */
-  soc=OpenClientSocket(varIP,baseport);
-  if (soc > 0) {
-    ReadFull(soc,&byte,1);
-    flag = byte; /* convert to int */
-    fprintf(stderr, "received socket_flag: %d\n", flag);fflush(stderr);
-  }
-  else {
-    close_socket();
-  }
 
+  if (server_socket) {
+    if (1==read(soc, &byte, 1)) {
+      flag = byte; /* convert to int */
+      fprintf(stderr, "received socket_flag: %d\n", flag);
+    }
+  } else {
+    soc=OpenClientSocket(varIP,baseport);
+    if (soc > 0) {
+      ReadFull(soc, &byte, 1);
+      flag = byte; /* convert to int */
+      fprintf(stderr, "received socket_flag: %d\n", flag);
+    } else {
+      close_socket();
+    }
+  }
   return flag;
-  
 }
 
 
@@ -102,7 +125,7 @@ void check_socket() {
 
   int socket_flag;
 
-  if (0==myid) socket_flag = connect_server();
+  if (0==myid) socket_flag = connect_visualization();
 
 #ifdef MPI
   MPI_Bcast(&socket_flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -149,7 +172,7 @@ void check_socket() {
         if (0==myid) printf("unknown token: %d\n", socket_flag);
         break;
     }
-    if (0==myid) close_socket();
+    if ((0==myid) && (!server_socket)) close_socket();
   }
 
 }

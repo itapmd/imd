@@ -1207,6 +1207,21 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #ifdef USE_SOCKETS
+    else if (strcasecmp(token,"socket_mode")==0) {
+      /* socket mode: client or server */
+      getparam(token,tmpstr,PARAM_STR,1,255);
+      if (strcasecmp(tmpstr,"client")==0) {
+	server_socket = 0;
+      }
+      else if (strcasecmp(tmpstr,"server")==0) {
+	server_socket = 1;
+      }
+      else {
+        char msg[255];
+        sprintf(msg,"****** Unknown socket mode %s ignored ******",tmpstr);
+        warning(msg);
+      }
+    }
     else if (strcasecmp(token,"socket_int")==0) {
       getparam("socket_int",&socket_int,PARAM_INT,1,1);
     }
@@ -1220,7 +1235,6 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"use_socket_window")==0) {
       getparam("use_socket_window",&use_socket_window,PARAM_INT,1,1);
     }
-
 #endif
 #ifdef NPT
     else if (strcasecmp(token,"xi")==0) {
