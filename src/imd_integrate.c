@@ -221,24 +221,20 @@ void move_atoms_mik(void)
 #ifdef FBC
         /* give virtual particles their extra force */
 	/* and set their impuls in restricted directions to 0 */
-	p->impuls X(i) += timestep *( (p->kraft X(i)) + (fbc_forces + p->sorte[i])->x)* 
-				      (restrictions + p->sorte[i])->x ;
-        p->impuls Y(i) += timestep * ((p->kraft Y(i)) + (fbc_forces + p->sorte[i])->y)*
-				      (restrictions + p->sorte[i])->y;
+	(p->kraft X(i)) += ((fbc_forces + p->sorte[i])->x)*(restrictions + p->sorte[i])->x;
+	(p->kraft Y(i)) += ((fbc_forces + p->sorte[i])->y)*(restrictions + p->sorte[i])->y;
 #ifndef TWOD
-        p->impuls Z(i) += timestep * ((p->kraft Z(i)) + (fbc_forces + p->sorte[i])->z)*
-				      (restrictions + p->sorte[i])->z;
+	(p->kraft Z(i)) += ((fbc_forces + p->sorte[i])->z)*(restrictions + p->sorte[i])->z;
 #endif
-#else
+#endif
         p->impuls X(i) += timestep * p->kraft X(i);
         p->impuls Y(i) += timestep * p->kraft Y(i);
 #ifndef TWOD
         p->impuls Z(i) += timestep * p->kraft Z(i);
 #endif
-#endif
 
-        /* Mikroconvergence Algorithm - set velocity zero if a*v < 0 */
-        if (0 > SPRODN(p->impuls,i,p->kraft,i)) {
+	/* Mikroconvergence Algorithm - set velocity zero if a*v < 0 */
+	if (0 > SPRODN(p->impuls,i,p->kraft,i)) {
           p->impuls X(i) = 0.0;
           p->impuls Y(i) = 0.0;
 #ifndef TWOD
