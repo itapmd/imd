@@ -40,15 +40,6 @@ void make_box( void )
   height.y = 1.0 / SPROD(tbox_y,tbox_y);
 }
 
-/* compute maximal dimension of cell array */
-ivektor maximal_cell_dim( void )
-{
-  ivektor max_cell_dim;
-  max_cell_dim.x = (int) (1.0 / sqrt( cellsz / height.x ) );
-  max_cell_dim.y = (int) (1.0 / sqrt( cellsz / height.y ) );
-  return max_cell_dim;
-}
-
 
 /******************************************************************************
 *
@@ -66,37 +57,20 @@ void init_cells( void )
   ivektor cellmin_old, cellmax_old, cellc;
   cell *p, *cell_array_old, *to; 
 
-#ifdef NPT
-  if (0 == myid) {
-    if (ensemble == ENS_NPT_ISO) {
-      printf("actual_shrink=%f limit_shrink=%f limit_growth=%f\n",
-              actual_shrink.x, limit_shrink.x, limit_growth.x );
-    }
-    else if (ensemble == ENS_NPT_AXIAL) {
-      printf("actual_shrink.x=%f limit_shrink.x=%f limit_growth.x=%f\n",
-              actual_shrink.x,   limit_shrink.x,   limit_growth.x );
-      printf("actual_shrink.y=%f limit_shrink.y=%f limit_growth.y=%f\n",
-              actual_shrink.y,   limit_shrink.y,   limit_growth.y );
-    }
-  }
-#endif
-
   /* compute scaling factors */
   make_box();
   cell_scale.x = sqrt( cellsz / height.x );
   cell_scale.y = sqrt( cellsz / height.y );
 
 #ifdef NPT
+  /* if NPT, we need some tolerance */
   if ((ensemble == ENS_NPT_ISO) || (ensemble == ENS_NPT_AXIAL)) {
-    /* the NEXT cell array for a GROWING system; 
-       needed to determine when to recompute the cell division */
-    next_cell_dim.x = (int) ( (1.0 + cell_size_tolerance) / cell_scale.x );
-    next_cell_dim.y = (int) ( (1.0 + cell_size_tolerance) / cell_scale.y );
-    cell_scale.x   /= (1.0 - cell_size_tolerance);
-    cell_scale.y   /= (1.0 - cell_size_tolerance);
+    cell_scale.x *= (1.0 + cell_size_tolerance);
+    cell_scale.y *= (1.0 + cell_size_tolerance);
   }
 #endif
-  /* set up the CURRENT cell array dimensions */
+
+  /* set up the cell array dimensions */
   global_cell_dim.x = (int) ( 1.0 / cell_scale.x );
   global_cell_dim.y = (int) ( 1.0 / cell_scale.y );
 
@@ -105,32 +79,22 @@ void init_cells( void )
 	 box_x.x * cell_scale.x, box_x.y * cell_scale.x, 
 	 box_y.x * cell_scale.y, box_y.y * cell_scale.y); 
 
-#ifdef MPI
-  /* cpu_dim must be a divisor of global_cell_dim */
-  if (0 != (global_cell_dim.x % cpu_dim.x))
+#ifdef MPI 
+ /* cpu_dim must be a divisor of global_cell_dim */
+ if (0 != (global_cell_dim.x % cpu_dim.x))
      global_cell_dim.x = ((int)(global_cell_dim.x/cpu_dim.x))*cpu_dim.x;
   if (0 != (global_cell_dim.y % cpu_dim.y))
      global_cell_dim.y = ((int)(global_cell_dim.y/cpu_dim.y))*cpu_dim.y;
-#ifdef NPT
-  /* cpu_dim must be a divisor of next_cell_dim */
-  if ((ensemble == ENS_NPT_ISO) || (ensemble == ENS_NPT_AXIAL)) {
-    if (0 != (next_cell_dim.x % cpu_dim.x))
-       next_cell_dim.x = ((int)(next_cell_dim.x/cpu_dim.x))*cpu_dim.x;
-    if (0 != (next_cell_dim.y % cpu_dim.y))
-       next_cell_dim.y = ((int)(next_cell_dim.y/cpu_dim.y))*cpu_dim.y;
-  }
-#endif
+#elif defined(MPI) && defined(OMP) 
+  /* cpu_dim must be a divisor of 2 * global_cell_dim */
+  if (0 != (global_cell_dim.x % (2*cpu_dim.x)))
+     global_cell_dim.x = ((int)(global_cell_dim.x/(2*cpu_dim.x)))*2*cpu_dim.x;
+  if (0 != (global_cell_dim.y % cpu_dim.y))
+     global_cell_dim.y = ((int)(global_cell_dim.y/(2*cpu_dim.y)))*2*cpu_dim.y;
 #elif defined(OMP)
   /* global_cell_dim must be even */
   if (0 != (global_cell_dim.x % 2)) global_cell_dim.x -= 1;
   if (0 != (global_cell_dim.y % 2)) global_cell_dim.y -= 1;
-#ifdef NPT
-  /* next_cell_dim must be even */
-  if ((ensemble == ENS_NPT_ISO) || (ensemble == ENS_NPT_AXIAL)) {
-    if (0 != (next_cell_dim.x % 2)) next_cell_dim.x -= 1;
-    if (0 != (next_cell_dim.y % 2)) next_cell_dim.y -= 1;
-  }
-#endif
 #endif
   
   /* Check if cell array is large enough */
@@ -143,47 +107,34 @@ void init_cells( void )
     if (global_cell_dim.y < 2) error("global_cell_dim.y < 2");
   }
 
-#ifdef NPT
-
   /* if system grows, the next cell division should have more cells */
-  if ((ensemble == ENS_NPT_ISO) || (ensemble == ENS_NPT_AXIAL)) {
 #ifdef MPI
-    if (next_cell_dim.x == global_cell_dim.x) next_cell_dim.x += cpu_dim.x;
-    if (next_cell_dim.y == global_cell_dim.y) next_cell_dim.y += cpu_dim.y;
+  next_cell_dim.x = global_cell_dim.x + cpu_dim.x;
+  next_cell_dim.y = global_cell_dim.y + cpu_dim.y;
+#elif defined(MPI) && defined(OMP)
+  next_cell_dim.x = global_cell_dim.x + 2 * cpu_dim.x;
+  next_cell_dim.y = global_cell_dim.y + 2 * cpu_dim.y;
 #elif defined(OMP)
-    if (next_cell_dim.x == global_cell_dim.x) next_cell_dim.x += 2;
-    if (next_cell_dim.y == global_cell_dim.y) next_cell_dim.y += 2;
+  next_cell_dim.x = global_cell_dim.x + 2;
+  next_cell_dim.y = global_cell_dim.y + 2;
 #else
-    if (next_cell_dim.x == global_cell_dim.x) next_cell_dim.x += 1;
-    if (next_cell_dim.y == global_cell_dim.y) next_cell_dim.y += 1;
+  next_cell_dim.x = global_cell_dim.x + 1;
+  next_cell_dim.y = global_cell_dim.y + 1;
 #endif
-  }
 
-  if (ensemble == ENS_NPT_ISO) {
-    /* factor by which a cell can grow before a change of
-       the cell division becomes worthwhile */
-    limit_growth.x = cell_scale.x * next_cell_dim.x;
-    tmp            = cell_scale.y * next_cell_dim.y;
-    /* getting more cells in at least one direction is enough */
-    limit_growth.x = MIN( limit_growth.x, tmp );
-    /* factor by which a cell can safely shrink */
-    limit_shrink.x = cell_scale.x * global_cell_dim.x;
-    tmp            = cell_scale.y * global_cell_dim.y;
-    limit_shrink.x = MAX( limit_shrink.x, tmp );
-    limit_shrink.x = limit_shrink.x * (1.0 - cell_size_tolerance);
-  }
+  /* maximal and minimal heights before a new cell division is needed */
+  min_height.x = cellsz * SQR(global_cell_dim.x);
+  min_height.y = cellsz * SQR(global_cell_dim.y);
+  max_height.x = cellsz * SQR(  next_cell_dim.x);
+  max_height.y = cellsz * SQR(  next_cell_dim.y);
 
-  if (ensemble == ENS_NPT_AXIAL) {
-    /* factors by which a cell can grow before a change of
-       the cell division becomes worthwhile */
-    limit_growth.x = cell_scale.x * next_cell_dim.x;
-    limit_growth.y = cell_scale.y * next_cell_dim.y;
-    /* factor by which a cell can safely shrink */
-    limit_shrink.x = cell_scale.x*global_cell_dim.x*(1.0-cell_size_tolerance);
-    limit_shrink.y = cell_scale.y*global_cell_dim.y*(1.0-cell_size_tolerance);
+#ifdef NPT
+  /* if NPT, we should let it grow a a little more */
+  if ((ensemble == ENS_NPT_ISO) || (ensemble == ENS_NPT_AXIAL)) {
+    max_height.x *= SQR(1 + cell_size_tolerance);
+    max_height.y *= SQR(1 + cell_size_tolerance);
   }
-
-#endif /* NPT */
+#endif
 
   /* If an integer number of cells does not fit exactly into the box, the
      cells are enlarged accordingly */
@@ -273,29 +224,6 @@ void init_cells( void )
     }
     free(cell_array_old);
   }
-
-#ifdef NPT
-
-  if ((ensemble == ENS_NPT_ISO) || (ensemble == ENS_NPT_AXIAL)) {
-    revise_cell_division = 0;
-    actual_shrink.x      = 1.0;
-    actual_shrink.y      = 1.0;
-  }
-
-  if (0==myid) {
-    if (ensemble == ENS_NPT_ISO) {
-      printf("actual_shrink=%f limit_shrink=%f limit_growth=%f\n",
-              actual_shrink.x, limit_shrink.x, limit_growth.x );
-    } 
-    else if (ensemble == ENS_NPT_AXIAL) { 
-      printf("actual_shrink.x=%f limit_shrink.x=%f limit_growth.x=%f\n",
-              actual_shrink.x,   limit_shrink.x,   limit_growth.x );
-      printf("actual_shrink.y=%f limit_shrink.y=%f limit_growth.y=%f\n",
-              actual_shrink.y,   limit_shrink.y,   limit_growth.y );
-    } 
-  }
-
-#endif /* NPT */
 
   make_cell_lists();
 

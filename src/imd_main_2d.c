@@ -89,8 +89,7 @@ void main_loop(void)
 #ifdef FBC
 #ifdef MIK  
     /* just increment the force if under threshold of e_kin or after 
-       waitsteps
-       and after annelasteps */
+       waitsteps and after annelasteps */
     temp_df.x = 0.0;
     temp_df.y = 0.0;
     for (l=0;l<vtypes;l++) *(fbc_df+l) = temp_df;
@@ -98,20 +97,9 @@ void main_loop(void)
     if (steps > fbc_annealsteps) {
       nofbcsteps++; 
       if ((2.0*tot_kin_energy/nactive < fbc_ekin_threshold) ||
-          (nofbcsteps==fbc_waitsteps)) 
-      {
+          (nofbcsteps==fbc_waitsteps)) {
         nofbcsteps=0;
-        for (l=0;l<vtypes;l++) *(fbc_df+l) = *(fbc_dforces+l) ;
-        /* MIK affects the total impuls, especially in inhomogenous samples,
-           so we set the velocities to 0 befor each force increment 
-        for (k=0; k<ncells; ++k) {
-          p = cell_array + CELLS(k);
-          for (i=0; i<p->n; ++i) {
-            p->impuls X(i) = 0.0;
-            p->impuls Y(i) = 0.0;
-          }
-        }
-        */
+        for (l=0;l<vtypes;l++) *(fbc_df+l) = *(fbc_dforces+l);
       }
     }
 #endif /* MIK */
@@ -316,7 +304,8 @@ void main_loop(void)
 
 #ifdef NPT
     /* revise cell division if necessary */
-    if (revise_cell_division==1) {
+    if ( (height.x < min_height.x) || (height.x > max_height.x)
+      || (height.y < min_height.y) || (height.y > max_height.y) ) {
       init_cells();
       fix_cells();
     }  

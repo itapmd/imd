@@ -23,7 +23,6 @@
 void expand_sample(void)
 {
   int k;
-  ivektor max_cell_dim;
   
   /* Apply expansion */
 #ifdef _OPENMP
@@ -53,16 +52,16 @@ void expand_sample(void)
 #endif
   make_box();
 
-  /* revise cell decomposition if necessary */
-  max_cell_dim = maximal_cell_dim();
-  if ((max_cell_dim.x<global_cell_dim.x) || (max_cell_dim.y<global_cell_dim.y)
+  /* revise cell division if necessary */
+  if ( (height.x < min_height.x) || (height.x > max_height.x)
+    || (height.y < min_height.y) || (height.y > max_height.y)
 #ifndef TWOD
-      || (max_cell_dim.z<global_cell_dim.z)
+    || (height.z < min_height.z) || (height.z > max_height.z)
 #endif
   ) {
     init_cells();
     fix_cells();
-  }
+  }  
 
 } /* expand sample */
 
@@ -76,8 +75,6 @@ void expand_sample(void)
 void shear_sample(void)
 {
   int k;
-  ivektor max_cell_dim;
-  real tmport[2];
 
   /* Apply shear */
 #ifdef _OPENMP
@@ -86,9 +83,9 @@ void shear_sample(void)
   for (k=0; k<ncells; ++k) {
     int i;
     cell *p;
+    real tmport[2];
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i) {
-      
       tmport[0]  = shear_factor.x * p->ort Y(i);
       tmport[1]  = shear_factor.y * p->ort X(i);
       p->ort X(i) += tmport[0];
@@ -99,22 +96,18 @@ void shear_sample(void)
   /* new box size */
   box_y.x += shear_factor.x * box_y.y;
   box_x.y += shear_factor.y * box_x.x;
-  
-
-
   make_box();
 
-  /* revise cell decomposition if necessary */
-  max_cell_dim = maximal_cell_dim();
-  fflush(stdout);
-  if ((max_cell_dim.x<global_cell_dim.x) || (max_cell_dim.y<global_cell_dim.y)
+  /* revise cell division if necessary */
+  if ( (height.x < min_height.x) || (height.x > max_height.x)
+    || (height.y < min_height.y) || (height.y > max_height.y)
 #ifndef TWOD
-      || (max_cell_dim.z<global_cell_dim.z)
+    || (height.z < min_height.z) || (height.z > max_height.z)
 #endif
   ) {
     init_cells();
     fix_cells();
-  }
+  }  
 
 } /* shear sample */
 

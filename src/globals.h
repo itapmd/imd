@@ -118,7 +118,9 @@ EXTERN vektor tbox_y INIT(nullvektor);
 #ifndef TWOD
 EXTERN vektor tbox_z INIT(nullvektor);
 #endif
-EXTERN vektor height INIT(nullvektor);
+EXTERN vektor     height INIT(nullvektor);
+EXTERN vektor max_height INIT(nullvektor);
+EXTERN vektor min_height INIT(nullvektor);
 
 /* Filenames */
 EXTERN char outbuf[OUTPUT_BUF_SIZE] INIT("\0");  /* output buffer */
@@ -240,8 +242,6 @@ EXTERN real vir_x INIT(0.0), vir_y INIT(0.0), vir_z INIT(0.0);
 /* diagonal of stress tensor */
 EXTERN real stress_x INIT(0.0), stress_y INIT(0.0), stress_z INIT(0.0);
 
-EXTERN int    revise_cell_division INIT(0);
-
 #ifdef NPT
 EXTERN real   inv_tau_xi INIT(0.0); /* inverse of tau_xi */
 EXTERN real   cell_size_tolerance INIT(0.05);
@@ -250,8 +250,6 @@ EXTERN vektor pressure_end INIT(nullvektor);
 EXTERN int    use_curr_pressure INIT(0);  /* which starting pressure to use */
 EXTERN vektor xi INIT(nullvektor), xi_old INIT(nullvektor);
 EXTERN vektor box_size INIT(einsvektor); 
-EXTERN vektor actual_shrink INIT(einsvektor), limit_shrink INIT(einsvektor);
-EXTERN vektor limit_growth INIT(einsvektor);
 #endif
 
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)

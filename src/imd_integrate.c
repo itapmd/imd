@@ -379,9 +379,6 @@ void move_atoms_nvt(void)
 #ifdef UNIAX
   real reibung_rot,  eins_d_reib_rot;
 #endif
-#ifdef SLLOD
-  ivektor max_cell_dim;
-#endif
   fnorm = 0.0;
 
   reibung     =        1.0 - eta * inv_tau_eta * timestep / 2.0;
@@ -520,16 +517,16 @@ void move_atoms_nvt(void)
   box_y.x += epsilon * box_y.y;
   make_box();
 
-  /* revise cell decomposition if necessary */
-  max_cell_dim = maximal_cell_dim();
-  if ((max_cell_dim.x<global_cell_dim.x) || (max_cell_dim.y<global_cell_dim.y)
+  /* revise cell division if necessary */
+  if ( (height.x < min_height.x) || (height.x > max_height.x)
+    || (height.y < min_height.y) || (height.y > max_height.y)
 #ifndef TWOD
-      || (max_cell_dim.z<global_cell_dim.z)
+    || (height.z < min_height.z) || (height.z > max_height.z)
 #endif
-      ) {
+  ) {
     init_cells();
     fix_cells();
-  }
+  }  
 #endif
 
 #ifdef UNIAX
@@ -591,7 +588,6 @@ void move_atoms_npt_iso(void)
 
   /* relative box size change */
   box_size.x      += 2.0 * timestep * xi.x * inv_tau_xi;
-  actual_shrink.x *= box_size.x;
   fric  =      1.0 - (xi.x * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0;
   ifric = 1.0/(1.0 + (xi.x * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0);
 #ifdef UNIAX
@@ -748,9 +744,6 @@ void move_atoms_npt_iso(void)
   /* old box_size relative to the current one, which is set to 1.0 */
   box_size.x = 1.0 / box_size.x;
 
-  /* check whether the box has not changed too much */
-  if ((actual_shrink.x < limit_shrink.x) || (actual_shrink.x > limit_growth.x))
-     revise_cell_division = 1;
 }
 
 #else
@@ -786,8 +779,6 @@ void move_atoms_npt_axial(void)
   /* relative box size change */ 
   box_size.x      += 2.0 * timestep * xi.x * inv_tau_xi;  
   box_size.y      += 2.0 * timestep * xi.y * inv_tau_xi;
-  actual_shrink.x *= box_size.x;
-  actual_shrink.y *= box_size.y;
   fric.x  =    1.0 - (xi.x * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0;
   fric.y  =    1.0 - (xi.y * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0;
   ifric.x = 1/(1.0 + (xi.x * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0);
@@ -795,7 +786,6 @@ void move_atoms_npt_axial(void)
 #ifndef TWOD
   stress_z         = 0.0;
   box_size.z      += 2.0 * timestep * xi.z * inv_tau_xi;  
-  actual_shrink.z *= box_size.z;
   fric.z  =    1.0 - (xi.z * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0;
   ifric.z = 1/(1.0 + (xi.z * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0);
 #endif
@@ -930,13 +920,6 @@ void move_atoms_npt_axial(void)
   box_size.z  = 1.0 / box_size.z;
 #endif  
 
-  /* check whether box has not changed too much */
-  if  ((actual_shrink.x < limit_shrink.x) || (actual_shrink.x > limit_growth.x)
-    || (actual_shrink.y < limit_shrink.y) || (actual_shrink.y > limit_growth.y)
-#ifndef TWOD
-    || (actual_shrink.z < limit_shrink.z) || (actual_shrink.z > limit_growth.z)
-#endif
-     ) revise_cell_division = 1;
 }
 
 #else
