@@ -53,6 +53,22 @@ void warning(char *msg)
   }
 }
 
+/* warning message built from two strings */
+void warning_str(char *msg, char *str)
+{ 
+  char buf[255];
+  sprintf(buf, msg, str);
+  warning(buf);
+}
+
+/* warning message built from three strings */
+void warning_str_str(char *msg, char *str1, char *str2)
+{ 
+  char buf[255];
+  sprintf(buf, msg, str1, str2);
+  warning(buf);
+}
+
 /******************************************************************************
 *
 * error -- Complain and abort

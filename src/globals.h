@@ -361,35 +361,27 @@ EXTERN vektor xi INIT(nullvektor), xi_old INIT(nullvektor);
 #endif
 
 EXTERN real end_temp INIT(0.0);        /* Temperature and at of simulation */
-#if defined(DEFORM)
-EXTERN real   ekin_threshold INIT(0.0); /* threshold for ekin */    
-EXTERN int    annealsteps INIT(0);      /* number of annealing steps */    
-#endif
 
-#if defined(GLOK)
+#ifdef GLOK
 EXTERN real   glok_ekin_threshold INIT(100.0); /* threshold for ekin */  
 EXTERN int    glok_annealsteps INIT(0);      /* number of annealing steps */
 #endif
 #ifdef DEFORM
 EXTERN int    deform_int INIT(0);       /* counting steps between 2 shears */
 EXTERN int    max_deform_int INIT(0);   /* max. steps between 2 shear steps */
+EXTERN real   deform_size INIT(1.0);    /* scale factor for deformation */
 EXTERN real   fnorm_threshold INIT(0.0);/* threshold for fnorm */    
 EXTERN vektor *deform_shift;            /* shift for each vtype */
 EXTERN vektor *deform_shear;            /* shear for each vtype */
 EXTERN vektor *deform_base;             /* base point for shear deformation */
 EXTERN int    *shear_def;               /* shear flag for each vtype */
-#endif
-
-#if defined(DEFORM) || defined(HOMDEF)
-EXTERN real   deform_size INIT(1.0);    /* scale factor for deformation */
+EXTERN real   ekin_threshold INIT(0.0); /* threshold for ekin */    
+EXTERN int    annealsteps INIT(0);      /* number of annealing steps */    
 #endif
 
 #ifdef HOMDEF
-EXTERN int    exp_interval INIT(0);       /* period of expansion steps */
-EXTERN vektor expansion INIT(einsvektor); /* expansion factors in x/y/z-dir */
-EXTERN int    hom_interval INIT(0);       /* period of homshear steps */
-EXTERN vektor2d shear_factor INIT(nullvektor2d);/* shear factor in x,y-dir */
 EXTERN int    lindef_interval INIT(0);    /* period of linear deform. steps */
+EXTERN real   lindef_size INIT(1.0);      /* scale factor of deformation */
 EXTERN vektor lindef_x INIT(nullvektor);  /* \               */
 EXTERN vektor lindef_y INIT(nullvektor);  /*  |  linear      */
 #ifndef TWOD                              /*   > deformation */
@@ -397,9 +389,14 @@ EXTERN vektor lindef_z INIT(nullvektor);  /*  |  matrix      */
 #endif                                    /* /               */
 EXTERN real shear_module INIT(1.0);       /* estimate of the shear module */
 EXTERN real bulk_module  INIT(1.0);       /* estimate of the bulk module */
-EXTERN real relax_rate   INIT(0.0);       /* pressure relaxation rate */
 EXTERN int  relax_mode   INIT(-1);        /* pressure relaxation mode */
+/* the following four are deprecated */
+EXTERN int    exp_interval INIT(0);       /* period of expansion steps */
+EXTERN vektor expansion INIT(einsvektor); /* expansion factors in x/y/z-dir */
+EXTERN int    hom_interval INIT(0);       /* period of homshear steps */
+EXTERN vektor2d shear_factor INIT(nullvektor2d);/* shear factor in x,y-dir */
 #endif
+EXTERN real relax_rate   INIT(0.0);       /* pressure relaxation rate */
 
 #ifdef SLLOD
 EXTERN vektor shear_rate   INIT(nullvektor); /* shear rate as a vector */

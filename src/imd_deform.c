@@ -119,9 +119,9 @@ void shear_sample(void)
 *****************************************************************************/
 
 #ifdef TWOD
-void lin_deform(vektor dx, vektor dy,            double scale)
+void lin_deform(vektor dx, vektor dy,            real scale)
 #else
-void lin_deform(vektor dx, vektor dy, vektor dz, double scale)
+void lin_deform(vektor dx, vektor dy, vektor dz, real scale)
 #endif
 {
    int k;

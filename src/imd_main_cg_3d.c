@@ -96,7 +96,7 @@ void main_loop(void)
     if ((exp_interval > 0)  expand_sample();
     if ((hom_interval > 0)   shear_sample();
     if ((lindef_interval > 0) && (0 == steps % lindef_interval)) 
-      lin_deform(lindef_x, lindef_y, lindef_z, deform_size);
+      lin_deform(lindef_x, lindef_y, lindef_z, lindef_size);
 #endif
 
 #ifdef DEFORM

@@ -1027,40 +1027,42 @@ void getparamfile(char *paramfname, int sim)
 #ifdef HOMDEF
     else if (strcasecmp(token,"exp_interval")==0) {
       /* period of expansion intervals */
-      getparam("exp_interval",&exp_interval,PARAM_INT,1,1);
+      getparam(token,&exp_interval,PARAM_INT,1,1);
+      warning_str("Paramter %s is deprecated, please consult manual!",token);
     }
     else if (strcasecmp(token,"expansion")==0) {
       /* expansion */
-      getparam("expansion",&expansion,PARAM_REAL,DIM,DIM);
+      getparam(token,&expansion,PARAM_REAL,DIM,DIM);
     }
     else if (strcasecmp(token,"hom_interval")==0) {
       /* period of homshear intervals */
-      getparam("hom_interval",&hom_interval,PARAM_INT,1,1);
+      getparam(token,&hom_interval,PARAM_INT,1,1);
+      warning_str("Paramter %s is deprecated, please consult manual!",token);
     }
     else if (strcasecmp(token,"shear_factor")==0) {
       /* maximum shear */
-      getparam("shear_factor",&shear_factor,PARAM_REAL,2,2);
+      getparam(token,&shear_factor,PARAM_REAL,2,2);
     }
     else if (strcasecmp(token,"lindef_interval")==0) {
       /* period of linear deformation intervals */
-      getparam("lindef_interval",&lindef_interval,PARAM_INT,1,1);
+      getparam(token,&lindef_interval,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"deform_size")==0) { 
+    else if (strcasecmp(token,"lindef_size")==0) { 
       /* scale factor for deformation */
-      getparam("deform_size",&deform_size,PARAM_REAL,1,1);
+      getparam(token,&lindef_size,PARAM_REAL,1,1);
     }
     else if (strcasecmp(token,"lindef_x")==0) {
       /* first row of deformation matrix */
-      getparam("lindef_x",&lindef_x,PARAM_REAL,DIM,DIM);
+      getparam(token,&lindef_x,PARAM_REAL,DIM,DIM);
     }
     else if (strcasecmp(token,"lindef_y")==0) {
       /* second row of deformation matrix */
-      getparam("lindef_y",&lindef_y,PARAM_REAL,DIM,DIM);
+      getparam(token,&lindef_y,PARAM_REAL,DIM,DIM);
     }
 #ifndef TWOD
     else if (strcasecmp(token,"lindef_z")==0) {
       /* third row of deformation matrix */
-      getparam("lindef_z",&lindef_z,PARAM_REAL,DIM,DIM);
+      getparam(token,&lindef_z,PARAM_REAL,DIM,DIM);
     }
 #endif
     else if (strcasecmp(token,"shear_module")==0) { 
@@ -1084,27 +1086,25 @@ void getparamfile(char *paramfname, int sim)
       else    error_str("Unknown relax_mode %s", tmpstr);
     }
 #endif
-#if defined(DEFORM)
- else if (strcasecmp(token,"annealsteps")==0) {
-      /* max nr of steps between shears */
-      getparam("annealsteps",&annealsteps,PARAM_INT,1,1);
-    }
- else if (strcasecmp(token,"ekin_threshold")==0) {
-      /* shear epsilon criterium, see imd_shear_new.c */
-      getparam("ekin_threshold",&ekin_threshold,PARAM_REAL,1,1);
-    }
-#endif
-#if defined(GLOK)
- else if (strcasecmp(token,"glok_annealsteps")==0) {
+#ifdef GLOK
+    else if (strcasecmp(token,"glok_annealsteps")==0) {
       /* number of annealing steps */
       getparam(token,&glok_annealsteps,PARAM_INT,1,1);
     }
- else if (strcasecmp(token,"glok_ekin_threshold")==0) {
+    else if (strcasecmp(token,"glok_ekin_threshold")==0) {
       /* threshold for ekin */
       getparam(token,&glok_ekin_threshold,PARAM_REAL,1,1);
     }
 #endif
 #ifdef DEFORM
+    else if (strcasecmp(token,"annealsteps")==0) {
+      /* max nr of steps between shears */
+      getparam(token,&annealsteps,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"ekin_threshold")==0) {
+      /* shear epsilon criterium, see imd_shear_new.c */
+      getparam(token,&ekin_threshold,PARAM_REAL,1,1);
+    }
     else if (strcasecmp(token,"max_deform_int")==0) {
       /* max nr of steps between shears */
       getparam("max_deform_int",&max_deform_int,PARAM_INT,1,1);
@@ -2460,16 +2460,16 @@ void broadcast_params() {
 #endif 
 
 #ifdef FINNIS
- MPI_Bcast( &delta_finnis     , 1, REAL   , 0, MPI_COMM_WORLD); 
- MPI_Bcast( &zeta_0           , 1, REAL   , 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &delta_finnis     , 1, REAL   , 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &zeta_0           , 1, REAL   , 0, MPI_COMM_WORLD); 
 #endif
 #if defined(GLOK)
- MPI_Bcast( &glok_annealsteps,    1, MPI_INT, 0, MPI_COMM_WORLD); 
- MPI_Bcast( &glok_ekin_threshold, 1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &glok_annealsteps,    1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &glok_ekin_threshold, 1, REAL,    0, MPI_COMM_WORLD); 
 #endif
 #ifdef DEFORM
- MPI_Bcast( &annealsteps,         1, MPI_INT, 0, MPI_COMM_WORLD); 
- MPI_Bcast( &ekin_threshold,      1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &annealsteps,         1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &ekin_threshold,      1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &max_deform_int,  1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &deform_size,     1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &fnorm_threshold, 1, REAL,    0, MPI_COMM_WORLD); 
@@ -2500,7 +2500,7 @@ void broadcast_params() {
   MPI_Bcast( &exp_interval,    1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &expansion,     DIM, REAL,    0, MPI_COMM_WORLD); 
 
-  MPI_Bcast( &deform_size,     1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &lindef_size,     1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &lindef_interval, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &lindef_x,      DIM, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &lindef_y,      DIM, REAL,    0, MPI_COMM_WORLD); 

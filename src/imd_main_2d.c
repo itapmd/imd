@@ -116,7 +116,8 @@ void main_loop(void)
 
 #ifdef STRESS_TENS
     do_press_calc = (((eng_int  > 0) && (0 == steps % eng_int )) ||
-                     ((dist_int > 0) && (0 == steps % dist_int)) );
+                     ((dist_int > 0) && (0 == steps % dist_int)) ||
+                     (relax_rate > 0.0) );
 #endif
 
 #ifdef EPITAX
@@ -155,7 +156,7 @@ void main_loop(void)
     if ((exp_interval > 0) && (0 == steps % exp_interval)) expand_sample();
     if ((hom_interval > 0) && (0 == steps % hom_interval)) shear_sample();
     if ((lindef_interval > 0) && (0 == steps % lindef_interval)) 
-      lin_deform(lindef_x, lindef_y, deform_size);
+      lin_deform(lindef_x, lindef_y, lindef_size);
 #endif
 
 #ifdef DEFORM
@@ -372,6 +373,10 @@ void main_loop(void)
 
 #ifdef TIMING
     imd_stop_timer(&time_io);
+#endif
+
+#ifdef HOMDEF
+    if (relax_rate > 0.0) relax_pressure();
 #endif
 
     do_boundaries();    
