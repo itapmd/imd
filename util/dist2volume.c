@@ -213,7 +213,7 @@ int main( int argc, char **argv )
     type = UV8;
     ext = "uvd";
   }
-  nsteps = (fmax-fmin+1) / step;
+  nsteps = (fmax-fmin+step) / step;
 
   /* open output file, write header */
   sprintf(tmpstr, "%s.%s", infilebase, fl.cont[n] );
@@ -251,8 +251,8 @@ int main( int argc, char **argv )
     fwrite( bt.dat, sizeof(unsigned char), bt.len , fp ); 
 
     /* read next distribution */
-    if (i<fmax) {
-      sprintf(infile, "%s.%d.%s", infilebase, i, suffix);
+    if (i<=fmax-step) {
+      sprintf(infile, "%s.%d.%s", infilebase, i+step, suffix);
       if (-1==read_float_dist( &fl,infile)) error("Cannot read distribution!");
     }
 
