@@ -172,6 +172,11 @@ void read_command_line(int argc, char **argv)
     case 'M':
       read_arg_bool(&argc, &argv, &all_moduli);
       break;
+      /* w - Output local elastic constant C_ij */
+    case 'w':
+      read_arg_int(&argc, &argv, &cindex);
+      select_moduli = 1;
+      break;
 #endif
 
 #ifdef RING

@@ -407,6 +407,7 @@ void do_elco_eam(cell *p, cell *q, vektor pbc);
 #endif
 void write_stress(void);
 void write_elco(void);
+void write_elco_select(void);
 #endif
 
 #ifdef PAIR_POT
@@ -697,6 +698,8 @@ EXTERN real   dbulkm_dp INIT(0.0);
 EXTERN int    stresstens INIT(0); 
 EXTERN int    moduli INIT(0); 
 EXTERN int    all_moduli INIT(0);
+EXTERN int    cindex INIT(-1);
+EXTERN int    select_moduli INIT(0);
 #endif
 
 #ifdef COVALENT

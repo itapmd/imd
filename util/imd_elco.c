@@ -50,7 +50,7 @@
 
 void usage(void)
 { 
-  printf("%s [-r<nnn>] [-A<nnn>] [-v] [-e<nnn>] [-c] [-m] [-M] [-s] -p paramter-file]\n",progname); 
+  printf("%s [-r<nnn>] [-A<nnn>] [-v] [-e<nnn>] [-c] [-m] [-M] [-s] [-w<nn>] -p paramter-file]\n", progname); 
   
   exit(1); 
 }
@@ -124,7 +124,7 @@ int main(int argc, char **argv)
   /* Write global data */
   write_data();
 
-  if ( stresstens || moduli || all_moduli ) {
+  if ( stresstens || moduli || all_moduli || select_moduli ) {
     /* Compute volumes of Voronoi cells */
     voronoi();
     
@@ -135,6 +135,10 @@ int main(int argc, char **argv)
     if ( moduli || all_moduli )
       /* Output tensor of elastic moduli */
       write_elco();
+
+    else if ( select_moduli ) 
+      /* Output tensor of selected elastic moduli */
+      write_elco_select();
   }
 
   return 0;
@@ -219,6 +223,18 @@ void init_elco(void)
 #endif
 	}
       }
+
+  /*  check indices of moduli to be written out */
+  if ( select_moduli ) {
+#ifndef TWOD
+    if ( cindex < 11 || cindex > 66 || cindex%10 < 1 || cindex%10 > 6)
+#else
+    if ( cindex != 11 || cindex != 12 || cindex != 16
+      || cindex != 22 || cindex != 26 || cindex != 66 
+      || cindex != 21 || cindex != 61 || cindex != 62 )
+#endif
+      error("Nonexisting indices of elastic moduli!");     
+  }
 }
 
 #ifdef COVALENT
@@ -432,7 +448,7 @@ void write_stress(void)
   out = fopen(fname,"w");
   if (NULL == out) error("Cannot open stress file.");
 
-  fprintf(out, "#No type\t x        y        z        s_xx         s_yy         s_zz         s_yz         s_zx         s_xy         Vol_Voronoi\n");
+  fprintf(out, "# No type x y z s_xx s_yy s_zz s_yz s_zx s_xy Vol_Voronoi\n");
 
   for (i=0; i < cell_dim.x; ++i)
     for (j=0; j < cell_dim.y; ++j)
@@ -447,18 +463,21 @@ void write_stress(void)
 #endif
 	for (l=0;l<p->n; ++l)
 	{
-	  if ( p->vol[l] > 0.0 ) { 
+	  if ( p->vol[l] > 0.0 ) {
 	    tmp = 1.0 / p->vol[l];
 #ifndef TWOD	  
 	    fprintf(out, "%d %d %f %f %f %.10f %.10f %.10f %.10f %.10f %.10f %f\n", 
-		    p->nummer[l], p->sorte[l], p->ort[l].x, p->ort[l].y, p->ort[l].z, 
-		    p->stress[l].xx * tmp, p->stress[l].yy * tmp, p->stress[l].zz * tmp, 
-		    p->stress[l].yz * tmp, p->stress[l].zx * tmp, p->stress[l].xy * tmp, 
+		    p->nummer[l], p->sorte[l], 
+		    p->ort[l].x, p->ort[l].y, p->ort[l].z, 
+		    p->stress[l].xx * tmp, p->stress[l].yy * tmp, 
+		    p->stress[l].zz * tmp, p->stress[l].yz * tmp, 
+		    p->stress[l].zx * tmp, p->stress[l].xy * tmp, 
 		    p->vol[l]);
 #else
 	    fprintf(out, "%d %d %f %f %.10f %.10f %.10f %f\n", 
 		    p->nummer[l], p->sorte[l], p->ort[l].x, p->ort[l].y, 
-		    p->stress[l].xx * tmp, p->stress[l].yy * tmp, p->stress[l].zz * tmp,  
+		    p->stress[l].xx * tmp, p->stress[l].yy * tmp, 
+		    p->stress[l].zz * tmp,  
 		    p->vol[l]);
 #endif
 	  }
@@ -491,7 +510,6 @@ void write_stress(void)
     }
   else
     printf("No Voronoi cell found.\n");
-
 }
 
 /******************************************************************************
@@ -511,19 +529,19 @@ void write_elco(void)
   sprintf(fname,"%s.elco",infilename);
   
   out = fopen(fname,"w");
-  if (NULL == out) error("Cannot open elco file.");
+  if (NULL == out) error("Cannot open .elco file.");
 
-  if ( all_moduli == 1 )
+  if ( all_moduli )
 #ifndef TWOD
-    fprintf(out, "#No type x        y        z         B       c_11     c_12     c_13     c_22     c_23     c_33     c_44     c_45     c_46     c_55     c_56     c_66     c_14     c_15     c_16     c_24     c_25     c_26     c_34     c_35     c_36\n");
+    fprintf(out, "# No type x y z B C_11 C_12 C_13 C_22 C_23 C_33 C_44 C_45 C_46 C_55 C_56 C_66 C_14 C_15 C_16 C_24 C_25 C_26 C_34 C_35 C_36\n");
 #else
-    fprintf(out, "#No type x        y        B       c_11     c_12     c_22     c_66     c_16     c_26\n");
+    fprintf(out, "# No type x y B C_11 C_12 C_22 C_66 C_16 C_26\n");
 #endif         
-  else
+  else if ( moduli )
 #ifndef TWOD
-    fprintf(out, "#No type x        y        z        B           c_11         c_12         c_44\n");
+    fprintf(out, "# No type x y z B C_11 C_12 C_44\n");
 #else
-    fprintf(out, "#No type x        y        B           c_11         c_12\n");
+    fprintf(out, "# No type x y B C_11 C_12\n");
 #endif
 
   for (i=0; i < cell_dim.x; ++i)
@@ -543,46 +561,221 @@ void write_elco(void)
 	    tmp = 1.0 / p->vol[l];
 #ifndef TWOD
 	    bulkmod = ( p->elco[l].c11 + p->elco[l].c22 + p->elco[l].c33 
-		       + 2.0 * ( p->elco[l].c12 + p->elco[l].c13 + p->elco[l].c23 ) ) / 9.0;
+			+ 2.0 
+			* ( p->elco[l].c12 + p->elco[l].c13 + p->elco[l].c23 ) 
+			) / 9.0;
 #else
 	    bulkmod = ( p->elco[l].c11 + p->elco[l].c22 
-		       + 2.0 * p->elco[l].c12 ) / 9.0;  /* ?? */
+			+ 2.0 * p->elco[l].c12 ) / 9.0;  /* ?? */
 #endif	    
-	    if ( all_moduli == 1 ) 
+	    if ( all_moduli ) 
 #ifndef TWOD
 	      fprintf(out, "%d %d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f\n", 
-		      p->nummer[l], p->sorte[l], p->ort[l].x, p->ort[l].y, p->ort[l].z, 
-		      bulkmod * tmp, p->elco[l].c11 * tmp, p->elco[l].c12 * tmp, 
-		      p->elco[l].c13 * tmp, p->elco[l].c22 * tmp, p->elco[l].c23 * tmp, 
-		      p->elco[l].c33 * tmp, p->elco[l].c44 * tmp, p->elco[l].c45 * tmp, 
-		      p->elco[l].c46 * tmp, p->elco[l].c55 * tmp, p->elco[l].c56 * tmp, 
-		      p->elco[l].c66 * tmp, p->elco[l].c14 * tmp, p->elco[l].c15 * tmp, 
-		      p->elco[l].c16 * tmp, p->elco[l].c24 * tmp, p->elco[l].c25 * tmp, 
-		      p->elco[l].c26 * tmp, p->elco[l].c34 * tmp, p->elco[l].c35 * tmp, 
+		      p->nummer[l], p->sorte[l], 
+		      p->ort[l].x, p->ort[l].y, p->ort[l].z, 
+		      bulkmod * tmp, 
+		      p->elco[l].c11 * tmp, p->elco[l].c12 * tmp, 
+		      p->elco[l].c13 * tmp, p->elco[l].c22 * tmp, 
+		      p->elco[l].c23 * tmp, p->elco[l].c33 * tmp, 
+		      p->elco[l].c44 * tmp, p->elco[l].c45 * tmp, 
+		      p->elco[l].c46 * tmp, p->elco[l].c55 * tmp, 
+		      p->elco[l].c56 * tmp, p->elco[l].c66 * tmp, 
+		      p->elco[l].c14 * tmp, p->elco[l].c15 * tmp, 
+		      p->elco[l].c16 * tmp, p->elco[l].c24 * tmp, 
+		      p->elco[l].c25 * tmp, p->elco[l].c26 * tmp, 
+		      p->elco[l].c34 * tmp, p->elco[l].c35 * tmp, 
 		      p->elco[l].c36 * tmp );
 #else
 	      fprintf(out, "%d %d %f %f %f %f %f %f %f %f %f\n", 
 		      p->nummer[l], p->sorte[l], p->ort[l].x, p->ort[l].y, 
-		      bulkmod * tmp, p->elco[l].c11 * tmp, p->elco[l].c12 * tmp, 
-		      p->elco[l].c22 * tmp,  
-		      p->elco[l].c66 * tmp, p->elco[l].c16 * tmp, p->elco[l].c26 * tmp );
+		      bulkmod * tmp, 
+		      p->elco[l].c11 * tmp, p->elco[l].c12 * tmp, 
+		      p->elco[l].c22 * tmp, p->elco[l].c66 * tmp, 
+		      p->elco[l].c16 * tmp, p->elco[l].c26 * tmp );
 #endif
-	    else 
+	    else if ( moduli )
 #ifndef TWOD
 	      fprintf(out, "%d %d %f %f %f %.10f %.10f %.10f %.10f\n", 
-		      p->nummer[l], p->sorte[l], p->ort[l].x, p->ort[l].y, p->ort[l].z, 
-		      bulkmod * tmp, p->elco[l].c11 * tmp, p->elco[l].c12 * tmp, 
+		      p->nummer[l], p->sorte[l], 
+		      p->ort[l].x, p->ort[l].y, p->ort[l].z, 
+		      bulkmod * tmp, 
+		      p->elco[l].c11 * tmp, p->elco[l].c12 * tmp, 
 		      p->elco[l].c44 * tmp );
 #else
 	      fprintf(out, "%d %d %f %f %.10f %.10f %.10f\n", 
 		      p->nummer[l], p->sorte[l], p->ort[l].x, p->ort[l].y, 
-		      bulkmod * tmp, p->elco[l].c11 * tmp, p->elco[l].c12 * tmp );
+		      bulkmod * tmp, 
+		      p->elco[l].c11 * tmp, p->elco[l].c12 * tmp );
 #endif
 	  }
 	}
       }
-
   fclose(out);
-
 }
 
+/******************************************************************************
+*
+*  write_elco_select --  writes data *.elco file
+*
+******************************************************************************/
+
+void write_elco_select(void)
+{
+  FILE *out;
+  str255 fname;
+  int i,j,k,l;
+  cell *p; 
+  real tmp, modulus;
+
+  sprintf(fname,"%s.c_%d.elco", infilename, cindex);
+  
+  out = fopen(fname,"w");
+  if (NULL == out) error("Cannot open .elco file.");
+
+#ifndef TWOD
+    fprintf(out, "# No type x y z C_%d\n", cindex);
+#else
+    fprintf(out, "# No type x y C_%d\n", cindex);
+#endif
+
+  for ( i=0; i<cell_dim.x; ++i)
+    for ( j=0; j<cell_dim.y; ++j)
+#ifndef TWOD
+      for ( k=0; k<cell_dim.z; ++k)
+#endif
+      {
+#ifdef TWOD
+        p = PTR_2D_V(cell_array,i,j  ,cell_dim);
+#else
+	p = PTR_3D_V(cell_array,i,j,k,cell_dim);
+#endif
+	for ( l=0; l<p->n; ++l) {
+
+	  if ( p->vol[l] > 0.0 ) {
+	    tmp = 1.0 / p->vol[l];
+#ifndef TWOD
+	    fprintf(out, "%d %d %f %f %f ",
+		    p->nummer[l], p->sorte[l], 
+		    p->ort[l].x, p->ort[l].y, p->ort[l].z);
+#else
+	    fprintf(out, "%d %d %f %f ",
+		    p->nummer[l], p->sorte[l], 
+		    p->ort[l].x, p->ort[l].y);
+#endif     
+	    switch ( cindex ) {
+
+	    case 11:
+	      modulus = p->elco[l].c11;
+	      break;
+	    case 12:
+	      modulus = p->elco[l].c12;
+	      break;
+	    case 13:
+	      modulus = p->elco[l].c13;
+	      break;
+	    case 14:
+	      modulus = p->elco[l].c14;
+	      break;
+	    case 15:
+	      modulus = p->elco[l].c15;
+	      break;
+	    case 16:
+	      modulus = p->elco[l].c16;
+	      break;
+	    case 21:
+	      modulus = p->elco[l].c12;
+	      break;
+	    case 22:
+	      modulus = p->elco[l].c22;
+	      break;
+	    case 23:
+	      modulus = p->elco[l].c23;
+	      break;
+	    case 24:
+	      modulus = p->elco[l].c24;
+	      break;
+	    case 25:
+	      modulus = p->elco[l].c25;
+	      break;
+	    case 26:
+	      modulus = p->elco[l].c26;
+	      break;
+	    case 31:
+	      modulus = p->elco[l].c13;
+	      break;
+	    case 32:
+	      modulus = p->elco[l].c23;
+	      break;
+	    case 33:
+	      modulus = p->elco[l].c33;
+	      break;
+	    case 34:
+	      modulus = p->elco[l].c34;
+	      break;
+	    case 35:
+	      modulus = p->elco[l].c35;
+	      break;
+	    case 36:
+	      modulus = p->elco[l].c36;
+	      break;
+	    case 41:
+	      modulus = p->elco[l].c14;
+	      break;
+	    case 42:
+	      modulus = p->elco[l].c24;
+	      break;
+	    case 43:
+	      modulus = p->elco[l].c34;
+	      break;
+	    case 44:
+	      modulus = p->elco[l].c44;
+	      break;
+	    case 45:
+	      modulus = p->elco[l].c45;
+	      break;
+	    case 46:
+	      modulus = p->elco[l].c46;
+	      break;
+	    case 51:
+	      modulus = p->elco[l].c15;
+	      break;
+	    case 52:
+	      modulus = p->elco[l].c25;
+	      break;
+	    case 53:
+	      modulus = p->elco[l].c35;
+	      break;
+	    case 54:
+	      modulus = p->elco[l].c45;
+	      break;
+	    case 55:
+	      modulus = p->elco[l].c55;
+	      break;
+	    case 56:
+	      modulus = p->elco[l].c56;
+	      break;
+	    case 61:
+	      modulus = p->elco[l].c16;
+	      break;
+	    case 62:
+	      modulus = p->elco[l].c26;
+	      break;
+	    case 63:
+	      modulus = p->elco[l].c36;
+	      break;
+	    case 64:
+	      modulus = p->elco[l].c46;
+	      break;
+	    case 65:
+	      modulus = p->elco[l].c56;
+	      break;
+	    case 66:
+	      modulus = p->elco[l].c66;
+	      break;
+	    }
+	    fprintf(out, "%.10f\n", modulus * tmp);
+	  }
+	}
+      }
+  fclose(out);
+}
