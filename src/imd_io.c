@@ -1544,23 +1544,32 @@ void write_header_config(FILE *out)
 #ifdef UNIAX
   fprintf(out, "#F %c 1 1 2 %d %d 1\n", c, 4*DIM, 2*DIM);
 #else
-  fprintf(out, "#F %c 1 1 1 %d %d 1\n", c, DIM, DIM);
+  fprintf(out, "#F %c 1 1 1 %d %d ", c, DIM, DIM);
+#ifdef ORDPAR
+  fprintf(out, "2\n" );
+#else
+  fprintf(out, "1\n" );
 #endif
+#endif
+
   /* contents line */
 #ifdef CG
-  fprintf(out, "#C number type mass x y z vx vy vz Epot\n");
-#else
-#ifdef UNIAX
+  fprintf(out, "#C ask Erik\n");
+#elif defined(UNIAX)
   fprintf(out, "#C number type mass inertia pos(3) axis(3) shape(3)");
   fprintf(out, " pot_depth(3) velocities(3) ang_veloc(3) Epot\n");
 #else
 #ifdef TWOD
-  fprintf(out, "#C number type mass x y vx vy Epot\n");
+  fprintf(out, "#C number type mass x y vx vy Epot");
 #else
-  fprintf(out, "#C number type mass x y z vx vy vz Epot\n");
+  fprintf(out, "#C number type mass x y z vx vy vz Epot");
 #endif
+#ifdef ORDPAR
+  fprintf(out, " nbanz" );
 #endif
+  fprintf(out, "\n" );
 #endif
+
 
   /* box lines */
 #ifdef TWOD
