@@ -240,10 +240,13 @@ void send_forces(void (*add_func)   (int, int, int, int),
   if (cpu_dim.x==1) {
     /* simply add east/west forces to original cells */
     for (i=0; i < cell_dim.y; ++i) {
+#ifndef AR 
       (*add_func)( 0, i, cell_dim.x-2, i );
+#endif
       (*add_func)( cell_dim.x-1, i, 1, i );
     }
   } else {
+#ifndef AR 
     /* copy east forces into send buffer */
     for (i=0; i < cell_dim.y; ++i)
       (*pack_func)( &send_buf_east, 0, i );
@@ -255,6 +258,7 @@ void send_forces(void (*add_func)   (int, int, int, int),
     recv_buf_west.n = 0;
     for (i=0; i < cell_dim.y; ++i)
       (*unpack_func)( &recv_buf_west, cell_dim.x-2, i );
+#endif
 
     /* copy west forces into send buffer */
     for (i=0; i < cell_dim.y; ++i) 
@@ -332,14 +336,18 @@ void send_forces(void (*add_func)   (int, int, int, int),
   if (cpu_dim.x==1) {
     /* simply add east/west forces to original cells */
     for (i=0; i < cell_dim.y; ++i) {
+#ifndef AR 
       (*add_func)( 0, i, cell_dim.x-2, i );
+#endif
       (*add_func)( cell_dim.x-1, i, 1, i );
     }
   } else {
+#ifndef AR 
     /* copy east forces into send buffer, send east */
     for (i=0; i < cell_dim.y; ++i)
       (*pack_func)( &send_buf_east, 0, i );
     irecv_buf( &recv_buf_west, nbwest, &reqwest[1] );
+#endif
     isend_buf( &send_buf_east, nbeast, &reqwest[0] );
 
     /* copy west forces into send buffer, send west */
@@ -348,11 +356,13 @@ void send_forces(void (*add_func)   (int, int, int, int),
     irecv_buf( &recv_buf_east, nbeast, &reqeast[1] );
     isend_buf( &send_buf_west, nbwest, &reqeast[0] );
 
+#ifndef AR
     /* wait for forces from west, add them to original cells */
     MPI_Waitall(2, reqwest, statwest);
     recv_buf_west.n = 0;
     for (i=0; i < cell_dim.y; ++i)
       (*unpack_func)( &recv_buf_west, cell_dim.x-2, i );
+#endif
 
     /* wait for forces from east, add them to original cells */
     MPI_Waitall(2, reqeast, stateast);
