@@ -291,6 +291,12 @@ EXTERN int  calc_Epot_ref INIT(0);    /* flag whether to compute Epot_ref */
 EXTERN int  Epot_diff INIT(1);        /* flag whether to write Epot_diff */
 #endif
 
+#ifdef ORDPAR
+#define nullvektor4d { 0.0, 0.0, 0.0, 0.0 }
+EXTERN real op_weight[2][2] INIT(nullvektor4d);
+EXTERN real op_r2_cut[2][2] INIT(nullvektor4d);
+#endif
+
 /* Global data for MSQD & correlation */
 #if defined(MSQD) || defined(CORRELATE)
 EXTERN real *msqd INIT(NULL);        /* (local) array of mean square disp. */

@@ -427,11 +427,19 @@ void do_forces(cell *p, cell *q, vektor pbc)
 	p->kraft Z(i) += force.z;
 	q->kraft Z(j) -= force.z;
 #endif
+
+#ifdef ORDPAR
+        if (radius2 < op_r2_cut[p_typ][q_typ]) {
+           p->pot_eng[i] += pot_zwi * op_weight[p_typ][q_typ];         
+           q->pot_eng[j] += pot_zwi * op_weight[q_typ][p_typ];         
+        }
+#else
 #ifndef MONOLJ
 	q->pot_eng[j] += pot_zwi;
 	p->pot_eng[i] += pot_zwi;
 #endif
 	tot_pot_energy += pot_zwi;
+#endif
 
 #ifdef P_AXIAL
         tmp_vir_vect.x -= d.x * d.x * pot_grad;

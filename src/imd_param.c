@@ -747,6 +747,20 @@ void getparamfile(char *paramfname, int sim)
       getparam("Epot_diff",&Epot_diff,PARAM_INT,1,1);
     }   
 #endif
+#ifdef ORDPAR
+    else if (strcasecmp(token,"op_rcut")==0) {
+      /* cutoff radius for order parameter */
+      getparam("op_rcut",&op_r2_cut,PARAM_REAL,4,4);
+      op_r2_cut[0][0] = SQR(op_r2_cut[0][0]);
+      op_r2_cut[0][1] = SQR(op_r2_cut[0][1]);
+      op_r2_cut[1][0] = SQR(op_r2_cut[1][0]);
+      op_r2_cut[1][1] = SQR(op_r2_cut[1][1]);
+    }   
+    else if (strcasecmp(token,"op_weight")==0) {
+      /* weights for order parameter */
+      getparam("op_weight",&op_weight,PARAM_REAL,4,4);
+    }   
+#endif
 #ifdef PULL
     else if (strcasecmp(token,"strip_shift")==0) {
       /* strip move per timestep - this is a vector */
@@ -1166,6 +1180,11 @@ void broadcast_params() {
   MPI_Bcast( &calc_Epot_ref,   1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &reset_Epot_step, 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &Epot_diff,       1, MPI_INT,  0, MPI_COMM_WORLD); 
+#endif
+
+#ifdef ORDPAR
+  MPI_Bcast( &op_r2_cut,       4, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &op_weight,       4, MPI_REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef PULL

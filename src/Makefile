@@ -467,6 +467,10 @@ ifneq (,$(findstring disloc,${MAKETARGET}))
 CFLAGS += -DDISLOC
 endif
 
+ifneq (,$(findstring ordpar,${MAKETARGET}))
+CFLAGS += -DORDPAR
+endif
+
 # EAM
 ifneq (,$(strip $(findstring eam,${MAKETARGET})))
 CFLAGS  += -DEAM
