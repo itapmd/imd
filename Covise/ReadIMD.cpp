@@ -470,12 +470,9 @@ int coReadIMD::compute()
             x.append(fX);
             y.append(fY);
             z.append(fZ);
-            if (iVX>-1 && iVY>-1 && iVZ>-1)
-            {
-              vx.append(fVX);
-              vy.append(fVY);
-              vz.append(fVZ);
-            }
+            vx.append(fVX);
+            vy.append(fVY);
+            vz.append(fVZ);
             if (iScalar[0]>-1) scalar1.append(fScalar[0] * pfsFactor1->getValue() + pfsOffset1->getValue());
             if (iScalar[1]>-1) scalar2.append(fScalar[1] * pfsFactor2->getValue() + pfsOffset2->getValue());
           }
@@ -495,15 +492,20 @@ int coReadIMD::compute()
       {
         fX = fY = fZ = fVX = fVY = fVZ = fScalar[0] = fScalar[1] = 0.0f;
       }
-      if      (c==iScalar[0]) fScalar[0] = tokenizer->nval;
-      else if (c==iScalar[1]) fScalar[1] = tokenizer->nval;
-      else if (c==iX) 
+
+      // Check for user defined parameters:
+      if (c==iScalar[0]) fScalar[0] = tokenizer->nval;
+      if (c==iScalar[1]) fScalar[1] = tokenizer->nval;
+
+      // Check for position and velocity:
+      if (c==iX) 
       {
         if (tokenizer->nval < 0.0f || tokenizer->nval > cpFile->boxSize[0][0])
         {
           if (warnings)
           {
-            sprintf(buf, "Warning: x coordinate %f out of range in line %d of file %s.", tokenizer->nval, tokenizer->getLineNumber(), filename);
+            sprintf(buf, "Warning: x coordinate %f out of range in line %d of file %s.", 
+              tokenizer->nval, tokenizer->getLineNumber(), filename);
             send_info(buf);
           }
         }
@@ -517,7 +519,8 @@ int coReadIMD::compute()
         {
           if (warnings)
           {
-            sprintf(buf, "Warning: y coordinate %f out of range in line %d of file %s.", tokenizer->nval, tokenizer->getLineNumber(), filename);
+            sprintf(buf, "Warning: y coordinate %f out of range in line %d of file %s.", 
+              tokenizer->nval, tokenizer->getLineNumber(), filename);
             send_info(buf);
           }
         }

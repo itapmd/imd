@@ -8,6 +8,8 @@
 ARCH=${HOSTTYPE}
 ifneq (,$(strip $(findstring linux,${HOSTTYPE})))
 ARCH = linux
+CC = /opt/experimental/bin/gcc
+LIBDIR = -L/opt/experimental/lib
 endif
 ifneq (,$(strip $(findstring iris,${HOSTTYPE})))
 ARCH = irix
@@ -63,14 +65,14 @@ OBJECTS = $(OBJDIR)/vvtokenizer.o $(OBJDIR)/vvtoolshed.o
 #$(PLATFORM)/bin/$(CATEGORY)/$(APPLICATION): $(OBJDIR)/$(APPLICATION).o $(OBJECTS)
 $(APPLICATION): $(OBJDIR)/$(APPLICATION).o $(OBJECTS)
 	  $(CC) $(CPPFLAGS) -o $@ $(OBJECTS) $(OBJDIR)/$(APPLICATION).o \
-	  $(COVISE_LIBDIR) $(COVISEAPI) $(APPLLIB) $(COVISELIB) -lm
+	  $(COVISE_LIBDIR) $(COVISEAPI) $(APPLLIB) $(COVISELIB) $(LIBDIR) -lm
 
 ############### general object rule ######################
 # can be modified (e.g. for dependencies)
 ##########################################################
 
 $(OBJDIR)/$(APPLICATION).o: $(APPLICATION).cpp $(APPLICATION).h
-	$(CC) $(CPPFLAGS) $(ADD_INC) -c $(APPLICATION).cpp -o $(OBJDIR)/$(APPLICATION).o
+	$(CC) $(CPPFLAGS) $(ADD_INC) -c $(APPLICATION).cpp -o $(OBJDIR)/$(APPLICATION).o $(LIBDIR)
 	$(POSTCC) 
 
 ############### module specific rules ####################
@@ -78,11 +80,11 @@ $(OBJDIR)/$(APPLICATION).o: $(APPLICATION).cpp $(APPLICATION).h
 ##########################################################
 
 $(OBJDIR)/vvtokenizer.o: $(VIRVODIR)/vvtokenizer.cpp
-	$(CC) $(CPPFLAGS) $(ADD_INC) -c $(VIRVODIR)/vvtokenizer.cpp -o $(OBJDIR)/vvtokenizer.o
+	$(CC) $(CPPFLAGS) $(ADD_INC) -c $(VIRVODIR)/vvtokenizer.cpp -o $(OBJDIR)/vvtokenizer.o $(LIBDIR)
 	$(POSTCC)
 
 $(OBJDIR)/vvtoolshed.o: $(VIRVODIR)/vvtoolshed.cpp
-	$(CC) $(CPPFLAGS) $(ADD_INC) -c $(VIRVODIR)/vvtoolshed.cpp -o $(OBJDIR)/vvtoolshed.o
+	$(CC) $(CPPFLAGS) $(ADD_INC) -c $(VIRVODIR)/vvtoolshed.cpp -o $(OBJDIR)/vvtoolshed.o $(LIBDIR)
 	$(POSTCC)
 
 ##########################################################
