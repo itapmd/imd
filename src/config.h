@@ -95,26 +95,9 @@
 *
 ******************************************************************************/
 
-/* Single CPU, Workstation */
-
-#ifdef RISC
-
-#endif
-
-/* Parallel Machine using Message Passing Interface */
-
-#ifdef MPI
-
-#endif
-
-#ifdef CRAY 
-
-#endif
-
 #ifdef SX4
 #undef USE_SOCKETS
 #endif
-
 
 /******************************************************************************
 *

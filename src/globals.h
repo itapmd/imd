@@ -193,7 +193,7 @@ EXTERN int  incrsz INIT(10);         /* increment of number of atoms in cell */
 
 
 /* MPI housekeeping */
-EXTERN int myid INIT(0);                  /* Who am I? (0 if RISC) */
+EXTERN int myid INIT(0);                  /* Who am I? (0 if serial) */
 EXTERN int parallel_output INIT(0);       /* Flag for parallel output */
 EXTERN int parallel_input  INIT(1);       /* Flag for parallel input */
 #ifdef MPI

@@ -13,31 +13,38 @@
 # 
 # Usage: make <target>
 #
-# <target> has the form imd_<arch>_<ensemble>[_<option>[_<option>...]]
+# <target> has the form 
 #
-# <arch> must be one of:
+#    imd[_<comp>][_<parallel>]_<ensemble>[_<option>[_<option>...]]
 #
-# risc	compile for serial execution, with cc where available
-# gcc	compile for serial execution, with gcc
-# mpi	compile for parallel execution, using MPI
-# omp   compile for parallel execution, using OpenMP
-# ompi  compile for parallel execution, using OpenMP and MPI
-# pacx  compile for parallel execution, using PACX
+# The parallelization method <parallel> can be one of:
 #
-# Machine and compiler specific flags, libraries, etc., are chosen as
-# a function of <arch> and the shell variable HOSTTYPE, which must
-# be set to a suitable value. Currently supported are:
+#    mpi   compile for parallel execution, using MPI
+#    omp   compile for parallel execution, using OpenMP
+#    ompi  compile for parallel execution, using OpenMP and MPI
+#    pacx  compile for parallel execution, using PACX
 #
-#   HOSTTYPE			OS			<arch>
+# If no parallelization method is specified, the default is
+# "serial". For each machine-parallelization method combination
+# (including serial), a default compiler is defined. If a different
+# compiler is desired, its name can be specified as the <comp> 
+# componend in the make target. For each compiler-parallelization
+# method-machine combination, a suitable set of compiler flags can
+# be defined. This is already done for many such combinations.
+# The machine type is derived from the shell variable HOSTTYPE.
+# Currently supported machine-parallelization combinations are:
 #
-#   i?86-linux, i686,i386	Linux    		risc gcc mpi
-#   alpha			True64 Unix             risc gcc mpi
-#   iris4d			SGI Irix		risc gcc omp mpi
-#   t3e				Cray Unicos/mk		risc mpi pacx
-#   SR8000                      HI-UX/MPP               mpi omp ompi
-#   SR2201, HITACHI		HI-UX/MPP		mpi
+#   HOSTTYPE			OS		Parallelization
 #
-# <ensemble> is one of nve, mik, nvt, npt_iso, npt_axial, frac, nvx, stm
+#   i?86-linux,i686,i386	Linux    	serial mpi omp
+#   alpha		 	True64 Unix     serial mpi omp
+#   iris4d		 	SGI Irix	serial mpi omp
+#   t3e			 	Cray Unicos/mk	serial mpi pacx
+#   SR8000               	HI-UX/MPP       mpi omp ompi
+#   SR2201, HITACHI	 	HI-UX/MPP	mpi
+#
+# <ensemble> is one or several of nve, mik, nvt, npt_iso, npt_axial, 
+# frac, nvx, stm
 #
 # <option> is one or several of 2d, debug, prof, mono, binary, ....
 #
@@ -52,10 +59,11 @@
 #
 # Examples:
 #
-# make imd_risc_nve                     ; single CPU 3d nve simulation
+# make imd_nve                          ; single CPU 3d nve simulation
 # make imd_mpi_frac_debug_2d            ; 2d fracture simlation with debugging
-# make imd_risc_nvt_prof                ; 3d NVT simulation with profiling
-# make EXTRAFLAGS=-DMYSYMB imd_gcc_mik  ; define preprocessor flag MYSYMB
+# make imd_nvt_prof                     ; 3d NVT simulation with profiling
+# make EXTRAFLAGS=-DMYSYMB imd_gcc_mik  ; define preprocessor flag MYSYMB,
+#                                       ; compile with gcc
 #
 # On some machines EXTRAFLAGS might work only if the shell used by make
 # is the same as the shell from which make is invoked (T3E, e.g.).
@@ -102,8 +110,6 @@ DEFORMSOURCES   = imd_deform.c
 SOCKHEADERS     = socket_tokens.h sockets.h sockutil.h
 SOCKSOURCES     = socket_io.c sockutil.c
 
-#FRACSOURCES     = imd_load.c
-
 QUASISOURCES    = imd_qc.c
 
 CORRSOURCES     = imd_correl.c
@@ -115,126 +121,184 @@ SAVEMEMSOURCES  = imd_savemem_3d.c
 
 ###########################################################################
 #
-#  Machine specific flags, libraries, etc.
+# flags for Linux
 #
 ###########################################################################
 
-# PACX MPI
+# default compilers and libraries
+CC_DEFAULT_SERIAL_i586		= gcc
+CC_DEFAULT_MPI_i586		= mpicc
+CC_DEFAULT_OMP_i586		= guidec
+
+# gcc, serial
+CFLAGS_gcc_SERIAL_i586		= -mcpu=i586 -O3
+CFLAGS_gcc_SERIAL_i586_DEBUG	= -mcpu=i586 -g
+CFLAGS_gcc_SERIAL_i586_PROF	= -g3 -pg
+
+# pgcc, serial
+CFLAGS_pgcc_SERIAL_i586        	= -fast
+CFLAGS_pgcc_SERIAL_i586_DEBUG  	= -g -Xa
+CFLAGS_pgcc_SERIAL_i586_PROF   	= -fast -Mprof=func
+
+# icc, serial
+CFLAGS_icc_SERIAL_i586        	= -O -tpp6
+
+# kcc, serial
+CFLAGS_KCC_SERIAL_i586       	= +K3 -O3 --diag_suppress 177,550
+
+# MPICH
+CFLAGS_mpicc_MPI_i586		= -mcpu=i686 -O3
+CFLAGS_mpicc_MPI_i586_DEBUG	= -mcpu=i686 -g
+CFLAGS_mpicc_MPI_i586_PROF	= -g3 -pg
+
+# guidec, OpenMP
+CFLAGS_guidec_OMP_i586         	= +K3 -O3 --diag_suppress 177,550
+CFLAGS_guidec_OMP_i586_DEBUG   	= -g +K0 -WGstrict --diag_suppress 177,550
+CFLAGS_guidec_OMP_i586_PROF    	= -p
+
+# omni, OpenMP
+CFLAGS_omcc_OMP_i586         	= -O
+CFLAGS_omcc_OMP_i586_DEBUG   	= -g
+
+# pgcc, OpenMP
+CFLAGS_pgcc_OMP_i586         	= -fast
+CFLAGS_pgcc_OMP_i586_DEBUG   	= -g -Xa
+CFLAGS_pgcc_OMP_i586_PROF    	= -fast -Mprof=func
+
+
+###########################################################################
+#
+# flags for alpha
+#
+###########################################################################
+
+# default compilers and libraries
+CC_DEFAULT_SERIAL_alpha		= cc
+CC_DEFAULT_OMP_alpha		= cc.alt
+CC_DEFAULT_MPI_alpha		= hcc
+MPILIBS_alpha			= -lmpi -lots
+
+# cc, serial
+CFLAGS_cc_SERIAL_alpha		= -Dalpha -O3 -float -fp_reorder -arch ev56 -tune host
+CFLAGS_cc_SERIAL_alpha_DEBUG	= -Dalpha -g
+CFLAGS_cc_SERIAL_alpha_PROF	= -g3 -pg
+
+# gcc, serial
+CFLAGS_gcc_SERIAL_alpha		= -Dalpha -O3
+CFLAGS_gcc_SERIAL_alpha_DEBUG	= -Dalpha -g
+CFLAGS_gcc_SERIAL_alpha_PROF	= -g3 -pg
+
+# OpenMP
+CFLAGS_cc.alt_OMP_alpha		= -Dalpha -mp -O3 -float -fp_reorder -arch ev56 -tune host
+CFLAGS_cc.alt_OMP_alpha_DEBUG	= -Dalpha -mp -g
+CFLAGS_cc.alt_OMP_alpha_PROF	= -g3 -pg
+
+# LAM/MPI
+CFLAGS_hcc_MPI_alpha		= -Dalpha -O3
+CFLAGS_hcc_MPI_alpha_DEBUG	= -Dalpha -g
+
+
+###########################################################################
+#
+# flags for IRIX
+#
+###########################################################################
+
+# default compilers and libraries
+CC_DEFAULT_SERIAL_iris4d	= cc
+CC_DEFAULT_OMP_iris4d		= cc
+
+# cc
+CFLAGS_cc_SERIAL_iris4d		= -Dsgi -O3 -n32 -mips3 -xansi -woff 1174
+CFLAGS_cc_SERIAL_iris4d_DEBUG	= -Dsgi -g -xansi -woff 1174
+CFLAGS_cc_SERIAL_iris4d_PROF	= -g3
+
+# gcc
+CFLAGS_gcc_SERIAL_iris4d		= -Dsgi -O3
+CFLAGS_gcc_SERIAL_iris4d_DEBUG	= -Dsgi -g
+CFLAGS_gcc_SERIAL_iris4d_PROF	= -g3 -pg
+
+# OpenMP
+CFLAGS_cc_OMP_iris4d		= -Dsgi -mp -O3 -n32 -mips3 -xansi -woff 1174
+CFLAGS_cc_OMP_iris4d_DEBUG	= -Dsgi -mp -g -xansi -woff 1174
+CFLAGS_cc_OMP_iris4d_PROF	= -g3
+
+
+###########################################################################
+#
+# flags for T3E
+#
+###########################################################################
+
+# default compilers and libraries
+CC_DEFAULT_SERIAL_t3e		= cc
+CC_DEFAULT_MPI_t3e		= cc
+CC_DEFAULT_PACX_t3e		= cc
+MPILIBS_t3e	    	        = -lmpi 
 PACXDIR				= ${HOME}/WORK/PACX
+PACXLIBS_t3e			= -L ${PACXDIR}/lib -lpacx -llzo -lmpi
+LIBS_PROF_t3e	 		= -lapp
 
-# flags for Linux
-CC_RISC_i586		= gcc
-CFLAGS_RISC_i586	= -DRISC -mcpu=i586 -O3
-CFLAGS_RISC_i586_DEBUG	= -DRISC -mcpu=i586 -g
-CFLAGS_RISC_i586_PROF	= -g3 -pg
+# serial
+CFLAGS_cc_SERIAL_t3e		= -Dt3e -O3 -haggress,report=isf -X1
+CFLAGS_cc_SERIAL_t3e_DEBUG	= -Dt3e -g -X1
+CFLAGS_cc_SERIAL_t3e_PROF	= -Gf -happrentice
 
-# flags for Linux with gcc (same as RISC)
-CC_GCC_i586		= gcc
-CFLAGS_GCC_i586		= -DRISC -mcpu=i586 -O3
-CFLAGS_GCC_i586_DEBUG	= -DRISC -mcpu=i586 -g
-CFLAGS_GCC_i586_PROF	= -g3 -pg
+# MPI
+CFLAGS_cc_MPI_t3e		= -Dt3e -DAR -O3 -htolerant,aggress,report=isf
+CFLAGS_cc_MPI_t3e_DEBUG		= -Dt3e -DAR -g
+CFLAGS_cc_MPI_t3e_PROF		= -Gf -happrentice
 
-# flags for Linux with MPICH
-CC_MPI_i586		= mpicc
-CFLAGS_MPI_i586		= -DMPI -mcpu=i686 -O3
-CFLAGS_MPI_i586_DEBUG	= -DMPI -mcpu=i686 -g
-CFLAGS_MPI_i586_PROF	= -g3 -pg
-#MPILIBS_i586		= -lmpich
+# PACX
+CFLAGS_cc_PACX_t3e		= -Dt3e -I${PACXDIR}/include -DAR -O3 -htolerant,aggress,report=isf
+CFLAGS_cc_PACX_t3e_DEBUG	= -Dt3e -I${PACXDIR}/include -DAR -g
+CFLAGS_cc_PACX_t3e_PROF		= -Gf -happrentice
 
-# flags for alpha with cc
-CC_RISC_alpha		= cc
-CFLAGS_RISC_alpha	= -Dalpha -DRISC -O3 -float -fp_reorder -arch ev56 -tune host
-CFLAGS_RISC_alpha_DEBUG	= -Dalpha -DRISC -g
-CFLAGS_RISC_alpha_PROF	= -g3 -pg
-
-# flags for alpha with gcc
-CC_GCC_alpha		= gcc
-CFLAGS_GCC_alpha	= -Dalpha -DRISC -O3
-CFLAGS_GCC_alpha_DEBUG	= -Dalpha -DRISC -g
-CFLAGS_GCC_alpha_PROF	= -g3 -pg
-
-# flags for alpha with OpenMP
-#CC_OMP_alpha		= cc.alt
-#CFLAGS_OMP_alpha	= -Dalpha -DOMP -mp -O3 -float -fp_reorder -arch ev56 -tune host
-#CFLAGS_OMP_alpha_DEBUG	= -Dalpha -DOMP -mp -g
-#CFLAGS_OMP_alpha_PROF	= -g3 -pg
-
-# flags for alpha with LAM/MPI
-CC_MPI_alpha		= hcc
-CFLAGS_MPI_alpha	= -Dalpha -DMPI -O3
-CFLAGS_MPI_alpha_DEBUG	= -Dalpha -DMPI -g
-MPILIBS_alpha		= -lmpi -lots
-
-# flags for IRIX with cc
-CC_RISC_iris4d			= cc
-CFLAGS_RISC_iris4d		= -Dsgi -DRISC -O3 -n32 -mips3 -xansi -woff 1174
-CFLAGS_RISC_iris4d_DEBUG	= -Dsgi -DRISC -g -xansi -woff 1174
-CFLAGS_RISC_iris4d_PROF		= -g3
-
-# flags for IRIX with gcc
-CC_GCC_iris4d			= gcc
-CFLAGS_GCC_iris4d		= -Dsgi -DRISC -O3
-CFLAGS_GCC_iris4d_DEBUG		= -Dsgi -DRISC -g
-CFLAGS_GCC_iris4d_PROF		= -g3 -pg
-
-# flags for IRIX with OpenMP
-CC_OMP_iris4d			= cc
-CFLAGS_OMP_iris4d		= -Dsgi -DOMP -mp -O3 -n32 -mips3 -xansi -woff 1174
-CFLAGS_OMP_iris4d_DEBUG		= -Dsgi -DOMP -mp -g -xansi -woff 1174
-CFLAGS_OMP_iris4d_PROF		= -g3
-
-# flags for IRIX with LAM/MPI
-CC_MPI_iris4d			= hcc
-CFLAGS_MPI_iris4d		= -Dsgi -DMPI -O2
-MPILIBS_iris4d			= -lmpi
-
-# flags for T3E RISC
-CC_RISC_t3e		= cc
-CFLAGS_RISC_t3e		= -Dt3e -DRISC -O3 -haggress,report=isf -X1
-CFLAGS_RISC_t3e_DEBUG	= -Dt3e -DRISC -g -X1
-CFLAGS_RISC_t3e_PROF	= -Gf -happrentice
-
-# flags for T3E MPI
-CC_MPI_t3e		= cc
-CFLAGS_MPI_t3e		= -Dt3e -DMPI -DAR -O3 -htolerant,aggress,report=isf
-CFLAGS_MPI_t3e_DEBUG	= -Dt3e -DMPI -DAR -g
-CFLAGS_MPI_t3e_PROF	= -Gf -happrentice
-MPILIBS_t3e    	        = -lmpi 
-
-# flags for T3E PACX
-CC_PACX_t3e		= cc
-CFLAGS_PACX_t3e		= -Dt3e -DPACX -DMPI -I${PACXDIR}/include -DAR -O3 -htolerant,aggress,report=isf
-CFLAGS_PACX_t3e_DEBUG	= -Dt3e -DPACX -DMPI -I${PACXDIR}/include -DAR -g
-CFLAGS_PACX_t3e_PROF	= -Gf -happrentice
-PACXLIBS_t3e		= -L ${PACXDIR}/lib -lpacx -llzo -lmpi
-
-LIBS_PROF_t3e 		:= -lapp
-
+###########################################################################
+#
 # flags for Hitachi SR2201
-CC_MPI_SR2201		 = cc
-CFLAGS_MPI_SR2201	 = -DMPI +O4 +Ol +Oprefetch -I/usr/local/mpi/include  -DMPI_hmpp2
-CFLAGS_MPI_SR2201_DEBUG	 = -DMPI -g -I/usr/local/mpi/include  -DMPI_hmpp2
-CFLAGS_MPI_SR2201_PROF   = -G
-MPILIBS_SR2201		 = -L/usr/local/mpi/lib/hmpp2/cml -lmpi
+#
+###########################################################################
 
-# flags for Hitachi SR8000 MPI
-CC_MPI_SR8000		 = cc
-CFLAGS_MPI_SR8000	 = -DMPI +O4 +Ol -I/usr/mpi/include
-CFLAGS_MPI_SR8000_DEBUG	 = -DMPI -g  -I/usr/mpi/include
-CFLAGS_MPI_SR8000_PROF   = -G
-MPILIBS_SR8000		 = -L/usr/mpi/lib -lmpi
+# default compilers and libraries
+CC_DEFAULT_MPI_SR2201	 	= cc
+MPILIBS_SR2201		 	= -L/usr/local/mpi/lib/hmpp2/cml -lmpi
 
-# flags for Hitachi SR8000 OpenMP
-CC_OMP_SR8000		 = cc
-CFLAGS_OMP_SR8000	 = -DOMP -omp -par +O4 +Ol
-CFLAGS_OMP_SR8000_DEBUG	 = -DOMP -omp -par=1 -O2 -g
-CFLAGS_OMP_SR8000_PROF   = -G
+# MPI
+CFLAGS_cc_MPI_SR2201	 	= +O4 +Ol +Oprefetch -I/usr/local/mpi/include  -DMPI_hmpp2
+CFLAGS_cc_MPI_SR2201_DEBUG   	= -g -I/usr/local/mpi/include -DMPI_hmpp2
+CFLAGS_cc_MPI_SR2201_PROF  	= -G
 
-# flags for Hitachi SR8000 MPI + OpenMP
-CC_OMPI_SR8000		 = cc
-CFLAGS_OMPI_SR8000	 = -DOMPI -omp -par +O4 +Ol -I/usr/mpi/include
-CFLAGS_OMPI_SR8000_DEBUG = -DOMPI -omp -par +O2 -g -I/usr/mpi/include
-CFLAGS_OMPI_SR8000_PROF  = -G
+###########################################################################
+#
+# flags for Hitachi SR8000
+#
+###########################################################################
+
+# default compilers and libraries
+CC_DEFAULT_MPI_SR8000		= mpicc
+CC_DEFAULT_OMP_SR8000		= cc
+CC_DEFAULT_OMPI_SR8000		= mpicc
+LIBS_PROF_SR8000		= -lpl
+
+# MPI
+CFLAGS_mpicc_MPI_SR8000        	= -O4 +Op -noparallel
+CFLAGS_mpicc_MPI_SR8000_DEBUG  	= -g
+CFLAGS_mpicc_MPI_SR8000_PROF   	= -Xfuncmonitor
+
+CFLAGS_mpicc_MPI_SR8000		= -O4 +Op -noparallel
+CFLAGS_mpicc_MPI_SR8000_DEBUG	= -g
+CFLAGS_mpicc_MPI_SR8000_PROF   	= -Xfuncmonitor
+
+# OpenMP
+CFLAGS_cc_OMP_SR8000	 	= -omp -par -O4 +Op
+CFLAGS_cc_OMP_SR8000_DEBUG	= -omp -par=1 -O2 -g
+CFLAGS_cc_OMP_SR8000_PROF   	= -Xfuncmonitor
+
+# MPI + OpenMP
+CFLAGS_mpicc_OMPI_SR8000	= -omp -par -O4 +Op
+CFLAGS_mpicc_OMPI_SR8000_DEBUG 	= -omp -par -O2 -g
+CFLAGS_mpicc_OMPI_SR8000_PROF  	= -Xfuncmonitor
 
 
 ###########################################################################
@@ -263,15 +327,77 @@ ifneq (,$(strip $(findstring HITACHI,${HOSTTYPE})))
 IMDHOST = SR2201
 endif
 
-CC_RISC           = ${CC_RISC_${IMDHOST}}
-CC_GCC		  = ${CC_GCC_${IMDHOST}}
-CC_MPI		  = ${CC_MPI_${IMDHOST}}
-CC_OMP		  = ${CC_OMP_${IMDHOST}}
-CC_OMPI		  = ${CC_OMPI_${IMDHOST}}
-CC_PACX		  = ${CC_PACX_${IMDHOST}}
 
-# to link or not to link
-LIBS    	  := -lm
+###########################################################################
+#
+#  Parallelization method
+#
+###########################################################################
+
+# default is serial
+PARALLEL = SERIAL
+# MPI
+ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
+PARALLEL = MPI
+CFLAGS  += -DMPI
+LIBS    += ${MPILIBS_${IMDHOST}}
+endif
+# OpenMP
+ifneq (,$(strip $(findstring omp,${MAKETARGET})))
+PARALLEL = OMP
+CFLAGS  += -DOMP
+endif
+# MPI + OpenMP
+ifneq (,$(strip $(findstring ompi,${MAKETARGET})))
+PARALLEL = OMPI
+endif
+# PACX
+ifneq (,$(strip $(findstring pacx,${MAKETARGET})))
+PARALLEL = PACX
+CFLAGS  += -DMPI -DPACX
+LIBS    += PACXLIBS_${IMDHOST}
+endif
+
+
+###########################################################################
+#
+#  Compiler
+#
+###########################################################################
+
+CC = ${CC_DEFAULT_${PARALLEL}_${IMDHOST}}
+# gcc
+ifneq (,$(strip $(findstring gcc,${MAKETARGET})))
+CC = gcc
+endif
+# pgcc
+ifneq (,$(strip $(findstring pgcc,${MAKETARGET})))
+CC = pgcc
+endif
+# icc
+ifneq (,$(strip $(findstring icc,${MAKETARGET})))
+CC = icc
+endif
+# kcc
+ifneq (,$(strip $(findstring kcc,${MAKETARGET})))
+CC = KCC
+endif
+# guidec
+ifneq (,$(strip $(findstring guidec,${MAKETARGET})))
+CC = guidec
+endif
+# omni
+ifneq (,$(strip $(findstring omcc,${MAKETARGET})))
+CC = omcc
+endif
+
+###########################################################################
+#
+#  Libraries
+#
+###########################################################################
+
+LIBS    	 += -lm
 MPILIBS		  = ${MPILIBS_${IMDHOST}}	
 PACXLIBS	  = ${PACXLIBS_${IMDHOST}}	
 
@@ -285,180 +411,34 @@ BINDIR   = bin
 #
 #########################################################
 
-# Architecture & Dimension
-
-###  RISC  ##############################################
-
-ifneq (,$(strip $(findstring risc,${MAKETARGET})))
-CC      := ${CC_RISC}
-
+HEADERS := ${IMDHEADERS}
 # twod or not twod
 ifneq (,$(strip $(findstring 2d,${MAKETARGET})))
-HEADERS := ${IMDHEADERS}
-SOURCES	:= ${SOURCES2D} ${RISCSOURCES2D}
-CFLAGS  += -DTWOD
-else
-HEADERS := ${IMDHEADERS}
-SOURCES	:= ${SOURCES3D} ${RISCSOURCES3D}
-endif
-
-# general compiler flags
-ifneq (,$(findstring debug,${MAKETARGET}))
-CFLAGS += ${CFLAGS_RISC_${IMDHOST}_DEBUG}
-else
-CFLAGS += ${CFLAGS_RISC_${IMDHOST}}
-endif
-ifneq (,$(findstring prof,${MAKETARGET}))
-CFLAGS += ${CFLAGS_RISC_${IMDHOST}_PROF}
-endif
-
-endif
-
-
-###  GCC  ###############################################
-
-ifneq (,$(strip $(findstring gcc,${MAKETARGET})))
-CC      := ${CC_GCC}
-
-# twod or not twod
-ifneq (,$(strip $(findstring 2d,${MAKETARGET})))
-HEADERS := ${IMDHEADERS}
-SOURCES	:= ${SOURCES2D} ${RISCSOURCES2D}
-CFLAGS  += -DTWOD
-else
-HEADERS := ${IMDHEADERS}
-SOURCES	:= ${SOURCES3D} ${RISCSOURCES3D}
-endif
-
-# general compiler flags
-ifneq (,$(findstring debug,${MAKETARGET}))
-CFLAGS += ${CFLAGS_GCC_${IMDHOST}_DEBUG}
-else
-CFLAGS += ${CFLAGS_GCC_${IMDHOST}}
-endif
-ifneq (,$(findstring prof,${MAKETARGET}))
-CFLAGS += ${CFLAGS_GCC_${IMDHOST}_PROF}
-endif
-
-endif
-
-
-###  MPI and OpenMP #####################################
-
-ifneq (,$(strip $(findstring ompi,${MAKETARGET})))
-CC      := ${CC_OMPI}
-LIBS    += ${MPILIBS_${IMDHOST}}
-
-# twod or not twod
-ifneq (,$(strip $(findstring 2d,${MAKETARGET})))
-HEADERS := ${IMDHEADERS}
-SOURCES	:= ${SOURCES2D} ${MPISOURCES2D}
-CFLAGS  += -DTWOD
-else
-HEADERS := ${IMDHEADERS}
-SOURCES	:= ${SOURCES3D} ${MPISOURCES3D}
-endif
-
-# general compiler flags
-ifneq (,$(findstring debug,${MAKETARGET}))
-CFLAGS += ${CFLAGS_OMPI_${IMDHOST}_DEBUG}
-else
-CFLAGS += ${CFLAGS_OMPI_${IMDHOST}}
-endif
-ifneq (,$(findstring prof,${MAKETARGET}))
-CFLAGS += ${CFLAGS_OMPI_${IMDHOST}_PROF}
-LIBS   += ${LIBS_PROF_${IMDHOST}}
-endif
-
-else
-
-
-###  MPI  ###############################################
-
+# serial or mpi
 ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
-CC      := ${CC_MPI}
-LIBS    += ${MPILIBS_${IMDHOST}}
-
-# twod or not twod
-ifneq (,$(strip $(findstring 2d,${MAKETARGET})))
-HEADERS := ${IMDHEADERS}
 SOURCES	:= ${SOURCES2D} ${MPISOURCES2D}
-CFLAGS  += -DTWOD
 else
-HEADERS := ${IMDHEADERS}
-SOURCES	:= ${SOURCES3D} ${MPISOURCES3D}
-endif
-
-# general compiler flags
-ifneq (,$(findstring debug,${MAKETARGET}))
-CFLAGS += ${CFLAGS_MPI_${IMDHOST}_DEBUG}
-else
-CFLAGS += ${CFLAGS_MPI_${IMDHOST}}
-endif
-ifneq (,$(findstring prof,${MAKETARGET}))
-CFLAGS += ${CFLAGS_MPI_${IMDHOST}_PROF}
-LIBS   += ${LIBS_PROF_${IMDHOST}}
-endif
-
-endif
-
-
-###  OpenMP  ############################################
-
-ifneq (,$(strip $(findstring omp,${MAKETARGET})))
-CC      := ${CC_OMP}
-
-# twod or not twod
-ifneq (,$(strip $(findstring 2d,${MAKETARGET})))
-HEADERS := ${IMDHEADERS}
 SOURCES	:= ${SOURCES2D} ${RISCSOURCES2D}
+endif
 CFLAGS  += -DTWOD
 else
-HEADERS := ${IMDHEADERS}
+# serial or mpi
+ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
+SOURCES	:= ${SOURCES3D} ${MPISOURCES3D}
+else
 SOURCES	:= ${SOURCES3D} ${RISCSOURCES3D}
 endif
+endif
 
-# general compiler flags
+# general compiler flags, debug and profile
 ifneq (,$(findstring debug,${MAKETARGET}))
-CFLAGS += ${CFLAGS_OMP_${IMDHOST}_DEBUG}
+CFLAGS += ${CFLAGS_${CC}_${PARALLEL}_${IMDHOST}_DEBUG}
 else
-CFLAGS += ${CFLAGS_OMP_${IMDHOST}}
+CFLAGS += ${CFLAGS_${CC}_${PARALLEL}_${IMDHOST}}
 endif
 ifneq (,$(findstring prof,${MAKETARGET}))
-CFLAGS += ${CFLAGS_OMP_${IMDHOST}_PROF}
-endif
-
-endif
-
-endif
-
-
-###  PACX  ##############################################
-
-ifneq (,$(strip $(findstring pacx,${MAKETARGET})))
-CC      := ${CC_PACX}
-LIBS    += ${PACXLIBS_${IMDHOST}}
-
-# twod or not twod
-ifneq (,$(strip $(findstring 2d,${MAKETARGET})))
-HEADERS := ${IMDHEADERS}
-SOURCES	:= ${SOURCES2D} ${MPISOURCES2D}
-CFLAGS  += -DTWOD
-else
-HEADERS := ${IMDHEADERS}
-SOURCES	:= ${SOURCES3D} ${MPISOURCES3D}
-endif
-
-# general compiler flags
-ifneq (,$(findstring debug,${MAKETARGET}))
-CFLAGS += ${CFLAGS_PACX_${IMDHOST}_DEBUG}
-else
-CFLAGS += ${CFLAGS_PACX_${IMDHOST}}
-endif
-ifneq (,$(findstring prof,${MAKETARGET}))
-CFLAGS += ${CFLAGS_PACX_${IMDHOST}_PROF}
-endif
-
+CFLAGS += ${CFLAGS_${CC}_${PARALLEL}_${IMDHOST}_PROF}
+LIBS   += ${LIBS_PROF_${IMDHOST}}
 endif
 
 
