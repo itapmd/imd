@@ -675,9 +675,6 @@ void vis_restart_simulation()
 {
   /* decrease steps_max, so that we exit the main loop on the next iteration */
   steps_max=steps;
-#ifdef MPI
-  MPI_Bcast( &steps_max, 1, MPI_INT, 0, cpugrid);
-#endif
 }
 
 /*****************************************************************************
