@@ -44,7 +44,7 @@ IMDHEADERS    = config.h globals.h imd.h makros.h prototypes.h types.h
 
 SOURCES       = imd.c imd_maxwell.c imd_integrate.c imd_forces.c \
 	        imd_misc.c imd_param.c imd_alloc.c imd_io.c imd_potential.c \
-                imd_time.c
+                imd_time.c imd_generate.c
 SOURCES2D     = ${SOURCES} imd_main_2d.c imd_io_2d.c imd_geom_2d.c \
 		imd_pictures_2d.c
 SOURCES3D     = ${SOURCES} imd_main_3d.c imd_io_3d.c imd_geom_3d.c \

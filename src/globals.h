@@ -55,8 +55,8 @@ EXTERN ivektor global_cell_dim;          /* dimension of cell array */
 /* Boundary Conditions */
 EXTERN ivektor pbc_dirs INIT(einsivektor); /* directions with pbc */
 
-EXTERN int vtypes INIT(0);       /* vtypes = ntypes + ntypes*(types of forces) */
-EXTERN vektor *restrictions INIT(NULL);     /* directions the atom is allowed to move in */
+EXTERN int vtypes INIT(0);   /* vtypes = ntypes + ntypes*(types of forces) */
+EXTERN vektor *restrictions INIT(NULL);  /* directions the atom is allowed to move in */
 
 #ifdef FBC    /* FBC uses the virtual atom types, */
 EXTERN vektor *fbc_forces;       /* each vtype has its force */
@@ -79,7 +79,8 @@ EXTERN int    relaxsteps INIT(1);
 /* Global bookkeeping */
 
 EXTERN int natoms  INIT(0);      /* Total number of atoms */
-EXTERN int nactive INIT(0);      /* Total number of active atoms */
+EXTERN int nactive INIT(0);      /* number of transl. degrees of freedom */
+EXTERN int nactive_rot INIT(0);  /* number of rot. degrees of freedom */
 EXTERN int ntypes INIT(0);       /* Total number of different atom types */
 EXTERN int *num_sort INIT(NULL); /* number of atoms for each type */
 EXTERN int steps_max INIT(0);    /* Maximum number of MD steps */

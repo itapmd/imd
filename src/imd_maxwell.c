@@ -1,3 +1,4 @@
+
 /******************************************************************************
 *
 * maxwell.c -- initialize velocity with a maxwell distribution
@@ -5,7 +6,6 @@
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
@@ -17,9 +17,6 @@
 * Converted directely from an example in the book of Allen and Tildesley
 *
 */
-
-void maxwell(real temp)
-               
 
 /* *******************************************************************
    ** TRANSLATIONAL VELOCITIES FROM MAXWELL-BOLTZMANN DISTRIBUTION  **
@@ -34,11 +31,12 @@ void maxwell(real temp)
    **    RETURNS A UNIFORM RANDOM NORMAL VARIATE FROM A             **
    **    DISTRIBUTION WITH ZERO MEAN AND UNIT VARIANCE.             **
    ******************************************************************* */
- 
- 
+
+void maxwell(real temp)
 { 
-   int         k, natom;
+   int         k;
    vektor      tot_impuls;
+   ivektor     nactive_vec;
    static long dummy = 0;
 
 #ifdef UNIAX
@@ -52,17 +50,15 @@ void maxwell(real temp)
 #endif
 
    real        TEMP;
-   real scale, xx;
-   int num, nhalf;
+   real scale, xx, tmp;
+   int num, nhalf, typ;
 
    TEMP = temp;
-   tot_impuls.x = 0.0;
-   tot_impuls.y = 0.0;
+   tot_impuls.x = 0.0;   nactive_vec.x = 0;
+   tot_impuls.y = 0.0;   nactive_vec.y = 0;
 #ifndef TWOD
-   tot_impuls.z = 0.0;
+   tot_impuls.z = 0.0;   nactive_vec.z = 0;
 #endif
-
-   natom = 0;
 
 #ifdef NVX
    nhalf = tran_nlayers / 2;
@@ -98,88 +94,70 @@ void maxwell(real temp)
                                xx * tran_nlayers / (box_x.x * (nhalf-1));
 	 }
 #endif
-         if (NUMMER(p,i) >= 0) {
-#ifdef FBC
-	    p->impuls X(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i))*(restrictions + p->sorte[i])->x;
-            p->impuls Y(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i))*(restrictions + p->sorte[i])->y;
+
+         tmp = sqrt(TEMP * MASSE(p,i));
+         typ = p->sorte[i];
+         p->impuls X(i) = gasdev( &seed ) * tmp * (restrictions + typ)->x;
+         p->impuls Y(i) = gasdev( &seed ) * tmp * (restrictions + typ)->y;
 #ifndef TWOD
-            p->impuls Z(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i))*(restrictions + p->sorte[i])->z;
+         p->impuls Z(i) = gasdev( &seed ) * tmp * (restrictions + typ)->z;
 #endif
-#else
-            p->impuls X(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i));
-            p->impuls Y(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i));
+         nactive_vec.x += (int) (restrictions + typ)->x;
+         nactive_vec.y += (int) (restrictions + typ)->y;
 #ifndef TWOD
-            p->impuls Z(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i));
+         nactive_vec.z += (int) (restrictions + typ)->z;
 #endif
-#endif
-            ++natom;
-            tot_impuls.x += p->impuls X(i);
-            tot_impuls.y += p->impuls Y(i);
+         tot_impuls.x += p->impuls X(i);
+         tot_impuls.y += p->impuls Y(i);
 #ifndef TWOD
-            tot_impuls.z += p->impuls Z(i);
+         tot_impuls.z += p->impuls Z(i);
 #endif
-         } else {
-            p->impuls X(i) = 0.0;
-            p->impuls Y(i) = 0.0;
-#ifndef TWOD
-            p->impuls Z(i) = 0.0;
-#endif
-         }
 
 #ifdef UNIAX
 
-	   /* angular velocities for uniaxial molecules */
+         /* angular velocities for uniaxial molecules */
 
-	   /* choose a random vector in space */
+         /* choose a random vector in space */
 
-	   xisq = 1.0;
+         xisq = 1.0;
 
-	   while ( xisq >= 1.0 ) 
-	     {
-	       xi1 = 2.0 * ran1( &dummy ) - 1.0 ;
-	       xi2 = 2.0 * ran1( &dummy ) - 1.0 ;
-	       xisq = xi1 * xi1 + xi2 * xi2 ;
-	     }
+         while ( xisq >= 1.0 ) {
+           xi1 = 2.0 * ran1( &dummy ) - 1.0 ;
+           xi2 = 2.0 * ran1( &dummy ) - 1.0 ;
+           xisq = xi1 * xi1 + xi2 * xi2 ;
+         }
 
-	   xi0 = sqrt( 1.0 - xisq ) ;
+         xi0 = sqrt( 1.0 - xisq ) ;
 
-	   p->dreh_impuls X(i) = 2.0 * xi1 * xi0 ;
-	   p->dreh_impuls Y(i) = 2.0 * xi2 * xi0 ;
-	   p->dreh_impuls Z(i) = 1.0 - 2.0 * xisq ;
+         p->dreh_impuls X(i) = 2.0 * xi1 * xi0 ;
+         p->dreh_impuls Y(i) = 2.0 * xi2 * xi0 ;
+         p->dreh_impuls Z(i) = 1.0 - 2.0 * xisq ;
 
-	   /* constrain the vector to be perpendicular 
-	      to the molecule */
+        /* constrain the vector to be perpendicular to the molecule */
 
-	   dot = SPRODN(p->dreh_impuls,i,p->achse,i);
+        dot = SPRODN(p->dreh_impuls,i,p->achse,i);
 
-	   p->dreh_impuls X(i) -= dot * p->achse X(i) ; 
-	   p->dreh_impuls Y(i) -= dot * p->achse Y(i) ; 
-	   p->dreh_impuls Z(i) -= dot * p->achse Z(i) ; 
+        p->dreh_impuls X(i) -= dot * p->achse X(i) ; 
+        p->dreh_impuls Y(i) -= dot * p->achse Y(i) ; 
+        p->dreh_impuls Z(i) -= dot * p->achse Z(i) ; 
 
-	   /* renormalize vector */	   
+        /* renormalize vector */	   
 
-	   osq = SPRODN(p->dreh_impuls,i,p->dreh_impuls,i);
-	   norm = sqrt( osq );
+        osq = SPRODN(p->dreh_impuls,i,p->dreh_impuls,i);
+        norm = sqrt( osq );
 
-	   p->dreh_impuls X(i) /= norm ;
-	   p->dreh_impuls Y(i) /= norm ;
-	   p->dreh_impuls Z(i) /= norm ;
+        p->dreh_impuls X(i) /= norm ;
+        p->dreh_impuls Y(i) /= norm ;
+        p->dreh_impuls Z(i) /= norm ;
 
-	   /* choose the magnitude of the angular momentum */
+        /* choose the magnitude of the angular momentum */
 
-	   osq = - 2.0 * p->traeg_moment[i] * TEMP
-	     * log( ran1( &dummy ) ) ;
-	   norm = sqrt( osq );
+        osq = - 2.0 * p->traeg_moment[i] * TEMP * log( ran1( &dummy ) ) ;
+        norm = sqrt( osq );
 
-	   p->dreh_impuls X(i) *= norm ;
-	   p->dreh_impuls Y(i) *= norm ;
-	   p->dreh_impuls Z(i) *= norm ;
-
-           if (NUMMER(p,i) >= 0) {
-              p->dreh_impuls X(i) = 0.0;
-              p->dreh_impuls Y(i) = 0.0;
-              p->dreh_impuls Z(i) = 0.0;
-           }
+        p->dreh_impuls X(i) *= norm ;
+        p->dreh_impuls Y(i) *= norm ;
+        p->dreh_impuls Z(i) *= norm ;
 
 #endif /* UNIAX */
 
@@ -198,29 +176,24 @@ void maxwell(real temp)
       }
    }
 
-   /* CPU could be empty */
-   if (0==natom) return;
-
-   tot_impuls.x /= natom;
-   tot_impuls.y /= natom;
+   tot_impuls.x = nactive_vec.x == 0 ? 0.0 : tot_impuls.x / nactive_vec.x;
+   tot_impuls.y = nactive_vec.y == 0 ? 0.0 : tot_impuls.y / nactive_vec.y;
 #ifndef TWOD
-   tot_impuls.z /= natom;
+   tot_impuls.z = nactive_vec.z == 0 ? 0.0 : tot_impuls.z / nactive_vec.z;
 #endif
 
-   /* Temperatur setzen */
+   /* correct center of mass momentum */
    for (k=0; k<ncells; ++k) {
       int i;
       cell *p;
       p = cell_array + CELLS(k);
-      for (i=0; i<p->n; ++i) { 
-         if (NUMMER(p,i) >= 0) {
-            p->impuls X(i) -= tot_impuls.x;
-            p->impuls Y(i) -= tot_impuls.y;
+      for (i=0; i<p->n; ++i) {
+         typ = p->sorte[i];
+         p->impuls X(i) -= tot_impuls.x * (restrictions + typ)->x;
+         p->impuls Y(i) -= tot_impuls.y * (restrictions + typ)->y;
 #ifndef TWOD
-            p->impuls Z(i) -= tot_impuls.z;
+         p->impuls Z(i) -= tot_impuls.z * (restrictions + typ)->z;
 #endif
-    
-	 }
       }
    }
 } 

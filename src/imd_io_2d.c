@@ -107,8 +107,8 @@ void read_atoms(str255 infilename)
   input->n_max=0;
   alloc_cell(input, 1);
 
-  natoms=0;
-  nactive=0;
+  natoms  = 0;
+  nactive = 0;
 #ifdef SHOCK
   do_maxwell=1;
 #else
@@ -190,10 +190,16 @@ void read_atoms(str255 infilename)
 #ifdef MPI
 
       to_cpu = cpu_coord(cellc);
-            if ((myid != to_cpu) && (1!=parallel_input)) {
+      if ((myid != to_cpu) && (1!=parallel_input)) {
         natoms++;
-        if (NUMMER(input,0)>=0) nactive++;
-        num_sort[input->sorte[0]]++;
+        /* we still have s == input->sorte[0] */
+        if (s < ntypes)
+          nactive += DIM;
+        else {
+          nactive += (int) (restrictions+s)->x;
+          nactive += (int) (restrictions+s)->y;
+        }
+        num_sort[SORTE(input,0)]++;
 	MPI_Send( input->ort,     DIM, MPI_REAL, to_cpu, ORT_TAG,    cpugrid);
 	MPI_Send( input->sorte,    1,  SHORT,    to_cpu, SORTE_TAG , cpugrid);
 	MPI_Send( input->masse,    1,  MPI_REAL, to_cpu, MASSE_TAG , cpugrid);
@@ -205,8 +211,14 @@ void read_atoms(str255 infilename)
 #endif
       } else if (to_cpu==myid) {  
         natoms++;
-        if (NUMMER(input,0)>=0) nactive++;
-        num_sort[input->sorte[0]]++;
+        /* we still have s == input->sorte[0] */
+        if (s < ntypes)
+          nactive += DIM;
+        else {
+          nactive += (int) (restrictions+s)->x;
+          nactive += (int) (restrictions+s)->y;
+        }
+        num_sort[SORTE(input,0)]++;
 	cellc = local_cell_coord(pos.x,pos.y);
 	move_atom(cellc, input, 0);
       }
@@ -214,8 +226,14 @@ void read_atoms(str255 infilename)
 #else /* not MPI */
 
       natoms++;
-      if (NUMMER(input,0)>=0) nactive++;
-      num_sort[input->sorte[0]]++;
+      /* we still have s == input->sorte[0] */
+      if (s < ntypes)
+        nactive += DIM;
+      else {
+        nactive += (int) (restrictions+s)->x;
+        nactive += (int) (restrictions+s)->y;
+      }
+      num_sort[SORTE(input,0)]++;
       move_atom(cellc, input, 0);
 
 #endif /* MPI */
@@ -363,15 +381,15 @@ void write_properties(int steps)
 #ifdef MC
   part_pot_energy = mc_epot_part();
 #else
-  part_pot_energy = tot_pot_energy / nactive;
-  part_kin_energy = tot_kin_energy / nactive;
+  part_pot_energy =       tot_pot_energy / natoms;
+  part_kin_energy = 2.0 * tot_kin_energy / nactive;
 #endif
   vol = volume / natoms;
 
   out = fopen(fname,"a");
   if (NULL == out) error("Cannot open properties file.");
 
-  fprintf(out,"%10.4e", (double)(steps * timestep));
+  fprintf(out,"%10.4e",  (double)(steps * timestep));
   fprintf(out," %10.4e", (double)part_pot_energy);
 #ifndef MC
   fprintf(out," %10.4e", (double)part_kin_energy);

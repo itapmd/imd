@@ -82,6 +82,9 @@ void read_atoms(str255 infilename)
     /* If CPU 0 found velocities in its data, no initialisation is done */
     MPI_Bcast( &natoms,       1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast( &nactive,      1, MPI_INT, 0, MPI_COMM_WORLD);
+#ifdef UNIAX
+    MPI_Bcast( &nactive_rot,  1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
     MPI_Bcast( num_sort, ntypes, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast( &do_maxwell,   1, MPI_INT, 0, MPI_COMM_WORLD);
     return;
@@ -114,8 +117,8 @@ void read_atoms(str255 infilename)
   input->n_max=0;
   alloc_cell(input, 1);
 
-  natoms=0;
-  nactive=0;
+  natoms  = 0;
+  nactive = 0;
 #ifdef SHOCK
   do_maxwell=1;
 #else
@@ -272,7 +275,17 @@ void read_atoms(str255 infilename)
       to_cpu = cpu_coord(cellc);
       if ((myid != to_cpu) && (1!=parallel_input)) {
         natoms++;
-        if (NUMMER(input,0)>=0) nactive++;
+        /* we still have s == input->sorte[0] */
+        if (s < ntypes) {
+          nactive += DIM;
+#ifdef UNIAX
+        nactive_rot += 2;
+#endif
+        } else {
+          nactive += (int) (restrictions+s)->x;
+          nactive += (int) (restrictions+s)->y;
+          nactive += (int) (restrictions+s)->z;
+        }
         num_sort[SORTE(input,0)]++;
 	MPI_Ssend( input->ort,     DIM, MPI_REAL,to_cpu,ORT_TAG,    cpugrid);
 #ifdef DISLOC
@@ -284,17 +297,30 @@ void read_atoms(str255 infilename)
 	MPI_Ssend( input->masse,  1, MPI_REAL , to_cpu, MASSE_TAG , cpugrid);
         MPI_Ssend( input->nummer, 1, INTEGER  , to_cpu, NUMMER_TAG, cpugrid);
 #ifdef UNIAX
-	MPI_Ssend( input->traeg_moment,  1, MPI_REAL , to_cpu, TRAEG_MOMENT_TAG , cpugrid);
+	MPI_Ssend( input->traeg_moment,  1, MPI_REAL , to_cpu, 
+                   TRAEG_MOMENT_TAG , cpugrid);
 	MPI_Ssend( input->achse,   DIM, MPI_REAL,to_cpu, ACHSE_TAG, cpugrid);
 	MPI_Ssend( input->shape, DIM, MPI_REAL,to_cpu, SHAPE_TAG, cpugrid);
-	MPI_Ssend( input->pot_well, DIM, MPI_REAL,to_cpu, POT_WELL_TAG, cpugrid);
-	MPI_Ssend( input->dreh_impuls, DIM, MPI_REAL,to_cpu, DREH_IMPULS_TAG, cpugrid);
+	MPI_Ssend( input->pot_well, DIM, MPI_REAL,to_cpu, POT_WELL_TAG, 
+                   cpugrid);
+	MPI_Ssend( input->dreh_impuls, DIM, MPI_REAL,to_cpu, DREH_IMPULS_TAG, 
+                   cpugrid);
 #endif
 #endif
 	MPI_Ssend( input->impuls,DIM, MPI_REAL, to_cpu, IMPULS_TAG, cpugrid);
       } else if (to_cpu==myid) {
         natoms++;  
-        if (NUMMER(input,0)>=0) nactive++;
+        /* we still have s == input->sorte[0] */
+        if (s < ntypes) {
+          nactive += DIM;
+#ifdef UNIAX
+        nactive_rot += 2;
+#endif
+        } else {
+          nactive += (int) (restrictions+s)->x;
+          nactive += (int) (restrictions+s)->y;
+          nactive += (int) (restrictions+s)->z;
+        }
         num_sort[SORTE(input,0)]++;
 	cellc = local_cell_coord(pos.x,pos.y,pos.z);
 	move_atom(cellc, input, 0);
@@ -303,7 +329,17 @@ void read_atoms(str255 infilename)
 #else /* not MPI */
 
       natoms++;  
-      if (NUMMER(input,0)>=0) nactive++;
+      /* we still have s == input->sorte[0] */
+      if (s < ntypes) {
+        nactive += DIM;
+#ifdef UNIAX
+        nactive_rot += 2;
+#endif
+      } else {
+        nactive += (int) (restrictions+s)->x;
+        nactive += (int) (restrictions+s)->y;
+        nactive += (int) (restrictions+s)->z;
+      }
       num_sort[SORTE(input,0)]++;
       move_atom(cellc, input, 0);
 
@@ -330,6 +366,10 @@ void read_atoms(str255 infilename)
     natoms = addnumber;
     MPI_Allreduce( &nactive, &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
     nactive = addnumber;
+#ifdef UNIAX
+    MPI_Allreduce( &nactive_rot, &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
+    nactive_rot = addnumber;
+#endif
     for (i=0; i<ntypes; i++) {
       MPI_Allreduce( &num_sort[i], &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
       num_sort[i] = addnumber;
@@ -337,8 +377,11 @@ void read_atoms(str255 infilename)
   } else { /* broadcast if serial io */
     MPI_Bcast( &natoms ,      1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast( &nactive,      1, MPI_INT, 0, MPI_COMM_WORLD);
+#ifdef UNIAX
+    MPI_Bcast( &nactive_rot,  1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
     MPI_Bcast( num_sort, ntypes, MPI_INT, 0, MPI_COMM_WORLD);
-  };
+  }
 
   /* If CPU 0 found velocities in its data, no initialisation is done */
   MPI_Bcast( &do_maxwell , 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -487,11 +530,11 @@ void write_properties(int steps)
 #ifdef MC
   part_pot_energy = mc_epot_part();
 #else
-  part_pot_energy =                tot_pot_energy / nactive;
+  part_pot_energy =       tot_pot_energy / natoms;
 #ifdef UNIAX
-  part_kin_energy = ( 2.0 / 5.0 )* tot_kin_energy / nactive;
+  part_kin_energy = 2.0 * tot_kin_energy / (nactive + nactive_rot);
 #else
-  part_kin_energy = ( 2.0 / 3.0 )* tot_kin_energy / nactive;
+  part_kin_energy = 2.0 * tot_kin_energy / nactive;
 #endif
 #endif
   vol = volume / natoms;

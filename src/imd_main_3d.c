@@ -124,8 +124,8 @@ void main_loop(void)
     if (steps > fbc_annealsteps) {
       nofbcsteps++; 
 
-      if((tot_kin_energy/nactive < fbc_ekin_threshold) ||
-         (nofbcsteps==fbc_waitsteps)) 
+      if ((2.0*tot_kin_energy/nactive < fbc_ekin_threshold) ||
+          (nofbcsteps==fbc_waitsteps)) 
       {
         nofbcsteps=0;
         for (l=0;l<vtypes;l++) {
@@ -164,7 +164,7 @@ void main_loop(void)
 #ifdef DEFORM
     if (steps > annealsteps) {
       deform_int++;
-      if ((tot_kin_energy/nactive < ekin_threshold) || 
+      if ((2.0*tot_kin_energy/nactive < ekin_threshold) || 
           (deform_int==max_deform_int)) {
         deform_sample();
         deform_int=0;

@@ -1,3 +1,4 @@
+
 /******************************************************************************
 *
 * imd_qc.c -- generates a quasicrystal
@@ -5,7 +6,6 @@
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
@@ -20,48 +20,40 @@
 
 void init_qc(void)    
 {
- integer p[3],q[3],hv,i,j;
- real    tau[3],period[3],tautl;
- integer np,no,na,nb,nc,nt;
+  integer p[3],q[3],hv,i,j;
+  real    tau[3],period[3],tautl;
+  integer np,no,na,nb,nc,nt;
 
- if (box_param.x != 0) {
-    appr[0] = box_param.x;
-    appr[1] = box_param.y; 
-    appr[2] = box_param.z;
- } else { /* backward compatibility */
-    appr[0] = (int) box_x.x;
-    appr[1] = (int) box_y.y; 
-    appr[2] = (int) box_z.z;
- }
+  if ((box_param.x==0) || (box_param.y==0) || (box_param.z==0))
+    error("box_param not set!");
 
- /* defining constants */
- tautl = (sqrt(5.0)+1.0)*0.5;
+  appr[0] = box_param.x;
+  appr[1] = box_param.y; 
+  appr[2] = box_param.z;
 
- if (0==myid)
-  printf("Approximant %d %d %d\n\n",appr[0],appr[1],appr[2]);
+  /* defining constants */
+  tautl = (sqrt(5.0)+1.0)*0.5;
 
- /* generate fibonacci numbers */
+  if (0==myid) printf("Approximant %d %d %d\n\n",appr[0],appr[1],appr[2]);
 
- for (j=0;j<3;j++)
-   {
+  /* generate fibonacci numbers */
+
+  for (j=0;j<3;j++) {
       p[j] =1;q[j]=0;hv=0;
-      for (i=0;i<appr[j];i++)
-	{
+      for (i=0;i<appr[j];i++) {
 	  hv=q[j];
           q[j]=p[j];
           p[j]=p[j]+hv;
-	}
+      }
       tau[j]=((real) p[j])/((real) q[j]);
       period[j]=4*(tautl*p[j]+q[j])/sqrt(tautl+2.0);
 
- if (0==myid)
-   {
-      printf("p(%1d)= %3d,q(%1d)= %3d,tau(%1d)= %3f\n",
-	     j,p[j],j,q[j],j,tau[j]);
-      printf("period in atomic units %10.5f\n",period[j]);
-   };
-
-   }
+      if (0==myid) {
+         printf("p(%1d)= %3d,q(%1d)= %3d,tau(%1d)= %3f\n",
+	        j,p[j],j,q[j],j,tau[j]);
+         printf("period in atomic units %10.5f\n",period[j]);
+      }
+  }
 
   /* analytical computation of size */
 
@@ -71,26 +63,25 @@ void init_qc(void)
 	p[0]*p[1]*q[2]+q[0]*q[1]*q[2]);
   na=np+no;nb=3*na;nc=2*np;nt=na+nb+nc;
 
- if (0==myid)
-   {
+  if (0==myid) {
      printf("\nnumber of prolate rhombohedra (p) %d\n",np);
      printf("number of oblate rhombohedra (o) %d\n",no);
      printf("number of vertex atoms (a) %d\n",na);
      printf("number of edge atoms (b) %d\n",nb);
      printf("number of large atoms (c) %d\n",nc);
      printf("total number %d\n\n ",nt);
-   };
+  }
   
- box_x.x=period[0];
- box_y.y=period[1];
- box_z.z=period[2];
+  box_x.x=period[0];
+  box_y.y=period[1];
+  box_z.z=period[2];
 
- box_x.y=0;
- box_x.z=0;
- box_y.x=0;
- box_y.z=0;
- box_z.x=0;
- box_z.y=0;
+  box_x.y=0;
+  box_x.z=0;
+  box_y.x=0;
+  box_y.z=0;
+  box_z.x=0;
+  box_z.y=0;
 
 }
 
@@ -136,7 +127,7 @@ void generate_qc( void )
   gam[0]=0.14;gam[1]=-0.25;gam[2]=0.33;gam[3]=-0.41;gam[4]=0.52;gam[5]=-0.33; 
   num_sort[0]=0;num_sort[1]=0;num_sort[2]=0;
 
-/* generating grid vectors */
+ /* generating grid vectors */
 
  for (j=0;j<3;j++)
    {
@@ -680,50 +671,37 @@ void sortin (int ifeld[])
       
       hv=1;
 
-      for (i = 0 ; i < p->n; i++) 
-        {
+      for (i = 0 ; i < p->n; i++) {
 	 dx = x - p->ort X(i);
 	 dy = y - p->ort Y(i);
 	 dz = z - p->ort Z(i);
 	 dist = dx*dx+dy*dy+dz*dz;
 	
-	 if (dist < 0.01) 
-	   {
+	 if (dist < 0.01) {
 	     hv=0;
 	     break;
-	   }
-        }
+	 }
+      }
 
-      if (hv == 1) 
-
-	{
-          sign=1;
-#if defined(FRAC) || defined(DEFORM)
-          if ((x>strip_width/2) && (x<box_x.x-strip_width/2) &&
-              (y>strip_width/2) && (y<box_y.y-strip_width/2) &&
-              (z>strip_width/2) && (z<box_z.z-strip_width/2))
-	    {
-              if ((x > strip_width) && (x < box_x.x-strip_width)) sign=-1;
-#endif
+      if (hv == 1) {
 
 	      natoms++;
-              if (sign>0) nactive++;
+              nactive +=3;
 
 	      input->n = 1;
 	      input->ort X(0) = x;
 	      input->ort Y(0) = y;
 	      input->ort Z(0) = z;
-	      input->nummer[0] = sign * natoms;
+	      input->nummer[0] = natoms;
 	      typ=ifeld[6]-1;
 	      
 	      if (fabs(x+2.*gmin.x) < 0.0001 && fabs(y+2.*gmin.y) < 0.0001 && 
 		  fabs(z+2.*gmin.z) < 0.0001) typ=0;
-	      
+
 	      if (typ == 1) typ=0; 
 	      if (typ == 2) typ=1;
 	
 	      input->sorte[0] = typ;
-	      
 #ifdef MPI
 	      cellc = local_cell_coord(input->ort X(0), input->ort Y(0), 
 				       input->ort Z(0));
@@ -731,38 +709,29 @@ void sortin (int ifeld[])
 #else
 	      move_atom(cellc, input, 0);
 #endif
-
-#if defined(FRAC) || defined(DEFORM)
-  }
-#endif
-
-	}
+      }
     }
 }
 
 /*****************************************************************************
 *
-* write the data to a file
+* write the data to a file (not really... :-))
 *
 ******************************************************************************/
 
 void adjust()
 {
-  int typ,i;
-  real x,y,z;
-  cell *p;
+  int k;
 
-#ifndef MPI
+  for (k=0; k<ncells; ++k) {
 
-  for (p = cell_array; 
-       p <= PTR_3D_V(cell_array,
-                     cell_dim.x-1,
-                     cell_dim.y-1,
-                     cell_dim.z-1,
-                     cell_dim);
-       ++p ) 
-    {
-      for (i = 0;i < p->n; ++i) {
+    cell *p;
+    int  i,typ;
+    real x,y,z;
+
+    p = cell_array + CELLS(k);
+
+    for (i=0; i<p->n; ++i) {
 	
 	x = p->ort X(i)-0.1;
 	y = p->ort Y(i)-0.1;
@@ -770,7 +739,6 @@ void adjust()
 	typ = p->sorte[i];
 	
 	/* fix the type of the first atom */
-
 	if (fabs(x+2.*gmin.x) < 0.0001 && fabs(y+2.*gmin.y) < 0.0001 && 
 	    fabs(z+2.*gmin.z) < 0.0001) 
         {
@@ -778,40 +746,10 @@ void adjust()
            p->sorte[i] = typ;
         }
         num_sort[typ]++;
-      }
     }
+  }
 }
 
-#else
-
-  int r,s,t;
-
-  for (r=1; r < cell_dim.x-1; ++r)
-      for (s=1; s < cell_dim.y-1; ++s)
-          for (t=1; t < cell_dim.z-1; ++t)
-          {
-            p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-	    
-	    for (i = 0;i < p->n; ++i) {
-	      
-	      x = p->ort X(i)-0.1;
-	      y = p->ort Y(i)-0.1;
-	      z = p->ort Z(i)-0.1;
-	      typ = p->sorte[i];
-	      
-	      /* fix the type of the first atom */
-	      
-	      if (fabs(x+2.*gmin.x) < 0.0001 && fabs(y+2.*gmin.y) < 0.0001 && 
-		  fabs(z+2.*gmin.z) < 0.0001) 
-              {
-                typ=0;
-                p->sorte[i] = typ;
-              }
-              num_sort[typ]++;
-	    }
-	  }
-}
-#endif
 
 
       
