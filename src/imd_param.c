@@ -868,7 +868,13 @@ void getparamfile(char *paramfname, int sim)
           ttbp_c1[i] = 0.37500;
           ttbp_c2[i] = 0.28125;
           ttbp_c3[i] = 0.00000;
-        };
+        }
+        else if (ttbp_sp[i] == 2) {
+          ttbp_c0[i] = 1.0;
+          ttbp_c1[i] = 0.0;
+          ttbp_c2[i] = 0.0;
+          ttbp_c3[i] = -1.0;
+        }
       };
     }
     else if (strcasecmp(token,"ttbp_potfile")==0) {
