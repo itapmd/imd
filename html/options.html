@@ -280,12 +280,12 @@ of the atoms in routine imd_maxwell within a strip
 value <TT>shock_speed</TT>. The velocity direction is in the positive 
 x-axis. 
 <P>
-There are several modes set by <TT>shock_mode</TT>. If <TT>shock_mode</TT>
-is set to 1 the left part of the sample with thickness
+There are several modes set by <TT>shock_mode</TT>: <P><UL><LI>If <TT>shock_mode</TT>
+is set to 1 then the left part of the sample with thickness
 <TT>shock_strip</TT> is slammed into the right
-one. If the parameter is set to 2 then two halves of the sample are
-slammed into oneanother. If it is set to 3 then the whole sample is
-slammed into a fixed wall.
+part. <LI>If the parameter is set to 2 then two halves of the sample are
+slammed into oneanother. <LI>If the parameter is set to 3 then the
+whole sample is slammed into a fixed wall.</UL>
 <P>
 <B>Important</B>: Currently, the atom velocities for the shockwave
 are set by the routine imd_maxwell, which is called at the start
