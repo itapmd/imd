@@ -44,13 +44,14 @@
 void calc_forces(void)
 {
   int  n, k;
-  real tmpvec1[4], tmpvec2[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  real tmpvec1[5], tmpvec2[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
   /* clear global accumulation variables */
   tot_pot_energy = 0.0;
-  virial         = 0.0;
-  vir_x          = 0.0;
-  vir_y          = 0.0;
+  virial = 0.0;
+  vir_xx = 0.0;
+  vir_yy = 0.0;
+  vir_xy = 0.0;
 
   /* clear per atom accumulation variables */
 #ifdef _OPENMP
@@ -84,7 +85,7 @@ void calc_forces(void)
   /* compute forces for all pairs of cells */
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y)
+#pragma omp parallel for schedule(dynamic) reduction(+:tot_pot_energy,virial,vir_xx,vir_yy,vir_xy)
 #endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
@@ -93,7 +94,8 @@ void calc_forces(void)
       pbc.x = P->ipbc[0] * box_x.x + P->ipbc[1] * box_y.x;
       pbc.y = P->ipbc[0] * box_x.y + P->ipbc[1] * box_y.y;
       do_forces(cell_array + P->np, cell_array + P->nq, pbc,
-                &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
+                &tot_pot_energy, &virial, &vir_xx, &vir_yy, &vir_zz,
+                                          &vir_yz, &vir_zx, &vir_xy);
     }
   }
 
@@ -106,7 +108,7 @@ void calc_forces(void)
   /* compute forces for remaining pairs of cells */
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y)
+#pragma omp parallel for schedule(dynamic)
 #endif
     for (k=npairs[n]; k<npairs2[n]; ++k) {
       vektor pbc;
@@ -117,7 +119,8 @@ void calc_forces(void)
       /* potential energy and virial are already complete;          */
       /* to avoid double counting, we update only the dummy tmpvec2 */
       do_forces(cell_array + P->np, cell_array + P->nq, pbc,
-                tmpvec2, tmpvec2+1, tmpvec2+2, tmpvec2+3, tmpvec2+4);
+                tmpvec2, tmpvec2+1, tmpvec2+2, tmpvec2+3, tmpvec2+4,
+                                    tmpvec2+5, tmpvec2+6, tmpvec2+7);
     }
   }
 
@@ -126,15 +129,17 @@ void calc_forces(void)
   /* sum up results of different CPUs */
   tmpvec1[0] = tot_pot_energy;
   tmpvec1[1] = virial;
-  tmpvec1[2] = vir_x;
-  tmpvec1[3] = vir_y;
+  tmpvec1[2] = vir_xx;
+  tmpvec1[3] = vir_yy;
+  tmpvec1[4] = vir_xy;
 
-  MPI_Allreduce( tmpvec1, tmpvec2, 4, REAL, MPI_SUM, cpugrid); 
+  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid); 
 
   tot_pot_energy = tmpvec2[0];
   virial         = tmpvec2[1];
-  vir_x          = tmpvec2[2];
-  vir_y          = tmpvec2[3];
+  vir_xx         = tmpvec2[2];
+  vir_yy         = tmpvec2[3];
+  vir_xy         = tmpvec2[4];
 
 }
 

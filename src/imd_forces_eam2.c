@@ -30,8 +30,9 @@
 
 #ifdef ASYMPOT
 
-void do_forces(cell *p, cell *q, vektor pbc, real *Epot, 
-               real *Virial, real *Vir_x, real *Vir_y, real *Vir_z)
+void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial, 
+               real *Vir_xx, real *Vir_yy, real *Vir_zz,
+               real *Vir_yz, real *Vir_zx, real *Vir_xy)
 {
   int i,j,k;
   vektor d;
@@ -194,12 +195,12 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
   if (is_short==1) printf("\n Short distance!\n");
 
 #ifdef P_AXIAL
-  *Vir_x  += tmp_vir_vect.x;
-  *Vir_y  += tmp_vir_vect.y;
+  *Vir_xx += tmp_vir_vect.x;
+  *Vir_yy += tmp_vir_vect.y;
   *Virial += tmp_vir_vect.x;
   *Virial += tmp_vir_vect.y;
 #ifndef TWOD
-  *Vir_z  += tmp_vir_vect.z;
+  *Vir_zz += tmp_vir_vect.z;
   *Virial += tmp_vir_vect.z;
 #endif
 #else
@@ -219,8 +220,9 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
 *
 ******************************************************************************/
 
-void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot, 
-                    real *Virial, real *Vir_x, real *Vir_y, real *Vir_z)
+void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot, real *Virial, 
+                    real *Vir_xx, real *Vir_yy, real *Vir_zz,
+                    real *Vir_yz, real *Vir_zx, real *Vir_xy)
 {
   int i,j,k;
   vektor d;
@@ -348,12 +350,12 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot,
   if (is_short==1) fprintf(stderr, "\n Short distance!\n");
 
 #ifdef P_AXIAL
-  *Vir_x  += tmp_vir_vect.x;
-  *Vir_y  += tmp_vir_vect.y;
+  *Vir_xx += tmp_vir_vect.x;
+  *Vir_yy += tmp_vir_vect.y;
   *Virial += tmp_vir_vect.x;
   *Virial += tmp_vir_vect.y;
 #ifndef TWOD
-  *Vir_z  += tmp_vir_vect.z;
+  *Vir_zz += tmp_vir_vect.z;
   *Virial += tmp_vir_vect.z;
 #endif
 #else

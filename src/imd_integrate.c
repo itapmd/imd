@@ -827,10 +827,10 @@ void move_atoms_npt_axial(void)
   vektor pfric, pifric, rfric, rifric, tvec;
 
   fnorm    = 0.0;
-  stress_x = (dyn_stress_x + vir_x) / volume;  dyn_stress_x = 0.0;
-  stress_y = (dyn_stress_y + vir_y) / volume;  dyn_stress_y = 0.0;
+  stress_x = (dyn_stress_x + vir_xx) / volume;  dyn_stress_x = 0.0;
+  stress_y = (dyn_stress_y + vir_yy) / volume;  dyn_stress_y = 0.0;
 #ifndef TWOD
-  stress_z = (dyn_stress_z + vir_z) / volume;  dyn_stress_z = 0.0;
+  stress_z = (dyn_stress_z + vir_zz) / volume;  dyn_stress_z = 0.0;
 #endif
 
   /* time evolution of xi */

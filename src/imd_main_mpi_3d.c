@@ -49,14 +49,17 @@
 void calc_forces(void)
 {
   int n, k;
-  real tmpvec1[5], tmpvec2[5] = {0.0, 0.0, 0.0, 0.0, 0.0};
+  real tmpvec1[8], tmpvec2[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
   /* clear global accumulation variables */
   tot_pot_energy = 0.0;
-  virial         = 0.0;
-  vir_x          = 0.0;
-  vir_y          = 0.0;
-  vir_z          = 0.0;
+  virial = 0.0;
+  vir_xx = 0.0;
+  vir_yy = 0.0;
+  vir_zz = 0.0;
+  vir_yz = 0.0;
+  vir_zx = 0.0;
+  vir_xy = 0.0;
 
   /* clear per atom accumulation variables */
 #ifdef _OPENMP
@@ -107,7 +110,7 @@ void calc_forces(void)
   /* compute forces for all pairs of cells */
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#pragma omp parallel for schedule(dynamic) reduction(+:tot_pot_energy,virial,vir_xx,vir_yy,vir_zz,vir_yz,vir_zx,vir_xy)
 #endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
@@ -117,7 +120,8 @@ void calc_forces(void)
       pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
       pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
       do_forces(cell_array + P->np, cell_array + P->nq, pbc,
-                &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
+                &tot_pot_energy, &virial, &vir_xx, &vir_yy, &vir_zz,
+                                          &vir_yz, &vir_zx, &vir_xy);
     }
   }
 
@@ -125,7 +129,7 @@ void calc_forces(void)
   /* complete neighbor tables for remaining pairs of cells */
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for
+#pragma omp parallel for schedule(dynamic)
 #endif
     for (k=npairs[n]; k<npairs2[n]; ++k) {
       vektor pbc;
@@ -140,11 +144,12 @@ void calc_forces(void)
 
   /* second force loop for covalent systems */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#pragma omp parallel for schedule(dynamic) reduction(+:tot_pot_energy,virial,vir_xx,vir_yy,vir_zz,vir_yz,vir_zx,vir_xy)
 #endif
   for (k=0; k<ncells; ++k) {
     do_forces2(cell_array + CELLS(k),
-               &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
+               &tot_pot_energy, &virial, &vir_xx, &vir_yy, &vir_zz,
+                                         &vir_yz, &vir_zx, &vir_xy);
   }
 #endif /* COVALENT */
 
@@ -156,7 +161,7 @@ void calc_forces(void)
   /* compute forces for remaining pairs of cells */
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#pragma omp parallel for schedule(dynamic)
 #endif
     for (k=npairs[n]; k<npairs2[n]; ++k) {
       vektor pbc;
@@ -168,7 +173,8 @@ void calc_forces(void)
       /* potential energy and virial are already complete;          */
       /* to avoid double counting, we update only the dummy tmpvec2 */
       do_forces(cell_array + P->np, cell_array + P->nq, pbc,
-                tmpvec2, tmpvec2+1, tmpvec2+2, tmpvec2+3, tmpvec2+4);
+                tmpvec2, tmpvec2+1, tmpvec2+2, tmpvec2+3, tmpvec2+4,
+                                    tmpvec2+5, tmpvec2+6, tmpvec2+7);
     }
   }
 #endif  /* not AR */
@@ -180,7 +186,7 @@ void calc_forces(void)
   /* second EAM2 loop over all cells pairs */
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#pragma omp parallel for schedule(dynamic) reduction(+:tot_pot_energy,virial,vir_xx,vir_yy,vir_zz,vir_yz,vir_zx,vir_xy)
 #endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
@@ -190,7 +196,8 @@ void calc_forces(void)
       pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
       pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
       do_forces_eam2(cell_array + P->np, cell_array + P->nq, pbc,
-                     &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
+                     &tot_pot_energy, &virial, &vir_xx, &vir_yy, &vir_zz,
+                                               &vir_yz, &vir_zx, &vir_xy);
     }
   }
 
@@ -202,7 +209,7 @@ void calc_forces(void)
   /* compute forces for remaining pairs of cells */
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#pragma omp parallel for schedule(dynamic)
 #endif
     for (k=npairs[n]; k<npairs2[n]; ++k) {
       vektor pbc;
@@ -214,7 +221,8 @@ void calc_forces(void)
       /* potential energy and virial are already complete;          */
       /* to avoid double counting, we update only the dummy tmpvec2 */
       do_forces_eam2(cell_array + P->np, cell_array + P->nq, pbc,
-                     tmpvec2, tmpvec2+1, tmpvec2+2, tmpvec2+3, tmpvec2+4);
+                     tmpvec2, tmpvec2+1, tmpvec2+2, tmpvec2+3, tmpvec2+4,
+                                         tmpvec2+5, tmpvec2+6, tmpvec2+7);
     }
   }
 #endif /* not AR */
@@ -224,17 +232,23 @@ void calc_forces(void)
   /* sum up results of different CPUs */
   tmpvec1[0] = tot_pot_energy;
   tmpvec1[1] = virial;
-  tmpvec1[2] = vir_x;
-  tmpvec1[3] = vir_y;
-  tmpvec1[4] = vir_z;
+  tmpvec1[2] = vir_xx;
+  tmpvec1[3] = vir_yy;
+  tmpvec1[4] = vir_zz;
+  tmpvec1[5] = vir_yz;
+  tmpvec1[6] = vir_zx;
+  tmpvec1[7] = vir_xy;
 
-  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid); 
+  MPI_Allreduce( tmpvec1, tmpvec2, 8, REAL, MPI_SUM, cpugrid); 
 
   tot_pot_energy = tmpvec2[0];
   virial         = tmpvec2[1];
-  vir_x          = tmpvec2[2];
-  vir_y          = tmpvec2[3];
-  vir_z          = tmpvec2[4];
+  vir_xx         = tmpvec2[2];
+  vir_yy         = tmpvec2[3];
+  vir_zz         = tmpvec2[4];
+  vir_yz         = tmpvec2[5];
+  vir_zx         = tmpvec2[6];
+  vir_xy         = tmpvec2[7];
 
 }
 

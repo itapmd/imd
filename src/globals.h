@@ -256,8 +256,9 @@ EXTERN real isq_tau_eta_rot INIT(0.0);
 #endif
 #endif
 
-/* diagonal of virial tensor */
-EXTERN real vir_x INIT(0.0), vir_y INIT(0.0), vir_z INIT(0.0);
+/* virial tensor */
+EXTERN real vir_xx INIT(0.0), vir_yy INIT(0.0), vir_zz INIT(0.0);
+EXTERN real vir_yz INIT(0.0), vir_zx INIT(0.0), vir_xy INIT(0.0);
 /* diagonal of stress tensor */
 EXTERN real stress_x INIT(0.0), stress_y INIT(0.0), stress_z INIT(0.0);
 EXTERN real dyn_stress_x INIT(0.0), dyn_stress_y INIT(0.0), dyn_stress_z INIT(0.0);

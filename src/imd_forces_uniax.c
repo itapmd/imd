@@ -19,9 +19,9 @@
 
 /* do_forces_uniax */
 
-void do_forces(cell *p, cell *q, vektor pbc, real *Epot, 
-               real *Virial, real *Vir_x, real *Vir_y, real *Vir_z)
-
+void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial, 
+               real *Vir_xx, real *Vir_yy, real *Vir_zz,
+               real *Vir_yz, real *Vir_zx, real *Vir_xy)
 {
   int i, j ;
   int jstart ;
@@ -141,9 +141,9 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
 
   }; /* for i */
 
-  *Vir_x  += tmp_vir_vect.x;
-  *Vir_y  += tmp_vir_vect.y;
-  *Vir_z  += tmp_vir_vect.z;
+  *Vir_xx += tmp_vir_vect.x;
+  *Vir_yy += tmp_vir_vect.y;
+  *Vir_zz += tmp_vir_vect.z;
   *Virial += tmp_virial ;
 
 } /* do_forces_uniax */

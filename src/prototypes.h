@@ -118,12 +118,12 @@ int     cpu_grid_coord(ivektor cellc);
 
 /* force computation - files imd_main_*.c, imd_forces_*.c */
 void calc_forces(void);
-void do_forces(cell*, cell*, vektor, real*, real*, real*, real*, real*);
+void do_forces(cell*, cell*, vektor, real*, real*, real*, real*, real*, real*, real*, real*);
 #ifdef COVALENT
-void do_forces2(cell*, real*, real*, real*, real*, real*);
+void do_forces2(cell*, real*, real*, real*, real*, real*, real*, real*, real*);
 #endif
 #ifdef EAM2
-void do_forces_eam2(cell*, cell*, vektor, real*, real*, real*, real*, real*);
+void do_forces_eam2(cell*, cell*, vektor, real*, real*, real*, real*, real*, real*, real*, real*);
 #endif
 #ifdef TERSOFF
 void init_tersoff(void);

@@ -35,9 +35,12 @@ void calc_forces(void)
   /* clear global accumulation variables */
   tot_pot_energy = 0.0;
   virial = 0.0;
-  vir_x  = 0.0;
-  vir_y  = 0.0;
-  vir_z  = 0.0;
+  vir_xx = 0.0;
+  vir_yy = 0.0;
+  vir_zz = 0.0;
+  vir_yz = 0.0;
+  vir_zx = 0.0;
+  vir_xy = 0.0;
 
   /* clear per atom accumulation variables */
 #ifdef _OPENMP
@@ -85,7 +88,7 @@ void calc_forces(void)
   /* compute forces for all pairs of cells */
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic) reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#pragma omp parallel for schedule(dynamic) reduction(+:tot_pot_energy,virial,vir_xx,vir_yy,vir_zz,vir_yz,vir_zx,vir_xy)
 #endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
@@ -95,14 +98,15 @@ void calc_forces(void)
       pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
       pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
       do_forces(cell_array + P->np, cell_array + P->nq, pbc,
-                &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
+                &tot_pot_energy, &virial, &vir_xx, &vir_yy, &vir_zz,
+                                          &vir_yz, &vir_zx, &vir_xy);
     }
   }
 
 #ifdef EAM2
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic) reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#pragma omp parallel for schedule(dynamic) reduction(+:tot_pot_energy,virial,vir_xx,vir_yy,vir_zz,vir_yz,vir_zx,vir_xy)
 #endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
@@ -112,17 +116,19 @@ void calc_forces(void)
       pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
       pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
       do_forces_eam2(cell_array + P->np, cell_array + P->nq, pbc,
-                     &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
+                     &tot_pot_energy, &virial, &vir_xx, &vir_yy, &vir_zz,
+                                               &vir_yz, &vir_zx, &vir_xy);
     }
   }
 #endif
 
 #ifdef COVALENT
 #ifdef _OPENMP
-#pragma omp parallel for schedule(dynamic) reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#pragma omp parallel for schedule(dynamic) reduction(+:tot_pot_energy,virial,vir_xx,vir_yy,vir_zz,vir_yz,vir_zx,vir_xy)
 #endif
   for (k=0; k<ncells; ++k) {
-    do_forces2(cell_array+k, &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
+    do_forces2(cell_array+k, &tot_pot_energy, &virial, 
+               &vir_xx, &vir_yy, &vir_zz, &vir_yz, &vir_zx, &vir_xy);
   }
 #endif
 

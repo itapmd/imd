@@ -31,7 +31,8 @@
 ******************************************************************************/
 
 void do_forces2(cell *p, real *Epot, real *Virial, 
-                real *Vir_x, real *Vir_y, real *Vir_z)
+                real *Vir_xx, real *Vir_yy, real *Vir_zz,
+                real *Vir_yz, real *Vir_zx, real *Vir_xy)
 {
   static real   *r2 = NULL, *r = NULL, *pot = NULL, *grad = NULL;
   static vektor *d  = NULL;
@@ -153,11 +154,11 @@ void do_forces2(cell *p, real *Epot, real *Virial,
   if (is_short==1) printf("\n Short distance!\n");
 
 #ifdef P_AXIAL
-  *Vir_x  += tmp_vir_vect.x;
+  *Vir_xx += tmp_vir_vect.x;
   *Virial += tmp_vir_vect.x;
-  *Vir_y  += tmp_vir_vect.y;
+  *Vir_yy += tmp_vir_vect.y;
   *Virial += tmp_vir_vect.y;
-  *Vir_z  += tmp_vir_vect.z;
+  *Vir_zz += tmp_vir_vect.z;
   *Virial += tmp_vir_vect.z;
 #else
   *Virial += tmp_virial;
@@ -176,7 +177,8 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 ******************************************************************************/
 
 void do_forces2(cell *p, real *Epot, real *Virial, 
-                real *Vir_x, real *Vir_y, real *Vir_z)
+                real *Vir_xx, real *Vir_yy, real *Vir_zz,
+                real *Vir_yz, real *Vir_zx, real *Vir_xy)
 {
   static real   *r = NULL, *fc = NULL, *dfc = NULL;
   static vektor *d  = NULL;
@@ -384,11 +386,11 @@ void do_forces2(cell *p, real *Epot, real *Virial,
   } /* i */
 
 #ifdef P_AXIAL
-  *Vir_x  += tmp_vir_vect.x;
+  *Vir_xx += tmp_vir_vect.x;
   *Virial += tmp_vir_vect.x;
-  *Vir_y  += tmp_vir_vect.y;
+  *Vir_yy += tmp_vir_vect.y;
   *Virial += tmp_vir_vect.y;
-  *Vir_z  += tmp_vir_vect.z;
+  *Vir_zz += tmp_vir_vect.z;
   *Virial += tmp_vir_vect.z;
 #else
   *Virial += tmp_virial;
