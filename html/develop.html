@@ -51,25 +51,34 @@ must be done:
      </UL></LI>
 <LI> if the force computation requires further data besides the atom 
      types and positions (like the direction of a non-pointlike
-     particle), these must be sent to the buffer cells.
-     For that purpose, the routine copy_atoms() in file imd_mpi_util.c
-     must be extended. It copies for all particles in a cell the data 
-     needed for the force computation into a communication buffer.
-     This buffer is unpacked with the routine process_buffer()
-     (see above), which must also be adapted. process_buffer() has 
-     two modes, FORCE and ATOMS. The first section of process_buffer 
-     is executed in both modes and unpacks items needed for the
-     force computation, whereas the second section, executed
-     only in ATOMS mode, unpacks the remaining items. All this
-     must be done in the right order!</LI>
-<LI> if the "force" includes also moments acting on non-pointlike
-     particles, it is recommended that the preprocessor symbol AR
-     is undefined in config.h. Otherwise, these generalized force
-     components would have to be sent back to the original cells
-     and added up there. There are plenty of routines in 
-     imd_mpi_main_3d.c that would have to be adapted in AR mode: 
-     copy_forces(), add_forces(), copy_atoms_ar(), move_atoms_ar(). 
-     AR mode is not (yet) available in 2d.
+     particle), these must be sent to the buffer cells.<BR>
+     There are two modes of operation:
+     <UL>
+     <LI>If AR is not defined (default in 2d, but not in 3d), which
+         is the simpler case, the routine copy_atoms() in file 
+         imd_mpi_util.c must be extended. It copies for all particles 
+         in a cell the data needed for the force computation into a 
+         communication buffer. This buffer is unpacked with the
+	 routine process_buffer() (see above), which must also be 
+         adapted. process_buffer() has two modes, FORCE and ATOMS. 
+         The first section of process_buffer is executed in both 
+         modes and unpacks items needed for the force computation, 
+         whereas the second section, executed only in ATOMS mode, 
+         unpacks the remaining items. All this must be done in the 
+         right order!</LI>
+     <LI>If AR is defined, the routines copy_atoms_ar(),
+	 move_atoms_ar() in file imd_mpi_main_3d.c must be
+         extended, so that they copy and move also the new
+         components needed for the force computation.
+         If the "force" includes also moments acting on non-pointlike
+         particles, it is recommended that the non-AR mode is used.
+         For this, the preprocessor symbol AR should be undefined in 
+         config.h. Otherwise, these generalized force components 
+         would have to be sent back to the original cells
+         and added up there. This is done by the routines 
+         copy_forces() and add_forces() in imd_mpi_util.c 
+         AR mode is not (yet) available in 2d.</LI>
+     </UL>
 </UL>
 
 Examples for such extensions of the particle data structure can
