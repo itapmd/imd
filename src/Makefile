@@ -212,6 +212,8 @@ ifeq (P4-gcc3,${IMDSYS})
   OPT_FLAGS	+= -O -march=pentium4 # -static
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
+  PAPI_INC      =  -I /opt/include
+  PAPI_LIBS     =  -L /opt/lib -lpapi -lperfctr
   export        MPICH_CC MPICH_CLINKER
 endif
 
