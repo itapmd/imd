@@ -541,6 +541,29 @@ void main_loop(void)
       write_config_select(0, "sqd", write_atoms_sqd, write_header_sqd);
 #endif
 
+    /* finish, if stop file is found */
+    if ((stop_int > 0) && (0==steps%stop_int)) {
+      int stop = 0;
+      if (0 == myid) {
+        FILE *testfile = fopen("stop","r");
+        if (NULL!=testfile) { 
+          fclose(testfile);
+          unlink("stop");
+          stop = 1;
+	}
+      }
+#ifdef MPI
+      MPI_Bcast( &stop, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
+      if (stop) {
+        if (myid == 0) printf("Stop file found after %d steps\n", steps);
+        write_config(-1,steps);
+        steps_max = steps;
+        finished = 1;
+        break;
+      }
+    }
+
     /* finish, if maxwalltime is reached */
     if (maxwalltime > 0) {
       double tdiff = difftime(time(&tend), tstart);
