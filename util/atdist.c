@@ -111,7 +111,7 @@ int read_atoms_dist(char *fname)
 void axis_projections_3d()
 {
   float *histx, *histy, *histz;
-  int dimxy, dimxyz, t, i, j, k, l;
+  int   t, i, j, k, l;
 
   histx = (float *) calloc( ntypes * dimx, sizeof(float) );
   histy = (float *) calloc( ntypes * dimy, sizeof(float) );
@@ -119,37 +119,34 @@ void axis_projections_3d()
   if ((histx==NULL) || (histy==NULL) || (histx==NULL))
     error("out of memory");
 
-  dimxy  = dimx  * dimy;
-  dimxyz = dimxy * dimz;
-
   for (t=0; t<ntypes; t++)
     for (i=0; i<dimx; i++)
       for (j=0; j<dimy; j++)
         for (k=0; k<dimz; k++) {
-          l = t * dimxyz + i * dimxy + j * dimx + k;
-          histx[ntypes * dimx + i] += atoms_dist[l];
-          histy[ntypes * dimy + j] += atoms_dist[l];
-          histz[ntypes * dimz + k] += atoms_dist[l];
+          l = ((t * dimx + i) * dimy + j) * dimz + k;
+          histx[t * dimx + i] += atoms_dist[l];
+          histy[t * dimy + j] += atoms_dist[l];
+          histz[t * dimz + k] += atoms_dist[l];
 	}
 
   printf("# Projection on x-Axis:\n");
   for (i=0; i<dimx; i++) {
     printf("%d",i);
-    for (t=0; t<ntypes; t++) printf(" %e", histx[ntypes * dimx + i]);
+    for (t=0; t<ntypes; t++) printf(" %e", histx[t * dimx + i]);
     printf("\n");
   }
 
   printf("\n\n# Projection on y-Axis:\n");
   for (i=0; i<dimy; i++) {
     printf("%d",i);
-    for (t=0; t<ntypes; t++) printf(" %e", histy[ntypes * dimy + i]);
+    for (t=0; t<ntypes; t++) printf(" %e", histy[t * dimy + i]);
     printf("\n");
   }
 
   printf("\n\n# Projection on z-Axis:\n");
   for (i=0; i<dimz; i++) {
     printf("%d",i);
-    for (t=0; t<ntypes; t++) printf(" %e", histz[ntypes * dimz + i]);
+    for (t=0; t<ntypes; t++) printf(" %e", histz[t * dimz + i]);
     printf("\n");
   }
 }
@@ -164,24 +161,23 @@ void xy_pictures_3d(char *infile, int min, int max)
 {
   float *hist, fmax;
   char  *pix, *pix2;
-  int dimxy, dimxyz, t, i, j, k, l;
-  FILE *out;
-  char fname[255]; 
-
-  hist = (float *) calloc( ntypes * dimx * dimy, sizeof(float) );
-  pix  = (char  *) calloc( ntypes * dimx * dimy, sizeof(char ) );
-  pix2 = (char  *) calloc( 3      * dimx * dimy, sizeof(char ) );
-  if ((hist==NULL) || (pix==NULL) || (pix2==NULL)) error("out of memory");
+  int   dimxy, t, i, j, k, l;
+  FILE  *out;
+  char  fname[255]; 
 
   dimxy  = dimx  * dimy;
-  dimxyz = dimxy * dimz;
+  hist = (float *) calloc( ntypes * dimxy, sizeof(float) );
+  pix  = (char  *) calloc( ntypes * dimxy, sizeof(char ) );
+  pix2 = (char  *) calloc( 3      * dimxy, sizeof(char ) );
+  if ((hist==NULL) || (pix==NULL) || (pix2==NULL)) error("out of memory");
+
 
   for (t=0; t<ntypes; t++)
     for (i=0; i<dimx; i++)
       for (j=0; j<dimy; j++)
         for (k=min; k<max+1; k++) {
-          l = t * dimxyz + i * dimxy + j * dimx + k;
-          hist[t * dimxy + dimx * i + j] += atoms_dist[l];
+          l = ((t * dimx + i) * dimy + j) * dimz + k;
+          hist[(t * dimy + j) * dimx + i] += atoms_dist[l];
 	}
 
   /* renormalize atoms distribution for pgm files*/
@@ -220,10 +216,10 @@ void xy_pictures_3d(char *infile, int min, int max)
           if (k!=t) pix2[3*i+k] -= (char) (hist[t*dimxy+i]*fmax);
     /* write color picture */
     sprintf(fname,"%s.xy.ppm",infile);
-    if (NULL==(out=fopen(fname,"w"))) error("Cannot open pgm-file.");
+    if (NULL==(out=fopen(fname,"w"))) error("Cannot open ppm-file.");
     fprintf(out,"P6\n%d %d\n255\n", dimx, dimy);
     if (3*dimxy!=fwrite(pix2,sizeof(char),3*dimxy,out))
-      error("Cannot write pgm-file.");
+      error("Cannot write ppm-file.");
     fclose(out);
   }
 }
@@ -238,25 +234,22 @@ void xz_pictures_3d(char *infile, int min, int max)
 {
   float *hist, fmax;
   char  *pix, *pix2;
-  int dimxy, dimxz, dimxyz, t, i, j, k, l;
-  FILE *out;
-  char fname[255]; 
+  int   dimxz, t, i, j, k, l;
+  FILE  *out;
+  char  fname[255]; 
 
-  hist = (float *) calloc( ntypes * dimx * dimz, sizeof(float) );
-  pix  = (char  *) calloc( ntypes * dimx * dimz, sizeof(char ) );
-  pix2 = (char  *) calloc( 3      * dimx * dimz, sizeof(char ) );
-  if ((hist==NULL) || (pix==NULL) || (pix2==NULL)) error("out of memory");
-
-  dimxy  = dimx  * dimy;
   dimxz  = dimx  * dimz;
-  dimxyz = dimxy * dimz;
+  hist = (float *) calloc( ntypes * dimxz, sizeof(float) );
+  pix  = (char  *) calloc( ntypes * dimxz, sizeof(char ) );
+  pix2 = (char  *) calloc( 3      * dimxz, sizeof(char ) );
+  if ((hist==NULL) || (pix==NULL) || (pix2==NULL)) error("out of memory");
 
   for (t=0; t<ntypes; t++)
     for (i=0; i<dimx; i++)
       for (j=min; j<max+1; j++)
-        for (k=min; k<max+1; k++) {
-          l = t * dimxyz + i * dimxy + j * dimx + k;
-          hist[t * dimxz + dimx * i + k] += atoms_dist[l];
+        for (k=0; k<dimz; k++) {
+          l = ((t * dimx + i) * dimy + j) * dimz + k;
+          hist[(t * dimz + k) * dimx + i] += atoms_dist[l];
 	}
 
   /* renormalize atoms distribution for pgm files*/
@@ -295,10 +288,10 @@ void xz_pictures_3d(char *infile, int min, int max)
           if (k!=t) pix2[3*i+k] -= (char) (hist[t*dimxz+i]*fmax);
     /* write color picture */
     sprintf(fname,"%s.xz.ppm",infile,t);
-    if (NULL==(out=fopen(fname,"w"))) error("Cannot open pgm-file.");
+    if (NULL==(out=fopen(fname,"w"))) error("Cannot open ppm-file.");
     fprintf(out,"P6\n%d %d\n255\n", dimx, dimz);
     if (3*dimxz!=fwrite(pix2,sizeof(char),3*dimxz,out))
-      error("Cannot write pgm-file.");
+      error("Cannot write ppm-file.");
     fclose(out);
   }
 }
@@ -313,25 +306,22 @@ void yz_pictures_3d(char *infile, int min, int max)
 {
   float *hist, fmax;
   char  *pix, *pix2;
-  int dimxy, dimyz, dimxyz, t, i, j, k, l;
-  FILE *out;
-  char fname[255]; 
+  int   dimyz, t, i, j, k, l;
+  FILE  *out;
+  char  fname[255]; 
 
-  hist = (float *) calloc( ntypes * dimy * dimz, sizeof(float) );
-  pix  = (char  *) calloc( ntypes * dimy * dimz, sizeof(char ) );
-  pix2 = (char  *) calloc( 3      * dimy * dimz, sizeof(char ) );
-  if ((hist==NULL) || (pix==NULL) || (pix2==NULL)) error("out of memory");
-
-  dimxy  = dimx  * dimy;
   dimyz  = dimy  * dimz;
-  dimxyz = dimxy * dimz;
+  hist = (float *) calloc( ntypes * dimyz, sizeof(float) );
+  pix  = (char  *) calloc( ntypes * dimyz, sizeof(char ) );
+  pix2 = (char  *) calloc( 3      * dimyz, sizeof(char ) );
+  if ((hist==NULL) || (pix==NULL) || (pix2==NULL)) error("out of memory");
 
   for (t=0; t<ntypes; t++)
     for (i=min; i<max+1; i++)
       for (j=0; j<dimy; j++)
         for (k=0; k<dimz; k++) {
-          l = t * dimxyz + i * dimxy + j * dimx + k;
-          hist[t * dimyz + dimy * j + k] += atoms_dist[l];
+          l = ((t * dimx + i) * dimy + j) * dimz + k;
+          hist[(t * dimz + k) * dimy + j] += atoms_dist[l];
 	}
 
   /* renormalize atoms distribution for pgm files*/
@@ -370,10 +360,10 @@ void yz_pictures_3d(char *infile, int min, int max)
           if (k!=t) pix2[3*i+k] -= (char) (hist[t*dimyz+i]*fmax);
     /* write color picture */
     sprintf(fname,"%s.yz.ppm",infile);
-    if (NULL==(out=fopen(fname,"w"))) error("Cannot open pgm-file.");
+    if (NULL==(out=fopen(fname,"w"))) error("Cannot open ppm-file.");
     fprintf(out,"P6\n%d %d\n255\n", dimy, dimz);
     if (3*dimyz!=fwrite(pix2,sizeof(char),3*dimyz,out))
-      error("Cannot write pgm-file.");
+      error("Cannot write ppm-file.");
     fclose(out);
   }
 }
@@ -392,16 +382,24 @@ void pictures_2d(char *infile)
   FILE *out;
   char fname[255]; 
 
-  pix  = (char  *) calloc( ntypes * dimx * dimy, sizeof(char) );
-  pix2 = (char  *) calloc( 3      * dimx * dimy, sizeof(char) );
+  dimxy = dimx * dimy;
+  hist = (float *) calloc( ntypes * dimxy, sizeof(float) );
+  pix  = (char  *) calloc( ntypes * dimxy, sizeof(char ) );
+  pix2 = (char  *) calloc( 3      * dimxy, sizeof(char ) );
   if ((hist==NULL) || (pix==NULL) || (pix2==NULL)) error("out of memory");
-  dimxy  = dimx  * dimy;
+
+  for (t=0; t<ntypes; t++)
+    for (i=0; i<dimx; i++)
+      for (j=0; j<dimy; j++) {
+          l =  (t * dimx + i) * dimy + j;
+          hist[(t * dimy + j) * dimx + i] = atoms_dist[l];
+	}
 
   /* renormalize atoms distribution for pgm files*/
   fmax = 0.0;
-  for (i=0; i<ntypes*dimxy; i++) fmax = MAX(fmax,atoms_dist[i]);
+  for (i=0; i<ntypes*dimxy; i++) fmax = MAX(fmax,hist[i]);
   fmax = 255/fmax;
-  for (i=0; i<ntypes*dimxy; i++) pix[i] = (char) (255-atoms_dist[i]*fmax);
+  for (i=0; i<ntypes*dimxy; i++) pix[i] = (char) (255-hist[i]*fmax);
 
   /* write pgm files */
   for (t=0; t<ntypes; t++) {
@@ -421,7 +419,7 @@ void pictures_2d(char *infile)
     fmax = 0.0;
     for (i=0; i<dimxy; i++) {
       float tmp=0.0;
-      for (t=0; t<ntypes; t++) tmp += atoms_dist[t*dimxy+i];
+      for (t=0; t<ntypes; t++) tmp += hist[t*dimxy+i];
       fmax = MAX(fmax,tmp);
     }
     fmax = 255/fmax;
@@ -429,13 +427,13 @@ void pictures_2d(char *infile)
     for (t=0; t<ntypes; t++) 
       for (i=0; i<dimxy; i++) 
         for (k=0; k<3; k++) 
-          if (k!=t) pix2[3*i+k] -= (char) (atoms_dist[t*dimxy+i]*fmax);
+          if (k!=t) pix2[3*i+k] -= (char) (hist[t*dimxy+i]*fmax);
     /* write color picture */
     sprintf(fname,"%s.ppm",infile);
-    if (NULL==(out=fopen(fname,"w"))) error("Cannot open pgm-file.");
+    if (NULL==(out=fopen(fname,"w"))) error("Cannot open ppm-file.");
     fprintf(out,"P6\n%d %d\n255\n", dimx, dimy);
     if (3*dimxy!=fwrite(pix2,sizeof(char),3*dimxy,out))
-      error("Cannot write pgm-file.");
+      error("Cannot write ppm-file.");
     fclose(out);
   }
 }
