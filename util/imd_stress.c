@@ -1,14 +1,23 @@
+
 /******************************************************************************
 *
-* imd_stress -- calculates stress field 
-*         
-*               Voronoi analysis according to Allen, Tildesley
-*               Parameter reading and cell decomposition from imd_pair
+* IMD -- The ITAP Molecular Dynamics Program
+*
+* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
+*
+* imd_stress -- calculates stress field 
+*         
+* Voronoi analysis according to Allen, Tildesley
+* Parameter reading and cell decomposition from imd_pair
+*
+******************************************************************************/
+
+/******************************************************************************
 * $Revision$
 * $Date$
 ******************************************************************************/

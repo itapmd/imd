@@ -1,9 +1,18 @@
+
+/******************************************************************************
+*
+* IMD -- The ITAP Molecular Dynamics Program
+*
+* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* University of Stuttgart, D-70550 Stuttgart
+*
+******************************************************************************/
+
 /****************************************************************************
 *
 * mklj makes an binary lj-parameterfile
 *
 ******************************************************************************/
-
 
 /* Quick and dirty -- needs lots of work */
 

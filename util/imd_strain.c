@@ -1,6 +1,15 @@
 
 /******************************************************************************
 *
+* IMD -- The ITAP Molecular Dynamics Program
+*
+* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* University of Stuttgart, D-70550 Stuttgart
+*
+******************************************************************************/
+
+/******************************************************************************
+*
 * imd_strain -- calculate strain tensor
 *
 * uses cell division routines of imd_pair

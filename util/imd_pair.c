@@ -1,11 +1,16 @@
 
 /******************************************************************************
 *
+* IMD -- The ITAP Molecular Dynamics Program
+*
+* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* University of Stuttgart, D-70550 Stuttgart
+*
+******************************************************************************/
+
+/******************************************************************************
+*
 * imd_pair -- calculate pair distibution functions
-*
-* Author: J. Stadler, ITAP, University of Stuttgart
-*
-* converted to new parameter format, added TWOD support (20.10.98, F. Gaehler)
 *
 ******************************************************************************/
 
