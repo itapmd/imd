@@ -12,7 +12,7 @@ Some options can be part of the <A HREF="compiling.html">compilation
 target</A>, others can only be invoked by <A HREF="compiling.html"> 
 preprocessor flags</A>.
 <P>
-We give here a list of all possible options, and describe here what 
+We give here a list of all possible options, and describe what 
 their purpose is and how they are used.
 
 <H2>Possible Options in the Compilation Target</H2>
@@ -21,47 +21,49 @@ their purpose is and how they are used.
 
 <TR ALIGN="LEFT">
   <TD WIDTH=120><A HREF="#2d">2d</A></TD>
-  <TD WIDTH=120><A HREF="#msqd">msqd</A></TD>
+  <TD WIDTH=120><A HREF="#4point">4point</A></TD>
+  <TD WIDTH=120><A HREF="#avpos">avpos</A></TD>
+  <TD WIDTH=120><A HREF="#mono, binary">binary</A></TD>
   <TD WIDTH=120><A HREF="#correl">correl</A></TD>
-  <TD WIDTH=120><A HREF="#disloc">disloc</A></TD>
-  <TD WIDTH=120><A HREF="#homdef">homdef</A></TD>
-  <TD WIDTH=120><A HREF="#deform">deform</A></TD>
+  <TD WIDTH=120><A HREF="#debug">debug</A></TD>
 </TR>
 <TR ALIGN="LEFT">
-  <TD WIDTH=120><A HREF="#FBC">fbc</A></TD>
-  <TD WIDTH=120><A HREF="#sock">sock</A></TD>
+  <TD WIDTH=120><A HREF="#deform">deform</A></TD>
+  <TD WIDTH=120><A HREF="#disloc">disloc</A></TD>
   <TD WIDTH=120><A HREF="#eam">eam</A></TD>
-  <TD WIDTH=120><A HREF="#covalent">ttbp</A></TD>
-  <TD WIDTH=120><A HREF="#covalent">tersoff</A></TD>
+  <TD WIDTH=120><A HREF="#efilter">efilter</A></TD>
+  <TD WIDTH=120><A HREF="#epitax">epitax</A></TD>
   <TD WIDTH=120><A HREF="#ewald">ewald</A></TD>
 </TR>
 <TR ALIGN="LEFT">
-  <TD WIDTH=120><A HREF="#uniax">uniax</A></TD>
-  <TD WIDTH=120><A HREF="#pacx">pacx</A></TD>
-  <TD WIDTH=120><A HREF="#shock">shock</A></TD>
-  <TD WIDTH=120><A HREF="#transport">transport</A></TD>
-  <TD WIDTH=120><A HREF="#stress_tens">stress</A></TD>
+  <TD WIDTH=120><A HREF="#FBC">fbc</A></TD>
   <TD WIDTH=120><A HREF="#fnorm">fnorm</A></TD>
-</TR>
-<TR ALIGN="LEFT">
-  <TD WIDTH=120><A HREF="#efilter">efilter</A></TD>
-  <TD WIDTH=120><A HREF="#avpos">avpos</A></TD>
-  <TD WIDTH=120><A HREF="#quasi">quasi</A></TD>
-  <TD WIDTH=120><A HREF="#ordpar">ordpar</A></TD>
-  <TD WIDTH=120><A HREF="#monolj">monolj</A></TD>
-  <TD WIDTH=120><A HREF="#mono, binary">mono</A></TD>
-</TR>
-<TR ALIGN="LEFT">
-  <TD WIDTH=120><A HREF="#mono, binary">binary</A></TD>
-  <TD WIDTH=120><A HREF="#single">single</A></TD>
-  <TD WIDTH=120><A HREF="#4point">4point</A></TD>
   <TD WIDTH=120><A HREF="#hpo">hpo</A></TD>
-  <TD WIDTH=120><A HREF="#debug">debug</A></TD>
-  <TD WIDTH=120><A HREF="#timing">timing</A></TD>
+  <TD WIDTH=120><A HREF="#homdef">homdef</A></TD>
+  <TD WIDTH=120><A HREF="#mono, binary">mono</A></TD>
+  <TD WIDTH=120><A HREF="#monolj">monolj</A></TD>
 </TR>
 <TR ALIGN="LEFT">
+  <TD WIDTH=120><A HREF="#msqd">msqd</A></TD>
+  <TD WIDTH=120><A HREF="#ordpar">ordpar</A></TD>
+  <TD WIDTH=120><A HREF="#pacx">pacx</A></TD>
   <TD WIDTH=120><A HREF="#prof">prof</A></TD>
-  <TD WIDTH=120><A HREF="#epitax">epitax</A></TD>
+  <TD WIDTH=120><A HREF="#quasi">quasi</A></TD>
+  <TD WIDTH=120><A HREF="#single">single</A></TD>
+</TR>
+<TR ALIGN="LEFT">
+  <TD WIDTH=120><A HREF="#sock">sock</A></TD>
+  <TD WIDTH=120><A HREF="#shock">shock</A></TD>
+  <TD WIDTH=120><A HREF="#spring">spring</A></TD>
+  <TD WIDTH=120><A HREF="#covalent">stiweb</A></TD>
+  <TD WIDTH=120><A HREF="#stress_tens">stress</A></TD>
+  <TD WIDTH=120><A HREF="#covalent">tersoff</A></TD>
+</TR>
+<TR ALIGN="LEFT">
+  <TD WIDTH=120><A HREF="#timing">timing</A></TD>
+  <TD WIDTH=120><A HREF="#transport">transport</A></TD>
+  <TD WIDTH=120><A HREF="#covalent">ttbp</A></TD>
+  <TD WIDTH=120><A HREF="#uniax">uniax</A></TD>
 </TR>
 
 </TABLE>
@@ -301,12 +303,23 @@ Provide support for sockets (for visualization).
 <a href=eam2.html>Use Embedded Atom Method potentials.</a>
 
 <A NAME="covalent">
-<P><LI><B>ttbp</B> and <B>tersoff</B><P>
+<P><LI><B>ttbp</B>, <B>stiweb</B>, and <B>tersoff</B><P>
 <A HREF="covalent.html">Use many-body potentials.</A>
 
 <A NAME="ewald">
 <P><LI><B>ewald</B><P>
 <A HREF="ewald.html">Use Coulomb potential with Ewald summation method.</A>
+
+<A NAME="spring">
+<P><LI><B>spring</B><P> Use harmonic potential. The spring constants
+<I>k<SUB>ij</SUB></I> are specified by the IMD parameter
+<TT>spring_const</TT>. In the parameter file, they have to be given in
+a line in the format <I>k<SUB>01</SUB></I> <I>k<SUB>02</SUB></I> ...
+<I>k<SUB>0(n-1)</SUB></I> <I>k<SUB>12</SUB></I>
+... <I>k<SUB>(n-2)(n-1)</SUB></I> where <I>n</I> is
+<TT>ntypes</TT>. All diagonal spring constants <I>k<SUB>ii</SUB></I> are
+set equal to zero. The option spring can be used for simulations with
+the shell model.
 
 
 <A NAME="uniax">
@@ -412,17 +425,20 @@ where <TT>&lt;n&gt;</TT> is a running number. This happens every
 ef_checkpt_int steps.
 
 <A NAME="avpos">
-<P><LI><B> avpos </B><P>
-This option enables to compute the average position of the atoms
-during a time interval. The averaging begins at step
-<TT>avpos_start</TT> (default 0) and ends at step
+<P><LI><B> avpos </B><P> This option enables IMD to compute the
+average position of the atoms during a time interval. The averaging
+begins at step <TT>avpos_start</TT> (default 0) and ends at step
 <TT>avpos_end</TT> (default <TT>maxsteps</TT>). Every
-<TT>avpos_int</TT> steps, the averaged positions are written in an 
-output file <TT>&lt;outfile&gt;.&lt;n&gt;.avp</TT>. The output file further 
-contains the average potential energy of the atoms. After writing the
-output, the averaging begins with the actual atom positions. The number of
-steps between additions of coordinates is specified by the parameter
-<TT>avpos_res</TT>.
+<TT>avpos_int</TT> steps, the averaged positions are written in an
+output file <TT>&lt;outfile&gt;.&lt;n&gt;.avp</TT>. The output file
+further contains the average potential energy of the atoms. After
+writing the output, the averaging begins with the actual atom
+positions. The number of steps between additions of coordinates is
+specified by the parameter <TT>avpos_res</TT>. For each avpos output
+file, an avpos iteration file is written which has the name
+<TT>&lt;outfile&gt;.&lt;n&gt;.avp.itr</TT> and contains the actual box
+vectors. When an NPT ensemble is used, the averaged box vectors are
+written in this file.
 
 <A NAME="quasi">
 <P><LI><B>quasi</B><P>

@@ -126,16 +126,21 @@ For more details take a look at the description of the
 
 <A NAME="TTBPPOT">
 
-<H2>Stillinger-Weber Potentials (option ttbp)</H2>
+<H2>Stillinger-Weber Potentials (options stiweb and ttbp)</H2>
 
-The pair interaction potential is used as described for 
-<A HREF="#PAIRPOT">pair potentials</A>. The three-body interaction 
+For the option stiweb, the Stillinger-Weber potential is computed
+analytically in the IMD implementation. The potential parameters have
+to be given in the parameter file.<P> 
+
+The option ttbp uses a general pair interaction potential which has to
+be given in a potential table as described for simulations with <A
+HREF="#PAIRPOT">pair potentials</A>. The three-body interaction
 potential is computed from parameters. However, a cutoff function has
-to be specified. Its possible input formats can be the same as for the 
+to be specified. Its possible input formats can be the same as for the
 pair potential.
 <p>
 For more details take a look at the description of the 
-<a href="covalent.html">TTBP implementation</a>.
+<a href="covalent.html">STIWEB and TTBP implementation</a>.
 
 <A NAME="TERSOFFPOT">
 
@@ -158,6 +163,15 @@ potential can be used.<P>
  
 For more details take a look at the description ot the
 <A HREF="ewald.html">EWALD implementation</A>.
+
+<A NAME="SPRING">
+
+<H2>Harmonic Potential (option spring)</H2>
+
+This potential can be used together with Coulomb potentials and other
+short range pair potentials in the shell model. Only the spring
+constants for atoms of different type have to be specified in the
+paramter file. 
 
 <A NAME="GAYBERNEPOT">
 

@@ -239,11 +239,23 @@ core_potential_file   # Core-core Pair Potential, tabulated in r**2
 embedding_energy_file # Embedding Energy Function, tabulated in rho
 atomic_e-density_file # Electron Density, tabulated in r**2
 
-# parameters for <A href="covalent.html">TTBP</A> (2 and 3 body potential)
+# parameters for <A href="covalent.html#ttbp">TTBP</A> (2 and 3 body potential)
 neigh_len       # maxmimum number of neighbors (for memory allocs)
 ttbp_constant   # force constants (for all i=0 ... (ntypes-1))
 ttbp_sp         # hybridization type (for all i=0 ... (ntypes-1))
 ttbp_potfile    # potential file for cutoff function
+
+# parameters for <A href="covalent.html#stiweb">STIWEB</A> (Stillinger-Weber potential)
+neigh_len       # maxmimum number of neighbors (for memory allocs)
+stiweb_a        # parameters for the Stillinger-Weber potential
+stiweb_b        # for all (i=0 ... (ntypes-1))
+stiweb_p
+stiweb_q
+stiweb_a1
+stiweb_de
+stiweb_a2
+stiweb_ga
+stiweb_la
 
 # parameters for <A href="covalent.html#tersoff">TERSOFF</A> (Tersoff potential)
 neigh_len       # maxmimum number of neighbors (for memory allocs)
@@ -266,6 +278,9 @@ charge          # atomic charges (for all i=0 ...  (ntypes-1))
 ew_kappa        # parameter kappa
 ew_nmax         # determines number of image simulation boxes
 ew_kmax         # determines number of k-vectors (3d integer vector)
+
+# parameters for SPRING (Harmonic potential)
+spring_const    # spring constants for atoms of different type
 
 # parameters for <a href=uniax.html>UNIAX</a> 
 # (Gay-Berne potential for uniaxial molecules)

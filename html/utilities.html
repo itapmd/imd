@@ -14,22 +14,25 @@ directory.
 <TABLE Border=0 Cellpadding=4 >
 
 <TR ALIGN="LEFT">
-  <TD WIDTH=180><A HREF="#imd_power">imd_power</A>
-  <TD WIDTH=180><A HREF="#imd_mklj">imd_mklj</A>
   <TD WIDTH=180><A HREF="#cutpot">cutpot</A>
-  <TD WIDTH=180><A HREF="#imd_pair">imd_pair</A>
-</TR>
-<TR ALIGN="LEFT">
   <TD WIDTH=180><A HREF="#imd_angle">imd_angle</A>
-  <TD WIDTH=180><A HREF="#imd_torsion">imd_torsion</A>
   <TD WIDTH=180><A HREF="#imd_coord">imd_coord</A>
-  <TD WIDTH=180><A HREF="#imd_strain">imd_strain</A>
+  <TD WIDTH=180><A HREF="#imd_dist2pgm">imd_dist2pgm.perl</A>
 </TR>
 <TR ALIGN="LEFT"> 
+  <TD WIDTH=180><A HREF="#imd_elco">imd_elco</A>
+  <TD WIDTH=180><A HREF="#imd_mklj">imd_mklj</A>
+  <TD WIDTH=180><A HREF="#imd_pair">imd_pair</A> 
+  <TD WIDTH=180><A HREF="#imd_power">imd_power</A>
+</TR>
+<TR ALIGN="LEFT"> 
+  <TD WIDTH=180><A HREF="#imd_strain">imd_strain</A>
   <TD WIDTH=180><A HREF="#imd_stress">imd_stress</A>
-  <TD WIDTH=180><A HREF="#procdata">procdata</A>
-  <TD WIDTH=180><A HREF="#imd_dist2pgm">imd_dist2pgm.perl</A>
+  <TD WIDTH=180><A HREF="#imd_torsion">imd_torsion</A>
   <TD WIDTH=180><A HREF="#imd2ppm">imd2ppm</A>
+</TR>
+<TR ALIGN="LEFT"> 
+  <TD WIDTH=180><A HREF="#procdata">procdata</A>
 </TR>
 </TABLE>
 
@@ -156,21 +159,24 @@ produces a binary using floats instead of doubles.
 imd_pair produces radial distribution histograms from IMD
 configuration files (or checkpoints). Usage is as follows:
 <PRE>
-    imd_pair [-v] [-r&lt;nn&gt;] [-a&lt;rmin&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
+    imd_pair [-v] [-r&lt;nn&gt;] [-A&lt;nn&gt;] [-a&lt;rmin&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
 </PRE>
-The parameter <TT>paramfile</TT> is mandatory. imd_pair reads the
-box size, the number of atom types, and the names of the configuration
-and checkpoint files from it. Also read is the parameter <TT>pbc_dirs</TT>,
-which determines (like in IMD) what boundary conditions are 
-used. The default is to use periodic boundary conditions.
-If the restart parameter
-<TT>-r&lt;nn&gt;</TT> is present, imd_pair takes the checkpoint
-file <TT>&lt;outfiles&gt;.&lt;nn&gt;.chkpt</TT> as input, and
-reads also the corresponding iteration file. Otherwise, 
-the input configuration <TT>&lt;coordname&gt;</TT> of the
-simulation described by <TT>paramfile</TT> is used as input.
-The output file name of imd_pair is the input file name, 
-but with <TT>.pair</TT> appended.
+The parameter <TT>paramfile</TT> is mandatory. imd_pair reads the box
+size, the number of atom types, and the names of the configuration and
+checkpoint files from it. Also read is the parameter
+<TT>pbc_dirs</TT>, which determines (like in IMD) what boundary
+conditions are used. The default is to use periodic boundary
+conditions.  If the restart parameter <TT>-r&lt;nn&gt;</TT> is
+present, imd_pair takes the checkpoint file
+<TT>&lt;outfiles&gt;.&lt;nn&gt;.chkpt</TT> as input, and reads also
+the corresponding iteration file. Otherwise, the input configuration
+<TT>&lt;coordname&gt;</TT> of the simulation described by
+<TT>paramfile</TT> is used as input.  If the parameter
+<TT>-A&lt;nn&gt;</TT> is present, imd_pair takes the avpos outfile
+<TT>&lt;outfiles&gt;.&lt;nn&gt;.avp</TT> as input, and reads also the
+corresponding iteration file
+<TT>&lt;outfiles&gt;.&lt;nn&gt;.avp.itr</TT>.  The output file name of
+imd_pair is the input file name, but with <TT>.pair</TT> appended.
 <P>
 The parameters <TT>-a&lt;rmin&gt;</TT> and <TT>-e&lt;rmax&gt;</TT>
 specify the minimal and maximal radius in the histogram.
@@ -208,7 +214,7 @@ produces a binary using floats instead of doubles.
 imd_angle produces angular distribution histograms from IMD
 configuration files (or checkpoints). Usage is as follows:
 <PRE>
-    imd_angle [-v] [-r&lt;nn&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
+    imd_angle [-v] [-r&lt;nn&gt;] [-A&lt;nn&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
 </PRE>
 The parameter <TT>paramfile</TT> is mandatory. imd_angle reads the
 box size, the number of atom types, and the names of the configuration
@@ -221,6 +227,11 @@ file <TT>&lt;outfiles&gt;.&lt;nn&gt;.chkpt</TT> as input, and
 reads also the corresponding iteration file. Otherwise, 
 the input configuration <TT>&lt;coordname&gt;</TT> of the
 simulation described by <TT>paramfile</TT> is used as input.
+If the parameter
+<TT>-A&lt;nn&gt;</TT> is present, imd_angle takes the avpos outfile
+<TT>&lt;outfiles&gt;.&lt;nn&gt;.avp</TT> as input, and reads also the
+corresponding iteration file
+<TT>&lt;outfiles&gt;.&lt;nn&gt;.avp.itr</TT>.
 The output file name of imd_angle is the input file name, 
 but with <TT>.angle</TT> appended.
 <P>
@@ -265,7 +276,7 @@ produces a binary using floats instead of doubles.
 imd_torsion produces torsion distribution histograms from IMD
 configuration files (or checkpoints). Usage is as follows:
 <PRE>
-    imd_torsion [-v] [-r&lt;nn&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
+    imd_torsion [-v] [-r&lt;nn&gt;] [-A&lt;nn&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
 </PRE>
 The parameter <TT>paramfile</TT> is mandatory. imd_torsion reads the
 box size, the number of atom types, and the names of the configuration
@@ -278,6 +289,11 @@ file <TT>&lt;outfiles&gt;.&lt;nn&gt;.chkpt</TT> as input, and
 reads also the corresponding iteration file. Otherwise, 
 the input configuration <TT>&lt;coordname&gt;</TT> of the
 simulation described by <TT>paramfile</TT> is used as input.
+If the parameter
+<TT>-A&lt;nn&gt;</TT> is present, imd_torsion takes the avpos outfile
+<TT>&lt;outfiles&gt;.&lt;nn&gt;.avp</TT> as input, and reads also the
+corresponding iteration file
+<TT>&lt;outfiles&gt;.&lt;nn&gt;.avp.itr</TT>.
 The output file name of imd_torsion is the input file name, 
 but with <TT>.torsion</TT> appended.
 <P>
@@ -330,7 +346,7 @@ produces a binary using floats instead of doubles.
 imd_coord produces coordination numbers of atoms from IMD 
 configuration files (or checkpoints). Usage is as follows:
 <PRE>
-    imd_coord [-v] [-r&lt;nn&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
+    imd_coord [-v] [-r&lt;nn&gt;] [-A&lt;nn&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
 </PRE>
 The parameter <TT>paramfile</TT> is mandatory. imd_coord reads the
 box size, the number of atom types, and the names of the configuration
@@ -343,6 +359,11 @@ file <TT>&lt;outfiles&gt;.&lt;nn&gt;.chkpt</TT> as input, and
 reads also the corresponding iteration file. Otherwise, 
 the input configuration <TT>&lt;coordname&gt;</TT> of the
 simulation described by <TT>paramfile</TT> is used as input.
+If the parameter
+<TT>-A&lt;nn&gt;</TT> is present, imd_coord takes the avpos outfile
+<TT>&lt;outfiles&gt;.&lt;nn&gt;.avp</TT> as input, and reads also the
+corresponding iteration file
+<TT>&lt;outfiles&gt;.&lt;nn&gt;.avp.itr</TT>.
 The output file name of imd_coord is the input file name, 
 but with <TT>.coord</TT> appended. The coordination numbers are
 additionally written on the standard output.
@@ -372,6 +393,78 @@ virtual types. Otherwise, all atom types are taken modulo
 <TT>ntypes</TT>, the number of different real atom types, and 
 <TT>N</TT> equals <TT>ntypes-1</TT>.
 <P>
+
+<A NAME="imd_elco">
+<H2>imd_elco.c</H2>
+</A>
+
+Computes the stress tensor, the tensor of the elastic moduli, and the
+pressure derivative of the bulk modulus for a given configuration of
+atoms using the potential. Compile as follows:
+
+<PRE>
+    gcc -O [-DTERSOFF] [-DSTIWEB] [-DSINGLE] imd_elco.c -lm
+</PRE>
+Presently, only the Tersoff potential (flag <TT>-DTERSOFF</TT>) and
+the Stillinger-Weber potential (flag <TT>-DSTIWEB</TT>) are
+supported. Default is a program for the Tersoff potential. Usage is as
+follows:
+<PRE>
+    imd_elco [-r&lt;nn&gt;] [-A&lt;nn&gt;] [-e&lt;rmax&gt;] [-s] [-m] [-M] -p &lt;paramfile&gt;
+</PRE>
+The parameter <TT>paramfile</TT> is mandatory. imd_elco reads the
+box size, the number of atom types, and the names of the configuration
+and checkpoint files from it. Also read is the parameter <TT>pbc_dirs</TT>,
+which determines (like in IMD) what boundary conditions are 
+used. The default is to use periodic boundary conditions.
+Furthermore, the potential parameters are read from the parameter
+file, where the format of the imd-options <B>tersoff</B> and
+<B>stiweb</B> are used.
+If the restart parameter
+<TT>-r&lt;nn&gt;</TT> is present, imd_elco takes the checkpoint
+file <TT>&lt;outfiles&gt;.&lt;nn&gt;.chkpt</TT> as input, and
+reads also the corresponding iteration file. Otherwise, 
+the input configuration <TT>&lt;coordname&gt;</TT> of the
+simulation described by <TT>paramfile</TT> is used as input.
+If the parameter
+<TT>-A&lt;nn&gt;</TT> is present, imd_elco takes the avpos outfile
+<TT>&lt;outfiles&gt;.&lt;nn&gt;.avp</TT> as input, and reads also the
+corresponding iteration file
+<TT>&lt;outfiles&gt;.&lt;nn&gt;.avp.itr</TT>.<P>
+
+By default, imd_elco computes the global stress tensor sigma_ij, the
+global tensor of the elastic moduli c_ab, and the global pressure
+derivative of the bulk modulus B'. These values are written on the
+standard output along with the potential energy, the total bulk
+modulus B and the pressure p. If the option [-s] is present, imd_elco
+writes the local stress tensor to a file with .stress appended to the
+input filename. The output format is
+<PRE>
+     x y z s_xx s_yy s_zz s_yz s_zx s_xy  
+</PRE>
+where x,y,z are the coordinates of the atoms and s_ij are the
+components of the stress tensor. The stress tensor is normalized with
+the volume of the Voronoi cell of the corresponding atom. The
+parameter [-e&lt;rmax&gt;] specifies the maximal distance 
+for which neighbouring atoms are taken into account in the computation
+of the Voronoi cells. It should be larger than the potential cutoff. 
+<P>
+ 
+If the option [-m] is present, imd_elco writes the local elastic moduli to a
+file with .elco appended to the input filename. The output format is
+<PRE>
+     x y z B c_11 c_12 c_44
+</PRE>
+In the case of the option [-M], imd_elco writes the complete
+tensor of the elastic moduli in the format
+<PRE>
+     x y z B c_11 c_12 c_13 c_22 c_23 c_33 c_44 c_45 c_46 c_55 c_56 /
+     c_66 c_14 c_15 c_16 c_24 c_25 c_26 c_34 c_35 c_36
+</PRE>
+As in the case of the stress tensor, the elastic moduli are normalized
+using the volumes of the Voronoi cells.
+<P>
+
 
 <A NAME="imd_strain">
 <H2>imd_strain.c</H2>

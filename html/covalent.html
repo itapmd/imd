@@ -11,37 +11,86 @@ IMD allows to use many-body potentials of the <B>Stillinger-Weber</B> type
 and the <B>Tersoff</B> potential.
 
 <UL>
-<LI> 
 
+<LI> <A NAME="stiweb">The option <B>stiweb</B> enables IMD to use the
+Stillinger-Weber potential (F. H. Stillinger and T. A. Weber,
+<I>Phys. Rev. B</I> <B>31</B> (1985) 5262) extended for the
+simulations of atoms of different types. The general form of the
+potential is
 
-The option <B>ttbp</B> (<B>t</B>wo- and <B>t</B>hree-<B>b</B>ody
-<B>p</B>otentials) 
-enables the use of potentials of the
-Stillinger-Weber type.<P>
-The Stillinger-Weber potential (F. H. Stillinger and T. A. Weber,
-<I>Phys. Rev. B</I> <B>31</B> (1985) 5262) is given by <BR><P>
-
+<P>
 <CENTER>
 <IMG SRC="covalent1.gif"><BR><P>
 </CENTER>
 
-where <I>V</I><SUB>2</SUB> is a two-body potential and <I>V</I><SUB>3</SUB> is
-the three-body contribution. The summation is over all atoms
-<I>i</I>, <I>j</I>, <I>k</I>
-with the restrictions indicated in the sums.
-The three-body term is<P>
+where <I>V<SUB>2</SUB></I> and <I>V<SUB>3</SUB></I> are given by
+
+<P>
+<CENTER>
+<IMG SRC="covalent14.gif"><BR><P>
+</CENTER>
+
+The angle <IMG WIDTH="35" HEIGHT="38" ALIGN="MIDDLE" BORDER="0"
+ SRC="covalent3.gif"> is the bond angle between the bonds <I>ij</I>
+ and <I>ik</I>. <I>V<SUB>2</SUB></I> and <I>V<SUB>3</SUB></I> are zero
+ for <I>r<SUB>ij</SUB></I> larger or equal to
+ <I>a<SUP>1</SUP><SUB>ij</SUB></I> and
+ <I>a<SUP>2</SUP><SUB>ij</SUB></I>, respectively.  The IMD parameters
+ and the corresponding potential parameters are the following: <P>
+
+<TABLE>
+<TR> <TD> <TT>stiweb_a</TT> </TD> <TD></TD><TD> <I>A<SUB>ij</SUB></I> </TD> </TR>
+<TR> <TD> <TT>stiweb_b</TT> </TD> <TD></TD> <TD> <I>B<SUB>ij</SUB></I> </TD> </TR>
+<TR> <TD> <TT>stiweb_p</TT> </TD> <TD></TD> <TD> <I>p<SUB>ij</SUB></I></TD> </TR>
+<TR> <TD> <TT>stiweb_q</TT> </TD> <TD></TD> <TD> <I>q<SUB>ij</SUB></I></TD> </TR>
+<TR> <TD> <TT>stiweb_de</TT> </TD> <TD></TD>  <TD> <IMG WIDTH="23" HEIGHT="20" ALIGN="MIDDLE" BORDER="0"
+            SRC="covalent15.gif"> </TD> </TR>
+<TR> <TD> <TT>stiweb_a1</TT> </TD> <TD></TD> <TD> <I>a<SUP>1</SUP><SUB>ij</SUB></I> </TD> </TR>
+<TR> <TD> <TT>stiweb_ga</TT> </TD> <TD></TD>  <TD> <IMG WIDTH="23" HEIGHT="15" ALIGN="MIDDLE" BORDER="0"
+            SRC="covalent16.gif"> </TD> </TR>
+<TR> <TD> <TT>stiweb_a2</TT> </TD> <TD></TD> <TD> <I>a<SUP>2</SUP><SUB>ij</SUB></I> </TD> </TR>
+<TR> <TD> <TT>stiweb_la</TT> </TD> <TD></TD>  <TD> <IMG WIDTH="23" HEIGHT="20" ALIGN="MIDDLE" BORDER="0"
+            SRC="covalent17.gif"> </TD> </TR>
+
+</TABLE>
+<P>
+
+The values of the two-index parameters have to be given for all types
+of atoms in the following format:<P>
+
+<CENTER>
+<I>A<SUB>00</SUB> A<SUB>01</SUB> ... A<SUB>0(n-1)</SUB> A<SUB>11</SUB>
+ A<SUB>12</SUB> ... A<SUB>(n-1)(n-1)</SUB></I> ,
+</CENTER><P>
+
+where <I>n</I> is the number of atoms.
+
+In the case of <TT>stiweb_la</TT>, the first index takes on all values
+from <I>0</I> to <I>n-1</I> while the last two indices are read in like
+the two-index parameters. <P>
+
+As a result of the short range nature of the potential, only
+the nearest neighbours have to be considered in the computation of the
+potential and the forces. The maximal number of nearest neighbours
+must be specified as a parameter with the IMD variable
+<TT>neigh_len</TT>. It is used to allocate memory for the neighbour tables.<P>
+
+
+<LI><A NAME="ttbp">
+
+The option <B>ttbp</B> (<B>t</B>wo- and <B>t</B>hree-<B>b</B>ody
+<B>p</B>otentials) enables IMD to use the Stillinger-Weber potential
+with a general pair potential.  The three-body term in this case is<P>
 
 <CENTER>
 <IMG SRC="covalent2.gif"><BR><P>
 </CENTER>
 
-Here, <I>Z</I> is the force constant, <I>f<SUB>c</SUB> (r)</I> is a cutoff
-function, and the angle <IMG
- WIDTH="35" HEIGHT="38" ALIGN="MIDDLE" BORDER="0" SRC="covalent3.gif"> is the bond angle 
-between the bonds  <I>ij</I> and <I>ik</I>. The parameter <I>h</I> indicates the hybridization
-<I>sp<SUP>h</SUP></I> of the
-atoms. In the case <I>h</I>=3 the coordination is fourfold while in
-the case <I>h</I>=2 the coordination number is three.
+where <I>Z</I> is the force constant and <I>f<SUB>c</SUB> (r)</I> is a
+cutoff function The parameter <I>h</I> indicates the hybridization
+<I>sp<SUP>h</SUP></I> of the atoms. In the case <I>h</I>=3 the
+coordination is fourfold while in the case <I>h</I>=2 the coordination
+number is three.
 <P>
 
 The two-body potential is read in as an IMD potential table as usual
@@ -52,15 +101,8 @@ format as the potential table. The corresponding IMD variable is
 
 The parameter <I>Z</I> corresponds to the IMD variable
 <TT>ttbp_constant</TT> and the hybridization pertains to 
-the variable <TT>ttbp_sp</TT>.<P>
-
-As a result of the short range nature of the potential, only
-the nearest neighbours have to be considered in the computation of the
-potential and the forces. The maximal number of nearest neighbours
-must be specified as a parameter with the IMD variable
-<TT>neigh_len</TT>. It is used to allocate memory for the neighbour tables.<P>
-
-
+the variable <TT>ttbp_sp</TT>. The maximal number of nearest
+neighbours must be given with the IMD variable <TT>neigh_len</TT>.<P>
 
 <LI>
 <A NAME="tersoff">The option <B>tersoff</B> enables the use of the Tersoff potential.</A><P>
