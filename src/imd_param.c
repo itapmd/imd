@@ -2,7 +2,6 @@
 *
 * read in parameter files (tag based)                               MH 260298
 * 
-* $RCSfile$
 * $Revision$
 * $Date$
 *
@@ -358,8 +357,7 @@ void getparamfile(char *paramfname, int sim)
         move_atoms = move_atoms_npt_axial;
       }
       else if (strcasecmp(tmpstr,"and")==0) {
-        ensemble = ENS_AND;
-        move_atoms = move_atoms_and;
+        error("please use nve ensemble with option and");
       }
       else if (strcasecmp(tmpstr,"mc")==0) {
         ensemble = ENS_MC;
@@ -442,25 +440,25 @@ void getparamfile(char *paramfname, int sim)
       /* Allocation & Initialisation of fbc_forces */
       fbc_forces = (vektor *) malloc(vtypes*DIM*sizeof(real));
       if (NULL==fbc_forces)
-	error("Can't allocate memory for fbc_forces\n");
+	error("Cannot allocate memory for fbc_forces\n");
       for(k=0; k<vtypes; k++)
        *(fbc_forces+k) = nullv;
 
       fbc_beginforces = (vektor *) malloc(vtypes*DIM*sizeof(real));
       if (NULL==fbc_beginforces)
-	error("Can't allocate memory for fbc_beginforces\n");
+	error("Cannot allocate memory for fbc_beginforces\n");
       for(k=0; k<vtypes; k++)
        *(fbc_beginforces+k) = nullv;
 #ifdef MIK
       fbc_dforces = (vektor *) malloc(vtypes*DIM*sizeof(real));
       if (NULL==fbc_dforces)
-	error("Can't allocate memory for fbc_dforces\n");
+	error("Cannot allocate memory for fbc_dforces\n");
       for(k=0; k<vtypes; k++)
        *(fbc_dforces+k) = nullv; 
 #else
       fbc_endforces = (vektor *) malloc(vtypes*DIM*sizeof(real));
       if (NULL==fbc_endforces)
-	error("Can't allocate memory for fbc_endforces\n");
+	error("Cannot allocate memory for fbc_endforces\n");
       for(k=0; k<vtypes; k++)
        *(fbc_endforces+k) = nullv;
 #endif
@@ -469,7 +467,7 @@ void getparamfile(char *paramfname, int sim)
       /* Allocation & Initialisation of deform_shift */
       deform_shift = (vektor *) malloc(vtypes*DIM*sizeof(real));
       if (NULL==deform_shift)
-	error("Can't allocate memory for deform_shift\n");
+	error("Cannot allocate memory for deform_shift\n");
       for(k=0; k<vtypes; k++)
        *(deform_shift+k) = nullv;
 #endif
@@ -1385,12 +1383,12 @@ void broadcast_params() {
 #if defined(FBC) || defined(DEFORM)
   if (0!=myid) fbc_forces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==fbc_forces) 
-    error("Can't allocate memory for fbc_forces on client."); 
+    error("Cannot allocate memory for fbc_forces on client."); 
   MPI_Bcast( fbc_forces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD);
  
   if (0!=myid) fbc_beginforces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==fbc_beginforces) 
-    error("Can't allocate memory for fbc_beginforces on client."); 
+    error("Cannot allocate memory for fbc_beginforces on client."); 
   MPI_Bcast( fbc_beginforces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
 #ifdef SMIK
   MPI_Bcast( &relaxsteps      , 1, MPI_INT,  0, MPI_COMM_WORLD);
@@ -1402,18 +1400,18 @@ void broadcast_params() {
 
   if (0!=myid) fbc_dforces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==fbc_dforces) 
-    error("Can't allocate memory for fbc_dforces on client."); 
+    error("Cannot allocate memory for fbc_dforces on client."); 
   MPI_Bcast( fbc_dforces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
 #else
   if (0!=myid) fbc_endforces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==fbc_endforces) 
-    error("Can't allocate memory for fbc_endforces on client."); 
+    error("Cannot allocate memory for fbc_endforces on client."); 
   MPI_Bcast( fbc_endforces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
 #endif
   if (0!=myid) restrictions  = (vektor *) malloc(vtypes*DIM*sizeof(int));
   if (NULL==restrictions) 
-    error("Can't allocate memory for restriction vectors on client."); 
+    error("Cannot allocate memory for restriction vectors on client."); 
   MPI_Bcast( restrictions, vtypes*DIM, MPI_INT, 0, MPI_COMM_WORLD);  
 
 
@@ -1525,7 +1523,7 @@ void broadcast_params() {
   MPI_Bcast( &strip_width, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
   if (0!=myid) deform_shift  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==deform_shift) 
-    error("Can't allocate memory for deform_shift on client."); 
+    error("Cannot allocate memory for deform_shift on client."); 
   MPI_Bcast( deform_shift, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD);
 #endif
 

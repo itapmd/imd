@@ -16,7 +16,7 @@
 
 /*****************************************************************************
 *
-* Basic NVE Verlet Integrator (seems to be more of leapfrog type...)
+* Basic NVE Integrator
 *
 *****************************************************************************/
 
@@ -24,38 +24,25 @@
 
 void move_atoms_nve(void)
 {
-#ifdef MPI
-#ifdef FNORM
-  real tmp2;
-#endif
-#ifdef GLOK
-  real tmp3;
-#endif
-#endif
   int k;
   real tmp;
   static int count = 0;
   tot_kin_energy = 0.0;
-#ifdef FNORM
   fnorm = 0.0;
-#endif
-#ifdef GLOK
-  PxF = 0.0;
-#endif
+  PxF   = 0.0;
 
   /* loop over all cells */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_kin_energy) private(tmp)
+#pragma omp parallel for reduction(+:tot_kin_energy,fnorm,PxF) private(tmp)
 #endif
   for (k=0; k<ncells; ++k) {
 
-    int  i;
-    int sort=0;
+    int  i, sort;
     cell *p;
     real kin_energie_1, kin_energie_2;
 #ifdef UNIAX    
     real rot_energie_1, rot_energie_2;
-    real dot,norm;
+    real dot, norm;
     vektor cross;
 #endif
     p = cell_array + CELLS(k);
@@ -73,20 +60,20 @@ void move_atoms_nve(void)
         rot_energie_1 = SPRODN(p->dreh_impuls,i,p->dreh_impuls,i);
 #endif
 
-	sort=(p->sorte[i]);
+        sort = p->sorte[i];
 #ifdef FBC
         /* give virtual particles their extra force */
-	(p->kraft X(i)) += ((fbc_forces + sort)->x);
-	(p->kraft Y(i)) += ((fbc_forces + sort)->y);
+	p->kraft X(i) += (fbc_forces + sort)->x;
+	p->kraft Y(i) += (fbc_forces + sort)->y;
 #ifndef TWOD
-	(p->kraft Z(i)) += ((fbc_forces + sort)->z);
+	p->kraft Z(i) += (fbc_forces + sort)->z;
 #endif
 #endif
 	/* and set their force (->momentum) in restricted directions to 0 */
-	(p->kraft X(i)) *= ((restrictions + sort)->x);
-	(p->kraft Y(i)) *= ((restrictions + sort)->y);
+	p->kraft X(i) *= (restrictions + sort)->x;
+	p->kraft Y(i) *= (restrictions + sort)->y;
 #ifndef TWOD
-	(p->kraft Z(i)) *= ((restrictions + sort)->z);
+	p->kraft Z(i) *= (restrictions + sort)->z;
 #endif
 
 #ifdef FNORM
@@ -99,7 +86,8 @@ void move_atoms_nve(void)
         p->impuls Z(i) += timestep * p->kraft Z(i);
 #endif
 
-	/* "Globale Konvergenz": like mik just with the global force and impuls vectors */
+	/* "Globale Konvergenz": like mik, just with the global 
+           force and momentum vectors */
 #ifdef GLOK              
 	PxF   +=  SPRODN(p->impuls,i,p->kraft,i);
 #endif
@@ -191,14 +179,16 @@ void move_atoms_nve(void)
   MPI_Allreduce( &tot_kin_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
   tot_kin_energy = tmp;
 #ifdef FNORM
-  /* Add all the (local) scalars of the local scalar products of the global force vector */ 
-  MPI_Allreduce( &fnorm, &tmp2, 1, MPI_REAL, MPI_SUM, cpugrid);
-  fnorm = tmp2;
+  /* Add all the (local) scalars of the local scalar products of the 
+     global force vector */ 
+  MPI_Allreduce( &fnorm, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  fnorm = tmp;
 #endif
 #ifdef GLOK
-  /* Add all the (local) scalars of the local scalar products of the global force & impuls vector */ 
-  MPI_Allreduce( &PxF, &tmp3, 1, MPI_REAL, MPI_SUM, cpugrid);
-  PxF = tmp3;
+  /* Add all the (local) scalars of the local scalar products of the 
+     global force & impuls vector */ 
+  MPI_Allreduce( &PxF, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  PxF = tmp;
 #endif
 #endif
   
@@ -211,19 +201,19 @@ void move_atoms_nve(void)
 }
 
 #else
-#ifndef SMIK
+
 void move_atoms_nve(void) 
 {
   if (myid==0)
   error("the chosen ensemble NVE is not supported by this binary");
 }
-#endif
+
 #endif
 
 
 /*****************************************************************************
 *
-* NVE Verlet Integrator with microconvergence relaxation  (seems to be more of leapfrog type...)
+*  NVE Integrator with microconvergence relaxation
 *
 *****************************************************************************/
 
@@ -232,13 +222,10 @@ void move_atoms_nve(void)
 void move_atoms_mik(void)
 {
   int k;
-  real tmp,tmp2;
+  real tmp;
   static int count = 0;
   tot_kin_energy = 0.0;
-
-#ifdef FNORM
   fnorm = 0.0;
-#endif
 
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
@@ -248,12 +235,11 @@ void move_atoms_mik(void)
 
   /* loop over all cells */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_kin_energy) private(tmp)
+#pragma omp parallel for reduction(+:tot_kin_energy,fnorm) private(tmp)
 #endif
   for (k=0; k<ncells; ++k) {
 
-    int  i;
-    int sort=0;
+    int  i, sort;
     cell *p;
     real kin_energie_1, kin_energie_2;
     p = cell_array + CELLS(k);
@@ -268,38 +254,43 @@ void move_atoms_mik(void)
 
         kin_energie_1 = SPRODN(p->impuls,i,p->impuls,i);
 
-	sort=(p->sorte[i]);
+	sort = p->sorte[i];
 #ifdef FBC
 #ifdef ATNR /* debugging  stuff */
-	if(p->nummer[i]==ATNR){
-	printf("kraft vorher: %.16f  %.16f  %.16f \n",(p->kraft X(i)),(p->kraft Y(i)),(p->kraft Z(i)));
-	printf("fbc_forces: %.16f  %.16f  %.16f \n", ((fbc_forces + sort)->x),((fbc_forces + sort)->y),((fbc_forces + sort)->z));
-	fflush(stdout);
+	if(p->nummer[i]==ATNR) {
+          printf("kraft vorher: %.16f  %.16f  %.16f \n",
+                 p->kraft X(i),p->kraft Y(i),p->kraft Z(i));
+          printf("fbc_forces: %.16f  %.16f  %.16f \n", 
+                 (fbc_forces + sort)->x,(fbc_forces + sort)->y,
+                 (fbc_forces + sort)->z);
+          fflush(stdout);
 	}
 #endif
         /* give virtual particles their extra force */
-	(p->kraft X(i)) += ((fbc_forces + sort)->x);
-	(p->kraft Y(i)) += ((fbc_forces + sort)->y);
+	p->kraft X(i) += (fbc_forces + sort)->x;
+	p->kraft Y(i) += (fbc_forces + sort)->y;
 #ifndef TWOD
-	(p->kraft Z(i)) += ((fbc_forces + sort)->z);
+	p->kraft Z(i) += (fbc_forces + sort)->z;
 #endif
 #endif /* FBC */
 
 	/* and set their force (->momentum) in restricted directions to 0 */
-	(p->kraft X(i)) *= ((restrictions + sort)->x);
-	(p->kraft Y(i)) *= ((restrictions + sort)->y);
+	p->kraft X(i) *= (restrictions + sort)->x;
+	p->kraft Y(i) *= (restrictions + sort)->y;
 #ifndef TWOD
-	(p->kraft Z(i)) *= ((restrictions + sort)->z);
+	p->kraft Z(i) *= (restrictions + sort)->z;
 #endif
 	
 #ifdef FBC
 #ifdef ATNR
-	if(p->nummer[i]==ATNR){
-	printf("kraft nachher: %.16f  %.16f  %.16f \n",(p->kraft X(i)),(p->kraft Y(i)),(p->kraft Z(i)));
-	fflush(stdout);
-	printf("impuls  vorher: %.16f  %.16f  %.16f \n",(p->impuls X(i)),(p->impuls Y(i)),(p->impuls Z(i)));
-	fflush(stdout);
-	}
+	if(p->nummer[i]==ATNR) {
+          printf("kraft nachher: %.16f  %.16f  %.16f \n",
+                 p->kraft X(i),p->kraft Y(i),p->kraft Z(i));
+          fflush(stdout);
+          printf("impuls  vorher: %.16f  %.16f  %.16f \n",
+                 p->impuls X(i),p->impuls Y(i),p->impuls Z(i));
+          fflush(stdout);
+        }
 #endif
 #endif  /* FBC */
 
@@ -330,11 +321,13 @@ void move_atoms_mik(void)
         }
 
 #ifdef ATNR
-	if(p->nummer[i]==ATNR){
-	printf("impuls: %.16f  %.16f  %.16f \n",(p->impuls X(i)),(p->impuls Y(i)),(p->impuls Z(i)));
-	printf("ort:  %.16f  %.16f  %.16f \n",(p->ort X(i)),(p->ort Y(i)),(p->ort Z(i)));
-	fflush(stdout);
-	}
+        if(p->nummer[i]==ATNR) {
+          printf("impuls: %.16f  %.16f  %.16f \n",
+                 p->impuls X(i),p->impuls Y(i),p->impuls Z(i));
+          printf("ort:  %.16f  %.16f  %.16f \n",
+                 p->ort X(i),p->ort Y(i),p->ort Z(i));
+          fflush(stdout);
+        }
 #endif
         kin_energie_2 =  SPRODN(p->impuls,i,p->impuls,i);
 
@@ -361,9 +354,10 @@ void move_atoms_mik(void)
   MPI_Allreduce( &tot_kin_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
   tot_kin_energy = tmp;
 #ifdef FNORM
-  /* Add all the (local) scalars of the local scalar products of the global force vector */ 
-  MPI_Allreduce( &fnorm, &tmp2, 1, MPI_REAL, MPI_SUM, cpugrid);
-  fnorm = tmp2;
+  /* Add all the (local) scalars of the local scalar products of the 
+     global force vector */ 
+  MPI_Allreduce( &fnorm, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  fnorm = tmp;
 #endif
 #endif
 
@@ -434,7 +428,7 @@ void move_atoms_msd(void)
 
 /*****************************************************************************
 *
-* NVT Verlet Integrator with Nose Hoover Thermostat  (seems to be more of leapfrog type...)
+* NVT Integrator with Nose Hoover Thermostat 
 *
 *****************************************************************************/
 
@@ -451,10 +445,10 @@ void move_atoms_nvt(void)
   real reibung_rot,  eins_d_reibung_rot;
 #endif
 
-  reibung        =      1.0 - eta * isq_tau_eta * timestep / 2.0;
+  reibung        =        1.0 - eta * isq_tau_eta * timestep / 2.0;
   eins_d_reibung = 1.0 / (1.0 + eta * isq_tau_eta * timestep / 2.0);
 #ifdef UNIAX
-  reibung_rot    =      1.0 - eta_rot * timestep / 2.0;
+  reibung_rot    =            1.0 - eta_rot * timestep / 2.0;
   eins_d_reibung_rot = 1.0 / (1.0 + eta_rot * timestep / 2.0);
 #endif
    
@@ -464,7 +458,7 @@ void move_atoms_nvt(void)
   for (k=0; k<ncells; ++k) {
 
     int i;
-    int sort=0;
+    int sort;
     cell *p;
 #ifdef UNIAX
     real dot, norm ;
@@ -481,7 +475,7 @@ void move_atoms_nvt(void)
                                                   / p->traeg_moment[i];
 #endif
 
-	sort=(p->sorte[i]);
+	sort = p->sorte[i];
 	p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i)) 
                            * eins_d_reibung * (restrictions + sort)->x;
         p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i)) 
@@ -575,7 +569,6 @@ void move_atoms_nvt(void)
 #endif
 
   /* time evolution of constraints */
-
   tmp  = nactive * temperature;
   eta += timestep * (kin_energie_2 / tmp - 1.0) * isq_tau_eta;
 #ifdef UNIAX
@@ -598,7 +591,7 @@ void move_atoms_nvt(void)
 
 /******************************************************************************
 *
-* NPT Verlet Integrator with Nose Hoover Thermostat  (seems to be more of leapfrog type...)
+* NPT Integrator with Nose Hoover Thermostat
 *
 ******************************************************************************/
 
@@ -617,11 +610,11 @@ void move_atoms_npt_iso(void)
 
   box_size.x      += 2.0 * timestep * xi.x;  /* relative box size change */  
   actual_shrink.x *= box_size.x;
-  fric             = 1.0 - (xi.x + eta) * timestep / 2.0;
+  fric             =         1.0 - (xi.x + eta) * timestep / 2.0;
   ifric            = 1.0 / ( 1.0 + (xi.x + eta) * timestep / 2.0 );
 #ifdef UNIAX
-  reib             = 1.0 - eta_rot * timestep / 2.0 ;
-  ireib            = 1.0 / ( 1.0 + eta_rot * timestep / 2.0 ) ;
+  reib             =         1.0 - eta_rot * timestep / 2.0;
+  ireib            = 1.0 / ( 1.0 + eta_rot * timestep / 2.0 );
 #endif
 
   /* loop over all cells */
@@ -742,7 +735,6 @@ void move_atoms_npt_iso(void)
 #endif
 
   /* time evolution of constraints */
-
   tmp  = nactive * temperature;
   eta += timestep * (Ekin_new / tmp - 1.0) * isq_tau_eta;
 #ifdef UNIAX
@@ -794,7 +786,7 @@ void move_atoms_npt_iso(void)
 
 /******************************************************************************
 *
-* NPT Verlet Integrator with Nose Hoover Thermostat  (seems to be more of leapfrog type...)
+*  NPT Integrator with Nose Hoover Thermostat
 *
 ******************************************************************************/
 
@@ -986,97 +978,6 @@ void move_atoms_npt_axial(void)
 
 /*****************************************************************************
 *
-* NVT Verlet Integrator with Andersen Thermostat for NVT  (seems to be more of leapfrog type...)
-*
-*****************************************************************************/
-
-#ifdef AND
-
-void move_atoms_and(void)
-
-{
-  int k;
-  real tmp;
-  static int count = 0;
-
-  tot_kin_energy = 0;
-
-#ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_kin_energy) private(tmp)
-#endif
-  for (k=0; k<ncells; ++k) {
-
-    int i;
-    cell *p;
-    real kin_energie_1, kin_energie_2;
-    p = cell_array + CELLS(k);
-
-    for (i=0; i<p->n; ++i) {
-
-        /* old kinetic energy */
-        kin_energie_1 =  SPRODN(p->impuls,i,p->impuls,i);
-
-        /* new momenta */
-        p->impuls X(i) += timestep * p->kraft X(i);
-        p->impuls Y(i) += timestep * p->kraft Y(i);
-#ifndef TWOD
-        p->impuls Z(i) += timestep * p->kraft Z(i);
-#endif
-
-        /* new kinetic energy */
-        kin_energie_2 =  SPRODN(p->impuls,i,p->impuls,i);
-
-        /* sum up kinetic energy */ 
-        tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4 * MASSE(p,i));
-
-        /* new positions */
-        tmp = timestep / MASSE(p,i);
-        p->ort X(i) += tmp * p->impuls X(i);
-        p->ort Y(i) += tmp * p->impuls Y(i);
-#ifndef TWOD
-        p->ort Z(i) += tmp * p->impuls Z(i);
-#endif
-
-#ifdef STRESS_TENS
-        p->presstens        X(i) += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
-        p->presstens        Y(i) += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
-#ifdef TWOD
-        p->presstens_offdia[i]   += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
-#else
-        p->presstens Z(i)        += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
-        p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
-#endif
-#endif
-    }
-  }
-
-#ifdef MPI
-  /* Add kinetic energy for all CPUs */
-  MPI_Allreduce( &tot_kin_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
-  tot_kin_energy = tmp;
-#endif
-
-  /* Andersen Thermostat -- Initialize the velocities now and then */
-  ++count;
-  if ((tmp_interval!=0) && (0==count%tmp_interval)) maxwell(temperature);
-
-}
-
-#else
-
-void move_atoms_and(void) 
-{
-  if (myid==0)
-  error("the chosen ensemble AND is not supported by this binary");
-}
-
-#endif
-
-
-/*****************************************************************************
-*
 *  Monte Carlo "integrator" 
 *
 *****************************************************************************/
@@ -1101,8 +1002,8 @@ void move_atoms_mc(void)
 
 /*****************************************************************************
 *
-* Verlet Integrator with stadium damping and fixed borders 
-* for fracture studies  (seems to be more of leapfrog type...)
+*  NVE Integrator with stadium damping and fixed borders 
+*  for fracture studies
 *
 *****************************************************************************/
 
@@ -1211,7 +1112,7 @@ void move_atoms_frac(void)
 
 /*****************************************************************************
 *
-* NVT Verlet Integrator with Stadium (seems to be more of leapfrog type...)
+*  NVT Integrator with Stadium 
 *
 *****************************************************************************/
 
@@ -1298,7 +1199,7 @@ void move_atoms_stm(void)
 
 /******************************************************************************
 *
-*  NVX  Integrator for heat conductivity
+*  NVX Integrator for heat conductivity
 * 
 ******************************************************************************/
 
