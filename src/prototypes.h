@@ -270,9 +270,15 @@ neightab *alloc_neightab(neightab *neigh, int count);
 #endif
 
 /* support for dislocations - file imd_io.c */
-#ifdef DISLOC
+#if defined(DISLOC) || defined(AVPOS)
 void reset_Epot_ref(void);
 void update_ort_ref(void);
+#endif
+
+/* support for average over positions */
+#ifdef AVPOS
+void add_positions(void);
+void write_avpos(int steps);
 #endif
 
 /* support for correlation functions - file imd_correl.c */

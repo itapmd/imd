@@ -931,6 +931,16 @@ void getparamfile(char *paramfname, int sim)
       getparam("Epot_diff",&Epot_diff,PARAM_INT,1,1);
     }   
 #endif
+#ifdef AVPOS
+    else if (strcasecmp(token,"avpos_res")==0) {
+      /* number of steps between coordinate addition */
+      getparam("avpos_res",&avpos_res,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"avpos_int")==0) {
+      /* number of steps between average position writes */
+      getparam("avpos_int",&avpos_int,PARAM_INT,1,1);
+    }
+#endif
 #ifdef ORDPAR
     else if (strcasecmp(token,"op_rcut")==0) {
       /* cutoff radius for order parameter */
@@ -1539,6 +1549,11 @@ void broadcast_params() {
   MPI_Bcast( &calc_Epot_ref,   1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &reset_Epot_step, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &Epot_diff,       1, MPI_INT, 0, MPI_COMM_WORLD); 
+#endif
+
+#ifdef AVPOS
+  MPI_Bcast( &avp_int,         1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &avp_res,         1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef ORDPAR

@@ -273,6 +273,9 @@ void write_cell_dsp(FILE *out, cell *p)
   }
 }
 
+#endif
+
+#if defined(DISLOC) || defined(AVPOS)
 
 /******************************************************************************
 *
@@ -317,8 +320,53 @@ void update_ort_ref(void)
   }
 }
 
-#endif /* DISLOC */
+#endif /* DISLOC, AVPOS */
 
+#ifdef AVPOS
+
+/******************************************************************************
+*
+* write_avpos writes average position to *.avp file
+*
+******************************************************************************/
+
+void write_avpos(int steps)
+{
+  FILE *out;
+  str255 fname;
+
+  int k;
+  real x, y, z;
+
+  sprintf(fname,"%s.%d.avp",outfilename, steps/avpos_int);
+  out = fopen(fname,"w");
+  if (NULL == out) error("Cannot open avp file.");
+
+  for (k=0; k<ncells; k++) {
+    int i;
+    cell* p;
+    p = cell_array + CELLS(k);
+    for (i=0; i<p->n; i++) {
+      x = p->ort_ref X(i) * avpos_res / avpos_int;
+      if ( pbc_dirs.x == 1 && x > box_x.x)  x -= box_x.x;
+      else if ( pbc_dirs.x == 1 && x < 0.0) x += box_x.x;
+      y = p->ort_ref Y(i) * avpos_res / avpos_int;
+      if ( pbc_dirs.y == 1 && y > box_y.y)  y -= box_y.y;
+      else if ( pbc_dirs.y == 1 && y < 0.0) y += box_y.y;
+#ifndef TWOD
+      z = p->ort_ref Z(i) * avpos_res / avpos_int;
+      if ( pbc_dirs.z == 1 && z > box_z.z)  z -= box_z.z;
+      else if ( pbc_dirs.z == 1 && z < 0.0) z += box_z.z;
+
+      fprintf(out,"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f\n ",  NUMMER(p,i), VSORTE(p,i), MASSE(p,i), x, y, z, p->Epot_ref[i] * avpos_res / avpos_int);
+#else
+      fprintf(out,"%d %d %12.16f %12.16f %12.16f %12.16f\n ",  NUMMER(p,i), VSORTE(p,i), MASSE(p,i), x, y, p->Epot_ref[i] * avpos_res / avpos_int);
+#endif
+    }
+  }
+}
+
+#endif
 
 #ifdef MSQD
 

@@ -441,3 +441,32 @@ void eam2_read_atomic_rho(str255 at_rho_filename)
 
 #endif /* EAM2 function tables */
 
+#ifdef AVPOS
+
+/******************************************************************************
+*
+* add_position adds coordinates and potential energy for computation of average
+* 
+* position and potential energy
+*
+******************************************************************************/
+
+void add_position(void)
+{
+  int k;
+  for (k=0; k<ncells; k++) {
+    int i;
+    cell* p;
+    p = cell_array + CELLS(k);
+    for (i=0; i<p->n; i++) {
+        p->ort_ref X(i) += p->ort X(i) + p->sheet X(i) * box_x.x;
+        p->ort_ref Y(i) += p->ort Y(i) + p->sheet Y(i) * box_y.y;
+#ifndef TWOD
+        p->ort_ref Z(i) += p->ort Z(i) + p->sheet Z(i) * box_z.z;
+#endif
+        p->Epot_ref[i]  += p->pot_eng[i];
+    }
+  }
+}
+  
+#endif

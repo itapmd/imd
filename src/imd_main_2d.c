@@ -167,6 +167,12 @@ void main_loop(void)
 #ifdef DISLOC
     if ((steps==reset_Epot_step) && (calc_Epot_ref==1)) reset_Epot_ref();
 #endif
+#ifdef AVPOS
+    if (steps == steps_min) {
+       update_ort_ref();
+       reset_Epot_ref();
+    }
+#endif
 
 #if defined(CORRELATE) || defined(MSQD)
     if ((steps >= correl_start) && ((steps < correl_end) || (correl_end==0))) {
@@ -267,6 +273,12 @@ void main_loop(void)
        write_config_select(steps,"dem",write_cell_dem);
     if ((dsp_interval > up_ort_ref) && (0 == steps%dsp_interval)) 
        write_config_select(steps,"dsp",write_cell_dsp);
+#endif
+#ifdef AVPOS
+    if ((avpos_res > 0) && (0 == steps%avpos_res) && steps > 0)
+       add_position();
+    if ((avpos_int > 0) && (0 == steps%avpos_int) && steps > 0)
+       write_avpos(steps);
 #endif
 
 #ifdef TRANSPORT
@@ -433,6 +445,9 @@ void do_boundaries(void)
       i = -FLOOR(SPRODX(p->ort,l,tbox_x));
       p->ort X(l) += i * box_x.x;
       p->ort Y(l) += i * box_x.y;
+#ifdef AVPOS
+      p->sheet X(l) -= i;
+#endif
     }
 
     /* PBC in y direction */
@@ -441,6 +456,9 @@ void do_boundaries(void)
       i = -FLOOR(SPRODX(p->ort,l,tbox_y));
       p->ort X(l) += i * box_y.x;
       p->ort Y(l) += i * box_y.y;
+#ifdef AVPOS
+      p->sheet Y(l) -= i;
+#endif
     }
 
   }

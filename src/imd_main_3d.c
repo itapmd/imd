@@ -171,6 +171,12 @@ void main_loop(void)
       }
     }
 #endif
+#ifdef AVPOS
+    if (steps == steps_min) {
+       update_ort_ref();
+       reset_Epot_ref();
+    }
+#endif
 
 #ifdef FBC
     /* fbc_forces is already initialised with beginforces */
@@ -341,7 +347,12 @@ void main_loop(void)
     if ((dsp_interval > up_ort_ref) && (0 == steps%dsp_interval)) 
        write_config_select(steps,"dsp",write_cell_dsp);
 #endif
-
+#ifdef AVPOS
+    if ((avpos_res > 0) && (0 == steps%avpos_res) && steps > 0)
+       add_position();
+    if ((avpos_int > 0) && (0 == steps%avpos_int) && steps > 0)
+       write_avpos(steps);
+#endif
 #ifdef TRANSPORT 
     if ((tran_interval > 0) && (steps > 0) && (0 == steps%tran_interval)) 
        write_temp_dist(steps);
@@ -547,6 +558,9 @@ void do_boundaries(void)
       p->ort X(l) += i * box_x.x;
       p->ort Y(l) += i * box_x.y;
       p->ort Z(l) += i * box_x.z;
+#ifdef AVPOS
+      p->sheet X(l) -= i;
+#endif
     }
 
     /* PBC in y direction */
@@ -556,6 +570,9 @@ void do_boundaries(void)
       p->ort X(l) += i * box_y.x;
       p->ort Y(l) += i * box_y.y;
       p->ort Z(l) += i * box_y.z;
+#ifdef AVPOS
+      p->sheet Y(l) -= i;
+#endif
     }
 
     /* PBC in z direction */
@@ -565,6 +582,9 @@ void do_boundaries(void)
       p->ort X(l) += i * box_z.x;
       p->ort Y(l) += i * box_z.y;
       p->ort Z(l) += i * box_z.z;
+#ifdef AVPOS
+      p->sheet Z(l) -= i;
+#endif
     }
 
   }

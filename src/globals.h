@@ -319,6 +319,11 @@ EXTERN int  calc_Epot_ref INIT(0);    /* flag whether to compute Epot_ref */
 EXTERN int  Epot_diff INIT(1);        /* flag whether to write Epot_diff */
 #endif
 
+#ifdef AVPOS
+EXTERN int avpos_int INIT(0);         /* Period of avp output ==0 */
+EXTERN int avpos_res INIT(0);         /* Period of coordinate addition */
+#endif
+
 #ifdef ORDPAR
 #define nullvektor4d { 0.0, 0.0, 0.0, 0.0 }
 EXTERN real op_weight[2][2] INIT(nullvektor4d);
