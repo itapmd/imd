@@ -104,6 +104,10 @@
 
 #endif
 
+#ifdef HOM
+#define STRESS_TENS
+#endif
+
 #ifdef SHOCK
 #define STRESS_TENS
 #endif

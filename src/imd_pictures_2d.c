@@ -386,6 +386,7 @@ if (0==myid) {
 /* Values that are not in the interval are set to MINIMUM */
           val = val > 1.0 ? 0.0 : val;
           val = val < 0.0 ? 0.0 : val;
+          np  = numpix*(1+p->sorte[i]);
           /* Get index into table */
 	  ind = (int)(val * 3.9999);
 

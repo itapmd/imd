@@ -333,7 +333,7 @@ EXTERN real heat_cond     INIT(0.0);   /* heat conductivity */
 #ifdef STRESS_TENS
 EXTERN integer press_interval INIT(0);  /* Intervalle der Aufzeichnung */ 
                                           /* des Drucktensors */
-EXTERN integer press_nlayers INIT(0);     /* Zahl der Schichten */
+EXTERN ivektor press_nlayers;     /* Zahl der Schichten */
 #endif
 
 /* I/O via sockets */

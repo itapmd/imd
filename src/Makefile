@@ -67,7 +67,7 @@ SOCKSOURCES   = socket_io.c sockutil.c
 
 FRACSOURCES   = imd_load.c
 
-SHEARSOURCES  = imd_shear.c
+HOMSOURCES     = imd_homshear.c imd_transport.c
 
 QUASISOURCES  = imd_qc.c
 
@@ -92,7 +92,7 @@ CFLAGS_alpha			= -DRISC -O3 -float -fp_reorder -tune host
 CFLAGS_alpha_DEBUG		= -DRISC -g  -float
 CFLAGS_speedy			= -DRISC -O3 -float -fp_reorder -arch host -tune host
 CFLAGS_speedy_DEBUG		= -DRISC -g -float
-CFLAGS_rs6000			= -DRISC -O3 -qarch=pwr2
+CFLAGS_rs6000			= -DRISC -O3 -qarch=pwr2 -qtune=pwr2
 CFLAGS_c90			= -DRISC -O3 -htask0,report=fv -DPVPCRAY
 CFLAGS_c90_DEBUG		= -DRISC -g
 # tcsh-Version
@@ -142,7 +142,7 @@ CFLAGS_MPI_paragon		= -DMPI -O4 -DAR
 CFLAGS_MPI_paragon_DEBUG	= -DMPI -g  -DAR
 CFLAGS_MPI_decstation		= -DMPI -O -float -D_POSIX_SOURCE
 CFLAGS_MPI_decstation_DEBUG	= -DMPI -O -float -D_POSIX_SOURCE
-CFLAGS_MPI_rs6000		= -DMPI -O3 -qarch=pwr2
+CFLAGS_MPI_rs6000		= -DMPI -O3 -qarch=pwr2 -qtune=pwr2
 CFLAGS_MPI_sx4			= -DMPI -hpthread_specific -Onodiv,bomove -pvctl -DSX4
 CFLAGS_MPI_sx4_DEBUG		= -DMPI -h2,pthread_specific,novector -DSX4
 CFLAGS_MPI_t3e			= -Dt3e -DMPI -DAR -O3 -htolerant,aggress,report=isf
@@ -174,7 +174,7 @@ SAVETOVECTORIZE			= imd_forces.o imd_integrate.o
 
 # Compilers
 CC_RISC_decstation		= cc
-CC_RISC_rs6000			= cc
+CC_RISC_rs6000			= xlC
 CC_RISC_sx4			= cc
 CC_RISC_os2			= gcc
 CC_RISC_iris4d			= cc
@@ -234,7 +234,7 @@ MPILIBS_paragon			= -lmpi -nx
 MPILIBS_decstation		= 
 MPILIBS_sx4			= -lmpi -lpthread
 MPILIBS_HITACHI			= -L/usr/local/mpi/lib/hmpp2/cml -lmpi
-MPILIBS_alpha			= -lmpi
+MPILIBS_alpha			= -lmpi -lots
 MPILIBS_iris4d			= -lmpi
 MPILIBS_i386-linux		= -lmpi
 MPILIBS_i486-linux		= -lmpi
@@ -430,6 +430,11 @@ ifneq (,$(findstring npt_iso,${MAKETARGET}))
 CFLAGS += -DNPT -DNPT_iso
 endif
 
+ifneq (,$(findstring hom,${MAKETARGET}))
+CFLAGS += -DHOM
+SOURCES += ${HOMSOURCES}
+endif
+
 ifneq (,$(findstring frac,${MAKETARGET}))
 CFLAGS += -DFRAC
 SOURCES += ${FRACSOURCES}
@@ -542,7 +547,7 @@ ${MAKETARGET}: ${OBJECTS} ${HEADERS}
 .DEFAULT:
 	${MAKE} MAKETARGET='$@' STAGE2
 
-# Second recursion sets all other Variables (depening on MAKETARGET) and compiles
+# Second recursion sets all other Variables (depending on MAKETARGET) and compiles
 # An empty MAKETARGET Variable would create an infinite recursion, so we check
 STAGE2:
 ifneq (,${MAKETARGET})
@@ -564,7 +569,7 @@ endif
 clean:
 	rm -f *.o *.u *~ \#* *.V *.T *.O
 
-release:	Makefile ${IMDHEADERS} ${SOURCES3D} ${RISCSOURCES3D} ${MPISOURCES3D} ${PACXSOURCES3D}  ${SOURCES2D} ${RISCSOURCES2D} ${MPISOURCES2D} ${PACXSOURCES2D} ${MISCSOURCES} ${FRACSOURCES} ${SOCKHEADERS} ${SOCKSOURCES}
+release:	Makefile ${IMDHEADERS} ${SOURCES3D} ${RISCSOURCES3D} ${MPISOURCES3D} ${PACXSOURCES3D}  ${SOURCES2D} ${RISCSOURCES2D} ${MPISOURCES2D} ${PACXSOURCES2D} ${MISCSOURCES} ${FRACSOURCES} ${HOMSOURCES} ${SOCKHEADERS} ${SOCKSOURCES}
 	cp Makefile         ${RELEASEPATH}
 	cp ${IMDHEADERS}    ${RELEASEPATH}
 	cp ${SOURCES3D}     ${RELEASEPATH}
@@ -578,6 +583,7 @@ release:	Makefile ${IMDHEADERS} ${SOURCES3D} ${RISCSOURCES3D} ${MPISOURCES3D} ${
 	cp ${MISCSOURCES}   ${RELEASEPATH}
 	cp ${SOCKHEADERS}   ${RELEASEPATH}
 	cp ${SOCKSOURCES}   ${RELEASEPATH}
+	cp ${HOMSOURCES}   ${RELEASEPATH}
 	cp ${FRACSOURCES}   ${RELEASEPATH}
 	cp ${QUASISOURCES}   ${RELEASEPATH}
 

@@ -572,9 +572,9 @@ void getparamfile(char *paramfname, int sim)
       getparam("pic_at_radius", pic_at_radius,PARAM_REAL_COPY,1,ntypes);
     }
 #ifdef HOM
-    else if (strcasecmp(token,"hom_interval")==0) {
+    else if (strcasecmp(token,"hom_int")==0) {
       /* period of homshear intervals */
-      getparam("hom_interval",&hom_interval,PARAM_INTEGER,1,1);
+      getparam("hom_int",&hom_interval,PARAM_INTEGER,1,1);
     }
     else if (strcasecmp(token,"shear_max")==0) {
       /* maximum shear */
@@ -700,8 +700,8 @@ void getparamfile(char *paramfname, int sim)
 #endif
 #ifdef STRESS_TENS
     else if (strcasecmp(token, "press_nlayers")==0){
-      /*number of layer  */
-      getparam("press_nlayers", &press_nlayers, PARAM_INTEGER, 1,1);
+      /* number of layers */
+      getparam("press_nlayers", &press_nlayers, PARAM_INTEGER, DIM,DIM);
     }
      else if (strcasecmp(token, "press_interval")==0){
       /*number of steps between press. writes  */
@@ -905,21 +905,18 @@ void check_parameters_complete()
         }
 #endif
 #ifdef STRESS_TENS
-	if (press_interval == 0){
+	if (press_interval == 0) {
 		error ("press_interval is zero. \n");
 	}
-	if (press_nlayers == 0){
-		error ("press_nlayers is zero. \n");
-        }
 #endif
 #ifdef MPI
-  if ((cpu_dim.x==0) || (cpu_dim.y==0)
+        if (cpu_dim.x==0) || (cpu_dim.y==0)
 #ifndef TWOD
-      || (cpu_dim.z==0)
+        || (cpu_dim.z==0)
 #endif
-     ) {
-       error("cpu_dim is missing or zero\n");
-  }
+	{
+           error("cpu_dim is missing or zero\n");
+        }
 #endif
 #ifdef USE_SOCKETS
   if (display_host[0]=='\0') {
