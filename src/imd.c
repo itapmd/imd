@@ -69,6 +69,7 @@ void main(int argc, char **argv)
 
   /* read command line and parameters for first simulation phase */
   read_parameters(argc,argv);
+
 #ifdef MPI
   broadcast_params();
 #endif
@@ -104,7 +105,7 @@ void main(int argc, char **argv)
 #ifdef MPI
   if (0 == myid) 
 #endif
-  printf("Reading atoms.\n");
+  printf("Reading atoms.\n");fflush(stdout);
 
   /* Filenames starting with denote internal 
   generation of the intitial configuration */

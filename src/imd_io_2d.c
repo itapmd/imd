@@ -42,7 +42,12 @@ void read_atoms(str255 infilename)
   vektor2d pos;
   vektor2d vau;
 #ifdef DISLOC
-  real refeng;
+  FILE *reffile;
+  int pref;
+  char refbuf[512];
+  real refeng, fdummy;
+  int refn, idummy;
+  vektor2d refpos;
 #endif
   real m;
   int i,s,n;
@@ -79,8 +84,15 @@ void read_atoms(str255 infilename)
 
 #else
   infile = fopen(infilename,"r");
+#ifdef DISLOC
+  reffile = fopen(reffilename,"r");
+#endif
 #endif
   if (NULL==infile) error("Cannot open atoms file.");
+
+#ifdef DISLOC
+  if (NULL==reffile) error("Cannot open reference file.");
+#endif
 
   /* Set up 1 atom input cell */
   input = (cell *) malloc(sizeof(cell));
@@ -99,6 +111,12 @@ void read_atoms(str255 infilename)
   while(!feof(infile)) {
 
     buf[0] = (char) NULL;
+#ifdef DISLOC
+    refbuf[0] = (char) NULL;
+    fgets(refbuf,sizeof(refbuf),reffile);
+    while ('#'==refbuf[1]) fgets(refbuf,sizeof(refbuf),reffile); /* eat comments */
+#endif
+    buf[0] = (char) NULL;
     fgets(buf,sizeof(buf),infile);
     while ('#'==buf[1]) fgets(buf,sizeof(buf),infile); /* eat comments */
 
@@ -107,10 +125,15 @@ void read_atoms(str255 infilename)
 #ifdef DOUBLE
     p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf",
 	      &n,&s,&m,&pos.x,&pos.y,&vau.x,&vau.y, &refeng);
+    pref = sscanf(refbuf,"%d %d %lf %lf %lf",
+	      &refn,&idummy,&fdummy,&refpos.x,&refpos.y);
 #else
     p = sscanf(buf,"%d %d %f %f %f %f %f %f",
 	      &n,&s,&m,&pos.x,&pos.y,&vau.x,&vau.y, &refeng);  
+    pref = sscanf(refbuf,"%d %d %f %f %f",
+	      &refn,&idummy,&fdummy,&refpos.x,&refpos.y);
 #endif
+    if (ABS(refn) != ABS(n)) error("Numbers in infile and reffile are different.\n");
 
 #else
 #ifdef DOUBLE
@@ -174,8 +197,8 @@ void read_atoms(str255 infilename)
 	input->kraft  X(0) = 0;
 	input->kraft  Y(0) = 0;
 	input->Epot_ref[0] = vau.x; /* vau.x misused as potengref ! */
-	input->ort_ref X(0) = 0;
-	input->ort_ref Y(0) = 0;
+	input->ort_ref X(0) = refpos.x;
+	input->ort_ref Y(0) = refpos.y;
 	break;
       case(8):     /* n, m, s, ort, vau, pot_ref */
 	input->n = 1;
@@ -189,12 +212,13 @@ void read_atoms(str255 infilename)
 	input->kraft  X(0) = 0;
 	input->kraft  Y(0) = 0;
 	input->Epot_ref[0] = refeng;
-	input->ort_ref X(0) = 0;
-	input->ort_ref Y(0) = 0;
+	input->ort_ref X(0) = refpos.x;
+	input->ort_ref Y(0) = refpos.y;
 	break;
 #endif
       default:
-	error("Incomplete line in atoms file.");
+        printf("%d is where we find an...\n", natoms+1);
+	error("Incomplete line in atoms file at line.\n");
       };
 
       cellc = cell_coord(pos.x,pos.y);
@@ -230,6 +254,9 @@ void read_atoms(str255 infilename)
   };
 
   fclose(infile);  
+#ifdef DISLOC
+  fclose(reffile);
+#endif
 
 #ifdef MPI
 
@@ -681,95 +708,94 @@ void write_demmaps(int steps)
 
 /******************************************************************************
 *
-* write_ddmmaps writes a differential displacement map to file *.ddm.x
+* write_dspmaps writes a differential displacement map to file *.ddm.x
 *
 ******************************************************************************/
 
-void write_ddmmaps(int steps)
+void write_dspmaps(int steps)
 
-#define WRITE_CELL_DDM     for (i = 0;i < p->n; ++i) {\
+#ifdef MONOLJ
+#define WRITE_CELL     for (i = 0;i < p->n; ++i) \
+             fprintf(out,"%12f %12f %12f %12f\n",\
+             p->ort X(i),\
+             p->ort Y(i),\
+	     p->impuls X(i),\
+	     p->impuls Y(i));
+		     
+#else
+
+#define WRITE_CELL_DSP     for (i = 0;i < p->n; ++i) {\
              dx = p->ort X(i) - p->ort_ref X(i);\
              dy = p->ort Y(i) - p->ort_ref Y(i);\
              if ((dx < boxx)&&(dy < boxy))\
-	       if ((dx > ddelta)||(-dx < -ddelta)||(dy > ddelta)||(-dy < -ddelta))\
-               fprintf(ddmout,"%12f %12f %12f %12f\n",\
+               fprintf(dspout,"%12f %12f %12f %12f\n",\
 	       p->ort X(i),\
 	       p->ort Y(i),\
 	       dx,\
                dy);\
           }
+#endif
+
 {
-  FILE *ddmout;
-  str255 ddmfname;
+  FILE *dspout;
+  str255 dspfname;
   int fzhlr;
   cell *p,*q;
   int i,j,k,m,tag;
-  real dx, dy, dz, boxx, boxy;
+  real dx, dy, boxx, boxy;
 
   /* Dateiname fuer Ausgabedatei erzeugen */
   fzhlr = steps;
-  sprintf(ddmfname,"%s.ddm.%u",outfilename,fzhlr);
+  sprintf(dspfname,"%s.dsp.%u",outfilename,fzhlr);
 
   /* 1/2 of the boxlength, this is not correct for non-cartesian boxes ! */
   boxx = box_x.x/2;
-  boxy = box_x.y/2;
-
+  boxy = box_y.y/2;
+  printf("%f %f\n", boxx, boxy);
 #ifdef MPI
 
   if (0==myid) {
 
-    /* Ausgabedatei oeffnen */
-    ddmout = fopen(ddmfname,"w");
-    if (NULL == ddmout) error("Cannot open output file for ddm.");
+  /* Ausgabedatei oeffnen */
+    dspout = fopen(dspfname,"w");
+    if (NULL == dspout) error("Cannot open output file for dsp.");
 
     /* Write data on CPU 0 */
 
     /* Write own data */
     for (j = 1; j < cell_dim.x-1; ++j )
-      for (k = 1; k < cell_dim.y-1; ++k ) { 
+      for (k = 1; k < cell_dim.y-1; ++k ) {
 	p = PTR_2D_V(cell_array, j, k, cell_dim);
-	WRITE_CELL_DDM;
-
-	/* ort_ref becomes current ort */
-	for (i = 0;i < p->n; ++i) {
-	  p->ort_ref X(i) = p->ort X(i);
-	  p->ort_ref Y(i) = p->ort Y(i);
-	}
-      };
+	WRITE_CELL_DSP;
+      }
 
     /* Receive data from other cpus and write that */
-    p   = PTR_3D_V(cell_array, 0, 0, cell_dim);
+    p   = PTR_2D_V(cell_array, 0, 0, 0, cell_dim);
     for ( m = 1; m < num_cpus; ++m)
       for (j = 1; j < cell_dim.x-1; ++j )
-	for (k = 1; k < cell_dim.y-1; ++k ) {
-	  tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
-	  recv_cell( p, m, tag );
-	  WRITE_CELL_DDM;
+        for (k = 1; k < cell_dim.y-1; ++k ) {
+          tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
+          recv_cell( p, m, tag );
+          WRITE_CELL_DSP;
+	}
 
-	  /* ort_ref becomes current ort */
-	  for (i = 0;i < p->n; ++i) {
-	    p->ort_ref X(i) = p->ort X(i);
-	    p->ort_ref Y(i) = p->ort Y(i);
-	  }
-	};
-
-    fclose(ddmout);      
-
+    fclose(dspout);      
+    
   } else { 
-    /* Send data to cpu 0 */
-    for (j = 1; j < cell_dim.x-1; ++j )
-      for (k = 1; k < cell_dim.y-1; ++k ) {
-        p   = PTR_2D_V(cell_array, j, k, cell_dim);
-        tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
-        send_cell( p, 0, tag );
-      };
+  /* Send data to cpu 0 */
+  for (j = 1; j < cell_dim.x-1; ++j )
+    for (k = 1; k < cell_dim.y-1; ++k ) {
+      p   = PTR_2D_V(cell_array, j, k, cell_dim);
+      tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
+      send_cell( p, 0, tag );
+    };
   };
 
 #else
 
   /* Ausgabedatei oeffnen */
-  ddmout = fopen(ddmfname,"w");
-  if (NULL == ddmout) error("Cannot open output file for ddm.");
+  dspout = fopen(dspfname,"w");
+  if (NULL == dspout) error("Cannot open output file for dsp.");
 
   for (p = cell_array; 
        p <= PTR_2D_V(cell_array,
@@ -777,35 +803,86 @@ void write_ddmmaps(int steps)
 		     cell_dim.y-1,
 		     cell_dim);
        ++p ) {
-    WRITE_CELL_DDM;
+    WRITE_CELL_DSP;
 
-    /* ort_ref becomes current ort */
+  }
+
+  fclose(dspout);
+
+#endif
+}
+
+
+/******************************************************************************
+*
+* update_ort_ref updates ort_ref
+*
+******************************************************************************/
+
+void update_ort_ref(void)
+
+{ 
+  cell *p,*q;
+  int i,j,k,m,tag;
+  real dx, dy, boxx, boxy;
+
+#ifdef MPI
+
+  if (0==myid) {
+
+  /* Update own data */
+  for (j = 1; j < cell_dim.x-1; ++j )
+    for (k = 1; k < cell_dim.y-1; ++k ) 
+      p = PTR_2D_V(cell_array, j, k, cell_dim);
+      for (i = 0;i < p->n; ++i) {
+	p->ort_ref X(i) = p->ort X(i);
+	p->ort_ref Y(i) = p->ort Y(i);
+      }
+    };
+
+  /* Receive data from other cpus and Update that */
+  p   = PTR_2D_V(cell_array, 0, 0, 0, cell_dim);
+    for ( m = 1; m < num_cpus; ++m)
+      for (j = 1; j < cell_dim.x-1; ++j )
+        for (k = 1; k < cell_dim.y-1; ++k )
+          tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
+          recv_cell( p, m, tag );
+	  for (i = 0;i < p->n; ++i) {
+	    p->ort_ref X(i) = p->ort X(i);
+	    p->ort_ref Y(i) = p->ort Y(i);
+	  }
+	};
+
+  } else { 
+  /* Send data to cpu 0 */
+  for (j = 1; j < cell_dim.x-1; ++j )
+    for (k = 1; k < cell_dim.y-1; ++k )
+      p   = PTR_2D_V(cell_array, j, k, cell_dim);
+      tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
+      send_cell( p, 0, tag );
+    };
+  };
+
+#else
+
+  for (p = cell_array; 
+       p <= PTR_2D_V(cell_array,
+		     cell_dim.x-1,
+		     cell_dim.y-1,
+		     cell_dim);
+       ++p ) {
     for (i = 0;i < p->n; ++i) {
       p->ort_ref X(i) = p->ort X(i);
       p->ort_ref Y(i) = p->ort Y(i);
     }
   }
 
-  fclose(ddmout);
+#endif
+
+}
+
 
 #endif
-  
-}
-
-
-/******************************************************************************
-*
-* write_dspmaps - writes a displacement map
-*
-******************************************************************************/
-
-void write_dspmaps(int steps)
-{
-  /* still empty */
-}
-
-#endif /* DISLOC */
-
 
 /******************************************************************************
 *

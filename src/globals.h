@@ -88,6 +88,15 @@ EXTERN str255 outfilename INIT("\0");   /* Output File */
 EXTERN str255 potfilename INIT("\0");   /* Potential */
 EXTERN char *paramfilename INIT(0L);    /* Parameter File */
 
+/* construction of PN-dislocations */
+EXTERN int pn INIT(0);                  /* construct a Peierls-Nabarro-dislocation? (0==no) */
+EXTERN real glideplane INIT(0);         /* y/z (2/3D)-coordinate of glidep. */
+EXTERN real burgersv INIT(1);           /* length of Burgers-vector */
+EXTERN real width INIT(1);              /* width of Burgers-vector density */
+
+/* Parameters for displacement map */
+EXTERN str255 reffilename INIT("\0");   /* Parameter File */
+
 /* Parameters for pictures */
 #ifdef TWOD
 EXTERN vektor2d pic_scale INIT(nullvektor);   /* Scale factor x/y for pictures     */
@@ -274,8 +283,8 @@ EXTERN real shear_epsilon INIT(0); /* energy difference to abort relaxation */
 
 #ifdef DISLOC
 EXTERN int  dem_interval INIT(0);     /* Period of dem output ==0 */
-EXTERN int  ddm_interval INIT(0);     /* Period of ddm output ==0 */
 EXTERN int  dsp_interval INIT(0);     /* Period of dsp output ==0 */
+EXTERN int  up_ort_ref INIT(0);   /* time to update ort_ref ? */
 EXTERN real min_dpot INIT(1.0);       /* difference for dem */
 EXTERN int  dpotsorte INIT(0);        /* type to compute dem map */
 EXTERN real ddelta INIT(1.0);         /* distance for ddm */

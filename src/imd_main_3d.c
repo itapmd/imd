@@ -82,6 +82,7 @@ void main_loop(void)
   if (0==restart) init();
 
 #ifdef MIKSHEAR
+  if (maxshearrelaxsteps == 0) maxshearrelaxsteps = 32767;
   stepssincelastshear = 0;
 #endif
 
@@ -188,9 +189,9 @@ void main_loop(void)
     if ((pic_interval > 0) && (0 == steps%pic_interval)) write_pictures(steps);
 
 #ifdef DISLOC
+    if (steps == up_ort_ref) update_ort_ref();
     if ((dem_interval > 0) && (0 == steps%dem_interval)) write_demmaps(steps);
-    if ((ddm_interval > 0) && (0 == steps%ddm_interval)) write_ddmmaps(steps);
-    if ((dsp_interval > 0) && (0 == steps%dsp_interval)) write_dspmaps(steps);
+    if ((dsp_interval > up_ort_ref) && (0 == steps%dsp_interval)) write_dspmaps(steps);
 #endif
 
 #ifdef USE_SOCKETS

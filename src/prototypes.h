@@ -18,6 +18,7 @@ void generate_fcc(int maxtyp);
 void generate_lav(void);
 ivektor init_hex(void);
 void generate_hex(ivektor v);
+void construct_pn_disloc(real *x, real *y, real *z);
 void init(void);
 void epilogue(void);
 void usage(void);
@@ -136,8 +137,8 @@ void write_shear_energy(int steps, int shear_steps);
 #ifdef DISLOC
 void reset_Epot_ref();
 void write_demmaps(int steps);
-void write_ddmmaps(int steps);
 void write_dspmaps(int steps);
+void update_ort_ref(void);
 #endif
 
 #ifdef EAM

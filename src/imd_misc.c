@@ -638,6 +638,7 @@ void generate_hex(ivektor v)
       input->nummer[0] = natoms;
       input->sorte[0] = typ;
       num_sort[typ]++;
+	if (pn)	construct_pn_disloc(&input->ort X(0), &input->ort Y(0), NULL);
 
       cellc = cell_coord(x,y);
 #ifdef MPI
@@ -711,13 +712,26 @@ void generate_fcc(int maxtyp)
         if (typ > maxtyp) continue;
 
 	++natoms;
+
         input->n = 1;
         input->ort X(0) = x + 0.5;
         input->ort Y(0) = y + 0.5;
         input->ort Z(0) = z + 0.5;
+	/* PN-dislocation ? */
+	if (pn)	{
+	  construct_pn_disloc(&input->ort X(0), &input->ort Y(0), &input->ort Z(0));
+	}
+
         cellc = cell_coord(input->ort X(0), input->ort Y(0), input->ort Z(0));
 #ifndef MONOLJ
-	input->nummer[0] = natoms;
+	if (pn) { /* immobile if around glideplane */
+	  if ((input->ort Z(0)<glideplane+1)&&(input->ort Z(0)> glideplane-1))
+            input->nummer[0] = -natoms;
+	  else
+	    input->nummer[0] = natoms;
+        }
+        else
+	  input->nummer[0] = natoms;
         input->sorte[0] = typ;
         num_sort[typ]++;
 #endif
@@ -864,6 +878,7 @@ void generate_lav()
 	  input->ort X(0) = x + co;
 	  input->ort Y(0) = y + co;
 	  input->ort Z(0) = z + co;
+	if (pn)	construct_pn_disloc(&input->ort X(0), &input->ort Y(0), &input->ort Z(0));
 	  cellc = cell_coord(input->ort X(0), input->ort Y(0), input->ort Z(0));
 #ifndef MONOLJ
 	  input->nummer[0] = natoms;
@@ -887,3 +902,21 @@ void generate_lav()
 } 
 
 #endif /* not TWOD */
+
+void construct_pn_disloc(real *x, real *y, real *z) {
+
+  real invwidth, hfboxl,pf; 
+  /* computation of params for PN-formula */
+  invwidth = 1/width;
+  hfboxl = .5*box_x.x;
+  pf = burgersv / M_PI;
+
+#ifndef TWOD
+            if (*z > glideplane) /* above glideplane? move! */
+#else
+            if (*y > glideplane) /* above glideplane? move! */
+#endif
+              *x += burgersv/2 -pf*atan((*x - hfboxl) * invwidth);
+
+}
+

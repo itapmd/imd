@@ -280,6 +280,10 @@ void getparamfile(char *paramfname, int sim)
       /* filename for potential data */
       getparam("potfile",potfilename,PARAM_STR,1,255);
     }
+    else if (strcasecmp(token,"reffile")==0) {
+      /* filename for reference configuration */
+      getparam("reffile",reffilename,PARAM_STR,1,255);
+    }
     else if (strcasecmp(token,"ensemble")==0) {
       /* ensemble */
       getparam("ensemble",tmpstr,PARAM_STR,1,255);
@@ -387,6 +391,22 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"use_current_temp")==0) {
       /* set imposed temperature to current system temperature */
       use_curr_temp = 1;
+    }
+    else if (strcasecmp(token,"pn")==0) {
+      /* z/y (3/2D)-coordinate of glideplane */
+      getparam("pn",&pn,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"glideplane")==0) {
+      /* z/y (3/2D)-coordinate of glideplane */
+      getparam("glideplane",&glideplane,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"burgersv")==0) {
+      /* length of Burgers-vector */
+      getparam("burgersv",&burgersv,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"width")==0) {
+      /* width of dislocation */
+      getparam("width",&width,PARAM_REAL,1,1);
     }
 #if defined(AND) || defined(NVT) || defined(NPT)
     else if (strcasecmp(token,"endtemp")==0) {
@@ -610,13 +630,13 @@ void getparamfile(char *paramfname, int sim)
       /* number of steps between picture writes */
       getparam("dem_int",&dem_interval,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"ddm_int")==0) {
-      /* number of steps between picture writes */
-      getparam("ddm_int",&ddm_interval,PARAM_INT,1,1);
-    }
     else if (strcasecmp(token,"dsp_int")==0) {
       /* number of steps between picture writes */
       getparam("dsp_int",&dsp_interval,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"up_ort_ref")==0) {
+      /* step number to compute ort_ref */
+      getparam("update_ort_ref",&up_ort_ref,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"min_dpot")==0) {
       /* minimum Epot difference */
