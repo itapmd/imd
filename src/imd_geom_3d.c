@@ -453,7 +453,7 @@ void init_cells( void )
 
 void make_cell_lists(void)
 {
-  int i,j,k,l,m,n,r,s,t,nbrank_cell,nn;
+  int i,j,k,l,m,n,r,s,t,nn;
   ivektor ipbc, neigh;
   pair *P;
 
@@ -589,12 +589,11 @@ void make_cell_lists(void)
               neigh.y = j-m;
               neigh.z = k-n;
 
-	      /* Calculate neighbour's CPU via buffer cell */
-	      nbrank_cell = cpu_coord(global_cell_coord( neigh ));
-
-              /* if the neighbor's original is on a different CPU */
-	      if ( nbrank_cell != myid ) {
-
+              /* if second cell is a buffer cell */
+              if ((neigh.x == 0) || (neigh.x == cell_dim.x-1) || 
+                  (neigh.y == 0) || (neigh.y == cell_dim.y-1) ||
+                  (neigh.z == 0) || (neigh.z == cell_dim.z-1)) 
+              {
                 /* array where to put the pairs */
                 if (l==0) {
                   if (m==0) { if (k % 2 == 0) nn=0; else nn=1; }
