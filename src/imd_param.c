@@ -401,7 +401,6 @@ void getparamfile(char *paramfname, int sim)
       /* number of steps between checkpoints / period for checkpoints */
       getparam("checkpt_int",&rep_interval,PARAM_INT,1,1);
     }
-
     else if (strcasecmp(token,"eng_int")==0) {
       /* energy data output interval */
       getparam("eng_int",&eng_interval,PARAM_INT,1,1);
@@ -436,6 +435,9 @@ void getparamfile(char *paramfname, int sim)
     }
     else if (strcasecmp(token,"dist_dim")==0) {
       getparam("dist_dim",&dist_dim,PARAM_INT,DIM,DIM);
+    }
+    else if (strcasecmp(token,"normalize_hist")==0) {
+      getparam("normalize_hist",&norm_hist,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"pbc_dirs")==0) {
       /* directions with periodic boundary conditions */
@@ -913,8 +915,8 @@ void getparamfile(char *paramfname, int sim)
       getparam("lindef_z",&lindef_z,PARAM_REAL,DIM,DIM);
     }
 #endif
-#endif /* HOMDEF */
-#ifdef DEFORM
+#endif
+#if defined(DEFORM)
     else if (strcasecmp(token,"ekin_threshold")==0) {
       /* shear epsilon criterium, see imd_shear_new.c */
       getparam("ekin_threshold",&ekin_threshold,PARAM_REAL,1,1);
@@ -1424,6 +1426,32 @@ void getparamfile(char *paramfname, int sim)
       getparam("uniax_r_cut",&uniax_r_cut,PARAM_REAL,1,1);
       uniax_r2_cut = SQR(uniax_r_cut);
       cellsz = MAX(cellsz,uniax_r2_cut);
+    }
+#endif 
+#ifdef PN
+    else if (strcasecmp(token,"pn_int")==0) {
+      /* energy data output interval */
+      getparam("pn_int",&pn_interval,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"glideplane")==0) {
+      /* PN: glide plane coordinates */
+      getparam("glideplane",&gp,PARAM_REAL,3,3);
+    }
+    else if (strcasecmp(token,"corestart")==0) {
+      /* PN: glide plane coordinates */
+      getparam("corestart",&corestart,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"coreend")==0) {
+      /* PN: glide plane coordinates */
+      getparam("coreend",&coreend,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"burgersv")==0) {
+      /* PN: glide plane coordinates */
+      getparam("burgersv",&bv,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"width")==0) {
+      /* PN: glide plane coordinates */
+      getparam("width",&w,PARAM_REAL,1,1);
     }
 #endif 
     else if (strcasecmp(token,"use_header")==0) {
