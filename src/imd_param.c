@@ -1141,9 +1141,6 @@ void check_parameters_complete()
 	if (tran_nlayers == 0){
 		error ("tran_nlayers is zero. \n");
         }
-	if (exch_interval == 0){
-		error ("exch_interval is zero. \n");
-        }
 #endif
 #ifdef STRESS_TENS
 	if (press_interval == 0) {
