@@ -15,6 +15,18 @@ procdata: procdata.c
 atdist: atdist.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ atdist.c -lm
 
+# convert VASP simulation to atom density distribution file
+vasp2atdist: vasp2atdist.c param.c param.h
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c vasp2atdist.c -lm
+
+# convert VASP simulation to sequence of IMD checkpoints
+vasp2chkpt: vasp2chkpt.c param.c param.h
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c vasp2chkpt.c -lm
+
+# convert VASP simulation to msqd fqile
+vasp2msqd: vasp2msqd.c param.c param.h
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c vasp2msqd.c -lm
+
 # histograms of square displacement files
 sqd2hist: sqd2hist.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ sqd2hist.c -lm
