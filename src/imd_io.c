@@ -635,13 +635,13 @@ void update_ort_ref(void)
       p->ort_ref X(i) = p->ort X(i);
       p->ort_ref Y(i) = p->ort Y(i);
 #ifdef AVPOS
-      p->sheet X(i)   = 0;
-      p->sheet Y(i)   = 0;
+      p->sheet X(i)   = 0.0;
+      p->sheet Y(i)   = 0.0;
 #endif
 #ifndef TWOD
       p->ort_ref Z(i) = p->ort Z(i);
 #ifdef AVPOS
-      p->sheet Z(i)   = 0;
+      p->sheet Z(i)   = 0.0;
 #endif
 #endif
     }
@@ -717,9 +717,9 @@ void write_atoms_avp(FILE *out)
 
 #ifndef TWOD
 	/* Averaged coordinates of atoms */
-	avp_pos.x = p->ort_ref X(i) * avpos_res / avpos_int;
-	avp_pos.y = p->ort_ref Y(i) * avpos_res / avpos_int;
-	avp_pos.z = p->ort_ref Z(i) * avpos_res / avpos_int;
+	avp_pos.x = p->ort_ref X(i) * avpos_res / ( avpos_int + avpos_res );
+	avp_pos.y = p->ort_ref Y(i) * avpos_res / ( avpos_int + avpos_res );
+	avp_pos.z = p->ort_ref Z(i) * avpos_res / ( avpos_int + avpos_res );
 
 	/* Coefficients of coordinates with respect to box vectors */
 	coeff.x = SPROD( avp_pos, tbox_x );
@@ -744,8 +744,8 @@ void write_atoms_avp(FILE *out)
 			x, y, z, p->Epot_ref[i] * avpos_res / avpos_int);
 #else
 	/* Averaged coordinates of atoms */ 
-	avp_pos.x = p->ort_ref X(i) * avpos_res / avpos_int;
-	avp_pos.y = p->ort_ref Y(i) * avpos_res / avpos_int;
+	avp_pos.x = p->ort_ref X(i) * avpos_res / ( avpos_int + avpos_res );
+	avp_pos.y = p->ort_ref Y(i) * avpos_res / ( avpos_int + avpos_res );
 
 	/* Coefficients of coordinates with respect to box vectors */
 	coeff.x = SPROD( avp_pos, tbox_x );
