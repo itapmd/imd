@@ -23,7 +23,6 @@
 void make_box( void )
 {
   real det;
-  vektor3d ibox_x, ibox_y, ibox_z;
 
   /* Determinant */
   det = box_x.y * box_y.z * box_z.x +
@@ -34,31 +33,19 @@ void make_box( void )
 	box_x.y * box_y.x * box_z.z;
   if ((0==myid) && (0==det)) error("Box Edges are parallel.");
 
-  /* Inverse box */
-  ibox_x.x = ( box_y.y * box_z.z - box_y.z * box_z.y ) / det;
-  ibox_x.y = ( box_x.z * box_z.y - box_x.y * box_z.z ) / det;
-  ibox_x.z = ( box_x.y * box_y.z - box_x.z * box_y.y ) / det;
+  /* transposed inverse box */
+  tbox_x.x = ( box_y.y * box_z.z - box_y.z * box_z.y ) / det;
+  tbox_y.x = ( box_x.z * box_z.y - box_x.y * box_z.z ) / det;
+  tbox_z.x = ( box_x.y * box_y.z - box_x.z * box_y.y ) / det;
 
-  ibox_y.x = ( box_y.z * box_z.x - box_y.x * box_z.z ) / det;
-  ibox_y.y = ( box_x.x * box_z.z - box_x.z * box_z.x ) / det;
-  ibox_y.z = ( box_x.z * box_y.x - box_x.x * box_y.z ) / det;
+  tbox_x.y = ( box_y.z * box_z.x - box_y.x * box_z.z ) / det;
+  tbox_y.y = ( box_x.x * box_z.z - box_x.z * box_z.x ) / det;
+  tbox_z.y = ( box_x.z * box_y.x - box_x.x * box_y.z ) / det;
 
-  ibox_z.x = ( box_y.x * box_z.y - box_y.y * box_z.x ) / det;
-  ibox_z.y = ( box_x.y * box_z.x - box_x.x * box_z.y ) / det;
-  ibox_z.z = ( box_x.x * box_y.y - box_x.y * box_y.x ) / det;
+  tbox_x.z = ( box_y.x * box_z.y - box_y.y * box_z.x ) / det;
+  tbox_y.z = ( box_x.y * box_z.x - box_x.x * box_z.y ) / det;
+  tbox_z.z = ( box_x.x * box_y.y - box_x.y * box_y.x ) / det;
 
-  /* Transpose */
-  tbox_x.x = ibox_x.x;
-  tbox_x.y = ibox_y.x;
-  tbox_x.z = ibox_z.x;
-
-  tbox_y.x = ibox_x.y;
-  tbox_y.y = ibox_y.y;
-  tbox_y.z = ibox_z.y;
-
-  tbox_z.x = ibox_x.z;
-  tbox_z.y = ibox_y.z;
-  tbox_z.z = ibox_z.z;
 }
 
 
