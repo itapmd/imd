@@ -844,9 +844,15 @@ void getparamfile(char *paramfname, int sim)
     }
 #ifdef SLLOD
     else if (strcasecmp(token,"shear_rate")==0) {
-      /* shear strength, corresponds to xy-entry in strain tensor */
-      getparam("shear_rate",&shear_rate,PARAM_REAL,2,2);
+      /* shear strength, corresponds to xy-like entries in strain tensor */
+      getparam("shear_rate",&shear_rate,PARAM_REAL,DIM,DIM);
     }
+#ifndef TWOD
+    else if (strcasecmp(token,"shear_rate2")==0) {
+      /* shear strength, corresponds to yx-entry in strain tensor */
+      getparam("shear_rate2",&shear_rate2,PARAM_REAL,DIM,DIM);
+    }
+#endif
 #endif
 #ifdef HOMDEF
     else if (strcasecmp(token,"exp_interval")==0) {

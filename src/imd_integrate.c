@@ -602,13 +602,18 @@ void move_atoms_sllod(void)
 #endif
   fnorm   = 0.0;
 
+#ifdef TWOD
   reibung.x         =        1.0 - (eta+shear_rate.x) * timestep / 2.0;
   eins_d_reib.x     = 1.0 / (1.0 + (eta+shear_rate.x) * timestep / 2.0);
   reibung.y         =        1.0 - (eta+shear_rate.y) * timestep / 2.0;
   eins_d_reib.y     = 1.0 / (1.0 + (eta+shear_rate.y) * timestep / 2.0);
-#ifndef TWOD
-  reibung.z         =        1.0 - eta * timestep / 2.0;
-  eins_d_reib.z     = 1.0 / (1.0 + eta * timestep / 2.0);
+#else
+  reibung.x         =        1.0 - (eta+shear_rate.z+shear_rate2.y) * timestep / 2.0;
+  eins_d_reib.x     = 1.0 / (1.0 + (eta+shear_rate.z+shear_rate2.y) * timestep / 2.0);
+  reibung.y         =        1.0 - (eta+shear_rate.x+shear_rate2.z) * timestep / 2.0;
+  eins_d_reib.y     = 1.0 / (1.0 + (eta+shear_rate.x+shear_rate2.z) * timestep / 2.0);
+  reibung.z         =        1.0 - (eta+shear_rate.y+shear_rate2.x) * timestep / 2.0;
+  eins_d_reib.z     = 1.0 / (1.0 + (eta+shear_rate.y+shear_rate2.x) * timestep / 2.0);
 #endif
 #ifdef UNIAX
   reibung_rot     =        1.0 - eta_rot * timestep / 2.0;
@@ -695,10 +700,17 @@ void move_atoms_sllod(void)
         p->ort Y(i) += tmp * p->impuls Y(i);
 #ifndef TWOD
         p->ort Z(i) += tmp * p->impuls Z(i);
-#endif
+	/* sllod specific */
+        p->ort X(i) += shear_rate.z  * p->ort Y(i);
+        p->ort X(i) += shear_rate2.y * p->ort Z(i);
+        p->ort Y(i) += shear_rate.x  * p->ort Z(i);
+        p->ort Y(i) += shear_rate2.z * p->ort X(i);
+        p->ort Z(i) += shear_rate.y  * p->ort X(i);
+        p->ort Z(i) += shear_rate2.x * p->ort Y(i);
+#else
         p->ort X(i) += shear_rate.x * p->ort Y(i);
         p->ort Y(i) += shear_rate.y * p->ort X(i);
-
+#endif
 #ifdef UNIAX
         cross.x = p->dreh_impuls Y(i) * p->achse Z(i)
                 - p->dreh_impuls Z(i) * p->achse Y(i);
@@ -756,8 +768,17 @@ void move_atoms_sllod(void)
 #endif
 
   /* adjusting the box */
+#ifdef TWOD
   box_x.y += shear_rate.y*box_y.y;
   box_y.x += shear_rate.x*box_x.x;
+#else
+  box_y.x += shear_rate.z  * box_y.y;
+  box_z.x += shear_rate2.y * box_z.z;
+  box_z.y += shear_rate.x  * box_z.z;
+  box_x.y += shear_rate2.z * box_x.x;
+  box_x.z += shear_rate.y  * box_x.x;
+  box_y.z += shear_rate2.x * box_y.y;
+#endif
   make_box();
 
   /* time evolution of constraints */

@@ -310,7 +310,10 @@ EXTERN vektor lindef_z INIT(nullvektor);  /*  |  matrix      */
 #endif
 
 #ifdef SLLOD
-EXTERN vektor2d shear_rate  INIT(nullvektor2d); /* shear rate as a vector */
+EXTERN vektor shear_rate   INIT(nullvektor); /* shear rate as a vector */
+#ifndef TWOD
+EXTERN vektor shear_rate2  INIT(nullvektor); /* shear rate as a vector */
+#endif
 #endif
 
 #if defined(FRAC) || defined(STM) || defined(FTG) 
