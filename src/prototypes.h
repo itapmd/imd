@@ -203,9 +203,9 @@ void add_forces   ( int k, int l, int m, int r, int s, int t );
 void pack_forces  ( msgbuf *b, int k, int l, int m);
 void unpack_forces( msgbuf *b, int k, int l, int m );
 #ifdef EAM2
-void copy_rho_h      ( int k, int l, int m, int r, int s, int t, vector );
+void copy_rho_h      ( int k, int l, int m, int r, int s, int t, vektor );
 void add_rho_h       ( int k, int l, int m, int r, int s, int t );
-void pack_rho_h_v    ( msgbuf *b, int k, int l, int m, vector );
+void pack_rho_h_v    ( msgbuf *b, int k, int l, int m, vektor );
 void pack_rho_h      ( msgbuf *b, int k, int l, int m );
 void unpack_rho_h    ( msgbuf *b, int k, int l, int m );
 void unpack_add_rho_h( msgbuf *b, int k, int l, int m );
