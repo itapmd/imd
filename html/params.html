@@ -67,7 +67,14 @@ use_current_pressure # (without arguments) Similar to use_current_temp.
 pressure_end	     # external end pressure/stress for NPT
                      # if different from pressure_start, the pressure
 		     # varies linearly during the simulation
+eta                  # dynamic eta variable for NVT thermostat
+                     # to continue a simulation properly, the old
+		     # final value of eta should be used
 tau_eta		     # time constant for thermostat
+xi                   # dynamic xi variable for NPT ensemble
+                     # scalar for NPT_iso, vector for NPT_axial
+                     # to continue a simulation properly, the old
+		     # final value of xi should be used
 tau_xi		     # time constant for volume control in NPT simulation
 isq_tau_eta	     # 1/SQR(tau_eta). Can be zero, which corresponds to NVE
 isq_tau_xi	     # 1/SQR(tau_xi). Can be zero, which corresponds
