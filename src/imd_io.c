@@ -1125,12 +1125,12 @@ void write_header_atdist_pos(FILE *out)
 
   /* box lines */
 #ifdef TWOD
-  fprintf(out, "#X \t%e %e\n", box_x.x , box_x.y);
-  fprintf(out, "#Y \t%e %e\n", box_y.x , box_y.y);
+  fprintf(out, "#X %e 0.0\n", pic_ur.x - pic_ll.x);
+  fprintf(out, "#Y 0.0 %e\n", pic_ur.y - pic_ll.y);
 #else
-  fprintf(out, "#X \t%e %e %e\n", box_x.x , box_x.y , box_x.z);
-  fprintf(out, "#Y \t%e %e %e\n", box_y.x , box_y.y , box_y.z);
-  fprintf(out, "#Z \t%e %e %e\n", box_z.x , box_z.y , box_z.z);
+  fprintf(out, "#X %e 0.0 0.0\n", pic_ur.x - pic_ll.x);
+  fprintf(out, "#Y 0.0 %e 0.0\n", pic_ur.y - pic_ll.y);
+  fprintf(out, "#Z 0.0 0.0 %e\n", pic_ur.z - pic_ll.z);
 #endif
 
   /* endheader line */
@@ -1186,9 +1186,11 @@ void write_atoms_atdist_pos(FILE *out)
                 (y < pic_ll.y) || (y > pic_ur.y)) continue;
 
 #ifdef TWOD
-            len += sprintf( outbuf+len, "%d %e %e\n", SORTE(p,i), x, y );
+            len += sprintf( outbuf+len, "%d %e %e\n", SORTE(p,i), 
+                            x - pic_ll.x, y - pic_ll.y );
 #else
-            len += sprintf( outbuf+len, "%d %e %e %e\n", SORTE(p,i), x, y, z );
+            len += sprintf( outbuf+len, "%d %e %e %e\n", SORTE(p,i), 
+                            x - pic_ll.x, y - pic_ll.y, z - pic_ll.z );
 #endif
             /* flush or send outbuf if it is full */
             if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
