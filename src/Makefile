@@ -156,8 +156,8 @@ CFLAGS_icc_OMP_i586_PROF	= -prof_gen
 CFLAGS_KCC_SERIAL_i586       	= +K3 -O3 --diag_suppress 177,550
 
 # MPICH
-CFLAGS_mpicc_MPI_i586		= -mcpu=i686 -O3
-CFLAGS_mpicc_MPI_i586_DEBUG	= -mcpu=i686 -g
+CFLAGS_mpicc_MPI_i586		= -O3
+CFLAGS_mpicc_MPI_i586_DEBUG	= -g
 CFLAGS_mpicc_MPI_i586_PROF	= -g3 -pg
 
 # guidec, OpenMP
