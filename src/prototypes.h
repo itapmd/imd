@@ -147,10 +147,13 @@ void deform_sample(void);
 #endif
 
 #ifdef DISLOC
-void reset_Epot_ref();
-void write_demmaps(int steps);
-void write_dspmaps(int steps);
+void reset_Epot_ref(void);
 void update_ort_ref(void);
+void write_cell_dem(FILE *out, cell *p);
+void write_cell_dsp(FILE *out, cell *p);
+#endif
+#ifdef EFILTER
+void write_cell_ef(FILE *out, cell *p);
 #endif
 
 #ifdef EAM
@@ -230,12 +233,3 @@ void locate(real x, real y, real z, int i, int j, int k);
 void borders(void);
 #endif
 void display_conf(int steps);
-#ifdef EFILTER
-void efwrite_config(int steps);
-#endif
-
-
-
-
-
-

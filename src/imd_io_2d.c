@@ -1,17 +1,16 @@
+
 /******************************************************************************
 *
-* imd_io_2d.c -- IO routines for the imd package 2D version
+* imd_io_2d.c -- 2D-specific IO routines
 *
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
 
 #include "imd.h"
-
 
 /******************************************************************************
 *
@@ -84,23 +83,21 @@ void read_atoms(str255 infilename)
   if ((1!=parallel_input) || (NULL==infile))
     infile = fopen(infilename,"r");
 #ifdef DISLOC
-  if ((calc_Epot_ref == 0) || (NULL==reffile))
-    reffile = fopen(reffilename,"r");
+  if (calc_Epot_ref == 0) reffile = fopen(reffilename,"r");
 #endif
 
 #else /* not MPI */
 
   infile = fopen(infilename,"r");
 #ifdef DISLOC
-  if (calc_Epot_ref == 0)
-    reffile = fopen(reffilename,"r");
+  if (calc_Epot_ref == 0) reffile = fopen(reffilename,"r");
 #endif
 
 #endif /* MPI */
 
   if (NULL==infile) error("Cannot open atoms file.");
 #ifdef DISLOC
-  if ((calc_Epot_ref == 0)&&(NULL==reffile)) 
+  if ((calc_Epot_ref == 0) && (NULL==reffile)) 
     error("Cannot open reference file.");
 #endif
 
@@ -409,41 +406,9 @@ void write_properties(int steps)
 }
 
 
-#ifdef MSQD
-
 /******************************************************************************
 *
-* write_msqd writes mean square displacement to *.msqd file
-*
-******************************************************************************/
-
-void write_msqd(int steps)
-{
-  FILE *out;
-  str255 fname;
-  int i;
-
-  sprintf(fname,"%s.msqd",outfilename);
-  out = fopen(fname,"a");
-  if (NULL == out) error("Cannot open msqd file.");
-
-  fprintf(out, "%10.4e", (double)(steps * timestep));
-  for (i=0; i<ntypes; i++) {
-    fprintf(out," %10.4e", (double)(msqd_global[i] / num_sort[i]));
-  };
-  putc('\n',out);
-
-  fclose(out);
-
-}
-
-#endif
-
-
-/******************************************************************************
-*
-* write_config writes a configuration to a numbered file
-* also creates a checkpoint
+*  write_cell - utility routine for write_config
 *
 ******************************************************************************/
 
@@ -452,7 +417,7 @@ void write_cell(FILE *out, cell *p)
   int i;
   double h;
 
-  for (i=0; i < p->n; i++)
+  for (i=0; i<p->n; i++)
 #ifdef ZOOM
     if( (p->ort X(i) >= pic_ll.x) && (p->ort X(i) <= pic_ur.x) &&
         (p->ort Y(i) >= pic_ll.y) && (p->ort Y(i) <= pic_ur.y) )
@@ -480,15 +445,22 @@ void write_cell(FILE *out, cell *p)
     }
 }
 
+/******************************************************************************
+*
+* write_config writes a configuration to a numbered file,
+* which can serve as a checkpoint; uses write_cell
+*
+******************************************************************************/
+
 void write_config(int steps)
 { 
   FILE *out;
   str255 fname;
   int fzhlr;
-  cell *p,*q;
-  int i,j,k,l,m,n,tag;
+  cell *p;
+  int k,m,tag;
 
-  /* Dateiname fuer Ausgabedatei erzeugen */
+  /* make output file name */
   fzhlr = steps / rep_interval;
 
 #ifdef MPI  
@@ -499,77 +471,54 @@ void write_config(int steps)
     sprintf(fname,"%s.%u",outfilename,fzhlr);
 
 #ifdef MPI
-
   if (1==parallel_output) {
+#endif
 
-    /* Ausgabedatei oeffnen */
+    /* open output file */
     out = fopen(fname,"w");
     if (NULL == out) error("Cannot open output file for config.");
 
-    for (j = 1; j < cell_dim.x-1; ++j )
-      for (k = 1; k < cell_dim.y-1; ++k ) {
- 	  p = PTR_2D_V(cell_array, j, k, cell_dim);
-	  write_cell(out,p);
-	};
-    
+    for (k=0; k<ncells; k++) {
+      p = cell_array + CELLS(k);
+      write_cell(out,p);
+    }
     fclose(out);
 
+#ifdef MPI
   } else { 
 
     if (0==myid) {
 
-      /* Ausgabedatei oeffnen */
+      /* open output file */
       out = fopen(fname,"w");
       if (NULL == out) error("Cannot open output file for config.");
 
-      /* Write data on CPU 0 */
+      /* write own data */
+      for (k=0; k<ncells; k++) {
+        p = cell_array + CELLS(k);
+        write_cell(out,p);
+      }
 
-      /* Write own data */
-      for (j = 1; j < cell_dim.x-1; ++j )
-	for (k = 1; k < cell_dim.y-1; ++k ) {
-	  p = PTR_2D_V(cell_array, j, k, cell_dim);
+      /* receive data from other cpus and write that */
+      p = cell_array;  /* this is a pointer to the first (buffer) cell */
+      for (m=1; m<num_cpus; ++m)
+        for (k=0; k<ncells; k++) {
+          tag = CELL_TAG + CELLS(k);
+          recv_cell(p,m,tag);
 	  write_cell(out,p);
-	};
-
-      /* Receive data from other cpus and write that */
-      p   = PTR_2D_V(cell_array, 0, 0, cell_dim);
-      for ( m = 1; m < num_cpus; ++m)
-	for (j = 1; j < cell_dim.x-1; ++j )
-	  for (k = 1; k < cell_dim.y-1; ++k ) {
-	    tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
-	    recv_cell( p, m, tag );
-	    write_cell(out,p);
-	  };
-
-      fclose(out);      
-    } else { 
-      /* Send data to cpu 0 */
-      for (j = 1; j < cell_dim.x-1; ++j )
-	for (k = 1; k < cell_dim.y-1; ++k ) {
-	  p   = PTR_2D_V(cell_array, j, k, cell_dim);
-	  tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
-	  send_cell( p, 0, tag );
 	}
+      fclose(out);
+
+    } else { 
+
+      /* send data to cpu 0 */
+      for (k=0; k<ncells; k++) {
+        p = cell_array + CELLS(k);
+        tag = CELL_TAG + CELLS(k);
+        send_cell(p,0,tag);
+      }
     }
   }
-
-#else
-
-  /* Ausgabedatei oeffnen */
-  out = fopen(fname,"w");
-  if (NULL == out) error("Cannot open output file for config.");
-
-  for (p = cell_array; 
-       p <= PTR_2D_V(cell_array,
-		     cell_dim.x-1,
-		     cell_dim.y-1,
-		     cell_dim);
-       ++p ) 
-
-    write_cell(out,p);
-
-  fclose(out);  
-
 #endif
 
   /* write iteration file */
@@ -607,410 +556,6 @@ void write_config(int steps)
   }
 }
 
-/******************************************************************************
-*
-* efwrite_config writes a 'filtered' configuration to a numbered file
-*
-******************************************************************************/
-#ifdef EFILTER
-void efwrite_cell(FILE *out, cell *p)
-{
-  int i;
-  double h;
-
-  for (i=0; i < p->n; i++)
-#ifdef ZOOM
-    if( (p->ort X(i) >= pic_ll.x) && (p->ort X(i) <= pic_ur.x) &&
-        (p->ort Y(i) >= pic_ll.y) && (p->ort Y(i) <= pic_ur.y) )
-#endif
-      {
-
-	if((POTENG(p,i)>=lower_e_pot)&&(POTENG(p,i)<=upper_e_pot))
-	  {
-#ifdef NVX
-	    h  = SPRODN(p->impuls,i,p->impuls,i)/(2*p->masse[i])+p->heatcond[i];
-	    h *=  p->impuls X(i) /  p->masse[i];
-	    fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f %12f\n",
-#else
-	    fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f\n",
-#endif
-		    p->nummer[i],
-		    p->sorte[i],
-		    p->masse[i],
-		    p->ort X(i),
-		    p->ort Y(i),
-		    p->impuls X(i) / p->masse[i],
-		    p->impuls Y(i) / p->masse[i],
-		    p->pot_eng[i]
-#ifdef NVX
-		    ,h
-#endif
-		    );
-		    
-		    }}
-}
-
-void efwrite_config(int steps)
-{ 
-  FILE *out;
-  str255 fname;
-  int fzhlr;
-  cell *p,*q;
-  int i,j,k,l,m,n,tag;
-
-  /* Dateiname fuer Ausgabedatei erzeugen */
-  fzhlr = steps / efrep_interval;
-
-#ifdef MPI  
-  if (1==parallel_output)
-    sprintf(fname,"%s.%u.%u",outfilename,fzhlr,myid);
-  else
-#endif
-    sprintf(fname,"%s.%u",outfilename,fzhlr);
-
-#ifdef MPI
-
-  if (1==parallel_output) {
-
-    /* Ausgabedatei oeffnen */
-    out = fopen(fname,"w");
-    if (NULL == out) error("Cannot open output file for config.");
-
-    for (j = 1; j < cell_dim.x-1; ++j )
-      for (k = 1; k < cell_dim.y-1; ++k ) {
- 	  p = PTR_2D_V(cell_array, j, k, cell_dim);
-	  efwrite_cell(out,p);
-	};
-    
-    fclose(out);
-
-  } else { 
-
-    if (0==myid) {
-
-      /* Ausgabedatei oeffnen */
-      out = fopen(fname,"w");
-      if (NULL == out) error("Cannot open output file for config.");
-
-      /* Write data on CPU 0 */
-
-      /* Write own data */
-      for (j = 1; j < cell_dim.x-1; ++j )
-	for (k = 1; k < cell_dim.y-1; ++k ) {
-	  p = PTR_2D_V(cell_array, j, k, cell_dim);
-	  efwrite_cell(out,p);
-	};
-
-      /* Receive data from other cpus and write that */
-      p   = PTR_2D_V(cell_array, 0, 0, cell_dim);
-      for ( m = 1; m < num_cpus; ++m)
-	for (j = 1; j < cell_dim.x-1; ++j )
-	  for (k = 1; k < cell_dim.y-1; ++k ) {
-	    tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
-	    recv_cell( p, m, tag );
-	    efwrite_cell(out,p);
-	  };
-
-      fclose(out);      
-    } else { 
-      /* Send data to cpu 0 */
-      for (j = 1; j < cell_dim.x-1; ++j )
-	for (k = 1; k < cell_dim.y-1; ++k ) {
-	  p   = PTR_2D_V(cell_array, j, k, cell_dim);
-	  tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
-	  send_cell( p, 0, tag );
-	}
-    }
-  }
-
-#else
-
-  /* Ausgabedatei oeffnen */
-  out = fopen(fname,"w");
-  if (NULL == out) error("Cannot open output file for config.");
-
-  for (p = cell_array; 
-       p <= PTR_2D_V(cell_array,
-		     cell_dim.x-1,
-		     cell_dim.y-1,
-		     cell_dim);
-       ++p ) 
-
-    efwrite_cell(out,p);
-
-  fclose(out);  
-
-#endif
-
-}
-#endif
-
-
-#ifdef DISLOC
-
-/******************************************************************************
-*
-* write_demmaps writes a differential energy map to file *.dem.x
-*
-******************************************************************************/
-
-void write_demmaps(int steps)
-
-#define WRITE_CELL_DEM     for (i = 0;i < p->n; ++i) {\
-             if (p->sorte[i] == dpotsorte) {\
-	       dpot = ABS(p->pot_eng[i] - p->Epot_ref[i]);\
-               if (dpot > min_dpot)\
-                 fprintf(demout,"%12f %12f %12f\n",\
-	         p->ort X(i),\
-	         p->ort Y(i),\
-                 dpot);\
-            }\
-          }
-{
-  FILE *demout;
-  str255 demfname;
-  int fzhlr;
-  cell *p,*q;
-  int i,j,k,m,tag;
-  real dpot;
-
-  /* Dateiname fuer Ausgabedatei erzeugen */
-  fzhlr = steps;
-  sprintf(demfname,"%s.dem.%u",outfilename,fzhlr);
-#ifdef MPI
-
-  if (0==myid) {
-
-    /* Ausgabedatei oeffnen */
-    demout = fopen(demfname,"w");
-    if (NULL == demout) error("Cannot open output file for dem.");
-
-    /* Write data on CPU 0 */
-
-    /* Write own data */
-    for (j = 1; j < cell_dim.x-1; ++j )
-      for (k = 1; k < cell_dim.y-1; ++k ) { 
-	p = PTR_2D_V(cell_array, j, k, cell_dim);
-	WRITE_CELL_DEM;
-      };
-
-    /* Receive data from other cpus and write that */
-    p   = PTR_2D_V(cell_array, 0, 0, cell_dim);
-    for ( m = 1; m < num_cpus; ++m)
-      for (j = 1; j < cell_dim.x-1; ++j )
-	for (k = 1; k < cell_dim.y-1; ++k ) {
-	  tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
-	  recv_cell( p, m, tag );
-	  WRITE_CELL_DEM;
-	};
-
-    fclose(demout);      
-
-  } else { 
-    /* Send data to cpu 0 */
-    for (j = 1; j < cell_dim.x-1; ++j )
-      for (k = 1; k < cell_dim.y-1; ++k ) {
-        p   = PTR_2D_V(cell_array, j, k, cell_dim);
-        tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
-        send_cell( p, 0, tag );
-      };
-  };
-
-#else
-
-  /* Ausgabedatei oeffnen */
-  demout = fopen(demfname,"w");
-  if (NULL == demout) error("Cannot open output file for dem.");
-
-  for (p = cell_array; 
-       p <= PTR_2D_V(cell_array,
-		     cell_dim.x-1,
-		     cell_dim.y-1,
-		     cell_dim);
-       ++p ) {
-    WRITE_CELL_DEM;
-    }
-
-  fclose(demout);
-
-#endif
-  
-}
-
-/******************************************************************************
-*
-* write_dspmaps writes a differential displacement map to file *.ddm.x
-*
-******************************************************************************/
-
-void write_dspmaps(int steps)
-
-#ifdef MONOLJ
-#define WRITE_CELL     for (i = 0;i < p->n; ++i) \
-             fprintf(out,"%12f %12f %12f %12f\n",\
-             p->ort X(i),\
-             p->ort Y(i),\
-	     p->impuls X(i),\
-	     p->impuls Y(i));
-		     
-#else
-
-#define WRITE_CELL_DSP     for (i = 0;i < p->n; ++i) {\
-             dx = p->ort X(i) - p->ort_ref X(i);\
-             dy = p->ort Y(i) - p->ort_ref Y(i);\
-             fprintf(dspout,"%12f %12f %12f %12f\n",\
-	     p->ort X(i),\
-	     p->ort Y(i),\
-	     dx,\
-             dy);\
-          }
-#endif
-
-{
-  FILE *dspout;
-  str255 dspfname;
-  int fzhlr;
-  cell *p,*q;
-  int i,j,k,m,tag;
-  real dx, dy, boxx, boxy;
-
-  /* Dateiname fuer Ausgabedatei erzeugen */
-  fzhlr = steps;
-  sprintf(dspfname,"%s.dsp.%u",outfilename,fzhlr);
-
-  /* 1/2 of the boxlength, this is not correct for non-cartesian boxes ! */
-  boxx = box_x.x/2;
-  boxy = box_y.y/2;
-#ifdef MPI
-
-  if (0==myid) {
-
-  /* Ausgabedatei oeffnen */
-    dspout = fopen(dspfname,"w");
-    if (NULL == dspout) error("Cannot open output file for dsp.");
-
-    /* Write data on CPU 0 */
-
-    /* Write own data */
-    for (j = 1; j < cell_dim.x-1; ++j )
-      for (k = 1; k < cell_dim.y-1; ++k ) {
-	p = PTR_2D_V(cell_array, j, k, cell_dim);
-	WRITE_CELL_DSP;
-      }
-
-    /* Receive data from other cpus and write that */
-    p   = PTR_2D_V(cell_array, 0, 0, cell_dim);
-    for ( m = 1; m < num_cpus; ++m)
-      for (j = 1; j < cell_dim.x-1; ++j )
-        for (k = 1; k < cell_dim.y-1; ++k ) {
-          tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
-          recv_cell( p, m, tag );
-          WRITE_CELL_DSP;
-	}
-
-    fclose(dspout);      
-    
-  } else { 
-  /* Send data to cpu 0 */
-  for (j = 1; j < cell_dim.x-1; ++j )
-    for (k = 1; k < cell_dim.y-1; ++k ) {
-      p   = PTR_2D_V(cell_array, j, k, cell_dim);
-      tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
-      send_cell( p, 0, tag );
-    };
-  };
-
-#else
-
-  /* Ausgabedatei oeffnen */
-  dspout = fopen(dspfname,"w");
-  if (NULL == dspout) error("Cannot open output file for dsp.");
-
-  for (p = cell_array; 
-       p <= PTR_2D_V(cell_array,
-		     cell_dim.x-1,
-		     cell_dim.y-1,
-		     cell_dim);
-       ++p ) {
-    WRITE_CELL_DSP;
-
-  }
-
-  fclose(dspout);
-
-#endif
-}
-
-
-/******************************************************************************
-*
-* update_ort_ref updates ort_ref
-*
-******************************************************************************/
-
-void update_ort_ref(void)
-
-{ 
-  cell *p,*q;
-  int i,j,k,m,tag;
-  real dx, dy, boxx, boxy;
-
-#ifdef MPI
-
-  if (0==myid) {
-
-  /* Update own data */
-  for (j = 1; j < cell_dim.x-1; ++j )
-    for (k = 1; k < cell_dim.y-1; ++k ) 
-      p = PTR_2D_V(cell_array, j, k, cell_dim);
-      for (i = 0;i < p->n; ++i) {
-	p->ort_ref X(i) = p->ort X(i);
-	p->ort_ref Y(i) = p->ort Y(i);
-      }
-
-  /* Receive data from other cpus and Update that */
-  p = PTR_2D_V(cell_array, 0, 0, cell_dim);
-  for ( m = 1; m < num_cpus; ++m)
-    for (j = 1; j < cell_dim.x-1; ++j )
-      for (k = 1; k < cell_dim.y-1; ++k ) {
-	tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
-        recv_cell( p, m, tag );
-	  for (i = 0;i < p->n; ++i) {
-	    p->ort_ref X(i) = p->ort X(i);
-	    p->ort_ref Y(i) = p->ort Y(i);
-	  }
-	};
-
-  } else { 
-  /* Send data to cpu 0 */
-  for (j = 1; j < cell_dim.x-1; ++j )
-    for (k = 1; k < cell_dim.y-1; ++k ) {
-      p   = PTR_2D_V(cell_array, j, k, cell_dim);
-      tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
-      send_cell( p, 0, tag );
-    };
-  };
-
-#else
-
-  for (p = cell_array; 
-       p <= PTR_2D_V(cell_array,
-		     cell_dim.x-1,
-		     cell_dim.y-1,
-		     cell_dim);
-       ++p ) {
-    for (i = 0;i < p->n; ++i) {
-      p->ort_ref X(i) = p->ort X(i);
-      p->ort_ref Y(i) = p->ort Y(i);
-    }
-  }
-
-#endif
-
-}
-
-
-#endif
 
 /******************************************************************************
 *
@@ -1030,7 +575,7 @@ void write_distrib(int steps)
   float *kin;
   shortint *num;
   float minpot, maxpot, minkin, maxkin;
-  int fzhlr,i,j,r,s,t;
+  int fzhlr,i,j,k;
   static float    *pot_hist_local=NULL;
   static float    *kin_hist_local=NULL;
   static shortint *num_hist_local=NULL;
@@ -1100,9 +645,8 @@ void write_distrib(int steps)
   scale.y = dist_dim.y / scale.y;
 
   /* loop over all atoms */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s ) {
-      p = PTR_2D_V(cell_array, r, s, cell_dim);
+  for (k=0; k<ncells; k++) {
+      p = cell_array + CELLS(k);
       for (i = 0;i < p->n; ++i) {
         coord.x = (int) (p->ort X(i) * scale.x);
         coord.y = (int) (p->ort Y(i) * scale.y);
@@ -1124,7 +668,7 @@ void write_distrib(int steps)
         *pot += p->pot_eng[i];
         *kin += SPRODN(p->impuls,i,p->impuls,i) / (2*p->masse[i]);
       }
-    }
+  }
 
 #ifdef MPI
   MPI_Reduce(pot_hist_local,pot_hist_global,size,MPI_FLOAT,MPI_SUM,0,cpugrid);
@@ -1183,13 +727,13 @@ void write_distrib(int steps)
                 count_pot, count_kin );
       }
     } else {
-      for ( r = 0; r < dist_dim.x; ++r )
-        for ( s = 0; s < dist_dim.y; ++s ) {
-          pot = PTR_2D_V(pot_hist, r, s, dist_dim);
-          kin = PTR_2D_V(kin_hist, r, s, dist_dim);
+      for (i=0; i<dist_dim.x; ++i)
+        for (j=0; j<dist_dim.y; ++j) {
+          pot = PTR_2D_V(pot_hist, i, j, dist_dim);
+          kin = PTR_2D_V(kin_hist, i, j, dist_dim);
           fprintf(outpot,"%f\n", *pot);
           fprintf(outkin,"%f\n", *kin);
-        };
+        }
     }
 
     fclose(outpot);

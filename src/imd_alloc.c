@@ -1,3 +1,4 @@
+
 /******************************************************************************
 *
 * Allocation and moving of atom data
@@ -5,7 +6,6 @@
 *   Contains routines move_atom() and alloc_cell(), which were in
 *   imd_geom.c and imd_geom_2d.c, but are dimension independent.  
 *
-* $RCSfile$
 * $Revision$
 * $Date$
 *
@@ -182,26 +182,6 @@ void move_atom(ivektor cellc, cell *from, int index)
 #endif /* not MONOLJ */
   }
 }
-
-
-#ifdef DISLOC
-void reset_Epot_ref(void)
-{
-  int  k;
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-  for (k=0; k<ncells; ++k) {
-    int  i;
-    cell *p;
-    p = cell_array + CELLS(k);
-    for (i=0; i<p->n; ++i) {
-      p->Epot_ref[i] = p->pot_eng[i];
-    }
-  }
-}
-#endif
-
 
 #ifdef COVALENT
 /******************************************************************************

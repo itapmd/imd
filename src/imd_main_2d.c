@@ -243,19 +243,22 @@ void main_loop(void)
 #endif
 
     /* Periodic I/O */
-#ifdef EFILTER  /* just print atoms if in an energy-window */ 
-    if ((efrep_interval > 0) && (0 == steps%efrep_interval)) efwrite_config(steps);
-#endif
     if ((rep_interval > 0) && (0 == steps%rep_interval)) write_config(steps);
     if ((eng_interval > 0) && (0 == steps%eng_interval) && (0==myid)) 
        write_properties(steps);
     if ((dis_interval > 0) && (0 == steps%dis_interval)) write_distrib(steps);
     if ((pic_interval > 0) && (0 == steps%pic_interval)) write_pictures(steps);
 
+#ifdef EFILTER  /* just print atoms in an energy-window */ 
+    if ((efrep_interval > 0) && (0 == steps%efrep_interval)) 
+       write_config_select(steps/efrep_interval,"ef",write_cell_ef);
+#endif
 #ifdef DISLOC
-    if ((dem_interval > 0) && (0 == steps%dem_interval)) write_demmaps(steps);
+    if (steps == up_ort_ref) update_ort_ref();
+    if ((dem_interval > 0) && (0 == steps%dem_interval)) 
+       write_config_select(steps,"dem",write_cell_dem);
     if ((dsp_interval > up_ort_ref) && (0 == steps%dsp_interval)) 
-       write_dspmaps(steps);
+       write_config_select(steps,"dsp",write_cell_dsp);
 #endif
 
 #ifdef TRANSPORT
