@@ -65,7 +65,7 @@ void calc_forces(void)
 #pragma omp parallel for
 #endif
   for (k=0; k<nallcells; ++k) {
-    int  i,j;
+    int  i;
     cell *p;
     p = cell_array + k;
     for (i=0; i<p->n; ++i) {
@@ -95,9 +95,7 @@ void calc_forces(void)
       p->nbanz[i] = 0;
 #endif
 #ifdef COVALENT
-      for (j=0; j<p->n; ++j) {
-        p->neigh[j]->n = 0;
-      }
+      p->neigh[i]->n = 0;
 #endif
 #ifdef EAM2
       p->eam2_rho_h[i] = 0.0; /* zero host electron density at atom site */
