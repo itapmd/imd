@@ -55,6 +55,9 @@ void main_loop(void)
     error("Can't allocate memory for fbc_df\n");
 #endif
 
+  /* initializations for the current simulation phase, if not yet done */
+  if (0==restart) init();
+
 #if defined(FRAC) || defined(FTG) 
   if (0==myid) {
       printf( "Strain rate is  %1.10f\n", dotepsilon0 );
@@ -109,9 +112,6 @@ void main_loop(void)
 #ifdef ATDIST
   init_atoms_dist();
 #endif
-
-  /* initializations for the current simulation phase, if not yet done */
-  if (0==restart) init();
 
 #ifdef DEFORM
   deform_int = 0;
