@@ -487,7 +487,7 @@ void write_pictures_bins(int steps)
 *
 ******************************************************************************/
 
-void write_pictures_cooked(int steps)
+void write_pictures_atoms(int steps)
 
 #ifdef NUMPIX
 #undef NUMPIX
@@ -858,7 +858,7 @@ void write_pictures( steps )
 {
   switch (pic_type) {
     case 0: write_pictures_raw ( steps ); break;
-    case 1: write_pictures_cooked ( steps ); break;
+    case 1: write_pictures_atoms ( steps ); break;
     case 2: write_pictures_bins( steps ); break;
   };
 }
