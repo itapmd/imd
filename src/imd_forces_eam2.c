@@ -1,12 +1,13 @@
-/*****************************************************************************
+
+/******************************************************************************
 *
 * imd_forces_eam2_risc -- force loops
 * uses some parts of do_forces, so please keep up to date
 * version that uses tables in r2
+*
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
@@ -20,14 +21,7 @@
 		      better (later) Nr. in parameterfile... */ 
 
 #include "imd.h"
-/* #include "makros.h" */
-#include <math.h>
 
-/* not supported yet by eam2*********
-   #if defined(PVPCRAY) || defined(SX4) 
-   #include "imd_forces_vec.c" 
-   #else 
-*************************************/
 
 /******************************************************************************
 *
@@ -41,8 +35,6 @@
 *    doesn't use 'actio = reactio' !!!!
 ******************************************************************************/
 
-
-
 void eam2_do_forces1(cell *p, cell *q, vektor pbc)     
 {
   int i,j,k;
@@ -53,8 +45,9 @@ void eam2_do_forces1(cell *p, cell *q, vektor pbc)
   vektor tmp_forces;
   real tmp_energy;
 
+  real tmp_virial = 0.0;
 #ifdef P_AXIAL
-  vektor tmp_vir_vect;
+  vektor tmp_vir_vect = {0.0, 0.0, 0.0};
 #endif
   real pot_zwi;
   real pot_grad;
@@ -62,17 +55,7 @@ void eam2_do_forces1(cell *p, cell *q, vektor pbc)
   int c;
   real pot_k0,pot_k1,pot_k2;
   int q_typ,p_typ;
-
   real *qptr;  
-
-  real tmp_virial     = 0.0;
-#ifdef P_AXIAL
-  tmp_vir_vect.x = 0.0;
-  tmp_vir_vect.y = 0.0;
-#ifndef TWOD
-  tmp_vir_vect.z = 0.0;
-#endif
-#endif
   
   /* EAM2 variables */
   real eam2_r;
@@ -95,7 +78,7 @@ void eam2_do_forces1(cell *p, cell *q, vektor pbc)
 
 
   /* For each atom in first cell */
-  for (i = 0;i < p->n; ++i) {
+  for (i=0; i<p->n; ++i) {
 
     /* For each atom in neighbouring cell */
     /* Some compilers don't find the expressions that are invariant 
@@ -361,7 +344,7 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
   int q_typ,p_typ;
   real *qptr; 
 #ifdef P_AXIAL
-  vektor tmp_vir_vect;
+  vektor tmp_vir_vect = {0.0, 0.0, 0.0};
 #endif
   /* EAM2 variables */
   real eam2_r;
@@ -393,16 +376,8 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
   real eam2_f_i_strich,eam2_f_j_strich,eam2_rho_i_strich,eam2_rho_j_strich;
   real eam2_force;
 
-#ifdef P_AXIAL
-  tmp_vir_vect.x = 0.0;
-  tmp_vir_vect.y = 0.0;
-#ifndef TWOD
-  tmp_vir_vect.z = 0.0;
-#endif
-#endif
-
   /* For each atom in first cell */
-  for (i = 0;i < p->n; ++i) {
+  for (i=0; i<p->n; ++i) {
     tmp_d.x = p->ort X(i) - pbc.x;
     tmp_d.y = p->ort Y(i) - pbc.y;
 #ifndef TWOD
