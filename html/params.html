@@ -53,11 +53,23 @@ pbc_dirs        # boundary condition type; vector with components 0 or 1
 checkpt_int	# number of steps between checkpoints
 eng_int		# number of steps between energy data writes
 pic_int		# number of steps between picture writes
-dist_int	# number of steps between energy distribution writes
-dist_dim        # dimensions for energy distribution writes 
-dist_binary_io  # formatted (0) or binary (1) energy distributions
-dist_has_coords # 1 means that (integer) bin coordinates are written
-virvo_io        # if eq. 1 no dists are written instead virvo files
+
+# writing distributions - general parameters
+dist_int	# number of steps between distribution writes
+dist_dim        # dimension of distribution 
+dist_ll         # lower left corner in user coords 
+dist_ur         # upper right corner in user coords
+
+# flags selecting the distributions: 
+# 0=no (default), 1=binary, 2=ASCII with bin coords, 3=ASCII no bin coords)
+dist_Epot_flag         # potential energy 
+dist_Ekin_flag         # kinetic energy 
+dist_Ekin_long_flag    # longitudinal kinetic energy (shock wave simulation) 
+dist_Ekin_trans_flag   # transversal kinetic energy (shock wave simulation) 
+dist_press_flag        # scalar pressure (requires option stress) 
+dist_presstens_flag    # pressure tensor (option stress, 
+                       # all components in one file) 
+dist_shock_shear_flag  # shear stress (shock wave simulation)
 
 # temperature, pressure, and related stuff
 # required if ensemble supports temperature or pressure control

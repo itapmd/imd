@@ -1,0 +1,253 @@
+<!--#include virtual="imdhead.html" -->
+
+<h1>Miscellaneous Tools</h1>
+
+<table cellpadding="4">
+<tr><td><a href="#imd_power">imd_power</a></td>
+    <td>power spectrum of data in properties file</td></tr>
+<tr><td><a href="#rav">rav</a></td>
+    <td>running averages</td></tr>
+<tr><td><a href="#makeconf">make_config</a></td>
+    <td>configuration file generator</td></tr>
+<tr><td><a href="#atcon">atcon</a></td>
+    <td>configuration file converter (not up-to-date)</td></tr>
+<tr><td><a href="#procdata">procdata</a></td>
+    <td>configuration file converter (not up-to-date)</td></tr>
+<tr><td><a href="#imd2ppm">imd2ppm</a></td>
+    <td>image of 2d binary tiling quasicrystal</td></tr>
+</table>
+
+
+<a id="imd_power" name="imd_power">
+<h2>imd_power</h2>
+</a>
+
+<p>
+Computes the power spectrum of an IMD properties file 
+(<tt>.eng</tt> file).</p>
+
+<p>
+Compilation:
+<pre>
+    gmake imd_power
+</pre>
+Usage:
+<pre>
+    imd_power &lt;n1&gt; &lt;n2&gt; &lt;engfile&gt;[.eng]
+</pre>
+imd_power reads lines <tt>n1</tt> through <tt>n2</tt> (inclusive)
+from the given <tt>.eng</tt> file (disregarding comment lines), 
+and computes the fast Fourier 
+transform (FFT) of columns <tt>2</tt> to <tt>n</tt>, using the time 
+variable from column <tt>1</tt>. At present, a maximum of <tt>16</tt> 
+columns is supported. If <tt>n2-n1+1</tt> is not a power of <tt>2</tt>, 
+the remaining entries are filled with zeros (FFT requires that the 
+number of data items is a power of <tt>2</tt>). The output is
+written to file <tt>&lt;engfile&gt;.fft</tt>. The first column
+of the output file contains the angular frequency, and the remaining 
+columns the squared Fourier amplitudes for this frequency.
+</p>
+
+
+<a id="name" name="rav">
+<h2>rav</h2>
+</a>
+
+<p>
+<b>rav</b> is an awk script that computes the running average of a
+histogram. Usage is as follows:</p>
+
+<pre>
+     rav [n=&lt;n&gt;] &lt;datafile&gt; &gt; &lt;newdatafile&gt;
+</pre>
+
+<p>
+The running average of a set of data points <i>f<sub>i</sub></i> is
+given by
+</p>
+
+<center><img src="rav.gif" /></center>
+
+<p>
+where the value of <i>n</i> can be given as an optional parameter
+(10 by default).
+</p>
+
+<p>
+<b>rav</b> can be used directly in gnuplot as in the following example:
+</p>
+
+<pre>
+     plot &quot;&lt;rav [n=&lt;n&gt;] datafile&quot; using 1:2
+</pre>
+
+
+<a id="makeconf" name="makeconf">
+<h2>make_config</h2>
+</a>
+
+<p>
+The make_config utility program can be used to generate configuration
+files for some simple crystal structures.</p>
+
+<p>
+Compilation:
+<pre>
+   gmake make_config
+</pre>
+</p>
+
+<p>
+The online help of make_config says:
+<pre>
+   Usage: make_config &lt;type&gt; &lt;outfile&gt; [options] 
+
+   &lt;type&gt; must be one of:
+
+    - hex        2D hexagonal crystal
+    - fcc        fcc structure
+    - bcc        bcc structure
+    - b2         B2 structure
+    - nacl       NaCl structure
+    - diamond    cubic diamond structure
+    - zincblende zincblende structure
+    - lav        cubic C15 Laves structure (MgCu2)
+
+   Options:  -s &lt;sx&gt; &lt;sy&gt; [&lt;sz&gt;]  size in unit cells (default 1)
+             -a &lt;a&gt;               lattice constant (default 1.0)
+             -m &lt;m0&gt; [&lt;m1&gt;]       mass(es)         (default 1.0)
+</pre>
+</p>
+
+<p>
+For the 3D cubic crystal structures, the size parameters <tt>sx, sy,
+and sz</tt> specify the number of cubic conventional unit cells in 
+each direction, and the lattice parameter <tt>a</tt> the size of this 
+unit cell. For 2D hexagonal crystals, the unit cell has size 
+<tt>a*sqrt(3)</tt>times <tt>a</tt>, with a nearest neighbor atom 
+distance <tt>a</tt>. If the option <tt>-m</tt> is used for a binary 
+structure (b2, nacl, zincblende, lav), the masses of both atom types
+must be given.</p>
+
+<p>
+Note that the user interface of make_config differs somewhat from
+that of the <a href="config.html#generated">online configuration 
+generation</a> of IMD.</p>
+
+<a id="atcon" name="atcon">
+<h2>atcon</h2>
+</a>
+
+<p>
+Atcon is configuration file constructor/converter.</p>
+
+<p>
+Compilation:
+<pre>
+  gmake atcon
+</pre>
+</p>
+
+<p>The online help of atcon says:
+<pre>
+Usage: atcon &lt;in_format&gt;:lt;out_format&gt; \
+       [-2d] [-bi] [-bo] [-help] [-i] &lt;infile&gt; [-o] &lt;outfile&gt;
+
+Supported input formats:
+TEE,IMD,MOP
+Supported output formats:
+TEE,IMD,MOP,POS,VRM,PDB
+
+TEE: &lt; x y z t &gt;, the first line contains the box
+IMD: &lt; nr t m x y z (vx vy vz) (prop) &gt;
+MOP:
+POS: postscript
+VRM: vrml
+PDB: proteine database format (rasmol)
+</pre>
+</p>
+
+
+<a id="procdata" name="procdata">
+<h2>procdata</h2>
+</a>
+
+<p>
+Procdata converts configuration files between different formats.
+It can also be used to cut out parts of a configuration, rotate
+a configuration, or to stack configurations periodically.
+</p>
+
+<p>
+Compilation:
+<pre>
+  gmake procdata
+</pre>
+<p>
+
+<p>
+The online help of procdata says:
+<pre>
+Usage: procdata [-i{format}] [-f{format}] inputfile outputfile
+
+-i0 reads IMD or VVMD data format (default)
+-i1 reads modifti.f/tiunmodif.f output format
+-f0 converts to MOLPIC format (for molgraph, default)
+-f1 converts to PDB format (for rasmol)
+-f2 converts to IMD format
+-k keeps previous numbers (default: sort and begin from 1
+-fRDF calculates radial distribution function
+-Cxmin limit   cuts off atoms with x&lt;limit
+-Cxmax limit   cuts off atoms with x&gt;limit
+-Cymin limit   cuts off atoms with y&lt;limit
+-Cymax limit   cuts off atoms with y&gt;limit
+-Czmin limit   cuts off atoms with z&lt;limit
+-Czmax limit   cuts off atoms with z&gt;limit
+-Sz zincr n    stacks the structure in z-direction n times 
+               with increment zinc (used for generation of 
+               2D-quasiperiodic structures)
+-Rx phi   rotate by angle phi around x-axis
+-Ry phi   rotate by angle phi around y-axis
+-Rz phi   rotate by angle phi around z-axis
+very special options are: (see source code)
+-RAlCuCo -CAlCuCo  rotates AlCuCo approximant
+and cuts out a rectangular piece (for approx2.inp)
+</pre>
+<p>
+
+
+<a id="imd2ppm" name="imd2ppm">
+<h2>imd2ppm</h2>
+</a>
+
+<p>
+imd2ppm converts <a href="config.html">IMD configuration files</a> 
+or special <tt>.pic</tt> files of 2D binary tiling quasicrystals 
+into ppm bitmaps, where each atom is drawn as a disk of appropriate 
+radius.</p> 
+
+<p>Compilation: 
+<pre>
+   gmake imd2ppm
+</pre>
+Usage:
+<pre>
+   imd2ppm [-p] [-a] infile E_min E_max x0 y0 width height width_pix height_pix
+</pre>
+If the flag <tt>-p</tt> is used, the coloring is according to the
+potential energy of each atom, rather than the kinetic energy.
+If the flag <tt>-a</tt> is used, imd2ppm expects a 
+<a href="config.html">IMD configuration files</a> as input,
+otherwise the special, binary <tt>.pic</tt> files.</p>
+
+<p>
+The remaining parameters are, in this order, the input file, the lower 
+and upper energy treshold for the coloring, x and y coordinates of the
+lower left corner of the image, width and height of the image in
+user coordinates, and width and height of the image in pixels
+(resolution). The output files are called <tt>&lt;infile&gt;.kin.ppm</tt>
+or <tt>&lt;infile&gt;.pot.ppm</tt>, depending on whether the flag 
+<tt>-p</tt> was used or not.
+</p>
+
+<!--#include virtual="imdfoot.html" -->

@@ -35,3 +35,9 @@ div {
 
 tr { vertical-align: top; }
 th { text-align: left; }
+
+span.sub {
+  margin-left: 1.2em;
+}
+
+
