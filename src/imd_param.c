@@ -455,6 +455,10 @@ void getparamfile(char *paramfname, int sim)
       /* write transversal Ekin dist? */
       getparam(token,&dist_Ekin_trans_flag,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token,"dist_Ekin_comp_flag")==0) {
+      /* write difference Ekin dist? */
+      getparam(token,&dist_Ekin_comp_flag,PARAM_INT,1,1);
+    }
     else if (strcasecmp(token,"dist_shock_shear_flag")==0) {
       /* write shock shear dist? */
       getparam(token,&dist_shock_shear_flag,PARAM_INT,1,1);
@@ -2144,6 +2148,7 @@ void broadcast_params() {
   MPI_Bcast( &dist_Ekin_flag,        1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_Ekin_long_flag,   1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_Ekin_trans_flag,  1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_Ekin_comp_flag,  1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_press_flag,       1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_presstens_flag,   1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_shock_shear_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 

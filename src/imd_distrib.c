@@ -89,6 +89,11 @@ void write_distrib(int steps)
     if (myid==0) write_distrib_select( &dist, dist_Ekin_trans_flag, 1, fzhlr, 
                                        "Ekin_trans", "Ekin_trans");
   }
+  if (dist_Ekin_comp_flag) {
+    make_distrib_select( &dist, 1, &flag, dist_Ekin_comp_fun);
+    if (myid==0) write_distrib_select( &dist, dist_Ekin_comp_flag, 1, fzhlr, 
+                                       "Ekin_comp", "Ekin_comp");
+  }
   if (dist_shock_shear_flag) {
     make_distrib_select( &dist, 1, &flag, dist_shock_shear_fun);
     if (myid==0) write_distrib_select( &dist, dist_shock_shear_flag, 1, fzhlr, 
@@ -192,6 +197,12 @@ void dist_shear_aniso_fun(float *dat, cell *p, int i)
 void dist_Ekin_trans_fun(float *dat, cell *p, int i)
 {
   *dat += (SQR(IMPULS(p,i,Y)) + SQR(IMPULS(p,i,Z))) / (4 * MASSE(p,i));
+}
+
+/* difference kinetic energy */
+void dist_Ekin_comp_fun(float *dat, cell *p, int i)
+{
+  *dat += (SQR(IMPULS(p,i,Y)) - SQR(IMPULS(p,i,Z))) / (2 * MASSE(p,i));
 }
 
 /* transversal kinetic energy */
