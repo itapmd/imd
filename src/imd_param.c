@@ -487,6 +487,10 @@ void getparamfile(char *paramfname, int sim)
       /* margin of neighbor list */
       getparam(token,&nbl_margin,PARAM_REAL,1,1);
     }
+    else if (strcasecmp(token,"nbl_size")==0) {
+      /* size of neighbor list */
+      getparam(token,&nbl_size,PARAM_REAL,1,1);
+    }
 #endif
 #ifdef VEC
     else if (strcasecmp(token,"atoms_per_cpu")==0) {
@@ -2293,6 +2297,7 @@ void broadcast_params() {
   }
 #ifdef NBLIST
   MPI_Bcast( &nbl_margin,    1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &nbl_size,      1, REAL, 0, MPI_COMM_WORLD);
 #endif
 #ifdef VEC
   MPI_Bcast( &atoms_per_cpu, 1,  INT, 0, MPI_COMM_WORLD);

@@ -255,6 +255,7 @@ EXTERN int  do_maxwell INIT(0.0);
 EXTERN long seed INIT(0);            /* seed for random number generator */
 #ifdef NBLIST
 EXTERN real nbl_margin INIT(0.4);    /* neighbor list margin */
+EXTERN real nbl_size   INIT(1.1);    /* neighbor list size */
 EXTERN int  nbl_count  INIT(0);      /* counting neighbor list rebuild */
 #endif
 

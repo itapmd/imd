@@ -88,7 +88,7 @@ int estimate_nblist_size(void)
 
 void make_nblist(void)
 {
-  static int at_max=0, nb_max=0;
+  static int at_max=0, nb_max=0, pa_max=0;
   int  c, c1, i, k, n, tn, at, cc;
   cell *p, *q;
 
@@ -129,7 +129,7 @@ void make_nblist(void)
     tl = (int *) realloc(tl, at_max * sizeof(int));
   }
   if (nbl_count==0) {
-    nb_max = (int) (1.1*estimate_nblist_size());
+    nb_max = (int) (nbl_size*estimate_nblist_size());
     tb = (TB_T *) realloc(tb, nb_max * sizeof(TB_T));
 #ifndef SAVEMEM
     cl = (int  *) realloc(cl, nb_max * sizeof(int ));
@@ -179,10 +179,12 @@ void make_nblist(void)
           }
         }
       }
+      pa_max = MAX(pa_max,tn-tl[n]);
       tl[++n] = tn;
+      if (tn > nb_max-2*pa_max) 
+        error("neighbor table full - increase nbl_size");
     }
   }
-  if (tn>nb_max) error("neighbor table overflow");
   nbl_count++;
 }
 
@@ -387,12 +389,12 @@ void calc_forces(int steps)
 #endif
         }
         if (it==jt) {
-          if (r2 < rho_h_tab.end[col])
-            {EAM_RHO(q,j) += rho_h;
+          if (r2 < rho_h_tab.end[col]) {
+            EAM_RHO(q,j) += rho_h;
 #ifdef EEAM
-             EAM_P(q,j) += rho_h*rho_h;
+            EAM_P(q,j) += rho_h*rho_h;
 #endif
-            } 
+          } 
         } else {
           col2 = jt * ntypes + it;
           if (r2 < rho_h_tab.end[col2]) {
@@ -737,7 +739,7 @@ void calc_forces(int steps)
 
 void check_nblist()
 {
-  real   r2, max1=0.0, max2;
+  real   r2, max1=0.0, max2, eps=0.0001;
   vektor d;
   int    k;
 
@@ -762,5 +764,5 @@ void check_nblist()
 #else
   max2 = max1;
 #endif
-  if (max2 > SQR(nbl_margin)) make_nblist();
+  if (max2+eps > SQR(nbl_margin)) make_nblist();
 }
