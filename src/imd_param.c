@@ -2518,6 +2518,7 @@ void broadcast_params() {
 #endif
 #ifdef STRESS_TENS
   MPI_Bcast( &press_int    , 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &presstens_ext, DIM*(DIM+1)/2, REAL, 0, MPI_COMM_WORLD);  
 #endif
 #if defined(FRAC) || defined(FTG) 
   MPI_Bcast( &dotepsilon0   , 1, REAL   , 0, MPI_COMM_WORLD); 
