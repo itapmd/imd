@@ -811,7 +811,8 @@ EXTERN cell *input;                                /* save data */
 #ifdef SHOCK
 EXTERN real shock_strip;                          /* width of shock strip */
 EXTERN real shock_speed INIT(0.0);                /* velocity in shock strip */
-EXTERN int  shock_mode INIT(2);                   /* type of shock */
+EXTERN int shock_incr INIT(0);      /* steps to accelerate to full velocity */
+EXTERN int shock_mode INIT(2);                   /* type of shock */
 #endif
 
 EXTERN int ensemble INIT(ENS_EMPTY);    /* active ensemble type */

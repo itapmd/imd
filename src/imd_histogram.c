@@ -857,7 +857,7 @@ void write_press_dist(int steps)
         if (dist_has_coords) fprintf(outfile, "%d %d ", r, s);
         fprintf(outfile, "%e %e %e %e %e %e\n", 
 	        hist.press_histxx[i], hist.press_histyy[i],
-q                hist.press_histxy[i], hist.num_hist[i] / hist.binvol,
+                hist.press_histxy[i], hist.num_hist[i] / hist.binvol,
                 hist.kin_hist[i], hist.pot_hist[i] );
         i++;
 #else
@@ -895,6 +895,7 @@ void write_press_dist_shock_header(FILE *out, hist_t *hist)
   char c;
   int n_coord;
   time_t now;
+  vektor s;
 
   /* format line -- format dim n_coord n_data */
   /*
@@ -903,25 +904,36 @@ void write_press_dist_shock_header(FILE *out, hist_t *hist)
   else
   */
     c = 'A';
-  n_coord = dist_has_coords ? 1 : 0;
-  fprintf(out, "#F %c 1 %d %d\n", c, 1, 2*DIM+3);
+  n_coord = dist_has_coords ? DIM : 0;
+  fprintf(out, "#F %c %d %d %d\n", c, n_coord, 2*DIM*3);
 
   /* contents line */
 #ifdef TWOD
-  if (dist_has_coords) fprintf(out, "#C x P_xx P_yy density");
+  if (dist_has_coords) fprintf(out, "#C x y P_xx P_yy density");
   else                 fprintf(out, "#C P_xx P_yy density");
   fprintf(out, " Ekin_xx Ekin_xxu Ekin_yy Epot\n");
 #else
-  if (dist_has_coords) fprintf(out, "#C x P_xx P_yy P_zz density");
+  if (dist_has_coords) fprintf(out, "#C x y z P_xx P_yy P_zz density");
   else                 fprintf(out, "#C P_xx P_yy P_zz density");
   fprintf(out, " Ekin_xx Ekin_xxu Ekin_yy Ekin_zz Epot\n");
 #endif
 
-  /* dimension line - we make only a 1-dim histogram */
-  fprintf(out, "#D %d\n", hist->dim.x);
+  /* dimension line */
+#ifdef TWOD
+  fprintf(out, "#D %d %d\n",    hist->dim.x, hist->dim.y);
+#else
+  fprintf(out, "#D %d %d %d\n", hist->dim.x, hist->dim.y, hist->dim.z);
+#endif
 
   /* bin size line */
-  fprintf(out, "#S %e\n", (hist->ur.x - hist->ll.x) / hist->dim.x);
+  s.x = (hist->ur.x - hist->ll.x) / hist->dim.x;
+  s.y = (hist->ur.y - hist->ll.y) / hist->dim.y;
+#ifdef TWOD
+  fprintf(out, "#S %e %e\n",    s.x, s.y);
+#else
+  s.z = (hist->ur.z - hist->ll.z) / hist->dim.z;
+  fprintf(out, "#S %e %e %e\n", s.x, s.y, s.z);
+#endif
 
   /* endheader line */
   time(&now);
@@ -941,17 +953,12 @@ void write_press_dist_shock(int steps)
   FILE   *outfile;
   str255 fname;
   hist_t hist;
-  int    fzhlr, i;
+  int    fzhlr, i, r, s, t;
 
-  /* we make only a 1D histogram */
-  hist.dim.x = press_dim.x;
+  /* now we make 3D histograms */
+  hist.dim   = press_dim;
   hist.ur    = hist_ur;
   hist.ll    = hist_ll;
-  hist.dim.y = 1;
-#ifndef TWOD
-  hist.dim.z = 1;
-#endif
-
   make_histograms(&hist);
 
   /* write pressure tensor distribution */
@@ -959,31 +966,38 @@ void write_press_dist_shock(int steps)
   if (myid==0) {
 
     fzhlr = steps / press_interval;
-
     sprintf(fname,"%s.%u.pressdist",outfilename,fzhlr);
     outfile = fopen(fname,"w");
     if (NULL == outfile) error("Cannot open pressure tensor file.");
     write_press_dist_shock_header(outfile, &hist);
 
-    for (i = 0; i < hist.size; i++) {
-      if (dist_has_coords) fprintf(outfile, "%d ", i);      
-#ifndef TWOD
-      fprintf(outfile,
-        "%10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10e\n", 
-        hist.press_histxx[i], hist.press_histyy[i], hist.press_histzz[i], 
-        hist.num_hist[i] / hist.binvol, 
-        hist.kin_histxx[i], hist.kin_histxxu[i], hist.kin_histyy[i],
-        hist.kin_histzz[i], hist.pot_hist[i] );
-#else
-      fprintf(outfile,
+    i=0;
+    for (r=0; r<hist.dim.x; r++) {
+      for (s=0; s<hist.dim.y; s++) {
+#ifdef TWOD
+	if (dist_has_coords) fprintf(outfile, "%d %d ", r, s);      
+        fprintf(outfile,
         "%10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e\n", 
         hist.press_histxx[i], hist.press_histyy[i], 
-        hist.num_hist[i] / hist.binvol,
-        hist.kin_histxx[i], hist.kin_histxxu[i], hist.kin_histyy[i], 
-        hist.pot_hist[i] ); 
+        hist.num_hist[i] / hist.binvol, hist.kin_histxx[i], 
+        hist.kin_histxxu[i], hist.kin_histyy[i], hist.pot_hist[i] ); 
+	i++;    
+#else
+        for (t=0; t<hist.dim.z; t++) {
+          if (dist_has_coords) fprintf(outfile, "%d %d %d ", r, s, t);
+	    fprintf(outfile, 
+            "%10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10e\n", 
+	    hist.press_histxx[i], hist.press_histyy[i], hist.press_histzz[i], 
+            hist.num_hist[i] / hist.binvol, 
+	    hist.kin_histxx[i], hist.kin_histxxu[i], hist.kin_histyy[i],
+	    hist.kin_histzz[i], hist.pot_hist[i] );
+            i++;
+        }
+        if (hist.dim.y>0) fprintf(outfile,"\n");
 #endif
+      }
+      if (hist.dim.x>0) fprintf(outfile,"\n");
     }
-    fprintf(outfile,"\n");
     fclose(outfile);
   }
 }

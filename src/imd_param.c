@@ -1116,6 +1116,10 @@ void getparamfile(char *paramfname, int sim)
       /* shock speed (in x dir.) */
       getparam("shock_speed",&shock_speed,PARAM_REAL,1,1); 
     }
+    else if (strcasecmp(token,"shock_incr")==0) { 
+      /* steps to achieve full velocity */
+      getparam("shock_incr",&shock_incr,PARAM_INT,1,1); 
+    }
     else if (strcasecmp(token,"shock_mode")==0) { 
        /* shock type: plate or half */
        getparam("shock_mode",&shock_mode,PARAM_INT,1,1); 
@@ -2392,6 +2396,7 @@ void broadcast_params() {
 #ifdef SHOCK
   MPI_Bcast( &shock_strip, 1, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &shock_speed, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &shock_incr, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &shock_mode,  1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 

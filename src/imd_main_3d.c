@@ -54,6 +54,18 @@ void main_loop(void)
     error("Can't allocate memory for fbc_df\n");
 #endif
 
+#ifdef SHOCK
+  /* compute speed increase */
+  real dshock_speed;
+      if (shock_mode == 3) { 
+	  dshock_speed=0;
+	      if (shock_incr>0) {
+		  dshock_speed=shock_speed/(real)shock_incr;
+		  shock_speed=0.0;
+	      }
+      }
+#endif
+
   /* initialize temperature, if necessary */
   if (0==imdrestart) {
     if (do_maxwell) maxwell(temperature);
@@ -127,6 +139,22 @@ void main_loop(void)
 
   /* simulation loop */
   for (steps=steps_min; steps <= steps_max; ++steps) {
+
+#ifdef SHOCK
+      /* accelerate blocks */
+  if (shock_mode == 3 && shock_incr>0) { 
+      if (steps<=shock_incr){  
+	  shock_speed+=dshock_speed;
+	  for (k=0; k<ncells; ++k) {
+	      cell *p;
+	      p = cell_array + CELLS(k);
+	      for (i=0; i<p->n; ++i) {
+		  IMPULS(p,i,X) += dshock_speed * MASSE(p,i);
+	      }
+	  }
+      }
+  }
+#endif
 
 #ifdef STRESS_TENS
     do_press_calc = (((eng_int  > 0) && (0 == steps % eng_int )) ||
