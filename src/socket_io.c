@@ -17,14 +17,15 @@
 *
 *****************************************************************************/
 
-void init_client()
-{
+void init_client() {
+
   fprintf(stderr, "baseport is %d\n", baseport);
   baseport = htons(baseport); /* we need it in network byte order */
   varIP = GetIP(display_host);
   if (varIP==0) {
     error("gethostbyname() failed, check display_host or specify IP number\n");
-  } else {
+  } 
+  else {
     printf("display_host is %s\n", display_host);
   }
 }
@@ -36,8 +37,8 @@ void init_client()
 *
 *****************************************************************************/
 
-int connect_server() 
-{
+int connect_server() {
+
   unsigned char byte;
   int flag = 0;
   
@@ -53,7 +54,7 @@ int connect_server()
   }
 
   return flag;
-
+  
 }
 
 
@@ -63,8 +64,7 @@ int connect_server()
 *
 *****************************************************************************/
 
-void close_socket()
-{
+void close_socket() {
   shutdown(soc,2);
   close(soc);
 }
@@ -76,15 +76,13 @@ void close_socket()
 *
 *****************************************************************************/
 
-void check_socket(int steps)
-{
+void check_socket(int steps) {
+
   int socket_flag;
 
-#ifdef MPI
   if (0==myid)
-#endif
+    socket_flag = connect_server();
 
-  socket_flag = connect_server();
 #ifdef MPI
   MPI_Bcast(&socket_flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif  
@@ -93,11 +91,15 @@ void check_socket(int steps)
     switch (socket_flag) {
       case T_QUIT:
         if (0==myid) error("Termination request received.");
+	break;
+      case T_WRITE_RAS:
+	write_ras_using_sockets();
+        break;
       case T_WRITE_DISTRIB:
         write_distrib_using_sockets();
         break;
       case T_WRITE_CONF_SOCKET:
-	write_conf_using_socket();
+	write_conf_using_sockets();
 	break;
 #ifdef TWOD
       case T_WRITE_PICTURE:
@@ -108,9 +110,7 @@ void check_socket(int steps)
         if (0==myid) printf("unknown token: %d\n",socket_flag);
         break;
     }
-#ifdef MPI
     if (0==myid)
-#endif
       close_socket();
   }
 
@@ -126,10 +126,10 @@ void check_socket(int steps)
 
 void write_rgb_picture_to_socket()
 
+{
+
 #define XMAXRES 400
 #define YMAXRES 400
-
-{
   int XRES, YRES;
   unsigned char image_resolution[4];
   vektor scale;
@@ -159,14 +159,15 @@ void write_rgb_picture_to_socket()
 
   /* get the current image size on the Display form socket */
 #ifdef MPI
-  if (myid == 0)
+  if (myid == 0) {
 #endif
-  {
+
     ReadFull(soc, (void *) image_resolution, 4);
     XRES = (int) image_resolution[0] * 256 + (int) image_resolution[1];
     YRES = (int) image_resolution[2] * 256 + (int) image_resolution[3];
-  }
+
 #ifdef MPI
+  }
   MPI_Bcast( &XRES, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &YRES, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
@@ -185,8 +186,8 @@ void write_rgb_picture_to_socket()
       bluebyte[i][j]  = 0;
       greenbyte[i][j] = 0;
       redbyte[i][j]   = 0;
-    };
-  };
+    }
+  }
 
   /* Color lookup table */
   tabred[0] = 0.10; tabgreen[0] = 0.20; tabblue[0] = 0.50;
@@ -194,67 +195,58 @@ void write_rgb_picture_to_socket()
   tabred[2] = 0.10; tabgreen[2] = 0.50; tabblue[2] = 0.25;
   tabred[3] = 0.75; tabgreen[3] = 0.75; tabblue[3] = 0.05;
   tabred[4] = 0.75; tabgreen[4] = 0.05; tabblue[4] = 0.05;
-
-/* loop over all atoms */
+  
+  /* loop over all atoms */
   for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-	{
-#ifndef TWOD
-	p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#else
-	p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#endif
-	for (i = 0;i < p->n; ++i) {
-	  coord.x = (int) (p->ort X(i) * scale.x) + xshift;
-	  coord.y = (int) (p->ort Y(i) * scale.y) + yshift;
-	  /* Check bounds */
-	  if (coord.x <  0   ) coord.x = 0;
-	  if (coord.x >= XRES) coord.x = XRES-1;
-	  if (coord.y <  0   ) coord.y = 0;
-	  if (coord.y >= YRES) coord.y = YRES-1;
-
-	  val = SPRODN(p->impuls,i,p->impuls,i) / (2*MASSE(p,i));
-	  
-	  val /= ecut_kin.y;
-	  if (1.0<val) val=0.9999;
-	  ind = (int)(val * 4.0);
-          delta = (val * 4.0 - ind)/4.0; one_minus_delta = 1.0 - delta;
-
-	  red = tabred[ind+1] * delta + one_minus_delta * tabred[ind];
-	  green = tabgreen[ind+1] * delta + one_minus_delta * tabgreen[ind];
-	  blue = tabblue[ind+1] * delta + one_minus_delta * tabblue[ind];
-
-	  redbyte[coord.x][coord.y]   = (short int) (255 * red  );
-	  bluebyte[coord.x][coord.y]  = (short int) (255 * blue );
-	  greenbyte[coord.x][coord.y] = (short int) (255 * green);
-	}
+    for ( s = cellmin.y; s < cellmax.y; ++s ) {
+      p = PTR_2D_V(cell_array, r, s,    cell_dim);
+      for (i = 0;i < p->n; ++i) {
+	coord.x = (int) (p->ort X(i) * scale.x) + xshift;
+	coord.y = (int) (p->ort Y(i) * scale.y) + yshift;
+	/* Check bounds */
+	if (coord.x <  0   ) coord.x = 0;
+	if (coord.x >= XRES) coord.x = XRES-1;
+	if (coord.y <  0   ) coord.y = 0;
+	if (coord.y >= YRES) coord.y = YRES-1;
+	
+	val = SPRODN(p->impuls,i,p->impuls,i) / (2*MASSE(p,i));
+	
+	val /= ecut_kin.y;
+	if (1.0<val) val=0.9999;
+	ind = (int)(val * 4.0);
+	delta = (val * 4.0 - ind)/4.0; one_minus_delta = 1.0 - delta;
+	
+	red = tabred[ind+1] * delta + one_minus_delta * tabred[ind];
+	green = tabgreen[ind+1] * delta + one_minus_delta * tabgreen[ind];
+	blue = tabblue[ind+1] * delta + one_minus_delta * tabblue[ind];
+	    
+	redbyte[coord.x][coord.y]   = (short int) (255 * red  );
+	bluebyte[coord.x][coord.y]  = (short int) (255 * blue );
+	greenbyte[coord.x][coord.y] = (short int) (255 * green);
       }
+    }
 
 #ifdef MPI
-/* Add the bytemaps */
-   MPI_Reduce( redbyte,   sum_red,   XRES * YRES, SHORT, MPI_SUM, 0, cpugrid);
-   MPI_Reduce( greenbyte, sum_green, XRES * YRES, SHORT, MPI_SUM, 0, cpugrid);
-   MPI_Reduce( bluebyte , sum_blue,  XRES * YRES, SHORT, MPI_SUM, 0, cpugrid);
+  /* Add the bytemaps */
+  MPI_Reduce( redbyte,   sum_red,   XRES * YRES, SHORT, MPI_SUM, 0, cpugrid);
+  MPI_Reduce( greenbyte, sum_green, XRES * YRES, SHORT, MPI_SUM, 0, cpugrid);
+  MPI_Reduce( bluebyte , sum_blue,  XRES * YRES, SHORT, MPI_SUM, 0, cpugrid);
 
   /* Zero bitmap */
   if (0==myid) 
-  for (i=0; i<XRES; i++ ) {
-    for (j=0; j<YRES; j++ ) {
-      redbyte[i][j]   = sum_red[i][j]   < 255 ? sum_red[i][j]   : 255;
-      greenbyte[i][j] = sum_green[i][j] < 255 ? sum_green[i][j] : 255;
-      bluebyte[i][j]  = sum_blue[i][j]  < 255 ? sum_blue[i][j]  : 255;
-    };
-  };
+    for (i=0; i<XRES; i++ ) {
+      for (j=0; j<YRES; j++ ) {
+	redbyte[i][j]   = sum_red[i][j]   < 255 ? sum_red[i][j]   : 255;
+	greenbyte[i][j] = sum_green[i][j] < 255 ? sum_green[i][j] : 255;
+	bluebyte[i][j]  = sum_blue[i][j]  < 255 ? sum_blue[i][j]  : 255;
+      }
+    }
 #endif
-
+  
   /* write bytes to socket */
 #ifdef MPI
-  if (0==myid)
+  if (0==myid) {
 #endif
-  {
     for (i=0; i<YRES; i++ ) {
       for (j=0; j<XRES; j++ ) {
         buf[3*j  ] = (unsigned char) redbyte[i][j];
@@ -263,9 +255,11 @@ void write_rgb_picture_to_socket()
       }
       WriteFull(soc,(void *)buf, 3*XRES);
     }
+#ifdef MPI
   }
+#endif
 }
-#endif  TWOD */
+#endif  /* TWOD */
 
 /*****************************************************************************
 *
@@ -273,11 +267,10 @@ void write_rgb_picture_to_socket()
 *
 *****************************************************************************/
 
-void write_conf_using_socket() {
+void write_ras_using_sockets() {
    int r,s,t,i, ready; 
    int a; 
    cell *p; 
-   int k=0;
 
    WriteFull(soc,&natoms,sizeof(int)); 
    /*   WriteFull(soc,&box_x.x,sizeof(real)); 
@@ -293,7 +286,6 @@ void write_conf_using_socket() {
 	   p = PTR_3D_V(cell_array, r, s, t, cell_dim); 
 #endif
 	   for (i = 0;i < p->n; ++i) { 
-	     fprintf(stdout, "%d %d %d\n", i, k++, p->nummer[i]);
 	     WriteFull(soc,&p->nummer[i],sizeof(int)); 
 	     WriteFull(soc,&p->sorte[i],sizeof(int)); 
 	     WriteFull(soc,&p->masse[i],sizeof(double)); 
@@ -311,6 +303,130 @@ void write_conf_using_socket() {
 	  }
 
 	}
+}
+
+
+/*****************************************************************************
+*
+*  sends atomic configuration to socket 
+*
+*****************************************************************************/
+
+void write_conf_using_sockets() {
+
+   int r,s,t,i, ready; 
+   int a; 
+   cell *p;
+   int k=0;
+   int *nummer;
+   short int *sorte;
+   real *masse, *x, *y, *vx, *vy, *pot;
+#ifndef TWOD
+   real *z, *vz;
+#endif
+
+   /* allocs */
+   nummer = (int *)       calloc(natoms, sizeof(int));
+   sorte  = (short int *) calloc(natoms, sizeof(short int));
+   masse  = (double *)    calloc(natoms, sizeof(double));
+   x      = (double *)    calloc(natoms, sizeof(double));
+   y      = (double *)    calloc(natoms, sizeof(double));
+#ifndef TWOD
+   z      = (double *)    calloc(natoms, sizeof(double));
+#endif
+   vx     = (double *)    calloc(natoms, sizeof(double));
+   vy     = (double *)    calloc(natoms, sizeof(double));
+#ifndef TWOD
+   vz     = (double *)    calloc(natoms, sizeof(double));
+#endif
+   pot    = (double *)    calloc(natoms, sizeof(double));
+
+   /*  loop over all atoms */
+   k=0;
+   for ( r = cellmin.x; r < cellmax.x; ++r ) 
+     for ( s = cellmin.y; s < cellmax.y; ++s ) { 
+#ifdef TWOD
+       p = PTR_2D_V(cell_array, r, s, cell_dim); 
+#else
+       for ( t = cellmin.z; t < cellmax.z; ++t ) { 
+	 p = PTR_3D_V(cell_array, r, s, t, cell_dim); 
+#endif
+	   for (i = 0;i < p->n; ++i) {
+	     nummer[k] = p->nummer[i];
+	     sorte[k]  = p->sorte[i];
+	     masse[k]  = p->masse[i];
+	     x[k]      = p->ort X(i);
+	     y[k]      = p->ort Y(i);
+#ifndef TWOD
+	     z[k]      = p->ort Z(i);
+#endif
+	     vx[k]     = p->impuls X(i);
+	     vy[k]     = p->impuls Y(i);
+#ifndef TWOD
+	     vz[k]     = p->impuls Z(i);
+#endif
+	     pot[k]    = p->pot_eng[i];
+
+	     k++;
+	   }
+	   
+       }
+#ifndef TWOD
+     }
+#endif
+
+   WriteFull(soc,&natoms,sizeof(int)); 
+   WriteFull(soc,(void *) nummer, natoms*sizeof(int)); 
+   WriteFull(soc,(void *) sorte, natoms*sizeof(short int)); 
+   WriteFull(soc,(void *) masse, natoms*sizeof(double)); 
+   WriteFull(soc,(void *) x, natoms*sizeof(double)); 
+   WriteFull(soc,(void *) y, natoms*sizeof(double)); 
+#ifndef TWOD
+   WriteFull(soc,(void *) z, natoms*sizeof(double)); 
+#endif
+   WriteFull(soc,(void *) vx, natoms*sizeof(double)); 
+   WriteFull(soc,(void *) vy, natoms*sizeof(double)); 
+#ifndef TWOD
+   WriteFull(soc,(void *) vz, natoms*sizeof(double)); 
+#endif
+   WriteFull(soc,(void *) pot, natoms*sizeof(double));
+
+   /*   WriteFull(soc,&box_x.x,sizeof(real)); 
+   WriteFull(soc,&box_y.y,sizeof(real)); */
+   /*  loop over all atoms */
+   /*   for ( r = cellmin.x; r < cellmax.x; ++r ) 
+     for ( s = cellmin.y; s < cellmax.y; ++s ) 
+#ifdef TWOD
+       {
+       p = PTR_2D_V(cell_array, r, s, cell_dim); 
+#else
+       for ( t = cellmin.z; t < cellmax.z; ++t ) { 
+	   p = PTR_3D_V(cell_array, r, s, t, cell_dim); 
+#endif
+	   for (i = 0;i < p->n; ++i) { 
+	     k++;
+	     printf("guten tag %d\n", p->sorte[i]);fflush(stdout);
+	     WriteFull(soc,&p->sorte[i],sizeof(int)); 
+	     WriteFull(soc,&p->nummer[i],sizeof(int));
+	     WriteFull(soc,&p->masse[i],sizeof(double)); 
+	     WriteFull(soc,&p->ort X(i),sizeof(double)); 
+	     WriteFull(soc,&p->ort Y(i),sizeof(double)); 
+#ifndef TWOD 
+	     WriteFull(soc,&p->ort Z(i),sizeof(double)); 
+#endif 
+	     WriteFull(soc,&p->impuls X(i),sizeof(double)); 
+	     WriteFull(soc,&p->impuls Y(i),sizeof(double)); 
+#ifndef TWOD
+	     WriteFull(soc,&p->impuls Z(i),sizeof(double));
+#endif
+	     WriteFull(soc,&p->pot_eng[i],sizeof(double));
+	  }
+
+	}
+       printf("totale: %d\n", k);
+   */
+
+
 }
 
 
@@ -491,3 +607,8 @@ void write_distrib_using_sockets()
     WriteFull(soc,(void *) kin_hist, size*sizeof(float));
   }
 }
+
+
+
+
+

@@ -68,11 +68,11 @@ void maxwell(real TEMP);
 float gasdev(long *idum);
 float ran1(long *idum);
 
-void write_conf_using_socket(void);
+void write_conf_using_sockets(void);
+void write_ras_using_sockets(void);
+void write_distrib_using_sockets(void);
 #ifdef TWOD
 void write_rgb_picture_to_socket(void);
-#else
-void write_distrib_using_sockets();
 #endif
 
 #ifdef MC
