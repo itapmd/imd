@@ -582,7 +582,7 @@ void getparamfile(char *paramfname, int sim)
       restrictions=(vektor*)realloc(restrictions,vtypes*DIM*sizeof(real));
       if (NULL==restrictions)
 	error("Cannot allocate memory for restriction vectors\n");
-      for(k=0; k<vtypes; k++)
+      for(k=0; k<ntypes; k++)
        *(restrictions+k) = einsv;
     }
     else if (strcasecmp(token,"starttemp")==0) {
