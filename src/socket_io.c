@@ -45,9 +45,7 @@ int connect_server() {
   int flag = 0;
   
   /* try to connect */
-  printf("welt");fflush(stdout);
   soc=OpenClientSocket(varIP,baseport);
-  printf("tlew");fflush(stdout);
   if (soc > 0) {
     ReadFull(soc,&byte,1);
     flag = byte; /* convert to int */
