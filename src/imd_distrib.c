@@ -548,7 +548,7 @@ void write_atoms_dist()
     if (NULL == out) error("Cannot open atoms distribution file.");
 
     c = is_big_endian ? 'B' : 'L';
-    fprintf(out,"#F %s %d 0 %d\n", c, DIM, ntypes);
+    fprintf(out,"#F %c %d 0 %d\n", c, DIM, ntypes);
     fprintf(out,"#C");
     for (i=0; i<ntypes; i++) fprintf(out," density_%d",i);
     fprintf(out,"\n");
