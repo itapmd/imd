@@ -187,13 +187,13 @@ void deform_sample(void) {
 	    if (p->ort X(i) <= box_x_half) {
 	      p->ort X(i) += strip_shift.x;
 	      p->ort Y(i) += strip_shift.y;
-#ifndef TWO
+#ifndef TWOD
 	      p->ort Z(i) += strip_shift.z;
 #endif
 	    } else {
 	      p->ort X(i) -= strip_shift.x;
 	      p->ort Y(i) -= strip_shift.y;
-#ifndef TWO
+#ifndef TWOD
 	      p->ort Z(i) -= strip_shift.z;
 #endif        
 	    }
