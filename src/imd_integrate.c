@@ -160,6 +160,12 @@ void move_atoms_nve(void)
 	if (shock_mode == 3) {
 	  if (ORT(p,i,X) > box_x.x) IMPULS(p,i,X) = -IMPULS(p,i,X);
 	}
+	if (shock_mode == 4) {
+	  if (ORT(p,i,X) < shock_speed_l * timestep * steps) 
+	      IMPULS(p,i,X) = -IMPULS(p,i,X) + shock_speed_l * MASSE(p,i);
+	  if (ORT(p,i,X) > box_x.x - shock_speed_r * timestep * steps) 
+	      IMPULS(p,i,X) = -IMPULS(p,i,X) - shock_speed_r * MASSE(p,i);
+	}
 #endif
 
         /* new molecular axes */
@@ -205,6 +211,9 @@ void move_atoms_nve(void)
         if (shock_mode == 3) PRESSTENS(p,i,xx) += (IMPULS(p,i,X) - 
 	  shock_speed * MASSE(p,i)) * (IMPULS(p,i,X) - shock_speed * 
            MASSE(p,i)) / MASSE(p,i);
+	/* two mirrors */
+        if (shock_mode == 4)
+	    PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
 #else
         PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
 #endif

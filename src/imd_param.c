@@ -1116,6 +1116,14 @@ void getparamfile(char *paramfname, int sim)
       /* shock speed (in x dir.) */
       getparam("shock_speed",&shock_speed,PARAM_REAL,1,1); 
     }
+    else if (strcasecmp(token,"shock_speed_left")==0) { 
+      /* shock speed (in x dir.) */
+      getparam("shock_speed_l",&shock_speed_l,PARAM_REAL,1,1); 
+    }
+    else if (strcasecmp(token,"shock_speed_right")==0) { 
+      /* shock speed (in x dir.) */
+      getparam("shock_speed_r",&shock_speed_r,PARAM_REAL,1,1);       
+    }
     else if (strcasecmp(token,"shock_incr")==0) { 
       /* steps to achieve full velocity */
       getparam("shock_incr",&shock_incr,PARAM_INT,1,1); 
@@ -1125,7 +1133,10 @@ void getparamfile(char *paramfname, int sim)
        getparam("shock_mode",&shock_mode,PARAM_INT,1,1); 
        if (shock_mode > 1) shock_strip = 0;
        /* compatibility with old input files */
-       if (shock_mode != 2 && shock_mode != 3) shock_mode = 1;
+       if (shock_mode < 2 && shock_mode > 4) shock_mode = 1;
+       /* */
+       if (shock_mode == 4 && shock_speed_l ==0) shock_speed_l = shock_speed; 
+       if (shock_mode == 4 && shock_speed_r ==0) shock_speed_r = shock_speed; 
     }
 #endif
 #ifdef MPI
@@ -2391,6 +2402,8 @@ void broadcast_params() {
 #ifdef SHOCK
   MPI_Bcast( &shock_strip, 1, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &shock_speed, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &shock_speed_l, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &shock_speed_r, 1, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &shock_incr, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &shock_mode,  1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif

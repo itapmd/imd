@@ -209,6 +209,9 @@ void dist_Ekin_long_fun(float *dat, cell *p, int i)
   /* bulk against wall */
   if (shock_mode == 3) 
     *dat += SQR(IMPULS(p,i,X) - tmp) / (2*MASSE(p,i));
+  /* two mirrors */
+  if (shock_mode == 4) 
+    *dat += SQR(IMPULS(p,i,X)) / (2*MASSE(p,i));
 }
 
 #endif /* SHOCK */
