@@ -9,19 +9,24 @@
 <H2><A NAME="configurations">Checkpoints</A></H2>
 
 IMD writes checkpoints in step intervals given by the parameter
-<TT>checkpt_int</TT>. A checkpoint is a complete
-<A HREF="config.html">configuration file</A>,
-whose name has the form
-<TT>&lt;outfiles&gt;.&lt;n&gt;.chkpt</TT>,
-where <TT>&lt;n&gt;</TT> is a running number.
-Together with every checkpoint file, an iteration file 
-<TT>&lt;outfiles&gt;.&lt;n&gt;.itr</TT> is written,
-which contains the current values of certain parameters,
-such as the current stepnumber, box size, external temperature
-and external pressure. A simulation can be 
-<A HREF="usage.html">restarted</A> from every checkpoint.
-If <TT>checkpt_int</TT> is zero, no checkpoints are
-written.
+<TT>checkpt_int</TT>. A checkpoint is a complete <A
+HREF="config.html">configuration file</A>, whose name has the form
+<TT>&lt;outfiles&gt;.&lt;n&gt;.chkpt</TT>, where <TT>&lt;n&gt;</TT> is
+a running number.  Together with every checkpoint file, an iteration
+file <TT>&lt;outfiles&gt;.&lt;n&gt;.itr</TT> is written, which
+contains the current values of certain parameters, such as the current
+stepnumber, box size, external temperature and external pressure. A
+simulation can be <A HREF="usage.html">restarted</A> from every
+checkpoint.  If <TT>checkpt_int</TT> is zero, no checkpoints are
+written. If <TT>use_header</TT> is one, a <A
+HREF="header.html">header</A> is prepended to the checkpoint
+file. Each header line begins with a <TT>#</TT> so that IMD or gnuplot
+will not have any problems reading such files. In the case of more
+than one processor and <TT>parallel_output</TT> is one the header is
+written to the separate file
+<TT>&lt;outfiles&gt;.&lt;n&gt;.head</TT>. A single file can be
+generated with <TT>catfiles.sh</TT> or <TT>catfiles.csh</TT> from the
+<A HREF="utilities.html">utilities</A>.
 
 <H2><A NAME="properties">Properties File</A></H2>
 
@@ -68,6 +73,8 @@ form
 <PRE>
      n E_pot_min E_pot_max E_kin_min E_kin_max
 </PRE>
+If <TT>use_header</TT> is one, a <A HREF="header.html">header</A> is
+prepended to the checkpoint file.
 
 <H2><A NAME="disloc">Writing Selected Atoms</A></H2>
 
