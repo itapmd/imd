@@ -895,7 +895,15 @@ void getparamfile(char *paramfname, int sim)
       /* strip width (in x dir.) */
       getparam("strip_width",&strip_width,PARAM_REAL,1,1);
     }
+#ifdef GLOKDEFORM
+else if (strcasecmp(token,"fnorm_threshold")==0) {
+      /* criterium to contiune deformation */
+      getparam("fnorm_threshold",&fnorm_threshold,PARAM_REAL,1,1);
+    }
 #endif
+
+#endif
+
 #ifdef SHOCK
     else if (strcasecmp(token,"shock_strip")==0) { 
       /* shock strip width (in x dir.) */
@@ -1504,7 +1512,12 @@ void check_parameters_complete()
     hist_ur.z = box_z.z;
 #endif
   }
-
+#ifdef GLOKDEFORM
+  if ((fnorm_threshold==0.0) && (max_deform_int == 0))
+  {
+       error("You have to define fnorm_threshold and max_deform_int ");
+  }
+#endif
 }
 
 /*****************************************************************
@@ -1867,6 +1880,9 @@ void broadcast_params() {
   MPI_Bcast( &ekin_threshold , 1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &annealsteps ,    1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &max_deform_int , 1, MPI_INT, 0, MPI_COMM_WORLD); 
+#ifdef GLOKDEFORM
+ MPI_Bcast( &fnorm_threshold , 1, REAL,    0, MPI_COMM_WORLD); 
+#endif
 #endif  
 
 #ifdef USE_SOCKETS

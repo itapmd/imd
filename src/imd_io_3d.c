@@ -534,14 +534,19 @@ void write_atoms_config(FILE *out)
 *
 ******************************************************************************/
 
-void write_itr_file(int fzhlr, int steps)
+void write_itr_file(int fzhlr, int steps, char *suffix)
 {
   FILE *out;
   str255 fname;
   int m,n;
 
+#ifdef SNAPSHOT
+  if (fzhlr>=0) sprintf(fname,"%s.%u.%sitr",outfilename,fzhlr,suffix);
+  else          sprintf(fname,"%s-final.%sitr",outfilename,suffix);
+#else
   if (fzhlr>=0) sprintf(fname,"%s.%u.itr",outfilename,fzhlr);
   else          sprintf(fname,"%s-final.itr",outfilename);
+#endif
 
   out = fopen(fname,"w");
   if (NULL == out) error("Cannot write iteration file.");
@@ -640,3 +645,26 @@ void write_avpos_itr_file(int fzhlr, int steps)
 }
 
 #endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

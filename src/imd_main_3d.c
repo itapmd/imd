@@ -170,16 +170,36 @@ void main_loop(void)
     if ((hom_interval > 0) && (0 == steps%hom_interval)) shear_sample();
     if ((lindef_interval > 0) && (0 == steps%lindef_interval)) lin_deform();
 #endif
+
 #ifdef DEFORM
+#ifdef GLOKDEFORM
     if (steps > annealsteps) {
       deform_int++;
-      if ((2.0*tot_kin_energy/nactive < ekin_threshold) || 
-          (deform_int==max_deform_int)) {
-        deform_sample();
-        deform_int=0;
+      if ((fnorm < fnorm_threshold) || 
+          (deform_int==max_deform_int)) 
+      {
+#ifdef SNAPSHOT
+	  write_eng_file(steps);
+	  write_ssconfig(steps);
+	  sscount++;
+#endif
+	  deform_sample();
+	  deform_int=0;
       }
     }
 #endif
+#ifndef GLOKDEFORM
+    if (steps > annealsteps) {
+	deform_int++;
+	if ((2.0*tot_kin_energy/nactive < ekin_threshold) || 
+	    (deform_int==max_deform_int)) {
+	    deform_sample();
+	    deform_int=0;
+	}
+    }
+#endif
+#endif
+
 #ifdef AVPOS
     if ((steps == steps_min) || (steps == avpos_start)) {
        update_avpos();
@@ -402,7 +422,7 @@ void main_loop(void)
   /* clean up the current phase, and clear restart flag */
   restart=0;
   if (0==myid) {
-    write_itr_file(-1, steps_max);
+    write_itr_file(-1, steps_max,"");
     printf( "End of simulation %d\n", simulation );
   }  
 }

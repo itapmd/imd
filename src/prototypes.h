@@ -208,8 +208,11 @@ void write_eng_file_header(void);
 
 /* write configurations - files imd_io.c, imd_io_*.c */
 void flush_outbuf(FILE *out, int *len, int tag);
-void write_itr_file(int fzhlr, int steps);
+void write_itr_file(int fzhlr, int steps,char *suffix);
 void write_config(int steps);
+#ifdef SNAPSHOT
+void write_ssconfig(int steps);
+#endif
 void write_config_select(int fzhlr, char *suffix,
   void (*write_atoms_fun)(FILE *out), void (*write_header_fun)(FILE *out));
 void write_atoms_config(FILE *out);

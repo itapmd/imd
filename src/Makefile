@@ -666,6 +666,14 @@ CFLAGS += -DDEFORM
 SOURCES += ${DEFORMSOURCES}
 endif
 
+ifneq (,$(findstring glokdeform,${MAKETARGET}))
+CFLAGS += -DGLOKDEFORM
+endif
+
+ifneq (,$(findstring snap,${MAKETARGET}))
+CFLAGS += -DSNAPSHOT
+endif
+
 ifneq (,$(findstring homdef,${MAKETARGET}))
 CFLAGS += -DHOMDEF
 SOURCES += ${DEFORMSOURCES}

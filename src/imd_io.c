@@ -135,8 +135,33 @@ void write_config(int steps)
   write_config_select(fzhlr, "chkpt", write_atoms_config, write_header_config);
 
   /* write iteration file */
-  if (myid == 0) write_itr_file(fzhlr, steps);
+  if (myid == 0) write_itr_file(fzhlr, steps,"");
 }
+
+#ifdef SNAPSHOT
+/******************************************************************************
+*
+*  write_ssconfig writes a configuration to a numbered file,
+*  which can serve as a checkpoint; uses write_atoms
+*
+******************************************************************************/
+
+void write_ssconfig(int steps)
+{ 
+  
+  /* first make sure that every atom is inside the box and on the right CPU */
+  if (1==parallel_output) {
+    do_boundaries();
+    fix_cells();
+  }
+
+  /* write checkpoint */
+  write_config_select(sscount, "ss", write_atoms_config, write_header_config);
+
+  /* write iteration file */
+  if (myid == 0) write_itr_file(sscount, steps,"ss");
+}
+#endif
 
 #ifdef EFILTER
 

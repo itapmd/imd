@@ -362,12 +362,18 @@ EXTERN real   strip_width INIT(0.0);   /* Strip width */
 EXTERN real   ekin_threshold INIT(0.0);/* threshold for ekin */    
 EXTERN int    annealsteps INIT(0);     /* number of annealing steps */    
 EXTERN int    max_deform_int INIT(0);  /* max. steps between 2 shear steps */  
-
+#ifdef GLOKDEFORM
+EXTERN real   fnorm_threshold INIT(0.0);/* threshold for fnorm */    
+#endif
 #endif
 
+#ifdef SNAPSHOT
+EXTERN int sscount INIT(0);
+#endif
 #ifdef DEFORM
 EXTERN vektor *deform_shift;       /* shift for each vtype */
 #endif
+
 
 #ifdef DISLOC
 EXTERN int  dem_interval INIT(0);     /* Period of dem output ==0 */
