@@ -48,6 +48,7 @@ box_unit        # scale of generated structures (default: 1.0)
 box_x		# 'x' or first vector for box
 box_y		# 'y' or second vector for box
 box_z		# 'z' or third vector for box - only 3D
+box_from_header # if 1, box is read from header of config file
 pbc_dirs        # boundary condition type; vector with components 0 or 1 
                 # 1 means pbc, 0 means free bc in that direction
                 # default is pbc in all directions
@@ -79,6 +80,7 @@ dist_shock_shear_flag  # shear stress (shock wave simulation)
 # in other ensembles, starttemp might be needed to initialize the velocities
 starttemp	     # Temperature at start of simulation phase. Also used to 
                      # initialize the velocities, if these are not given.
+do_maxwell           # if 1, initialize velocities to Maxwell distribution
 use_current_temp     # (without arguments) Instructs IMD to set the starting
                      # external temperature to the actual system temperature.
                      # In this case, the velocities MUST be given.
