@@ -200,6 +200,41 @@ a shockwave in a later phase of a multiphase simulation.
 Therefore, this option is <A HREF="limitations.html">not multiphase 
 ready</A>.
 
+<A NAME="transport">
+<P><LI><B>transport</B><P>
+</A>
+This option enables imd to compute the heat conductivty of a
+sample. The temperatures are given at the two ends of the sample by
+<TT>dTemp_start</TT> and <TT>dTemp_end</TT>, and
+the temperature gradient is applied along the x-axis.
+The local temperature will be written as a histogram
+onto a file <TT>&lt;basename&gt;.tempdist&lt;n&gt;</TT>. The
+writing interval is given by the parameter <tt>temp_interval</tt>,
+the number of histogram bins by <tt>temp_nlayers</TT>.
+<P>
+If this option is set, the heat current will be appended to the
+<TT>&lt;basename&gt;.eng</TT> file.
+<P>
+<B>Important</B>: In a new version the heat current may also be
+written to the <TT>&lt;basename&gt;.tempdist&lt;n&gt;</TT> file to
+avoid a screwed up <TT>&lt;basename&gt;.eng</TT> file
+</A>.
+
+<A NAME="stress_tens">
+<P><LI><B>stress_tens</B><P>
+</A>
+This option enables imd to compute the<B> diagonal</B> part of the
+stress or pressure tensor. The result will be written as a histogram
+onto a file <TT>&lt;basename&gt;.pressdist&lt;n&gt;</TT>. The
+writing interval is given by the parameter <tt>press_interval</tt>,
+the number of histogram bins by <tt>press_nlayers</TT>. 
+<P>
+<B>Important</B>: The histogram is written as a function of the
+x-coordinate and averaged over the y- and z-coordinate (in 3d). A
+generalization to more dimensional arrays and to the non-diagonal part
+of the pressure tensor is easily possible 
+</A>.
+
 <A NAME="quasi">
 <P><LI><B>quasi</B><P>
 </A>
