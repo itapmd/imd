@@ -91,7 +91,7 @@ ivektor maximal_cell_dim( void )
 #ifdef TTBP
   for (i=0; i<ntypes; ++i)
     for (j=0; j<ntypes; ++j)
-      r2_cut2 = MAX( r2_cut2, 4 * ttbp_r2_cut[i][j] );
+      r2_cut2 = MAX( r2_cut2, ttbp_r2_cut[i][j] );
 #endif 
 #ifdef UNIAX 
   r2_cut2 = uniax_r2_cut;
@@ -184,7 +184,7 @@ void init_cells( void )
 #ifdef TTBP
   for (i=0; i<ntypes; ++i)
     for (j=0; j<ntypes; ++j)
-      r2_cut2 = MAX( r2_cut2, 4 * ttbp_r2_cut[i][j] );
+      r2_cut2 = MAX( r2_cut2, ttbp_r2_cut[i][j] );
 #endif 
 #ifdef UNIAX 
   r2_cut2 = uniax_r2_cut;

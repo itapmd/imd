@@ -20,34 +20,28 @@
 
 void do_forces_ttbp(cell *p)
 {
-  vektor force,d,dd,ddd,tmp_d,dtheta_dr;
-  int    i,j,k,s_k;					       /* counter */
-  int    p_typ,j_typ,k_typ;				         /* sorte */
-  neightab  *neigh;                     /* neighbor table of one particle */
-  real   *tmp_ptr;                                               /* dummy */
-  real   dE_dr;
-  real   pot_zwi,tmp_pot;				           /* pot */
-  real   radius,radius2,rradius,rradius2, rrradius, rrradius2;/* distance */
-  real   *s_potptr;				                   /* pot */
-  real   s_chi,s_pot_k0,s_pot_k1,s_pot_k2;                         /* pot */
-  real   s_dv,s_d2v;                                               /* pot */
-  real   s_pot_grad_ik,s_pot_zwi_ik;		                   /* pot */
-  real   s_pot_grad_ij,s_pot_zwi_ij,tmp_f2;	                   /* pot */
-  real   s_pot_zwi_jk;                                             /* pot */
-  real   theta_grad;                /* actual value of theta(jik) in grad */
-  real   theta_rad;               /* actual value of theta(jik) in radian */
-  real   cos_theta;                      	    /* cosine(theta(jik)) */
-  real   dE_dtheta;	                                   /* dE / dtheta */
-  real   d_acos;	                        /* d cos(theta) / d theta */
-  real   tmp_factor;	                             
-  real   tmp_denom;	         /* inverse of denominator radius*rradius */
-  real	 tmp_sp;	                    /* SPROD of vectors ij and ik */
-  real   tmp_sin;                                                /* dummy */
+  static real   *r2 = NULL, *r = NULL, *pot = NULL, *grad = NULL;
+  static vektor *d  = NULL;
+  neightab *neigh;
+  vektor force_j, force_k;
+  cell   *jcell, *kcell;
+  int    i, j, k, p_typ, j_typ, knum, jnum;
+  real   *tmpptr, *potptr;
+  real   pot_zwi, tmp_pot, tmp_grad, tmp, tmp_j, tmp_k;
+  real   chi, dv, d2v, pot_k0, pot_k1, pot_k2, r2j;
+  real   tmp_f2, cos_theta, tmp_sp;
   real   tmp_virial = 0.0;
 #ifdef P_AXIAL
   vektor tmp_vir_vect = {0.0, 0.0, 0.0};
 #endif
-  real   r2tmp;
+
+  d    = (vektor *) realloc( d,    ttbp_len * sizeof(vektor) );
+  r2   = (real *)   realloc( r2,   ttbp_len * sizeof(real)   );
+  r    = (real *)   realloc( r,    ttbp_len * sizeof(real)   );
+  pot  = (real *)   realloc( pot,  ttbp_len * sizeof(real)   );
+  grad = (real *)   realloc( grad, ttbp_len * sizeof(real)   );
+  if ((d==NULL) || (r2==NULL) || (r==NULL) || (pot==NULL) || (grad==NULL))
+    error("cannot allocate memory for temporary neighbor data");
 
   /*           j
               /|
@@ -62,275 +56,94 @@ void do_forces_ttbp(cell *p)
 
     p_typ   = p->sorte[i];
     neigh   = p->neigh[i];
-    force.x = 0.0;
-    force.y = 0.0;
-    force.z = 0.0;
 
-    /* first neighbor in pair */
-    for (j=0; j<neigh->n-1; ++j) {
+    /* construct some data for all neighbors */
+    tmpptr = neigh->dist;
+    for (j=0; j<neigh->n; ++j) {
 
-      j_typ    = neigh->typ[j];
-      tmp_ptr  = &neigh->dist[j*3];
-      d.x      = *tmp_ptr; ++tmp_ptr;
-      d.y      = *tmp_ptr; ++tmp_ptr;
-      d.z      = *tmp_ptr;
+      /* type, distance vector, radii */
+      j_typ   = neigh->typ[j];
+      d[j].x  = *tmpptr++;
+      d[j].y  = *tmpptr++;
+      d[j].z  = *tmpptr++;
+      r2[j]   = SPROD(d[j],d[j]);
+      r[j]    = sqrt(r2[j]);
 
-      /* Calculate distance ij */
-      radius2  = SPROD(d,d);
-      /* Check for distances, shorter than minimal distance */
-      r2tmp = MAX( radius2, ttbp_r2_0 );
-      radius = sqrt(radius2);
+      /* smoothing potential */
+      r2j     = MAX( r2[j], ttbp_r2_0);
+      k       = (int) ((r2j - ttbp_r2_0) * ttbp_inv_r2_step);
+      chi     = (r2j - ttbp_r2_0 - k * ttbp_r2_step) * ttbp_inv_r2_step;
+      potptr  = PTR_3D_V(ttbp_potential, k, p_typ, j_typ, ttbp_pot_dim);
+      pot_k0  = *potptr; potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
+      pot_k1  = *potptr; potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
+      pot_k2  = *potptr;
+      dv      = pot_k1 - pot_k0;
+      d2v     = pot_k2 - 2 * pot_k1 + pot_k0;
+      grad[j] = 2 * ttbp_inv_r2_step * ( dv + (chi - 0.5) * d2v );
+      pot[j]  = pot_k0 + chi * dv + 0.5 * chi * (chi-1) * d2v;
 
-      /* ttbp smooth function ij: potential table */
-      if (radius2 <= ttbp_r2_cut[p_typ][j_typ]) {
-      s_k      = (int) ((r2tmp - ttbp_r2_0) * ttbp_inv_r2_step);
-      s_chi    = (r2tmp - ttbp_r2_0 - s_k * ttbp_r2_step) * ttbp_inv_r2_step;
-      s_potptr = PTR_3D_V(ttbp_potential, s_k, p_typ, j_typ, ttbp_pot_dim);
-      s_pot_k0 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
-      s_pot_k1 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
-      s_pot_k2 = *s_potptr;
-      s_dv     = s_pot_k1 - s_pot_k0;
-      s_d2v    = s_pot_k2 - 2 * s_pot_k1 + s_pot_k0;
-      s_pot_grad_ij = 2 * ttbp_inv_r2_step * ( s_dv + (s_chi - 0.5) * s_d2v );
-      s_pot_zwi_ij = s_pot_k0 + s_chi * s_dv + 0.5 * s_chi * (s_chi-1) * s_d2v;
-      }
+    }
 
-      /* second neighbor in pair */
+    /* for each pair of neighbors */
+    for (j=0; j<neigh->n-1; ++j)
       for (k=j+1; k<neigh->n; ++k) {
 
-        k_typ    = neigh->typ[k];
-        tmp_ptr  = &neigh->dist[k*3];
-        dd.x     = *tmp_ptr; ++tmp_ptr;
-        dd.y     = *tmp_ptr; ++tmp_ptr;
-        dd.z     = *tmp_ptr;
+        /* FOURIER potential term */
+        tmp_sp    = SPROD(d[j],d[k]);
+        cos_theta = tmp_sp / (r[j] * r[k]);
+        tmp       = cos_theta + 1.0 / ttbp_sp[p_typ];
+        tmp_pot   = ttbp_constant[p_typ] * tmp * tmp;
+        tmp_grad  = ttbp_constant[p_typ] * 2 * tmp;
 
-        /* Calculate distance ik */
-        rradius2 = SPROD(dd,dd);
-        /* Check for distances, shorter than minimal distance */
-        r2tmp = MAX( rradius2, ttbp_r2_0 );
-	rradius  = sqrt(rradius2);
+        /* smoothing potential, total potential */
+        tmp_f2          = pot[j] * pot[k];
+        pot_zwi         = tmp_pot * tmp_f2;
+        tot_pot_energy += pot_zwi;
 
-        /* ttbp smooth function ik: potential table */
-	if ( rradius2 <= ttbp_r2_cut[p_typ][k_typ]) {
-        s_k   = (int) ((r2tmp - ttbp_r2_0) * ttbp_inv_r2_step);
-        s_chi = (r2tmp - ttbp_r2_0 - s_k * ttbp_r2_step) * ttbp_inv_r2_step;
-        s_potptr = PTR_3D_V(ttbp_potential, s_k, p_typ, k_typ , ttbp_pot_dim);
-        s_pot_k0 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
-        s_pot_k1 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
-        s_pot_k2 = *s_potptr;
-        s_dv     = s_pot_k1 - s_pot_k0;
-        s_d2v    = s_pot_k2 - 2 * s_pot_k1 + s_pot_k0;
-        s_pot_grad_ik = 2 * ttbp_inv_r2_step * ( s_dv + (s_chi-0.5) * s_d2v );
-        s_pot_zwi_ik = s_pot_k0 + s_chi * s_dv + 0.5*s_chi * (s_chi-1) * s_d2v;
-	}
+        /* forces */
+        tmp   = -tmp_f2 * tmp_grad / (r[j] * r[k]);
+        tmp_j = tmp * tmp_sp / r2[j] + tmp_pot * grad[j] * pot[k];
+        tmp_k = tmp * tmp_sp / r2[k] + tmp_pot * grad[k] * pot[j];
 
-	/* Calculate distance jk */
-	ddd.x = d.x - dd.x;
-	ddd.y = d.y - dd.y;
-	ddd.z = d.z - dd.z;
-	rrradius2 = SPROD(ddd,ddd);
-	/* Check for distances, shorter than minimal distances */
-        r2tmp = MAX( rrradius2, ttbp_r2_0 );
-	rrradius = sqrt(rrradius2);
+        force_j.x = tmp_j * d[j].x - tmp * d[k].x;
+        force_j.y = tmp_j * d[j].y - tmp * d[k].y;
+        force_j.z = tmp_j * d[j].z - tmp * d[k].z;
 
-	/* ttbp smooth function jk: potential table */
-	if (rrradius2 <= ttbp_r2_cut[k_typ][j_typ]) {
-       	s_k   = (int) ((r2tmp - ttbp_r2_0) * ttbp_inv_r2_step);
-        s_chi = (r2tmp - ttbp_r2_0 - s_k * ttbp_r2_step) * ttbp_inv_r2_step;
-        s_potptr = PTR_3D_V(ttbp_potential, s_k, k_typ, j_typ , ttbp_pot_dim);
-        s_pot_k0 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
-        s_pot_k1 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
-        s_pot_k2 = *s_potptr;
-        s_dv     = s_pot_k1 - s_pot_k0;
-        s_d2v    = s_pot_k2 - 2 * s_pot_k1 + s_pot_k0;
-        s_pot_zwi_jk = s_pot_k0 + s_chi * s_dv + 0.5*s_chi * (s_chi-1) * s_d2v;
-	}
+        force_k.x = tmp_k * d[k].x - tmp * d[j].x;
+        force_k.y = tmp_k * d[k].y - tmp * d[j].y;
+        force_k.z = tmp_k * d[k].z - tmp * d[j].z;
 
-        /* Case 1: j-i-k                                                    */
-        /* The angle theta is the angle at atom i formed by the atoms j-i-k */
-        if ((radius2  <= ttbp_r2_cut[p_typ][j_typ]) && 
-            (rradius2 <= ttbp_r2_cut[p_typ][k_typ])) {
+        /* update force on particle i */
+        p->kraft X(i) += force_j.x + force_k.x;
+        p->kraft Y(i) += force_j.y + force_k.y;
+        p->kraft Z(i) += force_j.z + force_k.z;
+        p->pot_eng[i] += pot_zwi;
 
-          /* Calculate SP of vectors ij and ik */
-          tmp_sp    = SPROD(d,dd);
+        /* update force on particle j */
+        jcell = neigh->cl [j];
+        jnum  = neigh->num[j];
+        jcell->kraft X(jnum) -= force_j.x;
+        jcell->kraft Y(jnum) -= force_j.y;
+        jcell->kraft Z(jnum) -= force_j.z;
+        jcell->pot_eng[jnum] += pot_zwi;
 
-          /* Calculate cosine(theta(jik)) */
-          cos_theta = tmp_sp/(radius * rradius) ;
+        /* update force on particle k */
+        kcell = neigh->cl [k];
+        knum  = neigh->num[k];
+        kcell->kraft X(knum) -= force_k.x;
+        kcell->kraft Y(knum) -= force_k.y;
+        kcell->kraft Z(knum) -= force_k.z;
+        kcell->pot_eng[knum] += pot_zwi;
 
-          /* Calculate theta(jik) */
-          theta_rad = acos(cos_theta);
-
-          /* calculate f2 = f(ij)*f(ik) */
-          tmp_f2    = s_pot_zwi_ij * s_pot_zwi_ik;       /* smooth */
-
-          /* FOURIER potential term */
-          tmp_pot = ttbp_constant[p_typ]*(ttbp_c0[p_typ] +
-                                          ttbp_c1[p_typ] * cos_theta +
-                                          ttbp_c2[p_typ] * cos(2*theta_rad) +
-                                          ttbp_c3[p_typ] * cos(3*theta_rad));
-
-          pot_zwi         = tmp_pot * tmp_f2;     /* smooth */
-          p->pot_eng[i]  += pot_zwi;
-          tot_pot_energy += pot_zwi;
-
-          /* Forces ... the horror starts 
-           * F = - d E / d r  
-           *   = - d E / d Theta  *  d Theta / d r
-           *   = - d E / d Theta  *  d_acos *  dtheta_dr 
-           * smoothing 
-           * F = - d (E*Fij*Fik) / d r
-           *   = - d E / d r * Fij * Fik   - E * d Fij 
-           *                    / d r * Fik  - E * Fij * d Fik / d r
-           */
-
-          dE_dtheta = - ttbp_constant[p_typ] *
-                        (  ttbp_c1[p_typ] * sin(theta_rad) + 
-                         2*ttbp_c2[p_typ] * sin(2*theta_rad) + 
-                         3*ttbp_c3[p_typ] * sin(3*theta_rad));
-
-          tmp_sin = sin(theta_rad);
-          d_acos      = - 1.0 / tmp_sin;
-          tmp_denom   =   1.0 / (radius * rradius);
-          tmp_factor  =   tmp_denom * d_acos;
-
-          dtheta_dr.x = tmp_factor * ( d.x  * ( tmp_sp / radius2  - 1) +
-                                       dd.x * ( tmp_sp / rradius2 - 1));
-          dtheta_dr.y = tmp_factor * ( d.y  * ( tmp_sp / radius2  - 1) +
-                                       dd.y * ( tmp_sp / rradius2 - 1));
-          dtheta_dr.z = tmp_factor * ( d.z  * ( tmp_sp / radius2  - 1) +
-                                       dd.z * ( tmp_sp / rradius2 - 1));
-
-          force.x    += - dE_dtheta * dtheta_dr.x * tmp_f2
-                        + tmp_pot   * (  s_pot_grad_ij * d.x  * s_pot_zwi_ik
-                                       + s_pot_grad_ik * dd.x * s_pot_zwi_ij);
-          force.y    += - dE_dtheta * dtheta_dr.y * tmp_f2
-                        + tmp_pot   * (  s_pot_grad_ij * d.y  * s_pot_zwi_ik
-                                       + s_pot_grad_ik * dd.y * s_pot_zwi_ij);
-          force.z    += - dE_dtheta * dtheta_dr.z * tmp_f2
-                        + tmp_pot   * (  s_pot_grad_ij * d.z  * s_pot_zwi_ik
-                                       + s_pot_grad_ik * dd.z * s_pot_zwi_ij);
-
-        } /* case j-i-k */
-
-        /* Case 2: i-k-j                                                     */
-        /* The angle theta is the angle at atom k formed by the atoms i-k-j  */
-        if ((rradius2  <= ttbp_r2_cut[p_typ][k_typ]) && 
-            (rrradius2 <= ttbp_r2_cut[k_typ][j_typ])) { 
-
-          /* Calculate SP of vectors ik and jk */
-          tmp_sp = SPROD(dd,ddd);
-
-          /* Calculate cosine(theta(ikj)) */
-          cos_theta = - tmp_sp/(rradius * rrradius) ;
-
-          /* Calculate theta(ikj) */
-          theta_rad = acos(cos_theta);
-
-          /* calculate f2 = f(ik)*f(jk) */
-          tmp_f2    = s_pot_zwi_ik * s_pot_zwi_jk;       /* smooth */
-
-          /* FOURIER potential term */
-          tmp_pot = ttbp_constant[k_typ]*(ttbp_c0[k_typ] +
-                                          ttbp_c1[k_typ] * cos_theta +
-                                          ttbp_c2[k_typ] * cos(2*theta_rad) +
-                                          ttbp_c3[k_typ] * cos(3*theta_rad));
-
-          pot_zwi         = tmp_pot * tmp_f2;     /* smooth */
-          p->pot_eng[i]  += pot_zwi;
-
-          /* Forces */
-          dE_dtheta = - ttbp_constant[k_typ] *
-                     (  ttbp_c1[k_typ] * sin(theta_rad) + 
-                      2*ttbp_c2[k_typ] * sin(2*theta_rad) + 
-                      3*ttbp_c3[k_typ] * sin(3*theta_rad));
-
-          tmp_sin = sin(theta_rad);
-          d_acos       = - 1.0 / tmp_sin;
-          tmp_denom    =   1.0 / (rradius * rrradius);
-          tmp_factor   =   tmp_denom * d_acos;
-
-          dtheta_dr.x  = tmp_factor * ( ddd.x - tmp_sp / rradius2 * dd.x );
-          dtheta_dr.y  = tmp_factor * ( ddd.y - tmp_sp / rradius2 * dd.y );
-          dtheta_dr.z  = tmp_factor * ( ddd.z - tmp_sp / rradius2 * dd.z );
-
-          force.x     += - dE_dtheta * dtheta_dr.x * tmp_f2
-                         + tmp_pot * s_pot_grad_ik * dd.x * s_pot_zwi_jk;
-          force.y     += - dE_dtheta * dtheta_dr.y * tmp_f2
-                         + tmp_pot * s_pot_grad_ik * dd.y * s_pot_zwi_jk;
-          force.z     += - dE_dtheta * dtheta_dr.z * tmp_f2
-                         + tmp_pot * s_pot_grad_ik * dd.z * s_pot_zwi_jk;
-
-        } /* case i-k-j */
-
-
-        /* Case 3: i-j-k                                                     */
-        /*  The angle theta is the angle at atom j formed by the atoms i-j-k */
-        if ((radius2   <= ttbp_r2_cut[p_typ][j_typ]) && 
-            (rrradius2 <= ttbp_r2_cut[k_typ][j_typ])) { 
-
-          /* Calculate SP of vectors ij and jk */
-          tmp_sp = SPROD(d,ddd);
-
-          /* Calculate cosine(theta(ijk)) */
-          cos_theta = tmp_sp/(radius * rrradius) ;
-
-          /* Calculate theta(ijk) */
-          theta_rad = acos(cos_theta);
-
-          /* calculate f2 = f(ij)*f(jk) */
-          tmp_f2    = s_pot_zwi_ij * s_pot_zwi_jk;       /* smooth */
-
-          /* FOURIER potential term */
-          tmp_pot = ttbp_constant[j_typ]*(ttbp_c0[j_typ] +
-                                          ttbp_c1[j_typ] * cos_theta +
-                                          ttbp_c2[j_typ] * cos(2*theta_rad) +
-                                          ttbp_c3[j_typ] * cos(3*theta_rad));
-
-          pot_zwi         = tmp_pot * tmp_f2;     /* smooth */
-          p->pot_eng[i]  += pot_zwi;
-
-          /* Forces */
-          dE_dtheta = - ttbp_constant[j_typ] *
-                     (  ttbp_c1[j_typ] * sin(theta_rad) + 
-                      2*ttbp_c2[j_typ] * sin(2*theta_rad) + 
-                      3*ttbp_c3[j_typ] * sin(3*theta_rad));
-
-          tmp_sin      = sin(theta_rad);
-          d_acos       = - 1.0 / tmp_sin;
-          tmp_denom    =   1.0 / (radius * rrradius);
-          tmp_factor   =   tmp_denom * d_acos;
-
-          dtheta_dr.x  = - tmp_factor * ( ddd.x - tmp_sp / radius2 * d.x );
-          dtheta_dr.y  = - tmp_factor * ( ddd.y - tmp_sp / radius2 * d.y );
-          dtheta_dr.z  = - tmp_factor * ( ddd.z - tmp_sp / radius2 * d.z );
-
-          force.x     += - dE_dtheta * dtheta_dr.x * tmp_f2
-                         + tmp_pot * s_pot_grad_ij * d.x * s_pot_zwi_jk; 
-          force.y     += - dE_dtheta * dtheta_dr.y * tmp_f2
-                         + tmp_pot * s_pot_grad_ij * d.y * s_pot_zwi_jk;
-          force.z     += - dE_dtheta * dtheta_dr.z * tmp_f2
-                         + tmp_pot * s_pot_grad_ij * d.z * s_pot_zwi_jk;
-
-        } /* case i-j-k */
-
-      } /* k */
-
-    } /* j */
-
-    p->kraft X(i)  += force.x;
-    p->kraft Y(i)  += force.y;
-    p->kraft Z(i)  += force.z;
-
-    tmp_d.x         = p->ort X(i);
-    tmp_d.y         = p->ort Y(i);
-    tmp_d.z         = p->ort Z(i);
 #ifdef P_AXIAL
-    tmp_vir_vect.x -= tmp_d.x * force.x;
-    tmp_vir_vect.y -= tmp_d.y * force.y;
-    tmp_vir_vect.z -= tmp_d.z * force.z;
+        tmp_vir_vect.x += d[j].x * force_j.x + d[k] * force_k.x;
+        tmp_vir_vect.y += d[j].y * force_j.y + d[k] * force_k.y;
+        tmp_vir_vect.z += d[j].z * force_j.z + d[k] * force_k.z;
 #else
-    tmp_virial     -= SPROD(tmp_d,force);
+        tmp_virial     += SPROD(d[j],force_j) + SPROD(d[k],force_k);
 #endif
+
+    } /* neighbor pairs */
 
   } /* i */
 
@@ -347,4 +160,95 @@ void do_forces_ttbp(cell *p)
 
 }
 
+
+/******************************************************************************
+*
+*  do_neightab - compute neighbor table
+*
+******************************************************************************/
+
+void do_neightab(cell *p, cell *q, vektor pbc)
+{
+  int i, j, k;
+  int jstart, jend;
+  int q_typ, p_typ;
+  vektor d, tmp_d;
+  real *qptr, radius2, r2_short = r2_end;
+
+  /* For each atom in first cell */
+  for (i=0; i<p->n; ++i) {
+
+    tmp_d.x = p->ort X(i) - pbc.x;
+    tmp_d.y = p->ort Y(i) - pbc.y;
+    tmp_d.z = p->ort Z(i) - pbc.z;
+    p_typ   = p->sorte[i];
+
+    jstart = (p==q ? i+1 : 0);
+    qptr   = q->ort + DIM * jstart;
+    
+    /* For each atom in neighbouring cell */
+    for (j = jstart; j < q->n; ++j) {
+
+      q_typ = q->sorte[j];
+      
+      /* Calculate distance  */
+      d.x = *qptr++ - tmp_d.x;
+      d.y = *qptr++ - tmp_d.y;
+      d.z = *qptr++ - tmp_d.z;
+
+      radius2 = SPROD(d,d);
+
+      if (0==radius2) { char msgbuf[256];
+        sprintf(msgbuf,
+                "Distance is zero: nrs=%d %d\norte: %f %f %f, %f %f %f\n",
+                NUMMER(p,i),NUMMER(q,i),
+                p->ort X(i),p->ort Y(i),p->ort Z(i),
+                q->ort X(j),q->ort Y(j),q->ort Z(j));
+        error(msgbuf);
+      }
+
+      /* make neighbor tables for TTBP */
+      if (radius2 <= ttbp_r2_cut[p_typ][q_typ]) {
+
+        neightab *neigh;
+        real  *tmp_ptr;
+
+        /* update neighbor table of particle i */
+        neigh = p->neigh[i];
+        if (neigh->n_max <= neigh->n) {
+          error("neighbor table too small, increase ttbp_len");
+        }
+        neigh->typ[neigh->n] = q_typ;
+        neigh->cl [neigh->n] = q;
+        neigh->num[neigh->n] = j;
+        tmp_ptr  = &neigh->dist[3*neigh->n];
+        *tmp_ptr = d.x; ++tmp_ptr; 
+        *tmp_ptr = d.y; ++tmp_ptr; 
+        *tmp_ptr = d.z;
+        neigh->n++;
+
+        /* update neighbor table of particle j */
+        /* we do not need a neighbor table in buffer cells
+        neigh = q->neigh[j];
+        if (neigh->n_max <= neigh->n) {
+          error("neighbor table too small, increase ttbp_len");
+        }
+        neigh->typ[neigh->n] = p_typ;
+        neigh->cl [neigh->n] = p;
+        neigh->num[neigh->n] = i;
+        tmp_ptr  = &neigh->dist[3*neigh->n];
+        *tmp_ptr = -d.x; ++tmp_ptr; 
+        *tmp_ptr = -d.y; ++tmp_ptr; 
+        *tmp_ptr = -d.z;
+        neigh->n++;
+        */
+      }
+    } /* for j */
+  } /* for i */
+
+#ifndef MONOLJ
+  if (r2_short < r2_0) printf("\n Short distance! r2: %f\n",r2_short);
+#endif
+
+}
 

@@ -105,7 +105,7 @@ void main_loop(void)
     if (((eng_interval != 0) && (0 == steps%eng_interval)) || 
         (steps == steps_min)) setup_buffers();
     mpi_addtime(&time_io);
-#ifdef AR
+#if (defined(AR) && !defined(TTBP))
     send_atoms_ar();
 #else
     send_atoms_force();
@@ -136,8 +136,12 @@ void main_loop(void)
 #endif
 
 #ifdef MPI
-#ifdef AR    
+#ifdef AR
+#ifdef TTBP
+    send_forces_full();
+#else
     send_forces();
+#endif
     mpi_addtime(&time_comm_ar);
 #endif
 #endif
@@ -365,8 +369,14 @@ void fix_cells(void)
           else {
 
             to_cpu = cpu_coord( global_cell_coord( coord ));
+
+            /* atom is on my cpu */
+            if (to_cpu==myid)
+                move_atom(coord, p, l);
+            
             /* west */
-            if ((to_cpu==nbwest) || (to_cpu==nbnw)  || (to_cpu==nbws) ||
+            else if 
+               ((to_cpu==nbwest) || (to_cpu==nbnw)  || (to_cpu==nbws) ||
                 (to_cpu==nbuw  ) || (to_cpu==nbunw) || (to_cpu==nbuws)||
                 (to_cpu==nbdw  ) || (to_cpu==nbdwn) || (to_cpu==nbdsw))
                 copy_one_atom( &send_buf_west,  p, l);
@@ -394,10 +404,6 @@ void fix_cells(void)
             else if (to_cpu==nbup)
                 copy_one_atom( &send_buf_up  ,  p, l);
 
-            /* atom is on my cpu */
-            else if (to_cpu==myid)
-                move_atom(coord, p, l);
-            
             else error("Atom jumped multiple CPUs");
                         
 	  }

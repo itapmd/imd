@@ -123,6 +123,21 @@ void calc_forces(void)
     }
   }
 
+#ifdef TTBP
+  /* complete neighbor tables for remaining pairs of cells */
+  for (n=0; n<6; ++n) {
+    for (k=npairs[n]; k<npairs2[n]; ++k) {
+      vektor pbc;
+      pair *P;
+      P = pairs[n] + k;
+      pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
+      pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
+      pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
+      do_neightab(cell_array + P->np, cell_array + P->nq, pbc);
+    }
+  }
+#endif
+
   mpi_addtime(&time_calc_local);
   
 #ifndef AR  
@@ -1516,6 +1531,167 @@ void send_forces(void)
   add_forces( &recv_buf_south, 1,            1, 1);
   add_forces( &recv_buf_north, 1, cell_dim.y-2, 1);
 
+}
+
+
+/******************************************************************************
+*
+*  add_cell_force  -  add forces of one cell to those of another cell
+*
+******************************************************************************/
+
+void add_cell_force( int k, int l, int m, int r, int s, int t)
+{
+  int i;
+  cell *from, *to;
+
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+  to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
+
+  for (i=0; i<to->n; ++i) {
+    to->kraft X(i) += from->kraft X(i);
+    to->kraft Y(i) += from->kraft Y(i);
+    to->kraft Z(i) += from->kraft Z(i);
+#ifndef MONOLJ
+    to->pot_eng[i] += from->pot_eng[i];
+#endif
+  }
+}
+
+
+/******************************************************************************
+*
+*  send_forces_full  -  send forces of ALL buffer cells
+*
+******************************************************************************/
+
+void send_forces_full(void)
+{
+  int i,j;
+
+  MPI_Status  stateast[2],  statwest[2];
+  MPI_Status statnorth[2], statsouth[2];
+  MPI_Status    statup[2],  statdown[2];
+
+  MPI_Request  reqeast[2],   reqwest[2];
+  MPI_Request reqnorth[2],  reqsouth[2];
+  MPI_Request    requp[2],   reqdown[2];
+
+  empty_mpi_buffers();
+
+  /* send forces up/down */
+  if (cpu_dim.z==1) {
+    /* simply add up/down forces to original cells */
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=0; j < cell_dim.y; ++j) {
+	add_cell_force( i, j, 0, i, j, cell_dim.z-2 );
+        add_cell_force( i, j, cell_dim.z-1, i, j, 1 );
+      }
+  } else {
+    /* copy up forces into send buffer, send up */
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=0; j < cell_dim.y; ++j)
+	copy_forces( &send_buf_up, i, j, 0);
+    irecv_buf( &recv_buf_down , nbdown, &reqdown[1]);
+    isend_buf( &send_buf_up   , nbup  , &reqdown[0]);
+
+    /* copy down forces into send buffer, send down */
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=0; j < cell_dim.y; ++j)
+        copy_forces( &send_buf_down, i, j, cell_dim.z-1);
+    irecv_buf( &recv_buf_up  , nbup  , &requp[1] );
+    isend_buf( &send_buf_down, nbdown, &requp[0] );
+
+    /* wait for forces from down, add them to original cells */
+    MPI_Waitall(2, reqdown, statdown);
+    recv_buf_down.n = 0;
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=0; j < cell_dim.y; ++j)
+	add_forces( &recv_buf_down, i, j, cell_dim.z-2);
+
+    /* wait for forces from up, add them to original cells */
+    MPI_Waitall(2, requp, statup);
+    recv_buf_up.n = 0;
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=0; j < cell_dim.y; ++j)
+        add_forces( &recv_buf_up, i, j, 1);
+  }
+
+  /* send forces north/south */
+  if (cpu_dim.y==1) {
+    /* simply add north/south forces to original cells */
+    for (i=0; i < cell_dim.x; ++i)
+      for (j=1; j < cell_dim.z-1; ++j) {
+        add_cell_force( i, 0, j, i, cell_dim.y-2, j );
+        add_cell_force( i, cell_dim.y-1, j, i, 1, j );
+      }
+  } else {
+    /* copy north forces into send buffer, send north */
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=1; j < cell_dim.z-1; ++j)
+	copy_forces( &send_buf_north, i, 0, j);
+    irecv_buf( &recv_buf_south, nbsouth, &reqsouth[1] );
+    isend_buf( &send_buf_north, nbnorth, &reqsouth[0] );
+
+    /* copy south forces into send buffer, send south */
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=1; j < cell_dim.z-1; ++j)
+        copy_forces( &send_buf_south, i, cell_dim.y-1, j);
+    irecv_buf( &recv_buf_north, nbnorth, &reqnorth[1] );
+    isend_buf( &send_buf_south, nbsouth, &reqnorth[0] );
+
+    /* wait for forces from south, add them to original cells */
+    MPI_Waitall(2, reqsouth, statsouth);
+    recv_buf_south.n = 0;
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=1; j < cell_dim.z-1; ++j)
+	add_forces( &recv_buf_south, i, cell_dim.y-2, j);
+
+    /* wait for forces from north, add them to original cells */
+    MPI_Waitall(2, reqnorth, statnorth);
+    recv_buf_north.n = 0;
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=1; j < cell_dim.z-1; ++j)
+        add_forces( &recv_buf_north, i, 1, j);
+  }
+
+  /* send forces east/west */
+  if (cpu_dim.x==1) {
+    /* simply add east/west forces to original cells */
+    for (i=1; i < cell_dim.y-1; ++i)
+      for (j=1; j < cell_dim.z-1; ++j) { 
+        add_cell_force( 0, i, j, cell_dim.x-2, i, j );
+        add_cell_force( cell_dim.x-1, i, j, 1, i, j );
+      }
+  } else {
+    /* copy east forces into send buffer, send east */
+    for (i=1; i < cell_dim.y-1; ++i)
+      for (j=1; j < cell_dim.z-1; ++j) 
+	copy_forces( &send_buf_east, 0, i, j);
+    irecv_buf( &recv_buf_west, nbwest, &reqwest[1] );
+    isend_buf( &send_buf_east, nbeast, &reqwest[0] );
+
+    /* copy west forces into send buffer, send west */
+    for (i=1; i < cell_dim.y-1; ++i) 
+      for (j=1; j < cell_dim.z-1; ++j) 
+	copy_forces( &send_buf_west, cell_dim.x-1, i, j);
+    irecv_buf( &recv_buf_east, nbeast, &reqeast[1] );
+    isend_buf( &send_buf_west, nbwest, &reqeast[0] );
+
+    /* wait for forces from west, add them to original cells */
+    MPI_Waitall(2, reqwest, statwest);
+    recv_buf_west.n = 0;
+    for (i=1; i < cell_dim.y-1; ++i)
+      for (j=1; j < cell_dim.z-1; ++j) 
+	add_forces( &recv_buf_west, cell_dim.x-2, i, j);
+
+    /* wait for forces from east, add them to original cells */
+    MPI_Waitall(2, reqeast, stateast);
+    recv_buf_east.n = 0;
+    for (i=1; i < cell_dim.y-1; ++i) 
+      for (j=1; j < cell_dim.z-1; ++j) 
+	add_forces( &recv_buf_east, 1, i, j);
+  }
 }
 
 

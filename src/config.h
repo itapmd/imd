@@ -98,7 +98,9 @@
 #endif
 
 #ifdef TTBP
-#undef AR
+#ifndef AR
+#define AR
+#endif
 #endif
 
 #ifdef UNIAX

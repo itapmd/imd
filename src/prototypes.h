@@ -102,6 +102,7 @@ void send_atoms_force(void);
 void send_atoms_ar(void);
 void send_atoms_by_cell(void);
 void send_forces(void);
+void send_forces_full(void);
 void fix_cells_by_cell(void);
 
 #ifdef TWOD
@@ -116,6 +117,7 @@ vektor global_pbc(int i,int j, int k);
 void send_recv_cell(int i,int j,int k,int l,int m,int n);
 void recv_send_cell(int i,int j,int k,int l,int m,int n);
 void copy_cell_force(int i, int j, int k, int l, int m, int n);
+void add_cell_force(int i, int j, int k, int l, int m, int n);
 void move_atoms_force(msgbuf *b, int k, int l, int m);
 void copy_atoms_force(msgbuf *b, int k, int l, int m);
 void add_forces(msgbuf *b, int k, int l, int m);
@@ -140,16 +142,11 @@ ivektor my_cart_coords(int myid);
 void my_cart_rank(ivektor my_coord);
 #endif
 
-
-#ifdef MIKSHEAR
-void apply_shear(void);
-void shear1step(int steps);
-void write_shear_energy(int steps, int shear_steps);
-#endif
-
-#ifdef DEFORM
+#ifdef HOMDEF
 void shear_sample(void);
 void expand_sample(void);
+#endif
+#ifdef DEFORM
 void deform_sample(void);
 #endif
 
@@ -167,6 +164,7 @@ void do_forces_eam_2(cell *p);
 
 #ifdef TTBP
 void do_forces_ttbp(cell *p);
+void do_neightab(cell *p, cell *q, vektor pbc);
 void read_ttbp_potential(str255 ttbp_potfilename);
 neightab *alloc_neightab(neightab *neigh, int count);
 #endif
@@ -178,7 +176,6 @@ void gay_berne ( vektor r12, vektor e1, vektor e2,
 		 real *pot12, vektor *force12, 
 		 vektor *torque12, vektor *torque21 );
 #endif
-
 
 #if defined(CORRELATE) || defined(MSQD)
 void alloc_correl(int, int);

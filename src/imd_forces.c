@@ -224,7 +224,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
 
 #ifdef TTBP
       /* 2. Cutoff: make neighbor tables for TTBP */
-      if (radius2 <= 4 * ttbp_r2_cut[p_typ][q_typ]) {
+      if (radius2 <= ttbp_r2_cut[p_typ][q_typ]) {
 
         neightab *neigh;
         real  *tmp_ptr;
@@ -235,6 +235,8 @@ void do_forces(cell *p, cell *q, vektor pbc)
           error("neighbor table too small, increase ttbp_len");
         }
         neigh->typ[neigh->n] = q_typ;
+        neigh->cl [neigh->n] = q;
+        neigh->num[neigh->n] = j;
         tmp_ptr  = &neigh->dist[3*neigh->n];
         *tmp_ptr = d.x; ++tmp_ptr; 
         *tmp_ptr = d.y; ++tmp_ptr; 
@@ -247,6 +249,8 @@ void do_forces(cell *p, cell *q, vektor pbc)
           error("neighbor table too small, increase ttbp_len");
         }
         neigh->typ[neigh->n] = p_typ;
+        neigh->cl [neigh->n] = p;
+        neigh->num[neigh->n] = i;
         tmp_ptr  = &neigh->dist[3*neigh->n];
         *tmp_ptr = -d.x; ++tmp_ptr; 
         *tmp_ptr = -d.y; ++tmp_ptr; 

@@ -69,6 +69,8 @@ typedef ivektor3d  ivektor;
 typedef struct {
     real        *dist;
     shortint    *typ;
+    void        **cl;
+    integer     *num;
     int         n;
     int         n_max;
 } neightab;
@@ -120,6 +122,8 @@ typedef struct {
   integer np, nq;
   signed char ipbc[4];
 } pair;
+
+typedef cell* cellptr;
 
 /* Buffer for messages */
 
