@@ -10,7 +10,7 @@
 
 /******************************************************************************
 *
-* imd_main_3d.c -- main loop, three dimensions
+* imd_main_3d.c -- main loop, used for both two and three dimensions
 *
 ******************************************************************************/
 
@@ -31,39 +31,35 @@
 
 void main_loop(void)
 {
-  real tmp_pot_energy;
-  real tmp_kin_energy;
-  int  i, j, k;
-  real dtemp;
-  vektor d_pressure;
-
+  real tmp_pot_energy, tmp_kin_energy;
+  int  i, j, k, l;
+  int  steps_diff = steps_max - steps_min;
+  int  nofbcsteps = 0;
+  real dtemp, dshock_speed;
+  vektor d_pressure, *fbc_df;
+#ifdef TWOD
+  vektor nullv={0.0,0.0};
+#else
+  vektor nullv={0.0,0.0,0.0};
+#endif
 #if defined(CORRELATE) || defined(MSQD)
   int ref_step = correl_start;
 #endif
 
 #ifdef FBC
-#ifdef MIK
-  int nofbcsteps=0;
-#endif 
-  int l;
-  vektor nullv={0.0,0.0,0.0};
-  vektor temp_df;
-  vektor *fbc_df;
   fbc_df = (vektor *) malloc(vtypes*DIM*sizeof(real));
-  if (NULL==fbc_df)
-    error("Can't allocate memory for fbc_df\n");
+  if (NULL==fbc_df) error("Cannot allocate memory for fbc_df");
 #endif
 
 #ifdef SHOCK
   /* compute speed increase */
-  real dshock_speed;
-      if (shock_mode == 3) { 
-	  dshock_speed=0;
-	      if (shock_incr>0) {
-		  dshock_speed=shock_speed/(real)shock_incr;
-		  shock_speed=0.0;
-	      }
-      }
+  if (shock_mode == 3) { 
+    dshock_speed=0;
+    if (shock_incr>0) {
+      dshock_speed=shock_speed/(real)shock_incr;
+      shock_speed=0.0;
+    }
+  }
 #endif
 
   /* initialize temperature, if necessary */
@@ -83,38 +79,36 @@ void main_loop(void)
   if (0==myid) printf( "Starting simulation %d\n", simulation );
 
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
-  dtemp = (end_temp - temperature) / (steps_max - steps_min);
+  dtemp = (end_temp - temperature) / steps_diff;
 #endif
 
 #ifdef FBC
 #ifndef MIK
-/* dynamic loading, increment linearly each timestep */
+  /* dynamic loading, increment linearly each timestep */
   for (l=0;l<vtypes;l++){
-    temp_df.x = (((fbc_endforces+l)->x) - ((fbc_beginforces+l)->x))/(steps_max - steps_min);
-    temp_df.y = (((fbc_endforces+l)->y) - ((fbc_beginforces+l)->y))/(steps_max - steps_min);
-    temp_df.z = (((fbc_endforces+l)->z) - ((fbc_beginforces+l)->z))/(steps_max - steps_min);
-    
-    *(fbc_df+l) = temp_df;
+    (fbc_df+l)->x = ((fbc_endforces+l)->x - (fbc_beginforces+l)->x)/steps_diff;
+    (fbc_df+l)->y = ((fbc_endforces+l)->y - (fbc_beginforces+l)->y)/steps_diff;
+#ifndef TWOD
+    (fbc_df+l)->z = ((fbc_endforces+l)->z - (fbc_beginforces+l)->z)/steps_diff;
+#endif
   }
 #endif
 #endif
 
 #ifdef NVX
-  dtemp = (dTemp_end - dTemp_start)/(steps_max - steps_min);
+  dtemp = (dTemp_end - dTemp_start) / steps_diff;
   tran_Tleft  = temperature + dTemp_start;
   tran_Tright = temperature - dTemp_start;
 #endif
 
 #ifdef NPT
-  d_pressure.x = (pressure_end.x - pressure_ext.x) / (steps_max - steps_min);
-  d_pressure.y = (pressure_end.y - pressure_ext.y) / (steps_max - steps_min);
-  d_pressure.z = (pressure_end.z - pressure_ext.z) / (steps_max - steps_min);
+  d_pressure.x = (pressure_end.x - pressure_ext.x) / steps_diff;
+  d_pressure.y = (pressure_end.y - pressure_ext.y) / steps_diff;
+#ifndef TWOD
+  d_pressure.z = (pressure_end.z - pressure_ext.z) / steps_diff;
+#endif
   calc_dyn_pressure();
-  if (isq_tau_xi==0.0) {
-    xi.x = 0.0;
-    xi.y = 0.0;
-    xi.z = 0.0;
-  }
+  if (isq_tau_xi==0.0) xi = nullv;
 #endif
 
 #if defined(CORRELATE) || defined(MSQD)
@@ -141,7 +135,7 @@ void main_loop(void)
   for (steps=steps_min; steps <= steps_max; ++steps) {
 
 #ifdef SHOCK
-      /* accelerate blocks */
+    /* accelerate blocks */
     if (shock_mode == 3 && shock_incr>0) { 
       if (steps<=shock_incr){  
 	  shock_speed+=dshock_speed;
@@ -180,10 +174,7 @@ void main_loop(void)
 #ifdef MIK  
     /* just increment the force if under threshold of e_kin or after 
        waitsteps and after annelasteps */
-    temp_df.x = 0.0;
-    temp_df.y = 0.0;
-    temp_df.z = 0.0;  
-    for (l=0; l<vtypes; l++) *(fbc_df+l) = temp_df;
+    for (l=0; l<vtypes; l++) *(fbc_df+l) = nullv;
 
     if (steps > fbc_annealsteps) {
       nofbcsteps++; 
@@ -192,11 +183,7 @@ void main_loop(void)
           (nofbcsteps==fbc_waitsteps)) 
       {
         nofbcsteps=0;
-        for (l=0;l<vtypes;l++) {
-          (fbc_df+l)->x = (fbc_dforces+l)->x;
-          (fbc_df+l)->y = (fbc_dforces+l)->y;
-          (fbc_df+l)->z = (fbc_dforces+l)->z;
-        }
+        for (l=0; l<vtypes; l++) fbc_df[l] = fbc_dforces[l];
       }
     }
 #endif /* MIK */
@@ -206,16 +193,18 @@ void main_loop(void)
     if ((exp_interval > 0) && (0 == steps % exp_interval)) expand_sample();
     if ((hom_interval > 0) && (0 == steps % hom_interval)) shear_sample();
     if ((lindef_interval > 0) && (0 == steps % lindef_interval)) 
+#ifdef TWOD
+      lin_deform(lindef_x, lindef_y,           lindef_size);
+#else
       lin_deform(lindef_x, lindef_y, lindef_z, lindef_size);
+#endif
 #endif
 
 #ifdef DEFORM
 #ifdef GLOKDEFORM
     if (steps > annealsteps) {
       deform_int++;
-      if ((fnorm < fnorm_threshold) || 
-          (deform_int==max_deform_int)) 
-      {
+      if ((fnorm < fnorm_threshold) || (deform_int==max_deform_int)) {
 #ifdef SNAPSHOT
 	  write_eng_file(steps);
 	  write_ssconfig(steps);
@@ -259,12 +248,10 @@ void main_loop(void)
       /* fbc_df=0 if MIK && ekin> ekin_threshold */
       (fbc_forces+l)->x += (fbc_df+l)->x;  
       (fbc_forces+l)->y += (fbc_df+l)->y;
+#ifndef TWOD
       (fbc_forces+l)->z += (fbc_df+l)->z;
-    } 
-#ifdef ATNR
-    printf(" step: %d \n",steps); 
-    fflush(stdout);
 #endif
+    } 
 #endif
 
     calc_forces(steps);
@@ -305,16 +292,18 @@ void main_loop(void)
     /* "global convergence": set momenta to 0 if P*F < 0 (global vectors) */
     if (steps > glok_annealsteps) {
       if ((PxF<0.0)||(2.0*tot_kin_energy/nactive > glok_ekin_threshold)) {
-	for (k=0; k<NCELLS; ++k) {
+        for (k=0; k<NCELLS; ++k) {
           cell *p;
-	  p = CELLPTR(k);
-	  for (i=0; i<p->n; ++i) {
-	    IMPULS(p,i,X) = 0.0;
-	    IMPULS(p,i,Y) = 0.0;
-	    IMPULS(p,i,Z) = 0.0;
-	  }
-	}
-	write_eng_file(steps); 
+          p = CELLPTR(k);
+          for (i=0; i<p->n; ++i) {
+            IMPULS(p,i,X) = 0.0;
+            IMPULS(p,i,Y) = 0.0;
+#ifndef TWOD
+            IMPULS(p,i,Z) = 0.0;
+#endif
+          }
+        }
+        write_eng_file(steps); 
       }
     }
 #endif
@@ -333,7 +322,7 @@ void main_loop(void)
 #else
       temperature = 2.0 * tot_kin_energy / nactive;
 #endif
-      dtemp = (end_temp - temperature) / (steps_max - steps_min);
+      dtemp = (end_temp - temperature) / steps_diff;
       use_curr_temp = 0;
     }
 #endif
@@ -342,9 +331,11 @@ void main_loop(void)
     if ((steps==steps_min) && (ensemble==ENS_NPT_ISO) && 
         (use_curr_pressure==1)) {
       pressure_ext.x = pressure;
-      d_pressure.x = (pressure_end.x-pressure_ext.x) / (steps_max-steps_min);
-      d_pressure.y = (pressure_end.y-pressure_ext.y) / (steps_max-steps_min);
-      d_pressure.z = (pressure_end.z-pressure_ext.z) / (steps_max-steps_min);
+      d_pressure.x = (pressure_end.x-pressure_ext.x) / steps_diff;
+      d_pressure.y = (pressure_end.y-pressure_ext.y) / steps_diff;
+#ifndef TWOD
+      d_pressure.z = (pressure_end.z-pressure_ext.z) / steps_diff;
+#endif
       use_curr_pressure = 0;
     }
 #endif
@@ -354,10 +345,14 @@ void main_loop(void)
         (use_curr_pressure==1)) {
       pressure_ext.x = stress_x;
       pressure_ext.y = stress_y;
+#ifndef TWOD
       pressure_ext.z = stress_z;
-      d_pressure.x = (pressure_end.x-pressure_ext.x) / (steps_max-steps_min);
-      d_pressure.y = (pressure_end.y-pressure_ext.y) / (steps_max-steps_min);
-      d_pressure.z = (pressure_end.z-pressure_ext.z) / (steps_max-steps_min);
+#endif
+      d_pressure.x = (pressure_end.x-pressure_ext.x) / steps_diff;
+      d_pressure.y = (pressure_end.y-pressure_ext.y) / steps_diff;
+#ifndef TWOD
+      d_pressure.z = (pressure_end.z-pressure_ext.z) / steps_diff;
+#endif
       use_curr_pressure = 0;
     }
 #endif
@@ -375,7 +370,9 @@ void main_loop(void)
 #ifdef NPT
     pressure_ext.x += d_pressure.x;
     pressure_ext.y += d_pressure.y;
+#ifndef TWOD
     pressure_ext.z += d_pressure.z;
+#endif
 #endif
 
     /* Periodic I/O */
@@ -412,14 +409,15 @@ void main_loop(void)
 #endif
 #ifdef AVPOS
     if ( steps <= avpos_end ){
-	if ((avpos_res > 0) && (0 == (steps - avpos_start) % avpos_res) && steps > avpos_start)
-	    add_positions();
-	if ((avpos_int > 0) && (0 == (steps - avpos_start) % avpos_int) && steps > avpos_start) {
-	    write_config_select((steps - avpos_start) / avpos_int,"avp",
-				write_atoms_avp,write_header_avp);
-	    write_avpos_itr_file((steps - avpos_start) / avpos_int, steps);
-	    update_avpos();
-	}
+      if ((avpos_res > 0) && (0 == (steps - avpos_start) % avpos_res) && 
+          (steps > avpos_start)) add_positions();
+      if ((avpos_int > 0) && (0 == (steps - avpos_start) % avpos_int) && 
+          (steps > avpos_start)) {
+        write_config_select((steps - avpos_start) / avpos_int,"avp",
+                            write_atoms_avp,write_header_avp);
+        write_avpos_itr_file((steps - avpos_start) / avpos_int, steps);
+        update_avpos();
+      }
     }
 #endif
 #ifdef TRANSPORT 
@@ -520,7 +518,7 @@ void do_boundaries(void)
   for (k=0; k<NCELLS; ++k) {
 
     int  l;
-    real i;  /* FLOOR returns a double */
+    real i;  /* FLOOR returns a real */
     cell *p;
 
     p = CELLPTR(k);
@@ -531,16 +529,22 @@ void do_boundaries(void)
       i = -FLOOR( SPRODX( &ORT(p,l,X), tbox_x) );
       ORT(p,l,X)     += i * box_x.x;
       ORT(p,l,Y)     += i * box_x.y;
+#ifndef TWOD
       ORT(p,l,Z)     += i * box_x.z;
+#endif
 #ifdef MSQD
       REF_POS(p,l,X) += i * box_x.x;
       REF_POS(p,l,Y) += i * box_x.y;
+#ifndef TWOD
       REF_POS(p,l,Z) += i * box_x.z;
+#endif
 #endif
 #ifdef AVPOS
       SHEET(p,l,X)   -= i * box_x.x;
       SHEET(p,l,Y)   -= i * box_x.y;
+#ifndef TWOD
       SHEET(p,l,Z)   -= i * box_x.z;
+#endif
 #endif
     }
 
@@ -550,19 +554,26 @@ void do_boundaries(void)
       i = -FLOOR( SPRODX( &ORT(p,l,X), tbox_y) );
       ORT(p,l,X)     += i * box_y.x;
       ORT(p,l,Y)     += i * box_y.y;
+#ifndef TWOD
       ORT(p,l,Z)     += i * box_y.z;
+#endif
 #ifdef MSQD
       REF_POS(p,l,X) += i * box_y.x;
       REF_POS(p,l,Y) += i * box_y.y;
+#ifndef TWOD
       REF_POS(p,l,Z) += i * box_y.z;
+#endif
 #endif
 #ifdef AVPOS
       SHEET(p,l,X)   -= i * box_y.x;
       SHEET(p,l,Y)   -= i * box_y.y;
+#ifndef TWOD
       SHEET(p,l,Z)   -= i * box_y.z;
+#endif
 #endif
     }
 
+#ifndef TWOD
     /* PBC in z direction */
     if (pbc_dirs.z==1)
     for (l=0; l<p->n; ++l) {
@@ -581,7 +592,7 @@ void do_boundaries(void)
       SHEET(p,l,Z)   -= i * box_z.z;
 #endif
     }
-
+#endif
   }
 }
 
@@ -601,12 +612,14 @@ void calc_tot_presstens(void)
 
   tot_presstens.xx = 0.0; 
   tot_presstens.yy = 0.0; 
+  tot_presstens.xy = 0.0;
+#ifndef TWOD
   tot_presstens.zz = 0.0; 
   tot_presstens.yz = 0.0;
   tot_presstens.zx = 0.0;
-  tot_presstens.xy = 0.0;
+#endif
 
-  /*sum up total pressure tensor */
+  /* sum up total pressure tensor */
   for (i=0; i<NCELLS; ++i) {
     int j;
     cell *p;
@@ -614,10 +627,12 @@ void calc_tot_presstens(void)
     for (j=0; j<p->n; ++j) {
       tot_presstens.xx += PRESSTENS(p,j,xx);
       tot_presstens.yy += PRESSTENS(p,j,yy);
+      tot_presstens.xy += PRESSTENS(p,j,xy);  
+#ifndef TWOD
       tot_presstens.zz += PRESSTENS(p,j,zz);
       tot_presstens.yz += PRESSTENS(p,j,yz);  
       tot_presstens.zx += PRESSTENS(p,j,zx);  
-      tot_presstens.xy += PRESSTENS(p,j,xy);  
+#endif
     }
   }
 
@@ -625,19 +640,27 @@ void calc_tot_presstens(void)
 
   tmp_presstens1[0] = tot_presstens.xx; 
   tmp_presstens1[1] = tot_presstens.yy; 
-  tmp_presstens1[2] = tot_presstens.zz; 
-  tmp_presstens1[3] = tot_presstens.yz;
-  tmp_presstens1[4] = tot_presstens.zx;
-  tmp_presstens1[5] = tot_presstens.xy;
+  tmp_presstens1[2] = tot_presstens.xy;
+#ifndef TWOD
+  tmp_presstens1[3] = tot_presstens.zz; 
+  tmp_presstens1[4] = tot_presstens.yz;
+  tmp_presstens1[5] = tot_presstens.zx;
+#endif
 
+#ifdef TWOD
+  MPI_Allreduce( tmp_presstens1, tmp_presstens2, 3, REAL, MPI_SUM, cpugrid);
+#else
   MPI_Allreduce( tmp_presstens1, tmp_presstens2, 6, REAL, MPI_SUM, cpugrid);
+#endif
 
   tot_presstens.xx  = tmp_presstens2[0];
   tot_presstens.yy  = tmp_presstens2[1]; 
-  tot_presstens.zz  = tmp_presstens2[2];
-  tot_presstens.yz  = tmp_presstens2[3]; 
-  tot_presstens.zx  = tmp_presstens2[4]; 
-  tot_presstens.xy  = tmp_presstens2[5]; 
+  tot_presstens.xy  = tmp_presstens2[2]; 
+#ifndef TWOD
+  tot_presstens.zz  = tmp_presstens2[3];
+  tot_presstens.yz  = tmp_presstens2[4]; 
+  tot_presstens.zx  = tmp_presstens2[5]; 
+#endif
 
 #endif /* MPI */
 
