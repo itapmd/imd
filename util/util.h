@@ -140,6 +140,17 @@ INLINE static int MOD(int p, int q)
 #define J(a,b,c) [(((((a)*neigh_len) + (b))*neigh_len) + (c))]
 #endif
 
+#ifdef PS
+#define ABS(a) ((a)>=0) ? (a) : (-(a))
+#define NSTEP 1
+#define PI 3.1415927
+#define PIN 0.017453293
+#define Max -1.0e10
+#define Min 1.0e10
+#define PT 0.03527777778
+#define TOL 0.00001
+#endif
+
 /*****************************************************************************
 *
 *  include files
@@ -177,6 +188,11 @@ typedef struct {int  x; int  y; int z; } ivektor3d;
 typedef struct {int  i; int  x; int  y; int z; } ivektor4d;
 typedef struct {int n; int  i; int  j; int  k; int l; } ivektor5d;
 
+#ifdef PS
+typedef struct {real x; real y; } vektor2d;
+typedef struct {real x; real y; real z;} vektor3d;
+#endif
+
 #ifdef ELCO
 typedef struct { real xx, xy, xz, yx, yy, yz, zx, zy, zz; } tensor;
 
@@ -184,6 +200,7 @@ typedef struct { real c11, c12, c13, c14, c15, c16, c22, c23, c24,
   c25, c26, c33, c34, c35, c36, c44, c45, c46, c55, c56, c66;
 } tensor6d; 
 #endif
+
 #ifdef COVALENT
 /* Neighbor table for Tersoff potential */
 typedef struct {
@@ -237,6 +254,9 @@ typedef struct {
   int      *sp_color;
   neightab * perm_neightab_array;
 #endif
+#ifdef PS
+  real *enc;
+#endif
   int     n;
   int     n_max;
 } cell;
@@ -266,6 +286,15 @@ typedef struct queue_elmt {
   int               num;
   struct queue_elmt *next;
 } Queue_elmt;
+#endif
+
+#ifdef PS
+typedef struct list_elmt {
+  cell *cl;
+  int  num;
+  real  d;
+  struct list_elmt *next;
+} List_elmt;
 #endif
 
 /* for parameter reading */
@@ -347,6 +376,7 @@ void init_keating(void);
 
 #ifdef ELCO
 void init_elco(void);
+
 #ifdef TERSOFF
 void do_elco_tersoff(void);
 #elif STIWEB
@@ -357,6 +387,7 @@ void do_elco_keating(void);
 void write_stress(void);
 void write_elco(void);
 #endif
+
 #ifdef RING
 void search_rings(void);
 void go_forward(void);
@@ -367,6 +398,33 @@ void write_data(void);
 Queue_elmt *queue_create(cell *cl, int num);
 Queue_elmt *queue_enqueue(Queue_elmt *queue, cell *cl, int num);
 void queue_dequeue(Queue_elmt **qptr, cell **clptr, int *numptr); 
+#endif
+
+#ifdef PS
+void init_ps(void);
+void sort_atoms(void);
+void printcolor(FILE *out, real type, real zval, int bond);
+void setlinew(FILE *out, real linew);
+real setradius(int type);
+vektor2d transform(vektor2d vekt, real scl, vektor2d trans);
+void write_profile(void);
+void write_settings(void);
+vektor maxvektor(vektor v1, vektor v2);
+vektor minvektor(vektor v1, vektor v2);
+vektor zrotate(vektor pos, real angle);
+void draw_colorencoding(FILE *out, vektor2d position, vektor2d size); 
+#ifndef TWOD
+void draw_picture3d(void);
+real fdistance(vektor pos);
+real pdistance(vektor pos);
+real scale(vektor pos, real sclfct);
+vektor2d proj(vektor pos, real sclfct, vektor2d trans);
+vektor xrotate(vektor pos, real angle);
+vektor yrotate(vektor pos, real angle);
+#else
+void draw_picture2d(void);
+vektor2d scl(vektor pos, real sclfct, vektor2d trans);
+#endif
 #endif
 
 /*****************************************************************************
@@ -393,9 +451,17 @@ vektor box_z, tbox_z;
 #endif
 vektor height;
 #ifdef TWOD
+#ifdef PS
+ivektor pbc_dirs = {0,0};
+#else 
 ivektor pbc_dirs = {1,1};    /* directions with pbc - default is PBC */
+#endif
+#else
+#ifdef PS
+ivektor pbc_dirs = {0,0,0};
 #else
 ivektor pbc_dirs = {1,1,1};  /* directions with pbc - default is PBC */
+#endif
 #endif
 
 /* Filenames */
@@ -483,6 +549,7 @@ int    stresstens = 0, moduli = 0, all_moduli = 0;
 
 #ifdef COVALENT
 int  neigh_len = 6;
+int  nbonds = 0;
 #endif
 #ifdef TERSOFF
 real ter_r_cut[10][10], ter_r2_cut[10][10], ters_r_cut[55] ;
@@ -542,6 +609,86 @@ Queue_elmt *sp_queue;
 int sp_queue_length;
 atom *stack;
 int stack_end;
+#endif
+
+#ifdef PS
+List_elmt *atomlist;
+int    natoms_drawn = 0;
+int    nbonds_drawn = 0;
+real   dist_min = Min, dist_max = Max;
+real   r_atom = -1.0; 
+real   r_bond = -1.0;
+long   atomcolor = 1;
+real   atombrightness = 0.0;
+real   bondbrightness = -0.3;
+long    bondcolor = 0;
+real   ambient = 1.0;
+long   radii = 0;
+long   eng   = 0;
+long   kineng = 0;
+long   color_enc = 0;
+int    colorencoding = 0;
+real   linew = -1.0;
+real   alinew = 1.0;
+real   blinew = 1.0;
+real   slinew = 1.0;
+real   llinew = -1.0;
+real   shading = 45.0;
+real   scaling = 1.0;
+real   frame = 0.0;
+real   frame_linew = 2.0;
+real   rframe = -1.0;
+real   rframe_linew = 1.0;
+real   sframe = -1.0;
+real   sframe_linew = 1.0;
+real   frame_border = 9.0;
+real   frame_border_linew = 0.0;
+vektor2d translation = {0.0, 0.0};
+real   zoom = 1.0;
+real   ps_width = -1.0;
+real   ps_height = -1.0;
+int    axes = -1;
+real   spect = -1.0;
+real   backgrd = 0.0;
+real   needle = -1.0;
+real   depth  = 0.0;
+real   user_scale = 1.0;
+real   wireframe = -1.0;
+real   crop = -1.0;
+int    settings = -1;
+vektor ursprung;
+vektor cunit;
+#ifndef TWOD
+vektor maxl={Max,Max,Max}, minl={Min,Min,Min}; 
+vektor real_maxl={Max,Max,Max}, real_minl={Min,Min,Min};
+#else
+vektor maxl={Max,Max}, minl={Min,Min}; 
+vektor real_maxl={Max,Max}, real_minl={Min,Min};
+#endif
+real   maxeng=Max, mineng=Min;
+real   angx = 0.0, angy = 0.0, angz = 0.0;
+#ifndef TWOD
+real   zeta = Max;
+vektor foc = { 0.0, 0.0, Max};
+#endif
+real   r_cut_vec[55] = { -1.0 }; 
+real   ters_r_cut[55] = { -1.0 };
+real   r_cut[10][10];
+real   r2cut[10][10];
+vektor3d color_array[9];
+vektor3d enc_array[8];
+real   shade_array[9];
+real   radii_array[9];
+int    atomcol[9] = {0,1,2,3,4,5,6,7,8};
+int    bondcol[9] = {0,1,2,3,4,5,6,7,8};
+int    rad[9];
+int    enc[8] = {1,2,3,4,5,6,7,8};
+int    enc_len;
+#ifndef TWOD
+vektor unitv[3] = {{1,0,0},{0,1,0},{0,0,1}};
+#else
+vektor unitv[2] = {{1,0},{0,1}};
+#endif
 #endif
 
 /******************************************************************************
@@ -788,6 +935,9 @@ void alloc_cell(cell *cl, int count)
     cl->sp_color       = NULL;
     cl->perm_neightab_array = NULL;
 #endif
+#ifdef PS
+    cl->enc            = NULL;
+#endif
     cl->n             = 0;
   }
 
@@ -824,6 +974,9 @@ void alloc_cell(cell *cl, int count)
   cl->sp_hops  = (int    *) realloc(cl->sp_hops,  count * sizeof(int));
   cl->color    = (int    *) realloc(cl->color,    count * sizeof(int));
   cl->sp_color = (int    *) realloc(cl->sp_color, count * sizeof(int));
+#endif
+#ifdef PS
+  cl->enc     = (real   *) realloc(cl->enc,     count * sizeof(real) ); 
 #endif
 #ifdef COVALENT
   cl->neightab_array = (neightab *) realloc( cl->neightab_array, 
@@ -907,6 +1060,9 @@ void alloc_cell(cell *cl, int count)
     || (NULL==cl->color)
     || (NULL==cl->sp_color)
 #endif
+#ifdef PS
+   || (NULL==cl->enc)
+#endif
   ) error("Cannot allocate memory for cell.");
   cl->n_max  = count;
 }
@@ -921,11 +1077,7 @@ void alloc_cell(cell *cl, int count)
 
 void read_parameters(int argc,char **argv)
 {
-  str255 tmpname;
   str255 fname;
-  str255 parfilename;
-  FILE *infile;
-  FILE *tmpfile;
 
 /* Check for Restart, process options */
 
@@ -1058,6 +1210,529 @@ void read_parameters(int argc,char **argv)
       }
       else neigh_len = atof(&argv[1][2]);
       break;
+#endif
+#ifdef PS
+      /* a - draw coordinate axes */
+    case 'a':
+     if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          axes = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else axes = atof(&argv[1][2]);
+      break;
+      /* b - brightness of bonds */
+    case 'b':
+     if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          bondbrightness = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else bondbrightness = atof(&argv[1][2]);
+      break;
+      /* B - bond radius */
+    case 'B':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          r_bond = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else r_bond = atof(&argv[1][2]);
+      break;
+      /* c - crop boundary strip */
+    case 'c':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          crop = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else crop = atof(&argv[1][2]);
+      break;
+      /* C - atom colors */
+    case 'C':
+     if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          atomcolor = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else atomcolor = atof(&argv[1][2]);
+      break;
+#ifndef TWOD
+      /* d - shading with depth */
+    case 'd':
+     if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          depth = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else depth = atof(&argv[1][2]);
+      break;
+#endif
+      /* D - atom radii */
+    case 'D':
+     if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          radii = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else radii = atof(&argv[1][2]);
+      break; 
+      /* E - Use color encoding for energy */
+    case 'E':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          eng = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else eng = atof(&argv[1][2]);
+      break;
+      /* f - draw boxes */
+    case 'f':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          frame = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else frame = atof(&argv[1][2]);
+      break;
+      /* F - linewidth of bounding box */
+    case 'F':
+     if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          frame_linew = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else frame_linew = atof(&argv[1][2]);
+      break; 
+      /* g - background color */
+    case 'g':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          backgrd = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else backgrd = atof(&argv[1][2]);
+      break;
+       /* G - colorencoding of column G */ 
+    case 'G':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          color_enc = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else color_enc = atof(&argv[1][2]);
+      break;
+      /* h - height of picture */
+    case 'h':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          ps_height = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else ps_height = atof(&argv[1][2]);
+      break;
+      /* H - linewidth of atoms, bonds, and 
+       bond separators */
+    case 'H':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          linew = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else linew = atof(&argv[1][2]);
+      break;
+      /* i - x translation */
+    case 'i':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          translation.x = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else translation.x = atof(&argv[1][2]);
+      break;
+      /* I - Brigthness of atom shading */
+    case 'I':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          ambient = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else ambient = atof(&argv[1][2]);
+      break;
+      /* j - y translation */
+    case 'j':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          translation.y = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else translation.y = atof(&argv[1][2]);
+      break;
+      /* J - brightness of atoms */
+    case 'J':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          atombrightness = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else atombrightness = atof(&argv[1][2]);
+      break;
+     /* k - show color encoding of energy */
+    case 'k':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          spect = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else spect = atof(&argv[1][2]);
+      break;
+     /* K write file with parameter settings */
+    case 'K':
+      settings = 1;
+      break;
+     /* l linewidth of bond borders */
+    case 'l':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          blinew = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else blinew = atof(&argv[1][2]);
+      break;
+     /* L - line width of atom borders */
+    case 'L':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          alinew = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else alinew = atof(&argv[1][2]);
+      break;
+      /* m - zoom */
+    case 'm':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          zoom = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else zoom = atof(&argv[1][2]);
+      break;
+      /* M - Scale factor with depth */
+    case 'M':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          user_scale = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else user_scale = atof(&argv[1][2]);
+      break;
+#ifndef TWOD
+      /* n - draw lightshadow */
+    case 'n':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          llinew = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else llinew = atof(&argv[1][2]);
+      break;
+     /* N - bonds like needles */
+    case 'N':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          needle = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else needle = atof(&argv[1][2]);
+      break;
+#endif
+     /* o - draw simulation box */
+    case 'o':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          sframe = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else sframe = atof(&argv[1][2]);
+      break;
+     /* O - linewidth of simulation box */
+    case 'O':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          sframe_linew = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else sframe_linew = atof(&argv[1][2]);
+      break;
+     /* P - linewidth of bond separators */
+    case 'P':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          slinew = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else slinew = atof(&argv[1][2]);
+      break;
+     /* q - color of border of frames */
+    case 'q':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          frame_border = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else frame_border = atof(&argv[1][2]);
+      break;
+     /* Q - linewidth of border of frames */
+    case 'Q':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          frame_border_linew = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else frame_border_linew = atof(&argv[1][2]);
+      break;
+      /* R - atom radius */
+    case 'R':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          r_atom = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else r_atom = atof(&argv[1][2]);
+      break;
+      /* s - scale factor */
+    case 's':
+     if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          scaling = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else scaling = atof(&argv[1][2]);
+      break; 
+      /* S - shading of atoms */
+    case 'S':
+     if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          shading = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else shading = atof(&argv[1][2]);
+      break; 
+      /* t - kinetic energy */
+    case 't':
+     if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          kineng = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else kineng = atof(&argv[1][2]);
+      break; 
+#ifndef TWOD
+      /* T - Locatio of projection plane */
+    case 'T':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          zeta = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else zeta = atof(&argv[1][2]);
+      break;
+#endif
+      /* u - draw real bounding box */
+    case 'u':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          rframe = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else rframe = atof(&argv[1][2]);
+      break;
+      /* U - draw real bounding box */
+    case 'U':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          rframe_linew = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else rframe_linew = atof(&argv[1][2]);
+      break;
+      /* V - color of bonds */
+    case 'V':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          bondcolor = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else bondcolor = atof(&argv[1][2]);
+      break;
+      /* w - width of picture */
+    case 'w':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          ps_width = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else ps_width = atof(&argv[1][2]);
+      break;
+     /* W - draw wireframe */
+    case 'W':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          wireframe = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else wireframe = atof(&argv[1][2]);
+      break;
+#ifndef TWOD 
+      /* x - Rotation */
+    case 'x':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          angx = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else angx = atof(&argv[1][2]);
+      break;
+      /* y - Rotation */
+    case 'y':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          angy = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else angy = atof(&argv[1][2]);
+      break;
+#endif
+      /* z - Rotation */
+    case 'z':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          angz = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else angz = atof(&argv[1][2]);
+      break;
+#ifndef TWOD
+      /* X - Center of projection */
+    case 'X':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          foc.x = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else foc.x = atof(&argv[1][2]);
+      break;
+     /* Y - Center of projection */
+    case 'Y':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          foc.y = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else foc.y = atof(&argv[1][2]);
+      break;
+      /* Z - Center of projection */
+    case 'Z':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          foc.z = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else foc.z = atof(&argv[1][2]);
+      break;
+#endif
 #endif
     case 'p':
       if (argv[1][2]=='\0') {
@@ -1326,10 +2001,12 @@ void getparamfile(char *paramfname)
       getparam("box_z",&box_z,PARAM_REAL,DIM,DIM);
     }
 #endif
+#ifndef PS
     else if (strcasecmp(token,"pbc_dirs")==0) {
       /* directions with periodic boundary conditions */
       getparam("pbc_dirs",&pbc_dirs,PARAM_INT,DIM,DIM);
     }
+#endif
     else if (strcasecmp(token,"ntypes")==0) {
       /* number of atom types */
       getparam("ntypes",&ntypes,PARAM_INT,1,1);
@@ -1356,10 +2033,12 @@ void getparamfile(char *paramfname)
       getparam("neigh_len",&neigh_len,PARAM_INT,1,1);
     }
 #endif
-#ifdef TERSOFF
+#if defined(TERSOFF) || defined(PS)
     else if (strcasecmp(token,"ters_r_cut")==0) {     
       getparam("ters_r_cut",ters_r_cut,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
     }
+#endif
+#ifdef TERSOFF
     else if (strcasecmp(token,"ters_r0")==0) {     
       getparam("ters_r0",ters_r0,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
     }
@@ -1438,6 +2117,12 @@ void getparamfile(char *paramfname)
       getparam("keating_beta",keating_beta,PARAM_REAL,ntypes*ntypes*(ntypes+1)/2,ntypes*ntypes*(ntypes+1)/2);
     }
 #endif
+#ifdef PS
+    else if (strcasecmp(token,"r_cut")==0) {
+      /* Cutoff parameter */
+      getparam("r_cut",&r_cut_vec,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+#endif
   } while (!feof(pf));
   fclose(pf);
 
@@ -1473,7 +2158,7 @@ void error(char *mesg)
 *  The file format is flat ascii, one atom per line, lines beginning
 *  with '#' denote comments. Each line consists of
 *
-*  number type mass x y [z] [rest]
+*  number type mass x y [z] vx vy [vz] e [rest]
 *
 *  where
 *
@@ -1481,6 +2166,8 @@ void error(char *mesg)
 *  type     is the atom's index to the potenital table
 *  mass     is the mass of the atom
 *  x,y,z    are the atom's coordinates
+*  vx,vy,vz are the atoms's velocities
+*  e        is the atom's potential energy
 *  rest     is ignored until end of line
 *
 ******************************************************************************/
@@ -1489,9 +2176,12 @@ void read_atoms(str255 infilename)
 {
   FILE *infile;
   char buf[512];
-  int p, s, n, i;
-  vektor pos;
-  real m;
+  int p, s, n;
+  vektor pos, v;
+  real m, e, c;
+#ifdef PS
+  real tmp = 0.0;
+#endif
   cell *to;
   ivektor cellc;
 
@@ -1517,19 +2207,40 @@ void read_atoms(str255 infilename)
 
 #ifdef SINGLE
 #ifdef TWOD
-    p = sscanf(buf,"%d %d %f %f %f",&n,&s,&m,&pos.x,&pos.y);
+    p = sscanf(buf,"%d %d %f %f %f %f %f %f %f",
+	       &n,&s,&m,&pos.x,&pos.y,&v.x,&v.y,&e,&c);
 #else
-    p = sscanf(buf,"%d %d %f %f %f %f",&n,&s,&m,&pos.x,&pos.y,&pos.z);
+    p = sscanf(buf,"%d %d %f %f %f %f %f %f %f %f %f",
+	       &n,&s,&m,&pos.x,&pos.y,&pos.z,&v.x, &v.y, &v.z,&e,&c);
 #endif
 #else
 #ifdef TWOD
-    p = sscanf(buf,"%d %d %lf %lf %lf",&n,&s,&m,&pos.x,&pos.y);
+    p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf",
+	       &n,&s,&m,&pos.x,&pos.y,&v.x,&v.y,&e,&c);
 #else
-    p = sscanf(buf,"%d %d %lf %lf %lf %lf",&n,&s,&m,&pos.x,&pos.y,&pos.z);
+    p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+	       &n,&s,&m,&pos.x,&pos.y,&pos.z,&v.x, &v.y, &v.z,&e,&c);
 #endif
 #endif
 
     if (p>0) {
+
+#ifdef PS
+      /* Determine bounding box before rotation */
+      real_minl = minvektor(real_minl, pos);
+      real_maxl = maxvektor(real_maxl, pos);
+
+      /* Rotations of atom positions */
+#ifndef TWOD
+      if ( angx != 0.0 ) 
+	pos = xrotate(pos, angx);
+      if ( angy != 0.0 ) 
+	pos = yrotate(pos, angy);
+#endif
+      if ( angz != 0.0 ) 
+	pos = zrotate(pos, angz);
+#endif
+
       /* compute target cell */
       cellc = cell_coord(pos);
       to = PTR_VV(cell_array,cellc,cell_dim);
@@ -1555,6 +2266,31 @@ void read_atoms(str255 infilename)
 #ifdef RING
       to->del[to->n] = 0;
 #endif
+
+#ifdef PS
+      /* Determine bounding box after rotation */
+      minl = minvektor( minl, pos);
+      maxl = maxvektor( maxl, pos);
+
+#ifndef TWOD
+      if ( p > 6 && ( eng != 0 || kineng != 0 || color_enc != 0 ) ) {
+#else
+      if ( p > 5 && ( eng != 0 || kineng != 0 || color_enc != 0 ) ) {
+#endif
+	if ( eng != 0 )
+	  tmp = e;
+	else if ( kineng != 0 ) 
+	  tmp = 0.5 * m * SPROD(v,v);
+	else if ( color_enc != 0 )
+	  tmp = c;
+
+	maxeng = MAX(maxeng, tmp);
+	mineng = MIN(mineng, tmp);
+
+	to->enc[to->n] = tmp;
+      }
+#endif
+
       to->n++;
       natoms++;
     }
