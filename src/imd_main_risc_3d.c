@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -98,6 +98,13 @@ void calc_forces(int steps)
     }
 #endif
 
+#ifdef EWALD
+  if (steps==0) {
+    ewald_time.total = 0.0;
+    imd_start_timer( &ewald_time );
+  }
+#endif
+
   /* compute forces for all pairs of cells */
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
@@ -116,6 +123,12 @@ void calc_forces(int steps)
                                           &vir_yz, &vir_zx, &vir_xy);
     }
   }
+
+#ifdef EWALD
+  if (steps==0) {
+    imd_stop_timer( &ewald_time );
+  }
+#endif
 
 #ifdef EAM2
   /* compute embedding energy and its derivative */
@@ -153,8 +166,7 @@ void calc_forces(int steps)
 #endif
 
 #ifdef EWALD 
-  do_forces_ewald_real();
-  do_forces_ewald_fourier();
+  do_forces_ewald(steps);
 #endif 
 
 }

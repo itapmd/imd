@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -446,7 +446,7 @@ void create_pot_table(pot_table_t *pt)
                 val += pot - lj_shift[i][j];
               }
               else {
-                val = lj_a[i][j] * SQR(r2_cut[i][j] - r2);
+                val += lj_aaa[i][j] * SQR(r2_cut[i][j] - r2);
               }
             }
             /* Morse */
@@ -456,7 +456,7 @@ void create_pot_table(pot_table_t *pt)
                 val += pot - morse_shift[i][j];
               }
               else {
-                val = morse_a[i][j] * SQR(r2_cut[i][j] - r2);
+                val += morse_aaa[i][j] * SQR(r2_cut[i][j] - r2);
               }
             }
             /* Buckingham */
@@ -466,13 +466,25 @@ void create_pot_table(pot_table_t *pt)
                 val += pot - buck_shift[i][j];
               }
               else {
-                val = buck_a[i][j] * SQR(r2_cut[i][j] - r2);
+                val += buck_aaa[i][j] * SQR(r2_cut[i][j] - r2);
               }
             }
             /* harmonic potential for shell model */
             if (spring_cst[i][j]>0) {
 	      val = 0.5 * spring_cst[i][j] * r2;
             }
+#ifdef EWALD
+            /* Coulomb potential for Ewald */
+            if (ew_nmax < 0) {
+              if (r2 < (1.0 - POT_TAIL) * r2_cut[i][j]) {
+                pair_int_ewald(&pot, &grad, i, j, r2);
+                val += pot - ew_shift[i][j];
+              }
+              else {
+                val += ew_aaa[i][j] * SQR(r2_cut[i][j] - r2);
+              }
+	    }
+#endif
             *PTR_2D(pt->table, n, column, pt->maxsteps, ncols) = val;
           }
 	}
@@ -536,6 +548,11 @@ void init_pre_pot(void) {
       if ((r_begin[n]==0) && (buck_sigma_lin[n]>0)) 
         r_begin[n] = 0.1 * buck_sigma_lin[n];
 
+#ifdef EWALD
+      /* Coulomb for Ewald */
+      if ((ew_nmax < 0) && (r_begin[n]==0)) r_begin[n] = 0.2;
+#endif
+
       n++;
     }
 
@@ -565,7 +582,7 @@ void init_pre_pot(void) {
           pair_int_lj( &lj_shift[i][j],&tmp, i, j,
                        (1.0 - POT_TAIL) * r2_cut[i][j]);
           lj_shift[i][j] +=  0.25 * tmp *  POT_TAIL * r2_cut[i][j];
-          lj_a    [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
+          lj_aaa  [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
           if (myid==0)
             printf("Lennard-Jones potential %1d %1d shifted by %f\n", 
 	           i, j, -lj_shift[i][j]);
@@ -576,7 +593,7 @@ void init_pre_pot(void) {
           pair_int_morse( &morse_shift[i][j], &tmp, i, j,
                           (1.0 - POT_TAIL) * r2_cut[i][j]);
           morse_shift[i][j] +=  0.25 * tmp *  POT_TAIL * r2_cut[i][j];
-          morse_a    [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
+          morse_aaa  [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
           if (myid==0)
             printf("Morse potential %1d %1d shifted by %f\n", 
 	           i, j, -morse_shift[i][j]);
@@ -587,17 +604,33 @@ void init_pre_pot(void) {
           pair_int_buck( &buck_shift[i][j], &tmp, i, j, 
                          (1.0 - POT_TAIL) * r2_cut[i][j]);
           buck_shift[i][j] +=  0.25 * tmp *  POT_TAIL * r2_cut[i][j];
-          buck_a    [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
+          buck_aaa  [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
           if (myid==0)
             printf("Buckingham potential %1d %1d shifted by %f\n", 
 	           i, j, -buck_shift[i][j]);
 	}
         else buck_shift[i][j] = 0.0;
+#ifdef EWALD
+        /* Coulomb for Ewald */
+        if (ew_nmax < 0) {
+          pair_int_ewald( &ew_shift[i][j], &tmp, i, j, 
+                          (1.0 - POT_TAIL) * r2_cut[i][j]);
+          ew_shift[i][j] +=  0.25 * tmp *  POT_TAIL * r2_cut[i][j];
+          ew_aaa  [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
+          if (myid==0)
+            printf("Coulomb potential %1d %1d shifted by %f\n", 
+	           i, j, -ew_shift[i][j]);
+        } 
+        else ew_shift[i][j] = 0.0;
+#endif
       } 
       else {
         lj_shift   [i][j] = 0.0;
         morse_shift[i][j] = 0.0;
         buck_shift [i][j] = 0.0;
+#ifdef EWALD
+        if (ew_nmax < 0) ew_shift[i][j] = 0.0;
+#endif
       }
     }
 
@@ -927,7 +960,27 @@ void pair_int_buck(real *pot, real *grad, int p_typ, int q_typ, real r2)
   *grad = ( - exppot * rinv + 6 * powpot * rinv2 ) * invs2;
 }
 
-#endif
+#ifdef EWALD
+
+/*****************************************************************************
+*
+*  Evaluate Coulomb potential for EWALD 
+*
+******************************************************************************/
+
+void pair_int_ewald(real *pot, real *grad, int p_typ, int q_typ, real r2)
+{
+  real  r, chg, fac;
+  r     = SQRT(r2);
+  chg   = charge[p_typ] * charge[q_typ] * ew_eps;
+  fac   = chg * 2.0 * ew_kappa / sqrt( M_PI );
+  *pot  = chg * erfc1(ew_kappa * r) / r;
+  *grad = -2.0 * (*pot + fac * exp( -SQR(ew_kappa*r) ) ) / r2; 
+}
+
+#endif /* EWALD */
+
+#endif /* PAIR */
 
 #ifdef STIWEB
 

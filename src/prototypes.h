@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -44,6 +44,9 @@ void make_lin_pot_table( pot_table_t, lin_pot_table_t* );
 void pair_int_lj(real *pot, real *grad, int p_typ, int q_typ, real r2);
 void pair_int_morse(real *pot, real *grad, int p_typ, int q_typ, real r2);
 void pair_int_buck(real *pot, real *grad, int p_typ, int q_typ, real r2);
+#ifdef EWALD
+void pair_int_ewald(real *pot, real *grad, int p_typ, int q_typ, real r2);
+#endif
 #endif
 void pair_int2  (real*, real*, int*, pot_table_t*, int, int, real);
 void pair_int3  (real*, real*, int*, pot_table_t*, int, int, real);
@@ -395,6 +398,7 @@ void increase_neightab(neightab *neigh, int count);
 
 #ifdef EWALD
 /* support for computation of Coulomb forces */
+void do_forces_ewald(int);
 void do_forces_ewald_real(void);
 void do_forces_ewald_fourier(void);
 void init_ewald(void);

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -166,11 +166,6 @@ void init_cells( void )
       sprintf(msg,"global_cell_dim.z too small, need at least %d",cd.z);
       error(msg);
     }
-#ifdef EWALD
-    if (global_cell_dim.x < 2) error("global_cell_dim.x < 2");
-    if (global_cell_dim.y < 2) error("global_cell_dim.y < 2");
-    if (global_cell_dim.z < 2) error("global_cell_dim.z < 2");
-#endif
   }
 
   /* if system grows, the next cell division should have more cells */

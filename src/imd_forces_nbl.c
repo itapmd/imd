@@ -2,7 +2,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -25,7 +25,11 @@
 #ifdef SAVEMEM
 #define TB_T unsigned int
 #else
-#define TB_T unsigned char
+#ifdef EWALD
+#define TB_T unsigned short
+#else
+#define TB_T unsigned int
+#endif
 #endif
 
 TB_T *tb=NULL;
@@ -289,7 +293,15 @@ void calc_forces(int steps)
     }
 #endif
 
+#ifdef EWALD
+  if (steps==0) {
+    ewald_time.total = 0.0;
+    imd_start_timer( &ewald_time );
+  }
+#endif
+
   /* pair interactions - for all atoms */
+  n=0;
   for (k=0; k<ncells; k++) {
     cell *p = cell_array + cnbrs[k].np;
     for (i=0; i<p->n; i++) {
@@ -532,6 +544,12 @@ void calc_forces(int steps)
     }
   }
   if (is_short) printf("short distance!\n");
+
+#ifdef EWALD
+  if (steps==0) {
+    imd_stop_timer( &ewald_time );
+  }
+#endif
 
 #ifdef COVALENT
 
@@ -789,8 +807,7 @@ void calc_forces(int steps)
 
   /* EWALD is not parallelized */
 #if defined(EWALD) && !defined(MPI) 
-  do_forces_ewald_real();
-  do_forces_ewald_fourier();
+  do_forces_ewald(steps);
 #endif 
 
 #ifdef MPI

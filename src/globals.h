@@ -633,7 +633,7 @@ EXTERN real lj_epsilon[10][10];
 EXTERN real lj_sigma_lin[55] INIT(zero55);
 EXTERN real lj_sigma[10][10];
 EXTERN real lj_shift[10][10];
-EXTERN real lj_a    [10][10];
+EXTERN real lj_aaa  [10][10];
 #ifdef VEC
 EXTERN real lj_epsilon_vec[55] INIT(zero55);
 EXTERN real lj_sigma2_vec[55] INIT(zero55);
@@ -646,7 +646,7 @@ EXTERN real morse_sigma[10][10];
 EXTERN real morse_alpha_lin[55] INIT(zero55);
 EXTERN real morse_alpha[10][10];
 EXTERN real morse_shift[10][10];
-EXTERN real morse_a    [10][10];
+EXTERN real morse_aaa  [10][10];
 /* Buckingham */
 EXTERN real buck_a_lin[55] INIT(zero55);
 EXTERN real buck_a[10][10];
@@ -655,10 +655,14 @@ EXTERN real buck_c[10][10];
 EXTERN real buck_sigma_lin[55] INIT(zero55);
 EXTERN real buck_sigma[10][10];
 EXTERN real buck_shift[10][10];
-EXTERN real buck_a    [10][10];
+EXTERN real buck_aaa  [10][10];
 /* harmonic potential for shell model */
 EXTERN real spring_const[45] INIT(zero45);
 EXTERN real spring_cst[10][10];
+#ifdef EWALD
+EXTERN real ew_shift[10][10];
+EXTERN real ew_aaa  [10][10];
+#endif
 #endif
 
 #ifdef EAM2
@@ -818,6 +822,7 @@ EXTERN real epitax_speed INIT(1.0);
 #endif
 
 #ifdef EWALD
+EXTERN imd_timer ewald_time;
 EXTERN real     charge[10] INIT(zero10); /* Charge of atoms */
 EXTERN real     ew_kappa;                /* Parameter kappa */
 EXTERN ivektor  ew_kmax;                 /* Number of k-vectors in Ewald sum */
@@ -838,7 +843,7 @@ EXTERN real     *coskr;
 EXTERN real     *sinkr;
 EXTERN real     ew_vorf;
 EXTERN real     ew_vorf1;
-EXTERN real     ew_eps;
+EXTERN real     ew_eps INIT(14.38); /* this is e^2/(2*pi*epsilon_0) in eV A */
 EXTERN real     twopi;
 #endif
 
