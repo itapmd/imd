@@ -221,6 +221,16 @@ small because of the shearing, the cell subdivision is revised
 automatically. It is assumed that the second and third box vector
 point into y- and z-direction, respectively.
 </LI>
+<P>
+<LI>
+If <TT>lindef_interval</TT> is positive, the sample is linear
+deformed every <TT>lindef_interval</TT> steps. The linear 
+deformation is given as a full deformation matrix <B>A</B> with
+row vectors <TT>lindef_x</TT>, <TT>lindef_y</TT>, and <TT>lindef_z</TT>,
+if three dimensions are simulated. The transformation rule is
+<B>x</B> -> <B>x</B> + <B>A</B> <B>x</B>  for both atomic positions
+and box vectors.
+</LI>
 </UL>
 
 <A NAME="deform">
