@@ -1,4 +1,3 @@
-
 /******************************************************************************
 *
 * IMD -- The ITAP Molecular Dynamics Program
@@ -21,9 +20,7 @@
 
 #include "imd.h"
 
-/* prototypes needed only here */
-float gasdev(long *idum);
-float ran1(long *idum);
+real gaussian(const real);
 
 /*
 *
@@ -63,9 +60,9 @@ void maxwell(real temp)
    real osq;
 #endif
 
-   real        TEMP;
-   real scale, xx, tmp;
-   int num, nhalf, typ;
+   real   TEMP;
+   real   scale, xx, tmp;
+   int    num, nhalf, typ;
 
    TEMP = temp;
    tot_impuls.x = 0.0;   nactive_vec.x = 0;
@@ -79,7 +76,7 @@ void maxwell(real temp)
    scale = tran_nlayers / box_x.x;
 #endif
 
-   /* Temperatur setzen */
+   /* set temperature */
    for (k=0; k<ncells; ++k) {
 
       int i;
@@ -112,7 +109,7 @@ void maxwell(real temp)
 #ifdef FTG
 	  /* calc slice and set TEMP  */
 	 tmp = p->ort X(i)/box_x.x;
-	 slice = (int) nslices *tmp;
+	 slice = (int) nslices * tmp;
 	 if (slice<0)        slice = 0;
 	 if (slice>=nslices) slice = nslices -1;;
 	 
@@ -125,10 +122,10 @@ void maxwell(real temp)
          
 	 tmp = sqrt(TEMP * MASSE(p,i));
          typ = VSORTE(p,i);
-         p->impuls X(i) = gasdev( &seed ) * tmp * (restrictions + typ)->x;
-         p->impuls Y(i) = gasdev( &seed ) * tmp * (restrictions + typ)->y;
+         p->impuls X(i) = gaussian(tmp) * (restrictions + typ)->x;
+         p->impuls Y(i) = gaussian(tmp) * (restrictions + typ)->y;
 #ifndef TWOD
-         p->impuls Z(i) = gasdev( &seed ) * tmp * (restrictions + typ)->z;
+         p->impuls Z(i) = gaussian(tmp) * (restrictions + typ)->z;
 #endif
          nactive_vec.x += (int) (restrictions + typ)->x;
          nactive_vec.y += (int) (restrictions + typ)->y;
@@ -147,13 +144,11 @@ void maxwell(real temp)
 
          /* choose a random vector in space */
 
-         xisq = 1.0;
-
-         while ( xisq >= 1.0 ) {
-           xi1 = 2.0 * ran1( &dummy ) - 1.0 ;
-           xi2 = 2.0 * ran1( &dummy ) - 1.0 ;
+         do {
+           xi1 = 2.0 * drand48() - 1.0 ;
+           xi2 = 2.0 * drand48() - 1.0 ;
            xisq = xi1 * xi1 + xi2 * xi2 ;
-         }
+         } while ( xisq >= 1.0 );
 
          xi0 = sqrt( 1.0 - xisq ) ;
 
@@ -180,7 +175,7 @@ void maxwell(real temp)
 
         /* choose the magnitude of the angular momentum */
 
-        osq = - 2.0 * p->traeg_moment[i] * TEMP * log( ran1( &dummy ) ) ;
+        osq = - 2.0 * p->traeg_moment[i] * TEMP * log( drand48() ) ;
         norm = sqrt( osq );
 
         p->dreh_impuls X(i) *= norm ;
@@ -229,84 +224,29 @@ void maxwell(real temp)
       }
    }
 } 
- 
- 
-/* gasdev and ran1 are routines from numerical recipes to generate a
-   gaussian random distribution
 
+/* The following is adapted from the GNU Scientific Library at
+   http://www.gnu.org/software/gsl/ 
 */
- 
 
-float gasdev(long *idum)
+/* Polar (Box-Mueller) method; See Knuth v2, 3rd ed, p122 */
+
+real gaussian(const real sigma)
 {
-	float ran1(long *idum);
-	static int iset=0;
-	static float gset;
-	float fac,rsq,v1,v2;
+  double x, y, r2;
 
-	if  (iset == 0) {
-		do {
-			v1=2.0*ran1(idum)-1.0;
-			v2=2.0*ran1(idum)-1.0;
-			rsq=v1*v1+v2*v2;
-		} while (rsq >= 1.0 || rsq == 0.0);
-		fac=sqrt(-2.0*log(rsq)/rsq);
-		gset=v1*fac;
-		iset=1;
-		return v2*fac;
-	} else {
-		iset=0;
-		return gset;
-	}
+  do
+    {
+      /* choose x,y in uniform square (-1,-1) to (+1,+1) */
+
+      x = -1 + 2 * drand48();
+      y = -1 + 2 * drand48();
+
+      /* see if it is in the unit circle */
+      r2 = x * x + y * y;
+    }
+  while (r2 > 1.0 || r2 == 0);
+
+  /* Box-Muller transform */
+  return (real) (sigma * y * sqrt (-2.0 * log (r2) / r2));
 }
-/* (C) Copr. 1986-92 Numerical Recipes Software X!05.W4z4'>4. */
-
-#define IA 16807
-#define IM 2147483647
-#define AM (1.0/IM)
-#define IQ 127773
-#define IR 2836
-#define NTAB 32
-#define NDIV (1+(IM-1)/NTAB)
-#define EPS 1.2e-7
-#define RNMX (1.0-EPS)
-
-float ran1(long *idum)
-{
-	int j;
-	long k;
-	static long iy=0;
-	static long iv[NTAB];
-	float temp;
-
-	if (*idum <= 0 || !iy) {
-		if (-(*idum) < 1) *idum=1;
-		else *idum = -(*idum);
-		for (j=NTAB+7;j>=0;j--) {
-			k=(*idum)/IQ;
-			*idum=IA*(*idum-k*IQ)-IR*k;
-			if (*idum < 0) *idum += IM;
-			if (j < NTAB) iv[j] = *idum;
-		}
-		iy=iv[0];
-	}
-	k=(*idum)/IQ;
-	*idum=IA*(*idum-k*IQ)-IR*k;
-	if (*idum < 0) *idum += IM;
-	j=iy/NDIV;
-	iy=iv[j];
-	iv[j] = *idum;
-	if ((temp=AM*iy) > RNMX) return RNMX;
-	else return temp;
-}
-#undef IA
-#undef IM
-#undef AM
-#undef IQ
-#undef IR
-#undef NTAB
-#undef NDIV
-#undef EPS
-#undef RNMX
-/* (C) Copr. 1986-92 Numerical Recipes Software X!05.W4z4'>4. */
-

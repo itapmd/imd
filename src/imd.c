@@ -52,6 +52,9 @@ int main(int argc, char **argv)
   broadcast_params();
 #endif
 
+  /* initialize random number generator */
+  srand48(seed);
+
   /* initialize socket I/O */
 #ifdef USE_SOCKETS
   if (myid == 0) init_client();

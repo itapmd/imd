@@ -12,9 +12,6 @@
 
 #include "imd.h"
 
-/* prototype */
-float ran1(long *idum);
-
 #ifndef TWOD
 
 /******************************************************************************
@@ -45,8 +42,8 @@ void create_atom(int type, real mass, real temp)
     /* trial position of new particle (on master processor) */
     /* x,y coordinates at random, z coordinate shifted continuously */
     if (0 == myid) {
-    pos.x = ran1(&seed) * box_x.x;
-    pos.y = ran1(&seed) * box_y.y;
+    pos.x = drand48() * box_x.x;
+    pos.y = drand48() * box_y.y;
     pos.z = epitax_height;
   }
 
@@ -353,7 +350,7 @@ void create_atom(int type, real mass, real temp)
     /* trial position of new particle (on master processor) */
     /* x coordinate at random, y coordinate shifted continuously */
     if (0 == myid) {
-    pos.x = ran1(&seed) * box_x.x;
+    pos.x = drand48() * box_x.x;
     pos.y = epitax_height;
     }
 
