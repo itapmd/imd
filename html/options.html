@@ -47,11 +47,11 @@ their purpose is and how they are used.</p>
 <td width="120"><a href="#covalent">keating</a></td>
 <td width="120"><a href="#mono">mono</a></td>
 <td width="120"><a href="#monolj">monolj</a></td>
-<td width="120"></td>
+<td width="120"><a href="#msqd">msqd</a></td>
 </tr>
 
 <tr align="left">
-<td width="120"><a href="#msqd">msqd</a></td>
+<td width="120"><a href="#nbl">nbl</a></td>
 <td width="120"><a href="#ordpar">ordpar</a></td>
 <td width="120"><a href="#pacx">pacx</a></td>
 <td width="120"><a href="#pair">pair</a></td>
@@ -89,6 +89,43 @@ their purpose is and how they are used.</p>
 <p>
 2d simulation rather than 3d. The option 3d also exists - it is
 the default. </p>
+</dd>
+
+<dt><a id="nbl" name="nbl"><b>nbl</b></a>
+<dd>
+<p>
+This option enables the usage of <b>neighbor lists</b>, which can
+be reused for a certain number of steps. The neighbor list of an 
+atom includes the indices (cell and atom number within cell) of all 
+those atoms, whose distance at the moment of creation of the 
+list is within the interaction cutoff radius, or exceeds it by not 
+more than <tt>nbl_margin</tt> (which is a parameter). The neighbor 
+lists include all interacting particles, and thus remain valid, 
+as long as no atom has moved by more than <tt>nbl_margin</tt>. 
+If this is no longer the case, the neighbor lists are recomputed.
+The advantage of neighbor lists is, that the number of atom pairs
+for which the distance has to be computed is reduced by up to a
+factor 6, which substantially reduces the computation time (
+by up to 40%). The disadvantage is, that neighbor lists require a 
+considerable amount of memory, which is why they are made optional.
+The speedup depends on the value of <tt>nbl_margin</tt>. The larger
+it is, the longer the neighbor list remains valid - and the more
+distances have to be computed at each step. A value of some 15%
+of a typical nearest neighbor distance seems to be a good starting
+point. The neighbor list then has to be recomputed every 10-20
+steps.</p>
+
+<p>
+<b>Limitations:</b> Neighbor lists are currently implemented only
+in <b>3d</b>, and only for <a href="pairpot.html">pair</a> and 
+<a href="eam2.html">EAM</a> interactions. In principle, they 
+could also be implemented in 2d and for angle-dependent interactions,
+but for these the benefit is less important (neighbor lists are 
+already in use for some parts of the computation). 
+<a href="epitax.html">Epitax</a> is also <b>not</b> supported with 
+neighbor lists - they make little sense, if the number of particle 
+can change at any time.
+</p>
 </dd>
 
 <dt><a id="msqd" name="msqd"><b>msqd</b></a>
