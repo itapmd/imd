@@ -538,7 +538,7 @@ void setup_buffers(void)
     binc2++;         /* pot_eng */
 #endif
 #ifdef CG
-    binc2 += 2*DIM;  /* h, g */
+  binc2 += 2*DIM;  /* h, g */
 #endif
 #ifdef NVX
     binc2++;         /* heatcond */

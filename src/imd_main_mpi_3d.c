@@ -74,6 +74,7 @@ void calc_forces(int steps)
       p->kraft X(i) = 0.0;
       p->kraft Y(i) = 0.0;
       p->kraft Z(i) = 0.0;
+
 #ifdef UNIAX
       p->dreh_moment X(i) = 0.0;
       p->dreh_moment Y(i) = 0.0;
@@ -530,3 +531,12 @@ void send_atoms()
 }
 
 #endif /* not SR */
+
+
+
+
+
+
+
+
+

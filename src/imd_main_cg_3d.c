@@ -104,16 +104,18 @@ void main_loop(void)
     calc_fnorm_g_h();
 
     printf(" fmax= %lf \n",sqrt(fmax2));fflush(stdout);
+    
     old_cgval = CGVAL;
 
     for (cgsteps = 0 ; cgsteps < cg_maxsteps; cgsteps++)
     {
-	/*  printf (" cgstep %d, CGVAL = %lf \n",cgsteps,CGVAL);fflush(stdout); */
-	/* minimization in one 'direction' */
+/* minimization in one 'direction' */
 	
 	linminsteps=linmin();
 	ctf += linminsteps;
-	/*  printf (" cgstep %d, ctf %d linminsteps %d, CGVAL = %lf \n",cgsteps,ctf,linminsteps,CGVAL);fflush(stdout); */
+#ifdef DEBUG
+        printf (" cgstep %d, ctf %d linminsteps %d, CGVAL = %lf \n",cgsteps,ctf,linminsteps,CGVAL);fflush(stdout); 
+#endif
         /* Convergence test: change of Epot or smaller than fnorm*/
 #if defined(CGE) || defined(CGEF)
 	if (SQR(CGVAL - old_cgval) <= SQR(cg_threshold))  
@@ -123,23 +125,18 @@ void main_loop(void)
 	    break;
 #endif
 	old_cgval = CGVAL;
-
+	
 	cg_calcgamma();         /* calc gg, dgg */
 	
         /* sets ort = old_ort, h, g, needs gamma and gets fmax2*/ 
 	set_hg();
 	
-	do_boundaries();    
-	fix_cells();
-    
-        /* overwrites the checkpoint file after each cgstep */  
+/* overwrites the checkpoint file after each cgstep */  
 	write_config_select(0,"cgchkpt",write_atoms_config,write_header_config);  
 	write_eng_file(ctf);
     }
     
     /* write 'relaxed' config */
-
-   
     write_config(steps);
 
 
@@ -303,23 +300,30 @@ int linmin()
     fa = old_cgval;
     fb = fonedim(alpha_b);
 
-/*      printf("ID: %d before mnbrak: fmax= %lf alpha_a= %lf alpha_b=%lf fa= %lf fb=%lf \n",myid,fmax,alpha_a,alpha_b,fa,fb); */
-/*      fflush(stdout);      */
- 
+#ifdef DEBUG 
+    printf("ID: %d before mnbrak: fmax= %lf alpha_a= %lf alpha_b=%lf fa= %lf fb=%lf \n",myid,fmax,alpha_a,alpha_b,fa,fb);
+    fflush(stdout);     
+#endif
+
 /* decide which method to take to braket a mimimum, at the moment only mbrak, later zbrak? */
     iter1 = mnbrak (&alpha_a,&alpha_b,&alpha_c,&fa,&fb,&fc); /* call by reference Num Rec. p297 */
-   /*   if(iter1 <0) */
-/*      { */
-/*  	printf("error in mnbrak %lf %lf %lf %.12lf %.12lf %.12lf\n",&alpha_a,&alpha_b,&alpha_c,&fa,&fb,&fc);fflush(stdout); */
-/*      } */
-    /*  printf("after mnbrak \n");fflush(stdout); */
+
+#ifdef DEBUG
+   if(iter1 <0)
+    {
+	printf("error in mnbrak %lf %lf %lf %.12lf %.12lf %.12lf\n",&alpha_a,&alpha_b,&alpha_c,&fa,&fb,&fc);fflush(stdout);
+    }
+#endif
+
 /* decide which method to take to search the mimimum */
 #ifdef CGEF /* not implemented yet */
     iter2 = dbrent (alpha_a,alpha_b,alpha_c,fa,fb,fc); /* in ort should be the coord. of min pos. */
 #else
     iter2 =  brent (alpha_a,alpha_b,alpha_c,fb,&alphamin);
 #endif
-  /*    printf("ID: %d  in linmin: iter1= %d iter2 =%d \n",myid,iter1,iter2);fflush(stdout);  */
+#ifdef DEBUG
+     printf("ID: %d  in linmin: iter1= %d iter2 =%d \n",myid,iter1,iter2);fflush(stdout); 
+#endif
     return (iter1 + iter2);
 }
 
@@ -328,6 +332,8 @@ int linmin()
 real fonedim ( real alpha)  /* sets the global variables epot,fnorm corresponding to alpha */
 {
     move_atoms_cg(alpha);
+    do_boundaries();    
+    fix_cells();
     calc_forces(0);       /* why does calc_forces needs steps ? */
     calc_fnorm();
     return (CGVAL);
@@ -523,7 +529,6 @@ void cg_calcgamma(void)
   MPI_Allreduce( &tmp_gg,&gg , 1, REAL, MPI_SUM, cpugrid);
   MPI_Allreduce( &tmp_dgg,&dgg , 1, REAL, MPI_SUM, cpugrid);
 #else
-  fmax2 = tmp_fmax2;
   gg = tmp_gg;
   dgg = tmp_dgg;
 #endif
@@ -574,9 +579,7 @@ void set_hg(void)
   }
 
 #ifdef MPI
-/*    printf("ID: %d  tmp_fmax2: %lf\n",myid,tmp_fmax2);fflush(stdout); */
-   MPI_Allreduce( &tmp_fmax2, &fmax2, 1, MPI_REAL, MPI_MAX, cpugrid);
-/*    printf("ID: %d  fmax2: %lf\n",myid,fmax2);fflush(stdout);  */
+  MPI_Allreduce( &tmp_fmax2, &fmax2, 1, MPI_REAL, MPI_MAX, cpugrid);
 /* add up results from different CPUs */
   MPI_Allreduce( &tmp_gg,&gg , 1, REAL, MPI_SUM, cpugrid);
   MPI_Allreduce( &tmp_dgg,&dgg , 1, REAL, MPI_SUM, cpugrid);
