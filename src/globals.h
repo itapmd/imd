@@ -214,7 +214,7 @@ EXTERN int tmp_interval INIT(0);     /* Interval in which the thermostat */
                                      /* kicks (in timesteps) */
 #endif
 
-#if defined(NVT) || defined(NPT)
+#if defined(NVT) || defined(NPT) || defined(STM)
 EXTERN real eta INIT(0.0);          /* Nose-Hoover heat bath variable */
 EXTERN real isq_tau_eta INIT(0.0);  /* tau_eta: Nose-Hoover heat bath 'mass' */
                                /* isq_tau_eta : inverse of square of tau_eta */
@@ -240,8 +240,13 @@ EXTERN vektor actual_shrink INIT(einsvektor), limit_shrink INIT(einsvektor);
 EXTERN vektor limit_growth INIT(einsvektor);
 #endif
 
-#if defined(AND) || defined(NVT) || defined(NPT)
+#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
 EXTERN real end_temp INIT(0.0);        /* Temperature and at of simulation */
+#endif
+
+#if defined(STM)
+EXTERN vektor2d stadion INIT(nullvektor);
+EXTERN vektor2d center INIT(nullvektor);
 #endif
 
 #ifdef EXPAND

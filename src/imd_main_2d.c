@@ -33,7 +33,7 @@ void main_loop(void)
 
   if (0==myid) printf( "Starting simulation %d\n", simulation );
 
-#if defined(AND) || defined(NVT) || defined(NPT)
+#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
   dtemp = (end_temp - temperature) / (steps_max - steps_min);
 #endif
 
@@ -109,7 +109,7 @@ void main_loop(void)
 
     move_atoms(); 
 
-#if defined(AND) || defined(NVT) || defined(NPT)
+#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
     if ((steps==steps_min) && (use_curr_temp==1)) {
       temperature = 2 * tot_kin_energy / (DIM * natoms);
       dtemp = (end_temp - temperature) / (steps_max - steps_min);
@@ -187,7 +187,7 @@ void main_loop(void)
     if ((socket_int>0) && (0==steps%socket_int)) check_socket(steps);
 #endif
 
-#if defined(AND) || defined(NVT) || defined(NPT)
+#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
     temperature += dtemp;
 #endif
 

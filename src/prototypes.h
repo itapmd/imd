@@ -43,6 +43,7 @@ void move_atoms_mc(void);
 void move_atoms_frac(void);
 void move_atoms_nvx(void);
 void move_atoms_msd(void);
+void move_atoms_stm(void);
 void do_boundaries(void);
 void fix_cells(void);
 void calc_properties(void);

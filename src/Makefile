@@ -416,6 +416,10 @@ ifneq (,$(findstring nvt,${MAKETARGET}))
 CFLAGS += -DNVT
 endif
 
+ifneq (,$(findstring stm,${MAKETARGET}))
+CFLAGS += -DSTM
+endif
+
 ifneq (,$(findstring and,${MAKETARGET}))
 CFLAGS += -DAND
 endif

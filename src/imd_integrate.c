@@ -1013,6 +1013,123 @@ void move_atoms_frac(void)
 
 #endif
 
+#ifdef STM
+
+/*****************************************************************************
+*
+* move_atom
+*
+* NVT Verlet Integrator with Stadium
+*
+*****************************************************************************/
+void move_atoms_stm(void)
+
+{
+  cell *p;
+  int i;
+  real kin_energie_1,kin_energie_2;
+  vektor d;
+  int r,s,t;  
+  real reibung;
+  real eins_d_reibung;
+  real tmp,tmp2;
+
+  real inside,local_atom=0.0;
+
+  tot_kin_energy = 0;
+  kin_energie_1  = 0;
+  kin_energie_2  = 0;
+  reibung        =      1 - eta * timestep / 2.0;
+  eins_d_reibung = 1 / (1 + eta * timestep / 2.0);
+   
+/* loop over all atoms */
+  for ( r = cellmin.x; r < cellmax.x; ++r )
+    for ( s = cellmin.y; s < cellmax.y; ++s )
+      {
+        
+	p = PTR_2D_V(cell_array, r, s,    cell_dim);
+
+	for (i = 0;i < p->n; ++i) {
+          
+	  /* Check if outside or inside the ellipse: */	
+	  if( (p->ort X(i)-center.x)*(p->ort X(i)-center.x)/(stadion.x*stadion.x) +
+	      (p->ort Y(i)-center.y)*(p->ort Y(i)-center.y)/(stadion.y*stadion.y) -1
+	      <=0 ) {
+	    /* We are inside the ellipse: */
+	    reibung = 1.0;
+	    eins_d_reibung = 1.0;
+	    /* this atom doesn't count in the kinetic energy */
+	    inside = 0.0;
+	  } else {
+	    reibung        =      1 - eta * timestep / 2.0;
+	    eins_d_reibung = 1 / (1 + eta * timestep / 2.0);
+	    inside = 1.0;
+	    local_atom += 1.0;
+	  }
+
+
+	  /* move it */
+
+          /* twice the old kinetic energy */
+	  kin_energie_1 +=  SPRODN(p->impuls,i,p->impuls,i) / p->masse[i];
+
+	  /* Neue Impulse */
+	  p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i)) 
+	                   * eins_d_reibung;
+	  p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i)) 
+	                   * eins_d_reibung;
+
+	  /* twice the new kinetic energy */ 
+	  kin_energie_2  +=  SPRODN(p->impuls,i,p->impuls,i) / p->masse[i];
+	  
+	  /* Neue Orte */
+          /* Do not move atoms in strip or with negative numbers */
+	  if (p->nummer[i]>=0) {
+
+	    /* Neue Orte */
+	    d.x = timestep * p->impuls X(i) / p->masse[i];
+	    d.y = timestep * p->impuls Y(i) / p->masse[i];
+
+	    p->ort X(i)    += d.x;
+	    p->ort Y(i)    += d.y;
+
+	  } else {
+	    p->impuls X(i) =0.0;
+	    p->impuls Y(i) =0.0;
+	  };
+        };
+        
+      }
+  
+
+  tot_kin_energy = (kin_energie_1 + kin_energie_2) / 4.0;
+
+#ifdef MPI
+  /* Add kinetic energy form all cpus */
+  MPI_Allreduce( &tot_kin_energy, &tmp,  1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &kin_energie_2,  &tmp2, 1, MPI_REAL, MPI_SUM, cpugrid);
+
+  tot_kin_energy = tmp;
+  kin_energie_2  = tmp2;
+#endif
+
+  /* Zeitentwicklung der Parameter */
+  tmp  = DIM * natoms * temperature;
+  eta += timestep * (kin_energie_2 / tmp - 1.0) * isq_tau_eta;
+  
+}
+
+#else
+
+void move_atoms_stm(void) 
+{
+  if (myid==0)
+  error("the chosen ensemble STM is not supported by this binary");
+}
+
+
+
+#endif
 
 /******************************************************************************
 *

@@ -329,7 +329,10 @@ void getparamfile(char *paramfname, int sim)
         ensemble = ENS_FRAC;
         move_atoms = move_atoms_frac;
       }
-      else {
+      else if (strcasecmp(tmpstr,"stm")==0) {
+        ensemble = ENS_STM;
+        move_atoms = move_atoms_stm;
+      } else {
         error("unknown ensemble");
       }
     }
@@ -422,10 +425,18 @@ void getparamfile(char *paramfname, int sim)
       /* width of dislocation */
       getparam("width",&width,PARAM_REAL,1,1);
     }
-#if defined(AND) || defined(NVT) || defined(NPT)
+#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
     else if (strcasecmp(token,"endtemp")==0) {
       /* temperature at end of sim. */
       getparam("endtemp",&end_temp,PARAM_REAL,1,1);
+    }
+#endif
+#if defined(STM)
+    else if (strcasecmp(token,"stadium")==0) {
+      getparam("stadium",&stadion,PARAM_REAL,2,2);
+    }
+    else if (strcasecmp(token,"center")==0) {
+      getparam("center",&center,PARAM_REAL,2,2);
     }
 #endif
 #if MONOLJ
@@ -449,7 +460,7 @@ void getparamfile(char *paramfname, int sim)
       getparam("tempintv",&tmp_interval,PARAM_INT,1,1);
     }
 #endif
-#if defined(NVT) || defined(NPT)
+#if defined(NVT) || defined(NPT) || defined(STM)
     else if (strcasecmp(token,"eta")==0) {
       /* eta variable for NVT or NPT thermostat */
       getparam("eta",&eta,PARAM_REAL,1,1);
@@ -885,12 +896,12 @@ void check_parameters_complete()
   if (ntypes == 0) {
     error("ntypes is missing or zero.\n");
   };
-#if defined(NPT) || defined(NVT)
+#if defined(NPT) || defined(NVT) || defined(STM)
   if (temperature == 0) {
     error("starttemp is missing or zero.\n");
   };
 #endif
-#if defined(NPT) || defined(NVT)
+#if defined(NPT) || defined(NVT) || defined(STM)
   if (end_temp == 0) {
     error("endtemp is missing or zero.\n");
   };
@@ -1095,7 +1106,7 @@ void broadcast_params() {
   MPI_Bcast( infilename  , sizeof(infilename) , MPI_CHAR, 0, MPI_COMM_WORLD); 
   MPI_Bcast( reffilename , sizeof(reffilename), MPI_CHAR, 0, MPI_COMM_WORLD); 
 
-#if defined(AND) || defined(NVT) || defined(NPT)
+#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
   MPI_Bcast( &end_temp , 1 , MPI_REAL,  0, MPI_COMM_WORLD); 
 #endif
 #ifdef MONOLJ
@@ -1108,9 +1119,14 @@ void broadcast_params() {
   MPI_Bcast( &tmp_interval , 1 , MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 
-#if defined(NVT) || defined(NPT)
+#if defined(NVT) || defined(NPT) || defined(STM)
   MPI_Bcast( &eta ,         1 , MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &isq_tau_eta , 1 , MPI_REAL, 0, MPI_COMM_WORLD); 
+#endif
+
+#if defined(STM)
+  MPI_Bcast( &stadion ,         2 , MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &center ,          2 , MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef NPT
@@ -1238,6 +1254,7 @@ void broadcast_params() {
     case ENS_FRAC:      move_atoms = move_atoms_frac;      break;
     case ENS_NVX:       move_atoms = move_atoms_nvx;       break;
     case ENS_MSD:       move_atoms = move_atoms_msd;       break;
+    case ENS_STM:       move_atoms = move_atoms_stm;       break;  
     default: if (0==myid) error("unknown ensemble in broadcast"); break;
   }
   

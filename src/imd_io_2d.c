@@ -393,7 +393,7 @@ void write_properties(int steps)
   };
 #endif
 
-#ifdef NVT
+#if defined(NVT) || defined(STM)
   fprintf(out," %10.4e", eta );
 #endif
 
@@ -607,7 +607,7 @@ void write_config(int steps)
     fprintf(out,"box_x \t%f %f\n",box_x.x,box_x.y);
     fprintf(out,"box_y \t%f %f\n",box_y.x,box_y.y);
     fprintf(out,"starttemp \t%f\n",temperature);
-#if defined(NVT) || defined(NPT)
+#if defined(NVT) || defined(NPT) || defined(STM) 
     fprintf(out,"eta \t%f\n",eta);
 #endif
 #ifdef NPT
