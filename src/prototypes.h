@@ -89,9 +89,6 @@ int  irecv_buf(msgbuf *b, int from_cpu, MPI_Request *req);
 int  isend_buf(msgbuf *b, int to_cpu,   MPI_Request *req);
 #endif
 void empty_buffer_cells(void);
-#ifdef SAVEMEM  /* imd_savemem_3d.c */
-void dealloc_buffer_cells(void);
-#endif
 #endif
 
 /* make and maintain cells and their geometry - files imd_geom_*.c */
@@ -118,7 +115,7 @@ int     cpu_grid_coord(ivektor cellc);
 #endif
 
 /* force computation - files imd_main_*.c, imd_forces_*.c */
-void calc_forces(void);
+void calc_forces(int steps);
 void do_forces(cell*, cell*, vektor, real*, real*, real*, real*, real*, real*, real*, real*);
 #ifdef COVALENT
 void do_forces2(cell*, real*, real*, real*, real*, real*, real*, real*, real*);
@@ -165,18 +162,11 @@ void add_forces   ( int k, int l, int m, int r, int s, int t );
 void pack_forces  ( msgbuf *b, int k, int l, int m);
 void unpack_forces( msgbuf *b, int k, int l, int m );
 #ifdef EAM2
-void copy_rho_h  ( int k, int l, int m, int r, int s, int t );
-void pack_rho_h  ( msgbuf *b, int k, int l, int m );
-void unpack_rho_h( msgbuf *b, int k, int l, int m );
-#endif
-#ifdef MONOLJ   /* imd_main_mpi_3d.c */
-vektor global_pbc(int i,int j, int k);
-#endif
-#ifdef SAVEMEM  /* imd_savemem_3d.c */
-void send_cells_by_cell(void);
-void send_recv_cell(int i, int j, int k, int l, int m, int n);
-void send_cell_force(cell *p, int to_cpu, int tag);
-void recv_cell_force(cell *p, int from_cpu,int tag);
+void copy_rho_h      ( int k, int l, int m, int r, int s, int t );
+void add_rho_h       ( int k, int l, int m, int r, int s, int t );
+void pack_rho_h      ( msgbuf *b, int k, int l, int m );
+void unpack_rho_h    ( msgbuf *b, int k, int l, int m );
+void unpack_add_rho_h( msgbuf *b, int k, int l, int m );
 #endif
 #endif /* 3D  */
 #endif /* MPI */
@@ -204,9 +194,6 @@ void copy_atoms_buf(msgbuf *to, msgbuf *from);
 void copy_one_atom(msgbuf *to, cell *from, int index, int delete);
 void process_buffer(msgbuf *b, cell *p);
 void send_atoms(void);
-#ifdef SAVEMEM   /* imd_savemem_3d.c */
-void fix_cells_by_cell(void);
-#endif
 #endif
 /* write properties - file imd_io_*.c */
 void write_eng_file(int steps);

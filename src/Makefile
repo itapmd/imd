@@ -117,8 +117,6 @@ CORRSOURCES     = imd_correl.c
 
 TRANSSOURCES    = imd_transport.c
 
-SAVEMEMSOURCES  = imd_savemem_3d.c
-
 
 ###########################################################################
 #
@@ -704,9 +702,6 @@ endif
 # MONOLJ Case
 ifneq (,$(findstring monolj,${MAKETARGET}))
 CFLAGS += -DMONOLJ
-ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
-SOURCES += ${SAVEMEMSOURCES}
-endif
 endif
 
 # Single precision

@@ -224,8 +224,6 @@ void send_cells(void (*copy_func)  (int, int, int, int),
 *  What exactly is sent is determined by the parameter functions.
 *  We use Steve Plimptons communication scheme: we send only along
 *  the main axis of the system, so that corner cells travel twice.
-*  In AR mode, one buffer cell wall (including adjacent corner cells) 
-*  contains no forces.
 *
 ******************************************************************************/
 
@@ -242,13 +240,10 @@ void send_forces(void (*add_func)   (int, int, int, int),
   if (cpu_dim.x==1) {
     /* simply add east/west forces to original cells */
     for (i=0; i < cell_dim.y; ++i) {
-#ifndef AR 
       (*add_func)( 0, i, cell_dim.x-2, i );
-#endif
       (*add_func)( cell_dim.x-1, i, 1, i );
     }
   } else {
-#ifndef AR 
     /* copy east forces into send buffer */
     for (i=0; i < cell_dim.y; ++i)
       (*pack_func)( &send_buf_east, 0, i );
@@ -260,7 +255,6 @@ void send_forces(void (*add_func)   (int, int, int, int),
     recv_buf_west.n = 0;
     for (i=0; i < cell_dim.y; ++i)
       (*unpack_func)( &recv_buf_west, cell_dim.x-2, i );
-#endif
 
     /* copy west forces into send buffer */
     for (i=0; i < cell_dim.y; ++i) 
@@ -317,8 +311,6 @@ void send_forces(void (*add_func)   (int, int, int, int),
 *  What exactly is sent is determined by the parameter functions.
 *  We use Steve Plimptons communication scheme: we send only along
 *  the main axis of the system, so that corner cells travel twice.
-*  In AR mode, one buffer cell wall (including adjacent corner cells) 
-*  contains no forces.
 *
 ******************************************************************************/
 
@@ -340,19 +332,15 @@ void send_forces(void (*add_func)   (int, int, int, int),
   if (cpu_dim.x==1) {
     /* simply add east/west forces to original cells */
     for (i=0; i < cell_dim.y; ++i) {
-#ifndef AR 
       (*add_func)( 0, i, cell_dim.x-2, i );
-#endif
       (*add_func)( cell_dim.x-1, i, 1, i );
     }
   } else {
-#ifndef AR 
     /* copy east forces into send buffer, send east */
     for (i=0; i < cell_dim.y; ++i)
       (*pack_func)( &send_buf_east, 0, i );
     irecv_buf( &recv_buf_west, nbwest, &reqwest[1] );
     isend_buf( &send_buf_east, nbeast, &reqwest[0] );
-#endif
 
     /* copy west forces into send buffer, send west */
     for (i=0; i < cell_dim.y; ++i) 
@@ -360,13 +348,11 @@ void send_forces(void (*add_func)   (int, int, int, int),
     irecv_buf( &recv_buf_east, nbeast, &reqeast[1] );
     isend_buf( &send_buf_west, nbwest, &reqeast[0] );
 
-#ifndef AR
     /* wait for forces from west, add them to original cells */
     MPI_Waitall(2, reqwest, statwest);
     recv_buf_west.n = 0;
     for (i=0; i < cell_dim.y; ++i)
       (*unpack_func)( &recv_buf_west, cell_dim.x-2, i );
-#endif
 
     /* wait for forces from east, add them to original cells */
     MPI_Waitall(2, reqeast, stateast);
@@ -439,7 +425,6 @@ void copy_cell( int j, int k, int l, int m )
   }
 }
 
-
 /******************************************************************************
 *
 *  pack cell into MPI send buffer (for force comp.)
@@ -462,7 +447,6 @@ void pack_cell( msgbuf *b, int j, int k )
   }
   if (b->n_max < b->n)  error("Buffer overflow in pack_cell");
 }
-
 
 /******************************************************************************
 *
@@ -493,7 +477,6 @@ void unpack_cell( msgbuf *b, int j, int k )
   }
   if (b->n_max < b->n) error("Buffer overflow in unpack_cell");
 }
-
 
 /******************************************************************************
 *
@@ -527,7 +510,6 @@ void add_forces( int j, int k, int l, int m )
   }
 }
 
-
 /******************************************************************************
 *
 *  pack forces from buffer cell into MPI buffer
@@ -535,7 +517,7 @@ void add_forces( int j, int k, int l, int m )
 ******************************************************************************/
 
 void pack_forces( msgbuf *b, int j, int k )
- {
+{
   int i;
   cell *from;
     
@@ -559,7 +541,6 @@ void pack_forces( msgbuf *b, int j, int k )
   if (b->n_max < b->n) error("Buffer overflow in pack_forces.");
 }
 
-
 /******************************************************************************
 *
 *  unpack forces from MPI buffer, and add them to those of the original cell
@@ -567,7 +548,7 @@ void pack_forces( msgbuf *b, int j, int k )
 ******************************************************************************/
 
 void unpack_forces( msgbuf *b, int j, int k )
- {
+{
   int i;
   cell *to;
 

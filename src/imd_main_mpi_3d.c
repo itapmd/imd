@@ -21,7 +21,6 @@
 
 #include "imd.h"
 
-
 /******************************************************************************
 *
 * calc_forces 
@@ -44,12 +43,14 @@
 *
 ******************************************************************************/
 
-#ifndef MONOLJ
-
-void calc_forces(void)
+void calc_forces(int steps)
 {
   int n, k;
   real tmpvec1[8], tmpvec2[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+
+  /* fill the buffer cells */
+  if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
+  send_cells(copy_cell,pack_cell,unpack_cell);
 
   /* clear global accumulation variables */
   tot_pot_energy = 0.0;
@@ -181,6 +182,9 @@ void calc_forces(void)
 
 #ifdef EAM2
 
+#ifdef AR
+  send_forces(add_rho_h,pack_rho_h,unpack_add_rho_h);
+#endif
   send_cells(copy_rho_h,pack_rho_h,unpack_rho_h);
 
   /* second EAM2 loop over all cells pairs */
@@ -250,187 +254,102 @@ void calc_forces(void)
   vir_zx         = tmpvec2[6];
   vir_xy         = tmpvec2[7];
 
-}
+#ifdef AR
+  send_forces(add_forces,pack_forces,unpack_forces);
+#endif
 
-#else /* MONOLJ */
+}
 
 /******************************************************************************
 *
-*  this version is kept for world records only - it uses less memory
+*  fix_cells
+*
+*  check if each atom is in the correct cell and on the correct CPU;
+*  move atoms that have left their cell or CPU
+*
+*  this also uses Plimpton's comm scheme
 *
 ******************************************************************************/
 
-void calc_forces(void)
+void fix_cells(void)
 {
-  cell *p,*q;
-  int i,j,k;
-  int l,m,n;
-  int r,s,t;
-  int u,v,w;
-  vektor pbc = {0.0,0.0,0.0};
-  real tmp, tmpvir;
+  int i,j,k,l;
+  cell *p, *q;
+  ivektor coord, lcoord;
+  int to_cpu;
 
-  tot_pot_energy = 0.0;
-  virial         = 0.0;
-
-  /* Zero Forces */
-  for (k=0; k<nallcells; ++k) {
-    int  i;
-    cell *p;
-    p = cell_array + k;
-    for (i=0; i<p->n; ++i) {
-      p->kraft X(i) = 0.0;
-      p->kraft Y(i) = 0.0;
-      p->kraft Z(i) = 0.0;
-    }
-  }
-
-  /* What follows is the standard one-cpu force 
-     loop acting on our local data cells */
+  empty_mpi_buffers();
 
   /* for each cell in bulk */
-  for (i=1; i < cell_dim.x-1; ++i)
-    for (j=1; j < cell_dim.y-1; ++j)
-      for (k=1; k < cell_dim.z-1; ++k) {
+  for (i=cellmin.x; i < cellmax.x; ++i)
+    for (j=cellmin.y; j < cellmax.y; ++j)
+      for (k=cellmin.z; k < cellmax.z; ++k) {
 
-        p = PTR_3D_V(cell_array,i,j,k,cell_dim);
+	p = PTR_3D_V(cell_array, i, j, k, cell_dim);
 
-	/* For half of the neighbours of this cell */
-	for (l=0; l <= 1; ++l)
-	  for (m=-l; m <= 1; ++m)
-	    for (n=(l==0 ? -m  : -l ); n <= 1; ++n) {
+	/* loop over atoms in cell */
+	l=0;
+	while( l<p->n ) {
 
-	      /* Calculate Indicies of Neighbour */
-	      r = i + l;
-	      s = j + m;
-	      t = k + n; 
+	  lcoord = local_cell_coord(p->ort X(l),p->ort Y(l),p->ort Z(l));
+ 	  /* see if atom is in wrong cell */
+	  if ((lcoord.x == i) && (lcoord.y == j) && (lcoord.z == k)) {
+            l++;
+          } 
+          else {
 
-	      /* Neighbour (note that p==q ist possible) */
-	      q = PTR_3D_V(cell_array,r,s,t,cell_dim);
+            /* global cell coord and CPU */
+            coord  = cell_coord(p->ort X(l),p->ort Y(l),p->ort Z(l));
+            to_cpu = cpu_coord(coord);
 
-	      /* Apply periodic boundaries */
-	      pbc = global_pbc(r,s,t);
-	      do_forces(p,q,pbc);
-	    }
+            /* atom is on my cpu */
+            if (to_cpu==myid) {
+               q = PTR_VV(cell_array,lcoord,cell_dim);
+               move_atom(q, p, l);
+            }
+
+            /* west */
+            else if ((cpu_dim.x>1) && 
+               ((to_cpu==nbwest) || (to_cpu==nbnw)  || (to_cpu==nbws) ||
+                (to_cpu==nbuw  ) || (to_cpu==nbunw) || (to_cpu==nbuws)||
+                (to_cpu==nbdw  ) || (to_cpu==nbdwn) || (to_cpu==nbdsw)))
+                copy_one_atom( &send_buf_west, p, l, 1);
+            
+            /* east */
+            else if ((cpu_dim.x>1) &&
+                ((to_cpu==nbeast) || (to_cpu==nbse)  || (to_cpu==nben) ||
+                 (to_cpu==nbue  ) || (to_cpu==nbuse) || (to_cpu==nbuen)||
+                 (to_cpu==nbde  ) || (to_cpu==nbdes) || (to_cpu==nbdne)))
+                 copy_one_atom( &send_buf_east, p, l, 1);
+                        
+            /* south  */
+            else if ((cpu_dim.y>1) &&
+                ((to_cpu==nbsouth) || (to_cpu==nbus)  || (to_cpu==nbds)))
+                copy_one_atom( &send_buf_south, p, l, 1);
+                        
+            /* north  */
+            else if ((cpu_dim.y>1) &&
+                ((to_cpu==nbnorth) || (to_cpu==nbun)  || (to_cpu==nbdn)))
+                copy_one_atom( &send_buf_north, p, l, 1);
+            
+            /* down  */
+            else if ((cpu_dim.z>1) && (to_cpu==nbdown))
+                copy_one_atom( &send_buf_down, p, l, 1);
+            
+            /* up  */
+            else if ((cpu_dim.z>1) && (to_cpu==nbup))
+                copy_one_atom( &send_buf_up, p, l, 1);
+
+            else error("Atom jumped multiple CPUs");
+                        
+	  }
+	}
       }
 
-#ifndef AR  
-  /* Calculate forces on boundary half of cell */
-  /* potential energy and virial are already complete; to avoid double
-     counting, we keep a copy of the current value, which we use later */
-
-  tmp      = tot_pot_energy;
-  tmpvir   = virial;
-
-  /* for each cell in bulk */
-  for (i=1; i < cell_dim.x-1; ++i)
-    for (j=1; j < cell_dim.y-1; ++j)
-      for (k=1; k < cell_dim.z-1; ++k) {
-
-        p = PTR_3D_V(cell_array,i,j,k,cell_dim);
-
-	/* For half of the neighbours of this cell */
-	for (l=0; l <= 1; ++l)
-	  for (m=-l; m <= 1; ++m)
-	    for (n=(l==0 ? -m  : -l ); n <= 1; ++n) {
-
-	      /* Calculate Indicies of Neighbour */
-	      r = i - l;
-	      s = j - m;
-	      t = k - n;
-
-              /* if second cell is a buffer cell */
-              if ((r == 0) || (r == cell_dim.x-1) || 
-                  (s == 0) || (s == cell_dim.y-1) ||
-                  (t == 0) || (t == cell_dim.z-1)) 
-              {
-		q = PTR_3D_V(cell_array,r,s,t,cell_dim);
-		/* Apply periodic boundaries */
-		pbc = global_pbc(r,s,t);
-		do_forces(p,q,pbc);
-	      }
-	    }
-      }
-
-  /* use the previously saved values of potential energy and virial */
-  tot_pot_energy = tmp;
-  virial     = tmpvir;
-
-#endif  /* ... ifndef AR */
-
-  /* sum up results of different CPUs */
-  MPI_Allreduce( &tot_pot_energy, &tmp, 1, REAL, MPI_SUM, cpugrid); 
-  tot_pot_energy = tmp; 
-
-  MPI_Allreduce( &virial, &tmp,         1, REAL, MPI_SUM, cpugrid);
-  virial = tmp;
+  /* send atoms to neighbbour CPUs */
+  send_atoms();
 
 }
-
-
-/******************************************************************************
-*
-*  global_pbc tells if a local buffer cell is across the boundaries
-*
-*  only used for MONOLJ
-*
-******************************************************************************/
-
-vektor global_pbc(int i, int j, int k)    
-{
-  ivektor global_coord;
-  ivektor local_coord;
-  vektor pbc = { 0.0, 0.0, 0.0};
-
-  local_coord.x = i;
-  local_coord.y = j;
-  local_coord.z = k;
-
-  global_coord.x = local_coord.x - 1 + my_coord.x * (cell_dim.x - 2);
-  global_coord.y = local_coord.y - 1 + my_coord.y * (cell_dim.y - 2);
-  global_coord.z = local_coord.z - 1 + my_coord.z * (cell_dim.z - 2);
-
-  if (global_coord.x < 0) {
-    pbc.x -= box_x.x;      
-    pbc.y -= box_x.y;
-    pbc.z -= box_x.z;
-  }
-
-  if (global_coord.x >= global_cell_dim.x) {
-    pbc.x += box_x.x;      
-    pbc.y += box_x.y;
-    pbc.z += box_x.z;
-  }
-
-  if (global_coord.y < 0) {
-    pbc.x -= box_y.x;      
-    pbc.y -= box_y.y;
-    pbc.z -= box_y.z;
-  }
-
-  if (global_coord.y >= global_cell_dim.y) {
-    pbc.x += box_y.x;      
-    pbc.y += box_y.y;
-    pbc.z += box_y.z;
-  }
-
-  if (global_coord.z < 0) {
-    pbc.x -= box_z.x;      
-    pbc.y -= box_z.y;
-    pbc.z -= box_z.z;
-  }
-
-  if (global_coord.z >= global_cell_dim.z) {
-    pbc.x += box_z.x;      
-    pbc.y += box_z.y;
-    pbc.z += box_z.z;
-  }
-
-  return pbc;
-
-}
-
-#endif /* MONOLJ */
 
 #ifdef SR
 

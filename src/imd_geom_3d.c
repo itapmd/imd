@@ -313,8 +313,6 @@ void make_cell_lists(void)
   ncells = cell_dim.x * cell_dim.y * cell_dim.z;
 #endif
 
-#if !(defined(MPI) && defined(MONOLJ)) /* i.e., not world record */ 
-
   /* Make lists with pairs of interacting cells, taking account of 
      the boundary conditions. We distribute pairs on several lists 
      such that among the pairs in any list there is no cell that 
@@ -510,8 +508,6 @@ void make_cell_lists(void)
       }
 
 #endif /* MPI */
-
-#endif /* !(defined(MPI) && definded(MONOLJ)), i.e., not world record */
 
 #ifdef OMP
     check_pairs();

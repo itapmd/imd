@@ -24,11 +24,11 @@
 
 /*****************************************************************************
 *
-*  calc_forces()
+*  calc_forces
 *
 *****************************************************************************/
 
-void calc_forces(void)
+void calc_forces(int steps)
 {
   int n, k;
 
@@ -83,5 +83,36 @@ void calc_forces(void)
   }
 }
 
+/******************************************************************************
+*
+*  fix_cells
+*
+*  check if each atom is in the correct cell;
+*  move atoms that have left their cell
+*
+******************************************************************************/
 
+void fix_cells(void)
+{
+  int i,j,l;
+  cell *p, *q;
+  ivektor coord, dcpu, to_coord;
+
+  /* for each cell in bulk */
+  for (i=cellmin.x; i < cellmax.x; ++i)
+    for (j=cellmin.y; j < cellmax.y; ++j) {
+
+      p = PTR_2D_V(cell_array, i, j, cell_dim);
+
+      /* loop over atoms in cell */
+      l=0;
+      while( l < p->n ) {
+        coord = cell_coord(p->ort X(l),p->ort Y(l));
+        q = PTR_2D_VV(cell_array,coord,cell_dim);
+        /* if it's in the wrong cell, move it to the right cell */
+        if (p != q) move_atom(q,p,l); 
+        else        ++l;
+      }
+    }
+}
 

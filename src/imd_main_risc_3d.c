@@ -24,11 +24,11 @@
 
 /*****************************************************************************
 *
-* calc_forces()
+*  calc_forces
 *
 *****************************************************************************/
 
-void calc_forces(void)
+void calc_forces(int steps)
 {
   int n, k;
 
@@ -137,4 +137,39 @@ void calc_forces(void)
   do_forces_ewald_fourier();
 #endif 
 
+}
+
+/******************************************************************************
+*
+*  fix_cells
+*
+*  check if each atom is in the correct cell; 
+*  move atoms that have left their cells
+*
+******************************************************************************/
+
+void fix_cells(void)
+{
+  int i,j,k,l;
+  cell *p, *q;
+  ivektor coord, lcoord;
+  int to_cpu;
+
+  /* for each cell in bulk */
+  for (i=cellmin.x; i < cellmax.x; ++i)
+    for (j=cellmin.y; j < cellmax.y; ++j)
+      for (k=cellmin.z; k < cellmax.z; ++k) {
+
+	p = PTR_3D_V(cell_array, i, j, k, cell_dim);
+
+	/* loop over atoms in cell */
+	l=0;
+	while( l<p->n ) {
+          coord = cell_coord(p->ort X(l),p->ort Y(l),p->ort Z(l));
+          q = PTR_3D_VV(cell_array,coord,cell_dim);
+          /* if it's in the wrong cell, move it to the right cell */
+          if (p != q) move_atom(q,p,l); 
+          else        ++l;
+	}
+      }
 }

@@ -52,8 +52,11 @@ void main_loop(void)
     error("Can't allocate memory for fbc_df\n");
 #endif 
 
-  /* initializations for the current simulation phase, if not yet done */
-  if (0==restart) init();
+  /* initialize temperature if necessary */
+  if (0==restart) { 
+    if (do_maxwell) maxwell(temperature);
+    do_maxwell=0;
+  }
 
 #if defined(FRAC) || defined(FTG) 
   if (0==myid) {
@@ -173,24 +176,7 @@ void main_loop(void)
     } 
 #endif
 
-#ifdef MPI
-#ifdef TIMING
-    imd_start_timer(&time_force_comm);
-#endif
-    if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
-    send_cells(copy_cell,pack_cell,unpack_cell);
-#ifdef TIMING
-    imd_stop_timer(&time_force_comm);
-#endif
-#endif
-
-#ifdef TIMING
-    imd_start_timer(&time_force_calc);
-#endif
-    calc_forces(); 
-#ifdef TIMING
-    imd_stop_timer(&time_force_calc);
-#endif
+    calc_forces(steps); 
 
 #ifdef EPITAX
     if (steps == steps_min) {
@@ -221,18 +207,6 @@ void main_loop(void)
       if ((correl_int != 0) && (steps-ref_step+1 >= correl_int)) 
         ref_step += correl_int;
     }
-#endif
-
-#ifdef MPI
-#ifdef AR
-#ifdef TIMING
-    imd_start_timer(&time_force_comm);
-#endif
-    send_forces(add_forces,pack_forces,unpack_forces);
-#ifdef TIMING
-    imd_stop_timer(&time_force_comm);
-#endif
-#endif
 #endif
 
 #ifdef GLOK 
@@ -389,97 +363,6 @@ void main_loop(void)
 
 }
 
-
-/******************************************************************************
-*
-*  fix_cells
-*
-*  check if each atom is in the correct cell and on the correct CPU 
-*  move atoms that have left their cells in the last timestep
-*
-******************************************************************************/
-
-void fix_cells(void)
-{
-  int i,j,l;
-  cell *p, *q;
-  ivektor coord, dcpu, to_coord;
-
-#ifdef MPI
-  empty_mpi_buffers();
-#endif
-
-  /* for each cell in bulk */
-  for (i=cellmin.x; i < cellmax.x; ++i)
-    for (j=cellmin.y; j < cellmax.y; ++j) {
-
-      p = PTR_2D_V(cell_array, i, j, cell_dim);
-
-      /* loop over atoms in cell */
-      l=0;
-      while( l < p->n ) {
-
-#ifndef MPI
-        coord = cell_coord(p->ort X(l),p->ort Y(l));
-        q = PTR_2D_VV(cell_array,coord,cell_dim);
-        /* if it's in the wrong cell, move it to the right cell */
-        if (p != q) 
-          move_atom(q,p,l); 
-        else 
-          ++l;
-#else
-        coord = local_cell_coord(p->ort X(l),p->ort Y(l));
-	/* see if atom is in wrong cell */
-        if ((coord.x == i) && (coord.y == j)) {
-          l++;
-        } else {
-
-          /* Calculate distance on CPU grid */
-          to_coord = cpu_coord_v( cell_coord( p->ort X(l),p->ort Y(l) ));
-          dcpu.x = to_coord.x - my_coord.x;
-          dcpu.y = to_coord.y - my_coord.y;
-
-          /* Consider PBC */
-          if (pbc_dirs.x == 1) {
-            if (cpu_dim.x == 1) dcpu.x = 0; 
-            else dcpu.x -= ((int) (dcpu.x / (cpu_dim.x/2)) * cpu_dim.x);
-          }
-          if (pbc_dirs.y == 1) {
-            if (cpu_dim.y == 1) dcpu.y = 0;
-            else dcpu.y -= ((int) (dcpu.y / (cpu_dim.y/2)) * cpu_dim.y);
-          }
-
-          /* Check, if atom is on my cpu */
-          /* If not, copy into send buffer else move to correct cell */
-          if      ((0<dcpu.x) && (cpu_dim.x>1))
-            copy_one_atom( &send_buf_west,  p, l, 1);
-
-          else if ((0>dcpu.x) && (cpu_dim.x>1)) 
-            copy_one_atom( &send_buf_east,  p, l, 1);
-
-          else if (0<dcpu.y) 
-            copy_one_atom( &send_buf_south, p, l, 1); 
-
-          else if (0>dcpu.y) 
-            copy_one_atom( &send_buf_north, p, l, 1); 
-
-          else { /* atom is on my cpu */
-            q = PTR_VV(cell_array,coord,cell_dim);
-            move_atom(q, p, l);
-          }
-        }
-#endif /* MPI */
-      }
-    }
-
-#ifdef MPI
-  /* send border cells to neighbbours */
-  send_atoms();
-#endif
-
-}
-
-
 /******************************************************************************
 *
 *  do_boundaries
@@ -539,7 +422,6 @@ void do_boundaries(void)
   }
 }
 
-
 #ifdef STRESS_TENS
 
 /******************************************************************************
@@ -587,16 +469,3 @@ void calc_tot_presstens(void)
 
 #endif/* STRESS_TENS */
 
-
-/*****************************************************************************
-*
-*  ensemble specific initializations
-*
-*****************************************************************************/
-
-void init(void)
-{
-  /* Set Up Initial Temperature */
-  if (do_maxwell) maxwell(temperature);
-  do_maxwell=0;
-}

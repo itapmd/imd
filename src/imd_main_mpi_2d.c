@@ -41,10 +41,14 @@
 *
 ******************************************************************************/
 
-void calc_forces(void)
+void calc_forces(int steps)
 {
   int  n, k;
   real tmpvec1[5], tmpvec2[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+
+  /* fill the buffer cells */
+  if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
+  send_cells(copy_cell,pack_cell,unpack_cell);
 
   /* clear global accumulation variables */
   tot_pot_energy = 0.0;
@@ -140,6 +144,85 @@ void calc_forces(void)
   vir_xx         = tmpvec2[2];
   vir_yy         = tmpvec2[3];
   vir_xy         = tmpvec2[4];
+
+#ifdef AR
+  send_forces(add_forces,pack_forces,unpack_forces);
+#endif
+
+}
+
+/******************************************************************************
+*
+*  fix_cells
+*
+*  check if each atom is in the correct cell and on the correct CPU; 
+*  move atoms that have left their cell or CPU
+*
+******************************************************************************/
+
+void fix_cells(void)
+{
+  int i,j,l;
+  cell *p, *q;
+  ivektor coord, dcpu, to_coord;
+
+  empty_mpi_buffers();
+
+  /* for each cell in bulk */
+  for (i=cellmin.x; i < cellmax.x; ++i)
+    for (j=cellmin.y; j < cellmax.y; ++j) {
+
+      p = PTR_2D_V(cell_array, i, j, cell_dim);
+
+      /* loop over atoms in cell */
+      l=0;
+      while( l < p->n ) {
+
+        coord = local_cell_coord(p->ort X(l),p->ort Y(l));
+	/* see if atom is in wrong cell */
+        if ((coord.x == i) && (coord.y == j)) {
+          l++;
+        } else {
+
+          /* Calculate distance on CPU grid */
+          to_coord = cpu_coord_v( cell_coord( p->ort X(l),p->ort Y(l) ));
+          dcpu.x = to_coord.x - my_coord.x;
+          dcpu.y = to_coord.y - my_coord.y;
+
+          /* Consider PBC */
+          if (pbc_dirs.x == 1) {
+            if (cpu_dim.x == 1) dcpu.x = 0; 
+            else dcpu.x -= ((int) (dcpu.x / (cpu_dim.x/2)) * cpu_dim.x);
+          }
+          if (pbc_dirs.y == 1) {
+            if (cpu_dim.y == 1) dcpu.y = 0;
+            else dcpu.y -= ((int) (dcpu.y / (cpu_dim.y/2)) * cpu_dim.y);
+          }
+
+          /* Check, if atom is on my cpu */
+          /* If not, copy into send buffer else move to correct cell */
+          if      ((0<dcpu.x) && (cpu_dim.x>1))
+            copy_one_atom( &send_buf_west,  p, l, 1);
+
+          else if ((0>dcpu.x) && (cpu_dim.x>1)) 
+            copy_one_atom( &send_buf_east,  p, l, 1);
+
+          else if (0<dcpu.y) 
+            copy_one_atom( &send_buf_south, p, l, 1); 
+
+          else if (0>dcpu.y) 
+            copy_one_atom( &send_buf_north, p, l, 1); 
+
+          else { /* atom is on my cpu */
+            q = PTR_VV(cell_array,coord,cell_dim);
+            move_atom(q, p, l);
+          }
+        }
+      }
+    }
+
+  /* send atoms to neighbbour CPUs */
+  send_atoms();
 
 }
 

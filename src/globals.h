@@ -250,8 +250,6 @@ EXTERN imd_timer time_total;
 EXTERN imd_timer time_setup;
 EXTERN imd_timer time_main;
 EXTERN imd_timer time_io;
-EXTERN imd_timer time_force_comm;
-EXTERN imd_timer time_force_calc;
 
 /* Parameters for the various ensembles */
 

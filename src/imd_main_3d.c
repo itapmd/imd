@@ -55,8 +55,11 @@ void main_loop(void)
     error("Can't allocate memory for fbc_df\n");
 #endif
 
-  /* initializations for the current simulation phase, if not yet done */
-  if (0==restart) init();
+  /* initialize temperature, if necessary */
+  if (0==restart) {
+    if (do_maxwell) maxwell(temperature);
+    do_maxwell=0;
+  }
 
 #if defined(FRAC) || defined(FTG) 
   if (0==myid) {
@@ -71,8 +74,6 @@ void main_loop(void)
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
   dtemp = (end_temp - temperature) / (steps_max - steps_min);
 #endif
-
-
 
 #ifdef FBC
 #ifndef MIK
@@ -158,19 +159,6 @@ void main_loop(void)
           (fbc_df+l)->x = (fbc_dforces+l)->x;
           (fbc_df+l)->y = (fbc_dforces+l)->y;
           (fbc_df+l)->z = (fbc_dforces+l)->z;
-
-          /* MIK affects the total impuls, especially in inhomogenous samples,
-             so we set the velocities to 0 befor each force increment 
-
-             for (k=0; k<ncells; ++k) {
-               p = cell_array + CELLS(k);
-               for (i=0; i<p->n; ++i) {
-                 p->impuls X(i) = 0.0;
-                 p->impuls Y(i) = 0.0;
-                 p->impuls Z(i) = 0.0;
-               }
-             }
-          */
         }
       }
     }
@@ -217,28 +205,7 @@ void main_loop(void)
 #endif
 #endif
 
-#ifdef MPI
-#ifdef TIMING
-    imd_start_timer(&time_force_comm);
-#endif
-#ifdef SAVEMEM
-    send_cells_by_cell();
-#else
-    if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
-    send_cells(copy_cell,pack_cell,unpack_cell);
-#endif
-#ifdef TIMING
-    imd_stop_timer(&time_force_comm);
-#endif
-#endif
-
-#ifdef TIMING
-    imd_start_timer(&time_force_calc);
-#endif
-    calc_forces();
-#ifdef TIMING
-    imd_stop_timer(&time_force_calc);
-#endif
+    calc_forces(steps);
 
 #ifdef EPITAX
     if (steps == steps_min) {
@@ -259,18 +226,6 @@ void main_loop(void)
       if ((correl_int != 0) && (steps-ref_step+1 >= correl_int)) 
         ref_step += correl_int;
     }
-#endif
-
-#ifdef MPI
-#ifdef AR
-#ifdef TIMING
-    imd_start_timer(&time_force_comm);
-#endif
-    send_forces(add_forces,pack_forces,unpack_forces);
-#ifdef TIMING
-    imd_stop_timer(&time_force_comm);
-#endif
-#endif
 #endif
 
 #ifdef GLOK 
@@ -419,16 +374,7 @@ void main_loop(void)
 #endif
 
     do_boundaries();    
-
-    /* fix_cells redistributes atoms across the cpus. Putting at the bottom 
-       of the force loop enables us to calculate/write properties locally */
-#if (defined(MPI) && defined(SAVEMEM))
-    /* Deallocate buffer cells each timestep to save memory */
-    dealloc_buffer_cells();
-    fix_cells_by_cell();
-#else
     fix_cells();  
-#endif
 
 #ifdef ATDIST
     if (steps==atoms_dist_end) write_atoms_dist();
@@ -446,113 +392,6 @@ void main_loop(void)
     write_itr_file(-1, steps_max);
     printf( "End of simulation %d\n", simulation );
   }  
-}
-
-
-/******************************************************************************
-*
-*  fix_cells
-*
-*  check if each atom is in the correct cell and on the correct CPU 
-*  move atoms that have left their cells in the last timestep
-*
-*  this also uses Plimpton's comm scheme
-*
-******************************************************************************/
-
-void fix_cells(void)
-
-{
-  int i,j,k,l;
-  cell *p, *q;
-  ivektor coord, lcoord;
-  int to_cpu;
-
-#ifdef MPI
-  empty_mpi_buffers();
-#endif
-
-  /* for each cell in bulk */
-  for (i=cellmin.x; i < cellmax.x; ++i)
-    for (j=cellmin.y; j < cellmax.y; ++j)
-      for (k=cellmin.z; k < cellmax.z; ++k) {
-
-	p = PTR_3D_V(cell_array, i, j, k, cell_dim);
-
-	/* loop over atoms in cell */
-	l=0;
-	while( l<p->n ) {
-
-#ifndef MPI
-          coord = cell_coord(p->ort X(l),p->ort Y(l),p->ort Z(l));
-          q = PTR_3D_VV(cell_array,coord,cell_dim);
-          /* if it's in the wrong cell, move it to the right cell */
-          if  (p != q) 
-            move_atom(q,p,l); 
-          else
-            ++l;
-#else
-	  lcoord = local_cell_coord(p->ort X(l),p->ort Y(l),p->ort Z(l));
- 	  /* see if atom is in wrong cell */
-	  if ((lcoord.x == i) && (lcoord.y == j) && (lcoord.z == k)) {
-            l++;
-          } 
-          else {
-
-            /* global cell coord and CPU */
-            coord  = cell_coord(p->ort X(l),p->ort Y(l),p->ort Z(l));
-            to_cpu = cpu_coord(coord);
-
-            /* atom is on my cpu */
-            if (to_cpu==myid) {
-               q = PTR_VV(cell_array,lcoord,cell_dim);
-               move_atom(q, p, l);
-            }
-
-            /* west */
-            else if ((cpu_dim.x>1) && 
-               ((to_cpu==nbwest) || (to_cpu==nbnw)  || (to_cpu==nbws) ||
-                (to_cpu==nbuw  ) || (to_cpu==nbunw) || (to_cpu==nbuws)||
-                (to_cpu==nbdw  ) || (to_cpu==nbdwn) || (to_cpu==nbdsw)))
-                copy_one_atom( &send_buf_west, p, l, 1);
-            
-            /* east */
-            else if ((cpu_dim.x>1) &&
-                ((to_cpu==nbeast) || (to_cpu==nbse)  || (to_cpu==nben) ||
-                 (to_cpu==nbue  ) || (to_cpu==nbuse) || (to_cpu==nbuen)||
-                 (to_cpu==nbde  ) || (to_cpu==nbdes) || (to_cpu==nbdne)))
-                 copy_one_atom( &send_buf_east, p, l, 1);
-                        
-            /* south  */
-            else if ((cpu_dim.y>1) &&
-                ((to_cpu==nbsouth) || (to_cpu==nbus)  || (to_cpu==nbds)))
-                copy_one_atom( &send_buf_south, p, l, 1);
-                        
-            /* north  */
-            else if ((cpu_dim.y>1) &&
-                ((to_cpu==nbnorth) || (to_cpu==nbun)  || (to_cpu==nbdn)))
-                copy_one_atom( &send_buf_north, p, l, 1);
-            
-            /* down  */
-            else if ((cpu_dim.z>1) && (to_cpu==nbdown))
-                copy_one_atom( &send_buf_down, p, l, 1);
-            
-            /* up  */
-            else if ((cpu_dim.z>1) && (to_cpu==nbup))
-                copy_one_atom( &send_buf_up, p, l, 1);
-
-            else error("Atom jumped multiple CPUs");
-                        
-	  }
-
-#endif /* MPI */
-	}
-   }
-#ifdef MPI
-  /* send border cells to neighbbours */
-  send_atoms();
-#endif
-
 }
 
 
@@ -700,16 +539,4 @@ void calc_tot_presstens(void)
 
 #endif/* STRESS_TENS */
 
-/*****************************************************************************
-*
-*  ensemble specific initializations
-*
-*****************************************************************************/
-
-void init(void)
-{
-  /* Set Up Initial Temperature */
-  if (do_maxwell) maxwell(temperature);
-  do_maxwell=0;
-}
 

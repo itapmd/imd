@@ -29,6 +29,10 @@
 #ifndef SINGLE
 #define DOUBLE
 #endif
+/* the world record switch */
+#ifdef MONOLJ
+#define NODBG_DIST
+#endif
 
 /* define USE_RUSAGE for using getrusage()-routines   */
 /* define USE_CLOCK to use clock() instead of times() */
@@ -72,22 +76,16 @@
 /* AR is the default. We could make the default machine dependent */
 #define AR  
 
-/* EAM2 and UNIAX must not use AR - not implemented */
-#if defined(EAM2) || defined(UNIAX) || defined(MONOLJ)
+/* UNIAX must not use AR - not implemented */
+#ifdef UNIAX
 #undef AR
 #endif
 
-/* for COVALENT, AR must be set */
+/* for COVALENT, AR *must* be set */
 #ifdef COVALENT
 #ifndef AR
 #define AR
 #endif
-#endif
-
-/* the world record switch */
-#ifdef MONOLJ
-#define SAVEMEM
-#define NODBG_DIST
 #endif
 
 #endif /* MPI */

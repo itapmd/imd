@@ -37,8 +37,6 @@ int main(int argc, char **argv)
   time_setup.total = 0.0;
   time_main.total  = 0.0;
   time_io.total    = 0.0;
-  time_force_comm.total = 0.0;
-  time_force_calc.total = 0.0;
 
 #ifdef MPI
   init_mpi(&argc,argv);
@@ -185,12 +183,6 @@ int main(int argc, char **argv)
     printf("(inverse is %e).\n\n", 1.0/tmp);
 
 #ifdef TIMING
-    printf("Force computation:   %e seconds or %.1f %% of main loop\n",
-           time_force_calc.total,100*time_force_calc.total/time_main.total);
-#ifdef MPI
-    printf("Force communication: %e seconds or %.1f %% of main loop\n",
-           time_force_comm.total,100*time_force_comm.total/time_main.total);
-#endif
     printf("Input/Output time:   %e seconds or %.1f %% of main loop\n",
            time_io.total,100*time_io.total/time_main.total);
 #endif
