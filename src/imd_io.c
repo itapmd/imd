@@ -546,7 +546,7 @@ void write_eng_file(int steps)
  
   fprintf(out, format,   (double) Temp);
 #ifdef FNORM
-  fprintf(out, format,   (double) fnorm);
+  fprintf(out, format,   (double) fnorm / nactive);
 #endif
 #ifdef GLOK
   fprintf(out, format,   (double) PxF);

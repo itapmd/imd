@@ -585,6 +585,7 @@ void move_atoms_npt_iso(void)
   real fric, ifric, tmpvec1[4], tmpvec2[4], ttt;
   real Erot_old = 0.0, Erot_new = 0.0;
   real reib, ireib ;
+  fnorm = 0.0;
 
   /* new box size relative to old one */
   box_size.x = 1.0 / box_size.x + 2.0 * timestep * xi.x * inv_tau_xi;
@@ -617,6 +618,10 @@ void move_atoms_npt_iso(void)
 #ifdef UNIAX
       Erot_old += SPRODN(p->dreh_impuls,i,p->dreh_impuls,i) 
                                               / p->traeg_moment[i];
+#endif
+
+#ifdef FNORM
+      fnorm +=  SPRODN(p->kraft,i,p->kraft,i);
 #endif
 
       /* new momenta */
@@ -767,6 +772,7 @@ void move_atoms_npt_axial(void)
   int k;
   real Ekin, ttt, xi_tmp, tmpvec1[4], tmpvec2[4];
   vektor fric, ifric;
+  fnorm = 0.0;
 
   /* initialize data, and compute new box size */
   Ekin             = 0.0;
@@ -805,6 +811,10 @@ void move_atoms_npt_axial(void)
       stress_y += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
 #ifndef TWOD
       stress_z += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
+#endif
+
+#ifdef FNORM
+      fnorm +=  SPRODN(p->kraft,i,p->kraft,i);
 #endif
 
       /* new momenta */
