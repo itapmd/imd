@@ -587,7 +587,7 @@ void make_cell_lists(void)
 
 #ifdef MPI
 
-  /* Since we don't use actio=reactio accross cpus, we have to do
+  /* If we don't use actio=reactio accross cpus, we have to do
      the force loop also on the other half of the neighbours for the 
      cells on the surface of the CPU */
 
