@@ -318,6 +318,10 @@ void getparamfile(char *paramfname, int sim)
       seed = (long) tmp;
       if (seed > 0) seed = -seed;
     }
+    else if (strcasecmp(token,"do_maxwell")==0) {
+      /* force temperature initialization */
+      getparam(token,&do_maxwell,PARAM_INT,1,1);
+    }
     else if (strcasecmp(token,"coordname")==0) {
       /* file name for atom coordinate input data */
       getparam("coordname",infilename,PARAM_STR,1,255);
@@ -2205,6 +2209,7 @@ void broadcast_params() {
   MPI_Bcast( &maxwalltime , 1, REAL,     0, MPI_COMM_WORLD); 
   MPI_Bcast( &loop        , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &seed        , 1, MPI_LONG, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &do_maxwell  , 1, MPI_INT,  0, MPI_COMM_WORLD); 
 
   MPI_Bcast( &steps_max   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &steps_min   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
