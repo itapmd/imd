@@ -66,11 +66,10 @@ must be done:
 <LI> If the force computation requires further data besides the atom 
      types and positions (like the direction of a non-pointlike
      particle), these must be sent to the buffer cells.
-     For this purpose, the routines copy_atoms_force(),
-     move_atoms_force() and copy_cell_force() must be extended.
-     These routines, which are in file imd_main_mpi_2d.c or in
-     file imd_main_mpi_3d.c, move the atom data needed for the
-     force computation from cells to communication buffers,
+     For this purpose, the routines copy_cell, pack_cell and
+     unpack_cell in files imd_comm_force_2d.c and imd_comm_force_3d.c 
+     must be extended. These routines move the atom data needed for 
+     the force computation from cells to communication buffers,
      from communication buffers to buffer cells, or directly
      from cells to buffer cells, if these are on the same CPU. 
      The size of the communication buffers computed in
@@ -83,9 +82,9 @@ must be done:
      quantities that are computed in do_forces and depend on 
      a particle and its neighbors, like, e.g., the stress tensor.
      These properties are added back to the original cells with
-     the routines copy_forces(), add_forces(), and add_cell_force() 
-     in file imd_main_mpi_3d.c, which must be extended (so far, 
-     AR is available only in 3d). In order to avoid this complication, 
+     the routines add_forces, pack_forces, and unpack_forces 
+     in files imd_comm_force_2d.c and imd_comm_force_3d.c, which 
+     must be extended. In order to avoid this complication, 
      one can switch to the non-AR case by undefining the preprocessor 
      symbol AR in config.h. The size of the communication buffers as
      computed in setup_buffers() in file imd_mpi_util.c must be adjusted.
@@ -107,7 +106,6 @@ code file:
 <P>
 
 /****************************************************************<BR>
-* $RCSfile$<BR>
 * $Revision$<BR>
 * $Date$<BR>
 *****************************************************************/<BR>
