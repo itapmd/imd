@@ -129,7 +129,7 @@ void maxwell(real temp)
 	     }
 	 }
 	 if (shock_mode == 2) {
-	   if ( p->ort X(i) < box.x*0.5 ) 
+	   if ( p->ort X(i) < box_x.x*0.5 ) 
 	     p->impuls X(i) += shock_speed * p->masse[i];
 	   else
 	     p->impuls X(i) -= shock_speed * p->masse[i];
