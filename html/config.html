@@ -109,13 +109,15 @@ with a underscore, IMD tries to interpret it and computes the initial atom
 positions, rather than reading them in. The following generated structures
 are supported:
 <TABLE>
-<TR><TD>_fcc      <TD> fcc crystal (3D)
-<TR><TD>_bcc      <TD> bcc crystal (3D)
-<TR><TD>_nacl     <TD> NaCl crystal structure (3D)
-<TR><TD>_b2       <TD> crystal with B2 (CsCl) structure (3D)
-<TR><TD>_lav      <TD> a Laves phase (3D)
-<TR><TD>_tiqc     <TD> truncated icosahedra quasicrystal (3D)
-<TR><TD>_hex      <TD> hexagonal crystal (2D)
+<TR><TD>_fcc        <TD> fcc crystal (3D)
+<TR><TD>_bcc        <TD> bcc crystal (3D)
+<TR><TD>_nacl       <TD> NaCl crystal structure (3D)
+<TR><TD>_b2         <TD> crystal with B2 (CsCl) structure (3D)
+<TR><TD>_diamond    <TD> cubic diamond structure (3D)
+<TR><TD>_zincblende <TD> zincblende structure (3D)
+<TR><TD>_lav        <TD> a Laves phase (3D)
+<TR><TD>_tiqc       <TD> truncated icosahedra quasicrystal (3D)
+<TR><TD>_hex        <TD> hexagonal crystal (2D)
 </TABLE>
 The size of the configuration is specified with the parameter
 <TT>box_param</TT>, an integer vector, and an optional scale
@@ -124,14 +126,17 @@ the masses of the different atoms types can be specified with
 the parameter <tt>masses</tt>, which requires <tt>ntypes</tt>
 real values.
 <p>
-For the cubic structures _fcc, _bcc, _nacl, and _b2, all three 
-box parameters must be positive, even integers. They specify the
+For the cubic structures _fcc, _bcc, _nacl, and _b2, all three box
+parameters must be positive, even integers. They specify the
 dimensions of a rectangular block of a simple cubic lattice with
 lattice parameter 1. The atom positions are obvious subsets of these
-simple cubic lattice sites. In addition, the whole structure can
-be scaled by the real parameter <tt>box_unit</tt> (default: 1),
-so that, e.g., an _fcc structure with nearest neighbor distance 
-sqrt(2.0)*<tt>box_unit</tt> is obtained. 
+simple cubic lattice sites. In addition, the whole structure can be
+scaled by the real parameter <tt>box_unit</tt> (default: 1), so that,
+e.g., an _fcc structure with nearest neighbor distance
+sqrt(2.0)*<tt>box_unit</tt> is obtained.  In the case of the diamond
+and zincblende structure, the default lattice constant is 4.0. Thus,
+to obtain a structure with lattice constant <I>a</I>, the parameter
+<tt>box_unit</tt> has to be 0.25*<I>a</I>.
 <p>
 For the Laves crystal _lav, all three box parameters must be positive, 
 even integers. The structure can be scaled by the real parameter
