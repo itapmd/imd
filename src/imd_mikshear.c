@@ -23,7 +23,6 @@ void apply_shear()
   int i,j,k,l,m,tag;
 
 #ifdef MPI
-
   if (1==parallel_output) {
     for (j = 1; j < cell_dim.x-1; ++j )
       for (k = 1; k < cell_dim.y-1; ++k )
@@ -128,24 +127,6 @@ void apply_shear()
 #endif
 } /* apply_shear */
 
-/******************************************************************************
-*                                                                             *
-* do one shear step in main loop if ekin-value less than threshold            *
-*                                                                             *
-******************************************************************************/
-
-
-void shear1step(int steps)
-{
-#ifdef MPI
-  if (myid == 0)
-#endif 
-    write_shear_energy(steps, shear_steps);
-  write_config(shear_steps);
-  apply_shear();
-  maxwell(temperature);
-  shear_steps++;
-}
 
 /******************************************************************************
 *
@@ -185,5 +166,26 @@ void write_shear_energy(int steps, int shear_steps)
   fclose(out);
 
 
+} /* write_shear_energy */
+
+
+/******************************************************************************
+*                                                                             *
+* do one shear step in main loop if ekin-value less than threshold            *
+*                                                                             *
+******************************************************************************/
+
+
+void shear1step(int steps)
+{
+#ifdef MPI
+  if (myid == 0)
+#endif 
+  write_shear_energy(steps, shear_steps);
+  write_config(shear_steps);
+  apply_shear();
+  maxwell(temperature);
+  shear_steps++;
 }
+
 #endif /* MIKSHEAR */

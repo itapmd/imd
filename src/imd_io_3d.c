@@ -1139,16 +1139,3 @@ void write_distrib(int steps)
     fclose(outkin);
   }
 }
-
-
-/******************************************************************************
-*
-* write_pictures writes bitmap pictures of configuration
-*
-******************************************************************************/
-
-void write_pictures(int steps)
-
-{
-/* Still empty */
-}

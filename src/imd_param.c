@@ -287,6 +287,10 @@ void getparamfile(char *paramfname, int sim)
         ensemble = ENS_NVE;
         move_atoms = move_atoms_nve;
       }
+      else if (strcasecmp(tmpstr,"mikshear")==0) {
+        ensemble = ENS_MIKSHEAR;
+        move_atoms = move_atoms_mik;
+      }
       else if (strcasecmp(tmpstr,"mik")==0) {
         ensemble = ENS_MIK;
         move_atoms = move_atoms_mik;
@@ -318,10 +322,6 @@ void getparamfile(char *paramfname, int sim)
       else if (strcasecmp(tmpstr,"pull")==0) {
         ensemble = ENS_PULL;
         move_atoms = move_atoms_pull;
-      }
-      else if (strcasecmp(tmpstr,"mikshear")==0) {
-        ensemble = ENS_MIKSHEAR;
-        move_atoms = move_atoms_mik;
       }
       else {
         error("unknown ensemble");
@@ -596,9 +596,13 @@ void getparamfile(char *paramfname, int sim)
       /* shear epsilon criterium, see imd_shear_new.c */
       getparam("shear_epsilon",&shear_epsilon,PARAM_REAL,1,1);
     }   
-    else if (strcasecmp(token,"glideplane")==0) {
-      /* y component of glide plane coord. */
-      getparam("glideplane",&glideplane,PARAM_REAL,1,1);
+    else if (strcasecmp(token,"annealsteps")==0) {
+      /* max nr of steps between shears */
+      getparam("annealsteps",&annealsteps,PARAM_INT,1,1);
+    }   
+    else if (strcasecmp(token,"maxshearrelaxsteps")==0) {
+      /* max nr of steps between shears */
+      getparam("maxshearrelaxsteps",&maxshearrelaxsteps,PARAM_INT,1,1);
     }   
 #endif
 #ifdef DISLOC

@@ -81,11 +81,18 @@ void main_loop(void)
   /* initializations for the current simulation phase, if not yet done */
   if (0==restart) init();
 
+#ifdef MIKSHEAR
+  stepssincelastshear = 0;
+#endif
+
   for (steps=steps_min; steps <= steps_max; ++steps) {
 
 #ifdef MIKSHEAR
-    if ((steps > 2) && (tot_kin_energy/natoms < shear_epsilon) && 
-        (ensemble==ENS_MIKSHEAR)) shear1step(steps);
+  stepssincelastshear++;
+  if ((ensemble==ENS_MIKSHEAR) && (steps > annealsteps) && ((tot_kin_energy/natoms < shear_epsilon) || ((stepssincelastshear % maxshearrelaxsteps) == 0))) {
+    shear1step(steps);
+    stepssincelastshear = 0;
+  }
 #endif
 
 #ifdef MPI
@@ -178,6 +185,7 @@ void main_loop(void)
     if ((eng_interval > 0) && (0 == steps%eng_interval) && (0==myid)) 
       write_properties(steps);
     if ((dis_interval > 0) && (0 == steps%dis_interval)) write_distrib(steps);
+    if ((pic_interval > 0) && (0 == steps%pic_interval)) write_pictures(steps);
 
 #ifdef DISLOC
     if ((dem_interval > 0) && (0 == steps%dem_interval)) write_demmaps(steps);

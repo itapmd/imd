@@ -266,6 +266,9 @@ EXTERN vektor   delta;      /* atoms in strip move by this amount */
 EXTERN real glideplane INIT(0);    /* coordinate of the glide plane */
 EXTERN real shear_delta INIT(0);   /* shear increment */
 EXTERN int shear_steps INIT(0);   /* number of shear_steps */
+EXTERN int stepssincelastshear INIT(0);   /* number of shear_steps */
+EXTERN int annealsteps INIT(0);    /* annealing steps */
+EXTERN int maxshearrelaxsteps INIT(0);   /* number of shear_steps */
 EXTERN real shear_epsilon INIT(0); /* energy difference to abort relaxation */
 #endif
 

@@ -69,13 +69,17 @@ void write_vrml_cell( cell *p, FILE *out )
         pz = p->impuls Z(i);
         E_kin = (float) ( (px*px + py*py + pz*pz) / (2 * p->masse[i]) );
 #ifdef DISLOC
-        if (Epot_diff==1) {
-          E_pot = (float) p->pot_eng[i] - p->Epot_ref[i];
-        } else
+	if (p->sorte[i] == dpotsorte) {
+    	  E_pot = (float) p->pot_eng[i] - p->Epot_ref[i];
+	  if (E_pot < min_dpot) continue;
+	}
 #else
         E_pot = (float) (p->pot_eng[i]+35)/82;
 #endif
 	ind = (int)(E_pot * 3.9999);
+	ind = (ind -120)/4;
+	if (ind < -1) continue;
+	if (ind > 3) continue;
 
         /* Get RBG values from linear interpolation */
 	red = -4.0 * (tabred[ind] - tabred[ind+1]) * E_pot + (tabred[ind] * (ind+1) - ind * tabred[ind+1] );
@@ -118,7 +122,7 @@ void write_pictures_raw(int steps)
 
     /* Ausgabedatei oeffnen */
     out = fopen(fname,"w");
-    if (NULL == out) error("Can't open output file for config.");
+    if (NULL == out) error("Cannot open output file for config.");
 
 
     for (i = 1; i < cell_dim.x-1; ++i )
@@ -136,7 +140,7 @@ void write_pictures_raw(int steps)
 
       /* Ausgabedatei oeffnen */
       out = fopen(fname,"w");
-      if (NULL == out) error("Can't open output file for config.");
+      if (NULL == out) error("Cannot open output file for config.");
 
       /* Write data on CPU 0 */
 
@@ -160,7 +164,7 @@ void write_pictures_raw(int steps)
 	    };
 
       fclose(out);      
-    } else { 
+    } else {
       /* Send data to cpu 0 */
         for (i = 1; i < cell_dim.x-1; ++i )
           for (j = 1; j < cell_dim.y-1; ++j )
@@ -170,12 +174,13 @@ void write_pictures_raw(int steps)
 	      send_cell( p, 0, tag );
 	    };
     };
-  };
+  }
+
 #else
 
   /* Ausgabedatei oeffnen */
   out = fopen(fname,"w");
-  if (NULL == out) error("Can't open output file for config.");
+  if (NULL == out) error("Cannot open output file for config.");
 
 
   for (p = cell_array; 
@@ -219,7 +224,7 @@ void write_pictures_bins(int steps)
   shortint sum_red[YRES][XRES];
   shortint sum_green[YRES][XRES];
   shortint sum_blue[YRES][XRES];
-  ivektor2d maxcoord,mincoord;
+  ivektor3d maxcoord,mincoord;
 #endif
 
   char buf[3*XRES];
@@ -242,6 +247,13 @@ void write_pictures_bins(int steps)
   int pix;
   int np;
   int ia, ib;
+
+  /* normalize view_dir */
+  val = sqrt(view_dir.x*view_dir.x+view_dir.y*view_dir.y
+             +view_dir.z*view_dir.z);
+  view_dir.x /= val;
+  view_dir.y /= val;
+  view_dir.z /= val;
 
   /* base vectors normal to view_dir */
   a.x = - view_dir.y;
@@ -326,6 +338,7 @@ void write_pictures_bins(int steps)
   /* Color lookup table */
 
 
+
 /*  Original table from RUS - we use more saturation
 
     tabred[0] = 0.10; tabgreen[0] = 0.20; tabblue[0] = 0.50;
@@ -339,7 +352,7 @@ void write_pictures_bins(int steps)
     tabred[2] = 0.02; tabgreen[2] = 0.45; tabblue[2] = 0.02;
     tabred[3] = 0.23; tabgreen[3] = 0.23; tabblue[3] = 0.03;
     tabred[4] = 0.45; tabgreen[4] = 0.02; tabblue[4] = 0.02; 
-  
+
   /* loop over all atoms */
     for ( r = cellmin.x; r < cellmax.x; ++r )
       for ( s = cellmin.y; s < cellmax.y; ++s )
@@ -354,6 +367,7 @@ void write_pictures_bins(int steps)
             continue;
           coord.x = (int)floor((p->ort X(i)*a.x + p->ort Y(i)*a.y + p->ort Z(i)*a.z + xshift)*scale.x);
           coord.y = (int)floor((p->ort X(i)*b.x + p->ort Y(i)*b.y + p->ort Z(i)*b.z + yshift)*scale.y);
+
 	  /* Check bounds */
 	  if ((coord.x >= NUMPIX) && (coord.x < (XRES-NUMPIX)) &&
               (coord.y >= NUMPIX) && (coord.y < (YRES-NUMPIX))) { 
@@ -385,7 +399,7 @@ void write_pictures_bins(int steps)
                  if (k*k + j*j > np*np) continue;
                  pixcoord.x = coord.x + j;
                  pixcoord.y = coord.y + k;
-
+		 
                  pix =  redbit  [pixcoord.y][pixcoord.x] + (SFACTOR * 255 * red  );
                  redbit  [pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
 	      
@@ -494,14 +508,23 @@ if (0==myid) {
 	  if ((coord.x>=NUMPIX) && (coord.x<(XRES-NUMPIX)) &&
 	      (coord.y>=NUMPIX) && (coord.y<(YRES-NUMPIX))) {
 
+#ifdef DISLOC
+	if (p->sorte[i] == dpotsorte) {
+	  val = p->pot_eng[i] - p->Epot_ref[i];
+	  if (val < min_dpot) continue;
+	}
+#else
 	  val = p->pot_eng[i];
+#endif
 
           /* Scale Value to [0..1]   */
 	  val = (val - ecut_pot.x) / (ecut_pot.y - ecut_pot.x);
 /* Values that are not in the interval are set to MINIMUM */
           val = val > 1.0 ? 0.0 : val;
           val = val < 0.0 ? 0.0 : val;
-          np  = NUMPIX * (1 + p->sorte[i]);
+          np = NUMPIX * (1 + p->sorte[i]);
+/*          np  = (int)floor(p->ort X(i)*view_dir.x+p->ort Y(i)*view_dir.y+p->ort Z(i)*view_dir.z)*NUMPIX * (1 + p->sorte[i]);
+*/
 /* Defects in potential energy are rather point-like, so we enlarge all
 Pixels not in the default interval
           if ((val<1.0) && (val>0.0)) np = 3 * NUMPIX; else np = NUMPIX; */
@@ -517,7 +540,6 @@ Pixels not in the default interval
 
           blue = -4.0 * (tabblue[ind] - tabblue[ind+1]) * val + 
 	    (tabblue[ind] * (ind+1) - ind * tabblue[ind+1] );
-
 
           /* Set & Copy Pixel */
           for (j=-np;j<np;++j)
@@ -628,7 +650,7 @@ void write_vrmls(int steps)
 
     /* Ausgabedatei oeffnen */
     out = fopen(fname,"w");
-    if (NULL == out) error("Can't open output file for config.");
+    if (NULL == out) error("Cannot open output file for config.");
     fprintf(out, "#VRML V1.0 ascii\n\n");
     fprintf(out, "DEF StartPers PerspectiveCamera {\n");
     fprintf(out, "position 0 0 0\n");
@@ -653,7 +675,7 @@ void write_vrmls(int steps)
 
       /* Ausgabedatei oeffnen */
       out = fopen(fname,"w");
-      if (NULL == out) error("Can't open output file for config.");
+      if (NULL == out) error("Cannot open output file for config.");
       fprintf(out, "#VRML V1.0 ascii\n\n");
       fprintf(out, "DEF StartPers PerspectiveCamera {\n");
       fprintf(out, "position 2.5 2.5 15\n");
@@ -701,7 +723,7 @@ void write_vrmls(int steps)
 
   /* Ausgabedatei oeffnen */
   out = fopen(fname,"w");
-  if (NULL == out) error("Can't open output file for config.");
+  if (NULL == out) error("Cannot open output file for config.");
   fprintf(out, "#VRML V1.0 ascii\n\n");
   fprintf(out, "Separator {\n");
   if (projection)
