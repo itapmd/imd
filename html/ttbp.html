@@ -11,7 +11,7 @@ A <font color=blue>T</font>wo and <font color=blue>T</font>hree
 by Jutta Hahn.<p>
 	<li>
 <b>The interaction potential</b><p>
-In order to calculated the total energy the pair interaction and
+In order to calculate the total energy the pair interaction and
 the three body interaction (valence angle) are considered.<p><ul><li>
 U<sub>tot</sub> = <font color=red>U<sub>2</sub></font> + <font color=green>U<sub>3</sub></font><p> 
 <img src=ttbp.gif> <p>
@@ -19,12 +19,12 @@ U<sub>tot</sub> = <font color=red>U<sub>2</sub></font> + <font color=green>U<sub
 The two body term <font color=red>U<sub>2</sub></font> is chosen in 
 standard IMD fashion. The pairwise interaction of all particles is
 given by<p>
-<pre><font color=red>U<sub>2</sub></font> = <font color=red>\sum<sub>ij</sub><sup>N</sup> U<sub>ij</sub></font> </pre>
+<pre><font color=red>U<sub>2</sub> = \sum<sub>ij</sub><sup>N</sup> U<sub>ij</sub></font> </pre>
 	<li>
 The three body interaction <font color=green>U<sub>3</sub></font> is 
 treated as follows:<p>
-<pre><font color=green>U<sub>3</sub></font> = <font color=green>\sum<sub>ijk</sub><sup>N</sup> U<sub>ijk</sub></font></pre>
-<pre><font color=green>U<sub>3</sub></font> = <font color=green> \sum<sub>i</sub><sup>N</sup> \sum<sub>j</sub><sup>N</sup> \sum<sub>k</sub><sup>N</sup> U(j-i-k)</font></pre>
+<pre><font color=green>U<sub>3</sub> = \sum<sub>ijk</sub><sup>N</sup> U<sub>ijk</sub></font></pre>
+<pre><font color=green>U<sub>3</sub> = \sum<sub>i</sub><sup>N</sup> \sum<sub>j</sub><sup>N</sup> \sum<sub>k</sub><sup>N</sup> U(j-i-k)</font></pre>
 The sum is over all bonds forming an valence angle; i.e. atom i is bonded to
 1, 2, 3 and 4, forming the valence angles 1-i-2, 1-i-3, 1-i-4, 2-i-3, 2-i-4, 3-i-4.
 	<p>
@@ -33,9 +33,9 @@ f(ik) which are one for distances r<sub>ij</sub> and r<sub>ik</sub> smaller than
 bond lengths and zero for distances larger than a cutoff radii. <p>
 <pre><font color=green>U<sub>3</sub></font> = <font color=green>\sum<sub>ijk</sub><sup>N</sup> U(j-i-k) f(ij) f(ik)</font></pre>
 	<p>
-The three body function is a cosine function expansion of the angle theta.
-Dependent of the hybridization a variety of function may be applied. So far,
-sp3 hybrids are considered.<p>
+The three body function is a cosine function expansion of the angle theta j-i-k.<p>
+<pre><font color=green>U(j-i-k) = k ( c<sub>0</sub> + c<sub>1</sub> cos(j-i-k) + c<sub>2</sub> cos(2*(j-i-k)) + c<sub>3</sub> cos(3*(j-i-k)) )</font></PRE>
+So far, sp<sup>2</sup> and sp<sup>3</sup> hybrids may be considered.<p>
 	<li>
 The two body term as well as the three body cutoff functions are listed in a 
 standard IMD potential table (distance versus energy) while the three body 
