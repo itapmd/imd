@@ -15,13 +15,26 @@ extern Widget toplevel;
 extern Display *dpy;
 int radiovalue;
 
+struct drag_struct {
+  GC   gc;
+  GC   xor_gc;
+  char *object;
+} t_drag_client;
+
+XtEventHandler t_press_event(Widget w,struct drag_struct *drag,XButtonEvent *ev) {
+  int mousex,button;
+  button=ev->button;
+  if (button!=1) return;
+  mousex=ev->x;
+  temperature=mousex*.005;
+}
+
 /* some local identifiers */
 static int ReturnCode;         /* used by standard dialogs */
 
 static XtCallbackProc rgback(Widget w,struct radio_struct *rs,XtPointer call) {
        *(rs->variable) = rs->value;
-       col_mode = rs->value;
-       draw_scene(scene_type);
+       radiovalue = rs->value;
 }
 
 /*
@@ -141,22 +154,33 @@ Widget CreateRadioBox(char *LabelText,char *title,DialogButtonTypePtr Buttons,
 Widget CreateSlideBox(char *LabelText,
 		       DialogButtonTypePtr Buttons, 
 		       size_t Count, char *title) {
-  Widget  dialog, popup, box;
-  
+  Widget  dialog, popup, box,rect;
+  int n;
+  Arg wargs[3];
+
   /* create the popup shell */
   popup = XtVaCreatePopupShell(title, transientShellWidgetClass,
 			       toplevel,
 			       XtNinput, True,
 			       XtNallowShellResize, True,
 			       NULL);
-  dialog = XtVaCreateManagedWidget("dialog", dialogWidgetClass,
+  dialog = XtVaCreateManagedWidget("dialog", panedWidgetClass,
 				   popup,
 				   XtNlabel, LabelText,
 				   NULL);
   box = XtCreateManagedWidget("box",boxWidgetClass,dialog,
 			      NULL, 0);
+  rect = XtCreateManagedWidget("rect",boxWidgetClass,box,
+			      NULL, 0);
 
-  /* now we add the buttons and install the accelerators */
+  n = 0;
+  XtSetArg(wargs[n], XtNheight, 20); n++;
+  XtSetArg(wargs[n], XtNwidth, 200); n++;
+  XtSetValues(rect, wargs, n);
+
+  XtAddEventHandler(popup, ButtonPressMask, FALSE,
+		    t_press_event, &t_drag_client);
+
   AddButtons(dialog, NULL, Buttons, Count);
   while (Count--)
     XtInstallAccelerators(dialog, Buttons[Count].W);
@@ -209,6 +233,7 @@ int ColorEncodingDialog(char *MessageText) {
   Widget popup;
   int var;
   String names[] = {
+       "  nothing  ",
        "    type   ",
        "pot. energy",
        "kin. energy",
@@ -220,12 +245,93 @@ int ColorEncodingDialog(char *MessageText) {
        2,
        3,
        4,
+       5
   };
   static DialogButtonType buttons[] =
   { { "defaultButton", "     OK     ", CB_OK, (XtPointer) OK_BUTTON, NULL }};
 
   /* create radio box */
-  popup = CreateRadioBox(MessageText,MessageText, buttons, ENTRIES(buttons),names,values,&var,col_mode);
+  popup = CreateRadioBox(MessageText,MessageText, buttons, ENTRIES(buttons),names,values,&var,col_mode+1);
+  StartDialog(popup);
+  /* wait for radio box to complete */
+  DialogEventLoop(&ReturnCode);
+  EndDialog(popup);
+
+  return radiovalue;
+}
+
+/* size encoding dialog */
+int SizeEncodingDialog(char *MessageText) {
+  Widget popup;
+  int var;
+  String names[] = {
+       "nothing",
+       "  type ",
+       0
+  };
+  int values[] = {
+       1,
+       2
+  };
+  static DialogButtonType buttons[] =
+  { { "defaultButton", "     OK     ", CB_OK, (XtPointer) OK_BUTTON, NULL }};
+
+  /* create radio box */
+  popup = CreateRadioBox(MessageText,MessageText, buttons, ENTRIES(buttons),names,values,&var,size_mode+1);
+  StartDialog(popup);
+  /* wait for radio box to complete */
+  DialogEventLoop(&ReturnCode);
+  EndDialog(popup);
+
+  return radiovalue;
+}
+
+/* Bond mode dialog */
+int BondModeDialog(char *MessageText) {
+  Widget popup;
+  int var;
+  String names[] = {
+       "  no bonds  ",
+       "static bonds",
+       " dyn. bonds ",
+       0
+  };
+  int values[] = {
+       1,
+       2,
+       3,
+  };
+  static DialogButtonType buttons[] =
+  { { "defaultButton", "     OK     ", CB_OK, (XtPointer) OK_BUTTON, NULL }};
+
+  /* create radio box */
+  popup = CreateRadioBox(MessageText,MessageText, buttons, ENTRIES(buttons),names,values,&var,bond_mode+1);
+  StartDialog(popup);
+  /* wait for radio box to complete */
+  DialogEventLoop(&ReturnCode);
+  EndDialog(popup);
+
+  return radiovalue;
+}
+
+/* color encoding dialog */
+int QuasiSwitchDialog(char *MessageText) {
+  Widget popup;
+  int var;
+  String names[] = {
+       "   periodic  ",
+       "quasiperiodic",
+       0
+  };
+  int values[] = {
+       1,
+       2,
+  };
+  static DialogButtonType buttons[] =
+  { { "defaultButton", "     OK     ", CB_OK, (XtPointer) OK_BUTTON, NULL }};
+
+  /* create radio box */
+  popup = CreateRadioBox(MessageText,MessageText, buttons, ENTRIES(buttons),names,values,&var,qp);
   StartDialog(popup);
   /* wait for radio box to complete */
   DialogEventLoop(&ReturnCode);

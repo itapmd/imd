@@ -30,7 +30,7 @@ typedef enum ParamType {
 int curline; /* number of current line */
 int finished=0;
 
-extern int scene_type,col_mode,radectyp;
+extern int scene_type,col_mode;
 extern char *paramfilename;
 
 
@@ -273,13 +273,12 @@ void getparamfile(char *paramfname, int sim)
       /* color mode */
       getparam("col_mode",&col_mode,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"radectyp")==0) {
-      /* radius encodes type ? */
-      getparam("radectyp",&radectyp,PARAM_INT,1,1);
-    }
     else if (strcasecmp(token,"uvfname")==0) {
       /* name of unit vectors file? */
       getparam("uvfname",&uvfname,PARAM_STR,1,255);
+    }
+    else if (strcasecmp(token,"sim_host")==0) {
+      getparam("sim_host",sim_host,PARAM_STR,1,255);
     }
     else if (strcasecmp(token,"minbl")==0) {
       /* name of unit vectors file? */

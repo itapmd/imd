@@ -119,8 +119,7 @@ void DisplayBonds(Widget w, XtPointer client, XtPointer call) {
     bond_mode=0;
   else {
     bond_mode=1;
-    if (stat_bond)
-      read_unit_vectors();
+    read_unit_vectors();
   }
   draw_scene(scene_type);  
 }
@@ -140,7 +139,28 @@ void ColorEncoding(Widget w, XtPointer client, XtPointer call) {
   if ((rc==4)&&(bond_mode==0))
     MessageDialog("Geht nicht! Erst Bond-Mode einschalten");
   else
-    col_mode=rc;
+    col_mode=rc-1;
+  draw_scene(scene_type);
+}
+
+void SizeEncoding(Widget w, XtPointer client, XtPointer call) {
+  int rc;
+  rc=SizeEncodingDialog("Size Encoding");
+  size_mode=rc-1;
+  draw_scene(scene_type);
+}
+
+void BondMode(Widget w, XtPointer client, XtPointer call) {
+  int rc;
+  rc=BondModeDialog("Bond Mode");
+  bond_mode=rc-1;
+  draw_scene(scene_type);
+}
+
+void QuasiSwitch(Widget w, XtPointer client, XtPointer call) {
+  int rc;
+  rc=QuasiSwitchDialog("Quasiperiodic/Periodic");
+  qp=rc-1;
   draw_scene(scene_type);
 }
 
@@ -149,24 +169,22 @@ void Movie(Widget w, XtPointer client, XtPointer call) {
   float xloc,yloc;
   while(1) {
     if (scene_type)
-      connect_client(T_CONF);
-    else
       connect_client(T_DIST);
+    else
+      connect_client(T_CONF);
     draw_scene(scene_type);
     if (ch = checkkey()) break;
     if (mkey = slocator (&xloc, &yloc)) break;
   }
 }
 
-void AdjustTemperature(Widget w, XtPointer client, XtPointer call) {
-  printf("temp %s\n",client);
+void SelectTemperature(Widget w, XtPointer client, XtPointer call) {
+  TemperatureDialog("Select Temperature");
 }
 
 void Quit(Widget w, XtPointer client, XtPointer call) {
   int rc;
-  rc=QuestionDialog("Really Quit?");
-  if (rc)
-    exit(0);
+  exit(0);
 }
 
 void resize() {
@@ -207,20 +225,7 @@ GC		gc;
 
 void window_main(int argc, char **argv) {
   int		w, h;
-  Widget panel,
-    qbut,
-    bbut,
-    fbut,
-    dbut,
-    hbut,
-    xbut,
-    ybut,
-    zbut,
-    sbut,
-    pbut,
-    mbut;
-
-
+  Widget panel;
   Widget button1;
   Widget button2;
   Widget button3;
@@ -232,6 +237,9 @@ void window_main(int argc, char **argv) {
   Widget line11;
   Widget line12;
   Widget line22;
+  Widget line23;
+  Widget line32;
+  Widget line33;
   Widget entry;
   Widget LoadConf;
   Widget SaveConf;
@@ -245,8 +253,11 @@ void window_main(int argc, char **argv) {
   Widget SpecHost;
   Widget SpecPort;
   Widget ColEnc;
+  Widget SizEnc;
+  Widget BonMod;
+  Widget QuaSwi;
   Widget Mov;
-  Widget AdjTemp;
+  Widget SelTemp;
   Widget quit;
 
   int n;
@@ -341,7 +352,7 @@ void window_main(int argc, char **argv) {
   DispBds = XtCreateManagedWidget("Display Bonds", smeBSBObjectClass,
 				menu2, NULL, 0);
   XtAddCallback(DispBds, XtNcallback, DisplayBonds, "DisplayBonds");
-  line22 = XtCreateManagedWidget("line2", smeLineObjectClass,
+  line22 = XtCreateManagedWidget("line22", smeLineObjectClass,
 				menu2, NULL, 0);
 
   quit = XtCreateManagedWidget("quit", smeBSBObjectClass,
@@ -362,12 +373,26 @@ void window_main(int argc, char **argv) {
   SpecPort = XtCreateManagedWidget("Specify Port", smeBSBObjectClass,
 				menu3, NULL, 0);
   XtAddCallback(SpecPort, XtNcallback, SpecifyPort, "Specify Port");
-  line22 = XtCreateManagedWidget("line2", smeLineObjectClass,
+  line32 = XtCreateManagedWidget("line32", smeLineObjectClass,
 				menu3, NULL, 0);
 
   ColEnc = XtCreateManagedWidget("Color Encoding", smeBSBObjectClass,
 			       menu3, NULL, 0);
   XtAddCallback(ColEnc, XtNcallback, ColorEncoding, "Color Encoding");
+  
+  SizEnc = XtCreateManagedWidget("Size Encoding", smeBSBObjectClass,
+			       menu3, NULL, 0);
+  XtAddCallback(SizEnc, XtNcallback, SizeEncoding, "Size Encoding");
+  
+  BonMod = XtCreateManagedWidget("Bond Mode", smeBSBObjectClass,
+			       menu3, NULL, 0);
+  XtAddCallback(BonMod, XtNcallback, BondMode, "Bond Mode");
+
+  QuaSwi = XtCreateManagedWidget("Quasi Switch", smeBSBObjectClass,
+			       menu3, NULL, 0);
+  XtAddCallback(QuaSwi, XtNcallback, QuasiSwitch, "Quasi Switch");
+  line33 = XtCreateManagedWidget("line33", smeLineObjectClass,
+				menu3, NULL, 0);
   
   Mov = XtCreateManagedWidget("Movie Mode", smeBSBObjectClass,
 			       menu3, NULL, 0);
@@ -380,9 +405,9 @@ void window_main(int argc, char **argv) {
   menu4 = XtCreatePopupShell("menu4", simpleMenuWidgetClass,
 			     button4, NULL, 0);
 
-  AdjTemp = XtCreateManagedWidget("Adjust Temperature", smeBSBObjectClass,
+  SelTemp = XtCreateManagedWidget("Select Temperature", smeBSBObjectClass,
 			       menu4, NULL, 0);
-  XtAddCallback(AdjTemp, XtNcallback, AdjustTemperature, "Adjust Temperature");
+  XtAddCallback(SelTemp, XtNcallback, SelectTemperature, "Select Temperature");
   
 
   XtSetArg(wargs[0], XtNwidth, 512);

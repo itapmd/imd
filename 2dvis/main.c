@@ -65,12 +65,10 @@ void draw_text(void) {
   }
   else
     sprintf(str2,"Atom type is encoded");
-  if (bond_mode) {
-    if (stat_bond)
+  if (bond_mode==1)
       sprintf(str3,"Static bonds");
-    else
-      sprintf(str3,"Bonds according to distance");
-  }
+  if (bond_mode==1)
+      sprintf(str3,"Dynamic bonds");
   else
     sprintf(str3,"");
 
@@ -130,6 +128,9 @@ void draw_scene(int scene_type) {
       zz*=.2; /* looks better */
 #endif
       switch(col_mode) {
+      case 0:
+	color(1);
+	break;
       case 1: 
 	color(sorte[i]+1);
 	break;
@@ -148,7 +149,7 @@ void draw_scene(int scene_type) {
 
       /* if we shall draw bonds afterwards we compute
 	 the number of neighbours here */
-      if (bond_mode) {
+      if (bond_mode==1) {
 	nb=0;
 	for(k=0;k<nunits;k++)
 	  if (bcode[i]&(int)pow(2,k))
@@ -157,7 +158,7 @@ void draw_scene(int scene_type) {
 	/*	color(nb+1);*/
       }
 
-      if (radectyp)
+      if (size_mode)
 	circle(xx,yy,.5*(sorte[i]+1)*radius*scalex);
       else {
 #ifndef TWOD
@@ -218,8 +219,7 @@ void draw_bonds() {
       zzj*=.2; /* looks better */
 #endif
       if (i==j) continue;
-      if (stat_bond == 1) {
-	qp=1;
+      if (bond_mode == 1) {
 	if (qp) {
 #ifdef TWOD
 	  if (sorte[i]!=sorte[j]) continue;
@@ -257,11 +257,14 @@ void draw_bonds() {
 	    }
 	}
       }
-      else { /* stat_bond==0 */
-	maxbl=4.2;
-	minbl=3.8;
+      if (bond_mode==2) {
 	if (qp) {
+#ifndef TWOD
 	  if (sorte[i]!=0) continue;
+	  if (sorte[j]!=0) continue;
+#else
+	  if (sorte[i]==sorte[j]) continue;
+#endif
 	  dx=x[i]-x[j];
 	  dy=y[i]-y[j];
 #ifndef TWOD
@@ -270,8 +273,8 @@ void draw_bonds() {
 #else
 	  dr=dx*dx+dy*dy;
 #endif
-	  if (ABS(dr)<minbl) continue;
-	  if (ABS(dr)>maxbl) continue;
+	  if (ABS(dr)<.9) continue;
+	  if (ABS(dr)>1.1) continue;
 #ifndef TWOD
 	  move(xx,yy,zz);
 	  draw(xxj,yyj,zzj);

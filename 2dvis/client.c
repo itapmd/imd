@@ -96,8 +96,6 @@ int receive_conf()
 #endif
   ReadFull(socket_id,(void *) &pot[0], size);
 
-
-
   for (i=0;i<anz;i++) {
     if (endian_byte_swap) {
       iendian(&nummer[i]);
@@ -148,7 +146,7 @@ int receive_conf()
 
   return anz;
 }
-/*-----------------------------------------------------------------*/
+
 /*-----------------------------------------------------------------*/
 int receive_dist()
 {
@@ -221,16 +219,40 @@ int receive_dist()
 
   return x_res*y_res;
 }
+
 /*-----------------------------------------------------------------*/
-int initServer(){
+int initServer(int base_port){
 /******************************************************************/
 /* initializes server part for a socket-socket connection         */
 /******************************************************************/
+#ifdef DEBUG
   printf("Start to establish connection ...\n");
+#endif
   socket_id=OpenServerSocket(htons(base_port));
   if (socket_id < 1) return -1;
   return socket_id;
 }
+
+/*****************************************************************************
+*
+* init_client, if the visualization acts as a client
+*
+*****************************************************************************/
+
+void init_client() {
+
+  fprintf(stderr, "baseport is %d\n", base_port_int);
+  base_port_int = htons(base_port_int); /* we need it in network byte order */
+  varIP = GetIP(sim_host);
+  if (varIP==0) {
+    error("gethostbyname() failed, check sim_host or specify IP number\n");
+  } 
+  else {
+    printf("display_host is %s\n", sim_host);
+  }
+}
+
+
 /*-----------------------------------------------------------------*/
 
 int connect_client(char token)
@@ -243,21 +265,22 @@ int connect_client(char token)
   natoms=0;
   size=0;
   /* establish client-server connection */
-  if (initServer()==-1) {
+  if (initServer(base_port)==-1) {
     printf("Client-Server connection not established",
-	   "check port adress","");
+	   "check port adress %d\n",base_port);
   }
-  else {  
+  else {
+#ifdef DEBUG
     printf("using filedescriptor #%d as socket\n",socket_id);
+#endif
     WriteFull(socket_id,(void *) &token, 1);
+    WriteFull(socket_id,(void *) &temperature, 4);
     switch (token) {
       case T_CONF:
 	natoms=receive_conf();
-	printf("Got configuration with %d atoms.\n",natoms);
 	break;
       case T_DISTRIBUTION:
 	size=receive_dist();
-	printf("Got distribution of size %d.\n",size);
         break;
       case T_PICTURE:
         break;
