@@ -181,6 +181,9 @@ void main_loop(void)
 #ifdef SNAPSHOT
 	  write_eng_file(steps);
 	  write_ssconfig(steps);
+#ifdef WRITEF
+	  write_config_select(sscount, "wf",write_atoms_wf, write_header_wf);
+#endif
 	  sscount++;
 #endif
 	  deform_sample();

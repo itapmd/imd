@@ -42,6 +42,7 @@
 #   t3e			 	Cray Unicos/mk	serial mpi pacx
 #   SR8000               	HI-UX/MPP       mpi omp ompi
 #   SR2201, HITACHI	 	HI-UX/MPP	mpi
+#   rs6000			AIX             serial mpi
 #
 # <ensemble> is one or several of nve, mik, nvt, npt_iso, npt_axial, 
 # frac, nvx, ftg, stm
@@ -690,6 +691,10 @@ endif
 
 ifneq (,$(findstring efilter,${MAKETARGET}))
 CFLAGS += -DEFILTER
+endif
+
+ifneq (,$(findstring writef,${MAKETARGET}))
+CFLAGS += -DWRITEF
 endif
 
 ifneq (,$(findstring deform,${MAKETARGET}))

@@ -314,7 +314,7 @@ void write_header_wf(FILE *out)
 *
 ******************************************************************************/
 
-void write_atoms_ef(FILE *out)
+void write_atoms_wf(FILE *out)
 {
   int i, k, len=0;
   cell *p;
@@ -323,19 +323,12 @@ void write_atoms_ef(FILE *out)
   for (k=0; k<ncells; k++) {
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; i++) {
-      if ( pic_ur.x != (real)0 ) /* if pic_ur.x still 0, write everything */
-        if ((p->ort X(i) < pic_ll.x) || (p->ort X(i) > pic_ur.x) ||
-#ifndef TWOD
-            (p->ort Z(i) < pic_ll.z) || (p->ort Z(i) > pic_ur.z) || 
-#endif
-            (p->ort Y(i) < pic_ll.y) || (p->ort Y(i) > pic_ur.y)) continue;
-
-      if ( (POTENG(p,i)>=lower_e_pot) && (POTENG(p,i)<=upper_e_pot) ) {
+      if(SORTE(p,i) != VSORTE(p,i)){
         len += sprintf( outbuf+len,
 #ifdef TWOD
-          "%d %d %12f %12f %12f %12f %12f %12f\n",
+          "%d %d %12f %12f %12f %12g %12g %12f\n",
 #else
-          "%d %d %12f %12f %12f %12f %12f %12f %12f %12f\n",
+          "%d %d %12f %12f %12f %12f %12g %12g %12g %12f\n",
 #endif
           NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
           p->ort X(i),
@@ -343,18 +336,19 @@ void write_atoms_ef(FILE *out)
 #ifndef TWOD
           p->ort Z(i),
 #endif
-          p->impuls X(i) / MASSE(p,i),
-          p->impuls Y(i) / MASSE(p,i),
+          p->kraft X(i),
+          p->kraft Y(i),
 #ifndef TWOD
-          p->impuls Z(i) / MASSE(p,i),
+          p->kraft Z(i),
 #endif
           POTENG(p,i)
         );
         /* flush or send outbuf if it is full */
         if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
       }
+      }
     }
-  }
+
   flush_outbuf(out,&len,OUTBUF_TAG+1);
 }
 #endif /* WRITEF */
