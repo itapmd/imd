@@ -2272,6 +2272,7 @@ void broadcast_params() {
 
   MPI_Bcast( &timestep    ,   1, REAL,     0, MPI_COMM_WORLD); 
   MPI_Bcast( &temperature ,   1, REAL,     0, MPI_COMM_WORLD); 
+  MPI_Bcast( &use_current_temp, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &cpu_dim     , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
 
   MPI_Bcast( &parallel_output, 1, MPI_INT, 0, MPI_COMM_WORLD); 
