@@ -149,11 +149,11 @@ CFLAGS_pgcc_SERIAL_i586_DEBUG  	= -g -Xa
 CFLAGS_pgcc_SERIAL_i586_PROF   	= -Mprof=func
 
 # icc, serial
-CFLAGS_icc_SERIAL_i586        	= -O -ipo -axK
+CFLAGS_icc_SERIAL_i586        	= -O -ip -axK -rcd
 CFLAGS_icc_SERIAL_i586_PROF	= -prof_gen
 
 # icc, OpenMP
-CFLAGS_icc_OMP_i586        	= -O -ipo -axK -openmp
+CFLAGS_icc_OMP_i586        	= -O -ip -axK -rcd -openmp
 CFLAGS_icc_OMP_i586_PROF	= -prof_gen
 
 # kcc, serial
@@ -162,7 +162,7 @@ CFLAGS_KCC_SERIAL_i586       	= +K3 -O3 --diag_suppress 177,550
 # MPICH
 # there are many mpicc; if available, we take the Intel compiler
 ifneq (,$(strip $(findstring ia32,${PATH})))
-CFLAGS_mpicc_MPI_i586		= -O -ipo -axK
+CFLAGS_mpicc_MPI_i586		= -O -ip -axK -rcd
 CFLAGS_mpicc_MPI_i586_DEBUG	= -g
 CFLAGS_mpicc_MPI_i586_PROF	= -prof_gen
 else
@@ -174,7 +174,7 @@ endif
 # MPICH + OpenMP
 # there are many mpicc; if available, we take the Intel compiler
 ifneq (,$(strip $(findstring ia32,${PATH})))
-CFLAGS_mpicc_OMPI_i586		= -O -ipo -axK -openmp
+CFLAGS_mpicc_OMPI_i586		= -O -ip -axK -rcd -openmp
 CFLAGS_mpicc_OMPI_i586_DEBUG	= -g
 CFLAGS_mpicc_OMPI_i586_PROF	= -prof_gen
 else
