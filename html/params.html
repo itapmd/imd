@@ -27,6 +27,8 @@ startstep       # starting step number (default 0)
 timestep	# size of timestep (in MD units)
 ntypes		# number of atom types (types vary in [0..ntypes-1])
 seed            # seed for random number generator in maxwell
+initsize        # initially allocated cells get space for initsize particles
+incrsize        # memory in cells is incremented by incrsize particles
 
 # control parameters for parallel simulation
 cpu_dim		# CPU array dimension - required if parallel
@@ -184,8 +186,7 @@ baseport        # number of socket baseport - default is 31913
 r_cut           # potential cutoff radius 
 cell_size       # size of link cells 
                 # (In ordinary IMD cell_size = r_cut + epsilon)
-initsize        # Size of memory chunk to be allocated for particle cells
-                # (Set by CSTEP in ordinary IMD)
+initsize        # cells have space for initsize particles (needed for MONOLJ)
 
 # parameters for <a href=eam.html>EAM</a> 
 # (embedded atom method; Finnis/Sinclair)
@@ -197,7 +198,7 @@ eam_len         # maximum number of neighbors (for memory allocs)
 # parameters for <a href=ttbp.html>TTBP</a> (2 and 3 body potential)
 ttbp_len        # maxmimum number of neighbors (for memory allocs)
 ttbp_constant   # force constants (for all i=0 ... ntypes)
-ttbp_theta      # equilibrium angle (for all i=0 .. ntypes)
+ttbp_sp         # hybridization type (for all i=0 ... ntypes)
 ttbp_potfile    # potential file for smoothing function
 
 </PRE>
