@@ -42,6 +42,10 @@ void make_box( void )
 {
   /* volume */
   volume = box_x.x * box_y.y - box_x.y * box_y.x;
+  if (0 > volume) {
+    volume = -volume;
+    warning("System of box vectors is left-handed!");
+  }
   if (volume_init==0) {
     volume_init = volume;
   } else {

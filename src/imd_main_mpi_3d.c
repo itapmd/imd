@@ -144,9 +144,11 @@ void calc_forces(int steps)
   }
 
   /* second force loop for covalent systems */
+/* does not work correctly - different threads may write to same variables 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(runtime) reduction(+:tot_pot_energy,virial,vir_xx,vir_yy,vir_zz,vir_yz,vir_zx,vir_xy)
 #endif
+*/
   for (k=0; k<ncells; ++k) {
     do_forces2(cell_array + CELLS(k),
                &tot_pot_energy, &virial, &vir_xx, &vir_yy, &vir_zz,
@@ -161,9 +163,11 @@ void calc_forces(int steps)
 
   /* compute forces for remaining pairs of cells */
   for (n=0; n<nlists; ++n) {
+/* does not work correctly - different threads may write to same variables 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(runtime)
 #endif
+*/
     for (k=npairs[n]; k<npairs2[n]; ++k) {
       vektor pbc;
       pair *P;
@@ -310,17 +314,13 @@ void fix_cells(void)
                q = PTR_VV(cell_array,lcoord,cell_dim);
                move_atom(q, p, l);
 #ifdef CLONE
-	      if(l<p->n-nclones-1){
-	      for(clones=1;clones<=nclones;clones++)
-		  {
-		  move_atom(q,p,l+clones); 
-		  }
-	      }
-	      else /* we are dealing with the last in the stack */
-		  for(clones=1;clones<=nclones;clones++)
-		  {
-		  move_atom(q,p,l); 
-		  }
+               if (l<p->n-nclones-1) {
+	         for (clones=1;clones<=nclones;clones++) 
+                   move_atom(q,p,l+clones); 
+	       }
+	       else /* we are dealing with the last in the stack */
+		 for (clones=1;clones<=nclones;clones++)
+		   move_atom(q,p,l); 
 #endif
             }
 
@@ -332,17 +332,12 @@ void fix_cells(void)
 		{
                 copy_one_atom( &send_buf_west, p, l, 1);
 #ifdef CLONE
-		if(l<p->n-nclones-1){
-		    for(clones=1;clones<=nclones;clones++)
-			{
-			    copy_one_atom( &send_buf_west, p, l+clones, 1);
-			}
-		}
+		if (l<p->n-nclones-1)
+                  for (clones=1;clones<=nclones;clones++)
+                    copy_one_atom( &send_buf_west, p, l+clones, 1);
 		else /* we are dealing with the last in the stack */
-		    for(clones=1;clones<=nclones;clones++)
-			{
-			    copy_one_atom( &send_buf_west, p, l, 1);
-			}
+                  for (clones=1;clones<=nclones;clones++)
+                    copy_one_atom( &send_buf_west, p, l, 1);
 #endif
 		}
             
@@ -351,22 +346,17 @@ void fix_cells(void)
                 ((to_cpu==nbeast) || (to_cpu==nbse)  || (to_cpu==nben) ||
                  (to_cpu==nbue  ) || (to_cpu==nbuse) || (to_cpu==nbuen)||
                  (to_cpu==nbde  ) || (to_cpu==nbdes) || (to_cpu==nbdne)))
-		{
+                 {
                  copy_one_atom( &send_buf_east, p, l, 1);
 #ifdef CLONE
-		if(l<p->n-nclones-1){
-		    for(clones=1;clones<=nclones;clones++)
-			{
-			    copy_one_atom( &send_buf_east, p, l+clones, 1);
-			}
-		}
+                 if (l<p->n-nclones-1)
+		   for (clones=1;clones<=nclones;clones++)
+                     copy_one_atom( &send_buf_east, p, l+clones, 1);
 		else /* we are dealing with the last in the stack */
-		    for(clones=1;clones<=nclones;clones++)
-			{
-			    copy_one_atom( &send_buf_east, p, l, 1);
-			}
+		  for (clones=1;clones<=nclones;clones++)
+                    copy_one_atom( &send_buf_east, p, l, 1);
 #endif
-		}
+		 }
                    
             /* south  */
             else if ((cpu_dim.y>1) &&
@@ -374,17 +364,12 @@ void fix_cells(void)
 		{
                 copy_one_atom( &send_buf_south, p, l, 1);
 #ifdef CLONE
-		if(l<p->n-nclones-1){
-		    for(clones=1;clones<=nclones;clones++)
-			{
-			    copy_one_atom( &send_buf_south, p, l+clones, 1);
-			}
-		}
+		if (l<p->n-nclones-1)
+                  for (clones=1;clones<=nclones;clones++)
+                    copy_one_atom( &send_buf_south, p, l+clones, 1);
 		else /* we are dealing with the last in the stack */
-		    for(clones=1;clones<=nclones;clones++)
-			{
-			    copy_one_atom( &send_buf_south, p, l, 1);
-			}
+                  for (clones=1;clones<=nclones;clones++)
+                    copy_one_atom( &send_buf_south, p, l, 1);
 #endif
 		}
                    
@@ -392,38 +377,28 @@ void fix_cells(void)
             else if ((cpu_dim.y>1) &&
                 ((to_cpu==nbnorth) || (to_cpu==nbun)  || (to_cpu==nbdn)))
 		{                
-		    copy_one_atom( &send_buf_north, p, l, 1);
+                copy_one_atom( &send_buf_north, p, l, 1);
 #ifdef CLONE
-		if(l<p->n-nclones-1){
-		    for(clones=1;clones<=nclones;clones++)
-			{
-			    copy_one_atom( &send_buf_north, p, l+clones, 1);
-			}
-		}
+                if (l<p->n-nclones-1)
+                  for (clones=1;clones<=nclones;clones++)
+                    copy_one_atom( &send_buf_north, p, l+clones, 1);
 		else /* we are dealing with the last in the stack */
-		    for(clones=1;clones<=nclones;clones++)
-			{
-			    copy_one_atom( &send_buf_north, p, l, 1);
-			}
+                  for (clones=1;clones<=nclones;clones++)
+                    copy_one_atom( &send_buf_north, p, l, 1);
 #endif
-		}
+                }
             
             /* down  */
             else if ((cpu_dim.z>1) && (to_cpu==nbdown))
 		{
                 copy_one_atom( &send_buf_down, p, l, 1);
 #ifdef CLONE
-		if(l<p->n-nclones-1){
-		    for(clones=1;clones<=nclones;clones++)
-			{
-			    copy_one_atom( &send_buf_down, p, l+clones, 1);
-			}
-		}
+                if (l<p->n-nclones-1)
+                  for (clones=1;clones<=nclones;clones++)
+                    copy_one_atom( &send_buf_down, p, l+clones, 1);
 		else /* we are dealing with the last in the stack */
-		    for(clones=1;clones<=nclones;clones++)
-			{
-			    copy_one_atom( &send_buf_down, p, l, 1);
-			}
+                  for (clones=1;clones<=nclones;clones++)
+                    copy_one_atom( &send_buf_down, p, l, 1);
 #endif
 		}
             
@@ -432,17 +407,12 @@ void fix_cells(void)
 		{
                 copy_one_atom( &send_buf_up, p, l, 1);
 #ifdef CLONE
-		if(l<p->n-nclones-1){
-		    for(clones=1;clones<=nclones;clones++)
-			{
-			    copy_one_atom( &send_buf_up, p, l+clones, 1);
-			}
-		}
+		if (l<p->n-nclones-1)
+                  for (clones=1;clones<=nclones;clones++)
+                    copy_one_atom( &send_buf_up, p, l+clones, 1);
 		else /* we are dealing with the last in the stack */
-		    for(clones=1;clones<=nclones;clones++)
-			{
-			    copy_one_atom( &send_buf_up, p, l, 1);
-			}
+                  for (clones=1;clones<=nclones;clones++)
+                    copy_one_atom( &send_buf_up, p, l, 1);
 #endif
 		}
             

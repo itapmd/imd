@@ -123,9 +123,11 @@ void calc_forces(int steps)
 #endif
 
 #ifdef COVALENT
+/* does not work correctly - different threads may write to same variables 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(runtime) reduction(+:tot_pot_energy,virial,vir_xx,vir_yy,vir_zz,vir_yz,vir_zx,vir_xy)
 #endif
+*/
   for (k=0; k<ncells; ++k) {
     do_forces2(cell_array+k, &tot_pot_energy, &virial, 
                &vir_xx, &vir_yy, &vir_zz, &vir_yz, &vir_zx, &vir_xy);
@@ -150,13 +152,9 @@ void calc_forces(int steps)
 
 void fix_cells(void)
 {
-  int i,j,k,l;
+  int i,j,k,l,clones;
   cell *p, *q;
   ivektor coord, lcoord;
- 
-#ifdef CLONE
-  int clones;
-#endif
 
   /* for each cell in bulk */
   for (i=cellmin.x; i < cellmax.x; ++i)
@@ -171,32 +169,18 @@ void fix_cells(void)
           coord = cell_coord( ORT(p,l,X), ORT(p,l,Y), ORT(p,l,Z) );
           q = PTR_3D_VV(cell_array,coord,cell_dim);
           /* if it's in the wrong cell, move it to the right cell */
-          if (p != q) 
-	      {
-	      move_atom(q,p,l); 
+          if (p != q) {
+	    move_atom(q,p,l); 
 #ifdef CLONE
-	      if(l<p->n-nclones-1){
-	      for(clones=1;clones<=nclones;clones++)
-		  {
-		  move_atom(q,p,l+clones); 
-		  }
-	      }
-	      else /* we are dealing with the last in the stack */
-		  for(clones=1;clones<=nclones;clones++)
-		  {
-		  move_atom(q,p,l); 
-		  }
+            if (l<p->n-nclones-1)
+	      for (clones=1; clones<=nclones; clones++)
+                move_atom(q,p,l+clones); 
+	    else /* we are dealing with the last in the stack */
+              for (clones=1; clones<=nclones; clones++)
+                move_atom(q,p,l); 
 #endif
-	      }
-          else        ++l;
+	  }
+          else ++l;
 	}
       }
 }
-
-
-
-
-
-
-
-

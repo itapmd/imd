@@ -58,6 +58,10 @@ void make_box( void )
 
   /* volume */
   volume = SPROD( box_x, tbox_x );
+  if (0 > volume) {
+    volume = -volume;
+    warning("System of box vectors is left-handed!");
+  }
   if (volume_init==0) {
     volume_init = volume;
   } else {
