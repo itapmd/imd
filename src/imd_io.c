@@ -434,6 +434,111 @@ void write_atoms_avp(FILE *out)
 
 #endif
 
+/******************************************************************************
+*
+*  write header of properties file  - keep in sync with write_properties
+*
+******************************************************************************/
+
+void write_eng_file_header()
+{
+  str255 fname;
+  FILE *fl;
+
+  if (myid == 0) {
+
+    sprintf(fname,"%s.eng",outfilename);
+    fl = fopen(fname,"w");
+    if (NULL == fl) error("Cannot open properties file.");
+
+    fprintf(fl, "# time Epot ");
+    fprintf(fl, "temperature ");
+#ifdef FNORM
+    fprintf(fl, "fnorm ");
+#endif
+#ifdef GLOK
+    fprintf(fl, "PxF ");
+#endif
+    fprintf(fl, "pressure ");
+    fprintf(fl, "volume ");
+#if defined(NVT) || defined(NPT)
+    fprintf(fl, "eta ");
+#endif
+#ifdef NPT_axial
+#ifdef TWOD
+    fprintf(fl, "stress_x stress_y ");
+    fprintf(fl, "box_x.x box_y.y ");
+#else
+    fprintf(fl, "stress_x stress_y stress_z ");
+    fprintf(fl, "box_x.x box_y.y box_z.z ");
+#endif
+#endif
+    putc('\n',fl);
+
+    fclose(fl);
+  }
+}
+
+/******************************************************************************
+*
+*  write selected properties to *.eng file
+*  keep in sync with write_eng_file_header
+*
+******************************************************************************/
+
+void write_properties(int steps)
+{
+  FILE *out;
+  str255 fname;
+#ifdef HPO
+  char *format=" %.16e";
+#else
+  char *format=" %e";
+#endif
+  real Epot, Temp, vol;
+
+  Epot =       tot_pot_energy / natoms;
+#ifdef UNIAX
+  Temp = 2.0 * tot_kin_energy / (nactive + nactive_rot);
+#else
+  Temp = 2.0 * tot_kin_energy / nactive;
+#endif
+  vol  = volume / natoms;
+
+  sprintf(fname,"%s.eng",outfilename);
+  out = fopen(fname,"a");
+  if (NULL == out) error("Cannot open properties file.");
+
+  fprintf(out, "%e",     (double) (steps * timestep));
+  fprintf(out, "%.16e ", (double) Epot);
+ 
+  fprintf(out, format,   (double) Temp);
+#ifdef FNORM
+  fprintf(out, format,   (double) fnorm);
+#endif
+#ifdef GLOK
+  fprintf(out, format,   (double) PxF);
+#endif
+  fprintf(out," %e",     (double) pressure);
+  fprintf(out," %e",     (double) vol);
+#if defined(NVT) || defined(NPT)
+  fprintf(out," %e",     (double) eta );
+#endif
+  if (ensemble==ENS_NPT_AXIAL) {
+#ifdef TWOD
+    fprintf(out," %e %e", (double) stress_x, (double) stress_y );
+    fprintf(out," %e %e", (double)  box_x.x, (double)  box_y.y );
+#else
+    fprintf(out," %e %e %e", 
+                  (double) stress_x, (double) stress_y, (double) stress_z );
+    fprintf(out," %e %e %e", 
+                  (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
+#endif
+  }
+  putc('\n',out);
+  fclose(out);
+}
+
 #ifdef MSQD
 
 /******************************************************************************

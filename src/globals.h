@@ -142,15 +142,6 @@ EXTERN vektor3d view_pos INIT(nullvektor);  /* view position */
 EXTERN int      projection INIT(0);         /* projection type 0/1 */
 #endif
 
-/* Monte Carlo stuff */
-#ifdef MC
-EXTERN real mc_beta   INIT(0.0);
-EXTERN real mc_len    INIT(1.0);
-EXTERN real mc_accept INIT(0.0);
-EXTERN long mc_seed   INIT(0);
-EXTERN int  mc_count  INIT(0);
-#endif
-
 /* MD Stuff */
 EXTERN real timestep INIT(0.0);
 EXTERN real tot_pot_energy INIT(0.0);

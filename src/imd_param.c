@@ -241,10 +241,6 @@ void getparamfile(char *paramfname, int sim)
   str255 tmpstr;
   int tmp;
   real rtmp;
-#ifdef MC
-  int mc_seed_int;
-#endif
-
 
 #ifdef TWOD
   vektor3d tempforce;
@@ -351,10 +347,6 @@ void getparamfile(char *paramfname, int sim)
       }
       else if (strcasecmp(tmpstr,"and")==0) {
         error("please use nve ensemble with option and");
-      }
-      else if (strcasecmp(tmpstr,"mc")==0) {
-        ensemble = ENS_MC;
-        move_atoms = move_atoms_mc;
       }
       else if (strcasecmp(tmpstr,"frac")==0) {
         ensemble = ENS_FRAC;
@@ -666,21 +658,6 @@ void getparamfile(char *paramfname, int sim)
       getparam("inv_tau_eta_rot",&inv_tau_eta_rot,PARAM_REAL,1,1);
     }
 #endif
-#endif
-#ifdef MC
-    else if (strcasecmp(token,"mc_beta")==0) {
-      /* Monte Carlo inverse temperature */
-      getparam("mc_beta",&mc_beta,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"mc_len")==0) {
-      /* Monte Carlo mean jump length */
-      getparam("mc_len",&mc_len,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"mc_seed")==0) {
-      /* seed of Monte Carlo random number generator */
-      getparam("mc_seed",&mc_seed_int,PARAM_INT,1,1);
-      mc_seed = (long)mc_seed_int;
-    }
 #endif
 #ifdef FRAC
     else if (strcasecmp(token,"dampstadium")==0) { /* Damping stadium */
@@ -1465,12 +1442,6 @@ void broadcast_params() {
   MPI_Bcast( &cell_size_tolerance, 1, REAL, 0, MPI_COMM_WORLD); 
 #endif
 
-#ifdef MC
-  MPI_Bcast( &mc_beta     , 1, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &mc_len      , 1, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &mc_seed     , 1, MPI_LONG, 0, MPI_COMM_WORLD); 
-#endif
-
 #if defined(CORRELATE)
   MPI_Bcast( &correl_omode, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &correl_int,   1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -1619,7 +1590,6 @@ void broadcast_params() {
     case ENS_NVT:       move_atoms = move_atoms_nvt;       break;
     case ENS_NPT_ISO:   move_atoms = move_atoms_npt_iso;   break;
     case ENS_NPT_AXIAL: move_atoms = move_atoms_npt_axial; break;
-    case ENS_MC:        move_atoms = move_atoms_mc;        break;
     case ENS_FRAC:      move_atoms = move_atoms_frac;      break;
     case ENS_NVX:       move_atoms = move_atoms_nvx;       break;
     case ENS_STM:       move_atoms = move_atoms_stm;       break;  

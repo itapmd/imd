@@ -31,7 +31,7 @@
 #   SR8000                      HI-UX/MPP               mpi omp ompi
 #   SR2201, HITACHI		HI-UX/MPP		mpi
 #
-# <ensemble> is one of nve, mik, nvt, npt_iso, npt_axial, mc, frac, nvx, stm
+# <ensemble> is one of nve, mik, nvt, npt_iso, npt_axial, frac, nvx, stm
 #
 # <option> is one or several of 2d, debug, prof, mono, binary, ....
 #
@@ -92,8 +92,6 @@ EAMSOURCES    = imd_forces_eam.c
 EAM2SOURCES   = imd_forces_eam2.c
 
 COVALENTSOURCES = imd_forces_covalent.c
-
-MCSOURCES     = imd_mc.c
 
 CORRSOURCES   = imd_correl.c
 
@@ -470,11 +468,6 @@ endif
 
 ifneq (,$(findstring npt_axial,${MAKETARGET}))
 CFLAGS += -DNPT -DNPT_axial
-endif
-
-ifneq (,$(strip $(findstring mc,${MAKETARGET})))
-CFLAGS  += -DMC
-SOURCES += ${MCSOURCES}
 endif
 
 ifneq (,$(findstring frac,${MAKETARGET}))

@@ -313,12 +313,3 @@ void rnemd_heat_exchange();
 #ifdef USE_SOCKETS
 void check_socket(int steps);
 #endif
-
-/* support for Monte Carlo integrator - file imd_mc.c */
-#ifdef MC
-real mc_epot_diff( vektor old_pos, vektor new_pos, 
-                   int p_num, int p_typ, ivektor cellc );
-real mc_epot_atom( vektor pos, int p_num, int p_typ, ivektor cellc );
-real mc_epot_part( void );
-void one_mc_step();
-#endif

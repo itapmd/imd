@@ -199,14 +199,12 @@ void main_loop(void)
 #endif
 #endif
 
-#ifndef MC
 #ifdef TIMING
     imd_start_timer(&time_force_calc);
 #endif
     calc_forces();
 #ifdef TIMING
     imd_stop_timer(&time_force_calc);
-#endif
 #endif
 
 #ifdef DISLOC

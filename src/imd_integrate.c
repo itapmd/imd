@@ -979,30 +979,6 @@ void move_atoms_npt_axial(void)
 
 /*****************************************************************************
 *
-*  Monte Carlo "integrator" 
-*
-*****************************************************************************/
-
-#ifdef MC
-
-void move_atoms_mc(void)
-{
-   one_mc_step();
-}
-
-#else
-
-void move_atoms_mc(void)
-{
-  if (myid==0)
-  error("the chosen ensemble MC is not supported by this binary");
-}
-
-#endif
-
-
-/*****************************************************************************
-*
 *  NVE Integrator with stadium damping and fixed borders 
 *  for fracture studies
 *
