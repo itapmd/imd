@@ -302,6 +302,33 @@ tensor is written. Further, the histogram is written as a function
 of the x-coordinate only, and averaged over the y- and z-coordinate 
 (in 3d). For that purpose, the second and third component of
 <tt>press_dim</TT> have to be set to 1. 
+<A NAME="FBC">
+<P><LI><B>FBC</B><P>
+</A>
+Force Boundary Conditions. If set, one can define extra forces that
+are added on special atoms. To destinguish these atoms the concept of
+'virtual' atomtypes is introduced. A virtual atom of type v has the
+same physical properties as an atom of (real) type v modulo ntypes.
+total_types is the number of real atomtypes + virtual atom types.<p>
+For each virtual atomtype one can declare in the parameter file the
+starting and the end value of an extra force vector. The values between
+extra_startforce and extra_endforce are linearly interpolated (like
+the temperature). For mik simulations one specifies no extra_endforce,
+but an force increment extra_dforce that is added, when the kinetic
+energy per atom drops under fbc_ekin_threshold or after fbc_waitsteps
+(there is also a parameter fbc_annealsteps (like in deform)).<p> 
+This option should work with risc and mpi versions and at least with
+the NVE, NVT, AND and MIK integrators, 
+and also with the 2d and eam2 options.<p>
+There is also the posibility to restrict the movement of atomtypes to
+certain directions. Therefore one defines a restrictionvector for each
+type, with elements equal to zero in the forbidden directions. 
+This is still a little bit experimantal - it requires a responsible
+user: the begining velocities should be 0 and the temperature should
+be corrected for non existing degrees of freedom. One should also keep
+in mind, that restricting the motion of some atoms corresponds to a
+force which might affect the total impuls.
+
 
 <A NAME="quasi">
 <P><LI><B>quasi</B><P>
@@ -336,37 +363,10 @@ Compile with debug flags.
 </A>
 Compile with profiling support.
 
-<UL>
-<A NAME="FBC">
-<P><LI><B>FBC</B><P>
-</A>
-Force Boundary Conditions. If set, one can define extra forces that
-are added on special atoms. To destinguish these atoms the concept of
-'virtual' atomtypes is introduced. A virtual atom of type v has the
-same physical properties as an atom of (real) type v modulo ntypes.
-total_types is the number of real atomtypes + virtual atom types.<p>
-For each virtual atomtype one can declare in the parameter file the
-starting and the end value of an extra force vector. The values between
-extra_startforce and extra_endforce are linearly interpolated (like
-the temperature). For mik simulations one specifies no extra_endforce,
-but an force increment extra_dforce that is added, when the kinetic
-energy per atom drops under fbc_ekin_threshold or after fbc_waitsteps
-(there is also a parameter fbc_annealsteps (like in deform)).<p> 
-This option should work with risc and mpi versions and at least with
-the NVE, NVT, AND and MIK integrators, 
-and also with the 2d and eam2 options.<p>
-There is also the posibility to restrict the movement of atomtypes to
-certain directions. Therefore one defines a restrictionvector for each
-type, with elements equal to zero in the forbidden directions. 
-This is still a little bit experimantal - it requires a responsible
-user: the begining velocities should be 0, the temperature should
-be corrected for non existing degrees of freedom. One should also keep
-in mind, that restricting the motion of some atoms corresponds to a
-force which might affect the total impuls.
 </UL>
 <H2>Possible Preprocessor Flags</H2>
 
-
+<UL>
 <A NAME="EPOT_DIFF">
 <P><LI><B>EPOT_DIFF</B><P>
 </A>
