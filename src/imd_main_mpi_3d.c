@@ -60,12 +60,18 @@ void calc_forces(void)
 #endif
 
 #ifdef EAM
-  memset(eam_rho,   0, natoms*        sizeof(real));
-  memset(eam_ij,    0, natoms*eam_len*sizeof(integer));
-  memset(eam_dij_x, 0, natoms*eam_len*sizeof(real));
-  memset(eam_dij_y, 0, natoms*eam_len*sizeof(real));
-  memset(eam_dij_z, 0, natoms*eam_len*sizeof(real));
+  memset(eam_rho,   0, (natoms+1)*        sizeof(real));
+  memset(eam_ij,    0, (natoms+1)*eam_len*sizeof(real));
+  memset(eam_dij_x, 0, (natoms+1)*eam_len*sizeof(real));
+  memset(eam_dij_y, 0, (natoms+1)*eam_len*sizeof(real));
+  memset(eam_dij_z, 0, (natoms+1)*eam_len*sizeof(real));
 #endif /* EAM */
+
+#ifdef TTBP
+  memset(ttbp_ij,   0,(natoms+1)*ttbp_len*2*sizeof(real));
+  memset(ttbp_j,    0,(natoms+1)*ttbp_len*3*sizeof(real));
+  memset(ttbp_force,0,(natoms+1)*         3*sizeof(real));
+#endif /* TTBP */
 
   /* Zero Forces */
   for (p = cell_array; 
@@ -75,7 +81,6 @@ void calc_forces(void)
 		     cell_dim.z-1,
 		     cell_dim);
        ++p ) {
-
     
     for (i = 0;i < p->n; ++i) {
       p->kraft X(i) = 0.0;
@@ -134,14 +139,17 @@ void calc_forces(void)
 #endif
 #ifdef EAM
 	      do_forces_eam_1(p,q,pbc);		/* first EAM call */
+#elif TTBP
+	      do_forces_ttbp_1(p,q,pbc);        /* first TTBP call */
 #else
 	      do_forces(p,q,pbc);
-#endif /* EAM */
+#endif /* EAM TTBP classical */
 
 	    };
 
-#ifdef EAM
-  /* EAM cohesive function potential: for each cell */
+#if defined(EAM) || defined(TTBP)
+  /* EAM:  cohesive function potential: for each cell */
+  /* TTBP: three body potential */
   for (i=0; i < cell_dim.x; ++i)
     for (j=0; j < cell_dim.y; ++j)
       for (k=0; k < cell_dim.z; ++k) {
@@ -159,15 +167,35 @@ void calc_forces(void)
 #ifdef NOPBC
               if ((0 == pbc.x) && (0 == pbc.y) && (0 == pbc.z))
 #endif
+#ifdef EAM
               do_forces_eam_2(p,q,pbc);		/* second EAM call */
+#elif TTBP
+              do_forces_ttbp_2(p,q,pbc);    /* second TTBP call */
+#else
+			error("Force routine not defined.");
+#endif
       };
-#endif /* EAM  */
+#endif /* EAM || TTBP */
 
   mpi_addtime(&time_calc_local);
   
 #ifndef AR  
   /* Calculate forces on boundary half of cell */
   
+#ifdef EAM
+  memset(eam_rho,   0, (natoms+1)*        sizeof(real));
+  memset(eam_ij,    0, (natoms+1)*eam_len*sizeof(real));
+  memset(eam_dij_x, 0, (natoms+1)*eam_len*sizeof(real));
+  memset(eam_dij_y, 0, (natoms+1)*eam_len*sizeof(real));
+  memset(eam_dij_z, 0, (natoms+1)*eam_len*sizeof(real));
+#endif /* EAM */
+
+#ifdef TTBP
+  memset(ttbp_ij,   0,(natoms+1)*ttbp_len*2*sizeof(real));
+  memset(ttbp_j,    0,(natoms+1)*ttbp_len*3*sizeof(real));
+  memset(ttbp_force,0,(natoms+1)*3*sizeof(real));
+#endif /* TTBP */
+
   /* potential energy and virial are already complete; to avoid double
      counting, we keep a copy of the current value, which we use later */
 
@@ -213,12 +241,44 @@ void calc_forces(void)
               if ((0 == pbc.x) && (0 == pbc.y) && (0 == pbc.z))
 #endif
 #ifdef EAM
-		do_forces_eam_1(p,q,pbc);	/* third EAM call; not AR */
+        do_forces_eam_1(p,q,pbc);
+#elif TTBP
+        do_forces_ttbp_1(p,q,pbc);
 #else
 		do_forces(p,q,pbc);
-#endif /* EAM */
+#endif
 	      };
 	    };
+
+#if defined(EAM) || defined(TTBP)
+  /* EAM:  cohesive function potential: for each cell */
+  /* TTBP: three body potential */
+  for (i=0; i < cell_dim.x; ++i)
+    for (j=0; j < cell_dim.y; ++j)
+      for (k=0; k < cell_dim.z; ++k) {
+              /* Given cell */
+              p = PTR_3D_V(cell_array,i,j,k,cell_dim);
+              pbc.x = 0;
+              pbc.y = 0;
+              pbc.z = 0;
+              /* Neighbour (dummy; p==q) */
+              q = p;
+              /* Do the work */
+#ifdef SHOCK
+              if (0 == pbc.x)
+#endif
+#ifdef NOPBC
+              if ((0 == pbc.x) && (0 == pbc.y) && (0 == pbc.z))
+#endif
+#ifdef EAM
+              do_forces_eam_2(p,q,pbc);		/* second EAM call */
+#elif TTBP
+              do_forces_ttbp_2(p,q,pbc);    /* second TTBP call */
+#else
+			  error("Force routine not defined.");
+#endif
+      };
+#endif /* EAM || TTBP */
 
   /* use the previously saved values of potential energy and virial */
 
@@ -1219,8 +1279,11 @@ void move_atoms_ar( msgbuf *b, int k, int l, int m )
     to->ort Y(i) = b->data[ b->n++ ];
     to->ort Z(i) = b->data[ b->n++ ];
 #ifndef MONOLJ
-    to->sorte[i] = (shortint) b->data[ b->n++ ];
+    to->sorte[i] = (integer) b->data[ b->n++ ];
 #endif 
+#if defined(TTBP) || defined(EAM)
+    to->nummer[i] = (integer) b->data[ b->n++ ];
+#endif
   }
   if (b->n_max <= b->n) error("Buffer overflow in move_atoms_buf.");
 }
@@ -1247,6 +1310,9 @@ void copy_atoms_ar( msgbuf *b, int k, int l, int m)
     b->data[ b->n++ ] = from->ort Z(i);
 #ifndef MONOLJ
     b->data[ b->n++ ] = (real) from->sorte[i];
+#endif
+#if defined(TTBP) || defined(EAM)
+    b->data[ b->n++ ] = (real) from->nummer[i];
 #endif
   }
   if (b->n_max <= b->n)  error("Buffer overflow in copy_atoms_ar.");

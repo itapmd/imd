@@ -36,17 +36,17 @@ void calc_forces(void)
 #endif
   
 #ifdef EAM
-  memset(eam_rho,0,natoms*sizeof(real));
-  memset(eam_ij,0,natoms*eam_len*sizeof(integer));
-  memset(eam_dij_x,0,natoms*eam_len*sizeof(real));
-  memset(eam_dij_y,0,natoms*eam_len*sizeof(real));
-  memset(eam_dij_z,0,natoms*eam_len*sizeof(real));
+  memset(eam_rho,  0,(natoms+1)*        sizeof(real));
+  memset(eam_ij,   0,(natoms+1)*eam_len*sizeof(real));
+  memset(eam_dij_x,0,(natoms+1)*eam_len*sizeof(real));
+  memset(eam_dij_y,0,(natoms+1)*eam_len*sizeof(real));
+  memset(eam_dij_z,0,(natoms+1)*eam_len*sizeof(real));
 #endif /* EAM */
 
 #ifdef TTBP
-  memset(ttbp_ij,0,(natoms+1)*ttbp_len*2*sizeof(integer));
-  memset(ttbp_j,0,(natoms+1)*ttbp_len*3*sizeof(real));
-  memset(ttbp_force,0,(natoms+1)*3*sizeof(real));
+  memset(ttbp_ij,   0,(natoms+1)*ttbp_len*2*sizeof(real));
+  memset(ttbp_j,    0,(natoms+1)*ttbp_len*3*sizeof(real));
+  memset(ttbp_force,0,(natoms+1)*         3*sizeof(real));
 #endif /* TTBP */
 
   /* Zero Forces and potential energy */
@@ -153,7 +153,7 @@ void calc_forces(void)
 
       };
 
-#ifdef EAM
+#if defined(EAM) || defined(TTBP)
   /* EAM cohesive function potential: for each cell */
   for (i=0; i < cell_dim.x; ++i)
     for (j=0; j < cell_dim.y; ++j)
@@ -173,56 +173,13 @@ void calc_forces(void)
 #ifdef NOPBC
               if ((0 == pbc.x) && (0 == pbc.y) && (0 == pbc.z))
 #endif
+#ifdef EAM
 	      do_forces_eam_2(p,q,pbc);
-      };
-#endif /* EAM */
-
-#ifdef TTBP
-  /* Part II. TTBP: three body potential */
-  for (i=0; i < cell_dim.x; ++i)
-    for (j=0; j < cell_dim.y; ++j)
-      for (k=0; k < cell_dim.z; ++k) {
-	      /* Given cell */
-              /* Hey optimizer, this is invariant to the last three loops!! */
-	      p = PTR_3D_V(cell_array,i,j,k,cell_dim);
-	      pbc.x = 0;
-	      pbc.y = 0;
-	      pbc.z = 0;
-	      /* Neighbour (dummy; p==q) */
-              q = p;
-	      /* Do the work */
-#ifdef SHOCK
-              if (0 == pbc.x)
-#endif
-#ifdef NOPBC
-              if ((0 == pbc.x) && (0 == pbc.y) && (0 == pbc.z))
-#endif
+#elif TTBP
 	      do_forces_ttbp_2(p,q,pbc);
-      };
-
-  /* Part III. TTBP: three body potential */
-  for (i=0; i < cell_dim.x; ++i)
-    for (j=0; j < cell_dim.y; ++j)
-      for (k=0; k < cell_dim.z; ++k) {
-	      /* Given cell */
-              /* Hey optimizer, this is invariant to the last three loops!! */
-	      p = PTR_3D_V(cell_array,i,j,k,cell_dim);
-	      pbc.x = 0;
-	      pbc.y = 0;
-	      pbc.z = 0;
-	      /* Neighbour (dummy; p==q) */
-              q = p;
-	      /* Do the work */
-#ifdef SHOCK
-              if (0 == pbc.x)
+#else
 #endif
-#ifdef NOPBC
-              if ((0 == pbc.x) && (0 == pbc.y) && (0 == pbc.z))
-#endif
-	      do_forces_ttbp_3(p,q,pbc);
       };
-#endif /* TTBP */
+#endif /* EAM || TTBP */
 
 }
-
-
