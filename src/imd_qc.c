@@ -259,6 +259,7 @@ void generate_qc( void )
 	  k1max[j]=MAX(MAX(MAX(a1,a2),MAX(a3,a4)),MAX(MAX(a5,a6),MAX(a7,a8)));
 	}      
       natoms=0;
+      nactive=0;
       
       borders();
       
@@ -710,6 +711,8 @@ void sortin (int ifeld[])
 	    {
 #endif
 	      natoms++;
+              if (sign>0) nactive++;
+
 	      input->n = 1;
 	      input->ort X(0) = x;
 	      input->ort Y(0) = y;

@@ -51,7 +51,8 @@ EXTERN ivektor global_cell_dim;          /* dimension of cell array */
 
 /* Global bookkeeping */
 
-EXTERN int natoms INIT(0);       /* Total number of atoms */
+EXTERN int natoms  INIT(0);      /* Total number of atoms */
+EXTERN int nactive INIT(0);      /* Total number of active atoms */
 EXTERN int ntypes INIT(0);       /* Total number of different atom types */
 EXTERN int *num_sort INIT(NULL); /* number of atoms for each type */
 EXTERN int steps_max INIT(0);    /* Maximum number of MD steps */

@@ -165,7 +165,8 @@ void do_forces(cell *ap, cell *aq, vektor apbc)
 #ifndef TWOD
       force[i][j].z = d.z * pot_grad;
 #endif
-      tmp_energy += pot_zwi;
+      if ((NUMMER(p,i)>=0) || (NUMMER(q,j)>=0))
+        tmp_energy += pot_zwi;
 
 #ifdef P_AXIAL
       tmp_vir_vect.x -= d.x * d.x * pot_grad;
@@ -178,9 +179,6 @@ void do_forces(cell *ap, cell *aq, vektor apbc)
 #endif
 	/* negativ, da pot_grad gleich force !! */
 #ifdef STRESS_TENS
-
-      printf("here I am");
-
       p->presstens X(i) -= d.x * d.x * pot_grad;
       p->presstens Y(i) -= d.y * d.y * pot_grad;
       q->presstens X(i) -= d.x * d.x * pot_grad;

@@ -546,8 +546,10 @@ void generate_atoms(str255 mode)
   }
 #endif /* MONOLJ */
 
-  MPI_Allreduce( &natoms, &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
+  MPI_Allreduce( &natoms,  &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
   natoms = addnumber;
+  MPI_Allreduce( &nactive, &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
+  nactive = addnumber;
   for (i=0; i<ntypes; i++) {
     MPI_Allreduce(&num_sort[i], &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
     num_sort[i] = addnumber;
@@ -613,6 +615,7 @@ void generate_hex()
   input->masse[0] = 1.0;
 
   natoms = 0;
+  nactive = 0;
 
   for (i=min.x ; i<max.x; i++)
     for (j=min.y; j<max.y; j++) {
@@ -638,6 +641,8 @@ void generate_hex()
 #endif
 
       natoms++;
+      if (sign>0) nactive++;
+
       input->n = 1;
       input->ort X(0) = x;
       input->ort Y(0) = y;
@@ -705,6 +710,7 @@ void generate_fcc(int maxtyp)
 #endif
 
   natoms=0;
+  nactive=0;
 
   for (x=min.x ; x<max.x; x++)
     for (y=min.y; y<max.y; y++)
@@ -731,6 +737,7 @@ void generate_fcc(int maxtyp)
         if (typ > maxtyp) continue;
 
 	++natoms;
+        if (sign>0) nactive++;
 
         input->n = 1;
         input->ort X(0) = x + 0.5;
@@ -855,6 +862,7 @@ void generate_lav()
 #endif
 
   natoms=0;
+  nactive=0;
 
   for (i=min.x ; i<max.x; i++)
     for (j=min.y; j<max.y; j++)
@@ -886,6 +894,8 @@ void generate_lav()
 #endif
 	  
 	  ++natoms;
+          if (sign>0) nactive++;
+
 	  input->n = 1;
 	  input->ort X(0) = x + co;
 	  input->ort Y(0) = y + co;

@@ -189,7 +189,8 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 	q->pot_eng[j]  += pot_zwi;
 	p->pot_eng[i]  += pot_zwi;
 #endif
-	tot_pot_energy += pot_zwi;
+        if ((NUMMER(p,i)>=0) || (NUMMER(q,j)>=0))
+          tot_pot_energy += pot_zwi;
 
 #ifdef P_AXIAL
         tmp_vir_vect.x -= d.x * d.x * pot_grad;
@@ -363,7 +364,7 @@ void do_forces_eam_2(cell *p)
 
       /* EAM-CF: sum of all i energies */
       eam_cf_i   = sqrt(eam_rho[eam_pni]);
-      eam_cf    += eam_cf_i;
+      if (NUMMER(p,i)>0) eam_cf += eam_cf_i;
 
       eam_tmp_i  = 1.0/eam_cf_i;
       jstart     = 1;
