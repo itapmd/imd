@@ -62,40 +62,8 @@ parameter is needed, except perhaps the initial temperature, if not
 all atoms have their velocities given in the configuration file.
 
 <A NAME="mikshear">
-<P><LI><B>mikshear</B><P> </A> Inhomogeneous shear simulation
-using the microconvergence integrator.
-Whenever the kinetic energy per particle drops below 
-<TT>shear_epsilon</TT>, a shear step is performed, and the velocities 
-of the particles are reset to a maxwell distribution. After the shear
-step, the sample is then relaxed with the microconvergence integrator,
-until the kinetic energy per particle drops again below the treshold.
-When this happens, a new shear step is performed, and so on.
-At latest after <TT>maxshearrelaxsteps</TT> steps a new shear is
-performed.The first shear does not occur before at least
-<TT>annealsteps</TT> steps have been performed.
-<P>
-All atoms located in a strip of width <TT>strip_width</TT> from
-the boundaries in x-direction are fixed. In each shear step, these 
-fixed atoms are rigidly moved by the amount <TT>shear_delta</TT> 
-into the positive (negative) y-direction if they are located within 
-the left (right) strip. After the shear simulation is finished, 
-all atoms become mobile again.
-<P>
-Each time a shear step is performed, several properties are written 
-to a file <TT>&lt;outfile&gt;.sheng</TT>. These properties are, 
-in this order, the total shift, the current simulation time, 
-the potential energy per atom, the kinetic energy per atom 
-(which is normalized such that it is identical to the
-actual system temperature), the pressure and the volume.
-<P>
-As automatic generation of samples may lead to atoms with coordinates
-close to zero which would become negative after several shear steps it
-is possible to apply an initial shift to the sample. Therefore the
-flag <TT>initial_shift</TT> must be set to one and the vector
-<TT>ins</TT> must be set to the desired value.
-<P>
-These features have also been implemented in the 2D version, but have
-not yet been tested! 
+<P><LI><B>mikshear</B><P> </A> This ensemble no longer exists. Its 
+functionality has been integrated into the pull ensemble.
 
 <P><LI><B> frac </B><P>
 Fracture simulation with stadium damping. Anyone know how this works?
@@ -123,15 +91,14 @@ deformations exceeds the value <TT>maxdnoshsteps</TT>.
 <STRONG>This is new within the PULL ensemble. If
 <TT>ekin_threshold</TT> is set a very high value and
 <TT>maxdnoshsteps</TT> is set to zero a shear/pull deformation will be
-performed in each time step. As these are the initialization values
+performed in each time step. As these are the initialization values,
 old-style PULL simulations should not change their behaviour.</STRONG>
 <P>
 As automatic generation of samples may lead to atoms with coordinates
-close to zero which would become negative after several shear steps it
-is possible to apply an initial shift to the sample. Therefore the
-flag <TT>initial_shift</TT> must be set to one and the vector
+close to zero (which would become negative after several shear steps) 
+it is possible to apply an initial shift to the sample. For this the
+flag <TT>initial_shift</TT> must be set to 1, and the vector
 <TT>ins</TT> must be set to the desired value.
-
 
 <P><LI><B> mc </B><P>
 The Monte Carlo integrator attempts to make random jumps of mean 
