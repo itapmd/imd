@@ -254,6 +254,21 @@ endif
 #
 ###########################################################################
 
+# Itanium 2, icc 8.0 or higher
+ifeq (ia64-icc,${IMDSYS})
+  CC_SERIAL	= icc
+  CC_OMP	= icc
+  CC_MPI	= mpicc
+  CC_OMPI	= mpicc
+  BIN_DIR	= ${HOME}/bin/ia64
+  OPT_FLAGS	+= -O -ip #-static
+  MPI_FLAGS     += -quiet
+  OMP_FLAGS	+= -openmp
+  OMPI_FLAGS	+= -openmp -quiet
+  PROF_FLAGS	+= -prof_gen
+  DEBUG_FLAGS	+= -g
+endif
+
 # Itanium 2, ecc
 ifeq (ia64-ecc,${IMDSYS})
   CC_SERIAL	= ecc
@@ -261,7 +276,7 @@ ifeq (ia64-ecc,${IMDSYS})
   CC_MPI	= mpicc
   CC_OMPI	= mpicc
   BIN_DIR	= ${HOME}/bin/ia64
-  OPT_FLAGS	+= -O -ipo #-static
+  OPT_FLAGS	+= -O -ip #-static
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp
   PROF_FLAGS	+= -prof_gen
