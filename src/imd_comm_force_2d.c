@@ -347,8 +347,8 @@ void send_forces(void (*add_func)   (int, int, int, int),
     for (i=0; i < cell_dim.y; ++i)
       (*pack_func)( &send_buf_east, 0, i );
     irecv_buf( &recv_buf_west, nbwest, &reqwest[1] );
-#endif
     isend_buf( &send_buf_east, nbeast, &reqwest[0] );
+#endif
 
     /* copy west forces into send buffer, send west */
     for (i=0; i < cell_dim.y; ++i) 
