@@ -303,15 +303,13 @@ void write_atoms_press(FILE *out)
       len += sprintf( outbuf+len, 
         "%10.4e %10.4e %10.4e %10.4e %10.4e\n", 
         p->ort X(i),p->ort Y(i),
-        p->presstens X(i),p->presstens Y(i),
-        p->presstens_offdia[i]);
+        p->presstens[i].xx, p->presstens[i].yy, p->presstens[i].xy);
 #else
       len += sprintf( outbuf+len,
         "%10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e\n", 
         p->ort X(i),p->ort Y(i),p->ort Z(i),
-        p->presstens X(i),p->presstens Y(i),p->presstens Z(i),
-        p->presstens_offdia X(i),p->presstens_offdia Y(i),
-        p->presstens_offdia Z(i));
+        p->presstens[i].xx, p->presstens[i].yy, p->presstens[i].zz,
+        p->presstens[i].yz, p->presstens[i].zx, p->presstens[i].xy);
 #endif
       /* flush or send outbuf if it is full */
       if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -855,18 +853,16 @@ void write_eng_file(int steps)
 #ifdef STRESS_TENS
   real Press_xx,Press_yy, Press_xy;
 #ifndef TWOD
-  real Press_zz,Press_yz, Press_xz;
+  real Press_zz,Press_yz, Press_zx;
 #endif
-  Press_xx = tot_presstens.x / volume; 
-  Press_yy = tot_presstens.y / volume; 
-#ifdef TWOD
-  Press_xy = tot_presstens_offdia / volume; 
-#else 
-  Press_zz = tot_presstens.z / volume;
-  Press_yz = tot_presstens_offdia.x / volume; 
-  Press_xz = tot_presstens_offdia.y / volume; 
-  Press_xy = tot_presstens_offdia.z / volume; 
+  Press_xx = tot_presstens.xx / volume; 
+  Press_yy = tot_presstens.yy / volume; 
+#ifndef TWOD
+  Press_zz = tot_presstens.zz / volume;
+  Press_yz = tot_presstens.yz / volume; 
+  Press_zx = tot_presstens.zx / volume; 
 #endif
+  Press_xy = tot_presstens.xy / volume; 
 #endif
 
   Epot =       tot_pot_energy / natoms;
@@ -940,7 +936,7 @@ void write_eng_file(int steps)
 #else 
   fprintf(out," %e", (double) Press_zz);
   fprintf(out," %e %e %e",
-	  (double) Press_yz, (double) Press_xz, (double) Press_xy);
+	  (double) Press_yz, (double) Press_zx, (double) Press_xy);
 #endif    
 #endif
   putc('\n',out);

@@ -79,12 +79,12 @@ void calc_forces(void)
       p->heatcond[i] = 0.0;
 #endif      
 #ifdef STRESS_TENS
-      p->presstens X(i) = 0.0;
-      p->presstens Y(i) = 0.0;
-      p->presstens Z(i) = 0.0;
-      p->presstens_offdia X(i) = 0.0;
-      p->presstens_offdia Y(i) = 0.0;
-      p->presstens_offdia Z(i) = 0.0;
+      p->presstens[i].xx = 0.0;
+      p->presstens[i].yy = 0.0;
+      p->presstens[i].zz = 0.0;
+      p->presstens[i].yz = 0.0;
+      p->presstens[i].zx = 0.0;
+      p->presstens[i].xy = 0.0;
 #endif      
 #ifndef MONOLJ
       p->pot_eng[i] = 0.0;

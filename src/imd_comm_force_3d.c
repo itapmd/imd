@@ -760,12 +760,12 @@ void add_forces( int k, int l, int m, int r, int s, int t )
     to->heatcond[i] += from->heatcond[i];
 #endif
 #ifdef STRESS_TENS
-    to->presstens X(i) += from->presstens X(i);
-    to->presstens Y(i) += from->presstens Y(i);
-    to->presstens Z(i) += from->presstens Z(i);
-    to->presstens_offdia X(i) += from->presstens_offdia X(i);
-    to->presstens_offdia Y(i) += from->presstens_offdia Y(i);
-    to->presstens_offdia Z(i) += from->presstens_offdia Z(i);
+    to->presstens[i].xx += from->presstens[i].xx;
+    to->presstens[i].yy += from->presstens[i].yy;
+    to->presstens[i].zz += from->presstens[i].zz;
+    to->presstens[i].yz += from->presstens[i].yz;
+    to->presstens[i].zx += from->presstens[i].zx;
+    to->presstens[i].xy += from->presstens[i].xy;
 #endif
 #ifdef ORDPAR
     to->nbanz[i] += from->nbanz[i];
@@ -797,12 +797,12 @@ void pack_forces( msgbuf *b, int k, int l, int m)
     b->data[ b->n++ ] = from->heatcond[i];
 #endif
 #ifdef STRESS_TENS
-    b->data[ b->n++ ] = from->presstens X(i);
-    b->data[ b->n++ ] = from->presstens Y(i);
-    b->data[ b->n++ ] = from->presstens Z(i);
-    b->data[ b->n++ ] = from->presstens_offdia X(i);
-    b->data[ b->n++ ] = from->presstens_offdia Y(i);
-    b->data[ b->n++ ] = from->presstens_offdia Z(i);
+    b->data[ b->n++ ] = from->presstens[i].xx;
+    b->data[ b->n++ ] = from->presstens[i].yy;
+    b->data[ b->n++ ] = from->presstens[i].zz;
+    b->data[ b->n++ ] = from->presstens[i].yz;
+    b->data[ b->n++ ] = from->presstens[i].zx;
+    b->data[ b->n++ ] = from->presstens[i].xy;
 #endif
 #ifdef ORDPAR
     b->data[ b->n++ ] = (real) from->nbanz[i];
@@ -835,12 +835,12 @@ void unpack_forces( msgbuf *b, int k, int l, int m )
     to->heatcond[i] += b->data[ b->n++ ];
 #endif
 #ifdef STRESS_TENS
-    to->presstens X(i)        += b->data[ b->n++ ];
-    to->presstens Y(i)        += b->data[ b->n++ ];
-    to->presstens Z(i)        += b->data[ b->n++ ];
-    to->presstens_offdia X(i) += b->data[ b->n++ ];
-    to->presstens_offdia Y(i) += b->data[ b->n++ ];
-    to->presstens_offdia Z(i) += b->data[ b->n++ ];
+    to->presstens[i].xx += b->data[ b->n++ ];
+    to->presstens[i].yy += b->data[ b->n++ ];
+    to->presstens[i].zz += b->data[ b->n++ ];
+    to->presstens[i].yz += b->data[ b->n++ ];
+    to->presstens[i].zx += b->data[ b->n++ ];
+    to->presstens[i].xy += b->data[ b->n++ ];
 #endif
 #ifdef ORDPAR
     to->nbanz[i] += (shortint) b->data[ b->n++ ];

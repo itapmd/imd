@@ -602,13 +602,12 @@ void calc_tot_presstens(void)
 
   real tmp_presstens1[6], tmp_presstens2[6];
 
-  tot_presstens.x        = 0.0; 
-  tot_presstens.y        = 0.0; 
-  tot_presstens.z        = 0.0; 
-  tot_presstens_offdia.x   = 0.0;
-  tot_presstens_offdia.y   = 0.0;
-  tot_presstens_offdia.z   = 0.0;
-
+  tot_presstens.xx = 0.0; 
+  tot_presstens.yy = 0.0; 
+  tot_presstens.zz = 0.0; 
+  tot_presstens.yz = 0.0;
+  tot_presstens.zx = 0.0;
+  tot_presstens.xy = 0.0;
 
   /*sum up total pressure tensor */
   for (i=0; i<ncells; ++i) {
@@ -616,33 +615,32 @@ void calc_tot_presstens(void)
     cell *p;
     p = cell_array + CELLS(i);
     for (j=0; j<p->n; ++j) {
-
-      tot_presstens.x        += p->presstens X(j);
-      tot_presstens.y        += p->presstens Y(j);
-      tot_presstens.z        += p->presstens Z(j);
-      tot_presstens_offdia.x += p->presstens_offdia X(j);  
-      tot_presstens_offdia.y += p->presstens_offdia Y(j);  
-      tot_presstens_offdia.z += p->presstens_offdia Z(j);  
+      tot_presstens.xx += p->presstens[j].xx;
+      tot_presstens.yy += p->presstens[j].yy;
+      tot_presstens.zz += p->presstens[j].zz;
+      tot_presstens.yz += p->presstens[j].yz;  
+      tot_presstens.zx += p->presstens[j].zx;  
+      tot_presstens.xy += p->presstens[j].xy;  
     }
   }
 
 #ifdef MPI
 
-  tmp_presstens1[0]        = tot_presstens.x; 
-  tmp_presstens1[1]        = tot_presstens.y; 
-  tmp_presstens1[2]        = tot_presstens.z; 
-  tmp_presstens1[3]        = tot_presstens_offdia.x ;
-  tmp_presstens1[4]        = tot_presstens_offdia.y ;
-  tmp_presstens1[5]        = tot_presstens_offdia.z ;
+  tmp_presstens1[0] = tot_presstens.xx; 
+  tmp_presstens1[1] = tot_presstens.yy; 
+  tmp_presstens1[2] = tot_presstens.zz; 
+  tmp_presstens1[3] = tot_presstens.yz;
+  tmp_presstens1[4] = tot_presstens.zx;
+  tmp_presstens1[5] = tot_presstens.xy;
 
   MPI_Allreduce( tmp_presstens1, tmp_presstens2, 6, REAL, MPI_SUM, cpugrid);
 
-  tot_presstens.x            = tmp_presstens2[0];
-  tot_presstens.y            = tmp_presstens2[1]; 
-  tot_presstens.z            = tmp_presstens2[2];
-  tot_presstens_offdia.x     = tmp_presstens2[3]; 
-  tot_presstens_offdia.y     = tmp_presstens2[4]; 
-  tot_presstens_offdia.z     = tmp_presstens2[5]; 
+  tot_presstens.xx  = tmp_presstens2[0];
+  tot_presstens.yy  = tmp_presstens2[1]; 
+  tot_presstens.zz  = tmp_presstens2[2];
+  tot_presstens.yz  = tmp_presstens2[3]; 
+  tot_presstens.zx  = tmp_presstens2[4]; 
+  tot_presstens.xy  = tmp_presstens2[5]; 
 
 #endif /* MPI */
 

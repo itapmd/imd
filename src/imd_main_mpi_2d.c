@@ -71,9 +71,9 @@ void calc_forces(void)
       p->heatcond[i] = 0.0;
 #endif      
 #ifdef STRESS_TENS
-      p->presstens X(i) = 0.0;
-      p->presstens Y(i) = 0.0;
-      p->presstens_offdia[i] = 0.0;
+      p->presstens[i].xx = 0.0;
+      p->presstens[i].yy = 0.0;
+      p->presstens[i].xy = 0.0;
 #endif      
     }
   }

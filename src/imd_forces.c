@@ -149,32 +149,26 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
 #endif
 
 #ifdef STRESS_TENS
-        ppdptr = p->presstens + DIM * i;
-        qpdptr = q->presstens + DIM * j;
-        *ppdptr     -= d.x * force.x;
-        *qpdptr     -= d.x * force.x;
-        *(++ppdptr) -= d.y * force.y;
-        *(++qpdptr) -= d.y * force.y;
-#ifdef TWOD
+        p->presstens[i].xx -= d.x * force.x;
+        q->presstens[j].xx -= d.x * force.x;
+        p->presstens[i].yy -= d.y * force.y;
+        q->presstens[j].yy -= d.y * force.y;
+#ifndef TWOD
+        p->presstens[i].zz -= d.z * force.z;
+        q->presstens[j].zz -= d.z * force.z;
 #ifndef SHOCK
-        p->presstens_offdia[i] -= d.x * force.y;
-        q->presstens_offdia[j] -= d.x * force.y;
+        p->presstens[i].yz -= d.y * force.z;
+        q->presstens[j].yz -= d.y * force.z;
+        p->presstens[i].zx -= d.z * force.x;
+        q->presstens[j].zx -= d.z * force.x;
 #endif
-#else
-        *(++ppdptr) -= d.z * force.z;
-        *(++qpdptr) -= d.z * force.z;
+#endif
 #ifndef SHOCK
-        ppoptr = p->presstens_offdia + DIM * i;
-        qpoptr = q->presstens_offdia + DIM * j;
-        *ppoptr     -= d.y * force.z;
-        *qpoptr     -= d.y * force.z;
-        *(++ppoptr) -= d.z * force.x;
-        *(++qpoptr) -= d.z * force.x;
-        *(++ppoptr) -= d.x * force.y;
-        *(++qpoptr) -= d.x * force.y;
+        p->presstens[i].xy -= d.x * force.y;
+        q->presstens[j].xy -= d.x * force.y;
 #endif
 #endif
-#endif
+
 #ifdef NVX
         p->heatcond[i] += pot_zwi - radius2 * pot_grad;
         q->heatcond[j] += pot_zwi - radius2 * pot_grad;

@@ -121,14 +121,12 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
 #endif
 
 #ifdef STRESS_TENS
-        ppdptr = p->presstens + DIM * i;
-        *ppdptr     -= d.x * force.x;
-        *(++ppdptr) -= d.y * force.y;
-        *(++ppdptr) -= d.z * force.z;
-        ppoptr = p->presstens_offdia + DIM * i;
-        *ppoptr     -= d.y * force.z;
-        *(++ppoptr) -= d.z * force.x;
-        *(++ppoptr) -= d.x * force.y;
+        p->presstens[i].xx -= d.x * force.x;
+        p->presstens[i].yy -= d.y * force.y;
+        p->presstens[i].zz -= d.z * force.z;
+        p->presstens[i].yz -= d.y * force.z;
+        p->presstens[i].zx -= d.z * force.x;
+        p->presstens[i].xy -= d.x * force.y;
 #endif
       }
 
@@ -169,14 +167,12 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
 #endif
 
 #ifdef STRESS_TENS
-        qpdptr = q->presstens + DIM * j;
-        *qpdptr     -= d.x * force.x;
-        *(++qpdptr) -= d.y * force.y;
-        *(++qpdptr) -= d.z * force.z;
-        qpoptr = q->presstens_offdia + DIM * j;
-        *qpoptr     -= d.y * force.z;
-        *(++qpoptr) -= d.z * force.x;
-        *(++qpoptr) -= d.x * force.y;
+        q->presstens[j].xx -= d.x * force.x;
+        q->presstens[j].yy -= d.y * force.y;
+        q->presstens[j].zz -= d.z * force.z;
+        q->presstens[j].yz -= d.y * force.z;
+        q->presstens[j].zx -= d.z * force.x;
+        q->presstens[j].xy -= d.x * force.y;
 #endif
       }
 
@@ -329,22 +325,19 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot,
 #endif
 
 #ifdef STRESS_TENS
-        ppdptr = p->presstens + DIM * i;
-        qpdptr = q->presstens + DIM * j;
-        *ppdptr     -= d.x * force.x;
-        *qpdptr     -= d.x * force.x;
-        *(++ppdptr) -= d.y * force.y;
-        *(++qpdptr) -= d.y * force.y;
-        *(++ppdptr) -= d.z * force.z;
-        *(++qpdptr) -= d.z * force.z;
-        ppoptr = p->presstens_offdia + DIM * i;
-        qpoptr = q->presstens_offdia + DIM * j;
-        *ppoptr     -= d.y * force.z;
-        *qpoptr     -= d.y * force.z;
-        *(++ppoptr) -= d.z * force.x;
-        *(++qpoptr) -= d.z * force.x;
-        *(++ppoptr) -= d.x * force.y;
-        *(++qpoptr) -= d.x * force.y;
+        p->presstens[i].xx -= d.x * force.x;
+        p->presstens[i].yy -= d.y * force.y;
+        p->presstens[i].zz -= d.z * force.z;
+        p->presstens[i].yz -= d.y * force.z;
+        p->presstens[i].zx -= d.z * force.x;
+        p->presstens[i].xy -= d.x * force.y;
+
+        q->presstens[j].xx -= d.x * force.x;
+        q->presstens[j].yy -= d.y * force.y;
+        q->presstens[j].zz -= d.z * force.z;
+        q->presstens[j].yz -= d.y * force.z;
+        q->presstens[j].zx -= d.z * force.x;
+        q->presstens[j].xy -= d.x * force.y;
 #endif
 
       } /* if in the cutoff range */

@@ -337,14 +337,17 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 	tmp_virial     += tmp_5 * SPROD(d[k],dzeta_k[k]);
 #endif
 #ifdef STRESS_TENS
-	kcell->presstens X(knum)        -= d[k].x * tmp_5 * dzeta_k[k].x;
-	kcell->presstens Y(knum)        -= d[k].y * tmp_5 * dzeta_k[k].y;
-	kcell->presstens Z(knum)        -= d[k].z * tmp_5 * dzeta_k[k].z;
-	kcell->presstens_offdia X(knum) -= ( d[k].y * tmp_5 * dzeta_k[k].z + d[k].z * tmp_5 * dzeta_k[k].y ) / 2;
-	kcell->presstens_offdia Y(knum) -= ( d[k].z * tmp_5 * dzeta_k[k].x + d[k].x * tmp_5 * dzeta_k[k].z ) / 2;
-	kcell->presstens_offdia Z(knum) -= ( d[k].x * tmp_5 * dzeta_k[k].y + d[k].y * tmp_5 * dzeta_k[k].x ) / 2;
+	kcell->presstens[knum].xx -=   d[k].x * tmp_5 * dzeta_k[k].x;
+	kcell->presstens[knum].yy -=   d[k].y * tmp_5 * dzeta_k[k].y;
+	kcell->presstens[knum].zz -=   d[k].z * tmp_5 * dzeta_k[k].z;
+	kcell->presstens[knum].yz -= ( d[k].y * tmp_5 * dzeta_k[k].z + 
+                                       d[k].z * tmp_5 * dzeta_k[k].y ) / 2;
+	kcell->presstens[knum].zx -= ( d[k].z * tmp_5 * dzeta_k[k].x + 
+                                       d[k].x * tmp_5 * dzeta_k[k].z ) / 2;
+	kcell->presstens[knum].xy -= ( d[k].x * tmp_5 * dzeta_k[k].y + 
+                                       d[k].y * tmp_5 * dzeta_k[k].x ) / 2;
 #endif 
-	}
+      }
       
       /* update force on particle j */
       jcell = (cell *) neigh->cl [j];
@@ -368,12 +371,12 @@ void do_forces2(cell *p, real *Epot, real *Virial,
       tmp_virial     += SPROD(d[j],force_j);
 #endif
 #ifdef STRESS_TENS
-      jcell->presstens X(jnum)        -= d[j].x * force_j.x;
-      jcell->presstens Y(jnum)        -= d[j].y * force_j.y;
-      jcell->presstens Z(jnum)        -= d[j].z * force_j.z;
-      jcell->presstens_offdia X(jnum) -= ( d[j].y * force_j.z + d[j].z * force_j.y ) / 2;
-      jcell->presstens_offdia Y(jnum) -= ( d[j].z * force_j.x + d[j].x * force_j.z ) / 2;
-      jcell->presstens_offdia Z(jnum) -= ( d[j].x * force_j.y + d[j].y * force_j.x ) / 2;
+      jcell->presstens[jnum].xx -=  d[j].x * force_j.x;
+      jcell->presstens[jnum].yy -=  d[j].y * force_j.y;
+      jcell->presstens[jnum].zz -=  d[j].z * force_j.z;
+      jcell->presstens[jnum].yz -= (d[j].y * force_j.z + d[j].z * force_j.y)/2;
+      jcell->presstens[jnum].zx -= (d[j].z * force_j.x + d[j].x * force_j.z)/2;
+      jcell->presstens[jnum].xy -= (d[j].x * force_j.y + d[j].y * force_j.x)/2;
 #endif
 
     } /* neighbor j */

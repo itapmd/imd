@@ -30,12 +30,14 @@
 #define nullivektor { 0, 0 }
 #define einsvektor  { 1.0, 1.0 }
 #define einsivektor { 1, 1 }
+#define nullsymtensor { 0.0, 0.0, 0.0 }
 
 #else
 #define nullvektor  { 0.0, 0.0, 0.0 }
 #define nullivektor { 0, 0, 0 }
 #define einsvektor  { 1.0, 1.0, 1.0 }
 #define einsivektor { 1, 1, 1 }
+#define nullsymtensor { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #endif
 
 #define nullvektor2d { 0.0, 0.0 }
@@ -383,15 +385,9 @@ EXTERN int  tran_nlayers  INIT(0);     /* number of layers*/
 #endif
 
 #ifdef STRESS_TENS
-EXTERN vektor tot_presstens        INIT(nullvektor); /* diagonal and */ 
-#ifdef TWOD                                          
-EXTERN real tot_presstens_offdia INIT(0.0);         /* offdiagonal of */ 
-#else
-EXTERN vektor tot_presstens_offdia INIT(nullvektor); /* global press tensor */ 
-#endif
-
-EXTERN int  press_interval INIT(0);         /* Intervalle der Aufzeichnung */ 
-                                            /* des Drucktensors */
+EXTERN sym_tensor tot_presstens INIT(nullsymtensor);/* global pressure tens. */
+EXTERN int  press_interval INIT(0);         /* interval for writing the */ 
+                                            /* pressure tensor */
 EXTERN ivektor press_dim INIT(nullivektor); /* pressure histogram dimension */
 #endif
 

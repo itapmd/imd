@@ -507,9 +507,9 @@ void calc_tot_presstens(void)
 
   real tmp_presstens1[3], tmp_presstens2[3];
 
-  tot_presstens.x        = 0.0; 
-  tot_presstens.y        = 0.0; 
-  tot_presstens_offdia   = 0.0;
+  tot_presstens.xx = 0.0; 
+  tot_presstens.yy = 0.0; 
+  tot_presstens.xy = 0.0;
 
   /*sum up total pressure tensor */
   for (i=0; i<ncells; ++i) {
@@ -517,23 +517,23 @@ void calc_tot_presstens(void)
     cell *p;
     p = cell_array + CELLS(i);
     for (j=0; j<p->n; ++j) {
-      tot_presstens.x      += p->presstens X(j);
-      tot_presstens.y      += p->presstens Y(j);
-      tot_presstens_offdia += p->presstens_offdia[j];
+      tot_presstens.xx += p->presstens[j].xx;
+      tot_presstens.yy += p->presstens[j].yy;
+      tot_presstens.xy += p->presstens[j].xy;
     }
   }
 
 #ifdef MPI
   /* add up results from different CPUs */
-  tmp_presstens1[0]        = tot_presstens.x; 
-  tmp_presstens1[1]        = tot_presstens.y; 
-  tmp_presstens1[2]        = tot_presstens_offdia;
+  tmp_presstens1[0] = tot_presstens.xx; 
+  tmp_presstens1[1] = tot_presstens.yy; 
+  tmp_presstens1[2] = tot_presstens.xy;
 
   MPI_Allreduce( tmp_presstens1, tmp_presstens2, 3, REAL, MPI_SUM, cpugrid);
 
-  tot_presstens.x      = tmp_presstens2[0];
-  tot_presstens.y      = tmp_presstens2[1]; 
-  tot_presstens_offdia = tmp_presstens2[2]; 
+  tot_presstens.xx = tmp_presstens2[0];
+  tot_presstens.yy = tmp_presstens2[1]; 
+  tot_presstens.xy = tmp_presstens2[2]; 
 #endif /* MPI */
 
 }

@@ -278,7 +278,6 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef STRESS_TENS
     newcell.presstens = NULL;
-    newcell.presstens_offdia = NULL;
 #endif
 #ifdef COVALENT
     newcell.neigh  = NULL;
@@ -352,8 +351,7 @@ void alloc_cell(cell *thecell, int count)
     newcell.heatcond = (real *) malloc(count*sizeof(real));
 #endif
 #ifdef STRESS_TENS
-    newcell.presstens = (real *) malloc(count*DIM*sizeof(real));
-    newcell.presstens_offdia = (real *) malloc(count*DIM*sizeof(real));
+    newcell.presstens = (sym_tensor *) malloc(count*sizeof(sym_tensor));
 #endif
 #if (defined(COVALENT) && !defined(TWOD))
     newcell.neigh = (neightab **) malloc( count * sizeof(neighptr) );
@@ -401,7 +399,6 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef STRESS_TENS
         || (NULL == newcell.presstens)
-        || (NULL == newcell.presstens_offdia)
 #endif
 #ifdef UNIAX
         || (NULL == newcell.traeg_moment)
@@ -471,9 +468,7 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef STRESS_TENS
       memcpy(newcell.presstens,  thecell->presstens,  
-             thecell->n * DIM * sizeof(real));
-      memcpy(newcell.presstens_offdia,  thecell->presstens_offdia,  
-             thecell->n * DIM * sizeof(real));
+             thecell->n * sizeof(sym_tensor));
 #endif
 #ifdef UNIAX
       memcpy(newcell.traeg_moment, thecell->traeg_moment, 
@@ -519,7 +514,6 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef STRESS_TENS
     free(thecell->presstens);
-    free(thecell->presstens_offdia);
 #endif
 #ifdef COVALENT
     free(thecell->neigh);
@@ -562,7 +556,6 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef STRESS_TENS
   thecell->presstens = newcell.presstens;
-  thecell->presstens_offdia = newcell.presstens_offdia;
 #endif
 #ifdef COVALENT
   thecell->neigh = newcell.neigh;

@@ -313,8 +313,8 @@ void make_histograms(hist_t *hist)
 #ifdef STRESS_TENS
 
 #ifdef SHOCK
-      press_histxx_1[num] += p->presstens X(i);
-      press_histyy_1[num] += p->presstens Y(i);
+      press_histxx_1[num] += p->presstens[i].xx;
+      press_histyy_1[num] += p->presstens[i].yy;
       kin_histxx_1  [num] += SQR(p->impuls X(i)) / (2*MASSE(p,i));
       kin_histyy_1  [num] += SQR(p->impuls Y(i)) / (2*MASSE(p,i));
       /* average v_xx - u_p  relative to moving pistons */
@@ -338,22 +338,20 @@ void make_histograms(hist_t *hist)
           kin_histxxu_1[num] += SQR(p->impuls X(i) - tmp) / (2*MASSE(p,i));
 
 #ifndef TWOD
-      press_histzz_1[num] += p->presstens Z(i);
+      press_histzz_1[num] += p->presstens[i].zz;
       kin_histzz_1  [num] += SQR(p->impuls Z(i)) / (2*MASSE(p,i));
 #endif
 
 #else /* not SHOCK */
 
-      press_histxx_1[num] += p->presstens X(i);
-      press_histyy_1[num] += p->presstens Y(i);
-#ifdef TWOD
-      press_histxy_1[num] += p->presstens_offdia[i];
-#else
-      press_histzz_1[num] += p->presstens Z(i);
-      press_histxy_1[num] += p->presstens_offdia Z(i);
-      press_histzx_1[num] += p->presstens_offdia Y(i);
-      press_histyz_1[num] += p->presstens_offdia X(i);
+      press_histxx_1[num] += p->presstens[i].xx;
+      press_histyy_1[num] += p->presstens[i].yy;
+#ifndef TWOD
+      press_histzz_1[num] += p->presstens[i].zz;
+      press_histzx_1[num] += p->presstens[i].zx;
+      press_histyz_1[num] += p->presstens[i].yz;
 #endif
+      press_histxy_1[num] += p->presstens[i].xy;
 #endif /* SHOCK */
 
 #endif /* STRESS_TENS */

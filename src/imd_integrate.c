@@ -162,36 +162,34 @@ void move_atoms_nve(void)
 	/* plate against bulk */
         if (shock_mode == 1) {
           if ( p->ort X(i) < shock_strip )
-            p->presstens X(i) += (p->impuls X(i) - shock_speed * MASSE(p,i)) 
+            p->presstens[i].xx += (p->impuls X(i) - shock_speed * MASSE(p,i)) 
                     * (p->impuls X(i) - shock_speed * MASSE(p,i)) / MASSE(p,i);
           else
-	    p->presstens X(i) += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
+	    p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
         }
 	/* two halves against one another */
         if (shock_mode == 2) {
           if ( p->ort X(i) < box_x.x*0.5 )
-            p->presstens X(i) += (p->impuls X(i) - shock_speed * MASSE(p,i)) 
+            p->presstens[i].xx += (p->impuls X(i) - shock_speed * MASSE(p,i)) 
                     * (p->impuls X(i) - shock_speed * MASSE(p,i)) / MASSE(p,i);
           else
-            p->presstens X(i) += (p->impuls X(i) + shock_speed * MASSE(p,i)) 
+            p->presstens[i].xx += (p->impuls X(i) + shock_speed * MASSE(p,i)) 
                     * (p->impuls X(i) + shock_speed * MASSE(p,i)) / MASSE(p,i);
         }
 	/* bulk against wall */
-        if (shock_mode == 3) p->presstens X(i) += (p->impuls X(i) - 
+        if (shock_mode == 3) p->presstens[i].xx += (p->impuls X(i) - 
 	  shock_speed * MASSE(p,i)) * (p->impuls X(i) - shock_speed * 
            MASSE(p,i)) / MASSE(p,i);
 #else
-        p->presstens X(i)        += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
+        p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
 #endif
-        p->presstens Y(i)        += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
-#ifdef TWOD
-        p-> presstens_offdia[i]  += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
-#else
-        p->presstens        Z(i) += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
-        p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
+        p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
+#ifndef TWOD
+        p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
 #endif
+        p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
 #endif /* STRESS_TENS */
     }
   }
@@ -331,16 +329,14 @@ void move_atoms_mik(void)
         tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4.0 * MASSE(p,i));
 
 #ifdef STRESS_TENS
-        p->presstens        X(i) += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
-        p->presstens        Y(i) += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
-#ifdef TWOD
-        p->presstens_offdia[i]   += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
-#else
-        p->presstens Z(i)        += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
-        p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
+        p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
+        p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
+#ifndef TWOD
+        p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
 #endif
+        p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
 #endif
     }
   }
@@ -507,16 +503,14 @@ void move_atoms_nvt(void)
 #endif
 
 #ifdef STRESS_TENS
-        p->presstens        X(i) += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
-        p->presstens        Y(i) += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
-#ifdef TWOD
-        p->presstens_offdia[i]   += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
-#else
-        p->presstens Z(i)        += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
-        p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
+        p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
+        p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
+#ifndef TWOD
+        p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
 #endif
+        p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
 #endif
     }
   }
@@ -749,18 +743,15 @@ void move_atoms_npt_iso(void)
 #endif
 
 #ifdef STRESS_TENS
-      p->presstens        X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
-      p->presstens        Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
-#ifdef TWOD
-      p->presstens_offdia[i]   += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
-#else
-      p->presstens Z(i)        += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
-      p->presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) / MASSE(p,i);
-      p->presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) / MASSE(p,i);
-      p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
+        p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
+        p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
+#ifndef TWOD
+        p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
 #endif
+        p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
 #endif
-
     }
   }
 
@@ -914,16 +905,14 @@ void move_atoms_npt_axial(void)
 #endif
 
 #ifdef STRESS_TENS
-      p->presstens        X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
-      p->presstens        Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
-#ifdef TWOD
-      p->presstens_offdia[i]   += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
-#else
-      p->presstens Z(i)        += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
-      p->presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) / MASSE(p,i);
-      p->presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) / MASSE(p,i);
-      p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
+        p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
+        p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
+#ifndef TWOD
+        p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
 #endif
+        p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
 #endif
     }
   }
@@ -1121,16 +1110,14 @@ void move_atoms_frac(void)
 #endif
 
 #ifdef STRESS_TENS
-        p->presstens        X(i) += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
-        p->presstens        Y(i) += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
-#ifdef TWOD
-        p->presstens_offdia[i]   += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
-#else
-        p->presstens Z(i)        += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
-        p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
+        p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
+        p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
+#ifndef TWOD
+        p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
 #endif
+        p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
 #endif
     }
   }
@@ -1457,16 +1444,14 @@ void move_atoms_nvx(void)
       }
 
 #ifdef STRESS_TENS
-      p->presstens        X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
-      p->presstens        Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
-#ifdef TWOD
-      p->presstens_offdia[i]   += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
-#else
-      p->presstens Z(i)        += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
-      p->presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) / MASSE(p,i);
-      p->presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) / MASSE(p,i);
-      p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
+        p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
+        p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
+#ifndef TWOD
+        p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
 #endif
+        p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
 #endif
     }
   }

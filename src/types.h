@@ -62,6 +62,12 @@ typedef struct {int x; int y; int z; } ivektor3d;
 typedef struct {real x; real y; real z; real z2; } vektor4d;
 typedef struct {int x; int y; int z; int z2; } ivektor4d; 
 
+#ifdef TWOD
+typedef struct {real xx, yy, xy; } sym_tensor;
+#else
+typedef struct {real xx, yy, zz, yz, zx, xy; } sym_tensor;
+#endif
+
 /*
 
 Dirty trick to share as much code as possible between 2D and 3D
@@ -125,8 +131,7 @@ typedef struct {
   real        *heatcond;
 #endif
 #ifdef STRESS_TENS
-  real        *presstens;
-  real        *presstens_offdia;
+  sym_tensor  *presstens;
 #endif
   real        *impuls;
   real        *kraft;

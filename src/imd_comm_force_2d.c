@@ -517,9 +517,9 @@ void add_forces( int j, int k, int l, int m )
     to->heatcond[i] += from->heatcond[i];
 #endif
 #ifdef STRESS_TENS
-    to->presstens X(i)      += from->presstens X(i);
-    to->presstens Y(i)      += from->presstens Y(i);
-    to->presstens_offdia[i] += from->presstens_offdia[i];
+    to->presstens[i].xx += from->presstens[i].xx;
+    to->presstens[i].yy += from->presstens[i].yy;
+    to->presstens[i].xy += from->presstens[i].xy;
 #endif
 #ifdef ORDPAR
     to->nbanz[i] += from->nbanz[i];
@@ -548,9 +548,9 @@ void pack_forces( msgbuf *b, int j, int k )
     b->data[ b->n++ ] = from->heatcond[i];
 #endif
 #ifdef STRESS_TENS
-    b->data[ b->n++ ] = from->presstens X(i);
-    b->data[ b->n++ ] = from->presstens Y(i);
-    b->data[ b->n++ ] = from->presstens_offdia[i];
+    b->data[ b->n++ ] = from->presstens[i].xx;
+    b->data[ b->n++ ] = from->presstens[i].yy;
+    b->data[ b->n++ ] = from->presstens[i].xy;
 #endif
 #ifdef ORDPAR
     b->data[ b->n++ ] = (real) from->nbanz[i];
@@ -580,9 +580,9 @@ void unpack_forces( msgbuf *b, int j, int k )
     to->heatcond[i] += b->data[ b->n++ ];
 #endif
 #ifdef STRESS_TENS
-    to->presstens X(i)      += b->data[ b->n++ ];
-    to->presstens Y(i)      += b->data[ b->n++ ];
-    to->presstens_offdia[i] += b->data[ b->n++ ];
+    to->presstens[i].xx += b->data[ b->n++ ];
+    to->presstens[i].yy += b->data[ b->n++ ];
+    to->presstens[i].xy += b->data[ b->n++ ];
 #endif
 #ifdef ORDPAR
     to->nbanz[i] += (shortint) b->data[ b->n++ ];
