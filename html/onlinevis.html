@@ -70,7 +70,14 @@ and should respect the aspect ratio of the sample.
 <P>
 <H1>2dvis</H1> 2dvis is a visualization program that obtains its data
 - a configuration or an energy distribution - either from a file or
-via a socket connection.
+via a socket connection. In order to use these features, IMD must be compiled with the 
+<A HREF="options.html#sock">sock option</A>. The host on which
+VolIMD runs must be given in the parameter <TT>display_host</TT>.
+This can be the host name (fully qualified, if not locally known),
+or the internet number in dotted quad format. VolIMD and IMD also
+must agree on a port number. Currently, the default 31913 is used
+for both programs. This can be changed in IMD with the parameter
+<TT>baseport</TT>. It cannot be changed in 2dvis.
 <P>
 In case of a configuration each atom is
 represented by a circle. It can be colour encoded by its type or its
@@ -124,6 +131,14 @@ representation. Use the following mouse keys:
 <TR><TD>right</TD><TD>zoom</TD></TR>
 </TABLE>
 
+<H4>Known bugs</H4>
+<UL>
+<P><LI>Picture writes do not work correctly.
+<P><LI>There might be problems with endian byte swaps.
+</UL>
+
+
+<P>
 <A HREF="imd.html">Back to IMD User's Guide</A>
 
 </BODY>
