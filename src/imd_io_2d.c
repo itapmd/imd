@@ -537,9 +537,9 @@ void write_config(int steps)
 #endif
 
 #ifdef FBC
-    for(n=0; n<vtypes;n++)
+    for(m=0; m<vtypes;m++)
       fprintf(out,"extra_startforce %d %.21g %.21g \n",
-	      n,(fbc_forces+n)->x,(fbc_forces+n)->y);
+	      m,(fbc_forces+m)->x,(fbc_forces+m)->y);
 #endif
 
 #ifdef NPT
