@@ -507,8 +507,10 @@ void write_properties(int steps)
 
   fprintf(out, "%e",   (double)(steps * timestep));
   fprintf(out, format, (double)part_pot_energy);
+  fprintf(out, format, (double)tot_pot_energy); /* not official */
 #ifndef MC
   fprintf(out, format, (double)part_kin_energy);
+  fprintf(out, format, (double)tot_kin_energy); /* not official */
   fprintf(out," %e",   (double)pressure);
 #else
   fprintf(out," %e",   (double)(mc_accept/(real)mc_count));

@@ -159,20 +159,20 @@ void eam2_do_forces1(cell *p, cell *q, vektor pbc)
 	eam2_r = radius2;
 
 	eam2_r_cut=(*PTR_2D(eam2_phi_r_end,p_typ,q_typ,ntypes,ntypes));
-	if (eam2_r < eam2_r_cut+0.1) {                              
+	eam2_dr = *PTR_2D(eam2_phi_r_step,p_typ,q_typ,ntypes,ntypes); 
+	if (eam2_r < eam2_r_cut-(2.0*eam2_dr)) {                              
 
 	  /* interpolation: 4 Point Lagrange */
 	  
 	  /* get information about the table, depending on the atomtype */
 	  eam2_r0 = *PTR_2D(eam2_phi_r_begin,p_typ,q_typ,ntypes,ntypes);
-	  eam2_dr = *PTR_2D(eam2_phi_r_step,p_typ,q_typ,ntypes,ntypes);  
 	  eam2_dr_inv = 1.0/eam2_dr;
 	  eam2_nsteps = (int)( (eam2_r_cut - eam2_r0)*eam2_dr_inv +0.5 ); /*rounding?*/
       
 	  /* one quick hack to treat the borders of table */
 	  eam2_x= (eam2_r - eam2_r0)*eam2_dr_inv;
 	  eam2_k= (int) (eam2_x);                           
-	  eam2_k= MIN(eam2_k, eam2_nsteps-2);                           
+	  /* eam2_k= MIN(eam2_k, eam2_nsteps-2); eliminated because if (eam2_r < .. */ 
 	  eam2_k= MAX(eam2_k,1);
 	  eam2_x= eam2_x-eam2_k;
 	  eam2_x= MIN(eam2_x,2.0);
@@ -269,22 +269,22 @@ void eam2_do_forces1(cell *p, cell *q, vektor pbc)
 	}; /* if radius2 <= r2_cut */
 
 	eam2_r_cut = *PTR_2D(eam2_r_end,p_typ,q_typ,ntypes,ntypes);
-	eam2_r0    = *PTR_2D(eam2_r_begin,p_typ,q_typ,ntypes,ntypes);
-	if(eam2_r<eam2_r_cut+0.1)
+	eam2_dr = *PTR_2D(eam2_r_step,p_typ,q_typ,ntypes,ntypes);
+	if(eam2_r < eam2_r_cut-(2.0*eam2_dr))
 	  {
 	  /* here comes the EAM2  related stuff:
 	   * give each atom the electron density at the atoms position 
 	   * interpolation: 4 Point Lagrange */
 
 	    /* get informatio nabaout the table, depending on type */
-	    eam2_dr = *PTR_2D(eam2_r_step,p_typ,q_typ,ntypes,ntypes);
+	    eam2_r0    = *PTR_2D(eam2_r_begin,p_typ,q_typ,ntypes,ntypes);
 	    eam2_dr_inv =1.0/eam2_dr;
 	    eam2_nsteps = (int)((eam2_r_cut - eam2_r0 )*eam2_dr_inv +0.5);/*rounding?*/
 
 	    /* one quick hack to treat the boarders of table */
 	    eam2_x= (eam2_r - eam2_r0)*eam2_dr_inv;
 	    eam2_k= (int) (eam2_x);                           
-	    eam2_k= MIN(eam2_k, eam2_nsteps-2);                           
+	    /* eam2_k= MIN(eam2_k, eam2_nsteps-2);*/                           
 	    eam2_k= MAX(eam2_k,1);
 	    eam2_x= eam2_x-eam2_k;
 	    eam2_x= MIN(eam2_x,2.0);
@@ -310,7 +310,7 @@ void eam2_do_forces1(cell *p, cell *q, vektor pbc)
 
 	    p->eam2_rho_h[i] +=eam2_rho; 
 
-	  } /* if(eam2_r<eam2_r_cut+0.1) */
+	  } /* if(eam2_r<eam2_r_cut-2*eam_dr) */
       } /* if ! q==p.. */
 
 #ifdef DEBUG_INFO
@@ -375,7 +375,7 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
   real eam2_rho20=0.0;
   real eam2_drho2,eam2_drho2_inv;
   int  eam2_rho_k, eam2_rho_nsteps,eam2_rho2_nsteps;
-  real eam2_dr,eam2_dr_inv;
+  real eam2_dr_pq,eam2_dr_qp,eam2_dr_inv;
   int  eam2_r_nsteps;
   real rho_r_cut_pq,rho_r_cut_qp;
   /* makes the interpolation readable, don't really need different variables! */
@@ -420,7 +420,8 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
     eam2_drho       = *(eam2_rho_step+p_typ); 
     eam2_drho_inv   = 1.0/eam2_drho;
     eam2_rho0       = *(eam2_rho_begin+p_typ);
-    eam2_rho_nsteps = (int)( (*(eam2_rho_end+p_typ) - eam2_rho0 )*eam2_drho_inv +.5);
+    eam2_rho_nsteps = (int)((*(eam2_rho_end+p_typ)-eam2_rho0)*eam2_drho_inv +.5);
+
 
     /* f_i_strich(rho_h_i)  *******************************************************/
 
@@ -463,13 +464,14 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
 #endif
 	if((q==p && i==j)) 
 	  {
-	    /* here comes the energy, makes shure that energy is calculated only once per particle! */ 
+	    /* here comes the energy, energy is calculated only once per particle! */ 
 	    
 	    /* get table info */
 	    eam2_drho       = *(eam2_rho_step+p_typ); 
 	    eam2_drho_inv   = 1.0/eam2_drho;
 	    eam2_rho0       = *(eam2_rho_begin+p_typ);
-	    eam2_rho_nsteps = (int)( (*(eam2_rho_end+p_typ) - eam2_rho0 )*eam2_drho_inv+0.5);
+	    eam2_rho_nsteps = (int)((*(eam2_rho_end+p_typ)-eam2_rho0)*eam2_drho_inv + .5);
+
 	    
 	    /* handle boarders */
 	    eam2_rho_x= (eam2_this_rho - eam2_rho0)*eam2_drho_inv;
@@ -521,10 +523,12 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
 
 	  eam2_other_rho = q->eam2_rho_h[j];
 
-	  rho_r_cut_pq=*PTR_2D(eam2_r_end,p_typ,q_typ,ntypes,ntypes);
-	  rho_r_cut_qp=*PTR_2D(eam2_r_end,q_typ,p_typ,ntypes,ntypes); 
-		  
-	  if(eam2_r< rho_r_cut_pq+0.1 || eam2_r<rho_r_cut_qp+0.1)
+	  rho_r_cut_pq = *PTR_2D(eam2_r_end,p_typ,q_typ,ntypes,ntypes);
+	  rho_r_cut_qp = *PTR_2D(eam2_r_end,q_typ,p_typ,ntypes,ntypes); 
+	  eam2_dr_pq   = *PTR_2D(eam2_r_step,p_typ,q_typ,ntypes,ntypes);
+	  eam2_dr_qp   = *PTR_2D(eam2_r_step,q_typ,p_typ,ntypes,ntypes);
+	  
+	  if(eam2_r<rho_r_cut_pq-(2.0*eam2_dr_pq) || eam2_r<rho_r_cut_qp-(2.0*eam2_dr_qp))
 	    {
 	      
 	      /* now we go for the forces... */
@@ -536,7 +540,8 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
 	      eam2_drho2       = *(eam2_rho_step+q_typ); 
 	      eam2_drho2_inv   = 1.0/eam2_drho2;
 	      eam2_rho20       = *(eam2_rho_begin+q_typ);
-	      eam2_rho2_nsteps = (int)( (*(eam2_rho_end+q_typ) - eam2_rho20 )*eam2_drho2_inv+.5);
+	      eam2_rho2_nsteps = (int)((*(eam2_rho_end+q_typ)-eam2_rho20)*eam2_drho2_inv + .5);
+
 	      
 	      /* treat the boarders of table */
 	      eam2_rho2_x= (eam2_other_rho - eam2_rho20)*eam2_drho2_inv;
@@ -579,14 +584,14 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
 	      */
 
 	      /* get information about the atomic electron density function table (eam2_rho_at)*/ 
-	      eam2_dr       = *PTR_2D(eam2_r_step,q_typ,p_typ,ntypes,ntypes);
-	      eam2_dr_inv   = 1.0/eam2_dr;
+	     
+	      eam2_dr_inv   = 1.0/eam2_dr_qp;
 	      eam2_r0       = *PTR_2D(eam2_r_begin,q_typ,p_typ,ntypes,ntypes);
-	      eam2_r_nsteps = (int)( (rho_r_cut_qp - eam2_r0 )*eam2_dr_inv+.5);
+	      eam2_r_nsteps = (int)((rho_r_cut_qp-eam2_r0)*eam2_dr_inv +.5);
 	      
 	      eam2_x= (eam2_r - eam2_r0)*eam2_dr_inv;
 	      eam2_k= (int) (eam2_x);                           
-	      eam2_k= MIN(eam2_k, eam2_r_nsteps-2);       
+	      /* eam2_k= MIN(eam2_k, eam2_r_nsteps-2);  */     
 	      eam2_k= MAX(eam2_k,1);
 	      eam2_x= eam2_x-eam2_k;
 	      eam2_x= MIN(eam2_x,2.0);
@@ -611,14 +616,14 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
 	      
 	      /* rho_at_strich_j(r_ij) the same (same r) just with inverted p_type, q_type */ 
 	      /* get information about the atomic electron density function table (eam2_rho_at)*/ 
-	      eam2_dr       = *PTR_2D(eam2_r_step,p_typ,q_typ,ntypes,ntypes);
-	      eam2_dr_inv   = 1.0/eam2_dr;
+	      eam2_dr_inv   = 1.0/eam2_dr_pq;
 	      eam2_r0       = *PTR_2D(eam2_r_begin,p_typ,q_typ,ntypes,ntypes);
-	      eam2_r_nsteps = (int)( (rho_r_cut_pq - eam2_r0 )*eam2_dr_inv+.5);
+	      eam2_r_nsteps = (int)( (rho_r_cut_pq - eam2_r0 )*eam2_dr_inv +.5);
+
 	      
 	      eam2_x= (eam2_r - eam2_r0)*eam2_dr_inv;
 	      eam2_k= (int) (eam2_x);                           
-	      eam2_k= MIN(eam2_k, eam2_r_nsteps-2);       
+	      /* eam2_k= MIN(eam2_k, eam2_r_nsteps-2); */       
 	      eam2_k= MAX(eam2_k,1);
 	      eam2_x= eam2_x-eam2_k;
 	      eam2_x= MIN(eam2_x,2.0);
@@ -715,6 +720,11 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
 #endif 
 
 } /* eam2_do_forces2 */
+
+
+
+
+
 
 
 
