@@ -303,7 +303,7 @@ void getparamfile(char *paramfname, int sim)
       getparam("simulation",&tmp,PARAM_INT,1,1);
       if (sim < tmp) break;
     }
-    if (strcasecmp(token,"maxwalltime")==0) {
+    else if (strcasecmp(token,"maxwalltime")==0) {
       /* maximal walltime limit */
       getparam(token,&maxwalltime,PARAM_REAL,1,1);
     }
