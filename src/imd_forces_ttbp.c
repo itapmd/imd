@@ -34,8 +34,8 @@ void do_forces_ttbp_1(cell *p, cell *q, vektor pbc)
 #endif
   int    i,j,k;						       /* counter */
   int    q_typ,p_typ;					         /* sorte */
-  int    jstart;			                       /* ttbp counter */
-  int    pni,pnj,tmp_k=0;	  		                    /* ttbp dummy */ 
+  int    jstart;			                  /* ttbp counter */
+  int    pni,pnj,tmp_k=0;	  		            /* ttbp dummy */ 
   real   *tmp_ptri;			                    /* ttbp dummy */
   real   *tmp_ptr; 			                    /* ttbp dummy */
   real   radius2;					 /* distance ** 2 */
@@ -64,29 +64,24 @@ void do_forces_ttbp_1(cell *p, cell *q, vektor pbc)
     tmp_d.z = p->ort Z(i) - pbc.z;
     p_typ   = p->sorte[i];
     pni     = p->nummer[i];
-
+    if (pni < 0 ) { pni = -pni; };
     jstart  = (p==q ? i+1 : 0);
     qptr    = q->ort + DIM * jstart;
 
     /* For each atom in neighbouring cell */
     for (j = jstart; j < q->n; ++j) {
 
+      q_typ   = q->sorte[j];
       /* Calculate distance  */
-
       d.x     = *qptr - tmp_d.x; ++qptr;
       d.y     = *qptr - tmp_d.y; ++qptr;
       d.z     = *qptr - tmp_d.z; ++qptr;
       radius2 = SPROD(d,d);
-      q_typ   = q->sorte[j];
-#ifndef NODBG_DIST
       if (0==radius2) { char msgbuf[256];
         sprintf(msgbuf,"(ttbp_1) Distance is zero: i=%d (#%d), j=%d (#%d)\n",
 		i,p->nummer[i],j,q->nummer[j]);
         error(msgbuf);
       }
-#else
-      if (0==radius2) error("Distance is zero.");
-#endif
 
       /* 1. Cutoff: Calculate force, if distance smaller than cutoff */ 
       if (radius2 <= r2_cut) {
@@ -101,12 +96,10 @@ void do_forces_ttbp_1(cell *p, cell *q, vektor pbc)
 	/* A single access to the potential table involves two multiplications 
 	   We use a intermediate pointer to aviod this as much as possible.
 	   Note: This relies on layout of the pot-table in memory!!! */
-
 	potptr   = PTR_3D_V(potential, k, p_typ, q_typ, pot_dim);
 	pot_k0   = *potptr; potptr += pot_dim.y * pot_dim.z;
 	pot_k1   = *potptr; potptr += pot_dim.y * pot_dim.z;
 	pot_k2   = *potptr;
-
 	dv       = pot_k1 - pot_k0;
 	d2v      = pot_k2 - 2 * pot_k1 + pot_k0;
 
@@ -136,16 +129,16 @@ void do_forces_ttbp_1(cell *p, cell *q, vektor pbc)
         tmp_vir_vect.y -= d.y * d.y * pot_grad;
         tmp_vir_vect.z -= d.z * d.z * pot_grad;
 #else
-        tmp_virial     -= radius2 * pot_grad;  
+        tmp_virial     -= radius2   * pot_grad;  
 #endif
 
 	/* 2. Cutoff: Three body potential neighbors; save atom# and x,y,z coords */
         if (radius2 <= ttbp_r2_cut[p_typ][q_typ]) {
 
 	  pnj  = q->nummer[j];
-
+          if ( pnj < 0 ) { pnj = -pnj; };
 	  /* i interacts with j: save #j in array k>0 */
-      ttbp_ij[pni*ttbp_len] += (real) 1;
+          ttbp_ij[pni*ttbp_len] += (real) 1;
   	  tmp_k     = (int) ttbp_ij[pni*ttbp_len];
 	  tmp_ptri  = &ttbp_ij[pni*ttbp_len+tmp_k*2-1];
 	  *tmp_ptri = (real) pnj; ++tmp_ptri;
@@ -189,19 +182,17 @@ void do_forces_ttbp_1(cell *p, cell *q, vektor pbc)
   return;
 }
 
-
 /* ---------------------------------------------------------------------- */
 void do_forces_ttbp_2(cell *p, cell *q, vektor pbc)
 
 {
-  vektor d,dd;
-  vektor tmp_d;
+  vektor force,d,dd,tmp_d,dtheta_dr;
   int    i,j,k,s_k;					       /* counter */
   int    jstart,jend;					       /* counter */
-  int	 pni,pnj,pnk;		                   /* atom number */	
+  int	 pni,pnj,pnk;		                   	   /* atom number */	
   int    p_typ,j_typ,k_typ;				         /* sorte */
-  real *tmp_ptri;						 /* dummy */
-  real   *tmp_ptr;						 /* dummy */
+  real   *tmp_ptri, *tmp_ptr;				         /* dummy */
+  real   dE_dr;
   real   pot_zwi,tmp_pot;				           /* pot */
   real   radius,radius2,rradius,rradius2;		      /* distance */
   real   *s_potptr;				                   /* pot */
@@ -211,30 +202,15 @@ void do_forces_ttbp_2(cell *p, cell *q, vektor pbc)
   real   s_pot_grad_ij,s_pot_zwi_ij,tmp_f2;	                   /* pot */
   real   theta_grad;                /* actual value of theta(jik) in grad */
   real   theta_rad;               /* actual value of theta(jik) in radian */
-  real   sine_theta;                                        /* sin(theta) */
   real   cos_theta;                      	    /* cosine(theta(jik)) */
-  real   d_constant;	              /* harmonic: 2*k*(theta-ttbp_theta) */
+  real   dE_dtheta;	                                   /* dE / dtheta */
   real   d_acos;	                        /* d cos(theta) / d theta */
-  real   d_factor;	                             /* d_constant*d_acos */
+  real   tmp_factor;	                             
   real   tmp_denom;	         /* inverse of denominator radius*rradius */
-  real   tmp_smooth_A,tmp_smooth_B;			         /* dummy */
   real	 tmp_sp;	                    /* SPROD of vectors ij and ik */
-  real   tmp_simple_r,tmp_simple_rr,tmp_A,tmp_B;                 /* dummy */
-  real	 tmp_dcos_dxij,tmp_dcos_dxik;           /* dcos_theta / dx_(jk,i) */
-  real	 tmp_dcos_dyij,tmp_dcos_dyik;           /* dcos_theta / dy_(jk,i) */
-  real	 tmp_dcos_dzij,tmp_dcos_dzik;           /* dcos_theta / dz_(jk,i) */
-  real   tmp_Fxij,tmp_Fxik,tmp_Fyij,tmp_Fyik,tmp_Fzij,tmp_Fzik;  /* force */
-  real   tmp_pi;                                                   /* ... */
+  real   tmp_pi  = 3.141592654/180.0;                              /* ... */
   real   tmp_sin;                                                /* dummy */
-  real   ttbp_c0=0.34375;                                  /* fourier sp3 */
-  real   ttbp_c1=0.37500;                                  /* fourier sp3 */
-  real   ttbp_c2=0.28125;                                  /* fourier sp3 */
-  real   tmp_virial;
-#ifdef P_AXIAL
-  vektor tmp_vir_vect;
-#endif
-
-  tmp_virial     = 0.0;
+  real   tmp_virial = 0.0;
 #ifdef P_AXIAL
   vektor tmp_vir_vect;
   tmp_vir_vect.x = 0.0;
@@ -242,19 +218,15 @@ void do_forces_ttbp_2(cell *p, cell *q, vektor pbc)
   tmp_vir_vect.z = 0.0;
 #endif
 
-  tmp_pi = 3.141592654/180.0;
-
   /* The angle theta is the angle at atom i formed by the atoms j-i-k */
-
   /* For each atom in first cell */
   for (i = 0;i < p->n; ++i) {
 
     /* Some compilers don't find the expressions that are invariant 
        to the inner loop. I'll have to define my own temp variables. */
-
     pni      = p->nummer[i];
+    if ( pni < 0 ) { pni = -pni; };
     p_typ    = p->sorte[i];
-
     /* interaction of i with selected j's (from ttbp_1) */ 
     jstart   = 1;
     jend     = (int) ttbp_ij[pni*ttbp_len];
@@ -274,28 +246,21 @@ void do_forces_ttbp_2(cell *p, cell *q, vektor pbc)
       if (radius2 <= ttbp_r2_0) { radius2  = ttbp_r2_0; }; 
       radius   = sqrt(radius2);
 
-#ifndef NODBG_DIST
       if (0==radius2) { char msgbuf[256];
         sprintf(msgbuf,"(ttbp_2) Distance is zero: i=%d (#%d), j=%d (#%d)\n",
 		i,p->nummer[i],j,q->nummer[j]);
         error(msgbuf);
       }
-#else
-      if (0==radius2) error("Distance is zero.");
-#endif
 
       /* ttbp smooth function ij: potential table */
       s_k      = (int) ((radius2 - ttbp_r2_0) * ttbp_inv_r2_step);
       s_chi    = (radius2 - ttbp_r2_0 - s_k * ttbp_r2_step) * ttbp_inv_r2_step;
-	
       s_potptr = PTR_3D_V(ttbp_potential, s_k, p_typ, j_typ, ttbp_pot_dim);
       s_pot_k0 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
       s_pot_k1 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
       s_pot_k2 = *s_potptr;
-
       s_dv     = s_pot_k1 - s_pot_k0;
       s_d2v    = s_pot_k2 - 2 * s_pot_k1 + s_pot_k0;
-
       s_pot_grad_ij = -2 * ttbp_inv_r2_step * ( s_dv + (s_chi - 0.5) * s_d2v );
       s_pot_zwi_ij  = s_pot_k0 + s_chi * s_dv + 0.5 * s_chi * (s_chi - 1) * s_d2v;
 
@@ -315,29 +280,21 @@ void do_forces_ttbp_2(cell *p, cell *q, vektor pbc)
         /* Check for distances, shorter than minimal distance */
         if (rradius2 <= ttbp_r2_0) { rradius2 = ttbp_r2_0; }; 
 	rradius  = sqrt(rradius2);
-
-#ifndef NODBG_DIST
         if (0==rradius2) { char msgbuf[256];
           sprintf(msgbuf,"(ttbp_2) Distance is zero: i=%d (#%d), k=%d (#%d)\n",
 		  i,pni,k,pnk);
           error(msgbuf);
         }
-#else
-        if (0==rradius2) error("Distance is zero.");
-#endif
 
         /* ttbp smooth function ik: potential table */
         s_k      = (int) ((rradius2 - ttbp_r2_0) * ttbp_inv_r2_step);
         s_chi    = (rradius2 - ttbp_r2_0 - s_k * ttbp_r2_step) * ttbp_inv_r2_step;
-	
         s_potptr = PTR_3D_V(ttbp_potential, s_k, p_typ, k_typ , ttbp_pot_dim);
         s_pot_k0 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
         s_pot_k1 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
         s_pot_k2 = *s_potptr;
-
         s_dv     = s_pot_k1 - s_pot_k0;
         s_d2v    = s_pot_k2 - 2 * s_pot_k1 + s_pot_k0;
-
         s_pot_grad_ik = -2 * ttbp_inv_r2_step * ( s_dv + (s_chi - 0.5) * s_d2v );
         s_pot_zwi_ik  = s_pot_k0 + s_chi * s_dv + 0.5 * s_chi * (s_chi - 1) * s_d2v;
 
@@ -346,170 +303,81 @@ void do_forces_ttbp_2(cell *p, cell *q, vektor pbc)
 	/* Calculate cosine(theta(jik)) */
 	cos_theta = tmp_sp/radius/rradius;
 
+        /*  incase some security is needed:
         if (cos_theta >  1.0) { cos_theta =  1.0; };
         if (cos_theta < -1.0) { cos_theta = -1.0; };
+        */
 
 	/* Calculate theta(jik) */
 	theta_rad = acos(cos_theta);
 	/* calculate f2 = f(ij)*f(ik) */
  	tmp_f2    = s_pot_zwi_ij * s_pot_zwi_ik;	                /* smooth */
 
-	/* Energy (ttbp_theta[p_typ]: equilibrium angle) 
-         * HARMONIC potential term 
-         * theta_grad   = theta_rad/tmp_pi;
-         * pot_zwi      = ttbp_constant[p_typ]*(theta_grad-ttbp_theta[p_typ])
-         *                                    *(theta_grad-ttbp_theta[p_typ]); 
-         */
-
-        /* SINE potential term 
-         * sine_theta   = sin(theta_rad - ttbp_theta[p_typ]*tmp_pi);
-         * pot_zwi      = ttbp_constant[p_typ]*sine_theta*sine_theta;
-         */
-
-        /* FOURIER potential term 
-         * in case of TTBPNC: type=0 == sp3 hybrid 
-         * in case of TTBPNC: type=1 == sp2 hybrid - "but it works"
-         */
-#ifdef TTBPNC
-        if (p_typ==0) { 
-#endif /* TTBPNC */
-          pot_zwi = ttbp_constant[p_typ]*(ttbp_c0+
-                                          ttbp_c1*cos_theta+
-                                          ttbp_c2*cos(2*theta_rad));
-#ifdef TTBPNC
-        };
-        if (p_typ==1) {
-          pot_zwi = 0.1111111111 * ttbp_constant[p_typ]*(1-cos(3*theta_rad));
-        }
-#endif /* TTBPNC */
-
+        /* FOURIER potential term */
+        pot_zwi = ttbp_constant[p_typ]*(ttbp_c0[p_typ] +
+                                        ttbp_c1[p_typ] * cos_theta +
+                                        ttbp_c2[p_typ] * cos(2*theta_rad) +
+                                        ttbp_c3[p_typ] * cos(3*theta_rad));
 	tmp_pot		= pot_zwi ;
  	pot_zwi         = pot_zwi * tmp_f2 ;				/* smooth */
-
 	p->pot_eng[i]  += pot_zwi;
 	tot_pot_energy += pot_zwi;
 
 	/* Forces ... the horror starts 
-	 * Part 1: gradient = d E / d r 
+	 * F = - d E / d r  
+	 *   = - d E / d Theta  *  d Theta / d r
+	 *   = - d E / d Theta  *  d_acos *  dtheta_dr 
+	 * smoothing 
+	 * F = - d (E*Fij*Fik) / d r
+	 *   = - d E / d r * Fij * Fik   - E * d Fij / d r * Fik  - E * Fij * d Fik / d r
 	 */
 
-        /* HARMONIC 
-         * d_constant   = 2 * ttbp_constant[p_typ] 
-         *                  * (theta_grad - ttbp_theta[p_typ]);
-	 */
+        dE_dtheta    =  - ttbp_constant[p_typ]*(  ttbp_c1[p_typ]  * sin(theta_rad) + 
+                                                2*ttbp_c2[p_typ]  * sin(2*theta_rad) + 
+                                                3*ttbp_c3[p_typ]  * sin(3*theta_rad));
 
-        /* SINE 
-         * d_constant   = 2 * ttbp_constant[p_typ] 
-         *                  * sine_theta * cos(theta_rad-ttbp_theta[p_typ]*tmp_pi);
-         */
-
-        /* FOURIER */
-#ifdef TTBPNC
-        if (p_typ==0) {
-#endif /* TTBPNC */
-          d_constant   =  ttbp_constant[p_typ]
-                          * (-ttbp_c1 * sin(theta_rad) - 2*ttbp_c2 * sin(2*theta_rad));
-#ifdef TTBPNC
-        };
-        if (p_typ==1) {
-           d_constant   = 0.3333333 * ttbp_constant[p_typ]*sin(3*theta_rad);
-        }
-#endif /* TTBPNC */
-
-        /* From now on the calculations are independent of the potential type */
         tmp_sin = sin(theta_rad);
+        /*  in case some security is needed
         if ( (tmp_sin <  0.0001) && (tmp_sin >= 0.0) ) { tmp_sin =  0.0001; };
         if ( (tmp_sin > -0.0001) && (tmp_sin <= 0.0) ) { tmp_sin = -0.0001; };
-        d_acos          = -1.0 / tmp_sin;
-	d_factor	= d_constant * d_acos;
+        */
+        d_acos          = - 1.0 / tmp_sin;
+	tmp_denom	=   1.0 / (radius*rradius);
+	tmp_factor	= - tmp_denom * d_acos;
 
-	/* Part 2a: d cos(theta) / d r(jk,i) 
-	 * Part 2b: F = - grad E / d r * r/|r| = -d_factor * dcos_dr * r/|r| 
-	 */
+	dtheta_dr.x	= tmp_factor * ( d.x  * ( tmp_sp / radius2  - 1) +
+			                 dd.x * ( tmp_sp / rradius2 - 1) ) ;
+	dtheta_dr.y	= tmp_factor * ( d.y  * ( tmp_sp / radius2  - 1) +
+			                 dd.y * ( tmp_sp / rradius2 - 1) ) ;
+	dtheta_dr.z	= tmp_factor * ( d.z  * ( tmp_sp / radius2  - 1) +
+			                 dd.z * ( tmp_sp / rradius2 - 1) ) ;
 
-	tmp_denom	= 1.0/(radius*rradius);
-	tmp_simple_r	= tmp_sp / radius2;
-	tmp_simple_rr	= tmp_sp / rradius2;
+	force.x  = - dE_dtheta * dtheta_dr.x * tmp_f2
+	           + tmp_pot   * (  s_pot_grad_ij * d.x   * s_pot_zwi_ik
+	                          + s_pot_grad_ik * dd.x  * s_pot_zwi_ij);
+	force.y  = - dE_dtheta * dtheta_dr.y * tmp_f2
+	           + tmp_pot   * (  s_pot_grad_ij * d.y   * s_pot_zwi_ik
+	                          + s_pot_grad_ik * dd.y  * s_pot_zwi_ij);
+	force.z  = - dE_dtheta * dtheta_dr.z * tmp_f2
+	           + tmp_pot   * (  s_pot_grad_ij * d.z   * s_pot_zwi_ik
+	                          + s_pot_grad_ik * dd.z  * s_pot_zwi_ij);
+	p->kraft X(i)  += force.x;
+	p->kraft Y(i)  += force.y;
+	p->kraft Z(i)  += force.z;
 
- 	tmp_smooth_A    = tmp_pot * s_pot_zwi_ik * s_pot_grad_ij ;	/* smooth */
-	tmp_smooth_B    = tmp_pot * s_pot_zwi_ij * s_pot_grad_ik ;	/* smooth */
-
-	tmp_A     	= d.x  * tmp_simple_r;
-	tmp_B     	= dd.x * tmp_simple_rr;
-	tmp_dcos_dxij	= (dd.x - tmp_A) * tmp_denom ;
-	tmp_Fxij	= -d_factor * tmp_dcos_dxij * d.x  / radius  ;
-	tmp_Fxij	= tmp_Fxij  * tmp_f2 - (tmp_smooth_A * d.x)  ;	/* smooth */ 
-	tmp_dcos_dxik	= (d.x  - tmp_B) * tmp_denom ;
-	tmp_Fxik	= -d_factor * tmp_dcos_dxik * dd.x / rradius ;
-	tmp_Fxik	= tmp_Fxik  * tmp_f2 - (tmp_smooth_B * dd.x) ;	/* smooth */ 
-
-	tmp_A     	= d.y  * tmp_simple_r; 
-	tmp_B     	= dd.y * tmp_simple_rr;
-	tmp_dcos_dyij	= (dd.y - tmp_A) * tmp_denom ;
-	tmp_Fyij	= -d_factor * tmp_dcos_dyij * d.y  / radius  ;
-	tmp_Fyij	= tmp_Fyij  * tmp_f2 - (tmp_smooth_A * d.y)  ;	/* smooth */
-	tmp_dcos_dyik	= (d.y  - tmp_B) * tmp_denom ;
-	tmp_Fyik	= -d_factor * tmp_dcos_dyik * dd.y / rradius ;
-	tmp_Fyik	= tmp_Fyik  * tmp_f2 - (tmp_smooth_B * dd.y) ;	/* smooth */
-
-	tmp_A     	= d.z  * tmp_simple_r;
-	tmp_B     	= dd.z * tmp_simple_rr;
-	tmp_dcos_dzij	= (dd.z - tmp_A) * tmp_denom ;
-	tmp_Fzij	= -d_factor * tmp_dcos_dzij * d.z  / radius  ;
-	tmp_Fzij	= tmp_Fzij  * tmp_f2 - (tmp_smooth_A * d.z)  ;	/* smooth */
-	tmp_dcos_dzik	= (d.z  - tmp_B) * tmp_denom ;
-	tmp_Fzik	= -d_factor * tmp_dcos_dzik * dd.z / rradius ;
-	tmp_Fzik	= tmp_Fzik  * tmp_f2 - (tmp_smooth_B * dd.z) ;	/* smooth */
-
-	/* Part 3: store forces F = - grad E / d r(jk,i)  * r/|r| */
-	tmp_ptr   = &ttbp_force[pni*3];
-	*tmp_ptr += tmp_Fxij + tmp_Fxik ; ++tmp_ptr;
-	*tmp_ptr += tmp_Fyij + tmp_Fyik ; ++tmp_ptr;
-	*tmp_ptr += tmp_Fzij + tmp_Fzik ;
-	tmp_ptr   = &ttbp_force[pnj*3];
-	*tmp_ptr -= tmp_Fxij ;            ++tmp_ptr;
-	*tmp_ptr -= tmp_Fyij ;		  ++tmp_ptr;
-	*tmp_ptr -= tmp_Fzij ;		 
-	tmp_ptr   = &ttbp_force[pnk*3];
-	*tmp_ptr -= tmp_Fxik ;		  ++tmp_ptr;
-	*tmp_ptr -= tmp_Fyik ;		  ++tmp_ptr;
-	*tmp_ptr -= tmp_Fzik ;		  
+        tmp_d.x         = p->ort X(i);
+    	tmp_d.y         = p->ort Y(i);
+    	tmp_d.z         = p->ort Z(i);
+#ifdef P_AXIAL
+        tmp_vir_vect.x -= tmp_d.x * force.x;
+        tmp_vir_vect.y -= tmp_d.y * force.y;
+        tmp_vir_vect.z -= tmp_d.z * force.z;
+#else
+        tmp_virial     -= SPROD(tmp_d,force);
+#endif
 
       }; /* for k */
     }; /* for j */
-  }; /* for i */
-
-  /* For each atom in first cell */
-  for (i = 0;i < p->n; ++i) {
-
-    tmp_d.x         = p->ort X(i);
-    tmp_d.y         = p->ort Y(i);
-    tmp_d.z         = p->ort Z(i);
-    pni             = p->nummer[i];
-
-    /* Accumulate forces (and dummy virials) */
-    tmp_ptr = &ttbp_force[pni*3];
-      	p->kraft X(i)  += *tmp_ptr; 
-#ifdef P_AXIAL
-      	tmp_vir_vect.x += tmp_d.x * *tmp_ptr;
-#else
-      	tmp_virial     += tmp_d.x * *tmp_ptr;
-#endif
-        ++tmp_ptr;
-      	p->kraft Y(i)  += *tmp_ptr; 
-#ifdef P_AXIAL
-      	tmp_vir_vect.y += tmp_d.y * *tmp_ptr;
-#else
-      	tmp_virial     += tmp_d.y * *tmp_ptr;
-#endif
-        ++tmp_ptr;
-      	p->kraft Z(i)  += *tmp_ptr; 
-#ifdef P_AXIAL
-      	tmp_vir_vect.z += tmp_d.z * *tmp_ptr;
-#else
-      	tmp_virial     += tmp_d.z * *tmp_ptr;
-#endif
-
   }; /* for i */
 
 #ifdef P_AXIAL
