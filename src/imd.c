@@ -23,7 +23,7 @@
 
 int main(int argc, char **argv)
 {
-  int start;
+  int start, num_threads;
   time_t tstart, tend;
   real tmp;
   str255 fname;
@@ -136,7 +136,7 @@ int main(int argc, char **argv)
   start = steps_min;  /* keep starting step number */
 
   /* write .eng file header */
-  if ((restart==0) && (eng_int>0)) write_eng_file_header();
+  if ((imdrestart==0) && (eng_int>0)) write_eng_file_header();
 
   imd_stop_timer(&time_setup);
   imd_start_timer(&time_main);
@@ -196,18 +196,30 @@ int main(int argc, char **argv)
     if (0 == myid) printf("EPITAX: %d atoms created.\n", nepitax);
 #endif
 
+#ifdef OMP
+    num_threads = omp_get_max_threads();
+#else
+    num_threads = 1;
+#endif
+
 #ifdef MPI
-    printf("Did %d steps with %d atoms and %d CPUs.\n", 
-           steps_max+1, natoms, num_cpus);
+    printf("Did %d steps with %d atoms on %d CPUs.\n", 
+           steps_max+1, natoms, num_cpus*num_threads);
+#ifdef OMP
+    printf("Used %d processes with %d threads each.\n", num_cpus, num_threads);
+#endif
+#else
+#ifdef OMP
+    printf("Did %d steps with %d atoms on %d CPUs.\n", 
+           steps_max+1, natoms, num_threads);
 #else
     printf("Did %d steps with %d atoms.\n", steps_max+1, natoms);
 #endif
+#endif
+
     printf("Used %f seconds cputime,\n", time_total.total);
     printf("%f seconds excluding setup time,\n", time_main.total);
-#ifdef OMP
-    num_cpus *= omp_get_max_threads();
-#endif
-    tmp =  (num_cpus * time_main.total / (steps_max+1)) / natoms;
+    tmp =  (num_cpus * num_threads * time_main.total / (steps_max+1)) / natoms;
     printf("%e cpuseconds per step and atom\n", tmp);
     printf("(inverse is %e).\n\n", 1.0/tmp);
 

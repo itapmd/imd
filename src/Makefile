@@ -427,8 +427,9 @@ ifeq (Power4-cc,${IMDSYS})
   CC_OMPI	= mpcc_r
   BIN_DIR	= ${HOME}/bin/powerpc
   OPT_FLAGS	+= -O4 -w
-  OMP_FLAGS	+= -DUSE_WALLTIME -qsmp=omp
-  OMPI_FLAGS	+= -qsmp=omp
+  # MPI_FLAGS     += -q64
+  OMP_FLAGS	+= -DUSE_WALLTIME -q64 -qsmp=omp
+  OMPI_FLAGS	+= -qsmp=omp -q64
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -p
   PROF_LIBS	+= -lpl

@@ -136,7 +136,7 @@ EXTERN int *num_vsort INIT(NULL); /* number of atoms for each virtual type */
 EXTERN int steps INIT(0);        /* number of current MD step */
 EXTERN int steps_max INIT(0);    /* Maximum number of MD steps */
 EXTERN int steps_min INIT(0);    /* starting step nr for current phase */
-EXTERN int restart INIT(0);      /* file number for restart */
+EXTERN int imdrestart INIT(0);   /* file number for restart */
 EXTERN int checkpt_int INIT(0);  /* Period of checkpoints */
 EXTERN int eng_int INIT(0);      /* Period of data output */
 EXTERN int force_int INIT(0);    /* Period of force file writing */

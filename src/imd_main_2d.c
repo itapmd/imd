@@ -53,7 +53,7 @@ void main_loop(void)
 #endif 
 
   /* initialize temperature if necessary */
-  if (0==restart) { 
+  if (0==imdrestart) { 
     if (do_maxwell) maxwell(temperature);
     do_maxwell=0;
   }
@@ -387,7 +387,7 @@ void main_loop(void)
   }
 
   /* clean up the current phase, and clear restart flag */
-  restart=0;
+  imdrestart=0;
   if (0==myid) {
     write_itr_file(-1, steps_max,"");
     printf( "End of simulation %d\n", simulation );

@@ -514,22 +514,25 @@ void init_pre_pot(void) {
         /* Lennard-Jones */
         if (lj_epsilon[i][j] > 0.0) {
           pair_int_lj( &lj_shift[i][j], &tmp, i, j, r2_cut[i][j] );
-          printf("Lennard-Jones potential %1d %1d shifted by %f\n", 
-	         i, j, -lj_shift[i][j]);
+          if (myid==0)
+            printf("Lennard-Jones potential %1d %1d shifted by %f\n", 
+	           i, j, -lj_shift[i][j]);
 	}
         else lj_shift[i][j] = 0.0;
         /* Morse */
         if (morse_epsilon[i][j] > 0.0) {
           pair_int_morse( &morse_shift[i][j], &tmp, i, j, r2_cut[i][j] );
-          printf("Morse potential %1d %1d shifted by %f\n", 
-	         i, j, -morse_shift[i][j]);
+          if (myid==0)
+            printf("Morse potential %1d %1d shifted by %f\n", 
+	           i, j, -morse_shift[i][j]);
 	}
         else morse_shift[i][j] = 0.0;
         /* Buckingham */
         if (buck_sigma[i][j] > 0.0) {
           pair_int_buck( &buck_shift[i][j], &tmp, i, j, r2_cut[i][j] );
-          printf("Buckingham potential %1d %1d shifted by %f\n", 
-	         i, j, -buck_shift[i][j]);
+          if (myid==0)
+            printf("Buckingham potential %1d %1d shifted by %f\n", 
+	           i, j, -buck_shift[i][j]);
 	}
         else buck_shift[i][j] = 0.0;
       } 

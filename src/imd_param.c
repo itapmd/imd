@@ -1920,9 +1920,9 @@ void check_parameters_complete()
   }
 #endif
 #ifdef AVPOS
-  fprintf(stderr, "%d %d\n", avpos_start, restart*checkpt_int);
-  if (avpos_start <= restart*checkpt_int)
-    avpos_start = restart*checkpt_int+1; /* do not ask me why +1 ;-) */
+  fprintf(stderr, "%d %d\n", avpos_start, imdrestart*checkpt_int);
+  if (avpos_start <= imdrestart*checkpt_int)
+    avpos_start = imdrestart*checkpt_int+1; /* do not ask me why +1 ;-) */
   /* Default initialisation of end time */ 
   if (0==avpos_end) avpos_end = steps_max;
 #endif
@@ -1966,12 +1966,12 @@ void read_command_line(int argc,char **argv)
         case 'r':
           if (argv[1][2]=='\0') {
             if (NULL != argv[2]) {
-              restart = atoi(argv[2]);
+              imdrestart = atoi(argv[2]);
               --argc;
               ++argv;
             }
           }
-          else restart = atoi(&argv[1][2]);
+          else imdrestart = atoi(&argv[1][2]);
           break;
         case 'p':
           if (argv[1][2]=='\0') {
@@ -1996,7 +1996,7 @@ void read_command_line(int argc,char **argv)
   /* broadcast everything */
   MPI_Bcast( paramfilename, 255, MPI_CHAR, 0, MPI_COMM_WORLD); 
   MPI_Bcast( progname,      255, MPI_CHAR, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &restart,        1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &imdrestart,     1, MPI_INT,  0, MPI_COMM_WORLD); 
 #endif
 }
 
@@ -2023,19 +2023,19 @@ void read_parameters(void)
     check_parameters_complete();
 
     /* Get restart parameters if restart */
-    if (0 != restart) {
+    if (0 != imdrestart) {
       int tmp = finished;
-      sprintf(fname,"%s.%d.itr",outfilename,restart);
+      sprintf(fname,"%s.%d.itr",outfilename,imdrestart);
       testfile = fopen(fname,"r");
       if (NULL==testfile) { 
-        sprintf(fname,"%s.%05d.itr",outfilename,restart);
+        sprintf(fname,"%s.%05d.itr",outfilename,imdrestart);
       } else {
         fclose(testfile);
       }
-      sprintf(infilename,"%s.%d.%s",outfilename,restart,"chkpt");
+      sprintf(infilename,"%s.%d.%s",outfilename,imdrestart,"chkpt");
       testfile = fopen(infilename,"r");
       if (NULL==testfile) { 
-        sprintf(infilename,"%s.%05d.%s",outfilename,restart,"chkpt");
+        sprintf(infilename,"%s.%05d.%s",outfilename,imdrestart,"chkpt");
       } else {
         fclose(testfile);
       }
