@@ -56,16 +56,24 @@ rho_end drho followed by n blocks of values.
 For more details take a look at the description of the 
 <a href=eam2.html>EAM2 implementation</a>
 
-<H2>Two- and Three-Body Potentials</H2>
+<H2>Stillinger-Weber potential</H2>
 
 The pair interaction potential is used as described in 
 'IMD Potentials'. The three-body interaction potential
-is computed during the run. The explicit form of the 
-latter term is still under development. Only three-body 
-test potentials are available right now.
+is computed during the run. However, a cutoff function has
+to be specified. Its input format is the same as in the case
+of the IMD pair potential.
 <p>
 For more details take a look at the description of the 
-<a href=ttbp.html>TTBP implementation</a>.
+<a href="covalent.html">TTBP implementation</a>.
+
+<H2>Tersoff potential</H2>
+The Tersoff potential is computed analytically in the
+IMD implementation. A set of parameters, however, has
+to be given in the parameter file.<P>
+
+For more details take a look at the description of the 
+<A HREF="covalent.html#tersoff">TERSOFF implementation</A>.
 
 <H2>Gay-Berne Potential</H2>
 
