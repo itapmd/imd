@@ -628,6 +628,7 @@ void setup_buffers(void)
 #ifdef ADP
     binc3 += 9;
 #endif
+#endif /* EAM2 */
 
     /* one way or two ways */
 #ifdef AR
