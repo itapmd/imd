@@ -1580,9 +1580,9 @@ void write_atoms_sqd(FILE *out)
       d.z = SQR( ORT(p,i,Z) - REF_POS(p,i,Z) );
 #endif
 #ifdef TWOD
-      len += sprintf( outbuf+len, "%d %e %e\n",    SORTE(p,i), d.x, d.y     );
+      len += sprintf( outbuf+len, "%d %e %e\n",    VSORTE(p,i), d.x, d.y     );
 #else
-      len += sprintf( outbuf+len, "%d %e %e %e\n", SORTE(p,i), d.x, d.y, d.z);
+      len += sprintf( outbuf+len, "%d %e %e %e\n", VSORTE(p,i), d.x, d.y, d.z);
 #endif
       /* flush or send outbuf if it is full */
       if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
