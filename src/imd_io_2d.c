@@ -200,7 +200,9 @@ void read_atoms(str255 infilename)
 
       input->n = 1;
       NUMMER(input,0) = n;
+#ifndef MONO
       SORTE (input,0) = MOD(s,ntypes);
+#endif
       VSORTE(input,0) = s;
       MASSE (input,0) = m;
       ORT(input,0,X)  = pos.x;

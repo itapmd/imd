@@ -396,7 +396,9 @@ void generate_fcc(int maxtyp)
         ORT(input,0,Z) = zz;
 #ifndef MONOLJ
         NUMMER(input,0) = natoms;
+#ifndef MONO
         SORTE (input,0) = typ;
+#endif
         VSORTE(input,0) = typ;
         MASSE (input,0) = masses[typ];
 #endif
@@ -516,7 +518,9 @@ void generate_lav()
 	  ORT(input,0,Z)  = zz;
 #ifndef MONOLJ
 	  NUMMER(input,0) = natoms;
+#ifndef MONO
 	  SORTE (input,0) = typ;
+#endif
 	  VSORTE(input,0) = typ;
           MASSE (input,0) = masses[typ];
 #endif
