@@ -93,6 +93,20 @@ void main_loop(void)
 
   for (steps=steps_min; steps <= steps_max; ++steps) {
 
+#ifdef HOMDEF
+    if ((exp_interval > 0) && (0 == steps%exp_interval)) expand_sample();
+    if ((hom_interval > 0) && (0 == steps%hom_interval)) shear_sample();
+#endif
+#ifdef DEFORM
+    if (steps > annealsteps) {
+      deform_int++;
+      if ((tot_kin_energy < ekin_threshold) || (deform_int==max_deform_int)) {
+        deform_sample();
+        deform_int=0;
+      }
+    }
+#endif
+
 #ifdef MPI
 #ifdef SAVEMEM
     send_atoms_by_cell();
@@ -108,20 +122,6 @@ void main_loop(void)
 #endif
 #endif
     mpi_addtime(&time_comm_force);
-#endif
-
-#ifdef HOMDEF
-    if ((exp_interval > 0) && (0 == steps%exp_interval)) expand_sample();
-    if ((hom_interval > 0) && (0 == steps%hom_interval)) shear_sample();
-#endif
-#ifdef DEFORM
-    if (steps > annealsteps) {
-      deform_int++;
-      if ((tot_kin_energy < ekin_threshold) || (deform_int==max_deform_int)) {
-        deform_sample();
-        deform_int=0;
-      }
-    }
 #endif
 
 #ifndef MC

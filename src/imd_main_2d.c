@@ -67,14 +67,6 @@ void main_loop(void)
 
   for (steps=steps_min; steps <= steps_max; ++steps) { 
 
-#ifdef MPI
-    /* we should do this in more appropriate intervals */
-    if (((eng_interval != 0) && (0 == steps%eng_interval)) || 
-        (steps == steps_min)) setup_buffers();
-    send_atoms(FORCE);
-    mpi_addtime(&time_comm);
-#endif
-
 #ifdef HOMDEF
     if ((exp_interval > 0) && (0 == steps%exp_interval)) expand_sample();
     if ((hom_interval > 0) && (0 == steps%hom_interval)) shear_sample();
@@ -89,6 +81,13 @@ void main_loop(void)
     }
 #endif
 
+#ifdef MPI
+    /* we should do this in more appropriate intervals */
+    if (((eng_interval != 0) && (0 == steps%eng_interval)) || 
+        (steps == steps_min)) setup_buffers();
+    send_atoms(FORCE);
+    mpi_addtime(&time_comm);
+#endif
 
 #ifndef MC
     calc_forces(); 
