@@ -13,8 +13,8 @@ The original model was invented by
 J. G. Gay and B. J. Berne. It has been published in
 <EM>J. Chem. Phys.</EM> <B>74</B>, 3316 (1981). <P>
 
-	<li><b>
-Molecular properties</b><p>
+   	<li><b>
+Molecular Properties</b><p>
 In conventional IMD an atom is completely described by its mass m
 and the vectors [rx ry rz] and [vx vy vz] which denote its
 position and orientation, respectively. For uniaxial molecules
@@ -39,7 +39,7 @@ is supplemented by a rotational one. <P>
 	sy. The original version of the Gay-Berne model deals with
 	ellipsoids that possess a shape of sx : sy : sz = 1 : 1 : 3.
 	However, the current implementation in IMD allows for 
-	arbitrary values of shape anisotropy.
+	arbitrary values of sx and sz.
 	<li> 
 	The anisotropy of the interaction energy is given by the
 	well depths of the potential [ex ey ez]. They measure the
@@ -47,14 +47,15 @@ is supplemented by a rotational one. <P>
 	mutually parallel along the z direction. The three values
 	then correspond to the intermolecular separation vector
 	pointing along the x y z direction, respectively.
+	For uniaxial molecules ex must be equal to ey.
 	The original version of the Gay-Berne model deals with
 	an energy anisotropy of ex : ey : ez = 1 : 1 : 1/5.
 	However, the current implementation in IMD allows for 
-	arbitrary values of energy anisotropy.
+	arbitrary values of ex and ez.
 	</ul><P>	
 
 	<li><b>
-Gay-Berne potential</b><P>
+Gay-Berne Potential</b><P>
 
 For fixed shape and energy anisotropy of the unaxial ellipsoidal
 molecules the Gay-Berne pair potential is depending on four quantities:
@@ -219,4 +220,28 @@ file.inp</font>             <td>
   <font color=green>tau_eta_rot</font>   5.0e-02 
    	</PRE><td> (m) 
   	</table> <P> 
+	<li><b>
+Compiling IMD with UNIAX</b><p>
+The option UNIAX is implemented only in three dimensions. The NVE,
+NVT and NPT_ISO ensembles are available, both as non-parallelized
+and as parallelized versions. For compiling please use one of
+the options below: <P>
+        <ul>
+	<li> gmake imd_risc_nve_uniax
+	<li> gmake imd_risc_nvt_uniax
+	<li> gmake imd_risc_npt_iso_uniax
+	<li> gmake imd_mpi_nve_uniax
+	<li> gmake imd_mpi_nvt_uniax
+	<li> gmake imd_mpi_npt_iso_uniax
+	</ul> <P>
+	<li><b> 
+Generating Initial Configurations for IMD with UNIAX</b><p>
+A separate code (in c) is provided in the IMD user directory:
+<b>/imd/imd-samples/uniax/init_conf_uniax.c</b>. It should be
+run in interactive mode. Input quantities are requested
+from the keyboard. Its output is a IMD configuration file
+for uniaxial molecules. <P>
+A sample both for a configuration file <b>config.inp</b> and
+for a parametre file <b>param.inp</b> is available
+in the same directory.
 </BODY> </HTML>
