@@ -542,7 +542,7 @@ void vis_write_atoms()
   if (0==myid) {
     MPI_Status status;
     int m=1, len;
-    do {
+    while (m < num_cpus) {
       MPI_Recv( sock_buf_at, SOCK_BUF_AT_SIZE, MPI_FLOAT, MPI_ANY_SOURCE, 
                 MPI_ANY_TAG, cpugrid, &status );
       MPI_Get_count( &status, MPI_FLOAT, &len ); 
@@ -551,7 +551,7 @@ void vis_write_atoms()
         error("messages mixed up");
       if (status.MPI_TAG == AT_BUF_TAG+1) m++;
       if (len>0) vis_write_atoms_buf( &len, AT_BUF_TAG );
-    } while (m < num_cpus);
+    }
   }
   /* do not send other messages before we are finished */
   MPI_Barrier(cpugrid);

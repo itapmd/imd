@@ -101,7 +101,7 @@ void write_config_select(int fzhlr, char *suffix,
   if ((0==myid) && (parallel_output==0)) {
     MPI_Status status;
     int m=1, len;
-    do {
+    while (m < num_cpus) {
       MPI_Recv(outbuf, OUTPUT_BUF_SIZE, MPI_CHAR, MPI_ANY_SOURCE, 
                MPI_ANY_TAG, cpugrid, &status);
       MPI_Get_count(&status, MPI_CHAR, &len);
@@ -109,7 +109,7 @@ void write_config_select(int fzhlr, char *suffix,
         error("messages mixed up");
       if (status.MPI_TAG==OUTBUF_TAG+1) m++;
       if (len>1) fwrite(outbuf, 1, len-1, out);
-    } while (m < num_cpus);
+    }
   }
   /* don't send non-io messages before we are finished */
   MPI_Barrier(cpugrid);
