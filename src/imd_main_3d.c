@@ -12,8 +12,6 @@
 
 #include "imd.h"
 
-/*#define ATNR 2826   easier debuging... */
-
 /*****************************************************************************
 *
 *  main_loop
@@ -146,12 +144,6 @@ void main_loop(void)
              }
           */
         }
-        /* to avoid an imense total impuls and to see more of the phase space,
-	   we do some AND steps here.... */
-#ifdef MIKAND
-        if ((nofbcsteps!=0) && (0==nofbcsteps%tmp_interval)) 
-          maxwell(temperature);
-#endif
       }
     }
 #endif /* MIK */
@@ -242,13 +234,6 @@ void main_loop(void)
 #endif
 #endif
 
-#ifdef SMIK /* have relaxsteps nvesteps before mik */
-    if (steps<relaxsteps)
-      move_atoms_nve();
-    else
-      move_atoms();
-#else 
-
 #ifdef GLOK 
     /* "globale konvergenz": set impulses=0 if P*F <0 (global vectors) */
     if (PxF<0.0) {
@@ -271,8 +256,6 @@ void main_loop(void)
 #endif
 
     move_atoms(); /* here PxF is recalculated */
-
-#endif /* not SMIK */
 
 #if defined(AND) || defined(NVT) || defined(NPT)
     if ((steps==steps_min) && (use_curr_temp==1)) {

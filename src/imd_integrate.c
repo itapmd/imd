@@ -20,7 +20,7 @@
 *
 *****************************************************************************/
 
-#if defined(NVE) || defined(SMIK)
+#if defined(NVE)
 
 void move_atoms_nve(void)
 {
@@ -76,21 +76,6 @@ void move_atoms_nve(void)
 #ifndef TWOD
 	p->kraft Z(i) += (fbc_forces + sort)->z;
 #endif
-#ifdef BUG
-	if (sort==1)
-	  {
-	    f1x +=(fbc_forces + sort)->x;
-	    f1y +=(fbc_forces + sort)->y;
-	    f1z +=(fbc_forces + sort)->z;
-	  }
-	if (sort==2)
-	  {
-	    f2x +=(fbc_forces + sort)->x;
-	    f2y +=(fbc_forces + sort)->y;
-	    f2z +=(fbc_forces + sort)->z;
-	  }
-
-#endif	
 
 #endif
 	/* and set their force (->momentum) in restricted directions to 0 */
@@ -229,15 +214,7 @@ void move_atoms_nve(void)
   if ((tmp_interval!=0) && (0==count%tmp_interval)) maxwell(temperature);
 #endif
 
-#ifdef FBC
-#ifdef BUG 
-  printf("Total force on vtypes 1:\n");
-  printf("%.21e  %.21e %.21e\n",f1x,f1y,f1z);
-  printf("Total force on vtypes 2:\n");
-  printf(" %.21e  %.21e %.21e\n",f2x,f2y,f2z);
-  fflush(stdout);
-#endif
-#endif
+
 }
 
 #else

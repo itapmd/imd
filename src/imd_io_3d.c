@@ -464,7 +464,7 @@ void write_properties(int steps)
 {
   FILE *out;
   str255 fname;
-#ifdef EAM2
+#ifdef HPO
   char *format=" %.16e";
 #else
   char *format=" %e";
