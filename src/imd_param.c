@@ -2272,7 +2272,7 @@ void broadcast_params() {
 
   MPI_Bcast( &timestep    ,   1, REAL,     0, MPI_COMM_WORLD); 
   MPI_Bcast( &temperature ,   1, REAL,     0, MPI_COMM_WORLD); 
-  MPI_Bcast( &use_current_temp, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &use_curr_temp,  1, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &cpu_dim     , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
 
   MPI_Bcast( &parallel_output, 1, MPI_INT, 0, MPI_COMM_WORLD); 
@@ -2326,7 +2326,7 @@ void broadcast_params() {
   MPI_Bcast( &xi,                DIM, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &isq_tau_xi,          1, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &pressure_ext,      DIM, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &use_curr_pressure,   1, MPI_INT, 0 , MPI_COMM_WORLD);
+  MPI_Bcast( &use_curr_pressure,   1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &pressure_end,      DIM, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &cell_size_tolerance, 1, REAL, 0, MPI_COMM_WORLD); 
 #endif
