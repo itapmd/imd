@@ -34,10 +34,40 @@ directory.
 <TR ALIGN="LEFT"> 
   <TD WIDTH=180><A HREF="#imd2ppm">imd2ppm</A>
   <TD WIDTH=180><A HREF="#procdata">procdata</A>
+  <TD WIDTH=180><A HREF="#rav">rav</A>
 </TR>
 </TABLE>
 
 <P>
+
+<A NAME="rav">
+<H2>rav</H2>
+</A>
+
+<B>rav</B> is an awk script that computes the running average of a
+histogram. Usage is as follows:<BR>
+
+<PRE>
+     rav [n=&lt;n&gt;] &lt;datafile&gt; &gt; &lt;newdatafile&gt;
+</PRE>
+
+The running average of a set of data points <I>f<SUB>i</SUB></I> is
+given by<P>
+<CENTER>
+<IMG SRC="rav.gif">
+</CENTER>
+<P>
+where the value of <I>n</I> can be given as an optional parameter
+(10 by default).
+<P>
+
+<B>rav</B> can be used directly in gnuplot as in the following example:<BR>
+
+<PRE>
+     plot &quot;&lt;rav [n=&lt;n&gt;] datafile&quot; using 1:2
+</PRE>
+<P>
+
 
 <A NAME="imd_power">
 <H2>imd_power.c</H2>
