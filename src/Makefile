@@ -281,6 +281,8 @@ ifeq (ia64-icc,${IMDSYS})
   OMPI_FLAGS	+= -openmp -quiet
   PROF_FLAGS	+= -prof_gen
   DEBUG_FLAGS	+= -g
+  PAPI_INC      =  -I /opt/papi/include
+  PAPI_LIBS     =  -L /opt/papi/lib -lpapi
 endif
 
 # Itanium 2, ecc
@@ -922,7 +924,7 @@ endif
 
 # use papi
 ifneq (,$(findstring papi,${MAKETARGET}))
-CFLAGS += -DPAPI 
+CFLAGS += -DPAPI ${PAPI_INC} 
 LIBS   += ${PAPI_LIBS}
 endif
 

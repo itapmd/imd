@@ -221,17 +221,17 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef MPI
-    printf("Did %d steps with %d atoms on %d CPUs.\n", 
+    printf("Did %d steps with %ld atoms on %d CPUs.\n", 
            steps_max+1, natoms, num_cpus*num_threads);
 #ifdef OMP
     printf("Used %d processes with %d threads each.\n", num_cpus, num_threads);
 #endif
 #else
 #ifdef OMP
-    printf("Did %d steps with %d atoms on %d CPUs.\n", 
+    printf("Did %d steps with %ld atoms on %d CPUs.\n", 
            steps_max+1, natoms, num_threads);
 #else
-    printf("Did %d steps with %d atoms.\n", steps_max+1, natoms);
+    printf("Did %d steps with %ld atoms.\n", steps_max+1, natoms);
 #endif
 #endif
 

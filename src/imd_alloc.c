@@ -525,7 +525,7 @@ void alloc_cell(cell *thecell, int count)
 #ifdef CRAY
       malloc_stats(0);
 #endif
-      printf("Have %d atoms.\n",natoms);
+      printf("Have %ld atoms.\n",natoms);
       error("Cannot allocate memory for cell.");
     }
   }

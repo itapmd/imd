@@ -147,7 +147,7 @@ void generate_atoms(str255 mode)
     addnumber=num_sort[0];
     printf("num_sort = [ %ld",num_sort[0]);
     for (i=1; i<ntypes; i++) {
-      printf(", %u",num_sort[i]);
+      printf(", %ld",num_sort[i]);
       addnumber += num_sort[i];
     }
     printf(" ],  total = %ld\n",addnumber);
