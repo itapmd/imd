@@ -369,16 +369,14 @@ EXTERN real *gamma_ftg;                  /* Damping prefactor for slices*/
 EXTERN real *E_kin_ftg;                  /* kin energy of the slices */
 #endif
 
-
-#if defined(DEFORM)
-EXTERN int    deform_int INIT(0);      /* counting steps between 2 shears */
-EXTERN real   strip_width INIT(0.0);   /* Strip width */    
-EXTERN real   ekin_threshold INIT(0.0);/* threshold for ekin */    
-EXTERN int    annealsteps INIT(0);     /* number of annealing steps */    
-EXTERN int    max_deform_int INIT(0);  /* max. steps between 2 shear steps */  
-#ifdef GLOKDEFORM
+#ifdef DEFORM
+EXTERN int    deform_int INIT(0);       /* counting steps between 2 shears */
+EXTERN real   deform_size INIT(1.0);    /* scale factor for deformation */
+EXTERN real   ekin_threshold INIT(0.0); /* threshold for ekin */    
+EXTERN int    annealsteps INIT(0);      /* number of annealing steps */    
+EXTERN int    max_deform_int INIT(0);   /* max. steps between 2 shear steps */
 EXTERN real   fnorm_threshold INIT(0.0);/* threshold for fnorm */    
-#endif
+EXTERN vektor *deform_shift;            /* shift for each vtype */
 #endif
 
 #ifdef CG
@@ -386,7 +384,7 @@ EXTERN real   fnorm_threshold INIT(0.0);/* threshold for fnorm */
 EXTERN real   cg_threshold INIT(0.0);   /* threshold for cg */    
 EXTERN int    cg_maxsteps  INIT(0);     /* max number of cg steps */    
 EXTERN int    linmin_maxsteps  INIT(0); /* max number of linmin steps */    
-EXTERN real   linmin_tol  INIT(0.0);    /* tolerance between 2 linmin steps */    
+EXTERN real   linmin_tol  INIT(0.0);    /* tolerance between 2 linmin steps */
 EXTERN real   linmin_dmax  INIT(0.0);   /* max. search steps in linmin  */ 
 #ifndef DEFORM                          /* no double definition */
 EXTERN int    annealsteps INIT(0);      /* number of annealing steps */    
@@ -403,10 +401,6 @@ EXTERN real   cg_gamma   INIT(0.0);      /* see Num. Rec. p.320 */
 #ifdef SNAPSHOT
 EXTERN int sscount INIT(0);
 #endif
-#ifdef DEFORM
-EXTERN vektor *deform_shift;       /* shift for each vtype */
-#endif
-
 
 #ifdef DISLOC
 EXTERN int  dem_interval INIT(0);     /* Period of dem output ==0 */

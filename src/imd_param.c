@@ -509,10 +509,9 @@ void getparamfile(char *paramfname, int sim)
        *(fbc_endforces+k) = nullv;
 #endif
 #endif /*FBC*/
-
 #ifdef DEFORM
       /* Allocation & Initialisation of deform_shift */
-      deform_shift = (vektor *) malloc(vtypes*DIM*sizeof(real));
+      deform_shift = (vektor *) malloc( vtypes * DIM * sizeof(real) );
       if (NULL==deform_shift)
 	error("Cannot allocate memory for deform_shift\n");
       for(k=0; k<vtypes; k++)
@@ -935,11 +934,7 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #endif
-#if defined(DEFORM)
-    else if (strcasecmp(token,"ekin_threshold")==0) {
-      /* shear epsilon criterium, see imd_shear_new.c */
-      getparam("ekin_threshold",&ekin_threshold,PARAM_REAL,1,1);
-    }
+#ifdef DEFORM
     else if (strcasecmp(token,"annealsteps")==0) {
       /* max nr of steps between shears */
       getparam("annealsteps",&annealsteps,PARAM_INT,1,1);
@@ -948,16 +943,31 @@ void getparamfile(char *paramfname, int sim)
       /* max nr of steps between shears */
       getparam("max_deform_int",&max_deform_int,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"strip_width")==0) { 
-      /* strip width (in x dir.) */
-      getparam("strip_width",&strip_width,PARAM_REAL,1,1);
+    else if (strcasecmp(token,"ekin_threshold")==0) {
+      /* shear epsilon criterium, see imd_shear_new.c */
+      getparam("ekin_threshold",&ekin_threshold,PARAM_REAL,1,1);
     }
-#ifdef GLOKDEFORM
     else if (strcasecmp(token,"fnorm_threshold")==0) {
       /* criterium to contiune deformation */
       getparam("fnorm_threshold",&fnorm_threshold,PARAM_REAL,1,1);
     }
+    else if (strcasecmp(token,"deform_size")==0) { 
+      /* scale factor for deformation */
+      getparam("deform_size",&deform_size,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"deform_shift")==0) {
+      /* deform shift for virtual types */
+      /* format: type shift.x shift.y (shift.z) read in a temp. vektor */
+      getparam("deform_shift",&tempshift,PARAM_REAL,DIM+1,DIM+1);
+      if (tempshift.x>vtypes-1)
+       error("Shift defined for non existing virtual atom type\n");
+      shift.x = tempshift.y;
+      shift.y = tempshift.z;
+#ifndef TWOD
+      shift.z = tempshift.z2;
 #endif
+      *(deform_shift+(int)(tempshift.x)) = shift; 
+    }
 #endif /* DEFORM */
 #ifdef CG
     else if (strcasecmp(token,"cg_threshold")==0) {
@@ -980,12 +990,10 @@ void getparamfile(char *paramfname, int sim)
       /* max. length of trial step in 1d minimum search */
       getparam("linmin_dmax",&linmin_dmax,PARAM_REAL,1,1);
     }
-#ifndef DEFORM
     else if (strcasecmp(token,"annealsteps")==0) {
       /* max nr of steps between shears */
       getparam("annealsteps",&annealsteps,PARAM_INT,1,1);
     }
-#endif
 #endif /* CG */
 #ifdef SHOCK
     else if (strcasecmp(token,"shock_strip")==0) { 
@@ -1180,21 +1188,6 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"op_weight")==0) {
       /* weights for order parameter */
       getparam("op_weight",op_weight,PARAM_REAL,4,4);
-    }
-#endif
-#ifdef DEFORM
-    else if (strcasecmp(token,"deform_shift")==0) {
-      /* deform shift for virtual types */
-      /* format: type shift.x shift.y (shift.z) read in a temp. vektor */
-      getparam("deform_shift",&tempshift,PARAM_REAL,DIM+1,DIM+1);
-      if (tempshift.x>vtypes-1)
-       error("Shift defined for non existing virtual atom type\n");
-      shift.x = tempshift.y;
-      shift.y = tempshift.z;
-#ifndef TWOD
-      shift.z = tempshift.z2;
-#endif
-      *(deform_shift+(int)(tempshift.x)) = shift; 
     }
 #endif
 #ifdef USE_SOCKETS
@@ -2034,13 +2027,16 @@ void broadcast_params() {
   MPI_Bcast( gamma_ftg, nslices, REAL     , 0, MPI_COMM_WORLD);
 #endif 
 
-
-#if defined(DEFORM)
-  MPI_Bcast( &strip_width, 1, REAL, 0, MPI_COMM_WORLD); 
-  if (0!=myid) deform_shift  = (vektor *) malloc(vtypes*DIM*sizeof(real));
+#ifdef DEFORM
+  MPI_Bcast( &annealsteps,     1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &max_deform_int,  1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &deform_size,     1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &ekin_threshold,  1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &fnorm_threshold, 1, REAL,    0, MPI_COMM_WORLD); 
+  if (0!=myid) deform_shift = (vektor *) malloc( vtypes * DIM * sizeof(real) );
   if (NULL==deform_shift) 
     error("Cannot allocate memory for deform_shift on client."); 
-  MPI_Bcast( deform_shift, vtypes*DIM, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( deform_shift, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef SHOCK
@@ -2048,7 +2044,6 @@ void broadcast_params() {
   MPI_Bcast( &shock_speed, 1, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &shock_mode,  1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
-
 
 #ifdef DISLOC
   MPI_Bcast( &min_dpot,        1, REAL, 0, MPI_COMM_WORLD);
@@ -2090,23 +2085,14 @@ void broadcast_params() {
 #endif
 #endif
 
-#if defined(DEFORM)
-  MPI_Bcast( &ekin_threshold , 1, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &annealsteps ,    1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &max_deform_int , 1, MPI_INT, 0, MPI_COMM_WORLD); 
-#ifdef GLOKDEFORM
- MPI_Bcast( &fnorm_threshold , 1, REAL,    0, MPI_COMM_WORLD); 
-#endif
-#endif  
-
 #ifdef CG
- MPI_Bcast( &cg_threshold , 1, REAL,    0, MPI_COMM_WORLD); 
- MPI_Bcast( &cg_maxsteps  , 1, MPI_INT,    0, MPI_COMM_WORLD); 
- MPI_Bcast( &linmin_maxsteps  , 1, MPI_INT,    0, MPI_COMM_WORLD); 
- MPI_Bcast( &linmin_tol , 1, REAL,    0, MPI_COMM_WORLD); 
- MPI_Bcast( &linmin_dmax , 1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &cg_threshold,    1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &cg_maxsteps,     1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &linmin_maxsteps, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &linmin_tol,      1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &linmin_dmax,     1, REAL,    0, MPI_COMM_WORLD); 
 #ifndef DEFORM
-  MPI_Bcast( &annealsteps ,    1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &annealsteps,     1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 #endif
 

@@ -225,10 +225,10 @@ void deform_sample(void)
     for (i=0; i<p->n; ++i) {
       sort = VSORTE(p,i);
       /* move particles with virtual types  */
-      ORT(p,i,X) += (deform_shift + sort)->x;
-      ORT(p,i,Y) += (deform_shift + sort)->y;
+      ORT(p,i,X) += deform_size * (deform_shift + sort)->x;
+      ORT(p,i,Y) += deform_size * (deform_shift + sort)->y;
 #ifndef TWOD
-      ORT(p,i,Z) += (deform_shift + sort)->z;
+      ORT(p,i,Z) += deform_size * (deform_shift + sort)->z;
 #endif
     }
   }
