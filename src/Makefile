@@ -464,6 +464,11 @@ CFLAGS += -DSHOCK
 SOURCES += ${TRANSSOURCES}
 endif
 
+ifneq (,$(findstring stress,${MAKETARGET}))
+CFLAGS += -DSTRESS_TENS
+SOURCES += ${TRANSSOURCES}
+endif
+
 ifneq (,$(findstring quasi,${MAKETARGET}))
 CFLAGS += -DQUASI
 SOURCES += ${QUASISOURCES}
