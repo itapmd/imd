@@ -1641,7 +1641,7 @@ void write_header_config(FILE *out)
 
   /* contents line */
 #ifdef CG
-  fprintf(out, "#C ask Erik\n");
+  fprintf(out, "#C number type mass x y z vx vy vz Epot \n");
 #elif defined(UNIAX)
   fprintf(out, "#C number type mass inertia pos(3) axis(3) shape(3)");
   fprintf(out, " pot_depth(3) velocities(3) ang_veloc(3) Epot\n");
