@@ -70,9 +70,10 @@ int main(int argc, char **argv)
   /* Read atoms */
   read_atoms(infilename);
 
-  /* Compute permanent neighbour tables */
+  /* Compute neighbour tables */
   do_work(do_neighbour_tables); 
   first = 0;
+  do_work(do_neighbour_tables); 
 
   /* Search for rings */
   search_rings();
@@ -214,6 +215,40 @@ void do_neighbour_tables(cell *p, cell *q, vektor pbc)
 
 /******************************************************************************
 *
+*  update_neighbour_tables -- Calculates new neighbour tables
+*
+******************************************************************************/
+void update_neighbour_tables(cell *p, int i) {
+
+  neightab *neigh, *next_neigh;
+  int j, k, l;
+  cell *q;
+
+  /* Neighbour table of p, i */
+  neigh = &p->neightab_array[i];
+
+  /* For all neighbours of p, i */
+  for ( k=0; k<neigh->n; k++) {
+    q = neigh->cl[k];
+    j = neigh->num[k];
+    if ( q->del[j] == 0 ) {
+      /* Neighbour tables of neighbours */
+      next_neigh = &q->neightab_array[j];
+
+      for ( l=0; l<next_neigh->n; l++ )
+	if ( next_neigh->cl[l] == p && next_neigh->num[l] == i ) {
+	  /* Remove atom p, i from neighbour tables */
+	  next_neigh->cl[l]  = next_neigh->cl[next_neigh->n - 1];
+	  next_neigh->num[l] = next_neigh->num[next_neigh->n - 1];
+	  next_neigh->typ[l] = next_neigh->typ[next_neigh->n - 1];
+	  next_neigh->n--;
+	}
+    }
+  }
+}
+
+/******************************************************************************
+*
 *  write_data -- output ring statistics
 *
 ******************************************************************************/
@@ -228,7 +263,7 @@ void write_data(void) {
     /* Output on stdout */
     printf("--------------------------------------------------\n");
     printf(" Ring length  Total Occurence  Relative Occurence\n\n");
-    for ( i=0; i<=max_length; i++ )
+    for ( i=3; i<=max_length; i++ )
       printf("      %d            %d                %.3f %%\n", i, histogram[i]/2, (real)100*histogram[i]/(total_rings));
     printf("\n--------------------------------------------------\n");
 
@@ -240,7 +275,7 @@ void write_data(void) {
       error("Cannot open ring file.");
 
     fprintf(out, "#Ring length     Relative Occurence\n");
-    for ( i=0; i<=max_length; i++ )
+    for ( i=3; i<=max_length; i++ )
       fprintf(out, "%d\t%.6f\n", i, (real)histogram[i]/(total_rings));
 
     fclose(out);
@@ -309,14 +344,9 @@ void search_rings(void) {
 		  q = PTR_3D_V(cell_array,icc,jcc,kcc,cell_dim);
 #endif
 		  for ( m=0; m<q->n; ++m )
-		    if ( q->del[m] == 0 ) {
-		      neigh = &q->neightab_array[m];
-		      neigh->n = 0;
-		    }
+		    if ( q->del[m] == 0 ) 
+		      q->color[m] = -1;
 		}
-	
-	    /* Compute actual neighbour tables */
-	    do_work(do_neighbour_tables);
 
 	    /* Compute distances of neighbours */
 
@@ -367,8 +397,10 @@ void search_rings(void) {
 
 	    }
 
-	    /* Remove atom p,i from system (i.e., mark it) */
+	    /* Remove atom p,i from system (i.e., mark it)
+	     and update neighbour tables */
 	    p->del[i] = 1;
+	    update_neighbour_tables( p, i );
 
 	    /* Status line */
 	    count++;
@@ -645,7 +677,7 @@ int sp_ring(void) {
 	/* If neighbour is white and not farther away than max_length, 
 	   enqueue it */
 	if ( neigh_cell->sp_color[neigh_num] == -1 
-	     && neigh_cell->sp_hops[neigh_num] <= max_length ) {
+	     && act_cell->sp_hops[act_num] <= (max_length/2 + 1) ) {
 	  
 	  sp_queue = queue_enqueue( sp_queue, neigh_cell, neigh_num);
 	  sp_queue_length++;

@@ -362,6 +362,7 @@ void search_rings(void);
 void go_forward(void);
 void compute_hops(void);
 int sp_ring(void);
+void update_neighbour_tables(cell *p, int i);
 void write_data(void);
 Queue_elmt *queue_create(cell *cl, int num);
 Queue_elmt *queue_enqueue(Queue_elmt *queue, cell *cl, int num);
@@ -481,7 +482,7 @@ int    stresstens = 0, moduli = 0, all_moduli = 0;
 #endif
 
 #ifdef COVALENT
-int  neigh_len = 4;
+int  neigh_len = 6;
 #endif
 #ifdef TERSOFF
 real ter_r_cut[10][10], ter_r2_cut[10][10], ters_r_cut[55] ;
