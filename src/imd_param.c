@@ -579,7 +579,7 @@ void getparamfile(char *paramfname, int sim)
       };
       getparam("pic_at_radius", pic_at_radius,PARAM_REAL_COPY,1,ntypes);
     }
-#ifdef EXPAND
+#ifdef HOMDEF
     else if (strcasecmp(token,"exp_interval")==0) {
       /* period of expansion intervals */
       getparam("exp_interval",&exp_interval,PARAM_INT,1,1);
@@ -588,15 +588,13 @@ void getparamfile(char *paramfname, int sim)
       /* expansion */
       getparam("expansion",&expansion,PARAM_REAL,DIM,DIM);
     }
-#endif
-#ifdef DEFORM
     else if (strcasecmp(token,"hom_interval")==0) {
       /* period of homshear intervals */
       getparam("hom_interval",&hom_interval,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"shear_max")==0) {
+    else if (strcasecmp(token,"shear_factor")==0) {
       /* maximum shear */
-      getparam("shear_max",&shear_max,PARAM_REAL,1,1);
+      getparam("shear_factor",&shear_factor,PARAM_REAL,1,1);
     }
 #endif
 #if defined(FRAC) || defined(DEFORM)
@@ -1207,7 +1205,7 @@ void broadcast_params() {
   MPI_Bcast( &op_weight,       4, MPI_REAL, 0, MPI_COMM_WORLD);
 #endif
 
-#ifdef EXPAND
+#ifdef HOMDEF
   MPI_Bcast( &exp_interval , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &expansion ,  DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif

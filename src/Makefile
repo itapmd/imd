@@ -458,8 +458,8 @@ CFLAGS += -DDEFORM
 SOURCES += ${DEFORMSOURCES}
 endif
 
-ifneq (,$(findstring exp,${MAKETARGET}))
-CFLAGS += -DEXPAND
+ifneq (,$(findstring homdef,${MAKETARGET}))
+CFLAGS += -DHOMDEF
 SOURCES += ${DEFORMSOURCES}
 endif
 

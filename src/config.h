@@ -54,6 +54,7 @@
 
 #ifdef NPT_axial
 #define P_AXIAL
+#define PAXTEST
 #endif
 
 /* Canonical */

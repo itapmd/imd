@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* imd_deform.c -- shear sample homogeneously
+* imd_deform.c -- deform sample
 *
 ******************************************************************************/
 
@@ -12,7 +12,7 @@
 
 #include "imd.h"
 
-#ifdef EXPAND
+#ifdef HOMDEF   /* homogeneous deformation with pbc */
 
 /*****************************************************************************
 *
@@ -23,6 +23,7 @@
 void expand_sample(void)
 {
   int i,r,s,t;
+  ivektor max_cell_dim;
   cell *p;
   
   /* Apply expansion */
@@ -45,19 +46,30 @@ void expand_sample(void)
 #endif
         }
       }
-  /* new box size (box is assumed rectangular) */
-  box_x.x *= expansion.x;  ibox_x.x /= expansion.x;  tbox_x.x /= expansion.x;
-  box_y.y *= expansion.y;  ibox_y.y /= expansion.y;  tbox_y.y /= expansion.y;
+  /* new box size */
+#ifdef TWOD
+  box_x.x *= expansion.x;  box_y.x *= expansion.x;
+  box_x.y *= expansion.y;  box_y.y *= expansion.y;
+#else
+  box_x.x *= expansion.x;  box_x.y *= expansion.y;  box_x.z *= expansion.z;
+  box_y.x *= expansion.x;  box_y.y *= expansion.y;  box_y.z *= expansion.z;
+  box_z.x *= expansion.x;  box_z.y *= expansion.y;  box_z.z *= expansion.z;
+#endif
+  make_box();
+
+  /* revise cell decomposition if necessary */
+  max_cell_dim = maximal_cell_dim();
+  if ((max_cell_dim.x<global_cell_dim.x) || (max_cell_dim.y<global_cell_dim.y)
 #ifndef TWOD
-  box_z.z *= expansion.z;  ibox_z.z /= expansion.z;  tbox_z.z /= expansion.z;
-#endif  
+      || (max_cell_dim.z<global_cell_dim.z)
+#endif
+  ) {
+    init_cells();
+    fix_cells();
+  }
 
 } /* expand sample */
 
-#endif /* EXPAND */
-
-
-#ifdef DEFORM
 
 /*****************************************************************************
 *
@@ -67,79 +79,47 @@ void expand_sample(void)
 
 void shear_sample(void)
 {
-
   int i,r,s,t;
+  ivektor max_cell_dim;
   cell *p;
-  vektor2d d,u;
-  real umax,umin;
-  real tmp_umax,tmp_umin;
-  real xmax,xmin;
-  real tmp_xmax,tmp_xmin;
-  real sclx;
-  real theta;
-  real radius;
-  real amue;
-  real kappa;
-  int flag=0;
-  
-  if (0==myid) printf("Shearing sample.\n");
-  
-  /* Seek for Min/Max u and x */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-      for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-          for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-          {
-        
-#ifdef TWOD
-            p = PTR_2D_V(cell_array, r, s, cell_dim);
-#else
-            p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#endif
-            for (i = 0;i < p->n; ++i) {
 
-/* Catch first value */
-              if (0==flag) {
-                flag = -1;
-                xmax = p->ort X(i);
-                xmin = p->ort X(i);
-              } else {
-                xmax = MAX(xmax,p->ort X(i));
-                xmin = MIN(xmin,p->ort X(i));
-              };
-            }
-          }
-
-#ifdef MPI
-  MPI_Allreduce(&xmax, &tmp_xmax, 1, MPI_REAL, MPI_MAX, cpugrid);
-  MPI_Allreduce(&xmin, &tmp_xmin, 1, MPI_REAL, MPI_MIN, cpugrid);
-
-  xmax = tmp_xmax;
-  xmin = tmp_xmin;
-#endif
-
-  if (0==myid) printf("Min X: %f\nMax X: %f\n", xmin,xmax);
-  
   /* Apply shear */
   for ( r = cellmin.x; r < cellmax.x; ++r )
-      for ( s = cellmin.y; s < cellmax.y; ++s )
+    for ( s = cellmin.y; s < cellmax.y; ++s )
 #ifndef TWOD
-          for ( t = cellmin.z; t < cellmax.z; ++t )
+      for ( t = cellmin.z; t < cellmax.z; ++t )
 #endif
-          {
-        
+      {
 #ifdef TWOD
-            p = PTR_2D_V(cell_array, r, s, cell_dim);
+        p = PTR_2D_V(cell_array, r, s, cell_dim);
 #else
-            p = PTR_3D_V(cell_array, r, s, t, cell_dim);
+        p = PTR_3D_V(cell_array, r, s, t, cell_dim);
 #endif
-            for (i = 0;i < p->n; ++i)
-              p->ort Y(i) += shear_max * p->ort X(i) / xmax;
-                            
-          }
-} /*shear_sample*/
+        for (i = 0; i < p->n; ++i)
+          p->ort Y(i) += shear_factor * p->ort X(i);
+      }
 
+  /* new box size */
+  box_x.y += shear_factor * box_x.x;
+  make_box();
+
+  /* revise cell decomposition if necessary */
+  max_cell_dim = maximal_cell_dim();
+  if ((max_cell_dim.x<global_cell_dim.x) || (max_cell_dim.y<global_cell_dim.y)
+#ifndef TWOD
+      || (max_cell_dim.z<global_cell_dim.z)
+#endif
+  ) {
+    init_cells();
+    fix_cells();
+  }
+
+} /* shear sample */
+
+#endif /* HOMDEF */
+
+
+#ifdef DEFORM
 
 /*****************************************************************************
 *

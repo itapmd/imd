@@ -22,6 +22,8 @@ void generate_hex(void);
 void init(void);
 void usage(void);
 void getparamfile(char *paramfname, int sim);
+void make_box(void);
+ivektor maximal_cell_dim(void);
 void init_cells(void);
 void error(char *mesg);
 #ifdef TWOD
