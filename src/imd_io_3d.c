@@ -605,6 +605,21 @@ void write_config(int steps)
 	     p->dreh_impuls Z(i) / p->traeg_moment[i]) 
 
 #else /* not UNIAX */
+#ifdef ORDPAR
+#define WRITE_CELL     for (i = 0;i < p->n; ++i) \
+             fprintf(out,"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %d\n",\
+	     NUMMER(p,i),\
+	     p->sorte[i],\
+	     MASSE(p,i),\
+	     p->ort X(i),\
+	     p->ort Y(i),\
+	     p->ort Z(i),\
+	     p->impuls X(i) / MASSE(p,i),\
+	     p->impuls Y(i) / MASSE(p,i),\
+	     p->impuls Z(i) / MASSE(p,i),\
+             NBANZ(p,i)==0?0:POTENG(p,i)/NBANZ(p,i),\
+	     NBANZ(p,i))
+#else
 #define WRITE_CELL     for (i = 0;i < p->n; ++i) \
              fprintf(out,"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f\n",\
 	     NUMMER(p,i),\
@@ -617,6 +632,7 @@ void write_config(int steps)
 	     p->impuls Y(i) / MASSE(p,i),\
 	     p->impuls Z(i) / MASSE(p,i),\
              POTENG(p,i)) 
+#endif /* ORDPAR */
 #endif /* UNIAX or not UNIAX */
 
 { 
@@ -1359,7 +1375,11 @@ void write_distrib(int steps)
             *pot += p->pot_eng[i] - p->Epot_ref[i];
           } else
 #endif
+#ifdef ORDPAR
+          *pot += (p->nbanz[i]==0)?0:p->pot_eng[i]/p->nbanz[i];
+#else
           *pot += p->pot_eng[i];
+#endif
 #endif
 	  *kin += SPRODN(p->impuls,i,p->impuls,i) / (2*MASSE(p,i));
         }
