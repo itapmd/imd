@@ -774,8 +774,8 @@ void efwrite_config(int steps)
 /* Makro to write data of cell p to file out */
 /* just write those atoms which potential energy is within *
  * a specified energy window, not yet for uniax            */
-#define EFWRITE_CELL     for (i = 0;i < p->n; ++i) \
-             if((POTENG(p,i)>=lower_e_pot)&&(POTENG(p,i)<=upper_e_pot)) \
+#define EFWRITE_CELL     for (i = 0;i < p->n; ++i){ \
+             if( (POTENG(p,i)>=lower_e_pot) && ( POTENG(p,i)<=upper_e_pot) ){ \
              fprintf(out,"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f\n",\
 	     NUMMER(p,i),\
 	     p->sorte[i],\
@@ -786,7 +786,7 @@ void efwrite_config(int steps)
 	     p->impuls X(i) / MASSE(p,i),\
 	     p->impuls Y(i) / MASSE(p,i),\
 	     p->impuls Z(i) / MASSE(p,i),\
-		     POTENG(p,i)) 
+		     POTENG(p,i))}} 
 { 
   FILE *out;
   str255 fname;
