@@ -511,6 +511,10 @@ void write_properties(int steps)
 #ifdef FNORM
   fprintf(out, format, (double)fnorm);
 #endif
+#ifdef GLOK
+  fprintf(out, format, (double)PxF);
+#endif
+
   fprintf(out," %e",   (double)pressure);
 #else
   fprintf(out," %e",   (double)(mc_accept/(real)mc_count));
