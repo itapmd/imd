@@ -549,12 +549,12 @@ void getparamfile(char *paramfname, int sim)
       for(k=0; k<vtypes; k++)
        *(shear_def+k) = 0;
 
-      /* Allocation & Initialisation of deform_shift */
-      deform_shift = (vektor *) malloc( vtypes * DIM * sizeof(real) );
-      if (NULL==deform_shift)
-	error("Cannot allocate memory for deform_shift\n");
+      /* Allocation & Initialisation of deform_shear */
+      deform_shear = (vektor *) malloc( vtypes * DIM * sizeof(real) );
+      if (NULL==deform_shear)
+	error("Cannot allocate memory for deform_shear\n");
       for(k=0; k<vtypes; k++)
-       *(deform_shift+k) = nullv;
+       *(deform_shear+k) = nullv;
 
       /* Allocation & Initialisation of deform_base */
       deform_base = (vektor *) malloc( vtypes * DIM * sizeof(real) );
