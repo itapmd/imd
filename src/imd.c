@@ -91,19 +91,18 @@ void main(int argc, char **argv)
 #endif
 #endif
 
-#ifdef MPI
-  if (0 == myid) 
-#endif
-
   /* Filenames starting with denote internal 
   generation of the intitial configuration */
   if ('.' == infilename[0]) {
-    printf("Generating atoms: %s.\n", infilename);fflush(stdout);
+    if (0 == myid) { 
+      printf("Generating atoms: %s.\n", infilename);fflush(stdout);
+    }
     generate_atoms(infilename);
   }
   else {
-    /* Read Atoms from file */
-    printf("Reading atoms.\n");fflush(stdout);
+    if (0 == myid) {
+      printf("Reading atoms.\n");fflush(stdout);
+    }
     init_cells();
     read_atoms(infilename);
   }
