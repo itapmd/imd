@@ -275,35 +275,21 @@ only once in each phase.</p>
 <dt><a id="homdef" name="homdef"><b>homdef</b></a></dt>
 <dd>
 <p>
-The homdef option allows to homogeneously expand or shear the
-sample. The box is deformed in this process, together with its
-contents. Note that this option requires <b>periodic</b> boundary
-conditions.</p>
-
-<ul>
-<li>If <tt>exp_interval</tt> is positive, the sample is expanded
-every <tt>exp_interval</tt> steps. The expansion factors in x-, y-
-and z-direction are given by the parameter <tt>expansion</tt>,
-which is a vector. The box vectors are updated automatically, and
-the cell subdivision is revised if cells have become too small
-(expansion factors smaller than 1 shrink the sample).</li>
-
-<li>If <tt>hom_interval</tt> is positive, the sample is
-homogeneously sheared every <tt>hom_interval</tt> steps. In each
-shear step, <tt>shear_factor</tt>*x-coord is added to the y-coord
-of every particale, and the box is updated accordingly. If cells
-become too small because of the shearing, the cell subdivision is
-revised automatically. It is assumed that the second and third box
-vector point into y- and z-direction, respectively.</li>
-
-<li>If <tt>lindef_interval</tt> is positive, the sample is linear
-deformed every <tt>lindef_interval</tt> steps. The linear
-deformation is given as a full deformation matrix <b>A</b> with row
-vectors <tt>lindef_x</tt>, <tt>lindef_y</tt>, and
-<tt>lindef_z</tt>, if three dimensions are simulated. The
-transformation rule is <b>x</b> -&gt; <b>x</b> + <b>A</b> <b>x</b>
-for both atomic positions and box vectors.</li>
-</ul>
+If <tt>lindef_interval</tt> is positive, the sample is linearly
+deformed every <tt>lindef_interval</tt> steps. The linear deformation
+is described by a full deformation matrix <b>A</b>, whose rows are 
+given by the scalar <tt>lindef_size</tt> times the vectors
+<tt>lindef_x</tt>, <tt>lindef_y</tt>, and <tt>lindef_z</tt> (3d only).
+The transformation <b>x</b> -&gt; <b>x</b> + <b>A</b> <b>x</b>
+is applied to both the atom positions and the box vectors.
+In order to prevent the box contents from just snapping back, 
+periodic boundary conditions are required, or boundary layers 
+of atoms which are moved during the deformation, but are kept fixed 
+otherwise.</p>
+<p>
+The older interfaces for scale and shear deformations, activated
+by the parameters <tt>exp_interval</tt> and <tt>hom_interval</tt>,
+are <b>deprecated</b> and should no longer be used.</p>
 </dd>
 
 <dt><a id="deform" name="deform"><b>deform</b></a></dt>
@@ -324,6 +310,8 @@ parameter file:</p>
     deform_shift v shift_vector
 </pre>
 <p>
+All shift vectors are additionally multiplied with the scalar
+<tt>deform_size</tt>.
 During the first <tt>annealsteps</tt> steps, no deformations are
 done. This mechanism can be used both for shears
 (<tt>deform_shift</tt> parallel to sample boundary) and for
