@@ -76,19 +76,7 @@
 #define NOPBC
 #endif
 
-/* Pulling on borders */
-
-#ifdef PULL
-#define NOPBC
-#endif
-
-/* Shear */
-
-#ifdef SHEAR
-#define NOPBC
-#endif
-
-#ifdef HOMSHEAR
+#ifdef DEFORM
 #define NOPBC
 #endif
 
@@ -98,15 +86,6 @@
 
 #ifdef CORRELATE
 #define REFPOS
-#endif
-
-
-#ifdef TRANSPORT                                      
-
-#endif
-
-#ifdef HOM
-#define STRESS_TENS
 #endif
 
 #ifdef SHOCK

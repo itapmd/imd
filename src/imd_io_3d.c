@@ -169,7 +169,7 @@ void read_atoms(str255 infilename)
       if (0>=m) error("Mass zero or negative.\n");
       if ((p!=6) && (p<9)) error("incorrect line in configuration file.");
 
-       input->n = 1;
+      input->n = 1;
 #ifndef MONOLJ
       input->nummer[0] = n;
       input->sorte[0]  = s;
@@ -476,11 +476,7 @@ void write_config(int steps)
   int i,j,k,l,m,tag;
 
   /* Dateiname fuer Ausgabedatei erzeugen */
-#ifdef SHEAR
-  fzhlr = steps;
-#else
   fzhlr = steps / rep_interval;
-#endif
 
 #ifdef MPI  
   if (1==parallel_output)

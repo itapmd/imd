@@ -118,13 +118,6 @@ reffile         # file to read reference potential energy from
 Epot_diff       # whether to write the potential energy difference 
                 # (1, default), or the potential energy (0)
 
-# peierls - nabarro dislocations (DISLOC required)
-pn              # if (1) : construct a pn dislocation
-burgersv	# length of Burgers vector (pointing in x direction)
-width           # width of Burgers vector density
-glideplane      # z-coordinate of glideplane (in two dimensions: y)
-
-
 # parameters for FRAC
 dampstadion	# Damping stadion
 dampgamma	# Damping factor gamma
@@ -135,20 +128,19 @@ kel		# Shear modulus
 crktip		# Crack tip location
 strip_width	# strip width (in x dir)
 
-# parameters for HOM
+# parameters for DEFORM
 hom_int	        # number of steps between homogeneous shears
-exp_int	        # number of steps between homogeneous shears
-shear_max	# maximum shear (scaled by the largest x-coordinate)
-expansion	# expansion rate
-
-# parameters for PULL
-strip_shift	# strip shift per timestep (vector)
+exp_int	        # number of steps between homogeneous expansions
+shear_max	# maximum hom. shear (scaled by the largest x-coordinate)
+expansion	# homogeneous expansion rate
+strip_shift	# shift vector of strip atoms (per timestep)
 strip_width	# width (in x dir) of strip that is moved
-ekin_threshold	# criterium for simulation abort
-strip_width     # vector of pull deformation
-annealsteps	# simulated annealing (first shear will not occur before)
-maxdnoshsteps   # maximum number of steps between two shear/pulls
-
+annealsteps	# no deformation before annealsteps steps (default 0)
+ekin_threshold	# deform if Ekin drops below threshold (default 0)
+max_deform_int  # deform if number of steps since last deformation is
+                # max_deform_int (default 0 - no deformation)
+initial_shift   # flag (0/1); determines whether initial shift is done
+ins             # initial shift vector
 
 # parameters for SHOCK
 strip_width      # strip width (in x dir.)
@@ -158,16 +150,14 @@ shock_mode       # 1 left part is slammed into right part
                  # 2 both parts are slammed into oneanother
 
 # parameters for STRESS_TENS
-
 press_nlayers    # vector containing number of layers for local pressure
 press_interval   # interval for pressure tensor writes
 
 # parameters for TRANSPORT
-
 dTemp_start     # temperature at one side
 dTemp_end       # temperature at the other side
 tran_nlayers    # number of layers for local temperature
-tran_interval   # interval for temperature writes
+tran_interval   # interval for temperature distribution writes
 
 # parameters for MC
 mc_beta         # Monte Carlo inverse temperature

@@ -293,10 +293,6 @@ void getparamfile(char *paramfname, int sim)
         ensemble = ENS_NVE;
         move_atoms = move_atoms_nve;
       }
-      else if (strcasecmp(tmpstr,"shear")==0) {
-        ensemble = ENS_SHEAR;
-        move_atoms = move_atoms_mik;
-      }
       else if (strcasecmp(tmpstr,"mik")==0) {
         ensemble = ENS_MIK;
         move_atoms = move_atoms_mik;
@@ -568,7 +564,7 @@ void getparamfile(char *paramfname, int sim)
       };
       getparam("pic_at_radius", pic_at_radius,PARAM_REAL_COPY,1,ntypes);
     }
-#ifdef HOM
+#ifdef DEFORM
     else if (strcasecmp(token,"hom_int")==0) {
       /* period of homshear intervals */
       getparam("hom_int",&hom_interval,PARAM_INTEGER,1,1);
@@ -586,7 +582,7 @@ void getparamfile(char *paramfname, int sim)
       getparam("expansion",&expansion,PARAM_REAL,1,1);
     }
 #endif
-#if defined(FRAC) || defined(PULL)
+#if defined(FRAC) || defined(DEFORM)
     else if (strcasecmp(token,"initial_shift")==0) {
       /* shall the whole sample be shifted before MD */
       getparam("initial_shift",&initial_shift,PARAM_INTEGER,1,1);
@@ -603,9 +599,9 @@ void getparamfile(char *paramfname, int sim)
       /* max nr of steps between shears */
       getparam("annealsteps",&annealsteps,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"maxdnoshsteps")==0) {
+    else if (strcasecmp(token,"max_deform_int")==0) {
       /* max nr of steps between shears */
-      getparam("maxdnoshsteps",&maxdnoshsteps,PARAM_INT,1,1);
+      getparam("max_deform_int",&max_deform_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"strip_width")==0) { 
       /* strip width (in x dir.) */
@@ -761,7 +757,7 @@ void getparamfile(char *paramfname, int sim)
       getparam("op_weight",&op_weight,PARAM_REAL,4,4);
     }   
 #endif
-#ifdef PULL
+#ifdef DEFORM
     else if (strcasecmp(token,"strip_shift")==0) {
       /* strip move per timestep - this is a vector */
       getparam("strip_shift",&strip_shift,PARAM_REAL,DIM,DIM); 
@@ -1147,7 +1143,7 @@ void broadcast_params() {
   MPI_Bcast( &gamma_cut , 1, MPI_REAL, 0, MPI_COMM_WORLD);
 #endif
 
-#if defined(FRAC) || defined(PULL) || defined(SHOCK) || defined(SHEAR)
+#if defined(FRAC) || defined(DEFORM) || defined(SHOCK)
   MPI_Bcast( &strip_width, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
 
@@ -1166,12 +1162,6 @@ void broadcast_params() {
   MPI_Bcast( &tip.y , 1, MPI_REAL, 0, MPI_COMM_WORLD);
 #endif
 
-#ifdef SHEAR
-  MPI_Bcast( &shear_delta,   1, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &shear_epsilon, 1, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &glideplane,    1, MPI_REAL, 0, MPI_COMM_WORLD);
-#endif
-
 #ifdef DISLOC
   MPI_Bcast( &min_dpot,        1, MPI_REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ddelta,          1, MPI_REAL, 0, MPI_COMM_WORLD);
@@ -1187,7 +1177,7 @@ void broadcast_params() {
   MPI_Bcast( &op_weight,       4, MPI_REAL, 0, MPI_COMM_WORLD);
 #endif
 
-#ifdef PULL
+#ifdef DEFORM
   MPI_Bcast( &strip_shift , DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif  
 
@@ -1206,7 +1196,6 @@ void broadcast_params() {
     case ENS_AND:       move_atoms = move_atoms_and;       break;
     case ENS_MC:        move_atoms = move_atoms_mc;        break;
     case ENS_FRAC:      move_atoms = move_atoms_frac;      break;
-    case ENS_SHEAR:     move_atoms = move_atoms_mik;       break;
     case ENS_NVX:       move_atoms = move_atoms_nvx;       break;
     case ENS_MSD:       move_atoms = move_atoms_msd;       break;
     default: if (0==myid) error("unknown ensemble in broadcast"); break;

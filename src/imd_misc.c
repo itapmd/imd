@@ -505,7 +505,7 @@ void generate_atoms(str255 mode)
     init_cubic();
     init_cells();
     generate_fcc(1);
-  } else if (0 == strcmp(mode,".lav")) {  /* Laves */
+  } else if (0 == strcmp(mode,".lav")) {   /* Laves */
     init_cubic();
     init_cells();
     generate_lav();
@@ -601,7 +601,7 @@ void generate_hex()
   vektor  min, max;
   ivektor cellc;
   int     to_cpu;
-  int     i, j, typ;
+  int     i, j, typ, sign;
   real    x, y;
 
 #ifdef MPI
@@ -621,37 +621,41 @@ void generate_hex()
   alloc_cell(input, 1);
   input->masse[0] = 1.0;
 
-  natoms=0;
+  natoms = 0;
 
   for (i=min.x ; i<max.x; i++)
     for (j=min.y; j<max.y; j++) {
 
-      typ = (i+j) % 2;
+      sign = 1;
+      typ  = (i+j) % 2;
       if (typ > 0) continue;
 
       x = (i+0.5) * sqrt(3.0) * 0.5;
       y = (j+0.5) * 0.5;
 
-#if defined(FRAC) || defined(PULL) || defined(MIKSHEAR)
+#if defined(FRAC) || defined(DEFORM)
       /* leave boundary open if necessary */
-      if ((x+0.5 < strip_width/2) || (x+0.5 > box_x.x-strip_width/2) ||
-          (y+0.5 < strip_width/2) || (y+0.5 > box_y.y-strip_width/2)) continue;
+      if ((x < strip_width/2) || (x > box_x.x - strip_width/2) ||
+          (y < strip_width/2) || (y > box_y.y - strip_width/2)) continue;
+      /* boundary atoms get negative numbers */
+      if ((x < strip_width)   || (x > box_x.x - strip_width) ||
+          (y < strip_width)   || (y > box_y.y - strip_width)) sign = -1;
 #endif
 
 #ifdef SHOCK
       /* leave boundary open if necessary */
-      if ((x+0.5 < strip_width/2) || (x+0.5 > box_x.x-strip_width/2)) continue;
+      if ((x < strip_width/2) || (x > box_x.x - strip_width/2)) continue;
+      /* boundary atoms get negative numbers */
+      if ((x < strip_width)   || (x > box_x.x - strip_width)) sign = -1;
 #endif
 
       natoms++;
       input->n = 1;
       input->ort X(0) = x;
       input->ort Y(0) = y;
-      input->nummer[0] = natoms;
+      input->nummer[0] = sign * natoms;
       input->sorte[0] = typ;
       num_sort[typ]++;
-      if (pn) construct_pn_disloc(&input->ort X(0), &input->ort Y(0), NULL);
-
       cellc = cell_coord(x,y);
 #ifdef MPI
       to_cpu = cpu_coord(cellc);
@@ -687,7 +691,7 @@ void generate_fcc(int maxtyp)
   vektor  min, max;
   ivektor cellc;
   int     to_cpu;
-  int     x, y, z, typ;
+  int     x, y, z, typ, sign;
 
 #ifdef MPI
   min.x =  my_coord.x      * box_x.x / cpu_dim.x;
@@ -718,19 +722,26 @@ void generate_fcc(int maxtyp)
     for (y=min.y; y<max.y; y++)
       for (z=min.z; z<max.z; z++) {
  
-#if defined(FRAC) || defined(PULL) || defined(MIKSHEAR)
+        sign = 1;
+        typ  = (x+y+z) % 2;
+
+#if defined(FRAC) || defined(DEFORM)
         /* leave boundary open if necessary */
         if ((x+0.5 < strip_width/2) || (x+0.5 > box_x.x-strip_width/2) ||
             (y+0.5 < strip_width/2) || (y+0.5 > box_y.y-strip_width/2) ||
             (z+0.5 < strip_width/2) || (z+0.5 > box_z.z-strip_width/2)) continue;
+        /* atoms in strip get negatiave numbers */
+        if ((x+0.5 < strip_width)   || (x+0.5 > box_x.x-strip_width) ||
+            (y+0.5 < strip_width)   || (y+0.5 > box_y.y-strip_width) ||
+            (z+0.5 < strip_width)   || (z+0.5 > box_z.z-strip_width)) sign=-1;
 #endif
 
 #ifdef SHOCK
         /* leave boundary open if necessary */
         if ((x+0.5 < strip_width/2) || (x+0.5 > box_x.x-strip_width/2)) continue;
+        /* atoms in strip get negatiave numbers */
+        if ((x+0.5 < strip_width)   || (x+0.5 > box_x.x-strip_width)) sign=-1;
 #endif
-
-        typ = (x+y+z) % 2;
 
         /* if fcc, only atoms of type 0 */
         if (typ > maxtyp) continue;
@@ -741,19 +752,9 @@ void generate_fcc(int maxtyp)
         input->ort X(0) = x + 0.5;
         input->ort Y(0) = y + 0.5;
         input->ort Z(0) = z + 0.5;
-	/* PN-dislocation ? */
-        if (pn) construct_pn_disloc(&input->ort X(0), &input->ort Y(0), 
-                                                      &input->ort Z(0));
         cellc = cell_coord(input->ort X(0), input->ort Y(0), input->ort Z(0));
 #ifndef MONOLJ
-	if (pn) { /* immobile if around glideplane */
-	  if ((input->ort Z(0)<upperplane)&&(input->ort Z(0)> lowerplane))
-            input->nummer[0] = -natoms;
-	  else
-	    input->nummer[0] = natoms;
-        }
-        else
-	  input->nummer[0] = natoms;
+        input->nummer[0] = sign * natoms;
         input->sorte[0] = typ;
         num_sort[typ]++;
 #else
@@ -884,7 +885,7 @@ void generate_lav()
 	      (y+co < rmin.y) || (y+co > rmax.y) ||
 	      (z+co < rmin.z) || (z+co > rmax.z)) continue;
 
-#if defined(FRAC) || defined(PULL) || defined(MIKSHEAR)
+#if defined(FRAC) || defined(DEFORM)
 	  /* leave boundary open if necessary */
 	  if ((x+co < strip_width/2) || (x+co > box_x.x-strip_width/2) ||
 	      (y+co < strip_width/2) || (y+co > box_y.y-strip_width/2) ||
@@ -901,8 +902,6 @@ void generate_lav()
 	  input->ort X(0) = x + co;
 	  input->ort Y(0) = y + co;
 	  input->ort Z(0) = z + co;
-          if (pn) construct_pn_disloc(&input->ort X(0), &input->ort Y(0), 
-                                                        &input->ort Z(0));
 	  cellc = cell_coord(input->ort X(0), input->ort Y(0), 
                                               input->ort Z(0));
 #ifndef MONOLJ
@@ -917,31 +916,14 @@ void generate_lav()
 	    cellc = local_cell_coord(input->ort X(0), input->ort Y(0), 
 				     input->ort Z(0));
 	    move_atom(cellc, input, 0);
-	  };
+	  }
 #else
 	  move_atom(cellc, input, 0);
 #endif
 	  
-	};
-  
+	}
 } 
 
 #endif /* not TWOD */
 
-void construct_pn_disloc(real *x, real *y, real *z) {
-
-  real invwidth, hfboxl,pf; 
-  /* computation of params for PN-formula */
-  invwidth = 1/width;
-  hfboxl = .5*box_x.x;
-  pf = burgersv / M_PI;
-
-#ifndef TWOD
-            if (*z > upperplane) /* above glideplane? move! */
-#else
-            if (*y > upperplane) /* above glideplane? move! */
-#endif
-              *y += burgersv/2 -pf*atan((*x - hfboxl) * invwidth);
-
-}
 

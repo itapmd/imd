@@ -696,7 +696,7 @@ void sortin (int ifeld[])
       if (hv == 1) 
 
 	{
-#if defined(FRAC) || defined(PULL) || defined(SHEAR)
+#if defined(FRAC) || defined(DEFORM)
           if ((x>strip_width/2) && (x<box_x.x-strip_width/2) &&
               (y>strip_width/2) && (y<box_y.y-strip_width/2) &&
               (z>strip_width/2) && (z<box_z.z-strip_width/2))
@@ -731,7 +731,7 @@ void sortin (int ifeld[])
 	      move_atom(cellc, input, 0);
 #endif
 
-#if defined(FRAC) || defined(PULL) || defined (SHOCK) || defined(SHEAR)
+#if defined(FRAC) || defined(DEFORM) || defined (SHOCK)
   }
 #endif
 

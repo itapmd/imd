@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* imd_shear_hom.c -- shear sample homogeneously
+* imd_deform.c -- shear sample homogeneously
 *
 ******************************************************************************/
 
@@ -12,15 +12,12 @@
 
 #include "imd.h"
 
-#ifdef HOM
 
 /*****************************************************************************
 *
 * shear_sample()
 *
 *****************************************************************************/
-
-
 
 void shear_sample(void)
 {
@@ -39,13 +36,9 @@ void shear_sample(void)
   real kappa;
   int flag=0;
   
+  if (0==myid) printf("Shearing sample.\n");
   
-#ifdef MPI
-  if (0==myid)
-#endif
-      printf("Shearing sample.\n");
-  
-      /* Seek for Min/Max u and x */
+  /* Seek for Min/Max u and x */
   for ( r = cellmin.x; r < cellmax.x; ++r )
       for ( s = cellmin.y; s < cellmax.y; ++s )
 #ifndef TWOD
@@ -80,14 +73,9 @@ void shear_sample(void)
   xmin = tmp_xmin;
 #endif
 
-#ifdef MPI
-  if (0==myid)
-#endif
-      printf("Min X: %f\nMax X: %f\n",
-             xmin,xmax);
-
+  if (0==myid) printf("Min X: %f\nMax X: %f\n", xmin,xmax);
   
-          /* Apply shear */
+  /* Apply shear */
   for ( r = cellmin.x; r < cellmax.x; ++r )
       for ( s = cellmin.y; s < cellmax.y; ++s )
 #ifndef TWOD
@@ -104,11 +92,8 @@ void shear_sample(void)
               p->ort Y(i) += shear_max * p->ort X(i) / xmax;
                             
           }
-#ifdef MPI
-  if (0==myid)
-#endif
-  return;
 } /*shear_sample*/
+
 
 /*****************************************************************************
 *
@@ -134,13 +119,9 @@ void expand_sample(void)
   real kappa;
   int flag=0;
   
+  if (0==myid) printf("Expanding sample.\n");
   
-#ifdef MPI
-  if (0==myid)
-#endif
-      printf("Expanding sample.\n");
-  
-          /* Apply field */
+  /* Apply field */
   for ( r = cellmin.x; r < cellmax.x; ++r )
       for ( s = cellmin.y; s < cellmax.y; ++s )
 #ifndef TWOD
@@ -166,36 +147,25 @@ void expand_sample(void)
                             
             }
           }
-#ifdef MPI
-  if (0==myid)
-#endif
-      printf("Expansion done.\n");
-  return;
+
 } /* expand sample */
 
-#endif /* HOM */
-
-
-#ifdef PULL
 
 /*****************************************************************************
 *
-* deform_atoms()
+* deform_sample()
 *
 *****************************************************************************/
 
-void deform_atoms(void) {
+void deform_sample(void) {
 
   cell *p;
   int i;
   int r,s,t;
-  real tot_kin_energy_prev;
+  real box_x_half;
 
-  tot_kin_energy_prev = tot_kin_energy;
+  box_x_half = 0.5 * box_x.x;
 
-  if ((dnoshsteps > annealsteps) && 
-      ((tot_kin_energy_prev < ekin_threshold) || 
-       (dnoshsteps > maxdnoshsteps))) {
   /* loop over all atoms */
     for ( r = cellmin.x; r < cellmax.x; ++r )
       for ( s = cellmin.y; s < cellmax.y; ++s )
@@ -211,15 +181,16 @@ void deform_atoms(void) {
 #endif
 
 	  for (i = 0;i < p->n; ++i) {
+            /* move only atoms with negative number */
+            if (NUMMER(p,i) > 0) continue;
 	    /* which direction of pulling? */
-	    if (p->ort X(i) <= strip_width) {
+	    if (p->ort X(i) <= box_x_half) {
 	      p->ort X(i) -= strip_shift.x;
 	      p->ort Y(i) -= strip_shift.y;
 #ifndef TWOD
 	      p->ort Z(i) -= strip_shift.z;
 #endif
-	    }
-	    if (p->ort X(i) >= box_x.x - strip_width) {
+	    } else {
 	      p->ort X(i) += strip_shift.x;
 	      p->ort Y(i) += strip_shift.y;
 #ifndef TWOD
@@ -228,13 +199,8 @@ void deform_atoms(void) {
 	    }
 	  } /* i - loop */
 	} /* cell loop */
-    dnoshsteps = 0;
-  } else {
-	    dnoshsteps++;
-	  }
 
 } /* deform_atoms */
 
-#endif /* PULL */
 
 

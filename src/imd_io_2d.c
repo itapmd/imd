@@ -476,11 +476,7 @@ void write_config(int steps)
   int i,j,k,l,m,tag;
 
   /* Dateiname fuer Ausgabedatei erzeugen */
-#ifdef SHEAR
-  fzhlr = steps;
-#else
   fzhlr = steps / rep_interval;
-#endif
 
 #ifdef MPI  
   if (1==parallel_output)

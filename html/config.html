@@ -84,18 +84,13 @@ of the Fibonacci approximant in the three directions. For the
 <TT>box_param.y</TT> in y-direction. The nearest 
 neighbor distance is 1.
 <P>
-If the ensembles/options <B>frac</B>, <B>pull</B>, <B>mikshear</B> or
+If the ensembles/options <B>frac</B>, <B>deform</B> or
 <B>shock</B> are contained in the exectuble, a layer of with
 <TT>strip_width/2</TT> is left empty at the boundary of the box 
-for all generated structures (only in x-direction for shock).
-<P>
-If the parameter <TT>pn</TT> is set (==1) an edge dislocation is
-constructed by applying a Peierls-Nabarro displacement field. The
-parameters <TT>burgersv</TT> (length of the Burgers vector which is
-pointing in x-direction), <TT>width</TT> (width of the Burgers vector
-density and <TT>glideplane</TT> (specifying the z-coordinate
-(y-coordinate in two dimensional systems) of the glideplane can be
-set.
+for all generated structures, and the remaining atoms in a
+layer of with <TT>strip_width</TT> get negative numbers,
+which makes them immobile. For the shock option, this applies
+only to the layers perpendicular to the x-axis.
 <P>
 The <TT>.tiqc</TT> structure is an approximant of a truncated
 icosahedra quasicrystals (tiqc, truncated icosahedra clusters are also
@@ -126,7 +121,7 @@ forces, the minimal image convention is used.
 <P>
 Periodic boundary conditions can be <B>switched off</B> with the
 compilation flag <B>NOPBC</B>. Certain ensembles and options, notably
-<TT>frac</TT>, <TT>pull</TT> and <TT>mikshear</TT>, always switch off
+<TT>frac</TT> and <TT>deform</TT>, always switch off
 periodic boundary conditions. Here, it is the user's responsibility
 that the system fits into the box.  This is necessary in order that
 the distribution of the particles into cells works correctly. Only a

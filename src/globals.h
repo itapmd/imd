@@ -244,38 +244,37 @@ EXTERN vektor limit_growth INIT(einsvektor);
 EXTERN real end_temp INIT(0.0);        /* Temperature and at of simulation */
 #endif
 
-#if defined HOM
+#ifdef DEFORM 
 EXTERN int    hom_interval INIT(0);    /* period of homshear steps */
 EXTERN real   shear_max INIT(0.0);     /* max shear in y-direction */
 EXTERN int    exp_interval INIT(0);    /* period of expansion steps */
 EXTERN real   expansion INIT(1.0);     /* max expansion in y-direction */
 #endif
 
-#if defined(FRAC) || defined(PULL)
+#if defined(FRAC) || defined(DEFORM)
 EXTERN vektor stadion INIT(nullvektor);      /* Damping stadion */
 EXTERN real   gamma_bar INIT(0.0);    /* Damping prefactor */
 EXTERN real   gamma_cut INIT(0.0);    /* Damping cutoff */
 #endif
 
-#if defined(FRAC) || defined(PULL) || defined(SHOCK)
-EXTERN int    dnoshsteps INIT(0);     /* counting steps between 2 shears */
-EXTERN real   strip_width INIT(0.0);        /* Strip width */    
-EXTERN real   ekin_threshold INIT(1.0e+20); /* threshold for ekin */    
-EXTERN int    annealsteps INIT(0);    /* number of annealing steps */    
-EXTERN int    maxdnoshsteps INIT(0);  /* max. steps between 2 shear steps */  
-EXTERN int initial_shift INIT(0);  /* flag whether the sample is shifted */
-EXTERN vektor ins INIT(nullvektor);/* initial shift */
-EXTERN int shear_steps INIT(0);   /* number of shear_steps */
+#if defined(FRAC) || defined(DEFORM) || defined(SHOCK)
+EXTERN int    deform_int INIT(0);      /* counting steps between 2 shears */
+EXTERN real   strip_width INIT(0.0);   /* Strip width */    
+EXTERN real   ekin_threshold INIT(0.0);/* threshold for ekin */    
+EXTERN int    annealsteps INIT(0);     /* number of annealing steps */    
+EXTERN int    max_deform_int INIT(0);  /* max. steps between 2 shear steps */  
+EXTERN int    initial_shift INIT(0);   /* flag whether the sample is shifted */
+EXTERN vektor ins INIT(nullvektor);    /* initial shift */
 #endif
 
-/*  #ifdef FRAC */
+#ifdef FRAC
 EXTERN real kcrit INIT(0.0);          /* Stress Intensity Factor */
 EXTERN real mue INIT(0.0);            /* Youngs Modulus */
 EXTERN real kel INIT(0.0);            /* Shear Modulus */
 EXTERN vektor2d tip INIT(nullvektor2d); /* Location of crack Tip */
-/* #endif */
+#endif
 
-#ifdef PULL
+#ifdef DEFORM
 EXTERN vektor   strip_shift INIT(nullvektor);/* shift of atoms in strip */
 #endif
 

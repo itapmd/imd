@@ -184,7 +184,7 @@ file. This removes some of the confusion inside the energy file.
 If periodic boundary conditions are active, and the starting
 configuration contains particles outside the box, these are now
 mapped back into the box. Without periodic boundary conditions
-(frac, pull, shear), however, this cannot sensibly be done, and
+(frac or deform), however, this cannot sensibly be done, and
 so it is still the users responsibility to make sure that the
 configuration fits into the simulation box.
 
@@ -199,13 +199,6 @@ is now built into the option <A HREF="options.html#disloc">DISLOC</A>.
 <P>
 The utility program <A HREF="utilities.html#imd_pair">imd_pair</A> has been 
 converted to the new parameter file format. Support for 2D has been added.
-
-<P> 
-<LI> <B>mikshear, the former shear, is now an ensemble</B> 
-<P>
-<A HREF="ensembles.html#mikshear">mikshear</A> has become an ensemble,
-i.e., it has an ensemble value mikshear, and uses a unique integrator 
-(mik). This allows to make it multiphase ready.
 
 <P> 
 <LI> <B>Multiphase capabilities improved</B> 
@@ -259,13 +252,23 @@ swap is necessary. The VolIMD hos is now specified with the parameter
 <P>
 <LI> <B>Heat conductivity</B>
 <P>
-The heat conductivity can be computed with the option <TT>transport</TT>.
+The heat conductivity can be computed with the ensemble <TT>nvx</TT>.
 
 <P>
 <LI> <B>Stress tensor</B>
 <P>
 The distribution of stresses can be calculated with the option
 <TT>stress_tens</TT>.
+
+<P>
+<LI> <B>shear, pull and mikshear replaced by deform</B>
+<P>
+shear and pull simulations have been completely reorganized. There
+is now an option <A HREF="options.html#deform">deform</A>, which 
+incorporated all the facilities of the former shear, pull, and
+mikshear ensembles. This option can be combined with any integrator.
+All facilities can be switched on and off by specifying suitable
+parameters.
 
 </UL>
 

@@ -40,8 +40,6 @@
 # working shell, by uncommenting and adapting the following line. 
 # SHELL         = tcsh
 
-GET           = co
-
 IMDHEADERS    = config.h globals.h imd.h makros.h prototypes.h types.h 
 
 SOURCES       = imd.c imd_maxwell.c imd_integrate.c imd_forces.c \
@@ -62,15 +60,12 @@ MPISOURCES3D  = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c \
 PACXSOURCES2D = ${MPISOURCES2D} imd_pacx.c
 PACXSOURCES3D = ${MPISOURCES3D} imd_pacx.c
 
-PULLSOURCES   = imd_deform.c
+DEFORMSOURCES = imd_deform.c
 
-SHEARSOURCES  = imd_deform.c
 SOCKHEADERS   = socket_tokens.h sockets.h sockutil.h
 SOCKSOURCES   = socket_io.c sockutil.c
 
 FRACSOURCES   = imd_load.c
-
-HOMSOURCES     = imd_deform.c imd_transport.c
 
 QUASISOURCES  = imd_qc.c
 
@@ -81,7 +76,7 @@ MCSOURCES     = imd_mc.c
 
 CORRSOURCES   = imd_correl.c
 
-TRANSSOURCES	= imd_transport.c
+TRANSSOURCES  = imd_transport.c
 
 # Collection of my favourite compiler flags
 
@@ -433,33 +428,35 @@ ifneq (,$(findstring npt_iso,${MAKETARGET}))
 CFLAGS += -DNPT -DNPT_iso
 endif
 
-ifneq (,$(findstring hom,${MAKETARGET}))
-CFLAGS += -DHOM
-SOURCES += ${HOMSOURCES}
-endif
-
 ifneq (,$(findstring frac,${MAKETARGET}))
 CFLAGS += -DFRAC
 SOURCES += ${FRACSOURCES}
-endif
-
-ifneq (,$(findstring pull,${MAKETARGET}))
-CFLAGS += -DPULL
-SOURCES += ${PULLSOURCES}
-endif
-
-ifneq (,$(findstring shock,${MAKETARGET}))
-CFLAGS += -DSHOCK
-SOURCES += ${TRANSSOURCES}
 endif
 
 ifneq (,$(findstring mik,${MAKETARGET}))
 CFLAGS += -DMIK
 endif
 
-ifneq (,$(findstring shear,${MAKETARGET}))
-CFLAGS += -DSHEAR
-SOURCES += ${SHEARSOURCES}
+# Minimizer - Steepest Descent
+ifneq (,$(strip $(findstring msd,${MAKETARGET})))
+CFLAGS  += -DMSD
+endif
+
+# Monte Carlo
+ifneq (,$(strip $(findstring mc,${MAKETARGET})))
+CFLAGS  += -DMC
+SOURCES += ${MCSOURCES}
+endif
+
+# options
+ifneq (,$(findstring deform,${MAKETARGET}))
+CFLAGS += -DDEFORM
+SOURCES += ${DEFORMSOURCES}
+endif
+
+ifneq (,$(findstring shock,${MAKETARGET}))
+CFLAGS += -DSHOCK
+SOURCES += ${TRANSSOURCES}
 endif
 
 ifneq (,$(findstring quasi,${MAKETARGET}))
@@ -490,17 +487,6 @@ endif
 # TTBPNC
 ifneq (,$(strip $(findstring ttbpnc,${MAKETARGET})))
 CFLAGS  += -DTTBPNC
-endif
-
-# Minimizer - Steepest Descent
-ifneq (,$(strip $(findstring msd,${MAKETARGET})))
-CFLAGS  += -DMSD
-endif
-
-# Monte Carlo
-ifneq (,$(strip $(findstring mc,${MAKETARGET})))
-CFLAGS  += -DMC
-SOURCES += ${MCSOURCES}
 endif
 
 # Correlation

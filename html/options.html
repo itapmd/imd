@@ -145,6 +145,50 @@ writing intervals to zero.
 <B>Known bugs:</B> The reference potential energy can be set
 only once in each phase.
 
+<A NAME="deform">
+<P><LI><B> deform </B><P>
+</A>
+The deform option provides several possibilities to shear, expand
+of deform the sample in other ways.
+<P>
+<UL>
+<P><LI>
+If <TT>hom_interval</TT> is positive, the sample is homogeneously
+sheared in y-direction every <TT>hom_interval</TT> steps, using a 
+homogeneous displacement field depending on the x-coordinate of the 
+particle. The displacement is scaled with the maximum value of the 
+x-coordinates of all particles. The latter is computed before each 
+shear step. Atoms with x=0 are not shifted, whereas atoms with maximum
+x are shifted with a magnitude <TT>shear_max</TT>, which is a parameter.
+<P><LI>
+If <TT>exp_interval</TT> is positive, the sample is isotropically 
+expanded every <TT>exp_interval</TT> steps. The rate of expansion is 
+given by the parameter <TT>expansion</TT>. The box lengths are updated
+automatically.
+<P><LI>
+If <TT>max_deform_int</TT> is positive, or <TT>ekin_threshold</TT>
+is positive, atoms with negative numbers in the left half (in x
+direction) of the sample are rigidly moved by an amount
+<TT>strip_shift</TT>, which is a vector. Atoms with negative
+numbers in the right half of the sample are moved by the opposite
+vector. This happens if either the kinetic energy drops below
+<TT>ekin_threshold</TT> (useful with the mik integrator),
+or if the last deformation step was done <TT>max_deform_int</TT>
+steps ago. If <TT>annealsteps</TT> is positive, no deformations
+are done during the first <TT>annealsteps</TT> steps.
+This mechanism can be used both for shears (<TT>strip_shift</TT>
+parallel to sample boundary) and for compressions or expansions
+(<TT>strip_shift</TT> perpendicular to sample boundary). The
+atoms with negative numbers are usually located in two boundary
+layers perpendicular to the x-axis.
+<P>
+As automatic generation of samples may lead to atoms with coordinates
+close to zero (which would become negative after several shear steps) 
+it is possible to apply an initial shift to the sample. For this the
+flag <TT>initial_shift</TT> must be set to 1, and the vector
+<TT>ins</TT> must be set to the desired value.
+</UL>
+
 <A NAME="sock">
 <P><LI><B>sock</B><P>
 </A>
@@ -219,18 +263,20 @@ ready</A>.
 <A NAME="transport">
 <P><LI><B>transport</B><P>
 </A>
-This option enables imd to compute the heat conductivty of a
-sample. The temperatures are given at the two ends of the sample by
-<TT>dTemp_start</TT> and <TT>dTemp_end</TT>, and
-the temperature gradient is applied along the x-axis.
-The local temperature will be written as a histogram
-onto a file <TT>&lt;basename&gt;.tempdist&lt;n&gt;</TT>. The
-writing interval is given by the parameter <tt>temp_interval</tt>,
-the number of histogram bins by <tt>temp_nlayers</TT>.
-<P>
-The heat current is now appended to the
-<TT>&lt;basename&gt;.tempdist</TT> file.
-</A>
+This option enables IMD to compute the heat conductivty of a
+sample. It is automatically activated by the
+<A HREF="ensembles.html#nvx">nvx ensemble</A>.
+The sample is divided into <TT>tran_nlayers</TT> layers.
+The temperature of layer 0 is initialized to 
+<TT>starttemp + dTemp_start</TT>, and linearly moved to 
+<TT>starttemp + dTemp_end</TT> during the simulation. Similarly, 
+the temperature of layer <TT>tran_nlayers/2</TT> (in the middle of 
+the sample) is initially set to <TT>starttemp - dTemp_start</TT>,
+and linearly moved to <TT>starttemp - dTemp_end</TT>.
+The time, the heat conductivity, and the temperatures in
+layers 0 to <TT>tran_nlayers/2</TT> is written to the
+file <TT>&lt;basename&gt;.tempdist</TT> every
+<tt>tran_interval</tt> steps.
 
 <A NAME="stress_tens">
 <P><LI><B>stress_tens</B><P>

@@ -61,8 +61,8 @@ void main_loop(void)
   /* initializations for the current simulation phase, if not yet done */
   if (0==restart) init();
 
-#ifdef PULL
-  dnoshsteps = 0;
+#ifdef DEFORM
+  deform_int = 0;
 #endif
 
   for (steps=steps_min; steps <= steps_max; ++steps) { 
@@ -76,12 +76,16 @@ void main_loop(void)
 #endif
 
     /* shear, pull, frac and hom */
-#ifdef HOM
+#ifdef DEFORM
     if ((hom_interval > 0) && (0 == steps%hom_interval)) shear_sample();
     if ((exp_interval > 0) && (0 == steps%exp_interval)) expand_sample();
-#endif
-#ifdef PULL
-    deform_atoms();
+    if (steps > annealsteps) {
+      deform_int++;
+      if ((tot_kin_energy < ekin_threshold) || (deform_int==max_deform_int)) {
+        deform_sample();
+        deform_int=0;
+      }
+    }
 #endif
 
 
@@ -218,7 +222,6 @@ void main_loop(void)
   }
 
   /* clean up the current phase, and clear restart flag */
-  epilogue();
   restart=0;
 
   if (0==myid) printf( "End of simulation %d\n", simulation );
@@ -381,67 +384,8 @@ void init(void)
   xi.y = 0.0;
 #endif
   
-#if defined(FRAC) || defined(SHEAR)
-  /* Atoms with negative numbers are not moved */
-  /* loop over all atoms */
-  /* for each cell in bulk */
-  if ((ensemble==ENS_FRAC) || (ensemble==ENS_SHEAR)) 
-    for (r=cellmin.x; r < cellmax.x; ++r)
-      for (s=cellmin.x; s < cellmax.y; ++s) {
-	p = PTR_2D_V(cell_array, r, s, cell_dim);
-	for (i = 0;i < p->n; ++i) {
-	  /* Make Atom numbers in strip negative */
-	  if ((p->ort X(i) < strip_width) || (p->ort X(i) > (box_x.x - strip_width))) {
-	    if (0<p->nummer[i]) p->nummer[i] = - p->nummer[i];
-	  };
-	};
-      };
-#endif
-
-#ifdef PULL
-  /* Atoms with negative numbers are not moved */
-  /* loop over all atoms */
-  /* for each cell in bulk */
-  for (r=cellmin.x; r < cellmax.x; ++r)
-    for (s=cellmin.x; s < cellmax.y; ++s) {
-      p = PTR_2D_V(cell_array, r, s, cell_dim);
-      for (i = 0;i < p->n; ++i) {
-        /* Make Atom numbers in strip negative */
-        if ((p->ort X(i) < strip_width) || (p->ort X(i) > (box_x.x - strip_width))) {
-          if (0<p->nummer[i]) p->nummer[i] = - p->nummer[i];
-        };
-      };
-    };
-#endif
-  
 }
 
-
-/*****************************************************************************
-*
-*  ensemble specific epilogue
-*
-*****************************************************************************/
-
-void epilogue(void)
-{
-  int r, s, i;
-  cell *p;
-  
-#if defined(PULL) || defined(FRAC) || defined(SHEAR)
-  /* make all atoms mobile again */
-  if ((ensemble==ENS_PULL) || (ensemble==ENS_FRAC) || 
-      (ensemble==ENS_SHEAR)) 
-  for (r=1; r < cell_dim.x-1; ++r)
-    for (s=1; s < cell_dim.y-1; ++s) {
-      p = PTR_2D_V(cell_array, r, s, cell_dim);
-      for (i = 0;i < p->n; ++i) {
-        if (0>p->nummer[i]) p->nummer[i] = - p->nummer[i];
-      };
-    };
-#endif
-
-}
 
 
 

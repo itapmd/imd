@@ -140,8 +140,6 @@ __inline static real SQR(real x)
 #define ENS_AND       6
 #define ENS_MC        7
 #define ENS_FRAC      8
-#define ENS_PULL      9
-#define ENS_SHEAR    10
 #define ENS_NVX      11
 #define ENS_MSD      12
 

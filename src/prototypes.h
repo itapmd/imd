@@ -19,9 +19,7 @@ void generate_fcc(int maxtyp);
 void generate_lav(void);
 void init_hex(void);
 void generate_hex(void);
-void construct_pn_disloc(real *x, real *y, real *z);
 void init(void);
-void epilogue(void);
 void usage(void);
 void getparamfile(char *paramfname, int sim);
 void init_cells(void);
@@ -35,7 +33,6 @@ vektor back_into_box(vektor pos);
 void move_atom(ivektor cellc, cell *from, int index);
 void alloc_cell(cell *thecell, int count);
 void calc_forces(void);
-/*void move_atoms(void);*/
 void move_atoms_nve(void);
 void move_atoms_mik(void);
 void move_atoms_nvt(void);
@@ -136,19 +133,10 @@ void copy_forces(msgbuf *b, int k, int l, int m);
 void move_atoms_ar(msgbuf *b, int k, int l, int m);
 void copy_atoms_ar(msgbuf *b, int k, int l, int m);
 
-#ifdef SHEAR
-void apply_shear(void);
-void shear1step(int steps);
-void write_shear_energy(int steps, int shear_steps);
-#endif
-
-#ifdef HOM
+#ifdef DEFORM
 void shear_sample(void);
 void expand_sample(void);
-#endif
-
-#ifdef PULL
-void deform_atoms(void);
+void deform_sample(void);
 #endif
 
 #ifdef DISLOC

@@ -21,14 +21,17 @@ x-direction only.
 <P>
 Certain ensembles and options do some <B>initialization</B> during 
 startup. This is still the case for <B>shock</B>, which can therefore
-be used only for the first simulation phase. <B>frac</B>, <B>pull</B> 
-and <B>mikshear</B>, on the other hand, now do their initializations
-for each phase separately, so that they are compatible with each other.
+be used only for the first simulation phase.
+<P>
+Atoms with negative numbers are not moved by certain integrators,
+but are rigidly moved when the sample is sheared or deformed
+in other ways. The set of atoms with negative numbers remains
+the same throughout the whole simulation.
 <P>
 Certain features can not (yet) be switched on and off during a
 simulation. Once compiled into an executable, they are active all
 the time. Such features therefore only have limited <B>multiphase</B> 
-capabilities. There are probably no such feature left :-)
+capabilities. There are probably no such features left :-)
 <P>
 The type of <B>interaction</B> (pair potentials, EAM potentials, 
 two- and three-body potentials) is global to an entire IMD executable.
