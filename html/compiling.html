@@ -9,8 +9,29 @@ following. Note that on some systems, GNU make is called make.
 Most other implementations of make won't work.</p>
 
 <pre>
-   gmake [EXTRAFLAGS="some flags"] imd-target
+   gmake [FLAGS="some flags"] [IMDSYS="some system"] imd-target
 </pre>
+
+<p>
+The compiler and compilation flags are determined according to the 
+<a href="compiling.html#imdsys">IMDSYS variable</a>, which must be 
+set either as an environment variable, or be passed on the command 
+line as above. In previous versions of IMD, the HOSTTYPE environment 
+variable was used for this purpose, but this turned out to be too 
+inflexible. Especially for the IA32 architechture, there are too 
+many processor types requiring their own optimization flags, which 
+moreover depend on the choice of compiler (gcc2, gcc3, icc,...).
+It therefore seemed necessary to introduce a new, IMD-specific variable
+IMDSYS, which now determines a combination of system type and compiler,
+together with all associated compile and link flags. Further compile
+or ling flags, in addition to those determined by the IMDSYS variable, 
+can be passed on the command line with the help of the FLAGS variable.</p>
+
+<p>
+After compiling, the IMD executable is moved to the directory 
+$HOME/bin/$HOSTTYPE, which must exist, and which should be in the 
+search path. The location where executables are put can be customized 
+in the Makefile. </p>
 
 <p>
 <tt>imd-target</tt> consists of several components and has the
@@ -19,15 +40,6 @@ following structure:</p>
 <pre>
    imd[_parallelization]_ensemble[_ensemble]...[_2d][_option][_option]...
 </pre>
-
-<p>
-The compilation flags are set according to the $HOSTTYPE 
-environement variable, must be set to one of the <a href="#hosttypes">
-supported values</a> (support for further ones is easily added).
-The executable is moved to directory $HOME/bin/$HOSTTYPE,
-which must exist, and which should be in the current $PATH.
-The EXTRAFLAGS variable can be used to define further flags
-for the compiler, linker or C preprocessor. </p>
 
 <p>
 Most features of IMD must be activated with the corresponding 
@@ -43,10 +55,9 @@ parameter</a> read from the <a href="paramfile.html">parameter file</a>.
 <p>
 There are a few compilation options which cannot coexist with each
 other. In particular, IMD must be compiled for a fixed dimension
-(default is 3d, option _2d switches to 2d) and with a fixed type
-of interaction (default is tabulated pair potentials). In the
-current implementation, different types of interaction cannot
-coexist.</p>
+(default is 3d, option _2d switches to 2d), and there are some
+<a href="potentials.html">restrictions</a> on the types of interaction 
+which can be combined.</p>
 
 <h2>Compilation Options</h2>
 
@@ -82,24 +93,45 @@ If none of these is specified, a serial executable is compiled.
 <tr><td>sr           </td><td>use sendrecv in MPI version</td></tr>
 </table>
 
-<p>
-On some machines it is possible to use an alternative compiler, by specifying
-its name as an option. For details, have a look at the Makefile.</p>
-
-<a id="hosttypes" name="hosttypes">
-<h2>Supported $HOSTTYPE values</h2>
+<a id="imdsys" name="imdsys">
+<h2>Supported values of the IMDSYS variable</h2>
 </a>
 
+<p>
+Currently, the following values of the IMDSYS variable are supported:</p>
+
 <table>
-<tr><td>iris4d	              </td><td>SGI, Irix             </td></tr>
-<tr><td>alpha	              </td><td>DEC Alpha, Tru64 Unix </td></tr>
-<tr><td>cray-t3e, t3e         </td><td>Cray T3E              </td></tr>
-<tr><td>SR8000	              </td><td>Hitachi SR8000        </td></tr>
-<tr><td>rs6000	              </td><td>IBM RS 6000, AIX      </td></tr>
-<tr><td>i386-linux, i686&nbsp;</td><td>Intel IA32, Linux     </td></tr>
+<tr><td>AthlonMP-icc  </td><td> Athlon MP or XP, icc                 </td></tr>
+<tr><td>AthlonMP-gcc3 </td><td> Athlon MP or XP, gcc3                </td></tr>
+<tr><td>P4-icc        </td><td> Pentium 4 or Xeon, icc               </td></tr>
+<tr><td>P4-gcc3       </td><td> Pentium 4 or Xeon, gcc3              </td></tr>
+<tr><td>P3-icc        </td><td> Pentium II/III, icc                  </td></tr>
+<tr><td>P3-gcc3       </td><td> Pentium II/III, gcc3                 </td></tr>
+<tr><td>ia32-gcc2     </td><td> generic IA32, gcc2 (very slow)       </td></tr>
+<tr><td>ia64-ecc      </td><td> Intel Itanium 2, ecc                 </td></tr>
+<tr><td>alpha-cc      </td><td> Alpha EV56, cc                       </td></tr>
+<tr><td>alpha-gcc2    </td><td> Alpha EV56, gcc2 (slow)              </td></tr>
+<tr><td>irix-cc       </td><td> Irix, mips3, cc                      </td></tr>
+<tr><td>irix-gcc2     </td><td> Irix, mips3, gcc2 (slow)             </td></tr>
+<tr><td>USparc3-cc    </td><td> UltraSparc3, cc                      </td></tr>
+<tr><td>sparc-gcc2    </td><td> generic sparc, gcc2 (slow)           </td></tr>
+<tr><td>T3E-cc        </td><td> Cray T3E, cc                         </td></tr>
+<tr><td>sr8k-cc       </td><td> HITACHI SR8000, cc                   </td></tr>
+<tr><td>sr8k-xcc      </td><td> xcc cross compiler for HITACHI SR8000</td></tr>
+<tr><td>Power4-cc     </td><td> IBM Power4, cc </td></tr>
 </table>
 
-<p>Support for further values is easily added.</p>
+<p>
+The GCC 2.x compilers should usually be avoided. Especially on the IA32
+architecture, they produce very slow code. GCC 3.2 or the Intel compiler
+icc are much better choices. </p>
+
+<p>
+Support for further values of IMDSYS is easily added. The Makefile
+contains a detailed description of how the compile and link flags
+are determined from a number of Makefile variables, which must be
+set for each supported value of IMDSYS. There is a template from
+which one can start. </p>
 
 <!--#include virtual="imdfoot.html" -->
 
