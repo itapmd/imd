@@ -618,7 +618,7 @@ void init_pre_pot(void) {
 
 void init_fourpoint( pot_table_t *pt, int nc )
 {
-  int  col, n, nc;
+  int  col, n;
   real *y;
 
   /* loop over columns */
