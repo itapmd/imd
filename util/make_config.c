@@ -81,7 +81,7 @@ void init_hex(void)
   box_y.x = 0.0;
   box_y.y = box_param.y * box_unit;
   /* write header */
-  fprintf(outfile, "#F A 1 1 1 2\n");
+  fprintf(outfile, "#F A 1 1 1 2 0 0\n");
   fprintf(outfile, "#C number type mass x y\n");
   fprintf(outfile, "#X %f %f\n", box_x.x, box_x.y);
   fprintf(outfile, "#Y %f %f\n", box_y.x, box_y.y);
@@ -133,7 +133,7 @@ void init_cubic(void)
     box_unit    /= 4;
   }
   /* write header */
-  fprintf(outfile, "#F A 1 1 1 3\n");
+  fprintf(outfile, "#F A 1 1 1 3 0 0\n");
   fprintf(outfile, "#C number type mass x y z\n");
   fprintf(outfile, "#X %f %f %f\n", box_x.x, box_x.y, box_x.z);
   fprintf(outfile, "#Y %f %f %f\n", box_y.x, box_y.y, box_y.z);
