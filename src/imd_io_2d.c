@@ -398,7 +398,7 @@ void write_cell(FILE *out, cell *p)
 #define RESOL2 " %12.16f %12.16f"
 #else
 #define RESOL1 " %12f"
-#define RESOL2 " %12f 12f"
+#define RESOL2 " %12f %12f"
 #endif
 
   for (i=0; i<p->n; i++) {
