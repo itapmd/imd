@@ -419,8 +419,8 @@ void float2scalar12_dist( float_dist_t *fl, byte_dist_t *bt, float min,
         us[k++] = (unsigned short) tmp;
       }
 
-  /* endian swap if necessary - we need big endian */
-  if (!endian()) 
+  /* endian swap if necessary - we need little endian */
+  if (endian()) 
     for (i=0; i<k; i++) swap_2_bytes( (void *) (us+i) );
 
 }

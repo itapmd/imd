@@ -29,24 +29,24 @@ void  write_header_uv( int dimx, int dimy, int dimz, int nframe,
   sprintf(fname, "%s.uhd", file );
   if (NULL==(fp=fopen(fname, "w"))) error("Cannot open parameter file");
 
-  fprintf(fp, "HP Labs UltraVis Volume Data Set Header File, Hewlett Packard Company, 2000\n");
-  fprintf(fp, "VERSION: 1\n");
-  fprintf(fp, "DATASETNAME: %s.uvd\n", file );
-  fprintf(fp, "MANUFACTURER: IMD\n");
-  fprintf(fp, "COPYRIGHT: ITAP, Stuttgart Universtity\n");
-  fprintf(fp, "DESC: %s\n", file);
-  fprintf(fp, "MENUNAME: %s\n", file);
-  fprintf(fp, "XSIZE: %d\n", dimx);
-  fprintf(fp, "YSIZE: %d\n", dimy);
-  fprintf(fp, "ZSIZE: %d\n", dimz);
-  fprintf(fp, "VOXELTYPE: %s\n", voxeltype);
-  fprintf(fp, "TIMESTEPS: %d\n", nframe);
-  fprintf(fp, "VOLUMEPATH: %s.uvd\n", file);
-  fprintf(fp, "COMPRESSION: NONE\n");
-  fprintf(fp, "GEOPATH:\n");
-  fprintf(fp, "PARAMPATH: %s.ups\n", file);
-  fprintf(fp, "USERLIBRARY:\n");
-  fprintf(fp, "COMMENTS:\n");
+  fprintf(fp, "HP Labs UltraVis Volume Data Set Header File, Hewlett-Packard Company, 2000\r\n");
+  fprintf(fp, "VERSION: 1\r\n");
+  fprintf(fp, "DATASETNAME: %s.uvd\r\n", file );
+  fprintf(fp, "MANUFACTURER: IMD\r\n");
+  fprintf(fp, "COPYRIGHT: ITAP, Stuttgart University\r\n");
+  fprintf(fp, "DESC: %s\r\n", file);
+  fprintf(fp, "MENUNAME: %s\r\n", file);
+  fprintf(fp, "XSIZE: %d\r\n", dimx);
+  fprintf(fp, "YSIZE: %d\r\n", dimy);
+  fprintf(fp, "ZSIZE: %d\r\n", dimz);
+  fprintf(fp, "VOXELTYPE: %s\r\n", voxeltype);
+  fprintf(fp, "TIMESTEPS: %d\r\n", nframe);
+  fprintf(fp, "VOLUMEPATH: %s.uvd\r\n", file);
+  fprintf(fp, "COMPRESSION: NONE\r\n");
+  fprintf(fp, "GEOPATH:\r\n");
+  fprintf(fp, "PARAMPATH: %s.ups\r\n", file);
+  fprintf(fp, "USERLIBRARY:\r\n");
+  fprintf(fp, "COMMENTS:\r\n");
 
   fclose(fp);
 }
