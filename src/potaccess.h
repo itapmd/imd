@@ -222,7 +222,7 @@
   dfac3 =    1.0/6.0 * (3.0*chi*chi-1.0);                                    \
                                                                              \
   /* intermediate values */                                                  \
-  ptr = PTR_2D((pt).table, k, (col), (pt).maxsteps, (inc));                  \
+  ptr = PTR_2D((pt).table, k-1, (col), (pt).maxsteps, (inc));                \
   p0  = *ptr; ptr += (inc);                                                  \
   p1  = *ptr; ptr += (inc);                                                  \
   p2  = *ptr; ptr += (inc);                                                  \
@@ -303,7 +303,7 @@
   fac3 =  (1.0/6.0) * chi * (chi*chi-1.0);                                   \
                                                                              \
   /* intermediate values */                                                  \
-  ptr = PTR_2D((pt).table, k, (col), (pt).maxsteps, (inc));                  \
+  ptr = PTR_2D((pt).table, k-1, (col), (pt).maxsteps, (inc));                \
   p0  = *ptr; ptr += (inc);                                                  \
   p1  = *ptr; ptr += (inc);                                                  \
   p2  = *ptr; ptr += (inc);                                                  \
@@ -383,7 +383,7 @@
   dfac3 =    1.0/6.0 * (3.0*chi*chi-1.0);                                    \
                                                                              \
   /* intermediate values */                                                  \
-  ptr = PTR_2D((pt).table, k, (col), (pt).maxsteps, (inc));                  \
+  ptr = PTR_2D((pt).table, k-1, (col), (pt).maxsteps, (inc));                \
   p0  = *ptr; ptr += (inc);                                                  \
   p1  = *ptr; ptr += (inc);                                                  \
   p2  = *ptr; ptr += (inc);                                                  \

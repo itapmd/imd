@@ -736,7 +736,7 @@ void pair_int3(real *pot, real *grad, int *is_short, pot_table_t *pt,
   dfac3 =    1.0/6.0 * (3.0*chi*chi-1.0);
 
   /* intermediate values */
-  ptr = PTR_2D(pt->table, k, col, pt->maxsteps, inc);
+  ptr = PTR_2D(pt->table, k-1, col, pt->maxsteps, inc);
   p0  = *ptr; ptr += inc;
   p1  = *ptr; ptr += inc;
   p2  = *ptr; ptr += inc;
@@ -819,7 +819,7 @@ void val_func3(real *val, int *is_short, pot_table_t *pt,
   fac3 =  (1.0/6.0) * chi * (chi*chi-1.0);
 
   /* intermediate values */
-  ptr = PTR_2D(pt->table, k, col, pt->maxsteps, inc);
+  ptr = PTR_2D(pt->table, k-1, col, pt->maxsteps, inc);
   p0  = *ptr; ptr += inc;
   p1  = *ptr; ptr += inc;
   p2  = *ptr; ptr += inc;
@@ -901,7 +901,7 @@ void deriv_func3(real *grad, int *is_short, pot_table_t *pt,
   dfac3 =    1.0/6.0 * (3.0*chi*chi-1.0);
 
   /* intermediate values */
-  ptr = PTR_2D(pt->table, k, col, pt->maxsteps, inc);
+  ptr = PTR_2D(pt->table, k-1, col, pt->maxsteps, inc);
   p0  = *ptr; ptr += inc;
   p1  = *ptr; ptr += inc;
   p2  = *ptr; ptr += inc;
