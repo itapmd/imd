@@ -660,11 +660,12 @@ void calc_dyn_pressure(void)
 void move_atoms_npt_iso(void)
 {
   int  k;
-  real Ekin_new = 0.0, Erot_new = 0.0, fnorm = 0.0;
+  real Ekin_new = 0.0, Erot_new = 0.0;
   real pfric, pifric, rfric, rifric;
   real tmpvec1[5], tmpvec2[5], ttt;
   real reib, ireib;
 
+  fnorm    = 0.0;
 #ifdef UNIAX
   pressure = (0.6 * (Ekin_old + Erot_old) + virial) / (DIM * volume);
 #else
@@ -841,9 +842,10 @@ void move_atoms_npt_iso(void)
 void move_atoms_npt_axial(void)
 {
   int k;
-  real Ekin_new = 0.0, fnorm = 0.0, ttt, tmpvec1[5], tmpvec2[5];
+  real Ekin_new = 0.0, ttt, tmpvec1[5], tmpvec2[5];
   vektor pfric, pifric, rfric, rifric, tvec;
 
+  fnorm    = 0.0;
   stress_x = (dyn_stress_x + vir_x) / volume;  dyn_stress_x = 0.0;
   stress_y = (dyn_stress_y + vir_y) / volume;  dyn_stress_y = 0.0;
 #ifndef TWOD
