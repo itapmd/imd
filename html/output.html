@@ -100,17 +100,18 @@ lines of the form
 If the sample contains several atom types, only atoms of type 
 <TT>dpotsorte</TT> are written. 
 <P>
-A differential displacement map (DDM) file consists of all atoms
-which have moved a distance exceeding <TT>ddelta</TT> in the last
-MD timestep. These atoms are written to a file 
-<TT>&lt;outfile&gt;.ddm.&lt;n&gt;</TT>,
-containing lines of the form
+A displacement map (DSP) file shows the displacement of
+each atom in relation to a reference configuration.  Every
+<TT>dsp_int</TT><SUP>th</SUP> step the atoms are written to a file
+<TT>&lt;outfile&gt;.dsp.&lt;n&gt;</TT>, containing lines of the form
 <PRE>
      x y z dx dy dz.
 </PRE>
-where <TT>dx</TT>, <TT>dy</TT> and <TT>dz</TT> denote the displacement
-during the last MD timestep. Again, only atoms of type 
-<TT>dpotsorte</TT> are written.
+where <TT>dx</TT>, <TT>dy</TT> and <TT>dz</TT> denote the
+displacement. The reference file must be specified in the parameter
+<TT>reffile</TT>. The reference file must be consistent i.e. each line
+must describe the same atom as the original configuration. This is
+checked using the atom number. Negative numbers (fixed atoms) are OK.
 <P>
 These features have also been implemented in the 2D version, but have
 not yet been tested!  
