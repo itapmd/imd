@@ -117,6 +117,7 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc);
 void do_forces_ttbp(cell *p);
 #endif
 #ifdef TERSOFF
+void init_tersoff(void);
 void do_forces_tersoff(cell *p);
 #endif
 #ifdef UNIAX
