@@ -118,16 +118,74 @@ configuration file.</p></dd>
 <dt><b>glok</b></dt>
 <dd>
 <p>
-This is an option, which can be used together with the nve integrator.
-It works like a global version of mik: if the scalar product of
-the global force and momentum vectors (containing the force and
+This is a global version of the mik integrator: if the scalar product 
+of the global force and momentum vectors (containing the force and
 momentum components of all atoms) is negative (momentum goes "uphill"
-in the potential landscape), all momenta are reset to zero.
-Note that this concerns only translational forces, not the rotational
-ones in <a href="uniax.html">UNIAX</a>. glok should relax faster than
-mik, which can be verified using the option <a href="options.html#fnorm">
-fnorm</a>. glok now makes use of the parameters  annealsteps and
-ekin_threshold for better control of the relaxation.</p></dd>
+in the potential landscape), all momenta are reset to zero. Note that 
+this concerns only translational forces and momenta, not the
+rotational ones in <a href="uniax.html">UNIAX</a>. The momenta are 
+also reset to zero if the atoms are getting too fast, i.e., the 
+kinetic energy per atom exceeds the value of the parameter 
+<tt>glok_ekin_threshold</tt>. In some situations, glok relaxes 
+considerably faster than mik.</p></dd>
+
+<dt><b>cg</b></dt>
+<dd>
+<p>
+The conjugate gradient relaxator cg is controlled by the following
+parameters. <tt>linmin_tol</tt> is the tolerance in the line
+minimization. This is usually the only parameter that needs to
+be set. The number of interations in line minimization is limited
+by <tt>linmin_maxsteps</tt> (default <tt>100</tt>. The step width
+attempted in the first line minimization is given by 
+<tt>linmin_dmax</tt> (default <tt>0.01</tt>). In the following
+line minimizations, the optimal step width from the previous line 
+minimization is used. <tt>cg_infolevel = 1</tt> enables some 
+diagnostic messages. <tt>cg_fr = 1</tt> enables the Fletcher-Reeves 
+variant of cg; by default, the Polak-Ribiere variant is used. 
+If <tt>cg_reset_int</tt> (default 0) is positive, the cg history
+is reset every <tt>cg_reset_int</tt> steps.
+</p></dd>
+
+<dt><b><a id="relaxcontrol" name="relaxcontrol">relaxation control</a></b></dt>
+<dd>
+<p>
+Relaxation simulations with the relaxators mik, glok, and cg, are 
+controlled by the following common parameters. A sample is regarded 
+as <b>sufficiently relaxed</b>, if one of the following conditions
+is satisfied: the kinetic energy per atom is below <tt>ekin_threshold</tt>,
+the <a href="options.html#fnorm">force norm</a> is below 
+<tt>fnorm_threshold</tt>, or the absolute value of the potential
+energy change since the last step is below <tt>delta_epot_threshold</tt>.
+The computation of these quantities is automatically enabled. 
+The threshold values are zero by default, but one or several of them 
+can be set to a positive value in the parameter file.</p>
+<p>
+If the sample is sufficiently relaxed, a snapshot of the configuration
+is written (snapshot files, with an ending .ss, have the same format 
+as checkpoints, but a separate numbering). Moreover, if the 
+<a href="options.html#deform">deform option</a> is active 
+(<tt>max_deform_int > 0</tt>), the next deformation step is performed, 
+and the relaxation starts again. Further, if <a href="options.html#fbc">
+force boundary conditions</a> are active, and the force increment 
+<tt>extra_dforce</tt> is non-zero, it is added to the boundary forces,
+and the relaxation starts again. If neither the deform option or force 
+boundaries are active, the current simulation phase is terminated.</p>
+<p>
+Note that for a relaxation simulation with mik or glok, the timestep
+can often be chosen much larger than for a proper molecular dynamics
+simulation. A factor of 10 larger is often non unreasonable. A little
+experimentation may be needed to find the largest timestep, for which
+the simulation still converges. Since time has little meaning in a
+relaxation context, the number of force computations, nfc, is written 
+to the .eng file instead of the time, if some relaxator is compiled 
+into IMD (this is so even for an annealing phase with nve or nvt
+before the relaxation). For mik or glok relaxators, nfc agrees with 
+the step number, but for the cg integrator a single step may comprise 
+a large number of force computations. Since the force computation
+takes the main part of the simulation time, nfc allows for a fair 
+comparison of the speed of convergence between different integrators.
+</p></dd>
 
 <dt><b>pressure relaxation</b></dt>
 <dd>

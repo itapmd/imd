@@ -122,14 +122,11 @@ nbl_margin           # margin by which cutoff radius is increased when
 nbl_size             # default 1.1; increase slightly in case of
                      # neighbor table overflow
 
-# parameters for use with Force Boundary Conditions (FBC)
+# <a href="options.html#fbc">Force Boundary Conditions (fbc)</a>
 extra_startforce     # start-/endforce for each virtual type
 extra_endforce       # format: typenr force vector
-extra_dforce         # force increment for each virtual type (for mik)
-fbc_ekin_threshold   # extra_dforce is added when temperature
-                     # drops below the threshold value
-fbc_waitsteps        # or  after a given number of steps
-fbc_annealsteps      # the same as annealsteps for deform
+extra_dforce         # force increment for each virtual type (for relaxation)
+max_fbc_int          # maximum interval between fbc increments
 
 # parameters to write selected atoms (efilter)
 ef_checkpt_int       # number of steps between output of selected atoms 
@@ -142,9 +139,8 @@ pic_ur		     # location of upper right corner,
                      # only atoms within this box are considered 
 		     # for output
 
-# parameters for glok
-annealsteps	# no glokstep before annealsteps steps (default 0)
-ekin_threshold	# set velocities to 0 if temperature above threshold (default 100)
+# parameters for <a href="ensembles.html#relaxation">glok</a>
+glok_ekin_threshold # set velocities to 0 if temperature above threshold (default 100)
 
 # parameters for 2d pictures
 ecut_kin	# kinetic energy interval for pictures (min/max)
@@ -232,7 +228,7 @@ nslices_Right
 shear_rate      # yz-, zx-, and xy-component of the deformation rate tensor
 shear_rate2     # zy-, xz-, and yx-component of the deformation rate tensor
 
-# parameters for HOMDEF (with periodic boundary conditions)
+# parameters for <a href="options.html#homdef">homdef</a>
 lindef_interval # number of steps between linear deformation
 lindef_size     # size of linear deformation
 lindef_x        # first row vector of the deformation matrix
@@ -242,18 +238,20 @@ bulk_module     # bulk module (used for pressure relaxation)
 shear_module    # shear module (used for pressure relaxation)
 relax_rate      # pressure relaxation rate
 
-# parameters for DEFORM
+# parameters for <a href="ensembles.html#relaxcontrol">relaxations</a>
+ekin_threshold	# threshold for kinetic energy
+fnorm_threshold	# threshold for fnorm
+fmax_threshold  # threshold for maximum force component (not yet implemented)
+delta_epot_threshold  # threshold for potential energy change
+
+# parameters for <a href="options.html#deform">deform</a>
 deform_shift    # type and shift vector, by which atoms of that type
                 # are shifted in each deform step (default is no shift)
 deform_size     # additional scale factor of all shifts (default 1.0)
-annealsteps	# no deformation before annealsteps steps (default 0)
-ekin_threshold	# deform if temperature drops below threshold (default 0)
 max_deform_int  # deform if number of steps since last deformation is
                 # max_deform_int (default 0 - no deformation)
-fnorm_threshold	# deform if fnorm drops below threshold (default 0),
-                # used by glokdeform
 
-# parameters for SHOCK
+# parameters for <a href="options.html#shock">shock</a>
 shock_strip      # shock strip width (in x dir.)
 shock_speed      # shock speed (in x dir.)
 shock_mode       # 1 left part is slammed into right part

@@ -37,12 +37,12 @@ their purpose is and how they are used.</p>
 <td width="120"><a href="#einstein">einstein</a></td>
 <td width="120"><a href="#epitax">epitax</a></td>
 <td width="120"><a href="#ewald">ewald</a></td>
-<td width="120"><a href="#FBC">fbc</a></td>
+<td width="120"><a href="#fbc">fbc</a></td>
 <td width="120"><a href="#fnorm">fnorm</a></td>
 </tr>
 
 <tr align="left">
-<td width="120"><a href="#glokdeform">glokdeform</a></td>
+<td width="120"></td>
 <td width="120"><a href="#hpo">hpo</a></td>
 <td width="120"><a href="#homdef">homdef</a></td>
 <td width="120"><a href="#covalent">keating</a></td>
@@ -64,7 +64,7 @@ their purpose is and how they are used.</p>
 <td width="120"><a href="#single">single</a></td>
 <td width="120"><a href="#sock">sock</a></td>
 <td width="120"><a href="#shock">shock</a></td>
-<td width="120"><a href="#snap">snap</a></td>
+<td width="120"></td>
 <td width="120"><a href="#covalent">stiweb</a></td>
 </tr>
 
@@ -298,11 +298,12 @@ are <b>deprecated</b> and should no longer be used.</p>
 The deform option requires <b>free</b> boundary conditions (the
 box won't be deformed, but periodic boundary conditions can be
 used, e.g. when the deformation is orthogonal to the pbc (use at
-own risc, take care of centroid (angular) momentum)). A deform step
-is performed if either <tt>max_deform_int</tt> is positive and the
-last deform step was done <tt>max_deform_int</tt> steps ago, or if
-the temperature drops below <tt>ekin_threshold</tt> (useful with
-the mik integrator). In a deform step, all atoms of virtual type v
+own risk, take care of angular momentum). A deform step is performed
+if <tt>max_deform_int</tt> is positive, and either the last deform 
+step was done <tt>max_deform_int</tt> steps ago, or a 
+<a href="ensembles.html#relaxation">relaxation integrator</a> 
+is active and the sample is <a href="ensembles.html#relaxcontrol">
+sufficiently relaxed</a>. In a deform step, all atoms of virtual type v
 are shifted by the <tt>deform_shift</tt> vector for that type v. A
 <tt>deform_shift</tt> for type v is specified as follows in the
 parameter file:</p>
@@ -351,38 +352,35 @@ parameter file in the format</p>
 </pre>
 </dd>
 
-<dt><a id="glokdeform" name="glokdeform"><b>glokdeform</b></a></dt>
-<dd>
-<p>
-Like deform, just with the fnorm criterium, therefore with
-parameter <tt>fnorm_threshold</tt>. </p>
-</dd>
-
 <dt><a id="fbc" name="fbc"><b>fbc</b></a></dt>
 <dd>
 <p>
-Force Boundary Conditions. With this option, one can define
-extra forces that act on atoms of certain 
-<a href="general.html#virtual">virtual types</a>. This is implemented
-for the nve, nvt and mik ensembles.</p>
+This option enables <b>Force Boundary Conditions</b>, 
+which are extra forces acting on atoms of certain 
+<a href="general.html#virtual">virtual types</a>. 
+This is implemented for the nve and nvt ensembles, and for the
+<a href="ensembles.html#relaxation">relaxation integrators</a>.
+The extra forces are specified by parameters.</p>
 <p>
-For each concerned virtual type, one can declare in the
-parameter file the starting and the end value (in the simulation
-phase) of an extra force vector that is added to the force acting
-on atoms of that virtual type. The parameters
-<tt>extra_startforce</tt> and <tt>extra_endforce</tt> expect 1
-integer and d real numbers, where d is the sample dimension. The
-first integer number specifies the virtual atom type, the other d
-real numbers specify the extra force vector. The values between
-<tt>extra_startforce</tt> and <tt>extra_endforce</tt> are linearly
-interpolated (like the temperature).</p>
+For non-relaxator ensembles (nve and nvt), the extra forces
+are linearly interpolated between the values given by the 
+parameters <tt>extra_startforce</tt> and <tt>extra_endforce</tt>,
+which take a virtual type as the first argument, and the 
+components of the extra force vector acting on atoms of that
+virtual type as the following arguments. For different virtual
+types, different extra forces can be specified. By default,
+the extra forces are zero.</p>
 <p>
-For mik simulations, instead of <tt>extra_endforce</tt> the
-force increment <tt>extra_dforce</tt> should be specified. It is
-added to the applied force each time the temperature drops under
-<tt>fbc_ekin_threshold</tt>, or after <tt>fbc_waitsteps</tt>.
-During the initial <tt>fbc_annealsteps</tt> steps, no extra forces
-are applied.</p>
+For <a href="ensembles.html#relaxation">relaxation integrators</a>,
+the extra forces are specified by the parameters
+<tt>extra_startforce</tt> and <tt>extra_dforce</tt> in the
+same format. <tt>extra_dforce</tt> specifies a force increment, 
+which is added to the applied force whenever the sample is 
+<a href="ensembles.html#relaxcontrol">sufficiently relaxed</a>. 
+The force increment is also added, if <tt>max_fbc_int > 0</tt>
+and the last increment was added more than <tt>max_fbc_int</tt> 
+steps ago. After adding the force increment, the relaxation 
+continues.</p>
 <p>
 Note that the parameter <tt>total_types</tt> must be read
 <strong>before</strong> any extra forces.</p>
@@ -529,7 +527,8 @@ setting the <tt>press_int</tt> parameter to a positive value.</p>
 <p>
 Writes the average of the modulus of a (random) force component
 to the <tt>.eng</tt> file. This should be a good measure for the
-degree of relaxation in a glok or mik simulation. </p>
+degree of relaxation in a <a href="ensembles.html#relaxation">
+relaxation simulation</a>. </p>
 </dd>
 
 <dt><a id="einstein" name="einstein"><b>einstein</b></a></dt> 
@@ -551,24 +550,12 @@ where <tt>&lt;n&gt;</tt> is a running number. This happens every
 ef_checkpt_int step. </p>
 </dd>
 
-<dt><a id="snap" name="snap"><b>snap</b></a></dt>
-<dd>
-<p>
-Option to write snapshots of atomic configurations and the
-corresponding informations in
-<tt>&lt;outfile&gt;.n.&lt;ss&gt;</tt>,
-<tt>&lt;outfile&gt;.n.&lt;ssitr&gt;</tt> and
-<tt>&lt;outfile&gt;.eng</tt> when a certain condition is
-fullfilled. At the moment only used by the option glokdeform. </p>
-</dd>
-
 <dt><a id="writef" name="writef"><b>writef</b></a></dt>
 <dd>
 <p>
 Writes the forces on atoms of virtual types into
 <tt>&lt;outfile&gt;.wf.&lt;n&gt;</tt>, where <tt>&lt;n&gt;</tt> is
-a running number. This happens at the moment only in combination
-with snap. </p>
+a running number. </p>
 </dd>
 
 <dt><a id="avpos" name="avpos"><b>avpos</b></a></dt>
