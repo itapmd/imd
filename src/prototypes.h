@@ -163,6 +163,9 @@ void write_cell_dsp(FILE *out, cell *p);
 #ifdef EFILTER
 void write_cell_ef(FILE *out, cell *p);
 #endif
+#ifdef STRESS_TENS
+void write_cell_press(FILE *out, cell *p);
+#endif
 
 #ifdef EAM
 void do_forces_eam_1(cell *p, cell *q, vektor pbc);
@@ -221,7 +224,6 @@ void rnemd_heat_exchange();
 #ifdef STRESS_TENS
 void write_press_dist(int steps);
 void write_press_dist_shock(int steps);
-void write_press_atoms(int steps);
 #endif
 
 /* generate quasicrystal */

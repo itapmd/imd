@@ -5,7 +5,6 @@
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
@@ -363,8 +362,10 @@ void main_loop(void)
        write_press_dist_shock(steps);
 #else
     if ((press_interval > 0) && (0 == steps%press_interval)) {
-      if (0==press_dim.x) write_press_atoms(steps);
-      else write_press_dist(steps);
+      if (0==press_dim.x) 
+        write_config_select(steps/press_interval,"press",write_cell_press);
+      else 
+        write_press_dist(steps);
     }
 #endif
 #endif

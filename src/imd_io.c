@@ -1,3 +1,4 @@
+
 /******************************************************************************
 *
 * imd_io.c -- dimension independent IO  routines 
@@ -116,6 +117,38 @@ void write_cell_ef(FILE *out, cell *p)
       }
 }
 #endif /* EFILTER */
+
+
+#ifdef STRESS_TENS
+
+/******************************************************************************
+*
+*  filter function for write_config_select
+*  writes pressure tensor for each atom to files *.press.x
+*
+******************************************************************************/
+
+void write_cell_press(FILE *out, cell *p)
+{
+  int i;
+  for (i=0; i<p->n; ++i) {
+#ifdef TWOD
+    fprintf(out,"%10.4e %10.4e %10.4e %10.4e %10.4e\n", 
+      p->ort X(i),p->ort Y(i),
+      p->presstens X(i),p->presstens Y(i),
+      p->presstens_offdia[i]);
+#else
+    fprintf(out,
+      "%10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e\n", 
+      p->ort X(i),p->ort Y(i),p->ort Z(i),
+      p->presstens X(i),p->presstens Y(i),p->presstens Z(i),
+      p->presstens_offdia X(i),p->presstens_offdia Y(i),
+      p->presstens_offdia Z(i));
+#endif
+  }
+}
+#endif /* STRESS_TENS */
+
 
 #ifdef DISLOC
 

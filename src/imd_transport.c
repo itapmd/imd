@@ -1,6 +1,11 @@
 
+/******************************************************************************
+*
+* imd_transport.c -- heat transport (and pressure histograms)
+*
+******************************************************************************/
+
 /***************************************************************************
- * $RCSfile$
  * $Revision$
  * $Date$
  ***************************************************************************/
@@ -973,59 +978,5 @@ void write_press_dist(int steps)
 }
 
 #endif /* not SHOCK */
-
-
-/******************************************************************************
-*
-* write_press_atoms (pressure tensor for each atom)
-*
-******************************************************************************/
-
-void write_press_atoms(int steps)
-{
-  FILE  *outpress;
-  str255  fnamepress;
-  cell *p;
-  int fzhlr, i, r, s, t;
-
-  fzhlr = steps / press_interval;
-
-#ifdef MPI
-  sprintf(fnamepress,"%s.%u.pressdist.%u",outfilename,fzhlr,myid);
-#else
-  sprintf(fnamepress,"%s.%u.pressdist",outfilename,fzhlr);
-#endif
-  outpress = fopen(fnamepress,"w");
-  if (NULL == outpress) error("Cannot open pressure tensor file.");
-
-  /* loop over all atoms */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-      {
-#ifndef TWOD
-        p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#else
-        p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#endif
-        for (i = 0; i < p->n; ++i) {
-#ifdef TWOD
-          fprintf(outpress,"%10.4e %10.4e %10.4e %10.4e %10.4e\n", 
-                  p->ort X(i),p->ort Y(i),
-                  p->presstens X(i),p->presstens Y(i),
-                  p->presstens_offdia[i]);
-#else
-          fprintf(outpress,"%10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e\n", 
-                  p->ort X(i),p->ort Y(i),p->ort Z(i),
-                  p->presstens X(i),p->presstens Y(i),p->presstens Z(i),
-                  p->presstens_offdia X(i),p->presstens_offdia Y(i),
-                  p->presstens_offdia Z(i));
-#endif
-        }
-      }
-  fclose(outpress);
-}
 
 #endif /* STRESS_TENS */
