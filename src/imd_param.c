@@ -1950,8 +1950,8 @@ void broadcast_params() {
 
 #ifdef CG
  MPI_Bcast( &cg_threshold , 1, REAL,    0, MPI_COMM_WORLD); 
- MPI_Bcast( &cg_maxsteps  , 1, INT,    0, MPI_COMM_WORLD); 
- MPI_Bcast( &linmin_maxsteps  , 1, INT,    0, MPI_COMM_WORLD); 
+ MPI_Bcast( &cg_maxsteps  , 1, MPI_INT,    0, MPI_COMM_WORLD); 
+ MPI_Bcast( &linmin_maxsteps  , 1, MPI_INT,    0, MPI_COMM_WORLD); 
  MPI_Bcast( &linmin_tol , 1, REAL,    0, MPI_COMM_WORLD); 
  MPI_Bcast( &linmin_dmax , 1, REAL,    0, MPI_COMM_WORLD); 
 #ifndef DEFORM
