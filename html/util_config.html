@@ -7,28 +7,32 @@ For the postprocessing of IMD configuration files, IMD contains a group
 of utility programs with a common usage model:
 </p>
 
-<table align="center" border="0" cellpadding="4" >
-
-<tr align="left">
-  <td width="180"><a href="#imd_angle">imd_angle</a></td>
-  <td width="180"><a href="#imd_conn">imd_conn</a></td>
-  <td width="180"><a href="#imd_coord">imd_coord</a></td>
-  <td width="180"><a href="#imd_elco">imd_elco</a></td>
-</tr>
-<tr align="left"> 
-  <td width="180"><a href="#imd_pair">imd_pair</a></td> 
-  <td width="180"><a href="#imd_ps">imd_ps</a></td>
-  <td width="180"><a href="#imd_ring">imd_ring</a></td>
-  <td width="180"><a href="#imd_strain">imd_strain</a></td>
-</tr>
-<tr align="left"> 
-  <td width="180"><a href="#imd_stress">imd_stress</a></td>
-  <td width="180"><a href="#imd_torsion">imd_torsion</a></td>
-</tr>
+<table cellpadding="4">
+<tr><td><a href="#imd_angle">imd_angle</a></td>
+    <td>compute angular distribution function</td></tr>
+<tr><td><a href="#imd_cna">imd_cna</a></td>
+    <td>perform Common-Neighbour Analysis</td></tr>
+<tr><td><a href="#imd_conn">imd_conn</a></td>
+    <td>compute connection matrix</td></tr>
+<tr><td><a href="#imd_coord">imd_coord</a></td>
+    <td>compute coordination numbers</td></tr>
+<tr><td><a href="#imd_elco">imd_elco</a></td>
+    <td>compute elastic moduli</td></tr>
+<tr><td><a href="#imd_pair">imd_pair</a></td>
+    <td>compute pair distribution function</td></tr>
+<tr><td><a href="#imd_ps">imd_ps</a></td>
+    <td>create PostScript picture</td></tr>
+<tr><td><a href="#imd_ring">imd_ring</a></td>
+    <td>compute ring statistics</td></tr>
+<tr><td><a href="#imd_strain">imd_strain</a></td>
+    <td>compute strain tensor from displacements</td></tr>
+<tr><td><a href="#imd_stress">imd_stress</a></td>
+    <td>compute stress tensor from IMD stress output</td></tr>
+<tr><td><a href="#imd_torsion">imd_torsion</a></td>
+    <td>compute torsion angle distribution function</td></tr>
 </table>
 
 <p>
-
 
 These programs are compiled as
 follows: 
@@ -161,6 +165,181 @@ following format:
 
 <p>
 
+<a name="imd_cna">
+<h2>imd_cna</h2>
+</a>
+Performs the Common-Neighbour Analysis (CNA) for IMD configuration files.
+<p>
+
+The CNA classifies pairs of atoms according to their local
+environment. (J.D.Honeycutt and H.C.Andersen, <i>J.Phys.Chem.</i>
+<b>91</b> (1987) 4950, A.S.Clarke and H.J&oacute;nsson,
+<i>Phys.Rev.</i> <b>E47</b> (1993) 3975) 
+<p>
+
+A set of four indices <i>ijkl</i> (pair type) is used to characterize
+a pair of atoms having common nearest neighbour atoms where nearest
+neighbour atoms are defined by a cutoff distance. The indices have the
+following meaning:
+
+<center>
+<table border="0" cellspacing="10" cellpadding="3">
+<tr>
+   <td valign="top"><i>i</i></td>
+   <td>1 if the atom pair consists of nearest neighbour atoms<br>
+       2 otherwise</td>
+</tr>
+<tr>
+   <td valign="top"><i>j</i></td> 
+   <td>number of common nearest neighbour atoms</td>
+</tr>
+<tr>
+   <td valign="top"><i>k</i></td> 
+   <td>number of bonds between the common nearest neighbour atoms where 
+       bonded atoms are nearest neighbour atoms</td>
+</tr>
+<tr>
+   <td valign="top"><i>l</i></td>
+   <td>number of bonds in the longest continuous chain formed by 
+       the <i>k</i> bonds between common nearest neighbours</td>
+</tr>
+</table>
+</center>
+
+<p>
+The cutoff distance can be given for all pairs of atom types by the parameter
+<tt>r_cut</tt> in the parameter file. Alternatively, a common cutoff
+distance for all types can be specified by the option <b>-e</b>.
+
+<p>
+
+<b>imd_cna</b> gives a list of the found pair types along with their
+occurrences to standard output in the following form:
+
+<pre>
+  pair type   occurrence     relative occurrence
+--------------------------------------------------------
+   ijkl        n_ijkl              t_ijkl
+   ...          ...                 ...
+   ...          ...                 ...
+</pre>
+where <tt>n_ijkl</tt> is the number of times the pair type <tt>ijkl</tt>
+occurs and <tt>t_ijkl</tt> is <tt>n_ijkl</tt> divided by the total number
+of pairs.
+<p>
+
+The following special options can be used:
+
+<table border="0" cellspacing="10" cellpadding="3">
+<tr>
+   <th>Option</th>
+   <th>Values</th>
+   <th>Default</th>
+   <th>Description</th>
+</tr>
+<tr valign="top">
+   <td align="center"><b>-a</b></td>
+   <td align="center">real &gt;= 0.0</td>
+   <td align="center">0.0</td>
+   <td>Specifies the <u>minimal radius</u> in the histogram of the 
+	radial distribution function.
+	Only works in conjunction with the option <b>-g</b>.</td>
+</tr>
+<tr valign="top">
+   <td align="center"><b>-e</b></td>
+   <td align="center">real &gt; 0.0</td>
+   <td align="center">1.0</td>
+   <td>Specifies the <u>cutoff distance</u> for which atom pairs
+	are considered as nearest neighbours. If the option <b>-g</b>
+	is used, the maximal radius in the histogram of the radial
+	distribution function is twice this value unless the option
+	<b>-f</b> is set.</td>
+</tr>
+<tr valign="top">
+   <td align="center"><b>-f</b></td>
+   <td align="center">-</td>
+   <td align="center">-</td>
+   <td>Consider only pairs of atoms being nearest neighbour atoms, i.e.,
+	consider only pair types 1<i>jkl</i></td>
+</tr>
+<tr valign="top">
+   <td align="center"><b>-g</b></td>
+   <td align="center">-</td>
+   <td align="center">-</td>
+   <td>Write the decomposition of the radial distribution function (RDF)
+	with respect to the pair types to a file with suffix <tt>.rdf</tt>.
+	The output format of the histogram is
+	<pre>
+	r total_rdf t1 t2 ...
+	</pre>
+	where <tt>r</tt> is the radius, <tt>total_rdf</tt> is the total 
+	RDF, and <tt>t1</tt>, <tt>t2</tt>, ... are the
+	contributions to the RDF from the respective pair types (given
+	in the header line of the <tt>.rdf</tt> file). All RDFs are 
+	normalized with respect to the number of pairs.
+	</td>
+</tr>
+<tr valign="top">
+   <td align="center"><b>-l</b></td>
+   <td align="center">real,&nbsp;real,&nbsp;(real)</td>
+   <td align="center">-infty,&nbsp;-infty,&nbsp;(-infty)</td>
+   <td>Use a <u>partial box</u> with lower coordinates  given by three (two)
+       numbers. Only pairs of atoms where at least one atom has 
+       larger coordinates are considered.</td>
+</tr>
+<tr valign="top">
+   <td align="center"><b>-n</b></td>
+   <td align="center">integer &gt; 0</td>
+   <td align="center">1000</td>
+   <td>Specifies the <u>number of slots</u> in the histogram of the
+	radial distribution function. Only works in conjunction with
+	the option <b>-g</b></td>
+</tr>
+<tr valign="top">
+   <td align="center"><b>-w</b></td>
+   <td align="center">integer ijkl</td>
+   <td align="center">-</td>
+   <td>Write all atoms belonging to pairs of type <i>ijkl</i> 
+	to a file with 
+	suffix <tt>.ijkl.cna</tt>. The output format is the standard
+	format for IMD configurations.</td>
+</tr>
+<tr valign="top">
+   <td align="center"><b>-W</b></td>
+   <td align="center">4 integers<br>i j k l</td>
+   <td align="center">-</td>
+   <td>Similar to option <b>-w</b>, but the pair type <i>ijkl</i>
+	is given with spaces</td>
+</tr>
+<tr valign="top">
+   <td align="center"><b>-u</b></td>
+   <td align="center">real,&nbsp;real,&nbsp;(real)</td>
+   <td align="center">infty,&nbsp;infty,&nbsp;(infty)</td>
+   <td>Use a <u>partial box</u> with upper coordinates  given by three (two)
+       numbers. Only pairs of atoms where at least one atom has
+       smaller coordinates are considered.</td>
+</tr>
+</table>
+
+<p> 
+
+<b>imd_cna</b> can be used to detect dislocations and stacking
+faults in crystalline structures. For example, fcc and hcp structures
+are characterized by the following pair types.
+
+<table border="0" cellspacing="10" cellpadding="3" width="20%">
+<tr>
+   <th>fcc</th>
+   <th>hcp</th>
+</tr>
+<tr>
+   <td valign="top" align="center">1421<br>2100<br>2211<br>2444</td>
+   <td valign="top" align="center">1421<br>1422<br>2211<br>2333<br>2444</td>
+</tr>
+</table>
+
+<p>
+
 <a name="imd_conn">
 <h2>imd_conn</h2>
 </a>
@@ -199,10 +378,10 @@ file and the coordination numbers are computed slightly differently
 <p>
 
 <b>imd_coord</b> writes two tables to standard output. The first table
-contains the relative occurences <tt>c_ij</tt> of bonds between atoms
+contains the relative occurrences <tt>c_ij</tt> of bonds between atoms
 of type <i>i</i> and <i>j</i>. It has the following format:
 <pre>
- Bond  Occurence
+ Bond  Occurrence
 
    00    c_00
    01	 c_01
@@ -219,12 +398,12 @@ of type <i>i</i> and <i>j</i>. It has the following format:
 
 <p>
 
-The second table contains the occurences <tt>occ_i</tt> in percent of
+The second table contains the occurrences <tt>occ_i</tt> in percent of
 the coordination number <tt>i</tt> up to the coordination number
 <tt>cmax</tt>. It has the format
 
 <pre>
- Coordination  Occurence
+ Coordination  Occurrence
 
       0          occ_0
       1	         occ_1
@@ -272,7 +451,7 @@ The following special options can be used:
    <td align="center"><b>-g</b></td>
    <td align="center">-</td>
    <td align="center">-</td>
-   <td>Write the table of the occurences of the coordination numbers 
+   <td>Write the table of the occurrences of the coordination numbers 
    into a file with suffix <tt>.gcoord</tt>.</td>
 </tr>
 <tr valign="top">
