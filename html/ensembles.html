@@ -95,6 +95,21 @@ What do the parameters mean?
 Used for heat conductivity measurements. Forces a temperature
 gradient into the sample.
 
+<P><LI><B> sllod </B><P> SLLOD ensemble for simulation of shear flow
+with the help of a deformation rate tensor in combination with
+Lees-Edwards boundary conditions. It corresponds to an additional
+velocity component applied to every particle in every step. It appears
+also in the equation of the momenta so that the particles perform a
+motion relatively to the shear flow. The SLLOD algorithm
+<STRONG>must</STRONG> be used together with a thermostat and with
+periodic boundary conditions in all directions. In 2D a vector
+shear_rate must be specified whose two components correspond to the
+xy- resp. to the yx-component of the applied deformation rate
+tensor. In 3D two vectors with three components, shear_rate and
+shear_rate2 must be specified. The components of shear_rate specify
+its yz-, the zx-, and its xy-component. The components of shear_rate2
+specify its zy-, the xz-, and its yx-component.
+
 </UL>
 
 <P>
