@@ -76,6 +76,23 @@ form
 If <TT>use_header</TT> is one, a <A HREF="header.html">header</A> is
 prepended to the checkpoint file.
 
+<H2><A NAME="virvo">Virvo Output (Volume visualization)</A></H2>
+
+If the flag <TT>virvo_io</TT> is set to 1, files of type
+<TT>*.rvf</TT> are written instead of distribution files. The
+parameters <TT>dist_int</TT> and <TT>dist_dim</TT> have the same
+meaning as described above. The parameter <TT>dist_has_coords</TT> has
+no meaning anymore. 
+<P>
+Again, two files for the potential and kinetic
+energy are written. Their names are
+<TT>&lt;outfiles&gt;.&lt;n&gt;.pot.dist</TT> and
+<TT>&lt;outfiles&gt;.&lt;n&gt;.kin.dist</TT>, where <TT>&lt;n&gt;</TT>
+is a running number.  Offline visualization of these files is possible
+with virvo, see <A
+HREF="uni-stuttgart.de/RUSuser/vis/People/roland/volrend/volrend.html">this
+page</A>.
+
 <H2><A NAME="disloc">Writing Selected Atoms</A></H2>
 
 The option <TT>disloc</TT> allows to selectively write certain particles
