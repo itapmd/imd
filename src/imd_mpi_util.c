@@ -119,6 +119,7 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
 #ifndef TWOD
   to->data[ to->n++ ] = from->ort Z(index); 
 #endif
+
 #ifndef MONOLJ
   to->data[ to->n++ ] = from->nummer[index];
   to->data[ to->n++ ] = from->sorte[index];
@@ -128,6 +129,23 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
 #ifdef EAM2
   /* eam2_rho_h is not sent */
 #endif
+#ifdef CG
+  to->data[ to->n++ ] = from->h X(index); 
+  to->data[ to->n++ ] = from->h Y(index); 
+#ifndef TWOD
+  to->data[ to->n++ ] = from->h Z(index); 
+#endif
+  to->data[ to->n++ ] = from->g X(index); 
+  to->data[ to->n++ ] = from->g Y(index); 
+#ifndef TWOD
+  to->data[ to->n++ ] = from->g Z(index); 
+#endif
+  to->data[ to->n++ ] = from->old_ort X(index); 
+  to->data[ to->n++ ] = from->old_ort Y(index); 
+#ifndef TWOD
+  to->data[ to->n++ ] = from->old_ort Z(index); 
+#endif
+#endif /* CG */
 #ifdef DISLOC
   to->data[ to->n++ ] = from->Epot_ref[index];
   to->data[ to->n++ ] = from->ort_ref X(index); 
@@ -175,6 +193,7 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
 #ifndef TWOD
   to->data[ to->n++ ] = from->impuls Z(index); 
 #endif
+
   /* force is not sent */
 #ifdef COVALENT
   /* neighbor table is not sent */
@@ -218,6 +237,24 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
 #ifdef EAM2
       /* eam2_rho_h need not be copied */
 #endif
+#ifdef CG
+      from->h X(index) = from->h X(from->n); 
+      from->h Y(index) = from->h Y(from->n); 
+#ifndef TWOD
+      from->h Z(index) = from->h Z(from->n); 
+#endif
+      from->g X(index) = from->g X(from->n); 
+      from->g Y(index) = from->g Y(from->n); 
+#ifndef TWOD
+      from->g Z(index) = from->g Z(from->n); 
+#endif
+      from->old_ort X(index) = from->old_ort X(from->n); 
+      from->old_ort Y(index) = from->old_ort Y(from->n); 
+#ifndef TWOD
+      from->old_ort Z(index) = from->old_ort Z(from->n); 
+#endif
+
+#endif /* CG */
 #ifdef DISLOC
       from->Epot_ref[index]    = from->Epot_ref[from->n]; 
       from->ort_ref X(index)   = from->ort_ref X(from->n); 
@@ -333,6 +370,23 @@ void process_buffer(msgbuf *b, cell *p)
 #ifdef EAM2
     /* don't send eam2_rho_h */
 #endif
+#ifdef CG
+    input->h X(0) = b->data[j++];
+    input->h Y(0) = b->data[j++];
+#ifndef TWOD
+    input->h Z(0) = b->data[j++];
+#endif
+    input->g X(0) = b->data[j++];
+    input->g Y(0) = b->data[j++];
+#ifndef TWOD
+    input->g Z(0) = b->data[j++];
+#endif
+    input->old_ort X(0) = b->data[j++];
+    input->old_ort Y(0) = b->data[j++];
+#ifndef TWOD
+    input->old_ort Z(0) = b->data[j++];
+#endif
+#endif /* CG */
 #ifdef DISLOC
     input->Epot_ref[0]     = b->data[j++];
     input->ort_ref X(0)    = b->data[j++];
@@ -470,6 +524,14 @@ void setup_buffers(void)
 #ifndef MONOLJ
     binc1++;     /* sorte */
 #endif
+#ifdef CG
+#ifdef TWOD
+    binc1=6;     /* old_ort, h,g */
+#else
+    binc1=9;     /* old_ort, h,g */
+#endif
+
+#endif
 #ifdef UNIAX
     binc1+=9;    /* direction, etc. */
 #endif
@@ -482,6 +544,14 @@ void setup_buffers(void)
 #endif
 #ifndef MONOLJ
     binc2++;     /* pot_eng */
+#endif
+#ifdef CG
+#ifdef TWOD
+    binc2=6;          /* old_ort, h,g */
+#else
+    binc2=9;          /* old_ort, h,g */
+#endif
+
 #endif
 #ifdef NVX
     binc2++;     /* heatcond */
@@ -714,6 +784,13 @@ void recv_cell(cell *p, int from_cpu, int tag)
   MPI_Recv(b->data, b->n, REAL, from_cpu, tag, cpugrid, &status);
   process_buffer(b,p);
 }
+
+
+
+
+
+
+
 
 
 

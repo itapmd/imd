@@ -180,6 +180,7 @@ inline static real SQR(real x)
 #define ENS_NVX      11
 #define ENS_STM      13
 #define ENS_FTG      14
+#define ENS_CG       15
 
 /* All the logic in this program */
 #define TRUE         1
@@ -209,3 +210,28 @@ inline static real SQR(real x)
 #ifndef M_PI
 #define M_PI 4.0*atan(1.0)
 #endif
+
+/* Definition of the value that should be minimized */
+#ifdef CGE   /* completely based on energy, no use of gradient information */
+#define CGVAL tot_pot_energy
+#endif
+#ifdef CGEF   /* minimization of epot, but uses gradient information */
+#define CGVAL tot_pot_energy
+#endif
+#ifdef CGF   /* minimization of total forces */
+#define CGVAL fnorm
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+

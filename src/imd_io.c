@@ -163,6 +163,32 @@ void write_ssconfig(int steps)
 }
 #endif
 
+#ifdef CG
+/******************************************************************************
+*
+*  write_cgconfig writes a configuration to a numbered file,
+*  which can serve as a checkpoint; uses write_atoms
+* 
+******************************************************************************/
+
+void write_cgconfig(int steps)
+{ 
+  
+  /* first make sure that every atom is inside the box and on the right CPU */
+  if (1==parallel_output) {
+    do_boundaries();
+    fix_cells();
+  }
+
+  /* write checkpoint */
+  write_config_select(steps, "cgchkpt", write_atoms_config, write_header_config);
+
+  /* write iteration file */
+  if (myid == 0) write_itr_file(steps, steps,"cg");
+}
+#endif
+
+
 #ifdef EFILTER
 
 /******************************************************************************
@@ -933,6 +959,9 @@ void write_eng_file_header()
     fl = fopen(fname,"w");
     if (NULL == fl) error("Cannot open properties file.");
 
+#ifdef CG
+    fprintf(fl, "# ctf Epot fnorm");
+#else
     fprintf(fl, "# time Epot ");
     fprintf(fl, "temperature ");
 
@@ -982,6 +1011,7 @@ void write_eng_file_header()
     fprintf(fl, "Press_yz Press_xz Press_xy");
 #endif    
 #endif
+#endif
     putc('\n',fl);
 
     fclose(fl);
@@ -1007,6 +1037,7 @@ void write_eng_file(int steps)
 #else
   char *format=" %e";
 #endif
+
   real Epot, Temp, vol;
 
 #if defined(STM) || defined(FRAC)
@@ -1037,10 +1068,13 @@ void write_eng_file(int steps)
 #endif
 
   Epot =       tot_pot_energy / natoms;
+
+#ifndef CG
 #ifdef UNIAX
   Temp = 2.0 * tot_kin_energy / (nactive + nactive_rot);
 #else
   Temp = 2.0 * tot_kin_energy / nactive;
+#endif
 #endif
 
 #ifdef STM 
@@ -1056,7 +1090,9 @@ void write_eng_file(int steps)
 #endif
 
   vol  = volume / natoms;
+#ifndef CG
   pressure = Temp / vol + virial / (DIM * volume);
+#endif
 
   /* open .eng file if it is not yet open */
   if (NULL == eng_file) {
@@ -1065,6 +1101,11 @@ void write_eng_file(int steps)
     if (NULL == eng_file) error("Cannot open properties file.");
   }
 
+#ifdef CG
+  fprintf(eng_file, "%d",     steps);
+  fprintf(eng_file, " %.16e", (double) Epot);
+  fprintf(eng_file, format,   (double) fnorm / nactive);
+#else
   fprintf(eng_file, "%e",     (double) (steps * timestep));
   fprintf(eng_file, " %.16e", (double) Epot);
   fprintf(eng_file, format,   (double) Temp);
@@ -1123,6 +1164,7 @@ void write_eng_file(int steps)
 	  (double) Press_yz, (double) Press_zx, (double) Press_xy);
 #endif    
 #endif
+#endif /* CG */
   putc('\n',eng_file);
   flush_count++;
 
@@ -1318,6 +1360,9 @@ void write_header_config(FILE *out)
   fprintf(out, "#F %c 1 1 1 %d %d 1\n", c, DIM, DIM);
 #endif
   /* contents line */
+#ifdef CG
+  fprintf(out, "#C number type mass x y z vx vy vz Epot\n");
+#else
 #ifdef UNIAX
   fprintf(out, "#C number type mass inertia pos(3) axis(3) shape(3)");
   fprintf(out, " pot_depth(3) velocities(3) ang_veloc(3) Epot\n");
@@ -1326,6 +1371,7 @@ void write_header_config(FILE *out)
   fprintf(out, "#C number type mass x y vx vy Epot\n");
 #else
   fprintf(out, "#C number type mass x y z vx vy vz Epot\n");
+#endif
 #endif
 #endif
 

@@ -363,3 +363,11 @@ void check_socket(int steps);
 
 
 
+void write_cgconfig(int steps);
+real fonedim ( real alpha) ;
+void cg_calcgamma(void);
+real set_hg(void);
+void calc_fnorm(void);
+real  calc_fnorm_g_h(void);
+void move_atoms_cg(real alpha);
+

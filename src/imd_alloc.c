@@ -55,6 +55,23 @@ void move_atom(cell *to, cell *from, int index)
 #ifdef EAM2
   to->eam2_rho_h[to->n] = from->eam2_rho_h[index]; 
 #endif
+#ifdef CG
+  to->h  X(to->n) = from->h X(index); 
+  to->h  Y(to->n) = from->h Y(index); 
+#ifndef TWOD
+  to->h  Z(to->n) = from->h Z(index);
+#endif 
+  to->g  X(to->n) = from->g X(index); 
+  to->g  Y(to->n) = from->g Y(index); 
+#ifndef TWOD
+  to->g  Z(to->n) = from->g Z(index);
+#endif  
+  to->old_ort  X(to->n) = from->old_ort X(index); 
+  to->old_ort  Y(to->n) = from->old_ort Y(index); 
+#ifndef TWOD
+  to->old_ort  Z(to->n) = from->old_ort Z(index); 
+#endif
+#endif
 #ifdef DISLOC
   to->Epot_ref  [to->n] = from->Epot_ref[index];
   to->ort_ref X (to->n) = from->ort_ref X(index);
@@ -150,6 +167,23 @@ void move_atom(cell *to, cell *from, int index)
 #endif
 #ifdef EAM2
     from->eam2_rho_h[index] = from->eam2_rho_h[from->n];
+#endif
+#ifdef CG
+  from->h[index] = from->h[from->n]; 
+  from->h[index] = from->h[from->n]; 
+#ifndef TWOD
+  from->h[index] = from->h[from->n];
+#endif 
+  from->g[index] = from->g[from->n]; 
+  from->g[index] = from->g[from->n]; 
+#ifndef TWOD
+  from->g[index] = from->g[from->n];
+#endif  
+  from->old_ort[index] = from->old_ort[from->n]; 
+  from->old_ort[index] = from->old_ort[from->n]; 
+#ifndef TWOD
+  from->old_ort[index] = from->old_ort[from->n]; 
+#endif
 #endif
 #ifdef DISLOC
     from->Epot_ref [index] = from->Epot_ref[from->n];
@@ -294,6 +328,11 @@ void alloc_cell(cell *thecell, int count)
 #ifdef EAM2
     newcell.eam2_rho_h =NULL;
 #endif
+#ifdef CG
+    newcell.h = NULL;
+    newcell.g = NULL;
+    newcell.old_ort = NULL;
+#endif
 #ifdef ORDPAR
     newcell.nbanz = NULL;
 #endif
@@ -344,8 +383,15 @@ void alloc_cell(cell *thecell, int count)
     newcellsize = count *
         ( DIM * sizeof(real) + /* ort */
           DIM * sizeof(real) + /* impuls */
-          DIM * sizeof(real) ); /* kraft */
+          DIM * sizeof(real)   /* kraft */ 
+#ifdef CG
+	  + DIM * sizeof(real) /* h */
+	  + DIM * sizeof(real) /* g */
+	  + DIM * sizeof(real) /* old_ort */
+#endif
+	    ); 
 #endif  
+
         /* Get some space */
     space = malloc(newcellsize);
 
@@ -356,6 +402,11 @@ void alloc_cell(cell *thecell, int count)
     newcell.ort = tmp; tmp += DIM * count;
     newcell.impuls = tmp; tmp += DIM * count;
     newcell.kraft  = tmp; tmp += DIM * count;
+#ifdef CG
+    newcell.old_ort = tmp; tmp += DIM * count;
+    newcell.h = tmp; tmp += DIM * count;
+    newcell.g = tmp; tmp += DIM * count;
+#endif
 #ifdef UNIAX
     newcell.achse = tmp; tmp += DIM * count;
     newcell.dreh_impuls = tmp; tmp += DIM * count;
@@ -478,6 +529,11 @@ void alloc_cell(cell *thecell, int count)
       memcpy(newcell.ort   , thecell->ort,    thecell->n * DIM * sizeof(real));
       memcpy(newcell.impuls, thecell->impuls, thecell->n * DIM * sizeof(real));
       memcpy(newcell.kraft , thecell->kraft,  thecell->n * DIM * sizeof(real));
+#ifdef CG
+      memcpy(newcell.old_ort   , thecell->old_ort,    thecell->n * DIM * sizeof(real));
+      memcpy(newcell.h   , thecell->h,    thecell->n * DIM * sizeof(real));
+      memcpy(newcell.g   , thecell->g,    thecell->n * DIM * sizeof(real));
+#endif
 #ifndef MONOLJ
       memcpy(newcell.nummer,  thecell->nummer,  thecell->n * sizeof(integer));
       memcpy(newcell.sorte ,  thecell->sorte,   thecell->n * sizeof(shortint));
@@ -576,6 +632,11 @@ void alloc_cell(cell *thecell, int count)
   thecell->ort    = newcell.ort;
   thecell->impuls = newcell.impuls;
   thecell->kraft  = newcell.kraft;
+#ifdef CG
+  thecell->old_ort    = newcell.old_ort;
+  thecell->h    = newcell.h;
+  thecell->g    = newcell.g;
+#endif
 #ifndef MONOLJ
   thecell->nummer   = newcell.nummer;
   thecell->sorte    = newcell.sorte;
@@ -621,6 +682,22 @@ void alloc_cell(cell *thecell, int count)
   thecell->n_max = count;
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

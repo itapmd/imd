@@ -121,7 +121,7 @@ void move_atoms_nve(void)
 
         kin_energie_2 = SPRODN(p->impuls,i,p->impuls,i);
 #ifdef UNIAX
-        rot_energie_2 = SPRODN(p->dreh_impuls,i,p->dreh_impuls,i);
+        rot_energie_2 = SPRODN(p->dreh_impuls,i,p->dreh_impuls,i); 
 #endif
         /* sum up kinetic energy on this CPU */
         tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4 * MASSE(p,i));
@@ -1021,7 +1021,7 @@ void move_atoms_npt_iso(void)
 
 
 /******************************************************************************
-*
+ *
 *  NPT Integrator with Nose Hoover Thermostat
 *
 ******************************************************************************/
@@ -1958,6 +1958,48 @@ void move_atoms_nvx(void)
 {
   if (myid==0) 
   error("the chosen ensemble NVX is not supported by this binary");
+}
+
+#endif
+
+
+/*****************************************************************************
+*
+* Move the atoms for the  Conjugated Gradient
+*
+*****************************************************************************/
+
+#if defined(CG) 
+
+void move_atoms_cg(real alpha)
+{
+  int k;
+
+  /* loop over all cells */
+  for (k=0; k<ncells; ++k) {
+
+    int  i, sort;
+    cell *p;
+
+    p = cell_array + CELLS(k);
+
+    for (i=0; i<p->n; ++i) {
+
+        /* CG:  move atoms in search direction for linmin */
+        p->ort X(i) = p->old_ort X(i) + alpha * p->h X(i);
+        p->ort Y(i) = p->old_ort Y(i) + alpha * p->h Y(i);
+#ifndef TWOD
+        p->ort Z(i) = p->old_ort Z(i) + alpha * p->h Z(i);
+#endif
+    }
+  }
+}
+#else
+
+void move_atoms_cg(real alpha) 
+{
+  if (myid==0)
+  error("the chosen ensemble CG is not supported by this binary");
 }
 
 #endif

@@ -150,7 +150,7 @@ int main(int argc, char **argv)
     init_keating();
 #endif
 #ifdef STIWEB
-  init_stiweb();
+    init_stiweb();
 #endif
 #ifdef TERSOFF
     init_tersoff();
@@ -215,3 +215,12 @@ int main(int argc, char **argv)
   exit(0);
 
 }
+
+
+
+
+
+
+
+
+

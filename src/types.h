@@ -114,6 +114,11 @@ typedef struct {
 #ifdef EAM2                 /* EAM2: variable for the host electron density */
   real        *eam2_rho_h;
 #endif
+#ifdef CG                   
+  real        *h;           /* Conjugated Gradient: search vektor */
+  real        *g;           /* Conjugated Gradient: old forces */
+  real        *old_ort;     /* CG: old locations, needed for linmin */
+#endif
 #ifdef DISLOC
   real        *Epot_ref;
   real        *ort_ref;

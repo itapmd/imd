@@ -377,7 +377,13 @@ void getparamfile(char *paramfname, int sim)
       else if (strcasecmp(tmpstr,"stm")==0) {
         ensemble = ENS_STM;
         move_atoms = move_atoms_stm;
-      } else {
+      } 
+      else if (strcasecmp(tmpstr,"cg")==0) {
+        ensemble = ENS_CG;
+        move_atoms = move_atoms_cg;
+      }
+     
+ else {
         error("unknown ensemble");
       }
     }
@@ -909,7 +915,28 @@ else if (strcasecmp(token,"fnorm_threshold")==0) {
 #endif
 
 #endif
-
+#ifdef CG
+else if (strcasecmp(token,"cg_threshold")==0) {
+      /* criterium to contiune relaxation */
+      getparam("cg_threshold",&cg_threshold,PARAM_REAL,1,1);
+}
+else if (strcasecmp(token,"cg_maxsteps")==0) {
+      /* max steps of relaxation */
+      getparam("cg_maxsteps",&cg_maxsteps,PARAM_INT,1,1);
+}
+else if (strcasecmp(token,"linmin_maxsteps")==0) {
+      /* max steps to find min in one direction */
+      getparam("linmin_maxsteps",&linmin_maxsteps,PARAM_INT,1,1);
+}
+else if (strcasecmp(token,"linmin_tol")==0) {
+      /* tolerance to stop min search in one direction */
+      getparam("linmin_tol",&linmin_tol,PARAM_REAL,1,1);
+}
+else if (strcasecmp(token,"linmin_dmax")==0) {
+      /* max. length of trial step in 1d minimum search */
+      getparam("linmin_dmax",&linmin_dmax,PARAM_REAL,1,1);
+}
+#endif
 #ifdef SHOCK
     else if (strcasecmp(token,"shock_strip")==0) { 
       /* shock strip width (in x dir.) */
@@ -1524,6 +1551,16 @@ void check_parameters_complete()
        error("You have to define fnorm_threshold and max_deform_int ");
   }
 #endif
+#ifdef CG
+  if ((cg_threshold==0.0) || (cg_maxsteps==0))
+  {
+       error("You have to define cg_threshold and cg_maxsteps  ");
+  }
+  if ((linmin_maxsteps==0) || (linmin_tol==0.0) || (linmin_dmax==0.0))
+  {
+       error("You have to parameters for the linmin search  ");
+  }
+#endif
 }
 
 /*****************************************************************
@@ -1903,6 +1940,14 @@ void broadcast_params() {
 #endif
 #endif  
 
+#ifdef CG
+ MPI_Bcast( &cg_threshold , 1, REAL,    0, MPI_COMM_WORLD); 
+ MPI_Bcast( &cg_maxsteps  , 1, INT,    0, MPI_COMM_WORLD); 
+ MPI_Bcast( &linmin_maxsteps  , 1, INT,    0, MPI_COMM_WORLD); 
+ MPI_Bcast( &linmin_tol , 1, REAL,    0, MPI_COMM_WORLD); 
+ MPI_Bcast( &linmin_dmax , 1, REAL,    0, MPI_COMM_WORLD); 
+#endif
+
 #ifdef USE_SOCKETS
   MPI_Bcast( &socket_int, 1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
@@ -1987,6 +2032,7 @@ void broadcast_params() {
     case ENS_NVX:       move_atoms = move_atoms_nvx;       break;
     case ENS_STM:       move_atoms = move_atoms_stm;       break;  
     case ENS_FTG:      move_atoms = move_atoms_ftg;      break;  
+  case ENS_CG:         move_atoms = move_atoms_cg;      break;  
     default: if (0==myid) error("unknown ensemble in broadcast"); break;
   }
   

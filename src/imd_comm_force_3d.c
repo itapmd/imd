@@ -634,6 +634,12 @@ void copy_cell( int k, int l, int m, int r, int s, int t )
     to->ort X(i) = from->ort X(i);
     to->ort Y(i) = from->ort Y(i);
     to->ort Z(i) = from->ort Z(i);
+#ifdef CG
+    to->old_ort X(i) = from->old_ort X(i);
+    to->old_ort Y(i) = from->old_ort Y(i);
+    to->old_ort Z(i) = from->old_ort Z(i);
+
+#endif
 #ifndef MONOLJ
     to->sorte[i] = from->sorte[i];
 #ifdef UNIAX
@@ -670,6 +676,11 @@ void pack_cell( msgbuf *b, int k, int l, int m )
     b->data[ b->n++ ] = from->ort X(i);
     b->data[ b->n++ ] = from->ort Y(i);
     b->data[ b->n++ ] = from->ort Z(i);
+#ifdef CG
+    b->data[ b->n++ ] = from->old_ort X(i);
+    b->data[ b->n++ ] = from->old_ort Y(i);
+    b->data[ b->n++ ] = from->old_ort Z(i);
+#endif
 #ifndef MONOLJ
     b->data[ b->n++ ] = (real) from->sorte[i];
 #ifdef UNIAX
@@ -714,6 +725,11 @@ void unpack_cell( msgbuf *b, int k, int l, int m )
     to->ort X(i) = b->data[ b->n++ ];
     to->ort Y(i) = b->data[ b->n++ ];
     to->ort Z(i) = b->data[ b->n++ ];
+#ifdef CG
+    to->old_ort X(i) = b->data[ b->n++ ];
+    to->old_ort Y(i) = b->data[ b->n++ ];
+    to->old_ort Z(i) = b->data[ b->n++ ];
+#endif
 #ifndef MONOLJ
     to->sorte[i] = (shortint) b->data[ b->n++ ];
 #ifdef UNIAX
@@ -750,6 +766,14 @@ void add_forces( int k, int l, int m, int r, int s, int t )
     to->kraft X(i) += from->kraft X(i);
     to->kraft Y(i) += from->kraft Y(i);
     to->kraft Z(i) += from->kraft Z(i);
+#ifdef CG
+    to->h X(i) += from->h X(i);
+    to->h Y(i) += from->h Y(i);
+    to->h Z(i) += from->h Z(i);
+    to->g X(i) += from->g X(i);
+    to->g Y(i) += from->g Y(i);
+    to->g Z(i) += from->g Z(i);
+#endif
 #ifndef MONOLJ
     to->pot_eng[i] += from->pot_eng[i];
 #endif
@@ -791,6 +815,14 @@ void pack_forces( msgbuf *b, int k, int l, int m)
     b->data[ b->n++ ] = from->kraft X(i);
     b->data[ b->n++ ] = from->kraft Y(i);
     b->data[ b->n++ ] = from->kraft Z(i);
+#ifdef CG
+    b->data[ b->n++ ] = from->h X(i);
+    b->data[ b->n++ ] = from->h Y(i);
+    b->data[ b->n++ ] = from->h Z(i);
+    b->data[ b->n++ ] = from->g X(i);
+    b->data[ b->n++ ] = from->g Y(i);
+    b->data[ b->n++ ] = from->g Z(i);
+#endif
 #ifndef MONOLJ
     b->data[ b->n++ ] = from->pot_eng[i];
 #endif
@@ -833,6 +865,14 @@ void unpack_forces( msgbuf *b, int k, int l, int m )
     to->kraft X(i) += b->data[ b->n++ ];
     to->kraft Y(i) += b->data[ b->n++ ];
     to->kraft Z(i) += b->data[ b->n++ ];
+#ifdef CG
+    to->h X(i) += b->data[ b->n++ ];
+    to->h Y(i) += b->data[ b->n++ ];
+    to->h Z(i) += b->data[ b->n++ ];
+    to->g X(i) += b->data[ b->n++ ];
+    to->g Y(i) += b->data[ b->n++ ];
+    to->g Z(i) += b->data[ b->n++ ];
+#endif
 #ifndef MONOLJ
     to->pot_eng[i] += b->data[ b->n++ ];
 #endif
@@ -955,3 +995,8 @@ void unpack_add_rho_h( msgbuf *b, int k, int l, int m )
 }
 
 #endif /* EAM2 */
+
+
+
+
+

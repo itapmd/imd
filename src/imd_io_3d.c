@@ -503,6 +503,9 @@ void write_atoms_config(FILE *out)
       len += sprintf(outbuf+len, 
         RESOL3, p->pot_well X(i),p->pot_well Y(i),p->pot_well Z(i));
 #endif
+#ifdef CG
+      len += sprintf(outbuf+len, RESOL3,0.0, 0.0, 0.0);
+#else
       len += sprintf(outbuf+len, RESOL3,
         p->impuls X(i) / MASSE(p,i), 
         p->impuls Y(i) / MASSE(p,i), 
@@ -512,6 +515,7 @@ void write_atoms_config(FILE *out)
         p->dreh_impuls X(i) / p->traeg_moment[i],
         p->dreh_impuls Y(i) / p->traeg_moment[i],
         p->dreh_impuls Z(i) / p->traeg_moment[i]); 
+#endif
 #endif
 #ifdef ORDPAR
       len += sprintf(outbuf+len, 

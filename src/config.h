@@ -147,7 +147,11 @@
 #ifdef UNIAX
 #define MAX_ATOM_SIZE 40
 #else
+#ifdef CG
+#define MAX_ATOM_SIZE 35
+#else
 #define MAX_ATOM_SIZE 25
+#endif
 #endif
 #endif
 
