@@ -31,6 +31,10 @@ void imd_start_timer(imd_timer *timer)
 {
 #ifdef MPI
   timer->start = MPI_Wtime();
+#elif defined(USE_WALLTIME)
+  gettimeofday(&(timer->start),NULL);
+#elif defined(OMP)
+  timer->start = omp_get_wtime();
 #elif defined(USE_RUSAGE)
   getrusage(RUSAGE_SELF,&(timer->start));
 #else
@@ -48,6 +52,14 @@ void imd_stop_timer(imd_timer *timer)
 {
 #ifdef MPI
   timer->total += MPI_Wtime() - timer->start;
+#elif defined(USE_WALLTIME)
+  struct timeval now;
+  gettimeofday(&now,NULL);
+  timer->total += 
+    (double)(now.tv_sec  - timer->start.tv_sec) +
+    (double)(now.tv_usec - timer->start.tv_usec)/1E6;
+#elif defined(OMP)
+  timer->total += omp_get_wtime() - timer->start;
 #elif defined(USE_RUSAGE)
   struct rusage now;
   getrusage(RUSAGE_SELF,&now);

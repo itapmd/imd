@@ -195,13 +195,17 @@ typedef struct {
 
 /* data structure for timers */
 typedef struct {
-#ifdef MPI                /* with MPI_Wtime */
-  double start;           /* time when timer was started */
-#elif defined(USE_RUSAGE) /* with getrusage */ 
-  struct rusage start;    /* time when timer was started */
-#else                     /* with times */
-  struct tms start;       /* time when timer was started */
+#ifdef MPI                  /* with MPI_Wtime */
+  double start;             /* time when timer was started */
+#elif defined(USE_WALLTIME) /* with gettimeofday */
+  struct timeval start;     /* time when timer was started */
+#elif defined(OMP)          /* with omp_get_wtime */
+  double start;             /* time when timer was started */
+#elif defined(USE_RUSAGE)   /* with getrusage */ 
+  struct rusage start;      /* time when timer was started */
+#else                       /* with times */
+  struct tms start;         /* time when timer was started */
 #endif
-  double total;           /* accumulation of (stop_time - start_time) */
+  double total;             /* accumulation of (stop_time - start_time) */
 } imd_timer;
 
