@@ -63,6 +63,10 @@ void generate_atoms(str255 mode)
     init_cubic();
     init_cells();
     generate_fcc(1);
+  } else if (0 == strcmp(mode,"_bcc")) {  /* bcc */
+    init_cubic();
+    init_cells();
+    generate_fcc(2);
   } else if (0 == strcmp(mode,"_lav")) {   /* Laves */
     init_cubic();
     init_cells();
@@ -253,6 +257,12 @@ void generate_fcc(int maxtyp)
       for (z=min.z; z<max.z; z++) {
  
         typ  = (x+y+z) % 2;
+
+        if (maxtyp == 2) {
+          if (typ > 0) continue; /* if bcc, only atoms of type 0 */
+          if (z%2) continue; /* if bcc, only at. in bottom/top unit cell */ 
+        }
+
         if (typ > maxtyp) continue;  /* if fcc, only atoms of type 0 */
 
 	natoms++;
