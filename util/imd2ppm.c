@@ -21,7 +21,7 @@
 
            input        name of input file (output = input.ppm)
            Emin, Emax   bounderies of energy interval for coloring
-           x0 y0        left upper corner of selected range in original coord.
+           x0 y0        lower left corner of selected range in user coords
            b0 h0        width and height in original coordinates
            b1 h1        width and height of screen output (in pixels)
 
