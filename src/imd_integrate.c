@@ -447,6 +447,9 @@ void move_atoms_nvt(void)
 #ifdef FNORM
   fnorm = 0.0;
 #endif
+#ifdef SLLOD
+  ivektor max_cell_dim;
+#endif
 
   reibung     =        1.0 - eta * inv_tau_eta * timestep / 2.0;
   eins_d_reib = 1.0 / (1.0 + eta * inv_tau_eta * timestep / 2.0);
@@ -458,6 +461,7 @@ void move_atoms_nvt(void)
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:kin_energie_1,kin_energie_2,rot_energie_1,rot_energie_2) private(tmp)
 #endif
+
   for (k=0; k<ncells; ++k) {
 
     int i;
@@ -498,6 +502,10 @@ void move_atoms_nvt(void)
                            * eins_d_reib * (restrictions + sort)->z;
 #endif
 
+#ifdef SLLOD
+	p->impuls X(i) += epsilon * p->impuls X(i) / MASSE(p,i);
+#endif
+
 #ifdef UNIAX
         /* new angular momenta */
         dot = 2.0 * SPRODN(p->dreh_impuls,i,p->achse,i);
@@ -527,6 +535,10 @@ void move_atoms_nvt(void)
 #ifndef TWOD
         p->ort Z(i) += tmp * p->impuls Z(i);
 #endif
+
+#ifdef SLLOD
+	p->ort X(i) += epsilon / box_y.y * p->ort Y(i);
+#endif /* SLLOD */
 
 #ifdef UNIAX
         cross.x = p->dreh_impuls Y(i) * p->achse Z(i)
@@ -562,6 +574,23 @@ void move_atoms_nvt(void)
     }
   }
   
+#ifdef SLLOD
+  /* new box size */
+  box_y.x += epsilon * box_y.y;
+  make_box();
+
+  /* revise cell decomposition if necessary */
+  max_cell_dim = maximal_cell_dim();
+  if ((max_cell_dim.x<global_cell_dim.x) || (max_cell_dim.y<global_cell_dim.y)
+#ifndef TWOD
+      || (max_cell_dim.z<global_cell_dim.z)
+#endif
+      ) {
+    init_cells();
+    fix_cells();
+  }
+#endif
+
 #ifdef UNIAX
   tot_kin_energy = ( kin_energie_1 + kin_energie_2 
 		     + rot_energie_1 + rot_energie_2 ) / 4.0;
@@ -1410,3 +1439,4 @@ void move_atoms_nvx(void)
 }
 
 #endif
+

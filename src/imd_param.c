@@ -455,7 +455,8 @@ void getparamfile(char *paramfname, int sim)
       for(k=0; k<vtypes; k++)
        *(fbc_endforces+k) = nullv;
 #endif
-#endif /*FBC*/ 
+#endif /*FBC*/
+
 #ifdef DEFORM
       /* Allocation & Initialisation of deform_shift */
       deform_shift = (vektor *) malloc(vtypes*DIM*sizeof(real));
@@ -753,6 +754,12 @@ void getparamfile(char *paramfname, int sim)
       /* number of pixels in x/y direction */
       getparam("pic_type", &pic_type,PARAM_INT,1,1);
     }
+#ifdef SLLOD
+    else if (strcasecmp(token,"epsilon")==0) {
+      /* shear strength, corresponds to xy-entry in strain tensor */
+      getparam("epsilon",&epsilon,PARAM_REAL,1,1);
+    }
+#endif
 #ifdef HOMDEF
     else if (strcasecmp(token,"exp_interval")==0) {
       /* period of expansion intervals */
@@ -771,6 +778,12 @@ void getparamfile(char *paramfname, int sim)
       getparam("shear_factor",&shear_factor,PARAM_REAL,1,1);
     }
 #endif
+#ifdef SLLOD
+    else if (strcasecmp(token,"epsilon")==0) {
+      /* shear epsilon  */
+      getparam("epsilon",&epsilon,PARAM_REAL,1,1);
+    }
+#endif 
 #if defined(FRAC) || defined(DEFORM)
     else if (strcasecmp(token,"ekin_threshold")==0) {
       /* shear epsilon criterium, see imd_shear_new.c */
@@ -1508,6 +1521,10 @@ void broadcast_params() {
   MPI_Bcast( &stadium , DIM, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &gamma_bar , 1, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &gamma_cut , 1, REAL, 0, MPI_COMM_WORLD);
+#endif
+
+#ifdef FRAC
+  MPI_Bcast( &epsilon , 1, REAL, 0, MPI_COMM_WORLD); 
 #endif
 
 #if defined(FRAC) || defined(DEFORM)

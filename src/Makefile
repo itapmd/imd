@@ -473,6 +473,10 @@ ifneq (,$(findstring disloc,${MAKETARGET}))
 CFLAGS += -DDISLOC
 endif
 
+ifneq (,$(findstring sllod,${MAKETARGET}))
+CFLAGS += -DSLLOD -DNVT
+endif
+
 ifneq (,$(findstring avpos,${MAKETARGET}))
 CFLAGS += -DAVPOS
 endif

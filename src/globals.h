@@ -281,6 +281,10 @@ EXTERN int    hom_interval INIT(0);       /* period of homshear steps */
 EXTERN real   shear_factor INIT(0.0);     /* shear factor in y-direction */
 #endif
 
+#ifdef SLLOD
+EXTERN real   epsilon  INIT(0.0);         /* shear factor in x-direction */
+#endif
+
 #if defined(FRAC) || defined(STM)
 EXTERN vektor stadium INIT(nullvektor); /* Damping stadium */
 EXTERN vektor center  INIT(nullvektor); /* center of stadium */
@@ -325,9 +329,15 @@ EXTERN int avpos_res INIT(0);         /* Period of coordinate addition */
 #endif
 
 #ifdef ORDPAR
+#ifdef TWOD
 #define nullvektor4d { 0.0, 0.0, 0.0, 0.0 }
-EXTERN real op_weight[2][2] INIT(nullvektor4d);
-EXTERN real op_r2_cut[2][2] INIT(nullvektor4d);
+EXTERN real op_weight[1][1] INIT(nullvektor4d);
+EXTERN real op_r2_cut[1][1] INIT(nullvektor4d);
+#else
+#define nullvektor9d { 0.0, 0.0, 0.0, 0.0 }
+EXTERN real op_weight[2][2] INIT(nullvektor9d);
+EXTERN real op_r2_cut[2][2] INIT(nullvektor9d);
+#endif
 #endif
 
 /* Global data for MSQD & correlation */
