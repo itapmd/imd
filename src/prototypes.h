@@ -234,6 +234,8 @@ void write_atoms_config(FILE *out);
 void write_header_config(FILE *out);
 void write_atoms_pic(FILE *out); 
 void write_header_pic(FILE *out); 
+void write_atoms_pos(FILE *out); 
+void write_header_pos(FILE *out); 
 #ifdef DISLOC
 void write_atoms_dem(FILE *out);
 void write_header_dem(FILE *out);
@@ -314,9 +316,11 @@ void dist_press_fun      (float*, cell*, int);
 void dist_presstens_fun  (float*, cell*, int);
 
 #ifdef ATDIST
-void   init_atoms_dist(void);
-void update_atoms_dist(void);
-void  write_atoms_dist(void);
+void   init_atdist(void);
+void update_atdist(void);
+void  write_atdist(void);
+void write_atoms_atdist_pos(FILE*);
+void write_header_atdist_pos(FILE*);
 #endif
 
 /* write pictures - files imd_io_*.c */

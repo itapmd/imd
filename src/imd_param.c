@@ -1175,21 +1175,38 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #ifdef ATDIST
-    else if (strcasecmp(token,"atoms_dist_dim")==0) {
+    else if (strcasecmp(token,"atdist_dim")==0) {
       /* dimension of atoms distribution array */
-      getparam("atoms_dist_dim",&atoms_dist_dim,PARAM_INT,DIM,DIM);
+      getparam(token,&atdist_dim,PARAM_INT,DIM,DIM);
     }
-    else if (strcasecmp(token,"atoms_dist_int")==0) {
+    else if (strcasecmp(token,"atdist_int")==0) {
       /* interval between atoms distribution updates */
-      getparam("atoms_dist_int",&atoms_dist_int,PARAM_INT,1,1);
+      getparam(token,&atdist_int,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"atoms_dist_start")==0) {
+    else if (strcasecmp(token,"atdist_pos_int")==0) {
+      /* interval between atoms distribution updates */
+      getparam(token,&atdist_pos_int,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"atdist_start")==0) {
       /* step when recording atoms distribution is started */
-      getparam("atoms_dist_start",&atoms_dist_start,PARAM_INT,1,1);
+      getparam(token,&atdist_start,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"atoms_dist_end")==0) {
+    else if (strcasecmp(token,"atdist_end")==0) {
       /* step when recording atoms distribution is stopped */
-      getparam("atoms_dist_end",&atoms_dist_end,PARAM_INT,1,1);
+      getparam(token,&atdist_end,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"atdist_per_ll")==0) {
+      /* lower left of periodic extension */
+      getparam(token,&atdist_per_ll,PARAM_INT,DIM,DIM);
+    }
+    else if (strcasecmp(token,"atdist_per_ur")==0) {
+      /* upper right of periodic extension */
+      getparam(token,&atdist_per_ur,PARAM_INT,DIM,DIM);
+    }
+    else if (strcasecmp(token,"atdist_phi")==0) {
+      /* rotation angle around z-axis */
+      getparam(token,&atdist_phi,PARAM_REAL,1,1);
+      atdist_phi *= 8 * atan(1.0);
     }
 #endif
 #ifdef ORDPAR
@@ -1701,7 +1718,7 @@ void check_parameters_complete()
 #endif
 
 #ifdef ATDIST
-  if (0==atoms_dist_end) atoms_dist_end = steps_max;
+  if (0==atdist_end) atdist_end = steps_max;
 #endif
 
 #ifdef GLOKDEFORM

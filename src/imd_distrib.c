@@ -449,16 +449,16 @@ void write_distrib_header(FILE *out, dist_t *dist, int mode, int n, char *cont)
 *
 ******************************************************************************/
   
-void init_atoms_dist()
+void init_atdist()
 {
   int size, i;
 
   /* compute array size */
-  atoms_dist_size  = atoms_dist_dim.x * atoms_dist_dim.y;
+  atdist_size  = atdist_dim.x * atdist_dim.y;
 #ifndef TWOD
-  atoms_dist_size *= atoms_dist_dim.z;
+  atdist_size *= atdist_dim.z;
 #endif
-  size = atoms_dist_size * ntypes;
+  size = atdist_size * ntypes;
 
   /* backup if pic_ur is not set */
   if (0.0==pic_ur.x) {
@@ -470,20 +470,20 @@ void init_atoms_dist()
   }
 
   /* the bins are orthogonal boxes in space */
-  atoms_dist_scale.x = atoms_dist_dim.x / (pic_ur.x - pic_ll.x);
-  atoms_dist_scale.y = atoms_dist_dim.y / (pic_ur.y - pic_ll.y);
+  atdist_scale.x = atdist_dim.x / (pic_ur.x - pic_ll.x);
+  atdist_scale.y = atdist_dim.y / (pic_ur.y - pic_ll.y);
 #ifndef TWOD
-  atoms_dist_scale.z = atoms_dist_dim.z / (pic_ur.z - pic_ll.z);
+  atdist_scale.z = atdist_dim.z / (pic_ur.z - pic_ll.z);
 #endif
 
   /* allocate distribution array */
-  if (NULL==atoms_dist) {
-    atoms_dist = (float *) malloc( size * sizeof(float) );
-    if (NULL==atoms_dist) error("Cannot allocate atoms distribution array.");
+  if (NULL==atdist) {
+    atdist = (float *) malloc( size * sizeof(float) );
+    if (NULL==atdist) error("Cannot allocate atoms distribution array.");
   }
 
   /* initialize distribution array */
-  for (i=0; i<size; i++) atoms_dist[i]=0.0;
+  for (i=0; i<size; i++) atdist[i]=0.0;
 }
 
 /******************************************************************************
@@ -492,39 +492,63 @@ void init_atoms_dist()
 *
 ******************************************************************************/
   
-void update_atoms_dist()
+void update_atdist()
 {
   int  num, numx, numy, numz;
   cell *p;
-  int  i, k;
+  int  i, k, ix, iy, iz;
+  real x, y, z, t, co, si;
+
+  co = cos(atdist_phi);
+  si = sin(atdist_phi);
 
   /* loop over all atoms */
   for (k=0; k<ncells; ++k) {
     p = cell_array + CELLS(k);
-    for (i=0; i<p->n; ++i) {
-      /* continue if atom is not inside selected box */
-      if ((ORT(p,i,X) < pic_ll.x) || (ORT(p,i,X) > pic_ur.x) ||
+    for (i=0; i<p->n; ++i) 
+
+      /* periodic continuation */
+      for (ix=atdist_per_ll.x; ix<=atdist_per_ur.x; ix++)
 #ifndef TWOD
-          (ORT(p,i,Z) < pic_ll.z) || (ORT(p,i,Z) > pic_ur.z) || 
+        for (iz=atdist_per_ll.z; iz<=atdist_per_ur.z; iz++)
 #endif
-          (ORT(p,i,Y) < pic_ll.y) || (ORT(p,i,Y) > pic_ur.y)) continue;
-      /* which bin? */
-      numx = atoms_dist_scale.x * (ORT(p,i,X) - pic_ll.x);
-      if (numx < 0)                   numx = 0;
-      if (numx >= atoms_dist_dim.x)   numx = atoms_dist_dim.x-1;
-      numy = atoms_dist_scale.y * (ORT(p,i,Y) - pic_ll.y);
-      if (numy < 0)                   numy = 0;
-      if (numy >= atoms_dist_dim.y)   numy = atoms_dist_dim.y-1;
-      num = numx * atoms_dist_dim.y + numy;
+          for (iy=atdist_per_ll.y; iy<=atdist_per_ur.y; iy++) {
+#ifdef TWOD
+            x = ORT(p,i,X) + ix * box_x.x + iy * box_y.x;
+            y = ORT(p,i,Y) + ix * box_x.y + iy * box_y.y;
+#else
+            x = ORT(p,i,X) + ix * box_x.x + iy * box_y.x + iz * box_z.x;
+            y = ORT(p,i,Y) + ix * box_x.y + iy * box_y.y + iz * box_z.y;
+            z = ORT(p,i,Z) + ix * box_x.z + iy * box_y.z + iz * box_z.y;
+#endif
+            t =  co * x + si * y;
+            y = -si * x + co * y;
+            x = t;
+
+            /* continue if atom is not inside selected box */
+            if ((x < pic_ll.x) || (x > pic_ur.x) ||
 #ifndef TWOD
-      numz = atoms_dist_scale.z * (ORT(p,i,Z) - pic_ll.z);
-      if (numz < 0)                   numz = 0;
-      if (numz >= atoms_dist_dim.z)   numz = atoms_dist_dim.z-1;
-      num = num  * atoms_dist_dim.z + numz;
+                (z < pic_ll.z) || (z > pic_ur.z) || 
 #endif
-      num = SORTE(p,i) * atoms_dist_size + num;
-      atoms_dist[num] += 1.0;
-    }
+                (y < pic_ll.y) || (y > pic_ur.y)) continue;
+
+            /* which bin? */
+            numx = atdist_scale.x * (x - pic_ll.x);
+            if (numx < 0)                   numx = 0;
+            if (numx >= atdist_dim.x)   numx = atdist_dim.x-1;
+            numy = atdist_scale.y * (y - pic_ll.y);
+            if (numy < 0)                   numy = 0;
+            if (numy >= atdist_dim.y)   numy = atdist_dim.y-1;
+            num = numx * atdist_dim.y + numy;
+#ifndef TWOD
+            numz = atdist_scale.z * (z - pic_ll.z);
+            if (numz < 0)                   numz = 0;
+            if (numz >= atdist_dim.z)   numz = atdist_dim.z-1;
+            num = num  * atdist_dim.z + numz;
+#endif
+            num = SORTE(p,i) * atdist_size + num;
+            atdist[num] += 1.0;
+	  }
   }
 }
 
@@ -534,7 +558,7 @@ void update_atoms_dist()
 *
 ******************************************************************************/
   
-void write_atoms_dist()
+void write_atdist()
 {
   int  num, numx, numy, numz, size;
   int  i, k;
@@ -543,7 +567,7 @@ void write_atoms_dist()
   FILE *out;
 
   if (myid == 0) {
-    sprintf(fname,"%s.atoms_dist",outfilename);
+    sprintf(fname,"%s.atdist",outfilename);
     out = fopen(fname,"w");
     if (NULL == out) error("Cannot open atoms distribution file.");
 
@@ -553,19 +577,19 @@ void write_atoms_dist()
     for (i=0; i<ntypes; i++) fprintf(out," density_%d",i);
     fprintf(out,"\n");
 #ifdef TWOD
-    fprintf(out,"#D %d %d\n", atoms_dist_dim.x, atoms_dist_dim.y);
-    fprintf(out,"#S %f %f\n", 1.0/atoms_dist_scale.x, 1-0/atoms_dist_scale.y);
+    fprintf(out,"#D %d %d\n", atdist_dim.x, atdist_dim.y);
+    fprintf(out,"#S %f %f\n", 1.0 / atdist_scale.x, 1.0 / atdist_scale.y);
 #else
     fprintf(out,"#D %d %d %d\n",
-      atoms_dist_dim.x, atoms_dist_dim.y, atoms_dist_dim.z);
+      atdist_dim.x, atdist_dim.y, atdist_dim.z);
     fprintf(out,"#S %f %f %f\n", 
-      1.0/atoms_dist_scale.x, 1.0/atoms_dist_scale.y, 1.0/atoms_dist_scale.z);
+      1.0 / atdist_scale.x, 1.0 / atdist_scale.y, 1.0 / atdist_scale.z);
 #endif
     fprintf(out,"#E\n");
 
-    size = atoms_dist_size * ntypes;
-    if (size!=fwrite(atoms_dist,sizeof(float),size,out))
-      error("Cannot write atoms_dist");
+    size = atdist_size * ntypes;
+    if (size!=fwrite(atdist, sizeof(float), size, out))
+      error("Cannot write atoms distribution");
 
     fclose(out);
   }
