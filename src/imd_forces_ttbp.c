@@ -136,9 +136,9 @@ void do_forces_ttbp(cell *p)
         kcell->pot_eng[knum] += pot_zwi;
 
 #ifdef P_AXIAL
-        tmp_vir_vect.x += d[j].x * force_j.x + d[k] * force_k.x;
-        tmp_vir_vect.y += d[j].y * force_j.y + d[k] * force_k.y;
-        tmp_vir_vect.z += d[j].z * force_j.z + d[k] * force_k.z;
+        tmp_vir_vect.x += d[j].x * force_j.x + d[k].x * force_k.x;
+        tmp_vir_vect.y += d[j].y * force_j.y + d[k].y * force_k.y;
+        tmp_vir_vect.z += d[j].z * force_j.z + d[k].z * force_k.z;
 #else
         tmp_virial     += SPROD(d[j],force_j) + SPROD(d[k],force_k);
 #endif
