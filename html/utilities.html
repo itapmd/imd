@@ -482,8 +482,8 @@ computed. The default value is 10. <P>
 imd_ring writes a table to standard output of the following format: 
 <PRE>
      Ring length   Total occurrence  Relative occurrence
-          0              n_0                p_0
-	  1		 n_1		    p_1
+          3              n_3                p_3
+	  4		 n_4		    p_4
 	  
 	  .               .                  .
 	  .		  .		     .
@@ -493,13 +493,13 @@ imd_ring writes a table to standard output of the following format:
 </PRE>
 where <TT>n_i</TT> is the number of rings of length <TT>i</TT> and
 <TT>p_i</TT> is <TT>n_i</TT> divided by the total number of rings up
-to the length lmax. imd_ring writes the table of
+to the length <TT>lmax</TT>. imd_ring writes the table of
 the relative occurrences of the ring lengths into a file the name of
 which is the input file name, but with <TT>.ring</TT> appended.
 <P>
 In the ring search, imd_ring uses neighbour tables. For their memory
 allocation, a parameter <TT>neigh_len</TT> being the maximal number of
-neighbours has to be specified (Default 4). In the case of the Tersoff
+neighbours has to be specified (Default 6). In the case of the Tersoff
 potential, this value is taken from the parameter file.
 
 <P>
