@@ -146,9 +146,17 @@ system might become unstable due to pressure fluctuations, which
 can be quite large initially. If the bulk and shear modules are
 not given, they default to 1. Some experimentation with 
 <tt>relax_rate</tt> should then quickly reveal a usable value.
-The pressure relaxation feature requires the compile options 
-<a href="options.html#homdef">homdef</a> and 
-<a href="options.html#stress_tens">stress.</a>
+The parameter <tt>relax_mode</tt>, which can take values
+<tt>full</tt>, <tt>axial</tt>, and <tt>iso</tt>, determines wich
+part of the pressure tensor is relaxed. <tt>full</tt> means full
+relaxation, <tt>axial</tt> means relaxation of pressure along
+main axes of a rectangular box, and <tt>iso</tt> relaxes the scalar
+pressure by isotropic rescaling of the box. All pressure relaxation 
+modes require the compile option <a href="options.html#homdef">homdef</a>,
+and modes <tt>full</tt> and <tt>axial</tt> also the compile option
+<a href="options.html#stress_tens">stress</a>. Default mode is
+<tt>full</tt> if <a href="options.html#stress_tens">stress</a>
+is compiled, and <tt>iso</tt> otherwise.
 </p></dd>
 
 </dl>
