@@ -125,9 +125,15 @@ TRANSSOURCES    = imd_transport.c
 ###########################################################################
 
 # default compilers and libraries
+# if available, we take the Intel compiler
+ifneq (,${IA32ROOT})
+CC_DEFAULT_SERIAL_i586		= icc
+CC_DEFAULT_OMP_i586		= icc
+else
 CC_DEFAULT_SERIAL_i586		= gcc
-CC_DEFAULT_MPI_i586		= mpicc
 CC_DEFAULT_OMP_i586		= guidec
+endif
+CC_DEFAULT_MPI_i586		= mpicc
 
 # gcc, serial
 CFLAGS_gcc_SERIAL_i586		= -mcpu=i686 -O3
