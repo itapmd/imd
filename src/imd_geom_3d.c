@@ -255,9 +255,9 @@ void init_cells( void )
     if (global_cell_dim.y < cpu_dim.y) error("global_cell_dim.y < cpu_dim.y");
     if (global_cell_dim.z < cpu_dim.z) error("global_cell_dim.z < cpu_dim.z");
 #endif
-    if (global_cell_dim.x < 3)         error("global_cell_dim.x < 3");
-    if (global_cell_dim.y < 3)         error("global_cell_dim.y < 3");
-    if (global_cell_dim.z < 3)         error("global_cell_dim.z < 3");
+    if (global_cell_dim.x < 2) error("global_cell_dim.x < 2");
+    if (global_cell_dim.y < 2) error("global_cell_dim.y < 2");
+    if (global_cell_dim.z < 2) error("global_cell_dim.z < 2");
   }
 
 #ifdef NPT
