@@ -246,9 +246,7 @@ void main_loop(void)
     mpi_addtime(&time_io);
 #endif
 
-#ifndef NOPBC
     do_boundaries();    
-#endif
 
     /* fix_cells redistributes atoms across the cpus. Putting at the bottom 
        of the force loop enables us to calculate/write properties locally */
@@ -440,25 +438,38 @@ void do_boundaries(void)
 #endif
   for (k=0; k<ncells; ++k) {
 
-    int l;
+    int l,i;
     cell *p;
-    vektor d;
 
     p = cell_array + CELLS(k);
 
+    /* PBC in x direction */
+    if (pbc_dirs.x==1)
     for (l=0; l<p->n; ++l) {
-
-      /* Apply periodic boundaries */
-      d.x = -FLOOR(SPRODX(p->ort,l,tbox_x));
-      d.y = -FLOOR(SPRODX(p->ort,l,tbox_y));
-      d.z = -FLOOR(SPRODX(p->ort,l,tbox_z));
-
-#ifndef SHOCK
-      p->ort X(l) += d.x * box_x.x + d.y * box_y.x + d.z * box_z.x;
-#endif
-      p->ort Y(l) += d.x * box_x.y + d.y * box_y.y + d.z * box_z.y;
-      p->ort Z(l) += d.x * box_x.z + d.y * box_y.z + d.z * box_z.z;
+      i = -FLOOR(SPRODX(p->ort,l,tbox_x));
+      p->ort X(l) += i * box_x.x;
+      p->ort Y(l) += i * box_x.y;
+      p->ort Z(l) += i * box_x.z;
     }
+
+    /* PBC in y direction */
+    if (pbc_dirs.y==1)
+    for (l=0; l<p->n; ++l) {
+      i = -FLOOR(SPRODX(p->ort,l,tbox_y));
+      p->ort X(l) += i * box_y.x;
+      p->ort Y(l) += i * box_y.y;
+      p->ort Z(l) += i * box_y.z;
+    }
+
+    /* PBC in z direction */
+    if (pbc_dirs.z==1)
+    for (l=0; l<p->n; ++l) {
+      i = -FLOOR(SPRODX(p->ort,l,tbox_z));
+      p->ort X(l) += i * box_z.x;
+      p->ort Y(l) += i * box_z.y;
+      p->ort Z(l) += i * box_z.z;
+    }
+
   }
 }
 

@@ -405,12 +405,8 @@ void make_cell_lists(void)
           else if (s>cell_dim.y-1) s=0;
 #endif
 
-#ifdef SHOCK
-          if (0 == ipbc.x)
-#endif
-#ifdef NOPBC
-          if ((0 == ipbc.x) && (0 == ipbc.y))
-#endif
+          if (((pbc_dirs.x==1) || (pbc_dirs.x==ipbc.x)) &&
+              ((pbc_dirs.y==1) || (pbc_dirs.y==ipbc.y)))
           {
             /* add pair to list */
             P = pairs[nn] + npairs[nn];
@@ -459,12 +455,8 @@ void make_cell_lists(void)
             if (s<0) ipbc.y--; else if (s>global_cell_dim.y-1) ipbc.y++;
             s = neigh.y;
 
-#ifdef SHOCK
-            if (0 == ipbc.x)
-#endif
-#ifdef NOPBC
-            if ((0 == ipbc.x) && (0 == ipbc.y))
-#endif
+            if (((pbc_dirs.x==1) || (pbc_dirs.x==ipbc.x)) &&
+                ((pbc_dirs.y==1) || (pbc_dirs.y==ipbc.y)))
             {
               /* add pair to list */
               P = pairs[nn] + npairs2[nn];
@@ -482,11 +474,11 @@ void make_cell_lists(void)
 }
 
 
-/*
+/******************************************************************************
 *
-* cell_coord gives the (integral) cell_coorinates of a position
+*  cell_coord computes the (global) cell coorinates of a position
 *
-*/
+******************************************************************************/
 
 ivektor2d cell_coord(real x,real y)
 {
@@ -511,18 +503,21 @@ ivektor2d cell_coord(real x,real y)
 
 vektor back_into_box(vektor pos)
 {
-  vektor d;
   int i;
 
-  i = FLOOR(SPROD(pos,tbox_x));
-  d.x  = pos.x - i *  box_x.x;
-  d.y  = pos.y - i *  box_x.y;
+  if (pbc_dirs.x==1) {
+    i = FLOOR(SPROD(pos,tbox_x));
+    pos.x  -= i *  box_x.x;
+    pos.y  -= i *  box_x.y;
+  }
 
-  i = FLOOR(SPROD(pos,tbox_y));
-  d.x -= i *  box_y.x;
-  d.y -= i *  box_y.y;
+  if (pbc_dirs.y==1) {
+    i = FLOOR(SPROD(pos,tbox_y));
+    pos.x -= i *  box_y.x;
+    pos.y -= i *  box_y.y;
+  }
 
-  return(d);
+  return pos;
 
 }
 

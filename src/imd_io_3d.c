@@ -198,9 +198,7 @@ void read_atoms(str255 infilename)
       }
 #endif /* DISLOC */
 
-#ifndef NOPBC
       pos = back_into_box(pos);
-#endif
 
       if (0>=m) error("Mass zero or negative.\n");
 #ifdef UNIAX

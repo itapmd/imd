@@ -20,6 +20,7 @@ real mc_epot_diff( vektor old_pos, vektor new_pos,
   real   *qptr, *potptr;
   cell   *q;
   real   t_old=0.0,t_new=0.0;
+  ivektor ipbc;
 
   /* For all neighbours of this cell */
   for (l=-1; l <= 1; l++)
@@ -28,71 +29,59 @@ real mc_epot_diff( vektor old_pos, vektor new_pos,
   for (n=-1; n <= 1; n++) 
 #endif
   {
-    r = cellc.x + l;  pbc.x = 0;
-    s = cellc.y + m;  pbc.y = 0;
+    r = cellc.x + l;  ipbc.x = 0;
+    s = cellc.y + m;  ipbc.y = 0;
 #ifndef TWOD
-    t = cellc.z + n;  pbc.z = 0;
+    t = cellc.z + n;  ipbc.z = 0;
 #endif
 
     /* Apply periodic boundaries */
 
     if (r<0) {
        r = cell_dim.x-1; 
-       pbc.x -= box_x.x; 
-       pbc.y -= box_x.y; 
-#ifndef TWOD
-       pbc.z -= box_x.z;
-#endif
-    };
+       ipbc.x--;
+    }
     if (s<0) {
       s = cell_dim.y-1;
-      pbc.x -= box_y.x;      
-      pbc.y -= box_y.y;
-#ifndef TWOD
-      pbc.z -= box_y.z;
-#endif
-    };
+      ipbc.y--;
+    }
 #ifndef TWOD
     if (t<0) {
       t = cell_dim.z-1;
-      pbc.x -= box_z.x;      
-      pbc.y -= box_z.y;
-      pbc.z -= box_z.z;
-    };
+      ipbc.z--;
+    }
 #endif
     if (r>cell_dim.x-1) {
       r = 0; 
-      pbc.x += box_x.x;      
-      pbc.y += box_x.y;
-#ifndef TWOD
-      pbc.z += box_x.z;
-#endif
-    };
+      ipbc.x++;
+    }
     if (s>cell_dim.y-1) {
       s = 0; 
-      pbc.x += box_y.x;      
-      pbc.y += box_y.y;
-#ifndef TWOD
-      pbc.z += box_y.z;
-#endif
-    };
+      ipbc.y++;
+    }
 #ifndef TWOD
     if (t>cell_dim.z-1) {
       t = 0; 
-      pbc.x += box_z.x;      
-      pbc.y += box_z.y;
-      pbc.z += box_z.z;
-    };
+      ipbc.z++;
+    }
 #endif
 
-#ifdef NOPBC
-    if ((0 == pbc.x) && (0 == pbc.y) && (0 == pbc.z)) {
-#endif
-
+    if (   ((pbc_dirs.x==1) || (pbc_dirs.x==ipbc.x))
 #ifndef TWOD
-      q = PTR_3D_V(cell_array,r,s,t,cell_dim);
-#else
+        && ((pbc_dirs.z==1) || (pbc_dirs.z==ipbc.z)) 
+#endif
+        && ((pbc_dirs.y==1) || (pbc_dirs.y==ipbc.y)))
+    {
+
+#ifdef TWOD
       q = PTR_2D_V(cell_array,r,s,cell_dim);
+      pbc.x = ipbc.x * box_x.x + ipbc.y * box_y.x; 
+      pbc.y = ipbc.x * box_x.y + ipbc.y * box_y.y; 
+#else
+      q = PTR_3D_V(cell_array,r,s,t,cell_dim);
+      pbc.x = ipbc.x * box_x.x + ipbc.y * box_y.x + ipbc.z * box_z.x;
+      pbc.y = ipbc.x * box_x.y + ipbc.y * box_y.y + ipbc.z * box_z.y;
+      pbc.z = ipbc.x * box_x.z + ipbc.y * box_y.z + ipbc.z * box_z.z;
 #endif
       tmp_old.x = old_pos.x - pbc.x;
       tmp_new.x = new_pos.x - pbc.x;
@@ -136,7 +125,7 @@ real mc_epot_diff( vektor old_pos, vektor new_pos,
 
             t_new  += (pot_k0 + (pot_k1 - pot_k0) * chi);
             result += (pot_k0 + (pot_k1 - pot_k0) * chi);
-          };
+          }
 
           /* contribution of old position */
           radius2 = SPROD(d_old,d_old);
@@ -153,15 +142,13 @@ real mc_epot_diff( vektor old_pos, vektor new_pos,
 
             t_old  += (pot_k0 + (pot_k1 - pot_k0) * chi);
             result -= (pot_k0 + (pot_k1 - pot_k0) * chi);
-          };
-        };
-      };
-#ifdef NOPBC
-    };
-#endif
-  };
+          }
+        }
+      }
+    }
+  }
   /*  printf("new %10.4e old %10.4e\n",t_new,t_old);  */
-  return (result);
+  return result;
 }
 
 
@@ -174,6 +161,7 @@ real mc_epot_atom( vektor pos, int p_num, int p_typ, ivektor cellc )
   real   chi, pot_k0, pot_k1, radius2, result = 0.0;
   real   *qptr, *potptr;
   cell   *q;
+  ivektor ipbc;
 
   /* For all neighbours of this cell */
   for (l=-1; l <= 1; l++)
@@ -192,61 +180,49 @@ real mc_epot_atom( vektor pos, int p_num, int p_typ, ivektor cellc )
 
     if (r<0) {
        r = cell_dim.x-1; 
-       pbc.x -= box_x.x; 
-       pbc.y -= box_x.y; 
-#ifndef TWOD
-       pbc.z -= box_x.z;
-#endif
-    };
+       ipbc.x--;
+    }
     if (s<0) {
       s = cell_dim.y-1;
-      pbc.x -= box_y.x;      
-      pbc.y -= box_y.y;
-#ifndef TWOD
-      pbc.z -= box_y.z;
-#endif
-    };
+      ipbc.y--;
+    }
 #ifndef TWOD
     if (t<0) {
       t = cell_dim.z-1;
-      pbc.x -= box_z.x;      
-      pbc.y -= box_z.y;
-      pbc.z -= box_z.z;
-    };
+      ipbc.z--;
+    }
 #endif
     if (r>cell_dim.x-1) {
       r = 0; 
-      pbc.x += box_x.x;      
-      pbc.y += box_x.y;
-#ifndef TWOD
-      pbc.z += box_x.z;
-#endif
-    };
+      ipbc.x++;
+    }
     if (s>cell_dim.y-1) {
       s = 0; 
-      pbc.x += box_y.x;      
-      pbc.y += box_y.y;
-#ifndef TWOD
-      pbc.z += box_y.z;
-#endif
-    };
+      ipbc.y++;
+    }
 #ifndef TWOD
     if (t>cell_dim.z-1) {
       t = 0; 
-      pbc.x += box_z.x;      
-      pbc.y += box_z.y;
-      pbc.z += box_z.z;
-    };
+      ipbc.z++;
+    }
 #endif
 
-#ifdef NOPBC
-    if ((0 == pbc.x) && (0 == pbc.y) && (0 == pbc.z)) {
-#endif
-
+    if (   ((pbc_dirs.x==1) || (pbc_dirs.x==ipbc.x))
 #ifndef TWOD
-      q = PTR_3D_V(cell_array,r,s,t,cell_dim);
-#else
+        && ((pbc_dirs.z==1) || (pbc_dirs.z==ipbc.z)) 
+#endif
+        && ((pbc_dirs.y==1) || (pbc_dirs.y==ipbc.y))) 
+      {
+
+#ifdef TWOD
       q = PTR_2D_V(cell_array,r,s,cell_dim);
+      pbc.x = ipbc.x * box_x.x + ipbc.y * box_y.x; 
+      pbc.y = ipbc.x * box_x.y + ipbc.y * box_y.y; 
+#else
+      q = PTR_3D_V(cell_array,r,s,t,cell_dim);
+      pbc.x = ipbc.x * box_x.x + ipbc.y * box_y.x + ipbc.z * box_z.x;
+      pbc.y = ipbc.x * box_x.y + ipbc.y * box_y.y + ipbc.z * box_z.y;
+      pbc.z = ipbc.x * box_x.z + ipbc.y * box_y.z + ipbc.z * box_z.z;
 #endif
       tmp.x = pos.x - pbc.x;
       tmp.y = pos.y - pbc.y;
@@ -284,14 +260,12 @@ real mc_epot_atom( vektor pos, int p_num, int p_typ, ivektor cellc )
             ttt = (pot_k0 + (pot_k1 - pot_k0) * chi);
 
             result += (pot_k0 + (pot_k1 - pot_k0) * chi);
-          };
-	};
-      };
-#ifdef NOPBC
-    };
-#endif
-  };
-  return (result);
+          }
+	}
+      }
+    }
+  }
+  return result;
 }
 
 
@@ -358,10 +332,9 @@ void one_mc_step( void )
          newcellc = cell_coord( new_pos.x, new_pos.y );
 #endif
          move_atom( newcellc, p, i );
-       };
-
+       }
     }
-  };
+  }
   mc_accept += (real)accepted/(real)total;
   mc_count++;
 }

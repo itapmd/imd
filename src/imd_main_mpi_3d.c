@@ -371,9 +371,6 @@ void calc_forces(void)
 
 	      /* Apply periodic boundaries */
 	      pbc = global_pbc(r,s,t);
-#ifdef NOPBC
-              if ((0 == pbc.x) && (0 == pbc.y) && (0 == pbc.z))
-#endif
 	      do_forces(p,q,pbc);
 	    }
       }
@@ -418,10 +415,6 @@ void calc_forces(void)
 		q = PTR_3D_V(cell_array,r,s,t,cell_dim);
 		/* Apply periodic boundaries */
 		pbc = global_pbc(r,s,t);
-		/* Do the work */
-#ifdef NOPBC
-                if ((0 == pbc.x) && (0 == pbc.y) && (0 == pbc.z))
-#endif
 		do_forces(p,q,pbc);
 	      }
 	    }

@@ -387,6 +387,10 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"dist_dim")==0) {
       getparam("dist_dim",&dist_dim,PARAM_INT,DIM,DIM);
     }
+    else if (strcasecmp(token,"pbc_dirs")==0) {
+      /* directions with periodic boundary conditions */
+      getparam("pbc_dirs",&pbc_dirs,PARAM_INT,DIM,DIM);
+    }
     else if (strcasecmp(token,"box_x")==0) {
       /* 'x' or first vector for box */
       getparam("box_x",&box_x,PARAM_REAL,DIM,DIM);
@@ -1135,6 +1139,7 @@ void broadcast_params() {
   MPI_Bcast( &pic_type    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
 #endif
 
+  MPI_Bcast( &pbc_dirs    , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &box_x       , DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &box_y       , DIM, MPI_REAL, 0, MPI_COMM_WORLD);
 #ifndef TWOD

@@ -202,9 +202,7 @@ void main_loop(void)
     mpi_addtime(&time_io);
 #endif
 
-#ifndef NOPBC
     do_boundaries();    
-#endif
 
     fix_cells();
 
@@ -289,13 +287,16 @@ void fix_cells(void)
           dcpu.x = to_coord.x - my_coord.x;
           dcpu.y = to_coord.y - my_coord.y;
 
-#ifndef NOPBC
           /* Consider PBC */
-          if (cpu_dim.x == 1) dcpu.x = 0; 
-          else dcpu.x -= ((int) (dcpu.x / (cpu_dim.x/2)) * cpu_dim.x);
-          if (cpu_dim.y == 1) dcpu.y = 0;
-          else dcpu.y -= ((int) (dcpu.y / (cpu_dim.y/2)) * cpu_dim.y);
-#endif
+          if (pbc_dirs.x == 1) {
+            if (cpu_dim.x == 1) dcpu.x = 0; 
+            else dcpu.x -= ((int) (dcpu.x / (cpu_dim.x/2)) * cpu_dim.x);
+          }
+          if (pbc_dirs.y == 1) {
+            if (cpu_dim.y == 1) dcpu.y = 0;
+            else dcpu.y -= ((int) (dcpu.y / (cpu_dim.y/2)) * cpu_dim.y);
+          }
+
           /* Check, if atom is on my cpu */
           /* If not, copy into send buffer else move to correct cell */
           if      ( 0 < dcpu.x ) copy_one_atom( &send_buf_west,  p, l);
@@ -337,23 +338,27 @@ void do_boundaries(void)
 #endif
   for (k=0; k<ncells; ++k) {
 
-    int l;
+    int l,i;
     cell *p;
-    vektor d;
 
     p = cell_array + CELLS(k);
 
+    /* PBC in x direction */
+    if (pbc_dirs.x==1)
     for (l=0; l<p->n; ++l) {
-
-      /* Apply periodic boundaries */
-      d.x = -FLOOR(SPRODX(p->ort,l,tbox_x));
-      d.y = -FLOOR(SPRODX(p->ort,l,tbox_y));
-
-#ifndef SHOCK
-      p->ort X(l) += d.x * box_x.x + d.y * box_y.x;
-#endif
-      p->ort Y(l) += d.x * box_x.y + d.y * box_y.y;
+      i = -FLOOR(SPRODX(p->ort,l,tbox_x));
+      p->ort X(l) += i * box_x.x;
+      p->ort Y(l) += i * box_x.y;
     }
+
+    /* PBC in y direction */
+    if (pbc_dirs.y==1)
+    for (l=0; l<p->n; ++l) {
+      i = -FLOOR(SPRODX(p->ort,l,tbox_y));
+      p->ort X(l) += i * box_y.x;
+      p->ort Y(l) += i * box_y.y;
+    }
+
   }
 }
 

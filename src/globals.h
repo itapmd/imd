@@ -48,6 +48,7 @@ EXTERN int ncells,nallcells INIT(0);     /* number of cells */
 EXTERN int npairs[2*DIM],npairs2[2*DIM]; /* number of cell pairs */
 EXTERN ivektor cell_dim;                 /* dimension of cell array (per cpu)*/
 EXTERN ivektor global_cell_dim;          /* dimension of cell array */
+EXTERN ivektor pbc_dirs INIT(einsivektor);  /* directions with pbc */
 
 /* Global bookkeeping */
 

@@ -603,12 +603,9 @@ void make_cell_lists(void)
               else if (t>cell_dim.z-1) t=0;
 #endif
 
-#ifdef SHOCK
-              if (0 == ipbc.x)
-#endif
-#ifdef NOPBC
-              if ((0 == ipbc.x) && (0 == ipbc.y) && (0 == ipbc.z))
-#endif
+              if (((pbc_dirs.x==1) || (pbc_dirs.x==ipbc.x)) &&
+                  ((pbc_dirs.y==1) || (pbc_dirs.y==ipbc.y)) &&
+                  ((pbc_dirs.z==1) || (pbc_dirs.z==ipbc.z)))
               {
                 /* add pair to list */
                 P = pairs[nn] + npairs[nn];
@@ -667,12 +664,9 @@ void make_cell_lists(void)
                 if (t<0) ipbc.z--; else if (t>global_cell_dim.z-1) ipbc.z++;
                 t = neigh.z;
 
-#ifdef SHOCK
-                if (0 == ipbc.x)
-#endif
-#ifdef NOPBC
-                if ((0 == ipbc.x) && (0 == ipbc.y) && (0 == ipbc.z))
-#endif
+                if (((pbc_dirs.x==1) || (pbc_dirs.x==ipbc.x)) &&
+                    ((pbc_dirs.y==1) || (pbc_dirs.y==ipbc.y)) &&
+                    ((pbc_dirs.z==1) || (pbc_dirs.z==ipbc.z)))
                 {
                   /* add pair to list */
                   P = pairs[nn] + npairs2[nn];
@@ -693,11 +687,11 @@ void make_cell_lists(void)
 }
 
 
-/*
+/******************************************************************************
 *
-* cell_coord gives the (integral) cell_coorinates of a position
+*  cell_coord computes the (global) cell coorinates of a position
 *
-*/
+******************************************************************************/
 
 ivektor cell_coord(real x, real y, real z)
 {
@@ -726,25 +720,30 @@ ivektor cell_coord(real x, real y, real z)
 
 vektor back_into_box(vektor pos)
 {
-  vektor d;
   int i;
 
-  i = FLOOR(SPROD(pos,tbox_x));
-  d.x  = pos.x - i *  box_x.x;
-  d.y  = pos.y - i *  box_x.y;
-  d.z  = pos.z - i *  box_x.z;
+  if (pbc_dirs.x==1) {
+    i = FLOOR(SPROD(pos,tbox_x));
+    pos.x  -= i *  box_x.x;
+    pos.y  -= i *  box_x.y;
+    pos.z  -= i *  box_x.z;
+  }
 
-  i = FLOOR(SPROD(pos,tbox_y));
-  d.x -= i *  box_y.x;
-  d.y -= i *  box_y.y;
-  d.z -= i *  box_y.z;
+  if (pbc_dirs.y==1) {
+    i = FLOOR(SPROD(pos,tbox_y));
+    pos.x  -= i *  box_y.x;
+    pos.y  -= i *  box_y.y;
+    pos.z  -= i *  box_y.z;
+  }
 
-  i = FLOOR(SPROD(pos,tbox_z));
-  d.x -= i *  box_z.x;
-  d.y -= i *  box_z.y;
-  d.z -= i *  box_z.z;
+  if (pbc_dirs.z==1) {
+    i = FLOOR(SPROD(pos,tbox_z));
+    pos.x  -= i *  box_z.x;
+    pos.y  -= i *  box_z.y;
+    pos.z  -= i *  box_z.z;
+  }
 
-  return(d);
+  return pos;
 
 }
 
