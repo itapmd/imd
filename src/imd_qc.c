@@ -48,6 +48,11 @@ void init_qc(void)
   real    tau[3],period[3],tautl;
   integer np,no,na,nb,nc,nt;
 
+  if (size_per_cpu) {
+    box_param.x *= cpu_dim.x;
+    box_param.y *= cpu_dim.y;
+    box_param.z *= cpu_dim.z;
+  }
   if ((box_param.x==0) || (box_param.y==0) || (box_param.z==0))
     error("box_param not set!");
 

@@ -183,6 +183,7 @@ EXTERN int *upper_nb_cut INIT(NULL); /* upper number of neighbours  */
 #endif
 /* data for generated structures */
 EXTERN ivektor box_param INIT(nullivektor);  /* box parameters */
+EXTERN int  size_per_cpu INIT(0);            /* box_param is given per cpu */
 EXTERN real box_unit INIT(1.0);              /* lattice parameter */
 EXTERN real *masses INIT(NULL);              /* masses */
 

@@ -160,6 +160,10 @@ void generate_atoms(str255 mode)
 /* initialize for hexagonal crystal */
 void init_hex(void)
 {
+  if (size_per_cpu) {
+    box_param.x *= cpu_dim.x;
+    box_param.y *= cpu_dim.y;
+  }
   if ((box_param.x==0) || (box_param.y==0)) error("box_param not set!");
   box_x.x = box_param.x * sqrt(3.0) * box_unit;
   box_x.y = 0.0;
@@ -248,6 +252,11 @@ void generate_hex()
 /* initialize for cubic crystals */
 void init_cubic(void)
 {
+  if (size_per_cpu) {
+    box_param.x *= cpu_dim.x;
+    box_param.y *= cpu_dim.y;
+    box_param.z *= cpu_dim.z;
+  }
   if ((box_param.x==0) || (box_param.y==0) || (box_param.z==0))
     error("box_param not set!");
   box_x.x = box_param.x * box_unit;  box_x.y = 0.0;  box_x.z = 0.0;

@@ -684,25 +684,29 @@ void getparamfile(char *paramfname, int sim)
 #endif
     else if (strcasecmp(token,"box_param")==0) {
       /* box parameters for generated structures */
-      getparam("box_param",&box_param,PARAM_INT,DIM,DIM);
+      getparam(token,&box_param,PARAM_INT,DIM,DIM);
+    }
+    else if (strcasecmp(token,"size_per_cpu")==0) {
+      /* box parameters are given per CPU */
+      getparam(token,&size_per_cpu,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"box_unit")==0) {
       /* lattice parameter for generated structures */
-      getparam("box_unit",&box_unit,PARAM_REAL,1,1);
+      getparam(token,&box_unit,PARAM_REAL,1,1);
     }
     else if (strcasecmp(token,"masses")==0) {
       /* masses for generated structures */
       if (ntypes==0) 
         error("specify parameter ntypes before parameter masses");
-      getparam("masses",masses,PARAM_REAL,ntypes,ntypes);
+      getparam(token,masses,PARAM_REAL,ntypes,ntypes);
     }
     else if (strcasecmp(token,"timestep")==0) {
       /* size of timestep (in MD units) */
-      getparam("timestep",&timestep,PARAM_REAL,1,1);
+      getparam(token,&timestep,PARAM_REAL,1,1);
     }
     else if (strcasecmp(token,"ntypes")==0) {
       /* number of atom types */
-      getparam("ntypes",&ntypes,PARAM_INT,1,1);
+      getparam(token,&ntypes,PARAM_INT,1,1);
 #ifdef MONO
       if (ntypes!=1) error("this executable is for monoatomic systems only!");
 #endif
@@ -2214,10 +2218,11 @@ void broadcast_params() {
 #ifndef TWOD
   MPI_Bcast( &box_z       , DIM, REAL,     0, MPI_COMM_WORLD);
 #endif 
-  MPI_Bcast( &box_param   , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &box_unit    ,   1, REAL,     0, MPI_COMM_WORLD); 
-  MPI_Bcast( &ntypes      ,   1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &ntypepairs  ,   1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &box_param,    DIM, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &size_per_cpu,   1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &box_unit,       1, REAL,     0, MPI_COMM_WORLD); 
+  MPI_Bcast( &ntypes,         1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &ntypepairs,     1, MPI_INT,  0, MPI_COMM_WORLD); 
   if (0!=myid) {
     masses=(real*)realloc(masses,ntypes*sizeof(real));
     if (NULL==masses) error("Cannot allocate memory for masses array\n");
