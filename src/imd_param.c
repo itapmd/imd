@@ -313,7 +313,7 @@ void getparamfile(char *paramfname, int sim)
         ensemble = ENS_MSD;
         move_atoms = move_atoms_msd;
       }
- else if (strcasecmp(tmpstr,"npt_iso")==0) {
+      else if (strcasecmp(tmpstr,"npt_iso")==0) {
         ensemble = ENS_NPT_ISO;
         move_atoms = move_atoms_npt_iso;
       }
@@ -1206,12 +1206,11 @@ void broadcast_params() {
     case ENS_AND:       move_atoms = move_atoms_and;       break;
     case ENS_MC:        move_atoms = move_atoms_mc;        break;
     case ENS_FRAC:      move_atoms = move_atoms_frac;      break;
-    case ENS_PULL:      move_atoms = move_atoms_pull;      break;
     case ENS_SHEAR:     move_atoms = move_atoms_mik;       break;
     case ENS_NVX:       move_atoms = move_atoms_nvx;       break;
     case ENS_MSD:       move_atoms = move_atoms_msd;       break;
     default: if (0==myid) error("unknown ensemble in broadcast"); break;
-  };
+  }
   
 }
 
