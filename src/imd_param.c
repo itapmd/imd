@@ -1806,9 +1806,15 @@ void broadcast_params() {
   MPI_Bcast( &box_z       , DIM, REAL,     0, MPI_COMM_WORLD);
 #endif 
   MPI_Bcast( &box_param   , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &box_unit    ,   1, REAL,     0, MPI_COMM_WORLD); 
+  MPI_Bcast( &ntypes      ,   1, MPI_INT,  0, MPI_COMM_WORLD); 
+  if (0!=myid) {
+    masses=(real*)realloc(masses,ntypes*sizeof(real));
+    if (NULL==masses) error("Cannot allocate memory for masses array\n");
+  }
+  MPI_Bcast( masses,     ntypes, REAL,     0, MPI_COMM_WORLD); 
 
   MPI_Bcast( &timestep    ,   1, REAL,     0, MPI_COMM_WORLD); 
-  MPI_Bcast( &ntypes      ,   1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &temperature ,   1, REAL,     0, MPI_COMM_WORLD); 
   MPI_Bcast( &cpu_dim     , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_dim    , DIM, MPI_INT,  0, MPI_COMM_WORLD);
