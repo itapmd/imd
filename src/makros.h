@@ -10,6 +10,28 @@
 * $Date$
 ******************************************************************************/
 
+#if defined(__GNUC__)
+#define INLINE inline
+#else
+#define INLINE
+#endif
+
+/* avoid p % q, which is terribly slow */
+/* on SGI, inline doesn't really work :-( */
+#if defined(t3e)
+#pragma _CRI inline(MOD)
+#elif defined(alpha)
+#pragma inline(MOD)
+#elif defined(sgi)
+#pragma inline global (MOD)
+#endif
+INLINE static int MOD(shortint p, int q)
+{
+  int stmp=p;
+  while (stmp>=q) stmp-=q;
+  return stmp;
+}
+
 /* these macros should allow to avoid MONOLJ in many places */
 #ifdef MONOLJ
 #define SORTE(cell,i) 0
@@ -23,7 +45,8 @@
 #elif defined(BINARY)
 #define SORTE(cell,i) (((cell)->sorte[(i)]) & 0x1)
 #else
-#define SORTE(cell,i) (((cell)->sorte[(i)]) % ntypes)
+#define SORTE(cell,i) MOD((cell)->sorte[(i)],ntypes)
+/* #define SORTE(cell,i) (((cell)->sorte[(i)]) % ntypes) */
 #endif
 #define VSORTE(cell,i) ((cell)->sorte[(i)])
 #define NUMMER(cell,i) (cell)->nummer[(i)]
@@ -76,10 +99,12 @@ inline static real SQR(real x)
 #define SPROD3D(a,b) (((a).x * (b).x) + ((a).y * (b).y) + ((a).z * (b).z))
 #define SPROD2D(a,b) (((a).x * (b).x) + ((a).y * (b).y))
 /* Arrays */
-#define SPRODN3D(a,i,b,j) (((a)X(i) * (b)X(j)) + ((a)Y(i) * (b)Y(j)) + ((a)Z(i) * (b)Z(j)))
+#define SPRODN3D(a,i,b,j) \
+  (((a)X(i) * (b)X(j)) + ((a)Y(i) * (b)Y(j)) + ((a)Z(i) * (b)Z(j)))
 #define SPRODN2D(a,i,b,j) (((a)X(i) * (b)X(j)) + ((a)Y(i) * (b)Y(j)) )
 /* Mixed Arrray, Vector */
-#define SPRODX3D(a,i,b) (((a)X(i) * (b).x) + ((a)Y(i) * (b).y) + ((a)Z(i) * (b).z))
+#define SPRODX3D(a,i,b) \
+  (((a)X(i) * (b).x) + ((a)Y(i) * (b).y) + ((a)Z(i) * (b).z))
 #define SPRODX2D(a,i,b) (((a)X(i) * (b).x) + ((a)Y(i) * (b).y) )
                            
 
@@ -94,57 +119,38 @@ inline static real SQR(real x)
 #endif
 
 /* Dynamically allocated 3D arrray -- sort of */
-#define PTR_3D(var,i,j,k,dim_i,dim_j,dim_k) (((var) + \
-                                            ((i)*(dim_j)*(dim_k)) + \
-                                            ((j)*(dim_k)) + \
-                                             (k)))
+#define PTR_3D(var,i,j,k,dim_i,dim_j,dim_k) \
+  (((var) + ((i)*(dim_j)*(dim_k)) + ((j)*(dim_k)) + (k)))
 
 /* Dynamically allocated 3D arrray -- half vector version */
-#define PTR_3D_V(var,i,j,k,dim) (((var) + \
-                                 ((i)*(dim.y)*(dim.z)) + \
-                                 ((j)*(dim.z)) + \
-                                 (k)))
+#define PTR_3D_V(var,i,j,k,dim) \
+  (((var) + ((i)*(dim.y)*(dim.z)) + ((j)*(dim.z)) + (k)))
 
 /* Dynamically allocated 3D arrray -- full vector version */
-#define PTR_3D_VV(var,coord,dim) (((var) + \
-                                 ((coord.x)*(dim.y)*(dim.z)) + \
-                                 ((coord.y)*(dim.z)) + \
-                                 (coord.z)))
-
+#define PTR_3D_VV(var,coord,dim) \
+  (((var) + ((coord.x)*(dim.y)*(dim.z)) + ((coord.y)*(dim.z)) + (coord.z)))
 
 /* Dynamically allocated 2D arrray -- sort of */
-#define PTR_2D(var,i,j,dim_i,dim_j) (((var) + \
-                                   ((i)*(dim_j)) + \
-                                     (j)))
-                                         
+#define PTR_2D(var,i,j,dim_i,dim_j) \
+  (((var) + ((i)*(dim_j)) + (j)))
 
 /* Dynamically allocated 2D arrray -- half vector version */
-#define PTR_2D_V(var,i,j,dim) (((var) + \
-                               ((i)*(dim.y)) + \
-                                (j)))
-                                
+#define PTR_2D_V(var,i,j,dim) \
+  (((var) + ((i)*(dim.y)) + (j)))
 
 /* Dynamically allocated 2D arrray -- full vector version */
-#define PTR_2D_VV(var,coord,dim) (((var) + \
-                                 ((coord.x)*(dim.y)) + \
-                                  (coord.y)))
-
-
+#define PTR_2D_VV(var,coord,dim) \
+  (((var) + ((coord.x)*(dim.y)) + (coord.y)))
 
 #ifdef TWOD
-
 #define PTR     PTR_2D
 #define PTR_V   PTR_2D_V
 #define PTR_VV  PTR_2D_VV
-
 #else
-
 #define PTR     PTR_3D
 #define PTR_V   PTR_3D_V
 #define PTR_VV  PTR_3D_VV
-
 #endif
-
 
 /* simulation ensembles */
 #define ENS_EMPTY     0
