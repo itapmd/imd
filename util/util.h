@@ -417,11 +417,12 @@ real    area;            /* Area of Voronoi cell, 2d */
 
 #ifdef COORD
 real      *numbers;
-int       local  = -1;
-int       global = -1;
-int       c_max  = 10;
+int       use_unity = -1;
+int       local     = -1;
+int       global    = -1;
+int       c_max     = 10;
 ivektor2d num_dim;
-int       bonds = 0;     /* Total number of bonds */
+int       bonds     = 0; /* Total number of bonds */
 #endif
 
 #ifdef CONN
@@ -880,6 +881,10 @@ void read_parameters(int argc,char **argv)
       break;
 #endif
 #ifdef COORD
+      /* u - use cutoff-function equal to 1 */
+    case 'u':
+      use_unity = 1;
+      break;
      /* l - write local coordination numbers */
     case 'l':
       local  = 1;

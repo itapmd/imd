@@ -39,7 +39,7 @@
 
 void usage(void)
 { 
-  printf("%s [-r<nnn>] [-A<nnn>] [-e<nnn>] [-C<nnn>] [-l] [-g] [-p paramter-file]\n",progname); 
+  printf("%s [-r<nnn>] [-A<nnn>] [-e<nnn>] [-C<nnn>] [-l] [-g] [-u] [-p paramter-file]\n",progname); 
   exit(1); 
 }
 
@@ -156,7 +156,7 @@ void write_data()
 
 	  /* Spectrum of coordination numbers */
 	  if ( ttl_coord <= c_max ) 
-	  ++spec[(int)(ttl_coord)];
+	  ++spec[(int)(nint(ttl_coord))];
 
 	  if ( local == 1 ) {
 
@@ -265,12 +265,17 @@ void do_cell_pair(cell *p, cell *q, vektor pbc)
 #else
       if ( radius <= ter_r_cut[p_typ][q_typ] ) {
 
-	/* Cutoff function */
-	if ( radius <= ter_r0[p_typ][q_typ] ) 
+	if ( use_unity == 1 )
 	  fc = 1.0;
-	else 
-	  fc = 0.5 * ( 1.0 + cos( 3.141592654 * ( radius - ter_r0[p_typ][q_typ] ) 
-		     / ( ter_r_cut[p_typ][q_typ] - ter_r0[p_typ][q_typ] )  ) );
+	else {
+
+	  /* Use Cutoff function of Tersoff potential */
+	  if ( radius <= ter_r0[p_typ][q_typ] ) 
+	    fc = 1.0;
+	  else 
+	    fc = 0.5 * ( 1.0 + cos( 3.141592654 * ( radius - ter_r0[p_typ][q_typ] ) 
+				    / ( ter_r_cut[p_typ][q_typ] - ter_r0[p_typ][q_typ] )  ) );
+	}
 
 	/* Compute local coordination numbers */
 	for ( k=0; k<ntypes; k++ ) {
