@@ -623,7 +623,6 @@ endif
 
 # CG
 ifneq (,$(strip $(findstring cg,${MAKETARGET})))
-SOURCES -= imd_main_3d.c
 SOURCES += ${CGSOURCES}
 IMDHEADERS += cg_util.h  
 CFLAGS  += -DCG

@@ -1,4 +1,4 @@
-#ifndef CG /* CG uses other main_loop */
+
 /******************************************************************************
 *
 * IMD -- The ITAP Molecular Dynamics Program
@@ -26,6 +26,8 @@
 *  main_loop
 *
 *****************************************************************************/
+
+#ifndef CG  /* CG has different main loop */
 
 void main_loop(void)
 {
@@ -419,6 +421,7 @@ void main_loop(void)
   }  
 }
 
+#endif /* CG */
 
 /******************************************************************************
 *
@@ -564,4 +567,3 @@ void calc_tot_presstens(void)
 
 #endif/* STRESS_TENS */
 
-#endif /* CG uses other main_loop */

@@ -109,7 +109,7 @@ void main_loop(void)
 
     for (cgsteps = 0 ; cgsteps < cg_maxsteps; cgsteps++)
     {
-/* minimization in one 'direction' */
+        /* minimization in one 'direction' */
 	linminsteps=linmin();
 	ctf += linminsteps;
 #ifdef DEBUG
@@ -130,7 +130,7 @@ void main_loop(void)
         /* sets old_ort = ort, h, g, needs gamma and gets fmax2*/ 
 	set_hg();
 	
-/* overwrites the checkpoint file after each cgstep */  
+        /* overwrites the checkpoint file after each cgstep */  
 	write_config_select(0,"cgchkpt",write_atoms_config,write_header_config);  
 	write_eng_file(ctf);
     }
@@ -172,97 +172,10 @@ void main_loop(void)
 
 
 /******************************************************************************
-*
-* do_boundaries
-*
-* Apply periodic boundaries to all atoms
-* Could change so that only cells on surface to some work
-*
-******************************************************************************/
-
-void do_boundaries(void)
-{
-  int k;
-
-  /* for each cell in bulk */
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-  for (k=0; k<ncells; ++k) {
-
-    int l,i;
-    cell *p;
-
-    p = cell_array + CELLS(k);
-
-    /* PBC in x direction */
-    if (pbc_dirs.x==1)
-    for (l=0; l<p->n; ++l) {
-      i = -FLOOR(SPRODX(p->ort,l,tbox_x));
-      p->ort X(l)    += i * box_x.x;
-      p->ort Y(l)    += i * box_x.y;
-      p->ort Z(l)    += i * box_x.z;
-#ifdef MSQD
-      p->refpos X(l) += i * box_x.x;
-      p->refpos Y(l) += i * box_x.y;
-      p->refpos Z(l) += i * box_x.z;
-#endif
-#ifdef AVPOS
-      p->sheet X(l)  -= i * box_x.x;
-      p->sheet Y(l)  -= i * box_x.y;
-      p->sheet Z(l)  -= i * box_x.z;
-#endif
-    }
-
-    /* PBC in y direction */
-    if (pbc_dirs.y==1)
-    for (l=0; l<p->n; ++l) {
-      i = -FLOOR(SPRODX(p->ort,l,tbox_y));
-      p->ort X(l)    += i * box_y.x;
-      p->ort Y(l)    += i * box_y.y;
-      p->ort Z(l)    += i * box_y.z;
-#ifdef MSQD
-      p->refpos X(l) += i * box_y.x;
-      p->refpos Y(l) += i * box_y.y;
-      p->refpos Z(l) += i * box_y.z;
-#endif
-#ifdef AVPOS
-      p->sheet X(l)  -= i * box_y.x;
-      p->sheet Y(l)  -= i * box_y.y;
-      p->sheet Z(l)  -= i * box_y.z;
-#endif
-    }
-
-    /* PBC in z direction */
-    if (pbc_dirs.z==1)
-    for (l=0; l<p->n; ++l) {
-      i = -FLOOR(SPRODX(p->ort,l,tbox_z));
-      p->ort X(l)    += i * box_z.x;
-      p->ort Y(l)    += i * box_z.y;
-      p->ort Z(l)    += i * box_z.z;
-#ifdef MSQD
-      p->refpos X(l) += i * box_z.x;
-      p->refpos Y(l) += i * box_z.y;
-      p->refpos Z(l) += i * box_z.z;
-#endif
-#ifdef AVPOS
-      p->sheet X(l)  -= i * box_z.x;
-      p->sheet Y(l)  -= i * box_z.y;
-      p->sheet Z(l)  -= i * box_z.z;
-#endif
-    }
-
-  }
-}
-
-
-
-
-/*******************************************************************************
  *
- *                  linmin : linear minimization for cg                        *
+ *                  linmin : linear minimization for cg
  *
- ******************************************************************************/
+ *****************************************************************************/
 
 int linmin()
 {
