@@ -108,7 +108,9 @@ isq_tau_xi	     # 1/SQR(tau_xi). Can be zero, which corresponds
                      # to NVT or NVE
 cell_size_tol	     # relative tolerance for volume rescaling during 
                      # NPT simulation
-
+delta_finnis         # viscous damping coefficient for FINNIS
+zeta_0               # factor to be compatible with timestep in FINNIS
+ 
 # parameters for use with Force Boundary Conditions (FBC)
 extra_startforce     # start-/endforce for each virtual type
 extra_endforce       # format: typenr force vector

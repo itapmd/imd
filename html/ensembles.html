@@ -57,6 +57,12 @@ external temperature, which is linearly interpolated between
 <tt>starttemp</tt> and <tt>endtemp</tt>. With the nve integrator, 
 this corresponds to an NVT ensemble with Anderson thermostat.</p></li>
 
+<li><b> finnis </b>
+<p>
+Local temperature control which resembles an electronic heat bath for the
+ions according to Finns et al (PRB 44, p.567, 1999). It is basically a 
+simplyfied implementation of ftg.
+
 <li><b> npt_iso </b>
 <p>
 Constant pressure, constant temperature ensemble, with isotropic 
