@@ -28,6 +28,7 @@ timestep	# size of timestep (in MD units)
 total_types     # TOTAL number of atom types (including virtual types)
                 # total_types >= ntypes
 ntypes		# number of real atom types (types vary in [0..ntypes-1])
+masses          # masses for generated structures (default: 1.0)
 seed            # seed for random number generator in maxwell
 initsize        # initially allocated cells get space for initsize particles
 incrsize        # memory in cells is incremented by incrsize particles
@@ -42,6 +43,7 @@ parallel_output	# parallel output flag (0 == serial (default),
 
 # simulation box - required
 box_param       # box parameters for generated samples
+box_unit        # scale of generated structures (default: 1.0)
 box_x		# 'x' or first vector for box
 box_y		# 'y' or second vector for box
 box_z		# 'z' or third vector for box - only 3D

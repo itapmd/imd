@@ -111,23 +111,41 @@ are supported:
 <TABLE>
 <TR><TD>_fcc      <TD> fcc crystal (3D)
 <TR><TD>_bcc      <TD> bcc crystal (3D)
-<TR><TD>_nacl     <TD> NaCl crystal (3D)
+<TR><TD>_nacl     <TD> NaCl crystal structure (3D)
+<TR><TD>_b2       <TD> crystal with B2 (CsCl) structure (3D)
 <TR><TD>_lav      <TD> a Laves phase (3D)
 <TR><TD>_tiqc     <TD> truncated icosahedra quasicrystal (3D)
 <TR><TD>_hex      <TD> hexagonal crystal (2D)
 </TABLE>
 The size of the configuration is specified with the parameter
-<TT>box_param</TT>, an integer vector. For the cubic phases
-_fcc, _nacl and _lav, all three box parameters must be positive,
-even integers. They specify the the dimensions of a rectangular
-box. For the quasicrystalline _tiqc phase, an approximant with a
-rectangular box is created. The three parameters are the orders
-of the Fibonacci approximant in the three directions. For the 
-_hex phase, the dimension of the sample is 
-<TT>box_param.x*sqrt(3)</TT> in x-direction, and 
-<TT>box_param.y</TT> in y-direction. The nearest 
-neighbor distance is 1.
+<TT>box_param</TT>, an integer vector, and an optional scale
+parameter <tt>box_unit</tt>. For all generated structures,
+the masses of the different atoms types can be specified with
+the parameter <tt>masses</tt>, which requires <tt>ntypes</tt>
+real values.
+<p>
+For the cubic structures _fcc, _bcc, _nacl, and _b2, all three 
+box parameters must be positive, even integers. They specify the
+dimensions of a rectangular block of a simple cubic lattice with
+lattice parameter 1. The atom positions are obvious subsets of these
+simple cubic lattice sites. In addition, the whole structure can
+be scaled by the real parameter <tt>box_unit</tt> (default: 1),
+so that, e.g., an _fcc structure with nearest neighbor distance 
+sqrt(2.0)*<tt>box_unit</tt> is obtained. 
+<p>
+For the Laves crystal _lav, all three box parameters must be positive, 
+even integers. The structure can be scaled by the real parameter
+<tt>box_unit</tt> (default: 1).
+<p>
+For the 2D hexagonal _hex structure, the dimension of the sample is 
+<TT>box_param.x*sqrt(3)*box_unit</TT> in x-direction, and 
+<TT>box_param.y*box_unit</TT> in y-direction. The nearest 
+neighbor distance is <tt>box_unit</TT> (default: 1).
 <P>
+For the quasicrystalline _tiqc phase, an approximant with a
+rectangular box is created. The three parameters are the orders
+of the Fibonacci approximant in the three directions. For the
+_tiqc structure, scaling by <tt>box_unit</tt> is not yet supported.
 The <TT>_tiqc</TT> structure is an approximant of a truncated
 icosahedra quasicrystals (tiqc, truncated icosahedra clusters are also
 known as Bergman clusters). It requires the component <TT>quasi</TT> 
