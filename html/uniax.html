@@ -1,62 +1,64 @@
-	<HTML> <HEAD> <TITLE> EAM </TITLE>
-<!-- Changed by: Joachim Stelzer, 08-Nov-1999 -->
-	</HEAD> <BODY BGCOLOR="#FFFFFF"> <H1><font color=blue>
-Implementation of UNIAX</font></H1> 
 
-	<ul><li><b>
-Gay-Berne model</b><p>
-The Gay-Berne potential for uniaxial molecules
-(UNIAX) was implemented
-by Joachim Stelzer. It is a model for the pair
-interaction of two axially symmetric ellipsoidal molecules. 
-The original model was invented by 
-J. G. Gay and B. J. Berne. It has been published in
-<EM>J. Chem. Phys.</EM> <B>74</B>, 3316 (1981). <P>
+<!--#include virtual="imdhead.html" -->
 
-   	<li><b>
-Molecular Properties</b><p>
+<h1>Implementation of UNIAX</h1> 
+
+<h2>Gay-Berne model</h2>
+
+<p>
+The Gay-Berne potential for uniaxial molecules (UNIAX) was implemented
+by Joachim Stelzer. It is a model for the pair interaction of two 
+axially symmetric ellipsoidal molecules. The original model was
+invented by J. G. Gay and B. J. Berne <em>J. Chem. Phys.</em> 
+<b>74</b>, 3316 (1981). </p>
+
+<h2>Molecular Properties</h2>
+
+<p>
 In conventional IMD an atom is completely described by its mass m
 and the vectors [rx ry rz] and [vx vy vz] which denote its
 position and orientation, respectively. For uniaxial molecules
 the data structure is enlarged. Each translational quantity
-is supplemented by a rotational one. <P>
-        <ul><li>
-	The molecule possesses both mass m and moment of inertia I.
-	<li>
-	Its centre of mass is located at [rx ry rz] and the
-	orientation of its main axis is given by a unit vector
-	[ux, uy, uz], with ux^2 + uy^2+ uz^2 = 1.
-	<li>
-	Its velocity is [vx vy vz] and its angular velocity is
-	[wx wy wz].
-	<li>
-	The total force exerted on the molecule under consideration
-	is [fx fy fz]. In addition the rotational state of the 
-	molecule is changed due to the torque [tx ty tz].
-	<li> 
-	The shape of the uniaxial molecule is given by the lengths
-	of its principal axes [sx sy sz]. Thereby, sx must be equal to
-	sy. The original version of the Gay-Berne model deals with
-	ellipsoids that possess a shape of sx : sy : sz = 1 : 1 : 3.
-	However, the current implementation in IMD allows for 
-	arbitrary values of sx and sz.
-	<li> 
-	The anisotropy of the interaction energy is given by the
-	well depths of the potential [ex ey ez]. They measure the
-	interaction of a pair of molecules whose main axes are
-	mutually parallel along the z direction. The three values
-	then correspond to the intermolecular separation vector
-	pointing along the x y z direction, respectively.
-	For uniaxial molecules ex must be equal to ey.
-	The original version of the Gay-Berne model deals with
-	an energy anisotropy of ex : ey : ez = 1 : 1 : 1/5.
-	However, the current implementation in IMD allows for 
-	arbitrary values of ex and ez.
-	</ul><P>	
+is supplemented by a rotational one. </p>
 
-	<li><b>
-Gay-Berne Potential</b><P>
+<ul>
+<li>
+  The molecule possesses both mass m and moment of inertia I.</li>
+<li>
+  Its centre of mass is located at [rx ry rz] and the
+  orientation of its main axis is given by a unit vector
+  [ux, uy, uz], with ux^2 + uy^2+ uz^2 = 1.</li>
+<li>
+  Its velocity is [vx vy vz] and its angular velocity is
+  [wx wy wz].</li>
+<li>
+  The total force exerted on the molecule under consideration
+  is [fx fy fz]. In addition the rotational state of the 
+  molecule is changed due to the torque [tx ty tz].</li>
+<li> 
+  The shape of the uniaxial molecule is given by the lengths
+  of its principal axes [sx sy sz]. Thereby, sx must be equal to
+  sy. The original version of the Gay-Berne model deals with
+  ellipsoids that possess a shape of sx : sy : sz = 1 : 1 : 3.
+  However, the current implementation in IMD allows for 
+  arbitrary values of sx and sz.</li>
+<li> 
+  The anisotropy of the interaction energy is given by the
+  well depths of the potential [ex ey ez]. They measure the
+  interaction of a pair of molecules whose main axes are
+  mutually parallel along the z direction. The three values
+  then correspond to the intermolecular separation vector
+  pointing along the x y z direction, respectively.
+  For uniaxial molecules ex must be equal to ey.
+  The original version of the Gay-Berne model deals with
+  an energy anisotropy of ex : ey : ez = 1 : 1 : 1/5.
+  However, the current implementation in IMD allows for 
+  arbitrary values of ex and ez.</li>
+</ul>
 
+<h2>Gay-Berne Potential</h2>
+
+<p>
 For fixed shape and energy anisotropy of the unaxial ellipsoidal
 molecules the Gay-Berne pair potential is depending on four quantities:
 the scalar separation r<sub>ij</sub> of the centres of mass, the two
@@ -64,178 +66,76 @@ angles theta<sub>i</sub> and theta<sub>j</sub> between the molecular
 separation vector
 and the main axis of molecule i and j, respectively, and, finally,
 the angle phi<sub>ij</sub> for a twist of the molecular axes out of plane.
-<P>
+</p>
 
+<p>
 Due to this complicated dependence the Gay-Berne potential cannot
-be tabulated. In IMD it is calculated from its analytical expressions.
+be tabulated. Instead it is calculated from its analytical expressions.
 Likewise, the forces and torques are evaluated analytically as
-derivatives of the potential. To this aim, in case of the option
-UNIAX being switched on, the file imd_forces.c is replaced by
-<b>imd_forces_uniax.c</b> which governs the calculation of the total
-interaction for a system of uniaxial particles. The implementation
-of the Gay-Berne model itself is contained in the file
-<b>imd_gay_berne.c</b>.
-<P>
+derivatives of the potential. </p>
 
-	<li><b>
-Integrators for Uniaxial Molecules</b><p>
+<h2>Integrators for Uniaxial Molecules</h2>
 
+<p>
 Newton's equations of motion govern the time development of the
 translational degrees of freedom of the molecules. Uniaxial molecules
 in addition possess rotational degrees of freedom (main axis, angular
 velocity). These quantities change according to a simplified version
 of Euler's gyroid equations. Therefore the integration algorithms
 implemented in IMD must be supplemented. This has been performed
-for the ensembles with the option NVE, NVT, and NPT_ISO.
+for the ensembles with the option NVE, NVT, and NPT_ISO.</p>
 
+<p>
 Due to the constraint of the main axis [ux uy uz] being a unit
 vector, the integration of the gyroid equations is more complicated
 than only a one-to-one mapping of the corresponding way for solving
 Newton's equations. In particular, the angular velocity has always
 to be perpendicular to the main axis, because a uniaxial molecule
 cannot rotate around its main axis. The number of its rotational
-degree of freedoms is only two.
+degree of freedoms is only two.</p>
 
+<p>
 The Nos&eacute;-Hoover thermostat has been supplemented by an analogous
 method that keeps the total rotational energy on average at the
-value of 2/2 * kT, according to the equipartition theorem. <P>
+value of 2/2 * kT, according to the equipartition theorem. </p>
 
-<li><b>
-Parametres</b><p>
+<h2>Parameters</h2>
 
+<p>
 No potential table is necessary for the Gay-Berne interaction,
 because the potential, forces and torques are calculated analytically.
-However, further parametres are required in the IMD input file. <P>
-	<P><table bgcolor="#eeeeff"><tr align="left" valign="top"><th><td bgcolor="#ccccff">
-<b>UNIAX  	<td bgcolor="#ccccff"> 
-  <b>IMD variable <td bgcolor="#ccccff"> 
-    <b>Description </th><tr align="left" valign="top"> <th><td>
-rcut  	<td bgcolor="#ccccff"> 
-  uniax_r_cut <td> 
-    cutoff radius for Gay-Berne interaction. rcut = 4.0 for original
-    parametrization of the model. </th><tr align="left" valign="top"> <th><td>
-tau_r  	<td bgcolor="#ccccff"> 
-  tau_eta_rot <td> 
-    time constant for coupling to the heat bath of Nos&eacute;-Hoover
-    thermostat for rotational motion. Can be set equal to tau_eta.    
-    </th><tr align="left" valign="top"> <th><td>
-    </table><br>
-	<li><b>
-Files</b><p>
+However, further parametres are required in the IMD input file. </p>
 
-The following files are modified (m) or created (c)<p>
-	<table bgcolor="#eeeeff"><tr align="left" valign="top"><th><td bgcolor="#ccccff">
-<b>File    <td bgcolor="#ccccff">     
-  <b>Description  <td bgcolor="#ccccff"> 
-    <b>(m/c) <tr align="left" valign="top"><th><td bgcolor="#ccccff"><font color=red>
-Makefile</font><td>     
-  for example: make imd_risc_npt_iso_uniax <td> 
-    (m) </th><tr align="left" valign="top"><th><td bgcolor="#ccccff"> <font color=red>
-prototypes.h</font><td>     
-  new modules: do_forces_uniax, gay_berne       	<td> 
-    (m) </th><tr align="left" valign="top"><th><td bgcolor="#ccccff"> <font color=red>
-globals.h</font><td>     
-  new global variables: eta_rot, isq_tau_eta_rot, 
-  uniax_r_cut, uniax_r2_cut                	<td> 
-    (m) </th><tr align="left" valign="top"><th><td bgcolor="#ccccff"> <font color=red>
-types.h</font><td>     
-  Enlarged data structure (cell): molecules now also 
-  possess moment of inertia,
-  unit vector of main axis, angular velocity, torque, shape of
-  uniaxial ellipsoid, well depth of potential interaction for 
-  parallel molecules
-  with orientation of separation vector along the principal axes.  
-    <td> 
-    (m) </th><tr align="left" valign="top"><th><td bgcolor="#ccccff"> <font color=red>
-imd_alloc.c</font><td>     
-  Memory allocation for additional molecular quantities (alloc_cell),
-  moving data to different cell (move_atom) <td> 
-   (m) </th><tr align="left" valign="top"><th> <td bgcolor="#ccccff"> <font color=red>
-imd_mpi_util.c</font><td>     
-  moving data between CPUs (copy_one_atom, process_buffer, send_cell,
-  recv_cell)
- <td> 
-   (m) </th><tr align="left" valign="top"><th> <td bgcolor="#ccccff"> <font color=red>
-imd_param.c</font><td>     
-  Defining and broadcasting UNIAX variables for the parameter inputfile
-  (getparamfile,check_parameters_complete,broadcast_params):
-                                   <br>
-  tau_eta_rot (time constant for coupling to heat bath of Nos&eacute;-Hoover
-  thermostat for rotational motion), 
-  uniax_r_cut (cutoff radius for Gay-Berne interaction) 
-  <td> 
-    (m) </th><tr align="left" valign="top"> <th><td bgcolor="#ccccff"> <font color=red>
-imd_geom_3d.c</font><td>     
-  Setting square of cutoff radius to value for Gay-Berne potential (init_cells)
-  <td> 
-    (m) </th><tr align="left" valign="top"> <th><td bgcolor="#ccccff"> <font color=red>
-imd_io_3d.c</font><td>     
-  Reading, receiving, and writing enlarged data structure 
-  (read_atoms, recv_atoms, write_properties, write_atoms)
-  <td> 
-    (m) </th><tr align="left" valign="top"> <th><td bgcolor="#ccccff"> <font color=red>
-imd_maxwell.c</font><td>     
-  Setting initial angular momenta according to Maxwell-Boltzmann
-  distribution. The constraint of the angular momenta being
-  perpendicular to the main axis has to be taken into account (maxwell).
-  <td> 
-    (m) </th><tr align="left" valign="top"> <th><td bgcolor="#ccccff"> <font color=red>
-imd_integrate.c</font><td>     
-  Extending the IMD integrators for NVE (move_atoms_nve), NVT 
-  (move_atoms_nvt) and NPT_ISO (move_atoms_npt_iso) ensemble to
-  orientational degrees of freedom. An additional heat bath method 
-  according to Nos&eacute;-Hoover was implemented for orientations as well
-  (move_atoms_nvt, move_atoms_npt_iso).
-  <td> 
-    (m) </th><tr align="left" valign="top"> <th><td bgcolor="#ccccff"> <font color=red>
-imd.c</font><td>     
-  Reading of data for potential is omitted for UNIAX
-  <td> 
-    (m) </th><tr align="left" valign="top"> <th><td bgcolor="#ccccff"> <font color=red>
-imd_main_3d.c</font><td>     
-  Calculation of temperature is altered due to additional degrees of freedom
-  for uniaxial molecules (main_loop). 
-  Virial theorem is altered due to additional degrees of freedom
-  for uniaxial molecules (calc_properties).
-  <td> 
-    (m) </th><tr align="left" valign="top"> <th><td bgcolor="#ccccff"> <font color=red>
-imd_main_risc_3d.c</font><td>     
-  Using routine do_forces_uniax for calculation of interaction (calc_forces)
-  <td> 
-    (m) </th><tr align="left" valign="top"> <th><td bgcolor="#ccccff"> <font color=red>
-imd_forces_uniax.c</font><td>     
-   Replacing imd_forces for the calculation of total interaction
-   energy, all forces and torques for a system of uniaxial molecules.   
-   imd_forces is not used at all, if option UNIAX is switched on.
-  <td> 
-    (c) </th><tr align="left" valign="top"> <th><td bgcolor="#ccccff"> <font color=red>
-imd_gay_berne.c</font><td>     
-   Evaluating the Gay-Berne pair potential, force and torque
-   for a pair of uniaxial molecules.
-  <td> 
-    (c) </th><tr align="left" valign="top"> <th><td bgcolor="#ccccff"> <font color=red>
-file.inp</font>             <td>     
-  parameter input file:  <PRE>
-  <font color=green>uniax_r_cut</font>   4.0 	
-  <font color=green>tau_eta_rot</font>   5.0e-02 
-   	</PRE><td> (m) 
-  	</table> <P> 
-	<li><b>
-Compiling IMD with UNIAX</b><p>
-The option UNIAX is implemented only in three dimensions. The NVE,
-NVT and NPT_ISO ensembles are available, both as non-parallelized
-and as parallelized versions. For compiling please use one of
-the options below: <P>
-        <ul>
-	<li> gmake imd_risc_nve_uniax
-	<li> gmake imd_risc_nvt_uniax
-	<li> gmake imd_risc_npt_iso_uniax
-	<li> gmake imd_mpi_nve_uniax
-	<li> gmake imd_mpi_nvt_uniax
-	<li> gmake imd_mpi_npt_iso_uniax
-	</ul> <P>
-	<li><b> 
-Generating Initial Configurations for IMD with UNIAX</b><p>
+<table>
+<tr> <th>Parameter&nbsp;  </th>  
+     <th> Description </th></tr>
+<tr> <td>rcut  	      </td>  
+     <td> cutoff radius for Gay-Berne interaction. 
+          rcut = 4.0 for original parametrization of
+          the model. </th></tr>
+<tr> <td>tau_r  </td>  
+     <td> time constant for coupling to the heat
+          bath of Nos&eacute;-Hoover thermostat for 
+          rotational motion. Can be set equal to
+          tau_eta. </th></tr>   
+</table>
+
+<h2>Compiling IMD for UNIAX</h2>
+
+<p>
+When compiling IMD for UNIAX, the option <b>uniax</b> has to
+be specified, which is implemented only in three dimensions. 
+Only the NVE, NVT, and NPT_ISO ensembles are available, both 
+in the serial and the parallel version. Examples: </p>
+
+<pre>
+   gmake imd_nve_uniax
+   gmake imd_mpi_nvt_uniax
+</pre>
+
+<h2>Generating Initial Configurations</h2>
+
+<p>
 A separate code (in c) is provided in the IMD user directory:
 <b>/imd/imd-samples/uniax/init_conf_uniax.c</b>. It should be
 run in interactive mode. Input quantities are requested
@@ -244,4 +144,7 @@ for uniaxial molecules. <P>
 A sample both for a configuration file <b>config.inp</b> and
 for a parametre file <b>param.inp</b> is available
 in the same directory.
-</BODY> </HTML>
+</p>
+
+<!--#include virtual="imdfoot.html" -->
+

@@ -1,18 +1,16 @@
-<HTML>
-<HEAD>
-   <TITLE> Valid IMD Parameters </TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
 
-<H1>Valid IMD Parameters</H1>
+<!--#include virtual="imdhead.html" -->
 
+<h1>Valid Parameters</h1>
+
+<p>
 Following is a complete list of IMD parameters, together with a short
 description of their meaning, and indications when they are needed.
 Floating point numbers should be given in decimal notation. Vectors
 are given as a list of components, separated by spaces or tabs (all 
-on one line).
+on one line).</o>
 
-<PRE>
+<pre>
 # file names - required
 coordname	# file name for atom coordinate input data
 outfiles	# basename for output files - use a name different from
@@ -237,11 +235,14 @@ dTemp_end       # temperature at the other side
 tran_nlayers    # number of layers for local temperature
 tran_interval   # interval for temperature distribution writes
 
-# parameters for SOCK (socket routines)
+# parameters for SOCK (socket communication)
+loop            # 0 or 1; if 1, simulation is looping, which enables restart
 socket_int      # interval (in steps) between socket status checks
-display_host    # name of VolIMD host (fully qualified, if not locally known),
-                # or IP number in dotted quad format
-baseport        # number of socket baseport - default is 31913
+                # if 0, socket communication is disabled
+socket_mode     # socket mode of IMD: server or client
+display_host    # name visualization host - required in client mode
+server_port     # port number on server side - always required
+client_port     # port number on client side (in client mode, optional)
 
 # parameters for MONOLJ (record version)
 r_cut           # potential cutoff radius 
@@ -332,10 +333,6 @@ tau_eta_rot	# time constant for thermostat of rotational motion
 inv_tau_eta_rot	# 1/tau_eta_rot
 isq_tau_eta_rot	# 1/SQR(tau_eta_rot)
 
-</PRE>
+</pre>
 
-<P>
-<A HREF="imd.html">Back to IMD User's Guide</A> 
-
-</BODY>
-</HTML>
+<!--#include virtual="imdfoot.html" -->

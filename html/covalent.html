@@ -1,18 +1,19 @@
 
-<HTML>
-<HEAD>
-<TITLE> COVALENT </TITLE>
-</HEAD>
+<!--#include virtual="imdhead.html" -->
 
-<BODY BGCOLOR="#ffffff">
-<H1> Use of Many-Body Potentials </H1>
+<h1> Covalent Many-Body Potentials </h1>
 
+<p>
 IMD allows to use many-body potentials of the <B>Stillinger-Weber</B>
 type, the <B>Keating</B> potential, and the <B>Tersoff</B> potential.
+</p>
 
-<UL>
+<a id="keating" name="keating">
+<h2>Keating Potential</h2>
+</a>
 
-<LI><A NAME="keating">The option <B>keating</B> enables IMD to use the
+<p>
+The option <B>keating</B> enables IMD to use the
 Keating potential. The form of the potential is
 
 <P>
@@ -51,7 +52,12 @@ neighbours must be specified as a parameter with the IMD variable
 <TT>neigh_len</TT>. It is used to allocate memory for the neighbour
 tables.<P>
 
-<LI> <A NAME="stiweb">The option <B>stiweb</B> enables IMD to use the
+<a id="stiweb" name="stiweb">
+<h2>Stillinger-Weber Potential (analytic)</h2>
+</a>
+
+<p>
+The option <B>stiweb</B> enables IMD to use the
 Stillinger-Weber potential (F. H. Stillinger and T. A. Weber,
 <I>Phys. Rev. B</I> <B>31</B> (1985) 5262) extended for the
 simulations of atoms of different types. The general form of the
@@ -115,8 +121,11 @@ must be specified as a parameter with the IMD variable
 <TT>neigh_len</TT>. It is used to allocate memory for the neighbour tables.<P>
 
 
-<LI><A NAME="ttbp">
+<a id="ttbp" name="ttbp">
+<h2>Stillinger-Weber Potential (tabulated)</h2>
+</a>
 
+<p>
 The option <B>ttbp</B> (<B>t</B>wo- and <B>t</B>hree-<B>b</B>ody
 <B>p</B>otentials) enables IMD to use the Stillinger-Weber potential
 with a general pair potential.  The three-body term in this case is<P>
@@ -143,8 +152,12 @@ The parameter <I>Z</I> corresponds to the IMD variable
 the variable <TT>ttbp_sp</TT>. The maximal number of nearest
 neighbours must be given with the IMD variable <TT>neigh_len</TT>.<P>
 
-<LI>
-<A NAME="tersoff">The option <B>tersoff</B> enables the use of the Tersoff potential.</A><P>
+<a id="tersoff" name="tersoff">
+<h2>Tersoff Potential</h2>
+</a>
+
+<p>
+The option <B>tersoff</B> enables the use of the Tersoff potential.</p>
 
 In the present implementation, the following form of the Tersoff
 potential is used (J. Tersoff, <I>Phys. Rev. B</I> <B>39</B> (1989) 5566):<P>
@@ -234,10 +247,4 @@ as an IMD potential table as usual using the IMD variable
 <TT>potfile</TT>. It is also possible to use some 
 <A HREF="predefined_potentials.html">predefined pair potentials</A>.<P>
 
-
-<A HREF="imd.html">
-Back to IMD User's Guide</A>
-
-</BODY>
-</HTML>
-
+<!--#include virtual="imdfoot.html" -->

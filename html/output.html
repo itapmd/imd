@@ -1,133 +1,134 @@
-<HTML>
-<HEAD>
-   <TITLE>IMD Output Files</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
 
-<H1>IMD Output Files</H1>
+<!--#include virtual="imdhead.html" -->
 
-<H2><A NAME="configurations">Checkpoints</A></H2>
+<h1>Output Files</h1>
 
+<h2><a id="configurations" name="configurations">Checkpoints</a></h2>
+
+<p>
 IMD writes checkpoints in step intervals given by the parameter
-<TT>checkpt_int</TT>. A checkpoint is a complete <A
-HREF="config.html">configuration file</A>, whose name has the form
-<TT>&lt;outfiles&gt;.&lt;n&gt;.chkpt</TT>, where <TT>&lt;n&gt;</TT> is
+<tt>checkpt_int</tt>. A checkpoint is a complete <a href="config.html">
+configuration file</a>, whose name has the form
+<tt>&lt;outfiles&gt;.&lt;n&gt;.chkpt</tt>, where <tt>&lt;n&gt;</tt> is
 a running number.  Together with every checkpoint file, an iteration
-file <TT>&lt;outfiles&gt;.&lt;n&gt;.itr</TT> is written, which
+file <tt>&lt;outfiles&gt;.&lt;n&gt;.itr</tt> is written, which
 contains the current values of certain parameters, such as the current
 stepnumber, box size, external temperature and external pressure. A
-simulation can be <A HREF="usage.html">restarted</A> from every
-checkpoint.  If <TT>checkpt_int</TT> is zero, no checkpoints are
-written. If <TT>use_header</TT> is one, a <A
-HREF="header.html">header</A> is prepended to the checkpoint
-file. Each header line begins with a <TT>#</TT> so that IMD or gnuplot
-will not have any problems reading such files. In the case of more
-than one processor and <TT>parallel_output</TT> is one the header is
-written to the separate file
-<TT>&lt;outfiles&gt;.&lt;n&gt;.head</TT>. A single file can be
-generated with <TT>catfiles.sh</TT> or <TT>catfiles.csh</TT> from the
-<A HREF="utilities.html">utilities</A>.
+simulation can be <a href="usage.html">restarted</a> from every
+checkpoint.  If <tt>checkpt_int</tt> is zero, no checkpoints are
+written. A <a href="header.html">header</a> is prepended to the 
+checkpoint file. Each header line begins with a <tt>#</tt> so that 
+IMD or gnuplot will not have any problems reading such files. 
+In the case of more than one processor and <tt>parallel_output</tt> 
+is one the header is written to the separate file
+<tt>&lt;outfiles&gt;.&lt;n&gt;.head</tt>. A single file can be
+generated with <tt>catfiles.sh</tt> or <tt>catfiles.csh</tt> from the
+<a href="utilities.html">utilities</a>.</p>
 
-<H2><A NAME="properties">Properties File</A></H2>
+<h2><a id="properties" name="properties">Properties File</a></h2>
 
-In intervals of <TT>eng_int</TT> steps, IMD writes
+<p>
+In intervals of <tt>eng_int</tt> steps, IMD writes
 certain properties to a file
-<TT>&lt;outfiles&gt;.eng</TT>, one line each time.
+<tt>&lt;outfiles&gt;.eng</tt>, one line each time.
 The properties written are, in this order, the current simulation
 time, the potential energy per atom, the kinetic energy per atom
 (which is normalized such that it is identical to the actual
 system temperature), the pressure and the volume. If the
 simulation ensemble is npt_axial, and the preprocessor flag PAXTEST 
-is set, this is followed by the axial pressures and box dimensions.
+is set, this is followed by the axial pressures and box dimensions.</p>
 
-<H2><A NAME="distributions">Energy Distributions</A></H2>
+<h2>Distributions</h2>
 
-In intervals of <TT>dist_int</TT> steps, IMD writes the spatial
-distribution of potential and kinetic energy to the files
-<TT>&lt;outfiles&gt;.&lt;n&gt;.pot.dist</TT> and
-<TT>&lt;outfiles&gt;.&lt;n&gt;.kin.dist</TT>, where <TT>&lt;n&gt;</TT>
-is a running number.  The dimensions of the bin array is given by the
-parameter <TT>dist_dim</TT>. If <TT>dist_has_coords</TT> is set, also
-the bin coordinates are written to the .dist-files. 
-<P>
-If the parameter <TT>dist_binary_io</TT> is set to 1, both energy
-distribution files are written in binary floats, otherwise they
-are formatted (ASCII), with one value per line.
-The histogram bins are written in order, with the last index varying
-the fastest. <TT>E_pot</TT> and <TT>E_kin</TT> are the potential and
-kinetic energy in the histogram bin, respectively. If the <A
-HREF="#disloc">disloc</A> option is active and </TT>Epot_diff=1</TT>, 
-the difference of the
-potential energy and a reference potential energy is written, instead
-of the absolute potential energy. In two dimensions, the <A
-HREF="utilities.html#imd_dist2pgm">utility program</A>
-imd_dist2pgm.perl can generate a graymap from the dist file. 
-Offline visualization of the energy distributions is also easily 
-possible with VolIMD, which is a descendant of
-<A HREF="http://www.uni-stuttgart.de/RUSuser/vis/People/roland/volrend/volrend.html">VolRend</A>.
-<P>
-The minimum and maximum values of the potential and the kinetic 
-energy of each distribution array are stored in the file 
-<TT>&lt;outfiles&gt;.&lt;n&gt;.minmax.dist</TT>, in lines of the 
-form
-<PRE>
-     n E_pot_min E_pot_max E_kin_min E_kin_max
-</PRE>
-If <TT>use_header</TT> is one, a <A HREF="header.html">header</A> is
-prepended to the checkpoint file.
+<p>
+IMD can be directed to write out distributions of several quantities.
+To compute the distribution of the kinetic energy, say, the system 
+(or part of it) is divided into an array of rectangular boxes,
+called bins. For each such bin, the average value of the kinetic 
+energy of the atoms it contains is computed. The whole array of 
+values for all bins constitutes the distribution, and is written to
+a file. For other quantities, one proceeds analogously. The
+writing of the distributions of all supported quantities is
+controlled by the following common parameters:</p>
 
-<H2><A NAME="virvo">Virvo Output (Volume visualization)</A></H2>
+<table>
+<tr><td>dist_int </td><td>  interval for distribution writing </td></tr>
+<tr><td>dist_dim </td><td>  dimensions of distribution array  </td></tr>
+<tr><td>dist_ll  </td><td>  lower left corner in user coords  </td></tr>
+<tr><td>dist_ur  </td><td>  upper right corner in user coords </td></tr>
+</table>
 
-If the flag <TT>virvo_io</TT> is set to 1, files of type
-<TT>*.rvf</TT> are written instead of distribution files. The
-parameters <TT>dist_int</TT> and <TT>dist_dim</TT> have the same
-meaning as described above. The parameter <TT>dist_has_coords</TT> has
-no meaning anymore. 
-<P>
-Again, two files for the potential and kinetic
-energy are written. Their names are
-<TT>&lt;outfiles&gt;.&lt;n&gt;.pot.dist</TT> and
-<TT>&lt;outfiles&gt;.&lt;n&gt;.kin.dist</TT>, where <TT>&lt;n&gt;</TT>
-is a running number.  Offline visualization of these files is possible
-with virvo, see <A
-HREF="uni-stuttgart.de/RUSuser/vis/People/roland/volrend/volrend.html">this
-page</A>.
+<p>
+Distributions are written every <tt>dist_int</tt> timestep, 
+they have dimensions <tt>dist_dim</tt>, and only atoms within
+a rectangular box between the lower left corner <tt>dist_ll</tt>
+and the upper right corner <tt>dist_ur</tt> are considered.
+If the latter two parameters are missing, the default is to 
+take the whole system, but this works only for rectangular
+simulation boxes. It is stronly recommended to always specify
+these parameters.</p>
 
-<H2><A NAME="disloc">Writing Selected Atoms</A></H2>
+<p>
+In addition to these parameters, the writing of the distribution 
+of each supported quantity can individually be switched on and off
+with a flag, which also specifies the format in which the 
+distribution is written. If the flag is 0, the distribution
+is not written (default). If the flag is 1, the distribution
+is written in binary floats, which is the recommended format.
+A flag value of 2 means writing the distribution in ASCII with 
+bin coordinates, and 3 in ASCII without bin coordinates.</p>
 
-The option <TT>disloc</TT> allows to selectively write certain particles
-to special files. These files are useful to see dislocations.
-<P>
+<p>
+Currently, distributions of the following quantities are are supported:
+</p>
+
+<table>
+<tr><th>Flag name             </th><th> Quantity                     </th></tr>
+<tr><td>dist_Epot_flag        </td><td> potential energy             </td></tr>
+<tr><td>dist_Ekin_flag        </td><td> kinetic energy               </td></tr>
+<tr><td>dist_Ekin_long_flag   </td><td> longitudinal kinetic energy 
+                                        (shock wave simulation)      </td></tr>
+<tr><td>dist_Ekin_trans_flag  </td><td> transversal kinetic energy 
+                                        (shock wave simulation)      </td></tr>
+<tr><td>dist_press_flag       </td><td> scalar pressure (requires 
+                                        option stress)               </td></tr>
+<tr><td>dist_presstens_flag   </td><td> pressure tensor (option stress, 
+                                        all components in one file)  </td></tr>
+<tr><td>dist_shock_shear_flag </td><td> shear stress 
+                                        (shock wave simulation)      </td></tr>
+</table>
+
+<h2><a id="disloc" name="disloc">Writing Selected Atoms</a></h2>
+
+<p>
+The option <tt>disloc</tt> allows to selectively write certain particles
+to special files. These files are useful to see dislocations.</p>
+
+<p>
 A differential energy map (DEM) file consists of all particles 
 for which the difference of the potential energy and a (particle
-specific) <A HREF="options.html#disloc">reference potential energy</A>
-exceeds a certain threshold <TT>min_dpot</TT>. These particles are 
-written the file <TT>&lt;outfile&gt;.dem.&lt;n&gt;</TT> containing 
+specific) <a href="options.html#disloc">reference potential energy</a>
+exceeds a certain threshold <tt>min_dpot</tt>. These particles are 
+written the file <tt>&lt;outfile&gt;.dem.&lt;n&gt;</tt> containing 
 lines of the form
-<PRE>
+<pre>
      x y z dE_pot.
-</PRE>
+</pre>
 If the sample contains several atom types, only atoms of type 
-<TT>dpotsorte</TT> are written. 
-<P>
+<tt>dpotsorte</tt> are written. </p>
+
+<p>
 A displacement map (DSP) file shows the displacement of
 each atom in relation to a reference configuration.  Every
-<TT>dsp_int</TT><SUP>th</SUP> step the atoms are written to a file
-<TT>&lt;outfile&gt;.dsp.&lt;n&gt;</TT>, containing lines of the form
-<PRE>
+<tt>dsp_int</tt><sup>th</sup> step the atoms are written to a file
+<tt>&lt;outfile&gt;.dsp.&lt;n&gt;</tt>, containing lines of the form
+<pre>
      x y z dx dy dz.
-</PRE>
-where <TT>dx</TT>, <TT>dy</TT> and <TT>dz</TT> denote the
+</pre>
+where <tt>dx</tt>, <tt>dy</tt> and <tt>dz</tt> denote the
 displacement. The reference file must be specified in the parameter
-<TT>reffile</TT>. Each line of the reference file must describe the
+<tt>reffile</tt>. Each line of the reference file must describe the
 same atom as the corresponding line in the configuration file. This is
-checked using the atom number. Negative numbers (fixed atoms) are OK.
-<P>
-These features have also been implemented in the 2D version, but have
-not yet been tested!  
+checked using the atom number. Negative numbers (fixed atoms) are OK.</p>
 
-<P>
-<A HREF="imd.html">Back to IMD User's Guide</A> 
-
-</BODY>
-</HTML>
+<!--#include virtual="imdfoot.html" -->

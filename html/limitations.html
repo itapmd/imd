@@ -1,32 +1,29 @@
-<HTML>
-<HEAD>
-   <TITLE>Limitations of the current implementation of IMD</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
 
-<H1>Limitations of the current implemetation of IMD</H1>
-<P>
+<!--#include virtual="imdhead.html" -->
+
+<h1>Limitations of the current implemetation</h1>
+
+<p>
 The current implemetation of IMD has certain limitations, of which
 a user should be aware. Some of them are listed here, to avoid
 misunderstandings and errors. Most of them concern limited 
-multiphase simulation capabilities.
-<P>
-Certain ensembles and options do some <B>initialization</B> during 
-startup. This is still the case for <B>shock</B>, which can therefore
-be used only for the first simulation phase.
-<P>
+multiphase simulation capabilities.</p>
+
+<p>
+Certain ensembles and options do some <b>initialization</b> during 
+startup. This is still the case for <b>shock</b>, which can therefore
+be used only for the first simulation phase.</p>
+
+<p>
 Atoms with negative numbers are not moved by certain integrators,
 but are rigidly moved when the sample is sheared or deformed
 in other ways. The set of atoms with negative numbers remains
-the same throughout the whole simulation.
-<P>
-The type of <B>interaction</B> (pair potentials, EAM potentials, 
+the same throughout the whole simulation.</p>
+
+<p>
+The type of <b>interaction</b> (pair potentials, EAM potentials, 
 two- and three-body potentials, Coulomb potential) is global 
-to an entire IMD executable.
-The potential tables can not be changed during a simulation.
-<P>
-<A HREF="imd.html">Back to IMD User's Guide</A> 
+to an entire IMD executable. The potential tables can not be 
+changed during a simulation.</p>
 
-</BODY>
-</HTML>
-
+<!--#include virtual="imdfoot.html" -->

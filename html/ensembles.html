@@ -1,24 +1,35 @@
-<HTML>
-<HEAD>
-   <TITLE>IMD Ensembles</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
 
-<H1>IMD Ensembles</H1>
+<!--#include virtual="imdhead.html" -->
 
-IMD supports several different MD integrators. Many of them correspont
-to thermodynamic ensembles. Integrators are selected via the 
-<TT>ensemble</TT> parameter.
+<h1>Integrators</h1>
 
-<UL>
+The integrator is the routine which actually moves the atoms,
+depending on the current forces and velocities. The active integrator
+is selected in the parameter file via the <tt>ensemble</tt> parameter.
+Currently, each integrator to be used must be enabled at compile time.
 
-<P><LI><B> nve </B><P>
+<p>
+There are integrators simulating different <a href="#ensembles">
+thermodynamic ensembles</a>, integrators used for <a href="#relaxation">
+relaxation simulations</a>, and some <a href="#specialint"> special
+purpose integrators</a> for the simulation of fracture, shear flow, 
+or heat conduction.</p>
+
+<a name="ensembles">
+<h2>Themodynamic Ensembles</h1>
+</a>
+
+<ul>
+
+<li><b> nve </b>
+<p>
 Constant volume, constant energy ensemble. This is the most reliable
 integrator, and thus the main work horse. No particular parameters
 are needed, except perhaps the initial temperature starttemp, if not 
-all atoms have their velocities given in the configuration file.
+all atoms have their velocities given in the configuration file.</p></li>
 
-<P><LI><B> nvt </B><P>
+<li><b> nvt </b>
+<p>
 Constant volume, constant temperature ensemble, with 
 Nos&eacute;-Hoover thermostat (more precisely, this is an 
 ensemble with external temperature control - the temperature
@@ -30,26 +41,28 @@ of tau_eta, inv_tau_eta, can be specified. For historical
 reasons, even the squared inverse isq_tau_eta is accepted.
 inv_tau_eta or isq_tau_eta can be zero, which means constant
 energy simulation (nve). 
-If the option <A HREF=uniax.html>UNIAX</A> is switched on, an 
+If the option <a href="uniax.html">UNIAX</a> is switched on, an 
 additional parameter tau_eta_rot is required. It provides the 
 time constant for the coupling to the heat bath adjusting the 
 temperature for rotational motion. Like tau_eta, its inverse 
 inv_tau_eta, or its squared inverse isq_tau_eta, can be used
-as parameter.
+as parameter.</p></li>
 
-<P><LI><B> and </B><P>
+<li><b> and </b>
+<p>
 This is actually an option which can be used together with the 
-nve or mik integrators. Every tempintv steps, the velocities
+nve or mik integrators. Every <tt>tempintv</tt> steps, the velocities
 are reinitialized to a random maxwell distribution of the imposed 
-external temperature, which is linearly interpolated between starttemp 
-and endtemp. With the nve integrator, this corresponds to an NVT
-ensemble with Anderson thermostat.
+external temperature, which is linearly interpolated between 
+<tt>starttemp</tt> and <tt>endtemp</tt>. With the nve integrator, 
+this corresponds to an NVT ensemble with Anderson thermostat.</p></li>
 
-<P><LI><B> npt_iso </B><P>
+<li><b> npt_iso </b>
+<p>
 Constant pressure, constant temperature ensemble, with isotropic 
 volume scaling. Nos&eacute;-Hoover type thermostat and volume control 
 are employed. Temperature control is as in nvt, with the same parameters.
-(Again, if the option  <A HREF=uniax.html>UNIAX</A>
+(Again, if the option  <a href="uniax.html">UNIAX</a>
 is switched on, an additional parameter tau_eta_rot is required.)
 The pressure varies linearly from pressure_start to pressure_end
 (parameters). A time constant for the pressure control, tau_xi,
@@ -58,34 +71,54 @@ is required as a parameter. If inv_tau_xi or isq_tau_xi is zero,
 the volume remains constant. The cell subdivision includes a 
 rescaling tolerance cell_size_tol (parameter), which defaults to 
 0.05. If this tolerance is exceeded, the cell subdivision is 
-changed on the fly.
+changed on the fly.</p></li>
 
-<P><LI><B> npt_axial </B><P>
+<li><b> npt_axial </b>
+<p>
 Constant pressure, constant temperature ensemble, 
 with volume rescaling along each axis independently.
-This works only for <B>orthogonal boxes</B> correctly. 
+This works only for <b>orthogonal boxes</b> correctly. 
 Works the same way as npt_iso, with the same parameters, except that
-the three axial pressures can be specified separately. 
+the three axial pressures can be specified separately.</p></li>
 
-<P><LI><B> mik </B><P>
+</ul>
+
+<a name="relaxation">
+<h2>Relaxators</h1>
+</a>
+
+<ul>
+
+<li><b> mik </b>
+<p>
 Microconvergence integrator. After each step, if the velocity of an
 atom goes "uphill" in the potential landscape, it is reset to zero. 
 No particular parameter is needed, except perhaps the initial
 temperature, if not all atoms have their velocities given in the 
-configuration file.
+configuration file.</p></li>
 
-<P><LI><B> glok </B><P>
+<li><b> glok </b>
+<p>
 This is an option, which can be used together with the nve integrator.
 It works like a global version of mik: if the scalar product of
 the global force and momentum vectors (containing the force and
 momentum components of all atoms) is negative (momentum goes "uphill"
 in the potential landscape), all momenta are reset to zero.
 Note that this concerns only translational forces, not the rotational
-ones in <a href=uniax.html>UNIAX</a>. glok should relax faster than
-mik, which can be verified using the option <A HREF="options.html#fnorm">
-fnorm</A>.
+ones in <a href="uniax.html">UNIAX</a>. glok should relax faster than
+mik, which can be verified using the option <a href="options.html#fnorm">
+fnorm</a>.</p></li>
 
-<P><LI><B> frac </B><P>
+</ul>
+
+<a name="specialint">
+<h2>Special Purpose Integrators</h1>
+</a>
+
+<ul>
+
+<li><b> frac </b>
+<p>
 Fracture simulation with stadium damping according to Gumbsch et al. 
 (PRB 55, p.3445, 1997). The crack (x: propagation direction, y: crack
 plane, z: 2D or pbc) can propagate within the nve ensemble in an 
@@ -97,34 +130,32 @@ The ramping of the damping depends on the ratio stadium.x/box.x, i.e full
 damping at the border of the box. With stadium2 one can introduce an
 outer ellipse outside which full damping is applied, the slope of the
 damping thus depends on the ratio stadium.x/stadium2.x. Additionally the 
-sample can be strained at strainrate in y direction.   
-							
+sample can be strained at strainrate in y direction.</p></li>
 
-<A NAME="nvx">
-<P><LI><B> nvx </B><P>
-</A>
-Used for heat conductivity measurements. Forces a temperature
-gradient into the sample.
-
-<P><LI><B> sllod </B><P> SLLOD ensemble for simulation of shear flow
+<li><b> sllod </b>
+<p> 
+SLLOD ensemble for simulation of shear flow
 with the help of a deformation rate tensor in combination with
 Lees-Edwards boundary conditions. It corresponds to an additional
 velocity component applied to every particle in every step. It appears
 also in the equation of the momenta so that the particles perform a
 motion relatively to the shear flow. The SLLOD algorithm
-<STRONG>must</STRONG> be used together with a thermostat and with
+<b>must</b> be used together with a thermostat and with
 periodic boundary conditions in all directions. In 2D a vector
 shear_rate must be specified whose two components correspond to the
 xy- resp. to the yx-component of the applied deformation rate
 tensor. In 3D two vectors with three components, shear_rate and
 shear_rate2 must be specified. The components of shear_rate specify
 its yz-, the zx-, and its xy-component. The components of shear_rate2
-specify its zy-, the xz-, and its yx-component.
+specify its zy-, the xz-, and its yx-component.</p></li>
 
-</UL>
+<a name="nvx">
+<li><b> nvx </b>
+</a>
+<p>
+Used for heat conductivity measurements. Forces a temperature
+gradient into the sample.</p></li>
 
-<P>
-<A HREF="imd.html">Back to IMD User's Guide</A> 
+</ul>
 
-</BODY>
-</HTML>
+<!--#include virtual="imdfoot.html" -->

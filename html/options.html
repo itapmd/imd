@@ -1,10 +1,7 @@
-<HTML>
-<HEAD>
-   <TITLE>IMD Options</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
 
-<H1>IMD Options</H1>
+<!--#include virtual="imdhead.html" -->
+
+<h1>Options</h1>
 
 In addition to selecting the <A HREF="ensembles.html">simulation ensemble</A>
 (i.e., the MD integrator), various options can be compiled into IMD. 
@@ -628,36 +625,4 @@ This option enables the simulation of vacuum deposition of atoms.
 For more details take a look at the description of the 
 <A HREF="epitax.html">EPITAX implementation</A>.
 
-</UL>
-<H2>Possible Preprocessor Flags</H2>
-
-<UL>
-<A NAME="EPOT_DIFF">
-<P><LI><B>EPOT_DIFF</B><P>
-</A>
-The EPOT_DIFF flags has been eliminated. Its functionality has been
-built into the option <A HREF="#disloc">disloc</A>.
-
-<A NAME="ZOOM">
-<P><LI><B>ZOOM</B><P>
-</A>
-If set, only partial configurations consisting of the atoms inside the
-frame defined by <A HREF="pictures.html"><TT>pic_ll</TT> and
-<TT>pic_ur</TT></A> are written. It is probably better to use the 
-<A HREF="pictures.html"><TT>.pic</TT></A> files to make partial 
-pictures, though. ZOOM is available only in 2d at present. 
-
-<A NAME="PAXTEST">
-<P><LI><B>PAXTEST</B><P>
-</A>
-If set, and if the ensemble is NPT_axial, the axial pressures and
-box dimensions are written to the <A HREF="output.html">energy file</A> 
-as well. We might make this the default.
-
-</UL>
-
-<P>
-<A HREF="imd.html">Back to IMD User's Guide</A> 
-
-</BODY>
-</HTML>
+<!--#include virtual="imdfoot.html" -->

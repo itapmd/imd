@@ -1,153 +1,82 @@
-<HTML>
-<HEAD>
-   <TITLE>Online Visualization</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
 
-<H1>Online Visualization</H1>
+<!--#include virtual="imdhead.html" -->
 
-Online visualization of an IMD simulation can be done with the 
-VolIMD program, which is a descendent of
-<A
-HREF="http://www.uni-stuttgart.de/RUSuser/vis/People/roland/volrend/volrend.html">VolRend</A>. In two dimensions the 2dvis program can be used.
-<P>
-<H1>VolIMD</H1>
-VolIMD allows to communicate with a running IMD simulation via a 
-socket connection.  The user can direct VolIMD to post a request 
-to IMD. Every <TT>sock_int</TT> steps, IMD checks whether a request 
-has been posted, and acts accordingly. We say that VolIMD acts as 
-the "server", because it is on the VolIMD side where the simulation 
-is controlled. IMD therefore acts as "client". In priciple, one 
-could also do it the other way around, but this would be more 
-tricky. Also, we don't want to block IMD on 512 CPUs just because 
-VolIMD is busy rendering something and doesn't listen.
-<P>
-In order to use these features, IMD must be compiled with the 
-<A HREF="options.html#sock">sock option</A>. The host on which
-VolIMD runs must be given in the parameter <TT>display_host</TT>.
-This can be the host name (fully qualified, if not locally known),
-or the internet number in dotted quad format. VolIMD and IMD also
-must agree on a port number. Currently, the default 31913 is used
-for both programs. This can be changed in IMD with the parameter
-<TT>baseport</TT>, and in VolIMD in the "Simulation" menu.
-For a simulation in <B>two dimensions</B>, this must be selected
-in the "Switch" menu (default is 3D).
-<P>
-VolIMD currently runs only on SGI machines. At 
-<A HREF="http://www.itap.physik.uni-stuttgart.de">ITAP</A>, 
-the compiled binary is in the default search path on these machines. 
-If IMD runs on the Cray T3E at <A HREF="http://www.hlrs.de">HLRS</A>, 
-there are restrictions on the allowed display hosts and port numbers. 
-At <A HREF="http://www.itap.physik.uni-stuttgart.de">ITAP</A>, the only 
-allowed server is <B>godot-fd.itap.physik.uni-stuttgart.de</B>, and port 
-numbers must be above 2^15 (the default 31913 is ok).
-<P>
-In the present implementation, only three types of requests
-can be posted, all with the "Simulation" menu. 
-"<B>get distribution</B>" requests IMD to send histograms of 
-the kinetic and potential energy distributions (whose 
-dimensions are controlled by the IMD paramter <TT>dist_dim</TT>), 
-"<B>get picture</B>" (only in 2D)
-requests IMD to send an rgb picture of the kinetic energy 
-distribution (always at resolution 400x400), and "<B>terminate</B>"
-terminates IMD. In the "Switch" menu one can select whether
-on wants to view the kinetic or the potential energy distribution.
-<P>
-There should be no problems with IMD and VolIMD running on
-machines of different endianness, as IMD first sends test data,
-and by looking at this test data VolIMD decides whether a byte
-swap is necessary.
+<h1>Online Visualization</h1>
 
-<H4>Known bugs</H4>
-<UL>
-<P><LI>The display of energy distributions in 2 dimensions is somewhat
-suboptimal, to put it mildly.
-<P><LI>The resolution of 2D rgb pictures should be configurable,
-and should respect the aspect ratio of the sample.
-</UL>
+<p>
+IMD can communicate with external programs via a bi-directional
+socket connection. This mechanism allows for online visualization
+and steering of the simulation. Socket communication must be
+enabled with the compilation option <b>sock</b>. If enabled,
+IMD polls the socket connection for new requests every
+<tt>socket_int</tt> time steps. If <tt>socket_int &gt; 0</tt>, 
+the socket connection is created at the simulation start.
+The simulation will not proceed before the connection is established.
+If <tt>socket_int = 0</tt>, no socket connection is created.
+In either case, it is not possible to connect or reconnect at
+a later stage of the simulation.</p>
 
+<p>
+If the parameter <tt>loop</tt> is set to <tt>1</tt>, the entire
+simulation is repeated again and again. This allows to restart
+the simulation, by jumping to the simulation end, and then
+repeating it.</p>
 
-<P>
-<H1>2dvis</H1> 2dvis is a visualization program that obtains its data
-- a configuration or an energy distribution - either from a file or
-via a socket connection. In order to use these features, IMD must be compiled with the 
-<A HREF="options.html#sock">sock option</A>. The host on which
-VolIMD runs must be given in the parameter <TT>display_host</TT>.
-This can be the host name (fully qualified, if not locally known),
-or the internet number in dotted quad format. VolIMD and IMD also
-must agree on a port number. Currently, the default 31913 is used
-for both programs. This can be changed in IMD with the parameter
-<TT>baseport</TT>. It cannot be changed in 2dvis.
-<P>
-In case of a configuration each atom is
-represented by a circle. It can be colour encoded by its type or its
-potential energy. An element of the distribution array is displayed as
-a square. Its colour is an encoding of the potential or kinetic
-energy. Both data representations can be moved, rotated and
-zoomed. The data can be saved to a file or written to a picture
-(ppm-format).
-<P>
-To start the program enter '2dvis'. It might be necessary to set an
-environment variable first by entering<BR>
-<TT>setenv USEOWNCMAP 1</TT>.
-<P>
-Use the following keys to operate the program:<BR><BR>
-<TABLE>
-<TR><TD>1:</TD><TD>move configuration to the lower left</TD></TR>
-<TR><TD>2:</TD><TD>move configuration down</TD></TR>
-<TR><TD>3:</TD><TD>move configuration to the lower right</TD></TR>
-<TR><TD>4:</TD><TD>move configuration to the left</TD></TR>
-<TR><TD>6:</TD><TD>move configuration to the right</TD></TR>
-<TR><TD>7:</TD><TD>move configuration to the upper left</TD></TR>
-<TR><TD>8:</TD><TD>move configuration up</TD></TR>
-<TR><TD>9:</TD><TD>move configuration to the upper right</TD></TR>
-<TR><TD>0:</TD><TD>increase radius</TD></TR>
-<TR><TD>.:</TD><TD>decrease radius</TD></TR>
-<TR><TD>+:</TD><TD>scale configuration (larger)</TD></TR>
-<TR><TD>-:</TD><TD>scale configuration (smaller)</TD></TR>
-<TR><TD>*:</TD><TD>rotate about x-axis</TD></TR>
-<TR><TD>/:</TD><TD>rotate about y-axis</TD></TR>
-<TR><TD>a:</TD><TD>auto-scale</TD></TR>
-<TR><TD>b:</TD><TD>draw bonds</TD></TR>
-<TR><TD>c:</TD><TD>get configuration via socket</TD></TR>
-<TR><TD>d:</TD><TD>get distribution via socket</TD></TR>
-<TR><TD>e:</TD><TD>toggle type/energy encoding</TD></TR>
-<TR><TD>h:</TD><TD>display this help message</TD></TR>
-<TR><TD>k:</TD><TD>toggle potential/kinetic energy</TD></TR>
-<TR><TD>l:</TD><TD>load IMD-configuration from file</TD></TR>
-<TR><TD>p</TD><TD> make picture</TD></TR>
-<TR><TD>q:</TD><TD>quit program</TD></TR>
-<TR><TD>t:</TD><TD>toggle text on/off</TD></TR>
-<TR><TD>u:</TD><TD>read_unit_vectors</TD></TR>
-<TR><TD>w:</TD><TD>write to file</TD></TR>
-</TABLE>
+<h2>Socket communication</h2>
 
-Additionally you can use the mouse to move, rotate and zoom the data
-representation. Use the following mouse keys:
-<TABLE>
-<TR><TD>left</TD><TD>move</TD></TR>
-<TR><TD>middle</TD><TD>rotate around x-axis</TD></TR>
-<TR><TD>middle+right</TD><TD>rotate around y-axis</TD></TR>
-<TR><TD>right</TD><TD>zoom</TD></TR>
-</TABLE>
+<p>
+In the socket communication, IMD can play either the server
+part or the client part. This is chosen by the parameter
+<tt>socket_mode</tt>, whose value is either <tt>server</tt>
+or <tt>client</tt>. Depending on this mode, different other
+parameters have to be specified. Once the connection is
+established, the communication does not depend on the
+socket mode.</p>
 
-Some options can be set/unset via a parameter file
-&lt;paramfile&gt;. To use this option invoke 2dvis the following
-way<BR>
-<TT>2dvis -p &lt;paramfile&gt;</TT>.<BR>
+<h3>Server mode</h3>
 
-<H4>Known bugs</H4>
-<UL>
-<P><LI>Picture writes do not work correctly.
-<P><LI>There might be problems with endian byte swaps.
-<P><LI>Param-file does not include all options yet.
-<P><LI>Colour encoding must be improved.
-<P><LI>Types of atoms are not read correctly via socket.
-</UL>
+<p>
+In server mode, IMD opens a server socket on the local port 
+<tt>server_port</tt>, and waits for the client to connect.
+The first connection attempt is accepted. Under MPI, the 
+<tt>server_port</tt> is on the machine with the rank 0 process. 
+In server mode, the visualization must be able to contact 
+the machine IMD runs on. In a cluster environment, 
+where the cluster nodes often have private IP addresses, 
+this may not be possible. In this case, IMD should rather
+run in client mode.</p>
 
+<h3>Client mode</h3>
 
-<P>
-<A HREF="imd.html">Back to IMD User's Guide</A>
+<p>
+In client mode, IMD tries to connect to a server socket at
+port <tt>server_port</tt> on the machine specified by the
+parameter <tt>display_host</tt>. This is the machine the
+visualization runs on. By default, the connect call choses
+some local port on the simulation machine at which IMD can
+be contacted. In the presence of a firewall, it may be
+necessary to specify which local port shall be used. This
+can be done with the parameter <tt>client_port</tt>.
+If <tt>client_port = 0</tt> (default), the system choses a 
+port itself. If both IMD and visualization run on the same 
+machine, the two ports <tt>server_port</tt> and <tt>client_port</tt>
+must be different, but in that case there is no point
+prescribing a <tt>client_port</tt>. If IMD and visualization
+run on different machines, the two ports may be equal.
+Client mode should work also if the simulation machine has
+a private IP address, as connections from a private to a
+public IP address should be handled by Network Address
+Translation (NAT) at the gateway.</p>
 
-</BODY>
-</HTML>
+<h2>Supported online visualization programs</h2>
+
+<p>
+The currently supported online visualization program is the 
+COVER renderer from 
+<a href="http://www.hlrs.de/organization/vis/covise/">COVISE</a>, 
+which has been equipped with a plugin (written by
+<a href="http://www.hlrs.de/organization/vis/people/schulze/">
+J&uuml;rgen Schulze-D&ouml;bold</a>) implementing the 
+communication protocol with IMD.</p>
+
+<!--#include virtual="imdfoot.html" -->

@@ -1,110 +1,106 @@
-<HTML>
-<HEAD>
-   <TITLE>Compiling IMD</TITLE>
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
 
-<H1>Compiling IMD</H1>
+<!--#include virtual="imdhead.html" -->
 
-<P>
+<h1>Compiling</h1>
+
+<p>
 IMD is compiled with GNU make, which we call gmake in the
 following. Note that on some systems, GNU make is called make.
-Most other implementations of make won't work.
+Most other implementations of make won't work.</p>
 
-<UL><TT>
-gmake [EXTRAFLAGS="some flags"] imd-target
-</TT></UL>
+<pre>
+   gmake [EXTRAFLAGS="some flags"] imd-target
+</pre>
 
-imd-target consists of several components and has the following structure:
+<p>
+<tt>imd-target</tt> consists of several components and has the
+following structure:</p>
 
-<UL><TT>
-<P>imd_architecture_ensemble[_ensemble]...[_2d][_option]_[option]...</P>
-</TT></UL>
+<pre>
+   imd[_parallelization]_ensemble[_ensemble]...[_2d][_option][_option]...
+</pre>
 
-Default is a binary for 3d simulations. For <B>2d simulations</B>, the
-component _2d must be specified. In order that processor specific
-flags are set correctly, the <B>$HOSTTYPE</B> environement variable 
-must be set to one
-of the <A HREF="#hosttypes">supported $HOSTTYPE values</A>.
-The <B>executable</B> is moved to directory $HOME/bin/$HOSTTYPE,
-which must exist, and which should be in the search $PATH.
-The <B>EXTRAFLAGS</B> variable can be used to define further flags
-for the compiler, linker or C preprocessor. Note that starting with
-release 1.3, an IMD binary can support several ensembles. The active
-one is selected with a <A HREF="params.html">parameter</A> read from 
-the <A HREF="paramfile.html">parameter file</A>.  
+<p>
+The compilation flags are set according to the $HOSTTYPE 
+environement variable, must be set to one of the <a href="#hosttypes">
+supported values</a> (support for further ones is easily added).
+The executable is moved to directory $HOME/bin/$HOSTTYPE,
+which must exist, and which should be in the current $PATH.
+The EXTRAFLAGS variable can be used to define further flags
+for the compiler, linker or C preprocessor. </p>
 
-<P><TABLE>
-<A NAME=arch><TR><TH ALIGN=left COLSPAN=2>Supported architectures:</A>
-<TR><TD>risc <TD>serial execution on one CPU (even on vector computers)
-<TR><TD>mpi  <TD>parallel execution using MPI
-</Table>
+<p>
+Most features of IMD must be activated with the corresponding 
+compilation option in the make target. In particular, you need to 
+enable the integrator (ensemble) you want to use, and possibly support 
+for different interactions, if you don't want to use tabulated 
+pair potentials. Most options can coexist with each other. 
+In particular, it is possible to compile support for several
+integrators. The active one is selected with a <a href="params.html">
+parameter</a> read from the <a href="paramfile.html">parameter file</a>. 
+</p>
 
-<P><TABLE>
-<A NAME=ensembles><TR><TH ALIGN=left COLSPAN=2>Supported ensembles:</A>
-<TR><TD VALIGN=top>nve
-    <TD>constant volume, constant energy
-<TR><TD VALIGN=top>nvt
-    <TD>constant volume, constant temperature, with 
-        Nos&eacute;-Hoover thermostat 
-<TR><TD VALIGN=top>and
-    <TD>constant volume, constant temperature, with Anderson thermostat
-<TR><TD VALIGN=top>npt_iso
-    <TD>constant pressure, constant temperature, with
-        isotropic volume scaling, Nos&eacute;-Hoover 
-        thermostat and volume control 
-<TR><TD VALIGN=top>npt_axial
-    <TD>constant pressure, constant temperature, with
-        volume scaling along each axis independently, 
-        Nos&eacute;-Hoover thermostat and volume control 
-<TR><TD VALIGN=top>mik
-    <TD>microconvergence relaxation
-<TR><TD VALIGN=top>frac
-    <TD>fracture simulation with stadium damping
-<TR><TD VALIGN=top>nvx
-    <TD>heat transport measurements
-</TABLE>
+<p>
+There are a few compilation options which cannot coexist with each
+other. In particular, IMD must be compiled for a fixed dimension
+(default is 3d, option _2d switches to 2d) and with a fixed type
+of interaction (default is tabulated pair potentials). In the
+current implementation, different types of interaction cannot
+coexist.</p>
 
-<P><TABLE>
-<A NAME=options><TR><TH ALIGN=left COLSPAN=2>Supported options:</A>
-<TR><TD>2d          <TD>2d simulation rather than 3d
-<TR><TD>msqd        <TD>compute mean square displacements
-<TR><TD>correl      <TD>compute correlation functions
-<TR><TD>eam         <TD>use potentials of the Embedded Atom Method type
-<TR><TD>ttbp        <TD>use TTBP potentials
-<TR><TD>stiweb      <TD>use Stillinger-Weber potential
-<TR><TD>keating     <TD>use Keating potential
-<TR><TD>tersoff	    <TD>use Tersoff potential
-<TR><TD>ewald       <TD>use Coulomb potential with Ewald sum
-<TR><TD>spring      <TD>use harmonic potential
-<TR><TD>epitax	    <TD>simulation of vacuum deposition 
-<TR><TD>debug       <TD>compile with debug flags
-<TR><TD>prof        <TD>compile with profiling support
-<TR><TD>shock       <TD>generate a shock wave
-<TR><TD>quasi       <TD>needed to generate a binary icosahedral quasicrystal (ticq)
-<TR><TD>disloc      <TD>dislocations, used for selecting particles in write routines
-<TR><TD>homdef      <TD>shearing, expanding and compressing the sample
-                        with periodic boundary conditions
-<TR><TD>deform      <TD>shearing, expanding and compressing the sample
-                        with free boundary conditions
-<TR><TD>sock        <TD>enable sockets communication
-<TR><TD>uniax       <TD>use Gay-Berne potential for uniaxial molecules
-</TABLE>
+<h2>Compilation Options</h2>
 
-<P><TABLE>
-<A NAME=hosttypes><TR><TH ALIGN=left COLSPAN=2>
-Supported values for $HOSTTYPE:</A>
-<TR><TD>iris4d	           <TD>SGI running Irix 5 or 6
-<TR><TD>alpha	           <TD>DEC Alpha running Digital Unix 4.0
-<TR><TD>cray-t3e, t3e      <TD>Cray T3E
-<TR><TD>SR2201, HITACHI	   <TD>Hitachi SR2201 running HI-UX/MPP
-<TR><TD>SR8000	           <TD>Hitachi SR8000 running HI-UX/MPP
-<TR><TD>rs6000	           <TD>IBM SP-SMP rs 6000 running AIX
-<TR><TD>i386-linux, i686   <TD>Linux/Intel
-</TABLE>
-Support for further values is easily added.
-<P>
-<A HREF="imd.html">Back to IMD User's Guide</A> 
+<p>
+Most compilation options are described together with the simulation
+features they enable. For details, see the corresponding chapters.
+Here, we only list some general options.</p>
 
-</BODY>
-</HTML>
+<h3>Parallelization options</h3>
+
+<p>  
+IMD can be compiled with the following parallelization options.
+If none of these is specified, a serial executable is compiled.
+</p>
+
+<table>
+<tr><td>mpi        </td> <td>parallelization with MPI            </td></tr>
+<tr><td>omp        </td> <td>parallelization with OpenMP         </td></tr>
+<tr><td>ompi&nbsp; </td> <td>parallelization with MPI and OpenMP </td></tr>
+</table>
+
+<h3>Programming options</h3>
+
+<table>
+<tr><td>2d           </td><td>2d simulation</td></tr>
+<tr><td>single       </td><td>compile with single precision (not recommended)</td></tr>
+<tr><td>mono         </td><td>compile for sample with one atom type (faster)</td></tr>
+<tr><td>binary       </td><td>compile for binary sample (faster)</td></tr>
+<tr><td>hpo          </td><td>enable high precision output</td></tr>
+<tr><td>debug        </td><td>compile with debug support</td></tr>
+<tr><td>prof         </td><td>compile with profiling support</td></tr>
+<tr><td>timing&nbsp; </td><td>compile with extra timers</td></tr>
+<tr><td>sr           </td><td>use sendrecv in MPI version</td></tr>
+</table>
+
+<p>
+On some machines it is possible to use an alternative compiler, by specifying
+its name as an option. For details, have a look at the Makefile.</p>
+
+<a id="hosttypes" name="hosttypes">
+<h2>Supported $HOSTTYPE values</h2>
+</a>
+
+<table>
+<tr><td>iris4d	              </td><td>SGI, Irix             </td></tr>
+<tr><td>alpha	              </td><td>DEC Alpha, Tru64 Unix </td></tr>
+<tr><td>cray-t3e, t3e         </td><td>Cray T3E              </td></tr>
+<tr><td>SR8000	              </td><td>Hitachi SR8000        </td></tr>
+<tr><td>rs6000	              </td><td>IBM RS 6000, AIX      </td></tr>
+<tr><td>i386-linux, i686&nbsp;</td><td>Intel IA32, Linux     </td></tr>
+</table>
+
+<p>Support for further values is easily added.</p>
+
+<!--#include virtual="imdfoot.html" -->
+
+
