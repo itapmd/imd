@@ -20,23 +20,25 @@
 * $Date$
 ******************************************************************************/
 
+#ifndef ANGLE
 #define ANGLE
+#endif
+
+#define MAIN
+
 #include "util.h"
 
 /******************************************************************************
 *
 *  Usage -- educate users
 *
-*  Compilation: gcc -O [-DTWOD] [-DSLOTS=<nnn>] imd_angle.c -lm 
-*
 ******************************************************************************/
 
 void usage(void)
 { 
-  printf("%s [-r<nnn>] [-e<nnn>] [-p paramter-file]\n",progname); 
+  printf("%s [-r<nnn>] [-A<nnn>] [-a<nnn>] [-e<nnn>] [-v] [-p paramter-file]\n",progname); 
   exit(1); 
 }
-
 
 /*****************************************************************************
 *
@@ -52,15 +54,15 @@ int main(int argc, char **argv)
   /* Read Parameters from parameter file */
   read_parameters(argc,argv);
 
-  tablesize = SLOTS*ntypes*ntypes*ntypes*sizeof(real);
+  tablesize = slots*ntypes*ntypes*ntypes*sizeof(real);
   histogram = (real *) malloc(tablesize);
   if (NULL==histogram) error("Cannot allocate memory for histograms.");
-  hist_dim.i = SLOTS;
+  hist_dim.i = slots;
   hist_dim.x = ntypes;
   hist_dim.y = ntypes;
   hist_dim.z = ntypes;
 
-  for (i=0; i<SLOTS; ++i)
+  for (i=0; i<slots; ++i)
     for (j=0; j<ntypes; ++j)
       for (k=0; k<ntypes; ++k)
 	for (l=0; l<ntypes; ++l)
@@ -84,7 +86,6 @@ int main(int argc, char **argv)
 
 }
 
-
 /******************************************************************************
 *
 *  write_data writes histogram to *.angle file
@@ -97,18 +98,17 @@ void write_data()
   str255 fname;
   int i,j,k,l;
   real phi;
-  real f;
 
   if (-1==restart)
     sprintf(fname,"%s.angle",infilename);
   else
-    sprintf(fname,"%s.%u.angle",outfilename,restart);
+    sprintf(fname,"%s.%05d.angle",outfilename,restart);
 
   out = fopen(fname,"w");
   if (NULL == out) error("Cannot open histograms file.");
 
-  for (i=1; i<SLOTS; ++i) {
-    phi = ((float) i / SLOTS * 180);
+  for (i=1; i<slots; ++i) {
+    phi = ((float) i / slots * 180);
     fprintf(out,"%f ", phi);
     for (j=0; j<ntypes; ++j)
       for (k=0; k<ntypes; ++k)
@@ -121,12 +121,14 @@ void write_data()
     fprintf(out,"\n");
   };
 
+  printf("Minimal radius: %.6f\n", r_min);
+  printf("Maximal radius: %.6f\n", r_max);
   printf("%d angles computed\n", nangles);
+  printf("Histogram with %d slots\n", slots);
 
   fclose(out);
 
 }
-
 
 /******************************************************************************
 *
@@ -145,11 +147,11 @@ void do_angle(cell *p, cell *q, cell *qq, vektor pbc, vektor ppbc)
   int p_typ, q_typ, qq_typ;
 
   /* For each atom in first cell */
-  for (i = 0;i < p->n; ++i) 
+  for ( i=0; i<p->n; ++i) 
     /* For each atom in neighbouring cell */
-    for (j = 0; j < q->n; ++j) 
+    for ( j=0; j<q->n; ++j) 
       /* For each atom in second neighbouring cell */
-      for (k = ((q==qq) ? j+1 : 0); k < qq->n; ++k) {
+      for ( k=((q==qq) ? j+1 : 0); k<qq->n; ++k) {
       
 	/* Calculate distance vectors */
 	d.x = q->ort[j].x - p->ort[i].x + pbc.x;
@@ -168,11 +170,12 @@ void do_angle(cell *p, cell *q, cell *qq, vektor pbc, vektor ppbc)
 	rradius = sqrt( (double)(SPROD(dd,dd)) );
 
 	/* Calculate angles */
-	if ( (radius < r_max) && (rradius < r_max) && (radius > 0.0) && (rradius > 0.0)) {
+	if ( (radius < r_max) && (rradius < r_max) 
+	  && (radius > r_min) && (rradius > r_min) ) {
 	  ++nangles;
 	  phi = (double) (acos( (double)(SPROD(d,dd) )/ (radius * rradius)) );
 	  
-	  ang = (int) ( SLOTS * phi / 3.141592654 );
+	  ang = (int) ( slots * phi / 3.141592654 );
 	  
 	  p_typ  = p->sorte[i];
 	  q_typ  = q->sorte[j];
@@ -180,13 +183,12 @@ void do_angle(cell *p, cell *q, cell *qq, vektor pbc, vektor ppbc)
 
 	  if (q_typ > qq_typ) {temp = qq_typ; qq_typ = q_typ; q_typ = temp;}; 
 
-	  if ((ang>0) && (ang<SLOTS))
+	  if ((ang>0) && (ang<slots))
 	    ++*PTR_4D_V(histogram, ang , p_typ, q_typ, qq_typ, hist_dim);
 	} 
     };
 
 }
-
 
 /******************************************************************************
 *
@@ -230,8 +232,6 @@ void calc_angles(void)
 #endif
 
             {
-	      /* Given cell */
-              /* Hey optimizer, this is invariant to the last three loops!! */
 #ifdef TWOD
 	      p = PTR_2D_V(cell_array,i,j  ,cell_dim);
 #else
@@ -391,11 +391,5 @@ void calc_angles(void)
 
 	      /* Do the work */
 	      do_angle(p,q,qq,pbc,ppbc);
-      };
-
+      }
 }
-
-
-
-
-

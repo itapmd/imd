@@ -21,20 +21,23 @@
 * $Date$
 ******************************************************************************/
 
+#ifndef STRAIN
 #define STRAIN
+#endif
+
+#define MAIN
+
 #include "util.h"
 
 /******************************************************************************
 *
 *  Usage -- educate users
 *
-*  Compilation: gcc -O [-DTWOD] imd_strain.c -lm 
-*
 ******************************************************************************/
 
 void usage(void)
 { 
-  printf("%s [-r<nnn>] [-e<nnn>] [-c<nnn>] [-p paramter-file]\n",progname); 
+  printf("%s [-r<nnn>] [-e<nnn>] [-c<nnn>] [-v] [-p paramter-file]\n",progname); 
   exit(1); 
 }
 
@@ -91,8 +94,6 @@ void read_displacement(str255 infilename)
   int p;
   vektor pos;
   vektor u;
-  real m;
-  int s;
   cell *to;
   ivektor cellc;
 
@@ -171,14 +172,20 @@ void write_data(void)
 	  if (p->empty[l]==0)
 	    {
 #ifdef TWOD
-	  fprintf(out, "%d %f %f %f %f %f %f\n", ++number, p->ort[l].x, p->ort[l].y, p->strain[l].x, p->strain[l].y, p->strain_offdia[l].x);
+	      fprintf(out, "%d %f %f %f %f %f\n", ++number, 
+		      p->ort[l].x, p->ort[l].y, 
+		      p->strain[l].x, p->strain[l].y, p->strain_offdia[l].x);
 #else
-	fprintf(out, "%d %f %f %f %f %f %f %f %f %f\n", ++number, p->ort[l].x, p->ort[l].y, p->ort[l].z, p->strain[l].x, p->strain[l].y, p->strain[l].z, p->strain_offdia[l].x, p->strain_offdia[l].y, p->strain_offdia[l].z);
+	      fprintf(out, "%d %f %f %f %f %f %f %f %f %f\n", ++number, 
+		      p->ort[l].x, p->ort[l].y, p->ort[l].z, 
+		      p->strain[l].x, p->strain[l].y, p->strain[l].z, 
+		      p->strain_offdia[l].x, p->strain_offdia[l].y, 
+		      p->strain_offdia[l].z);
 #endif
 	    }
-	}
-  fclose(out);
+      }
 
+  fclose(out);
 }
 
 

@@ -1,7 +1,39 @@
+############################################################################
+#
+# IMD -- The ITAP Molecular Dynamics Program
+#
+# Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+# University of Stuttgart, D-70550 Stuttgart
+#
+#
+# IMD Utilities Makefile - works only with GNU make
+#
+# $Revision$
+# $Date$
+#
+############################################################################
 
-CC     = gcc
-CFLAGS = -O -g3 ${FLAGS}
+# Compilers
+CFLAGS = ${FLAGS}
+ifneq (,$(strip $(findstring i386,${HOSTTYPE})))
+CC      = icc
+FLAGS  += -O -static
+endif
+
+ifneq (,$(strip $(findstring alpha,${HOSTTYPE})))
+CC      = cc
+FLAGS  += -DALPHA -O3 -float -fp_reorder -arch ev56 -tune host -w
+endif
+
+ifneq (,$(strip $(findstring sparc,${HOSTTYPE})))
+CC      = cc
+FLAGS  += -fast -xtarget=ultra3 -xarch=v9b
+endif
+
+# where to put executable
 BINDIR = ${HOME}/bin/${HOSTTYPE}
+
+############################################################################
 
 # sample constructor/converter
 atcon: atcon.c
@@ -40,10 +72,12 @@ imd_power: fft.c imd_power.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ imd_power.c -lm
 
 
-##########################################################
+############################################################################
 #
 # distribution tools
 #
+###########################################################################
+
 DISTSOURCE = dist_tools.c dist_tools.h
 
 dist2volume: ${DISTSOURCE} dist2volume.c
@@ -70,41 +104,151 @@ sample2dist: sample2dist.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ sample2dist.c -lm
 
 
-###########################################################
+###########################################################################
 #
-# imd_pair and its decendands
+# imd_pair and its decendants
 #
-imd_pair: param.h param.c util.h imd_pair.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_pair.c -lm
+###########################################################################
 
-imd_angle: param.h param.c util.h imd_angle.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_angle.c -lm
+SOURCES = param.c
+HEADERS = util.h param.h
+LIBS    = -lm
 
-imd_conn: param.h param.c util.h imd_conn.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_conn.c -lm
+ifneq (,$(strip $(findstring 2d,${MAKETARGET})))
+FLAGS += -DTWOD
+endif
 
-imd_coord: param.h param.c util.h imd_coord.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_coord.c -lm
+ifneq (,$(strip $(findstring angle,${MAKETARGET})))
+FLAGS += -DANGLE
+SOURCES += imd_angle.c
+endif
 
-imd_elco: param.h param.c util.h imd_elco.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_elco.c -lm
+ifneq (,$(strip $(findstring conn,${MAKETARGET})))
+FLAGS += -DCONN
+SOURCES += imd_conn.c
+endif
 
-imd_ps: param.h param.c util.h imd_ps_main.c imd_ps.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_ps.c -lm
+ifneq (,$(strip $(findstring coord,${MAKETARGET})))
+FLAGS += -DCOORD
+SOURCES += imd_coord.c
+ifneq (,$(strip $(findstring tersoff,${MAKETARGET})))
+FLAGS += -DTERSOFF
+endif
+endif
 
-imd_ring: param.h param.c util.h imd_ring.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_ring.c -lm
+ifneq (,$(strip $(findstring elco,${MAKETARGET})))
+FLAGS += -DELCO
+SOURCES += imd_elco.c imd_stress.c
 
-imd_strain: param.h param.c util.h imd_strain.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_strain.c -lm
+ifneq (,$(strip $(findstring eam,${MAKETARGET})))
+FLAGS += -DEAM -DPAIR_POT
+SOURCES += imd_elco_eam.c imd_elco_pair.c
+HEADERS += potaccess.h
 
-imd_stress: param.h param.c util.h imd_stress.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_stress.c -lm
+else 
+ifneq (,$(strip $(findstring tersoff,${MAKETARGET})))
+FLAGS += -DTERSOFF -DCOVALENT 
+SOURCES += imd_elco_tersoff.c
 
-imd_torsion: param.h param.c util.h imd_torsion.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_torsion.c -lm
+else 
+ifneq (,$(strip $(findstring stiweb,${MAKETARGET})))
+FLAGS += -DSTIWEB -DCOVALENT 
+SOURCES += imd_elco_stiweb.c
+
+else 
+ifneq (,$(strip $(findstring keating,${MAKETARGET})))
+FLAGS += -DKEATING -DCOVALENT 
+SOURCES += imd_elco_keating.c
+
+else 
+FLAGS += -DPAIR_POT
+SOURCES += imd_elco_pair.c
+HEADERS += potaccess.h
+
+endif
+endif
+endif
+endif
+
+endif
+ifneq (,$(strip $(findstring pair,${MAKETARGET})))
+FLAGS += -DPAIR
+SOURCES += imd_pair.c
+endif
+
+ifneq (,$(strip $(findstring ps,${MAKETARGET})))
+FLAGS += -DPS -DCOVALENT
+SOURCES += imd_ps.c imd_ps_main.c
+endif
+
+ifneq (,$(strip $(findstring ring,${MAKETARGET})))
+FLAGS += -DRING -DCOVALENT
+SOURCES += imd_ring.c
+ifneq (,$(strip $(findstring tersoff,${MAKETARGET})))
+FLAGS += -DTERSOFF
+endif
+endif
+
+ifneq (,$(strip $(findstring strain,${MAKETARGET})))
+FLAGS += -DSTRAIN
+SOURCES += imd_strain.c
+endif
+
+ifneq (,$(strip $(findstring stress,${MAKETARGET})))
+FLAGS += -DSTRESS
+SOURCES += imd_stress.c
+endif
+
+ifneq (,$(strip $(findstring torsion,${MAKETARGET})))
+FLAGS += -DTORSION
+SOURCES += imd_torsion.c
+endif
+
+###########################################################################
+#
+#	 Rules
+#
+###########################################################################
+
+# Substitute .o for .c to get the names of the object files
+OBJECTS := $(subst .c,.o,${SOURCES})
+
+# all objects depend on headers
+${OBJECTS}: ${HEADERS}
+
+.SUFFIXES:
+
+# generic compilation rule
+%.o : %.c
+	${CC} ${CFLAGS} -c $<
+
+# How to link
+${MAKETARGET}: ${OBJECTS} 
+	${CC} ${FLAGS} -o $@ ${OBJECTS} ${LIBS}
+	mv $@ ${BINDIR}; rm -f $@
+
+# First recursion only set the MAKETARGET Variable
+.DEFAULT:
+	${MAKE} MAKETARGET='$@' STAGE2
+
+# Second recursion sets MAKETARGET variable and compiles
+# An empty MAKETARGET variable would create an infinite recursion, so we check
+STAGE2:
+ifneq (,${MAKETARGET})
+	${MAKE} MAKETARGET='${MAKETARGET}' ${MAKETARGET}
+else
+	@echo 'No TARGET specified.'
+endif
+
+###########################################################################
+#
+#	 Misc. TARGETs
+#
+###########################################################################
 
 # clean
 clean:
 	rm -f *.o *~ 
 
+count:
+	wc -l Makefile *.[ch] *.csh *.sh *_uv *.perl rav

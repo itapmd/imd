@@ -21,20 +21,23 @@
 * $Date$
 ******************************************************************************/
 
+#ifndef TORSION
 #define TORSION
+#endif
+
+#define MAIN
+
 #include "util.h"
 
 /******************************************************************************
 *
 *  Usage -- educate users
 *
-*  Compilation: gcc -O [-DSLOTS=<nnn>] imd_torsion.c -lm 
-*
 ******************************************************************************/
 
 void usage(void)
 { 
-  printf("%s [-r<nnn>] [-e<nnn>] [-p paramter-file]\n",progname); 
+  printf("%s [-r<nnn>] [-A<nnn>] [-e<nnn>] [-v] [-p paramter-file]\n",progname); 
   exit(1); 
 }
 
@@ -53,16 +56,16 @@ int main(int argc, char **argv)
   /* Read Parameters from parameter file */
   read_parameters(argc,argv);
 
-  tablesize = SLOTS*ntypes*ntypes*ntypes*ntypes*sizeof(real);
+  tablesize = slots*ntypes*ntypes*ntypes*ntypes*sizeof(real);
   histogram = (real *) malloc(tablesize);
   if (NULL==histogram) error("Cannot allocate memory for histograms.");
-  hist_dim.n = SLOTS;
+  hist_dim.n = slots;
   hist_dim.i = ntypes;
   hist_dim.j = ntypes;
   hist_dim.k = ntypes;
   hist_dim.l = ntypes;
 
-  for (n=0; n<SLOTS; ++n)
+  for (n=0; n<slots; ++n)
     for (i=0; i<ntypes; ++i)
       for (j=0; j<ntypes; ++j)
 	for (k=0; k<ntypes; ++k)
@@ -100,7 +103,6 @@ void write_data()
   str255 fname;
   int n,i,j,k,l;
   real phi;
-  real f;
 
   if (-1==restart)
     sprintf(fname,"%s.torsion",infilename);
@@ -110,8 +112,8 @@ void write_data()
   out = fopen(fname,"w");
   if (NULL == out) error("Cannot open histograms file.");
 
-  for (n = 0; n < SLOTS; ++n) {
-    phi = ((float) n / SLOTS * 180);
+  for (n = 0; n < slots; ++n) {
+    phi = ((float) n / slots * 180);
     fprintf(out,"%f ", phi);
     for (i = 0; i < ntypes; ++i)
       for (j = i; j < ntypes; ++j)
@@ -219,7 +221,9 @@ void do_angle(cell *p, cell *q, cell *r, cell *s,
 	    betrag_v_l = sqrt( (double)(SPROD(v_l,v_l)) );
 
 	    /* Calculate torsion angles */
-	    if ( (radius_ij < r_max) && (radius_ik < r_max) && (radius_jl < r_max) && (radius_ij*radius_ik*radius_jl*radius_jk*radius_il*radius_kl > 0.0) && (betrag_v_k > 0.0) && (betrag_v_l > 0.0) ) 
+	    if ( (radius_ij < r_max) && (radius_ik < r_max) 
+              && (radius_jl < r_max) 
+              && (radius_ij*radius_ik*radius_jl*radius_jk*radius_il*radius_kl > 0.0) && (betrag_v_k > 0.0) && (betrag_v_l > 0.0) ) 
 	      {
 		++nangles;
 		sprod = (double)( SPROD(v_k,v_l)/( betrag_v_k * betrag_v_l ));
@@ -227,7 +231,7 @@ void do_angle(cell *p, cell *q, cell *r, cell *s,
 		  
 		phi = (double) (acos(sprod));
   
-		ang = (int) ( SLOTS * phi / 3.141592654 );
+		ang = (int) ( slots * phi / 3.141592654 );
 
 		p_typ = p->sorte[i];
 		q_typ = q->sorte[j];
@@ -245,7 +249,7 @@ void do_angle(cell *p, cell *q, cell *r, cell *s,
 		  temp = s_typ; s_typ = r_typ; r_typ = temp;
 		}
 
-		if ((ang >= 0) && (ang < SLOTS))
+		if ((ang >= 0) && (ang < slots))
 		  ++*PTR_5D_V(histogram, ang , p_typ, q_typ, r_typ, s_typ, hist_dim);
 	      } 
 	  }

@@ -19,20 +19,23 @@
 * $Date$
 ******************************************************************************/
 
+#ifndef PAIR
 #define PAIR
+#endif
+
+#define MAIN
+
 #include "util.h"
 
 /******************************************************************************
 *
 *  Usage -- educate users
 *
-*  Compilation: gcc -O [-DTWOD] [-DSLOTS=<nnn>] imd_pair.c -lm
-*
 ******************************************************************************/
 
 void usage(void)
 { 
-  printf("%s [-r<nnn>] [-a<nnn>] [-e<nnn>] [-p paramter-file]\n",progname); 
+  printf("%s [-r<nnn>] [-a<nnn>] [-e<nnn>] [-v] [-p paramter-file]\n",progname); 
   exit(1); 
 }
 
@@ -51,14 +54,14 @@ int main(int argc, char **argv)
   /* Read Parameters from parameter file */
   read_parameters(argc,argv);
 
-  tablesize = SLOTS*ntypes*ntypes*sizeof(real);
+  tablesize = slots*ntypes*ntypes*sizeof(real);
   histogram = (real *) malloc(tablesize);
   if (NULL==histogram) error("Cannot allocate memory for histograms.");
-  hist_dim.x = SLOTS;
+  hist_dim.x = slots;
   hist_dim.y = ntypes;
   hist_dim.z = ntypes;
 
-  for (i=0; i<SLOTS; ++i)
+  for (i=0; i<slots; ++i)
     for (j=0; j<ntypes; ++j)
       for (k=0; k<ntypes; ++k)
 	*PTR_3D_V(histogram,i,j,k,hist_dim) = 0.0;
@@ -99,13 +102,13 @@ void write_data()
   if (-1==restart)
     sprintf(fname,"%s.pair",infilename);
   else
-    sprintf(fname,"%s.%u.pair",outfilename,restart);
+    sprintf(fname,"%s.%05d.pair",outfilename,restart);
 
   out = fopen(fname,"w");
   if (NULL == out) error("Cannot open histograms file.");
 
-  for (i=1; i<SLOTS; ++i) {
-    r = ((float) i / SLOTS * (r_max - r_min)) + r_min;
+  for (i=1; i<slots; ++i) {
+    r = ((float) i / slots * (r_max - r_min)) + r_min;
     fprintf(out,"%f ", r);
     f = natoms;
     for (j=0; j<ntypes; ++j)
@@ -154,17 +157,13 @@ void do_cell_pair(cell *p, cell *q, vektor pbc)
 
       radius = sqrt( (double)(SPROD(d,d)) );
 
-      k     = (int) ( SLOTS * (radius - r_min) / (r_max - r_min));
+      k     = (int) ( slots * (radius - r_min) / (r_max - r_min));
       p_typ = p->sorte[i];
       q_typ = q->sorte[j];
 
       if (q_typ > p_typ) {temp = p_typ; p_typ = q_typ; q_typ = temp;}
 
-      if ((k>0) && (k<SLOTS))
+      if ((k>0) && (k<slots))
 	*PTR_3D_V(histogram, k , q_typ, p_typ, hist_dim) += 2;
     }
 }
-
-
-
-

@@ -22,12 +22,13 @@
 * $Date$
 ******************************************************************************/
 
-#ifndef ELCO
-#define STRESS
+#ifndef STRESS
 #include "util.h"
-#endif
 
-#ifdef STRESS
+#else
+#define MAIN
+
+#include "util.h"
 
 /******************************************************************************
 *
@@ -38,7 +39,7 @@
 void usage(void)
 
 { 
-  printf("%s [-r<nnn>] [-e<nnn>] [-p paramter-file]\n", progname); 
+  printf("%s [-r<nnn>] [-e<nnn>] [-v] [-p paramter-file]\n", progname); 
   exit(1); 
 }
 
@@ -775,9 +776,9 @@ void do_voronoi_3d(void)
 void do_voronoi_2d(void)
 
 {
-  int     i, j, k, l, n;
-  real    det, detinv, tmp;
-  vektor  icoord, jcoord, tmpvertex, vertex[NUM], tmp1[2];
+  int     i, j, l, n;
+  real    det, detinv;
+  vektor  icoord, jcoord, tmpvertex, vertex[NUM];
   int     ok, index[NUM];
   int     vertexcount, vertexnum, edgesnum;
   int     *edges;

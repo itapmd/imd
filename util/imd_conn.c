@@ -21,20 +21,23 @@
 * $Date$
 ******************************************************************************/
 
+#ifndef CONN
 #define CONN
+#endif
+
+#define MAIN
+
 #include "util.h"
 
 /******************************************************************************
 *
 *  Usage -- educate users
 *
-*  Compilation: gcc -O [-DTWOD] [-DMAXNEIGH=<N>] imd_conn.c -lm 
-*
 ******************************************************************************/
 
 void usage(void)
 { 
-  printf("%s [-r<nnn>] [-p paramter-file]\n",progname); 
+  printf("%s [-r<nnn>] [-A<nnn>] [-v] [-p paramter-file]\n",progname); 
   exit(1); 
 }
 
@@ -67,7 +70,7 @@ int main(int argc, char **argv)
   ind = (int *)    malloc((n_max-n_min+1) * sizeof(int));
   num = (int *)    malloc(natoms * sizeof(int));
   tp  = (int *)    malloc(natoms * sizeof(int));
-  cm  = (int *)    malloc(natoms * MAXNEIGH * sizeof(int));
+  cm  = (int *)    malloc(natoms * maxneigh * sizeof(int));
   pos = (vektor *) malloc(natoms * sizeof(vektor));
   if ((nn==NULL) || (tp==NULL) | (cm==NULL) | (pos==NULL))
     error("cannot allocate connection matrix");
@@ -184,13 +187,13 @@ void do_cell_pair(cell *p, cell *q, vektor pbc)
 
         /* update neighbor table of p-particle */
         k = ind[p->nummer[i]-n_min];
-	if (nn[k]<MAXNEIGH) {
+	if (nn[k]<maxneigh) {
           *PTR_2D_V(cm,k,nn[k],cm_dim) = q->nummer[j];  nn[k]++;
         } else error("maximum number of neighbors exceeded");
 
         /* update neighbor table of q-particle */
         k = ind[q->nummer[j]-n_min];
-        if (nn[k]<MAXNEIGH) {
+        if (nn[k]<maxneigh) {
           *PTR_2D_V(cm,k,nn[k],cm_dim) = p->nummer[i];  nn[k]++;
 	} else error("maximum number of neighbors exceeded");
 

@@ -23,12 +23,15 @@
 * $Date$
 ******************************************************************************/
 
+#ifndef RING
 #define RING
-#define COVALENT
+#endif
 
 #ifdef TERSOFF
 #undef TWOD
 #endif
+
+#define MAIN
 
 #include "util.h"
 
@@ -36,13 +39,11 @@
 *
 *  Usage -- educate users
 *
-*  Compilation: gcc -O [-DTERSOFF] [-DTWOD] imd_ring.c -lm 
-*
 ******************************************************************************/
 
 void usage(void)
 { 
-  printf("%s [-r<nnn>] [-A<nnn>] [-e<nnn>] [-l<nnn>] -p paramter-file]\n",progname); 
+  printf("%s [-r<nnn>] [-A<nnn>] [-e<nnn>] [-l<nnn>] [-v] [-p paramter-file]\n",progname); 
   
   exit(1); 
 }
@@ -126,11 +127,11 @@ void init_tersoff(void) {
 
 void do_neighbour_tables(cell *p, cell *q, vektor pbc)
 {
-  int i, j, k;
-  int jstart, jend;
-  int q_typ, p_typ, column;
+  int i, j;
+  int jstart;
+  int q_typ, p_typ;
   vektor d, tmp_d;
-  real *qptr, radius;
+  real radius;
 
   /* For each atom in first cell */
   for (i=0; i<p->n; ++i) {
@@ -294,7 +295,7 @@ void search_rings(void) {
   cell *p, *act_cell;
   int  ic, jc, kc, intv, stars = 0, count = 0;
   int  i, act_num, j;
-  neightab *neigh, *pre_neigh, *act_neigh;
+  neightab *pre_neigh, *act_neigh;
   int    icc, jcc, kcc, m;
   cell *q;
 
@@ -569,7 +570,6 @@ void compute_hops() {
   neightab *neigh;
   cell *p, *neigh_cell;
   int  i, j, neigh_num;
-  Queue_elmt *q;
 
   while ( queue_length > 0 ) {
    
