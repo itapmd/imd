@@ -1177,17 +1177,17 @@ void broadcast_params() {
 #endif
 
 #ifdef DEFORM
-  MPI_Bcast( &hom_interval , 1, MPI_INTEGER, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &exp_interval , 1, MPI_INTEGER, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &shear_max , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &expansion , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &hom_interval , 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &exp_interval , 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &shear_max , 1, MPI_REAL,   0, MPI_COMM_WORLD); 
+  MPI_Bcast( &expansion , 1, MPI_REAL,   0, MPI_COMM_WORLD); 
 #endif
 #if defined(FRAC) || defined(DEFORM)
-  MPI_Bcast( &initial_shift ,  1, MPI_INTEGER, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &ins ,          DIM, MPI_REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &ekin_threshold , 1, MPI_REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &annealsteps ,    1, MPI_INT,     0, MPI_COMM_WORLD); 
-  MPI_Bcast( &max_deform_int , 1, MPI_INT,     0, MPI_COMM_WORLD); 
+  MPI_Bcast( &initial_shift ,  1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &ins ,          DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &ekin_threshold , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &annealsteps ,    1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &max_deform_int , 1, MPI_INT,  0, MPI_COMM_WORLD); 
 #endif  
 
 #ifdef USE_SOCKETS
