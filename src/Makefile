@@ -324,32 +324,32 @@ CC_DEFAULT_OMPI_SR8000		= mpicc
 LIBS_PROF_SR8000		= -lpl
 
 # MPI
-CFLAGS_mpicc_MPI_SR8000        	= -O4 +Op -noparallel
+CFLAGS_mpicc_MPI_SR8000        	= -O4 +Op -noparallel -msg=e
 CFLAGS_mpicc_MPI_SR8000_DEBUG  	= -g
 CFLAGS_mpicc_MPI_SR8000_PROF   	= -Xfuncmonitor
 
 # OpenMP
-CFLAGS_cc_OMP_SR8000	 	= -omp -par -O4 +Op
+CFLAGS_cc_OMP_SR8000	 	= -omp -par -O4 +Op -msg=e
 CFLAGS_cc_OMP_SR8000_DEBUG	= -omp -par=1 -O2 -g
 CFLAGS_cc_OMP_SR8000_PROF   	= -Xfuncmonitor
 
 # MPI + OpenMP
-CFLAGS_mpicc_OMPI_SR8000	= -omp -par -O4 +Op
+CFLAGS_mpicc_OMPI_SR8000	= -omp -par -O4 +Op -msg=e
 CFLAGS_mpicc_OMPI_SR8000_DEBUG 	= -omp -par -O2 -g
 CFLAGS_mpicc_OMPI_SR8000_PROF  	= -Xfuncmonitor
 
 # MPI (crosscompiler linux -> SR8000)
-CFLAGS_xmpicc_MPI_i586        	= -O4 +Op -noparallel
+CFLAGS_xmpicc_MPI_i586        	= -O4 +Op -noparallel -msg=e
 CFLAGS_xmpicc_MPI_i586_DEBUG  	= -g
 CFLAGS_xmpicc_MPI_i586_PROF   	= -Xfuncmonitor
 
 # OpenMP (crosscompiler linux -> SR8000)
-CFLAGS_xcc_OMP_i586	 	= -omp -par -O4 +Op
+CFLAGS_xcc_OMP_i586	 	= -omp -par -O4 +Op -msg=e
 CFLAGS_xcc_OMP_i586_DEBUG	= -omp -par=1 -O2 -g
 CFLAGS_xcc_OMP_i586_PROF   	= -Xfuncmonitor
 
 # MPI + OpenMP (crosscompiler linux -> SR8000)
-CFLAGS_xmpicc_OMPI_i586		= -omp -par -O4 +Op
+CFLAGS_xmpicc_OMPI_i586		= -omp -par -O4 +Op -msg=e
 CFLAGS_xmpicc_OMPI_i586_DEBUG 	= -omp -par -O2 -g
 CFLAGS_xmpicc_OMPI_i586_PROF  	= -Xfuncmonitor
 
