@@ -444,6 +444,10 @@ ifneq (,$(findstring fnorm,${MAKETARGET}))
 CFLAGS += -DFNORM
 endif
 
+ifneq (,$(findstring glok,${MAKETARGET}))
+CFLAGS += -DGLOK
+endif
+
 ifneq (,$(findstring npt_axial,${MAKETARGET}))
 CFLAGS += -DNPT -DNPT_axial
 endif

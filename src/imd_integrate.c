@@ -28,6 +28,12 @@ void move_atoms_nve(void)
   real tmp;
   static int count = 0;
   tot_kin_energy = 0.0;
+#ifdef FNORM
+  fnorm = 0.0;
+#endif
+#ifdef GLOK
+  PxF = 0.0;
+#endif
 
   /* loop over all cells */
 #ifdef _OPENMP
@@ -80,12 +86,20 @@ void move_atoms_nve(void)
 
 #endif /* FBC */
 
+#ifdef FNORM
+	fnorm +=  SPRODN(p->kraft,i,p->kraft,i);
+#endif
+
 	p->impuls X(i) += timestep * p->kraft X(i);
         p->impuls Y(i) += timestep * p->kraft Y(i);
 #ifndef TWOD
         p->impuls Z(i) += timestep * p->kraft Z(i);
 #endif
 
+	/* "Globale Konvergenz": like mik just with the global force and impuls vectors */
+#ifdef GLOK              
+	PxF   +=  SPRODN(p->impuls,i,p->kraft,i);
+#endif
 
 #ifdef UNIAX
         dot = 2.0 * SPRODN(p->dreh_impuls,i,p->achse,i);
@@ -174,6 +188,16 @@ void move_atoms_nve(void)
   /* Add kinetic energy from all cpus */
   MPI_Allreduce( &tot_kin_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
   tot_kin_energy = tmp;
+#ifdef FNORM
+  /* Add all the (local) scalars of the local scalar products of the global force vector */ 
+  MPI_Allreduce( &fnorm, &tmp2, 1, MPI_REAL, MPI_SUM, cpugrid);
+  fnorm = tmp2;
+#endif
+#ifdef GLOK
+  /* Add all the (local) scalars of the local scalar products of the global force & impuls vector */ 
+  MPI_Allreduce( &PxF, &tmp2, 1, MPI_REAL, MPI_SUM, cpugrid);
+  PxF = tmp2;
+#endif
 #endif
 
 #ifdef AND

@@ -154,6 +154,9 @@ EXTERN long seed INIT(0);           /* seed for random number generator */
 #ifdef FNORM
 EXTERN real fnorm INIT(0.0);  /* =f*f, f: global force vector: f=(f1.x, f1.y,...,fn.z) */ 
 #endif
+#ifdef GLOK
+EXTERN real PxF INIT(0.0);
+#endif
 
 #ifndef MONOLJ
 /* Potential Table */
