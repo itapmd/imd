@@ -384,6 +384,22 @@ void main_loop(void)
         (correl_end==0) && (steps==steps_max))   
       write_config_select(0, "sqd", write_atoms_sqd, write_header_sqd);
 #endif
+
+    /* finish, if maxwalltime is reached */
+    if (maxwalltime > 0) {
+      double tdiff = difftime(time(&tend), tstart);
+#ifdef MPI
+      MPI_Bcast( &tdiff, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+#endif
+      if (tdiff > maxwalltime) {
+        if (myid == 0) 
+          printf("Maximal allowed walltime reached after %d steps\n", steps);
+        write_config(-1,steps);
+        steps_max = steps;
+        finished = 1;
+        break;
+      }
+    }
   }
 
   /* clean up the current phase, and clear restart flag */

@@ -130,6 +130,8 @@ EXTERN vektor *fbc_endforces;
 #endif /* FBC */
 
 /* Global bookkeeping */
+EXTERN time_t tstart, tend;
+EXTERN real maxwalltime INIT(0);  /* maximal allowed walltime */
 EXTERN int is_big_endian;         /* 1 if big endian, 0 if little endian */
 EXTERN long natoms  INIT(0);      /* Total number of atoms */
 EXTERN long nactive INIT(0);      /* number of transl. degrees of freedom */

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -27,7 +27,6 @@
 int main(int argc, char **argv)
 {
   int start, num_threads, i;
-  time_t tstart, tend;
   real tmp;
 #ifdef PAPI
   float rtime, ptime, mflops;

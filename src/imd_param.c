@@ -303,6 +303,10 @@ void getparamfile(char *paramfname, int sim)
       getparam("simulation",&tmp,PARAM_INT,1,1);
       if (sim < tmp) break;
     }
+    if (strcasecmp(token,"maxwalltime")==0) {
+      /* maximal walltime limit */
+      getparam(token,&maxwalltime,PARAM_REAL,1,1);
+    }
     else if (strcasecmp(token,"loop")==0) {
       /* looping for online visualisation */
       getparam(token,&loop,PARAM_INT,1,1);
@@ -2163,6 +2167,7 @@ void broadcast_params() {
   MPI_Bcast( &finished    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &ensemble    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &simulation  , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &maxwalltime , 1, REAL,     0, MPI_COMM_WORLD); 
   MPI_Bcast( &loop        , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &seed        , 1, MPI_LONG, 0, MPI_COMM_WORLD); 
 
