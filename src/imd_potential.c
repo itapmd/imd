@@ -395,9 +395,10 @@ void create_pot_table(pot_table_t *pt)
     column = 0;
     for (i=0; i<ntypes; i++) 
       for (j=i; j<ntypes; j++) {
-        if (r_cut_lin[column]>0) {
+        if ((r_cut_lin[column]>0) || (ew_r2_cut>0)) {
           r2_begin[i][j]   = r2_begin[j][i]   = SQR(r_begin[column]);
-          r2_end[i][j]     = r2_end[j][i]     = MAX( SQR(r_cut_lin[column]), ew_r2_cut);
+          r2_end[i][j]     = r2_end[j][i]     
+                           = MAX( SQR(r_cut_lin[column]), ew_r2_cut);
           r2_step[i][j]    = r2_step[j][i] 
                            = (r2_end[i][j]-r2_begin[i][j])/(pot_res[column]-1);
           r2_invstep[i][j] = r2_invstep[j][i] = 1.0 / r2_step[i][j];

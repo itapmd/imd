@@ -255,11 +255,6 @@ inline static real SQR(real x)
 #define DIM 3
 #endif
 
-#ifdef EWALD
-#define I(a,b,c) [(((2*(a)+1)*(b))+(c))]
-#define J(a,b,c) [(((a)*(b))+(c))]   
-#endif
-
 #ifdef MEAM
 #define  I(a,b) [(((b)*(neigh_len)) + (a))] 
 #define IX(a,b) [(((b)*(neigh_len)) + (a))].x
@@ -369,7 +364,7 @@ inline static real SQR(real x)
 #endif
 
 #ifndef M_PI
-#define M_PI 4.0*atan(1.0)
+#define M_PI (4.0*atan(1.0))
 #endif
 
 /* Definition of the value that should be minimized */

@@ -98,8 +98,10 @@ void do_forces_ewald(int steps)
   }
 
   /* self energy part */
-  for (n=0; n<ntypes; n++)
+  for (n=0; n<ntypes; n++) {
     tot_pot_energy -= ew_vorf * num_sort[n] * SQR( charge[n] ) * ew_eps;
+    tot_pot_energy -= num_sort[n] * ew_shift[n][n] * 0.5;
+  }
 
   if ((steps==0) && (ew_test)) {
     imd_stop_timer( &ewald_time );
@@ -122,12 +124,15 @@ void do_forces_ewald(int steps)
 void do_forces_ewald_fourier(void)
 {
   int    i, j, k, l, m, n, c;
-  int    count, typ;
+  int    count, typ, offx, offy, offz;
   real   tmp, tmp_virial=0.0, sum_cos, sum_sin;
   real   kforce, kpot;
 
+  offx = ew_nx; 
+  offy = ew_ny; 
+  offz = ew_nz;
+
   /* Compute exp(ikr) recursively */
-  count = 0;
   for (c=0; c<ncells; c++) {
 
     cell *p = CELLPTR(c);
@@ -135,84 +140,92 @@ void do_forces_ewald_fourier(void)
     for (i=0; i<p->n; i++) {
 
       tmp = twopi * SPRODX(&ORT(p,i,X),tbox_x);
-      coskx I(ew_nx,count,ew_nx+1) =  cos(tmp);
-      coskx I(ew_nx,count,ew_nx-1) =  coskx I(ew_nx,count,ew_nx+1);
-      sinkx I(ew_nx,count,ew_nx+1) =  sin(tmp);
-      sinkx I(ew_nx,count,ew_nx-1) = -sinkx I(ew_nx,count,ew_nx+1); 
+      coskx[offx+1] =  cos(tmp);
+      coskx[offx-1] =  coskx[offx+1];
+      sinkx[offx+1] =  sin(tmp);
+      sinkx[offx-1] = -sinkx[offx+1]; 
 
       tmp = twopi * SPRODX(&ORT(p,i,X),tbox_y);
-      cosky I(ew_ny,count,ew_ny+1) =  cos(tmp);
-      cosky I(ew_ny,count,ew_ny-1) =  cosky I(ew_ny,count,ew_ny+1);
-      sinky I(ew_ny,count,ew_ny+1) =  sin(tmp);
-      sinky I(ew_ny,count,ew_ny-1) = -sinky I(ew_ny,count,ew_ny+1);
+      cosky[offy+1] =  cos(tmp);
+      cosky[offy-1] =  cosky[offy+1];
+      sinky[offy+1] =  sin(tmp);
+      sinky[offy-1] = -sinky[offy+1];
 
       tmp = twopi * SPRODX(&ORT(p,i,X),tbox_z);
-      coskz I(ew_nz,count,ew_nz+1) = cos(tmp);
-      sinkz I(ew_nz,count,ew_nz+1) = sin(tmp);
+      coskz[offz+1] = cos(tmp);
+      sinkz[offz+1] = sin(tmp);
 
       for (j=2; j<=ew_nx; j++) {
-        coskx I(ew_nx,count,ew_nx+j) =   coskx I(ew_nx,count,ew_nx+j-1) * coskx I(ew_nx,count,ew_nx+1) 
-                                       - sinkx I(ew_nx,count,ew_nx+j-1) * sinkx I(ew_nx,count,ew_nx+1);
-        coskx I(ew_nx,count,ew_nx-j) =   coskx I(ew_nx,count,ew_nx+j);
-        sinkx I(ew_nz,count,ew_nx+j) =   coskx I(ew_nx,count,ew_nx+j-1) * sinkx I(ew_nx,count,ew_nx+1) 
-                                       - sinkx I(ew_nx,count,ew_nx+j-1) * coskx I(ew_nx,count,ew_nx+1);
-        sinkx I(ew_nx,count,ew_nx-j) = - sinkx I(ew_nx,count,ew_nx+j);
+        coskx[offx+j] =   coskx[offx+j-1] * coskx[offx+1] 
+                        - sinkx[offx+j-1] * sinkx[offx+1];
+        coskx[offx-j] =   coskx[offx+j];
+        sinkx[offx+j] =   coskx[offx+j-1] * sinkx[offx+1] 
+                        - sinkx[offx+j-1] * coskx[offx+1];
+        sinkx[offx-j] = - sinkx[offx+j];
       }
 
       for (j=2; j<=ew_ny; j++) {
-        cosky I(ew_ny,count,ew_ny+j) =   cosky I(ew_ny,count,ew_ny+j-1) * cosky I(ew_ny,count,ew_ny+1) 
-                                       - sinky I(ew_ny,count,ew_ny+j-1) * sinky I(ew_ny,count,ew_ny+1);
-        cosky I(ew_ny,count,ew_ny-j) =   cosky I(ew_ny,count,ew_ny+j);
-        sinky I(ew_ny,count,ew_ny+j) =   cosky I(ew_ny,count,ew_ny+j-1) * sinky I(ew_ny,count,ew_ny+1) 
-                                       - sinky I(ew_ny,count,ew_ny+j-1) * cosky I(ew_ny,count,ew_ny+1);
-        sinky I(ew_ny,count,ew_ny-j) = - sinky I(ew_ny,count,ew_ny+j);
+        cosky[offy+j] =   cosky[offy+j-1] * cosky[offy+1] 
+                        - sinky[offy+j-1] * sinky[offy+1];
+        cosky[offy-j] =   cosky[offy+j];
+        sinky[offy+j] =   cosky[offy+j-1] * sinky[offy+1] 
+                        - sinky[offy+j-1] * cosky[offy+1];
+        sinky[offy-j] = - sinky[offy+j];
       }
 
       for (j=2; j<=ew_nz; j++) {
-        coskz I(ew_nz,count,ew_nz+j) =   coskz I(ew_nz,count,ew_nz+j-1) * coskz I(ew_nz,count,ew_nz+1) 
-                                       - sinkz I(ew_nz,count,ew_nz+j-1) * sinkz I(ew_nz,count,ew_nz+1);
-        sinkz I(ew_nz,count,ew_nz+j) =   coskz I(ew_nz,count,ew_nz+j-1) * sinkz I(ew_nz,count,ew_nz+1) 
-                                       - sinkz I(ew_nz,count,ew_nz+j-1) * coskz I(ew_nz,count,ew_nz+1);
+        coskz[offz+j] =   coskz[offz+j-1] * coskz[offz+1] 
+                        - sinkz[offz+j-1] * sinkz[offz+1];
+        sinkz[offz+j] =   coskz[offz+j-1] * sinkz[offz+1] 
+                        - sinkz[offz+j-1] * coskz[offz+1];
       }
-      count++;
+
+      offx += ew_dx;
+      offy += ew_dy;
+      offz += ew_dz;
     }
   }
 
   /* Loop over all reciprocal vectors */
   for (k=0; k<ew_totk; k++) {
 
-    l = ew_ivek[k].x;
-    m = ew_ivek[k].y;
-    n = ew_ivek[k].z;
-
+    count   = 0; 
+    offx    = ew_ivek[k].x;
+    offy    = ew_ivek[k].y;
+    offz    = ew_ivek[k].z;
     sum_cos = 0.0;
     sum_sin = 0.0;
 
     /* Compute exp(ikr) and sums thereof */
-    count = 0;
     for (c=0; c<ncells; c++) {
 
       cell *p = CELLPTR(c);
 
       for (i=0; i<p->n; i++) {
 
-        coskr[count] =   coskx I(ew_nx,count,ew_nx+l) * cosky I(ew_ny,count,ew_ny+m) * coskz I(ew_nz,count,ew_nz+n)
-                       - sinkx I(ew_nx,count,ew_nx+l) * sinky I(ew_ny,count,ew_ny+m) * coskz I(ew_nz,count,ew_nz+n)
-                       - sinkx I(ew_nx,count,ew_nx+l) * cosky I(ew_ny,count,ew_ny+m) * sinkz I(ew_nz,count,ew_nz+n) 
-                       - coskx I(ew_nx,count,ew_nx+l) * sinky I(ew_ny,count,ew_ny+m) * sinkz I(ew_nz,count,ew_nz+n);
+        coskr[count] =   coskx[offx] * cosky[offy] * coskz[offz]
+                       - sinkx[offx] * sinky[offy] * coskz[offz]
+                       - sinkx[offx] * cosky[offy] * sinkz[offz] 
+                       - coskx[offx] * sinky[offy] * sinkz[offz];
 
-        sinkr[count] = - sinkx I(ew_nx,count,ew_nx+l) * sinky I(ew_ny,count,ew_ny+m) * sinkz I(ew_nz,count,ew_nz+n)
-                       + sinkx I(ew_nx,count,ew_nx+l) * cosky I(ew_ny,count,ew_ny+m) * coskz I(ew_nz,count,ew_nz+n)
-                       + coskx I(ew_nx,count,ew_nx+l) * sinky I(ew_ny,count,ew_ny+m) * coskz I(ew_nz,count,ew_nz+n)
-                       + coskx I(ew_nx,count,ew_nx+l) * cosky I(ew_ny,count,ew_ny+m) * sinkz I(ew_nz,count,ew_nz+n);
+        sinkr[count] = - sinkx[offx] * sinky[offy] * sinkz[offz]
+                       + sinkx[offx] * cosky[offy] * coskz[offz]
+                       + coskx[offx] * sinky[offy] * coskz[offz]
+                       + coskx[offx] * cosky[offy] * sinkz[offz];
 
         typ      = SORTE(p,i);
         sum_cos += charge[typ] * coskr[count];
         sum_sin += charge[typ] * sinkr[count]; 
 
+        offx += ew_dx;
+        offy += ew_dy;
+        offz += ew_dz;
         count++;
       }
     }
+
+    /* update total potential energy */
+    tot_pot_energy += ew_expk[k] * (SQR(sum_sin) + SQR(sum_cos));
 
     /* update energies and forces */
     count = 0;
@@ -227,8 +240,7 @@ void do_forces_ewald_fourier(void)
         /* update potential energy */
         kpot   = charge[typ] * ew_expk[k]
 	         * (sinkr[count] * sum_sin + coskr[count] * sum_cos);
-        POTENG(p,i)    += kpot;
-        tot_pot_energy += kpot;
+        POTENG(p,i)  += kpot;
 
         /* update force */
         kforce = charge[typ] * ew_expk[k] 
@@ -412,9 +424,8 @@ void do_forces_ewald_real(void)
 
 void init_ewald(void)
 {
-  int    i, j, k;
+  int    i, j, k, offx, offy, offz, count, num;
   real   kvek2, vorf1;
-  int    count, num;
 
   /* we implicitly assume a system of units, in which lengths are
      measured in Angstrom [A], energies in electron volts [eV], 
@@ -425,8 +436,8 @@ void init_ewald(void)
   /* we need it earlier for analytically defined potentials */
   /* ew_eps   = 14.38; */
   twopi    = 2.0 * M_PI;
-  ew_vorf  = ew_kappa / sqrt( M_PI );
-  vorf1    = 2.0 * twopi * ew_eps / volume;
+  ew_vorf  = ew_kappa / SQRT( M_PI );
+  vorf1    = twopi * ew_eps / volume;
 
   ew_nx = (int) (ew_kcut * SQRT( SPROD(box_x,box_x) ) / twopi) + 1;
   ew_ny = (int) (ew_kcut * SQRT( SPROD(box_y,box_y) ) / twopi) + 1;
@@ -459,9 +470,9 @@ void init_ewald(void)
         /* only half of the k-vectors are needed */
         if ( (k==0) && ( (j<0) || ( (j==0) && (i<1) ) ) ) continue;
 
-        ew_ivek[ew_totk].x = i;
-        ew_ivek[ew_totk].y = j;
-        ew_ivek[ew_totk].z = k;
+        ew_ivek[ew_totk].x = i + ew_nx;
+        ew_ivek[ew_totk].y = j + ew_ny;
+        ew_ivek[ew_totk].z = k + ew_nz;
 
         ew_expk[ew_totk] = vorf1 * exp( -kvek2 / (4.0*SQR(ew_kappa)) ) / kvek2;
 
@@ -472,31 +483,38 @@ void init_ewald(void)
   printf("EWALD: %d k-vectors\n", ew_totk);
 
   /* Allocate memory for exp(ikr) */
-  coskx = (real *) malloc( natoms * (2*ew_nx+1) * sizeof(real));
-  sinkx = (real *) malloc( natoms * (2*ew_nx+1) * sizeof(real));
-  cosky = (real *) malloc( natoms * (2*ew_ny+1) * sizeof(real));
-  sinky = (real *) malloc( natoms * (2*ew_ny+1) * sizeof(real));
-  coskz = (real *) malloc( natoms * (2*ew_nz+1) * sizeof(real));
-  sinkz = (real *) malloc( natoms * (2*ew_nz+1) * sizeof(real));
-  coskr = (real *) malloc( natoms               * sizeof(real));
-  sinkr = (real *) malloc( natoms               * sizeof(real));
+  ew_dx = 2 * ew_nx + 1;
+  ew_dy = 2 * ew_ny + 1;
+  ew_dz = 2 * ew_nz + 1;
+  coskx = (real *) malloc( natoms * ew_dx * sizeof(real));
+  sinkx = (real *) malloc( natoms * ew_dx * sizeof(real));
+  cosky = (real *) malloc( natoms * ew_dy * sizeof(real));
+  sinky = (real *) malloc( natoms * ew_dy * sizeof(real));
+  coskz = (real *) malloc( natoms * ew_dz * sizeof(real));
+  sinkz = (real *) malloc( natoms * ew_dz * sizeof(real));
+  coskr = (real *) malloc( natoms         * sizeof(real));
+  sinkr = (real *) malloc( natoms         * sizeof(real));
 
   if( coskx == NULL || sinkx == NULL || cosky == NULL || sinky == NULL
       || coskz == NULL || sinkz == NULL || coskr == NULL || sinkr == NULL )
     error("EWALD: Cannot allocate memory for exp(ikr)");
 
   /* Position independent initializations */
-  count = 0;
+  offx = ew_nx; 
+  offy = ew_ny; 
+  offz = ew_nz;
   for (k=0; k<ncells; k++) {
     cell *p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
-      coskx I(ew_nx,count,ew_nx) = 1.0;
-      sinkx I(ew_nx,count,ew_nx) = 0.0;
-      cosky I(ew_ny,count,ew_ny) = 1.0;
-      sinky I(ew_ny,count,ew_ny) = 0.0;
-      coskz I(ew_nz,count,ew_nz) = 1.0;
-      sinkz I(ew_nz,count,ew_nz) = 0.0;
-      count++;
+      coskx[offx] = 1.0;
+      sinkx[offx] = 0.0;
+      cosky[offy] = 1.0;
+      sinky[offy] = 0.0;
+      coskz[offz] = 1.0;
+      sinkz[offz] = 0.0;
+      offx += ew_dx;
+      offy += ew_dy;
+      offz += ew_dz;
     }
   }
 }
