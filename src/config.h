@@ -127,7 +127,15 @@
 #define BUFSTEP 100
 
 /* maximum number of data items an atom can have */
-#define MAX_ATOM_SIZE 100
+#ifdef TWOD
+#define MAX_ATOM_SIZE 20
+#else
+#ifdef UNIAX
+#define MAX_ATOM_SIZE 40
+#else
+#define MAX_ATOM_SIZE 25
+#endif
+#endif
 
 /* number of data items by which an MPI buffer is increased */
 #define BUFFER_SIZE_INC 1024 
