@@ -132,8 +132,8 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols )
   if ((0==myid) || (1==parallel_input)) {
     if (format==1) read_pot_table1(pt, size, filename, infile);
     if (format==2) read_pot_table2(pt, size, filename, infile);
+    fclose(infile);
   }
-  fclose(infile);
 
 #ifdef MPI
   if (0==parallel_input) {
