@@ -9,12 +9,14 @@
 #include <X11/Xaw/SmeBSB.h> 
 #include <X11/Xaw/MenuButton.h> 
 #include <X11/Xaw/SmeLine.h> 
+#include <X11/Xaw/Dialog.h> 
 #include "vogle.h"
 
 #include "prototypes.h"
 #include "globals.h"
 #include "makros.h"
 
+Widget	canvas,toplevel;
 short int button;
 int oldmousex,oldmousey,mousex,mousey;
 
@@ -24,16 +26,16 @@ struct drag_struct {
   char *object;
 } drag_client;
 
-void press_event(Widget w,struct drag_struct *drag,XButtonEvent *ev) {
+XtEventHandler press_event(Widget w,struct drag_struct *drag,XButtonEvent *ev) {
   button=ev->button;
   oldmousex=ev->x;
   oldmousey=ev->y;
 }
 
-void motion_event(Widget w,struct drag_struct *drag,XButtonEvent *ev) {
+XtEventHandler motion_event(Widget w,struct drag_struct *drag,XButtonEvent *ev) {
 }
 
-void release_event(Widget w,struct drag_struct *drag,XButtonEvent *ev) {
+XtEventHandler release_event(Widget w,struct drag_struct *drag,XButtonEvent *ev) {
   int dx,dy,d;
 
   button=ev->button;
@@ -64,20 +66,20 @@ void release_event(Widget w,struct drag_struct *drag,XButtonEvent *ev) {
 }
 
 void LoadConfiguration(Widget w, XtPointer client, XtPointer call) {
-  natoms=read_atoms("tmp.id");
+  natoms=read_configuration("tmp.id");
   draw_scene(0);
 }
 
 void LoadDistribution(Widget w, XtPointer client, XtPointer call) {
-  printf("hallo %s\n",client);  
+  read_distribution("tmp.dist");
 }
 
 void SaveConfiguration(Widget w, XtPointer client, XtPointer call) {
-  write_atoms("out.id");
+  write_configuration("out.id");
 }
 
 void SaveDistribution(Widget w, XtPointer client, XtPointer call) {
-  printf("hallo %s\n",client);
+  write_distribution("out.dist");
 }
 
 void SaveImage(Widget w, XtPointer client, XtPointer call) {
@@ -116,7 +118,7 @@ void DisplayBonds(Widget w, XtPointer client, XtPointer call) {
   else {
     bond_mode=1;
     if (stat_bond)
-      read_unit_vecs();
+      read_unit_vectors();
   }
   draw_scene(scene_type);  
 }
@@ -136,86 +138,11 @@ void Quit(Widget w, XtPointer client, XtPointer call) {
 }
 
 
-Widget	canvas1;
-
 #define SIZE	512
 
 
-int	iii;
-int	back = 0;
-int	doubleb = 1;
-int	fill = 0;
-int	hatch = 0;
-
-int	vinited = 0;
-
-#define TRANS           25.0
-#define SCAL            0.1
-#define FILLED          2
-#define OUTLINE         3
-
-float   tdir = TRANS;
-float   scal = 1.0 + SCAL;
-int     but, nplanes;
-
 Display	*dpy;
 Window	win;
-
-do_plus() {
-  tdir = TRANS;
-}
-
-do_minus() {
-  tdir = -tdir;
-
-  if (scal < 1.0)
-    scal = 1.0 + SCAL;
-  else
-    scal = 1.0 - SCAL;
-}
-
-do_back() {
-  back = !back;
-  backface(back);
-}
-
-do_fill() {
-  fill = !fill;
-  hatch = 0;
-  polyfill(fill);
-}
-
-do_hatch() {
-  hatch = !hatch;
-  fill = 0;
-
-  polyhatch(hatch);
-}
-
-do_scale() {
-  scale(scal, scal, scal);
-}
-
-do_x() {
-  translate(tdir, 0.0, 0.0);
-}
-do_y() {
-  translate(0.0, tdir, 0.0);
-}
-
-do_z() {
-  translate(0.0, 0.0, tdir);
-}
-
-do_double() {
-  doubleb = !doubleb;
-
-  if (doubleb) {
-    fprintf(stderr, "Double buffer on\n");
-    backbuffer(1);
-  } else
-    frontbuffer();
-}
 
 XtCallbackProc quit() {
   vexit();
@@ -228,7 +155,7 @@ resize() {
 
   XtSetArg(arg[0], XtNwidth, &w);
   XtSetArg(arg[1], XtNheight, &h);
-  XtGetValues(canvas1, arg, 2);
+  XtGetValues(canvas, arg, 2);
 
   fprintf(stderr, "resize() %d %d\n", w, h);
   vo_xt_win_size((int)w, (int)h);
@@ -261,8 +188,7 @@ GC		gc;
 
 window_main(int argc, char **argv) {
   int		w, h;
-  Widget toplevel, 
-    panel,
+  Widget panel,
     qbut,
     bbut,
     fbut,
@@ -300,16 +226,9 @@ window_main(int argc, char **argv) {
   Widget quit;
 
   int n;
-  Arg		wargs[5];
-  void		drawscene();
-  Dimension	ww, wh, x, y;
-  XtTranslations	trans_table;
+  Arg wargs[5];
+  XtTranslations trans_table;
   
-  vinited = 0;
-
-  ww = wh = 100;
-  x = 0;
-  y = 0;
   toplevel = XtInitialize(argv[0], "xtlcube", NULL, 0, &argc, argv);
 
   panel = XtCreateManagedWidget("panel",
@@ -317,60 +236,8 @@ window_main(int argc, char **argv) {
 				toplevel,
 				NULL,
 				0);
-
   
-  /*  XtSetArg(wargs[0], XtNlabel, "Quit");
-  qbut = XtCreateManagedWidget("quit", 
-			       commandWidgetClass,
-			       panel,
-			       wargs,
-			       1);
-
-  XtAddCallback(qbut, XtNcallback, quit, NULL);
-
-  XtSetArg(wargs[0], XtNlabel, "Backface");
-  XtSetArg(wargs[1], XtNfromHoriz, qbut);
-  bbut = XtCreateManagedWidget("bargckfargce",
-			       commandWidgetClass,
-			       panel,
-			       wargs,
-			       2);
-
-  XtAddCallback(bbut, XtNcallback, do_back, NULL);
-
-  XtSetArg(wargs[0], XtNlabel, "Fill");
-  XtSetArg(wargs[1], XtNfromHoriz, bbut);
-  fbut = XtCreateManagedWidget("fill",
-			       commandWidgetClass,
-			       panel,
-			       wargs,
-			       2);
-  XtAddCallback(fbut, XtNcallback, do_fill, NULL);
-  
-  XtSetArg(wargs[0], XtNlabel, "Hatch");
-  XtSetArg(wargs[1], XtNfromHoriz, fbut);
-  hbut = XtCreateManagedWidget("hatch",
-			       commandWidgetClass,
-			       panel,
-			       wargs,
-			       2);
-  XtAddCallback(hbut, XtNcallback, do_hatch, NULL);
-
-  XtSetArg(wargs[0], XtNlabel, "DoubleBuffer");
-  XtSetArg(wargs[1], XtNfromHoriz, hbut);
-  dbut = XtCreateManagedWidget("doubleb",
-			       commandWidgetClass,
-			       panel,
-			       wargs,
-			       2);
-
-  XtAddCallback(dbut, XtNcallback, do_double, NULL);
-
-  XtSetArg(wargs[0], XtNwidth, 512);
-  XtSetArg(wargs[1], XtNheight, 512);
-  XtSetArg(wargs[2], XtNfromVert, qbut);
-  */
-
+  /* create the pull down menu */
   button1 = XtCreateManagedWidget("File", menuButtonWidgetClass,
 				  panel, NULL, 0);
 
@@ -473,7 +340,7 @@ window_main(int argc, char **argv) {
   
   XtSetArg(wargs[0], XtNwidth, 512);
   XtSetArg(wargs[1], XtNheight, 512);
-  canvas1 = XtCreateManagedWidget("canvas1", 
+  canvas = XtCreateManagedWidget("canvas", 
 				  simpleWidgetClass,
 				  panel,
 				  wargs,
@@ -481,7 +348,7 @@ window_main(int argc, char **argv) {
 
   XtAddActions(actions, XtNumber(actions));
   trans_table = XtParseTranslationTable(trans);
-  XtAugmentTranslations(canvas1, trans_table);
+  XtAugmentTranslations(canvas, trans_table);
 
   XtAddEventHandler(panel, ButtonPressMask, FALSE,
 		    press_event, &drag_client);
@@ -493,12 +360,11 @@ window_main(int argc, char **argv) {
   XtRealizeWidget(toplevel);
 
 
-  dpy = XtDisplay(canvas1);
-  win = XtWindow(canvas1);
+  dpy = XtDisplay(canvas);
+  win = XtWindow(canvas);
 
   vo_xt_window(dpy, win, 512, 512);
   vinit("X11");
-  vinited = 1;
 
   while(1) {
     XEvent	event;
@@ -507,19 +373,10 @@ window_main(int argc, char **argv) {
       XtNextEvent(&event);
       XtDispatchEvent(&event);
     }
-    vo_xt_window(dpy, XtWindow(canvas1), 512, 512);
+    vo_xt_window(dpy, XtWindow(canvas), 512, 512);
 
   }
 }
 
-void drawscene() {
-  float	x, y;
 
-  color(BLACK);
-  clear();
-  color(RED);
-  circle(0.0,0.0,.2);
-  if (doubleb)
-    swapbuffers();
-}
 

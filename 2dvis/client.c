@@ -134,7 +134,6 @@ int receive_conf()
   scaley=2.0/(maxy-miny);
 #ifndef TWOD
   scalez=2.0/(maxz-minz);
-  printf("%f %f %f\n", maxz, minz, scalez);
 #endif
   if (maxp==minp)
     scalepot=1.0;

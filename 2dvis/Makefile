@@ -1,15 +1,13 @@
 # Makefile beavis
 #
 
-# Compiler
-CC_iris4d = cc
-CC_i386-linux = gcc
-CC_alpha = gcc
-CC = 
-
-# Linker
+#Libraries
 LIBP = -L/usr/X11/lib
 LIBS = -lvogle -lm -lXaw
+EXTRALIBS_alpha = -lXt -lX11
+EXTRALIBS_i386-linux =
+EXTRALIBS_iris4d = -lXt -lX11
+LIBS += $(EXTRALIBS_$(HOSTTYPE))
 
 # Compiler
 CC_iris4d = cc
@@ -18,7 +16,7 @@ CC_alpha = gcc
 CC = $(CC_$(HOSTTYPE))
 
 # Headers
-HEADERS 	= sockutil.h tokens.h globals.h prototypes.h
+HEADERS 	= sockutil.h tokens.h globals.h prototypes.h makros.h
 SOURCES		= main.c client.c sockutil.c param.c menu.c
 
 # Compiler flags
@@ -31,10 +29,6 @@ endif
 ifneq (,$(strip $(findstring debug,${MAKETARGET})))
 CFLAGS += -g
 endif
-
-# Linker
-LIBP = -L/usr/X11/lib
-LIBS = -lvogle -lXaw -lm
 
 # Objects
 # Substitute .o for .c to get the names of the object files

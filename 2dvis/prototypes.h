@@ -6,7 +6,6 @@ void draw_scene(int scene_type);
 void compute_bonds(void);
 void init_graph(void);
 void display_help(void);
-int read_atoms(char *fname);
 void read_unit_vectors(void);
 void write_to_file(void);
 void getparamfile(char *paramfname);
@@ -23,3 +22,12 @@ void DisplayBonds(Widget w, XtPointer client, XtPointer call);
 void SpecifyHost(Widget w, XtPointer client, XtPointer call);
 void SpecifyPort(Widget w, XtPointer client, XtPointer call);
 void Quit(Widget w, XtPointer client, XtPointer call);
+void draw_scene(int scene_type);
+void draw_bonds(void);
+void draw_text(void);
+
+int read_configuration(char *fname);
+int write_configuration(char *fname);
+int read_distribution(char *fname);
+int write_distribution(char *fname);
+

@@ -23,204 +23,6 @@ int main(int argc, char **argv)
 
   read_parameters(argc,argv);
   window_main(argc,argv);
-  /*init_graph();*/
-
-  /* main loop */
-  do {
-    /* Taste, oder Mauskey erlaubt */
-    while (!((ch = checkkey()) || (mkey = slocator (&xloc, &yloc))));
-    if (mkey==1) {
-      xlocold=xloc;
-      ylocold=yloc;
-      while ((mkey=slocator(&xloc,&yloc))==1)
-	;
-      translate(xloc-xlocold,yloc-ylocold,.000001);
-      draw_scene(scene_type);
-    }
-    if (mkey==2) {
-      xlocold=xloc;
-      ylocold=yloc;
-      while ((mkey=slocator(&xloc,&yloc))==2)
-	;
-      rotate(100*(xloc-xlocold),'y');
-      rotate(100*(ylocold-yloc),'x');
-      draw_scene(scene_type);
-    }
-    if (mkey==3) { 
-      xlocold=xloc;
-      ylocold=yloc;
-      while ((mkey=slocator(&xloc,&yloc))==3)
-	;
-      delta=sqrt((xloc-xlocold)*(xloc-xlocold)+(yloc-ylocold)*(yloc-ylocold));
-      if (atan2(yloc-ylocold,xloc-xlocold)>0)
-	scale(1+.1*delta,1+.1*delta,0);
-      else
-	scale(1-.1*delta,1-.1*delta,0);
-      draw_scene(scene_type);
-    }
-    switch (ch) {
-    case '0' : 
-      radius*=1.5;
-      draw_scene(scene_type);
-      break;
-    case '.' : 
-      radius/=1.5;
-      draw_scene(scene_type);
-      break;
-    case '1' : 
-      translate(-.1,-.1,.000001);
-      draw_scene(scene_type);
-      break;
-    case '2' : 
-      translate(.000001,-.1,.000001);
-      draw_scene(scene_type);
-      break;
-    case '3' : 
-      translate(.1,-.1,.000001);
-      draw_scene(scene_type);
-      break;
-    case '4' : 
-      translate(-.1,.000001,.000001);
-      draw_scene(scene_type);
-      break;
-    case '6' : 
-      translate(.1,.000001,.000001);
-      draw_scene(scene_type);
-      break;
-    case '7' : 
-      translate(-.1,.1,.000001);
-      draw_scene(scene_type);
-      break;
-    case '8' : 
-      translate(.000001,.1,.000001);
-      draw_scene(scene_type);
-      break;
-    case '9' : 
-      translate(.1,.1,.000001);
-      draw_scene(scene_type);
-      break;
-    case '+' : 
-      scale(1.1,1.1,1.1);
-      draw_scene(scene_type);
-      break;
-    case '-' : 
-      scale(.9,.9,.9);
-      draw_scene(scene_type);
-      break;
-    case '*' : 
-      rotate(.1,'x');
-      draw_scene(scene_type);
-      break;
-    case '/' : 
-      rotate(.1,'y');
-      draw_scene(scene_type);
-      break;
-    case 'a' :
-      if (atom_mode)
-	atom_mode=0;
-      else {
-	atom_mode=1;
-      }
-      draw_scene(scene_type);
-      break;
-    case 'b' : 
-      if (bond_mode)
-	bond_mode=0;
-      else {
-	bond_mode=1;
-      }
-      draw_scene(scene_type);
-      break;
-    case 'c' : 
-      scene_type=0;
-      if (connect_client(9)==0) {
-	printf("No atoms!\n");
-	exit(-1);
-      }
-      draw_scene(scene_type);
-      break;
-    case 'd' : 
-      scene_type=1;
-      if (connect_client(1)==0) {
-	printf("No distribution!\n");
-	exit(-1);
-      }
-      draw_scene(scene_type);
-      break;
-    case 'e' : 
-      if (col_mode) 
-	col_mode=0; 
-      else
-	col_mode=1;
-      draw_scene(scene_type);
-      break;
-    case 'h' : 
-      display_help();
-      break;
-    case 'k' : 
-      if (eng_mode)
-	eng_mode=0;
-      else 
-	eng_mode=1;
-      draw_scene(scene_type);
-      break;
-    case 'l' : 
-      do { 
-	printf("Enter Filename: ");
-	scanf("%s", fname);
-      } 
-      while ((natoms=read_atoms(fname))<0);
-      if (natoms==0) {
-	printf("Kein Atom gelesen\n");
-	exit(-1);
-      }
-      draw_scene(scene_type);
-      break;
-    case 'm' : 
-      while (!((ch = checkkey()) || (mkey = slocator (&xloc, &yloc)))) {
-	if (connect_client(9)==0) {
-	  printf("No atoms!\n");
-	  exit(-1);
-	}
-	draw_scene(scene_type);
-      }
-      break;
-    case 'p' : 
-      make_picture();
-      break;
-    case 'q' : 
-      vexit();
-      exit(0);
-      break;
-    case 'r' : 
-      if (radectyp) 
-	radectyp=0; 
-      else 
-	radectyp=1;
-      draw_scene(scene_type);
-      break;
-    case 's':
-      if (stat_bond)
-	stat_bond=0;
-      else
-	stat_bond=1;
-      read_unit_vectors();
-      draw_scene(scene_type);
-      break;
-    case 't' : 
-      if (text) 
-	text=0; 
-      else 
-	text=1;
-      draw_scene(scene_type);
-      break;
-    case 'w' : 
-      write_to_file();
-      break;
-    default: break;
-    }
-  }
-  while (1);
 }
 
 /* init_graph initializes the graphics window */
@@ -295,13 +97,13 @@ void draw_scene(int scene_type) {
   double zz,zzj,dz;
 #endif
 
-  epsilon=.1;
   backbuffer();
   polyfill(1);
   color(BLACK);
   clear();
 
-  /* scene_type determines whether we deal with a distr. or a conf. */
+  /* scene_type determines whether we deal with a distr. or a conf.
+     distribution first */
   if (scene_type==1) {
     color(RED);
     for (i=0;i<x_res*y_res;i++) {
@@ -318,7 +120,8 @@ void draw_scene(int scene_type) {
     } /* for */
   } /* distribution (scene_type==1) */
 
-  if (scene_type==0) {
+  /* now configuration */ 
+  if ((scene_type==0)&&(atom_mode==1)) {
     for (i=0;i<natoms;i++) {
       xx=(x[i]-minx)*scalex-1;
       yy=(y[i]-miny)*scaley-1;
@@ -326,154 +129,184 @@ void draw_scene(int scene_type) {
       zz=(z[i]-minz)*scalez-1;
       zz*=.2; /* looks better */
 #endif
-      if (bond_mode==1) {
-	bcode[i]=0;
-	color(MAGENTA);
-	for (j=0;j<natoms;j++) {
-	  xxj=(x[j]-minx)*scalex-1;
-	  yyj=(y[j]-miny)*scaley-1;
-#ifndef TWOD
-	  zzj=(z[j]-minz)*scalez-1;
-	  zzj*=.2; /* looks better */
-#endif
-	  if (i==j) continue;
-	  if (stat_bond == 1) {
-	    if (qp)
-	      if (sorte[i]!=0) continue;
-	    dx=x[i]-x[j];
-	    if (ABS(dx)>2.4) continue;
-	    dy=y[i]-y[j];
-	    if (ABS(dy)>2.4) continue;
-#ifndef TWOD
-	    dz=z[i]-z[j];
-	    if (ABS(dz)>2.4) continue;	    
-#endif
-	    for (k=0;k<nunits;k++) {
-	      if (ABS(dx-ux[k])<epsilon)
-		if (ABS(dy-uy[k])<epsilon) {
-#ifndef TWOD
-		  if (ABS(dz-uz[k])<epsilon) {
-#endif
-		    bcode[i]+=pow(2,k);
-#ifndef TWOD
-		      move(xx,yy,zz);
-		      draw(xxj,yyj,zzj);
-		  }
-#else
-	      move2(xx,yy);
-	      draw2(xxj,yyj);
-#endif
-		}
-	    }
-	  }
-	  else { /* stat_bond==0 */
-	    maxbl=4.2;
-	    minbl=3.8;
-	    qp=1;
-	    if (qp) {
-	      if (sorte[i]!=0) continue;
-	      dx=x[i]-x[j];
-	      dy=y[i]-y[j];
-#ifndef TWOD
-	      dz=z[i]-z[j];
-	      dr=dx*dx+dy*dy+dz*dz;
-#else
-	      dr=dx*dx+dy*dy;
-#endif
-	      if (ABS(dr)<minbl) continue;
-	      if (ABS(dr)>maxbl) continue;
-#ifndef TWOD
-	      move(xx,yy,zz);
-	      draw(xxj,yyj,zzj);
-#else
-	      move2(xx,yy);
-	      draw2(xxj,yyj);
-#endif
-	      bcode[i]++;
-	    }
-	    else {
-	      dx=x[i]-x[j];
-	      dy=y[i]-y[j];
-#ifndef TWOD
-	      dz=z[i]-z[j];
-	      dr=dx*dx+dy*dy+dz*dz;
-#else
-	      dr=dx*dx+dy*dy;
-#endif
-	      if (ABS(dr)>maxbl) continue;
-	      if (ABS(dr)<minbl) continue;
-#ifndef TWOD
-	      move(xx,yy,zz);
-	      draw(xxj,yyj,zzj);
-#else
-	      move2(xx,yy);
-	      draw2(xxj,yyj);
-#endif
-	      bcode[i]++;
-	    }
-	  }
-	}
-      } /* bond_mode */
+      if (col_mode==0)
+	color(sorte[i]+1);
+      else {
+	if (eng_mode)
+	  cv=(int)(scalekin*(kin[i]+offskin));
+	else
+	  cv=(int)(scalepot*(pot[i]+offspot));
+	mapcolor(i+8,cv,cv,cv);
+	color(i+8);
+      }
 
-      if (atom_mode==1) {
+      /* if we shall draw bonds afterwards we compute
+	 the number of neighbours here */
+      if (bond_mode) {
 	nb=0;
 	for(k=0;k<nunits;k++)
-	  if (bcode[i]&(int)pow(2,k)) {
+	  if (bcode[i]&(int)pow(2,k))
 	    nb++;
-	  }
-	if (col_mode==0)
-	  color(sorte[i]+1);
-	else {
-	  if (bond_mode==1) 
-	    color(nb+1);
-	  else { /* bond_mode == 0 */
-	    if (eng_mode)
-	      cv=(int)(scalekin*(kin[i]+offskin));
-	    else
-	      cv=(int)(scalepot*(pot[i]+offspot));
-	    mapcolor(i+8,cv,cv,cv);
-	    color(i+8);
-	  }
-        }
-	if (radectyp)
-	  circle(xx,yy,.5*(sorte[i]+1)*radius*scalex);
-	else {
-#ifndef TWOD
-	  /* draw a cube */
-	  makepoly();
-	  move(xx-.01,yy-.01,zz-.01);
-	  draw(xx-.01,yy+.01,zz-.01);
-	  draw(xx+.01,yy+.01,zz-.01);
-	  draw(xx+.01,yy-.01,zz-.01);
-	  draw(xx+.01,yy-.01,zz+.01);
-	  draw(xx-.01,yy-.01,zz+.01);
-	  draw(xx-.01,yy-.01,zz-.01);
-	  draw(xx+.01,yy-.01,zz-.01);
-	  closepoly();
-	  makepoly();
-	  move(xx-.01,yy+.01,zz+.01);
-	  draw(xx+.01,yy+.01,zz+.01);
-	  draw(xx+.01,yy+.01,zz-.01);
-	  draw(xx-.01,yy+.01,zz-.01);
-	  draw(xx-.01,yy+.01,zz+.01);
-	  draw(xx-.01,yy-.01,zz+.01);
-	  draw(xx+.01,yy-.01,zz+.01);
-	  draw(xx+.01,yy+.01,zz+.01);
-	  closepoly();
-#else
-	  circle(xx,yy,radius*scalex);
-#endif
-	}
-      } /* atom_mode*/
-    } /* for i= */
-  } /* scene_type==0 */
 
+	/*	color(nb+1);*/
+      }
+
+      if (radectyp)
+	circle(xx,yy,.5*(sorte[i]+1)*radius*scalex);
+      else {
+#ifndef TWOD
+	/* draw a cube */
+	makepoly();
+	move(xx-.01,yy-.01,zz-.01);
+	draw(xx-.01,yy+.01,zz-.01);
+	draw(xx+.01,yy+.01,zz-.01);
+	draw(xx+.01,yy-.01,zz-.01);
+	draw(xx+.01,yy-.01,zz+.01);
+	draw(xx-.01,yy-.01,zz+.01);
+	draw(xx-.01,yy-.01,zz-.01);
+	draw(xx+.01,yy-.01,zz-.01);
+	closepoly();
+	makepoly();
+	move(xx-.01,yy+.01,zz+.01);
+	draw(xx+.01,yy+.01,zz+.01);
+	draw(xx+.01,yy+.01,zz-.01);
+	draw(xx-.01,yy+.01,zz-.01);
+	draw(xx-.01,yy+.01,zz+.01);
+	draw(xx-.01,yy-.01,zz+.01);
+	draw(xx+.01,yy-.01,zz+.01);
+	draw(xx+.01,yy+.01,zz+.01);
+	closepoly();
+#else
+	circle(xx,yy,radius*scalex);
+#endif
+      } /* radius encoding */
+    } /* for i= */
+  } /* configuration */
+
+  if (bond_mode) draw_bonds();
   if (text) draw_text();
   swapbuffers();
 }
 
- /* reading of a configuration from file */
-int read_atoms(char *fname) {
+void draw_bonds() {
+  int i,j,k;
+  float xx,yy,xxj,yyj,dx,dy,dr,epsilon;
+#ifndef TWOD
+  float zz,zzj,dz;
+#endif
+  epsilon=.1;
+
+  color(MAGENTA);
+  for (i=0;i<natoms;i++) {
+    xx=(x[i]-minx)*scalex-1;
+    yy=(y[i]-miny)*scaley-1;
+#ifndef TWOD
+    zz=(z[i]-minz)*scalez-1;
+    zz*=.2; /* looks better */
+#endif
+    for (j=0;j<natoms;j++) {
+      xxj=(x[j]-minx)*scalex-1;
+      yyj=(y[j]-miny)*scaley-1;
+#ifndef TWOD
+      zzj=(z[j]-minz)*scalez-1;
+      zzj*=.2; /* looks better */
+#endif
+      if (i==j) continue;
+      if (stat_bond == 1) {
+	qp=1;
+	if (qp) {
+#ifdef TWOD
+	  if (sorte[i]!=sorte[j]) continue;
+#else
+	  if (sorte[i]!=0) continue;
+	  if (sorte[j]!=0) continue;
+#endif
+	}
+	dx=x[i]-x[j];
+	if (ABS(dx)>2.4) continue;
+	dy=y[i]-y[j];
+	if (ABS(dy)>2.4) continue;
+#ifndef TWOD
+	dz=z[i]-z[j];
+	if (ABS(dz)>2.4) continue;	    
+#endif
+	for (k=0;k<nunits;k++) {
+	  if (ABS(dx-ux[k])<epsilon)
+	    if (ABS(dy-uy[k])<epsilon) {
+#ifndef TWOD
+	      if (ABS(dz-uz[k])<epsilon) {
+#endif
+		bcode[i]+=pow(2,k);
+#ifndef TWOD
+		color(MAGENTA);
+		if (k<2) color(YELLOW);
+	        if (k>3) color(CYAN);
+		move(xx,yy,zz);
+		draw(xxj,yyj,zzj);
+	      }
+#else
+	      move2(xx,yy);
+	      draw2(xxj,yyj);
+#endif
+	    }
+	}
+      }
+      else { /* stat_bond==0 */
+	maxbl=4.2;
+	minbl=3.8;
+	if (qp) {
+	  if (sorte[i]!=0) continue;
+	  dx=x[i]-x[j];
+	  dy=y[i]-y[j];
+#ifndef TWOD
+	  dz=z[i]-z[j];
+	  dr=dx*dx+dy*dy+dz*dz;
+#else
+	  dr=dx*dx+dy*dy;
+#endif
+	  if (ABS(dr)<minbl) continue;
+	  if (ABS(dr)>maxbl) continue;
+#ifndef TWOD
+	  move(xx,yy,zz);
+	  draw(xxj,yyj,zzj);
+#else
+	  move2(xx,yy);
+	  draw2(xxj,yyj);
+#endif
+	  bcode[i]++;
+	}
+	else {
+	  dx=x[i]-x[j];
+	  dy=y[i]-y[j];
+#ifndef TWOD
+	  dz=z[i]-z[j];
+	  dr=dx*dx+dy*dy+dz*dz;
+#else
+	  dr=dx*dx+dy*dy;
+#endif
+	  if (ABS(dr)>maxbl) continue;
+	  if (ABS(dr)<minbl) continue;
+#ifndef TWOD
+	  move(xx,yy,zz);
+	  draw(xxj,yyj,zzj);
+#else
+	  move2(xx,yy);
+	  draw2(xxj,yyj);
+#endif
+	  bcode[i]++;
+	}
+      }
+    } /* for j... */
+  } /* for i... */
+
+}
+
+/* reading of a configuration from file */
+int read_distribution(char *fname) {
+}
+
+/* reading of a configuration from file */
+int read_configuration(char *fname) {
 
   FILE *fp;
   char line[200],str[255];
@@ -571,7 +404,7 @@ int read_atoms(char *fname) {
 }
 
   /* reading of a configuration from file */
-int write_atoms(char *fname) {
+int write_configuration(char *fname) {
 
   FILE *fp;
   char str[255];
@@ -594,33 +427,15 @@ int write_atoms(char *fname) {
   return n;
 }
 
-void make_picture(void) {
-
-  char str[255];
-
-  sprintf(str,"import -window 0x4800002 2dvis.gif");
-  system(str);
-}
-
-void write_to_file(void) {
+int write_distribution(char *fname) {
   FILE *fp;
   int i;
 
-  if (scene_type) {
-    fp=fopen("2dvis.dist","w");
-    fprintf(fp,"%d %d %s\n", x_res,y_res,(eng_mode)?"kin":"pot");
-    for (i=0;i<x_res*y_res;i++)
-      fprintf(fp,"%f %f\n",potarray[i],kinarray[i]);
-  }
-  else {
-    fp=fopen("2dvis.id","w");
-    for (i=0;i<natoms;i++) {
-      if (columns==6)
-	fprintf(fp,"%d %d %f %f %f\n",nummer[i],sorte[i],masse[i],x[i],y[i]);
-      else
-	fprintf(fp,"%d %d %f %f %f %f %f %f\n",nummer[i],sorte[i],masse[i],x[i],y[i],vx[i],vy[i],pot[i]);
-    }
-  }
+  fp=fopen("2dvis.dist","w");
+  fprintf(fp,"%d %d %s\n", x_res,y_res,(eng_mode)?"kin":"pot");
+  for (i=0;i<x_res*y_res;i++)
+    fprintf(fp,"%f %f\n",potarray[i],kinarray[i]);
+
   fclose(fp);
 }
 
@@ -632,9 +447,9 @@ void read_unit_vectors(void) {
   fp=fopen(uvfname,"r");
 
   fgets(line,200,fp);
-  if (strncmp(line,"periodic",8))
+  if (strncmp(line,"period",6))
     qp=0;
-  if (strncmp(line,"quasiper",8))
+  if (strncmp(line,"quasip",6))
     qp=1;
 
   fgets(line,200,fp);
