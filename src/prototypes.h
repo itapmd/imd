@@ -46,6 +46,7 @@ void move_atoms_msd(void);
 void do_boundaries(void);
 void fix_cells(void);
 void calc_properties(void);
+void write_cell(FILE *out, cell *p);
 void write_config(int steps);
 void write_properties(int steps);
 void write_surroundings(int steps);

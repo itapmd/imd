@@ -442,6 +442,34 @@ void write_msqd(int steps)
 *
 ******************************************************************************/
 
+void write_cell(FILE *out, cell *p)
+{
+  int i;
+
+  for (i=0; i < p->n; i++)
+#ifdef ZOOM
+    if( (p->ort X(i) >= pic_ll.x) && (p->ort X(i) <= pic_ur.x) &&
+        (p->ort Y(i) >= pic_ll.y) && (p->ort Y(i) <= pic_ur.y) )
+#endif
+#ifdef TRANSPORT
+      fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f %12f\n",
+#else
+      fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f\n",
+#endif
+        p->nummer[i],
+        p->sorte[i],
+	p->masse[i],
+	p->ort X(i),
+	p->ort Y(i),
+	p->impuls X(i) / p->masse[i],
+	p->impuls Y(i) / p->masse[i],
+        p->pot_eng[i]
+#ifdef TRANSPORT
+        ,p->heatcond[i]
+#endif
+      );
+}
+
 void write_config(int steps)
 
 /* Makro to write data of cell p to file out */
@@ -500,7 +528,7 @@ void write_config(int steps)
     for (j = 1; j < cell_dim.x-1; ++j )
       for (k = 1; k < cell_dim.y-1; ++k ) {
  	  p = PTR_2D_V(cell_array, j, k, cell_dim);
-	  WRITE_CELL;
+	  write_cell(out,p);
 	};
     
     fclose(out);
@@ -519,7 +547,7 @@ void write_config(int steps)
       for (j = 1; j < cell_dim.x-1; ++j )
 	for (k = 1; k < cell_dim.y-1; ++k ) {
 	  p = PTR_2D_V(cell_array, j, k, cell_dim);
-	  WRITE_CELL;
+	  write_cell(out,p);
 	};
 
       /* Receive data from other cpus and write that */
@@ -529,7 +557,7 @@ void write_config(int steps)
 	  for (k = 1; k < cell_dim.y-1; ++k ) {
 	    tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
 	    recv_cell( p, m, tag );
-	    WRITE_CELL;
+	    write_cell(out,p);
 	  };
 
       fclose(out);      
@@ -557,7 +585,7 @@ void write_config(int steps)
 		     cell_dim);
        ++p ) 
 
-    WRITE_CELL;
+    write_cell(out,p);
 
   fclose(out);  
 
