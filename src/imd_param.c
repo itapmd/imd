@@ -498,6 +498,20 @@ void getparamfile(char *paramfname, int sim)
       /* time constant for thermostat */
       getparam("isq_tau_eta",&isq_tau_eta,PARAM_REAL,1,1);
     }
+#ifdef UNIAX
+    else if (strcasecmp(token,"tau_eta_rot")==0) {
+      /* time constant for thermostat of rotational motion */
+      getparam("tau_eta_rot",&isq_tau_eta_rot,PARAM_REAL,1,1);
+      if (isq_tau_eta_rot == (real)0) {
+        error("tau_eta_rot is zero.\n");
+      }
+      isq_tau_eta_rot = (real)1/SQR(isq_tau_eta_rot);
+    }
+    else if (strcasecmp(token,"isq_tau_eta_rot")==0) {
+      /* time constant for thermostat */
+      getparam("isq_tau_eta_rot",&isq_tau_eta_rot,PARAM_REAL,1,1);
+    }
+#endif
 #endif
 #ifdef MC
     else if (strcasecmp(token,"mc_beta")==0) {
@@ -897,6 +911,13 @@ void getparamfile(char *paramfname, int sim)
       getparam("ttbp_potfile",ttbp_potfilename,PARAM_STR,1,255);
     }
 #endif
+#ifdef UNIAX
+    else if (strcasecmp(token,"uniax_r_cut")==0) {
+      /* UNIAX: cutoff radius of uniaxial molecules */
+      getparam("uniax_r_cut",&uniax_r_cut,PARAM_REAL,1,1);
+      uniax_r2_cut = uniax_r_cut * uniax_r_cut;
+    }
+#endif
     else {
       fprintf(stderr,"**** WARNING: Unknown TAG %s ignored ****\n",token);
     }
@@ -984,7 +1005,11 @@ void check_parameters_complete()
     error("display_host name or IP address missing.\n");
   }
 #endif
-
+#ifdef UNIAX
+  if (uniax_r_cut == 0) {
+    error("uniax_r_cut is missing or zero.\n");
+  }
+#endif
 }
 
 /*****************************************************************
@@ -1153,6 +1178,9 @@ void broadcast_params() {
 #if defined(NVT) || defined(NPT) || defined(STM)
   MPI_Bcast( &eta ,         1 , MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &isq_tau_eta , 1 , MPI_REAL, 0, MPI_COMM_WORLD); 
+#ifdef UNIAX
+  MPI_Bcast( &isq_tau_eta_rot , 1 , MPI_REAL, 0, MPI_COMM_WORLD); 
+#endif
 #endif
 
 #if defined(STM)
@@ -1257,6 +1285,11 @@ void broadcast_params() {
 
 #ifdef USE_SOCKETS
   MPI_Bcast( &socket_int, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+#endif
+
+#ifdef UNIAX
+  MPI_Bcast( &uniax_r_cut,  1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &uniax_r2_cut, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef EAM

@@ -144,12 +144,17 @@ void main_loop(void)
 
     move_atoms();
 
+
 #if defined(AND) || defined(NVT) || defined(NPT)
     if ((steps==steps_min) && (use_curr_temp==1)) {
-      temperature = 2 * tot_kin_energy / (DIM * natoms);
+#ifdef UNIAX
+      temperature = 2.0 * tot_kin_energy / (5.0 * natoms);
+#else
+      temperature = 2.0 * tot_kin_energy / (DIM * natoms);
+#endif
       dtemp = (end_temp - temperature) / (steps_max - steps_min);
       use_curr_temp = 0;
-    };
+    }
 #endif
 
 #ifdef NPT_iso
@@ -460,7 +465,11 @@ void calc_properties(void)
   volume   = box_x.x * ( box_y.y * box_z.z - box_y.z * box_z.y)
            - box_x.y * ( box_y.x * box_z.z - box_y.z * box_z.x)
            + box_x.z * ( box_y.x * box_z.y - box_y.x * box_z.y);
-  pressure = ( 2.0 * tot_kin_energy + virial ) / ( 3 * volume );
+#ifdef UNIAX
+  pressure = ( 2.0 / 5.0 * tot_kin_energy + virial / 3.0 ) / volume ;
+#else
+  pressure = ( 2.0 * tot_kin_energy + virial ) / ( 3.0 * volume );
+#endif
 }
 
 

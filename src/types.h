@@ -104,6 +104,14 @@ typedef struct {
 #ifdef TTBP
     neightab    **neigh;
 #endif
+#ifdef UNIAX
+    real        *traeg_moment;
+    real        *achse;
+    real        *gestalt;
+    real        *brunnen;
+    real        *dreh_impuls;
+    real        *dreh_moment;
+#endif
     int         n;
     int         n_max;
 } cell;
@@ -122,9 +130,4 @@ typedef struct { real    *data;
 
 /* String used for Filenames etc. */
 typedef char str255[255];
-
-
-
-
-
 

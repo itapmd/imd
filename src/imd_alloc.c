@@ -52,13 +52,15 @@ void move_atom(ivektor cellc, cell *from, int index)
 #ifndef TWOD
   to->kraft Z(to->n) = from->kraft Z(index); 
 #endif
+
   
   to->impuls X(to->n) = from->impuls X(index); 
   to->impuls Y(to->n) = from->impuls Y(index); 
 #ifndef TWOD
   to->impuls Z(to->n) = from->impuls Z(index); 
 #endif
-#ifndef MONOLJ    
+    
+#ifndef MONOLJ
   to->masse[to->n] = from->masse[index]; 
   to->sorte[to->n] = from->sorte[index]; 
   to->nummer[to->n] = from->nummer[index]; 
@@ -70,7 +72,7 @@ void move_atom(ivektor cellc, cell *from, int index)
 #ifndef TWOD
   to->ort_ref Z (to->n) = from->ort_ref Z(index);
 #endif
-#endif
+#endif /* DISLOC */
 #ifdef REFPOS
   to->refpos X(to->n) = from->refpos X(index);
   to->refpos Y(to->n) = from->refpos Y(index);
@@ -78,7 +80,26 @@ void move_atom(ivektor cellc, cell *from, int index)
   to->refpos Z(to->n) = from->refpos Z(index);
 #endif
 #endif /* REFPOS */
+#ifdef UNIAX
+  to->traeg_moment[to->n] = from->traeg_moment[index]; 
+  to->achse X(to->n) = from->achse X(index); 
+  to->achse Y(to->n) = from->achse Y(index); 
+  to->achse Z(to->n) = from->achse Z(index); 
+  to->gestalt X(to->n) = from->gestalt X(index); 
+  to->gestalt Y(to->n) = from->gestalt Y(index); 
+  to->gestalt Z(to->n) = from->gestalt Z(index); 
+  to->brunnen X(to->n) = from->brunnen X(index); 
+  to->brunnen Y(to->n) = from->brunnen Y(index); 
+  to->brunnen Z(to->n) = from->brunnen Z(index); 
+  to->dreh_moment X(to->n) = from->dreh_moment X(index); 
+  to->dreh_moment Y(to->n) = from->dreh_moment Y(index); 
+  to->dreh_moment Z(to->n) = from->dreh_moment Z(index); 
+  to->dreh_impuls X(to->n) = from->dreh_impuls X(index); 
+  to->dreh_impuls Y(to->n) = from->dreh_impuls Y(index); 
+  to->dreh_impuls Z(to->n) = from->dreh_impuls Z(index); 
+#endif
 #endif /* not MONOLJ */
+
   ++to->n;
 
   /* Delete atom in original cell */
@@ -99,11 +120,14 @@ void move_atom(ivektor cellc, cell *from, int index)
     from->kraft Z(index) = from->kraft Z(from->n); 
 #endif
 
+
     from->impuls X(index) = from->impuls X(from->n); 
     from->impuls Y(index) = from->impuls Y(from->n); 
 #ifndef TWOD
     from->impuls Z(index) = from->impuls Z(from->n); 
 #endif
+
+
 #ifndef MONOLJ
     from->masse[index] = from->masse[from->n]; 
     from->sorte[index] = from->sorte[from->n]; 
@@ -116,7 +140,7 @@ void move_atom(ivektor cellc, cell *from, int index)
 #ifndef TWOD
     from->ort_ref Z(index) = from->ort_ref Z(from->n);
 #endif
-#endif
+#endif /* DISLOC */
 #ifdef REFPOS
     from->refpos X(index) = from->refpos X(from->n);
     from->refpos Y(index) = from->refpos Y(from->n);
@@ -124,6 +148,25 @@ void move_atom(ivektor cellc, cell *from, int index)
     from->refpos Z(index) = from->refpos Z(from->n);
 #endif
 #endif /* REFPOS */
+#ifdef UNIAX
+    from->traeg_moment[index] = from->traeg_moment[from->n]; 
+    from->achse X(index) = from->achse X(from->n); 
+    from->achse Y(index) = from->achse Y(from->n); 
+    from->achse Z(index) = from->achse Z(from->n); 
+    from->gestalt X(index) = from->gestalt X(from->n); 
+    from->gestalt Y(index) = from->gestalt Y(from->n); 
+    from->gestalt Z(index) = from->gestalt Z(from->n); 
+    from->brunnen X(index) = from->brunnen X(from->n); 
+    from->brunnen Y(index) = from->brunnen Y(from->n); 
+    from->brunnen Z(index) = from->brunnen Z(from->n); 
+    from->dreh_moment X(index) = from->dreh_moment X(from->n); 
+    from->dreh_moment Y(index) = from->dreh_moment Y(from->n); 
+    from->dreh_moment Z(index) = from->dreh_moment Z(from->n); 
+    from->dreh_impuls X(index) = from->dreh_impuls X(from->n); 
+    from->dreh_impuls Y(index) = from->dreh_impuls Y(from->n); 
+    from->dreh_impuls Z(index) = from->dreh_impuls Z(from->n); 
+#endif
+
 #endif /* not MONOLJ */
   }
 }
@@ -197,9 +240,9 @@ void alloc_cell(cell *thecell, int count)
   if (0==count) {
     thecell->n = 0;
     
-    newcell.ort =    NULL;
+    newcell.ort = NULL;
     newcell.impuls = NULL;
-    newcell.kraft  = NULL;
+    newcell.kraft = NULL;
 #ifndef MONOLJ
     newcell.nummer = NULL;
     newcell.pot_eng= NULL;
@@ -210,6 +253,7 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
     newcell.refpos = NULL;
 #endif
+    newcell.sorte  = NULL;
 #ifdef TRANSPORT
     newcell.heatcond = NULL;
 #endif
@@ -217,22 +261,38 @@ void alloc_cell(cell *thecell, int count)
     newcell.presstens = NULL;
     newcell.presstens_offdia = NULL;
 #endif
-    newcell.sorte  = NULL;
     newcell.masse  = NULL;
-#endif
 #ifdef TTBP
     newcell.neigh  = NULL;
 #endif
+#ifdef UNIAX
+    newcell.traeg_moment = NULL;
+    newcell.achse = NULL;
+    newcell.gestalt = NULL;
+    newcell.brunnen = NULL;
+    newcell.dreh_impuls = NULL;
+    newcell.dreh_moment = NULL;
+#endif
+#endif /* not MONOLJ */
   }
   else {
         /* Cell IS allocated */
     
     /* Calulate newcell size */
+#ifdef UNIAX
+    newcellsize = count *
+        ( DIM * sizeof(real) + /* ort */
+          DIM * sizeof(real) + /* achse */
+          DIM * sizeof(real) + /* impuls */
+          DIM * sizeof(real) + /* drehimpuls */
+          DIM * sizeof(real) + /* kraft */
+          DIM * sizeof(real) ); /* drehmoment */
+#else
     newcellsize = count *
         ( DIM * sizeof(real) + /* ort */
           DIM * sizeof(real) + /* impuls */
           DIM * sizeof(real) ); /* kraft */
-  
+#endif  
         /* Get some space */
     space = malloc(newcellsize);
 
@@ -240,9 +300,14 @@ void alloc_cell(cell *thecell, int count)
         /* Calculate Pointers */
   
     tmp = (real *) space;
-    newcell.ort    = tmp; tmp += DIM * count;
+    newcell.ort = tmp; tmp += DIM * count;
     newcell.impuls = tmp; tmp += DIM * count;
     newcell.kraft  = tmp; tmp += DIM * count;
+#ifdef UNIAX
+    newcell.achse = tmp; tmp += DIM * count;
+    newcell.dreh_impuls = tmp; tmp += DIM * count;
+    newcell.dreh_moment = tmp; tmp += DIM * count;
+#endif
 #ifndef MONOLJ
         /* Allocate rest of variables */
     newcell.nummer = (integer * ) malloc(count * sizeof(integer) );
@@ -254,6 +319,8 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
     newcell.refpos = (real *) malloc(count*DIM*sizeof(real));
 #endif
+    newcell.sorte  = (shortint* ) malloc(count * sizeof(shortint));
+    newcell.masse  = (real    * ) malloc(count * sizeof(real)    );
 #ifdef TRANSPORT
     newcell.heatcond = (real *) malloc(count*sizeof(real));
 #endif
@@ -273,9 +340,13 @@ void alloc_cell(cell *thecell, int count)
       newcell.neigh[i] = alloc_neightab(newcell.neigh[i], ttbp_len);
     }
 #endif
-    newcell.sorte  = (shortint* ) malloc(count * sizeof(shortint));
     newcell.masse  = (real    * ) malloc(count * sizeof(real)    );
+#ifdef UNIAX
+    newcell.traeg_moment  = (real    * ) malloc(count * sizeof(real)    );
+    newcell.gestalt = (real *) malloc(count*DIM*sizeof(real));
+    newcell.brunnen = (real *) malloc(count*DIM*sizeof(real));
 #endif
+#endif /* not MONOLJ */
 
     if ((NULL == space)
 #ifndef MONOLJ
@@ -288,6 +359,8 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
         || (NULL == newcell.refpos)
 #endif
+        || (NULL == newcell.sorte)
+        || (NULL == newcell.masse)
 #ifdef TRANSPORT
         || (NULL == newcell.heatcond)
 #endif
@@ -295,9 +368,13 @@ void alloc_cell(cell *thecell, int count)
         || (NULL == newcell.presstens)
         || (NULL == newcell.presstens_offdia)
 #endif
-        || (NULL == newcell.sorte)
         || (NULL == newcell.masse)
+#ifdef UNIAX
+        || (NULL == newcell.traeg_moment)
+	|| (NULL == newcell.gestalt)
+	|| (NULL == newcell.brunnen)
 #endif
+#endif /* not MONOLJ */
         ) {
       printf("Want %d bytes.\n",newcellsize);
 #ifdef CRAY
@@ -341,6 +418,8 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
       memcpy(newcell.refpos, thecell->refpos, thecell->n * DIM * sizeof(real));
 #endif
+      memcpy(newcell.sorte ,  thecell->sorte,   thecell->n * sizeof(shortint));
+      memcpy(newcell.masse ,  thecell->masse,   thecell->n * sizeof(real));
 #ifdef TRANSPORT
       memcpy(newcell.heatcond,  thecell->heatcond,  thecell->n * sizeof(real));
 #endif
@@ -350,9 +429,18 @@ void alloc_cell(cell *thecell, int count)
       memcpy(newcell.presstens_offdia, thecell->presstens_offdia, 
              thecell->n * DIM * sizeof(real));
 #endif
-      memcpy(newcell.sorte ,  thecell->sorte,   thecell->n * sizeof(shortint));
       memcpy(newcell.masse ,  thecell->masse,   thecell->n * sizeof(real));
+#ifdef UNIAX
+      memcpy(newcell.traeg_moment ,  thecell->traeg_moment,  thecell->n * sizeof(real));
+      memcpy(newcell.achse , thecell->achse,  thecell->n * DIM * sizeof(real));
+      memcpy(newcell.gestalt, thecell->gestalt, 
+                               thecell->n * DIM * sizeof(real));
+      memcpy(newcell.brunnen, thecell->brunnen, 
+                               thecell->n * DIM * sizeof(real));
+      memcpy(newcell.dreh_impuls , thecell->dreh_impuls,  thecell->n * DIM * sizeof(real));
+      memcpy(newcell.dreh_moment , thecell->dreh_moment,  thecell->n * DIM * sizeof(real));
 #endif
+#endif /* not MONOLJ */
     }
 
     /* deallocate old cell */
@@ -367,6 +455,7 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
     free(thecell->refpos);
 #endif
+    free(thecell->sorte);
 #ifdef TRANSPORT
     free(thecell->heatcond);
 #endif
@@ -374,18 +463,22 @@ void alloc_cell(cell *thecell, int count)
     free(thecell->presstens);
     free(thecell->presstens_offdia);
 #endif
-    free(thecell->sorte);
     free(thecell->masse);
-#endif
 #ifdef TTBP
     free(thecell->neigh);
 #endif
+#ifdef UNIAX
+    free(thecell->traeg_moment);
+    free(thecell->gestalt);
+    free(thecell->brunnen);
+#endif
+#endif /* not MONOLJ */
   }
 
-  /* set pointers to contents of new cell */
-  thecell->ort      = newcell.ort;
-  thecell->impuls   = newcell.impuls;
-  thecell->kraft    = newcell.kraft;
+  /* set pointers accordingly */
+  thecell->ort    = newcell.ort;
+  thecell->impuls = newcell.impuls;
+  thecell->kraft  = newcell.kraft;
 #ifndef MONOLJ
   thecell->nummer   = newcell.nummer;
   thecell->pot_eng  = newcell.pot_eng;
@@ -394,8 +487,10 @@ void alloc_cell(cell *thecell, int count)
   thecell->ort_ref  = newcell.ort_ref;
 #endif
 #ifdef REFPOS
-  thecell->refpos   = newcell.refpos;
+  thecell->refpos = newcell.refpos;
 #endif
+  thecell->sorte  = newcell.sorte;
+  thecell->masse  = newcell.masse;
 #ifdef TRANSPORT
   thecell->heatcond = newcell.heatcond;
 #endif
@@ -406,11 +501,16 @@ void alloc_cell(cell *thecell, int count)
 #ifdef TTBP
   thecell->neigh    = newcell.neigh;
 #endif
-  thecell->sorte    = newcell.sorte;
-  thecell->masse    = newcell.masse;
+#ifdef UNIAX
+  thecell->traeg_moment = newcell.traeg_moment;
+  thecell->achse  = newcell.achse;
+  thecell->dreh_impuls = newcell.dreh_impuls;
+  thecell->dreh_moment = newcell.dreh_moment;
+  thecell->gestalt = newcell.gestalt;
+  thecell->brunnen = newcell.brunnen;
 #endif
+#endif /* not MONOLJ */
 
   thecell->n_max    = count;
 
 }
-

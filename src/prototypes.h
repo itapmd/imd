@@ -140,6 +140,13 @@ ivektor my_cart_coords(int myid);
 void my_cart_rank(ivektor my_coord);
 #endif
 
+
+#ifdef MIKSHEAR
+void apply_shear(void);
+void shear1step(int steps);
+void write_shear_energy(int steps, int shear_steps);
+#endif
+
 #ifdef DEFORM
 void shear_sample(void);
 void expand_sample(void);
@@ -163,6 +170,15 @@ void do_forces_ttbp(cell *p);
 void read_ttbp_potential(str255 ttbp_potfilename);
 neightab *alloc_neightab(neightab *neigh, int count);
 #endif
+
+#ifdef UNIAX
+void do_forces_uniax(cell *p, cell *q, vektor pbc);
+void gay_berne ( vektor r12, vektor e1, vektor e2, 
+		 real rsqr, vektor s1, vektor w1, 
+		 real *pot12, vektor *force12, 
+		 vektor *torque12, vektor *torque21 );
+#endif
+
 
 #if defined(CORRELATE) || defined(MSQD)
 void alloc_correl(int, int);

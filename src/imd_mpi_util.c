@@ -75,9 +75,25 @@ void copy_one_atom(msgbuf *to, cell *from, int index)
 #ifndef TWOD
   to->data[ to->n++ ] = from->ort Z(index); 
 #endif
+#ifdef UNIAX
+  to->data[ to->n++ ] = from->achse X(index); 
+  to->data[ to->n++ ] = from->achse Y(index); 
+  to->data[ to->n++ ] = from->achse Z(index); 
+#endif
 #ifndef MONOLJ
   to->data[ to->n++ ] = from->sorte[index];
+#ifdef UNIAX
+  to->data[ to->n++ ] = from->gestalt X(index); 
+  to->data[ to->n++ ] = from->gestalt Y(index); 
+  to->data[ to->n++ ] = from->gestalt Z(index); 
+  to->data[ to->n++ ] = from->brunnen X(index); 
+  to->data[ to->n++ ] = from->brunnen Y(index); 
+  to->data[ to->n++ ] = from->brunnen Z(index); 
+#endif
   to->data[ to->n++ ] = from->masse[index];
+#ifdef UNIAX
+  to->data[ to->n++ ] = from->traeg_moment[index];
+#endif
   to->data[ to->n++ ] = from->nummer[index];
 #ifdef REFPOS
   to->data[ to->n++ ] = from->refpos X(index);
@@ -101,7 +117,11 @@ void copy_one_atom(msgbuf *to, cell *from, int index)
 #ifndef TWOD
   to->data[ to->n++ ] = from->impuls Z(index); 
 #endif
-
+#ifdef UNIAX
+  to->data[ to->n++ ] = from->dreh_impuls X(index); 
+  to->data[ to->n++ ] = from->dreh_impuls Y(index); 
+  to->data[ to->n++ ] = from->dreh_impuls Z(index); 
+#endif
   /* Delete atom in original cell */
 
   --from->n;
@@ -113,22 +133,46 @@ void copy_one_atom(msgbuf *to, cell *from, int index)
 #ifndef TWOD
     from->ort Z(index) = from->ort Z(from->n); 
 #endif
-
+#ifdef UNIAX
+    from->achse X(index) = from->achse X(from->n); 
+    from->achse Y(index) = from->achse Y(from->n); 
+    from->achse Z(index) = from->achse Z(from->n); 
+#endif
     from->kraft X(index) = from->kraft X(from->n); 
     from->kraft Y(index) = from->kraft Y(from->n); 
 #ifndef TWOD
     from->kraft Z(index) = from->kraft Z(from->n); 
 #endif
-
+#ifdef UNIAX
+    from->dreh_moment X(index) = from->dreh_moment X(from->n); 
+    from->dreh_moment Y(index) = from->dreh_moment Y(from->n); 
+    from->dreh_moment Z(index) = from->dreh_moment Z(from->n); 
+#endif
     from->impuls X(index) = from->impuls X(from->n); 
     from->impuls Y(index) = from->impuls Y(from->n); 
 #ifndef TWOD
     from->impuls Z(index) = from->impuls Z(from->n); 
 #endif
+#ifdef UNIAX
+    from->dreh_impuls X(index) = from->dreh_impuls X(from->n); 
+    from->dreh_impuls Y(index) = from->dreh_impuls Y(from->n); 
+    from->dreh_impuls Z(index) = from->dreh_impuls Z(from->n); 
+#endif
 #ifndef MONOLJ    
     from->pot_eng[index] = from->pot_eng[from->n]; 
     from->masse[index] = from->masse[from->n]; 
+#ifdef UNIAX
+    from->traeg_moment[index] = from->traeg_moment[from->n]; 
+#endif
     from->sorte[index] = from->sorte[from->n];
+#ifdef UNIAX
+    from->gestalt X(index) = from->gestalt X(from->n); 
+    from->gestalt Y(index) = from->gestalt Y(from->n); 
+    from->gestalt Z(index) = from->gestalt Z(from->n); 
+    from->brunnen X(index) = from->brunnen X(from->n); 
+    from->brunnen Y(index) = from->brunnen Y(from->n); 
+    from->brunnen Z(index) = from->brunnen Z(from->n); 
+#endif
     from->nummer[index] = from->nummer[from->n]; 
 #ifdef REFPOS
     from->refpos X(index) = from->refpos X(from->n);
@@ -179,8 +223,21 @@ void process_buffer(msgbuf *b, int mode)
 #ifndef TWOD
     input->ort Z(0) = b->data[j++];
 #endif
+#ifdef UNIAX
+    input->achse X(0) = b->data[j++];
+    input->achse Y(0) = b->data[j++];
+    input->achse Z(0) = b->data[j++];
+#endif
 #ifndef MONOLJ
     input->sorte[0] = b->data[j++];
+#endif
+#ifdef UNIAX
+    input->gestalt X(0) = b->data[j++];
+    input->gestalt Y(0) = b->data[j++];
+    input->gestalt Z(0) = b->data[j++];
+    input->brunnen X(0) = b->data[j++];
+    input->brunnen Y(0) = b->data[j++];
+    input->brunnen Z(0) = b->data[j++];
 #endif
 #ifdef EAM
     if (mode == FORCE) {
@@ -200,6 +257,9 @@ void process_buffer(msgbuf *b, int mode)
       /* get the rest of the data */
 #ifndef MONOLJ
       input->masse[0]        = b->data[j++];
+#ifdef UNIAX
+      input->traeg_moment[0] = b->data[j++];
+#endif
       input->nummer[0]       = b->data[j++];
 #ifdef REFPOS
       input->refpos X(0)     = b->data[j++];
@@ -222,7 +282,11 @@ void process_buffer(msgbuf *b, int mode)
 #ifndef TWOD
       input->impuls Z(0)     = b->data[j++];
 #endif
-
+#ifdef UNIAX
+      input->dreh_impuls X(0) = b->data[j++];
+      input->dreh_impuls Y(0) = b->data[j++];
+      input->dreh_impuls Z(0) = b->data[j++];
+#endif
 #ifdef TWOD
     coord2 = cell_coord( input->ort X(0), input->ort Y(0) );
 #else
@@ -533,13 +597,21 @@ void send_cell(cell *p, int to_cpu, int tag)
 #ifdef PACX
   MPI_Send( &(p->n), 1,           MPI_INT,  to_cpu, tag + SIZE_TAG,   cpugrid);
 #endif
-
   MPI_Ssend( p->ort, DIM*p->n,    MPI_REAL, to_cpu, tag + ORT_TAG,    cpugrid);
-
+#ifdef UNIAX
+  MPI_Ssend( p->achse, DIM*p->n,  MPI_REAL, to_cpu, tag + ACHSE_TAG,    cpugrid);
+#endif
 #ifndef MONOLJ
   MPI_Ssend( p->nummer, p->n,     INTEGER,  to_cpu, tag + NUMMER_TAG, cpugrid);
   MPI_Ssend( p->sorte,  p->n,     SHORT,    to_cpu, tag + SORTE_TAG,  cpugrid);
+#ifdef UNIAX
+  MPI_Ssend( p->gestalt, DIM*p->n, MPI_REAL,to_cpu, tag + GESTALT_TAG,  cpugrid);
+  MPI_Ssend( p->brunnen, DIM*p->n, MPI_REAL,to_cpu, tag + BRUNNEN_TAG,  cpugrid);
+#endif
   MPI_Ssend( p->masse,  p->n,     MPI_REAL, to_cpu, tag + MASSE_TAG,  cpugrid);
+#ifdef UNIAX
+  MPI_Ssend( p->traeg_moment,  p->n, MPI_REAL, to_cpu, tag + TRAEG_MOMENT_TAG,  cpugrid);
+#endif
   MPI_Ssend( p->pot_eng,p->n,     MPI_REAL, to_cpu, tag + POT_TAG,    cpugrid);
 #ifdef REFPOS
   MPI_Ssend( p->refpos, DIM*p->n, MPI_REAL, to_cpu, tag + REFPOS_TAG, cpugrid);
@@ -551,7 +623,13 @@ void send_cell(cell *p, int to_cpu, int tag)
 #endif
 
   MPI_Ssend( p->impuls, DIM*p->n, MPI_REAL, to_cpu, tag + IMPULS_TAG, cpugrid);
+#ifdef UNIAX
+  MPI_Ssend( p->dreh_impuls, DIM*p->n, MPI_REAL, to_cpu, tag + DREH_IMPULS_TAG, cpugrid);
+#endif
   MPI_Ssend( p->kraft,  DIM*p->n, MPI_REAL, to_cpu, tag + KRAFT_TAG,  cpugrid);
+#ifdef UNIAX
+  MPI_Ssend( p->dreh_moment,  DIM*p->n, MPI_REAL, to_cpu, tag + DREH_MOMENT_TAG,  cpugrid);
+#endif
 }
 
 
@@ -587,13 +665,28 @@ void recv_cell(cell *p, int from_cpu,int tag)
 
   MPI_Recv(p->ort,     DIM * size, MPI_REAL, from_cpu, tag + ORT_TAG,
                                              cpugrid, &status );
+#ifdef UNIAX
+  MPI_Recv(p->achse,   DIM * size, MPI_REAL, from_cpu, tag + ACHSE_TAG,
+                                             cpugrid, &status );
+#endif
+
 #ifndef MONOLJ
   MPI_Recv(p->nummer,        size, INTEGER,  from_cpu, tag + NUMMER_TAG, 
                                              cpugrid, &status);
   MPI_Recv(p->sorte,         size, SHORT,    from_cpu, tag + SORTE_TAG , 
                                              cpugrid, &status);
+#ifdef UNIAX
+  MPI_Recv(p->gestalt,   DIM * size, MPI_REAL, from_cpu, tag + GESTALT_TAG,
+                                             cpugrid, &status );
+  MPI_Recv(p->brunnen,   DIM * size, MPI_REAL, from_cpu, tag + BRUNNEN_TAG,
+                                             cpugrid, &status );
+#endif
   MPI_Recv(p->masse,         size, MPI_REAL, from_cpu, tag + MASSE_TAG , 
                                              cpugrid, &status);
+#ifdef UNIAX
+  MPI_Recv(p->traeg_moment,  size, MPI_REAL, from_cpu, tag + TRAEG_MOMENT_TAG , 
+                                             cpugrid, &status);
+#endif
   MPI_Recv(p->pot_eng,       size, MPI_REAL, from_cpu, tag + POT_TAG, 
                                              cpugrid, &status);
 #ifdef REFPOS
@@ -609,13 +702,14 @@ void recv_cell(cell *p, int from_cpu,int tag)
 #endif
   MPI_Recv(p->impuls,  DIM * size, MPI_REAL, from_cpu, tag + IMPULS_TAG, 
                                              cpugrid, &status);
+#ifdef UNIAX
+  MPI_Recv(p->dreh_impuls,  DIM * size, MPI_REAL, from_cpu, tag + DREH_IMPULS_TAG, 
+                                             cpugrid, &status);
+#endif
   MPI_Recv(p->kraft,   DIM * size, MPI_REAL, from_cpu, tag + KRAFT_TAG,  
                                              cpugrid, &status);
-
+#ifdef UNIAX
+  MPI_Recv(p->dreh_moment,   DIM * size, MPI_REAL, from_cpu, tag + DREH_MOMENT_TAG,  
+                                             cpugrid, &status);
+#endif
 }
-
-
-
-
-
-

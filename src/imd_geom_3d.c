@@ -93,6 +93,9 @@ ivektor maximal_cell_dim( void )
     for (j=0; j<ntypes; ++j)
       r2_cut2 = MAX( r2_cut2, 4 * ttbp_r2_cut[i][j] );
 #endif 
+#ifdef UNIAX 
+  r2_cut2 = uniax_r2_cut;
+#endif /* UNIAX */
 
   max_cell_dim.x = (int) ( 1.0 / sqrt( r2_cut2 / SPROD(hx,hx) ));
   max_cell_dim.y = (int) ( 1.0 / sqrt( r2_cut2 / SPROD(hy,hy) ));
@@ -106,7 +109,7 @@ ivektor maximal_cell_dim( void )
    scaling of the box. The scaling is done such that the distance
    between two of the cell's faces (==height) equals the cutoff.  
    An integer number of cells must fit into the box. If the cell
-   calculated by the scaling described above is to small, it is
+   calculated by the scaling described above is too small, it is
    enlarged accordingly.
 
    There must be at least three cells in each direction.  */
@@ -182,10 +185,14 @@ void init_cells( void )
     for (j=0; j<ntypes; ++j)
       r2_cut2 = MAX( r2_cut2, 4 * ttbp_r2_cut[i][j] );
 #endif 
+#ifdef UNIAX 
+  r2_cut2 = uniax_r2_cut;
+#endif /* UNIAX */
 
   cell_scale.x = sqrt( r2_cut2 / SPROD(hx,hx) );
   cell_scale.y = sqrt( r2_cut2 / SPROD(hy,hy) );
   cell_scale.z = sqrt( r2_cut2 / SPROD(hz,hz) );
+
 #ifdef NPT
   /* the NEXT cell array for a GROWING system; 
      needed to determine when to recompute the cell division */

@@ -48,6 +48,11 @@ void calc_forces(void)
       p->kraft X(i) = 0.0;
       p->kraft Y(i) = 0.0;
       p->kraft Z(i) = 0.0;
+#ifdef UNIAX
+      p->dreh_moment X(i) = 0.0;
+      p->dreh_moment Y(i) = 0.0;
+      p->dreh_moment Z(i) = 0.0;
+#endif
 #ifdef TRANSPORT
       p->heatcond[i] = 0.0;
 #endif     
@@ -84,7 +89,11 @@ void calc_forces(void)
       /* first EAM call */
       do_forces_eam_1(cell_array + P->np, cell_array + P->nq, pbc);
 #else
+#ifdef UNIAX
+      do_forces_uniax(cell_array + P->np, cell_array + P->nq, pbc);
+#else
       do_forces(cell_array + P->np, cell_array + P->nq, pbc);
+#endif
 #endif
     }
   }

@@ -76,6 +76,8 @@ MCSOURCES     = imd_mc.c
 
 CORRSOURCES   = imd_correl.c
 
+UNIAXSOURCES  = imd_forces_uniax.c imd_gay_berne.c
+
 TRANSSOURCES  = imd_transport.c
 
 # Collection of my favourite compiler flags
@@ -288,7 +290,7 @@ RELEASEPATH = /app/itapsoft/simulation/imd
 
 
 # Sockets are not included by default
-ifneq	(,$(strip $(findstring sock,${MAKETARGET})))
+ifneq (,$(strip $(findstring sock,${MAKETARGET})))
 CFLAGS += -DUSE_SOCKETS
 endif
 
@@ -515,6 +517,12 @@ endif
 ifneq (,$(strip $(findstring msqd,${MAKETARGET})))
 CFLAGS  += -DMSQD -DCORR_PBC
 SOURCES += ${CORRSOURCES}
+endif
+
+# UNIAX
+ifneq (,$(strip $(findstring uniax,${MAKETARGET})))
+CFLAGS  += -DUNIAX
+SOURCES += ${UNIAXSOURCES}
 endif
 
 # MONOLJ Case

@@ -20,7 +20,7 @@
 
 void maxwell(real temp)
                
- 
+
 /* *******************************************************************
    ** TRANSLATIONAL VELOCITIES FROM MAXWELL-BOLTZMANN DISTRIBUTION  **
    **                                                               **
@@ -39,6 +39,18 @@ void maxwell(real temp)
 { 
    int         k, natom;
    vektor      tot_impuls;
+   static long dummy = 0;
+
+#ifdef UNIAX
+   real xisq;
+   real xi0;
+   real xi1;
+   real xi2;
+   real dot;
+   real norm;
+   real osq;
+#endif
+
    real        TEMP;
    real scale, xx;
    int num, nhalf;
@@ -46,12 +58,12 @@ void maxwell(real temp)
    TEMP = temp;
    tot_impuls.x = 0.0;
    tot_impuls.y = 0.0;
-
 #ifndef TWOD
    tot_impuls.z = 0.0;
 #endif
 
    natom = 0;
+
 #ifdef TRANSPORT
    nhalf = tran_nlayers / 2;
    scale = tran_nlayers / box_x.x;
@@ -99,6 +111,58 @@ void maxwell(real temp)
 #ifndef TWOD
          tot_impuls.z += p->impuls Z(i);
 #endif
+
+#ifdef UNIAX
+
+	   /* angular velocities for uniaxial molecules */
+
+	   /* choose a random vector in space */
+
+	   xisq = 1.0;
+
+	   while ( xisq >= 1.0 ) 
+	     {
+	       xi1 = 2.0 * ran1( &dummy ) - 1.0 ;
+	       xi2 = 2.0 * ran1( &dummy ) - 1.0 ;
+	       xisq = xi1 * xi1 + xi2 * xi2 ;
+	     }
+
+	   xi0 = sqrt( 1.0 - xisq ) ;
+
+	   p->dreh_impuls X(i) = 2.0 * xi1 * xi0 ;
+	   p->dreh_impuls Y(i) = 2.0 * xi2 * xi0 ;
+	   p->dreh_impuls Z(i) = 1.0 - 2.0 * xisq ;
+
+	   /* constrain the vector to be perpendicular 
+	      to the molecule */
+
+	   dot = SPRODN(p->dreh_impuls,i,p->achse,i);
+
+	   p->dreh_impuls X(i) -= dot * p->achse X(i) ; 
+	   p->dreh_impuls Y(i) -= dot * p->achse Y(i) ; 
+	   p->dreh_impuls Z(i) -= dot * p->achse Z(i) ; 
+
+	   /* renormalize vector */	   
+
+	   osq = SPRODN(p->dreh_impuls,i,p->dreh_impuls,i);
+	   norm = sqrt( osq );
+
+	   p->dreh_impuls X(i) /= norm ;
+	   p->dreh_impuls Y(i) /= norm ;
+	   p->dreh_impuls Z(i) /= norm ;
+
+	   /* choose the magnitude of the angular momentum */
+
+	   osq = - 2.0 * p->traeg_moment[i] * TEMP
+	     * log( ran1( &dummy ) ) ;
+	   norm = sqrt( osq );
+
+	   p->dreh_impuls X(i) *= norm ;
+	   p->dreh_impuls Y(i) *= norm ;
+	   p->dreh_impuls Z(i) *= norm ;
+
+#endif /* UNIAX */
+
 #ifdef SHOCK
 	 if (shock_mode != 2) shock_mode = 1;
 	 if (shock_mode == 1) {
@@ -226,5 +290,4 @@ float ran1(long *idum)
 #undef EPS
 #undef RNMX
 /* (C) Copr. 1986-92 Numerical Recipes Software X!05.W4z4'>4. */
-
 

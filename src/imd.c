@@ -28,6 +28,7 @@
 int main(int argc, char **argv)
 
 {
+
   real tmp;
     
   int start;
@@ -52,6 +53,7 @@ int main(int argc, char **argv)
 #ifdef USE_RUSAGE
   getrusage(RUSAGE_SELF,&start_ru);
 #endif
+
 
   /* Fire up MPI */
 #ifdef MPI
@@ -79,6 +81,7 @@ int main(int argc, char **argv)
   if (myid == 0) init_client();
 #endif
 
+#ifndef UNIAX /* for uniaxial molecules calculate potential */
 #ifndef MONOLJ
   /* Read Potential from file */
   read_potential(potfilename);
@@ -86,6 +89,11 @@ int main(int argc, char **argv)
   /* Read TTBP Potential from file */
   read_ttbp_potential(ttbp_potfilename);
 #endif
+#endif /* not MONOLJ */
+#endif /* not UNIAX */
+
+#ifdef MONOLJ
+  r2_cut = tmp;
 #endif
 
   /* Filenames starting with denote internal 
@@ -106,6 +114,7 @@ int main(int argc, char **argv)
   if (0 == myid) printf("Done reading atoms.\n");
 
   start = steps_min;  /* keep starting step number */
+
 
   /* first phase of the simulation */
   if (steps_min <= steps_max) main_loop();
@@ -174,9 +183,15 @@ int main(int argc, char **argv)
            total_time/ (steps_max * natoms));
     printf("Inverse is %.3e steps * atom per cpusecond.\n",
 	   ((float)steps_max*(float)natoms)/total_time);
+#ifdef UNIAX
+    printf("Time for pair interaction t_pair is: %.3e seconds\n\n",
+           total_time / ((float)steps_max*(float)natoms*
+                         (4.0/3.0)*M_PI*pow(uniax_r2_cut,3.0/2.0)*(natoms/volume)));
+#else
     printf("Time for pair interaction t_pair is: %.3e seconds\n\n",
            total_time / ((float)steps_max*(float)natoms*
                          (4.0/3.0)*M_PI*pow(r2_cut,3.0/2.0)*(natoms/volume)));
+#endif
 #ifdef MPI
 
     time_comm += time_comm_force + time_comm_ar;

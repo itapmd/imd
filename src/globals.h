@@ -219,6 +219,11 @@ EXTERN int tmp_interval INIT(0);     /* Interval in which the thermostat */
 EXTERN real eta INIT(0.0);          /* Nose-Hoover heat bath variable */
 EXTERN real isq_tau_eta INIT(0.0);  /* tau_eta: Nose-Hoover heat bath 'mass' */
                                /* isq_tau_eta : inverse of square of tau_eta */
+#ifdef UNIAX
+EXTERN real eta_rot INIT(0.0);      /* Nose-Hoover heat bath variable for rotational motion */
+EXTERN real isq_tau_eta_rot INIT(0.0);  /* tau_eta_rot: Nose-Hoover heat bath 'mass' for rotational motion */
+                               /* isq_tau_eta_rot : inverse of square of tau_eta_rot */
+#endif
 #endif
 
 EXTERN vektor vir_vect INIT(nullvektor);   /* diagonal of virial tensor */
@@ -241,6 +246,12 @@ EXTERN vektor limit_growth INIT(einsvektor);
 
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
 EXTERN real end_temp INIT(0.0);        /* Temperature and at of simulation */
+#endif
+
+#if defined(FRAC) || defined(PULL)
+EXTERN vektor stadion INIT(nullvektor);      /* Damping stadion */
+EXTERN real   gamma_bar INIT(0.0);    /* Damping prefactor */
+EXTERN real   gamma_cut INIT(0.0);    /* Damping cutoff */
 #endif
 
 #ifdef HOMDEF
@@ -411,3 +422,8 @@ EXTERN int simulation INIT(1);          /* number of current simulation */
 EXTERN int finished INIT(0);            /* last phase of simulation? */
 EXTERN void (*move_atoms)(void);        /* active integrator routine */
 
+/* global parameters for UNIAX */
+#ifdef UNIAX
+EXTERN real uniax_r_cut   INIT(0.0); 	/* cutoff radius for uniaxial molecules */
+EXTERN real uniax_r2_cut; 		/* cutoff radius ^2 for uniaxial molecules */
+#endif
