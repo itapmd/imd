@@ -89,7 +89,7 @@ void do_forces_ttbp(cell *p)
         /* smoothing potential, total potential */
         tmp_f2          = pot[j] * pot[k];
         pot_zwi         = tmp_pot * tmp_f2;
-        if (NUMMER(p,i)>=0) tot_pot_energy += pot_zwi;
+        tot_pot_energy += pot_zwi;
 
         /* forces */
         tmp   = -tmp_f2 * tmp_grad / (r[j] * r[k]);

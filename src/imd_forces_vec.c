@@ -184,8 +184,7 @@ void do_forces(cell *ap, cell *aq, vektor apbc)
 #ifndef TWOD
       force[i][j].z = d.z * pot_grad;
 #endif
-      if ((NUMMER(p,i)>=0) || (NUMMER(q,j)>=0))
-        tmp_energy += pot_zwi;
+      tmp_energy += pot_zwi;
 
 #ifdef P_AXIAL
       tmp_vir_vect.x -= d.x * d.x * pot_grad;

@@ -118,8 +118,7 @@ void do_forces_uniax(cell *p, cell *q, vektor pbc)
 
 	p->pot_eng[i] += pot12;
 	q->pot_eng[j] += pot12;
-        if ((NUMMER(p,i)>=0) || (NUMMER(q,j)>=0))
-          tot_pot_energy += pot12;
+        tot_pot_energy += pot12;
 
         tmp_vir_vect.x += r12.x * force12.x ;
         tmp_vir_vect.y += r12.y * force12.y ;
