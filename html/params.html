@@ -172,6 +172,13 @@ display_host    # name of VolIMD host (fully qualified, if not locally known),
                 # or IP number in dotted quad format
 baseport        # number of socket baseport - default is 31913
 
+# parameters for MONOLJ (record version)
+r_cut           # potential cutoff radius 
+cell_size       # size of link cells 
+                # (In ordinary IMD cell_size = r_cut + epsilon)
+initsize        # Size of memory chunk to be allocated for particle cells
+                # (Set by CSTEP in ordinary IMD)
+
 # parameters for <a href=eam.html>EAM</a> 
 # (embedded atom method; Finnis/Sinclair)
 eam_A           # EAM constant
