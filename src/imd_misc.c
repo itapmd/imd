@@ -588,6 +588,8 @@ void init_hex(void)
     box_y.x = 0.0;
     box_y.y = box_param.y;
   } else { /* backward compatibility */
+    box_param.x = (int) box_x.x;
+    box_param.y = (int) box_y.y;
     box_x.x *= sqrt(3.0);
   }
 }
