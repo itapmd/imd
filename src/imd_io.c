@@ -207,7 +207,7 @@ void write_cell_pic(FILE *out, cell *p)
       picbuf.E_pot = (float) POTENG(p,i) - p->Epot_ref[i];
     else
 #endif
-#ifdef ORDPAR
+#if defined(ORDPAR) && !defined(TWOD)
     picbuf.E_pot = (p->nbanz[i]==0) ? 0 : p->pot_eng[i]/p->nbanz[i];
 #else
     picbuf.E_pot = POTENG(p,i);
