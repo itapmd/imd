@@ -241,7 +241,10 @@ void calc_tot_presstens(void);
 void write_atoms_avp(FILE *out);
 void write_header_avp(FILE *out);
 #endif
-
+#ifdef MSQD
+void write_atoms_sqd(FILE *out);
+void write_header_sqd(FILE *out);
+#endif
 void reduce_displacement(vektor *d);
 #ifdef MPI
 void recv_cell_old(cell *p, int from_cpu, int tag);

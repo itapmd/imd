@@ -1426,8 +1426,13 @@ void check_parameters_complete()
   fprintf(stderr, "%d %d\n", avpos_start, restart*rep_interval);
   if (avpos_start <= restart*rep_interval)
     avpos_start = restart*rep_interval+1; /* do not ask me why +1 ;-) */
+  /* Default initialisation of end time */ 
+  if (0==avpos_end) avpos_end = steps_max;
 #endif
 
+#ifdef ATDIST
+  if (0==atoms_dist_end) atoms_dist_end = steps_max;
+#endif
 }
 
 /*****************************************************************

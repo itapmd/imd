@@ -106,11 +106,6 @@ void main_loop(void)
   init_correl(ncorr_rmax,ncorr_tmax);
 #endif
 
-#ifdef AVPOS
-  /* Default initialisation of end time */ 
-  if( avpos_end == 0 ) avpos_end = steps_max;
-#endif
-
 #ifdef ATDIST
   init_atoms_dist();
 #endif
@@ -438,7 +433,11 @@ void main_loop(void)
 #ifdef ATDIST
     if (steps==atoms_dist_end) write_atoms_dist();
 #endif
-
+#ifdef MSQD
+    if ((correl_end >0) && (steps==correl_end) || 
+        (correl_end==0) && (steps==steps_max))   
+      write_config_select(0, "sqd", write_atoms_sqd, write_header_sqd);
+#endif
   }
 
   /* clean up the current phase, and clear restart flag */
