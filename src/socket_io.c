@@ -273,6 +273,7 @@ void write_ras_using_sockets() {
    int r,s,t,i, ready; 
    int a; 
    cell *p; 
+   real tmp;
 
    WriteFull(soc,&natoms,sizeof(int)); 
    /*   WriteFull(soc,&box_x.x,sizeof(real)); 
@@ -290,23 +291,28 @@ void write_ras_using_sockets() {
 	   for (i = 0;i < p->n; ++i) { 
 	     WriteFull(soc,&p->nummer[i],sizeof(int)); 
 	     WriteFull(soc,&p->sorte[i],sizeof(int)); 
-	     WriteFull(soc,&p->masse[i],sizeof(double)); 
-	     WriteFull(soc,&p->ort X(i),sizeof(double)); 
-	     WriteFull(soc,&p->ort Y(i),sizeof(double)); 
+	     WriteFull(soc,&p->masse[i],sizeof(real)); 
+	     WriteFull(soc,&p->ort X(i),sizeof(real)); 
+	     WriteFull(soc,&p->ort Y(i),sizeof(real)); 
 #ifndef TWOD 
-	     WriteFull(soc,&p->ort Z(i),sizeof(double)); 
+	     WriteFull(soc,&p->ort Z(i),sizeof(real)); 
 #endif 
-	     WriteFull(soc,&p->impuls X(i),sizeof(double)); 
-	     WriteFull(soc,&p->impuls Y(i),sizeof(double)); 
+	     WriteFull(soc,&p->impuls X(i),sizeof(real)); 
+	     WriteFull(soc,&p->impuls Y(i),sizeof(real)); 
 #ifndef TWOD
-	     WriteFull(soc,&p->impuls Z(i),sizeof(double));
+	     WriteFull(soc,&p->impuls Z(i),sizeof(real));
 #endif
 #ifdef ORDPAR
 #ifndef TWOD
-	     WriteFull(soc,&p->pot_eng[i]/&p->nbanz[i],sizeof(double));
+	     tmp = p->pot_eng[i];
+	     if (p->nbanz[i]>0) 
+	       tmp /= p->nbanz[i];
+	     else
+	       tmp=0.0;
+	     WriteFull(soc,&tmp,sizeof(real));
 #endif
 #endif
-	     WriteFull(soc,&p->pot_eng[i],sizeof(double));
+	     WriteFull(soc,&p->pot_eng[i],sizeof(real));
 	  }
 
 	}
@@ -339,18 +345,18 @@ void write_conf_using_sockets() {
    /* allocs */
    nummer = (int *)       calloc(natoms, sizeof(int));
    sorte  = (short int *) calloc(natoms, sizeof(short int));
-   masse  = (double *)    calloc(natoms, sizeof(double));
-   x      = (double *)    calloc(natoms, sizeof(double));
-   y      = (double *)    calloc(natoms, sizeof(double));
+   masse  = (real *)    calloc(natoms, sizeof(real));
+   x      = (real *)    calloc(natoms, sizeof(real));
+   y      = (real *)    calloc(natoms, sizeof(real));
 #ifndef TWOD
-   z      = (double *)    calloc(natoms, sizeof(double));
+   z      = (real *)    calloc(natoms, sizeof(real));
 #endif
-   vx     = (double *)    calloc(natoms, sizeof(double));
-   vy     = (double *)    calloc(natoms, sizeof(double));
+   vx     = (real *)    calloc(natoms, sizeof(real));
+   vy     = (real *)    calloc(natoms, sizeof(real));
 #ifndef TWOD
-   vz     = (double *)    calloc(natoms, sizeof(double));
+   vz     = (real *)    calloc(natoms, sizeof(real));
 #endif
-   pot    = (double *)    calloc(natoms, sizeof(double));
+   pot    = (real *)    calloc(natoms, sizeof(real));
 
 
    if (use_socket_window){ /* write all atoms in the box */    
@@ -516,18 +522,18 @@ void write_conf_using_sockets() {
      WriteFull(soc,&k,sizeof(int)); 
      WriteFull(soc,(void *) nummer, k*sizeof(int)); 
      WriteFull(soc,(void *) sorte, k*sizeof(short int)); 
-     WriteFull(soc,(void *) masse, k*sizeof(double)); 
-     WriteFull(soc,(void *) x, k*sizeof(double)); 
-     WriteFull(soc,(void *) y, k*sizeof(double)); 
+     WriteFull(soc,(void *) masse, k*sizeof(real)); 
+     WriteFull(soc,(void *) x, k*sizeof(real)); 
+     WriteFull(soc,(void *) y, k*sizeof(real)); 
 #ifndef TWOD
-     WriteFull(soc,(void *) z, k*sizeof(double)); 
+     WriteFull(soc,(void *) z, k*sizeof(real)); 
 #endif
-     WriteFull(soc,(void *) vx, k*sizeof(double)); 
-     WriteFull(soc,(void *) vy, k*sizeof(double)); 
+     WriteFull(soc,(void *) vx, k*sizeof(real)); 
+     WriteFull(soc,(void *) vy, k*sizeof(real)); 
 #ifndef TWOD
-     WriteFull(soc,(void *) vz, k*sizeof(double)); 
+     WriteFull(soc,(void *) vz, k*sizeof(real)); 
 #endif
-     WriteFull(soc,(void *) pot, k*sizeof(double));
+     WriteFull(soc,(void *) pot, k*sizeof(real));
    }
 }
 
