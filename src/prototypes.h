@@ -71,7 +71,7 @@ int  endian(void);
 
 /* start and stop MPI - files imd_mpi_util.c, imd_geom_mpi_*.c */
 #ifdef MPI
-void init_mpi(int argc,char **argv);
+void init_mpi(int *argc_pointer, char **argv);
 void setup_mpi_topology(void);
 void shutdown_mpi(void);
 #endif

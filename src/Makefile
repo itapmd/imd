@@ -30,7 +30,7 @@
 #
 #   HOSTTYPE			OS			<arch>
 #
-#   i?86-linux, i686		Linux    		risc gcc mpi
+#   i?86-linux, i686,i386	Linux    		risc gcc mpi
 #   alpha			True64 Unix             risc gcc mpi
 #   iris4d			SGI Irix		risc gcc omp mpi
 #   t3e				Cray Unicos/mk		risc mpi pacx
@@ -134,12 +134,12 @@ CFLAGS_GCC_i586		= -DRISC -mcpu=i586 -O3
 CFLAGS_GCC_i586_DEBUG	= -DRISC -mcpu=i586 -g
 CFLAGS_GCC_i586_PROF	= -g3 -pg
 
-# flags for Linux with LAM/MPI
+# flags for Linux with MPICH
 CC_MPI_i586		= mpicc
-CFLAGS_MPI_i586		= -DMPI -mcpu=i586 -O3
-CFLAGS_MPI_i586_DEBUG	= -DMPI -mcpu=i586 -g
+CFLAGS_MPI_i586		= -DMPI -mcpu=i686 -O3 -fomit-frame-pointer
+CFLAGS_MPI_i586_DEBUG	= -DMPI -mcpu=i686 -g
 CFLAGS_MPI_i586_PROF	= -g3 -pg
-#MPILIBS_i586		= -lmpi
+#MPILIBS_i586		= -lmpich
 
 # flags for alpha with cc
 CC_RISC_alpha		= cc
@@ -251,6 +251,9 @@ ifneq (,$(strip $(findstring linux,${HOSTTYPE})))
 IMDHOST = i586
 endif
 ifneq (,$(strip $(findstring i686,${HOSTTYPE})))
+IMDHOST = i586
+endif
+ifneq (,$(strip $(findstring i386,${HOSTTYPE})))
 IMDHOST = i586
 endif
 ifneq (,$(strip $(findstring cray,${HOSTTYPE})))

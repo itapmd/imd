@@ -27,10 +27,10 @@
 *
 ******************************************************************************/
 
-void init_mpi(int argc,char *argv[])
+void init_mpi(int *argc_pointer, char **argv)
 {
   /* Initialize MPI */
-  MPI_Init(&argc,&argv);
+  MPI_Init(argc_pointer, &argv);
   MPI_Comm_size(MPI_COMM_WORLD,&num_cpus);
   MPI_Comm_rank(MPI_COMM_WORLD,&myid);
 

@@ -41,7 +41,7 @@ int main(int argc, char **argv)
   time_force_calc.total = 0.0;
 
 #ifdef MPI
-  init_mpi(argc,argv);
+  init_mpi(&argc,argv);
 #endif
 
   /* start some timers (after starting MPI!) */
