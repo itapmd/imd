@@ -149,7 +149,6 @@ void write_pictures_bins(int steps)
 {
 
   vektor scale;
-  real xshift, yshift;
 
   shortint *redbit;
   shortint *greenbit;
@@ -189,9 +188,6 @@ void write_pictures_bins(int steps)
   /* compute pic_scale */
   pic_scale.x = box_x.x / (pic_ur.x - pic_ll.x);
   pic_scale.y = box_y.y / (pic_ur.y - pic_ll.y);
-
-  /* Make scaling same in both directions */
-  if (scale.y<scale.x)  scale.x = scale.y;
 
   scale.x *= pic_scale.x;
   scale.y *= pic_scale.y;
@@ -237,8 +233,8 @@ void write_pictures_bins(int steps)
 	p = PTR_2D_V(cell_array, r, s, cell_dim);
 
 	for (i = 0;i < p->n; ++i) {
-	  coord.x = (int) (p->ort X(i) * scale.x) + xshift;
-	  coord.y = (int) (p->ort Y(i) * scale.y) + yshift;
+	  coord.x = (int) (p->ort X(i) * scale.x);
+	  coord.y = (int) (p->ort Y(i) * scale.y);
 	  /* Check bounds */
 	  if ((coord.x >= 0) && (coord.x < (pic_res.x-NUMPIX)) &&
               (coord.y >= 0) && (coord.y < (pic_res.y-NUMPIX))) { 
@@ -367,8 +363,8 @@ if (0==myid) {
 	p = PTR_2D_V(cell_array, r, s, cell_dim);
 
 	for (i = 0;i < p->n; ++i) {
-	  coord.x = (int) (p->ort X(i) * scale.x) + xshift;
-	  coord.y = (int) (p->ort Y(i) * scale.y) + yshift;
+	  coord.x = (int) (p->ort X(i) * scale.x);
+	  coord.y = (int) (p->ort Y(i) * scale.y);
 	  /* Check bounds */
 	  if ((coord.x>=0) && (coord.x<(pic_res.x-NUMPIX)) &&
 	      (coord.y>=0) && (coord.y<(pic_res.y-NUMPIX))) {
