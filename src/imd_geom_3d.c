@@ -592,7 +592,7 @@ ivektor cell_coord(real x, real y, real z)
 
 vektor back_into_box(vektor pos)
 {
-  int i;
+  real i;
 
   if (pbc_dirs.x==1) {
     i = FLOOR(SPROD(pos,tbox_x));

@@ -451,7 +451,8 @@ void do_boundaries(void)
 #endif
   for (k=0; k<ncells; ++k) {
 
-    int l,i;
+    int  l;
+    real i;  /* FLOOR returns a real */
     cell *p;
 
     p = cell_array + CELLS(k);

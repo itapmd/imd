@@ -1,4 +1,4 @@
-#############################################################################
+############################################################################
 #
 # IMD -- The ITAP Molecular Dynamics Program
 #
@@ -138,10 +138,8 @@ endif
 CC_DEFAULT_MPI_i586		= mpicc
 
 # gcc, serial
-CFLAGS_gcc_SERIAL_i586		= -O  -march=athlon -static -mfpmath=sse -msse
-# CFLAGS_gcc_SERIAL_i586		= -O -funroll-all-loops -fomit-frame-pointer -march=pentiumpro -static -mfpmath=sse -msse
-#CFLAGS_gcc_SERIAL_i586		= -mcpu=i686 -O3
-# -O -march=athlon-mp -msse -mfpmath=sse
+#CFLAGS_gcc_SERIAL_i586		= -O -march=athlon-mp -mfpmath=sse -msse
+CFLAGS_gcc_SERIAL_i586		= -mcpu=i686 -O3
 CFLAGS_gcc_SERIAL_i586_DEBUG	= -mcpu=i686 -g
 CFLAGS_gcc_SERIAL_i586_PROF	= -g3 -pg
 
@@ -153,10 +151,12 @@ CFLAGS_pgcc_SERIAL_i586_PROF   	= -Mprof=func
 # icc, serial
 CFLAGS_icc_SERIAL_i586        	= -O -ip -axK
 CFLAGS_icc_SERIAL_i586_PROF	= -prof_gen
+RCDFLAGS_icc_SERIAL_i586	= -DRCD -rcd
 
 # icc, OpenMP
 CFLAGS_icc_OMP_i586        	= -O -ip -axK -openmp
 CFLAGS_icc_OMP_i586_PROF	= -prof_gen
+RCDFLAGS_icc_OMP_i586		= -DRCD -rcd
 
 # kcc, serial
 CFLAGS_KCC_SERIAL_i586       	= +K3 -O3 --diag_suppress 177,550
@@ -167,8 +167,10 @@ ifneq (,$(strip $(findstring ia32,${PATH})))
 CFLAGS_mpicc_MPI_i586		= -O -ip -axK
 CFLAGS_mpicc_MPI_i586_DEBUG	= -g
 CFLAGS_mpicc_MPI_i586_PROF	= -prof_gen
+RCDFLAGS_mpicc_MPI_i586		= -DRCD -rcd
 else
-CFLAGS_mpicc_MPI_i586		= -O -march=athlon-mp -static -mfpmath=sse -msse
+#CFLAGS_mpicc_MPI_i586		= -O -march=athlon-mp -mfpmath=sse -msse
+CFLAGS_mpicc_MPI_i586		= -O3 -mcpu=i686
 CFLAGS_mpicc_MPI_i586_DEBUG	= -g
 CFLAGS_mpicc_MPI_i586_PROF	= -g3 -pg
 endif
@@ -179,10 +181,7 @@ ifneq (,$(strip $(findstring ia32,${PATH})))
 CFLAGS_mpicc_OMPI_i586		= -O -ip -axK -openmp
 CFLAGS_mpicc_OMPI_i586_DEBUG	= -g
 CFLAGS_mpicc_OMPI_i586_PROF	= -prof_gen
-else
-CFLAGS_mpicc_OMPI_i586		= -O3
-CFLAGS_mpicc_OMPI_i586_DEBUG	= -g
-CFLAGS_mpicc_OMPI_i586_PROF	= -g3 -pg
+RCDFLAGS_mpicc_OMPI_i586	= -DRCD -rcd
 endif
 
 # guidec, OpenMP
@@ -591,6 +590,8 @@ CFLAGS += ${CFLAGS_${CC}_${PARALLEL}_${IMDHOST}_PROF}
 LIBS   += ${LIBS_PROF_${IMDHOST}}
 endif
 
+RCDFLAGS = ${RCDFLAGS_${CC}_${PARALLEL}_${IMDHOST}}
+
 
 ###  INTERACTION  #######################################
 
@@ -670,7 +671,6 @@ CFLAGS  += -DSPRING
 endif
 
 SOURCES += ${FORCESOURCES}
-
 
 ###  ENSEMBLES  #########################################
 
@@ -908,36 +908,45 @@ endif
 # Substitute .o for .c to get the names of the object files
 OBJECTS := $(subst .c,.o,${SOURCES})
 
+
 ###########################################################################
 #
 #	 Rules
 #
 ###########################################################################
 
+# all objects depend on headers
+${OBJECTS}: ${HEADERS}
 
 # How to compile *.c files
-%.o: %.c ${HEADERS}
-	${CC} ${CFLAGS} -c $(subst .o,.c,$@)
+# special rules for force computation
+imd_forces.o: imd_forces.c
+	${CC} ${CFLAGS} ${RCDFLAGS} -c imd_forces.c
+
+imd_forces_eam2.o: imd_forces_eam2.c
+	${CC} ${CFLAGS} ${RCDFLAGS} -c imd_forces_eam2.c
+
+imd_forces_covalent.o: imd_forces_covalent.c
+	${CC} ${CFLAGS} ${RCDFLAGS} -c imd_forces_covalent.c
+
+# generic compilation rule
+.c.o:
+	${CC} ${CFLAGS} -c $<
 
 # How to link
-${MAKETARGET}: ${OBJECTS} ${HEADERS}
-	${CC} ${CFLAGS} -o $@ ${OBJECTS} ${LIBS} ${ONLINELIBS}
+${MAKETARGET}: ${OBJECTS} 
+	${CC} ${CFLAGS} -o $@ ${OBJECTS} ${LIBS}
 	${MV} $@ ${BINDIR}; rm -f $@
-
 
 # First recursion only set the MAKETARGET Variable
 .DEFAULT:
 	${MAKE} MAKETARGET='$@' STAGE2
 
-# Second recursion sets all other Variables (depending on MAKETARGET) and compiles
-# An empty MAKETARGET Variable would create an infinite recursion, so we check
+# Second recursion sets MAKETARGET variable and compiles
+# An empty MAKETARGET variable would create an infinite recursion, so we check
 STAGE2:
 ifneq (,${MAKETARGET})
-	${MAKE} OBJECTS='${OBJECTS}'\
-                CC='${CC}'\
-                CFLAGS='${CFLAGS}'\
-                LIBS='${LIBS}'\
-                MAKETARGET='${MAKETARGET}' ${MAKETARGET}
+	${MAKE} MAKETARGET='${MAKETARGET}' ${MAKETARGET}
 else
 	@echo 'No TARGET specified.'
 endif

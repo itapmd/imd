@@ -239,7 +239,7 @@ inline static real SQR(real x)
 #define AT_BUF_TAG 500
 
 /* some systems have different versions of trunc and floor float and double */
-#if sgi || t3e
+#ifdef t3e
 #ifdef DOUBLE
 #define FLOOR floor
 #else
@@ -248,8 +248,6 @@ inline static real SQR(real x)
 #else
 #define FLOOR floor
 #endif
-
-#define TRUNC (int)
 
 #ifndef M_PI
 #define M_PI 4.0*atan(1.0)

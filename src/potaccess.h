@@ -30,6 +30,14 @@
 #define DERIV_FUNC DERIV_FUNC2
 #endif
 
+/* compensate for non-standard cast in icc (which is faster) */
+/* this works only for a positive argument */
+#ifdef RCD
+#define POS_TRUNC(x) ((int)(-0.5+(x)))
+#else
+#define POS_TRUNC(x) ((int)(x))
+#endif
+
 /*****************************************************************************
 *
 *  Evaluate monolj potential 
@@ -175,7 +183,7 @@
                                                                              \
   /* indices into potential table */                                         \
   istep = (pt).invstep[col];                                                 \
-  k     = (int) (r2a * istep);                                               \
+  k     = POS_TRUNC(r2a * istep);                                            \
   chi   = (r2a - k * (pt).step[col]) * istep;                                \
                                                                              \
   /* intermediate values */                                                  \
@@ -217,7 +225,7 @@
                                                                              \
   /* indices into potential table */                                         \
   istep = (pt).invstep[col];                                                 \
-  k     = (int) (r2a * istep);                                               \
+  k     = POS_TRUNC(r2a * istep);                                            \
   chi   = (r2a - k * (pt).step[col]) * istep;                                \
                                                                              \
   /* factors for the interpolation */                                        \
@@ -267,7 +275,7 @@
                                                                              \
   /* indices into potential table */                                         \
   istep = (pt).invstep[col];                                                 \
-  k     = (int) (r2a * istep);                                               \
+  k     = POS_TRUNC(r2a * istep);                                            \
   chi   = (r2a - k * (pt).step[col]) * istep;                                \
                                                                              \
   /* intermediate values */                                                  \
@@ -305,7 +313,7 @@
                                                                              \
   /* indices into potential table */                                         \
   istep = (pt).invstep[col];                                                 \
-  k     = (int) (r2a * istep);                                               \
+  k     = POS_TRUNC(r2a * istep);                                            \
   chi   = (r2a - k * (pt).step[col]) * istep;                                \
                                                                              \
   /* factors for the interpolation */                                        \
@@ -347,7 +355,7 @@
                                                                              \
   /* indices into potential table */                                         \
   istep = (pt).invstep[col];                                                 \
-  k     = (int) (r2a * istep);                                               \
+  k     = POS_TRUNC(r2a * istep);                                            \
   chi   = (r2a - k * (pt).step[col]) * istep;                                \
                                                                              \
   /* intermediate values */                                                  \
@@ -386,7 +394,7 @@
                                                                              \
   /* indices into potential table */                                         \
   istep = (pt).invstep[col];                                                 \
-  k     = (int) (r2a * istep);                                               \
+  k     = POS_TRUNC(r2a * istep);                                            \
   chi   = (r2a - k * (pt).step[col]) * istep;                                \
                                                                              \
   /* factors for the interpolation of the 1. derivative */                   \
