@@ -251,7 +251,7 @@ EXTERN real volume_init INIT(0.0);
 EXTERN real virial INIT(0.0);
 EXTERN real temperature INIT(0.0);
 EXTERN int  use_curr_temp INIT(0);   /* which starting temp to use (flag) */
-EXTERN int  do_maxwell INIT(0.0);
+EXTERN int  do_maxwell INIT(0);
 EXTERN long seed INIT(0);            /* seed for random number generator */
 #ifdef NBLIST
 EXTERN real nbl_margin INIT(0.4);    /* neighbor list margin */

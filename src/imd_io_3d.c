@@ -161,8 +161,6 @@ void read_atoms(str255 infilename)
   nactive = 0;
 #ifdef SHOCK
   do_maxwell=1;
-#else
-  do_maxwell=0;
 #endif
 
   /* Read the input file line by line */
