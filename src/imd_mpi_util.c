@@ -1,11 +1,10 @@
 /******************************************************************************
 *
-* imd_mpi_misc.c -- misc mpi routines
+* imd_mpi_util.c -- MPI utility routines
 *
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
@@ -317,10 +316,10 @@ void setup_buffers(void)
     binc1=2;     /* position */
 #else
     binc1=3;     /* position */
-#fi;
+#endif
 #ifndef MONOLJ
     binc1++;     /* sorte */
-#fi
+#endif
 #ifdef UNIAX
     binc1+=9;    /* direction, etc. */
 #endif
@@ -333,10 +332,10 @@ void setup_buffers(void)
     binc2=2;     /* force */
 #else
     binc2=3;     /* force */
-#fi;
+#endif
 #ifndef MONOLJ
     binc2++;     /* pot_eng */
-#fi
+#endif
 #ifdef NVX
     binc2++;     /* heatcond */
 #endif
@@ -384,8 +383,8 @@ void setup_buffers(void)
 		      largest_cell,size_east,size_north,size_up);
 #endif
 #else
-  size_east  = largest_cell * cell_dim.y * BINC;
-  size_north = largest_cell * cell_dim.x * BINC;
+  size_east  = largest_cell * cell_dim.y * binc;
+  size_north = largest_cell * cell_dim.x * binc;
 #ifdef DEBUG
   if (0==myid) printf("Max. cell is %d size east %d size north %d.\n", 
 		      largest_cell,size_east,size_north);
