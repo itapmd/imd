@@ -160,8 +160,10 @@ Epot_diff       # whether to write the potential energy difference
                 # (1, default), or the potential energy (0)
 
 #parameters for AVPOS
-avp_int         # number of steps between AVP writes
-avp_res         # number of steps between coordinate addition
+avpos_start     # when to start writing average positions (default: 0)
+avpos_end       # when to end   writing average positions (default: maxsteps)
+avpos_int       # number of steps between AVP writes
+avpos_res       # number of steps between coordinate addition
 
 # parameters for FRAC
 dampstadion	# Damping stadion
