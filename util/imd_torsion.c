@@ -28,7 +28,7 @@
 *
 *  Usage -- educate users
 *
-*  Compilation: gcc -O [-DSLOTS=<nnn>] [-DSINGLE] imd_torsion.c -lm 
+*  Compilation: gcc -O [-DSLOTS=<nnn>] imd_torsion.c -lm 
 *
 ******************************************************************************/
 

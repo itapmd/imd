@@ -28,7 +28,7 @@
 *
 *  Usage -- educate users
 *
-*  Compilation: gcc -O [-DTWOD] [-DSINGLE] imd_strain.c -lm 
+*  Compilation: gcc -O [-DTWOD] imd_strain.c -lm 
 *
 ******************************************************************************/
 
@@ -111,18 +111,11 @@ void read_displacement(str255 infilename)
     fgets(buf,sizeof(buf),infile);
     while ('#'==buf[1]) fgets(buf,sizeof(buf),infile); /* eat comments */
 
-#ifdef SINGLE
-#ifdef TWOD
-    p = sscanf(buf,"%f %f %f %f",&pos.x,&pos.y,&u.x,&u.y);
-#else
-    p = sscanf(buf,"%f %f %f %f %f %f",&pos.x,&pos.y,&pos.z,&u.x,&u.y,&u.z);
-#endif
-#else
 #ifdef TWOD
     p = sscanf(buf,"%lf %lf %lf %lf",&pos.x,&pos.y,&u.x,&u.y);
 #else
-    p = sscanf(buf,"%lf %lf %lf %lf %lf %lf",&pos.x,&pos.y,&pos.z,&u.x,&u.y,&u.z);
-#endif
+    p = sscanf(buf,"%lf %lf %lf %lf %lf %lf",
+               &pos.x,&pos.y,&pos.z,&u.x,&u.y,&u.z);
 #endif
 
     if (p>0) {

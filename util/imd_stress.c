@@ -116,19 +116,15 @@ void read_stress(str255 infilename)
     fgets(buf,sizeof(buf),infile);
     while ('#'==buf[1]) fgets(buf,sizeof(buf),infile); /* eat comments */
 
-#ifdef SINGLE
 #ifdef TWOD
-    p = sscanf(buf,"%f %f %f %f %f",&pos.x,&pos.y,&sigma.x,&sigma.y,&sigma_offdia.x);
+    p = sscanf(buf,"%lf %lf %lf %lf %lf",
+               &pos.x,&pos.y,&sigma.x,&sigma.y,&sigma_offdia.x);
 #else
-    p = sscanf(buf,"%f %f %f %f %f %f %f %f %f",&pos.x,&pos.y,&pos.z,&sigma.x,&sigma.y,&sigma.z,&sigma_offdia.x,&sigma_offdia.y,&sigam_offdia.z);
+    p = sscanf(buf,"%lf %lf %lf %lf %lf %lf %lf %lf %lf",
+               &pos.x,&pos.y,&pos.z,&sigma.x,&sigma.y,&sigma.z,
+               &sigma_offdia.x,&sigma_offdia.y,&sigma_offdia.z);
 #endif
-#else
-#ifdef TWOD
-    p = sscanf(buf,"%lf %lf %lf %lf %lf",&pos.x,&pos.y,&sigma.x,&sigma.y,&sigma_offdia.x);
-#else
-    p = sscanf(buf,"%lf %lf %lf %lf %lf %lf %lf %lf %lf",&pos.x,&pos.y,&pos.z,&sigma.x,&sigma.y,&sigma.z,&sigma_offdia.x,&sigma_offdia.y,&sigma_offdia.z);
-#endif
-#endif
+
     if (p>0) {
       /* compute target cell */
       cellc = cell_coord(pos);

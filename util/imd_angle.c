@@ -27,7 +27,7 @@
 *
 *  Usage -- educate users
 *
-*  Compilation: gcc -O [-DTWOD] [-DSLOTS=<nnn>] [-DSINGLE] imd_angle.c -lm 
+*  Compilation: gcc -O [-DTWOD] [-DSLOTS=<nnn>] imd_angle.c -lm 
 *
 ******************************************************************************/
 

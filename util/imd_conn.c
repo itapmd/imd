@@ -28,7 +28,7 @@
 *
 *  Usage -- educate users
 *
-*  Compilation: gcc -O [-DTWOD] [-DSINGLE] [-DMAXNEIGH=<N>] imd_conn.c -lm 
+*  Compilation: gcc -O [-DTWOD] [-DMAXNEIGH=<N>] imd_conn.c -lm 
 *
 ******************************************************************************/
 

@@ -36,7 +36,7 @@
 *
 *  Usage -- educate users
 *
-*  Compilation: gcc -O [-DTERSOFF] [-DTWOD] [-DSINGLE] imd_ring.c -lm 
+*  Compilation: gcc -O [-DTERSOFF] [-DTWOD] imd_ring.c -lm 
 *
 ******************************************************************************/
 

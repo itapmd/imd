@@ -21,11 +21,6 @@
 
 #define PS
 #define COVALENT
-#define SINGLE
-
-#ifdef DOUBLE
-#undef SINGLE
-#endif
 
 #include "util.h"
 #include "imd_ps_main.c"
@@ -34,7 +29,7 @@
 *
 *  Usage -- educate users
 *
-*  Compilation: gcc -O [-DTWOD] [-DDOUBLE] imd_ps.c -lm
+*  Compilation: gcc -O [-DTWOD] imd_ps.c -lm
 *
 ******************************************************************************/
 

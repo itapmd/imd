@@ -41,7 +41,7 @@
 *
 *  Usage -- educate users
 *
-*  Compilation: gcc -O [-DTERSOFF] [-DSTIWEB] [-DKEATING] [-DSINGLE] imd_elco.c -lm 
+*  Compilation: gcc -O [-DTERSOFF] [-DSTIWEB] [-DKEATING] imd_elco.c -lm 
 *
 ******************************************************************************/
 

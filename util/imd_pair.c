@@ -26,7 +26,7 @@
 *
 *  Usage -- educate users
 *
-*  Compilation: gcc -O [-DTWOD] [-DSLOTS=<nnn>] [-DSINGLE] imd_pair.c -lm
+*  Compilation: gcc -O [-DTWOD] [-DSLOTS=<nnn>] imd_pair.c -lm
 *
 ******************************************************************************/
 

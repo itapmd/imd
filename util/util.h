@@ -161,19 +161,13 @@ INLINE static int MOD(int p, int q)
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-
+#include "param.h"
 
 /*****************************************************************************
 *
 *  typedefs
 *
 *****************************************************************************/
-
-#ifdef SINGLE
-typedef float real;
-#else
-typedef double real;
-#endif
 
 #ifdef TWOD
 typedef struct {real x; real y; } vektor;
@@ -297,15 +291,6 @@ typedef struct list_elmt {
 } List_elmt;
 #endif
 
-/* for parameter reading */
-typedef enum ParamType {
-  PARAM_STR, PARAM_STRPTR,
-  PARAM_INT, PARAM_INT_COPY,
-  PARAM_INTEGER, PARAM_INTEGER_COPY,
-  PARAM_REAL, PARAM_REAL_COPY
-} PARAMTYPE;
-
-
 /*****************************************************************************
 *
 *  prototypes
@@ -317,8 +302,6 @@ void read_parameters(int argc, char **argv);
 void read_atoms(str255 infilename);
 void usage(void);
 void getparamfile(char *infile);
-int  getparam(char *param_name, void *param, PARAMTYPE ptype, 
-              int pnum_min, int pnum_max);
 ivektor cell_coord(vektor pos);
 void init_cells(void);
 void error(char *mesg);
@@ -440,7 +423,6 @@ int ntypes=0;        /* Total number of different atom types */
 int vtypes=0;        /* Number of virtual types */
 int use_vtypes=0;    /* flag for using virtual types */
 str255 progname;     /* Name of current executable argv[0] */
-int curline;         /* Number of current line for parameter reading */
 str255 error_msg;    /* string for error message */
 
 /* The simulation box and its inverse */
@@ -1840,163 +1822,6 @@ void read_parameters(int argc,char **argv)
 
 } 
 
-
-/*****************************************************************************
-*
-*  read one parameter (routine from imd_param.c)
-*
-*****************************************************************************/
-
-int getparam(char *param_name, void *param, PARAMTYPE ptype, 
-             int pnum_min, int pnum_max)
-{
-  static char errmsg[256];
-  char *str;
-  int i;
-  int numread;
-
-  numread = 0;
-  if (ptype == PARAM_STR) {
-    str = strtok(NULL," \t\n");
-    if (str == NULL) {
-      fprintf(stderr,"parameter for %s missing in line %u\n",
-              param_name,curline);
-      error("string expected");
-    }
-    else strncpy((char *)param,str,pnum_max);
-    numread++;
-  }
-  else if (ptype == PARAM_STRPTR) {
-    str = strtok(NULL," \t\n");
-    if (str == NULL) {
-      fprintf(stderr,"parameter for %s missing in line %u\n",
-              param_name,curline);
-      error("string expected");
-    }
-    else *((char**)param) = strdup(str);
-    numread++;
-  }
-  else if (ptype == PARAM_INT) {
-    for (i=0; i<pnum_min; i++) {
-      str = strtok(NULL," \t\n");
-      if (str == NULL) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
-                param_name,curline);
-        sprintf(errmsg,"integer vector of dim %u expected",
-                (unsigned)pnum_min);
-        error(errmsg);
-      }
-      else ((int*)param)[i] = atoi(str);
-      numread++;
-    }
-    for (i=pnum_min; i<pnum_max; i++) {
-      if ((str = strtok(NULL," \t\n")) != NULL) {
-        ((int*)param)[i] = atoi(str);
-        numread++;
-      }
-      else break;
-    }
-  }
-  else if (ptype == PARAM_INT_COPY) {
-    int ival = 0;
-    for (i=0; i<pnum_max; i++) {
-      str = strtok(NULL," \t\n");
-      if (str != NULL) {
-        ival = atoi(str);
-        numread++; /* return number of parameters actually read */
-      }
-      else if (i<pnum_min) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
-                param_name,curline);
-        sprintf(errmsg,"integer vector of dim %u expected",
-                (unsigned)pnum_min);
-        error(errmsg);
-      }
-      ((int*)param)[i] = ival;
-    }
-  }
-  else if (ptype == PARAM_INTEGER) {
-    for (i=0; i<pnum_min; i++) {
-      str = strtok(NULL," \t\n");
-      if (str == NULL) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
-                param_name,curline);
-        sprintf(errmsg,"integer vector of dim %u expected",
-                (unsigned)pnum_min);
-        error(errmsg);
-      }
-      else ((int *)param)[i] = atoi(str);
-      numread++;
-    }
-    for (i=pnum_min; i<pnum_max; i++) {
-      if ((str = strtok(NULL," \t\n")) != NULL) {
-        ((int *)param)[i] = atoi(str);
-        numread++;
-      }
-      else break;
-    }
-  }
-  else if (ptype == PARAM_INTEGER_COPY) {
-    int ival = 0;
-    for (i=0; i<pnum_max; i++) {
-      str = strtok(NULL," \t\n");
-      if (str != NULL) {
-        ival = atoi(str);
-        numread++; /* return number of parameters actually read */
-      }
-      else if (i<pnum_min) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
-                param_name,curline);
-        sprintf(errmsg,"integer vector of dim %u expected",
-                (unsigned)pnum_min);
-        error(errmsg);
-      }
-      ((int *)param)[i] = (int)ival;
-    }
-  }
-  else if (ptype == PARAM_REAL) {
-    for (i=0; i<pnum_min; i++) {
-      str = strtok(NULL," \t\n");
-      if (str == NULL) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
-                param_name,curline);
-        sprintf(errmsg,"real vector of dim %u expected",
-                (unsigned)pnum_min);
-        error(errmsg);
-      }
-      else ((real*)param)[i] = atof(str);
-      numread++;
-    }
-    for (i=pnum_min; i<pnum_max; i++) {
-      if ((str = strtok(NULL," \t\n")) != NULL) {
-        ((real*)param)[i] = atof(str);
-        numread++;
-      }
-      else break;
-    }
-  }
-  else if (ptype == PARAM_REAL_COPY) {
-    real rval = 0;
-    for (i=0; i<pnum_max; i++) {
-      str = strtok(NULL," \t\n");
-      if (str != NULL) {
-        rval = atof(str);
-        numread++; /* return number of parameters actually read */
-      }
-      else if (i<pnum_min) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
-                param_name,curline);
-        sprintf(errmsg,"real vector of dim %u expected",
-                (unsigned)pnum_min);
-        error(errmsg);
-      }
-      ((real*)param)[i] = rval;
-    }
-  }
-  return numread;
-} /* getparam */
-
-
 /*****************************************************************************
 *
 *  read tag-based parameter file
@@ -2011,7 +1836,6 @@ void getparamfile(char *paramfname)
   char *token;
   char *res;
 
-  curline = 0;
   pf = fopen(paramfname,"r");
   if (NULL == pf) {
     sprintf(error_msg,"Cannot open parameter file %s",paramfname);
@@ -2021,7 +1845,6 @@ void getparamfile(char *paramfname)
   do {
     res=fgets(buffer,1024,pf);
     if (NULL == res) break; /* probably EOF reached */
-    curline++;
     token = strtok(buffer," \t\n");
     if (NULL == token) continue; /* skip blank lines */
     if (token[0]=='#') continue; /* skip comments */
@@ -2252,22 +2075,12 @@ void read_atoms(str255 infilename)
     fgets(buf,sizeof(buf),infile);
     while ('#'==buf[1]) fgets(buf,sizeof(buf),infile); /* eat comments */
 
-#ifdef SINGLE
-#ifdef TWOD
-    p = sscanf(buf,"%d %d %f %f %f %f %f %f %f",
-	       &n,&s,&m,&pos.x,&pos.y,&v.x,&v.y,&e,&c);
-#else
-    p = sscanf(buf,"%d %d %f %f %f %f %f %f %f %f %f",
-	       &n,&s,&m,&pos.x,&pos.y,&pos.z,&v.x, &v.y, &v.z,&e,&c);
-#endif
-#else
 #ifdef TWOD
     p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf",
 	       &n,&s,&m,&pos.x,&pos.y,&v.x,&v.y,&e,&c);
 #else
     p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf %lf %lf",
 	       &n,&s,&m,&pos.x,&pos.y,&pos.z,&v.x, &v.y, &v.z,&e,&c);
-#endif
 #endif
 
     if (p>0) {
@@ -2459,7 +2272,4 @@ void do_work(void (*do_cell_pair)(cell *p, cell *q, vektor pbc))
             }
       }
 }
-
-
-
 

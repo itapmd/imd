@@ -33,7 +33,7 @@
 *
 *  Usage -- educate users
 *
-*  Compilation: gcc -O [-DTWOD] [-DTERSOFF] [-DSLOTS=<nnn>] [-DSINGLE] imd_coord.c -lm 
+*  Compilation: gcc -O [-DTWOD] [-DTERSOFF] [-DSLOTS=<nnn>] imd_coord.c -lm 
 *
 ******************************************************************************/
 

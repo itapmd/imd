@@ -74,35 +74,35 @@ sample2dist: sample2dist.c
 #
 # imd_pair and its decendands
 #
-imd_pair: util.h imd_pair.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ imd_pair.c -lm
+imd_pair: param.h param.c util.h imd_pair.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_pair.c -lm
 
-imd_angle: util.h imd_angle.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ imd_angle.c -lm
+imd_angle: param.h param.c util.h imd_angle.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_angle.c -lm
 
-imd_conn: util.h imd_conn.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ imd_conn.c -lm
+imd_conn: param.h param.c util.h imd_conn.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_conn.c -lm
 
-imd_coord: util.h imd_coord.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ imd_coord.c -lm
+imd_coord: param.h param.c util.h imd_coord.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_coord.c -lm
 
-imd_elco: util.h imd_elco.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ imd_elco.c -lm
+imd_elco: param.h param.c util.h imd_elco.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_elco.c -lm
 
-imd_ps: util.h imd_ps_main.c imd_ps.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ imd_ps.c -lm
+imd_ps: param.h param.c util.h imd_ps_main.c imd_ps.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_ps.c -lm
 
-imd_ring: util.h imd_ring.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ imd_ring.c -lm
+imd_ring: param.h param.c util.h imd_ring.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_ring.c -lm
 
-imd_strain: util.h imd_strain.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ imd_strain.c -lm
+imd_strain: param.h param.c util.h imd_strain.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_strain.c -lm
 
-imd_stress: util.h imd_stress.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ imd_stress.c -lm
+imd_stress: param.h param.c util.h imd_stress.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_stress.c -lm
 
-imd_torsion: util.h imd_torsion.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ imd_torsion.c -lm
+imd_torsion: param.h param.c util.h imd_torsion.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c imd_torsion.c -lm
 
 # clean
 clean:
