@@ -1480,6 +1480,16 @@ void check_parameters_complete()
 #ifdef ATDIST
   if (0==atoms_dist_end) atoms_dist_end = steps_max;
 #endif
+
+  /* backup if hist_ur is not set */
+  if (0.0==hist_ur.x) {
+    hist_ur.x = box_x.x;
+    hist_ur.y = box_y.y;
+#ifndef TWOD
+    hist_ur.z = box_z.z;
+#endif
+  }
+
 }
 
 /*****************************************************************
@@ -1616,6 +1626,8 @@ void broadcast_params() {
 #endif
   MPI_Bcast( &pic_ll      , DIM, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &pic_ur      , DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &hist_ll     , DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &hist_ur     , DIM, REAL, 0, MPI_COMM_WORLD); 
 #ifdef EFILTER
   MPI_Bcast( &lower_e_pot,    1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &upper_e_pot,    1, REAL,    0, MPI_COMM_WORLD);

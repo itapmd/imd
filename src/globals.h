@@ -114,7 +114,8 @@ EXTERN int dist_has_coords INIT(0);/* Flag for writing bin coords to dists */
 EXTERN int dist_coord INIT(0);   /* Flag for writing dist coords */
 EXTERN int virvo_io INIT(0);     /* Flag for virvo or volrend */
 EXTERN ivektor dist_dim INIT(einsivektor); /* Resolution of spatial distrib */
-EXTERN str255 rundesc; /* Description */
+EXTERN vektor  hist_ur  INIT(nullvektor);
+EXTERN vektor  hist_ll  INIT(nullvektor);
 EXTERN str255 progname; /* Name of current executable argv[0] */
 EXTERN ivektor cellmin; /* Minimum index of local cells (1 with MPI, 0 otherwise) */
 EXTERN ivektor cellmax; /* Maximum index of local cells  */

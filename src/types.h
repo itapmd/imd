@@ -209,6 +209,7 @@ typedef struct {
   integer *num_hist;
   int     size;
   ivektor dim;
+  vektor  ll, ur;
   real    binvol;
 } hist_t;
 
