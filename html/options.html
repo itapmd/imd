@@ -329,6 +329,18 @@ be corrected for non existing degrees of freedom. One should also keep
 in mind, that restricting the motion of some atoms corresponds to a
 force which might affect the total impuls.
 
+<A NAME="fnorm">
+<P><LI><B> fnorm </B><P>
+Calculates the scalar product of the global force vector, output in
+the .eng file before the pressure. This should be a good measure for
+the degree of relaxation.
+
+<A NAME="efilter">
+<P><LI><B> efilter </B><P>
+Only those atoms which have a potential energy between e_pot_lower and
+e_pot_upper are writen in <outfile>.ef.<n>. This happens every
+ef_checkpt_int steps.
+
 
 <A NAME="quasi">
 <P><LI><B>quasi</B><P>
