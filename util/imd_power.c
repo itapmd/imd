@@ -56,7 +56,7 @@ int n_min, n_max;      /* numbers of first and last line to be treated */
 int n_lines, n_cols;   /* number of lines and columns */
 unsigned long n_alloc; /* length of FFT (power of 2) */
 char progname[255];    /* name of executable (argv[0]) */
-char basename[255];    /* base name of input/output files */
+char fbasename[255];   /* base name of input/output files */
 double *cols[16];      /* columns of engfile */
 
 /*****************************************************************************
@@ -121,9 +121,9 @@ void read_input(int argc,char **argv)
   while (n_alloc < n_lines) n_alloc *= 2;
 
   /* get base file name, strip trailing .eng */
-  strcpy(basename, argv[3]);
-  p = strlen(basename) - 4;
-  if (NULL!=strstr(basename + p, ".eng")) basename[p] = '\0';
+  strcpy(fbasename, argv[3]);
+  p = strlen(fbasename) - 4;
+  if (NULL!=strstr(fbasename + p, ".eng")) fbasename[p] = '\0';
 
   /* read .eng file */
   read_engfile();
@@ -145,7 +145,7 @@ void read_engfile()
   int i,j,p;
 
   /* open .eng file */
-  sprintf(engfilename, "%s.eng", basename);
+  sprintf(engfilename, "%s.eng", fbasename);
   infile = fopen(engfilename,"r");
   if (NULL==infile) {
     sprintf(msg, "Cannot open file %s", engfilename);
@@ -213,7 +213,7 @@ void write_output()
   omega = 4 * atan(1.0) / (n_alloc*(cols[0][1]-cols[0][0]));
 
   /* open output file */
-  sprintf(outfilename, "%s.fft", basename);
+  sprintf(outfilename, "%s.fft", fbasename);
   outfile = fopen(outfilename,"w");
   if (NULL==outfile) {
     sprintf(msg, "Cannot open output file %s", outfilename);
