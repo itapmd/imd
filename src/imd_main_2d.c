@@ -280,12 +280,7 @@ void main_loop(void)
     imd_start_timer(&time_io);
 #endif
     if ((rep_interval > 0) && (0 == steps%rep_interval)) write_config(steps);
-    if ((eng_interval > 0) && (0 == steps%eng_interval)) { 
-#ifdef STRESS_TENS
-      calc_tot_presstens();
-#endif
-      if (myid==0) write_eng_file(steps);
-    }
+    if ((eng_interval > 0) && (0 == steps%eng_interval)) write_eng_file(steps);
     if ((dis_interval > 0) && (0 == steps%dis_interval)) write_distrib(steps);
     if ((pic_interval > 0) && (0 == steps%pic_interval)) write_pictures(steps);
 

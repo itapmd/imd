@@ -249,7 +249,7 @@ void main_loop(void)
 #endif
 
 #ifdef GLOK 
-    /* "globale konvergenz": set impulses=0 if P*F <0 (global vectors) */
+    /* "global convergence": set momenta to 0 if P*F < 0 (global vectors) */
     if (PxF<0.0) {
       for (k=0; k<ncells; ++k) {
         p = cell_array + CELLS(k);
@@ -259,21 +259,13 @@ void main_loop(void)
           p->impuls Z(i) = 0.0;
         }
       }
-#ifdef STRESS_TENS
-      calc_tot_presstens();
-#endif
-      if (myid==0) write_eng_file(steps); 
+      write_eng_file(steps); 
     }
     /* properties as they were after setting p=0 and 
        calculating ekin_ and p. p should then = f*dt
        therefore PxF >0 and f*f = 2*M*ekin
     */
-    if (old_PxF<0.0) {
-#ifdef STRESS_TENS
-      calc_tot_presstens();
-#endif
-      if (myid==0) write_eng_file(steps); 
-    }
+    if (old_PxF<0.0) write_eng_file(steps); 
     old_PxF = PxF;
 #endif
 
@@ -341,12 +333,7 @@ void main_loop(void)
     imd_start_timer(&time_io);
 #endif
     if ((rep_interval > 0) && (0 == steps%rep_interval)) write_config(steps);
-    if ((eng_interval > 0) && (0 == steps%eng_interval)) { 
-#ifdef STRESS_TENS
-      calc_tot_presstens();
-#endif
-      write_eng_file(steps);
-    }
+    if ((eng_interval > 0) && (0 == steps%eng_interval)) write_eng_file(steps);
     if ((dis_interval > 0) && (0 == steps%dis_interval)) write_distrib(steps);
     if ((pic_interval > 0) && (0 == steps%pic_interval)) write_pictures(steps);
 

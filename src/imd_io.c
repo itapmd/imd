@@ -926,6 +926,14 @@ void write_eng_file(int steps)
 #ifndef TWOD
   real Press_zz,Press_yz, Press_zx;
 #endif
+  calc_tot_presstens();
+#endif
+
+  /* write only on CPU 0; 
+     calc_tot_presstensor() above must be executed on all CPUs */
+  if (myid>0) return;
+
+#ifdef STRESS_TENS
   Press_xx = tot_presstens.xx / volume; 
   Press_yy = tot_presstens.yy / volume; 
 #ifndef TWOD
