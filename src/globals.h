@@ -155,6 +155,12 @@ EXTERN char *paramfilename INIT(0L);    /* Parameter File */
 /* Parameters for displacement map */
 EXTERN str255 reffilename INIT("\0");   /* Parameter File */
 
+/* pointers to files that are kept open */
+EXTERN FILE  *eng_file INIT(NULL);      /* pointer to .eng file  */
+EXTERN FILE *msqd_file INIT(NULL);      /* pointer to .msqd file */
+EXTERN int flush_int INIT(50);          /* flush .eng and .msqd files
+                                           every flush_int writes */
+
 /* Parameters for pictures */
 EXTERN vektor2d ecut_kin INIT(nullvektor2d);/* Kin. Energy interval for pictures */
 EXTERN vektor2d ecut_pot INIT(nullvektor2d);/* Pot. Energy interval for pictures */   

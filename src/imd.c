@@ -158,6 +158,8 @@ int main(int argc, char **argv)
 
   /* write execution time summary */
   if (0 == myid) {
+    if (NULL!= eng_file) fclose( eng_file);
+    if (NULL!=msqd_file) fclose(msqd_file);
     time(&tend);
     steps_max -= start;
     if (steps_max < 0)

@@ -63,11 +63,16 @@ void error(char *msg)
 {
 #ifdef MPI
   fprintf(stderr,"Error on CPU %d: %s\n",myid,msg);
-  fflush(stderr);
-  MPI_Abort(MPI_COMM_WORLD, 1);
 #else
   fprintf(stderr,"Error: %s\n",msg);
+#endif
+  /* try to flush and close whatever we can */
   fflush(stderr);
+  fflush(stdout);
+  if ((myid==0) && ( eng_file!=NULL)) fclose( eng_file);
+  if ((myid==0) && (msqd_file!=NULL)) fclose(msqd_file);
+#ifdef MPI
+  MPI_Abort(MPI_COMM_WORLD, 1);
 #endif
   exit(2);
 }

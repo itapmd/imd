@@ -868,11 +868,10 @@ void write_eng_file_header()
 
 void write_eng_file(int steps)
 {
-  FILE *out;
   str255 fname;
   int i;
-  real tmp;
-  
+  static int flush_count=0;
+  real tmp;  
 
 #ifdef HPO
   char *format=" %.16e";
@@ -922,19 +921,22 @@ void write_eng_file(int steps)
   vol  = volume / natoms;
   pressure = Temp / vol + virial / (DIM * volume);
 
-  sprintf(fname,"%s.eng",outfilename);
-  out = fopen(fname,"a");
-  if (NULL == out) error("Cannot open properties file.");
+  /* open .eng file if it is not yet open */
+  if (NULL == eng_file) {
+    sprintf(fname,"%s.eng",outfilename);
+    eng_file = fopen(fname,"a");
+    if (NULL == eng_file) error("Cannot open properties file.");
+  }
 
-  fprintf(out, "%e",     (double) (steps * timestep));
-  fprintf(out, " %.16e", (double) Epot);
-  fprintf(out, format,   (double) Temp);
+  fprintf(eng_file, "%e",     (double) (steps * timestep));
+  fprintf(eng_file, " %.16e", (double) Epot);
+  fprintf(eng_file, format,   (double) Temp);
 #if defined(STM) || defined(FRAC)
-  fprintf(out, format,   (double) Temp_stadium);
+  fprintf(eng_file, format,   (double) Temp_stadium);
 #endif
 
 #ifdef FRAC
-  fprintf(out, format,   (double) Temp_damp);
+  fprintf(eng_file, format,   (double) Temp_damp);
 #endif
 
 #ifdef FTG
@@ -942,50 +944,57 @@ void write_eng_file(int steps)
     Temp =  0.0;
     if (0 !=  *(ninslice + i))
       Temp =  2.0* *(E_kin_ftg+i)/ *(ninslice + i);
-    fprintf(out, format, Temp); 
+    fprintf(eng_file, format, Temp); 
   }
 #endif
 
 
 #ifdef FNORM
-  fprintf(out, format,   (double) fnorm / nactive);
+  fprintf(eng_file, format,   (double) fnorm / nactive);
 #endif
 #ifdef GLOK
-  fprintf(out, format,   (double) PxF);
+  fprintf(eng_file, format,   (double) PxF);
 #endif
-  fprintf(out," %e",     (double) pressure);
-  fprintf(out," %e",     (double) vol);
+  fprintf(eng_file," %e",     (double) pressure);
+  fprintf(eng_file," %e",     (double) vol);
 #if defined(NVT) || defined(NPT) || defined(STM)
-  fprintf(out," %e",     (double) (eta * tau_eta) );
+  fprintf(eng_file," %e",     (double) (eta * tau_eta) );
 #endif
 #ifdef FRAC 
-  fprintf(out," %e",     (double) gamma_damp );
-  fprintf(out," %e",     (double) dotepsilon );
+  fprintf(eng_file," %e",     (double) gamma_damp );
+  fprintf(eng_file," %e",     (double) dotepsilon );
 #endif
 
   if (ensemble==ENS_NPT_AXIAL) {
 #ifdef TWOD
-    fprintf(out," %e %e", (double) stress_x, (double) stress_y );
-    fprintf(out," %e %e", (double)  box_x.x, (double)  box_y.y );
+    fprintf(eng_file," %e %e", (double) stress_x, (double) stress_y );
+    fprintf(eng_file," %e %e", (double)  box_x.x, (double)  box_y.y );
 #else
-    fprintf(out," %e %e %e", 
+    fprintf(eng_file," %e %e %e", 
 	    (double) stress_x, (double) stress_y, (double) stress_z );
-    fprintf(out," %e %e %e", 
+    fprintf(eng_file," %e %e %e", 
 	    (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
 #endif
   }
 #ifdef STRESS_TENS
-  fprintf(out," %e %e", (double) Press_xx, (double) Press_yy);
+  fprintf(eng_file," %e %e", (double) Press_xx, (double) Press_yy);
 #ifdef TWOD
-  fprintf(out," %e", (double) Press_xy);
+  fprintf(eng_file," %e", (double) Press_xy);
 #else 
-  fprintf(out," %e", (double) Press_zz);
-  fprintf(out," %e %e %e",
+  fprintf(eng_file," %e", (double) Press_zz);
+  fprintf(eng_file," %e %e %e",
 	  (double) Press_yz, (double) Press_zx, (double) Press_xy);
 #endif    
 #endif
-  putc('\n',out);
-  fclose(out);
+  putc('\n',eng_file);
+  flush_count++;
+
+  /* flush .eng file every flush_int writes */
+  if (flush_count > flush_int) {
+    fflush(eng_file);
+    flush_count=0;
+  }
+
 }
 
 #ifdef MSQD
@@ -998,21 +1007,32 @@ void write_eng_file(int steps)
 
 void write_msqd(int steps)
 {
-  FILE *out;
   str255 fname;
   int i,j;
+  static int flush_count=0;
 
-  sprintf(fname,"%s.msqd",outfilename);
-  out = fopen(fname,"a");
-  if (NULL == out) error("Cannot open msqd file.");
-
-  fprintf(out, "%10.4e", (double)(steps * timestep));
-  for (i=0; i<ntypes; i++) 
-    for (j=0; i<DIM; j++) {
-    fprintf(out," %10.4e", (double)(msqd_global[i*DIM+j] / num_sort[i]));
+  /* open .msqd file if not yet open */
+  if (NULL == msqd_file) {
+    sprintf(fname,"%s.msqd",outfilename);
+    msqd_file = fopen(fname,"a");
+    if (NULL == msqd_file) error("Cannot open msqd file.");
   }
-  putc('\n',out);
-  fclose(out);
+
+  /* write the mean square displacements */
+  fprintf(msqd_file, "%10.4e", (double)(steps * timestep));
+  for (i=0; i<ntypes; i++) 
+    for (j=0; j<DIM; j++) {
+    fprintf(msqd_file," %10.4e", (double)(msqd_global[i*DIM+j] / num_sort[i]));
+  }
+  putc('\n',msqd_file);
+  flush_count++;
+
+  /* flush .msqd file every flush_int writes */
+  if (flush_count > flush_int){
+    fflush(msqd_file);
+    flush_count=0;
+  }
+
 }
 
 #endif
