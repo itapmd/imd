@@ -160,8 +160,6 @@ void calc_forces(void)
   }
 #endif
 
-  mpi_addtime(&time_calc_local);
-  
 #ifndef AR  
 
   /* If we don't use actio=reactio accross the cpus, we have do do
@@ -205,8 +203,6 @@ void calc_forces(void)
   vir_vect.x = tmpvec.x;
   vir_vect.y = tmpvec.y;
   vir_vect.z = tmpvec.z;
-
-  mpi_addtime(&time_calc_nonlocal);
 
 #endif  /* ... ifndef AR */
 
@@ -385,8 +381,6 @@ void calc_forces(void)
 	    }
       }
 
-  mpi_addtime(&time_calc_local);
-  
 #ifndef AR  
   /* Calculate forces on boundary half of cell */
   /* potential energy and virial are already complete; to avoid double
@@ -439,7 +433,6 @@ void calc_forces(void)
   vir_vect.z = tmpvec.z;
 #endif
 
-  mpi_addtime(&time_calc_nonlocal);
 #endif  /* ... ifndef AR */
 
   /* sum up results of different CPUs */

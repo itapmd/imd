@@ -1,3 +1,4 @@
+
 /******************************************************************************
 *
 * imd_main_3d.c -- main loop, three dimensions
@@ -10,6 +11,7 @@
 ******************************************************************************/
 
 #include "imd.h"
+
 /*#define ATNR 2826   easier debuging... */
 
 /*****************************************************************************
@@ -100,10 +102,6 @@ void main_loop(void)
 
   calc_properties();
 
-#ifdef MPI  
-  mpi_addtime(&time_setup);
-#endif
-
   /* initializations for the current simulation phase, if not yet done */
   if (0==restart) init();
 
@@ -111,55 +109,53 @@ void main_loop(void)
   deform_int = 0;
 #endif
 
-/* simulation loop */
+  /* simulation loop */
   for (steps=steps_min; steps <= steps_max; ++steps) {
 
 #ifdef FBC
 #ifdef MIK  
-/* just increment the force if under threshold of e_kin or after waitsteps
-  and after annelasteps */
-  temp_df.x = 0.0;
-  temp_df.y = 0.0;
-  temp_df.z = 0.0;  
-  for (l=0;l<vtypes;l++)
-      *(fbc_df+l) = temp_df;
+    /* just increment the force if under threshold of e_kin or after 
+       waitsteps and after annelasteps */
+    temp_df.x = 0.0;
+    temp_df.y = 0.0;
+    temp_df.z = 0.0;  
+    for (l=0; l<vtypes; l++) *(fbc_df+l) = temp_df;
 
- if (steps > fbc_annealsteps)
- {
-   nofbcsteps++; 
+    if (steps > fbc_annealsteps) {
+      nofbcsteps++; 
 
-   if((tot_kin_energy/nactive < fbc_ekin_threshold) ||
-        (nofbcsteps==fbc_waitsteps)) 
-     {
-      nofbcsteps=0;
-      for (l=0;l<vtypes;l++){
-         (fbc_df+l)->x = (fbc_dforces+l)->x ;
-	 (fbc_df+l)->y = (fbc_dforces+l)->y ;
-	 (fbc_df+l)->z = (fbc_dforces+l)->z ;
+      if((tot_kin_energy/nactive < fbc_ekin_threshold) ||
+         (nofbcsteps==fbc_waitsteps)) 
+      {
+        nofbcsteps=0;
+        for (l=0;l<vtypes;l++) {
+          (fbc_df+l)->x = (fbc_dforces+l)->x;
+          (fbc_df+l)->y = (fbc_dforces+l)->y;
+          (fbc_df+l)->z = (fbc_dforces+l)->z;
 
-	 /* MIK affects the total impuls, especially in inhomogenous samples,
-	    so we set the velocities to 0 befor each force increment 
-	    
-	    for (k=0; k<ncells; ++k) {
-	    p = cell_array + CELLS(k);
-	    for (i=0; i<p->n; ++i) {
-	     p->impuls X(i) = 0.0;
-	     p->impuls Y(i) = 0.0;
-	     p->impuls Z(i) = 0.0;
-	     }
-	     }
-	 */
-      }
-      /* to avoid an imense total impuls and to see more of the phase space,
-	 we do some AND steps here.... */
+          /* MIK affects the total impuls, especially in inhomogenous samples,
+             so we set the velocities to 0 befor each force increment 
+
+             for (k=0; k<ncells; ++k) {
+               p = cell_array + CELLS(k);
+               for (i=0; i<p->n; ++i) {
+                 p->impuls X(i) = 0.0;
+                 p->impuls Y(i) = 0.0;
+                 p->impuls Z(i) = 0.0;
+               }
+             }
+          */
+        }
+        /* to avoid an imense total impuls and to see more of the phase space,
+	   we do some AND steps here.... */
 #ifdef MIKAND
-      if ((nofbcsteps!=0) && (0==nofbcsteps%tmp_interval)) maxwell(temperature);
+        if ((nofbcsteps!=0) && (0==nofbcsteps%tmp_interval)) 
+          maxwell(temperature);
 #endif
-     }
- }
-
-#endif
-#endif
+      }
+    }
+#endif /* MIK */
+#endif /* FBC */
 
 #ifdef HOMDEF
     if ((exp_interval > 0) && (0 == steps%exp_interval)) expand_sample();
@@ -175,41 +171,50 @@ void main_loop(void)
       }
     }
 #endif
+
 #ifdef FBC
- for (l=0;l<vtypes;l++){               /* fbc_forces is already initialised with beginforces */
-   (fbc_forces+l)->x += (fbc_df+l)->x; /* fbc_df=0 if MIK && ekin> ekin_threshold */ 
-   (fbc_forces+l)->y += (fbc_df+l)->y;
-   (fbc_forces+l)->z += (fbc_df+l)->z;
-  } 
+    /* fbc_forces is already initialised with beginforces */
+    for (l=0; l<vtypes; l++){ 
+      /* fbc_df=0 if MIK && ekin> ekin_threshold */
+      (fbc_forces+l)->x += (fbc_df+l)->x;  
+      (fbc_forces+l)->y += (fbc_df+l)->y;
+      (fbc_forces+l)->z += (fbc_df+l)->z;
+    } 
 #ifdef ATNR
- printf(" step: %d \n",steps); 
- fflush(stdout);
+    printf(" step: %d \n",steps); 
+    fflush(stdout);
 #endif
 #endif
 
 #ifdef MPI
+#ifdef TIMING
+    imd_start_timer(&time_force_comm);
+#endif
 #ifdef SAVEMEM
     send_atoms_by_cell();
 #else
     /* we should do this in more appropriate intervals */
     if (((eng_interval != 0) && (0 == steps%eng_interval)) || 
         (steps == steps_min)) setup_buffers();
-    mpi_addtime(&time_io);
 #if (defined(AR) && !defined(COVALENT))
     send_atoms_ar();
 #else
     send_atoms_force();
 #endif
 #endif
-    mpi_addtime(&time_comm_force);
+#ifdef TIMING
+    imd_stop_timer(&time_force_comm);
+#endif
 #endif
 
 #ifndef MC
-    calc_forces(); 
+#ifdef TIMING
+    imd_start_timer(&time_force_calc);
 #endif
-
-#ifdef MPI
-    mpi_addtime(&time_calc);
+    calc_forces();
+#ifdef TIMING
+    imd_stop_timer(&time_force_calc);
+#endif
 #endif
 
 #ifdef DISLOC
@@ -227,12 +232,17 @@ void main_loop(void)
 
 #ifdef MPI
 #ifdef AR
+#ifdef TIMING
+    imd_start_timer(&time_force_comm);
+#endif
 #ifdef COVALENT
     send_forces_full();
 #else
     send_forces();
 #endif
-    mpi_addtime(&time_comm_ar);
+#ifdef TIMING
+    imd_stop_timer(&time_force_comm);
+#endif
 #endif
 #endif
 
@@ -243,31 +253,30 @@ void main_loop(void)
       move_atoms();
 #else 
 
-#ifdef GLOK /* "globale konvergenz": set impulses=0 if P*F <0 (global vectors) */
-    if (PxF<0.0)
-      {
-	for (k=0; k<ncells; ++k) {
-	  p = cell_array + CELLS(k);
-	  for (i=0; i<p->n; ++i) {
-	    p->impuls X(i) = 0.0;
-	    p->impuls Y(i) = 0.0;
-	    p->impuls Z(i) = 0.0;
-	  }
-	}
-      if (myid==0) write_properties(steps); 
+#ifdef GLOK 
+    /* "globale konvergenz": set impulses=0 if P*F <0 (global vectors) */
+    if (PxF<0.0) {
+      for (k=0; k<ncells; ++k) {
+        p = cell_array + CELLS(k);
+        for (i=0; i<p->n; ++i) {
+          p->impuls X(i) = 0.0;
+          p->impuls Y(i) = 0.0;
+          p->impuls Z(i) = 0.0;
+        }
       }
+      if (myid==0) write_properties(steps); 
+    }
     /* properties as they were after setting p=0 and 
        calculating ekin_ and p. p should then = f*dt
        therefore PxF >0 and f*f = 2*M*ekin
     */
-    if (myid==0)
-      if(old_PxF<0.0)
-	write_properties(steps); 
+    if ((myid==0) && (old_PxF<0.0)) write_properties(steps); 
     old_PxF = PxF;
 #endif
 
     move_atoms(); /* here PxF is recalculated */
-#endif
+
+#endif /* not SMIK */
 
 #if defined(AND) || defined(NVT) || defined(NPT)
     if ((steps==steps_min) && (use_curr_temp==1)) {
@@ -289,7 +298,7 @@ void main_loop(void)
       d_pressure.y = (pressure_end.y-pressure_ext.y) / (steps_max-steps_min);
       d_pressure.z = (pressure_end.z-pressure_ext.z) / (steps_max-steps_min);
       use_curr_pressure = 0;
-    };
+    }
 #endif
 
 #ifdef NPT_axial
@@ -300,7 +309,7 @@ void main_loop(void)
       d_pressure.y = (pressure_end.y-pressure_ext.y) / (steps_max-steps_min);
       d_pressure.z = (pressure_end.z-pressure_ext.z) / (steps_max-steps_min);
       use_curr_pressure = 0;
-    };
+    }
 #endif
 
 #if defined(AND) || defined(NVT) || defined(NPT)
@@ -319,17 +328,12 @@ void main_loop(void)
     pressure_ext.z += d_pressure.z;
 #endif
 
-#ifdef MPI
-    mpi_addtime(&time_calc);
-#endif
-
     calc_properties(); 
 
-#ifdef MPI
-    mpi_addtime(&time_calc);
-#endif
-
     /* Periodic I/O */
+#ifdef TIMING
+    imd_start_timer(&time_io);
+#endif
     if ((rep_interval > 0) && (0 == steps%rep_interval)) write_config(steps);
     if ((eng_interval > 0) && (0 == steps%eng_interval) && (0==myid)) 
        write_properties(steps);
@@ -375,65 +379,44 @@ void main_loop(void)
     if ((socket_int>0) && (0==steps%socket_int)) check_socket(steps);
 #endif
 
-#ifdef MPI
-    mpi_addtime(&time_io);
+#ifdef TIMING
+    imd_stop_timer(&time_io);
 #endif
 
     do_boundaries();    
 
     /* fix_cells redistributes atoms across the cpus. Putting at the bottom 
        of the force loop enables us to calculate/write properties locally */
-#ifdef SAVEMEM
-#ifdef MPI
+#if (defined(MPI) && defined(SAVEMEM))
     /* Deallocate buffer cells each timestep to save memory */
     for (i=0; i < cell_dim.x; ++i)
         for (j=0; j < cell_dim.y; ++j)
             for (k=0; k < cell_dim.z; ++k) {
               p = PTR_3D_V(cell_array, i, j, k, cell_dim); 
-            /* Check for buffer cell */
+              /* check for buffer cell and deallocate */
               if ((0==i) || (0==j) || (0==k) ||
                   (i == cell_dim.x-1) ||
                   (j == cell_dim.y-1) ||
                   (k == cell_dim.z-1))
-		/* and deallocate */
 		alloc_cell(p, 0);
-            };
+            }
     fix_cells_by_cell();
-#endif
 #else
     fix_cells();  
 #endif
 
 #ifdef NPT
-#ifdef DYNAMIC_CELLS
     /* revise cell division if necessary */
     if (revise_cell_division==1) {
        init_cells();
        fix_cells();
     }
-#else
-    /* check if cells have become too small */
-    if (myid == 0)
-    if (cells_too_small) {
-       /* write config if not yet written */
-       if ((rep_interval == 0) || (0 != steps%rep_interval)){
-          write_config(steps);
-          write_properties(steps);
-       };
-       printf("cells too small - start afresh with larger cells!\n");
-       break;
-    }
-#endif
 #endif
 
   }
 
   /* clean up the current phase, and clear restart flag */
   restart=0;
-
-#ifdef MPI
-  mpi_addtime(&time_comm);
-#endif
 
 #ifdef EAM
   free(eam_rho);

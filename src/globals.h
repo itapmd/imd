@@ -211,21 +211,15 @@ EXTERN int nbnw, nbws, nbse, nben,                         /* Edges */
            nbdn, nbde, nbds, nbdw;
 EXTERN int nbunw, nbuws, nbuse, nbuen,                     /* Corners */
            nbdne, nbdes, nbdsw, nbdwn;
-
-/* MPI timing */
-EXTERN double time_start;
-EXTERN double time_last;
-EXTERN double time_now;
-EXTERN double time_io;
-EXTERN double time_comm;
-EXTERN double time_calc;
-EXTERN double time_setup;
-EXTERN double time_stop;
-EXTERN double time_comm_force;
-EXTERN double time_comm_ar;
-EXTERN double time_calc_local;
-EXTERN double time_calc_nonlocal;
 #endif
+
+/* Timers */
+EXTERN imd_timer time_total;
+EXTERN imd_timer time_setup;
+EXTERN imd_timer time_main;
+EXTERN imd_timer time_io;
+EXTERN imd_timer time_force_comm;
+EXTERN imd_timer time_force_calc;
 
 /* Parameters for the various ensembles */
 

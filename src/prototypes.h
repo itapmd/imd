@@ -33,6 +33,8 @@ ivektor maximal_cell_dim(void);
 void init_cells(void);
 void make_cell_lists(void);
 void error(char *mesg);
+void imd_start_timer(imd_timer *timer);
+void imd_stop_timer(imd_timer *timer);
 #ifdef TWOD
 ivektor cell_coord(real x, real y);
 #else
@@ -123,7 +125,6 @@ void recv_cell(cell *p, int from_cpu, int tag);
 void send_cell(cell *p, int to_cpu, int tag);
 int  irecv_buf( msgbuf *b, int from_cpu, MPI_Request *req);
 int  isend_buf( msgbuf *b, int to_cpu,   MPI_Request *req);
-void mpi_addtime(double *timer);
 void copy_atoms_buf(msgbuf *to, msgbuf *from);
 void process_buffer(msgbuf *b, int mode);
 void setup_buffers(void);

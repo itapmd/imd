@@ -79,10 +79,6 @@ void main_loop(void)
 
   calc_properties();
 
-#ifdef MPI
-  mpi_addtime(&time_setup);
-#endif
-
   /* initializations for the current simulation phase, if not yet done */
   if (0==restart) init();
 
@@ -94,37 +90,34 @@ void main_loop(void)
 
 #ifdef FBC
 #ifdef MIK  
-/* just increment the force if under threshold of e_kin or after waitsteps
-  and after annelasteps */
-  temp_df.x = 0.0;
-  temp_df.y = 0.0;
-   for (l=0;l<vtypes;l++)
-      *(fbc_df+l) = temp_df;
+    /* just increment the force if under threshold of e_kin or after 
+       waitsteps
+       and after annelasteps */
+    temp_df.x = 0.0;
+    temp_df.y = 0.0;
+    for (l=0;l<vtypes;l++) *(fbc_df+l) = temp_df;
 
- if (steps > fbc_annealsteps)
- {
-   nofbcsteps++; 
-   if((tot_kin_energy/nactive < fbc_ekin_threshold) ||
-        (nofbcsteps==fbc_waitsteps)) 
-     {
-      nofbcsteps=0;
-      for (l=0;l<vtypes;l++)
-         *(fbc_df+l) = *(fbc_dforces+l) ;
-      /* MIK affects the total impuls, especially in inhomogenous samples,
-	 so we set the velocities to 0 befor each force increment 
-      for (k=0; k<ncells; ++k) {
-	p = cell_array + CELLS(k);
-	for (i=0; i<p->n; ++i) {
-	  p->impuls X(i) = 0.0;
-	  p->impuls Y(i) = 0.0;
-	}
+    if (steps > fbc_annealsteps) {
+      nofbcsteps++; 
+      if ((tot_kin_energy/nactive < fbc_ekin_threshold) ||
+          (nofbcsteps==fbc_waitsteps)) 
+      {
+        nofbcsteps=0;
+        for (l=0;l<vtypes;l++) *(fbc_df+l) = *(fbc_dforces+l) ;
+        /* MIK affects the total impuls, especially in inhomogenous samples,
+           so we set the velocities to 0 befor each force increment 
+        for (k=0; k<ncells; ++k) {
+          p = cell_array + CELLS(k);
+          for (i=0; i<p->n; ++i) {
+            p->impuls X(i) = 0.0;
+            p->impuls Y(i) = 0.0;
+          }
+        }
+        */
       }
-      */
-     }
- }
-
-#endif
-#endif
+    }
+#endif /* MIK */
+#endif /* FBC */
 
 #ifdef HOMDEF
     if ((exp_interval > 0) && (0 == steps%exp_interval)) expand_sample();
@@ -140,26 +133,37 @@ void main_loop(void)
       }
     }
 #endif
+
 #ifdef FBC
- for (l=0;l<vtypes;l++){               /* fbc_forces is already initialised with beginforces */
-   (fbc_forces+l)->x += (fbc_df+l)->x; /* fbc_df=0 if MIK && ekin> ekin_threshold */ 
-   (fbc_forces+l)->y += (fbc_df+l)->y;
-  } 
+    /* fbc_forces is already initialised with beginforces */
+    for (l=0;l<vtypes;l++) {
+      /* fbc_df=0 if MIK && ekin> ekin_threshold */ 
+      (fbc_forces+l)->x += (fbc_df+l)->x; 
+      (fbc_forces+l)->y += (fbc_df+l)->y;
+    } 
 #endif
+
 #ifdef MPI
+#ifdef TIMING
+    imd_start_timer(&time_force_comm);
+#endif
     /* we should do this in more appropriate intervals */
     if (((eng_interval != 0) && (0 == steps%eng_interval)) || 
         (steps == steps_min)) setup_buffers();
     send_atoms_force();
-    mpi_addtime(&time_comm);
+#ifdef TIMING
+    imd_stop_timer(&time_force_comm);
+#endif
 #endif
 
 #ifndef MC
-    calc_forces(); 
+#ifdef TIMING
+    imd_start_timer(&time_force_calc);
 #endif
-
-#ifdef MPI
-    mpi_addtime(&time_calc);
+    calc_forces(); 
+#ifdef TIMING
+    imd_stop_timer(&time_force_calc);
+#endif
 #endif
 
 #ifdef DISLOC
@@ -174,7 +178,9 @@ void main_loop(void)
         ref_step += correl_int;
     }
 #endif
-#ifdef GLOK /* "globale konvergenz": set impulses=0 if P*F <0 (global vectors) */
+
+#ifdef GLOK 
+    /* "globale konvergenz": set impulses=0 if P*F <0 (global vectors) */
     if (PxF<0.0)
       for (k=0; k<ncells; ++k) {
 	p = cell_array + CELLS(k);
@@ -185,6 +191,7 @@ void main_loop(void)
 	}
       }
 #endif
+
     move_atoms(); 
 
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
@@ -192,7 +199,7 @@ void main_loop(void)
       temperature = 2 * tot_kin_energy / (DIM * natoms);
       dtemp = (end_temp - temperature) / (steps_max - steps_min);
       use_curr_temp = 0;
-    };
+    }
 #endif
 
 #ifdef NPT_iso
@@ -202,7 +209,7 @@ void main_loop(void)
       d_pressure.x = (pressure_end.x-pressure_ext.x) / (steps_max-steps_min);
       d_pressure.y = (pressure_end.y-pressure_ext.y) / (steps_max-steps_min);
       use_curr_pressure = 0;
-    };
+    }
 #endif
 
 #ifdef NPT_axial
@@ -212,7 +219,7 @@ void main_loop(void)
       d_pressure.x = (pressure_end.x-pressure_ext.x) / (steps_max-steps_min);
       d_pressure.y = (pressure_end.y-pressure_ext.y) / (steps_max-steps_min);
       use_curr_pressure = 0;
-    };
+    }
 #endif
 
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
@@ -224,24 +231,17 @@ void main_loop(void)
     tran_Tright  -= dtemp;
 #endif
 
-
-
 #ifdef NPT
     pressure_ext.x += d_pressure.x;
     pressure_ext.y += d_pressure.y;
 #endif
 
-#ifdef MPI
-    mpi_addtime(&time_calc);
-#endif
-
     calc_properties(); 
 
-#ifdef MPI
-    mpi_addtime(&time_calc);
-#endif
-
     /* Periodic I/O */
+#ifdef TIMING
+    imd_start_timer(&time_io);
+#endif
     if ((rep_interval > 0) && (0 == steps%rep_interval)) write_config(steps);
     if ((eng_interval > 0) && (0 == steps%eng_interval) && (0==myid)) 
        write_properties(steps);
@@ -287,34 +287,19 @@ void main_loop(void)
     if ((socket_int>0) && (0==steps%socket_int)) check_socket(steps);
 #endif
 
-#ifdef MPI
-    mpi_addtime(&time_io);
+#ifdef TIMING
+    imd_stop_timer(&time_io);
 #endif
-
     do_boundaries();    
 
     fix_cells();
 
 #ifdef NPT
-#ifdef DYNAMIC_CELLS
     /* revise cell division if necessary */
     if (revise_cell_division==1) {
       init_cells();
       fix_cells();
     }  
-#else
-    /* check if cells have become too small */
-    if (myid == 0)
-    if (cells_too_small) {
-       /* write config if not yet written */
-       if ((rep_interval == 0) || (0 != steps%rep_interval)){
-          write_config(steps);
-          write_properties(steps);
-       };
-       printf("cells too small -- start afresh with larger cells!\n");
-       break;
-    }
-#endif
 #endif
 
   }
@@ -483,10 +468,3 @@ void init(void)
 #endif
   
 }
-
-
-
-
-
-
-

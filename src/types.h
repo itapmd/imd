@@ -159,3 +159,15 @@ typedef struct {
   real maxsteps;    /* physical length of the table */
   real *table;      /* the actual data */
 } pot_table_t;
+
+/* data structure for timers */
+typedef struct {
+#ifdef MPI                /* with MPI_Wtime */
+  double start;           /* time when timer was started */
+#elif defined(USE_RUSAGE) /* with getrusage */ 
+  struct rusage start;    /* time when timer was started */
+#else                     /* with times */
+  struct tms start;       /* time when timer was started */
+#endif
+  double total;           /* accumulation of (stop_time - start_time) */
+} imd_timer;

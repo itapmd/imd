@@ -12,8 +12,17 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
-#ifndef USE_CLOCK
+
+/* support for timers */
+#ifndef MPI
+#include <unistd.h>
+#ifdef USE_RUSAGE
+#include <sys/time.h>
+#include <sys/resource.h>
+#else
 #include <sys/times.h>
+#include <sys/types.h>
+#endif
 #endif
 
 /* Machine specific headers */

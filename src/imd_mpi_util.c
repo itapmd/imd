@@ -35,22 +35,6 @@ int irecv_buf(msgbuf *b, int from, MPI_Request *req)
 }
 
 
-/******************************************************************************
-*
-* mpi_addtime  Increments the various timers
-*
-******************************************************************************/
-
-void mpi_addtime(double *timer)
-{
-  double time_now;
-
-  time_now  = MPI_Wtime();
-  *timer   += (time_now - time_last);
-  time_last = time_now;
-}
-
-
 /**********************************************************************
 *
 * moves an atom from one cell into a buffer
