@@ -300,6 +300,7 @@ typedef       int integer;
     if (val>1) val=1;    
     ind = (int) 3.999*val;
 
+    /* old, probably wrong code - anyone who understands this?
     red   = -4.0*(tabred[t][ind] - tabred[t][ind+1])*val 
             + (tabred[t][ind] * (ind+1) - ind*tabred[t][ind+1]);
 
@@ -308,6 +309,11 @@ typedef       int integer;
 
     blue  = -4.0*(tabblue[t][ind] - tabblue[t][ind+1])*val 
             +(tabblue[t][ind]*(ind+1) - ind*tabblue[t][ind+1]);  
+    */
+
+    red   = tabred  [t][ind] + (val-ind)*(tabred  [t][ind+1]-tabred  [t][ind]);
+    green = tabgreen[t][ind] + (val-ind)*(tabgreen[t][ind+1]-tabgreen[t][ind]);
+    blue  = tabblue [t][ind] + (val-ind)*(tabblue [t][ind+1]-tabblue [t][ind]);
 
     maxc  = 215;
     sat_r = 1;
