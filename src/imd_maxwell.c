@@ -42,7 +42,6 @@ void maxwell(real temp)
    vektor      tot_impuls;
    int         r,s,t;
    real        TEMP;
-   static long dummy = 0;
    real scale, xx;
    int num, nhalf;
 
@@ -95,10 +94,10 @@ void maxwell(real temp)
 	   }
 #endif
 
-         p->impuls X(i) = gasdev( &dummy ) * sqrt(TEMP * MASSE(p,i));
-         p->impuls Y(i) = gasdev( &dummy ) * sqrt(TEMP * MASSE(p,i));
+         p->impuls X(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i));
+         p->impuls Y(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i));
 #ifndef TWOD
-         p->impuls Z(i) = gasdev( &dummy ) * sqrt(TEMP * MASSE(p,i));
+         p->impuls Z(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i));
 #endif
 
          ++natom;

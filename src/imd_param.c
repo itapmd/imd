@@ -10,6 +10,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <sys/time.h>
+#include <unistd.h>
 
 #include "imd.h"
 
@@ -255,6 +257,15 @@ void getparamfile(char *paramfname, int sim)
     exit(10);
   };
 
+  /* set the random number generator seed to the current time in seconds */
+  /* this will be superseeded by a fixed value from the parameter file */
+  { 
+    struct timeval tv;
+    struct timezone tz;
+    gettimeofday(&tv,&tz);
+    seed = (long) tv.tv_sec;
+  }
+
   do {
     res=fgets(buffer,1024,pf);
     if (NULL == res) { finished=1; break; }; /* probably EOF reached */
@@ -267,6 +278,12 @@ void getparamfile(char *paramfname, int sim)
       /* file name for atom coordinate input data */
       getparam("simulation",&tmp,PARAM_INT,1,1);
       if (sim < tmp) break;
+    }
+    else if (strcasecmp(token,"seed")==0) {
+      /* seed for random number generator in maxwell */
+      int tmp;
+      getparam("seed",&tmp,PARAM_INT,1,1);
+      seed = (long) tmp;
     }
     else if (strcasecmp(token,"coordname")==0) {
       /* file name for atom coordinate input data */
@@ -1080,6 +1097,7 @@ void broadcast_params() {
   MPI_Bcast( &finished    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &ensemble    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &simulation  , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &seed        , 1, MPI_LONG, 0, MPI_COMM_WORLD); 
 
   MPI_Bcast( &steps_max   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &steps_min   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
