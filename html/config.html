@@ -67,9 +67,21 @@ are supported:
 <TABLE>
 <TR><TD>.fcc      <TD> fcc crystal (3D)
 <TR><TD>.nacl     <TD> NaCl crystal (3D)
+<TR><TD>.lav      <TD> a Laves phase (3D)
 <TR><TD>.tiqc     <TD> truncated icosahedra quasicrystal (3D)
 <TR><TD>.hex      <TD> hexagonal crystal (2D)
 </TABLE>
+The size of the configuration is specified with the parameter
+<TT>box_param</TT>, an integer vector. For the cubic phases
+.fcc, .nacl and .lav, all three box parameters must be positive,
+even integers. They specify the the dimensions of a rectangular
+box. For the quasicrystalline .tiqc phase, an approximant with a
+rectangular box is created. The three parameters are the orders
+of the Fibonacci approximant in the three directions. For the 
+.hex phase, the dimension of the sample is 
+<TT>box_param.x*sqrt(3)</TT> in x-direction, and 
+<TT>box_param.y</TT> in y-direction. The nearest 
+neighbor distance is 1.
 <P>
 If the ensembles/options <B>frac</B>, <B>pull</B>, <B>mikshear</B> or
 <B>shock</B> are contained in the exectuble, a layer of with
@@ -84,47 +96,24 @@ density and <TT>glideplane</TT> (specifying the z-coordinate
 (y-coordinate in two dimensional systems) of the glideplane can be
 set.
 <P>
-For fcc and nacl structures, the box must be rectangular.
-More precisely, the box matrix must be diagonal, and each box 
-vector must have a length which is an even integer.
-<P>
-For hexagonal crystals, the size of the rectangular box is encoded
-in the diagonal of the box matrix (off-diagonal entries must be 0).
-The size of the sample is <TT>box_x.x*sqrt(3)</TT> in x-direction, and
-<TT>box_y.y</TT> in y-direction. The nearest neighbor distance is 1.
-<P>
-The <TT>.tiqc</TT> structure generates an approximant of a truncated
+The <TT>.tiqc</TT> structure is an approximant of a truncated
 icosahedra quasicrystals (tiqc, truncated icosahedra clusters are also
-known as Bergman clusters). The tiqc are simple decorations of the
-standard rhombohedra icosahedral quasicrystals in three
-dimensions. Every vertex and every edge center is occupied by an atom
-of type A (small atom). Every long diagonal of the prolate
-rhombohedron is decorated with two atoms of type B (large atoms). The
-diagonal is divided in the ratio 1:tau:1, where tau is the golden
-mean.
+known as Bergman clusters). It requires the component <TT>quasi</TT> 
+to be contained in the <A HREF="compiling.html">compilation target</A>.
+The tiqc are simple decorations of the standard rhombohedra
+icosahedral quasicrystals in three dimensions. Every vertex and every 
+edge center is occupied by an atom of type A (small atom). Every long 
+diagonal of the prolate rhombohedron is decorated with two atoms of 
+type B (large atoms). The diagonal is divided in the ratio 1:tau:1, 
+where tau is the golden mean.
 <P>
 Only the simplest case is implemented here. It is needed only if
 the number of particles to be simulated is so large that the 
 configuration cannot be stored on disk. For practical simulations 
 this will rarely be the case. For all other cases, there is a more
 versatile, stand alone <A HREF="samples.html">utility program</A>
-for the generation of quasicrystals.
+for the generation of quasicrystals. 
 <P>
-The simulation box must be spanned by a triple of othogonal vectors 
-in two-fold directions. Since we use periodic boundary conditions,
-the quasicrystal is actually an approximant. Only Fibonacci number 
-approximants are permitted. This allows us to characterize the 
-approxmiant by three Fibonacci numbers for the size of the three 
-coordination axis.
-<P>
-To enter the size of the approximant we have abused the box array
-which normally contains the periodic box vectors. For the generation
-of a quasicrystal the diagonal elements should contain the order of
-the approximant in the corresponding direction. The file name for 
-the particle coordinates must be chosen as <TT>.tiqc</TT>, and
-the component <TT>quasi</TT> must be contained in the 
-<A HREF="compiling.html">compilation target</A>.
-
 <A NAME="boundary"> 
 <H2>Boundary Conditions</H2>
 </A>
