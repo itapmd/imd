@@ -1177,10 +1177,11 @@ void broadcast_params() {
 #endif
 
 #ifdef DEFORM
-  MPI_Bcast( &hom_interval , 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &exp_interval , 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &shear_max , 1, MPI_REAL,   0, MPI_COMM_WORLD); 
-  MPI_Bcast( &expansion , 1, MPI_REAL,   0, MPI_COMM_WORLD); 
+  MPI_Bcast( &hom_interval , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &exp_interval , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &shear_max ,    1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &expansion ,    1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &strip_shift ,DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
 #if defined(FRAC) || defined(DEFORM)
   MPI_Bcast( &initial_shift ,  1, MPI_INT,  0, MPI_COMM_WORLD); 
