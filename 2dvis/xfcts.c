@@ -257,6 +257,44 @@ int SaveImageDialog(char *MessageText) {
 }
 
 /* color encoding dialog */
+int DisplayAtomsDialog(char *MessageText) {
+  Widget popup;
+  int var;
+  String names[] = {
+       "  0  ",
+       "  1  ",
+       "  2  ",
+       "  3  ",
+       " 0/1 ",
+       " 0/2 ",
+       " 1/2 ",
+       "1/2/3",
+       0
+  };
+  int values[] = {
+       1,
+       2,
+       3,
+       4,
+       5,
+       6,
+       7,
+       8
+  };
+  static DialogButtonType buttons[] =
+  { { "defaultButton", "     OK     ", CB_OK, (XtPointer) OK_BUTTON, NULL }};
+
+  /* create radio box */
+  popup = CreateRadioBox(MessageText,MessageText, buttons, ENTRIES(buttons),names,values,&var,atom_mode+1);
+  StartDialog(popup);
+  /* wait for radio box to complete */
+  DialogEventLoop(&ReturnCode);
+  EndDialog(popup);
+
+  return radiovalue;
+}
+
+/* color encoding dialog */
 int ColorEncodingDialog(char *MessageText) {
   Widget popup;
   int var;

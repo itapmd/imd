@@ -121,11 +121,38 @@ void GetDistribution(Widget w, XtPointer client, XtPointer call) {
 }
 
 void DisplayAtoms(Widget w, XtPointer client, XtPointer call) {
-  if (atom_mode) 
-    atom_mode=0;
-  else
-    atom_mode=1;
+  int rc;
+  rc=DisplayAtomsDialog("DisplayAtoms");
+  if (rc==1) atom_mode=0;
+  if (rc==2) atom_mode=1;
+  if (rc==3) atom_mode=2;
+  if (rc==4) atom_mode=4;
+  if (rc==5) atom_mode=3;
+  if (rc==6) atom_mode=5;
+  if (rc==7) atom_mode=6;
+  if (rc==8) atom_mode=7;
   draw_scene_wrapper(scene_type);
+}
+
+void RotateX(Widget w, XtPointer client, XtPointer call) {
+  float angle;
+  printf("Enter angle: ");scanf("%f",&angle);
+  rotate(angle,'x');
+  draw_scene_wrapper(scene_type);
+}
+
+void RotateY(Widget w, XtPointer client, XtPointer call) {
+  float angle;
+  printf("Enter angle: ");scanf("%f",&angle);
+  rotate(angle,'y');
+  draw_scene_wrapper(scene_type);  
+}
+
+void RotateZ(Widget w, XtPointer client, XtPointer call) {
+  float angle;
+  printf("Enter angle: ");scanf("%f",&angle);
+  rotate(angle,'z');
+  draw_scene_wrapper(scene_type);  
 }
 
 void DisplayBonds(Widget w, XtPointer client, XtPointer call) {
@@ -274,6 +301,9 @@ void window_main(int argc, char **argv) {
   Widget GetDist;
   Widget DispAts;
   Widget DispBds;
+  Widget RotX;
+  Widget RotY;
+  Widget RotZ;
   Widget SpecHost;
   Widget SpecPort;
   Widget ColEnc;
@@ -380,12 +410,16 @@ void window_main(int argc, char **argv) {
   XtAddCallback(DispBds, XtNcallback, DisplayBonds, "DisplayBonds");
   line22 = XtCreateManagedWidget("line22", smeLineObjectClass,
 				menu2, NULL, 0);
+  RotX = XtCreateManagedWidget("Rotate X", smeBSBObjectClass,
+				menu2, NULL, 0);
+  XtAddCallback(RotX, XtNcallback, RotateX, "Rotate X");
+  RotY = XtCreateManagedWidget("Rotate Y", smeBSBObjectClass,
+				menu2, NULL, 0);
+  XtAddCallback(RotY, XtNcallback, RotateY, "Rotate Y");
+  RotZ = XtCreateManagedWidget("Rotate Z", smeBSBObjectClass,
+				menu2, NULL, 0);
+  XtAddCallback(RotZ, XtNcallback, RotateZ, "Rotate Z");
 
-  quit = XtCreateManagedWidget("quit", smeBSBObjectClass,
-			       menu2, NULL, 0);
-
-  XtAddCallback(quit, XtNcallback, Quit, NULL);
-  
   /*
    *  create the third pull down menu
    */

@@ -125,8 +125,17 @@ void draw_scene(int scene_type) {
   } /* distribution (scene_type==1) */
 
   /* now configuration */ 
-  if ((scene_type==0)&&(atom_mode==1)) {
+  if ((scene_type==0)&&(atom_mode)) {
     for (i=0;i<natoms;i++) {
+      if (sorte[i]==0)
+	if ((atom_mode==0)||(atom_mode==2)||(atom_mode==4)||(atom_mode==6)) 
+	  continue;
+      if (sorte[i]==1)
+	if ((atom_mode==0)||(atom_mode==1)||(atom_mode==4)||(atom_mode==5)) 
+	  continue;
+      if (sorte[i]==2)
+	if ((atom_mode==0)||(atom_mode==1)||(atom_mode==2)||(atom_mode==3)) 
+	  continue;
       xx=(x[i]-minx)*scalex-1.0;
       yy=(y[i]-miny)*scaley-1.0;
 #ifndef TWOD
