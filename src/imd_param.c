@@ -288,7 +288,7 @@ void getparamfile(char *paramfname, int sim)
     res=fgets(buffer,1024,pf);
     if (NULL == res) { finished=1; break; }; /* probably EOF reached */
     curline++;
-    token = strtok(buffer," \t\n");
+    token = strtok(buffer," \t\r\n");
     if (NULL == token) continue; /* skip blank lines */
     if (token[0]=='#') continue; /* skip comments */
 
