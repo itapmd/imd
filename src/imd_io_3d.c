@@ -539,6 +539,9 @@ void write_atoms_config(FILE *out)
 #ifdef ORDPAR
       len += sprintf(outbuf+len, " %d",  NBANZ(p,i));
 #endif
+#ifdef EAM2
+      len += sprintf(outbuf+len, RESOL1, EAM_RHO(p,i));
+#endif
       len += sprintf(outbuf+len,"\n");
       /* flush or send outbuf if it is full */
       if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
