@@ -394,7 +394,7 @@ void move_atoms_mik(void)
   tmpvec1[0] = tot_kin_energy;
   tmpvec1[1] = fnorm;
 
-  MPI_Allreduce( tmpvev1, tmpvec2, 2, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( tmpvec1, tmpvec2, 2, REAL, MPI_SUM, cpugrid);
 
   tot_kin_energy = tmpvec2[0];
   fnorm          = tmpvec2[1];
@@ -598,10 +598,10 @@ void move_atoms_nvt(void)
 
   /* time evolution of constraints */
   ttt  = nactive * temperature;
-  eta += timestep * (kin_energie_2 / ttt - 1.0) * inv_tau_eta;
+  eta += timestep * (E_kin_2 / ttt - 1.0) * inv_tau_eta;
 #ifdef UNIAX
   ttt  = nactive_rot * temperature;
-  eta_rot += timestep * ( rot_energie_2 / ttt - 1.0 ) * inv_tau_eta_rot;
+  eta_rot += timestep * ( E_rot_2 / ttt - 1.0 ) * inv_tau_eta_rot;
 #endif
   
 }
