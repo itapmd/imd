@@ -252,7 +252,7 @@ void read_box(str255);
 void flush_outbuf(FILE *out, int *len, int tag);
 void write_itr_file(int fzhlr, int steps,char *suffix);
 void write_config(int fzhlr, int steps);
-#ifdef SNAPSHOT
+#ifdef RELAX
 void write_ssconfig(int steps);
 #endif
 void write_config_select(int fzhlr, char *suffix,
