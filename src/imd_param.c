@@ -318,7 +318,7 @@ void getparamfile(char *paramfname, int sim)
       /* file name for atom coordinate input data */
       getparam("coordname",infilename,PARAM_STR,1,255);
     }
-    else if (strcasecmp(token,"itrname")==0) {
+    else if (strcasecmp(token,"itrame")==0) {
       /* file name for initial itr-file */
       getparam("itrname",itrfilename,PARAM_STR,1,255);
     }
@@ -1820,7 +1820,7 @@ void read_parameters(void)
       sprintf(fname,"%s.%d.itr",outfilename,restart);
       testfile = fopen(fname,"r");
       if (NULL==testfile) { 
-        sprintf(infilename,"%s.%05d.itr",outfilename,restart);
+        sprintf(fname,"%s.%05d.itr",outfilename,restart);
       } else {
         fclose(testfile);
       }
@@ -1831,7 +1831,7 @@ void read_parameters(void)
       } else {
         fclose(testfile);
       }
-      printf("Restarting from %s.\n",infilename);
+      printf("Restarting from %s.\n",fname);
       getparamfile(fname,1);
       finished = tmp;
     } else {
