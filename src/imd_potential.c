@@ -382,7 +382,7 @@ void create_pot_table(pot_table_t *pt)
     int ncols = ntypes * ntypes;
     int i, j, n, column;
     real r2_begin[10][10], r2_end[10][10], r2_step[10][10], r2_invstep[10][10];
-    int len[i][j];
+    int len[10][10];
     real pot, grad, r2, val;
 
     /* Determine size of potential table */
