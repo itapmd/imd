@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <ctype.h>
+#include <string.h>
 #include "vvtokenizer.h"
 
 const int vvTokenizer::BLOCK_SIZE    = 4096;
@@ -34,8 +35,8 @@ vvTokenizer::vvTokenizer(FILE* file)
   nval             = 0.0f;
   sval[0]          = '\0';
   pushedBack       = false;
-  line             = 1;
   fp               = file;
+  line             = determineCurrentLine();
   caseConversion   = VV_NONE;    
   eolIsSignificant = false;
   blockUsed = 0;
@@ -46,12 +47,49 @@ vvTokenizer::vvTokenizer(FILE* file)
 }
 
 //----------------------------------------------------------------------------
-/// Destructor. Delete the tokenizer to get a coorect value of the file pointer.
+/** Destructor. 
+  Delete the tokenizer to get a correct value of the file pointer.
+  The destructor also makes sure that the file pointer is set to the byte
+  after the last tokenizer read.
+*/
 vvTokenizer::~vvTokenizer()
 {
-  fseek(fp, cur-blockUsed+1, SEEK_CUR);
+  long offset;
+
+  offset = cur-blockUsed;
+  if (!firstPass) --offset;
+  fseek(fp, offset, SEEK_CUR);
   delete[] sval;
   delete[] data;
+}
+
+//----------------------------------------------------------------------------
+/** Find the current line number. The algorithm scans all characters up
+  to the current file pointer value and determines the line number by counting
+  the line breaks.
+  @return current line number or -1 if there was an error
+*/
+int vvTokenizer::determineCurrentLine()
+{
+  int  lineNr = 1;
+  long current;      // current position in file
+  long i;
+  int  c;
+
+  current = ftell(fp);    // memorize file pointer
+  if (current<0) return -1;
+  fseek(fp, 0, SEEK_SET);
+  
+  // Count number of line breaks by counting the number 
+  // of '\r' characters in the file:
+  for (i=0; i<current; ++i)
+  {
+    c = fgetc(fp);
+    if (c=='\r')
+      ++lineNr;
+  }
+
+  return lineNr;
 }
 
 //----------------------------------------------------------------------------
@@ -162,9 +200,10 @@ void vvTokenizer::setWhitespaceCharacter(char wc)
 void vvTokenizer::setParseNumbers(bool pn)
 {
   for (int i='0'; i<='9'; ++i)
-    ctype[i] = pn ? (char)VV_DIGIT : (char)VV_ALPHA;
-  ctype['.'] = pn ? (char)VV_DIGIT : (char)VV_ALPHA;
-  ctype['-'] = pn ? (char)VV_DIGIT : (char)VV_ALPHA;
+    ctype[i] = pn ? VV_DIGIT : VV_ALPHA;
+  ctype['.'] = pn ? VV_DIGIT : VV_ALPHA;
+  ctype['-'] = pn ? VV_DIGIT : VV_ALPHA;
+  ctype['+'] = pn ? VV_DIGIT : VV_ALPHA;
 }
 
 //----------------------------------------------------------------------------
@@ -262,7 +301,7 @@ vvTokenizer::TokenType vvTokenizer::nextToken()
 	int   c;            // read character, or -1 for EOF
   int   len;          // string length
   int   i;
-  int   ct;
+  CharacterType ct;
 
 	if (pushedBack)       // if token was pushed back, re-use the last read token
   {
@@ -327,6 +366,17 @@ vvTokenizer::TokenType vvTokenizer::nextToken()
     {
       // skip until EOF or EOL
     }
+    if (c=='\r') 
+    {
+      ++line;
+      c = readChar();
+      if (c=='\n') c = readChar();
+    }
+    else if (c=='\n')
+    {
+      ++line;
+      c = readChar();
+    }
 	  peekChar = c;
 	  return nextToken();   // call self recursively
 	}
@@ -342,7 +392,7 @@ vvTokenizer::TokenType vvTokenizer::nextToken()
   }
   sval[len] = '\0';
   peekChar = c;
-  if ((ctype[sval[0]] & VV_DIGIT) != 0)   // is token a number?
+  if (isNumberToken(sval))
   {
     nval = (float)atof(sval);
     return ttype = VV_NUMBER;
@@ -363,13 +413,44 @@ vvTokenizer::TokenType vvTokenizer::nextToken()
   }
 }
 
+//----------------------------------------------------------------------------
+/** Finds out if the passed string is a number, i.e. all
+  its characters are digits. Note: there might be false positives,
+  e.g. "12-23...3" would be considered a number.<BR>
+  If setParseNumbers() is set to false, this function will always
+  return false.
+  @param str string to check
+  @return true if string is a number
+*/
+bool vvTokenizer::isNumberToken(char* str)
+{
+  int i;
+  bool isNumber = true;
+
+  for (i=0; i<int(strlen(str)); ++i)
+  {
+    if ((ctype[str[i]] & VV_DIGIT) == 0 && str[i]!='e' && str[i]!='E') 
+    {
+      isNumber = false;
+      break;
+    }
+  }
+  return isNumber;
+}
+
 //============================================================================
 // Functions for STANDALONE mode
 //============================================================================
 
 #ifdef VV_STANDALONE
 
-#include <iostream.h>
+#ifdef _STANDARD_C_PLUS_PLUS
+  #include <iostream>
+  using std::cerr;
+  using std::endl;
+#else
+  #include <iostream.h>
+#endif
 
 int main(int argc, char** argv)
 {

@@ -91,10 +91,11 @@ class vvTokenizer
     int   line;                     ///< line number of last token read
     CaseType caseConversion;        ///< case type to convert alpha values to
     bool  eolIsSignificant;         ///< true if EOL is returned as a token
-    char  ctype[256];               ///< character type list
+    CharacterType ctype[256];       ///< character type list
     bool  firstPass;                ///< true = first parsing pass
 
     int  readChar();
+    bool isNumberToken(char*);
 
   public:
     TokenType ttype;  ///< After a call to the <CODE>nextToken</CODE> method, this field 
@@ -124,6 +125,7 @@ class vvTokenizer
 
     vvTokenizer(FILE*);
     virtual ~vvTokenizer();
+    int  determineCurrentLine();
     void setDefault();
     void setLineNumber(int);
     int  getLineNumber();

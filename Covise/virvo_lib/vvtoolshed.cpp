@@ -5,6 +5,16 @@
 // Institution:         University of Stuttgart, Supercomputing Center (HLRS)
 //****************************************************************************
 
+#ifdef _STANDARD_C_PLUS_PLUS
+  #include <iostream>
+  #include <iomanip>
+  using std::cerr;
+  using std::setw;
+#else
+  #include <iostream.h>
+  #include <iomanip.h>
+#endif
+
 #ifdef WIN32
   #include <windows.h>
   #include <float.h>
@@ -16,22 +26,12 @@
 #endif
 #include <stdio.h>
 #include <string.h>
-#ifdef _STANDARD_C_PLUS_PLUS
-#include <iostream>
-#include <iomanip>
-using std::cerr;
-using std::setw;
-#else
-#include <iostream.h>
-#include <iomanip.h>
-#endif
 #include <float.h>
 #include <math.h>
 #include <assert.h>
 #include "vvtoolshed.h"
 
 #ifdef __sun
-  #define ceilf ceil
   #define powf pow 
   #define atanf atan
   #define sqrtf sqrt
@@ -141,7 +141,7 @@ void vvToolshed::HSBtoRGB(float h, float s, float v, float* r, float* g, float* 
   else
   {
     h /= 60.0;
-    i = (int)floor(h);
+    i = int(h);
     f = h - i;
     p = v * (1.0f - s);
     q = v * (1.0f - (s * f));
@@ -418,7 +418,7 @@ void vvToolshed::replaceExtension(char* newPath, const char* newExtension, const
   char* pointPos;
   int baseNameLen;    // length of base file name, including point
 
-  pointPos = strrchr(pathname, '.');
+  pointPos = (char*)strrchr(pathname, '.');
   if (pointPos==NULL) // is there a point in pathname?
   {
     // No point, so just add new extension:
@@ -436,9 +436,9 @@ void vvToolshed::replaceExtension(char* newPath, const char* newExtension, const
 }
 
 //----------------------------------------------------------------------------
-/** Increases the filename (filename must include an extension!)
- @return true if successful, false if filename couldn't be 
-         increased
+/** Increases the filename (filename must include an extension!).
+  @return true if successful, false if filename couldn't be increased.
+          Does not check if the file with the increased name exists.
 */
 bool vvToolshed::increaseFilename(char* filename)
 {
@@ -1009,7 +1009,7 @@ int vvToolshed::getLargestPrimeFactor(int number)
 */
 int vvToolshed::round(float fval)
 {
-  return (int)floor(fval + 0.5f);
+  return int(fval + 0.5f);
 }
 
 //----------------------------------------------------------------------------
@@ -1468,138 +1468,105 @@ int vvToolshed::write8(FILE* dst, uchar val)
 }
 
 //----------------------------------------------------------------------------
-/** Read a big endian unsigned short value system independently from a file
-  (most significant byte first).
+/** Read an unsigned short value system independently from a file.
 */
-ushort vvToolshed::read16BE(FILE* src)
+ushort vvToolshed::read16(FILE* src, vvToolshed::EndianType end)
 {
   uchar buf[2];
   int val;
   
   fread(buf, 2, 1, src);
-  val = (int)buf[0] * (int)256 + (int)buf[1];
+  if (end==VV_LITTLE_END)
+  {
+    val = (int)buf[0] + (int)buf[1] * (int)256;
+  }
+  else
+  {
+    val = (int)buf[0] * (int)256 + (int)buf[1];
+  }
   return (ushort)val;
 }
 
 //----------------------------------------------------------------------------
-/** Read a little endian unsigned short value system independently from a file
-  (least significant byte first).
-*/
-ushort vvToolshed::read16LE(FILE* src)
-{
-  uchar buf[2];
-  int val;
-  
-  fread(buf, 2, 1, src);
-  val = (int)buf[0] + (int)buf[1] * (int)256;
-  return (ushort)val;
-}
-
-//----------------------------------------------------------------------------
-/** Write a big endian unsigned short value system independently to a file
-  (most significant byte first).
+/** Write an unsigned short value system independently to a file.
   @return number of bytes written
 */
-int vvToolshed::write16BE(FILE* fp, ushort val)
+int vvToolshed::write16(FILE* fp, ushort val, vvToolshed::EndianType end)
 {
   uchar buf[2];
 
-  buf[0] = (uchar)(val >> 8); 
-  buf[1] = (uchar)(val & 0xFF);
+  if (end==VV_LITTLE_END)
+  {
+    buf[0] = (uchar)(val & 0xFF);
+    buf[1] = (uchar)(val >> 8); 
+  }
+  else
+  {
+    buf[0] = (uchar)(val >> 8); 
+    buf[1] = (uchar)(val & 0xFF);
+  }
   fwrite(buf, 2, 1, fp);
   return 2;
 }
 
 //----------------------------------------------------------------------------
-/** Write a little endian unsigned short value system independently to a file
-  (least significant byte first).
-  @return number of bytes written
+/** Read an unsigned long value system independently from a file.
 */
-int vvToolshed::write16LE(FILE* fp, ushort val)
-{
-  uchar buf[2];
-
-  buf[0] = (uchar)(val & 0xFF);
-  buf[1] = (uchar)(val >> 8); 
-  fwrite(buf, 2, 1, fp);
-  return 2;
-}
-
-//----------------------------------------------------------------------------
-/** Read a big endian unsigned long value system independently from a file.
- Read four bytes in a row in unix-style (most significant byte first).
-*/
-ulong vvToolshed::read32BE(FILE* src)
+ulong vvToolshed::read32(FILE* src, vvToolshed::EndianType end)
 {
   uchar buf[4];
   ulong val;
   
   fread(buf, 4, 1, src);
-  val = (ulong)buf[0] * (ulong)16777216 + (ulong)buf[1] * (ulong)65536 + 
-        (ulong)buf[2] * (ulong)256 + (ulong)buf[3];
+  if (end==VV_LITTLE_END)
+  {
+    val = (ulong)buf[3] * (ulong)16777216 + (ulong)buf[2] * (ulong)65536 + 
+          (ulong)buf[1] * (ulong)256 + (ulong)buf[0];
+  }
+  else
+  {
+    val = (ulong)buf[0] * (ulong)16777216 + (ulong)buf[1] * (ulong)65536 + 
+          (ulong)buf[2] * (ulong)256 + (ulong)buf[3];
+  }
   return (ulong)val;
 }
 
 //----------------------------------------------------------------------------
-/** Read a little endian unsigned long value system independently from a file.
- Read four bytes in a row in unix-style (least significant byte first).
-*/
-ulong vvToolshed::read32LE(FILE* src)
-{
-  uchar buf[4];
-  ulong val;
-  
-  fread(buf, 4, 1, src);
-  val = (ulong)buf[3] * (ulong)16777216 + (ulong)buf[2] * (ulong)65536 + 
-        (ulong)buf[1] * (ulong)256 + (ulong)buf[0];
-  return (ulong)val;
-}
-
-//----------------------------------------------------------------------------
-/** Write a big endian unsigned long value system independently to a file. 
-  Write four bytes in a row in unix-style (most significant byte first).
+/** Write an unsigned long value system independently to a file. 
   @return number of bytes written
 */
-int vvToolshed::write32BE(FILE* fp, ulong val)
+int vvToolshed::write32(FILE* fp, ulong val, vvToolshed::EndianType end)
 {
   uchar buf[4];
 
-  buf[0] = (uchar)(val  >> 24); 
-  buf[1] = (uchar)((val >> 16) & 0xFF);
-  buf[2] = (uchar)((val >> 8)  & 0xFF);
-  buf[3] = (uchar)(val & 0xFF);
-  fwrite(buf, 4, 1, fp);
-  return 4;
-}
-
-//----------------------------------------------------------------------------
-/** Write a little endian unsigned long value system independently to a file. 
-  Write four bytes in a row in unix-style (least significant byte first).
-  @return number of bytes written
-*/
-int vvToolshed::write32LE(FILE* fp, ulong val)
-{
-  uchar buf[4];
-
-  buf[0] = (uchar)(val & 0xFF);
-  buf[1] = (uchar)((val >> 8)  & 0xFF);
-  buf[2] = (uchar)((val >> 16) & 0xFF);
-  buf[3] = (uchar)(val  >> 24); 
+  if (end==VV_LITTLE_END)
+  {
+    buf[0] = (uchar)(val & 0xFF);
+    buf[1] = (uchar)((val >> 8)  & 0xFF);
+    buf[2] = (uchar)((val >> 16) & 0xFF);
+    buf[3] = (uchar)(val  >> 24); 
+  }
+  else
+  {
+    buf[0] = (uchar)(val  >> 24); 
+    buf[1] = (uchar)((val >> 16) & 0xFF);
+    buf[2] = (uchar)((val >> 8)  & 0xFF);
+    buf[3] = (uchar)(val & 0xFF);
+  }
   fwrite(buf, 4, 1, fp);
   return 4;
 }
 
 //----------------------------------------------------------------------------
 /** Read a 32 bit float value system independently from a file.
- Read four bytes in a row in unix-style (most significant byte first).
 */
-float vvToolshed::readFloat(FILE* src)
+float vvToolshed::readFloat(FILE* src, vvToolshed::EndianType end)
 {
   uchar buf[4];
   uchar tmp;
   
   fread(buf, 4, 1, src);
-  if (getEndianness()==LITTLE_END)  
+  if (getEndianness() != end)  
   { 
     // Reverse byte order:
     tmp = buf[0]; buf[0] = buf[3]; buf[3] = tmp;
@@ -1610,15 +1577,14 @@ float vvToolshed::readFloat(FILE* src)
 
 //----------------------------------------------------------------------------
 /** Write a 32 bit float value system independently to a file.
-  Write four bytes in a row in unix-style (most significant byte first).
   @return number of bytes written
 */
-int vvToolshed::writeFloat(FILE* fp, float val)
+int vvToolshed::writeFloat(FILE* fp, float val, vvToolshed::EndianType end)
 {
   uchar* buf;
   uchar tmp;
   
-  if (getEndianness()==LITTLE_END)  
+  if (getEndianness() != end)  
   { 
     // Reverse byte order:
     buf = (uchar*)&val;
@@ -1649,40 +1615,22 @@ int vvToolshed::write8(uchar* src, uchar val)
 }
 
 //----------------------------------------------------------------------------
-/** Read a big endian unsigned short value system independently from a buffer
-  (most significant byte first).
-*/
-ushort vvToolshed::read16BE(uchar* src)
-{
-  int val;
-  
-  val = (int)src[0] * (int)256 + (int)src[1];
-  return (ushort)val;
-}
-
-//----------------------------------------------------------------------------
 /** Read a little endian unsigned short value system independently from a buffer
   (least significant byte first).
 */
-ushort vvToolshed::read16LE(uchar* src)
+ushort vvToolshed::read16(uchar* src, vvToolshed::EndianType end)
 {
   int val;
   
-  val = (int)src[0] + (int)src[1] * (int)256;
+  if (end==VV_LITTLE_END)
+  {
+    val = (int)src[0] + (int)src[1] * (int)256;
+  }
+  else
+  {
+    val = (int)src[0] * (int)256 + (int)src[1];
+  }
   return (ushort)val;
-}
-
-//----------------------------------------------------------------------------
-/** Write a big endian unsigned short value system independently to a buffer
-  (most significant byte first).
-  @param buf pointer to 2 bytes of _allocated_ memory
-  @return number of bytes written
-*/
-int vvToolshed::write16BE(uchar* buf, ushort val)
-{
-  buf[0] = (uchar)(val >> 8); 
-  buf[1] = (uchar)(val & 0xFF);
-  return sizeof(ushort);
 }
 
 //----------------------------------------------------------------------------
@@ -1691,72 +1639,69 @@ int vvToolshed::write16BE(uchar* buf, ushort val)
   @param buf pointer to 2 bytes of _allocated_ memory
   @return number of bytes written
 */
-int vvToolshed::write16LE(uchar* buf, ushort val)
+int vvToolshed::write16(uchar* buf, ushort val, vvToolshed::EndianType end)
 {
-  buf[0] = (uchar)(val & 0xFF);
-  buf[1] = (uchar)(val >> 8); 
+  if (end==VV_LITTLE_END)
+  {
+    buf[0] = (uchar)(val & 0xFF);
+    buf[1] = (uchar)(val >> 8); 
+  }
+  else
+  {
+    buf[0] = (uchar)(val >> 8); 
+    buf[1] = (uchar)(val & 0xFF);
+  }
   return sizeof(ushort);
-}
-
-//----------------------------------------------------------------------------
-/** Read a big endian unsigned long value system independently from a buffer.
- Read four bytes in a row in unix-style (most significant byte first).
-*/
-ulong vvToolshed::read32BE(uchar* buf)
-{
-  ulong val;
-  
-  val = (ulong)buf[0] * (ulong)16777216 + (ulong)buf[1] * (ulong)65536 + 
-        (ulong)buf[2] * (ulong)256 + (ulong)buf[3];
-  return (ulong)val;
 }
 
 //----------------------------------------------------------------------------
 /** Read a little endian unsigned long value system independently from a buffer.
  Read four bytes in a row in unix-style (least significant byte first).
 */
-ulong vvToolshed::read32LE(uchar* buf)
+ulong vvToolshed::read32(uchar* buf, vvToolshed::EndianType end)
 {
   ulong val;
   
-  val = (ulong)buf[3] * (ulong)16777216 + (ulong)buf[2] * (ulong)65536 + 
-        (ulong)buf[1] * (ulong)256 + (ulong)buf[0];
+  if (end==VV_LITTLE_END)
+  {
+    val = (ulong)buf[3] * (ulong)16777216 + (ulong)buf[2] * (ulong)65536 + 
+          (ulong)buf[1] * (ulong)256 + (ulong)buf[0];
+  }
+  else
+  {
+    val = (ulong)buf[0] * (ulong)16777216 + (ulong)buf[1] * (ulong)65536 + 
+          (ulong)buf[2] * (ulong)256 + (ulong)buf[3];
+  }
   return (ulong)val;
 }
 
 //----------------------------------------------------------------------------
-/** Write a big endian unsigned long value system independently to a buffer. 
-  Write four bytes in a row in unix-style (most significant byte first).
+/** Write an unsigned long value system independently to a buffer. 
   @return number of bytes written
 */
-int vvToolshed::write32BE(uchar* buf, ulong val)
+int vvToolshed::write32(uchar* buf, ulong val, vvToolshed::EndianType end)
 {
-  buf[0] = (uchar)(val  >> 24); 
-  buf[1] = (uchar)((val >> 16) & 0xFF);
-  buf[2] = (uchar)((val >> 8)  & 0xFF);
-  buf[3] = (uchar)(val & 0xFF);
-  return sizeof(ulong);
-}
-
-//----------------------------------------------------------------------------
-/** Write a little endian unsigned long value system independently to a buffer. 
-  Write four bytes in a row in unix-style (least significant byte first).
-  @return number of bytes written
-*/
-int vvToolshed::write32LE(uchar* buf, ulong val)
-{
-  buf[0] = (uchar)(val & 0xFF);
-  buf[1] = (uchar)((val >> 8)  & 0xFF);
-  buf[2] = (uchar)((val >> 16) & 0xFF);
-  buf[3] = (uchar)(val  >> 24); 
+  if (end==VV_LITTLE_END)
+  {
+    buf[0] = (uchar)(val & 0xFF);
+    buf[1] = (uchar)((val >> 8)  & 0xFF);
+    buf[2] = (uchar)((val >> 16) & 0xFF);
+    buf[3] = (uchar)(val  >> 24); 
+  }
+  else
+  {
+    buf[0] = (uchar)(val  >> 24); 
+    buf[1] = (uchar)((val >> 16) & 0xFF);
+    buf[2] = (uchar)((val >> 8)  & 0xFF);
+    buf[3] = (uchar)(val & 0xFF);
+  }
   return sizeof(ulong);
 }
 
 //----------------------------------------------------------------------------
 /** Read a 32 bit float value system independently from a buffer.
- Read four bytes in a row in unix-style (most significant byte first).
 */
-float vvToolshed::readFloat(uchar* buf)
+float vvToolshed::readFloat(uchar* buf, vvToolshed::EndianType end)
 {
   float  fval;
   uchar* ptr;
@@ -1764,7 +1709,7 @@ float vvToolshed::readFloat(uchar* buf)
   
   assert(sizeof(float)==4);
   memcpy(&fval, buf, 4);
-  if (getEndianness()==LITTLE_END)  
+  if (getEndianness() != end)  
   { 
     // Reverse byte order:
     ptr = (uchar*)&fval;
@@ -1776,16 +1721,15 @@ float vvToolshed::readFloat(uchar* buf)
 
 //----------------------------------------------------------------------------
 /** Write a 32 bit float value system independently to a buffer.
-  Write four bytes in a row in unix-style (most significant byte first).
   @return number of bytes written
 */
-int vvToolshed::writeFloat(uchar* buf, float val)
+int vvToolshed::writeFloat(uchar* buf, float val, vvToolshed::EndianType end)
 {
   uchar tmp;
   
   assert(sizeof(float)==4);
   memcpy(buf, &val, 4);
-  if (getEndianness()==LITTLE_END)  
+  if (getEndianness() != end)  
   { 
     // Reverse byte order:
     tmp = buf[0]; buf[0] = buf[3]; buf[3] = tmp;
@@ -1807,7 +1751,7 @@ void vvToolshed::makeArraySystemIndependent(int numValues, float* array)
   uchar tmp;    // temporary byte value from float array, needed for swapping
 
   assert(sizeof(float) == 4);
-  if (getEndianness()==BIG_END)  return;    // nothing needs to be done
+  if (getEndianness()==VV_BIG_END)  return;    // nothing needs to be done
 
   buf = (uchar*)array;
   for (i=0; i<numValues; ++i)
@@ -1840,8 +1784,12 @@ vvToolshed::EndianType vvToolshed::getEndianness()
   uchar* ptr;
 
   ptr = (uchar*)&one;
-  if (*ptr == 0x3f) return BIG_END;
-  else              return LITTLE_END;
+  if (*ptr == 0x3f) return VV_BIG_END;
+  else
+  {
+    assert(*ptr == 0);
+    return VV_LITTLE_END;
+  }
 }
 
 //----------------------------------------------------------------------------

@@ -125,8 +125,8 @@ class vvToolshed
   public:
     enum EndianType     /// endianness
     {
-      LITTLE_END,       ///< little endian: low-order byte is stored first
-      BIG_END           ///< big endian: hight-order byte is stored first
+      VV_LITTLE_END,       ///< little endian: low-order byte is stored first
+      VV_BIG_END           ///< big endian: hight-order byte is stored first
     };
 
     static int     strCompare(const char*, const char*);
@@ -175,28 +175,20 @@ class vvToolshed
     static void    convertHS2XY(float, float, float*, float*);
     static uchar   read8(FILE*);
     static int     write8(FILE*, uchar);
-    static ushort  read16BE(FILE*);
-    static ushort  read16LE(FILE*);
-    static int     write16BE(FILE*, ushort);
-    static int     write16LE(FILE*, ushort);
-    static ulong   read32BE(FILE*);
-    static ulong   read32LE(FILE*);
-    static int     write32BE(FILE*, ulong);
-    static int     write32LE(FILE*, ulong);
-    static float   readFloat(FILE*);
-    static int     writeFloat(FILE*, float);
+    static ushort  read16(FILE*, vvToolshed::EndianType = VV_BIG_END);
+    static int     write16(FILE*, ushort, vvToolshed::EndianType = VV_BIG_END);
+    static ulong   read32(FILE*, vvToolshed::EndianType = VV_BIG_END);
+    static int     write32(FILE*, ulong, vvToolshed::EndianType = VV_BIG_END);
+    static float   readFloat(FILE*, vvToolshed::EndianType = VV_BIG_END);
+    static int     writeFloat(FILE*, float, vvToolshed::EndianType = VV_BIG_END);
     static uchar   read8(uchar*);
     static int     write8(uchar*, uchar);
-    static ushort  read16BE(uchar*);
-    static ushort  read16LE(uchar*);
-    static int     write16BE(uchar*, ushort);
-    static int     write16LE(uchar*, ushort);
-    static ulong   read32BE(uchar*);
-    static ulong   read32LE(uchar*);
-    static int     write32BE(uchar*, ulong);
-    static int     write32LE(uchar*, ulong);
-    static float   readFloat(uchar*);
-    static int     writeFloat(uchar*, float);
+    static ushort  read16(uchar*, vvToolshed::EndianType = VV_BIG_END);
+    static int     write16(uchar*, ushort, vvToolshed::EndianType = VV_BIG_END);
+    static ulong   read32(uchar*, vvToolshed::EndianType = VV_BIG_END);
+    static int     write32(uchar*, ulong, vvToolshed::EndianType = VV_BIG_END);
+    static float   readFloat(uchar*, vvToolshed::EndianType = VV_BIG_END);
+    static int     writeFloat(uchar*, float, vvToolshed::EndianType = VV_BIG_END);
     static void    makeArraySystemIndependent(int, float*);
     static void    makeArraySystemDependent(int, float*);
     static EndianType getEndianness();

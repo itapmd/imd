@@ -13,6 +13,9 @@
 * $Date$
 ******************************************************************************/
 
+#ifndef IMD_SOCKET_IO_H
+#define IMD_SOCKET_IO_H
+
 #define PROTOCOL_VERSION_MAJOR  0
 #define PROTOCOL_VERSION_MINOR  1
 
@@ -65,3 +68,5 @@ atoms_filt_t at_filt_max, at_filt_min; /* atoms filter minima and maxima */
 integer atlen;                         /* number of data items per atom */
 int soc=-1;                            /* socket file descriptor */
 unsigned long varIP;                   /* IP number of visualization server */
+
+#endif
