@@ -1818,7 +1818,7 @@ void read_parameters(void)
     if (0 != restart) {
       int tmp = finished;
       sprintf(fname,"%s.%d.itr",outfilename,restart);
-      sprintf(infilename,"%s.%d.%s",outfilename,restart,"chkpt");
+      sprintf(infilename,"%s.%05d.%s",outfilename,restart,"chkpt");
       printf("Restarting from %s.\n",infilename);
       getparamfile(fname,1);
       finished = tmp;
