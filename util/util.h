@@ -127,12 +127,17 @@ INLINE static int MOD(int p, int q)
 #endif
 
 /* Tolerance values for imd_stress */
-#ifdef STRESS
+#if defined(STRESS) || defined(ELCO)
 #define NUM        100
 #define TOL        1.0e-6
 #define TOL2       1.0e-10
 #define TOL_VERT2  1.0e-6
 #define TOL_DIST2  2.0e-11
+#endif
+
+#ifdef ELCO
+#define I(a,b)   [(((a)*neigh_len) + (b))]
+#define J(a,b,c) [(((((a)*neigh_len) + (b))*neigh_len) + (c))]
 #endif
 
 /*****************************************************************************
@@ -172,6 +177,26 @@ typedef struct {int  x; int  y; int z; } ivektor3d;
 typedef struct {int  i; int  x; int  y; int z; } ivektor4d;
 typedef struct {int n; int  i; int  j; int  k; int l; } ivektor5d;
 
+#ifdef ELCO
+typedef struct { real xx, xy, xz, yx, yy, yz, zx, zy, zz; } tensor;
+
+typedef struct { real c11, c12, c13, c14, c15, c16, c22, c23, c24, 
+  c25, c26, c33, c34, c35, c36, c44, c45, c46, c55, c56, c66;
+} tensor6d; 
+
+/* Neighbor table for Tersoff potential */
+typedef struct {
+  real        *dist;
+  short       *typ;
+  void        **cl;
+  int         *num;
+  int         n;
+  int         n_max;
+} neightab;
+
+typedef neightab* neighptr;
+#endif
+
 /* Basic Data Type - The Cell */
 typedef struct { 
   vektor *ort;
@@ -190,14 +215,24 @@ typedef struct {
 #ifdef CONN
   int    *nummer;
 #endif
+#ifdef ELCO
+  neightab *neightab_array;
+  tensor   *stress;
+  tensor6d *elco;
+  real     *vol;
+#endif
   int     n;
   int     n_max;
 } cell;
 
+#ifdef ELCO
+typedef cell* cellptr;
+#endif
+
 /* String used for Filenames etc. */
 typedef char str255[255];
 
-#ifdef STRESS
+#if defined(STRESS)||defined(ELCO)
 #ifndef TWOD
 typedef vektor vektorstr[NUM]; 
 #endif
@@ -265,6 +300,22 @@ void calc_angles(void);
 void make_numbers(void);
 #endif
 
+#ifdef ELCO
+void realloc_neightab(neightab *neigh, int cll);
+#ifdef TERSOFF
+void init_tersoff(void);
+void do_elco_tersoff(void);
+#elif defined(STIWEB)
+void init_stiweb(void);
+void do_elco_stiweb(void);
+#endif
+void voronoi(void);
+void sort(void);
+void do_voronoi(void);
+void write_stress(void);
+void write_elco(void);
+#endif
+
 /*****************************************************************************
 *
 *  global variables
@@ -300,7 +351,8 @@ str255 outfilename;   /* Output File */
 char *paramfilename;  /* parameter file */
 
 /* Bookkeeping */
-int  restart=-1;
+int  restart = -1;
+int  avpos   = -1;
 real r2_cut;
 real r_min = 1.0;     /* default value */
 #ifdef PAIR
@@ -338,7 +390,7 @@ ivektor5d hist_dim;
 ivektor4d hist_dim;
 #endif
 
-#ifdef STRESS
+#if defined(STRESS) || defined(ELCO)
 int     neighnum;        /* Number of neighbour atoms */
 vektor  *candcoord;      /* Coordinates of neighbour atoms */
 real    *canddist2;      /* Distance squared of neighbour atoms */ 
@@ -361,6 +413,49 @@ int *cm, *nn, *tp, *num, *ind;
 vektor *pos;
 #endif
 
+#ifdef ELCO
+tensor6d c = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+tensor sigma = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+real   vol, epot = 0.0, dbulkm_dp = 0.0;
+int    neigh_len;
+int    stresstens = 0, moduli = 0, all_moduli = 0;
+#ifdef TERSOFF
+real   ter_r_cut[10][10], ter_r2_cut[10][10], ters_r_cut[55] ;
+real   ter_r0[10][10], ters_r0[55];
+real   ter_a[10][10], ters_a[55];
+real   ter_b[10][10], ters_b[55];
+real   ter_la[10][10], ters_la[55];
+real   ter_mu[10][10], ters_mu[55];
+real   ters_ga[10];
+real   ters_n[10];
+real   ter_c2[10], ters_c[10];
+real   ter_d2[10], ters_d[10];
+real   ters_h[10];
+real   ter_chi[10][10], ters_chi[45];
+real   ter_om[10][10], ters_om[45];
+#elif defined(STIWEB)
+real stiweb_a[55];
+real sw_a[10][10];
+real stiweb_b[55];
+real sw_b[10][10];
+real stiweb_p[55];
+real sw_p[10][10];
+real stiweb_q[55];
+real sw_q[10][10];
+real stiweb_a1[55];
+real sw_a1[10][10];
+real stiweb_de[55];
+real sw_de[10][10];
+real sw_2_a1[10][10];
+real stiweb_a2[55];
+real sw_a2[10][10];
+real stiweb_la[550];
+real sw_la[10][10][10];
+real stiweb_ga[55];
+real sw_ga[10][10];
+real sw_r_cut[10][10];
+#endif
+#endif
 
 /******************************************************************************
 *
@@ -426,6 +521,10 @@ void make_box(void)
   /* volume */
   volume = SPROD( box_x, tbox_x );
   if (0==volume) error("Box Edges are parallel.");
+
+#ifdef ELCO
+  vol = volume;
+#endif
 
   /* normalization */
   tbox_x.x /= volume;  tbox_x.y /= volume;  tbox_x.z /= volume;
@@ -560,6 +659,8 @@ ivektor cell_coord(vektor ort)
 
 void alloc_cell(cell *cl, int count)
 {
+  int i;
+
   /* initialize if it is the first call */
   if (cl->n_max == 0) {
     cl->ort           = NULL;
@@ -577,6 +678,12 @@ void alloc_cell(cell *cl, int count)
 #endif
 #ifdef CONN
     cl->nummer        = NULL;
+#endif
+#ifdef ELCO
+    cl->stress        = NULL;
+    cl->elco          = NULL;
+    cl->neightab_array= NULL;
+    cl->vol           = NULL;
 #endif
     cl->n             = 0;
   }
@@ -600,6 +707,22 @@ void alloc_cell(cell *cl, int count)
 #ifdef CONN
   cl->nummer = (int    *) realloc(cl->nummer, count * sizeof(int));
 #endif
+#ifdef ELCO
+  cl->stress = (tensor *) realloc(cl->stress, count * sizeof(tensor));
+  cl->elco   = (tensor6d *) realloc(cl->elco, count * sizeof(tensor6d));
+  cl->vol    = (real   *) realloc(cl->vol,  count * sizeof(real));
+  cl->neightab_array = (neightab *) realloc( cl->neightab_array, count * sizeof(neightab) );
+   if (NULL == cl->neightab_array) 
+      error("Cannot allocate neighbor tables");
+
+  for (i=0; i<count; ++i) {
+      if( cl->n_max==0 ) { 
+	  realloc_neightab(&cl->neightab_array[i],0);
+      }
+      else 
+	  realloc_neightab(&cl->neightab_array[i],1);
+  }
+#endif
 
   /* check if it worked */
   if ( (NULL==cl->ort)
@@ -617,6 +740,12 @@ void alloc_cell(cell *cl, int count)
 #endif
 #ifdef CONN
     || (NULL==cl->nummer)
+#endif
+#ifdef ELCO
+    || (NULL==cl->stress)
+    || (NULL==cl->elco)
+    || (NULL==cl->neightab_array)
+    || (NULL==cl->vol)
 #endif
   ) error("Cannot allocate memory for cell.");
   cl->n_max  = count;
@@ -654,6 +783,17 @@ void read_parameters(int argc,char **argv)
       }
       else restart = atoi(&argv[1][2]);
       break;
+     /* A - use avpos outfiles */
+    case 'A':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          avpos = atoi(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else avpos = atoi(&argv[1][2]);
+      break;  
 #ifdef PAIR
       /* a - minimum radius */
     case 'a':
@@ -696,6 +836,20 @@ void read_parameters(int argc,char **argv)
       else r_cell = atof(&argv[1][2]);
       break;
 #endif
+#ifdef ELCO
+      /* s - Ouput local stress tensor */
+    case 's':
+      stresstens = 1;
+      break;
+      /* m - Output local elastic moduli c11, c12, c44 */
+    case 'm':
+      moduli = 1;
+      break;
+      /* M - Output all local elastic moduli */
+    case 'M':
+      all_moduli = 1;
+      break;
+#endif
     case 'p':
       if (argv[1][2]=='\0') {
         if (NULL != argv[2]) {
@@ -736,6 +890,7 @@ void read_parameters(int argc,char **argv)
   if (-1 != restart) sprintf(infilename,"%s.%u.press",outfilename,restart);
 #else
   if (-1 != restart) sprintf(infilename,"%s.%u",outfilename,restart);
+  else if (-1 != avpos) sprintf(infilename,"%s.%u.avp",outfilename,avpos);
 #endif
 
 #ifdef STRAIN
@@ -980,6 +1135,81 @@ void getparamfile(char *paramfname)
       if (NULL == r_cut) error("cannot allocate r_cut");
       getparam("r_cut",r_cut,PARAM_REAL,nn,nn);
     }
+#endif
+#ifdef ELCO
+    else if (strcasecmp(token,"neigh_len")==0) {
+      /* number of neighbors */
+      getparam("neigh_len",&neigh_len,PARAM_INT,1,1);
+    }
+#ifdef TERSOFF
+    else if (strcasecmp(token,"ters_r_cut")==0) {     
+      getparam("ters_r_cut",ters_r_cut,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"ters_r0")==0) {     
+      getparam("ters_r0",ters_r0,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"ters_a")==0) {     
+      getparam("ters_a",ters_a,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"ters_b")==0) {     
+      getparam("ters_b",ters_b,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"ters_la")==0) {     
+      getparam("ters_la",ters_la,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"ters_mu")==0) {     
+      getparam("ters_mu",ters_mu,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"ters_chi")==0) {     
+      getparam("ters_chi",ters_chi,PARAM_REAL,ntypes*(ntypes-1)/2,ntypes*(ntypes-1)/2);
+    }
+    else if (strcasecmp(token,"ters_om")==0) {     
+      getparam("ters_om",ters_om,PARAM_REAL,ntypes*(ntypes-1)/2,ntypes*(ntypes-1)/2);
+    }
+    else if (strcasecmp(token,"ters_ga")==0) {     
+      getparam("ters_ga",ters_ga,PARAM_REAL,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"ters_n")==0) {     
+      getparam("ters_n",ters_n,PARAM_REAL,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"ters_c")==0) {     
+      getparam("ters_c",ters_c,PARAM_REAL,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"ters_d")==0) {     
+      getparam("ters_d",ters_d,PARAM_REAL,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"ters_h")==0) {     
+      getparam("ters_h",ters_h,PARAM_REAL,ntypes,ntypes);
+    }
+#elif defined(STIWEB)
+    else if (strcasecmp(token,"stiweb_a")==0) {     
+      getparam("stiweb_a",stiweb_a,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"stiweb_b")==0) {     
+      getparam("stiweb_b",stiweb_b,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"stiweb_p")==0) {     
+      getparam("stiweb_p",stiweb_p,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"stiweb_q")==0) {     
+      getparam("stiweb_q",stiweb_q,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"stiweb_a1")==0) {     
+      getparam("stiweb_a1",stiweb_a1,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"stiweb_de")==0) {     
+      getparam("stiweb_de",stiweb_de,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"stiweb_a2")==0) {     
+      getparam("stiweb_a2",stiweb_a2,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"stiweb_ga")==0) {     
+      getparam("stiweb_ga",stiweb_ga,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"stiweb_la")==0) {     
+      getparam("stiweb_la",stiweb_la,PARAM_REAL,ntypes*ntypes*(ntypes+1)/2,ntypes*ntypes*(ntypes+1)/2);
+    }
+#endif
 #endif
   } while (!feof(pf));
   fclose(pf);
