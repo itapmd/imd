@@ -12,6 +12,10 @@
 
 #include "imd.h"
 
+/* prototypes needed only here */
+float gasdev(long *idum);
+float ran1(long *idum);
+
 /*
 *
 * Converted directely from an example in the book of Allen and Tildesley

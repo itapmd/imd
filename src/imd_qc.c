@@ -12,6 +12,21 @@
 
 #include "imd.h"
 
+/* prototypes needed only here */
+real r2 (real ai, real aj, real bi, real bj, real b, real ci, real cj,
+	 real c, int ks, real gi, real gj);
+real r3 (real ai, real aj, real ak, real bi, real bj, real bk, real b,
+	 real ci, real cj, real ck, int ks1, int ks2, real gi, real gj,
+	 real gk);
+real det(real ai, real aj, real ak, real bi, real bj, real bk, real ci, 
+	 real cj, real ck);
+void sortin (int ifeld[]);
+void adjust(void);
+void decorate(int i, int j, int k);
+void locate(real x, real y, real z, int i, int j, int k);
+void borders(void);
+
+
 /******************************************************************************
 * 
 * generate quasicrystal approximant box size from approximant order
