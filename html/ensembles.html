@@ -70,6 +70,9 @@ of the particles are reset to a maxwell distribution. After the shear
 step, the sample is then relaxed with the microconvergence integrator,
 until the kinetic energy per particle drops again below the treshold.
 When this happens, a new shear step is performed, and so on.
+At latest after <TT>maxshearrelaxsteps</TT> steps a new shear is
+performed.The first shear does not occur before at least
+<TT>annealsteps</TT> steps have been performed.
 <P>
 All atoms located in a strip of width <TT>strip_width</TT> from
 the boundaries in x-direction are fixed. In each shear step, these 

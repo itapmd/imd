@@ -46,6 +46,12 @@ dist_int	# number of steps between energy distribution writes
 dist_dim        # dimensions for energy distribution writes 
 dist_binary_io  # formatted (0) or binary (1) energy distributions
 
+# peierls - nabarro dislocations
+pn              # if (1) : construct a pn dislocation
+burgersv	# length of Burgers vector (pointing in x direction)
+width           # width of Burgers vector density
+glideplane      # z-coordinate of glideplane (in two dimensions: y)
+
 # temperature, pressure, and related stuff
 # required if ensemble supports temperature or pressure control
 # in other ensembles, starttemp might be needed to initialize the velocities
@@ -120,6 +126,9 @@ Epot_diff       # whether to write the potential energy difference
 shear_epsilon	# criterium for simulation abort
 shear_delta	# shear increment per timestep
 strip_width	# strip width (in x dir)
+annealsteps	# simulated annealing (first shear will not occur
+before)
+maxshearrelaxsteps # largest number of steps possible without shear
 
 # parameters for FRAC
 dampstadion	# Damping stadion

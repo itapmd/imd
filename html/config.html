@@ -76,6 +76,14 @@ If the ensembles/options <B>frac</B>, <B>pull</B>, <B>mikshear</B> or
 <TT>strip_width/2</TT> is left empty at the boundary of the box 
 for all generated structures (only in x-direction for shock).
 <P>
+If the parameter <TT>pn</TT> is set (==1) an edge dislocation is
+constructed by applying a Peierls-Nabarro displacement field. The
+parameters <TT>burgersv</TT> (length of the Burgers vector which is
+pointing in x-direction), <TT>width</TT> (width of the Burgers vector
+density and <TT>glideplane</TT> (specifying the z-coordinate
+(y-coordinate in two dimensional systems) of the glideplane can be
+set.
+<P>
 For fcc and nacl structures, the box must be rectangular.
 More precisely, the box matrix must be diagonal, and each box 
 vector must have a length which is an even integer.

@@ -48,17 +48,22 @@ The relevant parameters are the following:
 <P>This should be the resolution in pixels. At present, a fixed
    resolution is used.
 
-<P><LI>pic_scale
-<P>Zoom into the center of the picture. Should be replaced by
-   lower left and upper right corner of the picture.
+<P><LI>conf_ll
+<P> Specifies the lower left corner (in atomic coordinates) of the
+area that will be plotted. Default is the origin.
+</UL>
+
+<P><LI>conf_ur
+<P> Specifies the upper right corner (in atomic coordinates) of the
+area that will be plotted. Default is the vector (box_x.x,
+box_y.y)<SUP>T</SUP>.
 </UL>
 
 
 <H2>Atomic Pictures</H2>
 
 For not too big systems, one can make pictures where every single atom
-can be seen. At present, IMD can not directly produce such pictures,
-but this is planned. They have to be generated after the simulation.
+can be seen. They can be generated during or after the simulation.
 
 The first possibility is to convert 
 <A HREF="config.html">configuration files</A> into ppm files with
@@ -75,7 +80,7 @@ the <TT>.pic</TT> files are the following:
 <UL>
 
 <P><LI>pic_type
-<P>Must be 1 for <TT>.pic</TT> files
+<P>Must be 0 for <TT>.pic</TT> files
 
 <P><LI>pic_int
 <P>Interval (in steps) between picture writes.
@@ -98,6 +103,49 @@ the <TT>.pic</TT> files are the following:
    If parallel_io = 1, all input/output is parallel, if parallel_io = 0, 
    all input/output is serial. 
 </UL>
+
+Only atoms in a frame spanned by the paramters pic_ll (lower left
+corner) and pic_ur (upper right corner) are written. By default, this
+frame is set to the whole system.
+<P>
+Under the <A HREF="options.html#disloc">disloc</A> option, instead
+of the actual potential energy the difference to a reference
+potential energy is written to the .pic files.
+<P>
+If the compilation flag <B>ZOOM</B> is defined, only partial configuration
+files (checkpoints - which the no longer work as checkpoints!) 
+consisting of the atoms inside the frame defined by pic_ll and pic_ur
+are written. It is probably better to use the .pic files to make 
+partial pictures, though.
+<BR><BR>
+The third possibility is to write <TT>.atm</TT> files containing a
+picture of the atomic configuration (this is only recommended if the
+configuration is not too big or if the DISLOC option is invoked).  The
+necessary parameters for the <TT>.pic</TT> files are the following:
+
+<UL>
+
+<P><LI>pic_type
+<P>Must be 1 for <TT>.pic</TT> files
+
+<P><LI>pic_int
+<P>Interval (in steps) between picture writes.
+
+<P><LI>pic_ll
+<P>Lower left corner of the picture in IMD coordinates.
+
+<P><LI>pic_ur
+<P>Upper right corner of the picture in IMD coordinates.
+
+<P><LI>parallel_io
+<P>If parallel_io = 2, the .pic files are written in parallel (each CPU
+   writes its own atoms to a separate file). All other input/output 
+   is serial, however. 
+<P>
+   If parallel_io = 1, all input/output is parallel, if parallel_io = 0, 
+   all input/output is serial. 
+</UL>
+Is that true?
 
 Only atoms in a frame spanned by the paramters pic_ll (lower left
 corner) and pic_ur (upper right corner) are written. By default, this
