@@ -373,6 +373,8 @@ void pair_int_monolj(real *pot, real *grad, real r2)
   *pot  = sig_d_rad12 - 2.0 * sig_d_rad6 - monolj_shift;
 }
 
+#ifdef STIWEB
+
 /*****************************************************************************
 *
 *  Evaluate pair potential for Stillinger-Weber potential 
@@ -397,6 +399,7 @@ void pair_int_stiweb(real *pot, real *grad, int p_typ, int q_typ, real r2)
 
 }
 
+#endif
 
 /*****************************************************************************
 *

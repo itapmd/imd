@@ -602,4 +602,41 @@ void write_itr_file(int fzhlr, int steps)
   fclose(out);
 }
 
+#ifdef AVPOS
 
+/******************************************************************************
+*
+*  write avpos iteration file
+*
+******************************************************************************/
+
+void write_avpos_itr_file(int fzhlr, int steps)
+{
+  FILE *out;
+  str255 fname;
+  real tmp;
+
+  if (fzhlr>=0) sprintf(fname,"%s.%u.avp.itr",outfilename,fzhlr);
+  else          sprintf(fname,"%s-final.avp.itr",outfilename);
+
+  out = fopen(fname,"w");
+  if (NULL == out) error("Cannot write avpos iteration file.");
+
+  fprintf(out,"# avpos checkpoint %d\n",fzhlr);
+  fprintf(out,"startstep \t%d\n",steps+1);
+#ifdef NPT
+  /* Take average of box vectors */
+  tmp = avpos_res / ( avpos_int + avpos_res );
+  fprintf(out,"box_x \t%.16f %.16f %.16f\n",av_box_x.x * tmp,av_box_x.y * tmp,av_box_x.z * tmp);
+  fprintf(out,"box_y \t%.16f %.16f %.16f\n",av_box_y.x * tmp,av_box_y.y * tmp,av_box_y.z * tmp);
+  fprintf(out,"box_z \t%.16f %.16f %.16f\n",av_box_z.x * tmp,av_box_z.y * tmp,av_box_z.z * tmp);
+#else 
+  fprintf(out,"box_x \t%.16f %.16f %.16f\n",box_x.x,box_x.y,box_x.z);
+  fprintf(out,"box_y \t%.16f %.16f %.16f\n",box_y.x,box_y.y,box_y.z);
+  fprintf(out,"box_z \t%.16f %.16f %.16f\n",box_z.x,box_z.y,box_z.z);
+#endif
+
+  fclose(out);
+}
+
+#endif

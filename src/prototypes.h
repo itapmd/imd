@@ -125,6 +125,7 @@ void do_forces_eam2(cell*, cell*, vektor, real*, real*, real*, real*, real*, rea
 #endif
 #ifdef STIWEB
 void init_stiweb(void);
+void pair_int_stiweb(real *pot, real *grad, int p_typ, int q_typ, real r2);
 #endif
 #ifdef TERSOFF
 void init_tersoff(void);
@@ -230,6 +231,7 @@ void calc_tot_presstens(void);
 #ifdef AVPOS
 void write_atoms_avp(FILE *out);
 void write_header_avp(FILE *out);
+void write_avpos_itr_file(int fzhlr, int steps);
 #endif
 #ifdef MSQD
 void write_atoms_sqd(FILE *out);

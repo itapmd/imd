@@ -302,8 +302,9 @@ void main_loop(void)
 	if ((avpos_res > 0) && (0 == (steps - avpos_start) % avpos_res) && steps > avpos_start)
 	    add_position();
 	if ((avpos_int > 0) && (0 == (steps - avpos_start) % avpos_int) && steps > avpos_start) {
-	    write_config_select((steps-avpos_start)/avpos_int,"avp",
+	    write_config_select((steps - avpos_start) / avpos_int,"avp",
 				write_atoms_avp,write_header_avp);
+	    write_avpos_itr_file((steps - avpos_start) / avpos_int, steps);
 	    update_avpos();
 	}
     }

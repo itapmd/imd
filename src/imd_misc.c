@@ -103,6 +103,21 @@ void add_position(void)
         p->av_epot[i] += p->pot_eng[i];
     }
   }
+
+#ifdef NPT
+  av_box_x.x += box_x.x;
+  av_box_x.y += box_x.y;
+  av_box_y.x += box_y.x;
+  av_box_y.y += box_y.y;
+#ifndef TWOD
+  av_box_x.z += box_x.z;  
+  av_box_y.z += box_y.z;
+  av_box_z.x += box_z.x;
+  av_box_z.y += box_z.y;  
+  av_box_z.z += box_z.z;  
+#endif
+#endif
+
 }
   
 #endif
