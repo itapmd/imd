@@ -73,22 +73,22 @@ must be done:
      force computation from cells to communication buffers,
      from communication buffers to buffer cells, or directly
      from cells to buffer cells, if these are on the same CPU. 
-     <P>
-     If AR is defined, in addition the forces in the buffer cells
-     must be added to the forces in the corresponding original cells.
-     If the "force" includes also moments acting on non-pointlike
-     particles, these moments have to be treated like the other 
-     forces. For this purpose, the routines copy_forces() and 
-     add_forces() in file imd_main_mpi_3d.c must be extended 
-     (AR is so far available only in 3d). In order to avoid this,
+     The size of the communication buffers computed in
+     setup_buffers() in file imd_mpi_util.c must be adjusted.
+     </LI>
+<LI> If AR is defined, the forces in the buffer cells must be added 
+     to the forces in the corresponding original cells. Besides
+     the usual forces, this concerns also generalized forces like
+     momenta in the case of non-isotropic molecules, and all
+     quantities that are computed in do_forces and depend on 
+     a particle and its neighbors, like, e.g., the stress tensor.
+     These properties are added back to the original cells with
+     the routines copy_forces(), add_forces(), and add_cell_force() 
+     in file imd_main_mpi_3d.c, which must be extended (so far, 
+     AR is available only in 3d). In order to avoid this complication, 
      one can switch to the non-AR case by undefining the preprocessor 
-     symbol AR in config.h. 
-     <P>
-     In file config.h the macro BINC must be set to the number of
-     data items per particle that are communicated for the force
-     computation. For standard two-body interactions BINC is 4,
-     three position coordinates and the atom type. BINC is used
-     for the size of the communication buffers.
+     symbol AR in config.h. The size of the communication buffers as
+     computed in setup_buffers() in file imd_mpi_util.c must be adjusted.
 </UL>
 
 Examples for such extensions of the particle data structure can
