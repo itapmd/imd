@@ -471,16 +471,8 @@ ifneq (,$(findstring fbc,${MAKETARGET}))
 CFLAGS += -DFBC
 endif
 
-ifneq (,$(findstring bug,${MAKETARGET}))
-CFLAGS += -DBUG
-endif
-
-ifneq (,$(findstring smik,${MAKETARGET}))
-CFLAGS += -DSMIK
-endif
-
-ifneq (,$(findstring mikandfbc,${MAKETARGET}))
-CFLAGS += -DMIKAND
+ifneq (,$(findstring sr,${MAKETARGET}))
+CFLAGS += -DSR
 endif
 
 ifneq (,$(findstring fnorm,${MAKETARGET}))

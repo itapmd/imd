@@ -42,11 +42,30 @@ void shutdown_mpi(void)
   MPI_Barrier(MPI_COMM_WORLD);   /* Wait for all processes to arrive */
   MPI_Finalize();                /* Shutdown */
 }
+#ifdef SR
+/******************************************************************************
+*
+* isendrecv_buf lean version of sendrecv for force_loop
+*
+format MPI_Sendrecv(
+void *sendbuf,int sendcount, MPI_Datatype sendtype, int dest, int sendtag,
+void *recvbuf,int recvcount, MPI_Datatype recvtype, int source, int recvtag,
+MPI_Comm comm, MPI_Status *status);
+******************************************************************************/
+
+int isendrecv_buf(msgbuf *send, int to_cpu, msgbuf *recv, int from_cpu, MPI_Status *status)
+{
+  return MPI_Sendrecv(send->data, send->n, REAL, to_cpu, BUFFER_TAG,
+		      recv->data, recv->n_max, REAL, from_cpu, BUFFER_TAG,
+		      cpugrid, status );
+}
+#endif
 
 /******************************************************************************
 *
 * isend_buf lean version of send_cell for force_loop
 *
+format MPI_ISend(void*buf, int count,MPI_Datatype sendtype, int dest, int sendtag, MPI_Comm comm, MPI_Request *request)
 ******************************************************************************/
 
 int isend_buf(msgbuf *b, int to_cpu, MPI_Request *req)
@@ -64,6 +83,7 @@ int irecv_buf(msgbuf *b, int from, MPI_Request *req)
 {
   return MPI_Irecv(b->data, b->n_max, REAL, from, BUFFER_TAG, cpugrid, req);
 }
+
 
 /******************************************************************************
 *
