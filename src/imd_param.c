@@ -246,22 +246,25 @@ void getparamfile(char *paramfname, int sim)
   int mc_seed_int;
 #endif
 
-#ifdef FBC
+
 #ifdef TWOD
   vektor3d tempforce;
   vektor nullv={0.0,0.0};
   vektor3d tempvek;
   vektor einsv={1.0,1.0};
+  vektor3d tempshift;
 #else 
   vektor4d tempforce;
   vektor nullv={0.0,0.0,0.0};
   vektor4d tempvek;
   vektor einsv={1.0,1.0,1.0};
+  vektor4d tempshift;
 #endif
   vektor force;
   vektor vek;
+  vektor shift;
   int k;
-#endif
+
 
   int i;
 
@@ -427,10 +430,15 @@ void getparamfile(char *paramfname, int sim)
       getparam("e_pot_upper",&upper_e_pot,PARAM_REAL,1,1);
     }
 #endif
-#ifdef FBC
     else if (strcasecmp(token,"total_types")==0) {
       /* TOTAL nuber of atoms: ntypes + virtualtypes */
       getparam("total_types",&vtypes,PARAM_INT,1,1);
+      restrictions=(vektor*)realloc(restrictions,vtypes*DIM*sizeof(real));
+      if (NULL==restrictions)
+	error("Cannot allocate memory for restriction vectors\n");
+      for(k=0; k<vtypes; k++)
+       *(restrictions+k) = einsv;
+#ifdef FBC
       /* Allocation & Initialisation of fbc_forces */
       fbc_forces = (vektor *) malloc(vtypes*DIM*sizeof(real));
       if (NULL==fbc_forces)
@@ -456,12 +464,18 @@ void getparamfile(char *paramfname, int sim)
       for(k=0; k<vtypes; k++)
        *(fbc_endforces+k) = nullv;
 #endif
-      restrictions = (vektor *) malloc(vtypes*DIM*sizeof(real));
-      if (NULL==restrictions)
-	error("Can't allocate memory for restriction vectors\n");
+#endif /*FBC*/ 
+#ifdef DEFORM
+      /* Allocation & Initialisation of deform_shift */
+      deform_shift = (vektor *) malloc(vtypes*DIM*sizeof(real));
+      if (NULL==deform_shift)
+	error("Can't allocate memory for deform_shift\n");
       for(k=0; k<vtypes; k++)
-       *(restrictions+k) = einsv;
+       *(deform_shift+k) = nullv;
+#endif
     }
+
+#ifdef FBC
     else if (strcasecmp(token,"extra_startforce")==0) {
       /* extra force for virtual types */
       /* format: type force.x force.y (force.z) read in a temp. vektor */
@@ -525,6 +539,8 @@ void getparamfile(char *paramfname, int sim)
       *(fbc_endforces+(int)(tempforce.x)) = force;
     }
 #endif
+#endif /* FBC */
+
     else if (strcasecmp(token,"restrictionvector")==0) {
       /* restrictions for virtual types */
       /* format: type  1 1 (1) (=all directions ok) read in a temp. vektor */
@@ -538,8 +554,6 @@ void getparamfile(char *paramfname, int sim)
 #endif
       *(restrictions+(int)(tempvek.x)) = vek;
     }
-#endif /* FBC */
-
     else if (strcasecmp(token,"box_x")==0) {
       /* 'x' or first vector for box */
       getparam("box_x",&box_x,PARAM_REAL,DIM,DIM);
@@ -565,6 +579,13 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"ntypes")==0) {
       /* number of atom types */
       getparam("ntypes",&ntypes,PARAM_INT,1,1);
+      /*if there are no virtual atoms*/
+      if (vtypes==0) vtypes=ntypes;
+      restrictions=(vektor*)realloc(restrictions,vtypes*DIM*sizeof(real));
+      if (NULL==restrictions)
+	error("Cannot allocate memory for restriction vectors\n");
+      for(k=0; k<vtypes; k++)
+       *(restrictions+k) = einsv;
     }
     else if (strcasecmp(token,"starttemp")==0) {
       /* temperature at start of sim. */
@@ -943,6 +964,19 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"strip_shift")==0) {
       /* strip move per timestep - this is a vector */
       getparam("strip_shift",&strip_shift,PARAM_REAL,DIM,DIM); 
+    }
+    else if (strcasecmp(token,"deform_shift")==0) {
+      /* deform shift for virtual types */
+      /* format: type shift.x shift.y (shift.z) read in a temp. vektor */
+      getparam("deform_shift",&tempshift,PARAM_REAL,DIM+1,DIM+1);
+      if (tempshift.x>vtypes-1)
+       error("Shift defined for non existing virtual atom type\n");
+      shift.x = tempshift.y;
+      shift.y = tempshift.z;
+#ifndef TWOD
+      shift.z = tempshift.z2;
+#endif
+      *(deform_shift+(int)(tempshift.x)) = shift; 
     }
 #endif
 #ifdef USE_SOCKETS
@@ -1346,9 +1380,9 @@ void broadcast_params() {
   MPI_Bcast( &efrep_interval   , 1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 
-#ifdef FBC
   MPI_Bcast( &vtypes      , 1, MPI_INT,  0, MPI_COMM_WORLD);
 
+#if defined(FBC) || defined(DEFORM)
   if (0!=myid) fbc_forces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==fbc_forces) 
     error("Can't allocate memory for fbc_forces on client."); 
@@ -1376,11 +1410,12 @@ void broadcast_params() {
     error("Can't allocate memory for fbc_endforces on client."); 
   MPI_Bcast( fbc_endforces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
+#endif
   if (0!=myid) restrictions  = (vektor *) malloc(vtypes*DIM*sizeof(int));
   if (NULL==restrictions) 
     error("Can't allocate memory for restriction vectors on client."); 
   MPI_Bcast( restrictions, vtypes*DIM, MPI_INT, 0, MPI_COMM_WORLD);  
-#endif
+
 
   MPI_Bcast( &pbc_dirs    , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &box_x       , DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
@@ -1488,6 +1523,10 @@ void broadcast_params() {
 
 #if defined(FRAC) || defined(DEFORM)
   MPI_Bcast( &strip_width, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  if (0!=myid) deform_shift  = (vektor *) malloc(vtypes*DIM*sizeof(real));
+  if (NULL==deform_shift) 
+    error("Can't allocate memory for deform_shift on client."); 
+  MPI_Bcast( deform_shift, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef SHOCK

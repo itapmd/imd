@@ -53,20 +53,23 @@ EXTERN ivektor cell_dim;                 /* dimension of cell array (per cpu)*/
 EXTERN ivektor global_cell_dim;          /* dimension of cell array */
 
 /* Boundary Conditions */
-EXTERN ivektor pbc_dirs INIT(einsivektor);  /* directions with pbc */
-#ifdef FBC                       /* FBC uses the virtual atom types, */
-EXTERN int vtypes INIT(1);       /* vtypes = ntypes + ntypes*(types of forces) */
+EXTERN ivektor pbc_dirs INIT(einsivektor); /* directions with pbc */
+
+EXTERN int vtypes INIT(0);       /* vtypes = ntypes + ntypes*(types of forces) */
+EXTERN vektor *restrictions INIT(NULL);     /* directions the atom is allowed to move in */
+
+#ifdef FBC    /* FBC uses the virtual atom types, */
 EXTERN vektor *fbc_forces;       /* each vtype has its force */
 EXTERN vektor *fbc_beginforces;  /* begin & endvalues for linear interpolation */ 
-#ifdef MIK                        /* or ... */
-EXTERN vektor *fbc_dforces;       /* each vtype has its force increment */
+#ifdef MIK                       /* or ... */
+EXTERN vektor *fbc_dforces;      /* each vtype has its force increment */
 EXTERN real   fbc_ekin_threshold INIT(0.0);/* threshold for ekin */ 
 EXTERN int    fbc_waitsteps INIT(1); /* between increase of forces */
 EXTERN int    fbc_annealsteps INIT(1); /* times before 1. + df */
 #else
 EXTERN vektor *fbc_endforces;   
 #endif
-EXTERN vektor *restrictions;     /* directions the atom is allowed to move in */
+
 #endif
 
 #ifdef SMIK
@@ -299,7 +302,8 @@ EXTERN vektor2d tip INIT(nullvektor2d); /* Location of crack Tip */
 #endif
 
 #ifdef DEFORM
-EXTERN vektor   strip_shift INIT(nullvektor);/* shift of atoms in strip */
+EXTERN vektor strip_shift INIT(nullvektor);/* shift of atoms in strip */
+EXTERN vektor *deform_shift;       /* shift for each vtype */
 #endif
 
 #ifdef DISLOC
