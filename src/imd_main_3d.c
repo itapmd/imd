@@ -313,7 +313,7 @@ void fix_cells(void)
 	while( l<p->n ) {
 
 #ifndef MPI
-          coord = cell_coord(p->ort X(i),p->ort Y(i),p->ort Z(i));
+          coord = cell_coord(p->ort X(l),p->ort Y(l),p->ort Z(l));
           q = PTR_3D_VV(cell_array,coord,cell_dim);
           /* if it's in the wrong cell, move it to the right cell */
           if  (p != q) 

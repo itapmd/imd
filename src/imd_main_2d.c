@@ -222,12 +222,13 @@ void fix_cells(void)
       while( l < p->n ) {
 
 #ifndef MPI
+        coord = cell_coord(p->ort X(l),p->ort Y(l));
+        q = PTR_2D_VV(cell_array,coord,cell_dim);
         /* if it's in the wrong cell, move it to the right cell */
-        q = PTR_2D_VV(cell_array,cell_coord(p->ort X(i),p->ort Y(i)),cell_dim);
-        if 
-          (p != q) move_atom(cell_coord(p->ort X(i),p->ort Y(i)),p,i); 
+        if (p != q) 
+          move_atom(coord,p,l); 
         else 
-          ++i;
+          ++l;
 #else
         coord = local_cell_coord(p->ort X(l),p->ort Y(l));
 	/* see if atom is in wrong cell */
