@@ -67,7 +67,7 @@
 #endif
 
 /* shortcut for covalent interactions */
-#if defined(KEATING) || defined(TTBP) || defined(TERSOFF) || defined(STIWEB)
+#if defined(MEAM) || defined(KEATING) || defined(TTBP) || defined(TERSOFF) || defined(STIWEB)
 #define COVALENT
 #endif
 

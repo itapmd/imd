@@ -34,7 +34,7 @@ int  *cl, *tl;
 
 /******************************************************************************
 *
-*  make_nblist
+*  estimate_nblist_size
 *
 ******************************************************************************/
 
@@ -44,7 +44,7 @@ int estimate_nblist_size(void)
   cell *p, *q;
 
   /* for all cells */
-  for (c=0; c<ncells; c++) {
+  for (c=0; c<ncells2; c++) {
 
     c1 = cnbrs[c].np;
     p  = cell_array + c1;
@@ -103,8 +103,8 @@ void make_nblist(void)
 
   /* update reference positions */
   at=0;
-  for (k=0; k<NCELLS; k++) {
-    p = CELLPTR(k);
+  for (k=0; k<ncells; k++) {
+    p = cell_array + cnbrs[k].np;
     for (i=0; i<p->n; i++) {
       NBL_POS(p,i,X) = ORT(p,i,X);
       NBL_POS(p,i,Y) = ORT(p,i,Y);
@@ -114,6 +114,12 @@ void make_nblist(void)
     }
     at += p->n;
   }
+#ifdef COVALENT
+  for (k=ncells; k<ncells2; k++) {
+    p   = cell_array + cnbrs[k].np;
+    at += p->n;
+  }
+#endif
 
   /* fill the buffer cells */
   send_cells(copy_cell,pack_cell,unpack_cell);
@@ -130,12 +136,11 @@ void make_nblist(void)
     cl = (int  *) realloc(cl, nb_max * sizeof(int ));
 #endif
   }
-  if ((tl==NULL) || (tb==NULL))
-    error("cannot allocate neighbor table");
+  if ((tl==NULL) || (tb==NULL)) error("cannot allocate neighbor table");
 
   /* for all cells */
   n=0; tn=0; tl[0]=0;
-  for (c=0; c<ncells; c++) {
+  for (c=0; c<ncells2; c++) {
 
     c1 = cnbrs[c].np;
     p  = cell_array + c1;
@@ -186,8 +191,6 @@ void make_nblist(void)
 *
 *  calc_forces
 *
-*  This version keeps one particle fixed, and treats all its neighbors.
-*
 ******************************************************************************/
 
 void calc_forces(int steps)
@@ -234,6 +237,9 @@ void calc_forces(int steps)
 #ifdef ORDPAR
       NBANZ(p,i) = 0;
 #endif
+#ifdef COVALENT
+      NEIGH(p,i)->n = 0;
+#endif
 #ifdef EAM2
       EAM_RHO(p,i) = 0.0;
 #ifdef EEAM
@@ -248,7 +254,7 @@ void calc_forces(int steps)
 
   /* pair interactions - for all atoms */
   for (k=0; k<ncells; k++) {
-    p = CELLPTR(k);
+    p = cell_array + cnbrs[k].np;
     for (i=0; i<p->n; i++) {
 
       vektor d, force;
@@ -280,9 +286,22 @@ void calc_forces(int steps)
         col = it * ntypes + jt;
 
         /* compute pair interactions */
+#if defined(PAIR) || defined(KEATING) || defined(STIWEB)
+        /* PAIR, KEATING, and STIWEB are mutually exclusive */
+#if defined(PAIR)
         if (r2 <= pair_pot.end[col]) {
-
+#ifdef LINPOT
+          PAIR_INT_LIN(pot, grad, pair_pot_lin, col, inc, r2, is_short)
+#else
           PAIR_INT(pot, grad, pair_pot, col, inc, r2, is_short)
+#endif
+#elif defined(KEATING)
+        if (r2 < keat_r2_cut[it][jt]) {
+          PAIR_INT_KEATING(pot, grad, it, jt, r2)
+#elif defined(STIWEB)  
+        if (r2 < sw_2_a1[it][jt]) {
+	  PAIR_INT_STIWEB(pot, grad, it, jt, r2)
+#endif
 
           tot_pot_energy += pot;
           force.x = d.x * grad;
@@ -357,6 +376,8 @@ void calc_forces(int steps)
 #endif
         }
 
+#endif /* PAIR || KEATING || STIWEB */
+
 #ifdef EAM2
         /* compute host electron density */
         if (r2 < rho_h_tab.end[col])  {
@@ -384,11 +405,149 @@ void calc_forces(int steps)
           }
         }
 #endif
+
+#ifdef COVALENT
+        /* make neighbor tables for covalent systems */
+#if defined(KEATING)
+        if (r2 < keat_r2_cut[it][jt]) {
+#elif defined(TTBP)
+        if (r2 <= smooth_pot.end[col]) {
+#elif defined(STIWEB)
+        if (r2 < sw_2_a1[it][jt]) {
+#elif defined(TERSOFF)
+        if (r2 <= ter_r2_cut[it][jt]) {
+#elif defined(MEAM)
+        if (r2 <= meam_r2_cut[it][jt]) {
+#endif 
+          neightab *neigh;
+          real  *tmp_ptr;
+
+          /* update neighbor table of particle i */
+          neigh = NEIGH(p,i);
+          if (neigh->n_max <= neigh->n) {
+            increase_neightab( neigh, neigh->n_max + NEIGH_LEN_INC );
+          }
+          neigh->typ[neigh->n] = jt;
+          neigh->cl [neigh->n] = q;
+          neigh->num[neigh->n] = j;
+          tmp_ptr  = &neigh->dist[3*neigh->n];
+          *tmp_ptr = d.x; ++tmp_ptr; 
+          *tmp_ptr = d.y; ++tmp_ptr; 
+          *tmp_ptr = d.z;
+          neigh->n++;
+
+          /* update neighbor table of particle j */
+          neigh = NEIGH(q,j);
+          if (neigh->n_max <= neigh->n) {
+            increase_neightab( neigh, neigh->n_max + NEIGH_LEN_INC );
+          }
+          neigh->typ[neigh->n] = it;
+          neigh->cl [neigh->n] = p;
+          neigh->num[neigh->n] = i;
+          tmp_ptr  = &neigh->dist[3*neigh->n];
+          *tmp_ptr = -d.x; ++tmp_ptr; 
+          *tmp_ptr = -d.y; ++tmp_ptr; 
+          *tmp_ptr = -d.z;
+          neigh->n++;
+        }
+#endif  /* COVALENT */
+
       }
       n++;
     }
   }
   if (is_short) printf("short distance!\n");
+
+#ifdef COVALENT
+
+  /* complete neighbor tables for covalent systems */
+  for (k=ncells; k<ncells2; k++) {
+    p = cell_array +cnbrs[k].np;
+    for (i=0; i<p->n; i++) {
+
+      vektor d;
+      real   *d1, *d2, r2;
+      int    col, inc = ntypes * ntypes; 
+      int    m, j, it, jt;
+
+      d1 = p->ort   + DIM * i;
+      it = SORTE(p,i);
+
+      /* loop over neighbors */
+      for (m=tl[n]; m<tl[n+1]; m++) {
+#ifdef SAVEMEM
+        j   = tb[m] & 255U;
+        q   = cell_array + (tb[m] >> 8);
+#else
+        j   = tb[m];
+        q   = cell_array + cl[m];
+#endif
+        d2  = q->ort + DIM * j;
+        d.x = d2[0]-d1[0];
+        d.y = d2[1]-d1[1];
+        d.z = d2[2]-d1[2];
+        r2  = SPROD(d,d);
+        jt  = SORTE(q,j);
+        col = it * ntypes + jt;
+
+        /* make neighbor tables */
+#if defined(KEATING)
+        if (r2 < keat_r2_cut[it][jt]) {
+#elif defined(TTBP)
+        if (r2 <= smooth_pot.end[col]) {
+#elif defined(STIWEB)
+        if (r2 < sw_2_a1[it][jt]) {
+#elif defined(TERSOFF)
+        if (r2 <= ter_r2_cut[it][jt]) {
+#elif defined(MEAM)
+        if (r2 <= meam_r2_cut[it][jt]) {
+#endif 
+          neightab *neigh;
+          real  *tmp_ptr;
+
+          /* update neighbor table of particle i */
+          neigh = NEIGH(p,i);
+          if (neigh->n_max <= neigh->n) {
+            increase_neightab( neigh, neigh->n_max + NEIGH_LEN_INC );
+          }
+          neigh->typ[neigh->n] = jt;
+          neigh->cl [neigh->n] = q;
+          neigh->num[neigh->n] = j;
+          tmp_ptr  = &neigh->dist[3*neigh->n];
+          *tmp_ptr = d.x; ++tmp_ptr; 
+          *tmp_ptr = d.y; ++tmp_ptr; 
+          *tmp_ptr = d.z;
+          neigh->n++;
+
+          /* update neighbor table of particle j */
+          /* we do not need a neighbor table in buffer cells
+          neigh = NEIGH(q,j);
+          if (neigh->n_max <= neigh->n) {
+            increase_neightab( neigh, neigh->n_max + NEIGH_LEN_INC );
+          }
+          neigh->typ[neigh->n] = it;
+          neigh->cl [neigh->n] = p;
+          neigh->num[neigh->n] = i;
+          tmp_ptr  = &neigh->dist[3*neigh->n];
+          *tmp_ptr = -d.x; ++tmp_ptr; 
+          *tmp_ptr = -d.y; ++tmp_ptr; 
+          *tmp_ptr = -d.z;
+          neigh->n++;
+          */
+        }
+      }
+      n++;
+    }
+  }
+
+  /* second force loop for covalent systems */
+  for (k=0; k<ncells; ++k) {
+    do_forces2(cell_array + cnbrs[k].np,
+               &tot_pot_energy, &virial, &vir_xx, &vir_yy, &vir_zz,
+                                         &vir_yz, &vir_zx, &vir_xy);
+  }
+
+#endif /* COVALENT */
 
 #ifdef EAM2
 
@@ -544,6 +703,12 @@ void calc_forces(int steps)
   if (is_short) fprintf(stderr, "\n Short distance!\n");
 
 #endif /* EAM2 */
+
+  /* EWALD is not parallelized */
+#if defined(EWALD) && !defined(MPI) 
+  do_forces_ewald_real();
+  do_forces_ewald_fourier();
+#endif 
 
 #ifdef MPI
   /* sum up results of different CPUs */

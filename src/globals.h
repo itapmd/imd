@@ -100,6 +100,7 @@ EXTERN cell_nbrs_t *cnbrs INIT(NULL);    /* neighbors of each cell */
 #endif
 #endif
 EXTERN int ncells, nallcells INIT(0);    /* number of cells */
+EXTERN int ncells2;                      /* cells on lower bondary (for nbl) */
 EXTERN int nlists;                       /* number of cell pair lists */
 EXTERN ivektor cell_dim;                 /* dimension of cell array (per cpu)*/
 EXTERN ivektor global_cell_dim;          /* dimension of cell array */

@@ -589,11 +589,12 @@ void check_pairs()
 
 void make_cell_lists_nblist(void)
 {
-  int i,j,k, l,m,n, r,s,t, nn, ncnbrs=0;
+  int i,j,k, l,m,n, r,s,t, nn, qq, flag, ncnbrs=0;
   cell_nbrs_t *CN;
   ivektor ipbc;
 
-  cnbrs = (cell_nbrs_t *) realloc( cnbrs, ncells * sizeof(cell_nbrs_t) );
+  ncells2 = ncells;
+  cnbrs = (cell_nbrs_t *) realloc( cnbrs, nallcells * sizeof(cell_nbrs_t) );
   if (cnbrs==NULL) error("cannot allocate cell neighbor list");
   CN = cnbrs;
 
@@ -610,11 +611,17 @@ void make_cell_lists_nblist(void)
 	  for (m=-l; m <= 1; ++m)
 	    for (n=(l==0 ? -m  : -l ); n <= 1; ++n) { 
 
-              r = i+l - 1 + my_coord.x * (cell_dim.x - 2);
-              s = j+m - 1 + my_coord.y * (cell_dim.y - 2);
-              t = k+n - 1 + my_coord.z * (cell_dim.z - 2);
+              r = i+l;
+              s = j+m;
+              t = k+n;
 
-              /* Apply periodic boundaries */
+              qq = r * cell_dim.y * cell_dim.z + s * cell_dim.z + t;
+
+              /* apply periodic boundaries */
+              r += -1 + my_coord.x * (cell_dim.x - 2);
+              s += -1 + my_coord.y * (cell_dim.y - 2);
+              t += -1 + my_coord.z * (cell_dim.z - 2);
+
               ipbc.x = 0;
               if (r<0) ipbc.x--; else if (r>global_cell_dim.x-1) ipbc.x++;
 
@@ -624,21 +631,81 @@ void make_cell_lists_nblist(void)
               ipbc.z = 0;
               if (t<0) ipbc.z--; else if (t>global_cell_dim.z-1) ipbc.z++;
 
-              r = i+l;
-              s = j+m;
-              t = k+n;
-
               /* add cell to the list */
               if ( ((pbc_dirs.x==1) || (ipbc.x==0)) &&
                    ((pbc_dirs.y==1) || (ipbc.y==0)) &&
                    ((pbc_dirs.z==1) || (ipbc.z==0)) )
-                CN->nq[nn] = r*cell_dim.y*cell_dim.z + s*cell_dim.z + t;
+                CN->nq[nn] = qq;
               else
                 CN->nq[nn] = -1;
               nn++;
 	    }
         CN++;
       }
+
+#ifdef COVALENT
+
+  /* for each cell */
+  for (i=cellmin.x; i<cellmax.x; ++i)
+    for (j=cellmin.y; j<cellmax.y; ++j)
+      for (k=cellmin.z; k<cellmax.z; ++k) {
+
+        CN->np = i*cell_dim.y*cell_dim.z + j*cell_dim.z + k;
+        for (nn=0; nn<14; nn++) CN->nq[nn] = -1;
+        flag = 0;
+        nn   = 0;
+
+	/* for the other half of the neighbours of this cell */
+	for (l=0; l <= 1; ++l)
+	  for (m=-l; m <= 1; ++m)
+	    for (n=(l==0 ? -m  : -l ); n <= 1; ++n) { 
+
+              r = i-l;
+              s = j-m;
+              t = k-n;
+
+              /* if second cell is a buffer cell */
+              if ((r == 0) || (r == cell_dim.x-1) || 
+                  (s == 0) || (s == cell_dim.y-1) ||
+                  (t == 0) || (t == cell_dim.z-1)) {
+
+                qq = r * cell_dim.y * cell_dim.z + s * cell_dim.z + t;
+              
+                /* apply periodic boundaries */
+                r += -1 + my_coord.x * (cell_dim.x - 2);
+                s += -1 + my_coord.y * (cell_dim.y - 2);
+                t += -1 + my_coord.z * (cell_dim.z - 2);
+
+                ipbc.x = 0;
+                if (r<0) ipbc.x--; else if (r>global_cell_dim.x-1) ipbc.x++;
+
+                ipbc.y = 0;
+                if (s<0) ipbc.y--; else if (s>global_cell_dim.y-1) ipbc.y++;
+
+                ipbc.z = 0;
+                if (t<0) ipbc.z--; else if (t>global_cell_dim.z-1) ipbc.z++;
+
+                /* add cell to the list */
+                if ( ((pbc_dirs.x==1) || (ipbc.x==0)) &&
+                     ((pbc_dirs.y==1) || (ipbc.y==0)) &&
+                     ((pbc_dirs.z==1) || (ipbc.z==0)) ) {
+                  CN->nq[nn] = qq;
+                  flag=1;
+		}
+	      }
+              nn++;
+	    }
+
+        /* increase pointer only if there were some neighbor BUFFER cells */
+        if (flag) {
+          CN++;
+          ncells2++;
+        }
+
+      }
+
+#endif /* COVALENT */
+
 }
 
 #endif
