@@ -1981,6 +1981,166 @@ void move_atoms_ftg(void)
 
 
 
+/*****************************************************************************
+*
+*  Integrator with local temperature (Finnis)
+*  
+*
+*****************************************************************************/
+
+#ifdef FINNIS
+
+void move_atoms_finnis(void)
+
+{
+  int j, k;
+#ifdef CLONE
+  int clones;
+#endif
+
+  real E_kin_1, E_kin_2;
+  real tmp,tmp1,tmp2;
+  real ttt;
+  real reibung, reibung_y, eins_d_reib, eins_d_reib_y;
+  real epsilontmp, eins_d_epsilontmp;
+  int slice;
+  real zeta_finnis;
+
+  fnorm     = 0.0;
+
+  /* loop over all atoms */
+
+  for (k=0; k<ncells; ++k) {
+
+    int i;
+    int sort;
+    cell *p;
+
+    p = cell_array + CELLS(k);
+
+    for (i=0; i<p->n; ++i) {
+	
+      sort = VSORTE(p,i);
+
+      
+	/* calc kinetic "temperature" for actual atom */
+      tmp  = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
+#ifdef TWOD
+      tmp2 = ( (restrictions + sort)->x + 
+		 (restrictions + sort)->y   );
+#else
+      tmp2 = ( (restrictions + sort)->x + 
+	       (restrictions + sort)->y +  
+	       (restrictions + sort)->z  );
+#endif
+      if(tmp2!=0) tmp /= (real)tmp2;
+	
+
+	
+      /* to share the code with the non local version we overwrite 
+	 the zeta values every timestep */
+      zeta_finnis = zeta_0 * (tmp-temperature) 
+	/ sqrt(SQR(tmp) + SQR(temperature/delta_finnis));     
+
+
+      
+
+    /* twice the old kinetic energy */
+      E_kin_1 += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
+
+#ifdef FBC
+      /* give virtual particles their extra force */
+      KRAFT(p,i,X) += (fbc_forces + sort)->x;
+      KRAFT(p,i,Y) += (fbc_forces + sort)->y;
+#ifndef TWOD
+      KRAFT(p,i,Z) += (fbc_forces + sort)->z;
+#endif
+#endif
+
+      KRAFT(p,i,X) *= (restrictions + sort)->x;
+      KRAFT(p,i,Y) *= (restrictions + sort)->y;
+#ifndef TWOD
+      KRAFT(p,i,Z) *= (restrictions + sort)->z;
+#endif
+
+#ifdef FNORM
+      fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+#endif
+
+      reibung       =        1.0 -  zeta_finnis * timestep / 2.0;
+      eins_d_reib   = 1.0 / (1.0 +  zeta_finnis * timestep / 2.0);
+
+      /* new momenta */
+      IMPULS(p,i,X) = (IMPULS(p,i,X)  * reibung   + timestep * KRAFT(p,i,X))
+	* eins_d_reib   * (restrictions + sort)->x;
+      IMPULS(p,i,Y) = (IMPULS(p,i,Y)  * reibung   + timestep * KRAFT(p,i,Y))
+	* eins_d_reib  * (restrictions + sort)->y;
+#ifndef TWOD
+      IMPULS(p,i,Z) = (IMPULS(p,i,Z)  * reibung   + timestep * KRAFT(p,i,Z))
+	* eins_d_reib   * (restrictions + sort)->z;
+#endif                  
+
+      /* twice the new kinetic energy */ 
+      E_kin_2 += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
+	
+	/* new positions */
+      tmp = timestep / MASSE(p,i);
+
+      ORT(p,i,X) +=  tmp * IMPULS(p,i,X);
+      ORT(p,i,Y) +=  tmp * IMPULS(p,i,Y);
+
+#ifndef TWOD
+      ORT(p,i,Z) +=  tmp * IMPULS(p,i,Z);
+#endif
+
+#ifdef STRESS_TENS
+      PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
+      PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
+#ifndef TWOD
+      PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
+      PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
+      PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
+#endif
+      PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
+#endif
+
+#ifdef CLONE
+      for(clones=1;clones<=nclones;clones++)
+	    { 	/* and now do the same to all the clones */
+	    }
+      i+=nclones;
+#endif  
+      
+    }
+  }
+
+  tot_kin_energy = ( E_kin_1 + E_kin_2 ) / 4.0;
+
+#ifdef MPI
+  /* add up results from different CPUs */
+  
+  tmp1 = tot_kin_energy;
+  MPI_Allreduce( &tmp1, &tmp2, 1, REAL, MPI_SUM, cpugrid);
+  tot_kin_energy = tmp2;
+#endif
+
+
+}
+
+#else
+
+void move_atoms_finnis(void) 
+{
+  if (myid==0)
+  error("the chosen ensemble FINNIS is not supported by this binary");
+}
+
+#endif
+
+
+
+
+
 #ifdef STM
 
 /*****************************************************************************

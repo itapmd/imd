@@ -359,7 +359,7 @@ EXTERN int    n_stadium INIT(0);            /* number of transl. degrees
 
 #if defined(FRAC) || defined(FTG)  
 EXTERN real gamma_damp  INIT(0.0);        /* Damping factor */
-EXTERN real gamma_min  INIT(0.0);        /* minimal Damping factor */
+EXTERN real gamma_min  INIT(0.0);         /* minimal Damping factor */
 EXTERN real gamma_bar   INIT(0.0);        /* Damping prefactor */
 EXTERN int  dampingmode INIT(0);          /* damping mode  */
                                           /* 0: ramped viscous damping       */
@@ -371,6 +371,12 @@ EXTERN real dotepsilon INIT(0.0);         /* strain rate for crack loading */
 EXTERN real dotepsilon0 INIT(0.0);        /* initial strain rate */
 EXTERN int  expansionmode INIT(1);        /* mode for loading */
 #endif
+
+#ifdef FINNIS
+EXTERN real delta_finnis INIT(10.0);       /* time constant in finnis */ 
+EXTERN real zeta_0       INIT(0.0);        /* prefactor for finnis*/
+#endif
+
 
 #ifdef FRAC
 EXTERN real E_kin_damp INIT(0.0);         /* weighted !!  kin dampenergy  */

@@ -729,6 +729,11 @@ ifneq (,$(findstring ftg,${MAKETARGET}))
 CFLAGS += -DFTG
 endif
 
+ifneq (,$(findstring finnis,${MAKETARGET}))
+CFLAGS += -DFINNIS
+endif
+
+
 ifneq (,$(findstring stm,${MAKETARGET}))
 CFLAGS += -DSTM
 endif

@@ -375,6 +375,10 @@ void getparamfile(char *paramfname, int sim)
         ensemble = ENS_FTG;
         move_atoms = move_atoms_ftg;
       }
+      else if (strcasecmp(tmpstr,"finnis")==0) {
+        ensemble = ENS_FINNIS;
+        move_atoms = move_atoms_finnis;
+      }
       else if (strcasecmp(tmpstr,"sllod")==0) {
         ensemble = ENS_SLLOD;
         move_atoms = move_atoms_sllod;
@@ -802,7 +806,7 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #endif
-#if defined(FRAC) || defined(FTG)
+#if defined(FRAC) || defined(FTG) 
     else if (strcasecmp(token,"strainrate")==0) {
 	/* strain rate for crack loading */
 	getparam("strainrate",&dotepsilon0,PARAM_REAL,1,1);
@@ -828,7 +832,7 @@ void getparamfile(char *paramfname, int sim)
 #endif
 #ifdef FTG
   else if (strcasecmp(token,"delta_ftg")==0) {
-      /* damping mode for stadium geometry */
+      /* time constant delta for local temperature control  */
       getparam("delta_ftg",&delta_ftg,PARAM_REAL,1,1);
     } 
   else if (strcasecmp(token,"gamma_min")==0) { 
@@ -882,8 +886,16 @@ void getparamfile(char *paramfname, int sim)
       getparam("nslices_Right",&nslices_Right,PARAM_INT,1,1);
     }
 #endif 
-
-
+#ifdef FINNIS
+  else if (strcasecmp(token,"delta_finnis")==0) {
+      /* time constant delta for local temperature control  */
+      getparam("delta_finnis",&delta_finnis,PARAM_REAL,1,1);
+    } 
+  else if (strcasecmp(token,"zeta_0")==0) {
+      /* time constant delta for local temperature control  */
+      getparam("zeta_0",&zeta_0,PARAM_REAL,1,1);
+    } 
+#endif
 #ifndef TWOD
     else if (strcasecmp(token,"view_pos")==0) { 
       /* view position */
@@ -2144,6 +2156,11 @@ void broadcast_params() {
   MPI_Bcast( gamma_ftg, nslices, REAL     , 0, MPI_COMM_WORLD);
 #endif 
 
+#ifdef FINNIS
+ MPI_Bcast( &delta_finnis     , 1, REAL   , 0, MPI_COMM_WORLD); 
+ MPI_Bcast( &zeta_0           , 1, REAL   , 0, MPI_COMM_WORLD); 
+#endif
+
 #ifdef DEFORM
   MPI_Bcast( &annealsteps,     1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &max_deform_int,  1, MPI_INT, 0, MPI_COMM_WORLD); 
@@ -2336,6 +2353,7 @@ void broadcast_params() {
     case ENS_NVX:       move_atoms = move_atoms_nvx;       break;
     case ENS_STM:       move_atoms = move_atoms_stm;       break;  
     case ENS_FTG:       move_atoms = move_atoms_ftg;       break;  
+    case ENS_FINNIS:    move_atoms = move_atoms_finnis;    break;  
     case ENS_CG:     /* move_atoms = move_atoms_cg; */     break;  
     default: if (0==myid) error("unknown ensemble in broadcast"); break;
   }

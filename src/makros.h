@@ -221,6 +221,7 @@ inline static real SQR(real x)
 #define ENS_STM      13
 #define ENS_FTG      14
 #define ENS_CG       15
+#define ENS_FINNIS   16
 
 /* output formats for distributions */
 #define DIST_FORMAT_BINARY       1
