@@ -497,13 +497,16 @@ void update_atdist()
   cell *p;
   int  i, k, ix, iy, iz;
   real x, y, z, t, co, si;
+#ifdef CM_HACK
   static vektor tot_velocity = {0.0,0.0,0.0};
   static int step_count=0, max_count=100;
   int count=0;
+#endif
 
   co = cos(atdist_phi);
   si = sin(atdist_phi);
 
+#ifdef CM_HACK
   /* correct center of mass velocity */
   for (k=0; k<NCELLS; ++k) {
     int i;
@@ -537,6 +540,7 @@ void update_atdist()
   } else {
     step_count++;
   }
+#endif /* CM_HACK */
 
   /* loop over all atoms */
   for (k=0; k<NCELLS; ++k) {
