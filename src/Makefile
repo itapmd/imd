@@ -202,9 +202,16 @@ LIBS_PROF_t3e 		:= -lapp
 # flags for Hitachi SR2201
 CC_MPI_SR2201		 = cc
 CFLAGS_MPI_SR2201	 = -DMPI +O4 +Ol +Oprefetch -I/usr/local/mpi/include  -DMPI_hmpp2
-CFLAGS_MPI_SR2201_DEBUG = -DMPI -g -I/usr/local/mpi/include  -DMPI_hmpp2
-CFLAGS_MPI_SR2201_PROF  = -G
+CFLAGS_MPI_SR2201_DEBUG	 = -DMPI -g -I/usr/local/mpi/include  -DMPI_hmpp2
+CFLAGS_MPI_SR2201_PROF   = -G
 MPILIBS_SR2201		 = -L/usr/local/mpi/lib/hmpp2/cml -lmpi
+
+# flags for Hitachi SR8000
+CC_MPI_SR8000		 = cc
+CFLAGS_MPI_SR8000	 = -DMPI +O4 +Ol -I/usr/mpi/include
+CFLAGS_MPI_SR8000_DEBUG	 = -DMPI -g  -I/usr/mpi/include
+CFLAGS_MPI_SR8000_PROF   = -G
+MPILIBS_SR8000		 = -L/usr/mpi/lib -lmpi
 
 
 ###########################################################################
