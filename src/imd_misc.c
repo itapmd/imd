@@ -11,6 +11,7 @@
 ******************************************************************************/
 
 #include "imd.h"
+
 /* personal debug switch
 #define DEBUGINFO 1000 
 */
@@ -253,7 +254,6 @@ void read_potential(str255 potfilename)
   
   inv_r2_step = 1 / r2_step;
   
-  return;
 } /* end of pair potential */
 
 
@@ -313,7 +313,7 @@ void eam2_read_core_pot(str255 core_pot_filename)
       if ( 1 != fscanf(infile,"%lf", &r_step)) 
         error("Info line in core_potential_file corrupt.");
       numstep=1+(r_end - r_begin)/r_step;
-      number_of_steps = (int) rint(numstep);
+      number_of_steps = (int) (numstep+0.5);
       *PTR_2D(eam2_phi_r_begin,i,j,ntypes,ntypes) =r_begin ;
       *PTR_2D(eam2_phi_r_end,i,j,ntypes,ntypes) =r_end ;
       *PTR_2D(eam2_phi_r_step,i,j,ntypes,ntypes) =r_step ;
@@ -321,12 +321,10 @@ void eam2_read_core_pot(str255 core_pot_filename)
         eam2_max_phi_r_steps=number_of_steps; 
       }
       /* beware of stuff like numstep = 499.999999 */
-      if (number_of_steps!=numstep) {
-        fprintf(stderr,"WARNING: core_potential_file: \
-                r_end != r_begin + (nstep-1)*r_step\n \
-                %lf != %lf\n number_of_steps rounded to %d (was %lf)\n",
-                r_end,r_begin + (numstep-1)*r_step,
-                number_of_steps,numstep);
+      if (fabs(number_of_steps - numstep) >= 0.1) {
+        fprintf(stderr,"WARNING: core_potential_file:\
+                       numstep: %lf rounded to:%lf \n",
+                       numstep, number_of_steps);
       }
     }
   }
@@ -343,7 +341,7 @@ void eam2_read_core_pot(str255 core_pot_filename)
       r_begin=*PTR_2D(eam2_phi_r_begin,i,j,ntypes,ntypes);
       r_step =*PTR_2D(eam2_phi_r_step,i,j,ntypes,ntypes);
       numstep=1+(r_end - r_begin)/r_step;
-      number_of_steps = (int) rint(numstep);
+      number_of_steps = (int)(numstep+0.5);
       for(k=0;k<number_of_steps;k++){
 	if ( 1 != fscanf(infile,"%lf", &val)) 
 	    error("wrong format of core_potential_file.");
@@ -436,7 +434,7 @@ void eam2_read_embedding_energy(str255 emb_E_filename)
       error("Info line in embedding_energy_file corrupt.");
 
     numstep=1+(rho_end - rho_begin)/rho_step;
-    number_of_steps = (int) rint(numstep);  
+    number_of_steps = (int)(numstep+0.5);  
 
     *(eam2_rho_begin+i) = rho_begin;
     *(eam2_rho_end+i)   = rho_end; 
@@ -446,13 +444,11 @@ void eam2_read_embedding_energy(str255 emb_E_filename)
     }
 
     /* beware of stuff like numstep = 499.999999 */
-    if (number_of_steps!=numstep) { 
-      fprintf(stderr,"WARNING: embedding_energy_file: \
-              rho_end != rho_begin + (nstep-1)*rho_step\n \
-              %lf != %lf\n number_of_steps rounded to %d (was %lf)\n",
-              rho_end,rho_begin + (numstep-1)*rho_step,
-              number_of_steps,numstep);
-    }
+    if (fabs(number_of_steps - numstep) >= 0.1) {
+        fprintf(stderr,"WARNING: embedding_energy_file:\
+                       numstep: %lf rounded to:%lf \n",
+                       numstep, number_of_steps);
+      }
   }
   
   /* reading the functiontables */
@@ -466,7 +462,7 @@ void eam2_read_embedding_energy(str255 emb_E_filename)
       rho_begin=*(eam2_rho_begin+i);
       rho_step =*(eam2_rho_step+i);
       numstep=1+(rho_end - rho_begin)/rho_step;
-      number_of_steps = (int) rint(numstep);
+      number_of_steps = (int)(numstep+0.5);
       for(k=0;k<number_of_steps;k++){
 	if ( 1 != fscanf(infile,"%lf", &val)) 
 	  error("wrong format of embedding_energy_file.");
@@ -483,16 +479,16 @@ void eam2_read_embedding_energy(str255 emb_E_filename)
   printf("eam2_max_rho_steps = %d\n",eam2_max_rho_steps);
 
 #ifdef MPI
-};
+  };
   /* Broadcast table and table information to clients */
   MPI_Bcast( &eam2_max_rho_steps,      1, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &eam2_f_i_tablesize, 1, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &eam2_rho_infosize, 1, MPI_INT,  0, MPI_COMM_WORLD);
-  if (0!=myid) eam2_f_i  = (real *) malloc(eams2_f_i_tablesize);
+  if (0!=myid) eam2_f_i  = (real *) malloc(eam2_f_i_tablesize);
   if (NULL==eam2_f_i) 
     error("Can't allocate memory for embedding energy table on client.");
   if (0!=myid) eam2_rho_begin= (real *) malloc(eam2_rho_infosize);
-  if (NULL==eam2_rho_begin;) 
+  if (NULL==eam2_rho_begin) 
     error("Can't allocate memory for eam2_rho_begin on client.");
   if (0!=myid) eam2_rho_end = (real *) malloc(eam2_rho_infosize);
   if (NULL==eam2_rho_end) 
@@ -560,7 +556,7 @@ void eam2_read_atomic_rho(str255 at_rho_filename)
       if ( 1 != fscanf(infile,"%lf", &r_step)) 
         error("Info line in atomic_e-density_file corrupt.");
       numstep=1+(r_end - r_begin)/r_step;
-      number_of_steps = (int) rint(numstep);
+      number_of_steps = (int) (numstep+0.5);
       *PTR_2D(eam2_r_begin,i,j,ntypes,ntypes) =r_begin ;
       *PTR_2D(eam2_r_end,i,j,ntypes,ntypes) =r_end ;
       *PTR_2D(eam2_r_step,i,j,ntypes,ntypes) =r_step ;
@@ -569,13 +565,11 @@ void eam2_read_atomic_rho(str255 at_rho_filename)
       }
 
       /* what should i do: numstep=499.99999932*/
-      if (number_of_steps!=numstep) { 
-	fprintf(stderr,"WARNING: atomic_e-density_file: \
-                r_end != r_begin + (nstep-1)*r_step\n \
-                %.16lf != %.16lf\n number_of_steps rounded to %d (was:%lf)\n",
-		r_end,r_begin + (number_of_steps-1)*r_step,
-                number_of_steps,numstep);
-      }	 
+      if (fabs(number_of_steps - numstep) >= 0.1) {
+        fprintf(stderr,"WARNING: atomic_e-density_file:\
+                       numstep: %lf rounded to:%lf \n",
+		numstep, number_of_steps);
+      }
     }
   }
 
@@ -615,7 +609,7 @@ void eam2_read_atomic_rho(str255 at_rho_filename)
   if (NULL==eam2_rho_at) 
     error("Can't allocate memory for eam2_rho_at table on client.");
   if (0!=myid) eam2_r_begin= (real *) malloc(eam2_r_infosize);
-  if (NULL==eam2_r_begin;) 
+  if (NULL==eam2_r_begin) 
     error("Can't allocate memory for eam2_r_begin on client.");
   if (0!=myid) eam2_r_end = (real *) malloc(eam2_r_infosize);
   if (NULL==eam2_r_end) 
