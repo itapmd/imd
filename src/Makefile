@@ -197,23 +197,23 @@ CC_DEFAULT_MPI_alpha		= hcc
 MPILIBS_alpha			= -lmpi -lots
 
 # cc, serial
-CFLAGS_cc_SERIAL_alpha		= -Dalpha -O3 -float -fp_reorder -arch ev56 -tune host
-CFLAGS_cc_SERIAL_alpha_DEBUG	= -Dalpha -g
+CFLAGS_cc_SERIAL_alpha		= -DALPHA -O3 -float -fp_reorder -arch ev56 -tune host
+CFLAGS_cc_SERIAL_alpha_DEBUG	= -DALPHA -g
 CFLAGS_cc_SERIAL_alpha_PROF	= -g3 -pg
 
 # gcc, serial
-CFLAGS_gcc_SERIAL_alpha		= -Dalpha -O3
-CFLAGS_gcc_SERIAL_alpha_DEBUG	= -Dalpha -g
+CFLAGS_gcc_SERIAL_alpha		= -DALPHA -O3
+CFLAGS_gcc_SERIAL_alpha_DEBUG	= -DALPHA -g
 CFLAGS_gcc_SERIAL_alpha_PROF	= -g3 -pg
 
 # OpenMP
-CFLAGS_cc.alt_OMP_alpha		= -Dalpha -mp -O3 -float -fp_reorder -arch ev56 -tune host
-CFLAGS_cc.alt_OMP_alpha_DEBUG	= -Dalpha -mp -g
+CFLAGS_cc.alt_OMP_alpha		= -DALPHA -mp -O3 -float -fp_reorder -arch ev56 -tune host
+CFLAGS_cc.alt_OMP_alpha_DEBUG	= -DALPHA -mp -g
 CFLAGS_cc.alt_OMP_alpha_PROF	= -g3 -pg
 
 # LAM/MPI
-CFLAGS_hcc_MPI_alpha		= -Dalpha -O3
-CFLAGS_hcc_MPI_alpha_DEBUG	= -Dalpha -g
+CFLAGS_hcc_MPI_alpha		= -DALPHA -O3
+CFLAGS_hcc_MPI_alpha_DEBUG	= -DALPHA -g
 
 
 ###########################################################################
@@ -384,7 +384,7 @@ CFLAGS_mpcc_MPI_rs6000_DEBUG  	= -g
 CFLAGS_mpcc_MPI_rs6000_PROF   	= -p 
 
 # OpenMP
-#CFLAGS_cc_OMP_SR8000	 	= -omp -par -O4 +Op -msg=e
+#CFLAGS_xlc_OMP_rs6000	 	= -O4 -qtune=auto -qsmp=omp 
 #CFLAGS_cc_OMP_SR8000_DEBUG	= -omp -par=1 -O2 -g
 #CFLAGS_cc_OMP_SR8000_PROF   	= -Xfuncmonitor
 

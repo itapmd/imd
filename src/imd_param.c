@@ -380,7 +380,9 @@ void getparamfile(char *paramfname, int sim)
       } 
       else if (strcasecmp(tmpstr,"cg")==0) {
         ensemble = ENS_CG;
-        move_atoms = move_atoms_cg;
+        /* the following have different types; */
+        /* move_atoms_cg is never used as move_atoms */
+        /* move_atoms = move_atoms_cg; */
       }
      
  else {

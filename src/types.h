@@ -36,7 +36,7 @@ typedef short int integer;
 #define SHORT   MPI_SHORT
 #define INTEGER MPI_SHORT
 /* on alphas, all data should be 32 bit aligned */
-#elif defined(alpha)
+#elif defined(ALPHA)
 typedef       int shortint;
 typedef       int integer;
 #define SHORT   MPI_INT

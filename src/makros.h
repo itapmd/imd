@@ -30,7 +30,7 @@
 #if !defined(MONO) && !defined(BINARY)
 #if defined(t3e)
 #pragma _CRI inline(MOD)
-#elif defined(alpha)
+#elif defined(ALPHA)
 #pragma inline(MOD)
 #elif defined(sgi)
 #pragma inline global (MOD)

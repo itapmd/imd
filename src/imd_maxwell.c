@@ -225,8 +225,8 @@ void maxwell(real temp)
    }
 } 
 
-/* The following is adapted from the GNU Scientific Library at
-   http://www.gnu.org/software/gsl/ 
+/* The following is adapted from the GNU Scientific Library, Version 1.1.
+   See http://www.gnu.org/software/gsl/ 
 */
 
 /* Polar (Box-Mueller) method; See Knuth v2, 3rd ed, p122 */
