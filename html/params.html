@@ -21,6 +21,8 @@ potfile		# filename for pair potential data
 simulation      # number of next simulation phase, whose parameters follow
 ensemble        # simulation ensemble (MD integrator) 
 maxsteps	# step number at which simulation phase ends
+maxwalltime     # maximum allowed walltime in seconds; if exceeded (and > 0),
+                # IMD writes a checkpoint and stops
 startstep       # starting step number (default 0)
 timestep	# size of timestep (in MD units)
 total_types     # TOTAL number of atom types (including virtual types)
