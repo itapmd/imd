@@ -36,16 +36,15 @@ void init_socket()
   static int done = 0;
   str255 hostname, msg;
 
+  /* determine simulation host (the one with MPI rank 0 */
+  if (gethostname(hostname,255)) {
+    error("Cannot determine simulation host name");
+  } else {
+    fprintf(stderr, "Simulation host is %s\n", hostname); 
+  }
+ 
   /* IMD acts as server */
   if ((server_socket) && (!done)) {
- 
-    /* determine simulation host (the one with MPI rank 0 */
-    if (gethostname(hostname,255)) {
-      error("Cannot determine simulation host name");
-    } else {
-      fprintf(stderr, "Simulation host is %s\n", hostname); 
-    }
-
     /* open server socket */
     fprintf(stderr, "Opening server socket on port %d ... ", baseport);
     soc = OpenServerSocket(htons(baseport));
@@ -127,7 +126,7 @@ void check_socket() {
   if (0==myid) socket_flag = connect_visualization();
 
 #ifdef MPI
-  MPI_Bcast(&socket_flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&socket_flag, 1, MPI_INT, 0, cpugrid);
 #endif  
 
   if (socket_flag) {
@@ -175,6 +174,9 @@ void check_socket() {
         break;
     }
   }
+#ifdef MPI
+  MPI_Barrier(cpugrid);
+#endif
 }
 
 /******************************************************************************
@@ -380,13 +382,13 @@ void vis_check_atoms_flags()
 
 #ifdef MPI
   /* all CPUs need to know when to stop, so we distribute atlen */
-  MPI_Bcast( &atlen, 1, INTEGER, 0, MPI_COMM_WORLD );
+  MPI_Bcast( &atlen, 1, INTEGER, 0, cpugrid );
   /* broadcast flags and filters */
   if (atlen > 0) {
-    MPI_Bcast(&at_send_flags, ATOMS_FLAG_SIZE, INTEGER,   0, MPI_COMM_WORLD);
-    MPI_Bcast(&at_filt_flags, ATOMS_FLAG_SIZE, INTEGER,   0, MPI_COMM_WORLD);
-    MPI_Bcast(&at_filt_min ,  ATOMS_FILT_SIZE, MPI_FLOAT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&at_filt_max,   ATOMS_FILT_SIZE, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&at_send_flags, ATOMS_FLAG_SIZE, INTEGER,   0, cpugrid);
+    MPI_Bcast(&at_filt_flags, ATOMS_FLAG_SIZE, INTEGER,   0, cpugrid);
+    MPI_Bcast(&at_filt_min ,  ATOMS_FILT_SIZE, MPI_FLOAT, 0, cpugrid);
+    MPI_Bcast(&at_filt_max,   ATOMS_FILT_SIZE, MPI_FLOAT, 0, cpugrid);
   }
 #endif
 
@@ -590,8 +592,8 @@ void vis_change_params()
 #endif
   }
 #ifdef MPI
-  MPI_Bcast(&par_group, 1, INTEGER, 0, MPI_COMM_WORLD);  
-  MPI_Bcast(&flag     , 1, INTEGER, 0, MPI_COMM_WORLD);  
+  MPI_Bcast(&par_group, 1, INTEGER, 0, cpugrid);  
+  MPI_Bcast(&flag     , 1, INTEGER, 0, cpugrid);  
 #endif
 
   /* change parameters */
@@ -631,7 +633,7 @@ void vis_change_params_deform(integer flag)
     }
   }
 #ifdef MPI
-  if (flag) MPI_Bcast(&deform_size, 1, MPI_FLOAT, 0, MPI_COMM_WORLD);
+  if (flag) MPI_Bcast(&deform_size, 1, MPI_FLOAT, 0, cpugrid);
 #endif
 
   /* send back the changed parameters and other info */
@@ -659,7 +661,7 @@ void vis_restart_simulation()
   /* decrease steps_max, so that we exit the main loop on the next iteration */
   steps_max=steps;
 #ifdef MPI
-  MPI_Bcast( &steps_max, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &steps_max, 1, MPI_INT, 0, cpugrid);
 #endif
 }
 
@@ -940,8 +942,8 @@ void write_rgb_picture_to_socket()
     YRES = (int) image_resolution[2] * 256 + (int) image_resolution[3];
   }
 #ifdef MPI
-  MPI_Bcast( &XRES, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &YRES, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &XRES, 1, MPI_INT, 0, cpugrid);
+  MPI_Bcast( &YRES, 1, MPI_INT, 0, cpugrid);
 #endif
 
   /* the dist bins are orthogonal boxes in space */
