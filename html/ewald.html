@@ -37,11 +37,16 @@ the reciprocal vectors of the simulation box.
 
 <P>
 
-An additional short range two-body potential is read in as an IMD potential 
-table as usual using the IMD variable <TT>potfile</TT>.<P>
+An additional short range two-body potential can be used. If the
+option <B>pair</B> is used, the potential is read in as an IMD
+potential table as usual using the IMD variable <TT>potfile</TT>. It
+is also possible to use some <A
+HREF="predefined_potentials.html">predefined pair potentials</A>.
 
-For the 
-Ewald sum, the following parameters have to be specified in the parameter file:<P>
+<P>
+
+For the Ewald sum, the following parameters have to be specified in
+the parameter file:<P>
 
 The charges of the atoms have to be given for all types of atoms in a row.
 The corresponding IMD-parameter is <TT>charge</TT>. The value of the

@@ -95,12 +95,24 @@ which is format 2 for EAM interactions, and format 1 for everything else.
 
 <H2>Central Pair Potentials</H2>
 
-As a default, IMD uses classical, central two-body potentials, which 
-are tabulated in the potential file. The potential file can be either
-in either of two <A HREF="#POTFORMAT">formats</A>. It is essential
-that the potential is tabulated equidistant in the <B>square</B> of
-the atom distance. Note that if the potential does not extend down to 
-r^2=0, it is extrapolated linearly. 
+As a default, IMD uses classical, central two-body potentials, which
+are tabulated in the potential file. The potential file can be in
+either of two <A HREF="#POTFORMAT">formats</A>. It is essential that
+the potential is tabulated equidistant in the <B>square</B> of the
+atom distance. Note that if the potential does not extend down to
+r^2=0, it is extrapolated linearly. In the options <B>tersoff</B> and
+<B>ewald</B>, tabulated pair potentials are not used by default. In
+these cases, the option <B>pair</B> can be chosen to use an additional
+pair potential.
+
+<P>
+
+IMD allows to use some <A
+HREF="predefined_potentials.html">predefined pair
+potentials</A>. (options <B>lj</B>, <B>morse</B>, and <B>buck</B>) In
+this case, the forces are either computed analytically during the
+simulation or from a potential table created at the start of the
+simulation.
 
 <A NAME="EAMPOT">
 

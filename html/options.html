@@ -23,53 +23,59 @@ their purpose is and how they are used.
   <TD WIDTH=120><A HREF="#2d">2d</A></TD>
   <TD WIDTH=120><A HREF="#4point">4point</A></TD>
   <TD WIDTH=120><A HREF="#avpos">avpos</A></TD>
+  <TD WIDTH=120><A HREF="#pair_pre">buck</A></TD>
   <TD WIDTH=120><A HREF="#mono, binary">binary</A></TD>
   <TD WIDTH=120><A HREF="#correl">correl</A></TD>
-  <TD WIDTH=120><A HREF="#debug">debug</A></TD>
 </TR>
 <TR ALIGN="LEFT">
+  <TD WIDTH=120><A HREF="#debug">debug</A></TD>
   <TD WIDTH=120><A HREF="#deform">deform</A></TD>
   <TD WIDTH=120><A HREF="#disloc">disloc</A></TD>
   <TD WIDTH=120><A HREF="#eam">eam</A></TD>
   <TD WIDTH=120><A HREF="#efilter">efilter</A></TD>
   <TD WIDTH=120><A HREF="#einstein">einstein</A></TD>
-  <TD WIDTH=120><A HREF="#epitax">epitax</A></TD>
 </TR>
 <TR ALIGN="LEFT">
+  <TD WIDTH=120><A HREF="#epitax">epitax</A></TD>
   <TD WIDTH=120><A HREF="#ewald">ewald</A></TD>
   <TD WIDTH=120><A HREF="#FBC">fbc</A></TD>
   <TD WIDTH=120><A HREF="#fnorm">fnorm</A></TD>
   <TD WIDTH=120><A HREF="#glokdeform">glokdeform</A></TD>
   <TD WIDTH=120><A HREF="#hpo">hpo</A></TD>
-  <TD WIDTH=120><A HREF="#homdef">homdef</A></TD>
 </TR>
 <TR ALIGN="LEFT">
+  <TD WIDTH=120><A HREF="#homdef">homdef</A></TD>
   <TD WIDTH=120><A HREF="#covalent">keating</A></TD>
+  <TD WIDTH=120><A HREF="#pair_pre">lj</A></TD>
   <TD WIDTH=120><A HREF="#mono, binary">mono</A></TD>
   <TD WIDTH=120><A HREF="#monolj">monolj</A></TD>
+  <TD WIDTH=120><A HREF="#pair_pre">morse</A></TD>
+</TR>
+<TR ALIGN="LEFT">
   <TD WIDTH=120><A HREF="#msqd">msqd</A></TD>
   <TD WIDTH=120><A HREF="#ordpar">ordpar</A></TD>
   <TD WIDTH=120><A HREF="#pacx">pacx</A></TD>
-</TR>
-<TR ALIGN="LEFT">
+  <TD WIDTH=120><A HREF="#pair">pair</A></TD>
   <TD WIDTH=120><A HREF="#prof">prof</A></TD>
   <TD WIDTH=120><A HREF="#quasi">quasi</A></TD>
+</TR>
+<TR ALIGN="LEFT">
   <TD WIDTH=120><A HREF="#single">single</A></TD>
   <TD WIDTH=120><A HREF="#sock">sock</A></TD>
   <TD WIDTH=120><A HREF="#shock">shock</A></TD>
   <TD WIDTH=120><A HREF="#snap">snap</A></TD>
-</TR>
-<TR ALIGN="LEFT">
   <TD WIDTH=120><A HREF="#spring">spring</A></TD>
   <TD WIDTH=120><A HREF="#covalent">stiweb</A></TD>
+</TR>
+<TR ALIGN="LEFT">
   <TD WIDTH=120><A HREF="#stress_tens">stress</A></TD>
   <TD WIDTH=120><A HREF="#covalent">tersoff</A></TD>
   <TD WIDTH=120><A HREF="#timing">timing</A></TD>
   <TD WIDTH=120><A HREF="#transport">transport</A></TD>
-</TR>
-<TR ALIGN="LEFT">
   <TD WIDTH=120><A HREF="#covalent">ttbp</A></TD>
   <TD WIDTH=120><A HREF="#uniax">uniax</A></TD>
+</TR>
+<TR ALIGN="LEFT">
   <TD WIDTH=120><A HREF="#writef">writef</A></TD>
 
 
@@ -315,6 +321,19 @@ Note that the parameter <TT>total_types</TT> must be read
 </A>
 Provide support for sockets (for visualization).
 
+<A NAME="pair">
+<P><LI><B>pair</B><P>
+</A>
+Use tabulated pair potentials. This is the default option. Its only
+use currently is to enable IMD to employ additional pair potentials in
+the options <B>tersoff</B> and <B>ewald</B>.
+
+<A NAME="pair_pre">
+<P><LI><B>lj</B>, <B>morse</B>, and <B>buck</B><P>
+</A>
+<A HREF="predefined_potentials.html">Use predefined Lennard-Jones,
+Morse, or Buckingham potential.</A>
+
 <A NAME="eam">
 <P><LI><B>eam</B><P>
 </A>
@@ -335,10 +354,12 @@ Provide support for sockets (for visualization).
 a line in the format <I>k<SUB>01</SUB></I> <I>k<SUB>02</SUB></I> ...
 <I>k<SUB>0(n-1)</SUB></I> <I>k<SUB>12</SUB></I>
 ... <I>k<SUB>(n-2)(n-1)</SUB></I> where <I>n</I> is
-<TT>ntypes</TT>. All diagonal spring constants <I>k<SUB>ii</SUB></I> are
-set equal to zero. The option spring can be used for simulations with
-the shell model.
-
+<TT>ntypes</TT>. All diagonal spring constants <I>k<SUB>ii</SUB></I>
+are set equal to zero. Cutoff radii have to be given by the IMD
+parameter <TT>spring_r_cut</TT> in the format <I>r<SUB>00</SUB></I>
+<I>r<SUB>01</SUB></I> ... <I>r<SUB>0(n-1)</SUB></I> <I>r<SUB>11</SUB></I>
+<I>r<SUB>12</SUB></I> ... <I>r<SUB>(n-1)(n-1)</SUB></I>.  The option
+<B>spring</B> can be used for simulations with the shell model.
 
 <A NAME="uniax">
 <P><LI><B>uniax</B><P>

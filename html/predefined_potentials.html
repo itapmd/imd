@@ -1,0 +1,148 @@
+<HTML>
+<HEAD>
+   <TITLE>Predefined Potentials in IMD</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>Predefined Pair Potentials in IMD</H1>
+
+IMD allows to use some predefined pair potentials. Currently, the following
+potentials are supported:
+
+<P>
+
+<TABLE Border=0 Cellpadding=4 >
+
+<TR ALIGN="LEFT">
+  <TD WIDTH=250><A HREF="#lj">Lennard-Jones potential</A>
+  <TD WIDTH=250><A HREF="#morse">Morse potential</A>
+  <TD WIDTH=250><A HREF="#buck">Buckingham potential</A>
+</TR>
+
+</TABLE>
+
+<P>
+
+By default, the potential energies and forces for these potentials are
+computed analytically during the simulation. In this case, cutoff
+radii <I>r<SUB>cij</SUB></I> have to be specified in the parameter
+file through the IMD parameter <TT>r_cut</TT>. <TT>r_cut</TT> must be
+given for all pairs <I>ij</I> of atom types in the following format:
+
+<P>
+
+<CENTER>
+<TABLE BORDER=0 CELLPADDING=5><TR><TD>
+<TT>r_cut</TT></TD><TD></TD><TD>
+<I>r<SUB>c00</SUB></I>
+<I>r<SUB>c01</SUB></I>
+<I>r<SUB>c02</SUB></I> ...
+<I>r<SUB>c0(N-1)</SUB></I>
+<I>r<SUB>c11</SUB></I>
+<I>r<SUB>c12</SUB></I> ...
+<I>r<SUB>c(N-1)(N-1)</SUB></I></TD>
+</TABLE>
+</CENTER>
+
+<P>
+
+where <I>N</I> is the number of atom types.
+
+<P>
+
+Alternatively, by specifying minimal radii through the IMD parameter
+<TT>r_begin</TT> in the same format as the parameter <TT>r_cut</TT>, a
+potential table is created at the start of the simulation and is used
+to compute the potential energies and forces.  In that case, the
+numbers of tabulated points have to be specified by the integer
+parameter <TT>pot_res</TT>, again in the same format as the parameter
+<TT>r_cut</TT>. This means that the number of tabulated points can be
+given for each interaction between different atom types independently.
+
+<P>
+
+The potentials (in the analytical as well as in the tabulated form)
+are shifted in such a way that their values at the cutoff radii are
+zero.
+
+<P> 
+
+All predefined pair potentials can be combined. However, the cutoff
+radii, the starting radii, and the numbers of tabulated points have to
+be the same for all potential forms, which is not a restriction if for
+each pair of atom types only one potential is used.
+
+<P>
+
+<A NAME="lj">
+
+<H2>Lennard-Jones Potential</H2>
+
+The Lennard-Jones potential can be used by choosing the option
+<B>lj</B>. The following form of the potential is implemented:
+
+<P>
+<CENTER>
+<IMG SRC="lj.png">
+</CENTER>
+<P>
+
+The parameters <I>epsilon</I> and <I>sigma</I> have to be given in the
+parameter file by the IMD parameters <TT>lj_epsilon</TT> and
+<TT>lj_sigma</TT> in the same format as the paramter <TT>r_cut</TT>.
+
+<P>
+
+<A NAME="morse">
+
+<H2>Morse Potential</H2>
+
+The Morse potential can be used by choosing the option
+<B>morse</B>. The following form of the potential is implemented:
+
+<P>
+<CENTER>
+<IMG SRC="morse.png">
+</CENTER>
+<P>
+
+The parameters <I>epsilon</I>, <I>sigma</I>, and <I>alpha</I> have to
+be given in the parameter file by the IMD parameters
+<TT>morse_epsilon</TT>, <TT>morse_sigma</TT>, and <TT>morse_alpha</TT>
+in the same format as the paramter <TT>r_cut</TT>.
+
+<P>
+
+<A NAME="buck">
+
+<H2>Buckingham Potential</H2>
+
+The Buckingham potential can be used by choosing the option
+<B>buck</B>. The following form of the potential is implemented:
+
+<P>
+<CENTER>
+<IMG SRC="buck.png">
+</CENTER>
+<P>
+
+The parameters <I>A</I>, <I>C</I>, and <I>sigma</I> have to
+be given in the parameter file by the IMD parameters
+<TT>buck_a</TT>, <TT>buck_c</TT>, and <TT>buck_sigma</TT>
+in the same format as the paramter <TT>r_cut</TT>.
+
+<P>
+<A HREF="imd.html">Back to IMD User's Guide</A> 
+
+</BODY>
+</HTML>
+
+
+
+
+
+
+
+
+
+

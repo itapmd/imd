@@ -242,6 +242,25 @@ cell_size       # size of link cells
                 # (In ordinary IMD cell_size = r_cut + epsilon)
 initsize        # cells have space for initsize particles (needed for MONOLJ)
 
+# parameters for <A HREF="predefined_potentials.html">predefined pair potentials</A> (LJ, MORSE, BUCK)
+r_cut           # potential cutoff radii
+r_begin		# potential start radii
+pot_res		# numbers of tabulated potential values
+
+# parameters for <A HREF="predefined_potentials.html#lj">LJ</A> (Lennard-Jones potential)
+lj_epsilon
+lj_sigma
+
+# parameters for <A HREF="predefined_potentials.html#morse">MORSE</A> (Morse potential)
+morse_epsilon
+morse_sigma
+morse_alpha
+
+# parameters for <A HREF="predefined_potentials.html#buck">BUCK</A> (Buckingham potential)
+buck_a
+buck_c
+buck_sigma
+
 # parameters for <a href=eam2.html>EAM</a> (Embedded Atom Method potentials)
 core_potential_file   # Core-core Pair Potential, tabulated in r**2 
 embedding_energy_file # Embedding Energy Function, tabulated in rho
@@ -296,6 +315,7 @@ ew_kmax         # determines number of k-vectors (3d integer vector)
 
 # parameters for SPRING (Harmonic potential)
 spring_const    # spring constants for atoms of different type
+spring_r_cut    # cutoff lengths for atoms of different type
 
 # parameters for <a href=uniax.html>UNIAX</a> 
 # (Gay-Berne potential for uniaxial molecules)
