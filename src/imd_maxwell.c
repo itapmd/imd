@@ -55,8 +55,10 @@ void maxwell(real temp)
 #endif
 
    natom = 0;
+#ifdef TRANSPORT
    nhalf = tran_nlayers / 2;
    scale = tran_nlayers / box_x.x;
+#endif
 
    /* Temperatur setzen */
    for ( r = cellmin.x; r < cellmax.x; ++r )
