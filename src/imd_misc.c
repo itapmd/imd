@@ -129,7 +129,8 @@ void read_potential(str255 potfilename)
     
     for (i=0;i<ntypes;++i)
       for (j=0;j<ntypes;++j) {
-	if ( 1 != fscanf(infile,"%lf", &val)) error("Line incomplete in potential file.");
+	if ( 1 != fscanf(infile,"%lf", &val)) 
+           error("Line incomplete in potential file.");
 #ifdef STATIC_POT
 	potential[i][j][npot] = val;
 #else
@@ -647,7 +648,7 @@ void generate_hex()
       input->nummer[0] = natoms;
       input->sorte[0] = typ;
       num_sort[typ]++;
-	if (pn)	construct_pn_disloc(&input->ort X(0), &input->ort Y(0), NULL);
+      if (pn) construct_pn_disloc(&input->ort X(0), &input->ort Y(0), NULL);
 
       cellc = cell_coord(x,y);
 #ifdef MPI
@@ -738,10 +739,8 @@ void generate_fcc(int maxtyp)
         input->ort Y(0) = y + 0.5;
         input->ort Z(0) = z + 0.5;
 	/* PN-dislocation ? */
-	if (pn)	{
-	  construct_pn_disloc(&input->ort X(0), &input->ort Y(0), &input->ort Z(0));
-	}
-
+        if (pn) construct_pn_disloc(&input->ort X(0), &input->ort Y(0), 
+                                                      &input->ort Z(0));
         cellc = cell_coord(input->ort X(0), input->ort Y(0), input->ort Z(0));
 #ifndef MONOLJ
 	if (pn) { /* immobile if around glideplane */
@@ -898,8 +897,10 @@ void generate_lav()
 	  input->ort X(0) = x + co;
 	  input->ort Y(0) = y + co;
 	  input->ort Z(0) = z + co;
-	if (pn)	construct_pn_disloc(&input->ort X(0), &input->ort Y(0), &input->ort Z(0));
-	  cellc = cell_coord(input->ort X(0), input->ort Y(0), input->ort Z(0));
+          if (pn) construct_pn_disloc(&input->ort X(0), &input->ort Y(0), 
+                                                        &input->ort Z(0));
+	  cellc = cell_coord(input->ort X(0), input->ort Y(0), 
+                                              input->ort Z(0));
 #ifndef MONOLJ
 	  input->nummer[0] = natoms;
 	  input->sorte[0] = typ;

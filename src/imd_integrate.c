@@ -1116,9 +1116,19 @@ void move_atoms_nvx(void)
   real  px, vol, real_tmp;
   integer num, nhalf, r, s, t, int_tmp;  
   real	scale, rescale, Rescale;
+  vektor tot_impuls_left, tot_impuls_right, vectmp;
  
   heat_cond = 0.0;
   tot_kin_energy = 0.0;
+  tot_impuls_left.x  = 0.0;
+  tot_impuls_right.x = 0.0;
+  tot_impuls_left.y  = 0.0;
+  tot_impuls_right.y = 0.0;
+#ifndef TWOD
+  tot_impuls_left.z  = 0.0;
+  tot_impuls_right.z = 0.0;
+#endif
+
   nhalf = tran_nlayers / 2;
   scale = tran_nlayers / box_x.x;
 
@@ -1167,9 +1177,19 @@ void move_atoms_nvx(void)
            /* temperature control and heat conductivity */
            if (num == 0) {
 	      Ekin_left += Ekin_2;
+              tot_impuls_left.x += p->impuls X(i);
+              tot_impuls_left.y += p->impuls Y(i);
+#ifndef TWOD
+              tot_impuls_left.z += p->impuls Z(i);
+#endif
               natoms_left++;
            } else if  (num == nhalf) {
 	      Ekin_right += Ekin_2;
+              tot_impuls_right.x += p->impuls X(i);
+              tot_impuls_right.y += p->impuls Y(i);
+#ifndef TWOD
+              tot_impuls_right.z += p->impuls Z(i);
+#endif
               natoms_right++;
            } else if (num < nhalf) {
               heat_cond += (p->heatcond[i] + (Ekin_1 + Ekin_2)/2.0 )
@@ -1191,6 +1211,10 @@ void move_atoms_nvx(void)
   Ekin_left                      = real_tmp;
   MPI_Allreduce( &Ekin_right,     &real_tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
   Ekin_right                     = real_tmp;
+  MPI_Allreduce( tot_impuls_left, vectmp,  DIM, MPI_REAL, MPI_SUM, cpugrid);
+  tot_impuls_left                = vectmp;
+  MPI_Allreduce( tot_impuls_right, vectmp,  DIM, MPI_REAL, MPI_SUM, cpugrid);
+  tot_impuls_right               = vectmp;
   MPI_Allreduce( &natoms_left,    &int_tmp,  1, INTEGER,  MPI_SUM, cpugrid);
   natoms_left                    = int_tmp;
   MPI_Allreduce( &natoms_right,   &int_tmp,  1, INTEGER,  MPI_SUM, cpugrid);
@@ -1204,9 +1228,20 @@ void move_atoms_nvx(void)
 #endif
   heat_cond /= (2 * vol * (tran_Tleft -  tran_Tright));
 
+  tot_impuls_left.x  /= natoms_left;
+  tot_impuls_right.x /= natoms_right;
+  tot_impuls_left.y  /= natoms_left;
+  tot_impuls_right.y /= natoms_right;
+#ifndef TWOD
+  tot_impuls_left.z  /= natoms_left;
+  tot_impuls_right.z /= natoms_right;
+#endif
+
   /* rescale factors for momenta */
-  rescale = sqrt( DIM * tran_Tleft  * natoms_left  / Ekin_left  );
-  Rescale = sqrt( DIM * tran_Tright * natoms_right / Ekin_right );
+  real_tmp = Ekin_left/natoms_left  - SPROD(tot_impuls_left,tot_impuls_left);
+  rescale = sqrt( DIM * tran_Tleft / real_tmp  );
+  real_tmp = Ekin_left/natoms_right - SPROD(tot_impuls_right,tot_impuls_right);
+  Rescale = sqrt( DIM * tran_Tright / real_tmp  );
 
   for ( r = cellmin.x; r < cellmax.x; ++r )
     for ( s = cellmin.y; s < cellmax.y; ++s )
@@ -1228,16 +1263,16 @@ void move_atoms_nvx(void)
 
               /* rescale momenta */
  	      if (num == 0) {
-                 p->impuls X(i) *= rescale;
-                 p->impuls Y(i) *= rescale;
+                 p->impuls X(i) = (p->impuls X(i)-tot_impuls_left.x)*rescale;
+                 p->impuls Y(i) = (p->impuls Y(i)-tot_impuls_left.y)*rescale;
 #ifndef TWOD
-                 p->impuls Z(i) *= rescale;
+                 p->impuls Z(i) = (p->impuls Z(i)-tot_impuls_left.z)*rescale;
 #endif
                } else if (num == nhalf) {
-                 p->impuls X(i) *= Rescale;
-                 p->impuls Y(i) *= Rescale;
+                 p->impuls X(i) = (p->impuls X(i)-tot_impuls_right.x)*Rescale;
+                 p->impuls Y(i) = (p->impuls Y(i)-tot_impuls_right.y)*Rescale;
 #ifndef TWOD
-                 p->impuls Z(i) *= Rescale;
+                 p->impuls Z(i) = (p->impuls Z(i)-tot_impuls_right.z)*Rescale;
 #endif
  	      }
            }

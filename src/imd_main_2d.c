@@ -130,7 +130,7 @@ void main_loop(void)
     };
 #endif
 
-#ifndef NPPBC
+#ifndef NOPBC
     do_boundaries();    
 #endif
 
