@@ -445,7 +445,7 @@ void write_press_dist_shock(int steps)
 #endif
   MPI_Allreduce( pot_hist_1, pot_hist_2, 
                  press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
-  pot_histzz = pot_hist_2;
+  pot_hist = pot_hist_2;
   MPI_Allreduce( num_hist_1, num_hist_2, 
                  press_dim_tot, INTEGER, MPI_SUM, cpugrid);
   num_hist = num_hist_2;
@@ -453,7 +453,7 @@ void write_press_dist_shock(int steps)
                  press_dim.x, MPI_REAL, MPI_SUM, cpugrid);
   kin_histxx = kin_histxx_2;
 
-  MPI_Allreduce( kin_histxxu1, kin_histxxu_2, 
+  MPI_Allreduce( kin_histxxu_1, kin_histxxu_2, 
                  press_dim.x, MPI_REAL, MPI_SUM, cpugrid);
   kin_histxxu = kin_histxxu_2;
 
@@ -469,7 +469,7 @@ void write_press_dist_shock(int steps)
                  press_dim.x, MPI_REAL, MPI_SUM, cpugrid);
   pot_hist = pot_hist_2;
   MPI_Allreduce( num_hist_1, num_hist_2, 
-                 nlayer, INTEGER, MPI_SUM, cpugrid);
+                 press_dim.x, INTEGER, MPI_SUM, cpugrid);
   num_hist  = num_hist_2;
 #else
   press_histxx = press_histxx_1;
