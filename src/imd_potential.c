@@ -49,6 +49,11 @@ void read_pot_table1( pot_table_t *pt, char *filename )
     error(msg);
   }
 
+  /* catch the case where potential is identically zero */
+  for (i=0; i<size; ++i) {
+    pt->end[i] = 0.0;
+  }
+
 #ifdef MPI
   /* read table only on master processor? */
   if ((0==myid) || (1==parallel_input)) {
