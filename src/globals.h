@@ -57,8 +57,8 @@ EXTERN vektor *fbc_beginforces;  /* begin & endvalues for linear interpolation *
 #ifdef MIK                        /* or ... */
 EXTERN vektor *fbc_dforces;       /* each vtype has its force increment */
 EXTERN real   fbc_ekin_threshold INIT(0.0);/* threshold for ekin */ 
-EXTERN int    fbc_waitsteps INIT(0); /* between increase of forces */
-EXTERN int    fbc_annealsteps INIT(0); /* times before 1. + df */
+EXTERN int    fbc_waitsteps INIT(1); /* between increase of forces */
+EXTERN int    fbc_annealsteps INIT(1); /* times before 1. + df */
 #else
 EXTERN vektor *fbc_endforces;   
 #endif
