@@ -79,7 +79,11 @@ INLINE static int MOD(shortint p, int q)
 
 #ifdef EAM2
 #define EAM_RHO(cell,i)         (atoms.eam2_rho_h[(cell)->ind[i]])
+#ifdef EEAM
+#define EAM_P(cell,i)           (atoms.eeam_p_h[(cell)->ind[i]])
 #endif
+#endif
+
 #ifdef CG
 #define CG_G(cell,i,sub)        (atoms.g       sub((cell)->ind[i]))
 #define CG_H(cell,i,sub)        (atoms.h       sub((cell)->ind[i]))
@@ -149,7 +153,11 @@ INLINE static int MOD(shortint p, int q)
 
 #ifdef EAM2
 #define EAM_RHO(cell,i)         ((cell)->eam2_rho_h[i])
+#ifdef EEAM
+#define EAM_P(cell,i)           ((cell)->eeam_p_h[i])
 #endif
+#endif
+
 #ifdef CG
 #define CG_G(cell,i,sub)        ((cell)->g sub(i))
 #define CG_H(cell,i,sub)        ((cell)->h sub(i))

@@ -532,6 +532,9 @@ void write_atoms_config(FILE *out)
 #endif
 #ifdef EAM2
       len += sprintf(outbuf+len, RESOL1, EAM_RHO(p,i));
+#ifdef EEAM
+      len += sprintf(outbuf+len, RESOL1, EAM_P(p,i));
+#endif
 #endif
       len += sprintf(outbuf+len,"\n");
       /* flush or send outbuf if it is full */

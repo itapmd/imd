@@ -198,14 +198,25 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
       if (r2 < rho_h_tab.end[col])  {
         VAL_FUNC(rho_h, rho_h_tab, col,  inc, r2, is_short);
         EAM_RHO(p,i) += rho_h; 
+#ifdef EEAM
+        EAM_P(p,i) += rho_h*rho_h; 
+#endif
       }
       if (p_typ==q_typ) {
-        if (r2 < rho_h_tab.end[col]) EAM_RHO(q,j) += rho_h; 
+        if (r2 < rho_h_tab.end[col]) 
+          {EAM_RHO(q,j) += rho_h;
+#ifdef EEAM
+           EAM_P(q,j) += rho_h*rho_h;
+#endif
+          }
       } else {
         col2 = q_typ * ntypes + p_typ;
         if (r2 < rho_h_tab.end[col2]) {
           VAL_FUNC(rho_h, rho_h_tab, col2, inc, r2, is_short);
           EAM_RHO(q,j) += rho_h; 
+#ifdef EEAM
+          EAM_P(q,j) += rho_h*rho_h; 
+#endif
         }
       }
 #endif

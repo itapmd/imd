@@ -686,6 +686,11 @@ endif
 # EAM2 or EAM  -  this is now the same
 ifneq (,$(strip $(findstring eam,${MAKETARGET})))
 
+# EEAM
+ifneq (,$(strip $(findstring eeam,${MAKETARGET})))
+CFLAGS  += -DEEAM
+endif
+
 # MEAM
 ifneq (,$(strip $(findstring meam,${MAKETARGET})))
 CFLAGS  += -DMEAM -DCOVALENT

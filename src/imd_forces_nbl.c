@@ -236,6 +236,9 @@ void calc_forces(int steps)
 #endif
 #ifdef EAM2
       EAM_RHO(p,i) = 0.0;
+#ifdef EEAM
+      EAM_P(p,i) = 0.0;
+#endif
 #endif
 #ifdef NVX
       HEATCOND(p,i) = 0.0;
@@ -359,14 +362,25 @@ void calc_forces(int steps)
         if (r2 < rho_h_tab.end[col])  {
           VAL_FUNC(rho_h, rho_h_tab, col, inc, r2, is_short);
           EAM_RHO(p,i) += rho_h; 
+#ifdef EEAM
+          EAM_P(p,i) += rho_h*rho_h; 
+#endif
         }
         if (it==jt) {
-          if (r2 < rho_h_tab.end[col]) EAM_RHO(q,j) += rho_h; 
+          if (r2 < rho_h_tab.end[col])
+            {EAM_RHO(q,j) += rho_h;
+#ifdef EEAM
+             EAM_P(q,j) += rho_h*rho_h;
+#endif
+            } 
         } else {
           col2 = jt * ntypes + it;
           if (r2 < rho_h_tab.end[col2]) {
             VAL_FUNC(rho_h, rho_h_tab, col2, inc, r2, is_short);
             EAM_RHO(q,j) += rho_h; 
+#ifdef EEAM
+            EAM_P(q,j) += rho_h*rho_h; 
+#endif
           }
         }
 #endif
@@ -390,7 +404,14 @@ void calc_forces(int steps)
 
       vektor d, force;
       real   pot, grad, *d1, *d2, r2, *ff;
+#ifdef EEAM
+      real   eeam_energy;
+#endif
       real   f_i_strich, f_j_strich;
+#ifdef EEAM
+      real   M_i_strich, M_j_strich;
+      real   rho_i, rho_j;
+#endif
       real   rho_i_strich, rho_j_strich;
       int    col1, col2, inc = ntypes * ntypes; 
       int    m, j, it, jt, idummy=0;
@@ -401,8 +422,16 @@ void calc_forces(int steps)
 
       /* f_i and f_i_strich */
       PAIR_INT(pot, f_i_strich, embed_pot, it, ntypes, EAM_RHO(p,i), idummy);
+#ifdef EEAM
+      /* M_i and M_i_strich */
+      PAIR_INT(eeam_energy, M_i_strich, emod_pot, it, ntypes, EAM_P(p,i), idummy);
+#endif
       POTENG(p,i)    += pot;
       tot_pot_energy += pot;
+#ifdef EEAM
+      POTENG(p,i)    += eeam_energy;
+      tot_pot_energy += eeam_energy;
+#endif
 
       /* loop over neighbors */
       for (m=tl[n]; m<tl[n+1]; m++) {
@@ -426,23 +455,44 @@ void calc_forces(int steps)
 
           /* f_j_strich(rho_h_j) */
           DERIV_FUNC(f_j_strich, embed_pot, jt, ntypes, EAM_RHO(q,j), idummy);
+#ifdef EEAM
+          /* M_j_strich(p_h_j) */
+          DERIV_FUNC(M_j_strich, emod_pot, jt, ntypes, EAM_P(q,j), idummy);
+#endif
 
           /* take care: particle i gets its rho from particle j.    */
           /* This is tabulated in column it*ntypes+jt.              */
           /* Here we need the giving part from column jt*ntypes+it. */
 
           /* rho_strich_i(r_ij) */
+#ifndef EEAM
           DERIV_FUNC(rho_i_strich, rho_h_tab, col1, inc, r2, is_short);
+#else
+          /* rho_strich_i(r_ij) and rho_i(r_ij) */
+          PAIR_INT(rho_i, rho_i_strich, rho_h_tab, col1, inc, r2, is_short);
+#endif
 
           /* rho_strich_j(r_ij) */
           if (col1==col2) {
             rho_j_strich = rho_i_strich;
+#ifdef EEAM
+            rho_j = rho_i;
+#endif
           } else {
+#ifndef EEAM
             DERIV_FUNC(rho_j_strich, rho_h_tab, col2, inc, r2, is_short);
+#else
+            PAIR_INT(rho_j, rho_j_strich, rho_h_tab, col2, inc, r2, is_short);
+#endif
 	  }
 
           /* put together (f_i_strich and f_j_strich are by 0.5 too big) */
           grad = 0.5 * (f_i_strich*rho_j_strich+f_j_strich*rho_i_strich);
+#ifdef EEAM
+          /* 0.5 times 2 from derivative simplified to 1 */
+          grad += (M_i_strich*rho_j*rho_j_strich
+                 + M_j_strich*rho_i*rho_i_strich);
+#endif
 
           /* store force in temporary variable */
           force.x = d.x * grad;

@@ -638,6 +638,10 @@ EXTERN pot_table_t embed_pot;                     /* embedding energy table  */
 EXTERN pot_table_t rho_h_tab;                     /* electron transfer table */
 EXTERN str255 eam2_emb_E_filename INIT("\0");     /* embedding energy file   */
 EXTERN str255 eam2_at_rho_filename INIT("\0");    /* electron transfer file  */
+#ifdef EEAM
+EXTERN pot_table_t emod_pot;                      /* energy mod. term table  */
+EXTERN str255 eeam_mod_E_filename INIT("\0");     /* energy mod. term file   */
+#endif
 #endif
 
 #ifdef MEAM

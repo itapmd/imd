@@ -966,6 +966,7 @@ void unpack_forces( msgbuf *b, int k, int l, int m )
 /******************************************************************************
 *
 *  copy eam2_rho_h of one cell to another cell
+*  copy eeam_p_h of one cell to another cell
 *
 ******************************************************************************/
 
@@ -979,12 +980,16 @@ void copy_rho_h( int k, int l, int m, int r, int s, int t, vektor v )
 
   for (i=0; i<to->n; ++i) {
     EAM_RHO(to,i) = EAM_RHO(from,i);
+#ifdef EEAM
+    EAM_P(to,i) = EAM_P(from,i);
+#endif
   }
 }
 
 /******************************************************************************
 *
 *  add eam2_rho_h of one cell to another cell
+*  add eeam_p_h of one cell to another cell
 *
 ******************************************************************************/
 
@@ -998,12 +1003,16 @@ void add_rho_h( int k, int l, int m, int r, int s, int t )
 
   for (i=0; i<to->n; ++i) {
     EAM_RHO(to,i) += EAM_RHO(from,i);
+#ifdef EEAM
+    EAM_P(to,i) += EAM_P(from,i);
+#endif
   }
 }
 
 /******************************************************************************
 *
 *  pack eam2_rho_h_v into MPI buffer
+*  pack eeam_p_h_v into MPI buffer
 *
 ******************************************************************************/
 
@@ -1016,12 +1025,16 @@ void pack_rho_h_v( msgbuf *b, int k, int l, int m, vektor v )
 
   for (i=0; i<from->n; ++i) {
     b->data[ b->n++ ] = EAM_RHO(from,i);
+#ifdef EEAM
+    b->data[ b->n++ ] = EAM_P(from,i);
+#endif
   }
 }
 
 /******************************************************************************
 *
 *  pack eam2_rho_h into MPI buffer
+*  pack eeam_p_h into MPI buffer
 *
 ******************************************************************************/
 
@@ -1034,12 +1047,16 @@ void pack_rho_h( msgbuf *b, int k, int l, int m )
 
   for (i=0; i<from->n; ++i) {
     b->data[ b->n++ ] = EAM_RHO(from,i);
+#ifdef EEAM
+    b->data[ b->n++ ] = EAM_P(from,i);
+#endif
   }
 }
 
 /******************************************************************************
 *
 *  unpack eam2_rho_h from MPI buffer into cell
+*  unpack eeam_p_h from MPI buffer into cell
 *
 ******************************************************************************/
 
@@ -1052,12 +1069,16 @@ void unpack_rho_h( msgbuf *b, int k, int l, int m )
 
   for (i=0; i<to->n; ++i) {
     EAM_RHO(to,i) = b->data[ b->n++ ];
+#ifdef EEAM
+    EAM_P(to,i) = b->data[ b->n++ ];
+#endif
   }
 }
 
 /******************************************************************************
 *
 *  unpack and add eam2_rho_h from MPI buffer into cell
+*  unpack and add eeam_p_h from MPI buffer into cell
 *
 ******************************************************************************/
 
@@ -1070,6 +1091,9 @@ void unpack_add_rho_h( msgbuf *b, int k, int l, int m )
 
   for (i=0; i<to->n; ++i) {
     EAM_RHO(to,i) += b->data[ b->n++ ];
+#ifdef EEAM
+    EAM_P(to,i) += b->data[ b->n++ ];
+#endif
   }
 }
 

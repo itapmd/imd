@@ -87,6 +87,10 @@ int main(int argc, char **argv)
   read_pot_table(&embed_pot,eam2_emb_E_filename,ntypes,0);
   /* read the tabulated electron density function */
   read_pot_table(&rho_h_tab,eam2_at_rho_filename,ntypes*ntypes,1);
+#ifdef EEAM
+  /* read the tabulated energy modification term */
+  read_pot_table(&emod_pot,eeam_mod_E_filename,ntypes,0);
+#endif
 #endif
 
 #ifdef MEAM
@@ -277,6 +281,9 @@ int main(int argc, char **argv)
 #ifdef EAM2
     free_pot_table(&embed_pot);
     free_pot_table(&rho_h_tab);
+#ifdef EEAM
+    free_pot_table(&emod_pot);
+#endif
 #endif
 
     volume_init = 0.0;

@@ -189,12 +189,18 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
       if (r2 < rho_h_tab.end[col1])  {
         VAL_FUNC(rho_h, rho_h_tab, col1, inc, r2, is_short);
         EAM_RHO(p,i) += rho_h; 
+#ifdef EEAM
+        EAM_P(p,i) += rho_h*rho_h;
+#endif
       }
       if (r2 < rho_h_tab.end[col2]) {
         if (col1!=col2) {
           VAL_FUNC(rho_h, rho_h_tab, col2, inc, r2, is_short);
         }
         EAM_RHO(q,j) += rho_h; 
+#ifdef EEAM
+        EAM_P(q,j) += rho_h*rho_h; 
+#endif
       }
 
     } /* for j */
@@ -225,6 +231,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 *  second force loop, calculates the force and the energy 
 *  caused by the embedding electron density
 *  uses Phi(r2), Rho(r2), F(rho) and its derivatives
+*  also used for EEAM
 *
 ******************************************************************************/
 
@@ -246,7 +253,14 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
   vektor tmp_vir_vect = {0.0, 0.0, 0.0};
 #endif
   real eam2_energy, eam2_force;
+#ifdef EEAM
+  real eeam_energy;
+#endif
   real f_i_strich, f_j_strich;
+#ifdef EEAM
+  real M_i_strich, M_j_strich;
+  real rho_i, rho_j;
+#endif
   real rho_i_strich, rho_j_strich;
 
   /* for each atom in first cell */
@@ -268,12 +282,25 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
       /* f_i and f_i_strich */
       PAIR_INT(eam2_energy, f_i_strich, embed_pot, p_typ, 
                ntypes, EAM_RHO(p,i), idummy);
+#ifdef EEAM
+      /* M_i and M_i_strich */
+      PAIR_INT(eeam_energy, M_i_strich, emod_pot, p_typ, 
+               ntypes, EAM_P(p,i), idummy);
+#endif
       /* add energy only once per particle (same_cell) */
       POTENG(p,i)  += eam2_energy;
       *Epot        += eam2_energy;
+#ifdef EEAM
+      POTENG(p,i)  += eeam_energy;
+      *Epot        += eeam_energy;
+#endif
     } else {      
       /* only f_i_strich */
       DERIV_FUNC(f_i_strich, embed_pot, p_typ, ntypes, EAM_RHO(p,i), idummy);
+#ifdef EEAM
+      /* only M_i_strich(p_h_i) */
+      DERIV_FUNC(M_i_strich, emod_pot, p_typ, ntypes, EAM_P(p,i), idummy);
+#endif
     }
 
     jstart = (same_cell ? i+1 : 0);
@@ -296,6 +323,10 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 
         /* f_j_strich(rho_h_j) */
         DERIV_FUNC(f_j_strich, embed_pot, q_typ, ntypes, EAM_RHO(q,j), idummy);
+#ifdef EEAM
+        /* M_j_strich(p_h_j) */
+        DERIV_FUNC(M_j_strich, emod_pot, q_typ, ntypes, EAM_P(q,j), idummy);
+#endif
 
         /* take care: particle i gets its rho from particle j.
            This is tabulated in column p_typ*ntypes+q_typ.
@@ -303,17 +334,34 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
          */
 
         /* rho_strich_i(r_ij) */
+#ifndef EEAM
         DERIV_FUNC(rho_i_strich, rho_h_tab, col1, inc, r2, is_short);
+#else
+        /* rho_strich_i(r_ij) and rho_i(r_ij) */
+        PAIR_INT(rho_i, rho_i_strich, rho_h_tab, col1, inc, r2, is_short);
+#endif
 
         /* rho_strich_j(r_ij) */
         if (col1==col2) {
           rho_j_strich = rho_i_strich;
+#ifdef EEAM
+          rho_j = rho_i;
+#endif
 	} else {
+#ifndef EEAM
           DERIV_FUNC(rho_j_strich, rho_h_tab, col2, inc, r2, is_short);
+#else
+          PAIR_INT(rho_j, rho_j_strich, rho_h_tab, col2, inc, r2, is_short);
+#endif
 	}
 
         /* put together (f_i_strich and f_j_strich are by 0.5 too big) */
         eam2_force = 0.5 * (f_i_strich*rho_j_strich+f_j_strich*rho_i_strich);
+#ifdef EEAM
+        /* 0.5 times 2 from derivative simplified to 1 */
+        eam2_force += (M_i_strich*rho_j*rho_j_strich
+                     + M_j_strich*rho_i*rho_i_strich);
+#endif
 
         /* store force in temporary variable */
         force.x = d.x * eam2_force;

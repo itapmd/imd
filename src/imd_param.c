@@ -1482,18 +1482,24 @@ void getparamfile(char *paramfname, int sim)
 #endif
 #ifdef EAM2
     else if (strcasecmp(token,"core_potential_file")==0) {
-      /* EAM2:Filename for the tabulated Core-Core Potential (r^2) */
+      /* EAM2:Filename for the tabulated core-core potential (r^2) */
       getparam("core_potential_file",potfilename,PARAM_STR,1,255);
       have_potfile = 1;
     }
     else if (strcasecmp(token,"embedding_energy_file")==0) {
-      /* EAM2:Filename for the tabulated Embedding Enery(rho_h) */
+      /* EAM2:Filename for the tabulated embedding energy(rho_h) */
       getparam("embedding_energy_file",eam2_emb_E_filename,PARAM_STR,1,255);
     }
    else if (strcasecmp(token,"atomic_e-density_file")==0) {
       /* EAM2:Filename for the tabulated atomic electron density(r_ij^2) */
       getparam("atomic_e-density_file",eam2_at_rho_filename,PARAM_STR,1,255);
     }
+#ifdef EEAM
+    else if (strcasecmp(token,"eeam_energy_file")==0) {
+      /* EEAM:Filename for the tabulated energy modification term(p_h) */
+      getparam(token,eeam_mod_E_filename,PARAM_STR,1,255);
+    }
+#endif
 #endif
 #ifdef MEAM
     else if (strcasecmp(token,"core_potential_file")==0) {
@@ -2280,6 +2286,9 @@ void broadcast_params() {
 #ifdef EAM2
   MPI_Bcast( eam2_emb_E_filename,    255, MPI_CHAR, 0, MPI_COMM_WORLD); 
   MPI_Bcast( eam2_at_rho_filename,   255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+#ifdef EEAM
+  MPI_Bcast( eeam_mod_E_filename,    255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+#endif
 #endif
 #ifdef MEAM
   MPI_Bcast( meam_emb_E_filename,    255, MPI_CHAR, 0, MPI_COMM_WORLD); 

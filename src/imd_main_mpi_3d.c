@@ -101,6 +101,9 @@ void calc_forces(int steps)
 #endif
 #ifdef EAM2
       EAM_RHO(p,i) = 0.0; /* zero host electron density at atom site */
+#ifdef EEAM
+      EAM_P(p,i) = 0.0; /* zero host electron density at atom site */
+#endif
 #endif
     }
   }

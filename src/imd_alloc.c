@@ -127,6 +127,9 @@ void move_atom(cell *to, cell *from, int index)
 #endif
 #ifdef EAM2
   to->eam2_rho_h[to->n] = from->eam2_rho_h[index]; 
+#ifdef EEAM
+  to->eeam_p_h[to->n] = from->eeam_p_h[index]; 
+#endif
 #endif
 #ifdef CG
   to->h  X(to->n) = from->h X(index); 
@@ -236,6 +239,9 @@ void move_atom(cell *to, cell *from, int index)
 #endif
 #ifdef EAM2
     from->eam2_rho_h[index] = from->eam2_rho_h[from->n];
+#ifdef EEAM
+    from->eeam_p_h[index] = from->eeam_p_h[from->n];
+#endif
 #endif
 #ifdef CG
     from->h X(index) = from->h X(from->n); 
@@ -415,6 +421,9 @@ void alloc_cell(cell *thecell, int count)
     newcell.pot_eng= NULL;
 #ifdef EAM2
     newcell.eam2_rho_h =NULL;
+#ifdef EEAM
+    newcell.eeam_p_h =NULL;
+#endif
 #endif
 #ifdef CG
     newcell.h = NULL;
@@ -510,6 +519,9 @@ void alloc_cell(cell *thecell, int count)
     newcell.pot_eng= (real    * ) malloc(count * sizeof(real)    );
 #ifdef EAM2
     newcell.eam2_rho_h = (real *) malloc(count * sizeof(real)    );
+#ifdef EEAM
+    newcell.eeam_p_h = (real *) malloc(count * sizeof(real)    );
+#endif
 #endif
 #ifdef ORDPAR
     newcell.nbanz = (shortint *) malloc(count * sizeof(shortint));
@@ -561,6 +573,9 @@ void alloc_cell(cell *thecell, int count)
         || (NULL == newcell.pot_eng)
 #ifdef EAM2
 	|| (NULL == newcell.eam2_rho_h)
+#ifdef EEAM
+	|| (NULL == newcell.eeam_p_h)
+#endif
 #endif
 #ifdef ORDPAR
 	|| (NULL == newcell.nbanz)
@@ -646,6 +661,9 @@ void alloc_cell(cell *thecell, int count)
       memcpy(newcell.pot_eng, thecell->pot_eng, ncopy * sizeof(real));
 #ifdef EAM2
       memcpy(newcell.eam2_rho_h, thecell->eam2_rho_h, ncopy * sizeof(real));
+#ifdef EEAM
+      memcpy(newcell.eeam_p_h, thecell->eeam_p_h, ncopy * sizeof(real));
+#endif
 #endif
 #ifdef ORDPAR
       memcpy(newcell.nbanz, thecell->nbanz, ncopy * sizeof(shortint));
@@ -692,6 +710,9 @@ void alloc_cell(cell *thecell, int count)
     free(thecell->pot_eng);
 #ifdef EAM2
     free(thecell->eam2_rho_h);
+#ifdef EEAM
+    free(thecell->eeam_p_h);
+#endif
 #endif
 
 #ifdef ORDPAR
@@ -744,6 +765,9 @@ void alloc_cell(cell *thecell, int count)
   thecell->pot_eng  = newcell.pot_eng;
 #ifdef EAM2
   thecell->eam2_rho_h = newcell.eam2_rho_h;
+#ifdef EEAM
+  thecell->eeam_p_h = newcell.eeam_p_h;
+#endif
 #endif
 #ifdef ORDPAR
   thecell->nbanz = newcell.nbanz;

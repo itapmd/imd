@@ -117,6 +117,9 @@ typedef struct {
 #endif
 #ifdef EAM2                 /* EAM2: variable for the host electron density */
   real        *eam2_rho_h;
+#ifdef EEAM                 /* EAM2/EEAM: variable for the energy modification term */
+  real        *eeam_p_h;
+#endif
 #endif
 #ifdef CG                   
   real        *h;           /* Conjugated Gradient: search vektor */
