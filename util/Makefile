@@ -51,6 +51,10 @@ procdata: procdata.c
 atdist: atdist.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ atdist.c -lm
 
+# analyse/convert diffraction pattern files
+diffpat: diffpat.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ diffpat.c -lm
+
 # convert VASP simulation to atom density distribution file
 vasp2atdist: vasp2atdist.c param.c param.h
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c vasp2atdist.c -lm

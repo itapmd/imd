@@ -17,15 +17,15 @@
 *
 *  Compilation: 
 *
-*    gcc -O -o atdist atdist.c -lm
+*    make atdist
 *
 *  Usage for 2D distributions:
 *
 *    atdist <file>
 *
-*  writes a pgm file of the distribution for each atom type, and a ppm file
-*  if there are not more than tree atom types. The atoms types are then
-*  encoded in red, green, and blue.
+*  writes a pgm file for each atom type if there are more than tree atoms 
+*  types, and a ppm file otherwise. The atoms types are then encoded in red, 
+*  green, and blue.
 *
 *  Usage for 3D distributions:
 *
@@ -38,12 +38,15 @@
 *    atdist <file> <dir> <min> <max>
 *
 *  adds the slices from <min> to <max> perpendicular to <dir>, and writes 
-*  a pgm file for each atom type, and a ppm file if there are not more than 
-*  tree atom types. The atoms types are then encoded in red, green, and blue.
+*  a pgm file for each atom type if there are more than tree atoms types, 
+*  and a ppm file otherwise. The atoms types are then encoded in red, 
+*  green, and blue.
 *
 *    atdist <file> <xmin> <ymin> <zmin> <xmax> <ymax> <zmax>
 *
-*  cuts a rectangular block from the volume and writes it in virvo xvf format.
+*  cuts a rectangular block from the volume and writes it in virvo xvf 
+*  (RGBA) format. This mode works only with up to three atoms types,
+*  which are encoded in red, green, and blue.
 *
 ******************************************************************************/
 
@@ -732,6 +735,7 @@ int main(int argc, char **argv)
     } else if (dir==1) {
       yz_pictures_3d(argv[1],min,max,fmax);
     } else if (dir==0) {
+      if (ntypes>=4) error("this modes works only for up to 3 atoms types");
       virvo_picture_3d(argv[1],min_x,min_y,min_z,max_x,max_y,max_z);
     }
   }
