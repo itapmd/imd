@@ -368,6 +368,7 @@ EXTERN real ttbp_r2_0;             	/* TTBP minimum r^2 */
 EXTERN real ttbp_r2_end;           	/* TTBP maximum r^2 */
 EXTERN real ttbp_r2_step;          	/* delta between potential samples */
 EXTERN real ttbp_inv_r2_step;      	/* inverse thereof */
+EXTERN ivektor3d ttbp_pot_dim INIT(nullivektor3d); /* pot dimensions */
 #endif
 
 /* generate quasicrystal */

@@ -307,6 +307,10 @@ void getparamfile(char *paramfname, int sim)
         ensemble = ENS_NVX;
         move_atoms = move_atoms_nvx;
       }
+      else if (strcasecmp(tmpstr,"msd")==0) {
+        ensemble = ENS_MSD;
+        move_atoms = move_atoms_msd;
+      }
  else if (strcasecmp(tmpstr,"npt_iso")==0) {
         ensemble = ENS_NPT_ISO;
         move_atoms = move_atoms_npt_iso;
@@ -761,14 +765,14 @@ void getparamfile(char *paramfname, int sim)
       /* force constant (radians); type 0 */
       getparam("ttbp_constant",&ttbp_constant,PARAM_REAL,ntypes,ntypes);
       for (i=0;i<ntypes;i++) {
-        ttbp_constant[i] = ttbp_constant[i] * 3.1415927 / 180.;
+        ttbp_constant[i] = ttbp_constant[i];
       };
     }
     else if (strcasecmp(token,"ttbp_theta")==0) {
       /* equilibrium angle in radians */
       getparam("ttbp_theta",&ttbp_theta,PARAM_REAL,ntypes,ntypes);
       for (i=0;i<ntypes;i++) {
-        ttbp_theta[i] = ttbp_theta[i] * 3.1415927 / 180.;
+        ttbp_theta[i] = ttbp_theta[i];
       };
     }
     else if (strcasecmp(token,"ttbp_potfile")==0) {
@@ -1109,7 +1113,7 @@ void broadcast_params() {
     case ENS_PULL:      move_atoms = move_atoms_pull;      break;
     case ENS_MIKSHEAR:  move_atoms = move_atoms_mik;       break;
     case ENS_NVX:       move_atoms = move_atoms_nvx;       break;
-   /* the following should never be executed */
+    case ENS_MSD:       move_atoms = move_atoms_msd;       break;
     default: if (0==myid) error("unknown ensemble in broadcast"); break;
   };
   

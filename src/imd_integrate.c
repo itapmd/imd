@@ -84,7 +84,6 @@ void move_atoms_nve(void)
 #ifndef TWOD
           p->ort Z(i)    += d.z;
 #endif
-            
 #else /* MONOLJ */
 
           tmp += (kin_energie_1 + kin_energie_2) / ( 4 * p->masse[i] );
@@ -149,9 +148,10 @@ void move_atoms_mik(void)
   real kin_energie_1,kin_energie_2;
   vektor d;
   int r,s,t;  
-  real tmp = 0, tmp2;
+  real tmp = 0.0; 
+  real tmp2;
 
-  tot_kin_energy = 0;
+  tot_kin_energy = 0.0;
 
   /* loop over all atoms */
   for ( r = cellmin.x; r < cellmax.x; ++r )
@@ -174,10 +174,10 @@ void move_atoms_mik(void)
 #ifdef SX4
 #pragma vdir vector,nodep
 #endif
+
 	for (i = 0;i < iend; ++i) {
 
-	  /* move it */
-      
+       	  /* Sum kinetic energy */ 
 	  kin_energie_1 =  SPRODN(p->impuls,i,p->impuls,i);
 
 	  /* Neue Impulse */
@@ -187,23 +187,14 @@ void move_atoms_mik(void)
 	  p->impuls Z(i) += timestep * p->kraft Z(i);
 #endif
 
-       	  /* Sum kinetic energy */ 
-	  kin_energie_2 =  SPRODN(p->impuls,i,p->impuls,i);
-
-#ifdef MONOLJ
-          tmp += (kin_energie_1 + kin_energie_2) / 4;
-#else
-          tmp += (kin_energie_1 + kin_energie_2) / ( 4 * p->masse[i] );
-#endif
-          
 	  /* Mikroconvergence Algorithm - set velocity zero if a*v < 0 */
 	  /* Do not move atoms in strip or with negative numbers */
 	  if ((0 > SPRODN(p->impuls,i,p->kraft,i)) || (p->nummer[i]<0)) {
 
-	    p->impuls X(i) = 0;
-	    p->impuls Y(i) = 0;
+	    p->impuls X(i) = 0.0;
+	    p->impuls Y(i) = 0.0;
 #ifndef TWOD
-	    p->impuls Z(i) = 0;
+	    p->impuls Z(i) = 0.0;
 #endif
 
           } else { /* neue Orte */
@@ -218,8 +209,15 @@ void move_atoms_mik(void)
 #ifndef TWOD
             p->ort Z(i) += tmp2 * p->impuls Z(i);
 #endif
-
  	  };
+
+       	  /* Sum kinetic energy */ 
+	  kin_energie_2 =  SPRODN(p->impuls,i,p->impuls,i);
+#ifdef MONOLJ
+          tmp += (kin_energie_1 + kin_energie_2) / 4;
+#else
+          tmp += (kin_energie_1 + kin_energie_2) / ( 4.0 * p->masse[i] );
+#endif
 	};
       };
 
@@ -241,6 +239,88 @@ void move_atoms_mik(void)
 
 #endif
 
+/*****************************************************************************
+*
+* Minimizer:
+*
+* A sort of ... Steepest Descent - JH 1999: 02/03/...
+*
+*****************************************************************************/
+
+#ifdef MSD
+
+void move_atoms_msd(void)
+
+{
+  cell *p;
+  int i,iend;
+  real tmp_msd  = 0.0;
+  real tmp_step = 0.0;
+  vektor d;
+  int r,s,t;  
+  real tmp = 0.0; 				/* tot_kin_energy = 0 ! */
+
+  /* loop over all atoms */
+  for ( r = cellmin.x; r < cellmax.x; ++r )
+    for ( s = cellmin.y; s < cellmax.y; ++s )
+#ifndef TWOD
+      for ( t = cellmin.z; t < cellmax.z; ++t )
+#endif
+        {
+
+#ifndef TWOD
+        p = PTR_3D_V(cell_array, r, s, t, cell_dim);
+#else
+        p = PTR_2D_V(cell_array, r, s,    cell_dim);
+#endif
+
+        tmp_step = timestep; 
+        iend = p->n;
+        for (i = 0;i < iend; ++i) {
+          
+          /* Do not move atoms in strip or with negative numbers */
+          if (p->nummer[i] >= 0) {
+
+            tmp_msd = tmp_step / sqrt(SPRODN(p->kraft,i,p->kraft,i)) ;
+            /* Displacements */
+            d.x = tmp_msd * p->kraft X(i) ;
+            d.y = tmp_msd * p->kraft Y(i) ;
+#ifndef TWOD
+            d.z = tmp_msd * p->kraft Z(i) ;
+#endif
+	    /* New positions */
+            p->ort X(i)    += d.x;
+            p->ort Y(i)    += d.y;
+#ifndef TWOD
+            p->ort Z(i)    += d.z;
+#endif 
+          };
+          /* Neue Impulse */
+          p->impuls X(i) = 0.0;
+          p->impuls Y(i) = 0.0;
+#ifndef TWOD
+          p->impuls Z(i) = 0.0;
+#endif
+        };
+      };
+
+#ifdef MPI
+  /* Add kinetic energy form all cpus */
+  MPI_Allreduce( &tmp, &tot_kin_energy, 1, MPI_REAL, MPI_SUM, cpugrid);
+#else  
+  tot_kin_energy = tmp;
+#endif
+
+}
+
+#else  
+
+void move_atoms_msd(void) 
+{
+  error("the chosen ensemble (MSD) is not supported by this binary");
+}
+
+#endif 
 
 /*****************************************************************************
 *

@@ -441,6 +441,16 @@ CFLAGS  += -DTTBP
 SOURCES += ${TTBPSOURCES}
 endif
 
+# TTBPNC
+ifneq (,$(strip $(findstring ttbpnc,${MAKETARGET})))
+CFLAGS  += -DTTBPNC
+endif
+
+# Minimizer - Steepest Descent
+ifneq (,$(strip $(findstring msd,${MAKETARGET})))
+CFLAGS  += -DMSD
+endif
+
 # Monte Carlo
 ifneq (,$(strip $(findstring mc,${MAKETARGET})))
 CFLAGS  += -DMC

@@ -36,17 +36,17 @@ void calc_forces(void)
 #endif
   
 #ifdef EAM
-  memset(eam_rho,   0, natoms*        sizeof(real));
-  memset(eam_ij,    0, natoms*eam_len*sizeof(integer));
-  memset(eam_dij_x, 0, natoms*eam_len*sizeof(real));
-  memset(eam_dij_y, 0, natoms*eam_len*sizeof(real));
-  memset(eam_dij_z, 0, natoms*eam_len*sizeof(real));
+  memset(eam_rho,0,natoms*sizeof(real));
+  memset(eam_ij,0,natoms*eam_len*sizeof(integer));
+  memset(eam_dij_x,0,natoms*eam_len*sizeof(real));
+  memset(eam_dij_y,0,natoms*eam_len*sizeof(real));
+  memset(eam_dij_z,0,natoms*eam_len*sizeof(real));
 #endif /* EAM */
 
 #ifdef TTBP
-  memset(ttbp_ij,   0, natoms    *ttbp_len*2*sizeof(integer));
-  memset(ttbp_j,    0, (natoms+1)*ttbp_len  *sizeof(real));
-  memset(ttbp_force,0, (natoms+1)         *3*sizeof(real));
+  memset(ttbp_ij,0,(natoms+1)*ttbp_len*2*sizeof(integer));
+  memset(ttbp_j,0,(natoms+1)*ttbp_len*3*sizeof(real));
+  memset(ttbp_force,0,(natoms+1)*3*sizeof(real));
 #endif /* TTBP */
 
   /* Zero Forces and potential energy */

@@ -162,8 +162,6 @@ void read_potential(str255 potfilename)
   printf("Ends at r2_end : %f, r_end: %f\n",r2_end,sqrt(r2_end));
   printf("Step is r2_step: %f\n",r2_step);
 
-
-
   /* Shift potential to zero */
 
   for (i=0; i<ntypes; ++i)
@@ -266,7 +264,7 @@ void read_ttbp_potential(str255 ttbp_potfilename)
 
 {
 
-  real last_r =  0;
+  real last_r = 0.0;
   double r;
   FILE *infile;
   int  npot = 0;
@@ -351,6 +349,11 @@ void read_ttbp_potential(str255 ttbp_potfilename)
   printf("TTBP Ends at r2_end : %f, r_end: %f\n",ttbp_r2_end,sqrt(ttbp_r2_end));
   printf("TTBP Step is r2_step: %f\n",ttbp_r2_step);
 
+    for (i=0;i<ntypes;++i) 
+      for (j=0;j<ntypes;++j) {
+        printf("TTBP Smooth potential cutoff for %d and %d is: %f\n", i,j,sqrt(ttbp_r2_cut[i][j]));
+    };
+
   /* Shift potential to zero */
 
   for (i=0; i<ntypes; ++i)
@@ -431,13 +434,13 @@ void read_ttbp_potential(str255 ttbp_potfilename)
 
   /* Save dimensions of potential array */
 #ifdef STATIC_POT
-  pot_dim.x = MAXPOTLEN;
-  pot_dim.y = MAXATOMTYPES;
-  pot_dim.z = MAXATOMTYPES;
+  ttbp_pot_dim.x = MAXPOTLEN;
+  ttbp_pot_dim.y = MAXATOMTYPES;
+  ttbp_pot_dim.z = MAXATOMTYPES;
 #else
-  pot_dim.x = ttbp_nmax;
-  pot_dim.y = ntypes;
-  pot_dim.z = ntypes;
+  ttbp_pot_dim.x = ttbp_nmax;
+  ttbp_pot_dim.y = ntypes;
+  ttbp_pot_dim.z = ntypes;
 #endif
   
   ttbp_inv_r2_step = 1 / ttbp_r2_step;
