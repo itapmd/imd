@@ -138,6 +138,8 @@ CFLAGS_MPI_cray-t3e		= ${CFLAGS_MPI_t3e}
 CFLAGS_MPI_cray-t3e_DEBUG	= ${CFLAGS_MPI_t3e_DEBUG}
 CFLAGS_MPI_HITACHI		= -DMPI +O4 +Ol +Oprefetch -I/usr/local/mpi/include  -DMPI_hmpp2
 CFLAGS_MPI_HITACHI_DEBUG	= -DMPI -g -I/usr/local/mpi/include  -DMPI_hmpp2
+CFLAGS_MPI_alpha		= -DMPI -O3
+CFLAGS_MPI_iris4d		= -DMPI -O3
 CFLAGS_MPI_i386-linux		= -DMPI -O3 -m486
 CFLAGS_MPI_i386-linux_DEBUG	= -DMPI -O -g -Wall -m486
 
@@ -189,7 +191,9 @@ CC_MPI_t3e			= cc
 CC_MPI_cray-t3e			= cc
 CC_MPI_c90			= cc -Tcray_t3d
 CC_MPI_HITACHI			= cc
+CC_MPI_alpha			= hcc
 CC_MPI_i386-linux		= hcc
+CC_MPI_iris4d			= hcc
 
 CC_PACX_paragon			= cc
 CC_PACX_t3e			= cc
@@ -206,6 +210,8 @@ MPILIBS_paragon			= -lmpi -nx
 MPILIBS_decstation		= 
 MPILIBS_sx4			= -lmpi -lpthread
 MPILIBS_HITACHI			= -L/usr/local/mpi/lib/hmpp2/cml -lmpi
+MPILIBS_alpha			= -lmpi
+MPILIBS_iris4d			= -lmpi
 MPILIBS_i386-linux		= -lmpi
 
 PACXLIBS_t3e			= -L ${PACXDIR}/lib -lpacx -llzo -lmpi
@@ -219,7 +225,8 @@ LIBS_PROF_cray-t3e 		:= -lapp
 # this uses the HOSTTYPE envirorment variable
 # currently, there are CLFAGS for the following HOSTTYPES:
 # 
-# iris4d		SGI Irix 5.3		RISC
+# iris4d		SGI Irix 5.3		RISC MPI
+# i386-linux		SGI Irix 5.3		RISC MPI
 # decstation            DEC Ultirx 4.4          RISC MPI
 # alpha                 DEC UNIX 3.2            RISC
 # rs6000                AIX (Power2 arch)       RISC MPI

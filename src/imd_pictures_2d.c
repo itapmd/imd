@@ -155,9 +155,14 @@ void write_pictures_bins(int steps)
   shortint *bluebit;
 
 #ifdef MPI
+/* not valid code (no constants)
   shortint sum_red[pic_res.y][pic_res.x];
   shortint sum_green[pic_res.y][pic_res.x];
   shortint sum_blue[pic_res.y][pic_res.x];
+*/
+  shortint *sum_red;
+  shortint *sum_green;
+  shortint *sum_blue;
   ivektor2d maxcoord,mincoord;
 #endif
 
@@ -174,6 +179,12 @@ void write_pictures_bins(int steps)
   int ind;
   int pix;
   int np;
+
+#ifdef MPI
+  sum_red = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
+  sum_green = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
+  sum_blue = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
+#endif
 
   redbit = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
   greenbit = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
@@ -495,9 +506,14 @@ void write_pictures_cooked(int steps)
   shortint *bluebit;
 
 #ifdef MPI
-  shortint sum_red[pic_res.x][pic_res.y];
-  shortint sum_green[pic_res.x][pic_res.y];
-  shortint sum_blue[pic_res.x][pic_res.y];
+/* not valid code (no constants)
+  shortint sum_red[pic_res.y][pic_res.x];
+  shortint sum_green[pic_res.y][pic_res.x];
+  shortint sum_blue[pic_res.y][pic_res.x];
+*/
+  shortint *sum_red;
+  shortint *sum_green;
+  shortint *sum_blue;
   ivektor2d maxcoord,mincoord;
 #endif
 
@@ -515,6 +531,12 @@ void write_pictures_cooked(int steps)
   int ind;
   int pix;
   int np;
+
+#ifdef MPI
+  sum_red = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
+  sum_green = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
+  sum_blue = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
+#endif
 
   redbit = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
   greenbit = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
@@ -640,7 +662,7 @@ if (0==myid) {
    for (j=0; j<pic_res.y; j++ ) {
      for (i=0; i<pic_res.x; i++ ) { 
 
-      redbit[j*pic_res.x+i]   = sum_red[j*pic_res.x+i]   < 255 ? sum_red[j*pic_res.x+i]   : 200;
+      redbit[j*pic_res.x+i]   = sum_red[j*pic_res.x+i]   < 127 ? sum_red[j*pic_res.x+i]   : 200;
       greenbit[j*pic_res.x+i] = sum_green[j*pic_res.x+i] < 255 ? sum_green[j*pic_res.x+i] : 200;
       bluebit[j*pic_res.x+i]  = sum_blue[j*pic_res.x+i]  < 255 ? sum_blue[j*pic_res.x+i]  : 200;
     };
