@@ -1,160 +1,11 @@
+
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
 
 #include "imd.h"
 
-void write_pic_cell( cell *p, FILE *out ) 
-{
-    struct { 
-        float    pos_x, pos_y, pos_z, E_kin, E_pot;
-        integer  type;
-    } picbuf;
-
-    real px, py, pz;
-    int i;
-
-    for (i = 0;i < p->n; ++i) {
-        picbuf.pos_x = (float) p->ort X(i);
-        picbuf.pos_y = (float) p->ort Y(i);
-        picbuf.pos_z = (float) p->ort Z(i);
-        if ( pic_ur.x != (real)0 ) /*if pic_ur still 0, write everything */
-        if ( (picbuf.pos_x < pic_ll.x) || (picbuf.pos_x > pic_ur.x) ||
-             (picbuf.pos_y < pic_ll.y) || (picbuf.pos_y > pic_ur.y) ||
-             (picbuf.pos_z < pic_ll.z) || (picbuf.pos_z > pic_ur.z) ) continue;
-        px = p->impuls X(i);
-        py = p->impuls Y(i);
-        pz = p->impuls Z(i);
-#ifndef MONOLJ
-        picbuf.E_kin = (float) ( (px*px + py*py + pz*pz) / (2 * p->masse[i]) );
-#ifdef DISLOC
-        if (Epot_diff==1) {
-          picbuf.E_pot = (float) p->pot_eng[i] - p->Epot_ref[i];
-        } else
-#endif
-        picbuf.E_pot = (float) p->pot_eng[i];
-        picbuf.type  = (integer) p->sorte[i];
-#else
-        picbuf.E_kin = (float) ( (px*px + py*py + pz*pz) / 2 );
-        picbuf.type  = (integer)1;
-#endif /* MONOLJ */
-        fwrite( &picbuf, sizeof( picbuf ), 1, out ); 
-    }
-}
-
-
-void write_pictures_raw(int steps)
-{ 
-  FILE *out;
-
-  str255 fname;
-  int fzhlr;
-  cell *p,*q;
-  int i,j,k,l,m,tag;
-
-  /* Dateiname fuer Ausgabedatei erzeugen */
-  fzhlr = steps / pic_interval;
-
-#ifdef MPI  
-  if (0<parallel_output)
-    sprintf(fname,"%s.%u.%u.pic",outfilename,fzhlr,myid);
-  else
-#endif
-    sprintf(fname,"%s.%u.pic",outfilename,fzhlr);
-
-
-#ifdef MPI
-
-  if (0<parallel_output) {
-
-    /* Ausgabedatei oeffnen */
-    out = fopen(fname,"w");
-    if (NULL == out) error("Cannot open output file for config.");
-
-
-    for (i = 1; i < cell_dim.x-1; ++i )
-      for (j = 1; j < cell_dim.y-1; ++j )
-        for (k = 1; k < cell_dim.z-1; ++k ) {
- 	  p = PTR_3D_V(cell_array, i, j, k, cell_dim);
-	  write_pic_cell( p, out );
-	};
-    
-    fclose(out);
-
-  } else { 
-
-    if (0==myid) {
-
-      /* Ausgabedatei oeffnen */
-      out = fopen(fname,"w");
-      if (NULL == out) error("Cannot open output file for config.");
-
-      /* Write data on CPU 0 */
-
-      /* Write own data */
-    for (i = 1; i < cell_dim.x-1; ++i )
-      for (j = 1; j < cell_dim.y-1; ++j )
-        for (k = 1; k < cell_dim.z-1; ++k ) {
-	  p = PTR_3D_V(cell_array, i, j, k, cell_dim);
-	  write_pic_cell( p, out );
-	};
-
-      /* Receive data from other cpus and write that */
-      p   = PTR_2D_V(cell_array, 0, 0, cell_dim);
-      for ( m = 1; m < num_cpus; ++m)
-        for (i = 1; i < cell_dim.x-1; ++i )
-          for (j = 1; j < cell_dim.y-1; ++j )
-            for (k = 1; k < cell_dim.z-1; ++k ) {
-#ifndef MONOLJ
-	      tag = PTR_3D_V(CELL_TAG, i, j, k, cell_dim);
-	      recv_cell( p, m, tag );
-#else
-	      recv_cell( p, m, ORT_TAG );
-#endif
-	      write_pic_cell( p, out );
-	    };
-
-      fclose(out);      
-    } else {
-      /* Send data to cpu 0 */
-        for (i = 1; i < cell_dim.x-1; ++i )
-          for (j = 1; j < cell_dim.y-1; ++j )
-            for (k = 1; k < cell_dim.z-1; ++k ) {
-      	      p   = PTR_3D_V(cell_array, i, j, k, cell_dim);
-#ifndef MONOLJ
-	      tag = PTR_3D_V(CELL_TAG, i, j, k, cell_dim);
-	      send_cell( p, 0, tag );
-#else
-	      send_cell( p, 0, ORT_TAG );
-#endif
-	    };
-    };
-  }
-
-#else
-
-  /* Ausgabedatei oeffnen */
-  out = fopen(fname,"w");
-  if (NULL == out) error("Cannot open output file for config.");
-
-
-  for (p = cell_array; 
-       p <= PTR_3D_V(cell_array,
-		     cell_dim.x-1,
-		     cell_dim.y-1,
-		     cell_dim.z-1,
-		     cell_dim);
-       ++p ) {
-    write_pic_cell( p , out );
-  };
-
-  fclose(out);  
-
-#endif
-
-}
 
 /******************************************************************************
 *
@@ -162,35 +13,32 @@ void write_pictures_raw(int steps)
 *
 ******************************************************************************/
 
-void write_pictures_atoms(int steps)
+void write_pictures_bitmap(int steps)
 
-#define XRES 720
-#define YRES 576
 #define SFACTOR 1.0
 #define NUMPIX  5
 
 {
-
   vektor scale;
 
-  shortint redbit  [YRES][XRES];
-  shortint greenbit[YRES][XRES];
-  shortint bluebit [YRES][XRES];
+  static shortint *redbit    = NULL;
+  static shortint *greenbit  = NULL;
+  static shortint *bluebit   = NULL;
 
 #ifdef MPI
-  shortint sum_red[YRES][XRES];
-  shortint sum_green[YRES][XRES];
-  shortint sum_blue[YRES][XRES];
-  ivektor3d maxcoord,mincoord;
+  static shortint *sum_red   = NULL;
+  static shortint *sum_green = NULL;
+  static shortint *sum_blue  = NULL;
+  ivektor2d maxcoord,mincoord;
 #endif
 
-  char buf[3*XRES];
+  static unsigned char *buf  = NULL;
 
   real xshift, yshift;
 
   str255 fname;
   int fzhlr;
-  int i,j,k,r,s,t;
+  int i,j,k,l,r,s,t;
   real phi;
   real val;
   cell *p;
@@ -200,9 +48,9 @@ void write_pictures_atoms(int steps)
   vektor3d a, b;
   ivektor3d coord,pixcoord;
   real tabred[5],tabgreen[5],tabblue[5];
-  int ind;
+  int ind, size, ii;
   int pix;
-  int np;
+  int np = nsmear;
   int ia, ib;
 
   /* normalize view_dir */
@@ -268,12 +116,23 @@ void write_pictures_atoms(int steps)
   if (ia > xmax) xmax = ia;
   if (ib > ymax) ymax = ib;
   
-  /* the dist bins are orthogonal boxes in space */
+  size = pic_res.x * pic_res.y;
+#ifdef MPI
+  sum_red   = (shortint*) realloc(sum_red,   size*sizeof(shortint));
+  sum_green = (shortint*) realloc(sum_green, size*sizeof(shortint));
+  sum_blue  = (shortint*) realloc(sum_blue,  size*sizeof(shortint));
+#endif
+  redbit    = (shortint*) realloc(redbit,    size*sizeof(shortint));
+  greenbit  = (shortint*) realloc(greenbit,  size*sizeof(shortint));
+  bluebit   = (shortint*) realloc(bluebit,   size*sizeof(shortint));
+  buf       = (unsigned char*) realloc(buf, 3*pic_res.x);
 
+  /* the dist bins are orthogonal boxes in space */
   xshift = -xmin;
   yshift = -ymin;
-  scale.x = XRES / (xmax-xmin);
-  scale.y = YRES / (ymax-ymin);
+  scale.x = pic_res.x / (xmax-xmin);
+  scale.y = pic_res.y / (ymax-ymin);
+  size    = pic_res.x * pic_res.y;
 
   /* kinetic energy first */
 
@@ -284,324 +143,257 @@ void write_pictures_atoms(int steps)
   sprintf(fname,"%s.%u.kin.ppm",outfilename,fzhlr);
 
   /* Zero bitmap */
-  for (j=0; j<YRES; j++ ) {
-    for (i=0; i<XRES; i++ ) {
-      bluebit[j][i]  = 0;
-      greenbit[j][i] = 0;
-      redbit[j][i]   = 0;
-    };
-  };
+  for (i=0; i<size; i++) {
+    bluebit [i] = 0;
+    greenbit[i] = 0;
+    redbit  [i] = 0;
+  }
 
   /* Color lookup table */
 
+  /*  Original table from RUS - we use more saturation
 
+  tabred[0] = 0.10; tabgreen[0] = 0.20; tabblue[0] = 0.50;
+  tabred[1] = 0.05; tabgreen[1] = 0.75; tabblue[1] = 0.75;
+  tabred[2] = 0.10; tabgreen[2] = 0.50; tabblue[2] = 0.25;
+  tabred[3] = 0.75; tabgreen[3] = 0.75; tabblue[3] = 0.05;
+  tabred[4] = 0.75; tabgreen[4] = 0.05; tabblue[4] = 0.05; */
 
-/*  Original table from RUS - we use more saturation
-
-    tabred[0] = 0.10; tabgreen[0] = 0.20; tabblue[0] = 0.50;
-    tabred[1] = 0.05; tabgreen[1] = 0.75; tabblue[1] = 0.75;
-    tabred[2] = 0.10; tabgreen[2] = 0.50; tabblue[2] = 0.25;
-    tabred[3] = 0.75; tabgreen[3] = 0.75; tabblue[3] = 0.05;
-    tabred[4] = 0.75; tabgreen[4] = 0.05; tabblue[4] = 0.05; */
-
-    tabred[0] = 0.02; tabgreen[0] = 0.02; tabblue[0] = 0.45;
-    tabred[1] = 0.03; tabgreen[1] = 0.23; tabblue[1] = 0.23;
-    tabred[2] = 0.02; tabgreen[2] = 0.45; tabblue[2] = 0.02;
-    tabred[3] = 0.23; tabgreen[3] = 0.23; tabblue[3] = 0.03;
-    tabred[4] = 0.45; tabgreen[4] = 0.02; tabblue[4] = 0.02; 
+  tabred[0] = 0.02; tabgreen[0] = 0.02; tabblue[0] = 0.45;
+  tabred[1] = 0.03; tabgreen[1] = 0.23; tabblue[1] = 0.23;
+  tabred[2] = 0.02; tabgreen[2] = 0.45; tabblue[2] = 0.02;
+  tabred[3] = 0.23; tabgreen[3] = 0.23; tabblue[3] = 0.03;
+  tabred[4] = 0.45; tabgreen[4] = 0.02; tabblue[4] = 0.02; 
 
   /* loop over all atoms */
-    for ( r = cellmin.x; r < cellmax.x; ++r )
-      for ( s = cellmin.y; s < cellmax.y; ++s )
-        for ( t = cellmin.z; t < cellmax.z; ++t ) {
-      
-   	  p = PTR_3D_V(cell_array, r, s, t, cell_dim);
+  for (k=0; k<ncells; k++) {
 
-	  for (i = 0;i < p->n; ++i) {
-          if ( (p->ort X(i) < pic_ll.x) || (p->ort X(i) > pic_ur.x) ||
-               (p->ort Y(i) < pic_ll.y) || (p->ort Y(i) > pic_ur.y) ||
-               (p->ort Z(i) < pic_ll.z) || (p->ort Z(i) > pic_ur.z) )
-            continue;
-          coord.x = (int)floor((p->ort X(i)*a.x + p->ort Y(i)*a.y + p->ort Z(i)*a.z + xshift)*scale.x);
-          coord.y = (int)floor((p->ort X(i)*b.x + p->ort Y(i)*b.y + p->ort Z(i)*b.z + yshift)*scale.y);
+    p = cell_array + CELLS(k);
 
-	  /* Check bounds */
-	  if ((coord.x >= NUMPIX) && (coord.x < (XRES-NUMPIX)) &&
-              (coord.y >= NUMPIX) && (coord.y < (YRES-NUMPIX))) { 
-	  
-             coord.y = YRES - coord.y; /* in pic: from top to bottom */
-#ifndef MONOLJ
-             val = SPRODN(p->impuls,i,p->impuls,i) / (2*p->masse[i]);
-#endif
-             /* Scale Value to [0..1]   */
-	     val = (val - ecut_kin.x) / (ecut_kin.y - ecut_kin.x);
-             val = val > 1.0 ? 1.0 : val;
-             val = val < 0.0 ? 0.0 : val;
-#ifndef MONOLJ
-             np  = NUMPIX * (1 + p->sorte[i]);
-#else
-             np  = NUMPIX;
-#endif
-             /* Get index into table */
-	     ind = (int)(val * 3.9999);
+    for (i=0; i<p->n; ++i) {
 
-             /* Get RBG values from linear interpolation */
-	     red = -4.0 * (tabred[ind] - tabred[ind+1]) * val + 
+      if ( (p->ort X(i) < pic_ll.x) || (p->ort X(i) > pic_ur.x) ||
+           (p->ort Y(i) < pic_ll.y) || (p->ort Y(i) > pic_ur.y) ||
+           (p->ort Z(i) < pic_ll.z) || (p->ort Z(i) > pic_ur.z) ) continue;
+
+      coord.x = (int)floor((p->ort X(i)*a.x + p->ort Y(i)*a.y 
+                          + p->ort Z(i)*a.z + xshift)*scale.x);
+      coord.y = (int)floor((p->ort X(i)*b.x + p->ort Y(i)*b.y
+                          + p->ort Z(i)*b.z + yshift)*scale.y);
+
+      /* Check bounds */
+      if ((coord.x >= 0) && (coord.x < pic_res.x) &&
+          (coord.y >= 0) && (coord.y < pic_res.y)) { 
+
+        coord.y = pic_res.y - coord.y; /* in pic: from top to bottom */
+        val = SPRODN(p->impuls,i,p->impuls,i) / (2*MASSE(p,i));
+
+        /* Scale Value to [0..1]   */
+        val = (val - ecut_kin.x) / (ecut_kin.y - ecut_kin.x);
+        val = val > 1.0 ? 1.0 : val;
+        val = val < 0.0 ? 0.0 : val;
+
+        /* Get index into table */
+        ind = (int)(val * 3.9999);
+
+        /* Get RBG values from linear interpolation */
+        red = -4.0 * (tabred[ind] - tabred[ind+1]) * val + 
 	         (tabred[ind] * (ind+1) - ind * tabred[ind+1] );
 
-	     green = -4.0 * (tabgreen[ind] - tabgreen[ind+1]) * val +
+        green = -4.0 * (tabgreen[ind] - tabgreen[ind+1]) * val +
                  (tabgreen[ind] * (ind+1) - ind * tabgreen[ind+1] );
 
-             blue = -4.0 * (tabblue[ind] - tabblue[ind+1]) * val +
+        blue = -4.0 * (tabblue[ind] - tabblue[ind+1]) * val +
                  (tabblue[ind] * (ind+1) - ind * tabblue[ind+1] );
 
-             /* Set & Copy Pixel */
-             for (j=-np;j<np;++j)
-               for (k=-np;k<np;++k) {
-                 if (k*k + j*j > np*np) continue;
-                 pixcoord.x = coord.x + j;
-                 pixcoord.y = coord.y + k;
-		 
-                 pix =  redbit  [pixcoord.y][pixcoord.x] + (SFACTOR * 255 * red  );
-                 redbit  [pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
-	      
-                 pix = bluebit [pixcoord.y][pixcoord.x] + (SFACTOR * 255 * blue );
-                 bluebit [pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
-
-                 pix = greenbit[pixcoord.y][pixcoord.x] + (SFACTOR * 255 * green);
-                 greenbit[pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
-
-             }; /* for k */
-          }; /* if */
-       }; /* for i */
-    }; /* for r */
+        /* Set & Copy Pixel */
+        for (j=-np; j<np; ++j)
+          for (l=-np; l<np; ++l) {
+            if (l*l + j*j > np*np) continue;
+            if ((j<0) || (l<0) || (j>=pic_res.x) || (l>=pic_res.y)) continue; 
+            ii = (coord.y+l) * pic_res.x + coord.x+j;
+            pix =  redbit [ii] + (SFACTOR * 255 * red  );
+            redbit  [ii] = (shortint) pix < 255 ? pix : 255;
+            pix = bluebit [ii] + (SFACTOR * 255 * blue );
+            bluebit [ii] = (shortint) pix < 255 ? pix : 255;
+            pix = greenbit[ii] + (SFACTOR * 255 * green);
+            greenbit[ii] = (shortint) pix < 255 ? pix : 255;
+	  }
+      }
+    }
+  }
 
 #ifdef MPI
-/* Add the bitmaps */
-   MPI_Reduce( redbit,   sum_red,   XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
-   MPI_Reduce( greenbit, sum_green, XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
-   MPI_Reduce( bluebit , sum_blue,  XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
+  /* Add the bitmaps */
+  MPI_Reduce( redbit,   sum_red,   size, MPI_SHORT, MPI_SUM, 0, cpugrid);
+  MPI_Reduce( greenbit, sum_green, size, MPI_SHORT, MPI_SUM, 0, cpugrid);
+  MPI_Reduce( bluebit , sum_blue,  size, MPI_SHORT, MPI_SUM, 0, cpugrid);
 
-if (0==myid) { 
-
-/* Clip max value bitmap, create white background */
-   for (j=0; j<YRES; j++ ) {
-     for (i=0; i<XRES; i++ ) { 
-
-      redbit[j][i]   = sum_red[j][i]   < 255 ? sum_red[j][i]   : 200;
-      greenbit[j][i] = sum_green[j][i] < 255 ? sum_green[j][i] : 200;
-      bluebit[j][i]  = sum_blue[j][i]  < 255 ? sum_blue[j][i]  : 200;
-    };
-  }; 
-
-  
-};
+  /* Clip at max value of bitmap */
+  if (0==myid)
+    for (i=0; i<size; i++) {
+      redbit  [i] = sum_red  [i] < 255 ? sum_red  [i] : 200;
+      greenbit[i] = sum_green[i] < 255 ? sum_green[i] : 200;
+      bluebit [i] = sum_blue [i] < 255 ? sum_blue [i] : 200;
+    }
 #endif
 
-  for (j=0; j<YRES; j++ ) 
-    for (i=0; i<XRES; i++ ) 
-/* background white */
-      if ((0==redbit[j][i]) && (0==greenbit[j][i]) && (0==bluebit[j][i])) {
-         redbit[j][i]   = 250;
-         greenbit[j][i] = 250;
-         bluebit[j][i]  = 250;
-      };
+  /* background white */
+  if (0==myid)
+    for (i=0; i<size; i++)
+      if ((0==redbit[i]) && (0==greenbit[i]) && (0==bluebit[i])) {
+        redbit  [i] = 250;
+        greenbit[i] = 250;
+        bluebit [i] = 250;
+      }
 
   /* write ppm file */
-
-#ifdef MPI
   if (0==myid) {
-#endif
 
-  out = fopen(fname,"w");
-  if (NULL == out) error("Can`t open bitmap file.");
+    out = fopen(fname,"w");
+    if (NULL == out) error("Cannot open bitmap file.");
 
-  fprintf(out,"P6 %d %d 255\n", XRES, YRES);
+    fprintf(out,"P6 %d %d 255\n", pic_res.x, pic_res.y);
 
+    for (j=pic_res.y-1; j>=0; j-- ) {
+      for (i=0; i<pic_res.x; i++ ) {
+        ii = j * pic_res.x + i;
+        buf[3*i  ] = (char) redbit  [ii];
+        buf[3*i+1] = (char) greenbit[ii];
+        buf[3*i+2] = (char) bluebit [ii];
+      }
+      fwrite(buf, 1, 3*pic_res.x, out);
+    }
+    fclose(out);
+  }
 
-  for (j=0; j<YRES; j++ ) {
-    for (i=0; i<XRES; i++ ) {
-      buf[3*i  ] = (char) redbit[j][i];
-      buf[3*i+1] = (char) greenbit[j][i];
-      buf[3*i+2] = (char) bluebit[j][i];
-    };
-    fwrite(buf, sizeof(char), 3*XRES, out);
-  };
-
-  fclose(out);
-
-#ifdef MPI
- };
-#endif
-
-/* Potential energy second */
-
+  /* Potential energy second */
 
   /* create filename */
-
   sprintf(fname,"%s.%u.pot.ppm",outfilename,fzhlr);
 
-
   /* Zero bitmap */
-  for (j=0; j<YRES; j++ ) {
-    for (i=0; i<XRES; i++ ) {
-      bluebit[j][i]  = 0;
-      greenbit[j][i] = 0;
-      redbit[j][i]   = 0;
-    };
-  };
+  for (i=0; i<size; i++ ) {
+    bluebit [i] = 0;
+    greenbit[i] = 0;
+    redbit  [i] = 0;
+  }
 
   /* loop over all atoms */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-      for ( t = cellmin.z; t < cellmax.z; ++t )
-      {
+  for (k=0; k<ncells; k++) {
 
-	p = PTR_3D_V(cell_array, r, s, t, cell_dim);
+    p = cell_array + CELLS(k);
 
-	for (i = 0;i < p->n; ++i) {
-          if ( (p->ort X(i) < pic_ll.x) || (p->ort X(i) > pic_ur.x) ||
-               (p->ort Y(i) < pic_ll.y) || (p->ort Y(i) > pic_ur.y) ||
-               (p->ort Z(i) < pic_ll.z) || (p->ort Z(i) > pic_ur.z) )
-            continue;
-          coord.x = (int)floor((p->ort X(i)*a.x + p->ort Y(i)*a.y + p->ort Z(i)*a.z + xshift)*scale.x);
-          coord.y = (int)floor((p->ort X(i)*b.x + p->ort Y(i)*b.y + p->ort Z(i)*b.z + yshift)*scale.y);
-	  /* Check bounds */
-	  if ((coord.x>=NUMPIX) && (coord.x<(XRES-NUMPIX)) &&
-	      (coord.y>=NUMPIX) && (coord.y<(YRES-NUMPIX))) {
+    for (i=0; i<p->n; ++i) {
+
+      if ( (p->ort X(i) < pic_ll.x) || (p->ort X(i) > pic_ur.x) ||
+           (p->ort Y(i) < pic_ll.y) || (p->ort Y(i) > pic_ur.y) ||
+           (p->ort Z(i) < pic_ll.z) || (p->ort Z(i) > pic_ur.z) ) continue;
+
+      coord.x = (int)floor((p->ort X(i)*a.x + p->ort Y(i)*a.y 
+                          + p->ort Z(i)*a.z + xshift)*scale.x);
+      coord.y = (int)floor((p->ort X(i)*b.x + p->ort Y(i)*b.y 
+                          + p->ort Z(i)*b.z + yshift)*scale.y);
+      /* Check bounds */
+      if ((coord.x>=0) && (coord.x<pic_res.x) &&
+          (coord.y>=0) && (coord.y<pic_res.y)) {
 
 #ifndef MONOLJ
 #ifdef DISLOC
-	if (p->sorte[i] == dpotsorte) {
+	if (SORTE(p,i) == dpotsorte) {
 	  val = p->pot_eng[i] - p->Epot_ref[i];
 	  if (val < min_dpot) continue;
 	}
 #else
-	  val = p->pot_eng[i];
+        val = p->pot_eng[i];
 #endif
 #endif /* MONOLJ */
-          /* Scale Value to [0..1]   */
-	  val = (val - ecut_pot.x) / (ecut_pot.y - ecut_pot.x);
-/* Values that are not in the interval are set to MINIMUM */
-          val = val > 1.0 ? 0.0 : val;
-          val = val < 0.0 ? 0.0 : val;
-#ifndef MONOLJ
-          np = NUMPIX * (1 + p->sorte[i]);
-/*          np  = (int)floor(p->ort X(i)*view_dir.x+p->ort Y(i)*view_dir.y+p->ort Z(i)*view_dir.z)*NUMPIX * (1 + p->sorte[i]);
-*/
-#endif /* MONOLJ */
-/* Defects in potential energy are rather point-like, so we enlarge all
-Pixels not in the default interval
-          if ((val<1.0) && (val>0.0)) np = 3 * NUMPIX; else np = NUMPIX; */
 
-          /* Get index into table */
-	  ind = (int)(val * 3.9999);
+        /* Scale Value to [0..1]   */
+        val = (val - ecut_pot.x) / (ecut_pot.y - ecut_pot.x);
+        /* Values that are not in the interval are set to MINIMUM */
+        val = val > 1.0 ? 0.0 : val;
+        val = val < 0.0 ? 0.0 : val;
 
-	  red = -4.0 * (tabred[ind] - tabred[ind+1]) * val + 
+        /* Get index into table */
+        ind = (int)(val * 3.9999);
+
+        red = -4.0 * (tabred[ind] - tabred[ind+1]) * val + 
 	    (tabred[ind] * (ind+1) - ind * tabred[ind+1] );
 
-	  green = -4.0 * (tabgreen[ind] - tabgreen[ind+1]) * val + 
+        green = -4.0 * (tabgreen[ind] - tabgreen[ind+1]) * val + 
 	    (tabgreen[ind] * (ind+1) - ind * tabgreen[ind+1] );
 
-          blue = -4.0 * (tabblue[ind] - tabblue[ind+1]) * val + 
+        blue = -4.0 * (tabblue[ind] - tabblue[ind+1]) * val + 
 	    (tabblue[ind] * (ind+1) - ind * tabblue[ind+1] );
 
-          /* Set & Copy Pixel */
-          for (j=-np;j<np;++j)
-             for (k=-np;k<np;++k) {
-               if (k*k + j*j > np*np) continue;
-              pixcoord.x = coord.x + j;
-              pixcoord.y = coord.y + k;
-
-              if ((pixcoord.y<YRES) && (pixcoord.x<XRES)) {
-
-                 pix =  redbit  [pixcoord.y][pixcoord.x] + (SFACTOR * 255 * red  );
-                 redbit  [pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
-	      
-                 pix = bluebit [pixcoord.y][pixcoord.x] + (SFACTOR * 255 * blue );
-                 bluebit [pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
-
-                 pix = greenbit[pixcoord.y][pixcoord.x] + (SFACTOR * 255 * green);
-                 greenbit[pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
-              };
-           }; 
-	};
-       };
-    };
+        /* Set & Copy Pixel */
+        for (j=-np; j<np; ++j)
+          for (l=-np; l<np; ++l) {
+            if (l*l + j*j > np*np) continue;
+            if ((j<0) || (l<0) || (j>=pic_res.x) || (l>=pic_res.y)) continue; 
+            ii = (coord.y+l) * pic_res.x + coord.x+j;
+            pix =  redbit [ii] + (SFACTOR * 255 * red  );
+            redbit  [ii] = (shortint) pix < 255 ? pix : 255;
+            pix = bluebit [ii] + (SFACTOR * 255 * blue );
+            bluebit [ii] = (shortint) pix < 255 ? pix : 255;
+            pix = greenbit[ii] + (SFACTOR * 255 * green);
+            greenbit[ii] = (shortint) pix < 255 ? pix : 255;
+	  } 
+      }
+    }
+  }
 
 #ifdef MPI
-/* Add the bitmaps */
-   MPI_Reduce( redbit,   sum_red,   XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
-   MPI_Reduce( greenbit, sum_green, XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
-   MPI_Reduce( bluebit , sum_blue,  XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
+  /* Add the bitmaps */
+  MPI_Reduce( redbit,   sum_red,   size, MPI_SHORT, MPI_SUM, 0, cpugrid);
+  MPI_Reduce( greenbit, sum_green, size, MPI_SHORT, MPI_SUM, 0, cpugrid);
+  MPI_Reduce( bluebit , sum_blue,  size, MPI_SHORT, MPI_SUM, 0, cpugrid);
 
-if (0==myid) { 
-
-/* Clip max value bitmap, create white background */
-   for (j=0; j<YRES; j++ ) {
-     for (i=0; i<XRES; i++ ) { 
-
-      redbit[j][i]   = sum_red[j][i]   < 255 ? sum_red[j][i]   : 200;
-      greenbit[j][i] = sum_green[j][i] < 255 ? sum_green[j][i] : 200;
-      bluebit[j][i]  = sum_blue[j][i]  < 255 ? sum_blue[j][i]  : 200;
-    };
-  }; 
-
-  for (j=0; j<YRES; j++ )
-    for (i=0; i<XRES; i++ ) 
-/* background white */
-      if ((0==redbit[j][i]) && (0==greenbit[j][i]) && (0==bluebit[j][i])) {
-         redbit[j][i]   = 250;
-         greenbit[j][i] = 250;
-         bluebit[j][i]  = 250;
-      };
-  
-};
+  /* Clip at max value of bitmap */
+  if (0==myid)
+    for (i=0; i<size; i++ ) { 
+        redbit  [i] = sum_red  [i] < 255 ? sum_red  [i] : 200;
+        greenbit[i] = sum_green[i] < 255 ? sum_green[i] : 200;
+        bluebit [i] = sum_blue [i] < 255 ? sum_blue [i] : 200;
+    }
 #endif
+
+  /* background white */
+  if (0==myid)
+    for (i=0; i<size; i++)
+      if ((0==redbit[i]) && (0==greenbit[i]) && (0==bluebit[i])) {
+        redbit  [i] = 250;
+        greenbit[i] = 250;
+        bluebit [i] = 250;
+      }
 
   /* write ppm file */
-
-#ifdef MPI
   if (0==myid) {
-#endif
 
-  out = fopen(fname,"w");
-  if (NULL == out) error("Can`t open bitmap file.");
+    out = fopen(fname,"w");
+    if (NULL == out) error("Cannot open bitmap file.");
 
-  fprintf(out,"P6 %d %d 255\n", XRES, YRES);
+    fprintf(out,"P6 %d %d 255\n", pic_res.x, pic_res.y);
 
-
-  for (j=0; j<YRES; j++ ) {
-    for (i=0; i<XRES; i++ ) {
-      buf[3*i  ] = (char) redbit[j][i];
-      buf[3*i+1] = (char) greenbit[j][i];
-      buf[3*i+2] = (char) bluebit[j][i];
-    };
-    fwrite(buf, sizeof(char), 3*XRES, out);
-  };
-
-  fclose(out);
-
-#ifdef MPI
- };
-#endif
+    for (j=pic_res.y-1; j>=0; j-- ) {
+      for (i=0; i<pic_res.x; i++ ) {
+        ii = j * pic_res.x + i;
+        buf[3*i  ] = (char) redbit  [ii];
+        buf[3*i+1] = (char) greenbit[ii];
+        buf[3*i+2] = (char) bluebit [ii];
+      }
+      fwrite(buf, 1, 3*pic_res.x, out);
+    }
+    fclose(out);
+  }
 }
 
 
-void write_pictures( steps )
+void write_pictures( steps ) 
 {
   switch (pic_type) {
-    case 0: write_pictures_raw ( steps ); break;
-    case 1: write_pictures_atoms ( steps ); break;
-    case 2: break;
-  };
+    case 0: write_config_select(steps/pic_interval,"pic",write_cell_pic);break;
+    case 1: write_pictures_bitmap(steps); break;
+  }
 }
-
-
-
-
-
-
-
-
-

@@ -753,25 +753,12 @@ void getparamfile(char *paramfname, int sim)
       getparam("pic_res", &pic_res,PARAM_INT,1,2);
     }
     else if (strcasecmp(token,"numpix")==0) { 
-      /* number of pixels in x/y direction */
-      getparam("numpix", &numpix,PARAM_INT,1,1);
+      /* smearing radius in pixels */
+      getparam("nsmear", &nsmear,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"pic_type")==0) { 
       /* number of pixels in x/y direction */
       getparam("pic_type", &pic_type,PARAM_INT,1,1);
-    }
-    else if (strcasecmp(token,"pic_at_radius")==0) {
-      /* radius (in A) for atoms in pictures */
-      if (ntypes <= 0) {
-        error("ntypes is less or equal zero or missing\n");
-      }
-      else {
-        pic_at_radius = calloc(ntypes,sizeof(real));
-        if (pic_at_radius == NULL) {
-          error("Cannot allocate memory\n");
-        };
-      };
-      getparam("pic_at_radius", pic_at_radius,PARAM_REAL_COPY,1,ntypes);
     }
 #ifdef HOMDEF
     else if (strcasecmp(token,"exp_interval")==0) {

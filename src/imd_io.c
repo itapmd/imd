@@ -150,6 +150,56 @@ void write_cell_press(FILE *out, cell *p)
 #endif /* STRESS_TENS */
 
 
+/******************************************************************************
+*
+*  filter function for write_config_select
+*  writes .pic files (raw data for pictures)
+*
+******************************************************************************/
+
+void write_cell_pic(FILE *out, cell *p) 
+{
+  struct { 
+    float   pos_x, pos_y;
+#ifndef TWOD
+    float   pos_z; 
+#endif
+    float   E_kin, E_pot;
+    integer type;
+  } picbuf;
+
+  int i;
+
+  for (i=0; i<p->n; ++i) {
+    picbuf.pos_x = (float) p->ort X(i);
+    picbuf.pos_y = (float) p->ort Y(i);
+#ifndef TWOD
+    picbuf.pos_z = (float) p->ort Z(i);
+#endif
+    if ( pic_ur.x != (real)0 ) /*if pic_ur still 0, write everything */
+    if ( (picbuf.pos_x < pic_ll.x) || (picbuf.pos_x > pic_ur.x) ||
+#ifndef TWOD
+         (picbuf.pos_z < pic_ll.z) || (picbuf.pos_z > pic_ur.z) ||
+#endif
+         (picbuf.pos_y < pic_ll.y) || (picbuf.pos_y > pic_ur.y) ) continue;
+
+    picbuf.E_kin = (float) SPRODN(p->impuls,i,p->impuls,i)/(2*MASSE(p,i));
+#ifdef DISLOC
+    if (Epot_diff==1)
+      picbuf.E_pot = (float) p->pot_eng[i] - p->Epot_ref[i];
+    else
+#endif
+#if defined(ORDPAR) && !defined(TWOD)
+    picbuf.E_pot = (p->nbanz[i]==0) ? 0 : p->pot_eng[i]/p->nbanz[i];
+#else
+    picbuf.E_pot = p->pot_eng[i];
+#endif
+    picbuf.type  = (integer) SORTE(p,i);
+    fwrite(&picbuf, sizeof(picbuf), 1, out); 
+  }
+}
+
+
 #ifdef DISLOC
 
 /******************************************************************************

@@ -1,7 +1,7 @@
+
 /******************************************************************************
-* $RCSfile:
-* $Revision:
-* $Date:
+* $Revision$
+* $Date$
 ******************************************************************************/
 
 #ifndef USE_SOCKETS
@@ -120,6 +120,7 @@ void check_socket(int steps) {
 
 
 #ifdef TWOD
+
 /******************************************************************************
 *
 *  write_rgb_picture_to_socket writes pictures of configuration to sockets
@@ -127,29 +128,25 @@ void check_socket(int steps) {
 ******************************************************************************/
 
 void write_rgb_picture_to_socket()
-
 {
-
-#define XMAXRES 400
-#define YMAXRES 400
   int XRES, YRES;
   unsigned char image_resolution[4];
   vektor scale;
   real xshift, yshift;
 
-  short int redbyte[XMAXRES][YMAXRES];
-  short int greenbyte[XMAXRES][YMAXRES];
-  short int bluebyte[XMAXRES][YMAXRES];
+  static shortint *redbyte   = NULL;
+  static shortint *greenbyte = NULL;
+  static shortint *bluebyte  = NULL;
 
 #ifdef MPI
-  short int sum_red[XMAXRES][YMAXRES];
-  short int sum_green[XMAXRES][YMAXRES];
-  short int sum_blue[XMAXRES][YMAXRES];
+  static shortint *sum_red   = NULL;
+  static shortint *sum_green = NULL;
+  static shortint *sum_blue  = NULL;
 #endif
 
-  unsigned char buf[3*YMAXRES];
+  static unsigned char *buf  = NULL;
 
-  int i,j,r,s;
+  int i,j,k,r,s;
   real val, delta, one_minus_delta;
   cell *p;
   real red,green,blue;
@@ -157,24 +154,21 @@ void write_rgb_picture_to_socket()
   /* real ecut; */
   ivektor2d coord;
   real tabred[5],tabgreen[5],tabblue[5];
-  int ind;
+  int ind, size, ii;
 
-  /* get the current image size on the Display form socket */
-#ifdef MPI
+  /* get the current image size from socket */
   if (myid == 0) {
-#endif
-
     ReadFull(soc, (void *) image_resolution, 4);
     XRES = (int) image_resolution[0] * 256 + (int) image_resolution[1];
     YRES = (int) image_resolution[2] * 256 + (int) image_resolution[3];
-
-#ifdef MPI
   }
+#ifdef MPI
   MPI_Bcast( &XRES, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &YRES, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
   /* the dist bins are orthogonal boxes in space */
+  size = XRES * YRES;
   scale.x = XRES / box_x.x;
   scale.y = YRES / box_y.y;
 
@@ -182,13 +176,21 @@ void write_rgb_picture_to_socket()
   xshift = (XRES - box_x.x * scale.x) / 2.0;
   yshift = (YRES - box_y.y * scale.y) / 2.0;
 
-  /* Zero bytemaps */
-  for (i=0; i<XRES; i++ ) {
-    for (j=0; j<YRES; j++ ) {
-      bluebyte[i][j]  = 0;
-      greenbyte[i][j] = 0;
-      redbyte[i][j]   = 0;
-    }
+#ifdef MPI
+  sum_red   = (shortint*) realloc(sum_red,   size*sizeof(shortint));
+  sum_green = (shortint*) realloc(sum_green, size*sizeof(shortint));
+  sum_blue  = (shortint*) realloc(sum_blue,  size*sizeof(shortint));
+#endif
+  redbyte   = (shortint*) realloc(redbyte,   size*sizeof(shortint));
+  greenbyte = (shortint*) realloc(greenbyte, size*sizeof(shortint));
+  bluebyte  = (shortint*) realloc(bluebyte,  size*sizeof(shortint));
+  buf       = (unsigned char*) realloc(buf, 3*XRES);
+
+  /* Zero bitmaps */
+  for (i=0; i<size; i++ ) {
+    bluebyte [i] = 0;
+    greenbyte[i] = 0;
+    redbyte  [i] = 0;
   }
 
   /* Color lookup table */
@@ -199,68 +201,62 @@ void write_rgb_picture_to_socket()
   tabred[4] = 0.75; tabgreen[4] = 0.05; tabblue[4] = 0.05;
   
   /* loop over all atoms */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s ) {
-      p = PTR_2D_V(cell_array, r, s,    cell_dim);
-      for (i = 0;i < p->n; ++i) {
-	coord.x = (int) (p->ort X(i) * scale.x) + xshift;
-	coord.y = (int) (p->ort Y(i) * scale.y) + yshift;
-	/* Check bounds */
-	if (coord.x <  0   ) coord.x = 0;
-	if (coord.x >= XRES) coord.x = XRES-1;
-	if (coord.y <  0   ) coord.y = 0;
-	if (coord.y >= YRES) coord.y = YRES-1;
-	
-	val = SPRODN(p->impuls,i,p->impuls,i) / (2*MASSE(p,i));
-	
-	val /= ecut_kin.y;
-	if (1.0<val) val=0.9999;
-	ind = (int)(val * 4.0);
-	delta = (val * 4.0 - ind)/4.0; one_minus_delta = 1.0 - delta;
-	
-	red = tabred[ind+1] * delta + one_minus_delta * tabred[ind];
-	green = tabgreen[ind+1] * delta + one_minus_delta * tabgreen[ind];
-	blue = tabblue[ind+1] * delta + one_minus_delta * tabblue[ind];
-	    
-	redbyte[coord.x][coord.y]   = (short int) (255 * red  );
-	bluebyte[coord.x][coord.y]  = (short int) (255 * blue );
-	greenbyte[coord.x][coord.y] = (short int) (255 * green);
-      }
+  for (k=0; k<ncells; k++)
+    p = cell_array + CELLS(k);
+    for (i=0; i<p->n; ++i) {
+      coord.x = (int) (p->ort X(i) * scale.x) + xshift;
+      coord.y = (int) (p->ort Y(i) * scale.y) + yshift;
+      /* Check bounds */
+      if (coord.x <  0   ) coord.x = 0;
+      if (coord.x >= XRES) coord.x = XRES-1;
+      if (coord.y <  0   ) coord.y = 0;
+      if (coord.y >= YRES) coord.y = YRES-1;
+
+      val = SPRODN(p->impuls,i,p->impuls,i) / (2*MASSE(p,i));
+
+      val /= ecut_kin.y;
+      if (1.0<val) val=0.9999;
+      ind = (int)(val * 4.0);
+      delta = (val * 4.0 - ind)/4.0; one_minus_delta = 1.0 - delta;
+
+      red   = tabred  [ind+1] * delta + one_minus_delta * tabred  [ind];
+      green = tabgreen[ind+1] * delta + one_minus_delta * tabgreen[ind];
+      blue  = tabblue [ind+1] * delta + one_minus_delta * tabblue [ind];
+
+      ii = coord.x * YRES + coord.y; 
+      redbyte  [ii] = (shortint) (255 * red  );
+      bluebyte [ii] = (shortint) (255 * blue );
+      greenbyte[ii] = (shortint) (255 * green);
     }
 
 #ifdef MPI
   /* Add the bytemaps */
-  MPI_Reduce( redbyte,   sum_red,   XRES * YRES, SHORT, MPI_SUM, 0, cpugrid);
-  MPI_Reduce( greenbyte, sum_green, XRES * YRES, SHORT, MPI_SUM, 0, cpugrid);
-  MPI_Reduce( bluebyte , sum_blue,  XRES * YRES, SHORT, MPI_SUM, 0, cpugrid);
+  MPI_Reduce( redbyte,   sum_red,   size, SHORT, MPI_SUM, 0, cpugrid);
+  MPI_Reduce( greenbyte, sum_green, size, SHORT, MPI_SUM, 0, cpugrid);
+  MPI_Reduce( bluebyte , sum_blue,  size, SHORT, MPI_SUM, 0, cpugrid);
 
-  /* Zero bitmap */
+  /* clip bitmap to maximum */
   if (0==myid) 
-    for (i=0; i<XRES; i++ ) {
-      for (j=0; j<YRES; j++ ) {
-	redbyte[i][j]   = sum_red[i][j]   < 255 ? sum_red[i][j]   : 255;
-	greenbyte[i][j] = sum_green[i][j] < 255 ? sum_green[i][j] : 255;
-	bluebyte[i][j]  = sum_blue[i][j]  < 255 ? sum_blue[i][j]  : 255;
-      }
-    }
+  for (i=0; i<size; i++ ) {
+    redbyte  [i] = sum_red  [i] < 255 ? sum_red  [i] : 255;
+    greenbyte[i] = sum_green[i] < 255 ? sum_green[i] : 255;
+    bluebyte [i] = sum_blue [i] < 255 ? sum_blue [i] : 255;
+  }
 #endif
   
   /* write bytes to socket */
-#ifdef MPI
-  if (0==myid) {
-#endif
-    for (i=0; i<YRES; i++ ) {
-      for (j=0; j<XRES; j++ ) {
-        buf[3*j  ] = (unsigned char) redbyte[i][j];
-        buf[3*j+1] = (unsigned char) greenbyte[i][j];
-        buf[3*j+2] = (unsigned char) bluebyte[i][j];
-      }
-      WriteFull(soc,(void *)buf, 3*XRES);
+  if (0==myid)
+  for (i=0; i<YRES; i++ ) {
+    for (j=0; j<XRES; j++ ) {
+      ii = i * YRES + j;
+      buf[3*j  ] = (unsigned char) redbyte  [ii];
+      buf[3*j+1] = (unsigned char) greenbyte[ii];
+      buf[3*j+2] = (unsigned char) bluebyte [ii];
     }
-#ifdef MPI
+    WriteFull(soc,(void *)buf, 3*XRES);
   }
-#endif
 }
+
 #endif  /* TWOD */
 
 /*****************************************************************************
@@ -269,53 +265,46 @@ void write_rgb_picture_to_socket()
 *
 *****************************************************************************/
 
-void write_ras_using_sockets() {
-   int r,s,t,i, ready; 
+void write_ras_using_sockets() 
+{
+   int r,s,t,i,k, ready; 
    int a; 
    cell *p; 
    real tmp;
 
    WriteFull(soc,&natoms,sizeof(int)); 
-   /*   WriteFull(soc,&box_x.x,sizeof(real)); 
-   WriteFull(soc,&box_y.y,sizeof(real)); */
    /*  loop over all atoms */
-   for ( r = cellmin.x; r < cellmax.x; ++r ) 
-     for ( s = cellmin.y; s < cellmax.y; ++s ) 
-#ifdef TWOD
-       {
-       p = PTR_2D_V(cell_array, r, s, cell_dim); 
-#else
-       for ( t = cellmin.z; t < cellmax.z; ++t ) { 
-	   p = PTR_3D_V(cell_array, r, s, t, cell_dim); 
-#endif
-	   for (i = 0;i < p->n; ++i) { 
-	     WriteFull(soc,&p->nummer[i],sizeof(int)); 
-	     WriteFull(soc,&p->sorte[i],sizeof(int)); 
-	     WriteFull(soc,&p->masse[i],sizeof(real)); 
-	     WriteFull(soc,&p->ort X(i),sizeof(real)); 
-	     WriteFull(soc,&p->ort Y(i),sizeof(real)); 
+   for (k=0; k<ncells; k++) {
+
+     p = cell_array + CELLS(k);
+
+     for (i=0; i<p->n; ++i) { 
+       WriteFull(soc,&p->nummer[i],sizeof(int)); 
+       WriteFull(soc,&p->sorte[i],sizeof(int)); 
+       WriteFull(soc,&p->masse[i],sizeof(real)); 
+       WriteFull(soc,&p->ort X(i),sizeof(real)); 
+       WriteFull(soc,&p->ort Y(i),sizeof(real)); 
 #ifndef TWOD 
-	     WriteFull(soc,&p->ort Z(i),sizeof(real)); 
+       WriteFull(soc,&p->ort Z(i),sizeof(real)); 
 #endif 
-	     WriteFull(soc,&p->impuls X(i),sizeof(real)); 
-	     WriteFull(soc,&p->impuls Y(i),sizeof(real)); 
+       WriteFull(soc,&p->impuls X(i),sizeof(real)); 
+       WriteFull(soc,&p->impuls Y(i),sizeof(real)); 
 #ifndef TWOD
-	     WriteFull(soc,&p->impuls Z(i),sizeof(real));
+       WriteFull(soc,&p->impuls Z(i),sizeof(real));
 #endif
 #ifdef ORDPAR
 #ifndef TWOD
-	     tmp = p->pot_eng[i];
-	     if (p->nbanz[i]>0) 
-	       tmp /= p->nbanz[i];
-	     else
-	       tmp=0.0;
-	     WriteFull(soc,&tmp,sizeof(real));
+       tmp = p->pot_eng[i];
+       if (p->nbanz[i]>0) 
+         tmp /= p->nbanz[i];
+       else
+         tmp=0.0;
+       WriteFull(soc,&tmp,sizeof(real));
 #endif
 #endif
-	     WriteFull(soc,&p->pot_eng[i],sizeof(real));
-	  }
-
-	}
+       WriteFull(soc,&p->pot_eng[i],sizeof(real));
+     }
+   }
 }
 
 
@@ -359,7 +348,7 @@ void write_conf_using_sockets()
    pot    = (real *)    calloc(natoms, sizeof(real));
 
 
-   if (use_socket_window){ /* write all atoms in the box */    
+   if (use_socket_window) { /* write all atoms in the box */    
      socketwin_ll.x = pic_ll.x;
      socketwin_ll.y = pic_ll.y;
      socketwin_ur.x = pic_ur.x;
@@ -673,8 +662,3 @@ void write_distrib_using_sockets()
     WriteFull(soc,(void *) kin_hist, size*sizeof(float));
   }
 }
-
-
-
-
-

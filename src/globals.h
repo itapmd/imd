@@ -1,3 +1,4 @@
+
 /******************************************************************************
 *
 * globals.h -- Global Variables for the imd Package
@@ -5,7 +6,6 @@
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
@@ -135,9 +135,8 @@ EXTERN vektor pic_scale INIT(nullvektor);   /* Scale factor x/y for pictures    
 EXTERN vektor pic_ll  INIT(nullvektor);     /* lower left (front) corner */
 EXTERN vektor pic_ur  INIT(nullvektor);     /* upper right (back) corner */
 EXTERN ivektor   pic_res INIT(nullivektor); /* number of pixels in x/y dir.*/
-EXTERN int       numpix  INIT(1);           /* number of pixels in x/y dir.*/
-EXTERN int       pic_type INIT(0);          /* picture type 0/1/2 */
-EXTERN real      *pic_at_radius INIT(NULL); /* atom radius for pictures */
+EXTERN int       pic_type INIT(0);          /* picture type 0/1 */
+EXTERN int       nsmear   INIT(5);          /* smearing radius in pixels */
 #ifndef TWOD
 EXTERN vektor3d view_dir INIT(nullvektor);  /* view direction */
 EXTERN vektor3d view_pos INIT(nullvektor);  /* view position */

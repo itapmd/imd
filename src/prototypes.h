@@ -221,7 +221,7 @@ void write_cell_press(FILE *out, cell *p);
 void recv_cell(cell *p, int from_cpu, int tag);
 void send_cell(cell *p, int to_cpu, int tag);
 #endif
-#ifdef SOCK
+#ifdef USE_SOCKETS
 void write_conf_using_sockets(void);
 void write_ras_using_sockets(void);
 #endif
@@ -229,7 +229,9 @@ void write_ras_using_sockets(void);
 /* write distributions - files imd_io_*.c, imd_transport.c, socket_io.c */
 /* should be merged and put in imd_histogram.c */
 void write_distrib(int steps);
+#ifdef USE_SOCKETS
 void write_distrib_using_sockets(void);
+#endif
 #ifdef STRESS_TENS
 void write_press_dist(int steps);
 void write_press_dist_shock(int steps);
@@ -237,11 +239,11 @@ void write_press_dist_shock(int steps);
 
 /* write pictures - files imd_io_*.c, socket_io.c */
 void write_pictures(int steps);
-void write_pictures_atoms(int steps);
-void write_pictures_bins(int steps);
-void write_pic_cell(cell *p, FILE *out);
+void write_pictures_bitmap(int steps);
+#ifdef USE_SOCKETS
 #ifdef TWOD
 void write_rgb_picture_to_socket(void);
+#endif
 #endif
 
 /* shear, deform of load sample - files imd_deform.c, imd_load.c */
@@ -286,7 +288,7 @@ void rnemd_heat_exchange();
 #endif
 
 /* support for socket communication - file socket_io.c */
-#ifdef SOCK
+#ifdef USE_SOCKETS
 void check_socket(int steps);
 #endif
 
