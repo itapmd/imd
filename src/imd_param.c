@@ -1016,7 +1016,8 @@ void read_parameters(int argc,char **argv)
   /* Get restart parameters if restart */
   if (0 != restart) {
     sprintf(fname,"%s.%d.itr",outfilename,restart);
-    printf("Restarting from %s.\n",fname);
+    sprintf(infilename,"%s.%d",outfilename,restart);
+    printf("Restarting from %s.\n",infilename);
     getparamfile(fname,1);
   } else {
     /* Delete energy file if not restart */
