@@ -79,6 +79,7 @@ void main_loop(void)
 #ifdef NPT
   d_pressure.x = (pressure_end.x - pressure_ext.x) / (steps_max - steps_min);
   d_pressure.y = (pressure_end.y - pressure_ext.y) / (steps_max - steps_min);
+  calc_dyn_pressure();
 #endif
 
 #if defined(CORRELATE) || defined(MSQD)

@@ -578,6 +578,77 @@ void move_atoms_nvt(void)
 #endif
 
 
+#ifdef NPT
+
+/******************************************************************************
+*
+*  compute initial dynamical pressure
+*
+******************************************************************************/
+
+void calc_dyn_pressure(void)
+{
+  int  k;
+  real tmpvec1[5], tmpvec2[5];
+
+  /* initialize data */
+  dyn_stress_x = 0.0;
+  dyn_stress_y = 0.0;
+  dyn_stress_z = 0.0;
+  Ekin_old     = 0.0;
+  Erot_old     = 0.0;
+
+  /* loop over all cells */
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:dyn_stress_x,dyn_stress_y,dyn_stress_z,Ekin_old,Erot_old)
+#endif
+  for (k=0; k<ncells; ++k) {
+
+    int i;
+    cell *p;
+    real tmp;
+    p = cell_array + CELLS(k);
+
+    /* loop over atoms in cell */
+    for (i=0; i<p->n; ++i) {
+      tmp = 1.0 / MASSE(p,i);
+      dyn_stress_x += p->impuls X(i) * p->impuls X(i) * tmp;
+      dyn_stress_y += p->impuls Y(i) * p->impuls Y(i) * tmp;
+#ifndef TWOD
+      dyn_stress_z += p->impuls Z(i) * p->impuls Z(i) * tmp;
+#endif
+#ifdef UNIAX
+      Erot_old += SPRODN(p->dreh_impuls,i,p->dreh_impuls,i)/p->traeg_moment[i];
+#endif
+    }
+  }
+
+  Ekin_old  = dyn_stress_x + dyn_stress_y;
+#ifndef TWOD
+  Ekin_old += dyn_stress_z;
+#endif
+
+#ifdef MPI
+  /* add up results from different CPUs */
+  tmpvec1[0]   = dyn_stress_x;
+  tmpvec1[1]   = dyn_stress_y;
+  tmpvec1[2]   = dyn_stress_z;
+  tmpvec1[3]   = Ekin_old;
+  tmpvec1[4]   = Erot_old;
+
+  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid);
+
+  dyn_stress_x = tmpvec2[0];
+  dyn_stress_y = tmpvec2[1];
+  dyn_stress_z = tmpvec2[2];
+  Ekin_old     = tmpvec2[3];
+  Erot_old     = tmpvec2[4];
+#endif
+
+}
+
+#endif /* NPT */
+
 /******************************************************************************
 *
 * NPT Integrator with Nose Hoover Thermostat
@@ -587,19 +658,28 @@ void move_atoms_nvt(void)
 #ifdef NPT_iso
 
 void move_atoms_npt_iso(void)
-
 {
   int  k;
-  real Ekin_old = 0.0, Ekin_new = 0.0;
-  real fric, ifric, tmpvec1[5], tmpvec2[5], ttt;
-  real Erot_old = 0.0, Erot_new = 0.0;
-  real reib, ireib ;
-  fnorm = 0.0;
+  real Ekin_new = 0.0, Erot_new = 0.0, fnorm = 0.0;
+  real pfric, pifric, rfric, rifric;
+  real tmpvec1[5], tmpvec2[5], ttt;
+  real reib, ireib;
 
-  /* new box size relative to old one */
-  box_size.x =   1.0 / box_size.x + 2.0 * timestep * xi.x;
-  fric  =        1.0 - (xi.x + eta) * timestep / 2.0;
-  ifric = 1.0 / (1.0 + (xi.x + eta) * timestep / 2.0);
+#ifdef UNIAX
+  pressure = (0.6 * (Ekin_old + Erot_old) + virial) / (DIM * volume);
+#else
+  pressure = (Ekin_old + virial) / (DIM * volume) ;
+#endif
+
+  /* time evolution of xi */
+  xi_old.x = xi.x;
+  xi.x += timestep * (pressure-pressure_ext.x) * volume * isq_tau_xi / nactive;
+
+  /* some constants used later on */
+  pfric  =        1.0 - (xi_old.x + eta) * timestep / 2.0;
+  pifric = 1.0 / (1.0 + (xi.x     + eta) * timestep / 2.0);
+  rfric  =        1.0 + (xi.x          ) * timestep / 2.0;
+  rifric = 1.0 / (1.0 - (xi.x          ) * timestep / 2.0);
 #ifdef UNIAX
   reib  =        1.0 - eta_rot * timestep / 2.0;
   ireib = 1.0 / (1.0 + eta_rot * timestep / 2.0);
@@ -607,7 +687,7 @@ void move_atoms_npt_iso(void)
 
   /* loop over all cells */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:Ekin_old,Ekin_new,Erot_old,Erot_new,fnorm)
+#pragma omp parallel for reduction(+:Ekin_new,Erot_new,fnorm)
 #endif
   for (k=0; k<ncells; ++k) {
 
@@ -622,22 +702,15 @@ void move_atoms_npt_iso(void)
 
     for (i=0; i<p->n; ++i) {
 
-      /* twice the old kinetic energy */ 
-      Ekin_old += SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
-#ifdef UNIAX
-      Erot_old += SPRODN(p->dreh_impuls,i,p->dreh_impuls,i) 
-                                              / p->traeg_moment[i];
-#endif
-
 #ifdef FNORM
       fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
 #endif
 
       /* new momenta */
-      p->impuls X(i) = (fric*p->impuls X(i)+timestep*p->kraft X(i))*ifric;
-      p->impuls Y(i) = (fric*p->impuls Y(i)+timestep*p->kraft Y(i))*ifric;
+      p->impuls X(i) = (pfric*p->impuls X(i)+timestep*p->kraft X(i))*pifric;
+      p->impuls Y(i) = (pfric*p->impuls Y(i)+timestep*p->kraft Y(i))*pifric;
 #ifndef TWOD
-      p->impuls Z(i) = (fric*p->impuls Z(i)+timestep*p->kraft Z(i))*ifric;
+      p->impuls Z(i) = (pfric*p->impuls Z(i)+timestep*p->kraft Z(i))*pifric;
 #endif
 
 #ifdef UNIAX
@@ -654,18 +727,15 @@ void move_atoms_npt_iso(void)
       /* twice the new kinetic energy */ 
       Ekin_new += SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
 #ifdef UNIAX
-      Erot_new += SPRODN(p->dreh_impuls,i,p->dreh_impuls,i) 
-                                                   / p->traeg_moment[i];
+      Erot_new += SPRODN(p->dreh_impuls,i,p->dreh_impuls,i)/p->traeg_moment[i];
 #endif
 
       /* new positions */
-      tmp = p->impuls X(i) * 2.0 / ((1.0 + box_size.x) * MASSE(p,i));
-      p->ort X(i) = box_size.x * ( p->ort X(i) + timestep * tmp );
-      tmp = p->impuls Y(i) * 2.0 / ((1.0 + box_size.x) * MASSE(p,i));
-      p->ort Y(i) = box_size.x * ( p->ort Y(i) + timestep * tmp );
+      tmp = timestep / MASSE(p,i);
+      p->ort X(i) = (rfric * p->ort X(i) + p->impuls X(i) * tmp) * rifric;
+      p->ort Y(i) = (rfric * p->ort Y(i) + p->impuls Y(i) * tmp) * rifric;
 #ifndef TWOD
-      tmp = p->impuls Z(i) * 2.0 / ((1.0 + box_size.x) * MASSE(p,i));
-      p->ort Z(i) = box_size.x * ( p->ort Z(i) + timestep * tmp );
+      p->ort Z(i) = (rfric * p->ort Z(i) + p->impuls Z(i) * tmp) * rifric;
 #endif
 
 #ifdef UNIAX
@@ -706,54 +776,45 @@ void move_atoms_npt_iso(void)
 
 #ifdef MPI
   /* add up results from all CPUs */
-  tmpvec1[0] = Ekin_old;
-  tmpvec1[1] = Ekin_new;
-  tmpvec1[2] = Erot_old;
-  tmpvec1[3] = Erot_new;
-  tmpvec1[4] = fnorm;
+  tmpvec1[0] = Ekin_new;
+  tmpvec1[1] = Erot_new;
+  tmpvec1[2] = fnorm;
 
-  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( tmpvec1, tmpvec2, 3, REAL, MPI_SUM, cpugrid);
 
-  Ekin_old = tmpvec2[0];
-  Ekin_new = tmpvec2[1];
-  Erot_old = tmpvec2[2];
-  Erot_new = tmpvec2[3];
-  fnorm    = tmpvec2[4];
+  Ekin_new = tmpvec2[0];
+  Erot_new = tmpvec2[1];
+  fnorm    = tmpvec2[2];
 #endif
 
 #ifdef UNIAX
-  tot_kin_energy = ( Ekin_old + Ekin_new 
-		     + Erot_old + Erot_new ) / 4.0;
-  pressure = ( 2.0 / 5.0 * tot_kin_energy + virial / 3.0 ) / volume ;
+  tot_kin_energy = ( Ekin_old + Ekin_new + Erot_old + Erot_new) / 4.0;
 #else
   tot_kin_energy = ( Ekin_old + Ekin_new ) / 4.0;
-  pressure = ( 2.0 * tot_kin_energy + virial ) / ( DIM * volume ) ;
 #endif
 
-  /* time evolution of constraints */
-  ttt  = nactive * temperature;
-  eta += timestep * (Ekin_new / ttt - 1.0) * isq_tau_eta;
+  /* time evolution of eta */
+  ttt      = nactive * temperature;
+  eta     += timestep * (Ekin_new / ttt - 1.0) * isq_tau_eta;
+  Ekin_old = Ekin_new;
 #ifdef UNIAX
-  ttt  = nactive_rot * temperature;
+  ttt      = nactive_rot * temperature;
   eta_rot += timestep * (Erot_new / ttt - 1.0) * isq_tau_eta_rot;
+  Erot_old = Erot_new;
 #endif
 
-  ttt = xi_old.x + timestep * 2.0 * (pressure - pressure_ext.x) * volume
-                          * isq_tau_xi / nactive;
-  xi_old.x = xi.x;
-  xi.x = ttt;
-
-  /* new box size */
-  box_x.x *= box_size.x;
-  box_x.y *= box_size.x;
-  box_y.x *= box_size.x;
-  box_y.y *= box_size.x;
+  /* time evolution of box size */
+  ttt = (1.0 + xi.x * timestep / 2.0) / (1.0 - xi.x * timestep / 2.0);
+  box_x.x *= ttt;
+  box_x.y *= ttt;
+  box_y.x *= ttt;
+  box_y.y *= ttt;
 #ifndef TWOD
-  box_x.z *= box_size.x;
-  box_y.z *= box_size.x;
-  box_z.x *= box_size.x;
-  box_z.y *= box_size.x;
-  box_z.z *= box_size.x;
+  box_x.z *= ttt;
+  box_y.z *= ttt;
+  box_z.x *= ttt;
+  box_z.y *= ttt;
+  box_z.z *= ttt;
 #endif  
   make_box();
 }
@@ -778,34 +839,44 @@ void move_atoms_npt_iso(void)
 #ifdef NPT_axial
 
 void move_atoms_npt_axial(void)
-
 {
   int k;
-  real Ekin, ttt, xi_tmp, tmpvec1[5], tmpvec2[5];
-  vektor fric, ifric;
-  fnorm = 0.0;
+  real Ekin_new = 0.0, fnorm = 0.0, ttt, tmpvec1[5], tmpvec2[5];
+  vektor pfric, pifric, rfric, rifric, tvec;
 
-  /* initialize data, and compute new box size */
-  Ekin             = 0.0;
-  stress_x         = 0.0;
-  stress_y         = 0.0;
-  /* new box size relative to old one */ 
-  box_size.x     = 1.0 / box_size.x + 2.0 * timestep * xi.x;  
-  box_size.y     = 1.0 / box_size.y + 2.0 * timestep * xi.y;
-  fric.x  =        1.0 - (xi.x + eta) * timestep / 2.0;
-  fric.y  =        1.0 - (xi.y + eta) * timestep / 2.0;
-  ifric.x = 1.0 / (1.0 + (xi.x + eta) * timestep / 2.0);
-  ifric.y = 1.0 / (1.0 + (xi.y + eta) * timestep / 2.0);
+  stress_x = (dyn_stress_x + vir_x) / volume;  dyn_stress_x = 0.0;
+  stress_y = (dyn_stress_y + vir_y) / volume;  dyn_stress_y = 0.0;
 #ifndef TWOD
-  stress_z       = 0.0;
-  box_size.z     = 1.0 / box_size.z + 2.0 * timestep * xi.z;  
-  fric.z  =        1.0 - (xi.z + eta) * timestep / 2.0;
-  ifric.z = 1.0 / (1.0 + (xi.z + eta) * timestep / 2.0);
+  stress_z = (dyn_stress_z + vir_z) / volume;  dyn_stress_z = 0.0;
+#endif
+
+  /* time evolution of xi */
+  ttt  = timestep * volume * isq_tau_xi / nactive;
+  xi_old.x = xi.x;  xi.x += ttt * (stress_x - pressure_ext.x);
+  xi_old.y = xi.y;  xi.y += ttt * (stress_y - pressure_ext.y);
+#ifndef TWOD
+  xi_old.z = xi.z;  xi.z += ttt * (stress_z - pressure_ext.z);
+#endif
+
+  /* some constants used later on */
+  pfric.x  =        1.0 - (xi_old.x + eta) * timestep / 2.0;
+  pifric.x = 1.0 / (1.0 + (xi.x     + eta) * timestep / 2.0);
+  rfric.x  =        1.0 + (xi.x          ) * timestep / 2.0;
+  rifric.x = 1.0 / (1.0 - (xi.x          ) * timestep / 2.0);
+  pfric.y  =        1.0 - (xi_old.y + eta) * timestep / 2.0;
+  pifric.y = 1.0 / (1.0 + (xi.y     + eta) * timestep / 2.0);
+  rfric.y  =        1.0 + (xi.y          ) * timestep / 2.0;
+  rifric.y = 1.0 / (1.0 - (xi.y          ) * timestep / 2.0);
+#ifndef TWOD
+  pfric.z  =        1.0 - (xi_old.z + eta) * timestep / 2.0;
+  pifric.z = 1.0 / (1.0 + (xi.z     + eta) * timestep / 2.0);
+  rfric.z  =        1.0 + (xi.z          ) * timestep / 2.0;
+  rifric.z = 1.0 / (1.0 - (xi.z          ) * timestep / 2.0);
 #endif
 
   /* loop over all cells */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:Ekin,stress_x,stress_y,stress_z,fnorm)
+#pragma omp parallel for reduction(+:Ekin,dyn_stress_x,dyn_stress_y,dyn_stress_z,fnorm)
 #endif
   for (k=0; k<ncells; ++k) {
 
@@ -817,48 +888,37 @@ void move_atoms_npt_axial(void)
     /* loop over atoms in cell */
     for (i=0; i<p->n; ++i) {
 
-      /* contribution of old p's to stress */
-      stress_x += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
-      stress_y += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
-#ifndef TWOD
-      stress_z += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
-#endif
-
 #ifdef FNORM
       fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
 #endif
 
       /* new momenta */
-      p->impuls X(i) = (fric.x * p->impuls X(i)
-                                   + timestep * p->kraft X(i)) * ifric.x;
-      p->impuls Y(i) = (fric.y * p->impuls Y(i)
-                                   + timestep * p->kraft Y(i)) * ifric.y;
+      p->impuls X(i) = (pfric.x * p->impuls X(i)
+                                   + timestep * p->kraft X(i)) * pifric.x;
+      p->impuls Y(i) = (pfric.y * p->impuls Y(i)
+                                   + timestep * p->kraft Y(i)) * pifric.y;
 #ifndef TWOD
-      p->impuls Z(i) = (fric.z * p->impuls Z(i)
-                                   + timestep * p->kraft Z(i)) * ifric.z;
+      p->impuls Z(i) = (pfric.z * p->impuls Z(i)
+                                   + timestep * p->kraft Z(i)) * pifric.z;
 #endif
 
-      /* new kinetic energy, and contribution of new p's to stress */
-      tmp       = p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
-      stress_x += tmp;
-      Ekin     += tmp;
-      tmp       = p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
-      stress_y += tmp;
-      Ekin     += tmp;
+      /* new stress tensor (dynamic part only) */
+      tmp = 1.0 / MASSE(p,i);
+      dyn_stress_x += p->impuls X(i) * p->impuls X(i) * tmp;
+      dyn_stress_y += p->impuls Y(i) * p->impuls Y(i) * tmp;
 #ifndef TWOD
-      tmp       = p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
-      stress_z += tmp;
-      Ekin     += tmp;
+      dyn_stress_z += p->impuls Z(i) * p->impuls Z(i) * tmp;
 #endif
+
+      /* twice the new kinetic energy */ 
+      Ekin_new += SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
 	  
       /* new positions */
-      tmp = p->impuls X(i) * 2.0 / ((1.0 + box_size.x) * MASSE(p,i));
-      p->ort X(i) = box_size.x * (p->ort X(i) + timestep * tmp);
-      tmp = p->impuls Y(i) * 2.0 / ((1.0 + box_size.y) * MASSE(p,i));
-      p->ort Y(i) = box_size.y * (p->ort Y(i) + timestep * tmp);
+      tmp = timestep / MASSE(p,i);
+      p->ort X(i) = (rfric.x * p->ort X(i) + p->impuls X(i) * tmp) * rifric.x;
+      p->ort Y(i) = (rfric.y * p->ort Y(i) + p->impuls Y(i) * tmp) * rifric.y;
 #ifndef TWOD
-      tmp = p->impuls Z(i) * 2-0 / ((1.0 + box_size.z) * MASSE(p,i));
-      p->ort Z(i) = box_size.z * (p->ort Z(i) + timestep * tmp);
+      p->ort Z(i) = (rfric.z * p->ort Z(i) + p->impuls Z(i) * tmp) * rifric.z;
 #endif
 
 #ifdef STRESS_TENS
@@ -878,57 +938,41 @@ void move_atoms_npt_axial(void)
 
 #ifdef MPI
   /* add up results from different CPUs */
-  tmpvec1[0] = Ekin;
-  tmpvec1[1] = fnorm;
-  tmpvec1[2] = stress_x;
-  tmpvec1[3] = stress_y;
-#ifndef TWOD
-  tmpvec1[4] = stress_z;
+  tmpvec1[0]   = Ekin_new;
+  tmpvec1[1]   = fnorm;
+  tmpvec1[2]   = dyn_stress_x;
+  tmpvec1[3]   = dyn_stress_y;
+  tmpvec1[4]   = dyn_stress_z;
+
+  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid);
+
+  Ekin_new     = tmpvec2[0];
+  fnorm        = tmpvec2[1];
+  dyn_stress_x = tmpvec2[2];
+  dyn_stress_y = tmpvec2[3];
+  dyn_stress_z = tmpvec2[4];
 #endif
 
-  MPI_Allreduce( tmpvec1, tmpvec2, 2+DIM, REAL, MPI_SUM, cpugrid);
+  /* time evolution of eta */
+  tot_kin_energy = ( Ekin_old + Ekin_new ) / 4.0;
+  ttt      = nactive * temperature;
+  eta     += timestep * (Ekin_new / ttt - 1.0) * isq_tau_eta;
+  Ekin_old = Ekin_new;
 
-  Ekin     = tmpvec2[0];
-  fnorm    = tmpvec2[1];
-  stress_x = tmpvec2[2];
-  stress_y = tmpvec2[3];
+  /* time evolution of box size */
+  tvec.x   = (1.0 + xi.x * timestep / 2.0) / (1.0 - xi.x * timestep / 2.0);
+  tvec.y   = (1.0 + xi.y * timestep / 2.0) / (1.0 - xi.y * timestep / 2.0);
+  box_x.x *= tvec.x;
+  box_x.y *= tvec.x;
+  box_y.x *= tvec.y;
+  box_y.y *= tvec.y;
 #ifndef TWOD
-  stress_z = tmpvec2[4];
-#endif
-#endif
-
-  tot_kin_energy  = stress_x + stress_y;
-  stress_x        = (stress_x / 2.0 + vir_x) / volume;
-  stress_y        = (stress_y / 2.0 + vir_y) / volume;
-#ifndef TWOD
-  tot_kin_energy += stress_z;
-  stress_z        = (stress_z / 2.0 + vir_z) / volume;
-#endif
-  tot_kin_energy /= 4.0;
-
-  /* update parameters */
-  ttt  = nactive * temperature;
-  eta += timestep * (Ekin / ttt - 1.0) * isq_tau_eta;
-
-  ttt  = timestep * 2.0 * volume * isq_tau_xi / nactive;
-
-  xi_tmp   = xi_old.x + ttt * (stress_x - pressure_ext.x);
-  xi_old.x = xi.x;
-  xi.x     = xi_tmp;
-  xi_tmp   = xi_old.y + ttt * (stress_y - pressure_ext.y);
-  xi_old.y = xi.y;
-  xi.y     = xi_tmp;
-#ifndef TWOD
-  xi_tmp   = xi_old.z + ttt * (stress_z - pressure_ext.z);
-  xi_old.z = xi.z;
-  xi.z     = xi_tmp;
-#endif
-
-  /* new box (box is rectangular) */
-  box_x.x *= box_size.x;
-  box_y.y *= box_size.y;
-#ifndef TWOD
-  box_z.z *= box_size.z;
+  tvec.z = (1.0 + xi.z * timestep / 2.0) / (1.0 - xi.z * timestep / 2.0);
+  box_x.z *= tvec.x;
+  box_y.z *= tvec.y;
+  box_z.x *= tvec.z;
+  box_z.y *= tvec.z;
+  box_z.z *= tvec.z;
 #endif
   make_box();
 }

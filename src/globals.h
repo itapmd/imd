@@ -162,6 +162,8 @@ EXTERN int      projection INIT(0);         /* projection type 0/1 */
 EXTERN real timestep INIT(0.0);
 EXTERN real tot_pot_energy INIT(0.0);
 EXTERN real tot_kin_energy INIT(0.0);
+EXTERN real Ekin_old INIT(0.0);
+EXTERN real Erot_old INIT(0.0);
 EXTERN real pressure INIT(0.0);
 EXTERN real volume INIT(0.0);
 EXTERN real virial INIT(0.0);
@@ -252,6 +254,7 @@ EXTERN real isq_tau_eta_rot INIT(0.0);
 EXTERN real vir_x INIT(0.0), vir_y INIT(0.0), vir_z INIT(0.0);
 /* diagonal of stress tensor */
 EXTERN real stress_x INIT(0.0), stress_y INIT(0.0), stress_z INIT(0.0);
+EXTERN real dyn_stress_x INIT(0.0), dyn_stress_y INIT(0.0), dyn_stress_z INIT(0.0);
 
 #ifdef NPT
 EXTERN real   isq_tau_xi INIT(0.0); /* inverse of tau_xi^2 */
@@ -260,7 +263,6 @@ EXTERN vektor pressure_ext INIT(nullvektor);
 EXTERN vektor pressure_end INIT(nullvektor);
 EXTERN int    use_curr_pressure INIT(0);  /* which starting pressure to use */
 EXTERN vektor xi INIT(nullvektor), xi_old INIT(nullvektor);
-EXTERN vektor box_size INIT(einsvektor); 
 #endif
 
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)

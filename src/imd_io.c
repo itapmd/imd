@@ -605,7 +605,6 @@ void write_eng_file(int steps)
   fprintf(out," %e",     (double) gamma_damp );
 #endif
 
-
   if (ensemble==ENS_NPT_AXIAL) {
 #ifdef TWOD
     fprintf(out," %e %e", (double) stress_x, (double) stress_y );
@@ -712,13 +711,3 @@ void reduce_displacement(vektor *dist)
 #endif
   *dist = d;
 }
-
-
-
-
-
-
-
-
-
-

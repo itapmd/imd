@@ -183,6 +183,7 @@ void recv_cell_force(cell *p, int from_cpu,int tag);
 void move_atoms_nve(void);
 void move_atoms_mik(void);
 void move_atoms_nvt(void);
+void calc_dyn_pressure(void);
 void move_atoms_npt_iso(void);
 void move_atoms_npt_axial(void);
 void move_atoms_mc(void);
