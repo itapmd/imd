@@ -794,10 +794,7 @@ void getparamfile(char *paramfname, int sim)
        /* Damping prefactor gamma_bar */
 	getparam("gamma_bar",&gamma_bar,PARAM_REAL,1,1);
     }
-    else if (strcasecmp(token,"gamma_min")==0) { 
-       /* minimal damping prefactor gamma_bar */
-	getparam("gamma_min",&gamma_min,PARAM_REAL,1,1);
-    }
+  
     else if (strcasecmp(token,"gamma_damp")==0) { /* actual Damping factor */
 	getparam("gamma_damp",&gamma_damp,PARAM_REAL,1,1);
     }
@@ -805,12 +802,17 @@ void getparamfile(char *paramfname, int sim)
 	/* damping mode for stadium geometry */
 	getparam("dampingmode",&dampingmode,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"delta_ftg")==0) {
+  
+#endif
+#ifdef FTG
+  else if (strcasecmp(token,"delta_ftg")==0) {
       /* damping mode for stadium geometry */
       getparam("delta_ftg",&delta_ftg,PARAM_REAL,1,1);
     } 
-#endif
-#ifdef FTG
+  else if (strcasecmp(token,"gamma_min")==0) { 
+       /* minimal damping prefactor gamma_bar */
+	getparam("gamma_min",&gamma_min,PARAM_REAL,1,1);
+    }
     else if (strcasecmp(token,"Tleft")==0) {
       /* damping mode for stadium geometry */
       getparam("Tleft",&Tleft,PARAM_REAL,1,1);
