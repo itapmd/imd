@@ -388,11 +388,15 @@ void write_atoms_pic(FILE *out)
 #endif
     float   E_kin, E_pot;
     integer type;
+    integer end;   /* this must be the last component of picbuf_t! */
   } picbuf_t;
 
-  int i, k, len=0, sz=sizeof(picbuf_t);
-  picbuf_t *picbuf;
+  int i, k, len=0, sz;
+  picbuf_t *picbuf, dummy_buf;
   cell *p;
+
+  /* get the real size of picbuf_t in bytes */
+  sz = ((char *) &dummy_buf.end) - ((char *) &dummy_buf);
 
   for (k=0; k<ncells; k++) {
     p = cell_array + CELLS(k);
