@@ -533,7 +533,7 @@ The following potentials are currently supported:
 
 By default, <b>imd_elco</b> computes the global stress tensor
 <tt>sigma_ij</tt>, the global tensor of the elastic moduli
-<tt>c_ab</tt>, and the global pressure derivative of the bulk modulus
+<tt>C_ab</tt>, and the global pressure derivative of the bulk modulus
 <tt>B'</tt>. These values are written to standard output along with
 the atom number <tt>N</tt> , the total volume <tt>V</tt>, the volume
 per atom <tt>v</tt>, the potential energy <tt>E</tt>, the total bulk
@@ -564,11 +564,10 @@ The following special options can be used:
    <td>Write the <u>local stress tensor</u> to a file with suffix 
    <tt>.stress</tt>. The output format is 
    <pre>
-   number type x y z s_xx s_yy s_zz \
-   s_yz s_zx s_xy vol_voronoi  
+   number type x y (z) s_xx s_yy (s_zz s_yz s_zx) s_xy vol_voronoi  
    </pre>
    where <tt>number</tt> is the atom number, <tt>type</tt> is the atom
-   type, <tt>x,y,z</tt> are the coordinates of the atoms, <tt>s_ij</tt>
+   type, <tt>x,y(,z)</tt> are the coordinates of the atoms, <tt>s_ij</tt>
    are the components of the stress tensor, and <tt>vol_voronoi</tt> is
    the volume of the Voronoi cell. The stress tensor is normalized with
    the volume of the Voronoi cell of the corresponding atom.</td>
@@ -590,7 +589,7 @@ The following special options can be used:
    <td>Write the local elastic moduli to a file with suffix
    <tt>.elco</tt>. The output format is
    <pre>
-   number type x y z B c_11 c_12 c_44
+   number type x y (z) B C_11 C_12 (C_44)
    </pre>
    The elastic moduli are normalized using the volumes of the 
    Voronoi cells.</td>
@@ -602,12 +601,22 @@ The following special options can be used:
    <td>Write the complete tensor of the local elastic moduli to a 
    file with suffix <tt>.elco</tt>. The output format is
    <pre>
-   number type x y z B \
-   c_11 c_12 c_13 c_22 c_23 c_33 \
-   c_44 c_45 c_46 c_55 c_56 c_66 \
-   c_14 c_15 c_16 c_24 c_25 c_26 c_34 c_35 c_36
+   number type x y z B C_11 C_12 C_13 C_22 C_23 C_33 C_44 C_45 \
+   C_46 C_55 C_56 C_66 C_14 C_15 C_16 C_24 C_25 C_26 C_34 C_35 C_36
    </pre></td>
 </tr>
+<tr valign="top">
+   <td align="center"><b>-w</b></td>
+   <td align="center">integer&nbsp;ab</td>
+   <td align="center">-</td>
+   <td>Write selective component C_ab (Voigt notation) of the 
+   tensor of the local elastic moduli to a 
+   file with suffix <tt>.c_ab.elco</tt>. The output format is
+   <pre>
+   number type x y (z) C_ab
+   </pre></td>
+</tr>
+
 </table>
 
 <p>
