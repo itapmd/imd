@@ -1242,7 +1242,7 @@ void getparamfile(char *paramfname, int sim)
 void check_parameters_complete()
 {
   real tmp;
-
+  
   if (ensemble == 0) {
     error("missing or unknown ensemble parameter.");
   }
@@ -1339,9 +1339,11 @@ void check_parameters_complete()
     stadium2.y = box_y.y/2.0;
   }
 #endif
-
-
-
+#ifdef AVPOS
+  fprintf(stderr, "%d %d\n", avpos_start, restart*rep_interval);
+  if (avpos_start <= restart*rep_interval)
+    avpos_start = restart*rep_interval+1; /* do not ask me why +1 ;-) */
+#endif
 
 }
 
