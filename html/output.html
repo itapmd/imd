@@ -42,7 +42,8 @@ distribution of potential and kinetic energy to the files
 <TT>&lt;outfiles&gt;.&lt;n&gt;.pot.dist</TT> and
 <TT>&lt;outfiles&gt;.&lt;n&gt;.kin.dist</TT>, where <TT>&lt;n&gt;</TT>
 is a running number.  The dimensions of the bin array is given by the
-parameter <TT>dist_dim</TT>. 
+parameter <TT>dist_dim</TT>. If <TT>dist_has_coords</TT> is set, also
+the bin coordinates are written to the .dist-files. 
 <P>
 If the parameter <TT>dist_binary_io</TT> is set to 1, both energy
 distribution files are written in binary floats, otherwise they
