@@ -91,5 +91,6 @@ $(OBJDIR)/vvtoolshed.o: $(VIRVODIR)/vvtoolshed.cpp
 
 clean:
 	rm -f *.o *~ ReadIMD
+	rm -rf ii_*
 
 # DO NOT DELETE
