@@ -214,7 +214,7 @@ void do_forces_ewald_real(void)
 	    p_typ = SORTE(p,i);
 
 	    /* For each atom in second cell */
-	    jstart = (p==q ? i : 0);
+            jstart = (p==q ? i : 0 );
 
 	    for (j=jstart; j<q->n; ++j)
 	      {
@@ -434,7 +434,7 @@ void init_ewald(void)
 
   if( coskx == NULL || sinkx == NULL || cosky == NULL || sinky == NULL
       || coskz == NULL || sinkz == NULL || coskr == NULL || sinkr == NULL )
-    error("EWALD: Cannot allocate memory for exp\(ikr\)");
+    error("EWALD: Cannot allocate memory for exp(ikr)");
 
   count = 0;
 

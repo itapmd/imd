@@ -99,6 +99,7 @@ void init_cells( void )
   ivektor next_cell_dim, cell_dim_old, cd;
   ivektor cellmin_old, cellmax_old, cellc;
   cell *p, *cell_array_old, *to;
+  str255 msg;
 
 #ifdef NPT
   /* if NPT, we need some tolerance */
@@ -142,14 +143,23 @@ void init_cells( void )
 
   /* Check if cell array is large enough */
   if ( 0 == myid ) {
-#ifdef MPI
-    if (global_cell_dim.x < cpu_dim.x) error("global_cell_dim.x < cpu_dim.x");
-    if (global_cell_dim.y < cpu_dim.y) error("global_cell_dim.y < cpu_dim.y");
-    if (global_cell_dim.z < cpu_dim.z) error("global_cell_dim.z < cpu_dim.z");
-#endif
+    if (global_cell_dim.x < cd.x) {
+      sprintf(msg,"global_cell_dim.x too small, need at least %d",cd.x);
+      error(msg);
+    }
+    if (global_cell_dim.y < cd.y) {
+      sprintf(msg,"global_cell_dim.y too small, need at least %d",cd.y);
+      error(msg);
+    }
+    if (global_cell_dim.z < cd.z) {
+      sprintf(msg,"global_cell_dim.z too small, need at least %d",cd.z);
+      error(msg);
+    }
+#ifdef EWALD
     if (global_cell_dim.x < 2) error("global_cell_dim.x < 2");
     if (global_cell_dim.y < 2) error("global_cell_dim.y < 2");
     if (global_cell_dim.z < 2) error("global_cell_dim.z < 2");
+#endif
   }
 
   /* if system grows, the next cell division should have more cells */

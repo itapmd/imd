@@ -63,7 +63,11 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
     tmp_d.z = p->ort Z(i) - pbc.z;
 
     p_typ  = SORTE(p,i);
-    jstart = (p==q ? i+1 : 0);
+#ifdef TWOD
+    jstart = (((p==q) && (pbc.x==0) && (pbc.y==0))               ? i+1 : 0);
+#else
+    jstart = (((p==q) && (pbc.x==0) && (pbc.y==0) && (pbc.z==0)) ? i+1 : 0);
+#endif
     qptr   = q->ort + DIM * jstart;
 
     /* for each atom in neighbouring cell */
@@ -228,7 +232,7 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
                     real *Vir_xx, real *Vir_yy, real *Vir_zz,
                     real *Vir_yz, real *Vir_zx, real *Vir_xy)
 {
-  int i,j,k;
+  int i,j,k,same_cell;
   vektor d;
   vektor tmp_d;
   vektor force;
@@ -254,11 +258,17 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 
     p_typ   = SORTE(p,i);
 
-    if (p==q) {
+#ifdef TWOD
+    same_cell = ((p==q) && (pbc.x==0) && (pbc.y==0));
+#else
+    same_cell = ((p==q) && (pbc.x==0) && (pbc.y==0) && (pbc.z==0));
+#endif
+
+    if (same_cell) {
       /* f_i and f_i_strich */
       PAIR_INT(eam2_energy, f_i_strich, embed_pot, p_typ, 
                ntypes, p->eam2_rho_h[i], idummy);
-      /* add energy only once per particle (p==q) */
+      /* add energy only once per particle (same_cell) */
       p->pot_eng[i]  += eam2_energy;
       *Epot          += eam2_energy;
     } else {      
@@ -267,7 +277,7 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
                  ntypes, p->eam2_rho_h[i], idummy);
     }
 
-    jstart = (p==q ? i+1 : 0);
+    jstart = (same_cell ? i+1 : 0);
     qptr   = q->ort + DIM * jstart;
 
     /* for each atom in neighbouring cell */
