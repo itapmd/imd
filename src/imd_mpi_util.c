@@ -130,10 +130,10 @@ void copy_atom(msgbuf *to, int to_cpu, cell *p, int ind )
   to->data[ to->n++ ] = POTENG(p,ind);
 #endif
 #ifdef EAM2
-  /* eam_rho is not sent */
+  to->data[ to->n++ ] = EAM_RHO(p,ind);
   /* eam_dF  is not sent */
 #ifdef EEAM
-  /* eam_p_h is not sent */
+  to->data[ to->n++ ] = EAM_P  (p,ind);
   /* eam_dM  is not sent */
 #endif
 #endif
@@ -287,10 +287,10 @@ void copy_one_atom(msgbuf *to, int to_cpu, minicell *from, int index, int del)
       POTENG(p,ind) = POTENG(p,p->n); 
 #endif
 #ifdef EAM2
-      /* eam_rho need not be copied */
+      EAM_RHO(p,ind) = EAM_RHO(p,p->n); 
       /* eam_dF  need not be copied */
 #ifdef EEAM
-      /* eam_p_h need not be copied */
+      EAM_P  (p,ind) = EAM_P  (p,p->n); 
       /* eam_dM  need not be copied */
 #endif
 #endif
@@ -424,10 +424,10 @@ void process_buffer(msgbuf *b, cell *p)
     POTENG(input,0) = b->data[j++];
 #endif
 #ifdef EAM2
-    /* don't send eam_rho */
+    EAM_RHO(input,0) = b->data[j++];
     /* don't send eam_dF  */
 #ifdef EEAM
-    /* don't send eam_p_h */
+    EAM_P  (input,0) = b->data[j++];
     /* don't send eam_dM  */
 #endif
 #endif
