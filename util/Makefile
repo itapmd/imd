@@ -118,7 +118,7 @@ sample2dist: sample2dist.c
 #
 ###########################################################################
 
-SOURCES = param.c
+SOURCES = param.c util_param.c util_common.c
 HEADERS = util.h param.h
 LIBS    = -lm
 

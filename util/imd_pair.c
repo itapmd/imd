@@ -51,8 +51,11 @@ int main(int argc, char **argv)
   int tablesize;
   int i,j,k;
 
+  /* Read command line arguments */
+  read_command_line(argc,argv);
+
   /* Read Parameters from parameter file */
-  read_parameters(argc,argv);
+  read_parameters();
 
   tablesize = slots*ntypes*ntypes*sizeof(real);
   histogram = (real *) malloc(tablesize);

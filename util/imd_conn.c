@@ -52,8 +52,11 @@ int main(int argc, char **argv)
 {
   int i;
 
+  /* Read command line arguments */
+  read_command_line(argc,argv);
+
   /* Read Parameters from parameter file */
-  read_parameters(argc,argv);
+  read_parameters();
 
   /* Calculate cutoff radius */
   r2_cut = 0.0;

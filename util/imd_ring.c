@@ -56,9 +56,11 @@ void usage(void)
 
 int main(int argc, char **argv)
 {
+  /* Read command line arguments */
+  read_command_line(argc,argv);
 
   /* Read Parameters from parameter file */
-  read_parameters(argc,argv);
+  read_parameters();
 
 #ifdef TERSOFF
   /* Compute Tersoff parameters */
