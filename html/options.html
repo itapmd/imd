@@ -42,43 +42,42 @@ their purpose is and how they are used.</p>
 </tr>
 
 <tr align="left">
-<td width="120"></td>
 <td width="120"><a href="#hpo">hpo</a></td>
 <td width="120"><a href="#homdef">homdef</a></td>
 <td width="120"><a href="#covalent">keating</a></td>
 <td width="120"><a href="#mono">mono</a></td>
 <td width="120"><a href="#monolj">monolj</a></td>
+<td width="120"><a href="#msqd">msqd</a></td>
 </tr>
 
 <tr align="left">
-<td width="120"><a href="#msqd">msqd</a></td>
 <td width="120"><a href="#nbl">nbl</a></td>
 <td width="120"><a href="#ordpar">ordpar</a></td>
 <td width="120"><a href="#pacx">pacx</a></td>
 <td width="120"><a href="#pair">pair</a></td>
 <td width="120"><a href="#prof">prof</a></td>
+<td width="120"><a href="#quasi">quasi</a></td>
 </tr>
 
 <tr align="left">
-<td width="120"><a href="#quasi">quasi</a></td>
+<td width="120"><a href="#rigid">rigid</a></td>
 <td width="120"><a href="#single">single</a></td>
 <td width="120"><a href="#sock">sock</a></td>
 <td width="120"><a href="#shock">shock</a></td>
-<td width="120"></td>
 <td width="120"><a href="#covalent">stiweb</a></td>
+<td width="120"><a href="#stress_tens">stress</a></td>
 </tr>
 
 <tr align="left">
-<td width="120"><a href="#stress_tens">stress</a></td>
 <td width="120"><a href="#covalent">tersoff</a></td>
 <td width="120"><a href="#covalent">tersoff2</a></td>
 <td width="120"><a href="#timing">timing</a></td>
 <td width="120"><a href="#transport">transport</a></td>
 <td width="120"><a href="#covalent">ttbp</a></td>
+<td width="120"><a href="#uniax">uniax</a></td>
 </tr>
 
 <tr align="left">
-<td width="120"><a href="#uniax">uniax</a></td>
 <td width="120"><a href="#writef">writef</a></td>
 </tr>
 </table>
@@ -90,6 +89,36 @@ their purpose is and how they are used.</p>
 <p>
 2d simulation rather than 3d. The option 3d also exists - it is
 the default. </p>
+</dd>
+
+<dt><a id="rigid" name="rigid"><b>rigid</b></a></dt> 
+<dd> 
+<p> 
+This option enables IMD to combine atoms of one or several virtual
+types into <i>superatoms</i> that behave like rigid bodies. Superatoms
+are defined in the parameter file with the IMD parameter
+<tt>rigid</tt> in the following form:
+<pre>
+	rigid v_1 v_2 ... v_n  i j (k) 
+</pre>
+Here, <tt>v_1</tt>, <tt>v_2</tt>, ..., <tt>v_n</tt>
+(n<=<tt>total_types</tt>) are virtual types that are combined into a
+superatom. The integers <tt>i</tt>, <tt>j</tt>(, <tt>k</tt>) take on
+the values 0 or 1. They define a restricted motion of the atoms of the
+superatoms. For example, in a 3d simulation, <tt>1 0 1</tt> means
+rigid motion in <i>x</i> and <i>z</i> direction while in <i>y</i>
+direction, the constituent atoms of the superatom can move
+freely. Hence, <tt>1 1 1</tt> means complete rigidity and <tt>0 0
+0</tt> no rigidity at all (no superatom).</p>
+
+<p> It is possible to
+define up to <tt>total_types</tt> different (nonintersecting)
+superatoms.</p>
+
+<p><b>Note:</b>Only translational motion of the superatoms is
+possible; rotational motion is suppressed.<br> The option <b>rigid</b>
+is currently implemented only for the ensembles nve, mik, and nvt.</p>
+
 </dd>
 
 <dt><a id="nbl" name="nbl"><b>nbl</b></a>
