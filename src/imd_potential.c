@@ -112,7 +112,7 @@ void read_pot_table1( pot_table_t *pt, char *filename )
 
     fclose(infile);
 
-    r2_step = (r2 - r2_start) / npot;
+    r2_step = (r2 - r2_start) / (npot-1);
 
     if (0==myid) {
       printf("Read potential %s with %d lines.\n",filename,npot);
