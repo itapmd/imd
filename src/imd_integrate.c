@@ -503,7 +503,7 @@ void move_atoms_nvt(void)
 #endif
 
 #ifdef SLLOD
-	p->impuls X(i) += epsilon * p->impuls X(i) / MASSE(p,i);
+	p->impuls X(i) += epsilon * p->impuls Y(i) / MASSE(p,i);
 #endif
 
 #ifdef UNIAX
