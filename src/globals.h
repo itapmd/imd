@@ -409,6 +409,7 @@ EXTERN int  nsuperatoms INIT(0);          /* number of superatoms */
 EXTERN int  *superatom INIT(NULL);   /* maps virtual types to superatoms */
 EXTERN vektor *superrestrictions INIT(NULL); /* restricted rigidity */
 EXTERN vektor *superforce INIT(NULL);     /* total force on superatoms */
+EXTERN real *supermass INIT(NULL);        /* masses of superatoms */
 EXTERN int  *num_ssort INIT(NULL);   /* number of atoms for each superatom */
 #endif
 

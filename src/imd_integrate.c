@@ -103,7 +103,7 @@ void move_atoms_nve(void)
 	if ( superatom[sort] > -1 ) {
 
 	  satom   = superatom[sort];
-	  relmass = 1.0 / num_ssort[satom];
+	  relmass = MASSE(p,i) / supermass[satom];
 
 	  if ( (superrestrictions + satom)->x )
 	    KRAFT(p,i,X) = superforce[satom].x * relmass; 
@@ -116,7 +116,7 @@ void move_atoms_nve(void)
 	}
 #endif
 
-#ifdef FBC
+#if defined(FBC) && !defined(RIGID)
         /* give virtual particles their extra force */
 	KRAFT(p,i,X) += (fbc_forces + sort)->x;
 	KRAFT(p,i,Y) += (fbc_forces + sort)->y;
@@ -403,7 +403,7 @@ void move_atoms_mik(void)
 	if ( superatom[sort] > -1 ) {
 
 	  satom   = superatom[sort];
-	  relmass = 1.0 / num_ssort[satom];
+	  relmass = MASSE(p,i) / supermass[satom];
 
 	  if ( (superrestrictions + satom)->x )
 	    KRAFT(p,i,X) = superforce[satom].x * relmass; 
@@ -416,7 +416,7 @@ void move_atoms_mik(void)
 	}
 #endif
 
-#ifdef FBC
+#if defined(FBC) && !defined(RIGID)
         /* give virtual particles their extra force */
 	KRAFT(p,i,X) += (fbc_forces + sort)->x;
 	KRAFT(p,i,Y) += (fbc_forces + sort)->y;
@@ -585,7 +585,7 @@ void move_atoms_nvt(void)
 	if ( superatom[sort] > -1 ) {
 
 	  satom   = superatom[sort];
-	  relmass = 1.0 / num_ssort[satom];
+	  relmass = MASSE(p,i) / supermass[satom];
 
 	  if ( (superrestrictions + satom)->x )
 	    KRAFT(p,i,X) = superforce[satom].x * relmass; 
@@ -597,7 +597,7 @@ void move_atoms_nvt(void)
 #endif
 	}
 #endif
-#ifdef FBC
+#if defined(FBC) && !defined(RIGID)
         /* give virtual particles their extra force */
 	KRAFT(p,i,X) += (fbc_forces + sort)->x;
 	KRAFT(p,i,Y) += (fbc_forces + sort)->y;

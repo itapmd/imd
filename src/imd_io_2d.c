@@ -78,10 +78,15 @@ void read_atoms(str255 infilename)
   if ((num_vsort = (long *) calloc(vtypes,sizeof(long)))==NULL)
     error("cannot allocate memory for num_vsort\n");
 #ifdef RIGID
-  /* allocate num_ssort on all CPUs */
-  if ( nsuperatoms>0 )
+  /* allocate num_ssort and supermass on all CPUs */
+  if ( nsuperatoms>0 ) {
     if ((num_ssort = (int *) calloc(nsuperatoms,sizeof(int)))==NULL)
       error("cannot allocate memory for num_ssort\n");
+    if((supermass = (real *) calloc(nsuperatoms,sizeof(real)))==NULL)
+      error("cannot allocate memory for supermass\n"); 
+    for (i=0; i<nsuperatoms; i++)
+      supermass[i] = 0.0;
+  }
 #endif
 #ifdef MPI
 
@@ -211,6 +216,11 @@ void read_atoms(str255 infilename)
 #endif
       VSORTE(input,0) = s;
       MASSE (input,0) = m;
+#ifdef RIGID
+      if ( nsuperatoms > 0 )
+	if ( superatom[s] > -1 ) 
+	  supermass[superatom[s]] += m;
+#endif
       ORT(input,0,X)  = pos.x;
       ORT(input,0,Y)  = pos.y;
       if (p==5) {
