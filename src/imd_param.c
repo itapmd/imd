@@ -475,6 +475,12 @@ void getparamfile(char *paramfname, int sim)
       getparam("e_pot_upper",&upper_e_pot,PARAM_REAL,1,1);
     }
 #endif
+#ifdef CLONE
+    else if (strcasecmp(token,"nclones")==0) {
+      /* number of clones to deal with*/
+      getparam("nclones",&nclones,PARAM_INT,1,1);
+    }
+#endif
 #ifdef NBFILTER
     else if (strcasecmp(token,"nb_checkpt_int")==0) {
       getparam("nb_checkpt_int",&nb_checkpt_int,PARAM_INT,1,1);
@@ -1600,6 +1606,11 @@ void check_parameters_complete()
     error("correl_tmax is zero.");
   }
 #endif
+#ifdef CLONE
+  if (nclones == 0) {
+      error("nclones is zero.");
+  }
+#endif
 #ifdef NVX
   	if (dTemp_start == 0){
 		error ("dTemp_start is missing or zero.");
@@ -1845,6 +1856,9 @@ void broadcast_params() {
   MPI_Bcast( &lower_e_pot,    1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &upper_e_pot,    1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &ef_checkpt_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
+#ifdef CLONE
+  MPI_Bcast( &nclones, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 #ifdef SNAPSHOT
   MPI_Bcast( &sscount, 1, MPI_INT, 0, MPI_COMM_WORLD);

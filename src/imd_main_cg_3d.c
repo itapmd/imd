@@ -288,7 +288,7 @@ void  calc_fnorm( void)
 #endif
 #endif
 
-  	/* and set their force (->momentum) in restricted directions to 0 */ 
+  	/* and set their force in restricted directions to 0 */ 
 	KRAFT(p,i,X) *= (restrictions + sort)->x;
 	KRAFT(p,i,Y) *= (restrictions + sort)->y;
 #ifndef TWOD

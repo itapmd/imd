@@ -153,7 +153,10 @@ void fix_cells(void)
   int i,j,k,l;
   cell *p, *q;
   ivektor coord, lcoord;
-  int to_cpu;
+ 
+#ifdef CLONE
+  int clones;
+#endif
 
   /* for each cell in bulk */
   for (i=cellmin.x; i < cellmax.x; ++i)
@@ -161,14 +164,30 @@ void fix_cells(void)
       for (k=cellmin.z; k < cellmax.z; ++k) {
 
 	p = PTR_3D_V(cell_array, i, j, k, cell_dim);
-
+	/*printf(" cell %d %d %d \n",i,j,k);fflush(stdout);*/
 	/* loop over atoms in cell */
 	l=0;
 	while( l<p->n ) {
           coord = cell_coord( ORT(p,l,X), ORT(p,l,Y), ORT(p,l,Z) );
           q = PTR_3D_VV(cell_array,coord,cell_dim);
           /* if it's in the wrong cell, move it to the right cell */
-          if (p != q) move_atom(q,p,l); 
+          if (p != q) 
+	      {
+	      move_atom(q,p,l); 
+#ifdef CLONE
+	      if(l<p->n-nclones-1){
+	      for(clones=1;clones<=nclones;clones++)
+		  {
+		  move_atom(q,p,l+clones); 
+		  }
+	      }
+	      else /* we are dealing with the last in the stack */
+		  for(clones=1;clones<=nclones;clones++)
+		  {
+		  move_atom(q,p,l); 
+		  }
+#endif
+	      }
           else        ++l;
 	}
       }

@@ -33,13 +33,15 @@
 
 void move_atom(cell *to, cell *from, int index)
 {
-  /* Check the parameters */
+    /* printf("move atom nr. %d\n", from->nummer[index]);fflush(stdout); */
+ /* Check the parameters */
   if ((0 > index) || (index >= from->n)) 
     error("move_atom: index argument out of range.");
-  
+ 
   /* See if we need some space */
   if (to->n >= to->n_max) alloc_cell(to,to->n_max+incrsz);
-
+  
+ 
   /* Got some space, move atom */
   to->ort X(to->n) = from->ort X(index); 
   to->ort Y(to->n) = from->ort Y(index); 
@@ -153,7 +155,6 @@ void move_atom(cell *to, cell *from, int index)
   --from->n;
 
   if (0 < from->n) {
-
     from->ort X(index) = from->ort X(from->n); 
     from->ort Y(index) = from->ort Y(from->n); 
 #ifndef TWOD
@@ -258,6 +259,7 @@ void move_atom(cell *to, cell *from, int index)
     from->dreh_moment Y(index) = from->dreh_moment Y(from->n); 
     from->dreh_moment Z(index) = from->dreh_moment Z(from->n); 
 #endif
+
   }
 }
 

@@ -777,6 +777,10 @@ ifneq (,$(findstring efilter,${MAKETARGET}))
 CFLAGS += -DEFILTER
 endif
 
+ifneq (,$(findstring clone,${MAKETARGET}))
+CFLAGS += -DCLONE
+endif
+
 ifneq (,$(findstring nbfilter,${MAKETARGET}))
 CFLAGS += -DNBFILTER
 endif

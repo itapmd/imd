@@ -130,6 +130,10 @@ EXTERN int  ef_checkpt_int INIT(0);  /* Period of ef writes */
 EXTERN real lower_e_pot INIT(0.0);   /* lower end of energy window */
 EXTERN real upper_e_pot INIT(0.0);   /* upper end of energy window */
 #endif
+#ifdef CLONE
+EXTERN int  nclones INIT(0);         /* number of periodic clones */
+#endif
+
 #ifdef NBFILTER
 EXTERN int nb_checkpt_int INIT(0);   /* Period of nb writes */
 EXTERN int *lower_nb_cut INIT(NULL); /* lower number of neighbours  */
