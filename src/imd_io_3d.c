@@ -62,6 +62,10 @@ void read_atoms(str255 infilename)
   ivektor cellc;
   int to_cpu;
   int addnumber = 0;
+#ifdef MPI
+  real a[100];
+  msgbuf mpibuf;
+#endif
 
   /* allocate num_sort on all CPUs */
   if ((num_sort=calloc(ntypes,sizeof(int)))==NULL)
@@ -95,6 +99,8 @@ void read_atoms(str255 infilename)
 #ifdef DISLOC
   if (calc_Epot_ref == 0) reffile = fopen(reffilename,"r");
 #endif
+
+  mpibuf.data = a;
 
 #else /* not MPI */
 
@@ -287,26 +293,9 @@ void read_atoms(str255 infilename)
           nactive += (int) (restrictions+s)->z;
         }
         num_sort[SORTE(input,0)]++;
-	MPI_Ssend( input->ort,     DIM, REAL,to_cpu,ORT_TAG,    cpugrid);
-#ifdef DISLOC
-	MPI_Ssend( input->ort_ref, DIM, REAL,to_cpu,ORT_REF_TAG,cpugrid);
-	MPI_Ssend( input->Epot_ref,  1, REAL,to_cpu,POT_REF_TAG,cpugrid);
-#endif
-#ifndef MONOLJ
-	MPI_Ssend( input->sorte,  1, SHORT  , to_cpu, SORTE_TAG , cpugrid);
-	MPI_Ssend( input->masse,  1, REAL   , to_cpu, MASSE_TAG , cpugrid);
-        MPI_Ssend( input->nummer, 1, INTEGER, to_cpu, NUMMER_TAG, cpugrid);
-#ifdef UNIAX
-	MPI_Ssend( input->traeg_moment, 1, REAL, to_cpu,
-                   TRAEG_MOMENT_TAG, cpugrid);
-	MPI_Ssend( input->achse,    DIM, REAL,to_cpu, ACHSE_TAG, cpugrid);
-	MPI_Ssend( input->shape,    DIM, REAL,to_cpu, SHAPE_TAG, cpugrid);
-	MPI_Ssend( input->pot_well, DIM, REAL,to_cpu, POT_WELL_TAG, cpugrid);
-	MPI_Ssend( input->dreh_impuls, DIM, REAL,to_cpu, DREH_IMPULS_TAG, 
-                   cpugrid);
-#endif
-#endif
-	MPI_Ssend( input->impuls,DIM, REAL, to_cpu, IMPULS_TAG, cpugrid);
+        mpibuf.n = 0;
+        copy_one_atom(&mpibuf, input, 0, 0);
+        MPI_Send(mpibuf.data, mpibuf.n, REAL, to_cpu, CELL_TAG, cpugrid);
       } else if (to_cpu==myid) {
         natoms++;  
         /* we still have s == input->sorte[0] */
@@ -356,10 +345,10 @@ void read_atoms(str255 infilename)
 
 #ifdef MPI
 
-/* Tell other CPUs that reading atoms is finished. (tag==0) */
+  /* Tell other CPUs that reading atoms is finished. (tag==0) */
   if (1!=parallel_input)
     for (s=1; s<num_cpus; s++)
-      MPI_Ssend( input->ort, 3, REAL, s, 0, cpugrid);
+      MPI_Send(mpibuf.data, 1, REAL, s, 0, cpugrid);
 
   /* Add the number of atoms read (and kept) by each CPU */
   if (1==parallel_input) {
@@ -407,97 +396,23 @@ void read_atoms(str255 infilename)
 
 /******************************************************************************
 *
-*  recv_atoms
-*
 *  recveive atoms one at a time from CPU 0 
-*
 *  this is only used when parallel_input==0
 *
 ******************************************************************************/
 
 void recv_atoms(void)
 {
-  cell *input, *target;
   MPI_Status status;
-  ivektor cellc;
-  ivektor local_cellc;
+  real a[100];
+  msgbuf mpibuf;   
+  mpibuf.data = a;
 
   printf("Node %d listening.\n",myid);
-
-  input = (cell *) malloc(sizeof(cell));
-  if (0==input) error("Cannot allocate input cell.");
-  input->n_max = 0;
-  alloc_cell(input,1);
-
   while ( 1 ) {
-
-    MPI_Recv(input->ort,  DIM, REAL, 0, MPI_ANY_TAG   , cpugrid, &status );
-
-    if ((0 != status.MPI_TAG) && (ORT_TAG != status.MPI_TAG)) 
-       error("Messages mixed up.");
-
-    if ( 0 == status.MPI_TAG ) break;
-
-#ifndef MONOLJ
-    MPI_Recv(input->sorte,  1, SHORT,   0, SORTE_TAG , cpugrid, &status );
-    MPI_Recv(input->masse,  1, REAL,    0, MASSE_TAG , cpugrid, &status );
-    MPI_Recv(input->nummer, 1, INTEGER, 0, NUMMER_TAG, cpugrid, &status );
-#ifdef UNIAX
-    MPI_Recv(input->traeg_moment, 1, REAL, 0, TRAEG_MOMENT_TAG, 
-             cpugrid, &status );
-    MPI_Recv(input->achse, DIM, REAL, 0, ACHSE_TAG , cpugrid, &status );
-    MPI_Recv(input->shape, DIM, REAL, 0, SHAPE_TAG , cpugrid, &status );
-    MPI_Recv(input->pot_well, DIM, REAL, 0, POT_WELL_TAG , cpugrid, &status );
-    MPI_Recv(input->dreh_impuls,DIM, REAL, 0, DREH_IMPULS_TAG,cpugrid,&status);
-#endif
-#endif
-    MPI_Recv(input->impuls,  DIM, REAL, 0, IMPULS_TAG,  cpugrid, &status);
-#ifdef DISLOC
-    MPI_Recv(input->Epot_ref,  1, REAL, 0, POT_REF_TAG, cpugrid, &status);
-    MPI_Recv(input->ort_ref, DIM, REAL, 0, ORT_REF_TAG, cpugrid, &status);
-#endif
-
-    local_cellc = local_cell_coord(input->ort X(0),input->ort Y(0),
-                                   input->ort Z(0));
-    target = PTR_3D_VV(cell_array,local_cellc,cell_dim);
-
-    /* See if we need some space */
-    if (target->n >= target->n_max) alloc_cell(target,target->n_max+incrsz);
-
-    target->ort X(target->n)    = input->ort X(0);
-    target->ort Y(target->n)    = input->ort Y(0);
-    target->ort Z(target->n)    = input->ort Z(0);
-#ifndef MONOLJ
-    target->sorte[target->n]  = input->sorte[0];
-    target->masse[target->n]  = input->masse[0];
-    target->nummer[target->n] = input->nummer[0];
-#ifdef UNIAX
-    target->traeg_moment[target->n]  = input->traeg_moment[0];
-    target->achse X(target->n)  = input->achse X(0);
-    target->achse Y(target->n)  = input->achse Y(0);
-    target->achse Z(target->n)  = input->achse Z(0);
-    target->shape X(target->n)  = input->shape X(0);
-    target->shape Y(target->n)  = input->shape Y(0);
-    target->shape Z(target->n)  = input->shape Z(0);
-    target->pot_well X(target->n)  = input->pot_well X(0);
-    target->pot_well Y(target->n)  = input->pot_well Y(0);
-    target->pot_well Z(target->n)  = input->pot_well Z(0);
-    target->dreh_impuls X(target->n) = input->dreh_impuls X(0);
-    target->dreh_impuls Y(target->n) = input->dreh_impuls Y(0);
-    target->dreh_impuls Z(target->n) = input->dreh_impuls Z(0);
-#endif
-    target->impuls X(target->n) = input->impuls X(0);
-    target->impuls Y(target->n) = input->impuls Y(0);
-    target->impuls Z(target->n) = input->impuls Z(0);
-#endif /* not MONOLJ */
-#ifdef DISLOC
-    target->Epot_ref[target->n]  = input->Epot_ref[0];
-    target->ort_ref X(target->n) = input->ort_ref X(0);
-    target->ort_ref Y(target->n) = input->ort_ref Y(0);
-    target->ort_ref Z(target->n) = input->ort_ref Z(0);
-#endif
-    ++target->n;
-
+    MPI_Recv(mpibuf.data, 100, REAL, 0, MPI_ANY_TAG, cpugrid, &status);
+    if (0 == status.MPI_TAG) break;
+    process_buffer( &mpibuf, (cell *) NULL );
   }
   printf("Node %d leaves listen.\n",myid);
 }
@@ -648,6 +563,7 @@ void write_config(int steps)
     out = fopen(fname,"w");
     if (NULL == out) error("Cannot write iteration file.");
 
+    fprintf(out,"# checkpoint %d\n",fzhlr);
     fprintf(out,"startstep \t%d\n",steps+1);
     fprintf(out,"box_x \t%.16f %.16f %.16f\n",box_x.x,box_x.y,box_x.z);
     fprintf(out,"box_y \t%.16f %.16f %.16f\n",box_y.x,box_y.y,box_y.z);
