@@ -363,7 +363,6 @@ EXTERN real eam_A      INIT(0.0);	/* EAM cohesive function constant A */
 EXTERN real *ttbp_ij     INIT(NULL); /* neighbor array */
 EXTERN integer ttbp_len     INIT(50);	/* max neighbors */
 EXTERN real *ttbp_j 	    INIT(NULL);	/* position array */
-EXTERN real *ttbp_force     INIT(NULL); /* force array */
 EXTERN str255 ttbp_potfilename INIT("\0");   /* TTBP Potential */
 EXTERN real *ttbp_potential;            /* TTBP Potential array */
 EXTERN real ttbp_r2_cut[10][10];        /* cutoff^2;  less than 10 atom types! */   

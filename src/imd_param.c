@@ -1252,6 +1252,7 @@ void broadcast_params() {
 #ifdef TTBP
   MPI_Bcast( &ttbp_len,      1,      INTEGER,   0, MPI_COMM_WORLD);
   MPI_Bcast( &ttbp_constant, ntypes, MPI_REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &ttbp_sp,       ntypes, MPI_REAL,  0, MPI_COMM_WORLD);
 #endif
 
   /* broadcast integrator to other CPU's */

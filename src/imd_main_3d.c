@@ -70,8 +70,6 @@ void main_loop(void)
   if(NULL   == ttbp_ij) error("Can't allocate memory for ttbp_ij");
   ttbp_j    =  calloc((natoms+1)*ttbp_len*3,sizeof(real));
   if(NULL   == ttbp_j) error("Can't allocate memory for ttbp_j");
-  ttbp_force=  calloc((natoms+1)*3,sizeof(real));
-  if(NULL   == ttbp_force) error("Can't allocate memory for ttbp_force");
 #endif /* TTBP */
 
 #if defined(CORRELATE) || defined(MSQD)
@@ -318,7 +316,6 @@ void main_loop(void)
 #ifdef TTBP
   free(ttbp_ij);
   free(ttbp_j);
-  free(ttbp_force);
 #endif
 
   if (0==myid) printf( "End of simulation %d\n", simulation );

@@ -76,7 +76,6 @@ void calc_forces(void)
 #endif
   memset(ttbp_ij,   0,(natoms+1)*ttbp_len*2*sizeof(real));
   memset(ttbp_j,    0,(natoms+1)*ttbp_len*3*sizeof(real));
-  memset(ttbp_force,0,(natoms+1)*         3*sizeof(real));
 #endif /* TTBP */
 
   /* Zero Forces */
