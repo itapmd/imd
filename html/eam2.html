@@ -1,5 +1,5 @@
        <HTML> <HEAD> <TITLE> EAM2 </TITLE>
-<!-- Changed by: Erik Bitzek, 24-Nov-1999 -->
+<!-- Changed by: Erik Bitzek, 29. Nov-1999 -->
         </HEAD> <BODY BGCOLOR="#FFFFFF"> <H1><font color=blue>
 Implementation of EAM2</font></H1> 
 <p>
@@ -66,6 +66,11 @@ n*n lines with:<br>
 <tt>r_begin r_end dr </tt><BR>
 followed by n*n blocks of function values (equidistant in r^2) <BR>
 for the atom pairs ij: 00, 01,... 10, 11,... 
+<p>
+It is the responsibility of the creator of the potential to make
+shure, that the functions of r go smoothly to zero and that the last
+four values are 0.0
+
 <p>
 embedding_energy_file:<br>
 n lines with: <br>
