@@ -420,7 +420,7 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
     eam2_drho       = *(eam2_rho_step+p_typ); 
     eam2_drho_inv   = 1.0/eam2_drho;
     eam2_rho0       = *(eam2_rho_begin+p_typ);
-    eam2_rho_nsteps = (int)( (*(eam2_rho_end+p_typ) - eam2_rho0 )*eam2_drho_inv);
+    eam2_rho_nsteps = (int)( (*(eam2_rho_end+p_typ) - eam2_rho0 )*eam2_drho_inv +.5);
 
     /* f_i_strich(rho_h_i)  *******************************************************/
 
@@ -469,7 +469,7 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
 	    eam2_drho       = *(eam2_rho_step+p_typ); 
 	    eam2_drho_inv   = 1.0/eam2_drho;
 	    eam2_rho0       = *(eam2_rho_begin+p_typ);
-	    eam2_rho_nsteps = (int)( (*(eam2_rho_end+p_typ) - eam2_rho0 )*eam2_drho_inv);
+	    eam2_rho_nsteps = (int)( (*(eam2_rho_end+p_typ) - eam2_rho0 )*eam2_drho_inv+0.5);
 	    
 	    /* handle boarders */
 	    eam2_rho_x= (eam2_this_rho - eam2_rho0)*eam2_drho_inv;
@@ -536,7 +536,7 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
 	      eam2_drho2       = *(eam2_rho_step+q_typ); 
 	      eam2_drho2_inv   = 1.0/eam2_drho2;
 	      eam2_rho20       = *(eam2_rho_begin+q_typ);
-	      eam2_rho2_nsteps = (int)( (*(eam2_rho_end+q_typ) - eam2_rho20 )*eam2_drho2_inv);
+	      eam2_rho2_nsteps = (int)( (*(eam2_rho_end+q_typ) - eam2_rho20 )*eam2_drho2_inv+.5);
 	      
 	      /* treat the boarders of table */
 	      eam2_rho2_x= (eam2_other_rho - eam2_rho20)*eam2_drho2_inv;
@@ -582,7 +582,7 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
 	      eam2_dr       = *PTR_2D(eam2_r_step,q_typ,p_typ,ntypes,ntypes);
 	      eam2_dr_inv   = 1.0/eam2_dr;
 	      eam2_r0       = *PTR_2D(eam2_r_begin,q_typ,p_typ,ntypes,ntypes);
-	      eam2_r_nsteps = (int)( (rho_r_cut_qp - eam2_r0 )*eam2_dr_inv);
+	      eam2_r_nsteps = (int)( (rho_r_cut_qp - eam2_r0 )*eam2_dr_inv+.5);
 	      
 	      eam2_x= (eam2_r - eam2_r0)*eam2_dr_inv;
 	      eam2_k= (int) (eam2_x);                           
@@ -614,7 +614,7 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
 	      eam2_dr       = *PTR_2D(eam2_r_step,p_typ,q_typ,ntypes,ntypes);
 	      eam2_dr_inv   = 1.0/eam2_dr;
 	      eam2_r0       = *PTR_2D(eam2_r_begin,p_typ,q_typ,ntypes,ntypes);
-	      eam2_r_nsteps = (int)( (rho_r_cut_pq - eam2_r0 )*eam2_dr_inv);
+	      eam2_r_nsteps = (int)( (rho_r_cut_pq - eam2_r0 )*eam2_dr_inv+.5);
 	      
 	      eam2_x= (eam2_r - eam2_r0)*eam2_dr_inv;
 	      eam2_k= (int) (eam2_x);                           
