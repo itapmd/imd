@@ -1060,19 +1060,22 @@ void move_atoms_stm(void)
 
 {
   int k;
-  real kin_energie_1 = 0.0, kin_energie_2 = 0.0;
-  real tmpvec1[2], tmpvec2[2], ttt;
-   
+  /* we handle 2 ensembles ensindex = 0 -> NVT ;ensindex = 1 -> NVE */
+  int ensindex = 0;
+  real kin_energie_1[2] = {0.0,0.0}, kin_energie_2[2] = {0.0,0.0};
+  real tmpvec1[5], tmpvec2[5], ttt;
+  n_nve = 0;
+
   /* loop over all atoms */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:kin_energie_1,kin_energie_2)
+#pragma omp parallel for reduction(+:kin_energie_1[0],kin_energie_1[1],kin_energie_2[0],kin_energie_2[2],n_nve)
 #endif
   for (k=0; k<ncells; ++k) {
 
     int i;
     cell *p;
     real reibung, eins_d_reib;
-    real tmp, tmp1, tmp2;
+    real tmp;
     vektor d;
     int sort=0;
 
@@ -1087,13 +1090,16 @@ void move_atoms_stm(void)
           /* We are inside the ellipse: */
           reibung = 1.0;
           eins_d_reib = 1.0;
+	  n_nve += DIM;
+	  ensindex = 1;
         } else {
           reibung     =      1 - eta * inv_tau_eta * timestep / 2.0;
           eins_d_reib = 1 / (1 + eta * inv_tau_eta * timestep / 2.0);
+	  ensindex = 0;
         }
 
         /* twice the old kinetic energy */
-        kin_energie_1 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+        kin_energie_1[ensindex] +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
 
         /* new momenta */
 	sort = VSORTE(p,i);
@@ -1103,7 +1109,7 @@ void move_atoms_stm(void)
                           * eins_d_reib * (restrictions + sort)->y;
 
         /* twice the new kinetic energy */ 
-        kin_energie_2 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+        kin_energie_2[ensindex] +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
 
         /* new positions */
         tmp = timestep * MASSE(p,i);
@@ -1112,22 +1118,27 @@ void move_atoms_stm(void)
     }
   }
   
-  tot_kin_energy = (kin_energie_1 + kin_energie_2) / 4.0;
-
+  tot_kin_energy     = (kin_energie_1[0] + kin_energie_2[0]) / 4.0;
+  tot_kin_energy_nve = (kin_energie_1[1] + kin_energie_2[1]) / 4.0;
 #ifdef MPI
   /* add up results from all CPUs */
   tmpvec1[0] = tot_kin_energy;
-  tmpvec1[1] = kin_energie_2;
+  tmpvec1[1] = kin_energie_2[0];
+  tmpvec1[2] = tot_kin_energy_nve;
+  tmpvec1[3] = kin_energie_2[1];
+  tmpvec1[4] = (real)n_nve;
+  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid);
 
-  MPI_Allreduce( tmpvec1, tmpvec2, 2, REAL, MPI_SUM, cpugrid);
-
-  tot_kin_energy = tmpvec2[0];
-  kin_energie_2  = tmpvec2[1];
+  tot_kin_energy     = tmpvec2[0];
+  kin_energie_2[0]   = tmpvec2[1];
+  tot_kin_energy_nve = tmpvec2[2];
+  kin_energie_2[1]   = tmpvec2[3];
+  n_nve              = (int)tmpvec2[4];
 #endif
 
   /* Zeitentwicklung der Parameter */
-  ttt  = nactive * temperature;
-  eta += timestep * (kin_energie_2 / ttt - 1.0) * inv_tau_eta;
+  ttt  = (nactive - n_nve) * temperature;
+  eta += timestep * (kin_energie_2[0] / ttt - 1.0) * inv_tau_eta;
 
 }
 

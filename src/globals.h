@@ -288,6 +288,12 @@ EXTERN vektor stadium INIT(nullvektor); /* Damping stadium */
 EXTERN vektor center  INIT(nullvektor); /* center of stadium */
 EXTERN real   gamma_bar INIT(0.0);      /* Damping prefactor */
 EXTERN real   gamma_cut INIT(0.0);      /* Damping cutoff */
+EXTERN real   tot_kin_energy_nve INIT(0.0); /* total kin energy
+                                                     of the stadium */
+EXTERN int  n_nve INIT(0);          /* number of transl. degrees of freedom 
+				          in the stadium */
+
+
 #endif
 
 #if defined(FRAC) || defined(DEFORM)

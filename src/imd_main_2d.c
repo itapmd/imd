@@ -203,7 +203,11 @@ void main_loop(void)
 
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
     if ((steps==steps_min) && (use_curr_temp==1)) {
+#ifdef STM
+      temperature = 2 * tot_kin_energy / (nactive-n_nve);
+#else
       temperature = 2 * tot_kin_energy / nactive;
+#endif
       dtemp = (end_temp - temperature) / (steps_max - steps_min);
       use_curr_temp = 0;
     }

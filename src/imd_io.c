@@ -467,6 +467,10 @@ void write_eng_file_header()
 
     fprintf(fl, "# time Epot ");
     fprintf(fl, "temperature ");
+#ifdef STM
+    fprintf(fl, "stadiontemp ");
+#endif
+
 #ifdef FNORM
     fprintf(fl, "fnorm ");
 #endif
@@ -475,7 +479,7 @@ void write_eng_file_header()
 #endif
     fprintf(fl, "pressure ");
     fprintf(fl, "volume ");
-#if defined(NVT) || defined(NPT)
+#if defined(NVT) || defined(NPT) || defined(STM) 
     fprintf(fl, "eta ");
 #endif
 #ifdef NPT_axial
@@ -520,6 +524,10 @@ void write_eng_file(int steps)
 #endif
   real Epot, Temp, vol;
 
+#ifdef STM
+  real Temp_nve;
+#endif
+
 #ifdef STRESS_TENS
   real Press_xx,Press_yy, Press_xy;
 #ifndef TWOD
@@ -543,6 +551,12 @@ void write_eng_file(int steps)
 #else
   Temp = 2.0 * tot_kin_energy / nactive;
 #endif
+
+#ifdef STM
+  Temp     = 2.0 * tot_kin_energy / (nactive - n_nve);
+  Temp_nve = 2.0 * tot_kin_energy_nve / n_nve;
+#endif
+
   vol  = volume / natoms;
   pressure = Temp / vol + virial / (DIM * volume);
 
@@ -554,6 +568,10 @@ void write_eng_file(int steps)
   fprintf(out, " %.16e", (double) Epot);
  
   fprintf(out, format,   (double) Temp);
+#ifdef STM
+  fprintf(out, format,   (double) Temp_nve);
+#endif
+
 #ifdef FNORM
   fprintf(out, format,   (double) fnorm / nactive);
 #endif
@@ -562,7 +580,7 @@ void write_eng_file(int steps)
 #endif
   fprintf(out," %e",     (double) pressure);
   fprintf(out," %e",     (double) vol);
-#if defined(NVT) || defined(NPT)
+#if defined(NVT) || defined(NPT) || defined(STM)
   fprintf(out," %e",     (double) eta );
 #endif
   if (ensemble==ENS_NPT_AXIAL) {
@@ -671,3 +689,13 @@ void reduce_displacement(vektor *dist)
 #endif
   *dist = d;
 }
+
+
+
+
+
+
+
+
+
+
