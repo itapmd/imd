@@ -27,27 +27,95 @@
 
 /*****************************************************************************
 *
-*  read potential in first format: each line contains
+*  read potential table; choose format according to header
 *
-*  r**2 V00 V01 V02 ... V10 V11 V12 ... VNN
-*
-*  N is the number of different atom types
-*
-*  Note that it is assumed that Vij == Vji and that the r**2 are aequidistant.
-*
-******************************************************************************/
+*****************************************************************************/
 
-void read_pot_table1( pot_table_t *pt, char *filename )
+void read_pot_table( pot_table_t *pt, char *filename, int ncols )
 {
   FILE *infile;
-  int i, k;
-  int size, tablesize, npot=0;
-  real val, numstep, delta;
-  real r2, r2_start, r2_step;
-  str255 msg;
+  char buffer[1024], msg[255];
+  char *token, *res;
+  int  have_header=0, have_format=0, end_header;
+  int  size=ncols, tablesize, npot=0;
+  int  format=DEFAULT_POTFILE_TYPE;  /* 2 for EAM2, 1 otherwise */
+  int  i, k;
+
+  /* read header only on master processor? */
+  if ((0==myid) || (1==parallel_input)) {
+
+    /* open file */
+    infile = fopen(filename,"r");
+    if (NULL == infile) {
+      sprintf(msg,"Could not open file %s\n",filename);
+      error(msg);
+    }
+
+    /* read the header */
+    do {
+      /* read one line */
+      res=fgets(buffer,1024,infile);
+      if (NULL == res) {
+        sprintf(msg,"Unexpected end of file in %s",filename);
+        error(msg);
+      }
+
+      /* see if it is a header line */
+      if (buffer[0]=='#') {
+        have_header = 1;
+        /* stop after last header line */
+        end_header = (buffer[1]=='E');
+        /* see if it is the format line */
+        if (buffer[1]=='F') {
+          /* format complete? */
+          if (2!=sscanf( (const char*)(buffer+2), "%d%d", &format, &size )) {
+            sprintf(msg,"Corrupted format header line in file %s",filename);
+            error(msg);
+          }
+          /* right number of columns? */
+          if (size!=ncols) {
+            sprintf(msg,"Wrong number of data columns in file %s",filename);
+            error(msg);
+          }
+          /* recognized format? */
+          if ((format!=1) && (format!=2)) {
+            sprintf(msg,"Unrecognized format specified for file %s",filename);
+            error(msg);
+          }
+          have_format=1;
+	}
+      } else if (have_header) { 
+        /* header does not end properly */
+        sprintf(msg,"Corrupted header in file %s",filename);
+        error(msg);
+      } else {
+        /* we have no header, stop reading further */
+	end_header=1;
+        /* print a warning */
+        if (0==myid) fprintf(stderr,
+          "Warning: no header in potential file %s, assuming format %s\n",
+	  filename,format);
+      }
+    } while (!end_header);
+
+    /* did we have a format in the header */
+    if ((have_header) && (!have_format)) {
+      sprintf(msg,"Format not specified in header of file %s",filename);
+      error(msg);
+    }
+
+    /* rewind if there was no header */
+    if (!have_header) rewind(infile);
+
+    /* warn if we have no header */
+    if ((0==myid) && (!have_header)) {
+      sprintf(msg,"File %s has no header",filename);
+      warning(msg);
+    }
+
+  } /* have read header */
 
   /* allocate info block of function table */
-  size = ntypes*ntypes;
   pt->maxsteps = 0;
   pt->begin    = (real *) malloc(size*sizeof(real));
   pt->end      = (real *) malloc(size*sizeof(real));
@@ -64,100 +132,14 @@ void read_pot_table1( pot_table_t *pt, char *filename )
     pt->end[i] = 0.0;
   }
 
-#ifdef MPI
   /* read table only on master processor? */
   if ((0==myid) || (1==parallel_input)) {
-#endif
-
-    infile = fopen(filename,"r");
-    if (NULL==infile) {
-      sprintf(msg,"Cannot open file %s.",filename);
-      error(msg);
-    }
-
-    /* allocate the function table */
-    pt->maxsteps = PSTEP;
-    tablesize = size * pt->maxsteps;
-    pt->table = (real *) malloc(tablesize*sizeof(real));
-    if (NULL==pt->table) {
-      sprintf(msg,"Cannot allocate memory for function table %s.",filename);
-      error(msg);
-    }
-
-    /* input loop */
-    while (!feof(infile)) {
-
-      /* still some space left? */ 
-      if (((npot%PSTEP) == 0) && (npot>0)) {
-        pt->maxsteps += PSTEP;
-        tablesize = size * pt->maxsteps;
-        pt->table = (real *) realloc(pt->table, tablesize*sizeof(real));
-        if (NULL==pt->table) {
-          sprintf(msg,"Cannot extend memory for function table %s.",filename);
-          error(msg);
-        }
-      }
-
-      /*  read in potential */
-      if ( 1 != fscanf(infile,"%lf",&r2) ) break;
-      if (npot==0) r2_start = r2;  /* catch first value */
-      for (i=0; i<size; ++i) {
-	if (( 1 != fscanf(infile,"%lf", &val)) && (myid==0)) 
-           error("Line incomplete in potential file.");
-	*PTR_2D(pt->table,npot,i,pt->maxsteps,size) = val;
-        if (val!=0.0) pt->end[i] = r2; /* catch last non-zero value */
-      }
-      ++npot;
-    }
-
-    fclose(infile);
-
-    r2_step = (r2 - r2_start) / (npot-1);
-
-    if (0==myid) {
-      printf("Read potential %s with %d lines.\n",filename,npot);
-      printf("Starts at r2_start: %f, r_start: %f\n",r2_start,sqrt(r2_start));
-      printf("Ends at r2_end:     %f, r_end:   %f\n",r2,      sqrt(r2));
-      printf("Step is r2_step:    %f\n",r2_step);
-    }
-
-    /* fill info block, and shift potential to zero */
-    for (i=0; i<size; ++i) {
-      pt->begin[i] = r2_start;
-      pt->step[i] = r2_step;
-      pt->invstep[i] = 1.0 / r2_step;
-      delta = *PTR_2D(pt->table,(npot-1),i,pt->maxsteps,size);
-      if (delta!=0.0) {
-        if (0==myid)
-          printf("Potential %1d%1d shifted by %f\n",
-                 (i/ntypes),(i%ntypes),delta);
-        for (k=0; k<npot; ++k) *PTR_2D(pt->table,k,i,pt->table,size) -= delta;
-      } else {
-        pt->end[i] += r2_step;
-      }
-      cellsz = MAX(cellsz,pt->end[i]);
-    }
-    if (0==myid) printf("\n");
-
-    /* The interpolation uses k+1 and k+2, so we add zeros at end of table */
-    for (k=1; k<=3; ++k) {
-      /* still some space left? */ 
-      if (((npot%PSTEP) == 0) && (npot>0)) {
-        pt->maxsteps += PSTEP;
-        tablesize = size * pt->maxsteps;
-        pt->table = (real *) realloc(pt->table, tablesize*sizeof(real));
-        if (NULL==pt->table) {
-          sprintf(msg,"Cannot extend memory for function table %s.",filename);
-          error(msg);
-        }
-      }
-      for (i=0; i<size; ++i)
-	*PTR_2D(pt->table,npot,i,pt->table,size) = 0.0;
-      ++npot;
-    }
+    if (format==1) read_pot_table1(pt, size, filename, infile);
+    if (format==2) read_pot_table2(pt, size, filename, infile);
+  }
+  fclose(infile);
 
 #ifdef MPI
-  }
   if (0==parallel_input) {
     /* Broadcast table to other CPUs */
     MPI_Bcast( &(pt->maxsteps), 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -178,133 +160,192 @@ void read_pot_table1( pot_table_t *pt, char *filename )
 
 }
 
+
 /*****************************************************************************
 *
-*  read potential in second format: at the beginning ntypes*ntypes times 
+*  read potential in first format: each line contains
+*
+*  r**2 V00 V01 V02 ... V10 V11 V12 ... VNN
+*
+*  N is the number of different atom types
+*
+*  Note that it is assumed that the r**2 are aequidistant.
+*
+******************************************************************************/
+
+void read_pot_table1(pot_table_t *pt, int ncols, char *filename, FILE *infile)
+{
+  int i, k;
+  int tablesize, npot=0;
+  real val, numstep, delta;
+  real r2, r2_start, r2_step;
+  str255 msg;
+
+  /* allocate the function table */
+  pt->maxsteps = PSTEP;
+  tablesize = ncols * pt->maxsteps;
+  pt->table = (real *) malloc(tablesize*sizeof(real));
+  if (NULL==pt->table) {
+    sprintf(msg,"Cannot allocate memory for function table %s.",filename);
+    error(msg);
+  }
+
+  /* input loop */
+  while (!feof(infile)) {
+
+    /* still some space left? */ 
+    if (((npot%PSTEP) == 0) && (npot>0)) {
+      pt->maxsteps += PSTEP;
+      tablesize = ncols * pt->maxsteps;
+      pt->table = (real *) realloc(pt->table, tablesize*sizeof(real));
+      if (NULL==pt->table) {
+        sprintf(msg,"Cannot extend memory for function table %s.",filename);
+        error(msg);
+      }
+    }
+
+    /*  read in potential */
+    if ( 1 != fscanf(infile,"%lf",&r2) ) break;
+    if (npot==0) r2_start = r2;  /* catch first value */
+    for (i=0; i<ncols; ++i) {
+      if (( 1 != fscanf(infile,"%lf", &val)) && (myid==0)) 
+        error("Line incomplete in potential file.");
+      *PTR_2D(pt->table,npot,i,pt->maxsteps,ncols) = val;
+      if (val!=0.0) pt->end[i] = r2; /* catch last non-zero value */
+    }
+    ++npot;
+  }
+
+  r2_step = (r2 - r2_start) / (npot-1);
+
+  if (0==myid) {
+    printf("Read potential %s with %d lines.\n",filename,npot);
+    printf("Starts at r2_start: %f, r_start: %f\n",r2_start,sqrt(r2_start));
+    printf("Ends at r2_end:     %f, r_end:   %f\n",r2,      sqrt(r2));
+    printf("Step is r2_step:    %f\n",r2_step);
+  }
+
+  /* fill info block, and shift potential to zero */
+  for (i=0; i<ncols; ++i) {
+    pt->begin[i] = r2_start;
+    pt->step[i] = r2_step;
+    pt->invstep[i] = 1.0 / r2_step;
+    delta = *PTR_2D(pt->table,(npot-1),i,pt->maxsteps,ncols);
+    if (delta!=0.0) {
+      if (0==myid)
+        printf("Potential %1d%1d shifted by %f\n",
+               (i/ntypes),(i%ntypes),delta);
+      for (k=0; k<npot; ++k) *PTR_2D(pt->table,k,i,pt->table,ncols) -= delta;
+    } else {
+      pt->end[i] += r2_step;
+    }
+    if (ncols==ntypes*ntypes) cellsz = MAX(cellsz,pt->end[i]);
+  }
+  if (0==myid) printf("\n");
+
+  /* The interpolation uses k+1 and k+2, so we add zeros at end of table */
+  for (k=1; k<=5; ++k) {
+    /* still some space left? */ 
+    if (((npot%PSTEP) == 0) && (npot>0)) {
+      pt->maxsteps += PSTEP;
+      tablesize = ncols * pt->maxsteps;
+      pt->table = (real *) realloc(pt->table, tablesize*sizeof(real));
+      if (NULL==pt->table) {
+        sprintf(msg,"Cannot extend memory for function table %s.",filename);
+        error(msg);
+      }
+    }
+    for (i=0; i<ncols; ++i)
+      *PTR_2D(pt->table,npot,i,pt->table,ncols) = 0.0;
+    ++npot;
+  }
+}
+
+
+/*****************************************************************************
+*
+*  read potential in second format: at the beginning <ncols> times 
 *  a line of the form
 *
 *  r_begin r_end r_step,
 *  
 *  then the values of the potential (one per line), first those 
 *  for atom pair  00, then an empty line (for gnuplot), then 01 and so on.
+*  Analogously, if there is only one column per atom type.
 *
-*  Note that it is assumed that Vij == Vji and that the r**2 are aequidistant.
+*  Note that it is assumed that the r**2 are aequidistant.
 *
 ******************************************************************************/
 
-void read_pot_table2( pot_table_t *pt, char *filename, int cols )
+void read_pot_table2(pot_table_t *pt, int ncols, char *filename, FILE *infile)
 {
-  FILE *infile;
   int i, k, *len;
   int tablesize;
   real val, numstep;
   str255 msg;
 
-  /* allocate info block of function table */
-  pt->maxsteps = 0;
-  pt->begin    = (real *) malloc(cols * sizeof(real));
-  pt->end      = (real *) malloc(cols * sizeof(real));
-  pt->step     = (real *) malloc(cols * sizeof(real));
-  pt->invstep  = (real *) malloc(cols * sizeof(real));
-  len          = (int  *) malloc(cols * sizeof(real));
-  if ((pt->begin   == NULL) || (pt->end == NULL) || (pt->step == NULL) || 
-      (pt->invstep == NULL) || (len == NULL)) {
-    sprintf(msg,"Cannot allocate info block for function table %s.",filename);
+  len = (int  *) malloc(ncols * sizeof(real));
+  if (len==NULL) error("allocation failed in read_pot_table");
+
+  /* read the info block of the function table */
+  for(i=0; i<ncols; i++) {
+    if (3 != fscanf(infile, "%lf %lf %lf",
+                  &pt->begin[i], &pt->end[i], &pt->step[i])) {
+      if (0==myid) { 
+        sprintf(msg, "Info line in %s corrupt.", filename);
+        error(msg);
+      }
+    }
+    if (ncols==ntypes*ntypes) cellsz = MAX(cellsz,pt->end[i]);
+    pt->invstep[i] = 1.0 / pt->step[i];
+    numstep        = 1 + (pt->end[i] - pt->begin[i]) / pt->step[i];
+    len[i]         = (int) (numstep+0.5);  
+    pt->maxsteps   = MAX(pt->maxsteps, len[i]);
+
+    /* some security against rounding errors */
+    if ((fabs(len[i] - numstep) >= 0.1) && (0==myid)) {
+      char msg[255];
+      sprintf(msg,"numstep = %f rounded to %d in file %s.",
+              numstep, len[i], filename);
+      warning(msg);
+    }
+  }
+
+  /* allocate the function table */
+  /* allow some extra values at the end for interpolation */
+  tablesize = ncols * (pt->maxsteps+3);
+  pt->table = (real *) malloc(tablesize * sizeof(real));
+  if (NULL==pt->table) {
+    sprintf(msg,"Cannot allocate memory for function table %s.",filename);
     error(msg);
   }
 
-#ifdef MPI
-  /* read table only on master processor? */
-  if ((0==myid) || (1==parallel_input)) {
-#endif
-
-    infile = fopen(filename,"r");
-    if (NULL==infile) {
-      sprintf(msg,"Cannot open file %s.",filename);
-      error(msg);
-    }
-
-    /* read the info block of the function table */
-    for(i=0; i<cols; i++) {
-      if (3 != fscanf(infile, "%lf %lf %lf",
-                    &pt->begin[i], &pt->end[i], &pt->step[i])) {
-        if (0==myid) { 
-          sprintf(msg, "Info line in %s corrupt.", filename);
+  /* input loop */
+  for (i=0; i<ncols; i++) {
+    for (k=0; k<len[i]; k++) {
+      if (1 != fscanf(infile,"%lf", &val)) {
+        if (0==myid) {
+          sprintf(msg, "wrong format in file %s.", filename);
           error(msg);
-	}
-      }
-      cellsz = MAX(cellsz,pt->end[i]);
-      pt->invstep[i] = 1.0 / pt->step[i];
-      numstep        = 1 + (pt->end[i] - pt->begin[i]) / pt->step[i];
-      len[i]         = (int) (numstep+0.5);  
-      pt->maxsteps   = MAX(pt->maxsteps, len[i]);
-
-      /* some security against rounding errors */
-      if ((fabs(len[i] - numstep) >= 0.1) && (0==myid)) {
-        char msg[255];
-        sprintf(msg,"numstep = %f rounded to %d in file %s.",
-                numstep, len[i], filename);
-        warning(msg);
-      }
-    }
-
-    /* allocate the function table */
-    /* allow some extra values at the end for interpolation */
-    tablesize = cols * (pt->maxsteps+3);
-    pt->table = (real *) malloc(tablesize * sizeof(real));
-    if (NULL==pt->table) {
-      sprintf(msg,"Cannot allocate memory for function table %s.",filename);
-      error(msg);
-    }
-
-    /* input loop */
-    for (i=0; i<cols; i++) {
-      for (k=0; k<len[i]; k++) {
-        if (1 != fscanf(infile,"%lf", &val)) {
-          if (0==myid) {
-            sprintf(msg, "wrong format in file %s.", filename);
-            error(msg);
-	  }
         }
-        *PTR_2D(pt->table,k,i,pt->maxsteps,cols) = val;
       }
-      /* make some copies of the last value for interpolation */
-      for (k=len[i]; k<len[i]+3; k++)
-        *PTR_2D(pt->table,k,i,pt->maxsteps,cols) = val;
+      *PTR_2D(pt->table,k,i,pt->maxsteps,ncols) = val;
     }
-    fclose(infile);
-
-    if (0==myid) {
-      if (cols==ntypes) {
-        printf("Read tabulated function %s for %d atoms types.\n",
-               filename,cols);
-      } else {
-        printf("Read tabulated function %s for %d pairs of atoms types.\n",
-               filename,cols);
-      }
-      printf("Maximal length of table is %d.\n",pt->maxsteps);
-    }
-
-#ifdef MPI
+    /* make some copies of the last value for interpolation */
+    for (k=len[i]; k<len[i]+3; k++)
+      *PTR_2D(pt->table,k,i,pt->maxsteps,ncols) = val;
   }
-  if (0==parallel_input) {
-    /* Broadcast table to other CPUs */
-    MPI_Bcast( &(pt->maxsteps), 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->begin,    cols, REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->end,      cols, REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->step,     cols, REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->invstep,  cols, REAL, 0, MPI_COMM_WORLD);
-    tablesize = pt->maxsteps * cols;
-    if (0 != myid) {
-      pt->table = (real *) malloc(tablesize * sizeof(real));
-      if (NULL==pt->table)
-        error("Cannot allocate memory for function table");
-    }
-    MPI_Bcast( pt->table, tablesize, REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( &cellsz,           1, REAL, 0, MPI_COMM_WORLD);
-  }
-#endif
 
+  if (0==myid) {
+    if (ncols==ntypes) {
+      printf("Read tabulated function %s for %d atoms types.\n",
+             filename,ncols);
+    } else {
+      printf("Read tabulated function %s for %d pairs of atoms types.\n",
+             filename,ncols);
+    }
+    printf("Maximal length of table is %d.\n",pt->maxsteps);
+  }
 }
 
 /*****************************************************************************

@@ -59,25 +59,13 @@ embedding_energy_file   Potentials/Ni_u3/F_rho.Ni_u3.dat<BR>
 atomic_e-density_file   Potentials/Ni_u3/Rho_r2.Ni_u3.dat<BR>
 </CODE>
 <p>
-To allow different stepwidths and starting/ending points for the
-potentials, the tables have the following format: 
-<p>
-core_potential_file, atomic_e-density_file:  <BR>
-n*n lines with:<br>
-<tt>r_begin r_end dr </tt><BR>
-followed by n*n blocks of function values (equidistant in r^2) <BR>
-for the atom pairs ij: 00, 01,... 10, 11,... 
+The potential file can be in either of two different 
+<A HREF="potentials.html#POTFORMAT">formats</A>.
 <p>
 It is the responsibility of the creator of the potential to make
 sure, that the functions of r go smoothly to zero and that the last
 four values are 0.0. If you're having an exotic core potential with V_ij
 != V_ji, you have to use the option <b>asympot</b>.
-
-<p>
-embedding_energy_file:<br>
-n lines with: <br>
-<tt>rho_begin rho_end drho </tt><br>
-followed by n blocks of values equidistant in rho
 <p>
 <li><b>Existing Potentials </b>
 <p>

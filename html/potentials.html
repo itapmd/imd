@@ -6,56 +6,138 @@
 
 <H1>Interactions in IMD</H1>
 
+<A NAME="POTFORMAT">
+
+<H2>Potential File Format</H2>
+
+IMD supports several different kinds of interactions. Most of them
+are defined in terms of tabulated functions. Typical such functions 
+are central pair potentials, which depend on the distance of two atoms 
+and the two atom types involved. Such functions have to be tabulated 
+with steps which are equidistant in the <B>square of the distance</B>. 
+For EAM interactions one also needs functions which depend on one 
+atom type and the host electron density at the position of that atom. 
+Such functions are tabulated with steps equidistant in the electron
+density. 
+
+<H4>Potential File Header</H4>
+
+Tabulated functions can be given in either of two formats. The header
+specifies in which format the current file is, and how many data
+columns the tabulated function has for each argument. The number
+of data columns is either the number of atom type pairs (i.e., the
+square of the number of atom types), or, in the case of the EAM host 
+electron density, the number of atom types. The header has the
+following format:
+
+<PRE>
+## this is just a comment line
+#F f n
+## this is another comment line
+#E this is the very last header line
+</PRE>
+
+Header lines start with the character '#'. If the second character is
+'F', then the format specifyer f (either 1 or 2) and the number n of 
+data columns of the tabulated functions are read from the rest of the 
+line. The very last header line must have a character 'E' at the 
+second position. Header lines with a second character different from 
+'F' or 'E' are treated as comments, but it is recommended that such 
+lines start with two '#' characters. 
+
+<H4>Format 1</H4>
+
+In a potential file in format 1, each line contains first the function 
+argument, either the square of the distance (radius) or the host 
+electron density, and then all data columns, i.e., the function values 
+for this argument for the different atom type pairs or atom types. 
+If the atom types run from 0 to N, the lines in a format 1 file have
+either of the following formats:
+<PRE>
+r^2    V_00 V_01 ... V_0N V_10 V_11 ... V_NN 
+</PRE>
+<PRE>
+rho_h  E_0 ... E_N
+</PRE>
+
+Note that if a function of the square of the distance given in format
+1 does not vanish at the end of the tabulation, it is shifted so that
+it does vanish. This is for backwards compatibility; it would be
+better to change the potential file once and for all.
+<P>
+The disadvantage of format 1 is that all data columns have to be tabulated
+for the same range and with the same spacing. 
+  
+<H4>Format 2</H4>
+
+In a potential file in format 2, each data column has its own range
+and spacing. If we have n data columns, the file starts with n lines
+of the form
+<PRE>
+x_begin x_end dx
+</PRE>
+specifying the start, end, and spacing of the tabulation of the
+n data columns. The argument x is either the square of the atom 
+distance, or the host electron density. These n lines are then
+followed by n blocks with the function values, one for each atom 
+type pair or atom type. The number of function values is computed 
+from the begin, end, and spacing values of the corresponding table.
+They can be different for the different data columns. The order
+of the different data columns is as described for format 1.
+
+<H4>Backwards Compatibility</H4>
+
+For backwards compatibility, potential files without header are also 
+accepted, but a warning is printed. A default format is then assumed,
+which is format 2 for EAM interactions, and format 1 for everything else.
+
+<A NAME="PAIRPOT">
+
 <H2>Central Pair Potentials</H2>
 
 As a default, IMD uses classical, central two-body potentials, which 
-are tabulated in the potential file. Each line gives the potential
-values at one value of r^2 (square of the radius). If N is ntypes-1,
-the format of each line is:
-<PRE>
-r^2 V_00 V_01 ... V_0N V_10 V_11 ... V_NN 
-</PRE>
-It is <B>important</B> that the values of <B>r^2</B> at which the potential
-is given are <B>equidistant</B>. If the potential does not extend 
-down to r=0, it is extrapolated linearly. Further, IMD adds a
-constant to the potential, so that it ends at zero.
+are tabulated in the potential file. The potential file can be either
+in either of two <A HREF="#POTFORMAT">formats</A>. It is essential
+that the potential is tabulated equidistant in the <B>square</B> of
+the atom distance. Note that if the potential does not extend down to 
+r^2=0, it is extrapolated linearly. 
+
+<A NAME="EAMPOT">
 
 <H2>EAM Potentials (option eam)</H2>
 
 The energy in potentials of the Embedded Atom type consitsts of two
-parts:<p>
-A pair potential term (Phi(r)) representing the electrostatic core-core
-repulsion, and a cohesive term (F(rho)) representing the energy the ion
-core gets when it is "embedded" in the "Electron Sea". 
-This Embedding Energy is a function of the local electron density.
-This local electron density is in turn constructed as a superposition
-of contributions from neighboring atoms (Rho(r)).
+parts, a pair potential term specifyed by the function Phi(r)
+representing the electrostatic core-core repulsion, and a cohesive
+term specifyed by the function F(rho) representing the energy the ion
+core gets when it is "embedded" in the "Electron Sea". This Embedding 
+Energy is a function of the local electron density, which in turn
+is constructed as a superposition of contributions from neighboring 
+atoms. This electron transfer is specifyed by the function Rho(r).
 <p> 
-These functions depend on the type of atom i (F_i(rho)) and of the type of
-the other atom j (Rho_ij(r), Phi_ij(r)). We use function tables for
-all of them, the number of atom types n is limited only by memory.
-The format of the tables (equidistant in r^2) for Rho(r), Phi(r) is:
-<p>
-n*n times: r_begin r_end dr <p>
-followed by n*n blocks of function values for the n*n
-possible atom pairs ij: 00, 01,... 10, 11,...
-<p>
-F(rho) is tabulated equidistant in rho, beginning with n times rho_begin
-rho_end drho followed by n blocks of values.
+These functions depend on the type of the embedded atom (F_i(rho)), 
+or on the types i and j of the two atoms involved (Rho_ij(r), Phi_ij(r)). 
+The corresponding tabulated functions can be given in either of
+two <A HREF="#POTFORMAT">formats</A>. Note that Rho and Phi have
+to be tabulated equidistant in r^2.
 <p>
 For more details take a look at the description of the 
 <a href=eam2.html>EAM implementation</a>
 
+<A NAME="TTBPPOT">
+
 <H2>Stillinger-Weber Potentials (option ttbp)</H2>
 
-The pair interaction potential is used as described in 
-'IMD Potentials'. The three-body interaction potential
-is computed during the run. However, a cutoff function has
-to be specified. Its input format is the same as in the case
-of the IMD pair potential.
+The pair interaction potential is used as described for 
+<A HREF="#PAIRPOT">pair potentials</A>. The three-body interaction 
+potential is computed from parameters. However, a cutoff function has
+to be specified. Its possible input formats can be the same as for the 
+pair potential.
 <p>
 For more details take a look at the description of the 
 <a href="covalent.html">TTBP implementation</a>.
+
+<A NAME="TERSOFFPOT">
 
 <H2>Tersoff Potential (option tersoff)</H2>
 
@@ -66,6 +148,8 @@ to be given in the parameter file.<P>
 For more details take a look at the description of the 
 <A HREF="covalent.html#tersoff">TERSOFF implementation</A>.
 
+<A NAME="EWALDPOT">
+
 <H2>Coulomb Potential (option ewald)</H2>
 
 The Coulomb potential is computed using Ewald summation
@@ -74,6 +158,8 @@ potential can be used.<P>
  
 For more details take a look at the description ot the
 <A HREF="ewald.html">EWALD implementation</A>.
+
+<A NAME="GAYBERNEPOT">
 
 <H2>Gay-Berne Potential (option uniax)</H2>
 

@@ -1131,8 +1131,8 @@ void getparamfile(char *paramfname, int sim)
 #endif
 #ifdef EAM2
     else if (strcasecmp(token,"core_potential_file")==0) {
-      /* EAM2:Filename for the tabulated Core-Core Potenial (r^2) */
-      getparam("core_potential_file",eam2_core_pot_filename,PARAM_STR,1,255);
+      /* EAM2:Filename for the tabulated Core-Core Potential (r^2) */
+      getparam("core_potential_file",potfilename,PARAM_STR,1,255);
     }
     else if (strcasecmp(token,"embedding_energy_file")==0) {
       /* EAM2:Filename for the tabulated Embedding Enery(rho_h) */
@@ -1609,7 +1609,6 @@ void broadcast_params() {
   MPI_Bcast( ttbp_potfilename,       255, MPI_CHAR, 0, MPI_COMM_WORLD); 
 #endif
 #ifdef EAM2
-  MPI_Bcast( eam2_core_pot_filename, 255, MPI_CHAR, 0, MPI_COMM_WORLD); 
   MPI_Bcast( eam2_emb_E_filename,    255, MPI_CHAR, 0, MPI_COMM_WORLD); 
   MPI_Bcast( eam2_at_rho_filename,   255, MPI_CHAR, 0, MPI_COMM_WORLD); 
 #endif

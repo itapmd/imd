@@ -59,32 +59,26 @@ int main(int argc, char **argv)
   if (myid == 0) init_client();
 #endif
 
-#if !(defined(UNIAX) || defined(MONOLJ))
-
-#if !(defined(EAM2) || defined(TERSOFF))
-  /* read potential from file */
-  read_pot_table1(&pair_pot,potfilename);
+#ifdef PAIR_POT
+  /* read pair potential file - also used for TTBP, EAM2, and EWALD */
+  read_pot_table(&pair_pot,potfilename,ntypes*ntypes);
 #endif
 
 #ifdef TTBP
-  /* read TTBP smoothing potential from file */
-  read_pot_table1(&smooth_pot,ttbp_potfilename);
+  /* read TTBP smoothing potential file */
+  read_pot_table(&smooth_pot,ttbp_potfilename,ntypes*ntypes);
+#endif
+
+#ifdef EAM2
+  /* read the tabulated embedding energy function */
+  read_pot_table(&embed_pot,eam2_emb_E_filename,ntypes);
+  /* read the tabulated electron density function */
+  read_pot_table(&rho_h_tab,eam2_at_rho_filename,ntypes*ntypes);
 #endif
 
 #ifdef TERSOFF
   init_tersoff();
 #endif
-
-#ifdef EAM2
-  /* read the tabulated core-core Potential function */
-  read_pot_table2(&pair_pot,eam2_core_pot_filename,ntypes*ntypes);
-  /* read the tabulated embedding energy function */
-  read_pot_table2(&embed_pot,eam2_emb_E_filename,ntypes);
-  /* read the tabulated electron density function */
-  read_pot_table2(&rho_h_tab,eam2_at_rho_filename,ntypes*ntypes);
-#endif
-
-#endif /* not UNIAX and not MONOLJ */
 
   /* filenames starting with _ denote internal 
      generation of the intitial configuration */
@@ -104,7 +98,8 @@ int main(int argc, char **argv)
   if (0 == myid) printf("Done reading atoms.\n");
 
 #ifdef EPITAX
-  if (0 == myid) printf("EPITAX: Largest substrate atom number: %d\n", epitax_sub_n);
+  if (0 == myid) 
+    printf("EPITAX: Largest substrate atom number: %d\n", epitax_sub_n);
   epitax_number = epitax_sub_n;
   epitax_level  = substrate_level();
   check_boxheight();

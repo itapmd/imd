@@ -32,8 +32,9 @@ void check_parameters_complete(void);
 void broadcast_params(void);
 
 /* read and access potential tables - file imd_potential.c */
-void read_pot_table1( pot_table_t *pt, char *filename );
-void read_pot_table2( pot_table_t *pt, char *filename, int cols );
+void read_pot_table ( pot_table_t*, char*, int );
+void read_pot_table1( pot_table_t*, int, char*, FILE* );
+void read_pot_table2( pot_table_t*, int, char*, FILE* );
 void pair_int_monolj(real *pot, real *grad, real r2);
 void pair_int2  (real*, real*, int*, pot_table_t*, int, int, real);
 void pair_int3  (real*, real*, int*, pot_table_t*, int, int, real);

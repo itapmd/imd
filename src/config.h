@@ -43,6 +43,34 @@
 
 /******************************************************************************
 *
+* Interactions
+*
+******************************************************************************/
+
+/* backwards compatibility for potential files without headers */
+#ifdef EAM2
+#define DEFAULT_POTFILE_TYPE 2
+#else
+#define DEFAULT_POTFILE_TYPE 1
+#endif
+
+/* we always need PAIR_POT, unless TERSOFF, UNIAX, or MONOLJ are defined */
+/* note that  PAIR_POT is the default if no interaction is specified     */
+#if !(defined(TERSOFF) || defined(UNIAX) || defined(MONOLJ))
+#ifndef PAIR_POT
+#define PAIR_POT
+#endif
+#endif
+
+/* for EAM2, TTBP, and EWALD, we also need PAIR_POT */
+#if (defined(EAM2) || defined(TTBP) || defined(EWALD))
+#ifndef PAIR_POT
+#define PAIR_POT 
+#endif
+#endif
+
+/******************************************************************************
+*
 * Statistical Ensembles
 *
 ******************************************************************************/
