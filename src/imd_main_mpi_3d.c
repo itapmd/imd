@@ -507,6 +507,85 @@ vektor global_pbc(int i, int j, int k)
 
 #endif /* MONOLJ */
 
+#ifdef SR
+
+/******************************************************************************
+*
+* send_atoms  -  only used for fix_cells
+*
+******************************************************************************/
+
+void send_atoms()
+{
+  MPI_Status  stat;
+
+  if (cpu_dim.x > 1) {
+    /* send east, receive west, move atoms from west to cells */
+    sendrecv_buf( &send_buf_east, nbeast, &recv_buf_west, nbwest, &stat);
+    MPI_Get_count( &stat, REAL, &recv_buf_west.n );
+    process_buffer( &recv_buf_west, (cell *) NULL );
+
+    /* send west, receive east, move atoms from east to cells */
+    sendrecv_buf( &send_buf_west, nbwest, &recv_buf_east, nbeast, &stat);
+    MPI_Get_count( &stat, REAL, &recv_buf_east.n );
+    process_buffer( &recv_buf_east, (cell *) NULL );
+
+    /* Append atoms from west into north send buffer */
+    copy_atoms_buf( &send_buf_north, &recv_buf_west );
+    /* Append atoms from east into north send buffer */
+    copy_atoms_buf( &send_buf_north, &recv_buf_east );
+    /* check special case cpu_dim.y==2 */ 
+    if (nbsouth!=nbnorth) {
+      /* append atoms from east & west to south send buffer */
+      copy_atoms_buf( &send_buf_south, &recv_buf_east );
+      copy_atoms_buf( &send_buf_south, &recv_buf_west );
+    }
+  }
+
+  if (cpu_dim.y > 1) {
+    /* send north, receive south, move atoms from south to cells */
+    sendrecv_buf(  &send_buf_north, nbnorth, &recv_buf_south, nbsouth, &stat);
+    MPI_Get_count( &stat, REAL, &recv_buf_south.n );
+    process_buffer( &recv_buf_south, (cell *) NULL );
+
+    /* send south, receive north, move atoms from north to cells */
+    sendrecv_buf( &send_buf_south, nbsouth, &recv_buf_north, nbnorth, &stat);
+    MPI_Get_count( &stat, REAL, &recv_buf_north.n );
+    process_buffer( &recv_buf_north, (cell *) NULL );
+
+    /* Append atoms from north to up send buffer */
+    copy_atoms_buf( &send_buf_up, &recv_buf_north );
+    /* Append atoms from south to up send buffer */
+    copy_atoms_buf( &send_buf_up, &recv_buf_south );
+    /* Append atoms from east to up send buffer */
+    copy_atoms_buf( &send_buf_up, &recv_buf_east );
+    /* Append atoms from west to up send buffer */
+    copy_atoms_buf( &send_buf_up, &recv_buf_west );
+    /* check special case cpu_dim.z==2 */ 
+    if (nbdown!=nbup) {
+      /* append atoms from north,south,east,west to down send buffer */
+      copy_atoms_buf( &send_buf_down, &recv_buf_north );
+      copy_atoms_buf( &send_buf_down, &recv_buf_south );
+      copy_atoms_buf( &send_buf_down, &recv_buf_east  );
+      copy_atoms_buf( &send_buf_down, &recv_buf_west  );
+    }
+  }
+
+  if (cpu_dim.z > 1) {
+    /* send up, receive down, move atoms from down to cells */
+    sendrecv_buf( &send_buf_up, nbup, &recv_buf_down, nbdown, &stat);
+    MPI_Get_count( &stat, REAL, &recv_buf_down.n );
+    process_buffer( &recv_buf_down, (cell *) NULL );
+  
+    /* send down, receive up, move atoms from up to cells */
+    sendrecv_buf( &send_buf_down, nbdown, &recv_buf_up, nbup, &stat );
+    MPI_Get_count( &stat, REAL, &recv_buf_up.n );
+    process_buffer( &recv_buf_up, (cell *) NULL );
+  }
+
+}
+
+#else /* not SR */
 
 /******************************************************************************
 *
@@ -613,3 +692,5 @@ void send_atoms()
   }
 
 }
+
+#endif /* not SR */
