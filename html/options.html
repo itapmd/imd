@@ -341,6 +341,20 @@ Compile with profiling support.
 <H2>Possible Preprocessor Flags</H2>
 
 <UL>
+<A NAME="FBC">
+<P><LI><B>FBC</B><P>
+</A>
+Force Boundary Conditions. If set, one can define extra forces that
+are added on special atoms. To destinguish these atoms the concept of
+'virtual' atomtypes is introduced. A virtual atom of type v has the
+same physical properties as an atom of (real) type v modulo ntypes.
+total_types is the number of real atomtypes + virtual atom types.<p>
+For each virtual atomtype one can declare in the parameter file the
+starting and end value of an extra force vector. The values between
+extra_startforce and extra_endforce are linearly interpolated (like
+the temperature).<p> 
+This flag should work with risc and mpi versions and at least with
+the nve and mik integrators, and also with the 2d and eam2 options.
 
 <A NAME="EPOT_DIFF">
 <P><LI><B>EPOT_DIFF</B><P>

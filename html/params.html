@@ -88,6 +88,11 @@ isq_tau_xi	     # 1/SQR(tau_xi). Can be zero, which corresponds
 cell_size_tol	     # relative tolerance for volume rescaling during 
                      # NPT simulation
 
+# parameters for use with Force Boundary Conditions (FBC)
+total_types          # TOTAL nuber of atoms: ntypes + virtualtypes
+extra_startforce     # start-/endforce for each virtual type
+extra_endforce       # format: typenr forcevector
+
 # parameters for 2d pictures
 ecut_kin	# kinetic energy interval for pictures (min/max)
 ecut_pot	# potential energy interval for pictures (min/max)
