@@ -6,7 +6,13 @@
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
 float *atoms_dist;
-int dim, dimx, dimy, dimz, ntypes, endian, size;
+int dim, dimx, dimy, dimz, ntypes, size;
+
+/******************************************************************************
+*
+*  return error message and stop
+*
+******************************************************************************/
 
 void error(char *msg)
 {
@@ -14,11 +20,42 @@ void error(char *msg)
   exit(2);
 }
 
+/******************************************************************************
+*
+*  endian returns 1 if system is big endian, 0 if little endian
+*
+******************************************************************************/
+
+int endian(void)
+{
+  unsigned short int word = 0x0001;
+  unsigned char  *byte    = (unsigned char *) &word;
+  return (byte[0] ? 0 : 1);
+}
+
+/******************************************************************************
+*
+*  do endian swap for a four byte quantity
+*
+******************************************************************************/
+
+void do_endian_swap_4(char *str) {
+  char *c;
+  *c = * str;    * str    = *(str+3); *(str+3) = *c;
+  *c = *(str+1); *(str+1) = *(str+2); *(str+2) = *c;
+}
+
+/******************************************************************************
+*
+*  read atoms distribution
+*
+******************************************************************************/
+
 int read_atoms_dist(char *fname)
 {
   FILE *infile;
   char line[255];
-  int  cont;
+  int  cont, input_endian, i;
 
   /* open file */
   if (NULL==(infile=fopen(fname,"r"))) error("Cannot open input file");
@@ -31,7 +68,7 @@ int read_atoms_dist(char *fname)
       error("file header corrupt!");
     } else {
       if (line[1]=='F') {
-        sscanf(line+2,"%d %d %d",&endian,&dim,&ntypes);
+        sscanf(line+2,"%d %d %d",&input_endian,&dim,&ntypes);
       } else  if (line[1]=='D') {
         if (dim!=sscanf(line+2,"%d %d %d",&dimx,&dimy,&dimz))
           error("file header corrupt (dimension)!");
@@ -57,9 +94,19 @@ int read_atoms_dist(char *fname)
   /* close input file */
   fclose(infile);
 
+  /* do endian swap if necessary */
+  if (input_endian!=endian()) {
+    for (i=0; i<size; i++) do_endian_swap_4((char *)(atoms_dist+i));
+  }
+
   return dim;
 }
 
+/******************************************************************************
+*
+*  project histogram on the three main axis
+*
+******************************************************************************/
 
 void axis_projections_3d()
 {
@@ -88,25 +135,30 @@ void axis_projections_3d()
   printf("# Projection on x-Axis:\n");
   for (i=0; i<dimx; i++) {
     printf("%d",i);
-    for (t=0; t<ntypes; t++) printf(" %f", histx[ntypes * dimx + i]);
+    for (t=0; t<ntypes; t++) printf(" %e", histx[ntypes * dimx + i]);
     printf("\n");
   }
 
   printf("\n\n# Projection on y-Axis:\n");
   for (i=0; i<dimy; i++) {
     printf("%d",i);
-    for (t=0; t<ntypes; t++) printf(" %f", histy[ntypes * dimy + i]);
+    for (t=0; t<ntypes; t++) printf(" %e", histy[ntypes * dimy + i]);
     printf("\n");
   }
 
   printf("\n\n# Projection on z-Axis:\n");
   for (i=0; i<dimz; i++) {
     printf("%d",i);
-    for (t=0; t<ntypes; t++) printf(" %f", histz[ntypes * dimz + i]);
+    for (t=0; t<ntypes; t++) printf(" %e", histz[ntypes * dimz + i]);
     printf("\n");
   }
 }
 
+/******************************************************************************
+*
+*  write pictures of xy-slices
+*
+******************************************************************************/
 
 void xy_pictures_3d(char *infile, int min, int max)
 {
@@ -175,6 +227,12 @@ void xy_pictures_3d(char *infile, int min, int max)
     fclose(out);
   }
 }
+
+/******************************************************************************
+*
+*  write pictures of xz-slices
+*
+******************************************************************************/
 
 void xz_pictures_3d(char *infile, int min, int max)
 {
@@ -245,6 +303,12 @@ void xz_pictures_3d(char *infile, int min, int max)
   }
 }
 
+/******************************************************************************
+*
+*  write pictures of yz-slices
+*
+******************************************************************************/
+
 void yz_pictures_3d(char *infile, int min, int max)
 {
   float *hist, fmax;
@@ -314,6 +378,12 @@ void yz_pictures_3d(char *infile, int min, int max)
   }
 }
 
+/******************************************************************************
+*
+*  write pictures of 2d histogram
+*
+******************************************************************************/
+
 void pictures_2d(char *infile)
 {
   float *hist, fmax;
@@ -369,6 +439,12 @@ void pictures_2d(char *infile)
     fclose(out);
   }
 }
+
+/******************************************************************************
+*
+*  main
+*
+******************************************************************************/
 
 int main(int argc, char **argv) 
 {
