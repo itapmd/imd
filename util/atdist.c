@@ -148,7 +148,8 @@ int read_atoms_dist(char *fname)
 {
   FILE *infile;
   char line[255];
-  int  cont, input_endian, i;
+  char str[255];
+  int  cont, input_endian, i, n_coord, n;
 
   /* open file */
   if (NULL==(infile=fopen(fname,"r"))) error("Cannot open input file");
@@ -161,13 +162,28 @@ int read_atoms_dist(char *fname)
       error("file header corrupt!");
     } else {
       if (line[1]=='F') {
-        sscanf(line+2,"%d %d %d",&input_endian,&dim,&ntypes);
+        n = sscanf(line+2,"%d %s %d %d",str,&dim,&n_coord,&ntypes);
+        if (n==3) { /* old format */
+          if      (str[0]=='1') input_endian=1;
+          else if (str[0]=='0') input_endian=0;
+          else error("file header corrupt!");
+          ntypes = n_coord; 
+        } else { /* new format */
+          if      (str[0]=='B') input_endian=1;
+          else if (str[0]=='L') input_endian=0;
+          else error("file header corrupt!"); 
+        }
       } else  if (line[1]=='D') {
         if (dim!=sscanf(line+2,"%d %d %d",&dimx,&dimy,&dimz))
           error("file header corrupt (dimension)!");
       } else  if (line[1]=='S') {
         if (dim!=sscanf(line+2,"%f %f %f",&ddx,&ddy,&ddz))
           error("file header corrupt (dimension)!");
+        if (n==3) { /* old format */
+          ddx = 1.0/ddx;
+          ddy = 1.0/ddy;
+          ddz = 1.0/ddz;
+        }
       } else  if (line[1]=='E') {
 	cont=0;
       }
@@ -568,10 +584,10 @@ void virvo_picture_3d(char *infile, int min_x, int min_y, int min_z,
   ui = dz; copy4bytes(str,&ui);       str +=4;   /* dim_z */
   ui =  1; copy4bytes(str,&ui);       str +=4;   /* number of frames */
   uc = 32; (unsigned char) *str = uc; str++;     /* bits per voxel */
-  fl = 1.0/ddx; copy4bytes(str,&fl);  str +=4;   /* x-length of voxel */
-  fl = 1.0/ddy; copy4bytes(str,&fl);  str +=4;   /* y-length of voxel */
-  fl = 1.0/ddz; copy4bytes(str,&fl);  str +=4;   /* z-length of voxel */
-  fl = 1.0;     copy4bytes(str,&fl);  str +=4;   /* secs per frame */
+  fl = ddx; copy4bytes(str,&fl);      str +=4;   /* x-length of voxel */
+  fl = ddy; copy4bytes(str,&fl);      str +=4;   /* y-length of voxel */
+  fl = ddz; copy4bytes(str,&fl);      str +=4;   /* z-length of voxel */
+  fl = 1.0; copy4bytes(str,&fl);      str +=4;   /* secs per frame */
   us =  0; copy2bytes(str,&us);       str +=2;   /* number of transf. func. */
   us =  0; copy2bytes(str,&us);       str +=2;   /* type of transf. func. */
 
