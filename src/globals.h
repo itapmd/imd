@@ -368,12 +368,16 @@ EXTERN str255 ttbp_potfilename INIT("\0");   /* TTBP Potential */
 EXTERN real *ttbp_potential;            /* TTBP Potential array */
 EXTERN real ttbp_r2_cut[10][10];        /* cutoff^2;  less than 10 atom types! */   
 EXTERN real ttbp_constant[10];		/* constants; less than 10 atom types! */ 
-EXTERN real ttbp_theta[10];		/* theta;     less than 10 atom types! */ 
+EXTERN real ttbp_sp[10];		/* constants; less than 10 atom types! */ 
 EXTERN real ttbp_r2_0;             	/* TTBP minimum r^2 */
 EXTERN real ttbp_r2_end;           	/* TTBP maximum r^2 */
 EXTERN real ttbp_r2_step;          	/* delta between potential samples */
 EXTERN real ttbp_inv_r2_step;      	/* inverse thereof */
 EXTERN ivektor3d ttbp_pot_dim INIT(nullivektor3d); /* pot dimensions */
+EXTERN real ttbp_c0[10];             	/* TTBP cosine constant for sp hybrid*/
+EXTERN real ttbp_c1[10];             	/* TTBP cosine constant for sp hybrid*/
+EXTERN real ttbp_c2[10];             	/* TTBP cosine constant for sp hybrid*/
+EXTERN real ttbp_c3[10];             	/* TTBP cosine constant for sp hybrid*/
 #endif
 
 /* generate quasicrystal */
