@@ -461,6 +461,9 @@ void init_atdist()
   size = atdist_size * ntypes;
 
   /* backup if pic_ur is not set */
+  /************* Dieser Default ist so schlecht, dass man eigentlich 
+   ************  besser darauf verzichten sollte, ihn überhaupt zu
+   ************  setzen: Was passiert bei negativen Box-Vektoren? */
   if (0.0==pic_ur.x) {
     pic_ur.x = box_x.x;
     pic_ur.y = box_y.y;
