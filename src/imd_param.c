@@ -1395,10 +1395,10 @@ void broadcast_params() {
   MPI_Bcast( fbc_endforces, vtypes*DIM, REAL, 0, MPI_COMM_WORLD); 
 #endif
 #endif
-  if (0!=myid) restrictions  = (vektor *) malloc(vtypes*DIM*sizeof(int));
+  if (0!=myid) restrictions  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==restrictions) 
     error("Cannot allocate memory for restriction vectors on client."); 
-  MPI_Bcast( restrictions, vtypes*DIM, MPI_INT, 0, MPI_COMM_WORLD);  
+  MPI_Bcast( restrictions, vtypes*DIM, REAL, 0, MPI_COMM_WORLD);  
 
 
   MPI_Bcast( &pbc_dirs    , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
