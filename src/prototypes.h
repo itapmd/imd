@@ -168,11 +168,12 @@ void write_add_corr(int it, int steps, unsigned seqnum);
 #endif
 
 #ifdef TRANSPORT
-void write_temp(int steps);
+void write_temp_dist(int steps);
 #endif
 
 #ifdef STRESS_TENS
-void write_press_layers(int steps);
+void write_press_dist(int steps);
+void write_press_dist_shock(int steps);
 void write_press_atoms(int steps);
 #endif
 

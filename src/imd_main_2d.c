@@ -138,12 +138,20 @@ void main_loop(void)
 #endif
 
 #ifdef TRANSPORT
-    if ((tran_interval > 0) && (0 == steps%tran_interval)) write_temp(steps);
+    if ((tran_interval > 0) && (0 == steps%tran_interval)) 
+       write_temp_dist(steps);
 #endif
 
 #ifdef STRESS_TENS
-    if ((press_interval > 0) && (0 == steps%press_interval) && (0!=press_nlayers.x*press_nlayers.y)) write_press_layers(steps);
-    if ((press_interval > 0) && (0 == steps%press_interval) && (0==press_nlayers.x*press_nlayers.y)) write_press_atoms(steps);
+#ifdef SHOCK
+    if ((press_interval > 0) && (0 == steps%press_interval)) 
+       write_press_dist_shock(steps);
+#else
+    if ((press_interval > 0) && (0 == steps%press_interval)) {
+      if (0==press_nlayers.x*press_nlayers.y) write_press_atoms(steps);
+      else write_press_dist(steps);
+    }
+#endif
 #endif
 
 #ifndef NOPBC
