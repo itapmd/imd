@@ -80,6 +80,22 @@ void error(char *msg)
   exit(2);
 }
 
+/* error message built from two strings */
+void error_str(char *msg, char *str)
+{
+  char buf[255];
+  sprintf(buf, msg, str);
+  error(buf);
+}
+
+/* error message built from three strings */
+void error_str_str(char *msg, char *str1, char *str2)
+{
+  char buf[255];
+  sprintf(buf, msg, str1, str2);
+  error(buf);
+}
+
 #ifdef AVPOS
 
 /******************************************************************************

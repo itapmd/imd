@@ -492,10 +492,12 @@ void getparamfile(char *paramfname, int sim)
       getparam("nb_checkpt_int",&nb_checkpt_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"nb_cut_lower")==0) {
-      	getparam("nb_cut_lower",lower_nb_cut,PARAM_INT,ntypes,ntypes);
+      if (ntypes==0) error("specify parameter ntypes before nb_cut_lower");
+      getparam("nb_cut_lower",lower_nb_cut,PARAM_INT,ntypes,ntypes);
     }
     else if (strcasecmp(token,"nb_cut_upper")==0) {
-	getparam("nb_cut_upper",upper_nb_cut,PARAM_INT,ntypes,ntypes);
+      if (ntypes==0) error("specify parameter ntypes before nb_cut_upper");
+      getparam("nb_cut_upper",upper_nb_cut,PARAM_INT,ntypes,ntypes);
     }
 #endif
 #ifdef SNAPSHOT
@@ -1377,44 +1379,56 @@ void getparamfile(char *paramfname, int sim)
 #ifdef PAIR
     /* analytically defined potentials */
     else if (strcasecmp(token,"r_cut")==0) {
+      if (ntypes==0) error("specify parameter ntypes before r_cut");
       getparam(token, r_cut_lin, PARAM_REAL, ntypepairs, ntypepairs);
       have_pre_pot = 1;
     }
     else if (strcasecmp(token,"r_begin")==0) {
+      if (ntypes==0) error("specify parameter ntypes before r_begin");
       getparam(token, r_begin, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"pot_res")==0) {     
+      if (ntypes==0) error("specify parameter ntypes before pot_res");
       getparam(token, pot_res, PARAM_REAL, ntypepairs, ntypepairs);
     }
     /* Lennard-Jones */
     else if (strcasecmp(token,"lj_epsilon")==0) {
+      if (ntypes==0) error("specify parameter ntypes before lj_epsilon");
       getparam(token ,lj_epsilon_lin, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"lj_sigma")==0) {
+      if (ntypes==0) error("specify parameter ntypes before lj_sigma");
       getparam(token, lj_sigma_lin, PARAM_REAL, ntypepairs, ntypepairs);
     }
     /* Morse */
     else if (strcasecmp(token,"morse_epsilon")==0) {
+      if (ntypes==0) error("specify parameter ntypes before morse_epsilon");
       getparam(token, morse_epsilon_lin, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"morse_sigma")==0) {
+      if (ntypes==0) error("specify parameter ntypes before morse_sigma");
       getparam(token, morse_sigma_lin, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"morse_alpha")==0) {
+      if (ntypes==0) error("specify parameter ntypes before morse_alpha");
       getparam(token, morse_alpha_lin, PARAM_REAL, ntypepairs, ntypepairs);
     }
     /* Buckingham */
     else if (strcasecmp(token,"buck_a")==0) {
+      if (ntypes==0) error("specify parameter ntypes before buck_a");
       getparam(token, buck_a_lin, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"buck_c")==0) {
+      if (ntypes==0) error("specify parameter ntypes before buck_c");
       getparam(token, buck_c_lin, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"buck_sigma")==0) {
+      if (ntypes==0) error("specify parameter ntypes before buck_sigma");
       getparam(token, buck_sigma_lin, PARAM_REAL, ntypepairs, ntypepairs);
     }
     /* harmonic potential for shell model */
     else if (strcasecmp(token,"spring_const")==0) {
+      if (ntypes==0) error("specify parameter ntypes before spring_const");
       getparam(token, spring_const, PARAM_REAL, 
                ntypepairs-ntypes, ntypepairs-ntypes);
     }
@@ -1428,10 +1442,12 @@ void getparamfile(char *paramfname, int sim)
 #ifdef TTBP
     else if (strcasecmp(token,"ttbp_constant")==0) {
       /* force constant (radians); type 0 */
+      if (ntypes==0) error("specify parameter ntypes before ttbp_constant");
       getparam(token, ttbp_constant, PARAM_REAL, ntypes, ntypes);
     }
     else if (strcasecmp(token,"ttbp_sp")==0) {
       /* hybridization of the element type */
+      if (ntypes==0) error("specify parameter ntypes before ttbp_sp");
       getparam(token, ttbp_sp, PARAM_REAL, ntypes, ntypes);
     }
     else if (strcasecmp(token,"ttbp_potfile")==0) {
@@ -1442,89 +1458,115 @@ void getparamfile(char *paramfname, int sim)
 #endif
 #ifdef STIWEB
     else if (strcasecmp(token,"stiweb_a")==0) {
+      if (ntypes==0) error("specify parameter ntypes before stiweb_a");
       getparam(token, stiweb_a, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"stiweb_b")==0) {
+      if (ntypes==0) error("specify parameter ntypes before stiweb_b");
       getparam(token, stiweb_b, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"stiweb_p")==0) {
+      if (ntypes==0) error("specify parameter ntypes before stiweb_p");
       getparam(token, stiweb_p, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"stiweb_q")==0) {
+      if (ntypes==0) error("specify parameter ntypes before stiweb_q");
       getparam(token, stiweb_q, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"stiweb_a1")==0) {
+      if (ntypes==0) error("specify parameter ntypes before stiweb_a1");
       getparam(token, stiweb_a1, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"stiweb_de")==0) {
+      if (ntypes==0) error("specify parameter ntypes before stiweb_de");
       getparam(token, stiweb_de, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"stiweb_a2")==0) {
+      if (ntypes==0) error("specify parameter ntypes before stiweb_a2");
       getparam(token, stiweb_a2, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"stiweb_ga")==0) {
+      if (ntypes==0) error("specify parameter ntypes before stiweb_ga");
       getparam(token, stiweb_ga, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"stiweb_la")==0) {
+      if (ntypes==0) error("specify parameter ntypes before stiweb_la");
       getparam(token, stiweb_la, PARAM_REAL, ntypepairs, ntypepairs);
     }
 #endif
 #ifdef TERSOFF
     /* Parameters for Tersoff potential */
     else if (strcasecmp(token,"ters_r_cut")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_r_cut");
       getparam(token, ters_r_cut, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"ters_r0")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_r0");
       getparam(token, ters_r0, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"ters_a")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_a");
       getparam(token, ters_a, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"ters_b")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_b");
       getparam(token, ters_b, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"ters_la")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_la");
       getparam(token, ters_la, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"ters_mu")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_mu");
       getparam(token, ters_mu, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"ters_chi")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_chi");
       getparam(token, ters_chi, PARAM_REAL, 
                ntypepairs-ntypes, ntypepairs-ntypes);
     }
     else if (strcasecmp(token,"ters_om")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_om");
       getparam(token, ters_om, PARAM_REAL,
                ntypepairs-ntypes, ntypepairs-ntypes);
     }
     else if (strcasecmp(token,"ters_ga")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_ga");
       getparam(token, ters_ga, PARAM_REAL, ntypes, ntypes);
     }
     else if (strcasecmp(token,"ters_n")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_n");
       getparam(token, ters_n, PARAM_REAL, ntypes, ntypes);
     }
     else if (strcasecmp(token,"ters_c")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_c");
       getparam(token, ters_c, PARAM_REAL, ntypes, ntypes);
     }
     else if (strcasecmp(token,"ters_d")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_d");
       getparam(token, ters_d, PARAM_REAL, ntypes, ntypes);
     }
     else if (strcasecmp(token,"ters_h")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_h");
       getparam(token, ters_h, PARAM_REAL, ntypes, ntypes);
     }
 #endif
 #ifdef KEATING
     /* Parameters for Keating potential */
     else if (strcasecmp(token,"keating_r_cut")==0) {
+      if (ntypes==0) error("specify parameter ntypes before keating_r_cut");
       getparam(token, keating_r_cut, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"keating_alpha")==0) {
+      if (ntypes==0) error("specify parameter ntypes before keating_alpha");
       getparam(token, keating_alpha, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"keating_d")==0) {
+      if (ntypes==0) error("specify parameter ntypes before keating_d");
       getparam(token, keating_d, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"keating_beta")==0) {
+      if (ntypes==0) error("specify parameter ntypes before keating_beta");
       getparam(token, keating_beta, PARAM_REAL, 
                ntypes*ntypepairs, ntypes*ntypepairs);
     }
@@ -1532,6 +1574,7 @@ void getparamfile(char *paramfname, int sim)
 #ifdef EWALD
     /* Parameters for Ewald summation */
     else if (strcasecmp(token,"charge")==0) {
+      if (ntypes==0) error("specify parameter ntypes before charge");
       getparam("charge",charge,PARAM_REAL,ntypes,ntypes);
     }
     else if (strcasecmp(token,"ew_kappa")==0) {
@@ -1548,18 +1591,22 @@ void getparamfile(char *paramfname, int sim)
     /* Parameters for option epitax */
     else if (strcasecmp(token,"epitax_rate")==0) {
       /* rate of creation of particles */
+      if (ntypes==0) error("specify parameter ntypes before epitax_rate");
       getparam("epitax_rate",epitax_rate,PARAM_INT,ntypes,ntypes);
     }
     else if (strcasecmp(token,"epitax_type")==0) {
       /* type of particles to be created */
+      if (ntypes==0) error("specify parameter ntypes before epitax_type");
       getparam("epitax_type",epitax_type,PARAM_INT,ntypes,ntypes);
     }
     else if (strcasecmp(token,"epitax_mass")==0) {
       /* mass of particles to be created */
+      if (ntypes==0) error("specify parameter ntypes before epitax_mass");
       getparam("epitax_mass",epitax_mass,PARAM_REAL,ntypes,ntypes);
     } 
     else if (strcasecmp(token,"epitax_temp")==0) {
       /* temperature of particles to be created */
+      if (ntypes==0) error("specify parameter ntypes before epitax_temp");
       getparam("epitax_temp",epitax_temp,PARAM_REAL,ntypes,ntypes);
     }
     else if (strcasecmp(token,"epitax_cutoff")==0) {

@@ -72,6 +72,8 @@ void generate_qc(void);
 /* miscellaneous routines - files imd_misc.c, imd_time.c, imd_maxwell.c */
 void usage(void);
 void error(char *msg);
+void error_str(char *msg, char *str);
+void error_str_str(char *msg, char *str1, char *str2);
 void warning(char *msg);
 void imd_start_timer(imd_timer *timer);
 void imd_stop_timer(imd_timer *timer);
@@ -389,8 +391,6 @@ void write_temp_dist(int steps);
 #ifdef RNEMD
 void rnemd_heat_exchange();
 #endif
-
-
 
 #ifdef CG
 void write_cgconfig(int steps);
