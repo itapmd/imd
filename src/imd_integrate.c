@@ -1150,7 +1150,7 @@ void move_atoms_nvx(void)
 #else
   vol = box_x.x * box_y.y * box_z.z * (tran_nlayers-2) / tran_nlayers;
 #endif
-  heat_cond /= (2 * vol * (tran_Tleft -  tran_Tright));
+  heat_cond *= box_x.x / (2 * vol * (tran_Tleft -  tran_Tright));
 
   inv_mass_left      /= 2.0;
   inv_mass_right     /= 2.0;
