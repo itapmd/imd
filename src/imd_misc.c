@@ -182,26 +182,38 @@ void init_pot_par(void) {
 
   /* Shift of potentials */
   for (i=0; i<ntypes; i++) 
-      for (j=0; j<ntypes; j++) {
+    for (j=0; j<ntypes; j++) {
 #ifdef LJ
-	  tmp = pow( lj_sigma[i][j] / r_cut[i][j], 6 );
-	  lj_shift[i][j] = lj_epsilon[i][j] * ( tmp * tmp - 2 * tmp );
-	  printf("Lennard-Jones potential %1d %1d shifted by %f\n", 
-		 i, j, -lj_shift[i][j]);
+      if ( r_cut[i][j] > 0.0 ) { 
+	tmp = pow( lj_sigma[i][j] / r_cut[i][j], 6 );
+	lj_shift[i][j] = lj_epsilon[i][j] * ( tmp * tmp - 2 * tmp );
+	printf("Lennard-Jones potential %1d %1d shifted by %f\n", 
+	       i, j, -lj_shift[i][j]);
+      }
+      else
+	lj_shift[i][j] = 0.0;
 #endif
 #ifdef MORSE
-	  tmp = 1.0 - exp( - morse_alpha[i][j] * 
-			   ( r_cut[i][j] - morse_sigma[i][j] ) );
-	  morse_shift[i][j] = morse_epsilon[i][j] *  ( tmp * tmp - 1.0 );
-	  printf("Morse potential %1d %1d shifted by %f\n", 
-		 i, j, -morse_shift[i][j]);
+      if ( r_cut[i][j] > 0.0 ) {  
+	tmp = 1.0 - exp( - morse_alpha[i][j] * 
+			 ( r_cut[i][j] - morse_sigma[i][j] ) );
+	morse_shift[i][j] = morse_epsilon[i][j] *  ( tmp * tmp - 1.0 );
+	printf("Morse potential %1d %1d shifted by %f\n", 
+	       i, j, -morse_shift[i][j]);
+      }
+      else
+	morse_shift[i][j] = 0.0;
 #endif
 #ifdef BUCK
-	  buck_shift[i][j] = buck_a[i][j] 
-	      * exp( - r_cut[i][j] / buck_sigma[i][j] )
-	      - buck_c[i][j] * pow( buck_sigma[i][j] / r_cut[i][j] , 6 );
-	  printf("Buckingham potential %1d %1d shifted by %f\n", 
-		 i, j, -buck_shift[i][j]); 
+      if ( r_cut[i][j] > 0.0 ) {
+	buck_shift[i][j] = buck_a[i][j] 
+	  * exp( - r_cut[i][j] / buck_sigma[i][j] )
+	  - buck_c[i][j] * pow( buck_sigma[i][j] / r_cut[i][j] , 6 );
+	printf("Buckingham potential %1d %1d shifted by %f\n", 
+	       i, j, -buck_shift[i][j]); 
+      }
+      else
+	buck_shift[i][j] = 0.0;
 #endif
     }
 }
