@@ -112,8 +112,10 @@ EXTERN int onl_interval INIT(0); /* Period of online visualization */
 EXTERN int dist_binary_io INIT(0); /* Flag for binary I/O */
 EXTERN int dist_has_coords INIT(0);/* Flag for writing bin coords to dists */
 EXTERN int dist_coord INIT(0);   /* Flag for writing dist coords */
-EXTERN int virvo_io INIT(0);     /* Flag for virvo or volrend */
+EXTERN int virvo_io INIT(0);     /* Flag for virvo (0 => normal dist ) */
 EXTERN ivektor dist_dim INIT(einsivektor); /* Resolution of spatial distrib */
+EXTERN int norm_hist INIT(0);    /* Flag whether to normalize distribs */
+EXTERN str255 rundesc; /* Description */
 EXTERN vektor  hist_ur  INIT(nullvektor);
 EXTERN vektor  hist_ll  INIT(nullvektor);
 EXTERN str255 progname; /* Name of current executable argv[0] */
@@ -669,13 +671,13 @@ EXTERN real uniax_r_cut  INIT(0.0);/* cutoff radius for uniaxial molecules */
 EXTERN real uniax_r2_cut INIT(0.0);/* cutoff radius^2 for uniaxial molecules */
 #endif
 
-
-
-
-
-
-
-
-
-
-
+/* global parameters for PEIERLS */
+#ifdef PN
+EXTERN int pn_interval INIT(0); /* Period of pn output ==0 for no energy data */
+EXTERN FILE  *pn_file INIT(NULL);      /* pointer to .pn file  */
+EXTERN vektor3d gp INIT(nullvektor);/* cutoff radius for uniaxial molecules */
+EXTERN real corestart INIT(0.0);/* cutoff radius for uniaxial molecules */
+EXTERN real coreend INIT(0.0);/* cutoff radius for uniaxial molecules */
+EXTERN real bv INIT(1.0);/* cutoff radius for uniaxial molecules */
+EXTERN real w INIT(1.0);/* cutoff radius for uniaxial molecules */
+#endif
