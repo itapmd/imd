@@ -883,6 +883,10 @@ ifneq (,$(findstring fbc,${MAKETARGET}))
 CFLAGS += -DFBC
 endif
 
+ifneq (,$(findstring rigid,${MAKETARGET}))
+CFLAGS += -DRIGID
+endif
+
 ifneq (,$(findstring sendrec,${MAKETARGET}))
 CFLAGS += -DSR
 endif

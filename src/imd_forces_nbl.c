@@ -254,6 +254,18 @@ void calc_forces(int steps)
     }
   }
 
+  /* clear total forces */
+#ifdef RIGID
+  if ( nsuperatoms>0 ) 
+    for(i=0; i<nsuperatoms; i++) {
+      superforce[i].x = 0.0;
+      superforce[i].y = 0.0;
+#ifndef TWOD
+      superforce[i].z = 0.0;
+#endif
+    }
+#endif
+
   /* pair interactions - for all atoms */
   for (k=0; k<ncells; k++) {
     p = cell_array + cnbrs[k].np;

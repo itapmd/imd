@@ -57,6 +57,11 @@ void move_atoms_nve(void)
     real dot, norm;
     vektor cross;
 #endif
+#ifdef RIGID
+    int satom;
+    real relmass;
+#endif
+
     p = CELLPTR(k);
 
 #ifdef CLONE
@@ -93,6 +98,24 @@ void move_atoms_nve(void)
 #endif
 
         sort = VSORTE(p,i);
+
+#ifdef RIGID
+	if ( superatom[sort] > -1 ) {
+
+	  satom   = superatom[sort];
+	  relmass = 1.0 / num_ssort[satom];
+
+	  if ( (superrestrictions + satom)->x )
+	    KRAFT(p,i,X) = superforce[satom].x * relmass; 
+	  if ( (superrestrictions + satom)->y )
+	    KRAFT(p,i,Y) = superforce[satom].y * relmass;
+#ifndef TWOD
+	  if ( (superrestrictions + satom)->z )
+	    KRAFT(p,i,Z) = superforce[satom].z * relmass;
+#endif
+	}
+#endif
+
 #ifdef FBC
         /* give virtual particles their extra force */
 	KRAFT(p,i,X) += (fbc_forces + sort)->x;
@@ -338,6 +361,11 @@ void move_atoms_mik(void)
     int  i, j, sort;
     cell *p;
     real kin_energie_1, kin_energie_2, tmp;
+#ifdef RIGID
+    int satom;
+    real relmass;
+#endif
+
     p = CELLPTR(k);
 
 #ifdef CLONE
@@ -370,6 +398,24 @@ void move_atoms_mik(void)
         kin_energie_1 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
 
 	sort = VSORTE(p,i);
+
+#ifdef RIGID
+	if ( superatom[sort] > -1 ) {
+
+	  satom   = superatom[sort];
+	  relmass = 1.0 / num_ssort[satom];
+
+	  if ( (superrestrictions + satom)->x )
+	    KRAFT(p,i,X) = superforce[satom].x * relmass; 
+	  if ( (superrestrictions + satom)->y )
+	    KRAFT(p,i,Y) = superforce[satom].y * relmass;
+#ifndef TWOD
+	  if ( (superrestrictions + satom)->z )
+	    KRAFT(p,i,Z) = superforce[satom].z * relmass;
+#endif
+	}
+#endif
+
 #ifdef FBC
         /* give virtual particles their extra force */
 	KRAFT(p,i,X) += (fbc_forces + sort)->x;
@@ -495,6 +541,11 @@ void move_atoms_nvt(void)
     real dot, norm ;
     vektor cross ;
 #endif
+#ifdef RIGID
+    int satom;
+    real relmass;
+#endif
+
     p = CELLPTR(k);
 
 #ifdef CLONE
@@ -529,6 +580,23 @@ void move_atoms_nvt(void)
 #endif
 
 	sort = VSORTE(p,i);
+
+#ifdef RIGID
+	if ( superatom[sort] > -1 ) {
+
+	  satom   = superatom[sort];
+	  relmass = 1.0 / num_ssort[satom];
+
+	  if ( (superrestrictions + satom)->x )
+	    KRAFT(p,i,X) = superforce[satom].x * relmass; 
+	  if ( (superrestrictions + satom)->y )
+	    KRAFT(p,i,Y) = superforce[satom].y * relmass;
+#ifndef TWOD
+	  if ( (superrestrictions + satom)->z )
+	    KRAFT(p,i,Z) = superforce[satom].z * relmass;
+#endif
+	}
+#endif
 #ifdef FBC
         /* give virtual particles their extra force */
 	KRAFT(p,i,X) += (fbc_forces + sort)->x;

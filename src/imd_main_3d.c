@@ -36,6 +36,7 @@ void main_loop(void)
   int  have_fbc_incr = 0;
   real dtemp, dshock_speed, old_epot = 0.0;
   vektor d_pressure, *fbc_df;
+  real tmpvec1[DIM], tmpvec2[DIM];
 #ifdef TWOD
   vektor nullv={0.0,0.0};
 #else
@@ -253,7 +254,44 @@ void main_loop(void)
     if (ensemble == ENS_CG) cg_step(steps);
     else
 #endif
+
     calc_forces(steps);
+
+#ifdef RIGID
+    /* total force on superparticles (for each cpu) */
+    for(k=0; k<ncells; k++) {
+      cell *p;
+      int sorte;
+      p = CELLPTR(k);
+      for(i=0; i<p->n; i++) {
+	sorte = VSORTE(p,i);
+	if ( superatom[sorte] > -1 ) {
+	  superforce[superatom[sorte]].x += KRAFT(p,i,X);
+	  superforce[superatom[sorte]].y += KRAFT(p,i,Y);
+#ifndef TWOD
+	  superforce[superatom[sorte]].z += KRAFT(p,i,Z);
+#endif
+	}
+      }
+    }
+#ifdef MPI
+    /* total force on superparticles */
+    for(i=0; i<nsuperatoms; i++) {
+      tmpvec1[0] = superforce[i].x;
+      tmpvec1[1] = superforce[i].y;
+#ifndef TWOD
+      tmpvec1[2] = superforce[i].z;
+#endif
+      MPI_Allreduce( tmpvec1, tmpvec2, DIM, REAL, MPI_SUM, cpugrid); 
+
+      superforce[i].x = tmpvec2[0];
+      superforce[i].y = tmpvec2[1];
+#ifndef TWOD
+      superforce[i].z = tmpvec2[2];
+#endif
+    }
+#endif
+#endif
 
 #ifdef FORCE
     /* we have to write the forces *before* the atoms are moved */

@@ -84,6 +84,15 @@ void calc_forces(int steps)
     }
   }
 
+#ifdef RIGID
+  /* clear total forces */
+  if ( nsuperatoms>0 ) 
+    for(k=0; k<nsuperatoms; k++) {
+      superforce[k].x = 0.0;
+      superforce[k].y = 0.0;
+    }
+#endif
+
   /* What follows is the standard one-cpu force 
      loop acting on our local data cells */
 

@@ -77,6 +77,10 @@
  0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
  0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0}
 
+#define minusone50            {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,\
+-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,-1,-1,\
+-1,-1,-1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,-1,-1}
+
 #else
 #define EXTERN extern /* declare them extern otherwise */
 #define INIT(data)
@@ -397,6 +401,15 @@ EXTERN int    hom_interval INIT(0);       /* period of homshear steps */
 EXTERN vektor2d shear_factor INIT(nullvektor2d);/* shear factor in x,y-dir */
 #endif
 EXTERN real relax_rate   INIT(0.0);       /* pressure relaxation rate */
+
+#ifdef RIGID
+EXTERN int  rigidv[50] INIT(minusone50);  /* virtual types in a superatom */
+EXTERN int  nsuperatoms INIT(0);          /* number of superatoms */
+EXTERN int  *superatom INIT(NULL);   /* maps virtual types to superatoms */
+EXTERN vektor *superrestrictions INIT(NULL); /* restricted rigidity */
+EXTERN vektor *superforce INIT(NULL);     /* total force on superatoms */
+EXTERN int  *num_ssort INIT(NULL);   /* number of atoms for each superatom */
+#endif
 
 #ifdef SLLOD
 EXTERN vektor shear_rate   INIT(nullvektor); /* shear rate as a vector */

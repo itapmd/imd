@@ -72,12 +72,21 @@ void read_atoms(str255 infilename)
 #ifdef MPI
   msgbuf *input_buf, *b;
 #endif
+#ifdef RIGID
+  vektor mobile;
+#endif
 
   /* allocate num_sort and num_vsort on all CPUs */
   if ((num_sort = (long *) calloc(ntypes,sizeof(long)))==NULL)
     error("cannot allocate memory for num_sort\n");
   if ((num_vsort = (long *) calloc(vtypes,sizeof(long)))==NULL)
     error("cannot allocate memory for num_vsort\n");
+#ifdef RIGID
+  /* allocate num_ssort on all CPUs */
+  if ( nsuperatoms>0 )
+    if ((num_ssort = (int *) calloc(nsuperatoms,sizeof(int)))==NULL)
+      error("cannot allocate memory for num_ssort\n");
+#endif
 
 #ifdef VEC
   /* allocate the space for all atoms in one step */
@@ -425,6 +434,55 @@ void read_atoms(str255 infilename)
 
 #endif /* MPI */
 
+#ifdef RIGID
+  if ( nsuperatoms > 0 ) {
+    if (0==myid) {
+      /* number of atoms belonging to superatoms */
+      for (i=0; i<vtypes; i++) {
+	if ( superatom[i] > -1 )
+	  num_ssort[superatom[i]] += num_vsort[i];
+      }
+    }
+#ifdef MPI
+    MPI_Bcast( num_ssort, nsuperatoms,MPI_LONG, 0, MPI_COMM_WORLD);
+#endif
+
+    if (0==myid) {
+      /* compute nactive */
+      nactive = 0;
+      for (i=0; i<vtypes; i++) {
+	/* translational degrees of freedom of nonrigid vtypes */
+	if (superatom[i]==-1 || ((superrestrictions+superatom[i])->x)==0 )
+	  nactive += num_vsort[i] * (long) (restrictions+i)->x;
+	if (superatom[i]==-1 || ((superrestrictions+superatom[i])->y)==0 )
+	  nactive += num_vsort[i] * (long) (restrictions+i)->y;
+	if (superatom[i]==-1 || ((superrestrictions+superatom[i])->z)==0 )
+	  nactive += num_vsort[i] * (long) (restrictions+i)->z;
+      }
+      for (s=0; s<nsuperatoms; s++) {
+	/* check whether superatom s is mobile */
+	mobile.x = 1; mobile.y = 1; mobile.z = 1;
+	for(i=0; i<vtypes; i++)
+	  if (superatom[i]==s ) {
+	    if ((restrictions+i)->x == 0) 
+	      mobile.x = 0;
+	    if ((restrictions+i)->y == 0)
+	      mobile.y = 0;
+	    if ((restrictions+i)->z == 0)
+	      mobile.z = 0;
+	  }
+	/* translational degrees of freedom of rigid vtypes */
+	nactive += (superrestrictions+s)->x * mobile.x
+	         + (superrestrictions+s)->y * mobile.y
+	         + (superrestrictions+s)->z * mobile.z;
+      }
+    }
+  }
+#ifdef MPI
+    MPI_Bcast( &nactive,      1, MPI_LONG, 0, MPI_COMM_WORLD);
+#endif
+#endif
+
   /* print number of atoms */
   if (0==myid) {
     printf("Read structure with %ld atoms.\n",natoms);
@@ -442,9 +500,16 @@ void read_atoms(str255 infilename)
       addnumber+=num_vsort[i];
     }
     printf(" ],  total = %ld\n",addnumber);
+#ifdef RIGID
+    if ( nsuperatoms>0 ) {
+      printf("num_ssort = [ %u",num_ssort[0]);
+      for (i=1; i<nsuperatoms; i++)
+	printf(", %u",num_ssort[i]);
+      printf(" ]\n");
+    }
+#endif
   }
 }
-
 
 #ifdef MPI
 

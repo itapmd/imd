@@ -269,6 +269,9 @@ void getparamfile(char *paramfname, int sim)
   vektor vek;
   vektor shift;
   vektor shear, base;
+#ifdef RIGID
+  int superatomsize;
+#endif
   int nvalues;
   int k;
   int i;
@@ -582,6 +585,26 @@ void getparamfile(char *paramfname, int sim)
        *(fbc_endforces+k) = nullv;
 #endif
 #endif /*FBC*/
+#ifdef RIGID
+      /* Allocation & Initialization of superatom */
+      superatom = (int *) malloc( vtypes * sizeof(int) );
+      if (NULL==superatom)
+	error("Cannot allocate memory for superatom vector\n");
+      for(k=0; k<vtypes; k++)
+	superatom[k] = -1;
+
+      /* Allocation of superforce */
+      superforce = (vektor *) malloc( vtypes * sizeof(vektor));
+      if (NULL==superforce)
+	error("Cannot allocate memory for superforce vector\n");
+
+      /* Allocation & Initialization of superrestrictions */
+      superrestrictions=(vektor*)realloc(superrestrictions,vtypes*DIM*sizeof(real));
+      if (NULL==superrestrictions)
+	error("Cannot allocate memory for superrestriction vectors\n");
+      for(k=0; k<vtypes; k++)
+       *(superrestrictions+k) = nullv;
+#endif
 #ifdef DEFORM
       /* Allocation & Initialisation of deform_shift */
       deform_shift = (vektor *) malloc( vtypes * DIM * sizeof(real) );
@@ -612,6 +635,36 @@ void getparamfile(char *paramfname, int sim)
        *(deform_base+k) = nullv;
 #endif
     }
+#ifdef RIGID
+    else if (strcasecmp(token,"rigid")==0) {
+      /* virtual types forming superparticle */
+      getparam("rigid",rigidv,PARAM_INT,1,vtypes+DIM);
+      /* determine number of types in superparticle */
+      for (i=0; rigidv[i]!=-1; i++)
+	;
+      superatomsize = i - DIM;
+
+      /* construct vector superatom */
+      for (i=0; i<superatomsize; i++) {
+	if ( rigidv[i] > vtypes - 1 )
+	  error("Atom type in superparticle does not exist\n");
+	if ( superatom[rigidv[i]] > -1 && superatom[rigidv[i]] < nsuperatoms )
+	  error("Intersecting superparticles\n");
+	superatom[rigidv[i]] = nsuperatoms;
+	rigidv[i] = -1;
+      }
+
+      (superrestrictions + nsuperatoms)->x = rigidv[superatomsize];
+      rigidv[superatomsize] = -1;
+      (superrestrictions + nsuperatoms)->y = rigidv[superatomsize+1];
+      rigidv[superatomsize+1] = -1;
+#ifndef TWOD
+      (superrestrictions + nsuperatoms)->z = rigidv[superatomsize+2];
+      rigidv[superatomsize+2] = -1;
+#endif
+      ++nsuperatoms;
+    }
+#endif
 
 #ifdef RELAX
     else if (strcasecmp(token,"ekin_threshold")==0) {
@@ -2499,6 +2552,20 @@ void broadcast_params() {
 #endif
 #ifdef GLOK
   MPI_Bcast( &glok_ekin_threshold, 1, REAL, 0, MPI_COMM_WORLD); 
+#endif
+#ifdef RIGID
+ MPI_Bcast( &nsuperatoms,         1, MPI_INT, 0, MPI_COMM_WORLD);
+  if (0!=myid)  superatom = (int *) malloc( vtypes * sizeof(int) );
+  if (NULL==superatom)
+    error("Cannot allocate memory for superatom on client.");
+  MPI_Bcast( superatom, vtypes     , MPI_INT, 0, MPI_COMM_WORLD);
+  if (0!=myid) superrestrictions=(vektor*)malloc(vtypes*DIM*sizeof(real));
+  if (NULL==superrestrictions)
+    error("Cannot allocate memory for superrestrictions on client.");
+  MPI_Bcast( superrestrictions, vtypes*DIM , MPI_INT, 0, MPI_COMM_WORLD);
+  if (0!=myid) superforce = (vektor *) malloc( vtypes * sizeof(vektor));
+  if (NULL==superforce)
+    error("Cannot allocate memory for superforce on client.");  
 #endif
 #ifdef DEFORM
   MPI_Bcast( &max_deform_int,  1, MPI_INT, 0, MPI_COMM_WORLD); 

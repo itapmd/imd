@@ -124,10 +124,21 @@ void maxwell(real temp)
          
 	 tmp  = sqrt(TEMP * MASSE(p,i));
          rest = restrictions + VSORTE(p,i);
+#ifndef RIGID
          IMPULS(p,i,X) = gaussian(tmp) * rest->x;
          IMPULS(p,i,Y) = gaussian(tmp) * rest->y;
 #ifndef TWOD
          IMPULS(p,i,Z) = gaussian(tmp) * rest->z;
+#endif
+#else
+	 /* superatoms get velocity zero */
+	 if (superatom[VSORTE(p,i)]>-1) {
+	   IMPULS(p,i,X) = 0.0;
+	   IMPULS(p,i,Y) = 0.0;
+#ifndef TWOD
+	   IMPULS(p,i,Z) = 0.0;
+#endif
+	 }
 #endif
          nactive_x += (int) rest->x;
          nactive_y += (int) rest->y;

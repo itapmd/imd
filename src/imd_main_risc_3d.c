@@ -88,6 +88,15 @@ void calc_forces(int steps)
 #endif
     }
   }
+#ifdef RIGID
+  /* clear total forces */
+  if ( nsuperatoms>0 ) 
+    for(k=0; k<nsuperatoms; k++) {
+      superforce[k].x = 0.0;
+      superforce[k].y = 0.0;
+      superforce[k].z = 0.0;
+    }
+#endif
 
   /* compute forces for all pairs of cells */
   for (n=0; n<nlists; ++n) {
