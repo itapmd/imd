@@ -749,12 +749,6 @@ void copy_cell( int k, int l, int m, int r, int s, int t, vektor v )
     ACHSE(to,i,X) = ACHSE(from,i,X);
     ACHSE(to,i,Y) = ACHSE(from,i,Y);
     ACHSE(to,i,Z) = ACHSE(from,i,Z);
-    SHAPE(to,i,X) = SHAPE(from,i,X);
-    SHAPE(to,i,Y) = SHAPE(from,i,Y);
-    SHAPE(to,i,Z) = SHAPE(from,i,Z);
-    POT_WELL(to,i,X) = POT_WELL(from,i,X);
-    POT_WELL(to,i,Y) = POT_WELL(from,i,Y);
-    POT_WELL(to,i,Z) = POT_WELL(from,i,Z);
 #endif
   }
 }
@@ -785,12 +779,6 @@ void pack_cell( msgbuf *b, int k, int l, int m, vektor v )
     b->data[ b->n++ ] = ACHSE(from,i,X);
     b->data[ b->n++ ] = ACHSE(from,i,Y);
     b->data[ b->n++ ] = ACHSE(from,i,Z);
-    b->data[ b->n++ ] = SHAPE(from,i,X);
-    b->data[ b->n++ ] = SHAPE(from,i,Y);
-    b->data[ b->n++ ] = SHAPE(from,i,Z);
-    b->data[ b->n++ ] = POT_WELL(from,i,X);
-    b->data[ b->n++ ] = POT_WELL(from,i,Y);
-    b->data[ b->n++ ] = POT_WELL(from,i,Z);
 #endif
   }
   if (b->n_max < b->n)  error("Buffer overflow in pack_cell");
@@ -840,12 +828,6 @@ void unpack_cell( msgbuf *b, int k, int l, int m )
     ACHSE(to,i,X) = b->data[ b->n++ ];
     ACHSE(to,i,Y) = b->data[ b->n++ ];
     ACHSE(to,i,Z) = b->data[ b->n++ ];
-    SHAPE(to,i,X) = b->data[ b->n++ ];
-    SHAPE(to,i,Y) = b->data[ b->n++ ];
-    SHAPE(to,i,Z) = b->data[ b->n++ ];
-    POT_WELL(to,i,X) = b->data[ b->n++ ];
-    POT_WELL(to,i,Y) = b->data[ b->n++ ];
-    POT_WELL(to,i,Z) = b->data[ b->n++ ];
 #endif
   }
   if (b->n_max < b->n) error("Buffer overflow in unpack_cell");

@@ -825,7 +825,10 @@ EXTERN void (*move_atoms)(void);        /* active integrator routine */
 
 /* global parameters for UNIAX */
 #ifdef UNIAX
-EXTERN real uniax_r_cut  INIT(0.0);/* cutoff radius for uniaxial molecules */
-EXTERN real uniax_r2_cut INIT(0.0);/* cutoff radius^2 for uniaxial molecules */
+EXTERN real uniax_inert  INIT(1.0);        /* moment of intertia */
+EXTERN vektor uniax_sig  INIT(nullvektor); /* shape of potential */
+EXTERN vektor uniax_eps  INIT(nullvektor); /* depth of potential */
+EXTERN real uniax_r_cut  INIT(0.0);        /* cutoff radius */
+EXTERN real uniax_r2_cut INIT(0.0);        /* square of cutoff radius */
 #endif
 

@@ -67,6 +67,13 @@ is supplemented by a rotational one. </p>
 </ul>
 
 <p>
+The moment of inertia, particle shape, and potential depths, which 
+are common to all particles, are specified in the parameter file,
+and the other properties in the <a href="config.html#uniax">configuration 
+file</a>.
+</p>
+
+<p>
 <b>Limitation</b>: The current implementation is limited to a 
 <b>single type</b> of Gay-Berne particle. </p>
 
@@ -118,11 +125,20 @@ value of 2/2 * kT, according to the equipartition theorem. </p>
 <p>
 No potential table is necessary for the Gay-Berne interaction,
 because the potential, forces and torques are calculated analytically.
-However, further parametres are required in the IMD input file. </p>
+However, the potential and other parameters must be specified in the 
+parameter file. </p>
 
 <table>
 <tr> <th>Parameter&nbsp;  </th>  
      <th> Description </th></tr>
+<tr> <td>uniax_inert</td>
+     <td>moment of inertia perpendicular to the molecule's axis</td></tr>
+<tr> <td>uniax_sig</td>
+     <td>shape of the molecule, given by the three half axes;
+         the first two must be equal (uniaxial molecule)</td></tr>
+<tr> <td>uniax_eps</td>
+     <td>potential depths in the three main axis directions;
+         the first two values must be equal (uniaxial molecule)</td></tr>
 <tr> <td>rcut  	      </td>  
      <td> cutoff radius for Gay-Berne interaction. 
           rcut = 4.0 for original parametrization of

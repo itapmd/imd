@@ -177,7 +177,7 @@ void maxwell(real temp)
 
         /* choose the magnitude of the angular momentum */
 
-        osq = - 2.0 * TRAEG_MOMENT(p,i) * TEMP * log( drand48() ) ;
+        osq = - 2.0 * uniax_inert * TEMP * log( drand48() ) ;
         norm = sqrt( osq );
 
         DREH_IMPULS(p,i,X) *= norm ;

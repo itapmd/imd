@@ -144,8 +144,7 @@ void move_atoms_nve(void)
         /* sum up kinetic energy on this CPU */
         tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4 * MASSE(p,i));
 #ifdef UNIAX
-        tot_kin_energy += (rot_energie_1 + rot_energie_2) / 
-                                                    (4 * TRAEG_MOMENT(p,i) );
+        tot_kin_energy += (rot_energie_1 + rot_energie_2) / (4 * uniax_inert);
 #endif	  
 
         /* new positions */
@@ -177,9 +176,9 @@ void move_atoms_nve(void)
         cross.z = DREH_IMPULS(p,i,X) * ACHSE(p,i,Y)
                 - DREH_IMPULS(p,i,Y) * ACHSE(p,i,X);
 
-        ACHSE(p,i,X) += timestep * cross.x / TRAEG_MOMENT(p,i);
-        ACHSE(p,i,Y) += timestep * cross.y / TRAEG_MOMENT(p,i);
-        ACHSE(p,i,Z) += timestep * cross.z / TRAEG_MOMENT(p,i);
+        ACHSE(p,i,X) += timestep * cross.x / uniax_inert;
+        ACHSE(p,i,Y) += timestep * cross.y / uniax_inert;
+        ACHSE(p,i,Z) += timestep * cross.z / uniax_inert;
 
         norm = sqrt( SPRODN( &ACHSE(p,i,X), &ACHSE(p,i,X) ) );
 	    
@@ -480,7 +479,7 @@ void move_atoms_nvt(void)
         E_kin_1 += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
 #ifdef UNIAX
         E_rot_1 += SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) ) / 
-                                                       TRAEG_MOMENT(p,i);
+                                                                 uniax_inert;
 #endif
 
 	sort = VSORTE(p,i);
@@ -533,7 +532,7 @@ void move_atoms_nvt(void)
         E_kin_2 += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
 #ifdef UNIAX
         E_rot_2 += SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) ) / 
-                                                       TRAEG_MOMENT(p,i);
+                                                                 uniax_inert;
 #endif
 
         /* new positions */
@@ -552,9 +551,9 @@ void move_atoms_nvt(void)
         cross.z = DREH_IMPULS(p,i,X) * ACHSE(p,i,Y)
                 - DREH_IMPULS(p,i,Y) * ACHSE(p,i,X);
 
-        ACHSE(p,i,X) += timestep * cross.x / TRAEG_MOMENT(p,i);
-        ACHSE(p,i,Y) += timestep * cross.y / TRAEG_MOMENT(p,i);
-        ACHSE(p,i,Z) += timestep * cross.z / TRAEG_MOMENT(p,i);
+        ACHSE(p,i,X) += timestep * cross.x / uniax_inert;
+        ACHSE(p,i,Y) += timestep * cross.y / uniax_inert;
+        ACHSE(p,i,Z) += timestep * cross.z / uniax_inert;
 
         norm = sqrt( SPRODN( &ACHSE(p,i,X), &ACHSE(p,i,X) ));
 
@@ -680,7 +679,7 @@ void move_atoms_sllod(void)
         E_kin_1 += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
 #ifdef UNIAX
         E_rot_1 += SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) ) / 
-                                                       TRAEG_MOMENT(p,i);
+                                                                 uniax_inert;
 #endif
 
 	sort = VSORTE(p,i);
@@ -730,7 +729,7 @@ void move_atoms_sllod(void)
         E_kin_2 += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
 #ifdef UNIAX
         E_rot_2 += SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) ) / 
-                                                       TRAEG_MOMENT(p,i);
+                                                                 uniax_inert;
 #endif
 
         /* new positions */
@@ -758,9 +757,9 @@ void move_atoms_sllod(void)
         cross.z = DREH_IMPULS(p,i,X) * ACHSE(p,i,Y)
                 - DREH_IMPULS(p,i,Y) * ACHSE(p,i,X);
 
-        ACHSE(p,i,X) += timestep * cross.x / TRAEG_MOMENT(p,i);
-        ACHSE(p,i,Y) += timestep * cross.y / TRAEG_MOMENT(p,i);
-        ACHSE(p,i,Z) += timestep * cross.z / TRAEG_MOMENT(p,i);
+        ACHSE(p,i,X) += timestep * cross.x / uniax_inert;
+        ACHSE(p,i,Y) += timestep * cross.y / uniax_inert;
+        ACHSE(p,i,Z) += timestep * cross.z / uniax_inert;
 
         norm = sqrt( SPRODN( &ACHSE(p,i,X), &ACHSE(p,i,X) );
 
@@ -879,7 +878,7 @@ void calc_dyn_pressure(void)
 #endif
 #ifdef UNIAX
       Erot_old += SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) ) /
-                                                        TRAEG_MOMENT(p,i);
+                                                                uniax_inert;
 #endif
     }
   }
@@ -1012,7 +1011,7 @@ void move_atoms_npt_iso(void)
       Ekin_new += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
 #ifdef UNIAX
       Erot_new += SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) ) /
-                                                      TRAEG_MOMENT(p,i);
+                                                                uniax_inert;
 #endif
 
       /* new positions */
@@ -1032,9 +1031,9 @@ void move_atoms_npt_iso(void)
       cross.z = DREH_IMPULS(p,i,X) * ACHSE(p,i,Y)
               - DREH_IMPULS(p,i,Y) * ACHSE(p,i,X);
 
-      ACHSE(p,i,X) += timestep * cross.x / TRAEG_MOMENT(p,i);
-      ACHSE(p,i,Y) += timestep * cross.y / TRAEG_MOMENT(p,i);
-      ACHSE(p,i,Z) += timestep * cross.z / TRAEG_MOMENT(p,i);
+      ACHSE(p,i,X) += timestep * cross.x / uniax_inert;
+      ACHSE(p,i,Y) += timestep * cross.y / uniax_inert;
+      ACHSE(p,i,Z) += timestep * cross.z / uniax_inert;
 
       norm = sqrt( SPRODN( &ACHSE(p,i,X), &ACHSE(p,i,X) ) );
 

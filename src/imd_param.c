@@ -800,6 +800,22 @@ void getparamfile(char *paramfname, int sim)
       isq_tau_eta = SQR(isq_tau_eta);
     }
 #ifdef UNIAX
+    else if (strcasecmp(token,"uniax_inert")==0) {
+      /* moment of inertia */
+      getparam(token,&uniax_inert,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"uniax_sig")==0) {
+      /* nearest neighbor distances of potential in the three directions */
+      getparam(token,&uniax_sig,PARAM_REAL,3,3);
+      if (uniax_sig.x != uniax_sig.y) 
+        error("UNIAX molecules must be uniaxial!");
+    }
+    else if (strcasecmp(token,"uniax_eps")==0) {
+      /* depth of potential in the three directions */
+      getparam(token,&uniax_eps,PARAM_REAL,3,3);
+      if (uniax_eps.x != uniax_eps.y)
+         error("UNIAX molecules must be uniaxial!");
+    }
     else if (strcasecmp(token,"eta_rot")==0) {
       /* eta variable of rotational motion for NVT or NPT thermostat */
       getparam("eta_rot",&eta_rot,PARAM_REAL,1,1);
@@ -2457,6 +2473,9 @@ void broadcast_params() {
 #endif
 
 #ifdef UNIAX
+  MPI_Bcast( &uniax_inert,  1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &uniax_sig,    3, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &uniax_eps,    3, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &uniax_r_cut,  1, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &uniax_r2_cut, 1, REAL, 0, MPI_COMM_WORLD); 
 #endif

@@ -204,16 +204,9 @@ void move_atom(cell *to, cell *from, int index)
   /* reference positions of neighbor list are not copied */
 #endif
 #ifdef UNIAX
-  to->traeg_moment[to->n] = from->traeg_moment[index]; 
   to->achse X(to->n) = from->achse X(index); 
   to->achse Y(to->n) = from->achse Y(index); 
   to->achse Z(to->n) = from->achse Z(index); 
-  to->shape X(to->n) = from->shape X(index); 
-  to->shape Y(to->n) = from->shape Y(index); 
-  to->shape Z(to->n) = from->shape Z(index); 
-  to->pot_well X(to->n) = from->pot_well X(index); 
-  to->pot_well Y(to->n) = from->pot_well Y(index); 
-  to->pot_well Z(to->n) = from->pot_well Z(index); 
   to->dreh_impuls X(to->n) = from->dreh_impuls X(index); 
   to->dreh_impuls Y(to->n) = from->dreh_impuls Y(index); 
   to->dreh_impuls Z(to->n) = from->dreh_impuls Z(index); 
@@ -320,16 +313,9 @@ void move_atom(cell *to, cell *from, int index)
     /* reference positions of neighbor list are not copied */
 #endif
 #ifdef UNIAX
-    from->traeg_moment[index] = from->traeg_moment[from->n]; 
     from->achse X(index) = from->achse X(from->n); 
     from->achse Y(index) = from->achse Y(from->n); 
     from->achse Z(index) = from->achse Z(from->n); 
-    from->shape X(index) = from->shape X(from->n); 
-    from->shape Y(index) = from->shape Y(from->n); 
-    from->shape Z(index) = from->shape Z(from->n); 
-    from->pot_well X(index) = from->pot_well X(from->n); 
-    from->pot_well Y(index) = from->pot_well Y(from->n); 
-    from->pot_well Z(index) = from->pot_well Z(from->n); 
     from->dreh_impuls X(index) = from->dreh_impuls X(from->n); 
     from->dreh_impuls Y(index) = from->dreh_impuls Y(from->n); 
     from->dreh_impuls Z(index) = from->dreh_impuls Z(from->n); 
@@ -463,10 +449,7 @@ void alloc_cell(cell *thecell, int count)
     newcell.nbl_pos  = NULL;
 #endif
 #ifdef UNIAX
-    newcell.traeg_moment = NULL;
     newcell.achse = NULL;
-    newcell.shape = NULL;
-    newcell.pot_well = NULL;
     newcell.dreh_impuls = NULL;
     newcell.dreh_moment = NULL;
 #endif
@@ -564,11 +547,6 @@ void alloc_cell(cell *thecell, int count)
 #ifdef NBLIST
     newcell.nbl_pos = (real *) malloc(count*DIM*sizeof(real));
 #endif
-#ifdef UNIAX
-    newcell.traeg_moment  = (real    * ) malloc(count * sizeof(real)    );
-    newcell.shape = (real *) malloc(count*DIM*sizeof(real));
-    newcell.pot_well = (real *) malloc(count*DIM*sizeof(real));
-#endif
 #if defined(VEC) && defined(MPI)
     newcell.ind = (integer *) malloc(count * sizeof(integer));
 #endif
@@ -607,11 +585,6 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef NBLIST
         || (NULL == newcell.nbl_pos)
-#endif
-#ifdef UNIAX
-        || (NULL == newcell.traeg_moment)
-	|| (NULL == newcell.shape)
-	|| (NULL == newcell.pot_well)
 #endif
 #if defined(VEC) && defined(MPI)
         || (NULL == newcell.ind)
@@ -699,10 +672,7 @@ void alloc_cell(cell *thecell, int count)
       memcpy(newcell.nbl_pos,  thecell->nbl_pos,  ncopy * sizeof(real));
 #endif
 #ifdef UNIAX
-      memcpy(newcell.traeg_moment, thecell->traeg_moment, ncopy*sizeof(real));
       memcpy(newcell.achse ,   thecell->achse,    ncopy * DIM * sizeof(real));
-      memcpy(newcell.shape,    thecell->shape,    ncopy * DIM * sizeof(real));
-      memcpy(newcell.pot_well, thecell->pot_well, ncopy * DIM * sizeof(real));
       memcpy(newcell.dreh_impuls, thecell->dreh_impuls,ncopy*DIM*sizeof(real));
       memcpy(newcell.dreh_moment, thecell->dreh_moment,ncopy*DIM*sizeof(real));
 #endif
@@ -750,11 +720,6 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef NBLIST
     free(thecell->nbl_pos);
-#endif
-#ifdef UNIAX
-    free(thecell->traeg_moment);
-    free(thecell->shape);
-    free(thecell->pot_well);
 #endif
 #if defined(VEC) && defined(MPI)
     free(thecell->ind);
@@ -808,12 +773,9 @@ void alloc_cell(cell *thecell, int count)
   thecell->nbl_pos = newcell.nbl_pos;
 #endif
 #ifdef UNIAX
-  thecell->traeg_moment = newcell.traeg_moment;
   thecell->achse  = newcell.achse;
   thecell->dreh_impuls = newcell.dreh_impuls;
   thecell->dreh_moment = newcell.dreh_moment;
-  thecell->shape = newcell.shape;
-  thecell->pot_well = newcell.pot_well;
 #endif
 #if defined(VEC) && defined(MPI)
   thecell->ind = newcell.ind;

@@ -113,10 +113,7 @@ INLINE static int MOD(shortint p, int q)
 #define NBL_POS(cell,i,sub)     (atoms.nbl_pos sub((cell)->ind[i]))
 #endif
 #ifdef UNIAX
-#define TRAEG_MOMENT(cell,i)    (atoms.traeg_moment   [(cell)->ind[i]])
 #define ACHSE(cell,i,sub)       (atoms.achse       sub((cell)->ind[i]))
-#define SHAPE(cell,i,sub)       (atoms.shape       sub((cell)->ind[i]))
-#define POT_WELL(cell,i,sub)    (atoms.pot_well    sub((cell)->ind[i]))
 #define DREH_IMPULS(cell,i,sub) (atoms.dreh_impuls sub((cell)->ind[i]))
 #define DREH_MOMENT(cell,i,sub) (atoms.dreh_moment sub((cell)->ind[i]))
 #endif
@@ -189,10 +186,7 @@ INLINE static int MOD(shortint p, int q)
 #define NBL_POS(cell,i,sub)     ((cell)->nbl_pos sub(i))
 #endif
 #ifdef UNIAX
-#define TRAEG_MOMENT(cell,i)    ((cell)->traeg_moment[i])
 #define ACHSE(cell,i,sub)       ((cell)->achse sub(i))
-#define SHAPE(cell,i,sub)       ((cell)->shape sub(i))
-#define POT_WELL(cell,i,sub)    ((cell)->pot_well sub(i))
 #define DREH_IMPULS(cell,i,sub) ((cell)->dreh_impuls sub(i))
 #define DREH_MOMENT(cell,i,sub) ((cell)->dreh_moment sub(i))
 #endif

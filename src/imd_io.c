@@ -1681,7 +1681,7 @@ void write_header_config(FILE *out)
     */
     c = 'A';
 #ifdef UNIAX
-  fprintf(out, "#F %c 1 1 2 %d %d 1\n", c, 4*DIM, 2*DIM);
+  fprintf(out, "#F %c 1 1 1 %d %d 1\n", c, 2*DIM, 2*DIM);
 #else
   fprintf(out, "#F %c 1 1 1 %d %d ", c, DIM, DIM);
 #ifdef ORDPAR
@@ -1695,8 +1695,8 @@ void write_header_config(FILE *out)
 #ifdef CG
   fprintf(out, "#C number type mass x y z vx vy vz Epot \n");
 #elif defined(UNIAX)
-  fprintf(out, "#C number type mass inertia pos(3) axis(3) shape(3)");
-  fprintf(out, " pot_depth(3) velocities(3) ang_veloc(3) Epot\n");
+  fprintf(out, "#C number type mass pos(3) axis(3)");
+  fprintf(out, " velocities(3) ang_veloc(3) Epot\n");
 #else
 #ifdef TWOD
   fprintf(out, "#C number type mass x y vx vy");

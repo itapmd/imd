@@ -39,8 +39,6 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
   vektor e1 ;
   vektor e2 ;
   real rsqr ;
-  vektor s1 ;
-  vektor w1 ;
 
   real pot12 ;
   vektor force12 ;
@@ -67,14 +65,6 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
     e1.x = ACHSE(p,i,X);
     e1.y = ACHSE(p,i,Y);
     e1.z = ACHSE(p,i,Z);
-
-    s1.x = SHAPE(p,i,X);
-    s1.y = SHAPE(p,i,Y);
-    s1.z = SHAPE(p,i,Z);
-
-    w1.x = POT_WELL(p,i,X);
-    w1.y = POT_WELL(p,i,Y);
-    w1.z = POT_WELL(p,i,Z);
 
 #ifdef TWOD
     jstart = (((p==q) && (pbc.x==0) && (pbc.y==0))               ? i+1 : 0);
@@ -111,7 +101,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 
 	/* calculate interactions, if distance smaller than cutoff radius */ 
 
-	gay_berne( r12, e1, e2, rsqr, s1, w1, &pot12,
+	gay_berne( r12, e1, e2, rsqr, uniax_sig, uniax_eps, &pot12,
 		   &force12, &torque12, &torque21) ;
 	
         /* accumulate forces */

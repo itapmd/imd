@@ -205,16 +205,9 @@ void copy_atom(msgbuf *to, int to_cpu, cell *p, int ind )
   /* neighbor list reference positions are not sent */
 #endif
 #ifdef UNIAX
-  to->data[ to->n++ ] = TRAEG_MOMENT(p,ind);
   to->data[ to->n++ ] = ACHSE(p,ind,X); 
   to->data[ to->n++ ] = ACHSE(p,ind,Y); 
   to->data[ to->n++ ] = ACHSE(p,ind,Z); 
-  to->data[ to->n++ ] = SHAPE(p,ind,X); 
-  to->data[ to->n++ ] = SHAPE(p,ind,Y); 
-  to->data[ to->n++ ] = SHAPE(p,ind,Z); 
-  to->data[ to->n++ ] = POT_WELL(p,ind,X); 
-  to->data[ to->n++ ] = POT_WELL(p,ind,Y); 
-  to->data[ to->n++ ] = POT_WELL(p,ind,Z); 
   to->data[ to->n++ ] = DREH_IMPULS(p,ind,X); 
   to->data[ to->n++ ] = DREH_IMPULS(p,ind,Y); 
   to->data[ to->n++ ] = DREH_IMPULS(p,ind,Z); 
@@ -361,16 +354,9 @@ void copy_one_atom(msgbuf *to, int to_cpu, minicell *from, int index, int del)
       /* neighbor list reference positions are not copied */
 #endif
 #ifdef UNIAX
-      TRAEG_MOMENT(p,ind) = TRAEG_MOMENT(p,p->n);
       ACHSE(p,ind,X) = ACHSE(p,p->n,X); 
       ACHSE(p,ind,Y) = ACHSE(p,p->n,Y); 
       ACHSE(p,ind,Z) = ACHSE(p,p->n,Z); 
-      SHAPE(p,ind,X) = SHAPE(p,p->n,X); 
-      SHAPE(p,ind,Y) = SHAPE(p,p->n,Y); 
-      SHAPE(p,ind,Z) = SHAPE(p,p->n,Z); 
-      POT_WELL(p,ind,X) = POT_WELL(p,p->n,X); 
-      POT_WELL(p,ind,Y) = POT_WELL(p,p->n,Y); 
-      POT_WELL(p,ind,Z) = POT_WELL(p,p->n,Z); 
       DREH_IMPULS(p,ind,X) = DREH_IMPULS(p,p->n,X); 
       DREH_IMPULS(p,ind,Y) = DREH_IMPULS(p,p->n,Y); 
       DREH_IMPULS(p,ind,Z) = DREH_IMPULS(p,p->n,Z); 
@@ -498,16 +484,9 @@ void process_buffer(msgbuf *b, cell *p)
     /* neighbor list reference positions are not sent */
 #endif
 #ifdef UNIAX
-    TRAEG_MOMENT(input,0) = b->data[j++];
     ACHSE(input,0,X) = b->data[j++];
     ACHSE(input,0,Y) = b->data[j++];
     ACHSE(input,0,Z) = b->data[j++];
-    SHAPE(input,0,X) = b->data[j++];
-    SHAPE(input,0,Y) = b->data[j++];
-    SHAPE(input,0,Z) = b->data[j++];
-    POT_WELL(input,0,X) = b->data[j++];
-    POT_WELL(input,0,Y) = b->data[j++];
-    POT_WELL(input,0,Z) = b->data[j++];
     DREH_IMPULS(input,0,X) = b->data[j++];
     DREH_IMPULS(input,0,Y) = b->data[j++];
     DREH_IMPULS(input,0,Z) = b->data[j++];
@@ -587,7 +566,7 @@ void setup_buffers(void)
     binc1++;         /* sorte */
 #endif
 #ifdef UNIAX
-    binc1 += 9;      /* direction, etc. */
+    binc1 += 3;      /* achse */
 #endif
 
     /* for communication from buffer cells */

@@ -61,10 +61,7 @@ void read_atoms(str255 infilename)
 #endif
   real m;
 #ifdef UNIAX
-  real the;
   vektor axe;
-  vektor sig;
-  vektor eps;
   vektor ome;
 #endif
   int i,s,n;
@@ -188,35 +185,25 @@ void read_atoms(str255 infilename)
 #ifdef UNIAX 
 
 #ifdef DOUBLE
-    p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
-	      &n,&s,&m,&the,&pos.x,&pos.y,&pos.z,&axe.x,&axe.y,&axe.z,&sig.x,&sig.y,&sig.z,&eps.x,&eps.y,&eps.z,&vau.x,&vau.y,&vau.z,&ome.x,&ome.y,&ome.z);  
-    if ( axe.x * axe.x + axe.y * axe.y + axe.z * axe.z 
-	 - 1.0 > 1.0e-04 )
-      error("Molecular axis not a unit vector!");
-    if ( sig.x != sig.y )
-      error("This is not a uniaxial molecule!");
-    if ( eps.x != eps.y )
-      error("This is not a uniaxial molecule!");
+    p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+               &n,&s,&m,&pos.x,&pos.y,&pos.z,&axe.x,&axe.y,&axe.z,
+               &vau.x,&vau.y,&vau.z,&ome.x,&ome.y,&ome.z);  
 #else
-    p = sscanf(buf,"%d %d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f",
-	      &n,&s,&m,&the,&pos.x,&pos.y,&pos.z,&axe.x,&axe.y,&axe.z,&sig.x,&sig.y,&sig.z,&eps.x,&eps.y,&eps.z,&vau.x,&vau.y,&vau.z,&ome.x,&ome.y,&ome.z);  
-    if ( axe.x * axe.x + axe.y * axe.y + axe.z * axe.z 
-	 - 1.0 > 1.0e-04 )
-      error("Molecular axis not a unit vector!");
-    if ( sig.x != sig.y )
-      error("This is not a uniaxial molecule!");
-    if ( eps.x != eps.y )
-      error("This is not a uniaxial molecule!");
+    p = sscanf(buf,"%d %d %f %f %f %f %f %f %f %f %f %f %f %f %f",
+               &n,&s,&m,&pos.x,&pos.y,&pos.z,&axe.x,&axe.y,&axe.z,
+               &vau.x,&vau.y,&vau.z,&ome.x,&ome.y,&ome.z);  
 #endif
+    if ( ABS( SPROD(axe,axe) - 1.0 ) > 1.0e-04 )
+      error("Molecular axis not a unit vector!");
 
 #else /* not UNIAX */
 
 #ifdef DOUBLE
     p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf",
-	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);  
+               &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);  
 #else
     p = sscanf(buf,"%d %d %f %f %f %f %f %f %f",
-	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);
+               &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);
 #endif
 
 #endif /* UNIAX or not UNIAX */
@@ -245,9 +232,9 @@ void read_atoms(str255 infilename)
 
       if (0>=m) error("Mass zero or negative.\n");
 #ifdef UNIAX
-      if ((p!=16) && (p<22)) error("incorrect line in configuration file.");
+      if ((p!=9) && (p<15)) error("incorrect line in configuration file.");
 #else
-      if ((p!=6) && (p<9)) error("incorrect line in configuration file.");
+      if ((p!=6) && (p<9))  error("incorrect line in configuration file.");
 #endif
 
       input->n = 1;
@@ -263,17 +250,10 @@ void read_atoms(str255 infilename)
       ORT(input,0,Y) = pos.y;
       ORT(input,0,Z) = pos.z;
 #ifdef UNIAX
-      TRAEG_MOMENT(input,0) = the;
       ACHSE(input,0,X) = axe.x ;
       ACHSE(input,0,Y) = axe.y ;
       ACHSE(input,0,Z) = axe.z ;
-      SHAPE(input,0,X) = sig.x ;
-      SHAPE(input,0,Y) = sig.y ;
-      SHAPE(input,0,Z) = sig.z ;
-      POT_WELL(input,0,X) = eps.x ;
-      POT_WELL(input,0,Y) = eps.y ;
-      POT_WELL(input,0,Z) = eps.z ;
-      if (p==16) {
+      if (p==9) {
 	do_maxwell=1;
 	IMPULS(input,0,X) = 0 ;
 	IMPULS(input,0,Y) = 0 ;
@@ -285,9 +265,9 @@ void read_atoms(str255 infilename)
 	IMPULS(input,0,X) = vau.x * m;
 	IMPULS(input,0,Y) = vau.y * m;
 	IMPULS(input,0,Z) = vau.z * m;
-	DREH_IMPULS(input,0,X) = ome.x * the;
-	DREH_IMPULS(input,0,Y) = ome.y * the;
-	DREH_IMPULS(input,0,Z) = ome.z * the;
+	DREH_IMPULS(input,0,X) = ome.x * uniax_inert;
+	DREH_IMPULS(input,0,Y) = ome.y * uniax_inert;
+	DREH_IMPULS(input,0,Z) = ome.z * uniax_inert;
       }
       DREH_MOMENT(input,0,X) = 0 ;
       DREH_MOMENT(input,0,Y) = 0 ;
@@ -526,18 +506,11 @@ void write_atoms_config(FILE *out)
     for (i=0; i<p->n; i++) {
       len += sprintf(outbuf+len, "%d %d", NUMMER(p,i), VSORTE(p,i));
       len += sprintf(outbuf+len, RESOL1, MASSE(p,i));
-#ifdef UNIAX
-      len += sprintf(outbuf+len, RESOL1, TRAEG_MOMENT(p,i) );
-#endif
       len += sprintf(outbuf+len, 
         RESOL3, ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z) );
 #ifdef UNIAX
       len += sprintf(outbuf+len, 
         RESOL3, ACHSE(p,i,X), ACHSE(p,i,Y), ACHSE(p,i,Z) );
-      len += sprintf(outbuf+len, 
-        RESOL3, SHAPE(p,i,X), SHAPE(p,i,Y), SHAPE(p,i,Z) );
-      len += sprintf(outbuf+len, 
-        RESOL3, POT_WELL(p,i,X), POT_WELL(p,i,Y), POT_WELL(p,i,Z) );
 #endif
 #ifdef CG
       len += sprintf(outbuf+len, RESOL3, 0.0, 0.0, 0.0);
@@ -548,9 +521,9 @@ void write_atoms_config(FILE *out)
         IMPULS(p,i,Z) / MASSE(p,i));
 #ifdef UNIAX
       len += sprintf(outbuf+len, RESOL3,
-        DREH_IMPULS(p,i,X) / TRAEG_MOMENT(p,i),
-        DREH_IMPULS(p,i,Y) / TRAEG_MOMENT(p,i),
-        DREH_IMPULS(p,i,Z) / TRAEG_MOMENT(p,i)); 
+        DREH_IMPULS(p,i,X) / uniax_inert,
+        DREH_IMPULS(p,i,Y) / uniax_inert,
+        DREH_IMPULS(p,i,Z) / uniax_inert ); 
 #endif
 #endif
       len += sprintf(outbuf+len, RESOL1, POTENG(p,i));

@@ -151,10 +151,7 @@ typedef struct {
   real        *nbl_pos;
 #endif
 #ifdef UNIAX
-  real        *traeg_moment;
   real        *achse;
-  real        *shape;
-  real        *pot_well;
   real        *dreh_impuls;
   real        *dreh_moment;
 #endif
