@@ -176,6 +176,7 @@ inline static real SQR(real x)
 #define ENS_NPT_ISO   4
 #define ENS_NPT_AXIAL 5
 #define ENS_FRAC      8
+#define ENS_SLLOD     9
 #define ENS_NVX      11
 #define ENS_STM      13
 
