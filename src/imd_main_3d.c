@@ -224,7 +224,7 @@ void main_loop(void)
        write_press_dist_shock(steps);
 #else
     if ((press_interval > 0) && (0 == steps%press_interval)) {
-      if (0==press_nlayers.x) write_press_atoms(steps);
+      if (0==press_dim.x) write_press_atoms(steps);
       else write_press_dist(steps);
     }
 #endif

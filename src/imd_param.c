@@ -702,9 +702,9 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #ifdef STRESS_TENS
-    else if (strcasecmp(token, "press_nlayers")==0){
-      /* number of layers */
-      getparam("press_nlayers", &press_nlayers, PARAM_INTEGER, DIM,DIM);
+    else if (strcasecmp(token, "press_dim")==0){
+      /* pressure histogram dimension */
+      getparam("press_dim", &press_dim, PARAM_INTEGER, DIM,DIM);
     }
      else if (strcasecmp(token, "press_interval")==0){
       /*number of steps between press. writes  */
@@ -1147,7 +1147,7 @@ void broadcast_params() {
 #endif
 
 #ifdef STRESS_TENS
-  MPI_Bcast( &press_nlayers,  1, INTEGER,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &press_dim,      1, INTEGER,  0, MPI_COMM_WORLD);
   MPI_Bcast( &press_interval, 1, INTEGER,  0, MPI_COMM_WORLD);
 #endif
 

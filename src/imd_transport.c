@@ -143,7 +143,7 @@ void write_press_dist_shock(int steps)
   str255  fnamepress;
   cell *p;
   real scalex, scaley, layvol, laydens;
-  integer num, numx, numy, press_nlayers_tot;
+  integer num, numx, numy, press_dim_tot;
   int fzhlr, i, r, s, t;
 #ifndef TWOD
   int scalez, numz;
@@ -165,123 +165,123 @@ void write_press_dist_shock(int steps)
   /* the press bins are orthogonal boxes in space */
 
 #ifdef SHOCK
-  if (press_nlayers.y>1) press_nlayers.y=1;
+  if (press_dim.y>1) press_dim.y=1;
 #endif
-  scalex = press_nlayers.x / box_x.x;
-  scaley = press_nlayers.y / box_y.y;
-  press_nlayers_tot = press_nlayers.x*press_nlayers.y;
+  scalex = press_dim.x / box_x.x;
+  scaley = press_dim.y / box_y.y;
+  press_dim_tot = press_dim.x*press_dim.y;
 #ifndef TWOD
 #ifdef SHOCK
-  if (press_nlayers.z>1) press_nlayers.z=1;
+  if (press_dim.z>1) press_dim.z=1;
 #endif
-  scalez = press_nlayers.z / box_z.z;
-  press_nlayers_tot = press_nlayers.x*press_nlayers.y*press_nlayers.z;
+  scalez = press_dim.z / box_z.z;
+  press_dim_tot = press_dim.x*press_dim.y*press_dim.z;
 #endif
-  layvol = volume / press_nlayers_tot;
+  layvol = volume / press_dim_tot;
 
   /* allocate histogram arrays */
   if (NULL==press_histxx_1) {
-    press_histxx_1 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histxx_1 = (real *) malloc( press_dim_tot * sizeof(real) );
     if (NULL==press_histxx_1) 
       error("Cannot allocate xx pressure tensor array.");
   }  
   if (NULL==press_histyy_1) {
-    press_histyy_1 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histyy_1 = (real *) malloc( press_dim_tot * sizeof(real) );
     if (NULL==press_histyy_1) 
       error("Cannot allocate yy pressure tensor array.");
   }
 #ifndef TWOD  
   if (NULL==press_histzz_1) {
-    press_histzz_1 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histzz_1 = (real *) malloc( press_dim_tot * sizeof(real) );
     if (NULL==press_histzz_1) 
       error("Cannot allocate zz pressure tensor array.");
   }
 #endif  
   if (NULL==kin_histxx_1) {
-    kin_histxx_1 = (real *) malloc( press_nlayers.x * sizeof(real) );
+    kin_histxx_1 = (real *) malloc( press_dim.x * sizeof(real) );
     if (NULL==kin_histxx_1) 
       error("Cannot allocate pressure tensor array.");
   }  
   if (NULL==kin_histxxu_1) {
-    kin_histxxu_1 = (real *) malloc( press_nlayers.x * sizeof(real) );
+    kin_histxxu_1 = (real *) malloc( press_dim.x * sizeof(real) );
     if (NULL==kin_histxxu_1) 
       error("Cannot allocate pressure tensor array.");
   }  
   if (NULL==kin_histyy_1) {
-    kin_histyy_1 = (real *) malloc( press_nlayers.x * sizeof(real) );
+    kin_histyy_1 = (real *) malloc( press_dim.x * sizeof(real) );
     if (NULL==kin_histyy_1) 
       error("Cannot allocate pressure tensor array.");
   }  
 #ifndef TWOD
   if (NULL==kin_histzz_1) {
-    kin_histzz_1 = (real *) malloc( press_nlayers.x * sizeof(real) );
+    kin_histzz_1 = (real *) malloc( press_dim.x * sizeof(real) );
     if (NULL==kin_histzz_1) 
       error("Cannot allocate pressure tensor array.");
   }  
 #endif
   if (NULL==pot_hist_1) {
-    pot_hist_1 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    pot_hist_1 = (real *) malloc( press_dim_tot * sizeof(real) );
     if (NULL==pot_hist_1) 
       error("Cannot allocate potential energy array.");
   }  
   if (NULL==num_hist_1) {
-    num_hist_1 = (integer *) malloc( press_nlayers_tot * sizeof(integer) );
+    num_hist_1 = (integer *) malloc( press_dim_tot * sizeof(integer) );
     if (NULL==num_hist_1) 
       error("Cannot allocate number count array.");
   }
 #ifdef MPI
   if (NULL==press_histxx_2) {
-    press_histxx_2 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histxx_2 = (real *) malloc( press_dim_tot * sizeof(real) );
     if ((NULL==press_histxx_2) && (myid==0)) 
       error("Cannot allocate xx pressure tensor  array.");
   }  
   if (NULL==press_histyy_2) {
-    press_histyy_2 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histyy_2 = (real *) malloc( press_dim_tot * sizeof(real) );
     if ((NULL==press_histyy_2) && (myid==0)) 
       error("Cannot allocate yy pressure tensor  array.");
   }
 #ifndef TWOD
   if (NULL==press_histzz_2) {
-    press_histzz_2 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histzz_2 = (real *) malloc( press_dim_tot * sizeof(real) );
     if ((NULL==press_histzz_2) && (myid==0)) 
       error("Cannot allocate zz pressure tensor  array.");
   }
 #endif
   if (NULL==kin_histxx_2) {
-    kin_histxx_2 = (real *) malloc( press_nlayers.x * sizeof(real) );
+    kin_histxx_2 = (real *) malloc( press_dim.x * sizeof(real) );
     if (NULL==kin_histxx_2) 
       error("Cannot allocate pressure tensor array.");
   }  
   if (NULL==kin_histxxu_2) {
-    kin_histxxu_2 = (real *) malloc( press_nlayers.x * sizeof(real) );
+    kin_histxxu_2 = (real *) malloc( press_dim.x * sizeof(real) );
     if (NULL==kin_histxxu_2) 
       error("Cannot allocate pressure tensor array.");
   }  
   if (NULL==kin_histyy_2) {
-    kin_histyy_2 = (real *) malloc( press_nlayers.x * sizeof(real) );
+    kin_histyy_2 = (real *) malloc( press_dim.x * sizeof(real) );
     if (NULL==kin_histyy_2) 
       error("Cannot allocate pressure tensor array.");
   }  
 #ifndef TWOD
   if (NULL==kin_histzz_2) {
-    kin_histzz_2 = (real *) malloc( press_nlayers.x * sizeof(real) );
+    kin_histzz_2 = (real *) malloc( press_dim.x * sizeof(real) );
     if (NULL==kin_histzz_2) 
       error("Cannot allocate pressure tensor array.");
   }  
 #endif
   if (NULL==pot_hist_2) {
-    pot_hist_2 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    pot_hist_2 = (real *) malloc( press_dim_tot * sizeof(real) );
     if (NULL==pot_hist_2) 
       error("Cannot allocate potential energy array.");
   }  
   if (NULL==num_hist_2) {
-    num_hist_2 = (integer *) malloc( press_nlayers_tot * sizeof(integer) );
+    num_hist_2 = (integer *) malloc( press_dim_tot * sizeof(integer) );
     if ((NULL==num_hist_2) && (myid==0)) 
       error("Cannot allocate number count array.");
   }
 #endif
 
-  for (i = 0; i < press_nlayers.x; i++) {
+  for (i = 0; i < press_dim.x; i++) {
     kin_histxx_1[i] = 0;
     kin_histxxu_1[i] = 0;
     kin_histyy_1[i] = 0;
@@ -297,7 +297,7 @@ void write_press_dist_shock(int steps)
 #endif
 #endif
   }
-  for (i = 0; i < press_nlayers_tot; i++) {
+  for (i = 0; i < press_dim_tot; i++) {
     press_histxx_1[i] = 0.0;
     press_histyy_1[i] = 0.0;
 #ifndef TWOD
@@ -334,16 +334,16 @@ void write_press_dist_shock(int steps)
               /* which layer? */
 	      numx = scalex * p->ort X(i);
               if (numx < 0)             numx = 0;
-              if (numx >= press_nlayers.x)      numx = press_nlayers.x-1;
+              if (numx >= press_dim.x)      numx = press_dim.x-1;
 	      numy = scaley * p->ort Y(i);
               if (numy < 0)             numy = 0;
-              if (numy >= press_nlayers.y)      numy = press_nlayers.y-1;
-              num = numx * press_nlayers.y + numy;
+              if (numy >= press_dim.y)      numy = press_dim.y-1;
+              num = numx * press_dim.y + numy;
 #ifndef TWOD
 	      numz = scalez * p->ort Z(i);
               if (numz < 0)             numz = 0;
-              if (numz >= press_nlayers.z)      numz = press_nlayers.z-1;
-              num = num  * press_nlayers.z + numz;
+              if (numz >= press_dim.z)      numz = press_dim.z-1;
+              num = num  * press_dim.z + numz;
 #endif
 #ifdef TWOD
               press_histxx_1[num] += p->presstens X(i);
@@ -433,40 +433,40 @@ void write_press_dist_shock(int steps)
 #ifdef MPI
   /* add up results form different CPUs */
   MPI_Allreduce( press_histxx_1, press_histxx_2, 
-                 press_nlayers_tot, MPI_REAL, MPI_SUM, cpugrid);
+                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
   press_histxx = press_histxx_2;
   MPI_Allreduce( press_histyy_1, press_histyy_2, 
-                 press_nlayers_tot, MPI_REAL, MPI_SUM, cpugrid);
+                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
   press_histyy = press_histyy_2;
 #ifndef TWOD
   MPI_Allreduce( press_histzz_1, press_histzz_2, 
-                 press_nlayers_tot, MPI_REAL, MPI_SUM, cpugrid);
+                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
   press_histzz = press_histzz_2;
 #endif
   MPI_Allreduce( pot_hist_1, pot_hist_2, 
-                 press_nlayers_tot, MPI_REAL, MPI_SUM, cpugrid);
+                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
   pot_histzz = pot_hist_2;
   MPI_Allreduce( num_hist_1, num_hist_2, 
-                 press_nlayers_tot, INTEGER, MPI_SUM, cpugrid);
+                 press_dim_tot, INTEGER, MPI_SUM, cpugrid);
   num_hist = num_hist_2;
   MPI_Allreduce( kin_histxx_1, kin_histxx_2, 
-                 press_nlayer.x, MPI_REAL, MPI_SUM, cpugrid);
+                 press_dim.x, MPI_REAL, MPI_SUM, cpugrid);
   kin_histxx = kin_histxx_2;
 
   MPI_Allreduce( kin_histxxu1, kin_histxxu_2, 
-                 press_nlayer.x, MPI_REAL, MPI_SUM, cpugrid);
+                 press_dim.x, MPI_REAL, MPI_SUM, cpugrid);
   kin_histxxu = kin_histxxu_2;
 
   MPI_Allreduce( kin_histyy_1, kin_histyy_2, 
-                 press_nlayer.x, MPI_REAL, MPI_SUM, cpugrid);
+                 press_dim.x, MPI_REAL, MPI_SUM, cpugrid);
   kin_histyy = kin_histyy_2;
 #ifndef TWOD
   MPI_Allreduce( kin_histzz_1, kin_histzz_2, 
-                 press_nlayer.x, MPI_REAL, MPI_SUM, cpugrid);
+                 press_dim.x, MPI_REAL, MPI_SUM, cpugrid);
   kin_histzz = kin_histzz_2;
 #endif
   MPI_Allreduce( pot_hist_1, pot_hist_2, 
-                 press_nlayer.x, MPI_REAL, MPI_SUM, cpugrid);
+                 press_dim.x, MPI_REAL, MPI_SUM, cpugrid);
   pot_hist = pot_hist_2;
   MPI_Allreduce( num_hist_1, num_hist_2, 
                  nlayer, INTEGER, MPI_SUM, cpugrid);
@@ -497,7 +497,7 @@ void write_press_dist_shock(int steps)
     outpress = fopen(fnamepress,"w");
     if (NULL == outpress) error("Cannot open pressure tensor file.");
 #ifdef SHOCK
-    for (i = 0; i < press_nlayers.x; i++) {
+    for (i = 0; i < press_dim.x; i++) {
       if (num_hist[i] > 0) {
 	laydens = num_hist[i] / layvol;
 	pot_hist[i] /= num_hist[i];
@@ -548,7 +548,7 @@ void write_press_dist(int steps)
   str255  fnamepress;
   cell *p;
   real scalex, scaley, scalez, layvol, laydens, Ekin;
-  integer num, numx, numy, numz, press_nlayers_tot;
+  integer num, numx, numy, numz, press_dim_tot;
   int fzhlr, i, r, s, t;
   static real  *press_histxx, *press_histxx_1 = NULL, *press_histxx_2 = NULL;
   static real  *press_histyy, *press_histyy_1 = NULL, *press_histyy_2 = NULL;
@@ -563,115 +563,115 @@ void write_press_dist(int steps)
   static integer *num_hist,   *num_hist_1 = NULL,  *num_hist_2 = NULL;
   
   /* the press bins are orthogonal boxes in space */
-  scalex = press_nlayers.x / box_x.x;
-  scaley = press_nlayers.y / box_y.y;
-  press_nlayers_tot = press_nlayers.x*press_nlayers.y;
+  scalex = press_dim.x / box_x.x;
+  scaley = press_dim.y / box_y.y;
+  press_dim_tot = press_dim.x*press_dim.y;
 #ifndef TWOD
-  scalez = press_nlayers.z / box_z.z;
-  press_nlayers_tot *= press_nlayers.z;
+  scalez = press_dim.z / box_z.z;
+  press_dim_tot *= press_dim.z;
 #endif
-  layvol = volume / press_nlayers_tot;
+  layvol = volume / press_dim_tot;
 
   /* allocate histogram arrays */
   if (NULL==press_histxx_1) {
-    press_histxx_1 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histxx_1 = (real *) malloc( press_dim_tot * sizeof(real) );
     if (NULL==press_histxx_1) 
       error("Cannot allocate xx pressure tensor array.");
   }  
   if (NULL==press_histyy_1) {
-    press_histyy_1 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histyy_1 = (real *) malloc( press_dim_tot * sizeof(real) );
     if (NULL==press_histyy_1) 
       error("Cannot allocate yy pressure tensor array.");
   }
   if (NULL==press_histxy_1) {
-    press_histxy_1 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histxy_1 = (real *) malloc( press_dim_tot * sizeof(real) );
     if (NULL==press_histxy_1) 
       error("Cannot allocate xy pressure tensor array.");
   }
 #ifndef TWOD  
   if (NULL==press_histzz_1) {
-    press_histzz_1 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histzz_1 = (real *) malloc( press_dim_tot * sizeof(real) );
     if (NULL==press_histzz_1) 
       error("Cannot allocate zz pressure tensor array.");
   }
   if (NULL==press_histzx_1) {
-    press_histzx_1 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histzx_1 = (real *) malloc( press_dim_tot * sizeof(real) );
     if (NULL==press_histzx_1) 
       error("Cannot allocate zx pressure tensor array.");
   }
   if (NULL==press_histyz_1) {
-    press_histyz_1 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histyz_1 = (real *) malloc( press_dim_tot * sizeof(real) );
     if (NULL==press_histyz_1) 
       error("Cannot allocate yz pressure tensor array.");
   }
 #endif  
   if (NULL==kin_hist_1) {
-    kin_hist_1 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    kin_hist_1 = (real *) malloc( press_dim_tot * sizeof(real) );
     if (NULL==kin_hist_1) 
       error("Cannot allocate kinetic energy array.");
   }
   if (NULL==pot_hist_1) {
-    pot_hist_1 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    pot_hist_1 = (real *) malloc( press_dim_tot * sizeof(real) );
     if (NULL==pot_hist_1) 
       error("Cannot allocate potential energy array.");
   }  
   if (NULL==num_hist_1) {
-    num_hist_1 = (integer *) malloc( press_nlayers_tot * sizeof(integer) );
+    num_hist_1 = (integer *) malloc( press_dim_tot * sizeof(integer) );
     if (NULL==num_hist_1) 
       error("Cannot allocate number count array.");
   }
 #ifdef MPI
   if (NULL==press_histxx_2) {
-    press_histxx_2 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histxx_2 = (real *) malloc( press_dim_tot * sizeof(real) );
     if ((NULL==press_histxx_2) && (myid==0)) 
       error("Cannot allocate xx pressure tensor  array.");
   }  
   if (NULL==press_histyy_2) {
-    press_histyy_2 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histyy_2 = (real *) malloc( press_dim_tot * sizeof(real) );
     if ((NULL==press_histyy_2) && (myid==0)) 
       error("Cannot allocate yy pressure tensor  array.");
   }
   if (NULL==press_histxy_2) {
-    press_histxy_2 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histxy_2 = (real *) malloc( press_dim_tot * sizeof(real) );
     if ((NULL==press_histxy_2) && (myid==0)) 
       error("Cannot allocate xy pressure tensor  array.");
   }
 #ifndef TWOD
   if (NULL==press_histzz_2) {
-    press_histzz_2 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histzz_2 = (real *) malloc( press_dim_tot * sizeof(real) );
     if ((NULL==press_histzz_2) && (myid==0)) 
       error("Cannot allocate zz pressure tensor  array.");
   }
   if (NULL==press_histzx_2) {
-    press_histzx_2 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histzx_2 = (real *) malloc( press_dim_tot * sizeof(real) );
     if ((NULL==press_histzx_2) && (myid==0)) 
       error("Cannot allocate zx pressure tensor  array.");
   }
   if (NULL==press_histyz_2) {
-    press_histyz_2 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    press_histyz_2 = (real *) malloc( press_dim_tot * sizeof(real) );
     if ((NULL==press_histyz_2) && (myid==0)) 
       error("Cannot allocate yz pressure tensor  array.");
   }
 #endif
   if (NULL==kin_hist_2) {
-    kin_hist_2 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    kin_hist_2 = (real *) malloc( press_dim_tot * sizeof(real) );
     if (NULL==kin_hist_2) 
       error("Cannot allocate kinetic energy array.");
   }  
   if (NULL==pot_hist_2) {
-    pot_hist_2 = (real *) malloc( press_nlayers_tot * sizeof(real) );
+    pot_hist_2 = (real *) malloc( press_dim_tot * sizeof(real) );
     if (NULL==pot_hist_2) 
       error("Cannot allocate potential energy array.");
   }  
   if (NULL==num_hist_2) {
-    num_hist_2 = (integer *) malloc( press_nlayers_tot * sizeof(integer) );
+    num_hist_2 = (integer *) malloc( press_dim_tot * sizeof(integer) );
     if ((NULL==num_hist_2) && (myid==0)) 
       error("Cannot allocate number count array.");
   }
 #endif /* MPI */
 
   /* clear histograms */
-  for (i = 0; i < press_nlayers_tot; i++) {
+  for (i = 0; i < press_dim_tot; i++) {
     press_histxx_1[i] = 0.0;
     press_histyy_1[i] = 0.0;
     press_histxy_1[i] = 0.0;
@@ -714,16 +714,16 @@ void write_press_dist(int steps)
               /* which layer? */
 	      numx = scalex * p->ort X(i);
               if (numx < 0)             numx = 0;
-              if (numx >= press_nlayers.x)      numx = press_nlayers.x-1;
+              if (numx >= press_dim.x)      numx = press_dim.x-1;
 	      numy = scaley * p->ort Y(i);
               if (numy < 0)             numy = 0;
-              if (numy >= press_nlayers.y)      numy = press_nlayers.y-1;
-              num = numx * press_nlayers.y + numy;
+              if (numy >= press_dim.y)      numy = press_dim.y-1;
+              num = numx * press_dim.y + numy;
 #ifndef TWOD
 	      numz = scalez * p->ort Z(i);
               if (numz < 0)             numz = 0;
-              if (numz >= press_nlayers.z)      numz = press_nlayers.z-1;
-              num = num  * press_nlayers.z + numz;
+              if (numz >= press_dim.z)      numz = press_dim.z-1;
+              num = num  * press_dim.z + numz;
 #endif
 
               Ekin = SPRODN(p->impuls,i,p->impuls,i) / (2* MASSE(p,i));
@@ -746,33 +746,33 @@ void write_press_dist(int steps)
 #ifdef MPI
   /* add up results form different CPUs */
   MPI_Allreduce( press_histxx_1, press_histxx_2, 
-                 press_nlayers_tot, MPI_REAL, MPI_SUM, cpugrid);
+                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
   press_histxx = press_histxx_2;
   MPI_Allreduce( press_histyy_1, press_histyy_2, 
-                 press_nlayers_tot, MPI_REAL, MPI_SUM, cpugrid);
+                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
   press_histyy = press_histyy_2;
   MPI_Allreduce( press_histxy_1, press_histxy_2, 
-                 press_nlayers_tot, MPI_REAL, MPI_SUM, cpugrid);
+                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
   press_histxy = press_histxy_2;
 #ifndef TWOD
   MPI_Allreduce( press_histzz_1, press_histzz_2, 
-                 press_nlayers_tot, MPI_REAL, MPI_SUM, cpugrid);
+                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
   press_histzz = press_histzz_2;
   MPI_Allreduce( press_histzx_1, press_histzx_2, 
-                 press_nlayers_tot, MPI_REAL, MPI_SUM, cpugrid);
+                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
   press_histzx = press_histzx_2;
   MPI_Allreduce( press_histyz_1, press_histyz_2, 
-                 press_nlayers_tot, MPI_REAL, MPI_SUM, cpugrid);
+                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
   press_histyz = press_histyz_2;
 #endif
   MPI_Allreduce( kin_hist_1, kin_hist_2, 
-                 press_nlayers_tot, MPI_REAL, MPI_SUM, cpugrid);
+                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
   kin_hist     = kin_hist_2;
   MPI_Allreduce( pot_hist_1, pot_hist_2, 
-                 press_nlayers_tot, MPI_REAL, MPI_SUM, cpugrid);
+                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
   pot_hist     = pot_hist_2;
   MPI_Allreduce( num_hist_1, num_hist_2, 
-                 press_nlayers_tot, INTEGER, MPI_SUM, cpugrid);
+                 press_dim_tot, INTEGER, MPI_SUM, cpugrid);
   num_hist     = num_hist_2;
 #else /* not MPI */
   press_histxx = press_histxx_1;
@@ -796,7 +796,7 @@ void write_press_dist(int steps)
     outpress = fopen(fnamepress,"w");
     if (NULL == outpress) error("Cannot open pressure tensor file.");
 
-    for (i = 0; i < press_nlayers_tot; i++) {
+    for (i = 0; i < press_dim_tot; i++) {
       if (num_hist[i] > 0) {
 	laydens = num_hist[i] / layvol;
 	kin_hist[i]     /= num_hist[i];
