@@ -149,7 +149,7 @@ void move_atoms_mik(void)
   real kin_energie_1,kin_energie_2;
   vektor d;
   int r,s,t;  
-  real tmp = 0;
+  real tmp = 0, tmp2;
 
   tot_kin_energy = 0;
 
@@ -190,50 +190,36 @@ void move_atoms_mik(void)
        	  /* Sum kinetic energy */ 
 	  kin_energie_2 =  SPRODN(p->impuls,i,p->impuls,i);
 
-	  /* Neue Orte */
-
 #ifdef MONOLJ
           tmp += (kin_energie_1 + kin_energie_2) / 4;
-	  d.x = timestep * p->impuls X(i);
-	  d.y = timestep * p->impuls Y(i);
-#ifndef TWOD
-	  d.z = timestep * p->impuls Z(i);
-#endif
-#else /* MONOLJ */
-
+#else
           tmp += (kin_energie_1 + kin_energie_2) / ( 4 * p->masse[i] );
-	  d.x = timestep * p->impuls X(i) / p->masse[i];
-	  d.y = timestep * p->impuls Y(i) / p->masse[i];
-#ifndef TWOD
-	  d.z = timestep * p->impuls Z(i) / p->masse[i];
 #endif
-#endif /* MONOLJ */
           
 	  /* Mikroconvergence Algorithm - set velocity zero if a*v < 0 */
-	  if (0 > SPRODN(p->impuls,i,p->kraft,i)) {
+	  /* Do not move atoms in strip or with negative numbers */
+	  if ((0 > SPRODN(p->impuls,i,p->kraft,i)) || (p->nummer[i]<0)) {
+
 	    p->impuls X(i) = 0;
 	    p->impuls Y(i) = 0;
 #ifndef TWOD
 	    p->impuls Z(i) = 0;
 #endif
-	  };
 
-	  /* Do not move atoms in strip or with negative numbers */
-	  if (p->nummer[i]>=0) {
+          } else { /* neue Orte */
 
-	    p->ort X(i)    += d.x;
-	    p->ort Y(i)    += d.y;
-#ifndef TWOD
-	    d.z = timestep * p->impuls Z(i) / p->masse[i];
-	    p->ort Z(i)    += d.z;
+#ifdef MONOLJ
+            tmp2 = timestep;
+#else
+            tmp2 = timestep / p->masse[i];
 #endif
-	  } else {
-	    p->impuls X(i) =0.0;
-	    p->impuls Y(i) =0.0;
+            p->ort X(i) += tmp2 * p->impuls X(i);
+            p->ort Y(i) += tmp2 * p->impuls Y(i);
 #ifndef TWOD
-	    p->impuls Z(i) =0.0;
+            p->ort Z(i) += tmp2 * p->impuls Z(i);
 #endif
-	  };
+
+ 	  };
 	};
       };
 
