@@ -363,11 +363,7 @@ void make_histograms(hist_t *hist)
         pot_hist_1[num] += POTENG(p,i) - EPOT_REF(p,i);
       else
 #endif
-#if defined(ORDPAR) && !defined(TWOD)
-      pot_hist_1[num] += (NBANZ(p,i)==0) ? 0 : POTENG(p,i) / NBANZ(p,i);
-#else
       pot_hist_1[num] += POTENG(p,i);
-#endif
       num_hist_1[num]++;
 
     }
@@ -671,8 +667,7 @@ void write_distrib(int steps)
     if ((virvo_io==0)&&(use_header)) {
       write_distrib_header(outpot, &hist, "Epot");
       write_distrib_header(outkin, &hist, "Ekin");
-      fprintf(outminmax, 
-              "# contents count min_Epot max_Epot min_Ekin max_Ekin\n");
+      fprintf(outminmax, "#C count min_Epot max_Epot min_Ekin max_Ekin\n");
     }
     if (virvo_io==1) {
       c = (unsigned char)((hist.dim.x & 65280)>>8);
@@ -726,17 +721,19 @@ void write_distrib(int steps)
 #endif
 	    }
 	    if (virvo_io==1) {
-	      c = (unsigned char)(256.0*(hist.pot_hist[i]-hist.minpot)/(hist.maxpot-hist.minpot));
+	      c = (unsigned char)(256.0*(hist.pot_hist[i]-hist.minpot)/
+                                                   (hist.maxpot-hist.minpot));
 	      fputc(c, outpot);
-	      c = (unsigned char)(256.0*(hist.kin_hist[i]-hist.minkin)/(hist.maxkin-hist.minkin));
+	      c = (unsigned char)(256.0*(hist.kin_hist[i]-hist.minkin)/
+                                                   (hist.maxkin-hist.minkin));
 	      fputc(c, outkin);
 	      i++;
 	    } else {
 	      if (norm_hist) {
-		fprintf(outpot,"%f\n", 
-			(hist.num_hist[i])?hist.pot_hist[i]/hist.num_hist[i]:-10000.0);
-		fprintf(outkin,"%f\n", 
-			(hist.num_hist[i])?hist.kin_hist[i]/hist.num_hist[i]:0.0);
+		fprintf(outpot,"%f\n", (hist.num_hist[i]) ? 
+                        hist.pot_hist[i]/hist.num_hist[i] : -10000.0);
+		fprintf(outkin,"%f\n", (hist.num_hist[i]) ? 
+                        hist.kin_hist[i]/hist.num_hist[i] : 0.0);
 	      } else {
 		fprintf(outpot,"%f\n", hist.pot_hist[i]);
 		fprintf(outkin,"%f\n", hist.kin_hist[i]);

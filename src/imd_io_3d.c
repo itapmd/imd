@@ -517,12 +517,9 @@ void write_atoms_config(FILE *out)
         DREH_IMPULS(p,i,Z) / TRAEG_MOMENT(p,i)); 
 #endif
 #endif
-#ifdef ORDPAR
-      len += sprintf(outbuf+len, 
-        RESOL1, NBANZ(p,i)==0 ? 0 : POTENG(p,i) / NBANZ(p,i));
-      len += sprintf(outbuf+len, " %d", NBANZ(p,i));
-#else
       len += sprintf(outbuf+len, RESOL1, POTENG(p,i));
+#ifdef ORDPAR
+      len += sprintf(outbuf+len, " %d",  NBANZ(p,i));
 #endif
       len += sprintf(outbuf+len,"\n");
       /* flush or send outbuf if it is full */

@@ -288,8 +288,8 @@ void write_ras_using_sockets()
      p = cell_array + CELLS(k);
 
      for (i=0; i<p->n; ++i) { 
-       WriteFull(soc,&NUMMER(p,i),sizeof(int)); 
-       WriteFull(soc,&VSORTE(p,i),sizeof(int)); 
+       WriteFull(soc,&NUMMER(p,i),sizeof(integer)); 
+       WriteFull(soc,&VSORTE(p,i),sizeof(shortint)); 
        WriteFull(soc,&MASSE(p,i),sizeof(real)); 
        WriteFull(soc,&ORT(p,i,X),sizeof(real)); 
        WriteFull(soc,&ORT(p,i,Y),sizeof(real)); 
@@ -301,15 +301,8 @@ void write_ras_using_sockets()
 #ifndef TWOD
        WriteFull(soc,&IMPULS(p,i,Z),sizeof(real));
 #endif
-#if defined(ORDPAR) && !defined(TWOD)
-       tmp = POTENG(p,i);
-       if (NBANZ(p,i)>0) 
-         tmp /= NBANZ(p,i);
-       else
-         tmp=0.0;
-       WriteFull(soc,&tmp,sizeof(real));
-#endif
        WriteFull(soc,&POTENG(p,i),sizeof(real));
+       WriteFull(soc,&NBANZ(p,i),sizeof(shortint)); 
      }
    }
 }

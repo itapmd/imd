@@ -590,11 +590,7 @@ void write_header_pic(FILE *out)
   else
 #endif
 #ifdef ORDPAR 
-#ifdef TWOD
     fprintf(out, " ordpar type\n");
-#else
-    fprintf(out, " ordpar/nbanz type\n");
-#endif
 #else
     fprintf(out, " Epot type\n");
 #endif
@@ -665,11 +661,7 @@ void write_atoms_pic(FILE *out)
         picbuf->E_pot = (float) (POTENG(p,i) - EPOT_REF(p,i));
       else
 #endif
-#if defined(ORDPAR) && !defined(TWOD)
-      picbuf->E_pot = (NBANZ(p,i)==0) ? 0 : POTENG(p,i) / NBANZ(p,i);
-#else
       picbuf->E_pot = POTENG(p,i);
-#endif
       picbuf->type  = (integer) VSORTE(p,i);
       len += sz;
       /* flush or send outbuf if it is full */
@@ -1561,12 +1553,14 @@ void write_header_config(FILE *out)
   fprintf(out, " pot_depth(3) velocities(3) ang_veloc(3) Epot\n");
 #else
 #ifdef TWOD
-  fprintf(out, "#C number type mass x y vx vy Epot");
+  fprintf(out, "#C number type mass x y vx vy");
 #else
-  fprintf(out, "#C number type mass x y z vx vy vz Epot");
+  fprintf(out, "#C number type mass x y z vx vy vz");
 #endif
 #ifdef ORDPAR
-  fprintf(out, " nbanz" );
+  fprintf(out, " ordpar nbanz" );
+#else
+  fprintf(out, " Epot" );
 #endif
   fprintf(out, "\n" );
 #endif
