@@ -473,12 +473,12 @@ void getparamfile(char *paramfname, int sim)
       getparam("ef_checkpt_int",&ef_checkpt_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"e_pot_lower")==0) {
-      /* lower end of energy window */
-      getparam("e_pot_lower",&lower_e_pot,PARAM_REAL,1,1);
+      if (ntypes==0) error("specify parameter ntypes before e_pot_lower");
+      getparam("e_pot_lower",lower_e_pot,PARAM_REAL,ntypes,ntypes);
     }
     else if (strcasecmp(token,"e_pot_upper")==0) {
-      /* upper end of energy window */
-      getparam("e_pot_upper",&upper_e_pot,PARAM_REAL,1,1);
+      if (ntypes==0) error("specify parameter ntypes before e_pot_upper");
+      getparam("e_pot_upper",upper_e_pot,PARAM_REAL,ntypes,ntypes);
     }
 #endif
 #ifdef CLONE
@@ -700,6 +700,14 @@ void getparamfile(char *paramfname, int sim)
 	error("Cannot allocate memory for masses array\n");
       for(k=0; k<ntypes; k++)
         *(masses+k) = 1.0;
+#ifdef EFILTER
+      lower_e_pot = (real *) calloc(ntypes, sizeof(real));
+      if (NULL==lower_e_pot)
+	  error("Cannot allocate memory for lower_e_pot\n");
+      upper_e_pot = (real *) calloc(ntypes, sizeof(real));
+      if (NULL==upper_e_pot)
+	  error("Cannot allocate memory for upper_e_pot\n");
+#endif 
 #ifdef NBFILTER
       lower_nb_cut = (int *) calloc(ntypes, sizeof(int));
       if (NULL==lower_nb_cut)
@@ -2097,11 +2105,6 @@ void broadcast_params() {
 #endif
   MPI_Bcast( &pic_ll      , DIM, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &pic_ur      , DIM, REAL, 0, MPI_COMM_WORLD); 
-#ifdef EFILTER
-  MPI_Bcast( &lower_e_pot,    1, REAL,    0, MPI_COMM_WORLD);
-  MPI_Bcast( &upper_e_pot,    1, REAL,    0, MPI_COMM_WORLD);
-  MPI_Bcast( &ef_checkpt_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
-#endif
 #ifdef CLONE
   MPI_Bcast( &nclones, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
@@ -2156,6 +2159,20 @@ void broadcast_params() {
     masses=(real*)realloc(masses,ntypes*sizeof(real));
     if (NULL==masses) error("Cannot allocate memory for masses array\n");
   }
+
+#ifdef EFILTER
+  if (0!=myid){
+      lower_e_pot = (real *) calloc(ntypes, sizeof(real));
+      if (NULL==lower_e_pot)
+	  error("Cannot allocate memory for lower_e_pot\n");
+      upper_e_pot = (real *) calloc(ntypes, sizeof(real));
+      if (NULL==upper_e_pot)
+	  error("Cannot allocate memory for upper_e_pot\n");
+  }
+  MPI_Bcast( lower_e_pot, ntypes,   REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( upper_e_pot, ntypes,   REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &ef_checkpt_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
 
 #ifdef NBFILTER
   if (0!=myid){

@@ -160,8 +160,8 @@ EXTERN vektor  dist_ll           INIT(nullvektor);  /* upper right corner */
 
 #ifdef EFILTER
 EXTERN int  ef_checkpt_int INIT(0);  /* Period of ef writes */
-EXTERN real lower_e_pot INIT(0.0);   /* lower end of energy window */
-EXTERN real upper_e_pot INIT(0.0);   /* upper end of energy window */
+EXTERN real *lower_e_pot INIT(NULL); /* lower end of energy window */
+EXTERN real *upper_e_pot INIT(NULL); /* upper end of energy window */
 #endif
 #ifdef CLONE
 EXTERN int  nclones INIT(0);         /* number of periodic clones */

@@ -202,7 +202,6 @@ void write_header_ef(FILE *out)
 {
   char c;
   time_t now;
-
   /* format line */
   /* binary_io for checkpoints not implemented
    if (binary_io)
@@ -259,8 +258,10 @@ void write_atoms_ef(FILE *out)
 #endif
             (ORT(p,i,Y) < pic_ll.y) || (ORT(p,i,Y) > pic_ur.y)) continue;
 
-      if ( (POTENG(p,i)>=lower_e_pot) && (POTENG(p,i)<=upper_e_pot) ) {
-        len += sprintf( outbuf+len,
+      if ( (SORTE(p,i) == VSORTE(p,i)) &&
+           (POTENG(p,i)>=lower_e_pot[SORTE(p,i)]) && 
+           (POTENG(p,i)<=upper_e_pot[SORTE(p,i)]) ){
+          len += sprintf( outbuf+len,
 #ifdef TWOD
           "%d %d %12f %12f %12f %12f %12f %12f\n",
 #else
@@ -293,7 +294,7 @@ void write_atoms_ef(FILE *out)
 
 /******************************************************************************
 *
-*  writes header for ef-file
+*  writes header for nb-file
 *
 ******************************************************************************/
 
