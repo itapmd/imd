@@ -303,9 +303,9 @@ void draw_scene(int scene_type) {
 	    cv=(int)(scalepot*(pot[i]-offspot));
 	  color(cv+10);
 	}
-	printf("%f %f %d\n", scalepot,scalekin, cv);
-	xx=x[i]*scalex-1;
-	yy=y[i]*scaley-1;
+	/*printf("%f %f %d\n", scalepot,scalekin, cv);*/
+	xx=(x[i]-minx)*scalex-1;
+	yy=(y[i]-miny)*scaley-1;
 	if (radectyp)
 	  circle(xx,yy,.5*(sorte[i]+1)*radius*scalex);
 	else
@@ -328,17 +328,17 @@ void draw_scene(int scene_type) {
     }
     else {
       for (i=0;i<natoms;i++) {
-	xx=x[i]*scalex-1;
-	yy=y[i]*scaley-1;
+	xx=(x[i]-minx)*scalex-1;
+	yy=(y[i]-miny)*scaley-1;
 	bcode[i]=0;
       }
       color(MAGENTA);
       for (i=0;i<natoms;i++) {
-	xx=x[i]*scalex-1;
-	yy=y[i]*scaley-1;
+	xx=(x[i]-minx)*scalex-1;
+	yy=(y[i]-miny)*scaley-1;
 	for (j=0;j<natoms;j++) {
-	  xxj=x[j]*scalex-1;
-	  yyj=y[j]*scaley-1;
+	  xxj=(x[j]-minx)*scalex-1;
+	  yyj=(y[j]-miny)*scaley-1;
 	  if (i==j) continue;
 	  dx=x[i]-x[j];
 	  if (ABS(dx)>1.4) continue;
@@ -357,8 +357,8 @@ void draw_scene(int scene_type) {
       
       if (atom_mode) {
 	for (i=0;i<natoms;i++) {
-	  xx=x[i]*scalex-1;
-	  yy=y[i]*scaley-1;
+	  xx=(x[i]-minx)*scalex-1;
+	  yy=(y[i]-miny)*scaley-1;
 	  nb=0;
 	  for(k=0;k<nunits;k++)
 	    if (bcode[i]&(int)pow(2,k)) {
