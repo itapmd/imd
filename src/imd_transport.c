@@ -149,19 +149,20 @@ void write_temp_dist(int steps)
     for (i=0; i<p->n; ++i) {
 
       /* which layer? */
-      num = scale * p->ort X(i);
+      xx = p->ort X(i);
+      num = scale * xx;
       if (num < 0)             num = 0;
       if (num >= tran_nlayers) num = tran_nlayers-1;
-      if (num > nhalf) num = tran_nlayers - num;
-
-      temp = SPRODN(p->impuls,i,p->impuls,i)/ MASSE(p,i);
+      if (num > nhalf) {
+        num = tran_nlayers - num;
+        xx  = box_x.x - xx + box_x.x / tran_nlayers; 
+      }
+      temp = SPRODN(p->impuls,i,p->impuls,i) / (2*MASSE(p,i));
       temp_hist_1[num] += temp;
       num_hist_1[num]++;
 
       /* fit temperature gradient */
       if ((num!=0) && (num!=nhalf)) {
-        xx = p->ort X(i);
-        if (num>nhalf) xx = box_x.x - xx + box_x.x / tran_nlayers; 
         Sxi += xx;
         STi += temp;
         SxiTi += temp * xx;
@@ -237,8 +238,8 @@ void write_temp_dist(int steps)
 
     /* write temperature histogram */
     for (i = 0; i <= nhalf; i++) {
-      if (num_hist[i] > 0) temp_hist[i] /= (2*num_hist[i]);
-#ifndef TWOD   
+      if (num_hist[i] > 0) temp_hist[i] /= num_hist[i];
+#ifndef TWOD
       temp_hist[i] *= (2.0/DIM);
 #endif
       fprintf(outtemp," %10.4e", temp_hist[i] );
