@@ -1130,7 +1130,7 @@ void move_atoms_frac(void)
 #ifdef MPI
   /* add up results from different CPUs */
   tmpvec1[0] = tot_kin_energy;
-  tmpvec1[1] = E_kin_stadion;
+  tmpvec1[1] = E_kin_stadium;
   tmpvec1[2] = E_kin_damp;
   tmpvec1[3] = E_kin_damp2;
   tmpvec1[4] = n_stadium;
@@ -1139,7 +1139,7 @@ void move_atoms_frac(void)
   MPI_Allreduce( tmpvec1, tmpvec2, 6, REAL, MPI_SUM, cpugrid);
 
   tot_kin_energy = tmpvec2[0];
-  E_kin_stadion  = tmpvec2[1];
+  E_kin_stadium  = tmpvec2[1];
   E_kin_damp     = tmpvec2[2];
   E_kin_damp2    = tmpvec2[3];
   n_stadium      = tmpvec2[4];
