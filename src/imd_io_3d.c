@@ -775,7 +775,7 @@ void efwrite_config(int steps)
 /* just write those atoms which potential energy is within *
  * a specified energy window, not yet for uniax            */
 #define EFWRITE_CELL     for (i = 0;i < p->n; ++i){ \
-             if( (POTENG(p,i)>=lower_e_pot) && ( POTENG(p,i)<=upper_e_pot) ){ \
+             if( (POTENG(p,i)>lower_e_pot) && ( POTENG(p,i)<upper_e_pot) ){ \
              fprintf(out,"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f\n",\
 	     NUMMER(p,i),\
 	     p->sorte[i],\
