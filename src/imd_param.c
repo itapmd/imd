@@ -443,8 +443,12 @@ void getparamfile(char *paramfname, int sim)
       /* write press dist? */
       getparam(token,&dist_press_flag,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token,"dist_pressoff_flag")==0) {
+      /* write press dist? */
+      getparam(token,&dist_pressoff_flag,PARAM_INT,1,1);
+    }
     else if (strcasecmp(token,"dist_presstens_flag")==0) {
-      /* write presstens dist? */
+      /* write pressoff dist? */
       getparam(token,&dist_presstens_flag,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"dist_Ekin_long_flag")==0) {
@@ -2150,6 +2154,7 @@ void broadcast_params() {
   MPI_Bcast( &dist_Ekin_trans_flag,  1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_Ekin_comp_flag,  1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_press_flag,       1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_pressoff_flag,    1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_presstens_flag,   1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_shock_shear_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_shear_aniso_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 

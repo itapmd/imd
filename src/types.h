@@ -69,6 +69,8 @@ typedef struct {real xx, yy, xy; } sym_tensor;
 typedef struct {real xx, yy, zz, yz, zx, xy; } sym_tensor;
 #endif
 
+typedef struct {real yz, zx, xy; } off_tensor;
+
 /*
 
 Dirty trick to share as much code as possible between 2D and 3D

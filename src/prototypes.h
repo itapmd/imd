@@ -338,6 +338,10 @@ void dist_shock_shear_fun(float*, cell*, int);
 void dist_shear_aniso_fun(float*, cell*, int);
 void dist_press_fun      (float*, cell*, int);
 void dist_presstens_fun  (float*, cell*, int);
+void dist_pressoff_fun   (float*, cell*, int);
+void dist_pressxy_fun   (float*, cell*, int);
+void dist_pressyz_fun   (float*, cell*, int);
+void dist_presszx_fun   (float*, cell*, int);
 
 #ifdef ATDIST
 void   init_atdist(void);

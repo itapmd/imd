@@ -32,7 +32,7 @@
 void move_atoms_nve(void)
 {
   int k;
-  real tmpvec1[4], tmpvec2[4];
+  real tmpvec1[4], tmpvec2[4], rand;
   static int count = 0;
 
   /* epitax may call this routine for other ensembles,
@@ -157,13 +157,22 @@ void move_atoms_nve(void)
 
 #ifdef SHOCK
 	if (shock_mode == 3) {
-	  if (ORT(p,i,X) > box_x.x) IMPULS(p,i,X) = -IMPULS(p,i,X);
+
+	  if (ORT(p,i,X) > box_x.x) {
+	    IMPULS(p,i,X) = -IMPULS(p,i,X);
+	    ORT(p,i,X) = 2 * box_x.x - ORT(p,i,X);
+	  }
 	}
 	if (shock_mode == 4) {
-	  if (ORT(p,i,X) < shock_speed_l * timestep * steps) 
-	      IMPULS(p,i,X) = -IMPULS(p,i,X) + 2 * shock_speed_l * MASSE(p,i);
-	  if (ORT(p,i,X) > box_x.x - shock_speed_r * timestep * steps) 
-	      IMPULS(p,i,X) = -IMPULS(p,i,X) - 2 * shock_speed_r * MASSE(p,i);
+	  rand = shock_speed_l * timestep * steps ;
+	  if (ORT(p,i,X) < rand ) {
+	    IMPULS(p,i,X) = -IMPULS(p,i,X) + 2 * shock_speed_l * MASSE(p,i);
+	    ORT(p,i,X) = 2 * rand - ORT(p,i,X);
+	  }
+	  if (ORT(p,i,X) > box_x.x - rand ) {
+	    IMPULS(p,i,X) = -IMPULS(p,i,X) - 2 * shock_speed_r * MASSE(p,i);
+	    ORT(p,i,X) = 2 * ( box_x.x - rand ) - ORT(p,i,X);
+	  }
 	}
 #endif
 
@@ -191,28 +200,57 @@ void move_atoms_nve(void)
 #ifdef SHOCK
 	/* plate against bulk */
         if (shock_mode == 1) {
-          if ( ORT(p,i,X) < shock_strip )
+          if ( ORT(p,i,X) < shock_strip ) {
             PRESSTENS(p,i,xx) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) 
                     * (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) / MASSE(p,i);
-          else
+            PRESSTENS(p,i,xy) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) 
+                    * IMPULS(p,i,Y) / MASSE(p,i);
+            PRESSTENS(p,i,zx) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) 
+                    * IMPULS(p,i,Z) / MASSE(p,i);
+	  }
+          else {
 	    PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
+	    PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
+	    PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
+	  }
         }
 	/* two halves against one another */
         if (shock_mode == 2) {
-          if ( ORT(p,i,X) < box_x.x*0.5 )
+          if ( ORT(p,i,X) < box_x.x*0.5 ) {
             PRESSTENS(p,i,xx) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) 
                     * (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) / MASSE(p,i);
-          else
+            PRESSTENS(p,i,xy) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) 
+                    * IMPULS(p,i,Y) / MASSE(p,i);
+            PRESSTENS(p,i,zx) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) 
+                    * IMPULS(p,i,Z) / MASSE(p,i);
+	  }
+          else {
             PRESSTENS(p,i,xx) += (IMPULS(p,i,X) + shock_speed * MASSE(p,i)) 
                     * (IMPULS(p,i,X) + shock_speed * MASSE(p,i)) / MASSE(p,i);
+            PRESSTENS(p,i,xy) += (IMPULS(p,i,X) + shock_speed * MASSE(p,i)) 
+                    * IMPULS(p,i,Y) / MASSE(p,i);
+            PRESSTENS(p,i,zx) += (IMPULS(p,i,X) + shock_speed * MASSE(p,i)) 
+                    * IMPULS(p,i,Z) / MASSE(p,i);
+	  }
         }
 	/* bulk against wall */
-        if (shock_mode == 3) PRESSTENS(p,i,xx) += (IMPULS(p,i,X) - 
-	  shock_speed * MASSE(p,i)) * (IMPULS(p,i,X) - shock_speed * 
-           MASSE(p,i)) / MASSE(p,i);
+        if (shock_mode == 3) {
+	  PRESSTENS(p,i,xx) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) * 
+	    (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) / MASSE(p,i);
+	  PRESSTENS(p,i,xy) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) * 
+	    IMPULS(p,i,Y) / MASSE(p,i);
+	  PRESSTENS(p,i,zx) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) * 
+	    IMPULS(p,i,Z) / MASSE(p,i);
+	}
+	
 	/* two mirrors */
-        if (shock_mode == 4)
+        if (shock_mode == 4) {
 	    PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
+	    PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
+	    PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
+	}
+        
+	PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
 #else
         PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
 #endif

@@ -104,6 +104,17 @@ void write_distrib(int steps)
     if (myid==0) write_distrib_select( &dist, dist_shear_aniso_flag, 1, fzhlr, 
                                        "shear_aniso", "shear_aniso");
   }
+  if (dist_pressoff_flag) {
+    make_distrib_select( &dist, 1, &flag, dist_pressxy_fun);
+    if (myid==0) write_distrib_select( &dist, dist_pressoff_flag, 1, fzhlr, 
+				       "pressxy", "pressxy");
+    make_distrib_select( &dist, 1, &flag, dist_pressyz_fun);
+    if (myid==0) write_distrib_select( &dist, dist_pressoff_flag, 1, fzhlr, 
+				       "pressyz", "pressyz");
+    make_distrib_select( &dist, 1, &flag, dist_presszx_fun);
+    if (myid==0) write_distrib_select( &dist, dist_pressoff_flag, 1, fzhlr, 
+				       "presszx", "presszx");
+  }
 #endif /* SHOCK */
 
 }
@@ -191,6 +202,18 @@ void dist_shear_aniso_fun(float *dat, cell *p, int i)
 {
   *dat += PRESSTENS(p,i,yy)-PRESSTENS(p,i,zz);
 }
+void dist_pressxy_fun(float *dat, cell *p, int i)
+{
+  *dat += PRESSTENS(p,i,xy);
+}
+void dist_pressyz_fun(float *dat, cell *p, int i)
+{
+  *dat += PRESSTENS(p,i,yz);
+}
+void dist_presszx_fun(float *dat, cell *p, int i)
+{
+  *dat += PRESSTENS(p,i,zx);
+}
 #endif
 
 /* longitudinal kinetic energy */
@@ -254,6 +277,8 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
   static float   *dat_1 = NULL, *dat_2 = NULL;
   static float   *min   = NULL, *max   = NULL;
   static integer *num_1 = NULL, *num_2 = NULL;
+
+/*    printf("make_distrib_select %d\n",n); */
 
   /* the bins are orthogonal boxes in space */
   scalex = dist->dim.x / (dist->ur.x - dist->ll.x);
