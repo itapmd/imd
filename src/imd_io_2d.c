@@ -378,6 +378,9 @@ void write_properties(int steps)
   fprintf(out," %10.4e", (double)part_pot_energy);
 #ifndef MC
   fprintf(out," %10.4e", (double)part_kin_energy);
+#ifdef FNORM
+  fprintf(out, format, (double)fnorm);
+#endif
   fprintf(out," %10.4e", (double)pressure);
 #else
   fprintf(out," %10.4e", (double)(mc_accept/(real)mc_count));

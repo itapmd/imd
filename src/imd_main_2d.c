@@ -173,7 +173,17 @@ void main_loop(void)
         ref_step += correl_int;
     }
 #endif
-
+#ifdef GLOK /* "globale konvergenz": set impulses=0 if P*F <0 (global vectors) */
+    if (PxF<0.0)
+      for (k=0; k<ncells; ++k) {
+	p = cell_array + CELLS(k);
+	for (i=0; i<p->n; ++i) {
+	  p->impuls X(i) = 0.0;
+	  p->impuls Y(i) = 0.0;
+	  p->impuls Z(i) = 0.0;
+	}
+      }
+#endif
     move_atoms(); 
 
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
