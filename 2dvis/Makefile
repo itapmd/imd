@@ -4,7 +4,7 @@
 
 # Compiler
 CC_iris4d = cc
-CC_i386-linux = gcc
+CC_i386-linux = gcc -g
 CC_alpha = gcc
 CC = $(CC_$(HOSTTYPE))
 

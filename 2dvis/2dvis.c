@@ -18,6 +18,7 @@ int main(int argc, char **argv)
   char fname[255];
 
   /* inits */
+  putenv("USEOWNCMAP=1");
   strcpy(uvfname,"unitvecs");
 
   read_parameters(argc,argv);
@@ -41,7 +42,7 @@ int main(int argc, char **argv)
       ylocold=yloc;
       while ((mkey=slocator(&xloc,&yloc))==2)
 	;
-      rotate(100*(xlocold-xloc),'y');
+      rotate(100*(xloc-xlocold),'y');
       rotate(100*(ylocold-yloc),'x');
       draw_scene(scene_type);
     }
@@ -127,7 +128,6 @@ int main(int argc, char **argv)
 	bond_mode=0;
       else {
 	bond_mode=1;
-	read_unit_vectors();
       }
       draw_scene(scene_type);
       break;
@@ -188,6 +188,10 @@ int main(int argc, char **argv)
     case 'p' : 
       make_picture();
       break;
+    case 'q' : 
+      vexit();
+      exit(0);
+      break;
     case 'r' : 
       if (radectyp) 
 	radectyp=0; 
@@ -195,9 +199,12 @@ int main(int argc, char **argv)
 	radectyp=1;
       draw_scene(scene_type);
       break;
-    case 'q' : 
-      vexit();
-      exit(0);
+    case 's':
+      if (stat_bond)
+	stat_bond=0;
+      else
+	stat_bond=1;
+      read_unit_vectors();
       break;
     case 't' : 
       if (text) 
@@ -230,12 +237,8 @@ void init_graph(void) {
   clear();
   polyfill(1);
 
-  /* fill the colormap 
-  for (i=10;i<COLRES+10;i++)
-  mapcolor(i,i,i,i);*/
-
- for (i=0;i<COLRES;i++)
-  mapcolor(i+10,i,0,245-i);
+  for (i=0;i<COLRES;i++)
+    mapcolor(i+10,i,0,245-i);
 
 
 
@@ -245,15 +248,21 @@ void init_graph(void) {
 void draw_scene(int scene_type) {
 
   int i,j,k,cv,nb;
+  int n;
+  float points[8][3];
   double xx,yy,xxj,yyj;
   int ixx,iyy;
   char str[200];
-  float epsilon,dx,dy;
+  float epsilon,dx,dy,dr;
+#ifndef TWOD
+  double zz,minz;
+#endif
 
   epsilon=.1;
   backbuffer();
   color(BLACK);
   clear();
+  polyfill(1);
 
   /* scene_type determines whether we deal with a distr. or a conf. */
   if (scene_type==1) {
@@ -269,7 +278,8 @@ void draw_scene(int scene_type) {
 	cv=(int)floor(scalepot*(potarray[i]-offspot));
       color(cv+10);
       rect(xx,yy,xx+scalex,yy+scaley);
-    }
+    } /* for */
+
     /* drawing of text */
     if (text) {
       color(CYAN);
@@ -281,55 +291,26 @@ void draw_scene(int scene_type) {
       else
 	sprintf(str,"Potential energy is encoded");
       drawstr(str);
-    }
-  }
+    } /* text */
+  } /* distribution (scene_type==1) */
+
+
 
   if (scene_type==0) {
-    if (bond_mode==0) {
-      for (i=0;i<natoms;i++) {
-	if (col_mode==0) {
-	  if (sorte[i]==0) color(RED);
-	  if (sorte[i]==1) color(GREEN);
-	  if (sorte[i]==2) color(MAGENTA);
-	  if (sorte[i]==3) color(WHITE);
-	  if (sorte[i]==4) color(BLUE);
-	  if (sorte[i]==5) color(YELLOW);
-	  if (sorte[i]==6) color(CYAN);
-	}
-	else {
-	  if (eng_mode)
-	    cv=(int)(scalekin*(kin[i]-offskin));
-	  else
-	    cv=(int)(scalepot*(pot[i]-offspot));
-	  color(cv+10);
-	}
-	/*printf("%f %f %d\n", scalepot,scalekin, cv);*/
-	xx=(x[i]-minx)*scalex-1;
-	yy=(y[i]-miny)*scaley-1;
-	if (radectyp)
-	  circle(xx,yy,.5*(sorte[i]+1)*radius*scalex);
-	else
-	  circle(xx,yy,radius*scalex);
-      }
+    if (bond_mode==1) {
       if (text) {
 	color(CYAN);
 	move(0.0,0.7);
-	sprintf(str,"Configuration with %d atoms\n",natoms);
-	drawstr(str);
-	if (col_mode)
-	  if (eng_mode)
-	    sprintf(str,"Kinetic energy is encoded");
-	  else
-	    sprintf(str,"Potential energy is encoded");
-	else
-	  sprintf(str,"Atom type is encoded");
+	sprintf(str,"Drawing bonds");
 	drawstr(str);
       }
-    }
-    else {
       for (i=0;i<natoms;i++) {
 	xx=(x[i]-minx)*scalex-1;
 	yy=(y[i]-miny)*scaley-1;
+#ifndef TWOD
+	zz=z[i]*scalez-1;
+#endif
+
 	bcode[i]=0;
       }
       color(MAGENTA);
@@ -340,40 +321,67 @@ void draw_scene(int scene_type) {
 	  xxj=(x[j]-minx)*scalex-1;
 	  yyj=(y[j]-miny)*scaley-1;
 	  if (i==j) continue;
-	  dx=x[i]-x[j];
-	  if (ABS(dx)>1.4) continue;
-	  dy=y[i]-y[j];
-	  if (ABS(dy)>1.4) continue;
-	  for (k=0;k<nunits;k++) {
-	    if (ABS(dx-ux[k])<epsilon)
-	      if (ABS(dy-uy[k])<epsilon) {
-		move2(xx,yy);
-		draw2(xxj,yyj);
-		bcode[i]+=pow(2,k);
-	      }
+	  if (stat_bond == 1) {
+	    dx=x[i]-x[j];
+	    if (ABS(dx)>1.4) continue;
+	    dy=y[i]-y[j];
+	    if (ABS(dy)>1.4) continue;
+	    for (k=0;k<nunits;k++) {
+	      if (ABS(dx-ux[k])<epsilon)
+		if (ABS(dy-uy[k])<epsilon) {
+		  move2(xx,yy);
+		  draw2(xxj,yyj);
+		  bcode[i]+=pow(2,k);
+		}
+	    }
+	  }
+	  else { /* stat_bond==0 */
+	    if (qp) {
+	      if (sorte[i]==sorte[j]) continue;
+	      dx=x[i]-x[j];
+	      dy=y[i]-y[j];
+	      dr=dx*dx+dy*dy;
+	      if (ABS(dr)>1.1) continue;
+	      if (ABS(dr)<0.9) continue;
+	      move2(xx,yy);
+	      draw2(xxj,yyj);
+	      bcode[i]++;
+	    }
+	    else {
+	      dx=x[i]-x[j];
+	      dy=y[i]-y[j];
+	      dr=dx*dx+dy*dy;
+	      if (ABS(dr)>1.1) continue;
+	      if (ABS(dr)<0.9) continue;
+	      move2(xx,yy);
+	      draw2(xxj,yyj);
+	      bcode[i]++;
+	    }
 	  }
 	}
-      }
-      
-      if (atom_mode) {
-	for (i=0;i<natoms;i++) {
-	  xx=(x[i]-minx)*scalex-1;
-	  yy=(y[i]-miny)*scaley-1;
-	  nb=0;
-	  for(k=0;k<nunits;k++)
-	    if (bcode[i]&(int)pow(2,k)) {
-	      nb++;
-	    }
-	  if (col_mode==0) {
-	    if (sorte[i]==0) color(RED);
-	    if (sorte[i]==1) color(GREEN);
-	    if (sorte[i]==2) color(MAGENTA);
-	    if (sorte[i]==3) color(WHITE);
-	    if (sorte[i]==4) color(BLUE);
-	    if (sorte[i]==5) color(YELLOW);
-	    if (sorte[i]==6) color(CYAN);
+      } /* for i... */
+    }
+     
+    if (atom_mode==1) {
+      for (i=0;i<natoms;i++) {
+	xx=(x[i]-minx)*scalex-1;
+	yy=(y[i]-miny)*scaley-1;
+	nb=0;
+	for(k=0;k<nunits;k++)
+	  if (bcode[i]&(int)pow(2,k)) {
+	    nb++;
 	  }
-	  else {
+	if (col_mode==0) {
+	  if (sorte[i]==0) color(RED);
+	  if (sorte[i]==1) color(GREEN);
+	  if (sorte[i]==2) color(MAGENTA);
+	  if (sorte[i]==3) color(WHITE);
+	  if (sorte[i]==4) color(BLUE);
+	  if (sorte[i]==5) color(YELLOW);
+	  if (sorte[i]==6) color(CYAN);
+	}
+	else {
+	  if (bond_mode==1) {
 	    color(WHITE);
 	    if (nb==0) color(RED);
 	    if (nb==1) color(BLUE);
@@ -383,10 +391,44 @@ void draw_scene(int scene_type) {
 	    if (nb==5) color(WHITE);
 	    if (nb==6) color(CYAN);
 	  }
-	  if (radectyp)
-	    circle(xx,yy,.5*(sorte[i]+1)*radius*scalex);
-	  else
-	    circle(xx,yy,radius*scalex);
+	  else { /* bond_mode == 0 */
+	    if (eng_mode)
+	      cv=(int)(scalekin*(kin[i]+offskin));
+	    else
+	      cv=(int)(scalepot*(pot[i]+offspot));
+	    mapcolor(i+8,cv,cv,cv);
+	    color(i+8);
+	  }
+        }
+	
+	if (radectyp)
+	  circle(xx,yy,.5*(sorte[i]+1)*radius*scalex);
+	else {
+#ifndef TWOD
+	  /*
+	    move(xx,yy,zz);
+	    draw(xx,yy,zz+.1);
+	    draw(xx+.01,yy,zz+.1);
+	    draw(xx+.005,yy+.00866,zz+.1);
+	    draw(xx,yy,zz+.1);
+	    draw(xx+.005,yy+.00297,zz+.10866);
+	    draw(xx+.01,yy,zz+.1);
+	    draw(xx+.005,yy+.00866,zz+.1);
+	    draw(xx+.005,yy+.00297,zz+.10866);
+	  */
+	  move(xx,yy,zz);
+	  rdraw(0,0,.1);
+	  rdraw(.01,0,.1);
+	  rdraw(.005,.00866,.1);
+	  rdraw(0,0,.1);
+	  rdraw(.005,.00297,.10866);
+	  rdraw(.01,0,.1);
+	  rdraw(.005,.00866,.1);
+	  rdraw(.005,.00297,.10866);
+
+#else
+	  circle(xx,yy,radius*scalex);
+#endif
 	}
 	if (text) {
 	  color(CYAN);
@@ -394,14 +436,17 @@ void draw_scene(int scene_type) {
 	  sprintf(str,"Configuration with %d atoms\n",natoms);
 	  drawstr(str);
 	  if (col_mode)
-	    sprintf(str,"Potential energy is encoded");
+	    if (eng_mode)
+	      sprintf(str,"Kinetic energy is encoded");
+	    else
+	      sprintf(str,"Potential energy is encoded");
 	  else
 	    sprintf(str,"Atom type is encoded");
 	  drawstr(str);
 	}
-      } 
-    }
-  }
+      } /* atoms? (char "a") */
+    } /* bonds */
+  } /* atoms (scene_type==0) */
   swapbuffers();
 }
 

@@ -6,6 +6,7 @@
 #include <netinet/in.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <math.h>
 #include "sockutil.h"
 #include "tokens.h"
 #include "client.h"
@@ -14,26 +15,62 @@
 #include "makros.h"
 
 
+void iendian(int *number);
+void sendian(short int *number);
+void dendian(double *number);
+
 char server_name[256]="visrn";
 /* array pointers for received data */
-static int socket_id;
-extern int x_res,y_res;
-extern int natoms;
-extern float scalex,scaley,scalepot,scalekin,offspot,offskin;
+static int socket_id=0;
 
 /*-----------------------------------------------------------------*/
 int receive_conf()
 {
-  int i,size;
+  int i,j,k,size,itmp;
+  short int stmp;
+  char ctmp;
   double tmp;
-  int itmp;
   int anz;
   extern double *x, *y, *z, *vx, *vy, *vz;
   extern double *pot, *kin, *masse;
   extern int *nummer, *bcode;
   extern short int *sorte;
+  float f;
+  int size_of_double, size_of_int, size_of_short_int;
+  char *swap_buf;
+
+  size_of_int = sizeof(int);
+  size_of_short_int = sizeof(short int);
+  size_of_double = sizeof(double);
+
+  maxx=-1000;
+  maxy=-1000;
+#ifndef TWOD
+  maxz=-1000;
+#endif
+  minx=1000;
+  miny=1000;
+#ifndef TWOD
+  minz=1000;
+#endif
+  maxp=-1000;
+  maxk=-1000;
+  minp=1000;
+  mink=1000;
+
+  swap_buf = (char *)malloc(8);
+
+  ReadFull(socket_id, (void *)&f, sizeof(float));
+  if (f == 1)
+    endian_byte_swap = 0;
+  else
+    endian_byte_swap = 1;
 
   ReadFull(socket_id, (void *)&anz, sizeof(int));
+
+  if (endian_byte_swap) {
+    iendian(&anz);
+  }
 
   nummer = (int *)calloc(anz, sizeof(int));
   sorte  = (short int *)calloc(anz, sizeof(int));
@@ -70,12 +107,34 @@ int receive_conf()
 #endif
   ReadFull(socket_id,(void *) &pot[0], size);
 
+
+
   for (i=0;i<anz;i++) {
+    if (endian_byte_swap) {
+      iendian(&nummer[i]);
+      sendian(&sorte[i]);
+      dendian(&masse[i]);
+      dendian(&x[i]);
+      dendian(&y[i]);
+#ifndef TWOD
+      dendian(&z[i]);
+#endif
+      dendian(&vx[i]);
+      dendian(&vy[i]);
+#ifndef TWOD
+      dendian(&vz[i]);
+#endif
+      dendian(&pot[i]);
+    }
     kin[i] = vx[i]*vx[i]+vy[i]*vy[i];
     if (maxx<x[i]) maxx=x[i];
     if (minx>x[i]) minx=x[i];
     if (maxy<y[i]) maxy=y[i];
     if (miny>y[i]) miny=y[i];
+#ifndef TWOD
+    if (maxz<z[i]) maxz=z[i];
+    if (minz>z[i]) minz=z[i];
+#endif
     if (maxp<pot[i]) maxp=pot[i];
     if (minp>pot[i]) minp=pot[i];
     if (maxk<kin[i]) maxk=kin[i];
@@ -84,6 +143,9 @@ int receive_conf()
 
   scalex=2.0/(maxx-minx);
   scaley=2.0/(maxy-miny);
+#ifndef TWOD
+  scalez=2.0/(maxz-minz);
+#endif
   if (maxp==minp)
     scalepot=1.0;
   else
@@ -171,49 +233,6 @@ int receive_dist()
   return x_res*y_res;
 }
 /*-----------------------------------------------------------------*/
-
-/*-----------------------------------------------------------------*/
-
-void connect_server(char token)
-/************************************************************************/
-/* Connection to compute server and data handling	         	*/
-/************************************************************************/
-{
-  /* check if server is the paragon, where little endian is used 
-  if ( !strcmp(server_name,"paragon") || !strcmp(server_name,"paragon-fd") 
-        || !strcmp(server_name,"paragon-fd") ){
-    little_endian = 1;
-  }
-  else{
-    printf("server is not the paragon --> little endian = 0\n");
-    little_endian = 0;
-  }
-  */
-  /* establish client-server connection */
-  token = 10;
-  if (initClient(&(socket_id),0,server_name)==-1){
-    printf("Client-Server connection not established",
-                 "check server name","");
-  }
-  else{  
-    printf("using filedescriptor #%d as socket\n",socket_id);
-    WriteFull(socket_id,(void *) &token, 1);
-    switch (token) {
-      case T_DISTRIBUTION:
-        break;
-      case T_PICTURE:
-        break;
-      case T_QUIT:
-        break;
-      default:
-        fprintf(stderr,"Unimplemented token case!\n");
-        break;
-    }
-  close(socket_id);
-  }
-}
-
-/*-----------------------------------------------------------------*/
 int initServer(){
 /******************************************************************/
 /* initializes server part for a socket-socket connection         */
@@ -237,7 +256,7 @@ int connect_client(char token)
   /* establish client-server connection */
   if (initServer()==-1) {
     printf("Client-Server connection not established",
-                 "check port adress","");
+	   "check port adress","");
   }
   else {  
     printf("using filedescriptor #%d as socket\n",socket_id);
@@ -264,21 +283,48 @@ int connect_client(char token)
   return size+natoms;
 }
 
+void iendian(int *anz) {
+  int i,s;
+  char *p,h;
 
-int initClient(int *soc, int i, char *server_name){
-/******************************************************************/
-/* makes the socket-socket connection to server server_name       */
-/******************************************************************/
-  unsigned long var1;
-  printf("Open client socket ...\n");
-  var1 = GetIP(server_name);
-  printf("GetIP: %u\n",var1);
-  (*soc)=OpenClientSocket(GetIP(server_name),base_port+i);
-  if (*soc < 1){
-    return -1;
+  s=sizeof(int);
+  p = (char *)calloc(s,sizeof(char));
+  p = (char *)&anz[0];
+
+  for (i=0;i<s/2;i++) {
+    h = p[s-1-i];
+    p[s-1-i] = p[i];
+    p[i] = h; 
   }
-  else{
-    return 0;
+}
+
+void sendian(short int *anz) {
+  int i,s;
+  char *p,h;
+
+  s=sizeof(short int);
+  p = (char *)calloc(s,sizeof(char));
+  p = (char *)&anz[0];
+
+  for (i=0;i<s/2;i++) {
+    h = p[s-1-i];
+    p[s-1-i] = p[i];
+    p[i] = h; 
+  }
+}
+
+void dendian(double *anz) {
+  int i,s;
+  char *p,h;
+
+  s=sizeof(double);
+  p = (char *)calloc(s,sizeof(char));
+  p = (char *)&anz[0];
+
+  for (i=0;i<s/2;i++) {
+    h = p[s-1-i];
+    p[s-1-i] = p[i];
+    p[i] = h; 
   }
 }
 
