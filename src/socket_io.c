@@ -22,11 +22,13 @@ void init_client() {
   fprintf(stderr, "baseport is %d\n", baseport);
   baseport = htons(baseport); /* we need it in network byte order */
   varIP = GetIP(display_host);
-  if (varIP==0) {
-    error("gethostbyname() failed, check display_host or specify IP number\n");
-  } 
-  else {
-    printf("display_host is %s\n", display_host);
+  if (0==myid) {
+    if (varIP==0) {
+      error("gethostbyname() failed, check display_host or specify IP number\n");
+    } 
+    else {
+      printf("display_host is %s\n", display_host);
+    }
   }
 }
 
@@ -43,7 +45,9 @@ int connect_server() {
   int flag = 0;
   
   /* try to connect */
+  printf("welt");fflush(stdout);
   soc=OpenClientSocket(varIP,baseport);
+  printf("tlew");fflush(stdout);
   if (soc > 0) {
     ReadFull(soc,&byte,1);
     flag = byte; /* convert to int */
@@ -321,8 +325,12 @@ void write_conf_using_sockets() {
    int *nummer;
    short int *sorte;
    real *masse, *x, *y, *vx, *vy, *pot;
+   float f;
 #ifndef TWOD
    real *z, *vz;
+#endif
+#ifdef MPI
+   int m,tag;
 #endif
 
    /* allocs */
@@ -341,7 +349,6 @@ void write_conf_using_sockets() {
 #endif
    pot    = (double *)    calloc(natoms, sizeof(double));
 
-   
 
    if (use_socket_window){ /* write all atoms in the box */    
      socketwin_ll.x = pic_ll.x;
@@ -349,7 +356,8 @@ void write_conf_using_sockets() {
      socketwin_ur.x = pic_ur.x;
      socketwin_ur.y = pic_ur.y;
      
-   }else{              /* write only atoms in the window */    
+   }
+   else {              /* write only atoms in the window */    
      socketwin_ll.x = box_y.x;
      socketwin_ll.y = box_x.y;
      socketwin_ur.x = box_x.x;
@@ -357,6 +365,109 @@ void write_conf_using_sockets() {
    }
 
    /*  loop over all atoms */
+
+#ifdef MPI
+   if (0 == myid) { /* own data */
+     k=0;
+     for ( r = cellmin.x; r < cellmax.x; ++r ) 
+       for ( s = cellmin.y; s < cellmax.y; ++s ) { 
+#ifdef TWOD
+	 p = PTR_2D_V(cell_array, r, s, cell_dim); 
+#else
+	 for ( t = cellmin.z; t < cellmax.z; ++t ) { 
+	   p = PTR_3D_V(cell_array, r, s, t, cell_dim); 
+#endif
+	   for (i = 0;i < p->n; ++i) {
+	       if( (p->ort X(i) >= socketwin_ll.x) && \
+		   (p->ort X(i) <= socketwin_ur.x) && \
+		   (p->ort Y(i) >= socketwin_ll.y) && \
+		   (p->ort Y(i) <= socketwin_ur.y) ){
+		 nummer[k] = p->nummer[i];
+		 sorte[k]  = p->sorte[i];
+		 masse[k]  = p->masse[i];
+		 x[k]      = p->ort X(i);
+		 y[k]      = p->ort Y(i);
+#ifndef TWOD
+		 z[k]      = p->ort Z(i);
+#endif
+		 vx[k]     = p->impuls X(i);
+		 vy[k]     = p->impuls Y(i);
+#ifndef TWOD
+		 vz[k]     = p->impuls Z(i);
+#endif
+		 pot[k]    = p->pot_eng[i];
+		 k++;
+	       }
+	   }
+	   
+	 }
+#ifndef TWOD
+       }
+#endif
+
+     /* Receive data from other cpus and write that */
+#ifndef TWOD
+     p   = PTR_3D_V(cell_array, 0, 0, 0, cell_dim);
+#else
+     p   = PTR_2D_V(cell_array, 0, 0, cell_dim);
+#endif
+     for ( m = 1; m < num_cpus; ++m)
+       for ( r = cellmin.x; r < cellmax.x; ++r ) 
+	 for ( s = cellmin.y; s < cellmax.y; ++s ) { 
+#ifdef TWOD
+	   tag = PTR_2D_V(CELL_TAG, r, s, cell_dim);
+#else
+	   for ( t = cellmin.z; t < cellmax.z; ++t ) { 
+	     tag = PTR_3D_V(CELL_TAG, r, s, t, cell_dim);
+#endif
+	     recv_cell( p, m, ORT_TAG );
+	     for (i = 0;i < p->n; ++i) {
+	       if( (p->ort X(i) >= socketwin_ll.x) && \
+		   (p->ort X(i) <= socketwin_ur.x) && \
+		   (p->ort Y(i) >= socketwin_ll.y) && \
+		   (p->ort Y(i) <= socketwin_ur.y) ){
+		 nummer[k] = p->nummer[i];
+		 sorte[k]  = p->sorte[i];
+		 masse[k]  = p->masse[i];
+		 x[k]      = p->ort X(i);
+		 y[k]      = p->ort Y(i);
+#ifndef TWOD
+		 z[k]      = p->ort Z(i);
+#endif
+		 vx[k]     = p->impuls X(i);
+		 vy[k]     = p->impuls Y(i);
+#ifndef TWOD
+		 vz[k]     = p->impuls Z(i);
+#endif
+		 pot[k]    = p->pot_eng[i];
+		 k++;
+	       }
+	     }
+#ifndef TWOD
+	   }
+#endif
+	 }
+   }
+   else { /* myid != 0 */
+   /* Send data to cpu 0 */
+     for ( r = cellmin.x; r < cellmax.x; ++r ) 
+       for ( s = cellmin.y; s < cellmax.y; ++s ) { 
+#ifdef TWOD
+	 p = PTR_2D_V(cell_array, r, s, cell_dim); 
+	 tag = PTR_2D_V(CELL_TAG, r, s, cell_dim);
+#else
+	 for ( t = cellmin.z; t < cellmax.z; ++t ) { 
+	   p = PTR_3D_V(cell_array, r, s, t, cell_dim); 
+	   tag = PTR_3D_V(CELL_TAG, r, s, t, cell_dim);
+	   send_cell(p,0,ORT_TAG);
+	 }
+#endif
+
+       }
+   }
+
+#else /* #ifdef MPI */
+
    k=0;
    for ( r = cellmin.x; r < cellmax.x; ++r ) 
      for ( s = cellmin.y; s < cellmax.y; ++s ) { 
@@ -367,29 +478,21 @@ void write_conf_using_sockets() {
 	 p = PTR_3D_V(cell_array, r, s, t, cell_dim); 
 #endif
 	   for (i = 0;i < p->n; ++i) {
-
-	     if( (p->ort X(i) >= socketwin_ll.x) && \
-		 (p->ort X(i) <= socketwin_ur.x) && \
-		 (p->ort Y(i) >= socketwin_ll.y) && \
-		 (p->ort Y(i) <= socketwin_ur.y) ){
-	       nummer[k] = p->nummer[i];
-	       sorte[k]  = p->sorte[i];
-	       masse[k]  = p->masse[i];
-	       x[k]      = p->ort X(i);
-	       y[k]      = p->ort Y(i);
+	     nummer[k] = p->nummer[i];
+	     sorte[k]  = p->sorte[i];
+	     masse[k]  = p->masse[i];
+	     x[k]      = p->ort X(i);
+	     y[k]      = p->ort Y(i);
 #ifndef TWOD
-	       z[k]      = p->ort Z(i);
+	     z[k]      = p->ort Z(i);
 #endif
-	       vx[k]     = p->impuls X(i);
-	       vy[k]     = p->impuls Y(i);
+	     vx[k]     = p->impuls X(i);
+	     vy[k]     = p->impuls Y(i);
 #ifndef TWOD
-	       vz[k]     = p->impuls Z(i);
+	     vz[k]     = p->impuls Z(i);
 #endif
-	       pot[k]    = p->pot_eng[i];
-
-	       k++;
-	     }
-
+	     pot[k]    = p->pot_eng[i];
+	     k++;
 	   }
 	   
        }
@@ -397,63 +500,27 @@ void write_conf_using_sockets() {
      }
 #endif
 
-   socket_atoms= k;
-   printf("socket_atoms= %d\n",socket_atoms);
-   printf("k= %d\n",k);
-   printf("natoms= %d\n",natoms);
-   
-   WriteFull(soc,&socket_atoms,sizeof(int)); 
-   WriteFull(soc,(void *) nummer, socket_atoms*sizeof(int)); 
-   WriteFull(soc,(void *) sorte, socket_atoms*sizeof(short int)); 
-   WriteFull(soc,(void *) masse, socket_atoms*sizeof(double)); 
-   WriteFull(soc,(void *) x, socket_atoms*sizeof(double)); 
-   WriteFull(soc,(void *) y, socket_atoms*sizeof(double)); 
+#endif
+
+   if (0==myid) {
+     f=(float)1.0;
+     WriteFull(soc,&f, sizeof(float));
+     WriteFull(soc,&natoms,sizeof(int)); 
+     WriteFull(soc,(void *) nummer, natoms*sizeof(int)); 
+     WriteFull(soc,(void *) sorte, natoms*sizeof(short int)); 
+     WriteFull(soc,(void *) masse, natoms*sizeof(double)); 
+     WriteFull(soc,(void *) x, natoms*sizeof(double)); 
+     WriteFull(soc,(void *) y, natoms*sizeof(double)); 
 #ifndef TWOD
-   WriteFull(soc,(void *) z, socket_atoms*sizeof(double)); 
+     WriteFull(soc,(void *) z, natoms*sizeof(double)); 
 #endif
-   WriteFull(soc,(void *) vx, socket_atoms*sizeof(double)); 
-   WriteFull(soc,(void *) vy, socket_atoms*sizeof(double)); 
+     WriteFull(soc,(void *) vx, natoms*sizeof(double)); 
+     WriteFull(soc,(void *) vy, natoms*sizeof(double)); 
 #ifndef TWOD
-   WriteFull(soc,(void *) vz, socket_atoms*sizeof(double)); 
+     WriteFull(soc,(void *) vz, natoms*sizeof(double)); 
 #endif
-   WriteFull(soc,(void *) pot, socket_atoms*sizeof(double));
-
-   /*   WriteFull(soc,&box_x.x,sizeof(real)); 
-   WriteFull(soc,&box_y.y,sizeof(real)); */
-   /*  loop over all atoms */
-   /*   for ( r = cellmin.x; r < cellmax.x; ++r ) 
-     for ( s = cellmin.y; s < cellmax.y; ++s ) 
-#ifdef TWOD
-       {
-       p = PTR_2D_V(cell_array, r, s, cell_dim); 
-#else
-       for ( t = cellmin.z; t < cellmax.z; ++t ) { 
-	   p = PTR_3D_V(cell_array, r, s, t, cell_dim); 
-#endif
-	   for (i = 0;i < p->n; ++i) { 
-	     k++;
-	     printf("guten tag %d\n", p->sorte[i]);fflush(stdout);
-	     WriteFull(soc,&p->sorte[i],sizeof(int)); 
-	     WriteFull(soc,&p->nummer[i],sizeof(int));
-	     WriteFull(soc,&p->masse[i],sizeof(double)); 
-	     WriteFull(soc,&p->ort X(i),sizeof(double)); 
-	     WriteFull(soc,&p->ort Y(i),sizeof(double)); 
-#ifndef TWOD 
-	     WriteFull(soc,&p->ort Z(i),sizeof(double)); 
-#endif 
-	     WriteFull(soc,&p->impuls X(i),sizeof(double)); 
-	     WriteFull(soc,&p->impuls Y(i),sizeof(double)); 
-#ifndef TWOD
-	     WriteFull(soc,&p->impuls Z(i),sizeof(double));
-#endif
-	     WriteFull(soc,&p->pot_eng[i],sizeof(double));
-	  }
-
-	}
-       printf("totale: %d\n", k);
-   */
-
-
+     WriteFull(soc,(void *) pot, natoms*sizeof(double));
+   }
 }
 
 
@@ -489,6 +556,7 @@ void write_distrib_using_sockets()
 #else
   size = dist_dim.x * dist_dim.y * dist_dim.z;
 #endif
+
   /* allocate histogram arrays */
   if (NULL==pot_hist_local) {
     pot_hist_local = (float *) malloc(size*sizeof(float));

@@ -77,15 +77,21 @@ void shear_sample(void)
   ivektor max_cell_dim;
 
   /* Apply shear */
-#pragma omp parallel for
-  for (k=0; k<ncells; ++k) {
-    int i;
-    cell *p;
-    p = cell_array + CELLS(k);
-    for (i=0; i<p->n; ++i) {
-      p->ort Y(i) += shear_factor * p->ort X(i);
-    }
-  }
+  for ( r = cellmin.x; r < cellmax.x; ++r )
+    for ( s = cellmin.y; s < cellmax.y; ++s )
+#ifndef TWOD
+      for ( t = cellmin.z; t < cellmax.z; ++t )
+#endif
+      {
+#ifdef TWOD
+        p = PTR_2D_V(cell_array, r, s, cell_dim);
+#else
+        p = PTR_3D_V(cell_array, r, s, t, cell_dim);
+#endif
+        for (i = 0; i < p->n; ++i) {
+          p->ort Y(i) += shear_factor * p->ort X(i);
+	}
+      }
 
   /* new box size */
   box_x.y += shear_factor * box_x.x;
@@ -93,6 +99,7 @@ void shear_sample(void)
 
   /* revise cell decomposition if necessary */
   max_cell_dim = maximal_cell_dim();
+  fflush(stdout);
   if ((max_cell_dim.x<global_cell_dim.x) || (max_cell_dim.y<global_cell_dim.y)
 #ifndef TWOD
       || (max_cell_dim.z<global_cell_dim.z)

@@ -45,7 +45,9 @@ int WriteFull(int fd, const void *buffer, int bytes)
   
   while (nbytes>0) {
     written = write(fd,(void *) bptr,nbytes);
+#ifdef DEBUG
     printf("Sent %d Bytes package\n",written);
+#endif
     if (written < 0) return written; /* ERROR */
     nbytes-=written;
     bptr+=written;
@@ -67,7 +69,9 @@ int ReadFull(int filedes, const void *buffer, int bytes)
   
   while (nbytes>0) {
     nread = read(filedes,(void *) bptr,nbytes);
+#ifdef DEBUG
     printf("Received %d Byte package\n",nread);
+#endif
     if (nread < 0) return nread; /* ERROR */
     nbytes-=nread;
     bptr+=nread;
@@ -90,20 +94,26 @@ int OpenServerSocket(u_short MyPort)
     perror("Socket creation failed:");
     return -1;
   }
+#ifdef DEBUG
   printf("server socket #%d\n",soc);
-  
+#endif
+
   bzero((char *) &ServAddr, sizeof(ServAddr));
   ServAddr.sin_family        = PF_INET;
   ServAddr.sin_addr.s_addr   = INADDR_ANY;
   ServAddr.sin_port          = MyPort;
-  
+
+#ifdef DEBUG
   printf("calling bind \n");
+#endif
   if ( bind(soc,(struct sockaddr *)&ServAddr,sizeof(ServAddr)) ) {
     perror("Bind failed");
     return -1;
   }
-  
+
+#ifdef DEBUG
   printf("calling listening \n");
+#endif
   if ( listen(soc,5) ) {
     perror("Listen failed");
     return -1;
@@ -113,13 +123,18 @@ int OpenServerSocket(u_short MyPort)
   CliAddr.sin_family        = PF_INET;
   CliAddrLen=sizeof(CliAddr);
   
+#ifdef DEBUG
   printf("calling accept \n");
+#endif
+
   soc1=accept(soc,(struct sockaddr *)  &CliAddr,&CliAddrLen);
   if (soc1 == -1) {
     perror("Accept failed");
     return -1;
   }
+#ifdef DEBUG
   printf("returning\n");
+#endif
   close(soc);
   return soc1;
 }
@@ -139,7 +154,9 @@ int OpenNBServerSocket(u_short MyPort)
     perror("Socket creation failed:");
     return -1;
   }
+#ifdef DEBUG
   printf("server socket #%d\n",soc);
+#endif
   
   bzero((char *) &ServAddr, sizeof(ServAddr));
   ServAddr.sin_family        = AF_INET;
@@ -150,13 +167,17 @@ int OpenNBServerSocket(u_short MyPort)
     perror("fcntl F_SETOWN");
     exit(1);
   }
+#ifdef DEBUG
   printf("calling bind \n");
+#endif
   if ( bind(soc,(struct sockaddr *)&ServAddr,sizeof(ServAddr)) ) {
     perror("Bind failed");
     return -1;
   }
-  
+
+#ifdef DEBUG 
   printf("calling listening \n");
+#endif
   if ( listen(soc,5) ) {
     perror("Listen failed");
     return -1;
@@ -176,8 +197,10 @@ int OpenNBServerSocket(u_short MyPort)
     exit(1);
   }
 #endif
-  
+
+#ifdef DEBUG  
   printf("returning \n");
+#endif
   return soc;
 }
 
@@ -193,7 +216,6 @@ int OpenClientSocket(u_long toIP, u_short toPort)
   struct sockaddr_in ServAddr;
 
   soc = socket(PF_INET,SOCK_STREAM,0);
- /* printf("client socket #%d\n",soc); */
   if (soc == -1) {
     perror("Socket creation failed:");
     return -1;
@@ -205,15 +227,14 @@ int OpenClientSocket(u_long toIP, u_short toPort)
   ServAddr.sin_addr.s_addr   = toIP;
   
   if ((con_return = connect(soc,(struct sockaddr *)&ServAddr,sizeof(ServAddr))) < 0) {
-    /*perror("Connect failed");
-    printf("Error bei connect()\n");
-    printf("error return is %d\n",errno);*/
     shutdown(soc,2);
 	close(soc);
 	return -1;
   }
- printf("return socket #%d\n",soc);
- return soc;
+#ifdef DEBUG
+  printf("return socket #%d\n",soc);
+#endif
+  return soc;
 }
 
 /* #####################################

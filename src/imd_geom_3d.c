@@ -323,7 +323,7 @@ void init_cells( void )
   cellmax_old  = cellmax;
 
 #ifdef MPI
-  /* this thest should be obsolete now */
+  /* this test should be obsolete now */
   if (0==myid) {
      if ( 0 !=  global_cell_dim.x % cpu_dim.x ) 
         error("cpu_dim.x no divisor of global_cell_dim.x");

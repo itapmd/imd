@@ -834,7 +834,6 @@ void update_ort_ref(void)
   int i,j,k,m,tag;
   real dx, dy, boxx, boxy;
 
-  printf("hallo");fflush(stdout);
 #ifdef MPI
 
   if (0==myid) {
