@@ -249,16 +249,16 @@ void getparamfile(char *paramfname, int sim)
 #ifdef TWOD
   vektor3d tempforce;
   vektor nullv={0.0,0.0};
-  ivektor3d tempivek;
-  ivektor einsv={1,1};
+  vektor3d tempvek;
+  vektor einsv={1.0,1.0};
 #else 
   vektor4d tempforce;
   vektor nullv={0.0,0.0,0.0};
-  ivektor4d tempivek;
-  ivektor einsv={1,1,1};
+  vektor4d tempvek;
+  vektor einsv={1.0,1.0,1.0};
 #endif
   vektor force;
-  ivektor ivek;
+  vektor vek;
   int k;
 #endif
 
@@ -439,7 +439,7 @@ void getparamfile(char *paramfname, int sim)
       for(k=0; k<vtypes; k++)
        *(fbc_endforces+k) = nullv;
 #endif
-      restrictions = (ivektor *) malloc(vtypes*DIM*sizeof(int));
+      restrictions = (vektor *) malloc(vtypes*DIM*sizeof(real));
       if (NULL==restrictions)
 	error("Can't allocate memory for restriction vectors\n");
       for(k=0; k<vtypes; k++)
@@ -495,15 +495,15 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"restrictionvector")==0) {
       /* restrictions for virtual types */
       /* format: type  1 1 (1) (=all directions ok) read in a temp. vektor */
-      getparam("restrictionvector",&tempivek,PARAM_INT,DIM+1,DIM+1);
-      if (tempivek.x>vtypes-1)
+      getparam("restrictionvector",&tempvek,PARAM_REAL,DIM+1,DIM+1);
+      if (tempvek.x>vtypes-1)
        error("Restriction defined for non existing virtual atom type\n");
-      ivek.x = tempivek.y;
-      ivek.y = tempivek.z;
+      vek.x = tempvek.y;
+      vek.y = tempvek.z;
 #ifndef TWOD
-      ivek.z = tempivek.z2;
+      vek.z = tempvek.z2;
 #endif
-      *(restrictions+(tempivek.x)) = ivek;
+      *(restrictions+(int)(tempvek.x)) = vek;
     }
 #endif /* FBC */
 

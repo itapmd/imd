@@ -60,7 +60,7 @@ EXTERN real   fbc_ekin_threshold INIT(0.0);/* threshold for ekin */
 #else
 EXTERN vektor *fbc_endforces;   
 #endif
-EXTERN ivektor *restrictions;     /* directions the atom is allowed to move in */
+EXTERN vektor *restrictions;     /* directions the atom is allowed to move in */
 #endif
 
 /* Global bookkeeping */
