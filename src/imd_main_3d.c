@@ -120,6 +120,11 @@ void main_loop(void)
   /* simulation loop */
   for (steps=steps_min; steps <= steps_max; ++steps) {
 
+#ifdef STRESS_TENS
+    do_press_calc = (((eng_interval  >0) && (0==steps%eng_interval)) ||
+                     ((press_interval>0) && (0==steps%eng_interval)));
+#endif
+
 #ifdef EPITAX
     for (i=0; i<ntypes; ++i ) {
       if ( (steps >= epitax_startstep) && (steps <= epitax_maxsteps) ) {  
@@ -347,11 +352,6 @@ void main_loop(void)
     pressure_ext.y += d_pressure.y;
     pressure_ext.z += d_pressure.z;
 #endif
-
-#ifdef STRESS_TENS
-    calc_tot_presstens();
-#endif
-     
 
     /* Periodic I/O */
 #ifdef TIMING

@@ -762,7 +762,7 @@ void move_atoms_sllod(void)
 void move_atoms_sllod(void) 
 {
   if (myid==0)
-  error("the chosen ensemble NVT is not supported by this binary");
+  error("the chosen ensemble SLLOD is not supported by this binary");
 }
 
 #endif

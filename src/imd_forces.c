@@ -150,30 +150,28 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #endif
 
 #ifdef STRESS_TENS
-        /* avoid double counting of the virial */
-        force.x *= 0.5;
-        force.y *= 0.5;
+        if (do_press_calc) {
+          /* avoid double counting of the virial */
+          force.x *= 0.5;
+          force.y *= 0.5;
 #ifndef TWOD
-        force.z *= 0.5;
+          force.z *= 0.5;
 #endif
-        p->presstens[i].xx -= d.x * force.x;
-        q->presstens[j].xx -= d.x * force.x;
-        p->presstens[i].yy -= d.y * force.y;
-        q->presstens[j].yy -= d.y * force.y;
+          p->presstens[i].xx -= d.x * force.x;
+          q->presstens[j].xx -= d.x * force.x;
+          p->presstens[i].yy -= d.y * force.y;
+          q->presstens[j].yy -= d.y * force.y;
+          p->presstens[i].xy -= d.x * force.y;
+          q->presstens[j].xy -= d.x * force.y;
 #ifndef TWOD
-        p->presstens[i].zz -= d.z * force.z;
-        q->presstens[j].zz -= d.z * force.z;
-#ifndef SHOCK
-        p->presstens[i].yz -= d.y * force.z;
-        q->presstens[j].yz -= d.y * force.z;
-        p->presstens[i].zx -= d.z * force.x;
-        q->presstens[j].zx -= d.z * force.x;
+          p->presstens[i].zz -= d.z * force.z;
+          q->presstens[j].zz -= d.z * force.z;
+          p->presstens[i].yz -= d.y * force.z;
+          q->presstens[j].yz -= d.y * force.z;
+          p->presstens[i].zx -= d.z * force.x;
+          q->presstens[j].zx -= d.z * force.x;
 #endif
-#endif
-#ifndef SHOCK
-        p->presstens[i].xy -= d.x * force.y;
-        q->presstens[j].xy -= d.x * force.y;
-#endif
+	}
 #endif
 
 #ifdef NVX

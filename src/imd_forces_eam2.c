@@ -122,12 +122,14 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #endif
 
 #ifdef STRESS_TENS
-        p->presstens[i].xx -= d.x * force.x;
-        p->presstens[i].yy -= d.y * force.y;
-        p->presstens[i].zz -= d.z * force.z;
-        p->presstens[i].yz -= d.y * force.z;
-        p->presstens[i].zx -= d.z * force.x;
-        p->presstens[i].xy -= d.x * force.y;
+        if (do_press_calc) {
+          p->presstens[i].xx -= d.x * force.x;
+          p->presstens[i].yy -= d.y * force.y;
+          p->presstens[i].zz -= d.z * force.z;
+          p->presstens[i].yz -= d.y * force.z;
+          p->presstens[i].zx -= d.z * force.x;
+          p->presstens[i].xy -= d.x * force.y;
+	}
 #endif
       }
 
@@ -168,12 +170,14 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #endif
 
 #ifdef STRESS_TENS
-        q->presstens[j].xx -= d.x * force.x;
-        q->presstens[j].yy -= d.y * force.y;
-        q->presstens[j].zz -= d.z * force.z;
-        q->presstens[j].yz -= d.y * force.z;
-        q->presstens[j].zx -= d.z * force.x;
-        q->presstens[j].xy -= d.x * force.y;
+        if (do_press_calc) {
+          q->presstens[j].xx -= d.x * force.x;
+          q->presstens[j].yy -= d.y * force.y;
+          q->presstens[j].zz -= d.z * force.z;
+          q->presstens[j].yz -= d.y * force.z;
+          q->presstens[j].zx -= d.z * force.x;
+          q->presstens[j].xy -= d.x * force.y;
+	}
 #endif
       }
 
@@ -327,24 +331,26 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #endif
 
 #ifdef STRESS_TENS
-        /* avoid double counting of the virial */
-        force.x *= 0.5;
-        force.y *= 0.5;
-        force.z *= 0.5;
+        if (do_press_calc) {
+          /* avoid double counting of the virial */
+          force.x *= 0.5;
+          force.y *= 0.5;
+          force.z *= 0.5;
+ 
+          p->presstens[i].xx -= d.x * force.x;
+          p->presstens[i].yy -= d.y * force.y;
+          p->presstens[i].zz -= d.z * force.z;
+          p->presstens[i].yz -= d.y * force.z;
+          p->presstens[i].zx -= d.z * force.x;
+          p->presstens[i].xy -= d.x * force.y;
 
-        p->presstens[i].xx -= d.x * force.x;
-        p->presstens[i].yy -= d.y * force.y;
-        p->presstens[i].zz -= d.z * force.z;
-        p->presstens[i].yz -= d.y * force.z;
-        p->presstens[i].zx -= d.z * force.x;
-        p->presstens[i].xy -= d.x * force.y;
-
-        q->presstens[j].xx -= d.x * force.x;
-        q->presstens[j].yy -= d.y * force.y;
-        q->presstens[j].zz -= d.z * force.z;
-        q->presstens[j].yz -= d.y * force.z;
-        q->presstens[j].zx -= d.z * force.x;
-        q->presstens[j].xy -= d.x * force.y;
+          q->presstens[j].xx -= d.x * force.x;
+          q->presstens[j].yy -= d.y * force.y;
+          q->presstens[j].zz -= d.z * force.z;
+          q->presstens[j].yz -= d.y * force.z;
+          q->presstens[j].zx -= d.z * force.x;
+          q->presstens[j].xy -= d.x * force.y;
+	}
 #endif
 
       } /* if in the cutoff range */

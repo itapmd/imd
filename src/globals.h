@@ -448,6 +448,7 @@ EXTERN sym_tensor tot_presstens INIT(nullsymtensor);/* global pressure tens. */
 EXTERN int  press_interval INIT(0);         /* interval for writing the */ 
                                             /* pressure tensor */
 EXTERN ivektor press_dim INIT(nullivektor); /* pressure histogram dimension */
+EXTERN int do_press_calc INIT(0);           /* flag whether to do press calc */
 #endif
 
 /* I/O via sockets */
