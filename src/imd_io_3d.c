@@ -58,11 +58,11 @@ void read_atoms(str255 infilename)
   int addnumber = 0;
 
   /* allocate num_sort on all CPUs */
-  if ((num_sort=calloc(ntypes,sizeof(int)))==NULL) {
-      error("cannot allocate memory for num_sort\n");
-  };
+  if ((num_sort=calloc(ntypes,sizeof(int)))==NULL)
+    error("cannot allocate memory for num_sort\n");
 
 #ifdef MPI
+
   /* Try opening a per cpu file first when parallel_output is active */
   if (1==parallel_input) {
     sprintf(buf,"%s.%u",infilename,myid); 
@@ -78,26 +78,29 @@ void read_atoms(str255 infilename)
     MPI_Bcast( num_sort, ntypes, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast( &do_maxwell,   1, MPI_INT, 0, MPI_COMM_WORLD);
     return;
-  };
+  }
 
-  if ((1!=parallel_input) || (NULL==infile))
+  if ((1!=parallel_input) || (NULL==infile)) 
     infile = fopen(infilename,"r");
 #ifdef DISLOC
   if ((calc_Epot_ref == 0) || (NULL==reffile))
     reffile = fopen(reffilename,"r");
 #endif
 
-#else
+#else /* not MPI */
+
   infile = fopen(infilename,"r");
 #ifdef DISLOC
-  if (calc_Epot_ref == 0)
+  if (calc_Epot_ref == 0) 
     reffile = fopen(reffilename,"r");
 #endif
-#endif
-  if (NULL==infile) error("Cannot open atoms file.");
 
+#endif /* MPI */
+
+  if (NULL==infile) error("Cannot open atoms file.");
 #ifdef DISLOC
-  if ((calc_Epot_ref == 0)&&(NULL==reffile)) error("Cannot open reference file.");
+  if ((calc_Epot_ref == 0) && (NULL==reffile)) 
+    error("Cannot open reference file.");
 #endif
 
  /* Set up 1 atom input cell */
@@ -118,81 +121,18 @@ void read_atoms(str255 infilename)
 
     buf[0] = (char) NULL;
     fgets(buf,sizeof(buf),infile);
-    while ('#'==buf[1]) fgets(buf,sizeof(buf),infile); /* eat comments */
+    /* eat comments */
+    while ('#'==buf[1]) fgets(buf,sizeof(buf),infile); 
 
 #ifdef DISLOC
     if (calc_Epot_ref == 0) {
       refbuf[0] = (char) NULL;
       fgets(refbuf,sizeof(refbuf),reffile);
-      while ('#'==refbuf[1]) fgets(refbuf,sizeof(refbuf),reffile); /* eat comments */
+      /* eat comments */
+      while ('#'==refbuf[1]) fgets(refbuf,sizeof(refbuf),reffile);
     }
 #endif
 
-  /* Should use temporary variable */
-#ifdef MONOLJ
-
-#ifdef DOUBLE
-    p = sscanf(buf,"%lf %lf %lf %lf %lf %lf",
-	       &pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);  
-#else
-    p = sscanf(buf,"%f %f %f %f %f %f",
-	      &pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);  
-#endif
-
-#ifndef NOPBC
-    pos = back_into_box(pos);
-#endif
-
-    if (p>0) {
-      switch( p ) {
-      case(3):
-	do_maxwell=1;
-	input->n = 1;
-	input->ort    X(0) = pos.x;
-	input->ort    Y(0) = pos.y;
-	input->ort    Z(0) = pos.z;
-	input->impuls X(0) = 0;
-	input->impuls Y(0) = 0;
-	input->impuls Z(0) = 0;
-	input->kraft  X(0) = 0;
-	input->kraft  Y(0) = 0;
-	input->kraft  Z(0) = 0;
-	break;
-      case(6):
-	input->n = 1;
-	input->ort    X(0) = pos.x;
-	input->ort    Y(0) = pos.y;
-	input->ort    Z(0) = pos.z;
-	input->impuls X(0) = vau.x;
-	input->impuls Y(0) = vau.y;
-	input->impuls Z(0) = vau.z;
-	input->kraft  X(0) = 0;
-	input->kraft  Y(0) = 0;
-	input->kraft  Z(0) = 0;
-	break;
-      default:
-	error("Incomplete line in atoms file.");
-      };
-#else /* not MONOLJ */
-
-#ifdef DISLOC
-#ifdef DOUBLE
-    p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf",
-	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);
-    if (calc_Epot_ref == 0)
-      pref = sscanf(refbuf,"%d %d %lf %lf %lf %lf %lf",
-		    &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refpos.z,&fdummy,&fdummy,&fdummy,&refeng);
-#else
-    p = sscanf(buf,"%d %d %f %f %f %f %f %f %f %f",
-	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z, &refeng);  
-    if (calc_Epot_ref == 0)
-      pref = sscanf(refbuf,"%d %d %f %f %f %f",
-		    &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refpos.z,&fdummy,&fdummy,&fdummy,&refeng);
-#endif
-    if (calc_Epot_ref == 0)
-      if ((ABS(refn)) != (ABS(n))) {printf("%d %d\n", n, refn); error("Numbers in infile and reffile are different.\n");}
-
-#else /* not DISLOC */
 #ifdef DOUBLE
     p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf",
 	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);  
@@ -200,78 +140,72 @@ void read_atoms(str255 infilename)
     p = sscanf(buf,"%d %d %f %f %f %f %f %f %f",
 	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);
 #endif
+
+    if (p>0) {  /* skip empty lines at end of file */
+
+#ifdef DISLOC
+      if (calc_Epot_ref == 0) {
+#ifdef DOUBLE
+        pref = sscanf(refbuf,"%d %d %lf %lf %lf %lf %lf %lf %lf %lf",
+	  	    &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refpos.z,
+                    &fdummy,&fdummy,&fdummy,&refeng);
+#else
+        pref = sscanf(refbuf,"%d %d %f %f %f %f %f %f %f %f",
+		    &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refpos.z,
+                    &fdummy,&fdummy,&fdummy,&refeng);
+#endif
+        if ((ABS(refn)) != (ABS(n))) {
+          printf("%d %d\n", n, refn); 
+          error("Numbers in infile and reffile are different.\n");
+        }
+      }
+      if (pn) construct_pn_disloc(&pos.x,&pos.y,&pos.z);
 #endif /* DISLOC */
-    if (pn) construct_pn_disloc(&pos.x,&pos.y,&pos.z);
 
 #ifndef NOPBC
-    pos = back_into_box(pos);
+      pos = back_into_box(pos);
 #endif
 
-    if (0>=m) error("Mass zero or negative.\n");
-    if (p>0) {
-      switch( p ) {
-      case(6):      /* n, m, s, ort */
-	do_maxwell=1;
-	input->n = 1;
-	input->nummer[0] = n;
-	input->sorte[0] = s;
-	input->masse[0] = m;
-	input->ort    X(0) = pos.x;
-	input->ort    Y(0) = pos.y;
-	input->ort    Z(0) = pos.z;
-	input->impuls X(0) = 0;
-	input->impuls Y(0) = 0;
-	input->impuls Z(0) = 0;
-	input->kraft  X(0) = 0;
-	input->kraft  Y(0) = 0;
-	input->kraft  Z(0) = 0;
-#ifdef DISLOC
-	input->ort_ref X(0) = refpos.x;
-	input->ort_ref Y(0) = refpos.y;
-	input->ort_ref Z(0) = refpos.z;
-	input->Epot_ref[0] = refeng;
-#endif
-	break;
-      case(9):      /* n, m, s, ort, vau */
-	input->n = 1;
-	input->nummer[0] = n;
-	input->sorte[0] = s;
-	input->masse[0] = m;
-	input->ort    X(0) = pos.x;
-	input->ort    Y(0) = pos.y;
-	input->ort    Z(0) = pos.z;
-	input->impuls X(0) = vau.x * m;
-	input->impuls Y(0) = vau.y * m;
-	input->impuls Z(0) = vau.z * m;
-	input->kraft  X(0) = 0;
-	input->kraft  Y(0) = 0;
-	input->kraft  Z(0) = 0;
-#ifdef DISLOC
-	input->ort_ref X(0) = refpos.x;
-	input->ort_ref Y(0) = refpos.y;
-	input->ort_ref Z(0) = refpos.z;
-	input->Epot_ref[0] = refeng;
-#endif
-	break;
+      if (0>=m) error("Mass zero or negative.\n");
+      if ((p!=6) && (p<9)) error("incorrect line in configuration file.");
 
-      default:
-	error("Incomplete line in atoms file.");
-      };
-#endif /* MONOLJ */
+       input->n = 1;
+#ifndef MONOLJ
+      input->nummer[0] = n;
+      input->sorte[0]  = s;
+      input->masse[0]  = m;
+#endif
+      input->ort X(0) = pos.x;
+      input->ort Y(0) = pos.y;
+      input->ort Z(0) = pos.z;
+      if (p==6) {
+        do_maxwell=1;
+        input->impuls X(0) = 0;
+        input->impuls Y(0) = 0;
+        input->impuls Z(0) = 0;
+      } else {
+        input->impuls X(0) = vau.x * m;
+        input->impuls Y(0) = vau.y * m;
+        input->impuls Z(0) = vau.z * m;
+      }
+      input->kraft  X(0) = 0;
+      input->kraft  Y(0) = 0;
+      input->kraft  Z(0) = 0;
+#ifdef DISLOC
+      input->ort_ref X(0) = refpos.x;
+      input->ort_ref Y(0) = refpos.y;
+      input->ort_ref Z(0) = refpos.z;
+      input->Epot_ref[0]  = refeng;
+#endif
 
       cellc = cell_coord(pos.x,pos.y,pos.z);
 
 #ifdef MPI
 
       to_cpu = cpu_coord(cellc);
-      
       if ((myid != to_cpu) && (1!=parallel_input)) {
         natoms++;
-#ifndef MONOLJ
-        num_sort[input->sorte[0]]++;
-#else
-        num_sort[0]++;
-#endif
+        num_sort[SORTE(input,0)]++;
 	MPI_Ssend( input->ort,     DIM, MPI_REAL,to_cpu,ORT_TAG,    cpugrid);
 #ifdef DISLOC
 	MPI_Ssend( input->ort_ref, DIM, MPI_REAL,to_cpu,ORT_REF_TAG,cpugrid);
@@ -285,30 +219,25 @@ void read_atoms(str255 infilename)
 	MPI_Ssend( input->impuls,DIM, MPI_REAL, to_cpu, IMPULS_TAG, cpugrid);
       } else if (to_cpu==myid) {
         natoms++;  
-#ifndef MONOLJ
-        num_sort[input->sorte[0]]++;
-#else
-        num_sort[0]++;
-#endif
+        num_sort[SORTE(input,0)]++;
 	cellc = local_cell_coord(pos.x,pos.y,pos.z);
 	move_atom(cellc, input, 0);
-      };
+      }
+
 #else /* not MPI */
+
       natoms++;  
-#ifndef MONOLJ
-      num_sort[input->sorte[0]]++;
-#else
-      num_sort[0]++;
-#endif
+      num_sort[SORTE(input,0)]++;
       move_atom(cellc, input, 0);
-#endif
-    };
-  };
+
+#endif /* MPI */
+
+    } /* (p>0) */
+  } /* !feof(infile) */
 
   fclose(infile);  
 #ifdef DISLOC
-  if (calc_Epot_ref==0)
-    fclose(reffile);
+  if (calc_Epot_ref==0) fclose(reffile);
 #endif
 
 #ifdef MPI
@@ -464,10 +393,6 @@ void write_properties(int steps)
 #ifndef MC
   fprintf(out," %10.4e", (double)part_kin_energy);
   fprintf(out," %10.4e", (double)pressure);
-  /* The heat conduction is now written to the file tempdist
-     #ifdef TRANSPORT
-     fprintf(out," %10.4e", (double)heat_cond); 
-     #endif */
 #else
   fprintf(out," %10.4e", (double)(mc_accept/(real)mc_count));
   mc_accept = (real)0;
@@ -529,30 +454,19 @@ void write_msqd(int steps)
 
 void write_config(int steps)
 
-#ifdef MONOLJ
-#define WRITE_CELL     for (i = 0;i < p->n; ++i) \
-             fprintf(out,"%12f %12f %12f %12f %12f %12f\n",\
-	     p->ort X(i),\
-	     p->ort Y(i),\
-	     p->ort Z(i),\
-	     p->impuls X(i),\
-	     p->impuls Y(i),\
-	     p->impuls Z(i) )
-#else
 /* Makro to write data of cell p to file out */
 #define WRITE_CELL     for (i = 0;i < p->n; ++i) \
              fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f %12f %12f\n",\
-	     p->nummer[i],\
-	     p->sorte[i],\
-	     p->masse[i],\
+	     NUMMER(p,i),\
+	     SORTE(p,i),\
+	     MASSE(p,i),\
 	     p->ort X(i),\
 	     p->ort Y(i),\
 	     p->ort Z(i),\
-	     p->impuls X(i) / p->masse[i],\
-	     p->impuls Y(i) / p->masse[i],\
-	     p->impuls Z(i) / p->masse[i],\
-             p->pot_eng[i]) 
-#endif
+	     p->impuls X(i) / MASSE(p,i),\
+	     p->impuls Y(i) / MASSE(p,i),\
+	     p->impuls Z(i) / MASSE(p,i),\
+             POTENG(p,i)) 
 
 { 
   FILE *out;
@@ -648,52 +562,43 @@ void write_config(int steps)
   out = fopen(fname,"w");
   if (NULL == out) error("Cannot open output file for config.");
 
-
   for (p = cell_array; 
        p <= PTR_3D_V(cell_array,
-		     cell_dim.x-1,
-		     cell_dim.y-1,
-		     cell_dim.z-1,
-		     cell_dim);
+                     cell_dim.x-1,
+                     cell_dim.y-1,
+                     cell_dim.z-1,
+                     cell_dim);
        ++p ) 
-
-    WRITE_CELL;
+    
+      WRITE_CELL;
 
   fclose(out);  
 
 #endif
 
   /* write iteration file */
-#ifdef MPI
   if (myid == 0) {
-#endif
-  sprintf(fname,"%s.%u.itr",outfilename,fzhlr);
+    sprintf(fname,"%s.%u.itr",outfilename,fzhlr);
+    out = fopen(fname,"w");
+    if (NULL == out) error("Cannot write iteration file.");
 
-  out = fopen(fname,"w");
-  if (NULL == out) error("Cannot write checkpoint file.");
-
-  fprintf(out,"startstep \t%d\n",steps);
-  fprintf(out,"box_x \t%f %f %f\n",box_x.x,box_x.y,box_x.z);
-  fprintf(out,"box_y \t%f %f %f\n",box_y.x,box_y.y,box_y.z);
-  fprintf(out,"box_z \t%f %f %f\n",box_z.x,box_z.y,box_z.z);
-  fprintf(out,"starttemp \t%f\n",temperature);
+    fprintf(out,"startstep \t%d\n",steps);
+    fprintf(out,"box_x \t%f %f %f\n",box_x.x,box_x.y,box_x.z);
+    fprintf(out,"box_y \t%f %f %f\n",box_y.x,box_y.y,box_y.z);
+    fprintf(out,"box_z \t%f %f %f\n",box_z.x,box_z.y,box_z.z);
+    fprintf(out,"starttemp \t%f\n",temperature);
 
 #ifdef NPT
-  if (ensemble==ENS_NPT_ISO) {
-    fprintf(out,"pressure_ext \t%f\n",pressure_ext.x);
-  };
-  if (ensemble==ENS_NPT_AXIAL) {
-    fprintf(out,"pressure_ext \t%f %f %f\n",
-            pressure_ext.x,pressure_ext.y,pressure_ext.z);
-  };
+    if (ensemble==ENS_NPT_ISO) {
+      fprintf(out,"pressure_ext \t%f\n",pressure_ext.x);
+    }
+    if (ensemble==ENS_NPT_AXIAL) {
+      fprintf(out,"pressure_ext \t%f %f %f\n",
+              pressure_ext.x,pressure_ext.y,pressure_ext.z);
+    }
 #endif /* NPT */
-
-  fclose(out);
-
-#ifdef MPI
+    fclose(out);
   }
-#endif
-
 }
 
 
@@ -708,14 +613,20 @@ void write_config(int steps)
 void write_demmaps(int steps)
 
 #ifdef MONOLJ
+
 #define WRITE_CELL     for (i = 0;i < p->n; ++i) \
-             fprintf(out,"%12f %12f %12f %12f %12f %12f\n",\
-             p->ort X(i),\
-             p->ort Y(i),\
+             fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f %12f %12f\n",\
+	     NUMMER(p,i),\
+	     SORTE(p,i),\
+	     MASSE(p,i),\
+	     p->ort X(i),\
+	     p->ort Y(i),\
 	     p->ort Z(i),\
-	     p->impuls X(i),\
-	     p->impuls Y(i),\
-	     p->impuls Z(i) )
+	     p->impuls X(i) / MASSE(p,i),\
+	     p->impuls Y(i) / MASSE(p,i),\
+	     p->impuls Z(i) / MASSE(p,i),\
+             POTENG(p,i)) 
+
 #else
 
 #define WRITE_CELL_DEM     for (i = 0;i < p->n; ++i) {\
@@ -729,6 +640,7 @@ void write_demmaps(int steps)
                  dpot);\
 	     }\
           }
+
 #endif
 
 { 
@@ -824,14 +736,20 @@ void write_demmaps(int steps)
 void write_dspmaps(int steps)
 
 #ifdef MONOLJ
+
 #define WRITE_CELL     for (i = 0;i < p->n; ++i) \
-             fprintf(out,"%12f %12f %12f %12f %12f %12f\n",\
-             p->ort X(i),\
-             p->ort Y(i),\
+             fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f %12f %12f\n",\
+	     NUMMER(p,i),\
+	     SORTE(p,i),\
+	     MASSE(p,i),\
+	     p->ort X(i),\
+	     p->ort Y(i),\
 	     p->ort Z(i),\
-	     p->impuls X(i),\
-	     p->impuls Y(i),\
-	     p->impuls Z(i) )
+	     p->impuls X(i) / MASSE(p,i),\
+	     p->impuls Y(i) / MASSE(p,i),\
+	     p->impuls Z(i) / MASSE(p,i),\
+             POTENG(p,i)) 
+
 #else
 
 #define WRITE_CELL_DDM     for (i = 0;i < p->n; ++i) {\
@@ -847,6 +765,7 @@ void write_dspmaps(int steps)
                dy,\
                dz);\
           }
+
 #endif
 
 { 
