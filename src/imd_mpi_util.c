@@ -137,7 +137,11 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
 #endif
 #endif 
 #ifdef AVPOS
-  to->data[ to->n++ ] = from->sheet[index];
+  to->data[ to->n++ ] = from->sheet X(index);
+  to->data[ to->n++ ] = from->sheet Y(index);
+#ifndef TWOD
+  to->data[ to->n++ ] = from->sheet Z(index);
+#endif
 #endif
 #ifdef ORDPAR  
   to->data[ to->n++ ] = from->nbanz[index]; 
@@ -212,7 +216,11 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
 #endif
 #endif
 #ifdef AVPOS
-      from->sheet[index]    = from->sheet[from->n]; 
+      from->sheet X(index)  = from->sheet X(from->n); 
+      from->sheet Y(index)  = from->sheet Y(from->n); 
+#ifndef TWOD
+      from->sheet Z(index)  = from->sheet Z(from->n); 
+#endif
 #endif
 #ifdef ORDPAR 
       from->nbanz[index]    = from->nbanz[from->n]; 
@@ -312,7 +320,11 @@ void process_buffer(msgbuf *b, cell *p)
 #endif
 #endif
 #ifdef AVPOS
-    input->sheet[0]        = b->data[j++];
+    input->sheet X(0)      = b->data[j++];
+    input->sheet Y(0)      = b->data[j++];
+#ifndef TWOD
+    input->sheet Z(0)      = b->data[j++];
+#endif
 #endif
 #ifdef ORDPAR
     input->nbanz[0]        = b->data[j++];

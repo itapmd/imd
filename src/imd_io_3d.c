@@ -300,7 +300,9 @@ void read_atoms(str255 infilename)
       input->Epot_ref[0]  = refeng;
 #endif
 #ifdef AVPOS
-      input->sheet[0] = 0;
+      input->sheet X(0) = 0;
+      input->sheet Y(0) = 0;
+      input->sheet Z(0) = 0;
 #endif
 
       cellc = cell_coord(pos.x,pos.y,pos.z);
