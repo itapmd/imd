@@ -457,6 +457,10 @@ SOURCES += ${MCSOURCES}
 endif
 
 # options
+ifneq (,$(findstring nopbc,${MAKETARGET}))
+CFLAGS += -DNOPBC
+endif
+
 ifneq (,$(findstring deform,${MAKETARGET}))
 CFLAGS += -DDEFORM
 SOURCES += ${DEFORMSOURCES}
