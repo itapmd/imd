@@ -1,0 +1,123 @@
+<HTML>
+<HEAD>
+   <TITLE>IMD Ensembles</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>IMD Ensembles</H1>
+
+IMD supports several different MD integrators. Many of them correspont
+to thermodynamic ensembles. Integrators are selected via the 
+<TT>ensemble</TT> parameter.
+
+<UL>
+
+<P><LI><B> nve </B><P>
+Constant volume, constant energy ensemble. This is the most reliable
+integrator, and thus the main work horse. No particular parameters
+are needed, except perhaps the initial temperature starttemp, if not 
+all atoms have their velocities given in the configuration file.
+
+<P><LI><B> nvt </B><P>
+Constant volume, constant temperature ensemble, with 
+Nos&eacute;-Hoover thermostat (more precisely, this is an 
+ensemble with external temperature control - the temperature
+can actually vary during the simulation). The imposed temperature
+varies linearly from starttemp to endtemp (parameters).
+A further required parameter is the time constant of the
+temperature control, tau_eta. Alternatively, the parameter
+isq_tau_eta can be specified, which is equal to the inverse
+square of tau_eta. isq_tau_eta can be zero, which means constant
+energy simulation (nve).
+
+<P><LI><B> and </B><P>
+Constant volume, constant temperature ensemble, with Anderson
+thermostat. Similar to nvt, but with a different temperature
+control mechanism. The temperature is corrected every tempintv
+steps (parameter). tau_eta is not needed here.
+
+<P><LI><B> npt_iso </B><P>
+Constant pressure, constant temperature ensemble, with isotropic 
+volume scaling. Nos&eacute;-Hoover type thermostat and volume control 
+are employed. Temperature control is as in nvt, with the same parameters.
+The pressure varies linearly from pressure_start to pressure_end
+(parameters). A time constant for the pressure control, tau_xi,
+or its inverse square, isq_tau_xi, is required as a parameter.
+If isq_tau_xi is zero, the volume remains constant. The cell
+subdivision includes a rescaling tolerance cell_size_tol (parameter),
+which defaults to 0.05. If this tolerance is exceeded, the cell
+subdivision is changed on the fly.
+
+<P><LI><B> npt_axial </B><P>
+Constant pressure, constant temperature ensemble, 
+with volume rescaling along each axis independently.
+This works only for <B>orthogonal boxes</B> correctly. 
+Works the same way as npt_iso, with the same parameters, except that
+the three axial pressures can be specified separately. 
+
+<P><LI><B> mik </B><P>
+Microconvergence integrator. After each step, the velocity component
+"uphill" in the potential landscape is reset to zero. No particular
+parameter is needed, except perhaps the initial temperature, if not 
+all atoms have their velocities given in the configuration file.
+
+<A NAME="mikshear">
+<P><LI><B>mikshear</B><P> </A> Inhomogeneous shear simulation
+using the microconvergence integrator.
+Whenever the kinetic energy per particle drops below 
+<TT>shear_epsilon</TT>, a shear step is performed, and the velocities 
+of the particles are reset to a maxwell distribution. After the shear
+step, the sample is then relaxed with the microconvergence integrator,
+until the kinetic energy per particle drops again below the treshold.
+When this happens, a new shear step is performed, and so on.
+<P>
+All atoms located in a strip of width <TT>strip_width</TT> from
+the boundaries in x-direction are fixed. In each shear step, these 
+fixed atoms are rigidly moved by the amount <TT>shear_delta</TT> 
+into the positive (negative) y-direction if they are located within 
+the left (right) strip. After the shear simulation is finished, 
+all atoms become mobile again.
+<P>
+Each time a shear step is performed, several properties are written 
+to a file <TT>&lt;outfile&gt;.sheng</TT>. These properties are, 
+in this order, the total shift, the current simulation time, 
+the potential energy per atom, the kinetic energy per atom 
+(which is normalized such that it is identical to the
+actual system temperature), the pressure and the volume.
+<P>
+These features have also been implemented in the 2D version, but have
+not yet been tested! 
+
+<P><LI><B> frac </B><P>
+Fracture simulation with stadium damping. Anyone know how this works?
+What do the parameters mean? 
+
+<P><LI><B> pull </B><P>
+In this ensemble, a border strip (perpendicular to the x-axis) 
+of width <TT>strip_width</TT> is fixed and moved by an  
+amount <TT>sdelta</TT> in each time step. 
+The shift vector <TT>sdelta</TT> and the strip width
+<TT>strip_width</TT> are parameters. Depending on the
+shift vector, one can perform shear deformations 
+(shift vector parallel to the y-axis) as well as compressions and
+dilatations of the sample.
+
+<P><LI><B> mc </B><P>
+The Monte Carlo integrator attempts to make random jumps of mean 
+length <TT>mc_len</TT> (parameter). The steps are accepted with the 
+Metropolis probability min(1,exp(-beta*delta_E), where delta_E is 
+the energy difference involved. The inverse temperature beta is
+selected with the parameter <TT>mc_beta</TT>. The seed of the random 
+number generator can be selected with the parameter <TT>mc_seed</TT>.
+<P>
+<B>Known bugs:</B> The Monte Carlo integrator has been implemented 
+only for serial execution. Since it is not faster than MD integrators,
+it does not seem very useful. 
+
+</UL>
+
+<P>
+<A HREF="imd.html">Back to IMD User's Guide</A> 
+
+</BODY>
+</HTML>

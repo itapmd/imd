@@ -1,0 +1,163 @@
+<HTML>
+<HEAD>
+   <TITLE>IMD Utilities</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>IMD Utilities</H1>
+
+The following utility programs can be found in the <B>imd-utils</B> 
+directory.
+
+<A NAME="imd2ppm">
+<H2>imd2ppm</H2>
+</A>
+
+The C++ version of imd2ppm converts <A HREF="config.html">configuration 
+files</A> of 2D binary tilings into ppm bitmaps, where each atom is 
+drawn as a disk of appropriate radius. There are two versions: 
+imd2ppm.kin, which encodes the kinetic energy in the color of the 
+atoms, and imd2ppm.pot, which encodes the the potential energy in the 
+color of the atoms. 
+<P>
+The C version of imd2ppm works like the C++ version, but takes the 
+special <A HREF="pictures.html">.pic files</A> produced 
+by IMD as input.
+<P>
+<B>Usage</B>: <TT>
+imd2ppm infile E_min E_max x0 y0 width height width_pix height_pix
+</TT>
+<P>
+The parameters are, in this order, the input file, the lower and
+upper energy treshold for the coloring, x and y coordinates of the
+lower left corner of the image, width and height of the image in
+user coordinates, and width and height of the image in pixels
+(resolution). The output files are called <TT>&lt;infile&gt;.kin.ppm</TT>
+or <TT>&lt;infile&gt;.pot.ppm</TT>.
+
+<P>
+If the option <B>disloc</B> is used, the difference of the actual 
+potential energy and a reference potential energy of each atom 
+is written to the the .pic file, and so this difference is
+used for the coloring.
+
+<A NAME="imd_dist2pgm">
+<H2>imd_dist2pgm.perl</H2> 
+</A>
+
+Converts <A HREF="output.html#distributions">energy distribution files</A>
+to gray maps. If you find out how exactly this works, please report!
+Not clear whether this still works with the current distribution file
+format!
+
+<A NAME="imd_mklj">
+<H2>imd_mklj.c</H2>
+</A>
+
+Computes a Lennard-Jones-potential table for configurations containing
+two types of atoms. 
+It prompts for the following input parameters:
+<P>
+<STRONG>Ausgabedatei:</STRONG> Name of potential table file<BR>
+<STRONG>Radius Anf. :</STRONG> Lowest value of atomic distance<BR>
+<STRONG>Radius Ende :</STRONG> Largest value of atomic distance<BR>
+<STRONG>Zahl Schritte:</STRONG> Number of steps in table<BR>
+<STRONG>Exponent   p:</STRONG> Exponent of the repulsive part<BR>
+<STRONG>Exponent   q:</STRONG> Exponent of the attractive part<BR>
+<STRONG>Energie11   :</STRONG> Energy between particle of type 1 and
+type 1<BR>
+<STRONG>Energie22   :</STRONG> Energy between type 2 and
+type 2<BR>
+<STRONG>Energie12   :</STRONG> Energy between type 1 and
+type 2<BR>
+<STRONG>Sigma11     :</STRONG> Nearest-Neighbour-distance between
+type 1 and type 1<BR>
+<STRONG>Sigma22     :</STRONG> Nearest-Neighbour-distance between
+type 2 and type 2<BR>
+<STRONG>Sigma21     :</STRONG> Nearest-Neighbour-distance between
+type 1 and type 2<BR>
+ 
+<A NAME="imd_pair">
+<H2>imd_pair.c</H2>
+</A>
+
+Computes radial distribution histograms. Compile as follows:
+<PRE>
+    cc -O [-DTWOD] [-DNOPBC] [-DSLOTS=&lt;nnn&gt;] [-DDOUBLE] imd_pair.c -lm
+</PRE>
+Default is a program for 3D, but if the flag <TT>-DTWOD</TT> is 
+present, a program for 2D is compiled. With the flag 
+<TT>-DSLOTS=&lt;nnn&gt;</TT>, the number of slots in the histogram
+can be chosen. The default is 1000. <TT>-DNOPBC</TT> switches
+off periodic boundary conditions, and <TT>-DDOUBLE</TT>
+produces a binary using doubles instead of floats.
+<P>
+imd_pair produces radial distribution histograms from IMD
+configuration files (or checkpoints). Usage is as follows:
+<PRE>
+    imd_pair [-r&lt;nn&gt;] [-a&lt;rmin&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
+</PRE>
+The parameter <TT>paramfile</TT> is mandatory. imd_pair reads the
+box size, the number of atom types, and the names of the configuration
+and checkpoint files from it. If the restart parameter
+<TT>-r&lt;nn&gt;</TT> is present, imd_pair takes the checkpoint
+file <TT>&lt;outfiles&gt;.&lt;nn&gt;</TT> as input, and
+reads also the corresponding iteration file. Otherwise, 
+the input configuration <TT>&lt;coordname&gt;</TT> of the
+simulation described by <TT>paramfile</TT> is used as input.
+The output file name of imd_pair is the input file name, 
+but with <TT>.pair</TT> appended.
+<P>
+The parameters <TT>-a&lt;rmin&gt;</TT> and <TT>-e&lt;rmax&gt;</TT>
+specify the minimal and maximal radius in the histogram.
+They default to 0.0 and 5.0, respectively. For every slot in the
+histogram, one line is written:
+<PRE>
+    r d_00 d_01 ... d_0N d_11 ... d_NN f_00 f_01 ... f_0N f_11 ... f_NN 
+</PRE>
+where <TT>r</TT> is the radius, <TT>N</TT> is <TT>ntypes-1</TT>, 
+<TT>d_ij</TT> is the number of times the distances <TT>r</TT> occurs 
+between atoms of types <TT>i</TT> and <TT>j</TT>, devided by <TT>natoms</TT>,
+and <TT>f_ij = d_ij/(4*pi*r^2)</TT> is a normalized radial distribution.
+
+<A NAME="procdata">
+<H2>procdata.c</H2>
+</A>
+
+Procdata converts configuration files between different formats.
+It can also be used to cut out parts of a configuration, rotate
+a configuration, or to stack configurations periodically.
+<P>
+The online help of procdata says:
+
+<PRE>
+Usage: procdata [-i{format}] [-f{format}] inputfile outputfile
+
+-i0 reads IMD or VVMD data format (default)
+-i1 reads modifti.f/tiunmodif.f output format
+-f0 converts to MOLPIC format (for molgraph, default)
+-f1 converts to PDB format (for rasmol)
+-f2 converts to IMD format
+-k keeps previous numbers (default: sort and begin from 1
+-fRDF calculates radial distribution function
+-Cxmin limit   cuts off atoms with x<limit
+-Cxmax limit   cuts off atoms with x>limit
+-Cymin limit   cuts off atoms with y<limit
+-Cymax limit   cuts off atoms with y>limit
+-Czmin limit   cuts off atoms with z<limit
+-Czmax limit   cuts off atoms with z>limit
+-Sz zincr n    stacks the structure in z-direction n times with increment zincr
+                (used for generation of 2D-quasiperiodic structures)
+-Rx phi   rotate by angle phi around x-axis
+-Ry phi   rotate by angle phi around y-axis
+-Rz phi   rotate by angle phi around z-axis
+very special options are: (see source code)
+-RAlCuCo -CAlCuCo  rotates AlCuCo approximant
+and cuts out a rectangular piece (for approx2.inp)
+</PRE>
+<P>
+
+<A HREF="imd.html">Back to IMD User's Guide</A> 
+
+</BODY>
+</HTML>

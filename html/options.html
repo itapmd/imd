@@ -1,0 +1,270 @@
+<HTML>
+<HEAD>
+   <TITLE>IMD Options</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>IMD Options</H1>
+
+In addition to selecting the <A HREF="ensembles.html">simulation ensemble</A>
+(i.e., the MD integrator), various options can be compiled into IMD. 
+Some options can be part of the <A HREF="compiling.html">compilation 
+target</A>, others can only be invoked by <A HREF="compiling.html"> 
+preprocessor flags</A>.
+<P>
+We give here a list of all possible options, and describe here what 
+their purpose is and how they are used.
+
+<H2>Possible Options in the Compilation Target</H2>
+
+<UL>
+
+<A NAME="2d">
+<P><LI><B>2d</B><P>
+</A>
+2d simulation rather than 3d. The option 3d also exists - it is the
+default.
+
+<A NAME="msqd">
+<P><LI><B>msqd</B><P>
+</A>
+This option enables the computation of the <B>mean square 
+displacements</B> (MSQDs) (for each atom type separately). 
+It shares its parameters with the option correl. 
+The computation of the MSQDs is started at step 
+<TT>correl_start</TT>, and ends at step <TT>correl_end</TT>. 
+The reference positions are first stored at step 
+<TT>correl_start</TT>, and then they are reset every
+<TT>correl_int</TT> steps (or never, if <TT>correl_int=0</TT>, 
+which is the default). The MSQDs are computed every <TT>correl_ts</TT> 
+steps between <TT>correl_start</TT> and <TT>correl_end</TT>,
+and are written to the file <TT>&lt;outfiles&gt;.msqd</TT>,
+preceeded by the current simulation time.
+<P>
+The parameters <TT>correl_start</TT> and <TT>correl_end</TT> can be
+used to switch this option on and off during a multiphase simulation. 
+
+<A NAME="correl">
+<P><LI><B>correl</B><P>
+</A>
+This option enables the computation of the (spherically averaged)
+<B>van Hove self-correlation function</B> (VHSCF).
+<P>
+The computation of the VHSCF is started at step 
+<TT>correl_start</TT>, and ends at step <TT>correl_end</TT>. 
+Every <TT>correl_int</TT> steps after <TT>correl_start</TT>, 
+the correlation histogram is written to files 
+<TT>&lt;basename&gt;.corr&lt;n&gt.&lt;i&gt;</TT>,
+where <TT>&lt;n&gt;</TT> is a running number and 
+<TT>&lt;i&gt;</TT> ist the atom type. Every <TT>correl_ts</TT>
+steps, correlation data is added to the histogram.
+<P>
+The dimension of the correlation histogram is detemined by the
+parameters <TT>correl_tmax</TT> (time direction) and 
+<TT>correl_rmax</TT> (radial direction). The step width
+of the histogram is <TT>correl_ts</TT> in time direction,
+and (half) the diagonal of the box, divided by <TT>correl_rmax</TT>,
+in radial direction.
+<P>
+There are several modes for the output format, determined by the
+parameter <TT>correl_omode</TT>:
+<PRE>
+ 1  for gnuplot files with 1 empty line between blocks
+ 2  for gnuplot files with 2 empty lines between blocks
+ 3  for large gnuplot files (fully occupied matrix) with no empty lines
+ 4  for short files (refer to source for documentation)
+    (writes only a short header followed by matrix elements)
+</PRE>
+The third mode uses a further parameter, <TT>GS_rcut</TT>, which is
+a cutoff radius for the data to be written.
+<P>
+The parameters <TT>correl_start</TT> and <TT>correl_end</TT> can be
+used to switch this option on and off during a multiphase simulation. 
+<B>Beware:</B> in the current implementation, the histogram is allocated only
+once at the beginning of the simulation, and so the dimensions of the 
+histogram must not change during the simulation!
+
+<P>
+<B>Known bugs:</B>
+<P>
+Resetting the reference positions <TT>every correl_int</TT> 
+steps is fine, but why do we have to write out and clear the histogram
+each time?
+<P>
+The time in the histogram is taken modulo <TT>correl_tmax</TT>,
+but the reference positions are not reset, which spoils the
+whole histogram, if <TT>correl_tmax &gt; correl_int</TT>! 
+<P>
+Why don't we use a radial cutoff of the histogram right away, 
+instead of the wiered constuction with the diagonal, which works 
+only for orthogonal boxes anyway? In any case, it is better
+not to compute the parts of the histogram that are not needed,
+instead of just not writing them out (parameter GS_rcut)!
+
+<A NAME="disloc">
+<P><LI><B>disloc</B><P>
+</A>
+The disloc option enables certain features useful to see dislocations.
+<P>
+If the disloc option is present, reference potential energies for each
+particle are read from the last column in the configuration file.
+If this reference potential energy is missing, or if the parameter 
+<TT>calc_Epot_ref</TT> is set to 1, the potential energy computed at 
+step <TT>reset_Epot_step</TT> is used as reference.
+<P>
+If the disloc option is present and the parameter <TT>Epot_diff</TT>
+is 1 (which is the default), the potential energy written to
+<A HREF="pictures.html"><TT>.pic</TT> files</A> and to 
+<A HREF="output.html#distributions">energy distribution files</A> is 
+the difference of the actual potential energy and the reference 
+potential energy. This can be switched off by setting
+<TT>Epot_diff</TT> to 0.
+<P>
+The disloc option also enables the writing of 
+<A HREF="output.html#disloc">differential energy maps</A> 
+in intervals of <TT>dem_int</TT>, 
+and of <A HREF="output.html#disloc">differential displacement maps</A> 
+in intervals of <TT>ddm_int</TT>.
+The parameters needed are described together with the 
+<A HREF="output.html#disloc">format of these files</A>.
+<P>
+The writing of these files can be switched off by setting the 
+writing intervals to zero. 
+<P>
+<B>Known bugs:</B> The reference potential energy can be set
+only once in each phase.
+
+<A NAME="sock">
+<P><LI><B>sock</B><P>
+</A>
+Provide support for sockets (for visualization).
+
+<A NAME="eam">
+<P><LI><B>eam</B><P>
+</A>
+<a href=eam.html>Use EAM potentials.</a>
+
+<A NAME="ttbp">
+<P><LI><B>ttbp</B><P>
+<a href=ttbp.html>Use two- and three-body potentials.</a>
+
+<A NAME="pacx">
+<P><LI><B>pacx</B><P>
+</A>
+Link with PACX libraries in addition to MPI. 
+Needed for Metacomputing, but also useful if certain MPI routines are
+not available. 
+PACX is an extension of MPI which allows the distribution of the
+simulation across a network of (possibly continent-widely) separated
+supercomputers. 
+<P>
+IMD uses MPI_Cart routines to set up the communication network between
+the PEs. This is not possible with PACX since one supercomputer sees
+only the communication nodes of the other and not its
+topology. Therefore the MPI_Cart routines have been replaced.
+<P>
+Further replacements were necessary since not all MPI routines
+have been implemented in PACX so far:
+
+<P>
+<UL>
+<LI>MPI_Ssend is replaced by MPI_Send.
+
+<LI>MPI_Type_Contiguous is eliminated (was used only in 2d).
+
+<LI>The calling of the irecv_buf and isend_buf routines of IMD was 
+    not standard and has been replaced by a standard one.
+
+</UL>
+<BR>
+The PACX library is available from the PACX-Group at the RUS.
+A description of PACX and how to use it can be found <A
+HREF="http://www.hlrs.de/people/gabriel/PROJECTS/pacx/pacx.html">here</A>.
+
+<A NAME="shock">
+<P><LI><B>shock</B><P>
+</A>
+It is now possible to simulate shockwaves with IMD. A shockwave is
+generated in the following way: We use a box which is  periodic
+along the y- and z-axis. Along the x-axis there are
+free boundaries. The shockwave is generated by setting the velocities
+of the atoms in routine imd_maxwell within a strip
+<TT>shock_strip</TT> orthogonal to the x-axis to a large constant
+value <TT>shock_speed</TT>. The velocity direction is in the positive 
+x-axis. 
+<P>
+<B>Important</B>: Currently, the atom velocities for the shockwave
+are set by the routine imd_maxwell, which is called at the start
+of the simulation only. It is therefore not possible to start
+a shockwave in a later phase of a multiphase simulation. 
+Therefore, this option is <A HREF="limitations.html">not multiphase 
+ready</A>.
+
+<A NAME="quasi">
+<P><LI><B>quasi</B><P>
+</A>
+This option is required for the generation of truncated icosahedra
+quasicrystals, one of the few structure types IMD can
+<A HREF="config.html#generated">generate itself</A>.
+
+<A NAME="monolj">
+<P><LI><B>monolj</B><P>
+</A>
+Monoatomic Lennard-Jones system. The masses are all set to 1, and
+particles have no number. All this saves space, which is useful for 
+world records. 
+<P>
+<B>Editor's remark:</B> Part of this could also be achieved by
+using only one mass variable per atom type, instead of one per atom.
+
+<A NAME="single">
+<P><LI><B>single</B><P>
+</A>
+Do everything with single precision (default is double precision).
+This saves space, which is useful for world records.
+
+<A NAME="debug">
+<P><LI><B>debug</B><P>
+</A>
+Compile with debug flags.
+
+<A NAME="prof">
+<P><LI><B>prof</B><P>
+</A>
+Compile with profiling support.
+
+</UL>
+
+<H2>Possible Preprocessor Flags</H2>
+
+<UL>
+
+<A NAME="EPOT_DIFF">
+<P><LI><B>EPOT_DIFF</B><P>
+</A>
+The EPOT_DIFF flags has been eliminated. Its functionality has been
+built into the option <A HREF="#disloc">disloc</A>.
+
+<A NAME="ZOOM">
+<P><LI><B>ZOOM</B><P>
+</A>
+If set, only partial configurations consisting of the atoms inside the
+frame defined by <A HREF="pictures.html"><TT>pic_ll</TT> and
+<TT>pic_ur</TT></A> are written. It is probably better to use the 
+<A HREF="pictures.html"><TT>.pic</TT></A> files to make partial 
+pictures, though. ZOOM is available only in 2d at present. 
+
+<A NAME="PAXTEST">
+<P><LI><B>PAXTEST</B><P>
+</A>
+If set, and if the ensemble is NPT_axial, the axial pressures and
+box dimensions are written to the <A HREF="output.html">energy file</A> 
+as well. We might make this the default.
+
+</UL>
+
+<P>
+<A HREF="imd.html">Back to IMD User's Guide</A> 
+
+</BODY>
+</HTML>

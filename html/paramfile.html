@@ -1,0 +1,95 @@
+<HTML>
+<HEAD>
+   <TITLE> IMD Parameter Files </TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>IMD Parameter Files</H1>
+
+The IMD parameter file contains all necessary parameters of an 
+IMD simulation. In the case of <A HREF="#multiphase">multiphase 
+simulations</A>, it contains the entire script describing the the 
+simulation.
+<P>
+Each line contains one parameter, first the parameter name, 
+then the parameter value (or values), separated by spaces or tabs. 
+Empty lines or lines starting with # are discarded.
+<P>
+Certain parameters are required for every simulation, such as the
+simulation ensemble, the file with the starting configuration, 
+the box size, the number of steps to be simulated, etc. 
+IMD makes a rudimentary check whether every parameter needed is 
+actually given.
+<P>
+Other parameters make sense only in a certain context. If a parameter
+appears in the parameter file, but is not needed in the current
+context, a warning is issued, and the parameter is discarded.
+<P>
+There is a list of all <A HREF="params.html">valid parameters</A>,
+where each parameter is given with a short description of its meaning,
+and when it is needed. For the meaning of more specialized parameters,
+the description of the corresponding <A HREF="ensembles.html">ensembles</A>
+and <A HREF="options.html">options</A> should be consulted.
+
+<A NAME=multiphase>
+<H2>Multiphase Simulations</H2>
+</A>
+An IMD simulation can consist of several phases. Many parameters,
+in particular the MD integrator to be used, can change from one
+phase to the next. Simulation phases are numbered consecutively,
+from 1 to N. The parameter file contains first the parameters for
+phase 1, then the parameters for phase 2, etc. The start of the
+parameter file section for phase n is announced with a line
+<PRE>
+simulation n
+</PRE>
+Announcing the parameters for the first phase is optional. Before
+phase n is started, the parameters of all phases up to n are
+(re-)read. If a certain parameter is not given afresh for the new
+phase, its value from the previous phase (or its default value)
+is retained. In other words, only paramters whose values have changed
+need be given for the later phases.
+<P>
+Certain parameters <B>must not be changed</B> during the simulation, 
+like the box size. Also, it is probably a good idea to take care that 
+the external temperature and pressure are continuous throughout the 
+simulation. It is the <B>user's responsibility</B> that the parameter
+starttemp is equal to the parameter endtemp of the previous phase. 
+A similar statement holds for the external pressure.
+<P>
+Example of a paramter file with 4 phases:
+<PRE>
+simulation      1     # this line is not really needed
+ensemble        nvt   # nvt ensemble
+maxsteps        1000  # phase stops at step 1000
+starttemp       0.1   # starting temperature
+endtemp         0.1   # ending temperature - temperature remains constant
+
+other parameters for phase 1 (and the other phases)
+
+simulation      2
+maxsteps        2000  # phase stops at step 2000
+starttemp       0.1   # not needed - does not change
+endtemp         0.5   # ending temperature - temperature increases linearly
+
+simulation      3
+maxsteps        3000  # phase stops at step 3000
+starttemp       0.5   # this IS needed - temperature should be continuous
+endtemp         0.5   # not needed
+
+simulation      4
+maxsteps        4000  # phase stops at step 4000
+ensemble	nve   # we continue with nve ensemble
+</PRE>
+All four phases last 1000 steps. The first three use the nvt ensemble,
+the last one the nve ensemble. In the second phase, the system is 
+heated linearly from temperature 0.1 to temperature 0.5. Note that
+the parameter maxsteps is the step number at which the simulation
+phase ends, not the number of steps in the simulation phase.
+
+<P>
+<A HREF="imd.html">Back to IMD User's Guide</A> 
+
+</BODY>
+</HTML>
+

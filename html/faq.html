@@ -1,0 +1,87 @@
+<HTML>
+<HEAD>
+   <TITLE>IMD Ensembles</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>Frequently Asked Questions</H1>
+
+<P><DL COMPACT>
+<DT>1.
+<DD>Compilation problems: use gnumake! Gnumake for Cray T3E: ask
+Marco Brunelli.
+<P><DT>2.
+<DD>Restart: The number of additional steps has to be added to the
+  number of steps which have been run already. The total number of
+  steps is no difference but the absolute number of steps.
+<P><DT>3.
+<DD>(Dieter Wolfangel) Units: IMD uses no unit system by
+  itself. What counts are the units in which the potential has been
+  computed.
+<P>
+Particularly, IMD does not use reduced units. But if the potential
+  tabales are computed from standard Lennard-Jones interactions, it
+  seems as if reduced units are applied.
+<P>
+It is suitable to scale the values of mass, atom distance and energy
+  in such a way that there absolut value is of the order 1. For
+  example the mass in Dekau (10 atomic units), the atom distance in 
+  &#197;ngstr&#248;m (10 nm), and the energy in mRy (13.56 meV).
+<P>
+For aluminium (1.66<SUP>-26</SUP>kg) one gets a factor
+  mass<SUP>1/2</SUP>*length/energy<SUP>1/2</SUP> equal to 2.7<SUP>-13</SUP> for the
+  rescaling of the time unit 1 into seconds.
+<P>
+Thus the upper limit for a time step should be 0.01 (fs), if the
+  phonons with the highest frequency shall still be resolved (Debye
+  temperature 400K, equivalent to 8.3<SUP>12</SUP> Hz or 1.2<SUP>-13</SUP> s).
+<P>
+The IMD temperature 1 is equivalent to 157 Kelvin (energy/k<SUB>B</SUB>).
+<P><DT>4.
+<DD>(Christof) To make an atom immobile the running atom number must
+  be negative, but not the atom type!
+<P><DT>5.
+<DD>(Christof) Segmentation faults: 
+  <UL>
+<LI> call unlimit first
+<LI> test the file formats and remove unnecessary columns.
+  </UL>
+<P><DT>6.
+<DD>(Marco)
+<P>
+QUESTION : I have changed the potential table, and the program gives me 
+strange results.
+<P>
+ANSWER : The problem can be the potential table itself. IMD needs
+a potential table in which the values of the potential are computed
+in points EQUALLY displaced in <I>r<SUP>2</SUP></I>, and not in r.
+<P>
+QUESTION : I have used the displacement field of a crack, and I have
+scaled it to obtain a new start configuration relative to scaled
+boundary conditions as well, but the energies after very few time steps
+diverges.
+<P>
+ANSWER : The problem is that the displacement field is ill-conditioned
+in the neighborhood of the crack tip. The possible solutions are two:
+<P>
+1) You use a smaller time step, but this solution is not recommended,
+for you're using a different dynamic induced by potologic initial
+conditions.
+<P>
+2) You have to reach you displacement field step-by-step. Just scale
+your initial configuration of a smaller value. Then let it relaxe for
+very few time step, and rescale the output configuration of a little
+values again, and so on till you have reached the desired value of
+displacement during relaxation of intermediate configurations. The final
+configuration will be the right initial configuration of your problem.
+<P><DT>7.
+<DD>IMD uses the full minimal image condition, i.e. each atom is placed
+back into the original sample. This may give wrong results in
+diffusion simulations.
+<P></DL>
+
+<P>
+<A HREF="imd.html">Back to IMD User's Guide</A> 
+
+</BODY>
+</HTML>

@@ -1,0 +1,61 @@
+<HTML>
+<HEAD>
+   <TITLE>Unsupported</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>Developer's Corner</H1>
+
+Here we give some hints on how to extend IMD. In particular, we list
+some common pitfalls that are to be avoided.
+
+<H2>Introducing new parameters</H2>
+
+Before a new parameter can be used, it must be
+<UL>
+<LI>declared and initialized to default value (in file globals.h)
+<LI>read into IMD (routine getparamfile() in file imd_param.c)
+<LI>possibly checked for nonsense values (routine
+    check_parameters_complete() in file imd_param.c)
+<LI>broadcast to the other CPUs (routine broadcast_params() in
+    file imd_param.c)
+</UL>
+
+<H2>Extending the particle data structure</H2>
+
+Each particle in IMD carries a number of data items with it.
+If a is particle moved to a different cell, or even a different
+CPU, these data must be moved as well. They always remain with
+the particle.
+<P>
+In order to extend the particle data structure, the following
+must be done:
+<UL>
+<LI> the declaration of the type <TT>cell</TT> must be extended
+     with the new data item (in file types.h)
+<LI> the allocation routine alloc_cell() for the particle data
+     must be extended (file imd_alloc.c)
+<LI> in order that the particle data move together with the particle 
+     from one cell to another cell within the same CPU, the routine
+     move_atom() in file imd_alloc.c must be extended
+<LI> in order that the particle data move together with the particle
+     from one CPU to another CPU, two things must be done: 
+     <UL>
+     <LI> the routines copy_one_atom() und process_buffer() in file
+          imd_mpi_util.c must be extended. These routines pack/unpack 
+          selected atoms with their data into/from a communications buffer.
+     <LI> the routines send_cell() und recv_cell() in file
+          imd_mpi_util.c must be extended. These routines send and
+          receive entire cells.
+     </UL>
+</UL>
+
+Examples for such extensions of the particle data structure can
+be found by looking for the preprocessor flags REFPOS or DISLOC
+in the files mentioned.
+
+<P>
+<A HREF="imd.html">Back to IMD User's Guide</A> 
+
+</BODY>
+</HTML>

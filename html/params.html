@@ -1,0 +1,173 @@
+<HTML>
+<HEAD>
+   <TITLE> Valid IMD Parameters </TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>Valid IMD Parameters</H1>
+
+Following is a complete list of IMD parameters, together with a short
+description of their meaning, and indications when they are needed.
+Floating point numbers should be given in decimal notation. Vectors
+are given as a list of components, separated by spaces or tabs (all 
+on one line).
+
+<PRE>
+# file names - required
+coordname	# file name for atom coordinate input data
+outfiles	# basename for output files - use a name different from
+                # input file name, otherwise it will be overwritten
+potfile		# filename for pair potential data
+
+# main control parameters - required (except startstep)
+simulation      # number of next simulation phase, whose parameters follow
+ensemble        # simulation ensemble (MD integrator) 
+maxsteps	# step number at which simulation phase ends
+startstep       # starting step number (default 0)
+timestep	# size of timestep (in MD units)
+ntypes		# number of atom types (types vary in [0..ntypes-1])
+
+# control parameters for parallel simulation
+cpu_dim		# CPU array dimension - required if parallel
+parallel_input  # parallel input (1, default, recommended) or serial (0) input
+parallel_output	# parallel output flag (0 == serial (default),
+                # 1 == parallel, 2 == serial, but parallel picture writes)
+
+# simulation box - required
+box_x		# 'x' or first vector for box
+box_y		# 'y' or second vector for box
+box_z		# 'z' or third vector for box - only 3D
+
+# intervals for data writes - default is 0
+checkpt_int	# number of steps between checkpoints
+eng_int		# number of steps between energy data writes
+pic_int		# number of steps between picture writes
+dist_int	# number of steps between energy distribution writes
+dist_dim        # dimensions for energy distribution writes 
+dist_binary_io  # formatted (0) or binary (1) energy distributions
+
+# temperature, pressure, and related stuff
+# required if ensemble supports temperature or pressure control
+# in other ensembles, starttemp might be needed to initialize the velocities
+starttemp	     # Temperature at start of simulation phase. Also used to 
+                     # initialize the velocities, if these are not given.
+use_current_temp     # (without arguments) Instructs IMD to set the starting
+                     # external temperature to the actual system temperature.
+                     # In this case, the velocities MUST be given.
+endtemp		     # Temperature at end of simulation phase.
+                     # If different from starttemp, and ensemble can
+		     # control the temperature, the temperature varies
+                     # linearly during the simulation phase
+tempintv	     # time interval for Anderson thermostat
+pressure_start	     # external starting pressure/stress for NPT
+use_current_pressure # (without arguments) Similar to use_current_temp.
+                     # Instructs IMD to use the current system pressure
+                     # as the starting external pressure.
+pressure_end	     # external end pressure/stress for NPT
+                     # if different from pressure_start, the pressure
+		     # varies linearly during the simulation
+tau_eta		     # time constant for thermostat
+tau_xi		     # time constant for volume control in NPT simulation
+isq_tau_eta	     # 1/SQR(tau_eta). Can be zero, which corresponds to NVE
+isq_tau_xi	     # 1/SQR(tau_xi). Can be zero, which corresponds
+                     # to NVT or NVE
+cell_size_tol	     # relative tolerance for volume rescaling during 
+                     # NPT simulation
+
+# parameters for 2d pictures
+ecut_kin	# kinetic energy interval for pictures (min/max)
+ecut_pot	# potential energy interval for pictures (min/max)
+pic_scale	# picture scale (x y) 
+pic_ll		# lower left corner of picture
+pic_ur		# upper right corner of picture
+pic_res		# number of pixels in x/y direction
+pic_type	# type of picture: 0 (raw data), 1 (atoms), 2 (bins) 
+pic_at_radius	# radii of the atoms (for pictures)
+
+# parameters for particular modules
+
+# parameters for correlation functions and MSQD
+correl_start	# start time for correlation
+correl_end	# end time for correlation
+correl_ts	# sampling time interval for correlation
+
+# parameters for correlation functions only
+correl_rmax	# dimension of histogram in r domain
+correl_tmax	# dimension of histogram in t domain
+correl_int	# repeat interval for correlation
+GS_rcut         # cutoff radius for correlation data writes
+correl_omode	# output mode for correlation data
+                # 1 for gnuplot files with 1 empty line between blocks
+                # 2 for gnuplot files with 2 empty lines between blocks
+                # 3 for large gnuplot files (fully occupied matrix)
+                #   with no empty lines
+                # 4 for short files (refer to source for documentation)
+                #   (writes only a short header followed by matrix elements)
+
+# parameters for DISLOC
+dem_int         # number of steps between DEM writes
+ddm_int		# number of steps between DDM writes 
+dsp_int		# number of steps between DSP writes
+min_dpot	# threshold for plotting atoms
+dpotsorte	# type of atoms to be plotted
+ddelta          # threshold for plotting distance vector
+reset_Epot_step # step at which to compute Epot_ref (if calc_Epot_ref==1)
+calc_Epot_ref   # read (0) or compute (1) reference potential energy
+Epot_diff       # whether to write the potential energy difference 
+                # (1, default), or the potential energy (0)
+
+# parameters for MIKSHEAR (new shear module by G. Schaaf)
+shear_epsilon	# criterium for simulation abort
+shear_delta	# shear increment per timestep
+strip_width	# strip width (in x dir)
+
+# parameters for FRAC
+dampstadion	# Damping stadion
+dampgamma	# Damping factor gamma
+dampcutoff	# Damping cutoff
+k_crit		# Stress Intensity factor
+mue		# Youngs modulus
+kel		# Shear modulus
+crktip		# Crack tip location
+strip_width	# strip width (in x dir)
+
+# parameters for PULL
+strip_shift	# strip shift per timestep (vector)
+strip_width	# width (in x dir) of strip that is moved
+
+# parameters for SHOCK
+strip_width      # strip width (in x dir.)
+shock_strip      # shock strip width (in x dir.)
+shock_speed      # shock speed (in x dir.)
+
+# parameters for MC
+mc_beta         # Monte Carlo inverse temperature
+mc_len          # Monte Carlo mean jump length
+mc_seed         # seed for Monte Carlo random number generator
+
+# parameters for SOCK (socket routines)
+socket_int      # interval (in steps) between socket status checks
+display_host    # name of VolIMD host (fully qualified, if not locally known),
+                # or IP number in dotted quad format
+baseport        # number of socket baseport - default is 31913
+
+# parameters for <a href=eam.html>EAM</a> 
+# (embedded atom method; Finnis/Sinclair)
+eam_A           # EAM constant
+eam_r_cut       # cohesive function cutoff radius
+eam_r_0         # minimum distance
+eam_len         # maximum number of neighbors (for memory allocs)
+
+# parameters for <a href=ttbp.html>TTBP</a> (2 and 3 body potential)
+ttbp_len        # maxmimum number of neighbors (for memory allocs)
+ttbp_constant   # force constants (for all i=0 ... ntypes)
+ttbp_theta      # equilibrium angle (for all i=0 .. ntypes)
+ttbp_potfile    # potential file for smoothing function
+
+</PRE>
+
+<P>
+<A HREF="imd.html">Back to IMD User's Guide</A> 
+
+</BODY>
+</HTML>

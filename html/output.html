@@ -1,0 +1,122 @@
+<HTML>
+<HEAD>
+   <TITLE>IMD Output Files</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>IMD Output Files</H1>
+
+<H2><A NAME="configurations">Checkpoints</A></H2>
+
+IMD writes checkpoints in step intervals given by the parameter
+<TT>checkpt_int</TT>. A checkpoint is a complete
+<A HREF="config.html">configuration file</A>,
+whose name has the form
+<TT>&lt;outfiles&gt;.&lt;n&gt;</TT>,
+where <TT>&lt;n&gt;</TT> is a running number.
+Together with every checkpoint file, an iteration file 
+<TT>&lt;outfiles&gt;.&lt;n&gt;.itr</TT> is written,
+which contains the current values of certain parameters,
+such as the current stepnumber, box size, external temperature
+and external pressure. A simulation can be 
+<A HREF="usage.html">restarted</A> from every checkpoint.
+If <TT>checkpt_int</TT> is zero, no checkpoints are
+written.
+
+<H2><A NAME="properties">Properties File</A></H2>
+
+In intervals of <TT>eng_int</TT> steps, IMD writes
+certain properties to a file
+<TT>&lt;outfiles&gt;.eng</TT>, one line each time.
+The properties written are, in this order, the current simulation
+time, the potential energy per atom, the kinetic energy per atom
+(which is normalized such that it is identical to the actual
+system temperature), the pressure and the volume. If the
+simulation ensemble is npt_axial, and the preprocessor flag PAXTEST 
+is set, this is followed by the axial pressures and box dimensions.
+<P>
+In MC simulations, instead of kinetic energy and pressure,
+which have no meaning in this ensemble, the acceptance ratio
+since the last write is written. If <TT>eng_int</TT>
+is zero, no properties file is written.
+
+<H4>Known bugs</H4>
+
+In multiphase simulations containing Monte Carlo phases,
+the properties file is somewhat messy, because a particular 
+column does not always contain the same property. 
+The meaning of the numbers in a column can change 
+during the simulation. Fortunately, the mc ensemble is not
+used frequently!
+
+
+<H2><A NAME="distributions">Energy Distributions</A></H2>
+
+In intervals of <TT>dist_int</TT> steps, IMD writes the spatial
+distribution of potential and kinetic energy to the files
+<TT>&lt;outfiles&gt;.&lt;n&gt;.pot.dist</TT> and
+<TT>&lt;outfiles&gt;.&lt;n&gt;.kin.dist</TT>, where <TT>&lt;n&gt;</TT>
+is a running number.  The dimensions of the bin array is given by the
+parameter <TT>dist_dim</TT>. 
+<P>
+If the parameter <TT>dist_binary_io</TT> is set to 1, both energy
+distribution files are written in binary floats, otherwise they
+are formatted (ASCII), with one value per line.
+The histogram bins are written in order, with the last index varying
+the fastest. <TT>E_pot</TT> and <TT>E_kin</TT> are the potential and
+kinetic energy in the histogram bin, respectively. If the <A
+HREF="#disloc">disloc</A> option is active and </TT>Epot_diff=1</TT>, 
+the difference of the
+potential energy and a reference potential energy is written, instead
+of the absolute potential energy. In two dimensions, the <A
+HREF="utilities.html#imd_dist2pgm">utility program</A>
+imd_dist2pgm.perl can generate a graymap from the dist file. 
+Offline visualization of the energy distributions is also easily 
+possible with VolIMD, which is a descendant of
+<A HREF="http://www.uni-stuttgart.de/RUSuser/vis/People/roland/volrend/volrend.html">VolRend</A>.
+<P>
+The minimum and maximum values of the potential and the kinetic 
+energy of each distribution array are stored in the file 
+<TT>&lt;outfiles&gt;.&lt;n&gt;.minmax.dist</TT>, in lines of the 
+form
+<PRE>
+     n E_pot_min E_pot_max E_kin_min E_kin_max
+</PRE>
+
+<H2><A NAME="disloc">Writing Selected Atoms</A></H2>
+
+The option <TT>disloc</TT> allows to selectively write certain particles
+to special files. These files are useful to see dislocations.
+<P>
+A differential energy map (DEM) file consists of all particles 
+for which the difference of the potential energy and a (particle
+specific) <A HREF="options.html#disloc">reference potential energy</A>
+exceeds a certain threshold <TT>min_dpot</TT>. These particles are 
+written the file <TT>&lt;outfile&gt;.dem.&lt;n&gt;</TT> containing 
+lines of the form
+<PRE>
+     x y z dE_pot.
+</PRE>
+If the sample contains several atom types, only atoms of type 
+<TT>dpotsorte</TT> are written. 
+<P>
+A differential displacement map (DDM) file consists of all atoms
+which have moved a distance exceeding <TT>ddelta</TT> in the last
+MD timestep. These atoms are written to a file 
+<TT>&lt;outfile&gt;.ddm.&lt;n&gt;</TT>,
+containing lines of the form
+<PRE>
+     x y z dx dy dz.
+</PRE>
+where <TT>dx</TT>, <TT>dy</TT> and <TT>dz</TT> denote the displacement
+during the last MD timestep. Again, only atoms of type 
+<TT>dpotsorte</TT> are written.
+<P>
+These features have also been implemented in the 2D version, but have
+not yet been tested!  
+
+<P>
+<A HREF="imd.html">Back to IMD User's Guide</A> 
+
+</BODY>
+</HTML>

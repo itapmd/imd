@@ -1,0 +1,49 @@
+<HTML>
+<HEAD>
+   <TITLE>IMD Potentials</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>IMD Potentials</H1>
+As a default, IMD uses classical two-body potentials, which are
+tabulated in the potential file. Each line gives the potential
+values at one value of r^2 (square of the radius). If N is ntypes-1,
+the format of each line is:
+<PRE>
+r^2 V_00 V_01 ... V_0N V_10 V_11 ... V_NN 
+</PRE>
+It is <B>important</B> that the values of <B>r^2</B> at which the potential
+is given are <B>equidistant</B>. If the potential does not extend 
+down to r=0, it is extrapolated linearly. Further, IMD adds a
+constant to the potential, so that it ends at zero.
+
+<H2>EAM Potentials</H2>
+
+The pair interaction potential is used as described in 
+'IMD Potentials'. The cohesive energy term is computed
+during the run. The explicit form of the cohesive energy
+function depends on the elements considered. In IMD the
+potential functions optimized for molybdenum are available.
+<p>
+However, the change of the analytical cohesive energy 
+function and its first derivative should be straightforward.
+<p>
+For more details take a look at the description of the 
+<a href=eam.html>EAM implementation</a>.
+
+<H2>Two- and Three-Body Potentials</H2>
+
+The pair interaction potential is used as described in 
+'IMD Potentials'. The three-body interaction potential
+is computed during the run. The explicit form of the 
+latter term is still under development. Only three-body 
+test potentials are available right now.
+<p>
+For more details take a look at the description of the 
+<a href=ttbp.html>TTBP implementation</a>.
+
+<P>
+<A HREF="imd.html">Back to IMD User's Guide</A> 
+
+</BODY>
+</HTML>

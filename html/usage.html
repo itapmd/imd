@@ -1,0 +1,42 @@
+<HTML>
+<HEAD>
+   <TITLE>IMD Usage</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>Usage of IMD</H1>
+
+After having <A HREF="compiling.html">compiled</A> IMD for the
+desired target, the simulation is started as follows:
+<UL>
+imd_program [-rN] -p parameter_file
+</UL>
+The name of the IMD program is the same as the compilation target.
+If the parameter -rN is present, where N is an integer number, the 
+simulation is restarted from the checkpoint number N (note that 
+there must be no space between -r and N). The 
+<A HREF="paramfile.html">parameter file</A> contains all further
+<A HREF="params.html">parameters</A> describing the simulation.
+<P>
+On <B>parallel computers using MPI</B>, the machine must be instructed
+that a parallel process is to be run, and how many processors
+are to be used. The syntax for this depends on the particular 
+machine. Here are some important examples:
+<P><TABLE>
+<TR><TD>Cray T3E:       <TD>mpprun -n  P imd_program [-rN] -p parameter_file
+<TR><TD>Intel Paragon:  <TD>isub   -sz P imd_program [-rN] -p parameter_file
+<TR><TD>Paragon batch:  <TD>qsub   -lP P script, where script contains
+<TR><TD>                <TD>imd_program [-rN] -p parameter_file (no isub)
+<TR><TD>Hitachi:        <TD>mpirun -np P imd_program [-rN] -p parameter_file
+</TABLE>
+<P> 
+In all these examples, P is the number of processors to be used,
+which must agree with the number of processors requested in the
+parameter file.
+
+<P>
+<A HREF="imd.html">Back to IMD User's Guide</A> 
+
+</BODY>
+</HTML>
+

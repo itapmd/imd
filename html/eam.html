@@ -1,0 +1,363 @@
+<HTML>
+<HEAD>
+   <TITLE> EAM </TITLE>
+<!-- Changed by: Jutta Hahn, 27-Oct-1998 -->
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>Implementation of EAM (RISC)</H1>
+<hr size = 3 width=100% noshade>
+<p>
+
+The embedded atom method (EAM) has been implemented in IMD by
+Jutta Hahn (May 98). The EAM procedure given by Finnis/Sinclair 
+(M. W. Finnis and J. E. Sinclair  1984, <EM>Phil. Mag.</EM> A, 
+<B>50</B>, 45) for molybdenum has been chosen. 
+<P>
+
+The interaction between N particles is given by the sum of two 
+potential terms
+<P>
+U<sub>tot</sub> = U<sub>P</sub> + U<sub>N</sub>,
+<P>
+with U<sub>P</sub> the conventional central pair potential summation and 
+U<sub>N</sub> the N-body potential term.
+<P>
+
+In detail, the total energy is 
+<P>
+<PRE>
+U<sub>tot</sub> = \sum<sub>i,j</sub><sup>N</sup> U<sub>ij</sub>    - A * \sum<sub>i</sub><sup>N</sup> f(\rho<sub>i</sub>)               (1)
+<BR>
+U<sub>tot</sub> = \sum<sub>i,j</sub><sup>N</sup> U<sub>ij</sub>    - A * \sum<sub>i</sub><sup>N</sup> \sqrt(\rho<sub>i</sub>)           (2)
+<BR>
+U<sub>tot</sub> = \sum<sub>i,j</sub><sup>N</sup> U<sub>ij</sub>    - A * \sum<sub>i</sub><sup>N</sup> \sqrt(\sum<sub>j</sub><sup>N</sup> \phi<sub>ij</sub>)    (3)
+<BR>
+U<sub>tot</sub> = \sum<sub>i,j</sub><sup>N</sup> U(r<sub>ij</sub>) - A * \sum<sub>i</sub><sup>N</sup> \sqrt(\sum<sub>j</sub><sup>N</sup> \phi(r<sub>ij</sub>)) (4)
+</PRE>
+<P>
+with the distance r between two particle i and j and the EAM 
+constant A. In equation (1) the N-body potential term is written as 
+the sum of a cohesive function f. Typical to EAM is the square 
+root function f(\rho<sub>i</sub>) = \sqrt(\rho<sub>i</sub>) (eq. (2)). \rho can be 
+explained as a density function, which is written in equation (3) 
+as the sum of a pair function \phi<sub>ij</sub>. In order to calculate 
+U<sub>ij</sub> and \phi<sub>ij</sub> one uses pairwise distance depended 
+functions, U(r<sub>ij</sub>) and \phi(r<sub>ij</sub>) (eq. (4)). 
+<P>
+
+In case of molybdenum, vanadium, and others the following functions for 
+U(r<sub>ij</sub>) and \phi(r<sub>ij</sub>) are chosen:
+<P>
+U(r<sub>ij</sub>) = (r<sub>ij</sub> - c) * (c<sub>0</sub> + c<sub>1</sub>*r<sub>ij</sub> + c<sub>2</sub>*r<sub>ij</sub><sup>2</sup>)
+<P>
+for all r<sub>ij</sub> lower or equal c while for r<sub>ij</sub> > c the potential U(r<sub>ij</sub>) 
+is zero, and
+<P>
+\phi(r<sub>ij</sub>) = (r<sub>ij</sub> - d)<sup>2</sup>
+<P>
+for all r<sub>ij</sub> lower or equal d while for r<sub>ij</sub> > d the potential 
+\phi(r<sub>ij</sub>) is zero.  c, c<sub>0</sub>, c<sub>1</sub>, c<sub>2</sub>, d are parameters 
+typical for the element.
+<P>
+
+Equations (4)-(6) are realized in IMD. The pair potential U<sub>P</sub> is 
+still applied by a potential table, while in case of the cohesive 
+function U<sub>N</sub> the potential and its derivative (force) are 
+explicitely calculated.
+<P>
+
+The left formula of equation (4) can be solved like in case of 
+'classical' IMD. However, the main problem arises from the square 
+root calculation of a sum of pairwise 'interactions' \sqrt(\sum 
+\phi<sub>ij</sub>);  the right formula of equation (4). The following 
+strategy is applied:
+<P>
+	<UL>
+	<LI>
+Part 1: calculate the pair potential \sum U(r<sub>ij</sub>), its derivative
+and sumarize the cohesive function \phi(r<sub>ij</sub>). Moreover, remember 
+the eam neighbors and several characteristics which are needed later.
+	<LI>
+Part 2: calculate \sqrt(\rho<sub>i</sub>), tot_pot_energy and the eam forces.
+	</UL>
+
+This strategy results in two loops over all particles
+i = 0 ... N, for part 1 and for parts 2+3. 
+<P>
+
+<hr size = 3 width=100% noshade>
+<p>
+
+In order to use EAM a potential table for the pair interaction
+U(r<sub>ij</sub>) (eq. (5)) must be created. Further parameters are
+to be used in the IMD input file *.imp: 
+<P>
+
+<P><table border=1>
+<tr align="left" valign="top"><th> 	<td>
+EAM  	<td> IMD variable          	<td> Description 
+</th><tr align="left" valign="top"> <th><td>
+A  	<td> eam_A            		<td> EAM constant; eq. (4)
+</th><tr align="left" valign="top"> <th><td>
+d  	<td> eam_r_cut       		<td> EAM cohesive function cutoff radius; eq. (6) 
+</th><tr align="left" valign="top"> <th><td>
+.     	<td> eam_r_0         		<td> EAM minimum distance 
+</th><tr align="left" valign="top"> <th><td>
+.     	<td> eam_len          		<td> maximum number of neighbors in the cohesive
+                                         function calculation; technical value (memory)
+</th></table><br>
+
+The following files are modified (m) or created (c) (RISC-Version only):
+<p>
+<table border=1>
+<tr align="left" valign="top"> <th> 					<td>
+Makefile          <td>     for example: make imd_eam_risc_mik     	<td> (m)
+</th><tr align="left" valign="top"> <th> 				<td>
+prototypes.h      <td>     new function: do_forces_eam_1(2)       	<td> (m)
+</th><tr align="left" valign="top"> <th> 				<td>
+globals.h         <td>     global variables (eam_*)               	<td> (m)
+</th><tr align="left" valign="top"> <th> 				<td>
+imd_geom.c        <td>     cell size increasing                         <td> (m)
+</th><tr align="left" valign="top"> <th> 				<td>
+imd_param.c       <td>     define EAM variables for the parameter 
+                           inputfile:                                   <br>
+                           eam_len (number of maximum 
+                           allowed neighbors in cohesive function, 
+                           important to memory allocs),    
+                           eam_A (EAM cohesive function constant), 
+                           eam_r_cut (cutoff radius for
+                           cohesive function) and
+                           eam_r_0 (minimum distance for cohesive 
+                           function).                             	<td> (m)
+</th><tr align="left" valign="top"> <th> 				<td>
+imd_risc_main.c   <td>     memory allocs, free memory and walk the cells;<br>    
+                           calls do_forces_eam_1(2).            	<td> (m)
+</th><tr align="left" valign="top"> <th> 				<td>
+imd_forces_eam.c  <td>     used instead of do_forces.c;           	<br> 
+                           main calculation routine;                    <br> 
+                           part 1: calculation of the pair potential and 
+                           its derivative (force) as well as performing 
+                           the pre-calculations of the cohesive function 
+                           (do_forces_eam_1)                      	<br>    
+                           part 2: resume calculation of the cohesive 
+                           function, the total energy and 
+                           evaluate the cohesive force function     
+                           (do_forces_eam_2)                      	<td> (c) 
+</th><tr align="left" valign="top"> <th> 				<td>
+*.imp             <td>     parameter input file (example: Mo):          <br>
+<PRE>eam_len   50 	<br> 
+eam_A     1.887117<br> 
+eam_r_cut 4.114825<br> 
+eam_r_0   1. 	</PRE><td> (c) 
+</table>
+<P>
+<B> Important</B>: imd_forces_eam.c is a full copy of
+imd_forces.c and uses the classical pair potential plus 
+additions concerning the EAM. 
+Therefore, whenever anything is modified in imd_forces.c it
+should also maybe modified in imd_forces_eam.c
+<P>
+
+<hr size = 3 width=100% noshade>
+
+<table border=2 >
+<caption><pre><b> <h3>Modified Files (RISC Version) </h3></b></pre></caption>
+<tr align="left" valign="top"><th><td> <PRE>
+
+<B>Makefile</B> <br>
+</th><tr><th><td><PRE>
+...<br>
+EAMSOURCES = imd_forces_eam.c<br>
+...<br>
+ifneq (,$(strip $(findstring eam,{MAKETARGET})))<br>
+CFLAGS  += -DEAM<br>
+SOURCES += ${EAMSOURCES}<br>
+...<br>
+</th><tr><th><td><PRE>
+        
+<B>prototypes.h </B><br>
+</th><tr><th><td><PRE>
+...<br>
+void do_forces_eam_1(cell *p, cell *q, vektor pbc);<br>
+void do_forces_eam_2(cell *p, cell *q, vektor pbc);<br>
+...<br>
+</th><tr><th><td><PRE>
+        
+<B>globals.h </B><br>
+</th><tr><th><td><PRE>
+...<br>
+EXTERN integer *eam_ij;        /* neighbor array */<br>
+EXTERN integer eam_len;        /* max neighbors */<br>
+EXTERN real *eam_rho;          /* cohesive function density */<br>
+EXTERN real *eam_dij_x;        /* distance in x direction */<br>
+EXTERN real *eam_dij_y;        /* distance in y direction */<br>
+EXTERN real *eam_dij_z;        /* distance in z direction */<br>
+EXTERN real eam_r_0;           /* EAM minimum distance */<br>
+EXTERN real eam_r_cut;         /* EAM cutoff radius */<br>
+EXTERN real eam_r2_cut;        /* EAM cutoff radius^2 */<br>
+EXTERN real eam_A;             /* EAM cohesive function constant A */<br>
+...<br>
+</th><tr><th><td><PRE>
+
+<B>imd_param.c </B><br>
+</th><tr><th><td><PRE>
+...<br>
+else if (strcasecmp(token,"eam_len")==0) {<br>
+  /* number of neighbours */<br>
+  getparam("eam_len",&eam_len,PARAM_INTEGER,1,1);<br>
+<br>
+else if (strcasecmp(token,"eam_A")==0) {<br>
+  /* EAM constant for cohesive function */<br>
+  getparam("eam_A",&eam_A,PARAM_REAL,1,1);<br>
+}<br>
+else if (strcasecmp(token,"eam_r_cut")==0) {<br>
+  /* EAM: Cutoff of cohesive function */<br>
+  getparam("eam_r_cut",&eam_r_cut,PARAM_REAL,1,1);<br>
+  eam_r2_cut = eam_r_cut * eam_r_cut;<br>
+}<br>
+else if (strcasecmp(token,"eam_r_0")==0) {<br>
+  /* minimum distance of cohesive function */<br>
+  getparam("eam_r_0",&eam_r_0,PARAM_REAL,1,1);<br>
+}<br>
+...<br>
+</th><tr><th><td><PRE>
+
+<B>imd_geom.c</B><br>
+</th><tr><th><td><PRE>
+...<br>
+/* increase the size of the cell by 2 for EAM */<br>
+r2_cut2 = MAX( r2_cut, 2 * eam_r2_cut ); <br>
+...<br>
+</th><tr><th><td><PRE>
+
+<B>imd_risc_main.c </B><br>
+</th><tr><th><td><PRE>
+
+<b>void main_loop_risc(void) </b>
+
+...<br>
+/* memory allocation */<br>
+eam_rho   =  calloc(natoms,sizeof(real));<br>
+eam_ij    =  calloc(natoms*eam_len,sizeof(integer));<br>
+eam_dij_x =  calloc(natoms*eam_len,sizeof(real));<br>
+eam_dij_y =  calloc(natoms*eam_len,sizeof(real));<br>
+eam_dij_z =  calloc(natoms*eam_len,sizeof(real));<br>
+...<br>
+<A href=#CALC>calc_forces();</A>         
+...<br>
+/* free memory space */<br>
+free(eam_rho);<br>
+free(eam_ij);<br>
+free(eam_dij_x);<br>
+free(eam_dij_y);<br>
+free(eam_dij_z);<br>
+...<br>
+
+<b>void <A name="CALC">calc_forces(void)</A> </b>
+
+...<br>
+/* Part 1: For half of the neighbours of this cell: pair int. */<br>
+for (l=0; l <= 1; ++l)<br>
+  for (m=-l; m <= 1; ++m)<br>
+    for (n=(l==0 ? -m  : -l ); n <= 1; ++n) { <br>
+    ...<br>
+#ifdef EAM<br>
+    <a href=#EAM1>do_forces_eam_1(p,q,pbc);</A>
+#else<br>
+    do_forces(p,q,pbc);<br>
+#endif /* EAM */<br>
+};<br>
+...<br>
+#ifdef EAM<br>
+/* Part 2: for all atoms (cohesive potential and force) */<br>
+for (i=0; i < cell_dim.x; ++i)<br>
+  for (j=0; j < cell_dim.y; ++j)<br>
+    for (k=0; k < cell_dim.z; ++k) {<br>
+    p = PTR_3D_V(cell_array,i,j,k,cell_dim);<br>
+    pbc.x = 0;<br>
+    pbc.y = 0;<br>
+    pbc.z = 0;<br>
+    q = p;<br>
+    <a href=#EAM2>do_forces_eam_2(p,q,pbc);</A>
+};<br>
+#endif /* EAM */<br>
+...<br>
+</th><tr><th><td><PRE>
+        
+<B>imd_forces_eam.c</B> <br>
+</th><tr><th><td><PRE>
+
+<b>void <a name="EAM1">do_forces_eam_1(cell *ap, cell *aq, vektor apbc)</A></b>
+
+/* Part 1: pair potential and force, save eam neighbors */<br>
+for (i = 0;i < p->n; ++i) {<br>
+  eam_pni = p->nummer[i];<br>
+  jstart = (p==q ? i+1 : 0);<br>
+  for (j = jstart; j < q->n; ++j) {<br>
+    d.x      = q->ort X(j)-tmp_d.x; ...<br>
+    radius2  = SPROD(d,d);<br>
+    eam_r_ij = sqrt(radius2);<br>
+    if (radius2 <= r2_cut) { /* 1. Cutoff: pair */<br>
+      pot_grad = 2*inv_r2_step*(dv+(chi-0.5)*d2v);<br>
+      pot_zwi  =  pot_k0+chi*dv+0.5*chi*(chi-1)*d2v;<br>
+      force.x  = d.x*pot_grad;...<br>
+      p->kraft X(i)  += force.x;...<br>
+      p->pot_eng[i]  += pot_zwi;...<br>
+      tot_pot_energy += 2*pot_zwi; /* Important! */<br>
+    }; /* if 1. Cutoff */<br>
+    if (radius2 <= eam_r2_cut) { /* 2. Cutoff: EAM) */<br>
+      eam_pnj    = q->nummer[j];<br>
+      eam_phi_ij = (eam_r_ij-eam_r_cut)*(eam_r_ij-eam_r_cut);<br>
+      eam_ij[eam_pni*eam_len] += 1;                   		/* &raquo; eam_2 */<br>
+      eam_k = eam_ij[eam_pni*eam_len];<br>
+      eam_ij[eam_pni*eam_len+eam_k] = q->nummer[j];  		/* &raquo; eam_2 */<br>
+      eam_dij_x[eam_pni*eam_len+eam_k] = d.x;...  		/* &raquo; eam_2 */<br>
+      eam_rho[eam_pni] += eam_phi_ij;                		/* &raquo; eam_2 */<br>
+      eam_ij[eam_pnj*eam_len] += 1;                     	/* &raquo; eam_2 */<br>
+      eam_k = eam_ij[eam_pnj*eam_len];<br>
+      eam_ij[eam_pnj*eam_len+eam_k] = p->nummer[i];  		/* &raquo; eam_2 */<br>
+      eam_dij_x[eam_pnj*eam_len+eam_k] = -d.x;... 		/* &raquo; eam_2 */<br>
+      eam_rho[eam_pnj] += eam_phi_ij;                		/* &raquo; eam_2 */<br>
+    } /* if 2. Cutoff */ <br>
+}; /* j */ }; /* i */ <br>
+...<br>
+
+<b>void <a name="EAM2">do_forces_eam_2(cell *p, cell *q, vektor pbc)</A></b> 
+
+/* Part 2: calc of cohesive function and force, total energy */ <br>
+eam_cf = 0.0;<br>
+for (i = 0;i < p->n; ++i) {<br>
+  eam_pni = p->nummer[i];<br>
+  eam_cf_i = sqrt(eam_rho[eam_pni]);             		/* &laquo; eam_1 */<br>
+  eam_cf += eam_cf_i;<br>
+  p->pot_eng[i] -= eam_A * eam_cf_i;<br>
+  eam_tmp_i  = 1./eam_cf_i;<br>
+  jstart = 1;<br>
+  jend = eam_ij[eam_pni*eam_len];                 		/* &laquo; eam_1 */<br>
+  for (j = jstart; j <= jend; ++j) {<br>
+    d.x = eam_dij_x[eam_pni*eam_len+j]; ...   			/* &laquo; eam_1 */<br>
+    radius2 = SPROD(d,d);<br>
+    eam_r_ik = sqrt(radius2);<br>
+    eam_k = eam_ij[eam_pni*eam_len+j];             		/* &laquo; eam_1 */<br>
+    eam_tmp_k = 1./sqrt(eam_rho[eam_k]);          		/* &laquo; eam_1 */<br>
+    eam_pot_grad  = - eam_A*(eam_tmp_i+eam_tmp_k)<br>
+                    *(eam_r_ik-eam_r_cut)/eam_r_ik;<br>
+    force.x = d.x * eam_pot_grad; ...<br>
+    p->kraft X(i) += force.x; ...<br>
+  }; /* for j */<br>
+}; /* for i */<br>
+tot_pot_energy  -= eam_A * eam_cf;<br>
+...<br>
+</th>
+
+</table>
+
+<P>
+<hr size = 0 width=100% noshade>
+Written by Jutta Hahn<p>
+<A HREF="imd.html">Back to IMD User's Guide</A> 
+<hr size = 0 width=100% noshade>
+
+</BODY>
+</HTML>

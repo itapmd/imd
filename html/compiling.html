@@ -1,0 +1,108 @@
+<HTML>
+<HEAD>
+   <TITLE>Compiling IMD</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>Compiling IMD</H1>
+
+<P>
+IMD is compiled with GNU make, which we call gmake in the
+following. Note that on some systems, GNU make is called make.
+Most other implementations of make won't work.
+
+<UL><TT>
+gmake [EXTRAFLAGS="some flags"] imd-target
+</TT></UL>
+
+imd-target consists of several components and has the following structure:
+
+<UL><TT>
+<P>imd_architecture_ensemble[_ensemble]...[_2d][_option]_[option]...</P>
+</TT></UL>
+
+Default is a binary for 3d simulations. For <B>2d simulations</B>, the
+component _2d must be specified. In order that processor specific
+flags are set correctly, the <B>$HOSTTYPE</B> environement variable 
+must be set to one
+of the <A HREF="#hosttypes">supported $HOSTTYPE values</A>.
+The <B>EXTRAFLAGS</B> variable can be used to define further flags
+for the compiler, linker or C preprocessor. Note that starting with
+release 1.3, an IMD binary can support several ensembles. The active
+one is selected with a <A HREF="params.html">parameter</A> read from 
+the <A HREF="paramfile.html">parameter file</A>.  
+
+<P><TABLE>
+<A NAME=arch><TR><TH ALIGN=left COLSPAN=2>Supported architectures:</A>
+<TR><TD>risc <TD>serial execution on one CPU (even on vector computers)
+<TR><TD>mpi  <TD>parallel execution using MPI
+</Table>
+
+<P><TABLE>
+<A NAME=ensembles><TR><TH ALIGN=left COLSPAN=2>Supported ensembles:</A>
+<TR><TD VALIGN=top>nve
+    <TD>constant volume, constant energy
+<TR><TD VALIGN=top>nvt
+    <TD>constant volume, constant temperature, with 
+        Nos&eacute;-Hoover thermostat 
+<TR><TD VALIGN=top>and
+    <TD>constant volume, constant temperature, with Anderson thermostat
+<TR><TD VALIGN=top>npt_iso
+    <TD>constant pressure, constant temperature, with
+        isotropic volume scaling, Nos&eacute;-Hoover 
+        thermostat and volume control 
+<TR><TD VALIGN=top>npt_axial
+    <TD>constant pressure, constant temperature, with
+        volume scaling along each axis independently, 
+        Nos&eacute;-Hoover thermostat and volume control 
+<TR><TD VALIGN=top>mik
+    <TD>microconvergence relaxation
+<TR><TD VALIGN=top>mikshear
+    <TD>shearing plus microconvergence relaxation
+<TR><TD VALIGN=top>frac
+    <TD>fracture simulation with stadium damping
+<TR><TD VALIGN=top>pull
+    <TD>ensemble for shearing and pulling
+<TR><TD VALIGN=top>mc
+    <TD>Monte Carlo integrator
+</TABLE>
+
+<P><TABLE>
+<A NAME=options><TR><TH ALIGN=left COLSPAN=2>Supported options:</A>
+<TR><TD>2d          <TD>2d simulation rather than 3d
+<TR><TD>msqd        <TD>compute mean square displacements
+<TR><TD>correl      <TD>compute correlation functions
+<TR><TD>eam         <TD>use EAM potentials
+<TR><TD>ttbp        <TD>use TTBP potentials
+<TR><TD>debug       <TD>compile with debug flags
+<TR><TD>prof        <TD>compile with profiling support
+<TR><TD>shock       <TD>generate a shock wave
+<TR><TD>quasi       <TD>needed to generate a binary icosahedral quasicrystal (ticq)
+<TR><TD>disloc      <TD>dislocations, used for selecting particles in write routines
+<TR><TD>sock        <TD>enable sockets communication
+</TABLE>
+
+<P><TABLE>
+<A NAME=hosttypes><TR><TH ALIGN=left COLSPAN=2>
+                         Supported values for $HOSTTYPE:</A>
+<TR><TD>iris4d	     <TD>SGI running Irix 5 or 6
+<TR><TD>decstation   <TD>Decstation running Ultrix 4.4
+<TR><TD>alpha	     <TD>DEC Alpha running Digital Unix 3.2
+<TR><TD>speedy	     <TD>DEC Alpha running Digital Unix 4.0 (newer compiler)
+<TR><TD>rs6000	     <TD>RS6000 with Power2 Architecture running AIX
+<TR><TD>paragon	     <TD>Intel Paragon running OSF/1
+<TR><TD>c90	     <TD>Cray C90
+<TR><TD>t3e          <TD>Cray T3E
+<TR><TD>cray-t3e     <TD>Cray T3E
+<TR><TD>HITACHI	     <TD>Hitachi running HI-UX/MPP
+<TR><TD>i386-linux   <TD>Linux/Intel
+<TR><TD>i386-FreeBSD <TD>FreeBSD/Intel
+<TR><TD>os2	     <TD>IBM OS/2
+<TR><TD>sx4	     <TD>NEC SX4
+</TABLE>
+
+<P>
+<A HREF="imd.html">Back to IMD User's Guide</A> 
+
+</BODY>
+</HTML>

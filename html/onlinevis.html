@@ -1,0 +1,71 @@
+<HTML>
+<HEAD>
+   <TITLE>Online Visualization</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>Online Visualization</H1>
+
+Online visualization of an IMD simulation can be done with the 
+VolIMD program, which is a descendent of
+<A HREF="http://www.uni-stuttgart.de/RUSuser/vis/People/roland/volrend/volrend.html">VolRend</A>.
+VolIMD allows to communicate with a running IMD simulation via a 
+socket connection.  The user can direct VolIMD to post a request 
+to IMD. Every <TT>sock_int</TT> steps, IMD checks whether a request 
+has been posted, and acts accordingly. We say that VolIMD acts as 
+the "server", because it is on the VolIMD side where the simulation 
+is controlled. IMD therefore acts as "client". In priciple, one 
+could also do it the other way around, but this would be more 
+tricky. Also, we don't want to block IMD on 512 CPUs just because 
+VolIMD is busy rendering something and doesn't listen.
+<P>
+In order to use these features, IMD must be compiled with the 
+<A HREF="options.html#sock">sock option</A>. The host on which
+VolIMD runs must be given in the parameter <TT>display_host</TT>.
+This can be the host name (fully qualified, if not locally known),
+or the internet number in dotted quad format. VolIMD and IMD also
+must agree on a port number. Currently, the default 31913 is used
+for both programs. This can be changed in IMD with the parameter
+<TT>baseport</TT>, and in VolIMD in the "Simulation" menu.
+For a simulation in <B>two dimensions</B>, this must be selected
+in the "Switch" menu (default is 3D).
+<P>
+VolIMD currently runs only on SGI machines. At 
+<A HREF="http://www.itap.physik.uni-stuttgart.de">ITAP</A>, 
+the compiled binary is in the default search path on these machines. 
+If IMD runs on the Cray T3E at <A HREF="http://www.hlrs.de">HLRS</A>, 
+there are restrictions on the allowed display hosts and port numbers. 
+At <A HREF="http://www.itap.physik.uni-stuttgart.de">ITAP</A>, the only 
+allowed server is <B>godot-fd.itap.physik.uni-stuttgart.de</B>, and port 
+numbers must be above 2^15 (the default 31913 is ok).
+<P>
+In the present implementation, only three types of requests
+can be posted, all with the "Simulation" menu. 
+"<B>get distribution</B>" requests IMD to send histograms of 
+the kinetic and potential energy distributions (whose 
+dimensions are controlled by the IMD paramter <TT>dist_dim</TT>), 
+"<B>get picture</B>" (only in 2D)
+requests IMD to send an rgb picture of the kinetic energy 
+distribution (always at resolution 400x400), and "<B>terminate</B>"
+terminates IMD. In the "Switch" menu one can select whether
+on wants to view the kinetic or the potential energy distribution.
+<P>
+There should be no problems with IMD and VolIMD running on
+machines of different endianness, as IMD first sends test data,
+and by looking at this test data VolIMD decides whether a byte
+swap is necessary.
+
+<H4>Known bugs</H4>
+<UL>
+<P><LI>The display of energy distributions in 2 dimensions is somewhat
+suboptimal, to put it mildly.
+<P><LI>The resolution of 2D rgb pictures should be configurable,
+and should respect the aspect ratio of the sample.
+</UL>
+
+
+<P>
+<A HREF="imd.html">Back to IMD User's Guide</A> 
+
+</BODY>
+</HTML>

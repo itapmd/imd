@@ -1,0 +1,121 @@
+<HTML>
+<HEAD>
+   <TITLE>Pictures</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>Pictures</H1>
+
+There are several possibilities to make pictures from 2D IMD
+simulations. For pictures of 3D simulations we have to refer to
+VolIMD, which is a descendant of
+<A HREF="http://www.uni-stuttgart.de/RUSuser/vis/People/roland/volrend/volrend.html">VolRend</A>.
+
+
+<H2>Energy Distribution Pictures</H2>
+
+For energy distribution pictures, the structure is divided into
+an array of bins. Each bin corresponds to one pixel, which is
+colored according to the total potential or kinetic energy of
+the atoms in the bin. Such pictures are suitable for very big
+systems.
+
+The first possibility to make such pictures is to write 
+<A HREF="output.html#distributions">energy distribution files</A>, 
+and make pictures with 
+<A HREF="utilities.html">imd_dist2pgm.perl</A>.
+
+The second possibility is to directly write ppm files every 
+<TT>pic_int</TT> steps. These files are named
+<TT>&lt;outfiles&gt;.&lt;n&gt;.pot.ppm</TT> and
+<TT>&lt;outfiles&gt;.&lt;n&gt;.kin.ppm</TT>, repectively.
+The relevant parameters are the following:
+<UL>
+
+<P><LI>pic_type
+<P>Must be 2 for bins
+
+<P><LI>pic_int
+<P>Interval (in steps) between picture writes.
+
+<P><LI>Ecut_kin
+<P>Lower and upper treshold of kinetic energy (used for coloring)
+
+<P><LI>Ecut_pot
+<P>Lower and upper treshold of potential energy (used for coloring)
+
+<P><LI>pic_res
+<P>This should be the resolution in pixels. At present, a fixed
+   resolution is used.
+
+<P><LI>pic_scale
+<P>Zoom into the center of the picture. Should be replaced by
+   lower left and upper right corner of the picture.
+</UL>
+
+
+<H2>Atomic Pictures</H2>
+
+For not too big systems, one can make pictures where every single atom
+can be seen. At present, IMD can not directly produce such pictures,
+but this is planned. They have to be generated after the simulation.
+
+The first possibility is to convert 
+<A HREF="config.html">configuration files</A> into ppm files with
+the help if <A HREF="utilities.html">imd2ppm</A>. The second
+possibility is to write special <TT>.pic</TT> files
+containing the raw data needed for the pictures. These can
+then be turned into pictures by <A HREF="utilities.html">imd2ppm</A>.
+The advantage of the <TT>.pic</TT> files is that
+they contain only the data needed for the pictures. Moreover,
+they are written in binary format, and so writing and reading
+is faster, and they are smaller. The necessary parameters for
+the <TT>.pic</TT> files are the following:
+
+<UL>
+
+<P><LI>pic_type
+<P>Must be 1 for <TT>.pic</TT> files
+
+<P><LI>pic_int
+<P>Interval (in steps) between picture writes.
+
+<P><LI>pic_res
+<P>Resolution in pixels in x and y direction. If only one resolution
+   is given, the other is chosen such that pixels are approximately square.
+
+<P><LI>pic_ll
+<P>Lower left corner of the picture in IMD coordinates.
+
+<P><LI>pic_ur
+<P>Upper right corner of the picture in IMD coordinates.
+
+<P><LI>parallel_io
+<P>If parallel_io = 2, the .pic files are written in parallel (each CPU
+   writes its own atoms to a separate file). All other input/output 
+   is serial, however. 
+<P>
+   If parallel_io = 1, all input/output is parallel, if parallel_io = 0, 
+   all input/output is serial. 
+</UL>
+
+Only atoms in a frame spanned by the paramters pic_ll (lower left
+corner) and pic_ur (upper right corner) are written. By default, this
+frame is set to the whole system.
+<P>
+Under the <A HREF="options.html#disloc">disloc</A> option, instead
+of the actual potential energy the difference to a reference
+potential energy is written to the .pic files.
+<P>
+If the compilation flag <B>ZOOM</B> is defined, only partial configuration
+files (checkpoints - which the no longer work as checkpoints!) 
+consisting of the atoms inside the frame defined by pic_ll and pic_ur
+are written. It is probably better to use the .pic files to make 
+partial pictures, though.
+
+<P>
+<A HREF="imd.html">Back to IMD User's Guide</A> 
+
+</BODY>
+</HTML>
+

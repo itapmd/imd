@@ -1,0 +1,158 @@
+<HTML>
+<HEAD>
+   <TITLE>IMD Configurations</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>IMD Configurations</H1>
+
+The starting configuration of an IMD simulation is usually read from 
+a configuration file, whose format is described below. Also,
+at every checkpoint IMD writes the current configuration to a file
+in the same format, so that it can be used to restart the simulation,
+or as a starting configuration to a different simulation. 
+There are <A HREF="samples.html">utility programs</A> to generate 
+configuration files for several kinds of structures.
+Certain special types of configurations can also be 
+<A HREF="#generated">generated</A> directly by IMD. Note that there 
+are some issues with <A HREF="#boundary">boundary conditions</A> to
+be considered.
+
+<H2>Configuration Files</H2>
+
+An IMD configuration file is an ASCII file, which contains one
+line for each atom. The format is for each line is:
+
+<P><TABLE>
+<TR><TD>in 2d:   <TD>number type mass x y [vx vy]
+<TR><TD>in 3d:   <TD>number type mass x y z [vx vy vz]
+</TABLE>
+<P>
+These items stand for:
+<P><TABLE>
+<TR><TD>number	    <TD>number of the atom; should be unique
+<TR><TD>type        <TD>type of the atom; must be in the range [0..ntypes-1]
+<TR><TD>mass        <TD>mass of the atom; must be positive
+<TR><TD>x y z       <TD>coordinates of the atom
+<TR><TD>vx vy vz    <TD>velocity components of the atom
+</TABLE>
+<P>
+Note that:
+<UL>
+<LI> atoms with negative numbers are immobile in certain ensembles.
+<LI> if <A HREF="#boundary">free boundary conditions</A> are used,
+     it is the user's responsibility that the system fits into the
+     simulation box (spanned by the box vectors starting at the
+     origin). With <A HREF="#boundary">periodic boundary conditions</A>, 
+     atoms outside the box are mapped back into the box.
+<LI> if there are atoms with missing velocities in the input file,
+     the initial velocities are set to some random Maxwell
+     distribution with the desired temperature.
+</UL>
+
+<A NAME="makeconfig"> 
+<H2>Making Configurations Files</H2>
+</A>
+<P>
+There are <A HREF="samples.html">utility programs</A> to generate 
+configuration files for several kinds of structures.
+<P>
+<A NAME="generated"> 
+<H2>Generated Configurations</H2>
+</A>
+If the input configuration file name (parameter <TT>coordname</TT>) starts
+with a dot, IMD tries to interpret it and computes the initial atom
+positions, rather than reading them in. The following generated structures
+are supported:
+<TABLE>
+<TR><TD>.fcc      <TD> fcc crystal (3D)
+<TR><TD>.nacl     <TD> NaCl crystal (3D)
+<TR><TD>.tiqc     <TD> truncated icosahedra quasicrystal (3D)
+<TR><TD>.hex      <TD> hexagonal crystal (2D)
+</TABLE>
+<P>
+If the ensembles/options <B>frac</B>, <B>pull</B>, <B>mikshear</B> or
+<B>shock</B> are contained in the exectuble, a layer of with
+<TT>strip_width/2</TT> is left empty at the boundary of the box 
+for all generated structures (only in x-direction for shock).
+<P>
+For fcc and nacl structures, the box must be rectangular.
+More precisely, the box matrix must be diagonal, and each box 
+vector must have a length which is an even integer.
+<P>
+For hexagonal crystals, the size of the rectangular box is encoded
+in the diagonal of the box matrix (off-diagonal entries must be 0).
+The size of the sample is <TT>box_x.x*sqrt(3)</TT> in x-direction, and
+<TT>box_y.y</TT> in y-direction. The nearest neighbor distance is 1.
+<P>
+The <TT>.tiqc</TT> structure generates an approximant of a truncated
+icosahedra quasicrystals (tiqc, truncated icosahedra clusters are also
+known as Bergman clusters). The tiqc are simple decorations of the
+standard rhombohedra icosahedral quasicrystals in three
+dimensions. Every vertex and every edge center is occupied by an atom
+of type A (small atom). Every long diagonal of the prolate
+rhombohedron is decorated with two atoms of type B (large atoms). The
+diagonal is divided in the ratio 1:tau:1, where tau is the golden
+mean.
+<P>
+Only the simplest case is implemented here. It is needed only if
+the number of particles to be simulated is so large that the 
+configuration cannot be stored on disk. For practical simulations 
+this will rarely be the case. For all other cases, there is a more
+versatile, stand alone <A HREF="samples.html">utility program</A>
+for the generation of quasicrystals.
+<P>
+The simulation box must be spanned by a triple of othogonal vectors 
+in two-fold directions. Since we use periodic boundary conditions,
+the quasicrystal is actually an approximant. Only Fibonacci number 
+approximants are permitted. This allows us to characterize the 
+approxmiant by three Fibonacci numbers for the size of the three 
+coordination axis.
+<P>
+To enter the size of the approximant we have abused the box array
+which normally contains the periodic box vectors. For the generation
+of a quasicrystal the diagonal elements should contain the order of
+the approximant in the corresponding direction. The file name for 
+the particle coordinates must be chosen as <TT>.tiqc</TT>, and
+the component <TT>quasi</TT> must be contained in the 
+<A HREF="compiling.html">compilation target</A>.
+
+<A NAME="boundary"> 
+<H2>Boundary Conditions</H2>
+</A>
+IMD uses <B>periodic boundary</B> conditions by default. Whenever 
+particles leave the simulation box, or if they are outside the 
+simulation box when they are read from a configuration file, they 
+are mapped back into the simulation box. In the computation of the 
+forces, the minimal image convention is used.
+<P>
+Periodic boundary conditions can be <B>switched off</B> with the
+compilation flag <B>NOPBC</B>. Certain ensembles and options, notably
+<TT>frac</TT>, <TT>pull</TT> and <TT>mikshear</TT>, always switch off
+periodic boundary conditions. Here, it is the user's responsibility
+that the system fits into the box.  This is necessary in order that
+the distribution of the particles into cells works correctly. Only a
+few particles outside the box should do no harm; they are attributed
+to cells at the boundary. In any case, it might be wise to leave some
+empty space near the boundary.  If periodic boundary conditions are
+switched off, no minimal image convention is used in the force
+computation.
+<P>
+Note that the option <B>shock</B> uses <B>periodic</B> boundary 
+conditions in y and z direction, but <B>free</B> boundary conditions 
+in x direction.
+<P>
+<B>Important:</B> The type of boundary conditions is global to the
+entire IMD executable. If there are ensembles or options present
+which are incompatible with periodic boundary conditions, they are
+switched off everywhere. Of course, nobody would want to switch 
+the type of boundary conditions during a simulation. However, if
+features A and B are present in the same binary, and feature B
+requires NOPBC, then NOPBC is active also for feature A, even if
+A does not require this, and B is never actually used.
+
+<P>
+<A HREF="imd.html">Back to IMD User's Guide</A> 
+
+</BODY>
+</HTML>

@@ -1,0 +1,41 @@
+<HTML>
+<HEAD>
+   <TITLE>Limitations of the current implemetation of IMD</TITLE>
+</HEAD>
+<BODY BGCOLOR="#FFFFFF">
+
+<H1>Limitations of the current implemetation of IMD</H1>
+<P>
+The current implemetation of IMD has certain limitations, of which
+a user should be aware. Some of them are listed here, to avoid
+misunderstandings and errors. Most of them concern limited 
+multiphase simulation capabilities.
+<P>
+The type of <B>boundary conditon</B> (periodic or free) is global
+to an entire IMD executable, not only to an entire simulation.
+Certain ensembles and options (frac, pull, mikshear) require free 
+boundary conditions, and switch off periodic boundary conditions
+for all other components in the executable.
+The option <B>shock</B> does this with boundary conditions in
+x-direction only.
+<P>
+Certain ensembles and options do some <B>initialization</B> during 
+startup. This is still the case for <B>shock</B>, which can therefore
+be used only for the first simulation phase. <B>frac</B>, <B>pull</B> 
+and <B>mikshear</B>, on the other hand, now do their initializations
+for each phase separately, so that they are compatible with each other.
+<P>
+Certain features can not (yet) be switched on and off during a
+simulation. Once compiled into an executable, they are active all
+the time. Such features therefore only have limited <B>multiphase</B> 
+capabilities. There are probably no such feature left :-)
+<P>
+The type of <B>interaction</B> (pair potentials, EAM potentials, 
+two- and three-body potentials) is global to an entire IMD executable.
+The potential tables can not be changed during a simulation.
+<P>
+<A HREF="imd.html">Back to IMD User's Guide</A> 
+
+</BODY>
+</HTML>
+
