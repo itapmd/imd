@@ -27,6 +27,7 @@ void create_atom(int type, real mass, real temp)
   cell *p;
   ivektor cellc, neigh_cellc;
   vektor pos, dist;
+  real ran1, ran2;
   int pbc_x, pbc_y;
   real min_dist2, dist2;
   int i, l, m, n, cpu;
@@ -42,10 +43,12 @@ void create_atom(int type, real mass, real temp)
     /* trial position of new particle (on master processor) */
     /* x,y coordinates at random, z coordinate shifted continuously */
     if (0 == myid) {
-    pos.x = drand48() * box_x.x;
-    pos.y = drand48() * box_y.y;
-    pos.z = epitax_height;
-  }
+      ran1 = drand48();
+      ran2 = drand48();
+      pos.x = ran1 * box_x.x + ran2 * box_y.x;
+      pos.y = ran1 * box_x.y + ran2 * box_y.y;
+      pos.z = epitax_height;
+    }
 
    /* broadcast position */ 
 #ifdef MPI
