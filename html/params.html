@@ -208,11 +208,28 @@ core_potential_file   # Core-core Pair Potential, tabulated in r**2
 embedding_energy_file # Embedding Energy Function, tabulated in rho
 atomic_e-density_file # Electron Density, tabulated in r**2
 
-# parameters for <a href=ttbp.html>TTBP</a> (2 and 3 body potential)
-ttbp_len        # maxmimum number of neighbors (for memory allocs)
-ttbp_constant   # force constants (for all i=0 ... ntypes)
-ttbp_sp         # hybridization type (for all i=0 ... ntypes)
-ttbp_potfile    # potential file for smoothing function
+# parameters for <A href="covalent.html">TTBP</A> (2 and 3 body potential)
+neigh_len       # maxmimum number of neighbors (for memory allocs)
+ttbp_constant   # force constants (for all i=0 ... (ntypes-1))
+ttbp_sp         # hybridization type (for all i=0 ... (ntypes-1))
+ttbp_potfile    # potential file for cutoff function
+
+# parameters for <A href="covalent.html#tersoff">TERSOFF</A> (Tersoff potential)
+neigh_len       # maxmimum number of neighbors (for memory allocs)
+ters_a          # parameters for the Tersoff potential
+ters_b          #   for all (i=0 ... (ntypes-1))
+ters_la
+ters_mu
+ters_ga
+ters_n
+ters_c
+ters_d
+ters_h
+ters_r_cut
+ters_r0
+ters_chi
+
+
 
 # parameters for <a href=uniax.html>UNIAX</a> 
 # (Gay-Berne potential for uniaxial molecules)

@@ -1,0 +1,150 @@
+
+<HTML>
+<HEAD>
+<TITLE> COVALENT </TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#ffffff">
+<H1> Use of Many-Body Potentials </H1>
+
+IMD allows to use many-body potentials of the <B>Stillinger-Weber</B> type
+and the <B>Tersoff</B> potential.
+
+<UL>
+<LI> 
+
+
+The option <B>ttbp</B> (<B>t</B>wo- and <B>t</B>hree-<B>b</B>ody
+<B>p</B>otentials) 
+enables the use of potentials of the
+Stillinger-Weber type.<P>
+The Stillinger-Weber potential (F. H. Stillinger and T. A. Weber,
+<I>Phys. Rev. B</I> <B>31</B> (1985) 5262) is given by <BR><P>
+
+<CENTER>
+<IMG SRC="covalent1.gif"><BR><P>
+</CENTER>
+
+where <I>V</I><SUB>2</SUB> is a two-body potential and <I>V</I><SUB>3</SUB> is
+the three-body contribution. The summation is over all atoms
+<I>i</I>, <I>j</I>, <I>k</I>
+with the restrictions indicated in the sums.
+The three-body term is<P>
+
+<CENTER>
+<IMG SRC="covalent2.gif"><BR><P>
+</CENTER>
+
+Here, <I>Z</I> is the force constant, <I>f<SUB>c</SUB> (r)</I> is a cutoff
+function, and the angle <IMG
+ WIDTH="35" HEIGHT="38" ALIGN="MIDDLE" BORDER="0" SRC="covalent3.gif"> is the bond angle 
+between the bonds  <I>ij</I> and <I>ik</I>. The parameter <I>h</I> indicates the hybridization
+<I>sp<SUP>h</SUP></I> of the
+atoms. In the case <I>h</I>=3 the coordination is fourfold while in
+the case <I>h</I>=2 the coordination number is three.
+<P>
+
+The two-body potential is read in as an IMD potential table as usual
+using the IMD variable <TT>potfile</TT>. The cutoff function
+<I>f<SUB>c</SUB> (r)</I> has also to be given as a file in the same
+format as the potential table. The corresponding IMD variable is 
+<TT>ttbp_potfile</TT>.<P>
+
+The parameter <I>Z</I> corresponds to the IMD variable
+<TT>ttbp_constant</TT> and the hybridization pertains to 
+the variable <TT>ttbp_sp</TT>.<P>
+
+As a result of the short range nature of the potential, only
+the nearest neighbours have to be considered in the computation of the
+potential and the forces. The maximal number of nearest neighbours
+must be specified as a parameter with the IMD variable
+<TT>neigh_len</TT>. It is used to allocate memory for the neighbour tables.<P>
+
+
+
+<LI>
+<A NAME="tersoff">The option <B>tersoff</B> enables the use of the Tersoff potential.</A><P>
+
+In the present implementation, the following form of the Tersoff
+potential is used (J. Tersoff, <I>Phys. Rev. B</I> <B>39</B> (1989) 5566):<P>
+
+<CENTER>
+<IMG SRC="covalent4.gif"><BR><P>
+</CENTER>
+
+where
+
+<CENTER>
+<IMG SRC="covalent5.gif"><BR><P>
+</CENTER>
+
+The two-body potential is implicitely contained in this
+expression. Hence, an additional pair potential has not to be given.
+In contrast to the Stillinger-Weber potential, the cutoff function 
+<I>f<SUB>c</SUB> (r)</I> is not read in as a function table but is 
+computed analytically during the simulation according to<P>
+
+<CENTER>
+<IMG SRC="covalent6.gif"><BR><P>
+</CENTER>
+
+The indices of the parameters may refer to different types of
+atoms. However, the parameters with two indices are computed as
+follows:<P>
+
+<CENTER>
+<IMG SRC="covalent7.gif"><BR><P>
+</CENTER>
+
+The (symmetric) parameter 
+<IMG
+ WIDTH="30" HEIGHT="36" ALIGN="MIDDLE" BORDER="0"
+ SRC="covalent8.gif"> is an exception. Its diagonal values are equal
+to 1 and only the non-diagonal values have to be read in, provided there
+is more than one atom type. <P>
+
+The IMD variables with the corresponding parameters are as
+follows:<P>
+
+<TABLE>
+<TR> <TD> <TT>ters_a</TT> </TD>  <TD></TD><TD> <I>A<SUB>i</SUB><I> </TD> </TR>
+<TR> <TD> <TT>ters_b</TT> </TD> <TD></TD> <TD> <I>B<SUB>i</SUB><I> </TD> </TR>
+<TR> <TD> <TT>ters_la</TT> </TD> <TD></TD> <TD> <IMG WIDTH="23" HEIGHT="38" ALIGN="MIDDLE" BORDER="0"
+            SRC="covalent9.gif"> </TD> </TR>
+<TR> <TD> <TT>ters_mu</TT> </TD> <TD></TD>  <TD> <IMG WIDTH="23" HEIGHT="36" ALIGN="MIDDLE" BORDER="0"
+            SRC="covalent10.gif"> </TD> </TR>
+<TR> <TD> <TT>ters_ga</TT> </TD> <TD></TD> <TD> <IMG WIDTH="22" HEIGHT="36" ALIGN="MIDDLE" BORDER="0"
+            SRC="covalent11.gif"> </TD> </TR>
+
+<TR> <TD> <TT>ters_n</TT> </TD> <TD></TD> <TD> <I>n<SUB>i</SUB><I> </TD> </TR>
+<TR> <TD> <TT>ters_c</TT> </TD><TD></TD>  <TD> <I>c<SUB>i</SUB><I> </TD> </TR>
+<TR> <TD> <TT>ters_d</TT> </TD><TD></TD>  <TD> <I>d<SUB>i</SUB><I> </TD> </TR>
+<TR> <TD> <TT>ters_h</TT> </TD><TD></TD>  <TD> <I>h<SUB>i</SUB><I> </TD> </TR>
+<TR> <TD> <TT>ters_r_cut</TT> </TD><TD></TD>  <TD> <I>S<SUB>i</SUB><I> </TD> </TR>
+<TR> <TD> <TT>ters_r0</TT> </TD><TD></TD>  <TD> <I>R<SUB>i</SUB><I> </TD> </TR>
+
+<TR> <TD> <TT>ters_chi</TT> </TD><TD></TD>  <TD> <IMG WIDTH="30" HEIGHT="36" ALIGN="MIDDLE" BORDER="0"
+            SRC="covalent8.gif"> </TD>
+</TR>
+</TABLE>
+<P>
+
+The values of the single-index parameters have to be given for all atom types in a
+row. In the case of the variable <TT>ters_chi</TT>, the non-diagonal
+values of the matrix are read in using the following format:<P>
+
+<CENTER>
+<IMG SRC="covalent12.gif"><BR><P>
+</CENTER>
+
+where <I>n</I> is the number of atom types. <P>
+
+As in the case of the Stillinger-Weber potential, the value of the variable
+<TT>neigh_len</TT> must also be specified.<P>
+
+<A HREF="imd.html">
+Back to IMD User's Guide</A>
+
+</BODY>
+</HTML>
+
