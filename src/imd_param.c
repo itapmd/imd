@@ -366,6 +366,10 @@ void getparamfile(char *paramfname, int sim)
         ensemble = ENS_FRAC;
         move_atoms = move_atoms_frac;
       }
+      else if (strcasecmp(tmpstr,"sllod")==0) {
+        ensemble = ENS_SLLOD;
+        move_atoms = move_atoms_sllod;
+      }
       else if (strcasecmp(tmpstr,"stm")==0) {
         ensemble = ENS_STM;
         move_atoms = move_atoms_stm;
@@ -760,9 +764,9 @@ void getparamfile(char *paramfname, int sim)
       getparam("pic_type", &pic_type,PARAM_INT,1,1);
     }
 #ifdef SLLOD
-    else if (strcasecmp(token,"epsilon")==0) {
+    else if (strcasecmp(token,"shear_rate")==0) {
       /* shear strength, corresponds to xy-entry in strain tensor */
-      getparam("epsilon",&epsilon,PARAM_REAL,1,1);
+      getparam("shear_rate",&shear_rate,PARAM_REAL,2,2);
     }
 #endif
 #ifdef HOMDEF
@@ -1653,7 +1657,7 @@ void broadcast_params() {
 #endif
 
 #ifdef SLLOD
-  MPI_Bcast(&epsilon,1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&shear_rate, 2, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef TERSOFF
@@ -1691,6 +1695,7 @@ void broadcast_params() {
     case ENS_NVE:       move_atoms = move_atoms_nve;       break;
     case ENS_MIK:       move_atoms = move_atoms_mik;       break;
     case ENS_NVT:       move_atoms = move_atoms_nvt;       break;
+    case ENS_SLLOD:     move_atoms = move_atoms_sllod;     break;
     case ENS_NPT_ISO:   move_atoms = move_atoms_npt_iso;   break;
     case ENS_NPT_AXIAL: move_atoms = move_atoms_npt_axial; break;
     case ENS_FRAC:      move_atoms = move_atoms_frac;      break;
