@@ -20,10 +20,10 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 /* support for timers */
 #ifndef MPI
-#include <unistd.h>
 #ifdef USE_RUSAGE
 #include <sys/time.h>
 #include <sys/resource.h>
