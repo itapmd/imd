@@ -432,7 +432,7 @@ void write_itr_file(int fzhlr, int steps)
   fprintf(out,"box_x \t%f %f\n",box_x.x,box_x.y);
   fprintf(out,"box_y \t%f %f\n",box_y.x,box_y.y);
 
-#if defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
+#if defined(NVT) || defined(NPT) || defined(STM)
   /* if we have temperature control, write external temperature and eta */
   if (((ensemble==ENS_NVT)     || (ensemble==ENS_NPT_AXIAL) || 
        (ensemble==ENS_NPT_ISO) || (ensemble==ENS_STM) || 
@@ -440,6 +440,12 @@ void write_itr_file(int fzhlr, int steps)
     fprintf(out,"starttemp \t%f\n",temperature);
     fprintf(out,"eta \t%f\n",eta);
   }
+#endif
+
+#ifdef FRAC 
+  /* with FRAC ensemble, write external temperature */
+  if ((ensemble==ENS_FRAC)) && (isq_tau_eta>0))
+    fprintf(out,"starttemp \t%f\n",temperature);
 #endif
 
 #ifdef AND
