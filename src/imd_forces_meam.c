@@ -55,6 +55,8 @@ void do_forces2(cell *p, real *Epot, real *Virial,
   static real   *fl1  = NULL, *fl2  = NULL, *fl3  = NULL;
   static vektor *dfl1 = NULL, *dfl2 = NULL, *dfl3 = NULL;
   real     epsilon = 1e-10;
+  real     meam_t1_av, meam_t2_av, meam_t3_av;
+  real     t1, t2, t3;
   real     tmp_virial;
 #ifdef P_AXIAL
   vektor   tmp_vir_vect;
@@ -273,6 +275,12 @@ void do_forces2(cell *p, real *Epot, real *Virial,
     rho2_2 = 0.0;
     rho2_3 = 0.0;
 
+    if ( meam_t_average ) {
+      meam_t1_av = 0.0;
+      meam_t2_av = 0.0;
+      meam_t3_av = 0.0;
+    }
+
     /* for each neighbor of i */
     for (j=0; j<neigh->n; ++j) {
 
@@ -286,7 +294,14 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 	dfl3[j] = nullvek;
 	
 	rho_0  += rho_a0[j];
-	
+
+	if ( meam_t_average ) {
+	  j_typ = NSORTE(neigh,j);
+	  meam_t1_av += meam_t1[j_typ] * rho_a0[j];
+	  meam_t2_av += meam_t2[j_typ] * rho_a0[j];
+	  meam_t3_av += meam_t3[j_typ] * rho_a0[j];
+	}	
+
 	/* for each neighbor of i */
 	for (k=0; k<neigh->n; ++k) {
 
@@ -294,29 +309,23 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 
 	    /* Legendre polynomials */
 	    l1 = cos I(j,k); 
-	    l2 = l1 * l1 - 1.0 / 3.0;
-	    l3 = l1 * ( l1 * l1 - 0.6 );
+	    l2 = SQR(l1) - 1.0 / 3.0;
+	    l3 = l1 * ( SQR(l1) - 0.6 );
 
-	    tmp1 = rho_a1[k] * l1;
-	    tmp2 = rho_a2[k] * l2;
-	    tmp3 = rho_a3[k] * l3;
-
-	    fl1[j] += tmp1;
-	    fl2[j] += tmp2;
-	    fl3[j] += tmp3;
-
-	    rho2_1 += tmp1 * rho_a1[j];
-	    rho2_2 += tmp2 * rho_a2[j];
-	    rho2_3 += tmp3 * rho_a3[j];
+	    fl1[j] += rho_a1[k] * l1;
+	    fl2[j] += rho_a2[k] * l2;
+	    fl3[j] += rho_a3[k] * l3;
 
 	    /* derivatives of Legendre polynomials */
 	    dl1 = 1.0;
 	    dl2 = 2.0 * l1;
 	    dl3 = 3.0 * SQR(l1) - 0.6;
+
+	    tmp = l1 * invr[j];
 	    
-	    tmpv.x = d[k].x * invr[k] - l1 * d[j].x * invr[j];
-	    tmpv.y = d[k].y * invr[k] - l1 * d[j].y * invr[j];
-	    tmpv.z = d[k].z * invr[k] - l1 * d[j].z * invr[j];
+	    tmpv.x = d[k].x * invr[k] - tmp * d[j].x;
+	    tmpv.y = d[k].y * invr[k] - tmp * d[j].y;
+	    tmpv.z = d[k].z * invr[k] - tmp * d[j].z;
 
 	    tmp1 = rho_a1[k] * dl1;
 	    tmp2 = rho_a2[k] * dl2;
@@ -333,9 +342,23 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 	    dfl3[j].z += tmp3 * tmpv.z;
 	  }
 	}
+
+	rho2_1 += fl1[j] * rho_a1[j];
+	rho2_2 += fl2[j] * rho_a2[j];
+	rho2_3 += fl3[j] * rho_a3[j];
       }
     } /* j */
 
+    if ( meam_t_average ) {
+      t1 = meam_t1_av / rho_0;
+      t2 = meam_t2_av / rho_0;
+      t3 = meam_t3_av / rho_0;
+    }
+    else {
+      t1 = meam_t1[p_typ];
+      t2 = meam_t2[p_typ];
+      t3 = meam_t3[p_typ];
+    }
 
     if ( rho_0 == 0.0 ) {
       gamma  = 0.0;
@@ -345,8 +368,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
       df     = 0.0;
     }
     else {
-      gamma = ( meam_t1[p_typ] * rho2_1 + meam_t2[p_typ] * rho2_2 
-	       + meam_t3[p_typ] * rho2_3 ) / SQR(rho_0);
+      gamma = ( t1 * rho2_1 + t2 * rho2_2 + t3 * rho2_3 ) / SQR(rho_0);
       egamma = exp( - gamma );
       g = 2.0 / ( 1.0 + egamma );
       
@@ -453,17 +475,11 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 	drho2_3.z = tmp1 * ( tmpv.z - tmp * d[j].z ) + tmp2 * dfl3[j].z;
 
 	force_j.x += pref1 * drho_0.x 
-	  + pref2 * ( meam_t1[p_typ] * drho2_1.x 
-		     + meam_t2[p_typ] * drho2_2.x 
-		     + meam_t3[p_typ] * drho2_3.x );
+	  + pref2 * ( t1 * drho2_1.x + t2 * drho2_2.x + t3 * drho2_3.x );
 	force_j.y += pref1 * drho_0.y 
-	  + pref2 * ( meam_t1[p_typ] * drho2_1.y 
-		     + meam_t2[p_typ] * drho2_2.y 
-		     + meam_t3[p_typ] * drho2_3.y );
+	  + pref2 * ( t1 * drho2_1.y + t2 * drho2_2.y + t3 * drho2_3.y );
 	force_j.z += pref1 * drho_0.z 
-	  + pref2 * ( meam_t1[p_typ] * drho2_1.z 
-		     + meam_t2[p_typ] * drho2_2.z 
-		     + meam_t3[p_typ] * drho2_3.z );
+	  + pref2 * ( t1 * drho2_1.z + t2 * drho2_2.z + t3 * drho2_3.z );
 
 	KRAFT(jcell,jnum,X) += force_j.x;
 	KRAFT(jcell,jnum,Y) += force_j.y;
@@ -537,17 +553,11 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 	      }
 
 	      force_k.x += pref1 * drho_0.x 
-		+ pref2 * ( meam_t1[p_typ] * drho2_1.x 
-			   + meam_t2[p_typ] * drho2_2.x 
-			   + meam_t3[p_typ] * drho2_3.x );
+		+ pref2 * ( t1 * drho2_1.x + t2 * drho2_2.x + t3 * drho2_3.x );
 	      force_k.y += pref1 * drho_0.y 
-		+ pref2 * ( meam_t1[p_typ] * drho2_1.y 
-			   + meam_t2[p_typ] * drho2_2.y 
-			   + meam_t3[p_typ] * drho2_3.y );
+		+ pref2 * ( t1 * drho2_1.y + t2 * drho2_2.y + t3 * drho2_3.y );
 	      force_k.z += pref1 * drho_0.z 
-		+ pref2 * ( meam_t1[p_typ] * drho2_1.z 
-			   + meam_t2[p_typ] * drho2_2.z 
-			   + meam_t3[p_typ] * drho2_3.z );
+		+ pref2 * ( t1 * drho2_1.z + t2 * drho2_2.z + t3 * drho2_3.z );
 
 	      KRAFT(kcell,knum,X) += force_k.x;
 	      KRAFT(kcell,knum,Y) += force_k.y;

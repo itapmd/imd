@@ -629,6 +629,7 @@ EXTERN int have_eldensity_file INIT(0);
 EXTERN pot_table_t el_density;
 EXTERN str255 meam_eldensity_filename INIT("\0");
 EXTERN real meam_r2_cut[10][10];
+EXTERN int  meam_t_average INIT(0);
 EXTERN real meam_t1[10] INIT(zero10);
 EXTERN real meam_t2[10] INIT(zero10);
 EXTERN real meam_t3[10] INIT(zero10);

@@ -1444,6 +1444,9 @@ void getparamfile(char *paramfname, int sim)
       getparam("el_density_file",meam_eldensity_filename,PARAM_STR,1,255);
       have_eldensity_file = 1;
     }
+    else if (strcasecmp(token,"meam_t_average")==0) {
+      getparam(token, &meam_t_average, PARAM_INT, 1, 1);
+    }
     else if (strcasecmp(token,"meam_t1")==0) {
       if (ntypes==0) error("specify parameter ntypes before meam_t1");
       getparam(token, meam_t1, PARAM_REAL, ntypes, ntypes);
@@ -1455,10 +1458,6 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"meam_t3")==0) {
       if (ntypes==0) error("specify parameter ntypes before meam_t3");
       getparam(token, meam_t3, PARAM_REAL, ntypes, ntypes);
-    }
-    else if (strcasecmp(token,"meam_f0")==0) {
-      if (ntypes==0) error("specify parameter ntypes before meam_f0");
-      getparam(token, meam_f0, PARAM_REAL, ntypes, ntypes);
     }
     else if (strcasecmp(token,"meam_f0")==0) {
       if (ntypes==0) error("specify parameter ntypes before meam_f0");
