@@ -1,6 +1,4 @@
 /***************************************************************************
- * uniaxial histograms
- *
  * $RCSfile$
  * $Revision$
  * $Date$
@@ -92,11 +90,11 @@ void write_temp_dist(int steps)
 
 #ifdef MPI
   /* add up results form different CPUs */
-  MPI_Allreduce( temp_hist_1, temp_hist_2, 
-                 nhalf+1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( temp_hist_1, temp_hist_2, 
+              nhalf+1, MPI_REAL, MPI_SUM, 0, cpugrid);
   temp_hist = temp_hist_2;
-  MPI_Allreduce( num_hist_1, num_hist_2, 
-                 nhalf+1, INTEGER, MPI_SUM, cpugrid);
+  MPI_Reduce( num_hist_1, num_hist_2, 
+              nhalf+1, INTEGER,  MPI_SUM, 0, cpugrid);
   num_hist  = num_hist_2;
 #else
   temp_hist = temp_hist_1;
@@ -431,44 +429,44 @@ void write_press_dist_shock(int steps)
 
 #ifdef MPI
   /* add up results form different CPUs */
-  MPI_Allreduce( press_histxx_1, press_histxx_2, 
-                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( press_histxx_1, press_histxx_2, 
+              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
   press_histxx = press_histxx_2;
-  MPI_Allreduce( press_histyy_1, press_histyy_2, 
-                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( press_histyy_1, press_histyy_2, 
+              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
   press_histyy = press_histyy_2;
 #ifndef TWOD
-  MPI_Allreduce( press_histzz_1, press_histzz_2, 
-                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( press_histzz_1, press_histzz_2, 
+              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
   press_histzz = press_histzz_2;
 #endif
-  MPI_Allreduce( pot_hist_1, pot_hist_2, 
-                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( pot_hist_1, pot_hist_2, 
+              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
   pot_hist = pot_hist_2;
-  MPI_Allreduce( num_hist_1, num_hist_2, 
-                 press_dim_tot, INTEGER, MPI_SUM, cpugrid);
+  MPI_Reduce( num_hist_1, num_hist_2, 
+              press_dim_tot, INTEGER, MPI_SUM, 0, cpugrid);
   num_hist = num_hist_2;
-  MPI_Allreduce( kin_histxx_1, kin_histxx_2, 
-                 press_dim.x, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( kin_histxx_1, kin_histxx_2, 
+              press_dim.x, MPI_REAL, MPI_SUM, 0, cpugrid);
   kin_histxx = kin_histxx_2;
 
-  MPI_Allreduce( kin_histxxu_1, kin_histxxu_2, 
-                 press_dim.x, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( kin_histxxu_1, kin_histxxu_2, 
+              press_dim.x, MPI_REAL, MPI_SUM, 0, cpugrid);
   kin_histxxu = kin_histxxu_2;
 
-  MPI_Allreduce( kin_histyy_1, kin_histyy_2, 
-                 press_dim.x, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( kin_histyy_1, kin_histyy_2, 
+              press_dim.x, MPI_REAL, MPI_SUM, 0, cpugrid);
   kin_histyy = kin_histyy_2;
 #ifndef TWOD
-  MPI_Allreduce( kin_histzz_1, kin_histzz_2, 
-                 press_dim.x, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( kin_histzz_1, kin_histzz_2, 
+              press_dim.x, MPI_REAL, MPI_SUM, 0, cpugrid);
   kin_histzz = kin_histzz_2;
 #endif
-  MPI_Allreduce( pot_hist_1, pot_hist_2, 
-                 press_dim.x, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( pot_hist_1, pot_hist_2, 
+              press_dim.x, MPI_REAL, MPI_SUM, 0, cpugrid);
   pot_hist = pot_hist_2;
-  MPI_Allreduce( num_hist_1, num_hist_2, 
-                 press_dim.x, INTEGER, MPI_SUM, cpugrid);
+  MPI_Reduce( num_hist_1, num_hist_2, 
+              press_dim.x, INTEGER, MPI_SUM, 0, cpugrid);
   num_hist  = num_hist_2;
 #else
   press_histxx = press_histxx_1;
@@ -744,34 +742,34 @@ void write_press_dist(int steps)
 
 #ifdef MPI
   /* add up results form different CPUs */
-  MPI_Allreduce( press_histxx_1, press_histxx_2, 
-                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( press_histxx_1, press_histxx_2, 
+              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
   press_histxx = press_histxx_2;
-  MPI_Allreduce( press_histyy_1, press_histyy_2, 
-                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( press_histyy_1, press_histyy_2, 
+              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
   press_histyy = press_histyy_2;
-  MPI_Allreduce( press_histxy_1, press_histxy_2, 
-                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( press_histxy_1, press_histxy_2, 
+              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
   press_histxy = press_histxy_2;
 #ifndef TWOD
-  MPI_Allreduce( press_histzz_1, press_histzz_2, 
-                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( press_histzz_1, press_histzz_2, 
+              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
   press_histzz = press_histzz_2;
-  MPI_Allreduce( press_histzx_1, press_histzx_2, 
-                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( press_histzx_1, press_histzx_2, 
+              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
   press_histzx = press_histzx_2;
-  MPI_Allreduce( press_histyz_1, press_histyz_2, 
-                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( press_histyz_1, press_histyz_2, 
+              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
   press_histyz = press_histyz_2;
 #endif
-  MPI_Allreduce( kin_hist_1, kin_hist_2, 
-                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( kin_hist_1, kin_hist_2, 
+              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
   kin_hist     = kin_hist_2;
-  MPI_Allreduce( pot_hist_1, pot_hist_2, 
-                 press_dim_tot, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Reduce( pot_hist_1, pot_hist_2, 
+              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
   pot_hist     = pot_hist_2;
-  MPI_Allreduce( num_hist_1, num_hist_2, 
-                 press_dim_tot, INTEGER, MPI_SUM, cpugrid);
+  MPI_Reduce( num_hist_1, num_hist_2, 
+              press_dim_tot, INTEGER, MPI_SUM, 0, cpugrid);
   num_hist     = num_hist_2;
 #else /* not MPI */
   press_histxx = press_histxx_1;
