@@ -11,7 +11,7 @@ potentials are supported:
 <table border="0" cellpadding="4" >
 
 <tr align="left">
-  <td width="250>"<a href="#lj">Lennard-Jones potential</a></td>
+  <td width="250"><a href="#lj">Lennard-Jones potential</a></td>
   <td width="250"><a href="#morse">Morse potential</a></td>
   <td width="250"><a href="#buck">Buckingham potential</a></td>
 </tr>
@@ -20,32 +20,35 @@ potentials are supported:
 
 <p>
 
-By default, the potential energies and forces for these potentials are
-computed analytically during the simulation. In this case, cutoff
-radii <I>r<SUB>cij</SUB></I> have to be specified in the parameter
-file through the IMD parameter <TT>r_cut</TT>. <TT>r_cut</TT> must be
-given for all pairs&nbsp;<I>ij</I> of atom types in the following format:
+By default, the energies and forces for these potentials are computed
+analytically during the simulation. In this case, cutoff radii
+<i>r<sub>cij</sub></i> have to be specified in the parameter file
+through the IMD parameter <tt>r_cut</tt>. <tt>r_cut</tt> must be given
+for all pairs&nbsp;<i>ij</i> of atom types in the following format:
 
-<P>
+<p>
 
-<CENTER>
-<TABLE BORDER=0 CELLPADDING=5><TR><TD>
-<TT>r_cut</TT></TD><TD></TD><TD>
-<I>r<SUB>c00</SUB></I>
-<I>r<SUB>c01</SUB></I>
-<I>r<SUB>c02</SUB></I> ...
-<I>r<SUB>c0(N-1)</SUB></I>
-<I>r<SUB>c11</SUB></I>
-<I>r<SUB>c12</SUB></I> ...
-<I>r<SUB>c(N-1)(N-1)</SUB></I></TD>
-</TABLE>
-</CENTER>
+<center>
+<table border="0" cellpadding="5">
+<tr>
+   <td><tt>r_cut</tt></td>
+   <td></td>
+   <td><i>r<sub>c00</sub></i>
+   <i>r<sub>c01</sub></i>
+   <i>r<sub>c02</sub></i> ...
+   <i>r<sub>c0(N-1)</sub></i>
+   <i>r<sub>c11</sub></i>
+   <i>r<sub>c12</sub></i> ...
+   <i>r<sub>c(N-1)(N-1)</sub></i></td>
+</tr>
+</table>
+</center>
 
-<P>
+<p>
 
-where <I>N</I> is the number of atom types.
+where <i>N</i> is the number of atom types.
 
-<P>
+<p>
 
 Alternatively, by specifying minimal radii through the IMD parameter
 <TT>r_begin</TT> in the same format as the parameter <TT>r_cut</TT>, a
@@ -113,10 +116,10 @@ in the same format as the paramter <TT>r_cut</TT>.
 
 <A NAME="buck">
 
-<H2>Buckingham Potential</H2>
+<h2>Buckingham Potential</h2>
 
 The Buckingham potential can be used by choosing the option
-<B>buck</B>. The following form of the potential is implemented:
+<b>buck</b>. The following form of the potential is implemented:
 
 <p>
 <center>
