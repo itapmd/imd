@@ -86,7 +86,10 @@ xi                   # dynamic xi variable for NPT ensemble
                      # to continue a simulation properly, the old
 		     # final value of xi should be used
 tau_xi		     # time constant for volume control in NPT simulation
+inv_tau_eta	     # 1/tau_eta. Can be zero, which corresponds to NVE
 isq_tau_eta	     # 1/SQR(tau_eta). Can be zero, which corresponds to NVE
+inv_tau_xi	     # 1/tau_xi. Can be zero, which corresponds
+                     # to NVT or NVE
 isq_tau_xi	     # 1/SQR(tau_xi). Can be zero, which corresponds
                      # to NVT or NVE
 cell_size_tol	     # relative tolerance for volume rescaling during 
@@ -114,8 +117,9 @@ pic_scale	# picture scale (x y)
 pic_ll		# lower left corner of picture
 pic_ur		# upper right corner of picture
 pic_res		# number of pixels in x/y direction
-pic_type	# type of picture: 0 (raw data), 1 (atoms), 2 (bins) 
-pic_at_radius	# radii of the atoms (for pictures)
+pic_type	# type of picture: 0 (raw data), 1 (bins) 
+nsmear          # radius (in multiples of bin size) over which energy
+                # of atom is smeared out. Use with pic_tye=1. Default is 5.
 
 # parameters for particular modules
 
@@ -173,7 +177,6 @@ annealsteps	# no deformation before annealsteps steps (default 0)
 ekin_threshold	# deform if temperature drops below threshold (default 0)
 max_deform_int  # deform if number of steps since last deformation is
                 # max_deform_int (default 0 - no deformation)
-
 
 # parameters for SHOCK
 shock_strip      # shock strip width (in x dir.)
@@ -243,12 +246,12 @@ ters_r0
 ters_chi
 ters_om
 
-
-
 # parameters for <a href=uniax.html>UNIAX</a> 
 # (Gay-Berne potential for uniaxial molecules)
-uniax_r_cut     # cutoff radius for Gay-Berne potential (4.0 for original version)
+uniax_r_cut     # cutoff radius for Gay-Berne potential 
+                # (4.0 for original version)
 tau_eta_rot	# time constant for thermostat of rotational motion
+inv_tau_eta_rot	# 1/tau_eta_rot
 isq_tau_eta_rot	# 1/SQR(tau_eta_rot)
 
 </PRE>
