@@ -104,7 +104,6 @@ EXTERN ivektor pbc_dirs INIT(parteinsivektor);
 EXTERN ivektor pbc_dirs INIT(einsivektor); /* directions with pbc */
 #endif
 
-EXTERN int vtypes INIT(0);   /* vtypes = ntypes + ntypes*(types of forces) */
 EXTERN vektor *restrictions INIT(NULL);  /* directions the atom is allowed to move in */
 
 #ifdef FBC    /* FBC uses the virtual atom types, */
@@ -127,12 +126,14 @@ EXTERN int is_big_endian;         /* 1 if big endian, 0 if little endian */
 EXTERN long natoms  INIT(0);      /* Total number of atoms */
 EXTERN long nactive INIT(0);      /* number of transl. degrees of freedom */
 EXTERN long nactive_rot INIT(0);  /* number of rot. degrees of freedom */
-EXTERN int ntypes INIT(0);        /* Total number of different atom types */
+EXTERN int ntypes INIT(0);        /* number of real atom types */
+EXTERN int vtypes INIT(0);        /* number of virtual atom types */
 EXTERN int ntypepairs INIT(0);    /* Total number of different types pairs */
 EXTERN int ntypetriples INIT(0);  /* Total number of different types triples 
 				     symmetric in the last two indices */
 EXTERN long *num_sort INIT(NULL); /* number of atoms for each real type */
 EXTERN long *num_vsort INIT(NULL);/* number of atoms for each virtual type */
+EXTERN int  *sort_tab INIT(NULL); /* mapping of virtual to real types */
 EXTERN int steps INIT(0);        /* number of current MD step */
 EXTERN int steps_max INIT(0);    /* Maximum number of MD steps */
 EXTERN int steps_min INIT(0);    /* starting step nr for current phase */

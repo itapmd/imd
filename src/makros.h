@@ -57,6 +57,8 @@ INLINE static int MOD(shortint p, int q)
 #else
 #if defined(MONO)
 #define SORTE(cell,i)           0
+#elif defined(SX)
+#define SORTE(cell,i)           (sort_tab[(cell)->sorte[i]])
 #elif defined(BINARY)
 #define SORTE(cell,i)           (((cell)->sorte[i]) & 0x1)
 #else
@@ -274,3 +276,7 @@ inline static real SQR(real x)
 #ifdef CGF   /* minimization of total forces */
 #define CGVAL fnorm
 #endif
+
+#define MAXCELL 50
+
+

@@ -74,11 +74,8 @@ void move_atoms_nve(void)
       }
 #endif /* CLONE */
 
-#ifdef PVPCRAY
-#pragma ivdep
-#endif
-#ifdef SX4
-#pragma vdir vector,nodep
+#ifdef SX
+#pragma vdir vector,nodep,loopcnt=MAXCELL
 #endif
     for (i=0; i<p->n; ++i) { /* loop over all atoms in the cell */
 
@@ -305,11 +302,8 @@ void move_atoms_mik(void)
       }
 #endif /* CLONE */
 
-#ifdef PVPCRAY
-#pragma ivdep
-#endif
-#ifdef SX4
-#pragma vdir vector,nodep
+#ifdef SX
+#pragma vdir vector,nodep,loopcnt=MAXCELL
 #endif
     for (i=0; i<p->n; ++i) {
 

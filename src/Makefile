@@ -446,6 +446,29 @@ endif
 
 ###########################################################################
 #
+#  flags for NEC SX crosscompiler
+#
+###########################################################################
+
+ifeq (SX6,${IMDSYS})
+  CC_SERIAL             = sxc++
+#  CC_MPI		= 
+#  CC_OMP		= 
+#  CC_OMPI		= 
+  BIN_DIR		= ${HOME}/bin/sx6
+  OPT_FLAGS		+= -Xa -O -sx6 -C hopt -pvctl fullmsg -w off=177:550
+#  OPT_MPI_FLAGS	+= 
+#  OPT_OMP_FLAGS	+= 
+#  OPT_OMPI_FLAGS	+= 
+  DEBUG_FLAGS		+= -Xa -sx6 -g 
+#  DEBUG_OMP_FLAGS	+= 
+#  DEBUG_OMPI_FLAGS	+= 
+  PROF_FLAGS		+= -p
+#  PROF_LIBS		+= 
+endif
+
+###########################################################################
+#
 #  flags for IBM SP
 #
 ###########################################################################

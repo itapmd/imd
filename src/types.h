@@ -36,7 +36,8 @@ typedef short int integer;
 #define SHORT   MPI_SHORT
 #define INTEGER MPI_SHORT
 /* on alphas, all data should be 32 bit aligned */
-#elif defined(ALPHA)
+/* on NEC SX, shorts are not vectorizable */
+#elif defined(ALPHA) || defined(SX)
 typedef       int shortint;
 typedef       int integer;
 #define SHORT   MPI_INT
@@ -185,7 +186,7 @@ typedef struct {
   int  maxsteps;    /* physical length of the table */
   real *table;      /* the actual data */
 #ifdef SPLINE
-  real *table2;      /* second derivatives for spine interpolation */
+  real *table2;     /* second derivatives for spine interpolation */
 #endif
 } pot_table_t;
 
