@@ -356,7 +356,7 @@ void write_properties(int steps)
 #ifndef MC
   fprintf(out," %e", (double)part_kin_energy);
 #ifdef FNORM
-  fprintf(out, "%e", (double)fnorm);
+  fprintf(out, " %e", (double)fnorm);
 #endif
   fprintf(out," %e", (double)pressure);
 #else
