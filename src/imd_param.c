@@ -1646,6 +1646,16 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #endif
+#ifdef ADP
+    else if (strcasecmp(token,"adp_upotfile")==0) {
+      /* ADP dipole distortion potential */
+      getparam(token,adp_upotfile,PARAM_STR,1,255);
+    }
+    else if (strcasecmp(token,"adp_wpotfile")==0) {
+      /* ADP quadrupole distortion potential */
+      getparam(token,adp_wpotfile,PARAM_STR,1,255);
+    }
+#endif
 #ifdef MEAM
     else if (strcasecmp(token,"core_potential_file")==0) {
       /* MEAM:Filename for the tabulated Core-Core Potential (r^2) */
@@ -2462,6 +2472,10 @@ void broadcast_params() {
 #ifdef EEAM
   MPI_Bcast( eeam_mod_E_filename,    255, MPI_CHAR, 0, MPI_COMM_WORLD); 
 #endif
+#endif
+#ifdef ADP
+  MPI_Bcast( adp_upotfile,           255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( adp_wpotfile,           255, MPI_CHAR, 0, MPI_COMM_WORLD); 
 #endif
 #ifdef MEAM
   MPI_Bcast( meam_emb_E_filename,    255, MPI_CHAR, 0, MPI_COMM_WORLD); 

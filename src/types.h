@@ -123,6 +123,10 @@ typedef struct {
   real        *eeam_dM;     /* derivative of energy modification */
 #endif
 #endif
+#ifdef ADP
+  real        *adp_mu;
+  sym_tensor  *adp_lambda;
+#endif
 #ifdef CG                   
   real        *h;           /* Conjugated Gradient: search vektor */
   real        *g;           /* Conjugated Gradient: old forces */

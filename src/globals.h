@@ -676,6 +676,13 @@ EXTERN str255 eeam_mod_E_filename INIT("\0");     /* energy mod. term file   */
 #endif
 #endif
 
+#ifdef ADP
+EXTERN pot_table_t adp_upot;      /* dipole     distortion potential      */
+EXTERN pot_table_t adp_wpot;      /* quadrupole distortion potential      */
+EXTERN str255      adp_upotfile;  /* dipole     distortion potential name */
+EXTERN str255      adp_wpotfile;  /* quadrupole distortion potential name */
+#endif
+
 #ifdef MEAM
 EXTERN int have_embed_potfile INIT(0);
 EXTERN int have_pre_embed_pot INIT(0);

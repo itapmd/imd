@@ -287,6 +287,17 @@ void calc_forces(int steps)
       EAM_P(p,i) = 0.0;
 #endif
 #endif
+#ifdef ADP
+      ADP_MU    (p,i,X)  = 0.0;
+      ADP_MU    (p,i,Y)  = 0.0;
+      ADP_MU    (p,i,Z)  = 0.0;
+      ADP_LAMBDA(p,i,xx) = 0.0;
+      ADP_LAMBDA(p,i,yy) = 0.0;
+      ADP_LAMBDA(p,i,xy) = 0.0;
+      ADP_LAMBDA(p,i,zz) = 0.0;
+      ADP_LAMBDA(p,i,yz) = 0.0;
+      ADP_LAMBDA(p,i,zx) = 0.0;
+#endif
 #ifdef NVX
       HEATCOND(p,i) = 0.0;
 #endif     
@@ -324,6 +335,11 @@ void calc_forces(int steps)
 #else
       sym_tensor pp = {0.0,0.0,0.0,0.0,0.0,0.0};
 #endif
+#endif
+#ifdef ADP
+      real       tmp;
+      vektor     mu = {0.0,0.0,0.0};
+      sym_tensor la = {0.0,0.0,0.0,0.0,0.0,0.0};
 #endif
 #ifdef TWOD
       vektor d1, ff = {0.0,0.0};
@@ -489,6 +505,26 @@ void calc_forces(int steps)
         }
 #endif
 
+#ifdef ADP
+        /* compute adp_mu */
+        if (r2 < adp_upot.end[col])  {
+          VAL_FUNC(pot, adp_upot, col, inc, r2, is_short);
+          tmp = pot * d.x;  mu.x += tmp;  ADP_MU(q,j,X) -= tmp;
+          tmp = pot * d.y;  mu.y += tmp;  ADP_MU(q,j,Y) -= tmp;
+          tmp = pot * d.z;  mu.z += tmp;  ADP_MU(q,j,Z) -= tmp;
+        }
+        /* compute adp_lambda */
+        if (r2 < adp_wpot.end[col])  {
+          VAL_FUNC(pot, adp_wpot, col, inc, r2, is_short);
+          tmp = pot * d.x * d.x;  la.xx += tmp;  ADP_LAMBDA(q,j,xx) += tmp;
+          tmp = pot * d.y * d.y;  la.yy += tmp;  ADP_LAMBDA(q,j,yy) += tmp;
+          tmp = pot * d.z * d.z;  la.zz += tmp;  ADP_LAMBDA(q,j,zz) += tmp;
+          tmp = pot * d.y * d.z;  la.yz += tmp;  ADP_LAMBDA(q,j,yz) += tmp;
+          tmp = pot * d.z * d.x;  la.zx += tmp;  ADP_LAMBDA(q,j,zx) += tmp;
+          tmp = pot * d.x * d.y;  la.xy += tmp;  ADP_LAMBDA(q,j,xy) += tmp;
+        }
+#endif /* ADP */
+
 #ifdef COVALENT
         /* make neighbor tables for covalent systems */
         if (r2 < neightab_r2cut[col]) {
@@ -536,15 +572,28 @@ void calc_forces(int steps)
       EAM_P(p,i)   += eam_p;
 #endif
 #endif
-#ifdef STRESS_TENS
-      PRESSTENS(p,i,xx) += pp.xx;
-      PRESSTENS(p,i,yy) += pp.yy;
-      PRESSTENS(p,i,xy) += pp.xy;
-#ifndef TWOD
-      PRESSTENS(p,i,zz) += pp.zz;
-      PRESSTENS(p,i,yz) += pp.yz;
-      PRESSTENS(p,i,zx) += pp.zx;
+#ifdef ADP
+      ADP_MU    (p,i,X)  += mu.x;
+      ADP_MU    (p,i,Y)  += mu.y;
+      ADP_MU    (p,i,Z)  += mu.z;
+      ADP_LAMBDA(p,i,xx) += la.xx;
+      ADP_LAMBDA(p,i,yy) += la.yy;
+      ADP_LAMBDA(p,i,zz) += la.zz;
+      ADP_LAMBDA(p,i,yz) += la.yz;
+      ADP_LAMBDA(p,i,zx) += la.zx;
+      ADP_LAMBDA(p,i,xy) += la.xy;
 #endif
+#ifdef STRESS_TENS
+      if (do_press_calc) {
+        PRESSTENS(p,i,xx) += pp.xx;
+        PRESSTENS(p,i,yy) += pp.yy;
+        PRESSTENS(p,i,xy) += pp.xy;
+#ifndef TWOD
+        PRESSTENS(p,i,zz) += pp.zz;
+        PRESSTENS(p,i,yz) += pp.yz;
+        PRESSTENS(p,i,zx) += pp.zx;
+#endif
+      }
 #endif
 #ifdef ORDPAR
       NBANZ(p,i)    += nb;
@@ -655,7 +704,7 @@ void calc_forces(int steps)
   /* compute embedding energy and its derivative */
   for (k=0; k<ncells; k++) {
     cell *p = CELLPTR(k);
-    real pot;
+    real pot, tmp, tr;
 #ifdef ia64
 #pragma ivdep,swp
 #endif
@@ -667,6 +716,21 @@ void calc_forces(int steps)
 #ifdef EEAM
       PAIR_INT( pot, EAM_DM(p,i), emod_pot, SORTE(p,i), 
                 ntypes, EAM_P(p,i), idummy);
+      POTENG(p,i)    += pot;
+      tot_pot_energy += pot;
+#endif
+#ifdef ADP
+      tr  = (ADP_LAMBDA(p,i,xx) + ADP_LAMBDA(p,i,yy) + ADP_LAMBDA(p,i,zz))/3.0;
+      tmp = ADP_LAMBDA(p,i,xx) - tr; pot  = SQR(tmp);
+      tmp = ADP_LAMBDA(p,i,yy) - tr; pot += SQR(tmp);
+      tmp = ADP_LAMBDA(p,i,zz) - tr; pot += SQR(tmp);
+      tmp = ADP_LAMBDA(p,i,yz);      pot += SQR(tmp);
+      tmp = ADP_LAMBDA(p,i,zx);      pot += SQR(tmp);
+      tmp = ADP_LAMBDA(p,i,xy);      pot += SQR(tmp);
+      tmp = ADP_MU    (p,i,X);       pot += SQR(tmp);
+      tmp = ADP_MU    (p,i,Y);       pot += SQR(tmp);
+      tmp = ADP_MU    (p,i,Z);       pot += SQR(tmp);
+      pot *= 0.5;
       POTENG(p,i)    += pot;
       tot_pot_energy += pot;
 #endif
@@ -685,12 +749,27 @@ void calc_forces(int steps)
 #ifdef STRESS_TENS
       sym_tensor pp = {0.0,0.0,0.0,0.0,0.0,0.0};
 #endif
+#ifdef ADP
+      sym_tensor la1;
+      vektor mu1;
+#endif
       vektor d1, ff = {0.0,0.0,0.0};
       int m, it;
 
       d1.x = ORT(p,i,X);
       d1.y = ORT(p,i,Y);
       d1.z = ORT(p,i,Z);
+#ifdef ADP
+      mu1.x  = ADP_MU    (p,i,X);
+      mu1.y  = ADP_MU    (p,i,Y);
+      mu1.z  = ADP_MU    (p,i,Z);
+      la1.xx = ADP_LAMBDA(p,i,xx);
+      la1.yy = ADP_LAMBDA(p,i,yy);
+      la1.zz = ADP_LAMBDA(p,i,zz);
+      la1.yz = ADP_LAMBDA(p,i,yz);
+      la1.zx = ADP_LAMBDA(p,i,zx);
+      la1.xy = ADP_LAMBDA(p,i,xy);
+#endif
       it   = SORTE(p,i);
 
       /* loop over neighbors */
@@ -699,9 +778,9 @@ void calc_forces(int steps)
 #endif
       for (m=tl[n]; m<tl[n+1]; m++) {
 
-        vektor d, force;
-        real   pot, grad, rho_i_strich, rho_j_strich, rho_i, rho_j, r2, *d2;
-        int    j, jt, col1, col2, inc = ntypes * ntypes;
+        vektor d, force = {0.0,0.0,0.0};
+        real   r2;
+        int    j, jt, col1, col2, inc = ntypes * ntypes, have_force=0;
         cell   *q;
 
 #ifdef SAVEMEM
@@ -720,6 +799,8 @@ void calc_forces(int steps)
         col2 = it * ntypes + jt;
 
         if ((r2 < rho_h_tab.end[col1]) || (r2 < rho_h_tab.end[col2])) {
+
+          real pot, grad, rho_i_strich, rho_j_strich, rho_i, rho_j;
 
           /* take care: particle i gets its rho from particle j.    */
           /* This is tabulated in column it*ntypes+jt.              */
@@ -759,8 +840,51 @@ void calc_forces(int steps)
           force.x = d.x * grad;
           force.y = d.y * grad;
           force.z = d.z * grad;
+          have_force=1;
+        }
 
-          /* accumulate forces */
+#ifdef ADP
+        /* forces due to dipole distortion */
+        if (r2 < adp_upot.end[col1]) {
+          vektor mu;
+          real pot, grad, tmp;
+          PAIR_INT(pot, grad, adp_upot, col1, inc, r2, is_short);
+          mu.x = mu1.x - ADP_MU(q,j,X);
+          mu.y = mu1.y - ADP_MU(q,j,Y);
+          mu.z = mu1.z - ADP_MU(q,j,Z);
+          tmp  = SPROD(mu,d) * grad;
+          force.x += mu.x * pot + tmp * d.x;
+          force.y += mu.y * pot + tmp * d.y;
+          force.z += mu.z * pot + tmp * d.z;
+          have_force=1;
+        }
+        /* forces due to quadrupole distortion */
+        if (r2 < adp_wpot.end[col1]) {
+          sym_tensor la;
+          vektor v;
+          real pot, grad, nu, f1, f2;
+          PAIR_INT(pot, grad, adp_wpot, col1, inc, r2, is_short);
+          la.xx = la1.xx + ADP_LAMBDA(q,j,xx);
+          la.yy = la1.yy + ADP_LAMBDA(q,j,yy);
+          la.zz = la1.zz + ADP_LAMBDA(q,j,zz);
+          la.yz = la1.yz + ADP_LAMBDA(q,j,yz);
+          la.zx = la1.zx + ADP_LAMBDA(q,j,zx);
+          la.xy = la1.xy + ADP_LAMBDA(q,j,xy);
+          v.x = la.xx * d.x + la.xy * d.y + la.zx * d.z;
+          v.y = la.xy * d.x + la.yy * d.y + la.yz * d.z;
+          v.z = la.zx * d.x + la.yz * d.y + la.zz * d.z;
+          nu  = (la.xx + la.yy + la.zz) / 3.0;
+          f1  = 2.0 * pot;
+          f2  = (SPROD(v,d) + nu * r2) * grad + nu * f1; 
+          force.x += f1 * v.x + f2 * d.x;
+          force.y += f1 * v.y + f2 * d.y;
+          force.z += f1 * v.z + f2 * d.z;
+          have_force=1;
+        }
+#endif
+
+        /* accumulate forces */
+        if (have_force) {
           KRAFT(q,j,X) -= force.x;
           KRAFT(q,j,Y) -= force.y;
           KRAFT(q,j,Z) -= force.z;
@@ -772,7 +896,7 @@ void calc_forces(int steps)
           vir_yy       -= d.y * force.y;
           vir_zz       -= d.z * force.z;
 #else
-          virial -= r2  * grad;
+          virial       -= SPROD(d,force);
 #endif
 
 #ifdef STRESS_TENS
@@ -803,12 +927,14 @@ void calc_forces(int steps)
       KRAFT(p,i,Y) += ff.y;
       KRAFT(p,i,Z) += ff.z;
 #ifdef STRESS_TENS
-      PRESSTENS(p,i,xx) -= pp.xx;
-      PRESSTENS(p,i,yy) -= pp.yy;
-      PRESSTENS(p,i,zz) -= pp.zz;
-      PRESSTENS(p,i,yz) -= pp.yz;
-      PRESSTENS(p,i,zx) -= pp.zx;
-      PRESSTENS(p,i,xy) -= pp.xy;
+      if (do_press_calc) {
+        PRESSTENS(p,i,xx) -= pp.xx;
+        PRESSTENS(p,i,yy) -= pp.yy;
+        PRESSTENS(p,i,zz) -= pp.zz;
+        PRESSTENS(p,i,yz) -= pp.yz;
+        PRESSTENS(p,i,zx) -= pp.zx;
+        PRESSTENS(p,i,xy) -= pp.xy;
+      }
 #endif
       n++;
     }

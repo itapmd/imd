@@ -85,6 +85,10 @@ INLINE static int MOD(shortint p, int q)
 #define EAM_DM(cell,i)          (atoms.eeam_dM [(cell)->ind[i]])
 #endif
 #endif
+#ifdef ADP
+#define ADP_MU(cell,i,sub)      (atoms.adp_mu sub((cell)->ind[i]))
+#define ADP_LAMBDA(cell,i,sub)  (atoms.adp_lambda[(cell)->ind[i]].sub)
+#endif
 
 #ifdef CG
 #define CG_G(cell,i,sub)        (atoms.g       sub((cell)->ind[i]))
@@ -160,6 +164,10 @@ INLINE static int MOD(shortint p, int q)
 #define EAM_P(cell,i)           ((cell)->eeam_p_h[i])
 #define EAM_DM(cell,i)          ((cell)->eeam_dM [i])
 #endif
+#endif
+#ifdef ADP
+#define ADP_MU(cell,i,sub)      ((cell)->adp_mu sub(i))
+#define ADP_LAMBDA(cell,i,sub)  ((cell)->adp_lambda[i].sub)
 #endif
 
 #ifdef CG

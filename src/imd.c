@@ -91,6 +91,12 @@ int main(int argc, char **argv)
   read_pot_table(&emod_pot,eeam_mod_E_filename,ntypes,0);
 #endif
 #endif
+#ifdef ADP
+  /* read ADP dipole distortion file */
+  read_pot_table(&adp_upot,adp_upotfile,ntypes*ntypes,1);
+  /* read ADP quadrupole distortion file */
+  read_pot_table(&adp_wpot,adp_wpotfile,ntypes*ntypes,1);
+#endif
 
 #ifdef MEAM
   if (have_potfile)

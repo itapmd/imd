@@ -59,6 +59,11 @@
 #endif
 #endif
 
+/* ADP also implies EAM2 */
+#if defined(APD) && !defined(EAM2)
+#define EAM2
+#endif
+
 /* for EAM2 and TTBP, we also need PAIR */
 #if (defined(EAM2) || defined(TTBP))
 #ifndef PAIR

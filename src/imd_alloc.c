@@ -133,6 +133,17 @@ void move_atom(cell *to, cell *from, int index)
   to->eeam_dM [to->n] = from->eeam_dM [index]; 
 #endif
 #endif
+#ifdef ADP
+  to->adp_mu   X(to->n)    = from->adp_mu   X(index); 
+  to->adp_mu   Y(to->n)    = from->adp_mu   Y(index); 
+  to->adp_mu   Z(to->n)    = from->adp_mu   Z(index); 
+  to->adp_lambda[to->n].xx = from->adp_lambda[index].xx;   
+  to->adp_lambda[to->n].yy = from->adp_lambda[index].yy;   
+  to->adp_lambda[to->n].zz = from->adp_lambda[index].zz;   
+  to->adp_lambda[to->n].yz = from->adp_lambda[index].yz;   
+  to->adp_lambda[to->n].zx = from->adp_lambda[index].zx;   
+  to->adp_lambda[to->n].xy = from->adp_lambda[index].xy;   
+#endif
 #ifdef CG
   to->h  X(to->n) = from->h X(index); 
   to->h  Y(to->n) = from->h Y(index); 
@@ -246,6 +257,17 @@ void move_atom(cell *to, cell *from, int index)
     from->eeam_p_h[index] = from->eeam_p_h[from->n];
     from->eeam_dM [index] = from->eeam_dM [from->n];
 #endif
+#endif
+#ifdef ADP
+    from->adp_mu   X(index)    = from->adp_mu   X(from->n); 
+    from->adp_mu   Y(index)    = from->adp_mu   Y(from->n); 
+    from->adp_mu   Z(index)    = from->adp_mu   Z(from->n); 
+    from->adp_lambda[index].xx = from->adp_lambda[from->n].xx;   
+    from->adp_lambda[index].yy = from->adp_lambda[from->n].yy;   
+    from->adp_lambda[index].zz = from->adp_lambda[from->n].zz;   
+    from->adp_lambda[index].yz = from->adp_lambda[from->n].yz;   
+    from->adp_lambda[index].zx = from->adp_lambda[from->n].zx;   
+    from->adp_lambda[index].xy = from->adp_lambda[from->n].xy;   
 #endif
 #ifdef CG
     from->h X(index) = from->h X(from->n); 
@@ -431,6 +453,10 @@ void alloc_cell(cell *thecell, int count)
     newcell.eeam_dM  = NULL;
 #endif
 #endif
+#ifdef ADP
+    newcell.adp_mu     = NULL;
+    newcell.adp_lambda = NULL;
+#endif
 #ifdef CG
     newcell.h = NULL;
     newcell.g = NULL;
@@ -531,6 +557,10 @@ void alloc_cell(cell *thecell, int count)
     newcell.eeam_dM  = (real *) malloc(count * sizeof(real));
 #endif
 #endif
+#ifdef ADP
+    newcell.adp_mu     = (real       *) malloc(count * DIM * sizeof(real));
+    newcell.adp_lambda = (sym_tensor *) malloc(count * sizeof(sym_tensor));
+#endif
 #ifdef ORDPAR
     newcell.nbanz = (shortint *) malloc(count * sizeof(shortint));
 #endif
@@ -586,6 +616,10 @@ void alloc_cell(cell *thecell, int count)
 	|| (NULL == newcell.eeam_p_h)
 	|| (NULL == newcell.eeam_dM)
 #endif
+#endif
+#ifdef ADP
+	|| (NULL == newcell.adp_mu)
+	|| (NULL == newcell.adp_lambda)
 #endif
 #ifdef ORDPAR
 	|| (NULL == newcell.nbanz)
@@ -677,6 +711,10 @@ void alloc_cell(cell *thecell, int count)
       memcpy(newcell.eeam_dM,  thecell->eeam_dM,  ncopy * sizeof(real));
 #endif
 #endif
+#ifdef ADP
+      memcpy(newcell.adp_mu,     thecell->adp_mu,  ncopy * DIM * sizeof(real));
+      memcpy(newcell.adp_lambda, thecell->adp_lambda,ncopy*sizeof(sym_tensor));
+#endif
 #ifdef ORDPAR
       memcpy(newcell.nbanz, thecell->nbanz, ncopy * sizeof(shortint));
 #endif
@@ -728,7 +766,10 @@ void alloc_cell(cell *thecell, int count)
     free(thecell->eeam_dM);
 #endif
 #endif
-
+#ifdef ADP
+    free(thecell->adp_mu);
+    free(thecell->adp_lambda);
+#endif
 #ifdef ORDPAR
     free(thecell->nbanz);
 #endif
@@ -784,6 +825,10 @@ void alloc_cell(cell *thecell, int count)
   thecell->eeam_p_h = newcell.eeam_p_h;
   thecell->eeam_dM  = newcell.eeam_dM;
 #endif
+#endif
+#ifdef ADP
+  thecell->adp_mu     = newcell.adp_mu;
+  thecell->adp_lambda = newcell.adp_lambda;
 #endif
 #ifdef ORDPAR
   thecell->nbanz = newcell.nbanz;

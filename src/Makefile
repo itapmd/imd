@@ -752,6 +752,11 @@ endif
 endif
 endif
 
+# ADP
+ifneq (,$(strip $(findstring adp,${MAKETARGET})))
+CFLAGS  += -DADP
+endif
+
 # TTBP
 ifneq (,$(strip $(findstring ttbp,${MAKETARGET})))
 CFLAGS  += -DTTBP

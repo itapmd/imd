@@ -137,7 +137,9 @@ void copy_atom(msgbuf *to, int to_cpu, cell *p, int ind )
   /* eam_dM  is not sent */
 #endif
 #endif
-
+#ifdef ADP
+  /* adp_mu and adp_lambda are not sent */
+#endif
 #ifdef CG
   to->data[ to->n++ ] = CG_H(p,ind,X); 
   to->data[ to->n++ ] = CG_H(p,ind,Y); 
@@ -294,7 +296,9 @@ void copy_one_atom(msgbuf *to, int to_cpu, minicell *from, int index, int del)
       /* eam_dM  need not be copied */
 #endif
 #endif
-
+#ifdef ADP
+  /* adp_mu and adp_lambda need not be copied */
+#endif
 #ifdef CG
       CG_H(p,ind,X) = CG_H(p,p->n,X); 
       CG_H(p,ind,Y) = CG_H(p,p->n,Y); 
@@ -431,7 +435,9 @@ void process_buffer(msgbuf *b, cell *p)
     /* don't send eam_dM  */
 #endif
 #endif
-
+#ifdef ADP
+  /* don't send adp_mu and adp_lambda */
+#endif
 #ifdef CG
     CG_H(input,0,X) = b->data[j++];
     CG_H(input,0,Y) = b->data[j++];
@@ -576,7 +582,7 @@ void setup_buffers(void)
   int size_east;
   int size_north;
   int size_up;
-  int binc1, binc2;
+  int binc1, binc2, binc3;
 
   /* determine buffer size per atom */
   if (binc==0) {
@@ -612,11 +618,25 @@ void setup_buffers(void)
     binc2 += 3;      /* dreh_moment */
 #endif
 
+    /* communication of host electron density, adp_mu, adp_lambda */
+#ifdef EAM2
+#ifdef EEAM
+    binc3 = 2;
+#else 
+    binc3 = 1;
+#endif
+#ifdef ADP
+    binc3 += 9;
+#endif
+
     /* one way or two ways */
 #ifdef AR
     binc=MAX(binc1,binc2);
 #else
     binc=binc1;
+#endif
+#ifdef EAM2
+    binc=MAX(binc,binc3);
 #endif
   }
 

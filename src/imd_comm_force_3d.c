@@ -978,9 +978,20 @@ void copy_dF( int k, int l, int m, int r, int s, int t, vektor v )
   to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
 
   for (i=0; i<to->n; ++i) {
-    EAM_DF(to,i) = EAM_DF(from,i);
+    EAM_DF    (to,i)    = EAM_DF    (from,i);
 #ifdef EEAM
-    EAM_DM(to,i) = EAM_DM(from,i);
+    EAM_DM    (to,i)    = EAM_DM    (from,i);
+#endif
+#ifdef ADP
+    ADP_MU    (to,i,X)  = ADP_MU    (from,i,X);
+    ADP_MU    (to,i,Y)  = ADP_MU    (from,i,Y);
+    ADP_MU    (to,i,Z)  = ADP_MU    (from,i,Z);
+    ADP_LAMBDA(to,i,xx) = ADP_LAMBDA(from,i,xx);
+    ADP_LAMBDA(to,i,yy) = ADP_LAMBDA(from,i,yy);
+    ADP_LAMBDA(to,i,zz) = ADP_LAMBDA(from,i,zz);
+    ADP_LAMBDA(to,i,yz) = ADP_LAMBDA(from,i,yz);
+    ADP_LAMBDA(to,i,zx) = ADP_LAMBDA(from,i,zx);
+    ADP_LAMBDA(to,i,xy) = ADP_LAMBDA(from,i,xy);
 #endif
   }
 }
@@ -1005,6 +1016,17 @@ void add_rho( int k, int l, int m, int r, int s, int t )
 #ifdef EEAM
     EAM_P(to,i)   += EAM_P(from,i);
 #endif
+#ifdef ADP
+    ADP_MU    (to,i,X)  += ADP_MU    (from,i,X);
+    ADP_MU    (to,i,Y)  += ADP_MU    (from,i,Y);
+    ADP_MU    (to,i,Z)  += ADP_MU    (from,i,Z);
+    ADP_LAMBDA(to,i,xx) += ADP_LAMBDA(from,i,xx);
+    ADP_LAMBDA(to,i,yy) += ADP_LAMBDA(from,i,yy);
+    ADP_LAMBDA(to,i,zz) += ADP_LAMBDA(from,i,zz);
+    ADP_LAMBDA(to,i,yz) += ADP_LAMBDA(from,i,yz);
+    ADP_LAMBDA(to,i,zx) += ADP_LAMBDA(from,i,zx);
+    ADP_LAMBDA(to,i,xy) += ADP_LAMBDA(from,i,xy);
+#endif
   }
 }
 
@@ -1022,9 +1044,20 @@ void pack_dF( msgbuf *b, int k, int l, int m, vektor v )
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
   for (i=0; i<from->n; ++i) {
-    b->data[ b->n++ ] = EAM_DF(from,i);
+    b->data[ b->n++ ] = EAM_DF    (from,i);
 #ifdef EEAM
-    b->data[ b->n++ ] = EAM_DM(from,i);
+    b->data[ b->n++ ] = EAM_DM    (from,i);
+#endif
+#ifdef ADP
+    b->data[ b->n++ ] = ADP_MU    (from,i,X);
+    b->data[ b->n++ ] = ADP_MU    (from,i,X);
+    b->data[ b->n++ ] = ADP_MU    (from,i,X);
+    b->data[ b->n++ ] = ADP_LAMBDA(from,i,xx);
+    b->data[ b->n++ ] = ADP_LAMBDA(from,i,yy);
+    b->data[ b->n++ ] = ADP_LAMBDA(from,i,zz);
+    b->data[ b->n++ ] = ADP_LAMBDA(from,i,yz);
+    b->data[ b->n++ ] = ADP_LAMBDA(from,i,zx);
+    b->data[ b->n++ ] = ADP_LAMBDA(from,i,xy);
 #endif
   }
 }
@@ -1049,6 +1082,17 @@ void pack_rho( msgbuf *b, int k, int l, int m )
     b->data[ b->n++ ] = EAM_P(from,i);
 #endif
   }
+#ifdef ADP
+    b->data[ b->n++ ] = ADP_MU    (from,i,X);
+    b->data[ b->n++ ] = ADP_MU    (from,i,X);
+    b->data[ b->n++ ] = ADP_MU    (from,i,X);
+    b->data[ b->n++ ] = ADP_LAMBDA(from,i,xx);
+    b->data[ b->n++ ] = ADP_LAMBDA(from,i,yy);
+    b->data[ b->n++ ] = ADP_LAMBDA(from,i,zz);
+    b->data[ b->n++ ] = ADP_LAMBDA(from,i,yz);
+    b->data[ b->n++ ] = ADP_LAMBDA(from,i,zx);
+    b->data[ b->n++ ] = ADP_LAMBDA(from,i,xy);
+#endif
 }
 
 /******************************************************************************
@@ -1065,9 +1109,20 @@ void unpack_dF( msgbuf *b, int k, int l, int m )
   to = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
   for (i=0; i<to->n; ++i) {
-    EAM_DF(to,i) = b->data[ b->n++ ];
+    EAM_DF    (to,i)    = b->data[ b->n++ ];
 #ifdef EEAM
-    EAM_DM(to,i) = b->data[ b->n++ ];
+    EAM_DM    (to,i)    = b->data[ b->n++ ];
+#endif
+#ifdef ADP
+    ADP_MU    (to,i,X)  = b->data[ b->n++ ];
+    ADP_MU    (to,i,Y)  = b->data[ b->n++ ];
+    ADP_MU    (to,i,Z)  = b->data[ b->n++ ];
+    ADP_LAMBDA(to,i,xx) = b->data[ b->n++ ];
+    ADP_LAMBDA(to,i,yy) = b->data[ b->n++ ];
+    ADP_LAMBDA(to,i,zz) = b->data[ b->n++ ];
+    ADP_LAMBDA(to,i,yz) = b->data[ b->n++ ];
+    ADP_LAMBDA(to,i,zx) = b->data[ b->n++ ];
+    ADP_LAMBDA(to,i,xy) = b->data[ b->n++ ];
 #endif
   }
 }
@@ -1090,6 +1145,17 @@ void unpack_add_rho( msgbuf *b, int k, int l, int m )
     EAM_RHO(to,i) += b->data[ b->n++ ];
 #ifdef EEAM
     EAM_P(to,i)   += b->data[ b->n++ ];
+#endif
+#ifdef ADP
+    ADP_MU    (to,i,X)  += b->data[ b->n++ ];
+    ADP_MU    (to,i,Y)  += b->data[ b->n++ ];
+    ADP_MU    (to,i,Z)  += b->data[ b->n++ ];
+    ADP_LAMBDA(to,i,xx) += b->data[ b->n++ ];
+    ADP_LAMBDA(to,i,yy) += b->data[ b->n++ ];
+    ADP_LAMBDA(to,i,zz) += b->data[ b->n++ ];
+    ADP_LAMBDA(to,i,yz) += b->data[ b->n++ ];
+    ADP_LAMBDA(to,i,zx) += b->data[ b->n++ ];
+    ADP_LAMBDA(to,i,xy) += b->data[ b->n++ ];
 #endif
   }
 }
