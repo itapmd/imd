@@ -1049,9 +1049,6 @@ void write_header_force(FILE *out)
   /* number of atoms */
   fprintf(out, "%d\n", natoms);
   
-  /* cohesive energy */
-  fprintf(out, "%.16e\n",tot_pot_energy / natoms);
-
   /* box lines */
 #ifdef TWOD
   fprintf(out, "%.16e %.16e\n", box_x.x, box_x.y );
@@ -1061,6 +1058,9 @@ void write_header_force(FILE *out)
   fprintf(out, "%.16e %.16e %.16e\n", box_y.x, box_y.y, box_y.z );
   fprintf(out, "%.16e %.16e %.16e\n", box_z.x, box_z.y, box_z.z );
 #endif
+
+  /* cohesive energy */
+  fprintf(out, "%.16e\n",tot_pot_energy / natoms);
 
 }
 
