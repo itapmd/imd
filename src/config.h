@@ -25,21 +25,13 @@
 *
 ******************************************************************************/
 
-/* Double Precision is default */
+/* double precision is the default */
 #ifndef SINGLE
 #define DOUBLE
 #endif
 
-/* define SAVEMEM for small cell structure            */
-/* define AR for using actio-reactio principle        */
 /* define USE_RUSAGE for using getrusage()-routines   */
 /* define USE_CLOCK to use clock() instead of times() */
-
-#ifdef MONOLJ
-#define SAVEMEM
-#undef AR
-#define NODBG_DIST
-#endif
 
 /******************************************************************************
 *
@@ -69,6 +61,37 @@
 #endif
 #endif
 
+/* shortcut for covalent interactions */
+#if defined(TTBP) || defined(TERSOFF)
+#define COVALENT
+#endif
+
+/* check whether we use AR across CPU borders */
+#ifdef MPI
+
+/* AR is the default. We could make the default machine dependent */
+#define AR  
+
+/* EAM2 and UNIAX must not use AR - not implemented */
+#if defined(EAM2) || defined(UNIAX) || defined(MONOLJ)
+#undef AR
+#endif
+
+/* for COVALENT, AR must be set */
+#ifdef COVALENT
+#ifndef AR
+#define AR
+#endif
+#endif
+
+/* the world record switch */
+#ifdef MONOLJ
+#define SAVEMEM
+#define NODBG_DIST
+#endif
+
+#endif /* MPI */
+
 /******************************************************************************
 *
 * Statistical Ensembles
@@ -97,24 +120,6 @@
 
 #ifdef SHOCK
 #define STRESS_TENS
-#endif
-
-#ifdef EAM2
-#undef AR
-#endif
-
-#if defined(TTBP) || defined(TERSOFF)
-#define COVALENT
-#endif
-
-#ifdef COVALENT
-#ifndef AR
-#define AR
-#endif
-#endif
-
-#ifdef UNIAX
-#undef AR
 #endif
 
 /******************************************************************************

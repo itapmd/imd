@@ -287,13 +287,13 @@ CFLAGS_cc_SERIAL_t3e_DEBUG	= -Dt3e -g -X1
 CFLAGS_cc_SERIAL_t3e_PROF	= -Gf -happrentice
 
 # MPI
-CFLAGS_cc_MPI_t3e		= -Dt3e -DAR -O3 -htolerant,aggress,report=isf
-CFLAGS_cc_MPI_t3e_DEBUG		= -Dt3e -DAR -g
+CFLAGS_cc_MPI_t3e		= -Dt3e -O3 -htolerant,aggress,report=isf
+CFLAGS_cc_MPI_t3e_DEBUG		= -Dt3e -g
 CFLAGS_cc_MPI_t3e_PROF		= -Gf -happrentice
 
 # PACX
-CFLAGS_cc_PACX_t3e		= -Dt3e -I${PACXDIR}/include -DAR -O3 -htolerant,aggress,report=isf
-CFLAGS_cc_PACX_t3e_DEBUG	= -Dt3e -I${PACXDIR}/include -DAR -g
+CFLAGS_cc_PACX_t3e		= -Dt3e -I${PACXDIR}/include -O3 -htolerant,aggress,report=isf
+CFLAGS_cc_PACX_t3e_DEBUG	= -Dt3e -I${PACXDIR}/include -g
 CFLAGS_cc_PACX_t3e_PROF		= -Gf -happrentice
 
 ###########################################################################
