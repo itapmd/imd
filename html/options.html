@@ -336,10 +336,6 @@ Compile with debug flags.
 </A>
 Compile with profiling support.
 
-</UL>
-
-<H2>Possible Preprocessor Flags</H2>
-
 <UL>
 <A NAME="FBC">
 <P><LI><B>FBC</B><P>
@@ -354,16 +350,22 @@ starting and the end value of an extra force vector. The values between
 extra_startforce and extra_endforce are linearly interpolated (like
 the temperature). For mik simulations one specifies no extra_endforce,
 but an force increment extra_dforce that is added, when the kinetic
-energy per atom drops under fbc_ekin_threshold.<p> 
-This flag should work with risc and mpi versions and at least with
-the nve and mik integrators, and also with the 2d and eam2 options.<p>
+energy per atom drops under fbc_ekin_threshold or after fbc_waitsteps
+(there is also a parameter fbc_annealsteps (like in deform)).<p> 
+This option should work with risc and mpi versions and at least with
+the NVE, NVT, AND and MIK integrators, 
+and also with the 2d and eam2 options.<p>
 There is also the posibility to restrict the movement of atomtypes to
 certain directions. Therefore one defines a restrictionvector for each
 type, with elements equal to zero in the forbidden directions. 
-This is still in the experimental stage! TODO: while reading the
-atoms: set impulses=0 in the forbidden directions, change nactive to
-the actual number of degrees of freedom, in maxwell and thermostats:
-each dimension gets 0.5kT*restrictionvector...
+This is still a little bit experimantal - it requires a responsible
+user: the begining velocities should be 0, the temperature should
+be corrected for non existing degrees of freedom. One should also keep
+in mind, that restricting the motion of some atoms corresponds to a
+force which might affect the total impuls.
+</UL>
+<H2>Possible Preprocessor Flags</H2>
+
 
 <A NAME="EPOT_DIFF">
 <P><LI><B>EPOT_DIFF</B><P>

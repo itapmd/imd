@@ -35,10 +35,13 @@ Its provides the time constant for the coupling to the heat bath
 adjusting the temperature for rotational motion.
 
 <P><LI><B> and </B><P>
-Constant volume, constant temperature ensemble, with Anderson
-thermostat. Similar to nvt, but with a different temperature
-control mechanism. The temperature is corrected every tempintv
-steps (parameter). tau_eta is not needed here.
+This is now an option, that can be used on its own as an integrator,
+or with the nve or mik integrators. You choose the integrator in your
+parameter file and activate the Anderson constant volume, constant 
+temperature thermostat by setting the parameter tempintv.
+So every tempintv steps the velocities are reset to give a Maxwell
+distribution corresponding to the given temperature. 
+tau_eta is not needed here. Can be used with FBC.
 
 <P><LI><B> npt_iso </B><P>
 Constant pressure, constant temperature ensemble, with isotropic 
@@ -66,6 +69,7 @@ Microconvergence integrator. After each step, the velocity component
 "uphill" in the potential landscape is reset to zero. No particular
 parameter is needed, except perhaps the initial temperature, if not 
 all atoms have their velocities given in the configuration file.
+Can be used with AND and FBC.
 
 <P><LI><B> frac </B><P>
 Fracture simulation with stadium damping. Anyone know how this works?
