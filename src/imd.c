@@ -26,7 +26,7 @@
 
 int main(int argc, char **argv)
 {
-  int start, num_threads;
+  int start, num_threads, i;
   time_t tstart, tend;
   real tmp;
 #ifdef PAPI
@@ -68,6 +68,10 @@ int main(int argc, char **argv)
     read_pot_table(&pair_pot,potfilename,ntypes*ntypes,1);
   /* initialize analytically defined potentials */
   if (have_pre_pot) init_pre_pot();
+#ifdef MULTIPOT
+  for (i=0; i<N_POT_TAB; i++)
+    copy_pot_table( pair_pot, &pair_pot_ar[i]);
+#endif
 #ifdef LINPOT
   make_lin_pot_table(pair_pot, &pair_pot_lin);
 #endif

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -199,7 +199,7 @@ void init_cells( void )
       /* don't alloc data space for buffer cells */
       if ((0 != i) && (0 != j) && (i != cell_dim.x-1) && (j != cell_dim.y-1))
 #endif
-      alloc_cell(p, initsz);
+      ALLOC_MINICELL(p, initsz);
     }
 
   /* on the first invocation we have to set up the MPI process topology */
@@ -231,9 +231,9 @@ void init_cells( void )
           cellc = cell_coord( ORT(p,i,X), ORT(p,i,Y) );
 #endif
           to = PTR_VV(cell_array,cellc,cell_dim);
-          move_atom( to, p, i );
+          MOVE_ATOM( to, p, i );
         }
-        alloc_cell( p, 0 );  /* free old cell */
+        ALLOC_MINICELL( p, 0 );  /* free old cell */
     }
     free(cell_array_old);
     fix_cells();

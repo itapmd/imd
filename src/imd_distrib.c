@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -268,8 +268,8 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
   }
 
   /* loop over all atoms */
-  for (k=0; k<ncells; ++k) {
-    p = cell_array + CELLS(k);
+  for (k=0; k<NCELLS; ++k) {
+    p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
       /* which bin? */
       numx = scalex * (ORT(p,i,X) - dist->ll.x);
@@ -502,8 +502,8 @@ void update_atdist()
   si = sin(atdist_phi);
 
   /* loop over all atoms */
-  for (k=0; k<ncells; ++k) {
-    p = cell_array + CELLS(k);
+  for (k=0; k<NCELLS; ++k) {
+    p = CELLPTR(k);
     for (i=0; i<p->n; ++i) 
 
       /* periodic continuation */
@@ -682,15 +682,15 @@ void init_diffpat()
 void update_diffpat(int steps)
 {
   int   num, numx, numy, numz, k, i;
-  cell  *p;
   real  x, y, z;
   int   dimz  = 2 * (diffpat_dim.z / 2 + 1);
   int   dimz2 =     (diffpat_dim.z / 2 + 1);
   fftwf_complex *dist_out = (fftwf_complex *) diffdist;
 
   /* loop over all atoms */
-  for (k=0; k<ncells; ++k) {
-    p = cell_array + CELLS(k);
+  for (k=0; k<NCELLS; ++k) {
+    cell  *p;
+    p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
       x = ORT(p,i,X);
       y = ORT(p,i,Y);

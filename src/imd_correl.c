@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -111,10 +111,10 @@ void init_correl(int ncorr_rmax, int ncorr_tmax)
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
     int i;
     cell *p;
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
       REF_POS(p,i,X) = ORT(p,i,X);
       REF_POS(p,i,Y) = ORT(p,i,Y);
@@ -148,10 +148,10 @@ void correlate(int step, int ref_step, unsigned seqnum)
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for (k=0; k<ncells; ++k) {
+    for (k=0; k<NCELLS; ++k) {
       int i;
       cell *p;
-      p = cell_array + CELLS(k);
+      p = CELLPTR(k);
       for (i=0; i<p->n; ++i) {
         REF_POS(p,i,X) = ORT(p,i,X);
         REF_POS(p,i,Y) = ORT(p,i,Y);
@@ -182,11 +182,11 @@ void correlate(int step, int ref_step, unsigned seqnum)
     for (i=0; i<DIM*vtypes; i++) msqdv[i] = (real)0;
 
     /* loop over all cells */
-    for (k=0; k<ncells; ++k) {
+    for (k=0; k<NCELLS; ++k) {
 
       int i;
       cell *p;
-      p = cell_array + CELLS(k);
+      p = CELLPTR(k);
 
       for (i = 0; i < p->n; ++i) {
 

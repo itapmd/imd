@@ -368,8 +368,8 @@ void create_pot_table(pot_table_t *pt)
     /* Allocate or extend memory for potential table */
     if (have_potfile==0) {  /* have no potential table yet */
       pt->ncols    = ncols;
-      pt->maxsteps = maxres + 2;
-      tablesize    = ncols * pt->maxsteps;
+      pt->maxsteps = maxres;
+      tablesize    = ncols * (pt->maxsteps + 2);
       pt->begin    = (real *) malloc(ncols*sizeof(real));
       pt->end      = (real *) malloc(ncols*sizeof(real));
       pt->step     = (real *) malloc(ncols*sizeof(real));
@@ -382,9 +382,9 @@ void create_pot_table(pot_table_t *pt)
       if (NULL==pt->table) 
         error("Cannot allocate memory for potential table.");
     } else {   /* we possibly have to extend potential table */
-      if (maxres + 2 > pt->maxsteps) {
-        pt->maxsteps = maxres + 2;
-        tablesize    = ncols * pt->maxsteps;
+      if (maxres > pt->maxsteps) {
+        pt->maxsteps = maxres;
+        tablesize    = ncols * (pt->maxsteps + 2);
         pt->table    = (real *) realloc(pt->table, tablesize * sizeof(real));
         if (NULL==pt->table) 
           error("Cannot extend memory for potential table.");
@@ -820,6 +820,42 @@ void free_pot_table(pot_table_t *pt)
   free(pt->table2);
 #endif
 }
+
+#ifdef MULTIPOT
+
+/*****************************************************************************
+*
+*  copy potential table 
+*
+******************************************************************************/
+
+void copy_pot_table( pot_table_t pt, pot_table_t *npt )
+{
+  int size;
+
+  size = (pt.maxsteps + 2) * pt.ncols;
+
+  npt->ncols    = pt.ncols;
+  npt->maxsteps = pt.maxsteps;
+
+  npt->begin    = (real *) malloc( pt.ncols * sizeof(real) );
+  npt->end      = (real *) malloc( pt.ncols * sizeof(real) );
+  npt->step     = (real *) malloc( pt.ncols * sizeof(real) );
+  npt->invstep  = (real *) malloc( pt.ncols * sizeof(real) );
+  npt->table    = (real *) malloc( size     * sizeof(real) );
+  if ((NULL==npt->begin)   || (NULL==npt->end) || (NULL==npt->step) ||
+      (NULL==npt->invstep) || (NULL==npt->table))
+    error("Cannot allocate potential table");
+
+  memcpy( npt->begin,   pt.begin,   pt.ncols * sizeof(real) );
+  memcpy( npt->end,     pt.end,     pt.ncols * sizeof(real) );
+  memcpy( npt->step,    pt.step,    pt.ncols * sizeof(real) );
+  memcpy( npt->invstep, pt.invstep, pt.ncols * sizeof(real) );
+  memcpy( npt->table,   pt.table,   size     * sizeof(real) );
+
+}
+
+#endif
 
 #ifdef PAIR
 

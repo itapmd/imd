@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -19,6 +19,7 @@
 * $Date$
 ******************************************************************************/
 
+#define INDEXED_ACCESS
 #include "imd.h"
 
 #ifdef SR
@@ -34,29 +35,58 @@
 *
 ******************************************************************************/
 
-void send_cells(void (*copy_func)  (int, int, int, int, int, int),
-                void (*pack_func)  (msgbuf*, int, int, int),
+void send_cells(void (*copy_func)  (int, int, int, int, int, int, vektor),
+                void (*pack_func)  (msgbuf*, int, int, int, vektor),
                 void (*unpack_func)(msgbuf*, int, int, int))
 {
   int i,j;
 
-  MPI_Status  stat;
+  vektor uvec={0,0,0}, dvec={0,0,0};
+  vektor nvec={0,0,0}, svec={0,0,0};
+  vektor evec={0,0,0}, wvec={0,0,0};
 
+#ifdef MPI
+  MPI_Status  stat;
   empty_mpi_buffers();
+#endif
+
+#ifdef VEC
+  atoms.n_buf = atoms.n;
+  if (pbc_dirs.x==1) {
+    if (my_coord.x==0) evec = box_x;
+    if (my_coord.x==cpu_dim.x-1) {
+      wvec.x = -box_x.x; wvec.y = -box_x.y; wvec.z = -box_x.z;
+    }    
+  }
+  if (pbc_dirs.y==1) {
+    if (my_coord.y==0) nvec = box_y;
+    if (my_coord.y==cpu_dim.y-1) {
+      svec.x = -box_y.x; svec.y = -box_y.y; svec.z = -box_y.z;
+    }    
+  }
+  if (pbc_dirs.z==1) {
+    if (my_coord.z==0) uvec = box_z;
+    if (my_coord.z==cpu_dim.z-1) {
+      dvec.x = -box_z.x; dvec.y = -box_z.y; dvec.z = -box_z.z;
+    }    
+  }
+#endif
 
   /* exchange up/down */
   if (cpu_dim.z==1) {
     /* simply copy up/down atoms to buffer cells */
     for (i=1; i < cell_dim.x-1; ++i) 
       for (j=1; j < cell_dim.y-1; ++j) {
-        (*copy_func)( i, j, 1, i, j, cell_dim.z-1 );
-        (*copy_func)( i, j, cell_dim.z-2, i, j, 0 );
+        (*copy_func)( i, j, 1, i, j, cell_dim.z-1, uvec );
+        (*copy_func)( i, j, cell_dim.z-2, i, j, 0, dvec );
       }
-  } else {
+  }
+#ifdef MPI
+  else {
     /* copy up atoms into send buffer */
     for (i=1; i < cell_dim.x-1; ++i) 
       for (j=1; j < cell_dim.y-1; ++j)
-        (*pack_func)( &send_buf_up, i, j, 1 );
+        (*pack_func)( &send_buf_up, i, j, 1, uvec );
 
     /* send up, receive down */
     sendrecv_buf(&send_buf_up, nbup, &recv_buf_down, nbdown, &stat);
@@ -70,7 +100,7 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int),
     /* copy down atoms into send buffer */
     for (i=1; i < cell_dim.x-1; ++i) 
       for (j=1; j < cell_dim.y-1; ++j)
-        (*pack_func)( &send_buf_down, i, j, cell_dim.z-2 );
+        (*pack_func)( &send_buf_down, i, j, cell_dim.z-2, dvec );
 
     /* send down, receive up */
     sendrecv_buf(&send_buf_down, nbdown, &recv_buf_up, nbup, &stat);
@@ -81,20 +111,23 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int),
       for (j=1; j < cell_dim.y-1; ++j)
         (*unpack_func)( &recv_buf_up, i, j, 0 );
   }
+#endif
 
   /* exchange north/south */
   if (cpu_dim.y==1) {
     /* simply copy north/south atoms to buffer cells */
     for (i=1; i < cell_dim.x-1; ++i)
       for (j=0; j < cell_dim.z; ++j) {
-        (*copy_func)( i, 1, j, i, cell_dim.y-1, j );
-        (*copy_func)( i, cell_dim.y-2, j, i, 0, j );
+        (*copy_func)( i, 1, j, i, cell_dim.y-1, j, nvec );
+        (*copy_func)( i, cell_dim.y-2, j, i, 0, j, svec );
       }
-  } else {
+  }
+#ifdef MPI
+  else {
     /* copy north atoms into send buffer */
     for (i=1; i < cell_dim.x-1; ++i) 
       for (j=0; j < cell_dim.z; ++j)
-        (*pack_func)( &send_buf_north, i, 1, j );
+        (*pack_func)( &send_buf_north, i, 1, j, nvec );
 
     /* send north, receive south */
     sendrecv_buf(&send_buf_north, nbnorth, &recv_buf_south, nbsouth, &stat);
@@ -108,7 +141,7 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int),
     /* copy south atoms into send buffer */
     for (i=1; i < cell_dim.x-1; ++i) 
       for (j=0; j < cell_dim.z; ++j)
-        (*pack_func)( &send_buf_south, i, cell_dim.y-2, j );
+        (*pack_func)( &send_buf_south, i, cell_dim.y-2, j, svec );
 
     /* send south, receive north */
     sendrecv_buf(&send_buf_south, nbsouth, &recv_buf_north, nbnorth, &stat);
@@ -119,22 +152,25 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int),
       for (j=0; j < cell_dim.z; ++j)
         (*unpack_func)( &recv_buf_north, i, 0, j );
   }
+#endif
 
   /* exchange east/west */
   if (cpu_dim.x==1) {
     /* simply copy east/west atoms to buffer cells */
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j) { 
-        (*copy_func)( 1, i, j, cell_dim.x-1, i, j );
+        (*copy_func)( 1, i, j, cell_dim.x-1, i, j, evec );
 #if !defined(AR) || defined(COVALENT) 
-        (*copy_func)( cell_dim.x-2, i, j, 0, i, j );
+        (*copy_func)( cell_dim.x-2, i, j, 0, i, j, wvec );
 #endif
       }
-  } else {
+  }
+#ifdef MPI
+  else {
     /* copy east atoms into send buffer */
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j) 
-        (*pack_func)( &send_buf_east, 1, i, j );
+        (*pack_func)( &send_buf_east, 1, i, j, evec );
 
     /* send east, receive west */
     sendrecv_buf(&send_buf_east, nbeast, &recv_buf_west, nbwest, &stat);
@@ -149,7 +185,7 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int),
     /* copy west atoms into send buffer */
     for (i=0; i < cell_dim.y; ++i) 
       for (j=0; j < cell_dim.z; ++j) 
-        (*pack_func)( &send_buf_west, cell_dim.x-2, i, j );
+        (*pack_func)( &send_buf_west, cell_dim.x-2, i, j, wvec );
 
     /* send west, receive east */
     sendrecv_buf(&send_buf_west, nbwest, &recv_buf_east, nbeast, &stat);
@@ -161,6 +197,7 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int),
         (*unpack_func)( &recv_buf_east, 0, i, j );
 #endif
   }  
+#endif
 }
 
 #else /* not SR */
@@ -176,12 +213,17 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int),
 *
 ******************************************************************************/
 
-void send_cells(void (*copy_func)  (int, int, int, int, int, int),
-                void (*pack_func)  (msgbuf*, int, int, int),
+void send_cells(void (*copy_func)  (int, int, int, int, int, int, vektor),
+                void (*pack_func)  (msgbuf*, int, int, int, vektor),
                 void (*unpack_func)(msgbuf*, int, int, int))
 {
   int i,j;
 
+  vektor uvec={0,0,0}, dvec={0,0,0};
+  vektor nvec={0,0,0}, svec={0,0,0};
+  vektor evec={0,0,0}, wvec={0,0,0};
+
+#ifdef MPI
   MPI_Status  stateast[2],  statwest[2];
   MPI_Status statnorth[2], statsouth[2];
   MPI_Status    statup[2],  statdown[2];
@@ -191,27 +233,52 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int),
   MPI_Request    requp[2],   reqdown[2];
 
   empty_mpi_buffers();
+#endif
+
+#ifdef VEC
+  atoms.n_buf = atoms.n;
+  if (pbc_dirs.x==1) {
+    if (my_coord.x==0) evec = box_x;
+    if (my_coord.x==cpu_dim.x-1) {
+      wvec.x = -box_x.x; wvec.y = -box_x.y; wvec.z = -box_x.z;
+    }    
+  }
+  if (pbc_dirs.y==1) {
+    if (my_coord.y==0) nvec = box_y;
+    if (my_coord.y==cpu_dim.y-1) {
+      svec.x = -box_y.x; svec.y = -box_y.y; svec.z = -box_y.z;
+    }    
+  }
+  if (pbc_dirs.z==1) {
+    if (my_coord.z==0) uvec = box_z;
+    if (my_coord.z==cpu_dim.z-1) {
+      dvec.x = -box_z.x; dvec.y = -box_z.y; dvec.z = -box_z.z;
+    }    
+  }
+#endif
 
   /* exchange up/down */
   if (cpu_dim.z==1) {
     /* simply copy up/down atoms to buffer cells*/
     for (i=1; i < cell_dim.x-1; ++i) 
       for (j=1; j < cell_dim.y-1; ++j) {
-        (*copy_func)( i, j, 1, i, j, cell_dim.z-1 );
-        (*copy_func)( i, j, cell_dim.z-2, i, j, 0 );
+        (*copy_func)( i, j, 1, i, j, cell_dim.z-1, uvec );
+        (*copy_func)( i, j, cell_dim.z-2, i, j, 0, dvec );
       }
-  } else {
+  }
+#ifdef MPI
+  else {
     /* copy up atoms into send buffer, send up */
     for (i=1; i < cell_dim.x-1; ++i) 
       for (j=1; j < cell_dim.y-1; ++j)
-        (*pack_func)( &send_buf_up, i, j, 1 );
+        (*pack_func)( &send_buf_up, i, j, 1, uvec );
     irecv_buf( &recv_buf_down , nbdown, &reqdown[1]);
     isend_buf( &send_buf_up   , nbup  , &reqdown[0]);
 
     /* copy down atoms into send buffer, send down */
     for (i=1; i < cell_dim.x-1; ++i) 
       for (j=1; j < cell_dim.y-1; ++j)
-        (*pack_func)( &send_buf_down, i, j, cell_dim.z-2 );
+        (*pack_func)( &send_buf_down, i, j, cell_dim.z-2, dvec );
     irecv_buf( &recv_buf_up  , nbup  , &requp[1] );
     isend_buf( &send_buf_down, nbdown, &requp[0] );
 
@@ -229,27 +296,30 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int),
       for (j=1; j < cell_dim.y-1; ++j)
         (*unpack_func)( &recv_buf_up, i, j, 0 );
   }
+#endif
 
   /* exchange north/south */
   if (cpu_dim.y==1) {
     /* simply copy north/south atoms to buffer cells */
     for (i=1; i < cell_dim.x-1; ++i)
       for (j=0; j < cell_dim.z; ++j) {
-        (*copy_func)( i, 1, j, i, cell_dim.y-1, j );
-        (*copy_func)( i, cell_dim.y-2, j, i, 0, j );
+        (*copy_func)( i, 1, j, i, cell_dim.y-1, j, nvec );
+        (*copy_func)( i, cell_dim.y-2, j, i, 0, j, svec );
       }
-  } else {
-    /* copy north atoms into send buffer, send north*/
+  }
+#ifdef MPI
+  else {
+    /* copy north atoms into send buffer, send north */
     for (i=1; i < cell_dim.x-1; ++i) 
       for (j=0; j < cell_dim.z; ++j)
-        (*pack_func)( &send_buf_north, i, 1, j );
+        (*pack_func)( &send_buf_north, i, 1, j, nvec );
     irecv_buf( &recv_buf_south, nbsouth, &reqsouth[1] );
     isend_buf( &send_buf_north, nbnorth, &reqsouth[0] );
 
     /* copy south atoms into send buffer, send south*/
     for (i=1; i < cell_dim.x-1; ++i) 
       for (j=0; j < cell_dim.z; ++j)
-        (*pack_func)( &send_buf_south, i, cell_dim.y-2, j );
+        (*pack_func)( &send_buf_south, i, cell_dim.y-2, j, svec );
     irecv_buf( &recv_buf_north, nbnorth, &reqnorth[1] );
     isend_buf( &send_buf_south, nbsouth, &reqnorth[0] );
 
@@ -267,22 +337,25 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int),
       for (j=0; j < cell_dim.z; ++j)
         (*unpack_func)( &recv_buf_north, i, 0, j );
   }
+#endif
 
   /* exchange east/west*/
   if (cpu_dim.x==1) {
   /* simply copy east/west atoms to buffer cells*/
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j) { 
-        (*copy_func)( 1, i, j, cell_dim.x-1, i, j );
+        (*copy_func)( 1, i, j, cell_dim.x-1, i, j, evec );
 #if !defined(AR) || defined(COVALENT) 
-        (*copy_func)( cell_dim.x-2, i, j, 0, i, j );
+        (*copy_func)( cell_dim.x-2, i, j, 0, i, j, wvec );
 #endif
       }
-  } else {
+  }
+#ifdef MPI
+  else {
   /* copy east atoms into send buffer, send east*/
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j) 
-        (*pack_func)( &send_buf_east, 1, i, j );
+        (*pack_func)( &send_buf_east, 1, i, j, evec );
     irecv_buf( &recv_buf_west, nbwest, &reqwest[1] );
     isend_buf( &send_buf_east, nbeast, &reqwest[0] );
 
@@ -290,7 +363,7 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int),
     /* copy west atoms into send buffer, send west*/
     for (i=0; i < cell_dim.y; ++i) 
       for (j=0; j < cell_dim.z; ++j) 
-        (*pack_func)( &send_buf_west, cell_dim.x-2, i, j );
+        (*pack_func)( &send_buf_west, cell_dim.x-2, i, j, wvec );
     irecv_buf( &recv_buf_east, nbeast, &reqeast[1] );
     isend_buf( &send_buf_west, nbwest, &reqeast[0] );
 #endif
@@ -311,6 +384,7 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int),
         (*unpack_func)( &recv_buf_east, 0, i, j );
 #endif
   }  
+#endif
 }
 
 #endif /* not SR */
@@ -334,9 +408,10 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
 {
   int i,j;
 
+#ifdef MPI
   MPI_Status  stat;
-
   empty_mpi_buffers();
+#endif
 
   /* send forces east/west */
   if (cpu_dim.x==1) {
@@ -348,7 +423,9 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
 #endif
         (*add_func)( cell_dim.x-1, i, j, 1, i, j );
       }
-  } else {
+  }
+#ifdef MPI
+  else {
 #ifdef COVALENT 
     /* copy east forces into send buffer */
     for (i=0; i < cell_dim.y; ++i)
@@ -379,6 +456,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
       for (j=0; j < cell_dim.z; ++j) 
         (*unpack_func)( &recv_buf_east, 1, i, j );
   }
+#endif
 
   /* send forces north/south */
   if (cpu_dim.y==1) {
@@ -388,7 +466,9 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
         (*add_func)( i, 0, j, i, cell_dim.y-2, j );
         (*add_func)( i, cell_dim.y-1, j, i, 1, j );
       }
-  } else {
+  }
+#ifdef MPI
+  else {
     /* copy north forces into send buffer */
     for (i=1; i < cell_dim.x-1; ++i) 
       for (j=0; j < cell_dim.z; ++j)
@@ -417,6 +497,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
       for (j=0; j < cell_dim.z; ++j)
         (*unpack_func)( &recv_buf_north, i, 1, j );
   }
+#endif
 
   /* send forces up/down */
   if (cpu_dim.z==1) {
@@ -426,7 +507,9 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
         (*add_func)( i, j, 0, i, j, cell_dim.z-2 );
         (*add_func)( i, j, cell_dim.z-1, i, j, 1 );
       }
-  } else {
+  }
+#ifdef MPI
+  else {
     /* copy up forces into send buffer */
     for (i=1; i < cell_dim.x-1; ++i) 
       for (j=1; j < cell_dim.y-1; ++j)
@@ -455,6 +538,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
       for (j=1; j < cell_dim.y-1; ++j)
         (*unpack_func)( &recv_buf_up, i, j, 1 );
   }
+#endif
 }
 
 #else /* not SR */
@@ -476,6 +560,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
 {
   int i,j;
 
+#ifdef MPI
   MPI_Status  stateast[2],  statwest[2];
   MPI_Status statnorth[2], statsouth[2];
   MPI_Status    statup[2],  statdown[2];
@@ -485,6 +570,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
   MPI_Request    requp[2],   reqdown[2];
 
   empty_mpi_buffers();
+#endif
 
   /* send forces east/west */
   if (cpu_dim.x==1) {
@@ -496,7 +582,9 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
 #endif
         (*add_func)( cell_dim.x-1, i, j, 1, i, j );
       }
-  } else {
+  }
+#ifdef MPI
+  else {
 #ifdef COVALENT 
     /* copy east forces into send buffer, send east */
     for (i=0; i < cell_dim.y; ++i)
@@ -529,6 +617,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
       for (j=0; j < cell_dim.z; ++j) 
         (*unpack_func)( &recv_buf_east, 1, i, j );
   }
+#endif
 
   /* send forces north/south */
   if (cpu_dim.y==1) {
@@ -538,7 +627,9 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
         (*add_func)( i, 0, j, i, cell_dim.y-2, j );
         (*add_func)( i, cell_dim.y-1, j, i, 1, j );
       }
-  } else {
+  }
+#ifdef MPI
+  else {
     /* copy north forces into send buffer, send north */
     for (i=1; i < cell_dim.x-1; ++i) 
       for (j=0; j < cell_dim.z; ++j)
@@ -567,6 +658,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
       for (j=0; j < cell_dim.z; ++j)
         (*unpack_func)( &recv_buf_north, i, 1, j );
   }
+#endif
 
   /* send forces up/down */
   if (cpu_dim.z==1) {
@@ -576,7 +668,9 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
         (*add_func)( i, j, 0, i, j, cell_dim.z-2 );
         (*add_func)( i, j, cell_dim.z-1, i, j, 1 );
       }
-  } else {
+  }
+#ifdef MPI
+  else {
     /* copy up forces into send buffer, send up */
     for (i=1; i < cell_dim.x-1; ++i) 
       for (j=1; j < cell_dim.y-1; ++j)
@@ -605,6 +699,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
       for (j=1; j < cell_dim.y-1; ++j)
         (*unpack_func)( &recv_buf_up, i, j, 1 );
   }
+#endif
 }
 
 #endif /* not SR */
@@ -615,25 +710,34 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
 *
 ******************************************************************************/
 
-void copy_cell( int k, int l, int m, int r, int s, int t )
+void copy_cell( int k, int l, int m, int r, int s, int t, vektor v )
 {
-  int i, tmp_n;
-  cell *from, *to;
+  int i;
+  minicell *from, *to;
 
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
   to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
 
-  tmp_n = from->n;
-  if (tmp_n > to->n_max) {
+  /* increase minicell size if necessary */
+  if (from->n > to->n_max) {
     to->n = 0;
-    alloc_cell(to, tmp_n);
+    ALLOC_MINICELL(to, from->n);
   }
-  
-  to->n = tmp_n;
+
+#ifdef VEC
+  /* increase cell size if necessary */
+  if (atoms.n_buf + from->n > atoms.n_max) 
+    alloc_cell( &atoms, atoms.n_buf + from->n); 
+#endif
+
+  to->n = from->n;
   for (i=0; i<to->n; ++i) {
-    ORT(to,i,X)   = ORT(from,i,X);
-    ORT(to,i,Y)   = ORT(from,i,Y);
-    ORT(to,i,Z)   = ORT(from,i,Z);
+#ifdef VEC
+    to->ind[i]    = atoms.n_buf++;
+#endif
+    ORT(to,i,X)   = ORT(from,i,X) + v.x;
+    ORT(to,i,Y)   = ORT(from,i,Y) + v.y;
+    ORT(to,i,Z)   = ORT(from,i,Z) + v.z;
 #ifndef MONO
     VSORTE(to,i)  = VSORTE(from,i);
 #endif
@@ -657,19 +761,19 @@ void copy_cell( int k, int l, int m, int r, int s, int t )
 *
 ******************************************************************************/
 
-void pack_cell( msgbuf *b, int k, int l, int m )
+void pack_cell( msgbuf *b, int k, int l, int m, vektor v )
 {
   int i;
-  cell *from;
+  minicell *from;
     
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
   b->data[ b->n++ ] = (real) from->n;
     
   for (i=0; i<from->n; ++i) {
-    b->data[ b->n++ ] = ORT(from,i,X);
-    b->data[ b->n++ ] = ORT(from,i,Y);
-    b->data[ b->n++ ] = ORT(from,i,Z);
+    b->data[ b->n++ ] = ORT(from,i,X) + v.x;
+    b->data[ b->n++ ] = ORT(from,i,Y) + v.y;
+    b->data[ b->n++ ] = ORT(from,i,Z) + v.z;
 #ifndef MONO
     b->data[ b->n++ ] = (real) VSORTE(from,i);
 #endif
@@ -698,19 +802,30 @@ void unpack_cell( msgbuf *b, int k, int l, int m )
 {
   int i;
   int tmp_n;
-  cell *to;
+  minicell *to;
 
   to = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
   tmp_n = (int) b->data[ b->n++ ];
   
+  /* increase minicell size if necessary */
   if (tmp_n > to->n_max) {
     to->n = 0;
-    alloc_cell(to, tmp_n);
+    ALLOC_MINICELL(to, tmp_n);
   }
-  
+
+#ifdef VEC
+  /* increase cell size if necessary */
+  if (atoms.n_buf + tmp_n > atoms.n_max) 
+    alloc_cell( &atoms, atoms.n_buf + tmp_n); 
+#endif
+
+  /* copy indices and atoms */
   to->n = tmp_n;
   for (i=0; i<to->n; ++i) {
+#ifdef VEC
+    to->ind[i]  = atoms.n_buf++;
+#endif
     ORT(to,i,X) = b->data[ b->n++ ];
     ORT(to,i,Y) = b->data[ b->n++ ];
     ORT(to,i,Z) = b->data[ b->n++ ];
@@ -741,7 +856,7 @@ void unpack_cell( msgbuf *b, int k, int l, int m )
 void add_forces( int k, int l, int m, int r, int s, int t )
 {
   int i;
-  cell *from, *to;
+  minicell *from, *to;
 
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
   to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
@@ -784,7 +899,7 @@ void add_forces( int k, int l, int m, int r, int s, int t )
 void pack_forces( msgbuf *b, int k, int l, int m)
 {
   int i;
-  cell *from;
+  minicell *from;
     
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
   for (i=0; i<from->n; ++i) {
@@ -826,7 +941,7 @@ void pack_forces( msgbuf *b, int k, int l, int m)
 void unpack_forces( msgbuf *b, int k, int l, int m )
  {
   int i;
-  cell *to;
+  minicell *to;
 
   to = PTR_3D_V(cell_array, k, l, m, cell_dim);
   for (i=0; i<to->n; ++i) {
@@ -868,10 +983,10 @@ void unpack_forces( msgbuf *b, int k, int l, int m )
 *
 ******************************************************************************/
 
-void copy_rho_h( int k, int l, int m, int r, int s, int t )
+void copy_rho_h( int k, int l, int m, int r, int s, int t, vektor v )
 {
   int i;
-  cell *from, *to;
+  minicell *from, *to;
 
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
   to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
@@ -890,13 +1005,31 @@ void copy_rho_h( int k, int l, int m, int r, int s, int t )
 void add_rho_h( int k, int l, int m, int r, int s, int t )
 {
   int i;
-  cell *from, *to;
+  minicell *from, *to;
 
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
   to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
 
   for (i=0; i<to->n; ++i) {
     EAM_RHO(to,i) += EAM_RHO(from,i);
+  }
+}
+
+/******************************************************************************
+*
+*  pack eam2_rho_h_v into MPI buffer
+*
+******************************************************************************/
+
+void pack_rho_h_v( msgbuf *b, int k, int l, int m, vektor v )
+{
+  int i;
+  minicell *from;
+    
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+  for (i=0; i<from->n; ++i) {
+    b->data[ b->n++ ] = EAM_RHO(from,i);
   }
 }
 
@@ -909,7 +1042,7 @@ void add_rho_h( int k, int l, int m, int r, int s, int t )
 void pack_rho_h( msgbuf *b, int k, int l, int m )
 {
   int i;
-  cell *from;
+  minicell *from;
     
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
@@ -927,7 +1060,7 @@ void pack_rho_h( msgbuf *b, int k, int l, int m )
 void unpack_rho_h( msgbuf *b, int k, int l, int m )
 {
   int i;
-  cell *to;
+  minicell *to;
 
   to = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
@@ -945,7 +1078,7 @@ void unpack_rho_h( msgbuf *b, int k, int l, int m )
 void unpack_add_rho_h( msgbuf *b, int k, int l, int m )
 {
   int i;
-  cell *to;
+  minicell *to;
 
   to = PTR_3D_V(cell_array, k, l, m, cell_dim);
 

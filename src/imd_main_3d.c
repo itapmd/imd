@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -34,7 +34,6 @@ void main_loop(void)
   real tmp_pot_energy;
   real tmp_kin_energy;
   int i,j,k;
-  cell *p;
   real dtemp;
   vektor d_pressure;
 
@@ -271,8 +270,9 @@ void main_loop(void)
     /* "global convergence": set momenta to 0 if P*F < 0 (global vectors) */
     if (steps > glok_annealsteps) {
       if ((PxF<0.0)||(2.0*tot_kin_energy/nactive > glok_ekin_threshold)) {
-	for (k=0; k<ncells; ++k) {
-	  p = cell_array + CELLS(k);
+	for (k=0; k<NCELLS; ++k) {
+          cell *p:
+	  p = CELLPTR(k);
 	  for (i=0; i<p->n; ++i) {
 	    IMPULS(p,i,X) = 0.0;
 	    IMPULS(p,i,Y) = 0.0;
@@ -454,13 +454,13 @@ void do_boundaries(void)
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
 
     int  l;
-    real i;  /* FLOOR returns a real */
+    real i;  /* FLOOR returns a double */
     cell *p;
 
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
     /* PBC in x direction */
     if (pbc_dirs.x==1)
@@ -544,10 +544,10 @@ void calc_tot_presstens(void)
   tot_presstens.xy = 0.0;
 
   /*sum up total pressure tensor */
-  for (i=0; i<ncells; ++i) {
+  for (i=0; i<NCELLS; ++i) {
     int j;
     cell *p;
-    p = cell_array + CELLS(i);
+    p = CELLPTR(i);
     for (j=0; j<p->n; ++j) {
       tot_presstens.xx += PRESSTENS(p,j,xx);
       tot_presstens.yy += PRESSTENS(p,j,yy);

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -47,6 +47,78 @@ INLINE static int MOD(shortint p, int q)
 #define X(i) [DIM*(i)  ]
 #define Y(i) [DIM*(i)+1]
 #define Z(i) [DIM*(i)+2]
+
+#if defined(VEC) && defined(INDEXED_ACCESS)
+
+#ifdef MONOLJ
+#define SORTE(cell,i)           0
+#define VSORTE(cell,i)          0
+#define NUMMER(cell,i)          0
+#define MASSE(cell,i)           1.0
+#define POTENG(cell,i)          0.0
+#else
+#define VSORTE(cell,i)          (atoms.sorte  [(cell)->ind[i]])
+#if defined(MONO)
+#define SORTE(cell,i)           0
+#elif defined(SX)
+#define SORTE(cell,i)           (sort_tab[ VSORTE(cell,i) ])
+#elif defined(BINARY)
+#define SORTE(cell,i)           (VSORTE(cell,i) & 0x1)
+#else
+#define SORTE(cell,i)           MOD( VSORTE(cell,i), ntypes)
+#endif
+
+#define NUMMER(cell,i)          (atoms.nummer [(cell)->ind[i]])
+#define MASSE(cell,i)           (atoms.masse  [(cell)->ind[i]])
+#define POTENG(cell,i)          (atoms.pot_eng[(cell)->ind[i]])
+#endif
+
+#define ORT(cell,i,sub)         (atoms.ort    sub((cell)->ind[i]))
+#define KRAFT(cell,i,sub)       (atoms.kraft  sub((cell)->ind[i]))
+#define IMPULS(cell,i,sub)      (atoms.impuls sub((cell)->ind[i]))
+
+#ifdef EAM2
+#define EAM_RHO(cell,i)         (atoms.eam2_rho_h[(cell)->ind[i]])
+#endif
+#ifdef CG
+#define CG_G(cell,i,sub)        (atoms.g       sub((cell)->ind[i]))
+#define CG_H(cell,i,sub)        (atoms.h       sub((cell)->ind[i]))
+#define OLD_ORT(cell,i,sub)     (atoms.old_ort sub((cell)->ind[i]))
+#endif
+#ifdef DISLOC
+#define EPOT_REF(cell,i)        (atoms.Epot_ref   [(cell)->ind[i]])
+#define ORT_REF(cell,i,sub)     (atoms.ort_ref sub((cell)->ind[i]))
+#endif
+#ifdef AVPOS
+#define AV_POS(cell,i,sub)      (atoms.avpos sub((cell)->ind[i]))
+#define SHEET(cell,i,sub)       (atoms.sheet sub((cell)->ind[i]))
+#define AV_EPOT(cell,i)         (atoms.av_epot  [(cell)->ind[i]])
+#endif
+#ifdef ORDPAR
+#define NBANZ(cell,i)           (atoms.nbanz[(cell)->ind[i]])
+#endif
+#ifdef REFPOS
+#define REF_POS(cell,i,sub)     (atoms.refpos sub((cell)->ind[i]))
+#endif
+#ifdef NVX
+#define HEATCOND(cell,i)        (atoms.heatcond[(cell)->ind[i]])
+#endif
+#ifdef STRESS_TENS
+#define PRESSTENS(cell,i,sub)   (atoms.presstens[(cell)->ind[i]].sub)
+#endif
+#ifdef COVALENT
+/* not supported in VEC mode */
+#endif
+#ifdef UNIAX
+#define TRAEG_MOMENT(cell,i)    (atoms.traeg_moment   [(cell)->ind[i]])
+#define ACHSE(cell,i,sub)       (atoms.achse       sub((cell)->ind[i]))
+#define SHAPE(cell,i,sub)       (atoms.shape       sub((cell)->ind[i]))
+#define POT_WELL(cell,i,sub)    (atoms.pot_well    sub((cell)->ind[i]))
+#define DREH_IMPULS(cell,i,sub) (atoms.dreh_impuls sub((cell)->ind[i]))
+#define DREH_MOMENT(cell,i,sub) (atoms.dreh_moment sub((cell)->ind[i]))
+#endif
+
+#else /* not VEC or direct access */
 
 #ifdef MONOLJ
 #define SORTE(cell,i)           0
@@ -118,10 +190,30 @@ INLINE static int MOD(shortint p, int q)
 #define DREH_MOMENT(cell,i,sub) ((cell)->dreh_moment sub(i))
 #endif
 
-#ifdef MPI
+#endif /* VEC */
+
+#ifdef BUFCELLS
 #define CELLS(k) cells[k]
 #else
 #define CELLS(k) k
+#endif
+
+#if !defined(VEC) || defined(INDEXED_ACCESS)
+#define CELLPTR(k) (cell_array + CELLS(k))
+#define NCELLS ncells
+#else
+#define CELLPTR(k) (&atoms)
+#define NCELLS 1
+#endif
+
+#ifdef VEC
+#define MOVE_ATOM      move_atom_mini
+#define INSERT_ATOM    insert_atom
+#define ALLOC_MINICELL alloc_minicell
+#else
+#define MOVE_ATOM      move_atom
+#define INSERT_ATOM    move_atom
+#define ALLOC_MINICELL alloc_cell
 #endif
 
 /* Max gibt den groesseren von zwei Werten */
@@ -276,7 +368,3 @@ inline static real SQR(real x)
 #ifdef CGF   /* minimization of total forces */
 #define CGVAL fnorm
 #endif
-
-#define MAXCELL 50
-
-

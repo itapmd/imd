@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -109,10 +109,10 @@ void error_str_str(char *msg, char *str1, char *str2)
 void add_positions(void)
 {
   int k;
-  for (k=0; k<ncells; k++) {
+  for (k=0; k<NCELLS; k++) {
     int i;
     cell* p;
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
         AV_POS(p,i,X) += ORT(p,i,X) + SHEET(p,i,X);
         AV_POS(p,i,Y) += ORT(p,i,Y) + SHEET(p,i,Y);

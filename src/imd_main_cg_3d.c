@@ -2,7 +2,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -280,15 +280,15 @@ void  calc_fnorm( void)
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:fnorm)
 #endif
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
 
     int  i, sort;
     cell *p;
     real  tmp;
 
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
-/* loop over all particles */
+    /* loop over all particles */
     for (i=0; i<p->n; ++i) {
 
 	sort = VSORTE(p,i);
@@ -334,15 +334,15 @@ void calc_fnorm_g_h(void)
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_kin_energy,fnorm)
 #endif
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
 
     int  i, sort;
     cell *p;
     real  tmp;
 
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
-/* loop over all particles */
+    /* loop over all particles */
     for (i=0; i<p->n; ++i) {
 
 	sort = VSORTE(p,i);
@@ -414,17 +414,15 @@ void cg_calcgamma(void)
   tmp_gg = 0.0;
 
   /* loop over all cells */
-  for (k=0; k<ncells; ++k) 
-    {
+  for (k=0; k<NCELLS; ++k) {
 
     int  i, sort;
     cell *p;
     real  tmp;
 
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
-    for (i=0; i<p->n; ++i) 
-      {
+    for (i=0; i<p->n; ++i) {
 
 	sort = VSORTE(p,i);
 	tmp_gg +=  SPRODN( &CG_G(p,i,X), &CG_G(p,i,X) );
@@ -443,8 +441,8 @@ void cg_calcgamma(void)
 	/*  tmp_fmax2 = MAX(SQR(KRAFT(p,i,X)),tmp_fmax2); */
 /*  	tmp_fmax2 = MAX(SQR(KRAFT(p,i,Y)),tmp_fmax2); */
 /*  	tmp_fmax2 = MAX(SQR(KRAFT(p,i,Z)),tmp_fmax2); */
-      }
     }
+  }
 
 #ifdef MPI
 /* do we need this here again? is already in set_hg ! */
@@ -473,13 +471,13 @@ void set_hg(void)
 
 
   /* loop over all cells */
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
 
     int  i, sort;
     cell *p;
     real  tmp;
 
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
     for (i=0; i<p->n; ++i) {
 
@@ -495,7 +493,7 @@ void set_hg(void)
 	CG_H(p,i,Y) = KRAFT(p,i,Y) + cg_gamma * CG_H(p,i,Y);
 	CG_H(p,i,Z) = KRAFT(p,i,Z) + cg_gamma * CG_H(p,i,Z);
 
-/* determine the biggest force component*/
+        /* determine the biggest force component*/
 	tmp_fmax2 = MAX(SQR(KRAFT(p,i,X)),tmp_fmax2);
 	tmp_fmax2 = MAX(SQR(KRAFT(p,i,Y)),tmp_fmax2);
 	tmp_fmax2 = MAX(SQR(KRAFT(p,i,Z)),tmp_fmax2);

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -68,7 +68,7 @@ void read_atoms(str255 infilename)
   vektor ome;
 #endif
   int i,s,n;
-  cell *to;
+  minicell *to;
   ivektor cellc;
   int to_cpu;
   long addnumber = 0;
@@ -81,6 +81,14 @@ void read_atoms(str255 infilename)
     error("cannot allocate memory for num_sort\n");
   if ((num_vsort = (long *) calloc(vtypes,sizeof(long)))==NULL)
     error("cannot allocate memory for num_vsort\n");
+
+#ifdef VEC
+  /* we need to figure out how many atoms per CPU we will have... */
+  atoms.n = 0;
+  atoms.n_max = 0;
+  atoms.n_buf = 0;
+  alloc_cell(&atoms, 50000);
+#endif
 
 #ifdef MPI
 
@@ -246,7 +254,7 @@ void read_atoms(str255 infilename)
 #ifndef MONOLJ
       NUMMER(input,0) = n;
       VSORTE(input,0) = s;
-      MASSE(input,0)  = m;
+      MASSE (input,0) = m;
 #endif
       ORT(input,0,X) = pos.x;
       ORT(input,0,Y) = pos.y;
@@ -310,9 +318,12 @@ void read_atoms(str255 infilename)
 
       cellc = cell_coord(pos.x,pos.y,pos.z);
 
-#ifdef MPI
+#ifdef BUFCELLS
 
       to_cpu = cpu_coord(cellc);
+
+#ifdef MPI
+
       if ((myid != to_cpu) && (0==parallel_input)) {
         natoms++;
         /* we still have s == input->sorte[0] */
@@ -326,35 +337,39 @@ void read_atoms(str255 infilename)
           nactive += (long) (restrictions+s)->y;
           nactive += (long) (restrictions+s)->z;
         }
-        num_sort[SORTE(input,0)]++;
+        num_sort [ SORTE(input,0)]++;
         num_vsort[VSORTE(input,0)]++;
         b = input_buf + to_cpu;
-        copy_one_atom(b, input, 0, 0);
+        copy_atom(b, input, 0);
         if (b->n_max - b->n < MAX_ATOM_SIZE) {
           MPI_Send(b->data, b->n, REAL, to_cpu, INBUF_TAG, cpugrid);
           b->n = 0;
         }
-      } else if (to_cpu==myid) {
+      } else 
+
+#endif /* MPI */
+
+      if (to_cpu==myid) {
         natoms++;  
         /* we still have s == input->sorte[0] */
         if (s < ntypes) {
           nactive += DIM;
 #ifdef UNIAX
-        nactive_rot += 2;
+          nactive_rot += 2;
 #endif
         } else {
           nactive += (long) (restrictions+s)->x;
           nactive += (long) (restrictions+s)->y;
           nactive += (long) (restrictions+s)->z;
         }
-        num_sort[SORTE(input,0)]++;
+        num_sort [ SORTE(input,0)]++;
         num_vsort[VSORTE(input,0)]++;
 	cellc = local_cell_coord(pos.x,pos.y,pos.z);
         to = PTR_VV(cell_array,cellc,cell_dim);
-	move_atom(to, input, 0);
+	INSERT_ATOM(to, input, 0);
       }
 
-#else /* not MPI */
+#else /* not BUFCELLS */
 
       natoms++;  
       /* we still have s == input->sorte[0] */
@@ -368,12 +383,12 @@ void read_atoms(str255 infilename)
         nactive += (long) (restrictions+s)->y;
         nactive += (long) (restrictions+s)->z;
       }
-      num_sort[SORTE(input,0)]++;
+      num_sort [ SORTE(input,0)]++;
       num_vsort[VSORTE(input,0)]++;
       to = PTR_VV(cell_array,cellc,cell_dim);
-      move_atom(to, input, 0);
+      INSERT_ATOM(to, input, 0);
 
-#endif /* MPI or not MPI */
+#endif /* BUFCELLS or not BUFCELLS */
 
     } /* (p>0) */
   } /* !feof(infile) */
@@ -493,7 +508,6 @@ void recv_atoms(void)
 void write_atoms_config(FILE *out)
 {
   int i, k, len=0;
-  cell *p;
 
 #ifdef HPO
 #define RESOL1 " %12.16f"
@@ -503,8 +517,9 @@ void write_atoms_config(FILE *out)
 #define RESOL3 " %f %f %f"
 #endif
 
-  for (k=0; k<ncells; k++) {
-    p = cell_array + CELLS(k);
+  for (k=0; k<NCELLS; k++) {
+    cell *p;
+    p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
       len += sprintf(outbuf+len, "%d %d", NUMMER(p,i), VSORTE(p,i));
       len += sprintf(outbuf+len, RESOL1, MASSE(p,i));

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -170,14 +170,14 @@ void fix_cells(void)
           q = PTR_3D_VV(cell_array,coord,cell_dim);
           /* if it's in the wrong cell, move it to the right cell */
           if (p != q) {
-            move_atom(q, p, l); 
+            MOVE_ATOM(q,p,l); 
 #ifdef CLONE
             if (l < p->n-nclones)
               for (clone=1; clone<nclones; clone++)
-                move_atom(q, p, l+clone);
+                MOVE_ATOM(q, p, l+clone);
             else /* we are dealing with the last in the stack */
               for (clone=1; clone<nclones; clone++)
-                move_atom(q, p, l);
+                MOVE_ATOM(q, p, l);
 #endif
 	  }
           else ++l;

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -83,7 +83,10 @@
 #endif
 
 /* Where all the data lives */
-EXTERN cell *cell_array INIT(NULL);      /* array of cells */
+EXTERN minicell *cell_array INIT(NULL);  /* array of cells */
+#ifdef VEC
+EXTERN cell atoms;                       /* big cell in vector mode */
+#endif
 EXTERN integer *cells INIT(NULL);        /* list if inner cell indices */
 #ifdef TWOD
 EXTERN pair *pairs[9];                   /* arrays of cell pairs */  
@@ -91,6 +94,9 @@ EXTERN int  npairs[9], npairs2[9];       /* number of cell pairs */
 #else
 EXTERN pair *pairs[27];                  /* arrays of cell pairs */  
 EXTERN int  npairs[27], npairs2[27];     /* number of cell pairs */
+#ifdef VEC
+EXTERN cell_nbrs_t *cnbrs INIT(NULL);    /* neighbors of each cell */ 
+#endif
 #endif
 EXTERN int ncells, nallcells INIT(0);    /* number of cells */
 EXTERN int nlists;                       /* number of cell pair lists */
@@ -142,7 +148,8 @@ EXTERN int checkpt_int INIT(0);  /* Period of checkpoints */
 EXTERN int eng_int INIT(0);      /* Period of data output */
 EXTERN int force_int INIT(0);    /* Period of force file writing */
 EXTERN str255 progname; /* Name of current executable argv[0] */
-EXTERN ivektor cellmin; /* Minimum index of local cells (1 with MPI, 0 otherwise) */
+EXTERN ivektor cellmin; /* Minimum index of local cells (1 with BUFCELLS, 
+                                                         0 otherwise) */
 EXTERN ivektor cellmax; /* Maximum index of local cells  */
 EXTERN int use_header INIT(1);   /* shall a header be written */
 
@@ -248,6 +255,9 @@ EXTERN real omega_E INIT(0.0);
 
 /* Potential Table */
 EXTERN pot_table_t pair_pot;         /* potential data structure */
+#ifdef MULTIPOT
+EXTERN pot_table_t pair_pot_ar[N_POT_TAB]; /* array of potential tables */
+#endif
 #ifdef LINPOT
 EXTERN lin_pot_table_t pair_pot_lin; /* potential data structure */
 #endif
@@ -262,17 +272,12 @@ EXTERN int myid INIT(0);                  /* Who am I? (0 if serial) */
 EXTERN int num_cpus INIT(1);              /* How many cpus are there */
 EXTERN int parallel_output INIT(0);       /* Flag for parallel output */
 EXTERN int parallel_input  INIT(1);       /* Flag for parallel input */
-#ifdef MPI
-EXTERN ivektor cpu_dim INIT(nullivektor); /* Dimensions of CPU-Array */
-#else
+EXTERN ivektor my_coord INIT(nullivektor);/* Cartesian coordinates of cpu */
 EXTERN ivektor cpu_dim INIT(einsivektor); /* Dimensions of CPU-Array */
-#endif
-#ifdef MPI
 EXTERN int binc INIT(0);                  /* buffer size per atom */
 EXTERN int *cpu_ranks INIT(0);            /* Mapping of coords to ranks */
-EXTERN cell buf_one_atom;                 /* Buffer that holds one Atom */
+#ifdef MPI
 EXTERN MPI_Comm cpugrid;                  /* Cartesian MPI communicator */
-EXTERN ivektor my_coord;                  /* Cartesian coordinates of cpu */
 
 /* Send and Receive buffers */
 EXTERN msgbuf send_buf_east  INIT(nullbuffer);

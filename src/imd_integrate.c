@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -46,9 +46,9 @@ void move_atoms_nve(void)
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_kin_energy,fnorm,omega_E,PxF)
 #endif
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) { /* loop over all cells */
 
-    int  i, j, sort;
+    int  i, sort;
     cell *p;
     real kin_energie_1, kin_energie_2, tmp;
 #ifdef UNIAX    
@@ -56,7 +56,7 @@ void move_atoms_nve(void)
     real dot, norm;
     vektor cross;
 #endif
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
 #ifdef CLONE
     for (i=0; i<p->n; i+=nclones)
@@ -75,7 +75,7 @@ void move_atoms_nve(void)
 #endif /* CLONE */
 
 #ifdef SX
-#pragma vdir vector,nodep,loopcnt=MAXCELL
+#pragma vdir vector,nodep
 #endif
     for (i=0; i<p->n; ++i) { /* loop over all atoms in the cell */
 
@@ -279,12 +279,12 @@ void move_atoms_mik(void)
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_kin_energy,fnorm)
 #endif
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
 
     int  i, j, sort;
     cell *p;
     real kin_energie_1, kin_energie_2, tmp;
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
 #ifdef CLONE
     for (i=0; i<p->n; i+=nclones)
@@ -303,7 +303,7 @@ void move_atoms_mik(void)
 #endif /* CLONE */
 
 #ifdef SX
-#pragma vdir vector,nodep,loopcnt=MAXCELL
+#pragma vdir vector,nodep
 #endif
     for (i=0; i<p->n; ++i) {
 
@@ -432,7 +432,7 @@ void move_atoms_nvt(void)
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:E_kin_1,E_kin_2,E_rot_1,E_rot_2,fnorm,omega_E)
 #endif
-  for (k=0; k<ncells; ++k) {  /* loop over cells */
+  for (k=0; k<NCELLS; ++k) {  /* loop over cells */
 
     int i, j, sort;
     cell *p;
@@ -441,7 +441,7 @@ void move_atoms_nvt(void)
     real dot, norm ;
     vektor cross ;
 #endif
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
 #ifdef CLONE
     for (i=0; i<p->n; i+=nclones)
@@ -653,7 +653,7 @@ void move_atoms_sllod(void)
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:E_kin_1,E_kin_2,E_rot_1,E_rot_2,fnorm)
 #endif
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
 
     int i;
     int sort;
@@ -663,7 +663,7 @@ void move_atoms_sllod(void)
     real dot, norm ;
     vektor cross ;
 #endif
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
     for (i=0; i<p->n; ++i) {
 
@@ -853,12 +853,12 @@ void calc_dyn_pressure(void)
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:dyn_stress_x,dyn_stress_y,dyn_stress_z,Ekin_old,Erot_old)
 #endif
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
 
     int i;
     cell *p;
     real tmp;
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
     /* loop over atoms in cell */
     for (i=0; i<p->n; ++i) {
@@ -945,7 +945,7 @@ void move_atoms_npt_iso(void)
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:Ekin_new,Erot_new,fnorm,omega_E)
 #endif
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
 
     int i, j;
     cell *p;
@@ -954,7 +954,7 @@ void move_atoms_npt_iso(void)
     real dot, norm ;
     vektor cross ;
 #endif
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
 #ifdef CLONE
     for (i=0; i<p->n; i+=nclones)
@@ -1156,12 +1156,12 @@ void move_atoms_npt_axial(void)
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:Ekin,dyn_stress_x,dyn_stress_y,dyn_stress_z,fnorm,omega_E)
 #endif
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
 
     int i;
     cell *p;
     real tmp;
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
     /* loop over atoms in cell */
     for (i=0; i<p->n; ++i) {
@@ -1301,13 +1301,13 @@ void move_atoms_frac(void)
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:E_kin_1,E_kin_2,E_kin_damp1,E_kin_damp2,E_kin_stadium1,E_kin_stadium2,sum_f,n_stadium,fnorm)
 #endif
-  for (k=0; k<ncells; ++k){ 
+  for (k=0; k<NCELLS; ++k){ 
 
     int i, j, sort;
     cell *p;
     real tmp,tmp1,tmp2;
 
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
 #ifdef CLONE
     for (i=0; i<p->n; i+=nclones)
@@ -1557,12 +1557,12 @@ void move_atoms_ftg(void)
       dotepsilon = dotepsilon0 / (1.0 + dotepsilon0 * steps * timestep);
       
   /* loop over all cells */
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
 
     int i, j, sort;
     cell *p;
 
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
 #ifdef CLONE
     for (i=0; i<p->n; i+=nclones)
@@ -1580,6 +1580,7 @@ void move_atoms_ftg(void)
       }
 #endif /* CLONE */
 
+    /* loop over all atoms in cell */
     for (i=0; i<p->n; ++i) {
 	
       sort = VSORTE(p,i);
@@ -1805,13 +1806,13 @@ void move_atoms_finnis(void)
   fnorm = 0.0;
 
   /* loop over all cells */
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
 
     int i, j, sort;
     vektor *rest;
     cell *p;
 
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
 #ifdef CLONE
     for (i=0; i<p->n; i+=nclones)
@@ -1951,7 +1952,7 @@ void move_atoms_stm(void)
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:kin_energie_1[0],kin_energie_1[1],kin_energie_2[0],kin_energie_2[2],n_stadium)
 #endif
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
 
     int i;
     cell *p;
@@ -1960,7 +1961,7 @@ void move_atoms_stm(void)
     vektor d;
     int sort=0;
 
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
     for (i=0; i<p->n; ++i) {
 
@@ -2069,11 +2070,11 @@ void move_atoms_nvx(void)
   scale = tran_nlayers / box_x.x;
 
   /* loop over all atoms */
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
 
     int i;
     cell *p;
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
     for (i=0; i<p->n; ++i) {
 
@@ -2173,11 +2174,11 @@ void move_atoms_nvx(void)
              - inv_mass_right * SPROD(tot_impuls_right,tot_impuls_right);
   Rescale = sqrt( DIM * tran_Tright * natoms_right / real_tmp  );
 
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
 
     int i;
     cell *p;
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
     for (i=0; i<p->n; ++i) {
 	    
@@ -2242,12 +2243,12 @@ void move_atoms_cg(real alpha)
   int k;
 
   /* loop over all cells */
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
 
     int  i, j, sort;
     cell *p;
 
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
 
 #ifdef CLONE
     for (i=0; i<p->n; i+=nclones)

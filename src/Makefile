@@ -2,7 +2,7 @@
 #
 # IMD -- The ITAP Molecular Dynamics Program
 #
-# Copyright 1996-2003 Institute for Theoretical and Applied Physics,
+# Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 # University of Stuttgart, D-70550 Stuttgart
 #
 # $Revision$
@@ -242,7 +242,7 @@ ifeq (P3-gcc3,${IMDSYS})
   MPICH_CLINKER = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
-  OPT_FLAGS	+= -O -march=pentium3 # -static
+  OPT_FLAGS	+= -O -mcpu=pentium3 # -static
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
   export        MPICH_CC MPICH_CLINKER
@@ -589,6 +589,9 @@ MPISOURCES2D    = ${MPISOURCES} imd_main_mpi_2d.c imd_geom_mpi_2d.c \
 MPISOURCES3D    = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c \
 		  imd_comm_force_3d.c
 
+VECSOURCES3D    = imd_main_vec_3d.c imd_geom_mpi_3d.c imd_comm_force_3d.c \
+                  imd_fix_cells_3d.c
+
 PAIRSOURCES     = imd_forces.c
 EAM2SOURCES     = imd_forces_eam2.c
 MEAMSOURCES     = imd_forces_meam.c
@@ -629,18 +632,30 @@ SOURCES	:= ${SOURCES2D} ${RISCSOURCES2D}
 endif
 CFLAGS  += -DTWOD
 else
-# 3d, serial or mpi
+# 3d, vec, serial, mpi
+ifneq (,$(strip $(findstring vec,${MAKETARGET})))
+ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
+SOURCES	:= ${SOURCES3D} ${VECSOURCES3D} ${MPISOURCES}
+else
+SOURCES	:= ${SOURCES3D} ${VECSOURCES3D}
+endif
+else
 ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
 SOURCES	:= ${SOURCES3D} ${MPISOURCES3D}
 else
 SOURCES	:= ${SOURCES3D} ${RISCSOURCES3D}
 endif
 endif
+endif
 
 ###  INTERACTION  #######################################
 
 # pair interaction is the default
+ifneq (,$(strip $(findstring vec,${MAKETARGET})))
+FORCESOURCES =
+else
 FORCESOURCES = ${PAIRSOURCES}
+endif
 
 # PAIR
 ifneq (,$(strip $(findstring pair,${MAKETARGET})))
@@ -769,6 +784,11 @@ CFLAGS += -DSTM
 endif
 
 ###  OPTIONS  ############################################
+
+# vector mode
+ifneq (,$(findstring vec,${MAKETARGET}))
+CFLAGS += -DVEC
+endif
 
 # socket interface
 ifneq (,$(strip $(findstring sock,${MAKETARGET})))

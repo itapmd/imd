@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -123,10 +123,10 @@ void generate_atoms(str255 mode)
      ninc = tmp;
   }
   /* loop over all atoms, fix numbers */
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
     int i;
     cell *p;
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
     for (i=0; i<p->n; ++i) NUMMER(p,i) += ninc;
   }
 #endif /* MONOLJ */
@@ -227,12 +227,12 @@ void generate_hex()
       if (to_cpu==myid) {
         cellc = local_cell_coord(x,y);
         to = PTR_VV(cell_array,cellc,cell_dim);
-        move_atom(to, input, 0);
+        INSERT_ATOM(to, input, 0);
       }
       else error("imd_generate: atom on wrong CPU");
 #else
       to = PTR_VV(cell_array,cellc,cell_dim);
-      move_atom(to, input, 0);
+      INSERT_ATOM(to, input, 0);
 #endif
   }
 } 
@@ -256,11 +256,13 @@ void init_cubic(void)
 /* generate cubic crystal structures (not just fcc...) */
 void generate_fcc(int maxtyp)
 {
-  ivektor min, max, cellc;
-  cell    *input, *to;
-  real    xx, yy, zz;
-  int     to_cpu;
-  int     x, y, z, typ;
+  ivektor  min, max, cellc;
+  minicell *to;
+  cell     *input;
+  real     xx, yy, zz;
+  int      to_cpu;
+  int      x, y, z, typ;
+  long     count;
 
 #ifdef MPI
   if (myid==0)
@@ -285,7 +287,7 @@ void generate_fcc(int maxtyp)
     box_unit    /= 4;
   }
 
-#ifdef MPI
+#ifdef BUFCELLS
   min.x =  my_coord.x      * box_param.x / cpu_dim.x;
   max.x = (my_coord.x + 1) * box_param.x / cpu_dim.x;
   min.y =  my_coord.y      * box_param.y / cpu_dim.y;
@@ -296,6 +298,19 @@ void generate_fcc(int maxtyp)
   min.x = 0; max.x = box_param.x;
   min.y = 0; max.y = box_param.y;
   min.z = 0; max.z = box_param.z;
+#endif
+
+#ifdef VEC
+  /* estimate number of atoms per CPU, and allocate cell */
+  count = (max.x-min.x) * (max.y-min.y) * (max.z-min.z);
+  if ((maxtyp==0) || (maxtyp==6) || (maxtyp==7)) count /=2; /* fcc */ 
+  else if ((maxtyp==2) || (maxtyp==3))           count /=4; /* bcc */
+  else if ((maxtyp==4) || (maxtyp==5))           count /=8; /* diamond */
+  count = (count * nallcells * 5) / (ncells * 4);
+  atoms.n = 0;
+  atoms.n_max = 0;
+  atoms.n_buf = 0;
+  alloc_cell(&atoms, count);
 #endif
 
   /* Set up 1 atom input cell */
@@ -381,21 +396,21 @@ void generate_fcc(int maxtyp)
 #ifndef MONOLJ
         NUMMER(input,0) = natoms;
         VSORTE(input,0) = typ;
-        MASSE(input,0)  = masses[typ];
+        MASSE (input,0) = masses[typ];
 #endif
         num_sort[typ]++;
 
-#ifdef MPI
+#ifdef BUFCELLS
 	to_cpu = cpu_coord(cellc);
         if (to_cpu==myid) {
 	  cellc = local_cell_coord( xx, yy, zz );
           to = PTR_VV(cell_array,cellc,cell_dim);
-	  move_atom(to, input, 0);
+	  INSERT_ATOM(to, input, 0);
 	}
         else error("atom on wrong CPU");
 #else
 	to = PTR_VV(cell_array,cellc,cell_dim);
-        move_atom(to, input, 0);
+        INSERT_ATOM(to, input, 0);
 #endif
   }
 }
@@ -404,12 +419,14 @@ void generate_fcc(int maxtyp)
 
 void generate_lav()
 {
-  cell    *input, *to;
-  ivektor min, max, cellc;
-  int     to_cpu;
-  real    px[24],py[24],pz[24];
-  real    xx, yy, zz;
-  int     i,j,k,l,typ,pa[24];
+  minicell *to;
+  cell     *input;
+  ivektor  min, max, cellc;
+  int      to_cpu;
+  real     px[24],py[24],pz[24];
+  real     xx, yy, zz;
+  int      i,j,k,l,typ,pa[24];
+  long     count;
 
 #ifdef MPI
   if (myid==0)
@@ -446,7 +463,7 @@ void generate_lav()
   px[22] = 3; py[22] = 7; pz[22] = 7; pa[22] = 1;
   px[23] = 5; py[23] = 1; pz[23] = 1; pa[23] = 1;
 
-#ifdef MPI
+#ifdef BUFCELLS
   min.x =  my_coord.x      * box_param.x / cpu_dim.x;
   max.x = (my_coord.x + 1) * box_param.x / cpu_dim.x;
   min.y =  my_coord.y      * box_param.y / cpu_dim.y;
@@ -457,6 +474,16 @@ void generate_lav()
   min.x = 0; max.x = box_param.x;
   min.y = 0; max.y = box_param.y;
   min.z = 0; max.z = box_param.z;
+#endif
+
+#ifdef VEC
+  /* estimate number of atoms per CPU, and allocate cell */
+  count = (max.x-min.x) * (max.y-min.y) * (max.z-min.z) * 24;
+  count = (count * nallcells * 5) / (ncells * 4);
+  atoms.n = 0;
+  atoms.n_max = 0;
+  atoms.n_buf = 0;
+  alloc_cell(&atoms, count);
 #endif
 
   /* Set up 1 atom input cell */
@@ -482,28 +509,28 @@ void generate_lav()
 	  xx  = (px[l] + 8*i + 0.5) * box_unit;
 	  yy  = (py[l] + 8*j + 0.5) * box_unit;
 	  zz  = (pz[l] + 8*k + 0.5) * box_unit;
-	  ORT(input,0,X)  = xx;
+          ORT(input,0,X)  = xx;
 	  ORT(input,0,Y)  = yy;
 	  ORT(input,0,Z)  = zz;
 #ifndef MONOLJ
 	  NUMMER(input,0) = natoms;
 	  VSORTE(input,0) = typ;
-          MASSE(input,0)  = masses[typ];
+          MASSE (input,0) = masses[typ];
 #endif
 	  cellc = cell_coord(xx,yy,zz);
 	  num_sort[typ]++;
 
-#ifdef MPI
+#ifdef BUFCELLS
 	  to_cpu = cpu_coord(cellc);
 	  if (to_cpu==myid) {
 	    cellc = local_cell_coord(xx,yy,zz);
             to = PTR_VV(cell_array,cellc,cell_dim);
-            move_atom(to, input, 0);
+            INSERT_ATOM(to, input, 0);
           }
           else error("imd_generate: atom on wrong CPU");
 #else
           to = PTR_VV(cell_array,cellc,cell_dim);
-          move_atom(to, input, 0);
+          INSERT_ATOM(to, input, 0);
 #endif
         }
 } 

@@ -2,7 +2,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -77,13 +77,13 @@ void maxwell(real temp)
 
 
    /* set temperature */
-   for (k=0; k<ncells; ++k) {
+   for (k=0; k<NCELLS; ++k) {
 
       int i;
       cell *p;
       vektor *rest;
 
-      p = cell_array + CELLS(k);
+      p = CELLPTR(k);
 
       for (i=0; i<p->n; ++i) {
 
@@ -215,11 +215,11 @@ void maxwell(real temp)
 #endif
 
    /* set velocities of clones equal */
-   for (k=0; k<ncells; k++) {
+   for (k=0; k<NCELLS; k++) {
 
       int i, j;
       cell *p;
-      p = cell_array + CELLS(k);
+      p = CELLPTR(k);
 
       for (i=0; i<p->n; i+=nclones) {
 
@@ -247,11 +247,11 @@ void maxwell(real temp)
 #endif
 
    /* correct center of mass momentum */
-   for (k=0; k<ncells; ++k) {
+   for (k=0; k<NCELLS; ++k) {
       int i;
       cell *p;
       vektor *rest;
-      p = cell_array + CELLS(k);
+      p = CELLPTR(k);
       for (i=0; i<p->n; ++i) {
          rest = restrictions + VSORTE(p,i);
          IMPULS(p,i,X) -= tot_impuls.x * rest->x;
@@ -261,6 +261,7 @@ void maxwell(real temp)
 #endif
       }
    }
+
 } 
 
 /* The following is adapted from the GNU Scientific Library, Version 1.1.

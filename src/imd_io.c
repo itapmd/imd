@@ -248,8 +248,8 @@ void write_atoms_ef(FILE *out)
   cell *p;
   double h;
 
-  for (k=0; k<ncells; k++) {
-    p = cell_array + CELLS(k);
+  for (k=0; k<NCELLS; k++) {
+    p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
       if ( pic_ur.x != (real)0 ) /* if pic_ur.x still 0, write everything */
         if ((ORT(p,i,X) < pic_ll.x) || (ORT(p,i,X) > pic_ur.x) ||
@@ -349,8 +349,8 @@ void write_atoms_nb(FILE *out)
   cell *p;
   double h;
 
-  for (k=0; k<ncells; k++) {
-    p = cell_array + CELLS(k);
+  for (k=0; k<NCELLS; k++) {
+    p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
       if ( pic_ur.x != (real)0 ) /* if pic_ur.x still 0, write everything */
         if ((ORT(p,i,X) < pic_ll.x) || (ORT(p,i,X) > pic_ur.x) ||
@@ -449,8 +449,8 @@ void write_atoms_wf(FILE *out)
   cell *p;
   double h;
 
-  for (k=0; k<ncells; k++) {
-    p = cell_array + CELLS(k);
+  for (k=0; k<NCELLS; k++) {
+    p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
       if(SORTE(p,i) != VSORTE(p,i)){
         len += sprintf( outbuf+len,
@@ -542,8 +542,8 @@ void write_atoms_press(FILE *out)
   int i, k, len=0;
   cell *p;
 
-  for (k=0; k<ncells; k++) {
-    p = cell_array + CELLS(k);
+  for (k=0; k<NCELLS; k++) {
+    p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
 #ifdef TWOD
       len += sprintf( outbuf+len, 
@@ -642,8 +642,8 @@ void write_atoms_pic(FILE *out)
   /* get the real size of picbuf_t in bytes */
   sz = ((char *) &dummy_buf.end) - ((char *) &dummy_buf);
 
-  for (k=0; k<ncells; k++) {
-    p = cell_array + CELLS(k);
+  for (k=0; k<NCELLS; k++) {
+    p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
       picbuf = (picbuf_t *) (outbuf+len);
       picbuf->pos_x = (float) ORT(p,i,X);
@@ -735,8 +735,8 @@ void write_atoms_dem(FILE *out)
   cell *p;
   real dpot;
 
-  for (k=0; k<ncells; k++) {
-    p = cell_array + CELLS(k);
+  for (k=0; k<NCELLS; k++) {
+    p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
       dpot = ABS(POTENG(p,i) - EPOT_REF(p,i));
       if (dpot > min_dpot) {
@@ -812,8 +812,8 @@ void write_atoms_dsp(FILE *out)
   cell *p;
   vektor d;
 
-  for (k=0; k<ncells; k++) {
-    p = cell_array + CELLS(k);
+  for (k=0; k<NCELLS; k++) {
+    p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
       d.x = ORT(p,i,X) - ORT_REF(p,i,X);
       d.y = ORT(p,i,Y) - ORT_REF(p,i,Y);
@@ -847,10 +847,10 @@ void write_atoms_dsp(FILE *out)
 void reset_Epot_ref(void)
 {
   int  k;
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
     int  i;
     cell *p;
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
       EPOT_REF(p,i) = POTENG(p,i);
     }
@@ -867,10 +867,10 @@ void reset_Epot_ref(void)
 void update_ort_ref(void)
 { 
   int k;
-  for (k=0; k<ncells; k++) {
+  for (k=0; k<NCELLS; k++) {
     int i;
     cell* p;
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
       ORT_REF(p,i,X) = ORT(p,i,X);
       ORT_REF(p,i,Y) = ORT(p,i,Y);
@@ -894,10 +894,10 @@ void update_ort_ref(void)
 void update_avpos(void)
 { 
   int k;
-  for (k=0; k<ncells; k++) {
+  for (k=0; k<NCELLS; k++) {
     int i;
     cell* p;
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
       AV_EPOT(p,i)  = POTENG(p,i);
       AV_POS(p,i,X) = ORT(p,i,X);
@@ -979,13 +979,12 @@ void write_header_avp(FILE *out)
 void write_atoms_avp(FILE *out)
 {
   int i, k, len=0;
-  cell *p;
   real x, y, z;
   vektor avp_pos, coeff;
 
-  for (k=0; k<ncells; k++) {
+  for (k=0; k<NCELLS; k++) {
     cell* p;
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
 
 	/* Averaged coordinates of atoms */
@@ -1086,10 +1085,10 @@ void write_atoms_force(FILE *out)
 {
   int k, len=0;
 
-  for (k=0; k<ncells; k++) {
+  for (k=0; k<NCELLS; k++) {
     cell* p;
     int i;
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
 #ifdef TWOD
       len += sprintf( outbuf+len, "%d %.16e %.16e %.16e %.16e\n",
@@ -1169,10 +1168,10 @@ void write_atoms_atdist_pos(FILE *out)
   co = cos(atdist_phi);
   si = sin(atdist_phi);
 
-  for (k=0; k<ncells; k++) {
+  for (k=0; k<NCELLS; k++) {
     cell* p;
     int i;
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
     for (i=0; i<p->n; i++)
 
       /* periodic continuation */
@@ -1219,6 +1218,7 @@ void write_atoms_atdist_pos(FILE *out)
 /******************************************************************************
 *
 *  write eng file header  - keep in sync with write_eng_file
+*
 ******************************************************************************/
 
 void write_eng_file_header()
@@ -1573,9 +1573,9 @@ void write_atoms_sqd(FILE *out)
   int i, k, len=0;
   vektor d;
 
-  for (k=0; k<ncells; k++) {
+  for (k=0; k<NCELLS; k++) {
     cell* p;
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
       d.x = SQR( ORT(p,i,X) - REF_POS(p,i,X) );
       d.y = SQR( ORT(p,i,Y) - REF_POS(p,i,Y) );

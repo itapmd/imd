@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -14,7 +14,6 @@
 ******************************************************************************/
 
 #include "imd.h"
-
 
 /******************************************************************************
 *
@@ -50,7 +49,6 @@ void write_pictures_bitmap(int steps)
   int i,j,k,l,r,s,t;
   real phi;
   real val;
-  cell *p;
   real red,green,blue;
   real xmin, xmax, ymin, ymax;
   FILE *out;
@@ -175,9 +173,10 @@ void write_pictures_bitmap(int steps)
   tabred[4] = 0.45; tabgreen[4] = 0.02; tabblue[4] = 0.02; 
 
   /* loop over all atoms */
-  for (k=0; k<ncells; k++) {
+  for (k=0; k<NCELLS; k++) {
 
-    p = cell_array + CELLS(k);
+    cell *p;
+    p = CELLPTR(k);
 
     for (i=0; i<p->n; ++i) {
 
@@ -289,9 +288,10 @@ void write_pictures_bitmap(int steps)
   }
 
   /* loop over all atoms */
-  for (k=0; k<ncells; k++) {
+  for (k=0; k<NCELLS; k++) {
 
-    p = cell_array + CELLS(k);
+    cell *p;
+    p = CELLPTR(k);
 
     for (i=0; i<p->n; ++i) {
 

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -94,10 +94,10 @@ int  endian(void);
 /* start and stop MPI - files imd_mpi_util.c, imd_geom_mpi_*.c */
 #ifdef MPI
 void init_mpi(int *argc_pointer, char **argv);
-void setup_mpi_topology(void);
 void shutdown_mpi(void);
-void calc_cpu_dim(void);
 #endif
+void setup_mpi_topology(void);
+void calc_cpu_dim(void);
 
 /* manage MPI buffers and buffer cells - file imd_mpi_util.c */
 #ifdef MPI
@@ -120,8 +120,16 @@ vektor  vec_prod(vektor u, vektor v);
 void make_box(void);
 void init_cells(void);
 void make_cell_lists(void);
+#ifdef VEC
+void make_cell_lists_vec(void);
+#endif
 void check_pairs(void);
 void move_atom(cell *to, cell *from, int index);
+#ifdef VEC
+void move_atom_mini(minicell *, minicell *, int);
+void insert_atom(minicell *, cell *, int);
+void alloc_minicell(minicell *, int);
+#endif
 void alloc_cell(cell *thecell, int count);
 #ifdef TWOD
 ivektor       cell_coord(real x, real y);
@@ -130,11 +138,9 @@ ivektor local_cell_coord(real x, real y);
 ivektor       cell_coord(real x, real y, real z);
 ivektor local_cell_coord(real x, real y, real z);
 #endif
-#ifdef MPI
 int     cpu_coord(ivektor cellc);
 ivektor cpu_coord_v(ivektor cellc);
 int     cpu_grid_coord(ivektor cellc);
-#endif
 
 /* force computation - files imd_main_*.c, imd_forces_*.c */
 void calc_forces(int steps);
@@ -166,7 +172,7 @@ void gay_berne ( vektor r12, vektor e1, vektor e2,
 #endif
 
 /* communication for force computation - files imd_comm_force_2/3d.c */
-#ifdef MPI
+#if defined(MPI) || defined(VEC)
 #ifdef TWOD
 void send_cells (void (*copy_func)  (int, int, int, int),
                  void (*pack_func)  (msgbuf*, int, int),
@@ -181,27 +187,28 @@ void add_forces   ( int j, int k, int l, int m );
 void pack_forces  ( msgbuf *b, int j, int k );
 void unpack_forces( msgbuf *b, int j, int k );
 #else  /* 3D */
-void send_cells (void (*copy_func)  (int, int, int, int, int, int),
-                 void (*pack_func)  (msgbuf*, int, int, int),
+void send_cells (void (*copy_func)  (int, int, int, int, int, int, vektor),
+                 void (*pack_func)  (msgbuf*, int, int, int, vektor),
                  void (*unpack_func)(msgbuf*, int, int, int));
 void send_forces(void (*copy_func)  (int, int, int, int, int, int),
                  void (*pack_func)  (msgbuf*, int, int, int),
                  void (*unpack_func)(msgbuf*, int, int, int));
-void copy_cell    ( int k, int l, int m, int r, int s, int t );
-void pack_cell    ( msgbuf *b, int k, int l, int m );
+void copy_cell    ( int k, int l, int m, int r, int s, int t, vektor v );
+void pack_cell    ( msgbuf *b, int k, int l, int m, vektor v );
 void unpack_cell  ( msgbuf *b, int k, int l, int m );
 void add_forces   ( int k, int l, int m, int r, int s, int t );
 void pack_forces  ( msgbuf *b, int k, int l, int m);
 void unpack_forces( msgbuf *b, int k, int l, int m );
 #ifdef EAM2
-void copy_rho_h      ( int k, int l, int m, int r, int s, int t );
+void copy_rho_h      ( int k, int l, int m, int r, int s, int t, vector );
 void add_rho_h       ( int k, int l, int m, int r, int s, int t );
+void pack_rho_h_v    ( msgbuf *b, int k, int l, int m, vector );
 void pack_rho_h      ( msgbuf *b, int k, int l, int m );
 void unpack_rho_h    ( msgbuf *b, int k, int l, int m );
 void unpack_add_rho_h( msgbuf *b, int k, int l, int m );
 #endif
 #endif /* 3D  */
-#endif /* MPI */
+#endif /* MPI or VEC */
 
 /* integrators - file imd_integrate.c */
 void move_atoms_nve(void);
@@ -224,8 +231,9 @@ void do_boundaries(void);
 void fix_cells(void);
 #ifdef MPI
 void copy_atoms_buf(msgbuf *to, msgbuf *from);
-void copy_one_atom(msgbuf *to, cell *from, int index, int delete);
-void process_buffer(msgbuf *b, cell *p);
+void copy_one_atom (msgbuf *to, minicell *from, int index, int delete );
+void copy_atom     (msgbuf *to, cell *from, int index );
+void process_buffer(msgbuf *b,  cell *p);
 void send_atoms(void);
 #endif
 /* write properties - file imd_io_*.c */
@@ -285,10 +293,8 @@ void write_header_sqd(FILE *out);
 #endif
 void reduce_displacement(vektor *d);
 #ifdef MPI
-void recv_cell_old(cell *p, int from_cpu, int tag);
-void send_cell_old(cell *p, int to_cpu, int tag);
-void recv_cell(cell *p, int from_cpu, int tag);
-void send_cell(cell *p, int to_cpu, int tag);
+void recv_cell(minicell *p, int from_cpu, int tag);
+void send_cell(minicell *p, int to_cpu, int tag);
 #endif
 
 #ifdef USE_SOCKETS
@@ -314,7 +320,8 @@ void write_rgb_picture_to_socket(void);
 #endif
 
 /* write distributions - file imd_distrib.c */
-void make_distrib_select(dist_t*, int, int*, void (*fun)(float*, cell*, int));
+void make_distrib_select(dist_t*, int, int*, 
+                         void (*fun)(float*, cell*, int));
 void write_distrib_select(dist_t*, int, int, int, char*, char*);
 void write_distrib_header(FILE*, dist_t*, int, int, char*);
 void write_distrib(int);

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -19,6 +19,7 @@
 * $Date$
 ******************************************************************************/
 
+#define INDEXED_ACCESS
 #include "imd.h"
 
 /******************************************************************************
@@ -103,7 +104,7 @@ void init_cells( void )
   vektor cell_scale;
   ivektor next_cell_dim, cell_dim_old, cd;
   ivektor cellmin_old, cellmax_old, cellc;
-  cell *p, *cell_array_old, *to;
+  minicell *p, *cell_array_old, *to;
   str255 msg;
 
 #ifdef NPT
@@ -201,7 +202,7 @@ void init_cells( void )
   cellmin_old  = cellmin;
   cellmax_old  = cellmax;
 
-#ifdef MPI
+#ifdef BUFCELLS
   cell_dim.x = global_cell_dim.x / cpu_dim.x + 2;  
   cell_dim.y = global_cell_dim.y / cpu_dim.y + 2;
   cell_dim.z = global_cell_dim.z / cpu_dim.z + 2;
@@ -228,7 +229,7 @@ void init_cells( void )
 
   /* save old cell_array (if any), and allocate new one */
   cell_array_old = cell_array;
-  cell_array = (cell *) malloc(
+  cell_array = (minicell *) malloc(
 		     cell_dim.x * cell_dim.y * cell_dim.z * sizeof(cell));
   if ( 0 == myid )
     if (NULL == cell_array) error("Cannot allocate memory for cells");
@@ -241,18 +242,18 @@ void init_cells( void )
 	p = PTR_3D_V(cell_array, i, j, k, cell_dim);
 	p->n_max=0;
         p->n=0;
-#ifdef MPI
+#ifdef BUFCELLS
         /* don't alloc data space for buffer cells */
         if ((0 != i) && (0 != j) && (0 != k) &&
             (i != cell_dim.x-1) &&
             (j != cell_dim.y-1) &&
             (k != cell_dim.z-1))
 #endif
-            alloc_cell(p, initsz);
+            ALLOC_MINICELL(p, initsz);
   }
 
   /* on the first invocation we have to set up the MPI process topology */
-#ifdef MPI
+#ifdef BUFCELLS
   if (cell_array_old == NULL) setup_mpi_topology();
 #endif
   /* this is also the moment to inform about the number of threads */
@@ -268,7 +269,7 @@ void init_cells( void )
         for (l=cellmin_old.z; l < cellmax_old.z; l++) {
           p = PTR_3D_V(cell_array_old, j, k, l, cell_dim_old);
           for (i = p->n - 1; i >= 0; i--) {
-#ifdef MPI
+#ifdef BUFCELLS
             cellc = local_cell_coord( ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z) );
             /* strangly, some atoms get into buffer cells; 
                we push them back into the real cells, 
@@ -283,23 +284,25 @@ void init_cells( void )
             cellc = cell_coord( ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z) );
 #endif
             to = PTR_VV(cell_array,cellc,cell_dim);
-            move_atom( to, p, i );
+            MOVE_ATOM( to, p, i );
           }
-          alloc_cell( p, 0 );  /* free old cell */
+          ALLOC_MINICELL( p, 0 );  /* free old cell */
     }
     free(cell_array_old);
     fix_cells();
   }
 
   make_cell_lists();
-
+#ifdef VEC
+  make_cell_lists_vec();
+#endif
 }
 
 
 /******************************************************************************
 *
 *  make_cell_lists creates a list of indices of all inner cells
-*  (only if MPI), and a list of all pairs of interacting cells.
+*  (only if BUFCELLS), and a list of all pairs of interacting cells.
 *  These lists make it easy to loop over these cells and pairs.
 *
 ******************************************************************************/
@@ -320,7 +323,7 @@ void make_cell_lists(void)
   if (nallcells==0) for (i=0; i<nlists; ++i) pairs[i] = NULL;
 
   nallcells = cell_dim.x * cell_dim.y * cell_dim.z;
-#ifdef MPI
+#ifdef BUFCELLS
   ncells = (cell_dim.x-2) * (cell_dim.y-2) * (cell_dim.z-2);
   /* make list of inner cell indices */
   cells  = (integer*) realloc( cells, ncells * sizeof(integer) );
@@ -401,7 +404,7 @@ void make_cell_lists(void)
               nn = 0;
 #endif
 
-#ifdef MPI
+#ifdef BUFCELLS
               r = i+l - 1 + my_coord.x * (cell_dim.x - 2);
               s = j+m - 1 + my_coord.y * (cell_dim.y - 2);
               t = k+n - 1 + my_coord.z * (cell_dim.z - 2);
@@ -421,7 +424,7 @@ void make_cell_lists(void)
               ipbc.z = 0;
               if (t<0) ipbc.z--; else if (t>global_cell_dim.z-1) ipbc.z++;
 
-#ifdef MPI
+#ifdef BUFCELLS
               r = i+l;
               s = j+m;
               t = k+n;
@@ -444,15 +447,17 @@ void make_cell_lists(void)
                 P = pairs[nn] + npairs[nn];
                 P->np = i*cell_dim.y*cell_dim.z + j*cell_dim.z + k;
                 P->nq = r*cell_dim.y*cell_dim.z + s*cell_dim.z + t;
+#ifndef VEC
                 P->ipbc[0] = ipbc.x;
                 P->ipbc[1] = ipbc.y;
                 P->ipbc[2] = ipbc.z;
+#endif
                 npairs[nn]++;
 	      }
 	    }
       }
 
-#ifdef MPI
+#ifdef BUFCELLS
 
   /* If we don't use actio=reactio accross cpus, we have to do
      the force loop also on the other half of the neighbours for the 
@@ -518,23 +523,24 @@ void make_cell_lists(void)
                   P = pairs[nn] + npairs2[nn];
                   P->np = i*cell_dim.y*cell_dim.z + j*cell_dim.z + k;
                   P->nq = r*cell_dim.y*cell_dim.z + s*cell_dim.z + t;
+#ifndef VEC
                   P->ipbc[0] = ipbc.x;
                   P->ipbc[1] = ipbc.y;
                   P->ipbc[2] = ipbc.z;
+#endif
                   npairs2[nn]++;
 	        }
 	      }
 	    }
       }
 
-#endif /* MPI */
+#endif /* BUFCELLS */
 
 #ifdef OMP
     check_pairs();
 #endif
 
 }
-
 
 /******************************************************************************
 *
@@ -565,6 +571,69 @@ void check_pairs()
   free(lst);
 }
 
+#ifdef VEC
+
+/******************************************************************************
+*
+*  make_cell_lists_vec creates for each cell a list of neighbor cells
+*
+******************************************************************************/
+
+void make_cell_lists_vec(void)
+{
+  int i,j,k, l,m,n, r,s,t, nn, ncnbrs=0;
+  cell_nbrs_t *CN;
+  ivektor ipbc;
+
+  cnbrs = (cell_nbrs_t *) realloc( cnbrs, ncells * sizeof(cell_nbrs_t) );
+  if (cnbrs==NULL) error("cannot allocate cell neighbor list");
+  CN = cnbrs;
+
+  /* for each cell */
+  for (i=cellmin.x; i<cellmax.x; ++i)
+    for (j=cellmin.y; j<cellmax.y; ++j)
+      for (k=cellmin.z; k<cellmax.z; ++k) {
+
+        CN->np = i*cell_dim.y*cell_dim.z + j*cell_dim.z + k;
+        nn = 0;
+
+	/* For half of the neighbours of this cell */
+	for (l=0; l <= 1; ++l)
+	  for (m=-l; m <= 1; ++m)
+	    for (n=(l==0 ? -m  : -l ); n <= 1; ++n) { 
+
+              r = i+l - 1 + my_coord.x * (cell_dim.x - 2);
+              s = j+m - 1 + my_coord.y * (cell_dim.y - 2);
+              t = k+n - 1 + my_coord.z * (cell_dim.z - 2);
+
+              /* Apply periodic boundaries */
+              ipbc.x = 0;
+              if (r<0) ipbc.x--; else if (r>global_cell_dim.x-1) ipbc.x++;
+
+              ipbc.y = 0;
+              if (s<0) ipbc.y--; else if (s>global_cell_dim.y-1) ipbc.y++;
+
+              ipbc.z = 0;
+              if (t<0) ipbc.z--; else if (t>global_cell_dim.z-1) ipbc.z++;
+
+              r = i+l;
+              s = j+m;
+              t = k+n;
+
+              /* add cell to the list */
+              if ( ((pbc_dirs.x==1) || (ipbc.x==0)) &&
+                   ((pbc_dirs.y==1) || (ipbc.y==0)) &&
+                   ((pbc_dirs.z==1) || (ipbc.z==0)) )
+                CN->nq[nn] = r*cell_dim.y*cell_dim.z + s*cell_dim.z + t;
+              else
+                CN->nq[nn] = -1;
+              n++;
+	    }
+        CN++;
+      }
+}
+
+#endif
 
 /******************************************************************************
 *

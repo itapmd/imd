@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -37,10 +37,10 @@ void expand_sample(void)
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
     int i;
     cell *p;
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
       ORT(p,i,X) *= expansion.x;
       ORT(p,i,Y) *= expansion.y;
@@ -79,11 +79,11 @@ void shear_sample(void)
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
     int i;
     cell *p;
     real tmport[2];
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
       tmport[0]   = shear_factor.x * ORT(p,i,Y);
       tmport[1]   = shear_factor.y * ORT(p,i,X);
@@ -126,11 +126,11 @@ void lin_deform(void)
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
     int i;
     cell *p;
     real tmport[3];
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
        /* transform atom positions */
       tmport[0] =   lindef_x.x * ORT(p,i,X) + lindef_x.y * ORT(p,i,Y)
@@ -217,14 +217,14 @@ void deform_sample(void)
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<NCELLS; ++k) {
     int i;
     cell *p;
     int sort;
     vektor ort;
     real shear;
 
-    p = cell_array + CELLS(k);
+    p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
       sort = VSORTE(p,i);
 

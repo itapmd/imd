@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -26,6 +26,8 @@
 *  set up the MPI communication topology
 *
 ******************************************************************************/
+
+#ifdef MPI
 
 void setup_mpi_topology( void )
 {
@@ -85,6 +87,14 @@ void setup_mpi_topology( void )
 
 }
 
+#else
+
+void setup_mpi_topology(void)
+{
+  cpu_ranks = (int *) calloc(1, sizeof(int));
+}
+
+#endif
 
 /******************************************************************************
 *

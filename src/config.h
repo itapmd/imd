@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -75,8 +75,17 @@
    so that the forces go continuously to zero */
 #define POT_TAIL 0.05
 
-/* check whether we use AR across CPU borders */
-#ifdef MPI
+/* with VEC or MPI we always use buffer cells */
+#if defined(MPI) || defined(VEC)
+#define BUFCELLS
+#endif
+
+#ifdef VEC
+/* #define MULTIPOT */
+#define N_POT_TAB 128
+#endif
+
+#ifdef BUFCELLS
 
 /* AR is the default. We could make the default machine dependent */
 #define AR  
@@ -88,7 +97,7 @@
 #endif
 #endif
 
-#endif /* MPI */
+#endif /* BUFCELLS */
 
 /******************************************************************************
 *

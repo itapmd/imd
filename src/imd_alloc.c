@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -20,28 +20,97 @@
 *
 ******************************************************************************/
 
+#define INDEXED_ACCESS
 #include "imd.h"
+
+#ifdef VEC
+
+/*****************************************************************************
+*
+*  Move atom from minicell to minicell. Atom stays in the same cell. 
+*
+******************************************************************************/
+
+void move_atom_mini(minicell *to, minicell *from, int index)
+{
+  /* check the parameters */
+  if ((0 > index) || (index >= from->n)) 
+    error("move_atom: index argument out of range.");
+
+  /* see if we need some space */
+  if (to->n >= to->n_max) alloc_minicell(to,to->n_max+incrsz);
+
+#ifdef MPI
+  /* pointer from atom to index in its minicell */
+  atoms.ind[from->ind[index]] = to->n;
+#endif
+
+  /* move the indices */
+  to->ind[to->n++] = from->ind[index];
+  if (index < from->n-1) from->ind[index] = from->ind[from->n-1];  
+  from->n--;
+}
+
+/*****************************************************************************
+*
+*  Move atom from temporary cell to cell_array. 
+*
+******************************************************************************/
+
+void insert_atom(minicell *to, cell *from, int index)
+{
+  /* see if we need some space */
+  if (to->n >= to->n_max) alloc_minicell(to,to->n_max+incrsz);
+
+  /* put index of the inserted atom */
+  to->ind[to->n++] = atoms.n;
+
+  /* put atom at the end of the cell */
+  move_atom(&atoms, from, index);
+
+#ifdef MPI
+  /* pointer from atom to index in its minicell */
+  atoms.ind[atoms.n-1] = to->n-1;
+#endif
+}
+
+/******************************************************************************
+*
+*  Allocate a minicell
+*
+******************************************************************************/
+
+void alloc_minicell(minicell *p, int count)
+{
+  if (0==count) {  /* cell is freed */
+    free(p->ind);
+  }
+  else {  /* cell is allocated or enlarged */
+    p->ind = (int *) realloc( p->ind, count * sizeof(int) );
+    if (NULL==p->ind) error("minicell allocation failed");
+    p->n_max = count;
+  }
+}
+
+#endif
 
 /*****************************************************************************
 *
 *
 *  Moves an atom from one cell to another. 
 *  Does not move atoms between CPUs!
-*  Does not really belong to file imd_alloc.c either!
 *
 ******************************************************************************/
 
 void move_atom(cell *to, cell *from, int index)
 {
-    /* printf("move atom nr. %d\n", from->nummer[index]);fflush(stdout); */
- /* Check the parameters */
+  /* Check the parameters */
   if ((0 > index) || (index >= from->n)) 
     error("move_atom: index argument out of range.");
  
   /* See if we need some space */
   if (to->n >= to->n_max) alloc_cell(to,to->n_max+incrsz);
   
- 
   /* Got some space, move atom */
   to->ort X(to->n) = from->ort X(index); 
   to->ort Y(to->n) = from->ort Y(index); 
@@ -322,24 +391,24 @@ void increase_neightab(neightab *neigh, int count)
 
 /******************************************************************************
 *
-*  Allocates memory for a cell. Space is allocated in a single
-*  chunk, so that we can send a cell in one MPI operation.
+*  Allocate memory for a cell. 
 *
 ******************************************************************************/
 
 void alloc_cell(cell *thecell, int count)
-
 {
   void *space;
   cell newcell;
-  int i;
+  int i, ncopy;
   real *tmp;
   int newcellsize;
 
-/* Cell is freed */
+  /* cell is freed */
   if (0==count) {
     thecell->n = 0;
-    
+#ifdef VEC
+    thecell->n_buf = 0;
+#endif
     newcell.ort = NULL;
     newcell.impuls = NULL;
     newcell.kraft = NULL;
@@ -388,6 +457,9 @@ void alloc_cell(cell *thecell, int count)
     newcell.dreh_impuls = NULL;
     newcell.dreh_moment = NULL;
 #endif
+#if defined(VEC) && defined(MPI)
+    newcell.ind = NULL;
+#endif
 #endif /* not MONOLJ */
   }
   else {
@@ -415,12 +487,10 @@ void alloc_cell(cell *thecell, int count)
 	    ); 
 #endif  
 
-        /* Get some space */
+    /* Get some space */
     space = malloc(newcellsize);
 
-
-        /* Calculate Pointers */
-  
+    /* Calculate Pointers */
     tmp = (real *) space;
     newcell.ort = tmp; tmp += DIM * count;
     newcell.impuls = tmp; tmp += DIM * count;
@@ -482,6 +552,9 @@ void alloc_cell(cell *thecell, int count)
     newcell.shape = (real *) malloc(count*DIM*sizeof(real));
     newcell.pot_well = (real *) malloc(count*DIM*sizeof(real));
 #endif
+#if defined(VEC) && defined(MPI)
+    newcell.ind = (integer *) malloc(count * sizeof(integer));
+#endif
 #endif /* not MONOLJ */
 
     if ((NULL == space)
@@ -519,6 +592,9 @@ void alloc_cell(cell *thecell, int count)
 	|| (NULL == newcell.shape)
 	|| (NULL == newcell.pot_well)
 #endif
+#if defined(VEC) && defined(MPI)
+        || (NULL == newcell.ind)
+#endif
 #endif /* not MONOLJ */
         ) {
       printf("Want %d bytes.\n",newcellsize);
@@ -533,10 +609,16 @@ void alloc_cell(cell *thecell, int count)
   if (0 == thecell->n_max) {
     /* cell is just initialized */
     thecell->n = 0;
+#ifdef VEC
+    thecell->n_buf = 0;
+#endif
   } else {
 
     if (count < thecell->n_max) { /* cell shrinks, data is invalidated */
       thecell->n = 0;
+#ifdef VEC
+      thecell->n_buf = 0;
+#endif
 #if (defined(COVALENT) && !defined(TWOD))
       /* deallocate all neighbor tables */
       for (i=0; i<thecell->n_max; ++i) {
@@ -547,64 +629,60 @@ void alloc_cell(cell *thecell, int count)
     }
 
     /* if there are valid particles in cell, copy them to new cell */
-    if (thecell->n > 0) {
+#ifdef VEC
+    ncopy = MAX(thecell->n,thecell->n_buf);
+#else
+    ncopy = thecell->n;
+#endif
+    if (ncopy > 0) {
       /* cell is enlarged, copy data from old to newcell location */
-      memcpy(newcell.ort   , thecell->ort,    thecell->n * DIM * sizeof(real));
-      memcpy(newcell.impuls, thecell->impuls, thecell->n * DIM * sizeof(real));
-      memcpy(newcell.kraft , thecell->kraft,  thecell->n * DIM * sizeof(real));
+      memcpy(newcell.ort,     thecell->ort,     ncopy * DIM * sizeof(real));
+      memcpy(newcell.impuls,  thecell->impuls,  ncopy * DIM * sizeof(real));
+      memcpy(newcell.kraft,   thecell->kraft,   ncopy * DIM * sizeof(real));
 #ifdef CG
-      memcpy(newcell.h   , thecell->h,    thecell->n * DIM * sizeof(real));
-      memcpy(newcell.g   , thecell->g,    thecell->n * DIM * sizeof(real));
-      memcpy(newcell.old_ort   , thecell->old_ort,    thecell->n * DIM * sizeof(real));
+      memcpy(newcell.h,       thecell->h,       ncopy * DIM * sizeof(real));
+      memcpy(newcell.g,       thecell->g,       ncopy * DIM * sizeof(real));
+      memcpy(newcell.old_ort, thecell->old_ort, ncopy * DIM * sizeof(real));
 #endif
 #ifndef MONOLJ
-      memcpy(newcell.nummer,  thecell->nummer,  thecell->n * sizeof(integer));
-      memcpy(newcell.sorte ,  thecell->sorte,   thecell->n * sizeof(shortint));
-      memcpy(newcell.masse ,  thecell->masse,   thecell->n * sizeof(real));
-      memcpy(newcell.pot_eng, thecell->pot_eng, thecell->n * sizeof(real));
+      memcpy(newcell.nummer,  thecell->nummer,  ncopy * sizeof(integer));
+      memcpy(newcell.sorte,   thecell->sorte,   ncopy * sizeof(shortint));
+      memcpy(newcell.masse,   thecell->masse,   ncopy * sizeof(real));
+      memcpy(newcell.pot_eng, thecell->pot_eng, ncopy * sizeof(real));
 #ifdef EAM2
-      memcpy(newcell.eam2_rho_h, thecell->eam2_rho_h, 
-             thecell->n * sizeof(real));
+      memcpy(newcell.eam2_rho_h, thecell->eam2_rho_h, ncopy * sizeof(real));
 #endif
 #ifdef ORDPAR
-      memcpy(newcell.nbanz, thecell->nbanz,
-             thecell->n * sizeof(shortint));
+      memcpy(newcell.nbanz, thecell->nbanz, ncopy * sizeof(shortint));
 #endif
 #ifdef DISLOC
-      memcpy(newcell.Epot_ref, thecell->Epot_ref, 
-                               thecell->n * sizeof(real));
-      memcpy(newcell.ort_ref,  thecell->ort_ref, 
-                               thecell->n * DIM * sizeof(real));
+      memcpy(newcell.Epot_ref, thecell->Epot_ref, ncopy * sizeof(real));
+      memcpy(newcell.ort_ref,  thecell->ort_ref,  ncopy * DIM * sizeof(real));
 #endif
 #ifdef AVPOS
-      memcpy(newcell.av_epot, thecell->av_epot, 
-                              thecell->n * sizeof(real));
-      memcpy(newcell.avpos,   thecell->avpos, 
-                              thecell->n * DIM * sizeof(real));
-      memcpy(newcell.sheet,   thecell->sheet, thecell->n * DIM * sizeof(real));
+      memcpy(newcell.av_epot, thecell->av_epot, ncopy * sizeof(real));
+      memcpy(newcell.avpos,   thecell->avpos, ncopy * DIM * sizeof(real));
+      memcpy(newcell.sheet,   thecell->sheet, ncopy * DIM * sizeof(real));
 #endif
 #ifdef REFPOS
-      memcpy(newcell.refpos, thecell->refpos, thecell->n * DIM * sizeof(real));
+      memcpy(newcell.refpos, thecell->refpos, ncopy * DIM * sizeof(real));
 #endif
 #ifdef NVX
-      memcpy(newcell.heatcond,  thecell->heatcond,  thecell->n * sizeof(real));
+      memcpy(newcell.heatcond,  thecell->heatcond,  ncopy * sizeof(real));
 #endif
 #ifdef STRESS_TENS
-      memcpy(newcell.presstens,  thecell->presstens,  
-             thecell->n * sizeof(sym_tensor));
+      memcpy(newcell.presstens, thecell->presstens, ncopy*sizeof(sym_tensor));
 #endif
 #ifdef UNIAX
-      memcpy(newcell.traeg_moment, thecell->traeg_moment, 
-                               thecell->n * sizeof(real));
-      memcpy(newcell.achse , thecell->achse,  thecell->n * DIM * sizeof(real));
-      memcpy(newcell.shape, thecell->shape, 
-                               thecell->n * DIM * sizeof(real));
-      memcpy(newcell.pot_well, thecell->pot_well, 
-                               thecell->n * DIM * sizeof(real));
-      memcpy(newcell.dreh_impuls, thecell->dreh_impuls, 
-                               thecell->n * DIM * sizeof(real));
-      memcpy(newcell.dreh_moment, thecell->dreh_moment, 
-                               thecell->n * DIM * sizeof(real));
+      memcpy(newcell.traeg_moment, thecell->traeg_moment, ncopy*sizeof(real));
+      memcpy(newcell.achse ,   thecell->achse,    ncopy * DIM * sizeof(real));
+      memcpy(newcell.shape,    thecell->shape,    ncopy * DIM * sizeof(real));
+      memcpy(newcell.pot_well, thecell->pot_well, ncopy * DIM * sizeof(real));
+      memcpy(newcell.dreh_impuls, thecell->dreh_impuls,ncopy*DIM*sizeof(real));
+      memcpy(newcell.dreh_moment, thecell->dreh_moment,ncopy*DIM*sizeof(real));
+#endif
+#if defined(VEC) && defined(MPI)
+      memcpy(newcell.ind, thecell->ind, ncopy * sizeof(integer));
 #endif
 #endif /* not MONOLJ */
     }
@@ -648,6 +726,9 @@ void alloc_cell(cell *thecell, int count)
     free(thecell->traeg_moment);
     free(thecell->shape);
     free(thecell->pot_well);
+#endif
+#if defined(VEC) && defined(MPI)
+    free(thecell->ind);
 #endif
 #endif /* not MONOLJ */
   }
@@ -701,33 +782,11 @@ void alloc_cell(cell *thecell, int count)
   thecell->shape = newcell.shape;
   thecell->pot_well = newcell.pot_well;
 #endif
+#if defined(VEC) && defined(MPI)
+  thecell->ind = newcell.ind;
+#endif
 #endif /* not MONOLJ */
 
   thecell->n_max = count;
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

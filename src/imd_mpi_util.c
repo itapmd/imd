@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -90,110 +90,109 @@ int irecv_buf(msgbuf *b, int from, MPI_Request *req)
   return MPI_Irecv(b->data, b->n_max, REAL, from, BUFFER_TAG, cpugrid, req);
 }
 
-
 /******************************************************************************
 *
-* copy an atom from a cell into a buffer, and possibly delete it in the cell
+* copy an atom from a cell into a buffer
 *
 ******************************************************************************/
 
-void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
+void copy_atom(msgbuf *to, cell *p, int ind )
 {
   /* Check the parameters */
-  if ((0 > index) || (index >= from->n)) {
-    printf("%d: i %d n %d\n",myid,index,from->n);
-    error("copy_one_atom: index argument out of range.");
+  if ((0 > ind) || (ind >= p->n)) {
+    printf("%d: i %d n %d\n",myid,ind,p->n);
+    error("copy_atom: index argument out of range.");
   }
 
   /* See if we need some space */
   if (to->n + MAX_ATOM_SIZE > to->n_max) {
     to->n_max += BUFFER_SIZE_INC;
     to->data = (real *) realloc( to->data, to->n_max * sizeof(real) );
-    if (NULL == to->data) error("Cannot allocate buffer in copy_one_atom");
+    if (NULL == to->data) error("Cannot allocate buffer in copy_atom");
   }
 
   /* copy atom */
   /* data is packed in the same order as in the cell data structure */
-  to->data[ to->n++ ] = ORT(from,index,X); 
-  to->data[ to->n++ ] = ORT(from,index,Y); 
+  to->data[ to->n++ ] = ORT(p,ind,X); 
+  to->data[ to->n++ ] = ORT(p,ind,Y); 
 #ifndef TWOD
-  to->data[ to->n++ ] = ORT(from,index,Z); 
+  to->data[ to->n++ ] = ORT(p,ind,Z); 
 #endif
 
 #ifndef MONOLJ
-  to->data[ to->n++ ] = NUMMER(from,index);
-  to->data[ to->n++ ] = VSORTE(from,index);
-  to->data[ to->n++ ] = MASSE (from,index);
-  to->data[ to->n++ ] = POTENG(from,index);
+  to->data[ to->n++ ] = NUMMER(p,ind);
+  to->data[ to->n++ ] = VSORTE(p,ind);
+  to->data[ to->n++ ] = MASSE (p,ind);
+  to->data[ to->n++ ] = POTENG(p,ind);
 #endif
 #ifdef EAM2
   /* eam2_rho_h is not sent */
 #endif
 
 #ifdef CG
-  to->data[ to->n++ ] = CG_H(from,index,X); 
-  to->data[ to->n++ ] = CG_H(from,index,Y); 
+  to->data[ to->n++ ] = CG_H(p,ind,X); 
+  to->data[ to->n++ ] = CG_H(p,ind,Y); 
 #ifndef TWOD
-  to->data[ to->n++ ] = CG_H(from,index,Z); 
+  to->data[ to->n++ ] = CG_H(p,ind,Z); 
 #endif
-  to->data[ to->n++ ] = CG_G(from,index,X); 
-  to->data[ to->n++ ] = CG_G(from,index,Y); 
+  to->data[ to->n++ ] = CG_G(p,ind,X); 
+  to->data[ to->n++ ] = CG_G(p,ind,Y); 
 #ifndef TWOD
-  to->data[ to->n++ ] = CG_G(from,index,Z); 
+  to->data[ to->n++ ] = CG_G(p,ind,Z); 
 #endif
-  to->data[ to->n++ ] = OLD_ORT(from,index,X); 
-  to->data[ to->n++ ] = OLD_ORT(from,index,Y); 
+  to->data[ to->n++ ] = OLD_ORT(p,ind,X); 
+  to->data[ to->n++ ] = OLD_ORT(p,ind,Y); 
 #ifndef TWOD
-  to->data[ to->n++ ] = OLD_ORT(from,index,Z); 
+  to->data[ to->n++ ] = OLD_ORT(p,ind,Z); 
 #endif
 #endif /* CG */
 
 #ifdef DISLOC
-  to->data[ to->n++ ] = EPOT_REF(from,index);
-  to->data[ to->n++ ] = ORT_REF (from,index,X); 
-  to->data[ to->n++ ] = ORT_REF (from,index,Y); 
+  to->data[ to->n++ ] = EPOT_REF(p,ind);
+  to->data[ to->n++ ] = ORT_REF (p,ind,X); 
+  to->data[ to->n++ ] = ORT_REF (p,ind,Y); 
 #ifndef TWOD
-  to->data[ to->n++ ] = ORT_REF (from,index,Z); 
+  to->data[ to->n++ ] = ORT_REF (p,ind,Z); 
 #endif
 #endif 
 #ifdef AVPOS
-  to->data[ to->n++ ] = AV_EPOT(from,index);
-  to->data[ to->n++ ] = AV_POS (from,index,X); 
-  to->data[ to->n++ ] = AV_POS (from,index,Y);
-  to->data[ to->n++ ] = SHEET  (from,index,X);
-  to->data[ to->n++ ] = SHEET  (from,index,Y);
+  to->data[ to->n++ ] = AV_EPOT(p,ind);
+  to->data[ to->n++ ] = AV_POS (p,ind,X); 
+  to->data[ to->n++ ] = AV_POS (p,ind,Y);
+  to->data[ to->n++ ] = SHEET  (p,ind,X);
+  to->data[ to->n++ ] = SHEET  (p,ind,Y);
 #ifndef TWOD
-  to->data[ to->n++ ] = AV_POS (from,index,Z); 
-  to->data[ to->n++ ] = SHEET  (from,index,Z);
+  to->data[ to->n++ ] = AV_POS (p,ind,Z); 
+  to->data[ to->n++ ] = SHEET  (p,ind,Z);
 #endif
 #endif
 #ifdef ORDPAR  
-  to->data[ to->n++ ] = NBANZ(from,index); 
+  to->data[ to->n++ ] = NBANZ(p,ind); 
 #endif
 #ifdef REFPOS
-  to->data[ to->n++ ] = REF_POS(from,index,X);
-  to->data[ to->n++ ] = REF_POS(from,index,Y);
+  to->data[ to->n++ ] = REF_POS(p,ind,X);
+  to->data[ to->n++ ] = REF_POS(p,ind,Y);
 #ifndef TWOD
-  to->data[ to->n++ ] = REF_POS(from,index,Z);
+  to->data[ to->n++ ] = REF_POS(p,ind,Z);
 #endif
 #endif
 #ifdef NVX
-  to->data[ to->n++ ] = HEATCOND(from,index);
+  to->data[ to->n++ ] = HEATCOND(p,ind);
 #endif
 #ifdef STRESS_TENS
-  to->data[ to->n++ ] = PRESSTENS(from,index,xx);   
-  to->data[ to->n++ ] = PRESSTENS(from,index,yy);   
-  to->data[ to->n++ ] = PRESSTENS(from,index,xy);   
+  to->data[ to->n++ ] = PRESSTENS(p,ind,xx);   
+  to->data[ to->n++ ] = PRESSTENS(p,ind,yy);   
+  to->data[ to->n++ ] = PRESSTENS(p,ind,xy);   
 #ifndef TWOD
-  to->data[ to->n++ ] = PRESSTENS(from,index,zz);   
-  to->data[ to->n++ ] = PRESSTENS(from,index,yz);   
-  to->data[ to->n++ ] = PRESSTENS(from,index,zx);   
+  to->data[ to->n++ ] = PRESSTENS(p,ind,zz);   
+  to->data[ to->n++ ] = PRESSTENS(p,ind,yz);   
+  to->data[ to->n++ ] = PRESSTENS(p,ind,zx);   
 #endif
 #endif /* STRESS_TENS */
-  to->data[ to->n++ ] = IMPULS(from,index,X); 
-  to->data[ to->n++ ] = IMPULS(from,index,Y); 
+  to->data[ to->n++ ] = IMPULS(p,ind,X); 
+  to->data[ to->n++ ] = IMPULS(p,ind,Y); 
 #ifndef TWOD
-  to->data[ to->n++ ] = IMPULS(from,index,Z); 
+  to->data[ to->n++ ] = IMPULS(p,ind,Z); 
 #endif
 
   /* force is not sent */
@@ -201,134 +200,175 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
   /* neighbor table is not sent */
 #endif
 #ifdef UNIAX
-  to->data[ to->n++ ] = TRAEG_MOMENT(from,index);
-  to->data[ to->n++ ] = ACHSE(from,index,X); 
-  to->data[ to->n++ ] = ACHSE(from,index,Y); 
-  to->data[ to->n++ ] = ACHSE(from,index,Z); 
-  to->data[ to->n++ ] = SHAPE(from,index,X); 
-  to->data[ to->n++ ] = SHAPE(from,index,Y); 
-  to->data[ to->n++ ] = SHAPE(from,index,Z); 
-  to->data[ to->n++ ] = POT_WELL(from,index,X); 
-  to->data[ to->n++ ] = POT_WELL(from,index,Y); 
-  to->data[ to->n++ ] = POT_WELL(from,index,Z); 
-  to->data[ to->n++ ] = DREH_IMPULS(from,index,X); 
-  to->data[ to->n++ ] = DREH_IMPULS(from,index,Y); 
-  to->data[ to->n++ ] = DREH_IMPULS(from,index,Z); 
+  to->data[ to->n++ ] = TRAEG_MOMENT(p,ind);
+  to->data[ to->n++ ] = ACHSE(p,ind,X); 
+  to->data[ to->n++ ] = ACHSE(p,ind,Y); 
+  to->data[ to->n++ ] = ACHSE(p,ind,Z); 
+  to->data[ to->n++ ] = SHAPE(p,ind,X); 
+  to->data[ to->n++ ] = SHAPE(p,ind,Y); 
+  to->data[ to->n++ ] = SHAPE(p,ind,Z); 
+  to->data[ to->n++ ] = POT_WELL(p,ind,X); 
+  to->data[ to->n++ ] = POT_WELL(p,ind,Y); 
+  to->data[ to->n++ ] = POT_WELL(p,ind,Z); 
+  to->data[ to->n++ ] = DREH_IMPULS(p,ind,X); 
+  to->data[ to->n++ ] = DREH_IMPULS(p,ind,Y); 
+  to->data[ to->n++ ] = DREH_IMPULS(p,ind,Z); 
   /* dreh_moment is not sent */
 #endif
+#ifdef VEC
+  /* ind is not sent */
+#endif
+
+}
+
+/******************************************************************************
+*
+* copy an atom from a minicell into a buffer, and possibly delete it
+*
+******************************************************************************/
+
+void copy_one_atom(msgbuf *to, minicell *from, int index, int delete )
+{
+  cell *p;
+  int  ind;
+
+#ifdef VEC
+  p   = &atoms;
+  ind = from->ind[index];
+#else
+  p   = from;
+  ind = index;
+#endif
+
+  /* copy the atom to the message buffer */
+  copy_atom(to, p, ind);
 
   /* Delete atom in original cell? */
   if (delete==1) {
 
-    --from->n;
+    p->n--;
+
+#ifdef VEC
+    /* we move the last atom to slot ind, so we have to correct */
+    /* the minicell entry pointing to the atom to be moved      */
+    if (0 < p->n) {
+      ivektor  coord;
+      minicell *last;
+      coord = local_cell_coord( ORT(p,p->n,X), ORT(p,p->n,Y), ORT(p,p->n,Z));
+      last  = PTR_VV(cell_array,coord,cell_dim);
+      last->ind[ p->ind[p->n] ] = ind;
+      p->ind[ind] = p->ind[p->n];
+    }
+    from->n--;
+    if (0 < from->n) from->ind[index] = from->ind[from->n];
+#endif
 
     /* we treat the data in the same order as in the cell data structure */
-    if (0 < from->n) {
+    if (0 < p->n) {
 
-      ORT(from,index,X)  = ORT(from,from->n,X); 
-      ORT(from,index,Y)  = ORT(from,from->n,Y); 
+      ORT(p,ind,X)  = ORT(p,p->n,X); 
+      ORT(p,ind,Y)  = ORT(p,p->n,Y); 
 #ifndef TWOD
-      ORT(from,index,Z)  = ORT(from,from->n,Z); 
+      ORT(p,ind,Z)  = ORT(p,p->n,Z); 
 #endif
 #ifndef MONOLJ
-      NUMMER(from,index) = NUMMER(from,from->n); 
-      VSORTE(from,index) = VSORTE(from,from->n);
-      MASSE (from,index) = MASSE (from,from->n); 
-      POTENG(from,index) = POTENG(from,from->n); 
+      NUMMER(p,ind) = NUMMER(p,p->n); 
+      VSORTE(p,ind) = VSORTE(p,p->n);
+      MASSE (p,ind) = MASSE (p,p->n); 
+      POTENG(p,ind) = POTENG(p,p->n); 
 #endif
 #ifdef EAM2
       /* eam2_rho_h need not be copied */
 #endif
 
 #ifdef CG
-      CG_H(from,index,X) = CG_H(from,from->n,X); 
-      CG_H(from,index,Y) = CG_H(from,from->n,Y); 
+      CG_H(p,ind,X) = CG_H(p,p->n,X); 
+      CG_H(p,ind,Y) = CG_H(p,p->n,Y); 
 #ifndef TWOD
-      CG_H(from,index,Z) = CG_H(from,from->n,Z); 
+      CG_H(p,ind,Z) = CG_H(p,p->n,Z); 
 #endif
-      CG_G(from,index,X) = CG_G(from,from->n,X); 
-      CG_G(from,index,Y) = CG_G(from,from->n,Y); 
+      CG_G(p,ind,X) = CG_G(p,p->n,X); 
+      CG_G(p,ind,Y) = CG_G(p,p->n,Y); 
 #ifndef TWOD
-      CG_G(from,index,Z) = CG_G(from,from->n,Z); 
+      CG_G(p,ind,Z) = CG_G(p,p->n,Z); 
 #endif
-      OLD_ORT(from,index,X) = OLD_ORT(from,from->n,X); 
-      OLD_ORT(from,index,Y) = OLD_ORT(from,from->n,Y); 
+      OLD_ORT(p,ind,X) = OLD_ORT(p,p->n,X); 
+      OLD_ORT(p,ind,Y) = OLD_ORT(p,p->n,Y); 
 #ifndef TWOD
-      OLD_ORT(from,index,Z) = OLD_ORT(from,from->n,Z); 
+      OLD_ORT(p,ind,Z) = OLD_ORT(p,p->n,Z); 
 #endif
 #endif /* CG */
 
 #ifdef DISLOC
-      EPOT_REF(from,index)   = EPOT_REF(from,from->n); 
-      ORT_REF (from,index,X) = ORT_REF (from,from->n,X); 
-      ORT_REF (from,index,Y) = ORT_REF (from,from->n,Y); 
+      EPOT_REF(p,ind)   = EPOT_REF(p,p->n); 
+      ORT_REF (p,ind,X) = ORT_REF (p,p->n,X); 
+      ORT_REF (p,ind,Y) = ORT_REF (p,p->n,Y); 
 #ifndef TWOD
-      ORT_REF (from,index,Z) = ORT_REF (from,from->n,Z); 
+      ORT_REF (p,ind,Z) = ORT_REF (p,p->n,Z); 
 #endif
 #endif
 #ifdef AVPOS
-      AV_EPOT(from,index)   = AV_EPOT(from,from->n); 
-      AV_POS (from,index,X) = AV_POS (from,from->n,X); 
-      AV_POS (from,index,Y) = AV_POS (from,from->n,Y); 
-      SHEET  (from,index,X) = SHEET  (from,from->n,X); 
-      SHEET  (from,index,Y) = SHEET  (from,from->n,Y); 
+      AV_EPOT(p,ind)   = AV_EPOT(p,p->n); 
+      AV_POS (p,ind,X) = AV_POS (p,p->n,X); 
+      AV_POS (p,ind,Y) = AV_POS (p,p->n,Y); 
+      SHEET  (p,ind,X) = SHEET  (p,p->n,X); 
+      SHEET  (p,ind,Y) = SHEET  (p,p->n,Y); 
 #ifndef TWOD
-      AV_POS (from,index,Z) = AV_POS (from,from->n,Z); 
-      SHEET  (from,index,Z) = SHEET  (from,from->n,Z); 
+      AV_POS (p,ind,Z) = AV_POS (p,p->n,Z); 
+      SHEET  (p,ind,Z) = SHEET  (p,p->n,Z); 
 #endif
 #endif
 #ifdef ORDPAR 
-      NBANZ(from,index)    = NBANZ(from,from->n); 
+      NBANZ(p,ind)     = NBANZ(p,p->n); 
 #endif
 #ifdef REFPOS
-      REF_POS(from,index,X) = REF_POS(from,from->n,X);
-      REF_POS(from,index,Y) = REF_POS(from,from->n,Y);
+      REF_POS(p,ind,X) = REF_POS(p,p->n,X);
+      REF_POS(p,ind,Y) = REF_POS(p,p->n,Y);
 #ifndef TWOD
-      REF_POS(from,index,Z) = REF_POS(from,from->n,Z);
+      REF_POS(p,ind,Z) = REF_POS(p,p->n,Z);
 #endif
 #endif
 #ifdef NVX
-      HEATCOND(from,index)  = HEATCOND(from,from->n); 
+      HEATCOND(p,ind)  = HEATCOND(p,p->n); 
 #endif
 #ifdef STRESS_TENS
-      PRESSTENS(from,index,xx) = PRESSTENS(from,from->n,xx);   
-      PRESSTENS(from,index,yy) = PRESSTENS(from,from->n,yy);   
-      PRESSTENS(from,index,xy) = PRESSTENS(from,from->n,xy);   
+      PRESSTENS(p,ind,xx) = PRESSTENS(p,p->n,xx);   
+      PRESSTENS(p,ind,yy) = PRESSTENS(p,p->n,yy);   
+      PRESSTENS(p,ind,xy) = PRESSTENS(p,p->n,xy);   
 #ifndef TWOD
-      PRESSTENS(from,index,zz) = PRESSTENS(from,from->n,zz);   
-      PRESSTENS(from,index,yz) = PRESSTENS(from,from->n,yz);   
-      PRESSTENS(from,index,zx) = PRESSTENS(from,from->n,zx);   
+      PRESSTENS(p,ind,zz) = PRESSTENS(p,p->n,zz);   
+      PRESSTENS(p,ind,yz) = PRESSTENS(p,p->n,yz);   
+      PRESSTENS(p,ind,zx) = PRESSTENS(p,p->n,zx);   
 #endif
 #endif /* STRESS_TENS */
-      IMPULS(from,index,X) = IMPULS(from,from->n,X); 
-      IMPULS(from,index,Y) = IMPULS(from,from->n,Y); 
+      IMPULS(p,ind,X) = IMPULS(p,p->n,X); 
+      IMPULS(p,ind,Y) = IMPULS(p,p->n,Y); 
 #ifndef TWOD
-      IMPULS(from,index,Z) = IMPULS(from,from->n,Z); 
+      IMPULS(p,ind,Z) = IMPULS(p,p->n,Z); 
 #endif
       /* force need not be copied */
 #ifdef COVALENT
       /* neighbor table need not be copied */
 #endif
 #ifdef UNIAX
-      TRAEG_MOMENT(from,index) = TRAEG_MOMENT(from,from->n);
-      ACHSE(from,index,X) = ACHSE(from,from->n,X); 
-      ACHSE(from,index,Y) = ACHSE(from,from->n,Y); 
-      ACHSE(from,index,Z) = ACHSE(from,from->n,Z); 
-      SHAPE(from,index,X) = SHAPE(from,from->n,X); 
-      SHAPE(from,index,Y) = SHAPE(from,from->n,Y); 
-      SHAPE(from,index,Z) = SHAPE(from,from->n,Z); 
-      POT_WELL(from,index,X) = POT_WELL(from,from->n,X); 
-      POT_WELL(from,index,Y) = POT_WELL(from,from->n,Y); 
-      POT_WELL(from,index,Z) = POT_WELL(from,from->n,Z); 
-      DREH_IMPULS(from,index,X) = DREH_IMPULS(from,from->n,X); 
-      DREH_IMPULS(from,index,Y) = DREH_IMPULS(from,from->n,Y); 
-      DREH_IMPULS(from,index,Z) = DREH_IMPULS(from,from->n,Z); 
+      TRAEG_MOMENT(p,ind) = TRAEG_MOMENT(p,p->n);
+      ACHSE(p,ind,X) = ACHSE(p,p->n,X); 
+      ACHSE(p,ind,Y) = ACHSE(p,p->n,Y); 
+      ACHSE(p,ind,Z) = ACHSE(p,p->n,Z); 
+      SHAPE(p,ind,X) = SHAPE(p,p->n,X); 
+      SHAPE(p,ind,Y) = SHAPE(p,p->n,Y); 
+      SHAPE(p,ind,Z) = SHAPE(p,p->n,Z); 
+      POT_WELL(p,ind,X) = POT_WELL(p,p->n,X); 
+      POT_WELL(p,ind,Y) = POT_WELL(p,p->n,Y); 
+      POT_WELL(p,ind,Z) = POT_WELL(p,p->n,Z); 
+      DREH_IMPULS(p,ind,X) = DREH_IMPULS(p,p->n,X); 
+      DREH_IMPULS(p,ind,Y) = DREH_IMPULS(p,p->n,Y); 
+      DREH_IMPULS(p,ind,Z) = DREH_IMPULS(p,p->n,Z); 
       /* dreh_moment need not be copied */
 #endif
     }
   } /* delete or not delete */
 }
-
 
 /******************************************************************************
 *
@@ -344,7 +384,6 @@ void process_buffer(msgbuf *b, cell *p)
   ivektor coord, coord2;
   int to_cpu, j;
   static cell *input = NULL;
-  cell *to;
 
   if (b->n > b->n_max) error("buffer overflow in process_buffer");
 
@@ -469,10 +508,18 @@ void process_buffer(msgbuf *b, cell *p)
       coord2=cell_coord(       ORT(input,0,X), ORT(input,0,Y), ORT(input,0,Z));
 #endif
       to_cpu = cpu_coord( coord2 );
-      to = PTR_VV(cell_array,coord,cell_dim);
-      if (to_cpu == myid) move_atom(to, input, 0);
+      if (to_cpu == myid) {
+        minicell *to;
+        to = PTR_VV(cell_array,coord,cell_dim);
+        INSERT_ATOM(to, input, 0);
+      }
     } else {  /* put atom into cell pointed by p */
+#ifdef VEC
+      /* we arrive here only in outdated socket communication code */
+      error("not supported in vector mode");
+#else
       move_atom(p, input, 0);
+#endif
     }
   } while (j<b->n);
 
@@ -715,6 +762,7 @@ void empty_mpi_buffers(void)
 
 }
 
+#ifdef USE_SOCKETS
 
 /******************************************************************************
 *
@@ -723,7 +771,7 @@ void empty_mpi_buffers(void)
 *
 ******************************************************************************/
 
-void send_cell(cell *p, int to_cpu, int tag)
+void send_cell(minicell *p, int to_cpu, int tag)
 {
   int i;
   msgbuf *b;
@@ -743,7 +791,7 @@ void send_cell(cell *p, int to_cpu, int tag)
 *
 ******************************************************************************/
 
-void recv_cell(cell *p, int from_cpu, int tag)
+void recv_cell(minicell *p, int from_cpu, int tag)
 {
   MPI_Status status;
   msgbuf *b;
@@ -766,20 +814,4 @@ void recv_cell(cell *p, int from_cpu, int tag)
   process_buffer(b,p);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+#endif

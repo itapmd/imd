@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -154,16 +154,40 @@ typedef struct {
   real        *dreh_impuls;
   real        *dreh_moment;
 #endif
+#if defined(VEC) && defined(MPI)
+  integer     *ind;
+#endif
   int         n;
   int         n_max;
+#ifdef VEC
+  int         n_buf;
+#endif
 } cell;
+
+typedef cell* cellptr;
+
+#ifdef VEC
+typedef struct {
+  int *ind;
+  int n;
+  int n_max;
+} minicell;
+#else
+typedef cell minicell;
+#endif
 
 typedef struct {
   integer np, nq;
+#ifndef VEC
   signed char ipbc[4];
+#endif
 } pair;
 
-typedef cell* cellptr;
+#ifdef VEC
+typedef struct {
+  integer np, nq[14];
+} cell_nbrs_t;
+#endif
 
 /* Buffer for messages */
 typedef struct { 

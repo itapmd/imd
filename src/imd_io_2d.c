@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -242,7 +242,7 @@ void read_atoms(str255 infilename)
         num_sort[SORTE(input,0)]++;
         num_vsort[VSORTE(input,0)]++;
         b = input_buf + to_cpu;
-        copy_one_atom(b, input, 0, 0);
+        copy_atom(b, input, 0);
         if (b->n_max - b->n < MAX_ATOM_SIZE) {
           MPI_Send(b->data, b->n, REAL, to_cpu, INBUF_TAG, cpugrid);
           b->n = 0;
@@ -260,7 +260,7 @@ void read_atoms(str255 infilename)
         num_vsort[VSORTE(input,0)]++;
 	cellc = local_cell_coord(pos.x,pos.y);
         to = PTR_VV(cell_array,cellc,cell_dim);
-	move_atom(to, input, 0);
+	INSERT_ATOM(to, input, 0);
       }
 
 #else /* not MPI */
@@ -276,7 +276,7 @@ void read_atoms(str255 infilename)
       num_sort[SORTE(input,0)]++;
       num_vsort[VSORTE(input,0)]++;
       to = PTR_VV(cell_array,cellc,cell_dim);
-      move_atom(to, input, 0);
+      INSERT_ATOM(to, input, 0);
 
 #endif /* MPI */
 
