@@ -132,10 +132,11 @@ void xy_pictures_3d(char *infile, int min, int max)
           hist[t * dimxy + dimx * i + j] += atoms_dist[l];
 	}
 
-  /* renormalize atoms distribution */
-  fmax=0.0;
+  /* renormalize atoms distribution for pgm files*/
+  fmax = 0.0;
   for (i=0; i<ntypes*dimxy; i++) fmax = MAX(fmax,hist[i]);
-  for (i=0; i<ntypes*dimxy; i++) pix[i] = (char) 255*hist[i]/fmax;
+  fmax = 255/fmax;
+  for (i=0; i<ntypes*dimxy; i++) pix[i] = (char) (255-hist[i]*fmax);
 
   /* write pgm files */
   for (t=0; t<ntypes; t++) {
@@ -149,15 +150,30 @@ void xy_pictures_3d(char *infile, int min, int max)
   }
 
   /* write ppm-file */
-  for (t=0; t<ntypes; t++) 
-    for (i=0; i<dimxy; i++) pix2[3*i+t] = pix[t*dimxy+i];
-  sprintf(fname,"%s.xy.ppm",infile);
-  if (NULL==(out=fopen(fname,"w"))) error("Cannot open pgm-file.");
-  fprintf(out,"P6\n%d %d\n255\n", dimx, dimy);
-  if (3*dimxy!=fwrite(pix2,sizeof(char),3*dimxy,out))
-    error("Cannot write pgm-file.");
-  fclose(out);
-
+  if (ntypes<4) {
+    /* set everything to white */
+    for (i=0; i<3*dimxy; i++) pix2[i] = 255;
+    /* get renormalization factor for color pictures */
+    fmax = 0.0;
+    for (i=0; i<dimxy; i++) {
+      float tmp=0.0;
+      for (t=0; t<ntypes; t++) tmp += hist[t*dimxy+i];
+      fmax = MAX(fmax,tmp);
+    }
+    fmax = 255/fmax;
+    /* make color picture */
+    for (t=0; t<ntypes; t++) 
+      for (i=0; i<dimxy; i++) 
+        for (k=0; k<3; k++) 
+          if (k!=t) pix2[3*i+k] -= (char) (hist[t*dimxy+i]*fmax);
+    /* write color picture */
+    sprintf(fname,"%s.xy.ppm",infile);
+    if (NULL==(out=fopen(fname,"w"))) error("Cannot open pgm-file.");
+    fprintf(out,"P6\n%d %d\n255\n", dimx, dimy);
+    if (3*dimxy!=fwrite(pix2,sizeof(char),3*dimxy,out))
+      error("Cannot write pgm-file.");
+    fclose(out);
+  }
 }
 
 void xz_pictures_3d(char *infile, int min, int max)
@@ -185,10 +201,11 @@ void xz_pictures_3d(char *infile, int min, int max)
           hist[t * dimxz + dimx * i + k] += atoms_dist[l];
 	}
 
-  /* renormalize atoms distribution */
-  fmax=0.0;
+  /* renormalize atoms distribution for pgm files*/
+  fmax = 0.0;
   for (i=0; i<ntypes*dimxz; i++) fmax = MAX(fmax,hist[i]);
-  for (i=0; i<ntypes*dimxz; i++) pix[i] = (char) 255*hist[i]/fmax;
+  fmax = 255/fmax;
+  for (i=0; i<ntypes*dimxz; i++) pix[i] = (char) (255-hist[i]*fmax);
 
   /* write pgm files */
   for (t=0; t<ntypes; t++) {
@@ -202,15 +219,30 @@ void xz_pictures_3d(char *infile, int min, int max)
   }
 
   /* write ppm-file */
-  for (t=0; t<ntypes; t++) 
-    for (i=0; i<dimxz; i++) pix2[3*i+t] = pix[t*dimxz+i];
-  sprintf(fname,"%s.xz.ppm",infile,t);
-  if (NULL==(out=fopen(fname,"w"))) error("Cannot open pgm-file.");
-  fprintf(out,"P6\n%d %d\n255\n", dimx, dimz);
-  if (3*dimxz!=fwrite(pix2,sizeof(char),3*dimxz,out))
-    error("Cannot write pgm-file.");
-  fclose(out);
-
+  if (ntypes<4) {
+    /* set everything to white */
+    for (i=0; i<3*dimxz; i++) pix2[i] = 255;
+    /* get renormalization factor for color pictures */
+    fmax = 0.0;
+    for (i=0; i<dimxz; i++) {
+      float tmp=0.0;
+      for (t=0; t<ntypes; t++) tmp += hist[t*dimxz+i];
+      fmax = MAX(fmax,tmp);
+    }
+    fmax = 255/fmax;
+    /* make color picture */
+    for (t=0; t<ntypes; t++) 
+      for (i=0; i<dimxz; i++) 
+        for (k=0; k<3; k++) 
+          if (k!=t) pix2[3*i+k] -= (char) (hist[t*dimxz+i]*fmax);
+    /* write color picture */
+    sprintf(fname,"%s.xz.ppm",infile,t);
+    if (NULL==(out=fopen(fname,"w"))) error("Cannot open pgm-file.");
+    fprintf(out,"P6\n%d %d\n255\n", dimx, dimz);
+    if (3*dimxz!=fwrite(pix2,sizeof(char),3*dimxz,out))
+      error("Cannot write pgm-file.");
+    fclose(out);
+  }
 }
 
 void yz_pictures_3d(char *infile, int min, int max)
@@ -238,10 +270,11 @@ void yz_pictures_3d(char *infile, int min, int max)
           hist[t * dimyz + dimy * j + k] += atoms_dist[l];
 	}
 
-  /* renormalize atoms distribution */
-  fmax=0.0;
+  /* renormalize atoms distribution for pgm files*/
+  fmax = 0.0;
   for (i=0; i<ntypes*dimyz; i++) fmax = MAX(fmax,hist[i]);
-  for (i=0; i<ntypes*dimyz; i++) pix[i] = (char) 255*hist[i]/fmax;
+  fmax = 255/fmax;
+  for (i=0; i<ntypes*dimyz; i++) pix[i] = (char) (255-hist[i]*fmax);
 
   /* write pgm files */
   for (t=0; t<ntypes; t++) {
@@ -255,21 +288,37 @@ void yz_pictures_3d(char *infile, int min, int max)
   }
 
   /* write ppm-file */
-  for (t=0; t<ntypes; t++) 
-    for (i=0; i<dimyz; i++) pix2[3*i+t] = pix[t*dimyz+i];
-  sprintf(fname,"%s.yz.ppm",infile);
-  if (NULL==(out=fopen(fname,"w"))) error("Cannot open pgm-file.");
-  fprintf(out,"P6\n%d %d\n255\n", dimy, dimz);
-  if (3*dimyz!=fwrite(pix2,sizeof(char),3*dimyz,out))
-    error("Cannot write pgm-file.");
-  fclose(out);
+  if (ntypes<4) {
+    /* set everything to white */
+    for (i=0; i<3*dimyz; i++) pix2[i] = 255;
+    /* get renormalization factor for color pictures */
+    fmax = 0.0;
+    for (i=0; i<dimyz; i++) {
+      float tmp=0.0;
+      for (t=0; t<ntypes; t++) tmp += hist[t*dimyz+i];
+      fmax = MAX(fmax,tmp);
+    }
+    fmax = 255/fmax;
+    /* make color picture */
+    for (t=0; t<ntypes; t++) 
+      for (i=0; i<dimyz; i++) 
+        for (k=0; k<3; k++) 
+          if (k!=t) pix2[3*i+k] -= (char) (hist[t*dimyz+i]*fmax);
+    /* write color picture */
+    sprintf(fname,"%s.yz.ppm",infile);
+    if (NULL==(out=fopen(fname,"w"))) error("Cannot open pgm-file.");
+    fprintf(out,"P6\n%d %d\n255\n", dimy, dimz);
+    if (3*dimyz!=fwrite(pix2,sizeof(char),3*dimyz,out))
+      error("Cannot write pgm-file.");
+    fclose(out);
+  }
 }
 
 void pictures_2d(char *infile)
 {
   float *hist, fmax;
   char  *pix, *pix2;
-  int dimxy, t, i, j, l;
+  int dimxy, t, i, j, k, l;
   FILE *out;
   char fname[255]; 
 
@@ -278,10 +327,11 @@ void pictures_2d(char *infile)
   if ((hist==NULL) || (pix==NULL) || (pix2==NULL)) error("out of memory");
   dimxy  = dimx  * dimy;
 
-  /* renormalize atoms distribution */
-  fmax=0.0;
+  /* renormalize atoms distribution for pgm files*/
+  fmax = 0.0;
   for (i=0; i<ntypes*dimxy; i++) fmax = MAX(fmax,atoms_dist[i]);
-  for (i=0; i<ntypes*dimxy; i++) pix[i] = (char) 255*atoms_dist[i]/fmax;
+  fmax = 255/fmax;
+  for (i=0; i<ntypes*dimxy; i++) pix[i] = (char) (255-atoms_dist[i]*fmax);
 
   /* write pgm files */
   for (t=0; t<ntypes; t++) {
@@ -294,14 +344,30 @@ void pictures_2d(char *infile)
   }
 
   /* write ppm-file */
-  for (t=0; t<ntypes; t++) 
-    for (i=0; i<dimxy; i++) pix2[3*i+t] = pix[t*dimxy+i];
-  sprintf(fname,"%s.ppm",infile);
-  if (NULL==(out=fopen(fname,"w"))) error("Cannot open pgm-file.");
-  fprintf(out,"P6\n%d %d\n255\n", dimx, dimy);
-  if (3*dimxy!=fwrite(pix2,sizeof(char),3*dimxy,out))
-    error("Cannot write pgm-file.");
-  fclose(out);
+  if (ntypes<4) {
+    /* set everything to white */
+    for (i=0; i<3*dimxy; i++) pix2[i] = 255;
+    /* get renormalization factor for color pictures */
+    fmax = 0.0;
+    for (i=0; i<dimxy; i++) {
+      float tmp=0.0;
+      for (t=0; t<ntypes; t++) tmp += atoms_dist[t*dimxy+i];
+      fmax = MAX(fmax,tmp);
+    }
+    fmax = 255/fmax;
+    /* make color picture */
+    for (t=0; t<ntypes; t++) 
+      for (i=0; i<dimxy; i++) 
+        for (k=0; k<3; k++) 
+          if (k!=t) pix2[3*i+k] -= (char) (atoms_dist[t*dimxy+i]*fmax);
+    /* write color picture */
+    sprintf(fname,"%s.ppm",infile);
+    if (NULL==(out=fopen(fname,"w"))) error("Cannot open pgm-file.");
+    fprintf(out,"P6\n%d %d\n255\n", dimx, dimy);
+    if (3*dimxy!=fwrite(pix2,sizeof(char),3*dimxy,out))
+      error("Cannot write pgm-file.");
+    fclose(out);
+  }
 }
 
 int main(int argc, char **argv) 
@@ -330,12 +396,11 @@ int main(int argc, char **argv)
   } else  if ((argc==2) && (dim==2)) {
       pictures_2d(argv[1]);
   } else {
-    printf("%d %d %d %d\n",argc,dir,min,max);
-    if (dir==1) {
+    if (dir==3) {
       xy_pictures_3d(argv[1],min,max);
     } else if (dir==2) { 
       xz_pictures_3d(argv[1],min,max);
-    } else if (dir==3) {
+    } else if (dir==1) {
       yz_pictures_3d(argv[1],min,max);
     }
   }
