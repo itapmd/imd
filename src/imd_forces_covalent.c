@@ -320,6 +320,14 @@ void do_forces_tersoff(cell *p)
 	tmp_vir_vect.z += tmp_5 * d[k].z * dzeta_k[k].z;
 #else
 	tmp_virial     += tmp_5 * SPROD(d[k],dzeta_k[k]);
+#endif
+#ifdef STRESS_TENS
+	kcell->presstens X(knum)        -= d[k].x * tmp_5 * dzeta_k[k].x;
+	kcell->presstens Y(knum)        -= d[k].y * tmp_5 * dzeta_k[k].y;
+	kcell->presstens Z(knum)        -= d[k].z * tmp_5 * dzeta_k[k].z;
+	kcell->presstens_offdia X(knum) -= ( d[k].y * tmp_5 * dzeta_k[k].z + d[k].z * tmp_5 * dzeta_k[k].y ) / 2;
+	kcell->presstens_offdia Y(knum) -= ( d[k].z * tmp_5 * dzeta_k[k].x + d[k].x * tmp_5 * dzeta_k[k].z ) / 2;
+	kcell->presstens_offdia Z(knum) -= ( d[k].x * tmp_5 * dzeta_k[k].y + d[k].y * tmp_5 * dzeta_k[k].x ) / 2;
 #endif 
 	}
       
@@ -343,6 +351,14 @@ void do_forces_tersoff(cell *p)
       tmp_vir_vect.z += d[j].z * force_j.z;
 #else
       tmp_virial     += SPROD(d[j],force_j);
+#endif
+#ifdef STRESS_TENS
+      jcell->presstens X(jnum)        -= d[j].x * force_j.x;
+      jcell->presstens Y(jnum)        -= d[j].y * force_j.y;
+      jcell->presstens Z(jnum)        -= d[j].z * force_j.z;
+      jcell->presstens_offdia X(jnum) -= ( d[j].y * force_j.z + d[j].z * force_j.y ) / 2;
+      jcell->presstens_offdia Y(jnum) -= ( d[j].z * force_j.x + d[j].x * force_j.z ) / 2;
+      jcell->presstens_offdia Z(jnum) -= ( d[j].x * force_j.y + d[j].y * force_j.x ) / 2;
 #endif
 
     } /* neighbor j */
@@ -461,21 +477,22 @@ void do_neightab(cell *p, cell *q, vektor pbc)
 #ifdef TERSOFF
 void init_tersoff(void) {
 
-  int i, j;
+  int i, j, n = 0;
   real tmp;
 
   /* parameters for more than one atom type */
   for (i=0; i<ntypes; i++) {
     ter_c2[i] = ters_c[i] * ters_c[i];
     ter_d2[i] = ters_d[i] * ters_d[i];
-    for (j=0; j<ntypes; j++) { 
-      ter_r_cut[i][j] = sqrt( ters_r_cut[i] * ters_r_cut[j] );
-      ter_r2_cut[i][j] = ter_r_cut[i][j] * ter_r_cut[i][j];
-      ter_r0[i][j] = sqrt( ters_r0[i] * ters_r0[j] );
-      ter_a[i][j]  = sqrt( ters_a[i] * ters_a[j] );
-      ter_b[i][j]  = sqrt( ters_b[i] * ters_b[j] );
-      ter_la[i][j] = 0.5 * (ters_la[i] + ters_la[j] );
-      ter_mu[i][j] = 0.5 * (ters_mu[i] + ters_mu[j] );
+    for (j=i; j<ntypes; j++) {
+      ter_r_cut[i][j]  = ter_r_cut[j][i]  = ters_r_cut[n];
+      ter_r2_cut[i][j] = ter_r2_cut[j][i] = ter_r_cut[i][j] * ter_r_cut[i][j];
+      ter_r0[i][j]     = ter_r0[j][i]     = ters_r0[n];
+      ter_a[i][j]      = ter_a[j][i]      = ters_a[n];
+      ter_b[i][j]      = ter_b[j][i]      = ters_b[n];
+      ter_la[i][j]     = ter_la[j][i]     = ters_la[n];
+      ter_mu[i][j]     = ter_mu[j][i]     = ters_mu[n];
+      ++n;      
     }
   }
   for (i=0; i<ntypes; i++) ter_chi[i][i] = 1.0;

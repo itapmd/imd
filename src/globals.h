@@ -432,23 +432,23 @@ EXTERN int eam2_max_phi_r_steps INIT(0);
 #ifdef TTBP
 EXTERN str255 ttbp_potfilename INIT("\0"); /* TTBP smoothing potential file */
 EXTERN pot_table_t smooth_pot;    /* TTBP smoothing potential */
-EXTERN real ttbp_constant[10];	  /* constants; less than 10 atom types! */
-EXTERN real ttbp_sp[10];          /* constants; less than 10 atom types! */
+EXTERN real ttbp_constant[10];	  /* constants; less than 11 atom types! */
+EXTERN real ttbp_sp[10];          /* constants; less than 11 atom types! */
 #endif
 
 #ifdef TERSOFF
-EXTERN real ters_r_cut[10];  /* cutoff^2;  less than 10 atom types! */
+EXTERN real ters_r_cut[55];  /* cutoff^2;  less than 11 atom types! */
 EXTERN real ter_r_cut[10][10];
 EXTERN real ter_r2_cut[10][10];
-EXTERN real ters_r0[10];        
+EXTERN real ters_r0[55];        
 EXTERN real ter_r0[10][10];
-EXTERN real ters_a[10];        /* Parameters for Tersoff potential  */
+EXTERN real ters_a[55];        /* Parameters for Tersoff potential  */
 EXTERN real ter_a[10][10];
-EXTERN real ters_b[10];
+EXTERN real ters_b[55];
 EXTERN real ter_b[10][10];
-EXTERN real ters_la[10];
+EXTERN real ters_la[55];
 EXTERN real ter_la[10][10];
-EXTERN real ters_mu[10];
+EXTERN real ters_mu[55];
 EXTERN real ter_mu[10][10];
 EXTERN real ters_chi[45];
 EXTERN real ter_chi[10][10];

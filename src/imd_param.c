@@ -1070,22 +1070,22 @@ void getparamfile(char *paramfname, int sim)
 #ifdef TERSOFF
     /* Parameters for Tersoff potential */
     else if (strcasecmp(token,"ters_r_cut")==0) {     
-      getparam("ters_r_cut",ters_r_cut,PARAM_REAL,ntypes,ntypes);
+      getparam("ters_r_cut",ters_r_cut,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
     }
     else if (strcasecmp(token,"ters_r0")==0) {     
-      getparam("ters_r0",ters_r0,PARAM_REAL,ntypes,ntypes);
+      getparam("ters_r0",ters_r0,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
     }
     else if (strcasecmp(token,"ters_a")==0) {     
-      getparam("ters_a",ters_a,PARAM_REAL,ntypes,ntypes);
+      getparam("ters_a",ters_a,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
     }
     else if (strcasecmp(token,"ters_b")==0) {     
-      getparam("ters_b",ters_b,PARAM_REAL,ntypes,ntypes);
+      getparam("ters_b",ters_b,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
     }
     else if (strcasecmp(token,"ters_la")==0) {     
-      getparam("ters_la",ters_la,PARAM_REAL,ntypes,ntypes);
+      getparam("ters_la",ters_la,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
     }
     else if (strcasecmp(token,"ters_mu")==0) {     
-      getparam("ters_mu",ters_mu,PARAM_REAL,ntypes,ntypes);
+      getparam("ters_mu",ters_mu,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
     }
     else if (strcasecmp(token,"ters_chi")==0) {     
       getparam("ters_chi",ters_chi,PARAM_REAL,ntypes*(ntypes-1)/2,ntypes*(ntypes-1)/2);
@@ -1581,19 +1581,19 @@ void broadcast_params() {
 #endif
 
 #ifdef TERSOFF
-  MPI_Bcast( ters_r_cut,            ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_r0,               ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_a,                ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_b,                ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_la,               ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_mu,               ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_chi, ntypes*(ntypes-1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_om,  ntypes*(ntypes-1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_ga,               ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_n,                ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_c,                ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_d,                ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_h,                ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_r_cut, ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_r0,    ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_a,     ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_b,     ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_la,    ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_mu,    ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_chi,   ntypes*(ntypes-1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_om,    ntypes*(ntypes-1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_ga,                 ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_n,                  ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_c,                  ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_d,                  ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_h,                  ntypes, REAL, 0, MPI_COMM_WORLD);
 #endif
   
   /* broadcast integrator to other CPU's */
