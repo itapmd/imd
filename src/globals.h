@@ -102,6 +102,9 @@ EXTERN int dis_interval INIT(0); /* Period of spatial eng. distrib output ==0 fo
 EXTERN int pic_interval INIT(0); /* Period of data output ==0 for no energy data */
 EXTERN int onl_interval INIT(0); /* Period of online visualization */
 EXTERN int dist_binary_io INIT(0); /* Flag for binary I/O */
+EXTERN int dist_has_coords INIT(0);/* Flag for writing bin coords to dists */
+EXTERN int dist_coord INIT(0);   /* Flag for writing dist coords */
+EXTERN int virvo_io INIT(0);     /* Flag for virvo or volrend */
 EXTERN ivektor dist_dim INIT(einsivektor); /* Resolution of spatial distrib */
 EXTERN str255 rundesc; /* Description */
 EXTERN str255 progname; /* Name of current executable argv[0] */
@@ -272,6 +275,8 @@ EXTERN real end_temp INIT(0.0);        /* Temperature and at of simulation */
 #ifdef HOMDEF
 EXTERN int    exp_interval INIT(0);       /* period of expansion steps */
 EXTERN vektor expansion INIT(einsvektor); /* expansion factors in x/y/z-dir */
+EXTERN int    stret_interval INIT(0);     /* period of uniax. exp. steps */
+EXTERN real   stretch INIT(0.0);          /* uniaxial exp. factor (x-dir) */
 EXTERN int    hom_interval INIT(0);       /* period of homshear steps */
 EXTERN vektor2d shear_factor INIT(nullvektor2d);/* shear factor in x,y-direction */
 #endif

@@ -398,6 +398,18 @@ void getparamfile(char *paramfname, int sim)
       /* binary io flag for energy distributions */
       getparam("dist_binary_io",&dist_binary_io,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token,"dist_has_coords")==0) {
+      /* flag for writing coords to energy distributions */
+      getparam("dist_has_coords",&dist_has_coords,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"dist_coord")==0) {
+      /* binary io flag for distribution coordinates */
+      getparam("dist_coord",&dist_coord,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"virvo_io")==0) {
+      /* virvo io flag (0==volrend) */
+      getparam("virvo_io",&virvo_io,PARAM_INT,1,1);
+    }
     else if (strcasecmp(token,"pic_int")==0) {
       /* number of steps between picture writes */
       getparam("pic_int",&pic_interval,PARAM_INT,1,1);
@@ -744,6 +756,14 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"expansion")==0) {
       /* expansion */
       getparam("expansion",&expansion,PARAM_REAL,DIM,DIM);
+    }
+    else if (strcasecmp(token,"stret_interval")==0) {
+      /* period of uniaxial expansion intervals */
+      getparam("stret_interval",&stret_interval,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"stretch")==0) {
+      /* stretch factor */
+      getparam("stretch",&stretch,PARAM_REAL,1,1);
     }
     else if (strcasecmp(token,"hom_interval")==0) {
       /* period of homshear intervals */

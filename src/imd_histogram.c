@@ -627,6 +627,14 @@ void write_distrib(int steps)
 #ifndef TWOD
           for (t=0; t<hist.dim.z; t++) {
 #endif
+	    if (dist_has_coords) {
+	      fprintf(outpot, "%d %d ", r, s);
+	      fprintf(outkin, "%d %d ", r, s);
+#ifndef TWOD
+	      fprintf(outpot, "%d ", t);
+	      fprintf(outkin, "%d ", t);
+#endif
+	    }
             fprintf(outpot,"%f\n", hist.pot_hist[i]);
             fprintf(outkin,"%f\n", hist.kin_hist[i]);
             i++;
