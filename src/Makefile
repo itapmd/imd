@@ -99,11 +99,10 @@ MPISOURCES3D    = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c \
 		  imd_comm_force_3d.c
 
 PAIRSOURCES     = imd_forces.c
-EAM2SOURCES     = imd_forces.c imd_forces_eam2.c
-ASYMPOTSOURCES  = imd_forces_eam2.c
-COVALENTSOURCES = imd_forces.c imd_forces_covalent.c
+EAM2SOURCES     = imd_forces_eam2.c
+COVALENTSOURCES = imd_forces_covalent.c
 UNIAXSOURCES    = imd_forces_uniax.c imd_gay_berne.c
-EWALDSOURCES    = imd_forces.c imd_forces_ewald.c
+EWALDSOURCES    = imd_forces_ewald.c
 
 EPITAXSOURCES   = imd_epitax.c
 
@@ -487,22 +486,20 @@ ifneq (,$(strip $(findstring eam,${MAKETARGET})))
 CFLAGS  += -DEAM2
 ifneq (,$(strip $(findstring asympot,${MAKETARGET})))
 CFLAGS += -DASYMPOT
-FORCESOURCES = ${ASYMPOTSOURCES}
-else
-FORCESOURCES = ${EAM2SOURCES}
 endif
+FORCESOURCES += ${EAM2SOURCES}
 endif
 
 # TTBP
 ifneq (,$(strip $(findstring ttbp,${MAKETARGET})))
 CFLAGS  += -DTTBP
-FORCESOURCES = ${COVALENTSOURCES}
+FORCESOURCES += ${COVALENTSOURCES}
 endif
 
 # TERSOFF
 ifneq (,$(strip $(findstring tersoff,${MAKETARGET})))
 CFLAGS  += -DTERSOFF
-FORCESOURCES = ${COVALENTSOURCES}
+FORCESOURCES += ${COVALENTSOURCES}
 endif
 
 # UNIAX
@@ -514,7 +511,7 @@ endif
 # EWALD
 ifneq (,$(strip $(findstring ewald,${MAKETARGET})))
 CFLAGS  += -DEWALD
-FORCESOURCES  = ${EWALDSOURCES}
+FORCESOURCES  += ${EWALDSOURCES}
 endif
 
 SOURCES += ${FORCESOURCES}
