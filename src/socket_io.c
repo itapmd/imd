@@ -329,6 +329,26 @@ void vis_check_atoms_flags()
 #endif
     }
     if (stop) atlen = -1;
+#ifdef DEBUG
+    printf("atlen is %d\n", atlen);
+    printf("Received atom send flags:\n");
+    printf("  sorte=%d ort=%d impuls=%d Ekin=%d Epot=%d nbanz=%d\n",
+      at_send_flags.sorte, at_send_flags.ort,  at_send_flags.impuls, 
+      at_send_flags.Ekin,  at_send_flags.Epot, at_send_flags.nbanz ); 
+    printf("Received atom filter flags:\n");
+    printf("  sorte=%d ort=%d impuls=%d Ekin=%d Epot=%d nbanz=%d\n",
+      at_filt_flags.sorte, at_filt_flags.ort,  at_filt_flags.impuls, 
+      at_filt_flags.Ekin,  at_filt_flags.Epot, at_filt_flags.nbanz ); 
+    printf("Received atom filter values:\n");
+    printf("  Min: sorte=%f x=%f y=%f z=%f Ekin=%f Epot=%f nbanz=%f\n",
+      at_filt_min.sorte, at_filt_min.x,    at_filt_min.y, 
+      at_filt_min.z,     at_filt_min.Ekin, at_filt_min.Epot, 
+      at_filt_min.nbanz ); 
+    printf("  Max: sorte=%f x=%f y=%f z=%f Ekin=%f Epot=%f nbanz=%f\n",
+      at_filt_max.sorte, at_filt_max.x,    at_filt_max.y, 
+      at_filt_max.z,     at_filt_max.Ekin, at_filt_max.Epot, 
+      at_filt_max.nbanz );
+#endif
   }
 
 #ifdef MPI
@@ -361,6 +381,9 @@ void vis_write_atoms_buf(int *len, int tag)
       num = *len / atlen;
       WriteFull( soc, (void *) &num, sizeof(integer) );  
       WriteFull( soc, (void *) sock_buf_at, *len * sizeof(float) );
+#ifdef DEBUG
+      printf("Send block of %d atoms\n", num);
+#endif
     }
   }
 #ifdef MPI
@@ -485,6 +508,9 @@ void vis_write_atoms()
   /* return zero atoms if request makes no sense */
   if (atlen < 0) {
     if (0==myid) WriteFull( soc, &zero, sizeof(integer) );
+#ifdef DEBUG
+    if (0==myid) printf("Atom send request cannot be satisfied\n");
+#endif
     return;
   }
 
@@ -513,7 +539,9 @@ void vis_write_atoms()
 
   /* the last block with zero atoms */
   if (0==myid) WriteFull( soc, (void *) &zero, sizeof(integer) );
-
+#ifdef DEBUG
+  if (0==myid) printf("Sent last block with 0 atoms\n");
+#endif
 }
 
 /*****************************************************************************
@@ -530,6 +558,9 @@ void vis_change_params()
   if (0==myid) {
     ReadFull( soc, &par_group, sizeof(integer) );
     ReadFull( soc, &flag,      sizeof(integer) );
+#ifdef DEBUG
+    printf("par_group=%d, change_flag=%d\n", par_group, flag);
+#endif
   }
 #ifdef MPI
   MPI_Bcast(&par_group, 1, INTEGER, 0, MPI_COMM_WORLD);  
@@ -567,6 +598,9 @@ void vis_change_params_deform(integer flag)
     if (flag) {
       ReadFull( soc, &dsz, sizeof(float) );
       deform_size = dsz;
+#ifdef DEBUG
+      printf("Received new deform_size: %f\n", deform_size);
+#endif
     }
   }
 #ifdef MPI
@@ -579,6 +613,10 @@ void vis_change_params_deform(integer flag)
     dsz = deform_size;
     WriteFull( soc, &stp, sizeof(integer) );
     WriteFull( soc, &dsz, sizeof(float)   );
+#ifdef DEBUG
+    printf("Sent changed parameters: deform_size = %f, current step = %d\n",
+           deform_size, steps); 
+#endif
   }
 }
 #endif
