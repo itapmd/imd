@@ -63,7 +63,7 @@ must be done:
           imd_mpi_util.c must be extended. These routines send and
           receive entire cells.</LI>
      </UL></LI>
-<LI> if the force computation requires further data besides the atom 
+<LI> If the force computation requires further data besides the atom 
      types and positions (like the direction of a non-pointlike
      particle), these must be sent to the buffer cells.
      For this purpose, the routines copy_atoms_force(),
@@ -83,6 +83,12 @@ must be done:
      (AR is so far available only in 3d). In order to avoid this,
      one can switch to the non-AR case by undefining the preprocessor 
      symbol AR in config.h. 
+     <P>
+     In file config.h the macro BINC must be set to the number of
+     data items per particle that are communicated for the force
+     computation. For standard two-body interactions BINC is 4,
+     three position coordinates and the atom type. BINC is used
+     for the size of the communication buffers.
 </UL>
 
 Examples for such extensions of the particle data structure can
