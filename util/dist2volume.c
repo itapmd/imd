@@ -15,6 +15,7 @@ void usage(char *progname)
   printf("             -u <urx> <ury> <urz>  upper right corner\n");
   printf("             -i <min> <max>        data cutuff interval\n");
   printf("             -f <min> <max>        range of time steps\n");
+  printf("             -s <int>              time step interval\n");
   printf("             -t uv8|uv12|rvf|xvf   output format\n");
   printf("             -n <n>                index of data slot\n");
   printf("             -h                    this help\n\n");
@@ -107,7 +108,7 @@ int main( int argc, char **argv )
   char *progname, *infilebase, *suffix, *ext;
   char tmpstr[255], infile[255], outfile[255];
   FILE *fp;
-  int have_ur=0, have_minmax=0, have_type=0, type;
+  int have_ur=0, have_minmax=0, have_type=0, type, step=1, nsteps;
   int llx=0, lly=0, llz=0, urx, ury, urz, fmin=0, fmax=0, n=0, i;
   float min, max;
   float_dist_t fl;
@@ -143,6 +144,11 @@ int main( int argc, char **argv )
       fmax = atoi(argv[3]);
       argc -= 3;
       argv += 3;
+    }
+    else if (argv[1][1]=='s') {
+      step = atoi(argv[2]);
+      argc -= 2;
+      argv += 2;
     }
     else if (argv[1][1]=='t') {
       have_type=1;
@@ -201,6 +207,7 @@ int main( int argc, char **argv )
     type = UV8;
     ext = "uvd";
   }
+  nsteps = (fmax-fmin+1) / step;
 
   /* open output file, write header */
   sprintf(tmpstr, "%s.%s", infilebase, fl.cont[n] );
@@ -208,18 +215,18 @@ int main( int argc, char **argv )
   fp = fp=fopen(outfile,"w");
   if (NULL==fp) error("Cannot open output file");
   if (type==UV8) {
-    write_header_uv(urx-llx,ury-lly,urz-llz,fmax-fmin+1,tmpstr,"SCALAR8" );
-    write_header_xvf_sep(tmpstr, &fl, urx-llx, ury-lly, urz-llz, fmax-fmin+1);
+    write_header_uv(urx-llx,ury-lly,urz-llz,nsteps,tmpstr,"SCALAR8" );
+    write_header_xvf_sep(tmpstr, &fl, urx-llx, ury-lly, urz-llz, nsteps);
   } else if (type==UV12) { 
-    write_header_uv(urx-llx,ury-lly,urz-llz,fmax-fmin+1,tmpstr,"SCALAR12");
+    write_header_uv(urx-llx,ury-lly,urz-llz,nsteps,tmpstr,"SCALAR12");
   } else if (type==RVF) {
     write_header_rvf(fp, urx-llx, ury-lly, urz-llz);
   } else if (type==XVF ) {
-    write_header_xvf(fp, &fl, urx-llx, ury-lly, urz-llz, fmax-fmin+1);
+    write_header_xvf(fp, &fl, urx-llx, ury-lly, urz-llz, nsteps);
   }
 
   /* loop over frames */
-  for (i=fmin; i<=fmax; i++) {
+  for (i=fmin; i<=fmax; i+=step) {
 
     /* defaults if min and max are not specified */
     if (!have_minmax) {
