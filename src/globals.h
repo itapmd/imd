@@ -600,6 +600,7 @@ EXTERN int  tran_nlayers  INIT(0);     /* number of layers*/
 
 #ifdef STRESS_TENS
 EXTERN sym_tensor tot_presstens INIT(nullsymtensor);/* global pressure tens. */
+EXTERN sym_tensor presstens_ext INIT(nullsymtensor);  /* ext. pressure tens. */
 EXTERN int press_int INIT(0);    /* interval for writing the pressure tensor */
 EXTERN int do_press_calc INIT(0);           /* flag whether to do press calc */
 #endif

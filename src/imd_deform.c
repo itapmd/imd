@@ -208,30 +208,55 @@ void relax_pressure()
 #else
   vektor dx = {0.0, 0.0, 0.0}, dy = {0.0, 0.0, 0.0}, dz = {0.0, 0.0, 0.0};
 #endif
+  sym_tensor pt;
+  real pp;
 
+#ifdef STRESS_TENS
+
+  /* here, we support relaxation to arbitrary external pressure tensor */
+  calc_tot_presstens();
+  pt.xx = tot_presstens.xx / volume - presstens_ext.xx;
+  pt.yy = tot_presstens.yy / volume - presstens_ext.yy;
+  pt.xy = tot_presstens.xy / volume - presstens_ext.xy;
+#ifndef TWOD
+  pt.zz = tot_presstens.zz / volume - presstens_ext.zz;
+  pt.yz = tot_presstens.yz / volume - presstens_ext.yz;
+  pt.zx = tot_presstens.zx / volume - presstens_ext.zx;
+  pp = (pt.xx + pt.yy + pt.zz) / 3.0;
+#else
+  pp = (pt.xx + pt.yy) / 2.0;
+#endif
+  if ((relax_mode == RELAX_FULL) || (relax_mode == RELAX_AXIAL)) {
+    dx.x = pp / bulk_module + (pt.xx - pp) / shear_module;
+    dy.y = pp / bulk_module + (pt.yy - pp) / shear_module;
+#ifndef TWOD
+    dz.z = pp / bulk_module + (pt.zz - pp) / shear_module;
+#endif
+  } else {
+    dx.x = pp / bulk_module;
+    dy.y = pp / bulk_module;
+#ifndef TWOD
+    dz.z = pp / bulk_module;
+#endif
+  }
+  if (relax_mode == RELAX_FULL) {
+    dx.y  = dy.x = pt.xy / shear_module;
+#ifndef TWOD
+    dy.z  = dz.y = pt.yz / shear_module;
+    dz.x  = dx.z = pt.zx / shear_module;
+#endif
+  }
+
+#else  /* not STRESS_TENS */
+
+  /* here, we support only relaxation to scalar pressure zero */
   dx.x = pressure / bulk_module;
   dy.y = pressure / bulk_module;
 #ifndef TWOD
   dz.z = pressure / bulk_module;
 #endif
 
-#ifdef STRESS_TENS
-  if ((relax_mode == RELAX_FULL) || (relax_mode == RELAX_AXIAL)) {
-    calc_tot_presstens();
-    dx.x += (tot_presstens.xx - pressure) / shear_module;
-    dy.y += (tot_presstens.yy - pressure) / shear_module;
-#ifndef TWOD
-    dz.z += (tot_presstens.zz - pressure) / shear_module;
-#endif
-  }
-  if (relax_mode == RELAX_FULL) {
-    dx.y  = dy.x = tot_presstens.xy / shear_module;
-#ifndef TWOD
-    dy.z  = dz.y = tot_presstens.yz / shear_module;
-    dz.x  = dx.z = tot_presstens.zx / shear_module;
-#endif
-  }
-#endif /* STRESS_TENS */
+#endif /* not STRESS_TENS */
 
 #ifdef TWOD
   lin_deform(dx, dy,     relax_rate);

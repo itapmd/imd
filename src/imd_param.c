@@ -1396,8 +1396,12 @@ void getparamfile(char *paramfname, int sim)
 #endif
 #ifdef STRESS_TENS
      else if (strcasecmp(token, "press_int")==0){
-      /*number of steps between press. writes  */
-      getparam("press_int", &press_int, PARAM_INT, 1,1);
+      /* number of steps between pressure writes  */
+      getparam(token, &press_int, PARAM_INT, 1,1);
+    }
+     else if (strcasecmp(token, "presstens_ext")==0){
+      /* external pressure tensor for relaxation */
+      getparam(token, &presstens_ext, PARAM_REAL, DIM*(DIM+1)/2,DIM*(DIM+1)/2);
     }
 #endif
 #ifdef DISLOC
