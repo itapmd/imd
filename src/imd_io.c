@@ -95,7 +95,7 @@ void write_config_select(int fzhlr, char *suffix,
   (*write_atoms_fun)(out);
 #ifdef MPI
   /* if serial output, receive and write foreign data */
-  if ((0==myid) && (parallel_output==0)) {
+  if ((0==myid) && (parallel_output==0) && (num_cpus>1)) {
     MPI_Status status;
     int m=1, len;
     do {
