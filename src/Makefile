@@ -328,10 +328,6 @@ CFLAGS_mpicc_MPI_SR8000        	= -O4 +Op -noparallel
 CFLAGS_mpicc_MPI_SR8000_DEBUG  	= -g
 CFLAGS_mpicc_MPI_SR8000_PROF   	= -Xfuncmonitor
 
-CFLAGS_mpicc_MPI_SR8000		= -O4 +Op -noparallel
-CFLAGS_mpicc_MPI_SR8000_DEBUG	= -g
-CFLAGS_mpicc_MPI_SR8000_PROF   	= -Xfuncmonitor
-
 # OpenMP
 CFLAGS_cc_OMP_SR8000	 	= -omp -par -O4 +Op
 CFLAGS_cc_OMP_SR8000_DEBUG	= -omp -par=1 -O2 -g
@@ -341,6 +337,21 @@ CFLAGS_cc_OMP_SR8000_PROF   	= -Xfuncmonitor
 CFLAGS_mpicc_OMPI_SR8000	= -omp -par -O4 +Op
 CFLAGS_mpicc_OMPI_SR8000_DEBUG 	= -omp -par -O2 -g
 CFLAGS_mpicc_OMPI_SR8000_PROF  	= -Xfuncmonitor
+
+# MPI (crosscompiler linux -> SR8000)
+CFLAGS_xmpicc_MPI_i586        	= -O4 +Op -noparallel
+CFLAGS_xmpicc_MPI_i586_DEBUG  	= -g
+CFLAGS_xmpicc_MPI_i586_PROF   	= -Xfuncmonitor
+
+# OpenMP (crosscompiler linux -> SR8000)
+CFLAGS_xcc_OMP_i586	 	= -omp -par -O4 +Op
+CFLAGS_xcc_OMP_i586_DEBUG	= -omp -par=1 -O2 -g
+CFLAGS_xcc_OMP_i586_PROF   	= -Xfuncmonitor
+
+# MPI + OpenMP (crosscompiler linux -> SR8000)
+CFLAGS_xmpicc_OMPI_i586		= -omp -par -O4 +Op
+CFLAGS_xmpicc_OMPI_i586_DEBUG 	= -omp -par -O2 -g
+CFLAGS_xmpicc_OMPI_i586_PROF  	= -Xfuncmonitor
 
 
 ###########################################################################
@@ -432,6 +443,15 @@ endif
 ifneq (,$(strip $(findstring omcc,${MAKETARGET})))
 CC = omcc
 endif
+# SR8000 crosscompiler
+ifneq (,$(strip $(findstring sr8k,${MAKETARGET})))
+ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
+CC = xmpicc
+else
+CC = xcc
+endif
+endif
+
 
 ###########################################################################
 #
@@ -443,8 +463,14 @@ LIBS    	 += -lm
 MPILIBS		  = ${MPILIBS_${IMDHOST}}	
 PACXLIBS	  = ${PACXLIBS_${IMDHOST}}	
 
-# Executeables are put into $HOME/$BINDIR/$HOSTTYPE
-BINDIR   = bin
+# where to put executable
+ifneq (,$(strip $(findstring sr8k,${MAKETARGET})))
+BINDIR = hwwfs1:sr8k/bin/SR8000
+MV = scp
+else
+BINDIR   = ${HOME}/bin/${HOSTTYPE}
+MV =mv
+endif
 
 
 #########################################################
@@ -592,7 +618,7 @@ ifneq (,$(findstring fbc,${MAKETARGET}))
 CFLAGS += -DFBC
 endif
 
-ifneq (,$(findstring sr,${MAKETARGET}))
+ifneq (,$(findstring sendrec,${MAKETARGET}))
 CFLAGS += -DSR
 endif
 
@@ -726,7 +752,7 @@ OBJECTS := $(subst .c,.o,${SOURCES})
 # How to link
 ${MAKETARGET}: ${OBJECTS} ${HEADERS}
 	${CC} ${CFLAGS} -o $@ ${OBJECTS} ${LIBS} ${ONLINELIBS}
-	mv $@ ${HOME}/${BINDIR}/${HOSTTYPE}
+	${MV} $@ ${BINDIR}; rm -f $@
 
 
 # First recursion only set the MAKETARGET Variable
