@@ -214,6 +214,11 @@ int main(int argc, char **argv)
     printf("Achieved %f megaflops per CPU\n\n", mflops);
 #endif
 
+#ifdef NBLIST
+    printf("Neighbor list update every %d steps on average\n\n", 
+           steps_max / nblist_count);
+#endif
+
 #ifdef EPITAX
     if (0 == myid) printf("EPITAX: %d atoms created.\n", nepitax);
 #endif

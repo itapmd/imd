@@ -121,6 +121,10 @@ void main_loop(void)
   deform_int = 0;
 #endif
 
+#ifdef NBLIST
+  make_nblist(0);
+#endif
+
   /* simulation loop */
   for (steps=steps_min; steps <= steps_max; ++steps) {
 
@@ -132,11 +136,12 @@ void main_loop(void)
 #ifdef EPITAX
     for (i=0; i<ntypes; ++i ) {
       if ( (steps >= epitax_startstep) && (steps <= epitax_maxsteps) ) {  
-	if ( (epitax_rate[i] != 0) && ((steps-steps_min)%epitax_rate[i]) == 0 ) {
+	if ( (epitax_rate[i] != 0) && ((steps-steps_min)%epitax_rate[i])==0 ) {
 	  delete_atoms(); 
 	  create_atom(i, epitax_mass[i], epitax_temp[i]);
 	}
-	else if ( (epitax_rate[i] != 0) && (steps > epitax_maxsteps) && ((steps-steps_min)%epitax_rate[i]) == 0 ) 
+	else if ( (epitax_rate[i] != 0) && (steps > epitax_maxsteps) && 
+                  ( (steps-steps_min)%epitax_rate[i]) == 0 ) 
 	  delete_atoms();
       }
     }
@@ -411,8 +416,12 @@ void main_loop(void)
     imd_stop_timer(&time_io);
 #endif
 
+#ifdef NBLIST
+    check_nblist(steps);
+#else
     do_boundaries();    
     fix_cells();  
+#endif
 
 #ifdef ATDIST
     if ((atdist_int > 0) && (steps == atdist_end)) write_atdist();

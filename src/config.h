@@ -83,6 +83,8 @@
 #ifdef VEC
 /* #define MULTIPOT */
 #define N_POT_TAB 128
+#define REFPOS
+#define NBLIST
 #endif
 
 #ifdef BUFCELLS

@@ -107,6 +107,11 @@ void init_cells( void )
   minicell *p, *cell_array_old, *to;
   str255 msg;
 
+#ifdef NBLIST
+  /* add neighbor list margin */
+  cellsz = SQR( sqrt((double) cellsz) + nblist_margin );
+#endif
+
 #ifdef NPT
   /* if NPT, we need some tolerance */
   if ((ensemble == ENS_NPT_ISO) || (ensemble == ENS_NPT_AXIAL)) {
@@ -288,7 +293,11 @@ void init_cells( void )
           ALLOC_MINICELL( p, 0 );  /* free old cell */
     }
     free(cell_array_old);
+#ifdef NBLIST
+    make_nblist(0);
+#else
     fix_cells();
+#endif
   }
 
   make_cell_lists();

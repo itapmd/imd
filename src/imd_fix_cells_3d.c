@@ -29,13 +29,13 @@
 *  check if each atom is in the correct cell and on the correct CPU;
 *  move atoms that have left their cell or CPU
 *
-*  this also uses Plimpton's comm scheme
+*  this also uses Plimpton's communication scheme
 *
 ******************************************************************************/
 
 void fix_cells(void)
 {
-  int i,j,k,l,to_cpu;
+  int i,j,k,l,clone,to_cpu;
   minicell *p, *q;
   ivektor coord, lcoord;
   msgbuf *buf;

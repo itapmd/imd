@@ -22,254 +22,57 @@
 #include "imd.h"
 #include "potaccess.h"
 
-/* we can use several versions of calc_forces:
-
-   VERSION1:  straight forward first attempt
-   VERSION2:  vectorizing LLC algorithm as in Grest, Dünwald, Kremer
-   VERSION3:  refinement of VERSION1
-   VERSION4:  intermediate between VERSION1 and VERSION3
-
-   on SX6, only VERSION2 currently works; strange: VERSION1 used to work!
-   on IA64, VERSION3 is surprisingly fast!
-*/
+#define N0 17000     /* at least atoms.n */
+#define MC 40        /* maximum number of particles in cell */
+#define BS 100
+#define N1 MC*14
+#define N2 MC*4
 
 #define VERSION3
 
 /******************************************************************************
 *
-*  calc_forces 
+*  calc_forces, using Verlet neighbor lists
 *
 *  We use buffer cells on the surface of the cell array, even for 
 *  the serial version. Atoms in the buffer cells have positions with
 *  periodic boundary conditions applied, where applicable.
+*
+*  We can use two versions of calc_forces:
+*
+*     VERSION2:  vectorizing LLC algorithm as in Grest, Dünwald, Kremer
+*     VERSION3:  keep one atom fixed, run over neighbors
 *
 ******************************************************************************/
 
-#ifdef VERSION1
+#ifdef VERSION2
 
-#define MC 40      /* maximum atoms per minicell */
-#define N1 MC*14
-#define N2 MC*4
-#define N0 17000   /* at least atoms.n */
-
-void calc_forces(int steps)
-{
-  long   i, j, k, l, is_short=0, max, len;
-  int    tab[N0*N1], tlen[N0], itypes[N0*N2];
-  int    li[N0*N2], lj[N0*N2], lbeg[N0], lend[N0];
-  vektor dd[N0*N2], ff[N0*N2], fi[N0];
-  real   rr[N0*N2], ee[N0*N2], ei[N0];
-  real   tmpvec1[2], tmpvec2[2] = {0.0, 0.0}, tmp;
-
-#ifdef MPI
-  if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
-#endif
-
-  /* fill the buffer cells */
-  send_cells(copy_cell,pack_cell,unpack_cell);
-
-  /* clear global accumulation variables */
-  tot_pot_energy = 0.0;
-  virial = 0.0;
-
-  /* clear per atom accumulation variables */
-  for (k=0; k<atoms.n_buf; k++) {
-    atoms.kraft X(k) = 0.0;
-    atoms.kraft Y(k) = 0.0;
-    atoms.kraft Z(k) = 0.0;
-    atoms.pot_eng[k] = 0.0;
-  }
-
-#ifdef FTRACE
-  ftrace_region_begin("get_indices");
-#endif
-
-  /* course neighbor table */
-  for (k=0; k<atoms.n; k++) tlen[k] = 0;
-  for (k=0; k<npairs[0]; k++) {
-
-    pair *P;
-    minicell *p, *q;
-    int i, j, ii, jj, jstart;
-
-    P = pairs[0] + k;
-    p = cell_array + P->np;
-    q = cell_array + P->nq;
-
-    /* for each atom in first cell */
-    for (i=0; i<p->n; i++) {
-      int *tt;
-      ii = p->ind[i];
-      jstart = ((p==q) ? i+1 : 0);
-      tt = tab + N1*ii + tlen[ii] - jstart;
-
-      /* for each atom in neighbouring cell */
-      for (j = jstart; j < q->n; j++) {
-        tt[j] = q->ind[j];
-      }
-      tlen[ii] += q->n - jstart;
-    }
-  }
-
-#ifdef FTRACE
-  ftrace_region_end  ("get_indices");
-  ftrace_region_begin("calc_distances");
-#endif
-
-  /* narrow neighbor table */
-  len=0;
-  lbeg[0]=0;
-  for (i=0; i<atoms.n; i++) {
-    int j, ityp;
-    real *d1, *d2, dx, dy, dz, r2;
-    d1 = atoms.ort + DIM * i;
-    ityp = VSORTE(&atoms,i);
-    for (k=0; k<tlen[i]; k++) {
-      j  = tab[N1*i+k];
-      d2 = atoms.ort + DIM * j;
-      dx = d2[0]-d1[0];
-      dy = d2[1]-d1[1];
-      dz = d2[2]-d1[2];
-      r2 = dx*dx + dy*dy + dz*dz;
-      if (r2 < cellsz) {
-        li[len]   = i;
-        lj[len]   = j;
-        rr[len]   = r2;
-        dd[len].x = dx;
-        dd[len].y = dy;
-        dd[len].z = dz;
-        itypes[len] = ityp;
-        len++;
-      }
-    }
-    lend[i  ] = len;
-    lbeg[i+1] = len;
-  }
-
-#ifdef FTRACE
-  ftrace_region_end  ("calc_distances");
-  ftrace_region_begin("calc_forces");
-#endif
-
-  /* compute forces */
-  for (l=0; l<len; l++) {
-
-    real grad;
-    int  col, inc = ntypes * ntypes; 
-
-    col = itypes[l] * ntypes + VSORTE(&atoms,lj[l]);
-    /* col = VSORTE(&atoms,li[l]) * ntypes + VSORTE(&atoms,lj[l]); */
-
-    /* compute pair interactions */
-    if (rr[l] <= pair_pot.end[col]) {
-
-      /* beware: we must not use k as index in the macro's arguments! */
-#ifdef MULTIPOT
-      int pp = l % N_POT_TAB;
-      PAIR_INT(ee[l], grad, pair_pot_ar[pp], col, inc, rr[l], is_short)
-#else
-#ifdef LINPOT
-      PAIR_INT_LIN(ee[l], grad, pair_pot_lin, col, inc, rr[l], is_short)
-#else
-      PAIR_INT(ee[l], grad, pair_pot, col, inc, rr[l], is_short)
-#endif
-#endif
-
-      /* store force in temporary variables */
-      ff[l].x = dd[l].x * grad;
-      ff[l].y = dd[l].y * grad;
-      ff[l].z = dd[l].z * grad;
-      virial -= rr[l]   * grad;
-    }
-  }
-  if (is_short) printf("short distance!\n");
-
-#ifdef FTRACE
-  ftrace_region_end  ("calc_forces");
-  ftrace_region_begin("store_forces");
-#endif
-
-  /* accumulate forces */
-  for (i=0; i<atoms.n; i++) {
-    fi[i].x = 0.0;
-    fi[i].y = 0.0;
-    fi[i].z = 0.0;
-    ei[i]   = 0.0;
-  }
-  for (i=0; i<atoms.n; i++) {
-#ifdef SX
-#pragma vdir vector,nodep
-#endif
-    for (k=lbeg[i]; k<lend[i]; k++) {
-      int j = lj[k];
-      atoms.kraft X(j) -= ff[k].x;
-      atoms.kraft Y(j) -= ff[k].y;
-      atoms.kraft Z(j) -= ff[k].z;
-      atoms.pot_eng[j] += ee[k];
-      fi[i].x          += ff[k].x;
-      fi[i].y          += ff[k].y;
-      fi[i].z          += ff[k].z;
-      ei[i]            += ee[k];
-    }
-  }
-  for (i=0; i<atoms.n; i++) {
-    atoms.kraft X(i) += fi[i].x;
-    atoms.kraft Y(i) += fi[i].y;
-    atoms.kraft Z(i) += fi[i].z;
-    atoms.pot_eng[i] += ei[i];
-    tot_pot_energy   += ei[i];
-  }
-
-#ifdef FTRACE
-  ftrace_region_end("store_forces");
-#endif
-
-#ifdef MPI
-  /* sum up results of different CPUs */
-  tmpvec1[0] = tot_pot_energy;
-  tmpvec1[1] = virial;
-  MPI_Allreduce( tmpvec1, tmpvec2, 2, REAL, MPI_SUM, cpugrid); 
-  tot_pot_energy = tmpvec2[0];
-  virial         = tmpvec2[1];
-#endif
-
-  /* add forces back to original cells/cpus */
-  send_forces(add_forces,pack_forces,unpack_forces);
-
-}
-
-#endif /* VERSION1 */
+int li[N0*N2], lj[N0*N2], col[N0*N2], lbeg[N1], lend[N1], ltot; 
 
 /******************************************************************************
 *
-*  calc_forces 
-*
-*  We use buffer cells on the surface of the cell array, even for 
-*  the serial version. Atoms in the buffer cells have positions with
-*  periodic boundary conditions applied, where applicable.
+*  make_nblist
 *
 *  This version implements the vectorizing LLC algorithm from
 *  Grest, Dünweg & Kremer, Comp. Phys. Comm. 55, 269-285 (1989).
 *
 ******************************************************************************/
 
-#ifdef VERSION2
-
-#define N0 17000   /* at least atoms.n */
-
-void calc_forces(int steps)
+void make_nblist(int steps)
 {
-  long   i, j, k, l, m, n, is_short=0, len1, len2, max_cell;
-
-  int    li1[N0], lj1[N0], li2[N0], lj2[N0], ll[N0];
-  vektor dd[N0], ff[N0];
-  real   rr[N0], ee[N0];
-
-  real   tmpvec1[2], tmpvec2[2] = {0.0, 0.0}, tmp;
+  long   i, j, k, l, m, n, len1, len2, max_cell;
+  int    li1[N0], lj1[N0];
 
 #ifdef MPI
   if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
 #endif
+
+  /* update cell decomposition */
+  do_boundaries();
+  fix_cells();
+
+  /* update reference positions */
+  for (i=0; i<DIM*atoms.n; i++) atoms.refpos[i] = atoms.ort[i];
 
   /* fill the buffer cells */
   send_cells(copy_cell,pack_cell,unpack_cell);
@@ -280,25 +83,17 @@ void calc_forces(int steps)
     n = (cell_array+i)->n;
     if (max_cell < n) max_cell = n;
   }
+  if (max_cell>MC) error("maximum cell occupancy exceeded!");
 
-  /* clear global accumulation variables */
-  tot_pot_energy = 0.0;
-  virial = 0.0;
-
-  /* clear per atom accumulation variables */
-  for (k=0; k<atoms.n_buf; k++) {
-    atoms.kraft X(k) = 0.0;
-    atoms.kraft Y(k) = 0.0;
-    atoms.kraft Z(k) = 0.0;
-    atoms.pot_eng[k] = 0.0;
-  }
-
+  len2=0;
+  ltot=0;
   for (n=0; n<14; n++) {
-
     for (k=0; k<max_cell; k++) {
 
+      lbeg[ltot] = len2;
+
 #ifdef FTRACE
-      ftrace_region_begin("get_indices");
+      ftrace_region_begin("nbl_get_indices");
 #endif
 
       /* make list of index pairs */
@@ -321,12 +116,11 @@ void calc_forces(int steps)
       }
 
 #ifdef FTRACE
-      ftrace_region_end  ("get_indices");
-      ftrace_region_begin("calc_distances");
+      ftrace_region_end  ("nbl_get_indices");
+      ftrace_region_begin("nbl_calc_distances");
 #endif
 
       /* reduce pair list */
-      len2=0;
       for (l=0; l<len1; l++) {
         real *d1, *d2, dx, dy, dz, r2;
         d1 = atoms.ort + DIM * li1[l];
@@ -336,120 +130,39 @@ void calc_forces(int steps)
         dz = d2[2]-d1[2];
         r2 = dx*dx + dy*dy + dz*dz;
         if (r2 < cellsz) {
-          li2[len2]   = li1[l];
-          lj2[len2]   = lj1[l];
-          rr [len2]   = r2;
-          dd [len2].x = dx;
-          dd [len2].y = dy;
-          dd [len2].z = dz;
+          li[len2] = li1[l];
+          lj[len2] = lj1[l];
+          /* put in separate loop outside if? */
+          col[len2] = VSORTE(&atoms,li1[l]) * ntypes + VSORTE(&atoms,lj1[l]);
           len2++;
         }
       }
 
 #ifdef FTRACE
-      ftrace_region_end  ("calc_distances");
-      ftrace_region_begin("calc_forces");
+      ftrace_region_end  ("nbl_calc_distances");
 #endif
 
-#ifdef SX
-#pragma vdir vector,nodep
-#endif
-      /* compute forces */
-      for (l=0; l<len2; l++) {
-
-        real grad;
-        int  j, col, inc = ntypes * ntypes; 
-
-        col = VSORTE(&atoms,li2[l]) * ntypes + VSORTE(&atoms,lj2[l]);
-
-        /* compute pair interactions */
-        if (rr[l] <= pair_pot.end[col]) {
-
-          /* beware: we must not use k as index in the macro's arguments! */
-          PAIR_INT(ee[l], grad, pair_pot, col, inc, rr[l], is_short)
-
-          /* store force in temporary variables */
-          ff[l].x         = dd[l].x * grad;
-          ff[l].y         = dd[l].y * grad;
-          ff[l].z         = dd[l].z * grad;
-          virial         -= rr[l]   * grad;
-          tot_pot_energy += ee[l];
-
-          /* store force to second particle */
-          j = lj2[l];
-          atoms.kraft X(j) -= ff[l].x;
-          atoms.kraft Y(j) -= ff[l].y;
-          atoms.kraft Z(j) -= ff[l].z;
-          atoms.pot_eng[j] += ee[l];
-        }
-      }
-#ifdef FTRACE
-      ftrace_region_end  ("calc_forces");
-      ftrace_region_begin("store_forces");
-#endif
-
-#ifdef SX
-#pragma vdir vector,nodep
-#endif
-      /* accumulate remaining forces */
-      for (l=0; l<len2; l++) {
-        int i = li2[l];
-        atoms.kraft X(i) += ff[l].x;
-        atoms.kraft Y(i) += ff[l].y;
-        atoms.kraft Z(i) += ff[l].z;
-        atoms.pot_eng[i] += ee[l];
-      }
-
-#ifdef FTRACE
-      ftrace_region_end("store_forces");
-#endif
-
+      lend[ltot]=len2;
+      if (lend[ltot] > lbeg[ltot]) ltot++;
     }
   }
-  if (is_short) printf("short distance!\n");
-
-#ifdef MPI
-  /* sum up results of different CPUs */
-  tmpvec1[0] = tot_pot_energy;
-  tmpvec1[1] = virial;
-  MPI_Allreduce( tmpvec1, tmpvec2, 2, REAL, MPI_SUM, cpugrid); 
-  tot_pot_energy = tmpvec2[0];
-  virial         = tmpvec2[1];
-#endif
-
-  /* add forces back to original cells/cpus */
-  send_forces(add_forces,pack_forces,unpack_forces);
-
+  nblist_count++;
 }
-
-#endif /* VERSION2 */
-
 
 /******************************************************************************
 *
-*  calc_forces 
+*  calc_forces
 *
-*  We use buffer cells on the surface of the cell array, even for 
-*  the serial version. Atoms in the buffer cells have positions with
-*  periodic boundary conditions applied, where applicable.
+*  This version implements the vectorizing LLC algorithm from
+*  Grest, Dünweg & Kremer, Comp. Phys. Comm. 55, 269-285 (1989).
 *
 ******************************************************************************/
 
-#ifdef VERSION3
-
-#define MC 40      /* maximum atoms per minicell */
-#define N1 MC*14
-#define N2 MC*4
-#define N0 17000   /* at least atoms.n */
-
 void calc_forces(int steps)
 {
-  long   c, i, j, k, l, m, is_short=0, max, len, flag[MC*N2];
-  int    tab[MC*N1], tlen[N0], itypes[MC*N2];
-  int    li[MC*N2], lj[MC*N2], lbeg[MC], lend[MC];
-  vektor dd[MC*N2], ff[MC*N2], fi[N0];
-  real   rr[MC*N2], ee[MC*N2], ei[N0];
-  real   tmpvec1[2], tmpvec2[2] = {0.0, 0.0}, tmp;
+  int    k, m, is_short=0, li1[N0], lj1[N0], flag[N0];
+  real   rr[N0], ee[N0], tmpvec1[2], tmpvec2[2] = {0.0, 0.0};
+  vektor dd[N0], ff[N0];
 
 #ifdef MPI
   if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
@@ -469,7 +182,226 @@ void calc_forces(int steps)
     atoms.kraft Z(k) = 0.0;
     atoms.pot_eng[k] = 0.0;
   }
-  /* temporary storage */
+
+  /* loop over independent pair sublists */
+  for (k=0; k<ltot; k++) {
+
+#ifdef FTRACE
+    ftrace_region_begin("calc_forces");
+#endif
+
+#ifdef SX
+#pragma vdir vector,nodep
+#endif
+    /* compute forces */
+    for (m=0; m<lend[k]-lbeg[k]; m++) {
+
+      real grad, *d1, *d2;
+      int  j, l; 
+      const int inc = ntypes * ntypes;
+
+      l       = lbeg[k] + m;
+      d1      = atoms.ort + DIM * li[l];
+      d2      = atoms.ort + DIM * lj[l];
+      dd[m].x = d2[0]-d1[0];
+      dd[m].y = d2[1]-d1[1];
+      dd[m].z = d2[2]-d1[2];
+      rr[m]   = dd[m].x*dd[m].x + dd[m].y*dd[m].y + dd[m].z*dd[m].z;
+      flag[m] = 0;
+
+      /* compute pair interactions */
+      if (rr[m] <= pair_pot.end[col[l]]) {
+
+        /* beware: we must not use k as index in the macro's arguments! */
+#ifdef MULTIPOT
+        int pp = m % N_POT_TAB;
+        PAIR_INT(ee[m], grad, pair_pot_ar[pp], col[l], inc, rr[m], is_short)
+#else
+#ifdef LINPOT
+        PAIR_INT_LIN(ee[m], grad, pair_pot_lin, col[l], inc, rr[m], is_short)
+#else
+        PAIR_INT(ee[m], grad, pair_pot, col[l], inc, rr[m], is_short)
+#endif
+#endif
+        /* store force in temporary variables */
+        ff[m].x         = dd[m].x * grad;
+        ff[m].y         = dd[m].y * grad;
+        ff[m].z         = dd[m].z * grad;
+        virial         -= rr[m]   * grad;
+        tot_pot_energy += ee[m];
+
+        /* store force to second particle */
+        j = lj[l];
+        atoms.kraft X(j) -= ff[m].x;
+        atoms.kraft Y(j) -= ff[m].y;
+        atoms.kraft Z(j) -= ff[m].z;
+        atoms.pot_eng[j] += ee[m];
+        flag[m] = 1;
+      }
+    }
+
+#ifdef FTRACE
+    ftrace_region_end  ("calc_forces");
+    ftrace_region_begin("store_forces");
+#endif
+
+#ifdef SX
+#pragma vdir vector,nodep
+#endif
+    /* accumulate remaining forces */
+    for (m=0; m<lend[k]-lbeg[k]; m++) {
+      if (flag[m]) {  /* right way to deal with this? */
+        int i = li[m+lbeg[k]];
+        atoms.kraft X(i) += ff[m].x;
+        atoms.kraft Y(i) += ff[m].y;
+        atoms.kraft Z(i) += ff[m].z;
+        atoms.pot_eng[i] += ee[m];
+      }
+    }
+
+#ifdef FTRACE
+    ftrace_region_end("store_forces");
+#endif
+
+  }
+  if (is_short) printf("short distance!\n");
+
+#ifdef MPI
+  /* sum up results of different CPUs */
+  tmpvec1[0] = tot_pot_energy;
+  tmpvec1[1] = virial;
+  MPI_Allreduce( tmpvec1, tmpvec2, 2, REAL, MPI_SUM, cpugrid); 
+  tot_pot_energy = tmpvec2[0];
+  virial         = tmpvec2[1];
+#endif
+
+  /* add forces back to original cells/cpus */
+  send_forces(add_forces,pack_forces,unpack_forces);
+
+}
+
+#endif /* VERSION2 */
+
+#ifdef VERSION3
+
+int tab[N2*N0], tlen[N0];
+
+/******************************************************************************
+*
+*  make_nblist
+*
+*  This version keeps one particle fixed, and treats all its neighbors.
+*
+******************************************************************************/
+
+void make_nblist(int steps)
+{
+  int  c, i, tb[N1];
+
+#ifdef MPI
+  if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
+#endif
+
+  /* update cell decomposition */
+  do_boundaries();
+  fix_cells();
+
+  /* update reference positions */
+  for (i=0; i<DIM*atoms.n; i++) atoms.refpos[i] = atoms.ort[i];
+
+  /* fill the buffer cells */
+  send_cells(copy_cell,pack_cell,unpack_cell);
+
+  /* for all cells */
+  for (c=0; c<ncells; c++) {
+
+    minicell *p;
+    p = cell_array + cnbrs[c].np;
+
+    /* for each atom in cell */
+    for (i=0; i<p->n; i++) {
+
+      real *d1;
+      int  *tt, tl, tn, ii, jj, j, k, m;
+      minicell *q;
+
+      /* indices of particles from the same cell */
+      tt = tb - (i+1);
+      tl =    - (i+1);
+      for (j = i+1; j < p->n; j++) tt[j] = p->ind[j];
+      tt += p->n;
+      tl += p->n;
+
+      /* indices of particles from neighbor cells */
+      for (m=1; m<14; m++) {
+        if (cnbrs[c].nq[m]<0) continue;
+        q = cell_array + cnbrs[c].nq[m];
+        for (j = 0; j < q->n; j++) tt[j] = q->ind[j];
+        tt += q->n;
+        tl += q->n;
+      }
+
+      /* narrow neighbor table */
+      tn = 0;
+      ii = p->ind[i];
+      tt = tab + N2*ii;
+      d1 = atoms.ort + DIM * ii;
+#ifdef SX
+#pragma vdir vector,nodep
+#endif
+      for (k=0; k<tl; k++) {
+        real *d2, dx, dy, dz, r2;
+        d2 = atoms.ort + DIM * tb[k];
+        dx = d2[0]-d1[0];
+        dy = d2[1]-d1[1];
+        dz = d2[2]-d1[2];
+        r2 = dx*dx + dy*dy + dz*dz;
+        if (r2 < cellsz) {
+          tt[tn] = tb[k];          
+          tn++;
+        }
+      }
+      tlen[ii] = tn;
+    }
+  }
+  nblist_count++;
+}
+
+/******************************************************************************
+*
+*  calc_forces
+*
+*  This version keeps one particle fixed, and treats all its neighbors.
+*
+******************************************************************************/
+
+void calc_forces(int steps)
+{
+  int    i, b, k, is_short=0, nblocks, blocksize, flag[BS*N2];
+  int    it[BS*N2], lj[BS*N2], lbeg[BS], lend[BS];
+  vektor dd[BS*N2], ff[BS*N2], fi[N0];
+  real   rr[BS*N2], ee[BS*N2], ei[N0];
+  real   tmpvec1[2], tmpvec2[2] = {0.0, 0.0};
+
+#ifdef MPI
+  if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
+#endif
+
+  /* fill the buffer cells */
+  send_cells(copy_cell,pack_cell,unpack_cell);
+
+  /* clear global accumulation variables */
+  tot_pot_energy = 0.0;
+  virial = 0.0;
+
+  /* clear per atom accumulation variables */
+  for (k=0; k<atoms.n_buf; k++) {
+    atoms.kraft X(k) = 0.0;
+    atoms.kraft Y(k) = 0.0;
+    atoms.kraft Z(k) = 0.0;
+    atoms.pot_eng[k] = 0.0;
+  }
+  /* clear temporary storage */
   for (k=0; k<atoms.n; k++) {
     fi[k].x          = 0.0;
     fi[k].y          = 0.0;
@@ -477,77 +409,48 @@ void calc_forces(int steps)
     ei[k]            = 0.0;
   }
 
-  /* for all cells */
-  for (c=0; c<ncells; c++) {
+  /* to save memory, we treat atoms in blocks */
+  nblocks   = atoms.n / BS + 1;
+  blocksize = atoms.n / nblocks + 1;
 
-    minicell *p;
+  for (b=0; b<nblocks; b++) {
 
-    p = cell_array + cnbrs[c].np;
+    int i, l, k, imin, imax, len;
 
-#ifdef FTRACE
-    ftrace_region_begin("get_indices");
-#endif
-
-    /* for each atom in cell */
-    for (i=0; i<p->n; i++) {
-
-      int *tt;
-      minicell *q;
-
-      /* indices of particles from the same cell */
-      tt       = tab + N1*i - (i+1);
-      tlen[i]  =            - (i+1);
-      for (j = i+1; j < p->n; j++) tt[j] = p->ind[j];
-      tt      += p->n;
-      tlen[i] += p->n;
-
-      /* indices of particles from neighbor cells */
-      for (m=1; m<14; m++) {
-        if (cnbrs[c].nq[m]<0) continue;
-        q = cell_array + cnbrs[c].nq[m];
-#ifdef SX
-#pragma vdir vector,nodep
-#endif
-        for (j = 0; j < q->n; j++) tt[j] = q->ind[j];
-        tt      += q->n;
-        tlen[i] += q->n;
-      }
-    }
+    imin = b*blocksize;
+    imax = MIN(atoms.n, imin+blocksize);
 
 #ifdef FTRACE
-    ftrace_region_end  ("get_indices");
     ftrace_region_begin("calc_distances");
 #endif
 
-    /* narrow neighbor table */
+    /* compute distances */
     len=0;
-    for (i=0; i<p->n; i++) {
-      int jj, ii, ityp;
-      real *d1, *d2, dx, dy, dz, r2;
+    for (i=imin; i<imax; i++) {
 
-      lbeg[i] = len;
-      ii = p->ind[i];
-      d1 = atoms.ort + DIM * ii;
-      ityp = VSORTE(&atoms,ii);
+      int  ityp, j;
+      real d1[3], *d2, dx, dy, dz, r2;
+
+      lbeg[i-imin] = len;
+      d1[0] = atoms.ort X(i);
+      d1[1] = atoms.ort Y(i);
+      d1[2] = atoms.ort Z(i);
+      ityp  = VSORTE(&atoms,i);
+#ifdef SX
+#pragma vdir vector,loopcnt=256
+#endif
       for (k=0; k<tlen[i]; k++) {
-        jj = tab[N1*i+k];
-        d2 = atoms.ort + DIM * jj;
-        dx = d2[0]-d1[0];
-        dy = d2[1]-d1[1];
-        dz = d2[2]-d1[2];
-        r2 = dx*dx + dy*dy + dz*dz;
-        if (r2 < cellsz) {
-          li[len]   = ii;
-          lj[len]   = jj;
-          rr[len]   = r2;
-          dd[len].x = dx;
-          dd[len].y = dy;
-          dd[len].z = dz;
-          itypes[len] = ityp;
-          len++;
-        }
+        j  = tab[N2*i+k];
+        d2 = atoms.ort + DIM * j;
+        dd[len].x = d2[0]-d1[0];
+        dd[len].y = d2[1]-d1[1];
+        dd[len].z = d2[2]-d1[2];
+        rr[len] = dd[len].x*dd[len].x+dd[len].y*dd[len].y+dd[len].z*dd[len].z;
+        lj[len] = j;
+        it[len] = ityp;
+        len++;
       }
-      lend[i] = len;
+      lend[i-imin] = len;
     }
 
 #ifdef FTRACE
@@ -562,7 +465,7 @@ void calc_forces(int steps)
       int  col, inc = ntypes * ntypes; 
 
       flag[l] = 0;
-      col = itypes[l] * ntypes + VSORTE(&atoms,lj[l]);
+      col = it[l] * ntypes + VSORTE(&atoms,lj[l]);
 
       /* compute pair interactions */
       if (rr[l] <= pair_pot.end[col]) {
@@ -586,20 +489,19 @@ void calc_forces(int steps)
         flag[l] = 1;
       }
     }
-    if (is_short) printf("short distance!\n");
 
 #ifdef FTRACE
     ftrace_region_end  ("calc_forces");
     ftrace_region_begin("store_forces");
 #endif
 
-    for (l=0; l<p->n; l++) {
+    for (i=imin; i<imax; i++) {
 #ifdef SX
-#pragma vdir vector,nodep
+#pragma vdir vector,nodep,loopcnt=256
 #endif
-      for (k=lbeg[l]; k<lend[l]; k++) {
-        if (flag[k]) {
-          int i=li[k], j = lj[k];
+      for (k=lbeg[i-imin]; k<lend[i-imin]; k++) {
+        if (flag[k]) {  /* is there a better way to deal with this? */
+          int j = lj[k];
           atoms.kraft X(j) -= ff[k].x;
           atoms.kraft Y(j) -= ff[k].y;
           atoms.kraft Z(j) -= ff[k].z;
@@ -616,7 +518,8 @@ void calc_forces(int steps)
     ftrace_region_end("store_forces");
 #endif
 
-  }  /* loop over all cells */
+  }  /* loop over blocks */
+  if (is_short) printf("short distance!\n");
 
   /* store the remaining forces */
   for (i=0; i<atoms.n; i++) {
@@ -643,201 +546,29 @@ void calc_forces(int steps)
 
 #endif /* VERSION3 */
 
+/******************************************************************************
+*
+*  check_nblist
+*
+******************************************************************************/
 
-#ifdef VERSION4
-
-#define MC 40      /* maximum atoms per minicell */
-#define N1 MC*14
-#define N2 MC*4
-#define N0 17000   /* at least atoms.n */
-
-void calc_forces(int steps)
+void check_nblist(int steps)
 {
-  long   i, j, k, l, m, is_short=0, max, len;
-  int    tab[N0*N1], tlen[N0], itypes[N0*N2];
-  int    li[N0*N2], lj[N0*N2], lbeg[N0], lend[N0];
-  vektor dd[N0*N2], ff[N0*N2], fi[N0];
-  real   rr[N0*N2], ee[N0*N2], ei[N0];
-  real   tmpvec1[2], tmpvec2[2] = {0.0, 0.0}, tmp;
+  int  i;
+  real dx, dy, dz, r2, max1=0.0, max2;
+
+  for (i=0; i<atoms.n; i++) {
+    dx = atoms.ort X(i) - atoms.refpos X(i);
+    dy = atoms.ort Y(i) - atoms.refpos Y(i);
+    dz = atoms.ort Z(i) - atoms.refpos Z(i);
+    r2 = dx*dx + dy*dy +dz*dz;
+    if (r2 > max1) max1 = r2;
+  }
 
 #ifdef MPI
-  if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
-#endif
-
-  /* fill the buffer cells */
-  send_cells(copy_cell,pack_cell,unpack_cell);
-
-  /* clear global accumulation variables */
-  tot_pot_energy = 0.0;
-  virial = 0.0;
-
-  /* clear per atom accumulation variables */
-  for (k=0; k<atoms.n_buf; k++) {
-    atoms.kraft X(k) = 0.0;
-    atoms.kraft Y(k) = 0.0;
-    atoms.kraft Z(k) = 0.0;
-    atoms.pot_eng[k] = 0.0;
-  }
-
-#ifdef FTRACE
-  ftrace_region_begin("get_indices");
-#endif
-
-  /* course neighbor table */
-  for (k=0; k<ncells; k++) {
-
-    minicell *p, *q;
-    int *tt, ii;
-
-    p = cell_array + cnbrs[k].np;
-
-    /* for each atom in first cell */
-    for (i=0; i<p->n; i++) {
-
-      ii = p->ind[i];
-
-      /* indices of particles from the same cell */
-      tt       = tab + N1*ii - (i+1);
-      tlen[ii] =             - (i+1);
-      for (j = i+1; j < p->n; j++) tt[j] = p->ind[j];
-      tt       += p->n;
-      tlen[ii] += p->n;
-
-      /* indices of particles from neighbor cells */
-      for (m=1; m<14; m++) {
-        q = cell_array + cnbrs[k].nq[m];
-        for (j = 0; j < q->n; j++) tt[j] = q->ind[j];
-        tt       += q->n;
-        tlen[ii] += q->n;
-      }
-    }
-  }
-
-#ifdef FTRACE
-  ftrace_region_end  ("get_indices");
-  ftrace_region_begin("calc_distances");
-#endif
-
-  /* narrow neighbor table */
-  len=0;
-  lbeg[0]=0;
-  for (i=0; i<atoms.n; i++) {
-    int j, ityp;
-    real *d1, *d2, dx, dy, dz, r2;
-    d1 = atoms.ort + DIM * i;
-    ityp = VSORTE(&atoms,i);
-    for (k=0; k<tlen[i]; k++) {
-      j  = tab[N1*i+k];
-      d2 = atoms.ort + DIM * j;
-      dx = d2[0]-d1[0];
-      dy = d2[1]-d1[1];
-      dz = d2[2]-d1[2];
-      r2 = dx*dx + dy*dy + dz*dz;
-      if (r2 < cellsz) {
-        li[len]   = i;
-        lj[len]   = j;
-        rr[len]   = r2;
-        dd[len].x = dx;
-        dd[len].y = dy;
-        dd[len].z = dz;
-        itypes[len] = ityp;
-        len++;
-      }
-    }
-    lend[i  ] = len;
-    lbeg[i+1] = len;
-  }
-
-#ifdef FTRACE
-  ftrace_region_end  ("calc_distances");
-  ftrace_region_begin("calc_forces");
-#endif
-
-  /* compute forces */
-  for (l=0; l<len; l++) {
-
-    real grad;
-    int  col, inc = ntypes * ntypes; 
-
-    col = itypes[l] * ntypes + VSORTE(&atoms,lj[l]);
-    /* col = VSORTE(&atoms,li[l]) * ntypes + VSORTE(&atoms,lj[l]); */
-
-    /* compute pair interactions */
-    if (rr[l] <= pair_pot.end[col]) {
-
-      /* beware: we must not use k as index in the macro's arguments! */
-#ifdef MULTIPOT
-      int pp = l % N_POT_TAB;
-      PAIR_INT(ee[l], grad, pair_pot_ar[pp], col, inc, rr[l], is_short)
+  MPI_Allreduce( &max1, &max2, 1, REAL, MPI_MAX, cpugrid); 
 #else
-#ifdef LINPOT
-      PAIR_INT_LIN(ee[l], grad, pair_pot_lin, col, inc, rr[l], is_short)
-#else
-      PAIR_INT(ee[l], grad, pair_pot, col, inc, rr[l], is_short)
+  max2 = max1;
 #endif
-#endif
-
-      /* store force in temporary variables */
-      ff[l].x = dd[l].x * grad;
-      ff[l].y = dd[l].y * grad;
-      ff[l].z = dd[l].z * grad;
-      virial -= rr[l]   * grad;
-    }
-  }
-  if (is_short) printf("short distance!\n");
-
-#ifdef FTRACE
-  ftrace_region_end  ("calc_forces");
-  ftrace_region_begin("store_forces");
-#endif
-
-  /* accumulate forces */
-  for (i=0; i<atoms.n; i++) {
-    fi[i].x = 0.0;
-    fi[i].y = 0.0;
-    fi[i].z = 0.0;
-    ei[i]   = 0.0;
-  }
-  for (i=0; i<atoms.n; i++) {
-#ifdef SX
-#pragma vdir vector,nodep
-#endif
-    for (k=lbeg[i]; k<lend[i]; k++) {
-      int j = lj[k];
-      atoms.kraft X(j) -= ff[k].x;
-      atoms.kraft Y(j) -= ff[k].y;
-      atoms.kraft Z(j) -= ff[k].z;
-      atoms.pot_eng[j] += ee[k];
-      fi[i].x          += ff[k].x;
-      fi[i].y          += ff[k].y;
-      fi[i].z          += ff[k].z;
-      ei[i]            += ee[k];
-    }
-  }
-  for (i=0; i<atoms.n; i++) {
-    atoms.kraft X(i) += fi[i].x;
-    atoms.kraft Y(i) += fi[i].y;
-    atoms.kraft Z(i) += fi[i].z;
-    atoms.pot_eng[i] += ei[i];
-    tot_pot_energy   += ei[i];
-  }
-
-#ifdef FTRACE
-  ftrace_region_end("store_forces");
-#endif
-
-#ifdef MPI
-  /* sum up results of different CPUs */
-  tmpvec1[0] = tot_pot_energy;
-  tmpvec1[1] = virial;
-  MPI_Allreduce( tmpvec1, tmpvec2, 2, REAL, MPI_SUM, cpugrid); 
-  tot_pot_energy = tmpvec2[0];
-  virial         = tmpvec2[1];
-#endif
-
-  /* add forces back to original cells/cpus */
-  send_forces(add_forces,pack_forces,unpack_forces);
-
+  if (max2 > SQR(nblist_margin)) make_nblist(steps);
 }
-
-#endif /* VERSION4 */

@@ -467,6 +467,12 @@ void getparamfile(char *paramfname, int sim)
       /* directions with periodic boundary conditions */
       getparam("pbc_dirs",&pbc_dirs,PARAM_INT,DIM,DIM);
     }
+#ifdef NBLIST
+    else if (strcasecmp(token,"nblist_margin")==0) {
+      /* margin of neighbor list */
+      getparam(token,&nblist_margin,PARAM_REAL,1,1);
+    }
+#endif
 #ifdef EFILTER
     else if (strcasecmp(token,"ef_checkpt_int")==0) {
       /* number of steps between energy filtered checkpoints */
@@ -2170,6 +2176,9 @@ void broadcast_params() {
     if (NULL==masses) error("Cannot allocate memory for masses array\n");
   }
 
+#ifdef NBLIST
+  MPI_Bcast( nblist_margin, 1, REAL, 0, MPI_COMM_WORLD);
+#endif
 #ifdef EFILTER
   if (0!=myid){
       lower_e_pot = (real *) calloc(ntypes, sizeof(real));

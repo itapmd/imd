@@ -150,6 +150,10 @@ void do_forces2(cell*, real*, real*, real*, real*, real*, real*, real*, real*);
 #ifdef EAM2
 void do_forces_eam2(cell*, cell*, vektor, real*, real*, real*, real*, real*, real*, real*, real*);
 #endif
+#ifdef NBLIST
+void make_nblist(int);
+void check_nblist(int);
+#endif
 #ifdef MEAM
 void init_meam(void);
 #endif

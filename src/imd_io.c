@@ -128,8 +128,12 @@ void write_config(int fzhlr, int steps)
 { 
   /* first make sure that every atom is inside the box and on the right CPU */
   if (1==parallel_output) {
+#ifdef NBLIST
+    make_nblist(steps);
+#else
     do_boundaries();
     fix_cells();
+#endif
   }
 
   /* write checkpoint */
@@ -152,8 +156,12 @@ void write_ssconfig(int steps)
   
   /* first make sure that every atom is inside the box and on the right CPU */
   if (1==parallel_output) {
+#ifdef NBLIST
+    make_nblist(steps);
+#else
     do_boundaries();
     fix_cells();
+#endif
   }
 
   /* write checkpoint */
@@ -177,12 +185,16 @@ void write_cgconfig(int steps)
   
   /* first make sure that every atom is inside the box and on the right CPU */
   if (1==parallel_output) {
+#ifdef NBLIST
+    make_nblist(steps);
+#else
     do_boundaries();
     fix_cells();
+#endif
   }
 
   /* write checkpoint */
-  write_config_select(steps, "cgchkpt", write_atoms_config, write_header_config);
+  write_config_select(steps,"cgchkpt",write_atoms_config, write_header_config);
 
   /* write iteration file */
   if (myid == 0) write_itr_file(steps, steps,"cg");

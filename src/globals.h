@@ -125,7 +125,7 @@ EXTERN vektor *fbc_endforces;
 EXTERN vektor *fbc_endforces;   
 #endif
 
-#endif
+#endif /* FBC */
 
 /* Global bookkeeping */
 EXTERN int is_big_endian;         /* 1 if big endian, 0 if little endian */
@@ -242,9 +242,13 @@ EXTERN real volume INIT(0.0);
 EXTERN real volume_init INIT(0.0);
 EXTERN real virial INIT(0.0);
 EXTERN real temperature INIT(0.0);
-EXTERN int  use_curr_temp INIT(0);  /* which starting temp to use (flag) */
+EXTERN int  use_curr_temp INIT(0);   /* which starting temp to use (flag) */
 EXTERN int  do_maxwell INIT(0.0);
-EXTERN long seed INIT(0);           /* seed for random number generator */
+EXTERN long seed INIT(0);            /* seed for random number generator */
+#ifdef NBLIST
+EXTERN real nblist_margin INIT(0.1); /* neighbor list margin */
+EXTERN int  nblist_count  INIT(0);   /* counting neighbor list rebuild */
+#endif
 
 /* square of global force vector f=(f1.x, f1.y,...,fn.z) */
 EXTERN real fnorm INIT(0.0);  

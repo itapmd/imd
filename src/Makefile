@@ -589,7 +589,7 @@ MPISOURCES      = imd_mpi_util.c
 MPISOURCES2D    = ${MPISOURCES} imd_main_mpi_2d.c imd_geom_mpi_2d.c \
 		  imd_comm_force_2d.c
 MPISOURCES3D    = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c \
-		  imd_comm_force_3d.c
+		  imd_comm_force_3d.c imd_fix_cells_3d.c
 
 VECSOURCES3D    = imd_main_vec_3d.c imd_geom_mpi_3d.c imd_comm_force_3d.c \
                   imd_fix_cells_3d.c
