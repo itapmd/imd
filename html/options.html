@@ -461,22 +461,21 @@ layers 0 to <TT>tran_nlayers/2</TT> is written to the
 file <TT>&lt;basename&gt;.tempdist</TT> every
 <tt>tran_interval</tt> steps.
 
-<A NAME="stress_tens">
-<P><LI><B>stress</B><P>
-</A>
-This option enables imd to compute the stress or pressure tensor. 
-The result will be written as a histogram into a file 
-<TT>&lt;basename&gt;.&lt;n&gt;.pressdist</TT>. The output
-file further contains the density, kinetic energy and potential 
-energy distribution. The writing interval is given by the parameter 
-<tt>press_int</tt>, the dimension of the histogram by the
-integer vector <tt>press_dim</TT>. 
-<P>
-In <B>shock</B> mode, only the diagonal part of the pressure
-tensor is written. Further, the histogram is written as a function 
-of the x-coordinate only, and averaged over the y- and z-coordinate 
-(in 3d). For that purpose, the second and third component of
-<tt>press_dim</TT> have to be set to 1. 
+<a id="stress_tens" name="stress_tens">
+<li><p><b>stress</b></p></li>
+</a>
+<p>
+The option stress enables the computation of the stress or pressure 
+tensor. This is a non-negligible extra effort, and should be done 
+only when the pressure distribution or the pressure tensor is needed. 
+The global, scalar pressure is always computed. If the option stress 
+is enabled, the components of the global pressure tensor are written 
+to the <a href="output.html#properties">properties file</A> every 
+<tt>eng_int</tt> time steps. It is also possible to write out
+<a href="output.html#distributions">distributions</a> of the
+scalar or tensorial pressure, and to write out the pressure tensor
+contribution of each atom every <tt>press_int</tt> time steps,
+by setting the <tt>press_int</tt> parameter to a positive value.</p>
 
 <A NAME="fnorm">
 <P><LI><B> fnorm </B><P>
