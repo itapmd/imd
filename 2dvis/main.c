@@ -358,11 +358,11 @@ void draw_scene(int scene_type) {
 #ifndef TWOD
 		      move(xx,yy,zz);
 		      draw(xxj,yyj,zzj);
+		  }
 #else
 	      move2(xx,yy);
 	      draw2(xxj,yyj);
 #endif
-		  }
 		}
 	    }
 	  }
