@@ -437,10 +437,6 @@ void calc_forces(int steps)
 
 #ifdef VERSION3
 
-/*
-#define DEBUG
-*/
-
 #define MC 40      /* maximum atoms per minicell */
 #define N1 MC*14
 #define N2 MC*4
@@ -448,7 +444,7 @@ void calc_forces(int steps)
 
 void calc_forces(int steps)
 {
-  long   c, i, j, k, l, m, is_short=0, max, len;
+  long   c, i, j, k, l, m, is_short=0, max, len, flag[MC*N2];
   int    tab[MC*N1], tlen[N0], itypes[MC*N2];
   int    li[MC*N2], lj[MC*N2], lbeg[MC], lend[MC];
   vektor dd[MC*N2], ff[MC*N2], fi[N0];
@@ -472,7 +468,9 @@ void calc_forces(int steps)
     atoms.kraft Y(k) = 0.0;
     atoms.kraft Z(k) = 0.0;
     atoms.pot_eng[k] = 0.0;
-    /* temporary storage */
+  }
+  /* temporary storage */
+  for (k=0; k<atoms.n; k++) {
     fi[k].x          = 0.0;
     fi[k].y          = 0.0;
     fi[k].z          = 0.0;
@@ -493,10 +491,8 @@ void calc_forces(int steps)
     /* for each atom in cell */
     for (i=0; i<p->n; i++) {
 
-      int *tt, ii;
+      int *tt;
       minicell *q;
-
-      ii = p->ind[i];
 
       /* indices of particles from the same cell */
       tt       = tab + N1*i - (i+1);
@@ -507,6 +503,7 @@ void calc_forces(int steps)
 
       /* indices of particles from neighbor cells */
       for (m=1; m<14; m++) {
+        if (cnbrs[c].nq[m]<0) continue;
         q = cell_array + cnbrs[c].nq[m];
 #ifdef SX
 #pragma vdir vector,nodep
@@ -516,10 +513,6 @@ void calc_forces(int steps)
         tlen[i] += q->n;
       }
     }
-#ifdef DEBUG
-    for (i=0; i<tlen[0]; i++) printf("%d ",tab[i]);
-    printf("\n%d\n",tlen[0]);
-#endif
 
 #ifdef FTRACE
     ftrace_region_end  ("get_indices");
@@ -528,10 +521,11 @@ void calc_forces(int steps)
 
     /* narrow neighbor table */
     len=0;
-    lbeg[0]=0;
     for (i=0; i<p->n; i++) {
       int jj, ii, ityp;
       real *d1, *d2, dx, dy, dz, r2;
+
+      lbeg[i] = len;
       ii = p->ind[i];
       d1 = atoms.ort + DIM * ii;
       ityp = VSORTE(&atoms,ii);
@@ -553,13 +547,8 @@ void calc_forces(int steps)
           len++;
         }
       }
-      lend[i  ] = len;
-      lbeg[i+1] = len;
+      lend[i] = len;
     }
-#ifdef DEBUG
-    for (i=0; i<lend[0]; i++) printf("%d %d %f\n",li[i],lj[i],rr[i]);
-    printf("%d\n",lend[0]);
-#endif
 
 #ifdef FTRACE
     ftrace_region_end  ("calc_distances");
@@ -572,8 +561,8 @@ void calc_forces(int steps)
       real grad;
       int  col, inc = ntypes * ntypes; 
 
+      flag[l] = 0;
       col = itypes[l] * ntypes + VSORTE(&atoms,lj[l]);
-      /* col = VSORTE(&atoms,li[l]) * ntypes + VSORTE(&atoms,lj[l]); */
 
       /* compute pair interactions */
       if (rr[l] <= pair_pot.end[col]) {
@@ -589,22 +578,15 @@ void calc_forces(int steps)
         PAIR_INT(ee[l], grad, pair_pot, col, inc, rr[l], is_short)
 #endif
 #endif
-
         /* store force in temporary variables */
         ff[l].x = dd[l].x * grad;
         ff[l].y = dd[l].y * grad;
         ff[l].z = dd[l].z * grad;
         virial -= rr[l]   * grad;
+        flag[l] = 1;
       }
     }
     if (is_short) printf("short distance!\n");
-
-#ifdef DEBUG
-    for (i=0; i<lend[0]; i++) 
-      printf("%f %f %f %f\n",ff[i].x,ff[i].y,ff[i].z,ee[i]);
-    printf("%d\n",lend[0]);
-#endif
-
 
 #ifdef FTRACE
     ftrace_region_end  ("calc_forces");
@@ -616,15 +598,17 @@ void calc_forces(int steps)
 #pragma vdir vector,nodep
 #endif
       for (k=lbeg[l]; k<lend[l]; k++) {
-        int i=li[k], j = lj[k];
-        atoms.kraft X(j) -= ff[k].x;
-        atoms.kraft Y(j) -= ff[k].y;
-        atoms.kraft Z(j) -= ff[k].z;
-        atoms.pot_eng[j] += ee[k];
-        fi[i].x          += ff[k].x;
-        fi[i].y          += ff[k].y;
-        fi[i].z          += ff[k].z;
-        ei[i]            += ee[k];
+        if (flag[k]) {
+          int i=li[k], j = lj[k];
+          atoms.kraft X(j) -= ff[k].x;
+          atoms.kraft Y(j) -= ff[k].y;
+          atoms.kraft Z(j) -= ff[k].z;
+          atoms.pot_eng[j] += ee[k];
+          fi[i].x          += ff[k].x;
+          fi[i].y          += ff[k].y;
+          fi[i].z          += ff[k].z;
+          ei[i]            += ee[k];
+        }
       }
     }
 

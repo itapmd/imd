@@ -262,7 +262,7 @@ void generate_fcc(int maxtyp)
   real     xx, yy, zz;
   int      to_cpu;
   int      x, y, z, typ;
-  long     count;
+  int      count;
 
 #ifdef MPI
   if (myid==0)
@@ -306,7 +306,7 @@ void generate_fcc(int maxtyp)
   if ((maxtyp==0) || (maxtyp==6) || (maxtyp==7)) count /=2; /* fcc */ 
   else if ((maxtyp==2) || (maxtyp==3))           count /=4; /* bcc */
   else if ((maxtyp==4) || (maxtyp==5))           count /=8; /* diamond */
-  count = (count * nallcells * 5) / (ncells * 4);
+  count = (int) (count * (1.25 * nallcells / ncells));
   atoms.n = 0;
   atoms.n_max = 0;
   atoms.n_buf = 0;
