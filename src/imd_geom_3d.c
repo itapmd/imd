@@ -196,8 +196,9 @@ void init_cells( void )
 
   /* take the biggest one as actual cut-off */
   r2_cut2 = MAX(r2_cut2,r2_cut);
-  printf("The actual cut-off is %lf (cut-off of core-core Potential: %lf)\n",
-         r2_cut2, r2_cut);
+  if (myid==0) 
+    printf("The actual cut-off is %lf (cut-off of core-core Potential: %lf)\n",
+           r2_cut2, r2_cut);
   cellsz = MAX(cellsz, r2_cut2);
 #endif
 
