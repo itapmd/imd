@@ -44,6 +44,7 @@
 #endif
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
 #define SQR(a) (a)*(a)
 #define TRUNC (int)
 
@@ -260,6 +261,9 @@ void do_angle(cell *p, cell *q, cell *r, cell *s,
 void calc_angles(void);
 #endif
 
+#ifdef CONN
+void make_numbers(void);
+#endif
 
 /*****************************************************************************
 *
@@ -306,7 +310,8 @@ real r_max = 1.0;     /* default value */
 #endif
 int  nangles = 0;
 #ifdef CONN
-real r_max2d[2][2] = { {1.4, 1.4}, {1.4, 0.9} };  /* should be read */
+real *r_cut;
+int  n_min=0, n_max=0;
 #endif
 #ifdef STRAIN
 real r_cell = 1.0;    /* default value */
@@ -352,7 +357,7 @@ ivektor2d num_dim;
 #ifdef CONN
 /* Connection matrix */
 ivektor2d cm_dim = {0,MAXNEIGH};
-int *cm, *nn, *tp;
+int *cm, *nn, *tp, *num, *ind;
 vektor *pos;
 #endif
 
@@ -965,6 +970,17 @@ void getparamfile(char *paramfname)
       /* number of virtual atom types */
       getparam("total_types",&vtypes,PARAM_INT,1,1);
     }
+#ifdef CONN
+    else if (strcasecmp(token,"r_cut")==0) {
+      /* cutoff radii */
+      int nn;
+      if (use_vtypes) nn = SQR(vtypes);
+      else            nn = SQR(ntypes);
+      r_cut = (real *) calloc(nn,sizeof(real));
+      if (NULL == r_cut) error("cannot allocate r_cut");
+      getparam("r_cut",r_cut,PARAM_REAL,nn,nn);
+    }
+#endif
   } while (!feof(pf));
   fclose(pf);
 
@@ -1068,7 +1084,9 @@ void read_atoms(str255 infilename)
       to->sorte [to->n] = MOD(s,ntypes);
 #endif
 #ifdef CONN
-      to->nummer[to->n] = natoms;
+      to->nummer[to->n] = n;
+      n_min = MIN(n_min,n);
+      n_max = MAX(n_max,n);
 #endif
       to->n++;
       natoms++;
@@ -1191,5 +1209,3 @@ void do_work(void (*do_cell_pair)(cell *p, cell *q, vektor pbc))
             }
       }
 }
-
-

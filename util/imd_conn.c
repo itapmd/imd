@@ -28,7 +28,7 @@
 *
 *  Usage -- educate users
 *
-*  Compilation: gcc -O [-DTWOD] [-DSINGLE] imd_conn.c -lm 
+*  Compilation: gcc -O [-DTWOD] [-DSINGLE] [-DMAXNEIGH=<N>] imd_conn.c -lm 
 *
 ******************************************************************************/
 
@@ -47,15 +47,14 @@ void usage(void)
 
 int main(int argc, char **argv)
 {
-  int i,j;
+  int i;
 
   /* Read Parameters from parameter file */
   read_parameters(argc,argv);
 
   /* Calculate cutoff radius */
   r2_cut = 0.0;
-  for (i=0; i<ntypes; i++)
-    for (j=0; j<ntypes; j++) r2_cut = MAX( r2_cut, SQR(r_max2d[i][j]));
+  for (i=0; i<SQR(ntypes); i++) r2_cut = MAX( r2_cut, SQR(r_cut[i]));
 
   /* Initialize cell data structures */
   init_cells();
@@ -65,6 +64,8 @@ int main(int argc, char **argv)
 
   /* Allocate connection matrix */
   nn  = (int *)    calloc(natoms, sizeof(int));
+  ind = (int *)    malloc((n_max-n_min+1) * sizeof(int));
+  num = (int *)    malloc(natoms * sizeof(int));
   tp  = (int *)    malloc(natoms * sizeof(int));
   cm  = (int *)    malloc(natoms * MAXNEIGH * sizeof(int));
   pos = (vektor *) malloc(natoms * sizeof(vektor));
@@ -72,6 +73,7 @@ int main(int argc, char **argv)
     error("cannot allocate connection matrix");
 
   /* Calculate connection matrix */
+  make_numbers();
   do_work(do_cell_pair);
 
   /* Write connection matrix */
@@ -103,9 +105,11 @@ void write_data()
 
   for (i=0; i<natoms; ++i) {
 #ifdef TWOD
-    fprintf(out,"%d %d %f %f %d",   i,tp[i],pos[i].x,pos[i].y,         nn[i]);
+    fprintf(out,"%d %d %f %f %d",   
+            num[i],tp[i],pos[i].x,pos[i].y,         nn[i]);
 #else
-    fprintf(out,"%d %d %f %f %f %d",i,tp[i],pos[i].x,pos[i].y,pos[i].z,nn[i]);
+    fprintf(out,"%d %d %f %f %f %d",
+            num[i],tp[i],pos[i].x,pos[i].y,pos[i].z,nn[i]);
 #endif
     for (j=0; j<nn[i]; j++) fprintf(out," %d",*PTR_2D_V(cm,i,j,cm_dim));
     fprintf(out,"\n");
@@ -113,6 +117,41 @@ void write_data()
   fclose(out);
 }
 
+
+
+/******************************************************************************
+*
+*  translation from number to index, and vice versa
+*
+******************************************************************************/
+
+void make_numbers(void)
+{
+  cell *p;
+  int i,j=0,k,l,m;
+
+  /* for each cell */
+  for (k=0; k < cell_dim.x; ++k)
+    for (l=0; l < cell_dim.y; ++l)
+#ifndef TWOD
+      for (m=0; m < cell_dim.z; ++m)
+#endif
+      {
+#ifdef TWOD
+        p = PTR_2D_V(cell_array,k,l  ,cell_dim);
+#else
+        p = PTR_3D_V(cell_array,k,l,m,cell_dim);
+#endif
+        for (i=0; i<p->n; ++i) {
+          tp [j] = p->sorte [i];
+          pos[j] = p->ort   [i];
+          ind[p->nummer[i]-n_min] = j;  /* index  as function of number */
+          num[j] = p->nummer[i];        /* number as function of index  */
+          j++;
+	}
+      }
+
+}
 
 /******************************************************************************
 *
@@ -122,37 +161,39 @@ void write_data()
 
 void do_cell_pair(cell *p, cell *q, vektor pbc)
 {
-  int i,j,ii,jj;
+  int i,j,k;
   vektor d;
   real radius;
-  int p_typ,q_typ;
 
   /* For each atom in first cell */
   for (i=0; i<p->n; ++i) {
 
-    ii      = p->nummer[i];
-    tp[ii]  = p->sorte[i];
-    pos[ii] = p->ort[i];
-    
     /* For each atom in neighbouring cell */
-    /* Nasty little trick: If p==q, use only rest of atoms */
+    /* If p==q, use only rest of atoms */
     for (j = ((p==q) ? i+1 : 0); j < q->n; ++j) {
       
       /* Calculate distance */
-      d.x =q->ort[j].x - p->ort[i].x + pbc.x;
-      d.y =q->ort[j].y - p->ort[i].y + pbc.y;
+      d.x = q->ort[j].x - p->ort[i].x + pbc.x;
+      d.y = q->ort[j].y - p->ort[i].y + pbc.y;
 #ifndef TWOD
-      d.z =q->ort[j].z - p->ort[i].z + pbc.z;
+      d.z = q->ort[j].z - p->ort[i].z + pbc.z;
 #endif
 
       radius = sqrt( (double)(SPROD(d,d)) );
-      p_typ = p->sorte[i];
-      q_typ = q->sorte[j];
-      if (radius < r_max2d[p_typ][q_typ]) {
-        ii = p->nummer[i];
-        jj = q->nummer[j];
-        *PTR_2D_V(cm,ii,nn[ii],cm_dim) = jj;  nn[ii]++;
-        *PTR_2D_V(cm,jj,nn[jj],cm_dim) = ii;  nn[jj]++;
+      if (radius < r_cut[ (p->sorte[i])*ntypes + q->sorte[j] ]) {
+
+        /* update neighbor table of p-particle */
+        k = ind[p->nummer[i]-n_min];
+	if (nn[k]<MAXNEIGH) {
+          *PTR_2D_V(cm,k,nn[k],cm_dim) = q->nummer[j];  nn[k]++;
+        } else error("maximum number of neighbors exceeded");
+
+        /* update neighbor table of q-particle */
+        k = ind[q->nummer[j]-n_min];
+        if (nn[k]<MAXNEIGH) {
+          *PTR_2D_V(cm,k,nn[k],cm_dim) = p->nummer[i];  nn[k]++;
+	} else error("maximum number of neighbors exceeded");
+
       }
     }
   }
