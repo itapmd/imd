@@ -63,7 +63,7 @@ void read_atoms(str255 infilename)
 
 #ifdef MPI
 
-  /* Try opening a per cpu file first when parallel_output is active */
+  /* Try opening a per cpu file first when parallel_input is active */
   if (1==parallel_input) {
     sprintf(buf,"%s.%u",infilename,myid); 
     infile = fopen(buf,"r");
