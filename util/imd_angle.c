@@ -99,7 +99,7 @@ void write_data()
   real phi;
   real f;
 
-  if (0==restart)
+  if (-1==restart)
     sprintf(fname,"%s.angle",infilename);
   else
     sprintf(fname,"%s.%u.angle",outfilename,restart);

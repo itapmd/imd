@@ -102,7 +102,7 @@ void write_data()
   real phi;
   real f;
 
-  if (0 == restart)
+  if (-1==restart)
     sprintf(fname,"%s.torsion",infilename);
   else
     sprintf(fname,"%s.%u.torsion",outfilename,restart);

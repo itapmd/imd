@@ -96,7 +96,7 @@ void write_data()
   real r;
   real f;
 
-  if (0==restart)
+  if (-1==restart)
     sprintf(fname,"%s.pair",infilename);
   else
     sprintf(fname,"%s.%u.pair",outfilename,restart);

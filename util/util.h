@@ -296,7 +296,7 @@ str255 outfilename;   /* Output File */
 char *paramfilename;  /* parameter file */
 
 /* Bookkeeping */
-int  restart;
+int  restart=-1;
 real r2_cut;
 real r_min = 1.0;     /* default value */
 #ifdef PAIR
@@ -716,7 +716,7 @@ void read_parameters(int argc,char **argv)
   if (use_vtypes==1) ntypes = vtypes;
 
   /* Get restart parameters if restart */
-  if (0 != restart) {
+  if (-1 != restart) {
     sprintf(fname,"%s.%d.itr",outfilename,restart);
     getparamfile(fname);
   }
@@ -724,13 +724,13 @@ void read_parameters(int argc,char **argv)
 #ifdef STRAIN
   sprintf(infilename, "%s.dsp", outfilename);
 
-  if (0!=restart) sprintf(infilename,"%s.%u.dsp",outfilename,restart);
+  if (-1 != restart) sprintf(infilename,"%s.%u.dsp",outfilename,restart);
 #elif defined(STRESS)
   sprintf(infilename, "%s.press",outfilename);
 
-  if (0!=restart) sprintf(infilename,"%s.%u.press",outfilename,restart);
+  if (-1 != restart) sprintf(infilename,"%s.%u.press",outfilename,restart);
 #else
-  if (0!=restart) sprintf(infilename,"%s.%u",outfilename,restart);
+  if (-1 != restart) sprintf(infilename,"%s.%u",outfilename,restart);
 #endif
 
 #ifdef STRAIN
@@ -1024,7 +1024,7 @@ void read_atoms(str255 infilename)
 
   /* we first try the old checkpoint name, then the new */
   infile = fopen(infilename,"r");
-  if ((NULL==infile) && (restart!=0)) {
+  if ((NULL == infile) && (restart != -1)) {
     infilename = strcat(infilename,".chkpt");
     infile = fopen(infilename,"r");
   }

@@ -94,7 +94,7 @@ void write_data()
   str255 fname;
   int i,j;
 
-  if (0==restart)
+  if (-1==restart)
     sprintf(fname,"%s.conn",infilename);
   else
     sprintf(fname,"%s.%u.conn",outfilename,restart);
