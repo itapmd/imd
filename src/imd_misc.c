@@ -756,6 +756,8 @@ void generate_fcc(int maxtyp)
 	  input->nummer[0] = natoms;
         input->sorte[0] = typ;
         num_sort[typ]++;
+#else
+        num_sort[0]++;
 #endif
 
 #ifdef MPI
