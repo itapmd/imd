@@ -1,3 +1,4 @@
+
 /******************************************************************************
 *
 * imd_deform.c -- deform sample
@@ -5,7 +6,6 @@
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
@@ -133,12 +133,12 @@ void deform_sample(void)
     int sort;
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i) {
-      sort=(p->sorte[i]);
-      /* move virtual particles  */
-      (p->ort X(i)) += ((deform_shift + sort)->x);
-      (p->ort Y(i)) += ((deform_shift + sort)->y);
+      sort = p->sorte[i];
+      /* move particles with virtual types  */
+      p->ort X(i) += (deform_shift + sort)->x;
+      p->ort Y(i) += (deform_shift + sort)->y;
 #ifndef TWOD
-      (p->ort Z(i)) += ((deform_shift + sort)->z);
+      p->ort Z(i) += (deform_shift + sort)->z;
 #endif
     }
   }
