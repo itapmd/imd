@@ -439,12 +439,11 @@ void write_distrib_using_sockets()
           if (Epot_diff==1) { 
             *pot += p->pot_eng[i] - p->Epot_ref[i];
           } else
-#else
-	  *pot += p->pot_eng[i];
 #endif
+	  *pot += p->pot_eng[i];
 	  *kin += SPRODN(p->impuls,i,p->impuls,i) / (2*MASSE(p,i));
-        };
-      };
+        }
+      }
 
 #ifdef MPI
   MPI_Reduce(pot_hist_local,pot_hist_global,size,MPI_FLOAT,MPI_SUM,0,cpugrid);

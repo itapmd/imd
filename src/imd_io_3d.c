@@ -1146,16 +1146,12 @@ void write_distrib(int steps)
           if (Epot_diff==1) {
             *pot += p->pot_eng[i] - p->Epot_ref[i];
           } else
-#else
+#endif
           *pot += p->pot_eng[i];
 #endif
-
-	  *kin += SPRODN(p->impuls,i,p->impuls,i) / (2*p->masse[i]);
-#else
-          *kin += SPRODN(p->impuls,i,p->impuls,i) / 2;
-#endif
-        };
-      };
+	  *kin += SPRODN(p->impuls,i,p->impuls,i) / (2*MASSE(p,i));
+        }
+      }
 
 #ifdef MPI
   MPI_Reduce(pot_hist_local,pot_hist_global,size,MPI_FLOAT,MPI_SUM,0,cpugrid);
