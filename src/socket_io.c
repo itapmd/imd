@@ -23,22 +23,32 @@
 
 /*****************************************************************************
 *
-* init_client, if the simulation acts as a client
+* init_client, if the simulation acts as client (executed only on MPI rank 0)
 *
 *****************************************************************************/
 
-void init_client() {
+void init_client() 
+{
+  str255 hostname;
 
+  /* determine baseport */
   fprintf(stderr, "baseport is %d\n", baseport);fflush(stderr);
   baseport = htons(baseport); /* we need it in network byte order */
+
+  /* determine display host */
   varIP = GetIP(display_host);
-  if (0==myid) {
-    if (varIP==0) {
-      error("gethostbyname() failed, check display_host or specify IP number\n");
-    } 
-    else {
-      printf("display_host is %s\n", display_host);
-    }
+  if (varIP==0) {
+    error("gethostbyname() failed, check display_host or specify IP number\n");
+  } 
+  else {
+    printf("display host is %s\n", display_host);
+  }
+
+  /* determine simulation host (the one with MPI rank 0 */
+  if (gethostname(hostname,255)) {
+    error("Cannot determine simulation host name");
+  } else {
+    printf("simulation host is %s\n", hostname);
   }
 }
 
@@ -460,7 +470,7 @@ void vis_write_atoms_fun()
 void vis_write_atoms()
 {
   integer stp;
-  float zero = 0.0;
+  integer zero = 0;
 
   /* get and distribute flags and filters */
   vis_check_atoms_flags();
@@ -474,7 +484,7 @@ void vis_write_atoms()
 
   /* return zero atoms if request makes no sense */
   if (atlen < 0) {
-    if (0==myid) WriteFull( soc, &zero, sizeof(float) );
+    if (0==myid) WriteFull( soc, &zero, sizeof(integer) );
     return;
   }
 
@@ -502,7 +512,7 @@ void vis_write_atoms()
 #endif /* MPI */
 
   /* the last block with zero atoms */
-  if (0==myid) WriteFull( soc, (void *) &zero, sizeof(float) );
+  if (0==myid) WriteFull( soc, (void *) &zero, sizeof(integer) );
 
 }
 
