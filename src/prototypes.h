@@ -132,12 +132,11 @@ void alloc_minicell(minicell *, int);
 #endif
 void alloc_cell(cell *thecell, int count);
 #ifdef TWOD
-ivektor       cell_coord(real x, real y);
-ivektor local_cell_coord(real x, real y);
+ivektor cell_coord(real x, real y);
 #else
-ivektor       cell_coord(real x, real y, real z);
-ivektor local_cell_coord(real x, real y, real z);
+ivektor cell_coord(real x, real y, real z);
 #endif
+ivektor local_cell_coord(ivektor cellc);
 int     cpu_coord(ivektor cellc);
 ivektor cpu_coord_v(ivektor cellc);
 int     cpu_grid_coord(ivektor cellc);

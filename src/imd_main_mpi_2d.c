@@ -164,7 +164,7 @@ void fix_cells(void)
 {
   int i,j,l,clone;
   cell *p, *q;
-  ivektor coord, dcpu, to_coord;
+  ivektor coord, lcoord, dcpu, to_coord;
   msgbuf *buf;
 
   empty_mpi_buffers();
@@ -179,14 +179,15 @@ void fix_cells(void)
       l=0;
       while( l < p->n ) {
 
-        coord = local_cell_coord( ORT(p,l,X), ORT(p,l,Y) );
+        coord = cell_coord( ORT(p,l,X), ORT(p,l,Y) );
+        lcoord = local_cell_coord( coord );
 	/* see if atom is in wrong cell */
-        if ((coord.x == i) && (coord.y == j)) {
+        if ((lcoord.x == i) && (lcoord.y == j)) {
           l++;
         } else {
 
           /* Calculate distance on CPU grid */
-          to_coord = cpu_coord_v( cell_coord( ORT(p,l,X), ORT(p,l,Y) ) );
+          to_coord = cpu_coord_v( coord );
           dcpu.x = to_coord.x - my_coord.x;
           dcpu.y = to_coord.y - my_coord.y;
 
@@ -216,7 +217,7 @@ void fix_cells(void)
             buf = &send_buf_north;
           }
           else { /* atom is on my cpu */
-            q = PTR_VV(cell_array,coord,cell_dim);
+            q = PTR_VV(cell_array,lcoord,cell_dim);
             MOVE_ATOM(q, p, l);
 #ifdef CLONE
             if (l < p->n-nclones)

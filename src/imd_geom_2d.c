@@ -218,8 +218,9 @@ void init_cells( void )
       for (k=cellmin_old.y; k < cellmax_old.y; k++) {
 	p = PTR_2D_V(cell_array_old, j, k, cell_dim_old);
         for (i = p->n - 1; i >= 0; i--) {
+          cellc = cell_coord( ORT(p,i,X), ORT(p,i,Y) );
 #ifdef MPI
-          cellc = local_cell_coord( ORT(p,i,X), ORT(p,i,X) );
+          cellc = local_cell_coord( cellc );
           /* strangly, some atoms get into buffer cells; 
              we push them back into the real cells, 
              so that we do not lose them  */
@@ -227,8 +228,6 @@ void init_cells( void )
           if (cellc.y == 0) cellc.y++;
           if (cellc.x == cellmax.x) cellc.x--;
           if (cellc.y == cellmax.y) cellc.y--;
-#else
-          cellc = cell_coord( ORT(p,i,X), ORT(p,i,Y) );
 #endif
           to = PTR_VV(cell_array,cellc,cell_dim);
           MOVE_ATOM( to, p, i );

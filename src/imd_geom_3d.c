@@ -269,8 +269,9 @@ void init_cells( void )
         for (l=cellmin_old.z; l < cellmax_old.z; l++) {
           p = PTR_3D_V(cell_array_old, j, k, l, cell_dim_old);
           for (i = p->n - 1; i >= 0; i--) {
+            cellc = cell_coord( ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z) );
 #ifdef BUFCELLS
-            cellc = local_cell_coord( ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z) );
+            cellc = local_cell_coord( cellc );
             /* strangly, some atoms get into buffer cells; 
                we push them back into the real cells, 
                so that we don't lose them  */
@@ -280,8 +281,6 @@ void init_cells( void )
             if (cellc.x == cellmax.x) cellc.x--;
             if (cellc.y == cellmax.y) cellc.y--;
             if (cellc.z == cellmax.z) cellc.z--;
-#else
-            cellc = cell_coord( ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z) );
 #endif
             to = PTR_VV(cell_array,cellc,cell_dim);
             MOVE_ATOM( to, p, i );

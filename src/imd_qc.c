@@ -130,17 +130,19 @@ void generate_qc( void )
   vektor cen;                               /* cell center */
   vektor perpro;                            /* per pe */
 
-#ifndef MPI
+#ifndef BUFCELLS
 
   ivektor cpu_dim;
   int num_cpus = 0;
   int myid = 0;
   ivektor my_coord;
 
+  /* this can't possibly work... */
   cpu_dim.x=1;
   cpu_dim.y=1;
   cpu_dim.z=1;
 
+  /* this can't possibly work... */
   my_coord.x=0;
   my_coord.y=0;
   my_coord.z=0;
@@ -681,10 +683,9 @@ void sortin (int ifeld[])
   if (x < perp[0] && y < perp[1] && z < perp[2] && 
       x > perm[0] && y > perm[1] && z > perm[2]) 
     {   
-#ifdef MPI
-      cellc = local_cell_coord(x, y, z);
-#else
       cellc = cell_coord(x, y, z);
+#ifdef BUFCELLS
+      cellc = local_cell_coord(cellc);
 #endif
       p = PTR_3D_VV(cell_array,cellc,cell_dim);
       
@@ -722,13 +723,7 @@ void sortin (int ifeld[])
 
 	      VSORTE(input,0) = typ;
               MASSE(input,0)  = masses[typ];
-
-#ifdef MPI
-	      cellc = local_cell_coord( ORT(input,0,X), ORT(input,0,Y), 
-				        ORT(input,0,Z) );
-#endif
-              q = PTR_VV(cell_array,cellc,cell_dim);
-	      INSERT_ATOM(q, input, 0);
+              INSERT_ATOM(p, input, 0);
       }
     }
 }

@@ -364,7 +364,7 @@ void read_atoms(str255 infilename)
         }
         num_sort [ SORTE(input,0)]++;
         num_vsort[VSORTE(input,0)]++;
-	cellc = local_cell_coord(pos.x,pos.y,pos.z);
+	cellc = local_cell_coord(cellc);
         to = PTR_VV(cell_array,cellc,cell_dim);
 	INSERT_ATOM(to, input, 0);
       }

@@ -296,15 +296,15 @@ void fix_cells(void)
 	l=0;
 	while( l<p->n ) {
 
-	  lcoord = local_cell_coord( ORT(p,l,X), ORT(p,l,Y), ORT(p,l,Z) );
+          coord  = cell_coord( ORT(p,l,X), ORT(p,l,Y), ORT(p,l,Z) );
+	  lcoord = local_cell_coord( coord );
+
  	  /* see if atom is in wrong cell */
 	  if ((lcoord.x == i) && (lcoord.y == j) && (lcoord.z == k)) {
             l++;
           } 
           else {
 
-            /* global cell coord and CPU */
-            coord  = cell_coord( ORT(p,l,X), ORT(p,l,Y), ORT(p,l,Z) );
             to_cpu = cpu_coord(coord);
             buf    = NULL;
 

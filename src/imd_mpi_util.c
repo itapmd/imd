@@ -254,7 +254,8 @@ void copy_one_atom(msgbuf *to, minicell *from, int index, int delete )
     if (0 < p->n) {
       ivektor  coord;
       minicell *last;
-      coord = local_cell_coord( ORT(p,p->n,X), ORT(p,p->n,Y), ORT(p,p->n,Z));
+      coord = cell_coord( ORT(p,p->n,X), ORT(p,p->n,Y), ORT(p,p->n,Z) );
+      coord = local_cell_coord( coord );
       last  = PTR_VV(cell_array,coord,cell_dim);
       last->ind[ p->ind[p->n] ] = ind;
       p->ind[ind] = p->ind[p->n];
@@ -501,12 +502,11 @@ void process_buffer(msgbuf *b, cell *p)
 
     if (p==NULL) {  /* distribute atom into cell array */
 #ifdef TWOD
-      coord =local_cell_coord( ORT(input,0,X), ORT(input,0,Y) );
-      coord2=cell_coord(       ORT(input,0,X), ORT(input,0,Y) );
+      coord2=cell_coord( ORT(input,0,X), ORT(input,0,Y) );
 #else
-      coord =local_cell_coord( ORT(input,0,X), ORT(input,0,Y), ORT(input,0,Z));
-      coord2=cell_coord(       ORT(input,0,X), ORT(input,0,Y), ORT(input,0,Z));
+      coord2=cell_coord( ORT(input,0,X), ORT(input,0,Y), ORT(input,0,Z) );
 #endif
+      coord =local_cell_coord( coord2 );
       to_cpu = cpu_coord( coord2 );
       if (to_cpu == myid) {
         minicell *to;

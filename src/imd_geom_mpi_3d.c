@@ -102,11 +102,10 @@ void setup_mpi_topology(void)
 *
 ******************************************************************************/
 
-ivektor local_cell_coord(real x, real y, real z)
+ivektor local_cell_coord(ivektor global_coord)
 {
-  ivektor global_coord, local_coord;
-  
-  global_coord  = cell_coord(x,y,z);
+  ivektor local_coord;
+
   local_coord.x = global_coord.x - my_coord.x * (cell_dim.x - 2) + 1;
   local_coord.y = global_coord.y - my_coord.y * (cell_dim.y - 2) + 1;
   local_coord.z = global_coord.z - my_coord.z * (cell_dim.z - 2) + 1;

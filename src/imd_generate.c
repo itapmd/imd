@@ -172,7 +172,7 @@ void init_hex(void)
 void generate_hex()
 {
   cell    *input, *to;
-  ivektor min, max, cellc;
+  ivektor min, max, cellc, lcellc;
   int     to_cpu;
   int     i, j, typ;
   real    x, y;
@@ -225,8 +225,8 @@ void generate_hex()
 #ifdef MPI
       to_cpu = cpu_coord(cellc);
       if (to_cpu==myid) {
-        cellc = local_cell_coord(x,y);
-        to = PTR_VV(cell_array,cellc,cell_dim);
+        lcellc = local_cell_coord(cellc);
+        to = PTR_VV(cell_array,lcellc,cell_dim);
         INSERT_ATOM(to, input, 0);
       }
       else error("imd_generate: atom on wrong CPU");
@@ -256,7 +256,7 @@ void init_cubic(void)
 /* generate cubic crystal structures (not just fcc...) */
 void generate_fcc(int maxtyp)
 {
-  ivektor  min, max, cellc;
+  ivektor  min, max, cellc, lcellc;
   minicell *to;
   cell     *input;
   real     xx, yy, zz;
@@ -403,8 +403,8 @@ void generate_fcc(int maxtyp)
 #ifdef BUFCELLS
 	to_cpu = cpu_coord(cellc);
         if (to_cpu==myid) {
-	  cellc = local_cell_coord( xx, yy, zz );
-          to = PTR_VV(cell_array,cellc,cell_dim);
+	  lcellc = local_cell_coord( cellc );
+          to = PTR_VV(cell_array,lcellc,cell_dim);
 	  INSERT_ATOM(to, input, 0);
 	}
         else error("atom on wrong CPU");
@@ -421,7 +421,7 @@ void generate_lav()
 {
   minicell *to;
   cell     *input;
-  ivektor  min, max, cellc;
+  ivektor  min, max, cellc, lcellc;
   int      to_cpu;
   real     px[24],py[24],pz[24];
   real     xx, yy, zz;
@@ -523,8 +523,8 @@ void generate_lav()
 #ifdef BUFCELLS
 	  to_cpu = cpu_coord(cellc);
 	  if (to_cpu==myid) {
-	    cellc = local_cell_coord(xx,yy,zz);
-            to = PTR_VV(cell_array,cellc,cell_dim);
+	    lcellc = local_cell_coord(cellc);
+            to = PTR_VV(cell_array,lcellc,cell_dim);
             INSERT_ATOM(to, input, 0);
           }
           else error("imd_generate: atom on wrong CPU");
