@@ -1393,17 +1393,14 @@ void broadcast_params() {
   MPI_Bcast( &pic_scale   , 2, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ecut_kin    , 2, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ecut_pot    , 2, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &pic_ll      , 2, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &pic_ur      , 2, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &pic_res     , 2, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &pic_type    , 1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
-
+  MPI_Bcast( &pic_ll      , DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &pic_ur      , DIM, REAL, 0, MPI_COMM_WORLD); 
 #ifdef EFILTER
   MPI_Bcast( &lower_e_pot,    1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &upper_e_pot,    1, REAL,    0, MPI_COMM_WORLD);
-  MPI_Bcast( &pic_ll      , DIM, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &pic_ur      , DIM, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &efrep_interval, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
