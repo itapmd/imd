@@ -1,22 +1,137 @@
-<HTML>
-<HEAD>
-   <TITLE> TTBP </TITLE>
-<!-- Changed by: Jutta Hahn, 27-Oct-1998 -->
-</HEAD>
-<BODY BGCOLOR="#FFFFFF">
+	<HTML> <HEAD> <TITLE> TTBP</TITLE>
+<!-- Changed by: Jutta Hahn, 14-Sep-1999 -->
+	</HEAD> <BODY BGCOLOR="#FFFFFF"> <H1><font color=blue>
+Implementation of TTBP</font></H1> 
 
-<H1>Implementation of TTBP (RISC)</H1>
-Two and Three Body Potentials<br>
-<hr size = 3 width=100% noshade>
-<p>
+	<ul><li>
+<b>General remarks on TTBP</b><p>
+A <font color=blue>T</font>wo and <font color=blue>T</font>hree 
+<font color=blue>B</font>ody <font color=blue>P</font>otential 
+<font color=blue>(TTBP)</font> is implemented in the IMD code
+by Jutta Hahn.<p>
+	<li>
+<b>The interaction potential</b><p>
+In order to calculated the total energy the pair interaction and
+the three body interaction (valence angle) are considered.<p><ul><li>
+U<sub>tot</sub> = <font color=red>U<sub>2</sub></font> + <font color=green>U<sub>3</sub></font><p> 
+<img src=ttbp.gif> <p>
+	<li>
+The two body term <font color=red>U<sub>2</sub></font> is chosen in 
+standard IMD fashion. The pairwise interaction of all particles is
+given by<p>
+<pre><font color=red>U<sub>2</sub></font> = <font color=red>\sum<sub>ij</sub><sup>N</sup> U<sub>ij</sub></font> </pre>
+	<li>
+The three body interaction <font color=green>U<sub>3</sub></font> is 
+treated as follows:<p>
+<pre><font color=green>U<sub>3</sub></font> = <font color=green>\sum<sub>ijk</sub><sup>N</sup> U<sub>ijk</sub></font></pre>
+<pre><font color=green>U<sub>3</sub></font> = <font color=green> \sum<sub>i</sub><sup>N</sup> \sum<sub>j</sub><sup>N</sup> \sum<sub>k</sub><sup>N</sup> U(j-i-k)</font></pre>
+The sum is over all bonds forming an valence angle; i.e. atom i is bonded to
+1, 2, 3 and 4, forming the valence angles 1-i-2, 1-i-3, 1-i-4, 2-i-3, 2-i-4, 3-i-4.
+	<p>
+The three body term is multiplied with two distance dependent functions f(ij) and 
+f(ik) which are one for distances r<sub>ij</sub> and r<sub>ik</sub> smaller than the 
+bond lengths and zero for distances larger than a cutoff radii. <p>
+<pre><font color=green>U<sub>3</sub></font> = <font color=green>\sum<sub>ijk</sub><sup>N</sup> U(j-i-k) f(ij) f(ik)</font></pre>
+	<p>
+The three body function is a cosine function expansion of the angle theta.
+Dependent of the hybridization a variety of function may be applied. So far,
+sp3 hybrids are considered.<p>
+	<li>
+The two body term as well as the three body cutoff functions are listed in a 
+standard IMD potential table (distance versus energy) while the three body 
+interaction is calculated analytically.<p><ul><li>
+In a first step the pair interaction is calculated and the nearest neighbours
+are saved.<li>
+In the second step the nearest neighbor list is analyzed by calculating the
+three body interaction energy.
+	</ul></ul><p> <li><b>
+Parameters</b><p>
+In order to use TTBP potential tables for the pair interaction U<sub>2</sub> 
+and the cutoff functions f(ij) and f(ik) must be created (two files!). In addition 
+to the 'classical' IMD, further parameters are used in the IMD input file *.imp: <P>
 
-Decription still under construction ...
-<P>
-to be written by Jutta Hahn
-<p>
-<hr size = 0 width=100% noshade>
-<A HREF="imd.html">Back to IMD User's Guide</A> 
-<hr size = 0 width=100% noshade>
-
-</BODY>
-</HTML>
+        <P><table bgcolor="#eeeeff"><tr align="left" valign="top"><th><td bgcolor="#ccccff">
+<b>TTBP          <td bgcolor="#ccccff"> 
+  <b>IMD variable <td bgcolor="#ccccff"> 
+    <b>Description </th><tr align="left" valign="top"> <th><td>
+k       <td bgcolor="#ccccff"> 
+  ttbp_constant<td> 
+    force constant for the three body term</th><tr align="left" valign="top"> <th><td>
+&nbsp;  <td bgcolor="#ccccff"> 
+  ttbp_len <td> 
+    maximum number of neighbors used in the three body function 
+    calculation; technical value (memory)</th><tr align="left" valign="top"> <th><td>
+&nbsp;  <td bgcolor="#ccccff"> 
+  ttbp_potfile<td> 
+    potential file including the table for the cutoff functions f(ij) anf f(ik)
+    </th></table><br>
+	<li><p><b>
+Files</b><p>
+The following files are modified (m) or created (c)<p>
+        <table bgcolor="#eeeeff"><tr align="left" valign="top"><th><td bgcolor="#ccccff">
+<b>File    <td bgcolor="#ccccff">     
+  <b>Description  <td bgcolor="#ccccff"> 
+    <b>(m/c) <tr align="left" valign="top"><th><td bgcolor="#ccccff"><font color=red>
+Makefile</font><td>     
+  for example: make imd_ttbp_risc_mik <td> 
+    (m) </th><tr align="left" valign="top"><th><td bgcolor="#ccccff"> <font color=red>
+prototypes.h</font><td>     
+  new function: do_forces_ttbp_1(2)              <td> 
+    (m) </th><tr align="left" valign="top"><th><td bgcolor="#ccccff"> <font color=red>
+globals.h</font><td>     
+  global variables (ttbp_*)                      <td> 
+    (m) </th><tr align="left" valign="top"><th><td bgcolor="#ccccff"> <font color=red>
+config.h</font><td>     
+  global constant (BINC)                <td> 
+    (m) </th><tr align="left" valign="top"><th><td bgcolor="#ccccff"> <font color=red>
+imd_geom.c</font><td>     
+  cell size increasing <td> 
+   (m) </th><tr align="left" valign="top"><th> <td bgcolor="#ccccff"> <font color=red>
+imd_mpi_util.c</font><td>     
+  copy atoms to/from buffer <td> 
+   (m) </th><tr align="left" valign="top"><th> <td bgcolor="#ccccff"> <font color=red>
+imd_param.c</font><td>     
+  define TTBP variables for the parameter inputfile:                                   <br>
+  ttbp_len (number of maximum allowed neighbors in cohesive function, 
+  important to memory allocs), ttbp_constant (TTBP three body constant), 
+  ttbp_potfile (name of the cutoff function file).<td> 
+    (m) </th><tr align="left" valign="top"> <th><td bgcolor="#ccccff"> <font color=red>
+imd_main_(risc/mpi)_3d.c</font>   <td>     
+  memory allocs, free memory and walk the cells;<br>    
+  calls do_forces_ttbp_1(2).<td> 
+    (m) </th><tr align="left" valign="top"> <th><td bgcolor="#ccccff"> <font color=red>
+imd_forces_ttbp.c</font>  <td>     
+  used instead of do_forces.c;                  <br> 
+  main calculation routine;                    <br> 
+  part 1: calculation of the pair potential and 
+  its derivative (force) as well as performing 
+  the pre-calculations of the three body function
+  (do_forces_ttbp_1)                             <br>    
+  part 2: resume calculation of the three body
+  function, the total energy and 
+  evaluate the forces
+  (do_forces_ttbp_2)                             <td> 
+    (c) </th><tr align="left" valign="top"> <th><td bgcolor="#ccccff"> <font color=red>
+*.imp</font>             <td>     
+  parameter input file (example: Si):  <PRE>
+  <font color=green>ttbp_len</font>   	    50         
+  <font color=green>ttbp_constant</font>     90.0
+  <font color=green>ttbp_potfile</font>      filename.pot        </PRE><td> (c) 
+        </table> <P> 
+Important: imd_forces_ttbp.c is a full copy of imd_forces.c and uses 
+the classical pair potential plus additions concerning the TTBP. Therefore, 
+whenever anything is modified in imd_forces.c it should also maybe modified 
+in imd_forces_ttbp.c <P> 
+	<li> <b>
+Remarks	</b><p><UL><li>
+The memory allocation for creation of the neighbor list is in a bad mood
+(especially for the parallel version this will cause trouble ...).
+	<li>
+When changing the three body potential function only the imd_forces_ttbp.c
+file needs to be modified. 
+	<li>
+The parallel version only works for non-AR case (no actio=reactio)
+	</ul> </ul> <hr size = 0 width=100% noshade><small>
+Written by Jutta Hahn (last update: Sep 15, 1999)</small><p> <A HREF="imd.html">
+Back to IMD User's Guide</A> <hr size = 0 width=100% noshade>
+        </PRE></BODY> </HTML>
