@@ -141,6 +141,8 @@ ifeq (AthlonMP-icc,${IMDSYS})
   CC_OMP	= icc
   CC_MPI	= mpicc
   CC_OMPI	= mpicc
+  MPICH_CC      = icc
+  MPICH_CLINKER = icc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -ip -tpp6 -axK #-static
@@ -149,44 +151,54 @@ ifeq (AthlonMP-icc,${IMDSYS})
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -prof_gen
   RCD_FLAGS	+= -DRCD -rcd
+  export MPICH_CC MPICH_CLINKER
 endif
 
 # Athlon MP or XP, gcc3
 ifeq (AthlonMP-gcc3,${IMDSYS})
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
+  MPICH_CC      = gcc
+  MPICH_CLINKER = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -march=athlon-mp # -static
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
+  export        MPICH_CC MPICH_CLINKER
 endif
 
 # Pentium 4 or Xeon, icc
 ifeq (P4-icc,${IMDSYS})
   CC_SERIAL	= icc
   CC_OMP	= icc
-  CC_MPI	= mpicc
+  CC_MPI	= mpicc 
   CC_OMPI	= mpicc
+  MPICH_CC      = icc
+  MPICH_CLINKER = icc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
-  OPT_FLAGS	+= -O -ip -tpp7 #-static
+  OPT_FLAGS	+= -O -ip -tpp7 # -static
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -prof_gen
   RCD_FLAGS	+= -DRCD -rcd
+  export        MPICH_CC MPICH_CLINKER
 endif
 
 # Pentium 4 or Xeon, gcc3
 ifeq (P4-gcc3,${IMDSYS})
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
+  MPICH_CC      = gcc
+  MPICH_CLINKER = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -march=pentium4 # -static
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
+  export        MPICH_CC MPICH_CLINKER
 endif
 
 # Pentium III, icc
@@ -195,36 +207,45 @@ ifeq (P3-icc,${IMDSYS})
   CC_OMP	= icc
   CC_MPI	= mpicc
   CC_OMPI	= mpicc
+  MPICH_CC      = icc
+  MPICH_CLINKER = icc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
-  OPT_FLAGS	+= -O -ip -tpp6 -axK #-static
+  OPT_FLAGS	+= -O -ip -tpp6 -axK # -static
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -prof_gen
   RCD_FLAGS	+= -DRCD -rcd
+  export        MPICH_CC MPICH_CLINKER
 endif
 
 # Pentium III, gcc3
 ifeq (P3-gcc3,${IMDSYS})
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
+  MPICH_CC      = gcc
+  MPICH_CLINKER = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -march=pentium3 # -static
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
+  export        MPICH_CC MPICH_CLINKER
 endif
 
 # generic ia32 CPU, gcc 2.95 - slow!
 ifeq (ia32-gcc2,${IMDSYS})
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
+  MPICH_CC      = gcc
+  MPICH_CLINKER = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O3
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
+  export        MPICH_CC MPICH_CLINKER
 endif
 
 ###########################################################################
