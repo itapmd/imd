@@ -7,6 +7,7 @@ CFLAGS = -O6 -w -L/usr/X11/lib -DTWOD
 LIBS = -lvogle -lX11 -lm
 
 all:	2dvis
+	mv 2dvis ${HOME}/bin/${HOSTTYPE}
 
 2dvis:	2dvis.o client.o sockutil.o
 	$(CC) $(CFLAGS) -o 2dvis 2dvis.o client.o sockutil.o $(LIBS)

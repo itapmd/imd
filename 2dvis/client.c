@@ -50,7 +50,7 @@ int receive_conf()
   int itmp;
   int anz;
   extern double *x, *y, *z, *vx, *vy, *vz;
-  extern double *pot, *masse;
+  extern double *pot, *kin, *masse;
   extern int *nummer, *sorte;
   float maxx,maxy,minx,miny,maxp,minp,maxk,mink;
 
@@ -78,6 +78,7 @@ int receive_conf()
   /*  ReadFull(socket_id, (void *)&boxx, sizeof(double));
   ReadFull(socket_id, (void *)&boxy, sizeof(double));*/
   for (i=0;i<anz;i++) {
+    kin[i]=0;
     ReadFull(socket_id, (void *)&itmp, sizeof(int));
     nummer[i] = itmp;
     ReadFull(socket_id, (void *)&itmp, sizeof(int));
@@ -98,22 +99,35 @@ int receive_conf()
 #endif
     ReadFull(socket_id, (void *)&tmp, sizeof(double));
     vx[i] = tmp;
+    kin[i]+=tmp*tmp;
     ReadFull(socket_id, (void *)&tmp, sizeof(double));
     vy[i] = tmp;
+    kin[i]+=tmp*tmp;
 #ifndef TWOD
     ReadFull(socket_id, (void *)&tmp, sizeof(double));
     vz[i] = tmp;
+    kin[i]+=tmp*tmp;
 #endif
     ReadFull(socket_id, (void *)&tmp, sizeof(double));
     if (maxp<tmp) maxp=tmp;
     if (minp>tmp) minp=tmp;
     pot[i] = tmp;
+    if (maxk<kin[i]) maxk=kin[i];
+    if (mink>kin[i]) mink=kin[i];
   }
 
   scalex=2.0/(maxx-minx);
   scaley=2.0/(maxy-miny);
-  scalepot=COLRES/(maxp-minp);
+  if (maxp==minp)
+    scalepot=1.0;
+  else
+    scalepot=COLRES/(maxp-minp);
+  if (maxk==mink)
+    scalekin=1.0;
+  else
+    scalekin=COLRES/(maxk-mink);
   offspot=minp;
+  offskin=mink;
 
   return anz;
 }
@@ -299,81 +313,3 @@ int initClient(int *soc, int i, char *server_name){
   }
 }
 
-double get_maximum(double *array, int size)
-/******************************************************************/
-/* returns the maximum of array[size]                             */
-/******************************************************************/
-{
-  double *float_tmp, max;
-  int i;
-  float_tmp = array;
-  max = *array++;
-  for(i=1; i<size; i++){
-    max = (max > *array ? max : *array); array++;
-  }
-  array = float_tmp;
-  printf("maximum is %f\n",max);
-  return max;
-}
-
-double get_minimum(double *array, int size)
-/******************************************************************/
-/* returns the minimum of array[size]                             */
-/******************************************************************/
-{
-  double *float_tmp, min;
-  int i;
-  float_tmp = array;
-  min = *array++;
-  for(i=1; i<size; i++){
-    min = (min < *array ? min : *array); array++;
-  }
-  array = float_tmp;
-  printf("minimum is %f\n",min);
-  return min;
-}
-
-void scale_array(double *array, int size, double min, double max, double *buffer)
-/******************************************************************/
-/* scale an array with values between min and max                 */
-/******************************************************************/
-{
-  double grayvalue, width, *float_tmp;
-  int i; 
-  width = max - min;
-  printf("scale_array: width of data is %f\n",width);
-  float_tmp = array;
-  if (width == 0){
-    printf("cannot scale due to width 0");
-  }
-  else{
-    for(i=0; i<size; i++){
-      grayvalue =((*array++)-min)/width;
-      grayvalue = (grayvalue > 1.0) ? grayvalue = 1.0 : grayvalue;
-      grayvalue = (grayvalue < 0.0) ? grayvalue = 0.0 : grayvalue;
-      *buffer++ = grayvalue;
-    }
-  }
-  array = float_tmp;
-}
-
-void write_bytes_to_file(char filename[256],char *byte_array, int size)
-/******************************************************************/
-/* write size bytes to file filename                              */
-/******************************************************************/
-{
-  int fd;
-  if( ( fd=creat(filename,0640)) == -1 ) {
-    printf("Cannot create file named %s for output\n",filename);
-  }
-  if ((fd = open(filename, O_CREAT | O_RDWR)) < 0) {
-    perror("open");
-    fprintf(stderr, "could not open %s\n", filename);
-  }
-  else{
-    printf("writing data to file ...");
-    write(fd,byte_array,size);
-    close(fd);
-    printf("finished\n");
-  }
-}
