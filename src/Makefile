@@ -373,6 +373,7 @@ ifeq (USparc3-cc,${IMDSYS})
   OMPI_FLAGS	+= -xopenmp
   PROF_FLAGS	+= -p
   DEBUG_FLAGS	+= -g -xO3
+  LFLAGS        += -fast -xtarget=ultra3 -xarch=v9b
 endif
 
 # sparc, gcc2 - slow!
@@ -1035,7 +1036,7 @@ imd_forces_covalent.o: imd_forces_covalent.c
 
 # How to link
 ${MAKETARGET}: ${OBJECTS} 
-	${CC} -o $@ ${OBJECTS} ${LIBS}
+	${CC} ${LFLAGS} -o $@ ${OBJECTS} ${LIBS}
 	${MV} $@ ${BIN_DIR}; rm -f $@
 
 # First recursion only set the MAKETARGET Variable
