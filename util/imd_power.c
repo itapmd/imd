@@ -165,7 +165,7 @@ void read_engfile()
   /* read first line */
   n_cols = sscanf( buf,
     "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
-    r,r+1,r+2,r+3,r+4,r+5,r+6,r+6,r+8,r+9,r+10,r+11,r+12,r+13,r+14,r+15);
+    r,r+1,r+2,r+3,r+4,r+5,r+6,r+7,r+8,r+9,r+10,r+11,r+12,r+13,r+14,r+15);
 
   /* allocate data */
   for (j=0; j<n_cols; j++) {
@@ -179,7 +179,7 @@ void read_engfile()
     fgets(buf,sizeof(buf),infile); 
     p = sscanf( buf,
       "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
-      r,r+1,r+2,r+3,r+4,r+5,r+6,r+6,r+8,r+9,r+10,r+11,r+12,r+13,r+14,r+15);
+      r,r+1,r+2,r+3,r+4,r+5,r+6,r+7,r+8,r+9,r+10,r+11,r+12,r+13,r+14,r+15);
     if ((p<n_cols) || (feof(infile))) error("not enough data");
     for (j=0; j<n_cols; j++) {
       cols[j][i] = r[j];
