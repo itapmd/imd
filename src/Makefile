@@ -454,6 +454,11 @@ CFLAGS += -DDEFORM
 SOURCES += ${DEFORMSOURCES}
 endif
 
+ifneq (,$(findstring exp,${MAKETARGET}))
+CFLAGS += -DEXPAND
+SOURCES += ${DEFORMSOURCES}
+endif
+
 ifneq (,$(findstring shock,${MAKETARGET}))
 CFLAGS += -DSHOCK
 SOURCES += ${TRANSSOURCES}

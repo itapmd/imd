@@ -75,10 +75,11 @@ void main_loop(void)
     mpi_addtime(&time_comm);
 #endif
 
-    /* shear, pull, frac and hom */
+#ifdef EXPAND
+    if ((exp_interval > 0) && (0 == steps%exp_interval)) expand_sample();
+#endif
 #ifdef DEFORM
     if ((hom_interval > 0) && (0 == steps%hom_interval)) shear_sample();
-    if ((exp_interval > 0) && (0 == steps%exp_interval)) expand_sample();
     if (steps > annealsteps) {
       deform_int++;
       if ((tot_kin_energy < ekin_threshold) || (deform_int==max_deform_int)) {

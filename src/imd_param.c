@@ -568,6 +568,16 @@ void getparamfile(char *paramfname, int sim)
       };
       getparam("pic_at_radius", pic_at_radius,PARAM_REAL_COPY,1,ntypes);
     }
+#ifdef EXPAND
+    else if (strcasecmp(token,"exp_interval")==0) {
+      /* period of expansion intervals */
+      getparam("exp_interval",&exp_interval,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"expansion")==0) {
+      /* expansion */
+      getparam("expansion",&expansion,PARAM_REAL,DIM,DIM);
+    }
+#endif
 #ifdef DEFORM
     else if (strcasecmp(token,"hom_interval")==0) {
       /* period of homshear intervals */
@@ -576,14 +586,6 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"shear_max")==0) {
       /* maximum shear */
       getparam("shear_max",&shear_max,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"exp_interval")==0) {
-      /* period of expansion intervals */
-      getparam("exp_interval",&exp_interval,PARAM_INT,1,1);
-    }
-    else if (strcasecmp(token,"expansion")==0) {
-      /* expansion */
-      getparam("expansion",&expansion,PARAM_REAL,1,1);
     }
 #endif
 #if defined(FRAC) || defined(DEFORM)
@@ -1189,11 +1191,13 @@ void broadcast_params() {
   MPI_Bcast( &op_weight,       4, MPI_REAL, 0, MPI_COMM_WORLD);
 #endif
 
+#ifdef EXPAND
+  MPI_Bcast( &exp_interval , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &expansion ,  DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+#endif
 #ifdef DEFORM
   MPI_Bcast( &hom_interval , 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &exp_interval , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &shear_max ,    1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &expansion ,    1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &strip_shift ,DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
 #if defined(FRAC) || defined(DEFORM)

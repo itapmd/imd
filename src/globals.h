@@ -244,11 +244,14 @@ EXTERN vektor limit_growth INIT(einsvektor);
 EXTERN real end_temp INIT(0.0);        /* Temperature and at of simulation */
 #endif
 
+#ifdef EXPAND
+EXTERN int    exp_interval INIT(0);       /* period of expansion steps */
+EXTERN vektor expansion INIT(einsvektor); /* expansion factors in x/y/z-dir */
+#endif
+
 #ifdef DEFORM 
-EXTERN int    hom_interval INIT(0);    /* period of homshear steps */
-EXTERN real   shear_max INIT(0.0);     /* max shear in y-direction */
-EXTERN int    exp_interval INIT(0);    /* period of expansion steps */
-EXTERN real   expansion INIT(1.0);     /* max expansion in y-direction */
+EXTERN int    hom_interval INIT(0);       /* period of homshear steps */
+EXTERN real   shear_max INIT(0.0);        /* max shear in y-direction */
 #endif
 
 #if defined(FRAC) || defined(DEFORM)
