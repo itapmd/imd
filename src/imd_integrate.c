@@ -76,23 +76,21 @@ void move_atoms_nve(void)
         rot_energie_1 = SPRODN(p->dreh_impuls,i,p->dreh_impuls,i);
 #endif
 
-#ifdef FBC
 	sort=(p->sorte[i]);
+#ifdef FBC
         /* give virtual particles their extra force */
 	(p->kraft X(i)) += ((fbc_forces + sort)->x);
 	(p->kraft Y(i)) += ((fbc_forces + sort)->y);
 #ifndef TWOD
 	(p->kraft Z(i)) += ((fbc_forces + sort)->z);
 #endif
-
-	/* and set their force (->impulse) in restricted directions to 0 */
+#endif
+	/* and set their force (->momentum) in restricted directions to 0 */
 	(p->kraft X(i)) *= ((restrictions + sort)->x);
 	(p->kraft Y(i)) *= ((restrictions + sort)->y);
 #ifndef TWOD
 	(p->kraft Z(i)) *= ((restrictions + sort)->z);
 #endif
-
-#endif /* FBC */
 
 #ifdef FNORM
 	fnorm +=  SPRODN(p->kraft,i,p->kraft,i);
@@ -277,8 +275,8 @@ void move_atoms_mik(void)
 
         kin_energie_1 = SPRODN(p->impuls,i,p->impuls,i);
 
-#ifdef FBC
 	sort=(p->sorte[i]);
+#ifdef FBC
 #ifdef ATNR /* debugging  stuff */
 	if(p->nummer[i]==ATNR){
 	printf("kraft vorher: %.16f  %.16f  %.16f \n",(p->kraft X(i)),(p->kraft Y(i)),(p->kraft Z(i)));
@@ -292,13 +290,16 @@ void move_atoms_mik(void)
 #ifndef TWOD
 	(p->kraft Z(i)) += ((fbc_forces + sort)->z);
 #endif
-	/* and set their force (->impulse) in restricted directions to 0 */
+#endif /* FBC */
+
+	/* and set their force (->momentum) in restricted directions to 0 */
 	(p->kraft X(i)) *= ((restrictions + sort)->x);
 	(p->kraft Y(i)) *= ((restrictions + sort)->y);
 #ifndef TWOD
 	(p->kraft Z(i)) *= ((restrictions + sort)->z);
 #endif
 	
+#ifdef FBC
 #ifdef ATNR
 	if(p->nummer[i]==ATNR){
 	printf("kraft nachher: %.16f  %.16f  %.16f \n",(p->kraft X(i)),(p->kraft Y(i)),(p->kraft Z(i)));
@@ -307,8 +308,7 @@ void move_atoms_mik(void)
 	fflush(stdout);
 	}
 #endif
-
-#endif  /*FBC */
+#endif  /* FBC */
 
 #ifdef FNORM
 	fnorm +=  SPRODN(p->kraft,i,p->kraft,i);
@@ -494,7 +494,7 @@ void move_atoms_nvt(void)
         rot_energie_1 +=  SPRODN(p->dreh_impuls,i,p->dreh_impuls,i) 
                                                   / p->traeg_moment[i];
 #endif
-#ifdef FBC
+
 	sort=(p->sorte[i]);
 	p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i)) 
                            * eins_d_reibung * (restrictions + sort)->x;
@@ -503,17 +503,6 @@ void move_atoms_nvt(void)
 #ifndef TWOD
         p->impuls Z(i) = (p->impuls Z(i)*reibung + timestep * p->kraft Z(i)) 
                            * eins_d_reibung * (restrictions + sort)->z;
-#endif
-#else
-        /* new momenta */
-        p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i)) 
-                           * eins_d_reibung;
-        p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i)) 
-                           * eins_d_reibung;
-#ifndef TWOD
-        p->impuls Z(i) = (p->impuls Z(i)*reibung + timestep * p->kraft Z(i)) 
-                           * eins_d_reibung;
-#endif
 #endif
 
 #ifdef UNIAX
@@ -1262,10 +1251,7 @@ void move_atoms_stm(void)
     real reibung, eins_d_reibung;
     real tmp1, tmp2;
     vektor d;
-#ifdef FBC
     int sort=0;
-#endif
-
 
     p = cell_array + CELLS(k);
 
@@ -1290,21 +1276,11 @@ void move_atoms_stm(void)
         kin_energie_1 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
 
         /* new momenta */
-
-
-#ifdef FBC
 	sort=(p->sorte[i]);
-	p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i))                
+	p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i))
                           * eins_d_reibung * (restrictions + sort)->x;
-        p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i))  	            
+        p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i))
                           * eins_d_reibung * (restrictions + sort)->y;
-#else
-        /* new momenta */
-        p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i))                
-	                  * eins_d_reibung;
-        p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i))                
-	                  * eins_d_reibung;
-#endif
 
         /* twice the new kinetic energy */ 
         kin_energie_2 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);

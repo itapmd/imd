@@ -174,8 +174,8 @@ void read_atoms(str255 infilename)
         input->impuls X(0) = 0;
         input->impuls Y(0) = 0;
       } else {
-	input->impuls X(0) = vau.x * m;
-	input->impuls Y(0) = vau.y * m;
+	input->impuls X(0) = vau.x * m * (restrictions+s)->x;
+	input->impuls Y(0) = vau.y * m * (restrictions+s)->y;
       }
       input->kraft X(0) = 0;
       input->kraft Y(0) = 0;

@@ -253,9 +253,9 @@ void read_atoms(str255 infilename)
         input->impuls Y(0) = 0;
         input->impuls Z(0) = 0;
       } else {
-        input->impuls X(0) = vau.x * m;
-        input->impuls Y(0) = vau.y * m;
-        input->impuls Z(0) = vau.z * m;
+        input->impuls X(0) = vau.x * m * (restrictions+s)->x;
+        input->impuls Y(0) = vau.y * m * (restrictions+s)->y;
+        input->impuls Z(0) = vau.z * m * (restrictions+s)->z;
       }
 #endif /* UNIAX or not UNIAX */
       input->kraft  X(0) = 0;

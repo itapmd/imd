@@ -123,8 +123,6 @@ void shear_sample(void)
 void deform_sample(void) 
 {
   int k;
-  real box_x_half = 0.5 * box_x.x;
-
   /* loop over all atoms */
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -132,24 +130,16 @@ void deform_sample(void)
   for (k=0; k<ncells; ++k) {
     int i;
     cell *p;
+    int sort;
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i) {
-      /* move only atoms with negative number */
-      if (NUMMER(p,i) > 0) continue;
-      /* which direction of pulling? */
-      if (p->ort X(i) <= box_x_half) {
-        p->ort X(i) += strip_shift.x;
-        p->ort Y(i) += strip_shift.y;
+      sort=(p->sorte[i]);
+      /* move virtual particles  */
+      (p->ort X(i)) += ((deform_shift + sort)->x);
+      (p->ort Y(i)) += ((deform_shift + sort)->y);
 #ifndef TWOD
-        p->ort Z(i) += strip_shift.z;
+      (p->ort Z(i)) += ((deform_shift + sort)->z);
 #endif
-      } else {
-        p->ort X(i) -= strip_shift.x;
-        p->ort Y(i) -= strip_shift.y;
-#ifndef TWOD
-        p->ort Z(i) -= strip_shift.z;
-#endif        
-      }
     }
   }
 }
