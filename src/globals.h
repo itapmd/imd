@@ -269,9 +269,9 @@ EXTERN int    use_curr_pressure INIT(0);  /* which starting pressure to use */
 EXTERN vektor xi INIT(nullvektor), xi_old INIT(nullvektor);
 #endif
 
-#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
+
 EXTERN real end_temp INIT(0.0);        /* Temperature and at of simulation */
-#endif
+
 
 #ifdef HOMDEF
 EXTERN int    exp_interval INIT(0);       /* period of expansion steps */

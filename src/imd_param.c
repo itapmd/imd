@@ -604,7 +604,7 @@ void getparamfile(char *paramfname, int sim)
       /* set imposed temperature to current system temperature */
       use_curr_temp = 1;
     }
-#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
+#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
     else if (strcasecmp(token,"endtemp")==0) {
       /* temperature at end of sim. */
       getparam("endtemp",&end_temp,PARAM_REAL,1,1);
@@ -1189,7 +1189,7 @@ void check_parameters_complete()
     error("starttemp is missing or zero.");
   }
 #endif
-#if defined(NPT) || defined(NVT) || defined(STM)
+#if defined(NPT) || defined(NVT) || defined(STM) || defined(FRAC)
   if (end_temp == 0) {
     error("endtemp is missing or zero.");
   }
@@ -1467,7 +1467,7 @@ void broadcast_params() {
   MPI_Bcast( eam2_at_rho_filename,   255, MPI_CHAR, 0, MPI_COMM_WORLD); 
 #endif
 
-#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
+#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
   MPI_Bcast( &end_temp,      1, REAL, 0, MPI_COMM_WORLD); 
 #endif
 #ifdef MONOLJ

@@ -61,7 +61,7 @@ void main_loop(void)
 
   if (0==myid) printf( "Starting simulation %d\n", simulation );
 
-#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
+#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
   dtemp = (end_temp - temperature) / (steps_max - steps_min);
 #endif
 
@@ -218,7 +218,7 @@ void main_loop(void)
 
     move_atoms(); 
 
-#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
+#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
     if ((steps==steps_min) && (use_curr_temp==1)) {
 #ifdef STM
       temperature = 2 * tot_kin_energy / (nactive-n_stadium);
@@ -251,7 +251,7 @@ void main_loop(void)
     }
 #endif
 
-#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
+#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC) 
     temperature += dtemp;
 #endif
 
