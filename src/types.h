@@ -106,7 +106,7 @@ typedef struct {
 #ifdef AVPOS
   shortint    *sheet;
 #endif
-#if defined(ORDPAR) && !defined(TWOD)
+#ifdef ORDPAR
   shortint    *nbanz;
 #endif
 #ifdef REFPOS

@@ -356,7 +356,7 @@ void make_histograms(hist_t *hist)
         pot_hist_1[num] += p->pot_eng[i] - p->Epot_ref[i];
       else
 #endif
-#if defined(ORDPAR) && !defined(TWOD)
+#ifdef ORDPAR
       pot_hist_1[num] += (p->nbanz[i]==0)?0:p->pot_eng[i]/p->nbanz[i];
 #else
       pot_hist_1[num] += POTENG(p,i);
