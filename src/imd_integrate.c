@@ -36,8 +36,10 @@ void move_atoms_nve(void)
 #endif
   static int count = 0;
   tot_kin_energy = 0.0;
+#ifdef FNORM
   fnorm = 0.0;
   PxF   = 0.0;
+#endif
 
 
   /* loop over all cells */
@@ -257,7 +259,9 @@ void move_atoms_mik(void)
   real tmp;
   static int count = 0;
   tot_kin_energy = 0.0;
+#ifdef FNORM
   fnorm = 0.0;
+#endif
 
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
@@ -424,6 +428,9 @@ void move_atoms_nvt(void)
   real rot_energie_1 = 0.0, rot_energie_2 = 0.0;
   real reibung_rot,  eins_d_reib_rot;
 #endif
+#ifdef FNORM
+  fnorm = 0.0;
+#endif
 
   reibung     =        1.0 - eta * inv_tau_eta * timestep / 2.0;
   eins_d_reib = 1.0 / (1.0 + eta * inv_tau_eta * timestep / 2.0);
@@ -456,6 +463,16 @@ void move_atoms_nvt(void)
 #endif
 
 	sort = VSORTE(p,i);
+
+	p->kraft X(i) *= (restrictions + sort)->x;
+	p->kraft Y(i) *= (restrictions + sort)->y;
+#ifndef TWOD
+	p->kraft Z(i) *= (restrictions + sort)->z;
+#endif
+#ifdef FNORM
+	fnorm +=  SPRODN(p->kraft,i,p->kraft,i);
+#endif
+
 	p->impuls X(i) = (p->impuls X(i) * reibung + timestep * p->kraft X(i)) 
                            * eins_d_reib * (restrictions + sort)->x;
         p->impuls Y(i) = (p->impuls Y(i) * reibung + timestep * p->kraft Y(i)) 
