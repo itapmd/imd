@@ -255,6 +255,7 @@ void main_loop(void)
 	    p->impuls Z(i) = 0.0;
 	  }
 	}
+      write_properties(steps); 
       }
     /* properties as they were after setting p=0 and 
        calculating ekin_ and p. p should then = f*dt
