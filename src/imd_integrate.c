@@ -24,6 +24,14 @@
 
 void move_atoms_nve(void)
 {
+#ifdef MPI
+#ifdef FNORM
+  real tmp2;
+#endif
+#ifdef GLOK
+  real tmp3;
+#endif
+#endif
   int k;
   real tmp;
   static int count = 0;
@@ -195,8 +203,8 @@ void move_atoms_nve(void)
 #endif
 #ifdef GLOK
   /* Add all the (local) scalars of the local scalar products of the global force & impuls vector */ 
-  MPI_Allreduce( &PxF, &tmp2, 1, MPI_REAL, MPI_SUM, cpugrid);
-  PxF = tmp2;
+  MPI_Allreduce( &PxF, &tmp3, 1, MPI_REAL, MPI_SUM, cpugrid);
+  PxF = tmp3;
 #endif
 #endif
 
