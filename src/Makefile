@@ -138,8 +138,8 @@ endif
 CC_DEFAULT_MPI_i586		= mpicc
 
 # gcc, serial
-#CFLAGS_gcc_SERIAL_i586		= -O -march=athlon-mp -mfpmath=sse -msse
-CFLAGS_gcc_SERIAL_i586		= -mcpu=i686 -O3
+CFLAGS_gcc_SERIAL_i586		= -O -march=athlon-mp -mfpmath=sse -msse -static  -funroll-all-loops -fomit-frame-pointer
+#CFLAGS_gcc_SERIAL_i586		= -mcpu=i686 -O3
 CFLAGS_gcc_SERIAL_i586_DEBUG	= -mcpu=i686 -g
 CFLAGS_gcc_SERIAL_i586_PROF	= -g3 -pg
 
@@ -149,12 +149,12 @@ CFLAGS_pgcc_SERIAL_i586_DEBUG  	= -g -Xa
 CFLAGS_pgcc_SERIAL_i586_PROF   	= -Mprof=func
 
 # icc, serial
-CFLAGS_icc_SERIAL_i586        	= -O -ip -axK
+CFLAGS_icc_SERIAL_i586        	= -O -ip -axK -static
 CFLAGS_icc_SERIAL_i586_PROF	= -prof_gen
 RCDFLAGS_icc_SERIAL_i586	= -DRCD -rcd
 
 # icc, OpenMP
-CFLAGS_icc_OMP_i586        	= -O -ip -axK -openmp
+CFLAGS_icc_OMP_i586        	= -O -ip -axK -openmp -static
 CFLAGS_icc_OMP_i586_PROF	= -prof_gen
 RCDFLAGS_icc_OMP_i586		= -DRCD -rcd
 
@@ -164,13 +164,13 @@ CFLAGS_KCC_SERIAL_i586       	= +K3 -O3 --diag_suppress 177,550
 # MPICH
 # there are many mpicc; if available, we take the Intel compiler
 ifneq (,$(strip $(findstring ia32,${PATH})))
-CFLAGS_mpicc_MPI_i586		= -O -ip -axK
+CFLAGS_mpicc_MPI_i586		= -O -ip -axK -static
 CFLAGS_mpicc_MPI_i586_DEBUG	= -g
 CFLAGS_mpicc_MPI_i586_PROF	= -prof_gen
 RCDFLAGS_mpicc_MPI_i586		= -DRCD -rcd
 else
-#CFLAGS_mpicc_MPI_i586		= -O -march=athlon-mp -mfpmath=sse -msse
-CFLAGS_mpicc_MPI_i586		= -O3 -mcpu=i686
+CFLAGS_mpicc_MPI_i586		= -O -march=athlon-mp -mfpmath=sse -msse
+#CFLAGS_mpicc_MPI_i586		= -O3 -mcpu=i686
 CFLAGS_mpicc_MPI_i586_DEBUG	= -g
 CFLAGS_mpicc_MPI_i586_PROF	= -g3 -pg
 endif
@@ -178,7 +178,7 @@ endif
 # MPICH + OpenMP
 # there are many mpicc; if available, we take the Intel compiler
 ifneq (,$(strip $(findstring ia32,${PATH})))
-CFLAGS_mpicc_OMPI_i586		= -O -ip -axK -openmp
+CFLAGS_mpicc_OMPI_i586		= -O -ip -axK -openmp -static
 CFLAGS_mpicc_OMPI_i586_DEBUG	= -g
 CFLAGS_mpicc_OMPI_i586_PROF	= -prof_gen
 RCDFLAGS_mpicc_OMPI_i586	= -DRCD -rcd

@@ -316,13 +316,13 @@ void move_atoms_mik(void)
 {
   int k;
   real tmpvec1[2], tmpvec2[2];
+#ifdef CLONE
+  int clones;
+#endif
   static int count = 0;
   tot_kin_energy = 0.0;
   fnorm   = 0.0;
 
-#ifdef CLONE
-  int clones;
-#endif
 
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
@@ -491,15 +491,16 @@ void move_atoms_nvt(void)
 {
   int k;
   real tmpvec1[5], tmpvec2[5], ttt;
+#ifdef CLONE
+  int clones;
+#endif
   real E_kin_1 = 0.0, E_kin_2 = 0.0;
   real reibung, eins_d_reib;
   real E_rot_1 = 0.0, E_rot_2 = 0.0;
 #ifdef UNIAX
   real reibung_rot,  eins_d_reib_rot;
 #endif
-#ifdef CLONE
-  int clones;
-#endif
+
   fnorm   = 0.0;
   omega_E = 0.0;
 
@@ -1021,6 +1022,10 @@ void calc_dyn_pressure(void)
 void move_atoms_npt_iso(void)
 {
   int  k;
+#ifdef CLONE
+  int clones;
+#endif
+
   real Ekin_new = 0.0, Erot_new = 0.0;
   real pfric, pifric, rfric, rifric;
   real tmpvec1[4], tmpvec2[4], ttt;
@@ -1032,9 +1037,6 @@ void move_atoms_npt_iso(void)
   pressure = (0.6 * (Ekin_old + Erot_old) + virial) / (DIM * volume);
 #else
   pressure = (Ekin_old + virial) / (DIM * volume) ;
-#endif
-#ifdef CLONE
-  int clones;
 #endif
 
   /* time evolution of xi */
@@ -1414,6 +1416,11 @@ void move_atoms_frac(void)
 
 {
   int k;
+
+#ifdef CLONE
+  int clones;
+#endif
+
   real tmpvec1[7], tmpvec2[7], ttt;
   real E_kin_1        = 0.0, E_kin_2        = 0.0; 
   real E_kin_damp1    = 0.0, E_kin_damp2    = 0.0;
@@ -1426,10 +1433,6 @@ void move_atoms_frac(void)
   fnorm     = 0.0;
   sum_f     = 0.0;
   n_stadium = 0;
-
-#ifdef CLONE
-  int clones;
-#endif
 
   if(expansionmode==1)
       dotepsilon = dotepsilon0 / (1.0 + dotepsilon0 * steps * timestep);
@@ -1693,6 +1696,10 @@ void move_atoms_ftg(void)
 
 {
   int j, k;
+#ifdef CLONE
+  int clones;
+#endif
+
   static real *E_kin_1     = NULL; static real *E_kin_2     = NULL;
   static real *ftgtmpvec1  = NULL; static real *ftgtmpvec2  = NULL;
   static int  *iftgtmpvec1 = NULL; static int  *iftgtmpvec2 = NULL;
@@ -1704,9 +1711,6 @@ void move_atoms_ftg(void)
   int slice;
   real gamma_tmp;
 
-#ifdef CLONE
-  int clones;
-#endif
 
   /* alloc vector versions of E_kin and  ftgtmpvect*/
   if (NULL==E_kin_1) {
