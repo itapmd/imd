@@ -47,7 +47,7 @@ void readparamfile(char *paramfname)
     /* read one line */
     res=fgets(buffer,1024,pf);
     if (NULL == res) break;
-    token = strtok(buffer," \t\r\n");
+    token = strtok(buffer," =\t\r\n");
     if (NULL == token) continue; /* skip blank lines */
     if (token[0]=='#') continue; /* skip comments */
 

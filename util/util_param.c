@@ -699,7 +699,7 @@ void getparamfile(char *paramfname)
   do {
     res=fgets(buffer,1024,pf);
     if (NULL == res) break; /* probably EOF reached */
-    token = strtok(buffer," \t\n");
+    token = strtok(buffer," =\t\r\n");
     if (NULL == token) continue; /* skip blank lines */
     if (token[0]=='#') continue; /* skip comments */
 

@@ -67,13 +67,17 @@ vasp2chkpt: vasp2chkpt.c param.c param.h
 vasp2msqd: vasp2msqd.c param.c param.h
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c vasp2msqd.c -lm
 
+# convert VASP charge density to volume file
+chg2volume: chg2volume.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ chg2volume.c -lm
+
 # histograms of square displacement files
 sqd2hist: sqd2hist.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ sqd2hist.c -lm
 
 # smoothly cut potential table
-cutpot: cutpot.c
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ cutpot.c -lm
+cutpot: cutpot.c param.c param.h
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ param.c cutpot.c -lm
 
 # compute power spectrum in .eng file
 imd_power: fft.c imd_power.c

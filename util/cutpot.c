@@ -62,6 +62,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include "param.h"
 
 #define SQRTAIL 0
 #define EXPTAIL 1
@@ -78,14 +79,6 @@
 typedef char str255[255];
 
 typedef double real;
-
-/* parameter types */
-typedef enum ParamType {
-  PARAM_STR, PARAM_STRPTR,
-  PARAM_INT, PARAM_INT_COPY,
-  PARAM_INTEGER, PARAM_INTEGER_COPY,
-  PARAM_REAL, PARAM_REAL_COPY
-} PARAMTYPE;
 
 /* data structure to store a potential table or a function table */ 
 typedef struct {
@@ -118,162 +111,6 @@ void error(char *msg)
 
 /*****************************************************************************
 *
-*  read one parameter (routine from imd_param.c)
-*
-*****************************************************************************/
-
-int getparam(int curline, char *param_name, void *param, 
-             PARAMTYPE ptype, int pnum_min, int pnum_max)
-{
-  static char errmsg[256];
-  char *str;
-  int i;
-  int numread;
-
-  numread = 0;
-  if (ptype == PARAM_STR) {
-    str = strtok(NULL," \t\n");
-    if (str == NULL) {
-      fprintf(stderr,"parameter for %s missing in line %u\n",
-              param_name,curline);
-      error("string expected");
-    }
-    else strncpy((char *)param,str,pnum_max);
-    numread++;
-  }
-  else if (ptype == PARAM_STRPTR) {
-    str = strtok(NULL," \t\n");
-    if (str == NULL) {
-      fprintf(stderr,"parameter for %s missing in line %u\n",
-              param_name,curline);
-      error("string expected");
-    }
-    else *((char**)param) = strdup(str);
-    numread++;
-  }
-  else if (ptype == PARAM_INT) {
-    for (i=0; i<pnum_min; i++) {
-      str = strtok(NULL," \t\n");
-      if (str == NULL) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
-                param_name,curline);
-        sprintf(errmsg,"integer vector of dim %u expected",
-                (unsigned)pnum_min);
-        error(errmsg);
-      }
-      else ((int*)param)[i] = atoi(str);
-      numread++;
-    }
-    for (i=pnum_min; i<pnum_max; i++) {
-      if ((str = strtok(NULL," \t\n")) != NULL) {
-        ((int*)param)[i] = atoi(str);
-        numread++;
-      }
-      else break;
-    }
-  }
-  else if (ptype == PARAM_INT_COPY) {
-    int ival = 0;
-    for (i=0; i<pnum_max; i++) {
-      str = strtok(NULL," \t\n");
-      if (str != NULL) {
-        ival = atoi(str);
-        numread++; /* return number of parameters actually read */
-      }
-      else if (i<pnum_min) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
-                param_name,curline);
-        sprintf(errmsg,"integer vector of dim %u expected",
-                (unsigned)pnum_min);
-        error(errmsg);
-      }
-      ((int*)param)[i] = ival;
-    }
-  }
-  else if (ptype == PARAM_INTEGER) {
-    for (i=0; i<pnum_min; i++) {
-      str = strtok(NULL," \t\n");
-      if (str == NULL) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
-                param_name,curline);
-        sprintf(errmsg,"integer vector of dim %u expected",
-                (unsigned)pnum_min);
-        error(errmsg);
-      }
-      else ((int *)param)[i] = atoi(str);
-      numread++;
-    }
-    for (i=pnum_min; i<pnum_max; i++) {
-      if ((str = strtok(NULL," \t\n")) != NULL) {
-        ((int *)param)[i] = atoi(str);
-        numread++;
-      }
-      else break;
-    }
-  }
-  else if (ptype == PARAM_INTEGER_COPY) {
-    int ival = 0;
-    for (i=0; i<pnum_max; i++) {
-      str = strtok(NULL," \t\n");
-      if (str != NULL) {
-        ival = atoi(str);
-        numread++; /* return number of parameters actually read */
-      }
-      else if (i<pnum_min) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
-                param_name,curline);
-        sprintf(errmsg,"integer vector of dim %u expected",
-                (unsigned)pnum_min);
-        error(errmsg);
-      }
-      ((int *)param)[i] = (int)ival;
-    }
-  }
-  else if (ptype == PARAM_REAL) {
-    for (i=0; i<pnum_min; i++) {
-      str = strtok(NULL," \t\n");
-      if (str == NULL) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
-                param_name,curline);
-        sprintf(errmsg,"real vector of dim %u expected",
-                (unsigned)pnum_min);
-        error(errmsg);
-      }
-      else ((real*)param)[i] = atof(str);
-      numread++;
-    }
-    for (i=pnum_min; i<pnum_max; i++) {
-      if ((str = strtok(NULL," \t\n")) != NULL) {
-        ((real*)param)[i] = atof(str);
-        numread++;
-      }
-      else break;
-    }
-  }
-  else if (ptype == PARAM_REAL_COPY) {
-    real rval = 0;
-    for (i=0; i<pnum_max; i++) {
-      str = strtok(NULL," \t\n");
-      if (str != NULL) {
-        rval = atof(str);
-        numread++; /* return number of parameters actually read */
-      }
-      else if (i<pnum_min) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
-                param_name,curline);
-        sprintf(errmsg,"real vector of dim %u expected",
-                (unsigned)pnum_min);
-        error(errmsg);
-      }
-      ((real*)param)[i] = rval;
-    }
-  }
-  return numread;
-} /* getparam */
-
-
-/*****************************************************************************
-*
 *  read tag-based parameter file
 *  lines beginning with comment characters '#' or blank lines are skipped
 *
@@ -286,7 +123,6 @@ void getparamfile(char *paramfname)
   char *token;
   char *res;
   str255 tmp;
-  int  n=0;
 
   pf = fopen(paramfname,"r");
   if (NULL == pf) {
@@ -297,22 +133,21 @@ void getparamfile(char *paramfname)
   do {
     res=fgets(buffer,1024,pf);
     if (NULL == res) break; /* probably EOF reached */
-    n++;
-    token = strtok(buffer," \t\n");
+    token = strtok(buffer," =\t\r\n");
     if (NULL == token) continue; /* skip blank lines */
     if (token[0]=='#') continue; /* skip comments */
 
     if (strcasecmp(token,"infile")==0) {
       /* file name for input potential */
-      getparam(n,"infile",infilename,PARAM_STR,1,255);
+      getparam(token,infilename,PARAM_STR,1,255);
     }
     else if (strcasecmp(token,"outfile")==0) {
       /* file name for output potential */
-      getparam(n,"outfile",outfilename,PARAM_STR,1,255);
+      getparam(token,outfilename,PARAM_STR,1,255);
     }
     else if (strcasecmp(token,"ncols")==0) {
       /* number of columns */
-      getparam(n,"ncols",&ncols,PARAM_INT,1,1);
+      getparam(token,&ncols,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"symmetric")==0) {
       /* symmetric potential, ntypes*(ntypes+1)/2 columns */
@@ -320,18 +155,18 @@ void getparamfile(char *paramfname)
     }
     else if (strcasecmp(token,"nsteps")==0) {
       /* number of output potential lines */
-      getparam(n,"nsteps",&nsteps,PARAM_INT,1,1);
+      getparam(token,&nsteps,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"spacing")==0) {
       /* linear or square spacing of input table */
-      getparam(n,"spacing",tmp,PARAM_STR,1,255);
+      getparam(token,tmp,PARAM_STR,1,255);
       if      (strcmp((const char *)tmp,"lin")==0) spacing = LINSPACING;
       else if (strcmp((const char *)tmp,"sqr")==0) spacing = SQRSPACING;
       else error("parameter 'spacing' must be 'lin' or 'sqr'");
     }
     else if (strcasecmp(token,"tailtype")==0) {
       /* quadratic or exponetial potential tail */
-      getparam(n,"tailtype",tmp,PARAM_STR,1,255);
+      getparam(token,tmp,PARAM_STR,1,255);
       if      (strcmp((const char *)tmp,"sqr")==0) tailtype = SQRTAIL;
       else if (strcmp((const char *)tmp,"exp")==0) tailtype = EXPTAIL;
       else error("parameter 'tailtype' must be 'sqr' or 'exp'");
@@ -341,14 +176,14 @@ void getparamfile(char *paramfname)
       if (ncols==0) error("specify ncols before rcut");
       rcut = (real *) malloc( ncols * sizeof(real) );
       if (rcut==NULL) error("allocation of rcut failed");
-      getparam(n,"rcut",rcut,PARAM_REAL,ncols,ncols);
+      getparam(token,rcut,PARAM_REAL,ncols,ncols);
     }
     else if (strcasecmp(token,"steepness")==0) {
       /* c */
       if (ncols==0) error("specify ncols before steepness");
       steepness = (real *) malloc( ncols * sizeof(real) );
       if (rcut==NULL) error("allocation of steepness failed");
-      getparam(n,"steepness",steepness,PARAM_REAL,ncols,ncols);
+      getparam(token,steepness,PARAM_REAL,ncols,ncols);
     }
   } while (!feof(pf));
   fclose(pf);

@@ -74,7 +74,7 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
 
   numread = 0;
   if (ptype == PARAM_STR) {
-    str = strtok(NULL," \t\r\n");
+    str = strtok(NULL," =\t\r\n");
     if (str == NULL) {
       sprintf(errmsg,"parameter for %s missing -- string expected",param_name);
       error(errmsg);
@@ -83,7 +83,7 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
     numread++;
   }
   else if (ptype == PARAM_STRPTR) {
-    str = strtok(NULL," \t\r\n");
+    str = strtok(NULL," =\t\r\n");
     if (str == NULL) {
       sprintf(errmsg,"parameter for %s missing -- string expected",param_name);
       error(errmsg);
@@ -93,7 +93,7 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
   }
   else if (ptype == PARAM_INT) {
     for (i=0; i<pnum_min; i++) {
-      str = strtok(NULL," \t\r\n");
+      str = strtok(NULL," =\t\r\n");
       if (str == NULL) {
         sprintf(errmsg,"parameter for %s missing\n",param_name);
         sprintf(errmsg+strlen(errmsg),"integer vector of dim %u expected",
@@ -104,7 +104,7 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
       numread++;
     }
     for (i=pnum_min; i<pnum_max; i++) {
-      if ((str = strtok(NULL," \t\r\n")) != NULL) {
+      if ((str = strtok(NULL," =\t\r\n")) != NULL) {
         ((int*)param)[i] = atoi(str);
         numread++;
       }
@@ -114,7 +114,7 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
   else if (ptype == PARAM_INT_COPY) {
     int ival = 0;
     for (i=0; i<pnum_max; i++) {
-      str = strtok(NULL," \t\r\n");
+      str = strtok(NULL," =\t\r\n");
       if (str != NULL) {
         ival = atoi(str);
         numread++; /* return number of parameters actually read */
@@ -130,7 +130,7 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
   }
   else if (ptype == PARAM_INTEGER) {
     for (i=0; i<pnum_min; i++) {
-      str = strtok(NULL," \t\r\n");
+      str = strtok(NULL," =\t\r\n");
       if (str == NULL) {
         sprintf(errmsg,"parameter for %s missing\n",param_name);
         sprintf(errmsg+strlen(errmsg),"integer vector of dim %u expected",
@@ -141,7 +141,7 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
       numread++;
     }
     for (i=pnum_min; i<pnum_max; i++) {
-      if ((str = strtok(NULL," \t\r\n")) != NULL) {
+      if ((str = strtok(NULL," =\t\r\n")) != NULL) {
         ((integer*)param)[i] = atoi(str);
         numread++;
       }
@@ -151,7 +151,7 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
   else if (ptype == PARAM_INTEGER_COPY) {
     int ival = 0;
     for (i=0; i<pnum_max; i++) {
-      str = strtok(NULL," \t\r\n");
+      str = strtok(NULL," =\t\r\n");
       if (str != NULL) {
         ival = atoi(str);
         numread++; /* return number of parameters actually read */
@@ -167,7 +167,7 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
   }
   else if (ptype == PARAM_REAL) {
     for (i=0; i<pnum_min; i++) {
-      str = strtok(NULL," \t\r\n");
+      str = strtok(NULL," =\t\r\n");
       if (str == NULL) {
         sprintf(errmsg,"parameter for %s missing\n",param_name);
         sprintf(errmsg+strlen(errmsg),"real vector of dim %u expected",
@@ -178,7 +178,7 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
       numread++;
     }
     for (i=pnum_min; i<pnum_max; i++) {
-      if ((str = strtok(NULL," \t\r\n")) != NULL) {
+      if ((str = strtok(NULL," =\t\r\n")) != NULL) {
         ((real*)param)[i] = atof(str);
         numread++;
       }
@@ -188,7 +188,7 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
   else if (ptype == PARAM_REAL_COPY) {
     real rval = 0;
     for (i=0; i<pnum_max; i++) {
-      str = strtok(NULL," \t\r\n");
+      str = strtok(NULL," =\t\r\n");
       if (str != NULL) {
         rval = atof(str);
         numread++; /* return number of parameters actually read */
