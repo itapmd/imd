@@ -1,30 +1,30 @@
 
 <!--#include virtual="imdhead.html" -->
 
-<H1>Predefined Pair Potentials</H1>
+<h1>Predefined Pair Potentials</h1>
 
 IMD allows to use some predefined pair potentials. Currently, the following
 potentials are supported:
 
-<P>
+<p>
 
-<TABLE Border=0 Cellpadding=4 >
+<table border="0" cellpadding="4" >
 
-<TR ALIGN="LEFT">
-  <TD WIDTH=250><A HREF="#lj">Lennard-Jones potential</A>
-  <TD WIDTH=250><A HREF="#morse">Morse potential</A>
-  <TD WIDTH=250><A HREF="#buck">Buckingham potential</A>
-</TR>
+<tr align="left">
+  <td width="250>"<a href="#lj">Lennard-Jones potential</a></td>
+  <td width="250"><a href="#morse">Morse potential</a></td>
+  <td width="250"><a href="#buck">Buckingham potential</a></td>
+</tr>
 
-</TABLE>
+</table>
 
-<P>
+<p>
 
 By default, the potential energies and forces for these potentials are
 computed analytically during the simulation. In this case, cutoff
 radii <I>r<SUB>cij</SUB></I> have to be specified in the parameter
 file through the IMD parameter <TT>r_cut</TT>. <TT>r_cut</TT> must be
-given for all pairs <I>ij</I> of atom types in the following format:
+given for all pairs&nbsp;<I>ij</I> of atom types in the following format:
 
 <P>
 
@@ -75,14 +75,15 @@ each pair of atom types only one potential is used.
 
 <H2>Lennard-Jones Potential</H2>
 
-The Lennard-Jones potential can be used by choosing the option
-<B>lj</B>. The following form of the potential is implemented:
+The Lennard-Jones potential can be used by choosing the
+option&nbsp;<B>lj</B>. The following form of the potential is
+implemented:
 
-<P>
-<CENTER>
-<IMG SRC="lj.png">
-</CENTER>
-<P>
+<p>
+<center>
+<img src="lj.png" alt="Lennard-Jones potential">
+</center>
+<p>
 
 The parameters <I>epsilon</I> and <I>sigma</I> have to be given in the
 parameter file by the IMD parameters <TT>lj_epsilon</TT> and
@@ -97,11 +98,11 @@ parameter file by the IMD parameters <TT>lj_epsilon</TT> and
 The Morse potential can be used by choosing the option
 <B>morse</B>. The following form of the potential is implemented:
 
-<P>
-<CENTER>
-<IMG SRC="morse.png">
-</CENTER>
-<P>
+<p>
+<center>
+<img src="morse.png" alt="Morse potential">
+</center>
+<p>
 
 The parameters <I>epsilon</I>, <I>sigma</I>, and <I>alpha</I> have to
 be given in the parameter file by the IMD parameters
@@ -117,11 +118,11 @@ in the same format as the paramter <TT>r_cut</TT>.
 The Buckingham potential can be used by choosing the option
 <B>buck</B>. The following form of the potential is implemented:
 
-<P>
-<CENTER>
-<IMG SRC="buck.png">
-</CENTER>
-<P>
+<p>
+<center>
+<img src="buck.png" alt="Buckongham potential">
+</center>
+<p>
 
 The parameters <I>A</I>, <I>C</I>, and <I>sigma</I> have to
 be given in the parameter file by the IMD parameters
