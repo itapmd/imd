@@ -143,8 +143,6 @@ void write_pictures_raw(int steps)
 
 void write_pictures_bins(int steps)
 
-#define XRES 720
-#define YRES 576
 #define SFACTOR 1.0
 #define NUMPIX  2
 
@@ -153,19 +151,18 @@ void write_pictures_bins(int steps)
   vektor scale;
   real xshift, yshift;
 
-  shortint redbit  [YRES][XRES];
-  shortint greenbit[YRES][XRES];
-  shortint bluebit [YRES][XRES];
+  shortint *redbit;
+  shortint *greenbit;
+  shortint *bluebit;
 
 #ifdef MPI
-  shortint sum_red[YRES][XRES];
-  shortint sum_green[YRES][XRES];
-  shortint sum_blue[YRES][XRES];
+  shortint sum_red[pic_res.y][pic_res.x];
+  shortint sum_green[pic_res.y][pic_res.x];
+  shortint sum_blue[pic_res.y][pic_res.x];
   ivektor2d maxcoord,mincoord;
 #endif
 
-  char buf[3*XRES];
-
+  char *buf;
   str255 fname;
   int fzhlr;
   int i,j,k,r,s;
@@ -179,14 +176,19 @@ void write_pictures_bins(int steps)
   int pix;
   int np;
 
+  redbit = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
+  greenbit = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
+  bluebit = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
+  buf = (char*)calloc(3*pic_res.x*pic_res.y, sizeof(shortint));
+
   /* the dist bins are orthogonal boxes in space */
 
-  scale.x = XRES / box_x.x;
-  scale.y = YRES / box_y.y;
+  scale.x = pic_res.x / box_x.x;
+  scale.y = pic_res.y / box_y.y;
 
   /* compute pic_scale */
-  pic_scale.x = box_x.x / (conf_ur.x - conf_ll.x);
-  pic_scale.y = box_y.y / (conf_ur.y - conf_ll.y);
+  pic_scale.x = box_x.x / (pic_ur.x - pic_ll.x);
+  pic_scale.y = box_y.y / (pic_ur.y - pic_ll.y);
 
   /* Make scaling same in both directions */
   if (scale.y<scale.x)  scale.x = scale.y;
@@ -203,11 +205,11 @@ void write_pictures_bins(int steps)
   sprintf(fname,"%s.%u.kin.ppm",outfilename,fzhlr);
 
   /* Zero bitmap */
-  for (j=0; j<YRES; j++ ) {
-    for (i=0; i<XRES; i++ ) {
-      bluebit[j][i]  = 0;
-      greenbit[j][i] = 0;
-      redbit[j][i]   = 0;
+  for (j=0; j<pic_res.y; j++ ) {
+    for (i=0; i<pic_res.x; i++ ) {
+      bluebit[j*pic_res.x+i]  = 0;
+      greenbit[j*pic_res.x+i] = 0;
+      redbit[j*pic_res.x+i]   = 0;
     };
   };
 
@@ -238,8 +240,8 @@ void write_pictures_bins(int steps)
 	  coord.x = (int) (p->ort X(i) * scale.x) + xshift;
 	  coord.y = (int) (p->ort Y(i) * scale.y) + yshift;
 	  /* Check bounds */
-	  if ((coord.x >= 0) && (coord.x < (XRES-NUMPIX)) &&
-              (coord.y >= 0) && (coord.y < (YRES-NUMPIX))) { 
+	  if ((coord.x >= 0) && (coord.x < (pic_res.x-NUMPIX)) &&
+              (coord.y >= 0) && (coord.y < (pic_res.y-NUMPIX))) { 
 	  
              val = SPRODN(p->impuls,i,p->impuls,i) / (2*p->masse[i]);
 
@@ -267,14 +269,14 @@ void write_pictures_bins(int steps)
                  pixcoord.x = coord.x + j;
                  pixcoord.y = coord.y + k;
 
-                 pix =  redbit  [pixcoord.y][pixcoord.x] + (SFACTOR * 255 * red  );
-                 redbit  [pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+                 pix =  redbit  [pixcoord.y*pic_res.x+pixcoord.x] + (SFACTOR * 255 * red  );
+                 redbit  [pixcoord.y*pic_res.x+pixcoord.x] = (shortint) pix < 255 ? pix : 255;
 	      
-                 pix = bluebit [pixcoord.y][pixcoord.x] + (SFACTOR * 255 * blue );
-                 bluebit [pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+                 pix = bluebit [pixcoord.y*pic_res.x+pixcoord.x] + (SFACTOR * 255 * blue );
+                 bluebit [pixcoord.y*pic_res.x+pixcoord.x] = (shortint) pix < 255 ? pix : 255;
 
-                 pix = greenbit[pixcoord.y][pixcoord.x] + (SFACTOR * 255 * green);
-                 greenbit[pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+                 pix = greenbit[pixcoord.y*pic_res.x+pixcoord.x] + (SFACTOR * 255 * green);
+                 greenbit[pixcoord.y*pic_res.x+pixcoord.x] = (shortint) pix < 255 ? pix : 255;
 
              }; /* for k */
           }; /* if */
@@ -283,19 +285,19 @@ void write_pictures_bins(int steps)
 
 #ifdef MPI
 /* Add the bitmaps */
-   MPI_Reduce( redbit,   sum_red,   XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
-   MPI_Reduce( greenbit, sum_green, XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
-   MPI_Reduce( bluebit , sum_blue,  XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
+   MPI_Reduce( redbit,   sum_red,   pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
+   MPI_Reduce( greenbit, sum_green, pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
+   MPI_Reduce( bluebit , sum_blue,  pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
 
 if (0==myid) { 
 
 /* Clip max value bitmap, create white background */
-   for (j=0; j<YRES; j++ ) {
-     for (i=0; i<XRES; i++ ) { 
+   for (j=0; j<pic_res.y; j++ ) {
+     for (i=0; i<pic_res.x; i++ ) { 
 
-      redbit[j][i]   = sum_red[j][i]   < 255 ? sum_red[j][i]   : 200;
-      greenbit[j][i] = sum_green[j][i] < 255 ? sum_green[j][i] : 200;
-      bluebit[j][i]  = sum_blue[j][i]  < 255 ? sum_blue[j][i]  : 200;
+      redbit[j*pic_res.x+i]   = sum_red[j*pic_res.x+i]   < 255 ? sum_red[j*pic_res.x+i]   : 200;
+      greenbit[j*pic_res.x+i] = sum_green[j*pic_res.x+i] < 255 ? sum_green[j*pic_res.x+i] : 200;
+      bluebit[j*pic_res.x+i]  = sum_blue[j*pic_res.x+i]  < 255 ? sum_blue[j*pic_res.x+i]  : 200;
     };
   }; 
 
@@ -303,13 +305,13 @@ if (0==myid) {
 };
 #endif
 
-  for (j=0; j<YRES; j++ ) 
-    for (i=0; i<XRES; i++ ) 
+  for (j=0; j<pic_res.y; j++ ) 
+    for (i=0; i<pic_res.x; i++ ) 
 /* background white */
-      if ((0==redbit[j][i]) && (0==greenbit[j][i]) && (0==bluebit[j][i])) {
-         redbit[j][i]   = 250;
-         greenbit[j][i] = 250;
-         bluebit[j][i]  = 250;
+      if ((0==redbit[j*pic_res.x+i]) && (0==greenbit[j*pic_res.x+i]) && (0==bluebit[j*pic_res.x+i])) {
+         redbit[j*pic_res.x+i]   = 250;
+         greenbit[j*pic_res.x+i] = 250;
+         bluebit[j*pic_res.x+i]  = 250;
       };
 
 
@@ -322,16 +324,16 @@ if (0==myid) {
   out = fopen(fname,"w");
   if (NULL == out) error("Can`t open bitmap file.");
 
-  fprintf(out,"P6 %d %d 255\n", XRES, YRES);
+  fprintf(out,"P6 %d %d 255\n", pic_res.x, pic_res.y);
 
 
-  for (j=0; j<YRES; j++ ) {
-    for (i=0; i<XRES; i++ ) {
-      buf[3*i  ] = (char) redbit[j][i];
-      buf[3*i+1] = (char) greenbit[j][i];
-      buf[3*i+2] = (char) bluebit[j][i];
+  for (j=0; j<pic_res.y; j++ ) {
+    for (i=0; i<pic_res.x; i++ ) {
+      buf[3*i  ] = (unsigned char) redbit[j*pic_res.x+i];
+      buf[3*i+1] = (char) greenbit[j*pic_res.x+i];
+      buf[3*i+2] = (char) bluebit[j*pic_res.x+i];
     };
-    fwrite(buf, sizeof(char), 3*XRES, out);
+    fwrite(buf, sizeof(char), 3*pic_res.x, out);
   };
 
   fclose(out);
@@ -349,11 +351,11 @@ if (0==myid) {
 
 
   /* Zero bitmap */
-  for (i=0; i<YRES; i++ ) {
-    for (j=0; j<XRES; j++ ) {
-      bluebit[i][j]  = 0;
-      greenbit[i][j] = 0;
-      redbit[i][j]   = 0;
+  for (i=0; i<pic_res.y; i++ ) {
+    for (j=0; j<pic_res.x; j++ ) {
+      bluebit[i*pic_res.x+j]  = 0;
+      greenbit[i*pic_res.x+j] = 0;
+      redbit[i*pic_res.x+j]   = 0;
     };
   };
 
@@ -368,8 +370,8 @@ if (0==myid) {
 	  coord.x = (int) (p->ort X(i) * scale.x) + xshift;
 	  coord.y = (int) (p->ort Y(i) * scale.y) + yshift;
 	  /* Check bounds */
-	  if ((coord.x>=0) && (coord.x<(XRES-NUMPIX)) &&
-	      (coord.y>=0) && (coord.y<(YRES-NUMPIX))) {
+	  if ((coord.x>=0) && (coord.x<(pic_res.x-NUMPIX)) &&
+	      (coord.y>=0) && (coord.y<(pic_res.y-NUMPIX))) {
 
 	  val = p->pot_eng[i];
 
@@ -400,16 +402,16 @@ Pixels not in the default interval */
               pixcoord.x = coord.x + j;
               pixcoord.y = coord.y + k;
 
-              if ((pixcoord.x<XRES) && (pixcoord.y<YRES)) {
+              if ((pixcoord.x<pic_res.x) && (pixcoord.y<pic_res.y)) {
 
-                 pix =  redbit  [pixcoord.y][pixcoord.x] + (SFACTOR * 255 * red  );
-                 redbit  [pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+                 pix =  redbit  [pixcoord.y*pic_res.x+pixcoord.x] + (SFACTOR * 255 * red  );
+                 redbit  [pixcoord.y*pic_res.x+pixcoord.x] = (shortint) pix < 255 ? pix : 255;
 	      
-                 pix = bluebit [pixcoord.y][pixcoord.x] + (SFACTOR * 255 * blue );
-                 bluebit [pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+                 pix = bluebit [pixcoord.y*pic_res.x+pixcoord.x] + (SFACTOR * 255 * blue );
+                 bluebit [pixcoord.y*pic_res.x+pixcoord.x] = (shortint) pix < 255 ? pix : 255;
 
-                 pix = greenbit[pixcoord.y][pixcoord.x] + (SFACTOR * 255 * green);
-                 greenbit[pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+                 pix = greenbit[pixcoord.y*pic_res.x+pixcoord.x] + (SFACTOR * 255 * green);
+                 greenbit[pixcoord.y*pic_res.x+pixcoord.x] = (shortint) pix < 255 ? pix : 255;
               };
            }; 
 	};
@@ -418,29 +420,29 @@ Pixels not in the default interval */
 
 #ifdef MPI
 /* Add the bitmaps */
-   MPI_Reduce( redbit,   sum_red,   XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
-   MPI_Reduce( greenbit, sum_green, XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
-   MPI_Reduce( bluebit , sum_blue,  XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
+   MPI_Reduce( redbit,   sum_red,   pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
+   MPI_Reduce( greenbit, sum_green, pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
+   MPI_Reduce( bluebit , sum_blue,  pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
 
 if (0==myid) { 
 
 /* Clip max value bitmap, create white background */
-   for (j=0; j<YRES; j++ ) {
-     for (i=0; i<XRES; i++ ) { 
+   for (j=0; j<pic_res.y; j++ ) {
+     for (i=0; i<pic_res.x; i++ ) { 
 
-      redbit[j][i]   = sum_red[j][i]   < 255 ? sum_red[j][i]   : 200;
-      greenbit[j][i] = sum_green[j][i] < 255 ? sum_green[j][i] : 200;
-      bluebit[j][i]  = sum_blue[j][i]  < 255 ? sum_blue[j][i]  : 200;
+      redbit[j*pic_res.x+i]   = sum_red[j*pic_res.x+i]   < 255 ? sum_red[j*pic_res.x+i]   : 200;
+      greenbit[j*pic_res.x+i] = sum_green[j*pic_res.x+i] < 255 ? sum_green[j*pic_res.x+i] : 200;
+      bluebit[j*pic_res.x+i]  = sum_blue[j*pic_res.x+i]  < 255 ? sum_blue[j*pic_res.x+i]  : 200;
     };
   }; 
 
-  for (j=0; j<YRES; j++ ) 
-    for (i=0; i<XRES; i++ ) 
+  for (j=0; j<pic_res.y; j++ ) 
+    for (i=0; i<pic_res.x; i++ ) 
 /* background white */
-      if ((0==redbit[j][i]) && (0==greenbit[j][i]) && (0==bluebit[j][i])) {
-         redbit[j][i]   = 250;
-         greenbit[j][i] = 250;
-         bluebit[j][i]  = 250;
+      if ((0==redbit[j*pic_res.x+i]) && (0==greenbit[j*pic_res.x+i]) && (0==bluebit[j*pic_res.x+i])) {
+         redbit[j*pic_res.x+i]   = 250;
+         greenbit[j*pic_res.x+i] = 250;
+         bluebit[j*pic_res.x+i]  = 250;
       };
   
 };
@@ -455,16 +457,16 @@ if (0==myid) {
   out = fopen(fname,"w");
   if (NULL == out) error("Can`t open bitmap file.");
 
-  fprintf(out,"P6 %d %d 255\n", XRES, YRES);
+  fprintf(out,"P6 %d %d 255\n", pic_res.x, pic_res.y);
 
 
-  for (j=0; j<XRES; j++ ) {
-    for (i=0; i<YRES; i++ ) {
-      buf[3*i  ] = (char) redbit[j][i];
-      buf[3*i+1] = (char) greenbit[j][i];
-      buf[3*i+2] = (char) bluebit[j][i];
+  for (j=0; j<pic_res.x; j++ ) {
+    for (i=0; i<pic_res.y; i++ ) {
+      buf[3*i  ] = (char) redbit[j*pic_res.x+i];
+      buf[3*i+1] = (char) greenbit[j*pic_res.x+i];
+      buf[3*i+2] = (char) bluebit[j*pic_res.x+i];
     };
-    fwrite(buf, sizeof(char), 3*XRES, out);
+    fwrite(buf, sizeof(char), 3*pic_res.x, out);
   };
 
   fclose(out);
@@ -484,17 +486,9 @@ if (0==myid) {
 
 void write_pictures_cooked(int steps)
 
-#ifdef XRES
-#undef XRES
-#endif
-#ifdef YRES
-#undef YRES
-#endif
 #ifdef NUMPIX
 #undef NUMPIX
 #endif
-#define XRES 720
-#define YRES 576
 #define SFACTOR 1.0
 #define NUMPIX  8
 
@@ -502,18 +496,18 @@ void write_pictures_cooked(int steps)
 
   vektor scale;
 
-  shortint redbit  [YRES][XRES];
-  shortint greenbit[YRES][XRES];
-  shortint bluebit [YRES][XRES];
+  shortint *redbit;
+  shortint *greenbit;
+  shortint *bluebit;
 
 #ifdef MPI
-  shortint sum_red[XRES][YRES];
-  shortint sum_green[XRES][YRES];
-  shortint sum_blue[XRES][YRES];
+  shortint sum_red[pic_res.x][pic_res.y];
+  shortint sum_green[pic_res.x][pic_res.y];
+  shortint sum_blue[pic_res.x][pic_res.y];
   ivektor2d maxcoord,mincoord;
 #endif
 
-  char buf[3*XRES];
+  char *buf;
 
   str255 fname;
   int fzhlr;
@@ -528,14 +522,19 @@ void write_pictures_cooked(int steps)
   int pix;
   int np;
 
+  redbit = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
+  greenbit = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
+  bluebit = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
+  buf = (char*)calloc(3*pic_res.x*pic_res.y, sizeof(shortint));
+
   /* the dist bins are orthogonal boxes in space */
 
-  scale.x = XRES / box_x.x;
-  scale.y = YRES / box_y.y;
+  scale.x = pic_res.x / box_x.x;
+  scale.y = pic_res.y / box_y.y;
 
   /* compute pic_scale */
-  pic_scale.x = box_x.x / (conf_ur.x - conf_ll.x);
-  pic_scale.y = box_y.y / (conf_ur.y - conf_ll.y);
+  pic_scale.x = box_x.x / (pic_ur.x - pic_ll.x);
+  pic_scale.y = box_y.y / (pic_ur.y - pic_ll.y);
 
   /* Make scaling same in both directions */
   if (scale.y<scale.x)  scale.x = scale.y;
@@ -552,11 +551,11 @@ void write_pictures_cooked(int steps)
   sprintf(fname,"%s.%u.kin.atm",outfilename,fzhlr);
 
   /* Zero bitmap */
-  for (j=0; j<YRES; j++ ) {
-    for (i=0; i<XRES; i++ ) {
-      bluebit[j][i]  = 0;
-      greenbit[j][i] = 0;
-      redbit[j][i]   = 0;
+  for (j=0; j<pic_res.y; j++ ) {
+    for (i=0; i<pic_res.x; i++ ) {
+      bluebit[j*pic_res.x+i]  = 0;
+      greenbit[j*pic_res.x+i] = 0;
+      redbit[j*pic_res.x+i]   = 0;
     };
   };
 
@@ -584,16 +583,16 @@ void write_pictures_cooked(int steps)
 	p = PTR_2D_V(cell_array, r, s, cell_dim);
 
 	for (i = 0;i < p->n; ++i) {
-          if ( (p->ort X(i) < conf_ll.x) || (p->ort X(i) > conf_ur.x) ||
-             (p->ort Y(i) < conf_ll.y) || (p->ort Y(i) > conf_ur.y) )
+          if ( (p->ort X(i) < pic_ll.x) || (p->ort X(i) > pic_ur.x) ||
+             (p->ort Y(i) < pic_ll.y) || (p->ort Y(i) > pic_ur.y) )
             continue;
 	  coord.x = (int) (p->ort X(i) * scale.x);
 	  coord.y = (int) (p->ort Y(i) * scale.y);
 	  /* Check bounds */
-	  if ((coord.x >= NUMPIX) & (coord.x < (XRES-NUMPIX)) &&
-              (coord.y >= NUMPIX) && (coord.y < (YRES-NUMPIX))) { 
+	  if ((coord.x >= NUMPIX) & (coord.x < (pic_res.x-NUMPIX)) &&
+              (coord.y >= NUMPIX) && (coord.y < (pic_res.y-NUMPIX))) { 
 
-             coord.y = YRES - coord.y; /* in pic: from top to bottom */
+             coord.y = pic_res.y - coord.y; /* in pic: from top to bottom */
              val = SPRODN(p->impuls,i,p->impuls,i) / (2*p->masse[i]);
 
              /* Scale Value to [0..1]   */
@@ -621,14 +620,14 @@ void write_pictures_cooked(int steps)
                  pixcoord.x = coord.x + j;
                  pixcoord.y = coord.y + k;
 
-                 pix =  redbit  [pixcoord.y][pixcoord.x] + (SFACTOR * 255 * red  );
-                 redbit  [pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+                 pix =  redbit  [pixcoord.y*pic_res.x+pixcoord.x] + (SFACTOR * 255 * red  );
+                 redbit  [pixcoord.y*pic_res.x+pixcoord.x] = (shortint) pix < 255 ? pix : 255;
 	      
-                 pix = bluebit [pixcoord.y][pixcoord.x] + (SFACTOR * 255 * blue );
-                 bluebit [pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+                 pix = bluebit [pixcoord.y*pic_res.x+pixcoord.x] + (SFACTOR * 255 * blue );
+                 bluebit [pixcoord.y*pic_res.x+pixcoord.x] = (shortint) pix < 255 ? pix : 255;
 
-                 pix = greenbit[pixcoord.y][pixcoord.x] + (SFACTOR * 255 * green);
-                 greenbit[pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+                 pix = greenbit[pixcoord.y*pic_res.x+pixcoord.x] + (SFACTOR * 255 * green);
+                 greenbit[pixcoord.y*pic_res.x+pixcoord.x] = (shortint) pix < 255 ? pix : 255;
 
              }; /* for k */
           }; /* if */
@@ -637,19 +636,19 @@ void write_pictures_cooked(int steps)
 
 #ifdef MPI
 /* Add the bitmaps */
-   MPI_Reduce( redbit,   sum_red,   XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
-   MPI_Reduce( greenbit, sum_green, XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
-   MPI_Reduce( bluebit , sum_blue,  XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
+   MPI_Reduce( redbit,   sum_red,   pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
+   MPI_Reduce( greenbit, sum_green, pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
+   MPI_Reduce( bluebit , sum_blue,  pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
 
 if (0==myid) { 
 
 /* Clip max value bitmap, create white background */
-   for (j=0; j<YRES; j++ ) {
-     for (i=0; i<XRES; i++ ) { 
+   for (j=0; j<pic_res.y; j++ ) {
+     for (i=0; i<pic_res.x; i++ ) { 
 
-      redbit[j][i]   = sum_red[j][i]   < 255 ? sum_red[j][i]   : 200;
-      greenbit[j][i] = sum_green[j][i] < 255 ? sum_green[j][i] : 200;
-      bluebit[j][i]  = sum_blue[j][i]  < 255 ? sum_blue[j][i]  : 200;
+      redbit[j*pic_res.x+i]   = sum_red[j*pic_res.x+i]   < 255 ? sum_red[j*pic_res.x+i]   : 200;
+      greenbit[j*pic_res.x+i] = sum_green[j*pic_res.x+i] < 255 ? sum_green[j*pic_res.x+i] : 200;
+      bluebit[j*pic_res.x+i]  = sum_blue[j*pic_res.x+i]  < 255 ? sum_blue[j*pic_res.x+i]  : 200;
     };
   }; 
 
@@ -657,13 +656,13 @@ if (0==myid) {
 };
 #endif
 
-  for (j=0; j<YRES; j++ ) 
-    for (i=0; i<XRES; i++ ) 
+  for (j=0; j<pic_res.y; j++ ) 
+    for (i=0; i<pic_res.x; i++ ) 
 /* background white */
-      if ((0==redbit[j][i]) && (0==greenbit[j][i]) && (0==bluebit[j][i])) {
-         redbit[j][i]   = 250;
-         greenbit[j][i] = 250;
-         bluebit[j][i]  = 250;
+      if ((0==redbit[j*pic_res.x+i]) && (0==greenbit[j*pic_res.x+i]) && (0==bluebit[j*pic_res.x+i])) {
+         redbit[j*pic_res.x+i]   = 250;
+         greenbit[j*pic_res.x+i] = 250;
+         bluebit[j*pic_res.x+i]  = 250;
       };
 
 
@@ -676,16 +675,16 @@ if (0==myid) {
   out = fopen(fname,"w");
   if (NULL == out) error("Can`t open bitmap file.");
 
-  fprintf(out,"P6 %d %d 255\n", XRES, YRES);
+  fprintf(out,"P6 %d %d 255\n", pic_res.x, pic_res.y);
 
 
-  for (j=0; j<YRES; j++ ) {
-    for (i=0; i<XRES; i++ ) {
-      buf[3*i  ] = (char) redbit[j][i];
-      buf[3*i+1] = (char) greenbit[j][i];
-      buf[3*i+2] = (char) bluebit[j][i];
+  for (j=0; j<pic_res.y; j++ ) {
+    for (i=0; i<pic_res.x; i++ ) {
+      buf[3*i  ] = (char) redbit[j*pic_res.x+i];
+      buf[3*i+1] = (char) greenbit[j*pic_res.x+i];
+      buf[3*i+2] = (char) bluebit[j*pic_res.x+i];
     };
-    fwrite(buf, sizeof(char), 3*XRES, out);
+    fwrite(buf, sizeof(char), 3*pic_res.x, out);
   };
 
   fclose(out);
@@ -703,11 +702,11 @@ if (0==myid) {
   sprintf(fname,"%s.%u.pot.atm",outfilename,fzhlr);
 
   /* Zero bitmap */
-  for (j=0; j<YRES; j++ ) {
-    for (i=0; i<XRES; i++ ) {
-      bluebit[j][i]  = 0;
-      greenbit[j][i] = 0;
-      redbit[j][i]   = 0;
+  for (j=0; j<pic_res.y; j++ ) {
+    for (i=0; i<pic_res.x; i++ ) {
+      bluebit[j*pic_res.x+i]  = 0;
+      greenbit[j*pic_res.x+i] = 0;
+      redbit[j*pic_res.x+i]   = 0;
     };
   };
 
@@ -719,16 +718,16 @@ if (0==myid) {
 	p = PTR_2D_V(cell_array, r, s, cell_dim);
 
 	for (i = 0;i < p->n; ++i) {
-          if ( (p->ort X(i) < conf_ll.x) || (p->ort X(i) > conf_ur.x) ||
-             (p->ort Y(i) < conf_ll.y) || (p->ort Y(i) > conf_ur.y) )
+          if ( (p->ort X(i) < pic_ll.x) || (p->ort X(i) > pic_ur.x) ||
+             (p->ort Y(i) < pic_ll.y) || (p->ort Y(i) > pic_ur.y) )
             continue;
 	  coord.x = (int) (p->ort X(i) * scale.x);
 	  coord.y = (int) (p->ort Y(i) * scale.y);
 	  /* Check bounds */
-	  if ((coord.x>=NUMPIX) && (coord.x<(XRES-NUMPIX)) &&
-	      (coord.y>=NUMPIX) && (coord.y<(YRES-NUMPIX))) {
+	  if ((coord.x>=NUMPIX) && (coord.x<(pic_res.x-NUMPIX)) &&
+	      (coord.y>=NUMPIX) && (coord.y<(pic_res.y-NUMPIX))) {
 
-          coord.y = YRES - coord.y;
+          coord.y = pic_res.y - coord.y;
 #ifdef DISLOC
           if (Epot_diff==1) {
             val = p->pot_eng[i] - p->Epot_ref[i];
@@ -767,16 +766,16 @@ Pixels not in the default interval
                pixcoord.x = coord.x + j;
                pixcoord.y = coord.y + k;
 
-/*               if ((pixcoord.x<XRES) && (pixcoord.y<YRES)) {
+/*               if ((pixcoord.x<pic_res.x) && (pixcoord.y<pic_res.y)) {
 */
-                 pix =  redbit  [pixcoord.y][pixcoord.x] + (SFACTOR * 255 * red  );
-                 redbit  [pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+                 pix =  redbit  [pixcoord.y*pic_res.x+pixcoord.x] + (SFACTOR * 255 * red  );
+                 redbit  [pixcoord.y*pic_res.x+pixcoord.x] = (shortint) pix < 255 ? pix : 255;
 	      
-                 pix = bluebit [pixcoord.y][pixcoord.x] + (SFACTOR * 255 * blue );
-                 bluebit [pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+                 pix = bluebit [pixcoord.y*pic_res.x+pixcoord.x] + (SFACTOR * 255 * blue );
+                 bluebit [pixcoord.y*pic_res.x+pixcoord.x] = (shortint) pix < 255 ? pix : 255;
 
-                 pix = greenbit[pixcoord.y][pixcoord.x] + (SFACTOR * 255 * green);
-                 greenbit[pixcoord.y][pixcoord.x] = (shortint) pix < 255 ? pix : 255;
+                 pix = greenbit[pixcoord.y*pic_res.x+pixcoord.x] + (SFACTOR * 255 * green);
+                 greenbit[pixcoord.y*pic_res.x+pixcoord.x] = (shortint) pix < 255 ? pix : 255;
 /*              };
 */           }; 
 	};
@@ -785,29 +784,29 @@ Pixels not in the default interval
 
 #ifdef MPI
 /* Add the bitmaps */
-   MPI_Reduce( redbit,   sum_red,   XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
-   MPI_Reduce( greenbit, sum_green, XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
-   MPI_Reduce( bluebit , sum_blue,  XRES * YRES, MPI_SHORT, MPI_SUM, 0, cpugrid);
+   MPI_Reduce( redbit,   sum_red,   pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
+   MPI_Reduce( greenbit, sum_green, pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
+   MPI_Reduce( bluebit , sum_blue,  pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
 
 if (0==myid) { 
 
-/* Clip max value bitmap, create white background */
-   for (j=0; j<YRES; j++ ) {
-     for (i=0; i<XRES; i++ ) { 
+/* Clip max value bitmap, create black background */
+   for (j=0; j<pic_res.y; j++ ) {
+     for (i=0; i<pic_res.x; i++ ) { 
 
-      redbit[j][i]   = sum_red[j][i]   < 255 ? sum_red[j][i]   : 200;
-      greenbit[j][i] = sum_green[j][i] < 255 ? sum_green[j][i] : 200;
-      bluebit[j][i]  = sum_blue[j][i]  < 255 ? sum_blue[j][i]  : 200;
+      redbit[j*pic_res.x+i]   = sum_red[j*pic_res.x+i]   < 255 ? sum_red[j*pic_res.x+i]   : 0;
+      greenbit[j*pic_res.x+i] = sum_green[j*pic_res.x+i] < 255 ? sum_green[j*pic_res.x+i] : 0;
+      bluebit[j*pic_res.x+i]  = sum_blue[j*pic_res.x+i]  < 255 ? sum_blue[j*pic_res.x+i]  : 0;
     };
   }; 
 
-  for (j=0; j<YRES; j++ ) 
-    for (i=0; i<XRES; i++ ) 
+  for (j=0; j<pic_res.y; j++ ) 
+    for (i=0; i<pic_res.x; i++ ) 
 /* background white */
-      if ((0==redbit[j][i]) && (0==greenbit[j][i]) && (0==bluebit[j][i])) {
-         redbit[j][i]   = 250;
-         greenbit[j][i] = 250;
-         bluebit[j][i]  = 250;
+      if ((0==redbit[j*pic_res.x+i]) && (0==greenbit[j*pic_res.x+i]) && (0==bluebit[j*pic_res.x+i])) {
+         redbit[j*pic_res.x+i]   = 0;
+         greenbit[j*pic_res.x+i] = 0;
+         bluebit[j*pic_res.x+i]  = 0;
       };
   
 };
@@ -822,16 +821,16 @@ if (0==myid) {
   out = fopen(fname,"w");
   if (NULL == out) error("Can`t open bitmap file.");
 
-  fprintf(out,"P6 %d %d 255\n", XRES, YRES);
+  fprintf(out,"P6 %d %d 255\n", pic_res.x, pic_res.y);
 
 
-  for (j=0; j<YRES; j++ ) {
-    for (i=0; i<XRES; i++ ) {
-      buf[3*i  ] = (char) redbit[j][i];
-      buf[3*i+1] = (char) greenbit[j][i];
-      buf[3*i+2] = (char) bluebit[j][i];
+  for (j=0; j<pic_res.y; j++ ) {
+    for (i=0; i<pic_res.x; i++ ) {
+      buf[3*i  ] = (char) redbit[j*pic_res.x+i];
+      buf[3*i+1] = (char) greenbit[j*pic_res.x+i];
+      buf[3*i+2] = (char) bluebit[j*pic_res.x+i];
     };
-    fwrite(buf, sizeof(char), 3*XRES, out);
+    fwrite(buf, sizeof(char), 3*pic_res.x, out);
   };
 
   fclose(out);
