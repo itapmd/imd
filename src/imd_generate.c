@@ -253,6 +253,14 @@ void generate_fcc(int maxtyp)
   int     to_cpu;
   int     x, y, z, typ;
 
+  /* adjust parameters for diamond and zincblende lattice */
+  if(maxtyp == 4 || maxtyp == 5) { 
+    box_param.x *= 4; 
+    box_param.y *= 4; 
+    box_param.z *= 4; 
+    box_unit    /= 4;
+  }
+
 #ifdef MPI
   min.x =  my_coord.x      * box_param.x / cpu_dim.x;
   max.x = (my_coord.x + 1) * box_param.x / cpu_dim.x;
