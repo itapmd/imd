@@ -8,7 +8,8 @@
 
 #define COLRES 245
 
-int *nummer,*sorte,columns,*bcode;
+int *nummer,columns,*bcode;
+short int *sorte;
 double *masse,*x,*y,*z,*vx,*vy,*vz,*pot,*kin;
 float *potarray,*kinarray;
 int x_res,y_res;
@@ -390,49 +391,49 @@ void draw_scene(int scene_type) {
       }
       
       if (atom_mode) {
-      for (i=0;i<natoms;i++) {
-	xx=x[i]*scalex-1;
-	yy=y[i]*scaley-1;
-	nb=0;
-	for(k=0;k<nunits;k++)
-	  if (bcode[i]&(int)pow(2,k)) {
-	    nb++;
+	for (i=0;i<natoms;i++) {
+	  xx=x[i]*scalex-1;
+	  yy=y[i]*scaley-1;
+	  nb=0;
+	  for(k=0;k<nunits;k++)
+	    if (bcode[i]&(int)pow(2,k)) {
+	      nb++;
+	    }
+	  if (col_mode==0) {
+	    if (sorte[i]==0) color(RED);
+	    if (sorte[i]==1) color(GREEN);
+	    if (sorte[i]==2) color(MAGENTA);
+	    if (sorte[i]==3) color(WHITE);
+	    if (sorte[i]==4) color(BLUE);
+	    if (sorte[i]==5) color(YELLOW);
+	    if (sorte[i]==6) color(CYAN);
 	  }
-	if (col_mode==0) {
-	  if (sorte[i]==0) color(RED);
-	  if (sorte[i]==1) color(GREEN);
-	  if (sorte[i]==2) color(MAGENTA);
-	  if (sorte[i]==3) color(WHITE);
-	  if (sorte[i]==4) color(BLUE);
-	  if (sorte[i]==5) color(YELLOW);
-	  if (sorte[i]==6) color(CYAN);
+	  else {
+	    color(WHITE);
+	    if (nb==0) color(RED);
+	    if (nb==1) color(BLUE);
+	    if (nb==2) color(GREEN);
+	    if (nb==3) color(YELLOW);
+	    if (nb==4) color(MAGENTA);
+	    if (nb==5) color(WHITE);
+	    if (nb==6) color(CYAN);
+	  }
+	  if (radectyp)
+	    circle(xx,yy,.5*(sorte[i]+1)*radius*scalex);
+	  else
+	    circle(xx,yy,radius*scalex);
 	}
-	else {
-	  color(WHITE);
-	  if (nb==0) color(RED);
-	  if (nb==1) color(BLUE);
-	  if (nb==2) color(GREEN);
-	  if (nb==3) color(YELLOW);
-	  if (nb==4) color(MAGENTA);
-	  if (nb==5) color(WHITE);
-	  if (nb==6) color(CYAN);
+	if (text) {
+	  color(CYAN);
+	  move(0.0,0.7);
+	  sprintf(str,"Configuration with %d atoms\n",natoms);
+	  drawstr(str);
+	  if (col_mode)
+	    sprintf(str,"Potential energy is encoded");
+	  else
+	    sprintf(str,"Atom type is encoded");
+	  drawstr(str);
 	}
-	if (radectyp)
-	  circle(xx,yy,.5*(sorte[i]+1)*radius*scalex);
-	else
-	  circle(xx,yy,radius*scalex);
-      }
-      if (text) {
-	color(CYAN);
-	move(0.0,0.7);
-	sprintf(str,"Configuration with %d atoms\n",natoms);
-	drawstr(str);
-	if (col_mode)
-	  sprintf(str,"Potential energy is encoded");
-	else
-	  sprintf(str,"Atom type is encoded");
-	drawstr(str);
-      }
       } 
     }
   }
@@ -470,7 +471,7 @@ int read_atoms(char *fname) {
   fp=fopen(fname, "r");
 
   nummer=(int*)calloc(n,sizeof(int));
-  sorte=(int*)calloc(n,sizeof(int));
+  sorte=(short int*)calloc(n,sizeof(int));
   masse=(double*)calloc(n,sizeof(double));
   x=(double*)calloc(n,sizeof(double));
   y=(double*)calloc(n,sizeof(double));
