@@ -133,6 +133,19 @@ void main_loop(void)
          (fbc_df+l)->x = (fbc_dforces+l)->x ;
 	 (fbc_df+l)->y = (fbc_dforces+l)->y ;
 	 (fbc_df+l)->z = (fbc_dforces+l)->z ;
+
+	 /* MIK affects the total impuls, especially in inhomogenous samples,
+	    so we set the velocities to 0 befor each force increment */
+	  
+	 for (k=0; k<ncells; ++k) {
+	   p = cell_array + CELLS(k);
+	     for (i=0; i<p->n; ++i) {
+	       p->impuls X(i) = 0.0;
+	       p->impuls Y(i) = 0.0;
+	       p->impuls Z(i) = 0.0;
+	     }
+	 }
+
       }
      }
  }
