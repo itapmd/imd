@@ -180,51 +180,55 @@ void send_atoms(int mode)
   MPI_Status  stateast[2], statwest[2], statnorth[2], statsouth[2];
   MPI_Request  reqeast[2],  reqwest[2],  reqnorth[2],  reqsouth[2];
 
-  /* send east */
-  isend_buf( &send_buf_east, nbeast, &reqwest[0] );
-  irecv_buf( &recv_buf_west, nbwest, &reqwest[1] );
+  if (cpu_dim.x > 1) {
+    /* send east */
+    isend_buf( &send_buf_east, nbeast, &reqwest[0] );
+    irecv_buf( &recv_buf_west, nbwest, &reqwest[1] );
 
-  /* send west */
-  isend_buf( &send_buf_west, nbwest, &reqeast[0] );
-  irecv_buf( &recv_buf_east, nbeast, &reqeast[1] );
+    /* send west */
+    isend_buf( &send_buf_west, nbwest, &reqeast[0] );
+    irecv_buf( &recv_buf_east, nbeast, &reqeast[1] );
 
-  /* wait for atoms from west, move them to cells */
-  MPI_Waitall(2, reqwest, statwest);
-  MPI_Get_count( &statwest[1], MPI_REAL, &recv_buf_west.n );
-  process_buffer( &recv_buf_west, mode );
+    /* wait for atoms from west, move them to cells */
+    MPI_Waitall(2, reqwest, statwest);
+    MPI_Get_count( &statwest[1], MPI_REAL, &recv_buf_west.n );
+    process_buffer( &recv_buf_west, mode );
 
-  /* wait for atoms from east, move them to cells */
-  MPI_Waitall(2, reqeast, stateast);
-  MPI_Get_count( &stateast[1], MPI_REAL, &recv_buf_east.n );
-  process_buffer( &recv_buf_east, mode );
+    /* wait for atoms from east, move them to cells */
+    MPI_Waitall(2, reqeast, stateast);
+    MPI_Get_count( &stateast[1], MPI_REAL, &recv_buf_east.n );
+    process_buffer( &recv_buf_east, mode );
 
-  /* append atoms from east & west to north send buffer */
-  copy_atoms_buf( &send_buf_north, &recv_buf_west );
-  copy_atoms_buf( &send_buf_north, &recv_buf_east );
-  /* check special case cpu_dim.y==2 */ 
-  if (nbsouth!=nbnorth) {
-    /* append atoms from east & west to south send buffer */
-    copy_atoms_buf( &send_buf_south, &recv_buf_east );
-    copy_atoms_buf( &send_buf_south, &recv_buf_west );
+    /* append atoms from east & west to north send buffer */
+    copy_atoms_buf( &send_buf_north, &recv_buf_west );
+    copy_atoms_buf( &send_buf_north, &recv_buf_east );
+    /* check special case cpu_dim.y==2 */ 
+    if (nbsouth!=nbnorth) {
+      /* append atoms from east & west to south send buffer */
+      copy_atoms_buf( &send_buf_south, &recv_buf_east );
+      copy_atoms_buf( &send_buf_south, &recv_buf_west );
+    }
   }
 
-  /* send atoms north */
-  isend_buf( &send_buf_north, nbnorth, &reqsouth[0] );
-  irecv_buf( &recv_buf_south, nbsouth, &reqsouth[1] );
+  if (cpu_dim.y > 1) {
+    /* send atoms north */
+    isend_buf( &send_buf_north, nbnorth, &reqsouth[0] );
+    irecv_buf( &recv_buf_south, nbsouth, &reqsouth[1] );
 
-  /* send atoms south */
-  isend_buf( &send_buf_south, nbsouth, &reqnorth[0] );
-  irecv_buf( &recv_buf_north, nbnorth, &reqnorth[1] );
+    /* send atoms south */
+    isend_buf( &send_buf_south, nbsouth, &reqnorth[0] );
+    irecv_buf( &recv_buf_north, nbnorth, &reqnorth[1] );
 
-  /* wait for atoms from south, move them to cells */
-  MPI_Waitall(2, reqsouth, statsouth);
-  MPI_Get_count( &statsouth[1], MPI_REAL, &recv_buf_south.n );
-  process_buffer( &recv_buf_south, mode );   
+    /* wait for atoms from south, move them to cells */
+    MPI_Waitall(2, reqsouth, statsouth);
+    MPI_Get_count( &statsouth[1], MPI_REAL, &recv_buf_south.n );
+    process_buffer( &recv_buf_south, mode );   
 
-  /* Wait for atoms from north, move them to cells */
-  MPI_Waitall(2, reqnorth, statnorth);
-  MPI_Get_count( &statnorth[1], MPI_REAL, &recv_buf_north.n );
-  process_buffer( &recv_buf_north, mode );   
+    /* Wait for atoms from north, move them to cells */
+    MPI_Waitall(2, reqnorth, statnorth);
+    MPI_Get_count( &statnorth[1], MPI_REAL, &recv_buf_north.n );
+    process_buffer( &recv_buf_north, mode );   
+  }
 
 }
 
