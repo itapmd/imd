@@ -218,7 +218,9 @@ void generate_hex()
       ORT(input,0,X)  = x;
       ORT(input,0,Y)  = y;
       NUMMER(input,0) = natoms;
+#ifndef MONO
       SORTE (input,0) = typ;
+#endif
       VSORTE(input,0) = typ;
       MASSE(input,0)  = masses[typ];
       num_sort[typ]++;
