@@ -79,38 +79,45 @@ void maxwell(real temp)
       for (i=0; i<p->n; ++i) {
 
 #ifdef TRANSPORT
-           /* which layer? */
-           num = scale * p->ort X(i);
-           if (num < 0)             num = 0;
-           if (num >= tran_nlayers) num = tran_nlayers-1;
+         /* which layer? */
+         num = scale * p->ort X(i);
+         if (num < 0)             num = 0;
+         if (num >= tran_nlayers) num = tran_nlayers-1;
 
-           if (num == 0) {
-             TEMP = tran_Tleft;
-           } else if (num == nhalf) {
-             TEMP = tran_Tright;
-           } else if (num < nhalf) {
-             xx = p->ort X(i) - box_x.x / tran_nlayers;
-             TEMP = tran_Tleft + (tran_Tright - tran_Tleft) * 
-                                 xx * tran_nlayers / (box_x.x * (nhalf-1));
-           } else {
-             xx = box_x.x - p->ort X(i) - box_x.x / tran_nlayers;
-             TEMP = tran_Tleft + (tran_Tright - tran_Tleft) * 
-                                 xx * tran_nlayers / (box_x.x * (nhalf-1));
-	   }
+         if (num == 0) {
+            TEMP = tran_Tleft;
+         } else if (num == nhalf) {
+            TEMP = tran_Tright;
+         } else if (num < nhalf) {
+            xx = p->ort X(i) - box_x.x / tran_nlayers;
+            TEMP = tran_Tleft + (tran_Tright - tran_Tleft) * 
+                               xx * tran_nlayers / (box_x.x * (nhalf-1));
+         } else {
+            xx = box_x.x - p->ort X(i) - box_x.x / tran_nlayers;
+            TEMP = tran_Tleft + (tran_Tright - tran_Tleft) * 
+                               xx * tran_nlayers / (box_x.x * (nhalf-1));
+	 }
 #endif
 
-         p->impuls X(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i));
-         p->impuls Y(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i));
+         if (NUMMER(p,i) >= 0) {
+            p->impuls X(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i));
+            p->impuls Y(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i));
 #ifndef TWOD
-         p->impuls Z(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i));
+            p->impuls Z(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i));
 #endif
-
-         ++natom;
-         tot_impuls.x += p->impuls X(i);
-         tot_impuls.y += p->impuls Y(i);
+            ++natom;
+            tot_impuls.x += p->impuls X(i);
+            tot_impuls.y += p->impuls Y(i);
 #ifndef TWOD
-         tot_impuls.z += p->impuls Z(i);
+            tot_impuls.z += p->impuls Z(i);
 #endif
+         } else {
+            p->impuls X(i) = 0.0;
+            p->impuls Y(i) = 0.0;
+#ifndef TWOD
+            p->impuls Z(i) = 0.0;
+#endif
+         }
 
 #ifdef UNIAX
 
@@ -161,6 +168,12 @@ void maxwell(real temp)
 	   p->dreh_impuls Y(i) *= norm ;
 	   p->dreh_impuls Z(i) *= norm ;
 
+           if (NUMMER(p,i) >= 0) {
+              p->dreh_impuls X(i) = 0.0;
+              p->dreh_impuls Y(i) = 0.0;
+              p->dreh_impuls Z(i) = 0.0;
+           }
+
 #endif /* UNIAX */
 
 #ifdef SHOCK
@@ -201,12 +214,14 @@ void maxwell(real temp)
       int i;
       cell *p;
       p = cell_array + CELLS(k);
-      for (i = 0;i < p->n; ++i) { 
-         p->impuls X(i) -= tot_impuls.x;
-         p->impuls Y(i) -= tot_impuls.y;
+      for (i=0; i<p->n; ++i) { 
+         if (NUMMER(p,i) >= 0) {
+            p->impuls X(i) -= tot_impuls.x;
+            p->impuls Y(i) -= tot_impuls.y;
 #ifndef TWOD
-         p->impuls Z(i) -= tot_impuls.z;
+            p->impuls Z(i) -= tot_impuls.z;
 #endif
+         }
       }
    }
 } 
