@@ -54,8 +54,10 @@ RISCSOURCES2D = imd_main_risc_2d.c
 RISCSOURCES3D = imd_main_risc_3d.c
 
 MPISOURCES    = imd_mpi_util.c
-MPISOURCES2D  = ${MPISOURCES} imd_main_mpi_2d.c imd_geom_mpi_2d.c
-MPISOURCES3D  = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c
+MPISOURCES2D  = ${MPISOURCES} imd_main_mpi_2d.c imd_geom_mpi_2d.c \
+		imd_comm_force_2d.c
+MPISOURCES3D  = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c \
+		imd_comm_force_3d.c
 
 PACXSOURCES2D = ${MPISOURCES2D} imd_pacx.c
 PACXSOURCES3D = ${MPISOURCES3D} imd_pacx.c

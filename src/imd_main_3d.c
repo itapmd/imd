@@ -196,11 +196,7 @@ void main_loop(void)
     /* we should do this in more appropriate intervals */
     if (((eng_interval != 0) && (0 == steps%eng_interval)) || 
         (steps == steps_min)) setup_buffers();
-#if (defined(AR) && !defined(COVALENT))
-    send_atoms_ar();
-#else
-    send_atoms_force();
-#endif
+    send_cells(copy_cell,pack_cell,unpack_cell);
 #endif
 #ifdef TIMING
     imd_stop_timer(&time_force_comm);
@@ -235,11 +231,7 @@ void main_loop(void)
 #ifdef TIMING
     imd_start_timer(&time_force_comm);
 #endif
-#ifdef COVALENT
-    send_forces_full();
-#else
-    send_forces();
-#endif
+    send_forces(add_forces,pack_forces,unpack_forces);
 #ifdef TIMING
     imd_stop_timer(&time_force_comm);
 #endif

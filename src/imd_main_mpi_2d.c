@@ -81,7 +81,9 @@ void calc_forces(void)
     }
   }
 
-  /* Since we don't use actio=reactio accross the cpus, we have do do
+#ifndef AR
+
+  /* If we don't use actio=reactio accross the cpus, we have do do
      the force loop also on the other half of the neighbours for the 
      cells on the surface of the CPU */
 
@@ -110,6 +112,8 @@ void calc_forces(void)
   virial     = tmpvir;
   vir_vect.x = tmpvec.x;
   vir_vect.y = tmpvec.y;
+
+#endif /* AR */
 
   /* sum up results of different CPUs */
   MPI_Allreduce( &tot_pot_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid); 
@@ -231,176 +235,6 @@ void send_atoms(int mode)
   }
 
 }
-
-
-/******************************************************************************
-*
-*  copy_cell_force  -  copy contents of one cell to another cell
-*
-******************************************************************************/
-
-void copy_cell_force( int j, int k, int l, int m)
-{
-  int i, tmp_n;
-  cell *from, *to;
-
-  from = PTR_2D_V(cell_array, j, k, cell_dim);
-  to   = PTR_2D_V(cell_array, l, m, cell_dim);
-
-  tmp_n = from->n;
-  if (tmp_n >= to->n_max) {
-    to->n = 0;
-    alloc_cell(to, tmp_n);
-  }
-  
-  to->n = tmp_n;
-  for (i=0; i<to->n; ++i) {
-    to->ort X(i) = from->ort X(i);
-    to->ort Y(i) = from->ort Y(i);
-    to->sorte[i] = from->sorte[i];
-  }
-}
-
-
-/******************************************************************************
-*
-*  move_atoms_force  -  move atoms from MPI buffer to cells
-*
-******************************************************************************/
-
-void move_atoms_force( msgbuf *b, int j, int k)
-{
-  int i;
-  int tmp_n;
-  cell *to;
-
-  to = PTR_2D_V(cell_array, j, k, cell_dim);
-
-  tmp_n = (int) b->data[ b->n++ ];
-  
-  if (tmp_n >= to->n_max) {
-    to->n = 0;
-    alloc_cell(to, tmp_n);
-  }
-  
-  to->n = tmp_n;
-  for (i=0; i<to->n; ++i) {
-    to->ort X(i) = b->data[ b->n++ ];
-    to->ort Y(i) = b->data[ b->n++ ];
-    to->sorte[i] = (shortint) b->data[ b->n++ ];
-  }
-  if (b->n_max <= b->n) error("Buffer overflow in move_atoms_force");
-}
-
-
-/******************************************************************************
-*
-*  copy_atoms_force  -  copy atoms to MPI buffer
-*
-******************************************************************************/
-
-void copy_atoms_force( msgbuf *b, int j, int k)
-{
-  int i;
-  cell *from;
-    
-  from = PTR_2D_V(cell_array, j, k, cell_dim);
-
-  b->data[ b->n++ ] = (real) from->n;
-    
-  for (i=0; i<from->n; ++i) {
-    b->data[ b->n++ ] = from->ort X(i);
-    b->data[ b->n++ ] = from->ort Y(i);
-    b->data[ b->n++ ] = (real) from->sorte[i];
-  }
-  if (b->n_max <= b->n)  error("Buffer overflow in copy_atoms_force");
-}
-
-
-/******************************************************************************
-*
-* send_atoms_force  -  send atoms for force computation (no AR)
-*
-******************************************************************************/
-
-void send_atoms_force()
-{
-  int i;
-
-  MPI_Status  stateast[2], statwest[2], statnorth[2], statsouth[2];
-  MPI_Request  reqeast[2],  reqwest[2],  reqnorth[2],  reqsouth[2];
-
-  empty_mpi_buffers();
-  empty_buffer_cells();
-
-  /* exchange east/west */
-  if (cpu_dim.x==1) {
-    /* simply copy east/west atoms to buffer cells */
-    for (i=cellmin.y; i<cellmax.y; ++i) {
-      copy_cell_force( 1, i, cell_dim.x-1, i );
-      copy_cell_force( cell_dim.x-2, i, 0, i );
-    }
-  } else {
-    /* copy east atoms into send buffer, send east */
-    for (i=cellmin.y; i<cellmax.y; ++i)
-      copy_atoms_force( &send_buf_east, 1, i );
-    isend_buf( &send_buf_east, nbeast, &reqwest[0] );
-    irecv_buf( &recv_buf_west, nbwest, &reqwest[1] );
-
-    /* copy west atoms into send buffer, send west */
-    for (i=cellmin.y; i<cellmax.y; ++i) 
-      copy_atoms_force( &send_buf_west, cell_dim.x-2, i);
-    /* send west */
-    isend_buf( &send_buf_west, nbwest, &reqeast[0] );
-    irecv_buf( &recv_buf_east, nbeast, &reqeast[1] );
-
-    /* Wait for atoms from west, move them to buffer cells */
-    MPI_Waitall(2, reqwest, statwest);
-    recv_buf_west.n = 0;
-    for (i=cellmin.y; i<cellmax.y; ++i)
-      move_atoms_force( &recv_buf_west, cell_dim.x-1, i );
-
-    /* Wait for atoms from east, move them to buffer cells */
-    MPI_Waitall(2, reqeast, stateast);
-    recv_buf_east.n = 0;
-    for (i=cellmin.y; i<cellmax.y; ++i) 
-      move_atoms_force( &recv_buf_east, 0, i);
-  }
-
-  /* exchange north/south */
-  if (cpu_dim.y==1) {
-    /* simply copy north/south atoms to buffer cells */
-    for (i=0; i<cell_dim.x; ++i) {
-      copy_cell_force( i, 1, i, cell_dim.y-1 );
-      copy_cell_force( i, cell_dim.y-2, i, 0 );
-    }
-  } else {
-    /* copy north atoms into send buffer, send north */
-    for (i=0; i<cell_dim.x; ++i)
-      copy_atoms_force( &send_buf_north, i, 1);
-    isend_buf( &send_buf_north, nbnorth, &reqsouth[0] );
-    irecv_buf( &recv_buf_south, nbsouth, &reqsouth[1] );
-
-    /* copy south atoms into send buffer, send south */
-    for (i=0; i<cell_dim.x; ++i)
-      copy_atoms_force( &send_buf_south, i, cell_dim.y-2);
-    isend_buf( &send_buf_south, nbsouth, &reqnorth[0] );
-    irecv_buf( &recv_buf_north, nbnorth, &reqnorth[1] );
-
-    /* wait for atoms from south, move them to buffer cells */
-    MPI_Waitall(2, reqsouth, statsouth);
-    recv_buf_south.n = 0;
-    for (i=0; i<cell_dim.x; ++i)
-      move_atoms_force( &recv_buf_south, i, cell_dim.y-1);
-
-    /* Wait for atoms from north, move them to buffer cells */
-    MPI_Waitall(2, reqnorth, statnorth);
-    recv_buf_north.n = 0;
-    for (i=0; i<cell_dim.x; ++i)
-      move_atoms_force( &recv_buf_north, i, 0);
-  }
-}
-
 
 
 

@@ -105,21 +105,38 @@ ivektor local_cell_coord(real x, real y, real z);
 void recv_atoms(void);
 void send_atoms(int mode);
 void send_atoms_force(void);
-void send_atoms_ar(void);
-void send_forces(void);
-void send_forces_full(void);
 #ifdef TWOD
-void copy_cell_force(int i, int j, int k, int l);
-void copy_atoms_force(msgbuf *b, int k, int l);
-void move_atoms_force(msgbuf *b, int k, int l);
+void send_cells (void (*copy_func)  (int, int, int, int),
+                 void (*pack_func)  (msgbuf*, int, int),
+                 void (*unpack_func)(msgbuf*, int, int));
+void send_forces(void (*add_func)   (int, int, int, int),
+                 void (*pack_func)  (msgbuf*, int, int),
+                 void (*unpack_func)(msgbuf*, int, int));
+void copy_cell    ( int j, int k, int l, int m );
+void pack_cell    ( msgbuf *b, int j, int k );
+void unpack_cell  ( msgbuf *b, int j, int k );
+void add_forces   ( int j, int k, int l, int m );
+void pack_forces  ( msgbuf *b, int j, int k );
+void unpack_forces( msgbuf *b, int j, int k );
 #else
 vektor global_pbc(int i,int j, int k);
-void copy_cell_force(int i, int j, int k, int l, int m, int n);
-void add_cell_force(int i, int j, int k, int l, int m, int n);
-void move_atoms_force(msgbuf *b, int k, int l, int m);
-void copy_atoms_force(msgbuf *b, int k, int l, int m);
-void add_forces(msgbuf *b, int k, int l, int m);
-void copy_forces(msgbuf *b, int k, int l, int m);
+void send_cells (void (*copy_func)  (int, int, int, int, int, int),
+                 void (*pack_func)  (msgbuf*, int, int, int),
+                 void (*unpack_func)(msgbuf*, int, int, int));
+void send_forces(void (*copy_func)  (int, int, int, int, int, int),
+                 void (*pack_func)  (msgbuf*, int, int, int),
+                 void (*unpack_func)(msgbuf*, int, int, int));
+void copy_cell    ( int k, int l, int m, int r, int s, int t );
+void pack_cell    ( msgbuf *b, int k, int l, int m );
+void unpack_cell  ( msgbuf *b, int k, int l, int m );
+void add_forces   ( int k, int l, int m, int r, int s, int t );
+void pack_forces  ( msgbuf *b, int k, int l, int m);
+void unpack_forces( msgbuf *b, int k, int l, int m );
+#ifdef EAM2
+void copy_rho_h  ( int k, int l, int m, int r, int s, int t );
+void pack_rho_h  ( msgbuf *b, int k, int l, int m );
+void unpack_rho_h( msgbuf *b, int k, int l, int m );
+#endif
 #endif
 void recv_cell(cell *p, int from_cpu, int tag);
 void send_cell(cell *p, int to_cpu, int tag);

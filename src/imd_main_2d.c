@@ -150,7 +150,7 @@ void main_loop(void)
     /* we should do this in more appropriate intervals */
     if (((eng_interval != 0) && (0 == steps%eng_interval)) || 
         (steps == steps_min)) setup_buffers();
-    send_atoms_force();
+    send_cells(copy_cell,pack_cell,unpack_cell);
 #ifdef TIMING
     imd_stop_timer(&time_force_comm);
 #endif
@@ -179,6 +179,18 @@ void main_loop(void)
     }
 #endif
 
+#ifdef MPI
+#ifdef AR
+#ifdef TIMING
+    imd_start_timer(&time_force_comm);
+#endif
+    send_forces(add_forces,pack_forces,unpack_forces);
+#ifdef TIMING
+    imd_stop_timer(&time_force_comm);
+#endif
+#endif
+#endif
+
 #ifdef GLOK 
     /* "globale konvergenz": set impulses=0 if P*F <0 (global vectors) */
     if (PxF<0.0)
@@ -187,7 +199,6 @@ void main_loop(void)
 	for (i=0; i<p->n; ++i) {
 	  p->impuls X(i) = 0.0;
 	  p->impuls Y(i) = 0.0;
-	  p->impuls Z(i) = 0.0;
 	}
       }
 #endif
