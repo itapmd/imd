@@ -149,9 +149,12 @@ void main_loop(void)
       write_properties(steps);
     if ((dis_interval > 0) && (0 == steps%dis_interval)) write_distrib(steps);
     if ((pic_interval > 0) && (0 == steps%pic_interval)) write_pictures(steps);
+#ifdef HOM
+    if ((hom_interval > 0) && (0 == steps%hom_interval)) shear_sample(steps);
+    if ((exp_interval > 0) && (0 == steps%exp_interval)) expand_sample(steps);
+#endif
 
 #ifdef DISLOC
-    if (steps == up_ort_ref) update_ort_ref();
     if ((dem_interval > 0) && (0 == steps%dem_interval)) write_demmaps(steps);
     if ((dsp_interval > up_ort_ref) && (0 == steps%dsp_interval)) write_dspmaps(steps);
 #endif

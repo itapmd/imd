@@ -37,7 +37,6 @@ void shear_sample(void)
   int flag=0;
   
   
-  
 #ifdef MPI
   if (0==myid)
 #endif
@@ -104,10 +103,72 @@ void shear_sample(void)
                             
             }
           }
-  #ifdef MPI
+#ifdef MPI
   if (0==myid)
 #endif
       printf("Shear done.\n");
+  return;
+}
+/*****************************************************************************
+*
+* expand_sample()
+*
+*****************************************************************************/
+
+void expand_sample(void)
+
+{
+
+  int i,r,s,t;
+  cell *p;
+  vektor2d d,u;
+  real umax,umin;
+  real tmp_umax,tmp_umin;
+  real xmax,xmin;
+  real tmp_xmax,tmp_xmin;
+  real sclx;
+  real theta;
+  real radius;
+  real amue;
+  real kappa;
+  int flag=0;
+  
+  
+#ifdef MPI
+  if (0==myid)
+#endif
+      printf("Expanding sample.\n");
+  
+          /* Apply field */
+  for ( r = cellmin.x; r < cellmax.x; ++r )
+      for ( s = cellmin.y; s < cellmax.y; ++s )
+#ifndef TWOD
+          for ( t = cellmin.z; t < cellmax.z; ++t )
+#endif
+          {
+        
+#ifdef TWOD
+            p = PTR_2D_V(cell_array, r, s, cell_dim);
+#else
+            p = PTR_3D_V(cell_array, r, s, t, cell_dim);
+#endif
+            for (i = 0;i < p->n; ++i) {
+
+              p->ort X(i) *= expansion;
+              p->ort Y(i) *= expansion;
+	      box_x.x *= expansion;
+	      box_y.y *= expansion;
+#ifndef TWOD
+              p->ort Z(i) *= expansion;
+	      box_z.z *= expansion;
+#endif
+                            
+            }
+          }
+#ifdef MPI
+  if (0==myid)
+#endif
+      printf("Expansion done.\n");
   return;
 }
 

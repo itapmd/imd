@@ -280,10 +280,12 @@ void getparamfile(char *paramfname, int sim)
       /* filename for potential data */
       getparam("potfile",potfilename,PARAM_STR,1,255);
     }
+#ifdef DISLOC
     else if (strcasecmp(token,"reffile")==0) {
       /* filename for reference configuration */
       getparam("reffile",reffilename,PARAM_STR,1,255);
     }
+#endif
     else if (strcasecmp(token,"ensemble")==0) {
       /* ensemble */
       getparam("ensemble",tmpstr,PARAM_STR,1,255);
@@ -548,6 +550,10 @@ void getparamfile(char *paramfname, int sim)
       /* number of pixels in x/y direction */
       getparam("pic_res", &pic_res,PARAM_INT,1,2);
     }
+    else if (strcasecmp(token,"numpix")==0) { 
+      /* number of pixels in x/y direction */
+      getparam("numpix", &numpix,PARAM_INT,1,1);
+    }
     else if (strcasecmp(token,"pic_type")==0) { 
       /* number of pixels in x/y direction */
       getparam("pic_type", &pic_type,PARAM_INT,1,1);
@@ -565,6 +571,24 @@ void getparamfile(char *paramfname, int sim)
       };
       getparam("pic_at_radius", pic_at_radius,PARAM_REAL_COPY,1,ntypes);
     }
+#ifdef HOM
+    else if (strcasecmp(token,"hom_interval")==0) {
+      /* period of homshear intervals */
+      getparam("hom_interval",&hom_interval,PARAM_INTEGER,1,1);
+    }
+    else if (strcasecmp(token,"shear_max")==0) {
+      /* maximum shear */
+      getparam("shear_max",&shear_max,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"exp_interval")==0) {
+      /* period of expansion intervals */
+      getparam("exp_interval",&exp_interval,PARAM_INTEGER,1,1);
+    }
+    else if (strcasecmp(token,"expansion")==0) {
+      /* expansion */
+      getparam("expansion",&expansion,PARAM_REAL,1,1);
+    }
+#endif
 #if defined(FRAC) || defined(PULL) || defined(SHOCK)
     else if (strcasecmp(token,"initial_shift")==0) {
       /* shall the whole sample be shifted before MD */
@@ -577,11 +601,11 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"ekin_threshold")==0) {
       /* shear epsilon criterium, see imd_shear_new.c */
       getparam("ekin_threshold",&ekin_threshold,PARAM_REAL,1,1);
-    }   
+    }
     else if (strcasecmp(token,"annealsteps")==0) {
       /* max nr of steps between shears */
       getparam("annealsteps",&annealsteps,PARAM_INT,1,1);
-    }   
+    }
     else if (strcasecmp(token,"maxdnoshsteps")==0) {
       /* max nr of steps between shears */
       getparam("maxdnoshsteps",&maxdnoshsteps,PARAM_INT,1,1);
@@ -1136,8 +1160,8 @@ void broadcast_params() {
     case ENS_AND:       move_atoms = move_atoms_and;       break;
     case ENS_MC:        move_atoms = move_atoms_mc;        break;
     case ENS_FRAC:      move_atoms = move_atoms_frac;      break;
-    case ENS_PULL:      move_atoms = move_atoms_pull(int steps, int dnoshsteps);break;
-    case ENS_SHEAR:  move_atoms = move_atoms_mik;       break;
+    case ENS_PULL:      move_atoms = move_atoms_pull;      break;
+    case ENS_SHEAR:     move_atoms = move_atoms_mik;       break;
     case ENS_NVX:       move_atoms = move_atoms_nvx;       break;
     case ENS_MSD:       move_atoms = move_atoms_msd;       break;
     default: if (0==myid) error("unknown ensemble in broadcast"); break;

@@ -80,8 +80,11 @@ void check_socket(int steps)
 {
   int socket_flag;
 
-  if (0==myid) socket_flag = connect_server();
-  socket_flag = T_WRITE_CONF_SOCKET;
+#ifdef MPI
+  if (0==myid)
+#endif
+
+  socket_flag = connect_server();
 #ifdef MPI
   MPI_Bcast(&socket_flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif  
@@ -93,10 +96,10 @@ void check_socket(int steps)
       case T_WRITE_DISTRIB:
         write_distrib_using_sockets();
         break;
-#ifdef TWOD
       case T_WRITE_CONF_SOCKET:
 	write_conf_using_socket();
 	break;
+#ifdef TWOD
       case T_WRITE_PICTURE:
         write_rgb_picture_to_socket();
         break;
@@ -105,7 +108,10 @@ void check_socket(int steps)
         if (0==myid) printf("unknown token: %d\n",socket_flag);
         break;
     }
-    if (0==myid) close_socket();
+#ifdef MPI
+    if (0==myid)
+#endif
+      close_socket();
   }
 
 }
@@ -259,47 +265,58 @@ void write_rgb_picture_to_socket()
     }
   }
 }
+#endif  TWOD */
 
 /*****************************************************************************
 *
-*  sends 2D atomic configuration to socket 
+*  sends atomic configuration to socket 
 *
 *****************************************************************************/
 
-void write_conf_using_socket()
-{
-  int r,s,i;
-  int a;
-  cell *p;
+void write_conf_using_socket() {
+   int r,s,t,i, ready; 
+   int a; 
+   cell *p; 
+   int k=0;
 
-/* loop over all atoms */
-  WriteFull(soc,&natoms,sizeof(int));
-  WriteFull(soc,&box_x.x,sizeof(real));
-  WriteFull(soc,&box_y.y,sizeof(real));
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-	{
-	  p = PTR_2D_V(cell_array, r, s, cell_dim);
-	  for (i = 0;i < p->n; ++i) {
-	    if (i==36) continue;
-	    WriteFull(soc,&p->nummer[i],sizeof(int));
-	    WriteFull(soc,&p->sorte[i],sizeof(int));
-	    WriteFull(soc,&p->masse[i],sizeof(real));
-	    WriteFull(soc,&p->ort X(i),sizeof(real));
-	    WriteFull(soc,&p->ort Y(i),sizeof(real));
-	    WriteFull(soc,&p->impuls X(i),sizeof(real));
-	    WriteFull(soc,&p->impuls Y(i),sizeof(real));
-	    WriteFull(soc,&p->pot_eng[i],sizeof(real));
+   WriteFull(soc,&natoms,sizeof(int)); 
+   /*   WriteFull(soc,&box_x.x,sizeof(real)); 
+   WriteFull(soc,&box_y.y,sizeof(real)); */
+   /*  loop over all atoms */
+   for ( r = cellmin.x; r < cellmax.x; ++r ) 
+     for ( s = cellmin.y; s < cellmax.y; ++s ) 
+#ifdef TWOD
+       {
+       p = PTR_2D_V(cell_array, r, s, cell_dim); 
+#else
+       for ( t = cellmin.z; t < cellmax.z; ++t ) { 
+	   p = PTR_3D_V(cell_array, r, s, t, cell_dim); 
+#endif
+	   for (i = 0;i < p->n; ++i) { 
+	     fprintf(stdout, "%d %d %d\n", i, k++, p->nummer[i]);
+	     WriteFull(soc,&p->nummer[i],sizeof(int)); 
+	     WriteFull(soc,&p->sorte[i],sizeof(int)); 
+	     WriteFull(soc,&p->masse[i],sizeof(double)); 
+	     WriteFull(soc,&p->ort X(i),sizeof(double)); 
+	     WriteFull(soc,&p->ort Y(i),sizeof(double)); 
+#ifndef TWOD 
+	     WriteFull(soc,&p->ort Z(i),sizeof(double)); 
+#endif 
+	     WriteFull(soc,&p->impuls X(i),sizeof(double)); 
+	     WriteFull(soc,&p->impuls Y(i),sizeof(double)); 
+#ifndef TWOD
+	     WriteFull(soc,&p->impuls Z(i),sizeof(double));
+#endif
+	     WriteFull(soc,&p->pot_eng[i],sizeof(double));
 	  }
 
 	}
 }
-#endif /* TWOD */
 
 
 /*****************************************************************************
 *
-*  sends 2D or 3D kinetic and potentiel energy distribution to the socket 
+*  sends 2D or 3D kinetic and potential energy distribution to the socket 
 *
 *****************************************************************************/
 

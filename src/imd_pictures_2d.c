@@ -144,7 +144,6 @@ void write_pictures_raw(int steps)
 void write_pictures_bins(int steps)
 
 #define SFACTOR 1.0
-#define NUMPIX  2
 
 {
 
@@ -244,11 +243,11 @@ void write_pictures_bins(int steps)
 	p = PTR_2D_V(cell_array, r, s, cell_dim);
 
 	for (i = 0;i < p->n; ++i) {
-	  coord.x = (int) (p->ort X(i) * scale.x);
-	  coord.y = (int) (p->ort Y(i) * scale.y);
+	  coord.x = (int) ((p->ort X(i)-pic_ll.x) * scale.x);
+	  coord.y = (int) ((p->ort Y(i)-pic_ll.y) * scale.y);
 	  /* Check bounds */
-	  if ((coord.x >= 0) && (coord.x < (pic_res.x-NUMPIX)) &&
-              (coord.y >= 0) && (coord.y < (pic_res.y-NUMPIX))) { 
+	  if ((coord.x >= 0) && (coord.x < (pic_res.x-numpix)) &&
+              (coord.y >= 0) && (coord.y < (pic_res.y-numpix))) { 
 	  
              val = SPRODN(p->impuls,i,p->impuls,i) / (2*p->masse[i]);
 
@@ -256,7 +255,7 @@ void write_pictures_bins(int steps)
 	     val = (val - ecut_kin.x) / (ecut_kin.y - ecut_kin.x);
              val = val > 1.0 ? 1.0 : val;
              val = val < 0.0 ? 0.0 : val;
-             np  = NUMPIX;
+             np  = numpix;
              /* Get index into table */
 	     ind = (int)(val * 3.9999);
 
@@ -374,11 +373,11 @@ if (0==myid) {
 	p = PTR_2D_V(cell_array, r, s, cell_dim);
 
 	for (i = 0;i < p->n; ++i) {
-	  coord.x = (int) (p->ort X(i) * scale.x);
-	  coord.y = (int) (p->ort Y(i) * scale.y);
+	  coord.x = (int) ((p->ort X(i)-pic_ll.x) * scale.x);
+	  coord.y = (int) ((p->ort Y(i)-pic_ll.y) * scale.y);
 	  /* Check bounds */
-	  if ((coord.x>=0) && (coord.x<(pic_res.x-NUMPIX)) &&
-	      (coord.y>=0) && (coord.y<(pic_res.y-NUMPIX))) {
+	  if ((coord.x>=0) && (coord.x<(pic_res.x-numpix)) &&
+	      (coord.y>=0) && (coord.y<(pic_res.y-numpix))) {
 
 	  val = p->pot_eng[i];
 
@@ -387,9 +386,6 @@ if (0==myid) {
 /* Values that are not in the interval are set to MINIMUM */
           val = val > 1.0 ? 0.0 : val;
           val = val < 0.0 ? 0.0 : val;
-/* Defects in potential energy are rather point-like, so we enlarge all
-Pixels not in the default interval */
-          if ((val<1.0) && (val>0.0)) np = 3 * NUMPIX; else np = NUMPIX;
           /* Get index into table */
 	  ind = (int)(val * 3.9999);
 

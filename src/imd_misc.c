@@ -745,7 +745,7 @@ void generate_fcc(int maxtyp)
         cellc = cell_coord(input->ort X(0), input->ort Y(0), input->ort Z(0));
 #ifndef MONOLJ
 	if (pn) { /* immobile if around glideplane */
-	  if ((input->ort Z(0)<glideplane+1)&&(input->ort Z(0)> glideplane-1))
+	  if ((input->ort Z(0)<upperplane)&&(input->ort Z(0)> lowerplane))
             input->nummer[0] = -natoms;
 	  else
 	    input->nummer[0] = natoms;
@@ -933,11 +933,11 @@ void construct_pn_disloc(real *x, real *y, real *z) {
   pf = burgersv / M_PI;
 
 #ifndef TWOD
-            if (*z > glideplane) /* above glideplane? move! */
+            if (*z > upperplane) /* above glideplane? move! */
 #else
-            if (*y > glideplane) /* above glideplane? move! */
+            if (*y > upperplane) /* above glideplane? move! */
 #endif
-              *x += burgersv/2 -pf*atan((*x - hfboxl) * invwidth);
+              *y += burgersv/2 -pf*atan((*x - hfboxl) * invwidth);
 
 }
 

@@ -332,7 +332,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
 
 #ifndef NODBG_DIST
       if (0==radius2) { char msgbuf[256];
-        sprintf(msgbuf,"Distance is zero: i=%d, j=%d\n",i,j);
+        sprintf(msgbuf,"Distance is zero: nrs=%d %d\norte: %f %f, %f %f\n",p->nummer[i],q->nummer[i],p->ort X(i),p->ort Y(i),q->ort X(i),q->ort Y(i));
         error(msgbuf);
       }
 #else

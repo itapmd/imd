@@ -1041,7 +1041,7 @@ void move_atoms_pull(void)
 	  /* Sum kinetic energy */ 
 	  kin_energie_2 =  SPRODN(p->impuls,i,p->impuls,i);
 	  tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4*p->masse[i]);
-	  
+
 	  /* Pull on atoms in strip */
 	  if ((p->ort X(i) > strip) && 
               (p->ort X(i) < (box_x.x - strip))) {
@@ -1078,7 +1078,6 @@ void move_atoms_pull(void)
 	    } else {
 	      dnoshsteps++;
 	    }
-
             p->impuls X(i) =0.0;
 	    p->impuls Y(i) =0.0;
 #ifndef TWOD

@@ -67,8 +67,10 @@ void read_atoms(str255 infilename)
     sprintf(buf,"%s.%u",infilename,myid); 
     infile = fopen(buf,"r");
 #ifdef DISLOC
+  if (calc_Epot_ref == 0) {
     sprintf(buf,"%s.%u",reffilename,myid); 
     reffile = fopen(reffilename,"r");
+  }
 #endif
     /* When each cpu reads only part of the atoms, we have to add the
        number of atoms together to get the correct natoms. We set a
@@ -87,19 +89,22 @@ void read_atoms(str255 infilename)
     infile = fopen(infilename,"r");
 #ifdef DISLOC
   if ((1!=parallel_input) || (NULL==reffile))
-    reffile = fopen(reffilename,"r");
+    if (calc_Epot_ref == 0)
+      reffile = fopen(reffilename,"r");
 #endif
 
 #else
   infile = fopen(infilename,"r");
 #ifdef DISLOC
-  reffile = fopen(reffilename,"r");
+  if (calc_Epot_ref == 0)
+    reffile = fopen(reffilename,"r");
 #endif
 #endif
   if (NULL==infile) error("Cannot open atoms file.");
 
 #ifdef DISLOC
-  if (NULL==reffile) error("Cannot open reference file.");
+  if (calc_Epot_ref == 0)
+    if (NULL==reffile) error("Cannot open reference file.");
 #endif
 
   /* Set up 1 atom input cell */
@@ -134,20 +139,23 @@ void read_atoms(str255 infilename)
 #ifdef DOUBLE
     p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf",
 	      &n,&s,&m,&pos.x,&pos.y,&vau.x,&vau.y, &refeng);
-    pref = sscanf(refbuf,"%d %d %lf %lf %lf",
-	      &refn,&idummy,&fdummy,&refpos.x,&refpos.y);
+    if (calc_Epot_ref == 0)
+      pref = sscanf(refbuf,"%d %d %lf %lf %lf %lf",
+		    &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refeng);
 #else
     p = sscanf(buf,"%d %d %f %f %f %f %f %f",
 	      &n,&s,&m,&pos.x,&pos.y,&vau.x,&vau.y, &refeng);  
-    pref = sscanf(refbuf,"%d %d %f %f %f",
-	      &refn,&idummy,&fdummy,&refpos.x,&refpos.y);
+    if (calc_Epot_ref == 0)
+      pref = sscanf(refbuf,"%d %d %f %f %f %f",
+		    &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refeng);
 #endif
-    if (ABS(refn) != ABS(n)) error("Numbers in infile and reffile are different.\n");
+    if (calc_Epot_ref == 0)
+      if (ABS(refn) != ABS(n)) error("Numbers in infile and reffile are different.\n");
 
 #else
 #ifdef DOUBLE
     p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf",
-	      &n,&s,&m,&pos.x,&pos.y,&vau.x,&vau.y);  
+	      &n,&s,&m,&pos.x,&pos.y,&vau.x,&vau.y);
 #else
     p = sscanf(buf,"%d %d %f %f %f %f %f",
 	      &n,&s,&m,&pos.x,&pos.y,&vau.x,&vau.y);  
@@ -162,9 +170,6 @@ void read_atoms(str255 infilename)
     if (p>0) {
       switch( p ) {
       case(5):  /* n, m, s, ort */
-#ifdef DISLOC
-        calc_Epot_ref=1;
-#endif
 	do_maxwell=1;
 	input->n = 1;
 	input->nummer[0] = n;
@@ -176,11 +181,13 @@ void read_atoms(str255 infilename)
 	input->impuls Y(0) = 0;
 	input->kraft  X(0) = 0;
 	input->kraft  Y(0) = 0;
+#ifdef DISLOC
+	input->ort_ref X(0) = refpos.x;
+	input->ort_ref Y(0) = refpos.y;
+	input->Epot_ref[0] = refeng;
+#endif
 	break;
       case(7):  /* n, m, s, ort, vau */
-#ifdef DISLOC
-        calc_Epot_ref=1;
-#endif
 	input->n = 1;
 	input->nummer[0] = n;
 	input->sorte[0] = s;
@@ -191,7 +198,12 @@ void read_atoms(str255 infilename)
 	input->impuls Y(0) = vau.y * m;
 	input->kraft  X(0) = 0;
 	input->kraft  Y(0) = 0;
-	break;
+#ifdef DISLOC
+	input->ort_ref X(0) = refpos.x;
+	input->ort_ref Y(0) = refpos.y;
+	input->Epot_ref[0] = refeng;
+#endif
+break;
       default:
         printf("%d is where we find an...\n", natoms+1);
 	error("Incomplete line in atoms file at line.\n");
@@ -231,7 +243,8 @@ void read_atoms(str255 infilename)
 
   fclose(infile);  
 #ifdef DISLOC
-  fclose(reffile);
+  if (calc_Epot_ref == 0)
+    fclose(reffile);
 #endif
 
 #ifdef MPI
@@ -612,7 +625,7 @@ void write_demmaps(int steps)
 
 #define WRITE_CELL_DEM     for (i = 0;i < p->n; ++i) {\
              if (p->sorte[i] == dpotsorte) {\
-               dpot = p->pot_eng[i] - p->Epot_ref[i];\
+	       dpot = ABS(p->pot_eng[i] - p->Epot_ref[i]);\
                if (dpot > min_dpot)\
                  fprintf(demout,"%12f %12f %12f\n",\
 	         p->ort X(i),\
@@ -631,7 +644,6 @@ void write_demmaps(int steps)
   /* Dateiname fuer Ausgabedatei erzeugen */
   fzhlr = steps;
   sprintf(demfname,"%s.dem.%u",outfilename,fzhlr);
-
 #ifdef MPI
 
   if (0==myid) {
@@ -650,7 +662,7 @@ void write_demmaps(int steps)
       };
 
     /* Receive data from other cpus and write that */
-    p   = PTR_3D_V(cell_array, 0, 0, cell_dim);
+    p   = PTR_2D_V(cell_array, 0, 0, cell_dim);
     for ( m = 1; m < num_cpus; ++m)
       for (j = 1; j < cell_dim.x-1; ++j )
 	for (k = 1; k < cell_dim.y-1; ++k ) {
@@ -713,12 +725,11 @@ void write_dspmaps(int steps)
 #define WRITE_CELL_DSP     for (i = 0;i < p->n; ++i) {\
              dx = p->ort X(i) - p->ort_ref X(i);\
              dy = p->ort Y(i) - p->ort_ref Y(i);\
-             if ((dx < boxx)&&(dy < boxy))\
-               fprintf(dspout,"%12f %12f %12f %12f\n",\
-	       p->ort X(i),\
-	       p->ort Y(i),\
-	       dx,\
-               dy);\
+             fprintf(dspout,"%12f %12f %12f %12f\n",\
+	     p->ort X(i),\
+	     p->ort Y(i),\
+	     dx,\
+             dy);\
           }
 #endif
 
@@ -737,7 +748,6 @@ void write_dspmaps(int steps)
   /* 1/2 of the boxlength, this is not correct for non-cartesian boxes ! */
   boxx = box_x.x/2;
   boxy = box_y.y/2;
-  printf("%f %f\n", boxx, boxy);
 #ifdef MPI
 
   if (0==myid) {
@@ -756,7 +766,7 @@ void write_dspmaps(int steps)
       }
 
     /* Receive data from other cpus and write that */
-    p   = PTR_2D_V(cell_array, 0, 0, 0, cell_dim);
+    p   = PTR_2D_V(cell_array, 0, 0, cell_dim);
     for ( m = 1; m < num_cpus; ++m)
       for (j = 1; j < cell_dim.x-1; ++j )
         for (k = 1; k < cell_dim.y-1; ++k ) {
@@ -812,6 +822,7 @@ void update_ort_ref(void)
   int i,j,k,m,tag;
   real dx, dy, boxx, boxy;
 
+  printf("hallo");fflush(stdout);
 #ifdef MPI
 
   if (0==myid) {
@@ -824,15 +835,14 @@ void update_ort_ref(void)
 	p->ort_ref X(i) = p->ort X(i);
 	p->ort_ref Y(i) = p->ort Y(i);
       }
-    };
 
   /* Receive data from other cpus and Update that */
-  p   = PTR_2D_V(cell_array, 0, 0, 0, cell_dim);
-    for ( m = 1; m < num_cpus; ++m)
-      for (j = 1; j < cell_dim.x-1; ++j )
-        for (k = 1; k < cell_dim.y-1; ++k )
-          tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
-          recv_cell( p, m, tag );
+  p = PTR_2D_V(cell_array, 0, 0, cell_dim);
+  for ( m = 1; m < num_cpus; ++m)
+    for (j = 1; j < cell_dim.x-1; ++j )
+      for (k = 1; k < cell_dim.y-1; ++k ) {
+	tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
+        recv_cell( p, m, tag );
 	  for (i = 0;i < p->n; ++i) {
 	    p->ort_ref X(i) = p->ort X(i);
 	    p->ort_ref Y(i) = p->ort Y(i);
@@ -842,7 +852,7 @@ void update_ort_ref(void)
   } else { 
   /* Send data to cpu 0 */
   for (j = 1; j < cell_dim.x-1; ++j )
-    for (k = 1; k < cell_dim.y-1; ++k )
+    for (k = 1; k < cell_dim.y-1; ++k ) {
       p   = PTR_2D_V(cell_array, j, k, cell_dim);
       tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
       send_cell( p, 0, tag );

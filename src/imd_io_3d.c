@@ -185,7 +185,7 @@ void read_atoms(str255 infilename)
     p = sscanf(buf,"%d %d %f %f %f %f %f %f %f %f",
 	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z, &refeng);  
     pref = sscanf(refbuf,"%d %d %f %f %f %f",
-	      &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refpos.z,&refeng);
+	      &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refpos.z,&fdummy,&fdummy,&fdummy,&refeng);
 #endif
     if ((ABS(refn)) != (ABS(n))) {printf("%d %d\n", n, refn); error("Numbers in infile and reffile are different.\n");}
 
@@ -226,6 +226,9 @@ void read_atoms(str255 infilename)
 	input->kraft  Y(0) = 0;
 	input->kraft  Z(0) = 0;
 #ifdef DISLOC
+	input->ort_ref X(0) = refpos.x;
+	input->ort_ref Y(0) = refpos.y;
+	input->ort_ref Z(0) = refpos.z;
 	input->Epot_ref[0] = refeng;
 #endif
 	break;
@@ -247,6 +250,9 @@ void read_atoms(str255 infilename)
 	input->kraft  Y(0) = 0;
 	input->kraft  Z(0) = 0;
 #ifdef DISLOC
+	input->ort_ref X(0) = refpos.x;
+	input->ort_ref Y(0) = refpos.y;
+	input->ort_ref Z(0) = refpos.z;
 	input->Epot_ref[0] = refeng;
 #endif
 	break;
@@ -716,7 +722,7 @@ void write_demmaps(int steps)
 #define WRITE_CELL_DEM     for (i = 0;i < p->n; ++i) {\
              if (p->sorte[i] == dpotsorte) {\
                dpot = p->pot_eng[i] - p->Epot_ref[i];\
-               if (dpot > min_dpot)\
+               if (ABS(dpot) > min_dpot)\
                  fprintf(demout,"%12f %12f %12f %12f\n",\
 	         p->ort X(i),\
 	         p->ort Y(i),\

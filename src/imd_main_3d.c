@@ -203,6 +203,10 @@ void main_loop(void)
       write_properties(steps);
     if ((dis_interval > 0) && (0 == steps%dis_interval)) write_distrib(steps);
     if ((pic_interval > 0) && (0 == steps%pic_interval)) write_pictures(steps);
+#ifdef HOM
+    if ((hom_interval > 0) && (0 == steps%hom_interval)) shear_sample(steps);
+    if ((exp_interval > 0) && (0 == steps%exp_interval)) expand_sample(steps);
+#endif
 
 #ifdef DISLOC
     if (steps == up_ort_ref) update_ort_ref();
@@ -316,7 +320,7 @@ void main_loop(void)
 *  fix_cells
 *
 *  check if each atom is in the correct cell and on the correct CPU 
-*  move atoms the have left their cells in the last timestep
+*  move atoms that have left their cells in the last timestep
 *
 *  this also uses Plimpton's comm scheme
 *

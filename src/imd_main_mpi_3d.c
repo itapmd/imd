@@ -257,7 +257,7 @@ vektor global_pbc(int i, int j, int k)
   local_coord.y = j;
   local_coord.z = k;
 
-  /* Cannott use global_cell_coord function, this includes already pbc */
+  /* Cannot use global_cell_coord function, this includes already pbc */
   global_coord.x = local_coord.x - 1 + my_coord.x * (cell_dim.x - 2);
   global_coord.y = local_coord.y - 1 + my_coord.y * (cell_dim.y - 2);
   global_coord.z = local_coord.z - 1 + my_coord.z * (cell_dim.z - 2);
@@ -368,7 +368,7 @@ void shutdown_mpi(void)
 * where all of the data are sent.
 *
 * The drawback of the Plimpton scheme are the huge comm-buffers,
-* that use lots of memory. Its fast, however!!
+* that use lots of memory. It is fast, however!!
 *
 ******************************************************************************/
 
@@ -391,7 +391,7 @@ void send_atoms(int mode)
 
   /* Exchange east/west */
   /* copy east atoms into send buffer */
-  if (FORCE==mode) 
+  if (FORCE==mode)
     for (i=1; i < cell_dim.y-1; ++i)
       for (j=1; j < cell_dim.z-1; ++j) 
 	copy_atoms( &send_buf_east, 1, i, j);

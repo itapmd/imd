@@ -71,7 +71,7 @@ int ReadFull(int filedes, const void *buffer, int bytes)
     if (nread < 0) return nread; /* ERROR */
     nbytes-=nread;
     bptr+=nread;
-    /*if (nread==0) break;*/
+    /*    if (nread==0) break;*/
   }
   return bytes-nbytes;
 }
