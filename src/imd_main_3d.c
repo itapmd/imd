@@ -223,7 +223,7 @@ void main_loop(void)
 #endif
 
 #ifdef TRANSPORT 
-    if ((tran_interval > 0) && (0 == steps%tran_interval)) 
+    if ((tran_interval > 0) && (steps > 0) && (0 == steps%tran_interval)) 
        write_temp_dist(steps);
 #endif
 #ifdef RNEMD

@@ -95,10 +95,8 @@ void write_temp_dist(int steps)
 {
   FILE  *outtemp;
   str255  fnametemp;
-  cell *p;
   real scale;
-  int  num, nlayer;
-  int i, r, s, t, nhalf;
+  int  num, nlayer, k, i, nhalf;
   static real    *temp_hist, *temp_hist_1 = NULL, *temp_hist_2 = NULL;
   static integer *num_hist,   *num_hist_1 = NULL,  *num_hist_2 = NULL;
   
@@ -140,30 +138,25 @@ void write_temp_dist(int steps)
   }
 
   /* loop over all atoms */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-	{
-#ifndef TWOD
- 	   p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#else
-	   p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#endif
+  for (k=0; k<ncells; ++k) {
 
-           for (i = 0;i < p->n; ++i) {
+    int  i;
+    cell *p;
+    p = cell_array + CELLS(k);
 
-              /* which layer? */
-              num = scale * p->ort X(i);
-              if (num < 0)             num = 0;
-              if (num >= tran_nlayers) num = tran_nlayers-1;
-              if (num > nhalf) num = tran_nlayers - num;
+    for (i = 0;i < p->n; ++i) {
 
-              temp_hist_1[num] += SPRODN(p->impuls,i,p->impuls,i)/ MASSE(p,i);
-              num_hist_1[num]++;
-	   }
-        }
+      /* which layer? */
+      num = scale * p->ort X(i);
+      if (num < 0)             num = 0;
+      if (num >= tran_nlayers) num = tran_nlayers-1;
+      if (num > nhalf) num = tran_nlayers - num;
+
+      temp_hist_1[num] += SPRODN(p->impuls,i,p->impuls,i)/ MASSE(p,i);
+      num_hist_1[num]++;
+
+    }
+  }
 
 #ifdef MPI
   /* add up results form different CPUs */
@@ -180,16 +173,20 @@ void write_temp_dist(int steps)
 
   /* write temperature distribution */
   if (myid==0) {
+    real tmp;
     sprintf(fnametemp,"%s.tempdist",outfilename);
     outtemp = fopen(fnametemp,"a");
     if (NULL == outtemp) error("Cannot open temperatur file.");
 
     fprintf(outtemp,"%10.4e", steps * timestep);
 #ifdef NVX
-    /* the variable heat_cond was formerly written to the .eng file */
     fprintf(outtemp," %10.4e", heat_cond);
 #elif RNEMD
-    fprintf(outtemp," %10.4e", heat_transfer);
+    tmp = box_y.y * tran_interval * timestep;
+#ifndef TWOD
+    tmp *= box_z.z;
+#endif
+    fprintf(outtemp," %10.4e", heat_transfer/tmp);
 #endif
     for (i = 0; i <= nhalf; i++) {
       if (num_hist[i] > 0) temp_hist[i] /= (2*num_hist[i]);
@@ -201,7 +198,9 @@ void write_temp_dist(int steps)
     fprintf(outtemp,"\n");
     fclose(outtemp);
   }
-
+#ifdef RNEMD
+  heat_transfer = 0;
+#endif
 }
 
 #endif
