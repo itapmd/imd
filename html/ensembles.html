@@ -108,8 +108,30 @@ amount <TT>sdelta</TT> in each time step.
 The shift vector <TT>sdelta</TT> and the strip width
 <TT>strip_width</TT> are parameters. Depending on the
 shift vector, one can perform shear deformations 
-(shift vector parallel to the y-axis) as well as compressions and
+(shift vector perpendicular to the x-axis) as well as compressions and
 dilatations of the sample.
+<P>
+In a shear/pull step, the fixed atoms are rigidly moved by the vector
+<TT>sdelta</TT>. After the simulation is finished, all atoms become
+mobile again. A shear step is only performed if either
+<UL>
+<LI>the total kinetic energy of the sample drops below a threshold
+value <TT>ekin_threshold</TT> or
+<LI>the number of time steps between two successing shear/pull
+deformations exceeds the value <TT>maxdnoshsteps</TT>.
+</UL>
+<STRONG>This is new within the PULL ensemble. If
+<TT>ekin_threshold</TT> is set a very high value and
+<TT>maxdnoshsteps</TT> is set to zero a shear/pull deformation will be
+performed in each time step. As these are the initialization values
+old-style PULL simulations should not change their behaviour.
+<P>
+As automatic generation of samples may lead to atoms with coordinates
+close to zero which would become negative after several shear steps it
+is possible to apply an initial shift to the sample. Therefore the
+flag <TT>initial_shift</TT> must be set to one and the vector
+<TT>ins</TT> must be set to the desired value.
+
 
 <P><LI><B> mc </B><P>
 The Monte Carlo integrator attempts to make random jumps of mean 
