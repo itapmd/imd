@@ -1623,7 +1623,6 @@ void broadcast_params() {
     case ENS_NVT:       move_atoms = move_atoms_nvt;       break;
     case ENS_NPT_ISO:   move_atoms = move_atoms_npt_iso;   break;
     case ENS_NPT_AXIAL: move_atoms = move_atoms_npt_axial; break;
-    case ENS_AND:       move_atoms = move_atoms_and;       break;
     case ENS_MC:        move_atoms = move_atoms_mc;        break;
     case ENS_FRAC:      move_atoms = move_atoms_frac;      break;
     case ENS_NVX:       move_atoms = move_atoms_nvx;       break;
