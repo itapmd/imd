@@ -38,6 +38,26 @@
 #define SQR(a) (a)*(a)
 #define TRUNC (int)
 
+#if defined(__GNUC__)
+#define INLINE inline
+#else
+#define INLINE
+#endif
+
+/* avoid p % q, which is terribly slow */
+/* on SGI, inline doesn't really work :-( */
+#if defined(alpha)
+#pragma inline(MOD)
+#elif defined(sgi)
+#pragma inline global (MOD)
+#endif
+INLINE static int MOD(int p, int q)
+{
+  int stmp=p;
+  while (stmp>=q) stmp-=q;
+  return stmp;
+}
+
 /* scalar product for vectors */
 #ifdef TWOD
 #define SPROD(a,b) (((a).x * (b).x) + ((a).y * (b).y))
@@ -241,7 +261,9 @@ void calc_angles(void);
 cell *cell_array;    /* Array of Cells */
 ivektor cell_dim;    /* Dimension of above */
 int natoms;          /* Total number of atoms */
-int ntypes;          /* Total number of different atom types */
+int ntypes=0;        /* Total number of different atom types */
+int vtypes=0;        /* Number of virtual types */
+int use_vtypes=0;    /* flag for using virtual types */
 str255 progname;     /* Name of current executable argv[0] */
 int curline;         /* Number of current line for parameter reading */
 str255 error_msg;    /* string for error message */
@@ -609,18 +631,39 @@ void read_parameters(int argc,char **argv)
     switch (argv[1][1]) {
       /* r - restart */
     case 'r':
-      restart = atoi(&argv[1][2]);
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          restart = atoi(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else restart = atoi(&argv[1][2]);
       break;
 #ifdef PAIR
       /* a - minimum radius */
     case 'a':
-      r_min = atof(&argv[1][2]);
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          r_min = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else r_min = atof(&argv[1][2]);
       break;
 #endif
 #ifndef CONN
       /* e - maximum radius */
     case 'e':
-      r_max = atof(&argv[1][2]);
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          r_max = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else r_max = atof(&argv[1][2]);
 #ifdef STRAIN
       r_cell = r_max;
 #endif
@@ -629,7 +672,14 @@ void read_parameters(int argc,char **argv)
 #ifdef STRAIN
       /* c - cell width */
     case 'c':
-      r_cell = atof(&argv[1][2]);
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          r_cell = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else r_cell = atof(&argv[1][2]);
       break;
 #endif
     case 'p':
@@ -642,6 +692,8 @@ void read_parameters(int argc,char **argv)
       }
       else paramfilename = strdup(&argv[1][2]);
       break;
+    case 'v':
+      use_vtypes=1;
     default:
       printf("Illegal option %s \n",argv[1]);
       usage();
@@ -652,6 +704,7 @@ void read_parameters(int argc,char **argv)
   }
 
   getparamfile(paramfilename);
+  if (use_vtypes==1) ntypes = vtypes;
 
   /* Get restart parameters if restart */
   if (0 != restart) {
@@ -897,6 +950,11 @@ void getparamfile(char *paramfname)
     else if (strcasecmp(token,"ntypes")==0) {
       /* number of atom types */
       getparam("ntypes",&ntypes,PARAM_INT,1,1);
+      vtypes = MAX(vtypes,ntypes);
+    }
+    else if (strcasecmp(token,"total_types")==0) {
+      /* number of virtual atom types */
+      getparam("total_types",&vtypes,PARAM_INT,1,1);
     }
   } while (!feof(pf));
   fclose(pf);
@@ -998,7 +1056,7 @@ void read_atoms(str255 infilename)
       /* put the data */
       to->ort   [to->n] = pos;
 #if (!defined(STRAIN) && !defined(STRESS))
-      to->sorte [to->n] = s;
+      to->sorte [to->n] = MOD(s,ntypes);
 #endif
 #ifdef CONN
       to->nummer[to->n] = natoms;
