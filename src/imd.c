@@ -164,6 +164,9 @@ int main(int argc, char **argv)
     printf("Input/Output time:   %e seconds or %.1f %% of main loop\n",
            time_io.total,100*time_io.total/time_main.total);
 #endif
+  
+     fflush(stdout);
+     fflush(stderr);
   }
 
   /* kill MPI */
