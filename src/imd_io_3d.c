@@ -768,25 +768,29 @@ void write_config(int steps)
 * efwrite_config writes a  energy-filtered configuration to a numbered file
 *
 ******************************************************************************/
+void efwrite_cell(FILE *out, cell *p)
+{
+ int i;
+ for (i = 0;i < p->n; ++i)
+   {
+     if( (POTENG(p,i)>lower_e_pot) && ( POTENG(p,i)<upper_e_pot) )
+       {
+	 fprintf(out,"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f\n",
+		 NUMMER(p,i),
+		 p->sorte[i],
+		 MASSE(p,i),
+		 p->ort X(i),
+		 p->ort Y(i),
+		 p->ort Z(i),
+		 p->impuls X(i) / MASSE(p,i),
+		 p->impuls Y(i) / MASSE(p,i),
+		 p->impuls Z(i) / MASSE(p,i),
+		 POTENG(p,i));
+       }
+   } 
+}
 
 void efwrite_config(int steps)
-
-/* Makro to write data of cell p to file out */
-/* just write those atoms which potential energy is within *
- * a specified energy window, not yet for uniax            */
-#define EFWRITE_CELL     for (i = 0;i < p->n; ++i){ \
-             if( (POTENG(p,i)>lower_e_pot) && ( POTENG(p,i)<upper_e_pot) ){ \
-             fprintf(out,"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f\n",\
-	     NUMMER(p,i),\
-	     p->sorte[i],\
-	     MASSE(p,i),\
-	     p->ort X(i),\
-	     p->ort Y(i),\
-	     p->ort Z(i),\
-	     p->impuls X(i) / MASSE(p,i),\
-	     p->impuls Y(i) / MASSE(p,i),\
-	     p->impuls Z(i) / MASSE(p,i),\
-		     POTENG(p,i))}} 
 { 
   FILE *out;
   str255 fname;
@@ -817,8 +821,8 @@ void efwrite_config(int steps)
       for (k = 1; k < cell_dim.y-1; ++k )
 	for (l = 1; l < cell_dim.z-1; ++l ) {
  	  p = PTR_3D_V(cell_array, j, k, l, cell_dim);
-	  EFWRITE_CELL;
-	};
+	  efwrite_cell(out,p);
+	}
     
     fclose(out);
 
@@ -837,8 +841,8 @@ void efwrite_config(int steps)
 	for (k = 1; k < cell_dim.y-1; ++k )
 	  for (l = 1; l < cell_dim.z-1; ++l ) {
 	    p = PTR_3D_V(cell_array, j, k, l, cell_dim);
-	    EFWRITE_CELL;
-	  };
+	    efwrite_cell(out,p);
+	  }
 
       /* Receive data from other cpus and write that */
       p   = PTR_3D_V(cell_array, 0, 0, 0, cell_dim);
@@ -852,8 +856,8 @@ void efwrite_config(int steps)
 #else
 	      recv_cell( p, m, ORT_TAG );
 #endif
-	      EFWRITE_CELL;
-	    };
+	     efwrite_cell(out,p); 
+	    }
 
       fclose(out);      
     } else { 
@@ -875,7 +879,7 @@ void efwrite_config(int steps)
 
   /* Ausgabedatei oeffnen */
   out = fopen(fname,"w");
-  if (NULL == out) error("Cannot open output file for config.");
+  if (NULL == out) error("Cannot open output file for efconfig.");
 
   for (p = cell_array; 
        p <= PTR_3D_V(cell_array,
@@ -885,16 +889,12 @@ void efwrite_config(int steps)
                      cell_dim);
        ++p ) 
     
-      EFWRITE_CELL;
+    efwrite_cell(out,p);
 
   fclose(out);  
 
 #endif
-
-  /* write iteration file */
 }
-
-
 #endif /* EFILTER */
 
 #ifdef DISLOC

@@ -207,7 +207,7 @@ void move_atoms_nve(void)
   PxF = tmp3;
 #endif
 #endif
-
+  
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
   ++count;
