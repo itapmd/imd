@@ -206,6 +206,7 @@ void fix_cells_by_cell(void);
 /* write properties - file imd_io_*.c */
 void calc_properties(void);
 void write_properties(int steps);
+void write_eng_file_header(void);
 
 /* write configurations - files imd_io.c, imd_io_*.c */
 void write_itr_file(int fzhlr, int steps);

@@ -351,11 +351,52 @@ void recv_atoms(void)
 
 #endif 
 
+/******************************************************************************
+*
+*  write header of properties file  - keep in sync with write_properties
+*
+******************************************************************************/
+
+void write_eng_file_header()
+{
+  str255 fname;
+  FILE *fl;
+
+  sprintf(fname,"%s.eng",outfilename);
+  if (myid == 0) {
+    fl = fopen(fname,"w");
+    if (NULL == fl) error("Cannot open properties file.");
+    fprintf(fl,"# time Epot ");
+#ifndef MC
+    fprintf(fl,"temperature ");
+#ifdef FNORM
+    fprintf(fl,"fnorm ");
+#endif
+#ifdef GLOK
+    fprintf(fl,"PxF ");
+#endif
+    fprintf(fl,"pressure ");
+#else
+    fprintf(fl,"mc_accept/mc_count ");
+#endif
+    fprintf(fl,"volume ");
+    if (ensemble==ENS_NPT_AXIAL) {
+      fprintf(fl,"stress_x stress_y ");
+      fprintf(fl,"box_x.x box_y.y ");
+    }
+#if defined(NVT) || defined(NPT)
+    fprintf(fl,"eta ");
+#endif
+    putc('\n',fl);
+    fclose(fl);
+  }
+}
 
 /******************************************************************************
 *
-* write_properties writes selected properties to *.eng file
-* please keep the header in imd.c up to date
+*  write_properties writes selected properties to *.eng file
+*  keep in sync with write_eng_file_header
+*
 ******************************************************************************/
 
 void write_properties(int steps)
@@ -387,7 +428,10 @@ void write_properties(int steps)
 #ifndef MC
   fprintf(out," %e", (double)part_kin_energy);
 #ifdef FNORM
-  fprintf(out, " %e", (double)fnorm);
+  fprintf(out," %e", (double)fnorm);
+#endif
+#ifdef GLOK
+  fprintf(out," %e", (double)PxF);
 #endif
   fprintf(out," %e", (double)pressure);
 #else
@@ -405,11 +449,8 @@ void write_properties(int steps)
 #if defined(NVT) || defined(NPT) || defined(STM)
   fprintf(out," %e", eta );
 #endif
-
   putc('\n',out);
-
   fclose(out);
-
 }
 
 /******************************************************************************

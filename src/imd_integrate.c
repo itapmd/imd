@@ -20,20 +20,12 @@
 *
 *****************************************************************************/
 
-#if defined(NVE)
+#ifdef NVE
 
 void move_atoms_nve(void)
 {
   int k;
   real tmpvec1[3], tmpvec2[3];
-#ifdef BUG
-  real f1x=0.0;
-  real f1y=0.0;
-  real f1z=0.0;
-  real f2x=0.0;
-  real f2y=0.0;
-  real f2z=0.0;
-#endif
   static int count = 0;
   tot_kin_energy = 0.0;
   fnorm = 0.0;
