@@ -193,6 +193,11 @@ of the atoms in routine imd_maxwell within a strip
 value <TT>shock_speed</TT>. The velocity direction is in the positive 
 x-axis. 
 <P>
+There are two modes set by <TT>shock_mode</TT>. If <TT>shock_mode</TT>
+is set to one the left part of the sample is slammed into the right
+one, if the paremeter is set to 2 both parts are slammed into
+oneanother.
+<P>
 <B>Important</B>: Currently, the atom velocities for the shockwave
 are set by the routine imd_maxwell, which is called at the start
 of the simulation only. It is therefore not possible to start
@@ -212,20 +217,18 @@ onto a file <TT>&lt;basename&gt;.tempdist&lt;n&gt;</TT>. The
 writing interval is given by the parameter <tt>temp_interval</tt>,
 the number of histogram bins by <tt>temp_nlayers</TT>.
 <P>
-If this option is set, the heat current will be appended to the
-<TT>&lt;basename&gt;.eng</TT> file.
-<P>
-<B>Important</B>: In a new version the heat current may also be
-written to the <TT>&lt;basename&gt;.tempdist&lt;n&gt;</TT> file to
-avoid a screwed up <TT>&lt;basename&gt;.eng</TT> file
-</A>.
+The heat current is now appended to the
+<TT>&lt;basename&gt;.tempdist</TT> file.
+</A>
 
 <A NAME="stress_tens">
 <P><LI><B>stress_tens</B><P>
 </A>
 This option enables imd to compute the<B> diagonal</B> part of the
 stress or pressure tensor. The result will be written as a histogram
-onto a file <TT>&lt;basename&gt;.pressdist&lt;n&gt;</TT>. The
+onto a file <TT>&lt;basename&gt;.pressdist&lt;n&gt;</TT>. The output
+file further contains the density, kinetic energy and potential energy
+distribution. The
 writing interval is given by the parameter <tt>press_interval</tt>,
 the number of histogram bins by <tt>press_nlayers</TT>. 
 <P>
