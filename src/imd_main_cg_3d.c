@@ -29,13 +29,11 @@
 void main_loop(void)
 {
 
-  real old_cgval;
   real tmp_pot_energy;
 
   int ctf=0;
   int astep=0;
-  real fmax2;
-  int cgsteps,linminsteps;
+  int linminsteps;
 
 #ifdef FBC
   int l;
@@ -303,8 +301,10 @@ int linmin(real fmax2, real old_cgval)
       }
     fa = old_cgval;
     fb = fonedim(alpha_b);
-  /*    printf("before mnbrak: fmax= %lf alpha_a= %lf alpha_b=%lf fa= %lf fb=%lf \n",fmax,alpha_a,alpha_b,fa,fb);fflush(stdout);     */
- /*   printf("before mnbrak \n");fflush(stdout);*/
+
+    printf("ID: %d before mnbrak: fmax= %lf alpha_a= %lf alpha_b=%lf fa= %lf fb=%lf \n",myid,fmax,alpha_a,alpha_b,fa,fb);
+    fflush(stdout);     
+ 
 /* decide which method to take to braket a mimimum, at the moment only mbrak, later zbrak? */
     iter1 = mnbrak (&alpha_a,&alpha_b,&alpha_c,&fa,&fb,&fc); /* call by reference Num Rec. p297 */
    /*   if(iter1 <0) */
@@ -318,7 +318,7 @@ int linmin(real fmax2, real old_cgval)
 #else
     iter2 =  brent (alpha_a,alpha_b,alpha_c,fb,&alphamin);
 #endif
-   /*     printf("in linmin: iter1= %d iter2 =%d \n",iter1,iter2);fflush(stdout); */
+    printf("ID: %d  in linmin: iter1= %d iter2 =%d \n",myid,iter1,iter2);fflush(stdout); 
     return (iter1 + iter2);
 }
 
@@ -476,7 +476,7 @@ void cg_calcgamma(void)
   int k;
   real tmpvec1[3], tmpvec2[3];
   vektor tmpvec;
-  real tmp_fmax2,fmax2,tmp_gg,gg,tmp_dgg,dgg;
+  real tmp_fmax2,fmax2,tmp_gg,tmp_dgg;
 
   static int count = 0;
   tmp_fmax2 = 0.0;
@@ -540,7 +540,7 @@ real set_hg(void)
   int k;
   real tmpvec1[3], tmpvec2[3];
   vektor tmpvec;
-  real tmp_fmax2,fmax2,tmp_gg,gg,tmp_dgg,dgg;
+  real tmp_fmax2,fmax2,tmp_gg,tmp_dgg;
 
   static int count = 0;
   tmp_fmax2 = 0.0;

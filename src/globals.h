@@ -378,7 +378,12 @@ EXTERN real   linmin_dmax  INIT(0.0);   /* max. search steps in linmin  */
 EXTERN int    annealsteps INIT(0);      /* number of annealing steps */    
 #endif
 /* Variables needed by CG */
-EXTERN real   cg_gamma  INIT(0.0);     /* see Num. Rec. p.320 */    
+EXTERN int    cgsteps   INIT(0);        /* current nr of CG step */
+EXTERN real   fmax2     INIT(0.0);      /* max. force comp. ^2  */    
+EXTERN real   old_cgval  INIT(0.0);      /* old value to minimize */ 
+EXTERN real   gg         INIT(0.0);      /* see Num. Rec. p.320 */       
+EXTERN real   dgg        INIT(0.0);      /* see Num. Rec. p.320 */    
+EXTERN real   cg_gamma   INIT(0.0);      /* see Num. Rec. p.320 */    
 #endif
 
 #ifdef SNAPSHOT
