@@ -107,7 +107,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
         *Epot         += pot_zwi;
         p->pot_eng[i] += pot_zwi;
 
-        /* for the virial, we take the mean forces on the two particle */
+        /* for the virial, we take the mean forces on the two particles */
         force.x       *= 0.5;
         force.y       *= 0.5;
         force.z       *= 0.5;
@@ -153,7 +153,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
         *Epot         += pot_zwi;
         q->pot_eng[j] += pot_zwi;
 
-        /* for the virial, we take the mean forces on the two particle */
+        /* for the virial, we take the mean forces on the two particles */
         force.x       *= 0.5;
         force.y       *= 0.5;
         force.z       *= 0.5;
@@ -327,6 +327,11 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #endif
 
 #ifdef STRESS_TENS
+        /* avoid double counting of the virial */
+        force.x *= 0.5;
+        force.y *= 0.5;
+        force.z *= 0.5;
+
         p->presstens[i].xx -= d.x * force.x;
         p->presstens[i].yy -= d.y * force.y;
         p->presstens[i].zz -= d.z * force.z;

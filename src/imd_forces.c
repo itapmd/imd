@@ -150,6 +150,12 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #endif
 
 #ifdef STRESS_TENS
+        /* avoid double counting of the virial */
+        force.x *= 0.5;
+        force.y *= 0.5;
+#ifndef TWOD
+        force.z *= 0.5;
+#endif
         p->presstens[i].xx -= d.x * force.x;
         q->presstens[j].xx -= d.x * force.x;
         p->presstens[i].yy -= d.y * force.y;
