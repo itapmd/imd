@@ -1,3 +1,4 @@
+
 /******************************************************************************
 *
 * imd_comm_force_2d.c -- communication for force computation, two dimensions
@@ -11,6 +12,100 @@
 
 #include "imd.h"
 
+#ifdef SR
+
+/******************************************************************************
+*
+*  Send cells into buffer cells on neighboring CPUs for the force computation.
+*  What exactly is sent is determined by the parameter functions.
+*  We use Steve Plimptons communication scheme: we send only along
+*  the main axis of the system, so that corner cells travel twice.
+*  In AR mode, one cell wall (including adjacent corner cells) is not 
+*  needed in the buffer cells.
+*
+******************************************************************************/
+
+void send_cells(void (*copy_func)  (int, int, int, int),
+                void (*pack_func)  (msgbuf*, int, int),
+                void (*unpack_func)(msgbuf*, int, int))
+{
+  int i;
+  MPI_Status  stat;
+
+  empty_mpi_buffers();
+
+  /* exchange north/south */
+  if (cpu_dim.y==1) {
+    /* simply copy north/south atoms to buffer cells */
+    for (i=1; i<cell_dim.x-1; ++i) {
+      (*copy_func)( i, 1, i, cell_dim.y-1 );
+      (*copy_func)( i, cell_dim.y-2, i, 0 );
+    }
+  } else {
+    /* copy north atoms into send buffer */
+    for (i=1; i<cell_dim.x-1; ++i)
+      (*pack_func)( &send_buf_north, i, 1 );
+
+    /* send north, receive south */
+    sendrecv_buf( &send_buf_north, nbnorth, &recv_buf_south, nbsouth, &stat);
+
+    /* move atoms from south to buffer cells */
+    recv_buf_south.n = 0;
+    for (i=1; i<cell_dim.x-1; ++i)
+      (*unpack_func)( &recv_buf_south, i, cell_dim.y-1 );
+
+    /* copy south atoms into send buffer */
+    for (i=1; i<cell_dim.x-1; ++i)
+      (*pack_func)( &send_buf_south, i, cell_dim.y-2 );
+
+    /* send south, receive north */
+    sendrecv_buf( &send_buf_south, nbsouth, &recv_buf_north, nbnorth, &stat);
+
+    /* move atoms from north to buffer cells */
+    recv_buf_north.n = 0;
+    for (i=1; i<cell_dim.x-1; ++i)
+      (*unpack_func)( &recv_buf_north, i, 0 );
+  }
+
+  /* exchange east/west */
+  if (cpu_dim.x==1) {
+    /* simply copy east/west atoms to buffer cells */
+    for (i=0; i<cell_dim.y; ++i) {
+      (*copy_func)( 1, i, cell_dim.x-1, i );
+#ifndef AR
+      (*copy_func)( cell_dim.x-2, i, 0, i );
+#endif
+    }
+  } else {
+    /* copy east atoms into send buffer */
+    for (i=0; i<cell_dim.y; ++i)
+      (*pack_func)( &send_buf_east, 1, i );
+
+    /* send east, receive west */
+    sendrecv_buf( &send_buf_east, nbeast, &recv_buf_west, nbwest, &stat );
+
+    /* move atoms from west to buffer cells */
+    recv_buf_west.n = 0;
+    for (i=0; i<cell_dim.y; ++i)
+      (*unpack_func)( &recv_buf_west, cell_dim.x-1, i );
+
+#ifndef AR
+    /* copy west atoms into send buffer */
+    for (i=0; i<cell_dim.y; ++i) 
+      (*pack_func)( &send_buf_west, cell_dim.x-2, i );
+
+    /* send west, receive east */
+    sendrecv_buf( &send_buf_west, nbwest, &recv_buf_east, nbeast, &stat);
+
+    /* move atoms from east to buffer cells */
+    recv_buf_east.n = 0;
+    for (i=0; i<cell_dim.y; ++i) 
+      (*unpack_func)( &recv_buf_east, 0, i );
+#endif
+  }
+}
+
+#else /* not SR */
 
 /******************************************************************************
 *
@@ -48,14 +143,14 @@ void send_cells(void (*copy_func)  (int, int, int, int),
     /* copy north atoms into send buffer, send north */
     for (i=1; i<cell_dim.x-1; ++i)
       (*pack_func)( &send_buf_north, i, 1 );
-    isend_buf( &send_buf_north, nbnorth, &reqsouth[0] );
     irecv_buf( &recv_buf_south, nbsouth, &reqsouth[1] );
+    isend_buf( &send_buf_north, nbnorth, &reqsouth[0] );
 
     /* copy south atoms into send buffer, send south */
     for (i=1; i<cell_dim.x-1; ++i)
       (*pack_func)( &send_buf_south, i, cell_dim.y-2 );
-    isend_buf( &send_buf_south, nbsouth, &reqnorth[0] );
     irecv_buf( &recv_buf_north, nbnorth, &reqnorth[1] );
+    isend_buf( &send_buf_south, nbsouth, &reqnorth[0] );
 
     /* wait for atoms from south, move them to buffer cells */
     MPI_Waitall(2, reqsouth, statsouth);
@@ -83,16 +178,15 @@ void send_cells(void (*copy_func)  (int, int, int, int),
     /* copy east atoms into send buffer, send east */
     for (i=0; i<cell_dim.y; ++i)
       (*pack_func)( &send_buf_east, 1, i );
-    isend_buf( &send_buf_east, nbeast, &reqwest[0] );
     irecv_buf( &recv_buf_west, nbwest, &reqwest[1] );
+    isend_buf( &send_buf_east, nbeast, &reqwest[0] );
 
 #ifndef AR
     /* copy west atoms into send buffer, send west */
     for (i=0; i<cell_dim.y; ++i) 
       (*pack_func)( &send_buf_west, cell_dim.x-2, i );
-    /* send west */
-    isend_buf( &send_buf_west, nbwest, &reqeast[0] );
     irecv_buf( &recv_buf_east, nbeast, &reqeast[1] );
+    isend_buf( &send_buf_west, nbwest, &reqeast[0] );
 #endif
 
     /* Wait for atoms from west, move them to buffer cells */
@@ -111,6 +205,102 @@ void send_cells(void (*copy_func)  (int, int, int, int),
   }
 }
 
+#endif /* not SR */
+
+#ifdef SR
+
+/******************************************************************************
+*
+*  Add forces in buffer cells on neighboring CPUs back to the original cells.
+*  What exactly is sent is determined by the parameter functions.
+*  We use Steve Plimptons communication scheme: we send only along
+*  the main axis of the system, so that corner cells travel twice.
+*  In AR mode, one buffer cell wall (including adjacent corner cells) 
+*  contains no forces.
+*
+******************************************************************************/
+
+void send_forces(void (*add_func)   (int, int, int, int),
+                 void (*pack_func)  (msgbuf*, int, int),
+                 void (*unpack_func)(msgbuf*, int, int))
+{
+  int i;
+  MPI_Status  stat;
+
+  empty_mpi_buffers();
+
+  /* send forces east/west */
+  if (cpu_dim.x==1) {
+    /* simply add east/west forces to original cells */
+    for (i=0; i < cell_dim.y; ++i) {
+#ifndef AR 
+      (*add_func)( 0, i, cell_dim.x-2, i );
+#endif
+      (*add_func)( cell_dim.x-1, i, 1, i );
+    }
+  } else {
+#ifndef AR 
+    /* copy east forces into send buffer */
+    for (i=0; i < cell_dim.y; ++i)
+      (*pack_func)( &send_buf_east, 0, i );
+
+    /* send east, receive west */
+    sendrecv_buf( &send_buf_east, nbeast, &recv_buf_west, nbwest, &stat);
+
+    /* add forces from west to original cells */
+    recv_buf_west.n = 0;
+    for (i=0; i < cell_dim.y; ++i)
+      (*unpack_func)( &recv_buf_west, cell_dim.x-2, i );
+#endif
+
+    /* copy west forces into send buffer */
+    for (i=0; i < cell_dim.y; ++i) 
+      (*pack_func)( &send_buf_west, cell_dim.x-1, i );
+
+    /* send west, receive east */
+    sendrecv_buf( &send_buf_west, nbwest, &recv_buf_east, nbeast, &stat);
+
+    /* add forces from east to original cells */
+    recv_buf_east.n = 0;
+    for (i=0; i < cell_dim.y; ++i) 
+      (*unpack_func)( &recv_buf_east, 1, i );
+  }
+
+  /* send forces north/south */
+  if (cpu_dim.y==1) {
+    /* simply add north/south forces to original cells */
+    for (i=1; i < cell_dim.x-1; ++i) {
+      (*add_func)( i, 0, i, cell_dim.y-2 );
+      (*add_func)( i, cell_dim.y-1, i, 1 );
+    }
+  } else {
+    /* copy north forces into send buffer */
+    for (i=1; i < cell_dim.x-1; ++i) 
+      (*pack_func)( &send_buf_north, i, 0 );
+
+    /* send north, receive south */
+    sendrecv_buf( &send_buf_north, nbnorth, &recv_buf_south, nbsouth, &stat);
+
+    /* add forces from south to original cells */
+    recv_buf_south.n = 0;
+    for (i=1; i < cell_dim.x-1; ++i) 
+      (*unpack_func)( &recv_buf_south, i, cell_dim.y-2 );
+
+    /* copy south forces into send buffer */
+    for (i=1; i < cell_dim.x-1; ++i) 
+      (*pack_func)( &send_buf_south, i, cell_dim.y-1 );
+
+    /* send south, receive north */
+    sendrecv_buf( &send_buf_south, nbsouth, &recv_buf_north, nbnorth, &stat);
+
+    /* add forces from north to original cells */
+    recv_buf_north.n = 0;
+    for (i=1; i < cell_dim.x-1; ++i) 
+      (*unpack_func)( &recv_buf_north, i, 1 );
+  }
+}
+
+#else /* not SR */
 
 /******************************************************************************
 *
@@ -210,6 +400,7 @@ void send_forces(void (*add_func)   (int, int, int, int),
   }
 }
 
+#endif /* SR */
 
 /******************************************************************************
 *
