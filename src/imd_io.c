@@ -817,7 +817,7 @@ void write_eng_file_header()
 
 #ifdef FTG
     for(i=0;i<nslices;i++)
-      fprintf(fl, "temp %d ", i);
+      fprintf(fl, "temp_%d ", i);
 #endif
 
 #ifdef FNORM
@@ -937,6 +937,7 @@ void write_eng_file(int steps)
 
 #ifdef FTG
  for(i=0;i<nslices;i++)
+   if(*(ninslice + i) == 0) error("Slice is empty !");
    fprintf(out, format, 2.0* *(E_kin_ftg+i)/ *(ninslice + i) ); 
 #endif
 

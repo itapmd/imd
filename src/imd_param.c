@@ -741,19 +741,19 @@ void getparamfile(char *paramfname, int sim)
       /* nuber of slices*/
       getparam("nslices",&nslices,PARAM_INT,1,1);
 
-      ninslice=(int*)realloc(ninslice,nslices*sizeof(int));
+      ninslice=(int*) malloc(nslices*sizeof(int));
       if (NULL==ninslice)
 	error("Cannot allocate memory for ninslice vector\n");
       for(k=0; k<nslices; k++)
        *(ninslice+k) = 0;
 
-      gamma_ftg=(real*)realloc(gamma_ftg,nslices*sizeof(real));
+      gamma_ftg=(real*) malloc(nslices*sizeof(real));
       if (NULL==gamma_ftg)
 	error("Cannot allocate memory for gamma_ftg vector\n");
       for(k=0; k<nslices; k++)
 	*(gamma_ftg+k) = 0.0;
       
-      E_kin_ftg=(real*)realloc(E_kin_ftg,nslices*sizeof(real));
+      E_kin_ftg=(real*) malloc(nslices*sizeof(real));
       if (NULL==E_kin_ftg)
 	error("Cannot allocate memory for E_kin_ftg vector\n");
       for(k=0; k<nslices; k++)
@@ -1575,20 +1575,6 @@ void broadcast_params() {
     error("Cannot allocate memory for restriction vectors on client."); 
   MPI_Bcast( restrictions, vtypes*DIM, REAL, 0, MPI_COMM_WORLD);  
 
-#ifdef FTG
-  if (0!=myid) ninslice = (int*) realloc(ninslice,nslices*sizeof(int));
-  if (NULL==ninslice)
-    error("Cannot allocate memory for ninslice vector on client.\n");
-
-  if (0!=myid) gamma_ftg = (real*) realloc(gamma_ftg,nslices*sizeof(real));
-  if (NULL==gamma_ftg)
-    error("Cannot allocate memory for gamma_ftg vector on client.\n");
-
-  if (0!=myid) E_kin_ftg=(real*)realloc(E_kin_ftg,nslices*sizeof(real));
-  if (NULL==E_kin_ftg) 
-    error("Cannot allocate memory for E_kin_ftg vector on client.\n");
-#endif 
-
   MPI_Bcast( &pbc_dirs    , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &box_x       , DIM, REAL,     0, MPI_COMM_WORLD); 
   MPI_Bcast( &box_y       , DIM, REAL,     0, MPI_COMM_WORLD);
@@ -1699,7 +1685,20 @@ void broadcast_params() {
   MPI_Bcast( &nslices,       1, MPI_INT   , 0, MPI_COMM_WORLD); 
   MPI_Bcast( &nslices_Left,  1, MPI_INT   , 0, MPI_COMM_WORLD); 
   MPI_Bcast( &nslices_Right, 1, MPI_INT   , 0, MPI_COMM_WORLD); 
-#endif
+
+  if (0!=myid) ninslice  = (int*) malloc(nslices*sizeof(int));
+  if (NULL==ninslice)
+    error("Cannot allocate memory for ninslice vector on client.\n");
+                         
+  if (0!=myid) gamma_ftg = (real*) malloc(nslices*sizeof(real));
+  if (NULL==gamma_ftg)
+    error("Cannot allocate memory for gamma_ftg vector on client.\n");
+                         
+  if (0!=myid) E_kin_ftg = (real*) malloc(nslices*sizeof(real));
+  if (NULL==E_kin_ftg) 
+    error("Cannot allocate memory for E_kin_ftg vector on client.\n");
+#endif 
+
 
 #if defined(DEFORM)
   MPI_Bcast( &strip_width, 1, REAL, 0, MPI_COMM_WORLD); 
