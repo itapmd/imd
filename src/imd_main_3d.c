@@ -157,10 +157,17 @@ void main_loop(void)
 #endif
 
 #ifdef STRESS_TENS
+
+#ifdef HOMDEF
     do_press_calc = (((eng_int  > 0) && (0 == steps % eng_int )) ||
                      ((dist_int > 0) && (0 == steps % dist_int)) ||
                      (relax_rate > 0.0) );
-#endif
+
+#else  /* HOMDEF */
+    do_press_calc = (((eng_int  > 0) && (0 == steps % eng_int )) ||
+                     ((dist_int > 0) && (0 == steps % dist_int)) );
+#endif /* HOMDEF */
+#endif /* STRESSTENS */
 
 #ifdef EPITAX
     for (i=0; i<ntypes; ++i ) {
