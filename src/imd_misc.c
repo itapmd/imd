@@ -637,16 +637,13 @@ void generate_hex()
       /* leave boundary open if necessary */
       if ((x < strip_width/2) || (x > box_x.x - strip_width/2) ||
           (y < strip_width/2) || (y > box_y.y - strip_width/2)) continue;
-      /* boundary atoms get negative numbers */
-      if ((x < strip_width)   || (x > box_x.x - strip_width) ||
-          (y < strip_width)   || (y > box_y.y - strip_width)) sign = -1;
+      /* boundary atoms in x-direction get negative numbers */
+      if ((x < strip_width)   || (x > box_x.x - strip_width)) sign = -1;
 #endif
 
 #ifdef SHOCK
       /* leave boundary open if necessary */
       if ((x < strip_width/2) || (x > box_x.x - strip_width/2)) continue;
-      /* boundary atoms get negative numbers */
-      if ((x < strip_width)   || (x > box_x.x - strip_width)) sign = -1;
 #endif
 
       natoms++;
@@ -730,17 +727,13 @@ void generate_fcc(int maxtyp)
         if ((x+0.5 < strip_width/2) || (x+0.5 > box_x.x-strip_width/2) ||
             (y+0.5 < strip_width/2) || (y+0.5 > box_y.y-strip_width/2) ||
             (z+0.5 < strip_width/2) || (z+0.5 > box_z.z-strip_width/2)) continue;
-        /* atoms in strip get negatiave numbers */
-        if ((x+0.5 < strip_width)   || (x+0.5 > box_x.x-strip_width) ||
-            (y+0.5 < strip_width)   || (y+0.5 > box_y.y-strip_width) ||
-            (z+0.5 < strip_width)   || (z+0.5 > box_z.z-strip_width)) sign=-1;
+        /* boundary atoms in x-direction get negatiave numbers */
+        if ((x+0.5 < strip_width)   || (x+0.5 > box_x.x-strip_width)) sign=-1;
 #endif
 
 #ifdef SHOCK
         /* leave boundary open if necessary */
         if ((x+0.5 < strip_width/2) || (x+0.5 > box_x.x-strip_width/2)) continue;
-        /* atoms in strip get negatiave numbers */
-        if ((x+0.5 < strip_width)   || (x+0.5 > box_x.x-strip_width)) sign=-1;
 #endif
 
         /* if fcc, only atoms of type 0 */
@@ -785,7 +778,7 @@ void generate_lav()
   int     to_cpu;
   real     x, y, z, co;
   real     px[24],py[24],pz[24];
-  int     i,j,k,l,typ,pa[24];
+  int     i,j,k,l,typ,sign,pa[24];
 
   co = sqrt(2.)/8.;
 
@@ -880,6 +873,7 @@ void generate_lav()
 	  y=(py[l]+8.*j)/sqrt(8.);
 	  z=(pz[l]+8.*k)/sqrt(8.);
 	  typ=pa[l];
+          sign=-1;
 
 	  if ((x+co < rmin.x) || (x+co > rmax.x) ||
 	      (y+co < rmin.y) || (y+co > rmax.y) ||
@@ -890,6 +884,8 @@ void generate_lav()
 	  if ((x+co < strip_width/2) || (x+co > box_x.x-strip_width/2) ||
 	      (y+co < strip_width/2) || (y+co > box_y.y-strip_width/2) ||
 	      (z+co < strip_width/2) || (z+co > box_z.z-strip_width/2)) continue;
+	  /* boundary atoms in x-direction get negative numbers */
+	  if ((x+co < strip_width) || (x+co > box_x.x-strip_width)) sign=-1;
 #endif
 	  
 #ifdef SHOCK
@@ -905,7 +901,7 @@ void generate_lav()
 	  cellc = cell_coord(input->ort X(0), input->ort Y(0), 
                                               input->ort Z(0));
 #ifndef MONOLJ
-	  input->nummer[0] = natoms;
+	  input->nummer[0] = sign * natoms;
 	  input->sorte[0] = typ;
 	  num_sort[typ]++;
 #endif

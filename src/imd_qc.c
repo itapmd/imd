@@ -655,7 +655,7 @@ void decorate(int i, int j, int k)
       
 void sortin (int ifeld[])
 {
-  int typ,icell,i,hv,it,to_cpu;
+  int typ,sign,icell,i,hv,it,to_cpu;
   ivektor cellc;
   real x,y,z,dx,dy,dz,dist;
   cell *p;
@@ -696,11 +696,13 @@ void sortin (int ifeld[])
       if (hv == 1) 
 
 	{
+          sign=1;
 #if defined(FRAC) || defined(DEFORM)
           if ((x>strip_width/2) && (x<box_x.x-strip_width/2) &&
               (y>strip_width/2) && (y<box_y.y-strip_width/2) &&
               (z>strip_width/2) && (z<box_z.z-strip_width/2))
 	    {
+              if ((x > strip_width) && (x < box_x.x-strip_width)) sign=-1;
 #endif
 
 #ifdef SHOCK
@@ -712,7 +714,7 @@ void sortin (int ifeld[])
 	      input->ort X(0) = x;
 	      input->ort Y(0) = y;
 	      input->ort Z(0) = z;
-	      input->nummer[0] = natoms;
+	      input->nummer[0] = sign * natoms;
 	      typ=ifeld[6]-1;
 	      
 	      if (fabs(x+2.*gmin.x) < 0.0001 && fabs(y+2.*gmin.y) < 0.0001 && 
