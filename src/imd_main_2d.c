@@ -103,6 +103,10 @@ void main_loop(void)
   if( avpos_end == 0 ) avpos_end = steps_max;
 #endif
 
+#ifdef ATDIST
+  init_atoms_dist();
+#endif
+
   /* initializations for the current simulation phase, if not yet done */
   if (0==restart) init();
 
@@ -203,6 +207,11 @@ void main_loop(void)
     if ((steps == steps_min) || (steps == avpos_start)) {
        update_avpos();
     }
+#endif
+#ifdef ATDIST
+    if ((atoms_dist_int>0) && (0==steps % atoms_dist_int) &&
+        (steps>=atoms_dist_start) && (steps<=atoms_dist_end)) 
+      update_atoms_dist();
 #endif
 
 #if defined(CORRELATE) || defined(MSQD)
@@ -364,6 +373,10 @@ void main_loop(void)
 
     do_boundaries();    
     fix_cells();
+
+#ifdef ATDIST
+    if (steps==atoms_dist_end) write_atoms_dist();
+#endif
 
   }
 

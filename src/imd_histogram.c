@@ -933,11 +933,27 @@ void init_atoms_dist()
   int size, i;
 
   /* compute array size */
-  size  = atoms_dist_dim.x * atoms_dist_dim.y;
+  atoms_dist_size  = atoms_dist_dim.x * atoms_dist_dim.y;
 #ifndef TWOD
-  size *= atoms_dist_dim.z;
+  atoms_dist_size *= atoms_dist_dim.z;
 #endif
-  size *= ntypes;
+  size = atoms_dist_size * ntypes;
+
+  /* backup if pic_ur is not set */
+  if (0==pic_ur.x) {
+    pic_ur.x = box_x.x;
+    pic_ur.y = box_y.y;
+#ifndef TWOD
+    pic_ur.z = box_z.z;
+#endif
+  }
+
+  /* the bins are orthogonal boxes in space */
+  atoms_dist_scale.x = atoms_dist_dim.x / (pic_ur.x - pic_ll.x);
+  atoms_dist_scale.y = atoms_dist_dim.y / (pic_ur.y - pic_ll.y);
+#ifndef TWOD
+  atoms_dist_scale.z = atoms_dist_dim.z / (pic_ur.z - pic_ll.z);
+#endif
 
   /* allocate histogram array */
   if (NULL==atoms_dist) {
@@ -957,39 +973,35 @@ void init_atoms_dist()
   
 void update_atoms_dist()
 {
-  real scalex, scaley, scalez;
-  int  num, numx, numy, numz, size;
+  int  num, numx, numy, numz;
   cell *p;
   int  i, k;
-
-  /* the bins are orthogonal boxes in space */
-  scalex = atoms_dist_dim.x / box_x.x;
-  scaley = atoms_dist_dim.y / box_y.y;
-  size   = atoms_dist_dim.x * atoms_dist_dim.y;
-#ifndef TWOD
-  scalez = atoms_dist_dim.z / box_z.z;
-  size  *= atoms_dist_dim.z;
-#endif
 
   /* loop over all atoms */
   for (k=0; k<ncells; ++k) {
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i) {
+      /* continue if atom is not inside selected box */
+      if ((p->ort X(i) < pic_ll.x) || (p->ort X(i) > pic_ur.x) ||
+#ifndef TWOD
+          (p->ort Z(i) < pic_ll.z) || (p->ort Z(i) > pic_ur.z) || 
+#endif
+          (p->ort Y(i) < pic_ll.y) || (p->ort Y(i) > pic_ur.y)) continue;
       /* which bin? */
-      numx = scalex * p->ort X(i);
+      numx = atoms_dist_scale.x * (p->ort X(i) - pic_ll.x);
       if (numx < 0)                   numx = 0;
       if (numx >= atoms_dist_dim.x)   numx = atoms_dist_dim.x-1;
-      numy = scaley * p->ort Y(i);
+      numy = atoms_dist_scale.y * (p->ort Y(i) - pic_ll.y);
       if (numy < 0)                   numy = 0;
       if (numy >= atoms_dist_dim.y)   numy = atoms_dist_dim.y-1;
       num = numx * atoms_dist_dim.y + numy;
 #ifndef TWOD
-      numz = scalez * p->ort Z(i);
+      numz = atoms_dist_scale.z * (p->ort Z(i) - pic_ll.z);
       if (numz < 0)                   numz = 0;
       if (numz >= atoms_dist_dim.z)   numz = atoms_dist_dim.z-1;
       num = num  * atoms_dist_dim.z + numz;
 #endif
-      num = SORTE(p,i) * size + num;
+      num = SORTE(p,i) * atoms_dist_size + num;
       atoms_dist[num] += 1.0;
     }
   }
@@ -1003,21 +1015,10 @@ void update_atoms_dist()
   
 void write_atoms_dist()
 {
-  real scalex, scaley, scalez;
   int  num, numx, numy, numz, size;
   int  i, k;
   str255 fname;
   FILE *out;
-
-  /* the bins are orthogonal boxes in space */
-  scalex = box_x.x / atoms_dist_dim.x;
-  scaley = box_y.y / atoms_dist_dim.y;
-  size   = atoms_dist_dim.x * atoms_dist_dim.y;
-#ifndef TWOD
-  scalez = box_z.z / atoms_dist_dim.z;
-  size  *= atoms_dist_dim.z;
-#endif
-  size  *= ntypes;
 
   if (myid == 0) {
     sprintf(fname,"%s.atoms_dist",outfilename);
@@ -1027,14 +1028,16 @@ void write_atoms_dist()
     fprintf(out,"#F %d %d %d\n", is_big_endian, DIM, ntypes);
 #ifdef TWOD
     fprintf(out,"#D %d %d\n", atoms_dist_dim.x, atoms_dist_dim.y);
-    fprintf(out,"#S %f %f\n", scalex, scaley);
+    fprintf(out,"#S %f %f\n", atoms_dist_scale.x, atoms_dist_scale.y);
 #else
     fprintf(out,"#D %d %d %d\n",
             atoms_dist_dim.x, atoms_dist_dim.y, atoms_dist_dim.z);
-    fprintf(out,"#S %f %f %f\n", scalex, scaley, scalez);
+    fprintf(out,"#S %f %f %f\n", 
+            atoms_dist_scale.x, atoms_dist_scale.y, atoms_dist_scale.z);
 #endif
     fprintf(out,"#E\n");
 
+    size = atoms_dist_size * ntypes;
     if (size!=fwrite(atoms_dist,sizeof(float),size,out))
       error("Cannot write atoms_dist");
 

@@ -380,8 +380,12 @@ EXTERN int avpos_res INIT(0);         /* Period of coordinate addition */
 
 #ifdef ATDIST
 EXTERN float *atoms_dist INIT(NULL);  /* atoms distribution */
-EXTERN ivektor atoms_dist_dim INIT(nullvektor); /* dimension of atoms_dist */
+EXTERN ivektor atoms_dist_dim INIT(nullivektor); /* dimension of atoms_dist */
+EXTERN vektor atoms_dist_scale INIT(nullvektor); /* scale of atoms dist bins */
 EXTERN int atoms_dist_int INIT(0);    /* interval between atoms dist updates */
+EXTERN int atoms_dist_start INIT(0);  /* start step of atoms distribution */
+EXTERN int atoms_dist_end INIT(0);    /* stop step of atoms distribution */
+EXTERN int atoms_dist_size INIT(0);   /* size of atoms distribution */
 #endif
 
 #ifdef ORDPAR

@@ -1054,6 +1054,14 @@ void getparamfile(char *paramfname, int sim)
       /* interval between atoms distribution updates */
       getparam("atoms_dist_int",&atoms_dist_int,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token,"atoms_dist_start")==0) {
+      /* step when recording atoms distribution is started */
+      getparam("atoms_dist_start",&atoms_dist_start,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"atoms_dist_end")==0) {
+      /* step when recording atoms distribution is stopped */
+      getparam("atoms_dist_end",&atoms_dist_end,PARAM_INT,1,1);
+    }
 #endif
 #ifdef ORDPAR
     else if (strcasecmp(token,"op_rcut")==0) {

@@ -198,7 +198,9 @@ void main_loop(void)
     }
 #endif
 #ifdef ATDIST
-    if ((atoms_dist_int>0) && (0==steps % atoms_dist_int)) update_atoms_dist();
+    if ((atoms_dist_int>0) && (0==steps % atoms_dist_int) &&
+        (steps>=atoms_dist_start) && (steps<=atoms_dist_end))
+      update_atoms_dist();
 #endif
 
 #ifdef FBC
@@ -433,11 +435,11 @@ void main_loop(void)
     fix_cells();  
 #endif
 
-  }
-
 #ifdef ATDIST
-  write_atoms_dist();
+    if (steps==atoms_dist_end) write_atoms_dist();
 #endif
+
+  }
 
   /* clean up the current phase, and clear restart flag */
   restart=0;
