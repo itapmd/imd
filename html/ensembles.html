@@ -95,18 +95,6 @@ What do the parameters mean?
 Used for heat conductivity measurements. Forces a temperature
 gradient into the sample.
 
-<P><LI><B> mc </B><P>
-The Monte Carlo integrator attempts to make random jumps of mean 
-length <TT>mc_len</TT> (parameter). The steps are accepted with the 
-Metropolis probability min(1,exp(-beta*delta_E), where delta_E is 
-the energy difference involved. The inverse temperature beta is
-selected with the parameter <TT>mc_beta</TT>. The seed of the random 
-number generator can be selected with the parameter <TT>mc_seed</TT>.
-<P>
-<B>Known bugs:</B> The Monte Carlo integrator has been implemented 
-only for serial execution. Since it is not faster than MD integrators,
-it does not seem very useful. 
-
 </UL>
 
 <P>

@@ -34,21 +34,6 @@ time, the potential energy per atom, the kinetic energy per atom
 system temperature), the pressure and the volume. If the
 simulation ensemble is npt_axial, and the preprocessor flag PAXTEST 
 is set, this is followed by the axial pressures and box dimensions.
-<P>
-In MC simulations, instead of kinetic energy and pressure,
-which have no meaning in this ensemble, the acceptance ratio
-since the last write is written. If <TT>eng_int</TT>
-is zero, no properties file is written.
-
-<H4>Known bugs</H4>
-
-In multiphase simulations containing Monte Carlo phases,
-the properties file is somewhat messy, because a particular 
-column does not always contain the same property. 
-The meaning of the numbers in a column can change 
-during the simulation. Fortunately, the mc ensemble is not
-used frequently!
-
 
 <H2><A NAME="distributions">Energy Distributions</A></H2>
 
