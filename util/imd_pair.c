@@ -98,10 +98,10 @@
 *
 *****************************************************************************/
 
-#ifndef SINGLE
-typedef double real;
-#else 
+#ifdef SINGLE
 typedef float real;
+#else
+typedef double real;
 #endif
 
 #ifdef TWOD
@@ -919,17 +919,17 @@ void read_atoms(str255 infilename)
     fgets(buf,sizeof(buf),infile);
     while ('#'==buf[1]) fgets(buf,sizeof(buf),infile); /* eat comments */
 
-#ifdef DOUBLE
-#ifdef TWOD
-    p = sscanf(buf,"%d %d %lf %lf %lf",&n,&s,&m,&pos.x,&pos.y);
-#else
-    p = sscanf(buf,"%d %d %lf %lf %lf %lf",&n,&s,&m,&pos.x,&pos.y,&pos.z);
-#endif
-#else
+#ifdef SINGLE
 #ifdef TWOD
     p = sscanf(buf,"%d %d %f %f %f",&n,&s,&m,&pos.x,&pos.y);
 #else
     p = sscanf(buf,"%d %d %f %f %f %f",&n,&s,&m,&pos.x,&pos.y,&pos.z);
+#endif
+#else
+#ifdef TWOD
+    p = sscanf(buf,"%d %d %lf %lf %lf",&n,&s,&m,&pos.x,&pos.y);
+#else
+    p = sscanf(buf,"%d %d %lf %lf %lf %lf",&n,&s,&m,&pos.x,&pos.y,&pos.z);
 #endif
 #endif
     if (p>0) {
