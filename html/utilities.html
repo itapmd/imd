@@ -13,33 +13,32 @@ directory.
 <H2>imd2ppm</H2>
 </A>
 
-The C++ version of imd2ppm converts <A HREF="config.html">configuration 
-files</A> of 2D binary tilings into ppm bitmaps, where each atom is 
-drawn as a disk of appropriate radius. There are two versions: 
-imd2ppm.kin, which encodes the kinetic energy in the color of the 
-atoms, and imd2ppm.pot, which encodes the the potential energy in the 
-color of the atoms. 
-<P>
-The C version of imd2ppm works like the C++ version, but takes the 
-special <A HREF="pictures.html">.pic files</A> produced 
-by IMD as input.
-<P>
-<B>Usage</B>: <TT>
-imd2ppm infile E_min E_max x0 y0 width height width_pix height_pix
-</TT>
-<P>
+imd2ppm converts <A HREF="config.html">IMD configuration files</A> 
+or special <A HREF="pictures.html">.pic files</A> of 2D binary 
+tiling quasicrystals into ppm bitmaps, where each atom is drawn as 
+a disk of appropriate radius. Compilation goes as follows: 
+<PRE>
+    gcc -O [-DEPOT] [-DASCII] imd2ppm.c -lm
+</PRE>
+If compiled with <TT>-DASCII</TT>, imd2ppm expects 
+<A HREF="config.html">IMD configuration files</A> as input,
+otherwise the special, binary <A HREF="pictures.html">.pic files</A>.
+If compiled with <TT>-DEPOT</TT>, the potential energy of each
+atom is used for the coloring, otherwise the kinetic energy is used.
+Usage is as follows:
+<PRE>
+    imd2ppm infile E_min E_max x0 y0 width height width_pix height_pix
+</PRE>
 The parameters are, in this order, the input file, the lower and
 upper energy treshold for the coloring, x and y coordinates of the
 lower left corner of the image, width and height of the image in
 user coordinates, and width and height of the image in pixels
-(resolution). The output files are called <TT>&lt;infile&gt;.kin.ppm</TT>
-or <TT>&lt;infile&gt;.pot.ppm</TT>.
-
+(resolution). The output files are called <TT>&lt;infile&gt;.ppm</TT>.
 <P>
 If the option <B>disloc</B> is used, the difference of the actual 
 potential energy and a reference potential energy of each atom 
-is written to the the .pic file, and so this difference is
-used for the coloring.
+is written to the configuration files and .pic files, and so this 
+difference is used for the coloring.
 
 <A NAME="imd_dist2pgm">
 <H2>imd_dist2pgm.perl</H2> 
@@ -83,7 +82,7 @@ type 1 and type 2<BR>
 
 Computes radial distribution histograms. Compile as follows:
 <PRE>
-    cc -O [-DTWOD] [-DNOPBC] [-DSLOTS=&lt;nnn&gt;] [-DSINGLE] imd_pair.c -lm
+    gcc -O [-DTWOD] [-DNOPBC] [-DSLOTS=&lt;nnn&gt;] [-DSINGLE] imd_pair.c -lm
 </PRE>
 Default is a program for 3D, but if the flag <TT>-DTWOD</TT> is 
 present, a program for 2D is compiled. With the flag 
