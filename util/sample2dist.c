@@ -5,7 +5,7 @@
 *
 *  Compilation:
 *
-*    gcc -o sample2dist sample2dist.c -lm
+*    gmake sample2dist
 *
 *  Usage:
 *
