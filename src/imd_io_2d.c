@@ -435,11 +435,11 @@ void write_itr_file(int fzhlr, int steps)
 
 #ifdef NPT
   if (ensemble==ENS_NPT_ISO) {
-    fprintf(out,"pressure_ext \t%f\n",pressure_ext.x);
+    fprintf(out,"pressure_start \t%f\n",pressure_ext.x);
     fprintf(out,"xi \t%f\n",xi.x);
   }
   if (ensemble==ENS_NPT_AXIAL) {
-    fprintf(out,"pressure_ext \t%f %f\n",pressure_ext.x,pressure_ext.y);
+    fprintf(out,"pressure_start \t%f %f\n",pressure_ext.x,pressure_ext.y);
     fprintf(out,"xi \t%f %f\n",xi.x,xi.y);
   }
 #endif
