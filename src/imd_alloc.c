@@ -343,7 +343,7 @@ void alloc_cell(cell *thecell, int count)
     newcell.ort_ref = (real *) calloc(count*DIM, sizeof(real));
 #endif
 #ifdef AVPOS
-    newcell.sheet = (shortint *) malloc(count * DIM * sizeof(shortint));
+    newcell.sheet = (real *) malloc(count * DIM * sizeof(real));
 #endif
 #ifdef REFPOS
     newcell.refpos = (real *) malloc(count*DIM*sizeof(real));
@@ -461,7 +461,7 @@ void alloc_cell(cell *thecell, int count)
                                thecell->n * DIM * sizeof(real));
 #endif
 #ifdef AVPOS
-      memcpy(newcell.sheet, thecell->sheet, thecell->n * DIM * sizeof(shortint));
+      memcpy(newcell.sheet, thecell->sheet, thecell->n * DIM * sizeof(real));
 #endif
 #ifdef REFPOS
       memcpy(newcell.refpos, thecell->refpos, thecell->n * DIM * sizeof(real));
@@ -580,3 +580,12 @@ void alloc_cell(cell *thecell, int count)
   thecell->n_max = count;
 
 }
+
+
+
+
+
+
+
+
+

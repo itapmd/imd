@@ -90,10 +90,10 @@ void add_position(void)
     cell* p;
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; i++) {
-        p->ort_ref X(i) += p->ort X(i) + p->sheet X(i) * box_x.x;
-        p->ort_ref Y(i) += p->ort Y(i) + p->sheet Y(i) * box_y.y;
+        p->ort_ref X(i) += p->ort X(i) + p->sheet X(i);
+        p->ort_ref Y(i) += p->ort Y(i) + p->sheet Y(i);
 #ifndef TWOD
-        p->ort_ref Z(i) += p->ort Z(i) + p->sheet Z(i) * box_z.z;
+        p->ort_ref Z(i) += p->ort Z(i) + p->sheet Z(i);
 #endif
         p->Epot_ref[i]  += p->pot_eng[i];
     }

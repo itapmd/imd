@@ -328,6 +328,8 @@ EXTERN int  Epot_diff INIT(1);        /* flag whether to write Epot_diff */
 #endif
 
 #ifdef AVPOS
+EXTERN int avpos_start INIT(0);       /* Start time for avpos */
+EXTERN int avpos_end INIT(0);         /* End time for avpos */
 EXTERN int avpos_int INIT(0);         /* Period of avp output ==0 */
 EXTERN int avpos_res INIT(0);         /* Period of coordinate addition */
 #endif

@@ -634,8 +634,15 @@ void update_ort_ref(void)
     for (i=0; i<p->n; i++) {
       p->ort_ref X(i) = p->ort X(i);
       p->ort_ref Y(i) = p->ort Y(i);
+#ifdef AVPOS
+      p->sheet X(i)   = 0;
+      p->sheet Y(i)   = 0;
+#endif
 #ifndef TWOD
       p->ort_ref Z(i) = p->ort Z(i);
+#ifdef AVPOS
+      p->sheet Z(i)   = 0;
+#endif
 #endif
     }
   }

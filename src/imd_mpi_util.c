@@ -678,3 +678,7 @@ void recv_cell(cell *p, int from_cpu, int tag)
   MPI_Recv(b->data, b->n, REAL, from_cpu, tag, cpugrid, &status);
   process_buffer(b,p);
 }
+
+
+
+

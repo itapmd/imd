@@ -113,7 +113,7 @@ typedef struct {
   real        *ort_ref;
 #endif
 #ifdef AVPOS
-  shortint    *sheet;
+  real        *sheet;
 #endif
 #ifdef ORDPAR
   shortint    *nbanz;

@@ -932,6 +932,14 @@ void getparamfile(char *paramfname, int sim)
     }   
 #endif
 #ifdef AVPOS
+   else if (strcasecmp(token,"avpos_start")==0) {
+      /* step at which coordinate addition begins */
+      getparam("avpos_start",&avpos_start,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"avpos_end")==0) {
+      /* step at which coordinate addition ends */
+      getparam("avpos_end",&avpos_end,PARAM_INT,1,1);
+    }
     else if (strcasecmp(token,"avpos_res")==0) {
       /* number of steps between coordinate addition */
       getparam("avpos_res",&avpos_res,PARAM_INT,1,1);
@@ -1537,8 +1545,10 @@ void broadcast_params() {
 #endif
 
 #ifdef AVPOS
-  MPI_Bcast( &avpos_int,       1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &avpos_res,       1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &avpos_start,       1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &avpos_end,         1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &avpos_int,         1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &avpos_res,         1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef ORDPAR

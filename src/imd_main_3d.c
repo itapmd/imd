@@ -98,6 +98,11 @@ void main_loop(void)
   init_correl(ncorr_rmax,ncorr_tmax);
 #endif
 
+#ifdef AVPOS
+  /* Default initialisation of end time */ 
+  if( avpos_end == 0 ) avpos_end = steps_max;
+#endif
+
   /* initializations for the current simulation phase, if not yet done */
   if (0==restart) init();
 
@@ -162,7 +167,7 @@ void main_loop(void)
     }
 #endif
 #ifdef AVPOS
-    if (steps == steps_min) {
+    if ( steps == avpos_start ) {
        update_ort_ref();
        reset_Epot_ref();
     }
@@ -333,11 +338,16 @@ void main_loop(void)
        write_config_select(steps, "dsp", write_atoms_dsp, write_header_dsp);
 #endif
 #ifdef AVPOS
-    if ((avpos_res > 0) && (0 == steps%avpos_res) && steps > 0)
-       add_position();
-    if ((avpos_int > 0) && (0 == steps%avpos_int) && steps > 0)
-       write_config_select(steps/avpos_int, "avp", 
-                           write_atoms_avp, write_header_avp);
+    if ( steps <= avpos_end ){
+	if ((avpos_res > 0) && (0 == (steps - avpos_start) % avpos_res) && steps > avpos_start)
+	    add_position();
+	if ((avpos_int > 0) && (0 == (steps - avpos_start) % avpos_int) && steps > avpos_start) {
+	    write_config_select((steps-avpos_start)/avpos_int,"avp",
+				write_atoms_avp,write_header_avp);
+	    update_ort_ref();
+	    reset_Epot_ref();
+	}
+    }
 #endif
 #ifdef TRANSPORT 
     if ((tran_interval > 0) && (steps > 0) && (0 == steps%tran_interval)) 
@@ -539,11 +549,13 @@ void do_boundaries(void)
     if (pbc_dirs.x==1)
     for (l=0; l<p->n; ++l) {
       i = -FLOOR(SPRODX(p->ort,l,tbox_x));
-      p->ort X(l) += i * box_x.x;
-      p->ort Y(l) += i * box_x.y;
-      p->ort Z(l) += i * box_x.z;
+      p->ort X(l)   += i * box_x.x;
+      p->ort Y(l)   += i * box_x.y;
+      p->ort Z(l)   += i * box_x.z;
 #ifdef AVPOS
-      p->sheet X(l) -= i;
+      p->sheet X(l) -= i * box_x.x;
+      p->sheet Y(l) -= i * box_x.y;
+      p->sheet Z(l) -= i * box_x.z;
 #endif
     }
 
@@ -551,11 +563,13 @@ void do_boundaries(void)
     if (pbc_dirs.y==1)
     for (l=0; l<p->n; ++l) {
       i = -FLOOR(SPRODX(p->ort,l,tbox_y));
-      p->ort X(l) += i * box_y.x;
-      p->ort Y(l) += i * box_y.y;
-      p->ort Z(l) += i * box_y.z;
+      p->ort X(l)   += i * box_y.x;
+      p->ort Y(l)   += i * box_y.y;
+      p->ort Z(l)   += i * box_y.z;
 #ifdef AVPOS
-      p->sheet Y(l) -= i;
+      p->sheet X(l) -= i * box_y.x;
+      p->sheet Y(l) -= i * box_y.y;
+      p->sheet Z(l) -= i * box_y.z;
 #endif
     }
 
@@ -563,11 +577,13 @@ void do_boundaries(void)
     if (pbc_dirs.z==1)
     for (l=0; l<p->n; ++l) {
       i = -FLOOR(SPRODX(p->ort,l,tbox_z));
-      p->ort X(l) += i * box_z.x;
-      p->ort Y(l) += i * box_z.y;
-      p->ort Z(l) += i * box_z.z;
+      p->ort X(l)   += i * box_z.x;
+      p->ort Y(l)   += i * box_z.y;
+      p->ort Z(l)   += i * box_z.z;
 #ifdef AVPOS
-      p->sheet Z(l) -= i;
+      p->sheet X(l) -= i * box_z.x;
+      p->sheet Y(l) -= i * box_z.y;
+      p->sheet Z(l) -= i * box_z.z;
 #endif
     }
 
