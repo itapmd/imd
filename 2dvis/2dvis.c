@@ -210,11 +210,11 @@ int main(int argc, char **argv)
       break;
     case 'm' : 
       while (!((ch = checkkey()) || (mkey = slocator (&xloc, &yloc)))) {
-      if (connect_client(9)==0) {
-	printf("No atoms!\n");
-	exit(-1);
-      }
-      draw_scene(scene_type);
+	if (connect_client(9)==0) {
+	  printf("No atoms!\n");
+	  exit(-1);
+	}
+	draw_scene(scene_type);
       }
       break;
     case 'p' : 
@@ -283,6 +283,7 @@ void draw_scene(int scene_type) {
   float epsilon,dx,dy;
 
   epsilon=.1;
+  backbuffer();
   color(BLACK);
   clear();
 
@@ -434,6 +435,7 @@ void draw_scene(int scene_type) {
       } 
     }
   }
+  swapbuffers();
 }
 
 /* reading of a configuration from file */
@@ -575,7 +577,7 @@ void display_help(void) {
 
   char sysstring[1000];
 
-  sprintf(sysstring,"Use the following keys\n\nLMB:\tmove configuration\nMMB:\trotate configuration around x-axis\nR+MMBs\trotate configuration around y-axis\nRMB:\tscale configuration\n1:\tmove configuration to the lower left\n2:\tmove configuration down\n3:\tmove configuration to the lower right\n4:\tmove configuration to the left\n6:\tmove configuration to the right\n7:\tmove configuration to the upper left\n8:\tmove configuration up\n9:\tmove configuration to the upper right\n0:\tincrease radius\n.:\tdecrease radius\n+:\tscale configuration (larger)\n-:\tscale configuration (smaller)\n*:\trotate about x-axis\n/:\trotate about y-axis\na:\tauto-modus (movie)\nb:\tdraw bonds\nc:\tget configuration via socket\nd:\tget distribution via socket\ne:\ttoggle type/energy encoding\nh:\tdisplay this help message\nk:\ttoggle potential/kinetic energy\nl:\tload IMD-configuration from file\np\tmake picture\nq:\tquit program\nr:\ttoggle type encoding via radius\nt:\ttoggle text on/off\nw:\twrite to file\n");
+  sprintf(sysstring,"Use the following keys\n\nLMB:\tmove configuration\nMMB:\trotate configuration around x-axis\nR+MMBs\trotate configuration around y-axis\nRMB:\tscale configuration\n1:\tmove configuration to the lower left\n2:\tmove configuration down\n3:\tmove configuration to the lower right\n4:\tmove configuration to the left\n6:\tmove configuration to the right\n7:\tmove configuration to the upper left\n8:\tmove configuration up\n9:\tmove configuration to the upper right\n0:\tincrease radius\n.:\tdecrease radius\n+:\tscale configuration (larger)\n-:\tscale configuration (smaller)\n*:\trotate about x-axis\n/:\trotate about y-axis\na:\ttoggle drawing of atoms\nb:\ttoggle drawing of bonds\nc:\tget configuration via socket\nd:\tget distribution via socket\ne:\ttoggle type/energy encoding\nh:\tdisplay this help message\nk:\ttoggle potential/kinetic energy\nl:\tload IMD-configuration from file\nm:\tmovie mode\np\tmake picture\nq:\tquit program\nr:\ttoggle type encoding via radius\nt:\ttoggle text on/off\nw:\twrite to file\n");
   printf(sysstring);
   fflush(stdout);
 } 
