@@ -804,7 +804,9 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"shock_mode")==0) { 
        /* shock type: plate or half */
        getparam("shock_mode",&shock_mode,PARAM_INT,1,1); 
-       if (shock_mode != 2) shock_mode = 1;
+       if (shock_mode > 1) shock_strip = 0;
+       /* compatibility with old input files */
+       if (shock_mode != 2 && shock_mode != 3) shock_mode = 1;
     }
 #endif
 #ifdef MPI
