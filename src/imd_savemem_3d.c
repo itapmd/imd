@@ -40,6 +40,28 @@ ivektor global_cell_coord(ivektor local_coord)
 
 /******************************************************************************
 *
+*  Deallocate buffer cells each timestep to save memory
+*
+******************************************************************************/
+
+void dealloc_buffer_cells()
+{
+  int i,j,k;
+  cell *p;
+
+  for (i=0; i < cell_dim.x; ++i)
+    for (j=0; j < cell_dim.y; ++j)
+      for (k=0; k < cell_dim.z; ++k) {
+        p = PTR_3D_V(cell_array, i, j, k, cell_dim); 
+        /* check for buffer cell and deallocate */
+        if ((0==i) || (0==j) || (0==k) || (i == cell_dim.x-1) ||
+            (j == cell_dim.y-1) || (k == cell_dim.z-1)) alloc_cell(p, 0);
+      }
+}
+
+
+/******************************************************************************
+*
 * fix_cells_by_cell
 *
 * check if each atom is in the correct cell and on the correct CPU 
@@ -272,26 +294,22 @@ void send_atoms_by_cell()
 
 /******************************************************************************
 *
-* send_cell_force lean version of send_cell for force_loop - unused
+* send_cell_force lean version of send_cell for force_loop - UNUSED
 *
 ******************************************************************************/
 
 void send_cell_force(cell *p, int to_cpu, int tag)
 {
-#if defined(PACX) || defined(MONOLJ)
-  MPI_Send( &(p->n), 1,         MPI_INT, to_cpu, tag + SIZE_TAG,  cpugrid);
-#endif
   MPI_Send( p->ort, DIM * p->n, REAL,    to_cpu, tag + ORT_TAG,   cpugrid);
 #ifndef MONOLJ
   MPI_Send( p->sorte,     p->n, SHORT,   to_cpu, tag + SORTE_TAG, cpugrid);
 #endif
-
 }
 
 
 /******************************************************************************
 *
-* recv_cell_force lean version of recv_cell for force_loop - unused
+* recv_cell_force lean version of recv_cell for force_loop - UNUSED
 *
 ******************************************************************************/
 
@@ -301,13 +319,9 @@ void recv_cell_force(cell *p, int from_cpu,int tag)
   int newsize;
   MPI_Status status;
 
-#if defined(PACX) || defined(MONOLJ)
-  MPI_Recv( &size, 1, MPI_INT, from_cpu, tag + SIZE_TAG , cpugrid, &status );
-#else
   MPI_Probe( from_cpu, tag + ORT_TAG, cpugrid, &status );
   MPI_Get_count( &status, REAL, &size );
   size /= DIM;
-#endif
     
   /* realloc cell if necessary */
   newsize = p->n_max; 
@@ -410,7 +424,7 @@ void send_recv_cell(int i, int j, int k, int l, int m, int n)
   } else {
     recv_cell_force(q , from_cpu, tag);
     send_cell_force(p , to_cpu  , tag);
-  };
+  }
 
 }
 

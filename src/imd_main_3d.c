@@ -193,9 +193,7 @@ void main_loop(void)
 #ifdef SAVEMEM
     send_atoms_by_cell();
 #else
-    /* we should do this in more appropriate intervals */
-    if (((eng_interval != 0) && (0 == steps%eng_interval)) || 
-        (steps == steps_min)) setup_buffers();
+    if ((0 == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
     send_cells(copy_cell,pack_cell,unpack_cell);
 #endif
 #ifdef TIMING
@@ -381,17 +379,7 @@ void main_loop(void)
        of the force loop enables us to calculate/write properties locally */
 #if (defined(MPI) && defined(SAVEMEM))
     /* Deallocate buffer cells each timestep to save memory */
-    for (i=0; i < cell_dim.x; ++i)
-        for (j=0; j < cell_dim.y; ++j)
-            for (k=0; k < cell_dim.z; ++k) {
-              p = PTR_3D_V(cell_array, i, j, k, cell_dim); 
-              /* check for buffer cell and deallocate */
-              if ((0==i) || (0==j) || (0==k) ||
-                  (i == cell_dim.x-1) ||
-                  (j == cell_dim.y-1) ||
-                  (k == cell_dim.z-1))
-		alloc_cell(p, 0);
-            }
+    dealloc_buffer_cells();
     fix_cells_by_cell();
 #else
     fix_cells();  

@@ -569,9 +569,6 @@ void empty_mpi_buffers(void)
 
 void send_cell(cell *p, int to_cpu, int tag)
 {
-#ifdef PACX
-  MPI_Send( &(p->n), 1,        MPI_INT, to_cpu, tag + SIZE_TAG,   cpugrid);
-#endif
   MPI_Ssend( p->ort, DIM*p->n, REAL,    to_cpu, tag + ORT_TAG,    cpugrid);
 #ifndef MONOLJ
   MPI_Ssend( p->sorte,  p->n,  SHORT,   to_cpu, tag + SORTE_TAG,  cpugrid);
@@ -612,19 +609,15 @@ void send_cell(cell *p, int to_cpu, int tag)
 *
 ******************************************************************************/
 
-void recv_cell(cell *p, int from_cpu,int tag)
+void recv_cell(cell *p, int from_cpu, int tag)
 {
   int size;
   int newsize;
   MPI_Status status;
 
-#ifdef PACX
-  MPI_Recv( &size, 1, MPI_INT, from_cpu, tag + SIZE_TAG , cpugrid, &status );
-#else
   MPI_Probe( from_cpu, tag + ORT_TAG, cpugrid, &status );
   MPI_Get_count( &status, REAL, &size );
   size /= DIM;
-#endif
 
   /* realloc cell if necessary */
   newsize = p->n_max; 
@@ -636,7 +629,7 @@ void recv_cell(cell *p, int from_cpu,int tag)
   }
   p->n = size;
 
-  MPI_Recv(p->ort,     DIM * size, REAL, from_cpu, tag + ORT_TAG,
+  MPI_Recv(p->ort,     DIM * size, REAL,     from_cpu, tag + ORT_TAG,
                                              cpugrid, &status );
 #ifndef MONOLJ
   MPI_Recv(p->sorte,         size, SHORT,    from_cpu, tag + SORTE_TAG , 

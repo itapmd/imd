@@ -154,6 +154,7 @@ ivektor global_cell_coord(ivektor coords);
 void fix_cells_by_cell(void);
 void send_atoms_by_cell(void);
 void send_recv_cell(int i,int j,int k,int l,int m,int n);
+void dealloc_buffer_cells(void);
 #endif
 #endif
 

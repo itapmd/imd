@@ -163,3 +163,5 @@
 /* security margin for buffer sizes */
 #define CSTEP 10
 
+/* interval for checking MPI buffers */
+#define BUFSTEP 100
