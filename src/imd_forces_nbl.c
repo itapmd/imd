@@ -303,7 +303,7 @@ void calc_forces(int steps)
           pot *= 0.5;   /* avoid double counting */
 #endif
 #ifdef ORDPAR
-          if (r2 < op_r2_cut[p_typ][q_typ]) {
+          if (r2 < op_r2_cut[it][jt]) {
             POTENG(p,i) += op_weight[it][jt] * pot;
             POTENG(q,j) += op_weight[jt][it] * pot;
             NBANZ(p,i)++;
