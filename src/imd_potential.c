@@ -276,9 +276,8 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename, FILE *infile)
 void read_pot_table2(pot_table_t *pt, int ncols, char *filename, FILE *infile)
 {
   int i, k, *len;
-  int tablesize, nread;
+  int tablesize;
   real val, numstep;
-  char buffer[1024];
   str255 msg;
 
   len = (int  *) malloc(ncols * sizeof(real));
@@ -286,21 +285,13 @@ void read_pot_table2(pot_table_t *pt, int ncols, char *filename, FILE *infile)
 
   /* read the info block of the function table */
   for(i=0; i<ncols; i++) {
-    nread=0;
-    do {
-      if ((NULL==fgets(buffer,1024,infile)) && (0==myid)) {
-        sprintf(msg, "premature end in potential file %s.", filename);
+    if (3 != fscanf(infile, "%lf %lf %lf",
+                  &pt->begin[i], &pt->end[i], &pt->step[i])) {
+      if (0==myid) { 
+        sprintf(msg, "Info line in %s corrupt.", filename);
         error(msg);
       }
-      if (buffer[0]!='#') {
-        nread = sscanf(buffer, "%lf %lf %lf",
-                       &pt->begin[i], &pt->end[i], &pt->step[i]);
-      }
-      if ((0==myid) && (nread>0) && (nread!=3)) { 
-        sprintf(msg, "Info line in %s is corrupt.", filename);
-        error(msg);
-      }
-    } while (nread==0);
+    }
     if (ncols==ntypes*ntypes) cellsz = MAX(cellsz,pt->end[i]);
     pt->invstep[i] = 1.0 / pt->step[i];
     numstep        = 1 + (pt->end[i] - pt->begin[i]) / pt->step[i];
@@ -328,14 +319,12 @@ void read_pot_table2(pot_table_t *pt, int ncols, char *filename, FILE *infile)
   /* input loop */
   for (i=0; i<ncols; i++) {
     for (k=0; k<len[i]; k++) {
-      nread=0;
-      do {
-        if ((NULL==fgets(buffer,1024,infile)) && (0==myid)) {
-          sprintf(msg, "premature end in potential file %s.", filename);
+      if (1 != fscanf(infile,"%lf", &val)) {
+        if (0==myid) {
+          sprintf(msg, "wrong format in file %s.", filename);
           error(msg);
         }
-        if (buffer[0]!='#') nread = sscanf(buffer,"%lf", &val);
-      } while (nread==0);
+      }
       *PTR_2D(pt->table,k,i,pt->maxsteps,ncols) = val;
     }
     /* make some copies of the last value for interpolation */
