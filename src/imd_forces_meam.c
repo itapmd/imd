@@ -649,4 +649,15 @@ void init_meam(void) {
       }
     }
   }
+
+  /* update neighbor table cutoff */
+  if (NULL==neightab_r2cut) {
+    neightab_r2cut = (real *) calloc( ntypes * ntypes, sizeof(real) );
+    if (NULL==neightab_r2cut) 
+      error("cannot allocate memory for neightab_r2cut");
+  }
+  for (i=0; i<ntypes; i++)
+    for (j=0; j<ntypes; j++)
+      neightab_r2cut[i*ntypes+j] = 
+	MAX( neightab_r2cut[i*ntypes+j], meam_r2_cut[i][j] );
 }

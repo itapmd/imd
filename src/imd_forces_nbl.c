@@ -410,17 +410,8 @@ void calc_forces(int steps)
 
 #ifdef COVALENT
         /* make neighbor tables for covalent systems */
-#if defined(KEATING)
-        if (r2 < keat_r2_cut[it][jt]) {
-#elif defined(TTBP)
-        if (r2 <= smooth_pot.end[col]) {
-#elif defined(STIWEB)
-        if (r2 < sw_2_a1[it][jt]) {
-#elif defined(TERSOFF)
-        if (r2 <= ter_r2_cut[it][jt]) {
-#elif defined(MEAM)
-        if (r2 <= meam_r2_cut[it][jt]) {
-#endif 
+        if (r2 < neightab_r2cut[col]) {
+
           neightab *neigh;
           real  *tmp_ptr;
 
@@ -493,17 +484,8 @@ void calc_forces(int steps)
         col = it * ntypes + jt;
 
         /* make neighbor tables */
-#if defined(KEATING)
-        if (r2 < keat_r2_cut[it][jt]) {
-#elif defined(TTBP)
-        if (r2 <= smooth_pot.end[col]) {
-#elif defined(STIWEB)
-        if (r2 < sw_2_a1[it][jt]) {
-#elif defined(TERSOFF)
-        if (r2 <= ter_r2_cut[it][jt]) {
-#elif defined(MEAM)
-        if (r2 <= meam_r2_cut[it][jt]) {
-#endif 
+        if (r2 <= neightab_r2cut[col]) {
+
           neightab *neigh;
           real  *tmp_ptr;
 

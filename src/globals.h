@@ -775,6 +775,7 @@ EXTERN real keat_beta[10][10][10];
 
 #ifdef COVALENT  
 EXTERN int neigh_len INIT(NEIGH_LEN_INIT); /* initial neighbor table length */
+EXTERN real *neightab_r2cut INIT(NULL);    /* cutoff of neighbor table */
 #endif 
 
 #ifdef EPITAX

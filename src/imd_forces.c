@@ -223,17 +223,8 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 
 #ifdef COVALENT
       /* make neighbor tables for covalent systems */
-#if defined(KEATING)
-      if (r2 < keat_r2_cut[p_typ][q_typ]) {
-#elif defined(TTBP)
-      if (r2 <= smooth_pot.end[col]) {
-#elif defined(STIWEB)
-      if (r2 < sw_2_a1[p_typ][q_typ]) {
-#elif defined(TERSOFF)
-      if (r2 <= ter_r2_cut[p_typ][q_typ]) {
-#elif defined(MEAM)
-      if (r2 <= meam_r2_cut[p_typ][q_typ]) {
-#endif 
+      if (r2 <= neightab_r2cut[col]) {
+
         neightab *neigh;
         real  *tmp_ptr;
 

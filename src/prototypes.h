@@ -168,6 +168,9 @@ void init_keating(void);
 void init_stiweb(void);
 void pair_int_stiweb(real *pot, real *grad, int p_typ, int q_typ, real r2);
 #endif
+#ifdef TTBP
+void init_ttbp(void);
+#endif
 #ifdef TERSOFF
 void init_tersoff(void);
 #endif

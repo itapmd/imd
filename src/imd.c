@@ -107,6 +107,9 @@ int main(int argc, char **argv)
 #ifdef KEATING
   init_keating();
 #endif
+#ifdef TTBP
+  init_ttbp();
+#endif
 #ifdef STIWEB
   init_stiweb();
 #endif

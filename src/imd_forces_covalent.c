@@ -793,22 +793,9 @@ void do_neightab(cell *p, cell *q, vektor pbc)
                 ORT(q,j,X), ORT(q,j,Y), ORT(q,j,Z) );
         error(msgbuf);
       }
-#ifdef KEATING
-      /* make neighbor tables for KEATING */
-      if (radius2 < keat_r2_cut[p_typ][q_typ]) 
-#endif
-#ifdef TTBP
-      /* make neighbor tables for TTBP */
-      if (radius2 <= smooth_pot.end[column])
-#endif
-#ifdef STIWEB
-      if (radius2 < sw_2_a1[p_typ][q_typ]) 
-#endif
-#ifdef TERSOFF
-      /* make neighbor tables for TERSOFF */
-      if (radius2 <= ter_r2_cut[p_typ][q_typ])
-#endif
-      {        
+
+      /* make neighbor tables for covalent systems */
+      if (radius2 <= neightab_r2cut[column]) {        
         neightab *neigh;
         real  *tmp_ptr;
 
@@ -872,8 +859,33 @@ void init_keating(void) {
     for (j=0; j<ntypes; ++j)
       tmp = MAX( tmp, keat_r2_cut[i][j] );
   cellsz = MAX(cellsz,tmp);
-}	  
 
+  /* update neighbor table cutoff */
+  if (NULL==neightab_r2cut) {
+    neightab_r2cut = (real *) calloc( ntypes * ntypes, sizeof(real) );
+    if (NULL==neightab_r2cut) 
+      error("cannot allocate memory for neightab_r2cut");
+  }
+  for (i=0; i<ntypes; i++)
+    for (j=0; j<ntypes; j++)
+      neightab_r2cut[i*ntypes+j] = 
+	MAX( neightab_r2cut[i*ntypes+j], keat_r2_cut[i][j] );
+}
+
+#endif
+
+#ifdef TTBP
+void init_ttbp(void) {
+  int  i;
+  /* update neighbor table cutoff */
+  if (NULL==neightab_r2cut) {
+    neightab_r2cut = (real *) calloc( ntypes * ntypes, sizeof(real) );
+    if (NULL==neightab_r2cut) 
+      error("cannot allocate memory for neightab_r2cut");
+  }
+  for (i=0; i<ntypes*ntypes; i++)
+    neightab_r2cut[i] = MAX( neightab_r2cut[i], smooth_pot.end[i] );
+}
 #endif
 
 #ifdef STIWEB
@@ -912,6 +924,17 @@ void init_stiweb(void) {
       tmp = MAX( tmp, stiweb_a2[i*ntypes+j] );
     }
   cellsz = MAX(cellsz,tmp*tmp);
+
+  /* update neighbor table cutoff */
+  if (NULL==neightab_r2cut) {
+    neightab_r2cut = (real *) calloc( ntypes * ntypes, sizeof(real) );
+    if (NULL==neightab_r2cut) 
+      error("cannot allocate memory for neightab_r2cut");
+  }
+  for (i=0; i<ntypes; i++)
+    for (j=0; j<ntypes; j++)
+      neightab_r2cut[i*ntypes+j] = 
+	MAX( neightab_r2cut[i*ntypes+j], sw_2_a1[i][j] );
 }
 #endif
 
@@ -968,10 +991,17 @@ void init_tersoff(void) {
     for (j=0; j<ntypes; ++j)
       tmp = MAX( tmp, ter_r2_cut[i][j] );
   cellsz = MAX(cellsz,tmp);
+
+  /* update neighbor table cutoff */
+  if (NULL==neightab_r2cut) {
+    neightab_r2cut = (real *) calloc( ntypes * ntypes, sizeof(real) );
+    if (NULL==neightab_r2cut) 
+      error("cannot allocate memory for neightab_r2cut");
+  }
+  for (i=0; i<ntypes; i++)
+    for (j=0; j<ntypes; j++)
+      neightab_r2cut[i*ntypes+j] = 
+	MAX( neightab_r2cut[i*ntypes+j], ter_r2_cut[i][j] );
 }
 
 #endif 
-
-
-
-
