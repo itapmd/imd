@@ -686,6 +686,7 @@ void getparamfile(char *paramfname, int sim)
       if (ntypes!=2) error("this executable is for binary systems only!");
 #endif
       ntypepairs = ((ntypes+1)*ntypes)/2;
+      ntypetriples = ntypes * ntypepairs;      
       /* if there are no virtual atom types */
       if (vtypes==0) vtypes=ntypes;
       restrictions=(vektor*)realloc(restrictions,vtypes*DIM*sizeof(real));
@@ -1386,6 +1387,92 @@ void getparamfile(char *paramfname, int sim)
       getparam("atomic_e-density_file",eam2_at_rho_filename,PARAM_STR,1,255);
     }
 #endif
+#ifdef MEAM
+    else if (strcasecmp(token,"core_potential_file")==0) {
+      /* MEAM:Filename for the tabulated Core-Core Potential (r^2) */
+      getparam("core_potential_file",potfilename,PARAM_STR,1,255);
+      have_potfile = 1;
+    }
+    else if (strcasecmp(token,"embedding_energy_file")==0) {
+      /* MEAM:Filename for the tabulated Embedding Enery(rho_h) */
+      getparam("embedding_energy_file",meam_emb_E_filename,PARAM_STR,1,255);
+      have_embed_potfile = 1;
+    }
+    else if (strcasecmp(token,"el_density_file")==0) {
+      /* MEAM:Filename for the tabulated electron density */
+      getparam("el_density_file",meam_eldensity_filename,PARAM_STR,1,255);
+      have_eldensity_file = 1;
+    }
+    else if (strcasecmp(token,"meam_t1")==0) {
+      if (ntypes==0) error("specify parameter ntypes before meam_t1");
+      getparam(token, meam_t1, PARAM_REAL, ntypes, ntypes);
+    }
+    else if (strcasecmp(token,"meam_t2")==0) {
+      if (ntypes==0) error("specify parameter ntypes before meam_t2");
+      getparam(token, meam_t2, PARAM_REAL, ntypes, ntypes);
+    }
+    else if (strcasecmp(token,"meam_t3")==0) {
+      if (ntypes==0) error("specify parameter ntypes before meam_t3");
+      getparam(token, meam_t3, PARAM_REAL, ntypes, ntypes);
+    }
+    else if (strcasecmp(token,"meam_f0")==0) {
+      if (ntypes==0) error("specify parameter ntypes before meam_f0");
+      getparam(token, meam_f0, PARAM_REAL, ntypes, ntypes);
+    }
+    else if (strcasecmp(token,"meam_f0")==0) {
+      if (ntypes==0) error("specify parameter ntypes before meam_f0");
+      getparam(token, meam_f0, PARAM_REAL, ntypes, ntypes);
+    }
+    else if (strcasecmp(token,"meam_r0")==0) {
+      if (ntypes==0) error("specify parameter ntypes before meam_r0");
+      getparam(token, meam_r0, PARAM_REAL, ntypes, ntypes);
+    }
+    else if (strcasecmp(token,"meam_beta0")==0) {
+      if (ntypes==0) error("specify parameter ntypes before meam_beta0");
+      getparam(token, meam_beta0, PARAM_REAL, ntypes, ntypes);
+    }
+    else if (strcasecmp(token,"meam_beta1")==0) {
+      if (ntypes==0) error("specify parameter ntypes before meam_beta1");
+      getparam(token, meam_beta1, PARAM_REAL, ntypes, ntypes);
+    }
+    else if (strcasecmp(token,"meam_beta2")==0) {
+      if (ntypes==0) error("specify parameter ntypes before meam_beta2");
+      getparam(token, meam_beta2, PARAM_REAL, ntypes, ntypes);
+    }
+    else if (strcasecmp(token,"meam_beta3")==0) {
+      if (ntypes==0) error("specify parameter ntypes before meam_beta3");
+      getparam(token, meam_beta3, PARAM_REAL, ntypes, ntypes);
+    }
+    else if (strcasecmp(token,"meam_rcut")==0) {
+      if (ntypes==0) error("specify parameter ntypes before meam_rcut");
+      getparam(token, meam_rcut_lin, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+    else if (strcasecmp(token,"meam_deltar")==0) {
+      if (ntypes==0) error("specify parameter ntypes before meam_deltar");
+      getparam(token, meam_deltar_lin, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+    else if (strcasecmp(token,"meam_cmin")==0) {
+      if (ntypes==0) error("specify parameter ntypes before meam_cmin");
+      getparam(token, meam_cmin_lin, PARAM_REAL, 1, ntypetriples);
+    }
+    else if (strcasecmp(token,"meam_cmax")==0) {
+      if (ntypes==0) error("specify parameter ntypes before meam_cmax");
+      getparam(token, meam_cmax_lin, PARAM_REAL, 1, ntypetriples);
+    }
+    else if (strcasecmp(token,"meam_a")==0) {
+      if (ntypes==0) error("specify parameter ntypes before meam_a");
+      getparam(token, meam_a, PARAM_REAL, 1, ntypes);
+      have_pre_embed_pot = 1;
+    }
+    else if (strcasecmp(token,"meam_e")==0) {
+      if (ntypes==0) error("specify parameter ntypes before meam_e");
+      getparam(token, meam_e, PARAM_REAL, 1, ntypes);
+    }
+    else if (strcasecmp(token,"meam_rho0")==0) {
+      if (ntypes==0) error("specify parameter ntypes before meam_rho0");
+      getparam(token, meam_rho0, PARAM_REAL, 1, ntypes);
+    }
+#endif
 #ifdef PAIR
     /* analytically defined potentials */
     else if (strcasecmp(token,"r_cut")==0) {
@@ -2062,6 +2149,10 @@ void broadcast_params() {
 #ifdef EAM2
   MPI_Bcast( eam2_emb_E_filename,    255, MPI_CHAR, 0, MPI_COMM_WORLD); 
   MPI_Bcast( eam2_at_rho_filename,   255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+#endif
+#ifdef MEAM
+  MPI_Bcast( meam_emb_E_filename,    255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( meam_eldensity_filename,255, MPI_CHAR, 0, MPI_COMM_WORLD); 
 #endif
 
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)

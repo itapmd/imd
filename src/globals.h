@@ -129,6 +129,8 @@ EXTERN int nactive INIT(0);      /* number of transl. degrees of freedom */
 EXTERN int nactive_rot INIT(0);  /* number of rot. degrees of freedom */
 EXTERN int ntypes INIT(0);       /* Total number of different atom types */
 EXTERN int ntypepairs INIT(0);   /* Total number of different types pairs */
+EXTERN int ntypetriples INIT(0); /* Total number of different types triples 
+				    symmetric in the last two indices */
 EXTERN int *num_sort INIT(NULL); /* number of atoms for each real type */
 EXTERN int *num_vsort INIT(NULL); /* number of atoms for each virtual type */
 EXTERN int steps INIT(0);        /* number of current MD step */
@@ -597,6 +599,40 @@ EXTERN pot_table_t embed_pot;                     /* embedding energy table  */
 EXTERN pot_table_t rho_h_tab;                     /* electron transfer table */
 EXTERN str255 eam2_emb_E_filename INIT("\0");     /* embedding energy file   */
 EXTERN str255 eam2_at_rho_filename INIT("\0");    /* electron transfer file  */
+#endif
+
+#ifdef MEAM
+EXTERN int have_embed_potfile INIT(0);
+EXTERN int have_pre_embed_pot INIT(0);
+EXTERN pot_table_t embed_pot;                     /* embedding energy table  */
+EXTERN str255 meam_emb_E_filename INIT("\0");     /* embedding energy file   */
+EXTERN int have_eldensity_file INIT(0);
+EXTERN pot_table_t el_density;
+EXTERN str255 meam_eldensity_filename INIT("\0");
+EXTERN real meam_r2_cut[10][10];
+EXTERN real meam_t1[10] INIT(zero10);
+EXTERN real meam_t2[10] INIT(zero10);
+EXTERN real meam_t3[10] INIT(zero10);
+EXTERN real meam_f0[10] INIT(zero10);
+EXTERN real meam_r0[10] INIT(zero10);
+EXTERN real invmeam_r0[10];
+EXTERN real meam_beta0[10] INIT(zero10);
+EXTERN real meam_beta1[10] INIT(zero10);
+EXTERN real meam_beta2[10] INIT(zero10);
+EXTERN real meam_beta3[10] INIT(zero10);
+EXTERN real meam_rcut_lin[55] INIT(zero55);
+EXTERN real meam_rcut[10][10];
+EXTERN real meam_deltar_lin[55] INIT(zero55);
+EXTERN real meam_deltar[10][10];
+EXTERN real meam_cmax_lin[550] INIT(zero550);
+EXTERN real meam_cmax[10][10][10];
+EXTERN real meam_cmin_lin[550] INIT(zero550);
+EXTERN real meam_cmin[10][10][10];
+EXTERN real meam_a[10] INIT(zero10);
+EXTERN real meam_e[10] INIT(zero10);
+EXTERN real meam_rho0[10] INIT(zero10);
+EXTERN real invmeam_rho0[10];
+EXTERN vektor nullvek INIT(nullvektor);
 #endif
 
 #ifdef TTBP

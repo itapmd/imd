@@ -216,6 +216,8 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
       if (r2 < sw_2_a1[p_typ][q_typ]) {
 #elif defined(TERSOFF)
       if (r2 <= ter_r2_cut[p_typ][q_typ]) {
+#elif defined(MEAM)
+      if (r2 <= meam_r2_cut[p_typ][q_typ]) {
 #endif 
         neightab *neigh;
         real  *tmp_ptr;

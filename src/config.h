@@ -50,9 +50,10 @@
 #define DEFAULT_POTFILE_TYPE 1
 #endif
 
-/* we always need PAIR, unless TERSOFF, KEATING, STIWEB, UNIAX, or EWALD */
+/* we always need PAIR, unless MEAM, TERSOFF, KEATING, STIWEB, UNIAX, 
+   or EWALD */
 /* Note that PAIR is the default, if no interaction is specified */
-#if !(defined(TERSOFF) || defined(STIWEB) || defined(KEATING) || defined(UNIAX) || defined(EWALD))
+#if !(defined(MEAM) || defined(TERSOFF) || defined(STIWEB) || defined(KEATING) || defined(UNIAX) || defined(EWALD))
 #ifndef PAIR
 #define PAIR
 #endif
@@ -141,7 +142,11 @@
 #define BUFSTEP 100
 
 #ifdef COVALENT
+#ifdef MEAM
+#define NEIGH_LEN_INIT 12
+#else
 #define NEIGH_LEN_INIT 4
+#endif
 #define NEIGH_LEN_INC  2
 #endif
 

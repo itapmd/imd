@@ -103,6 +103,9 @@ INLINE static int MOD(shortint p, int q)
 #endif
 #ifdef COVALENT
 #define NEIGH(cell,i)           ((cell)->neigh[i])
+#define NSORTE(neigh,i)         ((neigh)->typ[i])
+#define NZELLE(neigh,i)         ((cell *) (neigh)->cl[i])
+#define NNUMMER(neigh,i)        ((neigh)->num[i])
 #endif
 #ifdef UNIAX
 #define TRAEG_MOMENT(cell,i)    ((cell)->traeg_moment[i])
@@ -148,6 +151,13 @@ inline static real SQR(real x)
 #ifdef EWALD
 #define I(a,b,c) [(((2*(a)+1)*(b))+(c))]
 #define J(a,b,c) [(((a)*(b))+(c))]   
+#endif
+
+#ifdef MEAM
+#define  I(a,b) [(((b)*(neigh_len)) + (a))] 
+#define IX(a,b) [(((b)*(neigh_len)) + (a))].x
+#define IY(a,b) [(((b)*(neigh_len)) + (a))].y
+#define IZ(a,b) [(((b)*(neigh_len)) + (a))].z
 #endif
 
 /* Skalarprodukt */

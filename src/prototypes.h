@@ -134,6 +134,9 @@ void do_forces2(cell*, real*, real*, real*, real*, real*, real*, real*, real*);
 #ifdef EAM2
 void do_forces_eam2(cell*, cell*, vektor, real*, real*, real*, real*, real*, real*, real*, real*);
 #endif
+#ifdef MEAM
+void init_meam(void);
+#endif
 #ifdef KEATING
 void init_keating(void);
 #endif

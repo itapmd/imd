@@ -100,6 +100,7 @@ MPISOURCES3D    = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c \
 
 PAIRSOURCES     = imd_forces.c
 EAM2SOURCES     = imd_forces_eam2.c
+MEAMSOURCES     = imd_forces_meam.c
 CGSOURCES	= imd_main_cg_3d.c
 COVALENTSOURCES = imd_forces_covalent.c
 UNIAXSOURCES    = imd_forces_uniax.c imd_gay_berne.c
@@ -606,12 +607,20 @@ endif
 
 # EAM2 or EAM  -  this is now the same
 ifneq (,$(strip $(findstring eam,${MAKETARGET})))
+
+# MEAM
+ifneq (,$(strip $(findstring meam,${MAKETARGET})))
+CFLAGS  += -DMEAM -DCOVALENT
+FORCESOURCES += ${MEAMSOURCES}
+else
+
 CFLAGS  += -DEAM2
 ifneq (,$(strip $(findstring asympot,${MAKETARGET})))
 CFLAGS += -DASYMPOT
 FORCESOURCES = ${EAM2SOURCES}
 else
 FORCESOURCES += ${EAM2SOURCES}
+endif
 endif
 endif
 

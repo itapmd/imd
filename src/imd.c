@@ -77,6 +77,18 @@ int main(int argc, char **argv)
   read_pot_table(&rho_h_tab,eam2_at_rho_filename,ntypes*ntypes);
 #endif
 
+#ifdef MEAM
+  if (have_potfile)
+    read_pot_table(&pair_pot,potfilename,ntypes*ntypes);
+  /* read the tabulated embedding energy function */
+  if (have_embed_potfile)
+    read_pot_table(&embed_pot,meam_emb_E_filename,ntypes);
+  /* read the tabulated electron density function */
+  if (have_eldensity_file)
+    read_pot_table(&el_density,meam_eldensity_filename,ntypes);    
+  init_meam();
+#endif
+
 #ifdef KEATING
   init_keating();
 #endif
