@@ -309,7 +309,7 @@ void write_pictures_bitmap(int steps)
   }
 }
 
-void write_pictures(steps)
+void write_pictures(int steps)
 {
   switch (pic_type) {
     case 0: 

@@ -70,7 +70,7 @@ void read_atoms(str255 infilename)
 #endif
 
   /* allocate num_sort on all CPUs */
-  if ((num_sort=calloc(ntypes,sizeof(int)))==NULL)
+  if ((num_sort = (int *) calloc(ntypes,sizeof(int)))==NULL)
     error("cannot allocate memory for num_sort\n");
 
 #ifdef MPI

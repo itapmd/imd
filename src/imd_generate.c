@@ -49,7 +49,7 @@ void generate_atoms(str255 mode)
   MPI_Status status;
 #endif
 
-  if ((num_sort=calloc(ntypes,sizeof(int)))==NULL) {
+  if ((num_sort = (int *) calloc(ntypes,sizeof(int)))==NULL) {
       error("cannot allocate memory for num_sort\n");
   }
 
