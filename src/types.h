@@ -20,7 +20,7 @@
 ******************************************************************************/
 
 
-/* Single precision is the default */
+/* double precision is the default */
 #ifdef DOUBLE
 typedef double real;
 #define REAL MPI_DOUBLE
