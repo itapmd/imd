@@ -1197,6 +1197,7 @@ void broadcast_params() {
   MPI_Bcast( &xi,                DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &isq_tau_xi,          1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &pressure_ext,      DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &pressure_end,      DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &cell_size_tolerance, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
 
