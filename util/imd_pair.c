@@ -111,7 +111,11 @@ void write_data()
     for (j=0; j<ntypes; ++j)
       for (k=j; k<ntypes; ++k)
 	fprintf(out,"%f ",*PTR_3D_V(histogram,i,j,k,hist_dim)/f);
+#ifdef TWOD
+    f = natoms * 2 * 3.14159265 * r;
+#else
     f = natoms * 4 * 3.14159265 * SQR(r);
+#endif
     for (j=0; j<ntypes; ++j)
       for (k=j; k<ntypes; ++k)
 	fprintf(out,"%f ",*PTR_3D_V(histogram,i,j,k,hist_dim)/f);
