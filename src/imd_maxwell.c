@@ -90,10 +90,10 @@ void maxwell(real temp)
 
       for (i=0; i<p->n; ++i) {
 
-#ifdef CLONE
-	  if(NUMMER(p,i)>=0)
-	      { /* if orignal atom do everything normal with that atom */
-#endif
+/* #ifdef CLONE */
+/* 	  if(NUMMER(p,i)>=0) */
+/* 	      { /* if orignal atom do everything normal with that atom */ */
+/* #endif */
 
 #ifdef NVX
          /* which layer? */
@@ -214,12 +214,12 @@ void maxwell(real temp)
 
 	for(clones=1;clones<=nclones;clones++)
 	    { 	/* and now do the same to all the clones */
-		if (NUMMER(p,i+clones)>=0)
-		    {
-			sprintf(errmsg,"maxwell: expected clone, but got original atom nr. %d ",
-			     NUMMER(p,i+clones)); 
-		    error(errmsg); 
-		    }
+		/* if (NUMMER(p,i+clones)>=0) */
+/* 		    { */
+/* 			sprintf(errmsg,"maxwell: expected clone, but got original atom nr. %d ", */
+/* 			     NUMMER(p,i+clones));  */
+/* 		    error(errmsg);  */
+/* 		    } */
 		IMPULS(p,i+clones,X) = IMPULS(p,i,X);
 		IMPULS(p,i+clones,Y) = IMPULS(p,i,Y);
 		IMPULS(p,i+clones,Z) = IMPULS(p,i,Z);
@@ -235,12 +235,12 @@ void maxwell(real temp)
 	    }
 	i+=nclones;
        }
-	  else
-	      {
-		  sprintf(errmsg,"maxwell: expected original atom, but got clone nr. %d",
-			     NUMMER(p,i));
-		  error(errmsg);
-	      } 
+	 /*  else */
+/* 	      { */
+/* 		  sprintf(errmsg,"maxwell: expected original atom, but got clone nr. %d", */
+/* 			     NUMMER(p,i)); */
+/* 		  error(errmsg); */
+/* 	      }  */
 #endif
       }
 
