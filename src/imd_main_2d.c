@@ -77,8 +77,6 @@ void main_loop(void)
   init_correl(ncorr_rmax,ncorr_tmax);
 #endif
 
-  calc_properties();
-
   /* initializations for the current simulation phase, if not yet done */
   if (0==restart) init();
 
@@ -250,8 +248,6 @@ void main_loop(void)
     pressure_ext.y += d_pressure.y;
 #endif
 
-    calc_properties(); 
-
     /* Periodic I/O */
 #ifdef TIMING
     imd_start_timer(&time_io);
@@ -310,8 +306,8 @@ void main_loop(void)
 #ifdef TIMING
     imd_stop_timer(&time_io);
 #endif
-    do_boundaries();    
 
+    do_boundaries();    
     fix_cells();
 
 #ifdef NPT
@@ -471,20 +467,6 @@ void do_boundaries(void)
     }
 
   }
-}
-
-
-/******************************************************************************
-*
-*  calc_properties
-*
-******************************************************************************/
-
-void calc_properties(void)
-{
-  /* volume and pressure */
-  volume   = box_x.x * box_y.y - box_x.y * box_y.x;
-  pressure = ( 2.0 * tot_kin_energy + virial ) / ( 2 * volume );
 }
 
 

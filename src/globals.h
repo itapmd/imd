@@ -116,6 +116,7 @@ EXTERN vektor tbox_y INIT(nullvektor);
 #ifndef TWOD
 EXTERN vektor tbox_z INIT(nullvektor);
 #endif
+EXTERN vektor height INIT(nullvektor);
 
 /* Filenames */
 EXTERN char outbuf[OUTPUT_BUF_SIZE] INIT("\0");  /* output buffer */
@@ -237,7 +238,6 @@ EXTERN real vir_x INIT(0.0), vir_y INIT(0.0), vir_z INIT(0.0);
 /* diagonal of stress tensor */
 EXTERN real stress_x INIT(0.0), stress_y INIT(0.0), stress_z INIT(0.0);
 
-EXTERN int    cells_too_small INIT(0);
 EXTERN int    revise_cell_division INIT(0);
 
 #ifdef NPT

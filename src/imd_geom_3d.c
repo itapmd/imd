@@ -1,7 +1,7 @@
 
 /******************************************************************************
 *
-* imd_geom_3d.c -- Domain decomposition routines for the imd package
+* imd_geom_3d.c -- domain decomposition routines, 3d version
 *
 ******************************************************************************/
 
@@ -12,128 +12,78 @@
 
 #include "imd.h"
 
-/* To determine the cell into which a given particle belongs, we
-   have to transform the cartesian coordinates of the particle into
-   the coordinate system that is spanned by the vectors of the box
-   edges. This yields coordinates in the interval [0..1] that are
-   multiplied by global_cell_dim to get the cells index.
+/******************************************************************************
+*
+*  To determine the cell into which a given particle belongs, we
+*  have to transform the cartesian coordinates of the particle into
+*  the coordinate system spanned by the vectors of the box edges. 
+*  This yields coordinates in the interval [0..1] that are
+*  multiplied by global_cell_dim to get the cell's index.
+*
+******************************************************************************/
 
-   Here we calculate the transformation matrix. */
+/* vector product */ 
+vektor vec_prod(vektor u, vektor v)
+{
+  vektor w;
+  w.x = u.y * v.z - u.z * v.y;
+  w.y = u.z * v.x - u.x * v.z;
+  w.z = u.x * v.y - u.y * v.x;
+  return w;
+}
 
+/* compute transformation matrix */
 void make_box( void )
 {
-  real det;
+  /* compute tbox_j such that SPROD(box_i,tbox_j) == delta_ij */
+  /* first unnormalized */
+  tbox_x = vec_prod( box_y, box_z );
+  tbox_y = vec_prod( box_z, box_x );
+  tbox_z = vec_prod( box_x, box_y );
 
-  /* Determinant */
-  det = box_x.y * box_y.z * box_z.x +
-        box_x.z * box_y.x * box_z.y +
-	box_x.x * box_y.y * box_z.z -
-        box_x.z * box_y.y * box_z.x -
-        box_x.x * box_y.z * box_z.y -
-	box_x.y * box_y.x * box_z.z;
-  if ((0==myid) && (0==det)) error("Box Edges are parallel.");
+  /* volume */
+  volume = SPROD( box_x, tbox_x );
+  if ((0==myid) && (0==volume)) error("Box Edges are parallel.");
 
-  /* transposed inverse box */
-  tbox_x.x = ( box_y.y * box_z.z - box_y.z * box_z.y ) / det;
-  tbox_y.x = ( box_x.z * box_z.y - box_x.y * box_z.z ) / det;
-  tbox_z.x = ( box_x.y * box_y.z - box_x.z * box_y.y ) / det;
+  /* normalization */
+  tbox_x.x /= volume;  tbox_x.y /= volume;  tbox_x.z /= volume;
+  tbox_y.x /= volume;  tbox_y.y /= volume;  tbox_y.z /= volume;
+  tbox_z.x /= volume;  tbox_z.y /= volume;  tbox_z.z /= volume;
 
-  tbox_x.y = ( box_y.z * box_z.x - box_y.x * box_z.z ) / det;
-  tbox_y.y = ( box_x.x * box_z.z - box_x.z * box_z.x ) / det;
-  tbox_z.y = ( box_x.z * box_y.x - box_x.x * box_y.z ) / det;
-
-  tbox_x.z = ( box_y.x * box_z.y - box_y.y * box_z.x ) / det;
-  tbox_y.z = ( box_x.y * box_z.x - box_x.x * box_z.y ) / det;
-  tbox_z.z = ( box_x.x * box_y.y - box_x.y * box_y.x ) / det;
-
+  /* squares of the box heights perpendicular to the faces */
+  height.x = 1.0 / SPROD(tbox_x,tbox_x);
+  height.y = 1.0 / SPROD(tbox_y,tbox_y);
+  height.z = 1.0 / SPROD(tbox_z,tbox_z);
 }
 
-
-/* Calculate smallest possible cell (i.e. the height==cutoff) */
-/* This needs a better way to do operations on 3d vectors */
-
+/* compute maximal dimension of cell array */
 ivektor maximal_cell_dim( void ) 
 {
-  real    s1, s2, r2_cut, r2_cut2;
-  vektor  hx,hy,hz;
   ivektor max_cell_dim;
-  int     i,j;
-
-  /* Height x */
-  s1 = SPROD(box_x,box_y)/SPROD(box_y,box_y);
-  s2 = SPROD(box_x,box_z)/SPROD(box_z,box_z);
-  
-  hx.x = box_x.x - s1 * box_y.x - s2 * box_z.x;
-  hx.y = box_x.y - s1 * box_y.y - s2 * box_z.y;
-  hx.z = box_x.z - s1 * box_y.z - s2 * box_z.z;
-  
-  /* Height y */
-  s1 = SPROD(box_y,box_x)/SPROD(box_x,box_x);
-  s2 = SPROD(box_y,box_z)/SPROD(box_z,box_z);
-
-  hy.x = box_y.x - s1 * box_x.x - s2 * box_z.x;
-  hy.y = box_y.y - s1 * box_x.y - s2 * box_z.y;
-  hy.z = box_y.z - s1 * box_x.z - s2 * box_z.z;
-  
-  /* Height z */
-  s1 = SPROD(box_z,box_x)/SPROD(box_x,box_x);
-  s2 = SPROD(box_z,box_y)/SPROD(box_y,box_y);
-  
-  hz.x = box_z.x - s1 * box_x.x - s2 * box_y.x;
-  hz.y = box_z.y - s1 * box_x.y - s2 * box_y.y;
-  hz.z = box_z.z - s1 * box_x.z - s2 * box_y.z;
-  
-  /* Scaling factors box/cell */
-#ifdef EAM2  
-  /* the tables are in r2 */
-  /* get the biggest r_cut of eam2_phi_r_end */
-  r2_cut=0.0;
-  for(i=0;i<ntypes;i++)
-    for(j=0;j<ntypes;j++)
-      r2_cut = MAX( r2_cut, *PTR_2D(eam2_phi_r_end,i,j,ntypes,ntypes) );
-
-  /* get the biggest r_cut of eam2_r_end */
-  r2_cut2=0.0;
-  for(i=0;i<ntypes;i++)
-    for(j=0;j<ntypes;j++)
-      r2_cut2 = MAX( r2_cut2, *PTR_2D(eam2_r_end,i,j,ntypes,ntypes) );
-
-  /* take the biggest one as actual cut-off */
-  r2_cut2 = MAX(r2_cut2,r2_cut);
-  if (myid==0) 
-    printf("The actual cut-off is %lf (cut-off of core-core Potential: %lf)\n",
-           r2_cut2, r2_cut);
-  cellsz = MAX(cellsz, r2_cut2);
-#endif
-
-  max_cell_dim.x = (int) ( 1.0 / sqrt( cellsz / SPROD(hx,hx) ));
-  max_cell_dim.y = (int) ( 1.0 / sqrt( cellsz / SPROD(hy,hy) ));
-  max_cell_dim.z = (int) ( 1.0 / sqrt( cellsz / SPROD(hz,hz) ));
-  return(max_cell_dim);
-
+  max_cell_dim.x = (int) ( 1.0 / sqrt( cellsz / height.x ) );
+  max_cell_dim.y = (int) ( 1.0 / sqrt( cellsz / height.y ) );
+  max_cell_dim.z = (int) ( 1.0 / sqrt( cellsz / height.z ) );
+  return max_cell_dim;
 }
 
 
-/* init_cells determines the size of the cells. The cells generated by
-   scaling of the box. The scaling is done such that the distance
-   between two of the cell's faces (==height) equals the cutoff.  
-   An integer number of cells must fit into the box. If the cell
-   calculated by the scaling described above is too small, it is
-   enlarged accordingly.
-
-   There must be at least three cells in each direction.  */
+/******************************************************************************
+*
+*  Compute the size of the cells, and initialize the cell array.
+*  There must be at least two cells in each direction.
+*
+******************************************************************************/
 
 void init_cells( void )
 
 {
   int i, j, k, l;
-  vektor hx, hy, hz; 
   real tmp;
   vektor cell_scale;
   ivektor next_cell_dim, cell_dim_old;
   ivektor cellmin_old, cellmax_old, cellc;
   cell *p, *cell_array_old, *to;
-  real s1, s2, r2_cut, r2_cut2;
+  real r2_cut, r2_cut2;
 
 #ifdef NPT
   if (0 == myid) {
@@ -152,35 +102,8 @@ void init_cells( void )
   }
 #endif
 
-  /* Calculate smallest possible cell (i.e. the height==cutoff) */
-  /* This needs a better way to do operations on 3d vectors */
-
-  /* Height x */
-  s1 = SPROD(box_x,box_y)/SPROD(box_y,box_y);
-  s2 = SPROD(box_x,box_z)/SPROD(box_z,box_z);
-  
-  hx.x = box_x.x - s1 * box_y.x - s2 * box_z.x;
-  hx.y = box_x.y - s1 * box_y.y - s2 * box_z.y;
-  hx.z = box_x.z - s1 * box_y.z - s2 * box_z.z;
-  
-  /* Height y */
-  s1 = SPROD(box_y,box_x)/SPROD(box_x,box_x);
-  s2 = SPROD(box_y,box_z)/SPROD(box_z,box_z);
-
-  hy.x = box_y.x - s1 * box_x.x - s2 * box_z.x;
-  hy.y = box_y.y - s1 * box_x.y - s2 * box_z.y;
-  hy.z = box_y.z - s1 * box_x.z - s2 * box_z.z;
-  
-  /* Height z */
-  s1 = SPROD(box_z,box_x)/SPROD(box_x,box_x);
-  s2 = SPROD(box_z,box_y)/SPROD(box_y,box_y);
-  
-  hz.x = box_z.x - s1 * box_x.x - s2 * box_y.x;
-  hz.y = box_z.y - s1 * box_x.y - s2 * box_y.y;
-  hz.z = box_z.z - s1 * box_x.z - s2 * box_y.z;
-  
-  /* Scaling factors box/cell */
-#ifdef EAM2  
+#ifdef EAM2
+  /* this belongs to where these tables are read ! */  
   /* the tables are in r2 */
   /* get the biggest r_cut of eam2_phi_r_end */
   r2_cut=0.0;
@@ -202,9 +125,11 @@ void init_cells( void )
   cellsz = MAX(cellsz, r2_cut2);
 #endif
 
-  cell_scale.x = sqrt( cellsz / SPROD(hx,hx) );
-  cell_scale.y = sqrt( cellsz / SPROD(hy,hy) );
-  cell_scale.z = sqrt( cellsz / SPROD(hz,hz) );
+  /* compute scaling factors */
+  make_box();
+  cell_scale.x = sqrt( cellsz / height.x );
+  cell_scale.y = sqrt( cellsz / height.y );
+  cell_scale.z = sqrt( cellsz / height.z );
 
 #ifdef NPT
   /* the NEXT cell array for a GROWING system; 
@@ -377,9 +302,6 @@ void init_cells( void )
 	 cell_dim.x,cell_dim.y,cell_dim.z);
 #endif
 
-  /* get box transformation matrix */
-  make_box();
-
   /* save old cell_array (if any), and allocate new one */
   cell_array_old = cell_array;
   cell_array = (cell *) malloc(
@@ -442,7 +364,6 @@ void init_cells( void )
 #ifdef NPT
   if ((ensemble == ENS_NPT_ISO) || (ensemble == ENS_NPT_AXIAL)) {
     revise_cell_division = 0;
-    cells_too_small      = 0;
     actual_shrink.x      = 1.0;
     actual_shrink.y      = 1.0;
     actual_shrink.z      = 1.0;

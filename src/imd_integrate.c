@@ -732,29 +732,25 @@ void move_atoms_npt_iso(void)
   xi.x = ttt;
 
   /* new box size */
-  box_x.x *= box_size.x;  tbox_x.x /= box_size.x;
-  box_x.y *= box_size.x;  tbox_x.x /= box_size.x;
-  box_y.x *= box_size.x;  tbox_y.x /= box_size.x;
-  box_y.y *= box_size.x;  tbox_y.x /= box_size.x;
+  box_x.x *= box_size.x;
+  box_x.y *= box_size.x;
+  box_y.x *= box_size.x;
+  box_y.y *= box_size.x;
 #ifndef TWOD
-  box_x.z *= box_size.x;  tbox_x.z /= box_size.x;
-  box_y.z *= box_size.x;  tbox_y.z /= box_size.x;
-  box_z.x *= box_size.x;  tbox_z.x /= box_size.x;
-  box_z.y *= box_size.x;  tbox_z.y /= box_size.x;
-  box_z.z *= box_size.x;  tbox_z.z /= box_size.x;
+  box_x.z *= box_size.x;
+  box_y.z *= box_size.x;
+  box_z.x *= box_size.x;
+  box_z.y *= box_size.x;
+  box_z.z *= box_size.x;
 #endif  
+  make_box();
 
   /* old box_size relative to the current one, which is set to 1.0 */
   box_size.x = 1.0 / box_size.x;
 
   /* check whether the box has not changed too much */
-  if (actual_shrink.x < limit_shrink.x) {
-     cells_too_small = 1;
-  }
-  if ((actual_shrink.x < limit_shrink.x) 
-       || (actual_shrink.x > limit_growth.x)) {
+  if ((actual_shrink.x < limit_shrink.x) || (actual_shrink.x > limit_growth.x))
      revise_cell_division = 1;
-  }
 }
 
 #else
@@ -920,11 +916,12 @@ void move_atoms_npt_axial(void)
 #endif
 
   /* new box size (box is rectangular) */
-  box_x.x *= box_size.x;  tbox_x.x /= box_size.x;
-  box_y.y *= box_size.y;  tbox_y.y /= box_size.y;
+  box_x.x *= box_size.x;
+  box_y.y *= box_size.y;
 #ifndef TWOD
-  box_z.z *= box_size.z;  tbox_z.z /= box_size.z;
-#endif  
+  box_z.z *= box_size.z;
+#endif
+  make_box();
 
   /* old box size relative to new one */
   box_size.x  = 1.0 / box_size.x;
@@ -934,22 +931,12 @@ void move_atoms_npt_axial(void)
 #endif  
 
   /* check whether box has not changed too much */
-  if  ((actual_shrink.x < limit_shrink.x) 
-    || (actual_shrink.y < limit_shrink.y) 
-#ifndef TWOD
-    || (actual_shrink.z < limit_shrink.z) 
-#endif
-     ) {
-     cells_too_small = 1;
-  }
   if  ((actual_shrink.x < limit_shrink.x) || (actual_shrink.x > limit_growth.x)
     || (actual_shrink.y < limit_shrink.y) || (actual_shrink.y > limit_growth.y)
 #ifndef TWOD
     || (actual_shrink.z < limit_shrink.z) || (actual_shrink.z > limit_growth.z)
 #endif
-     ) {
-     revise_cell_division = 1;
-  }
+     ) revise_cell_division = 1;
 }
 
 #else

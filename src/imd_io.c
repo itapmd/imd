@@ -509,6 +509,7 @@ void write_properties(int steps)
   Temp = 2.0 * tot_kin_energy / nactive;
 #endif
   vol  = volume / natoms;
+  pressure = Temp / vol + virial / (DIM * volume);
 
   sprintf(fname,"%s.eng",outfilename);
   out = fopen(fname,"a");

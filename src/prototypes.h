@@ -89,6 +89,7 @@ void dealloc_buffer_cells(void);
 /* make and maintain cells and their geometry - files imd_geom_*.c */
 ivektor maximal_cell_dim(void);
 vektor  back_into_box(vektor pos);
+vektor  vec_prod(vektor u, vektor v);
 void make_box(void);
 void init_cells(void);
 void make_cell_lists(void);
@@ -204,7 +205,6 @@ void fix_cells_by_cell(void);
 #endif
 
 /* write properties - file imd_io_*.c */
-void calc_properties(void);
 void write_properties(int steps);
 void write_eng_file_header(void);
 
