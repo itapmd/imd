@@ -168,6 +168,180 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 
 #endif /* TTBP */
 
+#ifdef STIWEB
+
+/******************************************************************************
+*
+*  forces for Stillinger-Weber potential, 
+*             using neighbor tables computed in do_forces
+*
+******************************************************************************/
+
+void do_forces2(cell *p, real *Epot, real *Virial, 
+                real *Vir_xx, real *Vir_yy, real *Vir_zz,
+                real *Vir_yz, real *Vir_zx, real *Vir_xy)
+{
+  static vektor  *d = NULL;
+  static real    *r = NULL, *fc = NULL, *dfc = NULL;
+  neightab *neigh;
+  int      i, j, k, p_typ, k_typ, j_typ, jnum, knum, col;
+  vektor         force_j, force_k;
+  cell           *jcell, *kcell;
+  real     *tmpptr;
+  real     tmp_r, tmp_sp, cos_theta, tmp, pot_zwi;
+  real     tmp_grad1, tmp_grad2, tmp_jj, tmp_kk, tmp_jk;
+  real     tmp_1, tmp_2;
+  real   tmp_virial = 0.0;
+#ifdef P_AXIAL
+  vektor tmp_vir_vect = {0.0, 0.0, 0.0};
+#endif
+
+  d    = (vektor *) realloc( d,    neigh_len * sizeof(vektor) );
+  r    = (real *)   realloc( r,    neigh_len * sizeof(real)   );
+  fc   = (real *)   realloc( fc,   neigh_len * sizeof(real)   );
+  dfc  = (real *)   realloc( dfc,  neigh_len * sizeof(real)   );
+
+  if ( (d==NULL) || (r==NULL) || (fc==NULL) || (dfc==NULL) )
+    error("cannot allocate memory for temporary neighbor data");
+
+  /* For each atom in cell */
+  for (i=0; i<p->n; ++i) {
+
+    p_typ   = SORTE(p,i);
+    neigh   = p->neigh[i];
+    
+    /* construct some data for all neighbors */
+    tmpptr = neigh->dist;
+    for (j=0; j<neigh->n; ++j) {
+
+      /* type, distance vector, radii */
+      j_typ   = neigh->typ[j];
+      col     = p_typ * ( ntypes - 1 ) + j_typ;
+      d[j].x  = *tmpptr++;
+      d[j].y  = *tmpptr++;
+      d[j].z  = *tmpptr++;
+      r[j]    = sqrt(SPROD(d[j],d[j]));
+      
+      /* cutoff function */
+      tmp_r  = 1.0 / ( r[j] - sw_a2[p_typ][j_typ] );
+      fc[j]  = exp( sw_ga[p_typ][j_typ] * tmp_r );
+      dfc[j] = - fc[j] * sw_ga[p_typ][j_typ] * tmp_r * tmp_r / r[j];
+      
+    } /* j */
+
+    /* for each pair of neighbors */
+    for (j=0; j<neigh->n-1; ++j)
+      for (k=j+1; k<neigh->n; ++k) {
+
+	j_typ = neigh->typ[j];
+	jcell = (cell *) neigh->cl [j];
+	jnum  = neigh->num[j];
+	k_typ = neigh->typ[k];
+	kcell = (cell *) neigh->cl [k];
+	knum  = neigh->num[k];
+
+	/* potential term */
+	tmp_sp    = SPROD(d[j],d[k]);
+	cos_theta = tmp_sp / (r[j] * r[k]);
+	tmp       = cos_theta + 1.0 / 3.0;
+
+	pot_zwi   = sw_la[p_typ][j_typ][k_typ] * fc[j] * fc[k] * tmp * tmp;
+
+	/* total potential */
+	*Epot   += pot_zwi;
+
+	/* forces */
+	tmp_grad1  = sw_la[p_typ][j_typ][k_typ] * fc[j] * fc[k] * 2 * tmp;
+	tmp_grad2  = sw_la[p_typ][j_typ][k_typ] * tmp * tmp;
+	tmp_jj = 1.0 / ( r[j] * r[j] );
+	tmp_kk = 1.0 / ( r[k] * r[k] );
+	tmp_jk = 1.0 / ( r[j] * r[k] );
+	tmp_1 = tmp_grad2 * dfc[j] * fc[k] - tmp_grad1 * cos_theta * tmp_jj;
+	tmp_2 = tmp_grad1 * tmp_jk;
+
+	force_j.x = tmp_1 * d[j].x + tmp_2 * d[k].x;
+	force_j.y = tmp_1 * d[j].y + tmp_2 * d[k].y;
+	force_j.z = tmp_1 * d[j].z + tmp_2 * d[k].z;
+
+	tmp_1 = tmp_grad2 * dfc[k] * fc[j] - tmp_grad1 * cos_theta * tmp_kk;
+	
+	force_k.x = tmp_1 * d[k].x + tmp_2 * d[j].x;
+	force_k.y = tmp_1 * d[k].y + tmp_2 * d[j].y;
+	force_k.z = tmp_1 * d[k].z + tmp_2 * d[j].z;
+
+	/* update force on particle i */
+	p->kraft X(i) += force_j.x + force_k.x;
+	p->kraft Y(i) += force_j.y + force_k.y;
+	p->kraft Z(i) += force_j.z + force_k.z;
+	p->pot_eng[i] += pot_zwi;
+	
+	/* update force on particle j */
+	jcell->kraft X(jnum) -= force_j.x;
+	jcell->kraft Y(jnum) -= force_j.y;
+	jcell->kraft Z(jnum) -= force_j.z;
+	jcell->pot_eng[jnum] += pot_zwi;
+
+	/* update force on particle k */
+	kcell->kraft X(knum) -= force_k.x;
+	kcell->kraft Y(knum) -= force_k.y;
+	kcell->kraft Z(knum) -= force_k.z;
+	kcell->pot_eng[knum] += pot_zwi;
+#ifdef P_AXIAL
+	tmp_vir_vect.x += d[j].x * force_j.x + d[k].x * force_k.x;
+	tmp_vir_vect.y += d[j].y * force_j.y + d[k].y * force_k.y;
+	tmp_vir_vect.z += d[j].z * force_j.z + d[k].z * force_k.z;
+#else
+	tmp_virial     += SPROD(d[j],force_j) + SPROD(d[k],force_k);
+#endif
+#ifdef STRESS_TENS /* Distribute stress among atoms */
+	tmp = 0.25 * ( force_j.x * d[j].x + force_k.x * d[k].x );
+	p->presstens[i].xx        += 2.0 * tmp;
+	jcell->presstens[jnum].xx += tmp;
+	kcell->presstens[knum].xx += tmp;
+	tmp = 0.25 * ( force_j.y * d[j].y + force_k.y * d[k].y );
+	p->presstens[i].yy        += 2.0 * tmp;
+	jcell->presstens[jnum].yy += tmp;
+	kcell->presstens[knum].yy += tmp;
+	tmp = 0.25 * ( force_j.z * d[j].z + force_k.z * d[k].z );
+	p->presstens[i].zz        += 2.0 * tmp;
+	jcell->presstens[jnum].zz += tmp;
+	kcell->presstens[knum].zz += tmp;
+	tmp = 0.125 * ( force_j.y * d[j].z + force_k.y * d[k].z 
+		      + force_j.z * d[j].y + force_k.z * d[k].y );
+	p->presstens[i].yz        += 2.0 * tmp;
+	jcell->presstens[jnum].yz += tmp;
+	kcell->presstens[knum].yz += tmp;	
+	tmp =  0.125 * ( force_j.z * d[j].x + force_k.z * d[k].x 
+		       + force_j.x * d[j].z + force_k.x * d[k].z );
+	p->presstens[i].zx        += 2.0 * tmp;
+	jcell->presstens[jnum].zx += tmp;
+	kcell->presstens[knum].zx += tmp;	
+	tmp =  0.125 * ( force_j.x * d[j].y + force_k.x * d[k].y 
+		       + force_j.y * d[j].x + force_k.y * d[k].x );
+	p->presstens[i].xy        += 2.0 * tmp;
+	jcell->presstens[jnum].xy += tmp;
+	kcell->presstens[knum].xy += tmp;
+#endif
+
+      } /* neighbor pairs */
+  
+  } /* i */
+
+#ifdef P_AXIAL
+  *Vir_xx += tmp_vir_vect.x;
+  *Virial += tmp_vir_vect.x;
+  *Vir_yy += tmp_vir_vect.y;
+  *Virial += tmp_vir_vect.y;
+  *Vir_zz += tmp_vir_vect.z;
+  *Virial += tmp_vir_vect.z;
+#else
+  *Virial += tmp_virial;
+#endif
+
+}
+
+#endif /* STIWEB */
+
 #ifdef TERSOFF
 
 /******************************************************************************
@@ -454,6 +628,9 @@ void do_neightab(cell *p, cell *q, vektor pbc)
       /* make neighbor tables for TTBP */
       if (radius2 <= smooth_pot.end[column])
 #endif
+#ifdef STIWEB
+      if (radius2 < sw_2_a1[p_typ][q_typ]) 
+#endif
 #ifdef TERSOFF
       /* make neighbor tables for TERSOFF */
       if (radius2 <= ter_r2_cut[p_typ][q_typ])
@@ -497,6 +674,45 @@ void do_neightab(cell *p, cell *q, vektor pbc)
 
 }
 
+
+#ifdef STIWEB
+void init_stiweb(void) {
+
+  int  i, j, k, n, m;
+  real tmp;
+
+  /* parameters for more than one atom type */
+  n = 0; m = 0;
+  for (i=0; i<ntypes; i++) 
+    for (j=i; j<ntypes; j++) {
+      sw_a[i][j]  = sw_a[j][i]  = stiweb_a[n];
+      sw_b[i][j]  = sw_b[j][i]  = stiweb_b[n];
+      sw_p[i][j]  = sw_p[j][i]  = stiweb_p[n];
+      sw_q[i][j]  = sw_q[j][i]  = stiweb_q[n];
+      sw_a1[i][j] = sw_a1[j][i] = stiweb_a1[n];
+      sw_de[i][j] = sw_de[j][i] = stiweb_de[n];
+      sw_ga[i][j] = sw_ga[j][i] = stiweb_ga[n];
+      sw_a2[i][j] = sw_a2[j][i] = stiweb_a2[n];
+      n++;
+      for (k=0; k<ntypes; k++) {
+	sw_la[k][i][j] = sw_la[k][j][i] = stiweb_la[m];
+	m++;
+      }
+    }
+
+  for (i=0; i<ntypes; ++i)
+    for (j=0; j<ntypes; ++j) 
+      sw_2_a1[i][j] = sw_a1[i][j] * sw_a1[i][j];
+
+  tmp = 0.0;
+  for (i=0; i<ntypes; ++i)
+    for (j=0; j<ntypes; ++j) {
+      tmp = MAX( tmp, stiweb_a1[i*ntypes+j] );
+      tmp = MAX( tmp, stiweb_a2[i*ntypes+j] );
+    }
+  cellsz = MAX(cellsz,tmp*tmp);
+}
+#endif
 
 #ifdef TERSOFF
 void init_tersoff(void) {

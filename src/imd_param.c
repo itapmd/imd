@@ -1189,6 +1189,35 @@ void getparamfile(char *paramfname, int sim)
       getparam("ttbp_potfile",ttbp_potfilename,PARAM_STR,1,255);
     }
 #endif
+#ifdef STIWEB
+    else if (strcasecmp(token,"stiweb_a")==0) {     
+      getparam("stiweb_a",stiweb_a,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"stiweb_b")==0) {     
+      getparam("stiweb_b",stiweb_b,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"stiweb_p")==0) {     
+      getparam("stiweb_p",stiweb_p,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"stiweb_q")==0) {     
+      getparam("stiweb_q",stiweb_q,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"stiweb_a1")==0) {     
+      getparam("stiweb_a1",stiweb_a1,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"stiweb_de")==0) {     
+      getparam("stiweb_de",stiweb_de,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"stiweb_a2")==0) {     
+      getparam("stiweb_a2",stiweb_a2,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"stiweb_ga")==0) {     
+      getparam("stiweb_ga",stiweb_ga,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"stiweb_la")==0) {     
+      getparam("stiweb_la",stiweb_la,PARAM_REAL,ntypes*ntypes*(ntypes+1)/2,ntypes*ntypes*(ntypes+1)/2);
+    }
+#endif
 #ifdef TERSOFF
     /* Parameters for Tersoff potential */
     else if (strcasecmp(token,"ters_r_cut")==0) {     
@@ -1818,6 +1847,18 @@ void broadcast_params() {
 
 #ifdef SLLOD
   MPI_Bcast(&shear_rate, 2, REAL, 0, MPI_COMM_WORLD);
+#endif
+
+#ifdef STIWEB
+  MPI_Bcast( stiweb_a,         ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( stiweb_b,         ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( stiweb_p,         ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( stiweb_q,         ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( stiweb_a1,        ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( stiweb_de,        ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( stiweb_a2,        ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( stiweb_ga,        ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( stiweb_la, ntypes*ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef TERSOFF

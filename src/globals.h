@@ -479,6 +479,28 @@ EXTERN real ttbp_constant[10];	  /* constants; less than 11 atom types! */
 EXTERN real ttbp_sp[10];          /* constants; less than 11 atom types! */
 #endif
 
+#ifdef STIWEB
+EXTERN real stiweb_a[55];       /* Parameters for Stillinger-Weber potential */
+EXTERN real sw_a[10][10];       /* Less than 11 atom types! */
+EXTERN real stiweb_b[55];
+EXTERN real sw_b[10][10];
+EXTERN real stiweb_p[55];
+EXTERN real sw_p[10][10];
+EXTERN real stiweb_q[55];
+EXTERN real sw_q[10][10];
+EXTERN real stiweb_a1[55];
+EXTERN real sw_a1[10][10];
+EXTERN real stiweb_de[55];
+EXTERN real sw_de[10][10];
+EXTERN real sw_2_a1[10][10];
+EXTERN real stiweb_a2[55];
+EXTERN real sw_a2[10][10];
+EXTERN real stiweb_la[550];
+EXTERN real sw_la[10][10][10];
+EXTERN real stiweb_ga[55];
+EXTERN real sw_ga[10][10];
+#endif
+
 #ifdef TERSOFF
 EXTERN real ters_r_cut[55];  /* cutoff^2;  less than 11 atom types! */
 EXTERN real ter_r_cut[10][10];
@@ -506,7 +528,7 @@ EXTERN real ter_d2[10];
 EXTERN real ters_h[10];
 #endif
 
-/* for TTBP and TERSOFF */
+/* for TTBP, STIWEB, and TERSOFF */
 #ifdef COVALENT  
 EXTERN int neigh_len INIT(50);     /* max neighbors */
 #endif 

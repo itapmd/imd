@@ -123,6 +123,9 @@ void do_forces2(cell*, real*, real*, real*, real*, real*, real*, real*, real*);
 #ifdef EAM2
 void do_forces_eam2(cell*, cell*, vektor, real*, real*, real*, real*, real*, real*, real*, real*);
 #endif
+#ifdef STIWEB
+void init_stiweb(void);
+#endif
 #ifdef TERSOFF
 void init_tersoff(void);
 #endif

@@ -375,6 +375,31 @@ void pair_int_monolj(real *pot, real *grad, real r2)
 
 /*****************************************************************************
 *
+*  Evaluate pair potential for Stillinger-Weber potential 
+*
+******************************************************************************/
+
+void pair_int_stiweb(real *pot, real *grad, int p_typ, int q_typ, real r2)
+{
+  real radius, phi_r, phi_a, inv_c, inv_r, f_cut;
+
+  radius = sqrt(r2);
+  phi_r  =   sw_a[p_typ][q_typ] * pow( radius, - sw_p[p_typ][q_typ] );
+  phi_a  = - sw_b[p_typ][q_typ] * pow( radius, - sw_q[p_typ][q_typ] );
+  inv_c  = 1.0 / ( radius - sw_a1[p_typ][q_typ] );
+  inv_r  = 1.0 / radius;
+  f_cut  = exp( sw_de[p_typ][q_typ] * inv_c );
+
+  *pot  = ( phi_r + phi_a ) * f_cut;
+  *grad = ( - *pot * sw_de[p_typ][q_typ] * inv_c * inv_c 
+	    - f_cut * inv_r * ( sw_p[p_typ][q_typ] * phi_r 
+			      + sw_q[p_typ][q_typ] * phi_a ) ) * inv_r; 
+
+}
+
+
+/*****************************************************************************
+*
 *  Evaluate potential table with quadratic interpolation. 
 *  Returns the potential value and twice the derivative.
 *  Note: we need (1/r)(dV/dr) = 2 * dV/dr^2 --> use with equidistant r^2 

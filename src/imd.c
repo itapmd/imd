@@ -136,6 +136,9 @@ int main(int argc, char **argv)
 #ifdef MPI
     broadcast_params();
 #endif
+#ifdef STIWEB
+  init_stiweb();
+#endif
 #ifdef TERSOFF
     init_tersoff();
 #endif
