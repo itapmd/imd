@@ -185,16 +185,16 @@ void deform_sample(void) {
             if (NUMMER(p,i) > 0) continue;
 	    /* which direction of pulling? */
 	    if (p->ort X(i) <= box_x_half) {
-	      p->ort X(i) -= strip_shift.x;
-	      p->ort Y(i) -= strip_shift.y;
-#ifndef TWOD
-	      p->ort Z(i) -= strip_shift.z;
-#endif
-	    } else {
 	      p->ort X(i) += strip_shift.x;
 	      p->ort Y(i) += strip_shift.y;
-#ifndef TWOD
+#ifndef TWO
 	      p->ort Z(i) += strip_shift.z;
+#endif
+	    } else {
+	      p->ort X(i) -= strip_shift.x;
+	      p->ort Y(i) -= strip_shift.y;
+#ifndef TWO
+	      p->ort Z(i) -= strip_shift.z;
 #endif        
 	    }
 	  } /* i - loop */
