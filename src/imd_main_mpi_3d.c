@@ -277,13 +277,12 @@ void calc_forces(int steps)
 
 void fix_cells(void)
 {
-  int i,j,k,l;
+  int i,j,k,l,clone;
   cell *p, *q;
   ivektor coord, lcoord;
   int to_cpu;
-#ifdef CLONE
-  int clones;
-#endif
+  msgbuf *buf;
+
   empty_mpi_buffers();
 
   /* for each cell in bulk */
@@ -307,6 +306,7 @@ void fix_cells(void)
             /* global cell coord and CPU */
             coord  = cell_coord( ORT(p,l,X), ORT(p,l,Y), ORT(p,l,Z) );
             to_cpu = cpu_coord(coord);
+            buf    = NULL;
 
             /* atom is on my cpu */
 
@@ -314,110 +314,65 @@ void fix_cells(void)
                q = PTR_VV(cell_array,lcoord,cell_dim);
                move_atom(q, p, l);
 #ifdef CLONE
-               if (l<p->n-nclones-1) {
-	         for (clones=1;clones<=nclones;clones++) 
-                   move_atom(q,p,l+clones); 
-	       }
-	       else /* we are dealing with the last in the stack */
-		 for (clones=1;clones<=nclones;clones++)
-		   move_atom(q,p,l); 
+               if (l < p->n-nclones)
+                 for (clone=1; clone<nclones; clone++) 
+                   move_atom(q, p, l+clone);
+               else /* we are dealing with the last in the stack */
+                 for (clone=1; clone<nclones; clone++) 
+                   move_atom(q, p, l); 
 #endif
             }
 
             /* west */
             else if ((cpu_dim.x>1) && 
-               ((to_cpu==nbwest) || (to_cpu==nbnw)  || (to_cpu==nbws) ||
-                (to_cpu==nbuw  ) || (to_cpu==nbunw) || (to_cpu==nbuws)||
-                (to_cpu==nbdw  ) || (to_cpu==nbdwn) || (to_cpu==nbdsw)))
-		{
-                copy_one_atom( &send_buf_west, p, l, 1);
-#ifdef CLONE
-		if (l<p->n-nclones-1)
-                  for (clones=1;clones<=nclones;clones++)
-                    copy_one_atom( &send_buf_west, p, l+clones, 1);
-		else /* we are dealing with the last in the stack */
-                  for (clones=1;clones<=nclones;clones++)
-                    copy_one_atom( &send_buf_west, p, l, 1);
-#endif
-		}
+              ((to_cpu==nbwest) || (to_cpu==nbnw)  || (to_cpu==nbws) ||
+               (to_cpu==nbuw  ) || (to_cpu==nbunw) || (to_cpu==nbuws)||
+               (to_cpu==nbdw  ) || (to_cpu==nbdwn) || (to_cpu==nbdsw))) {
+              buf = &send_buf_west;
+            }
             
             /* east */
             else if ((cpu_dim.x>1) &&
-                ((to_cpu==nbeast) || (to_cpu==nbse)  || (to_cpu==nben) ||
-                 (to_cpu==nbue  ) || (to_cpu==nbuse) || (to_cpu==nbuen)||
-                 (to_cpu==nbde  ) || (to_cpu==nbdes) || (to_cpu==nbdne)))
-                 {
-                 copy_one_atom( &send_buf_east, p, l, 1);
-#ifdef CLONE
-                 if (l<p->n-nclones-1)
-		   for (clones=1;clones<=nclones;clones++)
-                     copy_one_atom( &send_buf_east, p, l+clones, 1);
-		else /* we are dealing with the last in the stack */
-		  for (clones=1;clones<=nclones;clones++)
-                    copy_one_atom( &send_buf_east, p, l, 1);
-#endif
-		 }
+              ((to_cpu==nbeast) || (to_cpu==nbse)  || (to_cpu==nben) ||
+               (to_cpu==nbue  ) || (to_cpu==nbuse) || (to_cpu==nbuen)||
+               (to_cpu==nbde  ) || (to_cpu==nbdes) || (to_cpu==nbdne))) {
+              buf = &send_buf_east;
+            }
                    
             /* south  */
             else if ((cpu_dim.y>1) &&
-                ((to_cpu==nbsouth) || (to_cpu==nbus)  || (to_cpu==nbds)))
-		{
-                copy_one_atom( &send_buf_south, p, l, 1);
-#ifdef CLONE
-		if (l<p->n-nclones-1)
-                  for (clones=1;clones<=nclones;clones++)
-                    copy_one_atom( &send_buf_south, p, l+clones, 1);
-		else /* we are dealing with the last in the stack */
-                  for (clones=1;clones<=nclones;clones++)
-                    copy_one_atom( &send_buf_south, p, l, 1);
-#endif
-		}
+              ((to_cpu==nbsouth) || (to_cpu==nbus)  || (to_cpu==nbds))) {
+              buf = &send_buf_south;
+            }
                    
             /* north  */
             else if ((cpu_dim.y>1) &&
-                ((to_cpu==nbnorth) || (to_cpu==nbun)  || (to_cpu==nbdn)))
-		{                
-                copy_one_atom( &send_buf_north, p, l, 1);
-#ifdef CLONE
-                if (l<p->n-nclones-1)
-                  for (clones=1;clones<=nclones;clones++)
-                    copy_one_atom( &send_buf_north, p, l+clones, 1);
-		else /* we are dealing with the last in the stack */
-                  for (clones=1;clones<=nclones;clones++)
-                    copy_one_atom( &send_buf_north, p, l, 1);
-#endif
-                }
+              ((to_cpu==nbnorth) || (to_cpu==nbun)  || (to_cpu==nbdn))) {
+              buf = &send_buf_north;
+            }
             
             /* down  */
-            else if ((cpu_dim.z>1) && (to_cpu==nbdown))
-		{
-                copy_one_atom( &send_buf_down, p, l, 1);
-#ifdef CLONE
-                if (l<p->n-nclones-1)
-                  for (clones=1;clones<=nclones;clones++)
-                    copy_one_atom( &send_buf_down, p, l+clones, 1);
-		else /* we are dealing with the last in the stack */
-                  for (clones=1;clones<=nclones;clones++)
-                    copy_one_atom( &send_buf_down, p, l, 1);
-#endif
-		}
+            else if ((cpu_dim.z>1) && (to_cpu==nbdown)) {
+              buf = &send_buf_down;
+            }
             
             /* up  */
-            else if ((cpu_dim.z>1) && (to_cpu==nbup))
-		{
-                copy_one_atom( &send_buf_up, p, l, 1);
-#ifdef CLONE
-		if (l<p->n-nclones-1)
-                  for (clones=1;clones<=nclones;clones++)
-                    copy_one_atom( &send_buf_up, p, l+clones, 1);
-		else /* we are dealing with the last in the stack */
-                  for (clones=1;clones<=nclones;clones++)
-                    copy_one_atom( &send_buf_up, p, l, 1);
-#endif
-		}
-            
+            else if ((cpu_dim.z>1) && (to_cpu==nbup)) {
+              buf = &send_buf_up;
+            }
             else error("Atom jumped multiple CPUs");
-                        
+
+            if (buf != NULL) {
+              copy_one_atom( buf, p, l, 1);
+#ifdef CLONE
+              if (l < p->n-nclones)
+                for (clone=1; clone<nclones; clone++)
+                  copy_one_atom( buf, p, l+clone, 1);
+              else /* we are dealing with the last in the stack */
+                for (clone=1; clone<nclones; clone++)
+                  copy_one_atom( buf, p, l, 1);
+#endif
+	    }
 	  }
 	}
       }

@@ -484,7 +484,7 @@ void getparamfile(char *paramfname, int sim)
 #ifdef CLONE
     else if (strcasecmp(token,"nclones")==0) {
       /* number of clones to deal with*/
-      getparam("nclones",&nclones,PARAM_INT,1,1);
+      getparam(token,&nclones,PARAM_INT,1,1);
     }
 #endif
 #ifdef NBFILTER
@@ -1858,11 +1858,6 @@ void check_parameters_complete()
   }
   if (ncorr_tmax == 0) {
     error("correl_tmax is zero.");
-  }
-#endif
-#ifdef CLONE
-  if (nclones == 0) {
-      error("nclones is zero.");
   }
 #endif
 #ifdef NVX

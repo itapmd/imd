@@ -152,7 +152,7 @@ void calc_forces(int steps)
 
 void fix_cells(void)
 {
-  int i,j,k,l,clones;
+  int i,j,k,l,clone;
   cell *p, *q;
   ivektor coord, lcoord;
 
@@ -170,14 +170,14 @@ void fix_cells(void)
           q = PTR_3D_VV(cell_array,coord,cell_dim);
           /* if it's in the wrong cell, move it to the right cell */
           if (p != q) {
-	    move_atom(q,p,l); 
+            move_atom(q, p, l); 
 #ifdef CLONE
-            if (l<p->n-nclones-1)
-	      for (clones=1; clones<=nclones; clones++)
-                move_atom(q,p,l+clones); 
-	    else /* we are dealing with the last in the stack */
-              for (clones=1; clones<=nclones; clones++)
-                move_atom(q,p,l); 
+            if (l < p->n-nclones)
+              for (clone=1; clone<nclones; clone++)
+                move_atom(q, p, l+clone);
+            else /* we are dealing with the last in the stack */
+              for (clone=1; clone<nclones; clone++)
+                move_atom(q, p, l);
 #endif
 	  }
           else ++l;

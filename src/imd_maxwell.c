@@ -59,10 +59,6 @@ void maxwell(real temp)
    real norm;
    real osq;
 #endif
-#ifdef CLONE
-      int clones;
-      char errmsg[126];
-#endif
    real   TEMP;
    real   scale, xx, tmp;
    int    num, nhalf, typ;
@@ -85,16 +81,11 @@ void maxwell(real temp)
 
       int i;
       cell *p;
+      vektor *rest;
 
       p = cell_array + CELLS(k);
 
       for (i=0; i<p->n; ++i) {
-
-/* #ifdef CLONE */
-/* 	  if(NUMMER(p,i)>=0) */
-/* 	      {   */
- /*if orignal atom do everything normal with that atom */ 
-/* #endif */
 
 #ifdef NVX
          /* which layer? */
@@ -127,21 +118,21 @@ void maxwell(real temp)
 	 TEMP=  Tleft + (Tright-Tleft)*(slice-nslices_Left+1) /
 	   (real) (nslices-nslices_Left-nslices_Right+1);
     
-	 if(slice>=nslices-nslices_Right)  TEMP = Tright;
-	 if(slice<nslices_Left)            TEMP=  Tleft;
+	 if (slice>=nslices-nslices_Right) TEMP = Tright;
+	 if (slice<nslices_Left)           TEMP=  Tleft;
 #endif
          
-	 tmp = sqrt(TEMP * MASSE(p,i));
-         typ = VSORTE(p,i);
-         IMPULS(p,i,X) = gaussian(tmp) * (restrictions + typ)->x;
-         IMPULS(p,i,Y) = gaussian(tmp) * (restrictions + typ)->y;
+	 tmp  = sqrt(TEMP * MASSE(p,i));
+         rest = restrictions + VSORTE(p,i);
+         IMPULS(p,i,X) = gaussian(tmp) * rest->x;
+         IMPULS(p,i,Y) = gaussian(tmp) * rest->y;
 #ifndef TWOD
-         IMPULS(p,i,Z) = gaussian(tmp) * (restrictions + typ)->z;
+         IMPULS(p,i,Z) = gaussian(tmp) * rest->z;
 #endif
-         nactive_x += (int) (restrictions + typ)->x;
-         nactive_y += (int) (restrictions + typ)->y;
+         nactive_x += (int) rest->x;
+         nactive_y += (int) rest->y;
 #ifndef TWOD
-         nactive_z += (int) (restrictions + typ)->z;
+         nactive_z += (int) rest->z;
 #endif
          tot_impuls.x += IMPULS(p,i,X);
          tot_impuls.y += IMPULS(p,i,Y);
@@ -211,43 +202,43 @@ void maxwell(real temp)
 	 /* bulk against wall */
 	 if (shock_mode == 3) IMPULS(p,i,X) += shock_speed * MASSE(p,i);
 #endif
-#ifdef CLONE
-
-	for(clones=1;clones<=nclones;clones++)
-	    { 	/* and now do the same to all the clones */
-		/* if (NUMMER(p,i+clones)>=0) */
-/* 		    { */
-/* 			sprintf(errmsg,"maxwell: expected clone, but got original atom nr. %d ", */
-/* 			     NUMMER(p,i+clones));  */
-/* 		    error(errmsg);  */
-/* 		    } */
-		IMPULS(p,i+clones,X) = IMPULS(p,i,X);
-		IMPULS(p,i+clones,Y) = IMPULS(p,i,Y);
-		IMPULS(p,i+clones,Z) = IMPULS(p,i,Z);
-
-		nactive_x += (int) (restrictions + typ)->x;
-		nactive_y += (int) (restrictions + typ)->y;
-		nactive_z += (int) (restrictions + typ)->z;
-
-		tot_impuls.x += IMPULS(p,i,X);
-		tot_impuls.y += IMPULS(p,i,Y);
-		tot_impuls.z += IMPULS(p,i,Z);
-
-	    }
-	i+=nclones;
-     /*   } */
-/* 	  else */
-/* 	      { */
-/* 		  sprintf(errmsg,"maxwell: expected original atom, but got clone nr. %d", */
-/* 			     NUMMER(p,i)); */
-/* 		  error(errmsg); */
-/* 	      }  */
-#endif
       }
-
    }
 
+#ifdef CLONE
 
+   /* compute the total momentum afresh */
+   tot_impuls.x = 0.0;
+   tot_impuls.y = 0.0;
+#ifndef TWOD
+   tot_impuls.z = 0.0;
+#endif
+
+   /* set velocities of clones equal */
+   for (k=0; k<ncells; k++) {
+
+      int i, j;
+      cell *p;
+      p = cell_array + CELLS(k);
+
+      for (i=0; i<p->n; i+=nclones) {
+
+        tot_impuls.x += nclones * IMPULS(p,i,X);
+        tot_impuls.y += nclones * IMPULS(p,i,Y);
+#ifndef TWOD
+        tot_impuls.z += nclones * IMPULS(p,i,Z);
+#endif
+	for (j=1; j<nclones; j++) {
+          IMPULS(p,i+j,X) = IMPULS(p,i,X);
+          IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
+#ifndef TWOD
+          IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
+#endif
+        }
+      }
+   }
+
+#endif /* CLONE */
 
    tot_impuls.x = nactive_x == 0 ? 0.0 : tot_impuls.x / nactive_x;
    tot_impuls.y = nactive_y == 0 ? 0.0 : tot_impuls.y / nactive_y;
@@ -259,13 +250,14 @@ void maxwell(real temp)
    for (k=0; k<ncells; ++k) {
       int i;
       cell *p;
+      vektor *rest;
       p = cell_array + CELLS(k);
       for (i=0; i<p->n; ++i) {
-         typ = VSORTE(p,i);
-         IMPULS(p,i,X) -= tot_impuls.x * (restrictions + typ)->x;
-         IMPULS(p,i,Y) -= tot_impuls.y * (restrictions + typ)->y;
+         rest = restrictions + VSORTE(p,i);
+         IMPULS(p,i,X) -= tot_impuls.x * rest->x;
+         IMPULS(p,i,Y) -= tot_impuls.y * rest->y;
 #ifndef TWOD
-         IMPULS(p,i,Z) -= tot_impuls.z * (restrictions + typ)->z;
+         IMPULS(p,i,Z) -= tot_impuls.z * rest->z;
 #endif
       }
    }

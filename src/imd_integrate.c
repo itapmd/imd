@@ -29,13 +29,11 @@
 
 #if defined(NVE) || defined(EPITAX) || defined(CG)
 
-void move_atoms_nve(void){
+void move_atoms_nve(void)
+{
   int k;
   real tmpvec1[4], tmpvec2[4];
   static int count = 0;
-#ifdef CLONE
-  int clones;
-#endif
 
   /* epitax may call this routine for other ensembles,
      in which case we do not reset tot_kin_energy */
@@ -48,10 +46,9 @@ void move_atoms_nve(void){
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_kin_energy,fnorm,omega_E,PxF)
 #endif
+  for (k=0; k<ncells; ++k) {
 
-  for (k=0; k<ncells; ++k) { /* loop over all cells */
-
-    int  i, sort;
+    int  i, j, sort;
     cell *p;
     real kin_energie_1, kin_energie_2, tmp;
 #ifdef UNIAX    
@@ -61,16 +58,29 @@ void move_atoms_nve(void){
 #endif
     p = cell_array + CELLS(k);
 
+#ifdef CLONE
+    for (i=0; i<p->n; i+=nclones)
+      for (j=1; j<nclones; j++) {
+        KRAFT(p,i+j,X)  = KRAFT(p,i,X);
+        KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
+#ifndef TWOD
+        KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
+#endif
+        IMPULS(p,i+j,X) = IMPULS(p,i,X);
+        IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
+#ifndef TWOD
+        IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
+#endif
+      }
+#endif /* CLONE */
+
 #ifdef PVPCRAY
 #pragma ivdep
 #endif
 #ifdef SX4
 #pragma vdir vector,nodep
 #endif
-
-    
     for (i=0; i<p->n; ++i) { /* loop over all atoms in the cell */
-
 
 #ifdef EPITAX 
         /* beam atoms are always integrated by NVE */
@@ -209,60 +219,6 @@ void move_atoms_nve(void){
 #endif
         PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif /* STRESS_TENS */
-
-#ifdef CLONE
-	for(clones=1;clones<=nclones;clones++)
-	    { 	/* and now do the same to all the clones */
-
-		kin_energie_1 = SPRODN( &IMPULS(p,i+clones,X), &IMPULS(p,i+clones,X) );
-
-		/* for everything which has to do with summing up something 
-		   we use the original atom */
-#ifdef FNORM
-		fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
-#endif
-#ifdef EINSTEIN
-		omega_E += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) ) / MASSE(p,i);
-#endif
-
-		/* needed for kin_energy_1 */
-		IMPULS(p,i+clones,X) = IMPULS(p,i,X);
-		IMPULS(p,i+clones,Y) = IMPULS(p,i,Y);
-		IMPULS(p,i+clones,Z) = IMPULS(p,i,Z);
-
-#ifdef GLOK              
-		PxF += SPRODN( &IMPULS(p,i,X), &KRAFT(p,i,X) );
-#endif
-
-		kin_energie_2 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
-		tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4 * MASSE(p,i));
-
-		/* for new positions and other properties 
-		   of the clones use the impuls of original atom */
-		tmp = timestep / MASSE(p,i);
-		ORT(p,i+clones,X) += tmp * IMPULS(p,i,X);
-		ORT(p,i+clones,Y) += tmp * IMPULS(p,i,Y);
-#ifndef TWOD
-		ORT(p,i+clones,Z) += tmp * IMPULS(p,i,Z);
-#endif
-
-	       
-#ifdef STRESS_TENS
-		PRESSTENS(p,i+clones,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
-		PRESSTENS(p,i+clones,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
-#ifndef TWOD
-		PRESSTENS(p,i+clones,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
-		PRESSTENS(p,i+clones,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
-		PRESSTENS(p,i+clones,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
-#endif
-		PRESSTENS(p,i+clones,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
-#endif 
-	    }
-    i+=nclones;
-  
-
-#endif
-
     }
   }
 
@@ -287,7 +243,6 @@ void move_atoms_nve(void){
   if ((tempintv!=0) && (0==count%tempintv)) maxwell(temperature);
 #endif
 
-
 }
 
 #else
@@ -299,7 +254,6 @@ void move_atoms_nve(void)
 }
 
 #endif
-
 
 /*****************************************************************************
 *
@@ -313,13 +267,10 @@ void move_atoms_mik(void)
 {
   int k;
   real tmpvec1[2], tmpvec2[2];
-#ifdef CLONE
-  int clones;
-#endif
+
   static int count = 0;
   tot_kin_energy = 0.0;
   fnorm   = 0.0;
-
 
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
@@ -333,10 +284,26 @@ void move_atoms_mik(void)
 #endif
   for (k=0; k<ncells; ++k) {
 
-    int  i, sort;
+    int  i, j, sort;
     cell *p;
     real kin_energie_1, kin_energie_2, tmp;
     p = cell_array + CELLS(k);
+
+#ifdef CLONE
+    for (i=0; i<p->n; i+=nclones)
+      for (j=1; j<nclones; j++) {
+        KRAFT(p,i+j,X)  = KRAFT(p,i,X);
+        KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
+#ifndef TWOD
+        KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
+#endif
+        IMPULS(p,i+j,X) = IMPULS(p,i,X);
+        IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
+#ifndef TWOD
+        IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
+#endif
+      }
+#endif /* CLONE */
 
 #ifdef PVPCRAY
 #pragma ivdep
@@ -411,44 +378,6 @@ void move_atoms_mik(void)
 #endif
         PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
-
-#ifdef CLONE
-	for(clones=1;clones<=nclones;clones++)
-	    { 	/* and now do the same to all the clones */
-
-        kin_energie_1 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
-
-
-#ifdef FNORM
-	fnorm += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
-#endif
-
-        IMPULS(p,i+clones,X)  =       IMPULS(p,i,X) ;
-        IMPULS(p,i+clones,Y)  =       IMPULS(p,i,Y) ;
-        IMPULS(p,i+clones,Z)  =       IMPULS(p,i,Z) ;
-
-	tmp = timestep / MASSE(p,i);
-	ORT(p,i+clones,X) += tmp * IMPULS(p,i,X);
-	ORT(p,i+clones,Y) += tmp * IMPULS(p,i,Y);
-	ORT(p,i+clones,Z) += tmp * IMPULS(p,i,Z);
-        
-        kin_energie_2 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
-
-        /* sum up kinetic energy on this CPU */ 
-        tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4.0 * MASSE(p,i));
-
-#ifdef STRESS_TENS
-        PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
-        PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
-        PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
-        PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
-        PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
-        PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
-#endif
-
-	    }
-    i+=nclones;
-#endif
     }
   }
 
@@ -488,9 +417,7 @@ void move_atoms_nvt(void)
 {
   int k;
   real tmpvec1[5], tmpvec2[5], ttt;
-#ifdef CLONE
-  int clones;
-#endif
+
   real E_kin_1 = 0.0, E_kin_2 = 0.0;
   real reibung, eins_d_reib;
   real E_rot_1 = 0.0, E_rot_2 = 0.0;
@@ -513,8 +440,7 @@ void move_atoms_nvt(void)
 #endif
   for (k=0; k<ncells; ++k) {  /* loop over cells */
 
-    int i;
-    int sort;
+    int i, j, sort;
     cell *p;
     real tmp;
 #ifdef UNIAX
@@ -522,6 +448,22 @@ void move_atoms_nvt(void)
     vektor cross ;
 #endif
     p = cell_array + CELLS(k);
+
+#ifdef CLONE
+    for (i=0; i<p->n; i+=nclones)
+      for (j=1; j<nclones; j++) {
+        KRAFT(p,i+j,X)  = KRAFT(p,i,X);
+        KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
+#ifndef TWOD
+        KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
+#endif
+        IMPULS(p,i+j,X) = IMPULS(p,i,X);
+        IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
+#ifndef TWOD
+        IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
+#endif
+      }
+#endif /* CLONE */
 
     for (i=0; i<p->n; ++i) {  /* loop over atoms */
 
@@ -628,48 +570,6 @@ void move_atoms_nvt(void)
 #endif
         PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
-    
-
-#ifdef CLONE
-	for(clones=1;clones<=nclones;clones++)
-	    { 	/* and now do the same to all the clones */
-
-        /* twice the old kinetic energy */
-        E_kin_1 += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
-
-#ifdef FNORM
-	fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
-#endif
-#ifdef EINSTEIN
-	omega_E += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) ) / MASSE(p,i);
-#endif
-
-	IMPULS(p,i+clones,X) = IMPULS(p,i,X);
-	IMPULS(p,i+clones,Y) = IMPULS(p,i,Y);
-	IMPULS(p,i+clones,Z) = IMPULS(p,i,Z);
-
-        /* twice the new kinetic energy */ 
-        E_kin_2 += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
-
-        /* new positions */
-        tmp = timestep / MASSE(p,i);
-        ORT(p,i+clones,X) += tmp * IMPULS(p,i,X);
-        ORT(p,i+clones,Y) += tmp * IMPULS(p,i,Y);
-        ORT(p,i+clones,Z) += tmp * IMPULS(p,i,Z);
-
-#ifdef STRESS_TENS
-        PRESSTENS(p,i+clones,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
-        PRESSTENS(p,i+clones,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
-        PRESSTENS(p,i+clones,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
-        PRESSTENS(p,i+clones,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
-        PRESSTENS(p,i+clones,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
-        PRESSTENS(p,i+clones,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
-#endif
-    }    
-	i+=nclones;
-    
-#endif
-	   
     } 
 }
   
@@ -1019,9 +919,6 @@ void calc_dyn_pressure(void)
 void move_atoms_npt_iso(void)
 {
   int  k;
-#ifdef CLONE
-  int clones;
-#endif
 
   real Ekin_new = 0.0, Erot_new = 0.0;
   real pfric, pifric, rfric, rifric;
@@ -1056,7 +953,7 @@ void move_atoms_npt_iso(void)
 #endif
   for (k=0; k<ncells; ++k) {
 
-    int i;
+    int i, j;
     cell *p;
     real tmp;
 #ifdef UNIAX
@@ -1064,6 +961,22 @@ void move_atoms_npt_iso(void)
     vektor cross ;
 #endif
     p = cell_array + CELLS(k);
+
+#ifdef CLONE
+    for (i=0; i<p->n; i+=nclones)
+      for (j=1; j<nclones; j++) {
+        KRAFT(p,i+j,X)  = KRAFT(p,i,X);
+        KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
+#ifndef TWOD
+        KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
+#endif
+        IMPULS(p,i+j,X) = IMPULS(p,i,X);
+        IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
+#ifndef TWOD
+        IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
+#endif
+      }
+#endif /* CLONE */
 
     for (i=0; i<p->n; ++i) {
 
@@ -1131,50 +1044,11 @@ void move_atoms_npt_iso(void)
       PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
       PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
 #ifndef TWOD
-        PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
-        PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
-        PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
+      PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
+      PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
+      PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
 #endif
-        PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
-#endif
-
-#ifdef CLONE
-	for(clones=1;clones<=nclones;clones++)
-	    { 	/* and now do the same to all the clones */
-		
-#ifdef FNORM
-      fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
-#endif
-#ifdef EINSTEIN
-      omega_E += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) ) / MASSE(p,i);
-#endif
-
-      /* new momenta */
-      IMPULS(p,i+clones,X) =       IMPULS(p,i,X);
-      IMPULS(p,i+clones,Y) =       IMPULS(p,i,Y);
-      IMPULS(p,i+clones,Z) =       IMPULS(p,i,Z);
-
-      /* twice the new kinetic energy */ 
-      Ekin_new += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
-
-      /* new positions */
-      tmp = timestep / MASSE(p,i);
-      ORT(p,i+clones,X) = (rfric * ORT(p,i+clones,X) + IMPULS(p,i,X) * tmp) * rifric;
-      ORT(p,i+clones,Y) = (rfric * ORT(p,i+clones,Y) + IMPULS(p,i,Y) * tmp) * rifric;
-      ORT(p,i+clones,Z) = (rfric * ORT(p,i+clones,Z) + IMPULS(p,i,Z) * tmp) * rifric;
-
-#ifdef STRESS_TENS
-        PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
-        PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
-        PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
-        PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
-        PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
-        PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
-#endif
-
-	    }
-	i+=nclones;
-
+      PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
     }
   }
@@ -1410,15 +1284,10 @@ void move_atoms_npt_axial(void)
 #ifdef FRAC
 
 void move_atoms_frac(void)
-
 {
-  int k;
-
-#ifdef CLONE
-  int clones;
-#endif
-
+  int  k;
   real tmpvec1[7], tmpvec2[7], ttt;
+
   real E_kin_1        = 0.0, E_kin_2        = 0.0; 
   real E_kin_damp1    = 0.0, E_kin_damp2    = 0.0;
   real E_kin_stadium1 = 0.0, E_kin_stadium2 = 0.0;
@@ -1433,25 +1302,40 @@ void move_atoms_frac(void)
 
   if(expansionmode==1)
       dotepsilon = dotepsilon0 / (1.0 + dotepsilon0 * steps * timestep);
-      
 
-  /* loop over all atoms */
+  /* loop over all cells */
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:E_kin_1,E_kin_2,E_kin_damp1,E_kin_damp2,E_kin_stadium1,E_kin_stadium2,sum_f,n_stadium,fnorm)
 #endif
   for (k=0; k<ncells; ++k){ 
 
-    int i;
-    int sort;
+    int i, j, sort;
     cell *p;
     real tmp,tmp1,tmp2;
 
     p = cell_array + CELLS(k);
 
-    for (i=0; i<p->n; ++i){
+#ifdef CLONE
+    for (i=0; i<p->n; i+=nclones)
+      for (j=1; j<nclones; j++) {
+        KRAFT(p,i+j,X)  = KRAFT(p,i,X);
+        KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
+#ifndef TWOD
+        KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
+#endif
+        IMPULS(p,i+j,X) = IMPULS(p,i,X);
+        IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
+#ifndef TWOD
+        IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
+#endif
+      }
+#endif /* CLONE */
+
+    /* loop over all atoms in the cell */
+    for (i=0; i<p->n; ++i) {
 	
 	/* if half axis in x-direction is zero: global viscous damping ! */
-	if(stadium.x <= 0.0){ 
+	if(stadium.x <= 0.0) { 
 	    f = 1.0; 
 	} else {
 	    /* Calculate stadium function f */
@@ -1459,16 +1343,12 @@ void move_atoms_frac(void)
 	    tmp2 = SQR((ORT(p,i,Y)-center.y)/(2.0*stadium2.y));
 	    f    = (tmp1+tmp2-SQR(stadium.x/(2.0*stadium2.x)))/\
 		(.25- SQR(stadium.x/(2.0*stadium2.x)));
-	
 	}
 	
 	if (f<= 0.0) {
 	    f = 0.0;
 	    n_stadium += DIM;
 	    /* what about the restrictions?? */
-#ifdef CLONE
-	    n_stadium += nclones*DIM; /* also the clones aren't in f */
-#endif
 	}
 	if (f>1.0) f = 1.0;
 
@@ -1543,7 +1423,6 @@ void move_atoms_frac(void)
         ORT(p,i,X) +=  tmp * IMPULS(p,i,X);
         ORT(p,i,Y)  = (tmp * IMPULS(p,i,Y) + epsilontmp * ORT(p,i,Y))
 	                * eins_d_epsilontmp;
-
 #ifndef TWOD
         ORT(p,i,Z) +=  tmp * IMPULS(p,i,Z);
 #endif
@@ -1558,71 +1437,6 @@ void move_atoms_frac(void)
 #endif
         PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
-
-#ifdef CLONE
-	for(clones=1;clones<=nclones;clones++)
-	    { 	/* and now do the same to all the clones */
-	
-		/* f and sort stays the same */
-
-        /* add up f considering the restriction vector  */
-
-	sum_f+= f * ( (restrictions + sort)->x + 
-		      (restrictions + sort)->y +  
-		      (restrictions + sort)->z  )/3.0;
-	
-       	/* twice the old kinetic energy */
-	/* this has to be redone here, because we need 
-		   to work also with the old impuls */
-        tmp = SPRODN( &IMPULS(p,i+clones,X), &IMPULS(p,i+clones,X) ) / MASSE(p,i);
-	E_kin_1 += tmp;
-	if (f == 0.0) E_kin_stadium1 +=      tmp;
-	if (f >  0.0) E_kin_damp1    +=  f * tmp;
-
-
-#ifdef FNORM
-	fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
-#endif
-
-        /* new momenta */
-	IMPULS(p,i+clones,X) = IMPULS(p,i,X);
-	IMPULS(p,i+clones,Y) = IMPULS(p,i,Y);
-	IMPULS(p,i+clones,Z) = IMPULS(p,i,Z);
-
-	/* twice the new kinetic energy */
-        tmp = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
-	E_kin_2 += tmp;
-	if (f == 0.0) E_kin_stadium2 +=      tmp;
-	if (f >  0.0) E_kin_damp2    +=  f * tmp;
-
-
-	/* new positions */
-        tmp = timestep / MASSE(p,i);
-	/* allready known */
-/* 	epsilontmp =               1.0 + dotepsilon * timestep / 2.0; */
-/* 	eins_d_epsilontmp = 1.0 / (1.0 - dotepsilon * timestep / 2.0); */
-
-        ORT(p,i+clones,X) +=  tmp * IMPULS(p,i,X);
-        ORT(p,i+clones,Y)  = (tmp * IMPULS(p,i,Y) + epsilontmp * ORT(p,i,Y))
-	                * eins_d_epsilontmp;
-	ORT(p,i+clones,Z) +=  tmp * IMPULS(p,i,Z);
-
-#ifdef STRESS_TENS
-        PRESSTENS(p,i+clones,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
-        PRESSTENS(p,i+clones,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
-#ifndef TWOD
-        PRESSTENS(p,i+clones,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
-        PRESSTENS(p,i+clones,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
-        PRESSTENS(p,i+clones,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
-#endif
-        PRESSTENS(p,i+clones,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
-#endif
-
-	
-
-	    }
-    i+=nclones;
-#endif  
     }
   }
 
@@ -1693,9 +1507,6 @@ void move_atoms_ftg(void)
 
 {
   int j, k;
-#ifdef CLONE
-  int clones;
-#endif
 
   static real *E_kin_1     = NULL; static real *E_kin_2     = NULL;
   static real *ftgtmpvec1  = NULL; static real *ftgtmpvec2  = NULL;
@@ -1707,7 +1518,6 @@ void move_atoms_ftg(void)
   real epsilontmp, eins_d_epsilontmp;
   int slice;
   real gamma_tmp;
-
 
   /* alloc vector versions of E_kin and  ftgtmpvect*/
   if (NULL==E_kin_1) {
@@ -1747,21 +1557,34 @@ void move_atoms_ftg(void)
     *(ninslice  +j) = 0;
   }
 
-  fnorm     = 0.0;
+  fnorm = 0.0;
 
   if(expansionmode==1)
       dotepsilon = dotepsilon0 / (1.0 + dotepsilon0 * steps * timestep);
       
-
-  /* loop over all atoms */
-
+  /* loop over all cells */
   for (k=0; k<ncells; ++k) {
 
-    int i;
-    int sort;
+    int i, j, sort;
     cell *p;
 
     p = cell_array + CELLS(k);
+
+#ifdef CLONE
+    for (i=0; i<p->n; i+=nclones)
+      for (j=1; j<nclones; j++) {
+        KRAFT(p,i+j,X)  = KRAFT(p,i,X);
+        KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
+#ifndef TWOD
+        KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
+#endif
+        IMPULS(p,i+j,X) = IMPULS(p,i,X);
+        IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
+#ifndef TWOD
+        IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
+#endif
+      }
+#endif /* CLONE */
 
     for (i=0; i<p->n; ++i) {
 	
@@ -1810,7 +1633,6 @@ void move_atoms_ftg(void)
 	  / sqrt(SQR(tmp) + SQR(temperature/delta_ftg));     
       } 
 
-      
       /* add up degrees of freedom  considering restriction vector  */
 #ifdef TWOD
       *(ninslice + slice) += ( (restrictions + sort)->x + 
@@ -1888,14 +1710,6 @@ void move_atoms_ftg(void)
 #endif
         PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
-
-#ifdef CLONE
-	for(clones=1;clones<=nclones;clones++)
-	    { 	/* and now do the same to all the clones */
-	    }
-    i+=nclones;
-#endif  
-
     }
   }
 
@@ -1938,7 +1752,6 @@ void move_atoms_ftg(void)
     *(ninslice + j) = *(iftgtmpvec2 +j); 
 #endif
 
-
   for (j=0; j<nslices; j++) {
     temperature =  Tleft + (Tright-Tleft)*(j-nslices_Left+1) /
       (real) (nslices-nslices_Left-nslices_Right+1);
@@ -1962,7 +1775,6 @@ void move_atoms_ftg(void)
     }
   }
 
-
 }
 
 #else
@@ -1975,9 +1787,6 @@ void move_atoms_ftg(void)
 
 #endif
 
-
-
-
 /*****************************************************************************
 *
 *  Integrator with local temperature (Finnis)
@@ -1988,59 +1797,63 @@ void move_atoms_ftg(void)
 #ifdef FINNIS
 
 void move_atoms_finnis(void)
-
 {
   int j, k;
-#ifdef CLONE
-  int clones;
-#endif
 
   real E_kin_1, E_kin_2;
-  real tmp,tmp1,tmp2;
+  real tmp, tmp1, tmp2;
   real ttt;
   real reibung, reibung_y, eins_d_reib, eins_d_reib_y;
   real epsilontmp, eins_d_epsilontmp;
   int slice;
   real zeta_finnis;
 
-  fnorm     = 0.0;
+  fnorm = 0.0;
 
-  /* loop over all atoms */
-
+  /* loop over all cells */
   for (k=0; k<ncells; ++k) {
 
-    int i;
-    int sort;
+    int i, j, sort;
+    vektor *rest;
     cell *p;
 
     p = cell_array + CELLS(k);
 
+#ifdef CLONE
+    for (i=0; i<p->n; i+=nclones)
+      for (j=1; j<nclones; j++) {
+        KRAFT(p,i+j,X)  = KRAFT(p,i,X);
+        KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
+#ifndef TWOD
+        KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
+#endif
+        IMPULS(p,i+j,X) = IMPULS(p,i,X);
+        IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
+#ifndef TWOD
+        IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
+#endif
+      }
+#endif /* CLONE */
+
+    /* loop over all atoms in the cell */
     for (i=0; i<p->n; ++i) {
 	
       sort = VSORTE(p,i);
+      rest = restrictions + sort;
 
-      
-	/* calc kinetic "temperature" for actual atom */
+      /* calc kinetic "temperature" for actual atom */
       tmp  = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
 #ifdef TWOD
-      tmp2 = ( (restrictions + sort)->x + 
-		 (restrictions + sort)->y   );
+      tmp2 = rest->x + rest->y;
 #else
-      tmp2 = ( (restrictions + sort)->x + 
-	       (restrictions + sort)->y +  
-	       (restrictions + sort)->z  );
+      tmp2 = rest->x + rest->y + rest->z;
 #endif
-      if(tmp2!=0) tmp /= (real)tmp2;
-	
+      if (tmp2 != 0) tmp /= tmp2;
 
-	
       /* to share the code with the non local version we overwrite 
 	 the zeta values every timestep */
       zeta_finnis = zeta_0 * (tmp-temperature) 
 	/ sqrt(SQR(tmp) + SQR(temperature/delta_finnis));     
-
-
-      
 
     /* twice the old kinetic energy */
       E_kin_1 += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
@@ -2054,10 +1867,10 @@ void move_atoms_finnis(void)
 #endif
 #endif
 
-      KRAFT(p,i,X) *= (restrictions + sort)->x;
-      KRAFT(p,i,Y) *= (restrictions + sort)->y;
+      KRAFT(p,i,X) *= rest->x;
+      KRAFT(p,i,Y) *= rest->y;
 #ifndef TWOD
-      KRAFT(p,i,Z) *= (restrictions + sort)->z;
+      KRAFT(p,i,Z) *= rest->z;
 #endif
 
 #ifdef FNORM
@@ -2068,24 +1881,22 @@ void move_atoms_finnis(void)
       eins_d_reib   = 1.0 / (1.0 +  zeta_finnis * timestep / 2.0);
 
       /* new momenta */
-      IMPULS(p,i,X) = (IMPULS(p,i,X)  * reibung   + timestep * KRAFT(p,i,X))
-	* eins_d_reib   * (restrictions + sort)->x;
-      IMPULS(p,i,Y) = (IMPULS(p,i,Y)  * reibung   + timestep * KRAFT(p,i,Y))
-	* eins_d_reib  * (restrictions + sort)->y;
+      IMPULS(p,i,X) = (IMPULS(p,i,X) * reibung + timestep * KRAFT(p,i,X))
+                       * eins_d_reib * rest->x;
+      IMPULS(p,i,Y) = (IMPULS(p,i,Y) * reibung + timestep * KRAFT(p,i,Y))
+                       * eins_d_reib * rest->y;
 #ifndef TWOD
-      IMPULS(p,i,Z) = (IMPULS(p,i,Z)  * reibung   + timestep * KRAFT(p,i,Z))
-	* eins_d_reib   * (restrictions + sort)->z;
+      IMPULS(p,i,Z) = (IMPULS(p,i,Z) * reibung + timestep * KRAFT(p,i,Z))
+                       * eins_d_reib * rest->z;
 #endif                  
 
       /* twice the new kinetic energy */ 
       E_kin_2 += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
-	
-	/* new positions */
-      tmp = timestep / MASSE(p,i);
 
+      /* new positions */
+      tmp = timestep / MASSE(p,i);
       ORT(p,i,X) +=  tmp * IMPULS(p,i,X);
       ORT(p,i,Y) +=  tmp * IMPULS(p,i,Y);
-
 #ifndef TWOD
       ORT(p,i,Z) +=  tmp * IMPULS(p,i,Z);
 #endif
@@ -2100,14 +1911,6 @@ void move_atoms_finnis(void)
 #endif
       PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
-
-#ifdef CLONE
-      for(clones=1;clones<=nclones;clones++)
-	    { 	/* and now do the same to all the clones */
-	    }
-      i+=nclones;
-#endif  
-      
     }
   }
 
@@ -2115,12 +1918,10 @@ void move_atoms_finnis(void)
 
 #ifdef MPI
   /* add up results from different CPUs */
-  
   tmp1 = tot_kin_energy;
   MPI_Allreduce( &tmp1, &tmp2, 1, REAL, MPI_SUM, cpugrid);
   tot_kin_energy = tmp2;
 #endif
-
 
 }
 
@@ -2133,10 +1934,6 @@ void move_atoms_finnis(void)
 }
 
 #endif
-
-
-
-
 
 #ifdef STM
 
@@ -2223,9 +2020,9 @@ void move_atoms_stm(void)
 
   tot_kin_energy     = tmpvec2[0];
   kin_energie_2[0]   = tmpvec2[1];
-  E_kin_stadium = tmpvec2[2];
+  E_kin_stadium      = tmpvec2[2];
   kin_energie_2[1]   = tmpvec2[3];
-  n_stadium              = (int)tmpvec2[4];
+  n_stadium          = (int)tmpvec2[4];
 #endif
 
   /* Zeitentwicklung der Parameter */
@@ -2438,7 +2235,6 @@ void move_atoms_nvx(void)
 
 #endif
 
-
 /*****************************************************************************
 *
 * Move the atoms for the  Conjugated Gradient
@@ -2450,46 +2246,48 @@ void move_atoms_nvx(void)
 void move_atoms_cg(real alpha)
 {
   int k;
-#ifdef CLONE
-  int clones;
-#endif
+
   /* loop over all cells */
   for (k=0; k<ncells; ++k) {
 
-    int  i, sort;
+    int  i, j, sort;
     cell *p;
 
     p = cell_array + CELLS(k);
 
+#ifdef CLONE
+    for (i=0; i<p->n; i+=nclones)
+      for (j=1; j<nclones; j++) {
+        KRAFT(p,i+j,X)  = KRAFT(p,i,X);
+        KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
+#ifndef TWOD
+        KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
+#endif
+        IMPULS(p,i+j,X) = IMPULS(p,i,X);
+        IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
+#ifndef TWOD
+        IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
+#endif
+      }
+#endif /* CLONE */
+
     for (i=0; i<p->n; ++i) {
-        /* CG:  move atoms in search direction for linmin */
-        ORT(p,i,X) = OLD_ORT(p,i,X) + alpha * CG_H(p,i,X);
-        ORT(p,i,Y) = OLD_ORT(p,i,Y) + alpha * CG_H(p,i,Y);
+      /* CG:  move atoms in search direction for linmin */
+      ORT(p,i,X) = OLD_ORT(p,i,X) + alpha * CG_H(p,i,X);
+      ORT(p,i,Y) = OLD_ORT(p,i,Y) + alpha * CG_H(p,i,Y);
 #ifndef TWOD
-        ORT(p,i,Z) = OLD_ORT(p,i,Z) + alpha * CG_H(p,i,Z);
-#endif
-#ifdef CLONE /* i hope that the clone atoms will experience the same force 
-		as the org. atoms, so i'm not changing anything else... */
-	for(clones=1;clones<=nclones;clones++)
-	    {
-		ORT(p,i,X) = OLD_ORT(p,i,X) + alpha * CG_H(p,i+clones,X);
-		ORT(p,i,Y) = OLD_ORT(p,i,Y) + alpha * CG_H(p,i+clones,Y);
-#ifndef TWOD
-		ORT(p,i,Z) = OLD_ORT(p,i,Z) + alpha * CG_H(p,i+clones,Z);
-#endif
-	    }
-    i+=nclones;
+      ORT(p,i,Z) = OLD_ORT(p,i,Z) + alpha * CG_H(p,i,Z);
 #endif
     }
   }
 }
+
 #else
 
 void move_atoms_cg(real alpha) 
 {
   if (myid==0)
-  error("the chosen ensemble CG is not supported by this binary");
+    error("the chosen ensemble CG is not supported by this binary");
 }
 
 #endif
-

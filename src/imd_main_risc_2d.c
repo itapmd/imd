@@ -94,7 +94,7 @@ void calc_forces(int steps)
 
 void fix_cells(void)
 {
-  int i,j,l;
+  int i,j,l,clone;
   cell *p, *q;
   ivektor coord, dcpu, to_coord;
 
@@ -110,8 +110,18 @@ void fix_cells(void)
         coord = cell_coord( ORT(p,l,X), ORT(p,l,Y) );
         q = PTR_2D_VV(cell_array,coord,cell_dim);
         /* if it's in the wrong cell, move it to the right cell */
-        if (p != q) move_atom(q,p,l); 
-        else        ++l;
+        if (p != q) {
+          move_atom(q, p, l);
+#ifdef CLONE
+          if (l < p->n - nclones)
+            for (clone=1; clone<nclones; clone++)
+              move_atom(q, p, l+clone);
+          else /* we are dealing with the last in the stack */
+            for (clone=1; clone<nclones; clone++)
+              move_atom(q, p, l);
+#endif
+        }
+        else ++l;
       }
     }
 }

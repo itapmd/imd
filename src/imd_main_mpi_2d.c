@@ -162,9 +162,10 @@ void calc_forces(int steps)
 
 void fix_cells(void)
 {
-  int i,j,l;
+  int i,j,l,clone;
   cell *p, *q;
   ivektor coord, dcpu, to_coord;
+  msgbuf *buf;
 
   empty_mpi_buffers();
 
@@ -201,22 +202,42 @@ void fix_cells(void)
 
           /* Check, if atom is on my cpu */
           /* If not, copy into send buffer else move to correct cell */
-          if      ((0<dcpu.x) && (cpu_dim.x>1))
-            copy_one_atom( &send_buf_west,  p, l, 1);
-
-          else if ((0>dcpu.x) && (cpu_dim.x>1)) 
-            copy_one_atom( &send_buf_east,  p, l, 1);
-
-          else if (0<dcpu.y) 
-            copy_one_atom( &send_buf_south, p, l, 1); 
-
-          else if (0>dcpu.y) 
-            copy_one_atom( &send_buf_north, p, l, 1); 
-
+          buf   = NULL;
+          if      ((0<dcpu.x) && (cpu_dim.x>1)) {
+            buf = &send_buf_west; 
+          }
+          else if ((0>dcpu.x) && (cpu_dim.x>1)) { 
+            buf = &send_buf_east;
+          }
+          else if (0<dcpu.y) { 
+            buf = &send_buf_south;
+          }
+          else if (0>dcpu.y) { 
+            buf = &send_buf_north;
+          }
           else { /* atom is on my cpu */
             q = PTR_VV(cell_array,coord,cell_dim);
             move_atom(q, p, l);
+#ifdef CLONE
+            if (l < p->n-nclones)
+              for (clone=1; clone<nclones; clone++) 
+                move_atom(q, p, l+clone);
+            else /* we are dealing with the last in the stack */
+              for (clone=1; clone<nclones; clone++) 
+                move_atom(q, p, l); 
+#endif
           }
+          if (buf != NULL) {
+            copy_one_atom( buf, p, l, 1); 
+#ifdef CLONE
+            if (l < p->n-nclones)
+              for (clone=1; clone<nclones; clone++)
+                copy_one_atom( buf, p, l+clone, 1);
+            else /* we are dealing with the last in the stack */
+              for (clone=1; clone<nclones; clone++)
+                copy_one_atom( buf, p, l, 1);
+#endif
+	  }
         }
       }
     }
