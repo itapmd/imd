@@ -26,6 +26,8 @@ component _2d must be specified. In order that processor specific
 flags are set correctly, the <B>$HOSTTYPE</B> environement variable 
 must be set to one
 of the <A HREF="#hosttypes">supported $HOSTTYPE values</A>.
+The <B>executable</B> is moved to directory $HOME/bin/$HOSTTYPE,
+which must exist, and which should be in the search $PATH.
 The <B>EXTRAFLAGS</B> variable can be used to define further flags
 for the compiler, linker or C preprocessor. Note that starting with
 release 1.3, an IMD binary can support several ensembles. The active
