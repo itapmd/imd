@@ -1075,9 +1075,6 @@ imd_forces_nbl.o: imd_forces_nbl.c
 imd_main_nbl_3d.o: imd_main_nbl_3d.c
 	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_main_nbl_3d.c
 
-imd_forces_nbl.o: imd_forces_nbl.c
-	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_forces_nbl.c
-
 imd_forces_eam2.o: imd_forces_eam2.c
 	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_forces_eam2.c
 
