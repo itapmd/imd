@@ -25,7 +25,9 @@ int main(int argc, char **argv)
   int start;
   time_t tstart, tend;
   real tmp;
-
+  str255 fname;
+  FILE *fl;
+  
   time(&tstart);
 
   /* reset timers */
@@ -54,6 +56,40 @@ int main(int argc, char **argv)
 #ifdef USE_SOCKETS
   if (myid == 0) init_client();
 #endif
+
+  /* write header for properties file, keep up to date ! */
+  sprintf(fname,"%s.eng",outfilename);
+  if (myid == 0)
+    {
+      fl = fopen(fname,"w");
+      if (NULL == fl) error("Cannot open properties file.");
+      fprintf(fl,"# time  part_pot_energy ");
+#ifndef MC
+      fprintf(fl,"2*part_kin_energy ");
+#ifdef FNORM
+      fprintf(fl,"fnorm ");
+#endif
+#ifdef GLOK
+      fprintf(fl,"PxF ");
+#endif
+      fprintf(fl,"pressure ");
+#else
+      fprintf(fl,"mc_accept/mc_count ");
+#endif
+      fprintf(fl,"vol ");
+if (ensemble==ENS_NPT_AXIAL) 
+  {
+    fprintf(fl,"stress_x stress_y stress_z ");
+    fprintf(fl,"box_x.x box_x.y box_x.z ");
+  }
+#if defined(NVT) || defined(NPT)
+fprintf(fl,"eta ");
+#endif
+putc('\n',fl);
+
+fclose(fl);
+
+}
 
 #if !(defined(UNIAX) || defined(MONOLJ))
 
