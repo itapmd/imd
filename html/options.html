@@ -117,6 +117,16 @@ point. The neighbor list then has to be recomputed every 10-20
 steps.</p>
 
 <p>
+The maximal number of atom pairs in the neighbor list is determined
+as a rough estimate times a factor <tt>nbl_size</tt>, a parameter 
+which defaults to <tt>1.1</tt>. If the neighbor list turns out to 
+be too small, IMD aborts with an error message. This may happen if
+the density of the system increases significantly, e.g. in an 
+NPT simulation. In such a case, <tt>nbl_size</tt> can be set
+to a larger value, like <tt>1.2</tt>. Note that the memory
+requirement is directly proportional to <tt>nbl_size</tt>.
+
+<p>
 <b>Limitations:</b> Neighbor lists are currently implemented only
 in <b>3d</b>, and only for <a href="pairpot.html">pair</a> and 
 <a href="eam2.html">EAM</a> interactions. In principle, they 
