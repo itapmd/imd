@@ -220,7 +220,6 @@ void generate_qc( void )
       if (0==input) error("Can't allocate input cell.") ;
       input->n_max=0;
       alloc_cell(input, 1);
-      input->masse[0]=1.0;
 
       /* Set up cpu parts */
 
@@ -714,14 +713,16 @@ void sortin (int ifeld[])
 	      input->ort Z(0) = z;
 	      input->nummer[0] = natoms;
 	      typ=ifeld[6]-1;
-	      
+
 	      if (fabs(x+2.*gmin.x) < 0.0001 && fabs(y+2.*gmin.y) < 0.0001 && 
 		  fabs(z+2.*gmin.z) < 0.0001) typ=0;
 
 	      if (typ == 1) typ=0; 
 	      if (typ == 2) typ=1;
-	
+
 	      input->sorte[0] = typ;
+              input->masse[0] = masses[typ];
+
 #ifdef MPI
 	      cellc = local_cell_coord(input->ort X(0), input->ort Y(0), 
 				       input->ort Z(0));

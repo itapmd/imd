@@ -127,8 +127,10 @@ EXTERN real  lower_e_pot INIT(0.0); /* lower end of energy window */
 EXTERN real  upper_e_pot INIT(0.0); /* upper end of energy window */
 #endif
 
-/* box parameters for generated structures */
-EXTERN ivektor box_param INIT(nullivektor);
+/* data for generated structures */
+EXTERN ivektor box_param INIT(nullivektor);  /* box parameters */
+EXTERN real box_unit INIT(1.0);              /* lattice parameter */
+EXTERN real *masses INIT(NULL);              /* masses */
 
 /* The simulation box and its inverse */
 EXTERN vektor box_x  INIT(nullvektor);

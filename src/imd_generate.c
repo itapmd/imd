@@ -71,10 +71,10 @@ void generate_atoms(str255 mode)
   } else if (0 == strcmp(mode,"_nacl")) {  /* NaCl */
     init_cubic();
     generate_fcc(1);
-  } else if (0 == strcmp(mode,"_bcc")) {  /* bcc */
+  } else if (0 == strcmp(mode,"_bcc")) {   /* bcc */
     init_cubic();
     generate_fcc(2);
-  } else if (0 == strcmp(mode,"_b2")) {  /* B2 */
+  } else if (0 == strcmp(mode,"_b2")) {    /* B2, CsCl */
     init_cubic();
     generate_fcc(3);
   } else if (0 == strcmp(mode,"_lav")) {   /* Laves */
@@ -142,10 +142,10 @@ void generate_atoms(str255 mode)
 void init_hex(void)
 {
   if ((box_param.x==0) || (box_param.y==0)) error("box_param not set!");
-  box_x.x = box_param.x * sqrt(3.0);
+  box_x.x = box_param.x * sqrt(3.0) * box_unit;
   box_x.y = 0.0;
   box_y.x = 0.0;
-  box_y.y = box_param.y;
+  box_y.y = box_param.y * box_unit;
   make_box();
 }
 
@@ -171,10 +171,9 @@ void generate_hex()
 
   /* Set up 1 atom input cell */
   input = (cell *) malloc(sizeof(cell));
-  if (0==input) error("Can't allocate input cell.");
+  if (0==input) error("Cannot allocate input cell");
   input->n_max = 0;
   alloc_cell(input,1);
-  input->masse[0] = 1.0;
 
   natoms  = 0;
   nactive = 0;
@@ -185,17 +184,18 @@ void generate_hex()
       typ  = (i+j) % 2;
       if (typ > 0) continue;
 
-      x = (i+0.5) * sqrt(3.0) * 0.5;
-      y = (j+0.5) * 0.5;
+      x = (i+0.5) * sqrt(3.0) * 0.5 * box_unit;
+      y = (j+0.5) * 0.5 * box_unit;
 
       natoms++;
       nactive += 2;
 
       input->n = 1;
-      input->ort X(0) = x;
-      input->ort Y(0) = y;
+      input->ort X(0)  = x;
+      input->ort Y(0)  = y;
       input->nummer[0] = natoms;
-      input->sorte[0] = typ;
+      input->sorte [0] = typ;
+      input->masse [0] = masses[typ];
       num_sort[typ]++;
       cellc = cell_coord(x,y);
 #ifdef MPI
@@ -224,13 +224,13 @@ void init_cubic(void)
     error("box_param not set!");
   if ((box_param.x%2==1) || (box_param.y%2==1) || (box_param.z%2==1))
     error("box_param must consist of three even numbers!");
-  box_x.x = box_param.x; box_x.y = 0.0;         box_x.z = 0.0;
-  box_y.x = 0.0;         box_y.y = box_param.y; box_y.z = 0.0;
-  box_z.x = 0.0;         box_z.y = 0.0;         box_z.z = box_param.z;
+  box_x.x = box_param.x * box_unit;  box_x.y = 0.0;  box_x.z = 0.0;
+  box_y.x = 0.0;  box_y.y = box_param.y * box_unit;  box_y.z = 0.0;
+  box_z.x = 0.0;  box_z.y = 0.0;  box_z.z = box_param.z * box_unit;
   make_box();
 }
 
-/* generate fcc or NaCl crystal */
+/* generate fcc or B2 or NaCl crystal */
 void generate_fcc(int maxtyp)
 {
   cell    *input, *to;
@@ -254,12 +254,9 @@ void generate_fcc(int maxtyp)
 
   /* Set up 1 atom input cell */
   input = (cell *) malloc(sizeof(cell));
-  if (0==input) error("Can't allocate input cell.");
+  if (0==input) error("Cannot allocate input cell.");
   input->n_max = 0;
   alloc_cell(input,1);
-#ifndef MONOLJ
-  input->masse[0] = 1.0;
-#endif
 
   natoms  = 0;
   nactive = 0;
@@ -270,15 +267,15 @@ void generate_fcc(int maxtyp)
  
         typ  = (x+y+z) % 2;
 
+        /* B2 == CsCl structure */
         if (maxtyp ==3) {
-          if ((z%2==0)&&(y%2==0)&&(x%2==0)) {
+          if ((z%2==0) && (y%2==0) && (x%2==0)) {
              typ=0;
           }
-          else if ((z%2==1)&&(y%2==1)&&(x%2==1)) {
+          else if ((z%2==1) && (y%2==1) && (x%2==1)) {
              typ=1;
           }
-          else
-            continue;
+          else continue;
         }
 
         /* bcc case - all atoms get typ 0 */
@@ -287,19 +284,21 @@ void generate_fcc(int maxtyp)
           typ = 0;
         }
 
+        /* maxtyp == 0: fcc;  maxtyp == 1: NaCl */
         if (typ > maxtyp) continue;  /* if fcc, only atoms of type 0 */
 
 	natoms++;
         nactive += 3;
 
         input->n = 1;
-        input->ort X(0) = x + 0.5;
-        input->ort Y(0) = y + 0.5;
-        input->ort Z(0) = z + 0.5;
+        input->ort X(0) = (x + 0.5) * box_unit;
+        input->ort Y(0) = (y + 0.5) * box_unit;
+        input->ort Z(0) = (z + 0.5) * box_unit;
         cellc = cell_coord(input->ort X(0), input->ort Y(0), input->ort Z(0));
 #ifndef MONOLJ
         input->nummer[0] = natoms;
-        input->sorte[0] = typ;
+        input->sorte [0] = typ;
+        input->masse [0] = masses[typ];
 #endif
         num_sort[typ]++;
 
@@ -316,7 +315,7 @@ void generate_fcc(int maxtyp)
         move_atom(to, input, 0);
 #endif
   }
-} 
+}
 
 /* generate a cubic Laves structure crystal */
 
@@ -326,11 +325,11 @@ void generate_lav()
   vektor  min, max, lmin, lmax, rmax, rmin;
   ivektor cellc;
   int     to_cpu;
-  real     x, y, z, co;
-  real     px[24],py[24],pz[24];
+  real    x, y, z, co;
+  real    px[24],py[24],pz[24];
   int     i,j,k,l,typ,pa[24];
 
-  co = sqrt(2.)/8.;
+  co = sqrt(2.0)/8.;
 
   px[0] = 0; py[0] = 0; pz[0] = 0; pa[0] = 0;
   px[1] = 2; py[1] = 2; pz[1] = 0; pa[1] = 0;
@@ -368,18 +367,18 @@ void generate_lav()
 
   if (myid==0) printf("Zahl der Atome: %d\n",(int)(max.x*max.y*max.z)*24);
 
-  rmin.x = my_coord.x      * box_x.x / cpu_dim.x;
+  rmin.x =  my_coord.x      * box_x.x / cpu_dim.x;
   rmax.x = (my_coord.x + 1) * box_x.x / cpu_dim.x;
-  rmin.y = my_coord.y      * box_y.y / cpu_dim.y;
+  rmin.y =  my_coord.y      * box_y.y / cpu_dim.y;
   rmax.y = (my_coord.y + 1) * box_y.y / cpu_dim.y;
-  rmin.z = my_coord.z      * box_z.z / cpu_dim.z;
+  rmin.z =  my_coord.z      * box_z.z / cpu_dim.z;
   rmax.z = (my_coord.z + 1) * box_z.z / cpu_dim.z;
 
-  lmin.x = (my_coord.x -1)     * box_x.x / cpu_dim.x;
+  lmin.x = (my_coord.x - 1) * box_x.x / cpu_dim.x;
   lmax.x = (my_coord.x + 2) * box_x.x / cpu_dim.x;
-  lmin.y = (my_coord.y -1)     * box_y.y / cpu_dim.y;
+  lmin.y = (my_coord.y - 1) * box_y.y / cpu_dim.y;
   lmax.y = (my_coord.y + 2) * box_y.y / cpu_dim.y;
-  lmin.z = (my_coord.z -1)     * box_z.z / cpu_dim.z;
+  lmin.z = (my_coord.z -1 ) * box_z.z / cpu_dim.z;
   lmax.z = (my_coord.z + 2) * box_z.z / cpu_dim.z;
 
   min.x = (int)(lmin.x/sqrt(8.)+0.5);
@@ -408,12 +407,9 @@ void generate_lav()
 
   /* Set up 1 atom input cell */
   input = (cell *) malloc(sizeof(cell));
-  if (0==input) error("Can't allocate input cell.");
+  if (0==input) error("Cannot allocate input cell.");
   input->n_max = 0;
   alloc_cell(input,1);
-#ifndef MONOLJ
-  input->masse[0] = 1.0;
-#endif
 
   natoms  = 0;
   nactive = 0;
@@ -436,14 +432,13 @@ void generate_lav()
           nactive += 3;
 
 	  input->n = 1;
-	  input->ort X(0) = x + co;
-	  input->ort Y(0) = y + co;
-	  input->ort Z(0) = z + co;
+	  input->ort X(0) = (x + co) * box_unit;
+	  input->ort Y(0) = (y + co) * box_unit;
+	  input->ort Z(0) = (z + co) * box_unit;
 	  cellc = cell_coord(input->ort X(0),input->ort Y(0),input->ort Z(0));
-#ifndef MONOLJ
 	  input->nummer[0] = natoms;
-	  input->sorte[0] = typ;
-#endif
+	  input->sorte [0] = typ;
+          input->masse [0] = masses[typ];
 	  num_sort[typ]++;
 #ifdef MPI
 	  to_cpu = cpu_coord(cellc);
@@ -459,7 +454,6 @@ void generate_lav()
 #endif
         }
 } 
-
 
 #endif /* not TWOD */
 

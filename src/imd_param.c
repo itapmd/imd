@@ -462,7 +462,7 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
     else if (strcasecmp(token,"total_types")==0) {
-      /* TOTAL nuber of atoms: ntypes + virtualtypes */
+      /* TOTAL nuber of atom types: ntypes + virtual types */
       getparam("total_types",&vtypes,PARAM_INT,1,1);
       restrictions=(vektor*)realloc(restrictions,vtypes*DIM*sizeof(real));
       if (NULL==restrictions)
@@ -594,8 +594,18 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
     else if (strcasecmp(token,"box_param")==0) {
-      /*  box parameters for generated structures */
+      /* box parameters for generated structures */
       getparam("box_param",&box_param,PARAM_INT,DIM,DIM);
+    }
+    else if (strcasecmp(token,"box_unit")==0) {
+      /* lattice parameter for generated structures */
+      getparam("box_unit",&box_unit,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"masses")==0) {
+      /* masses for generated structures */
+      if (ntypes==0) 
+        error("specify parameter ntypes before parameter masses");
+      getparam("masses",&masses,PARAM_REAL,ntypes,ntypes);
     }
     else if (strcasecmp(token,"timestep")==0) {
       /* size of timestep (in MD units) */
@@ -610,13 +620,19 @@ void getparamfile(char *paramfname, int sim)
 #ifdef BINARY
       if (ntypes!=2) error("this executable is for binary systems only!");
 #endif
-      /*if there are no virtual atoms*/
+      /* if there are no virtual atom types */
       if (vtypes==0) vtypes=ntypes;
       restrictions=(vektor*)realloc(restrictions,vtypes*DIM*sizeof(real));
       if (NULL==restrictions)
 	error("Cannot allocate memory for restriction vectors\n");
       for(k=0; k<ntypes; k++)
-       *(restrictions+k) = einsv;
+        *(restrictions+k) = einsv;
+      /* array of masses for generated structures */
+      masses=(real*)realloc(masses,ntypes*sizeof(real));
+      if (NULL==masses)
+	error("Cannot allocate memory for masses array\n");
+      for(k=0; k<ntypes; k++)
+        *(masses+k) = 1.0;
     }
     else if (strcasecmp(token,"starttemp")==0) {
       /* temperature at start of sim. */
