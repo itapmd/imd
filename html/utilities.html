@@ -403,30 +403,28 @@ pressure derivative of the bulk modulus for a given configuration of
 atoms using the potential. Compile as follows:
 
 <PRE>
-    gcc -O [-DTERSOFF] [-DSTIWEB] [-DSINGLE] imd_elco.c -lm
+    gcc -O [-DTERSOFF] [-DSTIWEB] [-DKEATING] [-DSINGLE] imd_elco.c -lm
 </PRE>
-Presently, only the Tersoff potential (flag <TT>-DTERSOFF</TT>) and
-the Stillinger-Weber potential (flag <TT>-DSTIWEB</TT>) are
-supported. Default is a program for the Tersoff potential. Usage is as
-follows:
+Presently, only the Tersoff potential (flag <TT>-DTERSOFF</TT>), the
+Stillinger-Weber potential (flag <TT>-DSTIWEB</TT>), and the Keating
+potential (flag <TT>-DKEATING</TT>) are supported. Default is a
+program for the Tersoff potential. Usage is as follows:
 <PRE>
     imd_elco [-r&lt;nn&gt;] [-A&lt;nn&gt;] [-e&lt;rmax&gt;] [-s] [-m] [-M] -p &lt;paramfile&gt;
 </PRE>
-The parameter <TT>paramfile</TT> is mandatory. imd_elco reads the
-box size, the number of atom types, and the names of the configuration
-and checkpoint files from it. Also read is the parameter <TT>pbc_dirs</TT>,
-which determines (like in IMD) what boundary conditions are 
-used. The default is to use periodic boundary conditions.
-Furthermore, the potential parameters are read from the parameter
-file, where the format of the imd-options <B>tersoff</B> and
-<B>stiweb</B> are used.
-If the restart parameter
-<TT>-r&lt;nn&gt;</TT> is present, imd_elco takes the checkpoint
-file <TT>&lt;outfiles&gt;.&lt;nn&gt;.chkpt</TT> as input, and
-reads also the corresponding iteration file. Otherwise, 
-the input configuration <TT>&lt;coordname&gt;</TT> of the
-simulation described by <TT>paramfile</TT> is used as input.
-If the parameter
+The parameter <TT>paramfile</TT> is mandatory. imd_elco reads the box
+size, the number of atom types, and the names of the configuration and
+checkpoint files from it. Also read is the parameter
+<TT>pbc_dirs</TT>, which determines (like in IMD) what boundary
+conditions are used. The default is to use periodic boundary
+conditions.  Furthermore, the potential parameters are read from the
+parameter file, where the format of the imd-options <B>tersoff</B>,
+<B>stiweb</B>, and <B>keating</B> are used.  If the restart parameter
+<TT>-r&lt;nn&gt;</TT> is present, imd_elco takes the checkpoint file
+<TT>&lt;outfiles&gt;.&lt;nn&gt;.chkpt</TT> as input, and reads also
+the corresponding iteration file. Otherwise, the input configuration
+<TT>&lt;coordname&gt;</TT> of the simulation described by
+<TT>paramfile</TT> is used as input.  If the parameter
 <TT>-A&lt;nn&gt;</TT> is present, imd_elco takes the avpos outfile
 <TT>&lt;outfiles&gt;.&lt;nn&gt;.avp</TT> as input, and reads also the
 corresponding iteration file
@@ -440,26 +438,29 @@ modulus B and the pressure p. If the option [-s] is present, imd_elco
 writes the local stress tensor to a file with .stress appended to the
 input filename. The output format is
 <PRE>
-     x y z s_xx s_yy s_zz s_yz s_zx s_xy  
+     number type x y z s_xx s_yy s_zz s_yz s_zx s_xy vol_voronoi  
 </PRE>
-where x,y,z are the coordinates of the atoms and s_ij are the
-components of the stress tensor. The stress tensor is normalized with
+where <TT>number</TT> is the atom number, <TT>type</TT> is the atom
+type, <TT>x,y,z</TT> are the coordinates of the atoms, <TT>s_ij</TT>
+are the components of the stress tensor, and <TT>vol_voronoi</TT> is
+the volume of the Voronoi cell. The stress tensor is normalized with
 the volume of the Voronoi cell of the corresponding atom. The
-parameter [-e&lt;rmax&gt;] specifies the maximal distance 
-for which neighbouring atoms are taken into account in the computation
-of the Voronoi cells. It should be larger than the potential cutoff. 
+parameter [-e&lt;rmax&gt;] specifies the maximal distance for which
+neighbouring atoms are taken into account in the computation of the
+Voronoi cells. It should be larger than the potential cutoff.
 <P>
  
 If the option [-m] is present, imd_elco writes the local elastic moduli to a
 file with .elco appended to the input filename. The output format is
 <PRE>
-     x y z B c_11 c_12 c_44
+     number type x y z B c_11 c_12 c_44
 </PRE>
 In the case of the option [-M], imd_elco writes the complete
 tensor of the elastic moduli in the format
 <PRE>
-     x y z B c_11 c_12 c_13 c_22 c_23 c_33 c_44 c_45 c_46 c_55 c_56 /
-     c_66 c_14 c_15 c_16 c_24 c_25 c_26 c_34 c_35 c_36
+     number type x y z B \
+     c_11 c_12 c_13 c_22 c_23 c_33 c_44 c_45 c_46 c_55 c_56 c_66 \
+     c_14 c_15 c_16 c_24 c_25 c_26 c_34 c_35 c_36
 </PRE>
 As in the case of the stress tensor, the elastic moduli are normalized
 using the volumes of the Voronoi cells.
