@@ -73,7 +73,7 @@ Can be used with AND and FBC.
 
 <P><LI><B> glok </B><P>
 This is a kind of "global" mik. It works by now with the nve
-integrator in 2D and 3D, but not with uniax. Here the velocities of
+integrator (compile with glok_nve, ensemble is nve) in 2D and 3D, but not with uniax. Here the velocities of
 all atoms are set to 0, when the scalar product of the GLOBAL force
 and impuls vectors is smaller than 0. This should give a faster
 relaxation than mik, espacially if non-local stuff should be relaxed.
