@@ -47,6 +47,7 @@ void do_forces_ttbp(cell *p)
 #ifdef P_AXIAL
   vektor tmp_vir_vect = {0.0, 0.0, 0.0};
 #endif
+  real   r2tmp;
 
   /*           j
               /|
@@ -77,13 +78,13 @@ void do_forces_ttbp(cell *p)
       /* Calculate distance ij */
       radius2  = SPROD(d,d);
       /* Check for distances, shorter than minimal distance */
-      if (radius2 <= ttbp_r2_0) radius2 = ttbp_r2_0;
+      r2tmp = MAX( radius2, ttbp_r2_0 );
       radius = sqrt(radius2);
 
       /* ttbp smooth function ij: potential table */
       if (radius2 <= ttbp_r2_cut[p_typ][j_typ]) {
-      s_k      = (int) ((radius2 - ttbp_r2_0) * ttbp_inv_r2_step);
-      s_chi    = (radius2 - ttbp_r2_0 - s_k * ttbp_r2_step) * ttbp_inv_r2_step;
+      s_k      = (int) ((r2tmp - ttbp_r2_0) * ttbp_inv_r2_step);
+      s_chi    = (r2tmp - ttbp_r2_0 - s_k * ttbp_r2_step) * ttbp_inv_r2_step;
       s_potptr = PTR_3D_V(ttbp_potential, s_k, p_typ, j_typ, ttbp_pot_dim);
       s_pot_k0 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
       s_pot_k1 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
@@ -106,13 +107,13 @@ void do_forces_ttbp(cell *p)
         /* Calculate distance ik */
         rradius2 = SPROD(dd,dd);
         /* Check for distances, shorter than minimal distance */
-        if (rradius2 <= ttbp_r2_0) rradius2 = ttbp_r2_0;
+        r2tmp = MAX( rradius2, ttbp_r2_0 );
 	rradius  = sqrt(rradius2);
 
         /* ttbp smooth function ik: potential table */
 	if ( rradius2 <= ttbp_r2_cut[p_typ][k_typ]) {
-        s_k   = (int) ((rradius2 - ttbp_r2_0) * ttbp_inv_r2_step);
-        s_chi = (rradius2 - ttbp_r2_0 - s_k * ttbp_r2_step) * ttbp_inv_r2_step;
+        s_k   = (int) ((r2tmp - ttbp_r2_0) * ttbp_inv_r2_step);
+        s_chi = (r2tmp - ttbp_r2_0 - s_k * ttbp_r2_step) * ttbp_inv_r2_step;
         s_potptr = PTR_3D_V(ttbp_potential, s_k, p_typ, k_typ , ttbp_pot_dim);
         s_pot_k0 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
         s_pot_k1 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
@@ -129,13 +130,13 @@ void do_forces_ttbp(cell *p)
 	ddd.z = d.z - dd.z;
 	rrradius2 = SPROD(ddd,ddd);
 	/* Check for distances, shorter than minimal distances */
-	if (rrradius2 <= ttbp_r2_0) rrradius2 = ttbp_r2_0;
+        r2tmp = MAX( rrradius2, ttbp_r2_0 );
 	rrradius = sqrt(rrradius2);
 
 	/* ttbp smooth function jk: potential table */
 	if (rrradius2 <= ttbp_r2_cut[k_typ][j_typ]) {
-       	s_k   = (int) ((rrradius2 - ttbp_r2_0) * ttbp_inv_r2_step);
-        s_chi = (rrradius2 - ttbp_r2_0 - s_k * ttbp_r2_step) * ttbp_inv_r2_step;
+       	s_k   = (int) ((r2tmp - ttbp_r2_0) * ttbp_inv_r2_step);
+        s_chi = (r2tmp - ttbp_r2_0 - s_k * ttbp_r2_step) * ttbp_inv_r2_step;
         s_potptr = PTR_3D_V(ttbp_potential, s_k, k_typ, j_typ , ttbp_pot_dim);
         s_pot_k0 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
         s_pot_k1 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
