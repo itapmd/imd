@@ -1,9 +1,15 @@
-#
-# Makefile 2dvis/3dvis
+# Makefile beavis
 #
 
-# Target
-MAKETARGET = $(@)
+# Compiler
+CC_iris4d = cc
+CC_i386-linux = gcc
+CC_alpha = gcc
+CC = 
+
+# Linker
+LIBP = -L/usr/X11/lib
+LIBS = -lvogle -lX11 -lm
 
 # Compiler
 CC_iris4d = cc
@@ -11,42 +17,53 @@ CC_i386-linux = gcc
 CC_alpha = gcc
 CC = $(CC_$(HOSTTYPE))
 
-# Compiler flags
-CFLAGS = -g
+# Headers
+HEADERS 	= sockutil.h tokens.h globals.h prototypes.h
+SOURCES		= main.c client.c sockutil.c param.c
 
-ifneq (,$(strip $(findstring 3d,${MAKETARGET})))
+# Compiler flags
+#CFLAGS = -g
+
+ifneq (,$(strip $(findstring 2d,${MAKETARGET})))
 CFLAGS += -DTWOD
 endif
 
 ifneq (,$(strip $(findstring debug,${MAKETARGET})))
-CFLAGS += -g
+CFLAGS += -DDEBUG
 endif
 
 # Linker
 LIBP = -L/usr/X11/lib
 LIBS = -lvogle -lX11 -lm
 
-all:	2dvis
+# Objects
+# Substitute .o for .c to get the names of the object files
+OBJECTS := $(subst .c,.o,${SOURCES})
 
-3dvis:	2dvis.o client.o sockutil.o param.o
-	$(CC) $(LIBP) $(CFLAGS) -o 2dvis 2dvis.o client.o sockutil.o param.o $(LIBS)
-	mv 2dvis $(HOME)/bin/$(HOSTTYPE)
+# How to compile *.c files
+%.o: %.c ${HEADERS}
+	${CC} ${CFLAGS} -c $(subst .o,.c,$@)
 
-2dvis:	2dvis.o client.o sockutil.o param.o
-	$(CC) $(LIBP) $(CFLAGS) -o 2dvis 2dvis.o client.o sockutil.o param.o $(LIBS)
-	mv 2dvis $(HOME)/bin/$(HOSTTYPE)
+# How to link
+$(MAKETARGET): ${OBJECTS} ${HEADERS}
+	$(CC) $(LIBP) $(CFLAGS) -o $@ ${OBJECTS} ${LIBS}
+	mv $@ $(HOME)/bin/$(HOSTTYPE)
 
-2dvis.o:	2dvis.c globals.h prototypes.h
-	$(CC) $(CFLAGS) -c 2dvis.c
+.DEFAULT:
+	${MAKE} MAKETARGET='$@' STAGE2
 
-client.o:	client.c client.h sockutil.h tokens.h globals.h prototypes.h 
-	$(CC) $(CFLAGS) -c client.c
-
-sockutil.o:	sockutil.c sockutil.h globals.h prototypes.h
-	$(CC) $(CFLAGS) -c sockutil.c
-
-param.o:	param.c  globals.h prototypes.h
-	$(CC) $(CFLAGS) -c param.c
+# Second recursion sets all other Variables (depending on MAKETARGET) and compiles
+# An empty MAKETARGET Variable would create an infinite recursion, so we check
+STAGE2:
+ifneq (,${MAKETARGET})
+	${MAKE} OBJECTS='${OBJECTS}'\
+                CC='${CC}'\
+                CFLAGS='${CFLAGS}'\
+                LIBS='${LIBS}'\
+                MAKETARGET='${MAKETARGET}' ${MAKETARGET}
+else
+	@echo 'No TARGET specified.'
+endif
 
 clean:
 	rm -f *.o *~ \#*  
