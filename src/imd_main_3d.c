@@ -587,7 +587,7 @@ void calc_properties(void)
   /* volume and pressure */
   volume   = box_x.x * ( box_y.y * box_z.z - box_y.z * box_z.y)
            - box_x.y * ( box_y.x * box_z.z - box_y.z * box_z.x)
-           + box_x.z * ( box_y.x * box_z.y - box_y.x * box_z.y);
+           + box_x.z * ( box_y.x * box_z.y - box_y.y * box_z.x);
 #ifdef UNIAX
   pressure = ( 2.0 / 5.0 * tot_kin_energy + virial / 3.0 ) / volume ;
 #else
