@@ -50,39 +50,23 @@
 #define DEFAULT_POTFILE_TYPE 1
 #endif
 
-/* we always need PAIR_POT, unless TERSOFF, KEATING, STIWEB, UNIAX, MONOLJ, */
-/* SPRING, or PAIR_PRE are defined */
-/* note that  PAIR_POT is the default if no interaction is specified     */
-#if !(defined(TERSOFF) || defined(KEATING) || defined(STIWEB) || defined(UNIAX) || defined(MONOLJ) || defined(SPRING) || defined(PAIR_PRE))
-#ifndef PAIR_POT
-#define PAIR_POT
-#endif
-#endif
-
-/* for EAM2, TTBP, and PAIR, we also need PAIR_POT */
-#if (defined(EAM2) || defined(TTBP) || defined(PAIR))
-#ifndef PAIR_POT
-#define PAIR_POT 
-#endif
-#endif
-
-/* PAIR is default */
-#if !(defined(TERSOFF) || defined(KEATING) || defined(STIWEB) || defined(EWALD) || defined(SPRING) || defined(PAIR_PRE))
+/* we always need PAIR, unless TERSOFF, KEATING, STIWEB, UNIAX, or EWALD */
+/* Note that PAIR is the default, if no interaction is specified */
+#if !(defined(TERSOFF) || defined(STIWEB) || defined(KEATING) || defined(UNIAX) || defined(EWALD))
 #ifndef PAIR
 #define PAIR
 #endif
 #endif
 
-/* If predefined potentials are used, no potential table is read in unless */
-/* the option pair is used explicitly */
-#if defined(PAIR_PRE) && !defined(PAIR)
-#ifdef PAIR_POT
-#undef PAIR_POT
+/* for EAM2 and TTBP, we also need PAIR */
+#if (defined(EAM2) || defined(TTBP))
+#ifndef PAIR
+#define PAIR 
 #endif
 #endif
 
 /* shortcut for covalent interactions */
-#if defined(KEATING)|| defined(TTBP) || defined(TERSOFF) || defined(STIWEB)
+#if defined(KEATING) || defined(TTBP) || defined(TERSOFF) || defined(STIWEB)
 #define COVALENT
 #endif
 

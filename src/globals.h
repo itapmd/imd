@@ -32,7 +32,6 @@
 #define einsivektor { 1, 1 }
 #define parteinsivektor { 1, 0 }
 #define nullsymtensor { 0.0, 0.0, 0.0 }
-
 #else
 #define nullvektor  { 0.0, 0.0, 0.0 }
 #define nullivektor { 0, 0, 0 }
@@ -48,6 +47,35 @@
 #define nullivektor3d { 0, 0, 0 }
 
 #define nullbuffer  {NULL, 0, 0 }
+
+#define zero10       {0,0,0,0,0,0,0,0,0,0}
+
+#define zero45       {0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0}
+
+#define zero55       {0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0}
+
+#define zero550      {0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0}
 
 #else
 #define EXTERN extern /* declare them extern otherwise */
@@ -100,6 +128,7 @@ EXTERN int natoms  INIT(0);      /* Total number of atoms */
 EXTERN int nactive INIT(0);      /* number of transl. degrees of freedom */
 EXTERN int nactive_rot INIT(0);  /* number of rot. degrees of freedom */
 EXTERN int ntypes INIT(0);       /* Total number of different atom types */
+EXTERN int ntypepairs INIT(0);   /* Total number of different types pairs */
 EXTERN int *num_sort INIT(NULL); /* number of atoms for each type */
 EXTERN int steps INIT(0);        /* number of current MD step */
 EXTERN int steps_max INIT(0);    /* Maximum number of MD steps */
@@ -217,8 +246,6 @@ EXTERN real omega_E INIT(0.0);
 
 /* Potential Table */
 EXTERN pot_table_t pair_pot;         /* potential data structure */
-EXTERN real monolj_r2_cut INIT(0.0); /* cutoff^2 for MONOLJ */   
-EXTERN real monolj_shift INIT(0.0);  /* shift of monolj potential */   
 EXTERN real cellsz INIT(0);          /* minimal cell diameter */
 EXTERN int  initsz INIT(10);         /* initial number of atoms in cell */
 EXTERN int  incrsz INIT(10);         /* increment of number of atoms in cell */
@@ -522,41 +549,40 @@ EXTERN vektor socketwin_ll  INIT(nullvektor);  /* lower left (front) corner */
 EXTERN vektor socketwin_ur  INIT(nullvektor);  /* upper right (back) corner */
 #endif
 
-#ifdef PAIR_PRE
-EXTERN real r_cut_lin[55]; 
-EXTERN real r_cut[10][10];    /* Less than 11 atom types! */
+#ifdef PAIR
+/* analytically defined pair potentials */
+EXTERN real r_cut_lin[55] INIT(zero55); 
+EXTERN real r_cut [10][10]; 
 EXTERN real r2_cut[10][10]; 
-EXTERN real r_begin[55];
-EXTERN real pot_res[55]; 
-EXTERN int  use_pot_table INIT(0); 
-#endif
-
-#ifdef LJ
-EXTERN real lj_epsilon_lin[55];
+EXTERN real r_begin[55] INIT(zero55);
+EXTERN real pot_res[55] INIT(zero55);
+EXTERN int  have_pre_pot INIT(0); 
+EXTERN int  have_potfile INIT(0); 
+/* Lennard-Jones */
+EXTERN real lj_epsilon_lin[55] INIT(zero55);
 EXTERN real lj_epsilon[10][10];
-EXTERN real lj_sigma_lin[55];
+EXTERN real lj_sigma_lin[55] INIT(zero55);
 EXTERN real lj_sigma[10][10];
 EXTERN real lj_shift[10][10];
-#endif
-
-#ifdef MORSE
-EXTERN real morse_epsilon_lin[55];
+/* Morse */
+EXTERN real morse_epsilon_lin[55] INIT(zero55);
 EXTERN real morse_epsilon[10][10];
-EXTERN real morse_sigma_lin[55];
+EXTERN real morse_sigma_lin[55] INIT(zero55);
 EXTERN real morse_sigma[10][10];
-EXTERN real morse_alpha_lin[55];
+EXTERN real morse_alpha_lin[55] INIT(zero55);
 EXTERN real morse_alpha[10][10];
 EXTERN real morse_shift[10][10];
-#endif
-
-#ifdef BUCK
-EXTERN real buck_a_lin[55];
+/* Buckingham */
+EXTERN real buck_a_lin[55] INIT(zero55);
 EXTERN real buck_a[10][10];
-EXTERN real buck_c_lin[55];
+EXTERN real buck_c_lin[55] INIT(zero55);
 EXTERN real buck_c[10][10];
-EXTERN real buck_sigma_lin[55];
+EXTERN real buck_sigma_lin[55] INIT(zero55);
 EXTERN real buck_sigma[10][10];
 EXTERN real buck_shift[10][10];
+/* harmonic potential for shell model */
+EXTERN real spring_const[45] INIT(zero45);
+EXTERN real spring_cst[10][10];
 #endif
 
 #ifdef EAM2
@@ -574,77 +600,79 @@ EXTERN real ttbp_sp[10];          /* constants; less than 11 atom types! */
 #endif
 
 #ifdef STIWEB
-EXTERN real stiweb_a[55];       /* Parameters for Stillinger-Weber potential */
-EXTERN real sw_a[10][10];       /* Less than 11 atom types! */
-EXTERN real stiweb_b[55];
+/* Parameters for Stillinger-Weber potential */
+/* Not more than 10 atom types!              */
+EXTERN real stiweb_a[55] INIT(zero55); 
+EXTERN real sw_a[10][10];
+EXTERN real stiweb_b[55] INIT(zero55);
 EXTERN real sw_b[10][10];
-EXTERN real stiweb_p[55];
+EXTERN real stiweb_p[55] INIT(zero55);
 EXTERN real sw_p[10][10];
-EXTERN real stiweb_q[55];
+EXTERN real stiweb_q[55] INIT(zero55);
 EXTERN real sw_q[10][10];
-EXTERN real stiweb_a1[55];
+EXTERN real stiweb_a1[55] INIT(zero55);
 EXTERN real sw_a1[10][10];
-EXTERN real stiweb_de[55];
+EXTERN real stiweb_de[55] INIT(zero55);
 EXTERN real sw_de[10][10];
 EXTERN real sw_2_a1[10][10];
-EXTERN real stiweb_a2[55];
+EXTERN real stiweb_a2[55] INIT(zero55);
 EXTERN real sw_a2[10][10];
-EXTERN real stiweb_la[550];
+EXTERN real stiweb_la[550] INIT(zero550);
 EXTERN real sw_la[10][10][10];
-EXTERN real stiweb_ga[55];
+EXTERN real stiweb_ga[55] INIT(zero55);
 EXTERN real sw_ga[10][10];
 #endif
 
 #ifdef TERSOFF
-EXTERN real ters_r_cut[55];  /* cutoff^2;  less than 11 atom types! */
+/* Parameters for Tersoff potential  */
+/* Not more than 10 atom types!      */
+EXTERN real ters_r_cut[55] INIT(zero55);  /* cutoff^2 */
 EXTERN real ter_r_cut[10][10];
 EXTERN real ter_r2_cut[10][10];
-EXTERN real ters_r0[55];        
+EXTERN real ters_r0[55] INIT(zero55);        
 EXTERN real ter_r0[10][10];
-EXTERN real ters_a[55];        /* Parameters for Tersoff potential  */
+EXTERN real ters_a[55] INIT(zero55);       
 EXTERN real ter_a[10][10];
-EXTERN real ters_b[55];
+EXTERN real ters_b[55] INIT(zero55);
 EXTERN real ter_b[10][10];
-EXTERN real ters_la[55];
+EXTERN real ters_la[55] INIT(zero55);
 EXTERN real ter_la[10][10];
-EXTERN real ters_mu[55];
+EXTERN real ters_mu[55] INIT(zero55);
 EXTERN real ter_mu[10][10];
-EXTERN real ters_chi[45];
+EXTERN real ters_chi[45] INIT(zero45);
 EXTERN real ter_chi[10][10];
-EXTERN real ters_om[45];
+EXTERN real ters_om[45] INIT(zero45);
 EXTERN real ter_om[10][10];
 EXTERN real ters_ga[10];
-EXTERN real ters_n[10];
-EXTERN real ters_c[10];
-EXTERN real ter_c2[10];
-EXTERN real ters_d[10];
-EXTERN real ter_d2[10];
-EXTERN real ters_h[10];
+EXTERN real ters_n[10] INIT(zero10);
+EXTERN real ters_c[10] INIT(zero10);
+EXTERN real ter_c2[10] INIT(zero10);
+EXTERN real ters_d[10] INIT(zero10);
+EXTERN real ter_d2[10] INIT(zero10);
+EXTERN real ters_h[10] INIT(zero10);
 #endif
 
 #ifdef KEATING
-EXTERN real keating_alpha[55];
+EXTERN real keating_alpha[55] INIT(zero55);
 EXTERN real keat_alpha[10][10];
-EXTERN real keating_d[55];
+EXTERN real keating_d[55] INIT(zero55);
 EXTERN real keat_d[10][10];
-EXTERN real keating_r_cut[55];
+EXTERN real keating_r_cut[55] INIT(zero55);
 EXTERN real keat_r_cut[10][10];
 EXTERN real keat_r2_cut[10][10];
-EXTERN real keating_beta[550];
+EXTERN real keating_beta[550] INIT(zero550);
 EXTERN real keat_beta[10][10][10];
 #endif
 
-/* for TTBP, STIWEB, and TERSOFF */
 #ifdef COVALENT  
 EXTERN int neigh_len INIT(50);     /* max neighbors */
 #endif 
 
-/* for EPITAX */
 #ifdef EPITAX
-EXTERN int epitax_rate[10];        /* creation rate of atoms */
-EXTERN int epitax_type[10];        /* type of atom to be created */
-EXTERN real epitax_mass[10];       /* mass of atom to be created */
-EXTERN real epitax_temp[10];       /* temperature of atom to be created */
+EXTERN int  epitax_rate[10] INIT(zero10);  /* creation rate of atoms */
+EXTERN int  epitax_type[10] INIT(zero10);  /* type of atom to be created */
+EXTERN real epitax_mass[10] INIT(zero10);  /* mass of atom to be created */
+EXTERN real epitax_temp[10] INIT(zero10);  /* temp. of atom to be created */
 EXTERN real epitax_cutoff INIT(0.0);  
 EXTERN int epitax_maxsteps;        /* number of timesteps with atom creation */
 EXTERN int epitax_startstep INIT(0);  /* timestep where cretion begins */
@@ -659,10 +687,10 @@ EXTERN real epitax_speed INIT(1.0);
 #endif
 
 #ifdef EWALD
-EXTERN real     charge[10];     /* Charge of atoms */
-EXTERN real     ew_kappa;       /* Parameter kappa */
-EXTERN ivektor  ew_kmax;        /* Number of k-vectors in Ewald sum */
-EXTERN int      ew_nmax;        /* Number of image boxes */
+EXTERN real     charge[10] INIT(zero10); /* Charge of atoms */
+EXTERN real     ew_kappa;                /* Parameter kappa */
+EXTERN ivektor  ew_kmax;                 /* Number of k-vectors in Ewald sum */
+EXTERN int      ew_nmax;                 /* Number of image boxes */
 EXTERN int      ew_nx;
 EXTERN int      ew_ny;
 EXTERN int      ew_nz;
@@ -681,13 +709,6 @@ EXTERN real     ew_vorf;
 EXTERN real     ew_vorf1;
 EXTERN real     ew_eps;
 EXTERN real     twopi;
-#endif
-
-#ifdef SPRING
-EXTERN real     spring_const[45];    /* Spring constant */
-EXTERN real     spring_cst[10][10];
-EXTERN real     spring_r_cut[55];    /* Cutoff */
-EXTERN real     spring_r2_cut[10][10];
 #endif
 
 /* generate quasicrystal */
@@ -726,13 +747,3 @@ EXTERN real uniax_r_cut  INIT(0.0);/* cutoff radius for uniaxial molecules */
 EXTERN real uniax_r2_cut INIT(0.0);/* cutoff radius^2 for uniaxial molecules */
 #endif
 
-/* global parameters for PEIERLS */
-#ifdef PN
-EXTERN int pn_interval INIT(0); /* Period of pn output ==0 for no energy data */
-EXTERN FILE  *pn_file INIT(NULL);      /* pointer to .pn file  */
-EXTERN vektor3d gp INIT(nullvektor);/* cutoff radius for uniaxial molecules */
-EXTERN real corestart INIT(0.0);/* cutoff radius for uniaxial molecules */
-EXTERN real coreend INIT(0.0);/* cutoff radius for uniaxial molecules */
-EXTERN real bv INIT(1.0);/* cutoff radius for uniaxial molecules */
-EXTERN real w INIT(1.0);/* cutoff radius for uniaxial molecules */
-#endif

@@ -604,21 +604,6 @@ ifneq (,$(strip $(findstring pair,${MAKETARGET})))
 CFLAGS  += -DPAIR
 endif
 
-# LJ
-ifneq (,$(strip $(findstring lj,${MAKETARGET})))
-CFLAGS  += -DPAIR_PRE -DLJ
-endif
-
-# MORSE
-ifneq (,$(strip $(findstring morse,${MAKETARGET})))
-CFLAGS  += -DPAIR_PRE -DMORSE
-endif
-
-# BUCK
-ifneq (,$(strip $(findstring buck,${MAKETARGET})))
-CFLAGS  += -DPAIR_PRE -DBUCK
-endif
-
 # EAM2 or EAM  -  this is now the same
 ifneq (,$(strip $(findstring eam,${MAKETARGET})))
 CFLAGS  += -DEAM2
@@ -664,11 +649,6 @@ endif
 ifneq (,$(strip $(findstring ewald,${MAKETARGET})))
 CFLAGS  += -DEWALD
 FORCESOURCES  += ${EWALDSOURCES}
-endif
-
-# SPRING
-ifneq (,$(strip $(findstring spring,${MAKETARGET})))
-CFLAGS  += -DSPRING
 endif
 
 SOURCES += ${FORCESOURCES}

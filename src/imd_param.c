@@ -330,6 +330,7 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"potfile")==0) {
       /* filename for potential data */
       getparam("potfile",potfilename,PARAM_STR,1,255);
+      have_potfile = 1;
     }
 #ifdef DISLOC
     else if (strcasecmp(token,"reffile")==0) {
@@ -682,6 +683,7 @@ void getparamfile(char *paramfname, int sim)
 #ifdef BINARY
       if (ntypes!=2) error("this executable is for binary systems only!");
 #endif
+      ntypepairs = ((ntypes+1)*ntypes)/2;
       /* if there are no virtual atom types */
       if (vtypes==0) vtypes=ntypes;
       restrictions=(vektor*)realloc(restrictions,vtypes*DIM*sizeof(real));
@@ -729,19 +731,11 @@ void getparamfile(char *paramfname, int sim)
       getparam("center",&center,PARAM_REAL,2,2);
     }
 #endif
-#ifdef MONOLJ
-    else if (strcasecmp(token,"r_cut")==0) {
-      /* cutoff radius */
-      getparam("r_cut",&monolj_r2_cut,PARAM_REAL,1,1);
-      monolj_r2_cut = SQR(monolj_r2_cut);
-      cellsz = MAX(cellsz,monolj_r2_cut);
-    }
     else if (strcasecmp(token,"cellsize")==0) {
       /* minimal cell diameter */
       getparam("cellsize",&rtmp,PARAM_REAL,1,1);
       cellsz = MAX(cellsz,SQR(rtmp));
     }
-#endif
     else if (strcasecmp(token,"initsize")==0) {
       /* initial cell size */
       getparam("initsize",&initsz,PARAM_INT,1,1);
@@ -1369,6 +1363,7 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"core_potential_file")==0) {
       /* EAM2:Filename for the tabulated Core-Core Potential (r^2) */
       getparam("core_potential_file",potfilename,PARAM_STR,1,255);
+      have_potfile = 1;
     }
     else if (strcasecmp(token,"embedding_energy_file")==0) {
       /* EAM2:Filename for the tabulated Embedding Enery(rho_h) */
@@ -1379,199 +1374,176 @@ void getparamfile(char *paramfname, int sim)
       getparam("atomic_e-density_file",eam2_at_rho_filename,PARAM_STR,1,255);
     }
 #endif
-
-#ifdef PAIR_PRE
-    else if (strcasecmp(token,"r_cut")==0) {     
-      getparam("r_cut",r_cut_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+#ifdef PAIR
+    /* analytically defined potentials */
+    else if (strcasecmp(token,"r_cut")==0) {
+      getparam(token, r_cut_lin, PARAM_REAL, ntypepairs, ntypepairs);
+      have_pre_pot = 1;
     }
-    else if (strcasecmp(token,"r_begin")==0) {     
-      getparam("r_begin",r_begin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
-      use_pot_table = 1;
+    else if (strcasecmp(token,"r_begin")==0) {
+      getparam(token, r_begin, PARAM_REAL, ntypepairs, ntypepairs);
     }
     else if (strcasecmp(token,"pot_res")==0) {     
-      getparam("pot_res",pot_res,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+      getparam(token, pot_res, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+    /* Lennard-Jones */
+    else if (strcasecmp(token,"lj_epsilon")==0) {
+      getparam(token ,lj_epsilon_lin, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+    else if (strcasecmp(token,"lj_sigma")==0) {
+      getparam(token, lj_sigma_lin, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+    /* Morse */
+    else if (strcasecmp(token,"morse_epsilon")==0) {
+      getparam(token, morse_epsilon_lin, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+    else if (strcasecmp(token,"morse_sigma")==0) {
+      getparam(token, morse_sigma_lin, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+    else if (strcasecmp(token,"morse_alpha")==0) {
+      getparam(token, morse_alpha_lin, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+    /* Buckingham */
+    else if (strcasecmp(token,"buck_a")==0) {
+      getparam(token, buck_a_lin, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+    else if (strcasecmp(token,"buck_c")==0) {
+      getparam(token, buck_c_lin, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+    else if (strcasecmp(token,"buck_sigma")==0) {
+      getparam(token, buck_sigma_lin, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+    /* harmonic potential for shell model */
+    else if (strcasecmp(token,"spring_const")==0) {
+      getparam(token, spring_const, PARAM_REAL, 
+               ntypepairs-ntypes, ntypepairs-ntypes);
     }
 #endif
-
-#ifdef LJ
-    else if (strcasecmp(token,"lj_epsilon")==0) {     
-      getparam("lj_epsilon",lj_epsilon_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
-    }
-    else if (strcasecmp(token,"lj_sigma")==0) {     
-      getparam("lj_sigma",lj_sigma_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
-    }
-#endif
-
-#ifdef MORSE
-    else if (strcasecmp(token,"morse_epsilon")==0) {     
-      getparam("morse_epsilon",morse_epsilon_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
-    }
-    else if (strcasecmp(token,"morse_sigma")==0) {     
-      getparam("morse_sigma",morse_sigma_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
-    }
-    else if (strcasecmp(token,"morse_alpha")==0) {     
-      getparam("morse_alpha",morse_alpha_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
-    }
-#endif
-
-#ifdef BUCK
-    else if (strcasecmp(token,"buck_a")==0) {     
-      getparam("buck_a",buck_a_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
-    }
-    else if (strcasecmp(token,"buck_c")==0) {     
-      getparam("buck_c",buck_c_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
-    }
-    else if (strcasecmp(token,"buck_sigma")==0) {     
-      getparam("buck_sigma",buck_sigma_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
-    }
-#endif
-
 #ifdef COVALENT
     else if (strcasecmp(token,"neigh_len")==0) {
       /* number of neighbors */
-      getparam("neigh_len",&neigh_len,PARAM_INT,1,1);
+      getparam(token, &neigh_len, PARAM_INT, 1, 1);
     }
 #endif
 #ifdef TTBP
     else if (strcasecmp(token,"ttbp_constant")==0) {
       /* force constant (radians); type 0 */
-      getparam("ttbp_constant",ttbp_constant,PARAM_REAL,ntypes,ntypes);
+      getparam(token, ttbp_constant, PARAM_REAL, ntypes, ntypes);
     }
     else if (strcasecmp(token,"ttbp_sp")==0) {
       /* hybridization of the element type */
-      getparam("ttbp_sp",ttbp_sp,PARAM_REAL,ntypes,ntypes);
+      getparam(token, ttbp_sp, PARAM_REAL, ntypes, ntypes);
     }
     else if (strcasecmp(token,"ttbp_potfile")==0) {
       /* filename for ttbp potential data */
-      getparam("ttbp_potfile",ttbp_potfilename,PARAM_STR,1,255);
+      getparam(token, ttbp_potfilename, PARAM_STR, 1, 255);
+      have_potfile = 1;
     }
 #endif
 #ifdef STIWEB
-    else if (strcasecmp(token,"stiweb_a")==0) {     
-      getparam("stiweb_a",stiweb_a,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"stiweb_a")==0) {
+      getparam(token, stiweb_a, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"stiweb_b")==0) {     
-      getparam("stiweb_b",stiweb_b,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"stiweb_b")==0) {
+      getparam(token, stiweb_b, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"stiweb_p")==0) {     
-      getparam("stiweb_p",stiweb_p,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"stiweb_p")==0) {
+      getparam(token, stiweb_p, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"stiweb_q")==0) {     
-      getparam("stiweb_q",stiweb_q,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"stiweb_q")==0) {
+      getparam(token, stiweb_q, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"stiweb_a1")==0) {     
-      getparam("stiweb_a1",stiweb_a1,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"stiweb_a1")==0) {
+      getparam(token, stiweb_a1, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"stiweb_de")==0) {     
-      getparam("stiweb_de",stiweb_de,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"stiweb_de")==0) {
+      getparam(token, stiweb_de, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"stiweb_a2")==0) {     
-      getparam("stiweb_a2",stiweb_a2,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"stiweb_a2")==0) {
+      getparam(token, stiweb_a2, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"stiweb_ga")==0) {     
-      getparam("stiweb_ga",stiweb_ga,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"stiweb_ga")==0) {
+      getparam(token, stiweb_ga, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"stiweb_la")==0) {     
-      getparam("stiweb_la",stiweb_la,PARAM_REAL,ntypes*ntypes*(ntypes+1)/2,ntypes*ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"stiweb_la")==0) {
+      getparam(token, stiweb_la, PARAM_REAL, ntypepairs, ntypepairs);
     }
 #endif
 #ifdef TERSOFF
     /* Parameters for Tersoff potential */
-    else if (strcasecmp(token,"ters_r_cut")==0) {     
-      getparam("ters_r_cut",ters_r_cut,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"ters_r_cut")==0) {
+      getparam(token, ters_r_cut, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"ters_r0")==0) {     
-      getparam("ters_r0",ters_r0,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"ters_r0")==0) {
+      getparam(token, ters_r0, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"ters_a")==0) {     
-      getparam("ters_a",ters_a,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"ters_a")==0) {
+      getparam(token, ters_a, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"ters_b")==0) {     
-      getparam("ters_b",ters_b,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"ters_b")==0) {
+      getparam(token, ters_b, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"ters_la")==0) {     
-      getparam("ters_la",ters_la,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"ters_la")==0) {
+      getparam(token, ters_la, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"ters_mu")==0) {     
-      getparam("ters_mu",ters_mu,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"ters_mu")==0) {
+      getparam(token, ters_mu, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"ters_chi")==0) {     
-      getparam("ters_chi",ters_chi,PARAM_REAL,ntypes*(ntypes-1)/2,ntypes*(ntypes-1)/2);
+    else if (strcasecmp(token,"ters_chi")==0) {
+      getparam(token, ters_chi, PARAM_REAL, 
+               ntypepairs-ntypes, ntypepairs-ntypes);
     }
-    else if (strcasecmp(token,"ters_om")==0) {     
-      getparam("ters_om",ters_om,PARAM_REAL,ntypes*(ntypes-1)/2,ntypes*(ntypes-1)/2);
+    else if (strcasecmp(token,"ters_om")==0) {
+      getparam(token, ters_om, PARAM_REAL,
+               ntypepairs-ntypes, ntypepairs-ntypes);
     }
-    else if (strcasecmp(token,"ters_ga")==0) {     
-      getparam("ters_ga",ters_ga,PARAM_REAL,ntypes,ntypes);
+    else if (strcasecmp(token,"ters_ga")==0) {
+      getparam(token, ters_ga, PARAM_REAL, ntypes, ntypes);
     }
-    else if (strcasecmp(token,"ters_n")==0) {     
-      getparam("ters_n",ters_n,PARAM_REAL,ntypes,ntypes);
+    else if (strcasecmp(token,"ters_n")==0) {
+      getparam(token, ters_n, PARAM_REAL, ntypes, ntypes);
     }
-    else if (strcasecmp(token,"ters_c")==0) {     
-      getparam("ters_c",ters_c,PARAM_REAL,ntypes,ntypes);
+    else if (strcasecmp(token,"ters_c")==0) {
+      getparam(token, ters_c, PARAM_REAL, ntypes, ntypes);
     }
-    else if (strcasecmp(token,"ters_d")==0) {     
-      getparam("ters_d",ters_d,PARAM_REAL,ntypes,ntypes);
+    else if (strcasecmp(token,"ters_d")==0) {
+      getparam(token, ters_d, PARAM_REAL, ntypes, ntypes);
     }
-    else if (strcasecmp(token,"ters_h")==0) {     
-      getparam("ters_h",ters_h,PARAM_REAL,ntypes,ntypes);
+    else if (strcasecmp(token,"ters_h")==0) {
+      getparam(token, ters_h, PARAM_REAL, ntypes, ntypes);
     }
 #endif
 #ifdef KEATING
     /* Parameters for Keating potential */
-    else if (strcasecmp(token,"keating_r_cut")==0) {     
-      getparam("keating_r_cut",keating_r_cut,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"keating_r_cut")==0) {
+      getparam(token, keating_r_cut, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"keating_alpha")==0) {     
-      getparam("keating_alpha",keating_alpha,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"keating_alpha")==0) {
+      getparam(token, keating_alpha, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"keating_d")==0) {     
-      getparam("keating_d",keating_d,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"keating_d")==0) {
+      getparam(token, keating_d, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"keating_beta")==0) {     
-      getparam("keating_beta",keating_beta,PARAM_REAL,ntypes*ntypes*(ntypes+1)/2,ntypes*ntypes*(ntypes+1)/2);
+    else if (strcasecmp(token,"keating_beta")==0) {
+      getparam(token, keating_beta, PARAM_REAL, 
+               ntypes*ntypepairs, ntypes*ntypepairs);
     }
 #endif
 #ifdef EWALD
     /* Parameters for Ewald summation */
-    else if (strcasecmp(token,"charge")==0) {     
+    else if (strcasecmp(token,"charge")==0) {
       getparam("charge",charge,PARAM_REAL,ntypes,ntypes);
     }
-    else if (strcasecmp(token,"ew_kappa")==0) {     
+    else if (strcasecmp(token,"ew_kappa")==0) {
       getparam("ew_kappa",&ew_kappa,PARAM_REAL,1,1);
     }
-    else if (strcasecmp(token,"ew_kmax")==0) {     
+    else if (strcasecmp(token,"ew_kmax")==0) {
       getparam("ew_kmax",&ew_kmax,PARAM_INT,3,3);
     }
-    else if (strcasecmp(token,"ew_nmax")==0) {     
+    else if (strcasecmp(token,"ew_nmax")==0) {
       getparam("ew_nmax",&ew_nmax,PARAM_INT,1,1);
     }
 #endif
-#ifdef SPRING
-    /* Parameters for harmonic potential */
-    else if (strcasecmp(token,"spring_const")==0) {     
-      getparam("spring_const",spring_const,PARAM_REAL,ntypes*(ntypes-1)/2,ntypes*(ntypes-1)/2);
-      /* Initialize parameters */
-      for (i=0; i<ntypes; i++) spring_cst[i][i] = 0.0;
-      if ( ntypes>1 ) {
-	for (i=0; i<(ntypes-1); i++)
-	  for (k=(i+1); k<ntypes; k++) {
-	    spring_cst[i][k] = spring_cst[k][i] 
-	      = spring_const[i * ( 2 * ntypes - i - 3 ) / 2 + k - 1]; 
-	  }
-      }
-    }
-    else if (strcasecmp(token,"spring_r_cut")==0) {     
-      getparam("spring_r_cut",spring_r_cut,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
-      /* Initialize parameters */
-      tmp = 0;
-      for ( i=0; i<ntypes; i++ )
-	  for ( k=i; k<ntypes; k++ ) {
-	      spring_r2_cut[i][k] = spring_r2_cut[k][i] = spring_r_cut[tmp] * spring_r_cut[tmp];
-	      tmp++;
-	  }
-    }
-#endif 
 #ifdef EPITAX
     /* Parameters for option epitax */
     else if (strcasecmp(token,"epitax_rate")==0) {
@@ -1623,32 +1595,6 @@ void getparamfile(char *paramfname, int sim)
       cellsz = MAX(cellsz,uniax_r2_cut);
     }
 #endif 
-#ifdef PN
-    else if (strcasecmp(token,"pn_int")==0) {
-      /* energy data output interval */
-      getparam("pn_int",&pn_interval,PARAM_INT,1,1);
-    }
-    else if (strcasecmp(token,"glideplane")==0) {
-      /* PN: glide plane coordinates */
-      getparam("glideplane",&gp,PARAM_REAL,3,3);
-    }
-    else if (strcasecmp(token,"corestart")==0) {
-      /* PN: glide plane coordinates */
-      getparam("corestart",&corestart,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"coreend")==0) {
-      /* PN: glide plane coordinates */
-      getparam("coreend",&coreend,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"burgersv")==0) {
-      /* PN: glide plane coordinates */
-      getparam("burgersv",&bv,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"width")==0) {
-      /* PN: glide plane coordinates */
-      getparam("width",&w,PARAM_REAL,1,1);
-    }
-#endif 
     else if (strcasecmp(token,"use_header")==0) {
 	/* shall a header be used */
       getparam("use_header",&use_header,PARAM_INT,1,1);
@@ -1684,6 +1630,10 @@ void check_parameters_complete()
   if (ntypes == 0) {
     error("ntypes is missing or zero.");
   }
+#ifdef PAIR
+  if ((have_potfile==0) && (have_pre_pot==0))
+    error("You must specify a pair interaction!");
+#endif
 #if defined(NPT) || defined(NVT) || defined(FRAC) || defined(FINNIS)
   if (temperature == 0) {
     error("starttemp is missing or zero.");
@@ -1766,13 +1716,6 @@ void check_parameters_complete()
   if (uniax_r_cut == 0) {
     error("uniax_r_cut is missing or zero.");
   }
-#endif
-#ifdef MONOLJ
-  if (monolj_r2_cut == 0) {
-    error("monolj_r_cut is missing or zero.");
-  }
-  /* determine shift of potential at cutoff */
-  pair_int_monolj(&monolj_shift,&tmp,monolj_r2_cut);
 #endif
 
 #if defined(FRAC) || defined(FTG) 
@@ -2021,6 +1964,7 @@ void broadcast_params() {
   MPI_Bcast( &box_param   , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &box_unit    ,   1, REAL,     0, MPI_COMM_WORLD); 
   MPI_Bcast( &ntypes      ,   1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &ntypepairs  ,   1, MPI_INT,  0, MPI_COMM_WORLD); 
   if (0!=myid) {
     masses=(real*)realloc(masses,ntypes*sizeof(real));
     if (NULL==masses) error("Cannot allocate memory for masses array\n");
@@ -2062,10 +2006,6 @@ void broadcast_params() {
 
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
   MPI_Bcast( &end_temp,      1, REAL, 0, MPI_COMM_WORLD); 
-#endif
-#ifdef MONOLJ
-  MPI_Bcast( &monolj_r2_cut, 1, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &monolj_shift,  1, REAL, 0, MPI_COMM_WORLD); 
 #endif
   MPI_Bcast( &cellsz, 1, REAL,     0, MPI_COMM_WORLD); 
   MPI_Bcast( &initsz, 1, MPI_INT,  0, MPI_COMM_WORLD);
@@ -2263,27 +2203,26 @@ void broadcast_params() {
   MPI_Bcast( &uniax_r2_cut, 1, REAL, 0, MPI_COMM_WORLD); 
 #endif
 
-#ifdef PAIR_PRE
-  MPI_Bcast( r_cut_lin, ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( r_begin,   ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( pot_res,   ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-#endif
-
-#ifdef LJ
-  MPI_Bcast( lj_epsilon_lin, ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( lj_sigma_lin,   ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-#endif
-
-#ifdef MORSE
-  MPI_Bcast( morse_epsilon_lin, ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( morse_sigma_lin,   ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( morse_alpha_lin,   ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-#endif
-
-#ifdef BUCK
-  MPI_Bcast( buck_a_lin, ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( buck_c_lin, ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( buck_sigma_lin, ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+#ifdef PAIR
+  /* analytically defined potentials */
+  MPI_Bcast( &have_pre_pot,   1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &have_potfile,   1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( r_cut_lin, ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( r_begin,   ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( pot_res,   ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  /* Lennard-Jones */
+  MPI_Bcast( lj_epsilon_lin, ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( lj_sigma_lin,   ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  /* Morse */
+  MPI_Bcast( morse_epsilon_lin, ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( morse_sigma_lin,   ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( morse_alpha_lin,   ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  /* Buckingham */
+  MPI_Bcast( buck_a_lin,     ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( buck_c_lin,     ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( buck_sigma_lin, ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  /* harmonic potential for shell model */
+  MPI_Bcast( spring_const, ntypepairs-ntypes, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef COVALENT
@@ -2300,38 +2239,38 @@ void broadcast_params() {
 #endif
 
 #ifdef STIWEB
-  MPI_Bcast( stiweb_a,         ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( stiweb_b,         ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( stiweb_p,         ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( stiweb_q,         ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( stiweb_a1,        ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( stiweb_de,        ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( stiweb_a2,        ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( stiweb_ga,        ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( stiweb_la, ntypes*ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( stiweb_a,         ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( stiweb_b,         ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( stiweb_p,         ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( stiweb_q,         ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( stiweb_a1,        ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( stiweb_de,        ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( stiweb_a2,        ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( stiweb_ga,        ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( stiweb_la, ntypes*ntypepairs, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef TERSOFF
-  MPI_Bcast( ters_r_cut, ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_r0,    ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_a,     ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_b,     ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_la,    ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_mu,    ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_chi,   ntypes*(ntypes-1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_om,    ntypes*(ntypes-1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_ga,                 ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_n,                  ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_c,                  ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_d,                  ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_h,                  ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_r_cut, ntypepairs,        REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_r0,    ntypepairs,        REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_a,     ntypepairs,        REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_b,     ntypepairs,        REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_la,    ntypepairs,        REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_mu,    ntypepairs,        REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_chi,   ntypepairs-ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_om,    ntypepairs-ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_ga,               ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_n,                ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_c,                ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_d,                ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_h,                ntypes, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef KEATING
-  MPI_Bcast( keating_r_cut,       ntypes*(ntypes+1)/2, REAL, 0,MPI_COMM_WORLD);
-  MPI_Bcast( keating_alpha,       ntypes*(ntypes+1)/2, REAL, 0,MPI_COMM_WORLD);
-  MPI_Bcast( keating_d,           ntypes*(ntypes+1)/2, REAL, 0,MPI_COMM_WORLD);
-  MPI_Bcast( keating_beta, ntypes*ntypes*(ntypes+1)/2, REAL, 0,MPI_COMM_WORLD);
+  MPI_Bcast( keating_r_cut,       ntypepairs, REAL, 0,MPI_COMM_WORLD);
+  MPI_Bcast( keating_alpha,       ntypepairs, REAL, 0,MPI_COMM_WORLD);
+  MPI_Bcast( keating_d,           ntypepairs, REAL, 0,MPI_COMM_WORLD);
+  MPI_Bcast( keating_beta, ntypes*ntypepairs, REAL, 0,MPI_COMM_WORLD);
 #endif
 
 #ifdef EPITAX

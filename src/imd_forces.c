@@ -97,45 +97,17 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #endif
 
       /* compute pair interactions */
-#if defined(PAIR) || defined(PAIR_PRE) || defined(KEATING) || defined(STIWEB)
-#ifdef PAIR_PRE
-      pot_zwi  = 0.0;
-      pot_grad = 0.0;
-      if (r2 < r2_cut[p_typ][q_typ]) {
-	  if ( !use_pot_table ) {
-#ifdef LJ
-	      PAIR_INT_LJ(pot_zwi, pot_grad, p_typ, q_typ, r2)
-#endif
-
-#ifdef MORSE
-	      PAIR_INT_MORSE(pot_zwi, pot_grad, p_typ, q_typ, r2)
-#endif
-
-#ifdef BUCK
-	      PAIR_INT_BUCK(pot_zwi, pot_grad, p_typ, q_typ, r2) 
-#endif
-	  }
-	  else 
-              PAIR_INT(pot_zwi, pot_grad, pair_pot, col, inc, r2, is_short)   
-#elif defined(MONOLJ)
-      if (r2 <= monolj_r2_cut) {
-        PAIR_INT_MONOLJ(pot_zwi, pot_grad, r2)
+#if defined(PAIR) || defined(KEATING) || defined(STIWEB)
+      /* PAIR, KEATING, and STIWEB are mutually exclusive */
+#if defined(PAIR)
+      if (r2 <= pair_pot.end[col]) {
+        PAIR_INT(pot_zwi, pot_grad, pair_pot, col, inc, r2, is_short)
 #elif defined(KEATING)
       if (r2 < keat_r2_cut[p_typ][q_typ]) {
 	PAIR_INT_KEATING(pot_zwi, pot_grad, p_typ, q_typ, r2)
 #elif defined(STIWEB)  
       if (r2 < sw_2_a1[p_typ][q_typ]) {
 	PAIR_INT_STIWEB(pot_zwi, pot_grad, p_typ, q_typ, r2)
-#else
-      if (r2 <= pair_pot.end[col]) {
-        PAIR_INT(pot_zwi, pot_grad, pair_pot, col, inc, r2, is_short)
-#endif
-#ifdef SPRING
-      if ( spring_cst[p_typ][q_typ] != 0.0 )
- 	  if ( r2 < spring_r2_cut[p_typ][q_typ] ) {
-	      pot_zwi  = 0.5 * spring_cst[p_typ][q_typ] * r2;
-	      pot_grad = spring_cst[p_typ][q_typ];
-	  }
 #endif
 
         /* store force in temporary variable */
@@ -215,7 +187,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
         HEATCOND(q,j) += pot_zwi - r2 * pot_grad;
 #endif
       }
-#endif /* PAIR || PAIR_PRE */
+#endif /* PAIR || KEATING || STIWEB */
 
 #ifdef EAM2
       /* compute host electron density */
@@ -236,16 +208,13 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 
 #ifdef COVALENT
       /* make neighbor tables for covalent systems */
-#ifdef KEATING
+#if defined(KEATING)
       if (r2 < keat_r2_cut[p_typ][q_typ]) {
-#endif
-#ifdef TTBP
+#elif defined(TTBP)
       if (r2 <= smooth_pot.end[col]) {
-#endif
-#ifdef STIWEB
+#elif defined(STIWEB)
       if (r2 < sw_2_a1[p_typ][q_typ]) {
-#endif
-#ifdef TERSOFF
+#elif defined(TERSOFF)
       if (r2 <= ter_r2_cut[p_typ][q_typ]) {
 #endif 
         neightab *neigh;
@@ -284,7 +253,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
     } /* for j */
   } /* for i */
 
-#ifndef MONOLJ
+#ifdef DEBUG
   if (is_short==1) printf("\n Short distance!\n");
 #endif
 #ifdef P_AXIAL
@@ -301,4 +270,3 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #endif 
 
 }
-

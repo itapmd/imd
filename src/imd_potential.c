@@ -251,7 +251,6 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename, FILE *infile)
     }
     if (ncols==ntypes*ntypes) cellsz = MAX(cellsz,pt->end[i]);
   }
-  if (0==myid) printf("\n");
 
   /* The interpolation uses k+1 and k+2, so we make a few copies 
      of the last value at the end of the table */
@@ -368,11 +367,11 @@ void read_pot_table2(pot_table_t *pt, int ncols, char *filename, FILE *infile)
   }
 }
 
-#ifdef PAIR_PRE
+#ifdef PAIR
 
 /*****************************************************************************
 *
-*  Create potential tables for predefined potentials
+*  Create or modify potential tables for predefined potentials
 *
 ******************************************************************************/
 
@@ -386,86 +385,208 @@ void create_pot_table(pot_table_t *pt)
     real pot, grad, r2, val;
 
     /* Determine size of potential table */
-    for ( i=0; i<ntypes*(ntypes+1)/2; ++i)
-	maxres = MAX(maxres,pot_res[i]);
-    pt->maxsteps = maxres;
-    tablesize = ncols * ( pt->maxsteps + 3 );
+    for (i=0; i<ntypes*(ntypes+1)/2; ++i)
+      maxres = MAX(maxres,pot_res[i]);
 
-    printf("Creating potential table\n");
+    /* Allocate or extend memory for potential table */
+    if (have_potfile==0) {  /* have no potential table yet */
+      pt->maxsteps = maxres + 5;
+      tablesize    = ncols * pt->maxsteps;
+      pt->begin    = (real *) malloc(ncols*sizeof(real));
+      pt->end      = (real *) malloc(ncols*sizeof(real));
+      pt->step     = (real *) malloc(ncols*sizeof(real));
+      pt->invstep  = (real *) malloc(ncols*sizeof(real));
+      if ((pt->begin   == NULL) || (pt->end == NULL) || (pt->step == NULL) || 
+	  (pt->invstep == NULL)) 
+        error("Cannot allocate info block for potential table.");
+      pt->table = (real *) malloc(tablesize * sizeof(real));
+      if (NULL==pt->table) 
+        error("Cannot allocate memory for potential table.");
+    } else {   /* we possibly have to extend potential table */
+      if (maxres + 5 > pt->maxsteps) {
+        pt->maxsteps = maxres + 5;
+        tablesize    = ncols * pt->maxsteps;
+        pt->table    = (real *) realloc(pt->table, tablesize * sizeof(real));
+        if (NULL==pt->table) 
+          error("Cannot extend memory for potential table.");
+      }
+    }
 
-    /* Allocate memory for potential table */
-    pt->begin    = (real *) malloc(ncols*sizeof(real));
-    pt->end      = (real *) malloc(ncols*sizeof(real));
-    pt->step     = (real *) malloc(ncols*sizeof(real));
-    pt->invstep  = (real *) malloc(ncols*sizeof(real));
-    if ((pt->begin   == NULL) || (pt->end == NULL) || (pt->step == NULL) || 
-	(pt->invstep == NULL)) 
-	error("Cannot allocate info block for potential table.");
-    pt->table = (real *) malloc(tablesize * sizeof(real));
-    if (NULL==pt->table) 
-	error("Cannot allocate memory for potential table.");
-
-    /* Create info header */
-    n = 0;
-    for ( i=0; i<ntypes; i++) 
-	for ( j=i; j<ntypes; j++) {
-	    r2_begin[i][j]    = r2_begin[j][i]    
-		= r_begin[n] * r_begin[n];
-#if defined(LJ) || defined(MORSE) || defined(BUCK) 
-	    if ( r2_begin[i][j] == 0.0 )
-		error("Potential singular at r=0. Increase r_begin!");
-#endif
-
-	    r2_end[i][j]      = r2_end[i][j]      
-		= r_cut_lin[n] * r_cut_lin[n];
-	    r2_step[i][j]     = r2_step[i][j]     
-		= ( r2_end[i][j] - r2_begin[i][j] ) / pot_res[n];
-	    r2_invstep[i][j]  = r2_invstep[i][j]  
-		= 1.0 / r2_step[i][j];
-	    len[i][j] = pot_res[n];
-	    ++n;
-	}
+    /* Prepare header info */
     column = 0;
-    for ( i=0; i<ntypes; i++)
-	for ( j=0; j<ntypes; j++) {
-	    pt->begin[column]    = r2_begin[i][j];
-	    pt->end[column]      = r2_end[i][j];
-	    pt->step[column]     = r2_step[i][j];
-	    pt->invstep[column]  = r2_invstep[i][j];
-
-	    ++column;
+    for (i=0; i<ntypes; i++) 
+      for (j=i; j<ntypes; j++) {
+        if (r_cut_lin[column]>0) {
+          r2_begin[i][j]   = r2_begin[j][i]   = SQR(r_begin[column]);
+          r2_end[i][j]     = r2_end[j][i]     = SQR(r_cut_lin[column]);
+          r2_step[i][j]    = r2_step[j][i] 
+                           = (r2_end[i][j] - r2_begin[i][j]) / pot_res[column];
+          r2_invstep[i][j] = r2_invstep[j][i] = 1.0 / r2_step[i][j];
+          len[i][j]        = len[j][i]        = pot_res[column];
 	}
+        ++column;
+      }
 
-    /* Create potential table */
+    /* Create or update info header */
     column = 0;
-    for ( i=0; i<ntypes; i++ )
-	for ( j=0; j<ntypes; j++ ) {
-	    for ( n=0; n<len[i][j]; n++) {
-
-		val = 0.0;
-		r2 = r2_begin[i][j] + n * r2_step[i][j];
-#ifdef LJ
-		pair_int_lj(&pot, &grad, i, j, r2);
-		val += pot;
-#endif
-#ifdef MORSE
-		pair_int_morse(&pot, &grad, i, j, r2);
-		val += pot;
-#endif
-#ifdef BUCK
-		pair_int_buck(&pot, &grad, i, j, r2);
-		val += pot;
-#endif
-
-		*PTR_2D(pt->table, n, column, pt->maxsteps, ncols) = val;
-	    }
-	    
-	    /* Make some copies of the last value for interpolation */
-	    for ( n=len[i][j]; n<len[i][j]+3; n++)
-		*PTR_2D(pt->table, n, column, pt->maxsteps, ncols) = val;
+    for (i=0; i<ntypes; i++)
+      for (j=0; j<ntypes; j++) { 
+        if (r2_end[i][j]>0) {
+          pt->begin  [column] = r2_begin  [i][j];
+          pt->end    [column] = r2_end    [i][j];
+          pt->step   [column] = r2_step   [i][j];
+          pt->invstep[column] = r2_invstep[i][j];
+        }
+        else if (have_potfile==0) {
+          if (myid==0)
+            printf("WARNING: no pair potential for atom types %d and %d!",i,j);
+          pt->begin  [column] = 0.0;
+          pt->end    [column] = 0.0;
+          pt->step   [column] = 0.0;
+          pt->invstep[column] = 0.0;
 	}
+        ++column;
+      }
 
-    ++column;
+    /* fill potential table */
+    column = 0;
+    for (i=0; i<ntypes; i++)
+      for (j=0; j<ntypes; j++) {
+
+        if (r2_end[i][j]>0) {
+
+          for (n=0; n<len[i][j]; n++) {
+            val = 0.0;
+            r2 = r2_begin[i][j] + n * r2_step[i][j];
+            /* Lennard-Jones */
+            if (lj_epsilon[i][j]>0) {
+              pair_int_lj(&pot, &grad, i, j, r2);
+              val += pot - lj_shift[i][j];
+            }
+            /* Morse */
+            if (morse_epsilon[i][j]>0) {
+              pair_int_morse(&pot, &grad, i, j, r2);
+              val += pot - morse_shift[i][j];
+            }
+            /* Buckingham */
+            if (buck_sigma[i][j]>0) {
+              pair_int_buck(&pot, &grad, i, j, r2);
+              val += pot - buck_shift[i][j];
+            }
+            /* harmonic potential for shell model */
+            if (spring_cst[i][j]>0) {
+	      val = 0.5 * spring_cst[i][j] * r2;
+            }
+            *PTR_2D(pt->table, n, column, pt->maxsteps, ncols) = val;
+          }
+
+          /* Make some copies of the last value for interpolation */
+          for (n=len[i][j]; n<len[i][j]+3; n++)
+            *PTR_2D(pt->table, n, column, pt->maxsteps, ncols) = val;
+	}
+        ++column;
+      }
+}
+
+/******************************************************************************
+*
+*  init_pre_pot -- initialize parameters for analytic pair potentials
+*
+******************************************************************************/
+
+void init_pre_pot(void) {
+
+  int  i, j, k, n;
+  real tmp = 0.0;
+
+  n=0;
+  for (i=0; i<ntypes; i++) 
+    for (j=i; j<ntypes; j++) {
+
+      r_cut [i][j] = r_cut [j][i] =     r_cut_lin[n];
+      r2_cut[i][j] = r2_cut[j][i] = SQR(r_cut_lin[n]);
+      if (pot_res[n]==0) pot_res[n] = 1000;
+
+      /* Lennard-Jones */
+      lj_epsilon[i][j] = lj_epsilon[j][i] = lj_epsilon_lin[n]; 
+      lj_sigma  [i][j] = lj_sigma  [j][i] = lj_sigma_lin  [n]; 
+      if ((r_begin[n]==0) && (lj_epsilon_lin[n]>0)) {
+        if (lj_sigma_lin[n]>0) 
+          r_begin[n] = 0.1 * lj_sigma_lin[n];
+        else
+          error("lj_sigma must be > 0 if lj_epsilon > 0");
+      }
+
+      /* Morse */
+      morse_epsilon[i][j] = morse_epsilon[j][i] = morse_epsilon_lin[n]; 
+      morse_sigma  [i][j] = morse_sigma  [j][i] = morse_sigma_lin  [n]; 
+      morse_alpha  [i][j] = morse_alpha  [j][i] = morse_alpha_lin  [n]; 
+      if ((morse_epsilon_lin[n]>0) && (morse_sigma_lin[n]==0)) 
+        error("morse_sigma must be > 0 if morse_epsilon > 0");
+
+      /* Buckingham */
+      buck_a    [i][j] = buck_a    [j][i] = buck_a_lin    [n];
+      buck_c    [i][j] = buck_c    [j][i] = buck_c_lin    [n];
+      buck_sigma[i][j] = buck_sigma[j][i] = buck_sigma_lin[n];
+      if ((r_begin[n]==0) && (buck_sigma_lin[n]>0)) 
+        r_begin[n] = 0.1 * buck_sigma_lin[n];
+
+      n++;
+    }
+
+  /* harmonic potential for shell model */
+  for (i=0; i<ntypes; i++) spring_cst[i][i] = 0.0;
+  n=0;
+  for (i=0; i<ntypes-1; i++)
+    for (k=i+1; k<ntypes; k++) {
+      spring_cst[i][k] = spring_cst[k][i] = spring_const[n]; 
+      if (spring_const[n]>0) r_begin[i*ntypes+k] = 0.0;
+      n++;
+    }
+
+  for (i=0; i<ntypes; ++i)
+    for (j=0; j<ntypes; ++j)
+      tmp = MAX( tmp, r2_cut[i][j] );
+  
+  cellsz = MAX(cellsz,tmp);
+
+  /* Shift of potentials */
+  for (i=0; i<ntypes; i++) 
+    for (j=0; j<ntypes; j++) {
+
+      if (r2_cut[i][j] > 0.0) { 
+        /* Lennard-Jones */
+        if (lj_epsilon[i][j] > 0.0) {
+          pair_int_lj( &lj_shift[i][j], &tmp, i, j, r2_cut[i][j] );
+          printf("Lennard-Jones potential %1d %1d shifted by %f\n", 
+	         i, j, -lj_shift[i][j]);
+	}
+        else lj_shift[i][j] = 0.0;
+        /* Morse */
+        if (morse_epsilon[i][j] > 0.0) {
+          pair_int_morse( &morse_shift[i][j], &tmp, i, j, r2_cut[i][j] );
+          printf("Morse potential %1d %1d shifted by %f\n", 
+	         i, j, -morse_shift[i][j]);
+	}
+        else morse_shift[i][j] = 0.0;
+        /* Buckingham */
+        if (buck_sigma[i][j] > 0.0) {
+          pair_int_buck( &buck_shift[i][j], &tmp, i, j, r2_cut[i][j] );
+          printf("Buckingham potential %1d %1d shifted by %f\n", 
+	         i, j, -buck_shift[i][j]);
+	}
+        else buck_shift[i][j] = 0.0;
+      } 
+      else {
+        lj_shift   [i][j] = 0.0;
+        morse_shift[i][j] = 0.0;
+        buck_shift [i][j] = 0.0;
+      }
+    }
+
+  /* Create or update potential table */
+  create_pot_table(&pair_pot);
+
 }
 
 #endif
@@ -485,25 +606,7 @@ void free_pot_table(pot_table_t *pt)
   free(pt->table);
 }
 
-/*****************************************************************************
-*
-*  Evaluate monolj potential 
-*
-******************************************************************************/
-
-void pair_int_monolj(real *pot, real *grad, real r2)
-{
-  real sig_d_rad2, sig_d_rad6, sig_d_rad12;
-
-  sig_d_rad2  = 2.0 / r2;
-  sig_d_rad6  = sig_d_rad2 * sig_d_rad2 * sig_d_rad2;
-  sig_d_rad12 = sig_d_rad6 * sig_d_rad6;
-
-  *grad = - 6 * sig_d_rad2 * ( sig_d_rad12 - sig_d_rad6 );
-  *pot  = sig_d_rad12 - 2.0 * sig_d_rad6 - monolj_shift;
-}
-
-#ifdef LJ
+#ifdef PAIR
 
 /*****************************************************************************
 *
@@ -519,15 +622,10 @@ void pair_int_lj(real *pot, real *grad, int p_typ, int q_typ, real r2)
   sig_d_rad6  = sig_d_rad2 * sig_d_rad2 * sig_d_rad2;
   sig_d_rad12 = sig_d_rad6 * sig_d_rad6;
 
-  *pot = lj_epsilon[p_typ][q_typ] * ( sig_d_rad12 - 2.0 * sig_d_rad6 ) 
-    - lj_shift[p_typ][q_typ];
+  *pot = lj_epsilon[p_typ][q_typ] * ( sig_d_rad12 - 2.0 * sig_d_rad6 );
   *grad = -12.0 * lj_epsilon[p_typ][q_typ] / r2 
     * ( sig_d_rad12 - sig_d_rad6 );  
 }
-
-#endif
-
-#ifdef MORSE
 
 /*****************************************************************************
 *
@@ -544,15 +642,10 @@ void pair_int_morse(real *pot, real *grad, int p_typ, int q_typ, real r2)
 		 * ( r - morse_sigma[p_typ][q_typ] ) );
   cexppot = 1.0 - exppot;
  
-  *pot  = morse_epsilon[p_typ][q_typ] * ( cexppot * cexppot - 1.0 ) 
-    - morse_shift[p_typ][q_typ];
+  *pot  = morse_epsilon[p_typ][q_typ] * ( cexppot * cexppot - 1.0 );
   *grad = 2.0 * morse_alpha[p_typ][q_typ] * morse_epsilon[p_typ][q_typ] / r
     * exppot * cexppot;
 }
-
-#endif
-
-#ifdef BUCK
 
 /*****************************************************************************
 *
@@ -570,7 +663,7 @@ void pair_int_buck(real *pot, real *grad, int p_typ, int q_typ, real r2)
   exppot = buck_a[p_typ][q_typ] * exp ( - 1.0 / rinv );
   invs2   = 1.0 / ( buck_sigma[p_typ][q_typ] * buck_sigma[p_typ][q_typ] );
 
-  *pot = exppot - powpot - buck_shift[p_typ][q_typ];
+  *pot = exppot - powpot;
   *grad = ( - exppot * rinv + 6 * powpot * rinv2 ) * invs2;
 }
 

@@ -57,9 +57,12 @@ int main(int argc, char **argv)
   /* initialize random number generator */
   srand48(seed);
 
-#ifdef PAIR_POT
-  /* read pair potential file - also used for TTBP, EAM2, and EWALD */
-  read_pot_table(&pair_pot,potfilename,ntypes*ntypes);
+#ifdef PAIR
+  /* read pair potential file - also used for TTBP, EAM2, TERSOFF, EWALD, .. */
+  if (have_potfile)
+    read_pot_table(&pair_pot,potfilename,ntypes*ntypes);
+  /* initialize analytically defined potentials */
+  if (have_pre_pot) init_pre_pot();
 #endif
 
 #ifdef TTBP
@@ -72,13 +75,6 @@ int main(int argc, char **argv)
   read_pot_table(&embed_pot,eam2_emb_E_filename,ntypes);
   /* read the tabulated electron density function */
   read_pot_table(&rho_h_tab,eam2_at_rho_filename,ntypes*ntypes);
-#endif
-
-#ifdef PAIR_PRE
-  init_pot_par();
-  /* Create potential table for predefined potentials*/
-  if ( use_pot_table )
-      create_pot_table(&pair_pot);
 #endif
 
 #ifdef KEATING
@@ -225,7 +221,7 @@ int main(int argc, char **argv)
     for (k=0; k<nallcells; k++) cell_array[k].n = 0;
 
     /* free potential tables */
-#if defined(PAIR_POT) || defined(PAIR_PRE)
+#if defined(PAIR)
     free_pot_table(&pair_pot);
 #endif
 #ifdef TTBP

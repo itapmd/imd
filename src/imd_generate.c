@@ -354,7 +354,6 @@ void generate_fcc(int maxtyp)
   }
 }
 
-
 /* generate a cubic Laves structure crystal */
 
 void generate_lav()
@@ -437,9 +436,11 @@ void generate_lav()
 	  ORT(input,0,X)  = (px[l] + 8*i + 0.5) * box_unit;
 	  ORT(input,0,Y)  = (py[l] + 8*j + 0.5) * box_unit;
 	  ORT(input,0,Z)  = (pz[l] + 8*k + 0.5) * box_unit;
+#ifndef MONOLJ
 	  NUMMER(input,0) = natoms;
 	  VSORTE(input,0) = typ;
           MASSE(input,0)  = masses[typ];
+#endif
 	  cellc = cell_coord( ORT(input,0,X), ORT(input,0,Y), ORT(input,0,Z) );
 	  num_sort[typ]++;
 

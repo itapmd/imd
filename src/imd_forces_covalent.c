@@ -206,7 +206,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 
       /* smoothing potential */
       col = p_typ * ntypes + j_typ;
-      PAIR_INT2(pot[j],grad[j],smooth_pot,col,inc,r2[j],is_short)
+      PAIR_INT(pot[j],grad[j],smooth_pot,col,inc,r2[j],is_short)
     }
 
     /* for each pair of neighbors */

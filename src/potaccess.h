@@ -40,24 +40,6 @@
 
 /*****************************************************************************
 *
-*  Evaluate monolj potential 
-*
-******************************************************************************/
-
-#define PAIR_INT_MONOLJ(pot, grad, r2)                                        \
-{                                                                             \
-  real sig_d_rad2, sig_d_rad6, sig_d_rad12;                                   \
-                                                                              \
-  sig_d_rad2  = 2.0 / (r2);                                                   \
-  sig_d_rad6  = sig_d_rad2 * sig_d_rad2 * sig_d_rad2;                         \
-  sig_d_rad12 = sig_d_rad6 * sig_d_rad6;                                      \
-                                                                              \
-  grad = - 6 * sig_d_rad2 * ( sig_d_rad12 - sig_d_rad6 );                     \
-  pot  = sig_d_rad12 - 2.0 * sig_d_rad6 - monolj_shift;                       \
-}
-
-/*****************************************************************************
-*
 *  Evaluate Lennard-Jones potential
 *
 ******************************************************************************/
