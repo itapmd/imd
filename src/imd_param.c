@@ -452,26 +452,43 @@ void getparamfile(char *paramfname, int sim)
       getparam("crktip",&tip,PARAM_REAL,DIM,DIM);
     }
 #endif
-#ifdef TWOD
+#ifndef TWOD
+    else if (strcasecmp(token,"view_pos")==0) { 
+      /* view position */
+      getparam("view_pos",&view_pos,PARAM_REAL,DIM,DIM);
+    }
+    else if (strcasecmp(token,"view_dir")==0) {
+      /* view direction */
+      getparam("view_dir",&view_dir,PARAM_REAL,DIM,DIM);
+    }
+    else if (strcasecmp(token,"projection")==0) {
+      /* projection (0=orthogonal, 1=perspective) */
+      getparam("projection",&projection,PARAM_INT,1,1);
+    }
+#endif
     else if (strcasecmp(token,"ecut_kin")==0) { 
       /* kinetic energy interval for pictures (min/max) */
-      getparam("ecut_kin",&ecut_kin,PARAM_REAL,2,2);
+      getparam("ecut_kin",&ecut_kin,PARAM_REAL,DIM,DIM);
     }
     else if (strcasecmp(token,"ecut_pot")==0) { 
       /* potential energy interval for pictures (min/max) */
-      getparam("ecut_pot",&ecut_pot,PARAM_REAL,2,2);
-    }
-    else if (strcasecmp(token,"pic_scale")==0) { 
-      /* picture scale (x y) */
-      getparam("pic_scale", &pic_scale,PARAM_REAL,2,2);
+      getparam("ecut_pot",&ecut_pot,PARAM_REAL,DIM,DIM);
     }
     else if (strcasecmp(token,"pic_ll")==0) { 
       /* lower left corner of picture */
-      getparam("pic_ll", &pic_ll,PARAM_REAL,2,2);
+      getparam("pic_ll", &pic_ll,PARAM_REAL,DIM,DIM);
     }
     else if (strcasecmp(token,"pic_ur")==0) { 
       /* upper right corner of picture */
-      getparam("pic_ur", &pic_ur,PARAM_REAL,2,2);
+      getparam("pic_ur", &pic_ur,PARAM_REAL,DIM,DIM);
+    }
+    else if (strcasecmp(token,"conf_ll")==0) { 
+      /* lower left corner of configuration */
+      getparam("conf_ll", &conf_ll,PARAM_REAL,DIM,DIM);
+    }
+    else if (strcasecmp(token,"conf_ur")==0) { 
+      /* upper right corner of configuration */
+      getparam("conf_ur", &conf_ur,PARAM_REAL,DIM,DIM);
     }
     else if (strcasecmp(token,"pic_res")==0) { 
       /* number of pixels in x/y direction */
@@ -494,7 +511,6 @@ void getparamfile(char *paramfname, int sim)
       };
       getparam("pic_at_radius", pic_at_radius,PARAM_REAL_COPY,1,ntypes);
     }
-#endif
 #if defined(FRAC) || defined(PULL) || defined(SHOCK) || defined(MIKSHEAR)
     else if (strcasecmp(token,"strip_width")==0) { 
       /* strip width (in x dir.) */
