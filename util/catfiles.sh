@@ -7,4 +7,5 @@ for file in *.0; do
   touch $head
   cat $head $new.* > $new
   rm -f $new.*
+  rm -f $head
 done

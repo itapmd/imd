@@ -6,5 +6,6 @@ foreach file (*.0)
   set head=`echo $new | sed -e 's/\.chkpt$/.head/'`
   touch $head
   cat $head $new.* > $new
-#  rm -f $new.*
+  rm -f $new.*
+  rm -f $head
 end
