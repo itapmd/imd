@@ -23,7 +23,7 @@
 
 #include "imd.h" 
 #include "socket_io.h"
-
+#include <sys/ioctl.h>
 
 /*****************************************************************************
 *
@@ -89,14 +89,26 @@ int connect_visualization()
 {
   unsigned char byte;
   int flag = 0;
+  size_t nbytes;
 
   /* switch temporarily to non-blocking I/O on socket */
+  /*
   fcntl(soc, F_SETFL, O_NONBLOCK);
   if (1==read(soc, &byte, 1)) {
-    flag = byte; /* convert to int */
+    flag = byte; 
     fprintf(stderr, "received socket_flag: %d\n", flag);
   }
   fcntl(soc, F_SETFL, O_SYNC);
+  */
+
+  /* check whether there is something to read */
+  ioctl(soc,FIONREAD,&nbytes);
+  if (nbytes>0) {
+    ReadFull(soc,&byte,1);
+    flag=byte;
+    fprintf(stderr, "received socket_flag: %d\n", flag);
+  }
+
   return flag;
 }
 
@@ -633,7 +645,7 @@ void vis_change_params_deform(integer flag)
     }
   }
 #ifdef MPI
-  if (flag) MPI_Bcast(&deform_size, 1, MPI_FLOAT, 0, cpugrid);
+  if (flag) MPI_Bcast(&deform_size, 1, REAL, 0, cpugrid);
 #endif
 
   /* send back the changed parameters and other info */
