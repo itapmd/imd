@@ -1,11 +1,12 @@
-       <HTML> <HEAD> <TITLE> EAM2 </TITLE>
-<!-- Changed by: Erik Bitzek, Mon Feb 12 21:08:00 MET 2001 -->
-        </HEAD> <BODY BGCOLOR="#FFFFFF"> <H1><font color=blue>
-Implementation of EAM2</font></H1> 
+<HTML>
+<HEAD> 
+  <TITLE> EAM Potentials </TITLE>
+</HEAD> 
+<BODY BGCOLOR="#FFFFFF"> 
+
+<H1><font color=blue>Implementation of EAM Potentials</font></H1> 
 <p>
-The Embedded Atom Method (EAM) was implemented by Erik Bitzek. It is more
-general than the <a href=eam.html>eam implementation</a> because it is
-not limited to potentials of the Finnis-Sinclair type.
+The Embedded Atom Method (EAM) was implemented by Erik Bitzek. 
 <p>
   <ul>
 <li><b>Basic Theory</b>
@@ -42,15 +43,15 @@ model</EM>, and the <EM>Finnis-Sinclair potentials</EM>.
 See also the <a href="http://www.itap.physik.uni-stuttgart.de/~gabiz/teeseminar_texte/texte_teeseminar.html">
 Teeseminar</a> about EAM.
 <p>
-<li><b>Use of eam2</b>
+<li><b>Use of eam</b>
 <p>
-The eam2 option works on risc and mpi plattforms. 
-It now uses actio=reaction between the atoms on the same processor.
-eam2 should work with most of the common options.
+The eam option works on risc and mpi plattforms. 
+It now uses actio=reactio between the atoms on the same processor.
+eam should work with most of the common options.
 See <A HREF = "#Tests">Tests</A> for options that are guaranteed to work.
 
 <p>
-To use eam2 one needs tables of three functions. 
+To use eam one needs tables of three functions. 
 Therefore the parameter file should contain lines indicating these
 tables, e.g.:<p><CODE>
 core_potential_file     Potentials/Ni_u3/Phi_r2.Ni_u3.dat<BR>
@@ -69,8 +70,8 @@ for the atom pairs ij: 00, 01,... 10, 11,...
 <p>
 It is the responsibility of the creator of the potential to make
 sure, that the functions of r go smoothly to zero and that the last
-four values are 0.0. If you're having an exotic core potential with ij
-!= ji, you have to use the option <b>asympot</b>.
+four values are 0.0. If you're having an exotic core potential with V_ij
+!= V_ji, you have to use the option <b>asympot</b>.
 
 <p>
 embedding_energy_file:<br>
@@ -81,13 +82,13 @@ followed by n blocks of values equidistant in rho
 <li><b>Existing Potentials </b>
 <p>
 Potentials with documentation and sample structures, parameter files
-and tools can be found in <a href="file:/common/share/itap/software/simulation/imd-samples/eam2">
-<code>~imd/imd-samples/eam2</code></a>.
+and tools can be found in <a href="file:/common/share/itap/software/simulation/imd-samples/eam">
+<code>~imd/imd-samples/eam</code></a>.
 At the moment there are three potentials for Nickel and one for NiAl.
-<p> 
+<p>
 <li><A NAME = "Tests"><b>Tests </b></A>
 <p>
-The eam2 option was tested by
+The eam option was tested by
 <ul>
 <li> comparing the energy output for a dynamical nve simulation with
 those produced by an other MD program (FEAT by Peter Gumbsch)
@@ -99,7 +100,7 @@ experimental data
 <li> checking the conservation of energy at different temperatures  
 </ul>
 <p>
-Therefore one may conclude that the eam2 option leads to correct
+Therefore one may conclude that the eam option leads to correct
 results at least for: one and two different atom types, with and
 without periodic boundary conditions, on risc and mpi plattforms,
 with the MIK, NVE, NVT options.
