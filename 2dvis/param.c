@@ -2,8 +2,7 @@
 #include <string.h>
 #include <sys/time.h>
 #include <unistd.h>
-
-/*#include "imd.h"*/
+#include "globals.h"
 
 #if defined(__GNUC__) && defined(__STRICT_ANSI__)
 extern char *strdup(char *);
@@ -32,7 +31,8 @@ int curline; /* number of current line */
 int finished=0;
 
 extern int scene_type,col_mode,radectyp;
-extern char *paramfilename, *uvfname;
+extern char *paramfilename;
+
 
 /*****************************************************************************
 *
@@ -280,6 +280,14 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"uvfname")==0) {
       /* name of unit vectors file? */
       getparam("uvfname",&uvfname,PARAM_STR,1,255);
+    }
+    else if (strcasecmp(token,"minbl")==0) {
+      /* name of unit vectors file? */
+      getparam("minbl",&minbl,PARAM_STR,1,255);
+    }
+    else if (strcasecmp(token,"maxbl")==0) {
+      /* name of unit vectors file? */
+      getparam("maxbl",&maxbl,PARAM_STR,1,255);
     }
     else {
       fprintf(stderr,"**** WARNING: Unknown TAG %s ignored ****\n",token);

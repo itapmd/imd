@@ -31,17 +31,7 @@ int receive_conf()
   char ctmp;
   double tmp;
   int anz;
-  extern double *x, *y, *z, *vx, *vy, *vz;
-  extern double *pot, *kin, *masse;
-  extern int *nummer, *bcode;
-  extern short int *sorte;
   float f;
-  int size_of_double, size_of_int, size_of_short_int;
-  char *swap_buf;
-
-  size_of_int = sizeof(int);
-  size_of_short_int = sizeof(short int);
-  size_of_double = sizeof(double);
 
   maxx=-1000;
   maxy=-1000;
@@ -58,13 +48,12 @@ int receive_conf()
   minp=1000;
   mink=1000;
 
-  swap_buf = (char *)malloc(8);
-
   ReadFull(socket_id, (void *)&f, sizeof(float));
   if (f == 1)
     endian_byte_swap = 0;
   else
     endian_byte_swap = 1;
+  endian_byte_swap = 0;
 
   ReadFull(socket_id, (void *)&anz, sizeof(int));
 
@@ -145,6 +134,7 @@ int receive_conf()
   scaley=2.0/(maxy-miny);
 #ifndef TWOD
   scalez=2.0/(maxz-minz);
+  printf("%f %f %f\n", maxz, minz, scalez);
 #endif
   if (maxp==minp)
     scalepot=1.0;
