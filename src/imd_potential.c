@@ -309,14 +309,14 @@ int pair_int_monolj(real *pot, real *grad, real r2)
 /*****************************************************************************
 *
 *  Evaluate potential table with quadratic interpolation. 
-*  Returned are potential value and gradient.
+*  Returned are potential value V and gradient (dV/dr)/r.
 *  col is p_typ * ntypes + q_typ
 *
 ******************************************************************************/
 
 int pair_int2(real *pot, real *grad, pot_table_t *pt, int col, real r2)
 {
-  real r2a, chi, p0, p1, p2, dv, d2v;
+  real r2a, istep, chi, p0, p1, p2, dv, d2v;
   real *ptr;
   int  k, inc, is_short=0;
 
@@ -328,11 +328,12 @@ int pair_int2(real *pot, real *grad, pot_table_t *pt, int col, real r2)
   }
 
   /* Indices into potential table */
-  k   = (int) (r2a * pt->invstep[col]);
-  chi = (r2a - k * pt->step[col]) * pt->invstep[col];
+  istep = pt->invstep[col];
+  k     = (int) (r2a * istep);
+  chi   = (r2a - k * pt->step[col]) * istep;
 
   /* A single access to the potential table involves two multiplications 
-     We use a intermediate pointer to aviod this as much as possible.
+     We use a intermediate pointer to avoid this as much as possible.
      Note: This relies on layout of the pot-table in memory!!! */
 
   inc = ntypes * ntypes;
@@ -344,7 +345,7 @@ int pair_int2(real *pot, real *grad, pot_table_t *pt, int col, real r2)
   d2v = p2 - 2 * p1 + p0;
 
   /* norm of gradient and potential energy */
-  *grad = 2 * pt->invstep[col] * (dv + (chi - 0.5) * d2v);
+  *grad = 2 * istep * (dv + (chi - 0.5) * d2v);
   *pot  = p0 + chi * dv + 0.5 * chi * (chi - 1) * d2v;
   return is_short;
 

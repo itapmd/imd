@@ -150,7 +150,6 @@ void eam2_do_forces1(cell *p, cell *q, vektor pbc)
 	if (0==radius2) error("Distance is zero.");
 #endif
 
-
 	/* eam2_r  = sqrt(radius2);                  
 	   this is history, but i didn't wanted to change all 
 	   variable names to ...r2, sorry, 
@@ -184,8 +183,8 @@ void eam2_do_forces1(cell *p, cell *q, vektor pbc)
 	  eam2_interpol_fac4 = (1.0/6.0)*eam2_x*(eam2_x*eam2_x-1.0);
 
 	  /* factors for the interpolation of the 1. derivative */
-	  eam2_dphi_interpol_fac1 = (-1.0/6.0) *((3*eam2_x-6.0)*eam2_x+2.0);           
-	  eam2_dphi_interpol_fac2 = 0.5*((3.0*eam2_x-4.0)*eam2_x-1.0);                  
+	  eam2_dphi_interpol_fac1 = (-1.0/6.0) *((3*eam2_x-6.0)*eam2_x+2.0);
+	  eam2_dphi_interpol_fac2 = 0.5*((3.0*eam2_x-4.0)*eam2_x-1.0);
 	  eam2_dphi_interpol_fac3 = (-0.5)*((3.0*eam2_x-2.0)*eam2_x-2.0);
 	  eam2_dphi_interpol_fac4 = (1.0/6.0)*(3.0*eam2_x*eam2_x-1.0);
 	  
@@ -196,7 +195,8 @@ void eam2_do_forces1(cell *p, cell *q, vektor pbc)
 	  eam2_phi_k3 = *eam2_phi_potptr; eam2_phi_potptr += ntypes * ntypes;
 	  eam2_phi_k4 = *eam2_phi_potptr;
 
-	  /* interpolation of potential energy, Factor 0.5 depending on the table */ 
+	  /* interpolation of potential energy, 
+             Factor 0.5 depending on the table */ 
 	  pot_zwi = 0.5* ( eam2_interpol_fac1 * eam2_phi_k1 +
 	                   eam2_interpol_fac2 * eam2_phi_k2 +
 			   eam2_interpol_fac3 * eam2_phi_k3 +
@@ -209,11 +209,10 @@ void eam2_do_forces1(cell *p, cell *q, vektor pbc)
 	     we want to calculate with tables in s=r**2:
 	     w(s)/s =2* d/ds V(s) */
 
-	  pot_grad = -  eam2_dr_inv*2.0*( eam2_dphi_interpol_fac1 *eam2_phi_k1 +          
-			                  eam2_dphi_interpol_fac2 *eam2_phi_k2 +
-				          eam2_dphi_interpol_fac3 *eam2_phi_k3 +
-				          eam2_dphi_interpol_fac4 *eam2_phi_k4  );
-	  
+	  pot_grad = -eam2_dr_inv*2.0*( eam2_dphi_interpol_fac1 *eam2_phi_k1 +
+			                eam2_dphi_interpol_fac2 *eam2_phi_k2 +
+				        eam2_dphi_interpol_fac3 *eam2_phi_k3 +
+				        eam2_dphi_interpol_fac4 *eam2_phi_k4 );
 
 	  /* Store forces in temp */
 	  force.x = d.x * pot_grad;
@@ -422,16 +421,15 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
     eam2_rho0       = *(eam2_rho_begin+p_typ);
     eam2_rho_nsteps = (int)((*(eam2_rho_end+p_typ)-eam2_rho0)*eam2_drho_inv +.5);
 
+    /* f_i_strich(rho_h_i)  **************************************************/
 
-    /* f_i_strich(rho_h_i)  *******************************************************/
-
-    eam2_rho_x= (eam2_this_rho - eam2_rho0)*eam2_drho_inv;                      
-    eam2_rho_k= (int) (eam2_rho_x);                           
-    eam2_rho_k= MIN(eam2_rho_k, eam2_rho_nsteps - 2);                           
+    eam2_rho_x= (eam2_this_rho - eam2_rho0)*eam2_drho_inv;
+    eam2_rho_k= (int) (eam2_rho_x);
+    eam2_rho_k= MIN(eam2_rho_k, eam2_rho_nsteps - 2);
     eam2_rho_k= MAX(eam2_rho_k,1);
     eam2_rho_x=eam2_rho_x - eam2_rho_k;
     eam2_rho_x= MIN(eam2_rho_x,2.0);
-    
+
     eam2_f_i_potptr = PTR_2D(eam2_f_i, eam2_rho_k-1, p_typ, eam2_max_rho_steps, ntypes);
     eam2_f_i_k1 = *eam2_f_i_potptr; eam2_f_i_potptr += ntypes;
     eam2_f_i_k2 = *eam2_f_i_potptr; eam2_f_i_potptr += ntypes;
@@ -439,21 +437,20 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
     eam2_f_i_k4 = *eam2_f_i_potptr;
 
     /* factors for the interpolation of the 1. derivative of f_i(this_rho) */
-    eam2_df_interpol_fac1 = (-1.0/6.0) *((3.0*eam2_rho_x-6.0)*eam2_rho_x+2.0);           
-    eam2_df_interpol_fac2 = 0.5*((3.0*eam2_rho_x-4.0)*eam2_rho_x-1.0);                
+    eam2_df_interpol_fac1 = (-1.0/6.0) *((3.0*eam2_rho_x-6.0)*eam2_rho_x+2.0); 
+    eam2_df_interpol_fac2 = 0.5*((3.0*eam2_rho_x-4.0)*eam2_rho_x-1.0);
     eam2_df_interpol_fac3 = (-0.5)*((3.0*eam2_rho_x-2.0)*eam2_rho_x-2.0);
     eam2_df_interpol_fac4 = (1.0/6.0)*(3.0*eam2_rho_x*eam2_rho_x-1.0);
-    
-    
-    eam2_f_i_strich = eam2_drho_inv*( eam2_df_interpol_fac1 *eam2_f_i_k1 +     
+
+    eam2_f_i_strich = eam2_drho_inv*( eam2_df_interpol_fac1 *eam2_f_i_k1 +
 				      eam2_df_interpol_fac2 *eam2_f_i_k2 +
 				      eam2_df_interpol_fac3 *eam2_f_i_k3 +
 				      eam2_df_interpol_fac4 *eam2_f_i_k4 );
-
-	   
+   
     for (j = jstart; j < q->n; ++j) 
       {
-	/* Calculate distance, this has to happen before the if, else *qptr isn't actual!*/
+	/* Calculate distance, this has to happen before the if, 
+           else *qptr isn't actual!*/
 	d.x = tmp_d.x - *qptr;
 	++qptr;
 	d.y = tmp_d.y - *qptr;
@@ -464,7 +461,8 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
 #endif
 	if((q==p && i==j)) 
 	  {
-	    /* here comes the energy, energy is calculated only once per particle! */ 
+	    /* here comes the energy, energy is calculated 
+               only once per particle! */ 
 	    
 	    /* get table info */
 	    eam2_drho       = *(eam2_rho_step+p_typ); 
@@ -472,7 +470,6 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
 	    eam2_rho0       = *(eam2_rho_begin+p_typ);
 	    eam2_rho_nsteps = (int)((*(eam2_rho_end+p_typ)-eam2_rho0)*eam2_drho_inv + .5);
 
-	    
 	    /* handle boarders */
 	    eam2_rho_x= (eam2_this_rho - eam2_rho0)*eam2_drho_inv;
 	    eam2_rho_k= (int) (eam2_rho_x);                           
@@ -481,7 +478,6 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
 	    eam2_rho_x= eam2_rho_x - eam2_rho_k;
 	    eam2_rho_x= MIN(eam2_rho_x,2.0);
 	    
-
 	    eam2_f_i_potptr = PTR_2D(eam2_f_i, eam2_rho_k-1, p_typ, eam2_max_rho_steps, ntypes); 
 	    eam2_f_i_k1 = *eam2_f_i_potptr; eam2_f_i_potptr += ntypes;   
 	    eam2_f_i_k2 = *eam2_f_i_potptr; eam2_f_i_potptr += ntypes;  
