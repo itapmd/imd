@@ -485,7 +485,7 @@ void write_press_layers(int steps)
 #ifdef TWOD
               press_histxx_1[numx*press_nlayers.y+numy] += p->presstens X(i);
               press_histyy_1[numx*press_nlayers.y+numy] += p->presstens Y(i);
-              press_histxy_1[numx*press_nlayers.y+numy] += p->presstens_offdia X(i);
+              press_histxy_1[numx*press_nlayers.y+numy] += p->presstens_offdia Z(i);
 	      kin_hist_1[numx*press_nlayers.y+numy] += SPRODN(p->impuls,i,p->impuls,i) / (2* MASSE(p,i));
 
 	      /* ANFANG Johannes Stuff */
@@ -873,7 +873,7 @@ void write_press_atoms(int steps)
 #else
 	     fprintf(outpress_offdia,"%10.4e %10.4e %10.4e %10.4e\n", 
 		     p->ort X(i),p->ort Y(i),
-		     p->presstens_offdia X(i));
+		     p->presstens_offdia Z(i));
 #endif
   }
 	   }

@@ -203,15 +203,15 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 	p->presstens Y(i) -= d.y * d.y * pot_grad;
 	q->presstens X(j) -= d.x * d.x * pot_grad;
 	q->presstens Y(j) -= d.y * d.y * pot_grad;
+	p->presstens_offdia Z(i) -= d.x * d.y * pot_grad;
+	q->presstens_offdia Z(j) -= d.x * d.y * pot_grad;
+#ifndef TWOD
+	p->presstens Z(i) -= d.z * d.z * pot_grad;
+	q->presstens Z(j) -= d.z * d.z * pot_grad;
 	p->presstens_offdia X(i) -= d.y * d.z * pot_grad;
 	p->presstens_offdia Y(i) -= d.z * d.x * pot_grad;
 	q->presstens_offdia X(j) -= d.y * d.z * pot_grad;
 	q->presstens_offdia Y(j) -= d.z * d.x * pot_grad;
-#ifndef TWOD
-	p->presstens Z(i) -= d.z * d.z * pot_grad;
-	q->presstens Z(j) -= d.z * d.z * pot_grad;
-	p->presstens_offdia Z(i) -= d.x * d.y * pot_grad;
-	q->presstens_offdia Z(j) -= d.x * d.y * pot_grad;
 #endif
 #endif
 
@@ -398,15 +398,15 @@ void do_forces_eam_2(cell *p, cell *q, vektor pbc)
         p->presstens Y(i) -= d.y * d.y * eam_pot_grad;
         q->presstens X(j) -= d.x * d.x * eam_pot_grad;
         q->presstens Y(j) -= d.y * d.y * eam_pot_grad;
+	p->presstens_offdia Z(i) -= d.x * d.y * eam_pot_grad;
+	q->presstens_offdia Z(j) -= d.x * d.y * eam_pot_grad;
+#ifndef TWOD
+        p->presstens Z(i) -= d.z * d.z * eam_pot_grad;
+        q->presstens Z(j) -= d.z * d.z * eam_pot_grad;
 	p->presstens_offdia X(i) -= d.y * d.z * eam_pot_grad;
 	p->presstens_offdia Y(i) -= d.z * d.x * eam_pot_grad;
 	q->presstens_offdia X(j) -= d.y * d.z * eam_pot_grad;
 	q->presstens_offdia Y(j) -= d.z * d.x * eam_pot_grad;
-#ifndef TWOD
-        p->presstens Z(i) -= d.z * d.z * eam_pot_grad;
-        q->presstens Z(j) -= d.z * d.z * eam_pot_grad;
-	p->presstens_offdia Z(i) -= d.x * d.y * eam_pot_grad;
-	q->presstens_offdia Z(j) -= d.x * d.y * eam_pot_grad;
 #endif
 #endif
 
