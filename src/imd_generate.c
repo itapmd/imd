@@ -240,16 +240,16 @@ void generate_fcc(int maxtyp)
   int     x, y, z, typ;
 
 #ifdef MPI
-  min.x =  my_coord.x      * box_x.x / cpu_dim.x;
-  max.x = (my_coord.x + 1) * box_x.x / cpu_dim.x;
-  min.y =  my_coord.y      * box_y.y / cpu_dim.y;
-  max.y = (my_coord.y + 1) * box_y.y / cpu_dim.y;
-  min.z =  my_coord.z      * box_z.z / cpu_dim.z;
-  max.z = (my_coord.z + 1) * box_z.z / cpu_dim.z;
+  min.x =  my_coord.x      * box_param.x / cpu_dim.x;
+  max.x = (my_coord.x + 1) * box_param.x / cpu_dim.x;
+  min.y =  my_coord.y      * box_param.y / cpu_dim.y;
+  max.y = (my_coord.y + 1) * box_param.y / cpu_dim.y;
+  min.z =  my_coord.z      * box_param.z / cpu_dim.z;
+  max.z = (my_coord.z + 1) * box_param.z / cpu_dim.z;
 #else
-  min.x = 0; max.x = box_x.x;
-  min.y = 0; max.y = box_y.y;
-  min.z = 0; max.z = box_z.z;
+  min.x = 0; max.x = box_param.x;
+  min.y = 0; max.y = box_param.y;
+  min.z = 0; max.z = box_param.z;
 #endif
 
   /* Set up 1 atom input cell */
