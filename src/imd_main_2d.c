@@ -74,7 +74,8 @@ void main_loop(void)
 #ifdef DEFORM
     if (steps > annealsteps) {
       deform_int++;
-      if ((tot_kin_energy < ekin_threshold) || (deform_int==max_deform_int)) {
+      if ((tot_kin_energy/nactive < ekin_threshold) || 
+          (deform_int==max_deform_int)) {
         deform_sample();
         deform_int=0;
       }
