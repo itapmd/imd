@@ -1521,6 +1521,14 @@ void getparamfile(char *paramfname, int sim)
       getparam(token, meam_rho0, PARAM_REAL, 1, ntypes);
     }
 #endif
+    else if (strcasecmp(token,"debug_potential")==0) {
+      /* write out interpolated potential */
+      getparam(token, &debug_potential, PARAM_INT, 1, 1);
+    }
+    else if (strcasecmp(token,"debug_pot_res")==0) {
+      /* resolution of test interpolation */
+      getparam(token, &debug_pot_res, PARAM_INT, 1, 1);
+    }
 #ifdef PAIR
     /* analytically defined potentials */
     else if (strcasecmp(token,"r_cut")==0) {

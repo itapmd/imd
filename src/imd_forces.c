@@ -101,7 +101,11 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
       /* PAIR, KEATING, and STIWEB are mutually exclusive */
 #if defined(PAIR)
       if (r2 <= pair_pot.end[col]) {
+#ifdef LINPOT
+        PAIR_INT_LIN(pot_zwi, pot_grad, pair_pot_lin, col, inc, r2, is_short)
+#else
         PAIR_INT(pot_zwi, pot_grad, pair_pot, col, inc, r2, is_short)
+#endif
 #elif defined(KEATING)
       if (r2 < keat_r2_cut[p_typ][q_typ]) {
 	PAIR_INT_KEATING(pot_zwi, pot_grad, p_typ, q_typ, r2)

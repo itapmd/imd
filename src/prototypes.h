@@ -33,10 +33,13 @@ void check_parameters_complete(void);
 void broadcast_params(void);
 
 /* read and access potential tables - file imd_potential.c */
-void read_pot_table ( pot_table_t*, char*, int );
-void read_pot_table1( pot_table_t*, int, char*, FILE* );
-void read_pot_table2( pot_table_t*, int, char*, FILE* );
+void read_pot_table ( pot_table_t*, char*, int, int );
+void read_pot_table1( pot_table_t*, int, char*, FILE*, int );
+void read_pot_table2( pot_table_t*, int, char*, FILE*, int );
 void free_pot_table ( pot_table_t*);
+#ifdef LINPOT
+void make_lin_pot_table( pot_table_t, lin_pot_table_t* );
+#endif
 #ifdef PAIR
 void pair_int_lj(real *pot, real *grad, int p_typ, int q_typ, real r2);
 void pair_int_morse(real *pot, real *grad, int p_typ, int q_typ, real r2);
@@ -50,6 +53,14 @@ void deriv_func2(       real*, int*, pot_table_t*, int, int, real);
 void deriv_func3(       real*, int*, pot_table_t*, int, int, real);
 void init_pre_pot(void);
 void create_pot_table(pot_table_t *pt);
+void test_potential(pot_table_t, char*, int);
+#if   defined(FOURPOINT)
+void init_fourpoint(pot_table_t*, int);
+#elif defined(SPLINE)
+void init_spline(pot_table_t*, int, int);
+#else
+void init_threepoint(pot_table_t*, int);
+#endif
 
 /* read configuration - files imd_io_2/3d.c */
 void   read_atoms(str255 infilename);

@@ -19,11 +19,16 @@
 *
 ******************************************************************************/
 
-/* 4-point (cubic) or 3-point (quadratic) interpolation of function tables */
-#ifdef FOURPOINT
+/* 4-point (cubic), spline, or 3-point (quadratic) interpolation of 
+   function tables */
+#if   defined(FOURPOINT)
 #define   PAIR_INT   PAIR_INT3
 #define   VAL_FUNC   VAL_FUNC3
 #define DERIV_FUNC DERIV_FUNC3
+#elif defined(SPLINE)
+#define   PAIR_INT   PAIR_INT_SP
+#define   VAL_FUNC   VAL_FUNC_SP
+#define DERIV_FUNC DERIV_FUNC_SP
 #else
 #define   PAIR_INT   PAIR_INT2
 #define   VAL_FUNC   VAL_FUNC2
@@ -141,6 +146,40 @@
                                                                               \
 }
 
+
+/*****************************************************************************
+*
+*  Evaluate potential table with linear interpolation. 
+*  Returns the potential value and twice the derivative.
+*  Note: we need (1/r)(dV/dr) = 2 * dV/dr^2 --> use with equidistant r^2 
+*  col is p_typ * ntypes + q_typ
+*
+******************************************************************************/
+
+#define PAIR_INT_LIN(pot, grad, pt, col, inc, r2, is_short)                  \
+{                                                                            \
+  real r2a, chi, *t;                                                         \
+  int  k;                                                                    \
+                                                                             \
+  /* check for distances shorter than minimal distance in table */           \
+  r2a = MIN((r2),(pt).end[col]);                                             \
+  r2a = r2a - (pt).begin[col];                                               \
+  if (r2a < 0) {                                                             \
+    r2a = 0;                                                                 \
+    is_short = 1;                                                            \
+  }                                                                          \
+                                                                             \
+  /* indices into potential table */                                         \
+  r2a   = r2a *  (pt).invstep[col];                                          \
+  k     = POS_TRUNC(r2a);                                                    \
+  chi   = r2a - k;                                                           \
+                                                                             \
+  /* potential and twice the derivative */                                   \
+  t    = (pt).table[col];                                                    \
+  pot  = t[2*k  ]*(1.0-chi) + t[2*k+2]*chi;                                  \
+  grad = t[2*k+1]*(1.0-chi) + t[2*k+3]*chi;                                  \
+}
+
 /*****************************************************************************
 *
 *  Evaluate potential table with quadratic interpolation. 
@@ -165,8 +204,10 @@
                                                                              \
   /* indices into potential table */                                         \
   istep = (pt).invstep[col];                                                 \
-  k     = POS_TRUNC(r2a * istep);                                            \
-  chi   = (r2a - k * (pt).step[col]) * istep;                                \
+  r2a   = r2a * istep;                                                       \
+  k     = POS_TRUNC(r2a);                                                    \
+  /* k     = MIN( POS_TRUNC(r2a), (pt).len[col]-3 ); */                      \
+  chi   = r2a - k;                                                           \
                                                                              \
   /* intermediate values */                                                  \
   ptr = PTR_2D((pt).table, k, (col), (pt).maxsteps, (inc));                  \
@@ -206,8 +247,10 @@
                                                                              \
   /* indices into potential table */                                         \
   istep = (pt).invstep[col];                                                 \
-  k     = MAX( POS_TRUNC(r2a * istep), 1 );                                  \
-  chi   = (r2a - k * (pt).step[col]) * istep;                                \
+  r2a   = r2a * istep;                                                       \
+  k     = MAX( POS_TRUNC(r2a), 1 );                                          \
+  /* k     = MIN( MAX( POS_TRUNC(r2a), 1 ), (pt).len[col]-3 ); */            \
+  chi   = r2a - k;                                                           \
                                                                              \
   /* factors for the interpolation */                                        \
   fac0 = -(1.0/6.0) * chi * (chi-1.0) * (chi-2.0);                           \
@@ -237,6 +280,53 @@
 
 /*****************************************************************************
 *
+*  Evaluate potential table with spline interpolation. 
+*  Returns the potential value and twice the derivative.
+*  Note: we need (1/r)(dV/dr) = 2 * dV/dr^2 --> use with equidistant r^2 
+*  col is p_typ * ntypes + q_typ
+*
+******************************************************************************/
+
+#define PAIR_INT_SP(pot, grad, pt, col, inc, r2, is_short)                   \
+{                                                                            \
+  real r2a, a, b, a2, b2, istep, step, st6, p1, p2, d21, d22;                \
+  int k;                                                                     \
+                                                                             \
+  /* check for distances shorter than minimal distance in table */           \
+  r2a = MIN((r2),(pt).end[col]);                                             \
+  r2a = r2a - (pt).begin[col];                                               \
+  if (r2a < 0) {                                                             \
+    r2a = 0;                                                                 \
+    is_short = 1;                                                            \
+  }                                                                          \
+                                                                             \
+  /* indices into potential table */                                         \
+  istep = (pt).invstep[col];                                                 \
+  step  = (pt).step[col];                                                    \
+  r2a   = r2a * istep;                                                       \
+  k     = POS_TRUNC(r2a);                                                    \
+  /* k     = MIN( POS_TRUNC(r2a), (pt).len[col]-2 ); */                      \
+  b     = r2a - k;                                                           \
+  a     = 1.0 - b;                                                           \
+                                                                             \
+  /* intermediate values */                                                  \
+  k     = k * (inc) + (col);                                                 \
+  p1    = (pt).table[k];                                                     \
+  d21   = (pt).table2[k];                                                    \
+  k    += (inc);                                                             \
+  p2    = (pt).table[k];                                                     \
+  d22   = (pt).table2[k];                                                    \
+  a2    = a * a - 1;                                                         \
+  b2    = b * b - 1;                                                         \
+  st6   = step / 6;                                                          \
+                                                                             \
+  /* potential and twice the derivative */                                   \
+  pot  = a * p1 + b * p2 + (a * a2 * d21 + b * b2 * d22) * st6 * step;       \
+  grad = 2*((p2 - p1) * istep + ((3*b2 + 2) * d22 - (3*a2 + 2) * d21) * st6);\
+}
+
+/*****************************************************************************
+*
 *  Evaluate tabulated function with quadratic interpolation. 
 *
 ******************************************************************************/
@@ -256,8 +346,10 @@
                                                                              \
   /* indices into potential table */                                         \
   istep = (pt).invstep[col];                                                 \
-  k     = POS_TRUNC(r2a * istep);                                            \
-  chi   = (r2a - k * (pt).step[col]) * istep;                                \
+  r2a   = r2a * istep;                                                       \
+  k     = POS_TRUNC(r2a);                                                    \
+  /* k     = MIN( POS_TRUNC(r2a), (pt).len[col]-3 ); */                      \
+  chi   = r2a - k;                                                           \
                                                                              \
   /* intermediate values */                                                  \
   ptr = PTR_2D((pt).table, k, (col), (pt).maxsteps, (inc));                  \
@@ -293,8 +385,10 @@
                                                                              \
   /* indices into potential table */                                         \
   istep = (pt).invstep[col];                                                 \
-  k     = MAX( POS_TRUNC(r2a * istep), 1 );                                  \
-  chi   = (r2a - k * (pt).step[col]) * istep;                                \
+  r2a   = r2a * istep;                                                       \
+  k     = MAX( POS_TRUNC(r2a), 1 );                                          \
+  /* k     = MIN( MAX( POS_TRUNC(r2a), 1 ), (pt).len[col]-3 ); */            \
+  chi   = r2a - k;                                                           \
                                                                              \
   /* factors for the interpolation */                                        \
   fac0 = -(1.0/6.0) * chi * (chi-1.0) * (chi-2.0);                           \
@@ -311,6 +405,49 @@
                                                                              \
   /* the function value */                                                   \
   val = fac0 * p0 + fac1 * p1 + fac2 * p2 + fac3 * p3;                       \
+}
+
+/*****************************************************************************
+*
+*  Evaluate tabulated function with spline interpolation. 
+*
+******************************************************************************/
+
+#define VAL_FUNC_SP(val, pt, col, inc, r2, is_short)                         \
+{                                                                            \
+  real r2a, a, b, a2, b2, istep, step, st6, p1, p2, d21, d22;                \
+  int k;                                                                     \
+                                                                             \
+  /* check for distances shorter than minimal distance in table */           \
+  r2a = MIN((r2),(pt).end[col]);                                             \
+  r2a = r2a - (pt).begin[col];                                               \
+  if (r2a < 0) {                                                             \
+    r2a = 0;                                                                 \
+    is_short = 1;                                                            \
+  }                                                                          \
+                                                                             \
+  /* indices into potential table */                                         \
+  istep = (pt).invstep[col];                                                 \
+  step  = (pt).step[col];                                                    \
+  r2a   = r2a * istep;                                                       \
+  k     = POS_TRUNC(r2a);                                                    \
+  /* k     = MIN( POS_TRUNC(r2a), (pt).len[col]-2 ); */                      \
+  b     = r2a - k;                                                           \
+  a     = 1.0 - b;                                                           \
+                                                                             \
+  /* intermediate values */                                                  \
+  k     = k * (inc) + (col);                                                 \
+  p1    = (pt).table[k];                                                     \
+  d21   = (pt).table2[k];                                                    \
+  k    += (inc);                                                             \
+  p2    = (pt).table[k];                                                     \
+  d22   = (pt).table2[k];                                                    \
+  a2    = a * a - 1;                                                         \
+  b2    = b * b - 1;                                                         \
+  st6   = step / 6;                                                          \
+                                                                             \
+  /* the function value */                                                   \
+  val  = a * p1 + b * p2 + (a * a2 * d21 + b * b2 * d22) * st6 * step;       \
 }
 
 /*****************************************************************************
@@ -335,8 +472,10 @@
                                                                              \
   /* indices into potential table */                                         \
   istep = (pt).invstep[col];                                                 \
-  k     = POS_TRUNC(r2a * istep);                                            \
-  chi   = (r2a - k * (pt).step[col]) * istep;                                \
+  r2a   = r2a * istep;                                                       \
+  k     = POS_TRUNC(r2a);                                                    \
+  /* k     = MIN( POS_TRUNC(r2a), (pt).len[col]-3 ); */                      \
+  chi   = r2a - k;                                                           \
                                                                              \
   /* intermediate values */                                                  \
   ptr = PTR_2D((pt).table, k, (col), (pt).maxsteps, (inc));                  \
@@ -373,8 +512,10 @@
                                                                              \
   /* indices into potential table */                                         \
   istep = (pt).invstep[col];                                                 \
-  k     = MAX( POS_TRUNC(r2a * istep), 1 );                                  \
-  chi   = (r2a - k * (pt).step[col]) * istep;                                \
+  r2a   = r2a * istep;                                                       \
+  k     = MAX( POS_TRUNC(r2a), 1 );                                          \
+  /* k     = MIN( MAX( POS_TRUNC(r2a), 1 ), (pt).len[col]-3 ); */            \
+  chi   = r2a - k;                                                           \
                                                                              \
   /* factors for the interpolation of the 1. derivative */                   \
   dfac0 = -(1.0/6.0) * ((3.0*chi-6.0)*chi+2.0);                              \
@@ -392,3 +533,48 @@
   /* twice the derivative */                                                 \
   grad = 2 * istep * (dfac0 * p0 + dfac1 * p1 + dfac2 * p2 + dfac3 * p3);    \
 }
+
+/*****************************************************************************
+*
+*  Evaluate the derivative of a function with spline interpolation. 
+*  Returns *twice* the derivative.
+*
+******************************************************************************/
+
+#define DERIV_FUNC_SP(grad, pt, col, inc, r2, is_short)                      \
+{                                                                            \
+  real r2a, a, b, a2, b2, istep, step, st6, p1, p2, d21, d22;                \
+  int k;                                                                     \
+                                                                             \
+  /* check for distances shorter than minimal distance in table */           \
+  r2a = MIN((r2),(pt).end[col]);                                             \
+  r2a = r2a - (pt).begin[col];                                               \
+  if (r2a < 0) {                                                             \
+    r2a = 0;                                                                 \
+    is_short = 1;                                                            \
+  }                                                                          \
+                                                                             \
+  /* indices into potential table */                                         \
+  istep = (pt).invstep[col];                                                 \
+  step  = (pt).step[col];                                                    \
+  r2a   = r2a * istep;                                                       \
+  k     = POS_TRUNC(r2a);                                                    \
+  /* k     = MIN( POS_TRUNC(r2a), (pt).len[col]-2 ); */                      \
+  b     = r2a - k;                                                           \
+  a     = 1.0 - b;                                                           \
+                                                                             \
+  /* intermediate values */                                                  \
+  k     = k * (inc) + (col);                                                 \
+  p1    = (pt).table[k];                                                     \
+  d21   = (pt).table2[k];                                                    \
+  k    += (inc);                                                             \
+  p2    = (pt).table[k];                                                     \
+  d22   = (pt).table2[k];                                                    \
+  a2    = a * a - 1;                                                         \
+  b2    = b * b - 1;                                                         \
+  st6   = step / 6;                                                          \
+                                                                             \
+  /* twice the derivative */                                                 \
+  grad = 2*((p2 - p1) * istep + ((3*b2 + 2) * d22 - (3*a2 + 2) * d21) * st6);\
+}
+

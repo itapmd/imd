@@ -24,6 +24,7 @@
 ******************************************************************************/
 
 #include "imd.h"
+#include "potaccess.h"
 
 #ifdef  DOUBLE
 #define FORMAT1 "%lf"
@@ -39,7 +40,7 @@
 *
 *****************************************************************************/
 
-void read_pot_table( pot_table_t *pt, char *filename, int ncols )
+void read_pot_table( pot_table_t *pt, char *filename, int ncols, int radial )
 {
   FILE *infile;
   char buffer[1024], msg[255];
@@ -105,21 +106,26 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols )
 
   /* allocate info block of function table */
   pt->maxsteps = 0;
-  pt->begin    = (real *) malloc(size*sizeof(real));
-  pt->end      = (real *) malloc(size*sizeof(real));
-  pt->step     = (real *) malloc(size*sizeof(real));
-  pt->invstep  = (real *) malloc(size*sizeof(real));
+  pt->ncols    = ncols;
+  pt->begin    = (real *) malloc(ncols*sizeof(real));
+  pt->end      = (real *) malloc(ncols*sizeof(real));
+  pt->step     = (real *) malloc(ncols*sizeof(real));
+  pt->invstep  = (real *) malloc(ncols*sizeof(real));
+  pt->len      = (int  *) malloc(ncols*sizeof(int ));
   if ((pt->begin   == NULL) || (pt->end == NULL) || (pt->step == NULL) || 
-      (pt->invstep == NULL))
+      (pt->invstep == NULL) || (pt->len == NULL))
     error_str("Cannot allocate info block for function table %s.",filename);
 
   /* catch the case where potential is identically zero */
-  for (i=0; i<size; ++i) pt->end[i] = 0.0;
+  for (i=0; i<ncols; ++i) {
+    pt->end[i] = 0.0;
+    pt->len[i] = 0;
+  }
 
   /* read table only on master processor? */
   if ((0==myid) || (1==parallel_input)) {
-    if (format==1) read_pot_table1(pt, size, filename, infile);
-    if (format==2) read_pot_table2(pt, size, filename, infile);
+    if (format==1) read_pot_table1(pt, ncols, filename, infile, radial);
+    if (format==2) read_pot_table2(pt, ncols, filename, infile, radial);
     fclose(infile);
   }
 
@@ -127,11 +133,12 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols )
   if (0==parallel_input) {
     /* Broadcast table to other CPUs */
     MPI_Bcast( &(pt->maxsteps), 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->begin,    size, REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->end,      size, REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->step,     size, REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->invstep,  size, REAL, 0, MPI_COMM_WORLD);
-    tablesize = pt->maxsteps * size;
+    MPI_Bcast( pt->begin,   ncols, REAL,    0, MPI_COMM_WORLD);
+    MPI_Bcast( pt->end,     ncols, REAL,    0, MPI_COMM_WORLD);
+    MPI_Bcast( pt->step,    ncols, REAL,    0, MPI_COMM_WORLD);
+    MPI_Bcast( pt->invstep, ncols, REAL,    0, MPI_COMM_WORLD);
+    MPI_Bcast( pt->len,     ncols, MPI_INT, 0, MPI_COMM_WORLD);
+    tablesize = (pt->maxsteps + 2) * ncols;
     if (0 != myid) {
       pt->table = (real *) malloc(tablesize*sizeof(real));
       if (NULL==pt->table)
@@ -141,6 +148,18 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols )
     MPI_Bcast( &cellsz,           1, REAL, 0, MPI_COMM_WORLD);
   }
 #endif
+
+#if   defined(FOURPOINT)
+  init_fourpoint(pt, ncols);
+#elif defined(SPLINE)
+  pt->table2 = NULL;
+  init_spline(pt, ncols, radial);
+#else
+  init_threepoint(pt, ncols);
+#endif
+
+  /* test interpolation of potential */
+  if ((0==myid) && (debug_potential)) test_potential(*pt, filename, ncols);
 
 }
 
@@ -157,7 +176,8 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols )
 *
 ******************************************************************************/
 
-void read_pot_table1(pot_table_t *pt, int ncols, char *filename, FILE *infile)
+void read_pot_table1(pot_table_t *pt, int ncols, char *filename, 
+                     FILE *infile, int radial)
 {
   int i, k;
   int tablesize, npot=0;
@@ -191,7 +211,10 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename, FILE *infile)
       if ((1 != fscanf(infile,FORMAT1, &val)) && (myid==0)) 
         error("Line incomplete in potential file.");
       *PTR_2D(pt->table,npot,i,pt->maxsteps,ncols) = val;
-      if (val!=0.0) pt->end[i] = r2; /* catch last non-zero value */
+      if (val!=0.0) { /* catch last non-zero value */
+        pt->end[i] = r2;
+        pt->len[i] = npot+1;
+      }
     }
     ++npot;
   }
@@ -214,36 +237,24 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename, FILE *infile)
     pt->step[i] = r2_step;
     pt->invstep[i] = 1.0 / r2_step;
     delta = *PTR_2D(pt->table,(npot-1),i,pt->maxsteps,ncols);
-    /* do not shift embedding energy of EAM */
-    if (ncols==ntypes*ntypes) {
+    /* if function of r2, shift potential and adjust cellsz */
+    if (radial) {
       if (delta!=0.0) {
         if (0==myid)
           printf("Potential %1d%1d shifted by %f\n",
                  (i/ntypes),(i%ntypes),delta);
         for (k=0; k<npot; ++k) *PTR_2D(pt->table,k,i,pt->table,ncols) -= delta;
-      } else {
-        pt->end[i] += r2_step;
       }
     }
-    if (ncols==ntypes*ntypes) cellsz = MAX(cellsz,pt->end[i]);
+    if (radial) cellsz = MAX(cellsz,pt->end[i]);
   }
 
-  /* The interpolation uses k+1 and k+2, so we make a few copies 
-     of the last value at the end of the table */
-  for (k=1; k<=5; ++k) {
-    /* still some space left? */ 
-    if (((npot%PSTEP) == 0) && (npot>0)) {
-      pt->maxsteps += PSTEP;
-      tablesize = ncols * pt->maxsteps;
-      pt->table = (real *) realloc(pt->table, tablesize*sizeof(real));
-      if (NULL==pt->table)
-        error_str("Cannot extend memory for function table %s.",filename);
-    }
-    for (i=0; i<ncols; ++i)
-      *PTR_2D(pt->table,npot,i,pt->table,ncols) 
-          = *PTR_2D(pt->table,npot-1,i,pt->table,ncols);
-    ++npot;
-  }
+  /* increase table size for security */
+  tablesize = ncols * (pt->maxsteps+2);
+  pt->table = (real *) realloc(pt->table, tablesize*sizeof(real));
+  if (NULL==pt->table)
+    error_str("Cannot extend memory for function table %s.",filename);
+
 }
 
 
@@ -262,53 +273,62 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename, FILE *infile)
 *
 ******************************************************************************/
 
-void read_pot_table2(pot_table_t *pt, int ncols, char *filename, FILE *infile)
+void read_pot_table2(pot_table_t *pt, int ncols, char *filename, 
+                     FILE *infile, int radial)
 {
-  int i, k, *len;
+  int i, k;
   int tablesize;
-  real val, numstep;
-
-  len = (int  *) malloc(ncols * sizeof(real));
-  if (len==NULL) error("allocation failed in read_pot_table");
+  real val, numstep, delta;
 
   /* read the info block of the function table */
   for(i=0; i<ncols; i++) {
     if (3!=fscanf(infile, FORMAT3, &pt->begin[i], &pt->end[i], &pt->step[i])) {
       if (0==myid) error_str("Info line in %s corrupt.", filename);
     }
-    if (ncols==ntypes*ntypes) cellsz = MAX(cellsz,pt->end[i]);
+    if (radial) cellsz = MAX(cellsz,pt->end[i]);
     pt->invstep[i] = 1.0 / pt->step[i];
     numstep        = 1 + (pt->end[i] - pt->begin[i]) / pt->step[i];
-    len[i]         = (int) (numstep+0.49);  
-    pt->maxsteps   = MAX(pt->maxsteps, len[i]);
+    pt->len[i]     = (int) (numstep+0.49);  
+    pt->maxsteps   = MAX(pt->maxsteps, pt->len[i]);
 
     /* some security against rounding errors */
-    if ((fabs(len[i] - numstep) >= 0.1) && (0==myid)) {
+    if ((fabs(pt->len[i] - numstep) >= 0.1) && (0==myid)) {
       char msg[255];
       sprintf(msg,"numstep = %f rounded to %d in file %s.",
-              numstep, len[i], filename);
+              numstep, pt->len[i], filename);
       warning(msg);
     }
   }
 
   /* allocate the function table */
   /* allow some extra values at the end for interpolation */
-  tablesize = ncols * (pt->maxsteps+3);
+  tablesize = ncols * (pt->maxsteps+2);
   pt->table = (real *) malloc(tablesize * sizeof(real));
   if (NULL==pt->table)
     error_str("Cannot allocate memory for function table %s.",filename);
 
   /* input loop */
   for (i=0; i<ncols; i++) {
-    for (k=0; k<len[i]; k++) {
+    for (k=0; k<pt->len[i]; k++) {
       if (1 != fscanf(infile,FORMAT1, &val)) {
         if (0==myid) error_str("wrong format in file %s.", filename);
       }
       *PTR_2D(pt->table,k,i,pt->maxsteps,ncols) = val;
     }
-    /* make some copies of the last value for interpolation */
-    for (k=len[i]; k<len[i]+3; k++)
-      *PTR_2D(pt->table,k,i,pt->maxsteps,ncols) = val;
+  }
+
+  /* if function of r2, shift potential if necessary */
+  if (radial) {
+    for (i=0; i<ncols; i++) {
+      delta = *PTR_2D(pt->table,pt->len[i]-1,i,pt->maxsteps,ncols);
+      if (delta!=0.0) {
+        if (0==myid)
+          printf("Potential %1d%1d shifted by %f\n",
+                 (i/ntypes),(i%ntypes),delta);
+        for (k=0; k<pt->len[i]; k++) 
+          *PTR_2D(pt->table,k,i,pt->table,ncols) -= delta;
+      }
+    }
   }
 
   if (0==myid) {
@@ -346,21 +366,23 @@ void create_pot_table(pot_table_t *pt)
 
     /* Allocate or extend memory for potential table */
     if (have_potfile==0) {  /* have no potential table yet */
-      pt->maxsteps = maxres + 5;
+      pt->ncols    = ncols;
+      pt->maxsteps = maxres + 2;
       tablesize    = ncols * pt->maxsteps;
       pt->begin    = (real *) malloc(ncols*sizeof(real));
       pt->end      = (real *) malloc(ncols*sizeof(real));
       pt->step     = (real *) malloc(ncols*sizeof(real));
       pt->invstep  = (real *) malloc(ncols*sizeof(real));
+      pt->len      = (int  *) malloc(ncols*sizeof(int ));
       if ((pt->begin   == NULL) || (pt->end == NULL) || (pt->step == NULL) || 
-	  (pt->invstep == NULL)) 
+	  (pt->invstep == NULL) || (pt->len == NULL)) 
         error("Cannot allocate info block for potential table.");
       pt->table = (real *) malloc(tablesize * sizeof(real));
       if (NULL==pt->table) 
         error("Cannot allocate memory for potential table.");
     } else {   /* we possibly have to extend potential table */
-      if (maxres + 5 > pt->maxsteps) {
-        pt->maxsteps = maxres + 5;
+      if (maxres + 2 > pt->maxsteps) {
+        pt->maxsteps = maxres + 2;
         tablesize    = ncols * pt->maxsteps;
         pt->table    = (real *) realloc(pt->table, tablesize * sizeof(real));
         if (NULL==pt->table) 
@@ -376,7 +398,7 @@ void create_pot_table(pot_table_t *pt)
           r2_begin[i][j]   = r2_begin[j][i]   = SQR(r_begin[column]);
           r2_end[i][j]     = r2_end[j][i]     = SQR(r_cut_lin[column]);
           r2_step[i][j]    = r2_step[j][i] 
-                           = (r2_end[i][j] - r2_begin[i][j]) / pot_res[column];
+                           = (r2_end[i][j]-r2_begin[i][j])/(pot_res[column]-1);
           r2_invstep[i][j] = r2_invstep[j][i] = 1.0 / r2_step[i][j];
           len[i][j]        = len[j][i]        = pot_res[column];
 	}
@@ -392,6 +414,7 @@ void create_pot_table(pot_table_t *pt)
           pt->end    [column] = r2_end    [i][j];
           pt->step   [column] = r2_step   [i][j];
           pt->invstep[column] = r2_invstep[i][j];
+          pt->len    [column] = len       [i][j];
         }
         else if (have_potfile==0) {
           if (myid==0)
@@ -400,6 +423,7 @@ void create_pot_table(pot_table_t *pt)
           pt->end    [column] = 0.0;
           pt->step   [column] = 0.0;
           pt->invstep[column] = 0.0;
+          pt->len    [column] = 0;
 	}
         ++column;
       }
@@ -416,18 +440,33 @@ void create_pot_table(pot_table_t *pt)
             r2 = r2_begin[i][j] + n * r2_step[i][j];
             /* Lennard-Jones */
             if (lj_epsilon[i][j]>0) {
-              pair_int_lj(&pot, &grad, i, j, r2);
-              val += pot - lj_shift[i][j];
+              if (r2 < (1.0 - POT_TAIL) * r2_cut[i][j]) {
+                pair_int_lj(&pot, &grad, i, j, r2);
+                val += pot - lj_shift[i][j];
+              }
+              else {
+                val = lj_a[i][j] * SQR(r2_cut[i][j] - r2);
+              }
             }
             /* Morse */
             if (morse_epsilon[i][j]>0) {
-              pair_int_morse(&pot, &grad, i, j, r2);
-              val += pot - morse_shift[i][j];
+              if (r2 < (1.0 - POT_TAIL) * r2_cut[i][j]) {
+                pair_int_morse(&pot, &grad, i, j, r2);
+                val += pot - morse_shift[i][j];
+              }
+              else {
+                val = morse_a[i][j] * SQR(r2_cut[i][j] - r2);
+              }
             }
             /* Buckingham */
             if (buck_sigma[i][j]>0) {
-              pair_int_buck(&pot, &grad, i, j, r2);
-              val += pot - buck_shift[i][j];
+              if (r2 < (1.0 - POT_TAIL) * r2_cut[i][j]) {
+                pair_int_buck(&pot, &grad, i, j, r2);
+                val += pot - buck_shift[i][j];
+              }
+              else {
+                val = buck_a[i][j] * SQR(r2_cut[i][j] - r2);
+              }
             }
             /* harmonic potential for shell model */
             if (spring_cst[i][j]>0) {
@@ -435,13 +474,22 @@ void create_pot_table(pot_table_t *pt)
             }
             *PTR_2D(pt->table, n, column, pt->maxsteps, ncols) = val;
           }
-
-          /* Make some copies of the last value for interpolation */
-          for (n=len[i][j]; n<len[i][j]+3; n++)
-            *PTR_2D(pt->table, n, column, pt->maxsteps, ncols) = val;
 	}
         ++column;
       }
+
+#if   defined(FOURPOINT)
+  init_fourpoint(pt, ncols);
+#elif defined(SPLINE)
+  if (have_potfile==0) pt->table2 = NULL;
+  init_spline(pt, ncols, 1);
+#else
+  init_threepoint(pt, ncols);
+#endif
+
+  /* test interpolation of potential */
+  if ((0==myid) && (debug_potential)) test_potential(*pt, "pair_pot", ncols);
+
 }
 
 /******************************************************************************
@@ -513,7 +561,10 @@ void init_pre_pot(void) {
       if (r2_cut[i][j] > 0.0) { 
         /* Lennard-Jones */
         if (lj_epsilon[i][j] > 0.0) {
-          pair_int_lj( &lj_shift[i][j], &tmp, i, j, r2_cut[i][j] );
+          pair_int_lj( &lj_shift[i][j],&tmp, i, j,
+                       (1.0 - POT_TAIL) * r2_cut[i][j]);
+          lj_shift[i][j] +=  0.25 * tmp *  POT_TAIL * r2_cut[i][j];
+          lj_a    [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
           if (myid==0)
             printf("Lennard-Jones potential %1d %1d shifted by %f\n", 
 	           i, j, -lj_shift[i][j]);
@@ -521,7 +572,10 @@ void init_pre_pot(void) {
         else lj_shift[i][j] = 0.0;
         /* Morse */
         if (morse_epsilon[i][j] > 0.0) {
-          pair_int_morse( &morse_shift[i][j], &tmp, i, j, r2_cut[i][j] );
+          pair_int_morse( &morse_shift[i][j], &tmp, i, j,
+                          (1.0 - POT_TAIL) * r2_cut[i][j]);
+          morse_shift[i][j] +=  0.25 * tmp *  POT_TAIL * r2_cut[i][j];
+          morse_a    [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
           if (myid==0)
             printf("Morse potential %1d %1d shifted by %f\n", 
 	           i, j, -morse_shift[i][j]);
@@ -529,7 +583,10 @@ void init_pre_pot(void) {
         else morse_shift[i][j] = 0.0;
         /* Buckingham */
         if (buck_sigma[i][j] > 0.0) {
-          pair_int_buck( &buck_shift[i][j], &tmp, i, j, r2_cut[i][j] );
+          pair_int_buck( &buck_shift[i][j], &tmp, i, j, 
+                         (1.0 - POT_TAIL) * r2_cut[i][j]);
+          buck_shift[i][j] +=  0.25 * tmp *  POT_TAIL * r2_cut[i][j];
+          buck_a    [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
           if (myid==0)
             printf("Buckingham potential %1d %1d shifted by %f\n", 
 	           i, j, -buck_shift[i][j]);
@@ -550,6 +607,200 @@ void init_pre_pot(void) {
 
 #endif
 
+#if defined(FOURPOINT)
+
+/******************************************************************************
+*
+*  init_fourpoint -- initialize for 4point interpolation
+*
+******************************************************************************/
+
+void init_fourpoint( pot_table_t *pt, int nc )
+{
+  int  col, n, nc;
+  real *y;
+
+  /* loop over columns */
+  for (col=0; col<nc; col++) {
+
+    y    = pt->table  + col;
+    n    = pt->len[col];
+
+    /* for security, we continue the last interpolation polynomial */
+    y[ n   *nc] =  4*y[(n-1)*nc]- 6*y[(n-2)*nc]+ 4*y[(n-3)*nc]-  y[(n-4)*nc];
+    y[(n+1)*nc] = 10*y[(n-1)*nc]-20*y[(n-2)*nc]+15*y[(n-3)*nc]-4*y[(n-4)*nc];
+
+  }
+}
+
+#elif defined(SPLINE)
+
+/******************************************************************************
+*
+*  init_spline -- initialize for spline interpolation
+*
+******************************************************************************/
+
+void init_spline( pot_table_t *pt, int ncols, int radial )
+{
+  int size, col, n, i, k;
+  real p, qn, un, step, *u = NULL, *y, *y2;
+
+  /* (re)allocate data */
+  size = pt->maxsteps + 2;
+  pt->table2 = (real *) realloc(pt->table2, ncols * size * sizeof(real));
+  u          = (real *) realloc(u,                  size * sizeof(real));
+  if ((NULL==pt->table2) || (NULL==u))
+    error("Cannot allocate memory for spline interpolation");
+
+  /* loop over columns */
+  for (col=0; col<ncols; col++) {
+
+    y2   = pt->table2 + col;
+    y    = pt->table  + col;
+    n    = pt->len[col];
+    step = pt->step[col];
+
+    /* at the left end, we always take natural splines */
+    y2[0] = u[0] = 0;
+
+    for (i=1; i<n-1; i++) {
+      p = 0.5 * y2[(i-1)*ncols] + 2.0;
+      y2[i*ncols] = -0.5 / p;
+      u[i] = (y[(i+1)*ncols] - 2*y[i*ncols] + y[(i-1)*ncols]) / step; 
+      u[i] = (6.0 * u[i] / (2*step) - 0.5 * u[i-1]) / p;
+    }
+
+    /* first derivative zero at right end for radial functions,
+       natural splines otherwise */
+    if (radial) {
+      qn = 0.5;
+      un = (3.0 / step) * (y[(n-2)*ncols] - y[(n-1)*ncols]) / step;
+    }
+    else {
+      qn = un = 0.0;
+    }
+
+    y2[(n-1)*ncols] = (un - qn * u[n-2]) / (qn * y2[(n-2)*ncols] + 1.0);
+    for (k=n-2; k>=0; k--) 
+      y2[k*ncols] = y2[k*ncols] * y2[(k+1)*ncols] + u[k];
+
+    /* for security, we continue the last interpolation polynomial */
+    y [n*ncols] = 2*y [(n-1)*ncols]-y [(n-2)*ncols]+SQR(step)*y2[(n-1)*ncols];
+    y2[n*ncols] = 2*y2[(n-1)*ncols]-y2[(n-2)*ncols];
+
+  }
+}
+
+#else
+
+/******************************************************************************
+*
+*  init_threepoint -- initialize for 3point interpolation
+*
+******************************************************************************/
+
+void init_threepoint( pot_table_t *pt, int ncols )
+{
+  int col, n;
+  real *y;
+
+  /* loop over columns */
+  for (col=0; col<ncols; col++) {
+
+    y    = pt->table  + col;
+    n    = pt->len[col];
+
+    /* for security, we continue the last interpolation polynomial */
+    y[ n   *ncols] = 3*y[(n-1)*ncols] - 3*y[(n-2)*ncols] +   y[(n-3)*ncols];
+    y[(n+1)*ncols] = 6*y[(n-1)*ncols] - 8*y[(n-2)*ncols] + 3*y[(n-3)*ncols];
+
+  }
+}
+
+#endif
+
+/******************************************************************************
+*
+*  test_potential -- test potential interpolation
+*
+******************************************************************************/
+
+void test_potential(pot_table_t pt, char *basename, int ncols)
+{
+  real x, dx, pot, grad;
+  int  i, col, is_short=0;
+  FILE *out;
+  char fname[255];
+
+  for (col=0; col<ncols; col++) {
+    dx = (pt.end[col] - pt.begin[col] + 0.5 * pt.step[col]) / debug_pot_res;
+    sprintf(fname, "%s.%d", basename, col);
+    out = fopen(fname,"w");
+    fprintf(out, "# argument, value, derivative\n");
+    for (i=0; i<=debug_pot_res; i++) {
+      x = pt.begin[col] + i * dx;
+      PAIR_INT( pot, grad, pt, col, ncols, x, is_short);
+      fprintf(out, "%e %e %e\n", x, pot, grad);
+      fflush(out);
+    }
+    fclose(out);
+  }
+
+}
+
+#ifdef LINPOT
+
+/******************************************************************************
+*
+*  test_potential -- test potential interpolation
+*
+******************************************************************************/
+
+#define LIN_RES 10000
+
+void make_lin_pot_table( pot_table_t pt, lin_pot_table_t *lpt )
+{
+  int i, j, ii;
+  real dx, *t;
+
+  lpt->ncols   = pt.ncols;
+  lpt->begin   = (real  *) malloc( pt.ncols * sizeof(real ) );
+  lpt->end     = (real  *) malloc( pt.ncols * sizeof(real ) );
+  lpt->step    = (real  *) malloc( pt.ncols * sizeof(real ) );
+  lpt->invstep = (real  *) malloc( pt.ncols * sizeof(real ) );
+  lpt->len     = (int   *) malloc( pt.ncols * sizeof(int  ) );
+  lpt->table   = (real **) malloc( pt.ncols * sizeof(real*) );
+  if ((NULL==lpt->begin)   || (NULL==lpt->end) || (NULL==lpt->step) ||
+      (NULL==lpt->invstep) || (NULL==lpt->len) || (NULL==lpt->table))
+    error("Cannot allocate potential table");
+
+  for (i=0; i<pt.ncols; i++) {
+
+    lpt->table[i] = (real *) malloc( 2 * (LIN_RES + 2) * sizeof(real) );
+    if (NULL==lpt->table[i]) error("Cannot allocate potential table");
+
+    dx = (pt.end[i] - pt.begin[i]) / LIN_RES;
+
+    lpt->begin[i]   = pt.begin[i];
+    lpt->end[i]     = pt.end[i];
+    lpt->step[i]    = dx;
+    lpt->invstep[i] = 1.0 / dx;
+    lpt->len[i]     = LIN_RES+1;
+
+    t  = lpt->table[i];
+
+    for (j=0; j<LIN_RES+1; j++)
+      PAIR_INT2( t[2*j], t[2*j+1], pt, i, pt.ncols, pt.begin[i] + j*dx, ii );
+
+    t[2*(LIN_RES+1)  ] = t[2*LIN_RES  ];
+    t[2*(LIN_RES+1)+1] = t[2*LIN_RES+1];
+
+  }
+}
+
+#endif
+
 /*****************************************************************************
 *
 *  Free potential table 
@@ -562,7 +813,11 @@ void free_pot_table(pot_table_t *pt)
   free(pt->end);
   free(pt->step);
   free(pt->invstep);
+  free(pt->len);
   free(pt->table);
+#ifdef SPLINE
+  free(pt->table2);
+#endif
 }
 
 #ifdef PAIR
@@ -913,3 +1168,5 @@ void deriv_func3(real *grad, int *is_short, pot_table_t *pt,
   /* twice the derivative */
   *grad = 2 * istep * (dfac0 * p0 + dfac1 * p1 + dfac2 * p2 + dfac3 * p3);
 }
+
+

@@ -65,32 +65,35 @@ int main(int argc, char **argv)
 #ifdef PAIR
   /* read pair potential file - also used for TTBP, EAM2, TERSOFF, EWALD, .. */
   if (have_potfile)
-    read_pot_table(&pair_pot,potfilename,ntypes*ntypes);
+    read_pot_table(&pair_pot,potfilename,ntypes*ntypes,1);
   /* initialize analytically defined potentials */
   if (have_pre_pot) init_pre_pot();
+#ifdef LINPOT
+  make_lin_pot_table(pair_pot, &pair_pot_lin);
+#endif
 #endif
 
 #ifdef TTBP
   /* read TTBP smoothing potential file */
-  read_pot_table(&smooth_pot,ttbp_potfilename,ntypes*ntypes);
+  read_pot_table(&smooth_pot,ttbp_potfilename,ntypes*ntypes,1);
 #endif
 
 #ifdef EAM2
   /* read the tabulated embedding energy function */
-  read_pot_table(&embed_pot,eam2_emb_E_filename,ntypes);
+  read_pot_table(&embed_pot,eam2_emb_E_filename,ntypes,0);
   /* read the tabulated electron density function */
-  read_pot_table(&rho_h_tab,eam2_at_rho_filename,ntypes*ntypes);
+  read_pot_table(&rho_h_tab,eam2_at_rho_filename,ntypes*ntypes,1);
 #endif
 
 #ifdef MEAM
   if (have_potfile)
-    read_pot_table(&pair_pot,potfilename,ntypes*ntypes);
+    read_pot_table(&pair_pot,potfilename,ntypes*ntypes,1);
   /* read the tabulated embedding energy function */
   if (have_embed_potfile)
-    read_pot_table(&embed_pot,meam_emb_E_filename,ntypes);
+    read_pot_table(&embed_pot,meam_emb_E_filename,ntypes,0);
   /* read the tabulated electron density function */
   if (have_eldensity_file)
-    read_pot_table(&el_density,meam_eldensity_filename,ntypes);    
+    read_pot_table(&el_density,meam_eldensity_filename,ntypes,1);    
   init_meam();
 #endif
 

@@ -915,6 +915,11 @@ ifneq (,$(findstring 4point,${MAKETARGET}))
 CFLAGS += -DFOURPOINT
 endif
 
+# use spline interpolation
+ifneq (,$(findstring spline,${MAKETARGET}))
+CFLAGS += -DSPLINE
+endif
+
 # use papi
 ifneq (,$(findstring papi,${MAKETARGET}))
 CFLAGS += -DPAPI 

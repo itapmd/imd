@@ -180,9 +180,27 @@ typedef struct {
   real *end;        /* last value in the table (followed by extra zeros) */
   real *step;       /* table increment */
   real *invstep;    /* inverse of increment */
+  int  *len;        /* length of the individual columns */
+  int  ncols;       /* number of columns in the table */
   int  maxsteps;    /* physical length of the table */
   real *table;      /* the actual data */
+#ifdef SPLINE
+  real *table2;      /* second derivatives for spine interpolation */
+#endif
 } pot_table_t;
+
+#ifdef LINPOT
+/* data structure to store a potential table or a function table */ 
+typedef struct {
+  real *begin;      /* first value in the table */
+  real *end;        /* last value in the table */
+  real *step;       /* table increment */
+  real *invstep;    /* inverse of increment */
+  int  *len;        /* length of the individual columns */
+  int  ncols;       /* number of columns in the table */
+  real **table;     /* the actual data */
+} lin_pot_table_t;
+#endif
 
 /* data structure for distributions */
 typedef struct {

@@ -249,10 +249,14 @@ EXTERN real omega_E INIT(0.0);
 
 /* Potential Table */
 EXTERN pot_table_t pair_pot;         /* potential data structure */
+#ifdef LINPOT
+EXTERN lin_pot_table_t pair_pot_lin; /* potential data structure */
+#endif
 EXTERN real cellsz INIT(0);          /* minimal cell diameter */
 EXTERN int  initsz INIT(10);         /* initial number of atoms in cell */
 EXTERN int  incrsz INIT(10);         /* increment of number of atoms in cell */
-
+EXTERN int  debug_potential INIT(0);   /* write out interpolated potential */
+EXTERN int  debug_pot_res INIT(10000); /* resolution of the above */
 
 /* MPI housekeeping */
 EXTERN int myid INIT(0);                  /* Who am I? (0 if serial) */
@@ -592,6 +596,7 @@ EXTERN real lj_epsilon[10][10];
 EXTERN real lj_sigma_lin[55] INIT(zero55);
 EXTERN real lj_sigma[10][10];
 EXTERN real lj_shift[10][10];
+EXTERN real lj_a    [10][10];
 /* Morse */
 EXTERN real morse_epsilon_lin[55] INIT(zero55);
 EXTERN real morse_epsilon[10][10];
@@ -600,6 +605,7 @@ EXTERN real morse_sigma[10][10];
 EXTERN real morse_alpha_lin[55] INIT(zero55);
 EXTERN real morse_alpha[10][10];
 EXTERN real morse_shift[10][10];
+EXTERN real morse_a    [10][10];
 /* Buckingham */
 EXTERN real buck_a_lin[55] INIT(zero55);
 EXTERN real buck_a[10][10];
@@ -608,6 +614,7 @@ EXTERN real buck_c[10][10];
 EXTERN real buck_sigma_lin[55] INIT(zero55);
 EXTERN real buck_sigma[10][10];
 EXTERN real buck_shift[10][10];
+EXTERN real buck_a    [10][10];
 /* harmonic potential for shell model */
 EXTERN real spring_const[45] INIT(zero45);
 EXTERN real spring_cst[10][10];

@@ -71,6 +71,10 @@
 #define COVALENT
 #endif
 
+/* percentage of r2_cut, in which generated potentials are corrected
+   so that the forces go continuously to zero */
+#define POT_TAIL 0.05
+
 /* check whether we use AR across CPU borders */
 #ifdef MPI
 
