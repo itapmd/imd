@@ -121,7 +121,7 @@
 ###########################################################################
 
 MV		= mv      # program to move imd binary to ${BIN_DIR}
-LIBS		+= #-lm
+LIBS		+= -lm
 MPI_FLAGS	+= -DMPI
 OMP_FLAGS	+= -DOMP
 OMPI_FLAGS	+= -DMPI -DOMP
@@ -233,12 +233,13 @@ ifeq (P4-icc,${IMDSYS})
 #  MPICH_CLINKER = icc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
-  OPT_FLAGS	+= -O -ip -tpp7 # -static
+  OPT_FLAGS	+= -O -ip -tpp7
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -prof_gen
   RCD_FLAGS	+= -DRCD -rcd
+  LFLAGS        += # -static
   export        MPICH_CC # MPICH_CLINKER
 endif
 
@@ -250,11 +251,12 @@ ifeq (P4-gcc3,${IMDSYS})
 #  MPICH_CLINKER = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
-  OPT_FLAGS	+= -O -march=pentium4 # -static
+  OPT_FLAGS	+= -O -march=pentium4
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
   PAPI_INC      =  -I /opt/include
   PAPI_LIBS     =  -L /opt/lib -lpapi -lperfctr
+  LFLAGS        += # -static
   export        MPICH_CC # MPICH_CLINKER
 endif
 
