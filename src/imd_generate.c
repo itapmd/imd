@@ -258,9 +258,10 @@ void generate_fcc(int maxtyp)
  
         typ  = (x+y+z) % 2;
 
+        /* bcc case - all atoms get typ 0 */
         if (maxtyp == 2) {
-          if (typ > 0) continue; /* if bcc, only atoms of type 0 */
-          if (z%2) continue; /* if bcc, only at. in bottom/top unit cell */ 
+          if (((x%2) != (y%2)) || ((y%2) != (z%2))) continue;
+          typ = 0;
         }
 
         if (typ > maxtyp) continue;  /* if fcc, only atoms of type 0 */
