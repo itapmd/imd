@@ -2146,7 +2146,7 @@ void read_parameters(void)
 
 void broadcast_params() {
 
-  int i;
+  int i, nvalues;
 
   MPI_Bcast( &finished    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &ensemble    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
@@ -2574,6 +2574,11 @@ void broadcast_params() {
   MPI_Bcast( ters_chi,   ntypepairs-ntypes, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_om,    ntypepairs-ntypes, REAL, 0, MPI_COMM_WORLD);
   /* nvalues is ntypes for TERSOFF and ntypepairs for TERSOFF2 */
+#ifdef TERSOFF2
+  nvalues = ntypepairs;
+#else
+  nvalues = ntypes;
+#endif
   MPI_Bcast( ters_ga,        nvalues,       REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_n,         nvalues,       REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_c,         nvalues,       REAL, 0, MPI_COMM_WORLD);

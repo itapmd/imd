@@ -633,7 +633,7 @@ void alloc_cell(cell *thecell, int count)
       for (i=0; i<thecell->n_max; ++i) {
         thecell->neigh[i] = alloc_neightab(thecell->neigh[i],0);
       }
-      free(thecell->neigh);
+      /* free(thecell->neigh); is freed later again */
 #endif
     }
 

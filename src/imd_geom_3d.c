@@ -102,14 +102,14 @@ void init_cells( void )
   int i, j, k, l;
   real tmp, tol=1.0;
   vektor cell_scale;
-  ivektor next_cell_dim, cell_dim_old, cd;
-  ivektor cellmin_old, cellmax_old, cellc;
+  ivektor next_cell_dim, cell_dim_old, cd, cellc;
   minicell *p, *cell_array_old, *to;
   str255 msg;
 
 #ifdef NBLIST
-  /* add neighbor list margin */
-  cellsz = SQR( sqrt((double) cellsz) + nbl_margin );
+  /* add neighbor list margin (only the first time) */
+  if (NULL == cell_array)
+    cellsz = SQR( sqrt((double) cellsz) + nbl_margin );
 #endif
 
 #ifdef NPT
@@ -202,10 +202,8 @@ void init_cells( void )
   printf("Global cell array dimensions: %d %d %d\n",
           global_cell_dim.x,global_cell_dim.y,global_cell_dim.z);
 
-  /* keep a copy of cell_dim & Co., so that we can redistribute the atoms */
+  /* keep a copy of cell_dim, so that we can redistribute the atoms */
   cell_dim_old = cell_dim;
-  cellmin_old  = cellmin;
-  cellmax_old  = cellmax;
 
 #ifdef BUFCELLS
   cell_dim.x = global_cell_dim.x / cpu_dim.x + 2;  
@@ -235,7 +233,7 @@ void init_cells( void )
   /* save old cell_array (if any), and allocate new one */
   cell_array_old = cell_array;
   cell_array = (minicell *) malloc(
-		     cell_dim.x * cell_dim.y * cell_dim.z * sizeof(cell));
+               cell_dim.x * cell_dim.y * cell_dim.z * sizeof(minicell));
   if ( 0 == myid )
     if (NULL == cell_array) error("Cannot allocate memory for cells");
 
@@ -269,27 +267,36 @@ void init_cells( void )
 
   /* redistribute atoms */
   if (cell_array_old != NULL) {
-    for (j=cellmin_old.x; j < cellmax_old.x; j++)
-      for (k=cellmin_old.y; k < cellmax_old.y; k++)
-        for (l=cellmin_old.z; l < cellmax_old.z; l++) {
+    for (j=0; j < cell_dim_old.x; j++)
+      for (k=0; k < cell_dim_old.y; k++)
+        for (l=0; l < cell_dim_old.z; l++) {
           p = PTR_3D_V(cell_array_old, j, k, l, cell_dim_old);
-          for (i = p->n - 1; i >= 0; i--) {
-            cellc = cell_coord( ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z) );
+
 #ifdef BUFCELLS
-            cellc = local_cell_coord( cellc );
-            /* strangly, some atoms get into buffer cells; 
-               we push them back into the real cells, 
-               so that we don't lose them  */
-            if (cellc.x == 0) cellc.x++;
-            if (cellc.y == 0) cellc.y++;
-            if (cellc.z == 0) cellc.z++;
-            if (cellc.x == cellmax.x) cellc.x--;
-            if (cellc.y == cellmax.y) cellc.y--;
-            if (cellc.z == cellmax.z) cellc.z--;
+          /* redistribute only contents of real cells */
+          if ((0 != j) && (0 != k) && (0 != l) &&
+              (j != cell_dim_old.x-1) &&
+              (k != cell_dim_old.y-1) &&
+              (l != cell_dim_old.z-1))
 #endif
-            to = PTR_VV(cell_array,cellc,cell_dim);
-            MOVE_ATOM( to, p, i );
-          }
+            for (i = p->n - 1; i >= 0; i--) {
+              cellc = cell_coord( ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z) );
+#ifdef BUFCELLS
+              cellc = local_cell_coord( cellc );
+              /* strangly, some atoms get into buffer cells; 
+                 we push them back into the real cells, 
+                 so that we don't lose them  */
+              if (cellc.x < 1) cellc.x = 1;
+              if (cellc.y < 1) cellc.y = 1;
+              if (cellc.z < 1) cellc.z = 1;
+              if (cellc.x > cellmax.x-1) cellc.x = cellmax.x-1;
+              if (cellc.y > cellmax.y-1) cellc.y = cellmax.y-1;
+              if (cellc.z > cellmax.z-1) cellc.z = cellmax.z-1;
+#endif
+              to = PTR_VV(cell_array,cellc,cell_dim);
+              MOVE_ATOM( to, p, i );
+            }
+
           ALLOC_MINICELL( p, 0 );  /* free old cell */
     }
     free(cell_array_old);
