@@ -178,6 +178,7 @@ EXTERN real Ekin_old INIT(0.0);
 EXTERN real Erot_old INIT(0.0);
 EXTERN real pressure INIT(0.0);
 EXTERN real volume INIT(0.0);
+EXTERN real volume_init INIT(0.0);
 EXTERN real virial INIT(0.0);
 EXTERN real temperature INIT(0.0);
 EXTERN int  use_curr_temp INIT(0);  /* which starting temp to use (flag) */

@@ -58,6 +58,11 @@ void make_box( void )
 
   /* volume */
   volume = SPROD( box_x, tbox_x );
+  if (volume_init==0) {
+    volume_init = volume;
+  } else {
+    if ((myid==0) && (volume>8*volume_init)) error("system seems to explode!");
+  }
   if ((0==myid) && (0==volume)) error("Box Edges are parallel.");
 
   /* normalization */

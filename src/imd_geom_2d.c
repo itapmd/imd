@@ -42,6 +42,11 @@ void make_box( void )
 {
   /* volume */
   volume = box_x.x * box_y.y - box_x.y * box_y.x;
+  if (volume_init==0) {
+    volume_init = volume;
+  } else {
+    if ((myid==0) && (volume>4*volume_init)) error("system seems to explode!");
+  }
   if ((0==myid) && (0==volume)) error("Box Edges are parallel.");
 
   /* compute tbox_j such that SPROD(box_i,tbox_j) == delta_ij */
