@@ -1192,6 +1192,10 @@ void getparamfile(char *paramfname, int sim)
       /* minimum Epot difference */
       getparam("min_dpot",&min_dpot,PARAM_REAL,1,1);
     }
+    else if (strcasecmp(token,"min_dsp2")==0) {
+      /* minimum square displacement in .dsp files */
+      getparam(token,&min_dsp2,PARAM_REAL,1,1);
+    }
     else if (strcasecmp(token,"reset_Epot_step")==0) {
       /* step at which to compute Epot_ref (if calc_Epot_ref==1) */
       getparam("reset_Epot_step",&reset_Epot_step,PARAM_INT,1,1);
@@ -2203,7 +2207,7 @@ void broadcast_params() {
 
 #ifdef DISLOC
   MPI_Bcast( &min_dpot,        1, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &ddelta,          1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &min_dsp2,        1, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &dem_int,         1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &dsp_int,         1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &calc_Epot_ref,   1, MPI_INT, 0, MPI_COMM_WORLD); 

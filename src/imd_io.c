@@ -818,15 +818,17 @@ void write_atoms_dsp(FILE *out)
       d.z = ORT(p,i,Z) - ORT_REF(p,i,Z);
 #endif
       reduce_displacement(&d);
+      if (SPROD(d,d) > min_dsp2) {
 #ifdef TWOD
-      len += sprintf( outbuf+len, "%d %e %e %e %e\n",
-        VSORTE(p,i), ORT(p,i,X), ORT(p,i,Y), d.x, d.y);
+        len += sprintf( outbuf+len, "%d %e %e %e %e\n",
+          VSORTE(p,i), ORT(p,i,X), ORT(p,i,Y), d.x, d.y);
 #else
-      len += sprintf( outbuf+len, "%d %e %e %e %e %e %e\n",
-        VSORTE(p,i), ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), d.x, d.y, d.z);
+        len += sprintf( outbuf+len, "%d %e %e %e %e %e %e\n",
+          VSORTE(p,i), ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), d.x, d.y, d.z);
 #endif
-      /* flush or send outbuf if it is full */
-      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+        /* flush or send outbuf if it is full */
+        if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+      }
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);

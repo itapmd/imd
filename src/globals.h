@@ -422,6 +422,7 @@ EXTERN int  dem_int INIT(0);          /* Period of dem output */
 EXTERN int  dsp_int INIT(0);          /* Period of dsp output */
 EXTERN int  up_ort_ref INIT(0);       /* time to update ort_ref ? */
 EXTERN real min_dpot INIT(1.0);       /* difference for dem */
+EXTERN real min_dsp2 INIT(0.0);       /* minimal square displacement in .dsp */
 EXTERN int  reset_Epot_step INIT(0);  /* step at which Epot_ref is computed */
 EXTERN int  calc_Epot_ref INIT(0);    /* flag whether to compute Epot_ref */
 EXTERN int  Epot_diff INIT(1);        /* flag whether to write Epot_diff */
