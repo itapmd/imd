@@ -287,27 +287,26 @@ void read_atoms(str255 infilename)
           nactive += (int) (restrictions+s)->z;
         }
         num_sort[SORTE(input,0)]++;
-	MPI_Ssend( input->ort,     DIM, MPI_REAL,to_cpu,ORT_TAG,    cpugrid);
+	MPI_Ssend( input->ort,     DIM, REAL,to_cpu,ORT_TAG,    cpugrid);
 #ifdef DISLOC
-	MPI_Ssend( input->ort_ref, DIM, MPI_REAL,to_cpu,ORT_REF_TAG,cpugrid);
-	MPI_Ssend( input->Epot_ref,1,MPI_REAL,to_cpu,POT_REF_TAG,cpugrid);
+	MPI_Ssend( input->ort_ref, DIM, REAL,to_cpu,ORT_REF_TAG,cpugrid);
+	MPI_Ssend( input->Epot_ref,  1, REAL,to_cpu,POT_REF_TAG,cpugrid);
 #endif
 #ifndef MONOLJ
-	MPI_Ssend( input->sorte,  1, SHORT    , to_cpu, SORTE_TAG , cpugrid);
-	MPI_Ssend( input->masse,  1, MPI_REAL , to_cpu, MASSE_TAG , cpugrid);
-        MPI_Ssend( input->nummer, 1, INTEGER  , to_cpu, NUMMER_TAG, cpugrid);
+	MPI_Ssend( input->sorte,  1, SHORT  , to_cpu, SORTE_TAG , cpugrid);
+	MPI_Ssend( input->masse,  1, REAL   , to_cpu, MASSE_TAG , cpugrid);
+        MPI_Ssend( input->nummer, 1, INTEGER, to_cpu, NUMMER_TAG, cpugrid);
 #ifdef UNIAX
-	MPI_Ssend( input->traeg_moment,  1, MPI_REAL , to_cpu, 
-                   TRAEG_MOMENT_TAG , cpugrid);
-	MPI_Ssend( input->achse,   DIM, MPI_REAL,to_cpu, ACHSE_TAG, cpugrid);
-	MPI_Ssend( input->shape, DIM, MPI_REAL,to_cpu, SHAPE_TAG, cpugrid);
-	MPI_Ssend( input->pot_well, DIM, MPI_REAL,to_cpu, POT_WELL_TAG, 
-                   cpugrid);
-	MPI_Ssend( input->dreh_impuls, DIM, MPI_REAL,to_cpu, DREH_IMPULS_TAG, 
+	MPI_Ssend( input->traeg_moment, 1, REAL, to_cpu,
+                   TRAEG_MOMENT_TAG, cpugrid);
+	MPI_Ssend( input->achse,    DIM, REAL,to_cpu, ACHSE_TAG, cpugrid);
+	MPI_Ssend( input->shape,    DIM, REAL,to_cpu, SHAPE_TAG, cpugrid);
+	MPI_Ssend( input->pot_well, DIM, REAL,to_cpu, POT_WELL_TAG, cpugrid);
+	MPI_Ssend( input->dreh_impuls, DIM, REAL,to_cpu, DREH_IMPULS_TAG, 
                    cpugrid);
 #endif
 #endif
-	MPI_Ssend( input->impuls,DIM, MPI_REAL, to_cpu, IMPULS_TAG, cpugrid);
+	MPI_Ssend( input->impuls,DIM, REAL, to_cpu, IMPULS_TAG, cpugrid);
       } else if (to_cpu==myid) {
         natoms++;  
         /* we still have s == input->sorte[0] */
@@ -358,7 +357,7 @@ void read_atoms(str255 infilename)
 /* Tell other CPUs that reading atoms is finished. (tag==0) */
   if (1!=parallel_input)
     for (s=1; s<num_cpus; s++)
-      MPI_Ssend( input->ort, 3, MPI_REAL, s, 0, cpugrid);
+      MPI_Ssend( input->ort, 3, REAL, s, 0, cpugrid);
 
   /* Add the number of atoms read (and kept) by each CPU */
   if (1==parallel_input) {
@@ -430,7 +429,7 @@ void recv_atoms(void)
 
   while ( 1 ) {
 
-    MPI_Recv(input->ort,  DIM, MPI_REAL, 0, MPI_ANY_TAG   , cpugrid, &status );
+    MPI_Recv(input->ort,  DIM, REAL, 0, MPI_ANY_TAG   , cpugrid, &status );
 
     if ((0 != status.MPI_TAG) && (ORT_TAG != status.MPI_TAG)) 
        error("Messages mixed up.");
@@ -438,21 +437,22 @@ void recv_atoms(void)
     if ( 0 == status.MPI_TAG ) break;
 
 #ifndef MONOLJ
-    MPI_Recv(input->sorte,  1, SHORT,     0, SORTE_TAG , cpugrid, &status );
-    MPI_Recv(input->masse,  1, MPI_REAL,  0, MASSE_TAG , cpugrid, &status );
-    MPI_Recv(input->nummer, 1, INTEGER,   0, NUMMER_TAG, cpugrid, &status );
+    MPI_Recv(input->sorte,  1, SHORT,   0, SORTE_TAG , cpugrid, &status );
+    MPI_Recv(input->masse,  1, REAL,    0, MASSE_TAG , cpugrid, &status );
+    MPI_Recv(input->nummer, 1, INTEGER, 0, NUMMER_TAG, cpugrid, &status );
 #ifdef UNIAX
-    MPI_Recv(input->traeg_moment,  1, MPI_REAL,  0, TRAEG_MOMENT_TAG , cpugrid, &status );
-    MPI_Recv(input->achse, DIM, MPI_REAL, 0, ACHSE_TAG , cpugrid, &status );
-    MPI_Recv(input->shape, DIM, MPI_REAL, 0, SHAPE_TAG , cpugrid, &status );
-    MPI_Recv(input->pot_well, DIM, MPI_REAL, 0, POT_WELL_TAG , cpugrid, &status );
-    MPI_Recv(input->dreh_impuls,DIM, MPI_REAL, 0, DREH_IMPULS_TAG, cpugrid, &status );
+    MPI_Recv(input->traeg_moment, 1, REAL, 0, TRAEG_MOMENT_TAG, 
+             cpugrid, &status );
+    MPI_Recv(input->achse, DIM, REAL, 0, ACHSE_TAG , cpugrid, &status );
+    MPI_Recv(input->shape, DIM, REAL, 0, SHAPE_TAG , cpugrid, &status );
+    MPI_Recv(input->pot_well, DIM, REAL, 0, POT_WELL_TAG , cpugrid, &status );
+    MPI_Recv(input->dreh_impuls,DIM, REAL, 0, DREH_IMPULS_TAG,cpugrid,&status);
 #endif
 #endif
-    MPI_Recv(input->impuls,DIM, MPI_REAL, 0, IMPULS_TAG, cpugrid, &status );
+    MPI_Recv(input->impuls,  DIM, REAL, 0, IMPULS_TAG,  cpugrid, &status);
 #ifdef DISLOC
-    MPI_Recv(input->Epot_ref,1, MPI_REAL, 0, POT_REF_TAG, cpugrid, &status);
-    MPI_Recv(input->ort_ref, DIM, MPI_REAL, 0, ORT_REF_TAG,  cpugrid, &status);
+    MPI_Recv(input->Epot_ref,  1, REAL, 0, POT_REF_TAG, cpugrid, &status);
+    MPI_Recv(input->ort_ref, DIM, REAL, 0, ORT_REF_TAG, cpugrid, &status);
 #endif
 
     local_cellc = local_cell_coord(input->ort X(0),input->ort Y(0),

@@ -6,7 +6,6 @@
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
@@ -280,11 +279,11 @@ void send_atoms_by_cell()
 void send_cell_force(cell *p, int to_cpu, int tag)
 {
 #if defined(PACX) || defined(MONOLJ)
-  MPI_Send( &(p->n), 1,           MPI_INT, to_cpu, tag + SIZE_TAG, cpugrid);
+  MPI_Send( &(p->n), 1,         MPI_INT, to_cpu, tag + SIZE_TAG,  cpugrid);
 #endif
-  MPI_Send( p->ort, DIM * p->n, MPI_REAL, to_cpu, tag + ORT_TAG, cpugrid);
+  MPI_Send( p->ort, DIM * p->n, REAL,    to_cpu, tag + ORT_TAG,   cpugrid);
 #ifndef MONOLJ
-  MPI_Send( p->sorte,     p->n, SHORT,  to_cpu, tag + SORTE_TAG, cpugrid);
+  MPI_Send( p->sorte,     p->n, SHORT,   to_cpu, tag + SORTE_TAG, cpugrid);
 #endif
 
 }
@@ -306,7 +305,7 @@ void recv_cell_force(cell *p, int from_cpu,int tag)
   MPI_Recv( &size, 1, MPI_INT, from_cpu, tag + SIZE_TAG , cpugrid, &status );
 #else
   MPI_Probe( from_cpu, tag + ORT_TAG, cpugrid, &status );
-  MPI_Get_count( &status, MPI_REAL, &size );
+  MPI_Get_count( &status, REAL, &size );
   size /= DIM;
 #endif
     
@@ -320,7 +319,7 @@ void recv_cell_force(cell *p, int from_cpu,int tag)
   }
   p->n = size;
 
-  MPI_Recv(p->ort, DIM*size, MPI_REAL, from_cpu, tag+ORT_TAG, cpugrid,&status);
+  MPI_Recv(p->ort, DIM*size, REAL,from_cpu, tag + ORT_TAG,   cpugrid, &status);
 #ifndef MONOLJ
   MPI_Recv(p->sorte, size, SHORT, from_cpu, tag + SORTE_TAG, cpugrid, &status);
 #endif

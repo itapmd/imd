@@ -174,29 +174,28 @@ void write_temp_dist(int steps)
         Sxisq += xx * xx;
         numb++;
       }
-
     }
   }
 
 #ifdef MPI
   /* add up results form different CPUs */
 #ifdef NVX
-  MPI_Allreduce( &heat_cond, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &heat_cond, &tmp, 1, REAL, MPI_SUM, cpugrid);
   heat_cond = tmp;
 #endif
   MPI_Reduce( temp_hist_1, temp_hist_2, 
-              nhalf+1, MPI_REAL, MPI_SUM, 0, cpugrid);
+              nhalf+1, REAL, MPI_SUM, 0, cpugrid);
   temp_hist = temp_hist_2;
   MPI_Reduce( num_hist_1, num_hist_2, 
               nhalf+1, INTEGER,  MPI_SUM, 0, cpugrid);
   num_hist  = num_hist_2;
-  MPI_Reduce( &Sxi, &tmp, 1, MPI_REAL, MPI_SUM, 0, cpugrid );
+  MPI_Reduce( &Sxi, &tmp, 1, REAL, MPI_SUM, 0, cpugrid );
   Sxi = tmp;
-  MPI_Reduce( &STi, &tmp, 1, MPI_REAL, MPI_SUM, 0, cpugrid );
+  MPI_Reduce( &STi, &tmp, 1, REAL, MPI_SUM, 0, cpugrid );
   STi = tmp;
-  MPI_Reduce( &SxiTi, &tmp, 1, MPI_REAL, MPI_SUM, 0, cpugrid );
+  MPI_Reduce( &SxiTi, &tmp, 1, REAL, MPI_SUM, 0, cpugrid );
   SxiTi = tmp;
-  MPI_Reduce( &Sxisq, &tmp, 1, MPI_REAL, MPI_SUM, 0, cpugrid );
+  MPI_Reduce( &Sxisq, &tmp, 1, REAL, MPI_SUM, 0, cpugrid );
   Sxisq = tmp;
   MPI_Reduce( &numb, &numb_tmp, 1, MPI_INT, MPI_SUM, 0, cpugrid );
   numb = numb_tmp; 
@@ -286,7 +285,7 @@ void write_press_dist_shock(int steps)
   cell *p;
   real scalex, scaley, layvol, laydens;
   int  num, numx, numy, press_dim_tot;
-  int fzhlr, i, r, s, t;
+  int fzhlr, i, k;
 #ifndef TWOD
   int scalez, numz;
 #endif
@@ -453,22 +452,15 @@ void write_press_dist_shock(int steps)
     num_hist_2[i] = 0;
 #endif
   }
+
   /* loop over all atoms */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-	{
-#ifndef TWOD
- 	   p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#else
-	   p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#endif
+  for (k=0; k<ncells; ++k) {
+
+           p = cell_array + CELLS(k);
 
            for (i = 0;i < p->n; ++i) {
 
-              /* which layer? */
+              /* which bin? */
 	      numx = scalex * p->ort X(i);
               if (numx < 0)             numx = 0;
               if (numx >= press_dim.x)      numx = press_dim.x-1;
@@ -559,45 +551,45 @@ void write_press_dist_shock(int steps)
               num_hist_1[num]++;
 #endif
 	   }
-        }
+  }
 
 #ifdef MPI
   /* add up results form different CPUs */
   MPI_Reduce( press_histxx_1, press_histxx_2, 
-              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
+              press_dim_tot, REAL, MPI_SUM, 0, cpugrid);
   press_histxx = press_histxx_2;
   MPI_Reduce( press_histyy_1, press_histyy_2, 
-              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
+              press_dim_tot, REAL, MPI_SUM, 0, cpugrid);
   press_histyy = press_histyy_2;
 #ifndef TWOD
   MPI_Reduce( press_histzz_1, press_histzz_2, 
-              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
+              press_dim_tot, REAL, MPI_SUM, 0, cpugrid);
   press_histzz = press_histzz_2;
 #endif
   MPI_Reduce( pot_hist_1, pot_hist_2, 
-              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
+              press_dim_tot, REAL, MPI_SUM, 0, cpugrid);
   pot_hist = pot_hist_2;
   MPI_Reduce( num_hist_1, num_hist_2, 
               press_dim_tot, INTEGER, MPI_SUM, 0, cpugrid);
   num_hist = num_hist_2;
   MPI_Reduce( kin_histxx_1, kin_histxx_2, 
-              press_dim.x, MPI_REAL, MPI_SUM, 0, cpugrid);
+              press_dim.x, REAL, MPI_SUM, 0, cpugrid);
   kin_histxx = kin_histxx_2;
 
   MPI_Reduce( kin_histxxu_1, kin_histxxu_2, 
-              press_dim.x, MPI_REAL, MPI_SUM, 0, cpugrid);
+              press_dim.x, REAL, MPI_SUM, 0, cpugrid);
   kin_histxxu = kin_histxxu_2;
 
   MPI_Reduce( kin_histyy_1, kin_histyy_2, 
-              press_dim.x, MPI_REAL, MPI_SUM, 0, cpugrid);
+              press_dim.x, REAL, MPI_SUM, 0, cpugrid);
   kin_histyy = kin_histyy_2;
 #ifndef TWOD
   MPI_Reduce( kin_histzz_1, kin_histzz_2, 
-              press_dim.x, MPI_REAL, MPI_SUM, 0, cpugrid);
+              press_dim.x, REAL, MPI_SUM, 0, cpugrid);
   kin_histzz = kin_histzz_2;
 #endif
   MPI_Reduce( pot_hist_1, pot_hist_2, 
-              press_dim.x, MPI_REAL, MPI_SUM, 0, cpugrid);
+              press_dim.x, REAL, MPI_SUM, 0, cpugrid);
   pot_hist = pot_hist_2;
   MPI_Reduce( num_hist_1, num_hist_2, 
               press_dim.x, INTEGER, MPI_SUM, 0, cpugrid);
@@ -680,7 +672,7 @@ void write_press_dist(int steps)
   cell *p;
   real scalex, scaley, scalez, layvol, laydens, Ekin;
   int  num, numx, numy, numz, press_dim_tot;
-  int fzhlr, i, r, s, t;
+  int fzhlr, i, k, r, s, t;
   static real  *press_histxx, *press_histxx_1 = NULL, *press_histxx_2 = NULL;
   static real  *press_histyy, *press_histyy_1 = NULL, *press_histyy_2 = NULL;
   static real  *press_histxy, *press_histxy_1 = NULL, *press_histxy_2 = NULL;
@@ -830,30 +822,23 @@ void write_press_dist(int steps)
   }
 
   /* loop over all atoms */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-	{
-#ifndef TWOD
- 	   p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#else
-	   p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#endif
+  for (k=0; k<ncells; ++k) {
+
+           p = cell_array + CELLS(k);
+
            for (i = 0; i < p->n; ++i) {
               /* which layer? */
 	      numx = scalex * p->ort X(i);
               if (numx < 0)             numx = 0;
-              if (numx >= press_dim.x)      numx = press_dim.x-1;
+              if (numx >= press_dim.x)  numx = press_dim.x-1;
 	      numy = scaley * p->ort Y(i);
               if (numy < 0)             numy = 0;
-              if (numy >= press_dim.y)      numy = press_dim.y-1;
+              if (numy >= press_dim.y)  numy = press_dim.y-1;
               num = numx * press_dim.y + numy;
 #ifndef TWOD
 	      numz = scalez * p->ort Z(i);
               if (numz < 0)             numz = 0;
-              if (numz >= press_dim.z)      numz = press_dim.z-1;
+              if (numz >= press_dim.z)  numz = press_dim.z-1;
               num = num  * press_dim.z + numz;
 #endif
 
@@ -872,35 +857,35 @@ void write_press_dist(int steps)
 	      pot_hist_1[num] += p->pot_eng[i];
               num_hist_1[num]++;
 	   }
-        }
+  }
 
 #ifdef MPI
   /* add up results form different CPUs */
   MPI_Reduce( press_histxx_1, press_histxx_2, 
-              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
+              press_dim_tot, REAL, MPI_SUM, 0, cpugrid);
   press_histxx = press_histxx_2;
   MPI_Reduce( press_histyy_1, press_histyy_2, 
-              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
+              press_dim_tot, REAL, MPI_SUM, 0, cpugrid);
   press_histyy = press_histyy_2;
   MPI_Reduce( press_histxy_1, press_histxy_2, 
-              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
+              press_dim_tot, REAL, MPI_SUM, 0, cpugrid);
   press_histxy = press_histxy_2;
 #ifndef TWOD
   MPI_Reduce( press_histzz_1, press_histzz_2, 
-              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
+              press_dim_tot, REAL, MPI_SUM, 0, cpugrid);
   press_histzz = press_histzz_2;
   MPI_Reduce( press_histzx_1, press_histzx_2, 
-              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
+              press_dim_tot, REAL, MPI_SUM, 0, cpugrid);
   press_histzx = press_histzx_2;
   MPI_Reduce( press_histyz_1, press_histyz_2, 
-              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
+              press_dim_tot, REAL, MPI_SUM, 0, cpugrid);
   press_histyz = press_histyz_2;
 #endif
   MPI_Reduce( kin_hist_1, kin_hist_2, 
-              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
+              press_dim_tot, REAL, MPI_SUM, 0, cpugrid);
   kin_hist     = kin_hist_2;
   MPI_Reduce( pot_hist_1, pot_hist_2, 
-              press_dim_tot, MPI_REAL, MPI_SUM, 0, cpugrid);
+              press_dim_tot, REAL, MPI_SUM, 0, cpugrid);
   pot_hist     = pot_hist_2;
   MPI_Reduce( num_hist_1, num_hist_2, 
               press_dim_tot, INTEGER, MPI_SUM, 0, cpugrid);

@@ -1,12 +1,11 @@
+
 /******************************************************************************
 *
 * types.h -- Data types for the imd Package
 *
-*
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
@@ -15,10 +14,10 @@
 /* Single precision is the default */
 #ifdef DOUBLE
 typedef double real;
-#define MPI_REAL MPI_DOUBLE
+#define REAL MPI_DOUBLE
 #else 
 typedef float real;
-#define MPI_REAL MPI_FLOAT
+#define REAL MPI_FLOAT
 #endif
 
 /* Crays use 64bit ints. Thats too much just to enumerate the atoms */

@@ -145,19 +145,19 @@ void read_pot_table1( pot_table_t *pt, char *filename )
   }
   if (0==parallel_input) {
     /* Broadcast table to other CPUs */
-    MPI_Bcast( &(pt->maxsteps),  1, MPI_INT,  0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->begin,    size, MPI_REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->end,      size, MPI_REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->step,     size, MPI_REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->invstep,  size, MPI_REAL, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &(pt->maxsteps), 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( pt->begin,    size, REAL, 0, MPI_COMM_WORLD);
+    MPI_Bcast( pt->end,      size, REAL, 0, MPI_COMM_WORLD);
+    MPI_Bcast( pt->step,     size, REAL, 0, MPI_COMM_WORLD);
+    MPI_Bcast( pt->invstep,  size, REAL, 0, MPI_COMM_WORLD);
     tablesize = pt->maxsteps * size;
     if (0 != myid) {
       pt->table = (real *) malloc(tablesize*sizeof(real));
       if (NULL==pt->table)
         error("Cannot allocate memory for function table");
     }
-    MPI_Bcast( pt->table, tablesize, MPI_REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( &cellsz,           1, MPI_REAL, 0, MPI_COMM_WORLD);
+    MPI_Bcast( pt->table, tablesize, REAL, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &cellsz,           1, REAL, 0, MPI_COMM_WORLD);
   }
 #endif
 
@@ -267,19 +267,19 @@ void read_pot_table2( pot_table_t *pt, char *filename, int mode )
   }
   if (0==parallel_input) {
     /* Broadcast table to other CPUs */
-    MPI_Bcast( &(pt->maxsteps), 1, MPI_INT,  0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->begin,    size, MPI_REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->end,      size, MPI_REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->step,     size, MPI_REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->invstep,  size, MPI_REAL, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &(pt->maxsteps), 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( pt->begin,    size, REAL, 0, MPI_COMM_WORLD);
+    MPI_Bcast( pt->end,      size, REAL, 0, MPI_COMM_WORLD);
+    MPI_Bcast( pt->step,     size, REAL, 0, MPI_COMM_WORLD);
+    MPI_Bcast( pt->invstep,  size, REAL, 0, MPI_COMM_WORLD);
     tablesize = pt->maxsteps * size;
     if (0 != myid) {
       pt->table = (real *) malloc(tablesize*sizeof(real));
       if (NULL==pt->table)
         error("Cannot allocate memory for function table");
     }
-    MPI_Bcast( pt->table, tablesize, MPI_REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( &cellsz,           1, MPI_REAL, 0, MPI_COMM_WORLD);
+    MPI_Bcast( pt->table, tablesize, REAL, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &cellsz,           1, REAL, 0, MPI_COMM_WORLD);
   }
 #endif
 

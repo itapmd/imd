@@ -176,18 +176,18 @@ void move_atoms_nve(void)
 
 #ifdef MPI
   /* Add kinetic energy from all cpus */
-  MPI_Allreduce( &tot_kin_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &tot_kin_energy, &tmp, 1, REAL, MPI_SUM, cpugrid);
   tot_kin_energy = tmp;
 #ifdef FNORM
   /* Add all the (local) scalars of the local scalar products of the 
      global force vector */ 
-  MPI_Allreduce( &fnorm, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &fnorm, &tmp, 1, REAL, MPI_SUM, cpugrid);
   fnorm = tmp;
 #endif
 #ifdef GLOK
   /* Add all the (local) scalars of the local scalar products of the 
      global force & impuls vector */ 
-  MPI_Allreduce( &PxF, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &PxF, &tmp, 1, REAL, MPI_SUM, cpugrid);
   PxF = tmp;
 #endif
 #endif
@@ -351,12 +351,12 @@ void move_atoms_mik(void)
 
 #ifdef MPI
   /* Add kinetic energy from all cpus */
-  MPI_Allreduce( &tot_kin_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &tot_kin_energy, &tmp, 1, REAL, MPI_SUM, cpugrid);
   tot_kin_energy = tmp;
 #ifdef FNORM
   /* Add all the (local) scalars of the local scalar products of the 
      global force vector */ 
-  MPI_Allreduce( &fnorm, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &fnorm, &tmp, 1, REAL, MPI_SUM, cpugrid);
   fnorm = tmp;
 #endif
 #endif
@@ -558,12 +558,12 @@ void move_atoms_nvt(void)
 
 #ifdef MPI
   /* add kinetic energy from all cpus */
-  MPI_Allreduce( &tot_kin_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &tot_kin_energy, &tmp, 1, REAL, MPI_SUM, cpugrid);
   tot_kin_energy = tmp;
-  MPI_Allreduce( &kin_energie_2,  &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &kin_energie_2,  &tmp, 1, REAL, MPI_SUM, cpugrid);
   kin_energie_2  = tmp;
 #ifdef UNIAX
-  MPI_Allreduce( &rot_energie_2,  &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &rot_energie_2,  &tmp, 1, REAL, MPI_SUM, cpugrid);
   rot_energie_2  = tmp;
 #endif
 #endif
@@ -714,14 +714,14 @@ void move_atoms_npt_iso(void)
 
 #ifdef MPI
   /* add data from all cpus */
-  MPI_Allreduce( &Ekin_old, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &Ekin_old, &tmp, 1, REAL, MPI_SUM, cpugrid);
   Ekin_old = tmp;
-  MPI_Allreduce( &Ekin_new, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &Ekin_new, &tmp, 1, REAL, MPI_SUM, cpugrid);
   Ekin_new = tmp;
 #ifdef UNIAX
-  MPI_Allreduce( &Erot_old, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &Erot_old, &tmp, 1, REAL, MPI_SUM, cpugrid);
   Erot_old  = tmp;
-  MPI_Allreduce( &Erot_new, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &Erot_new, &tmp, 1, REAL, MPI_SUM, cpugrid);
   Erot_new  = tmp;
 #endif
 #endif
@@ -896,8 +896,8 @@ void move_atoms_npt_axial(void)
 
 #ifdef MPI
   /* Add kinetic energy from all cpus */
-  MPI_Allreduce( &Ekin,   &tmp,      1, MPI_REAL, MPI_SUM, cpugrid);
-  MPI_Allreduce( &stress, &tmpvec, DIM, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &Ekin,   &tmp,      1, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &stress, &tmpvec, DIM, REAL, MPI_SUM, cpugrid);
 
   Ekin     = tmp;
   stress.x = tmpvec.x;
@@ -1094,7 +1094,7 @@ void move_atoms_frac(void)
 
 #ifdef MPI
   /* Add kinetic energy for all CPUs */
-  MPI_Allreduce( &tot_kin_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &tot_kin_energy, &tmp, 1, REAL, MPI_SUM, cpugrid);
   tot_kin_energy = tmp;
 #endif
 
@@ -1177,9 +1177,9 @@ void move_atoms_stm(void)
 
 #ifdef MPI
   /* Add kinetic energy form all cpus */
-  MPI_Allreduce( &tot_kin_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &tot_kin_energy, &tmp, 1, REAL, MPI_SUM, cpugrid);
   tot_kin_energy = tmp;
-  MPI_Allreduce( &kin_energie_2,  &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &kin_energie_2,  &tmp, 1, REAL, MPI_SUM, cpugrid);
   kin_energie_2  = tmp;
 #endif
 
@@ -1301,19 +1301,19 @@ void move_atoms_nvx(void)
 
 #ifdef MPI
   /* Add up results from all cpus */
-  MPI_Allreduce( &tot_kin_energy, &real_tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &tot_kin_energy, &real_tmp, 1, REAL, MPI_SUM, cpugrid);
   tot_kin_energy                 = real_tmp;
-  MPI_Allreduce( &Ekin_left,      &real_tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &Ekin_left,      &real_tmp, 1, REAL, MPI_SUM, cpugrid);
   Ekin_left                      = real_tmp;
-  MPI_Allreduce( &Ekin_right,     &real_tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &Ekin_right,     &real_tmp, 1, REAL, MPI_SUM, cpugrid);
   Ekin_right                     = real_tmp;
-  MPI_Allreduce( &inv_mass_left,  &real_tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &inv_mass_left,  &real_tmp, 1, REAL, MPI_SUM, cpugrid);
   inv_mass_left                  = real_tmp;
-  MPI_Allreduce( &inv_mass_right, &real_tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &inv_mass_right, &real_tmp, 1, REAL, MPI_SUM, cpugrid);
   inv_mass_right                 = real_tmp;
-  MPI_Allreduce( &tot_impuls_left,&vectmp, DIM, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &tot_impuls_left,&vectmp, DIM, REAL, MPI_SUM, cpugrid);
   tot_impuls_left                = vectmp;
-  MPI_Allreduce(&tot_impuls_right,&vectmp, DIM, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce(&tot_impuls_right,&vectmp, DIM, REAL, MPI_SUM, cpugrid);
   tot_impuls_right               = vectmp;
   MPI_Allreduce( &natoms_left,    &int_tmp,  1, MPI_INT,  MPI_SUM, cpugrid);
   natoms_left                    = int_tmp;

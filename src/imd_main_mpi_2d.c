@@ -6,7 +6,6 @@
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
@@ -116,13 +115,13 @@ void calc_forces(void)
 #endif /* AR */
 
   /* sum up results of different CPUs */
-  MPI_Allreduce( &tot_pot_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid); 
+  MPI_Allreduce( &tot_pot_energy, &tmp, 1, REAL, MPI_SUM, cpugrid); 
   tot_pot_energy = tmp; 
 
-  MPI_Allreduce( &virial,   &tmpvir,    1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &virial,   &tmpvir,    1, REAL, MPI_SUM, cpugrid);
   virial = tmpvir;
 
-  MPI_Allreduce( &vir_vect, &tmpvec,  DIM, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &vir_vect, &tmpvec,  DIM, REAL, MPI_SUM, cpugrid);
   vir_vect.x = tmpvec.x;
   vir_vect.y = tmpvec.y;
 
@@ -175,11 +174,11 @@ void shutdown_mpi(void)
 
 /******************************************************************************
 *
-* send_atoms  -  only used for fix_cells; we always have mode == ATOMS
+* send_atoms  -  only used for fix_cells
 *
 ******************************************************************************/
 
-void send_atoms(int mode)
+void send_atoms()
 {
   MPI_Status  stateast[2], statwest[2], statnorth[2], statsouth[2];
   MPI_Request  reqeast[2],  reqwest[2],  reqnorth[2],  reqsouth[2];
@@ -195,13 +194,13 @@ void send_atoms(int mode)
 
     /* wait for atoms from west, move them to cells */
     MPI_Waitall(2, reqwest, statwest);
-    MPI_Get_count( &statwest[1], MPI_REAL, &recv_buf_west.n );
-    process_buffer( &recv_buf_west, mode );
+    MPI_Get_count( &statwest[1], REAL, &recv_buf_west.n );
+    process_buffer( &recv_buf_west );
 
     /* wait for atoms from east, move them to cells */
     MPI_Waitall(2, reqeast, stateast);
-    MPI_Get_count( &stateast[1], MPI_REAL, &recv_buf_east.n );
-    process_buffer( &recv_buf_east, mode );
+    MPI_Get_count( &stateast[1], REAL, &recv_buf_east.n );
+    process_buffer( &recv_buf_east );
 
     /* append atoms from east & west to north send buffer */
     copy_atoms_buf( &send_buf_north, &recv_buf_west );
@@ -225,13 +224,13 @@ void send_atoms(int mode)
 
     /* wait for atoms from south, move them to cells */
     MPI_Waitall(2, reqsouth, statsouth);
-    MPI_Get_count( &statsouth[1], MPI_REAL, &recv_buf_south.n );
-    process_buffer( &recv_buf_south, mode );   
+    MPI_Get_count( &statsouth[1], REAL, &recv_buf_south.n );
+    process_buffer( &recv_buf_south );   
 
     /* Wait for atoms from north, move them to cells */
     MPI_Waitall(2, reqnorth, statnorth);
-    MPI_Get_count( &statnorth[1], MPI_REAL, &recv_buf_north.n );
-    process_buffer( &recv_buf_north, mode );   
+    MPI_Get_count( &statnorth[1], REAL, &recv_buf_north.n );
+    process_buffer( &recv_buf_north );   
   }
 
 }

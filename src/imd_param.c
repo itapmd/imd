@@ -1366,50 +1366,50 @@ void broadcast_params() {
   MPI_Bcast( &pic_interval, 1, MPI_INT,  0, MPI_COMM_WORLD); 
 
 #ifdef TWOD
-  MPI_Bcast( &pic_scale   , 2, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &ecut_kin    , 2, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &ecut_pot    , 2, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &pic_ll      , 2, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &pic_ur      , 2, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &pic_res     , 2, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &pic_type    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &pic_scale   , 2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &ecut_kin    , 2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &ecut_pot    , 2, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &pic_ll      , 2, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &pic_ur      , 2, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &pic_res     , 2, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &pic_type    , 1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef EFILTER
-  MPI_Bcast( &lower_e_pot , 1, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &upper_e_pot , 1, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &efrep_interval   , 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &lower_e_pot,    1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &upper_e_pot,    1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &efrep_interval, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
-  MPI_Bcast( &vtypes      , 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &vtypes,         1, MPI_INT, 0, MPI_COMM_WORLD);
 
-#if defined(FBC) || defined(DEFORM)
+#ifdef FBC
   if (0!=myid) fbc_forces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==fbc_forces) 
     error("Cannot allocate memory for fbc_forces on client."); 
-  MPI_Bcast( fbc_forces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( fbc_forces, vtypes*DIM, REAL, 0, MPI_COMM_WORLD);
  
   if (0!=myid) fbc_beginforces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==fbc_beginforces) 
     error("Cannot allocate memory for fbc_beginforces on client."); 
-  MPI_Bcast( fbc_beginforces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( fbc_beginforces, vtypes*DIM, REAL, 0, MPI_COMM_WORLD); 
 #ifdef SMIK
-  MPI_Bcast( &relaxsteps      , 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &relaxsteps, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 #ifdef MIK
-  MPI_Bcast( &fbc_ekin_threshold , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &fbc_waitsteps      , 1, MPI_INT,  0, MPI_COMM_WORLD);
-  MPI_Bcast( &fbc_annealsteps    , 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &fbc_ekin_threshold , 1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &fbc_waitsteps      , 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &fbc_annealsteps    , 1, MPI_INT, 0, MPI_COMM_WORLD);
 
   if (0!=myid) fbc_dforces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==fbc_dforces) 
     error("Cannot allocate memory for fbc_dforces on client."); 
-  MPI_Bcast( fbc_dforces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( fbc_dforces, vtypes*DIM, REAL, 0, MPI_COMM_WORLD); 
 #else
   if (0!=myid) fbc_endforces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==fbc_endforces) 
     error("Cannot allocate memory for fbc_endforces on client."); 
-  MPI_Bcast( fbc_endforces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( fbc_endforces, vtypes*DIM, REAL, 0, MPI_COMM_WORLD); 
 #endif
 #endif
   if (0!=myid) restrictions  = (vektor *) malloc(vtypes*DIM*sizeof(int));
@@ -1419,16 +1419,16 @@ void broadcast_params() {
 
 
   MPI_Bcast( &pbc_dirs    , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &box_x       , DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &box_y       , DIM, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &box_x       , DIM, REAL,     0, MPI_COMM_WORLD); 
+  MPI_Bcast( &box_y       , DIM, REAL,     0, MPI_COMM_WORLD);
 #ifndef TWOD
-  MPI_Bcast( &box_z       , DIM, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &box_z       , DIM, REAL,     0, MPI_COMM_WORLD);
 #endif 
   MPI_Bcast( &box_param   , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
 
-  MPI_Bcast( &timestep    , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &ntypes      , 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &temperature , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &timestep    ,   1, REAL,     0, MPI_COMM_WORLD); 
+  MPI_Bcast( &ntypes      ,   1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &temperature ,   1, REAL,     0, MPI_COMM_WORLD); 
   MPI_Bcast( &cpu_dim     , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_dim    , DIM, MPI_INT,  0, MPI_COMM_WORLD);
 
@@ -1444,45 +1444,45 @@ void broadcast_params() {
 #endif
 
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
-  MPI_Bcast( &end_temp , 1 , MPI_REAL,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &end_temp,      1, REAL, 0, MPI_COMM_WORLD); 
 #endif
 #ifdef MONOLJ
-  MPI_Bcast( &monolj_r2_cut, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &monolj_shift,  1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &monolj_r2_cut, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &monolj_shift,  1, REAL, 0, MPI_COMM_WORLD); 
 #endif
-  MPI_Bcast( &cellsz, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &cellsz, 1, REAL,     0, MPI_COMM_WORLD); 
   MPI_Bcast( &initsz, 1, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &incrsz, 1, MPI_INT,  0, MPI_COMM_WORLD);
 
 #ifdef AND
-  MPI_Bcast( &tmp_interval , 1 , MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &tmp_interval, 1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 
 #if defined(NVT) || defined(NPT) || defined(STM)
-  MPI_Bcast( &eta ,         1 , MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &inv_tau_eta , 1 , MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &eta ,         1 , REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &inv_tau_eta , 1 , REAL, 0, MPI_COMM_WORLD); 
 #ifdef UNIAX
-  MPI_Bcast( &eta_rot ,         1 , MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &inv_tau_eta_rot , 1 , MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &eta_rot ,         1 , REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &inv_tau_eta_rot , 1 , REAL, 0, MPI_COMM_WORLD); 
 #endif
 #endif
 
 #if defined(STM)
-  MPI_Bcast( &stadium ,         2 , MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &center ,          2 , MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &stadium ,         2 , REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &center ,          2 , REAL, 0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef NPT
-  MPI_Bcast( &xi,                DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &inv_tau_xi,          1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &pressure_ext,      DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &pressure_end,      DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &cell_size_tolerance, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &xi,                DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &inv_tau_xi,          1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &pressure_ext,      DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &pressure_end,      DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &cell_size_tolerance, 1, REAL, 0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef MC
-  MPI_Bcast( &mc_beta     , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &mc_len      , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &mc_beta     , 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &mc_len      , 1, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &mc_seed     , 1, MPI_LONG, 0, MPI_COMM_WORLD); 
 #endif
 
@@ -1500,8 +1500,8 @@ void broadcast_params() {
 #endif
 
 #ifdef NVX
-  MPI_Bcast( &dTemp_start,   1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dTemp_end,     1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dTemp_start,   1, REAL,   0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dTemp_end,     1, REAL,   0, MPI_COMM_WORLD); 
 #endif
 #ifdef RNEMD
   MPI_Bcast( &exch_interval, 1, MPI_INT,  0, MPI_COMM_WORLD);
@@ -1517,58 +1517,58 @@ void broadcast_params() {
 #endif
 
 #ifdef FRAC
-  MPI_Bcast( &stadium , DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &gamma_bar , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &gamma_cut , 1, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &stadium , DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &gamma_bar , 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &gamma_cut , 1, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #if defined(FRAC) || defined(DEFORM)
-  MPI_Bcast( &strip_width, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &strip_width, 1, REAL, 0, MPI_COMM_WORLD); 
   if (0!=myid) deform_shift  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==deform_shift) 
     error("Cannot allocate memory for deform_shift on client."); 
-  MPI_Bcast( deform_shift, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( deform_shift, vtypes*DIM, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef SHOCK
-  MPI_Bcast( &shock_strip, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &shock_speed, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &shock_mode,  1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &shock_strip, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &shock_speed, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &shock_mode,  1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef FRAC
-  MPI_Bcast( &kcrit , 1, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &mue   , 1, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &kel   , 1, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &tip.x , 1, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &tip.y , 1, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &kcrit , 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &mue   , 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &kel   , 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &tip.x , 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &tip.y , 1, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef DISLOC
-  MPI_Bcast( &min_dpot,        1, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &ddelta,          1, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &dem_interval,    1, MPI_INT,  0, MPI_COMM_WORLD);
-  MPI_Bcast( &dsp_interval,    1, MPI_INT,  0, MPI_COMM_WORLD);
-  MPI_Bcast( &calc_Epot_ref,   1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &reset_Epot_step, 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &Epot_diff,       1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &min_dpot,        1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &ddelta,          1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dem_interval,    1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dsp_interval,    1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &calc_Epot_ref,   1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &reset_Epot_step, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &Epot_diff,       1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef ORDPAR
-  MPI_Bcast( &op_r2_cut,       4, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &op_weight,       4, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &op_r2_cut,       4, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &op_weight,       4, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef HOMDEF
-  MPI_Bcast( &hom_interval , 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &shear_factor , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &exp_interval , 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &expansion ,  DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &hom_interval , 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &shear_factor , 1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &exp_interval , 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &expansion ,  DIM, REAL,    0, MPI_COMM_WORLD); 
 #endif
 #if defined(FRAC) || defined(DEFORM)
-  MPI_Bcast( &ekin_threshold , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &annealsteps ,    1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &max_deform_int , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &ekin_threshold , 1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &annealsteps ,    1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &max_deform_int , 1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif  
 
 #ifdef USE_SOCKETS
@@ -1576,16 +1576,16 @@ void broadcast_params() {
 #endif
 
 #ifdef UNIAX
-  MPI_Bcast( &uniax_r_cut,  1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &uniax_r2_cut, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &uniax_r_cut,  1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &uniax_r2_cut, 1, REAL, 0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef EAM
-  MPI_Bcast( &eam_len,   1, MPI_INT,  0, MPI_COMM_WORLD);
-  MPI_Bcast( &eam_A,     1, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &eam_r_cut, 1, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &eam_r2_cut,1, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &eam_r_0,   1, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &eam_len,   1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &eam_A,     1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &eam_r_cut, 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &eam_r2_cut,1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &eam_r_0,   1, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef COVALENT
@@ -1593,24 +1593,24 @@ void broadcast_params() {
 #endif
 
 #ifdef TTBP
-  MPI_Bcast( ttbp_constant,  ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ttbp_sp,        ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ttbp_constant,  ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ttbp_sp,        ntypes, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef TERSOFF
-  MPI_Bcast( ters_r_cut,            ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_r0,               ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_a,                ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_b,                ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_la,               ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_mu,               ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_chi, ntypes*(ntypes-1)/2, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_om,  ntypes*(ntypes-1)/2, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_ga,               ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_n,                ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_c,                ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_d,                ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_h,                ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_r_cut,            ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_r0,               ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_a,                ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_b,                ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_la,               ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_mu,               ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_chi, ntypes*(ntypes-1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_om,  ntypes*(ntypes-1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_ga,               ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_n,                ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_c,                ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_d,                ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_h,                ntypes, REAL, 0, MPI_COMM_WORLD);
 #endif
   
   /* broadcast integrator to other CPU's */

@@ -2,7 +2,6 @@
 *
 * van-Hove-Correlation and mean square displacement
 *
-* $RCSfile$
 * $Revision$
 * $Date$
 *
@@ -312,7 +311,7 @@ void correlate(int step, int ref_step, unsigned seqnum)
 
 #ifdef MSQD
 #ifdef MPI
-    MPI_Reduce(msqd,msqd_global,ntypes,MPI_REAL,MPI_SUM,0,cpugrid);
+    MPI_Reduce(msqd,msqd_global,ntypes,REAL,MPI_SUM,0,cpugrid);
     if (0==myid)
 #endif
     write_msqd(step);

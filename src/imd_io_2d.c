@@ -200,14 +200,14 @@ void read_atoms(str255 infilename)
           nactive += (int) (restrictions+s)->y;
         }
         num_sort[SORTE(input,0)]++;
-	MPI_Send( input->ort,     DIM, MPI_REAL, to_cpu, ORT_TAG,    cpugrid);
-	MPI_Send( input->sorte,    1,  SHORT,    to_cpu, SORTE_TAG , cpugrid);
-	MPI_Send( input->masse,    1,  MPI_REAL, to_cpu, MASSE_TAG , cpugrid);
-	MPI_Send( input->nummer,   1,  INTEGER,  to_cpu, NUMMER_TAG, cpugrid);
-	MPI_Send( input->impuls,  DIM, MPI_REAL, to_cpu, IMPULS_TAG, cpugrid);
+	MPI_Send( input->ort,     DIM, REAL,    to_cpu, ORT_TAG,    cpugrid);
+	MPI_Send( input->sorte,    1,  SHORT,   to_cpu, SORTE_TAG , cpugrid);
+	MPI_Send( input->masse,    1,  REAL,    to_cpu, MASSE_TAG , cpugrid);
+	MPI_Send( input->nummer,   1,  INTEGER, to_cpu, NUMMER_TAG, cpugrid);
+	MPI_Send( input->impuls,  DIM, REAL,    to_cpu, IMPULS_TAG, cpugrid);
 #ifdef DISLOC
-	MPI_Send( input->ort_ref, DIM, MPI_REAL, to_cpu, ORT_REF_TAG,cpugrid);
-	MPI_Send( input->Epot_ref, 1,  MPI_REAL, to_cpu, POT_REF_TAG,cpugrid);
+	MPI_Send( input->ort_ref, DIM, REAL,    to_cpu, ORT_REF_TAG,cpugrid);
+	MPI_Send( input->Epot_ref, 1,  REAL,    to_cpu, POT_REF_TAG,cpugrid);
 #endif
       } else if (to_cpu==myid) {  
         natoms++;
@@ -251,7 +251,7 @@ void read_atoms(str255 infilename)
   /* Tell other CPUs that reading atoms is finished. (tag==0) */
   if (1!=parallel_input)
     for (s=1; s<num_cpus; s++)
-      MPI_Ssend( input->ort, 2, MPI_REAL, s, 0, cpugrid);
+      MPI_Ssend( input->ort, 2, REAL, s, 0, cpugrid);
 
   /* Add the number of atoms read (and kept) by each CPU */
   if (1==parallel_input) {
@@ -316,20 +316,20 @@ void recv_atoms(void)
   
   while ( 1 ) {
 
-    MPI_Recv(input->ort, DIM, MPI_REAL, 0, MPI_ANY_TAG   , cpugrid, &status );
+    MPI_Recv(input->ort, DIM, REAL, 0, MPI_ANY_TAG   , cpugrid, &status );
 
     if ((0 != status.MPI_TAG) && (ORT_TAG != status.MPI_TAG)) 
        error("Messages mixed up.");
 
     if ( 0 == status.MPI_TAG ) break;
 
-    MPI_Recv(input->sorte,  1, SHORT,     0, SORTE_TAG , cpugrid, &status );
-    MPI_Recv(input->masse,  1, MPI_REAL,  0, MASSE_TAG , cpugrid, &status );
-    MPI_Recv(input->nummer, 1, INTEGER,   0, NUMMER_TAG, cpugrid, &status );
-    MPI_Recv(input->impuls,DIM, MPI_REAL, 0, IMPULS_TAG, cpugrid, &status );
+    MPI_Recv(input->sorte,  1, SHORT,   0, SORTE_TAG , cpugrid, &status );
+    MPI_Recv(input->masse,  1, REAL,    0, MASSE_TAG , cpugrid, &status );
+    MPI_Recv(input->nummer, 1, INTEGER, 0, NUMMER_TAG, cpugrid, &status );
+    MPI_Recv(input->impuls,DIM, REAL,   0, IMPULS_TAG, cpugrid, &status );
 #ifdef DISLOC
-    MPI_Recv(input->Epot_ref,1, MPI_REAL, 0, POT_REF_TAG, cpugrid, &status);
-    MPI_Recv(input->ort_ref, 2, MPI_REAL, 0, ORT_REF_TAG, cpugrid, &status);
+    MPI_Recv(input->Epot_ref,1, REAL,   0, POT_REF_TAG, cpugrid, &status);
+    MPI_Recv(input->ort_ref, 2, REAL,   0, ORT_REF_TAG, cpugrid, &status);
 #endif
 
     local_cellc = local_cell_coord(input->ort X(0),input->ort Y(0));
@@ -346,8 +346,8 @@ void recv_atoms(void)
     target->sorte[target->n]  = input->sorte[0];
     target->nummer[target->n] = input->nummer[0];
 #ifdef DISLOC
-    MPI_Recv(input->Epot_ref,1, MPI_REAL, 0, POT_REF_TAG, cpugrid, &status);
-    MPI_Recv(input->ort_ref,    2, MPI_REAL, 0, ORT_REF_TAG, cpugrid, &status);
+    MPI_Recv(input->Epot_ref, 1, REAL, 0, POT_REF_TAG, cpugrid, &status);
+    MPI_Recv(input->ort_ref,  2, REAL, 0, ORT_REF_TAG, cpugrid, &status);
 #endif
 
     ++target->n;

@@ -19,7 +19,7 @@
 
 int isend_buf(msgbuf *b, int to_cpu, MPI_Request *req)
 {
-  return MPI_Isend(b->data, b->n, MPI_REAL, to_cpu, BUFFER_TAG, cpugrid, req);
+  return MPI_Isend(b->data, b->n, REAL, to_cpu, BUFFER_TAG, cpugrid, req);
 }
 
 
@@ -31,7 +31,7 @@ int isend_buf(msgbuf *b, int to_cpu, MPI_Request *req)
 
 int irecv_buf(msgbuf *b, int from, MPI_Request *req)
 {
-  return MPI_Irecv(b->data,b->n_max,MPI_REAL,from,BUFFER_TAG,cpugrid,req);
+  return MPI_Irecv(b->data, b->n_max, REAL, from, BUFFER_TAG, cpugrid, req);
 }
 
 
@@ -176,7 +176,7 @@ void copy_one_atom(msgbuf *to, cell *from, int index)
 *
 ******************************************************************************/
 
-void process_buffer(msgbuf *b, int mode)
+void process_buffer(msgbuf *b)
 {
   ivektor coord, coord2;
   int to_cpu;
@@ -384,7 +384,7 @@ void setup_buffers(void)
       free(send_buf_west.data);
       free(recv_buf_east.data);
       free(recv_buf_west.data);
-    };
+    }
 
     /* Allocate buffers */
     send_buf_east.data = (real *) malloc( size_east * sizeof(real) );
@@ -403,7 +403,7 @@ void setup_buffers(void)
     send_buf_west.n_max = size_east;
     recv_buf_east.n_max = size_east;
     recv_buf_west.n_max = size_east;
-  };
+  }
 
   /* Allocate north/south buffers */
   if (size_north > send_buf_north.n_max) {
@@ -414,7 +414,7 @@ void setup_buffers(void)
       free(send_buf_south.data);
       free(recv_buf_north.data);
       free(recv_buf_south.data);
-    };
+    }
 
     /* Allocate buffers */
     send_buf_north.data = (real *) malloc( size_north * sizeof(real) );
@@ -434,7 +434,7 @@ void setup_buffers(void)
     recv_buf_north.n_max = size_north;
     recv_buf_south.n_max = size_north;
 
-  };
+  }
 
 #ifndef TWOD
   /* Allocate up/down buffers */
@@ -446,7 +446,7 @@ void setup_buffers(void)
       free(send_buf_down.data);
       free(recv_buf_up.data);
       free(recv_buf_down.data);
-    };
+    }
 
     /* Allocate buffers */
     send_buf_up.data   = (real *) malloc( size_up * sizeof(real) );
@@ -465,7 +465,6 @@ void setup_buffers(void)
     send_buf_down.n_max = size_up;
     recv_buf_up.n_max   = size_up;
     recv_buf_down.n_max = size_up;
-
   }
 
 #endif
@@ -491,7 +490,7 @@ void empty_buffer_cells(void)
     p->n = 0;
     p = PTR_2D_V(cell_array, i,            0, cell_dim);
     p->n = 0;
-  };
+  }
 
   /* yz surface */
   for (i=0; i < cell_dim.y; ++i) {
@@ -499,7 +498,7 @@ void empty_buffer_cells(void)
     p->n = 0;
     p = PTR_2D_V(cell_array,            0, i, cell_dim);
     p->n = 0;
-  };
+  }
 #else
   /* empty the buffer cells */
   /* xy surface */
@@ -509,7 +508,7 @@ void empty_buffer_cells(void)
       p->n = 0;
       p = PTR_3D_V(cell_array, i, j,            0, cell_dim);
       p->n = 0;
-    };
+    }
 
   /* xz surface */
   for (i=0; i < cell_dim.x; ++i) 
@@ -518,7 +517,7 @@ void empty_buffer_cells(void)
       p->n = 0;
       p = PTR_3D_V(cell_array, i,            0, j, cell_dim);
       p->n = 0;
-    };
+    }
 
   /* yz surface */
   for (i=0; i < cell_dim.y; ++i) 
@@ -527,7 +526,7 @@ void empty_buffer_cells(void)
       p->n = 0;
       p = PTR_3D_V(cell_array,            0, i, j, cell_dim);
       p->n = 0;
-    };
+    }
 #endif
 
 }
@@ -571,37 +570,39 @@ void empty_mpi_buffers(void)
 void send_cell(cell *p, int to_cpu, int tag)
 {
 #ifdef PACX
-  MPI_Send( &(p->n), 1,           MPI_INT,  to_cpu, tag + SIZE_TAG,   cpugrid);
+  MPI_Send( &(p->n), 1,        MPI_INT, to_cpu, tag + SIZE_TAG,   cpugrid);
 #endif
-  MPI_Ssend( p->ort, DIM*p->n,    MPI_REAL, to_cpu, tag + ORT_TAG,    cpugrid);
+  MPI_Ssend( p->ort, DIM*p->n, REAL,    to_cpu, tag + ORT_TAG,    cpugrid);
 #ifndef MONOLJ
-  MPI_Ssend( p->sorte,  p->n,     SHORT,    to_cpu, tag + SORTE_TAG,  cpugrid);
-  MPI_Ssend( p->masse,  p->n,     MPI_REAL, to_cpu, tag + MASSE_TAG,  cpugrid);
-  MPI_Ssend( p->nummer, p->n,     INTEGER,  to_cpu, tag + NUMMER_TAG, cpugrid);
+  MPI_Ssend( p->sorte,  p->n,  SHORT,   to_cpu, tag + SORTE_TAG,  cpugrid);
+  MPI_Ssend( p->masse,  p->n,  REAL,    to_cpu, tag + MASSE_TAG,  cpugrid);
+  MPI_Ssend( p->nummer, p->n,  INTEGER, to_cpu, tag + NUMMER_TAG, cpugrid);
 #ifdef UNIAX
-  MPI_Ssend( p->traeg_moment,  p->n, MPI_REAL, to_cpu, tag + TRAEG_MOMENT_TAG,  cpugrid);
-  MPI_Ssend( p->achse, DIM*p->n,  MPI_REAL, to_cpu, tag + ACHSE_TAG,    cpugrid);
-  MPI_Ssend( p->shape, DIM*p->n, MPI_REAL,to_cpu, tag + SHAPE_TAG,  cpugrid);
-  MPI_Ssend( p->pot_well, DIM*p->n, MPI_REAL,to_cpu, tag + POT_WELL_TAG,  cpugrid);
-  MPI_Ssend( p->dreh_impuls, DIM*p->n, MPI_REAL, to_cpu, tag + DREH_IMPULS_TAG, cpugrid);
-  MPI_Ssend( p->dreh_moment,  DIM*p->n, MPI_REAL, to_cpu, tag + DREH_MOMENT_TAG,  cpugrid);
+  MPI_Ssend( p->traeg_moment, p->n, REAL,to_cpu,tag+TRAEG_MOMENT_TAG,cpugrid);
+  MPI_Ssend( p->achse, DIM*p->n,    REAL, to_cpu, tag + ACHSE_TAG,    cpugrid);
+  MPI_Ssend( p->shape, DIM*p->n,    REAL,to_cpu, tag + SHAPE_TAG,  cpugrid);
+  MPI_Ssend( p->pot_well, DIM*p->n, REAL,to_cpu, tag + POT_WELL_TAG,  cpugrid);
+  MPI_Ssend( p->dreh_impuls, DIM*p->n, REAL, to_cpu, tag + DREH_IMPULS_TAG, 
+             cpugrid);
+  MPI_Ssend( p->dreh_moment, DIM*p->n, REAL, to_cpu, tag + DREH_MOMENT_TAG,  
+             cpugrid);
 #endif
-  MPI_Ssend( p->pot_eng,p->n,     MPI_REAL, to_cpu, tag + POT_TAG,    cpugrid);
+  MPI_Ssend( p->pot_eng,p->n,     REAL, to_cpu, tag + POT_TAG,    cpugrid);
 #ifdef ORDPAR
 #ifndef TWOD
-  MPI_Ssend( p->nbanz,p->n,     MPI_INT, to_cpu, tag + NBA_TAG,    cpugrid);
+  MPI_Ssend( p->nbanz,p->n,      SHORT, to_cpu, tag + NBA_TAG,    cpugrid);
 #endif
 #endif
 #ifdef REFPOS
-  MPI_Ssend( p->refpos, DIM*p->n, MPI_REAL, to_cpu, tag + REFPOS_TAG, cpugrid);
+  MPI_Ssend( p->refpos, DIM*p->n, REAL, to_cpu, tag + REFPOS_TAG, cpugrid);
 #endif
 #ifdef DISLOC
-  MPI_Ssend( p->Epot_ref,p->n,    MPI_REAL, to_cpu, tag + POT_REF_TAG,cpugrid);
-  MPI_Ssend( p->ort_ref,DIM*p->n, MPI_REAL, to_cpu, tag + ORT_REF_TAG,cpugrid);
+  MPI_Ssend( p->Epot_ref,p->n,    REAL, to_cpu, tag + POT_REF_TAG,cpugrid);
+  MPI_Ssend( p->ort_ref,DIM*p->n, REAL, to_cpu, tag + ORT_REF_TAG,cpugrid);
 #endif
 #endif /* not MONOLJ */
-  MPI_Ssend( p->impuls, DIM*p->n, MPI_REAL, to_cpu, tag + IMPULS_TAG, cpugrid);
-  MPI_Ssend( p->kraft,  DIM*p->n, MPI_REAL, to_cpu, tag + KRAFT_TAG,  cpugrid);
+  MPI_Ssend( p->impuls, DIM*p->n, REAL, to_cpu, tag + IMPULS_TAG, cpugrid);
+  MPI_Ssend( p->kraft,  DIM*p->n, REAL, to_cpu, tag + KRAFT_TAG,  cpugrid);
 }
 
 
@@ -621,7 +622,7 @@ void recv_cell(cell *p, int from_cpu,int tag)
   MPI_Recv( &size, 1, MPI_INT, from_cpu, tag + SIZE_TAG , cpugrid, &status );
 #else
   MPI_Probe( from_cpu, tag + ORT_TAG, cpugrid, &status );
-  MPI_Get_count( &status, MPI_REAL, &size );
+  MPI_Get_count( &status, REAL, &size );
   size /= DIM;
 #endif
 
@@ -635,49 +636,49 @@ void recv_cell(cell *p, int from_cpu,int tag)
   }
   p->n = size;
 
-  MPI_Recv(p->ort,     DIM * size, MPI_REAL, from_cpu, tag + ORT_TAG,
+  MPI_Recv(p->ort,     DIM * size, REAL, from_cpu, tag + ORT_TAG,
                                              cpugrid, &status );
 #ifndef MONOLJ
   MPI_Recv(p->sorte,         size, SHORT,    from_cpu, tag + SORTE_TAG , 
                                              cpugrid, &status);
-  MPI_Recv(p->masse,         size, MPI_REAL, from_cpu, tag + MASSE_TAG , 
+  MPI_Recv(p->masse,         size, REAL,     from_cpu, tag + MASSE_TAG , 
                                              cpugrid, &status);
   MPI_Recv(p->nummer,        size, INTEGER,  from_cpu, tag + NUMMER_TAG, 
                                              cpugrid, &status);
 #ifdef UNIAX
-  MPI_Recv(p->traeg_moment,  size, MPI_REAL, from_cpu, tag + TRAEG_MOMENT_TAG, 
+  MPI_Recv(p->traeg_moment,      size, REAL, from_cpu, tag + TRAEG_MOMENT_TAG, 
                                              cpugrid, &status);
-  MPI_Recv(p->achse,   DIM * size, MPI_REAL, from_cpu, tag + ACHSE_TAG,
+  MPI_Recv(p->achse,       DIM * size, REAL, from_cpu, tag + ACHSE_TAG,
                                              cpugrid, &status );
-  MPI_Recv(p->shape,   DIM * size, MPI_REAL, from_cpu, tag + SHAPE_TAG,
+  MPI_Recv(p->shape,       DIM * size, REAL, from_cpu, tag + SHAPE_TAG,
                                              cpugrid, &status );
-  MPI_Recv(p->pot_well,   DIM * size, MPI_REAL, from_cpu, tag + POT_WELL_TAG,
+  MPI_Recv(p->pot_well,    DIM * size, REAL, from_cpu, tag + POT_WELL_TAG,
                                              cpugrid, &status );
-  MPI_Recv(p->dreh_impuls,  DIM * size, MPI_REAL, from_cpu, tag + DREH_IMPULS_TAG, 
+  MPI_Recv(p->dreh_impuls, DIM * size, REAL, from_cpu, tag + DREH_IMPULS_TAG, 
                                              cpugrid, &status);
-  MPI_Recv(p->dreh_moment,   DIM * size, MPI_REAL, from_cpu, tag + DREH_MOMENT_TAG,  
+  MPI_Recv(p->dreh_moment, DIM * size, REAL, from_cpu, tag + DREH_MOMENT_TAG,  
                                              cpugrid, &status);
 #endif
-  MPI_Recv(p->pot_eng,       size, MPI_REAL, from_cpu, tag + POT_TAG, 
-#ifdef REFPOS
+  MPI_Recv(p->pot_eng, size, REAL,  from_cpu, tag + POT_TAG, cpugrid, &status);
+#ifdef ORDPAR
 #ifndef TWOD
-  MPI_Recv(p->nbanz,       size, MPI_INT, from_cpu, tag + NBA_TAG, 
+  MPI_Recv(p->nbanz,   size, SHORT, from_cpu, tag + NBA_TAG, cpugrid, &status);
 #endif
 #endif
-                                             cpugrid, &status);
+                                            
 #ifdef REFPOS
-  MPI_Recv(p->refpos,  DIM * size, MPI_REAL, from_cpu, tag + REFPOS_TAG, 
-                                             cpugrid, &status);
+  MPI_Recv(p->refpos,  DIM * size, REAL, from_cpu, tag + REFPOS_TAG, 
+                                         cpugrid, &status);
 #endif
 #ifdef DISLOC
-  MPI_Recv(p->Epot_ref,      size, MPI_REAL, from_cpu, tag + POT_REF_TAG , 
-                                             cpugrid, &status);
-  MPI_Recv(p->ort_ref, DIM * size, MPI_REAL, from_cpu, tag + ORT_REF_TAG, 
-                                             cpugrid, &status);
+  MPI_Recv(p->Epot_ref,      size, REAL, from_cpu, tag + POT_REF_TAG , 
+                                         cpugrid, &status);
+  MPI_Recv(p->ort_ref, DIM * size, REAL, from_cpu, tag + ORT_REF_TAG, 
+                                         cpugrid, &status);
 #endif
 #endif /* not MONOLJ */
-  MPI_Recv(p->impuls,  DIM * size, MPI_REAL, from_cpu, tag + IMPULS_TAG, 
-                                             cpugrid, &status);
-  MPI_Recv(p->kraft,   DIM * size, MPI_REAL, from_cpu, tag + KRAFT_TAG,  
-                                             cpugrid, &status);
+  MPI_Recv(p->impuls,  DIM * size, REAL, from_cpu, tag + IMPULS_TAG, 
+                                         cpugrid, &status);
+  MPI_Recv(p->kraft,   DIM * size, REAL, from_cpu, tag + KRAFT_TAG,  
+                                         cpugrid, &status);
 }

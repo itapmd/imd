@@ -103,7 +103,7 @@ ivektor local_cell_coord(real x, real y);
 ivektor local_cell_coord(real x, real y, real z);
 #endif
 void recv_atoms(void);
-void send_atoms(int mode);
+void send_atoms(void);
 void send_atoms_force(void);
 #ifdef TWOD
 void send_cells (void (*copy_func)  (int, int, int, int),
@@ -143,7 +143,7 @@ void send_cell(cell *p, int to_cpu, int tag);
 int  irecv_buf( msgbuf *b, int from_cpu, MPI_Request *req);
 int  isend_buf( msgbuf *b, int to_cpu,   MPI_Request *req);
 void copy_atoms_buf(msgbuf *to, msgbuf *from);
-void process_buffer(msgbuf *b, int mode);
+void process_buffer(msgbuf *b);
 void setup_buffers(void);
 void empty_buffer_cells(void);
 void copy_one_atom(msgbuf *to, cell *from, int index);

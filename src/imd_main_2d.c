@@ -398,7 +398,7 @@ void fix_cells(void)
 
 #ifdef MPI
   /* send border cells to neighbbours */
-  send_atoms(ATOMS);
+  send_atoms();
 #endif
 
 }

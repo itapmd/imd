@@ -145,7 +145,6 @@ inline static real SQR(real x)
 #define ENS_NVT       3
 #define ENS_NPT_ISO   4
 #define ENS_NPT_AXIAL 5
-#define ENS_AND       6
 #define ENS_MC        7
 #define ENS_FRAC      8
 #define ENS_NVX      11
@@ -155,18 +154,6 @@ inline static real SQR(real x)
 /* All the logic in this program */
 #define TRUE         1
 #define FALSE        0
-
-/* Nasty constants, should use enum */
-#define USHORT       41
-#define INT          42
-#define REAL         43
-#define VECTOR3D     44
-#define STRING       45
-#define IVECTOR3D    46
-#define VECTOR2D     47
-#define IVECTOR2D    48
-#define ATOMS        49
-#define FORCE        50
 
 /* Some constants for Message passing, should all have unique values */
 #ifdef MPI

@@ -1,3 +1,4 @@
+
 /******************************************************************************
 *
 * imd_load.c -- load sample for crack
@@ -5,7 +6,6 @@
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
@@ -81,10 +81,10 @@ void load_sample(void)
   }
 
 #ifdef MPI
-  MPI_Allreduce(&umax, &tmp_umax, 1, MPI_REAL, MPI_MAX, cpugrid);
-  MPI_Allreduce(&umin, &tmp_umin, 1, MPI_REAL, MPI_MIN, cpugrid);
-  MPI_Allreduce(&xmax, &tmp_xmax, 1, MPI_REAL, MPI_MAX, cpugrid);
-  MPI_Allreduce(&xmin, &tmp_xmin, 1, MPI_REAL, MPI_MIN, cpugrid);
+  MPI_Allreduce(&umax, &tmp_umax, 1, REAL, MPI_MAX, cpugrid);
+  MPI_Allreduce(&umin, &tmp_umin, 1, REAL, MPI_MIN, cpugrid);
+  MPI_Allreduce(&xmax, &tmp_xmax, 1, REAL, MPI_MAX, cpugrid);
+  MPI_Allreduce(&xmin, &tmp_xmin, 1, REAL, MPI_MIN, cpugrid);
 
   umax = tmp_umax;
   umin = tmp_umin;

@@ -171,13 +171,13 @@ void eam2_read_core_pot(str255 core_pot_filename)
   if (NULL==eam2_phi_r_step) 
     error("Can't allocate memory for eam2_phi_r_step on client.");
   MPI_Bcast( eam2_phi, eam2_phi_tablesize / sizeof(real), 
-             MPI_REAL, 0, MPI_COMM_WORLD);
+             REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( eam2_phi_r_begin, eam2_phi_r_infosize / sizeof(real), 
-             MPI_REAL, 0, MPI_COMM_WORLD);
+             REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( eam2_phi_r_end, eam2_phi_r_infosize / sizeof(real), 
-             MPI_REAL, 0, MPI_COMM_WORLD);
+             REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( eam2_phi_r_step, eam2_phi_r_infosize / sizeof(real), 
-             MPI_REAL, 0, MPI_COMM_WORLD);
+             REAL, 0, MPI_COMM_WORLD);
 #endif
 } /* end of eam2_read_core_pot */
 
@@ -293,13 +293,13 @@ void eam2_read_embedding_energy(str255 emb_E_filename)
   if (NULL==eam2_rho_step) 
     error("Can't allocate memory for eam2_rho_step on client.");
   MPI_Bcast( eam2_f_i, eam2_f_i_tablesize / sizeof(real), 
-             MPI_REAL, 0, MPI_COMM_WORLD);
+             REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( eam2_rho_begin, eam2_rho_infosize / sizeof(real), 
-             MPI_REAL, 0, MPI_COMM_WORLD);
+             REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( eam2_rho_end, eam2_rho_infosize / sizeof(real), 
-             MPI_REAL, 0, MPI_COMM_WORLD);
+             REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( eam2_rho_step, eam2_rho_infosize / sizeof(real), 
-             MPI_REAL, 0, MPI_COMM_WORLD);
+             REAL, 0, MPI_COMM_WORLD);
 #endif
 } /* end of eam2_readenergy */
 
@@ -414,13 +414,13 @@ void eam2_read_atomic_rho(str255 at_rho_filename)
   if (NULL==eam2_r_step) 
     error("Can't allocate memory for eam2_r_step on client.");
   MPI_Bcast( eam2_rho_at, eam2_rho_at_tablesize / sizeof(real), 
-             MPI_REAL, 0, MPI_COMM_WORLD);
+             REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( eam2_r_begin, eam2_r_infosize / sizeof(real), 
-             MPI_REAL, 0, MPI_COMM_WORLD);
+             REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( eam2_r_end, eam2_r_infosize / sizeof(real), 
-             MPI_REAL, 0, MPI_COMM_WORLD);
+             REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( eam2_r_step, eam2_r_infosize / sizeof(real), 
-             MPI_REAL, 0, MPI_COMM_WORLD);
+             REAL, 0, MPI_COMM_WORLD);
 #endif
 } /* end of eam2_read_atomic_rho */
 

@@ -297,13 +297,13 @@ void calc_forces(void)
 #endif /* EAM2 */
 
   /* sum up results of different CPUs */
-  MPI_Allreduce( &tot_pot_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid); 
+  MPI_Allreduce( &tot_pot_energy, &tmp, 1, REAL, MPI_SUM, cpugrid); 
   tot_pot_energy = tmp; 
 
-  MPI_Allreduce( &virial,   &tmpvir,    1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &virial,   &tmpvir,    1, REAL, MPI_SUM, cpugrid);
   virial = tmpvir;
 
-  MPI_Allreduce( &vir_vect, &tmpvec,  DIM, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &vir_vect, &tmpvec,  DIM, REAL, MPI_SUM, cpugrid);
   vir_vect.x = tmpvec.x;
   vir_vect.y = tmpvec.y;
   vir_vect.z = tmpvec.z;
@@ -435,14 +435,14 @@ void calc_forces(void)
 #endif  /* ... ifndef AR */
 
   /* sum up results of different CPUs */
-  MPI_Allreduce( &tot_pot_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid); 
+  MPI_Allreduce( &tot_pot_energy, &tmp, 1, REAL, MPI_SUM, cpugrid); 
   tot_pot_energy = tmp; 
 
-  MPI_Allreduce( &virial, &tmp,         1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &virial, &tmp,         1, REAL, MPI_SUM, cpugrid);
   virial = tmp;
 
 #ifdef P_AXIAL
-  MPI_Allreduce( &vir_vect, &tmpvec,  DIM, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &vir_vect, &tmpvec,  DIM, REAL, MPI_SUM, cpugrid);
   vir_vect.x = tmpvec.x;
   vir_vect.y = tmpvec.y;
   vir_vect.z = tmpvec.z;
@@ -576,7 +576,7 @@ void shutdown_mpi(void)
 * Atoms are sent only over the faces of the processors box in 
 * the order east-west, north-south, up-down
 *
-* This is only used for atom redistribuion (mode==ATOMS)
+* This is only used for atom redistribuion
 * where all of the data are sent.
 *
 * The drawback of the Plimpton scheme are the huge comm-buffers,
@@ -584,7 +584,7 @@ void shutdown_mpi(void)
 *
 ******************************************************************************/
 
-void send_atoms(int mode)
+void send_atoms()
 {
   MPI_Status  stateast[2],  statwest[2];
   MPI_Status statnorth[2], statsouth[2];
@@ -605,13 +605,13 @@ void send_atoms(int mode)
 
     /* Wait for atoms from west, move them to cells */
     MPI_Waitall(2, reqwest, statwest);
-    MPI_Get_count( &statwest[1], MPI_REAL, &recv_buf_west.n );
-    process_buffer( &recv_buf_west, mode);
+    MPI_Get_count( &statwest[1], REAL, &recv_buf_west.n );
+    process_buffer( &recv_buf_west );
 
     /* Wait for atoms from east, move them to cells */
     MPI_Waitall(2, reqeast, stateast);
-    MPI_Get_count( &stateast[1], MPI_REAL, &recv_buf_east.n );
-    process_buffer( &recv_buf_east, mode);
+    MPI_Get_count( &stateast[1], REAL, &recv_buf_east.n );
+    process_buffer( &recv_buf_east );
 
     /* Append atoms from west into north send buffer */
     copy_atoms_buf( &send_buf_north, &recv_buf_west );
@@ -636,13 +636,13 @@ void send_atoms(int mode)
 
     /* Wait for atoms from south, move them to cells */
     MPI_Waitall(2, reqsouth, statsouth);
-    MPI_Get_count( &statsouth[1], MPI_REAL, &recv_buf_south.n );
-    process_buffer( &recv_buf_south, mode);
+    MPI_Get_count( &statsouth[1], REAL, &recv_buf_south.n );
+    process_buffer( &recv_buf_south );
 
     /* Wait for atoms from north, move them to cells */
     MPI_Waitall(2, reqnorth, statnorth);
-    MPI_Get_count( &statnorth[1], MPI_REAL, &recv_buf_north.n );
-    process_buffer( &recv_buf_north, mode);
+    MPI_Get_count( &statnorth[1], REAL, &recv_buf_north.n );
+    process_buffer( &recv_buf_north );
 
     /* Append atoms from north to up send buffer */
     copy_atoms_buf( &send_buf_up, &recv_buf_north );
@@ -673,13 +673,13 @@ void send_atoms(int mode)
 
     /* Wait for atoms from down, move them to cells */
     MPI_Waitall(2, reqdown, statdown);
-    MPI_Get_count( &statdown[1], MPI_REAL, &recv_buf_down.n );
-    process_buffer( &recv_buf_down, mode);   
+    MPI_Get_count( &statdown[1], REAL, &recv_buf_down.n );
+    process_buffer( &recv_buf_down );   
 
     /* Wait for atoms from up, move them to cells */
     MPI_Waitall(2, requp, statup);
-    MPI_Get_count( &statup[1], MPI_REAL, &recv_buf_up.n );
-    process_buffer( &recv_buf_up, mode);  
+    MPI_Get_count( &statup[1], REAL, &recv_buf_up.n );
+    process_buffer( &recv_buf_up );  
   }
 
 }
