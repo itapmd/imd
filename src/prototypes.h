@@ -189,6 +189,7 @@ void move_atoms_npt_iso(void);
 void move_atoms_npt_axial(void);
 void move_atoms_mc(void);
 void move_atoms_frac(void);
+void move_atoms_sllod(void);
 void move_atoms_nvx(void);
 void move_atoms_msd(void);
 void move_atoms_stm(void);
