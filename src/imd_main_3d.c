@@ -80,20 +80,6 @@ void main_loop(void)
   d_pressure.z = (pressure_end.z - pressure_ext.z) / (steps_max - steps_min);
 #endif
 
-#ifdef EAM
-  /* memory allocation */
-  eam_rho   =  calloc((natoms+1),sizeof(real));
-  if(NULL   == eam_rho) error("Cannot allocate memory for eam_rho");
-  eam_ij    =  calloc((natoms+1)*eam_len,sizeof(real));
-  if(NULL   == eam_ij) error("Cannot allocate memory for eam_ij");
-  eam_dij_x =  calloc((natoms+1)*eam_len,sizeof(real));
-  if(NULL   == eam_dij_x) error("Cannot allocate memory for eam_dij_x");
-  eam_dij_y =  calloc((natoms+1)*eam_len,sizeof(real));
-  if(NULL   == eam_dij_y) error("Cannot allocate memory for eam_dij_y");
-  eam_dij_z =  calloc((natoms+1)*eam_len,sizeof(real));
-  if(NULL   == eam_dij_z) error("Cannot allocate memory for eam_dij_z");
-#endif /* EAM */
-
 #if defined(CORRELATE) || defined(MSQD)
   init_correl(ncorr_rmax,ncorr_tmax);
 #endif
@@ -393,13 +379,6 @@ void main_loop(void)
   }
 
   /* clean up the current phase, and clear restart flag */
-#ifdef EAM
-  free(eam_rho);
-  free(eam_ij);
-  free(eam_dij_x);
-  free(eam_dij_y);
-  free(eam_dij_z);
-#endif
   restart=0;
   if (0==myid) {
     write_itr_file(-1, steps_max);

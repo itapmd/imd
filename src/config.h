@@ -62,10 +62,6 @@
 #define STRESS_TENS
 #endif
 
-#ifdef EAM
-#undef AR
-#endif
-
 #ifdef EAM2
 #undef AR
 #endif

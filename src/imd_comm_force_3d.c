@@ -638,9 +638,6 @@ void copy_cell( int k, int l, int m, int r, int s, int t )
     to->pot_well Y(i) = from->pot_well Y(i);
     to->pot_well Z(i) = from->pot_well Z(i);
 #endif
-#endif 
-#ifdef EAM
-    to->nummer[i] = from->nummer[i];
 #endif
   }
 }
@@ -678,9 +675,6 @@ void pack_cell( msgbuf *b, int k, int l, int m )
     b->data[ b->n++ ] = from->pot_well Y(i);
     b->data[ b->n++ ] = from->pot_well Z(i);
 #endif
-#endif
-#ifdef EAM
-    b->data[ b->n++ ] = (real) from->nummer[i];
 #endif
   }
   if (b->n_max < b->n)  error("Buffer overflow in pack_cell");
@@ -726,9 +720,6 @@ void unpack_cell( msgbuf *b, int k, int l, int m )
     to->pot_well Y(i) = b->data[ b->n++ ];
     to->pot_well Z(i) = b->data[ b->n++ ];
 #endif
-#endif 
-#ifdef EAM
-    to->nummer[i] = (integer) b->data[ b->n++ ];
 #endif
   }
   if (b->n_max < b->n) error("Buffer overflow in unpack_cell");

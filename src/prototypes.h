@@ -109,7 +109,7 @@ int     cpu_grid_coord(ivektor cellc);
 /* force computation - files imd_main_*.c, imd_forces_*.c */
 void calc_forces(void);
 void do_forces(cell*, cell*, vektor, real*, real*, real*, real*, real*);
-#if (defined(EAM) || defined(TTBP) || defined(TERSOFF))
+#ifdef COVALENT
 void do_forces2(cell*, real*, real*, real*, real*, real*);
 #endif
 #ifdef EAM2

@@ -49,17 +49,6 @@ void calc_forces(void)
   vir_y          = 0.0;
   vir_z          = 0.0;
 
-#ifdef EAM
-#ifdef AR
-  error("EAM force routine not defined in case of actio = reactio.");
-#endif
-  memset(eam_rho,   0, (natoms+1)*        sizeof(real));
-  memset(eam_ij,    0, (natoms+1)*eam_len*sizeof(real));
-  memset(eam_dij_x, 0, (natoms+1)*eam_len*sizeof(real));
-  memset(eam_dij_y, 0, (natoms+1)*eam_len*sizeof(real));
-  memset(eam_dij_z, 0, (natoms+1)*eam_len*sizeof(real));
-#endif /* EAM */
-
   /* clear per atom accumulation variables */
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -139,9 +128,18 @@ void calc_forces(void)
       do_neightab(cell_array + P->np, cell_array + P->nq, pbc);
     }
   }
-#endif
 
-#ifndef AR  
+  /* second force loop for covalent systems */
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#endif
+  for (k=0; k<ncells; ++k) {
+    do_forces2(cell_array + CELLS(k),
+               &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
+  }
+#endif /* COVALENT */
+
+#ifndef AR
   /* If we don't use actio=reactio accross the cpus, we have do do
      the force loop also on the other half of the neighbours for the 
      cells on the surface of the CPU */
@@ -165,16 +163,6 @@ void calc_forces(void)
     }
   }
 #endif  /* not AR */
-
-#if (defined(EAM) || defined(TTBP) || defined(TERSOFF))
-#ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
-#endif
-  for (k=0; k<ncells; ++k) {
-    do_forces2(cell_array + CELLS(k),
-               &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
-  }
-#endif
 
 #ifdef EAM2
 

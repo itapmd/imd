@@ -29,14 +29,6 @@ void calc_forces(void)
   vir_x  = 0.0;
   vir_y  = 0.0;
   vir_z  = 0.0;
-  
-#ifdef EAM
-  memset(eam_rho,  0,(natoms+1)*        sizeof(real));
-  memset(eam_ij,   0,(natoms+1)*eam_len*sizeof(real));
-  memset(eam_dij_x,0,(natoms+1)*eam_len*sizeof(real));
-  memset(eam_dij_y,0,(natoms+1)*eam_len*sizeof(real));
-  memset(eam_dij_z,0,(natoms+1)*eam_len*sizeof(real));
-#endif /* EAM */
 
   /* clear per atom accumulation variables */
 #ifdef _OPENMP
@@ -116,7 +108,7 @@ void calc_forces(void)
   }
 #endif
 
-#if (defined(EAM) || defined(TTBP) || defined(TERSOFF))
+#ifdef COVALENT
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif

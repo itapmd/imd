@@ -1005,26 +1005,6 @@ void getparamfile(char *paramfname, int sim)
       getparam("cell_size_tol",&cell_size_tolerance,PARAM_REAL,1,1);
     }
 #endif
-#ifdef EAM
-    else if (strcasecmp(token,"eam_len")==0) {
-      /* EAM: number of neighbours */
-      getparam("eam_len",&eam_len,PARAM_INT,1,1);
-    }
-    else if (strcasecmp(token,"eam_A")==0) {
-      /* EAM: constant for cohesive function */
-      getparam("eam_A",&eam_A,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"eam_r_cut")==0) {
-      /* EAM: cutoff of cohesive function */
-      getparam("eam_r_cut",&eam_r_cut,PARAM_REAL,1,1);
-      eam_r2_cut = SQR(eam_r_cut);
-      cellsz = MAX(cellsz,eam_r2_cut);
-    }
-    else if (strcasecmp(token,"eam_r_0")==0) {
-      /* EAM: minimum distance of cohesive function */
-      getparam("eam_r_0",&eam_r_0,PARAM_REAL,1,1);
-    }
-#endif
 #ifdef EAM2
     else if (strcasecmp(token,"core_potential_file")==0) {
       /* EAM2:Filename for the tabulated Core-Core Potenial (r^2) */
@@ -1553,14 +1533,6 @@ void broadcast_params() {
 #ifdef UNIAX
   MPI_Bcast( &uniax_r_cut,  1, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &uniax_r2_cut, 1, REAL, 0, MPI_COMM_WORLD); 
-#endif
-
-#ifdef EAM
-  MPI_Bcast( &eam_len,   1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &eam_A,     1, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &eam_r_cut, 1, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &eam_r2_cut,1, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &eam_r_0,   1, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef COVALENT

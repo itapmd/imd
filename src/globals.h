@@ -389,21 +389,6 @@ EXTERN vektor socketwin_ur  INIT(nullvektor);     /* upper right (back) corner *
 EXTERN int  socket_atoms INIT(0);        /* counter for atoms to send window */
 #endif
 
-#ifdef EAM
-/* neighborlist for EAM forces in 2D array */
-EXTERN real *eam_ij    INIT(NULL);  /* neighbor array */
-EXTERN int  eam_len    INIT(50);    /* max neighbors */
-EXTERN real *eam_rho   INIT(NULL);  /* cohesive function density */ 
-				    /* (Finnis/Sinclair) */
-EXTERN real *eam_dij_x INIT(NULL);  /* distance in x direction */
-EXTERN real *eam_dij_y INIT(NULL);  /* distance in y direction */
-EXTERN real *eam_dij_z INIT(NULL);  /* distance in z direction */
-EXTERN real eam_r_cut  INIT(0.0);   /* EAM cutoff radius */
-EXTERN real eam_r_0    INIT(1.0);   /* EAM minimum distance */
-EXTERN real eam_r2_cut;             /* EAM cutoff radius ^2 */
-EXTERN real eam_A      INIT(0.0);   /* EAM cohesive function constant A */
-#endif
-
 #ifdef EAM2
 EXTERN pot_table_t embed_pot;                     /* embedding energy table  */
 EXTERN pot_table_t rho_h_tab;                     /* electron transfer table */

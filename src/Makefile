@@ -81,7 +81,6 @@ MPISOURCES3D    = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c \
 		  imd_comm_force_3d.c
 
 PAIRSOURCES     = imd_forces.c
-EAMSOURCES      = imd_forces_eam.c
 EAM2SOURCES     = imd_forces.c imd_forces_eam2.c
 ASYMPOTSOURCES  = imd_forces_eam2.c
 COVALENTSOURCES = imd_forces.c imd_forces_covalent.c
@@ -454,20 +453,14 @@ endif
 # pair interaction is the default
 FORCESOURCES = ${PAIRSOURCES}
 
-# EAM2 or EAM
-ifneq (,$(strip $(findstring eam2,${MAKETARGET})))
+# EAM2 or EAM  -  this is now the same
+ifneq (,$(strip $(findstring eam,${MAKETARGET})))
 CFLAGS  += -DEAM2
 ifneq (,$(strip $(findstring asympot,${MAKETARGET})))
 CFLAGS += -DASYMPOT
 FORCESOURCES = ${ASYMPOTSOURCES}
 else
 FORCESOURCES = ${EAM2SOURCES}
-endif
-else
-ifneq (,$(strip $(findstring eam,${MAKETARGET})))
-CFLAGS  += -DEAM
-CFLAGS  += -UAR
-FORCESOURCES = ${EAMSOURCES}
 endif
 endif
 

@@ -419,9 +419,6 @@ void setup_buffers(void)
 #ifdef UNIAX
     binc1+=9;    /* direction, etc. */
 #endif
-#ifdef EAM
-    binc1++;     /* nummer */
-#endif
 
     /* for communication from buffer cells */
 #ifdef TWOD
