@@ -505,7 +505,7 @@ void write_cell(FILE *out, cell *p)
   int i;
 
   for (i=0; i<p->n; i++) {
-      fprintf(out,"%d %d %12.16f ", NUMMER(p,i), SORTE(p,i), MASSE(p,i));
+      fprintf(out,"%d %d %12.16f ", NUMMER(p,i), VSORTE(p,i), MASSE(p,i));
 #ifdef UNIAX
       fprintf(out,"%12.16f ", p->traeg_moment[i]);
 #endif
