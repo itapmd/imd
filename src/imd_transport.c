@@ -80,8 +80,9 @@ void write_temp(int steps)
 
               /* which layer? */
               num = scale * p->ort X(i);
+              if (num < 0)             num = 0;
+              if (num >= tran_nlayers) num = tran_nlayers-1;
               if (num > nhalf) num = tran_nlayers - num;
-              if (num < 0)     num = 0;
 
               temp_hist_1[num] += SPRODN(p->impuls,i,p->impuls,i)/p->masse[i];
               num_hist_1[num]++;

@@ -130,6 +130,10 @@ void main_loop(void)
     };
 #endif
 
+#ifdef TRANSPORT
+    if ((tran_interval > 0) && (0 == steps%tran_interval)) write_temp(steps);
+#endif
+
 #ifndef NOPBC
     do_boundaries();    
 #endif
@@ -158,10 +162,6 @@ void main_loop(void)
     if (steps == up_ort_ref) update_ort_ref();
     if ((dem_interval > 0) && (0 == steps%dem_interval)) write_demmaps(steps);
     if ((dsp_interval > up_ort_ref) && (0 == steps%dsp_interval)) write_dspmaps(steps);
-#endif
-
-#ifdef TRANSPORT
-    if ((tran_interval > 0) && (0 == steps%tran_interval)) write_temp(steps);
 #endif
 
 #ifdef USE_SOCKETS
