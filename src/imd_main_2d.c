@@ -332,7 +332,9 @@ void do_boundaries(void)
   int k;
 
   /* for each cell in bulk */
+#ifdef _OPENMP
 #pragma omp parallel for
+#endif
   for (k=0; k<ncells; ++k) {
 
     int l;

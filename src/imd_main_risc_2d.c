@@ -30,7 +30,9 @@ void calc_forces(void)
   vir_vect.y     = 0.0;
 
   /* clear per atom accumulation variables */
+#ifdef _OPENMP
 #pragma omp parallel for
+#endif
   for (k=0; k<ncells; ++k) {
     int  i;
     cell *p;
@@ -52,7 +54,9 @@ void calc_forces(void)
 
   /* compute forces for all pairs of cells */
   for (n=0; n<4; ++n ) {
+#ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y)
+#endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
       pair *P;

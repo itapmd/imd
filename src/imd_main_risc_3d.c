@@ -39,7 +39,9 @@ void calc_forces(void)
 #endif /* EAM */
 
   /* clear per atom accumulation variables */
+#ifdef _OPENMP
 #pragma omp parallel for
+#endif
   for (k=0; k<ncells; ++k) {
     int  i,j;
     cell *p;
@@ -80,7 +82,9 @@ void calc_forces(void)
 
   /* compute forces for all pairs of cells */
   for (n=0; n<6; ++n) {
+#ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+#endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
       pair *P;
@@ -104,7 +108,9 @@ void calc_forces(void)
 #ifdef EAM2
   /* if EAM2, we have to loop a second time over pairs of distinct cells */
   for (n=0; n<6; ++n) {
+#ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+#endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
       pair *P;
@@ -119,7 +125,9 @@ void calc_forces(void)
 
   /* second EAM2 loop over all cells pairs */
   for (n=0; n<6; ++n) {
+#ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+#endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
       pair *P;
@@ -133,7 +141,9 @@ void calc_forces(void)
 
   /* if EAM2, we have to loop a second time over pairs of distinct cells */
   for (n=0; n<6; ++n) {
+#ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+#endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
       pair *P;
@@ -149,7 +159,9 @@ void calc_forces(void)
 
 #ifdef EAM
   /* EAM cohesive function potential */
+#ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+#endif
   for (k=0; k<ncells; ++k) {
     do_forces_eam_2(cell_array + k);
   }
@@ -157,7 +169,9 @@ void calc_forces(void)
 
 #ifdef TTBP
   /* TTBP: three body potential */
+#ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+#endif
   for (k=0; k<ncells; ++k) {
     do_forces_ttbp(cell_array + k);
   }

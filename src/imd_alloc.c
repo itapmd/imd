@@ -181,7 +181,9 @@ void move_atom(ivektor cellc, cell *from, int index)
 void reset_Epot_ref(void)
 {
   int  k;
+#ifdef _OPENMP
 #pragma omp parallel for
+#endif
   for (k=0; k<ncells; ++k) {
     int  i;
     cell *p;

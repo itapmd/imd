@@ -28,7 +28,9 @@ void move_atoms_nve(void)
   tot_kin_energy = 0.0;
 
   /* loop over all cells */
+#ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_kin_energy) private(tmp)
+#endif
   for (k=0; k<ncells; ++k) {
 
     int  i;
@@ -173,7 +175,9 @@ void move_atoms_mik(void)
   tot_kin_energy = 0.0;
 
   /* loop over all cells */
+#ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_kin_energy) private(tmp)
+#endif
   for (k=0; k<ncells; ++k) {
 
     int  i;
@@ -272,7 +276,9 @@ void move_atoms_msd(void)
   tot_kin_energy = 0.0;
 
   /* loop over all cells */
+#ifdef _OPENMP
 #pragma omp parallel for
+#endif
   for (k=0; k<ncells; ++k) {
 
     int  i;
@@ -337,7 +343,9 @@ void move_atoms_nvt(void)
   eins_d_reibung_rot = 1.0 / (1.0 + eta_rot * timestep / 2.0);
 #endif
    
+#ifdef _OPENMP
 #pragma omp parallel for reduction(+:kin_energie_1,kin_energie_2,rot_energie_1,rot_energie_2) private(tmp)
+#endif
   for (k=0; k<ncells; ++k) {
 
     int i;
@@ -504,7 +512,9 @@ void move_atoms_npt_iso(void)
 #endif
 
   /* loop over all cells */
+#ifdef _OPENMP
 #pragma omp parallel for reduction(+:Ekin_old,Ekin_new,Erot_old,Erot_new) private(tmp)
+#endif
   for (k=0; k<ncells; ++k) {
 
     int i;
@@ -706,10 +716,12 @@ void move_atoms_npt_axial(void)
 #endif
 
   /* loop over all cells */
+#ifdef _OPENMP
 #ifdef TWOD
 #pragma omp parallel for reduction(+:Ekin,stress.x,stress.y)
 #else
 #pragma omp parallel for reduction(+:Ekin,stress.x,stress.y,stress.z)
+#endif
 #endif
   for (k=0; k<ncells; ++k) {
 
@@ -877,7 +889,9 @@ void move_atoms_and(void)
 
   tot_kin_energy = 0;
 
+#ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_kin_energy) private(tmp)
+#endif
   for (k=0; k<ncells; ++k) {
 
     int i;
@@ -1002,7 +1016,9 @@ void move_atoms_frac(void)
   c_halbe.y = box_y.y / 2.0;
 
   /* loop over all atoms */
+#ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_kin_energy)
+#endif
   for (k=0; k<ncells; ++k) {
 
     int i;
@@ -1098,7 +1114,9 @@ void move_atoms_stm(void)
   real kin_energie_1 = 0.0, kin_energie_2 = 0.0, tmp;
    
   /* loop over all atoms */
+#ifdef _OPENMP
 #pragma omp parallel for reduction(+:kin_energie_1,kin_energie_2) private(tmp)
+#endif
   for (k=0; k<ncells; ++k) {
 
     int i;

@@ -120,7 +120,9 @@ void correlate(int step, int ref_step, unsigned seqnum)
 
   if (step == ref_step) { /* initialize reference positions */
     /* loop over all cells */
+#ifdef _OPENMP
 #pragma omp parallel for
+#endif
     for (k=0; k<ncells; ++k) {
       int i;
       cell *p;

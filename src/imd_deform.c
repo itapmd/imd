@@ -26,7 +26,9 @@ void expand_sample(void)
   ivektor max_cell_dim;
   
   /* Apply expansion */
+#ifdef _OPENMP
 #pragma omp parallel for
+#endif
   for (k=0; k<ncells; ++k) {
     int i;
     cell *p;
@@ -73,16 +75,13 @@ void expand_sample(void)
 
 void shear_sample(void)
 {
-  int i,r,s;
-#ifndef TWOD
-  int t;
-#endif
-  cell *p;
   int k;
   ivektor max_cell_dim;
 
   /* Apply shear */
+#ifdef _OPENMP
 #pragma omp parallel for
+#endif
   for (k=0; k<ncells; ++k) {
     int i;
     cell *p;
@@ -127,7 +126,9 @@ void deform_sample(void)
   real box_x_half = 0.5 * box_x.x;
 
   /* loop over all atoms */
+#ifdef _OPENMP
 #pragma omp parallel for
+#endif
   for (k=0; k<ncells; ++k) {
     int i;
     cell *p;
