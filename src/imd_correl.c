@@ -217,7 +217,7 @@ void correlate(int step, int ref_step, unsigned seqnum)
            particles do not travel more than half a box diameter */
         /* correlate displacement with PBC applied */
         reduce_displacement(&dist);
-        dr  = sqrt(SPROD(drsq,dsrq)); 
+        dr  = sqrt(SPROD(dist,dist)); 
         idr = (int)(dr*inv_dr);
         GS[SORTE(p,i)][it][idr]++; /* calculate histogram for self part */
 #endif
