@@ -662,7 +662,7 @@ CFLAGS += -DDISLOC
 endif
 
 ifneq (,$(findstring sllod,${MAKETARGET}))
-CFLAGS += -DSLLOD
+CFLAGS += -DSLLOD -DNVT
 endif
 
 ifneq (,$(findstring avpos,${MAKETARGET}))
