@@ -1074,7 +1074,7 @@ void calc_distances(void)
                 } else continue;
               }
               if (s<0) {
-                if (pbc_dirs.y==0) {
+                if (pbc_dirs.y==1) {
                   s = cell_dim.y-1;
                   pbc.x -= box_y.x;      
                   pbc.y -= box_y.y;
