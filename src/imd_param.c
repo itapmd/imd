@@ -1750,12 +1750,11 @@ void check_parameters_complete()
 #endif
 #ifdef MPI
 #ifdef TWOD
-        if ((cpu_dim.x==0) || (cpu_dim.y==0))
+        if ( cpu_dim.x * cpu_dim.y             != num_cpus ) {
 #else
-        if ((cpu_dim.x==0) || (cpu_dim.y==0) || (cpu_dim.z==0))
+	if ( cpu_dim.x * cpu_dim.y * cpu_dim.z != num_cpus ) {
 #endif
-	{
-           error("cpu_dim is missing or zero.");
+	  calc_cpu_dim();
         }
 #endif
 #ifdef USE_SOCKETS

@@ -169,3 +169,35 @@ ivektor cpu_coord_v(ivektor cellc)
 
   return coord;
 }
+
+/******************************************************************************
+*
+*  calc_cpu_dim chooses the cpu dimension if no array dimension is given
+*  or if cpu_dim does not correspond to the available number of cpus
+*
+******************************************************************************/
+
+void calc_cpu_dim(void)
+{
+  int trial, n;
+
+  n = num_cpus;
+
+  /* estimate cpu_dim.x */
+  trial = (int) ceil(pow(n, 1.0/3.0));
+
+  for( cpu_dim.x=trial; cpu_dim.x>0; cpu_dim.x--)
+    if ( n%cpu_dim.x == 0 )
+      break;
+  n /= cpu_dim.x;
+
+  /* estimate cpu_dim.y */
+  trial = (int) ceil( sqrt(n));
+
+  for( cpu_dim.y=trial; cpu_dim.y>0; cpu_dim.y--)
+    if ( n%cpu_dim.y == 0 )
+      break;
+
+  cpu_dim.z = n/cpu_dim.y;
+  
+}

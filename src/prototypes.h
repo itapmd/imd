@@ -81,6 +81,7 @@ void create_pot_table(pot_table_t *pt);
 void init_mpi(int *argc_pointer, char **argv);
 void setup_mpi_topology(void);
 void shutdown_mpi(void);
+void calc_cpu_dim(void);
 #endif
 
 /* manage MPI buffers and buffer cells - file imd_mpi_util.c */
