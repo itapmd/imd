@@ -15,7 +15,7 @@ int WriteFull(int filedes, const void *buffer, int nbytes);
 int ReadFull(int filedes, const void *buffer, int nbytes);
 unsigned long GetIP(const char *name);
 int OpenServerSocket(u_short MyPort);
-int OpenClientSocket(u_long toIP, u_short toPort);
+int OpenClientSocket(u_long toIP, u_short toPort, u_short locPort);
 void WriteSync(int fd);
 void ReadSync(int fd);
 #endif

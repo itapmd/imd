@@ -1296,9 +1296,13 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"display_host")==0) {
       getparam("display_host",display_host,PARAM_STR,1,255);
     }
-    else if (strcasecmp(token,"baseport")==0) { int tmp;
-      getparam("baseport",&tmp,PARAM_INT,1,1);
-      baseport = tmp; /* conversion to unsigned short */
+    else if (strcasecmp(token,"server_port")==0) { int tmp;
+      getparam(token,&tmp,PARAM_INT,1,1);
+      server_port = tmp; /* conversion to unsigned short */
+    }
+    else if (strcasecmp(token,"client_port")==0) { int tmp;
+      getparam(token,&tmp,PARAM_INT,1,1);
+      client_port = tmp; /* conversion to unsigned short */
     }
     else if (strcasecmp(token,"use_socket_window")==0) {
       getparam("use_socket_window",&use_socket_window,PARAM_INT,1,1);

@@ -505,7 +505,8 @@ EXTERN int do_press_calc INIT(0);           /* flag whether to do press calc */
 #ifdef USE_SOCKETS
 EXTERN int server_socket INIT(1);          /* socket mode: client or server */
 EXTERN int socket_int INIT(1);               /* interval for reading socket */
-EXTERN unsigned short baseport INIT(31913);  /* base port for VolIMD socket */
+EXTERN unsigned short client_port INIT(0);        /* client port for socket */
+EXTERN unsigned short server_port INIT(31050);    /* server port for socket */
 EXTERN char display_host[256] INIT("");      /* name of controlling machine */
 EXTERN int  use_socket_window INIT(0);  /* flag for using a window to write */
 EXTERN vektor socketwin_ll  INIT(nullvektor);  /* lower left (front) corner */

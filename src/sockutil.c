@@ -223,32 +223,44 @@ int OpenNBServerSocket(u_short MyPort)
   return soc;
 }
 
-
 /* ##########################################################
    ### Open Socket for CLIENT: Port, IP in Host-ByteOrder ###
    ########################################################## */
 
-int OpenClientSocket(u_long toIP, u_short toPort)
+int OpenClientSocket(u_long toIP, u_short toPort, u_short locPort)
 {
   extern int errno;
-  int soc, con_return;
-  struct sockaddr_in ServAddr;
+  int soc;
+  struct sockaddr_in ServAddr, CliAddr;
 
+  /* create socket */
   soc = socket(PF_INET,SOCK_STREAM,0);
   if (soc == -1) {
     perror("Socket creation failed:");
     return -1;
   }
   
-  bzero((char *) &ServAddr, sizeof(ServAddr));
-  ServAddr.sin_family        = PF_INET;
+  /* bind socket to local port */
+  if (locPort > 0) {
+    memset((char *) &CliAddr, 0, sizeof(CliAddr));
+    CliAddr.sin_family        = AF_INET;
+    CliAddr.sin_addr.s_addr   = INADDR_ANY;
+    CliAddr.sin_port          = locPort;
+    if (bind(soc, (struct sockaddr *) &CliAddr, sizeof(CliAddr))) {
+      perror("Cannot bind socket to local port:");
+    }
+  }
+
+  /* connect to remote port */
+  memset((char *) &ServAddr, 0, sizeof(ServAddr));
+  ServAddr.sin_family        = AF_INET;
   ServAddr.sin_port          = toPort;
   ServAddr.sin_addr.s_addr   = toIP;
-  
-  if ((con_return = connect(soc,(struct sockaddr *)&ServAddr,sizeof(ServAddr))) < 0) {
+  if (connect(soc, (struct sockaddr *) &ServAddr, sizeof(ServAddr))) {
+    perror("Cannot connect to socket:");
     shutdown(soc,2);
-	close(soc);
-	return -1;
+    close(soc);
+    return -1;
   }
 #ifdef DEBUG
   printf("return socket #%d\n",soc);

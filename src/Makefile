@@ -152,6 +152,7 @@ CFLAGS_pgcc_SERIAL_i586_PROF   	= -Mprof=func
 CFLAGS_icc_SERIAL_i586        	= -O -ip -axK -static
 CFLAGS_icc_SERIAL_i586_PROF	= -prof_gen
 RCDFLAGS_icc_SERIAL_i586	= -DRCD -rcd
+CFLAGS_icc_SERIAL_i586_DEBUG  	= -g
 
 # icc, OpenMP
 CFLAGS_icc_OMP_i586        	= -O -ip -axK -openmp -static

@@ -1,4 +1,3 @@
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -15,31 +14,35 @@ void error(char *msg)
   exit(2);
 }
 
-void init_socket(unsigned short baseport, char *simhost)
+void init_socket(unsigned short locPort, char *host, unsigned short toPort)
 {
-  if (simhost==NULL) {
+  if (host==NULL) {
     /* open server socket */
-    fprintf(stderr, "Opening server socket on port %d ... ", baseport);
-    soc = OpenServerSocket(htons(baseport));
+    fprintf(stderr, "Opening server socket on port %d ...", locPort);
+    soc = OpenServerSocket(htons(locPort));
     if (soc < 1) error("Cannot open server socket");
-    fprintf(stderr, "done\n");
+    fprintf(stderr, " connected\n");
   }
   else {
-    /* determine simulation host */
-    varIP = GetIP(simhost);
+    /* determine remote host */
+    varIP = GetIP(host);
     if (varIP==0) {
       char msg[255];
-      sprintf(msg, "Cannot find simulation host %s", simhost);
+      sprintf(msg, "Cannot find host %s", host);
       error(msg);
     }
 
     /* info message */
-    fprintf(stderr, "Acting as client, trying to connect to %s port %d\n",
-            simhost, baseport);
+    if (locPort>0)
+      fprintf(stderr, "Connecting from port %d to %s port %d ...",
+              locPort, host, toPort);
+    else
+      fprintf(stderr, "Connecting to %s port %d ...", host, toPort);
 
     /* open client socket */
-    soc=OpenClientSocket(varIP,htons(baseport));
+    soc=OpenClientSocket(varIP,htons(toPort),htons(locPort));
     if (soc <=0) error("Cannot open client socket");
+    else fprintf(stderr," done\n");
   }
 }
 
@@ -161,21 +164,24 @@ void vis_change_params()
 int main(int argc, char **argv)
 {
   int  n;
-  char *host;
+  char *host=NULL;
+  unsigned short locPort=0, toPort=0;
 
   if (argc==2) {      /* server socket */
-    host = NULL;
+    locPort = (unsigned short) atoi(argv[1]);
   }
-  else if (argc==3) { /* client socket */
-    host = strdup(argv[2]);
+  else if (argc==4) { /* client socket */
+    locPort = (unsigned short) atoi(argv[1]);
+    host    = strdup(argv[2]);
+    toPort  = (unsigned short) atoi(argv[3]);
   }
   else {
-    printf("Usage:  socktest <port>             # open server socket\n");
-    printf("        socktest <port> <simhost>   # open client socket\n");
+    printf("Usage: socktest <port>                    # open server socket\n");
+    printf("       socktest <locPort> <host> <toPort> # open client socket\n");
     return 0;
   }
 
-  init_socket((unsigned short) atoi(argv[1]), host);
+  init_socket(locPort, host, toPort);
 
   do {
 

@@ -46,9 +46,10 @@ void init_socket()
   /* IMD acts as server */
   if ((server_socket) && (!done)) {
     /* open server socket */
-    fprintf(stderr, "Opening server socket on port %d ... ", baseport);
-    soc = OpenServerSocket(htons(baseport));
+    fprintf(stderr, "Opening server socket on port %d ...", server_port);
+    soc = OpenServerSocket(htons(server_port));
     if (soc < 1) error("Cannot open server socket");
+    else fprintf(stderr," connected\n");
   }
 
   /* IMD acts as client */
@@ -62,16 +63,18 @@ void init_socket()
     }
 
     /* info message */
-    fprintf(stderr, "Acting as client, display host is %s, baseport %d\n",
-            display_host, baseport);
+    if (client_port > 0)
+      fprintf(stderr, "Connecting from port %d to %s port %d ...",
+              client_port, display_host, server_port);
+    else
+      fprintf(stderr, "Connecting to %s port %d ...", 
+              display_host, server_port);
     fflush(stderr);
    
-    /* we need baseport in network byte order */
-    baseport = htons(baseport);   
-
     /* open client socket */
-    soc=OpenClientSocket(varIP,baseport);
+    soc=OpenClientSocket(varIP, htons(server_port), htons(client_port));
     if (soc < 1) error("Cannot open client socket");
+    else fprintf(stderr," done\n");
   }
 
   /* do initialization only once */
