@@ -1604,7 +1604,7 @@ void broadcast_params() {
 #endif
 
 #ifdef SLLOD
-  MPI_Bcast(epsilon,1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&epsilon,1, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef TERSOFF
