@@ -696,7 +696,7 @@ void write_vrmls(int steps)
 	};
 
       /* Receive data from other cpus and write that */
-      p   = PTR_3D_V(cell_array, 0, 0, cell_dim);
+      p   = PTR_3D_V(cell_array, 0, 0, 0, cell_dim);
       for ( m = 1; m < num_cpus; ++m)
         for (i = 1; i < cell_dim.x-1; ++i )
           for (j = 1; j < cell_dim.y-1; ++j )
