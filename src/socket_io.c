@@ -69,6 +69,10 @@ void init_socket()
    
     /* we need baseport in network byte order */
     baseport = htons(baseport);   
+
+    /* open client socket */
+    soc=OpenClientSocket(varIP,baseport);
+    if (soc < 1) error("Cannot open client socket");
   }
 
   /* do initialization only once */
@@ -87,24 +91,13 @@ int connect_visualization()
   unsigned char byte;
   int flag = 0;
 
-  if (server_socket) {
-    /* switch temporarily to non-blocking I/O on socket */
-    fcntl(soc, F_SETFL, O_NONBLOCK);
-    if (1==read(soc, &byte, 1)) {
-      flag = byte; /* convert to int */
-      fprintf(stderr, "received socket_flag: %d\n", flag);
-    }
-    fcntl(soc, F_SETFL, O_SYNC);
-  } else {
-    soc=OpenClientSocket(varIP,baseport);
-    if (soc > 0) {
-      ReadFull(soc, &byte, 1);
-      flag = byte; /* convert to int */
-      fprintf(stderr, "received socket_flag: %d\n", flag);
-    } else {
-      close_socket();
-    }
+  /* switch temporarily to non-blocking I/O on socket */
+  fcntl(soc, F_SETFL, O_NONBLOCK);
+  if (1==read(soc, &byte, 1)) {
+    flag = byte; /* convert to int */
+    fprintf(stderr, "received socket_flag: %d\n", flag);
   }
+  fcntl(soc, F_SETFL, O_SYNC);
   return flag;
 }
 
@@ -181,9 +174,7 @@ void check_socket() {
         if (0==myid) printf("unknown token: %d\n", socket_flag);
         break;
     }
-    if ((0==myid) && (!server_socket)) close_socket();
   }
-
 }
 
 /******************************************************************************
@@ -311,7 +302,19 @@ void vis_init_atoms()
     WriteFull( soc, &flags,   ATOMS_FLAG_SIZE * sizeof(integer) );
     WriteFull( soc, &tot_min, ATOMS_FILT_SIZE * sizeof(float)   );
     WriteFull( soc, &tot_max, ATOMS_FILT_SIZE * sizeof(float)   );
+#ifdef DEBUG
+    printf("Sent atom flags:\n");
+    printf("  sorte=%d ort=%d impuls=%d Ekin=%d Epot=%d nbanz=%d\n",
+      flags.sorte, flags.ort,  flags.impuls, 
+      flags.Ekin,  flags.Epot, flags.nbanz ); 
+    printf("Sent atom min/max values:\n");
+    printf("  Min: sorte=%f x=%f y=%f z=%f Ekin=%f Epot=%f nbanz=%f\n",
+      min.sorte, min.x, min.y, min.z, min.Ekin, min.Epot, min.nbanz ); 
+    printf("  Max: sorte=%f x=%f y=%f z=%f Ekin=%f Epot=%f nbanz=%f\n",
+      max.sorte, max.x, max.y, max.z, max.Ekin, max.Epot, max.nbanz );
+#endif
   }
+
 }
 
 

@@ -970,4 +970,4 @@ help:
 	echo "Usage: gmake imd_<ensemble>_<architeture>[_<suffix>...]"
 
 socktest:
-	gcc -o ${BINDIR}/socktest -DDEBUG sockutil.c socktest.c
+	gcc -o ${BINDIR}/socktest sockutil.c socktest.c

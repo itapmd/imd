@@ -15,23 +15,32 @@ void error(char *msg)
   exit(2);
 }
 
-void init_socket(char *simhost, int baseport)
+void init_socket(unsigned short baseport, char *simhost)
 {
-  /* determine simulation host */
-  varIP = GetIP(simhost);
-  if (varIP==0) {
-    char msg[255];
-    sprintf(msg, "Cannot find simulation host %s", simhost);
-    error(msg);
+  if (simhost==NULL) {
+    /* open server socket */
+    fprintf(stderr, "Opening server socket on port %d ... ", baseport);
+    soc = OpenServerSocket(htons(baseport));
+    if (soc < 1) error("Cannot open server socket");
+    fprintf(stderr, "done\n");
   }
+  else {
+    /* determine simulation host */
+    varIP = GetIP(simhost);
+    if (varIP==0) {
+      char msg[255];
+      sprintf(msg, "Cannot find simulation host %s", simhost);
+      error(msg);
+    }
 
-  /* info message */
-  fprintf(stderr, "Acting as client, trying to connect to %s port %d\n",
-          simhost, baseport);
+    /* info message */
+    fprintf(stderr, "Acting as client, trying to connect to %s port %d\n",
+            simhost, baseport);
 
-  /* open client socket */
-  soc=OpenClientSocket(varIP,htons(baseport));
-  if (soc <=0) error("Cannot open client socket");
+    /* open client socket */
+    soc=OpenClientSocket(varIP,htons(baseport));
+    if (soc <=0) error("Cannot open client socket");
+  }
 }
 
 void vis_init()
@@ -118,8 +127,10 @@ void vis_write_atoms()
     printf("Received atoms with data:\n");
     for (i=0; i<num; i++) {
       ReadFull(soc,a,4*atlen);
+#ifdef DEBUG
       for (j=0; j<atlen; j++) printf("%e ",a[j]);
       printf("\n");
+#endif
     }
   } while (num); 
   printf("Receiving atoms finished\n");
@@ -149,14 +160,22 @@ void vis_change_params()
 
 int main(int argc, char **argv)
 {
-  int n;
+  int  n;
+  char *host;
 
-  if (argc<3) {
-    printf("Usage:  socktest <host> <port>\n");
+  if (argc==2) {      /* server socket */
+    host = NULL;
+  }
+  else if (argc==3) { /* client socket */
+    host = strdup(argv[2]);
+  }
+  else {
+    printf("Usage:  socktest <port>             # open server socket\n");
+    printf("        socktest <port> <simhost>   # open client socket\n");
     return 0;
   }
 
-  init_socket(argv[1],atoi(argv[2]));
+  init_socket((unsigned short) atoi(argv[1]), host);
 
   do {
 

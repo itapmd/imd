@@ -74,6 +74,9 @@ void error(char *msg)
 #ifdef MPI
   MPI_Abort(MPI_COMM_WORLD, 1);
 #endif
+#ifdef USE_SOCKETS
+  close_socket();
+#endif
   exit(2);
 }
 
