@@ -109,7 +109,6 @@ EXTERN vektor2d ecut_pot INIT(nullvektor);  /* Pot. Energy interval for pictures
 EXTERN vektor2d  pic_ll  INIT(nullvektor);  /* lower left corner */
 EXTERN vektor2d  pic_ur  INIT(nullvektor);  /* upper right corner */
 EXTERN ivektor2d pic_res INIT(nullivektor); /* number of pixels in x/y dir.*/
-EXTERN int       numpix  INIT(1);           /* number of pixels in x/y dir.*/
 #else
 EXTERN vektor3d view_dir INIT(nullvektor);  /* view direction */
 EXTERN vektor3d view_pos INIT(nullvektor);  /* view position */
@@ -121,6 +120,7 @@ EXTERN vektor3d  pic_ll  INIT(nullvektor);  /* lower left corner */
 EXTERN vektor3d  pic_ur  INIT(nullvektor);  /* upper right corner */
 EXTERN ivektor3d pic_res INIT(nullivektor); /* number of pixels in x/y dir.*/
 #endif
+EXTERN int       numpix  INIT(1);           /* number of pixels in x/y dir.*/
 EXTERN int       pic_type INIT(0);          /* picture type 0/1/2 */
 EXTERN real      *pic_at_radius INIT(NULL); /* atom radius for pictures */
 
