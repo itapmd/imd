@@ -626,7 +626,7 @@ void write_avpos_itr_file(int fzhlr, int steps)
   fprintf(out,"startstep \t%d\n",steps+1);
 #ifdef NPT
   /* Take average of box vectors */
-  tmp = avpos_res / ( avpos_int + avpos_res );
+  tmp = (real) avpos_res / ( avpos_int + avpos_res );
   fprintf(out,"box_x \t%.16f %.16f %.16f\n",av_box_x.x * tmp,av_box_x.y * tmp,av_box_x.z * tmp);
   fprintf(out,"box_y \t%.16f %.16f %.16f\n",av_box_y.x * tmp,av_box_y.y * tmp,av_box_y.z * tmp);
   fprintf(out,"box_z \t%.16f %.16f %.16f\n",av_box_z.x * tmp,av_box_z.y * tmp,av_box_z.z * tmp);
