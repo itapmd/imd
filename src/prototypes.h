@@ -197,7 +197,6 @@ void send_atoms(void);
 void fix_cells_by_cell(void);
 #endif
 #endif
-
 /* write properties - file imd_io_*.c */
 void write_properties(int steps);
 void write_eng_file_header(void);
@@ -218,6 +217,7 @@ void write_atoms_ef(FILE *out);
 #endif
 #ifdef STRESS_TENS
 void write_atoms_press(FILE *out);
+void calc_tot_presstens(void);
 #endif
 #ifdef AVPOS
 void write_atoms_avp(FILE *out);

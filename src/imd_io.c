@@ -478,6 +478,15 @@ void write_eng_file_header()
     fprintf(fl, "box_x.x box_y.y box_z.z ");
 #endif
 #endif
+#ifdef STRESS_TENS
+    fprintf(fl, "Press_xx Press_yy ");
+#ifdef TWOD
+    fprintf(fl, "Press_xy ");
+#else 
+    fprintf(fl, "Press_zz ");
+    fprintf(fl, "Press_yz Press_xz Press_xy");
+#endif    
+#endif
     putc('\n',fl);
 
     fclose(fl);
@@ -491,7 +500,7 @@ void write_eng_file_header()
 *
 ******************************************************************************/
 
-void write_properties(int steps)
+void write_eng_file(int steps)
 {
   FILE *out;
   str255 fname;
@@ -501,6 +510,23 @@ void write_properties(int steps)
   char *format=" %e";
 #endif
   real Epot, Temp, vol;
+
+#ifdef STRESS_TENS
+  real Press_xx,Press_yy, Press_xy;
+#ifndef TWOD
+  real Press_zz,Press_yz, Press_xz;
+#endif
+  Press_xx = tot_presstens.x / volume; 
+  Press_yy = tot_presstens.y / volume; 
+#ifdef TWOD
+  Press_xy = tot_presstens_offdia / volume; 
+#else 
+  Press_zz = tot_presstens.z / volume;
+  Press_yz = tot_presstens_offdia.x / volume; 
+  Press_xz = tot_presstens_offdia.y / volume; 
+  Press_xy = tot_presstens_offdia.z / volume; 
+#endif
+#endif
 
   Epot =       tot_pot_energy / natoms;
 #ifdef UNIAX
@@ -536,11 +562,21 @@ void write_properties(int steps)
     fprintf(out," %e %e", (double)  box_x.x, (double)  box_y.y );
 #else
     fprintf(out," %e %e %e", 
-                  (double) stress_x, (double) stress_y, (double) stress_z );
+	    (double) stress_x, (double) stress_y, (double) stress_z );
     fprintf(out," %e %e %e", 
-                  (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
+	    (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
 #endif
   }
+#ifdef STRESS_TENS
+  fprintf(out," %e %e", (double) Press_xx, (double) Press_yy);
+#ifdef TWOD
+  fprintf(out," %e", (double) Press_xy);
+#else 
+  fprintf(out," %e", (double) Press_zz);
+  fprintf(out," %e %e %e",
+	  (double) Press_yz, (double) Press_xz, (double) Press_xy);
+#endif    
+#endif
   putc('\n',out);
   fclose(out);
 }

@@ -363,7 +363,14 @@ EXTERN int  tran_nlayers  INIT(0);     /* number of layers*/
 #endif
 
 #ifdef STRESS_TENS
-EXTERN int press_interval INIT(0);          /* Intervalle der Aufzeichnung */ 
+EXTERN vektor tot_presstens        INIT(nullvektor); /* diagonal and */ 
+#ifdef TWOD                                          
+EXTERN real tot_presstens_offdia INIT(0.0);         /* offdiagonal of */ 
+#else
+EXTERN vektor tot_presstens_offdia INIT(nullvektor); /* global press tensor */ 
+#endif
+
+EXTERN int  press_interval INIT(0);         /* Intervalle der Aufzeichnung */ 
                                             /* des Drucktensors */
 EXTERN ivektor press_dim INIT(nullivektor); /* pressure histogram dimension */
 #endif

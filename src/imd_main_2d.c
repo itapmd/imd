@@ -248,13 +248,17 @@ void main_loop(void)
     pressure_ext.y += d_pressure.y;
 #endif
 
+#ifdef STRESS_TENS
+    calc_tot_presstens();
+#endif
+
     /* Periodic I/O */
 #ifdef TIMING
     imd_start_timer(&time_io);
 #endif
     if ((rep_interval > 0) && (0 == steps%rep_interval)) write_config(steps);
     if ((eng_interval > 0) && (0 == steps%eng_interval) && (0==myid)) 
-       write_properties(steps);
+       write_eng_file(steps);
     if ((dis_interval > 0) && (0 == steps%dis_interval)) write_distrib(steps);
     if ((pic_interval > 0) && (0 == steps%pic_interval)) write_pictures(steps);
 
@@ -468,6 +472,54 @@ void do_boundaries(void)
 
   }
 }
+
+
+#ifdef STRESS_TENS
+
+/******************************************************************************
+*
+*  calc_tot_presstens
+*
+******************************************************************************/
+
+void calc_tot_presstens(void)
+{
+  int i;
+
+  real tmp_presstens1[3], tmp_presstens2[3];
+
+  tot_presstens.x        = 0.0; 
+  tot_presstens.y        = 0.0; 
+  tot_presstens_offdia   = 0.0;
+
+  /*sum up total pressure tensor */
+  for (i=0; i<ncells; ++i) {
+    int j;
+    cell *p;
+    p = cell_array + CELLS(i);
+    for (j=0; j<p->n; ++j) {
+      tot_presstens.x      += p->presstens X(j);
+      tot_presstens.y      += p->presstens Y(j);
+      tot_presstens_offdia += p->presstens_offdia[j];
+    }
+  }
+
+#ifdef MPI
+  /* add up results from different CPUs */
+  tmp_presstens1[0]        = tot_presstens.x; 
+  tmp_presstens1[1]        = tot_presstens.y; 
+  tmp_presstens1[2]        = tot_presstens_offdia;
+
+  MPI_Allreduce( tmp_presstens1, tmp_presstens2, 3, REAL, MPI_SUM, cpugrid);
+
+  tot_presstens.x      = tmp_presstens2[0];
+  tot_presstens.y      = tmp_presstens2[1]; 
+  tot_presstens_offdia = tmp_presstens2[2]; 
+#endif /* MPI */
+
+}
+
+#endif/* STRESS_TENS */
 
 
 /*****************************************************************************

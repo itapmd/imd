@@ -241,13 +241,13 @@ void main_loop(void)
           p->impuls Z(i) = 0.0;
         }
       }
-      if (myid==0) write_properties(steps); 
+      if (myid==0) write_eng_file(steps); 
     }
     /* properties as they were after setting p=0 and 
        calculating ekin_ and p. p should then = f*dt
        therefore PxF >0 and f*f = 2*M*ekin
     */
-    if ((myid==0) && (old_PxF<0.0)) write_properties(steps); 
+    if ((myid==0) && (old_PxF<0.0)) write_eng_file(steps); 
     old_PxF = PxF;
 #endif
 
@@ -305,13 +305,18 @@ void main_loop(void)
     pressure_ext.z += d_pressure.z;
 #endif
 
+#ifdef STRESS_TENS
+    calc_tot_presstens();
+#endif
+     
+
     /* Periodic I/O */
 #ifdef TIMING
     imd_start_timer(&time_io);
 #endif
     if ((rep_interval > 0) && (0 == steps%rep_interval)) write_config(steps);
     if ((eng_interval > 0) && (0 == steps%eng_interval) && (0==myid)) 
-       write_properties(steps);
+       write_eng_file(steps);
     if ((dis_interval > 0) && (0 == steps%dis_interval)) write_distrib(steps);
     if ((pic_interval > 0) && (0 == steps%pic_interval)) write_pictures(steps);
 
@@ -571,6 +576,67 @@ void do_boundaries(void)
   }
 }
 
+#ifdef STRESS_TENS
+
+/******************************************************************************
+*
+*  calc_tot_presstens
+*
+******************************************************************************/
+
+void calc_tot_presstens(void)
+{ 
+  int i;
+
+  real tmp_presstens1[6], tmp_presstens2[6];
+
+  tot_presstens.x        = 0.0; 
+  tot_presstens.y        = 0.0; 
+  tot_presstens.z        = 0.0; 
+  tot_presstens_offdia.x   = 0.0;
+  tot_presstens_offdia.y   = 0.0;
+  tot_presstens_offdia.z   = 0.0;
+
+
+  /*sum up total pressure tensor */
+  for (i=0; i<ncells; ++i) {
+    int j;
+    cell *p;
+    p = cell_array + CELLS(i);
+    for (j=0; j<p->n; ++j) {
+
+      tot_presstens.x        += p->presstens X(j);
+      tot_presstens.y        += p->presstens Y(j);
+      tot_presstens.z        += p->presstens Z(j);
+      tot_presstens_offdia.x += p->presstens_offdia X(j);  
+      tot_presstens_offdia.y += p->presstens_offdia Y(j);  
+      tot_presstens_offdia.z += p->presstens_offdia Z(j);  
+    }
+  }
+
+#ifdef MPI
+
+  tmp_presstens1[0]        = tot_presstens.x; 
+  tmp_presstens1[1]        = tot_presstens.y; 
+  tmp_presstens1[2]        = tot_presstens.z; 
+  tmp_presstens1[3]        = tot_presstens_offdia.x ;
+  tmp_presstens1[4]        = tot_presstens_offdia.y ;
+  tmp_presstens1[5]        = tot_presstens_offdia.z ;
+
+  MPI_Allreduce( tmp_presstens1, tmp_presstens2, 6, REAL, MPI_SUM, cpugrid);
+
+  tot_presstens.x            = tmp_presstens2[0];
+  tot_presstens.y            = tmp_presstens2[1]; 
+  tot_presstens.z            = tmp_presstens2[2];
+  tot_presstens_offdia.x     = tmp_presstens2[3]; 
+  tot_presstens_offdia.y     = tmp_presstens2[4]; 
+  tot_presstens_offdia.z     = tmp_presstens2[5]; 
+
+#endif /* MPI */
+
+}
+
+#endif/* STRESS_TENS */
 
 /*****************************************************************************
 *
