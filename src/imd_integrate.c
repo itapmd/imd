@@ -29,7 +29,7 @@
 *
 *****************************************************************************/
 
-#if defined(NVE) || defined(EPITAX)
+#if defined(NVE) || defined(EPITAX) || defined(CG)
 
 void move_atoms_nve(void)
 {

@@ -938,6 +938,12 @@ else if (strcasecmp(token,"linmin_dmax")==0) {
       /* max. length of trial step in 1d minimum search */
       getparam("linmin_dmax",&linmin_dmax,PARAM_REAL,1,1);
 }
+#ifndef DEFORM
+   else if (strcasecmp(token,"annealsteps")==0) {
+      /* max nr of steps between shears */
+      getparam("annealsteps",&annealsteps,PARAM_INT,1,1);
+   }
+#endif
 #endif
 #ifdef SHOCK
     else if (strcasecmp(token,"shock_strip")==0) { 
@@ -1948,6 +1954,9 @@ void broadcast_params() {
  MPI_Bcast( &linmin_maxsteps  , 1, INT,    0, MPI_COMM_WORLD); 
  MPI_Bcast( &linmin_tol , 1, REAL,    0, MPI_COMM_WORLD); 
  MPI_Bcast( &linmin_dmax , 1, REAL,    0, MPI_COMM_WORLD); 
+#ifndef DEFORM
+  MPI_Bcast( &annealsteps ,    1, MPI_INT, 0, MPI_COMM_WORLD); 
+#endif
 #endif
 
 #ifdef USE_SOCKETS

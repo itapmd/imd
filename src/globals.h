@@ -374,6 +374,9 @@ EXTERN int    cg_maxsteps  INIT(0);     /* max number of cg steps */
 EXTERN int    linmin_maxsteps  INIT(0); /* max number of linmin steps */    
 EXTERN real   linmin_tol  INIT(0.0);    /* tolerance between 2 linmin steps */    
 EXTERN real   linmin_dmax  INIT(0.0);   /* max. search steps in linmin  */ 
+#ifndef DEFORM                          /* no double definition */
+EXTERN int    annealsteps INIT(0);      /* number of annealing steps */    
+#endif
 /* Variables needed by CG */
 EXTERN real   cg_gamma  INIT(0.0);     /* see Num. Rec. p.320 */    
 #endif

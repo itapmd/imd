@@ -33,7 +33,7 @@ void main_loop(void)
   real tmp_pot_energy;
 
   int ctf=0;
-
+  int astep=0;
   real fmax2;
   int cgsteps,linminsteps;
 
@@ -62,10 +62,7 @@ void main_loop(void)
 
 
   /******* changing the boundary / initial  conditions after relaxation ***/
-
-  /* initialize temperature, if necessary */
-  /* later: a 'temperature' possibility to add noise to the positions ? */
-
+ 
 #ifdef FBC
     temp_df.x = 0.0;
     temp_df.y = 0.0;
@@ -86,8 +83,18 @@ void main_loop(void)
 #endif
 
 #ifdef DEFORM
+	if(steps>0)     /* first relax undeformed sample */
 	deform_sample();
 #endif
+  /* initialize with random noise ("temperature"), if necessary *
+   * -> let the system evolve anealsteps with nve                        */
+     if (do_maxwell) maxwell(temperature);
+     for(astep=0;astep<annealsteps;astep++)
+    {
+	calc_forces(astep);
+	ctf++;
+	move_atoms_nve(); 
+    }
 
     /***** Now do the Conjugate gradient ************/
 
@@ -98,7 +105,7 @@ void main_loop(void)
     printf(" fmax2= %lf \n",sqrt(fmax2));fflush(stdout);
     old_cgval = CGVAL;
 
-    ctf=1;
+
 
     for (cgsteps = 0 ; cgsteps < cg_maxsteps; cgsteps++)
     {
