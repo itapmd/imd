@@ -445,6 +445,7 @@ void write_msqd(int steps)
 void write_cell(FILE *out, cell *p)
 {
   int i;
+  double h;
 
   for (i=0; i < p->n; i++)
 #ifdef ZOOM
@@ -452,6 +453,8 @@ void write_cell(FILE *out, cell *p)
         (p->ort Y(i) >= pic_ll.y) && (p->ort Y(i) <= pic_ur.y) )
 #endif
 #ifdef TRANSPORT
+      h  = SPRODN(p->impuls,i,p->impuls,i)/(2*p->masse[i])+p->heatcond[i];
+      h *=  p->impuls X(i) /  p->masse[i];
       fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f %12f\n",
 #else
       fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f\n",
@@ -465,7 +468,7 @@ void write_cell(FILE *out, cell *p)
 	p->impuls Y(i) / p->masse[i],
         p->pot_eng[i]
 #ifdef TRANSPORT
-        ,p->heatcond[i]
+        ,h
 #endif
       );
 }
