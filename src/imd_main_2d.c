@@ -343,7 +343,8 @@ void init(void)
 #endif
 
 #ifdef NPT
-  xi = {0,0};
+  xi.x = 0.0;
+  xi.y = 0.0;
 #endif
   
 #if defined(PULL) || defined(FRAC) || defined(MIKSHEAR)
