@@ -810,20 +810,37 @@ void write_press_dist(int steps)
 	press_histyz[i] /= num_hist[i];
 #endif
       }
+    }
       
 #ifdef TWOD
-      fprintf(outpress,
-              "%10.4e %10.4e %10.4e %10.4e %10.4e %10.4e\n", 
-	      press_histxx[i], press_histyy[i], press_histxy[i],
-              laydens, kin_hist[i], pot_hist[i] );
+    i=0;
+    for (r = 0; r < press_dim.x; r++) {
+      for (s = 0; s < press_dim.y; s++) {
+        fprintf(outpress,
+                "%10.4e %10.4e %10.4e %10.4e %10.4e %10.4e\n", 
+	        press_histxx[i], press_histyy[i], press_histxy[i],
+                laydens, kin_hist[i], pot_hist[i] );
+        i++;
+      }
+      fprintf(outpress,"\n");
+    }
 #else
-      fprintf(outpress,
+    i=0;
+    for (r = 0; r < press_dim.x; r++) {
+      for (s = 0; s < press_dim.y; s++) {
+        for (t = 0; t < press_dim.z; t++) {
+          fprintf(outpress,
               "%10.4e %10.4e %10.4e %10e %10.4e %10.4e %10e %10.4e %10.4e\n", 
 	      press_histxx[i], press_histyy[i], press_histzz[i], 
 	      press_histyz[i], press_histzx[i], press_histxy[i],
               laydens, kin_hist[i], pot_hist[i] );
-#endif
+          i++;
+	}
+        fprintf(outpress,"\n");
+      }
+      fprintf(outpress,"\n");
     }
+#endif
     fprintf(outpress,"\n");
     fclose(outpress);
   }
