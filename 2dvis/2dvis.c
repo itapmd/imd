@@ -262,9 +262,14 @@ void init_graph(void) {
   clear();
   polyfill(1);
 
-  /* fill the colormap */
+  /* fill the colormap 
   for (i=10;i<COLRES+10;i++)
-    mapcolor(i,i,i,i);
+  mapcolor(i,i,i,i);*/
+
+ for (i=0;i<COLRES;i++)
+  mapcolor(i+10,i,0,245-i);
+
+
 
 }
 
@@ -324,13 +329,13 @@ void draw_scene(int scene_type) {
 	}
 	else {
 	  if (eng_mode)
-	    cv=(int)(scalekin*(kin[i]+offskin));
+	    cv=(int)(scalekin*(kin[i]-offskin));
 	  else
-	    cv=(int)(scalepot*(pot[i]+offspot));
-	  mapcolor(i+8,cv,cv,cv);
-	  color(i+8);
+	    cv=(int)(scalepot*(pot[i]-offspot));
+	  color(cv+10);
 	}
-	printf("%f %f %f\n", xx, x[i], scalex);
+	/*	printf("%f %f %f\n", xx, x[i], scalex);*/
+	printf("%f %f %d\n", scalepot,scalekin, cv);
 	xx=x[i]*scalex-1;
 	yy=y[i]*scaley-1;
 	if (radectyp)
@@ -480,21 +485,30 @@ int read_atoms(char *fname) {
 #else
     columns=sscanf(line,"%d %d %lf %lf %lf %lf %lf %lf %lf %lf",&nummer[n],&sorte[n],&masse[n],&x[n],&y[n],&z[n],&vx[n],&vy[n],&vz[n],&pot[n]);
 #endif
-
+    kin[n] = vx[n]*vx[n]+vy[n]*vy[n];
     if (maxx<x[n]) maxx=x[n];
     if (maxy<y[n]) maxy=y[n];
     if (minx>x[n]) minx=x[n];
     if (miny>y[n]) miny=y[n];
-    if (columns==6) {
-      if (maxp<pot[n]) minp=pot[n];
-      if (minp>pot[n]) minp=pot[n];
-    }
+    if (maxp<pot[n]) maxp=pot[n];
+    if (minp>pot[n]) minp=pot[n];
+    if (maxk<kin[n]) maxk=kin[n];
+    if (mink>kin[n]) mink=kin[n];
     n++;
   }
 
   scalex=2.0/(maxx-minx);
   scaley=2.0/(maxy-miny);
-
+  if (maxp==minp)
+    scalepot=1.0;
+  else
+    scalepot=COLRES/(maxp-minp);
+  if (maxk==mink)
+    scalekin=1.0;
+  else
+    scalekin=COLRES/(maxk-mink);
+  offspot=minp;
+  offskin=mink;
   fclose(fp);
   return n;
 }
