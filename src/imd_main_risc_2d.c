@@ -41,6 +41,9 @@ void calc_forces(void)
       p->kraft X(i) = 0.0;
       p->kraft Y(i) = 0.0;
       p->pot_eng[i] = 0.0;
+#ifdef ORDPAR
+      p->nbanz[i] = 0;
+#endif
 #ifdef NVX
       p->heatcond[i] = 0.0;
 #endif     

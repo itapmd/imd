@@ -397,10 +397,9 @@ void write_cell(FILE *out, cell *p)
 #ifdef NVX
       h  = SPRODN(p->impuls,i,p->impuls,i)/(2*p->masse[i])+p->heatcond[i];
       h *=  p->impuls X(i) /  p->masse[i];
-      fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f %12f\n",
-#else
-      fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f\n",
 #endif
+     
+      fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f",
         p->nummer[i],
         p->sorte[i],
         p->masse[i],
@@ -408,11 +407,17 @@ void write_cell(FILE *out, cell *p)
         p->ort Y(i),
         p->impuls X(i) / p->masse[i],
         p->impuls Y(i) / p->masse[i],
-        p->pot_eng[i]
+        p->pot_eng[i]);
+      
 #ifdef NVX
-        ,h
+        fprintf(out," %12f",h);
 #endif
-      );
+#ifdef ORDPAR
+        fprintf(out," %d", NBANZ(p,i));
+#endif
+
+	fprintf(out,"\n");
+      
   }
 }
 

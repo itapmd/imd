@@ -321,6 +321,9 @@ void add_forces( int j, int k, int l, int m )
     to->presstens Y(i)      += from->presstens Y(i);
     to->presstens_offdia[i] += from->presstens_offdia[i];
 #endif
+#ifdef ORDPAR
+    to->nbanz[i] += from->nbanz[i];
+#endif
   }
 }
 
@@ -348,6 +351,9 @@ void pack_forces( msgbuf *b, int j, int k )
     b->data[ b->n++ ] = from->presstens X(i);
     b->data[ b->n++ ] = from->presstens Y(i);
     b->data[ b->n++ ] = from->presstens_offdia[i];
+#endif
+#ifdef ORDPAR
+    b->data[ b->n++ ] = (real) from->nbanz[i];
 #endif
   }
   if (b->n_max < b->n) error("Buffer overflow in pack_forces.");
@@ -377,6 +383,9 @@ void unpack_forces( msgbuf *b, int j, int k )
     to->presstens X(i)      += b->data[ b->n++ ];
     to->presstens Y(i)      += b->data[ b->n++ ];
     to->presstens_offdia[i] += b->data[ b->n++ ];
+#endif
+#ifdef ORDPAR
+    to->nbanz[i] += (shortint) b->data[ b->n++ ];
 #endif
   }
   if (b->n_max < b->n) error("Buffer overflow in unpack_forces.");

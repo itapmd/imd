@@ -136,10 +136,8 @@ void do_forces(cell *p, cell *q, vektor pbc)
         if (radius2 < op_r2_cut[p_typ][q_typ]) {
            p->pot_eng[i] += pot_zwi * op_weight[p_typ][q_typ];         
            q->pot_eng[j] += pot_zwi * op_weight[q_typ][p_typ];         
-#ifndef TWOD
 	   p->nbanz[i]++;
 	   q->nbanz[j]++;
-#endif /* TWOD or NOT TWOD (Hamlet, Act 3, Scene 1) */
         }
 #else
         q->pot_eng[j] += pot_zwi;

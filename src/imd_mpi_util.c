@@ -110,7 +110,7 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
   to->data[ to->n++ ] = from->ort_ref Z(index); 
 #endif
 #endif 
-#if defined(ORDPAR) && !defined(TWOD)
+#if defined(ORDPAR) 
   to->data[ to->n++ ] = from->nbanz[index]; 
 #endif
 #ifdef REFPOS
@@ -182,7 +182,7 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
       from->ort_ref Z(index)   = from->ort_ref Z(from->n); 
 #endif
 #endif
-#if defined(ORDPAR) && !defined(TWOD)
+#if defined(ORDPAR)
       from->nbanz[index]    = from->nbanz[from->n]; 
 #endif
 #ifdef REFPOS
@@ -279,7 +279,7 @@ void process_buffer(msgbuf *b, cell *p)
     input->ort_ref Z(0)    = b->data[j++];
 #endif
 #endif
-#if defined(ORDPAR) && !defined(TWOD)
+#if defined(ORDPAR)
     input->nbanz[0]        = b->data[j++];
 #endif
 #ifdef REFPOS
@@ -417,9 +417,7 @@ void setup_buffers(void)
 #endif
 #endif
 #ifdef ORDPAR
-#ifndef TWOD
     binc2++;     /* nbanz */
-#endif
 #endif
 
     /* one way or two ways */
