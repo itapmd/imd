@@ -265,16 +265,6 @@ void move_atoms_mik(void)
 
 	sort = VSORTE(p,i);
 #ifdef FBC
-#ifdef ATNR /* debugging  stuff */
-	if(p->nummer[i]==ATNR) {
-          printf("kraft vorher: %.16f  %.16f  %.16f \n",
-                 p->kraft X(i),p->kraft Y(i),p->kraft Z(i));
-          printf("fbc_forces: %.16f  %.16f  %.16f \n", 
-                 (fbc_forces + sort)->x,(fbc_forces + sort)->y,
-                 (fbc_forces + sort)->z);
-          fflush(stdout);
-	}
-#endif
         /* give virtual particles their extra force */
 	p->kraft X(i) += (fbc_forces + sort)->x;
 	p->kraft Y(i) += (fbc_forces + sort)->y;
@@ -290,18 +280,6 @@ void move_atoms_mik(void)
 	p->kraft Z(i) *= (restrictions + sort)->z;
 #endif
 	
-#ifdef FBC
-#ifdef ATNR
-	if(p->nummer[i]==ATNR) {
-          printf("kraft nachher: %.16f  %.16f  %.16f \n",
-                 p->kraft X(i),p->kraft Y(i),p->kraft Z(i));
-          fflush(stdout);
-          printf("impuls  vorher: %.16f  %.16f  %.16f \n",
-                 p->impuls X(i),p->impuls Y(i),p->impuls Z(i));
-          fflush(stdout);
-        }
-#endif
-#endif  /* FBC */
 
 #ifdef FNORM
 	fnorm +=  SPRODN(p->kraft,i,p->kraft,i);
@@ -438,7 +416,15 @@ void move_atoms_nvt(void)
 #endif
 
 	sort = VSORTE(p,i);
+#ifdef FBC
+        /* give virtual particles their extra force */
+	p->kraft X(i) += (fbc_forces + sort)->x;
+	p->kraft Y(i) += (fbc_forces + sort)->y;
+#ifndef TWOD
+	p->kraft Z(i) += (fbc_forces + sort)->z;
+#endif
 
+#endif
 	p->kraft X(i) *= (restrictions + sort)->x;
 	p->kraft Y(i) *= (restrictions + sort)->y;
 #ifndef TWOD
