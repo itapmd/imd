@@ -23,7 +23,7 @@ void write_temp(int steps)
   cell *p;
   real scale;
   integer num, nlayer;
-  int i, r, s, t;
+  int i, r, s, t, nhalf;
   static real    *temp_hist, *temp_hist_1 = NULL, *temp_hist_2 = NULL;
   static integer *num_hist,   *num_hist_1 = NULL,  *num_hist_2 = NULL;
   
