@@ -393,31 +393,32 @@ void write_cell(FILE *out, cell *p)
   int i;
   double h;
 
+#ifdef HPO
+#define RESOL1 " %12.16f"
+#define RESOL2 " %12.16f %12.16f"
+#else
+#define RESOL1 " %12f"
+#define RESOL2 " %12f 12f"
+#endif
+
   for (i=0; i<p->n; i++) {
 #ifdef NVX
       h  = SPRODN(p->impuls,i,p->impuls,i)/(2*p->masse[i])+p->heatcond[i];
       h *=  p->impuls X(i) /  p->masse[i];
 #endif
-     
-      fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f",
-        p->nummer[i],
-        p->sorte[i],
-        p->masse[i],
-        p->ort X(i),
-        p->ort Y(i),
-        p->impuls X(i) / p->masse[i],
-        p->impuls Y(i) / p->masse[i],
-        p->pot_eng[i]);
-      
+      fprintf(out, "%d %d", p->nummer[i], p->sorte[i]);
+      fprintf(out, RESOL1, p->masse[i]);
+      fprintf(out, RESOL2, p->ort X(i), p->ort Y(i));
+      fprintf(out, RESOL2, p->impuls X(i) / MASSE(p,i),
+                           p->impuls Y(i) / MASSE(p,i));
+      fprintf(out, RESOL1, p->pot_eng[i]);
 #ifdef NVX
-        fprintf(out," %12f",h);
+      fprintf(out, RESOL1, h);
 #endif
 #ifdef ORDPAR
-        fprintf(out," %d", NBANZ(p,i));
+      fprintf(out," %d", NBANZ(p,i));
 #endif
-
-	fprintf(out,"\n");
-      
+      fprintf(out,"\n");
   }
 }
 

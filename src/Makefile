@@ -23,9 +23,9 @@
 #
 #   HOSTTYPE			OS			<arch>
 #
-#   i?86-linux, i686		Linux    		risc gcc
-#   alpha			True64 Unix             risc gcc
-#   iris4d			SGI Irix		risc gcc omp
+#   i?86-linux, i686		Linux    		risc gcc mpi
+#   alpha			True64 Unix             risc gcc mpi
+#   iris4d			SGI Irix		risc gcc omp mpi
 #   t3e				Cray Unicos/mk		risc mpi pacx
 #   SR2201, HITACHI		HI-UX/MPP		mpi
 #
@@ -603,6 +603,11 @@ endif
 # binary system (performance tweak)
 ifneq (,$(findstring binary,${MAKETARGET}))
 CFLAGS += -DBINARY
+endif
+
+# high precision output (checkpoints)
+ifneq (,$(findstring hpo,${MAKETARGET}))
+CFLAGS += -DHPO
 endif
 
 # Substitute .o for .c to get the names of the object files

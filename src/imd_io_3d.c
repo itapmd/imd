@@ -507,36 +507,41 @@ void write_cell(FILE *out, cell *p)
 {
   int i;
 
+#ifdef HPO
+#define RESOL1 " %12.16f"
+#define RESOL3 " %12.16f %12.16f %12.16f"
+#else
+#define RESOL1 " %12f"
+#define RESOL3 " %12f 12f 12f"
+#endif
+
   for (i=0; i<p->n; i++) {
-      fprintf(out,"%d %d %12.16f ", NUMMER(p,i), VSORTE(p,i), MASSE(p,i));
+      fprintf(out, "%d %d", NUMMER(p,i), VSORTE(p,i));
+      fprintf(out, RESOL1, MASSE(p,i));
 #ifdef UNIAX
-      fprintf(out,"%12.16f ", p->traeg_moment[i]);
+      fprintf(out, RESOL1, p->traeg_moment[i]);
 #endif
-      fprintf(out,"%12.16f %12.16f %12.16f ",
-              p->ort X(i), p->ort Y(i), p->ort Z(i));
+      fprintf(out, RESOL3, p->ort X(i), p->ort Y(i), p->ort Z(i));
 #ifdef UNIAX
-      fprintf(out,"%12.16f %12.16f ",
-        p->achse X(i), p->achse Y(i), p->achse Z(i));
-      fprintf(out,"%12.16f %12.16f ",
-        p->shape X(i), p->shape Y(i), p->shape Z(i));
-      fprintf(out,"%12.16f %12.16f ",
-        p->pot_well X(i), p->pot_well Y(i), p->pot_well Z(i));
+      fprintf(out, RESOL3, p->achse X(i), p->achse Y(i), p->achse Z(i));
+      fprintf(out, RESOL3, p->shape X(i), p->shape Y(i), p->shape Z(i));
+      fprintf(out, RESOL3, p->pot_well X(i),p->pot_well Y(i),p->pot_well Z(i));
 #endif
-      fprintf(out,"%12.16f %12.16f %12.16f ",
+      fprintf(out, RESOL3,
         p->impuls X(i) / MASSE(p,i), 
         p->impuls Y(i) / MASSE(p,i), 
         p->impuls Z(i) / MASSE(p,i));
 #ifdef UNIAX
-      fprintf(out,"%12.16f %12.16f %12.16f ",
+      fprintf(out, RESOL3,
         p->dreh_impuls X(i) / p->traeg_moment[i],
         p->dreh_impuls Y(i) / p->traeg_moment[i],
         p->dreh_impuls Z(i) / p->traeg_moment[i]); 
 #endif
 #ifdef ORDPAR
-      fprintf(out,"%12.16f %d ",
-        NBANZ(p,i)==0 ? 0 : POTENG(p,i) / NBANZ(p,i), NBANZ(p,i));
+      fprintf(out, RESOL1, NBANZ(p,i)==0 ? 0 : POTENG(p,i) / NBANZ(p,i));
+      fprintf(out, " %d", NBANZ(p,i));
 #else
-      fprintf(out,"%12.16f", POTENG(p,i));
+      fprintf(out, RESOL1, POTENG(p,i));
 #endif
       fprintf(out,"\n");
   }
