@@ -203,23 +203,36 @@ void lin_deform(vektor dx, vektor dy, vektor dz, double scale)
 
 void relax_pressure()
 {
-  vektor dx, dy, dz;
-  real press;
-
-  calc_tot_presstens();
 #ifdef TWOD
-  press = (tot_presstens.xx + tot_presstens.yy) / 2.0;
+  vektor dx = {0.0, 0.0}, dy = {0.0, 0.0};
 #else
-  press = (tot_presstens.xx + tot_presstens.yy + tot_presstens.zz) / 3.0;
+  vektor dx = {0.0, 0.0, 0.0}, dy = {0.0, 0.0, 0.0}, dz = {0.0, 0.0, 0.0};
 #endif
-  dx.x = press / bulk_module + (tot_presstens.xx - press) / shear_module;
-  dy.y = press / bulk_module + (tot_presstens.yy - press) / shear_module;
+
+  dx.x = pressure / bulk_module;
+  dy.y = pressure / bulk_module;
 #ifndef TWOD
-  dz.z = press / bulk_module + (tot_presstens.zz - press) / shear_module;
-  dy.z = dz.y = tot_presstens.yz / shear_module;
-  dz.x = dx.z = tot_presstens.zx / shear_module;
+  dz.z = pressure / bulk_module;
 #endif
-  dx.y = dy.x = tot_presstens.xy / shear_module;
+
+#ifdef STRESS_TENS
+  if ((relax_mode == RELAX_FULL) || (relax_mode == RELAX_AXIAL)) {
+    calc_tot_presstens();
+    dx.x += (tot_presstens.xx - pressure) / shear_module;
+    dy.y += (tot_presstens.yy - pressure) / shear_module;
+#ifndef TWOD
+    dz.z += (tot_presstens.zz - pressure) / shear_module;
+#endif
+  }
+  if (relax_mode == RELAX_FULL) {
+    dx.y  = dy.x = tot_presstens.xy / shear_module;
+#ifndef TWOD
+    dy.z  = dz.y = tot_presstens.yz / shear_module;
+    dz.x  = dx.z = tot_presstens.zx / shear_module;
+#endif
+  }
+#endif /* STRESS_TENS */
+
 #ifdef TWOD
   lin_deform(dx, dy,     relax_rate);
 #else

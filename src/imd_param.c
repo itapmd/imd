@@ -1071,6 +1071,14 @@ void getparamfile(char *paramfname, int sim)
       /* pressure relaxation rate */
       getparam(token,&relax_rate,PARAM_REAL,1,1);
     }
+    else if (strcasecmp(token,"relax_mode")==0) { 
+      /* pressure relaxation mode */
+      getparam(token,tmpstr,PARAM_STR,1,255);
+      if      (strcasecmp(tmpstr,"full" )==0) relax_mode = RELAX_FULL;
+      else if (strcasecmp(tmpstr,"axial")==0) relax_mode = RELAX_AXIAL;
+      else if (strcasecmp(tmpstr,"iso"  )==0) relax_mode = RELAX_ISO;
+      else    error_str("Unknown relax_mode %s", tmpstr);
+    }
 #endif
 #if defined(DEFORM)
  else if (strcasecmp(token,"annealsteps")==0) {
@@ -2049,6 +2057,14 @@ void check_parameters_complete()
        error("You have to parameters for the linmin search  ");
   }
 #endif
+#ifdef HOMDEF
+  if (relax_rate > 0.0) {
+#ifndef STRESS_TENS
+    if ((relax_mode == RELAX_FULL) || (relax_mode == RELAX_AXIAL))
+      error("Pressure relaxation modes axial and full require option stress");
+#endif
+  }
+#endif
 }
 
 /*****************************************************************
@@ -2486,6 +2502,7 @@ void broadcast_params() {
   MPI_Bcast( &shear_module,    1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &bulk_module,     1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &relax_rate,      1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &relax_mode,      1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef SHOCK

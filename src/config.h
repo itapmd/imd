@@ -183,6 +183,11 @@
 #endif
 #endif
 
+/* pressure relaxation */
+#define RELAX_FULL     0
+#define RELAX_AXIAL    1
+#define RELAX_ISO      2
+
 /* number of data items by which an MPI buffer is increased */
 #define BUFFER_SIZE_INC 1024 
 
