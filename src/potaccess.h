@@ -63,6 +63,22 @@
     * ( sig_d_rad12 - sig_d_rad6 );					\
 }
 
+#ifdef VEC
+
+#define PAIR_INT_LJ_VEC(pot, grad, col, r2)		                   \
+{									   \
+  real sig_d_rad2, sig_d_rad6, sig_d_rad12;				   \
+									   \
+  sig_d_rad2  = lj_sigma2_vec[col] / (r2);                                 \
+  sig_d_rad6  = sig_d_rad2 * sig_d_rad2 * sig_d_rad2;			   \
+  sig_d_rad12 = sig_d_rad6 * sig_d_rad6;				   \
+									   \
+  pot  = lj_epsilon_vec[col] * (sig_d_rad12 - 2.0 * sig_d_rad6);           \
+  grad = - 12.0 * lj_epsilon_vec[col] * (sig_d_rad12 - sig_d_rad6) / (r2); \
+}
+
+#endif
+
 /*****************************************************************************
 *
 *  Evaluate Morse potential

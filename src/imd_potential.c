@@ -604,6 +604,15 @@ void init_pre_pot(void) {
   /* Create or update potential table */
   create_pot_table(&pair_pot);
 
+#ifdef VEC
+  /* Lennard-Jones parameters for vector version */
+  for (i=0; i<ntypes; i++)
+    for (j=0; j<ntypes; j++) {
+      lj_epsilon_vec[i*ntypes+j] = lj_epsilon[i][j];
+      lj_sigma2_vec [i*ntypes+j] = SQR(lj_sigma[i][j]);
+    }
+#endif
+
 }
 
 #endif

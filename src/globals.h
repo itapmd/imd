@@ -632,6 +632,10 @@ EXTERN real lj_sigma_lin[55] INIT(zero55);
 EXTERN real lj_sigma[10][10];
 EXTERN real lj_shift[10][10];
 EXTERN real lj_a    [10][10];
+#ifdef VEC
+EXTERN real lj_epsilon_vec[55] INIT(zero55);
+EXTERN real lj_sigma2_vec[55] INIT(zero55);
+#endif
 /* Morse */
 EXTERN real morse_epsilon_lin[55] INIT(zero55);
 EXTERN real morse_epsilon[10][10];

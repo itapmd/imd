@@ -789,6 +789,11 @@ CFLAGS  += -DEWALD
 FORCESOURCES  += ${EWALDSOURCES}
 endif
 
+# LJ - computed Lennard-Jones (for vector versions only)
+ifneq (,$(strip $(findstring lj,${MAKETARGET})))
+CFLAGS  += -DLJ
+endif
+
 SOURCES += ${FORCESOURCES}
 
 ###  ENSEMBLES  #########################################

@@ -49,6 +49,12 @@
 
 #ifdef VEC2
 
+#ifdef MONO
+#define COL(i) 0
+#else
+#define COL(i) col[(i)]
+#endif
+
 int li[N0*N2], lj[N0*N2], col[N0*N2], lbeg[N1], lend[N1], ltot; 
 
 /******************************************************************************
@@ -134,8 +140,10 @@ void make_nblist()
         if (r2 < cellsz) {
           li[len2] = li1[l];
           lj[len2] = lj1[l];
+#ifndef MONO
           /* put in separate loop outside if? */
           col[len2] = SORTE(&atoms,li1[l]) * ntypes + SORTE(&atoms,lj1[l]);
+#endif
           len2++;
         }
       }
@@ -179,12 +187,8 @@ void calc_forces(int steps)
   nfc++;
 
   /* clear per atom accumulation variables */
-  for (k=0; k<atoms.n_buf; k++) {
-    atoms.kraft X(k) = 0.0;
-    atoms.kraft Y(k) = 0.0;
-    atoms.kraft Z(k) = 0.0;
-    atoms.pot_eng[k] = 0.0;
-  }
+  for (k=0; k<DIM*atoms.n_buf; k++) atoms.kraft  [k] = 0.0;
+  for (k=0; k<    atoms.n_buf; k++) atoms.pot_eng[k] = 0.0;
 
   /* loop over independent pair sublists */
   for (k=0; k<ltot; k++) {
@@ -213,17 +217,21 @@ void calc_forces(int steps)
       flag[m] = 0;
 
       /* compute pair interactions */
-      if (rr[m] <= pair_pot.end[col[l]]) {
+      if (rr[m] <= pair_pot.end[COL(l)]) {
 
         /* beware: we must not use k as index in the macro's arguments! */
 #ifdef MULTIPOT
         int pp = m % N_POT_TAB;
-        PAIR_INT(ee[m], grad, pair_pot_ar[pp], col[l], inc, rr[m], is_short)
+        PAIR_INT(ee[m], grad, pair_pot_ar[pp], COL(l), inc, rr[m], is_short)
 #else
 #ifdef LINPOT
-        PAIR_INT_LIN(ee[m], grad, pair_pot_lin, col[l], inc, rr[m], is_short)
+        PAIR_INT_LIN(ee[m], grad, pair_pot_lin, COL(l), inc, rr[m], is_short)
 #else
-        PAIR_INT(ee[m], grad, pair_pot, col[l], inc, rr[m], is_short)
+#ifdef LJ
+        PAIR_INT_LJ_VEC(ee[m], grad, COL(l), rr[m])
+#else
+        PAIR_INT(ee[m], grad, pair_pot, COL(l), inc, rr[m], is_short)
+#endif
 #endif
 #endif
         /* store force in temporary variables */
@@ -286,6 +294,12 @@ void calc_forces(int steps)
 #endif /* VEC2 */
 
 #ifdef VEC3
+
+#ifdef MONO
+#define COL 0
+#else
+#define COL col
+#endif
 
 int tab[N2*N0], tlen[N0];
 
@@ -398,12 +412,8 @@ void calc_forces(int steps)
   virial = 0.0;
 
   /* clear per atom accumulation variables */
-  for (k=0; k<atoms.n_buf; k++) {
-    atoms.kraft X(k) = 0.0;
-    atoms.kraft Y(k) = 0.0;
-    atoms.kraft Z(k) = 0.0;
-    atoms.pot_eng[k] = 0.0;
-  }
+  for (k=0; k<DIM*atoms.n_buf; k++) atoms.kraft  [k] = 0.0;
+  for (k=0; k<    atoms.n_buf; k++) atoms.pot_eng[k] = 0.0;
   /* clear temporary storage */
   for (k=0; k<atoms.n; k++) {
     fi[k].x          = 0.0;
@@ -450,7 +460,9 @@ void calc_forces(int steps)
         dd[len].z = d2[2]-d1[2];
         rr[len] = dd[len].x*dd[len].x+dd[len].y*dd[len].y+dd[len].z*dd[len].z;
         lj[len] = j;
+#ifndef MONO
         it[len] = ityp;
+#endif
         len++;
       }
       lend[i-imin] = len;
@@ -468,20 +480,26 @@ void calc_forces(int steps)
       int  col, inc = ntypes * ntypes; 
 
       flag[l] = 0;
+#ifndef MONO
       col = it[l] * ntypes + SORTE(&atoms,lj[l]);
+#endif
 
       /* compute pair interactions */
-      if (rr[l] <= pair_pot.end[col]) {
+      if (rr[l] <= pair_pot.end[COL]) {
 
         /* beware: we must not use k as index in the macro's arguments! */
 #ifdef MULTIPOT
         int pp = l % N_POT_TAB;
-        PAIR_INT(ee[l], grad, pair_pot_ar[pp], col, inc, rr[l], is_short)
+        PAIR_INT(ee[l], grad, pair_pot_ar[pp], COL, inc, rr[l], is_short)
 #else
 #ifdef LINPOT
-        PAIR_INT_LIN(ee[l], grad, pair_pot_lin, col, inc, rr[l], is_short)
+        PAIR_INT_LIN(ee[l], grad, pair_pot_lin, COL, inc, rr[l], is_short)
 #else
-        PAIR_INT(ee[l], grad, pair_pot, col, inc, rr[l], is_short)
+#ifdef LJ
+        PAIR_INT_LJ_VEC(ee[l], grad, COL, rr[l])
+#else
+        PAIR_INT(ee[l], grad, pair_pot, COL, inc, rr[l], is_short)
+#endif
 #endif
 #endif
         /* store force in temporary variables */
