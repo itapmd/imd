@@ -76,11 +76,8 @@ void main(int argc, char **argv)
 
   /* Initialize socket i/o */
 #ifdef USE_SOCKETS
-#ifdef MPI
-  if (myid == 0)
-#endif /* MPI */
-    init_client();
-#endif /* USE_SOCKETS */
+  if (myid == 0) init_client();
+#endif
 
 #ifndef MONOLJ
   /* Read Potential from file */
@@ -106,11 +103,7 @@ void main(int argc, char **argv)
     init_cells();
     read_atoms(infilename);
   }
-
-#ifdef MPI
-  if (0 == myid) 
-#endif
-  printf("Done reading atoms.\n");
+  if (0 == myid) printf("Done reading atoms.\n");
 
   start = steps_min;  /* keep starting step number */
 
@@ -121,10 +114,7 @@ void main(int argc, char **argv)
   while (finished==0) {
     simulation++;
     steps_min = steps_max;
-#ifdef MPI
-    if (0==myid)
-#endif
-    getparamfile( paramfilename, simulation );
+    if (0==myid) getparamfile( paramfilename, simulation );
 #ifdef MPI
     broadcast_params();
 #endif
