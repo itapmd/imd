@@ -696,8 +696,25 @@ void getparamfile(char *paramfname, int sim)
 #endif
 #endif
 #ifdef FRAC
-    else if (strcasecmp(token,"dampgamma")==0) { /* Damping factor gamma */
-      getparam("dampgamma",&gamma_bar,PARAM_REAL,1,1);
+    else if (strcasecmp(token,"gamma_bar")==0) { 
+       /* Damping prefactor gamma_bar */
+	getparam("gamma_bar",&gamma_bar,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"gamma_damp")==0) { /* actual Damping factor */
+	getparam("gamma_damp",&gamma_damp,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"strainrate")==0) {
+	/* strain rate for crack loading */
+	getparam("strainrate",&dotepsilon0,PARAM_REAL,1,1);
+	dotepsilon = dotepsilon0;
+    }
+    else if (strcasecmp(token,"expansionmode")==0) {
+	/* strain mode for crack loading */
+	getparam("expansionmode",&expansionmode,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"dampingmode")==0) {
+	/* damping mode for stadium geometry */
+	getparam("dampingmode",&dampingmode,PARAM_INT,1,1);
     }
 #endif
 #ifndef TWOD
@@ -1519,7 +1536,11 @@ void broadcast_params() {
 #endif
 
 #ifdef FRAC
-  MPI_Bcast( &gamma_bar , 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &gamma_bar     , 1, REAL   , 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &gamma_damp    , 1, REAL   , 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dotepsilon0   , 1, REAL   , 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &expansionmode , 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dampingmode   , 1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 
 #if defined(DEFORM)

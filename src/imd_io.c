@@ -799,7 +799,7 @@ void write_eng_file_header()
 #endif
 
 #ifdef FRAC
-    fprintf(fl, "dampingtem ");
+    fprintf(fl, "dampingtemp ");
 #endif
 
 #ifdef FNORM
@@ -815,6 +815,7 @@ void write_eng_file_header()
 #endif
 #ifdef FRAC  
     fprintf(fl, "gamma_damp ");
+    fprintf(fl, "strainrate ");
 #endif
 #ifdef NPT_axial
 #ifdef TWOD
@@ -929,6 +930,7 @@ void write_eng_file(int steps)
 #endif
 #ifdef FRAC 
   fprintf(out," %e",     (double) gamma_damp );
+  fprintf(out," %e",     (double) dotepsilon );
 #endif
 
   if (ensemble==ENS_NPT_AXIAL) {

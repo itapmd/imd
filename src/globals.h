@@ -299,7 +299,11 @@ EXTERN real gamma_damp INIT(0.0);         /* Damping prefactor */
 EXTERN real gamma_bar INIT(0.0);          /* Damping factor */
 EXTERN real E_kin_damp INIT(0.0);         /* weighted !!  kin dampenergy  */
 EXTERN real sum_f INIT(0.0);              /* Sum of stadium function */
-
+EXTERN real dotepsilon INIT(0.0);         /* strain rate for crack loading */
+EXTERN real dotepsilon0 INIT(0.0);        /* initial strain rate */
+EXTERN int  expansionmode INIT(1);        /* loading */
+EXTERN int  dampingmode  INIT(0);        /* damping mode  1: Nose-Hoover*/
+                                          /*              0: viscous damping*/
 #endif
 
 #if defined(DEFORM)

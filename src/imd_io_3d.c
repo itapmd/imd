@@ -569,6 +569,13 @@ void write_itr_file(int fzhlr, int steps)
   if (tmp_interval>0) fprintf(out,"starttemp \t%f\n",temperature);
 #endif
 
+#ifdef FRAC 
+ /* with FRAC ensemble, write actual damping factor and strainrate*/
+  fprintf(out,"gamma_damp \t%f\n",gamma_damp);
+  fprintf(out,"strainrate \t%f\n",dotepsilon);
+#endif
+
+
 #ifdef FBC
   for(n=0; n<vtypes;n++)
     fprintf(out,"extra_startforce %d %.21g %.21g %.21g \n",
@@ -590,4 +597,5 @@ void write_itr_file(int fzhlr, int steps)
 
   fclose(out);
 }
+
 

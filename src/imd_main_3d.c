@@ -55,6 +55,14 @@ void main_loop(void)
     error("Can't allocate memory for fbc_df\n");
 #endif
 
+
+#ifdef FRAC
+  if (0==myid) {
+      printf( "Strain rate is  %1.10f\n", dotepsilon0 );
+      printf( "Damping mode  %d\n", dampingmode );
+  }
+#endif
+
   if (0==myid) printf( "Starting simulation %d\n", simulation );
 
 #if defined(AND) || defined(NVT) || defined(NPT)

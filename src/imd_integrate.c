@@ -935,9 +935,7 @@ void move_atoms_npt_axial(void)
   tmpvec1[2]   = dyn_stress_x;
   tmpvec1[3]   = dyn_stress_y;
   tmpvec1[4]   = dyn_stress_z;
-
   MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid);
-
   Ekin_new     = tmpvec2[0];
   fnorm        = tmpvec2[1];
   dyn_stress_x = tmpvec2[2];
@@ -999,12 +997,18 @@ void move_atoms_frac(void)
   real E_kin_1        = 0.0, E_kin_2        = 0.0; 
   real E_kin_damp1    = 0.0, E_kin_damp2    = 0.0;
   real E_kin_stadium1 = 0.0, E_kin_stadium2 = 0.0;
-  real reibung, eins_d_reib;
+  real reibung, reibung_y, eins_d_reib, eins_d_reib_y;
+  real epsilontmp, eins_d_epsilontmp;
+
   real f; /* stadium function: the bath tub !!!!*/
 
   fnorm     = 0.0;
   sum_f     = 0.0;
   n_stadium = 0;
+
+  if(expansionmode==1)
+      dotepsilon = dotepsilon0 / (1.0 + dotepsilon0 * steps * timestep);
+      
 
   /* loop over all atoms */
 #ifdef _OPENMP
@@ -1021,10 +1025,18 @@ void move_atoms_frac(void)
 
     for (i=0; i<p->n; ++i) {
 	
-        /* Calculate stadium function f */
-	tmp1 = SQR((p->ort X(i)-center.x)/box_x.x);
-	tmp2 = SQR((p->ort Y(i)-center.y)/box_y.y);
-	f = (tmp1+tmp2-SQR(stadium.x/box_x.x))/(.25- SQR(stadium.x/box_x.x));
+	/* dampingmode == 2 -> global viscous damping !!!! */
+	if(dampingmode == 2){ 
+	    f = 1.0; 
+	} else {
+	    /* Calculate stadium function f */
+	    tmp1 = SQR((p->ort X(i)-center.x)/box_x.x);
+	    tmp2 = SQR((p->ort Y(i)-center.y)/box_y.y);
+	    f = (tmp1+tmp2-SQR(stadium.x/box_x.x))/\
+		(.25- SQR(stadium.x/box_x.x));
+	}
+	
+
 	if (f<= 0.0) {
 	    f = 0.0;
 	    n_stadium += DIM;
@@ -1069,19 +1081,23 @@ void move_atoms_frac(void)
 	fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
 #endif
 
-	reibung     =        1.0 - gamma_damp * f * timestep / 2.0;
-	eins_d_reib = 1.0 / (1.0 + gamma_damp * f * timestep / 2.0);
+	reibung       =        1.0 -  gamma_damp * f * timestep / 2.0;
+	eins_d_reib   = 1.0 / (1.0 +  gamma_damp * f * timestep / 2.0);
+	reibung_y     =        1.0 - (gamma_damp * f + dotepsilon) * 
+	                        timestep / 2.0;
+	eins_d_reib_y = 1.0 / (1.0 + (gamma_damp * f + dotepsilon) * 
+			        timestep / 2.0);
 	
         /* new momenta */
-	p->impuls X(i) = (p->impuls X(i) * reibung + timestep * p->kraft X(i)) 
-                           * eins_d_reib * (restrictions + sort)->x;
-        p->impuls Y(i) = (p->impuls Y(i) * reibung + timestep * p->kraft Y(i)) 
-                           * eins_d_reib * (restrictions + sort)->y;
+	p->impuls X(i) = (p->impuls X(i)   * reibung   + timestep * p->kraft X(i)) 
+                           * eins_d_reib   * (restrictions + sort)->x;
+        p->impuls Y(i) = (p->impuls Y(i)   * reibung_y + timestep * p->kraft Y(i)) 
+                           * eins_d_reib_y * (restrictions + sort)->y;
 #ifndef TWOD
-        p->impuls Z(i) = (p->impuls Z(i) * reibung + timestep * p->kraft Z(i)) 
-                           * eins_d_reib * (restrictions + sort)->z;
+        p->impuls Z(i) = (p->impuls Z(i)   * reibung   + timestep * p->kraft Z(i)) 
+                           * eins_d_reib   * (restrictions + sort)->z;
 #endif                  
-    
+
 	/* twice the new kinetic energy */ 
 	E_kin_2 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);	
 	
@@ -1093,10 +1109,15 @@ void move_atoms_frac(void)
 
 	/* new positions */
         tmp = timestep / MASSE(p,i);
-        p->ort X(i) += tmp * p->impuls X(i);
-        p->ort Y(i) += tmp * p->impuls Y(i);
+	epsilontmp =               1.0 + dotepsilon * timestep / 2.0;
+	eins_d_epsilontmp = 1.0 / (1.0 - dotepsilon * timestep / 2.0);
+
+        p->ort X(i) +=  tmp * p->impuls X(i);
+        p->ort Y(i)  = (tmp * p->impuls Y(i) + epsilontmp * p->ort Y(i))
+	                * eins_d_epsilontmp;
+
 #ifndef TWOD
-        p->ort Z(i) += tmp * p->impuls Z(i);
+        p->ort Z(i) +=  tmp * p->impuls Z(i);
 #endif
 
 #ifdef STRESS_TENS
@@ -1128,7 +1149,7 @@ void move_atoms_frac(void)
   tmpvec1[4] = n_stadium;
   tmpvec1[5] = sum_f;
 
-  MPI_Allreduce( tmpvec1, tmpvec2, 4, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( tmpvec1, tmpvec2, 6, REAL, MPI_SUM, cpugrid);
 
   tot_kin_energy = tmpvec2[0];
   E_kin_stadion  = tmpvec2[1];
@@ -1138,10 +1159,19 @@ void move_atoms_frac(void)
   sum_f          = tmpvec2[5];
 #endif
 
-  /* time evolution of constraints */
   ttt   = 2.0 * temperature * sum_f;
-  gamma_damp = (1.0 - ttt/E_kin_damp2) * gamma_bar;
 
+  /* time evolution of constraints */
+  /* dampingmode: 0 -> viscous damping (default); 
+                  1 -> Nose-Hoover; 
+		  2 -> global viscous damping */
+
+  if(dampingmode == 1){
+      gamma_damp += timestep * (E_kin_damp2 / ttt - 1.0) * gamma_bar;
+  } else {
+      gamma_damp  =            (1.0 - ttt / E_kin_damp2) * gamma_bar;
+  }
+      
 }
 
 #else
@@ -1244,7 +1274,7 @@ void move_atoms_stm(void)
 
   /* Zeitentwicklung der Parameter */
   ttt  = (nactive - n_stadium) * temperature;
-  eta += timestep * (kin_energie_2[0] / ttt - 1.0) * inv_tau_eta;
+  eta += timestep * (kin_energie_2[0] / ttt - 1.0) * isq_tau_eta;
 }
 
 #else
