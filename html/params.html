@@ -101,6 +101,12 @@ fbc_annealsteps      # the same as annealsteps for deform
 restrictionvector    # format: typenr 1 1 0 
                      # (i.e no movement in z-direction)
 
+# parameters for use with Energy filter (efilter)
+ef_checkpt_int       # number of steps between output of selected atoms 
+e_pot_lower          # lower limit of potential energy
+e_pot_upper          # upper limit, only those atoms with pot. energy
+                     # within this range are printed
+
 # parameters for 2d pictures
 ecut_kin	# kinetic energy interval for pictures (min/max)
 ecut_pot	# potential energy interval for pictures (min/max)
