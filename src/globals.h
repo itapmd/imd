@@ -378,6 +378,12 @@ EXTERN int avpos_int INIT(0);         /* Period of avp output ==0 */
 EXTERN int avpos_res INIT(0);         /* Period of coordinate addition */
 #endif
 
+#ifdef ATDIST
+EXTERN float *atoms_dist INIT(NULL);  /* atoms distribution */
+EXTERN ivektor atoms_dist_dim INIT(nullvektor); /* dimension of atoms_dist */
+EXTERN int atoms_dist_int INIT(0);    /* interval between atoms dist updates */
+#endif
+
 #ifdef ORDPAR
 #define nullvektor4d { 0.0, 0.0, 0.0, 0.0 }
 EXTERN real op_weight[2][2] INIT(nullvektor4d);

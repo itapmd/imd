@@ -920,4 +920,126 @@ void write_press_dist_shock(int steps)
 
 #endif /* STRESS_TENS */
 
+#ifdef ATDIST
 
+/******************************************************************************
+*
+*  initialize atoms distribution array
+*
+******************************************************************************/
+  
+void init_atoms_dist()
+{
+  int size, i;
+
+  /* compute array size */
+  size  = atoms_dist_dim.x * atoms_dist_dim.y;
+#ifndef TWOD
+  size *= atoms_dist_dim.z;
+#endif
+  size *= ntypes;
+
+  /* allocate histogram array */
+  if (NULL==atoms_dist) {
+    atoms_dist = (float *) malloc( size * sizeof(float) );
+    if (NULL==atoms_dist) error("Cannot allocate atoms distribution array.");
+  }
+
+  /* initialize histogram array */
+  for (i=0; i<size; i++) atoms_dist[i]=0.0;
+}
+
+/******************************************************************************
+*
+*  update atoms distribution array
+*
+******************************************************************************/
+  
+void update_atoms_dist()
+{
+  real scalex, scaley, scalez;
+  int  num, numx, numy, numz, size;
+  cell *p;
+  int  i, k;
+
+  /* the bins are orthogonal boxes in space */
+  scalex = atoms_dist_dim.x / box_x.x;
+  scaley = atoms_dist_dim.y / box_y.y;
+  size   = atoms_dist_dim.x * atoms_dist_dim.y;
+#ifndef TWOD
+  scalez = atoms_dist_dim.z / box_z.z;
+  size  *= atoms_dist_dim.z;
+#endif
+
+  /* loop over all atoms */
+  for (k=0; k<ncells; ++k) {
+    p = cell_array + CELLS(k);
+    for (i=0; i<p->n; ++i) {
+      /* which bin? */
+      numx = scalex * p->ort X(i);
+      if (numx < 0)                   numx = 0;
+      if (numx >= atoms_dist_dim.x)   numx = atoms_dist_dim.x-1;
+      numy = scaley * p->ort Y(i);
+      if (numy < 0)                   numy = 0;
+      if (numy >= atoms_dist_dim.y)   numy = atoms_dist_dim.y-1;
+      num = numx * atoms_dist_dim.y + numy;
+#ifndef TWOD
+      numz = scalez * p->ort Z(i);
+      if (numz < 0)                   numz = 0;
+      if (numz >= atoms_dist_dim.z)   numz = atoms_dist_dim.z-1;
+      num = num  * atoms_dist_dim.z + numz;
+#endif
+      num = SORTE(p,i) * size + num;
+      atoms_dist[num] += 1.0;
+    }
+  }
+}
+
+/******************************************************************************
+*
+*  write atoms distribution array
+*
+******************************************************************************/
+  
+void write_atoms_dist()
+{
+  real scalex, scaley, scalez;
+  int  num, numx, numy, numz, size;
+  int  i, k;
+  str255 fname;
+  FILE *out;
+
+  /* the bins are orthogonal boxes in space */
+  scalex = box_x.x / atoms_dist_dim.x;
+  scaley = box_y.y / atoms_dist_dim.y;
+  size   = atoms_dist_dim.x * atoms_dist_dim.y;
+#ifndef TWOD
+  scalez = box_z.z / atoms_dist_dim.z;
+  size  *= atoms_dist_dim.z;
+#endif
+  size  *= ntypes;
+
+  if (myid == 0) {
+    sprintf(fname,"%s.atoms_dist",outfilename);
+    out = fopen(fname,"w");
+    if (NULL == out) error("Cannot open atoms distribution file.");
+
+    fprintf(out,"#F %d %d %d\n", is_big_endian, DIM, ntypes);
+#ifdef TWOD
+    fprintf(out,"#D %d %d\n", atoms_dist_dim.x, atoms_dist_dim.y);
+    fprintf(out,"#S %f %f\n", scalex, scaley);
+#else
+    fprintf(out,"#D %d %d %d\n",
+            atoms_dist_dim.x, atoms_dist_dim.y, atoms_dist_dim.z);
+    fprintf(out,"#S %f %f %f\n", scalex, scaley, scalez);
+#endif
+    fprintf(out,"#E\n");
+
+    if (size!=fwrite(atoms_dist,sizeof(float),size,out))
+      error("Cannot write atoms_dist");
+
+    fclose(out);
+  }
+}
+
+#endif /* ATDIST */

@@ -111,6 +111,10 @@ void main_loop(void)
   if( avpos_end == 0 ) avpos_end = steps_max;
 #endif
 
+#ifdef ATDIST
+  init_atoms_dist();
+#endif
+
   /* initializations for the current simulation phase, if not yet done */
   if (0==restart) init();
 
@@ -192,6 +196,9 @@ void main_loop(void)
     if ((steps == steps_min) || (steps == avpos_start)) {
        update_avpos();
     }
+#endif
+#ifdef ATDIST
+    if ((atoms_dist_int>0) && (0==steps % atoms_dist_int)) update_atoms_dist();
 #endif
 
 #ifdef FBC
@@ -427,6 +434,10 @@ void main_loop(void)
 #endif
 
   }
+
+#ifdef ATDIST
+  write_atoms_dist();
+#endif
 
   /* clean up the current phase, and clear restart flag */
   restart=0;

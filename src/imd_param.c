@@ -1028,7 +1028,7 @@ void getparamfile(char *paramfname, int sim)
     }   
 #endif
 #ifdef AVPOS
-   else if (strcasecmp(token,"avpos_start")==0) {
+    else if (strcasecmp(token,"avpos_start")==0) {
       /* step at which coordinate addition begins */
       getparam("avpos_start",&avpos_start,PARAM_INT,1,1);
     }
@@ -1043,6 +1043,16 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"avpos_int")==0) {
       /* number of steps between average position writes */
       getparam("avpos_int",&avpos_int,PARAM_INT,1,1);
+    }
+#endif
+#ifdef ATDIST
+    else if (strcasecmp(token,"atoms_dist_dim")==0) {
+      /* dimension of atoms distribution array */
+      getparam("atoms_dist_dim",&atoms_dist_dim,PARAM_INT,DIM,DIM);
+    }
+    else if (strcasecmp(token,"atoms_dist_int")==0) {
+      /* interval between atoms distribution updates */
+      getparam("atoms_dist_int",&atoms_dist_int,PARAM_INT,1,1);
     }
 #endif
 #ifdef ORDPAR

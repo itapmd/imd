@@ -269,6 +269,11 @@ void write_press_dist_shock_header(FILE *out);
 #ifdef USE_SOCKETS
 void write_distrib_using_sockets(void);
 #endif
+#ifdef ATDIST
+void   init_atoms_dist(void);
+void update_atoms_dist(void);
+void  write_atoms_dist(void);
+#endif
 
 /* write pictures - files imd_io_*.c, socket_io.c */
 void write_pictures(int steps);
