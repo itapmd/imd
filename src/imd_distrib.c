@@ -519,7 +519,7 @@ void update_atdist()
 #else
             x = ORT(p,i,X) + ix * box_x.x + iy * box_y.x + iz * box_z.x;
             y = ORT(p,i,Y) + ix * box_x.y + iy * box_y.y + iz * box_z.y;
-            z = ORT(p,i,Z) + ix * box_x.z + iy * box_y.z + iz * box_z.y;
+            z = ORT(p,i,Z) + ix * box_x.z + iy * box_y.z + iz * box_z.z;
 #endif
             t =  co * x + si * y;
             y = -si * x + co * y;
