@@ -176,7 +176,7 @@ epitax_height    # z (2d: y) coordinate of atom creation at start time
 epitax_speed     # velocity of lifting the creation height
 epitax_cutoff	 # minimum distance between atoms in particle beam
 epitax_ctrl      # control parameter for switch of ensemble for
-                   deposited atoms
+                 # deposited atoms
 
 # parameters for FRAC
 dampstadion	# Damping stadion
@@ -205,6 +205,8 @@ annealsteps	# no deformation before annealsteps steps (default 0)
 ekin_threshold	# deform if temperature drops below threshold (default 0)
 max_deform_int  # deform if number of steps since last deformation is
                 # max_deform_int (default 0 - no deformation)
+fnorm_threshold	# deform if fnorm drops below threshold (default 0),
+                # used by glokdeform
 
 # parameters for SHOCK
 shock_strip      # shock strip width (in x dir.)

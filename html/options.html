@@ -38,34 +38,40 @@ their purpose is and how they are used.
 <TR ALIGN="LEFT">
   <TD WIDTH=120><A HREF="#FBC">fbc</A></TD>
   <TD WIDTH=120><A HREF="#fnorm">fnorm</A></TD>
+  <TD WIDTH=120><A HREF="#glokdeform">glokdeform</A></TD>
   <TD WIDTH=120><A HREF="#hpo">hpo</A></TD>
   <TD WIDTH=120><A HREF="#homdef">homdef</A></TD>
   <TD WIDTH=120><A HREF="#covalent">keating</A></TD>
-  <TD WIDTH=120><A HREF="#mono, binary">mono</A></TD>
 </TR>
 <TR ALIGN="LEFT">
+  <TD WIDTH=120><A HREF="#mono, binary">mono</A></TD>
   <TD WIDTH=120><A HREF="#monolj">monolj</A></TD>
   <TD WIDTH=120><A HREF="#msqd">msqd</A></TD>
   <TD WIDTH=120><A HREF="#ordpar">ordpar</A></TD>
   <TD WIDTH=120><A HREF="#pacx">pacx</A></TD>
   <TD WIDTH=120><A HREF="#prof">prof</A></TD>
-  <TD WIDTH=120><A HREF="#quasi">quasi</A></TD>
 </TR>
 <TR ALIGN="LEFT">
+  <TD WIDTH=120><A HREF="#quasi">quasi</A></TD>
   <TD WIDTH=120><A HREF="#single">single</A></TD>
   <TD WIDTH=120><A HREF="#sock">sock</A></TD>
   <TD WIDTH=120><A HREF="#shock">shock</A></TD>
+  <TD WIDTH=120><A HREF="#snap">snap</A></TD>
   <TD WIDTH=120><A HREF="#spring">spring</A></TD>
-  <TD WIDTH=120><A HREF="#covalent">stiweb</A></TD>
-  <TD WIDTH=120><A HREF="#stress_tens">stress</A></TD>
 </TR>
 <TR ALIGN="LEFT">
+ <TD WIDTH=120><A HREF="#covalent">stiweb</A></TD>
+  <TD WIDTH=120><A HREF="#stress_tens">stress</A></TD>
   <TD WIDTH=120><A HREF="#covalent">tersoff</A></TD>
   <TD WIDTH=120><A HREF="#timing">timing</A></TD>
   <TD WIDTH=120><A HREF="#transport">transport</A></TD>
   <TD WIDTH=120><A HREF="#covalent">ttbp</A></TD>
-  <TD WIDTH=120><A HREF="#uniax">uniax</A></TD>
 </TR>
+<TR ALIGN="LEFT">
+  <TD WIDTH=120><A HREF="#uniax">uniax</A></TD>
+
+
+  </TR>
 </TABLE>
 
 <UL>
@@ -245,7 +251,10 @@ and box vectors.
 <P><LI><B> deform </B><P>
 </A>
 <P>
-The deform option requires <B>free</B> boundary conditions.
+The deform option requires <B>free</B> boundary conditions
+(the box won't be deformed, but periodic boundary conditions can be
+used, e.g. when the deformation in the is orthogonal to the pbc (use
+at own risc, take care of centroid (angular) momentum).
 A deform step is performed if either <TT>max_deform_int</TT> is
 positive and the last deform step was done <TT>max_deform_int</TT>
 steps ago, or if the temperature drops below <TT>ekin_threshold</TT>
@@ -262,6 +271,13 @@ parallel to sample boundary) and for compressions or expansions
 (<TT>deform_shift</TT> perpendicular to sample boundary). The
 atoms with the virtual types concerned are usually located in two 
 boundary layers of the sample.
+
+<A NAME="glokdeform">
+<P><LI><B> glokdeform </B><P>
+</A>
+<P>
+Like deform, just with the fnorm criterium, therefore with 
+parameter <TT>fnorm_threshold</TT>.
 
 <A NAME="FBC">
 <P><LI><B>fbc</B><P>
@@ -423,6 +439,16 @@ Only those atoms which have a potential energy between e_pot_lower and
 e_pot_upper are writen in <TT>&lt;outfile&gt;.ef.&lt;n&gt;</TT>,
 where <TT>&lt;n&gt;</TT> is a running number. This happens every
 ef_checkpt_int steps.
+
+<A NAME="snap">
+<P><LI><B> snap </B><P>
+Option to write snapshots of atomic configurations and the
+corresponding informations in 
+<TT>&lt;outfile&gt;.n.&lt;ss&gt;</TT>,
+<TT>&lt;outfile&gt;.n.&lt;ssitr&gt;</TT> and 
+<TT>&lt;outfile&gt;.eng</TT> when a certain condition is fullfilled. 
+At the moment only used by the option glokdeform.
+
 
 <A NAME="avpos">
 <P><LI><B> avpos </B><P> This option enables IMD to compute the
