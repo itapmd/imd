@@ -1670,6 +1670,7 @@ void reduce_displacement(vektor *dist)
 
 void write_header_config(FILE *out)
 {
+  int atompar=1; 		/* number of atomic parameter */
   char c;
   time_t now;
 
@@ -1684,10 +1685,17 @@ void write_header_config(FILE *out)
   fprintf(out, "#F %c 1 1 1 %d %d 1\n", c, 2*DIM, 2*DIM);
 #else
   fprintf(out, "#F %c 1 1 1 %d %d ", c, DIM, DIM);
+#ifdef EAM2
+  atompar++;
+#ifdef EEAM
+  atompar++;
+#endif
+#endif
+
 #ifdef ORDPAR
-  fprintf(out, "2\n" );
+  fprintf(out, "%d\n",atompar+1 );
 #else
-  fprintf(out, "1\n" );
+  fprintf(out, "%d\n", atompar );
 #endif
 #endif
 
