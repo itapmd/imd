@@ -89,11 +89,12 @@ int endian(void)
 *
 ******************************************************************************/
 
-void do_endian_swap_4(char *str)
+void swap_4_bytes(void *data)
 {
-  char *c;
-  *c = * str;    * str    = *(str+3); *(str+3) = *c;
-  *c = *(str+1); *(str+1) = *(str+2); *(str+2) = *c;
+  char c, *str;
+  str = (char *) data;
+  c = str[0]; str[0] = str[3]; str[3] = c;
+  c = str[1]; str[1] = str[2]; str[3] = c;
 }
 
 /******************************************************************************
@@ -102,16 +103,15 @@ void do_endian_swap_4(char *str)
 *
 ******************************************************************************/
 
-void copy2bytes(char *str, void *source)
+void copy_2_bytes(char *str, void *source)
 {
   char *c;
   c = source;
   if (my_endian==1) {
-    * str    = * c   ;
-    *(str+1) = *(c+1);
-  } else {
-    * str    = *(c+1);
-    *(str+1) = * c   ;
+    str[0] = c[0]; str[1] = c[1];
+  } 
+  else {
+    str[0] = c[1]; str[1] = c[0]   ;
   }
 }
 
@@ -121,20 +121,15 @@ void copy2bytes(char *str, void *source)
 *
 ******************************************************************************/
 
-void copy4bytes(char *str, void *source)
+void copy_4_bytes(char *str, void *source)
 {
   char *c;
   c = source;
   if (my_endian==1) {
-    * str    = * c   ;
-    *(str+1) = *(c+1);
-    *(str+2) = *(c+2);
-    *(str+3) = *(c+3);
-  } else {
-    * str    = *(c+3);
-    *(str+1) = *(c+2);
-    *(str+2) = *(c+1);
-    *(str+3) = * c   ;
+    str[0] = c[0]; str[1] = c[1]; str[2] = c[2]; str[3] = c[3];
+  } 
+  else {
+    str[0] = c[3]; str[1] = c[2]; str[2] = c[1]; str[3] = c[0];
   }
 }
 
@@ -208,7 +203,7 @@ int read_atoms_dist(char *fname)
 
   /* do endian swap if necessary */
   if (input_endian!=endian()) {
-    for (i=0; i<size; i++) do_endian_swap_4((char *)(atoms_dist+i));
+    for (i=0; i<size; i++) swap_4_bytes(atoms_dist+i);
   }
 
   return dim;
@@ -577,19 +572,19 @@ void virvo_picture_3d(char *infile, int min_x, int min_y, int min_z,
   /* make volume file header */
   my_endian=endian();
   str = header;
-  sprintf(str,"%s","VIRVO-XVF");      str +=9;   /* file type */
-  us = 48; copy2bytes(str,&us);       str +=2;   /* header size */
-  ui = dx; copy4bytes(str,&ui);       str +=4;   /* dim_x */
-  ui = dy; copy4bytes(str,&ui);       str +=4;   /* dim_y */
-  ui = dz; copy4bytes(str,&ui);       str +=4;   /* dim_z */
-  ui =  1; copy4bytes(str,&ui);       str +=4;   /* number of frames */
-  uc = 32; (unsigned char) *str = uc; str++;     /* bits per voxel */
-  fl = ddx; copy4bytes(str,&fl);      str +=4;   /* x-length of voxel */
-  fl = ddy; copy4bytes(str,&fl);      str +=4;   /* y-length of voxel */
-  fl = ddz; copy4bytes(str,&fl);      str +=4;   /* z-length of voxel */
-  fl = 1.0; copy4bytes(str,&fl);      str +=4;   /* secs per frame */
-  us =  0; copy2bytes(str,&us);       str +=2;   /* number of transf. func. */
-  us =  0; copy2bytes(str,&us);       str +=2;   /* type of transf. func. */
+  sprintf(str,"%s","VIRVO-XVF");    str +=9;   /* file type */
+  us = 48; copy_2_bytes(str,&us);   str +=2;   /* header size */
+  ui = dx; copy_4_bytes(str,&ui);   str +=4;   /* dim_x */
+  ui = dy; copy_4_bytes(str,&ui);   str +=4;   /* dim_y */
+  ui = dz; copy_4_bytes(str,&ui);   str +=4;   /* dim_z */
+  ui =  1; copy_4_bytes(str,&ui);   str +=4;   /* number of frames */
+  uc = 32; (unsigned char) *str = uc; str++;   /* bits per voxel */
+  fl = ddx; copy_4_bytes(str,&fl);  str +=4;   /* x-length of voxel */
+  fl = ddy; copy_4_bytes(str,&fl);  str +=4;   /* y-length of voxel */
+  fl = ddz; copy_4_bytes(str,&fl);  str +=4;   /* z-length of voxel */
+  fl = 1.0; copy_4_bytes(str,&fl);  str +=4;   /* secs per frame */
+  us =   0; copy_2_bytes(str,&us);  str +=2;   /* number of transf. func. */
+  us =   0; copy_2_bytes(str,&us);  str +=2;   /* type of transf. func. */
 
   hist = (float          *) calloc( len,  sizeof(float) );
   vol  = (unsigned char  *) calloc( len4, sizeof(char ) );
