@@ -82,25 +82,13 @@ void main(int argc, char **argv)
     init_client();
 #endif /* USE_SOCKETS */
 
-#ifdef MONOLJ
-#ifdef MPI
-  MPI_Bcast( &r2_cut , 1, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &cellsz , 1, MPI_REAL, 0, MPI_COMM_WORLD);
-  tmp = r2_cut;
-  r2_cut = SQR(cellsz);
-#endif
-#else
+#ifndef MONOLJ
   /* Read Potential from file */
   read_potential(potfilename);
 #ifdef TTBP
   /* Read TTBP Potential from file */
   read_ttbp_potential(ttbp_potfilename);
 #endif
-#endif
-
-#ifdef MONOLJ
-  init_cells();
-  r2_cut = tmp;
 #endif
 
 #ifdef MPI

@@ -26,12 +26,17 @@ void init_cells( void )
 {
   int i, j, k, l;
   vektor hx, hy, hz; 
-  real det, tmp;
+  real det, tmp, tmp2;
   vektor cell_scale;
   ivektor next_cell_dim, cell_dim_old;
   ivektor cellmin_old, cellmax_old, cellc;
   cell *p, *cell_array_old; 
   real s1, s2, r2_cut2;
+
+#ifdef MONOLJ
+  tmp2 = r2_cut;
+  r2_cut = SQR(cellsz);
+#endif
 
 #ifdef NPT
   if (ensemble == ENS_NPT_ISO) {
@@ -289,7 +294,7 @@ void init_cells( void )
 
   /* Determinant first */
   det = box_x.y * box_y.z * box_z.x +
-        box_x.z * box_y.x * box_z.y +
+        box_z.z * box_y.x * box_z.y +
 	box_x.x * box_y.y * box_z.z -
         box_x.z * box_y.y * box_z.x -
         box_x.x * box_y.z * box_z.y -
@@ -427,6 +432,9 @@ void init_cells( void )
 
 #endif /* NPT */
 
+#ifdef MONOLJ
+  r2_cut = tmp2;
+#endif
 }
 
 

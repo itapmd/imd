@@ -499,9 +499,7 @@ void generate_atoms(str255 mode)
 #else /* 3D */
   if (0 == strcmp(mode,".fcc")) {          /* fcc */
     init_cubic();
-#ifndef MONOLJ
     init_cells();
-#endif
     generate_fcc(0);
   } else if (0 == strcmp(mode,".nacl")) {  /* NaCl */
     init_cubic();
@@ -632,7 +630,7 @@ void generate_hex()
       x = (i+0.5) * sqrt(3.0) * 0.5;
       y = (j+0.5) * 0.5;
 
-#if defined(FRAC) || defined(PULL) || defined(SHEAR)
+#if defined(FRAC) || defined(PULL) || defined(MIKSHEAR)
       /* leave boundary open if necessary */
       if ((x+0.5 < strip/2) || (x+0.5 > box_x.x-strip/2) ||
           (y+0.5 < strip/2) || (y+0.5 > box_y.y-strip/2)) continue;
@@ -696,6 +694,7 @@ void generate_fcc(int maxtyp)
   max.y = (my_coord.y + 1) * box_y.y / cpu_dim.y;
   min.z =  my_coord.z      * box_z.z / cpu_dim.z;
   max.z = (my_coord.z + 1) * box_z.z / cpu_dim.z;
+
 #else
   min.x = 0; max.x = box_x.x;
   min.y = 0; max.y = box_y.y;
@@ -716,12 +715,17 @@ void generate_fcc(int maxtyp)
   for (x=min.x ; x<max.x; x++)
     for (y=min.y; y<max.y; y++)
       for (z=min.z; z<max.z; z++) {
-
-#if defined(FRAC) || defined(PULL) || defined(SHEAR) || defined(SHOCK)
+ 
+#if defined(FRAC) || defined(PULL) || defined(MIKSHEAR)
         /* leave boundary open if necessary */
         if ((x+0.5 < strip/2) || (x+0.5 > box_x.x-strip/2) ||
             (y+0.5 < strip/2) || (y+0.5 > box_y.y-strip/2) ||
             (z+0.5 < strip/2) || (z+0.5 > box_z.z-strip/2)) continue;
+#endif
+
+#ifdef SHOCK
+        /* leave boundary open if necessary */
+        if ((x+0.5 < strip/2) || (x+0.5 > box_x.x-strip/2)) continue;
 #endif
 
         typ = (x+y+z) % 2;
@@ -732,25 +736,16 @@ void generate_fcc(int maxtyp)
 	++natoms;
 
         input->n = 1;
-
         input->ort X(0) = x + 0.5;
         input->ort Y(0) = y + 0.5;
         input->ort Z(0) = z + 0.5;
-
-#ifdef SHEAR
-        if (initial_shift) {
-          input->ort X(0) += ins.x;
-          input->ort Y(0) += ins.y;
-          input->ort Z(0) += ins.z;
-        }
-#endif
 	/* PN-dislocation ? */
         if (pn) construct_pn_disloc(&input->ort X(0), &input->ort Y(0), 
                                                       &input->ort Z(0));
         cellc = cell_coord(input->ort X(0), input->ort Y(0), input->ort Z(0));
 #ifndef MONOLJ
 	if (pn) { /* immobile if around glideplane */
-	  if ((input->ort Z(0)<=upperplane)&&(input->ort Z(0)>= lowerplane))
+	  if ((input->ort Z(0)<glideplane+1)&&(input->ort Z(0)> glideplane-1))
             input->nummer[0] = -natoms;
 	  else
 	    input->nummer[0] = natoms;
@@ -772,13 +767,7 @@ void generate_fcc(int maxtyp)
 	move_atom(cellc, input, 0);
 #endif
 
-
   };
-
-#ifdef SHEAR
-        if (initial_shift)
-          strip += ins.y;
-#endif
 } 
 
 /* generate a cubic Laves structure crystal */
@@ -891,7 +880,7 @@ void generate_lav()
 	      (y+co < rmin.y) || (y+co > rmax.y) ||
 	      (z+co < rmin.z) || (z+co > rmax.z)) continue;
 
-#if defined(FRAC) || defined(PULL) || defined(SHEAR)
+#if defined(FRAC) || defined(PULL) || defined(MIKSHEAR)
 	  /* leave boundary open if necessary */
 	  if ((x+co < strip/2) || (x+co > box_x.x-strip/2) ||
 	      (y+co < strip/2) || (y+co > box_y.y-strip/2) ||
@@ -941,28 +930,14 @@ void construct_pn_disloc(real *x, real *y, real *z) {
   /* computation of params for PN-formula */
   invwidth = 1/width;
   hfboxl = .5*box_x.x;
-  pf = .5 * burgersv / M_PI;
+  pf = burgersv / M_PI;
 
 #ifndef TWOD
-            if (*z > lowerplane)
+            if (*z > glideplane) /* above glideplane? move! */
 #else
-            if (*y > lowerplane)
+            if (*y > glideplane) /* above glideplane? move! */
 #endif
-              *x += burgersv/2;
-#ifndef TWOD
-            if (*z == lowerplane)
-#else
-            if (*y == lowerplane)
-#endif
-              *x -= pf*atan((*x - hfboxl) * invwidth);
-#ifndef TWOD
-            if (*z == upperplane)
-#else
-            if (*y == upperplane)
-#endif
-              *x += pf*atan((*x - hfboxl) * invwidth);
+              *x += burgersv/2 -pf*atan((*x - hfboxl) * invwidth);
+
 }
-
-
-
 
