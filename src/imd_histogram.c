@@ -310,18 +310,24 @@ void make_histograms(hist_t *hist)
       kin_histyy_1  [num] += SQR(p->impuls Y(i)) / (2*MASSE(p,i));
       /* average v_xx - u_p  relative to moving pistons */
       tmp = shock_speed * MASSE(p,i);
-      if (shock_mode == 2) {
-        if ( p->ort X(i) < box_x.x*0.5 )
-          kin_histxxu_1[num] += SQR(p->impuls X(i) - tmp) / (2*MASSE(p,i));
-        else
-          kin_histxxu_1[num] += SQR(p->impuls X(i) + tmp) / (2*MASSE(p,i));
-      }
+      /* plate against bulk */
       if (shock_mode == 1) {
         if ( p->ort X(i) < shock_strip ) 
           kin_histxxu_1[num] += SQR(p->impuls X(i) - tmp) / (2*MASSE(p,i));
         else
           kin_histxxu_1[num] += SQR(p->impuls X(i)) / (2*MASSE(p,i));
       }
+      /* two halves against one another */
+      if (shock_mode == 2) {
+        if ( p->ort X(i) < box_x.x*0.5 )
+          kin_histxxu_1[num] += SQR(p->impuls X(i) - tmp) / (2*MASSE(p,i));
+        else
+          kin_histxxu_1[num] += SQR(p->impuls X(i) + tmp) / (2*MASSE(p,i));
+      }
+      /* bulk against wall */
+      if (shock_mode == 3) 
+          kin_histxxu_1[num] += SQR(p->impuls X(i) - tmp) / (2*MASSE(p,i));
+
 #ifndef TWOD
       press_histzz_1[num] += p->presstens Z(i);
       kin_histzz_1  [num] += SQR(p->impuls Z(i)) / (2*MASSE(p,i));

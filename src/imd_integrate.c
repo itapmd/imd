@@ -170,6 +170,7 @@ void move_atoms_nve(void)
 
 #ifdef STRESS_TENS
 #ifdef SHOCK
+	/* plate against bulk */
         if (shock_mode == 1) {
           if ( p->ort X(i) < shock_strip )
             p->presstens X(i) += (p->impuls X(i) - shock_speed * MASSE(p,i)) 
@@ -177,6 +178,7 @@ void move_atoms_nve(void)
           else
 	    p->presstens X(i) += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
         }
+	/* two halves against one another */
         if (shock_mode == 2) {
           if ( p->ort X(i) < box_x.x*0.5 )
             p->presstens X(i) += (p->impuls X(i) - shock_speed * MASSE(p,i)) 
@@ -185,6 +187,10 @@ void move_atoms_nve(void)
             p->presstens X(i) += (p->impuls X(i) + shock_speed * MASSE(p,i)) 
                     * (p->impuls X(i) + shock_speed * MASSE(p,i)) / MASSE(p,i);
         }
+	/* bulk against wall */
+        if (shock_mode == 3) p->presstens X(i) += (p->impuls X(i) - 
+	  shock_speed * MASSE(p,i)) * (p->impuls X(i) - shock_speed * 
+           MASSE(p,i)) / MASSE(p,i);
 #else
         p->presstens X(i)        += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
 #endif

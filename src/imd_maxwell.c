@@ -166,16 +166,20 @@ void maxwell(real temp)
 #endif /* UNIAX */
 
 #ifdef SHOCK
+	/* plate against bulk */
 	 if (shock_mode == 1) {
 	   if ( p->ort X(i) < shock_strip ) 
 	       p->impuls X(i) += shock_speed * MASSE(p,i);
 	 }
+	 /* two halves against one another */
 	 if (shock_mode == 2) {
 	   if ( p->ort X(i) < box_x.x*0.5 ) 
 	     p->impuls X(i) += shock_speed * MASSE(p,i);
 	   else
 	     p->impuls X(i) -= shock_speed * MASSE(p,i);
 	 }
+	 /* bulk against wall */
+	 if (shock_mode == 3) p->impuls X(i) += shock_speed * MASSE(p,i);
 #endif
       }
    }
