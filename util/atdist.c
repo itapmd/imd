@@ -157,12 +157,13 @@ int read_atoms_dist(char *fname)
       error("file header corrupt!");
     } else {
       if (line[1]=='F') {
-        n = sscanf(line+2,"%d %s %d %d",str,&dim,&n_coord,&ntypes);
+        n = sscanf(line+2,"%s %d %d %d",str,&dim,&n_coord,&ntypes);
         if (n==3) { /* old format */
           if      (str[0]=='1') input_endian=1;
           else if (str[0]=='0') input_endian=0;
           else error("file header corrupt!");
-          ntypes = n_coord; 
+          ntypes  = n_coord;
+          n_coord = 0;
         } else { /* new format */
           if      (str[0]=='B') input_endian=1;
           else if (str[0]=='L') input_endian=0;
