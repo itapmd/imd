@@ -283,6 +283,7 @@ void write_rgb_picture_to_socket(void);
 #ifdef HOMDEF
 void shear_sample(void);
 void expand_sample(void);
+void lin_deform(void);
 #endif
 #ifdef DEFORM
 void deform_sample(void);
