@@ -9,7 +9,7 @@ CC =
 
 # Linker
 LIBP = -L/usr/X11/lib
-LIBS = -lvogle -lX11 -lm
+LIBS = -lvogle -lm -lXaw
 
 # Compiler
 CC_iris4d = cc
@@ -19,7 +19,7 @@ CC = $(CC_$(HOSTTYPE))
 
 # Headers
 HEADERS 	= sockutil.h tokens.h globals.h prototypes.h
-SOURCES		= main.c client.c sockutil.c param.c
+SOURCES		= main.c client.c sockutil.c param.c menu.c
 
 # Compiler flags
 #CFLAGS = -g
@@ -29,12 +29,12 @@ CFLAGS += -DTWOD
 endif
 
 ifneq (,$(strip $(findstring debug,${MAKETARGET})))
-CFLAGS += -DDEBUG
+CFLAGS += -g
 endif
 
 # Linker
 LIBP = -L/usr/X11/lib
-LIBS = -lvogle -lX11 -lm
+LIBS = -lvogle -lXaw -lm
 
 # Objects
 # Substitute .o for .c to get the names of the object files

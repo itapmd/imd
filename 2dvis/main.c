@@ -1,4 +1,3 @@
-#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <vogle.h>
@@ -23,8 +22,8 @@ int main(int argc, char **argv)
   strcpy(uvfname,"unitvecs");
 
   read_parameters(argc,argv);
-
-  init_graph();
+  window_main(argc,argv);
+  /*init_graph();*/
 
   /* main loop */
   do {
@@ -251,7 +250,7 @@ void draw_text(void) {
 
   char str1[200],str2[200],str3[300];
 
-  color(1);
+  color(CYAN);
   if (scene_type)
     sprintf(str1,"Distribution, size %dx%d\n",x_res,y_res);
   else
@@ -298,6 +297,7 @@ void draw_scene(int scene_type) {
 
   epsilon=.1;
   backbuffer();
+  polyfill(1);
   color(BLACK);
   clear();
 
@@ -428,10 +428,11 @@ void draw_scene(int scene_type) {
 	    color(nb+1);
 	  else { /* bond_mode == 0 */
 	    if (eng_mode)
-	      cv=(int)(scalekin*(kin[i]-mink));
+	      cv=(int)(scalekin*(kin[i]+offskin));
 	    else
-	      cv=(int)(scalepot*(pot[i]-minp));
-	    color(cv+10);
+	      cv=(int)(scalepot*(pot[i]+offspot));
+	    mapcolor(i+8,cv,cv,cv);
+	    color(i+8);
 	  }
         }
 	if (radectyp)
@@ -471,7 +472,7 @@ void draw_scene(int scene_type) {
   swapbuffers();
 }
 
-/* reading of a configuration from file */
+ /* reading of a configuration from file */
 int read_atoms(char *fname) {
 
   FILE *fp;
@@ -564,6 +565,31 @@ int read_atoms(char *fname) {
     scalekin=COLRES/(maxk-mink);
   offspot=minp;
   offskin=mink;
+  fclose(fp);
+
+  return n;
+}
+
+  /* reading of a configuration from file */
+int write_atoms(char *fname) {
+
+  FILE *fp;
+  char str[255];
+  int n;
+
+  fp=fopen(fname, "w");
+  if (fp==NULL) {
+    printf("Kann Datei %s nicht anlegen.\n",fname);
+    return -1;
+  }
+
+  for (n=0;n<=natoms;n++)
+#ifdef TWOD
+    fprintf(fp,"%d %d %lf %lf %lf %lf %lf %lf\n",nummer[n],sorte[n],masse[n],x[n],y[n],vx[n],vy[n],pot[n]);
+#else
+    fprintf(fp,"%d %d %lf %lf %lf %lf %lf %lf\n",nummer[n],sorte[n],masse[n],x[n],y[n],z[n],vx[n],vy[n],vz[n],pot[n]);
+#endif
+
   fclose(fp);
   return n;
 }

@@ -33,6 +33,21 @@ int receive_conf()
   int anz;
   float f;
 
+  maxx=-1000;
+  maxy=-1000;
+#ifndef TWOD
+  maxz=-1000;
+#endif
+  minx=1000;
+  miny=1000;
+#ifndef TWOD
+  minz=1000;
+#endif
+  maxp=-1000;
+  maxk=-1000;
+  minp=1000;
+  mink=1000;
+
   ReadFull(socket_id, (void *)&f, sizeof(float));
   if (f == 1)
     endian_byte_swap = 0;
