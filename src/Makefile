@@ -161,6 +161,7 @@ CFLAGS_KCC_SERIAL_i586       	= +K3 -O3 --diag_suppress 177,550
 
 # MPICH
 # there are many mpicc; if available, we take the Intel compiler
+# i take the gcc!
 ifneq (,$(strip $(findstring ia32,${PATH})))
 CFLAGS_mpicc_MPI_i586		= -O -ip 
 CFLAGS_mpicc_MPI_i586_DEBUG	= -g
