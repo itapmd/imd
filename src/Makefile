@@ -170,7 +170,7 @@ else
 CFLAGS_mpicc_MPI_i586		= -O3
 CFLAGS_mpicc_MPI_i586_DEBUG	= -g
 CFLAGS_mpicc_MPI_i586_PROF	= -g3 -pg
-endif
+#endif
 
 # MPICH + OpenMP
 # there are many mpicc; if available, we take the Intel compiler

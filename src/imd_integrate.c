@@ -1427,6 +1427,10 @@ void move_atoms_frac(void)
   sum_f     = 0.0;
   n_stadium = 0;
 
+#ifdef CLONE
+  int clones;
+#endif
+
   if(expansionmode==1)
       dotepsilon = dotepsilon0 / (1.0 + dotepsilon0 * steps * timestep);
       
@@ -1435,7 +1439,7 @@ void move_atoms_frac(void)
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:E_kin_1,E_kin_2,E_kin_damp1,E_kin_damp2,E_kin_stadium1,E_kin_stadium2,sum_f,n_stadium,fnorm)
 #endif
-  for (k=0; k<ncells; ++k) {
+  for (k=0; k<ncells; ++k){ 
 
     int i;
     int sort;
@@ -1444,7 +1448,7 @@ void move_atoms_frac(void)
 
     p = cell_array + CELLS(k);
 
-    for (i=0; i<p->n; ++i) {
+    for (i=0; i<p->n; ++i){
 	
 	/* if half axis in x-direction is zero: global viscous damping ! */
 	if(stadium.x <= 0.0){ 
@@ -1461,6 +1465,10 @@ void move_atoms_frac(void)
 	if (f<= 0.0) {
 	    f = 0.0;
 	    n_stadium += DIM;
+	    /* what about the restrictions?? */
+#ifdef CLONE
+	    n_stadium += nclones*DIM; /* also the clones aren't in f */
+#endif
 	}
 	if (f>1.0) f = 1.0;
 
@@ -1550,6 +1558,71 @@ void move_atoms_frac(void)
 #endif
         PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
+
+#ifdef CLONE
+	for(clones=1;clones<=nclones;clones++)
+	    { 	/* and now do the same to all the clones */
+	
+		/* f and sort stays the same */
+
+        /* add up f considering the restriction vector  */
+
+	sum_f+= f * ( (restrictions + sort)->x + 
+		      (restrictions + sort)->y +  
+		      (restrictions + sort)->z  )/3.0;
+	
+       	/* twice the old kinetic energy */
+	/* this has to be redone here, because we need 
+		   to work also with the old impuls */
+        tmp = SPRODN( &IMPULS(p,i+clones,X), &IMPULS(p,i+clones,X) ) / MASSE(p,i);
+	E_kin_1 += tmp;
+	if (f == 0.0) E_kin_stadium1 +=      tmp;
+	if (f >  0.0) E_kin_damp1    +=  f * tmp;
+
+
+#ifdef FNORM
+	fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+#endif
+
+        /* new momenta */
+	IMPULS(p,i+clones,X) = IMPULS(p,i,X);
+	IMPULS(p,i+clones,Y) = IMPULS(p,i,Y);
+	IMPULS(p,i+clones,Z) = IMPULS(p,i,Z);
+
+	/* twice the new kinetic energy */
+        tmp = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
+	E_kin_2 += tmp;
+	if (f == 0.0) E_kin_stadium2 +=      tmp;
+	if (f >  0.0) E_kin_damp2    +=  f * tmp;
+
+
+	/* new positions */
+        tmp = timestep / MASSE(p,i);
+	/* allready known */
+/* 	epsilontmp =               1.0 + dotepsilon * timestep / 2.0; */
+/* 	eins_d_epsilontmp = 1.0 / (1.0 - dotepsilon * timestep / 2.0); */
+
+        ORT(p,i+clones,X) +=  tmp * IMPULS(p,i,X);
+        ORT(p,i+clones,Y)  = (tmp * IMPULS(p,i,Y) + epsilontmp * ORT(p,i,Y))
+	                * eins_d_epsilontmp;
+	ORT(p,i+clones,Z) +=  tmp * IMPULS(p,i,Z);
+
+#ifdef STRESS_TENS
+        PRESSTENS(p,i+clones,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
+        PRESSTENS(p,i+clones,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
+#ifndef TWOD
+        PRESSTENS(p,i+clones,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i+clones,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i+clones,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
+#endif
+        PRESSTENS(p,i+clones,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
+#endif
+
+	
+
+	    }
+    i+=nclones;
+#endif  
     }
   }
 
@@ -1630,6 +1703,10 @@ void move_atoms_ftg(void)
   real epsilontmp, eins_d_epsilontmp;
   int slice;
   real gamma_tmp;
+
+#ifdef CLONE
+  int clones;
+#endif
 
   /* alloc vector versions of E_kin and  ftgtmpvect*/
   if (NULL==E_kin_1) {
@@ -1810,6 +1887,14 @@ void move_atoms_ftg(void)
 #endif
         PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
+
+#ifdef CLONE
+	for(clones=1;clones<=nclones;clones++)
+	    { 	/* and now do the same to all the clones */
+	    }
+    i+=nclones;
+#endif  
+
     }
   }
 
