@@ -17,7 +17,7 @@
 CFLAGS = ${FLAGS}
 ifneq (,$(strip $(findstring i386,${HOSTTYPE})))
 CC      = icc
-FLAGS  += -O -static
+FLAGS  += -O #-static
 endif
 
 ifneq (,$(strip $(findstring alpha,${HOSTTYPE})))
@@ -35,7 +35,11 @@ BINDIR = ${HOME}/bin/${HOSTTYPE}
 
 ############################################################################
 
-# sample constructor/converter
+# sample constructor
+make_config: make_config.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ make_config.c -lm
+
+# sample converter
 atcon: atcon.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ atcon.c -lm
 
