@@ -60,7 +60,7 @@
 #
 ###########################################################################
 
-IMDHEADERS    = config.h globals.h imd.h makros.h prototypes.h types.h 
+IMDHEADERS    = config.h globals.h imd.h makros.h potaccess.h prototypes.h types.h 
 
 SOURCES       = imd.c imd_maxwell.c imd_integrate.c imd_forces.c \
 	        imd_misc.c imd_param.c imd_alloc.c imd_io.c imd_potential.c \
@@ -527,7 +527,7 @@ CFLAGS += -DFNORM
 endif
 
 ifneq (,$(findstring glok,${MAKETARGET}))
-CFLAGS += -DGLOK
+CFLAGS += -DGLOK -DFNORM
 endif
 
 ifneq (,$(findstring efilter,${MAKETARGET}))
