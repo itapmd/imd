@@ -651,9 +651,9 @@ void move_atoms_npt_iso(void)
   MPI_Allreduce( &Ekin_new, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
   Ekin_new = tmp;
 #ifdef UNIAX
-  MPI_Allreduce( &Erot_old,  &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &Erot_old, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
   Erot_old  = tmp;
-  MPI_Allreduce( &Erot_new,  &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &Erot_new, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
   Erot_new  = tmp;
 #endif
 #endif
