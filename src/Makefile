@@ -24,7 +24,7 @@
 #
 #   i?86-linux, i686		Linux    		risc gcc
 #   alpha			True64 Unix             risc gcc
-#   iris4d			SGI Irix		risc 
+#   iris4d			SGI Irix		risc gcc
 #   t3e				Cray Unicos/mk		risc mpi pacx
 #   HITACHI, SR2201		HI-UX/MPP		mpi
 #
@@ -154,10 +154,10 @@ CFLAGS_RISC_iris4d_DEBUG	= -Dsgi -DRISC -g -fullwarn -xansi
 CFLAGS_RISC_iris4d_PROF		= -g3
 
 # flags for IRIX with gcc
-#CC_GCC_iris4d			= gcc
-#CFLAGS_GCC_iris4d		= -Dsgi -DRISC -mcpu=r4000 -mips3 -O3
-#CFLAGS_GCC_iris4d_DEBUG		= -Dsgi -DRISC -g
-#CFLAGS_GCC_iris4d_PROF		= -g3 -pg
+CC_GCC_iris4d			= gcc
+CFLAGS_GCC_iris4d		= -Dsgi -DRISC -O3
+CFLAGS_GCC_iris4d_DEBUG		= -Dsgi -DRISC -g
+CFLAGS_GCC_iris4d_PROF		= -g3 -pg
 
 # flags for IRIX with LAM/MPI
 #CC_MPI_iris4d			= hcc
