@@ -1,3 +1,13 @@
+
+/******************************************************************************
+*
+* IMD -- The ITAP Molecular Dynamics Program
+*
+* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* University of Stuttgart, D-70550 Stuttgart
+*
+******************************************************************************/
+
 /******************************************************************************
 *
 * van-Hove-Correlation and mean square displacement
@@ -8,7 +18,7 @@
 ******************************************************************************/
 
 /* ToDo:                                                          */
-/* correl_alloc() von correl_init() separieren                    */
+/* separate correl_alloc() from correl_init()                     */
 /*                                                                */
 
 #include "imd.h"

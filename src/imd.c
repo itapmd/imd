@@ -1,9 +1,10 @@
 
 /******************************************************************************
 *
-* imd -- The ITAP Molecular Dynamics Package
+* IMD -- The ITAP Molecular Dynamics Program
 *
-* Author: J. Stadler, ITAP, University of Stuttgart
+* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
 

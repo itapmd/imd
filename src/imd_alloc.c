@@ -1,6 +1,15 @@
 
 /******************************************************************************
 *
+* IMD -- The ITAP Molecular Dynamics Program
+*
+* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* University of Stuttgart, D-70550 Stuttgart
+*
+******************************************************************************/
+
+/******************************************************************************
+*
 * Allocation and moving of atom data
 *
 *   Contains routines move_atom() and alloc_cell(), which were in

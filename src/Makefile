@@ -1,5 +1,11 @@
 ##############################################################################
 #
+# IMD -- The ITAP Molecular Dynamics Program
+#
+# Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+# University of Stuttgart, D-70550 Stuttgart
+#
+#
 # IMD Makefile - works only with GNU make
 #
 # $Revision$
@@ -34,6 +40,10 @@
 # <ensemble> is one of nve, mik, nvt, npt_iso, npt_axial, frac, nvx, stm
 #
 # <option> is one or several of 2d, debug, prof, mono, binary, ....
+#
+# The executable, which has the name <target>, is moved to the directory
+# $HOME/bin/$HOSTTYPE, which must exist, and which should be in the
+# search $PATH.
 #
 # A comprehensive list of options can be found below in this makefile.
 # Further compiler flags can be handed over with the EXTRAFLAGS variable.

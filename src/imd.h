@@ -1,10 +1,18 @@
+
 /******************************************************************************
 *
-* imd.h -- Header file for all Modules of the imd Package
+* IMD -- The ITAP Molecular Dynamics Program
 *
+* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
 
+/******************************************************************************
+*
+* imd.h -- Header file for all modules of IMD
+*
+******************************************************************************/
 
 /* C stuff */
 #include <stdlib.h>
