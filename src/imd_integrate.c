@@ -237,12 +237,14 @@ void move_atoms_nve(void)
   if ((tmp_interval!=0) && (0==count%tmp_interval)) maxwell(temperature);
 #endif
 
+#ifdef FBC
 #ifdef BUG 
   printf("Total force on vtypes 1:\n");
   printf("%.21e  %.21e %.21e\n",f1x,f1y,f1z);
   printf("Total force on vtypes 2:\n");
   printf(" %.21e  %.21e %.21e\n",f2x,f2y,f2z);
   fflush(stdout);
+#endif
 #endif
 }
 
