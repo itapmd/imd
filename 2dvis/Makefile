@@ -2,15 +2,21 @@
 # Makefile 2dvis
 #
 
-CC = gcc
-CFLAGS = -O6 -w -L/usr/X11/lib -DTWOD
+# Compiler
+CC_iris4d = cc
+CC_i386-linux = gcc
+CC_alpha = gcc
+CC = $(CC_$(HOSTTYPE))
+
+CFLAGS = -DTWOD
+LIBP = -L/usr/X11/lib
 LIBS = -lvogle -lX11 -lm
 
 all:	2dvis
-	mv 2dvis ${HOME}/bin/${HOSTTYPE}
+	mv 2dvis $(HOME)/bin/$(HOSTTYPE)
 
 2dvis:	2dvis.o client.o sockutil.o
-	$(CC) $(CFLAGS) -o 2dvis 2dvis.o client.o sockutil.o $(LIBS)
+	$(CC) $(LIBP) $(CFLAGS) -o 2dvis 2dvis.o client.o sockutil.o $(LIBS)
 
 2dvis.o:	2dvis.c
 	$(CC) $(CFLAGS) -c 2dvis.c

@@ -17,25 +17,8 @@
 #define DIM 2
 #define COLRES 245.0
 
-/* definition of variables for local (routines in this file) and extern usage */
-/* boolean for determining if kinetic or potential energy data 
-   should be displayed */
-extern unsigned char KineticEnergyFile=0;
-/* boolean for 2D Simulation */
-extern unsigned char TwoDSimulation;
-/* default for compute server */
-extern char server_name[256] = "visrn";
-extern int endianByteSwap=0;
-/* for hints in the histogram display the maxima and minima of a received
-   data set is stored in last_received... */
-extern unsigned char usePreviousLimits;
-extern double last_received_kinetic_minimum = 0; 
-extern double last_received_kinetic_maximum = 0;
-extern double last_received_potential_minimum = 0;
-extern double last_received_potential_maximum = 0;
-/* number of first port that will be connected */
-/*unsigned short base_port = 12955;*/
 extern unsigned short base_port;
+char server_name[256]="visrn";
 /* array pointers for received data */
 static int socket_id;
 extern int x_res,y_res;

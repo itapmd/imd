@@ -1,11 +1,11 @@
 #include <stdio.h>
+#include <string.h>
 #include <vogle.h>
 #include <math.h>
 
 /* Abs berechnet den Betrag einer Zahl */
 #define ABS(a) ((a) >0 ? (a) : -(a))
 
-#define TWOD
 #define MAXNATOMS 12000
 #define COLRES 245
 
@@ -19,6 +19,7 @@ float scalex,scaley,scalepot,scalekin,radius,offspot,offskin;
 int colmode,scene_type,text,engmode,qp,radectyp;
 float *ux,*uy;
 
+void make_picture(void);
 void draw_scene(int scene_type);
 void draw_bonds(void);
 void init_graph(void);
@@ -211,12 +212,11 @@ void draw_scene(int scene_type) {
       }
       xx=x[i]*scalex-1;
       yy=y[i]*scaley-1;
-      if (sorte[i]>10) sorte[i]=0;
-      printf("%d %d %d %f %f %f\n", i, nummer[i], sorte[i], masse[i], x[i], y[i]);fflush(stdout);
+      /*      printf("%d %d %d %f %f %f\n", i, nummer[i], sorte[i], masse[i], x[i], y[i]);fflush(stdout);*/
       if (radectyp)
-	circle(xx,yy,radius*scalex);
+	circle(xx,yy,.5*(sorte[i]+1)*radius*scalex);
       else
-	circle(xx,yy,.5*(sorte[i]+1.0)*radius*scalex);
+	circle(xx,yy,radius*scalex);
     }
     if (text) {
       color(CYAN);
@@ -265,12 +265,10 @@ void draw_scene(int scene_type) {
 	if (nb==5) color(WHITE);
 	if (nb==6) color(CYAN);
       }
-      if (sorte[i]>10) sorte[i]==0;
-      printf("%d %f\n", i, sorte[i]);fflush(stdout);
       if (radectyp)
-	circle(xx,yy,radius*scalex);
-      else
 	circle(xx,yy,.5*(sorte[i]+1)*radius*scalex);
+      else
+	circle(xx,yy,radius*scalex);
     }
     if (text) {
       color(CYAN);
@@ -306,7 +304,6 @@ int read_atoms(char *fname) {
 #ifndef TWOD
   z=(double*)calloc(MAXNATOMS,sizeof(float));
 #endif
-  pot=(float*)calloc(MAXNATOMS,sizeof(float));
 
   fp=fopen(fname, "r");
   if (fp==NULL) {
