@@ -164,30 +164,28 @@ simulation box when they are read from a configuration file, they
 are mapped back into the simulation box. In the computation of the 
 forces, the minimal image convention is used.
 <P>
-Periodic boundary conditions can be <B>switched off</B> with the
-compilation flag <B>NOPBC</B>. Certain ensembles and options, notably
-<TT>frac</TT> and <TT>deform</TT>, always switch off
-periodic boundary conditions. Here, it is the user's responsibility
-that the system fits into the box.  This is necessary in order that
-the distribution of the particles into cells works correctly. Only a
-few particles outside the box should do no harm; they are attributed
-to cells at the boundary. In any case, it might be wise to leave some
-empty space near the boundary.  If periodic boundary conditions are
-switched off, no minimal image convention is used in the force
-computation.
+Periodic boundary conditions can be <B>switched off</B> in one or 
+several directions by reading in the parameter <TT>pbc_dirs</TT>,
+which is a vector. A value of 1 means periodic boundary condition
+in that direction, a value of 0 means free boundary condition.
+Certain ensembles and options, notably <TT>frac</TT> and
+<TT>deform</TT>, require that periodic boundary conditions are
+switched off in this way. It is then the user's responsibility
+that the sample fits into the box. This is necessary in order that
+particles are evenly distributed into cells. As a particle is put
+into the nearest cell, samples much bigger than the simulation box
+will result in overfull border cells, which means serious performance
+degradation. Apart from that, there is no further problem. Likewise, 
+if the sample is much smaller than the simulation box, there will be 
+empty or almost empty cells, which will lead to load balancing problems
+in the parallel version (but not in the serial version). It is
+therefore wise to choose the box so that it is exactly filled by 
+the sample. There is no harm if a few atoms then leave the box during 
+the  simulation.
 <P>
-Note that the option <B>shock</B> uses <B>periodic</B> boundary 
+Note that the option <B>shock</B> needs <B>periodic</B> boundary 
 conditions in y and z direction, but <B>free</B> boundary conditions 
 in x direction.
-<P>
-<B>Important:</B> The type of boundary conditions is global to the
-entire IMD executable. If there are ensembles or options present
-which are incompatible with periodic boundary conditions, they are
-switched off everywhere. Of course, nobody would want to switch 
-the type of boundary conditions during a simulation. However, if
-features A and B are present in the same binary, and feature B
-requires NOPBC, then NOPBC is active also for feature A, even if
-A does not require this, and B is never actually used.
 
 <P>
 <A HREF="imd.html">Back to IMD User's Guide</A> 

@@ -151,7 +151,7 @@ only once in each phase.
 <P>
 The homdef option allows to homogeneously expand or shear the
 sample. The box is deformed in this process, together with its
-contents. Note that this option uses <B>periodic</B> boundary 
+contents. Note that this option requires <B>periodic</B> boundary 
 conditions.
 <UL>
 <P><LI>
@@ -178,6 +178,7 @@ point into y- and z-direction, respectively.
 <P><LI><B> deform </B><P>
 </A>
 <P>
+The deform option requires <B>free</B> boundary conditions.
 If <TT>max_deform_int</TT> is positive, or <TT>ekin_threshold</TT>
 is positive, atoms with negative numbers in the left half (in x
 direction) of the sample are rigidly moved by an amount
@@ -239,20 +240,6 @@ the PEs. This is not possible with PACX since one supercomputer sees
 only the communication nodes of the other and not its
 topology. Therefore the MPI_Cart routines have been replaced.
 <P>
-Further replacements were necessary since not all MPI routines
-have been implemented in PACX so far:
-
-<P>
-<UL>
-<LI>MPI_Ssend is replaced by MPI_Send.
-
-<LI>MPI_Type_Contiguous is eliminated (was used only in 2d).
-
-<LI>The calling of the irecv_buf and isend_buf routines of IMD was 
-    not standard and has been replaced by a standard one.
-
-</UL>
-<BR>
 The PACX library is available from the PACX-Group at the RUS.
 A description of PACX and how to use it can be found <A
 HREF="http://www.hlrs.de/people/gabriel/PROJECTS/pacx/pacx.html">here</A>.
