@@ -315,9 +315,6 @@ void write_press_dist_shock(int steps)
     num_hist_2[i] = 0;
 #endif
   }
-
-   if (myid==0) printf("Angekommen\n");
-
   /* loop over all atoms */
   for ( r = cellmin.x; r < cellmax.x; ++r )
     for ( s = cellmin.y; s < cellmax.y; ++s )
@@ -473,7 +470,7 @@ void write_press_dist_shock(int steps)
   MPI_Allreduce( num_hist_1, num_hist_2, 
                  press_dim.x, INTEGER, MPI_SUM, cpugrid);
   num_hist  = num_hist_2;
-#else
+else
   press_histxx = press_histxx_1;
   press_histyy = press_histyy_1;
 #ifndef TWOD
