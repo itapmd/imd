@@ -29,9 +29,8 @@ void write_pic_cell( cell *p, FILE *out )
         if (Epot_diff==1) {
           picbuf.E_pot = (float) p->pot_eng[i] - p->Epot_ref[i];
         } else
-#else
-        picbuf.E_pot = (float) p->pot_eng[i];
 #endif
+        picbuf.E_pot = (float) p->pot_eng[i];
         picbuf.type  = (integer) p->sorte[i];
         fwrite( &picbuf, sizeof( picbuf ), 1, out ); 
     }
@@ -117,7 +116,7 @@ void write_pictures_raw(int steps)
 
   /* Ausgabedatei oeffnen */
   out = fopen(fname,"w");
-  if (NULL == out) error("Can't open output file for config.");
+  if (NULL == out) error("Cannott open output file for config.");
 
 
   for (p = cell_array; 
@@ -297,7 +296,7 @@ void write_pictures_bins(int steps)
    MPI_Reduce( greenbit, sum_green, pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
    MPI_Reduce( bluebit , sum_blue,  pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
 
-if (0==myid) { 
+   if (0==myid) { 
 
 /* Clip max value bitmap, create white background */
    for (j=0; j<pic_res.y; j++ ) {
@@ -428,7 +427,7 @@ if (0==myid) {
    MPI_Reduce( greenbit, sum_green, pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
    MPI_Reduce( bluebit , sum_blue,  pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
 
-if (0==myid) { 
+   if (0==myid) { 
 
 /* Clip max value bitmap, create white background */
    for (j=0; j<pic_res.y; j++ ) {
@@ -655,9 +654,9 @@ void write_pictures_cooked(int steps)
    MPI_Reduce( greenbit, sum_green, pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
    MPI_Reduce( bluebit , sum_blue,  pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
 
-if (0==myid) { 
+   if (0==myid) { 
 
-/* Clip max value bitmap, create white background */
+   /* Clip max value bitmap, create white background */
    for (j=0; j<pic_res.y; j++ ) {
      for (i=0; i<pic_res.x; i++ ) { 
 
@@ -802,7 +801,7 @@ Pixels not in the default interval */
    MPI_Reduce( greenbit, sum_green, pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
    MPI_Reduce( bluebit , sum_blue,  pic_res.x * pic_res.y, MPI_SHORT, MPI_SUM, 0, cpugrid);
 
-if (0==myid) { 
+   if (0==myid) { 
 
 /* Clip max value bitmap, create black background */
    for (j=0; j<pic_res.y; j++ ) {
