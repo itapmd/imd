@@ -92,7 +92,7 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 
     eam_pni = p->nummer[i];
     if (eam_pni < 0 ) {
-      eam_pni = - eam_pni;
+      eam_pni = -eam_pni;
     };
     /* Some compilers don't find the expressions that are invariant 
        to the inner loop. I'll have to define my own temp variables. */
@@ -122,7 +122,7 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 
  #ifndef NODBG_DIST
       if (0==radius2) { char msgbuf[256];
-        sprintf(msgbuf,"Pair distance is zero: i=%d, j=%d\n",i,j);
+        sprintf(msgbuf,"Pair distance is zero: i=%d (#%d), j=%d (#%d)\n",i,eam_pni,j,eam_pnj);
         error(msgbuf);
       }
 #else
@@ -239,7 +239,7 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 
 	  eam_pnj    = q->nummer[j];	
 	  if (eam_pnj < 0 ) {
-	    eam_pnj = - eam_pnj;
+	    eam_pnj = -eam_pnj;
 	  };
 	  /* EAM-CF:  fixed i and j */
 	  eam_phi_ij = (eam_r_ij-eam_r_cut)*(eam_r_ij-eam_r_cut);
@@ -247,7 +247,7 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
           /* save #j in the #i array field k > 0  (-> calc of forces) */
           eam_ij[eam_pni*eam_len]         += (real) 1;
           eam_k                            = (integer) eam_ij[eam_pni*eam_len];
-          eam_ij[eam_pni*eam_len+eam_k]    = (real) q->nummer[j]; 
+          eam_ij[eam_pni*eam_len+eam_k]    = (real) eam_pnj; 
           eam_dij_x[eam_pni*eam_len+eam_k] = d.x; 
           eam_dij_y[eam_pni*eam_len+eam_k] = d.y; 
           eam_dij_z[eam_pni*eam_len+eam_k] = d.z; 
@@ -257,7 +257,7 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
           /* save #i in the #j array field k > 0  (-> calc of forces) */
           eam_ij[eam_pnj*eam_len]         += (real) 1;
           eam_k                            = (integer) eam_ij[eam_pnj*eam_len];
-          eam_ij[eam_pnj*eam_len+eam_k]    = (real) p->nummer[i]; 
+          eam_ij[eam_pnj*eam_len+eam_k]    = (real) eam_pni; 
           eam_dij_x[eam_pnj*eam_len+eam_k] = -d.x; 
           eam_dij_y[eam_pnj*eam_len+eam_k] = -d.y; 
           eam_dij_z[eam_pnj*eam_len+eam_k] = -d.z; 
@@ -351,6 +351,9 @@ void do_forces_eam_2(cell *p, cell *q, vektor pbc)
     if (p_typ == 0) {
 
       eam_pni    = p->nummer[i];
+      if ( eam_pni < 0 ) {
+        eam_pni = -eam_pni;
+      };
 
       /* EAM-CF: sum of all i energies */
       eam_cf_i   = sqrt(eam_rho[eam_pni]);
