@@ -88,6 +88,12 @@ the potential energy per atom, the kinetic energy per atom
 (which is normalized such that it is identical to the
 actual system temperature), the pressure and the volume.
 <P>
+As automatic generation of samples may lead to atoms with coordinates
+close to zero which would become negative after several shear steps it
+is possible to apply an initial shift to the sample. Therefore the
+flag <TT>initial_shift</TT> must be set to one and the vector
+<TT>ins</TT> must be set to the desired value.
+<P>
 These features have also been implemented in the 2D version, but have
 not yet been tested! 
 
