@@ -22,7 +22,7 @@ void write_temp_dist(int steps)
   str255  fnametemp;
   cell *p;
   real scale;
-  integer num, nlayer;
+  int  num, nlayer;
   int i, r, s, t, nhalf;
   static real    *temp_hist, *temp_hist_1 = NULL, *temp_hist_2 = NULL;
   static integer *num_hist,   *num_hist_1 = NULL,  *num_hist_2 = NULL;
@@ -143,7 +143,7 @@ void write_press_dist_shock(int steps)
   str255  fnamepress;
   cell *p;
   real scalex, scaley, layvol, laydens;
-  integer num, numx, numy, press_dim_tot;
+  int  num, numx, numy, press_dim_tot;
   int fzhlr, i, r, s, t;
 #ifndef TWOD
   int scalez, numz;
@@ -547,7 +547,7 @@ void write_press_dist(int steps)
   str255  fnamepress;
   cell *p;
   real scalex, scaley, scalez, layvol, laydens, Ekin;
-  integer num, numx, numy, numz, press_dim_tot;
+  int  num, numx, numy, numz, press_dim_tot;
   int fzhlr, i, r, s, t;
   static real  *press_histxx, *press_histxx_1 = NULL, *press_histxx_2 = NULL;
   static real  *press_histyy, *press_histyy_1 = NULL, *press_histyy_2 = NULL;

@@ -1143,13 +1143,13 @@ void move_atoms_nvx(void)
 
 {
   cell *p;
-  int	i;
-  real  Ekin_1, Ekin_2;
-  real  Ekin_left = 0.0, Ekin_right = 0.0;
-  integer natoms_left = 0, natoms_right = 0;
-  real  px, vol, real_tmp;
-  integer num, nhalf, r, s, t, int_tmp;  
-  real	scale, rescale, Rescale;
+  int  i;
+  real Ekin_1, Ekin_2;
+  real Ekin_left = 0.0, Ekin_right = 0.0;
+  int  natoms_left = 0, natoms_right = 0;
+  real px, vol, real_tmp;
+  int  num, nhalf, r, s, t, int_tmp;  
+  real scale, rescale, Rescale;
   vektor tot_impuls_left, tot_impuls_right, vectmp;
   real inv_mass_left=0.0, inv_mass_right=0.0;
  
@@ -1256,9 +1256,9 @@ void move_atoms_nvx(void)
   tot_impuls_left                = vectmp;
   MPI_Allreduce( tot_impuls_right, vectmp, DIM, MPI_REAL, MPI_SUM, cpugrid);
   tot_impuls_right               = vectmp;
-  MPI_Allreduce( &natoms_left,    &int_tmp,  1, INTEGER,  MPI_SUM, cpugrid);
+  MPI_Allreduce( &natoms_left,    &int_tmp,  1, MPI_INT,  MPI_SUM, cpugrid);
   natoms_left                    = int_tmp;
-  MPI_Allreduce( &natoms_right,   &int_tmp,  1, INTEGER,  MPI_SUM, cpugrid);
+  MPI_Allreduce( &natoms_right,   &int_tmp,  1, MPI_INT,  MPI_SUM, cpugrid);
   natoms_right                   = int_tmp;
 #endif
 

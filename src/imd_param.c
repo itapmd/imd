@@ -660,19 +660,19 @@ void getparamfile(char *paramfname, int sim)
 #ifdef CORRELATE
     else if (strcasecmp(token,"correl_rmax")==0) {
       /* dimension of histogram in r domain */
-      getparam("correl_rmax",&ncorr_rmax,PARAM_INTEGER,1,1);
+      getparam("correl_rmax",&ncorr_rmax,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"correl_tmax")==0) {
       /* dimension of histogram in t domain */
-      getparam("correl_tmax",&ncorr_tmax,PARAM_INTEGER,1,1);
+      getparam("correl_tmax",&ncorr_tmax,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"correl_int")==0) {
       /* repeat interval for correlation */
-      getparam("correl_int",&correl_int,PARAM_INTEGER,1,1);
+      getparam("correl_int",&correl_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"correl_omode")==0) {
       /* repeat interval for correlation */
-      getparam("correl_omode",&correl_omode,PARAM_INTEGER,1,1);
+      getparam("correl_omode",&correl_omode,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"GS_rcut")==0) {
       /* cutoff radius for correlation data writes */
@@ -682,15 +682,15 @@ void getparamfile(char *paramfname, int sim)
 #if defined(CORRELATE) || defined(MSQD)
     else if (strcasecmp(token,"correl_start")==0) {
       /* start time for correlation */
-      getparam("correl_start",&correl_start,PARAM_INTEGER,1,1);
+      getparam("correl_start",&correl_start,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"correl_end")==0) {
       /* end time for correlation */
-      getparam("correl_end",&correl_end,PARAM_INTEGER,1,1);
+      getparam("correl_end",&correl_end,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"correl_ts")==0) {
       /* sampling time interval for correlation */
-      getparam("correl_ts",&correl_ts,PARAM_INTEGER,1,1);
+      getparam("correl_ts",&correl_ts,PARAM_INT,1,1);
     }
 #endif
 #ifdef TRANSPORT
@@ -704,11 +704,11 @@ void getparamfile(char *paramfname, int sim)
     }
     else if (strcasecmp(token, "tran_nlayers")==0){
       /*number of layer  */
-      getparam("tran_nlayers", &tran_nlayers, PARAM_INTEGER, 1,1);
+      getparam("tran_nlayers", &tran_nlayers, PARAM_INT, 1,1);
     }
      else if (strcasecmp(token, "tran_interval")==0){
       /*number of steps between temp. writes  */
-      getparam("tran_interval", &tran_interval, PARAM_INTEGER, 1,1);
+      getparam("tran_interval", &tran_interval, PARAM_INT, 1,1);
     }
 #endif
 #ifdef STRESS_TENS
@@ -718,7 +718,7 @@ void getparamfile(char *paramfname, int sim)
     }
      else if (strcasecmp(token, "press_interval")==0){
       /*number of steps between press. writes  */
-      getparam("press_interval", &press_interval, PARAM_INTEGER, 1,1);
+      getparam("press_interval", &press_interval, PARAM_INT, 1,1);
     }
 #endif
 #ifdef DISLOC
@@ -740,7 +740,7 @@ void getparamfile(char *paramfname, int sim)
     }   
     else if (strcasecmp(token,"dpotsorte")==0) {
       /* atom type for Epot difference */
-      getparam("dpotsorte",&dpotsorte,PARAM_INTEGER,1,1);
+      getparam("dpotsorte",&dpotsorte,PARAM_INT,1,1);
     }   
     else if (strcasecmp(token,"ddelta")==0) {
       /* minimum distance for ddm */
@@ -828,7 +828,7 @@ void getparamfile(char *paramfname, int sim)
 #ifdef EAM
     else if (strcasecmp(token,"eam_len")==0) {
       /* EAM: number of neighbours */
-      getparam("eam_len",&eam_len,PARAM_INTEGER,1,1);
+      getparam("eam_len",&eam_len,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"eam_A")==0) {
       /* EAM: constant for cohesive function */
@@ -847,7 +847,7 @@ void getparamfile(char *paramfname, int sim)
 #ifdef TTBP
     else if (strcasecmp(token,"ttbp_len")==0) {
       /* number of neighbors */
-      getparam("ttbp_len",&ttbp_len,PARAM_INTEGER,1,1);
+      getparam("ttbp_len",&ttbp_len,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"ttbp_constant")==0) {
       /* force constant (radians); type 0 */
@@ -1125,8 +1125,8 @@ void broadcast_params() {
 #endif
 #ifdef MONOLJ
   MPI_Bcast( &r2_cut     , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &cellsz      , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &initsz, 1, INTEGER, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &cellsz     , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &initsz     , 1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 
 #ifdef AND
@@ -1157,32 +1157,32 @@ void broadcast_params() {
 #endif
 
 #if defined(CORRELATE)
-  MPI_Bcast( &correl_omode, 1, INTEGER, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &correl_int,   1, INTEGER, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &correl_tmax,  1, INTEGER, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &correl_rmax,  1, INTEGER, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &correl_omode, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &correl_int,   1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &correl_tmax,  1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &correl_rmax,  1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #if defined(CORRELATE) || defined(MSQD)
-  MPI_Bcast( &correl_start, 1, INTEGER, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &correl_end,   1, INTEGER, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &correl_ts,    1, INTEGER, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &correl_start, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &correl_end,   1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &correl_ts,    1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef TRANSPORT
   MPI_Bcast( &dTemp_start,   1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dTemp_end,     1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &tran_nlayers,  1, INTEGER,  0, MPI_COMM_WORLD);
-  MPI_Bcast( &tran_interval, 1, INTEGER,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &tran_nlayers,  1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &tran_interval, 1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 
 #ifdef STRESS_TENS
-  MPI_Bcast( &press_dim, DIM, MPI_INT,  0, MPI_COMM_WORLD);
-  MPI_Bcast( &press_interval, 1, INTEGER,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &press_dim,    DIM, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &press_interval, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef FRAC
-  MPI_Bcast( &stadium   , DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &stadium , DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &gamma_bar , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &gamma_cut , 1, MPI_REAL, 0, MPI_COMM_WORLD);
 #endif
@@ -1195,7 +1195,7 @@ void broadcast_params() {
   MPI_Bcast( &shock_strip, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &shock_speed, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &shock_elong, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &shock_mode, 1, INTEGER, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &shock_mode,  1, MPI_INT,  0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef FRAC
@@ -1250,7 +1250,7 @@ void broadcast_params() {
 #endif
 
 #ifdef TTBP
-  MPI_Bcast( &ttbp_len,      1,      INTEGER,   0, MPI_COMM_WORLD);
+  MPI_Bcast( &ttbp_len,      1,      MPI_INT,   0, MPI_COMM_WORLD);
   MPI_Bcast( &ttbp_constant, ntypes, MPI_REAL,  0, MPI_COMM_WORLD);
   MPI_Bcast( &ttbp_sp,       ntypes, MPI_REAL,  0, MPI_COMM_WORLD);
 #endif

@@ -296,20 +296,20 @@ EXTERN real op_r2_cut[2][2] INIT(nullvektor4d);
 #if defined(MSQD) || defined(CORRELATE)
 EXTERN real *msqd INIT(NULL);        /* (local) array of mean square disp. */
 EXTERN real *msqd_global INIT(NULL); /* global array of mean square disp. */
-EXTERN integer correl_int INIT(0);   /* repeat interval for correlation */
-EXTERN integer correl_start INIT(0); /* start time for correlation */
-EXTERN integer correl_end INIT(0);   /* end time for correlation */
-EXTERN integer correl_ts INIT(0); /* sampling time interval for correlation */
-EXTERN integer ncorr_rmax INIT(0); /* dimension of histogram in r domain */
-EXTERN integer ncorr_tmax INIT(1); /* dimension of histogram in t domain */
-EXTERN real GS_rcut INIT(0); /* cutoff radius for correlation data writes */
+EXTERN int  correl_int INIT(0);      /* repeat interval for correlation */
+EXTERN int  correl_start INIT(0);    /* start time for correlation */
+EXTERN int  correl_end INIT(0);      /* end time for correlation */
+EXTERN int  correl_ts INIT(0);  /* sampling time interval for correlation */
+EXTERN int  ncorr_rmax INIT(0); /* dimension of histogram in r domain */
+EXTERN int  ncorr_tmax INIT(1); /* dimension of histogram in t domain */
+EXTERN real GS_rcut INIT(0);    /* cutoff radius for correlation data writes */
 #endif
 
 /* Global data for correlation */
 #ifdef CORRELATE
 EXTERN real inv_dr;                /* inverse of step size delta r */
-EXTERN integer ***GS INIT(NULL);    /* histogram array for self correlation */
-EXTERN integer correl_omode INIT(1); /* output mode for histogram */
+EXTERN int correl_omode INIT(1);   /* output mode for histogram */
+EXTERN integer ***GS INIT(NULL);   /* histogram array for self correlation */
 #endif
 
 #if defined(TRANSPORT)
@@ -319,15 +319,15 @@ EXTERN real dTemp_end 	  INIT(0.0);   /* deviation of final heat bath
                                           temperature from mean temp. */ 
 EXTERN real tran_Tleft 	  INIT(0.0);   /* temperature of the left=hot wall */
 EXTERN real tran_Tright   INIT(0.0);   /* temperature of the right=cold  wall*/
-EXTERN integer tran_interval INIT(0);  /* Intervalle der Temperaturaufz.*/
-EXTERN integer tran_nlayers  INIT(0);  /* number of layers*/
+EXTERN int  tran_interval INIT(0);     /* Intervalle der Temperaturaufz.*/
+EXTERN int  tran_nlayers  INIT(0);     /* number of layers*/
 EXTERN real heat_cond     INIT(0.0);   /* heat conductivity */
 #endif
 
 #ifdef STRESS_TENS
-EXTERN integer press_interval INIT(0);  /* Intervalle der Aufzeichnung */ 
-                                        /* des Drucktensors */
-EXTERN ivektor press_dim INIT(nullivektor);               /* pressure histogram dimension */
+EXTERN int press_interval INIT(0);          /* Intervalle der Aufzeichnung */ 
+                                            /* des Drucktensors */
+EXTERN ivektor press_dim INIT(nullivektor); /* pressure histogram dimension */
 #endif
 
 /* I/O via sockets */
@@ -345,9 +345,10 @@ EXTERN unsigned long varIP INIT(0);
 /* EAM stuff */
 #ifdef EAM
 /* neighborlist for EAM forces in 2D array */
-EXTERN real *eam_ij    INIT(NULL);  /* neighbor array */
-EXTERN integer eam_len INIT(50);  	/* max neighbors */
-EXTERN real *eam_rho   INIT(NULL);	/* cohesive function density (Finnis/Sinclair) */
+EXTERN real *eam_ij    INIT(NULL);      /* neighbor array */
+EXTERN int  eam_len INIT(50);  	        /* max neighbors */
+EXTERN real *eam_rho   INIT(NULL);	/* cohesive function density */
+                                        /* (Finnis/Sinclair) */
 EXTERN real *eam_dij_x INIT(NULL);	/* distance in x direction */
 EXTERN real *eam_dij_y INIT(NULL);	/* distance in y direction */
 EXTERN real *eam_dij_z INIT(NULL);	/* distance in z direction */
@@ -360,14 +361,14 @@ EXTERN real eam_A      INIT(0.0);	/* EAM cohesive function constant A */
 /* TTBP */
 #ifdef TTBP
 /* neighborlist for TTBP */
-EXTERN real *ttbp_ij     INIT(NULL); /* neighbor array */
-EXTERN integer ttbp_len     INIT(50);	/* max neighbors */
-EXTERN real *ttbp_j 	    INIT(NULL);	/* position array */
-EXTERN str255 ttbp_potfilename INIT("\0");   /* TTBP Potential */
-EXTERN real *ttbp_potential;            /* TTBP Potential array */
-EXTERN real ttbp_r2_cut[10][10];        /* cutoff^2;  less than 10 atom types! */   
-EXTERN real ttbp_constant[10];		/* constants; less than 10 atom types! */ 
-EXTERN real ttbp_sp[10];		/* constants; less than 10 atom types! */ 
+EXTERN real *ttbp_ij     INIT(NULL);       /* neighbor array */
+EXTERN int  ttbp_len     INIT(50);	   /* max neighbors */
+EXTERN real *ttbp_j 	 INIT(NULL);	   /* position array */
+EXTERN str255 ttbp_potfilename INIT("\0"); /* TTBP Potential */
+EXTERN real *ttbp_potential;         /* TTBP Potential array */
+EXTERN real ttbp_r2_cut[10][10];     /* cutoff^2;  less than 10 atom types! */
+EXTERN real ttbp_constant[10];	     /* constants; less than 10 atom types! */ 
+EXTERN real ttbp_sp[10];	     /* constants; less than 10 atom types! */ 
 EXTERN real ttbp_r2_0;             	/* TTBP minimum r^2 */
 EXTERN real ttbp_r2_end;           	/* TTBP maximum r^2 */
 EXTERN real ttbp_r2_step;          	/* delta between potential samples */
@@ -400,9 +401,9 @@ EXTERN cell *input;                                /* save data */
 /* simulate shock wave */
 #ifdef SHOCK
 EXTERN real shock_strip;                          /* width of shock strip */
-EXTERN real shock_speed INIT(0.0);                 /* velocity in shock strip */
+EXTERN real shock_speed INIT(0.0);                /* velocity in shock strip */
 EXTERN real shock_elong;                          /* atom elongation */
-EXTERN int shock_mode INIT(2);                    /* type of shock */
+EXTERN int  shock_mode INIT(2);                   /* type of shock */
 #endif
 
 EXTERN int ensemble INIT(ENS_EMPTY);    /* active ensemble type */
