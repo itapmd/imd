@@ -1124,6 +1124,10 @@ void getparamfile(char *paramfname, int sim)
       cellsz = MAX(cellsz,uniax_r2_cut);
     }
 #endif 
+    else if (strcasecmp(token,"use_header")==0) {
+	/* shall a header be used */
+      getparam("use_header",&use_header,PARAM_INT,1,1);
+    }
     else {
       char msg[255];
       sprintf(msg,"****** Unknown TAG %s ignored ******",token);
@@ -1592,6 +1596,8 @@ void broadcast_params() {
   MPI_Bcast( ters_h,                  ntypes, REAL, 0, MPI_COMM_WORLD);
 #endif
   
+  MPI_Bcast(&use_header,1, MPI_INT, 0, MPI_COMM_WORLD);
+
   /* broadcast integrator to other CPU's */
 
   switch (ensemble) {

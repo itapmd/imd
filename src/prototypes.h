@@ -67,6 +67,7 @@ void warning(char *msg);
 void imd_start_timer(imd_timer *timer);
 void imd_stop_timer(imd_timer *timer);
 void maxwell(real TEMP);
+int test_endianness(void);
 
 /* start and stop MPI - files imd_mpi_util.c, imd_geom_mpi_*.c */
 #ifdef MPI
@@ -210,6 +211,7 @@ void write_eng_file_header(void);
 
 /* write configurations - files imd_io.c, imd_io_*.c */
 void write_itr_file(int fzhlr, int steps);
+void write_config_header(FILE *out);
 void write_config(int steps);
 void write_config_select(int fzhlr, char *suffix, 
                          void (*write_atoms_fun)(FILE *out));
@@ -245,6 +247,7 @@ void write_ras_using_sockets(void);
 /* write distributions - files imd_histogram.c, socket_io.c */
 void make_histograms(hist_t *hist);
 void write_distrib(int steps);
+void write_dist_header(FILE *out, int type);
 #ifdef STRESS_TENS
 void write_press_dist(int steps);
 #endif

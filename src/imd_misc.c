@@ -101,3 +101,19 @@ void add_position(void)
 }
   
 #endif
+
+/******************************************************************************
+*
+* test_endianness returns 1 if system is big endian otherwise 0
+*
+******************************************************************************/
+
+#define BIG_ENDIAN      0
+#define LITTLE_ENDIAN   1
+
+int test_endianness(void)
+{
+    short int word = 0x0001;
+    char *byte = (char *) &word;
+    return(byte[0] ? LITTLE_ENDIAN : BIG_ENDIAN);
+}

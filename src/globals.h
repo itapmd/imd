@@ -110,6 +110,7 @@ EXTERN str255 rundesc; /* Description */
 EXTERN str255 progname; /* Name of current executable argv[0] */
 EXTERN ivektor cellmin; /* Minimum index of local cells (1 with MPI, 0 otherwise) */
 EXTERN ivektor cellmax; /* Maximum index of local cells  */
+EXTERN int use_header INIT(0);   /* shall a header be written */
 
 #ifdef EFILTER
 EXTERN int efrep_interval INIT(0); /* Period of checkpoints ==0 for no checkpoints */
