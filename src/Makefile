@@ -102,7 +102,7 @@ DEFORMSOURCES   = imd_deform.c
 SOCKHEADERS     = socket_tokens.h sockets.h sockutil.h
 SOCKSOURCES     = socket_io.c sockutil.c
 
-FRACSOURCES     = imd_load.c
+#FRACSOURCES     = imd_load.c
 
 QUASISOURCES    = imd_qc.c
 

@@ -639,9 +639,10 @@ void init(void)
   if (do_maxwell) maxwell(temperature);
   do_maxwell=0;
 
+/*  old loading procedure
 #ifdef FRAC
   if(ensemble==ENS_FRAC) load_sample(); 
 #endif
-
+*/
 }
 

@@ -467,8 +467,13 @@ void write_eng_file_header()
 
     fprintf(fl, "# time Epot ");
     fprintf(fl, "temperature ");
-#ifdef STM
+
+#if defined(STM) || defined(FRAC) 
     fprintf(fl, "stadiontemp ");
+#endif
+
+#ifdef FRAC
+    fprintf(fl, "dampingtem ");
 #endif
 
 #ifdef FNORM
@@ -481,6 +486,9 @@ void write_eng_file_header()
     fprintf(fl, "volume ");
 #if defined(NVT) || defined(NPT) || defined(STM) 
     fprintf(fl, "eta * tau_eta ");
+#endif
+#ifdef FRAC  
+    fprintf(fl, "gamma_damp ");
 #endif
 #ifdef NPT_axial
 #ifdef TWOD
@@ -524,8 +532,8 @@ void write_eng_file(int steps)
 #endif
   real Epot, Temp, vol;
 
-#ifdef STM
-  real Temp_nve;
+#if defined(STM) || defined(FRAC)
+  real Temp_damp, Temp_stadium = 0.0;
 #endif
 
 #ifdef STRESS_TENS
@@ -552,9 +560,16 @@ void write_eng_file(int steps)
   Temp = 2.0 * tot_kin_energy / nactive;
 #endif
 
-#ifdef STM
-  Temp     = 2.0 * tot_kin_energy / (nactive - n_nve);
-  Temp_nve = 2.0 * tot_kin_energy_nve / n_nve;
+#ifdef STM 
+  Temp     = 2.0 * tot_kin_energy / (nactive - n_stadium);
+#endif 
+
+#if defined(STM) || defined(FRAC)
+  if(n_stadium != 0)  Temp_stadium = 2.0 * E_kin_stadium / n_stadium;
+#endif
+
+#if defined(FRAC)
+  Temp_damp = E_kin_damp / sum_f;
 #endif
 
   vol  = volume / natoms;
@@ -566,10 +581,13 @@ void write_eng_file(int steps)
 
   fprintf(out, "%e",     (double) (steps * timestep));
   fprintf(out, " %.16e", (double) Epot);
- 
   fprintf(out, format,   (double) Temp);
-#ifdef STM
-  fprintf(out, format,   (double) Temp_nve);
+#if defined(STM) || defined(FRAC)
+  fprintf(out, format,   (double) Temp_stadium);
+#endif
+
+#ifdef FRAC
+  fprintf(out, format,   (double) Temp_damp);
 #endif
 
 #ifdef FNORM
@@ -583,6 +601,11 @@ void write_eng_file(int steps)
 #if defined(NVT) || defined(NPT) || defined(STM)
   fprintf(out," %e",     (double) (eta * tau_eta) );
 #endif
+#ifdef FRAC 
+  fprintf(out," %e",     (double) gamma_damp );
+#endif
+
+
   if (ensemble==ENS_NPT_AXIAL) {
 #ifdef TWOD
     fprintf(out," %e %e", (double) stress_x, (double) stress_y );

@@ -204,7 +204,7 @@ void main_loop(void)
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
     if ((steps==steps_min) && (use_curr_temp==1)) {
 #ifdef STM
-      temperature = 2 * tot_kin_energy / (nactive-n_nve);
+      temperature = 2 * tot_kin_energy / (nactive-n_stadium);
 #else
       temperature = 2 * tot_kin_energy / nactive;
 #endif
@@ -535,8 +535,9 @@ void init(void)
   if (do_maxwell) maxwell(temperature);
   do_maxwell=0;
 
+/* old loading procedure 
 #ifdef FRAC
   if(ensemble==ENS_FRAC) load_sample(); 
 #endif
-  
+*/  
 }

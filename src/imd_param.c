@@ -598,7 +598,7 @@ void getparamfile(char *paramfname, int sim)
       getparam("endtemp",&end_temp,PARAM_REAL,1,1);
     }
 #endif
-#if defined(STM)
+#if defined(STM) || defined(FRAC)
     else if (strcasecmp(token,"stadium")==0) {
       getparam("stadium",&stadium,PARAM_REAL,2,2);
     }
@@ -684,26 +684,8 @@ void getparamfile(char *paramfname, int sim)
 #endif
 #endif
 #ifdef FRAC
-    else if (strcasecmp(token,"dampstadium")==0) { /* Damping stadium */
-      getparam("dampstadium",&stadium,PARAM_REAL,DIM,DIM);
-    }
     else if (strcasecmp(token,"dampgamma")==0) { /* Damping factor gamma */
       getparam("dampgamma",&gamma_bar,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"dampcutoff")==0) { /* Damping cutoff */
-      getparam("dampcutoff",&gamma_cut,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"k_crit")==0) { /* Stress Intensity factor */
-      getparam("k_crit",&kcrit,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"mue")==0) { /* Youngs modulus */
-      getparam("mue",&mue,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"kel")==0) { /* Shear modulus */
-      getparam("kel",&kel,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"crktip")==0) { /* Crack tip location */
-      getparam("crktip",&tip,PARAM_REAL,DIM,DIM);
     }
 #endif
 #ifndef TWOD
@@ -772,7 +754,7 @@ void getparamfile(char *paramfname, int sim)
       getparam("shear_factor",&shear_factor,PARAM_REAL,2,2);
     }
 #endif
-#if defined(FRAC) || defined(DEFORM)
+#if defined(DEFORM)
     else if (strcasecmp(token,"ekin_threshold")==0) {
       /* shear epsilon criterium, see imd_shear_new.c */
       getparam("ekin_threshold",&ekin_threshold,PARAM_REAL,1,1);
@@ -1458,7 +1440,7 @@ void broadcast_params() {
 #endif
 #endif
 
-#if defined(STM)
+#if defined(STM) || defined(FRAC)
   MPI_Bcast( &stadium ,         2 , REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &center ,          2 , REAL, 0, MPI_COMM_WORLD); 
 #endif
@@ -1502,16 +1484,10 @@ void broadcast_params() {
 #endif
 
 #ifdef FRAC
-  MPI_Bcast( &stadium , DIM, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &gamma_bar , 1, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &gamma_cut , 1, REAL, 0, MPI_COMM_WORLD);
 #endif
 
-#ifdef FRAC
-  MPI_Bcast( &epsilon , 1, REAL, 0, MPI_COMM_WORLD); 
-#endif
-
-#if defined(FRAC) || defined(DEFORM)
+#if defined(DEFORM)
   MPI_Bcast( &strip_width, 1, REAL, 0, MPI_COMM_WORLD); 
   if (0!=myid) deform_shift  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==deform_shift) 
@@ -1525,13 +1501,6 @@ void broadcast_params() {
   MPI_Bcast( &shock_mode,  1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 
-#ifdef FRAC
-  MPI_Bcast( &kcrit , 1, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &mue   , 1, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &kel   , 1, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &tip.x , 1, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &tip.y , 1, REAL, 0, MPI_COMM_WORLD);
-#endif
 
 #ifdef DISLOC
   MPI_Bcast( &min_dpot,        1, REAL, 0, MPI_COMM_WORLD);
@@ -1559,7 +1528,7 @@ void broadcast_params() {
   MPI_Bcast( &exp_interval , 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &expansion ,  DIM, REAL,    0, MPI_COMM_WORLD); 
 #endif
-#if defined(FRAC) || defined(DEFORM)
+#if defined(DEFORM)
   MPI_Bcast( &ekin_threshold , 1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &annealsteps ,    1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &max_deform_int , 1, MPI_INT, 0, MPI_COMM_WORLD); 

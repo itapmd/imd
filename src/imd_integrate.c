@@ -957,65 +957,108 @@ void move_atoms_frac(void)
 
 {
   int k;
-  vektor stad, c_halbe;
-  real tmp;
-  static int count = 0;
-  tot_kin_energy = 0;
+  real tmpvec1[6], tmpvec2[6], ttt;
+  real E_kin_1        = 0.0, E_kin_2        = 0.0; 
+  real E_kin_damp1    = 0.0, E_kin_damp2    = 0.0;
+  real E_kin_stadium1 = 0.0, E_kin_stadium2 = 0.0;
+  real reibung, eins_d_reib;
+  real f; /* stadium function: the bath tub !!!!*/
 
-  stad.x = 2 / stadium.x;
-  stad.y = 2 / stadium.y;
-
-  c_halbe.x = box_x.x / 2.0;
-  c_halbe.y = box_y.y / 2.0;
+  fnorm     = 0.0;
+  sum_f     = 0.0;
+  n_stadium = 0;
 
   /* loop over all atoms */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_kin_energy)
+#pragma omp parallel for reduction(+:E_kin_1,E_kin_2,E_kin_damp1,E_kin_damp2,E_kin_stadium1,E_kin_stadium2,sum_f,n_stadium,fnorm)
 #endif
   for (k=0; k<ncells; ++k) {
 
     int i;
+    int sort;
     cell *p;
-    real kin_energie_1, kin_energie_2, gamma, tmp1, tmp2;
+    real tmp,tmp1,tmp2;
+
     p = cell_array + CELLS(k);
 
     for (i=0; i<p->n; ++i) {
+	
+        /* Calculate stadium function f */
+	tmp1 = SQR((p->ort X(i)-center.x)/box_x.x);
+	tmp2 = SQR((p->ort Y(i)-center.y)/box_y.y);
+	f = (tmp1+tmp2-SQR(stadium.x/box_x.x))/(.25- SQR(stadium.x/box_x.x));
+	if (f<= 0.0) {
+	    f = 0.0;
+	    n_stadium += DIM;
+	}
+	if (f>1.0) f = 1.0;
 
-      /* do not move particles with negative numbers */
-      if (NUMMER(p,i)>=0) {
+	sort = VSORTE(p,i);
 
-        kin_energie_1 =  SPRODN(p->impuls,i,p->impuls,i);
-
-        /* Calculate stadium function */
-        tmp1 = SQR((p->ort X(i) - c_halbe.x) / 2*stadium.x);
-        tmp2 = SQR((p->ort Y(i) - c_halbe.y) / 2*stadium.y);
-        /* versteht das jemand?? */
-        gamma = gamma_bar * (SQR(tmp1 + tmp2) - 2 * (tmp1 - tmp2) + 1);
-
-        if (gamma_cut <= gamma) gamma = gamma_cut;
-        if ((SQR((p->ort X(i) - c_halbe.x)  * stad.x)
-            + SQR((p->ort Y(i) - c_halbe.y) * stad.y)) < 1.0) gamma=0;
-                  
-        /* new momenta */
-        tmp1 = (1 - (1/(2 * MASSE(p,i))) * gamma * timestep);
-        tmp2 = (1 + (1/(2 * MASSE(p,i))) * gamma * timestep);
-        p->impuls X(i) = (p->kraft X(i)*timestep + p->impuls X(i)*tmp1)/tmp2;
-        p->impuls Y(i) = (p->kraft Y(i)*timestep + p->impuls Y(i)*tmp1)/tmp2;
+        /* add up f considering the restriction vector  */
+#ifdef TWOD
+	sum_f+= f * ( (restrictions + sort)->x + 
+		      (restrictions + sort)->y   )/2.0;
+#else
+	sum_f+= f * ( (restrictions + sort)->x + 
+		      (restrictions + sort)->y +  
+		      (restrictions + sort)->z  )/3.0;
+#endif
+	
+       	/* twice the old kinetic energy */
+	E_kin_1 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);	
+	if (f == 0.0)
+	    E_kin_stadium1 +=      SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+	if (f >  0.0)
+	    E_kin_damp1    +=  f * SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+	
+#ifdef FBC
+        /* give virtual particles their extra force */
+	p->kraft X(i) += (fbc_forces + sort)->x;
+	p->kraft Y(i) += (fbc_forces + sort)->y;
 #ifndef TWOD
-        p->impuls Z(i) = (p->kraft Z(i)*timestep + p->impuls Z(i)*tmp1)/tmp2;
+	p->kraft Z(i) += (fbc_forces + sort)->z;
+#endif
 #endif
 
-        kin_energie_2 =  SPRODN(p->impuls,i,p->impuls,i);
-
-        /* sum up kinetic energy */ 
-        tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4*MASSE(p,i));
-
-        /* new positions */
-        tmp1 = timestep / MASSE(p,i);
-        p->ort X(i) += tmp1 * p->impuls X(i);
-        p->ort Y(i) += tmp1 * p->impuls Y(i);
+	p->kraft X(i) *= (restrictions + sort)->x;
+	p->kraft Y(i) *= (restrictions + sort)->y;
 #ifndef TWOD
-        p->ort Z(i) += tmp1 * p->impuls Z(i);
+	p->kraft Z(i) *= (restrictions + sort)->z;
+#endif
+
+#ifdef FNORM
+	fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
+#endif
+
+	reibung     =        1.0 - gamma_damp * f * timestep / 2.0;
+	eins_d_reib = 1.0 / (1.0 + gamma_damp * f * timestep / 2.0);
+	
+        /* new momenta */
+	p->impuls X(i) = (p->impuls X(i) * reibung + timestep * p->kraft X(i)) 
+                           * eins_d_reib * (restrictions + sort)->x;
+        p->impuls Y(i) = (p->impuls Y(i) * reibung + timestep * p->kraft Y(i)) 
+                           * eins_d_reib * (restrictions + sort)->y;
+#ifndef TWOD
+        p->impuls Z(i) = (p->impuls Z(i) * reibung + timestep * p->kraft Z(i)) 
+                           * eins_d_reib * (restrictions + sort)->z;
+#endif                  
+    
+	/* twice the new kinetic energy */ 
+	E_kin_2 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);	
+	
+	if (f == 0.0)
+	    E_kin_stadium2 +=      SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+	if (f > 0.0)
+	    E_kin_damp2    +=  f * SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+
+
+	/* new positions */
+        tmp = timestep / MASSE(p,i);
+        p->ort X(i) += tmp * p->impuls X(i);
+        p->ort Y(i) += tmp * p->impuls Y(i);
+#ifndef TWOD
+        p->ort Z(i) += tmp * p->impuls Z(i);
 #endif
 
 #ifdef STRESS_TENS
@@ -1030,15 +1073,36 @@ void move_atoms_frac(void)
         p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
 #endif
 #endif
-      }
     }
   }
 
+  tot_kin_energy = ( E_kin_1        + E_kin_2         ) / 4.0;
+  E_kin_stadium  = ( E_kin_stadium1 + E_kin_stadium2  ) / 4.0;
+  E_kin_damp     = ( E_kin_damp1    + E_kin_damp2     ) / 4.0;
+
+
 #ifdef MPI
-  /* Add kinetic energy for all CPUs */
-  MPI_Allreduce( &tot_kin_energy, &tmp, 1, REAL, MPI_SUM, cpugrid);
-  tot_kin_energy = tmp;
+  /* add up results from different CPUs */
+  tmpvec1[0] = tot_kin_energy;
+  tmpvec1[1] = E_kin_stadion;
+  tmpvec1[2] = E_kin_damp;
+  tmpvec1[3] = E_kin_damp2;
+  tmpvec1[4] = n_stadium;
+  tmpvec1[5] = sum_f;
+
+  MPI_Allreduce( tmpvec1, tmpvec2, 4, REAL, MPI_SUM, cpugrid);
+
+  tot_kin_energy = tmpvec2[0];
+  E_kin_stadion  = tmpvec2[1];
+  E_kin_damp     = tmpvec2[2];
+  E_kin_damp2    = tmpvec2[3];
+  n_stadium      = tmpvec2[4];
+  sum_f          = tmpvec2[5];
 #endif
+
+  /* time evolution of constraints */
+  ttt   = 2.0 * temperature * sum_f;
+  gamma_damp = (1.0 - ttt/E_kin_damp2) * gamma_bar;
 
 }
 
@@ -1068,11 +1132,11 @@ void move_atoms_stm(void)
   int ensindex = 0;
   real kin_energie_1[2] = {0.0,0.0}, kin_energie_2[2] = {0.0,0.0};
   real tmpvec1[5], tmpvec2[5], ttt;
-  n_nve = 0;
+  n_stadium = 0;
 
   /* loop over all atoms */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:kin_energie_1[0],kin_energie_1[1],kin_energie_2[0],kin_energie_2[2],n_nve)
+#pragma omp parallel for reduction(+:kin_energie_1[0],kin_energie_1[1],kin_energie_2[0],kin_energie_2[2],n_stadium)
 #endif
   for (k=0; k<ncells; ++k) {
 
@@ -1094,7 +1158,7 @@ void move_atoms_stm(void)
           /* We are inside the ellipse: */
           reibung = 1.0;
           eins_d_reib = 1.0;
-	  n_nve += DIM;
+	  n_stadium += DIM;
 	  ensindex = 1;
         } else {
           reibung     =      1 - eta * timestep / 2.0;
@@ -1122,28 +1186,27 @@ void move_atoms_stm(void)
     }
   }
   
-  tot_kin_energy     = (kin_energie_1[0] + kin_energie_2[0]) / 4.0;
-  tot_kin_energy_nve = (kin_energie_1[1] + kin_energie_2[1]) / 4.0;
+  tot_kin_energy  = (kin_energie_1[0] + kin_energie_2[0]) / 4.0;
+  E_kin_stadium   = (kin_energie_1[1] + kin_energie_2[1]) / 4.0;
 #ifdef MPI
   /* add up results from all CPUs */
   tmpvec1[0] = tot_kin_energy;
   tmpvec1[1] = kin_energie_2[0];
-  tmpvec1[2] = tot_kin_energy_nve;
+  tmpvec1[2] = E_kin_stadium;
   tmpvec1[3] = kin_energie_2[1];
-  tmpvec1[4] = (real)n_nve;
+  tmpvec1[4] = (real)n_stadium;
   MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid);
 
   tot_kin_energy     = tmpvec2[0];
   kin_energie_2[0]   = tmpvec2[1];
-  tot_kin_energy_nve = tmpvec2[2];
+  E_kin_stadium = tmpvec2[2];
   kin_energie_2[1]   = tmpvec2[3];
-  n_nve              = (int)tmpvec2[4];
+  n_stadium              = (int)tmpvec2[4];
 #endif
 
   /* Zeitentwicklung der Parameter */
-  ttt  = (nactive - n_nve) * temperature;
-  eta += timestep * (kin_energie_2[0] / ttt - 1.0) * isq_tau_eta;
-
+  ttt  = (nactive - n_stadium) * temperature;
+  eta += timestep * (kin_energie_2[0] / ttt - 1.0) * inv_tau_eta;
 }
 
 #else
