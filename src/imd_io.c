@@ -552,7 +552,7 @@ void write_atoms_press(FILE *out)
 #else
       len += sprintf( outbuf+len,
 		      /*        "%d %d %f %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e\n", */
-        "%d %d %f %12f %12f %12f %12f %12f %12f %12f %12f %12f\n", 
+        "%d %d %f %.12f %.12f %.12f %.12f %.12f %.12f %.12f %.12f %.12f\n", 
 
          NUMMER(p,i), VSORTE(p,i), MASSE(p,i),ORT(p,i,X),ORT(p,i,Y),ORT(p,i,Z),
         PRESSTENS(p,i,xx), PRESSTENS(p,i,yy), PRESSTENS(p,i,zz),
