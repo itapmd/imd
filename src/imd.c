@@ -237,15 +237,15 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef MPI
-    printf("Did %d steps with %ld atoms on %d CPUs.\n", 
-           steps_max+1, natoms, num_cpus*num_threads);
+    printf("Did %d steps with %ld atoms on %d physical CPUs.\n", 
+           steps_max+1, natoms, num_cpus * num_threads / hyper_threads);
 #ifdef OMP
     printf("Used %d processes with %d threads each.\n", num_cpus, num_threads);
 #endif
 #else
 #ifdef OMP
-    printf("Did %d steps with %ld atoms on %d CPUs.\n", 
-           steps_max+1, natoms, num_threads);
+    printf("Did %d steps with %ld atoms on %d physical CPUs.\n", 
+           steps_max+1, natoms, num_threads / hyper_threads);
 #else
     printf("Did %d steps with %ld atoms.\n", steps_max+1, natoms);
 #endif
@@ -253,7 +253,8 @@ int main(int argc, char **argv)
 
     printf("Used %f seconds cputime,\n", time_total.total);
     printf("%f seconds excluding setup time,\n", time_main.total);
-    tmp =  (num_cpus * num_threads * time_main.total / (steps_max+1)) / natoms;
+    tmp =  ((num_cpus * num_threads / hyper_threads) * time_main.total / 
+           (steps_max+1)) / natoms;
     printf("%e cpuseconds per step and atom\n", tmp);
     printf("(inverse is %e).\n\n", 1.0/tmp);
 

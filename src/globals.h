@@ -157,6 +157,7 @@ EXTERN ivektor cellmin; /* Minimum index of local cells (1 with BUFCELLS,
                                                          0 otherwise) */
 EXTERN ivektor cellmax; /* Maximum index of local cells  */
 EXTERN int use_header INIT(1);   /* shall a header be written */
+EXTERN int hyper_threads INIT(1); /* number of hyperthreads per CPU */
 
 /* controlling distribution output */
 EXTERN int dist_Ekin_flag        INIT(0); /* write Ekin dists? */
