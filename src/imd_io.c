@@ -169,8 +169,8 @@ void write_header_ef(FILE *out)
 
   /* box lines */
 #ifdef TWOD
-  fprintf(out, "#3 box_x \t%.16e %.16e ", box_x.x , box_x.y);
-  fprintf(out, "#4 box_y \t%.16e %.16e ", box_y.x , box_y.y);
+  fprintf(out, "#3 box_x \t%.16e %.16e\n", box_x.x , box_x.y);
+  fprintf(out, "#4 box_y \t%.16e %.16e\n", box_y.x , box_y.y);
 #else
   fprintf(out, "#3 box_x \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#4 box_y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
@@ -269,8 +269,8 @@ void write_header_press(FILE *out)
 
   /* box lines */
 #ifdef TWOD
-  fprintf(out, "# box_x \t%.16e %.16e ", box_x.x , box_x.y);
-  fprintf(out, "# box_y \t%.16e %.16e ", box_y.x , box_y.y);
+  fprintf(out, "# box_x \t%.16e %.16e\n", box_x.x , box_x.y);
+  fprintf(out, "# box_y \t%.16e %.16e\n", box_y.x , box_y.y);
 #else
   fprintf(out, "# box_x \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "# box_y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
@@ -357,8 +357,8 @@ void write_header_pic(FILE *out)
 
   /* box lines */
 #ifdef TWOD
-  fprintf(out, "# box_x \t%.16e %.16e ", box_x.x , box_x.y);
-  fprintf(out, "# box_y \t%.16e %.16e ", box_y.x , box_y.y);
+  fprintf(out, "# box_x \t%.16e %.16e\n", box_x.x , box_x.y);
+  fprintf(out, "# box_y \t%.16e %.16e\n", box_y.x , box_y.y);
 #else
   fprintf(out, "# box_x \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "# box_y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
@@ -466,8 +466,8 @@ void write_header_dem(FILE *out)
 
   /* box lines */
 #ifdef TWOD
-  fprintf(out, "# box_x \t%.16e %.16e ", box_x.x , box_x.y);
-  fprintf(out, "# box_y \t%.16e %.16e ", box_y.x , box_y.y);
+  fprintf(out, "# box_x \t%.16e %.16e\n", box_x.x , box_x.y);
+  fprintf(out, "# box_y \t%.16e %.16e\n", box_y.x , box_y.y);
 #else
   fprintf(out, "# box_x \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "# box_y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
@@ -545,8 +545,8 @@ void write_header_dsp(FILE *out)
 
   /* box lines */
 #ifdef TWOD
-  fprintf(out, "# box_x \t%.16e %.16e ", box_x.x , box_x.y);
-  fprintf(out, "# box_y \t%.16e %.16e ", box_y.x , box_y.y);
+  fprintf(out, "# box_x \t%.16e %.16e\n", box_x.x , box_x.y);
+  fprintf(out, "# box_y \t%.16e %.16e\n", box_y.x , box_y.y);
 #else
   fprintf(out, "# box_x \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "# box_y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
@@ -703,8 +703,8 @@ void write_header_avp(FILE *out)
 
   /* box lines */
 #ifdef TWOD
-  fprintf(out, "# box_x \t%.16e %.16e ", box_x.x , box_x.y);
-  fprintf(out, "# box_y \t%.16e %.16e ", box_y.x , box_y.y);
+  fprintf(out, "# box_x \t%.16e %.16e\n", box_x.x , box_x.y);
+  fprintf(out, "# box_y \t%.16e %.16e\n", box_y.x , box_y.y);
 #else
   fprintf(out, "# box_x \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "# box_y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
@@ -1186,8 +1186,8 @@ void write_header_config(FILE *out)
 
   /* box lines */
 #ifdef TWOD
-  fprintf(out, "# box_x \t%.16e %.16e ", box_x.x , box_x.y);
-  fprintf(out, "# box_y \t%.16e %.16e ", box_y.x , box_y.y);
+  fprintf(out, "# box_x \t%.16e %.16e\n", box_x.x , box_x.y);
+  fprintf(out, "# box_y \t%.16e %.16e\n", box_y.x , box_y.y);
 #else
   fprintf(out, "# box_x \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "# box_y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
