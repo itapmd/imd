@@ -47,3 +47,4 @@ void float2rgb_dist(float_dist_t *fl, byte_dist_t *bt, float min, float max,
 /* reading and writing distributions */
 int  read_float_dist( float_dist_t *dist, char *fname);
 void write_ppm( byte_dist_t *rgb, char *fname );
+void write_float_dist( float_dist_t *dist, char *fname );

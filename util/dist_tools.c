@@ -283,6 +283,44 @@ int read_float_dist( float_dist_t *dist, char *fname )
 
 /******************************************************************************
 *
+*  write float distribution (binary only)
+*
+******************************************************************************/
+
+void write_float_dist( float_dist_t *dist, char *fname )
+{
+  FILE *outfile;
+  char c;
+  int  i;
+
+  /* open file */
+  if (NULL==(outfile=fopen(fname,"w"))) error("Cannot write distribution");
+
+  /* write file header */
+  if (endian()) c='B'; else c='L';
+  fprintf(outfile, "#F %c %d 0 %d\n", c, dist->dim, dist->n);
+  fprintf(outfile, "#C");
+  for (i=0; i<dist->n; i++) fprintf(outfile, " %s", dist->cont[i]);
+  fprintf(outfile, "\n");
+  if (2==dist->dim) {
+    fprintf(outfile, "#D %d %d\n",    dist->dimx, dist->dimy);
+    fprintf(outfile, "#S %e %e\n",    dist->sx,   dist->sy  );
+  }
+  else if (3==dist->dim) {
+    fprintf(outfile, "#D %d %d %d\n", dist->dimx, dist->dimy, dist->dimz);
+    fprintf(outfile, "#S %e %e %e\n", dist->sx,   dist->sy,   dist->sz  );
+  }
+  else error("Strange dimension of distribution!");
+  fprintf(outfile, "#E\n");
+
+  /* write data */
+  if (dist->len!=fwrite(dist->dat, sizeof(float), dist->len, outfile))
+    error("Cannot write distribution");
+  fclose(outfile);
+}
+
+/******************************************************************************
+*
 *  cut and convert float to scalar8 distribution
 *
 ******************************************************************************/

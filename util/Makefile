@@ -46,6 +46,9 @@ dist2ascii: ${DISTSOURCE} dist2ascii.c
 dist2hist: ${DISTSOURCE} dist2hist.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ dist2hist.c -lm
 
+dist_extract: ${DISTSOURCE} dist_extract.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ dist_extract.c -lm
+
 # quick hack; needs to be replaced by better version
 dist2rvf: dist2rvf.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ dist2rvf.c -lm
