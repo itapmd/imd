@@ -274,13 +274,14 @@ void getparamfile(char *paramfname, int sim)
     exit(10);
   };
 
-  /* set the random number generator seed to the current time in seconds */
+  /* set the random number generator seed to the */
+  /* negative of the current time in seconds */
   /* this will be superseeded by a fixed value from the parameter file */
   { 
     struct timeval tv;
     struct timezone tz;
     gettimeofday(&tv,&tz);
-    seed = (long) tv.tv_sec;
+    seed = (long) -tv.tv_sec;
   }
 
   do {
@@ -301,6 +302,7 @@ void getparamfile(char *paramfname, int sim)
       int tmp;
       getparam("seed",&tmp,PARAM_INT,1,1);
       seed = (long) tmp;
+      if (seed > 0) seed = -seed;
     }
     else if (strcasecmp(token,"coordname")==0) {
       /* file name for atom coordinate input data */
