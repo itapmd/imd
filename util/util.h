@@ -879,6 +879,10 @@ void read_parameters(int argc,char **argv)
     sprintf(fname,"%s.%d.itr",outfilename,restart);
     getparamfile(fname);
   }
+  else if  (-1 != avpos) {
+    sprintf(fname,"%s.%d.avp.itr",outfilename,avpos);
+    getparamfile(fname);
+  }
 
 #ifdef STRAIN
   sprintf(infilename, "%s.dsp", outfilename);
