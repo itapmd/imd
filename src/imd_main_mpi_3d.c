@@ -1305,15 +1305,26 @@ void send_atoms_ar(void)
 void add_forces( msgbuf *b, int k, int l, int m )
  {
   int i;
-  cell *from;
+  cell *to;
 
-  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
-  for (i=0; i<from->n; ++i) {
-    from->kraft X(i) += b->data[ b->n++ ];
-    from->kraft Y(i) += b->data[ b->n++ ];
-    from->kraft Z(i) += b->data[ b->n++ ];
+  to = PTR_3D_V(cell_array, k, l, m, cell_dim);
+  for (i=0; i<to->n; ++i) {
+    to->kraft X(i) += b->data[ b->n++ ];
+    to->kraft Y(i) += b->data[ b->n++ ];
+    to->kraft Z(i) += b->data[ b->n++ ];
 #ifndef MONOLJ
-    from->pot_eng[i] += b->data[ b->n++ ];
+    to->pot_eng[i] += b->data[ b->n++ ];
+#endif
+#ifdef NVX
+    to->heatcond[i] += b->data[ b->n++ ],;
+#endif
+#ifdef STRESS_TENS
+    to->presstens X(i)        += b->data[ b->n++ ];
+    to->presstens Y(i)        += b->data[ b->n++ ];
+    to->presstens Z(i)        += b->data[ b->n++ ];
+    to->presstens_offdia X(i) += b->data[ b->n++ ];
+    to->presstens_offdia Y(i) += b->data[ b->n++ ];
+    to->presstens_offdia Z(i) += b->data[ b->n++ ];
 #endif
   }
   if (b->n_max <= b->n) error("Buffer overflow in add_forces.");
@@ -1338,6 +1349,17 @@ void copy_forces( msgbuf *b, int k, int l, int m)
     b->data[ b->n++ ] = from->kraft Z(i);
 #ifndef MONOLJ
     b->data[ b->n++ ] = from->pot_eng[i];
+#endif
+#ifdef NVX
+    b->data[ b->n++ ] = from->heatcond[i];
+#endif
+#ifdef STRESS_TENS
+    b->data[ b->n++ ] = from->presstens X(i);
+    b->data[ b->n++ ] = from->presstens Y(i);
+    b->data[ b->n++ ] = from->presstens Z(i);
+    b->data[ b->n++ ] = from->presstens_offdia X(i);
+    b->data[ b->n++ ] = from->presstens_offdia Y(i);
+    b->data[ b->n++ ] = from->presstens_offdia Z(i);
 #endif
   }
   if (b->n_max <= b->n) error("Buffer overflow in copy_forces.");
