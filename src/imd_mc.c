@@ -1,23 +1,23 @@
+
 /******************************************************************************
 *
 * Monte-Carlo-Routinen von Franz Gaehler
 *
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
 
 #include "imd.h"
 
+
 /* potential energy difference between old and new position of an atom */
 
 real mc_epot_diff( vektor old_pos, vektor new_pos, 
                    int p_num, int p_typ, ivektor cellc )
 {
-  int    q_typ, i, j, k, l, m, n, r, s, t;
+  int    q_typ, column, i, j, k, l, m, n, r, s, t;
   vektor pbc, tmp_new, tmp_old, d_new, d_old;
-  real   chi, pot_k0, pot_k1, radius2, result = 0.0;
-  real   *qptr, *potptr;
+  real   *qptr, pot_tmp, grad_tmp, radius2, result = 0.0;
   cell   *q;
   real   t_old=0.0,t_new=0.0;
   ivektor ipbc;
@@ -103,45 +103,24 @@ real mc_epot_diff( vektor old_pos, vektor new_pos,
         d_old.z = *qptr - tmp_old.z; ++qptr;
 #endif
         if (p_num != q->nummer[i]) {
-          q_typ  = q->sorte[i];
 
-          /* A single access to the potential table involves two
-	     multiplications We use a intermediate pointer to aviod
-	     this as much as possible.  Note: This relies on layout of
-	     the pot-table in memory!!! */
+          q_typ  = q->sorte[i];
+          column  = p_typ * ntypes + q_typ;
 
           /* contribution of new position */
           radius2 = SPROD(d_new,d_new);
-          if (radius2 <= r2_cut) {
-            if (radius2 <= r2_0)  radius2 = r2_0; 
-
-            /* Indices into potential table */
-	    k   = (int) ((radius2 - r2_0) * inv_r2_step);
-            chi = (radius2 - r2_0 - k * r2_step) * inv_r2_step;
-	
-	    potptr = PTR_3D_V(potential, k, p_typ, q_typ , pot_dim);
-	    pot_k0 = *potptr; potptr += pot_dim.y * pot_dim.z;
-	    pot_k1 = *potptr;
-
-            t_new  += (pot_k0 + (pot_k1 - pot_k0) * chi);
-            result += (pot_k0 + (pot_k1 - pot_k0) * chi);
+          if (radius2 <= pair_pot.end[column]) {
+            pair_int2(&pot_tmp,&grad_tmp,&pair_pot,column,radius2);
+            t_new  += pot_tmp;
+            result += pot_tmp;
           }
 
           /* contribution of old position */
           radius2 = SPROD(d_old,d_old);
-          if (radius2 <= r2_cut) {
-            if (radius2 <= r2_0)  radius2 = r2_0; 
-
-            /* Indices into potential table */
-	    k   = (int) ((radius2 - r2_0) * inv_r2_step);
-	    chi = (radius2 - r2_0 - k * r2_step) * inv_r2_step;
-	
-	    potptr = PTR_3D_V(potential, k, p_typ, q_typ , pot_dim);
-	    pot_k0 = *potptr; potptr += pot_dim.y * pot_dim.z;
-	    pot_k1 = *potptr;
-
-            t_old  += (pot_k0 + (pot_k1 - pot_k0) * chi);
-            result -= (pot_k0 + (pot_k1 - pot_k0) * chi);
+          if (radius2 <= pair_pot.end[column]) {
+            pair_int2(&pot_tmp,&grad_tmp,&pair_pot,column,radius2);
+            t_old  += pot_tmp;
+            result -= pot_tmp;
           }
         }
       }
@@ -156,10 +135,9 @@ real mc_epot_diff( vektor old_pos, vektor new_pos,
 
 real mc_epot_atom( vektor pos, int p_num, int p_typ, ivektor cellc )
 {
-  int    q_typ, i, j, k, l, m, n, r, s, t;
+  int    q_typ, column, i, j, k, l, m, n, r, s, t;
   vektor pbc, tmp, d;
-  real   chi, pot_k0, pot_k1, radius2, result = 0.0;
-  real   *qptr, *potptr;
+  real   *qptr, pot_tmp, grad_tmp, radius2, result = 0.0;
   cell   *q;
   ivektor ipbc;
 
@@ -238,28 +216,15 @@ real mc_epot_atom( vektor pos, int p_num, int p_typ, ivektor cellc )
         d.z = *qptr - tmp.z; ++qptr;
 #endif
         if (p_num != q->nummer[i]) {
-          q_typ  = q->sorte[i];
 
-          /* A single access to the potential table involves two
-	     multiplications We use a intermediate pointer to aviod
-	     this as much as possible.  Note: This relies on layout of
-	     the pot-table in memory!!! */
+          q_typ  = q->sorte[i];
+          column  = p_typ * ntypes + q_typ;
 
           /* potential energy */
           radius2 = SPROD(d,d);
-          if (radius2 <= r2_cut) {real ttt;
-            if (radius2 <= r2_0)  radius2 = r2_0; 
-
-            /* Indices into potential table */
-	    k   = (int) ((radius2 - r2_0) * inv_r2_step);
-	    chi = (radius2 - r2_0 - k * r2_step) * inv_r2_step;
-	
-	    potptr = PTR_3D_V(potential, k, p_typ, q_typ , pot_dim);
-	    pot_k0 = *potptr; potptr += pot_dim.y * pot_dim.z;
-	    pot_k1 = *potptr;
-            ttt = (pot_k0 + (pot_k1 - pot_k0) * chi);
-
-            result += (pot_k0 + (pot_k1 - pot_k0) * chi);
+          if (radius2 <= pair_pot.end[column]) {
+            pair_int2(&pot_tmp,&grad_tmp,&pair_pot,column,radius2);
+            result += pot_tmp;
           }
 	}
       }
