@@ -318,8 +318,8 @@ int main( int argc, char **argv )
         argc -= 3;
         argv += 3;
       } else {
-        if ((argc<5) || (argv[2][0] == '-') || (argv[3][0] == '-')
-                     || (argv[4][0] == '-')) error("Not enough parameters!");
+        if ((argc<3) || (argv[2][0] == '-')) 
+          error("Not enough parameters!");
         masses[0] = atof(argv[2]);
         argc -= 2;
         argv += 2;
