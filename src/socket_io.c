@@ -292,7 +292,7 @@ void write_ras_using_sockets()
 #ifndef TWOD
        WriteFull(soc,&p->impuls Z(i),sizeof(real));
 #endif
-#ifdef ORDPAR
+#if defined(ORDPAR) && !defined(TWOD)
        tmp = p->pot_eng[i];
        if (p->nbanz[i]>0) 
          tmp /= p->nbanz[i];
