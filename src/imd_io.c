@@ -1468,13 +1468,42 @@ void write_msqd(int steps)
     sprintf(fname,"%s.msqd",outfilename);
     msqd_file = fopen(fname,"a");
     if (NULL == msqd_file) error("Cannot open msqd file.");
+    fprintf(msqd_file,"# time ");
+    if (msqd_ntypes) {
+      for (i=0; i<ntypes; i++) {
+         fprintf(msqd_file,"realtype%d_x ",i);
+         fprintf(msqd_file,"realtype%d_y ",i);
+#ifndef TWOD
+         fprintf(msqd_file,"realtype%d_z ",i);
+#endif
+      }
+    }
+    if (msqd_vtypes) {
+      for (i=0; i<vtypes; i++) {
+         fprintf(msqd_file,"virttype%d_x ",i);
+         fprintf(msqd_file,"virttype%d_y ",i);
+#ifndef TWOD
+         fprintf(msqd_file,"virttype%d_z ",i);
+#endif
+      }
+    }
+    fprintf(msqd_file,"\n");
   }
 
   /* write the mean square displacements */
   fprintf(msqd_file, "%10.4e", (double)(steps * timestep));
-  for (i=0; i<ntypes; i++) 
-    for (j=0; j<DIM; j++) {
-    fprintf(msqd_file," %10.4e", (double)(msqd_global[i*DIM+j] / num_sort[i]));
+  if (msqd_ntypes) {
+    for (i=0; i<ntypes; i++) 
+      for (j=0; j<DIM; j++) {
+        fprintf(msqd_file," %10.4e", (double)(msqd_global[i*DIM+j] / num_sort[i]));
+      }
+  }
+  if (msqd_vtypes) {
+    for (i=0; i<vtypes; i++) 
+      for (j=0; j<DIM; j++) {
+        fprintf(msqd_file," %10.4e", 
+           (num_vsort[i]==0 ? 0 : (double)(msqdv_global[i*DIM+j] / num_vsort[i])));
+      }
   }
   putc('\n',msqd_file);
   flush_count++;

@@ -129,7 +129,8 @@ EXTERN int nactive INIT(0);      /* number of transl. degrees of freedom */
 EXTERN int nactive_rot INIT(0);  /* number of rot. degrees of freedom */
 EXTERN int ntypes INIT(0);       /* Total number of different atom types */
 EXTERN int ntypepairs INIT(0);   /* Total number of different types pairs */
-EXTERN int *num_sort INIT(NULL); /* number of atoms for each type */
+EXTERN int *num_sort INIT(NULL); /* number of atoms for each real type */
+EXTERN int *num_vsort INIT(NULL); /* number of atoms for each virtual type */
 EXTERN int steps INIT(0);        /* number of current MD step */
 EXTERN int steps_max INIT(0);    /* Maximum number of MD steps */
 EXTERN int steps_min INIT(0);    /* starting step nr for current phase */
@@ -499,6 +500,10 @@ EXTERN real op_r2_cut[2][2] INIT(nullvektor4d);
 #if defined(MSQD) || defined(CORRELATE)
 EXTERN real *msqd INIT(NULL);        /* (local) array of mean square disp. */
 EXTERN real *msqd_global INIT(NULL); /* global array of mean square disp. */
+EXTERN real *msqdv INIT(NULL);       /* the same for virtual types */
+EXTERN real *msqdv_global INIT(NULL);/*         - '' -             */
+EXTERN int  msqd_ntypes INIT(1);     /* write msqd for real types */
+EXTERN int  msqd_vtypes INIT(0);     /* write msqd for virtual types */
 EXTERN int  correl_int INIT(0);      /* repeat interval for correlation */
 EXTERN int  correl_start INIT(0);    /* start time for correlation */
 EXTERN int  correl_end INIT(0);      /* end time for correlation */

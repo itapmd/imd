@@ -1150,6 +1150,14 @@ void getparamfile(char *paramfname, int sim)
       /* sampling time interval for correlation */
       getparam("correl_ts",&correl_ts,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token,"msqd_ntypes")==0) {
+      /* write msqd for real types */
+      getparam("msqd_ntypes",&msqd_ntypes,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"msqd_vtypes")==0) {
+      /* write msqd for virtual types */
+      getparam("msqd_vtypes",&msqd_vtypes,PARAM_INT,1,1);
+    }
 #endif
 #ifdef NVX
     else if (strcasecmp(token, "dTemp_start")==0){
@@ -2098,6 +2106,8 @@ void broadcast_params() {
   MPI_Bcast( &correl_start, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &correl_end,   1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &correl_ts,    1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &msqd_ntypes,  1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &msqd_vtypes,  1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef NVX

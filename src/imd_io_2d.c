@@ -69,9 +69,11 @@ void read_atoms(str255 infilename)
   msgbuf *input_buf, *b;
 #endif
 
-  /* allocate num_sort on all CPUs */
+  /* allocate num_sort and num_vsort on all CPUs */
   if ((num_sort = (int *) calloc(ntypes,sizeof(int)))==NULL)
     error("cannot allocate memory for num_sort\n");
+  if ((num_vsort = (int *) calloc(vtypes,sizeof(int)))==NULL)
+    error("cannot allocate memory for num_vsort\n");
 
 #ifdef MPI
 
@@ -86,10 +88,11 @@ void read_atoms(str255 infilename)
   } else if (0!=myid) {
     recv_atoms(); 
     /* If CPU 0 found velocities in its data, no initialisation is done */
-    MPI_Bcast( &natoms,       1, MPI_INT, 0, MPI_COMM_WORLD);  
-    MPI_Bcast( &nactive,      1, MPI_INT, 0, MPI_COMM_WORLD);  
-    MPI_Bcast( num_sort, ntypes, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( &do_maxwell,   1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &natoms,        1, MPI_INT, 0, MPI_COMM_WORLD);  
+    MPI_Bcast( &nactive,       1, MPI_INT, 0, MPI_COMM_WORLD);  
+    MPI_Bcast( num_sort,  ntypes, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( num_vsort, vtypes, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &do_maxwell,    1, MPI_INT, 0, MPI_COMM_WORLD);
     return;
   }
 
@@ -237,6 +240,7 @@ void read_atoms(str255 infilename)
           nactive += (int) (restrictions+s)->y;
         }
         num_sort[SORTE(input,0)]++;
+        num_vsort[VSORTE(input,0)]++;
         b = input_buf + to_cpu;
         copy_one_atom(b, input, 0, 0);
         if (b->n_max - b->n < MAX_ATOM_SIZE) {
@@ -253,6 +257,7 @@ void read_atoms(str255 infilename)
           nactive += (int) (restrictions+s)->y;
         }
         num_sort[SORTE(input,0)]++;
+        num_vsort[VSORTE(input,0)]++;
 	cellc = local_cell_coord(pos.x,pos.y);
         to = PTR_VV(cell_array,cellc,cell_dim);
 	move_atom(to, input, 0);
@@ -269,6 +274,7 @@ void read_atoms(str255 infilename)
         nactive += (int) (restrictions+s)->y;
       }
       num_sort[SORTE(input,0)]++;
+      num_vsort[VSORTE(input,0)]++;
       to = PTR_VV(cell_array,cellc,cell_dim);
       move_atom(to, input, 0);
 
@@ -305,10 +311,15 @@ void read_atoms(str255 infilename)
       MPI_Allreduce(&num_sort[i], &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
       num_sort[i]=addnumber;
     }
+    for (i=0; i<vtypes; i++) {
+      MPI_Allreduce(&num_vsort[i], &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
+      num_vsort[i]=addnumber;
+    }
   } else { /* broadcast */
-    MPI_Bcast( &natoms ,      1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( &nactive,      1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( num_sort, ntypes, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &natoms ,       1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &nactive,       1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( num_sort,  ntypes, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( num_vsort, vtypes, MPI_INT, 0, MPI_COMM_WORLD);
   }
 
   /* If CPU 0 found velocities in its data, no initialisation is done */
@@ -324,6 +335,13 @@ void read_atoms(str255 infilename)
     for (i=1; i<ntypes; i++) {
       printf(", %u",num_sort[i]);
       addnumber+=num_sort[i];
+    }
+    printf(" ],  total = %u\n",addnumber);
+    addnumber=num_vsort[0];
+    printf("num_vsort = [ %u",num_vsort[0]);
+    for (i=1; i<vtypes; i++) {
+      printf(", %u",num_vsort[i]);
+      addnumber+=num_vsort[i];
     }
     printf(" ],  total = %u\n",addnumber);
   }

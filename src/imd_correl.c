@@ -98,10 +98,13 @@ void init_correl(int ncorr_rmax, int ncorr_tmax)
 
   /* Allocate msqd arrays */
   msqd = (real *) malloc(DIM*ntypes*sizeof(real));
+  msqdv = (real *) malloc(DIM*vtypes*sizeof(real));
 #ifdef MPI
   msqd_global = (real *) malloc(DIM*ntypes*sizeof(real));
+  msqdv_global = (real *) malloc(DIM*vtypes*sizeof(real));
 #else
   msqd_global = msqd;
+  msqdv_global = msqdv;
 #endif
 
   /* initialize reference positions */
@@ -176,6 +179,7 @@ void correlate(int step, int ref_step, unsigned seqnum)
 #endif /* CORRELATE */
 
     for (i=0; i<DIM*ntypes; i++) msqd[i] = (real)0;
+    for (i=0; i<DIM*vtypes; i++) msqdv[i] = (real)0;
 
     /* loop over all cells */
     for (k=0; k<ncells; ++k) {
@@ -201,6 +205,11 @@ void correlate(int step, int ref_step, unsigned seqnum)
         msqd Y(SORTE(p,i)) += dist.y * dist.y;
 #ifndef TWOD
         msqd Z(SORTE(p,i)) += dist.z * dist.z;
+#endif
+        msqdv X(VSORTE(p,i)) += dist.x * dist.x;
+        msqdv Y(VSORTE(p,i)) += dist.y * dist.y;
+#ifndef TWOD
+        msqdv Z(VSORTE(p,i)) += dist.z * dist.z;
 #endif
 
 #ifdef CORRELATE
@@ -230,6 +239,7 @@ void correlate(int step, int ref_step, unsigned seqnum)
 #ifdef MSQD
 #ifdef MPI
     MPI_Reduce(msqd,msqd_global,DIM*ntypes,REAL,MPI_SUM,0,cpugrid);
+    MPI_Reduce(msqdv,msqdv_global,DIM*vtypes,REAL,MPI_SUM,0,cpugrid);
 #endif
     if (0==myid) write_msqd(step);
 #endif
