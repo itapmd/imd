@@ -19,31 +19,31 @@ their purpose is and how they are used.
 <TR ALIGN="LEFT">
   <TD WIDTH=120><A HREF="#2d">2d</A></TD>
   <TD WIDTH=120><A HREF="#4point">4point</A></TD>
+  <TD WIDTH=120><a href="#atdist">atdist</a></TD>
   <TD WIDTH=120><A HREF="#avpos">avpos</A></TD>
-  <TD WIDTH=120></TD>
   <TD WIDTH=120><A HREF="#mono, binary">binary</A></TD>
   <TD WIDTH=120><A HREF="#correl">correl</A></TD>
 </TR>
 <TR ALIGN="LEFT">
   <TD WIDTH=120><A HREF="#debug">debug</A></TD>
   <TD WIDTH=120><A HREF="#deform">deform</A></TD>
+  <TD WIDTH=120><A HREF="#diffpat">diffpat</A></TD>
   <TD WIDTH=120><A HREF="#disloc">disloc</A></TD>
   <TD WIDTH=120><A HREF="#eam">eam</A></TD>
   <TD WIDTH=120><A HREF="#efilter">efilter</A></TD>
-  <TD WIDTH=120><A HREF="#einstein">einstein</A></TD>
 </TR>
 <TR ALIGN="LEFT">
+  <TD WIDTH=120><A HREF="#einstein">einstein</A></TD>
   <TD WIDTH=120><A HREF="#epitax">epitax</A></TD>
   <TD WIDTH=120><A HREF="#ewald">ewald</A></TD>
   <TD WIDTH=120><A HREF="#FBC">fbc</A></TD>
   <TD WIDTH=120><A HREF="#fnorm">fnorm</A></TD>
   <TD WIDTH=120><A HREF="#glokdeform">glokdeform</A></TD>
-  <TD WIDTH=120><A HREF="#hpo">hpo</A></TD>
 </TR>
 <TR ALIGN="LEFT">
+  <TD WIDTH=120><A HREF="#hpo">hpo</A></TD>
   <TD WIDTH=120><A HREF="#homdef">homdef</A></TD>
   <TD WIDTH=120><A HREF="#covalent">keating</A></TD>
-  <TD WIDTH=120></TD>
   <TD WIDTH=120><A HREF="#mono, binary">mono</A></TD>
   <TD WIDTH=120><A HREF="#monolj">monolj</A></TD>
   <TD WIDTH=120></TD>
@@ -559,6 +559,74 @@ neighbours. This has proven useful for the detection of dislocations
 and stacking faults. The number of neighbours is also being printed 
 in the configuration file.
 
+<a name="atdist" id="atdist">
+<p><li><b>atdist</b></p>
+</a>
+<p>
+Determines the time-averaged distribution of atoms in a <b>rectangular</b>
+block of material between the lower left corner <tt>atdist_ll</tt>
+and the upper right corner <tt>atdist_ur</tt>. For this purpose,
+the block is divided into a rectangular array of bins, of dimension
+<tt>atdist_dim</tt>. Each bin contains a counter for each atom type,
+and every <tt>atdist_int</tt> time steps such a counter is 
+incremented if an atom of the given type is located in that bin.
+This recording is started at time step <tt>atdist_start</tt>,
+and stopped at time step <tt>atdist_end</tt>. Small samples can
+be periodically extended in order to fill a large enough block,
+using the parameters <tt>atdist_per_ll</tt> and <tt>atdist_per_ur</tt>,
+which are integer vectors specifying the lower left and upper right 
+corners, respectively, of the the periodic array of copies of the
+sample. It is the user's responsibility to choose this array large
+enough. The parameter <tt>atdist_phi</tt>, which is given in multiples
+of 2 Pi, can be used to rotate the sample around the z-axis, before
+it is mapped to the array of bins. Furthermore, the positions
+and types of all atoms in the block are written every <tt>atdist_pos_int</tt>
+time steps to files *.cpt, which can be used for visualization with
+the Covise program. The resulting distribution files *.atdist can
+be analysed and converted with the utility program 
+<a href="util_distrib.html#atdist">atdist</a>. </p>
+
+<p>
+This option is parallelized only by OpenMP, not by MPI.</p>
+
+<a name="diffpat" id="diffpat">
+<p><li><b>diffpat</b></p>
+</a>
+<p>
+Determines the diffraction pattern of a <b>rectangular</b>
+block of material between the lower left corner <tt>diffpat_ll</tt>
+and the upper right corner <tt>diffpat_ur</tt> by Fast Fourier
+Transform (FFT). For this purpose, the block is divided into
+an array of bins, of dimension <tt>diffpat_dim</tt>. Each bin 
+contains a counter for each atom type, and every time step such 
+a counter is incremented if an atom of the given type is located 
+in that bin. Every <tt>diffpat_int</tt> time steps, the FFT of
+the resulting distrbution is computed, its intensities
+are added up, and the array is cleared. In other words, the
+contributions of time slices of <tt>diffpat_int</tt> steps
+are added up incoherently. The recording of the diffraction
+pattern is started at time step <tt>diffpat_start</tt>, and
+stopped at time step <tt>diffpat_end</tt>. The scattering
+strength of the different atoms types, usually propotional
+to the charge of the nucleus, must be given with the parameter
+<tt>diffpat_weight</tt>. </p>
+
+<p>
+Note that the resulution of the diffraction pattern (the size of
+its pixels) is inversely proportional to the size of the block
+of material, whereas the dimension of the distribution array
+determines the range of reciprocal space for which the diffraction
+pattern is computed. Unlike to option <a href="#adist">atdist</a>, 
+the sample is not periodically extended in order to fill the block.
+The resulting diffraction pattern files *.diffpat can be analysed
+and converted with the utility program 
+<a href="util_distrib.html#diffpat">diffpat</a>. </p>
+
+<p>
+This option is parallelized only by OpenMP, not by MPI. It also 
+requires the <a href="http://www.fftw.org">FFTW</a> library,
+whose location must be configured in the Makefile. </p>
+
 <A NAME="monolj">
 <P><LI><B>monolj</B><P>
 </A>
@@ -572,8 +640,7 @@ using only one mass variable per atom type, instead of one per atom.
 <A NAME="mono, binary">
 <P><LI><B>mono, binary</B><P>
 </A>
-The hard coding of the number of different atom types speeds up imd.
-Caution: do not use mono when using different atomtypes... 
+Hard coding of the number of different atom types make IMD faster.
 
 <A NAME="single">
 <P><LI><B>single</B><P>
@@ -591,7 +658,7 @@ Lagrange interpolation.
 <A NAME="hpo">
 <P><LI><B>hpo</B><P>
 </A>
-The output is writen with a higher precision.
+The output is written with a higher precision.
 
 <A NAME="debug">
 <P><LI><B>debug</B><P>

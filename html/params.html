@@ -350,6 +350,27 @@ tau_eta_rot	# time constant for thermostat of rotational motion
 inv_tau_eta_rot	# 1/tau_eta_rot
 isq_tau_eta_rot	# 1/SQR(tau_eta_rot)
 
+# parameters for <a href="options.html#atdist">ATDIST</a>
+atdist_dim      # dimension of atoms distribution array
+atdist_int      # interval between atoms distribution updates
+atdist_start    # step when recording atoms distribution is started
+atdist_end      # step when recording atoms distribution is stopped
+atdist_ll       # lower left  corner of atoms distribution
+atdist_ur       # upper right corner of atoms distribution
+atdist_per_ll   # lower left of periodic extension
+atdist_per_ur   # upper right of periodic extension
+atdist_phi      # rotation angle around z-axis
+atdist_pos_int  # interval between atom position writes
+
+# parameters for  <a href="options.html#diffpat">DIFFPAT</a>
+diffpat_dim     # dimension of atoms distribution array
+diffpat_int     # interval between diffraction pattern updates
+diffpat_start   # step when diffraction pattern recording is started
+diffpat_end     # step when diffraction pattern recording is stopped
+diffpat_ur      # upper right corner of atoms distribution
+diffpat_ll      # lower left  corner of atoms distribution
+diffpat_weight  # scattering strength of different atom types
+
 </pre>
 
 <!--#include virtual="imdfoot.html" -->

@@ -17,8 +17,10 @@ The following utility programs deal with
     <td>compute histogram of a distribution</td></tr>
 <tr><td><a href="#dist_extract">dist_extract</a></td>
     <td>extract one data slot from a distribution</td></tr>
-<tr><td><a href="#sample2dist">sample2dist</a></td>
-    <td>compute energy distribution from an IMD checkpoint</td></tr>
+<tr><td><a href="#atdist">atdist</a></td>
+    <td>analyse and convert atoms distributions</td></tr>
+<tr><td><a href="#diffpat">diffpat</a></td>
+    <td>analyse and convert diffraction patterns</td></tr>
 </table>
 
 
@@ -140,5 +142,79 @@ sample2dist creates two distribution files,
 <tt>&lt;chkpt-file&gt;.pot.dist</tt> and 
 <tt>&lt;chkpt-file&gt;.kin.dist</tt>.
 </p>
+
+
+<a id="atdist" name="atdist">
+<h2>atdist</h2>
+</a>
+
+<p>
+atdist is a utility program to analyse/convert atoms distribution
+files. </p>
+
+<p>
+For 2D distributions,
+<pre>
+    atdist file
+</pre>
+writes a pgm file for each atom type if there are more than tree atoms 
+types, and a ppm file otherwise. The atoms types are then encoded in red, 
+green, and blue.
+</p>
+
+<p>
+For 3D distributions,
+<pre>
+    atdist file
+</pre>
+projects the distribution onto the three axis, and writes these 1D
+histograms to the terminal. This helps to find out where the dense
+planes in the distribution are.
+<pre>
+    atdist file dir min max
+</pre>
+adds the slices from <tt>min</tt> to <tt>max</tt> perpendicular to 
+<tt>dir</tt>, and writes a pgm file for each atom type if there 
+are more than tree atoms types, and a ppm file otherwise. 
+The atoms types are then encoded in red, green, and blue.
+<pre>
+    atdist file xmin ymin zmin xmax ymax zmax
+</pre>
+cuts a rectangular block from the volume and writes it in virvo xvf 
+(RGBA) format. This mode works only with up to three atoms types,
+which are encoded in red, green, and blue. </p>
+
+
+<a id="diffpat" name="diffpat">
+<h2>diffpat</h2>
+</a>
+
+<p>
+diffpat is a utility program to analyse/convert 3D diffraction patterns.
+<pre>
+    diffpat file 
+</pre>
+projects the diffraction pattern onto the three axis, and writes these 
+1D histograms to the terminal. This helps to find out where the dense
+planes are.
+<pre>
+    diffpat [-v] [-c fmax] [-l dyn] file dir min max
+</pre>
+adds the slices <tt>min..max-1</tt> perpendicular to <tt>dir</tt>, 
+and writes a pgm file, or a virvo file if option <tt>-v</tt> is
+given. If <tt>fmax</tt> is given, the intensity is cut at <tt>fmax</tt>. 
+By default, the intensities are mapped linearly to the gray values. 
+If the option <tt>-l</tt> is given, the intensities are mapped 
+logarithmically to the gray values, and intensities more 
+than a factor <tt>dyn</tt> smaller than the maximum are set to zero. 
+<pre>
+    diffpat [-c fmax] [-l dyn] file xmin ymin zmin xmax ymax zmax
+</pre>
+cuts a rectangular block from the volume and writes it in virvo xvf 
+format. If <tt>fmax</tt> is given, the intensity is cut at <tt>fmax</tt>. 
+By default, the intensities are mapped linearly to the gray values. 
+If the option <tt>-l</tt> is given, the intensities are mapped 
+logarithmically to the gray values, and intensities more than a 
+factor <tt>dyn</tt> smaller than the maximum are set to zero. </p>
 
 <!--#include virtual="imdfoot.html" -->
