@@ -648,7 +648,8 @@ void getparamfile(char *paramfname, int sim)
 #ifdef MPI
     else if (strcasecmp(token,"cpu_dim")==0) {
       /* CPU array dimension */
-      getparam("cpu_dim",&cpu_dim,PARAM_INT,DIM,DIM);    }
+      getparam("cpu_dim",&cpu_dim,PARAM_INT,DIM,DIM);    
+    }
     else if (strcasecmp(token,"parallel_output")==0) {
       /* parallel output flag */
       getparam("parallel_output",&parallel_output,PARAM_INT,1,1);    }
@@ -713,7 +714,7 @@ void getparamfile(char *paramfname, int sim)
 #ifdef STRESS_TENS
     else if (strcasecmp(token, "press_dim")==0){
       /* pressure histogram dimension */
-      getparam("press_dim", &press_dim, PARAM_INTEGER, DIM,DIM);
+      getparam("press_dim", &press_dim, PARAM_INT, DIM,DIM);
     }
      else if (strcasecmp(token, "press_interval")==0){
       /*number of steps between press. writes  */
@@ -1162,7 +1163,7 @@ void broadcast_params() {
 #endif
 
 #ifdef STRESS_TENS
-  MPI_Bcast( &press_dim,      1, INTEGER,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &press_dim, DIM, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &press_interval, 1, INTEGER,  0, MPI_COMM_WORLD);
 #endif
 

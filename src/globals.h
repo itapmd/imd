@@ -327,7 +327,7 @@ EXTERN real heat_cond     INIT(0.0);   /* heat conductivity */
 #ifdef STRESS_TENS
 EXTERN integer press_interval INIT(0);  /* Intervalle der Aufzeichnung */ 
                                         /* des Drucktensors */
-EXTERN ivektor press_dim;               /* pressure histogram dimension */
+EXTERN ivektor press_dim INIT(nullivektor);               /* pressure histogram dimension */
 #endif
 
 /* I/O via sockets */

@@ -127,7 +127,7 @@ void write_temp_dist(int steps)
 
 #endif
 
-#ifdef STRESS_TENS
+#ifdef STRESS_TENS 
 
 #ifdef SHOCK
 
@@ -315,6 +315,8 @@ void write_press_dist_shock(int steps)
     num_hist_2[i] = 0;
 #endif
   }
+
+   if (myid==0) printf("Angekommen\n");
 
   /* loop over all atoms */
   for ( r = cellmin.x; r < cellmax.x; ++r )
