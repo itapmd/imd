@@ -552,6 +552,12 @@ CFLAGS  += -DTERSOFF
 FORCESOURCES += ${COVALENTSOURCES}
 endif
 
+# KEATING
+ifneq (,$(strip $(findstring keating,${MAKETARGET})))
+CFLAGS  += -DKEATING
+FORCESOURCES += ${COVALENTSOURCES}
+endif
+
 # UNIAX
 ifneq (,$(strip $(findstring uniax,${MAKETARGET})))
 CFLAGS  += -DUNIAX

@@ -1260,6 +1260,21 @@ void getparamfile(char *paramfname, int sim)
       getparam("ters_h",ters_h,PARAM_REAL,ntypes,ntypes);
     }
 #endif
+#ifdef KEATING
+    /* Parameters for Keating potential */
+    else if (strcasecmp(token,"keating_r_cut")==0) {     
+      getparam("keating_r_cut",keating_r_cut,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"keating_alpha")==0) {     
+      getparam("keating_alpha",keating_alpha,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"keating_d")==0) {     
+      getparam("keating_d",keating_d,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"keating_beta")==0) {     
+      getparam("keating_beta",keating_beta,PARAM_REAL,ntypes*ntypes*(ntypes+1)/2,ntypes*ntypes*(ntypes+1)/2);
+    }
+#endif
 #ifdef EWALD
     /* Parameters for Ewald summation */
     else if (strcasecmp(token,"charge")==0) {     
@@ -1903,6 +1918,14 @@ void broadcast_params() {
   MPI_Bcast( ters_d,                  ntypes, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_h,                  ntypes, REAL, 0, MPI_COMM_WORLD);
 #endif
+
+#ifdef KEATING
+  MPI_Bcast( keating_r_cut,        ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( keating_alpha,        ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( keating_d    ,        ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( keating_beta , ntypes*ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+#endif
+
 #ifdef EPITAX
   MPI_Bcast( epitax_rate,     ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( epitax_type,     ntypes, MPI_REAL, 0, MPI_COMM_WORLD);

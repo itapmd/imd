@@ -22,6 +22,127 @@
 #include "imd.h"
 #include "potaccess.h"
 
+#ifdef KEATING
+
+/******************************************************************************
+*
+*  three body forces for Keating potential, 
+*        using neighbor tables computed in do_forces
+*
+******************************************************************************/
+
+void do_forces2(cell *p, real *Epot, real *Virial, 
+                real *Vir_xx, real *Vir_yy, real *Vir_zz,
+                real *Vir_yz, real *Vir_zx, real *Vir_xy)
+{
+  static vektor *d  = NULL;
+  neightab *neigh;
+  vektor force_j, force_k;
+  cell   *jcell, *kcell;
+  int    i, j, k, p_typ, j_typ, k_typ, knum, jnum;
+  real   *tmpptr;
+  real   pot_zwi, tmp_sp, tmp_d2, tmp;
+  real   tmp_virial = 0.0;
+#ifdef P_AXIAL
+  vektor tmp_vir_vect = {0.0, 0.0, 0.0};
+#endif
+
+  d    = (vektor *) realloc( d,    neigh_len * sizeof(vektor) );
+  if ( d==NULL )
+    error("cannot allocate memory for temporary neighbor data");
+
+  /* For each atom in cell */
+  for (i=0; i<p->n; ++i) {
+
+    p_typ   = SORTE(p,i);
+    neigh   = p->neigh[i];
+
+    /* construct some data for all neighbors */
+    tmpptr = neigh->dist;
+    for (j=0; j<neigh->n; ++j) {
+
+      /* type, distance vector */
+      j_typ   = neigh->typ[j];
+      d[j].x  = *tmpptr++;
+      d[j].y  = *tmpptr++;
+      d[j].z  = *tmpptr++;
+    }
+
+    /* for each pair of neighbors */
+    for (j=0; j<neigh->n-1; ++j)
+      for (k=j+1; k<neigh->n; ++k) {
+
+	j_typ = neigh->typ[j];
+	k_typ = neigh->typ[k];
+
+        /* potential term */
+        tmp_sp  = SPROD(d[j],d[k]);
+	tmp_d2  = keat_d[p_typ][j_typ] * keat_d[p_typ][k_typ];
+	pot_zwi = 3.0 * keat_beta[p_typ][j_typ][k_typ] / ( 8.0 * tmp_d2 )
+	        * SQR( tmp_sp + tmp_d2 / 3.0 ); 
+
+        *Epot  += pot_zwi;
+
+        /* forces */
+        tmp   = 3.0 * keat_beta[p_typ][j_typ][k_typ] / ( 4.0 * tmp_d2)
+	      * ( SPROD(d[j],d[k]) + tmp_d2 / 3.0 );
+
+        force_j.x = tmp * d[k].x;
+        force_j.y = tmp * d[k].y;
+        force_j.z = tmp * d[k].z;
+
+        force_k.x = tmp * d[j].x;
+        force_k.y = tmp * d[j].y;
+        force_k.z = tmp * d[j].z;
+        /* update force on particle i */
+        p->kraft X(i) += force_j.x + force_k.x;
+        p->kraft Y(i) += force_j.y + force_k.y;
+        p->kraft Z(i) += force_j.z + force_k.z;
+        p->pot_eng[i] += pot_zwi;
+
+        /* update force on particle j */
+        jcell = (cell *) neigh->cl [j];
+        jnum  = neigh->num[j];
+        jcell->kraft X(jnum) -= force_j.x;
+        jcell->kraft Y(jnum) -= force_j.y;
+        jcell->kraft Z(jnum) -= force_j.z;
+        jcell->pot_eng[jnum] += pot_zwi;
+
+        /* update force on particle k */
+        kcell = (cell *) neigh->cl [k];
+        knum  = neigh->num[k];
+        kcell->kraft X(knum) -= force_k.x;
+        kcell->kraft Y(knum) -= force_k.y;
+        kcell->kraft Z(knum) -= force_k.z;
+        kcell->pot_eng[knum] += pot_zwi;
+
+#ifdef P_AXIAL
+        tmp_vir_vect.x += d[j].x * force_j.x + d[k].x * force_k.x;
+        tmp_vir_vect.y += d[j].y * force_j.y + d[k].y * force_k.y;
+        tmp_vir_vect.z += d[j].z * force_j.z + d[k].z * force_k.z;
+#else
+        tmp_virial     += SPROD(d[j],force_j) + SPROD(d[k],force_k);
+#endif
+
+    } /* neighbor pairs */
+
+  } /* i */
+
+#ifdef P_AXIAL
+  *Vir_xx += tmp_vir_vect.x;
+  *Virial += tmp_vir_vect.x;
+  *Vir_yy += tmp_vir_vect.y;
+  *Virial += tmp_vir_vect.y;
+  *Vir_zz += tmp_vir_vect.z;
+  *Virial += tmp_vir_vect.z;
+#else
+  *Virial += tmp_virial;
+#endif
+
+}
+
+#endif
+
 #ifdef TTBP
 
 /******************************************************************************
@@ -624,6 +745,10 @@ void do_neightab(cell *p, cell *q, vektor pbc)
                 q->ort X(j),q->ort Y(j),q->ort Z(j));
         error(msgbuf);
       }
+#ifdef KEATING
+      /* make neighbor tables for KEATING */
+      if (radius2 < keat_r2_cut[p_typ][q_typ]) 
+#endif
 #ifdef TTBP
       /* make neighbor tables for TTBP */
       if (radius2 <= smooth_pot.end[column])
@@ -674,6 +799,34 @@ void do_neightab(cell *p, cell *q, vektor pbc)
 
 }
 
+#ifdef KEATING
+void init_keating(void) {
+
+  int  i, j, k, n, m;
+  real tmp;
+
+  /* parameters for more than one atom type */
+  n = 0; m = 0;
+  for (i=0; i<ntypes; i++) 
+    for (j=i; j<ntypes; j++) {
+      keat_alpha[i][j]  = keat_alpha[j][i]  = keating_alpha[n];
+      keat_d[i][j]      = keat_d[j][i]      = keating_d[n];
+      keat_r_cut[i][j]  = keat_r_cut[j][i]  = keating_r_cut[n];
+      keat_r2_cut[i][j] = keat_r2_cut[j][i] = SQR( keat_r_cut[i][j] );
+      n++; 
+      for (k=0; k<ntypes; k++) {
+	keat_beta[k][i][j] = keat_beta[k][j][i] = keating_beta[m];
+	m++;
+      }
+    }
+  tmp = 0.0;
+  for (i=0; i<ntypes; ++i)
+    for (j=0; j<ntypes; ++j)
+      tmp = MAX( tmp, keat_r2_cut[i][j] );
+  cellsz = MAX(cellsz,tmp);
+}	  
+
+#endif
 
 #ifdef STIWEB
 void init_stiweb(void) {

@@ -50,6 +50,24 @@
 
 /*****************************************************************************
 *
+*  Evaluate pair potential for Keating potential 
+*
+******************************************************************************/
+
+#define PAIR_INT_KEATING(pot, grad, p_typ, q_typ, r2)                         \
+{                                                                             \
+  real tmp_pot, tmp;                                                          \
+                                                                              \
+  tmp_pot = 3.0 * keat_alpha[p_typ][q_typ]                                    \
+          / ( 8.0 * keat_d[p_typ][q_typ] * keat_d[p_typ][q_typ] );            \
+  tmp = r2 - keat_d[p_typ][q_typ] * keat_d[p_typ][q_typ];                     \
+                                                                              \
+  pot = tmp_pot * tmp * tmp;                                                  \
+  grad = 4.0 * tmp_pot * tmp;                                                 \
+}
+
+/*****************************************************************************
+*
 *  Evaluate pair potential for Stillinger-Weber potential 
 *
 ******************************************************************************/

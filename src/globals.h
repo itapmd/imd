@@ -536,6 +536,18 @@ EXTERN real ter_d2[10];
 EXTERN real ters_h[10];
 #endif
 
+#ifdef KEATING
+EXTERN real keating_alpha[55];
+EXTERN real keat_alpha[10][10];
+EXTERN real keating_d[55];
+EXTERN real keat_d[10][10];
+EXTERN real keating_r_cut[55];
+EXTERN real keat_r_cut[10][10];
+EXTERN real keat_r2_cut[10][10];
+EXTERN real keating_beta[550];
+EXTERN real keat_beta[10][10][10];
+#endif
+
 /* for TTBP, STIWEB, and TERSOFF */
 #ifdef COVALENT  
 EXTERN int neigh_len INIT(50);     /* max neighbors */

@@ -52,7 +52,7 @@
 
 /* we always need PAIR_POT, unless TERSOFF, UNIAX, or MONOLJ are defined */
 /* note that  PAIR_POT is the default if no interaction is specified     */
-#if !(defined(TERSOFF) || defined(STIWEB) || defined(UNIAX) || defined(MONOLJ))
+#if !(defined(TERSOFF) || defined(KEATING) || defined(STIWEB) || defined(UNIAX) || defined(MONOLJ))
 #ifndef PAIR_POT
 #define PAIR_POT
 #endif
@@ -66,7 +66,7 @@
 #endif
 
 /* shortcut for covalent interactions */
-#if defined(TTBP) || defined(TERSOFF) || defined(STIWEB)
+#if defined(KEATING)|| defined(TTBP) || defined(TERSOFF) || defined(STIWEB)
 #define COVALENT
 #endif
 

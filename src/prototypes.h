@@ -123,6 +123,9 @@ void do_forces2(cell*, real*, real*, real*, real*, real*, real*, real*, real*);
 #ifdef EAM2
 void do_forces_eam2(cell*, cell*, vektor, real*, real*, real*, real*, real*, real*, real*, real*);
 #endif
+#ifdef KEATING
+void init_keating(void);
+#endif
 #ifdef STIWEB
 void init_stiweb(void);
 void pair_int_stiweb(real *pot, real *grad, int p_typ, int q_typ, real r2);

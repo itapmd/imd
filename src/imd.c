@@ -74,6 +74,9 @@ int main(int argc, char **argv)
   read_pot_table(&rho_h_tab,eam2_at_rho_filename,ntypes*ntypes);
 #endif
 
+#ifdef KEATING
+  init_keating();
+#endif
 #ifdef STIWEB
   init_stiweb();
 #endif
@@ -138,6 +141,10 @@ int main(int argc, char **argv)
     }
 #ifdef MPI
     broadcast_params();
+#endif
+
+#ifdef KEATING
+    init_keating();
 #endif
 #ifdef STIWEB
   init_stiweb();
