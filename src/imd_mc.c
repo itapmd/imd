@@ -131,7 +131,7 @@ real mc_epot_diff( vektor old_pos, vektor new_pos,
             chi = (radius2 - r2_0 - k * r2_step) * inv_r2_step;
 	
 	    potptr = PTR_3D_V(potential, k, p_typ, q_typ , pot_dim);
-	    pot_k0 = *potptr; potptr += pot_dim.y + pot_dim.z;
+	    pot_k0 = *potptr; potptr += pot_dim.y * pot_dim.z;
 	    pot_k1 = *potptr;
 
             t_new  += (pot_k0 + (pot_k1 - pot_k0) * chi);
@@ -148,7 +148,7 @@ real mc_epot_diff( vektor old_pos, vektor new_pos,
 	    chi = (radius2 - r2_0 - k * r2_step) * inv_r2_step;
 	
 	    potptr = PTR_3D_V(potential, k, p_typ, q_typ , pot_dim);
-	    pot_k0 = *potptr; potptr += pot_dim.y + pot_dim.z;
+	    pot_k0 = *potptr; potptr += pot_dim.y * pot_dim.z;
 	    pot_k1 = *potptr;
 
             t_old  += (pot_k0 + (pot_k1 - pot_k0) * chi);
@@ -279,7 +279,7 @@ real mc_epot_atom( vektor pos, int p_num, int p_typ, ivektor cellc )
 	    chi = (radius2 - r2_0 - k * r2_step) * inv_r2_step;
 	
 	    potptr = PTR_3D_V(potential, k, p_typ, q_typ , pot_dim);
-	    pot_k0 = *potptr; potptr += pot_dim.y + pot_dim.z;
+	    pot_k0 = *potptr; potptr += pot_dim.y * pot_dim.z;
 	    pot_k1 = *potptr;
             ttt = (pot_k0 + (pot_k1 - pot_k0) * chi);
 

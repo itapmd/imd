@@ -103,8 +103,8 @@ void do_forces_ttbp_1(cell *p, cell *q, vektor pbc)
 	   Note: This relies on layout of the pot-table in memory!!! */
 
 	potptr   = PTR_3D_V(potential, k, p_typ, q_typ, pot_dim);
-	pot_k0   = *potptr; potptr += pot_dim.y + pot_dim.z;
-	pot_k1   = *potptr; potptr += pot_dim.y + pot_dim.z;
+	pot_k0   = *potptr; potptr += pot_dim.y * pot_dim.z;
+	pot_k1   = *potptr; potptr += pot_dim.y * pot_dim.z;
 	pot_k2   = *potptr;
 
 	dv       = pot_k1 - pot_k0;
@@ -289,8 +289,8 @@ void do_forces_ttbp_2(cell *p, cell *q, vektor pbc)
       s_chi    = (radius2 - ttbp_r2_0 - s_k * ttbp_r2_step) * ttbp_inv_r2_step;
 	
       s_potptr = PTR_3D_V(ttbp_potential, s_k, p_typ, j_typ, ttbp_pot_dim);
-      s_pot_k0 = *s_potptr; s_potptr += ttbp_pot_dim.y + ttbp_pot_dim.z;
-      s_pot_k1 = *s_potptr; s_potptr += ttbp_pot_dim.y + ttbp_pot_dim.z;
+      s_pot_k0 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
+      s_pot_k1 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
       s_pot_k2 = *s_potptr;
 
       s_dv     = s_pot_k1 - s_pot_k0;
@@ -331,8 +331,8 @@ void do_forces_ttbp_2(cell *p, cell *q, vektor pbc)
         s_chi    = (rradius2 - ttbp_r2_0 - s_k * ttbp_r2_step) * ttbp_inv_r2_step;
 	
         s_potptr = PTR_3D_V(ttbp_potential, s_k, p_typ, k_typ , ttbp_pot_dim);
-        s_pot_k0 = *s_potptr; s_potptr += ttbp_pot_dim.y + ttbp_pot_dim.z;
-        s_pot_k1 = *s_potptr; s_potptr += ttbp_pot_dim.y + ttbp_pot_dim.z;
+        s_pot_k0 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
+        s_pot_k1 = *s_potptr; s_potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
         s_pot_k2 = *s_potptr;
 
         s_dv     = s_pot_k1 - s_pot_k0;

@@ -141,8 +141,8 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 	   Note: This relies on layout of the pot-table in memory!!! */
 	/* k0, k1, k2: Potentialwerte an drei aufeinanderfolgenden k */
  	potptr = PTR_3D_V(potential, k, p_typ, q_typ , pot_dim);
-	pot_k0 = *potptr; potptr += pot_dim.y + pot_dim.z;
-	pot_k1 = *potptr; potptr += pot_dim.y + pot_dim.z;
+	pot_k0 = *potptr; potptr += pot_dim.y * pot_dim.z;
+	pot_k1 = *potptr; potptr += pot_dim.y * pot_dim.z;
 	pot_k2 = *potptr;
 
 	/* dv: 	1. Abl. des Pots in Einheiten der Einheitsschrittweite k

@@ -145,8 +145,8 @@ void do_forces(cell *ap, cell *aq, vektor apbc)
       pot_k2 = potential[p_typ][q_typ][k + 2];  
 #else
       potptr = PTR_3D_V(potential, k, p_typ, q_typ , pot_dim);
-      pot_k0 = *potptr; potptr += pot_dim.y + pot_dim.z;
-      pot_k1 = *potptr; potptr += pot_dim.y + pot_dim.z;
+      pot_k0 = *potptr; potptr += pot_dim.y * pot_dim.z;
+      pot_k1 = *potptr; potptr += pot_dim.y * pot_dim.z;
       pot_k2 = *potptr;
 #endif /* STATIC_POT */
       dv  = pot_k1 - pot_k0;
