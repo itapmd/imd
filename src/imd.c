@@ -99,6 +99,10 @@ int main(int argc, char **argv)
   }
   if (0 == myid) printf("Done reading atoms.\n");
 
+#ifdef OMP
+  printf("\nComputing with %d thread(s).\n\n",omp_get_max_threads());
+#endif
+
   start = steps_min;  /* keep starting step number */
 
   imd_stop_timer(&time_setup);
