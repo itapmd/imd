@@ -304,7 +304,7 @@ void getparamfile(char *paramfname, int sim)
       getparam("simulation",&tmp,PARAM_INT,1,1);
       if (sim < tmp) break;
     }
-    if (strcasecmp(token,"loop")==0) {
+    else if (strcasecmp(token,"loop")==0) {
       /* looping for online visualisation */
       getparam(token,&loop,PARAM_INT,1,1);
     }
