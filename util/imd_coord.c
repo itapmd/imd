@@ -156,7 +156,7 @@ void write_data()
 
 	  /* Spectrum of coordination numbers */
 	  if ( ttl_coord <= c_max ) 
-	  ++spec[(int)(nint(ttl_coord))];
+	  ++spec[(int)(rint(ttl_coord))];
 
 	  if ( local == 1 ) {
 
