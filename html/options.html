@@ -287,21 +287,21 @@ file <TT>&lt;basename&gt;.tempdist</TT> every
 <tt>tran_interval</tt> steps.
 
 <A NAME="stress_tens">
-<P><LI><B>stress_tens</B><P>
+<P><LI><B>stress</B><P>
 </A>
-This option enables imd to compute the<B> diagonal</B> part of the
-stress or pressure tensor. The result will be written as a histogram
-onto a file <TT>&lt;basename&gt;.pressdist&lt;n&gt;</TT>. The output
-file further contains the density, kinetic energy and potential energy
-distribution. The
-writing interval is given by the parameter <tt>press_interval</tt>,
-the number of histogram bins by <tt>press_nlayers</TT>. 
+This option enables imd to compute the stress or pressure tensor. 
+The result will be written as a histogram into a file 
+<TT>&lt;basename&gt;.&lt;n&gt;.pressdist</TT>. The output
+file further contains the density, kinetic energy and potential 
+energy distribution. The writing interval is given by the parameter 
+<tt>press_interval</tt>, the dimension of the histogram by the
+integer vector <tt>press_dim</TT>. 
 <P>
-<B>Important</B>: The histogram is written as a function of the
-x-coordinate and averaged over the y- and z-coordinate (in 3d). A
-generalization to more dimensional arrays and to the non-diagonal part
-of the pressure tensor is easily possible 
-</A>.
+In <B>shock</B> mode, only the diagonal part of the pressure
+tensor is written. Further, the histogram is written as a function 
+of the x-coordinate only, and averaged over the y- and z-coordinate 
+(in 3d). For that purpose, the second and third component of
+<tt>press_dim</TT> have to be set to 1. 
 
 <A NAME="quasi">
 <P><LI><B>quasi</B><P>
