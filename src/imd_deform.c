@@ -73,6 +73,11 @@ void expand_sample(void)
 
 void shear_sample(void)
 {
+  int i,r,s;
+#ifndef TWOD
+  int t;
+#endif
+  cell *p;
   int k;
   ivektor max_cell_dim;
 
