@@ -25,7 +25,7 @@
 void move_atoms_nve(void)
 {
   int k;
-  real tmp;
+  real tmpvec1[3], tmpvec2[3];
 #ifdef BUG
   real f1x=0.0;
   real f1y=0.0;
@@ -36,23 +36,18 @@ void move_atoms_nve(void)
 #endif
   static int count = 0;
   tot_kin_energy = 0.0;
-#ifdef FNORM
   fnorm = 0.0;
-#endif
-#ifdef GLOK
   PxF   = 0.0;
-#endif
-
 
   /* loop over all cells */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_kin_energy,fnorm,PxF) private(tmp)
+#pragma omp parallel for reduction(+:tot_kin_energy,fnorm,PxF)
 #endif
   for (k=0; k<ncells; ++k) {
 
     int  i, sort;
     cell *p;
-    real kin_energie_1, kin_energie_2;
+    real kin_energie_1, kin_energie_2, tmp;
 #ifdef UNIAX    
     real rot_energie_1, rot_energie_2;
     real dot, norm;
@@ -216,21 +211,16 @@ void move_atoms_nve(void)
   }
 
 #ifdef MPI
-  /* Add kinetic energy from all cpus */
-  MPI_Allreduce( &tot_kin_energy, &tmp, 1, REAL, MPI_SUM, cpugrid);
-  tot_kin_energy = tmp;
-#ifdef FNORM
-  /* Add all the (local) scalars of the local scalar products of the 
-     global force vector */ 
-  MPI_Allreduce( &fnorm, &tmp, 1, REAL, MPI_SUM, cpugrid);
-  fnorm = tmp;
-#endif
-#ifdef GLOK
-  /* Add all the (local) scalars of the local scalar products of the 
-     global force & impuls vector */ 
-  MPI_Allreduce( &PxF, &tmp, 1, REAL, MPI_SUM, cpugrid);
-  PxF = tmp;
-#endif
+  /* add up results from different CPUs */
+  tmpvec1[0] = tot_kin_energy;
+  tmpvec1[1] = fnorm;
+  tmpvec1[2] = PxF;
+
+  MPI_Allreduce( tmpvec1, tmpvec2, 3, REAL, MPI_SUM, cpugrid);
+
+  tot_kin_energy = tmpvec2[0];
+  fnorm          = tmpvec2[1];
+  PxF            = tmpvec2[2];
 #endif
   
 #ifdef AND
@@ -272,12 +262,10 @@ void move_atoms_nve(void)
 void move_atoms_mik(void)
 {
   int k;
-  real tmp;
+  real tmpvec1[2], tmpvec2[2];
   static int count = 0;
   tot_kin_energy = 0.0;
-#ifdef FNORM
   fnorm = 0.0;
-#endif
 
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
@@ -287,13 +275,13 @@ void move_atoms_mik(void)
 
   /* loop over all cells */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_kin_energy,fnorm) private(tmp)
+#pragma omp parallel for reduction(+:tot_kin_energy,fnorm)
 #endif
   for (k=0; k<ncells; ++k) {
 
     int  i, sort;
     cell *p;
-    real kin_energie_1, kin_energie_2;
+    real kin_energie_1, kin_energie_2, tmp;
     p = cell_array + CELLS(k);
 
 #ifdef PVPCRAY
@@ -402,15 +390,14 @@ void move_atoms_mik(void)
   }
 
 #ifdef MPI
-  /* Add kinetic energy from all cpus */
-  MPI_Allreduce( &tot_kin_energy, &tmp, 1, REAL, MPI_SUM, cpugrid);
-  tot_kin_energy = tmp;
-#ifdef FNORM
-  /* Add all the (local) scalars of the local scalar products of the 
-     global force vector */ 
-  MPI_Allreduce( &fnorm, &tmp, 1, REAL, MPI_SUM, cpugrid);
-  fnorm = tmp;
-#endif
+  /* add up results from different CPUs */
+  tmpvec1[0] = tot_kin_energy;
+  tmpvec1[1] = fnorm;
+
+  MPI_Allreduce( tmpvev1, tmpvec2, 2, REAL, MPI_SUM, cpugrid);
+
+  tot_kin_energy = tmpvec2[0];
+  fnorm          = tmpvec2[1];
 #endif
 
 }
@@ -438,15 +425,14 @@ void move_atoms_nvt(void)
 
 {
   int k;
-  real kin_energie_1 = 0.0, kin_energie_2 = 0.0;
-  real reibung, eins_d_reib, tmp;
+  real tmpvec1[3], tmpvec2[3], ttt;
+  real E_kin_1 = 0.0, E_kin_2 = 0.0;
+  real reibung, eins_d_reib;
+  real E_rot_1 = 0.0, E_rot_2 = 0.0;
 #ifdef UNIAX
-  real rot_energie_1 = 0.0, rot_energie_2 = 0.0;
   real reibung_rot,  eins_d_reib_rot;
 #endif
-#ifdef FNORM
   fnorm = 0.0;
-#endif
 #ifdef SLLOD
   ivektor max_cell_dim;
 #endif
@@ -459,14 +445,14 @@ void move_atoms_nvt(void)
 #endif
    
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:kin_energie_1,kin_energie_2,rot_energie_1,rot_energie_2,fnorm) private(tmp)
+#pragma omp parallel for reduction(+:E_kin_1,E_kin_2,E_rot_1,E_rot_2,fnorm)
 #endif
-
   for (k=0; k<ncells; ++k) {
 
     int i;
     int sort;
     cell *p;
+    real tmp;
 #ifdef UNIAX
     real dot, norm ;
     vektor cross ;
@@ -476,9 +462,9 @@ void move_atoms_nvt(void)
     for (i=0; i<p->n; ++i) {
 
         /* twice the old kinetic energy */
-        kin_energie_1 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+        E_kin_1 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
 #ifdef UNIAX
-        rot_energie_1 +=  SPRODN(p->dreh_impuls,i,p->dreh_impuls,i) 
+        E_rot_1 +=  SPRODN(p->dreh_impuls,i,p->dreh_impuls,i) 
                                                   / p->traeg_moment[i];
 #endif
 
@@ -522,9 +508,9 @@ void move_atoms_nvt(void)
 #endif
 
         /* twice the new kinetic energy */ 
-        kin_energie_2 += SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+        E_kin_2 += SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
 #ifdef UNIAX
-        rot_energie_2 += SPRODN(p->dreh_impuls,i,p->dreh_impuls,i) 
+        E_rot_2 += SPRODN(p->dreh_impuls,i,p->dreh_impuls,i) 
                                                      / p->traeg_moment[i];
 #endif
 
@@ -592,30 +578,30 @@ void move_atoms_nvt(void)
 #endif
 
 #ifdef UNIAX
-  tot_kin_energy = ( kin_energie_1 + kin_energie_2 
-		     + rot_energie_1 + rot_energie_2 ) / 4.0;
+  tot_kin_energy = ( E_kin_1 + E_kin_2 + E_rot_1 + E_rot_2 ) / 4.0;
 #else
-  tot_kin_energy = ( kin_energie_1 + kin_energie_2 ) / 4.0;
+  tot_kin_energy = ( E_kin_1 + E_kin_2 ) / 4.0;
 #endif
 
 #ifdef MPI
-  /* add kinetic energy from all cpus */
-  MPI_Allreduce( &tot_kin_energy, &tmp, 1, REAL, MPI_SUM, cpugrid);
-  tot_kin_energy = tmp;
-  MPI_Allreduce( &kin_energie_2,  &tmp, 1, REAL, MPI_SUM, cpugrid);
-  kin_energie_2  = tmp;
-#ifdef UNIAX
-  MPI_Allreduce( &rot_energie_2,  &tmp, 1, REAL, MPI_SUM, cpugrid);
-  rot_energie_2  = tmp;
-#endif
+  /* add up results from different CPUs */
+  tmpvec1[0] = tot_kin_energy;
+  tmpvec1[1] = E_kin_2;
+  tmpvec1[2] = E_rot_2;
+
+  MPI_Allreduce( tmpvec1, tmpvec2, 3, REAL, MPI_SUM, cpugrid);
+
+  tot_kin_energy = tmpvec2[0];
+  E_kin_2        = tmpvec2[1];
+  E_rot_2        = tmpvec2[2];
 #endif
 
   /* time evolution of constraints */
-  tmp  = nactive * temperature;
-  eta += timestep * (kin_energie_2 / tmp - 1.0) * inv_tau_eta;
+  ttt  = nactive * temperature;
+  eta += timestep * (kin_energie_2 / ttt - 1.0) * inv_tau_eta;
 #ifdef UNIAX
-  tmp  = nactive_rot * temperature;
-  eta_rot += timestep * ( rot_energie_2 / tmp - 1.0 ) * inv_tau_eta_rot;
+  ttt  = nactive_rot * temperature;
+  eta_rot += timestep * ( rot_energie_2 / ttt - 1.0 ) * inv_tau_eta_rot;
 #endif
   
 }
@@ -644,11 +630,9 @@ void move_atoms_npt_iso(void)
 {
   int  k;
   real Ekin_old = 0.0, Ekin_new = 0.0;
-  real fric, ifric, tmp;
-#ifdef UNIAX
+  real fric, ifric, tmpvec1[4], tmpvec2[4], ttt;
   real Erot_old = 0.0, Erot_new = 0.0;
   real reib, ireib ;
-#endif
 
   /* relative box size change */
   box_size.x      += 2.0 * timestep * xi.x * inv_tau_xi;
@@ -662,12 +646,13 @@ void move_atoms_npt_iso(void)
 
   /* loop over all cells */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:Ekin_old,Ekin_new,Erot_old,Erot_new) private(tmp)
+#pragma omp parallel for reduction(+:Ekin_old,Ekin_new,Erot_old,Erot_new)
 #endif
   for (k=0; k<ncells; ++k) {
 
     int i;
     cell *p;
+    real tmp;
 #ifdef UNIAX
     real dot, norm ;
     vektor cross ;
@@ -755,17 +740,18 @@ void move_atoms_npt_iso(void)
   }
 
 #ifdef MPI
-  /* add data from all cpus */
-  MPI_Allreduce( &Ekin_old, &tmp, 1, REAL, MPI_SUM, cpugrid);
-  Ekin_old = tmp;
-  MPI_Allreduce( &Ekin_new, &tmp, 1, REAL, MPI_SUM, cpugrid);
-  Ekin_new = tmp;
-#ifdef UNIAX
-  MPI_Allreduce( &Erot_old, &tmp, 1, REAL, MPI_SUM, cpugrid);
-  Erot_old  = tmp;
-  MPI_Allreduce( &Erot_new, &tmp, 1, REAL, MPI_SUM, cpugrid);
-  Erot_new  = tmp;
-#endif
+  /* add up results from all CPUs */
+  tmpvec1[0] = Ekin_old;
+  tmpvec1[1] = Ekin_new;
+  tmpvec1[2] = Erot_old;
+  tmpvec1[3] = Erot_new;
+
+  MPI_Allreduce( tmpvec1, tmpvec2, 4, REAL, MPI_SUM, cpugrid);
+
+  Ekin_old = tmpvec2[0];
+  Ekin_new = tmpvec2[1];
+  Erot_old = tmpvec2[2];
+  Erot_new = tmpvec2[3];
 #endif
 
 #ifdef UNIAX
@@ -778,17 +764,17 @@ void move_atoms_npt_iso(void)
 #endif
 
   /* time evolution of constraints */
-  tmp  = nactive * temperature;
-  eta += timestep * (Ekin_new / tmp - 1.0) * inv_tau_eta;
+  ttt  = nactive * temperature;
+  eta += timestep * (Ekin_new / ttt - 1.0) * inv_tau_eta;
 #ifdef UNIAX
-  tmp  = nactive_rot * temperature;
-  eta_rot += timestep * (Erot_new / tmp - 1.0) * inv_tau_eta_rot;
+  ttt  = nactive_rot * temperature;
+  eta_rot += timestep * (Erot_new / ttt - 1.0) * inv_tau_eta_rot;
 #endif
 
-  tmp = xi_old.x + timestep * 2.0 * (pressure - pressure_ext.x) * volume
+  ttt = xi_old.x + timestep * 2.0 * (pressure - pressure_ext.x) * volume
                           * inv_tau_xi * DIM / (nactive * temperature);
   xi_old.x = xi.x;
-  xi.x = tmp;
+  xi.x = ttt;
 
   /* new box size */
   box_x.x *= box_size.x;  tbox_x.x /= box_size.x;
@@ -839,7 +825,7 @@ void move_atoms_npt_axial(void)
 
 {
   int k;
-  real Ekin, tmp, xi_tmp, tmpvec1[4], tmpvec2[4];
+  real Ekin, ttt, xi_tmp, tmpvec1[4], tmpvec2[4];
   vektor fric, ifric;
 
   /* initialize data, and compute new box size */
@@ -933,7 +919,7 @@ void move_atoms_npt_axial(void)
   }
 
 #ifdef MPI
-  /* Add kinetic energy from all cpus */
+  /* add up results from different CPUs */
   tmpvec1[0] = Ekin;
   tmpvec1[1] = stress_x;
   tmpvec1[2] = stress_y;
@@ -961,19 +947,19 @@ void move_atoms_npt_axial(void)
   tot_kin_energy /= 4.0;
 
   /* update parameters */
-  tmp  = nactive * temperature;
-  eta += timestep * (Ekin / tmp - 1.0) * inv_tau_eta;
+  ttt  = nactive * temperature;
+  eta += timestep * (Ekin / ttt - 1.0) * inv_tau_eta;
 
-  tmp  = timestep * 2.0 * volume * inv_tau_xi * DIM / (nactive * temperature);
+  ttt  = timestep * 2.0 * volume * inv_tau_xi * DIM / (nactive * temperature);
 
-  xi_tmp   = xi_old.x + tmp * (stress_x - pressure_ext.x);
+  xi_tmp   = xi_old.x + ttt * (stress_x - pressure_ext.x);
   xi_old.x = xi.x;
   xi.x     = xi_tmp;
-  xi_tmp   = xi_old.y + tmp * (stress_y - pressure_ext.y);
+  xi_tmp   = xi_old.y + ttt * (stress_y - pressure_ext.y);
   xi_old.y = xi.y;
   xi.y     = xi_tmp;
 #ifndef TWOD
-  xi_tmp   = xi_old.z + tmp * (stress_z - pressure_ext.z);
+  xi_tmp   = xi_old.z + ttt * (stress_z - pressure_ext.z);
   xi_old.z = xi.z;
   xi.z     = xi_tmp;
 #endif
@@ -1166,18 +1152,19 @@ void move_atoms_stm(void)
 
 {
   int k;
-  real kin_energie_1 = 0.0, kin_energie_2 = 0.0, tmp;
+  real kin_energie_1 = 0.0, kin_energie_2 = 0.0;
+  real tmpvec1[2], tmpvec2[2], ttt;
    
   /* loop over all atoms */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:kin_energie_1,kin_energie_2) private(tmp)
+#pragma omp parallel for reduction(+:kin_energie_1,kin_energie_2)
 #endif
   for (k=0; k<ncells; ++k) {
 
     int i;
     cell *p;
     real reibung, eins_d_reib;
-    real tmp1, tmp2;
+    real tmp, tmp1, tmp2;
     vektor d;
     int sort=0;
 
@@ -1220,16 +1207,19 @@ void move_atoms_stm(void)
   tot_kin_energy = (kin_energie_1 + kin_energie_2) / 4.0;
 
 #ifdef MPI
-  /* Add kinetic energy form all cpus */
-  MPI_Allreduce( &tot_kin_energy, &tmp, 1, REAL, MPI_SUM, cpugrid);
-  tot_kin_energy = tmp;
-  MPI_Allreduce( &kin_energie_2,  &tmp, 1, REAL, MPI_SUM, cpugrid);
-  kin_energie_2  = tmp;
+  /* add up results from all CPUs */
+  tmpvec1[0] = tot_kin_energy;
+  tmpvec1[1] = kin_energie_2;
+
+  MPI_Allreduce( tmpvec1, tmpvec2, 2, REAL, MPI_SUM, cpugrid);
+
+  tot_kin_energy = tmpvec2[0];
+  kin_energie_2  = tmpvec2[1];
 #endif
 
   /* Zeitentwicklung der Parameter */
-  tmp  = nactive * temperature;
-  eta += timestep * (kin_energie_2 / tmp - 1.0) * inv_tau_eta;
+  ttt  = nactive * temperature;
+  eta += timestep * (kin_energie_2 / ttt - 1.0) * inv_tau_eta;
 
 }
 
