@@ -460,7 +460,7 @@ void init_atdist()
 #endif
   size = atdist_size * ntypes;
 
-  /* diffpat_ll and diffpat_ur must be set */
+  /* atdist_ll and atdist_ur must be set */
   if (0.0==atdist_ur.x) {
     error("atdist_ll and atdist_ur must be set");
   }

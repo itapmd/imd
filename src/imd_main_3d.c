@@ -212,6 +212,10 @@ void main_loop(void)
        update_avpos();
     }
 #endif
+#ifdef ATDIST
+    if ((atdist_int > 0) && (steps >= atdist_start) && 
+        (steps <= atdist_end)) update_atdist();
+#endif
 #ifdef DIFFPAT
     if ((diffpat_int > 0) && (steps >= diffpat_start) && 
         (steps <= diffpat_end)) update_diffpat(steps);
