@@ -92,6 +92,10 @@ cell_size_tol	     # relative tolerance for volume rescaling during
 total_types          # TOTAL nuber of atoms: ntypes + virtualtypes
 extra_startforce     # start-/endforce for each virtual type
 extra_endforce       # format: typenr forcevector
+                     # or (using mik)
+extra_dforce         # force increment for each virtual type 
+fbc_ekin_threshold   # that is added when E_kin per atom
+                     # drops under the thresholdvalue
 
 # parameters for 2d pictures
 ecut_kin	# kinetic energy interval for pictures (min/max)

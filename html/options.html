@@ -352,7 +352,9 @@ total_types is the number of real atomtypes + virtual atom types.<p>
 For each virtual atomtype one can declare in the parameter file the
 starting and end value of an extra force vector. The values between
 extra_startforce and extra_endforce are linearly interpolated (like
-the temperature).<p> 
+the temperature). For mik simulations one specifies no extra_endforce,
+but an force increment extra_dforce that is added, when the kinetic
+energy per atom drops under fbc_ekin_threshold.<p> 
 This flag should work with risc and mpi versions and at least with
 the nve and mik integrators, and also with the 2d and eam2 options.
 
