@@ -145,8 +145,8 @@ void do_forces(cell *p, cell *q, vektor pbc)
 	   Note: This relies on layout of the pot-table in memory!!! */
 
 	potptr = PTR_3D_V(potential, k, p_typ, q_typ , pot_dim);
-	pot_k0 = *potptr; potptr += pot_dim.y + pot_dim.z;
-	pot_k1 = *potptr; potptr += pot_dim.y + pot_dim.z;
+	pot_k0 = *potptr; potptr += pot_dim.y * pot_dim.z;
+	pot_k1 = *potptr; potptr += pot_dim.y * pot_dim.z;
 	pot_k2 = *potptr;
 
 	dv  = pot_k1 - pot_k0;
