@@ -21,6 +21,7 @@
 
 void flush_outbuf(FILE *out, int *len, int tag)
 {
+  if (*len+1>OUTPUT_BUF_SIZE) error("outbuf overflow");
   if ((myid==0) || (parallel_output==1)) {
     if (*len>0) fwrite(outbuf, 1, *len, out);
   }
@@ -77,10 +78,14 @@ void write_config_select(int fzhlr, char *suffix,
       MPI_Recv(outbuf, OUTPUT_BUF_SIZE, MPI_CHAR, MPI_ANY_SOURCE, 
                MPI_ANY_TAG, cpugrid, &status);
       MPI_Get_count(&status, MPI_CHAR, &len);
+      if ((status.MPI_TAG!=OUTBUF_TAG+1) && (status.MPI_TAG!=OUTBUF_TAG))
+        error("messages mixed up");
       if (status.MPI_TAG==OUTBUF_TAG+1) m++;
       if (len>1) fwrite(outbuf, 1, len-1, out);
     } while (m < num_cpus);
   }
+  /* don't send non-io messages before we are finished */
+  MPI_Barrier(cpugrid);
 #endif /* MPI */
   if ((0==myid) || (1==parallel_output)) fclose(out);
 }
@@ -510,7 +515,7 @@ void write_properties(int steps)
   if (NULL == out) error("Cannot open properties file.");
 
   fprintf(out, "%e",     (double) (steps * timestep));
-  fprintf(out, " %.16e ", (double) Epot);
+  fprintf(out, " %.16e", (double) Epot);
  
   fprintf(out, format,   (double) Temp);
 #ifdef FNORM
