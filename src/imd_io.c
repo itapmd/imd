@@ -255,19 +255,20 @@ void write_cell_dem(FILE *out, cell *p)
 void write_cell_dsp(FILE *out, cell *p)
 {
   int i;
-  real dx,dy,dz;
+  vektor d;
   for (i=0; i<p->n; ++i) {
-    dx = p->ort X(i) - p->ort_ref X(i);
-    dy = p->ort Y(i) - p->ort_ref Y(i);
+    d.x = p->ort X(i) - p->ort_ref X(i);
+    d.y = p->ort Y(i) - p->ort_ref Y(i);
 #ifndef TWOD 
-    dz = p->ort Z(i) - p->ort_ref Z(i);
-    if ((ABS(dx)<box_x.x/2) && (ABS(dy)<box_y.y/2) && (ABS(dz)<box_z.z/2))
-    fprintf(out,"%12f %12f %12f %12f %12f %12f\n",
-            p->ort X(i),p->ort Y(i),p->ort Z(i),dx,dy,dz);
-#else
-    if ((ABS(dx)<box_x.x/2) && (ABS(dy)<box_y.y/2))
+    d.z = p->ort Z(i) - p->ort_ref Z(i);
+#endif
+    reduce_displacement(&d);
+#ifdef TWOD
     fprintf(out,"%12f %12f %12f %12f\n",
-            p->ort X(i),p->ort Y(i),dx,dy);
+            p->ort X(i),p->ort Y(i),d.x,d.y);
+#else
+    fprintf(out,"%12f %12f %12f %12f %12f %12f\n",
+            p->ort X(i),p->ort Y(i),p->ort Z(i),d.x,d.y,d.z);
 #endif
   }
 }
@@ -346,3 +347,57 @@ void write_msqd(int steps)
 }
 
 #endif
+
+/******************************************************************************
+*
+* reduce displacement vector modulo box vectors, so that it is in a
+* box centered at the origin
+*
+******************************************************************************/
+
+void reduce_displacement(vektor *dist)
+{
+  vektor d;
+  d = *dist;
+  while (SPROD(d,tbox_x) > 0.5) {
+    d.x -= box_x.x;
+    d.y -= box_x.y;
+#ifndef TWOD
+    d.z -= box_x.z;
+#endif
+  }
+  while (SPROD(d,tbox_x) < -0.5) {
+    d.x += box_x.x;
+    d.y += box_x.y;
+#ifndef TWOD
+    d.z += box_x.z;
+#endif
+  }
+  while (SPROD(d,tbox_y) > 0.5) {
+    d.x -= box_y.x;
+    d.y -= box_y.y;
+#ifndef TWOD
+    d.z -= box_y.z;
+#endif
+  }
+  while (SPROD(d,tbox_y) < -0.5) {
+    d.x += box_y.x;
+    d.y += box_y.y;
+#ifndef TWOD
+    d.z += box_y.z;
+#endif
+  }
+#ifndef TWOD
+  while (SPROD(d,tbox_z) > 0.5) {
+    d.x -= box_z.x;
+    d.y -= box_z.y;
+    d.z -= box_z.z;
+  }
+  while (SPROD(d,tbox_z) < -0.5) {
+    d.x += box_z.x;
+    d.y += box_z.y;
+    d.z += box_z.z;
+  }
+#endif
+  *dist = d;
+}

@@ -29,7 +29,6 @@
 
 /*****************************************************************************
 * Praeprozessor-Flags:
-* CORR_PBC    periodische Randbedingungen fuer Korrelation verwenden (Default)
 * CORRELATE   Selbstkorrelation und MSQD berechnen
 * MSQD        ausschliesslich MSQD berechnen
 *****************************************************************************/
@@ -72,21 +71,18 @@ void init_correl(int ncorr_rmax, int ncorr_tmax)
 #ifdef TWOD
   diagonal = sqrt(SQR(box_x.x+box_y.x)+SQR(box_x.y+box_y.y));
 #else
-  diagonal = sqrt(SQR(box_x.x+box_y.x+box_z.x)+SQR(box_x.y+box_y.y+box_z.y)+SQR(box_x.z+box_y.z+box_z.z));
+  diagonal = sqrt(SQR(box_x.x+box_y.x+box_z.x)+SQR(box_x.y+box_y.y+box_z.y)+
+                  SQR(box_x.z+box_y.z+box_z.z));
 #endif
   /* Limit histogram size in r domain to ncorr_rmax entries */
-#ifdef CORR_PBC
-  inv_dr = (real)(2*ncorr_rmax)/diagonal;
-#else
   inv_dr = (real)ncorr_rmax/diagonal;
-#endif
   if ((filename = malloc(256))==NULL) {
     error("cannot malloc namebuffer\n");
-  };
+  }
   for (i=0; i<ntypes; i++) {
     sprintf(filename,"%s.corr.%u",outfilename,(unsigned)i);
     unlink(filename);
-  };
+  }
   free(filename);
 #endif /* CORRELATE */
 
@@ -111,7 +107,7 @@ void init_correl(int ncorr_rmax, int ncorr_tmax)
 
 void correlate(int step, int ref_step, unsigned seqnum)
 {
-  integer k;
+  integer k,i;
 
 #if defined(MPI) && defined(CORRELATE)
   int *global_corr;
@@ -144,7 +140,7 @@ void correlate(int step, int ref_step, unsigned seqnum)
     global_corr = calloc(ncorr_rmax,sizeof(integer));
     if (global_corr==NULL) {
       error("allocation of buffers failed\n");
-    };
+    }
 #endif /* MPI */
 #endif /* CORRELATE */
 
@@ -157,164 +153,54 @@ void correlate(int step, int ref_step, unsigned seqnum)
       cell *p;
       p = cell_array + CELLS(k);
 
-	  for (i = 0; i < p->n; ++i) {
-            vektor dist;
-#ifdef CORR_PBC
-            vektor d;
-#endif
-            real dr,drsq;
+      for (i = 0; i < p->n; ++i) {
 
-/* calculate distance between atom i at t=tau (ort) and t=0 (refpos) */
+        vektor dist;
+        real dr,drsq;
 
-            dist.x = p->ort X(i) - p->refpos X(i);
-            dist.y = p->ort Y(i) - p->refpos Y(i);
+        /* calculate distance between atom i at t=tau (ort) and t=0 (refpos) */
+        dist.x = p->ort X(i) - p->refpos X(i);
+        dist.y = p->ort Y(i) - p->refpos Y(i);
 #ifndef TWOD
-            dist.z = p->ort Z(i) - p->refpos Z(i);
+        dist.z = p->ort Z(i) - p->refpos Z(i);
 #endif
 
-#ifdef DEBUG
-            drsq = dist.x*dist.x;
-            drsq += dist.y*dist.y;
-#ifndef TWOD
-            drsq += dist.z*dist.z;
-#endif
-            printf("DRSQ0=%g\n",(double)drsq);
-            printf("dist0.x=%12.5g\n",(double)dist.x);
-            printf("dist0.y=%12.5g\n",(double)dist.y);
-            printf("dist0.z=%12.5g\n",(double)dist.z);
-#endif /* DEBUG */
+        reduce_displacement(&dist);
 
-#ifdef CORR_PBC
-	    /* Apply periodic boundary conditions */
-            /* if it's over the limit, map it back */
-            d.x =0;
-            d.y =0;
+        drsq  = dist.x * dist.x;
+        drsq += dist.y * dist.y;
 #ifndef TWOD
-            d.z =0;
-#endif
-            while (SPROD(dist,tbox_x) > 0.5) {
-               dist.x -= box_x.x;
-               dist.y -= box_x.y;
-#ifndef TWOD
-               dist.z -= box_x.z;
-#endif
-            };
-            while (SPROD(dist,tbox_x) < -0.5) {
-               dist.x += box_x.x;
-               dist.y += box_x.y;
-#ifndef TWOD
-               dist.z += box_x.z;
-#endif
-            };
-            while (SPROD(dist,tbox_y) > 0.5) {
-               dist.x -= box_y.x;
-               dist.y -= box_y.y;
-#ifndef TWOD
-               dist.z -= box_y.z;
-#endif
-            };
-            while (SPROD(dist,tbox_y) < -0.5) {
-               dist.x += box_y.x;
-               dist.y += box_y.y;
-#ifndef TWOD
-               dist.z += box_y.z;
-#endif
-            };
-
-#ifndef TWOD
-            while (SPROD(dist,tbox_z) > 0.5) {
-               dist.x -= box_z.x;
-               dist.y -= box_z.y;
-               dist.z -= box_z.z;
-            };
-            while (SPROD(dist,tbox_z) < -0.5) {
-               dist.x += box_z.x;
-               dist.y += box_z.y;
-               dist.z += box_z.z;
-            };
-#endif
-            
-/*
-            d.y -= FLOOR((real)1/8*SPROD(dist,tbox_x)) * box_x.y/2;
-#ifndef TWOD
-            d.z -= FLOOR((real)1/8*SPROD(dist,tbox_x)) * box_x.z/2;
-#endif
-            d.x -= FLOOR((real)1/8*SPROD(dist,tbox_y)) * box_y.x/2;
-            d.y -= FLOOR((real)1/8*SPROD(dist,tbox_y)) * box_y.y/2;
-#ifndef TWOD
-            d.z -= FLOOR((real)1/8*SPROD(dist,tbox_y)) * box_y.z/2;
-#endif
-            d.x -= FLOOR((real)1/8*SPROD(dist,tbox_z)) * box_z.x/2;
-            d.y -= FLOOR((real)1/8*SPROD(dist,tbox_z)) * box_z.y/2;
-#ifndef TWOD
-            d.z -= FLOOR((real)1/8*SPROD(dist,tbox_z)) * box_z.z/2;
-#endif
-*/
-
-#ifdef DEBUG
-            printf("dist.x=%12.5g d.x=%12.5g\n",(double)dist.x,(double)d.x);
-            printf("dist.y=%12.5g d.y=%12.5g\n",(double)dist.y,(double)d.y);
-            printf("dist.z=%12.5g d.z=%12.5g\n",(double)dist.z,(double)d.z);
+        drsq += dist.z * dist.z;
 #endif
 
-#ifndef TWOD
-	    /*
-            dist.x += d.x - (box_x.x+box_y.x+box_z.x) / 2.0;
-            dist.y += d.y - (box_x.y+box_y.y+box_z.y) / 2.0;
-            dist.z += d.z - (box_x.z+box_y.z+box_z.z) / 2.0;
-	    */
-#else
-	    /*
-            dist.x += d.x - (box_x.x+box_y.x) / 2.0;
-            dist.y += d.y - (box_x.y+box_y.y) / 2.0;
-	    */
-#endif
-
-#endif /* CORR_PBC */
-
-            drsq = dist.x*dist.x;
-            drsq += dist.y*dist.y;
-#ifndef TWOD
-            drsq += dist.z*dist.z;
-#endif
-            /* mean square displacement with PBC applied */
-            msqd[p->sorte[i]] += drsq;
-
-#ifdef DEBUG
-            printf("DRSQ=%g\n",(double)drsq);
-#endif
+        /* mean square displacement with PBC applied */
+        msqd[p->sorte[i]] += drsq;
 
 #ifdef CORRELATE
-            dr = sqrt(drsq); /* correlate displacement with PBC applied */
-            idr = (int)(dr*inv_dr);
-#ifndef CORR_PBC
-	    if (idr >= ncorr_rmax) idr = ncorr_rmax;
+        dr  = sqrt(drsq); /* correlate displacement with PBC applied */
+        idr = (int)(dr*inv_dr);
+        GS[p->sorte[i]][it][idr]++; /* calculate histogram for self part */
 #endif
-            GS[p->sorte[i]][it][idr]++; /* calculate histogram for self part */
-#endif /* CORRELATE */
-	  } /* for i */
+      }
     }
 
 #ifdef CORRELATE
 #ifdef MPI
     for (i=0; i<ntypes; i++) {
-      MPI_Reduce(GS[i][it], global_corr, ncorr_rmax, INTEGER, MPI_SUM, 0, cpugrid);
+      MPI_Reduce(GS[i][it], global_corr, ncorr_rmax, 
+                 INTEGER, MPI_SUM, 0, cpugrid);
       if (0==myid) memcpy(GS[i][it],global_corr,sizeof(integer)*ncorr_rmax);
     }
 #endif
     /* GS[i][it][idr] contains local self correlation within one CPU */
-#ifdef MPI
-    if (0==myid)
-#endif
-      write_add_corr(it,step,seqnum);
+    if (0==myid) write_add_corr(it,step,seqnum);
 #endif
 
 #ifdef MSQD
 #ifdef MPI
     MPI_Reduce(msqd,msqd_global,ntypes,REAL,MPI_SUM,0,cpugrid);
-    if (0==myid)
 #endif
-    write_msqd(step);
+    if (0==myid) write_msqd(step);
 #endif
 
 #ifdef CORRELATE

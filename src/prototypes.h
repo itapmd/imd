@@ -216,6 +216,7 @@ void write_cell_ef(FILE *out, cell *p);
 #ifdef STRESS_TENS
 void write_cell_press(FILE *out, cell *p);
 #endif
+void reduce_displacement(vektor *d);
 #ifdef MPI
 void recv_cell_old(cell *p, int from_cpu, int tag);
 void send_cell_old(cell *p, int to_cpu, int tag);

@@ -543,7 +543,7 @@ endif
 
 # Correlation
 ifneq (,$(strip $(findstring corr,${MAKETARGET})))
-CFLAGS  += -DCORRELATE -DCORR_PBC
+CFLAGS  += -DCORRELATE
 SOURCES += ${CORRSOURCES}
 endif
 
@@ -555,7 +555,7 @@ endif
 
 # mean square displacement
 ifneq (,$(strip $(findstring msqd,${MAKETARGET})))
-CFLAGS  += -DMSQD -DCORR_PBC
+CFLAGS  += -DMSQD
 SOURCES += ${CORRSOURCES}
 endif
 
