@@ -192,6 +192,7 @@ void main_loop(void)
       else {
         for (l=0; l<vtypes; l++) *(fbc_df+l) = nullv;
         do_fbc_incr = 0;
+        fbc_int++;
       }
     }
 #endif
