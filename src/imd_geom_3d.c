@@ -537,7 +537,7 @@ void check_pairs()
   int i, j, max, *lst;
   pair *p;
 
-  max = global_cell_dim.x * global_cell_dim.y * global_cell_dim.y;
+  max = cell_dim.x * cell_dim.y * cell_dim.z;
   lst = (int *) malloc(max*sizeof(int));
 
   for (i=0; i<nlists; i++) {
@@ -545,8 +545,10 @@ void check_pairs()
     for (j=0; j<npairs[i]; j++) {
       p = pairs[i]+j;
       if (lst[p->np]>0)                     error("pair list corruption!"); 
+      if (p->np>=max)                       error("pair overflow!");
       lst[p->np]=1;
       if ((lst[p->nq]>0) && (p->np!=p->nq)) error("pair list corruption!"); 
+      if (p->nq>=max)                       error("pair overflow!");
       lst[p->nq]=1;
     }
   }
