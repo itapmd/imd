@@ -96,7 +96,7 @@ void write_header_xvf_sep( char *basename, float_dist_t *fl,
   FILE *fp;
   char fname[255];
 
-  sprintf(fname, "%s.xvf", basename );
+  sprintf(fname, "%s.xvf-header", basename );
   if (NULL==(fp=fopen(fname, "w"))) error("Cannot open parameter file");
   write_header_xvf( fp, fl, dx, dy, dz, nf);
   fclose(fp);

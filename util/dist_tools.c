@@ -427,31 +427,29 @@ void float2scalar12_dist( float_dist_t *fl, byte_dist_t *bt, float min,
 
 /******************************************************************************
 *
-*  cut and convert float to rgb distribution
+*  cut and convert 2D float to ppm distribution
 *
 ******************************************************************************/
 
-void float2rgb_dist( float_dist_t *fl, byte_dist_t *bt, float min, float max,
-  int n, int llx, int lly, int llz, int urx, int ury, int urz,
+void float2ppm_dist( float_dist_t *fl, byte_dist_t *bt, float min, float max,
+  int n, int llx, int lly, int urx, int ury, 
   void (*color)(unsigned char*, float))
 {
   int ix, iy, iz, j, k;
   float tmp, sc;
 
+  if (fl->dim!=2) error("Need 2D distribution!");
   if ((llx<0) || (urx>fl->dimx) || 
-      (lly<0) || (ury>fl->dimy) || 
-      (llz<0) || (urz>fl->dimz)) error("cut region not contained in dist");
+      (lly<0) || (ury>fl->dimy)) error("cut region not contained in dist");
   if (n >= fl->n) error("too few components");
 
   bt->dim  = fl->dim;
   bt->dimx = urx - llx;
   bt->dimy = ury - lly;
-  bt->dimz = urz - llz;
-  bt->nbin = bt->dimx * bt->dimy * bt->dimz;
+  bt->nbin = bt->dimx * bt->dimy;
   bt->len  = bt->nbin * 3;
   bt->sx   = fl->sx;
   bt->sy   = fl->sy;
-  bt->sz   = fl->sz;
   bt->n    = 3;
 
   /* (re)allocate distribution */
@@ -459,28 +457,27 @@ void float2rgb_dist( float_dist_t *fl, byte_dist_t *bt, float min, float max,
 
   sc = 1.0 / (max - min);
   k  = 0;
-  for (ix=llx; ix<urx; ix++)
-    for (iy=lly; iy<ury; iy++)
-      for (iz=llz; iz<urz; iz++) {
-        tmp = MAX( min, ELM(fl,ix,iy,iz,n) );
-        tmp = sc * (MIN( tmp, max ) - min);
-        color(bt->dat + k, tmp); 
-        k+=3;
-      }
+  for (iy=ury-1; iy>=lly; iy--)
+    for (ix=llx; ix<urx; ix++) {
+      tmp = MAX( min, ELM(fl,ix,iy,0,n) );
+      tmp = sc * (MIN( tmp, max ) - min);
+      color(bt->dat + k, tmp); 
+      k+=3;
+    }
 }
 
 /******************************************************************************
 *
-*  write 2D rgb distribution to ppm file
+*  write 2D ppm distribution to ppm file
 *
 ******************************************************************************/
 
-void write_ppm( byte_dist_t *rgb, char *fname )
+void write_ppm( byte_dist_t *ppm, char *fname )
 {
   FILE *outfile;
-  if (rgb->dim!=2) error("2D distribution required");
+  if (ppm->dim!=2) error("2D distribution required");
   if (NULL==(outfile=fopen(fname,"w"))) error("Cannot open ppm file");
-  fprintf( outfile, "P6\n%d %d\n255\n", rgb->dimy, rgb->dimx );
-  fwrite( rgb->dat, sizeof(unsigned char), rgb->len, outfile ); 
+  fprintf( outfile, "P6\n%d %d\n255\n", ppm->dimx, ppm->dimy );
+  fwrite( ppm->dat, sizeof(unsigned char), ppm->len, outfile ); 
   fclose( outfile);
 }

@@ -41,8 +41,10 @@ void  alloc_byte_dist( byte_dist_t *bt);
 /* conversion of distributions */
 void float2scalar8_dist(float_dist_t *fl, byte_dist_t *bt, float min, 
   float max, int n, int llx, int lly, int llz, int urx, int ury, int urz);
-void float2rgb_dist(float_dist_t *fl, byte_dist_t *bt, float min, float max,
-  int n, int llx, int lly, int llz, int urx, int ury, int urz,
+void float2scalar12_dist(float_dist_t *fl, byte_dist_t *bt, float min, 
+  float max, int n, int llx, int lly, int llz, int urx, int ury, int urz);
+void float2ppm_dist(float_dist_t *fl, byte_dist_t *bt, float min, float max,
+  int n, int llx, int lly, int urx, int ury,
   void (*color)(unsigned char*, float));
 
 /* reading and writing distributions */

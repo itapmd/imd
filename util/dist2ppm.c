@@ -85,7 +85,7 @@ int main( int argc, char **argv )
 
   /* convert to rgb distribution */
   init_byte_dist( &bt );
-  float2rgb_dist( &fl, &bt, min, max, n, llx, lly, 0, urx, ury, 1, rgbcolor);
+  float2ppm_dist( &fl, &bt, min, max, n, llx, lly, urx, ury, rgbcolor);
 
   /* construct outfile name, replacing last suffix by name of data entry */
   tmp = infile;
