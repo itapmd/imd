@@ -86,6 +86,57 @@ type 1 and type 1<BR>
 type 2 and type 2<BR>
 <STRONG>Sigma21     :</STRONG> Nearest-Neighbour-distance between
 type 1 and type 2<BR>
+
+<A NAME="cutpot">
+<H2>cutpot.c</H2>
+</A>
+
+Cutpot can be used to shorten pair potentials. For each 
+data column, a cutoff radius (or radius squared) must be specified. 
+Up to this radius, the returned potential is equal to the input 
+potential, but beyond thes radius it is replaced by a function which 
+tends smoothly to zero. The resulting potential is continuous and has 
+a continuous first derivative.  
+
+<P>
+Each line of the input potential starts either with a radius or a squared
+radius, which is followed by the corresponding potential values. The
+radii or squared radii, whichever are used, must be equally spaced.
+For the output potential, only equally spaced, squared radii are used.
+This format is required by IMD. The cutoff values must be given in the
+same scale as the input potential, i.e., as radii for linear spacing,
+and as squared radii for quadratic spacing.
+
+<P>
+There are two tail functions possible, a quadratic polynomial b(a-x)^2,
+and an exponential function b*exp(-c/(a-x)). In the latter case, for
+each column a further parameter, the steepness, can be specified, which
+controls how fast the potential goes to zero. The default steepness
+value is 2.0.
+
+<P>
+Cutpot requires the following parameters (here with example values), 
+which must be given in the parameter file:
+
+<PRE>
+  ncols      4                  # number of data (potential) columns
+  nsteps     2000               # number of lines in output potential
+  infile     input.pot          # input potential file
+  outfile    output.pot         # output potential file
+  spacing    lin                # spacing of input potential; lin or sqr
+  tailtype   sqr                # type of tail function; sqr or exp
+  rcut       1.4 1.6 1.6 1.6    # cutoff values, where tail function starts
+  steepness  1.5 1.5 1.5 1.5    # steepness of exponential tail function
+</PRE>
+
+Compilation:
+<PRE>
+  gcc -o cutpot -O cutpot.c -lm
+</PRE>
+Usage:
+<PRE>
+  cutpot &lt;paramfile&gt;
+</PRE>
  
 <A NAME="imd_pair">
 <H2>imd_pair.c</H2>
