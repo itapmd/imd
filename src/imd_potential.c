@@ -91,10 +91,6 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols )
       } else {
         /* we have no header, stop reading further */
 	end_header=1;
-        /* print a warning */
-        if (0==myid) fprintf(stderr,
-          "Warning: no header in potential file %s, assuming format %s\n",
-	  filename,format);
       }
     } while (!end_header);
 
