@@ -78,7 +78,7 @@ void move_atoms_nve(void)
 #endif
 
 #ifdef FNORM
-	fnorm +=  SPRODN(p->kraft,i,p->kraft,i);
+	fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
 #endif
 
 	p->impuls X(i) += timestep * p->kraft X(i);
@@ -282,7 +282,7 @@ void move_atoms_mik(void)
 	
 
 #ifdef FNORM
-	fnorm +=  SPRODN(p->kraft,i,p->kraft,i);
+	fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
 #endif
 
         p->impuls X(i) += timestep * p->kraft X(i);
@@ -428,7 +428,7 @@ void move_atoms_nvt(void)
 	p->kraft Z(i) *= (restrictions + sort)->z;
 #endif
 #ifdef FNORM
-	fnorm +=  SPRODN(p->kraft,i,p->kraft,i);
+	fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
 #endif
 
 	p->impuls X(i) = (p->impuls X(i) * reibung + timestep * p->kraft X(i)) 
@@ -621,7 +621,7 @@ void move_atoms_npt_iso(void)
 #endif
 
 #ifdef FNORM
-      fnorm +=  SPRODN(p->kraft,i,p->kraft,i);
+      fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
 #endif
 
       /* new momenta */
@@ -814,7 +814,7 @@ void move_atoms_npt_axial(void)
 #endif
 
 #ifdef FNORM
-      fnorm +=  SPRODN(p->kraft,i,p->kraft,i);
+      fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
 #endif
 
       /* new momenta */
