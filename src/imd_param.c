@@ -433,7 +433,7 @@ void getparamfile(char *paramfname, int sim)
 #endif
 #if defined(STM)
     else if (strcasecmp(token,"stadium")==0) {
-      getparam("stadium",&stadion,PARAM_REAL,2,2);
+      getparam("stadium",&stadium,PARAM_REAL,2,2);
     }
     else if (strcasecmp(token,"center")==0) {
       getparam("center",&center,PARAM_REAL,2,2);
@@ -494,8 +494,8 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #ifdef FRAC
-    else if (strcasecmp(token,"dampstadion")==0) { /* Damping stadion */
-      getparam("dampstadion",&stadion,PARAM_REAL,DIM,DIM);
+    else if (strcasecmp(token,"dampstadium")==0) { /* Damping stadium */
+      getparam("dampstadium",&stadium,PARAM_REAL,DIM,DIM);
     }
     else if (strcasecmp(token,"dampgamma")==0) { /* Damping factor gamma */
       getparam("dampgamma",&gamma_bar,PARAM_REAL,1,1);
@@ -1125,7 +1125,7 @@ void broadcast_params() {
 #endif
 
 #if defined(STM)
-  MPI_Bcast( &stadion ,         2 , MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &stadium ,         2 , MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &center ,          2 , MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
 
@@ -1168,7 +1168,7 @@ void broadcast_params() {
 #endif
 
 #ifdef FRAC
-  MPI_Bcast( &stadion   , DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &stadium   , DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &gamma_bar , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &gamma_cut , 1, MPI_REAL, 0, MPI_COMM_WORLD);
 #endif

@@ -244,11 +244,6 @@ EXTERN vektor limit_growth INIT(einsvektor);
 EXTERN real end_temp INIT(0.0);        /* Temperature and at of simulation */
 #endif
 
-#if defined(STM)
-EXTERN vektor2d stadion INIT(nullvektor);
-EXTERN vektor2d center INIT(nullvektor);
-#endif
-
 #ifdef EXPAND
 EXTERN int    exp_interval INIT(0);       /* period of expansion steps */
 EXTERN vektor expansion INIT(einsvektor); /* expansion factors in x/y/z-dir */
@@ -259,10 +254,11 @@ EXTERN int    hom_interval INIT(0);       /* period of homshear steps */
 EXTERN real   shear_max INIT(0.0);        /* max shear in y-direction */
 #endif
 
-#if defined(FRAC) || defined(DEFORM)
-EXTERN vektor stadion INIT(nullvektor);      /* Damping stadion */
-EXTERN real   gamma_bar INIT(0.0);    /* Damping prefactor */
-EXTERN real   gamma_cut INIT(0.0);    /* Damping cutoff */
+#if defined(FRAC) || defined(STM)
+EXTERN vektor stadium INIT(nullvektor); /* Damping stadium */
+EXTERN vektor center  INIT(nullvektor); /* center of stadium */
+EXTERN real   gamma_bar INIT(0.0);      /* Damping prefactor */
+EXTERN real   gamma_cut INIT(0.0);      /* Damping cutoff */
 #endif
 
 #if defined(FRAC) || defined(DEFORM) || defined(SHOCK)

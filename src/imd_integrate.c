@@ -888,7 +888,7 @@ void move_atoms_mc(void)
 
 /*****************************************************************************
 *
-* Verlet Integrator with stadion damping and fixed borders 
+* Verlet Integrator with stadium damping and fixed borders 
 * for fracture studies 
 *
 *****************************************************************************/
@@ -908,8 +908,8 @@ void move_atoms_frac(void)
   static int count = 0;
   tot_kin_energy = 0;
 
-  stad.x = 2 / stadion.x;
-  stad.y = 2 / stadion.y;
+  stad.x = 2 / stadium.x;
+  stad.y = 2 / stadium.y;
 
   c_halbe.x = box_x.x / 2.0;
   c_halbe.y = box_y.y / 2.0;
@@ -934,10 +934,10 @@ void move_atoms_frac(void)
 
           /* Calculate stadium function */
           gamma = gamma_bar * 
-          ( SQR( SQR( (p->ort X(i) - c_halbe.x) / 2*stadion.x)
-                 + SQR( (p->ort Y(i) - c_halbe.y) / 2*stadion.y)) -
-            2* ( SQR( (p->ort X(i) - c_halbe.x) / 2*stadion.x)
-                 - SQR( (p->ort Y(i) - c_halbe.y) / 2*stadion.y))
+          ( SQR( SQR( (p->ort X(i) - c_halbe.x) / 2*stadium.x)
+                 + SQR( (p->ort Y(i) - c_halbe.y) / 2*stadium.y)) -
+            2* ( SQR( (p->ort X(i) - c_halbe.x) / 2*stadium.x)
+                 - SQR( (p->ort Y(i) - c_halbe.y) / 2*stadium.y))
                     + 1);
 
               if (gamma_cut <= gamma) gamma = gamma_cut;
@@ -1052,8 +1052,8 @@ void move_atoms_stm(void)
 	for (i = 0;i < p->n; ++i) {
           
 	  /* Check if outside or inside the ellipse: */	
-	  if( (p->ort X(i)-center.x)*(p->ort X(i)-center.x)/(stadion.x*stadion.x) +
-	      (p->ort Y(i)-center.y)*(p->ort Y(i)-center.y)/(stadion.y*stadion.y) -1
+	  if( (p->ort X(i)-center.x)*(p->ort X(i)-center.x)/(stadium.x*stadium.x) +
+	      (p->ort Y(i)-center.y)*(p->ort Y(i)-center.y)/(stadium.y*stadium.y) -1
 	      <=0 ) {
 	    /* We are inside the ellipse: */
 	    reibung = 1.0;
