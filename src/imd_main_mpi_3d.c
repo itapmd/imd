@@ -60,6 +60,9 @@ void calc_forces(void)
 #endif
 
 #ifdef EAM
+#ifdef AR
+  error("EAM force routine not defined in case of actio = reactio.");
+#endif
   memset(eam_rho,   0, (natoms+1)*        sizeof(real));
   memset(eam_ij,    0, (natoms+1)*eam_len*sizeof(real));
   memset(eam_dij_x, 0, (natoms+1)*eam_len*sizeof(real));
@@ -68,6 +71,9 @@ void calc_forces(void)
 #endif /* EAM */
 
 #ifdef TTBP
+#ifdef AR
+  error("TTBP force routine not defined in case of actio = reactio.");
+#endif
   memset(ttbp_ij,   0,(natoms+1)*ttbp_len*2*sizeof(real));
   memset(ttbp_j,    0,(natoms+1)*ttbp_len*3*sizeof(real));
   memset(ttbp_force,0,(natoms+1)*         3*sizeof(real));
@@ -150,55 +156,10 @@ void calc_forces(void)
 
 	    };
 
-#if defined(EAM) || defined(TTBP)
-  /* EAM:  cohesive function potential: for each cell */
-  /* TTBP: three body potential */
-  for (i=0; i < cell_dim.x; ++i)
-    for (j=0; j < cell_dim.y; ++j)
-      for (k=0; k < cell_dim.z; ++k) {
-              /* Given cell */
-              p = PTR_3D_V(cell_array,i,j,k,cell_dim);
-              pbc.x = 0;
-              pbc.y = 0;
-              pbc.z = 0;
-              /* Neighbour (dummy; p==q) */
-              q = p;
-              /* Do the work */
-#ifdef SHOCK
-              if (0 == pbc.x)
-#endif
-#ifdef NOPBC
-              if ((0 == pbc.x) && (0 == pbc.y) && (0 == pbc.z))
-#endif
-#ifdef EAM
-              do_forces_eam_2(p,q,pbc);		/* second EAM call */
-#elif TTBP
-              do_forces_ttbp_2(p,q,pbc);    /* second TTBP call */
-#else
-			error("Force routine not defined.");
-#endif
-      };
-#endif /* EAM || TTBP */
-
   mpi_addtime(&time_calc_local);
   
 #ifndef AR  
   /* Calculate forces on boundary half of cell */
-  
-#ifdef EAM
-  memset(eam_rho,   0, (natoms+1)*        sizeof(real));
-  memset(eam_ij,    0, (natoms+1)*eam_len*sizeof(real));
-  memset(eam_dij_x, 0, (natoms+1)*eam_len*sizeof(real));
-  memset(eam_dij_y, 0, (natoms+1)*eam_len*sizeof(real));
-  memset(eam_dij_z, 0, (natoms+1)*eam_len*sizeof(real));
-#endif /* EAM */
-
-#ifdef TTBP
-  memset(ttbp_ij,   0,(natoms+1)*ttbp_len*2*sizeof(real));
-  memset(ttbp_j,    0,(natoms+1)*ttbp_len*3*sizeof(real));
-  memset(ttbp_force,0,(natoms+1)*3*sizeof(real));
-#endif /* TTBP */
-
   /* potential energy and virial are already complete; to avoid double
      counting, we keep a copy of the current value, which we use later */
 
@@ -253,36 +214,6 @@ void calc_forces(void)
 	      };
 	    };
 
-#if defined(EAM) || defined(TTBP)
-  /* EAM:  cohesive function potential: for each cell */
-  /* TTBP: three body potential */
-  for (i=0; i < cell_dim.x; ++i)
-    for (j=0; j < cell_dim.y; ++j)
-      for (k=0; k < cell_dim.z; ++k) {
-              /* Given cell */
-              p = PTR_3D_V(cell_array,i,j,k,cell_dim);
-              pbc.x = 0;
-              pbc.y = 0;
-              pbc.z = 0;
-              /* Neighbour (dummy; p==q) */
-              q = p;
-              /* Do the work */
-#ifdef SHOCK
-              if (0 == pbc.x)
-#endif
-#ifdef NOPBC
-              if ((0 == pbc.x) && (0 == pbc.y) && (0 == pbc.z))
-#endif
-#ifdef EAM
-              do_forces_eam_2(p,q,pbc);		/* second EAM call */
-#elif TTBP
-              do_forces_ttbp_2(p,q,pbc);    /* second TTBP call */
-#else
-			  error("Force routine not defined.");
-#endif
-      };
-#endif /* EAM || TTBP */
-
   /* use the previously saved values of potential energy and virial */
 
   tot_pot_energy = tmp;
@@ -294,7 +225,30 @@ void calc_forces(void)
 #endif
 
   mpi_addtime(&time_calc_nonlocal);
-#endif  
+#endif  /* ... ifndef AR */
+
+#if defined(EAM) || defined(TTBP)
+  /* EAM:  cohesive function potential: for each cell */
+  /* TTBP: three body potential */
+  for (i=1; i < cell_dim.x-1; ++i)
+    for (j=1; j < cell_dim.y-1; ++j)
+      for (k=1; k < cell_dim.z-1; ++k) {
+              /* Given cell */
+              p = PTR_3D_V(cell_array,i,j,k,cell_dim);
+              pbc.x = 0;
+              pbc.y = 0;
+              pbc.z = 0;
+              q = p;
+              /* Do the work */
+#ifdef EAM
+              do_forces_eam_2(p,q,pbc);		/* second EAM call */
+#elif TTBP
+              do_forces_ttbp_2(p,q,pbc);             /* second TTBP call */
+#else
+	      error("Force routine not defined.");
+#endif
+      };
+#endif /* EAM || TTBP */
 
   MPI_Allreduce( &virial,   &tmp,      1, MPI_REAL, MPI_SUM, cpugrid);
   virial = tmp;
