@@ -295,14 +295,16 @@ void xy_pictures_3d(char *infile, int min, int max)
   for (i=0; i<ntypes*dimxy; i++) pix[i] = (char) (255-hist[i]*fmax);
 
   /* write pgm files */
-  for (t=0; t<ntypes; t++) {
-    sprintf(fname,"%s.xy.%d.pgm",infile,t);
-    if (NULL==(out=fopen(fname,"w"))) 
-      error("Cannot open pgm-file.");
-    fprintf(out,"P5\n%d %d\n255\n", dimx, dimy);
-    if (dimxy!=fwrite(pix+t*dimxy,sizeof(char),dimxy,out))
-      error("Cannot write pgm-file.");
-    fclose(out);
+  if (ntypes>=4) {
+    for (t=0; t<ntypes; t++) {
+      sprintf(fname,"%s.xy.%d.pgm",infile,t);
+      if (NULL==(out=fopen(fname,"w"))) 
+        error("Cannot open pgm-file.");
+      fprintf(out,"P5\n%d %d\n255\n", dimx, dimy);
+      if (dimxy!=fwrite(pix+t*dimxy,sizeof(char),dimxy,out))
+        error("Cannot write pgm-file.");
+      fclose(out);
+    }
   }
 
   /* write ppm-file */
@@ -367,14 +369,16 @@ void xz_pictures_3d(char *infile, int min, int max)
   for (i=0; i<ntypes*dimxz; i++) pix[i] = (char) (255-hist[i]*fmax);
 
   /* write pgm files */
-  for (t=0; t<ntypes; t++) {
-    sprintf(fname,"%s.xz.%d.pgm",infile,t);
-    if (NULL==(out=fopen(fname,"w"))) 
-      error("Cannot open pgm-file.");
-    fprintf(out,"P5\n%d %d\n255\n", dimx, dimz);
-    if (dimxz!=fwrite(pix+t*dimxz,sizeof(char),dimxz,out))
-      error("Cannot write pgm-file.");
-    fclose(out);
+  if (ntypes>=4) {
+    for (t=0; t<ntypes; t++) {
+      sprintf(fname,"%s.xz.%d.pgm",infile,t);
+      if (NULL==(out=fopen(fname,"w"))) 
+        error("Cannot open pgm-file.");
+      fprintf(out,"P5\n%d %d\n255\n", dimx, dimz);
+      if (dimxz!=fwrite(pix+t*dimxz,sizeof(char),dimxz,out))
+        error("Cannot write pgm-file.");
+      fclose(out);
+    }
   }
 
   /* write ppm-file */
@@ -439,14 +443,16 @@ void yz_pictures_3d(char *infile, int min, int max)
   for (i=0; i<ntypes*dimyz; i++) pix[i] = (char) (255-hist[i]*fmax);
 
   /* write pgm files */
-  for (t=0; t<ntypes; t++) {
-    sprintf(fname,"%s.yz.%d.pgm",infile,t);
-    if (NULL==(out=fopen(fname,"w"))) 
-      error("Cannot open pgm-file.");
-    fprintf(out,"P5\n%d %d\n255\n", dimy, dimz);
-    if (dimyz!=fwrite(pix+t*dimyz,sizeof(char),dimyz,out))
-      error("Cannot write pgm-file.");
-    fclose(out);
+  if (ntypes>=4) {
+    for (t=0; t<ntypes; t++) {
+      sprintf(fname,"%s.yz.%d.pgm",infile,t);
+      if (NULL==(out=fopen(fname,"w"))) 
+        error("Cannot open pgm-file.");
+      fprintf(out,"P5\n%d %d\n255\n", dimy, dimz);
+      if (dimyz!=fwrite(pix+t*dimyz,sizeof(char),dimyz,out))
+        error("Cannot write pgm-file.");
+      fclose(out);
+    }
   }
 
   /* write ppm-file */
@@ -510,13 +516,15 @@ void pictures_2d(char *infile)
   for (i=0; i<ntypes*dimxy; i++) pix[i] = (char) (255-hist[i]*fmax);
 
   /* write pgm files */
-  for (t=0; t<ntypes; t++) {
-    sprintf(fname,"%s.%d.pgm",infile,t);
-    if (NULL==(out=fopen(fname,"w"))) error("Cannot open pgm-file.");
-    fprintf(out,"P5\n%d %d\n255\n", dimx, dimy);
-    if (dimxy!=fwrite(pix+t*dimxy,sizeof(char),dimxy,out))
-      error("Cannot write pgm-file.");
-    fclose(out);
+  if (ntypes>=4) {
+    for (t=0; t<ntypes; t++) {
+      sprintf(fname,"%s.%d.pgm",infile,t);
+      if (NULL==(out=fopen(fname,"w"))) error("Cannot open pgm-file.");
+      fprintf(out,"P5\n%d %d\n255\n", dimx, dimy);
+      if (dimxy!=fwrite(pix+t*dimxy,sizeof(char),dimxy,out))
+        error("Cannot write pgm-file.");
+      fclose(out);
+    }
   }
 
   /* write ppm-file */
