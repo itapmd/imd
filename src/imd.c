@@ -77,6 +77,13 @@ int main(int argc, char **argv)
   read_pot_table(&rho_h_tab,eam2_at_rho_filename,ntypes*ntypes);
 #endif
 
+#ifdef PAIR_PRE
+  init_pot_par();
+  /* Create potential table for predefined potentials*/
+  if ( use_pot_table )
+      create_pot_table(&pair_pot);
+#endif
+
 #ifdef KEATING
   init_keating();
 #endif

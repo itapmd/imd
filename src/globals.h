@@ -508,6 +508,43 @@ EXTERN vektor socketwin_ur  INIT(nullvektor);     /* upper right (back) corner *
 EXTERN int  socket_atoms INIT(0);        /* counter for atoms to send window */
 #endif
 
+#ifdef PAIR_PRE
+EXTERN real r_cut_lin[55]; 
+EXTERN real r_cut[10][10];    /* Less than 11 atom types! */
+EXTERN real r2_cut[10][10]; 
+EXTERN real r_begin[55];
+EXTERN real pot_res[55]; 
+EXTERN int  use_pot_table INIT(0); 
+#endif
+
+#ifdef LJ
+EXTERN real lj_epsilon_lin[55];
+EXTERN real lj_epsilon[10][10];
+EXTERN real lj_sigma_lin[55];
+EXTERN real lj_sigma[10][10];
+EXTERN real lj_shift[10][10];
+#endif
+
+#ifdef MORSE
+EXTERN real morse_epsilon_lin[55];
+EXTERN real morse_epsilon[10][10];
+EXTERN real morse_sigma_lin[55];
+EXTERN real morse_sigma[10][10];
+EXTERN real morse_alpha_lin[55];
+EXTERN real morse_alpha[10][10];
+EXTERN real morse_shift[10][10];
+#endif
+
+#ifdef BUCK
+EXTERN real buck_a_lin[55];
+EXTERN real buck_a[10][10];
+EXTERN real buck_c_lin[55];
+EXTERN real buck_c[10][10];
+EXTERN real buck_sigma_lin[55];
+EXTERN real buck_sigma[10][10];
+EXTERN real buck_shift[10][10];
+#endif
+
 #ifdef EAM2
 EXTERN pot_table_t embed_pot;                     /* embedding energy table  */
 EXTERN pot_table_t rho_h_tab;                     /* electron transfer table */
@@ -635,6 +672,8 @@ EXTERN real     twopi;
 #ifdef SPRING
 EXTERN real     spring_const[45];    /* Spring constant */
 EXTERN real     spring_cst[10][10];
+EXTERN real     spring_r_cut[55];    /* Cutoff */
+EXTERN real     spring_r2_cut[10][10];
 #endif
 
 /* generate quasicrystal */

@@ -69,6 +69,10 @@ void imd_start_timer(imd_timer *timer);
 void imd_stop_timer(imd_timer *timer);
 void maxwell(real TEMP);
 int  endian(void);
+#ifdef PAIR_PRE
+void init_pot_par(void);
+void create_pot_table(pot_table_t *pt);
+#endif
 
 /* start and stop MPI - files imd_mpi_util.c, imd_geom_mpi_*.c */
 #ifdef MPI
@@ -117,6 +121,15 @@ int     cpu_grid_coord(ivektor cellc);
 /* force computation - files imd_main_*.c, imd_forces_*.c */
 void calc_forces(int steps);
 void do_forces(cell*, cell*, vektor, real*, real*, real*, real*, real*, real*, real*, real*);
+#ifdef LJ
+void pair_int_lj(real *pot, real *grad, int p_typ, int q_typ, real r2);
+#endif
+#ifdef MORSE
+void pair_int_morse(real *pot, real *grad, int p_typ, int q_typ, real r2);
+#endif
+#ifdef BUCK
+void pair_int_buck(real *pot, real *grad, int p_typ, int q_typ, real r2);
+#endif
 #ifdef COVALENT
 void do_forces2(cell*, real*, real*, real*, real*, real*, real*, real*, real*);
 #endif

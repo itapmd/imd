@@ -50,6 +50,67 @@
 
 /*****************************************************************************
 *
+*  Evaluate Lennard-Jones potential
+*
+******************************************************************************/
+
+#define PAIR_INT_LJ(pot, grad, p_typ, q_typ, r2)			\
+{									\
+  real sig_d_rad2, sig_d_rad6, sig_d_rad12;				\
+									\
+  sig_d_rad2  = lj_sigma[p_typ][q_typ] * lj_sigma[p_typ][q_typ] / (r2);	\
+  sig_d_rad6  = sig_d_rad2 * sig_d_rad2 * sig_d_rad2;			\
+  sig_d_rad12 = sig_d_rad6 * sig_d_rad6;				\
+									\
+  pot += lj_epsilon[p_typ][q_typ] * ( sig_d_rad12 - 2.0 * sig_d_rad6 )	\
+    - lj_shift[p_typ][q_typ];						\
+  grad += - 12.0 * lj_epsilon[p_typ][q_typ] / (r2)			\
+    * ( sig_d_rad12 - sig_d_rad6 );					\
+}
+
+/*****************************************************************************
+*
+*  Evaluate Morse potential
+*
+******************************************************************************/
+
+#define PAIR_INT_MORSE(pot, grad, p_typ, q_typ, r2)			    \
+{									    \
+  real r, exppot, cexppot;						    \
+									    \
+  r       = sqrt((r2));							    \
+  exppot  = exp( - morse_alpha[p_typ][q_typ]				    \
+		 * ( r - morse_sigma[p_typ][q_typ] ) );			    \
+  cexppot = 1.0 - exppot;						    \
+									    \
+  pot  += morse_epsilon[p_typ][q_typ] * ( cexppot * cexppot - 1.0 )	    \
+    - morse_shift[p_typ][q_typ];					    \
+  grad += 2.0 * morse_alpha[p_typ][q_typ] * morse_epsilon[p_typ][q_typ] / r \
+    * exppot * cexppot;							    \
+}
+
+/*****************************************************************************
+*
+*  Evaluate Buckingham potential 
+*
+******************************************************************************/
+
+#define PAIR_INT_BUCK(pot, grad, p_typ, q_typ, r2)			   \
+{									   \
+  real rinv, rinv2, powpot, exppot, invs2;				   \
+									   \
+  rinv   = buck_sigma[p_typ][q_typ] / sqrt((r2));			   \
+  rinv2  = rinv * rinv;							   \
+  powpot  = buck_c[p_typ][q_typ] * rinv2 * rinv2 * rinv2;		   \
+  exppot = buck_a[p_typ][q_typ] * exp ( - 1.0 / rinv );			   \
+  invs2   = 1.0 / ( buck_sigma[p_typ][q_typ] * buck_sigma[p_typ][q_typ] ); \
+									   \
+  pot += exppot - powpot - buck_shift[p_typ][q_typ];			   \
+  grad += ( - exppot * rinv + 6 * powpot * rinv2 ) * invs2;		   \
+}
+
+/*****************************************************************************
+*
 *  Evaluate pair potential for Keating potential 
 *
 ******************************************************************************/

@@ -1247,6 +1247,53 @@ void getparamfile(char *paramfname, int sim)
       getparam("atomic_e-density_file",eam2_at_rho_filename,PARAM_STR,1,255);
     }
 #endif
+
+#ifdef PAIR_PRE
+    else if (strcasecmp(token,"r_cut")==0) {     
+      getparam("r_cut",r_cut_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"r_begin")==0) {     
+      getparam("r_begin",r_begin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+      use_pot_table = 1;
+    }
+    else if (strcasecmp(token,"pot_res")==0) {     
+      getparam("pot_res",pot_res,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+#endif
+
+#ifdef LJ
+    else if (strcasecmp(token,"lj_epsilon")==0) {     
+      getparam("lj_epsilon",lj_epsilon_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"lj_sigma")==0) {     
+      getparam("lj_sigma",lj_sigma_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+#endif
+
+#ifdef MORSE
+    else if (strcasecmp(token,"morse_epsilon")==0) {     
+      getparam("morse_epsilon",morse_epsilon_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"morse_sigma")==0) {     
+      getparam("morse_sigma",morse_sigma_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"morse_alpha")==0) {     
+      getparam("morse_alpha",morse_alpha_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+#endif
+
+#ifdef BUCK
+    else if (strcasecmp(token,"buck_a")==0) {     
+      getparam("buck_a",buck_a_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"buck_c")==0) {     
+      getparam("buck_c",buck_c_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"buck_sigma")==0) {     
+      getparam("buck_sigma",buck_sigma_lin,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+#endif
+
 #ifdef COVALENT
     else if (strcasecmp(token,"neigh_len")==0) {
       /* number of neighbors */
@@ -1381,6 +1428,16 @@ void getparamfile(char *paramfname, int sim)
 	      = spring_const[i * ( 2 * ntypes - i - 3 ) / 2 + k - 1]; 
 	  }
       }
+    }
+    else if (strcasecmp(token,"spring_r_cut")==0) {     
+      getparam("spring_r_cut",spring_r_cut,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+      /* Initialize parameters */
+      tmp = 0;
+      for ( i=0; i<ntypes; i++ )
+	  for ( k=i; k<ntypes; k++ ) {
+	      spring_r2_cut[i][k] = spring_r2_cut[k][i] = spring_r_cut[tmp] * spring_r_cut[tmp];
+	      tmp++;
+	  }
     }
 #endif 
 #ifdef EPITAX
@@ -2027,6 +2084,29 @@ void broadcast_params() {
 #ifdef UNIAX
   MPI_Bcast( &uniax_r_cut,  1, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &uniax_r2_cut, 1, REAL, 0, MPI_COMM_WORLD); 
+#endif
+
+#ifdef PAIR_PRE
+  MPI_Bcast( r_cut_lin, ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( r_begin,   ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( pot_res,   ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+#endif
+
+#ifdef LJ
+  MPI_Bcast( lj_epsilon_lin, ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( lj_sigma_lin,   ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+#endif
+
+#ifdef MORSE
+  MPI_Bcast( morse_epsilon_lin, ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( morse_sigma_lin,   ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( morse_alpha_lin,   ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+#endif
+
+#ifdef BUCK
+  MPI_Bcast( buck_a_lin, ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( buck_c_lin, ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( buck_sigma_lin, ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef COVALENT

@@ -97,8 +97,27 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #endif
 
       /* compute pair interactions */
-#ifndef TERSOFF
-#ifdef MONOLJ
+#if defined(PAIR) || defined(PAIR_PRE) || defined(KEATING) || defined(STIWEB)
+#ifdef PAIR_PRE
+      pot_zwi  = 0.0;
+      pot_grad = 0.0;
+      if (r2 < r2_cut[p_typ][q_typ]) {
+	  if ( !use_pot_table ) {
+#ifdef LJ
+	      PAIR_INT_LJ(pot_zwi, pot_grad, p_typ, q_typ, r2)
+#endif
+
+#ifdef MORSE
+	      PAIR_INT_MORSE(pot_zwi, pot_grad, p_typ, q_typ, r2)
+#endif
+
+#ifdef BUCK
+	      PAIR_INT_BUCK(pot_zwi, pot_grad, p_typ, q_typ, r2) 
+#endif
+	  }
+	  else 
+              PAIR_INT(pot_zwi, pot_grad, pair_pot, col, inc, r2, is_short)   
+#elif MONOLJ
       if (r2 <= monolj_r2_cut) {
         PAIR_INT_MONOLJ(pot_zwi, pot_grad, r2)
 #elif KEATING
@@ -112,10 +131,11 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
         PAIR_INT(pot_zwi, pot_grad, pair_pot, col, inc, r2, is_short)
 #endif
 #ifdef SPRING
-      if ( spring_cst[p_typ][q_typ] != 0.0 ) {
-	pot_zwi  = 0.5 * spring_cst[p_typ][q_typ] * r2;
-	pot_grad = spring_cst[p_typ][q_typ];
-      }
+      if ( spring_cst[p_typ][q_typ] != 0.0 )
+ 	  if ( r2 < spring_r2_cut[p_typ][q_typ] ) {
+	      pot_zwi  = 0.5 * spring_cst[p_typ][q_typ] * r2;
+	      pot_grad = spring_cst[p_typ][q_typ];
+	  }
 #endif
 
         /* store force in temporary variable */
@@ -195,7 +215,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
         q->heatcond[j] += pot_zwi - radius2 * pot_grad;
 #endif
       }
-#endif /* not TERSOFF */
+#endif /* PAIR || PAIR_PRE */
 
 #ifdef EAM2
       /* compute host electron density */
