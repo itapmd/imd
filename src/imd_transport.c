@@ -85,7 +85,7 @@ void write_temp(int steps)
               if (num >= tran_nlayers) num = tran_nlayers-1;
               if (num > nhalf) num = tran_nlayers - num;
 
-              temp_hist_1[num] += SPRODN(p->impuls,i,p->impuls,i)/p->masse[i];
+              temp_hist_1[num] += SPRODN(p->impuls,i,p->impuls,i)/ MASSE(p,i);
               num_hist_1[num]++;
 	   }
         }
@@ -486,35 +486,35 @@ void write_press_layers(int steps)
               press_histxx_1[numx*press_nlayers.y+numy] += p->presstens X(i);
               press_histyy_1[numx*press_nlayers.y+numy] += p->presstens Y(i);
               press_histxy_1[numx*press_nlayers.y+numy] += p->presstens_offdia X(i);
-	      kin_hist_1[numx*press_nlayers.y+numy] += SPRODN(p->impuls,i,p->impuls,i) / (2*p->masse[i]);
+	      kin_hist_1[numx*press_nlayers.y+numy] += SPRODN(p->impuls,i,p->impuls,i) / (2* MASSE(p,i));
 
 	      /* ANFANG Johannes Stuff */
 
               /* average v_xx relative to center of mass*/
 
               kin_histxx_1[numx] += p->impuls X(i) * p->impuls X(i) 
-                / (2*p->masse[i]);
+                / (2* MASSE(p,i));
 
               /* average v_xx - u_p  relative to moving pistons */
               if (shock_mode == 2) {
                 if ( p->ort X(i) < box_x.x*0.5 )
-                  kin_histxxu_1[numx]+=(p->impuls X(i)-shock_speed*p->masse[i]) 
-                    *(p->impuls X(i)-shock_speed*p->masse[i])/(2*p->masse[i]);
+                  kin_histxxu_1[numx]+=(p->impuls X(i)-shock_speed* MASSE(p,i)) 
+                    *(p->impuls X(i)-shock_speed* MASSE(p,i))/(2* MASSE(p,i));
                 else
-                  kin_histxxu_1[numx]+=(p->impuls X(i)+shock_speed*p->masse[i]) 
-                    *(p->impuls X(i)+shock_speed*p->masse[i])/(2*p->masse[i]);
+                  kin_histxxu_1[numx]+=(p->impuls X(i)+shock_speed* MASSE(p,i)) 
+                    *(p->impuls X(i)+shock_speed* MASSE(p,i))/(2* MASSE(p,i));
               }
               if (shock_mode == 1) {
                 if ( p->ort X(i) < strip_width/2 + shock_strip ) 
                   {          
                     if ( shock_speed > 0 )
                       kin_histxxu_1[numx]+=
-                        (p->impuls X(i)-shock_speed*p->masse[i]) 
-                        *(p->impuls X(i)-shock_speed*p->masse[i])
-                        /(2*p->masse[i]);
+                        (p->impuls X(i)-shock_speed* MASSE(p,i)) 
+                        *(p->impuls X(i)-shock_speed* MASSE(p,i))
+                        /(2* MASSE(p,i));
                     else
                       kin_histxxu_1[numx]+=p->impuls X(i)*p->impuls X(i)
-                        /(2*p->masse[i]);
+                        /(2* MASSE(p,i));
                   }
               }
 
@@ -522,10 +522,10 @@ void write_press_layers(int steps)
               if (shock_mode == 2) {
                 if ( p->ort X(i) < box_x.x*0.5 )
                   kin_histxxv_1[numx]+=(p->impuls X(i)-p_imp_l) 
-                    *(p->impuls X(i)-p_imp_l)/(2*p->masse[i]);
+                    *(p->impuls X(i)-p_imp_l)/(2* MASSE(p,i));
                 else
                   kin_histxxv_1[numx]+=(p->impuls X(i)-p_imp_r) 
-                    *(p->impuls X(i)-p_imp_r)/(2*p->masse[i]);
+                    *(p->impuls X(i)-p_imp_r)/(2* MASSE(p,i));
               }
               if (shock_mode == 1) {
                 if ( p->ort X(i) < strip_width/2 + shock_strip ) 
@@ -533,16 +533,16 @@ void write_press_layers(int steps)
                     if ( shock_speed > 0 )
                       kin_histxxv_1[numx]+=
                         (p->impuls X(i)-p_imp_l)*(p->impuls X(i)-p_imp_l)
-                        /(2*p->masse[i]);
+                        /(2* MASSE(p,i));
                     else
                       kin_histxxv_1[numx]+=
                         (p->impuls X(i)-p_imp_r)*(p->impuls X(i)-p_imp_r)
-                        /(2*p->masse[i]);
+                        /(2* MASSE(p,i));
                   }
               }
 
               kin_histyy_1[numx] += p->impuls Y(i) * p->impuls Y(i) 
-                / (2*p->masse[i]);
+                / (2* MASSE(p,i));
 
 	      /* ENDE Johannes Stuff */
 
@@ -561,28 +561,28 @@ void write_press_layers(int steps)
               /* average v_xx relative to center of mass*/
 
               kin_histxx_1[numx] += p->impuls X(i) * p->impuls X(i) 
-                / (2*p->masse[i]);
+                / (2* MASSE(p,i));
 
               /* average v_xx - u_p  relative to moving pistons */
               if (shock_mode == 2) {
                 if ( p->ort X(i) < box_x.x*0.5 )
-                  kin_histxxu_1[numx]+=(p->impuls X(i)-shock_speed*p->masse[i]) 
-                    *(p->impuls X(i)-shock_speed*p->masse[i])/(2*p->masse[i]);
+                  kin_histxxu_1[numx]+=(p->impuls X(i)-shock_speed* MASSE(p,i)) 
+                    *(p->impuls X(i)-shock_speed* MASSE(p,i))/(2* MASSE(p,i));
                 else
-                  kin_histxxu_1[numx]+=(p->impuls X(i)+shock_speed*p->masse[i]) 
-                    *(p->impuls X(i)+shock_speed*p->masse[i])/(2*p->masse[i]);
+                  kin_histxxu_1[numx]+=(p->impuls X(i)+shock_speed* MASSE(p,i)) 
+                    *(p->impuls X(i)+shock_speed* MASSE(p,i))/(2* MASSE(p,i));
               }
               if (shock_mode == 1) {
                 if ( p->ort X(i) < strip_width/2 + shock_strip ) 
                   {          
                     if ( shock_speed > 0 )
                       kin_histxxu_1[numx]+=
-                        (p->impuls X(i)-shock_speed*p->masse[i]) 
-                        *(p->impuls X(i)-shock_speed*p->masse[i])
-                        /(2*p->masse[i]);
+                        (p->impuls X(i)-shock_speed* MASSE(p,i)) 
+                        *(p->impuls X(i)-shock_speed* MASSE(p,i))
+                        /(2* MASSE(p,i));
                     else
                       kin_histxxu_1[numx]+=p->impuls X(i)*p->impuls X(i)
-                        /(2*p->masse[i]);
+                        /(2* MASSE(p,i));
                   }
               }
 
@@ -590,10 +590,10 @@ void write_press_layers(int steps)
               if (shock_mode == 2) {
                 if ( p->ort X(i) < box_x.x*0.5 )
                   kin_histxxv_1[numx]+=(p->impuls X(i)-p_imp_l) 
-                    *(p->impuls X(i)-p_imp_l)/(2*p->masse[i]);
+                    *(p->impuls X(i)-p_imp_l)/(2* MASSE(p,i));
                 else
                   kin_histxxv_1[numx]+=(p->impuls X(i)-p_imp_r) 
-                    *(p->impuls X(i)-p_imp_r)/(2*p->masse[i]);
+                    *(p->impuls X(i)-p_imp_r)/(2* MASSE(p,i));
               }
               if (shock_mode == 1) {
                 if ( p->ort X(i) < strip_width/2 + shock_strip ) 
@@ -601,24 +601,24 @@ void write_press_layers(int steps)
                     if ( shock_speed > 0 )
                       kin_histxxv_1[numx]+=
                         (p->impuls X(i)-p_imp_l)*(p->impuls X(i)-p_imp_l)
-                        /(2*p->masse[i]);
+                        /(2* MASSE(p,i));
                     else
                       kin_histxxv_1[numx]+=
                         (p->impuls X(i)-p_imp_r)*(p->impuls X(i)-p_imp_r)
-                        /(2*p->masse[i]);
+                        /(2* MASSE(p,i));
                   }
               }
 
 	      /* ENDE Johannes Stuff */
 
               kin_histyy_1[numx] += p->impuls Y(i) * p->impuls Y(i) 
-                / (2*p->masse[i]);
+                / (2* MASSE(p,i));
 #ifndef TWOD
               kin_histzz_1[numx] += p->impuls Z(i) * p->impuls Z(i) 
-                / (2*p->masse[i]);
+                / (2* MASSE(p,i));
 #endif
 
-	      kin_hist_1[numx*press_nlayers.y*press_nlayers.z+numy*press_nlayers.z+numz] += SPRODN(p->impuls,i,p->impuls,i) / (2*p->masse[i]);
+	      kin_hist_1[numx*press_nlayers.y*press_nlayers.z+numy*press_nlayers.z+numz] += SPRODN(p->impuls,i,p->impuls,i) / (2* MASSE(p,i));
 	      pot_hist_1[numx*press_nlayers.y*press_nlayers.z+numy*press_nlayers.z+numz] += p->pot_eng[i];
               num_hist_1[numx*press_nlayers.y*press_nlayers.z+numy*press_nlayers.z+numz]++;
 #endif
