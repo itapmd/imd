@@ -56,7 +56,7 @@ void do_forces_ttbp(cell *p)
   /* For each atom in cell */
   for (i=0; i<p->n; ++i) {
 
-    p_typ   = p->sorte[i];
+    p_typ   = SORTE(p,i);
     neigh   = p->neigh[i];
 
     /* construct some data for all neighbors */
@@ -210,7 +210,7 @@ void do_forces_tersoff(cell *p)
   /* For each atom in cell */
   for (i=0; i<p->n; ++i) {
 
-    p_typ   = p->sorte[i];
+    p_typ   = SORTE(p,i);
     neigh   = p->neigh[i];
 
     /* construct some data for all neighbors */
@@ -391,7 +391,7 @@ void do_neightab(cell *p, cell *q, vektor pbc)
     tmp_d.x = p->ort X(i) - pbc.x;
     tmp_d.y = p->ort Y(i) - pbc.y;
     tmp_d.z = p->ort Z(i) - pbc.z;
-    p_typ   = p->sorte[i];
+    p_typ   = SORTE(p,i);
 
     jstart = (p==q ? i+1 : 0);
     qptr   = q->ort + DIM * jstart;
@@ -399,7 +399,7 @@ void do_neightab(cell *p, cell *q, vektor pbc)
     /* For each atom in neighbouring cell */
     for (j = jstart; j < q->n; ++j) {
 
-      q_typ = q->sorte[j];
+      q_typ = SORTE(q,j);
       
       /* Calculate distance  */
       d.x = *qptr++ - tmp_d.x;
