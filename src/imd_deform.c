@@ -98,6 +98,117 @@ void shear_sample(void)
 
 } /* shear sample */
 
+
+/*****************************************************************************
+* 
+* lin_deform()
+*
+*****************************************************************************/
+
+void lin_deform(void)
+{
+   int k;
+   real tmpbox[3];
+   
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+  for (k=0; k<ncells; ++k) {
+    int i;
+    cell *p;
+    real tmport[3];
+    p = cell_array + CELLS(k);
+    for (i=0; i<p->n; ++i) {
+       /* transform atom positions */
+      tmport[0] =   lindef_x.x * p->ort X(i) + lindef_x.y * p->ort Y(i)
+#ifndef TWOD
+                  + lindef_x.z * p->ort Z(i)
+#endif
+                                                 ;
+      tmport[1] =   lindef_y.x * p->ort X(i) + lindef_y.y * p->ort Y(i)
+#ifndef TWOD
+                  + lindef_y.z * p->ort Z(i)
+#endif
+                                                 ;
+#ifndef TWOD
+      tmport[2] =   lindef_z.x * p->ort X(i) + lindef_z.y * p->ort Y(i)
+                  + lindef_z.z * p->ort Z(i) ;
+#endif
+
+      p->ort X(i) += tmport[0];
+      p->ort Y(i) += tmport[1];
+#ifndef TWOD
+      p->ort Z(i) += tmport[2];
+#endif
+    }
+  }
+
+  /* transform first box vector */
+  tmpbox[0] =   lindef_x.x * box_x.x + lindef_x.y * box_x.y
+#ifndef TWOD
+              + lindef_x.z * box_x.z
+#endif
+                                             ;
+  tmpbox[1] =   lindef_y.x * box_x.x + lindef_y.y * box_x.y
+#ifndef TWOD
+              + lindef_y.z * box_x.z
+#endif
+                                             ;
+#ifndef TWOD
+  tmpbox[2] =   lindef_z.x * box_x.x + lindef_z.y * box_x.y
+              + lindef_z.z * box_x.z ;
+#endif
+
+  box_x.x += tmpbox[0];
+  box_x.y += tmpbox[1];
+#ifndef TWOD
+  box_x.z += tmpbox[2];
+#endif
+  
+  /* transform second box vector */
+  tmpbox[0] =   lindef_x.x * box_y.x + lindef_x.y * box_y.y
+#ifndef TWOD
+              + lindef_x.z * box_y.z
+#endif
+                                             ;
+  tmpbox[1] =   lindef_y.x * box_y.x + lindef_y.y * box_y.y
+#ifndef TWOD
+              + lindef_y.z * box_y.z
+#endif
+                                             ;
+#ifndef TWOD
+  tmpbox[2] =   lindef_z.x * box_y.x + lindef_z.y * box_y.y
+              + lindef_z.z * box_y.z ;
+#endif
+
+  box_y.x += tmpbox[0];
+  box_y.y += tmpbox[1];
+#ifndef TWOD
+  box_y.z += tmpbox[2];
+#endif
+  
+  /* transform third box vector */
+#ifndef TWOD
+  tmpbox[0] =   lindef_x.x * box_z.x + lindef_x.y * box_z.y
+              + lindef_x.z * box_z.z ;
+
+  tmpbox[1] =   lindef_y.x * box_z.x + lindef_y.y * box_z.y
+              + lindef_y.z * box_z.z ;
+
+  tmpbox[2] =   lindef_z.x * box_z.x + lindef_z.y * box_z.y
+              + lindef_z.z * box_z.z ;
+
+  box_z.x += tmpbox[0];
+  box_z.y += tmpbox[1];
+  box_z.z += tmpbox[2];
+#endif
+
+  /* apply box changes */
+  make_box();
+ 
+} /* lin_deform */
+
+
 #endif /* HOMDEF */
 
 

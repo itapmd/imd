@@ -797,6 +797,24 @@ void getparamfile(char *paramfname, int sim)
       /* maximum shear */
       getparam("shear_factor",&shear_factor,PARAM_REAL,2,2);
     }
+    else if (strcasecmp(token,"lindef_interval")==0) {
+      /* period of linear deformation intervals */
+      getparam("lindef_interval",&lindef_interval,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"lindef_x")==0) {
+      /* first row of deformation matrix */
+      getparam("lindef_x",&lindef_x,PARAM_REAL,DIM,DIM);
+    }
+    else if (strcasecmp(token,"lindef_y")==0) {
+      /* second row of deformation matrix */
+      getparam("lindef_y",&lindef_y,PARAM_REAL,DIM,DIM);
+    }
+#ifndef TWOD
+    else if (strcasecmp(token,"lindef_z")==0) {
+      /* third row of deformation matrix */
+      getparam("lindef_z",&lindef_z,PARAM_REAL,DIM,DIM);
+    }
+#endif
 #endif
 #if defined(DEFORM)
     else if (strcasecmp(token,"ekin_threshold")==0) {

@@ -289,6 +289,12 @@ EXTERN int    stret_interval INIT(0);     /* period of uniax. exp. steps */
 EXTERN real   stretch INIT(0.0);          /* uniaxial exp. factor (x-dir) */
 EXTERN int    hom_interval INIT(0);       /* period of homshear steps */
 EXTERN vektor2d shear_factor INIT(nullvektor2d);/* shear factor in x,y-direction */
+EXTERN int    lindef_interval INIT(0);    /* period of linear deformation steps */
+EXTERN vektor lindef_x INIT(nullvektor);  /* \               */
+EXTERN vektor lindef_y INIT(nullvektor);  /*  |  linear      */
+#ifndef TWOD                              /*   > deformation */
+EXTERN vektor lindef_z INIT(nullvektor);  /*  |  matrix      */
+#endif                                    /* /               */
 #endif
 
 #ifdef SLLOD

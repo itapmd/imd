@@ -176,6 +176,7 @@ void main_loop(void)
 #ifdef HOMDEF
     if ((exp_interval > 0) && (0 == steps%exp_interval)) expand_sample();
     if ((hom_interval > 0) && (0 == steps%hom_interval)) shear_sample();
+    if ((lindef_interval > 0) && (0 == steps%lindef_interval)) lin_deform();
 #endif
 #ifdef DEFORM
     if (steps > annealsteps) {
