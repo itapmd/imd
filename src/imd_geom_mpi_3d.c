@@ -129,7 +129,7 @@ int cpu_coord(ivektor cellc)
 *
 *  cpu_grid_coord computes the CPU rank from the CPU coordinates.
 *  Used to determine the rank of neighbor CPUs, so periodic
-*  boundary conditions must alway be applied.
+*  boundary conditions must always be applied.
 *
 ******************************************************************************/
 

@@ -71,15 +71,15 @@ void read_atoms(str255 infilename)
   cell *to;
   ivektor cellc;
   int to_cpu;
-  int addnumber = 0;
+  long addnumber = 0;
 #ifdef MPI
   msgbuf *input_buf, *b;
 #endif
 
   /* allocate num_sort and num_vsort on all CPUs */
-  if ((num_sort = (int *) calloc(ntypes,sizeof(int)))==NULL)
+  if ((num_sort = (long *) calloc(ntypes,sizeof(long)))==NULL)
     error("cannot allocate memory for num_sort\n");
-  if ((num_vsort = (int *) calloc(vtypes,sizeof(int)))==NULL)
+  if ((num_vsort = (long *) calloc(vtypes,sizeof(long)))==NULL)
     error("cannot allocate memory for num_vsort\n");
 
 #ifdef MPI
@@ -95,14 +95,14 @@ void read_atoms(str255 infilename)
   } else if (0!=myid) {
     recv_atoms();
     /* If CPU 0 found velocities in its data, no initialisation is done */
-    MPI_Bcast( &natoms,       1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( &nactive,      1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &natoms,       1, MPI_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &nactive,      1, MPI_LONG, 0, MPI_COMM_WORLD);
 #ifdef UNIAX
-    MPI_Bcast( &nactive_rot,  1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &nactive_rot,  1, MPI_LONG, 0, MPI_COMM_WORLD);
 #endif
-    MPI_Bcast( num_sort, ntypes, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( num_vsort, vtypes, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( &do_maxwell,   1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( num_sort, ntypes, MPI_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast( num_vsort, vtypes,MPI_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &do_maxwell,   1, MPI_INT,  0, MPI_COMM_WORLD);
     return;
   }
 
@@ -398,30 +398,30 @@ void read_atoms(str255 infilename)
 
   /* Add the number of atoms read (and kept) by each CPU */
   if (1==parallel_input) {
-    MPI_Allreduce( &natoms,  &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
+    MPI_Allreduce( &natoms,  &addnumber, 1, MPI_LONG, MPI_SUM, cpugrid);
     natoms = addnumber;
-    MPI_Allreduce( &nactive, &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
+    MPI_Allreduce( &nactive, &addnumber, 1, MPI_LONG, MPI_SUM, cpugrid);
     nactive = addnumber;
 #ifdef UNIAX
-    MPI_Allreduce( &nactive_rot, &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
+    MPI_Allreduce( &nactive_rot, &addnumber, 1, MPI_LONG, MPI_SUM, cpugrid);
     nactive_rot = addnumber;
 #endif
     for (i=0; i<ntypes; i++) {
-      MPI_Allreduce( &num_sort[i], &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
+      MPI_Allreduce( &num_sort[i], &addnumber, 1, MPI_LONG, MPI_SUM, cpugrid);
       num_sort[i] = addnumber;
     }
     for (i=0; i<vtypes; i++) {
-      MPI_Allreduce( &num_vsort[i], &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
+      MPI_Allreduce( &num_vsort[i], &addnumber, 1, MPI_LONG, MPI_SUM, cpugrid);
       num_vsort[i] = addnumber;
     }
   } else { /* broadcast if serial io */
-    MPI_Bcast( &natoms ,      1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( &nactive,      1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &natoms ,      1, MPI_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &nactive,      1, MPI_LONG, 0, MPI_COMM_WORLD);
 #ifdef UNIAX
-    MPI_Bcast( &nactive_rot,  1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &nactive_rot,  1, MPI_LONG, 0, MPI_COMM_WORLD);
 #endif
-    MPI_Bcast( num_sort, ntypes, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( num_vsort, vtypes, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( num_sort, ntypes, MPI_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast( num_vsort, vtypes,MPI_LONG, 0, MPI_COMM_WORLD);
   }
 
   /* If CPU 0 found velocities in its data, no initialisation is done */
@@ -431,21 +431,21 @@ void read_atoms(str255 infilename)
 
   /* print number of atoms */
   if (0==myid) {
-    printf("Read structure with %d atoms.\n",natoms);
+    printf("Read structure with %ld atoms.\n",natoms);
     addnumber=num_sort[0];
-    printf("num_sort = [ %u",num_sort[0]);
+    printf("num_sort = [ %ld",num_sort[0]);
     for (i=1; i<ntypes; i++) {
-      printf(", %u",num_sort[i]);
+      printf(", %ld",num_sort[i]);
       addnumber+=num_sort[i];
     }
-    printf(" ],  total = %u\n",addnumber);
+    printf(" ],  total = %ld\n",addnumber);
     addnumber=num_vsort[0];
-    printf("num_vsort = [ %u",num_vsort[0]);
+    printf("num_vsort = [ %ld",num_vsort[0]);
     for (i=1; i<vtypes; i++) {
-      printf(", %u",num_vsort[i]);
+      printf(", %ld",num_vsort[i]);
       addnumber+=num_vsort[i];
     }
-    printf(" ],  total = %u\n",addnumber);
+    printf(" ],  total = %ld\n",addnumber);
   }
 }
 

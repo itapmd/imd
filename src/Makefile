@@ -135,6 +135,20 @@ DEBUG_FLAGS	+= -DDEBUG
 #
 ###########################################################################
 
+# AMD Opteron, gcc3
+ifeq (x86_64-gcc3,${IMDSYS})
+  CC_SERIAL	= gcc
+  CC_MPI	= mpicc
+  MPICH_CC      = gcc
+  MPICH_CLINKER = gcc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+#  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
+  OPT_FLAGS	+= -O -m64 # -static
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -g3 -pg
+  export        MPICH_CC MPICH_CLINKER
+endif
+
 # Athlon MP or XP, icc
 ifeq (AthlonMP-icc,${IMDSYS})
   CC_SERIAL	= icc

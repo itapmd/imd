@@ -566,7 +566,7 @@ void check_pairs()
 
 /******************************************************************************
 *
-*  cell_coord computes the (global) cell coorinates of a position
+*  cell_coord computes the (global) cell coordinates of a position
 *
 ******************************************************************************/
 
@@ -588,7 +588,7 @@ ivektor cell_coord(real x, real y, real z)
   if      (coord.z >= global_cell_dim.z) coord.z = global_cell_dim.z - 1;
   else if (coord.z < 0)                  coord.z = 0;
 
-  return(coord);
+  return coord;
 
 }
 

@@ -329,21 +329,21 @@ void read_atoms(str255 infilename)
 
   /* print number of atoms */
   if (0==myid) {
-    printf("Read structure with %d atoms.\n",natoms);
+    printf("Read structure with %ld atoms.\n",natoms);
     addnumber=num_sort[0];
-    printf("num_sort = [ %u",num_sort[0]);
+    printf("num_sort = [ %ld",num_sort[0]);
     for (i=1; i<ntypes; i++) {
-      printf(", %u",num_sort[i]);
+      printf(", %ld",num_sort[i]);
       addnumber+=num_sort[i];
     }
-    printf(" ],  total = %u\n",addnumber);
+    printf(" ],  total = %ld\n",addnumber);
     addnumber=num_vsort[0];
-    printf("num_vsort = [ %u",num_vsort[0]);
+    printf("num_vsort = [ %ld",num_vsort[0]);
     for (i=1; i<vtypes; i++) {
-      printf(", %u",num_vsort[i]);
+      printf(", %ld",num_vsort[i]);
       addnumber+=num_vsort[i];
     }
-    printf(" ],  total = %u\n",addnumber);
+    printf(" ],  total = %ld\n",addnumber);
   }
 }
 

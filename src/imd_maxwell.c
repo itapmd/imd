@@ -46,7 +46,7 @@ void maxwell(real temp)
 { 
    int         k;
    vektor      tot_impuls;
-   ivektor     nactive_vec;
+   long        nactive_x, nactive_y, nactive_z;
    static long dummy = 0;
    int slice;
 
@@ -68,10 +68,10 @@ void maxwell(real temp)
    int    num, nhalf, typ;
 
    TEMP = temp;
-   tot_impuls.x = 0.0;   nactive_vec.x = 0;
-   tot_impuls.y = 0.0;   nactive_vec.y = 0;
+   tot_impuls.x = 0.0;   nactive_x = 0;
+   tot_impuls.y = 0.0;   nactive_y = 0;
 #ifndef TWOD
-   tot_impuls.z = 0.0;   nactive_vec.z = 0;
+   tot_impuls.z = 0.0;   nactive_z = 0;
 #endif
 
 #ifdef NVX
@@ -138,10 +138,10 @@ void maxwell(real temp)
 #ifndef TWOD
          IMPULS(p,i,Z) = gaussian(tmp) * (restrictions + typ)->z;
 #endif
-         nactive_vec.x += (int) (restrictions + typ)->x;
-         nactive_vec.y += (int) (restrictions + typ)->y;
+         nactive_x += (int) (restrictions + typ)->x;
+         nactive_y += (int) (restrictions + typ)->y;
 #ifndef TWOD
-         nactive_vec.z += (int) (restrictions + typ)->z;
+         nactive_z += (int) (restrictions + typ)->z;
 #endif
          tot_impuls.x += IMPULS(p,i,X);
          tot_impuls.y += IMPULS(p,i,Y);
@@ -225,9 +225,9 @@ void maxwell(real temp)
 		IMPULS(p,i+clones,Y) = IMPULS(p,i,Y);
 		IMPULS(p,i+clones,Z) = IMPULS(p,i,Z);
 
-		nactive_vec.x += (int) (restrictions + typ)->x;
-		nactive_vec.y += (int) (restrictions + typ)->y;
-		nactive_vec.z += (int) (restrictions + typ)->z;
+		nactive_x += (int) (restrictions + typ)->x;
+		nactive_y += (int) (restrictions + typ)->y;
+		nactive_z += (int) (restrictions + typ)->z;
 
 		tot_impuls.x += IMPULS(p,i,X);
 		tot_impuls.y += IMPULS(p,i,Y);
@@ -249,10 +249,10 @@ void maxwell(real temp)
 
 
 
-   tot_impuls.x = nactive_vec.x == 0 ? 0.0 : tot_impuls.x / nactive_vec.x;
-   tot_impuls.y = nactive_vec.y == 0 ? 0.0 : tot_impuls.y / nactive_vec.y;
+   tot_impuls.x = nactive_x == 0 ? 0.0 : tot_impuls.x / nactive_x;
+   tot_impuls.y = nactive_y == 0 ? 0.0 : tot_impuls.y / nactive_y;
 #ifndef TWOD
-   tot_impuls.z = nactive_vec.z == 0 ? 0.0 : tot_impuls.z / nactive_vec.z;
+   tot_impuls.z = nactive_z == 0 ? 0.0 : tot_impuls.z / nactive_z;
 #endif
 
    /* correct center of mass momentum */

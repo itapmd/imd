@@ -123,16 +123,16 @@ EXTERN vektor *fbc_endforces;
 #endif
 
 /* Global bookkeeping */
-EXTERN int is_big_endian;        /* 1 if big endian, 0 if little endian */
-EXTERN int natoms  INIT(0);      /* Total number of atoms */
-EXTERN int nactive INIT(0);      /* number of transl. degrees of freedom */
-EXTERN int nactive_rot INIT(0);  /* number of rot. degrees of freedom */
-EXTERN int ntypes INIT(0);       /* Total number of different atom types */
-EXTERN int ntypepairs INIT(0);   /* Total number of different types pairs */
-EXTERN int ntypetriples INIT(0); /* Total number of different types triples 
-				    symmetric in the last two indices */
-EXTERN int *num_sort INIT(NULL); /* number of atoms for each real type */
-EXTERN int *num_vsort INIT(NULL); /* number of atoms for each virtual type */
+EXTERN int is_big_endian;         /* 1 if big endian, 0 if little endian */
+EXTERN long natoms  INIT(0);      /* Total number of atoms */
+EXTERN long nactive INIT(0);      /* number of transl. degrees of freedom */
+EXTERN long nactive_rot INIT(0);  /* number of rot. degrees of freedom */
+EXTERN int ntypes INIT(0);        /* Total number of different atom types */
+EXTERN int ntypepairs INIT(0);    /* Total number of different types pairs */
+EXTERN int ntypetriples INIT(0);  /* Total number of different types triples 
+				     symmetric in the last two indices */
+EXTERN long *num_sort INIT(NULL); /* number of atoms for each real type */
+EXTERN long *num_vsort INIT(NULL);/* number of atoms for each virtual type */
 EXTERN int steps INIT(0);        /* number of current MD step */
 EXTERN int steps_max INIT(0);    /* Maximum number of MD steps */
 EXTERN int steps_min INIT(0);    /* starting step nr for current phase */

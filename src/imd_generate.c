@@ -47,14 +47,16 @@
 void generate_atoms(str255 mode)
 {
   cell *to;
-  int addnumber, tmp, ninc;
-  int r, s, t, i, k;
+  long addnumber, tmp, ninc, i, k;
 #ifdef MPI
   MPI_Status status;
 #endif
 
-  if ((num_sort = (int *) calloc(ntypes,sizeof(int)))==NULL) {
+  if ((num_sort = (long *) calloc(ntypes,sizeof(long)))==NULL) {
       error("cannot allocate memory for num_sort\n");
+  }
+  if ((num_vsort = (long *) calloc(vtypes,sizeof(long)))==NULL) {
+      error("cannot allocate memory for num_vsort\n");
   }
 
 #ifdef DISLOC
@@ -109,15 +111,15 @@ void generate_atoms(str255 mode)
   /* Get numbering of atoms right even across CPUs */
   ninc = 0;
   if ((0==myid) && (num_cpus>1))
-     MPI_Send( &natoms, 1, MPI_INT, myid + 1, 0, cpugrid );
+     MPI_Send( &natoms, 1, MPI_LONG, myid + 1, 0, cpugrid );
   else if ((0<myid) && (myid<(num_cpus-1))) {
-     MPI_Recv( &tmp,    1, MPI_INT, myid - 1, 0, cpugrid, &status );
+     MPI_Recv( &tmp,    1, MPI_LONG, myid - 1, 0, cpugrid, &status );
      ninc = tmp;
      tmp += natoms;
-     MPI_Send( &tmp,    1, MPI_INT, myid + 1, 0, cpugrid );
+     MPI_Send( &tmp,    1, MPI_LONG, myid + 1, 0, cpugrid );
   }
   else if (myid==(num_cpus-1)) {
-     MPI_Recv( &tmp,    1, MPI_INT, myid - 1, 0, cpugrid, &status );
+     MPI_Recv( &tmp,    1, MPI_LONG, myid - 1, 0, cpugrid, &status );
      ninc = tmp;
   }
   /* loop over all atoms, fix numbers */
@@ -129,25 +131,26 @@ void generate_atoms(str255 mode)
   }
 #endif /* MONOLJ */
 
-  MPI_Allreduce( &natoms,  &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
+  MPI_Allreduce( &natoms,  &addnumber, 1, MPI_LONG, MPI_SUM, cpugrid);
   natoms = addnumber;
-  MPI_Allreduce( &nactive, &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
+  MPI_Allreduce( &nactive, &addnumber, 1, MPI_LONG, MPI_SUM, cpugrid);
   nactive = addnumber;
   for (i=0; i<ntypes; i++) {
-    MPI_Allreduce(&num_sort[i], &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
+    MPI_Allreduce(&num_sort[i], &addnumber, 1, MPI_LONG, MPI_SUM, cpugrid);
     num_sort[i] = addnumber;
   }
 #endif /* MPI */
 
-  if (0== myid) {
-    printf("Generated %s structure with %d atoms.\n",mode,natoms);
+  for (i=0; i<ntypes; i++) num_vsort[i] = num_sort[i];
+  if (0 == myid) {
+    printf("Generated %s structure with %ld atoms.\n",mode,natoms);
     addnumber=num_sort[0];
-    printf("num_sort = [ %u",num_sort[0]);
+    printf("num_sort = [ %ld",num_sort[0]);
     for (i=1; i<ntypes; i++) {
       printf(", %u",num_sort[i]);
       addnumber += num_sort[i];
     }
-    printf(" ],  total = %u\n",addnumber);
+    printf(" ],  total = %ld\n",addnumber);
   }
 }
 
@@ -169,11 +172,16 @@ void init_hex(void)
 void generate_hex()
 {
   cell    *input, *to;
-  vektor  min, max;
-  ivektor cellc;
+  ivektor min, max, cellc;
   int     to_cpu;
   int     i, j, typ;
   real    x, y;
+
+#ifdef MPI
+  if (myid==0)
+    if ((box_param.x % cpu_dim.x) || (box_param.y % cpu_dim.y))
+      error("box_param must be commensurate with cpu_dim");
+#endif
 
 #ifdef MPI
   min.x =  my_coord.x      * 2 * box_param.x / cpu_dim.x;
@@ -217,10 +225,11 @@ void generate_hex()
 #ifdef MPI
       to_cpu = cpu_coord(cellc);
       if (to_cpu==myid) {
-        cellc = local_cell_coord( ORT(input,0,X), ORT(input,0,Y) );
+        cellc = local_cell_coord(x,y);
         to = PTR_VV(cell_array,cellc,cell_dim);
         move_atom(to, input, 0);
       }
+      else error("imd_generate: atom on wrong CPU");
 #else
       to = PTR_VV(cell_array,cellc,cell_dim);
       move_atom(to, input, 0);
@@ -247,20 +256,29 @@ void init_cubic(void)
 /* generate cubic crystal structures (not just fcc...) */
 void generate_fcc(int maxtyp)
 {
+  ivektor min, max, cellc;
   cell    *input, *to;
-  vektor  min, max;
-  ivektor cellc;
+  real    xx, yy, zz;
   int     to_cpu;
   int     x, y, z, typ;
 
+#ifdef MPI
+  if (myid==0)
+    if ((box_param.x % cpu_dim.x) || (box_param.y % cpu_dim.y) || 
+        (box_param.z % cpu_dim.z))
+      error("box_param must be commensurate with cpu_dim");
+#endif
+
   /* conventional unit cell has size box_unit */
-  if (maxtyp < 4 || maxtyp==6 || maxtyp==7) {  /* FCC, BCC, B2, NaCl, L1_2 */
+  /* FCC, BCC, B2, NaCl, L1_2 */
+  if ((maxtyp < 4) || (maxtyp==6) || (maxtyp==7)) {
     box_param.x *= 2; 
     box_param.y *= 2; 
     box_param.z *= 2; 
     box_unit    /= 2;
   }
-  else {               /* diamond and zincblende */
+  /* diamond and zincblende */
+  else {
     box_param.x *= 4; 
     box_param.y *= 4; 
     box_param.z *= 4; 
@@ -353,10 +371,13 @@ void generate_fcc(int maxtyp)
         nactive += 3;
 
         input->n = 1;
-        ORT(input,0,X) = (x + 0.5) * box_unit;
-        ORT(input,0,Y) = (y + 0.5) * box_unit;
-        ORT(input,0,Z) = (z + 0.5) * box_unit;
-        cellc = cell_coord( ORT(input,0,X), ORT(input,0,Y), ORT(input,0,Z) );
+        xx = (x + 0.5) * box_unit;
+        yy = (y + 0.5) * box_unit;
+        zz = (z + 0.5) * box_unit;
+        cellc = cell_coord( xx, yy, zz );
+        ORT(input,0,X) = xx;
+        ORT(input,0,Y) = yy;
+        ORT(input,0,Z) = zz;
 #ifndef MONOLJ
         NUMMER(input,0) = natoms;
         VSORTE(input,0) = typ;
@@ -367,11 +388,11 @@ void generate_fcc(int maxtyp)
 #ifdef MPI
 	to_cpu = cpu_coord(cellc);
         if (to_cpu==myid) {
-	  cellc = local_cell_coord( ORT(input,0,X), ORT(input,0,Y),
-                                    ORT(input,0,Z) );
+	  cellc = local_cell_coord( xx, yy, zz );
           to = PTR_VV(cell_array,cellc,cell_dim);
 	  move_atom(to, input, 0);
 	}
+        else error("atom on wrong CPU");
 #else
 	to = PTR_VV(cell_array,cellc,cell_dim);
         move_atom(to, input, 0);
@@ -384,10 +405,10 @@ void generate_fcc(int maxtyp)
 void generate_lav()
 {
   cell    *input, *to;
-  vektor  min, max;
-  ivektor cellc;
+  ivektor min, max, cellc;
   int     to_cpu;
   real    px[24],py[24],pz[24];
+  real    xx, yy, zz;
   int     i,j,k,l,typ,pa[24];
 
 #ifdef MPI
@@ -458,25 +479,28 @@ void generate_lav()
 	  typ = pa[l];
 
 	  input->n = 1;
-	  ORT(input,0,X)  = (px[l] + 8*i + 0.5) * box_unit;
-	  ORT(input,0,Y)  = (py[l] + 8*j + 0.5) * box_unit;
-	  ORT(input,0,Z)  = (pz[l] + 8*k + 0.5) * box_unit;
+	  xx  = (px[l] + 8*i + 0.5) * box_unit;
+	  yy  = (py[l] + 8*j + 0.5) * box_unit;
+	  zz  = (pz[l] + 8*k + 0.5) * box_unit;
+	  ORT(input,0,X)  = xx;
+	  ORT(input,0,Y)  = yy;
+	  ORT(input,0,Z)  = zz;
 #ifndef MONOLJ
 	  NUMMER(input,0) = natoms;
 	  VSORTE(input,0) = typ;
           MASSE(input,0)  = masses[typ];
 #endif
-	  cellc = cell_coord( ORT(input,0,X), ORT(input,0,Y), ORT(input,0,Z) );
+	  cellc = cell_coord(xx,yy,zz);
 	  num_sort[typ]++;
 
 #ifdef MPI
 	  to_cpu = cpu_coord(cellc);
 	  if (to_cpu==myid) {
-	    cellc = local_cell_coord( ORT(input,0,X), ORT(input,0,Y), 
-				      ORT(input,0,Z) );
+	    cellc = local_cell_coord(xx,yy,zz);
             to = PTR_VV(cell_array,cellc,cell_dim);
             move_atom(to, input, 0);
           }
+          else error("imd_generate: atom on wrong CPU");
 #else
           to = PTR_VV(cell_array,cellc,cell_dim);
           move_atom(to, input, 0);
