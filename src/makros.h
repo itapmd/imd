@@ -99,7 +99,7 @@ INLINE static int MOD(shortint p, int q)
 #define HEATCOND(cell,i)        ((cell)->heatcond[i])
 #endif
 #ifdef STRESS_TENS
-#define PRESSTENS(cell,i,sub)   ((cell)->presstens.sub)
+#define PRESSTENS(cell,i,sub)   ((cell)->presstens[i].sub)
 #endif
 #ifdef COVALENT
 #define NEIGH(cell,i)           ((cell)->neigh[i])
