@@ -29,11 +29,20 @@ machine. Here are some important examples:
 <TR><TD>                <TD>imd_program [-rN] -p parameter_file (no isub)
 <TR><TD>Hitachi:        <TD>mpirun -np P imd_program [-rN] -p parameter_file
 </TABLE>
+<P>
+On a cluster of workstations where <A
+HREF=http://www.mpi.nd.edu/lam/>LAM-MPI</A> is installed boot the
+cluster with<BR><BR>
+lamboot -v &lt;<TT>hostfile</TT>&gt;<BR><BR>
+where <TT>hostfile</TT> contains lines with the workstations that
+shall be part of the cluster. Then start IMD by typing<BR><BR>
+mpirun -np P imd_program [-rN] -p parameter_file
+<BR><BR>
+
 <P> 
 In all these examples, P is the number of processors to be used,
 which must agree with the number of processors requested in the
 parameter file.
-
 <P>
 Interesting Cray T3E commands: <B>fpart</B> and <B>grmview</B> show the free partitions
 and the partitioning of the machine.
