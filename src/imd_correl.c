@@ -97,9 +97,9 @@ void init_correl(int ncorr_rmax, int ncorr_tmax)
 #endif /* CORRELATE */
 
   /* Allocate msqd arrays */
-  msqd = (real *) malloc(ntypes*sizeof(real));
+  msqd = (real *) malloc(DIM*ntypes*sizeof(real));
 #ifdef MPI
-  msqd_global = (real *) malloc(ntypes*sizeof(real));
+  msqd_global = (real *) malloc(DIM*ntypes*sizeof(real));
 #else
   msqd_global = msqd;
 #endif
@@ -154,7 +154,7 @@ void correlate(int step, int ref_step, unsigned seqnum)
 #endif /* MPI */
 #endif /* CORRELATE */
 
-    for (i=0; i<ntypes; i++) msqd[i] = (real)0;
+    for (i=0; i<DIM*ntypes; i++) msqd[i] = (real)0;
 
     /* loop over all cells */
     for (k=0; k<ncells; ++k) {
@@ -175,19 +175,19 @@ void correlate(int step, int ref_step, unsigned seqnum)
         dist.z = p->ort Z(i) - p->refpos Z(i);
 #endif
 
-        reduce_displacement(&dist);
-
-        drsq  = dist.x * dist.x;
-        drsq += dist.y * dist.y;
+        /* mean square displacement with PBC applied */
+        msqd X(SORTE(p,i)) += dist.x * dist.x;
+        msqd Y(SORTE(p,i)) += dist.y * dist.y;
 #ifndef TWOD
-        drsq += dist.z * dist.z;
+        msqd Z(SORTE(p,i)) += dist.z * dist.z;
 #endif
 
-        /* mean square displacement with PBC applied */
-        msqd[p->sorte[i]] += drsq;
-
 #ifdef CORRELATE
-        dr  = sqrt(drsq); /* correlate displacement with PBC applied */
+        /* unlike in the MSQD part, we explicitly assume here that
+           particles do not travel more than half a box diameter */
+        /* correlate displacement with PBC applied */
+        reduce_displacement(&dist);
+        dr  = sqrt(SPROD(drsq,dsrq)); 
         idr = (int)(dr*inv_dr);
         GS[p->sorte[i]][it][idr]++; /* calculate histogram for self part */
 #endif
@@ -208,7 +208,7 @@ void correlate(int step, int ref_step, unsigned seqnum)
 
 #ifdef MSQD
 #ifdef MPI
-    MPI_Reduce(msqd,msqd_global,ntypes,REAL,MPI_SUM,0,cpugrid);
+    MPI_Reduce(msqd,msqd_global,DIM*ntypes,REAL,MPI_SUM,0,cpugrid);
 #endif
     if (0==myid) write_msqd(step);
 #endif

@@ -78,8 +78,8 @@ default.
 <P><LI><B>msqd</B><P>
 </A>
 This option enables the computation of the <B>mean square 
-displacements</B> (MSQDs) (for each atom type separately). 
-It shares its parameters with the option correl. 
+displacements</B> (MSQDs) (for each atom type and each direction
+separately). It shares its parameters with the option correl. 
 The computation of the MSQDs is started at step 
 <TT>correl_start</TT>, and ends at step <TT>correl_end</TT>. 
 The reference positions are first stored at step 
@@ -88,7 +88,13 @@ The reference positions are first stored at step
 which is the default). The MSQDs are computed every <TT>correl_ts</TT> 
 steps between <TT>correl_start</TT> and <TT>correl_end</TT>,
 and are written to the file <TT>&lt;outfiles&gt;.msqd</TT>,
-preceeded by the current simulation time.
+preceeded by the current simulation time. The format of the msqd file
+is:
+<PRE>
+  time d2x_1 d2y_1 [d2z_1] [d2x_2 d2y_2 [d2z_2]] ...
+</PRE>
+where <TT>d2x_n</TT> is the mean square displacement of particles of
+type <TT>n</TT> in <TT>x</TT> direction, etc.
 <P>
 The parameters <TT>correl_start</TT> and <TT>correl_end</TT> can be
 used to switch this option on and off during a multiphase simulation. 

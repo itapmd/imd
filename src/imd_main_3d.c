@@ -572,13 +572,18 @@ void do_boundaries(void)
     if (pbc_dirs.x==1)
     for (l=0; l<p->n; ++l) {
       i = -FLOOR(SPRODX(p->ort,l,tbox_x));
-      p->ort X(l)   += i * box_x.x;
-      p->ort Y(l)   += i * box_x.y;
-      p->ort Z(l)   += i * box_x.z;
+      p->ort X(l)    += i * box_x.x;
+      p->ort Y(l)    += i * box_x.y;
+      p->ort Z(l)    += i * box_x.z;
+#ifdef MSQD
+      p->refpos X(l) += i * box_x.x;
+      p->refpos Y(l) += i * box_x.y;
+      p->refpos Z(l) += i * box_x.z;
+#endif
 #ifdef AVPOS
-      p->sheet X(l) -= i * box_x.x;
-      p->sheet Y(l) -= i * box_x.y;
-      p->sheet Z(l) -= i * box_x.z;
+      p->sheet X(l)  -= i * box_x.x;
+      p->sheet Y(l)  -= i * box_x.y;
+      p->sheet Z(l)  -= i * box_x.z;
 #endif
     }
 
@@ -586,13 +591,18 @@ void do_boundaries(void)
     if (pbc_dirs.y==1)
     for (l=0; l<p->n; ++l) {
       i = -FLOOR(SPRODX(p->ort,l,tbox_y));
-      p->ort X(l)   += i * box_y.x;
-      p->ort Y(l)   += i * box_y.y;
-      p->ort Z(l)   += i * box_y.z;
+      p->ort X(l)    += i * box_y.x;
+      p->ort Y(l)    += i * box_y.y;
+      p->ort Z(l)    += i * box_y.z;
+#ifdef MSQD
+      p->refpos X(l) += i * box_y.x;
+      p->refpos Y(l) += i * box_y.y;
+      p->refpos Z(l) += i * box_y.z;
+#endif
 #ifdef AVPOS
-      p->sheet X(l) -= i * box_y.x;
-      p->sheet Y(l) -= i * box_y.y;
-      p->sheet Z(l) -= i * box_y.z;
+      p->sheet X(l)  -= i * box_y.x;
+      p->sheet Y(l)  -= i * box_y.y;
+      p->sheet Z(l)  -= i * box_y.z;
 #endif
     }
 
@@ -600,13 +610,18 @@ void do_boundaries(void)
     if (pbc_dirs.z==1)
     for (l=0; l<p->n; ++l) {
       i = -FLOOR(SPRODX(p->ort,l,tbox_z));
-      p->ort X(l)   += i * box_z.x;
-      p->ort Y(l)   += i * box_z.y;
-      p->ort Z(l)   += i * box_z.z;
+      p->ort X(l)    += i * box_z.x;
+      p->ort Y(l)    += i * box_z.y;
+      p->ort Z(l)    += i * box_z.z;
+#ifdef MSQD
+      p->refpos X(l) += i * box_z.x;
+      p->refpos Y(l) += i * box_z.y;
+      p->refpos Z(l) += i * box_z.z;
+#endif
 #ifdef AVPOS
-      p->sheet X(l) -= i * box_z.x;
-      p->sheet Y(l) -= i * box_z.y;
-      p->sheet Z(l) -= i * box_z.z;
+      p->sheet X(l)  -= i * box_z.x;
+      p->sheet Y(l)  -= i * box_z.y;
+      p->sheet Z(l)  -= i * box_z.z;
 #endif
     }
 

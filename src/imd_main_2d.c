@@ -494,11 +494,15 @@ void do_boundaries(void)
     if (pbc_dirs.x==1)
     for (l=0; l<p->n; ++l) {
       i = -FLOOR(SPRODX(p->ort,l,tbox_x));
-      p->ort X(l)   += i * box_x.x;
-      p->ort Y(l)   += i * box_x.y;
+      p->ort X(l)    += i * box_x.x;
+      p->ort Y(l)    += i * box_x.y;
+#ifdef MSQD
+      p->refpos X(l) += i * box_x.x;
+      p->refpos Y(l) += i * box_x.y;
 #ifdef AVPOS
-      p->sheet X(l) -= i * box_x.x;
-      p->sheet Y(l) -= i * box_x.y;
+      p->sheet X(l)  -= i * box_x.x;
+      p->sheet Y(l)  -= i * box_x.y;
+#endif
 #endif
     }
 
@@ -506,11 +510,15 @@ void do_boundaries(void)
     if (pbc_dirs.y==1)
     for (l=0; l<p->n; ++l) {
       i = -FLOOR(SPRODX(p->ort,l,tbox_y));
-      p->ort X(l)   += i * box_y.x;
-      p->ort Y(l)   += i * box_y.y;
+      p->ort X(l)    += i * box_y.x;
+      p->ort Y(l)    += i * box_y.y;
+#ifdef MSQD
+      p->refpos X(l) += i * box_y.x;
+      p->refpos Y(l) += i * box_y.y;
+#endif
 #ifdef AVPOS
-      p->sheet X(l) -= i * box_y.x;
-      p->sheet Y(l) -= i * box_y.y;
+      p->sheet X(l)  -= i * box_y.x;
+      p->sheet Y(l)  -= i * box_y.y;
 #endif
     }
 

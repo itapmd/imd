@@ -1000,15 +1000,16 @@ void write_msqd(int steps)
 {
   FILE *out;
   str255 fname;
-  int i;
+  int i,j;
 
   sprintf(fname,"%s.msqd",outfilename);
   out = fopen(fname,"a");
   if (NULL == out) error("Cannot open msqd file.");
 
   fprintf(out, "%10.4e", (double)(steps * timestep));
-  for (i=0; i<ntypes; i++) {
-    fprintf(out," %10.4e", (double)(msqd_global[i] / num_sort[i]));
+  for (i=0; i<ntypes; i++) 
+    for (j=0; i<DIM; j++) {
+    fprintf(out," %10.4e", (double)(msqd_global[i*DIM+j] / num_sort[i]));
   }
   putc('\n',out);
   fclose(out);
