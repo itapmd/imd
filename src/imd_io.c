@@ -1074,12 +1074,12 @@ void write_header_force(FILE *out)
   
   /* box lines */
 #ifdef TWOD
-  fprintf(out, "#X %e %e\n",    box_x.x , box_x.y);
-  fprintf(out, "#Y %e %e\n",    box_y.x , box_y.y);
+  fprintf(out, "#X %.16e %.16e\n",       box_x.x , box_x.y);
+  fprintf(out, "#Y %.16e %.16e\n",       box_y.x , box_y.y);
 #else
-  fprintf(out, "#X %e %e %e\n", box_x.x , box_x.y , box_x.z);
-  fprintf(out, "#Y %e %e %e\n", box_y.x , box_y.y , box_y.z);
-  fprintf(out, "#Z %e %e %e\n", box_z.x , box_z.y , box_z.z);
+  fprintf(out, "#X %.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
+  fprintf(out, "#Y %.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
+  fprintf(out, "#Z %.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
 #endif
 
   /* endheader line */
@@ -1104,11 +1104,11 @@ void write_atoms_force(FILE *out)
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; i++) {
 #ifdef TWOD
-      len += sprintf( outbuf+len, "%d %e %e %e %e\n",
+      len += sprintf( outbuf+len, "%d %.16e %.16e %.16e %.16e\n",
                       SORTE(p,i), p->ort X(i), p->ort Y(i),
                       p->kraft X(i), p->kraft Y(i) );
 #else
-      len += sprintf( outbuf+len, "%d %e %e %e %e %e %e\n",
+      len += sprintf( outbuf+len, "%d %.16e %.16e %.16e %.16e %.16e %.16e\n",
                       SORTE(p,i), p->ort X(i), p->ort Y(i), p->ort Z(i),
                       p->kraft X(i), p->kraft Y(i), p->kraft Z(i) );
 #endif
