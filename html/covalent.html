@@ -89,43 +89,27 @@ computed analytically during the simulation according to<P>
 </CENTER>
 
 The indices of the parameters may refer to different types of
-atoms. However, the parameters with two indices are computed as
-follows:<P>
-
-<CENTER>
-<IMG SRC="covalent7.gif"><BR><P>
-</CENTER>
-
-The (symmetric) parameters 
-<IMG
- WIDTH="30" HEIGHT="36" ALIGN="MIDDLE" BORDER="0"
- SRC="covalent8.gif"> and
-<IMG
- WIDTH="30" HEIGHT="36" ALIGN="MIDDLE" BORDER="0"
- SRC="covalent13.gif">
-are exceptions. Their diagonal values are equal
-to 1 and only the non-diagonal values have to be read in, provided there
-is more than one atom type. <P>
+atoms. <P>
 
 The IMD variables with the corresponding parameters are as
 follows:<P>
 
 <TABLE>
-<TR> <TD> <TT>ters_a</TT> </TD>  <TD></TD><TD> <I>A<SUB>i</SUB><I> </TD> </TR>
-<TR> <TD> <TT>ters_b</TT> </TD> <TD></TD> <TD> <I>B<SUB>i</SUB><I> </TD> </TR>
-<TR> <TD> <TT>ters_la</TT> </TD> <TD></TD> <TD> <IMG WIDTH="23" HEIGHT="38" ALIGN="MIDDLE" BORDER="0"
+<TR> <TD> <TT>ters_a</TT> </TD>  <TD></TD><TD> <I>A<SUB>ij</SUB></I> </TD> </TR>
+<TR> <TD> <TT>ters_b</TT> </TD> <TD></TD> <TD> <I>B<SUB>ij</SUB></I> </TD> </TR>
+<TR> <TD> <TT>ters_la</TT> </TD> <TD></TD> <TD> <IMG WIDTH="29" HEIGHT="38" ALIGN="MIDDLE" BORDER="0"
             SRC="covalent9.gif"> </TD> </TR>
-<TR> <TD> <TT>ters_mu</TT> </TD> <TD></TD>  <TD> <IMG WIDTH="23" HEIGHT="36" ALIGN="MIDDLE" BORDER="0"
+<TR> <TD> <TT>ters_mu</TT> </TD> <TD></TD>  <TD> <IMG WIDTH="30" HEIGHT="36" ALIGN="MIDDLE" BORDER="0"
             SRC="covalent10.gif"> </TD> </TR>
 <TR> <TD> <TT>ters_ga</TT> </TD> <TD></TD> <TD> <IMG WIDTH="22" HEIGHT="36" ALIGN="MIDDLE" BORDER="0"
             SRC="covalent11.gif"> </TD> </TR>
 
-<TR> <TD> <TT>ters_n</TT> </TD> <TD></TD> <TD> <I>n<SUB>i</SUB><I> </TD> </TR>
-<TR> <TD> <TT>ters_c</TT> </TD><TD></TD>  <TD> <I>c<SUB>i</SUB><I> </TD> </TR>
-<TR> <TD> <TT>ters_d</TT> </TD><TD></TD>  <TD> <I>d<SUB>i</SUB><I> </TD> </TR>
-<TR> <TD> <TT>ters_h</TT> </TD><TD></TD>  <TD> <I>h<SUB>i</SUB><I> </TD> </TR>
-<TR> <TD> <TT>ters_r_cut</TT> </TD><TD></TD>  <TD> <I>S<SUB>i</SUB><I> </TD> </TR>
-<TR> <TD> <TT>ters_r0</TT> </TD><TD></TD>  <TD> <I>R<SUB>i</SUB><I> </TD> </TR>
+<TR> <TD> <TT>ters_n</TT> </TD> <TD></TD> <TD> <I>n<SUB>i</SUB></I> </TD> </TR>
+<TR> <TD> <TT>ters_c</TT> </TD><TD></TD>  <TD> <I>c<SUB>i</SUB></I> </TD> </TR>
+<TR> <TD> <TT>ters_d</TT> </TD><TD></TD>  <TD> <I>d<SUB>i</SUB></I> </TD> </TR>
+<TR> <TD> <TT>ters_h</TT> </TD><TD></TD>  <TD> <I>h<SUB>i</SUB></I> </TD> </TR>
+<TR> <TD> <TT>ters_r_cut</TT> </TD><TD></TD>  <TD> <I>S<SUB>ij</SUB></I> </TD> </TR>
+<TR> <TD> <TT>ters_r0</TT> </TD><TD></TD>  <TD> <I>R<SUB>ij</SUB></I> </TD> </TR>
 
 <TR> <TD> <TT>ters_chi</TT> </TD><TD></TD>  <TD> <IMG WIDTH="30" HEIGHT="36" ALIGN="MIDDLE" BORDER="0"
             SRC="covalent8.gif"> </TD>
@@ -138,14 +122,27 @@ follows:<P>
 <P>
 
 The values of the single-index parameters have to be given for all atom types in a
-row. In the case of the variables <TT>ters_chi</TT> and <TT>ters_om</TT>, the non-diagonal
-values of the matrix are read in using the following format:<P>
+row. 
+The values of the parameters <TT>ters_a</TT>, <TT>ters_b</TT>,
+<TT>ters_la</TT>, <TT>ters_mu</TT>, <TT>ters_r_cut</TT> and <TT>ters_r0</TT> are read in using the following format:<P>
+<CENTER>
+<I>A<SUB>00</SUB> A<SUB>01</SUB> ... A<SUB>0(n-1)</SUB> A<SUB>11</SUB>
+ A<SUB>12</SUB> ... A<SUB>(n-1)(n-1)</SUB></I> ,
+</CENTER><P>
+
+where <I>n</I> is the number of atom types.
+In the case of the variables <TT>ters_chi</TT> and <TT>ters_om</TT>,
+the diagonal values of the matrix are equal to 1 and the non-diagonal
+values are read in using the following format:<P>
 
 <CENTER>
 <IMG SRC="covalent12.gif"><BR><P>
 </CENTER>
 
-where <I>n</I> is the number of atom types. <P>
+<P>
+
+The parameters <TT>ters_chi</TT> and <TT>ters_om</TT> are only
+required if there is more than one atom type.<P>
 
 As in the case of the Stillinger-Weber potential, the value of the variable
 <TT>neigh_len</TT> must also be specified.<P>
