@@ -133,6 +133,7 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols, int radial )
   if (0==parallel_input) {
     /* Broadcast table to other CPUs */
     MPI_Bcast( &(pt->maxsteps), 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &(pt->ncols),    1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast( pt->begin,   ncols, REAL,    0, MPI_COMM_WORLD);
     MPI_Bcast( pt->end,     ncols, REAL,    0, MPI_COMM_WORLD);
     MPI_Bcast( pt->step,    ncols, REAL,    0, MPI_COMM_WORLD);
