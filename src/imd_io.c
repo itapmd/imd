@@ -117,7 +117,7 @@ void write_cell_ef(FILE *out, cell *p)
         fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f %12f %12f\n",
 #endif
           NUMMER(p,i),
-          SORTE(p,i),
+          p->sorte[i],
           MASSE(p,i),
           p->ort X(i),
           p->ort Y(i),
