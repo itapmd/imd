@@ -121,7 +121,7 @@
 ###########################################################################
 
 MV		= mv      # program to move imd binary to ${BIN_DIR}
-LIBS		+= -lm
+LIBS		+= #-lm
 MPI_FLAGS	+= -DMPI
 OMP_FLAGS	+= -DOMP
 OMPI_FLAGS	+= -DMPI -DOMP
@@ -143,9 +143,50 @@ ifeq (x86_64-gcc3,${IMDSYS})
 #  MPICH_CLINKER = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
 #  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
-  OPT_FLAGS	+= -O -m64 # -static
+  OPT_FLAGS	+= -O -m64
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
+  LFLAGS        += # -static
+  export        MPICH_CC # MPICH_CLINKER
+endif
+
+# Intel EM64T "AMD inside", icc
+ifeq (x86_64-icc,${IMDSYS})
+  CC_SERIAL	= icc
+  CC_MPI	= mpicc
+  MPICH_CC      = icc
+#  MPICH_CLINKER = gcc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+#  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
+  OPT_FLAGS	+= -O3 -ip -axP
+  MPI_FLAGS     += 
+  OMP_FLAGS	+= -openmp
+  OMPI_FLAGS	+= -openmp
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -prof_gen
+  RCD_FLAGS	+= # -DRCD -rcd
+  MPI_LIBS      += 
+  LFLAGS        += # -static
+  export        MPICH_CC # MPICH_CLINKER
+endif
+
+# Intel EM64T "AMD inside", icc, Infiniband
+ifeq (x86_64-IB-icc,${IMDSYS})
+  CC_SERIAL	= icc
+  CC_MPI	= icc
+  MPICH_CC      = icc
+#  MPICH_CLINKER = gcc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+#  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
+  OPT_FLAGS	+= -O3 -ip -axP
+  MPI_FLAGS     += -I/usr/mellanox/include -I/opt/ib/include
+  OMP_FLAGS	+= -openmp
+  OMPI_FLAGS	+= -openmp
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -prof_gen
+  RCD_FLAGS	+= # -DRCD -rcd
+  MPI_LIBS      += -L/usr/mellanox/lib -L/opt/ib/lib -lmpich -lvapi -lmosal -lmpga
+  LFLAGS        += # -static
   export        MPICH_CC # MPICH_CLINKER
 endif
 
@@ -1025,6 +1066,9 @@ ${OBJECTS}: ${HEADERS}
 # special rules for force computation
 imd_forces.o: imd_forces.c
 	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_forces.c
+
+imd_forces_nbl.o: imd_forces_nbl.c
+	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_forces_nbl.c
 
 imd_main_nbl_3d.o: imd_main_nbl_3d.c
 	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_main_nbl_3d.c
