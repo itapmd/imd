@@ -480,7 +480,7 @@ void write_eng_file_header()
     fprintf(fl, "pressure ");
     fprintf(fl, "volume ");
 #if defined(NVT) || defined(NPT) || defined(STM) 
-    fprintf(fl, "eta ");
+    fprintf(fl, "eta * tau_eta ");
 #endif
 #ifdef NPT_axial
 #ifdef TWOD
@@ -581,7 +581,7 @@ void write_eng_file(int steps)
   fprintf(out," %e",     (double) pressure);
   fprintf(out," %e",     (double) vol);
 #if defined(NVT) || defined(NPT) || defined(STM)
-  fprintf(out," %e",     (double) eta );
+  fprintf(out," %e",     (double) (eta * tau_eta) );
 #endif
   if (ensemble==ENS_NPT_AXIAL) {
 #ifdef TWOD

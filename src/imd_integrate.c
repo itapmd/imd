@@ -390,11 +390,11 @@ void move_atoms_nvt(void)
 #endif
   fnorm = 0.0;
 
-  reibung     =        1.0 - eta * inv_tau_eta * timestep / 2.0;
-  eins_d_reib = 1.0 / (1.0 + eta * inv_tau_eta * timestep / 2.0);
+  reibung         =        1.0 - eta * timestep / 2.0;
+  eins_d_reib     = 1.0 / (1.0 + eta * timestep / 2.0);
 #ifdef UNIAX
-  reibung_rot     =        1.0 - eta_rot * inv_tau_eta_rot * timestep / 2.0;
-  eins_d_reib_rot = 1.0 / (1.0 + eta_rot * inv_tau_eta_rot * timestep / 2.0);
+  reibung_rot     =        1.0 - eta_rot * timestep / 2.0;
+  eins_d_reib_rot = 1.0 / (1.0 + eta_rot * timestep / 2.0);
 #endif
    
 #ifdef _OPENMP
@@ -559,10 +559,10 @@ void move_atoms_nvt(void)
 
   /* time evolution of constraints */
   ttt  = nactive * temperature;
-  eta += timestep * (E_kin_2 / ttt - 1.0) * inv_tau_eta;
+  eta += timestep * (E_kin_2 / ttt - 1.0) * isq_tau_eta;
 #ifdef UNIAX
   ttt  = nactive_rot * temperature;
-  eta_rot += timestep * ( E_rot_2 / ttt - 1.0 ) * inv_tau_eta_rot;
+  eta_rot += timestep * (E_rot_2 / ttt - 1.0) * isq_tau_eta_rot;
 #endif
   
 }
@@ -591,23 +591,23 @@ void move_atoms_npt_iso(void)
 {
   int  k;
   real Ekin_old = 0.0, Ekin_new = 0.0;
-  real fric, ifric, tmpvec1[4], tmpvec2[4], ttt;
+  real fric, ifric, tmpvec1[5], tmpvec2[5], ttt;
   real Erot_old = 0.0, Erot_new = 0.0;
   real reib, ireib ;
   fnorm = 0.0;
 
   /* new box size relative to old one */
-  box_size.x = 1.0 / box_size.x + 2.0 * timestep * xi.x * inv_tau_xi;
-  fric  =      1.0 - (xi.x * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0;
-  ifric = 1.0/(1.0 + (xi.x * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0);
+  box_size.x =   1.0 / box_size.x + 2.0 * timestep * xi.x;
+  fric  =        1.0 - (xi.x + eta) * timestep / 2.0;
+  ifric = 1.0 / (1.0 + (xi.x + eta) * timestep / 2.0);
 #ifdef UNIAX
-  reib  =      1.0 - eta_rot * inv_tau_eta_rot * timestep / 2.0;
-  ireib = 1.0/(1.0 + eta_rot * inv_tau_eta_rot * timestep / 2.0);
+  reib  =        1.0 - eta_rot * timestep / 2.0;
+  ireib = 1.0 / (1.0 + eta_rot * timestep / 2.0);
 #endif
 
   /* loop over all cells */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:Ekin_old,Ekin_new,Erot_old,Erot_new)
+#pragma omp parallel for reduction(+:Ekin_old,Ekin_new,Erot_old,Erot_new,fnorm)
 #endif
   for (k=0; k<ncells; ++k) {
 
@@ -710,13 +710,15 @@ void move_atoms_npt_iso(void)
   tmpvec1[1] = Ekin_new;
   tmpvec1[2] = Erot_old;
   tmpvec1[3] = Erot_new;
+  tmpvec1[4] = fnorm;
 
-  MPI_Allreduce( tmpvec1, tmpvec2, 4, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid);
 
   Ekin_old = tmpvec2[0];
   Ekin_new = tmpvec2[1];
   Erot_old = tmpvec2[2];
   Erot_new = tmpvec2[3];
+  fnorm    = tmpvec2[4];
 #endif
 
 #ifdef UNIAX
@@ -730,14 +732,14 @@ void move_atoms_npt_iso(void)
 
   /* time evolution of constraints */
   ttt  = nactive * temperature;
-  eta += timestep * (Ekin_new / ttt - 1.0) * inv_tau_eta;
+  eta += timestep * (Ekin_new / ttt - 1.0) * isq_tau_eta;
 #ifdef UNIAX
   ttt  = nactive_rot * temperature;
-  eta_rot += timestep * (Erot_new / ttt - 1.0) * inv_tau_eta_rot;
+  eta_rot += timestep * (Erot_new / ttt - 1.0) * isq_tau_eta_rot;
 #endif
 
   ttt = xi_old.x + timestep * 2.0 * (pressure - pressure_ext.x) * volume
-                          * inv_tau_xi * DIM / (nactive * temperature);
+                          * isq_tau_xi / nactive;
   xi_old.x = xi.x;
   xi.x = ttt;
 
@@ -779,7 +781,7 @@ void move_atoms_npt_axial(void)
 
 {
   int k;
-  real Ekin, ttt, xi_tmp, tmpvec1[4], tmpvec2[4];
+  real Ekin, ttt, xi_tmp, tmpvec1[5], tmpvec2[5];
   vektor fric, ifric;
   fnorm = 0.0;
 
@@ -788,22 +790,22 @@ void move_atoms_npt_axial(void)
   stress_x         = 0.0;
   stress_y         = 0.0;
   /* new box size relative to old one */ 
-  box_size.x       = 1.0 / box_size.x + 2.0 * timestep * xi.x * inv_tau_xi;  
-  box_size.y       = 1.0 / box_size.y + 2.0 * timestep * xi.y * inv_tau_xi;
-  fric.x  =    1.0 - (xi.x * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0;
-  fric.y  =    1.0 - (xi.y * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0;
-  ifric.x = 1/(1.0 + (xi.x * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0);
-  ifric.y = 1/(1.0 + (xi.y * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0);
+  box_size.x     = 1.0 / box_size.x + 2.0 * timestep * xi.x;  
+  box_size.y     = 1.0 / box_size.y + 2.0 * timestep * xi.y;
+  fric.x  =        1.0 - (xi.x + eta) * timestep / 2.0;
+  fric.y  =        1.0 - (xi.y + eta) * timestep / 2.0;
+  ifric.x = 1.0 / (1.0 + (xi.x + eta) * timestep / 2.0);
+  ifric.y = 1.0 / (1.0 + (xi.y + eta) * timestep / 2.0);
 #ifndef TWOD
-  stress_z         = 0.0;
-  box_size.z       = 1.0 / box_size.z + 2.0 * timestep * xi.z * inv_tau_xi;  
-  fric.z  =    1.0 - (xi.z * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0;
-  ifric.z = 1/(1.0 + (xi.z * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0);
+  stress_z       = 0.0;
+  box_size.z     = 1.0 / box_size.z + 2.0 * timestep * xi.z;  
+  fric.z  =        1.0 - (xi.z + eta) * timestep / 2.0;
+  ifric.z = 1.0 / (1.0 + (xi.z + eta) * timestep / 2.0);
 #endif
 
   /* loop over all cells */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:Ekin,stress_x,stress_y,stress_z)
+#pragma omp parallel for reduction(+:Ekin,stress_x,stress_y,stress_z,fnorm)
 #endif
   for (k=0; k<ncells; ++k) {
 
@@ -877,19 +879,21 @@ void move_atoms_npt_axial(void)
 #ifdef MPI
   /* add up results from different CPUs */
   tmpvec1[0] = Ekin;
-  tmpvec1[1] = stress_x;
-  tmpvec1[2] = stress_y;
+  tmpvec1[1] = fnorm;
+  tmpvec1[2] = stress_x;
+  tmpvec1[3] = stress_y;
 #ifndef TWOD
-  tmpvec1[3] = stress_z;
+  tmpvec1[4] = stress_z;
 #endif
 
-  MPI_Allreduce( tmpvec1, tmpvec2, 1+DIM, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( tmpvec1, tmpvec2, 2+DIM, REAL, MPI_SUM, cpugrid);
 
   Ekin     = tmpvec2[0];
-  stress_x = tmpvec2[1];
-  stress_y = tmpvec2[2];
+  fnorm    = tmpvec2[1];
+  stress_x = tmpvec2[2];
+  stress_y = tmpvec2[3];
 #ifndef TWOD
-  stress_z = tmpvec2[3];
+  stress_z = tmpvec2[4];
 #endif
 #endif
 
@@ -904,9 +908,9 @@ void move_atoms_npt_axial(void)
 
   /* update parameters */
   ttt  = nactive * temperature;
-  eta += timestep * (Ekin / ttt - 1.0) * inv_tau_eta;
+  eta += timestep * (Ekin / ttt - 1.0) * isq_tau_eta;
 
-  ttt  = timestep * 2.0 * volume * inv_tau_xi * DIM / (nactive * temperature);
+  ttt  = timestep * 2.0 * volume * isq_tau_xi / nactive;
 
   xi_tmp   = xi_old.x + ttt * (stress_x - pressure_ext.x);
   xi_old.x = xi.x;
@@ -1093,8 +1097,8 @@ void move_atoms_stm(void)
 	  n_nve += DIM;
 	  ensindex = 1;
         } else {
-          reibung     =      1 - eta * inv_tau_eta * timestep / 2.0;
-          eins_d_reib = 1 / (1 + eta * inv_tau_eta * timestep / 2.0);
+          reibung     =      1 - eta * timestep / 2.0;
+          eins_d_reib = 1 / (1 + eta * timestep / 2.0);
 	  ensindex = 0;
         }
 
@@ -1138,7 +1142,7 @@ void move_atoms_stm(void)
 
   /* Zeitentwicklung der Parameter */
   ttt  = (nactive - n_nve) * temperature;
-  eta += timestep * (kin_energie_2[0] / ttt - 1.0) * inv_tau_eta;
+  eta += timestep * (kin_energie_2[0] / ttt - 1.0) * isq_tau_eta;
 
 }
 

@@ -640,20 +640,24 @@ void getparamfile(char *paramfname, int sim)
     }
     else if (strcasecmp(token,"tau_eta")==0) {
       /* time constant tau_eta for thermostat */
-      getparam("tau_eta",&inv_tau_eta,PARAM_REAL,1,1);
-      if (inv_tau_eta == (real)0) {
+      getparam("tau_eta",&tau_eta,PARAM_REAL,1,1);
+      if (tau_eta == (real)0) {
         error("tau_eta is zero.\n");
       }
-      inv_tau_eta = 1.0/inv_tau_eta;
+      isq_tau_eta = 1.0 / SQR(tau_eta);
     }
     else if (strcasecmp(token,"isq_tau_eta")==0) {
       /* inverse of square of time constant tau_eta for thermostat */
-      getparam("isq_tau_eta",&inv_tau_eta,PARAM_REAL,1,1);
-      inv_tau_eta = sqrt(inv_tau_eta);
+      getparam("isq_tau_eta",&isq_tau_eta,PARAM_REAL,1,1);
+      if (isq_tau_eta == (real)0) tau_eta = 0.0;
+      else tau_eta = 1.0 / sqrt(isq_tau_eta);
     }
     else if (strcasecmp(token,"inv_tau_eta")==0) {
       /* inverse of time constant tau_eta for thermostat */
-      getparam("inv_tau_eta",&inv_tau_eta,PARAM_REAL,1,1);
+      getparam("inv_tau_eta",&isq_tau_eta,PARAM_REAL,1,1);
+      if (isq_tau_eta == (real)0) tau_eta = 0.0;
+      else tau_eta = 1.0 / isq_tau_eta;
+      isq_tau_eta = SQR(isq_tau_eta);
     }
 #ifdef UNIAX
     else if (strcasecmp(token,"eta_rot")==0) {
@@ -662,20 +666,20 @@ void getparamfile(char *paramfname, int sim)
     }
     else if (strcasecmp(token,"tau_eta_rot")==0) {
       /* time constant tau_eta for thermostat of rotational motion */
-      getparam("tau_eta_rot",&inv_tau_eta_rot,PARAM_REAL,1,1);
+      getparam("tau_eta_rot",&isq_tau_eta_rot,PARAM_REAL,1,1);
       if (inv_tau_eta_rot == (real)0) {
         error("tau_eta_rot is zero.\n");
       }
-      inv_tau_eta_rot = 1.0/inv_tau_eta_rot;
+      isq_tau_eta_rot = 1.0 / SQR(isq_tau_eta_rot);
     }
     else if (strcasecmp(token,"isq_tau_eta_rot")==0) {
       /* squared inverse of time constant for thermostat of rot. motion */
-      getparam("isq_tau_eta_rot",&inv_tau_eta_rot,PARAM_REAL,1,1);
-      inv_tau_eta_rot = sqrt(inv_tau_eta_rot);
+      getparam("isq_tau_eta_rot",&isq_tau_eta_rot,PARAM_REAL,1,1);
     }
     else if (strcasecmp(token,"inv_tau_eta_rot")==0) {
       /* inverse of time constant for thermostat of rotational motion */
-      getparam("inv_tau_eta_rot",&inv_tau_eta_rot,PARAM_REAL,1,1);
+      getparam("inv_tau_eta_rot",&isq_tau_eta_rot,PARAM_REAL,1,1);
+      isq_tau_eta_rot = SQR(isq_tau_eta_rot);
     }
 #endif
 #endif
@@ -999,20 +1003,20 @@ void getparamfile(char *paramfname, int sim)
     }
     else if (strcasecmp(token,"tau_xi")==0) {
       /* time constant tau_xi for NPT thermostat algorithm */
-      getparam("tau_xi",&inv_tau_xi,PARAM_REAL,1,1);
-      if (inv_tau_xi == (real)0) {
+      getparam("tau_xi",&isq_tau_xi,PARAM_REAL,1,1);
+      if (isq_tau_xi == (real)0) {
         error("tau_xi is zero.\n");
       }
-      inv_tau_xi = 1.0/inv_tau_xi;
+      isq_tau_xi = 1.0 / SQR(isq_tau_xi);
     }
     else if (strcasecmp(token,"isq_tau_xi")==0) {
       /* inverse of square of time constant tau_xi for NPT thermostat */
-      getparam("isq_tau_xi",&inv_tau_xi,PARAM_REAL,1,1);
-      inv_tau_xi = sqrt(inv_tau_xi);
+      getparam("isq_tau_xi",&isq_tau_xi,PARAM_REAL,1,1);
     }
     else if (strcasecmp(token,"inv_tau_xi")==0) {
       /* inverse of time constant tau_xi for NPT thermostat */
-      getparam("inv_tau_xi",&inv_tau_xi,PARAM_REAL,1,1);
+      getparam("inv_tau_xi",&isq_tau_xi,PARAM_REAL,1,1);
+      isq_tau_xi = SQR(isq_tau_xi);
     }
     else if (strcasecmp(token,"cell_size_tol")==0) {
       /* rel. tolerance for volume rescaling during NPT sim. */

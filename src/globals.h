@@ -237,14 +237,14 @@ EXTERN int tmp_interval INIT(0);     /* Interval in which the thermostat */
 
 #if defined(NVT) || defined(NPT) || defined(STM)
 EXTERN real eta INIT(0.0);          /* Nose-Hoover heat bath variable */
-EXTERN real inv_tau_eta INIT(0.0);  /* tau_eta: Nose-Hoover heat bath 'mass' */
-                                    /* inv_tau_eta : inverse of tau_eta */
+EXTERN real tau_eta INIT(0.0);      /* Nose-Hoover heat bath relax. time */
+EXTERN real isq_tau_eta INIT(0.0);  /* isq_tau_eta : inverse of tau_eta^2 */
 #ifdef UNIAX
-/* Nose-Hoover heat bath variable for rotational motion */
+/* Nose-Hoover heat bath variable for rotational motion: */
 EXTERN real eta_rot INIT(0.0);      
-/* tau_eta_rot: Nose-Hoover heat bath 'mass' for rotational motion */
-/* inv_tau_eta_rot : inverse of tau_eta_rot */
-EXTERN real inv_tau_eta_rot INIT(0.0);  
+/* inverse of tau_eta_rot^2, with tau_eta_rot the Nose-Hoover */
+/* heat bath relaxation time for rotational motion: */
+EXTERN real isq_tau_eta_rot INIT(0.0);  
 #endif
 #endif
 
@@ -254,7 +254,7 @@ EXTERN real vir_x INIT(0.0), vir_y INIT(0.0), vir_z INIT(0.0);
 EXTERN real stress_x INIT(0.0), stress_y INIT(0.0), stress_z INIT(0.0);
 
 #ifdef NPT
-EXTERN real   inv_tau_xi INIT(0.0); /* inverse of tau_xi */
+EXTERN real   isq_tau_xi INIT(0.0); /* inverse of tau_xi^2 */
 EXTERN real   cell_size_tolerance INIT(0.05);
 EXTERN vektor pressure_ext INIT(nullvektor);
 EXTERN vektor pressure_end INIT(nullvektor);
