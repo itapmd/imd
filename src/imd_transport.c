@@ -95,7 +95,7 @@ void write_temp_dist(int steps)
 {
   FILE  *outtemp;
   str255  fnametemp;
-  real scale;
+  real scale, vol;
   int  num, nlayer, k, i, nhalf;
   static real    *temp_hist, *temp_hist_1 = NULL, *temp_hist_2 = NULL;
   static integer *num_hist,   *num_hist_1 = NULL,  *num_hist_2 = NULL;
@@ -175,6 +175,10 @@ void write_temp_dist(int steps)
 
 #ifdef MPI
   /* add up results form different CPUs */
+#ifdef NVX
+  MPI_Allreduce( &heat_cond, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  heat_cond = tmp;
+#endif
   MPI_Reduce( temp_hist_1, temp_hist_2, 
               nhalf+1, MPI_REAL, MPI_SUM, 0, cpugrid);
   temp_hist = temp_hist_2;
@@ -204,7 +208,7 @@ void write_temp_dist(int steps)
     STi /= numb;
     SxiTi /= numb;
     Sxisq /= numb;
-    a = (SxiTi - Sxi * STi) / (Sxisq - Sxi * Sxi);
+    a = - (SxiTi - Sxi * STi) / (Sxisq - Sxi * Sxi);
 
     sprintf(fnametemp,"%s.tempdist",outfilename);
     outtemp = fopen(fnametemp,"a");
@@ -225,8 +229,15 @@ void write_temp_dist(int steps)
 #endif
 
 #ifdef NVX
+#ifdef TWOD
+    vol = box_x.x * box_y.y           * (tran_nlayers-2) / tran_nlayers;
+#else
+    vol = box_x.x * box_y.y * box_z.z * (tran_nlayers-2) / tran_nlayers;
+#endif
+    heat_cond /= (vol * tran_interval);
     /* write heat current density determined by Gillan-Evans-Algorithm */
     fprintf(outtemp," %10.4e", heat_cond);
+    heat_cond = 0.0;
 #endif
 
     /* write measured temperature gradient */
@@ -234,7 +245,7 @@ void write_temp_dist(int steps)
 
 #ifdef NVX
     /* write nominal temperature gradient */
-    fprintf(outtemp," %10.4e", (tran_Tleft - tran_Tright) / (2 * box_x.x));
+    fprintf(outtemp," %10.4e", 2 * (tran_Tleft - tran_Tright) / box_x.x );
 #endif
 
     /* write temperature histogram */

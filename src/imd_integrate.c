@@ -1275,7 +1275,6 @@ void move_atoms_nvx(void)
   vektor tot_impuls_left, tot_impuls_right, vectmp;
   real inv_mass_left=0.0, inv_mass_right=0.0;
  
-  heat_cond = 0.0;
   tot_kin_energy = 0.0;
   tot_impuls_left.x  = 0.0;
   tot_impuls_right.x = 0.0;
@@ -1359,8 +1358,6 @@ void move_atoms_nvx(void)
   /* Add up results from all cpus */
   MPI_Allreduce( &tot_kin_energy, &real_tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
   tot_kin_energy                 = real_tmp;
-  MPI_Allreduce( &heat_cond,      &real_tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
-  heat_cond                      = real_tmp;
   MPI_Allreduce( &Ekin_left,      &real_tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
   Ekin_left                      = real_tmp;
   MPI_Allreduce( &Ekin_right,     &real_tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
@@ -1378,17 +1375,6 @@ void move_atoms_nvx(void)
   MPI_Allreduce( &natoms_right,   &int_tmp,  1, MPI_INT,  MPI_SUM, cpugrid);
   natoms_right                   = int_tmp;
 #endif
-
-#ifdef TWOD
-  vol = box_x.x * box_y.y           * (tran_nlayers-2) / tran_nlayers;
-#else
-  vol = box_x.x * box_y.y * box_z.z * (tran_nlayers-2) / tran_nlayers;
-#endif
-  heat_cond /= vol;
-
-  /* before we devided also by temperature gradient:
-  heat_cond *= box_x.x / (2 * vol * (tran_Tleft -  tran_Tright));
-  */
 
   inv_mass_left      /= 2.0;
   inv_mass_right     /= 2.0;
