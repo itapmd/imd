@@ -1,0 +1,50 @@
+#!/bin/awk -f
+
+# rav computes the running average of a histogram
+
+BEGIN {
+
+  n = 10;
+  diff = 0;
+
+}
+
+{
+  w = 2*n+1;
+
+  if( ($1 ~ /^[^0-9]/) || /^$/ ) # Ignore comments and blank lines
+    ++diff;
+  else
+    {
+      if(NR-diff<w)
+        for(i=1; i<=NF; ++i)
+	  {
+	    tmp[NR-diff, i] = $i;
+	    sum[i]         += $i;
+          }
+      else
+        {
+	  tmp[((NR-diff-1)%w)+1, 1] = $1;
+	  printf("%f  ",tmp[(NR-diff+n)%w+1, 1]);
+	
+	  for(i=2; i<=NF; ++i)
+	    {
+	      sum[i] += $i;
+	      tmp[((NR-diff-1)%w)+1, i] = $i;
+	      printf("%f  ", sum[i]/w);
+	      sum[i] -= tmp[((NR-diff)%w)+1, i];
+	    }
+	  printf("\n");
+        }
+    }
+}
+	  
+
+
+
+
+
+
+
+
+	
