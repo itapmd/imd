@@ -47,12 +47,6 @@ dist_int	# number of steps between energy distribution writes
 dist_dim        # dimensions for energy distribution writes 
 dist_binary_io  # formatted (0) or binary (1) energy distributions
 
-# peierls - nabarro dislocations
-pn              # if (1) : construct a pn dislocation
-burgersv	# length of Burgers vector (pointing in x direction)
-width           # width of Burgers vector density
-glideplane      # z-coordinate of glideplane (in two dimensions: y)
-
 # temperature, pressure, and related stuff
 # required if ensemble supports temperature or pressure control
 # in other ensembles, starttemp might be needed to initialize the velocities
@@ -120,8 +114,16 @@ dpotsorte	# type of atoms to be plotted
 ddelta          # threshold for plotting distance vector
 reset_Epot_step # step at which to compute Epot_ref (if calc_Epot_ref==1)
 calc_Epot_ref   # read (0) or compute (1) reference potential energy
+reffile         # file to read reference potential energy from
 Epot_diff       # whether to write the potential energy difference 
                 # (1, default), or the potential energy (0)
+
+# peierls - nabarro dislocations (DISLOC required)
+pn              # if (1) : construct a pn dislocation
+burgersv	# length of Burgers vector (pointing in x direction)
+width           # width of Burgers vector density
+glideplane      # z-coordinate of glideplane (in two dimensions: y)
+
 
 # parameters for FRAC
 dampstadion	# Damping stadion
