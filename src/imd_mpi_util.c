@@ -36,7 +36,7 @@ void init_mpi(int *argc_pointer, char **argv)
 
   if (0 == myid) { 
     printf("%s\n", argv[0]);
-    printf("Starting up MPI on %d nodes.\n", num_cpus);
+    printf("Starting up MPI with %d processes.\n", num_cpus);
   }
 }
 

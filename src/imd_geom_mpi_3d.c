@@ -29,17 +29,13 @@
 
 void setup_mpi_topology( void )
 {
-  int tmp;
   int period[3] = { 1, 1, 1 };
   ivektor cpuc, nbcoord;
 
   /* Set up process topology */
   if (0==myid) {
-    printf("Global cpu array dimensions: %d %d %d\n",
+    printf("MPI process array dimensions: %d %d %d\n",
 	   cpu_dim.x,cpu_dim.y,cpu_dim.z);
-    tmp = cpu_dim.x * cpu_dim.y * cpu_dim.z;
-    printf("Want %d cpus, have %d cpus.\n", (int) tmp, num_cpus);
-    if (tmp > num_cpus) error("Not enough cpus."); 
   }
   
   MPI_Cart_create(MPI_COMM_WORLD, 3, (int *) &cpu_dim, period, 1, &cpugrid);
@@ -214,6 +210,8 @@ void calc_cpu_dim(void)
     if ( n%fctr.x == 0 )
       break;
   n /= fctr.x;
+
+  trial = (int) ceil( sqrt( (double) n ) );
 
   for( fctr.y=trial; fctr.y>0; fctr.y--)
     if ( n%fctr.y == 0 )

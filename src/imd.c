@@ -116,10 +116,6 @@ int main(int argc, char **argv)
   init_ewald();
 #endif
 
-#ifdef OMP
-  printf("\nComputing with %d thread(s).\n\n",omp_get_max_threads());
-#endif
-
   /* initialize socket I/O */
 #ifdef USE_SOCKETS
   if ((myid == 0) && (socket_int > 0)) init_socket();

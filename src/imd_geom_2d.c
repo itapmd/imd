@@ -200,6 +200,11 @@ void init_cells( void )
 #ifdef MPI
   if (cell_array_old == NULL) setup_mpi_topology();
 #endif
+  /* this is also the moment to inform about the number of threads */
+#ifdef OMP
+  if ((cell_array_old == NULL) && (myid == 0))
+    printf("Computing with %d thread(s) per process.\n",omp_get_max_threads());
+#endif
 
   /* redistribute atoms */
   if (cell_array_old != NULL) {

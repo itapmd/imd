@@ -1756,12 +1756,15 @@ void check_parameters_complete()
 	}
 #endif
 #ifdef MPI
+        {
 #ifdef TWOD
-        if ( cpu_dim.x * cpu_dim.y             != num_cpus ) {
+          int want_cpus = cpu_dim.x * cpu_dim.y;
 #else
-	if ( cpu_dim.x * cpu_dim.y * cpu_dim.z != num_cpus ) {
+          int want_cpus = cpu_dim.x * cpu_dim.y * cpu_dim.z;
 #endif
-	  calc_cpu_dim();
+          if ( want_cpus != num_cpus) calc_cpu_dim();
+          if ((want_cpus != num_cpus) && (want_cpus != 1)) 
+            warning("cpu_dim incompatible with available CPUs, using default");
         }
 #endif
 #ifdef USE_SOCKETS
