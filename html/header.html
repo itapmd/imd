@@ -11,9 +11,12 @@ Data files created by IMD contain a header if the flag
 processing programs that get information about the data from it or by
 the user who can read about the content of each column.  The header
 consists of several lines starting with a <TT>#</TT> so that they
-still can be read by IMD or gnuplot. They contain various information
-about the data in the file. The header of both atom and distribution
-files starts with the following line
+still can be read by IMD or gnuplot. A number immediately follows the
+<TT>#</TT> so that the application of a sort command to the file will
+not change the order of the header lines (otherwise <TT># contents
+...</TT> would be put in front of TT># format ...</TT>). They contain
+various information about the data in the file. The header of both
+atom and distribution files starts with the following line
 <PRE>
 # format &lt;format&gt;
 </PRE>
