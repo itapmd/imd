@@ -901,7 +901,6 @@ void write_eng_file(int steps)
 #ifndef TWOD
   real Press_zz,Press_yz, Press_zx;
 #endif
-  calc_tot_presstens();
   Press_xx = tot_presstens.xx / volume; 
   Press_yy = tot_presstens.yy / volume; 
 #ifndef TWOD
