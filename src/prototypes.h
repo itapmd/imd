@@ -222,7 +222,7 @@ void write_eng_file_header(void);
 /* write configurations - files imd_io.c, imd_io_*.c */
 void flush_outbuf(FILE *out, int *len, int tag);
 void write_itr_file(int fzhlr, int steps,char *suffix);
-void write_config(int steps);
+void write_config(int fzhlr, int steps);
 #ifdef SNAPSHOT
 void write_ssconfig(int steps);
 #endif

@@ -60,7 +60,8 @@ void write_config_select(int fzhlr, char *suffix,
   if (1==parallel_output) {
     /* write header to separate file */
     if ((myid==0) && (use_header)) {
-      sprintf(fname,"%s.%u.%s.head",outfilename,fzhlr,suffix);
+      if (fzhlr >= 0) sprintf(fname,"%s.%u.%s.head",outfilename,fzhlr,suffix);
+      else            sprintf(fname,"%s-final.%s.head",outfilename,suffix);
       out = fopen(fname, "w");
       if (NULL == out) { 
         sprintf(msg,"Cannot open output file %s",fname);
@@ -70,7 +71,8 @@ void write_config_select(int fzhlr, char *suffix,
       fclose(out);
     }
     /* open output file */
-    sprintf(fname,"%s.%u.%s.%u",outfilename,fzhlr,suffix,myid);
+    if (fzhlr >= 0) sprintf(fname,"%s.%u.%s.%u",outfilename,fzhlr,suffix,myid);
+    else            sprintf(fname,"%s-final.%s.%u", outfilename,suffix,myid);
     out = fopen(fname,"w");
     if (NULL == out) { 
        sprintf(msg,"Cannot open output file %s",fname);
@@ -80,7 +82,8 @@ void write_config_select(int fzhlr, char *suffix,
 #endif
   if (0==myid) {
     /* open output file */
-    sprintf(fname,"%s.%u.%s",outfilename,fzhlr,suffix);
+    if (fzhlr >= 0) sprintf(fname,"%s.%u.%s", outfilename,fzhlr,suffix);
+    else            sprintf(fname,"%s-final.%s", outfilename,suffix);
     out = fopen(fname,"w");
     if (NULL == out) {
        sprintf(msg,"Cannot open output file %s",fname);
@@ -121,10 +124,8 @@ void write_config_select(int fzhlr, char *suffix,
 *
 ******************************************************************************/
 
-void write_config(int steps)
+void write_config(int fzhlr, int steps)
 { 
-  int fzhlr = steps / rep_interval;
-
   /* first make sure that every atom is inside the box and on the right CPU */
   if (1==parallel_output) {
     do_boundaries();
