@@ -61,6 +61,9 @@ void calc_forces(void)
 #endif /* EAM */
 
   /* clear per atom accumulation variables */
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
   for (k=0; k<nallcells; ++k) {
     int  i,j;
     cell *p;
@@ -107,6 +110,9 @@ void calc_forces(void)
 
   /* compute forces for all pairs of cells */
   for (n=0; n<6; ++n) {
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
       pair *P;
@@ -130,6 +136,9 @@ void calc_forces(void)
 #ifdef EAM2
   /* if EAM2, we have to loop a second time over pairs of distinct cells */
   for (n=0; n<6; ++n) {
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
       pair *P;
@@ -146,6 +155,9 @@ void calc_forces(void)
 #ifdef COVALENT
   /* complete neighbor tables for remaining pairs of cells */
   for (n=0; n<6; ++n) {
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
     for (k=npairs[n]; k<npairs2[n]; ++k) {
       vektor pbc;
       pair *P;
@@ -175,6 +187,9 @@ void calc_forces(void)
 
   /* compute forces for remaining pairs of cells */
   for (n=0; n<6; ++n) {
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#endif
     for (k=npairs[n]; k<npairs2[n]; ++k) {
       vektor pbc;
       pair *P;
@@ -204,22 +219,28 @@ void calc_forces(void)
 
 #endif  /* ... ifndef AR */
 
-#ifdef EAM
-  /* EAM cohesive function potential */
+#ifdef EAM  /* EAM cohesive function potential */
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#endif
   for (k=0; k<ncells; ++k) {
     do_forces_eam_2(cell_array + CELLS(k));
   }
 #endif /* EAM */
 
-#ifdef TTBP
-  /* TTBP: three body potential */
+#ifdef TTBP  /* TTBP: three body potential */
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#endif
   for (k=0; k<ncells; ++k) {
     do_forces_ttbp(cell_array + CELLS(k));
   }
 #endif /* TTBP */
 
-#ifdef TERSOFF
-  /* Tersoff potential */
+#ifdef TERSOFF  /* Tersoff potential */
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#endif
   for (k=0; k<ncells; ++k) {
     do_forces_tersoff(cell_array + CELLS(k));
   }
@@ -231,6 +252,9 @@ void calc_forces(void)
 
   /* second EAM2 loop over all cells pairs */
   for (n=0; n<6; ++n) {
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
       pair *P;
@@ -244,6 +268,9 @@ void calc_forces(void)
 
   /* if EAM2, we have to loop a second time over pairs of distinct cells */
   for (n=0; n<6; ++n) {
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
       pair *P;
@@ -256,23 +283,26 @@ void calc_forces(void)
     }
   }
 
-#ifndef AR
+#endif /* EAM2 */
 
-  /* If we don't use actio=reactio accross the cpus, we have do do
-     the force loop also on the other half of the neighbours for the 
-     cells on the surface of the CPU */
-
-  /* potential energy and virial are already complete; to avoid double
-     counting, we keep a copy of the current value, which we use later */
-
+  /* potential energy and virial are already complete; we save them away */
   tmpvec1[0] = tot_pot_energy;
   tmpvec1[1] = vir_x;
   tmpvec1[2] = vir_y;
   tmpvec1[3] = vir_z;
   tmpvec1[4] = virial;
 
+#if defined(EAM2) && !defined(AR)
+
+  /* If we don't use actio=reactio accross the cpus, we have do do
+     the force loop also on the other half of the neighbours for the 
+     cells on the surface of the CPU */
+
   /* compute forces for remaining pairs of cells */
   for (n=0; n<6; ++n) {
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#endif
     for (k=npairs[n]; k<npairs2[n]; ++k) {
       vektor pbc;
       pair *P;
@@ -284,24 +314,9 @@ void calc_forces(void)
     }
   }
 
-  /* use the previously saved values of potential energy and virial */
-  tot_pot_energy = tmpvec1[0];
-  vir_x          = tmpvec1[1];
-  vir_y          = tmpvec1[2];
-  vir_z          = tmpvec1[3];
-  virial         = tmpvec1[4];
-
-#endif /* not AR */
-
-#endif /* EAM2 */
+#endif /* EAM2 and not AR */
 
   /* sum up results of different CPUs */
-  tmpvec1[0] = tot_pot_energy;
-  tmpvec1[1] = vir_x;
-  tmpvec1[2] = vir_y;
-  tmpvec1[3] = vir_z;
-  tmpvec1[4] = virial;
-
   MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid); 
 
   tot_pot_energy = tmpvec2[0];
@@ -495,19 +510,7 @@ vektor global_pbc(int i, int j, int k)
 
 /******************************************************************************
 *
-* send_atoms
-*
-* This sends the atom positions to the neighbouring cpus using
-* Steve Plimptons comm scheme
-*
-* Atoms are sent only over the faces of the processors box in 
-* the order east-west, north-south, up-down
-*
-* This is only used for atom redistribuion
-* where all of the data are sent.
-*
-* The drawback of the Plimpton scheme are the huge comm-buffers,
-* that use lots of memory. It is fast, however!!
+* send_atoms  -  only used for fix_cells
 *
 ******************************************************************************/
 
@@ -610,6 +613,3 @@ void send_atoms()
   }
 
 }
-
-
-

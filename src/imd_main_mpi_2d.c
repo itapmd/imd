@@ -37,12 +37,16 @@ void calc_forces(void)
   int    n, k;
   real   tmpvec1[4], tmpvec2[4];
 
+  /* clear global accumulation variables */
   tot_pot_energy = 0.0;
   virial         = 0.0;
   vir_x          = 0.0;
   vir_y          = 0.0;
 
-  /* Zero Forces */
+  /* clear per atom accumulation variables */
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
   for (k=0; k<nallcells; ++k) {
     int i;
     cell *p;
@@ -70,6 +74,9 @@ void calc_forces(void)
 
   /* compute forces for all pairs of cells */
   for (n=0; n<4; ++n) {
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y)
+#endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
       pair *P;
@@ -80,22 +87,23 @@ void calc_forces(void)
     }
   }
 
+  /* potential energy and virial are already complete; we save them away */
+  tmpvec1[0] = tot_pot_energy;
+  tmpvec1[1] = vir_x;
+  tmpvec1[2] = vir_y;
+  tmpvec1[3] = virial;
+
 #ifndef AR
 
   /* If we don't use actio=reactio accross the cpus, we have do do
      the force loop also on the other half of the neighbours for the 
      cells on the surface of the CPU */
 
-  /* potential energy and virial are already complete; to avoid double
-     counting, we keep a copy of the current value, which we use later */
-
-  tmpvec1[0] = tot_pot_energy;
-  tmpvec1[1] = vir_x;
-  tmpvec1[2] = vir_y;
-  tmpvec1[3] = virial;
-
   /* compute forces for remaining pairs of cells */
   for (n=0; n<4; ++n) {
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y)
+#endif
     for (k=npairs[n]; k<npairs2[n]; ++k) {
       vektor pbc;
       pair *P;
@@ -106,19 +114,7 @@ void calc_forces(void)
     }
   }
 
-  /* use the previously saved values of potential energy and virial */
-  tot_pot_energy = tmpvec1[0];
-  vir_x          = tmpvec1[1];
-  vir_y          = tmpvec1[2];
-  virial         = tmpvec1[3];
-
 #endif /* AR */
-
-  /* sum up results of different CPUs */
-  tmpvec1[0] = tot_pot_energy;
-  tmpvec1[1] = vir_x;
-  tmpvec1[2] = vir_y;
-  tmpvec1[3] = virial;
 
   MPI_Allreduce( tmpvec1, tmpvec2, 4, REAL, MPI_SUM, cpugrid); 
 
