@@ -340,8 +340,8 @@ EXTERN int    annealsteps INIT(0);      /* number of annealing steps */
 #endif
 
 #if defined(GLOK)
-EXTERN real   ekin_threshold INIT(100.0); /* threshold for ekin */    
-EXTERN int    annealsteps INIT(0);      /* number of annealing steps */    
+EXTERN real   glok_ekin_threshold INIT(100.0); /* threshold for ekin */    
+EXTERN int    glok_annealsteps INIT(0);      /* number of annealing steps */
 #endif
 #ifdef DEFORM
 EXTERN int    deform_int INIT(0);       /* counting steps between 2 shears */

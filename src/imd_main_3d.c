@@ -263,8 +263,8 @@ void main_loop(void)
 
 #ifdef GLOK 
     /* "global convergence": set momenta to 0 if P*F < 0 (global vectors) */
-    if (steps > annealsteps) {
-      if ((PxF<0.0)||(2.0*tot_kin_energy/nactive > ekin_threshold)) {
+    if (steps > glok_annealsteps) {
+      if ((PxF<0.0)||(2.0*tot_kin_energy/nactive > glok_ekin_threshold)) {
 	for (k=0; k<ncells; ++k) {
 	  p = cell_array + CELLS(k);
 	  for (i=0; i<p->n; ++i) {
