@@ -1294,22 +1294,17 @@ void move_atoms_stm(void)
 
 #ifdef FBC
 	sort=(p->sorte[i]);
-	p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i)) 
-                           * eins_d_reibung * (restrictions + sort)->x;
-        p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i)) 
-                           * eins_d_reibung * (restrictions + sort)->y;
+	p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i))                
+                          * eins_d_reibung * (restrictions + sort)->x;
+        p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i))  	            
+                          * eins_d_reibung * (restrictions + sort)->y;
 #else
         /* new momenta */
-        p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i)) 
-                           * eins_d_reibung;
-        p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i)) 
-                           * eins_d_reibung;
+        p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i))                
+	                  * eins_d_reibung;
+        p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i))                
+	                  * eins_d_reibung;
 #endif
-
-	p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i)) 
-                         * eins_d_reibung;
-        p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i)) 
-                         * eins_d_reibung;
 
         /* twice the new kinetic energy */ 
         kin_energie_2 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
