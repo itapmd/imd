@@ -228,7 +228,7 @@ void calc_forces(void)
 
 #ifdef EAM2
 
-  send_cells(copy_rho_h,pack_rho_h,unpack_rho_h);
+  send_cells(copy_rho_h,pack_rho_h,unpack_rho_h,0);
 
   /* second EAM2 loop over all cells pairs */
   for (n=0; n<6; ++n) {

@@ -148,7 +148,7 @@ void unpack_forces( msgbuf *b, int j, int k );
 #else  /* 3D */
 void send_cells (void (*copy_func)  (int, int, int, int, int, int),
                  void (*pack_func)  (msgbuf*, int, int, int),
-                 void (*unpack_func)(msgbuf*, int, int, int));
+                 void (*unpack_func)(msgbuf*, int, int, int), int);
 void send_forces(void (*copy_func)  (int, int, int, int, int, int),
                  void (*pack_func)  (msgbuf*, int, int, int),
                  void (*unpack_func)(msgbuf*, int, int, int));
