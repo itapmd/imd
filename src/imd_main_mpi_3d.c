@@ -71,6 +71,11 @@ void calc_forces(void)
       p->kraft X(i) = 0.0;
       p->kraft Y(i) = 0.0;
       p->kraft Z(i) = 0.0;
+#ifdef UNIAX
+      p->dreh_moment X(i) = 0.0;
+      p->dreh_moment Y(i) = 0.0;
+      p->dreh_moment Z(i) = 0.0;
+#endif
 #ifdef TRANSPORT
       p->heatcond[i] = 0.0;
 #endif      
@@ -109,7 +114,11 @@ void calc_forces(void)
       /* first EAM call */
       do_forces_eam_1(cell_array + P->np, cell_array + P->nq, pbc);
 #else
+#ifdef UNIAX
+      do_forces_uniax(cell_array + P->np, cell_array + P->nq, pbc);
+#else
       do_forces(cell_array + P->np, cell_array + P->nq, pbc);
+#endif
 #endif
     }
   }
@@ -144,7 +153,11 @@ void calc_forces(void)
       /* first EAM call */
       do_forces_eam_1(cell_array + P->np, cell_array + P->nq, pbc);
 #else
+#ifdef UNIAX
+      do_forces_uniax(cell_array + P->np, cell_array + P->nq, pbc);
+#else
       do_forces(cell_array + P->np, cell_array + P->nq, pbc);
+#endif
 #endif
     }
   }
@@ -595,6 +608,17 @@ void copy_cell_force( int k, int l, int m, int r, int s, int t)
     to->ort Z(i) = from->ort Z(i);
 #ifndef MONOLJ
     to->sorte[i] = from->sorte[i];
+#ifdef UNIAX
+    to->achse X(i) = from->achse X(i);
+    to->achse Y(i) = from->achse Y(i);
+    to->achse Z(i) = from->achse Z(i);
+    to->shape X(i) = from->shape X(i);
+    to->shape Y(i) = from->shape Y(i);
+    to->shape Z(i) = from->shape Z(i);
+    to->pot_well X(i) = from->pot_well X(i);
+    to->pot_well Y(i) = from->pot_well Y(i);
+    to->pot_well Z(i) = from->pot_well Z(i);
+#endif
 #endif 
 #ifdef EAM
     to->nummer[i] = from->nummer[i];
@@ -631,6 +655,17 @@ void move_atoms_force( msgbuf *b, int k, int l, int m )
     to->ort Z(i) = b->data[ b->n++ ];
 #ifndef MONOLJ
     to->sorte[i] = (shortint) b->data[ b->n++ ];
+#ifdef UNIAX
+    to->achse X(i) = b->data[ b->n++ ];
+    to->achse Y(i) = b->data[ b->n++ ];
+    to->achse Z(i) = b->data[ b->n++ ];
+    to->shape X(i) = b->data[ b->n++ ];
+    to->shape Y(i) = b->data[ b->n++ ];
+    to->shape Z(i) = b->data[ b->n++ ];
+    to->pot_well X(i) = b->data[ b->n++ ];
+    to->pot_well Y(i) = b->data[ b->n++ ];
+    to->pot_well Z(i) = b->data[ b->n++ ];
+#endif
 #endif 
 #ifdef EAM
     to->nummer[i] = (integer) b->data[ b->n++ ];
@@ -661,6 +696,17 @@ void copy_atoms_force( msgbuf *b, int k, int l, int m)
     b->data[ b->n++ ] = from->ort Z(i);
 #ifndef MONOLJ
     b->data[ b->n++ ] = (real) from->sorte[i];
+#ifdef UNIAX
+    b->data[ b->n++ ] = from->achse X(i);
+    b->data[ b->n++ ] = from->achse Y(i);
+    b->data[ b->n++ ] = from->achse Z(i);
+    b->data[ b->n++ ] = from->shape X(i);
+    b->data[ b->n++ ] = from->shape Y(i);
+    b->data[ b->n++ ] = from->shape Z(i);
+    b->data[ b->n++ ] = from->pot_well X(i);
+    b->data[ b->n++ ] = from->pot_well Y(i);
+    b->data[ b->n++ ] = from->pot_well Z(i);
+#endif
 #endif
 #ifdef EAM
     b->data[ b->n++ ] = (real) from->nummer[i];

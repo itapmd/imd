@@ -95,6 +95,7 @@ ivektor maximal_cell_dim( void )
 #endif 
 #ifdef UNIAX 
   r2_cut2 = uniax_r2_cut;
+  r2_cut  = uniax_r2_cut;
 #endif /* UNIAX */
 
   max_cell_dim.x = (int) ( 1.0 / sqrt( r2_cut2 / SPROD(hx,hx) ));
@@ -187,6 +188,7 @@ void init_cells( void )
 #endif 
 #ifdef UNIAX 
   r2_cut2 = uniax_r2_cut;
+  r2_cut  = uniax_r2_cut;
 #endif /* UNIAX */
 
   cell_scale.x = sqrt( r2_cut2 / SPROD(hx,hx) );

@@ -101,6 +101,10 @@
 #undef AR
 #endif
 
+#ifdef UNIAX
+#undef AR
+#endif
+
 /******************************************************************************
 *
 * Architectures
@@ -146,9 +150,12 @@
 #define CSTEP 10
 
 /* number of items per atom to be communicated for force computation */ 
+#ifdef UNIAX
+#define BINC 13
+#else
 #ifdef EAM 
 #define BINC 5
 #else
 #define BINC 4
 #endif
-
+#endif

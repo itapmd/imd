@@ -54,13 +54,13 @@ void do_forces_uniax(cell *p, cell *q, vektor pbc)
     e1.y = p->achse Y(i) ;
     e1.z = p->achse Z(i) ;
 
-    s1.x = p->gestalt X(i) ;
-    s1.y = p->gestalt Y(i) ;
-    s1.z = p->gestalt Z(i) ;
+    s1.x = p->shape X(i) ;
+    s1.y = p->shape Y(i) ;
+    s1.z = p->shape Z(i) ;
 
-    w1.x = p->brunnen X(i) ;
-    w1.y = p->brunnen Y(i) ;
-    w1.z = p->brunnen Z(i) ;
+    w1.x = p->pot_well X(i) ;
+    w1.y = p->pot_well Y(i) ;
+    w1.z = p->pot_well Z(i) ;
 
     jstart = (p==q ? i+1 : 0);
     

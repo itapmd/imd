@@ -147,21 +147,21 @@ void read_atoms(str255 infilename)
 	      &n,&s,&m,&the,&pos.x,&pos.y,&pos.z,&axe.x,&axe.y,&axe.z,&sig.x,&sig.y,&sig.z,&eps.x,&eps.y,&eps.z,&vau.x,&vau.y,&vau.z,&ome.x,&ome.y,&ome.z);  
     if ( axe.x * axe.x + axe.y * axe.y + axe.z * axe.z 
 	 - 1.0 > 1.0e-04 )
-      error("Molecular axis not a unit vector.");
+      error("Molecular axis not a unit vector!");
     if ( sig.x != sig.y )
-      error("not a uniaxial molecule.");
+      error("This is not a uniaxial molecule!");
     if ( eps.x != eps.y )
-      error("not a uniaxial molecule.");
+      error("This is not a uniaxial molecule!");
 #else
     p = sscanf(buf,"%d %d %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f %f",
 	      &n,&s,&m,&the,&pos.x,&pos.y,&pos.z,&axe.x,&axe.y,&axe.z,&sig.x,&sig.y,&sig.z,&eps.x,&eps.y,&eps.z,&vau.x,&vau.y,&vau.z,&ome.x,&ome.y,&ome.z);  
     if ( axe.x * axe.x + axe.y * axe.y + axe.z * axe.z 
 	 - 1.0 > 1.0e-04 )
-      error("Molecular axis not a unit vector.");
+      error("Molecular axis not a unit vector!");
     if ( sig.x != sig.y )
-      error("not a uniaxial molecule.");
+      error("This is not a uniaxial molecule!");
     if ( eps.x != eps.y )
-      error("not a uniaxial molecule.");
+      error("This is not a uniaxial molecule!");
 #endif
 
 #else /* not UNIAX */
@@ -221,12 +221,12 @@ void read_atoms(str255 infilename)
       input->achse X(0) = axe.x ;
       input->achse Y(0) = axe.y ;
       input->achse Z(0) = axe.z ;
-      input->gestalt X(0) = sig.x ;
-      input->gestalt Y(0) = sig.y ;
-      input->gestalt Z(0) = sig.z ;
-      input->brunnen X(0) = eps.x ;
-      input->brunnen Y(0) = eps.y ;
-      input->brunnen Z(0) = eps.z ;
+      input->shape X(0) = sig.x ;
+      input->shape Y(0) = sig.y ;
+      input->shape Z(0) = sig.z ;
+      input->pot_well X(0) = eps.x ;
+      input->pot_well Y(0) = eps.y ;
+      input->pot_well Z(0) = eps.z ;
       if (p==16) {
 	do_maxwell=1;
 	input->impuls X(0) = 0 ;
@@ -285,6 +285,13 @@ void read_atoms(str255 infilename)
 	MPI_Ssend( input->sorte,  1, SHORT    , to_cpu, SORTE_TAG , cpugrid);
 	MPI_Ssend( input->masse,  1, MPI_REAL , to_cpu, MASSE_TAG , cpugrid);
         MPI_Ssend( input->nummer, 1, INTEGER  , to_cpu, NUMMER_TAG, cpugrid);
+#ifdef UNIAX
+	MPI_Ssend( input->traeg_moment,  1, MPI_REAL , to_cpu, TRAEG_MOMENT_TAG , cpugrid);
+	MPI_Ssend( input->achse,   DIM, MPI_REAL,to_cpu, ACHSE_TAG, cpugrid);
+	MPI_Ssend( input->shape, DIM, MPI_REAL,to_cpu, SHAPE_TAG, cpugrid);
+	MPI_Ssend( input->pot_well, DIM, MPI_REAL,to_cpu, POT_WELL_TAG, cpugrid);
+	MPI_Ssend( input->dreh_impuls, DIM, MPI_REAL,to_cpu, DREH_IMPULS_TAG, cpugrid);
+#endif
 #endif
 	MPI_Ssend( input->impuls,DIM, MPI_REAL, to_cpu, IMPULS_TAG, cpugrid);
       } else if (to_cpu==myid) {
@@ -384,21 +391,19 @@ void recv_atoms(void)
 
     if ( 0 == status.MPI_TAG ) break;
 
-#ifdef UNIAX
-    MPI_Recv(input->achse, DIM, MPI_REAL, 0, ACHSE_TAG , cpugrid, &status );
-#endif
 #ifndef MONOLJ
     MPI_Recv(input->sorte,  1, SHORT,     0, SORTE_TAG , cpugrid, &status );
     MPI_Recv(input->masse,  1, MPI_REAL,  0, MASSE_TAG , cpugrid, &status );
+    MPI_Recv(input->nummer, 1, INTEGER,   0, NUMMER_TAG, cpugrid, &status );
 #ifdef UNIAX
     MPI_Recv(input->traeg_moment,  1, MPI_REAL,  0, TRAEG_MOMENT_TAG , cpugrid, &status );
-#endif
-    MPI_Recv(input->nummer, 1, INTEGER,   0, NUMMER_TAG, cpugrid, &status );
-#endif
-    MPI_Recv(input->impuls,DIM, MPI_REAL, 0, IMPULS_TAG, cpugrid, &status );
-#ifdef UNIAX
+    MPI_Recv(input->achse, DIM, MPI_REAL, 0, ACHSE_TAG , cpugrid, &status );
+    MPI_Recv(input->shape, DIM, MPI_REAL, 0, SHAPE_TAG , cpugrid, &status );
+    MPI_Recv(input->pot_well, DIM, MPI_REAL, 0, POT_WELL_TAG , cpugrid, &status );
     MPI_Recv(input->dreh_impuls,DIM, MPI_REAL, 0, DREH_IMPULS_TAG, cpugrid, &status );
 #endif
+#endif
+    MPI_Recv(input->impuls,DIM, MPI_REAL, 0, IMPULS_TAG, cpugrid, &status );
 #ifdef DISLOC
     MPI_Recv(input->Epot_ref,1, MPI_REAL, 0, POT_REF_TAG, cpugrid, &status);
     MPI_Recv(input->ort_ref, DIM, MPI_REAL, 0, ORT_REF_TAG,  cpugrid, &status);
@@ -414,27 +419,29 @@ void recv_atoms(void)
     target->ort X(target->n)    = input->ort X(0);
     target->ort Y(target->n)    = input->ort Y(0);
     target->ort Z(target->n)    = input->ort Z(0);
+#ifndef MONOLJ
+    target->sorte[target->n]  = input->sorte[0];
+    target->masse[target->n]  = input->masse[0];
+    target->nummer[target->n] = input->nummer[0];
 #ifdef UNIAX
+    target->traeg_moment[target->n]  = input->traeg_moment[0];
     target->achse X(target->n)  = input->achse X(0);
     target->achse Y(target->n)  = input->achse Y(0);
     target->achse Z(target->n)  = input->achse Z(0);
+    target->shape X(target->n)  = input->shape X(0);
+    target->shape Y(target->n)  = input->shape Y(0);
+    target->shape Z(target->n)  = input->shape Z(0);
+    target->pot_well X(target->n)  = input->pot_well X(0);
+    target->pot_well Y(target->n)  = input->pot_well Y(0);
+    target->pot_well Z(target->n)  = input->pot_well Z(0);
+    target->dreh_impuls X(target->n) = input->dreh_impuls X(0);
+    target->dreh_impuls Y(target->n) = input->dreh_impuls Y(0);
+    target->dreh_impuls Z(target->n) = input->dreh_impuls Z(0);
 #endif
     target->impuls X(target->n) = input->impuls X(0);
     target->impuls Y(target->n) = input->impuls Y(0);
     target->impuls Z(target->n) = input->impuls Z(0);
-#ifdef UNIAX
-    target->dreh_impuls X(target->n) = input->dreh_impuls X(0);
-    target->dreh_impuls Y(target->n) = input->dreh_impuls Y(0);
-    target->dreh_impuls Z(target->n) = input->dreh_impuls Z(0);
-#endif 
-#ifndef MONOLJ
-    target->nummer[target->n] = input->nummer[0];
-    target->masse[target->n]  = input->masse[0];
-#ifdef UNIAX
-    target->traeg_moment[target->n]  = input->traeg_moment[0];
-#endif
-    target->sorte[target->n]  = input->sorte[0];
-#endif
+#endif /* not MONOLJ */
 #ifdef DISLOC
     target->Epot_ref[target->n]  = input->Epot_ref[0];
     target->ort_ref X(target->n) = input->ort_ref X(0);
@@ -565,12 +572,12 @@ void write_config(int steps)
 	     p->achse X(i),\
 	     p->achse Y(i),\
 	     p->achse Z(i),\
-	     p->gestalt X(i),\
-	     p->gestalt Y(i),\
-	     p->gestalt Z(i),\
-	     p->brunnen X(i),\
-	     p->brunnen Y(i),\
-	     p->brunnen Z(i),\
+	     p->shape X(i),\
+	     p->shape Y(i),\
+	     p->shape Z(i),\
+	     p->pot_well X(i),\
+	     p->pot_well Y(i),\
+	     p->pot_well Z(i),\
 	     p->impuls X(i) / p->masse[i],\
 	     p->impuls Y(i) / p->masse[i],\
 	     p->impuls Z(i) / p->masse[i],\
@@ -710,6 +717,9 @@ void write_config(int steps)
     fprintf(out,"starttemp \t%f\n",temperature);
 #if defined(NVT) || defined(NPT)
     fprintf(out,"eta \t%f\n",eta);
+#ifdef UNIAX
+    fprintf(out,"eta_rot \t%f\n",eta_rot);
+#endif
 #endif
 #ifdef NPT
     if (ensemble==ENS_NPT_ISO) {

@@ -182,6 +182,12 @@ __inline static real SQR(real x)
 #define POT_REF_TAG  9
 #define ORT_REF_TAG  10
 #define REFPOS_TAG   11
+#define TRAEG_MOMENT_TAG 12
+#define ACHSE_TAG 13
+#define SHAPE_TAG 14
+#define POT_WELL_TAG 15
+#define DREH_IMPULS_TAG 16
+#define DREH_MOMENT_TAG 17
 #endif
 
 /* some systems have different versions of trunc and floor float and double */

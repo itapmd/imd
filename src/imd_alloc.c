@@ -85,12 +85,12 @@ void move_atom(ivektor cellc, cell *from, int index)
   to->achse X(to->n) = from->achse X(index); 
   to->achse Y(to->n) = from->achse Y(index); 
   to->achse Z(to->n) = from->achse Z(index); 
-  to->gestalt X(to->n) = from->gestalt X(index); 
-  to->gestalt Y(to->n) = from->gestalt Y(index); 
-  to->gestalt Z(to->n) = from->gestalt Z(index); 
-  to->brunnen X(to->n) = from->brunnen X(index); 
-  to->brunnen Y(to->n) = from->brunnen Y(index); 
-  to->brunnen Z(to->n) = from->brunnen Z(index); 
+  to->shape X(to->n) = from->shape X(index); 
+  to->shape Y(to->n) = from->shape Y(index); 
+  to->shape Z(to->n) = from->shape Z(index); 
+  to->pot_well X(to->n) = from->pot_well X(index); 
+  to->pot_well Y(to->n) = from->pot_well Y(index); 
+  to->pot_well Z(to->n) = from->pot_well Z(index); 
   to->dreh_moment X(to->n) = from->dreh_moment X(index); 
   to->dreh_moment Y(to->n) = from->dreh_moment Y(index); 
   to->dreh_moment Z(to->n) = from->dreh_moment Z(index); 
@@ -153,12 +153,12 @@ void move_atom(ivektor cellc, cell *from, int index)
     from->achse X(index) = from->achse X(from->n); 
     from->achse Y(index) = from->achse Y(from->n); 
     from->achse Z(index) = from->achse Z(from->n); 
-    from->gestalt X(index) = from->gestalt X(from->n); 
-    from->gestalt Y(index) = from->gestalt Y(from->n); 
-    from->gestalt Z(index) = from->gestalt Z(from->n); 
-    from->brunnen X(index) = from->brunnen X(from->n); 
-    from->brunnen Y(index) = from->brunnen Y(from->n); 
-    from->brunnen Z(index) = from->brunnen Z(from->n); 
+    from->shape X(index) = from->shape X(from->n); 
+    from->shape Y(index) = from->shape Y(from->n); 
+    from->shape Z(index) = from->shape Z(from->n); 
+    from->pot_well X(index) = from->pot_well X(from->n); 
+    from->pot_well Y(index) = from->pot_well Y(from->n); 
+    from->pot_well Z(index) = from->pot_well Z(from->n); 
     from->dreh_moment X(index) = from->dreh_moment X(from->n); 
     from->dreh_moment Y(index) = from->dreh_moment Y(from->n); 
     from->dreh_moment Z(index) = from->dreh_moment Z(from->n); 
@@ -268,8 +268,8 @@ void alloc_cell(cell *thecell, int count)
 #ifdef UNIAX
     newcell.traeg_moment = NULL;
     newcell.achse = NULL;
-    newcell.gestalt = NULL;
-    newcell.brunnen = NULL;
+    newcell.shape = NULL;
+    newcell.pot_well = NULL;
     newcell.dreh_impuls = NULL;
     newcell.dreh_moment = NULL;
 #endif
@@ -343,8 +343,8 @@ void alloc_cell(cell *thecell, int count)
     newcell.masse  = (real    * ) malloc(count * sizeof(real)    );
 #ifdef UNIAX
     newcell.traeg_moment  = (real    * ) malloc(count * sizeof(real)    );
-    newcell.gestalt = (real *) malloc(count*DIM*sizeof(real));
-    newcell.brunnen = (real *) malloc(count*DIM*sizeof(real));
+    newcell.shape = (real *) malloc(count*DIM*sizeof(real));
+    newcell.pot_well = (real *) malloc(count*DIM*sizeof(real));
 #endif
 #endif /* not MONOLJ */
 
@@ -371,8 +371,8 @@ void alloc_cell(cell *thecell, int count)
         || (NULL == newcell.masse)
 #ifdef UNIAX
         || (NULL == newcell.traeg_moment)
-	|| (NULL == newcell.gestalt)
-	|| (NULL == newcell.brunnen)
+	|| (NULL == newcell.shape)
+	|| (NULL == newcell.pot_well)
 #endif
 #endif /* not MONOLJ */
         ) {
@@ -433,9 +433,9 @@ void alloc_cell(cell *thecell, int count)
 #ifdef UNIAX
       memcpy(newcell.traeg_moment ,  thecell->traeg_moment,  thecell->n * sizeof(real));
       memcpy(newcell.achse , thecell->achse,  thecell->n * DIM * sizeof(real));
-      memcpy(newcell.gestalt, thecell->gestalt, 
+      memcpy(newcell.shape, thecell->shape, 
                                thecell->n * DIM * sizeof(real));
-      memcpy(newcell.brunnen, thecell->brunnen, 
+      memcpy(newcell.pot_well, thecell->pot_well, 
                                thecell->n * DIM * sizeof(real));
       memcpy(newcell.dreh_impuls , thecell->dreh_impuls,  thecell->n * DIM * sizeof(real));
       memcpy(newcell.dreh_moment , thecell->dreh_moment,  thecell->n * DIM * sizeof(real));
@@ -469,8 +469,8 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef UNIAX
     free(thecell->traeg_moment);
-    free(thecell->gestalt);
-    free(thecell->brunnen);
+    free(thecell->shape);
+    free(thecell->pot_well);
 #endif
 #endif /* not MONOLJ */
   }
@@ -506,8 +506,8 @@ void alloc_cell(cell *thecell, int count)
   thecell->achse  = newcell.achse;
   thecell->dreh_impuls = newcell.dreh_impuls;
   thecell->dreh_moment = newcell.dreh_moment;
-  thecell->gestalt = newcell.gestalt;
-  thecell->brunnen = newcell.brunnen;
+  thecell->shape = newcell.shape;
+  thecell->pot_well = newcell.pot_well;
 #endif
 #endif /* not MONOLJ */
 

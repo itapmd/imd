@@ -107,8 +107,8 @@ typedef struct {
 #ifdef UNIAX
     real        *traeg_moment;
     real        *achse;
-    real        *gestalt;
-    real        *brunnen;
+    real        *shape;
+    real        *pot_well;
     real        *dreh_impuls;
     real        *dreh_moment;
 #endif

@@ -499,6 +499,10 @@ void getparamfile(char *paramfname, int sim)
       getparam("isq_tau_eta",&isq_tau_eta,PARAM_REAL,1,1);
     }
 #ifdef UNIAX
+    else if (strcasecmp(token,"eta_rot")==0) {
+      /* eta variable for NVT or NPT thermostat */
+      getparam("eta_rot",&eta_rot,PARAM_REAL,1,1);
+    }
     else if (strcasecmp(token,"tau_eta_rot")==0) {
       /* time constant for thermostat of rotational motion */
       getparam("tau_eta_rot",&isq_tau_eta_rot,PARAM_REAL,1,1);
@@ -1179,6 +1183,7 @@ void broadcast_params() {
   MPI_Bcast( &eta ,         1 , MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &isq_tau_eta , 1 , MPI_REAL, 0, MPI_COMM_WORLD); 
 #ifdef UNIAX
+  MPI_Bcast( &eta_rot ,         1 , MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &isq_tau_eta_rot , 1 , MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
 #endif
