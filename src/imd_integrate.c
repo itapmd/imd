@@ -432,10 +432,10 @@ void move_atoms_nvt(void)
 #ifdef UNIAX
   real reibung_rot,  eins_d_reib_rot;
 #endif
-  fnorm = 0.0;
 #ifdef SLLOD
   ivektor max_cell_dim;
 #endif
+  fnorm = 0.0;
 
   reibung     =        1.0 - eta * inv_tau_eta * timestep / 2.0;
   eins_d_reib = 1.0 / (1.0 + eta * inv_tau_eta * timestep / 2.0);
