@@ -335,9 +335,9 @@ EXTERN vektor shear_rate2  INIT(nullvektor); /* shear rate as a vector */
 #endif
 
 #if defined(FRAC) || defined(STM) || defined(FTG) 
-EXTERN vektor center  INIT(nullvektor);     /* center of stadium */
-EXTERN vektor stadium  INIT(nullvektor);     /* half axes of Damping stadium */
-EXTERN vektor stadium2 INIT(nullvektor);     /* half axes where the max. 
+EXTERN vektor2d   center  INIT(nullvektor2d); /* center of stadium */
+EXTERN vektor2d  stadium  INIT(nullvektor2d); /* half axes of Damping stadium */
+EXTERN vektor2d  stadium2 INIT(nullvektor2d); /* half axes where the max. 
 						damping factor  is reached  */
 #endif
 

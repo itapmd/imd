@@ -1264,7 +1264,11 @@ void write_eng_file(int steps)
 #endif
 
 #if defined(FRAC)
-  Temp_damp = E_kin_damp / sum_f;
+  if(sum_f !=0){
+      Temp_damp = 2.0 * E_kin_damp / (sum_f * DIM);
+  } else {
+      Temp_damp = 0.0;
+  }
 #endif
 
   vol  = volume / natoms;

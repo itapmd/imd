@@ -1299,7 +1299,7 @@ void move_atoms_frac(void)
 #else
 	sum_f+= f * ( (restrictions + sort)->x + 
 		      (restrictions + sort)->y +  
-		      (restrictions + sort)->z  )/2.0;
+		      (restrictions + sort)->z  )/3.0;
 #endif
 	
        	/* twice the old kinetic energy */
@@ -1401,7 +1401,7 @@ void move_atoms_frac(void)
   sum_f          = tmpvec2[5];
 #endif
 
-  ttt   = 2.0 * temperature * sum_f;
+  ttt   = DIM * temperature * sum_f;
 
   /* time evolution of constraints */
   /* dampingmode: 0 -> viscous damping (default); 
@@ -1410,7 +1410,13 @@ void move_atoms_frac(void)
   if(dampingmode == 1){
       gamma_damp += timestep * (E_kin_damp2 / ttt - 1.0) * gamma_bar;
   } else {
-      gamma_damp  =            (1.0 - ttt / E_kin_damp2) * gamma_bar;
+      
+      if( E_kin_damp2 != 0.0){
+	  gamma_damp  =        (1.0 - ttt / E_kin_damp2) * gamma_bar;
+      } else {
+	  gamma_damp  =  0.0;
+      }
+
   }
       
 }
