@@ -1068,6 +1068,9 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"ters_chi")==0) {     
       getparam("ters_chi",ters_chi,PARAM_REAL,ntypes*(ntypes-1)/2,ntypes*(ntypes-1)/2);
     }
+    else if (strcasecmp(token,"ters_om")==0) {     
+      getparam("ters_om",ters_om,PARAM_REAL,ntypes*(ntypes-1)/2,ntypes*(ntypes-1)/2);
+    }
     else if (strcasecmp(token,"ters_ga")==0) {     
       getparam("ters_ga",ters_ga,PARAM_REAL,ntypes,ntypes);
     }
@@ -1546,6 +1549,7 @@ void broadcast_params() {
   MPI_Bcast( ters_la,               ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_mu,               ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_chi, ntypes*(ntypes-1)/2, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_om,  ntypes*(ntypes-1)/2, MPI_REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_ga,               ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_n,                ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_c,                ntypes, MPI_REAL, 0, MPI_COMM_WORLD);

@@ -180,7 +180,7 @@ void do_forces_tersoff(cell *p)
   vektor dcos_j, dcos_k, dzeta_i, dzeta_j, force_j;
   static vektor *dzeta_k = NULL; 
   cell   *jcell, *kcell;
-  int    i, j, k, p_typ, j_typ, knum, jnum;
+  int    i, j, k, p_typ, j_typ, k_typ, knum, jnum;
   real   *tmpptr, *potptr;
   real   pot_zwi, tmp_grad;
   real   cos_theta, cut_tmp, cut_tmp_j;
@@ -244,6 +244,8 @@ void do_forces_tersoff(cell *p)
     /* for each neighbor of i */
     for (j=0; j<neigh->n; ++j){
 
+      j_typ = neigh->typ[j];
+
       zeta = 0.0;     
       dzeta_i.x = 0.0; dzeta_i.y = 0.0; dzeta_i.z = 0.0;
       dzeta_j.x = 0.0; dzeta_j.y = 0.0; dzeta_j.z = 0.0;
@@ -252,6 +254,8 @@ void do_forces_tersoff(cell *p)
       for (k=0; k<neigh->n; ++k) 
 	if (k!=j) {
 
+	k_typ = neigh->typ[k];
+  
 	/* angular term */
 	tmp_jk    = 1 / ( r[j] * r[k] );  
         cos_theta = SPROD(d[j],d[k]) * tmp_jk;
@@ -260,7 +264,7 @@ void do_forces_tersoff(cell *p)
 	g_theta   = 1 + ter_c2[p_typ]/ter_d2[p_typ] - ter_c2[p_typ] * tmp_2;
 
 	/* zeta */
-	zeta  += fc[k] * g_theta; 
+	zeta  += fc[k] * ter_om[p_typ][k_typ] * g_theta; 
 
         tmp_j2 = cos_theta / ( r[j] * r[j] );
 	tmp_k2 = cos_theta / ( r[k] * r[k] );
@@ -275,8 +279,8 @@ void do_forces_tersoff(cell *p)
 	dcos_k.y = tmp_jk * d[j].y - tmp_k2 * d[k].y;
 	dcos_k.z = tmp_jk * d[j].z - tmp_k2 * d[k].z;
 
-	tmp_3    = 2 * ter_c2[p_typ] * tmp_1 * tmp_2 * tmp_2 * fc[k];
-	tmp_grad = dfc[k] / r[k] * g_theta;
+	tmp_3    = 2 * ter_c2[p_typ] * tmp_1 * tmp_2 * tmp_2 * fc[k] * ter_om[p_typ][k_typ];
+	tmp_grad = dfc[k] / r[k] * g_theta * ter_om[p_typ][k_typ];
 
 	/* derivatives of zeta; dzeta_i is not the full derivative */
 	dzeta_k[k].x = tmp_grad * d[k].x - tmp_3 * dcos_k.x;
@@ -293,8 +297,8 @@ void do_forces_tersoff(cell *p)
  
       } /* k */
 
-      phi_r  = ter_a[p_typ][j_typ] * exp(- ter_la[p_typ][j_typ] * r[j]);
-      phi_a  = ter_b[p_typ][j_typ] * exp(- ter_mu[p_typ][j_typ] * r[j]);
+      phi_r  = 0.5 * ter_a[p_typ][j_typ] * exp(- ter_la[p_typ][j_typ] * r[j]);
+      phi_a  = 0.5 * ter_b[p_typ][j_typ] * exp(- ter_mu[p_typ][j_typ] * r[j]);
       tmp_4  = pow( ters_ga[p_typ] * zeta, ters_n[p_typ] );
 
       b_ij  = ter_chi[p_typ][j_typ] * pow( 1 + tmp_4, -1 / ( 2 * ters_n[p_typ] ));

@@ -254,6 +254,14 @@ void init_cells( void )
       ter_chi[i][j] = ter_chi[j][i] = ters_chi[i * ( 2 * ntypes - i - 3 ) / 2 + j - 1]; 
 	}
       }
+  for (i=0; i<ntypes; i++)
+	ter_om[i][i] = 1.0;
+      if ( ntypes>1 ) {
+  for (i=0; i<(ntypes-1); i++)
+    for (j=(i+1); j<ntypes; j++) {
+      ter_om[i][j] = ter_om[j][i] = ters_om[i * ( 2 * ntypes - i - 3 ) / 2 + j - 1]; 
+	}
+      }  
   r2_cut2 = 0.0;
   for (i=0; i<ntypes; ++i)
     for (j=0; j<ntypes; ++j)
