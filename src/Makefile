@@ -15,6 +15,7 @@
 # gcc	compile for serial execution, with gcc
 # mpi	compile for parallel execution, using MPI
 # omp   compile for parallel execution, using OpenMP
+# ompi  compile for parallel execution, using OpenMP and MPI
 # pacx  compile for parallel execution, using PACX
 #
 # Machine and compiler specific flags, libraries, etc., are chosen as
@@ -27,6 +28,7 @@
 #   alpha			True64 Unix             risc gcc mpi
 #   iris4d			SGI Irix		risc gcc omp mpi
 #   t3e				Cray Unicos/mk		risc mpi pacx
+#   SR8000                      HI-UX/MPP               mpi omp ompi
 #   SR2201, HITACHI		HI-UX/MPP		mpi
 #
 # <ensemble> is one of nve, mik, nvt, npt_iso, npt_axial, mc, frac, nvx, stm
@@ -206,10 +208,23 @@ CFLAGS_MPI_SR2201_DEBUG	 = -DMPI -g -I/usr/local/mpi/include  -DMPI_hmpp2
 CFLAGS_MPI_SR2201_PROF   = -G
 MPILIBS_SR2201		 = -L/usr/local/mpi/lib/hmpp2/cml -lmpi
 
-# flags for Hitachi SR8000
+# flags for Hitachi SR8000 MPI
 CC_MPI_SR8000		 = cc
 CFLAGS_MPI_SR8000	 = -DMPI +O4 +Ol -I/usr/mpi/include
 CFLAGS_MPI_SR8000_DEBUG	 = -DMPI -g  -I/usr/mpi/include
+CFLAGS_MPI_SR8000_PROF   = -G
+MPILIBS_SR8000		 = -L/usr/mpi/lib -lmpi
+
+# flags for Hitachi SR8000 OpenMP
+CC_MPI_SR8000		 = cc
+CFLAGS_MPI_SR8000	 = -DOMP -omp -procnum=8 +O4 +Ol
+CFLAGS_MPI_SR8000_DEBUG	 = -DOMP -omp -procnum=8 -g
+CFLAGS_MPI_SR8000_PROF   = -G
+
+# flags for Hitachi SR8000 MPI + OpenMP
+CC_MPI_SR8000		 = cc
+CFLAGS_MPI_SR8000	 = -DOMPI -omp -procnum=8 +O4 +Ol -I/usr/mpi/include
+CFLAGS_MPI_SR8000_DEBUG	 = -DOMPI -omp -procnum=8 -g -I/usr/mpi/include
 CFLAGS_MPI_SR8000_PROF   = -G
 MPILIBS_SR8000		 = -L/usr/mpi/lib -lmpi
 
@@ -241,6 +256,7 @@ CC_RISC           = ${CC_RISC_${IMDHOST}}
 CC_GCC		  = ${CC_GCC_${IMDHOST}}
 CC_MPI		  = ${CC_MPI_${IMDHOST}}
 CC_OMP		  = ${CC_OMP_${IMDHOST}}
+CC_OMPI		  = ${CC_OMPI_${IMDHOST}}
 CC_PACX		  = ${CC_PACX_${IMDHOST}}
 
 # to link or not to link
@@ -248,7 +264,7 @@ LIBS    	  := -lm
 MPILIBS		  = ${MPILIBS_${IMDHOST}}	
 PACXLIBS	  = ${PACXLIBS_${IMDHOST}}	
 
-# Executeables are put into $HOME/$BINDIR$/HOSTTYPE
+# Executeables are put into $HOME/$BINDIR/$HOSTTYPE
 BINDIR   = bin
 
 
@@ -316,6 +332,36 @@ endif
 endif
 
 
+###  MPI and OpenMP #####################################
+
+ifneq (,$(strip $(findstring ompi,${MAKETARGET})))
+CC      := ${CC_OMPI}
+LIBS    += ${MPILIBS_${IMDHOST}}
+
+# twod or not twod
+ifneq (,$(strip $(findstring 2d,${MAKETARGET})))
+HEADERS := ${IMDHEADERS}
+SOURCES	:= ${SOURCES2D} ${MPISOURCES2D}
+CFLAGS  += -DTWOD
+else
+HEADERS := ${IMDHEADERS}
+SOURCES	:= ${SOURCES3D} ${MPISOURCES3D}
+endif
+
+# general compiler flags
+ifneq (,$(findstring debug,${MAKETARGET}))
+CFLAGS += ${CFLAGS_OMPI_${IMDHOST}_DEBUG}
+else
+CFLAGS += ${CFLAGS_OMPI_${IMDHOST}}
+endif
+ifneq (,$(findstring prof,${MAKETARGET}))
+CFLAGS += ${CFLAGS_OMPI_${IMDHOST}_PROF}
+LIBS   += ${LIBS_PROF_${IMDHOST}}
+endif
+
+else
+
+
 ###  MPI  ###############################################
 
 ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
@@ -369,6 +415,8 @@ CFLAGS += ${CFLAGS_OMP_${IMDHOST}}
 endif
 ifneq (,$(findstring prof,${MAKETARGET}))
 CFLAGS += ${CFLAGS_OMP_${IMDHOST}_PROF}
+endif
+
 endif
 
 endif
