@@ -87,7 +87,7 @@ void maxwell(real temp)
 
 #ifdef NVX
          /* which layer? */
-         num = scale * p->ort X(i);
+         num = scale * ORT(p,i,X);
          if (num < 0)             num = 0;
          if (num >= tran_nlayers) num = tran_nlayers-1;
 
@@ -96,11 +96,11 @@ void maxwell(real temp)
          } else if (num == nhalf) {
             TEMP = tran_Tright;
          } else if (num < nhalf) {
-            xx = p->ort X(i) - box_x.x / tran_nlayers;
+            xx = ORT(p,i,X) - box_x.x / tran_nlayers;
             TEMP = tran_Tleft + (tran_Tright - tran_Tleft) * 
                                xx * tran_nlayers / (box_x.x * (nhalf-1));
          } else {
-            xx = box_x.x - p->ort X(i) - box_x.x / tran_nlayers;
+            xx = box_x.x - ORT(p,i,X) - box_x.x / tran_nlayers;
             TEMP = tran_Tleft + (tran_Tright - tran_Tleft) * 
                                xx * tran_nlayers / (box_x.x * (nhalf-1));
 	 }
@@ -108,7 +108,7 @@ void maxwell(real temp)
 
 #ifdef FTG
 	  /* calc slice and set TEMP  */
-	 tmp = p->ort X(i)/box_x.x;
+	 tmp = ORT(p,i,X) / box_x.x;
 	 slice = (int) nslices * tmp;
 	 if (slice<0)        slice = 0;
 	 if (slice>=nslices) slice = nslices -1;;
@@ -122,20 +122,20 @@ void maxwell(real temp)
          
 	 tmp = sqrt(TEMP * MASSE(p,i));
          typ = VSORTE(p,i);
-         p->impuls X(i) = gaussian(tmp) * (restrictions + typ)->x;
-         p->impuls Y(i) = gaussian(tmp) * (restrictions + typ)->y;
+         IMPULS(p,i,X) = gaussian(tmp) * (restrictions + typ)->x;
+         IMPULS(p,i,Y) = gaussian(tmp) * (restrictions + typ)->y;
 #ifndef TWOD
-         p->impuls Z(i) = gaussian(tmp) * (restrictions + typ)->z;
+         IMPULS(p,i,Z) = gaussian(tmp) * (restrictions + typ)->z;
 #endif
          nactive_vec.x += (int) (restrictions + typ)->x;
          nactive_vec.y += (int) (restrictions + typ)->y;
 #ifndef TWOD
          nactive_vec.z += (int) (restrictions + typ)->z;
 #endif
-         tot_impuls.x += p->impuls X(i);
-         tot_impuls.y += p->impuls Y(i);
+         tot_impuls.x += IMPULS(p,i,X);
+         tot_impuls.y += IMPULS(p,i,Y);
 #ifndef TWOD
-         tot_impuls.z += p->impuls Z(i);
+         tot_impuls.z += IMPULS(p,i,Z);
 #endif
 
 #ifdef UNIAX
@@ -152,53 +152,53 @@ void maxwell(real temp)
 
          xi0 = sqrt( 1.0 - xisq ) ;
 
-         p->dreh_impuls X(i) = 2.0 * xi1 * xi0 ;
-         p->dreh_impuls Y(i) = 2.0 * xi2 * xi0 ;
-         p->dreh_impuls Z(i) = 1.0 - 2.0 * xisq ;
+         DREH_IMPULS(p,i,X) = 2.0 * xi1 * xi0 ;
+         DREH_IMPULS(p,i,Y) = 2.0 * xi2 * xi0 ;
+         DREH_IMPULS(p,i,Z) = 1.0 - 2.0 * xisq ;
 
         /* constrain the vector to be perpendicular to the molecule */
 
-        dot = SPRODN(p->dreh_impuls,i,p->achse,i);
+        dot = SPRODN( &DREH_IMPULS(p,i,X), &ACHSE(p,i,X) );
 
-        p->dreh_impuls X(i) -= dot * p->achse X(i) ; 
-        p->dreh_impuls Y(i) -= dot * p->achse Y(i) ; 
-        p->dreh_impuls Z(i) -= dot * p->achse Z(i) ; 
+        DREH_IMPULS(p,i,X) -= dot * ACHSE(p,i,X) ; 
+        DREH_IMPULS(p,i,Y) -= dot * ACHSE(p,i,Y) ; 
+        DREH_IMPULS(p,i,Z) -= dot * ACHSE(p,i,Z) ; 
 
         /* renormalize vector */	   
 
-        osq = SPRODN(p->dreh_impuls,i,p->dreh_impuls,i);
+        osq = SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) );
         norm = sqrt( osq );
 
-        p->dreh_impuls X(i) /= norm ;
-        p->dreh_impuls Y(i) /= norm ;
-        p->dreh_impuls Z(i) /= norm ;
+        DREH_IMPULS(p,i,X) /= norm ;
+        DREH_IMPULS(p,i,Y) /= norm ;
+        DREH_IMPULS(p,i,Z) /= norm ;
 
         /* choose the magnitude of the angular momentum */
 
-        osq = - 2.0 * p->traeg_moment[i] * TEMP * log( drand48() ) ;
+        osq = - 2.0 * TRAEG_MOMENT(p,i) * TEMP * log( drand48() ) ;
         norm = sqrt( osq );
 
-        p->dreh_impuls X(i) *= norm ;
-        p->dreh_impuls Y(i) *= norm ;
-        p->dreh_impuls Z(i) *= norm ;
+        DREH_IMPULS(p,i,X) *= norm ;
+        DREH_IMPULS(p,i,Y) *= norm ;
+        DREH_IMPULS(p,i,Z) *= norm ;
 
 #endif /* UNIAX */
 
 #ifdef SHOCK
 	/* plate against bulk */
 	 if (shock_mode == 1) {
-	   if ( p->ort X(i) < shock_strip ) 
-	       p->impuls X(i) += shock_speed * MASSE(p,i);
+	   if ( ORT(p,i,X) < shock_strip ) 
+	       IMPULS(p,i,X) += shock_speed * MASSE(p,i);
 	 }
 	 /* two halves against one another */
 	 if (shock_mode == 2) {
-	   if ( p->ort X(i) < box_x.x*0.5 ) 
-	     p->impuls X(i) += shock_speed * MASSE(p,i);
+	   if ( ORT(p,i,X) < box_x.x*0.5 ) 
+	     IMPULS(p,i,X) += shock_speed * MASSE(p,i);
 	   else
-	     p->impuls X(i) -= shock_speed * MASSE(p,i);
+	     IMPULS(p,i,X) -= shock_speed * MASSE(p,i);
 	 }
 	 /* bulk against wall */
-	 if (shock_mode == 3) p->impuls X(i) += shock_speed * MASSE(p,i);
+	 if (shock_mode == 3) IMPULS(p,i,X) += shock_speed * MASSE(p,i);
 #endif
       }
    }
@@ -216,10 +216,10 @@ void maxwell(real temp)
       p = cell_array + CELLS(k);
       for (i=0; i<p->n; ++i) {
          typ = VSORTE(p,i);
-         p->impuls X(i) -= tot_impuls.x * (restrictions + typ)->x;
-         p->impuls Y(i) -= tot_impuls.y * (restrictions + typ)->y;
+         IMPULS(p,i,X) -= tot_impuls.x * (restrictions + typ)->x;
+         IMPULS(p,i,Y) -= tot_impuls.y * (restrictions + typ)->y;
 #ifndef TWOD
-         p->impuls Z(i) -= tot_impuls.z * (restrictions + typ)->z;
+         IMPULS(p,i,Z) -= tot_impuls.z * (restrictions + typ)->z;
 #endif
       }
    }

@@ -102,7 +102,7 @@ void move_atom(cell *to, cell *from, int index)
 #endif
 #endif /* REFPOS */
 #ifdef NVX
-  to->head_cond[to->n] = from->head_cond[index];   
+  to->heatcond[to->n] = from->heatcond[index];   
 #endif
 #ifdef STRESS_TENS
   to->presstens[to->n].xx = from->presstens[index].xx;   
@@ -215,7 +215,7 @@ void move_atom(cell *to, cell *from, int index)
 #endif
 #endif /* REFPOS */
 #ifdef NVX
-    from->head_cond[index] = from->head_cond[from->n];
+    from->heatcond[index] = from->heatcond[from->n];
 #endif
 #ifdef STRESS_TENS
     from->presstens[index].xx = from->presstens[from->n].xx;   

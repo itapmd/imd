@@ -95,12 +95,12 @@ void add_positions(void)
     cell* p;
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; i++) {
-        p->avpos X(i) += p->ort X(i) + p->sheet X(i);
-        p->avpos Y(i) += p->ort Y(i) + p->sheet Y(i);
+        AV_POS(p,i,X) += ORT(p,i,X) + SHEET(p,i,X);
+        AV_POS(p,i,Y) += ORT(p,i,Y) + SHEET(p,i,Y);
 #ifndef TWOD
-        p->avpos Z(i) += p->ort Z(i) + p->sheet Z(i);
+        AV_POS(p,i,Z) += ORT(p,i,Z) + SHEET(p,i,Z);
 #endif
-        p->av_epot[i] += p->pot_eng[i];
+        AV_EPOT(p,i)  += POTENG(p,i);
     }
   }
 

@@ -52,10 +52,10 @@ void rnemd_heat_exchange()
 
     for (i=0; i<p->n; ++i) {
 
-      tmp = SPRODN(p->impuls,i,p->impuls,i) / (2 * MASSE(p,i));
+      tmp = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / (2*MASSE(p,i));
 
       /* which layer? */
-      num = scale * p->ort X(i);
+      num = scale * ORT(p,i,X);
       if (num < 0)             num = 0;
       if (num >= tran_nlayers) num = tran_nlayers-1;
 
@@ -75,16 +75,16 @@ void rnemd_heat_exchange()
   }
 
   /* swap the velocities */
-  swap = maxcell->impuls X(maxatom);
-  maxcell->impuls X(maxatom) = mincell->impuls X(minatom);
-  mincell->impuls X(minatom) = swap;
-  swap = maxcell->impuls Y(maxatom);
-  maxcell->impuls Y(maxatom) = mincell->impuls Y(minatom);
-  mincell->impuls Y(minatom) = swap;
+  swap = IMPULS(maxcell,maxatom,X);
+  IMPULS(maxcell,maxatom,X) = IMPULS(mincell,minatom,X);
+  IMPULS(mincell,minatom,X) = swap;
+  swap = IMPULS(maxcell,maxatom,Y);
+  IMPULS(maxcell,maxatom,Y) = IMPULS(mincell,minatom,Y);
+  IMPULS(mincell,minatom,Y) = swap;
 #ifndef TWOD
-  swap = maxcell->impuls Z(maxatom);
-  maxcell->impuls Z(maxatom) = mincell->impuls Z(minatom);
-  mincell->impuls Z(minatom) = swap;
+  swap = IMPULS(maxcell,maxatom,Z);
+  IMPULS(maxcell,maxatom,Z) = IMPULS(mincell,minatom,Z);
+  IMPULS(mincell,minatom,Z) = swap;
 #endif
 
   /* accumulate heat transfer */
@@ -157,7 +157,7 @@ void write_temp_dist(int steps)
     for (i=0; i<p->n; ++i) {
 
       /* which layer? */
-      xx = p->ort X(i);
+      xx = ORT(p,i,X);
       num = scale * xx;
       if (num < 0)             num = 0;
       if (num >= tran_nlayers) num = tran_nlayers-1;
@@ -165,7 +165,7 @@ void write_temp_dist(int steps)
         num = tran_nlayers - num;
         xx  = box_x.x - xx + box_x.x / tran_nlayers; 
       }
-      temp = SPRODN(p->impuls,i,p->impuls,i) / (2*MASSE(p,i));
+      temp = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / (2*MASSE(p,i));
       temp_hist_1[num] += temp;
       num_hist_1[num]++;
 

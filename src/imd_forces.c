@@ -60,10 +60,10 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
   /* for each atom in first cell */
   for (i=0; i<p->n; ++i) {
 
-    tmp_d.x = p->ort X(i) - pbc.x;
-    tmp_d.y = p->ort Y(i) - pbc.y;
+    tmp_d.x = ORT(p,i,X) - pbc.x;
+    tmp_d.y = ORT(p,i,Y) - pbc.y;
 #ifndef TWOD
-    tmp_d.z = p->ort Z(i) - pbc.z;
+    tmp_d.z = ORT(p,i,Z) - pbc.z;
 #endif
 
     p_typ  = SORTE(p,i);
@@ -72,7 +72,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #else
     jstart = (((p==q) && (pbc.x==0) && (pbc.y==0) && (pbc.z==0)) ? i+1 : 0);
 #endif
-    qptr   = q->ort + DIM * jstart;
+    qptr   = &ORT(q,jstart,X);
 
     /* for each atom in neighbouring cell */
     for (j = jstart; j < q->n; ++j) {
@@ -146,8 +146,8 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #endif
 
         /* accumulate forces */
-        pfptr = p->kraft + DIM * i;
-        qfptr = q->kraft + DIM * j;
+        pfptr = &KRAFT(p,i,X);
+        qfptr = &KRAFT(q,j,X);
         *pfptr     += force.x; 
         *qfptr     -= force.x; 
         *(++pfptr) += force.y; 
@@ -164,14 +164,14 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #endif
 #ifdef ORDPAR
         if (r2 < op_r2_cut[p_typ][q_typ]) {
-	  p->pot_eng[i] += op_weight[p_typ][q_typ] * pot_zwi;
-	  q->pot_eng[j] += op_weight[q_typ][p_typ] * pot_zwi;
-	  p->nbanz[i]++;
-	  q->nbanz[j]++;
+	  POTENG(p,i) += op_weight[p_typ][q_typ] * pot_zwi;
+	  POTENG(q,j) += op_weight[q_typ][p_typ] * pot_zwi;
+	  NBANZ(p,i)++;
+	  NBANZ(q,j)++;
         }
 #else
-        q->pot_eng[j] += pot_zwi;
-        p->pot_eng[i] += pot_zwi;
+        POTENG(p,i) += pot_zwi;
+        POTENG(q,j) += pot_zwi;
 #endif
 #endif
 
@@ -193,26 +193,26 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #ifndef TWOD
           force.z *= 0.5;
 #endif
-          p->presstens[i].xx -= d.x * force.x;
-          q->presstens[j].xx -= d.x * force.x;
-          p->presstens[i].yy -= d.y * force.y;
-          q->presstens[j].yy -= d.y * force.y;
-          p->presstens[i].xy -= d.x * force.y;
-          q->presstens[j].xy -= d.x * force.y;
+          PRESSTENS(p,i,xx) -= d.x * force.x;
+          PRESSTENS(q,j,xx) -= d.x * force.x;
+          PRESSTENS(p,i,yy) -= d.y * force.y;
+          PRESSTENS(q,j,yy) -= d.y * force.y;
+          PRESSTENS(p,i,xy) -= d.x * force.y;
+          PRESSTENS(q,j,xy) -= d.x * force.y;
 #ifndef TWOD
-          p->presstens[i].zz -= d.z * force.z;
-          q->presstens[j].zz -= d.z * force.z;
-          p->presstens[i].yz -= d.y * force.z;
-          q->presstens[j].yz -= d.y * force.z;
-          p->presstens[i].zx -= d.z * force.x;
-          q->presstens[j].zx -= d.z * force.x;
+          PRESSTENS(p,i,zz) -= d.z * force.z;
+          PRESSTENS(q,j,zz) -= d.z * force.z;
+          PRESSTENS(p,i,yz) -= d.y * force.z;
+          PRESSTENS(q,j,yz) -= d.y * force.z;
+          PRESSTENS(p,i,zx) -= d.z * force.x;
+          PRESSTENS(q,j,zx) -= d.z * force.x;
 #endif
 	}
 #endif
 
 #ifdef NVX
-        p->heatcond[i] += pot_zwi - radius2 * pot_grad;
-        q->heatcond[j] += pot_zwi - radius2 * pot_grad;
+        HEATCOND(p,i) += pot_zwi - r2 * pot_grad;
+        HEATCOND(q,j) += pot_zwi - r2 * pot_grad;
 #endif
       }
 #endif /* PAIR || PAIR_PRE */
@@ -221,15 +221,15 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
       /* compute host electron density */
       if (r2 < rho_h_tab.end[col])  {
         VAL_FUNC(rho_h, rho_h_tab, col,  inc, r2, is_short);
-        p->eam2_rho_h[i] += rho_h; 
+        EAM_RHO(p,i) += rho_h; 
       }
       if (p_typ==q_typ) {
-        if (r2 < rho_h_tab.end[col]) q->eam2_rho_h[j] += rho_h; 
+        if (r2 < rho_h_tab.end[col]) EAM_RHO(q,j) += rho_h; 
       } else {
         col2 = q_typ * ntypes + p_typ;
         if (r2 < rho_h_tab.end[col2]) {
           VAL_FUNC(rho_h, rho_h_tab, col2, inc, r2, is_short);
-          q->eam2_rho_h[j] += rho_h; 
+          EAM_RHO(q,j) += rho_h; 
         }
       }
 #endif
@@ -252,7 +252,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
         real  *tmp_ptr;
 
         /* update neighbor table of particle i */
-        neigh = p->neigh[i];
+        neigh = NEIGH(p,i);
         if (neigh->n_max <= neigh->n) {
           error("neighbor table too small, increase neigh_len");
         }
@@ -266,7 +266,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
         neigh->n++;
 
         /* update neighbor table of particle j */
-        neigh = q->neigh[j];
+        neigh = NEIGH(q,k);
         if (neigh->n_max <= neigh->n) {
           error("neighbor table too small, increase neigh_len");
         }

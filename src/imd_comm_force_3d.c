@@ -631,21 +631,21 @@ void copy_cell( int k, int l, int m, int r, int s, int t )
   
   to->n = tmp_n;
   for (i=0; i<to->n; ++i) {
-    to->ort X(i) = from->ort X(i);
-    to->ort Y(i) = from->ort Y(i);
-    to->ort Z(i) = from->ort Z(i);
+    ORT(to,i,X)   = ORT(from,i,X);
+    ORT(to,i,Y)   = ORT(from,i,Y);
+    ORT(to,i,Z)   = ORT(from,i,Z);
 #ifndef MONOLJ
-    to->sorte[i] = from->sorte[i];
+    VSORTE(to,i)  = VSORTE(from,i);
 #ifdef UNIAX
-    to->achse X(i) = from->achse X(i);
-    to->achse Y(i) = from->achse Y(i);
-    to->achse Z(i) = from->achse Z(i);
-    to->shape X(i) = from->shape X(i);
-    to->shape Y(i) = from->shape Y(i);
-    to->shape Z(i) = from->shape Z(i);
-    to->pot_well X(i) = from->pot_well X(i);
-    to->pot_well Y(i) = from->pot_well Y(i);
-    to->pot_well Z(i) = from->pot_well Z(i);
+    ACHSE(to,i,X) = ACHSE(from,i,X);
+    ACHSE(to,i,Y) = ACHSE(from,i,Y);
+    ACHSE(to,i,Z) = ACHSE(from,i,Z);
+    SHAPE(to,i,X) = SHAPE(from,i,X);
+    SHAPE(to,i,Y) = SHAPE(from,i,Y);
+    SHAPE(to,i,Z) = SHAPE(from,i,Z);
+    POT_WELL(to,i,X) = POT_WELL(from,i,X);
+    POT_WELL(to,i,Y) = POT_WELL(from,i,Y);
+    POT_WELL(to,i,Z) = POT_WELL(from,i,Z);
 #endif
 #endif
   }
@@ -667,21 +667,21 @@ void pack_cell( msgbuf *b, int k, int l, int m )
   b->data[ b->n++ ] = (real) from->n;
     
   for (i=0; i<from->n; ++i) {
-    b->data[ b->n++ ] = from->ort X(i);
-    b->data[ b->n++ ] = from->ort Y(i);
-    b->data[ b->n++ ] = from->ort Z(i);
+    b->data[ b->n++ ] = ORT(from,i,X);
+    b->data[ b->n++ ] = ORT(from,i,Y);
+    b->data[ b->n++ ] = ORT(from,i,Z);
 #ifndef MONOLJ
-    b->data[ b->n++ ] = (real) from->sorte[i];
+    b->data[ b->n++ ] = (real) VSORTE(from,i);
 #ifdef UNIAX
-    b->data[ b->n++ ] = from->achse X(i);
-    b->data[ b->n++ ] = from->achse Y(i);
-    b->data[ b->n++ ] = from->achse Z(i);
-    b->data[ b->n++ ] = from->shape X(i);
-    b->data[ b->n++ ] = from->shape Y(i);
-    b->data[ b->n++ ] = from->shape Z(i);
-    b->data[ b->n++ ] = from->pot_well X(i);
-    b->data[ b->n++ ] = from->pot_well Y(i);
-    b->data[ b->n++ ] = from->pot_well Z(i);
+    b->data[ b->n++ ] = ACHSE(from,i,X);
+    b->data[ b->n++ ] = ACHSE(from,i,Y);
+    b->data[ b->n++ ] = ACHSE(from,i,Z);
+    b->data[ b->n++ ] = SHAPE(from,i,X);
+    b->data[ b->n++ ] = SHAPE(from,i,Y);
+    b->data[ b->n++ ] = SHAPE(from,i,Z);
+    b->data[ b->n++ ] = POT_WELL(from,i,X);
+    b->data[ b->n++ ] = POT_WELL(from,i,Y);
+    b->data[ b->n++ ] = POT_WELL(from,i,Z);
 #endif
 #endif
   }
@@ -711,21 +711,21 @@ void unpack_cell( msgbuf *b, int k, int l, int m )
   
   to->n = tmp_n;
   for (i=0; i<to->n; ++i) {
-    to->ort X(i) = b->data[ b->n++ ];
-    to->ort Y(i) = b->data[ b->n++ ];
-    to->ort Z(i) = b->data[ b->n++ ];
+    ORT(to,i,X) = b->data[ b->n++ ];
+    ORT(to,i,Y) = b->data[ b->n++ ];
+    ORT(to,i,Z) = b->data[ b->n++ ];
 #ifndef MONOLJ
-    to->sorte[i] = (shortint) b->data[ b->n++ ];
+    VSORTE(to,i) = (shortint) b->data[ b->n++ ];
 #ifdef UNIAX
-    to->achse X(i) = b->data[ b->n++ ];
-    to->achse Y(i) = b->data[ b->n++ ];
-    to->achse Z(i) = b->data[ b->n++ ];
-    to->shape X(i) = b->data[ b->n++ ];
-    to->shape Y(i) = b->data[ b->n++ ];
-    to->shape Z(i) = b->data[ b->n++ ];
-    to->pot_well X(i) = b->data[ b->n++ ];
-    to->pot_well Y(i) = b->data[ b->n++ ];
-    to->pot_well Z(i) = b->data[ b->n++ ];
+    ACHSE(to,i,X) = b->data[ b->n++ ];
+    ACHSE(to,i,Y) = b->data[ b->n++ ];
+    ACHSE(to,i,Z) = b->data[ b->n++ ];
+    SHAPE(to,i,X) = b->data[ b->n++ ];
+    SHAPE(to,i,Y) = b->data[ b->n++ ];
+    SHAPE(to,i,Z) = b->data[ b->n++ ];
+    POT_WELL(to,i,X) = b->data[ b->n++ ];
+    POT_WELL(to,i,Y) = b->data[ b->n++ ];
+    POT_WELL(to,i,Z) = b->data[ b->n++ ];
 #endif
 #endif
   }
@@ -747,31 +747,30 @@ void add_forces( int k, int l, int m, int r, int s, int t )
   to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
 
   for (i=0; i<to->n; ++i) {
-    to->kraft X(i) += from->kraft X(i);
-    to->kraft Y(i) += from->kraft Y(i);
-    to->kraft Z(i) += from->kraft Z(i);
-
+    KRAFT(to,i,X)  += KRAFT(from,i,X);
+    KRAFT(to,i,Y)  += KRAFT(from,i,Y);
+    KRAFT(to,i,Z)  += KRAFT(from,i,Z);
 #ifndef MONOLJ
-    to->pot_eng[i] += from->pot_eng[i];
+    POTENG(to,i)   += POTENG(from,i);
 #endif
 #ifdef NVX
-    to->heatcond[i] += from->heatcond[i];
+    HEATCOND(to,i) += HEATCOND(from,i);
 #endif
 #ifdef STRESS_TENS
-    to->presstens[i].xx += from->presstens[i].xx;
-    to->presstens[i].yy += from->presstens[i].yy;
-    to->presstens[i].zz += from->presstens[i].zz;
-    to->presstens[i].yz += from->presstens[i].yz;
-    to->presstens[i].zx += from->presstens[i].zx;
-    to->presstens[i].xy += from->presstens[i].xy;
+    PRESSTENS(to,i,xx) += PRESSTENS(from,i,xx);
+    PRESSTENS(to,i,yy) += PRESSTENS(from,i,yy);
+    PRESSTENS(to,i,zz) += PRESSTENS(from,i,zz);
+    PRESSTENS(to,i,yz) += PRESSTENS(from,i,yz);
+    PRESSTENS(to,i,zx) += PRESSTENS(from,i,zx);
+    PRESSTENS(to,i,xy) += PRESSTENS(from,i,xy);
 #endif
 #ifdef ORDPAR
-    to->nbanz[i] += from->nbanz[i];
+    NBANZ(to,i) += NBANZ(from,i);
 #endif
 #ifdef UNIAX
-    to->dreh_moment X(i) += from->dreh_moment X(i);
-    to->dreh_moment Y(i) += from->dreh_moment Y(i);
-    to->dreh_moment Z(i) += from->dreh_moment Z(i);
+    DREH_MOMENT(to,i,X) += DREH_MOMENT(from,i,X);
+    DREH_MOMENT(to,i,Y) += DREH_MOMENT(from,i,Y);
+    DREH_MOMENT(to,i,Z) += DREH_MOMENT(from,i,Z);
 #endif
   }
 }
@@ -789,30 +788,30 @@ void pack_forces( msgbuf *b, int k, int l, int m)
     
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
   for (i=0; i<from->n; ++i) {
-    b->data[ b->n++ ] = from->kraft X(i);
-    b->data[ b->n++ ] = from->kraft Y(i);
-    b->data[ b->n++ ] = from->kraft Z(i);
+    b->data[ b->n++ ] = KRAFT(from,i,X);
+    b->data[ b->n++ ] = KRAFT(from,i,Y);
+    b->data[ b->n++ ] = KRAFT(from,i,Z);
 #ifndef MONOLJ
-    b->data[ b->n++ ] = from->pot_eng[i];
+    b->data[ b->n++ ] = POTENG(from,i);
 #endif
 #ifdef NVX
-    b->data[ b->n++ ] = from->heatcond[i];
+    b->data[ b->n++ ] = HEATCOND(from,i);
 #endif
 #ifdef STRESS_TENS
-    b->data[ b->n++ ] = from->presstens[i].xx;
-    b->data[ b->n++ ] = from->presstens[i].yy;
-    b->data[ b->n++ ] = from->presstens[i].zz;
-    b->data[ b->n++ ] = from->presstens[i].yz;
-    b->data[ b->n++ ] = from->presstens[i].zx;
-    b->data[ b->n++ ] = from->presstens[i].xy;
+    b->data[ b->n++ ] = PRESSTENS(from,i,xx);
+    b->data[ b->n++ ] = PRESSTENS(from,i,yy);
+    b->data[ b->n++ ] = PRESSTENS(from,i,zz);
+    b->data[ b->n++ ] = PRESSTENS(from,i,yz);
+    b->data[ b->n++ ] = PRESSTENS(from,i,zx);
+    b->data[ b->n++ ] = PRESSTENS(from,i,xy);
 #endif
 #ifdef ORDPAR
-    b->data[ b->n++ ] = (real) from->nbanz[i];
+    b->data[ b->n++ ] = (real) NBANZ(from,i);
 #endif
 #ifdef UNIAX
-    b->data[ b->n++ ] = from->dreh_moment X(i);
-    b->data[ b->n++ ] = from->dreh_moment Y(i);
-    b->data[ b->n++ ] = from->dreh_moment Z(i);
+    b->data[ b->n++ ] = DREH_MOMENT(from,i,X);
+    b->data[ b->n++ ] = DREH_MOMENT(from,i,Y);
+    b->data[ b->n++ ] = DREH_MOMENT(from,i,Z);
 #endif
   }
   if (b->n_max < b->n) error("Buffer overflow in pack_forces.");
@@ -831,30 +830,30 @@ void unpack_forces( msgbuf *b, int k, int l, int m )
 
   to = PTR_3D_V(cell_array, k, l, m, cell_dim);
   for (i=0; i<to->n; ++i) {
-    to->kraft X(i) += b->data[ b->n++ ];
-    to->kraft Y(i) += b->data[ b->n++ ];
-    to->kraft Z(i) += b->data[ b->n++ ];
+    KRAFT(to,i,X)  += b->data[ b->n++ ];
+    KRAFT(to,i,Y)  += b->data[ b->n++ ];
+    KRAFT(to,i,Z)  += b->data[ b->n++ ];
 #ifndef MONOLJ
-    to->pot_eng[i] += b->data[ b->n++ ];
+    POTENG(to,i)   += b->data[ b->n++ ];
 #endif
 #ifdef NVX
-    to->heatcond[i] += b->data[ b->n++ ];
+    HEATCOND(to,i) += b->data[ b->n++ ];
 #endif
 #ifdef STRESS_TENS
-    to->presstens[i].xx += b->data[ b->n++ ];
-    to->presstens[i].yy += b->data[ b->n++ ];
-    to->presstens[i].zz += b->data[ b->n++ ];
-    to->presstens[i].yz += b->data[ b->n++ ];
-    to->presstens[i].zx += b->data[ b->n++ ];
-    to->presstens[i].xy += b->data[ b->n++ ];
+    PRESSTENS(to,i,xx) += b->data[ b->n++ ];
+    PRESSTENS(to,i,yy) += b->data[ b->n++ ];
+    PRESSTENS(to,i,zz) += b->data[ b->n++ ];
+    PRESSTENS(to,i,yz) += b->data[ b->n++ ];
+    PRESSTENS(to,i,zx) += b->data[ b->n++ ];
+    PRESSTENS(to,i,xy) += b->data[ b->n++ ];
 #endif
 #ifdef ORDPAR
-    to->nbanz[i] += (shortint) b->data[ b->n++ ];
+    NBANZ(to,i) += (shortint) b->data[ b->n++ ];
 #endif
 #ifdef UNIAX
-    to->dreh_moment X(i) += b->data[ b->n++ ];
-    to->dreh_moment Y(i) += b->data[ b->n++ ];
-    to->dreh_moment Z(i) += b->data[ b->n++ ];
+    DREH_MOMENT(to,i,X) += b->data[ b->n++ ];
+    DREH_MOMENT(to,i,Y) += b->data[ b->n++ ];
+    DREH_MOMENT(to,i,Z) += b->data[ b->n++ ];
 #endif
   }
   if (b->n_max < b->n) error("Buffer overflow in unpack_forces.");
@@ -878,7 +877,7 @@ void copy_rho_h( int k, int l, int m, int r, int s, int t )
   to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
 
   for (i=0; i<to->n; ++i) {
-    to->eam2_rho_h[i] = from->eam2_rho_h[i];
+    EAM_RHO(to,i) = EAM_RHO(from,i);
   }
 }
 
@@ -897,7 +896,7 @@ void add_rho_h( int k, int l, int m, int r, int s, int t )
   to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
 
   for (i=0; i<to->n; ++i) {
-    to->eam2_rho_h[i] += from->eam2_rho_h[i];
+    EAM_RHO(to,i) += EAM_RHO(from,i);
   }
 }
 
@@ -915,7 +914,7 @@ void pack_rho_h( msgbuf *b, int k, int l, int m )
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
   for (i=0; i<from->n; ++i) {
-    b->data[ b->n++ ] = from->eam2_rho_h[i];
+    b->data[ b->n++ ] = EAM_RHO(from,i);
   }
 }
 
@@ -933,7 +932,7 @@ void unpack_rho_h( msgbuf *b, int k, int l, int m )
   to = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
   for (i=0; i<to->n; ++i) {
-    to->eam2_rho_h[i] = b->data[ b->n++ ];
+    EAM_RHO(to,i) = b->data[ b->n++ ];
   }
 }
 
@@ -951,13 +950,8 @@ void unpack_add_rho_h( msgbuf *b, int k, int l, int m )
   to = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
   for (i=0; i<to->n; ++i) {
-    to->eam2_rho_h[i] += b->data[ b->n++ ];
+    EAM_RHO(to,i) += b->data[ b->n++ ];
   }
 }
 
 #endif /* EAM2 */
-
-
-
-
-

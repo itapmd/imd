@@ -55,7 +55,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
   for (i=0; i<p->n; ++i) {
 
     p_typ   = SORTE(p,i);
-    neigh   = p->neigh[i];
+    neigh   = NEIGH(p,i);
 
     /* construct some data for all neighbors */
     tmpptr = neigh->dist;
@@ -95,26 +95,26 @@ void do_forces2(cell *p, real *Epot, real *Virial,
         force_k.y = tmp * d[j].y;
         force_k.z = tmp * d[j].z;
         /* update force on particle i */
-        p->kraft X(i) += force_j.x + force_k.x;
-        p->kraft Y(i) += force_j.y + force_k.y;
-        p->kraft Z(i) += force_j.z + force_k.z;
-        p->pot_eng[i] += pot_zwi;
+        KRAFT(p,i,X) += force_j.x + force_k.x;
+        KRAFT(p,i,Y) += force_j.y + force_k.y;
+        KRAFT(p,i,Z) += force_j.z + force_k.z;
+        POTENG(p,i)  += pot_zwi;
 
         /* update force on particle j */
         jcell = (cell *) neigh->cl [j];
         jnum  = neigh->num[j];
-        jcell->kraft X(jnum) -= force_j.x;
-        jcell->kraft Y(jnum) -= force_j.y;
-        jcell->kraft Z(jnum) -= force_j.z;
-        jcell->pot_eng[jnum] += pot_zwi;
+        KRAFT(jcell,jnum,X) -= force_j.x;
+        KRAFT(jcell,jnum,Y) -= force_j.y;
+        KRAFT(jcell,jnum,Z) -= force_j.z;
+        POTENG(jcell,jnum)  += pot_zwi;
 
         /* update force on particle k */
         kcell = (cell *) neigh->cl [k];
         knum  = neigh->num[k];
-        kcell->kraft X(knum) -= force_k.x;
-        kcell->kraft Y(knum) -= force_k.y;
-        kcell->kraft Z(knum) -= force_k.z;
-        kcell->pot_eng[knum] += pot_zwi;
+        KRAFT(kcell,knum,X) -= force_k.x;
+        KRAFT(kcell,knum,Y) -= force_k.y;
+        KRAFT(kcell,knum,Z) -= force_k.z;
+        POTENG(kcell,knum)  += pot_zwi;
 
 #ifdef P_AXIAL
         tmp_vir_vect.x += d[j].x * force_j.x + d[k].x * force_k.x;
@@ -190,7 +190,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
   for (i=0; i<p->n; ++i) {
 
     p_typ   = SORTE(p,i);
-    neigh   = p->neigh[i];
+    neigh   = NEIGH(p,i);
 
     /* construct some data for all neighbors */
     tmpptr = neigh->dist;
@@ -239,26 +239,26 @@ void do_forces2(cell *p, real *Epot, real *Virial,
         force_k.z = tmp_k * d[k].z - tmp * d[j].z;
 
         /* update force on particle i */
-        p->kraft X(i) += force_j.x + force_k.x;
-        p->kraft Y(i) += force_j.y + force_k.y;
-        p->kraft Z(i) += force_j.z + force_k.z;
-        p->pot_eng[i] += pot_zwi;
+        KRAFT(p,i,X) += force_j.x + force_k.x;
+        KRAFT(p,i,Y) += force_j.y + force_k.y;
+        KRAFT(p,i,Z) += force_j.z + force_k.z;
+        POTENG(p,i)  += pot_zwi;
 
         /* update force on particle j */
         jcell = (cell *) neigh->cl [j];
         jnum  = neigh->num[j];
-        jcell->kraft X(jnum) -= force_j.x;
-        jcell->kraft Y(jnum) -= force_j.y;
-        jcell->kraft Z(jnum) -= force_j.z;
-        jcell->pot_eng[jnum] += pot_zwi;
+        KRAFT(jcell,jnum,X) -= force_j.x;
+        KRAFT(jcell,jnum,Y) -= force_j.y;
+        KRAFT(jcell,jnum,Z) -= force_j.z;
+        POTENG(jcell,jnum)   += pot_zwi;
 
         /* update force on particle k */
         kcell = (cell *) neigh->cl [k];
         knum  = neigh->num[k];
-        kcell->kraft X(knum) -= force_k.x;
-        kcell->kraft Y(knum) -= force_k.y;
-        kcell->kraft Z(knum) -= force_k.z;
-        kcell->pot_eng[knum] += pot_zwi;
+        KRAFT(kcell,knum,X) -= force_k.x;
+        KRAFT(kcell,knum,Y) -= force_k.y;
+        KRAFT(kcell,knum,Z) -= force_k.z;
+        POTENG(kcell,knum)  += pot_zwi;
 
 #ifdef P_AXIAL
         tmp_vir_vect.x += d[j].x * force_j.x + d[k].x * force_k.x;
@@ -329,7 +329,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
   for (i=0; i<p->n; ++i) {
 
     p_typ   = SORTE(p,i);
-    neigh   = p->neigh[i];
+    neigh   = NEIGH(p,i);
     
     /* construct some data for all neighbors */
     tmpptr = neigh->dist;
@@ -391,22 +391,22 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 	force_k.z = tmp_1 * d[k].z + tmp_2 * d[j].z;
 
 	/* update force on particle i */
-	p->kraft X(i) += force_j.x + force_k.x;
-	p->kraft Y(i) += force_j.y + force_k.y;
-	p->kraft Z(i) += force_j.z + force_k.z;
-	p->pot_eng[i] += pot_zwi;
+	KRAFT(p,i,X) += force_j.x + force_k.x;
+	KRAFT(p,i,Y) += force_j.y + force_k.y;
+	KRAFT(p,i,Z) += force_j.z + force_k.z;
+	POTENG(p,i)  += pot_zwi;
 	
 	/* update force on particle j */
-	jcell->kraft X(jnum) -= force_j.x;
-	jcell->kraft Y(jnum) -= force_j.y;
-	jcell->kraft Z(jnum) -= force_j.z;
-	jcell->pot_eng[jnum] += pot_zwi;
+	KRAFT(jcell,jnum,X) -= force_j.x;
+	KRAFT(jcell,jnum,Y) -= force_j.y;
+	KRAFT(jcell,jnum,Z) -= force_j.z;
+	POTENG(jcell,jnum)  += pot_zwi;
 
 	/* update force on particle k */
-	kcell->kraft X(knum) -= force_k.x;
-	kcell->kraft Y(knum) -= force_k.y;
-	kcell->kraft Z(knum) -= force_k.z;
-	kcell->pot_eng[knum] += pot_zwi;
+	KRAFT(kcell,knum,X) -= force_k.x;
+	KRAFT(kcell,knum,Y) -= force_k.y;
+	KRAFT(kcell,knum,Z) -= force_k.z;
+	POTENG(kcell,knum)  += pot_zwi;
 #ifdef P_AXIAL
 	tmp_vir_vect.x += d[j].x * force_j.x + d[k].x * force_k.x;
 	tmp_vir_vect.y += d[j].y * force_j.y + d[k].y * force_k.y;
@@ -416,32 +416,32 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 #endif
 #ifdef STRESS_TENS /* Distribute stress among atoms */
 	tmp = 0.25 * ( force_j.x * d[j].x + force_k.x * d[k].x );
-	p->presstens[i].xx        += 2.0 * tmp;
-	jcell->presstens[jnum].xx += tmp;
-	kcell->presstens[knum].xx += tmp;
+	PRESSTENS(p,i,xx)        += 2.0 * tmp;
+	PRESSTENS(jcell,jnum,xx) += tmp;
+	PRESSTENS(kcell,knum,xx) += tmp;
 	tmp = 0.25 * ( force_j.y * d[j].y + force_k.y * d[k].y );
-	p->presstens[i].yy        += 2.0 * tmp;
-	jcell->presstens[jnum].yy += tmp;
-	kcell->presstens[knum].yy += tmp;
+	PRESSTENS(p,i,yy)        += 2.0 * tmp;
+	PRESSTENS(jcell,jnum,yy) += tmp;
+	PRESSTENS(kcell,knum,yy) += tmp;
 	tmp = 0.25 * ( force_j.z * d[j].z + force_k.z * d[k].z );
-	p->presstens[i].zz        += 2.0 * tmp;
-	jcell->presstens[jnum].zz += tmp;
-	kcell->presstens[knum].zz += tmp;
+	PRESSTENS(p,i,zz)        += 2.0 * tmp;
+	PRESSTENS(jcell,jnum,zz) += tmp;
+	PRESSTENS(kcell,knum,zz) += tmp;
 	tmp = 0.125 * ( force_j.y * d[j].z + force_k.y * d[k].z 
 		      + force_j.z * d[j].y + force_k.z * d[k].y );
-	p->presstens[i].yz        += 2.0 * tmp;
-	jcell->presstens[jnum].yz += tmp;
-	kcell->presstens[knum].yz += tmp;	
+	PRESSTENS(p,i,yz)        += 2.0 * tmp;
+	PRESSTENS(jcell,jnum,yz) += tmp;
+	PRESSTENS(kcell,knum,yz) += tmp;	
 	tmp =  0.125 * ( force_j.z * d[j].x + force_k.z * d[k].x 
 		       + force_j.x * d[j].z + force_k.x * d[k].z );
-	p->presstens[i].zx        += 2.0 * tmp;
-	jcell->presstens[jnum].zx += tmp;
-	kcell->presstens[knum].zx += tmp;	
+	PRESSTENS(p,i,zx)        += 2.0 * tmp;
+	PRESSTENS(jcell,jnum,zx) += tmp;
+	PRESSTENS(kcell,knum,zx) += tmp;	
 	tmp =  0.125 * ( force_j.x * d[j].y + force_k.x * d[k].y 
 		       + force_j.y * d[j].x + force_k.y * d[k].x );
-	p->presstens[i].xy        += 2.0 * tmp;
-	jcell->presstens[jnum].xy += tmp;
-	kcell->presstens[knum].xy += tmp;
+	PRESSTENS(p,i,xy)        += 2.0 * tmp;
+	PRESSTENS(jcell,jnum,xy) += tmp;
+	PRESSTENS(kcell,knum,xy) += tmp;
 #endif
 
       } /* neighbor pairs */
@@ -512,7 +512,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
   for (i=0; i<p->n; ++i) {
 
     p_typ   = SORTE(p,i);
-    neigh   = p->neigh[i];
+    neigh   = NEIGH(p,i);
 
     /* construct some data for all neighbors */
     tmpptr = neigh->dist;
@@ -625,9 +625,10 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 	if (k!=j) {
         kcell = (cell *) neigh->cl [k];
         knum  = neigh->num[k];
-        kcell->kraft X(knum) += tmp_5 * dzeta_k[k].x;
-        kcell->kraft Y(knum) += tmp_5 * dzeta_k[k].y;
-        kcell->kraft Z(knum) += tmp_5 * dzeta_k[k].z;
+        KRAFT(kcell,knum,X) += tmp_5 * dzeta_k[k].x;
+        KRAFT(kcell,knum,Y) += tmp_5 * dzeta_k[k].y;
+        KRAFT(kcell,knum,Z) += tmp_5 * dzeta_k[k].z;
+
 #ifdef P_AXIAL
 	tmp_vir_vect.x += tmp_5 * d[k].x * dzeta_k[k].x;
 	tmp_vir_vect.y += tmp_5 * d[k].y * dzeta_k[k].y;
@@ -638,41 +639,41 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 #ifdef STRESS_TENS
         if (do_press_calc) {
 	  tmp = 0.5 * d[k].x * tmp_5 * dzeta_k[k].x;
-	  p->presstens[i].xx        -= tmp;
-  	  jcell->presstens[jnum].xx -= tmp;
+	  PRESSTENS(p,i,xx)        -= tmp;
+  	  PRESSTENS(jcell,jnum,xx) -= tmp;
 	  tmp = 0.5 * d[k].y * tmp_5 * dzeta_k[k].y;
-	  p->presstens[i].yy        -= tmp;
-  	  jcell->presstens[jnum].yy -= tmp;
+	  PRESSTENS(p,i,yy)        -= tmp;
+  	  PRESSTENS(jcell,jnum,yy) -= tmp;
 	  tmp = 0.5 * d[k].z * tmp_5 * dzeta_k[k].z;
-	  p->presstens[i].zz        -= tmp;
-  	  jcell->presstens[jnum].zz -= tmp;
+	  PRESSTENS(p,i,zz)        -= tmp;
+  	  PRESSTENS(jcell,jnum,zz) -= tmp;
 	  tmp = 0.25 * ( d[k].y * tmp_5 * dzeta_k[k].z + 
                          d[k].z * tmp_5 * dzeta_k[k].y );
-	  p->presstens[i].yz        -= tmp;
-  	  jcell->presstens[jnum].yz -= tmp;
+	  PRESSTENS(p,i,yz)        -= tmp;
+  	  PRESSTENS(jcell,jnum,yz) -= tmp;
 	  tmp = 0.25 * ( d[k].z * tmp_5 * dzeta_k[k].x + 
                          d[k].x * tmp_5 * dzeta_k[k].z );
-	  p->presstens[i].zx        -= tmp;
-  	  jcell->presstens[jnum].zx -= tmp;	  
+	  PRESSTENS(p,i,zx)        -= tmp;
+  	  PRESSTENS(jcell,jnum,zx) -= tmp;	  
 	  tmp = 0.25 * ( d[k].x * tmp_5 * dzeta_k[k].y + 
 			 d[k].y * tmp_5 * dzeta_k[k].x );
-	  p->presstens[i].xy        -= tmp;
-  	  jcell->presstens[jnum].xy -= tmp;
+	  PRESSTENS(p,i,xy)        -= tmp;
+  	  PRESSTENS(jcell,jnum,xy) -= tmp;
 	}
 #endif 
       }
       
       /* update force on particle j */
-      jcell->kraft X(jnum) += force_j.x;
-      jcell->kraft Y(jnum) += force_j.y;
-      jcell->kraft Z(jnum) += force_j.z;
-      jcell->pot_eng[jnum] += fc[j] * pot_zwi;
+      KRAFT(jcell,jnum,X) += force_j.x;
+      KRAFT(jcell,jnum,X) += force_j.y;
+      KRAFT(jcell,jnum,X) += force_j.z;
+      POTENG(jcell,jnum)  += fc[j] * pot_zwi;
 
       /* update force on particle i */
-      p->kraft X(i) += tmp_5 * dzeta_i.x - force_j.x;
-      p->kraft Y(i) += tmp_5 * dzeta_i.y - force_j.y;
-      p->kraft Z(i) += tmp_5 * dzeta_i.z - force_j.z;
-      p->pot_eng[i] += fc[j] * pot_zwi;
+      KRAFT(p,i,X) += tmp_5 * dzeta_i.x - force_j.x;
+      KRAFT(p,i,Y) += tmp_5 * dzeta_i.y - force_j.y;
+      KRAFT(p,i,Z) += tmp_5 * dzeta_i.z - force_j.z;
+      POTENG(p,i)  += fc[j] * pot_zwi;
 
 #ifdef P_AXIAL
       tmp_vir_vect.x += d[j].x * force_j.x;
@@ -684,23 +685,23 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 #ifdef STRESS_TENS
       if (do_press_calc) {
 	tmp = 0.5 * d[j].x * force_j.x; 
-	p->presstens[i].xx        -= tmp;
-	jcell->presstens[jnum].xx -= tmp;
+	PRESSTENS(p,i,xx)        -= tmp;
+	PRESSTENS(jcell,jnum,xx) -= tmp;
 	tmp = 0.5 * d[j].y * force_j.y;
-	p->presstens[i].yy        -= tmp;
-	jcell->presstens[jnum].yy -= tmp;
+	PRESSTENS(p,i,yy)        -= tmp;
+	PRESSTENS(jcell,jnum,yy) -= tmp;
 	tmp = 0.5 * d[j].z * force_j.z;
-	p->presstens[i].zz        -= tmp;
-	jcell->presstens[jnum].zz -= tmp;
+	PRESSTENS(p,i,zz)        -= tmp;
+	PRESSTENS(jcell,jnum,zz) -= tmp;
 	tmp = 0.25 * ( d[j].y * force_j.z + d[j].z*force_j.y );
-	p->presstens[i].yz        -= tmp;
-	jcell->presstens[jnum].yz -= tmp;
+	PRESSTENS(p,i,yz)        -= tmp;
+	PRESSTENS(jcell,jnum,yz) -= tmp;
 	tmp = 0.25 * ( d[j].z * force_j.x + d[j].x*force_j.z );
-	p->presstens[i].zx        -= tmp;
-	jcell->presstens[jnum].zx -= tmp;
+	PRESSTENS(p,i,zx)        -= tmp;
+	PRESSTENS(jcell,jnum,zx) -= tmp;
 	tmp = 0.25 * ( d[j].x * force_j.y + d[j].y*force_j.x );
-	p->presstens[i].xy        -= tmp;
-	jcell->presstens[jnum].xy -= tmp;
+	PRESSTENS(p,i,xy)        -= tmp;
+	PRESSTENS(jcell,jnum,xy) -= tmp;
       }
 #endif
 
@@ -740,9 +741,9 @@ void do_neightab(cell *p, cell *q, vektor pbc)
   /* For each atom in first cell */
   for (i=0; i<p->n; ++i) {
 
-    tmp_d.x = p->ort X(i) - pbc.x;
-    tmp_d.y = p->ort Y(i) - pbc.y;
-    tmp_d.z = p->ort Z(i) - pbc.z;
+    tmp_d.x = ORT(p,i,X) - pbc.x;
+    tmp_d.y = ORT(p,i,Y) - pbc.y;
+    tmp_d.z = ORT(p,i,Z) - pbc.z;
     p_typ   = SORTE(p,i);
 
 #ifdef TWOD
@@ -750,7 +751,7 @@ void do_neightab(cell *p, cell *q, vektor pbc)
 #else
     jstart = (((p==q) && (pbc.x==0) && (pbc.y==0) && (pbc.z==0)) ? i+1 : 0);
 #endif
-    qptr   = q->ort + DIM * jstart;
+    qptr   = &ORT(q,jstart,X);
     
     /* For each atom in neighbouring cell */
     for (j = jstart; j < q->n; ++j) {
@@ -769,8 +770,8 @@ void do_neightab(cell *p, cell *q, vektor pbc)
         sprintf(msgbuf,
                 "Distance is zero: nrs=%d %d\norte: %f %f %f, %f %f %f\n",
                 NUMMER(p,i),NUMMER(q,i),
-                p->ort X(i),p->ort Y(i),p->ort Z(i),
-                q->ort X(j),q->ort Y(j),q->ort Z(j));
+                ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z),
+                ORT(q,j,X), ORT(q,j,Y), ORT(q,j,Z) );
         error(msgbuf);
       }
 #ifdef KEATING
@@ -793,7 +794,7 @@ void do_neightab(cell *p, cell *q, vektor pbc)
         real  *tmp_ptr;
 
         /* update neighbor table of particle i */
-        neigh = p->neigh[i];
+        neigh = NEIGH(p,i);
         if (neigh->n_max <= neigh->n) {
           error("neighbor table too small, increase neigh_len");
         }

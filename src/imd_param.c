@@ -1906,7 +1906,7 @@ void broadcast_params() {
   MPI_Bcast( lower_nb_cut,     ntypes, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( upper_nb_cut,     ntypes, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &nbrep_interval,  1,      MPI_INT, 0, MPI_COMM_WORLD);
-#endif */
+#endif
 
   MPI_Bcast( masses,     ntypes, REAL,     0, MPI_COMM_WORLD); 
 

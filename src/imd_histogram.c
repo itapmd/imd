@@ -299,13 +299,13 @@ void make_histograms(hist_t *hist)
     for (i=0; i<p->n; ++i) {
 
       /* which bin? */
-      numx = scalex * (p->ort X(i) - hist->ll.x);
+      numx = scalex * (ORT(p,i,X) - hist->ll.x);
       if ((numx < 0) || (numx >= hist->dim.x)) continue;
-      numy = scaley * (p->ort Y(i) - hist->ll.y);
+      numy = scaley * (ORT(p,i,Y) - hist->ll.y);
       if ((numy < 0) || (numy >= hist->dim.y)) continue;
       num = numx * hist->dim.y + numy;
 #ifndef TWOD
-      numz = scalez * (p->ort Z(i) - hist->ll.z);
+      numz = scalez * (ORT(p,i,Z) - hist->ll.z);
       if ((numz < 0) || (numz >= hist->dim.z)) continue;
       num = num * hist->dim.z + numz;
 #endif
@@ -313,58 +313,58 @@ void make_histograms(hist_t *hist)
 #ifdef STRESS_TENS
 
 #ifdef SHOCK
-      press_histxx_1[num] += p->presstens[i].xx;
-      press_histyy_1[num] += p->presstens[i].yy;
-      kin_histxx_1  [num] += SQR(p->impuls X(i)) / (2*MASSE(p,i));
-      kin_histyy_1  [num] += SQR(p->impuls Y(i)) / (2*MASSE(p,i));
+      press_histxx_1[num] += PRESSTENS(p,i,xx);
+      press_histyy_1[num] += PRESSTENS(p,i,yy);
+      kin_histxx_1  [num] += SQR(IMPULS(p,i,X)) / (2*MASSE(p,i));
+      kin_histyy_1  [num] += SQR(IMPULS(p,i,Y)) / (2*MASSE(p,i));
       /* average v_xx - u_p  relative to moving pistons */
       tmp = shock_speed * MASSE(p,i);
       /* plate against bulk */
       if (shock_mode == 1) {
-        if ( p->ort X(i) < shock_strip ) 
-          kin_histxxu_1[num] += SQR(p->impuls X(i) - tmp) / (2*MASSE(p,i));
+        if ( ORT(p,i,X) < shock_strip ) 
+          kin_histxxu_1[num] += SQR(IMPULS(p,i,X) - tmp) / (2*MASSE(p,i));
         else
-          kin_histxxu_1[num] += SQR(p->impuls X(i)) / (2*MASSE(p,i));
+          kin_histxxu_1[num] += SQR(IMPULS(p,i,X)) / (2*MASSE(p,i));
       }
       /* two halves against one another */
       if (shock_mode == 2) {
-        if ( p->ort X(i) < box_x.x*0.5 )
-          kin_histxxu_1[num] += SQR(p->impuls X(i) - tmp) / (2*MASSE(p,i));
+        if ( ORT(p,i,X) < box_x.x*0.5 )
+          kin_histxxu_1[num] += SQR(IMPULS(p,i,X) - tmp) / (2*MASSE(p,i));
         else
-          kin_histxxu_1[num] += SQR(p->impuls X(i) + tmp) / (2*MASSE(p,i));
+          kin_histxxu_1[num] += SQR(IMPULS(p,i,X) + tmp) / (2*MASSE(p,i));
       }
       /* bulk against wall */
       if (shock_mode == 3) 
-          kin_histxxu_1[num] += SQR(p->impuls X(i) - tmp) / (2*MASSE(p,i));
+          kin_histxxu_1[num] += SQR(IMPULS(p,i,X) - tmp) / (2*MASSE(p,i));
 
 #ifndef TWOD
-      press_histzz_1[num] += p->presstens[i].zz;
-      kin_histzz_1  [num] += SQR(p->impuls Z(i)) / (2*MASSE(p,i));
+      press_histzz_1[num] += PRESSTENS(p,i,zz);
+      kin_histzz_1  [num] += SQR(IMPULS(p,i,Z)) / (2*MASSE(p,i));
 #endif
 
 #else /* not SHOCK */
 
-      press_histxx_1[num] += p->presstens[i].xx;
-      press_histyy_1[num] += p->presstens[i].yy;
+      press_histxx_1[num] += PRESSTENS(p,i,xx);
+      press_histyy_1[num] += PRESSTENS(p,i,yy);
 #ifndef TWOD
-      press_histzz_1[num] += p->presstens[i].zz;
-      press_histzx_1[num] += p->presstens[i].zx;
-      press_histyz_1[num] += p->presstens[i].yz;
+      press_histzz_1[num] += PRESSTENS(p,i,zz);
+      press_histzx_1[num] += PRESSTENS(p,i,zx);
+      press_histyz_1[num] += PRESSTENS(p,i,yz);
 #endif
-      press_histxy_1[num] += p->presstens[i].xy;
+      press_histxy_1[num] += PRESSTENS(p,i,xy);
 #endif /* SHOCK */
 
 #endif /* STRESS_TENS */
 
-      Ekin = SPRODN(p->impuls,i,p->impuls,i) / (2* MASSE(p,i));
+      Ekin = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / (2 * MASSE(p,i));
       kin_hist_1[num] += Ekin; 
 #ifdef DISLOC
       if (Epot_diff==1)
-        pot_hist_1[num] += p->pot_eng[i] - p->Epot_ref[i];
+        pot_hist_1[num] += POTENG(p,i) - EPOT_REF(p,i);
       else
 #endif
 #if defined(ORDPAR) && !defined(TWOD)
-      pot_hist_1[num] += (p->nbanz[i]==0)?0:p->pot_eng[i]/p->nbanz[i];
+      pot_hist_1[num] += (NBANZ(p,i)==0) ? 0 : POTENG(p,i) / NBANZ(p,i);
 #else
       pot_hist_1[num] += POTENG(p,i);
 #endif
@@ -1057,21 +1057,21 @@ void update_atoms_dist()
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i) {
       /* continue if atom is not inside selected box */
-      if ((p->ort X(i) < pic_ll.x) || (p->ort X(i) > pic_ur.x) ||
+      if ((ORT(p,i,X) < pic_ll.x) || (ORT(p,i,X) > pic_ur.x) ||
 #ifndef TWOD
-          (p->ort Z(i) < pic_ll.z) || (p->ort Z(i) > pic_ur.z) || 
+          (ORT(p,i,Z) < pic_ll.z) || (ORT(p,i,Z) > pic_ur.z) || 
 #endif
-          (p->ort Y(i) < pic_ll.y) || (p->ort Y(i) > pic_ur.y)) continue;
+          (ORT(p,i,Y) < pic_ll.y) || (ORT(p,i,Y) > pic_ur.y)) continue;
       /* which bin? */
-      numx = atoms_dist_scale.x * (p->ort X(i) - pic_ll.x);
+      numx = atoms_dist_scale.x * (ORT(p,i,X) - pic_ll.x);
       if (numx < 0)                   numx = 0;
       if (numx >= atoms_dist_dim.x)   numx = atoms_dist_dim.x-1;
-      numy = atoms_dist_scale.y * (p->ort Y(i) - pic_ll.y);
+      numy = atoms_dist_scale.y * (ORT(p,i,Y) - pic_ll.y);
       if (numy < 0)                   numy = 0;
       if (numy >= atoms_dist_dim.y)   numy = atoms_dist_dim.y-1;
       num = numx * atoms_dist_dim.y + numy;
 #ifndef TWOD
-      numz = atoms_dist_scale.z * (p->ort Z(i) - pic_ll.z);
+      numz = atoms_dist_scale.z * (ORT(p,i,Z) - pic_ll.z);
       if (numz < 0)                   numz = 0;
       if (numz >= atoms_dist_dim.z)   numz = atoms_dist_dim.z-1;
       num = num  * atoms_dist_dim.z + numz;

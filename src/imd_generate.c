@@ -118,7 +118,7 @@ void generate_atoms(str255 mode)
     int i;
     cell *p;
     p = cell_array + CELLS(k);
-    for (i=0; i<p->n; ++i) p->nummer[i] += ninc;
+    for (i=0; i<p->n; ++i) NUMMER(p,i) += ninc;
   }
 #endif /* MONOLJ */
 
@@ -200,17 +200,17 @@ void generate_hex()
       nactive += 2;
 
       input->n = 1;
-      input->ort X(0)  = x;
-      input->ort Y(0)  = y;
-      input->nummer[0] = natoms;
-      input->sorte [0] = typ;
-      input->masse [0] = masses[typ];
+      ORT(input,0,X)  = x;
+      ORT(input,0,Y)  = y;
+      NUMMER(input,0) = natoms;
+      VSORTE(input,0) = typ;
+      MASSE(input,0)  = masses[typ];
       num_sort[typ]++;
       cellc = cell_coord(x,y);
 #ifdef MPI
       to_cpu = cpu_coord(cellc);
       if (to_cpu==myid) {
-        cellc = local_cell_coord(input->ort X(0), input->ort Y(0));
+        cellc = local_cell_coord( ORT(input,0,X), ORT(input,0,Y) );
         to = PTR_VV(cell_array,cellc,cell_dim);
         move_atom(to, input, 0);
       }
@@ -316,22 +316,22 @@ void generate_fcc(int maxtyp)
         nactive += 3;
 
         input->n = 1;
-        input->ort X(0) = (x + 0.5) * box_unit;
-        input->ort Y(0) = (y + 0.5) * box_unit;
-        input->ort Z(0) = (z + 0.5) * box_unit;
-        cellc = cell_coord(input->ort X(0), input->ort Y(0), input->ort Z(0));
+        ORT(input,0,X) = (x + 0.5) * box_unit;
+        ORT(input,0,Y) = (y + 0.5) * box_unit;
+        ORT(input,0,Z) = (z + 0.5) * box_unit;
+        cellc = cell_coord( ORT(input,0,X), ORT(input,0,Y), ORT(input,0,Z) );
 #ifndef MONOLJ
-        input->nummer[0] = natoms;
-        input->sorte [0] = typ;
-        input->masse [0] = masses[typ];
+        NUMMER(input,0) = natoms;
+        VSORTE(input,0) = typ;
+        MASSE(input,0)  = masses[typ];
 #endif
         num_sort[typ]++;
 
 #ifdef MPI
 	to_cpu = cpu_coord(cellc);
         if (to_cpu==myid) {
-	  cellc = local_cell_coord(input->ort X(0), input->ort Y(0), 
-                                   input->ort Z(0));
+	  cellc = local_cell_coord( ORT(input,0,X), ORT(input,0,Y),
+                                    ORT(input,0,Z) );
           to = PTR_VV(cell_array,cellc,cell_dim);
 	  move_atom(to, input, 0);
 	}
@@ -342,31 +342,38 @@ void generate_fcc(int maxtyp)
   }
 }
 
+
 /* generate a cubic Laves structure crystal */
 
 void generate_lav()
 {
   cell    *input, *to;
-  vektor  min, max, lmin, lmax, rmax, rmin;
+  vektor  min, max;
   ivektor cellc;
   int     to_cpu;
-  real    x, y, z, co;
   real    px[24],py[24],pz[24];
   int     i,j,k,l,typ,pa[24];
 
-  co = sqrt(2.0)/8.;
+  if (myid==0)
+    if ((box_param.x % (8*cpu_dim.x)) || (box_param.y % (8*cpu_dim.z)) || 
+	(box_param.z % (8*cpu_dim.z))) 
+#ifdef MPI
+      error("For _lav, components of box_param must be divisible by 8*cpu_dim");
+#else
+      error("For _lav, components of box_param must be divisible by 8");
+#endif
 
-  px[0] = 0; py[0] = 0; pz[0] = 0; pa[0] = 0;
-  px[1] = 2; py[1] = 2; pz[1] = 0; pa[1] = 0;
-  px[2] = 2; py[2] = 0; pz[2] = 2; pa[2] = 0;
-  px[3] = 0; py[3] = 2; pz[3] = 2; pa[3] = 0;
-  px[4] = 3; py[4] = 3; pz[4] = 3; pa[4] = 1;
-  px[5] = 5; py[5] = 5; pz[5] = 5; pa[5] = 1;
+  px[ 0] = 0; py[ 0] = 0; pz[ 0] = 0; pa[ 0] = 0;
+  px[ 1] = 2; py[ 1] = 2; pz[ 1] = 0; pa[ 1] = 0;
+  px[ 2] = 2; py[ 2] = 0; pz[ 2] = 2; pa[ 2] = 0;
+  px[ 3] = 0; py[ 3] = 2; pz[ 3] = 2; pa[ 3] = 0;
+  px[ 4] = 3; py[ 4] = 3; pz[ 4] = 3; pa[ 4] = 1;
+  px[ 5] = 5; py[ 5] = 5; pz[ 5] = 5; pa[ 5] = 1;
 
-  px[6] = 4; py[6] = 4; pz[6] = 0; pa[6] = 0;
-  px[7] = 6; py[7] = 6; pz[7] = 0; pa[7] = 0;
-  px[8] = 6; py[8] = 4; pz[8] = 2; pa[8] = 0;
-  px[9] = 4; py[9] = 6; pz[9] = 2; pa[9] = 0;
+  px[ 6] = 4; py[ 6] = 4; pz[ 6] = 0; pa[ 6] = 0;
+  px[ 7] = 6; py[ 7] = 6; pz[ 7] = 0; pa[ 7] = 0;
+  px[ 8] = 6; py[ 8] = 4; pz[ 8] = 2; pa[ 8] = 0;
+  px[ 9] = 4; py[ 9] = 6; pz[ 9] = 2; pa[ 9] = 0;
   px[10] = 7; py[10] = 7; pz[10] = 3; pa[10] = 1;
   px[11] = 1; py[11] = 1; pz[11] = 5; pa[11] = 1;
 
@@ -385,49 +392,16 @@ void generate_lav()
   px[23] = 5; py[23] = 1; pz[23] = 1; pa[23] = 1;
 
 #ifdef MPI
-
-  max.x = (int)(box_x.x/sqrt(8.)+0.5);
-  max.y = (int)(box_y.y/sqrt(8.)+0.5);
-  max.z = (int)(box_z.z/sqrt(8.)+0.5);
-
-  if (myid==0) printf("Zahl der Atome: %d\n",(int)(max.x*max.y*max.z)*24);
-
-  rmin.x =  my_coord.x      * box_x.x / cpu_dim.x;
-  rmax.x = (my_coord.x + 1) * box_x.x / cpu_dim.x;
-  rmin.y =  my_coord.y      * box_y.y / cpu_dim.y;
-  rmax.y = (my_coord.y + 1) * box_y.y / cpu_dim.y;
-  rmin.z =  my_coord.z      * box_z.z / cpu_dim.z;
-  rmax.z = (my_coord.z + 1) * box_z.z / cpu_dim.z;
-
-  lmin.x = (my_coord.x - 1) * box_x.x / cpu_dim.x;
-  lmax.x = (my_coord.x + 2) * box_x.x / cpu_dim.x;
-  lmin.y = (my_coord.y - 1) * box_y.y / cpu_dim.y;
-  lmax.y = (my_coord.y + 2) * box_y.y / cpu_dim.y;
-  lmin.z = (my_coord.z -1 ) * box_z.z / cpu_dim.z;
-  lmax.z = (my_coord.z + 2) * box_z.z / cpu_dim.z;
-
-  min.x = (int)(lmin.x/sqrt(8.)+0.5);
-  max.x = (int)(lmax.x/sqrt(8.)+0.5);
-  min.y = (int)(lmin.y/sqrt(8.)+0.5);
-  max.y = (int)(lmax.y/sqrt(8.)+0.5);
-  min.z = (int)(lmin.z/sqrt(8.)+0.5);
-  max.z = (int)(lmax.z/sqrt(8.)+0.5);
-
-  /*
-  printf("%d %f %f %f %f %f %f\n",myid,min.x,max.x,min.y,max.y,min.z,max.z);
-  */
-
+  min.x =  my_coord.x      * box_param.x / cpu_dim.x;
+  max.x = (my_coord.x + 1) * box_param.x / cpu_dim.x;
+  min.y =  my_coord.y      * box_param.y / cpu_dim.y;
+  max.y = (my_coord.y + 1) * box_param.y / cpu_dim.y;
+  min.z =  my_coord.z      * box_param.z / cpu_dim.z;
+  max.z = (my_coord.z + 1) * box_param.z / cpu_dim.z;
 #else
-
-  min.x=0;
-  min.y=0;
-  min.z=0;
-  max.x=(int)(box_x.x/sqrt(8.)+0.5);
-  max.y=(int)(box_y.y/sqrt(8.)+0.5);
-  max.z=(int)(box_z.z/sqrt(8.)+0.5);
-
-  printf("Zahl der Atome: %d\n",(int)(max.x*max.y*max.z)*24);
-
+  min.x = 0; max.x = box_param.x;
+  min.y = 0; max.y = box_param.y;
+  min.z = 0; max.z = box_param.z;
 #endif
 
   /* Set up 1 atom input cell */
@@ -439,37 +413,30 @@ void generate_lav()
   natoms  = 0;
   nactive = 0;
 
-  for (i=min.x ; i<max.x; i++)
-    for (j=min.y; j<max.y; j++)
-      for (k=min.z; k<max.z; k++) 
-
-	for (l=0;l<24;l++) {
-	  x=(px[l]+8.*i)/sqrt(8.);
-	  y=(py[l]+8.*j)/sqrt(8.);
-	  z=(pz[l]+8.*k)/sqrt(8.);
-	  typ=pa[l];
-
-/*	  if ((x+co < rmin.x) || (x+co > rmax.x) ||
-	      (y+co < rmin.y) || (y+co > rmax.y) ||
-	      (z+co < rmin.z) || (z+co > rmax.z)) continue; */
+  for (i=min.x; i<max.x; i+=8)
+    for (j=min.y; j<max.y; j+=8)
+      for (k=min.z; k<max.z; k+=8) 
+	for (l=0; l<24; l++) {
 
 	  natoms++;
           nactive += 3;
+	  typ = pa[l];
 
 	  input->n = 1;
-	  input->ort X(0) = (x + co) * box_unit;
-	  input->ort Y(0) = (y + co) * box_unit;
-	  input->ort Z(0) = (z + co) * box_unit;
-	  cellc = cell_coord(input->ort X(0),input->ort Y(0),input->ort Z(0));
-	  input->nummer[0] = natoms;
-	  input->sorte [0] = typ;
-          input->masse [0] = masses[typ];
+	  ORT(input,0,X)  = (px[l] + i + 0.5) * box_unit;
+	  ORT(input,0,Y)  = (py[l] + j + 0.5) * box_unit;
+	  ORT(input,0,Z)  = (pz[l] + k + 0.5) * box_unit;
+	  NUMMER(input,0) = natoms;
+	  VSORTE(input,0) = typ;
+          MASSE(input,0)  = masses[typ];
+	  cellc = cell_coord( ORT(input,0,X), ORT(input,0,Y), ORT(input,0,Z) );
 	  num_sort[typ]++;
+
 #ifdef MPI
 	  to_cpu = cpu_coord(cellc);
 	  if (to_cpu==myid) {
-	    cellc = local_cell_coord(input->ort X(0), input->ort Y(0), 
-				     input->ort Z(0));
+	    cellc = local_cell_coord( ORT(input,0,X), ORT(input,0,Y), 
+				      ORT(input,0,Z) );
             to = PTR_VV(cell_array,cellc,cell_dim);
             move_atom(to, input, 0);
           }
@@ -481,5 +448,4 @@ void generate_lav()
 } 
 
 #endif /* not TWOD */
-
 

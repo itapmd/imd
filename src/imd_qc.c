@@ -691,9 +691,9 @@ void sortin (int ifeld[])
       hv=1;
 
       for (i = 0 ; i < p->n; i++) {
-	 dx = x - p->ort X(i);
-	 dy = y - p->ort Y(i);
-	 dz = z - p->ort Z(i);
+	 dx = x - ORT(p,i,X);
+	 dy = y - ORT(p,i,Y);
+	 dz = z - ORT(p,i,Z);
 	 dist = dx*dx+dy*dy+dz*dz;
 	
 	 if (dist < 0.01) {
@@ -708,10 +708,10 @@ void sortin (int ifeld[])
               nactive +=3;
 
 	      input->n = 1;
-	      input->ort X(0) = x;
-	      input->ort Y(0) = y;
-	      input->ort Z(0) = z;
-	      input->nummer[0] = natoms;
+	      ORT(input,0,X)  = x;
+	      ORT(input,0,Y)  = y;
+	      ORT(input,0,Z)  = z;
+	      NUMMER(input,0) = natoms;
 	      typ=ifeld[6]-1;
 
 	      if (fabs(x+2.*gmin.x) < 0.0001 && fabs(y+2.*gmin.y) < 0.0001 && 
@@ -720,12 +720,12 @@ void sortin (int ifeld[])
 	      if (typ == 1) typ=0; 
 	      if (typ == 2) typ=1;
 
-	      input->sorte[0] = typ;
-              input->masse[0] = masses[typ];
+	      VSORTE(input,0) = typ;
+              MASSE(input,0)  = masses[typ];
 
 #ifdef MPI
-	      cellc = local_cell_coord(input->ort X(0), input->ort Y(0), 
-				       input->ort Z(0));
+	      cellc = local_cell_coord( ORT(input,0,X), ORT(input,0,Y), 
+				        ORT(input,0,Z) );
 #endif
               q = PTR_VV(cell_array,cellc,cell_dim);
 	      move_atom(q, input, 0);
@@ -735,7 +735,7 @@ void sortin (int ifeld[])
 
 /*****************************************************************************
 *
-* write the data to a file (not really... :-))
+* what do we do here?
 *
 ******************************************************************************/
 
@@ -753,17 +753,17 @@ void adjust()
 
     for (i=0; i<p->n; ++i) {
 	
-	x = p->ort X(i)-0.1;
-	y = p->ort Y(i)-0.1;
-	z = p->ort Z(i)-0.1;
-	typ = p->sorte[i];
+	x = ORT(p,i,X)-0.1;
+	y = ORT(p,i,Y)-0.1;
+	z = ORT(p,i,Z)-0.1;
+	typ = VSORTE(p,i);
 	
 	/* fix the type of the first atom */
 	if (fabs(x+2.*gmin.x) < 0.0001 && fabs(y+2.*gmin.y) < 0.0001 && 
 	    fabs(z+2.*gmin.z) < 0.0001) 
         {
            typ=0;
-           p->sorte[i] = typ;
+           VSORTE(p,i) = typ;
         }
         num_sort[typ]++;
     }

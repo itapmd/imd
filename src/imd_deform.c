@@ -42,10 +42,10 @@ void expand_sample(void)
     cell *p;
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i) {
-      p->ort X(i) *= expansion.x;
-      p->ort Y(i) *= expansion.y;
+      ORT(p,i,X) *= expansion.x;
+      ORT(p,i,Y) *= expansion.y;
 #ifndef TWOD
-      p->ort Z(i) *= expansion.z;
+      ORT(p,i,Z) *= expansion.z;
 #endif
     }
   }
@@ -85,10 +85,10 @@ void shear_sample(void)
     real tmport[2];
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i) {
-      tmport[0]  = shear_factor.x * p->ort Y(i);
-      tmport[1]  = shear_factor.y * p->ort X(i);
-      p->ort X(i) += tmport[0];
-      p->ort Y(i) += tmport[1];
+      tmport[0]   = shear_factor.x * ORT(p,i,Y);
+      tmport[1]   = shear_factor.y * ORT(p,i,X);
+      ORT(p,i,X) += tmport[0];
+      ORT(p,i,Y) += tmport[1];
     }
   }
 
@@ -133,25 +133,25 @@ void lin_deform(void)
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i) {
        /* transform atom positions */
-      tmport[0] =   lindef_x.x * p->ort X(i) + lindef_x.y * p->ort Y(i)
+      tmport[0] =   lindef_x.x * ORT(p,i,X) + lindef_x.y * ORT(p,i,Y)
 #ifndef TWOD
-                  + lindef_x.z * p->ort Z(i)
+                  + lindef_x.z * ORT(p,i,Z)
 #endif
                                                  ;
-      tmport[1] =   lindef_y.x * p->ort X(i) + lindef_y.y * p->ort Y(i)
+      tmport[1] =   lindef_y.x * ORT(p,i,X) + lindef_y.y * ORT(p,i,Y)
 #ifndef TWOD
-                  + lindef_y.z * p->ort Z(i)
+                  + lindef_y.z * ORT(p,i,Z)
 #endif
                                                  ;
 #ifndef TWOD
-      tmport[2] =   lindef_z.x * p->ort X(i) + lindef_z.y * p->ort Y(i)
-                  + lindef_z.z * p->ort Z(i) ;
+      tmport[2] =   lindef_z.x * ORT(p,i,X) + lindef_z.y * ORT(p,i,Y)
+                  + lindef_z.z * ORT(p,i,Z) ;
 #endif
 
-      p->ort X(i) += tmport[0];
-      p->ort Y(i) += tmport[1];
+      ORT(p,i,X) += tmport[0];
+      ORT(p,i,Y) += tmport[1];
 #ifndef TWOD
-      p->ort Z(i) += tmport[2];
+      ORT(p,i,Z) += tmport[2];
 #endif
     }
   }
@@ -223,12 +223,12 @@ void deform_sample(void)
     int sort;
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i) {
-      sort = p->sorte[i];
+      sort = VSORTE(p,i);
       /* move particles with virtual types  */
-      p->ort X(i) += (deform_shift + sort)->x;
-      p->ort Y(i) += (deform_shift + sort)->y;
+      ORT(p,i,X) += (deform_shift + sort)->x;
+      ORT(p,i,Y) += (deform_shift + sort)->y;
 #ifndef TWOD
-      p->ort Z(i) += (deform_shift + sort)->z;
+      ORT(p,i,Z) += (deform_shift + sort)->z;
 #endif
     }
   }

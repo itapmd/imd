@@ -112,8 +112,12 @@ void init_correl(int ncorr_rmax, int ncorr_tmax)
     int i;
     cell *p;
     p = cell_array + CELLS(k);
-    for (i=0; i<p->n*DIM; ++i) {
-      p->refpos[i] = p->ort[i];
+    for (i=0; i<p->n; ++i) {
+      REF_POS(p,i,X) = ORT(p,i,X);
+      REF_POS(p,i,Y) = ORT(p,i,Y);
+#ifndef TWOD
+      REF_POS(p,i,Z) = ORT(p,i,Z);
+#endif
     }
   }
 
@@ -145,8 +149,12 @@ void correlate(int step, int ref_step, unsigned seqnum)
       int i;
       cell *p;
       p = cell_array + CELLS(k);
-      for (i=0; i<p->n*DIM; ++i) {
-        p->refpos[i] = p->ort[i];
+      for (i=0; i<p->n; ++i) {
+        REF_POS(p,i,X) = ORT(p,i,X);
+        REF_POS(p,i,Y) = ORT(p,i,Y);
+#ifndef TWOD
+        REF_POS(p,i,Z) = ORT(p,i,Z);
+#endif
       }
     }
   } 
@@ -182,10 +190,10 @@ void correlate(int step, int ref_step, unsigned seqnum)
         real dr,drsq;
 
         /* calculate distance between atom i at t=tau (ort) and t=0 (refpos) */
-        dist.x = p->ort X(i) - p->refpos X(i);
-        dist.y = p->ort Y(i) - p->refpos Y(i);
+        dist.x = ORT(p,i,X) - REF_POS(p,i,X);
+        dist.y = ORT(p,i,Y) - REF_POS(p,i,Y);
 #ifndef TWOD
-        dist.z = p->ort Z(i) - p->refpos Z(i);
+        dist.z = ORT(p,i,Z) - REF_POS(p,i,Z);
 #endif
 
         /* mean square displacement with PBC applied */
@@ -202,7 +210,7 @@ void correlate(int step, int ref_step, unsigned seqnum)
         reduce_displacement(&dist);
         dr  = sqrt(SPROD(drsq,dsrq)); 
         idr = (int)(dr*inv_dr);
-        GS[p->sorte[i]][it][idr]++; /* calculate histogram for self part */
+        GS[SORTE(p,i)][it][idr]++; /* calculate histogram for self part */
 #endif
       }
     }

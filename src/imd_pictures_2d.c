@@ -115,14 +115,14 @@ void write_pictures_bitmap(int steps)
 
     for (i=0; i<p->n; ++i) {
 
-      coord.x = (int) ((p->ort X(i)-pic_ll.x) * scale.x);
-      coord.y = (int) ((p->ort Y(i)-pic_ll.y) * scale.y);
+      coord.x = (int) ((ORT(p,i,X)-pic_ll.x) * scale.x);
+      coord.y = (int) ((ORT(p,i,Y)-pic_ll.y) * scale.y);
 
       /* Check bounds */
       if ((coord.x >= 0) && (coord.x < pic_res.x) &&
           (coord.y >= 0) && (coord.y < pic_res.y)) { 
 
-        val = SPRODN(p->impuls,i,p->impuls,i) / (2*p->masse[i]);
+        val = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / (2*MASSE(p,i));
 
         /* Scale Value to [0..1]   */
         val = (val - ecut_kin.x) / (ecut_kin.y - ecut_kin.x);
@@ -221,14 +221,14 @@ void write_pictures_bitmap(int steps)
 
     for (i=0; i<p->n; ++i) {
 
-      coord.x = (int) ((p->ort X(i)-pic_ll.x) * scale.x);
-      coord.y = (int) ((p->ort Y(i)-pic_ll.y) * scale.y);
+      coord.x = (int) ((ORT(p,i,X)-pic_ll.x) * scale.x);
+      coord.y = (int) ((ORT(p,i,Y)-pic_ll.y) * scale.y);
 
       /* Check bounds */
       if ((coord.x>=0) && (coord.x<pic_res.x) &&
           (coord.y>=0) && (coord.y<pic_res.y)) {
 
-        val = p->pot_eng[i];
+        val = POTENG(p,i);
 
         /* Scale Value to [0..1]   */
         val = (val - ecut_pot.x) / (ecut_pot.y - ecut_pot.x);

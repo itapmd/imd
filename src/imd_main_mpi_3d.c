@@ -71,37 +71,36 @@ void calc_forces(int steps)
     cell *p;
     p = cell_array + k;
     for (i=0; i<p->n; ++i) {
-      p->kraft X(i) = 0.0;
-      p->kraft Y(i) = 0.0;
-      p->kraft Z(i) = 0.0;
-
+      KRAFT(p,i,X) = 0.0;
+      KRAFT(p,i,Y) = 0.0;
+      KRAFT(p,i,Z) = 0.0;
 #ifdef UNIAX
-      p->dreh_moment X(i) = 0.0;
-      p->dreh_moment Y(i) = 0.0;
-      p->dreh_moment Z(i) = 0.0;
+      DREH_MOMENT(p,i,X) = 0.0;
+      DREH_MOMENT(p,i,Y) = 0.0;
+      DREH_MOMENT(p,i,Z) = 0.0;
 #endif
 #ifdef NVX
-      p->heatcond[i] = 0.0;
+      HEATCOND(p,i) = 0.0;
 #endif      
 #ifdef STRESS_TENS
-      p->presstens[i].xx = 0.0;
-      p->presstens[i].yy = 0.0;
-      p->presstens[i].zz = 0.0;
-      p->presstens[i].yz = 0.0;
-      p->presstens[i].zx = 0.0;
-      p->presstens[i].xy = 0.0;
+      PRESSTENS(p,i,xx) = 0.0;
+      PRESSTENS(p,i,yy) = 0.0;
+      PRESSTENS(p,i,zz) = 0.0;
+      PRESSTENS(p,i,yz) = 0.0;
+      PRESSTENS(p,i,zx) = 0.0;
+      PRESSTENS(p,i,xy) = 0.0;
 #endif      
 #ifndef MONOLJ
-      p->pot_eng[i] = 0.0;
+      POTENG(p,i) = 0.0;
 #endif
 #ifdef ORDPAR
-      p->nbanz[i] = 0;
+      NBANZ(p,i) = 0;
 #endif
 #ifdef COVALENT
-      p->neigh[i]->n = 0;
+      NEIGH(p,i)->n = 0;
 #endif
 #ifdef EAM2
-      p->eam2_rho_h[i] = 0.0; /* zero host electron density at atom site */
+      EAM_RHO(p,i) = 0.0; /* zero host electron density at atom site */
 #endif
     }
   }
@@ -292,7 +291,7 @@ void fix_cells(void)
 	l=0;
 	while( l<p->n ) {
 
-	  lcoord = local_cell_coord(p->ort X(l),p->ort Y(l),p->ort Z(l));
+	  lcoord = local_cell_coord( ORT(p,l,X), ORT(p,l,Y), ORT(p,l,Z) );
  	  /* see if atom is in wrong cell */
 	  if ((lcoord.x == i) && (lcoord.y == j) && (lcoord.z == k)) {
             l++;
@@ -300,7 +299,7 @@ void fix_cells(void)
           else {
 
             /* global cell coord and CPU */
-            coord  = cell_coord(p->ort X(l),p->ort Y(l),p->ort Z(l));
+            coord  = cell_coord( ORT(p,l,X), ORT(p,l,Y), ORT(p,l,Z) );
             to_cpu = cpu_coord(coord);
 
             /* atom is on my cpu */

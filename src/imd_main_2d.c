@@ -246,8 +246,8 @@ void main_loop(void)
       for (k=0; k<ncells; ++k) {
 	p = cell_array + CELLS(k);
 	for (i=0; i<p->n; ++i) {
-	  p->impuls X(i) = 0.0;
-	  p->impuls Y(i) = 0.0;
+	  IMPULS(p,i,X) = 0.0;
+	  IMPULS(p,i,Y) = 0.0;
 	}
       }
 #endif
@@ -425,15 +425,15 @@ void do_boundaries(void)
     /* PBC in x direction */
     if (pbc_dirs.x==1)
     for (l=0; l<p->n; ++l) {
-      i = -FLOOR(SPRODX(p->ort,l,tbox_x));
-      p->ort X(l)    += i * box_x.x;
-      p->ort Y(l)    += i * box_x.y;
+      i = -FLOOR( SPRODX( &ORT(p,l,X), tbox_x) );
+      ORT(p,l,X)     += i * box_x.x;
+      ORT(p,l,Y)     += i * box_x.y;
 #ifdef MSQD
-      p->refpos X(l) += i * box_x.x;
-      p->refpos Y(l) += i * box_x.y;
+      REF_POS(p,l,X) += i * box_x.x;
+      REF_POS(p,l,Y) += i * box_x.y;
 #ifdef AVPOS
-      p->sheet X(l)  -= i * box_x.x;
-      p->sheet Y(l)  -= i * box_x.y;
+      SHEET(p,l,X)   -= i * box_x.x;
+      SHEET(p,l,Y)   -= i * box_x.y;
 #endif
 #endif
     }
@@ -441,16 +441,16 @@ void do_boundaries(void)
     /* PBC in y direction */
     if (pbc_dirs.y==1)
     for (l=0; l<p->n; ++l) {
-      i = -FLOOR(SPRODX(p->ort,l,tbox_y));
-      p->ort X(l)    += i * box_y.x;
-      p->ort Y(l)    += i * box_y.y;
+      i = -FLOOR( SPRODX( &ORT(p,l,X), tbox_y) );
+      ORT(p,l,X)     += i * box_y.x;
+      ORT(p,l,Y)     += i * box_y.y;
 #ifdef MSQD
-      p->refpos X(l) += i * box_y.x;
-      p->refpos Y(l) += i * box_y.y;
+      REF_POS(p,l,X) += i * box_y.x;
+      REF_POS(p,l,Y) += i * box_y.y;
 #endif
 #ifdef AVPOS
-      p->sheet X(l)  -= i * box_y.x;
-      p->sheet Y(l)  -= i * box_y.y;
+      SHEET(p,l,X)   -= i * box_y.x;
+      SHEET(p,l,Y)   -= i * box_y.y;
 #endif
     }
 
@@ -481,9 +481,9 @@ void calc_tot_presstens(void)
     cell *p;
     p = cell_array + CELLS(i);
     for (j=0; j<p->n; ++j) {
-      tot_presstens.xx += p->presstens[j].xx;
-      tot_presstens.yy += p->presstens[j].yy;
-      tot_presstens.xy += p->presstens[j].xy;
+      tot_presstens.xx += PRESSTENS(p,j,xx);
+      tot_presstens.yy += PRESSTENS(p,j,yy);
+      tot_presstens.xy += PRESSTENS(p,j,xy);
     }
   }
 

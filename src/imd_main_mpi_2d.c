@@ -66,19 +66,19 @@ void calc_forces(int steps)
     cell *p;
     p = cell_array + k;
     for (i=0; i<p->n; ++i) {
-      p->kraft X(i) = 0.0;
-      p->kraft Y(i) = 0.0;
-      p->pot_eng[i] = 0.0;
+      KRAFT(p,i,X) = 0.0;
+      KRAFT(p,i,Y) = 0.0;
+      POTENG(p,i)  = 0.0;
 #ifdef ORDPAR
-      p->nbanz[i] = 0;
+      NBANZ(p,i) = 0;
 #endif
 #ifdef NVX
-      p->heatcond[i] = 0.0;
+      HEATCOND(p,i) = 0.0;
 #endif      
 #ifdef STRESS_TENS
-      p->presstens[i].xx = 0.0;
-      p->presstens[i].yy = 0.0;
-      p->presstens[i].xy = 0.0;
+      PRESSTENS(p,i,xx) = 0.0;
+      PRESSTENS(p,i,yy) = 0.0;
+      PRESSTENS(p,i,xy) = 0.0;
 #endif      
     }
   }
@@ -178,14 +178,14 @@ void fix_cells(void)
       l=0;
       while( l < p->n ) {
 
-        coord = local_cell_coord(p->ort X(l),p->ort Y(l));
+        coord = local_cell_coord( ORT(p,l,X), ORT(p,l,Y) );
 	/* see if atom is in wrong cell */
         if ((coord.x == i) && (coord.y == j)) {
           l++;
         } else {
 
           /* Calculate distance on CPU grid */
-          to_coord = cpu_coord_v( cell_coord( p->ort X(l),p->ort Y(l) ));
+          to_coord = cpu_coord_v( cell_coord( ORT(p,l,X), ORT(p,l,Y) ) );
           dcpu.x = to_coord.x - my_coord.x;
           dcpu.y = to_coord.y - my_coord.y;
 

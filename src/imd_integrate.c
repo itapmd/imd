@@ -67,138 +67,138 @@ void move_atoms_nve(void)
 
 #if defined(EPITAX) && !defined(NVE) 
       /* beam atoms are always integrated by NVE */
-      if ( (NUMMER(p,i)>epitax_sub_n) && (p->pot_eng[i]>(epitax_ctrl * epitax_poteng_min)) ) {
+      if ( (NUMMER(p,i)>epitax_sub_n) && (POTENG(p,i)>(epitax_ctrl * epitax_poteng_min)) ) {
 #endif
 
-        kin_energie_1 = SPRODN(p->impuls,i,p->impuls,i);
+        kin_energie_1 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
 #ifdef UNIAX
-        rot_energie_1 = SPRODN(p->dreh_impuls,i,p->dreh_impuls,i);
+        rot_energie_1 = SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) );
 #endif
 
         sort = VSORTE(p,i);
 #ifdef FBC
         /* give virtual particles their extra force */
-	p->kraft X(i) += (fbc_forces + sort)->x;
-	p->kraft Y(i) += (fbc_forces + sort)->y;
+	KRAFT(p,i,X) += (fbc_forces + sort)->x;
+	KRAFT(p,i,Y) += (fbc_forces + sort)->y;
 #ifndef TWOD
-	p->kraft Z(i) += (fbc_forces + sort)->z;
+	KRAFT(p,i,Z) += (fbc_forces + sort)->z;
 #endif
 
 #endif
 	/* and set their force (->momentum) in restricted directions to 0 */
-	p->kraft X(i) *= (restrictions + sort)->x;
-	p->kraft Y(i) *= (restrictions + sort)->y;
+	KRAFT(p,i,X) *= (restrictions + sort)->x;
+	KRAFT(p,i,Y) *= (restrictions + sort)->y;
 #ifndef TWOD
-	p->kraft Z(i) *= (restrictions + sort)->z;
+	KRAFT(p,i,Z) *= (restrictions + sort)->z;
 #endif
 
 #ifdef FNORM
-	fnorm   += SPRODN(p->kraft,i,p->kraft,i);
+	fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
 #endif
 #ifdef EINSTEIN
-	omega_E += SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
+	omega_E += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) ) / MASSE(p,i);
 #endif
 
-	p->impuls X(i) += timestep * p->kraft X(i);
-        p->impuls Y(i) += timestep * p->kraft Y(i);
+	IMPULS(p,i,X) += timestep * KRAFT(p,i,X);
+        IMPULS(p,i,Y) += timestep * KRAFT(p,i,Y);
 #ifndef TWOD
-        p->impuls Z(i) += timestep * p->kraft Z(i);
+        IMPULS(p,i,Z) += timestep * KRAFT(p,i,Z);
 #endif
 
 	/* "Globale Konvergenz": like mik, just with the global 
            force and momentum vectors */
 #ifdef GLOK              
-	PxF   +=  SPRODN(p->impuls,i,p->kraft,i);
+	PxF += SPRODN( &IMPULS(p,i,X), &KRAFT(p,i,X) );
 #endif
 
 #ifdef UNIAX
-        dot = 2.0 * SPRODN(p->dreh_impuls,i,p->achse,i);
-        p->dreh_impuls X(i) += timestep * p->dreh_moment X(i)
-                               - dot * p->achse X(i);
-        p->dreh_impuls Y(i) += timestep * p->dreh_moment Y(i)
-                               - dot * p->achse Y(i);
-        p->dreh_impuls Z(i) += timestep * p->dreh_moment Z(i)
-                               - dot * p->achse Z(i);
+        dot = 2.0 * SPRODN( &DREH_IMPULS(p,i,X), &ACHSE(p,i,X) );
+        DREH_IMPULS(p,i,X) += timestep * DREH_MOMENT(p,i,X)
+                               - dot * ACHSE(p,i,X);
+        DREH_IMPULS(p,i,Y) += timestep * DREH_MOMENT(p,i,Y)
+                               - dot * ACHSE(p,i,Y);
+        DREH_IMPULS(p,i,Z) += timestep * DREH_MOMENT(p,i,Z)
+                               - dot * ACHSE(p,i,Z);
 #endif
 
-        kin_energie_2 = SPRODN(p->impuls,i,p->impuls,i);
+        kin_energie_2 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
 #ifdef UNIAX
-        rot_energie_2 = SPRODN(p->dreh_impuls,i,p->dreh_impuls,i); 
+        rot_energie_2 = SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) ); 
 #endif
         /* sum up kinetic energy on this CPU */
         tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4 * MASSE(p,i));
 #ifdef UNIAX
-        tot_kin_energy += (rot_energie_1 + rot_energie_2) 
-                                    / (4 * p->traeg_moment[i]);	  
+        tot_kin_energy += (rot_energie_1 + rot_energie_2) / 
+                                                    (4 * TRAEG_MOMENT(p,i) );
 #endif	  
 
         /* new positions */
         tmp = timestep / MASSE(p,i);
-        p->ort X(i) += tmp * p->impuls X(i);
-        p->ort Y(i) += tmp * p->impuls Y(i);
+        ORT(p,i,X) += tmp * IMPULS(p,i,X);
+        ORT(p,i,Y) += tmp * IMPULS(p,i,Y);
 #ifndef TWOD
-        p->ort Z(i) += tmp * p->impuls Z(i);
+        ORT(p,i,Z) += tmp * IMPULS(p,i,Z);
 #endif
 
 #ifdef SHOCK
 	if (shock_mode == 3) {
-	  if (p->ort X(i) > box_x.x) p->impuls X(i) = -p->impuls X(i);
+	  if (ORT(p,i,X) > box_x.x) IMPULS(p,i,X) = -IMPULS(p,i,X);
 	}
 #endif
 
         /* new molecular axes */
 #ifdef UNIAX
-        cross.x = p->dreh_impuls Y(i) * p->achse Z(i)
-                - p->dreh_impuls Z(i) * p->achse Y(i);
-        cross.y = p->dreh_impuls Z(i) * p->achse X(i)
-                - p->dreh_impuls X(i) * p->achse Z(i);
-        cross.z = p->dreh_impuls X(i) * p->achse Y(i)
-                - p->dreh_impuls Y(i) * p->achse X(i);
+        cross.x = DREH_IMPULS(p,i,Y) * ACHSE(p,i,Z)
+                - DREH_IMPULS(p,i,Z) * ACHSE(p,i,Y);
+        cross.y = DREH_IMPULS(p,i,Z) * ACHSE(p,i,X)
+                - DREH_IMPULS(p,i,X) * ACHSE(p,i,Z);
+        cross.z = DREH_IMPULS(p,i,X) * ACHSE(p,i,Y)
+                - DREH_IMPULS(p,i,Y) * ACHSE(p,i,X);
 
-        p->achse X(i) += timestep * cross.x / p->traeg_moment[i];
-        p->achse Y(i) += timestep * cross.y / p->traeg_moment[i];
-        p->achse Z(i) += timestep * cross.z / p->traeg_moment[i];
+        ACHSE(p,i,X) += timestep * cross.x / TRAEG_MOMENT(p,i);
+        ACHSE(p,i,Y) += timestep * cross.y / TRAEG_MOMENT(p,i);
+        ACHSE(p,i,Z) += timestep * cross.z / TRAEG_MOMENT(p,i);
 
-        norm = sqrt( SPRODN(p->achse,i,p->achse,i) );
+        norm = sqrt( SPRODN( &ACHSE(p,i,X), &ACHSE(p,i,X) ) );
 	    
-        p->achse X(i) /= norm;
-        p->achse Y(i) /= norm;
-        p->achse Z(i) /= norm;
+        ACHSE(p,i,X) /= norm;
+        ACHSE(p,i,Y) /= norm;
+        ACHSE(p,i,Z) /= norm;
 #endif    
 
 #ifdef STRESS_TENS
 #ifdef SHOCK
 	/* plate against bulk */
         if (shock_mode == 1) {
-          if ( p->ort X(i) < shock_strip )
-            p->presstens[i].xx += (p->impuls X(i) - shock_speed * MASSE(p,i)) 
-                    * (p->impuls X(i) - shock_speed * MASSE(p,i)) / MASSE(p,i);
+          if ( ORT(p,i,X) < shock_strip )
+            PRESSTENS(p,i,xx) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) 
+                    * (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) / MASSE(p,i);
           else
-	    p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
+	    PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
         }
 	/* two halves against one another */
         if (shock_mode == 2) {
-          if ( p->ort X(i) < box_x.x*0.5 )
-            p->presstens[i].xx += (p->impuls X(i) - shock_speed * MASSE(p,i)) 
-                    * (p->impuls X(i) - shock_speed * MASSE(p,i)) / MASSE(p,i);
+          if ( ORT(p,i,X) < box_x.x*0.5 )
+            PRESSTENS(p,i,xx) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) 
+                    * (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) / MASSE(p,i);
           else
-            p->presstens[i].xx += (p->impuls X(i) + shock_speed * MASSE(p,i)) 
-                    * (p->impuls X(i) + shock_speed * MASSE(p,i)) / MASSE(p,i);
+            PRESSTENS(p,i,xx) += (IMPULS(p,i,X) + shock_speed * MASSE(p,i)) 
+                    * (IMPULS(p,i,X) + shock_speed * MASSE(p,i)) / MASSE(p,i);
         }
 	/* bulk against wall */
-        if (shock_mode == 3) p->presstens[i].xx += (p->impuls X(i) - 
-	  shock_speed * MASSE(p,i)) * (p->impuls X(i) - shock_speed * 
+        if (shock_mode == 3) PRESSTENS(p,i,xx) += (IMPULS(p,i,X) - 
+	  shock_speed * MASSE(p,i)) * (IMPULS(p,i,X) - shock_speed * 
            MASSE(p,i)) / MASSE(p,i);
 #else
-        p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
+        PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
 #endif
-        p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
+        PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
 #ifndef TWOD
-        p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
+        PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
 #endif
-        p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
+        PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif /* STRESS_TENS */
     }
 #if defined(EPITAX) && !defined(NVE)
@@ -284,77 +284,77 @@ void move_atoms_mik(void)
 
 #ifdef EPITAX
       /* only substrate atoms are integrated by MIK */
-      if ( (NUMMER(p,i)<=epitax_sub_n) || (p->pot_eng[i]<=(epitax_ctrl * epitax_poteng_min)) ) {
+      if ( (NUMMER(p,i)<=epitax_sub_n) || (POTENG(p,i)<=(epitax_ctrl * epitax_poteng_min)) ) {
 #endif
 
-        kin_energie_1 = SPRODN(p->impuls,i,p->impuls,i);
+        kin_energie_1 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
 
 	sort = VSORTE(p,i);
 #ifdef FBC
         /* give virtual particles their extra force */
-	p->kraft X(i) += (fbc_forces + sort)->x;
-	p->kraft Y(i) += (fbc_forces + sort)->y;
+	KRAFT(p,i,X) += (fbc_forces + sort)->x;
+	KRAFT(p,i,Y) += (fbc_forces + sort)->y;
 #ifndef TWOD
-	p->kraft Z(i) += (fbc_forces + sort)->z;
+	KRAFT(p,i,Z) += (fbc_forces + sort)->z;
 #endif
 #endif /* FBC */
 
 	/* and set their force (->momentum) in restricted directions to 0 */
-	p->kraft X(i) *= (restrictions + sort)->x;
-	p->kraft Y(i) *= (restrictions + sort)->y;
+	KRAFT(p,i,X) *= (restrictions + sort)->x;
+	KRAFT(p,i,Y) *= (restrictions + sort)->y;
 #ifndef TWOD
-	p->kraft Z(i) *= (restrictions + sort)->z;
+	KRAFT(p,i,Z) *= (restrictions + sort)->z;
 #endif
 	
 #ifdef FNORM
-	fnorm   += SPRODN(p->kraft,i,p->kraft,i);
+	fnorm += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
 #endif
 
-        p->impuls X(i) += timestep * p->kraft X(i);
-        p->impuls Y(i) += timestep * p->kraft Y(i);
+        IMPULS(p,i,X) += timestep * KRAFT(p,i,X);
+        IMPULS(p,i,Y) += timestep * KRAFT(p,i,Y);
 #ifndef TWOD
-        p->impuls Z(i) += timestep * p->kraft Z(i);
+        IMPULS(p,i,Z) += timestep * KRAFT(p,i,Z);
 #endif
 
 	/* Mikroconvergence Algorithm - set velocity zero if a*v < 0 */
-	if (0.0 > SPRODN(p->impuls,i,p->kraft,i)) {
-          p->impuls X(i) = 0.0;
-          p->impuls Y(i) = 0.0;
+	if (0.0 > SPRODN( &IMPULS(p,i,X), &KRAFT(p,i,X) ) ) {
+          IMPULS(p,i,X) = 0.0;
+          IMPULS(p,i,Y) = 0.0;
 #ifndef TWOD
-          p->impuls Z(i) = 0.0;
+          IMPULS(p,i,Z) = 0.0;
 #endif
         } else { /* new positions */
           tmp = timestep / MASSE(p,i);
-          p->ort X(i) += tmp * p->impuls X(i);
-          p->ort Y(i) += tmp * p->impuls Y(i);
+          ORT(p,i,X) += tmp * IMPULS(p,i,X);
+          ORT(p,i,Y) += tmp * IMPULS(p,i,Y);
 #ifndef TWOD
-          p->ort Z(i) += tmp * p->impuls Z(i);
+          ORT(p,i,Z) += tmp * IMPULS(p,i,Z);
 #endif
         }
 
 #ifdef ATNR
         if(p->nummer[i]==ATNR) {
           printf("impuls: %.16f  %.16f  %.16f \n",
-                 p->impuls X(i),p->impuls Y(i),p->impuls Z(i));
+                 IMPULS(p,i,X),IMPULS(p,i,Y),IMPULS(p,i,Z));
           printf("ort:  %.16f  %.16f  %.16f \n",
-                 p->ort X(i),p->ort Y(i),p->ort Z(i));
+                 ORT(p,i,X),ORT(p,i,Y),ORT(p,i,Z));
           fflush(stdout);
         }
 #endif
-        kin_energie_2 =  SPRODN(p->impuls,i,p->impuls,i);
+        kin_energie_2 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
 
         /* sum up kinetic energy on this CPU */ 
         tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4.0 * MASSE(p,i));
 
 #ifdef STRESS_TENS
-        p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
-        p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
+        PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
+        PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
 #ifndef TWOD
-        p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
+        PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
 #endif
-        p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
+        PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
     }
 #ifdef EPITAX
@@ -434,105 +434,106 @@ void move_atoms_nvt(void)
 
 #ifdef EPITAX
       /* only substrate atoms are integrated by NVT */
-      if ( (NUMMER(p,i)<=epitax_sub_n) || (p->pot_eng[i]<=(epitax_ctrl * epitax_poteng_min)) ) {
+      if ( (NUMMER(p,i)<=epitax_sub_n) || 
+           (POTENG(p,i)<=(epitax_ctrl * epitax_poteng_min)) ) {
 #endif
 
         /* twice the old kinetic energy */
-        E_kin_1 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+        E_kin_1 += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
 #ifdef UNIAX
-        E_rot_1 +=  SPRODN(p->dreh_impuls,i,p->dreh_impuls,i) 
-                                                  / p->traeg_moment[i];
+        E_rot_1 += SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) ) / 
+                                                       TRAEG_MOMENT(p,i);
 #endif
 
 	sort = VSORTE(p,i);
 #ifdef FBC
         /* give virtual particles their extra force */
-	p->kraft X(i) += (fbc_forces + sort)->x;
-	p->kraft Y(i) += (fbc_forces + sort)->y;
+	KRAFT(p,i,X) += (fbc_forces + sort)->x;
+	KRAFT(p,i,Y) += (fbc_forces + sort)->y;
 #ifndef TWOD
-	p->kraft Z(i) += (fbc_forces + sort)->z;
+	KRAFT(p,i,Z) += (fbc_forces + sort)->z;
 #endif
 
 #endif
-	p->kraft X(i) *= (restrictions + sort)->x;
-	p->kraft Y(i) *= (restrictions + sort)->y;
+	KRAFT(p,i,X) *= (restrictions + sort)->x;
+	KRAFT(p,i,Y) *= (restrictions + sort)->y;
 #ifndef TWOD
-	p->kraft Z(i) *= (restrictions + sort)->z;
+	KRAFT(p,i,Z) *= (restrictions + sort)->z;
 #endif
 #ifdef FNORM
-	fnorm   += SPRODN(p->kraft,i,p->kraft,i);
+	fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
 #endif
 #ifdef EINSTEIN
-	omega_E += SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
+	omega_E += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) ) / MASSE(p,i);
 #endif
 
-	p->impuls X(i) = (p->impuls X(i) * reibung + timestep * p->kraft X(i)) 
+	IMPULS(p,i,X) = (IMPULS(p,i,X) * reibung + timestep * KRAFT(p,i,X)) 
                            * eins_d_reib * (restrictions + sort)->x;
-        p->impuls Y(i) = (p->impuls Y(i) * reibung + timestep * p->kraft Y(i)) 
+        IMPULS(p,i,Y) = (IMPULS(p,i,Y) * reibung + timestep * KRAFT(p,i,Y)) 
                            * eins_d_reib * (restrictions + sort)->y;
 #ifndef TWOD
-        p->impuls Z(i) = (p->impuls Z(i) * reibung + timestep * p->kraft Z(i)) 
+        IMPULS(p,i,Z) = (IMPULS(p,i,Z) * reibung + timestep * KRAFT(p,i,Z)) 
                            * eins_d_reib * (restrictions + sort)->z;
 #endif
 
 #ifdef UNIAX
         /* new angular momenta */
-        dot = 2.0 * SPRODN(p->dreh_impuls,i,p->achse,i);
+        dot = 2.0 * SPRODN( &DREH_IMPULS(p,i,X), &ACHSE(p,i,X) );
 
-        p->dreh_impuls X(i) = eins_d_reib_rot
-            * ( p->dreh_impuls X(i) * reibung_rot
-                + timestep * p->dreh_moment X(i) - dot * p->achse X(i) );
-        p->dreh_impuls Y(i) = eins_d_reib_rot
-            * ( p->dreh_impuls Y(i) * reibung_rot
-                + timestep * p->dreh_moment Y(i) - dot * p->achse Y(i) );
-        p->dreh_impuls Z(i) = eins_d_reib_rot
-            * ( p->dreh_impuls Z(i) * reibung_rot
-                + timestep * p->dreh_moment Z(i) - dot * p->achse Z(i) );
+        DREH_IMPULS(p,i,X) = eins_d_reib_rot
+            * ( DREH_IMPULS(p,i,X) * reibung_rot
+                + timestep * DREH_MOMENT(p,i,X) - dot * ACHSE(p,i,X) );
+        DREH_IMPULS(p,i,Y) = eins_d_reib_rot
+            * ( DREH_IMPULS(p,i,Y) * reibung_rot
+                + timestep * DREH_MOMENT(p,i,Y) - dot * ACHSE(p,i,Y) );
+        DREH_IMPULS(p,i,Z) = eins_d_reib_rot
+            * ( DREH_IMPULS(p,i,Z) * reibung_rot
+                + timestep * DREH_MOMENT(p,i,Z) - dot * ACHSE(p,i,Z) );
 #endif
 
         /* twice the new kinetic energy */ 
-        E_kin_2 += SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+        E_kin_2 += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
 #ifdef UNIAX
-        E_rot_2 += SPRODN(p->dreh_impuls,i,p->dreh_impuls,i) 
-                                                     / p->traeg_moment[i];
+        E_rot_2 += SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) ) / 
+                                                       TRAEG_MOMENT(p,i);
 #endif
 
         /* new positions */
         tmp = timestep / MASSE(p,i);
-        p->ort X(i) += tmp * p->impuls X(i);
-        p->ort Y(i) += tmp * p->impuls Y(i);
+        ORT(p,i,X) += tmp * IMPULS(p,i,X);
+        ORT(p,i,Y) += tmp * IMPULS(p,i,Y);
 #ifndef TWOD
-        p->ort Z(i) += tmp * p->impuls Z(i);
+        ORT(p,i,Z) += tmp * IMPULS(p,i,Z);
 #endif
 
 #ifdef UNIAX
-        cross.x = p->dreh_impuls Y(i) * p->achse Z(i)
-                - p->dreh_impuls Z(i) * p->achse Y(i);
-        cross.y = p->dreh_impuls Z(i) * p->achse X(i)
-                - p->dreh_impuls X(i) * p->achse Z(i);
-        cross.z = p->dreh_impuls X(i) * p->achse Y(i)
-                - p->dreh_impuls Y(i) * p->achse X(i);
+        cross.x = DREH_IMPULS(p,i,Y) * ACHSE(p,i,Z)
+                - DREH_IMPULS(p,i,Z) * ACHSE(p,i,Y);
+        cross.y = DREH_IMPULS(p,i,Z) * ACHSE(p,i,X)
+                - DREH_IMPULS(p,i,X) * ACHSE(p,i,Z);
+        cross.z = DREH_IMPULS(p,i,X) * ACHSE(p,i,Y)
+                - DREH_IMPULS(p,i,Y) * ACHSE(p,i,X);
 
-        p->achse X(i) += timestep * cross.x / p->traeg_moment[i];
-        p->achse Y(i) += timestep * cross.y / p->traeg_moment[i];
-        p->achse Z(i) += timestep * cross.z / p->traeg_moment[i];
+        ACHSE(p,i,X) += timestep * cross.x / TRAEG_MOMENT(p,i);
+        ACHSE(p,i,Y) += timestep * cross.y / TRAEG_MOMENT(p,i);
+        ACHSE(p,i,Z) += timestep * cross.z / TRAEG_MOMENT(p,i);
 
-        norm = sqrt( SPRODN(p->achse,i,p->achse,i) );
+        norm = sqrt( SPRODN( &ACHSE(p,i,X), &ACHSE(p,i,X) );
 
-        p->achse X(i) /= norm;
-        p->achse Y(i) /= norm;
-        p->achse Z(i) /= norm;
+        ACHSE(p,i,X) /= norm;
+        ACHSE(p,i,Y) /= norm;
+        ACHSE(p,i,Z) /= norm;
 #endif
 
 #ifdef STRESS_TENS
-        p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
-        p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
+        PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
+        PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
 #ifndef TWOD
-        p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
+        PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
 #endif
-        p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
+        PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
     }
   }
@@ -638,107 +639,107 @@ void move_atoms_sllod(void)
     for (i=0; i<p->n; ++i) {
 
         /* twice the old kinetic energy */
-        E_kin_1 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+        E_kin_1 += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
 #ifdef UNIAX
-        E_rot_1 +=  SPRODN(p->dreh_impuls,i,p->dreh_impuls,i) 
-                                                  / p->traeg_moment[i];
+        E_rot_1 += SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) ) / 
+                                                       TRAEG_MOMENT(p,i);
 #endif
 
 	sort = VSORTE(p,i);
 #ifdef FBC
         /* give virtual particles their extra force */
-	p->kraft X(i) += (fbc_forces + sort)->x;
-	p->kraft Y(i) += (fbc_forces + sort)->y;
+	KRAFT(p,i,X) += (fbc_forces + sort)->x;
+	KRAFT(p,i,Y) += (fbc_forces + sort)->y;
 #ifndef TWOD
-	p->kraft Z(i) += (fbc_forces + sort)->z;
+	KRAFT(p,i,Z) += (fbc_forces + sort)->z;
 #endif
 
 #endif
-	p->kraft X(i) *= (restrictions + sort)->x;
-	p->kraft Y(i) *= (restrictions + sort)->y;
+	KRAFT(p,i,X) *= (restrictions + sort)->x;
+	KRAFT(p,i,Y) *= (restrictions + sort)->y;
 #ifndef TWOD
-	p->kraft Z(i) *= (restrictions + sort)->z;
+	KRAFT(p,i,Z) *= (restrictions + sort)->z;
 #endif
 #ifdef FNORM
-	fnorm   += SPRODN(p->kraft,i,p->kraft,i);
+	fnorm += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
 #endif
 
-	p->impuls X(i) = (p->impuls X(i) * reibung.x + timestep * p->kraft X(i)) 
+	IMPULS(p,i,X) = (IMPULS(p,i,X) * reibung.x + timestep * KRAFT(p,i,X)) 
                            * eins_d_reib.x * (restrictions + sort)->x;
-        p->impuls Y(i) = (p->impuls Y(i) * reibung.y + timestep * p->kraft Y(i)) 
+        IMPULS(p,i,Y) = (IMPULS(p,i,Y) * reibung.y + timestep * KRAFT(p,i,Y)) 
                            * eins_d_reib.y * (restrictions + sort)->y;
 #ifndef TWOD
-        p->impuls Z(i) = (p->impuls Z(i) * reibung.z + timestep * p->kraft Z(i)) 
+        IMPULS(p,i,Z) = (IMPULS(p,i,Z) * reibung.z + timestep * KRAFT(p,i,Z)) 
                            * eins_d_reib.z * (restrictions + sort)->z;
 #endif
 
 #ifdef UNIAX
         /* new angular momenta */
-        dot = 2.0 * SPRODN(p->dreh_impuls,i,p->achse,i);
+        dot = 2.0 * SPRODN( &DREH_IMPULS(p,i,X), &ACHSE(p,i,X) );
 
-        p->dreh_impuls X(i) = eins_d_reib_rot
-            * ( p->dreh_impuls X(i) * reibung_rot
-                + timestep * p->dreh_moment X(i) - dot * p->achse X(i) );
-        p->dreh_impuls Y(i) = eins_d_reib_rot
-            * ( p->dreh_impuls Y(i) * reibung_rot
-                + timestep * p->dreh_moment Y(i) - dot * p->achse Y(i) );
-        p->dreh_impuls Z(i) = eins_d_reib_rot
-            * ( p->dreh_impuls Z(i) * reibung_rot
-                + timestep * p->dreh_moment Z(i) - dot * p->achse Z(i) );
+        DREH_IMPULS(p,i,X) = eins_d_reib_rot
+            * ( DREH_IMPULS(p,i,X) * reibung_rot
+                + timestep * DREH_MOMENT(p,i,X) - dot * ACHSE(p,i,X) );
+        DREH_IMPULS(p,i,Y) = eins_d_reib_rot
+            * ( DREH_IMPULS(p,i,Y) * reibung_rot
+                + timestep * DREH_MOMENT(p,i,Y) - dot * ACHSE(p,i,Y) );
+        DREH_IMPULS(p,i,Z) = eins_d_reib_rot
+            * ( DREH_IMPULS(p,i,Z) * reibung_rot
+                + timestep * DREH_MOMENT(p,i,Z) - dot * ACHSE(p,i,Z) );
 #endif
 
         /* twice the new kinetic energy */ 
-        E_kin_2 += SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+        E_kin_2 += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
 #ifdef UNIAX
-        E_rot_2 += SPRODN(p->dreh_impuls,i,p->dreh_impuls,i) 
-                                                     / p->traeg_moment[i];
+        E_rot_2 += SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) ) / 
+                                                       TRAEG_MOMENT(p,i);
 #endif
 
         /* new positions */
         tmp = timestep / MASSE(p,i);
-        p->ort X(i) += tmp * p->impuls X(i);
-        p->ort Y(i) += tmp * p->impuls Y(i);
+        ORT(p,i,X) += tmp * IMPULS(p,i,X);
+        ORT(p,i,Y) += tmp * IMPULS(p,i,Y);
 #ifndef TWOD
-        p->ort Z(i) += tmp * p->impuls Z(i);
+        ORT(p,i,Z) += tmp * IMPULS(p,i,Z);
 	/* sllod specific */
-        p->ort X(i) += shear_rate.z  * p->ort Y(i);
-        p->ort X(i) += shear_rate2.y * p->ort Z(i);
-        p->ort Y(i) += shear_rate.x  * p->ort Z(i);
-        p->ort Y(i) += shear_rate2.z * p->ort X(i);
-        p->ort Z(i) += shear_rate.y  * p->ort X(i);
-        p->ort Z(i) += shear_rate2.x * p->ort Y(i);
+        ORT(p,i,X) += shear_rate.z  * ORT(p,i,Y);
+        ORT(p,i,X) += shear_rate2.y * ORT(p,i,Z);
+        ORT(p,i,Y) += shear_rate.x  * ORT(p,i,Z);
+        ORT(p,i,Y) += shear_rate2.z * ORT(p,i,X);
+        ORT(p,i,Z) += shear_rate.y  * ORT(p,i,X);
+        ORT(p,i,Z) += shear_rate2.x * ORT(p,i,Y);
 #else
-        p->ort X(i) += shear_rate.x * p->ort Y(i);
-        p->ort Y(i) += shear_rate.y * p->ort X(i);
+        ORT(p,i,X) += shear_rate.x * ORT(p,i,Y);
+        ORT(p,i,Y) += shear_rate.y * ORT(p,i,X);
 #endif
 #ifdef UNIAX
-        cross.x = p->dreh_impuls Y(i) * p->achse Z(i)
-                - p->dreh_impuls Z(i) * p->achse Y(i);
-        cross.y = p->dreh_impuls Z(i) * p->achse X(i)
-                - p->dreh_impuls X(i) * p->achse Z(i);
-        cross.z = p->dreh_impuls X(i) * p->achse Y(i)
-                - p->dreh_impuls Y(i) * p->achse X(i);
+        cross.x = DREH_IMPULS(p,i,Y) * ACHSE(p,i,Z)
+                - DREH_IMPULS(p,i,Z) * ACHSE(p,i,Y);
+        cross.y = DREH_IMPULS(p,i,Z) * ACHSE(p,i,X)
+                - DREH_IMPULS(p,i,X) * ACHSE(p,i,Z);
+        cross.z = DREH_IMPULS(p,i,X) * ACHSE(p,i,Y)
+                - DREH_IMPULS(p,i,Y) * ACHSE(p,i,X);
 
-        p->achse X(i) += timestep * cross.x / p->traeg_moment[i];
-        p->achse Y(i) += timestep * cross.y / p->traeg_moment[i];
-        p->achse Z(i) += timestep * cross.z / p->traeg_moment[i];
+        ACHSE(p,i,X) += timestep * cross.x / TRAEG_MOMENT(p,i);
+        ACHSE(p,i,Y) += timestep * cross.y / TRAEG_MOMENT(p,i);
+        ACHSE(p,i,Z) += timestep * cross.z / TRAEG_MOMENT(p,i);
 
-        norm = sqrt( SPRODN(p->achse,i,p->achse,i) );
+        norm = sqrt( SPRODN( &ACHSE(p,i,X), &ACHSE(p,i,X) );
 
-        p->achse X(i) /= norm;
-        p->achse Y(i) /= norm;
-        p->achse Z(i) /= norm;
+        ACHSE(p,i,X) /= norm;
+        ACHSE(p,i,Y) /= norm;
+        ACHSE(p,i,Z) /= norm;
 #endif
 
 #ifdef STRESS_TENS
-        p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
-        p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
+        PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
+        PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
 #ifndef TWOD
-        p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
+        PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
 #endif
-        p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
+        PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
     }
 #ifdef EPITAX
@@ -836,13 +837,14 @@ void calc_dyn_pressure(void)
     /* loop over atoms in cell */
     for (i=0; i<p->n; ++i) {
       tmp = 1.0 / MASSE(p,i);
-      dyn_stress_x += p->impuls X(i) * p->impuls X(i) * tmp;
-      dyn_stress_y += p->impuls Y(i) * p->impuls Y(i) * tmp;
+      dyn_stress_x += IMPULS(p,i,X) * IMPULS(p,i,X) * tmp;
+      dyn_stress_y += IMPULS(p,i,Y) * IMPULS(p,i,Y) * tmp;
 #ifndef TWOD
-      dyn_stress_z += p->impuls Z(i) * p->impuls Z(i) * tmp;
+      dyn_stress_z += IMPULS(p,i,Z) * IMPULS(p,i,Z) * tmp;
 #endif
 #ifdef UNIAX
-      Erot_old += SPRODN(p->dreh_impuls,i,p->dreh_impuls,i)/p->traeg_moment[i];
+      Erot_old += SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) ) /
+                                                        TRAEG_MOMENT(p,i);
 #endif
     }
   }
@@ -930,73 +932,74 @@ void move_atoms_npt_iso(void)
     for (i=0; i<p->n; ++i) {
 
 #ifdef FNORM
-      fnorm   += SPRODN(p->kraft,i,p->kraft,i);
+      fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
 #endif
 #ifdef EINSTEIN
-      omega_E += SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
+      omega_E += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) ) / MASSE(p,i);
 #endif
 
       /* new momenta */
-      p->impuls X(i) = (pfric*p->impuls X(i)+timestep*p->kraft X(i))*pifric;
-      p->impuls Y(i) = (pfric*p->impuls Y(i)+timestep*p->kraft Y(i))*pifric;
+      IMPULS(p,i,X) = (pfric*IMPULS(p,i,X)+timestep*KRAFT(p,i,X))*pifric;
+      IMPULS(p,i,Y) = (pfric*IMPULS(p,i,Y)+timestep*KRAFT(p,i,Y))*pifric;
 #ifndef TWOD
-      p->impuls Z(i) = (pfric*p->impuls Z(i)+timestep*p->kraft Z(i))*pifric;
+      IMPULS(p,i,Z) = (pfric*IMPULS(p,i,Z)+timestep*KRAFT(p,i,Z))*pifric;
 #endif
 
 #ifdef UNIAX
       /* new angular momenta */
-      dot = 2.0 * SPRODN(p->dreh_impuls,i,p->achse,i);
-      p->dreh_impuls X(i) = ireib * ( p->dreh_impuls X(i) * reib 
-              + timestep * p->dreh_moment X(i) - dot * p->achse X(i) );
-      p->dreh_impuls Y(i) = ireib * ( p->dreh_impuls Y(i) * reib 
-              + timestep * p->dreh_moment Y(i) - dot * p->achse Y(i) );
-      p->dreh_impuls Z(i) = ireib * ( p->dreh_impuls Z(i) * reib 
-              + timestep * p->dreh_moment Z(i) - dot * p->achse Z(i) );
+      dot = 2.0 * SPRODN( &DREH_IMPULS(p,i,X), &ACHSE(p,i,X) );
+      DREH_IMPULS(p,i,X) = ireib * ( DREH_IMPULS(p,i,X) * reib 
+              + timestep * DREH_MOMENT(p,i,X) - dot * ACHSE(p,i,X) );
+      DREH_IMPULS(p,i,Y) = ireib * ( DREH_IMPULS(p,i,Y) * reib 
+              + timestep * DREH_MOMENT(p,i,Y) - dot * ACHSE(p,i,Y) );
+      DREH_IMPULS(p,i,Z) = ireib * ( DREH_IMPULS(p,i,Z) * reib 
+              + timestep * DREH_MOMENT(p,i,Z) - dot * ACHSE(p,i,Z) );
 #endif
 
       /* twice the new kinetic energy */ 
-      Ekin_new += SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+      Ekin_new += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
 #ifdef UNIAX
-      Erot_new += SPRODN(p->dreh_impuls,i,p->dreh_impuls,i)/p->traeg_moment[i];
+      Erot_new += SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) ) /
+                                                      TRAEG_MOMENT(p,i);
 #endif
 
       /* new positions */
       tmp = timestep / MASSE(p,i);
-      p->ort X(i) = (rfric * p->ort X(i) + p->impuls X(i) * tmp) * rifric;
-      p->ort Y(i) = (rfric * p->ort Y(i) + p->impuls Y(i) * tmp) * rifric;
+      ORT(p,i,X) = (rfric * ORT(p,i,X) + IMPULS(p,i,X) * tmp) * rifric;
+      ORT(p,i,Y) = (rfric * ORT(p,i,Y) + IMPULS(p,i,Y) * tmp) * rifric;
 #ifndef TWOD
-      p->ort Z(i) = (rfric * p->ort Z(i) + p->impuls Z(i) * tmp) * rifric;
+      ORT(p,i,Z) = (rfric * ORT(p,i,Z) + IMPULS(p,i,Z) * tmp) * rifric;
 #endif
 
 #ifdef UNIAX
       /* new molecular axes */
-      cross.x = p->dreh_impuls Y(i) * p->achse Z(i)
-              - p->dreh_impuls Z(i) * p->achse Y(i);
-      cross.y = p->dreh_impuls Z(i) * p->achse X(i)
-              - p->dreh_impuls X(i) * p->achse Z(i);
-      cross.z = p->dreh_impuls X(i) * p->achse Y(i)
-              - p->dreh_impuls Y(i) * p->achse X(i);
+      cross.x = DREH_IMPULS(p,i,Y) * ACHSE(p,i,Z)
+              - DREH_IMPULS(p,i,Z) * ACHSE(p,i,Y);
+      cross.y = DREH_IMPULS(p,i,Z) * ACHSE(p,i,X)
+              - DREH_IMPULS(p,i,X) * ACHSE(p,i,Z);
+      cross.z = DREH_IMPULS(p,i,X) * ACHSE(p,i,Y)
+              - DREH_IMPULS(p,i,Y) * ACHSE(p,i,X);
 
-      p->achse X(i) += timestep * cross.x / p->traeg_moment[i];
-      p->achse Y(i) += timestep * cross.y / p->traeg_moment[i];
-      p->achse Z(i) += timestep * cross.z / p->traeg_moment[i];
+      ACHSE(p,i,X) += timestep * cross.x / TRAEG_MOMENT(p,i);
+      ACHSE(p,i,Y) += timestep * cross.y / TRAEG_MOMENT(p,i);
+      ACHSE(p,i,Z) += timestep * cross.z / TRAEG_MOMENT(p,i);
 
-      norm = sqrt( SPRODN(p->achse,i,p->achse,i) );
+      norm = sqrt( SPRODN( &ACHSE(p,i,X), &ACHSE(p,i,X) ) );
 
-      p->achse X(i) /= norm;
-      p->achse Y(i) /= norm;
-      p->achse Z(i) /= norm;
+      ACHSE(p,i,X) /= norm;
+      ACHSE(p,i,Y) /= norm;
+      ACHSE(p,i,Z) /= norm;
 #endif
 
 #ifdef STRESS_TENS
-        p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
-        p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
+        PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
+        PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
 #ifndef TWOD
-        p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
+        PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
 #endif
-        p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
+        PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
     }
   }
@@ -1122,48 +1125,48 @@ void move_atoms_npt_axial(void)
 
       tmp = 1.0 / MASSE(p,i);
 #ifdef FNORM
-      fnorm   += SPRODN(p->kraft,i,p->kraft,i);
+      fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
 #endif
 #ifdef EINSTEIN
-      omega_E += SPRODN(p->kraft,i,p->kraft,i) * tmp;
+      omega_E += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) ) * tmp;
 #endif
 #ifdef STRESS_TENS
-      p->presstens[i].xx += p->impuls X(i) * p->impuls X(i) * tmp;
-      p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i) * tmp;
+      PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) * tmp;
+      PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) * tmp;
 #ifndef TWOD
-      p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i) * tmp;
-      p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i) * tmp;
-      p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i) * tmp;
+      PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) * tmp;
+      PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) * tmp;
+      PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) * tmp;
 #endif
-      p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i) * tmp;
+      PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) * tmp;
 #endif
 
       /* new momenta */
-      p->impuls X(i) = (pfric.x * p->impuls X(i)
-                                   + timestep * p->kraft X(i)) * pifric.x;
-      p->impuls Y(i) = (pfric.y * p->impuls Y(i)
-                                   + timestep * p->kraft Y(i)) * pifric.y;
+      IMPULS(p,i,X) = (pfric.x * IMPULS(p,i,X)
+                                   + timestep * KRAFT(p,i,X)) * pifric.x;
+      IMPULS(p,i,Y) = (pfric.y * IMPULS(p,i,Y)
+                                   + timestep * KRAFT(p,i,Y)) * pifric.y;
 #ifndef TWOD
-      p->impuls Z(i) = (pfric.z * p->impuls Z(i)
-                                   + timestep * p->kraft Z(i)) * pifric.z;
+      IMPULS(p,i,Z) = (pfric.z * IMPULS(p,i,Z)
+                                   + timestep * KRAFT(p,i,Z)) * pifric.z;
 #endif
 
       /* new stress tensor (dynamic part only) */
-      dyn_stress_x += p->impuls X(i) * p->impuls X(i) * tmp;
-      dyn_stress_y += p->impuls Y(i) * p->impuls Y(i) * tmp;
+      dyn_stress_x += IMPULS(p,i,X) * IMPULS(p,i,X) * tmp;
+      dyn_stress_y += IMPULS(p,i,Y) * IMPULS(p,i,Y) * tmp;
 #ifndef TWOD
-      dyn_stress_z += p->impuls Z(i) * p->impuls Z(i) * tmp;
+      dyn_stress_z += IMPULS(p,i,Z) * IMPULS(p,i,Z) * tmp;
 #endif
 
       /* twice the new kinetic energy */ 
-      Ekin_new += SPRODN(p->impuls,i,p->impuls,i) * tmp;
+      Ekin_new += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) * tmp;
 	  
       /* new positions */
       tmp *= timestep;
-      p->ort X(i) = (rfric.x * p->ort X(i) + p->impuls X(i) * tmp) * rifric.x;
-      p->ort Y(i) = (rfric.y * p->ort Y(i) + p->impuls Y(i) * tmp) * rifric.y;
+      ORT(p,i,X) = (rfric.x * ORT(p,i,X) + IMPULS(p,i,X) * tmp) * rifric.x;
+      ORT(p,i,Y) = (rfric.y * ORT(p,i,Y) + IMPULS(p,i,Y) * tmp) * rifric.y;
 #ifndef TWOD
-      p->ort Z(i) = (rfric.z * p->ort Z(i) + p->impuls Z(i) * tmp) * rifric.z;
+      ORT(p,i,Z) = (rfric.z * ORT(p,i,Z) + IMPULS(p,i,Z) * tmp) * rifric.z;
 #endif
     }
   }
@@ -1242,7 +1245,7 @@ void move_atoms_frac(void)
   real reibung, reibung_y, eins_d_reib, eins_d_reib_y;
   real epsilontmp, eins_d_epsilontmp;
 
-  real f; /* stadium function: the bath tub !!!!*/
+  real tmp, f; /* stadium function: the bath tub !!!!*/
 
   fnorm     = 0.0;
   sum_f     = 0.0;
@@ -1272,8 +1275,8 @@ void move_atoms_frac(void)
 	    f = 1.0; 
 	} else {
 	    /* Calculate stadium function f */
-	    tmp1 = SQR((p->ort X(i)-center.x)/(2.0*stadium2.x));
-	    tmp2 = SQR((p->ort Y(i)-center.y)/(2.0*stadium2.y));
+	    tmp1 = SQR((ORT(p,i,X)-center.x)/(2.0*stadium2.x));
+	    tmp2 = SQR((ORT(p,i,Y)-center.y)/(2.0*stadium2.y));
 	    f    = (tmp1+tmp2-SQR(stadium.x/(2.0*stadium2.x)))/\
 		(.25- SQR(stadium.x/(2.0*stadium2.x)));
 	
@@ -1300,29 +1303,28 @@ void move_atoms_frac(void)
 #endif
 	
        	/* twice the old kinetic energy */
-	E_kin_1 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);	
-	if (f == 0.0)
-	    E_kin_stadium1 +=      SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
-	if (f >  0.0)
-	    E_kin_damp1    +=  f * SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+        tmp = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
+	E_kin_1 += tmp;
+	if (f == 0.0) E_kin_stadium1 +=      tmp;
+	if (f >  0.0) E_kin_damp1    +=  f * tmp;
 	
 #ifdef FBC
         /* give virtual particles their extra force */
-	p->kraft X(i) += (fbc_forces + sort)->x;
-	p->kraft Y(i) += (fbc_forces + sort)->y;
+	KRAFT(p,i,X) += (fbc_forces + sort)->x;
+	KRAFT(p,i,Y) += (fbc_forces + sort)->y;
 #ifndef TWOD
-	p->kraft Z(i) += (fbc_forces + sort)->z;
+	KRAFT(p,i,Z) += (fbc_forces + sort)->z;
 #endif
 #endif
 
-	p->kraft X(i) *= (restrictions + sort)->x;
-	p->kraft Y(i) *= (restrictions + sort)->y;
+	KRAFT(p,i,X) *= (restrictions + sort)->x;
+	KRAFT(p,i,Y) *= (restrictions + sort)->y;
 #ifndef TWOD
-	p->kraft Z(i) *= (restrictions + sort)->z;
+	KRAFT(p,i,Z) *= (restrictions + sort)->z;
 #endif
 
 #ifdef FNORM
-	fnorm   += SPRODN(p->kraft,i,p->kraft,i);
+	fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
 #endif
 
 	reibung       =        1.0 -  gamma_damp * f * timestep / 2.0;
@@ -1333,22 +1335,20 @@ void move_atoms_frac(void)
 			        timestep / 2.0);
 	
         /* new momenta */
-	p->impuls X(i) = (p->impuls X(i)   * reibung   + timestep * p->kraft X(i)) 
+	IMPULS(p,i,X) = (IMPULS(p,i,X)  * reibung   + timestep * KRAFT(p,i,X))
                            * eins_d_reib   * (restrictions + sort)->x;
-        p->impuls Y(i) = (p->impuls Y(i)   * reibung_y + timestep * p->kraft Y(i)) 
+        IMPULS(p,i,Y) = (IMPULS(p,i,Y)  * reibung_y + timestep * KRAFT(p,i,Y))
                            * eins_d_reib_y * (restrictions + sort)->y;
 #ifndef TWOD
-        p->impuls Z(i) = (p->impuls Z(i)   * reibung   + timestep * p->kraft Z(i)) 
+        IMPULS(p,i,Z) = (IMPULS(p,i,Z)  * reibung   + timestep * KRAFT(p,i,Z))
                            * eins_d_reib   * (restrictions + sort)->z;
 #endif                  
 
-	/* twice the new kinetic energy */ 
-	E_kin_2 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);	
-	
-	if (f == 0.0)
-	    E_kin_stadium2 +=      SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
-	if (f > 0.0)
-	    E_kin_damp2    +=  f * SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+	/* twice the new kinetic energy */
+        tmp = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
+	E_kin_2 += tmp;
+	if (f == 0.0) E_kin_stadium2 +=      tmp;
+	if (f >  0.0) E_kin_damp2    +=  f * tmp;
 
 
 	/* new positions */
@@ -1356,23 +1356,23 @@ void move_atoms_frac(void)
 	epsilontmp =               1.0 + dotepsilon * timestep / 2.0;
 	eins_d_epsilontmp = 1.0 / (1.0 - dotepsilon * timestep / 2.0);
 
-        p->ort X(i) +=  tmp * p->impuls X(i);
-        p->ort Y(i)  = (tmp * p->impuls Y(i) + epsilontmp * p->ort Y(i))
+        ORT(p,i,X) +=  tmp * IMPULS(p,i,X);
+        ORT(p,i,Y)  = (tmp * IMPULS(p,i,Y) + epsilontmp * ORT(p,i,Y))
 	                * eins_d_epsilontmp;
 
 #ifndef TWOD
-        p->ort Z(i) +=  tmp * p->impuls Z(i);
+        ORT(p,i,Z) +=  tmp * IMPULS(p,i,Z);
 #endif
 
 #ifdef STRESS_TENS
-        p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
-        p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
+        PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
+        PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
 #ifndef TWOD
-        p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
+        PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
 #endif
-        p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
+        PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
     }
   }
@@ -1508,7 +1508,7 @@ void move_atoms_ftg(void)
       sort = VSORTE(p,i);
 
       /* calc slice */
-      tmp = p->ort X(i)/box_x.x; 
+      tmp = ORT(p,i,X)/box_x.x; 
       slice = (int) (nslices *tmp);
       if (slice<0)        slice = 0;
       if (slice>=nslices) slice = nslices-1;;      
@@ -1523,7 +1523,7 @@ void move_atoms_ftg(void)
 	if (temperature > Tright) temperature = Tright;
 	
 	/* calc kinetic "temperature" for actual atom */
-	tmp  = SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+	tmp  = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
 #ifdef TWOD
 	tmp2 = ( (restrictions + sort)->x + 
 		 (restrictions + sort)->y   );
@@ -1535,7 +1535,7 @@ void move_atoms_ftg(void)
 	if(tmp2!=0) tmp /= (real)tmp2;
 	
 	/* calc damping factor form position */
-	gamma_tmp = (fabs(p->ort Y(i)-center.y) - stadium.y)/
+	gamma_tmp = (fabs(ORT(p,i,Y)-center.y) - stadium.y)/
 	  (stadium2.y-stadium.y);
 	if ( gamma_tmp < 0.0)  gamma_tmp = 0.0;
 	if ( gamma_tmp > 1.0)  gamma_tmp = 1.0;
@@ -1562,25 +1562,26 @@ void move_atoms_ftg(void)
 #endif
       
       /* twice the old kinetic energy */
-      *(E_kin_1 + slice) +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
-	
+      *(E_kin_1 + slice) += 
+        SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
+
 #ifdef FBC
         /* give virtual particles their extra force */
-	p->kraft X(i) += (fbc_forces + sort)->x;
-	p->kraft Y(i) += (fbc_forces + sort)->y;
+	KRAFT(p,i,X) += (fbc_forces + sort)->x;
+	KRAFT(p,i,Y) += (fbc_forces + sort)->y;
 #ifndef TWOD
-	p->kraft Z(i) += (fbc_forces + sort)->z;
+	KRAFT(p,i,Z) += (fbc_forces + sort)->z;
 #endif
 #endif
 
-	p->kraft X(i) *= (restrictions + sort)->x;
-	p->kraft Y(i) *= (restrictions + sort)->y;
+	KRAFT(p,i,X) *= (restrictions + sort)->x;
+	KRAFT(p,i,Y) *= (restrictions + sort)->y;
 #ifndef TWOD
-	p->kraft Z(i) *= (restrictions + sort)->z;
+	KRAFT(p,i,Z) *= (restrictions + sort)->z;
 #endif
 
 #ifdef FNORM
-	fnorm   += SPRODN(p->kraft,i,p->kraft,i);
+	fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
 #endif
 
 	reibung       =        1.0 -  *(gamma_ftg + slice) * timestep / 2.0;
@@ -1591,40 +1592,41 @@ void move_atoms_ftg(void)
 			        timestep / 2.0);
 	
         /* new momenta */
-	p->impuls X(i) = (p->impuls X(i)   * reibung   + timestep * p->kraft X(i)) 
+	IMPULS(p,i,X) = (IMPULS(p,i,X)  * reibung   + timestep * KRAFT(p,i,X))
                            * eins_d_reib   * (restrictions + sort)->x;
-        p->impuls Y(i) = (p->impuls Y(i)   * reibung_y + timestep * p->kraft Y(i)) 
+        IMPULS(p,i,Y) = (IMPULS(p,i,Y)  * reibung_y + timestep * KRAFT(p,i,Y))
                            * eins_d_reib_y * (restrictions + sort)->y;
 #ifndef TWOD
-        p->impuls Z(i) = (p->impuls Z(i)   * reibung   + timestep * p->kraft Z(i)) 
+        IMPULS(p,i,Z) = (IMPULS(p,i,Z)  * reibung   + timestep * KRAFT(p,i,Z))
                            * eins_d_reib   * (restrictions + sort)->z;
 #endif                  
 
 	/* twice the new kinetic energy */ 
-	*(E_kin_2 + slice) +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i); 
+	*(E_kin_2 + slice) += 
+          SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
 	
 	/* new positions */
         tmp = timestep / MASSE(p,i);
 	epsilontmp =               1.0 + dotepsilon * timestep / 2.0;
 	eins_d_epsilontmp = 1.0 / (1.0 - dotepsilon * timestep / 2.0);
 
-        p->ort X(i) +=  tmp * p->impuls X(i);
-        p->ort Y(i)  = (tmp * p->impuls Y(i) + epsilontmp * p->ort Y(i))
+        ORT(p,i,X) +=  tmp * IMPULS(p,i,X);
+        ORT(p,i,Y)  = (tmp * IMPULS(p,i,Y) + epsilontmp * ORT(p,i,Y))
 	                * eins_d_epsilontmp;
 
 #ifndef TWOD
-        p->ort Z(i) +=  tmp * p->impuls Z(i);
+        ORT(p,i,Z) +=  tmp * IMPULS(p,i,Z);
 #endif
 
 #ifdef STRESS_TENS
-        p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
-        p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
+        PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
+        PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
 #ifndef TWOD
-        p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
+        PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
 #endif
-        p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
+        PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
     }
   }
@@ -1744,8 +1746,8 @@ void move_atoms_stm(void)
     for (i=0; i<p->n; ++i) {
 
         /* Check if outside or inside the ellipse: */	
-        tmp = SQR((p->ort X(i)-center.x)/stadium.x) +
-              SQR((p->ort Y(i)-center.y)/stadium.y) - 1;
+        tmp = SQR((ORT(p,i,X)-center.x)/stadium.x) +
+              SQR((ORT(p,i,Y)-center.y)/stadium.y) - 1;
         if (tmp <= 0) {
           /* We are inside the ellipse: */
           reibung = 1.0;
@@ -1759,22 +1761,24 @@ void move_atoms_stm(void)
         }
 
         /* twice the old kinetic energy */
-        kin_energie_1[ensindex] +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+        kin_energie_1[ensindex] += 
+          SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
 
         /* new momenta */
 	sort = VSORTE(p,i);
-	p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i))
+	IMPULS(p,i,X) = (IMPULS(p,i,X)*reibung + timestep * KRAFT(p,i,X))
                           * eins_d_reib * (restrictions + sort)->x;
-        p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i))
+        IMPULS(p,i,Y) = (IMPULS(p,i,Y)*reibung + timestep * KRAFT(p,i,Y))
                           * eins_d_reib * (restrictions + sort)->y;
 
         /* twice the new kinetic energy */ 
-        kin_energie_2[ensindex] +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+        kin_energie_2[ensindex] +=
+          SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
 
         /* new positions */
         tmp = timestep * MASSE(p,i);
-        p->ort X(i) += tmp * p->impuls X(i);
-        p->ort Y(i) += tmp * p->impuls Y(i);
+        ORT(p,i,X) += tmp * IMPULS(p,i,X);
+        ORT(p,i,Y) += tmp * IMPULS(p,i,Y);
     }
   }
   
@@ -1854,31 +1858,31 @@ void move_atoms_nvx(void)
 
     for (i=0; i<p->n; ++i) {
 
-      Ekin_1 = SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i); 
-      px = p->impuls X(i);
+      Ekin_1 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
+      px = IMPULS(p,i,X);
 
       /* new momenta */
-      p->impuls X(i) += timestep * p->kraft X(i); 
-      p->impuls Y(i) += timestep * p->kraft Y(i); 
+      IMPULS(p,i,X) += timestep * KRAFT(p,i,X); 
+      IMPULS(p,i,Y) += timestep * KRAFT(p,i,Y); 
 #ifndef TWOD
-      p->impuls Z(i) += timestep * p->kraft Z(i); 
+      IMPULS(p,i,Z) += timestep * KRAFT(p,i,Z); 
 #endif
 
       /* twice the new kinetic energy */ 
-      Ekin_2 = SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i); 
-      px = (px + p->impuls X(i)) / 2.0;
+      Ekin_2 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
+      px = (px + IMPULS(p,i,X)) / 2.0;
 
       /* new positions */
-      p->ort X(i) += timestep * p->impuls X(i) / MASSE(p,i);
-      p->ort Y(i) += timestep * p->impuls Y(i) / MASSE(p,i);
+      ORT(p,i,X) += timestep * IMPULS(p,i,X) / MASSE(p,i);
+      ORT(p,i,Y) += timestep * IMPULS(p,i,Y) / MASSE(p,i);
 #ifndef TWOD
-      p->ort Z(i) += timestep * p->impuls Z(i) / MASSE(p,i);
+      ORT(p,i,Z) += timestep * IMPULS(p,i,Z) / MASSE(p,i);
 #endif
 
       tot_kin_energy += (Ekin_1 + Ekin_2) / 4.0;
 
       /* which layer */
-      num = scale * p->ort X(i);
+      num = scale * ORT(p,i,X);
       if (num < 0)             num = 0;
       if (num >= tran_nlayers) num = tran_nlayers-1;
 
@@ -1886,27 +1890,25 @@ void move_atoms_nvx(void)
       if (num == 0) {
         Ekin_left += Ekin_2;
         inv_mass_left     += 1/(MASSE(p,i));
-        tot_impuls_left.x += p->impuls X(i);
-        tot_impuls_left.y += p->impuls Y(i);
+        tot_impuls_left.x += IMPULS(p,i,X);
+        tot_impuls_left.y += IMPULS(p,i,Y);
 #ifndef TWOD
-        tot_impuls_left.z += p->impuls Z(i);
+        tot_impuls_left.z += IMPULS(p,i,Z);
 #endif
         natoms_left++;
       } else if  (num == nhalf) {
         Ekin_right += Ekin_2;
         inv_mass_right     += 1/(MASSE(p,i));
-        tot_impuls_right.x += p->impuls X(i);
-        tot_impuls_right.y += p->impuls Y(i);
+        tot_impuls_right.x += IMPULS(p,i,X);
+        tot_impuls_right.y += IMPULS(p,i,Y);
 #ifndef TWOD
-        tot_impuls_right.z += p->impuls Z(i);
+        tot_impuls_right.z += IMPULS(p,i,Z);
 #endif
         natoms_right++;
       } else if (num < nhalf) {
-        heat_cond += (p->heatcond[i] + (Ekin_1 + Ekin_2)/2.0 )
-                                  * px / MASSE(p,i);
+        heat_cond += (HEATCOND(p,i) + (Ekin_1 + Ekin_2) / 2) * px / MASSE(p,i);
       } else {
-        heat_cond -= (p->heatcond[i] + (Ekin_1 + Ekin_2)/2.0 )
-                                  * px / MASSE(p,i);
+        heat_cond -= (HEATCOND(p,i) + (Ekin_1 + Ekin_2) / 2) * px / MASSE(p,i);
       }
     }
   }
@@ -1961,34 +1963,34 @@ void move_atoms_nvx(void)
     for (i=0; i<p->n; ++i) {
 	    
       /* which layer? */
-      num = scale * p->ort X(i);
+      num = scale * ORT(p,i,X);
       if (num < 0)             num = 0;
       if (num >= tran_nlayers) num = tran_nlayers-1;
 
       /* rescale momenta */
       if (num == 0) {
-        p->impuls X(i) = (p->impuls X(i)-tot_impuls_left.x)*rescale;
-        p->impuls Y(i) = (p->impuls Y(i)-tot_impuls_left.y)*rescale;
+        IMPULS(p,i,X) = (IMPULS(p,i,X) - tot_impuls_left.x) * rescale;
+        IMPULS(p,i,Y) = (IMPULS(p,i,Y) - tot_impuls_left.y) * rescale;
 #ifndef TWOD
-        p->impuls Z(i) = (p->impuls Z(i)-tot_impuls_left.z)*rescale;
+        IMPULS(p,i,Z) = (IMPULS(p,i,Z) - tot_impuls_left.z) * rescale;
 #endif
       } else if (num == nhalf) {
-        p->impuls X(i) = (p->impuls X(i)-tot_impuls_right.x)*Rescale;
-        p->impuls Y(i) = (p->impuls Y(i)-tot_impuls_right.y)*Rescale;
+        IMPULS(p,i,X) = (IMPULS(p,i,X) - tot_impuls_right.x) * Rescale;
+        IMPULS(p,i,Y) = (IMPULS(p,i,Y) - tot_impuls_right.y) * Rescale;
 #ifndef TWOD
-        p->impuls Z(i) = (p->impuls Z(i)-tot_impuls_right.z)*Rescale;
+        IMPULS(p,i,Z) = (IMPULS(p,i,Z) - tot_impuls_right.z) * Rescale;
 #endif
       }
 
 #ifdef STRESS_TENS
-        p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
-        p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
+        PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
+        PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
 #ifndef TWOD
-        p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
+        PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
 #endif
-        p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
+        PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
     }
   }
@@ -2030,12 +2032,11 @@ void move_atoms_cg(real alpha)
     p = cell_array + CELLS(k);
 
     for (i=0; i<p->n; ++i) {
-
         /* CG:  move atoms in search direction for linmin */
-        p->ort X(i) = p->old_ort X(i) + alpha * p->h X(i);
-        p->ort Y(i) = p->old_ort Y(i) + alpha * p->h Y(i);
+        ORT(p,i,X) = OLD_ORT(p,i,X) + alpha * CG_H(p,i,X);
+        ORT(p,i,Y) = OLD_ORT(p,i,Y) + alpha * CG_H(p,i,Y);
 #ifndef TWOD
-        p->ort Z(i) = p->old_ort Z(i) + alpha * p->h Z(i);
+        ORT(p,i,Z) = OLD_ORT(p,i,Z) + alpha * CG_H(p,i,Z);
 #endif
     }
   }

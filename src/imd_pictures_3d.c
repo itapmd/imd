@@ -181,21 +181,21 @@ void write_pictures_bitmap(int steps)
 
     for (i=0; i<p->n; ++i) {
 
-      if ( (p->ort X(i) < pic_ll.x) || (p->ort X(i) > pic_ur.x) ||
-           (p->ort Y(i) < pic_ll.y) || (p->ort Y(i) > pic_ur.y) ||
-           (p->ort Z(i) < pic_ll.z) || (p->ort Z(i) > pic_ur.z) ) continue;
+      if ( (ORT(p,i,X) < pic_ll.x) || (ORT(p,i,X) > pic_ur.x) ||
+           (ORT(p,i,Y) < pic_ll.y) || (ORT(p,i,Y) > pic_ur.y) ||
+           (ORT(p,i,Z) < pic_ll.z) || (ORT(p,i,Z) > pic_ur.z) ) continue;
 
-      coord.x = (int)floor((p->ort X(i)*a.x + p->ort Y(i)*a.y 
-                          + p->ort Z(i)*a.z + xshift)*scale.x);
-      coord.y = (int)floor((p->ort X(i)*b.x + p->ort Y(i)*b.y
-                          + p->ort Z(i)*b.z + yshift)*scale.y);
+      coord.x = (int)floor((ORT(p,i,X) * a.x + ORT(p,i,Y) * a.y 
+                          + ORT(p,i,Z) * a.z + xshift) * scale.x);
+      coord.y = (int)floor((ORT(p,i,X) * b.x + ORT(p,i,Y) * b.y
+                          + ORT(p,i,Z) * b.z + yshift) * scale.y);
 
       /* Check bounds */
       if ((coord.x >= 0) && (coord.x < pic_res.x) &&
           (coord.y >= 0) && (coord.y < pic_res.y)) { 
 
         coord.y = pic_res.y - coord.y; /* in pic: from top to bottom */
-        val = SPRODN(p->impuls,i,p->impuls,i) / (2*MASSE(p,i));
+        val = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / (2*MASSE(p,i));
 
         /* Scale Value to [0..1]   */
         val = (val - ecut_kin.x) / (ecut_kin.y - ecut_kin.x);
@@ -295,14 +295,14 @@ void write_pictures_bitmap(int steps)
 
     for (i=0; i<p->n; ++i) {
 
-      if ( (p->ort X(i) < pic_ll.x) || (p->ort X(i) > pic_ur.x) ||
-           (p->ort Y(i) < pic_ll.y) || (p->ort Y(i) > pic_ur.y) ||
-           (p->ort Z(i) < pic_ll.z) || (p->ort Z(i) > pic_ur.z) ) continue;
+      if ( (ORT(p,i,X) < pic_ll.x) || (ORT(p,i,X) > pic_ur.x) ||
+           (ORT(p,i,Y) < pic_ll.y) || (ORT(p,i,Y) > pic_ur.y) ||
+           (ORT(p,i,Z) < pic_ll.z) || (ORT(p,i,Z) > pic_ur.z) ) continue;
 
-      coord.x = (int)floor((p->ort X(i)*a.x + p->ort Y(i)*a.y 
-                          + p->ort Z(i)*a.z + xshift)*scale.x);
-      coord.y = (int)floor((p->ort X(i)*b.x + p->ort Y(i)*b.y 
-                          + p->ort Z(i)*b.z + yshift)*scale.y);
+      coord.x = (int)floor((ORT(p,i,X) * a.x + ORT(p,i,Y) * a.y 
+                          + ORT(p,i,Z) * a.z + xshift) * scale.x);
+      coord.y = (int)floor((ORT(p,i,X) * b.x + ORT(p,i,Y) * b.y 
+                          + ORT(p,i,Z) * b.z + yshift) * scale.y);
       /* Check bounds */
       if ((coord.x>=0) && (coord.x<pic_res.x) &&
           (coord.y>=0) && (coord.y<pic_res.y)) {
@@ -310,11 +310,11 @@ void write_pictures_bitmap(int steps)
 #ifndef MONOLJ
 #ifdef DISLOC
 	if (SORTE(p,i) == dpotsorte) {
-	  val = p->pot_eng[i] - p->Epot_ref[i];
+	  val = POTENG(p,i) - EPOT_REF(p,i);
 	  if (val < min_dpot) continue;
 	}
 #else
-        val = p->pot_eng[i];
+        val = POTENG(p,i);
 #endif
 #endif /* MONOLJ */
 

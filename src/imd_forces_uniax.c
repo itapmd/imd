@@ -60,21 +60,21 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
     /* Some compilers don't find the expressions that are invariant 
        to the inner loop. I'll have to define my own temp variables. */
 
-    tmp_r12.x = p->ort X(i) - pbc.x;
-    tmp_r12.y = p->ort Y(i) - pbc.y;
-    tmp_r12.z = p->ort Z(i) - pbc.z;
+    tmp_r12.x = ORT(p,i,X) - pbc.x;
+    tmp_r12.y = ORT(p,i,Y) - pbc.y;
+    tmp_r12.z = ORT(p,i,Z) - pbc.z;
 
-    e1.x = p->achse X(i) ;
-    e1.y = p->achse Y(i) ;
-    e1.z = p->achse Z(i) ;
+    e1.x = ACHSE(p,i,X);
+    e1.y = ACHSE(p,i,Y);
+    e1.z = ACHSE(p,i,Z);
 
-    s1.x = p->shape X(i) ;
-    s1.y = p->shape Y(i) ;
-    s1.z = p->shape Z(i) ;
+    s1.x = SHAPE(p,i,X);
+    s1.y = SHAPE(p,i,Y);
+    s1.z = SHAPE(p,i,Z);
 
-    w1.x = p->pot_well X(i) ;
-    w1.y = p->pot_well Y(i) ;
-    w1.z = p->pot_well Z(i) ;
+    w1.x = POT_WELL(p,i,X);
+    w1.y = POT_WELL(p,i,Y);
+    w1.z = POT_WELL(p,i,Z);
 
 #ifdef TWOD
     jstart = (((p==q) && (pbc.x==0) && (pbc.y==0))               ? i+1 : 0);
@@ -86,15 +86,15 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
       
       /* Calculate distance */
 
-      r12.x = tmp_r12.x - q->ort X(j) ;
-      r12.y = tmp_r12.y - q->ort Y(j) ;
-      r12.z = tmp_r12.z - q->ort Z(j) ;
+      r12.x = tmp_r12.x - ORT(q,j,X);
+      r12.y = tmp_r12.y - ORT(q,j,Y);
+      r12.z = tmp_r12.z - ORT(q,j,Z);
 
       rsqr = SPROD(r12,r12);
 
-      e2.x = q->achse X(j) ;
-      e2.y = q->achse Y(j) ;
-      e2.z = q->achse Z(j) ;
+      e2.x = ACHSE(q,j,X);
+      e2.y = ACHSE(q,j,Y);
+      e2.z = ACHSE(q,j,Z);
 
 #ifndef NODBG_DIST
       if (0==rsqr) 
@@ -116,27 +116,27 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 	
         /* accumulate forces */
 
-	p->kraft X(i) += force12.x;
-	p->kraft Y(i) += force12.y;
-	p->kraft Z(i) += force12.z;
+	KRAFT(p,i,X) += force12.x;
+	KRAFT(p,i,Y) += force12.y;
+	KRAFT(p,i,Z) += force12.z;
 
-	q->kraft X(j) -= force12.x;
-	q->kraft Y(j) -= force12.y;
-	q->kraft Z(j) -= force12.z;
+	KRAFT(q,j,X) -= force12.x;
+	KRAFT(q,j,Y) -= force12.y;
+	KRAFT(q,j,Z) -= force12.z;
 
         /* accumulate torques */
 
-	p->dreh_moment X(i) += torque12.x;
-	p->dreh_moment Y(i) += torque12.y;
-	p->dreh_moment Z(i) += torque12.z;
+	DREH_MOMENT(p,i,X) += torque12.x;
+	DREH_MOMENT(p,i,Y) += torque12.y;
+	DREH_MOMENT(p,i,Z) += torque12.z;
 
-	q->dreh_moment X(j) += torque21.x;
-	q->dreh_moment Y(j) += torque21.y;
-	q->dreh_moment Z(j) += torque21.z;
+	DREH_MOMENT(q,j,X) += torque21.x;
+	DREH_MOMENT(q,j,Y) += torque21.y;
+	DREH_MOMENT(q,j,Z) += torque21.z;
 
-	p->pot_eng[i] += pot12;
-	q->pot_eng[j] += pot12;
-        *Epot         += pot12;
+	POTENG(p,i) += pot12;
+	POTENG(q,j) += pot12;
+        *Epot       += pot12;
 
         tmp_vir_vect.x += r12.x * force12.x ;
         tmp_vir_vect.y += r12.y * force12.y ;

@@ -48,9 +48,9 @@ void do_forces_ewald_fourier(void)
       p = cell_array + k;
       for( i=0; i<p->n; ++i)
 	{
-	  coord.x = p->ort X(i);
-	  coord.y = p->ort Y(i);
-	  coord.z = p->ort Z(i);
+	  coord.x = ORT(p,i,X);
+	  coord.y = ORT(p,i,Y);
+	  coord.z = ORT(p,i,Z);
 
 	  tmp = twopi * SPROD(tbox_x, coord);
 	  coskx I(ew_nx,count,ew_nx+1) =  cos( tmp );
@@ -120,7 +120,6 @@ void do_forces_ewald_fourier(void)
 	      for( i=0; i<p->n; ++i)
 		{
 
-
 		  typ = SORTE(p,i);
 	  
 		  coskr J(ew_totk,count,totk) =   coskx I(ew_nx,count,ew_nx+l) * cosky I(ew_ny,count,ew_ny+m) * coskz I(ew_nz,count,ew_nz+n)
@@ -153,21 +152,25 @@ void do_forces_ewald_fourier(void)
 		  typ = SORTE(p,i);
 	
 		  kpot = ew_vorf1 * ew_expk[totk] * charge[typ] 
-		             * ( sinkr J(ew_totk,count,totk) * sum_sin + coskr J(ew_totk,count,totk) * sum_cos );
-/*db_kpot += kpot;*/		  
-		  p->pot_eng[i] += kpot;
+		             * ( sinkr J(ew_totk,count,totk) * sum_sin + 
+                                 coskr J(ew_totk,count,totk) * sum_cos );
+                  /*db_kpot += kpot;*/		  
+		  POTENG(p,i) += kpot;
 
 		  tot_pot_energy += kpot;
 
 		  kforce = ew_vorf1 * charge[typ] * ew_expk[totk] 
-		               * ( sinkr J(ew_totk,count,totk) * sum_cos - coskr J(ew_totk,count,totk) * sum_sin );
+		               * ( sinkr J(ew_totk,count,totk) * sum_cos - 
+                                   coskr J(ew_totk,count,totk) * sum_sin );
 	  		  
-		  p->kraft X(i) += ew_kvek[totk].x * kforce;
-		  p->kraft Y(i) += ew_kvek[totk].y * kforce;
-		  p->kraft Z(i) += ew_kvek[totk].z * kforce;
+		  KRAFT(p,i,X) += ew_kvek[totk].x * kforce;
+		  KRAFT(p,i,Y) += ew_kvek[totk].y * kforce;
+		  KRAFT(p,i,Z) += ew_kvek[totk].z * kforce;
 
 		  tmp_virial += kforce * 
-		                ( ew_kvek[totk].x * p->ort X(i) + ew_kvek[totk].y * p->ort Y(i) + ew_kvek[totk].z * p->ort Z(i) );  
+	                ( ew_kvek[totk].x * ORT(p,i,X) + 
+                          ew_kvek[totk].y * ORT(p,i,Y) + 
+                          ew_kvek[totk].z * ORT(p,i,Z) );  
 		  
 		  ++count;
 
@@ -223,9 +226,9 @@ void do_forces_ewald_real(void)
 
 		/* Distance vector */
 
-		d.x = p->ort X(i) - q->ort X(j);
-		d.y = p->ort Y(i) - q->ort Y(j);
-		d.z = p->ort Z(i) - q->ort Z(j);
+		d.x = ORT(p,i,X) - ORT(q,j,X);
+		d.y = ORT(p,i,Y) - ORT(q,j,Y);
+		d.z = ORT(p,i,Z) - ORT(q,j,Z);
 
 		/* Apply the minimum image convention */
 		tmp_sprod = SPROD(d,box_x);
@@ -310,21 +313,21 @@ void do_forces_ewald_real(void)
 
 		/* update potential energy and forces */
 
-		p->pot_eng[i]  += rpot;
-		q->pot_eng[j]  += rpot;
+		POTENG(p,i) += rpot;
+		POTENG(q,j) += rpot;
 
-/*db_rpot += rpot;*/
-	  
+                /*db_rpot += rpot;*/
+
                 tot_pot_energy += rpot;
 
-		p->kraft X(i) += rforce.x;
-		q->kraft X(j) -= rforce.x;
+		KRAFT(p,i,X) += rforce.x;
+		KRAFT(q,j,X) -= rforce.x;
 	
-		p->kraft Y(i) += rforce.y;
-		q->kraft Y(j) -= rforce.y;
+		KRAFT(p,i,Y) += rforce.y;
+		KRAFT(q,j,Y) -= rforce.y;
 	
-		p->kraft Z(i) += rforce.z;
-		q->kraft Z(j) -= rforce.z;
+		KRAFT(p,i,Z) += rforce.z;
+		KRAFT(q,j,Z) -= rforce.z;
 
 	      } /* for j */
 	    

@@ -93,9 +93,9 @@ void create_atom(int type, real mass, real temp)
 	  
 	    for ( i=0; i<p->n; ++i) {
 	      
-	      dist.x = pos.x - p->ort X(i) + pbc_x * box_x.x;
-	      dist.y = pos.y - p->ort Y(i) + pbc_y * box_y.y;
-	      dist.z = pos.z - p->ort Z(i);
+	      dist.x = pos.x - ORT(p,i,X) + pbc_x * box_x.x;
+	      dist.y = pos.y - ORT(p,i,Y) + pbc_y * box_y.y;
+	      dist.z = pos.z - ORT(p,i,Z);
 
 	      dist2  = MIN(dist2,SPROD(dist,dist));
 	    }
@@ -125,22 +125,22 @@ void create_atom(int type, real mass, real temp)
 
   if ( p->n >= p->n_max) alloc_cell(p, p->n_max + CSTEP);
 
-  p->ort X(p->n) = pos.x;
-  p->ort Y(p->n) = pos.y;
-  p->ort Z(p->n) = pos.z;
+  ORT(p,p->n,X) = pos.x;
+  ORT(p,p->n,Y) = pos.y;
+  ORT(p,p->n,Z) = pos.z;
 
-  p->impuls X(p->n) = 0.0;
-  p->impuls Y(p->n) = 0.0;
-  p->impuls Z(p->n) = - sqrt( 3 * temp * mass );
+  IMPULS(p,p->n,X) = 0.0;
+  IMPULS(p,p->n,Y) = 0.0;
+  IMPULS(p,p->n,Z) = - sqrt( 3 * temp * mass );
 
-  p->kraft X(p->n) = 0.0;
-  p->kraft Y(p->n) = 0.0;
-  p->kraft Z(p->n) = 0.0;
+  KRAFT(p,p->n,X) = 0.0;
+  KRAFT(p,p->n,Y) = 0.0;
+  KRAFT(p,p->n,Z) = 0.0;
   
-  p->nummer[p->n]  = epitax_number + 1;
-  p->sorte[p->n]   = type;
-  p->masse[p->n]   = mass;
-  p->pot_eng[p->n] = 0.0;
+  NUMMER(p,p->n)  = epitax_number + 1;
+  VSORTE(p,p->n)  = type;
+  MASSE(p,p->n)   = mass;
+  POTENG(p,p->n)  = 0.0;
 
   ++p->n;
 
@@ -196,7 +196,8 @@ void delete_atoms(void)
 
 	  for ( i=0; i<p->n; ++i) {
 #ifndef MPI
-	    printf("Atom %d deleted. z-coordinate = %lf\n", NUMMER(p,i), p->ort Z(i));
+	    printf("Atom %d deleted. z-coordinate = %lf\n", 
+                   NUMMER(p,i), ORT(p,i,Z) );
 #endif
 	    if ( NUMMER(p,i) > epitax_sub_n)  ++nepitax_loc;
 	    ++n_loc;
@@ -238,7 +239,7 @@ real substrate_level(void)
 
   for (k=0; k<ncells; ++k ) {
     p = cell_array + CELLS(k);
-    for (i=0; i<p->n; ++i) tmp_level = MAX(tmp_level, p->ort Z(i));
+    for (i=0; i<p->n; ++i) tmp_level = MAX(tmp_level, ORT(p,i,Z) );
   }
 
 #ifdef MPI
@@ -267,7 +268,7 @@ void calc_poteng_min(void)
   for (k=0; k<ncells; ++k ) {
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i)  
-      tmp_epot = MIN(tmp_epot, p->pot_eng[i]);
+      tmp_epot = MIN(tmp_epot, POTENG(p,i) );
   }
 
 #ifdef MPI
@@ -391,8 +392,8 @@ void create_atom(int type, real mass, real temp)
 	  
 	    for ( i=0; i<p->n; ++i) {
 	      
-	      dist.x = pos.x - p->ort X(i) + pbc_x * box_x.x;
-	      dist.y = pos.y - p->ort Y(i);
+	      dist.x = pos.x - ORT(p,i,X) + pbc_x * box_x.x;
+	      dist.y = pos.y - ORT(p,i,Y);
 
 	      dist2  = MIN(dist2,SPROD(dist,dist));
 	    }
@@ -422,24 +423,25 @@ void create_atom(int type, real mass, real temp)
 
   if ( p->n >= p->n_max) alloc_cell(p, p->n_max + CSTEP);
 
-  p->ort X(p->n) = pos.x;
-  p->ort Y(p->n) = pos.y;
+  ORT(p,p->n,X)    = pos.x;
+  ORT(p,p->n,Y)    = pos.y;
 
-  p->impuls X(p->n) = 0.0;
-  p->impuls Y(p->n) = - sqrt( 3 * temp * mass );
+  IMPULS(p,p->n,X) = 0.0;
+  IMPULS(p,p->n,Y) = - sqrt( 3 * temp * mass );
 
-  p->kraft X(p->n) = 0.0;
-  p->kraft Y(p->n) = 0.0;
+  KRAFT(p,p->n,X)  = 0.0;
+  KRAFT(p,p->n,Y)  = 0.0;
   
-  p->nummer[p->n]  = epitax_number + 1;
-  p->sorte[p->n]   = type;
-  p->masse[p->n]   = mass;
-  p->pot_eng[p->n] = 0.0;
+  NUMMER(p,p->n)   = epitax_number + 1;
+  VSORTE(p,p->n)   = type;
+  MASSE(p,p->n)    = mass;
+  POTENG(p,p->n)   = 0.0;
 
   ++p->n;
 
 #ifndef MPI
-  printf("Atom %d created, coordinates x=%lf, y=%lf\n", epitax_number + 1, pos.x, pos.y);
+  printf("Atom %d created, coordinates x=%lf, y=%lf\n", 
+         epitax_number + 1, pos.x, pos.y);
 #endif
 #ifdef MPI
   }
@@ -486,7 +488,8 @@ void delete_atoms(void)
 
 	for ( i=0; i<p->n; ++i) {
 #ifndef MPI
-	  printf("Atom %d deleted. y-coordinate = %lf\n", NUMMER(p,i), p->ort Y(i));
+	  printf("Atom %d deleted. y-coordinate = %lf\n", 
+                 NUMMER(p,i), ORT(p,i,Y) );
 #endif
 	  if ( NUMMER(p,i) > epitax_sub_n)  ++nepitax_loc;
 	  ++n_loc;
@@ -528,7 +531,7 @@ real substrate_level(void)
 
   for (k=0; k<ncells; ++k ) {
     p = cell_array + CELLS(k);
-    for (i=0; i<p->n; ++i) tmp_level = MAX(tmp_level, p->ort Y(i));
+    for (i=0; i<p->n; ++i) tmp_level = MAX(tmp_level, ORT(p,i,Y) );
   }
 
 #ifdef MPI
@@ -557,7 +560,7 @@ void calc_poteng_min(void)
   for (k=0; k<ncells; ++k ) {
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i)  
-      tmp_epot = MIN(tmp_epot, p->pot_eng[i]);
+      tmp_epot = MIN(tmp_epot, POTENG(p,i) );
   }
 
 #ifdef MPI

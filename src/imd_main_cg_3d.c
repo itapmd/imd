@@ -281,21 +281,21 @@ void  calc_fnorm( void)
 
 #ifdef FBC
         /* give virtual particles their extra force */
-	p->kraft X(i) += (fbc_forces + sort)->x;
-	p->kraft Y(i) += (fbc_forces + sort)->y;
+	KRAFT(p,i,X) += (fbc_forces + sort)->x;
+	KRAFT(p,i,Y) += (fbc_forces + sort)->y;
 #ifndef TWOD
-	p->kraft Z(i) += (fbc_forces + sort)->z;
+	KRAFT(p,i,Z) += (fbc_forces + sort)->z;
 #endif
 #endif
 
   	/* and set their force (->momentum) in restricted directions to 0 */ 
-	p->kraft X(i) *= (restrictions + sort)->x;
-	p->kraft Y(i) *= (restrictions + sort)->y;
+	KRAFT(p,i,X) *= (restrictions + sort)->x;
+	KRAFT(p,i,Y) *= (restrictions + sort)->y;
 #ifndef TWOD
-	p->kraft Z(i) *= (restrictions + sort)->z;
+	KRAFT(p,i,Z) *= (restrictions + sort)->z;
 #endif
 
-	tmp_fnorm +=  SPRODN(p->kraft,i,p->kraft,i);
+	tmp_fnorm +=  SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
     }
   }
 #ifdef MPI
@@ -334,43 +334,43 @@ void calc_fnorm_g_h(void)
 	sort = VSORTE(p,i);
 #ifdef FBC
         /* give virtual particles their extra force */
-	p->kraft X(i) += (fbc_forces + sort)->x;
-	p->kraft Y(i) += (fbc_forces + sort)->y;
+	KRAFT(p,i,X) += (fbc_forces + sort)->x;
+	KRAFT(p,i,Y) += (fbc_forces + sort)->y;
 #ifndef TWOD
-	p->kraft Z(i) += (fbc_forces + sort)->z;
+	KRAFT(p,i,Z) += (fbc_forces + sort)->z;
 #endif
 #endif
 
   	/* and set their force (->momentum) in restricted directions to 0 */ 
-	p->kraft X(i) *= (restrictions + sort)->x;
-	p->kraft Y(i) *= (restrictions + sort)->y;
+	KRAFT(p,i,X) *= (restrictions + sort)->x;
+	KRAFT(p,i,Y) *= (restrictions + sort)->y;
 #ifndef TWOD
-	p->kraft Z(i) *= (restrictions + sort)->z;
+	KRAFT(p,i,Z) *= (restrictions + sort)->z;
 #endif
 
-	tmp_fnorm +=  SPRODN(p->kraft,i,p->kraft,i);
+	tmp_fnorm +=  SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
 	/* initialise old_ort */
-	p->old_ort X(i) = p->ort X(i);
-	p->old_ort Y(i) = p->ort Y(i);
-	p->old_ort Z(i) = p->ort Z(i);
+	OLD_ORT(p,i,X) = ORT(p,i,X);
+	OLD_ORT(p,i,Y) = ORT(p,i,Y);
+	OLD_ORT(p,i,Z) = ORT(p,i,Z);
 
 	/* initialise search vectors */
-	p->h X(i) = p->kraft X(i);
-	p->h Y(i) = p->kraft Y(i);
+	CG_H(p,i,X) = KRAFT(p,i,X);
+	CG_H(p,i,Y) = KRAFT(p,i,Y);
 #ifndef TWOD
-	p->h Z(i) = p->kraft Z(i);
+	CG_H(p,i,Z) = KRAFT(p,i,Z);
 #endif
 
-	p->g X(i) = p->kraft X(i);
-	p->g Y(i) = p->kraft Y(i);
+	CG_G(p,i,X) = KRAFT(p,i,X);
+	CG_G(p,i,Y) = KRAFT(p,i,Y);
 #ifndef TWOD
-	p->g Z(i) = p->kraft Z(i);
+	CG_G(p,i,Z) = KRAFT(p,i,Z);
 #endif
 
 /* determine the biggest force component */
-	tmp_fmax2 = MAX(SQR(p->kraft X(i)),tmp_fmax2);
-	tmp_fmax2 = MAX(SQR(p->kraft Y(i)),tmp_fmax2);
-	tmp_fmax2 = MAX(SQR(p->kraft Z(i)),tmp_fmax2);
+	tmp_fmax2 = MAX(SQR(KRAFT(p,i,X)),tmp_fmax2);
+	tmp_fmax2 = MAX(SQR(KRAFT(p,i,Y)),tmp_fmax2);
+	tmp_fmax2 = MAX(SQR(KRAFT(p,i,Z)),tmp_fmax2);
     }
   }
 #ifdef MPI
@@ -413,22 +413,22 @@ void cg_calcgamma(void)
       {
 
 	sort = VSORTE(p,i);
-	tmp_gg +=  SPRODN(p->g,i,p->g,i);
+	tmp_gg +=  SPRODN( &CG_G(p,i,X), &CG_G(p,i,X) );
 
 /* which method to construct the conjugated direction */
 #ifdef FR /* Fletcher-Reeves */
-	tmp_dgg +=  SPRODN(p->kraft,i,p->kraft,i);
+	tmp_dgg +=  SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
 #else  /* Polak-Ribiere */
-	tmpvec.x = p->kraft X(i) - p->g X(i);
-	tmpvec.y = p->kraft Y(i) - p->g Y(i);
-	tmpvec.z = p->kraft Z(i) - p->g Z(i);
-	tmp_dgg  += SPRODX(p->kraft,i,tmpvec); 
+	tmpvec.x = KRAFT(p,i,X) - CG_G(p,i,X);
+	tmpvec.y = KRAFT(p,i,Y) - CG_G(p,i,Y);
+	tmpvec.z = KRAFT(p,i,Z) - CG_G(p,i,Z);
+	tmp_dgg  += SPRODX( &KRAFT(p,i,X), tmpvec ); 
 #endif
 /* do we need this here again? is already in set_hg ! */
 /* determine the biggest force component */
-	/*  tmp_fmax2 = MAX(SQR(p->kraft X(i)),tmp_fmax2); */
-/*  	tmp_fmax2 = MAX(SQR(p->kraft Y(i)),tmp_fmax2); */
-/*  	tmp_fmax2 = MAX(SQR(p->kraft Z(i)),tmp_fmax2); */
+	/*  tmp_fmax2 = MAX(SQR(KRAFT(p,i,X)),tmp_fmax2); */
+/*  	tmp_fmax2 = MAX(SQR(KRAFT(p,i,Y)),tmp_fmax2); */
+/*  	tmp_fmax2 = MAX(SQR(KRAFT(p,i,Z)),tmp_fmax2); */
       }
     }
 
@@ -469,22 +469,22 @@ void set_hg(void)
 
     for (i=0; i<p->n; ++i) {
 
-	p->old_ort X(i) = p->ort X(i);
-	p->old_ort Y(i) = p->ort Y(i);
-	p->old_ort Z(i) = p->ort Z(i);
+	OLD_ORT(p,i,X) = ORT(p,i,X);
+	OLD_ORT(p,i,Y) = ORT(p,i,Y);
+	OLD_ORT(p,i,Z) = ORT(p,i,Z);
 
-	p->g X(i) = p->kraft X(i);
-	p->g Y(i) = p->kraft Y(i);
-	p->g Z(i) = p->kraft Z(i);
+	CG_G(p,i,X) = KRAFT(p,i,X);
+	CG_G(p,i,Y) = KRAFT(p,i,Y);
+	CG_G(p,i,Z) = KRAFT(p,i,Z);
 
-	p->h X(i) = p->kraft X(i) + cg_gamma * p->h X(i);
-	p->h Y(i) = p->kraft Y(i) + cg_gamma * p->h Y(i);
-	p->h Z(i) = p->kraft Z(i) + cg_gamma * p->h Z(i);
+	CG_H(p,i,X) = KRAFT(p,i,X) + cg_gamma * CG_H(p,i,X);
+	CG_H(p,i,Y) = KRAFT(p,i,Y) + cg_gamma * CG_H(p,i,Y);
+	CG_H(p,i,Z) = KRAFT(p,i,Z) + cg_gamma * CG_H(p,i,Z);
 
 /* determine the biggest force component*/
-	tmp_fmax2 = MAX(SQR(p->kraft X(i)),tmp_fmax2);
-	tmp_fmax2 = MAX(SQR(p->kraft Y(i)),tmp_fmax2);
-	tmp_fmax2 = MAX(SQR(p->kraft Z(i)),tmp_fmax2);
+	tmp_fmax2 = MAX(SQR(KRAFT(p,i,X)),tmp_fmax2);
+	tmp_fmax2 = MAX(SQR(KRAFT(p,i,Y)),tmp_fmax2);
+	tmp_fmax2 = MAX(SQR(KRAFT(p,i,Z)),tmp_fmax2);
     }
   }
 

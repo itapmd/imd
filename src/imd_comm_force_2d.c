@@ -429,9 +429,9 @@ void copy_cell( int j, int k, int l, int m )
   
   to->n = tmp_n;
   for (i=0; i<to->n; ++i) {
-    to->ort X(i) = from->ort X(i);
-    to->ort Y(i) = from->ort Y(i);
-    to->sorte[i] = from->sorte[i];
+    ORT(to,i,X)  = ORT(from,i,X);
+    ORT(to,i,Y)  = ORT(from,i,Y);
+    VSORTE(to,i) = VSORTE(from,i);
   }
 }
 
@@ -451,9 +451,9 @@ void pack_cell( msgbuf *b, int j, int k )
   b->data[ b->n++ ] = (real) from->n;
     
   for (i=0; i<from->n; ++i) {
-    b->data[ b->n++ ] = from->ort X(i);
-    b->data[ b->n++ ] = from->ort Y(i);
-    b->data[ b->n++ ] = (real) from->sorte[i];
+    b->data[ b->n++ ] = ORT(from,i,X);
+    b->data[ b->n++ ] = ORT(from,i,Y);
+    b->data[ b->n++ ] = (real) VSORTE(from,i);
   }
   if (b->n_max < b->n)  error("Buffer overflow in pack_cell");
 }
@@ -481,9 +481,9 @@ void unpack_cell( msgbuf *b, int j, int k )
   
   to->n = tmp_n;
   for (i=0; i<to->n; ++i) {
-    to->ort X(i) = b->data[ b->n++ ];
-    to->ort Y(i) = b->data[ b->n++ ];
-    to->sorte[i] = (shortint) b->data[ b->n++ ];
+    ORT(to,i,X)  = b->data[ b->n++ ];
+    ORT(to,i,Y)  = b->data[ b->n++ ];
+    VSORTE(to,i) = (shortint) b->data[ b->n++ ];
   }
   if (b->n_max < b->n) error("Buffer overflow in unpack_cell");
 }
@@ -503,19 +503,19 @@ void add_forces( int j, int k, int l, int m )
   to   = PTR_2D_V(cell_array, l, m, cell_dim);
 
   for (i=0; i<to->n; ++i) {
-    to->kraft X(i) += from->kraft X(i);
-    to->kraft Y(i) += from->kraft Y(i);
-    to->pot_eng[i] += from->pot_eng[i];
+    KRAFT (to,i,X) += KRAFT (from,i,X);
+    KRAFT (to,i,Y) += KRAFT (from,i,Y);
+    POTENG(to,i)   += POTENG(from,i);
 #ifdef NVX
-    to->heatcond[i] += from->heatcond[i];
+    HEATCOND(to,i) += HEATCOND(from,i);
 #endif
 #ifdef STRESS_TENS
-    to->presstens[i].xx += from->presstens[i].xx;
-    to->presstens[i].yy += from->presstens[i].yy;
-    to->presstens[i].xy += from->presstens[i].xy;
+    PRESSTENS(to,i,xx) += PRESSTENS(from,i,xx);
+    PRESSTENS(to,i,yy) += PRESSTENS(from,i,yy);
+    PRESSTENS(to,i,xy) += PRESSTENS(from,i,xy);
 #endif
 #ifdef ORDPAR
-    to->nbanz[i] += from->nbanz[i];
+    NBANZ(to,i) += NBANZ(from,i);
 #endif
   }
 }
@@ -533,19 +533,19 @@ void pack_forces( msgbuf *b, int j, int k )
     
   from = PTR_2D_V(cell_array, j, k, cell_dim);
   for (i=0; i<from->n; ++i) {
-    b->data[ b->n++ ] = from->kraft X(i);
-    b->data[ b->n++ ] = from->kraft Y(i);
-    b->data[ b->n++ ] = from->pot_eng[i];
+    b->data[ b->n++ ] = KRAFT(from,i,X);
+    b->data[ b->n++ ] = KRAFT(from,i,Y);
+    b->data[ b->n++ ] = POTENG(from,i);
 #ifdef NVX
-    b->data[ b->n++ ] = from->heatcond[i];
+    b->data[ b->n++ ] = HEATCOND(from,i);
 #endif
 #ifdef STRESS_TENS
-    b->data[ b->n++ ] = from->presstens[i].xx;
-    b->data[ b->n++ ] = from->presstens[i].yy;
-    b->data[ b->n++ ] = from->presstens[i].xy;
+    b->data[ b->n++ ] = PRESSTENS(fromi,xx);
+    b->data[ b->n++ ] = PRESSTENS(from,i,yy);
+    b->data[ b->n++ ] = PRESSTENS(from,i,xy);
 #endif
 #ifdef ORDPAR
-    b->data[ b->n++ ] = (real) from->nbanz[i];
+    b->data[ b->n++ ] = (real) NBANZ(from,i);
 #endif
   }
   if (b->n_max < b->n) error("Buffer overflow in pack_forces.");
@@ -564,19 +564,19 @@ void unpack_forces( msgbuf *b, int j, int k )
 
   to = PTR_2D_V(cell_array, j, k, cell_dim);
   for (i=0; i<to->n; ++i) {
-    to->kraft X(i) += b->data[ b->n++ ];
-    to->kraft Y(i) += b->data[ b->n++ ];
-    to->pot_eng[i] += b->data[ b->n++ ];
+    KRAFT (to,i,X) += b->data[ b->n++ ];
+    KRAFT (to,i,Y) += b->data[ b->n++ ];
+    POTENG(to,i)   += b->data[ b->n++ ];
 #ifdef NVX
-    to->heatcond[i] += b->data[ b->n++ ];
+    HEATCOND(to,i) += b->data[ b->n++ ];
 #endif
 #ifdef STRESS_TENS
-    to->presstens[i].xx += b->data[ b->n++ ];
-    to->presstens[i].yy += b->data[ b->n++ ];
-    to->presstens[i].xy += b->data[ b->n++ ];
+    PRESSTENS(to,i,xx) += b->data[ b->n++ ];
+    PRESSTENS(to,i,yy) += b->data[ b->n++ ];
+    PRESSTENS(to,i,xy) += b->data[ b->n++ ];
 #endif
 #ifdef ORDPAR
-    to->nbanz[i] += (shortint) b->data[ b->n++ ];
+    NBANZ(to,i) += (shortint) b->data[ b->n++ ];
 #endif
   }
   if (b->n_max < b->n) error("Buffer overflow in unpack_forces.");

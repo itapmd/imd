@@ -268,9 +268,9 @@ void main_loop(void)
       for (k=0; k<ncells; ++k) {
         p = cell_array + CELLS(k);
         for (i=0; i<p->n; ++i) {
-          p->impuls X(i) = 0.0;
-          p->impuls Y(i) = 0.0;
-          p->impuls Z(i) = 0.0;
+          IMPULS(p,i,X) = 0.0;
+          IMPULS(p,i,Y) = 0.0;
+          IMPULS(p,i,Z) = 0.0;
         }
       }
       write_eng_file(steps); 
@@ -462,57 +462,57 @@ void do_boundaries(void)
     /* PBC in x direction */
     if (pbc_dirs.x==1)
     for (l=0; l<p->n; ++l) {
-      i = -FLOOR(SPRODX(p->ort,l,tbox_x));
-      p->ort X(l)    += i * box_x.x;
-      p->ort Y(l)    += i * box_x.y;
-      p->ort Z(l)    += i * box_x.z;
+      i = -FLOOR( SPRODX( &ORT(p,l,X), tbox_x) );
+      ORT(p,l,X)     += i * box_x.x;
+      ORT(p,l,Y)     += i * box_x.y;
+      ORT(p,l,Z)     += i * box_x.z;
 #ifdef MSQD
-      p->refpos X(l) += i * box_x.x;
-      p->refpos Y(l) += i * box_x.y;
-      p->refpos Z(l) += i * box_x.z;
+      REF_POS(p,l,X) += i * box_x.x;
+      REF_POS(p,l,Y) += i * box_x.y;
+      REF_POS(p,l,Z) += i * box_x.z;
 #endif
 #ifdef AVPOS
-      p->sheet X(l)  -= i * box_x.x;
-      p->sheet Y(l)  -= i * box_x.y;
-      p->sheet Z(l)  -= i * box_x.z;
+      SHEET(p,l,X)   -= i * box_x.x;
+      SHEET(p,l,Y)   -= i * box_x.y;
+      SHEET(p,l,Z)   -= i * box_x.z;
 #endif
     }
 
     /* PBC in y direction */
     if (pbc_dirs.y==1)
     for (l=0; l<p->n; ++l) {
-      i = -FLOOR(SPRODX(p->ort,l,tbox_y));
-      p->ort X(l)    += i * box_y.x;
-      p->ort Y(l)    += i * box_y.y;
-      p->ort Z(l)    += i * box_y.z;
+      i = -FLOOR( SPRODX( &ORT(p,l,X), tbox_y) );
+      ORT(p,l,X)     += i * box_y.x;
+      ORT(p,l,Y)     += i * box_y.y;
+      ORT(p,l,Z)     += i * box_y.z;
 #ifdef MSQD
-      p->refpos X(l) += i * box_y.x;
-      p->refpos Y(l) += i * box_y.y;
-      p->refpos Z(l) += i * box_y.z;
+      REF_POS(p,l,X) += i * box_y.x;
+      REF_POS(p,l,Y) += i * box_y.y;
+      REF_POS(p,l,Z) += i * box_y.z;
 #endif
 #ifdef AVPOS
-      p->sheet X(l)  -= i * box_y.x;
-      p->sheet Y(l)  -= i * box_y.y;
-      p->sheet Z(l)  -= i * box_y.z;
+      SHEET(p,l,X)   -= i * box_y.x;
+      SHEET(p,l,Y)   -= i * box_y.y;
+      SHEET(p,l,Z)   -= i * box_y.z;
 #endif
     }
 
     /* PBC in z direction */
     if (pbc_dirs.z==1)
     for (l=0; l<p->n; ++l) {
-      i = -FLOOR(SPRODX(p->ort,l,tbox_z));
-      p->ort X(l)    += i * box_z.x;
-      p->ort Y(l)    += i * box_z.y;
-      p->ort Z(l)    += i * box_z.z;
+      i = -FLOOR( SPRODX( &ORT(p,l,X), tbox_z) );
+      ORT(p,l,X)     += i * box_z.x;
+      ORT(p,l,Y)     += i * box_z.y;
+      ORT(p,l,Z)     += i * box_z.z;
 #ifdef MSQD
-      p->refpos X(l) += i * box_z.x;
-      p->refpos Y(l) += i * box_z.y;
-      p->refpos Z(l) += i * box_z.z;
+      REF_POS(p,l,X) += i * box_z.x;
+      REF_POS(p,l,Y) += i * box_z.y;
+      REF_POS(p,l,Z) += i * box_z.z;
 #endif
 #ifdef AVPOS
-      p->sheet X(l)  -= i * box_z.x;
-      p->sheet Y(l)  -= i * box_z.y;
-      p->sheet Z(l)  -= i * box_z.z;
+      SHEET(p,l,X)   -= i * box_z.x;
+      SHEET(p,l,Y)   -= i * box_z.y;
+      SHEET(p,l,Z)   -= i * box_z.z;
 #endif
     }
 
@@ -546,12 +546,12 @@ void calc_tot_presstens(void)
     cell *p;
     p = cell_array + CELLS(i);
     for (j=0; j<p->n; ++j) {
-      tot_presstens.xx += p->presstens[j].xx;
-      tot_presstens.yy += p->presstens[j].yy;
-      tot_presstens.zz += p->presstens[j].zz;
-      tot_presstens.yz += p->presstens[j].yz;  
-      tot_presstens.zx += p->presstens[j].zx;  
-      tot_presstens.xy += p->presstens[j].xy;  
+      tot_presstens.xx += PRESSTENS(p,j,xx);
+      tot_presstens.yy += PRESSTENS(p,j,yy);
+      tot_presstens.zz += PRESSTENS(p,j,zz);
+      tot_presstens.yz += PRESSTENS(p,j,yz);  
+      tot_presstens.zx += PRESSTENS(p,j,zx);  
+      tot_presstens.xy += PRESSTENS(p,j,xy);  
     }
   }
 

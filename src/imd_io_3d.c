@@ -241,63 +241,63 @@ void read_atoms(str255 infilename)
 
       input->n = 1;
 #ifndef MONOLJ
-      input->nummer[0] = n;
-      input->sorte[0]  = s;
-      input->masse[0]  = m;
+      NUMMER(input,0) = n;
+      VSORTE(input,0) = s;
+      MASSE(input,0)  = m;
 #endif
-      input->ort X(0) = pos.x;
-      input->ort Y(0) = pos.y;
-      input->ort Z(0) = pos.z;
+      ORT(input,0,X) = pos.x;
+      ORT(input,0,Y) = pos.y;
+      ORT(input,0,Z) = pos.z;
 #ifdef UNIAX
-      input->traeg_moment[0] = the;
-      input->achse X(0) = axe.x ;
-      input->achse Y(0) = axe.y ;
-      input->achse Z(0) = axe.z ;
-      input->shape X(0) = sig.x ;
-      input->shape Y(0) = sig.y ;
-      input->shape Z(0) = sig.z ;
-      input->pot_well X(0) = eps.x ;
-      input->pot_well Y(0) = eps.y ;
-      input->pot_well Z(0) = eps.z ;
+      TRAEG_MOMENT(input,0) = the;
+      ACHSE(input,0,X) = axe.x ;
+      ACHSE(input,0,Y) = axe.y ;
+      ACHSE(input,0,Z) = axe.z ;
+      SHAPE(input,0,X) = sig.x ;
+      SHAPE(input,0,Y) = sig.y ;
+      SHAPE(input,0,Z) = sig.z ;
+      POT_WELL(input,0,X) = eps.x ;
+      POT_WELL(input,0,Y) = eps.y ;
+      POT_WELL(input,0,Z) = eps.z ;
       if (p==16) {
 	do_maxwell=1;
-	input->impuls X(0) = 0 ;
-	input->impuls Y(0) = 0 ;
-	input->impuls Z(0) = 0 ;
-	input->dreh_impuls X(0) = 0 ;
-	input->dreh_impuls Y(0) = 0 ;
-	input->dreh_impuls Z(0) = 0 ;
+	IMPULS(input,0,X) = 0 ;
+	IMPULS(input,0,Y) = 0 ;
+	IMPULS(input,0,Z) = 0 ;
+	DREH_IMPULS(input,0,X) = 0 ;
+	DREH_IMPULS(input,0,Y) = 0 ;
+	DREH_IMPULS(input,0,Z) = 0 ;
       } else {
-	input->impuls X(0) = vau.x * m;
-	input->impuls Y(0) = vau.y * m;
-	input->impuls Z(0) = vau.z * m;
-	input->dreh_impuls X(0) = ome.x * the;
-	input->dreh_impuls Y(0) = ome.y * the;
-	input->dreh_impuls Z(0) = ome.z * the;
+	IMPULS(input,0,X) = vau.x * m;
+	IMPULS(input,0,Y) = vau.y * m;
+	IMPULS(input,0,Z) = vau.z * m;
+	DREH_IMPULS(input,0,X) = ome.x * the;
+	DREH_IMPULS(input,0,Y) = ome.y * the;
+	DREH_IMPULS(input,0,Z) = ome.z * the;
       }
-      input->dreh_moment X(0) = 0 ;
-      input->dreh_moment Y(0) = 0 ;
-      input->dreh_moment Z(0) = 0 ;
+      DREH_MOMENT(input,0,X) = 0 ;
+      DREH_MOMENT(input,0,Y) = 0 ;
+      DREH_MOMENT(input,0,Z) = 0 ;
 #else /* not UNIAX */
       if (p==6) {
         do_maxwell=1;
-        input->impuls X(0) = 0;
-        input->impuls Y(0) = 0;
-        input->impuls Z(0) = 0;
+        IMPULS(input,0,X) = 0;
+        IMPULS(input,0,Y) = 0;
+        IMPULS(input,0,Z) = 0;
       } else {
-        input->impuls X(0) = vau.x * m * (restrictions+s)->x;
-        input->impuls Y(0) = vau.y * m * (restrictions+s)->y;
-        input->impuls Z(0) = vau.z * m * (restrictions+s)->z;
+        IMPULS(input,0,X) = vau.x * m * (restrictions+s)->x;
+        IMPULS(input,0,Y) = vau.y * m * (restrictions+s)->y;
+        IMPULS(input,0,Z) = vau.z * m * (restrictions+s)->z;
       }
 #endif /* UNIAX or not UNIAX */
-      input->kraft  X(0) = 0;
-      input->kraft  Y(0) = 0;
-      input->kraft  Z(0) = 0;
+      KRAFT(input,0,X) = 0;
+      KRAFT(input,0,Y) = 0;
+      KRAFT(input,0,Z) = 0;
 #ifdef DISLOC
-      input->ort_ref X(0) = refpos.x;
-      input->ort_ref Y(0) = refpos.y;
-      input->ort_ref Z(0) = refpos.z;
-      input->Epot_ref[0]  = refeng;
+      ORT_REF(input,0,X) = refpos.x;
+      ORT_REF(input,0,Y) = refpos.y;
+      ORT_REF(input,0,Z) = refpos.z;
+      EPOT_REF(input,0)  = refeng;
 #endif
 
 #ifdef EPITAX
@@ -491,30 +491,30 @@ void write_atoms_config(FILE *out)
       len += sprintf(outbuf+len, "%d %d", NUMMER(p,i), VSORTE(p,i));
       len += sprintf(outbuf+len, RESOL1, MASSE(p,i));
 #ifdef UNIAX
-      len += sprintf(outbuf+len, RESOL1, p->traeg_moment[i]);
+      len += sprintf(outbuf+len, RESOL1, TRAEG_MOMENT(p,i) );
 #endif
       len += sprintf(outbuf+len, 
-        RESOL3, p->ort X(i), p->ort Y(i),p->ort Z(i));
+        RESOL3, ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z) );
 #ifdef UNIAX
       len += sprintf(outbuf+len, 
-        RESOL3, p->achse X(i), p->achse Y(i), p->achse Z(i));
+        RESOL3, ACHSE(p,i,X), ACHSE(p,i,Y), ACHSE(p,i,Z) );
       len += sprintf(outbuf+len, 
-        RESOL3, p->shape X(i), p->shape Y(i), p->shape Z(i));
+        RESOL3, SHAPE(p,i,X), SHAPE(p,i,Y), SHAPE(p,i,Z) );
       len += sprintf(outbuf+len, 
-        RESOL3, p->pot_well X(i),p->pot_well Y(i),p->pot_well Z(i));
+        RESOL3, POT_WELL(p,i,X), POT_WELL(p,i,Y), POT_WELL(p,i,Z) );
 #endif
 #ifdef CG
-      len += sprintf(outbuf+len, RESOL3,0.0, 0.0, 0.0);
+      len += sprintf(outbuf+len, RESOL3, 0.0, 0.0, 0.0);
 #else
       len += sprintf(outbuf+len, RESOL3,
-        p->impuls X(i) / MASSE(p,i), 
-        p->impuls Y(i) / MASSE(p,i), 
-        p->impuls Z(i) / MASSE(p,i));
+        IMPULS(p,i,X) / MASSE(p,i), 
+        IMPULS(p,i,Y) / MASSE(p,i), 
+        IMPULS(p,i,Z) / MASSE(p,i));
 #ifdef UNIAX
       len += sprintf(outbuf+len, RESOL3,
-        p->dreh_impuls X(i) / p->traeg_moment[i],
-        p->dreh_impuls Y(i) / p->traeg_moment[i],
-        p->dreh_impuls Z(i) / p->traeg_moment[i]); 
+        DREH_IMPULS(p,i,X) / TRAEG_MOMENT(p,i),
+        DREH_IMPULS(p,i,Y) / TRAEG_MOMENT(p,i),
+        DREH_IMPULS(p,i,Z) / TRAEG_MOMENT(p,i)); 
 #endif
 #endif
 #ifdef ORDPAR
@@ -652,26 +652,3 @@ void write_avpos_itr_file(int fzhlr, int steps)
 }
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

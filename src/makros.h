@@ -43,29 +43,74 @@ INLINE static int MOD(shortint p, int q)
 }
 #endif
 
-/* these macros should allow to avoid MONOLJ in many places */
+/* Sometimes we use array where we should use vectors but... */
+#define X(i) [DIM*(i)  ]
+#define Y(i) [DIM*(i)+1]
+#define Z(i) [DIM*(i)+2]
+
 #ifdef MONOLJ
-#define SORTE(cell,i) 0
-#define VSORTE(cell,i) 0
-#define NUMMER(cell,i) 0
-#define MASSE(cell,i) 1.0
-#define POTENG(cell,i) 0.0
+#define SORTE(cell,i)           0
+#define VSORTE(cell,i)          0
+#define NUMMER(cell,i)          0
+#define MASSE(cell,i)           1.0
+#define POTENG(cell,i)          0.0
 #else
 #if defined(MONO)
-#define SORTE(cell,i) 0
+#define SORTE(cell,i)           0
 #elif defined(BINARY)
-#define SORTE(cell,i) (((cell)->sorte[(i)]) & 0x1)
+#define SORTE(cell,i)           (((cell)->sorte[i]) & 0x1)
 #else
-#define SORTE(cell,i) MOD((cell)->sorte[(i)],ntypes)
-/* #define SORTE(cell,i) (((cell)->sorte[(i)]) % ntypes) */
+#define SORTE(cell,i)           MOD((cell)->sorte[i],ntypes)
 #endif
-#define VSORTE(cell,i) ((cell)->sorte[(i)])
-#define NUMMER(cell,i) (cell)->nummer[(i)]
-#define MASSE(cell,i) (cell)->masse[(i)]
-#define POTENG(cell,i) (cell)->pot_eng[(i)]
+#define VSORTE(cell,i)          ((cell)->sorte[i])
+#define NUMMER(cell,i)          ((cell)->nummer[i])
+#define MASSE(cell,i)           ((cell)->masse[i])
+#define POTENG(cell,i)          ((cell)->pot_eng[i])
+#endif
+
+#define ORT(cell,i,sub)         ((cell)->ort sub(i))
+#define KRAFT(cell,i,sub)       ((cell)->kraft sub(i))
+#define IMPULS(cell,i,sub)      ((cell)->impuls sub(i))
+
+#ifdef EAM2
+#define EAM_RHO(cell,i)         ((cell)->eam2_rho_h[i])
+#endif
+#ifdef CG
+#define CG_G(cell,i,sub)        ((cell)->g sub(i))
+#define CG_H(cell,i,sub)        ((cell)->h sub(i))
+#define OLD_ORT(cell,i,sub)     ((cell)->old_ort sub(i))
+#endif
+#ifdef DISLOC
+#define EPOT_REF(cell,i)        ((cell)->Epot_ref[i])
+#define ORT_REF(cell,i,sub)     ((cell)->ort_ref sub(i))
+#endif
+#ifdef AVPOS
+#define AV_POS(cell,i,sub)      ((cell)->avpos sub(i))
+#define SHEET(cell,i,sub)       ((cell)->sheet sub(i))
+#define AV_EPOT(cell,i)         ((cell)->av_epot[i])
 #endif
 #ifdef ORDPAR
-#define NBANZ(cell,i) (cell)->nbanz[(i)]
+#define NBANZ(cell,i)           (cell)->nbanz[(i)]
+#endif
+#ifdef REFPOS
+#define REF_POS(cell,i,sub)     ((cell)->refpos sub(i))
+#endif
+#ifdef NVX
+#define HEATCOND(cell,i)        ((cell)->heatcond[i])
+#endif
+#ifdef STRESS_TENS
+#define PRESSTENS(cell,i,sub)   ((cell)->presstens.sub)
+#endif
+#ifdef COVALENT
+#define NEIGH(cell,i)           ((cell)->neigh[i])
+#endif
+#ifdef UNIAX
+#define TRAEG_MOMENT(cell,i)    ((cell)->traeg_moment[i])
+#define ACHSE(cell,i,sub)       ((cell)->achse sub(i))
+#define SHAPE(cell,i,sub)       ((cell)->shape sub(i))
+#define POT_WELL(cell,i,sub)    ((cell)->pot_well sub(i))
+#define DREH_IMPULS(cell,i,sub) ((cell)->dreh_impuls sub(i))
+#define DREH_MOMENT(cell,i,sub) ((cell)->dreh_moment sub(i))
 #endif
 
 #ifdef MPI
@@ -100,11 +145,6 @@ inline static real SQR(real x)
 #define DIM 3
 #endif
 
-/* Sometimes we use array where we should use vectors but... */
-#define X(i) [DIM*(i)  ]
-#define Y(i) [DIM*(i)+1]
-#define Z(i) [DIM*(i)+2]
-
 #ifdef EWALD
 #define I(a,b,c) [(((2*(a)+1)*(b))+(c))]
 #define J(a,b,c) [(((a)*(b))+(c))]   
@@ -115,23 +155,23 @@ inline static real SQR(real x)
 #define SPROD3D(a,b) (((a).x * (b).x) + ((a).y * (b).y) + ((a).z * (b).z))
 #define SPROD2D(a,b) (((a).x * (b).x) + ((a).y * (b).y))
 /* Arrays */
-#define SPRODN3D(a,i,b,j) \
-  (((a)X(i) * (b)X(j)) + ((a)Y(i) * (b)Y(j)) + ((a)Z(i) * (b)Z(j)))
-#define SPRODN2D(a,i,b,j) (((a)X(i) * (b)X(j)) + ((a)Y(i) * (b)Y(j)) )
+#define SPRODN3D(a,b) \
+  (((a)[0] * (b)[0]) + ((a)[1] * (b)[1]) + ((a)[2] * (b)[2]))
+#define SPRODN2D(a,b) (((a)[0] * (b)[0]) + ((a)[1] * (b)[1]))
 /* Mixed Arrray, Vector */
-#define SPRODX3D(a,i,b) \
-  (((a)X(i) * (b).x) + ((a)Y(i) * (b).y) + ((a)Z(i) * (b).z))
-#define SPRODX2D(a,i,b) (((a)X(i) * (b).x) + ((a)Y(i) * (b).y) )
+#define SPRODX3D(a,b) \
+   (((a)[0] * (b).x) + ((a)[1] * (b).y) + ((a)[2] * (b).z))
+#define SPRODX2D(a,b) (((a)[0] * (b).x) + ((a)[1] * (b).y))
                            
 
 #ifdef TWOD
 #define SPROD(a,b)         SPROD2D(a,b)
-#define SPRODN(a,i,b,j)    SPRODN2D(a,i,b,j)
-#define SPRODX(a,i,b)      SPRODX2D(a,i,b)
+#define SPRODN(a,b)        SPRODN2D(a,b)
+#define SPRODX(a,b)        SPRODX2D(a,b)
 #else
-#define SPROD(a,b) SPROD3D(a,b)
-#define SPRODN(a,i,b,j)    SPRODN3D(a,i,b,j)
-#define SPRODX(a,i,b)      SPRODX3D(a,i,b)
+#define SPROD(a,b)         SPROD3D(a,b)
+#define SPRODN(a,b)        SPRODN3D(a,b)
+#define SPRODX(a,b)        SPRODX3D(a,b)
 #endif
 
 /* Dynamically allocated 3D arrray -- sort of */

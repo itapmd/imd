@@ -252,11 +252,11 @@ void write_atoms_ef(FILE *out)
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; i++) {
       if ( pic_ur.x != (real)0 ) /* if pic_ur.x still 0, write everything */
-        if ((p->ort X(i) < pic_ll.x) || (p->ort X(i) > pic_ur.x) ||
+        if ((ORT(p,i,X) < pic_ll.x) || (ORT(p,i,X) > pic_ur.x) ||
 #ifndef TWOD
-            (p->ort Z(i) < pic_ll.z) || (p->ort Z(i) > pic_ur.z) || 
+            (ORT(p,i,Z) < pic_ll.z) || (ORT(p,i,Z) > pic_ur.z) || 
 #endif
-            (p->ort Y(i) < pic_ll.y) || (p->ort Y(i) > pic_ur.y)) continue;
+            (ORT(p,i,Y) < pic_ll.y) || (ORT(p,i,Y) > pic_ur.y)) continue;
 
       if ( (POTENG(p,i)>=lower_e_pot) && (POTENG(p,i)<=upper_e_pot) ) {
         len += sprintf( outbuf+len,
@@ -266,15 +266,15 @@ void write_atoms_ef(FILE *out)
           "%d %d %12f %12f %12f %12f %12f %12f %12f %12f\n",
 #endif
           NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
-          p->ort X(i),
-          p->ort Y(i),
+          ORT(p,i,X),
+          ORT(p,i,Y),
 #ifndef TWOD
-          p->ort Z(i),
+          ORT(p,i,Z),
 #endif
-          p->impuls X(i) / MASSE(p,i),
-          p->impuls Y(i) / MASSE(p,i),
+          IMPULS(p,i,X) / MASSE(p,i),
+          IMPULS(p,i,Y) / MASSE(p,i),
 #ifndef TWOD
-          p->impuls Z(i) / MASSE(p,i),
+          IMPULS(p,i,Z) / MASSE(p,i),
 #endif
           POTENG(p,i)
         );
@@ -351,11 +351,11 @@ void write_atoms_nb(FILE *out)
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; i++) {
       if ( pic_ur.x != (real)0 ) /* if pic_ur.x still 0, write everything */
-        if ((p->ort X(i) < pic_ll.x) || (p->ort X(i) > pic_ur.x) ||
+        if ((ORT(p,i,X) < pic_ll.x) || (ORT(p,i,X) > pic_ur.x) ||
 #ifndef TWOD
-            (p->ort Z(i) < pic_ll.z) || (p->ort Z(i) > pic_ur.z) || 
+            (ORT(p,i,Z) < pic_ll.z) || (ORT(p,i,Z) > pic_ur.z) || 
 #endif
-            (p->ort Y(i) < pic_ll.y) || (p->ort Y(i) > pic_ur.y)) continue;
+            (ORT(p,i,Y) < pic_ll.y) || (ORT(p,i,Y) > pic_ur.y)) continue;
 
       if ( (SORTE(p,i) == VSORTE(p,i)) && 
 	   ((NBANZ(p,i)< lower_nb_cut[SORTE(p,i)]) || 
@@ -367,15 +367,15 @@ void write_atoms_nb(FILE *out)
           "%d %d %12f %12f %12f %12f %12f %12f %12f %12f\n",
 #endif
           NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
-          p->ort X(i),
-          p->ort Y(i),
+          ORT(p,i,X),
+          ORT(p,i,Y),
 #ifndef TWOD
-          p->ort Z(i),
+          ORT(p,i,Z),
 #endif
-          p->impuls X(i) / MASSE(p,i),
-          p->impuls Y(i) / MASSE(p,i),
+          IMPULS(p,i,X) / MASSE(p,i),
+          IMPULS(p,i,X) / MASSE(p,i),
 #ifndef TWOD
-          p->impuls Z(i) / MASSE(p,i),
+          IMPULS(p,i,Z) / MASSE(p,i),
 #endif
           POTENG(p,i)
         );
@@ -458,15 +458,15 @@ void write_atoms_wf(FILE *out)
           "%d %d %12f %12f %12f %12f %12e %12e %12e %12f\n",
 #endif
           NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
-          p->ort X(i),
-          p->ort Y(i),
+          ORT(p,i,X),
+          ORT(p,i,Y),
 #ifndef TWOD
-          p->ort Z(i),
+          ORT(p,i,Z),
 #endif
-          p->kraft X(i),
-          p->kraft Y(i),
+          KRAFT(p,i,X),
+          KRAFT(p,i,Y),
 #ifndef TWOD
-          p->kraft Z(i),
+          KRAFT(p,i,Z),
 #endif
           POTENG(p,i)
         );
@@ -546,14 +546,14 @@ void write_atoms_press(FILE *out)
 #ifdef TWOD
       len += sprintf( outbuf+len, 
         "%10.4e %10.4e %10.4e %10.4e %10.4e\n", 
-        p->ort X(i),p->ort Y(i),
-        p->presstens[i].xx, p->presstens[i].yy, p->presstens[i].xy);
+        ORT(p,i,X),ORT(p,i,Y),
+        PRESSTENS(p,i,xx), PRESSTENS(p,i,yy), PRESSTENS(p,i,xy) );
 #else
       len += sprintf( outbuf+len,
         "%10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e\n", 
-        p->ort X(i),p->ort Y(i),p->ort Z(i),
-        p->presstens[i].xx, p->presstens[i].yy, p->presstens[i].zz,
-        p->presstens[i].yz, p->presstens[i].zx, p->presstens[i].xy);
+        ORT(p,i,X),ORT(p,i,Y),ORT(p,i,Z),
+        PRESSTENS(p,i,xx), PRESSTENS(p,i,yy), PRESSTENS(p,i,zz),
+        PRESSTENS(p,i,yz), PRESSTENS(p,i,zx), PRESSTENS(p,i,xy) );
 #endif
       /* flush or send outbuf if it is full */
       if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -646,10 +646,10 @@ void write_atoms_pic(FILE *out)
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i) {
       picbuf = (picbuf_t *) (outbuf+len);
-      picbuf->pos_x = (float) p->ort X(i);
-      picbuf->pos_y = (float) p->ort Y(i);
+      picbuf->pos_x = (float) ORT(p,i,X);
+      picbuf->pos_y = (float) ORT(p,i,Y);
 #ifndef TWOD
-      picbuf->pos_z = (float) p->ort Z(i);
+      picbuf->pos_z = (float) ORT(p,i,Z);
 #endif
       if ( pic_ur.x != (real)0 ) /* if pic_ur still 0, write everything */
       if ( (picbuf->pos_x < pic_ll.x) || (picbuf->pos_x > pic_ur.x) ||
@@ -658,14 +658,15 @@ void write_atoms_pic(FILE *out)
 #endif
            (picbuf->pos_y < pic_ll.y) || (picbuf->pos_y > pic_ur.y) ) continue;
 
-      picbuf->E_kin = (float) SPRODN(p->impuls,i,p->impuls,i)/(2*MASSE(p,i));
+      picbuf->E_kin = (float) SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / 
+                                                            (2 * MASSE(p,i));
 #ifdef DISLOC
       if (Epot_diff==1)
-        picbuf->E_pot = (float) POTENG(p,i) - p->Epot_ref[i];
+        picbuf->E_pot = (float) (POTENG(p,i) - EPOT_REF(p,i));
       else
 #endif
 #if defined(ORDPAR) && !defined(TWOD)
-      picbuf->E_pot = (p->nbanz[i]==0) ? 0 : p->pot_eng[i]/p->nbanz[i];
+      picbuf->E_pot = (NBANZ(p,i)==0) ? 0 : POTENG(p,i) / NBANZ(p,i);
 #else
       picbuf->E_pot = POTENG(p,i);
 #endif
@@ -741,15 +742,15 @@ void write_atoms_dem(FILE *out)
   for (k=0; k<ncells; k++) {
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i) {
-      if (p->sorte[i] == dpotsorte) {
-        dpot = ABS(p->pot_eng[i] - p->Epot_ref[i]);
+      if (VSORTE(p,i) == dpotsorte) {
+        dpot = ABS(POTENG(p,i) - EPOT_REF(p,i));
         if (dpot > min_dpot) {
 #ifdef TWOD
           len += sprintf( outbuf+len, "%12f %12f %12f\n",
-            p->ort X(i), p->ort Y(i), dpot);
+            ORT(p,i,X), ORT(p,i,Y), dpot);
 #else
           len += sprintf( outbuf+len, "%12f %12f %12f %12f\n",
-            p->ort X(i), p->ort Y(i), p->ort Z(i), dpot);
+            ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), dpot);
 #endif
           /* flush or send outbuf if it is full */
           if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -820,18 +821,18 @@ void write_atoms_dsp(FILE *out)
   for (k=0; k<ncells; k++) {
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i) {
-      d.x = p->ort X(i) - p->ort_ref X(i);
-      d.y = p->ort Y(i) - p->ort_ref Y(i);
+      d.x = ORT(p,i,X) - ORT_REF(p,i,X);
+      d.y = ORT(p,i,Y) - ORT_REF(p,i,Y);
 #ifndef TWOD 
-      d.z = p->ort Z(i) - p->ort_ref Z(i);
+      d.z = ORT(p,i,Z) - ORT_REF(p,i,Z);
 #endif
       reduce_displacement(&d);
 #ifdef TWOD
       len += sprintf( outbuf+len, "%12f %12f %12f %12f\n",
-        p->ort X(i), p->ort Y(i), d.x, d.y);
+        ORT(p,i,X), ORT(p,i,Y), d.x, d.y);
 #else
       len += sprintf( outbuf+len, "%12f %12f %12f %12f %12f %12f\n",
-        p->ort X(i), p->ort Y(i), p->ort Z(i), d.x, d.y, d.z);
+        ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), d.x, d.y, d.z);
 #endif
       /* flush or send outbuf if it is full */
       if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -858,7 +859,7 @@ void reset_Epot_ref(void)
     cell *p;
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i) {
-      p->Epot_ref[i] = p->pot_eng[i];
+      EPOT_REF(p,i) = POTENG(p,i);
     }
   }
 }
@@ -878,10 +879,10 @@ void update_ort_ref(void)
     cell* p;
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; i++) {
-      p->ort_ref X(i) = p->ort X(i);
-      p->ort_ref Y(i) = p->ort Y(i);
+      ORT_REF(p,i,X) = ORT(p,i,X);
+      ORT_REF(p,i,Y) = ORT(p,i,Y);
 #ifndef TWOD
-      p->ort_ref Z(i) = p->ort Z(i);
+      ORT_REF(p,i,Z) = ORT(p,i,Z);
 #endif
     }
   }
@@ -905,14 +906,14 @@ void update_avpos(void)
     cell* p;
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; i++) {
-      p->av_epot[i] = p->pot_eng[i];
-      p->avpos X(i) = p->ort X(i);
-      p->avpos Y(i) = p->ort Y(i);
-      p->sheet X(i) = 0.0;
-      p->sheet Y(i) = 0.0;
+      AV_EPOT(p,i)  = POTENG(p,i);
+      AV_POS(p,i,X) = ORT(p,i,X);
+      AV_POS(p,i,Y) = ORT(p,i,Y);
+      SHEET(p,i,X)  = 0.0;
+      SHEET(p,i,Y)  = 0.0;
 #ifndef TWOD
-      p->avpos Z(i) = p->ort Z(i);
-      p->sheet Z(i) = 0.0;
+      AV_POS(p,i,Z) = ORT(p,i,Z);
+      SHEET(p,i,Z)  = 0.0;
 #endif
     }
   }
@@ -995,10 +996,10 @@ void write_atoms_avp(FILE *out)
     for (i=0; i<p->n; i++) {
 
 	/* Averaged coordinates of atoms */
-	avp_pos.x = p->avpos X(i) * avpos_res / ( avpos_int + avpos_res );
-	avp_pos.y = p->avpos Y(i) * avpos_res / ( avpos_int + avpos_res );
+	avp_pos.x = AV_POS(p,i,X) * avpos_res / ( avpos_int + avpos_res );
+	avp_pos.y = AV_POS(p,i,Y) * avpos_res / ( avpos_int + avpos_res );
 #ifndef TWOD
-	avp_pos.z = p->avpos Z(i) * avpos_res / ( avpos_int + avpos_res );
+	avp_pos.z = AV_POS(p,i,Z) * avpos_res / ( avpos_int + avpos_res );
 #endif
 	/* Coefficients of coordinates with respect to box vectors */
 	coeff.x = SPROD( avp_pos, tbox_x );
@@ -1022,15 +1023,15 @@ void write_atoms_avp(FILE *out)
 	len += sprintf( outbuf+len,
 			"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f\n",
 			NUMMER(p,i), VSORTE(p,i), MASSE(p,i), 
-			x, y, z, p->av_epot[i] * avpos_res / avpos_int);
+			x, y, z, AV_EPOT(p,i) * avpos_res / avpos_int);
 #else
 	x = coeff.x * box_x.x + coeff.y * box_y.x;
 	y = coeff.x * box_x.y + coeff.y * box_y.y;
 
 	len += sprintf( outbuf+len,
 			"%d %d %12.16f %12.16f %12.16f %12.16f\n",
-			NUMMER(p,i), VSORTE(p,i), MASSE(p,i), 
-			x, y, p->av_epot[i] * avpos_res / (avpos_int + avpos_res ));
+			NUMMER(p,i), VSORTE(p,i), MASSE(p,i), x, y, 
+			AV_EPOT(p,i) * avpos_res / (avpos_int + avpos_res ));
 #endif
       /* flush or send outbuf if it is full */
       if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -1105,12 +1106,12 @@ void write_atoms_force(FILE *out)
     for (i=0; i<p->n; i++) {
 #ifdef TWOD
       len += sprintf( outbuf+len, "%d %.16e %.16e %.16e %.16e\n",
-                      SORTE(p,i), p->ort X(i), p->ort Y(i),
-                      p->kraft X(i), p->kraft Y(i) );
+                      SORTE(p,i), ORT(p,i,X), ORT(p,i,Y),
+                      KRAFT(p,i,X), KRAFT(p,i,Y) );
 #else
       len += sprintf( outbuf+len, "%d %.16e %.16e %.16e %.16e %.16e %.16e\n",
-                      SORTE(p,i), p->ort X(i), p->ort Y(i), p->ort Z(i),
-                      p->kraft X(i), p->kraft Y(i), p->kraft Z(i) );
+                      SORTE(p,i), ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z),
+                      KRAFT(p,i,X), KRAFT(p,i,Y), KRAFT(p,i,Z) );
 #endif
       /* flush or send outbuf if it is full */
       if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -1450,10 +1451,10 @@ void write_atoms_sqd(FILE *out)
     cell* p;
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; i++) {
-      d.x = SQR(p->ort X(i) - p->refpos X(i));
-      d.y = SQR(p->ort Y(i) - p->refpos Y(i));
+      d.x = SQR( ORT(p,i,X) - REF_POS(p,i,X) );
+      d.y = SQR( ORT(p,i,Y) - REF_POS(p,i,Y) );
 #ifndef TWOD
-      d.z = SQR(p->ort Z(i) - p->refpos Z(i));
+      d.z = SQR( ORT(p,i,Z) - REF_POS(p,i,Z) );
 #endif
 #ifdef TWOD
       len += sprintf( outbuf+len, "%d %e %e\n",    SORTE(p,i), d.x, d.y     );

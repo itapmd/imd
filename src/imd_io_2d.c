@@ -196,25 +196,25 @@ void read_atoms(str255 infilename)
       if ((p!=5) && (p<7)) error("incorrect line in configuration file.");
 
       input->n = 1;
-      input->nummer[0] = n;
-      input->sorte[0]  = s;
-      input->masse[0]  = m;
-      input->ort X(0)  = pos.x;
-      input->ort Y(0)  = pos.y;
+      NUMMER(input,0) = n;
+      VSORTE(input,0) = s;
+      MASSE(input,0)  = m;
+      ORT(input,0,X)  = pos.x;
+      ORT(input,0,Y)  = pos.y;
       if (p==5) {
         do_maxwell=1;
-        input->impuls X(0) = 0;
-        input->impuls Y(0) = 0;
+        IMPULS(input,0,X) = 0;
+        IMPULS(input,0,Y) = 0;
       } else {
-	input->impuls X(0) = vau.x * m * (restrictions+s)->x;
-	input->impuls Y(0) = vau.y * m * (restrictions+s)->y;
+	IMPULS(input,0,X) = vau.x * m * (restrictions+s)->x;
+	IMPULS(input,0,Y) = vau.y * m * (restrictions+s)->y;
       }
-      input->kraft X(0) = 0;
-      input->kraft Y(0) = 0;
+      KRAFT(input,0,X) = 0;
+      KRAFT(input,0,Y) = 0;
 #ifdef DISLOC
-      input->ort_ref X(0) = refpos.x;
-      input->ort_ref Y(0) = refpos.y;
-      input->Epot_ref[0]  = refeng;
+      ORT_REF(input,0,X) = refpos.x;
+      ORT_REF(input,0,Y) = refpos.y;
+      EPOT_REF(input,0)  = refeng;
 #endif
 
 #ifdef EPITAX
@@ -388,15 +388,16 @@ void write_atoms_config(FILE *out)
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; i++) {
 #ifdef NVX
-      h  = SPRODN(p->impuls,i,p->impuls,i)/(2*p->masse[i])+p->heatcond[i];
-      h *=  p->impuls X(i) /  p->masse[i];
+      h  = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) /
+                                      (2*MASSE(p,i)) + HEATCOND(p,i);
+      h *= IMPULS(p,i,X) / MASSE(p,i);
 #endif
-      len += sprintf(outbuf+len, "%d %d", p->nummer[i], p->sorte[i]);
-      len += sprintf(outbuf+len, RESOL1, p->masse[i]);
-      len += sprintf(outbuf+len, RESOL2, p->ort X(i), p->ort Y(i));
-      len += sprintf(outbuf+len, RESOL2, p->impuls X(i) / MASSE(p,i),
-                                         p->impuls Y(i) / MASSE(p,i));
-      len += sprintf(outbuf+len, RESOL1, p->pot_eng[i]);
+      len += sprintf(outbuf+len, "%d %d", NUMMER(p,i), VSORTE(p,i) );
+      len += sprintf(outbuf+len, RESOL1, MASSE(p,i) );
+      len += sprintf(outbuf+len, RESOL2, ORT(p,i,X), ORT(p,i,Y) );
+      len += sprintf(outbuf+len, RESOL2, IMPULS(p,i,X) / MASSE(p,i),
+                                         IMPULS(p,i,Y) / MASSE(p,i) );
+      len += sprintf(outbuf+len, RESOL1, POTENG(p,i) );
 #ifdef NVX
       len += sprintf(outbuf+len, RESOL1, h);
 #endif
