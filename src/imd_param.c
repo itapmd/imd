@@ -269,9 +269,8 @@ void getparamfile(char *paramfname, int sim)
   vektor vek;
   vektor shift;
   vektor shear, base;
+  int nvalues;
   int k;
-
-
   int i;
 
   curline = 0;
@@ -714,7 +713,13 @@ void getparamfile(char *paramfname, int sim)
       if (ntypes!=2) error("this executable is for binary systems only!");
 #endif
       ntypepairs = ((ntypes+1)*ntypes)/2;
-      ntypetriples = ntypes * ntypepairs;      
+      ntypetriples = ntypes * ntypepairs;
+#ifdef TERSOFF
+      nvalues = ntypes;
+#ifdef TERSOFF2
+      nvalues = ntypepairs;
+#endif
+#endif      
       /* if there are no virtual atom types */
       if (vtypes==0) vtypes=ntypes;
       restrictions=(vektor*)realloc(restrictions,vtypes*DIM*sizeof(real));
@@ -1748,25 +1753,26 @@ void getparamfile(char *paramfname, int sim)
       getparam(token, ters_om, PARAM_REAL,
                ntypepairs-ntypes, ntypepairs-ntypes);
     }
+    /* nvalues is ntypes for TERSOFF and ntypepairs for TERSOFF2 */
     else if (strcasecmp(token,"ters_ga")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_ga");
-      getparam(token, ters_ga, PARAM_REAL, ntypes, ntypes);
+      getparam(token, ters_ga, PARAM_REAL, nvalues, nvalues);
     }
     else if (strcasecmp(token,"ters_n")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_n");
-      getparam(token, ters_n, PARAM_REAL, ntypes, ntypes);
+      getparam(token, ters_n, PARAM_REAL, nvalues, nvalues);
     }
     else if (strcasecmp(token,"ters_c")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_c");
-      getparam(token, ters_c, PARAM_REAL, ntypes, ntypes);
+      getparam(token, ters_c, PARAM_REAL, nvalues, nvalues);
     }
     else if (strcasecmp(token,"ters_d")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_d");
-      getparam(token, ters_d, PARAM_REAL, ntypes, ntypes);
+      getparam(token, ters_d, PARAM_REAL, nvalues, nvalues);
     }
     else if (strcasecmp(token,"ters_h")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_h");
-      getparam(token, ters_h, PARAM_REAL, ntypes, ntypes);
+      getparam(token, ters_h, PARAM_REAL, nvalues, nvalues);
     }
 #endif
 #ifdef KEATING
@@ -2567,11 +2573,12 @@ void broadcast_params() {
   MPI_Bcast( ters_mu,    ntypepairs,        REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_chi,   ntypepairs-ntypes, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_om,    ntypepairs-ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_ga,               ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_n,                ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_c,                ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_d,                ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ters_h,                ntypes, REAL, 0, MPI_COMM_WORLD);
+  /* nvalues is ntypes for TERSOFF and ntypepairs for TERSOFF2 */
+  MPI_Bcast( ters_ga,        nvalues,       REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_n,         nvalues,       REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_c,         nvalues,       REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_d,         nvalues,       REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_h,         nvalues,       REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef KEATING

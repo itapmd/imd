@@ -731,6 +731,20 @@ EXTERN real ters_chi[45] INIT(zero45);
 EXTERN real ter_chi[10][10];
 EXTERN real ters_om[45] INIT(zero45);
 EXTERN real ter_om[10][10];
+#ifdef TERSOFF2
+EXTERN real ters_ga[55] INIT(zero55);
+EXTERN real ter_ga[10][10];
+EXTERN real ters_n[55] INIT(zero55);
+EXTERN real ter_n[10][10];
+EXTERN real ters_c[55] INIT(zero55);
+EXTERN real ter_c[10][10];
+EXTERN real ter_c2[10][10];
+EXTERN real ters_d[55] INIT(zero55);
+EXTERN real ter_d[10][10];
+EXTERN real ter_d2[10][10];
+EXTERN real ters_h[55] INIT(zero55);
+EXTERN real ter_h[10][10];
+#else
 EXTERN real ters_ga[10];
 EXTERN real ters_n[10] INIT(zero10);
 EXTERN real ters_c[10] INIT(zero10);
@@ -738,6 +752,7 @@ EXTERN real ter_c2[10] INIT(zero10);
 EXTERN real ters_d[10] INIT(zero10);
 EXTERN real ter_d2[10] INIT(zero10);
 EXTERN real ters_h[10] INIT(zero10);
+#endif
 #endif
 
 #ifdef KEATING

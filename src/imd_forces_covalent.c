@@ -562,10 +562,16 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 	/* angular term */
 	tmp_jk    = 1 / ( r[j] * r[k] );  
         cos_theta = SPROD(d[j],d[k]) * tmp_jk;
+#ifdef TERSOFF2
+	tmp_1     = ter_h[p_typ][j_typ] - cos_theta;
+	tmp_2     = 1 / ( ter_d2[p_typ][j_typ] + tmp_1 * tmp_1 );
+	g_theta   = 1 + ter_c2[p_typ][j_typ]/ter_d2[p_typ][j_typ] 
+	  - ter_c2[p_typ][j_typ] * tmp_2;
+#else
 	tmp_1     = ters_h[p_typ] - cos_theta;
 	tmp_2     = 1 / ( ter_d2[p_typ] + tmp_1 * tmp_1 );
 	g_theta   = 1 + ter_c2[p_typ]/ter_d2[p_typ] - ter_c2[p_typ] * tmp_2;
-
+#endif
 	/* zeta */
 	zeta  += fc[k] * ter_om[p_typ][k_typ] * g_theta; 
 
@@ -582,7 +588,13 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 	dcos_k.y = tmp_jk * d[j].y - tmp_k2 * d[k].y;
 	dcos_k.z = tmp_jk * d[j].z - tmp_k2 * d[k].z;
 
-	tmp_3    = 2 * ter_c2[p_typ] * tmp_1 * tmp_2 * tmp_2 * fc[k] * ter_om[p_typ][k_typ];
+#ifdef TERSOFF2
+	tmp_3    = 2 * ter_c2[p_typ][j_typ] * tmp_1 * tmp_2 * tmp_2 
+	  * fc[k] * ter_om[p_typ][k_typ];
+#else
+	tmp_3    = 2 * ter_c2[p_typ] * tmp_1 * tmp_2 * tmp_2 
+	  * fc[k] * ter_om[p_typ][k_typ];
+#endif
 	tmp_grad = dfc[k] / r[k] * g_theta * ter_om[p_typ][k_typ];
 
 	/* derivatives of zeta; dzeta_i is not the full derivative */
@@ -602,10 +614,17 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 
       phi_r  = 0.5 * ter_a[p_typ][j_typ] * exp(- ter_la[p_typ][j_typ] * r[j]);
       phi_a  = 0.5 * ter_b[p_typ][j_typ] * exp(- ter_mu[p_typ][j_typ] * r[j]);
-      tmp_4  = pow( ters_ga[p_typ] * zeta, ters_n[p_typ] );
+#ifdef TERSOFF2
+      tmp_4  = pow( ter_ga[p_typ][j_typ] * zeta, ter_n[p_typ][j_typ] );
 
-      b_ij  = ter_chi[p_typ][j_typ] * pow( 1 + tmp_4, -1 / ( 2 * ters_n[p_typ] ));
+     b_ij  = ter_chi[p_typ][j_typ] 
+       * pow( 1 + tmp_4, -1 / ( 2 * ter_n[p_typ][j_typ] ));
+#else
+     tmp_4  = pow( ters_ga[p_typ] * zeta, ters_n[p_typ] );
 
+     b_ij  = ter_chi[p_typ][j_typ] 
+       * pow( 1 + tmp_4, -1 / ( 2 * ters_n[p_typ] ));
+#endif
       pot_zwi  = phi_r - b_ij * phi_a;
       *Epot   += fc[j] * pot_zwi;
 
@@ -904,8 +923,10 @@ void init_tersoff(void) {
 
   /* parameters for more than one atom type */
   for (i=0; i<ntypes; i++) {
+#ifndef TERSOFF2
     ter_c2[i] = ters_c[i] * ters_c[i];
     ter_d2[i] = ters_d[i] * ters_d[i];
+#endif
     for (j=i; j<ntypes; j++) {
       ter_r_cut[i][j]  = ter_r_cut[j][i]  = ters_r_cut[n];
       ter_r2_cut[i][j] = ter_r2_cut[j][i] = ter_r_cut[i][j] * ter_r_cut[i][j];
@@ -914,6 +935,15 @@ void init_tersoff(void) {
       ter_b[i][j]      = ter_b[j][i]      = ters_b[n];
       ter_la[i][j]     = ter_la[j][i]     = ters_la[n];
       ter_mu[i][j]     = ter_mu[j][i]     = ters_mu[n];
+#ifdef TERSOFF2
+      ter_ga[i][j]     = ter_ga[j][i]     = ters_ga[n];
+      ter_n[i][j]      = ter_n[j][i]      = ters_n[n];
+      ter_c[i][j]      = ter_c[j][i]      = ters_c[n];
+      ter_c2[i][j]     = ter_c2[j][i]     = ter_c[i][j] * ter_c[i][j];
+      ter_d[i][j]      = ter_d[j][i]      = ters_d[n];
+      ter_d2[i][j]     = ter_d2[j][i]     = ter_d[i][j] * ter_d[i][j];
+      ter_h[i][j]      = ter_h[j][i]      = ters_h[n];
+#endif
       ++n;      
     }
   }

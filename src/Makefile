@@ -768,6 +768,9 @@ endif
 ifneq (,$(strip $(findstring tersoff,${MAKETARGET})))
 CFLAGS  += -DTERSOFF
 FORCESOURCES += ${COVALENTSOURCES}
+ifneq (,$(strip $(findstring tersoff2,${MAKETARGET})))
+CFLAGS  += -DTERSOFF2
+endif
 endif
 
 # KEATING
