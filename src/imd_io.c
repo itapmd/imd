@@ -939,7 +939,10 @@ void write_eng_file(int steps)
 
 #ifdef FTG
   for(i=0;i<nslices;i++){
-    fprintf(out, format, 2.0* *(E_kin_ftg+i)/ *(ninslice + i) ); 
+    Temp =  0.0;
+    if (0 !=  *(ninslice + i))
+      Temp =  2.0* *(E_kin_ftg+i)/ *(ninslice + i);
+    fprintf(out, format, Temp); 
   }
 #endif
 

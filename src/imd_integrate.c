@@ -1405,7 +1405,6 @@ void move_atoms_ftg(void)
   real epsilontmp, eins_d_epsilontmp;
   int slice;
 
-  /* printf("%d\n\n", nslices);*/
   /* alloc vector versions of E_kin and  tmpvect*/
   if (NULL==E_kin_1) {
     E_kin_1=(real*) malloc(nslices*sizeof(real));
@@ -1464,10 +1463,9 @@ void move_atoms_ftg(void)
 	
       /* calc slice */
       tmp = p->ort X(i)/box_x.x;
-      slice = floor(nslices *tmp);
+      slice = (int) (nslices *tmp);
       if (slice<0)        slice = 0;
-      if (slice>=nslices) slice = nslices -1;;      
-      
+      if (slice>=nslices) slice = nslices-1;;      
 
       sort = VSORTE(p,i);
       /* add up degrees of freedom  considering restriction vector  */
@@ -1563,19 +1561,19 @@ void move_atoms_ftg(void)
   for (j=0; j<nslices; j++) *(tmpvec1 + j) = *(E_kin_ftg + j);
   MPI_Allreduce( tmpvec1, tmpvec2, nslices, REAL, MPI_SUM, cpugrid);
   for (j=0; j<nslices; j++) *(E_kin_ftg + j) = *(tmpvec2 + j);
-
+  
   for (j=0; j<nslices; j++) *(tmpvec1 + j) = *(E_kin_2 + j);
   MPI_Allreduce( tmpvec1, tmpvec2, nslices, REAL, MPI_SUM, cpugrid);
   for (j=0; j<nslices; j++) *(E_kin_2 + j) = *(tmpvec2 + j);
-
+  
   tmp1 = tot_kin_energy;
   MPI_Allreduce( &tmp1, &tmp2, 1, REAL, MPI_SUM, cpugrid);
   tot_kin_energy = tmp2;
-
+  
   for (j=0; j<nslices; j++) *(itmpvec1 +j) = *(ninslice   + j);
   MPI_Allreduce( itmpvec1, itmpvec2, nslices, MPI_INT, MPI_SUM, cpugrid);
   for (j=0; j<nslices; j++) *(ninslice + j) = *(itmpvec2 +j); 
-
+  
 #endif
 
 
@@ -1586,18 +1584,22 @@ void move_atoms_ftg(void)
     
     if(j>=nslices-nslices_Right)  temperature = Tright;
     if(j<nslices_Left)            temperature = Tleft;
-
+    
     ttt   = temperature * *(ninslice+j);
-
+    
     /* time evolution of constraints */
     /* dampingmode: 0 -> viscous damping (default); 
        1 -> Nose-Hoover; */
-    if(dampingmode == 1){
-      *(gamma_ftg+j) += timestep * ( *(E_kin_2+j) / ttt - 1.0) * gamma_bar;
+    if(0 != ttt){
+      if (dampingmode == 1) {
+	*(gamma_ftg+j) += timestep * ( *(E_kin_2+j) / ttt - 1.0) * gamma_bar;
+      } else { 
+	*(gamma_ftg+j)  =            (1.0 - ttt /  *(E_kin_2+j)) * gamma_bar;
+      }
     } else {
-      *(gamma_ftg+j)  =            (1.0 - ttt /  *(E_kin_2+j)) * gamma_bar;
+      *(gamma_ftg+j)  = 0.0;
     }
-  } 
+  }
 
 }
 

@@ -112,7 +112,7 @@ void maxwell(real temp)
 #ifdef FTG
 	  /* calc slice and set TEMP  */
 	 tmp = p->ort X(i)/box_x.x;
-	 slice = floor(nslices *tmp);
+	 slice = (int) nslices *tmp;
 	 if (slice<0)        slice = 0;
 	 if (slice>=nslices) slice = nslices -1;;
 	 
