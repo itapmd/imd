@@ -89,4 +89,6 @@ EXTERN float *uz;
 
 EXTERN char *paramfilename;
 EXTERN char uvfname[255];
-
+EXTERN float lbondx[10000],lbondy[10000],lbondz[10000];
+EXTERN float rbondx[10000],rbondy[10000],rbondz[10000];
+EXTERN int banz;

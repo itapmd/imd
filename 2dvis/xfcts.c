@@ -228,7 +228,33 @@ int QuestionDialog(char *MessageText) {
   return ReturnCode;
 }
 
-/* color encoding dialog */
+/* save image dialog */
+int SaveConfigurationDialog(char *MessageText) {
+  Widget popup;
+  int var;
+  String names[] = {
+       "  IMD   ",
+       "geomview",
+       0
+  };
+  int values[] = {
+       1,
+       2,
+  };
+  static DialogButtonType buttons[] =
+  { { "defaultButton", "     OK     ", CB_OK, (XtPointer) OK_BUTTON, NULL }};
+
+  /* create radio box */
+  popup = CreateRadioBox(MessageText,MessageText, buttons, ENTRIES(buttons),names,values,&var,savimg_mode+1);
+  StartDialog(popup);
+  /* wait for radio box to complete */
+  DialogEventLoop(&ReturnCode);
+  EndDialog(popup);
+
+  return radiovalue;
+}
+
+/* save image dialog */
 int SaveImageDialog(char *MessageText) {
   Widget popup;
   int var;

@@ -12,7 +12,7 @@ LIBS += $(EXTRALIBS_$(HOSTTYPE))
 # Compiler
 CC_iris4d = cc
 CC_i386-linux = gcc
-CC_alpha = gcc
+CC_alpha = cc
 CC = $(CC_$(HOSTTYPE))
 
 # Headers

@@ -37,7 +37,6 @@ void init_graph(void) {
   color(BLACK);
   clear();
   polyfill(1);
-
 }
 
 /* drawing of text */
@@ -203,13 +202,15 @@ void draw_scene(int scene_type) {
 }
 
 void draw_bonds() {
-  int i,j,k;
+  int i,j,k,n=0;
   float xx,yy,xxj,yyj,dx,dy,dr,epsilon;
+
 #ifndef TWOD
   float zz,zzj,dz;
 #endif
   epsilon=.25;
 
+  banz=0;
   color(MAGENTA);
   for (i=0;i<natoms;i++) {
     bcode[i]=0;
@@ -309,6 +310,15 @@ void draw_bonds() {
 	    if (ABS(dr)<1.8) continue;
 	    if (ABS(dr)>10.4) continue;
 	  }
+	  lbondx[n]=x[i];
+	  rbondx[n]=x[j];
+	  lbondy[n]=y[i];
+	  rbondy[n]=y[j];
+#ifndef TWOD
+	  lbondz[n]=z[i];
+	  rbondz[n]=z[j];
+#endif
+	  ++n;
 	  bcode[i]++;
 	  if (bond_mode==2) {
 #ifndef TWOD
@@ -332,6 +342,7 @@ void draw_bonds() {
 	  if (ABS(dr)>1.1) continue;
 	  if (ABS(dr)<.9) continue;
 	  bcode[i]++;
+#ifndef TWOD
 	  if ((dx>.851-epsilon)&&(dx<.851+epsilon)&&(dy>-epsilon)&&(dy<epsilon)&&(dz>.526-epsilon)&&(dz<.526+epsilon)) {
 	    color(RED);
 	  }
@@ -369,6 +380,7 @@ void draw_bonds() {
 	  if ((dx>.526-epsilon)&&(dx<.526+epsilon)&&(dy>-.851-epsilon)&&(dy<-.851+epsilon)&&(dz>-epsilon)&&(dz<epsilon)) {
 		color(BLUE);
 	  }
+#endif
 
 	  if (bond_mode==2) {
 #ifndef TWOD
@@ -383,7 +395,7 @@ void draw_bonds() {
       }
     } /* for j... */
   } /* for i... */
-
+  banz=n;
 }
 
 /* reading of a configuration from file */
@@ -430,18 +442,18 @@ int read_configuration(char *fname) {
   while (fgets(line,200,fp)) {
 #ifdef TWOD
     columns=sscanf(line,"%d %d %lf %lf %lf %lf %lf %lf",&nummer[n],&sorte[n],&masse[n],&x[n],&y[n],&vx[n],&vy[n],&pot[n]);
-    if (columns==8) {
+    if (columns==8)
       kin[n] = vx[n]*vx[n]+vy[n]*vy[n];
 #else
     columns=sscanf(line,"%d %d %lf %lf %lf %lf %lf %lf %lf %lf",&nummer[n],&sorte[n],&masse[n],&x[n],&y[n],&z[n],&vx[n],&vy[n],&vz[n],&pot[n]);
-    if (columns==10) {
+    if (columns==10)
       kin[n] = vx[n]*vx[n]+vy[n]*vy[n]+vz[n]*vz[n];
 #endif
-      if (maxp<pot[n]) maxp=pot[n];
-      if (minp>pot[n]) minp=pot[n];
-      if (maxk<kin[n]) maxk=kin[n];
-      if (mink>kin[n]) mink=kin[n];
-    }
+    if (maxp<pot[n]) maxp=pot[n];
+    if (minp>pot[n]) minp=pot[n];
+    if (maxk<kin[n]) maxk=kin[n];
+    if (mink>kin[n]) mink=kin[n];
+
     if (maxx<x[n]) maxx=x[n];
     if (maxy<y[n]) maxy=y[n];
     if (minx>x[n]) minx=x[n];
@@ -452,6 +464,7 @@ int read_configuration(char *fname) {
 #endif
     n++;
   }
+
 
   if (maxx==minx) {
     minx=0;
@@ -489,7 +502,7 @@ int read_configuration(char *fname) {
   return n;
 }
 
-  /* writing a configuration to a file */
+/* writing a configuration to a file */
 int write_configuration(char *fname) {
 
   FILE *fp;
@@ -513,7 +526,53 @@ int write_configuration(char *fname) {
   return n;
 }
 
-  /* writing a configuration to a file */
+/* writing a configuration to a file */
+int write_geomv(char *fname) {
+
+  FILE *fp;
+  char str[255];
+  int n;
+
+  fp=fopen(fname, "w");
+  if (fp==NULL) {
+    printf("Kann Datei %s nicht anlegen.\n",fname);
+    return -1;
+  }
+
+  for (n=0;n<natoms;n++) {
+    if (sorte[n]==0) sprintf(str,"1.0 0.0 0.0 1.0");
+    if (sorte[n]==1) sprintf(str,"0.0 1.0 0.0 1.0");
+    if (sorte[n]==2) sprintf(str,"0.0 0.0 1.0 1.0");
+#ifdef TWOD
+    fprintf(fp,"LIST { OFF 4 2 4\n");
+    fprintf(fp,"%f %f 0\n",x[n]-.1,y[n]-.1);
+    fprintf(fp,"%f %f 0\n",x[n]-.1,y[n]+.1);
+    fprintf(fp,"%f %f 0\n",x[n]+.1,y[n]-.1);
+    fprintf(fp,"%f %f 0\n",x[n]+.1,y[n]+.1);
+    fprintf(fp,"5   0 1 2 3 0\n");
+#else
+    fprintf(fp,"LIST { OFF 4 4 6\n");
+    fprintf(fp,"%f %f %f\n",x[n],y[n],z[n]+.2,str);
+    fprintf(fp,"%f %f %f\n",x[n]+.1632993,y[n]-.0942809,z[n]-.0666667,str);
+    fprintf(fp,"%f %f %f\n",x[n],y[n]+.1885618,z[n]-.0666667,str);
+    fprintf(fp,"%f %f %f\n",x[n]-.1632993,y[n]-.0942809,z[n]-.0666667,str);
+    fprintf(fp,"3   1 0 3 %s\n3   2 0 1 %s\n3   3 0 2 %s\n3   3 2 1 %s\n}\n",str,str,str,str);
+#endif
+  }
+
+  for (n=0;n<banz;n++) {
+    fprintf(fp,"LIST { MESH 2 2\t");
+    fprintf(fp,"%f %f %f  ",lbondx[n],lbondy[n],lbondz[n]);
+    fprintf(fp,"%f %f %f  ",rbondx[n],rbondy[n],rbondz[n]);
+    fprintf(fp,"%f %f %f  ",lbondx[n],lbondy[n],lbondz[n]);
+    fprintf(fp,"%f %f %f  ",rbondx[n],rbondy[n],rbondz[n]);
+    fprintf(fp,"}\n");
+  }
+  fclose(fp);
+  return n;
+}
+
+/* writing a configuration to a file */
 int write_vrml(char *fname) {
 
   FILE *fp;
@@ -576,8 +635,7 @@ int write_vrml(char *fname) {
 		    }
 		  }
 #else
-		  move2(xx,yy);
-		  draw2(xxj,yyj);
+
 #endif
 		}
 	    }
@@ -655,8 +713,6 @@ int write_vrml(char *fname) {
 		phi=3.14-acos(dy/length);
 		fprintf(fp,"  Separator {\n    Material { diffuseColor %s }\n    Translation { translation %f %f %f }\n    Rotation { rotation %f 0 %f %f }\n    Translation { translation 0 .5 0 }\n    Cylinder { radius .1 height %f }\n  }\n",colstr,x[i],y[i],z[i],-dz,dx,phi,length);
 #else
-		move2(xx,yy);
-		draw2(xxj,yyj);
 #endif
 	      }
 	    }
@@ -678,8 +734,6 @@ int write_vrml(char *fname) {
 		phi=3.14-acos(dy/length);
 		fprintf(fp,"  Separator {\n    Material { diffuseColor 1 1 1 }\n    Translation { translation %f %f %f }\n    Rotation { rotation %f 0 %f %f }\n    Translation { translation 0 .5 0 }\n    Cylinder { radius .1 height %f }\n  }\n",x[i],y[i],z[i],-dz,dx,phi,length);
 #else
-		move2(xx,yy);
-		draw2(xxj,yyj);
 #endif
 	      }
 	    }

@@ -77,7 +77,14 @@ void LoadDistribution(Widget w, XtPointer client, XtPointer call) {
 }
 
 void SaveConfiguration(Widget w, XtPointer client, XtPointer call) {
-  write_configuration("out.id");
+  int rc,savconf_mode;
+
+  rc=SaveConfigurationDialog("Save Configuration");
+  savconf_mode=rc-1;
+  if (savconf_mode==0)
+    write_configuration("out.id");
+  else
+    write_geomv("out.geom");
 }
 
 void SaveDistribution(Widget w, XtPointer client, XtPointer call) {
