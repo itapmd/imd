@@ -28,15 +28,20 @@ a (system dependent) startup script like the following ones:
     mpirun -np P imd_program [-r N] -p parameter_file   # MPICH
     mpprun -n  P imd_program [-r N] -p parameter_file   # Cray T3E
 </pre>
-Here, P is the number of MPI processes, and must agree with the number
-of processes requested by the cpu_grid vector in the parameter file.
+Here, P is the number of MPI processes. If P does not correspond to
+the number of processes specified by the parameter <tt>cpu_dim</tt> in
+the parameter file or if <tt>cpu_dim</tt> is missing, IMD chooses an
+appropriate cpu grid by factorizing P evenly and by adhering to the
+size distribution of <tt>cpu_dim</tt> (if given).</p>  
+
+<p> 
 If MPI and OpenMP are combined, one usually wants to run one MPI
-process per computer node, with the number of OpenMP threads equal
-to the number of CPUs per node. Care must be taken that exactly
-one process is allocated on each node. In a pure MPI scheme, the
-number of processes P should be equal to the total number of
-CPUs available. Which parallelisation method is faster has to be 
-checked case by case.</p>
+process per computer node, with the number of OpenMP threads equal to
+the number of CPUs per node. Care must be taken that exactly one
+process is allocated on each node. In a pure MPI scheme, the number of
+processes P should be equal to the total number of CPUs
+available. Which parallelisation method is faster has to be checked
+case by case.</p>
 
 <!--#include virtual="imdfoot.html" -->
 
