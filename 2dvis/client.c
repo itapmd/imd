@@ -33,15 +33,6 @@ int receive_conf()
   extern int *nummer, *bcode;
   extern short int *sorte;
 
-  maxx=-1000;
-  maxy=-1000;
-  minx=1000;
-  miny=1000;
-  maxp=-1000;
-  maxk=-1000;
-  minp=1000;
-  mink=1000;
-
   ReadFull(socket_id, (void *)&anz, sizeof(int));
 
   nummer = (int *)calloc(anz, sizeof(int));
