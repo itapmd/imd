@@ -306,7 +306,7 @@ void do_forces_eam_2(cell *p)
   /* For each atom in first cell: calculate force */
   for (i = 0;i < p->n; ++i) {
 
-    p_typ      = p->sorte[i];
+    p_typ      = SORTE(p,i);
 
     /* force only for atom sort "0" */
     /* ... not nice, but it works */

@@ -154,8 +154,8 @@ void do_forces(cell *ap, cell *aq, vektor apbc)
 
       /* Indices into potential table */
       k     = (int) ((radius2 - r2_0) * inv_r2_step);
-      q_typ = q->sorte[j];
-      p_typ = p->sorte[i];
+      q_typ = SORTE(q,j);
+      p_typ = SORTE(p,i);
       chi = (radius2 - r2_0 - k * r2_step) * inv_r2_step;
 
 #ifdef STATIC_POT
