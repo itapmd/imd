@@ -16,9 +16,9 @@
 int brent(real ax, real bx, real cx, real fb,real *alphamin)
 {
 	int iter;
-	real a,b,d,etemp,fu,fv,fw,fx,p,q,r,tol1,tol2,u,v,w,x,xm;
+	real a,b,etemp,fu,fv,fw,fx,p,q,r,tol1,tol2,u,v,w,x,xm;
 	real e=0.0;
-
+	real d=0.0;
 	real tol = linmin_tol;
 
 	a=(ax < cx ? ax : cx);
@@ -79,7 +79,6 @@ int brent(real ax, real bx, real cx, real fb,real *alphamin)
 		}
 	}
 	error("Too many iterations in brent");
-
 }
 
 
@@ -168,6 +167,13 @@ int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc)
 #undef CGOLD
 #undef ZEPS
 /* (C) Copr. 1986-92 Numerical Recipes Software X!05.W4z4'>4. */
+
+
+
+
+
+
+
 
 
 

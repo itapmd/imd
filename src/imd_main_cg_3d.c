@@ -103,18 +103,17 @@ void main_loop(void)
     calc_forces(steps);
     calc_fnorm_g_h();
 
-    printf(" fmax= %lf \n",sqrt(fmax2));fflush(stdout);
+    printf(" fmax= %.16lf  CGVAL= %.16lf\n",sqrt(fmax2),CGVAL);fflush(stdout);
     
     old_cgval = CGVAL;
 
     for (cgsteps = 0 ; cgsteps < cg_maxsteps; cgsteps++)
     {
 /* minimization in one 'direction' */
-	
 	linminsteps=linmin();
 	ctf += linminsteps;
 #ifdef DEBUG
-        printf (" cgstep %d, ctf %d linminsteps %d, CGVAL = %lf \n",cgsteps,ctf,linminsteps,CGVAL);fflush(stdout); 
+        printf (" cgstep %d, ctf %d linminsteps %d, CGVAL = %.16lf \n",cgsteps,ctf,linminsteps,CGVAL);fflush(stdout); 
 #endif
         /* Convergence test: change of Epot or smaller than fnorm*/
 #if defined(CGE) || defined(CGEF)
@@ -128,7 +127,7 @@ void main_loop(void)
 	
 	cg_calcgamma();         /* calc gg, dgg */
 	
-        /* sets ort = old_ort, h, g, needs gamma and gets fmax2*/ 
+        /* sets old_ort = ort, h, g, needs gamma and gets fmax2*/ 
 	set_hg();
 	
 /* overwrites the checkpoint file after each cgstep */  
@@ -301,7 +300,7 @@ int linmin()
     fb = fonedim(alpha_b);
 
 #ifdef DEBUG 
-    printf("ID: %d before mnbrak: fmax= %lf alpha_a= %lf alpha_b=%lf fa= %lf fb=%lf \n",myid,fmax,alpha_a,alpha_b,fa,fb);
+    printf("ID: %d before mnbrak: fmax= %.16lf alpha_a= %.16lf alpha_b=%.16lf fa= %.16lf fb=%.16lf \n",myid,fmax,alpha_a,alpha_b,fa,fb);
     fflush(stdout);     
 #endif
 
@@ -334,7 +333,7 @@ real fonedim ( real alpha)  /* sets the global variables epot,fnorm correspondin
     move_atoms_cg(alpha);
     do_boundaries();    
     fix_cells();
-    calc_forces(0);       /* why does calc_forces needs steps ? */
+    calc_forces(1);       /* why does calc_forces needs steps ? */
     calc_fnorm();
     return (CGVAL);
 }
@@ -346,7 +345,7 @@ real fonedim ( real alpha)  /* sets the global variables epot,fnorm correspondin
 void  calc_fnorm(void)
 {
   int k;
-  real tmp_fnorm;
+  real tmp_fnorm=0.0;
 
   fnorm = 0.0;
 
@@ -398,12 +397,11 @@ void  calc_fnorm(void)
 void calc_fnorm_g_h(void)
 {
   int k;
-  real tmp_fnorm;
-  real tmp_fmax2;
+  real tmp_fnorm=0.0;
+  real tmp_fmax2=0.0;
   
   static int count = 0;
   fnorm = 0.0;
-  tmp_fmax2 = 0.0;
   
   /* loop over all cells */
 #ifdef _OPENMP
@@ -541,12 +539,11 @@ void set_hg(void)
   int k;
   real tmpvec1[3], tmpvec2[3];
   vektor tmpvec;
-  real tmp_fmax2,tmp_gg,tmp_dgg;
+  real tmp_fmax2;
 
   static int count = 0;
   tmp_fmax2 = 0.0;
-  tmp_dgg = 0.0;
-  tmp_gg = 0.0;
+
 
   /* loop over all cells */
   for (k=0; k<ncells; ++k) {
@@ -580,16 +577,9 @@ void set_hg(void)
 
 #ifdef MPI
   MPI_Allreduce( &tmp_fmax2, &fmax2, 1, MPI_REAL, MPI_MAX, cpugrid);
-/* add up results from different CPUs */
-  MPI_Allreduce( &tmp_gg,&gg , 1, REAL, MPI_SUM, cpugrid);
-  MPI_Allreduce( &tmp_dgg,&dgg , 1, REAL, MPI_SUM, cpugrid);
 #else
   fmax2 = tmp_fmax2;
-  gg = tmp_gg;
-  dgg = tmp_dgg;
 #endif
-  cg_gamma = dgg/gg;
-
   return;
 }
 

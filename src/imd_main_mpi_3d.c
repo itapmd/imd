@@ -304,7 +304,8 @@ void fix_cells(void)
             to_cpu = cpu_coord(coord);
 
             /* atom is on my cpu */
-            if (to_cpu==myid) {
+
+	    if (to_cpu==myid) {
                q = PTR_VV(cell_array,lcoord,cell_dim);
                move_atom(q, p, l);
             }
@@ -531,6 +532,20 @@ void send_atoms()
 }
 
 #endif /* not SR */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

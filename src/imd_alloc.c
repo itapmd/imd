@@ -403,9 +403,9 @@ void alloc_cell(cell *thecell, int count)
     newcell.impuls = tmp; tmp += DIM * count;
     newcell.kraft  = tmp; tmp += DIM * count;
 #ifdef CG
-    newcell.old_ort = tmp; tmp += DIM * count;
     newcell.h = tmp; tmp += DIM * count;
     newcell.g = tmp; tmp += DIM * count;
+    newcell.old_ort = tmp; tmp += DIM * count;
 #endif
 #ifdef UNIAX
     newcell.achse = tmp; tmp += DIM * count;
@@ -530,9 +530,9 @@ void alloc_cell(cell *thecell, int count)
       memcpy(newcell.impuls, thecell->impuls, thecell->n * DIM * sizeof(real));
       memcpy(newcell.kraft , thecell->kraft,  thecell->n * DIM * sizeof(real));
 #ifdef CG
-      memcpy(newcell.old_ort   , thecell->old_ort,    thecell->n * DIM * sizeof(real));
       memcpy(newcell.h   , thecell->h,    thecell->n * DIM * sizeof(real));
       memcpy(newcell.g   , thecell->g,    thecell->n * DIM * sizeof(real));
+      memcpy(newcell.old_ort   , thecell->old_ort,    thecell->n * DIM * sizeof(real));
 #endif
 #ifndef MONOLJ
       memcpy(newcell.nummer,  thecell->nummer,  thecell->n * sizeof(integer));
@@ -596,6 +596,7 @@ void alloc_cell(cell *thecell, int count)
 #ifdef EAM2
     free(thecell->eam2_rho_h);
 #endif
+
 #ifdef ORDPAR
     free(thecell->nbanz);
 #endif
@@ -633,9 +634,9 @@ void alloc_cell(cell *thecell, int count)
   thecell->impuls = newcell.impuls;
   thecell->kraft  = newcell.kraft;
 #ifdef CG
-  thecell->old_ort    = newcell.old_ort;
   thecell->h    = newcell.h;
   thecell->g    = newcell.g;
+  thecell->old_ort    = newcell.old_ort;
 #endif
 #ifndef MONOLJ
   thecell->nummer   = newcell.nummer;

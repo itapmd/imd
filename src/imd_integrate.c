@@ -21,8 +21,6 @@
 
 #include "imd.h"
 
-/*#define ATNR 2826  easier debuging... */
-
 /*****************************************************************************
 *
 * Basic NVE Integrator

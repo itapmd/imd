@@ -526,7 +526,7 @@ void setup_buffers(void)
     binc1++;         /* sorte */
 #endif
 #ifdef CG
-    binc1 += DIM;    /* old_ort */
+    binc1 += 3*DIM;    /* h,g,old_ort */
 #endif
 #ifdef UNIAX
     binc1 += 9;      /* direction, etc. */
@@ -538,7 +538,7 @@ void setup_buffers(void)
     binc2++;         /* pot_eng */
 #endif
 #ifdef CG
-  binc2 += 2*DIM;  /* h, g */
+  binc2 += 3*DIM;  /* h, g,old_ort */
 #endif
 #ifdef NVX
     binc2++;         /* heatcond */
