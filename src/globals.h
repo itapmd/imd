@@ -329,15 +329,9 @@ EXTERN int avpos_res INIT(0);         /* Period of coordinate addition */
 #endif
 
 #ifdef ORDPAR
-#ifdef TWOD
 #define nullvektor4d { 0.0, 0.0, 0.0, 0.0 }
-EXTERN real op_weight[1][1] INIT(nullvektor4d);
-EXTERN real op_r2_cut[1][1] INIT(nullvektor4d);
-#else
-#define nullvektor9d { 0.0, 0.0, 0.0, 0.0 }
-EXTERN real op_weight[2][2] INIT(nullvektor9d);
-EXTERN real op_r2_cut[2][2] INIT(nullvektor9d);
-#endif
+EXTERN real op_weight[2][2] INIT(nullvektor4d);
+EXTERN real op_r2_cut[2][2] INIT(nullvektor4d);
 #endif
 
 /* Global data for MSQD & correlation */

@@ -948,7 +948,7 @@ void getparamfile(char *paramfname, int sim)
 #ifdef ORDPAR
     else if (strcasecmp(token,"op_rcut")==0) {
       /* cutoff radius for order parameter */
-      getparam("op_rcut",&op_r2_cut,PARAM_REAL,4,4);
+      getparam("op_rcut",op_r2_cut,PARAM_REAL,4,4);
       op_r2_cut[0][0] = SQR(op_r2_cut[0][0]);
       op_r2_cut[0][1] = SQR(op_r2_cut[0][1]);
       op_r2_cut[1][0] = SQR(op_r2_cut[1][0]);
@@ -956,7 +956,7 @@ void getparamfile(char *paramfname, int sim)
     }   
     else if (strcasecmp(token,"op_weight")==0) {
       /* weights for order parameter */
-      getparam("op_weight",&op_weight,PARAM_REAL,4,4);
+      getparam("op_weight",op_weight,PARAM_REAL,4,4);
     }
 #endif
 #ifdef DEFORM
