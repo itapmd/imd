@@ -277,9 +277,9 @@ void main_loop(void)
 #if defined(AND) || defined(NVT) || defined(NPT)
     if ((steps==steps_min) && (use_curr_temp==1)) {
 #ifdef UNIAX
-      temperature = 2.0 * tot_kin_energy / (5.0 * natoms);
+      temperature = 2.0 * tot_kin_energy / (nactive + nactive_rot);
 #else
-      temperature = 2.0 * tot_kin_energy / (DIM * natoms);
+      temperature = 2.0 * tot_kin_energy / nactive;
 #endif
       dtemp = (end_temp - temperature) / (steps_max - steps_min);
       use_curr_temp = 0;
