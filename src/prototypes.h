@@ -29,7 +29,7 @@ ivektor cell_coord(real x, real y);
 #else
 ivektor cell_coord(real x, real y, real z);
 #endif
-void back_into_box(vektor pos);
+vektor back_into_box(vektor pos);
 void move_atom(ivektor cellc, cell *from, int index);
 void alloc_cell(cell *thecell, int count);
 void calc_forces(void);

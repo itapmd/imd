@@ -357,25 +357,22 @@ ivektor2d cell_coord(real x,real y)
 }
 
 
-/* map vektor back into simulation box (works in place) */
+/* map vektor back into simulation box */
 
-void back_into_box(vektor pos)
+vektor back_into_box(vektor pos)
 {
   vektor d;
   int i;
 
   i = FLOOR(SPROD(pos,tbox_x));
-  d.x  = i *  box_x.x;
-  d.y  = i *  box_x.y;
+  d.x  = pos.x - i *  box_x.x;
+  d.y  = pos.y - i *  box_x.y;
 
   i = FLOOR(SPROD(pos,tbox_y));
-  d.x += i *  box_y.x;
-  d.y += i *  box_y.y;
+  d.x -= i *  box_y.x;
+  d.y -= i *  box_y.y;
 
-  pos.x -= d.x;
-  pos.y -= d.y;
- 
-  return;
+  return(d);
 
 }
 

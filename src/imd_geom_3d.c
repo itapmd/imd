@@ -466,33 +466,29 @@ ivektor cell_coord(real x, real y, real z)
 }
 
 
-/* map vektor back into simulation box (works in place) */
+/* map vektor back into simulation box */
 
-void back_into_box(vektor pos)
+vektor back_into_box(vektor pos)
 {
   vektor d;
   int i;
 
   i = FLOOR(SPROD(pos,tbox_x));
-  d.x  = i *  box_x.x;
-  d.y  = i *  box_x.y;
-  d.z  = i *  box_x.z;
+  d.x  = pos.x - i *  box_x.x;
+  d.y  = pos.y - i *  box_x.y;
+  d.z  = pos.z - i *  box_x.z;
 
   i = FLOOR(SPROD(pos,tbox_y));
-  d.x += i *  box_y.x;
-  d.y += i *  box_y.y;
-  d.z += i *  box_y.z;
+  d.x -= i *  box_y.x;
+  d.y -= i *  box_y.y;
+  d.z -= i *  box_y.z;
 
   i = FLOOR(SPROD(pos,tbox_z));
-  d.x += i *  box_z.x;
-  d.y += i *  box_z.y;
-  d.z += i *  box_z.z;
+  d.x -= i *  box_z.x;
+  d.y -= i *  box_z.y;
+  d.z -= i *  box_z.z;
 
-  pos.x -= d.x;
-  pos.y -= d.y;
-  pos.z -= d.z;
- 
-  return;
+  return(d);
 
 }
 

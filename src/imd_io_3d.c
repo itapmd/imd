@@ -114,7 +114,7 @@ void read_atoms(str255 infilename)
 #endif
 
 #ifndef NOPBC
-    back_into_box(pos);
+    pos = back_into_box(pos);
 #endif
 
     if (p>0) {
@@ -169,7 +169,7 @@ void read_atoms(str255 infilename)
 #endif
 
 #ifndef NOPBC
-    back_into_box(pos);
+    pos = back_into_box(pos);
 #endif
 
     if (0>=m) error("Mass zero or negative.\n");
