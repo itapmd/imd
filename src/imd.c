@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 
   /* filenames starting with denote internal 
      generation of the intitial configuration */
-  if ('.' == infilename[0]) {
+  if ('_' == infilename[0]) {
     if (0 == myid) { 
       printf("Generating atoms: %s.\n", infilename);fflush(stdout);
     }

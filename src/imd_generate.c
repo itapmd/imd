@@ -16,14 +16,14 @@
 *
 * generate_atoms - generate atoms for initial configuration
 *
-* filenames starting with a dot don't specify a file to read from
+* filenames starting with an _ don't specify a file to read from
 * but a crystal structure to generate as an initial configuration:
 *
-* .fcc      -- generates fcc structure
-* .nacl     -- generates binary nacl structure (atom type 0 and 1)
-* .tiqc     -- generates a truncated icosahedra quasicrystal
-* .hex      -- generates 2D hexagonal crystal
-* .lav      -- generates a cubic Laves structure A15 (MgCu2)
+* _fcc      -- generates fcc structure
+* _nacl     -- generates binary nacl structure (atom type 0 and 1)
+* _tiqc     -- generates a truncated icosahedra quasicrystal
+* _hex      -- generates 2D hexagonal crystal
+* _lav      -- generates a cubic Laves structure A15 (MgCu2)
 *
 * The lattice constant of the crystal structures (fcc and nacl) is 2.0.
 *
@@ -50,25 +50,25 @@ void generate_atoms(str255 mode)
   do_maxwell=1;
 
 #ifdef TWOD
-  if (0 == strcmp(mode,".hex")) {          /* hexagonal crystal */
+  if (0 == strcmp(mode,"_hex")) {          /* hexagonal crystal */
     init_hex();
     init_cells();
     generate_hex();
 #else /* 3D */
-  if (0 == strcmp(mode,".fcc")) {          /* fcc */
+  if (0 == strcmp(mode,"_fcc")) {          /* fcc */
     init_cubic();
     init_cells();
     generate_fcc(0);
-  } else if (0 == strcmp(mode,".nacl")) {  /* NaCl */
+  } else if (0 == strcmp(mode,"_nacl")) {  /* NaCl */
     init_cubic();
     init_cells();
     generate_fcc(1);
-  } else if (0 == strcmp(mode,".lav")) {   /* Laves */
+  } else if (0 == strcmp(mode,"_lav")) {   /* Laves */
     init_cubic();
     init_cells();
     generate_lav();
 #ifdef QUASI
-  } else if (0 == strcmp(mode,".tiqc")) {  /* quasicrystal */
+  } else if (0 == strcmp(mode,"_tiqc")) {  /* quasicrystal */
     init_qc();
     init_cells();
     generate_qc();
