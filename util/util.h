@@ -96,6 +96,15 @@
 #define CSTEP   10
 #endif
 
+/* Tolerance values for imd_stress */
+#ifdef STRESS
+#define NUM        100
+#define TOL        1.0e-6
+#define TOL2       1.0e-10
+#define TOL_VERT2  1.0e-6
+#define TOL_DIST2  2.0e-11
+#endif
+
 /*****************************************************************************
 *
 *  include files
@@ -141,6 +150,10 @@ typedef struct {
   vektor *strain;
   vektor *strain_offdia;
   short  *empty;
+#elif defined(STRESS)
+  vektor *stress;
+  vektor *stress_offdia;
+  real   *vol;
 #else
   int    *sorte;
 #endif
@@ -153,6 +166,12 @@ typedef struct {
 
 /* String used for Filenames etc. */
 typedef char str255[255];
+
+#ifdef STRESS
+#ifndef TWOD
+typedef vektor vektorstr[NUM]; 
+#endif
+#endif
 
 /* for parameter reading */
 typedef enum ParamType {
@@ -192,6 +211,18 @@ void calc_angles(void);
 #ifdef STRAIN
 void read_displacement(str255 infilename);
 void calc_strain(void);
+#endif
+
+#ifdef STRESS
+void read_stress(str255 infilename);
+void voronoi(void);
+#ifdef TWOD
+void do_voronoi_2d(void);
+#else
+void do_voronoi_3d(void);
+#endif
+void sort(void);
+void write_stress(int restart);
 #endif
 
 #ifdef TORSION
@@ -249,6 +280,15 @@ real r_max2d[2][2] = { {1.4, 1.4}, {1.4, 0.9} };  /* should be read */
 #ifdef STRAIN
 real r_cell = 1.0;    /* default value */
 #endif
+#ifdef STRESS
+int  atomcount = 0;   /* statistics */ 
+int  maxneigh  = 0, sumneigh  = 0;
+int  maxvert   = 0, sumvert   = 0;
+int  maxedges  = 0, sumedges  = 0;
+#ifndef TWOD
+int  maxfaces  = 0, sumfaces  = 0;
+#endif
+#endif
 
 /* The histograms */
 real      *histogram;
@@ -260,6 +300,17 @@ ivektor5d hist_dim;
 #endif
 #ifdef ANGLE
 ivektor4d hist_dim;
+#endif
+
+#ifdef STRESS
+int     neighnum;        /* Number of neighbour atoms */
+vektor  *candcoord;      /* Coordinates of neighbour atoms */
+real    *canddist2;      /* Distance squared of neighbour atoms */ 
+#ifndef TWOD
+real    volume;          /* Volume of Voronoi cell, 3d */
+#else
+real    area;            /* Area of Voronoi cell, 2d */
+#endif
 #endif
 
 #ifdef COORD
@@ -481,6 +532,10 @@ void alloc_cell(cell *cl, int count)
     cl->strain        = NULL;
     cl->strain_offdia = NULL;
     cl->empty         = NULL;
+#elif defined(STRESS)
+    cl->stress        = NULL;
+    cl->stress_offdia = NULL;
+    cl->vol           = NULL;
 #else
     cl->sorte         = NULL;
 #endif
@@ -498,6 +553,11 @@ void alloc_cell(cell *cl, int count)
   cl->strain_offdia = (vektor *) realloc(cl->strain_offdia,
                                               count * sizeof(vektor));
   cl->empty  = (short  *) realloc(cl->empty,  count * sizeof(short));
+#elif defined(STRESS)
+  cl->stress = (vektor *) realloc(cl->stress, count * sizeof(vektor));
+  cl->stress_offdia = (vektor *) realloc(cl->stress_offdia,
+                                              count * sizeof(vektor));
+  cl->vol    = (real   *) realloc(cl->vol,  count * sizeof(real));
 #else
   cl->sorte  = (int    *) realloc(cl->sorte,  count * sizeof(int));
 #endif
@@ -512,7 +572,11 @@ void alloc_cell(cell *cl, int count)
     || (NULL==cl->strain)
     || (NULL==cl->strain_offdia)
     || (NULL==cl->empty)
-#else
+#elif defined(STRESS)
+    || (NULL==cl->stress)
+    || (NULL==cl->stress_offdia)
+    || (NULL==cl->vol)
+#else   
     || (NULL==cl->sorte)
 #endif
 #ifdef CONN
@@ -592,12 +656,25 @@ void read_parameters(int argc,char **argv)
     getparamfile(fname);
   }
 
+#ifdef STRAIN
+  sprintf(infilename, "%s.dsp", outfilename);
+
+  if (0!=restart) sprintf(infilename,"%s.%u.dsp",outfilename,restart);
+#elif defined(STRESS)
+  sprintf(infilename, "%s.press",outfilename);
+
+  if (0!=restart) sprintf(infilename,"%s.%u.press",outfilename,restart);
+#else
   if (0!=restart) sprintf(infilename,"%s.%u",outfilename,restart);
+#endif
 
 #ifdef STRAIN
   /* r_cell >= r_max is required */
   if (r_cell < r_max) error("Cell smaller than cutoff radius!");
   r2_cut = SQR(r_cell);
+#endif
+#ifdef STRESS
+  r2_cut = SQR(r_max);  
 #endif
 
 } 
@@ -917,7 +994,7 @@ void read_atoms(str255 infilename)
       if (to->n >= to->n_max) alloc_cell(to,to->n_max+CSTEP);
       /* put the data */
       to->ort   [to->n] = pos;
-#ifndef STRAIN
+#if (!defined(STRAIN) && !defined(STRESS))
       to->sorte [to->n] = s;
 #endif
 #ifdef CONN
@@ -1044,3 +1121,5 @@ void do_work(void (*do_cell_pair)(cell *p, cell *q, vektor pbc))
             }
       }
 }
+
+
