@@ -347,7 +347,7 @@ are used and the coordination numbers are computed slightly different.
 configuration files (or checkpoints, or avpos outfiles). Usage is as
 follows:
 <PRE>
-    imd_coord [-v] [-r&lt;nn&gt;] [-A&lt;nn&gt;] [-e&lt;rmax&gt;] [-g] [-l] [-C&lt;cmax&gt;] -p &lt;paramfile&gt;
+    imd_coord [-v] [-r&lt;nn&gt;] [-A&lt;nn&gt;] [-e&lt;rmax&gt;] [-g] [-l] [-C&lt;cmax&gt;] [-u] -p &lt;paramfile&gt;
 </PRE>
 The parameter <TT>paramfile</TT> is mandatory. imd_coord reads the box
 size, the number of atom types, and the names of the configuration and
@@ -383,14 +383,13 @@ is 1.0. imd_coord writes a table to standard output in the following format:
 
    NN    c_NN
 </PRE>
-where <TT>N</TT> is one less than the number of atom types, and 
-<TT>c_ij</TT> is the average coordination number corresponding to 
-the bond ij. If the flag <TT>[-v]</TT> is present, all virtual atom
-types are treated as being different, and <TT>N</TT> equals 
-<TT>vtypes-1</TT>, where <TT>vtypes</TT> is the number of different 
-virtual types. Otherwise, all atom types are taken modulo
-<TT>ntypes</TT>, the number of different real atom types, and 
-<TT>N</TT> equals <TT>ntypes-1</TT>.
+where <TT>N</TT> is one less than the number of atom types, and
+<TT>c_ij</TT> is the relative occurence of the bond ij. If the flag
+<TT>[-v]</TT> is present, all virtual atom types are treated as being
+different, and <TT>N</TT> equals <TT>vtypes-1</TT>, where
+<TT>vtypes</TT> is the number of different virtual types. Otherwise,
+all atom types are taken modulo <TT>ntypes</TT>, the number of
+different real atom types, and <TT>N</TT> equals <TT>ntypes-1</TT>.
 <P>
 
 The parameter <TT>-C&lt;cmax&gt;</TT> specifies the maximal
@@ -429,7 +428,7 @@ number corresponding to neighbour atoms of type <TT>i</TT>.
 If imd_coord is compiled with the <TT>TERSOFF</TT> flag, the value of
 <TT>rmax</TT> is computed from the cutoff parameters of the Tersoff
 potential. Furthermore, the coordination numbers
-<I>I<SUB>i</SUB><SUP>X</SUP></I> are computed as
+<I>N<SUB>i</SUB><SUP>X</SUP></I> are computed by default as
 <P>
 <CENTER>
 <IMG SRC="coord.gif"><BR><P>
@@ -437,7 +436,9 @@ potential. Furthermore, the coordination numbers
 <P>
 where the sum is over all neighbour atoms <I>j</I> of atom <I>i</I>
 with type <I>X</I> and <I>f<SUB>c</SUB></I> is the cutoff function of
-the Tersoff potential.
+the Tersoff potential. If the option <TT>-u</TT> is used, the cutoff
+function <I>f<SUB>c</SUB></I> is set equal to unity within the cutoff
+radius.
 <P>
 
 
