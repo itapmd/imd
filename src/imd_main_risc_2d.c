@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* imd_main_risc.c -- main loop, risc specific part, two dimensions
+* imd_main_risc_2d.c -- main loop, risc specific part, two dimensions
 *
 ******************************************************************************/
 
@@ -65,7 +65,7 @@ void calc_forces(void)
 	      /* Apply periodic boundaries */
 	      pbc.x = 0;
 	      pbc.y = 0;
-#ifndef NOPBC
+
 	      if (r<0) {
 		r = cell_dim.x-1; 
 		pbc.x -= box_x.x;      
@@ -86,7 +86,6 @@ void calc_forces(void)
 		pbc.x += box_y.x;      
 		pbc.y += box_y.y;
 	      };
-#endif
 
 #ifdef SHOCK
               if (0 == pbc.x)
