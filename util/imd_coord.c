@@ -244,7 +244,6 @@ void do_cell_pair(cell *p, cell *q, vektor pbc)
       p_typ = p->sorte[i];
       q_typ = q->sorte[j];
 
-      if (q_typ > p_typ) {temp = p_typ; p_typ = q_typ; q_typ = temp;}
 #ifndef TERSOFF
       if ( radius <= r_max ) {
 
