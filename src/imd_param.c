@@ -437,9 +437,10 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #if MONOLJ
-    else if (strcasecmp(token,"r2_cut")==0) {
+    else if (strcasecmp(token,"r_cut")==0) {
       /* cutoff radius */
-      getparam("r2_cut",&r2_cut,PARAM_REAL,1,1);
+      getparam("r_cut",&r2_cut,PARAM_REAL,1,1);
+      r2_cut = SQR(r2_cut);
     }
     else if (strcasecmp(token,"cellsize")==0) {
       /* cell dimension */
