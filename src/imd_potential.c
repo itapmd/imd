@@ -227,8 +227,10 @@ void read_pot_table2( pot_table_t *pt, char *filename, int mode )
 
       /* some security against rounding errors */
       if ((fabs(len[i] - numstep) >= 0.1) && (0==myid)) {
-        fprintf(stderr,"WARNING: numstep = %f rounded to %d in file %s.\n",
+        char msg[255];
+        sprintf(msg,"numstep = %f rounded to %d in file %s.",
                 numstep, len[i], filename);
+        warning(msg);
       }
     }
 

@@ -56,7 +56,8 @@ void generate_qc(void);
 
 /* miscellaneous routines - files imd_misc.c, imd_time.c, imd_maxwell.c */
 void usage(void);
-void error(char *mesg);
+void error(char *msg);
+void warning(char *msg);
 void imd_start_timer(imd_timer *timer);
 void imd_stop_timer(imd_timer *timer);
 void maxwell(real TEMP);

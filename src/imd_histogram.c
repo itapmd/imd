@@ -600,8 +600,10 @@ void write_distrib(int steps)
       count_pot=fwrite(hist.pot_hist, sizeof(float), hist.size, outpot);
       count_kin=fwrite(hist.kin_hist, sizeof(float), hist.size, outkin);
       if ((count_pot!=hist.size) || (count_kin!=hist.size)) {
-        fprintf(stderr,"dist write incomplete - cnt_pot = %d, cnt_kin = %d\n", 
+        char msg[255];
+        sprintf(msg,"dist write incomplete - cnt_pot = %d, cnt_kin = %d", 
                 count_pot, count_kin );
+        warning(msg);
       }
     } else {
       i=0;

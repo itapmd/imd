@@ -86,9 +86,9 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
   if (ptype == PARAM_STR) {
     str = strtok(NULL," \t\n");
     if (str == NULL) {
-      fprintf(stderr,"parameter for %s missing in line %u\n",
+      sprintf(errmsg,"parameter for %s missing in line %u\nstring expected",
               param_name,curline);
-      error("string expected\n");
+      error(errmsg);
     }
     else strncpy((char *)param,str,pnum_max);
     numread++;
@@ -96,9 +96,9 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
   else if (ptype == PARAM_STRPTR) {
     str = strtok(NULL," \t\n");
     if (str == NULL) {
-      fprintf(stderr,"parameter for %s missing in line %u\n",
+      sprintf(errmsg,"parameter for %s missing in line %u\nstring expected",
               param_name,curline);
-      error("string expected\n");
+      error(errmsg);
     }
     else *((char**)param) = strdup(str);
     numread++;
@@ -107,9 +107,9 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
     for (i=0; i<pnum_min; i++) {
       str = strtok(NULL," \t\n");
       if (str == NULL) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
+        sprintf(errmsg,"parameter for %s missing in line %u\n",
                 param_name,curline);
-        sprintf(errmsg,"integer vector of dim %u expected\n",
+        sprintf(errmsg+strlen(errmsg),"integer vector of dim %u expected",
                 (unsigned)pnum_min);
         error(errmsg);
       }
@@ -133,12 +133,12 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
         numread++; /* return number of parameters actually read */
       }
       else if (i<pnum_min) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
+        sprintf(errmsg,"parameter for %s missing in line %u\n",
                 param_name,curline);
-        sprintf(errmsg,"integer vector of dim %u expected\n",
+        sprintf(errmsg+strlen(errmsg),"integer vector of dim %u expected",
                 (unsigned)pnum_min);
         error(errmsg);
-      };
+      }
       ((int*)param)[i] = ival;
     }
   }
@@ -146,9 +146,9 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
     for (i=0; i<pnum_min; i++) {
       str = strtok(NULL," \t\n");
       if (str == NULL) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
+        sprintf(errmsg,"parameter for %s missing in line %u\n",
                 param_name,curline);
-        sprintf(errmsg,"integer vector of dim %u expected\n",
+        sprintf(errmsg+strlen(errmsg),"integer vector of dim %u expected",
                 (unsigned)pnum_min);
         error(errmsg);
       }
@@ -172,12 +172,12 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
         numread++; /* return number of parameters actually read */
       }
       else if (i<pnum_min) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
+        sprintf(errmsg,"parameter for %s missing in line %u\n",
                 param_name,curline);
-        sprintf(errmsg,"integer vector of dim %u expected\n",
+        sprintf(errmsg+strlen(errmsg),"integer vector of dim %u expected",
                 (unsigned)pnum_min);
         error(errmsg);
-      };
+      }
       ((integer*)param)[i] = (integer)ival;
     }
   }
@@ -185,9 +185,9 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
     for (i=0; i<pnum_min; i++) {
       str = strtok(NULL," \t\n");
       if (str == NULL) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
+        sprintf(errmsg,"parameter for %s missing in line %u\n",
                 param_name,curline);
-        sprintf(errmsg,"real vector of dim %u expected\n",
+        sprintf(errmsg+strlen(errmsg),"real vector of dim %u expected",
                 (unsigned)pnum_min);
         error(errmsg);
       }
@@ -211,12 +211,12 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
         numread++; /* return number of parameters actually read */
       }
       else if (i<pnum_min) {
-        fprintf(stderr,"parameter for %s missing in line %u\n",
+        sprintf(errmsg,"parameter for %s missing in line %u\n",
                 param_name,curline);
-        sprintf(errmsg,"real vector of dim %u expected\n",
+        sprintf(errmsg+strlen(errmsg),"real vector of dim %u expected",
                 (unsigned)pnum_min);
         error(errmsg);
-      };
+      }
       ((real*)param)[i] = rval;
     }
   }
@@ -1118,7 +1118,9 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif 
     else {
-      fprintf(stderr,"**** WARNING: Unknown TAG %s ignored ****\n",token);
+      char msg[255];
+      sprintf(msg,"****** Unknown TAG %s ignored ******",token);
+      warning(msg);
     }
   } while (!feof(pf));
   if (feof(pf)) finished=1;
@@ -1138,65 +1140,65 @@ void check_parameters_complete()
   real tmp;
 
   if (ensemble == 0) {
-    error("missing or unknown ensemble parameter.\n");
+    error("missing or unknown ensemble parameter.");
   }
   if (timestep == (real)0) {
-    error("timestep is missing or zero.\n");
+    error("timestep is missing or zero.");
   }
   if (ntypes == 0) {
-    error("ntypes is missing or zero.\n");
+    error("ntypes is missing or zero.");
   }
 #if defined(NPT) || defined(NVT) || defined(STM)
   if (temperature == 0) {
-    error("starttemp is missing or zero.\n");
+    error("starttemp is missing or zero.");
   }
 #endif
 #if defined(NPT) || defined(NVT) || defined(STM)
   if (end_temp == 0) {
-    error("endtemp is missing or zero.\n");
+    error("endtemp is missing or zero.");
   }
 #endif
 #if defined(CORRELATE) || defined(MSQD)
   if (correl_ts == 0) {
     if (eng_interval != 0) correl_ts = eng_interval;
     else {
-      error("correl_ts is missing or zero.\n");
+      error("correl_ts is missing or zero.");
     }
   }
 #endif
 #ifdef CORRELATE
   if (ncorr_rmax == 0) {
-    error("correl_rmax is missing or zero.\n");
+    error("correl_rmax is missing or zero.");
   }
   if (ncorr_tmax == 0) {
-    error("correl_tmax is zero.\n");
+    error("correl_tmax is zero.");
   }
 #endif
 #ifdef NVX
   	if (dTemp_start == 0){
-		error ("dTemp_start is missing or zero. \n ");
+		error ("dTemp_start is missing or zero.");
 	}
 	if (dTemp_end == 0){
-		error ("dTemp_end is missing or zero. \n ");
+		error ("dTemp_end is missing or zero.");
 	}
 	if (tran_interval == 0){
-		error ("tran_interval is zero. \n");
+		error ("tran_interval is zero.");
 	}
 	if (tran_nlayers == 0){
-		error ("tran_nlayers is zero. \n");
+		error ("tran_nlayers is zero.");
         }
 #endif
 #ifdef RNEMD
 	if (tran_interval == 0){
-		error ("tran_interval is zero. \n");
+		error ("tran_interval is zero.");
 	}
 	if (tran_nlayers == 0){
-		error ("tran_nlayers is zero. \n");
+		error ("tran_nlayers is zero.");
         }
 #endif
 #ifdef STRESS_TENS
 	if (press_interval == 0) {
-		error ("press_interval is zero. \n");
+		error ("press_interval is zero.");
 	}
 #endif
 #ifdef MPI
@@ -1206,22 +1208,22 @@ void check_parameters_complete()
         if ((cpu_dim.x==0) || (cpu_dim.y==0) || (cpu_dim.z==0))
 #endif
 	{
-           error("cpu_dim is missing or zero\n");
+           error("cpu_dim is missing or zero.");
         }
 #endif
 #ifdef USE_SOCKETS
   if (display_host[0]=='\0') {
-    error("display_host name or IP address missing.\n");
+    error("display_host name or IP address missing.");
   }
 #endif
 #ifdef UNIAX
   if (uniax_r_cut == 0) {
-    error("uniax_r_cut is missing or zero.\n");
+    error("uniax_r_cut is missing or zero.");
   }
 #endif
 #ifdef MONOLJ
   if (monolj_r2_cut == 0) {
-    error("monolj_r_cut is missing or zero.\n");
+    error("monolj_r_cut is missing or zero.");
   }
   /* determine shift of potential at cutoff */
   pair_int_monolj(&monolj_shift,&tmp,monolj_r2_cut);

@@ -19,7 +19,7 @@
 
 void init_client() {
 
-  fprintf(stderr, "baseport is %d\n", baseport);
+  fprintf(stderr, "baseport is %d\n", baseport);fflush(stderr);
   baseport = htons(baseport); /* we need it in network byte order */
   varIP = GetIP(display_host);
   if (0==myid) {
@@ -49,7 +49,7 @@ int connect_server() {
   if (soc > 0) {
     ReadFull(soc,&byte,1);
     flag = byte; /* convert to int */
-    fprintf(stderr, "received socket_flag: %d\n", flag);
+    fprintf(stderr, "received socket_flag: %d\n", flag);fflush(stderr);
   }
   else {
     close_socket();

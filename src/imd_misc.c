@@ -22,17 +22,29 @@
 ******************************************************************************/
 
 void usage(void)
-
 { 
-
+  if (myid==0) {
+    fprintf(stderr,"%s [-r<nnn>] [-p paramter-file]\n",progname); 
+    fflush(stderr);
+  }
 #ifdef MPI
-  fprintf(stderr,"%s [-r<nnn>] [-p paramter-file]\n",progname); 
   MPI_Abort(MPI_COMM_WORLD, 1);
-#else
-  fprintf(stderr,"%s [-r<nnn>] [-p paramter-file]\n",progname); 
 #endif
   exit(1); 
+}
 
+/******************************************************************************
+*
+*  print a warning
+*
+******************************************************************************/
+
+void warning(char *msg)
+{ 
+  if (myid==0) {
+    fprintf(stderr,"WARNING: %s\n",msg);
+    fflush(stderr);
+  }
 }
 
 /******************************************************************************
@@ -41,15 +53,15 @@ void usage(void)
 *
 ******************************************************************************/
 
-void error(char *mesg)
-
+void error(char *msg)
 {
-  
 #ifdef MPI
-  fprintf(stderr,"CPU %d: %s\n",myid,mesg);
+  fprintf(stderr,"Error on CPU %d: %s\n",myid,msg);
+  fflush(stderr);
   MPI_Abort(MPI_COMM_WORLD, 1);
 #else
-  fprintf(stderr,"Error: %s\n",mesg);
+  fprintf(stderr,"Error: %s\n",msg);
+  fflush(stderr);
 #endif
   exit(2);
 }
@@ -118,9 +130,10 @@ void eam2_read_core_pot(str255 core_pot_filename)
       }
       /* beware of stuff like numstep = 499.999999 */
       if (fabs(number_of_steps - numstep) >= 0.1) {
-        fprintf(stderr,"WARNING: core_potential_file:\
-                       numstep: %lf rounded to:%lf \n",
-                       numstep, number_of_steps);
+        char msg[255];
+        sprintf(msg,"core_potential_file: numstep: %lf rounded to: %lf",
+                numstep, number_of_steps);
+        warning(msg);
       }
     }
   }
@@ -241,10 +254,11 @@ void eam2_read_embedding_energy(str255 emb_E_filename)
 
     /* beware of stuff like numstep = 499.999999 */
     if (fabs(number_of_steps - numstep) >= 0.1) {
-        fprintf(stderr,"WARNING: embedding_energy_file:\
-                       numstep: %lf rounded to:%lf \n",
-                       numstep, number_of_steps);
-      }
+      char msg[255];
+      sprintf(msg,"embedding_energy_file: numstep: %lf rounded to: %lf",
+              numstep, number_of_steps);
+      warning(msg);
+    }
   }
   
   /* reading the functiontables */
@@ -362,9 +376,10 @@ void eam2_read_atomic_rho(str255 at_rho_filename)
 
       /* what should i do: numstep=499.99999932*/
       if (fabs(number_of_steps - numstep) >= 0.1) {
-        fprintf(stderr,"WARNING: atomic_e-density_file:\
-                       numstep: %lf rounded to:%lf \n",
+        char msg[255];
+        sprintf(msg,"atomic_e-density_file: numstep: %lf rounded to: %lf",
 		numstep, number_of_steps);
+        warning(msg);
       }
     }
   }

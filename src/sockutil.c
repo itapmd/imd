@@ -52,7 +52,7 @@ int WriteFull(int fd, const void *buffer, int bytes)
     nbytes-=written;
     bptr+=written;
     if (written==0) 
-      fprintf(stderr,"Network write() returned 0: retrying...");
+      fprintf(stderr,"Network write() returned 0: retrying...");fflush(stderr);
   }
   return 0;
 }
