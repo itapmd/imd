@@ -66,7 +66,7 @@ void calc_forces(void)
     int  i,j;
     cell *p;
     p = cell_array + k;
-    for (i = 0;i < p->n; ++i) {
+    for (i=0; i<p->n; ++i) {
       p->kraft X(i) = 0.0;
       p->kraft Y(i) = 0.0;
       p->kraft Z(i) = 0.0;

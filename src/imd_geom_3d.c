@@ -394,9 +394,10 @@ void init_cells( void )
 
 	p = PTR_3D_V(cell_array, i, j, k, cell_dim);
 	p->n_max=0;
+        p->n=0;
 #ifdef MPI
         /* don't alloc data space for buffer cells */
-        if ((0!=i) && (0!=j) && (0!=k) &&
+        if ((0 != i) && (0 != j) && (0 != k) &&
             (i != cell_dim.x-1) &&
             (j != cell_dim.y-1) &&
             (k != cell_dim.z-1))

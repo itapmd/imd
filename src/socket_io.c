@@ -415,6 +415,7 @@ void write_conf_using_sockets()
             k++;
 	  }
 	}
+        p->n=0;
       }
 
    } else { /* myid != 0 */

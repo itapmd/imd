@@ -257,6 +257,13 @@ void init_cells( void )
     for (j=0; j < cell_dim.y; ++j) {
       p = PTR_2D_V(cell_array, i, j, cell_dim);
       p->n_max=0;
+      p->n=0;
+#ifdef MPI
+      /* don't alloc data space for buffer cells */
+      if ((0 != i) && (0 != j) &&
+          (i != cell_dim.x-1) &&
+          (j != cell_dim.y-1))
+#endif
       alloc_cell(p, initsz);
     }
 

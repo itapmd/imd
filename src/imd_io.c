@@ -75,6 +75,7 @@ void write_config_select(int fzhlr, char *suffix,
       for (k=0; k<ncells; k++) {
         recv_cell(p,MPI_ANY_SOURCE,CELL_TAG); /* accept cells in any order */
         (*write_cell_fun)(out,p);
+        p->n=0;
       }
     fclose(out);      
   } else { 
