@@ -135,11 +135,11 @@ CFLAGS_GCC_i586_DEBUG	= -DRISC -mcpu=i586 -g
 CFLAGS_GCC_i586_PROF	= -g3 -pg
 
 # flags for Linux with LAM/MPI
-CC_MPI_i586		= hcc
+CC_MPI_i586		= mpicc
 CFLAGS_MPI_i586		= -DMPI -mcpu=i586 -O3
 CFLAGS_MPI_i586_DEBUG	= -DMPI -mcpu=i586 -g
 CFLAGS_MPI_i586_PROF	= -g3 -pg
-MPILIBS_i586		= -lmpi
+#MPILIBS_i586		= -lmpi
 
 # flags for alpha with cc
 CC_RISC_alpha		= cc
@@ -609,7 +609,7 @@ CFLAGS += -DDISLOC
 endif
 
 ifneq (,$(findstring sllod,${MAKETARGET}))
-CFLAGS += -DSLLOD -DNVT
+CFLAGS += -DSLLOD
 endif
 
 ifneq (,$(findstring avpos,${MAKETARGET}))
