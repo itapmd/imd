@@ -1,12 +1,12 @@
+
 /******************************************************************************
 *
 * imd_angle -- calculate angular distribution functions
-* - a descendant of imd.pair
+* A descendant of imd_pair
 *
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
@@ -177,11 +177,12 @@ int curline;         /* Number of current line for parameter reading */
 str255 error_msg;    /* string for error message */
 
 /* The simulation box and its inverse */
-vektor box_x, ibox_x, tbox_x;
-vektor box_y, ibox_y, tbox_y;
+vektor box_x, tbox_x;
+vektor box_y, tbox_y;
 #ifndef TWOD
-vektor box_z, ibox_z, tbox_z;
+vektor box_z, tbox_z;
 #endif
+vektor height;
 #ifdef TWOD
 ivektor pbc_dirs = {1,1};    /* directions with pbc - default is PBC */
 #else
@@ -252,203 +253,156 @@ int main(int argc, char **argv)
 }
 
 
-/*****************************************************************************
+/******************************************************************************
 *
-*  init_cell determines the minimal size of the cells such that their
-*  diameter is less than the cutoff radius.
+*  To determine the cell into which a given particle belongs, we
+*  have to transform the cartesian coordinates of the particle into
+*  the coordinate system spanned by the vectors of the box edges. 
+*  This yields coordinates in the interval [0..1] that are
+*  multiplied by cell_dim to get the cell's index.
 *
-*  A suitable cell array os then allocated.
-*
-*****************************************************************************/ 
-
-void init_cells(void)
-
-{
-
-  vektor hx,hy,hz; 
-  vektor cell_scale;
-  real s1,s2;
-  cell *p;
-  real det;
-  int i,j,k;
-
-  /* Calculate smallest possible cell (i.e. the height==cutoff) */
+******************************************************************************/
 
 #ifdef TWOD
 
- /* Height x */
-  s1 = SPROD(box_x,box_x) - SPROD(box_x,box_y);
-  
-  /* Height y */
-  s2 = SPROD(box_y,box_y) - SPROD(box_x,box_y);
-  
-  cell_scale.x = sqrt( (double)(r2_cut / s1) );
-  cell_scale.y = sqrt( (double)(r2_cut / s2) );
+/* compute transformation matrix */
+void make_box(void)
+{
+  real volume;
 
+  /* volume */
+  volume = box_x.x * box_y.y - box_x.y * box_y.x;
+  if (0==volume) error("Box Edges are parallel.");
+
+  /* compute tbox_j such that SPROD(box_i,tbox_j) == delta_ij */
+  tbox_x.x =   box_y.y / volume;
+  tbox_x.y = - box_y.x / volume;
+  tbox_y.x = - box_x.y / volume;
+  tbox_y.y =   box_x.x / volume;
+
+  /* squares of the box heights perpendicular to the faces */
+  height.x = 1.0 / SPROD(tbox_x,tbox_x);
+  height.y = 1.0 / SPROD(tbox_y,tbox_y);
+}
+
+#else
+
+/* vector product */ 
+vektor vec_prod(vektor u, vektor v)
+{
+  vektor w;
+  w.x = u.y * v.z - u.z * v.y;
+  w.y = u.z * v.x - u.x * v.z;
+  w.z = u.x * v.y - u.y * v.x;
+  return w;
+}
+
+/* compute transformation matrix */
+void make_box(void)
+{
+  real volume;
+
+  /* compute tbox_j such that SPROD(box_i,tbox_j) == delta_ij */
+  /* first unnormalized */
+  tbox_x = vec_prod( box_y, box_z );
+  tbox_y = vec_prod( box_z, box_x );
+  tbox_z = vec_prod( box_x, box_y );
+
+  /* volume */
+  volume = SPROD( box_x, tbox_x );
+  if (0==volume) error("Box Edges are parallel.");
+
+  /* normalization */
+  tbox_x.x /= volume;  tbox_x.y /= volume;  tbox_x.z /= volume;
+  tbox_y.x /= volume;  tbox_y.y /= volume;  tbox_y.z /= volume;
+  tbox_z.x /= volume;  tbox_z.y /= volume;  tbox_z.z /= volume;
+
+  /* squares of the box heights perpendicular to the faces */
+  height.x = 1.0 / SPROD(tbox_x,tbox_x);
+  height.y = 1.0 / SPROD(tbox_y,tbox_y);
+  height.z = 1.0 / SPROD(tbox_z,tbox_z);
+}
+
+#endif
+
+
+/******************************************************************************
+*
+*  Compute the size of the cells, and initialize the cell array.
+*  There must be at least two cells in each direction.
+*
+******************************************************************************/
+
+void init_cells(void)
+{
+  vektor cell_scale;
+  cell   *p;
+  int    nmax, i;
+
+  make_box();
+
+  /* scaling factors box/cell */
+  cell_scale.x = sqrt( (double)(r2_cut / height.x) );
+  cell_scale.y = sqrt( (double)(r2_cut / height.y) );
+#ifndef TWOD
+  cell_scale.z = sqrt( (double)(r2_cut / height.z) );
+#endif
+
+#ifdef TWOD
   printf("Minimal cell size: \n\t ( %f %f ) \n\t ( %f %f ) \n",
 	 box_x.x * cell_scale.x, box_x.y * cell_scale.x, 
 	 box_y.x * cell_scale.y, box_y.y * cell_scale.y); 
-
-  /* Set up Cell-Array */
-  cell_dim.x = (int) ( 1.0 / cell_scale.x );
-  cell_dim.y = (int) ( 1.0 / cell_scale.y );
-  
-  /* If an integer number of cells does not fit exactly into the box, the
-     cells are enlarged accordingly */
-  cell_scale.x = 1.0 / cell_dim.x;
-  cell_scale.y = 1.0 / cell_dim.y;
-
-  printf("Minimal cell size: \n\t ( %f %f ) \n\t ( %f %f ) \n",
-	 box_x.x * cell_scale.x, box_x.y * cell_scale.x, 
-	 box_y.x * cell_scale.y, box_y.y * cell_scale.y); 
-
-  printf("Cell array dimensions: %d %d\n", cell_dim.x,cell_dim.y);
-  cell_array = (cell *) malloc(cell_dim.x * cell_dim.y * sizeof(cell));
-  if (NULL == cell_array) error("Cannot allocate memory for cells");
-
-#else /* 3D */
-
-  /* Height x */
-  s1 = SPROD(box_x,box_y)/SPROD(box_y,box_y);
-  s2 = SPROD(box_x,box_z)/SPROD(box_z,box_z);
-
-  hx.x = box_x.x - s1 * box_y.x - s2 * box_z.x;
-  hx.y = box_x.y - s1 * box_y.y - s2 * box_z.y;
-  hx.z = box_x.z - s1 * box_y.z - s2 * box_z.z;
-
-  /* Height y */
-  s1 = SPROD(box_y,box_x)/SPROD(box_x,box_x);
-  s2 = SPROD(box_y,box_z)/SPROD(box_z,box_z);
-
-  hy.x = box_y.x - s1 * box_x.x - s2 * box_z.x;
-  hy.y = box_y.y - s1 * box_x.y - s2 * box_z.y;
-  hy.z = box_y.z - s1 * box_x.z - s2 * box_z.z;
-
-  /* Height z */
-  s1 = SPROD(box_z,box_x)/SPROD(box_x,box_x);
-  s2 = SPROD(box_z,box_y)/SPROD(box_y,box_y);
-
-  hz.x = box_z.x - s1 * box_x.x - s2 * box_y.x;
-  hz.y = box_z.y - s1 * box_x.y - s2 * box_y.y;
-  hz.z = box_z.z - s1 * box_x.z - s2 * box_y.z;
-
-  /* Scaling factors box/cell */
-  cell_scale.x = sqrt( (double)(r2_cut / SPROD(hx,hx)) );
-  cell_scale.y = sqrt( (double)(r2_cut / SPROD(hy,hy)) );
-  cell_scale.z = sqrt( (double)(r2_cut / SPROD(hz,hz)) );
-
+#else
   printf("Minimal cell size: \n");
   printf("\t ( %f %f %f ) \n\t ( %f %f %f ) \n\t ( %f %f %f )\n",
      box_x.x * cell_scale.x, box_x.y * cell_scale.x, box_x.z * cell_scale.x,
      box_y.x * cell_scale.y, box_y.y * cell_scale.y, box_y.z * cell_scale.y,
      box_z.x * cell_scale.z, box_z.y * cell_scale.z, box_z.z * cell_scale.z);
+#endif
 
-  /* Set up Cell-Array */
+  /* set up cell array */
   cell_dim.x = (int) ( 1.0 / cell_scale.x );
   cell_dim.y = (int) ( 1.0 / cell_scale.y );
+#ifndef TWOD
   cell_dim.z = (int) ( 1.0 / cell_scale.z );
+#endif
   
   /* If an integer number of cells does not fit exactly into the box, the
      cells are enlarged accordingly */
   cell_scale.x = 1.0 / cell_dim.x;
   cell_scale.y = 1.0 / cell_dim.y;
+#ifndef TWOD
   cell_scale.z = 1.0 / cell_dim.z;
+#endif
 
+#ifdef TWOD
+  printf("Actual cell size: \n\t ( %f %f ) \n\t ( %f %f ) \n",
+	 box_x.x * cell_scale.x, box_x.y * cell_scale.x, 
+	 box_y.x * cell_scale.y, box_y.y * cell_scale.y); 
+  printf("Cell array dimensions: %d %d\n", cell_dim.x,cell_dim.y);
+  cell_array = (cell *) malloc(cell_dim.x * cell_dim.y * sizeof(cell));
+#else
   printf("Actual cell size: \n");
   printf("\t ( %f %f %f ) \n\t ( %f %f %f ) \n\t ( %f %f %f )\n",
      box_x.x * cell_scale.x, box_x.y * cell_scale.x, box_x.z * cell_scale.x,
      box_y.x * cell_scale.y, box_y.y * cell_scale.y, box_y.z * cell_scale.y,
      box_z.x * cell_scale.z, box_z.y * cell_scale.z, box_z.z * cell_scale.z);
-
   printf("Cell array dimensions: %d %d %d\n",cell_dim.x,cell_dim.y,cell_dim.z);
-  cell_array = (cell *) malloc(
-		     cell_dim.x * cell_dim.y * cell_dim.z * sizeof(cell));
+  cell_array = (cell *) malloc(cell_dim.x*cell_dim.y*cell_dim.z*sizeof(cell));
+#endif
   if (NULL == cell_array) error("Cannot allocate memory for cells");
 
-#endif /* TWOD */
-
-  /* Initialize cells */
-  for (i=0; i < cell_dim.x; ++i)
-    for (j=0; j < cell_dim.y; ++j)
+  nmax = cell_dim.x * cell_dim.y;
 #ifndef TWOD
-      for (k=0; k < cell_dim.z; ++k) 
+  nmax = nmax * cell_dim.z;
 #endif
-      {
-#ifdef TWOD
-	p = PTR_2D_V(cell_array, i, j,    cell_dim);
-#else
-	p = PTR_3D_V(cell_array, i, j, k, cell_dim);
-#endif
-	p->n_max=0;
-	alloc_cell(p, CSTEP);
-  };
 
-  /* To determine the cell into which a given particle belongs, we
-     have to transform the cartesian coordinates of the particle into
-     the coordinate system that is spanned by the vectors of the box
-     edges. This yields coordinates in the interval [0..1] that are
-     multiplied bye global_cell_dim to get the cells index.
-
-     Here we calculate the transformation matrix. */
-
-  /* Calculate inverse of coordinate matrix */
-
-#ifdef TWOD
-
-  /* Determinant first */
-  det = box_x.x * box_y.y - box_x.y * box_y.x;
-  if ( 0 == det) error("Box Edges are parallel.");
-
-  /* Inverse second */
-  ibox_x.x =   box_y.y / det;
-  ibox_x.y = - box_y.x / det;
-  ibox_y.x = - box_x.y / det;
-  ibox_y.y =   box_x.x / det;
-
-  /* Transpose */
-  tbox_x.x = ibox_x.x;
-  tbox_x.y = ibox_y.x;
-  tbox_y.x = ibox_x.y;
-  tbox_y.y = ibox_y.y;
-
-#else /* 3D */
-
-  /* Determinant first */
-  det = box_x.y * box_y.z * box_z.x +
-        box_x.z * box_y.x * box_z.y +
-	box_x.x * box_y.y * box_z.z -
-        box_x.z * box_y.y * box_z.x -
-        box_x.x * box_y.z * box_z.y -
-	box_x.y * box_y.x * box_z.z;
-  if ( 0 == det) error("Box Edges are paralell.");
-
-  /* Inverse second */
-  ibox_x.x = ( box_y.y * box_z.z - box_y.z * box_z.y ) / det;
-  ibox_x.y = ( box_x.z * box_z.y - box_x.y * box_z.z ) / det;
-  ibox_x.z = ( box_x.y * box_y.z - box_x.z * box_y.y ) / det;
-
-  ibox_y.x = ( box_y.z * box_z.x - box_y.x * box_z.z ) / det;
-  ibox_y.y = ( box_x.x * box_z.z - box_x.z * box_z.x ) / det;
-  ibox_y.z = ( box_x.z * box_y.x - box_x.x * box_y.z ) / det;
-
-  ibox_z.x = ( box_y.x * box_z.y - box_y.y * box_z.x ) / det;
-  ibox_z.y = ( box_x.y * box_z.x - box_x.x * box_z.y ) / det;
-  ibox_z.z = ( box_x.x * box_y.y - box_x.y * box_y.x ) / det;
-
-  /* Transpose */
-  tbox_x.x = ibox_x.x;
-  tbox_x.y = ibox_y.x;
-  tbox_x.z = ibox_z.x;
-
-  tbox_y.x = ibox_x.y;
-  tbox_y.y = ibox_y.y;
-  tbox_y.z = ibox_z.y;
-
-  tbox_z.x = ibox_x.z;
-  tbox_z.y = ibox_y.z;
-  tbox_z.z = ibox_z.z;
-
-#endif /* TWOD */
+  /* initialize cells */
+  for (i=0; i<nmax; ++i) {
+    p = cell_array + i;
+    p->n_max = 0;
+    alloc_cell(p, CSTEP);
+  }
 
 }
 
