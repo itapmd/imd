@@ -1,4 +1,3 @@
-
 /******************************************************************************
 *
 * imd_comm_force_2d.c -- communication for force computation, two dimensions
