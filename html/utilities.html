@@ -333,44 +333,43 @@ following format:
 <A NAME="imd_coord">
 <H2>imd_coord.c</H2>
 </A>
-Computes coordination numbers. The usage is similar to
-imd_pair.c. Compile as follows:
+Computes coordination numbers. Compile as follows:
 <PRE>
-    gcc -O [-DTWOD] [-DSINGLE] imd_coord.c -lm
+    gcc -O [-DTWOD] [-DTERSOFF] [-DSINGLE] imd_coord.c -lm
 </PRE>
-Default is a program for 3D, but if the flag <TT>-DTWOD</TT> is 
-present, a program for 2D is compiled.
-The flag <TT>-DSINGLE</TT>
-produces a binary using floats instead of doubles.
-<P> 
-imd_coord produces coordination numbers of atoms from IMD 
-configuration files (or checkpoints). Usage is as follows:
+Default is a program for 3D, but if the flag <TT>-DTWOD</TT> is
+present, a program for 2D is compiled.  The flag <TT>-DSINGLE</TT>
+produces a binary using floats instead of doubles. In the case of the
+flag <TT>-DTERSOFF</TT>, the cutoff parameter of the Tersoff potential
+are used and the coordination numbers are computed slightly different.
+
+<P> imd_coord produces coordination numbers of atoms from IMD
+configuration files (or checkpoints, or avpos outfiles). Usage is as
+follows:
 <PRE>
-    imd_coord [-v] [-r&lt;nn&gt;] [-A&lt;nn&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
+    imd_coord [-v] [-r&lt;nn&gt;] [-A&lt;nn&gt;] [-e&lt;rmax&gt;] [-g] [-l] [-C&lt;cmax&gt;] -p &lt;paramfile&gt;
 </PRE>
-The parameter <TT>paramfile</TT> is mandatory. imd_coord reads the
-box size, the number of atom types, and the names of the configuration
-and checkpoint files from it. Also read is the parameter <TT>pbc_dirs</TT>,
-which determines (like in IMD) what boundary conditions are 
-used. The default is to use periodic boundary conditions.
-If the restart parameter
-<TT>-r&lt;nn&gt;</TT> is present, imd_coord takes the checkpoint
-file <TT>&lt;outfiles&gt;.&lt;nn&gt;.chkpt</TT> as input, and
-reads also the corresponding iteration file. Otherwise, 
-the input configuration <TT>&lt;coordname&gt;</TT> of the
-simulation described by <TT>paramfile</TT> is used as input.
-If the parameter
+The parameter <TT>paramfile</TT> is mandatory. imd_coord reads the box
+size, the number of atom types, and the names of the configuration and
+checkpoint files from it. Also read is the parameter
+<TT>pbc_dirs</TT>, which determines (like in IMD) what boundary
+conditions are used. The default is to use periodic boundary
+conditions.  If the restart parameter <TT>-r&lt;nn&gt;</TT> is
+present, imd_coord takes the checkpoint file
+<TT>&lt;outfiles&gt;.&lt;nn&gt;.chkpt</TT> as input, and reads also
+the corresponding iteration file. Otherwise, the input configuration
+<TT>&lt;coordname&gt;</TT> of the simulation described by
+<TT>paramfile</TT> is used as input.  If the parameter
 <TT>-A&lt;nn&gt;</TT> is present, imd_coord takes the avpos outfile
 <TT>&lt;outfiles&gt;.&lt;nn&gt;.avp</TT> as input, and reads also the
 corresponding iteration file
-<TT>&lt;outfiles&gt;.&lt;nn&gt;.avp.itr</TT>.
-The output file name of imd_coord is the input file name, 
-but with <TT>.coord</TT> appended. The coordination numbers are
-additionally written on the standard output.
+<TT>&lt;outfiles&gt;.&lt;nn&gt;.avp.itr</TT>. <P>
+
 <P>
+
 The parameter <TT>-e&lt;rmax&gt;</TT> specifies the maximal distance
 for which neighbouring atoms are taken into account. The default
-is 1.0. imd_coord writes a table in the following format:
+is 1.0. imd_coord writes a table to standard output in the following format:
 <PRE>
    00    c_00
    01	 c_01
@@ -393,6 +392,54 @@ virtual types. Otherwise, all atom types are taken modulo
 <TT>ntypes</TT>, the number of different real atom types, and 
 <TT>N</TT> equals <TT>ntypes-1</TT>.
 <P>
+
+The parameter <TT>-C&lt;cmax&gt;</TT> specifies the maximal
+coordination number the occurence of which is computed. The default
+vaue is 10. imd_coord writes a table to standard output in the
+followint format:
+<PRE>
+   0       occ_0
+   1	   occ_1
+
+     ...
+
+   cmax    occ_cmax
+</PRE>
+where <TT>occ_i</TT> is the occurence in percent of the coordination number i.
+
+<P>
+
+If the parameter <TT>-g</TT> is present, imd_coord writes the table of
+the occurences of the coordination numbers into a file the name of
+which is the input file name, but with <TT>.gcoord</TT> appended. If
+the parameter <TT>-l</TT> is present, imd_coord writes the local
+coordination numbers for each atom into a file the name of which is
+the input file name, but with <TT>.coord</TT> appended. The output
+format in this case is
+<PRE>
+    n type x y (z) c_tot c_0 c_1 ... c_N
+</PRE>
+where <TT>n</TT> is the atom number, <TT>type</TT> is the type of the
+atom, <TT>x,y,(z)</TT> are the coordinates of the atom, <TT>c_tot</TT>
+is the total coordination number, and <TT>c_i</TT> is the coordination
+number corresponding to neighbour atoms of type <TT>i</TT>.
+
+<P>
+
+If imd_coord is compiled with the <TT>TERSOFF</TT> flag, the value of
+<TT>rmax</TT> is computed from the cutoff parameters of the Tersoff
+potential. Furthermore, the coordination numbers
+<I>I<SUB>i</SUB><SUP>X</SUP></I> are computed as
+<P>
+<CENTER>
+<IMG SRC="coord.gif"><BR><P>
+</CENTER>
+<P>
+where the sum is over all neighbour atoms <I>j</I> of atom <I>i</I>
+with type <I>X</I> and <I>f<SUB>c</SUB></I> is the cutoff function of
+the Tersoff potential.
+<P>
+
 
 <A NAME="imd_elco">
 <H2>imd_elco.c</H2>
