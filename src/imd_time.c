@@ -34,7 +34,7 @@ void imd_start_timer(imd_timer *timer)
 #elif defined(USE_RUSAGE)
   getrusage(RUSAGE_SELF,&(timer->start));
 #else
-   times(&(timer->start)); 
+  times(&(timer->start)); 
 #endif
 }
 
@@ -49,7 +49,7 @@ void imd_stop_timer(imd_timer *timer)
 #ifdef MPI
   timer->total += MPI_Wtime() - timer->start;
 #elif defined(USE_RUSAGE)
-  timeval now;
+  struct rusage now;
   getrusage(RUSAGE_SELF,&now);
   timer->total += 
     (double)(now.ru_utime.tv_sec  - timer->start.ru_utime.tv_sec) +
@@ -59,7 +59,7 @@ void imd_stop_timer(imd_timer *timer)
   double inv_tick = 0.0;
   if (inv_tick==0.0) inv_tick = 1.0 / (double) sysconf(_SC_CLK_TCK);
   times(&now);
-  timer->total += (double)(now.tms_utime - timer->start.tms_utime) * inv_tick;
+  timer->total += (double)(now.tms_utime - timer->start.tms_utime)*inv_tick;
 #endif
 }
 
