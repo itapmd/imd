@@ -39,7 +39,7 @@ int  *cl, *tl;
 
 int estimate_nblist_size(void)
 {
-  int  c, c1, i, tn=0;
+  int  c, c1, i, tn=1;
   cell *p, *q;
 
   /* for all cells */
@@ -101,7 +101,7 @@ void make_nblist(void)
   fix_cells();
 
   /* update reference positions */
-  at=0;
+  at=1;
   for (k=0; k<ncells; k++) {
     p = cell_array + cnbrs[k].np;
     for (i=0; i<p->n; i++) {
