@@ -108,7 +108,8 @@ void move_atoms_nve(void)
 
 void move_atoms_nve(void) 
 {
-  error("the chosen ensemble is not supported by this binary");
+  if (myid==0)
+  error("the chosen ensemble NVE is not supported by this binary");
 }
 
 #endif
@@ -211,7 +212,8 @@ void move_atoms_mik(void)
 
 void move_atoms_mik(void) 
 {
-  error("the chosen ensemble is not supported by this binary");
+  if (myid==0)
+  error("the chosen ensemble MIK is not supported by this binary");
 }
 
 #endif
@@ -286,7 +288,8 @@ void move_atoms_msd(void)
 
 void move_atoms_msd(void) 
 {
-  error("the chosen ensemble (MSD) is not supported by this binary");
+  if (myid==0)
+  error("the chosen ensemble MSD is not supported by this binary");
 }
 
 #endif 
@@ -394,7 +397,8 @@ void move_atoms_nvt(void)
 
 void move_atoms_nvt(void) 
 {
-  error("the chosen ensemble is not supported by this binary");
+  if (myid==0)
+  error("the chosen ensemble NVT is not supported by this binary");
 }
 
 #endif
@@ -526,7 +530,8 @@ void move_atoms_npt_iso(void)
 
 void move_atoms_npt_iso(void) 
 {
-  error("the chosen ensemble is not supported by this binary");
+  if (myid==0)
+  error("the chosen ensemble NPT_ISO is not supported by this binary");
 }
 
 #endif
@@ -713,7 +718,8 @@ void move_atoms_npt_axial(void)
 
 void move_atoms_npt_axial(void) 
 {
-  error("the chosen ensemble is not supported by this binary");
+  if (myid==0)
+  error("the chosen ensemble NPT_AXIAL is not supported by this binary");
 }
 
 #endif
@@ -810,7 +816,8 @@ void move_atoms_and(void)
 
 void move_atoms_and(void) 
 {
-  error("the chosen ensemble is not supported by this binary");
+  if (myid==0)
+  error("the chosen ensemble AND is not supported by this binary");
 }
 
 #endif
@@ -833,7 +840,8 @@ void move_atoms_mc(void)
 
 void move_atoms_mc(void)
 {
-  error("the chosen ensemble is not supported by this binary");
+  if (myid==0)
+  error("the chosen ensemble MC is not supported by this binary");
 }
 
 #endif
@@ -955,7 +963,8 @@ void move_atoms_frac(void)
 
 void move_atoms_frac(void) 
 {
-  error("the chosen ensemble is not supported by this binary");
+  if (myid==0)
+  error("the chosen ensemble FRAC is not supported by this binary");
 }
 
 #endif
@@ -1072,7 +1081,8 @@ void move_atoms_pull(void)
 
 void move_atoms_pull(void) 
 {
-  error("the chosen ensemble is not supported by this binary");
+  if (myid==0)
+  error("the chosen ensemble PULL is not supported by this binary");
 }
 
 #endif
@@ -1282,7 +1292,8 @@ void move_atoms_nvx(void)
 
 void move_atoms_nvx(void) 
 {
-  error("the chosen ensemble is not supported by this binary");
+  if (myid==0) 
+  error("the chosen ensemble NVX is not supported by this binary");
 }
 
 #endif
