@@ -126,8 +126,7 @@ allows to generate configuration files for several simple crystal
 structures, notably 2D hexagonal crystals, and 3d cubic FCC, BCC, 
 B2 (CsCL), NaCl, diamond, zincblende, and C15 Laves type structures. 
 These are essentially the same configurations as those 
-<a href="config.html#generated">generated online</a> by IMD. 
-Note, however, that the user interface is slightly different.</p>
+<a href="config.html#generated">generated online</a> by IMD. </p>
 
 <a id="generated" name="generated"> 
 <h2>Generated Configurations</h2>
@@ -161,32 +160,30 @@ the parameter <tt>masses</tt>, which requires <tt>ntypes</tt>
 real values.</p>
 
 <p>
-For the cubic structures _fcc, _bcc, _nacl, and _b2, all three box
-parameters must be positive, even integers. They specify the
-dimensions of a rectangular block of a simple cubic lattice with
-lattice parameter 1. The atom positions are obvious subsets of these
-simple cubic lattice sites. In addition, the whole structure can be
-scaled by the real parameter <tt>box_unit</tt> (default: 1), so that,
-e.g., an _fcc structure with nearest neighbor distance
-sqrt(2.0)*<tt>box_unit</tt> is obtained.  In the case of the diamond
-and zincblende structure, the size of the unit cell is
-<tt>box_unit</tt> (default: 1).</p>
+For the cubic crystal structures _fcc, _bcc, _nacl, _b2, _diamond,
+_zincblende, and _lav, the three components of the parameter
+<tt>box_param</tt> specify the number of conventional cubic unit
+cells in each direction. The size of such a cubic unit cell is
+given by the parameter <tt>box_unit</tt>, which defaults to 
+<tt>1.0</tt>. So, in order to obtain an FCC crystal with nearest
+neighbor distance <tt>sqrt(2)</tt>, <tt>box_unit</tt> must be set 
+to <tt>2.0</tt>.</p>
 
 <p>
-For the C15 Laves structure _lav, the three box parameters specify
-the number of unit cells in each direction (each with 24 atoms).
-In the parallel version, each CPU must have a block of entire cells,
-which means that the box parameters must be multiples of the
-components of <tt>cpu_dim</tt>. The size of the conventional cubic 
-unit cell is equal to <tt>box_unit</tt> (default: 1). For example, 
-in order to obtain a scale where the nearest neighbor distance of 
-small atoms (type 0) is 1, <tt>box_unit</tt> must be set to 2*sqrt(2).</p>
+For the C15 Laves structure _lav, the three box parameters 
+must be multiples of the corresponding components of <tt>cpu_dim</tt>
+in the parallel version, so that each CPU contains a block of 
+complete unit cells (each with 24 atoms). Here, in order to obtain a 
+nearest neighbor distance <tt>d</tt> of small atoms (type 0), 
+<tt>box_unit</tt> must be set to <tt>d*2*sqrt(2)</tt>.</p>
 
 <p>
-For the 2D hexagonal _hex structure, the dimension of the sample is 
-<tt>box_param.x*sqrt(3)*box_unit</tt> in x-direction, and 
-<tt>box_param.y*box_unit</tt> in y-direction. The nearest 
-neighbor distance is <tt>box_unit</tt> (default: 1).</p>
+For the 2D hexagonal _hex structure, <tt>box_param</tt> specifies
+the number of rectangular unit cells in each direction. In units of
+<tt>box_unit</tt>, the size of a unit cell is <tt>sqrt(3)</tt> in the
+x-direction, and <tt>1.0</tt> in the y-direction. <tt>box_unit</tt>, 
+which defaults to <tt>1.0</tt>, is also equal to the nearest neighbor 
+distance.</p>
 
 <p>
 For the quasicrystalline _tiqc phase, an approximant with a

@@ -28,23 +28,18 @@
 * filenames starting with an _ don't specify a file to read from
 * but a crystal structure to generate as an initial configuration:
 *
-* _fcc        -- generates fcc structure
-* _bcc        -- generates bcc structure
+* _hex        -- generates 2D hexagonal crystal
+* _fcc        -- generates FCC structure
+* _bcc        -- generates BCC structure
 * _b2         -- generates B2 structure
-* _nacl       -- generates binary nacl structure (atom type 0 and 1)
+* _nacl       -- generates NaCl structure
 * _diamond    -- generates cubic diamond structure
 * _zincblende -- generates zincblende structure
-* _tiqc       -- generates a truncated icosahedra quasicrystal
-* _hex        -- generates 2D hexagonal crystal
 * _lav        -- generates a cubic Laves structure C15 (MgCu2)
+* _tiqc       -- generates a truncated icosahedra quasicrystal
 *
 * The lattice constant of the conventional unit cell of the crystal 
-* structures is:
-*
-*  - 2.0 * box_unit for fcc, bcc, B2, and NaCl structures
-*  - 4.0 * box_unit for the diamond and zincblende structures
-*  - 1.0 * box_unit for the C15 Laves structure
-*  - 1.0 * box_unit for the 2D hexagonal structures
+* structures is box_unit.
 *
 ******************************************************************************/
 
@@ -69,17 +64,17 @@ void generate_atoms(str255 mode)
   do_maxwell=1;
 
 #ifdef TWOD
-  if (0 == strcmp(mode,"_hex")) {          /* hexagonal crystal */
+  if (0 == strcmp(mode,"_hex")) {          /* 2D hexagonal crystal */
     init_hex();
     generate_hex();
 #else /* 3D */
-  if (0 == strcmp(mode,"_fcc")) {          /* fcc */
+  if (0 == strcmp(mode,"_fcc")) {          /* FCC */
     init_cubic();
     generate_fcc(0);
   } else if (0 == strcmp(mode,"_nacl")) {  /* NaCl */
     init_cubic();
     generate_fcc(1);
-  } else if (0 == strcmp(mode,"_bcc")) {   /* bcc */
+  } else if (0 == strcmp(mode,"_bcc")) {   /* BCC */
     init_cubic();
     generate_fcc(2);
   } else if (0 == strcmp(mode,"_b2")) {    /* B2, CsCl */
@@ -91,7 +86,7 @@ void generate_atoms(str255 mode)
   } else if (0 == strcmp(mode,"_zincblende")) { /* zincblende */
     init_cubic();
     generate_fcc(5);
-  } else if (0 == strcmp(mode,"_lav")) {   /* Laves */
+  } else if (0 == strcmp(mode,"_lav")) {   /* C15 Laves */
     init_cubic();
     generate_lav();
 #ifdef QUASI
@@ -236,15 +231,13 @@ void init_cubic(void)
 {
   if ((box_param.x==0) || (box_param.y==0) || (box_param.z==0))
     error("box_param not set!");
-  if ((box_param.x%2==1) || (box_param.y%2==1) || (box_param.z%2==1))
-    error("box_param must consist of three even numbers!");
   box_x.x = box_param.x * box_unit;  box_x.y = 0.0;  box_x.z = 0.0;
   box_y.x = 0.0;  box_y.y = box_param.y * box_unit;  box_y.z = 0.0;
   box_z.x = 0.0;  box_z.y = 0.0;  box_z.z = box_param.z * box_unit;
   make_box();
 }
 
-/* generate fcc or B2 or NaCl crystal */
+/* generate cubic crystal structures (not just fcc...) */
 void generate_fcc(int maxtyp)
 {
   cell    *input, *to;
@@ -253,8 +246,14 @@ void generate_fcc(int maxtyp)
   int     to_cpu;
   int     x, y, z, typ;
 
-  /* adjust parameters for diamond and zincblende lattice */
-  if(maxtyp == 4 || maxtyp == 5) { 
+  /* conventional unit cell has size box_unit */
+  if (maxtyp < 4) {    /* FCC, BCC, B2, NaCl  */
+    box_param.x *= 2; 
+    box_param.y *= 2; 
+    box_param.z *= 2; 
+    box_unit    /= 2;
+  }
+  else {               /* diamond and zincblende */
     box_param.x *= 4; 
     box_param.y *= 4; 
     box_param.z *= 4; 
