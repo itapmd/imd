@@ -41,10 +41,8 @@ void main_loop(void)
   vektor temp_df;
   vektor *fbc_df;
   fbc_df = (vektor *) malloc(vtypes*DIM*sizeof(real));
-      if (NULL==fbc_df)
-	error("Can't allocate memory for fbc_df\n");
-      for(l=0; l<vtypes; l++)
-       *(fbc_forces+l) = nullv; 
+  if (NULL==fbc_df)
+    error("Can't allocate memory for fbc_df\n");
 #endif
 
   if (0==myid) printf( "Starting simulation %d\n", simulation );
