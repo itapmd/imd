@@ -93,6 +93,7 @@ vektor  vec_prod(vektor u, vektor v);
 void make_box(void);
 void init_cells(void);
 void make_cell_lists(void);
+void check_pairs(void);
 void move_atom(cell *to, cell *from, int index);
 void alloc_cell(cell *thecell, int count);
 #ifdef TWOD

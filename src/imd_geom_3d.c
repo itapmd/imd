@@ -75,7 +75,6 @@ ivektor maximal_cell_dim( void )
 ******************************************************************************/
 
 void init_cells( void )
-
 {
   int i, j, k, l;
   real tmp;
@@ -173,6 +172,19 @@ void init_cells( void )
        next_cell_dim.z = ((int)(next_cell_dim.z/cpu_dim.z))*cpu_dim.z;
   }
 #endif
+#elif defined(OMP)
+  /* global_cell_dim must be even */
+  if (0 != (global_cell_dim.x % 2)) global_cell_dim.x -= 1;
+  if (0 != (global_cell_dim.y % 2)) global_cell_dim.y -= 1;
+  if (0 != (global_cell_dim.z % 2)) global_cell_dim.z -= 1;
+#ifdef NPT
+  /* next_cell_dim must be even */
+  if ((ensemble == ENS_NPT_ISO) || (ensemble == ENS_NPT_AXIAL)) {
+    if (0 != (next_cell_dim.x % 2)) next_cell_dim.x -= 1;
+    if (0 != (next_cell_dim.y % 2)) next_cell_dim.y -= 1;
+    if (0 != (next_cell_dim.z % 2)) next_cell_dim.z -= 1;
+  }
+#endif
 #endif
 
   /* Check if cell array is large enough */
@@ -195,6 +207,10 @@ void init_cells( void )
     if (next_cell_dim.x == global_cell_dim.x) next_cell_dim.x += cpu_dim.x;
     if (next_cell_dim.y == global_cell_dim.y) next_cell_dim.y += cpu_dim.y;
     if (next_cell_dim.z == global_cell_dim.z) next_cell_dim.z += cpu_dim.z;
+#elif defined(OMP)
+    if (next_cell_dim.x == global_cell_dim.x) next_cell_dim.x += 2;
+    if (next_cell_dim.y == global_cell_dim.y) next_cell_dim.y += 2;
+    if (next_cell_dim.z == global_cell_dim.z) next_cell_dim.z += 2;
 #else
     if (next_cell_dim.x == global_cell_dim.x) next_cell_dim.x += 1;
     if (next_cell_dim.y == global_cell_dim.y) next_cell_dim.y += 1;
@@ -259,44 +275,25 @@ void init_cells( void )
   cellmax_old  = cellmax;
 
 #ifdef MPI
-  /* this test should be obsolete now */
-  if (0==myid) {
-     if ( 0 !=  global_cell_dim.x % cpu_dim.x ) 
-        error("cpu_dim.x no divisor of global_cell_dim.x");
-     if ( 0 !=  global_cell_dim.y % cpu_dim.y ) 
-        error("cpu_dim.y no divisor of global_cell_dim.y");
-     if ( 0 !=  global_cell_dim.z % cpu_dim.z ) 
-        error("cpu_dim.z no divisor of global_cell_dim.z");
-  }
-
   cell_dim.x = global_cell_dim.x / cpu_dim.x + 2;  
   cell_dim.y = global_cell_dim.y / cpu_dim.y + 2;
   cell_dim.z = global_cell_dim.z / cpu_dim.z + 2;
 
-  cellmin.x = 1;
-  cellmin.y = 1;
-  cellmin.z = 1;
+  cellmin.x = 1;   cellmax.x = cell_dim.x - 1;
+  cellmin.y = 1;   cellmax.y = cell_dim.y - 1;
+  cellmin.z = 1;   cellmax.z = cell_dim.z - 1;
 
-  cellmax.x = cell_dim.x - 1;
-  cellmax.y = cell_dim.y - 1;
-  cellmax.z = cell_dim.z - 1;
-    
   if (0==myid) 
     printf("Local cell array dimensions (incl buffer): %d %d %d\n",
 	   cell_dim.x,cell_dim.y,cell_dim.z);
 #else
-
   cell_dim.x = global_cell_dim.x;
   cell_dim.y = global_cell_dim.y;
   cell_dim.z = global_cell_dim.z;
 
-  cellmin.x = 0;
-  cellmin.y = 0;
-  cellmin.z = 0;
-
-  cellmax.x = cell_dim.x;
-  cellmax.y = cell_dim.y;
-  cellmax.z = cell_dim.z;
+  cellmin.x = 0;   cellmax.x = cell_dim.x;
+  cellmin.y = 0;   cellmax.y = cell_dim.y;
+  cellmin.z = 0;   cellmax.z = cell_dim.z;
 
   printf("Local cell array dimensions: %d %d %d\n",
 	 cell_dim.x,cell_dim.y,cell_dim.z);
@@ -307,7 +304,7 @@ void init_cells( void )
   cell_array = (cell *) malloc(
 		     cell_dim.x * cell_dim.y * cell_dim.z * sizeof(cell));
   if ( 0 == myid )
-  if (NULL == cell_array) error("Cannot allocate memory for cells");
+    if (NULL == cell_array) error("Cannot allocate memory for cells");
 
   /* Initialize cells */
   for (i=0; i < cell_dim.x; ++i)
@@ -399,12 +396,18 @@ void init_cells( void )
 
 void make_cell_lists(void)
 {
-  int i,j,k,l,m,n,r,s,t,nn;
+  int i,j,k,l,m,n,r,s,t,nn,nnx,nny,nnz;
   ivektor ipbc, neigh;
   pair *P;
 
+#ifdef OMP
+  nlists = 27;
+#else
+  nlists = 1;
+#endif
+
   /* initialize pairs before creating the first pair lists */
-  if (nallcells==0) for (i=0; i<6; ++i) pairs[i] = NULL;
+  if (nallcells==0) for (i=0; i<nlists; ++i) pairs[i] = NULL;
 
   nallcells = cell_dim.x * cell_dim.y * cell_dim.z;
 #ifdef MPI
@@ -414,10 +417,8 @@ void make_cell_lists(void)
   l = 0;
   for (i=cellmin.x; i<cellmax.x; ++i)
     for (j=cellmin.y; j<cellmax.y; ++j)
-      for (k=cellmin.z; k<cellmax.z; ++k) {
-        cells[l] = i * cell_dim.y * cell_dim.z + j * cell_dim.z + k;
-        l++;
-      }
+      for (k=cellmin.z; k<cellmax.z; ++k)
+        cells[l++] = i * cell_dim.y * cell_dim.z + j * cell_dim.z + k;
 #else
   ncells = cell_dim.x * cell_dim.y * cell_dim.z;
 #endif
@@ -431,34 +432,66 @@ void make_cell_lists(void)
      for the pairs from the same list.
   */
 
+#ifdef OMP
+  nn = sizeof(pair) * (cell_dim.x * cell_dim.y * cell_dim.z);
+  pairs[0] = (pair *) realloc( pairs[0], nn );  npairs[0] = 0;
+
   nn = sizeof(pair) * (cell_dim.x * cell_dim.y * ((cell_dim.z+1)/2));
-  pairs[0] = (pair *) realloc( pairs[0], nn * 2 );  npairs[0] = 0;
-  pairs[1] = (pair *) realloc( pairs[1], nn * 2 );  npairs[1] = 0;
+  pairs[1] = (pair *) realloc( pairs[1], nn );  npairs[1] = 0;
+  pairs[2] = (pair *) realloc( pairs[2], nn );  npairs[2] = 0;
+
   nn = sizeof(pair) * (cell_dim.x * ((cell_dim.y+1)/2) * cell_dim.z);
-  pairs[2] = (pair *) realloc( pairs[2], nn * 3 );  npairs[2] = 0;
-  pairs[3] = (pair *) realloc( pairs[3], nn * 3 );  npairs[3] = 0;
+  for (i=3; i<9; i++) {
+    pairs[i] = (pair *) realloc( pairs[i], nn );  npairs[i] = 0;
+  }
   nn = sizeof(pair) * (((cell_dim.x+1)/2) * cell_dim.y * cell_dim.z);
-  pairs[4] = (pair *) realloc( pairs[4], nn * 9 );  npairs[4] = 0;
-  pairs[5] = (pair *) realloc( pairs[5], nn * 9 );  npairs[5] = 0;
-  if ((pairs[0]==NULL) || (pairs[1]==NULL) || (pairs[2]==NULL) ||
-      (pairs[3]==NULL) || (pairs[4]==NULL) || (pairs[5]==NULL)) 
-      error("cannot allocate pair lists");
+  for (i=9; i<27; i++) {
+    pairs[i] = (pair *) realloc( pairs[i], nn );  npairs[i] = 0;
+  }
+
+  if ((pairs[ 0]==NULL) || (pairs[ 1]==NULL) || (pairs[ 2]==NULL) ||
+      (pairs[ 3]==NULL) || (pairs[ 4]==NULL) || (pairs[ 5]==NULL) ||
+      (pairs[ 6]==NULL) || (pairs[ 7]==NULL) || (pairs[ 8]==NULL) ||
+      (pairs[ 9]==NULL) || (pairs[10]==NULL) || (pairs[11]==NULL) ||
+      (pairs[12]==NULL) || (pairs[13]==NULL) || (pairs[14]==NULL) ||
+      (pairs[15]==NULL) || (pairs[16]==NULL) || (pairs[17]==NULL) ||
+      (pairs[18]==NULL) || (pairs[19]==NULL) || (pairs[20]==NULL) ||
+      (pairs[21]==NULL) || (pairs[22]==NULL) || (pairs[23]==NULL) ||
+      (pairs[24]==NULL) || (pairs[25]==NULL) || (pairs[26]==NULL)) 
+    error("cannot allocate pair lists");
+#else
+  nn = sizeof(pair) * cell_dim.x * cell_dim.y * cell_dim.z * 14;
+  pairs[0] = (pair *) realloc( pairs[0], nn );  npairs[0] = 0;
+  if (pairs[0]==NULL) error("cannot allocate pair list");
+#endif
 
   /* for each cell */
   for (i=cellmin.x; i<cellmax.x; ++i)
     for (j=cellmin.y; j<cellmax.y; ++j)
-      for (k=cellmin.z; k<cellmax.z; ++k)
+      for (k=cellmin.z; k<cellmax.z; ++k) {
+
+#ifdef OMP
+        if (i % 2 == 0) nnx =  9; else nnx = 10;
+        if (j % 2 == 0) nny =  3; else nny =  4;
+        if (k % 2 == 0) nnz =  1; else nnz =  2;
+#endif
 
 	/* For half of the neighbours of this cell */
 	for (l=0; l <= 1; ++l)
 	  for (m=-l; m <= 1; ++m)
 	    for (n=(l==0 ? -m  : -l ); n <= 1; ++n) { 
 
+#ifdef OMP
               /* array where to put the pairs */
               if (l==0) {
-                if (m==0) { if (k % 2 == 0) nn=0; else nn=1; }
-                else      { if (j % 2 == 0) nn=2; else nn=3; }
-              } else      { if (i % 2 == 0) nn=4; else nn=5; }
+                if (m==0) { 
+                  if (n==0) nn = 0;
+                  else    { nn = nnz; nnz += 2; }
+		} else    { nn = nny; nny += 2; }
+	      } else      { nn = nnx; nnx += 2; }
+#else
+              nn = 0;
+#endif
 
 #ifdef MPI
               r = i+l - 1 + my_coord.x * (cell_dim.x - 2);
@@ -509,6 +542,7 @@ void make_cell_lists(void)
                 npairs[nn]++;
 	      }
 	    }
+      }
 
 #ifdef MPI
 
@@ -516,12 +550,18 @@ void make_cell_lists(void)
      the force loop also on the other half of the neighbours for the 
      cells on the surface of the CPU */
 
-  for (i=0; i<6; ++i) npairs2[i] = npairs[i];
+  for (i=0; i<nlists; ++i) npairs2[i] = npairs[i];
 
   /* for each cell */
   for (i=cellmin.x; i<cellmax.x; ++i)
     for (j=cellmin.y; j<cellmax.y; ++j)
-      for (k=cellmin.z; k<cellmax.z; ++k)
+      for (k=cellmin.z; k<cellmax.z; ++k) {
+
+#ifdef OMP
+        if (i % 2 == 0) nnx =  9; else nnx = 10;
+        if (j % 2 == 0) nny =  3; else nny =  4;
+        if (k % 2 == 0) nnz =  1; else nnz =  2;
+#endif
 
 	/* for the other half of the neighbours of this cell */
 	for (l=0; l <= 1; ++l)
@@ -532,17 +572,23 @@ void make_cell_lists(void)
               neigh.y = j-m;
               neigh.z = k-n;
 
+#ifdef OMP
+              /* array where to put the pairs */
+              if (l==0) {
+                if (m==0) { 
+                  if (n==0) nn = 0;
+                  else    { nn = nnz; nnz += 2; }
+		} else    { nn = nny; nny += 2; }
+	      } else      { nn = nnx; nnx += 2; }
+#else
+              nn = 0;
+#endif
+
               /* if second cell is a buffer cell */
               if ((neigh.x == 0) || (neigh.x == cell_dim.x-1) || 
                   (neigh.y == 0) || (neigh.y == cell_dim.y-1) ||
                   (neigh.z == 0) || (neigh.z == cell_dim.z-1)) 
               {
-                /* array where to put the pairs */
-                if (l==0) {
-                  if (m==0) { if (k % 2 == 0) nn=0; else nn=1; }
-                  else      { if (j % 2 == 0) nn=2; else nn=3; }
-                } else      { if (i % 2 == 0) nn=4; else nn=5; }
-
                 /* Apply periodic boundaries */
                 ipbc.x = 0; r = neigh.x - 1 + my_coord.x * (cell_dim.x - 2);
                 if (r<0) ipbc.x--; else if (r>global_cell_dim.x-1) ipbc.x++;
@@ -571,11 +617,44 @@ void make_cell_lists(void)
 	        }
 	      }
 	    }
+      }
 
 #endif /* MPI */
 
 #endif /* !(defined(MPI) && definded(MONOLJ)), i.e., not world record */
 
+#ifdef OMP
+    check_pairs();
+#endif
+
+}
+
+
+/******************************************************************************
+*
+*  check pair lists in OMP mode
+*
+******************************************************************************/
+
+void check_pairs()
+{
+  int i, j, max, *lst;
+  pair *p;
+
+  max = global_cell_dim.x * global_cell_dim.y * global_cell_dim.y;
+  lst = (int *) malloc(max*sizeof(int));
+
+  for (i=0; i<nlists; i++) {
+    for (j=0; j<max; j++) lst[j]=0;
+    for (j=0; j<npairs[i]; j++) {
+      p = pairs[i]+j;
+      if (lst[p->np]>0)                     error("pair list corruption!"); 
+      lst[p->np]=1;
+      if ((lst[p->nq]>0) && (p->np!=p->nq)) error("pair list corruption!"); 
+      lst[p->nq]=1;
+    }
+  }
+  free(lst);
 }
 
 
@@ -608,7 +687,11 @@ ivektor cell_coord(real x, real y, real z)
 }
 
 
-/* map vektor back into simulation box */
+/******************************************************************************
+*
+*  map vektor back into simulation box
+*
+******************************************************************************/
 
 vektor back_into_box(vektor pos)
 {

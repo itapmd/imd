@@ -39,18 +39,20 @@
 #else
 #define EXTERN extern /* declare them extern otherwise */
 #define INIT(data)
-/* #define nullvektor
-#define nullivektor
-#define einsvektor
-#define einsivektor */
 #endif
 
 /* Where all the data lives */
 EXTERN cell *cell_array INIT(NULL);      /* array of cells */
 EXTERN integer *cells INIT(NULL);        /* list if inner cell indices */
-EXTERN pair *pairs[2*DIM];               /* arrays of cell pairs */  
-EXTERN int ncells,nallcells INIT(0);     /* number of cells */
-EXTERN int npairs[2*DIM],npairs2[2*DIM]; /* number of cell pairs */
+#ifdef TWOD
+EXTERN pair *pairs[9];                   /* arrays of cell pairs */  
+EXTERN int  npairs[9], npairs2[9];       /* number of cell pairs */
+#else
+EXTERN pair *pairs[27];                  /* arrays of cell pairs */  
+EXTERN int  npairs[27], npairs2[27];     /* number of cell pairs */
+#endif
+EXTERN int ncells, nallcells INIT(0);    /* number of cells */
+EXTERN int nlists;                       /* number of cell pair lists */
 EXTERN ivektor cell_dim;                 /* dimension of cell array (per cpu)*/
 EXTERN ivektor global_cell_dim;          /* dimension of cell array */
 

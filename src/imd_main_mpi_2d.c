@@ -73,7 +73,7 @@ void calc_forces(void)
      loop acting on our local data cells */
 
   /* compute forces for all pairs of cells */
-  for (n=0; n<4; ++n) {
+  for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y)
 #endif
@@ -100,7 +100,7 @@ void calc_forces(void)
      cells on the surface of the CPU */
 
   /* compute forces for remaining pairs of cells */
-  for (n=0; n<4; ++n) {
+  for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y)
 #endif

@@ -107,7 +107,7 @@ void calc_forces(void)
      loop acting on our local data cells */
 
   /* compute forces for all pairs of cells */
-  for (n=0; n<6; ++n) {
+  for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
@@ -124,7 +124,7 @@ void calc_forces(void)
 
 #ifdef EAM2
   /* if EAM2, we have to loop a second time over pairs of distinct cells */
-  for (n=0; n<6; ++n) {
+  for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
@@ -143,7 +143,7 @@ void calc_forces(void)
 
 #ifdef COVALENT
   /* complete neighbor tables for remaining pairs of cells */
-  for (n=0; n<6; ++n) {
+  for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -175,7 +175,7 @@ void calc_forces(void)
   tmpvec1[4] = virial;
 
   /* compute forces for remaining pairs of cells */
-  for (n=0; n<6; ++n) {
+  for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
@@ -213,7 +213,7 @@ void calc_forces(void)
   send_cells(copy_rho_h,pack_rho_h,unpack_rho_h);
 
   /* second EAM2 loop over all cells pairs */
-  for (n=0; n<6; ++n) {
+  for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
@@ -229,7 +229,7 @@ void calc_forces(void)
   }
 
   /* if EAM2, we have to loop a second time over pairs of distinct cells */
-  for (n=0; n<6; ++n) {
+  for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
@@ -261,7 +261,7 @@ void calc_forces(void)
      cells on the surface of the CPU */
 
   /* compute forces for remaining pairs of cells */
-  for (n=0; n<6; ++n) {
+  for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
