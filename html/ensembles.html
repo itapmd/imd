@@ -86,8 +86,19 @@ mik, which can be verified using the option <A HREF="options.html#fnorm">
 fnorm</A>.
 
 <P><LI><B> frac </B><P>
-Fracture simulation with stadium damping. Anyone know how this works?
-What do the parameters mean? 
+Fracture simulation with stadium damping according to Gumbsch et al. 
+(PRB 55, p.3445, 1997). The crack (x: propagation direction, y: crack
+plane, z: 2D or pbc) can propagate within the nve ensemble in an 
+elliptical "stadium" (characterized by center and stadium (= half axes)).
+Outside this inner ellipse viscous damping or nvt temperature control is
+applied (depending on dampingmode). The damping is characterized by the
+damping coefficient gamma_bar which should be around 2*omega_E.
+The ramping of the damping depends on the ratio stadium.x/box.x, i.e full
+damping at the border of the box. With stadium2 one can introduce an
+outer ellipse outside which full damping is applied, the slope of the
+damping thus depends on the ratio stadium.x/stadium2.x. Additionally the 
+sample can be strained at strainrate in y direction.   
+							
 
 <A NAME="nvx">
 <P><LI><B> nvx </B><P>

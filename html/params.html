@@ -182,14 +182,21 @@ epitax_ctrl      # control parameter for switch of ensemble for
                  # deposited atoms
 
 # parameters for FRAC
-dampstadion	# Damping stadion
-dampgamma	# Damping factor gamma
-dampcutoff	# Damping cutoff
-k_crit		# Stress Intensity factor
-mue		# Youngs modulus
-kel		# Shear modulus
-crktip		# Crack tip location
-strip_width	# strip width (in x dir)
+center           # center of stadium function: x y
+stadium          # half axes of inner elipse: x y
+stadium2         # half axes of outer elipse: x y, default box.x,y/2
+expansionmode    # if 1 strain the sample in y direction
+strainrate       # with this strainrate
+gamma_bar        # damping coefficent
+dampingmode      # O: viscous damping (default) 1: Nose-Hover
+# additional parameters for FTG
+delta_ftg        # ???
+gamma_min
+Tleft
+Tright
+nslices
+nslices_Left
+nslices_Right
 
 # parameters for SLLOD (with periodic boundary conditions)
 shear_rate      # yz-, zx-, and xy-component of the deformation rate tensor
