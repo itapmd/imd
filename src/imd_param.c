@@ -618,6 +618,9 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"stadium")==0) {
       getparam("stadium",&stadium,PARAM_REAL,2,2);
     }
+    else if (strcasecmp(token,"stadium2")==0) {
+      getparam("stadium2",&stadium2,PARAM_REAL,2,2);
+    }
     else if (strcasecmp(token,"center")==0) {
       getparam("center",&center,PARAM_REAL,2,2);
     }
@@ -1311,6 +1314,17 @@ void check_parameters_complete()
   /* determine shift of potential at cutoff */
   pair_int_monolj(&monolj_shift,&tmp,monolj_r2_cut);
 #endif
+
+#ifdef FRAC
+  if (stadium2.x==0 && stadium2.y==0 ){
+    stadium2.x = box_x.x/2.0;
+    stadium2.y = box_y.y/2.0;
+  }
+#endif
+
+
+
+
 }
 
 /*****************************************************************
@@ -1539,8 +1553,9 @@ void broadcast_params() {
 #endif
 
 #if defined(STM) || defined(FRAC)
-  MPI_Bcast( &stadium ,         2 , REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &center ,          2 , REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &stadium,          2 , REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &stadium2,         2 , REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &center,           2 , REAL, 0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef NPT

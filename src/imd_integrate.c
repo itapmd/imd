@@ -690,7 +690,6 @@ void move_atoms_sllod(void)
         p->ort X(i) += shear_rate.x * p->ort Y(i);
         p->ort Y(i) += shear_rate.y * p->ort X(i);
 
-	
 #ifdef UNIAX
         cross.x = p->dreh_impuls Y(i) * p->achse Z(i)
                 - p->dreh_impuls Z(i) * p->achse Y(i);
@@ -1229,21 +1228,23 @@ void move_atoms_frac(void)
 	    f = 1.0; 
 	} else {
 	    /* Calculate stadium function f */
-	    tmp1 = SQR((p->ort X(i)-center.x)/box_x.x);
-	    tmp2 = SQR((p->ort Y(i)-center.y)/box_y.y);
-	    f = (tmp1+tmp2-SQR(stadium.x/box_x.x))/\
-		(.25- SQR(stadium.x/box_x.x));
+	    tmp1 = SQR((p->ort X(i)-center.x)/(2.0*stadium2.x));
+	    tmp2 = SQR((p->ort Y(i)-center.y)/(2.0*stadium2.y));
+	    f    = (tmp1+tmp2-SQR(stadium.x/(2.0*stadium2.x)))/\
+		(.25- SQR(stadium.x/(2.0*stadium2.x)));
+	
 	}
 	
-
 	if (f<= 0.0) {
 	    f = 0.0;
 	    n_stadium += DIM;
 	}
 	if (f>1.0) f = 1.0;
 
-	sort = VSORTE(p,i);
+       /* we smooth the stadium function: to get a real bath tub !*/  
+	f    = .5 * (1 + sin(-M_PI/2.0 + M_PI*f));
 
+	sort = VSORTE(p,i);
         /* add up f considering the restriction vector  */
 #ifdef TWOD
 	sum_f+= f * ( (restrictions + sort)->x + 

@@ -296,7 +296,9 @@ EXTERN real   epsilon  INIT(0.0);         /* shear factor in x-direction */
 #endif
 
 #if defined(FRAC) || defined(STM)
-EXTERN vektor stadium INIT(nullvektor);     /* Damping stadium */
+EXTERN vektor stadium  INIT(nullvektor);     /* half axes of Damping stadium */
+EXTERN vektor stadium2 INIT(nullvektor);     /* half axes where the max. 
+						damping factor  is reached  */
 EXTERN vektor center  INIT(nullvektor);     /* center of stadium */
 EXTERN real   E_kin_stadium INIT(0.0);      /* kin energy of the stadium */
 EXTERN int    n_stadium INIT(0);            /* number of transl. degrees 
