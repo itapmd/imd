@@ -28,18 +28,23 @@
 * filenames starting with an _ don't specify a file to read from
 * but a crystal structure to generate as an initial configuration:
 *
-* _fcc      -- generates fcc structure
-* _bcc      -- generates bcc structure
-* _b2       -- generates B2 structure
-* _nacl     -- generates binary nacl structure (atom type 0 and 1)
-* _diamond  -- generates cubic diamond structure
+* _fcc        -- generates fcc structure
+* _bcc        -- generates bcc structure
+* _b2         -- generates B2 structure
+* _nacl       -- generates binary nacl structure (atom type 0 and 1)
+* _diamond    -- generates cubic diamond structure
 * _zincblende -- generates zincblende structure
-* _tiqc     -- generates a truncated icosahedra quasicrystal
-* _hex      -- generates 2D hexagonal crystal
-* _lav      -- generates a cubic Laves structure A15 (MgCu2)
+* _tiqc       -- generates a truncated icosahedra quasicrystal
+* _hex        -- generates 2D hexagonal crystal
+* _lav        -- generates a cubic Laves structure C15 (MgCu2)
 *
-* The lattice constant of the crystal structures (fcc and nacl) is 2.0.
-* The lattice constant of the diamond and zincblende structure is 4.0.
+* The lattice constant of the conventional unit cell of the crystal 
+* structures is:
+*
+*  - 2.0 * box_unit for fcc, bcc, B2, and NaCl structures
+*  - 4.0 * box_unit for the diamond and zincblende structures
+*  - 1.0 * box_unit for the C15 Laves structure
+*  - 1.0 * box_unit for the 2D hexagonal structures
 *
 ******************************************************************************/
 
@@ -354,13 +359,11 @@ void generate_lav()
   real    px[24],py[24],pz[24];
   int     i,j,k,l,typ,pa[24];
 
-  if (myid==0)
-    if ((box_param.x % (8*cpu_dim.x)) || (box_param.y % (8*cpu_dim.z)) || 
-	(box_param.z % (8*cpu_dim.z))) 
 #ifdef MPI
-      error("For _lav, components of box_param must be divisible by 8*cpu_dim");
-#else
-      error("For _lav, components of box_param must be divisible by 8");
+  if (myid==0)
+    if ((box_param.x % cpu_dim.x) || (box_param.y % cpu_dim.y) || 
+        (box_param.z % cpu_dim.z))
+      error("box_param must be commensurate with cpu_dim");
 #endif
 
   px[ 0] = 0; py[ 0] = 0; pz[ 0] = 0; pa[ 0] = 0;
@@ -413,9 +416,10 @@ void generate_lav()
   natoms  = 0;
   nactive = 0;
 
-  for (i=min.x; i<max.x; i+=8)
-    for (j=min.y; j<max.y; j+=8)
-      for (k=min.z; k<max.z; k+=8) 
+  box_unit /= 8.0;
+  for (i=min.x; i<max.x; i++)
+    for (j=min.y; j<max.y; j++)
+      for (k=min.z; k<max.z; k++) 
 	for (l=0; l<24; l++) {
 
 	  natoms++;
@@ -423,9 +427,9 @@ void generate_lav()
 	  typ = pa[l];
 
 	  input->n = 1;
-	  ORT(input,0,X)  = (px[l] + i + 0.5) * box_unit;
-	  ORT(input,0,Y)  = (py[l] + j + 0.5) * box_unit;
-	  ORT(input,0,Z)  = (pz[l] + k + 0.5) * box_unit;
+	  ORT(input,0,X)  = (px[l] + 8*i + 0.5) * box_unit;
+	  ORT(input,0,Y)  = (py[l] + 8*j + 0.5) * box_unit;
+	  ORT(input,0,Z)  = (pz[l] + 8*k + 0.5) * box_unit;
 	  NUMMER(input,0) = natoms;
 	  VSORTE(input,0) = typ;
           MASSE(input,0)  = masses[typ];
