@@ -745,6 +745,14 @@ void setup_buffers(void)
 
 #endif
 
+#ifdef SHOCK
+  if (0==dump_buf.n_max) {
+    dump_buf.data = (real *) malloc( BUF_SIZE_INC * sizeof(real) );
+    if (NULL==dump_buf.data) error("cannot allocate buffer");
+    dump_buf.n_max = BUF_SIZE_INC;
+  }
+#endif
+
 }
 
 

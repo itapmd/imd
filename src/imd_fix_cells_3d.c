@@ -119,7 +119,20 @@ void fix_cells(void)
               buf = &send_buf_up;
             }
             
-            else error("Atom jumped multiple CPUs");
+            else {
+#ifdef SHOCK
+              /* remove atom from simulation */
+              buf = &dump_buf;
+              dump_buf.n = 0;
+              natoms  -= nclones;
+              nactive -= nclones * DIM;
+              num_sort [ SORTE(p,l)] -= nclones;
+              num_vsort[VSORTE(p,l)] -= nclones;
+              warning("Atom jumped multiple CPUs");
+#else
+              error("Atom jumped multiple CPUs");
+#endif
+	    }
 
             if (buf != NULL) {
               copy_one_atom( buf, to_cpu, p, l, 1);
