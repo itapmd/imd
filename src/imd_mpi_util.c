@@ -122,6 +122,7 @@ void copy_atom(msgbuf *to, int to_cpu, cell *p, int ind )
 
 #ifndef MONOLJ
   to->data[ to->n++ ] = NUMMER(p,ind);
+  to->data[ to->n++ ] = SORTE (p,ind);
   to->data[ to->n++ ] = VSORTE(p,ind);
   to->data[ to->n++ ] = MASSE (p,ind);
   to->data[ to->n++ ] = POTENG(p,ind);
@@ -278,6 +279,7 @@ void copy_one_atom(msgbuf *to, int to_cpu, minicell *from, int index, int del)
 #endif
 #ifndef MONOLJ
       NUMMER(p,ind) = NUMMER(p,p->n); 
+      SORTE (p,ind) = SORTE (p,p->n);
       VSORTE(p,ind) = VSORTE(p,p->n);
       MASSE (p,ind) = MASSE (p,p->n); 
       POTENG(p,ind) = POTENG(p,p->n); 
@@ -414,6 +416,7 @@ void process_buffer(msgbuf *b, cell *p)
 #endif
 #ifndef MONOLJ
     NUMMER(input,0) = b->data[j++];
+    SORTE (input,0) = b->data[j++];
     VSORTE(input,0) = b->data[j++];
     MASSE (input,0) = b->data[j++];
     POTENG(input,0) = b->data[j++];

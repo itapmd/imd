@@ -253,6 +253,7 @@ void read_atoms(str255 infilename)
       input->n = 1;
 #ifndef MONOLJ
       NUMMER(input,0) = n;
+      SORTE (input,0) = MOD(s,ntypes);
       VSORTE(input,0) = s;
       MASSE (input,0) = m;
 #endif
@@ -326,7 +327,7 @@ void read_atoms(str255 infilename)
 
       if ((myid != to_cpu) && (0==parallel_input)) {
         natoms++;
-        /* we still have s == input->sorte[0] */
+        /* we still have s == input->vsorte[0] */
         if (s < ntypes) {
           nactive += DIM;
 #ifdef UNIAX
@@ -351,7 +352,7 @@ void read_atoms(str255 infilename)
 
       if (to_cpu==myid) {
         natoms++;  
-        /* we still have s == input->sorte[0] */
+        /* we still have s == input->vsorte[0] */
         if (s < ntypes) {
           nactive += DIM;
 #ifdef UNIAX
@@ -372,7 +373,7 @@ void read_atoms(str255 infilename)
 #else /* not BUFCELLS */
 
       natoms++;  
-      /* we still have s == input->sorte[0] */
+      /* we still have s == input->vsorte[0] */
       if (s < ntypes) {
         nactive += DIM;
 #ifdef UNIAX

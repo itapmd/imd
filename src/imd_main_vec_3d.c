@@ -135,7 +135,7 @@ void make_nblist()
           li[len2] = li1[l];
           lj[len2] = lj1[l];
           /* put in separate loop outside if? */
-          col[len2] = VSORTE(&atoms,li1[l]) * ntypes + VSORTE(&atoms,lj1[l]);
+          col[len2] = SORTE(&atoms,li1[l]) * ntypes + SORTE(&atoms,lj1[l]);
           len2++;
         }
       }
@@ -437,7 +437,7 @@ void calc_forces(int steps)
       d1[0] = atoms.ort X(i);
       d1[1] = atoms.ort Y(i);
       d1[2] = atoms.ort Z(i);
-      ityp  = VSORTE(&atoms,i);
+      ityp  = SORTE(&atoms,i);
 #ifdef SX
 #pragma vdir vector,loopcnt=256
 #endif
@@ -467,7 +467,7 @@ void calc_forces(int steps)
       int  col, inc = ntypes * ntypes; 
 
       flag[l] = 0;
-      col = it[l] * ntypes + VSORTE(&atoms,lj[l]);
+      col = it[l] * ntypes + SORTE(&atoms,lj[l]);
 
       /* compute pair interactions */
       if (rr[l] <= pair_pot.end[col]) {

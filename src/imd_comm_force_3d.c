@@ -743,7 +743,7 @@ void copy_cell( int k, int l, int m, int r, int s, int t, vektor v )
     ORT(to,i,Y)   = ORT(from,i,Y) + v.y;
     ORT(to,i,Z)   = ORT(from,i,Z) + v.z;
 #ifndef MONO
-    VSORTE(to,i)  = VSORTE(from,i);
+    SORTE(to,i)   = SORTE(from,i);
 #endif
 #ifdef UNIAX
     ACHSE(to,i,X) = ACHSE(from,i,X);
@@ -779,7 +779,7 @@ void pack_cell( msgbuf *b, int k, int l, int m, vektor v )
     b->data[ b->n++ ] = ORT(from,i,Y) + v.y;
     b->data[ b->n++ ] = ORT(from,i,Z) + v.z;
 #ifndef MONO
-    b->data[ b->n++ ] = (real) VSORTE(from,i);
+    b->data[ b->n++ ] = (real) SORTE(from,i);
 #endif
 #ifdef UNIAX
     b->data[ b->n++ ] = ACHSE(from,i,X);
@@ -834,7 +834,7 @@ void unpack_cell( msgbuf *b, int k, int l, int m )
     ORT(to,i,Y) = b->data[ b->n++ ];
     ORT(to,i,Z) = b->data[ b->n++ ];
 #ifndef MONO
-    VSORTE(to,i) = (shortint) b->data[ b->n++ ];
+    SORTE(to,i) = (shortint) b->data[ b->n++ ];
 #endif
 #ifdef UNIAX
     ACHSE(to,i,X) = b->data[ b->n++ ];

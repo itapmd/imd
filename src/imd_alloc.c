@@ -119,9 +119,10 @@ void move_atom(cell *to, cell *from, int index)
   to->ort Z(to->n) = from->ort Z(index); 
 #endif
 #ifndef MONOLJ
-  to->nummer [to->n] = from->nummer[index]; 
-  to->sorte  [to->n] = from->sorte[index]; 
-  to->masse  [to->n] = from->masse[index]; 
+  to->nummer [to->n] = from->nummer [index]; 
+  to->sorte  [to->n] = from->sorte  [index]; 
+  to->vsorte [to->n] = from->vsorte [index]; 
+  to->masse  [to->n] = from->masse  [index]; 
   to->pot_eng[to->n] = from->pot_eng[index];
 #endif
 #ifdef EAM2
@@ -234,9 +235,10 @@ void move_atom(cell *to, cell *from, int index)
     from->ort Z(index) = from->ort Z(from->n); 
 #endif
 #ifndef MONOLJ
-    from->nummer [index] = from->nummer[from->n]; 
-    from->sorte  [index] = from->sorte[from->n]; 
-    from->masse  [index] = from->masse[from->n]; 
+    from->nummer [index] = from->nummer [from->n]; 
+    from->sorte  [index] = from->sorte  [from->n]; 
+    from->vsorte [index] = from->vsorte [from->n]; 
+    from->masse  [index] = from->masse  [from->n]; 
     from->pot_eng[index] = from->pot_eng[from->n];
 #endif
 #ifdef EAM2
@@ -422,6 +424,7 @@ void alloc_cell(cell *thecell, int count)
 #ifndef MONOLJ
     newcell.nummer = NULL;
     newcell.sorte  = NULL;
+    newcell.vsorte = NULL;
     newcell.masse  = NULL;
     newcell.pot_eng= NULL;
 #ifdef EAM2
@@ -519,6 +522,7 @@ void alloc_cell(cell *thecell, int count)
     /* Allocate rest of variables */
     newcell.nummer = (integer * ) malloc(count * sizeof(integer) );
     newcell.sorte  = (shortint* ) malloc(count * sizeof(shortint));
+    newcell.vsorte = (shortint* ) malloc(count * sizeof(shortint));
     newcell.masse  = (real    * ) malloc(count * sizeof(real)    );
     newcell.pot_eng= (real    * ) malloc(count * sizeof(real)    );
 #ifdef EAM2
@@ -574,6 +578,7 @@ void alloc_cell(cell *thecell, int count)
 #ifndef MONOLJ
         || (NULL == newcell.nummer)
         || (NULL == newcell.sorte)
+        || (NULL == newcell.vsorte)
         || (NULL == newcell.masse)
         || (NULL == newcell.pot_eng)
 #ifdef EAM2
@@ -663,6 +668,7 @@ void alloc_cell(cell *thecell, int count)
 #ifndef MONOLJ
       memcpy(newcell.nummer,  thecell->nummer,  ncopy * sizeof(integer));
       memcpy(newcell.sorte,   thecell->sorte,   ncopy * sizeof(shortint));
+      memcpy(newcell.vsorte,  thecell->vsorte,  ncopy * sizeof(shortint));
       memcpy(newcell.masse,   thecell->masse,   ncopy * sizeof(real));
       memcpy(newcell.pot_eng, thecell->pot_eng, ncopy * sizeof(real));
 #ifdef EAM2
@@ -711,6 +717,7 @@ void alloc_cell(cell *thecell, int count)
 #ifndef MONOLJ
     free(thecell->nummer);
     free(thecell->sorte);
+    free(thecell->vsorte);
     free(thecell->masse);
     free(thecell->pot_eng);
 #ifdef EAM2
@@ -767,6 +774,7 @@ void alloc_cell(cell *thecell, int count)
 #ifndef MONOLJ
   thecell->nummer   = newcell.nummer;
   thecell->sorte    = newcell.sorte;
+  thecell->vsorte   = newcell.vsorte;
   thecell->masse    = newcell.masse;
   thecell->pot_eng  = newcell.pot_eng;
 #ifdef EAM2

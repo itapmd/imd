@@ -200,8 +200,9 @@ void read_atoms(str255 infilename)
 
       input->n = 1;
       NUMMER(input,0) = n;
+      SORTE (input,0) = MOD(s,ntypes);
       VSORTE(input,0) = s;
-      MASSE(input,0)  = m;
+      MASSE (input,0) = m;
       ORT(input,0,X)  = pos.x;
       ORT(input,0,Y)  = pos.y;
       if (p==5) {
@@ -232,14 +233,14 @@ void read_atoms(str255 infilename)
       to_cpu = cpu_coord(cellc);
       if ((myid != to_cpu) && (0==parallel_input)) {
         natoms++;
-        /* we still have s == input->sorte[0] */
+        /* we still have s == input->vsorte[0] */
         if (s < ntypes)
           nactive += DIM;
         else {
           nactive += (long) (restrictions+s)->x;
           nactive += (long) (restrictions+s)->y;
         }
-        num_sort[SORTE(input,0)]++;
+        num_sort [SORTE (input,0)]++;
         num_vsort[VSORTE(input,0)]++;
         b = input_buf + to_cpu;
         copy_atom(b, to_cpu, input, 0);
@@ -249,14 +250,14 @@ void read_atoms(str255 infilename)
         }
       } else if (to_cpu==myid) {  
         natoms++;
-        /* we still have s == input->sorte[0] */
+        /* we still have s == input->vsorte[0] */
         if (s < ntypes)
           nactive += DIM;
         else {
           nactive += (long) (restrictions+s)->x;
           nactive += (long) (restrictions+s)->y;
         }
-        num_sort[SORTE(input,0)]++;
+        num_sort [SORTE (input,0)]++;
         num_vsort[VSORTE(input,0)]++;
 	cellc = local_cell_coord(cellc);
         to = PTR_VV(cell_array,cellc,cell_dim);
@@ -266,14 +267,14 @@ void read_atoms(str255 infilename)
 #else /* not MPI */
 
       natoms++;
-      /* we still have s == input->sorte[0] */
+      /* we still have s == input->vsorte[0] */
       if (s < ntypes)
         nactive += DIM;
       else {
         nactive += (long) (restrictions+s)->x;
         nactive += (long) (restrictions+s)->y;
       }
-      num_sort[SORTE(input,0)]++;
+      num_sort [SORTE (input,0)]++;
       num_vsort[VSORTE(input,0)]++;
       to = PTR_VV(cell_array,cellc,cell_dim);
       INSERT_ATOM(to, input, 0);

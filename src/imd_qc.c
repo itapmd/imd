@@ -721,6 +721,7 @@ void sortin (int ifeld[])
 	      if (typ == 1) typ=0; 
 	      if (typ == 2) typ=1;
 
+	      SORTE (input,0) = typ;
 	      VSORTE(input,0) = typ;
               MASSE(input,0)  = masses[typ];
               INSERT_ATOM(p, input, 0);
@@ -758,6 +759,7 @@ void adjust()
 	    fabs(z+2.*gmin.z) < 0.0001) 
         {
            typ=0;
+           SORTE (p,i) = typ;
            VSORTE(p,i) = typ;
         }
         num_sort[typ]++;

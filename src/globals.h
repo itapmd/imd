@@ -140,7 +140,6 @@ EXTERN int ntypetriples INIT(0);  /* Total number of different types triples
 				     symmetric in the last two indices */
 EXTERN long *num_sort INIT(NULL); /* number of atoms for each real type */
 EXTERN long *num_vsort INIT(NULL);/* number of atoms for each virtual type */
-EXTERN int  *sort_tab INIT(NULL); /* mapping of virtual to real types */
 EXTERN int steps INIT(0);        /* number of current MD step */
 EXTERN int steps_max INIT(0);    /* Maximum number of MD steps */
 EXTERN int steps_min INIT(0);    /* starting step nr for current phase */

@@ -27,7 +27,7 @@
 
 /* avoid p % q, which is terribly slow */
 /* on SGI, inline doesn't really work :-( */
-#if !defined(MONO) && !defined(BINARY)
+#if !defined(MONO)
 #if defined(t3e)
 #pragma _CRI inline(MOD)
 #elif defined(ALPHA)
@@ -51,26 +51,26 @@ INLINE static int MOD(shortint p, int q)
 #if defined(VEC) && defined(INDEXED_ACCESS)
 
 #ifdef MONOLJ
+
 #define SORTE(cell,i)           0
 #define VSORTE(cell,i)          0
 #define NUMMER(cell,i)          0
 #define MASSE(cell,i)           1.0
 #define POTENG(cell,i)          0.0
+
 #else
-#define VSORTE(cell,i)          (atoms.sorte  [(cell)->ind[i]])
-#if defined(MONO)
+
+#ifdef MONO
 #define SORTE(cell,i)           0
-#elif defined(SX)
-#define SORTE(cell,i)           (sort_tab[ VSORTE(cell,i) ])
-#elif defined(BINARY)
-#define SORTE(cell,i)           (VSORTE(cell,i) & 0x1)
 #else
-#define SORTE(cell,i)           MOD( VSORTE(cell,i), ntypes)
+#define SORTE(cell,i)           (atoms.sorte  [(cell)->ind[i]])
 #endif
 
+#define VSORTE(cell,i)          (atoms.vsorte [(cell)->ind[i]])
 #define NUMMER(cell,i)          (atoms.nummer [(cell)->ind[i]])
 #define MASSE(cell,i)           (atoms.masse  [(cell)->ind[i]])
 #define POTENG(cell,i)          (atoms.pot_eng[(cell)->ind[i]])
+
 #endif
 
 #define ORT(cell,i,sub)         (atoms.ort    sub((cell)->ind[i]))
@@ -124,25 +124,26 @@ INLINE static int MOD(shortint p, int q)
 #else /* not VEC or direct access */
 
 #ifdef MONOLJ
+
 #define SORTE(cell,i)           0
 #define VSORTE(cell,i)          0
 #define NUMMER(cell,i)          0
 #define MASSE(cell,i)           1.0
 #define POTENG(cell,i)          0.0
+
 #else
+
 #if defined(MONO)
 #define SORTE(cell,i)           0
-#elif defined(SX)
-#define SORTE(cell,i)           (sort_tab[(cell)->sorte[i]])
-#elif defined(BINARY)
-#define SORTE(cell,i)           (((cell)->sorte[i]) & 0x1)
 #else
-#define SORTE(cell,i)           MOD((cell)->sorte[i],ntypes)
+#define SORTE(cell,i)           ((cell)->sorte[i])
 #endif
-#define VSORTE(cell,i)          ((cell)->sorte[i])
+
+#define VSORTE(cell,i)          ((cell)->vsorte[i])
 #define NUMMER(cell,i)          ((cell)->nummer[i])
 #define MASSE(cell,i)           ((cell)->masse[i])
 #define POTENG(cell,i)          ((cell)->pot_eng[i])
+
 #endif
 
 #define ORT(cell,i,sub)         ((cell)->ort sub(i))

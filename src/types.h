@@ -38,14 +38,14 @@ typedef short int integer;
 /* on alphas, all data should be 32 bit aligned */
 /* on NEC SX, shorts are not vectorizable */
 #elif defined(ALPHA) || defined(SX)
-typedef       int shortint;
-typedef       int integer;
+typedef int shortint;
+typedef int integer;
 #define SHORT   MPI_INT
 #define INTEGER MPI_INT
 #else
-typedef short int shortint;
-typedef       int integer;
-#define SHORT   MPI_SHORT
+typedef int shortint;
+typedef int integer;
+#define SHORT   MPI_INT
 #define INTEGER MPI_INT
 #endif
 
@@ -109,6 +109,7 @@ typedef struct {
 #ifndef MONOLJ
   integer     *nummer;   
   shortint    *sorte;
+  shortint    *vsorte;
   real        *masse;
   real        *pot_eng;
 #endif

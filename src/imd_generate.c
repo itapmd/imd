@@ -218,6 +218,7 @@ void generate_hex()
       ORT(input,0,X)  = x;
       ORT(input,0,Y)  = y;
       NUMMER(input,0) = natoms;
+      SORTE (input,0) = typ;
       VSORTE(input,0) = typ;
       MASSE(input,0)  = masses[typ];
       num_sort[typ]++;
@@ -395,6 +396,7 @@ void generate_fcc(int maxtyp)
         ORT(input,0,Z) = zz;
 #ifndef MONOLJ
         NUMMER(input,0) = natoms;
+        SORTE (input,0) = typ;
         VSORTE(input,0) = typ;
         MASSE (input,0) = masses[typ];
 #endif
@@ -514,6 +516,7 @@ void generate_lav()
 	  ORT(input,0,Z)  = zz;
 #ifndef MONOLJ
 	  NUMMER(input,0) = natoms;
+	  SORTE (input,0) = typ;
 	  VSORTE(input,0) = typ;
           MASSE (input,0) = masses[typ];
 #endif

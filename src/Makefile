@@ -981,11 +981,6 @@ ifneq (,$(findstring mono,${MAKETARGET}))
 CFLAGS += -DMONO
 endif
 
-# binary system (performance tweak)
-ifneq (,$(findstring binary,${MAKETARGET}))
-CFLAGS += -DBINARY
-endif
-
 # high precision output (checkpoints)
 ifneq (,$(findstring hpo,${MAKETARGET}))
 CFLAGS += -DHPO

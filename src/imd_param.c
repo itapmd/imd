@@ -2078,11 +2078,6 @@ void read_parameters(void)
   broadcast_params();
 #endif
 
-  /* make mapping of virtual types to real types */
-  sort_tab = (int *) malloc( vtypes * sizeof(int) );
-  if (NULL==sort_tab) error("Cannot allocate sort_tab");
-  for (i=0; i<vtypes; i++) sort_tab[i] = i % ntypes;
-
 }
 
 
