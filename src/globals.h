@@ -334,15 +334,13 @@ EXTERN vektor xi INIT(nullvektor), xi_old INIT(nullvektor);
 #endif
 
 EXTERN real end_temp INIT(0.0);        /* Temperature and at of simulation */
-#ifdef GLOK
-EXTERN real   ekin_threshold INIT(100.0); /* threshold for ekin */    
+#if defined(GLOK) || defined(DEFORM)
+EXTERN real   ekin_threshold INIT(0.0); /* threshold for ekin */    
 EXTERN int    annealsteps INIT(0);      /* number of annealing steps */    
 #endif
 
 #ifdef DEFORM
 EXTERN int    deform_int INIT(0);       /* counting steps between 2 shears */
-EXTERN real   ekin_threshold INIT(0.0); /* threshold for ekin */    
-EXTERN int    annealsteps INIT(0);      /* number of annealing steps */    
 EXTERN int    max_deform_int INIT(0);   /* max. steps between 2 shear steps */
 EXTERN real   fnorm_threshold INIT(0.0);/* threshold for fnorm */    
 EXTERN vektor *deform_shift;            /* shift for each vtype */
