@@ -232,6 +232,7 @@ CFLAGS_cc_OMP_iris4d_PROF	= -g3
 
 # default compilers and libraries
 CC_DEFAULT_SERIAL_sparc		= cc
+CC_DEFAULT_OMP_sparc		= cc
 CC_DEFAULT_MPI_sparc		= mpcc
 MPILIBS_sparc			= -lmpi
 
@@ -244,6 +245,11 @@ CFLAGS_cc_SERIAL_sparc_PROF	= -p
 CFLAGS_gcc_SERIAL_sparc		= -O3
 CFLAGS_gcc_SERIAL_sparc_DEBUG	= -g
 CFLAGS_gcc_SERIAL_sparc_PROF	= -g3 -pg
+
+# cc
+CFLAGS_cc_OMP_sparc		= -fast -xopenmp -xtarget=ultra3 -xarch=v9b
+CFLAGS_cc_OMP_sparc_DEBUG	= -g -xopenmp -xO3
+CFLAGS_cc_OMP_sparc_PROF	= -p
 
 # MPI
 CFLAGS_mpcc_MPI_sparc		= -fast -xtarget=ultra3 -xarch=v9b
