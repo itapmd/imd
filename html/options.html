@@ -169,49 +169,55 @@ only for orthogonal boxes anyway? In any case, it is better
 not to compute the parts of the histogram that are not needed,
 instead of just not writing them out (parameter GS_rcut)!
 
-<A NAME="disloc">
-<P><LI><B>disloc</B><P>
-</A>
-The disloc option enables certain features useful to see dislocations.
-<P>
+<a is="disloc" name="disloc">
+<p><li><b>disloc</b><p>
+</a>
+
+<p>
+The disloc option enables certain features useful to see dislocations.</p>
+
+<p>
 If the disloc option is present, reference potential energies are
 provided for each particle. A differential potential energy (DE) is
 computed from the current and the reference value. Particles with DEs
-exceeding a threshold <TT>min_dpot</TT> (default 1.0) are
-plotted. This is done for only one type of atoms specified in
-<TT>dpotsorte</TT> (default 0).
-<P> 
+exceeding a threshold <tt>min_dpot</tt> (default 1.0) are plotted. </p>
+
+<p> 
 If the parameter
-<TT>calc_Epot_ref</TT> is set to 0 (default) the reference potential
-energy is read from a file specified in <TT>reffile</TT>. This is a
+<tt>calc_Epot_ref</tt> is set to 0 (default) the reference potential
+energy is read from a file specified in <tt>reffile</tt>. This is a
 normal checkpoint file which must contain the same particles at the
-same line as the input file. IMD checks the atom number (actually the
-absolute value of the atom number, so that fixed atoms are not a
-problem). If <TT>calc_Epot_ref</TT> is set to 1, the potential energy
-at step <TT>reset_Epot_ref</TT> (default: 0) becomes the reference
-potential energy.
-<P>
-If the disloc option is present and the parameter <TT>Epot_diff</TT>
+same line as the input file. IMD checks the atom number. 
+If <tt>calc_Epot_ref</tt> is set to 1, the potential energy
+at step <tt>reset_Epot_ref</tt> (default: 0) becomes the reference
+potential energy.</p>
+
+<p>
+If the disloc option is present and the parameter <tt>Epot_diff</tt>
 is 1 (which is the default), the potential energy written to
-<A HREF="pictures.html"><TT>.pic</TT> files</A> and to 
-<A HREF="output.html#distributions">energy distribution files</A> is 
+<a href="pictures.html"><tt>.pic</tt> files</a> and to 
+<a href="output.html#distributions">energy distribution files</a> is 
 the difference of the actual potential energy and the reference 
 potential energy. This can be switched off by setting
-<TT>Epot_diff</TT> to 0.
-<P>
+<tt>Epot_diff</tt> to 0.</p>
+
+<p>
 The disloc option also enables the writing of 
-<A HREF="output.html#disloc">differential energy maps</A> 
-in intervals of <TT>dem_int</TT>, 
-and of <A HREF="output.html#disloc">differential displacement maps</A> 
-in intervals of <TT>ddm_int</TT>.
+<a href="output.html#disloc">differential energy maps</a> 
+in intervals of <tt>dem_int</tt>, 
+and of <a href="output.html#disloc">displacement maps</a> 
+in intervals of <tt>dsp_int</tt>.
 The parameters needed are described together with the 
-<A HREF="output.html#disloc">format of these files</A>.
-<P>
+<a href="output.html#disloc">format of these files</a>.</p>
+
+<p>
 The writing of these files can be switched off by setting the 
-writing intervals to zero. 
-<P>
-<B>Known bugs:</B> The reference potential energy can be set
-only once in each phase.
+writing intervals to zero. </p>
+
+<p>
+<b>Known bugs:</b> The reference potential energy can be set
+only once in each phase.</p>
+
 
 <A NAME="homdef">
 <P><LI><B> homdef </B><P>

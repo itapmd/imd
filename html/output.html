@@ -112,10 +112,9 @@ exceeds a certain threshold <tt>min_dpot</tt>. These particles are
 written the file <tt>&lt;outfile&gt;.dem.&lt;n&gt;</tt> containing 
 lines of the form
 <pre>
-     x y z dE_pot.
+     type x y z dE_pot.
 </pre>
-If the sample contains several atom types, only atoms of type 
-<tt>dpotsorte</tt> are written. </p>
+</p>
 
 <p>
 A displacement map (DSP) file shows the displacement of
@@ -123,12 +122,17 @@ each atom in relation to a reference configuration.  Every
 <tt>dsp_int</tt><sup>th</sup> step the atoms are written to a file
 <tt>&lt;outfile&gt;.dsp.&lt;n&gt;</tt>, containing lines of the form
 <pre>
-     x y z dx dy dz.
+     type x y z dx dy dz.
 </pre>
 where <tt>dx</tt>, <tt>dy</tt> and <tt>dz</tt> denote the
-displacement. The reference file must be specified in the parameter
-<tt>reffile</tt>. Each line of the reference file must describe the
-same atom as the corresponding line in the configuration file. This is
-checked using the atom number. Negative numbers (fixed atoms) are OK.</p>
+displacement. At the step <tt>update_ort_ref</tt> (default 0), 
+the current configuration is copied into the reference configuration.
+This overwrites the reference configuration read from the reference
+file, which can be avoided if <tt>update_ort_ref</tt> is set to
+a negative value. In any case, a reference file is always read.
+It must be specified in the parameter <tt>reffile</tt>. 
+Each line of the reference file must describe the same atom as 
+the corresponding line in the configuration file. This is
+checked using the atom number.</p>
 
 <!--#include virtual="imdfoot.html" -->

@@ -693,13 +693,13 @@ void write_header_dem(FILE *out)
    else
     */
     c = 'A';
-  fprintf(out, "#F %c 0 0 0 %d 0 1\n", c, DIM);
+  fprintf(out, "#F %c 0 1 0 %d 0 1\n", c, DIM);
   
   /* contents line */
 #ifdef TWOD
-  fprintf(out, "#C x y dpot\n");
+  fprintf(out, "#C type x y dpot\n");
 #else
-  fprintf(out, "#C x y z dpot\n");
+  fprintf(out, "#C type x y z dpot\n");
 #endif
 
   /* box lines */
@@ -735,19 +735,17 @@ void write_atoms_dem(FILE *out)
   for (k=0; k<ncells; k++) {
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i) {
-      if (VSORTE(p,i) == dpotsorte) {
-        dpot = ABS(POTENG(p,i) - EPOT_REF(p,i));
-        if (dpot > min_dpot) {
+      dpot = ABS(POTENG(p,i) - EPOT_REF(p,i));
+      if (dpot > min_dpot) {
 #ifdef TWOD
-          len += sprintf( outbuf+len, "%12f %12f %12f\n",
-            ORT(p,i,X), ORT(p,i,Y), dpot);
+        len += sprintf( outbuf+len, "%d %e %e %e\n",
+                        VSORTE(p,i), ORT(p,i,X), ORT(p,i,Y), dpot);
 #else
-          len += sprintf( outbuf+len, "%12f %12f %12f %12f\n",
-            ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), dpot);
+        len += sprintf( outbuf+len, "%d %e %e %e %e\n",
+                        VSORTE(p,i), ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), dpot);
 #endif
-          /* flush or send outbuf if it is full */
-          if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
-	}
+        /* flush or send outbuf if it is full */
+        if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
       }
     }
   }
@@ -772,13 +770,13 @@ void write_header_dsp(FILE *out)
    else
     */
     c = 'A';
-  fprintf(out, "#F %c 0 0 0 %d 0 %d\n", c, DIM, DIM);
+  fprintf(out, "#F %c 0 1 0 %d 0 %d\n", c, DIM, DIM);
   
   /* contents line */
 #ifdef TWOD
-  fprintf(out, "#C number type mass x y dx dy\n");
+  fprintf(out, "#C type x y dx dy\n");
 #else
-  fprintf(out, "#C number type mass x y z dx dy dz\n");
+  fprintf(out, "#C type x y z dx dy dz\n");
 #endif
 
   /* box lines */
@@ -821,11 +819,11 @@ void write_atoms_dsp(FILE *out)
 #endif
       reduce_displacement(&d);
 #ifdef TWOD
-      len += sprintf( outbuf+len, "%12f %12f %12f %12f\n",
-        ORT(p,i,X), ORT(p,i,Y), d.x, d.y);
+      len += sprintf( outbuf+len, "%d %e %e %e %e\n",
+        VSORTE(p,i), ORT(p,i,X), ORT(p,i,Y), d.x, d.y);
 #else
-      len += sprintf( outbuf+len, "%12f %12f %12f %12f %12f %12f\n",
-        ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), d.x, d.y, d.z);
+      len += sprintf( outbuf+len, "%d %e %e %e %e %e %e\n",
+        VSORTE(p,i), ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), d.x, d.y, d.z);
 #endif
       /* flush or send outbuf if it is full */
       if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -834,9 +832,6 @@ void write_atoms_dsp(FILE *out)
   flush_outbuf(out,&len,OUTBUF_TAG+1);
 }
 
-#endif
-
-#ifdef DISLOC
 
 /******************************************************************************
 *

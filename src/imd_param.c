@@ -1191,15 +1191,7 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"min_dpot")==0) {
       /* minimum Epot difference */
       getparam("min_dpot",&min_dpot,PARAM_REAL,1,1);
-    }   
-    else if (strcasecmp(token,"dpotsorte")==0) {
-      /* atom type for Epot difference */
-      getparam("dpotsorte",&dpotsorte,PARAM_INT,1,1);
-    }   
-    else if (strcasecmp(token,"ddelta")==0) {
-      /* minimum distance for ddm */
-      getparam("ddelta",&ddelta,PARAM_REAL,1,1);
-    }   
+    }
     else if (strcasecmp(token,"reset_Epot_step")==0) {
       /* step at which to compute Epot_ref (if calc_Epot_ref==1) */
       getparam("reset_Epot_step",&reset_Epot_step,PARAM_INT,1,1);

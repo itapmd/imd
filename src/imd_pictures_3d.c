@@ -309,10 +309,8 @@ void write_pictures_bitmap(int steps)
 
 #ifndef MONOLJ
 #ifdef DISLOC
-	if (SORTE(p,i) == dpotsorte) {
-	  val = POTENG(p,i) - EPOT_REF(p,i);
-	  if (val < min_dpot) continue;
-	}
+        val = ABS(POTENG(p,i) - EPOT_REF(p,i));
+	if (val < min_dpot) continue;
 #else
         val = POTENG(p,i);
 #endif
