@@ -305,7 +305,7 @@ EXTERN vektor lindef_z INIT(nullvektor);  /*  |  matrix      */
 #endif
 
 #ifdef SLLOD
-EXTERN real   epsilon  INIT(0.0);         /* shear factor in x-direction */
+EXTERN vektor2d shear_rate  INIT(nullvektor2d); /* shear rate as a vector */
 #endif
 
 #if defined(FRAC) || defined(STM) || defined(FTG) 
