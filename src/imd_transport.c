@@ -485,7 +485,7 @@ void write_press_layers(int steps)
 #ifdef TWOD
               press_histxx_1[numx*press_nlayers.y+numy] += p->presstens X(i);
               press_histyy_1[numx*press_nlayers.y+numy] += p->presstens Y(i);
-              press_histxy_1[numx*press_nlayers.y+numy] += p->presstens_offdia Z(i);
+              press_histxy_1[numx*press_nlayers.y+numy] += p->presstens_offdia[i];
 	      kin_hist_1[numx*press_nlayers.y+numy] += SPRODN(p->impuls,i,p->impuls,i) / (2* MASSE(p,i));
 
 	      /* ANFANG Johannes Stuff */
@@ -765,18 +765,14 @@ void write_press_layers(int steps)
 #endif
 
 #ifdef SHOCK
-#ifndef TWOD   
     for (i = 0; i < press_nlayers.x; i++) {
       if (num_hist[i] > 0) {
 	laydens = num_hist[i] / layvol;
 	pot_hist[i] /= num_hist[i];
 	press_histxx[i] /= num_hist[i];
 	press_histyy[i] /= num_hist[i];
-	press_histxy[i] /= num_hist[i];
 #ifndef TWOD
 	press_histzz[i] /= num_hist[i];
-	press_histzx[i] /= num_hist[i];
-	press_histyz[i] /= num_hist[i];
 #endif
         kin_histxx[i] /= num_hist[i];
         kin_histxxu[i] /= num_hist[i];
@@ -787,6 +783,7 @@ void write_press_layers(int steps)
 #endif
       }
 
+#ifndef TWOD
       fprintf(outpress,"%10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10e\n", 
               press_histxx[i], press_histyy[i], press_histzz[i], laydens, 
               kin_histxx[i], kin_histxxu[i], kin_histxxv[i], kin_histyy[i],
@@ -873,7 +870,7 @@ void write_press_atoms(int steps)
 #else
 	     fprintf(outpress_offdia,"%10.4e %10.4e %10.4e %10.4e\n", 
 		     p->ort X(i),p->ort Y(i),
-		     p->presstens_offdia Z(i));
+		     p->presstens_offdia[i]);
 #endif
   }
 	   }

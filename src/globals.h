@@ -401,7 +401,7 @@ EXTERN cell *input;                                /* save data */
 /* simulate shock wave */
 #ifdef SHOCK
 EXTERN real shock_strip;                          /* width of shock strip */
-EXTERN real shock_speed INIT(0.0)                 /* velocity in shock strip */
+EXTERN real shock_speed INIT(0.0);                 /* velocity in shock strip */
 EXTERN real shock_elong;                          /* atom elongation */
 EXTERN int shock_mode INIT(2);                    /* type of shock */
 #endif
