@@ -131,8 +131,8 @@ CC_DEFAULT_MPI_i586		= mpicc
 CC_DEFAULT_OMP_i586		= guidec
 
 # gcc, serial
-CFLAGS_gcc_SERIAL_i586		= -mcpu=i586 -O3
-CFLAGS_gcc_SERIAL_i586_DEBUG	= -mcpu=i586 -g
+CFLAGS_gcc_SERIAL_i586		= -mcpu=i686 -O3
+CFLAGS_gcc_SERIAL_i586_DEBUG	= -mcpu=i686 -g
 CFLAGS_gcc_SERIAL_i586_PROF	= -g3 -pg
 
 # pgcc, serial
@@ -214,7 +214,7 @@ CFLAGS_cc_SERIAL_iris4d_DEBUG	= -Dsgi -g -xansi -woff 1174
 CFLAGS_cc_SERIAL_iris4d_PROF	= -g3
 
 # gcc
-CFLAGS_gcc_SERIAL_iris4d		= -Dsgi -O3
+CFLAGS_gcc_SERIAL_iris4d	= -Dsgi -O3
 CFLAGS_gcc_SERIAL_iris4d_DEBUG	= -Dsgi -g
 CFLAGS_gcc_SERIAL_iris4d_PROF	= -g3 -pg
 
@@ -222,6 +222,33 @@ CFLAGS_gcc_SERIAL_iris4d_PROF	= -g3 -pg
 CFLAGS_cc_OMP_iris4d		= -Dsgi -mp -O3 -n32 -mips3 -xansi -woff 1174
 CFLAGS_cc_OMP_iris4d_DEBUG	= -Dsgi -mp -g -xansi -woff 1174
 CFLAGS_cc_OMP_iris4d_PROF	= -g3
+
+
+###########################################################################
+#
+# flags for sparc
+#
+###########################################################################
+
+# default compilers and libraries
+CC_DEFAULT_SERIAL_sparc		= cc
+CC_DEFAULT_MPI_sparc		= mpcc
+MPILIBS_sparc			= -lmpi
+
+# cc
+CFLAGS_cc_SERIAL_sparc		= -fast -xtarget=ultra3 -xarch=v9b
+CFLAGS_cc_SERIAL_sparc_DEBUG	= -g -xO3
+CFLAGS_cc_SERIAL_sparc_PROF	= -p
+
+# gcc - slow
+CFLAGS_gcc_SERIAL_sparc		= -O3
+CFLAGS_gcc_SERIAL_sparc_DEBUG	= -g
+CFLAGS_gcc_SERIAL_sparc_PROF	= -g3 -pg
+
+# MPI
+CFLAGS_mpcc_MPI_sparc		= -fast -xtarget=ultra3 -xarch=v9b
+CFLAGS_mpcc_MPI_sparc_DEBUG	= -g -xO3
+CFLAGS_mpcc_MPI_sparc_PROF	= -p
 
 
 ###########################################################################
