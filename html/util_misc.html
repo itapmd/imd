@@ -6,6 +6,8 @@
 <table cellpadding="4">
 <tr><td><a href="#imd_power">imd_power</a></td>
     <td>power spectrum of data in properties file</td></tr>
+<tr><td><a href="#imd2cfg.perl">imd2cfg.perl</a></td>
+    <td>perl script to convert IMD atom files to AtomEye cfg format</td></tr>
 <tr><td><a href="#rav">rav</a></td>
     <td>running averages</td></tr>
 <tr><td><a href="#makeconf">make_config</a></td>
@@ -45,6 +47,35 @@ number of data items is a power of <tt>2</tt>). The output is
 written to file <tt>&lt;engfile&gt;.fft</tt>. The first column
 of the output file contains the angular frequency, and the remaining 
 columns the squared Fourier amplitudes for this frequency.
+</p>
+
+
+<h2><a id="imd2cfg.perl" name="imd2cfg.perl">imd2cfg.perl</a></h2>
+
+<p>
+perl script to convert IMD atom files to AtomEye extended cfg format</p>
+
+<p>
+Usage:
+<pre>
+    imd2cfg.perl -i &lt;infile&gt; -t &lt;types&gt; &lt;options&gt
+</pre>
+&lt;types&gt; is a space separated list of atom types, like: 
+<tt>-t Ni Al</tt>. Sufficiently many atom types must be specified.</p>
+
+<p>
+Supported options are:
+<pre>
+   -v           include also velocities, if available (default: no velocities)
+   -s           sort according to atom types (default: no sort)
+   -Lx <x y z>  first  box vector (default: read from header)
+   -Ly <x y z>  second box vector (default: read from header)
+   -Lz <x y z>  third  box vector (default: read from header)
+</pre>
+The preferred system of <a href="units.html">units</a> used in the 
+input file must be specified at the beginning of the script 
+(examples are given). Otherwise, AtomEye will give wrong 
+information on units, but the atoms are displayed anyway.
 </p>
 
 
