@@ -302,7 +302,9 @@ void write_ras_using_sockets()
        WriteFull(soc,&IMPULS(p,i,Z),sizeof(real));
 #endif
        WriteFull(soc,&POTENG(p,i),sizeof(real));
+#ifdef ORDPAR
        WriteFull(soc,&NBANZ(p,i),sizeof(shortint)); 
+#endif
      }
    }
 }

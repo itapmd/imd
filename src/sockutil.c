@@ -96,8 +96,9 @@ int ReadFull(int filedes, const void *buffer, int bytes)
 
 int OpenServerSocket(u_short MyPort)
 {
-  struct sockaddr_in ServAddr,CliAddr;
-  int soc,soc1,CliAddrLen;
+  struct sockaddr_in ServAddr, CliAddr;
+  int soc, soc1;
+  socklen_t CliAddrLen;
 
   soc = socket(PF_INET,SOCK_STREAM,0);
   if (soc == -1) {
@@ -137,7 +138,7 @@ int OpenServerSocket(u_short MyPort)
   printf("calling accept \n");
 #endif
 
-  soc1=accept(soc,(struct sockaddr *)  &CliAddr,&CliAddrLen);
+  soc1=accept(soc,(struct sockaddr *)  &CliAddr, &CliAddrLen);
   if (soc1 == -1) {
     perror("Accept failed");
     return -1;
@@ -156,8 +157,9 @@ int OpenServerSocket(u_short MyPort)
 
 int OpenNBServerSocket(u_short MyPort)
 {
-  struct sockaddr_in ServAddr,CliAddr;
-  int soc,soc1,CliAddrLen;
+  struct sockaddr_in ServAddr, CliAddr;
+  int soc, soc1;
+  socklen_t CliAddrLen;
 
   soc = socket(AF_INET,SOCK_STREAM,0);
   if (soc == -1) {
