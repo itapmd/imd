@@ -525,9 +525,6 @@ void setup_buffers(void)
 #ifndef MONOLJ
     binc1++;         /* sorte */
 #endif
-#ifdef CG
-    binc1 += 3*DIM;    /* h,g,old_ort */
-#endif
 #ifdef UNIAX
     binc1 += 9;      /* direction, etc. */
 #endif
@@ -536,9 +533,6 @@ void setup_buffers(void)
     binc2 = DIM;     /* force */
 #ifndef MONOLJ
     binc2++;         /* pot_eng */
-#endif
-#ifdef CG
-  binc2 += 3*DIM;  /* h, g,old_ort */
 #endif
 #ifdef NVX
     binc2++;         /* heatcond */
