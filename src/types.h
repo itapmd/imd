@@ -96,7 +96,7 @@ typedef struct {
 #ifdef REFPOS
   real        *refpos;
 #endif
-#ifdef TRANSPORT
+#ifdef NVX
   real        *heatcond;
 #endif
 #ifdef STRESS_TENS

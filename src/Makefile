@@ -521,9 +521,9 @@ CFLAGS  += -DCORRELATE -DCORR_PBC
 SOURCES += ${CORRSOURCES}
 endif
 
-# Transport
-ifneq (,$(strip $(findstring transport,${MAKETARGET})))
-CFLAGS  += -DTRANSPORT -DTRANS_PBC
+# RNEMD heat transport
+ifneq (,$(strip $(findstring rnemd,${MAKETARGET})))
+CFLAGS  += -DRNEMD
 SOURCES += ${TRANSSOURCES}
 endif
 

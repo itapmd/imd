@@ -1,3 +1,4 @@
+
 /***************************************************************************
  * $RCSfile$
  * $Revision$
@@ -6,7 +7,83 @@
 
 #include "imd.h"
 
+#ifdef RNEMD
+
+/******************************************************************************
+*
+*  rnmend_heat_exchange -- exchange velocities of two particles
+*
+*  current limitation: one particle type, serial only
+*
+******************************************************************************/
+
+void rnemd_heat_exchange()
+{
+  int  k;
+  real swap;
+
+  cell *mincell, *maxcell;
+  int  minatom, maxatom;
+  real minEkin=tot_kin_energy, maxEkin=0.0;
+
+  int  nhalf = tran_nlayers / 2;
+  real scale = tran_nlayers / box_x.x;
+
+  /* find hot and cold particles to be swapped */
+  for (k=0; k<ncells; ++k) {
+
+    int  i,num;
+    cell *p;
+    real tmp;
+    p = cell_array + CELLS(k);
+
+    for (i=0; i<p->n; ++i) {
+
+      tmp = SPRODN(p->impuls,i,p->impuls,i) / (2 * MASSE(p,i));
+
+      /* which layer? */
+      num = scale * p->ort X(i);
+      if (num < 0)             num = 0;
+      if (num >= tran_nlayers) num = tran_nlayers-1;
+
+      /* minimum in hot layer */
+      if ((minEkin > tmp) && (num==0)) {
+        minEkin = tmp;
+        mincell = p;
+        minatom = i;
+      } 
+      /* maximum in cold layer */
+      if ((maxEkin < tmp) && (num==nhalf)) {
+        maxEkin = tmp;
+        maxcell = p;
+        maxatom = i;
+      }
+    }
+  }
+
+  /* swap the velocities */
+  swap = maxcell->impuls X(maxatom);
+  maxcell->impuls X(maxatom) = mincell->impuls X(minatom);
+  mincell->impuls X(minatom) = swap;
+  swap = maxcell->impuls Y(maxatom);
+  maxcell->impuls Y(maxatom) = mincell->impuls Y(minatom);
+  mincell->impuls Y(minatom) = swap;
+#ifndef TWOD
+  swap = maxcell->impuls Z(maxatom);
+  maxcell->impuls Z(maxatom) = mincell->impuls Z(minatom);
+  mincell->impuls Z(minatom) = swap;
+#endif
+
+  /* accumulate heat transfer */
+  heat_transfer += maxEkin - minEkin;
+
+}
+
+#endif
+
+
 #ifdef TRANSPORT
+
 /******************************************************************************
 *
 * write_temp_dist
@@ -108,8 +185,12 @@ void write_temp_dist(int steps)
     if (NULL == outtemp) error("Cannot open temperatur file.");
 
     fprintf(outtemp,"%10.4e", steps * timestep);
+#ifdef NVX
     /* the variable heat_cond was formerly written to the .eng file */
     fprintf(outtemp," %10.4e", heat_cond);
+#elif RNEMD
+    fprintf(outtemp," %10.4e", heat_transfer);
+#endif
     for (i = 0; i <= nhalf; i++) {
       if (num_hist[i] > 0) temp_hist[i] /= (2*num_hist[i]);
 #ifndef TWOD   

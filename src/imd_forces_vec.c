@@ -188,7 +188,7 @@ void do_forces(cell *ap, cell *aq, vektor apbc)
       q->presstens Z(i) -= d.z * d.z * pot_grad;
 #endif
 #endif
-#ifdef TRANSPORT
+#ifdef NVX
         p->heatcond[i] += pot_zwi - radius2 * pot_grad;
         q->heatcond[j] += pot_zwi - radius2 * pot_grad;
 #endif

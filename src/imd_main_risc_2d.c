@@ -41,7 +41,7 @@ void calc_forces(void)
       p->kraft X(i) = 0.0;
       p->kraft Y(i) = 0.0;
       p->pot_eng[i] = 0.0;
-#ifdef TRANSPORT
+#ifdef NVX
       p->heatcond[i] = 0.0;
 #endif     
 #ifdef STRESS_TENS

@@ -697,7 +697,7 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
 
 		    
 /* TODO: 
- * treatment  of ORDPAR, TRANSPORT 
+ * treatment  of ORDPAR, NVX 
    refer to do_forces, imd_forces_eam,
  */
 	    } /* if in the cutoff range */

@@ -64,11 +64,10 @@
 #endif
 
 
-/* TRANSPORT */
-
-#ifdef NVX
+/* heat transport */
+#if defined(NVX) || defined(RNEMD)
+#define NVE
 #define TRANSPORT
-#define TRANS_PBC
 #endif
 
 /* Stadium damping for fracture */

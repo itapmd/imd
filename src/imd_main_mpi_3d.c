@@ -76,7 +76,7 @@ void calc_forces(void)
       p->dreh_moment Y(i) = 0.0;
       p->dreh_moment Z(i) = 0.0;
 #endif
-#ifdef TRANSPORT
+#ifdef NVX
       p->heatcond[i] = 0.0;
 #endif      
 #ifdef STRESS_TENS

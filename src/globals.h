@@ -321,16 +321,22 @@ EXTERN int correl_omode INIT(1);   /* output mode for histogram */
 EXTERN integer ***GS INIT(NULL);   /* histogram array for self correlation */
 #endif
 
-#if defined(TRANSPORT)
+#ifdef NVX
 EXTERN real dTemp_start   INIT(0.0);   /* deviation of starting heat bath 
                                           temperature from mean temp. */
 EXTERN real dTemp_end 	  INIT(0.0);   /* deviation of final heat bath 
                                           temperature from mean temp. */ 
 EXTERN real tran_Tleft 	  INIT(0.0);   /* temperature of the left=hot wall */
 EXTERN real tran_Tright   INIT(0.0);   /* temperature of the right=cold  wall*/
+EXTERN real heat_cond     INIT(0.0);   /* heat conductivity */
+#endif
+#ifdef RNEMD
+EXTERN real heat_transfer INIT(0.0);   /* total (integrated) heat transfer */
+EXTERN int  exch_interval INIT(0.0);   /* interval between particle exchange */
+#endif
+#ifdef TRANSPORT
 EXTERN int  tran_interval INIT(0);     /* Intervalle der Temperaturaufz.*/
 EXTERN int  tran_nlayers  INIT(0);     /* number of layers*/
-EXTERN real heat_cond     INIT(0.0);   /* heat conductivity */
 #endif
 
 #ifdef STRESS_TENS

@@ -216,7 +216,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
         q->presstens_offdia Z(j) -= d.x * d.y * pot_grad;
 #endif
 #endif
-#ifdef TRANSPORT
+#ifdef NVX
         p->heatcond[i] += pot_zwi - radius2 * pot_grad;
         q->heatcond[j] += pot_zwi - radius2 * pot_grad;
 #endif

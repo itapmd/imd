@@ -702,21 +702,29 @@ void getparamfile(char *paramfname, int sim)
       getparam("correl_ts",&correl_ts,PARAM_INT,1,1);
     }
 #endif
-#ifdef TRANSPORT
+#ifdef NVX
     else if (strcasecmp(token, "dTemp_start")==0){
-      /*  temperature ...*/
+      /* temperature asymmetry at start */
       getparam("dTemp_start", &dTemp_start, PARAM_REAL, 1,1);
     }
     else if (strcasecmp(token, "dTemp_end")==0){
-      /* temperature ...*/
+      /* temperature asymmetry at end */
       getparam("dTemp_end", &dTemp_end, PARAM_REAL, 1,1);
     }
+#endif
+#ifdef RNEMD
+    else if (strcasecmp(token, "exch_interval")==0){
+      /* interval for particle exchange */
+      getparam("exch_interval", &exch_interval, PARAM_INT, 1,1);
+    }
+#endif
+#ifdef TRANSPORT
     else if (strcasecmp(token, "tran_nlayers")==0){
-      /*number of layer  */
+      /* number of layers */
       getparam("tran_nlayers", &tran_nlayers, PARAM_INT, 1,1);
     }
      else if (strcasecmp(token, "tran_interval")==0){
-      /*number of steps between temp. writes  */
+      /* number of steps between temp. writes  */
       getparam("tran_interval", &tran_interval, PARAM_INT, 1,1);
     }
 #endif
@@ -990,7 +998,7 @@ void check_parameters_complete()
     error("correl_tmax is zero.\n");
   }
 #endif
-#ifdef TRANSPORT
+#ifdef NVX
   	if (dTemp_start == 0){
 		error ("dTemp_start is missing or zero. \n ");
 	}
@@ -1002,6 +1010,17 @@ void check_parameters_complete()
 	}
 	if (tran_nlayers == 0){
 		error ("tran_nlayers is zero. \n");
+        }
+#endif
+#ifdef RNEMD
+	if (tran_interval == 0){
+		error ("tran_interval is zero. \n");
+	}
+	if (tran_nlayers == 0){
+		error ("tran_nlayers is zero. \n");
+        }
+	if (exch_interval == 0){
+		error ("exch_interval is zero. \n");
         }
 #endif
 #ifdef STRESS_TENS
@@ -1236,9 +1255,14 @@ void broadcast_params() {
   MPI_Bcast( &correl_ts,    1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
-#ifdef TRANSPORT
+#ifdef NVX
   MPI_Bcast( &dTemp_start,   1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dTemp_end,     1, MPI_REAL, 0, MPI_COMM_WORLD); 
+#endif
+#ifdef RNEMD
+  MPI_Bcast( &exch_interval, 1, MPI_INT,  0, MPI_COMM_WORLD);
+#endif
+#ifdef TRANSPORT
   MPI_Bcast( &tran_nlayers,  1, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &tran_interval, 1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif

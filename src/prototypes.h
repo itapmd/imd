@@ -204,6 +204,9 @@ void write_add_corr(int it, int steps, unsigned seqnum);
 #ifdef TRANSPORT
 void write_temp_dist(int steps);
 #endif
+#ifdef RNEMD
+void rnemd_heat_exchange();
+#endif
 
 #ifdef STRESS_TENS
 void write_press_dist(int steps);

@@ -270,7 +270,7 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
     newcell.refpos = NULL;
 #endif
-#ifdef TRANSPORT
+#ifdef NVX
     newcell.heatcond = NULL;
 #endif
 #ifdef STRESS_TENS
@@ -339,7 +339,7 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
     newcell.refpos = (real *) malloc(count*DIM*sizeof(real));
 #endif
-#ifdef TRANSPORT
+#ifdef NVX
     newcell.heatcond = (real *) malloc(count*sizeof(real));
 #endif
 #ifdef STRESS_TENS
@@ -381,7 +381,7 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
         || (NULL == newcell.refpos)
 #endif
-#ifdef TRANSPORT
+#ifdef NVX
         || (NULL == newcell.heatcond)
 #endif
 #ifdef STRESS_TENS
@@ -444,7 +444,7 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
       memcpy(newcell.refpos, thecell->refpos, thecell->n * DIM * sizeof(real));
 #endif
-#ifdef TRANSPORT
+#ifdef NVX
       memcpy(newcell.heatcond,  thecell->heatcond,  thecell->n * sizeof(real));
 #endif
 #ifdef STRESS_TENS
@@ -486,7 +486,7 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
     free(thecell->refpos);
 #endif
-#ifdef TRANSPORT
+#ifdef NVX
     free(thecell->heatcond);
 #endif
 #ifdef STRESS_TENS
@@ -523,7 +523,7 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
   thecell->refpos = newcell.refpos;
 #endif
-#ifdef TRANSPORT
+#ifdef NVX
   thecell->heatcond = newcell.heatcond;
 #endif
 #ifdef STRESS_TENS

@@ -38,7 +38,7 @@ void main_loop(void)
   dtemp = (end_temp - temperature) / (steps_max - steps_min);
 #endif
 
-#ifdef TRANSPORT
+#ifdef NVX
   dtemp = (dTemp_end - dTemp_start)/(steps_max - steps_min);
   tran_Tleft  = temperature + dTemp_start;
   tran_Tright = temperature - dTemp_start;
@@ -188,7 +188,7 @@ void main_loop(void)
     temperature += dtemp;
 #endif
 
-#ifdef TRANSPORT
+#ifdef NVX
     tran_Tleft   += dtemp;
     tran_Tright  -= dtemp;
 #endif
@@ -222,9 +222,13 @@ void main_loop(void)
        write_dspmaps(steps);
 #endif
 
-#ifdef TRANSPORT
+#ifdef TRANSPORT 
     if ((tran_interval > 0) && (0 == steps%tran_interval)) 
        write_temp_dist(steps);
+#endif
+#ifdef RNEMD
+    if ((exch_interval > 0) && (0 == steps%exch_interval)) 
+       rnemd_heat_exchange();
 #endif
 
 #ifdef STRESS_TENS

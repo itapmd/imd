@@ -379,10 +379,6 @@ void write_properties(int steps)
 #ifndef MC
   fprintf(out," %10.4e", (double)part_kin_energy);
   fprintf(out," %10.4e", (double)pressure);
-  /* heat_cond is now written to the file tempdist
-     #ifdef TRANSPORT
-     fprintf(out," %10.4e", (double)heat_cond); 
-     #endif */
 #else
   fprintf(out," %10.4e", (double)(mc_accept/(real)mc_count));
   mc_accept = (real)0;
@@ -459,7 +455,7 @@ void write_cell(FILE *out, cell *p)
         (p->ort Y(i) >= pic_ll.y) && (p->ort Y(i) <= pic_ur.y) )
 #endif
     {
-#ifdef TRANSPORT
+#ifdef NVX
       h  = SPRODN(p->impuls,i,p->impuls,i)/(2*p->masse[i])+p->heatcond[i];
       h *=  p->impuls X(i) /  p->masse[i];
       fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f %12f\n",
@@ -474,7 +470,7 @@ void write_cell(FILE *out, cell *p)
 	p->impuls X(i) / p->masse[i],
 	p->impuls Y(i) / p->masse[i],
         p->pot_eng[i]
-#ifdef TRANSPORT
+#ifdef NVX
         ,h
 #endif
       );

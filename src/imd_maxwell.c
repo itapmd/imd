@@ -64,7 +64,7 @@ void maxwell(real temp)
 
    natom = 0;
 
-#ifdef TRANSPORT
+#ifdef NVX
    nhalf = tran_nlayers / 2;
    scale = tran_nlayers / box_x.x;
 #endif
@@ -78,7 +78,7 @@ void maxwell(real temp)
 
       for (i=0; i<p->n; ++i) {
 
-#ifdef TRANSPORT
+#ifdef NVX
          /* which layer? */
          num = scale * p->ort X(i);
          if (num < 0)             num = 0;
