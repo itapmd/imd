@@ -299,18 +299,27 @@ EXTERN int    use_curr_pressure INIT(0);  /* which starting pressure to use */
 EXTERN vektor xi INIT(nullvektor), xi_old INIT(nullvektor);
 #endif
 
-
 EXTERN real end_temp INIT(0.0);        /* Temperature and at of simulation */
 
+#ifdef DEFORM
+EXTERN int    deform_int INIT(0);       /* counting steps between 2 shears */
+EXTERN real   ekin_threshold INIT(0.0); /* threshold for ekin */    
+EXTERN int    annealsteps INIT(0);      /* number of annealing steps */    
+EXTERN int    max_deform_int INIT(0);   /* max. steps between 2 shear steps */
+EXTERN real   fnorm_threshold INIT(0.0);/* threshold for fnorm */    
+EXTERN vektor *deform_shift;            /* shift for each vtype */
+#endif
+
+#if defined(DEFORM) || defined(HOMDEF)
+EXTERN real   deform_size INIT(1.0);    /* scale factor for deformation */
+#endif
 
 #ifdef HOMDEF
 EXTERN int    exp_interval INIT(0);       /* period of expansion steps */
 EXTERN vektor expansion INIT(einsvektor); /* expansion factors in x/y/z-dir */
-EXTERN int    stret_interval INIT(0);     /* period of uniax. exp. steps */
-EXTERN real   stretch INIT(0.0);          /* uniaxial exp. factor (x-dir) */
 EXTERN int    hom_interval INIT(0);       /* period of homshear steps */
-EXTERN vektor2d shear_factor INIT(nullvektor2d);/* shear factor in x,y-direction */
-EXTERN int    lindef_interval INIT(0);    /* period of linear deformation steps */
+EXTERN vektor2d shear_factor INIT(nullvektor2d);/* shear factor in x,y-dir */
+EXTERN int    lindef_interval INIT(0);    /* period of linear deform. steps */
 EXTERN vektor lindef_x INIT(nullvektor);  /* \               */
 EXTERN vektor lindef_y INIT(nullvektor);  /*  |  linear      */
 #ifndef TWOD                              /*   > deformation */
@@ -367,16 +376,6 @@ EXTERN int   nslices_Right INIT(1);      /* Number of slices with Tright*/
 EXTERN int  *ninslice;                   /* Number of atoms in slice*/
 EXTERN real *gamma_ftg;                  /* Damping prefactor for slices*/
 EXTERN real *E_kin_ftg;                  /* kin energy of the slices */
-#endif
-
-#ifdef DEFORM
-EXTERN int    deform_int INIT(0);       /* counting steps between 2 shears */
-EXTERN real   deform_size INIT(1.0);    /* scale factor for deformation */
-EXTERN real   ekin_threshold INIT(0.0); /* threshold for ekin */    
-EXTERN int    annealsteps INIT(0);      /* number of annealing steps */    
-EXTERN int    max_deform_int INIT(0);   /* max. steps between 2 shear steps */
-EXTERN real   fnorm_threshold INIT(0.0);/* threshold for fnorm */    
-EXTERN vektor *deform_shift;            /* shift for each vtype */
 #endif
 
 #ifdef CG

@@ -148,19 +148,19 @@ void lin_deform(void)
                   + lindef_z.z * ORT(p,i,Z) ;
 #endif
 
-      ORT(p,i,X) += tmport[0];
-      ORT(p,i,Y) += tmport[1];
+      ORT(p,i,X) += deform_size * tmport[0];
+      ORT(p,i,Y) += deform_size * tmport[1];
 #ifndef TWOD
-      ORT(p,i,Z) += tmport[2];
+      ORT(p,i,Z) += deform_size * tmport[2];
 #endif
     }
   }
 
   /* transform first box vector */
-  tmpbox[0] = SPROD(lindef_x,box_x) ;
-  tmpbox[1] = SPROD(lindef_y,box_x) ;
+  tmpbox[0] = deform_size * SPROD(lindef_x,box_x) ;
+  tmpbox[1] = deform_size * SPROD(lindef_y,box_x) ;
 #ifndef TWOD
-  tmpbox[2] = SPROD(lindef_z,box_x) ;
+  tmpbox[2] = deform_size * SPROD(lindef_z,box_x) ;
 #endif
 
   box_x.x += tmpbox[0];
@@ -170,10 +170,10 @@ void lin_deform(void)
 #endif
   
   /* transform second box vector */
-  tmpbox[0] = SPROD(lindef_x,box_y) ;
-  tmpbox[1] = SPROD(lindef_y,box_y) ;
+  tmpbox[0] = deform_size * SPROD(lindef_x,box_y) ;
+  tmpbox[1] = deform_size * SPROD(lindef_y,box_y) ;
 #ifndef TWOD
-  tmpbox[2] = SPROD(lindef_z,box_y) ;
+  tmpbox[2] = deform_size * SPROD(lindef_z,box_y) ;
 #endif
 
   box_y.x += tmpbox[0];
@@ -184,9 +184,9 @@ void lin_deform(void)
 
   /* transform third box vector */
 #ifndef TWOD
-  tmpbox[0] = SPROD(lindef_x,box_z) ;
-  tmpbox[1] = SPROD(lindef_y,box_z) ;
-  tmpbox[2] = SPROD(lindef_z,box_z) ;
+  tmpbox[0] = deform_size * SPROD(lindef_x,box_z) ;
+  tmpbox[1] = deform_size * SPROD(lindef_y,box_z) ;
+  tmpbox[2] = deform_size * SPROD(lindef_z,box_z) ;
 
   box_z.x += tmpbox[0];
   box_z.y += tmpbox[1];

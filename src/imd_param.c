@@ -899,14 +899,6 @@ void getparamfile(char *paramfname, int sim)
       /* expansion */
       getparam("expansion",&expansion,PARAM_REAL,DIM,DIM);
     }
-    else if (strcasecmp(token,"stret_interval")==0) {
-      /* period of uniaxial expansion intervals */
-      getparam("stret_interval",&stret_interval,PARAM_INT,1,1);
-    }
-    else if (strcasecmp(token,"stretch")==0) {
-      /* stretch factor */
-      getparam("stretch",&stretch,PARAM_REAL,1,1);
-    }
     else if (strcasecmp(token,"hom_interval")==0) {
       /* period of homshear intervals */
       getparam("hom_interval",&hom_interval,PARAM_INT,1,1);
@@ -918,6 +910,10 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"lindef_interval")==0) {
       /* period of linear deformation intervals */
       getparam("lindef_interval",&lindef_interval,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"deform_size")==0) { 
+      /* scale factor for deformation */
+      getparam("deform_size",&deform_size,PARAM_REAL,1,1);
     }
     else if (strcasecmp(token,"lindef_x")==0) {
       /* first row of deformation matrix */
@@ -2039,6 +2035,21 @@ void broadcast_params() {
   MPI_Bcast( deform_shift, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
 #endif
 
+#ifdef HOMDEF
+  MPI_Bcast( &hom_interval,    1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &shear_factor,    2, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &exp_interval,    1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &expansion,     DIM, REAL,    0, MPI_COMM_WORLD); 
+
+  MPI_Bcast( &deform_size,     1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &lindef_interval, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &lindef_x,      DIM, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &lindef_y,      DIM, REAL,    0, MPI_COMM_WORLD); 
+#ifndef TWOD
+  MPI_Bcast( &lindef_z,      DIM, REAL,    0, MPI_COMM_WORLD); 
+#endif
+#endif
+
 #ifdef SHOCK
   MPI_Bcast( &shock_strip, 1, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &shock_speed, 1, REAL, 0, MPI_COMM_WORLD); 
@@ -2069,20 +2080,6 @@ void broadcast_params() {
 #ifdef ORDPAR
   MPI_Bcast( &op_r2_cut,       4, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &op_weight,       4, REAL, 0, MPI_COMM_WORLD);
-#endif
-
-#ifdef HOMDEF
-  MPI_Bcast( &hom_interval , 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &shear_factor , 2, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &exp_interval , 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &expansion ,  DIM, REAL,    0, MPI_COMM_WORLD); 
-
-  MPI_Bcast( &lindef_interval , 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &lindef_x        ,  DIM, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &lindef_y        ,  DIM, REAL, 0, MPI_COMM_WORLD); 
-#ifndef TWOD
-  MPI_Bcast( &lindef_z        ,  DIM, REAL, 0, MPI_COMM_WORLD); 
-#endif
 #endif
 
 #ifdef CG
