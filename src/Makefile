@@ -361,6 +361,33 @@ CFLAGS_xmpicc_OMPI_i586		= -omp -par -O4 +Op -msg=e
 CFLAGS_xmpicc_OMPI_i586_DEBUG 	= -omp -par -O2 -g
 CFLAGS_xmpicc_OMPI_i586_PROF  	= -Xfuncmonitor
 
+###########################################################################
+#
+# flags for IBM SP-SMP
+#
+###########################################################################
+
+# default compilers and libraries
+CC_DEFAULT_MPI_rs6000		= mpcc
+CC_DEFAULT_OMP_rs6000		= xlc_r
+CC_DEFAULT_OMPI_rs6000		= mpcc_r #?
+LIBS_PROF_rs6000		= -lpl   #?
+
+# MPI
+CFLAGS_mpicc_MPI_rs6000        	= -O4 -qtune # -O4 automatically invokes -qarch=auto
+CFLAGS_mpicc_MPI_rs6000_DEBUG  	= -g
+CFLAGS_mpicc_MPI_rs6000_PROF   	= -p
+
+# OpenMP
+#CFLAGS_cc_OMP_SR8000	 	= -omp -par -O4 +Op -msg=e
+#CFLAGS_cc_OMP_SR8000_DEBUG	= -omp -par=1 -O2 -g
+#CFLAGS_cc_OMP_SR8000_PROF   	= -Xfuncmonitor
+
+# MPI + OpenMP
+#CFLAGS_mpicc_OMPI_SR8000	= -omp -par -O4 +Op -msg=e
+#CFLAGS_mpicc_OMPI_SR8000_DEBUG 	= -omp -par -O2 -g
+#CFLAGS_mpicc_OMPI_SR8000_PROF  	= -Xfuncmonitor
+
 
 ###########################################################################
 #
