@@ -9,6 +9,8 @@
 #include "sockutil.h"
 #include "tokens.h"
 #include "client.h"
+#include "globals.h"
+#include "prototypes.h"
 
 /* definition of function for byte swapping (little endian <--> big endian) */
 #define swap(x,y)  x ^= y;  y ^= x;  x ^= y
@@ -17,7 +19,6 @@
 #define DIM 2
 #define COLRES 245
 
-extern unsigned short base_port;
 char server_name[256]="visrn";
 /* array pointers for received data */
 static int socket_id;
@@ -36,7 +37,6 @@ int receive_conf()
   extern double *pot, *kin, *masse;
   extern int *nummer, *bcode;
   extern short int *sorte;
-  float maxx,maxy,minx,miny,maxp,minp,maxk,mink;
 
   maxx=-1000;
   maxy=-1000;
@@ -48,7 +48,6 @@ int receive_conf()
   mink=1000;
 
   ReadFull(socket_id, (void *)&anz, sizeof(int));
-  printf("%d\n", anz);fflush(stdout);
 
   nummer = (int *)calloc(anz, sizeof(int));
   sorte  = (short int *)calloc(anz, sizeof(int));
@@ -96,48 +95,6 @@ int receive_conf()
     if (maxk<kin[i]) maxk=kin[i];
     if (mink>kin[i]) mink=kin[i];
   }
- /*
-  for (i=0;i<anz;i++) {
-    kin[i]=0;
-    ReadFull(socket_id, (void *)&itmp, sizeof(int));
-    printf("%d %d ", i, itmp);
-    sorte[i] = itmp;
-    ReadFull(socket_id, (void *)&itmp, sizeof(int));
-    nummer[i] = itmp;
-    printf("%d\n",itmp);
-    ReadFull(socket_id, (void *)&tmp, sizeof(double));
-    masse[i] = tmp;
-    ReadFull(socket_id, (void *)&tmp, sizeof(double));
-    if (maxx<tmp) maxx=tmp;
-    if (minx>tmp) minx=tmp;
-    x[i] = tmp;
-    ReadFull(socket_id, (void *)&tmp, sizeof(double));
-    if (maxy<tmp) maxy=tmp;
-    if (miny>tmp) miny=tmp;
-    y[i] = tmp;
-#ifndef TWOD
-    ReadFull(socket_id, (void *)&tmp, sizeof(double));
-    z[i] = tmp;
-#endif
-    ReadFull(socket_id, (void *)&tmp, sizeof(double));
-    vx[i] = tmp;
-    kin[i]+=tmp*tmp;
-    ReadFull(socket_id, (void *)&tmp, sizeof(double));
-    vy[i] = tmp;
-    kin[i]+=tmp*tmp;
-#ifndef TWOD
-    ReadFull(socket_id, (void *)&tmp, sizeof(double));
-    vz[i] = tmp;
-    kin[i]+=tmp*tmp;
-#endif
-    ReadFull(socket_id, (void *)&tmp, sizeof(double));
-    if (maxp<tmp) maxp=tmp;
-    if (minp>tmp) minp=tmp;
-    pot[i] = tmp;
-    if (maxk<kin[i]) maxk=kin[i];
-    if (mink>kin[i]) mink=kin[i];
-  }
-  */
 
   scalex=2.0/(maxx-minx);
   scaley=2.0/(maxy-miny);

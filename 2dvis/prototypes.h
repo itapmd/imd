@@ -1,0 +1,12 @@
+void read_parameters(int argc,char **argv);
+void usage(void);
+void make_picture(void);
+void draw_scene(int scene_type);
+void compute_bonds(void);
+void init_graph(void);
+void display_help(void);
+int read_atoms(char *fname);
+void read_unit_vectors(void);
+void write_to_file(void);
+void getparamfile(char *paramfname);
+void error(char *mesg);

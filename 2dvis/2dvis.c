@@ -3,36 +3,12 @@
 #include <vogle.h>
 #include <math.h>
 
-/* Abs berechnet den Betrag einer Zahl */
-#define ABS(a) ((a) >0 ? (a) : -(a))
+#define MAIN
 
-#define COLRES 245
+#include "prototypes.h"
+#include "globals.h"
+#include "makros.h"
 
-int *nummer,columns,*bcode;
-short int *sorte;
-double *masse,*x,*y,*z,*vx,*vy,*vz,*pot,*kin;
-float *potarray,*kinarray;
-int x_res,y_res;
-int natoms,nunits;
-unsigned short base_port;
-float scalex,scaley,scalepot,scalekin,radius,offspot,offskin;
-int bond_mode,atom_mode,col_mode,scene_type,text,eng_mode,qp,radectyp;
-float *ux,*uy;
-char *paramfilename;
-char uvfname[255];
-
-void read_parameters(int argc,char **argv);
-void usage(void);
-void make_picture(void);
-void draw_scene(int scene_type);
-void compute_bonds(void);
-void init_graph(void);
-void display_help(void);
-int read_atoms(char *fname);
-void read_unit_vectors(void);
-void write_to_file(void);
-void getparamfile(char *paramfname);
-void error(char *mesg);
 
 int main(int argc, char **argv)
 {
@@ -42,14 +18,6 @@ int main(int argc, char **argv)
   char fname[255];
 
   /* inits */
-  base_port=31913;
-  atom_mode=1;
-  col_mode=0;
-  bond_mode=0;
-  scene_type=0;
-  text=0;
-  radius=.3;
-  radectyp=0;
   strcpy(uvfname,"unitvecs");
 
   read_parameters(argc,argv);
@@ -335,7 +303,6 @@ void draw_scene(int scene_type) {
 	    cv=(int)(scalepot*(pot[i]-offspot));
 	  color(cv+10);
 	}
-	/*	printf("%f %f %f\n", xx, x[i], scalex);*/
 	printf("%f %f %d\n", scalepot,scalekin, cv);
 	xx=x[i]*scalex-1;
 	yy=y[i]*scaley-1;
@@ -444,7 +411,6 @@ int read_atoms(char *fname) {
   FILE *fp;
   char line[200],str[255];
   int n;
-  float maxx,minx,maxy,miny,maxp,minp,maxk,mink;
 
   maxx=-1000;
   maxy=-1000;

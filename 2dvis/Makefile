@@ -18,16 +18,16 @@ all:	2dvis
 2dvis:	2dvis.o client.o sockutil.o param.o
 	$(CC) $(LIBP) $(CFLAGS) -o 2dvis 2dvis.o client.o sockutil.o param.o $(LIBS)
 
-2dvis.o:	2dvis.c
+2dvis.o:	2dvis.c globals.h prototypes.h
 	$(CC) $(CFLAGS) -c 2dvis.c
 
-client.o:	client.c client.h sockutil.h tokens.h
+client.o:	client.c client.h sockutil.h tokens.h globals.h prototypes.h 
 	$(CC) $(CFLAGS) -c client.c
 
-sockutil.o:	sockutil.c sockutil.h
+sockutil.o:	sockutil.c sockutil.h globals.h prototypes.h
 	$(CC) $(CFLAGS) -c sockutil.c
 
-param.o:	param.c
+param.o:	param.c  globals.h prototypes.h
 	$(CC) $(CFLAGS) -c param.c
 
 clean:
