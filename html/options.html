@@ -184,8 +184,8 @@ is positive, atoms with negative numbers in the left half (in x
 direction) of the sample are rigidly moved by an amount
 <TT>strip_shift</TT>, which is a vector. Atoms with negative
 numbers in the right half of the sample are moved by the opposite
-vector. This happens if either the kinetic energy drops below
-<TT>ekin_threshold</TT> (useful with the mik integrator),
+vector. This happens if either the kinetic energy per particle drops 
+below <TT>ekin_threshold</TT> (useful with the mik integrator),
 or if the last deformation step was done <TT>max_deform_int</TT>
 steps ago. If <TT>annealsteps</TT> is positive, no deformations
 are done during the first <TT>annealsteps</TT> steps.
