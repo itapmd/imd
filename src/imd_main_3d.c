@@ -87,6 +87,11 @@ void main_loop(void)
   d_pressure.y = (pressure_end.y - pressure_ext.y) / (steps_max - steps_min);
   d_pressure.z = (pressure_end.z - pressure_ext.z) / (steps_max - steps_min);
   calc_dyn_pressure();
+  if (isq_tau_xi==0.0) {
+    xi.x = 0.0;
+    xi.y = 0.0;
+    xi.z = 0.0;
+  }
 #endif
 
 #if defined(CORRELATE) || defined(MSQD)
