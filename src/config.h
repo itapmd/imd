@@ -29,6 +29,7 @@
 #ifdef MONOLJ
 #define SAVEMEM
 #undef AR
+#define NODBG_DIST
 #endif
 
 /******************************************************************************

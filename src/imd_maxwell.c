@@ -95,19 +95,12 @@ void maxwell(real temp)
 	   }
 #endif
 
-#ifdef MONOLJ
-         p->impuls X(i) = gasdev( &dummy ) * sqrt(TEMP);
-         p->impuls Y(i) = gasdev( &dummy ) * sqrt(TEMP);
+         p->impuls X(i) = gasdev( &dummy ) * sqrt(TEMP * MASSE(p,i));
+         p->impuls Y(i) = gasdev( &dummy ) * sqrt(TEMP * MASSE(p,i));
 #ifndef TWOD
-         p->impuls Z(i) = gasdev( &dummy ) * sqrt(TEMP);
+         p->impuls Z(i) = gasdev( &dummy ) * sqrt(TEMP * MASSE(p,i));
 #endif
-#else
-         p->impuls X(i) = gasdev( &dummy ) * sqrt(TEMP * p->masse[i]);
-         p->impuls Y(i) = gasdev( &dummy ) * sqrt(TEMP * p->masse[i]);
-#ifndef TWOD
-         p->impuls Z(i) = gasdev( &dummy ) * sqrt(TEMP * p->masse[i]);
-#endif
-#endif
+
          ++natom;
          tot_impuls.x += p->impuls X(i);
          tot_impuls.y += p->impuls Y(i);
@@ -120,7 +113,7 @@ void maxwell(real temp)
 	   if ( p->ort X(i) < strip/2 + shock_strip ) 
 	     {	     
 	       if ( shock_speed > 0 ) p->impuls X(i) += 
-					shock_speed * p->masse[i];
+                                    	shock_speed * MASSE(p,i);
 	       if ( shock_elong > 0 ) { 
 		 p->ort X(i) += shock_elong 
 		   + ( shock_strip + strip/2 - p->ort X(i) )
@@ -130,9 +123,9 @@ void maxwell(real temp)
 	 }
 	 if (shock_mode == 2) {
 	   if ( p->ort X(i) < box_x.x*0.5 ) 
-	     p->impuls X(i) += shock_speed * p->masse[i];
+	     p->impuls X(i) += shock_speed * MASSE(p,i);
 	   else
-	     p->impuls X(i) -= shock_speed * p->masse[i];
+	     p->impuls X(i) -= shock_speed * MASSE(p,i);
 	 }
 #endif
        }

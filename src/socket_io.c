@@ -216,7 +216,7 @@ void write_rgb_picture_to_socket()
 	  if (coord.y <  0   ) coord.y = 0;
 	  if (coord.y >= YRES) coord.y = YRES-1;
 
-	  val = SPRODN(p->impuls,i,p->impuls,i) / (2*p->masse[i]);
+	  val = SPRODN(p->impuls,i,p->impuls,i) / (2*MASSE(p,i));
 	  
 	  val /= ecut_kin.y;
 	  if (1.0<val) val=0.9999;
@@ -442,7 +442,7 @@ void write_distrib_using_sockets()
 #else
 	  *pot += p->pot_eng[i];
 #endif
-	  *kin += SPRODN(p->impuls,i,p->impuls,i) / (2*p->masse[i]);
+	  *kin += SPRODN(p->impuls,i,p->impuls,i) / (2*MASSE(p,i));
         };
       };
 

@@ -11,6 +11,17 @@
 * $Date$
 ******************************************************************************/
 
+/* these macros should allow to avoid MONOLJ in most places */
+#ifdef MONOLJ
+#define SORTE(cell,i) 0
+#define NUMMER(cell,i) 0
+#define MASSE(cell,i) (real) 1
+#else
+#define SORTE(cell,i) (cell)->sorte[(i)]
+#define NUMMER(cell,i) (cell)->nummer[(i)]
+#define MASSE(cell,i) (cell)->masse[(i)]
+#endif
+
 /* Max gibt den groesseren von zwei Werten */
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 
