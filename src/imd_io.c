@@ -21,7 +21,7 @@
 ******************************************************************************/
 
 void write_config_select(int fzhlr, char *suffix, 
-                         void *write_cell_fun(FILE *out, cell *p))
+                         void (*write_cell_fun)(FILE *out, cell *p))
 {
   FILE *out;
   str255 fname,msg;
@@ -41,7 +41,7 @@ void write_config_select(int fzhlr, char *suffix,
     /* write own data */
     for (k=0; k<ncells; k++) {
       p = cell_array + CELLS(k);
-      write_cell_fun(out,p);
+      (*write_cell_fun)(out,p);
     }
 
 #ifdef MPI
@@ -50,7 +50,7 @@ void write_config_select(int fzhlr, char *suffix,
       for (k=0; k<ncells; k++) {
         tag = CELL_TAG + CELLS(k);
         recv_cell(p,m,tag);
-        write_cell_fun(out,p);
+        (*write_cell_fun)(out,p);
       }
 #endif
 

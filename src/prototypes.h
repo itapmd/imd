@@ -146,6 +146,8 @@ void expand_sample(void);
 void deform_sample(void);
 #endif
 
+void write_config_select(int fzhlr, char *suffix, 
+                         void (*write_cell_fun)(FILE *out, cell *p));
 #ifdef DISLOC
 void reset_Epot_ref(void);
 void update_ort_ref(void);
