@@ -144,19 +144,10 @@ void lin_deform(void)
   }
 
   /* transform first box vector */
-  tmpbox[0] =   lindef_x.x * box_x.x + lindef_x.y * box_x.y
+  tmpbox[0] = SPROD(lindef_x,box_x) ;
+  tmpbox[1] = SPROD(lindef_y,box_x) ;
 #ifndef TWOD
-              + lindef_x.z * box_x.z
-#endif
-                                             ;
-  tmpbox[1] =   lindef_y.x * box_x.x + lindef_y.y * box_x.y
-#ifndef TWOD
-              + lindef_y.z * box_x.z
-#endif
-                                             ;
-#ifndef TWOD
-  tmpbox[2] =   lindef_z.x * box_x.x + lindef_z.y * box_x.y
-              + lindef_z.z * box_x.z ;
+  tmpbox[2] = SPROD(lindef_z,box_x) ;
 #endif
 
   box_x.x += tmpbox[0];
@@ -166,19 +157,10 @@ void lin_deform(void)
 #endif
   
   /* transform second box vector */
-  tmpbox[0] =   lindef_x.x * box_y.x + lindef_x.y * box_y.y
+  tmpbox[0] = SPROD(lindef_x,box_y) ;
+  tmpbox[1] = SPROD(lindef_y,box_y) ;
 #ifndef TWOD
-              + lindef_x.z * box_y.z
-#endif
-                                             ;
-  tmpbox[1] =   lindef_y.x * box_y.x + lindef_y.y * box_y.y
-#ifndef TWOD
-              + lindef_y.z * box_y.z
-#endif
-                                             ;
-#ifndef TWOD
-  tmpbox[2] =   lindef_z.x * box_y.x + lindef_z.y * box_y.y
-              + lindef_z.z * box_y.z ;
+  tmpbox[2] = SPROD(lindef_z,box_y) ;
 #endif
 
   box_y.x += tmpbox[0];
@@ -186,23 +168,18 @@ void lin_deform(void)
 #ifndef TWOD
   box_y.z += tmpbox[2];
 #endif
-  
+
   /* transform third box vector */
 #ifndef TWOD
-  tmpbox[0] =   lindef_x.x * box_z.x + lindef_x.y * box_z.y
-              + lindef_x.z * box_z.z ;
-
-  tmpbox[1] =   lindef_y.x * box_z.x + lindef_y.y * box_z.y
-              + lindef_y.z * box_z.z ;
-
-  tmpbox[2] =   lindef_z.x * box_z.x + lindef_z.y * box_z.y
-              + lindef_z.z * box_z.z ;
+  tmpbox[0] = SPROD(lindef_x,box_z) ;
+  tmpbox[1] = SPROD(lindef_y,box_z) ;
+  tmpbox[2] = SPROD(lindef_z,box_z) ;
 
   box_z.x += tmpbox[0];
   box_z.y += tmpbox[1];
   box_z.z += tmpbox[2];
 #endif
-
+ 
   /* apply box changes */
   make_box();
  
