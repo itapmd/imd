@@ -176,6 +176,11 @@ vektor box_y, tbox_y;
 #ifndef TWOD
 vektor box_z, tbox_z;
 #endif
+#ifdef TWOD
+ivektor pbc_dirs = {1,1};    /* directions with pbc - default is PBC */
+#else
+ivektor pbc_dirs = {1,1,1};  /* directions with pbc - default is PBC */
+#endif
 
 /* Filenames */
 str255 infilename;    /* Input File */
@@ -368,7 +373,7 @@ void init_cells(void)
 #endif
 	p->n_max=0;
 	alloc_cell(p, CSTEP);
-  };
+  }
 
   /* To determine the cell into which a given particle belongs, we
      have to transform the cartesian coordinates of the particle into
@@ -492,7 +497,7 @@ void move_atom(ivektor cellc, cell *from, int index)
     from->ort[index].z = from->ort[from->n].z; 
 #endif
     from->sorte[index] = from->sorte[from->n]; 
-  };
+  }
 
 }
 
@@ -526,10 +531,10 @@ void alloc_cell(cell *thecell, int count)
      } else {
       /* cell is shrinking, data gets invalid */
       thecell->n = 0;
-    };
+    }
     free(thecell->ort);
     free(thecell->sorte);
-   };
+   }
 
   /* set pointers accordingly */
   thecell->ort    = new.ort;
@@ -578,7 +583,7 @@ void read_parameters(int argc,char **argv)
           paramfilename = strdup(argv[2]);
           --argc;
           ++argv;
-        };
+        }
       }
       else paramfilename = strdup(&argv[1][2]);
       break;
@@ -589,7 +594,7 @@ void read_parameters(int argc,char **argv)
     }
     ++argv;
     --argc;
-  };
+  }
 
   getparamfile(paramfilename);
 
@@ -597,7 +602,7 @@ void read_parameters(int argc,char **argv)
   if (0 != restart) {
     sprintf(fname,"%s.%d.itr",outfilename,restart);
     getparamfile(fname);
-  };
+  }
 
   if (0!=restart) sprintf(infilename,"%s.%u",outfilename,restart);
 
@@ -674,7 +679,7 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
         sprintf(errmsg,"integer vector of dim %u expected",
                 (unsigned)pnum_min);
         error(errmsg);
-      };
+      }
       ((int*)param)[i] = ival;
     }
   }
@@ -713,7 +718,7 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
         sprintf(errmsg,"integer vector of dim %u expected",
                 (unsigned)pnum_min);
         error(errmsg);
-      };
+      }
       ((int *)param)[i] = (int)ival;
     }
   }
@@ -752,7 +757,7 @@ int getparam(char *param_name, void *param, PARAMTYPE ptype,
         sprintf(errmsg,"real vector of dim %u expected",
                 (unsigned)pnum_min);
         error(errmsg);
-      };
+      }
       ((real*)param)[i] = rval;
     }
   }
@@ -779,11 +784,11 @@ void getparamfile(char *paramfname)
   if (NULL == pf) {
     sprintf(error_msg,"Cannot open parameter file %s",paramfname);
     error(error_msg);
-  };
+  }
 
   do {
     res=fgets(buffer,1024,pf);
-    if (NULL == res) { break; }; /* probably EOF reached */
+    if (NULL == res) break; /* probably EOF reached */
     curline++;
     token = strtok(buffer," \t\n");
     if (NULL == token) continue; /* skip blank lines */
@@ -811,6 +816,10 @@ void getparamfile(char *paramfname)
       getparam("box_z",&box_z,PARAM_REAL,DIM,DIM);
     }
 #endif
+    else if (strcasecmp(token,"pbc_dirs")==0) {
+      /* directions with periodic boundary conditions */
+      getparam("pbc_dirs",&pbc_dirs,PARAM_INT,DIM,DIM);
+    }
     else if (strcasecmp(token,"ntypes")==0) {
       /* number of atom types */
       getparam("ntypes",&ntypes,PARAM_INT,1,1);
@@ -922,8 +931,8 @@ void read_atoms(str255 infilename)
       input->ort[0] = pos;
       cellc = cell_coord(pos);
       move_atom(cellc, input, 0);
-    };
-  };
+    }
+  }
   fclose(infile);  
 
 }
@@ -964,7 +973,7 @@ void write_histograms(int steps)
       for (k=j; k<ntypes; ++k)
 	fprintf(out,"%f ",*PTR_3D_V(histogram,i,j,k,hist_dim)/f);
     fprintf(out,"\n");
-  };
+  }
   fclose(out);
 
 }
@@ -1004,12 +1013,11 @@ void do_distance(cell *p, cell *q, vektor pbc)
       p_typ = p->sorte[i];
       q_typ = q->sorte[j];
 
-      if (q_typ > p_typ) {temp = p_typ; p_typ = q_typ; q_typ = temp;}; 
+      if (q_typ > p_typ) {temp = p_typ; p_typ = q_typ; q_typ = temp;}
 
       if ((k>0) && (k<SLOTS))
 	*PTR_3D_V(histogram, k , q_typ, p_typ, hist_dim) += 2;
-    };
-
+    }
 }
 
 
@@ -1034,88 +1042,98 @@ void calc_distances(void)
 #ifndef TWOD
       for (k=0; k < cell_dim.z; ++k)
 #endif
-	/* For half of the neighbours of this cell */
-	for (l=0; l <= 1; ++l)
-	  for (m=-l; m <= 1; ++m)
+      {
+#ifdef TWOD
+        p = PTR_2D_V(cell_array,i,j  ,cell_dim);
+#else
+        p = PTR_3D_V(cell_array,i,j,k,cell_dim);
+#endif
+        /* For half of the neighbours of this cell */
+        for (l=0; l <= 1; ++l)
+          for (m=-l; m <= 1; ++m)
 #ifndef TWOD
-	    for (n=(l==0 ? -m  : -l ); n <= 1; ++n)
+            for (n=(l==0 ? -m  : -l ); n <= 1; ++n)
 #endif
             {
-	      /* Given cell */
-              /* Hey optimizer, this is invariant to the last three loops!! */
-#ifdef TWOD
-	      p = PTR_2D_V(cell_array,i,j  ,cell_dim);
-#else
-	      p = PTR_3D_V(cell_array,i,j,k,cell_dim);
-#endif
-	      /* Calculate Indicies of Neighbour */
+              /* Calculate Indicies of Neighbour */
               r = i+l;  pbc.x = 0;
               s = j+m;  pbc.y = 0;
 #ifndef TWOD
               t = k+n;  pbc.z = 0;
 #endif
 
-#ifndef NOPBC
-	      if (r<0) {
-		r = cell_dim.x-1; 
-		pbc.x -= box_x.x;      
-		pbc.y -= box_x.y;
+              /* deal with periodic boundary conditions if necessary */
+              if (r<0) {
+                if (pbc_dirs.x==1) {
+                  r = cell_dim.x-1; 
+                  pbc.x -= box_x.x;      
+                  pbc.y -= box_x.y;
 #ifndef TWOD
-		pbc.z -= box_x.z;
+                  pbc.z -= box_x.z;
 #endif
-	      };
-	      if (s<0) {
-		s = cell_dim.y-1;
-		pbc.x -= box_y.x;      
-		pbc.y -= box_y.y;
+                } else continue;
+              }
+              if (s<0) {
+                if (pbc_dirs.y==0) {
+                  s = cell_dim.y-1;
+                  pbc.x -= box_y.x;      
+                  pbc.y -= box_y.y;
 #ifndef TWOD
-		pbc.z -= box_y.z;
+                  pbc.z -= box_y.z;
 #endif
-	      };
+                } else continue;
+              }
 #ifndef TWOD
-	      if (t<0) {
-		t = cell_dim.z-1;
-		pbc.x -= box_z.x;      
-		pbc.y -= box_z.y;
-		pbc.z -= box_z.z;
-	      };
+              if (t<0) {
+                if (pbc_dirs.z==1) {
+                  t = cell_dim.z-1;
+                  pbc.x -= box_z.x;      
+                  pbc.y -= box_z.y;
+                  pbc.z -= box_z.z;
+                } else continue;
+              }
 #endif
-	      if (r>cell_dim.x-1) {
-		r = 0; 
-		pbc.x += box_x.x;      
-		pbc.y += box_x.y;
+              if (r>cell_dim.x-1) {
+                if (pbc_dirs.x==1) {
+                  r = 0; 
+                  pbc.x += box_x.x;      
+                  pbc.y += box_x.y;
 #ifndef TWOD
-		pbc.z += box_x.z;
+                  pbc.z += box_x.z;
 #endif
-	      };
-	      if (s>cell_dim.y-1) {
-		s = 0; 
-		pbc.x += box_y.x;      
-		pbc.y += box_y.y;
+                } else continue;
+              }
+              if (s>cell_dim.y-1) {
+                if (pbc_dirs.y==1) {
+                  s = 0; 
+                  pbc.x += box_y.x;      
+                  pbc.y += box_y.y;
 #ifndef TWOD
-		pbc.z += box_y.z;
+                  pbc.z += box_y.z;
 #endif
-	      };
+                } else continue;
+              }
 #ifndef TWOD
-	      if (t>cell_dim.z-1) {
-		t = 0; 
-		pbc.x += box_z.x;      
-		pbc.y += box_z.y;
-		pbc.z += box_z.z;
-	      };
+              if (t>cell_dim.z-1) {
+                if (pbc_dirs.z==1) {
+                  t = 0; 
+                  pbc.x += box_z.x;      
+                  pbc.y += box_z.y;
+                  pbc.z += box_z.z;
+                } else continue;
+              }
 #endif
-#endif /* NOPBC */
 
 	      /* Neighbour cell (note that p==q ist possible) */
 #ifdef TWOD
-	      q = PTR_2D_V(cell_array,r,s,cell_dim);
+              q = PTR_2D_V(cell_array,r,s,cell_dim);
 #else
-	      q = PTR_3D_V(cell_array,r,s,t,cell_dim);
+              q = PTR_3D_V(cell_array,r,s,t,cell_dim);
 #endif
-	      /* Do the work */
-	      do_distance(p,q,pbc);
-      };
-
+              /* Do the work */
+              do_distance(p,q,pbc);
+            }
+      }
 }
 
 
