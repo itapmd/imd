@@ -17,6 +17,9 @@
 
 /* include file also declares global variables and has function prototypes */
 #include "imd.h"
+#ifdef PAPI
+#include <papi.h>
+#endif
 
 /* Main module of the IMD Package;
    Various versions are built by conditional compilation */
@@ -26,8 +29,10 @@ int main(int argc, char **argv)
   int start, num_threads;
   time_t tstart, tend;
   real tmp;
-  str255 fname;
-  FILE *fl;
+#ifdef PAPI
+  float rtime, ptime, mflops;
+  long_long flpins;
+#endif
   
 #ifdef MPI
   init_mpi(&argc,argv);
@@ -140,6 +145,9 @@ int main(int argc, char **argv)
 
   imd_stop_timer(&time_setup);
   imd_start_timer(&time_main);
+#ifdef PAPI
+  PAPI_flops(&rtime,&ptime,&flpins,&mflops);
+#endif
 
   /* first phase of the simulation */
   if (steps_min <= steps_max) main_loop();
@@ -177,6 +185,9 @@ int main(int argc, char **argv)
 
   imd_stop_timer(&time_main);
   imd_stop_timer(&time_total);
+#ifdef PAPI
+  PAPI_flops(&rtime,&ptime,&flpins,&mflops);
+#endif
 
   /* write execution time summary */
   if (0 == myid) {
@@ -191,6 +202,10 @@ int main(int argc, char **argv)
     printf("%s\n\n",progname);
     printf("started at %s", ctime(&tstart));
     printf("finished at %s\n", ctime(&tend));
+
+#ifdef PAPI
+    printf("Achieved %f megaflops per CPU\n\n", mflops);
+#endif
 
 #ifdef EPITAX
     if (0 == myid) printf("EPITAX: %d atoms created.\n", nepitax);

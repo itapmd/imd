@@ -434,22 +434,39 @@ endif
 #
 ###########################################################################
 
-# Power4 regatta
-ifeq (Power4-cc,${IMDSYS})
+# Power4 regatta, 64 bit
+ifeq (Power4-cc-64,${IMDSYS})
+  CC_SERIAL	= xlc_r
+  CC_MPI	= mpcc_r
+  CC_OMP	= xlc_r
+  CC_OMPI	= mpcc_r
+  BIN_DIR	= ${HOME}/bin/powerpc
+  OPT_FLAGS	+= -O4 -w -q64 # -qtbtable=full
+  OMP_FLAGS	+= -DUSE_WALLTIME -qsmp=omp
+  OMPI_FLAGS	+= -qsmp=omp
+  DEBUG_FLAGS	+= -g -q64
+  PROF_FLAGS	+= -p
+  PROF_LIBS	+= -lpl
+  PAPI_LIBS     =  -lpapi64 -lpmapi
+  LIBS          += # -lmpiprof
+endif
+
+# Power4 regatta, 32bit
+ifeq (Power4-cc-32,${IMDSYS})
   CC_SERIAL	= xlc
   CC_MPI	= mpcc
   CC_OMP	= xlc_r
   CC_OMPI	= mpcc_r
   BIN_DIR	= ${HOME}/bin/powerpc
-  OPT_FLAGS	+= -O4 -w
-  # MPI_FLAGS     += -q64
-  OMP_FLAGS	+= -DUSE_WALLTIME -q64 -qsmp=omp
-  OMPI_FLAGS	+= -qsmp=omp -q64
-  DEBUG_FLAGS	+= -g
+  OPT_FLAGS	+= -O4 -w -q32 # -qtbtable=full
+  OMP_FLAGS	+= -DUSE_WALLTIME -qsmp=omp
+  OMPI_FLAGS	+= -qsmp=omp
+  DEBUG_FLAGS	+= -g -q64
   PROF_FLAGS	+= -p
   PROF_LIBS	+= -lpl
+  PAPI_LIBS     =  -lpapi32 -lpmapi
+  LIBS          += # -lmpiprof
 endif
-
 
 ###########################################################################
 #
@@ -882,6 +899,12 @@ endif
 # use 4-point-interpolation
 ifneq (,$(findstring 4point,${MAKETARGET}))
 CFLAGS += -DFOURPOINT
+endif
+
+# use papi
+ifneq (,$(findstring papi,${MAKETARGET}))
+CFLAGS += -DPAPI 
+LIBS   += ${PAPI_LIBS}
 endif
 
 # Substitute .o for .c to get the names of the object files
