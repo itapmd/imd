@@ -549,6 +549,7 @@ EXTERN vektor socketwin_ll  INIT(nullvektor);  /* lower left (front) corner */
 EXTERN vektor socketwin_ur  INIT(nullvektor);  /* upper right (back) corner */
 #endif
 
+EXTERN int  have_potfile INIT(0); 
 #ifdef PAIR
 /* analytically defined pair potentials */
 EXTERN real r_cut_lin[55] INIT(zero55); 
@@ -557,7 +558,6 @@ EXTERN real r2_cut[10][10];
 EXTERN real r_begin[55] INIT(zero55);
 EXTERN real pot_res[55] INIT(zero55);
 EXTERN int  have_pre_pot INIT(0); 
-EXTERN int  have_potfile INIT(0); 
 /* Lennard-Jones */
 EXTERN real lj_epsilon_lin[55] INIT(zero55);
 EXTERN real lj_epsilon[10][10];
