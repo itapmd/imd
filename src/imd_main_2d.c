@@ -199,7 +199,7 @@ void main_loop(void)
     calc_forces(steps); 
 
 #ifdef WRITEF /* can be used as tool for postprocessing */
-    write_config_select(sscount, "wf",write_atoms_wf, write_header_wf);
+    write_config_select(steps, "wf",write_atoms_wf, write_header_wf);
 #endif
 
 #ifdef EPITAX
