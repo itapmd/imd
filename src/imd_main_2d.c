@@ -52,10 +52,11 @@ void main_loop(void)
     error("Can't allocate memory for fbc_df\n");
 #endif 
 
-#ifdef FRAC
+#if defined(FRAC) || defined(FTG) 
   if (0==myid) {
       printf( "Strain rate is  %1.10f\n", dotepsilon0 );
       printf( "Damping mode  %d\n", dampingmode );
+      printf( "Damping prefactor is %1.10f\n\n", gamma_bar );
   }
 #endif
 

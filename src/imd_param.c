@@ -759,6 +759,15 @@ void getparamfile(char *paramfname, int sim)
       for(k=0; k<nslices; k++)
 	*(E_kin_ftg+k) = 0.0;
     }
+    else if (strcasecmp(token,"gamma_ftg")==0) {
+      /* actual Damping factor for each slice */
+      /* format: slice gamma_ftg  read in a temp. vektor */
+      getparam("gamma_ftg",&tempvek,PARAM_REAL,2,2);
+      if (tempvek.x>nslices-1)
+	error("actual Damping factorfor non existing slice\n");
+      *(gamma_ftg + (int)tempvek.x) = tempvek.y;
+      printf("%d %3.6f\n", (int)tempvek.x, tempvek.y);
+    }
     else if (strcasecmp(token,"nslices_Left")==0) {
       /* nuber of slices with Tleft*/
       getparam("nslices_Left",&nslices_Left,PARAM_INT,1,1);
@@ -1686,17 +1695,22 @@ void broadcast_params() {
   MPI_Bcast( &nslices_Left,  1, MPI_INT   , 0, MPI_COMM_WORLD); 
   MPI_Bcast( &nslices_Right, 1, MPI_INT   , 0, MPI_COMM_WORLD); 
 
-  if (0!=myid) ninslice  = (int*) malloc(nslices*sizeof(int));
-  if (NULL==ninslice)
-    error("Cannot allocate memory for ninslice vector on client.\n");
-                         
-  if (0!=myid) gamma_ftg = (real*) malloc(nslices*sizeof(real));
-  if (NULL==gamma_ftg)
-    error("Cannot allocate memory for gamma_ftg vector on client.\n");
-                         
-  if (0!=myid) E_kin_ftg = (real*) malloc(nslices*sizeof(real));
-  if (NULL==E_kin_ftg) 
-    error("Cannot allocate memory for E_kin_ftg vector on client.\n");
+  if (0!=myid){ 
+    ninslice  = (int*) malloc(nslices*sizeof(int));
+    if (NULL==ninslice)
+      error("Cannot allocate memory for ninslice vector on client.\n");
+  }                   
+  if (0!=myid){ 
+    E_kin_ftg = (real*) malloc(nslices*sizeof(real));
+    if (NULL==E_kin_ftg) 
+      error("Cannot allocate memory for E_kin_ftg vector on client.\n");
+  }
+  if (0!=myid){
+    gamma_ftg = (real*) malloc(nslices*sizeof(real));
+    if (NULL==gamma_ftg)
+      error("Cannot allocate memory for gamma_ftg vector on client.\n");
+  }
+  MPI_Bcast( &gamma_ftg, nslices, REAL     , 0, MPI_COMM_WORLD);
 #endif 
 
 

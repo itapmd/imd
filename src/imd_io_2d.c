@@ -449,6 +449,11 @@ void write_itr_file(int fzhlr, int steps)
   fprintf(out,"strainrate \t%f\n",dotepsilon);
 #endif
 
+#ifdef FTG
+  for(m=0; m<nslices;m++)
+  fprintf(out,"gamma_ftg %d\t%f\n",m , *(gamma_ftg + m));
+#endif
+
 #ifdef AND
   /* with Anderson thermostat, write external temperature */
   if (tmp_interval>0) fprintf(out,"starttemp \t%f\n",temperature);

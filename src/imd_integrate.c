@@ -1395,9 +1395,9 @@ void move_atoms_ftg(void)
 
 {
   int j, k;
-  static real *E_kin_1  = NULL; static real *E_kin_2  = NULL;
-  static real *tmpvec1  = NULL; static real *tmpvec2  = NULL;
-  static int  *itmpvec1 = NULL; static int  *itmpvec2 = NULL;
+  static real *E_kin_1     = NULL; static real *E_kin_2     = NULL;
+  static real *ftgtmpvec1  = NULL; static real *ftgtmpvec2  = NULL;
+  static int  *iftgtmpvec1 = NULL; static int  *iftgtmpvec2 = NULL;
 
   real tmp,tmp1,tmp2;
   real ttt;
@@ -1405,7 +1405,7 @@ void move_atoms_ftg(void)
   real epsilontmp, eins_d_epsilontmp;
   int slice;
 
-  /* alloc vector versions of E_kin and  tmpvect*/
+  /* alloc vector versions of E_kin and  ftgtmpvect*/
   if (NULL==E_kin_1) {
     E_kin_1=(real*) malloc(nslices*sizeof(real));
     if (NULL==E_kin_1) 
@@ -1416,25 +1416,25 @@ void move_atoms_ftg(void)
     if (NULL==E_kin_2) 
       error("Cannot allocate memory for E_kin_2 vector\n");
   }
-  if (NULL==tmpvec1) {
-    tmpvec1=(real*) malloc(nslices*sizeof(real));
-    if (NULL==tmpvec1) 
-      error("Cannot allocate memory for tmpvec1 vector\n");
+  if (NULL==ftgtmpvec1) {
+    ftgtmpvec1=(real*) malloc(nslices*sizeof(real));
+    if (NULL==ftgtmpvec1) 
+      error("Cannot allocate memory for ftgtmpvec1 vector\n");
   }
-  if (NULL==tmpvec2) {
-    tmpvec2=(real*) malloc(nslices*sizeof(real));
-    if (NULL==tmpvec2) 
-      error("Cannot allocate memory for tmpvec2 vector\n");
+  if (NULL==ftgtmpvec2) {
+    ftgtmpvec2=(real*) malloc(nslices*sizeof(real));
+    if (NULL==ftgtmpvec2) 
+      error("Cannot allocate memory for ftgtmpvec2 vector\n");
   }
-  if (NULL==itmpvec1) {
-    itmpvec1=(int*) malloc(nslices*sizeof(int));
-    if (NULL==itmpvec1) 
-      error("Cannot allocate memory for itmpvec1 vector\n");
+  if (NULL==iftgtmpvec1) {
+    iftgtmpvec1=(int*) malloc(nslices*sizeof(int));
+    if (NULL==iftgtmpvec1) 
+      error("Cannot allocate memory for iftgtmpvec1 vector\n");
   }
-  if (NULL==itmpvec2) {
-    itmpvec2=(int*) malloc(nslices*sizeof(int));
-    if (NULL==itmpvec2) 
-      error("Cannot allocate memory for itmpvec2 vector\n");
+  if (NULL==iftgtmpvec2) {
+    iftgtmpvec2=(int*) malloc(nslices*sizeof(int));
+    if (NULL==iftgtmpvec2) 
+      error("Cannot allocate memory for iftgtmpvec2 vector\n");
   }
 
   for (j=0; j<nslices; j++) {
@@ -1466,6 +1466,7 @@ void move_atoms_ftg(void)
       slice = (int) (nslices *tmp);
       if (slice<0)        slice = 0;
       if (slice>=nslices) slice = nslices-1;;      
+
 
       sort = VSORTE(p,i);
       /* add up degrees of freedom  considering restriction vector  */
@@ -1546,39 +1547,47 @@ void move_atoms_ftg(void)
     }
   }
 
-
   tot_kin_energy = 0.0; 
   for (j=0; j<nslices; j++){
     tot_kin_energy += ( *(E_kin_1 + j) + *(E_kin_2 + j)) / 4.0;
     *(E_kin_ftg+j)  = ( *(E_kin_1 + j) + *(E_kin_2 + j)) / 4.0;
   }
 
-
-
+#ifdef DEBUG
+  printf("\n%d: ", myid);
+  for (j=0;j<nslices;j++)
+    printf("%3.6f ", *(gamma_ftg +j));
+    printf("\n");
+#endif
+ 
 #ifdef MPI
   /* add up results from different CPUs */
   
-  for (j=0; j<nslices; j++) *(tmpvec1 + j) = *(E_kin_ftg + j);
-  MPI_Allreduce( tmpvec1, tmpvec2, nslices, REAL, MPI_SUM, cpugrid);
-  for (j=0; j<nslices; j++) *(E_kin_ftg + j) = *(tmpvec2 + j);
+  for (j=0; j<nslices; j++) 
+    *(ftgtmpvec1 + j) = *(E_kin_ftg + j);
+  MPI_Allreduce( ftgtmpvec1, ftgtmpvec2, nslices, REAL, MPI_SUM, cpugrid);
+  for (j=0; j<nslices; j++) 
+    *(E_kin_ftg + j) = *(ftgtmpvec2 + j);
   
-  for (j=0; j<nslices; j++) *(tmpvec1 + j) = *(E_kin_2 + j);
-  MPI_Allreduce( tmpvec1, tmpvec2, nslices, REAL, MPI_SUM, cpugrid);
-  for (j=0; j<nslices; j++) *(E_kin_2 + j) = *(tmpvec2 + j);
+  for (j=0; j<nslices; j++) 
+    *(ftgtmpvec1 + j) = *(E_kin_2 + j);
+  MPI_Allreduce( ftgtmpvec1, ftgtmpvec2, nslices, REAL, MPI_SUM, cpugrid);
+  for (j=0; j<nslices; j++) 
+    *(E_kin_2 + j) = *(ftgtmpvec2 + j);
   
   tmp1 = tot_kin_energy;
   MPI_Allreduce( &tmp1, &tmp2, 1, REAL, MPI_SUM, cpugrid);
   tot_kin_energy = tmp2;
   
-  for (j=0; j<nslices; j++) *(itmpvec1 +j) = *(ninslice   + j);
-  MPI_Allreduce( itmpvec1, itmpvec2, nslices, MPI_INT, MPI_SUM, cpugrid);
-  for (j=0; j<nslices; j++) *(ninslice + j) = *(itmpvec2 +j); 
-  
+  for (j=0; j<nslices; j++) 
+    *(iftgtmpvec1 +j) = *(ninslice   + j);
+  MPI_Allreduce( iftgtmpvec1, iftgtmpvec2, nslices, MPI_INT, MPI_SUM, cpugrid);
+  for (j=0; j<nslices; j++) 
+    *(ninslice + j) = *(iftgtmpvec2 +j); 
 #endif
 
 
   for (j=0; j<nslices; j++) {
-    
     temperature =  Tleft + (Tright-Tleft)*(j-nslices_Left+1) /
       (real) (nslices-nslices_Left-nslices_Right+1);
     
@@ -1600,6 +1609,7 @@ void move_atoms_ftg(void)
       *(gamma_ftg+j)  = 0.0;
     }
   }
+
 
 }
 

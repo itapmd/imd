@@ -538,7 +538,7 @@ void write_itr_file(int fzhlr, int steps)
 {
   FILE *out;
   str255 fname;
-  int n;
+  int m,n;
 
   if (fzhlr>=0) sprintf(fname,"%s.%u.itr",outfilename,fzhlr);
   else          sprintf(fname,"%s-final.itr",outfilename);
@@ -564,17 +564,21 @@ void write_itr_file(int fzhlr, int steps)
   }
 #endif
 
-#ifdef AND
-  /* with Anderson thermostat, write external temperature */
-  if (tmp_interval>0) fprintf(out,"starttemp \t%f\n",temperature);
-#endif
-
 #ifdef FRAC 
  /* with FRAC ensemble, write actual damping factor and strainrate*/
   fprintf(out,"gamma_damp \t%f\n",gamma_damp);
   fprintf(out,"strainrate \t%f\n",dotepsilon);
 #endif
 
+#ifdef FTG
+  for(m=0; m<nslices;m++)
+  fprintf(out,"gamma_ftg %d\t%f\n",m , *(gamma_ftg + m));
+#endif
+
+#ifdef AND
+  /* with Anderson thermostat, write external temperature */
+  if (tmp_interval>0) fprintf(out,"starttemp \t%f\n",temperature);
+#endif
 
 #ifdef FBC
   for(n=0; n<vtypes;n++)
