@@ -126,7 +126,7 @@ int main(int argc, char **argv)
     if (0 == myid) {
       printf("Reading atoms.\n");fflush(stdout);
     }
-    read_box(infilename);
+    if (use_box_from_header == 1) read_box(infilename);
     make_box();
     read_atoms(infilename);
   }
