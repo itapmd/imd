@@ -468,8 +468,194 @@ void move_atoms_nvt(void)
                            * eins_d_reib * (restrictions + sort)->z;
 #endif
 
+#ifdef UNIAX
+        /* new angular momenta */
+        dot = 2.0 * SPRODN(p->dreh_impuls,i,p->achse,i);
+
+        p->dreh_impuls X(i) = eins_d_reib_rot
+            * ( p->dreh_impuls X(i) * reibung_rot
+                + timestep * p->dreh_moment X(i) - dot * p->achse X(i) );
+        p->dreh_impuls Y(i) = eins_d_reib_rot
+            * ( p->dreh_impuls Y(i) * reibung_rot
+                + timestep * p->dreh_moment Y(i) - dot * p->achse Y(i) );
+        p->dreh_impuls Z(i) = eins_d_reib_rot
+            * ( p->dreh_impuls Z(i) * reibung_rot
+                + timestep * p->dreh_moment Z(i) - dot * p->achse Z(i) );
+#endif
+
+        /* twice the new kinetic energy */ 
+        E_kin_2 += SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+#ifdef UNIAX
+        E_rot_2 += SPRODN(p->dreh_impuls,i,p->dreh_impuls,i) 
+                                                     / p->traeg_moment[i];
+#endif
+
+        /* new positions */
+        tmp = timestep / MASSE(p,i);
+        p->ort X(i) += tmp * p->impuls X(i);
+        p->ort Y(i) += tmp * p->impuls Y(i);
+#ifndef TWOD
+        p->ort Z(i) += tmp * p->impuls Z(i);
+#endif
+
+#ifdef UNIAX
+        cross.x = p->dreh_impuls Y(i) * p->achse Z(i)
+                - p->dreh_impuls Z(i) * p->achse Y(i);
+        cross.y = p->dreh_impuls Z(i) * p->achse X(i)
+                - p->dreh_impuls X(i) * p->achse Z(i);
+        cross.z = p->dreh_impuls X(i) * p->achse Y(i)
+                - p->dreh_impuls Y(i) * p->achse X(i);
+
+        p->achse X(i) += timestep * cross.x / p->traeg_moment[i];
+        p->achse Y(i) += timestep * cross.y / p->traeg_moment[i];
+        p->achse Z(i) += timestep * cross.z / p->traeg_moment[i];
+
+        norm = sqrt( SPRODN(p->achse,i,p->achse,i) );
+
+        p->achse X(i) /= norm;
+        p->achse Y(i) /= norm;
+        p->achse Z(i) /= norm;
+#endif
+
+#ifdef STRESS_TENS
+        p->presstens        X(i) += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
+        p->presstens        Y(i) += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
+#ifdef TWOD
+        p->presstens_offdia[i]   += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
+#else
+        p->presstens Z(i)        += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
+        p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
+#endif
+#endif
+    }
+  }
+  
+#ifdef UNIAX
+  tot_kin_energy = ( E_kin_1 + E_kin_2 + E_rot_1 + E_rot_2 ) / 4.0;
+#else
+  tot_kin_energy = ( E_kin_1 + E_kin_2 ) / 4.0;
+#endif
+
+#ifdef MPI
+  /* add up results from different CPUs */
+  tmpvec1[0] = tot_kin_energy;
+  tmpvec1[1] = E_kin_2;
+  tmpvec1[2] = E_rot_2;
+
+  MPI_Allreduce( tmpvec1, tmpvec2, 3, REAL, MPI_SUM, cpugrid);
+
+  tot_kin_energy = tmpvec2[0];
+  E_kin_2        = tmpvec2[1];
+  E_rot_2        = tmpvec2[2];
+#endif
+
+  /* time evolution of constraints */
+  ttt  = nactive * temperature;
+  eta += timestep * (E_kin_2 / ttt - 1.0) * isq_tau_eta;
+#ifdef UNIAX
+  ttt  = nactive_rot * temperature;
+  eta_rot += timestep * (E_rot_2 / ttt - 1.0) * isq_tau_eta_rot;
+#endif
+  
+}
+
+#else
+
+void move_atoms_nvt(void) 
+{
+  if (myid==0)
+  error("the chosen ensemble NVT is not supported by this binary");
+}
+
+#endif
+
+
+/*****************************************************************************
+*
+* NVT Integrator with Nose Hoover Thermostat 
+*
+*****************************************************************************/
+
 #ifdef SLLOD
-	p->impuls X(i) += epsilon * p->impuls Y(i) / MASSE(p,i);
+
+void move_atoms_sllod(void)
+
+{
+  int k;
+  real tmpvec1[3], tmpvec2[3], ttt;
+  real E_kin_1 = 0.0, E_kin_2 = 0.0;
+  vektor reibung, eins_d_reib;
+  real E_rot_1 = 0.0, E_rot_2 = 0.0;
+#ifdef UNIAX
+  real reibung_rot,  eins_d_reib_rot;
+#endif
+  fnorm = 0.0;
+
+  reibung.x         =        1.0 - (eta+shear_rate.x) * timestep / 2.0;
+  eins_d_reib.x     = 1.0 / (1.0 + (eta+shear_rate.x) * timestep / 2.0);
+  reibung.y         =        1.0 - (eta+shear_rate.y) * timestep / 2.0;
+  eins_d_reib.y     = 1.0 / (1.0 + (eta+shear_rate.y) * timestep / 2.0);
+#ifndef TWOD
+  reibung.z         =        1.0 - eta * timestep / 2.0;
+  eins_d_reib.z     = 1.0 / (1.0 + eta * timestep / 2.0);
+#endif
+#ifdef UNIAX
+  reibung_rot     =        1.0 - eta_rot * timestep / 2.0;
+  eins_d_reib_rot = 1.0 / (1.0 + eta_rot * timestep / 2.0);
+#endif
+   
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:E_kin_1,E_kin_2,E_rot_1,E_rot_2,fnorm)
+#endif
+  for (k=0; k<ncells; ++k) {
+
+    int i;
+    int sort;
+    cell *p;
+    real tmp;
+#ifdef UNIAX
+    real dot, norm ;
+    vektor cross ;
+#endif
+    p = cell_array + CELLS(k);
+
+    for (i=0; i<p->n; ++i) {
+
+        /* twice the old kinetic energy */
+        E_kin_1 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+#ifdef UNIAX
+        E_rot_1 +=  SPRODN(p->dreh_impuls,i,p->dreh_impuls,i) 
+                                                  / p->traeg_moment[i];
+#endif
+
+	sort = VSORTE(p,i);
+#ifdef FBC
+        /* give virtual particles their extra force */
+	p->kraft X(i) += (fbc_forces + sort)->x;
+	p->kraft Y(i) += (fbc_forces + sort)->y;
+#ifndef TWOD
+	p->kraft Z(i) += (fbc_forces + sort)->z;
+#endif
+
+#endif
+	p->kraft X(i) *= (restrictions + sort)->x;
+	p->kraft Y(i) *= (restrictions + sort)->y;
+#ifndef TWOD
+	p->kraft Z(i) *= (restrictions + sort)->z;
+#endif
+#ifdef FNORM
+	fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
+#endif
+
+	p->impuls X(i) = (p->impuls X(i) * reibung.x + timestep * p->kraft X(i)) 
+                           * eins_d_reib.x * (restrictions + sort)->x;
+        p->impuls Y(i) = (p->impuls Y(i) * reibung.y + timestep * p->kraft Y(i)) 
+                           * eins_d_reib.y * (restrictions + sort)->y;
+#ifndef TWOD
+        p->impuls Z(i) = (p->impuls Z(i) * reibung.z + timestep * p->kraft Z(i)) 
+                           * eins_d_reib.z * (restrictions + sort)->z;
 #endif
 
 #ifdef UNIAX
@@ -501,11 +687,10 @@ void move_atoms_nvt(void)
 #ifndef TWOD
         p->ort Z(i) += tmp * p->impuls Z(i);
 #endif
+        p->ort X(i) += shear_rate.x * p->ort Y(i);
+        p->ort Y(i) += shear_rate.y * p->ort X(i);
 
-#ifdef SLLOD
-	p->ort X(i) += epsilon * p->ort Y(i);
-#endif /* SLLOD */
-
+	
 #ifdef UNIAX
         cross.x = p->dreh_impuls Y(i) * p->achse Z(i)
                 - p->dreh_impuls Z(i) * p->achse Y(i);
@@ -541,12 +726,6 @@ void move_atoms_nvt(void)
 #endif
   }
   
-#ifdef SLLOD
-  /* new box size */
-  box_y.x += epsilon * box_y.y;
-  make_box();
-#endif
-
 #ifdef UNIAX
   tot_kin_energy = ( E_kin_1 + E_kin_2 + E_rot_1 + E_rot_2 ) / 4.0;
 #else
@@ -566,6 +745,11 @@ void move_atoms_nvt(void)
   E_rot_2        = tmpvec2[2];
 #endif
 
+  /* adjusting the box */
+  box_x.y += shear_rate.y*box_y.y;
+  box_y.x += shear_rate.x*box_x.x;
+  make_box();
+
   /* time evolution of constraints */
   ttt  = nactive * temperature;
   eta += timestep * (E_kin_2 / ttt - 1.0) * isq_tau_eta;
@@ -578,7 +762,7 @@ void move_atoms_nvt(void)
 
 #else
 
-void move_atoms_nvt(void) 
+void move_atoms_sllod(void) 
 {
   if (myid==0)
   error("the chosen ensemble NVT is not supported by this binary");
