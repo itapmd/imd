@@ -37,9 +37,9 @@ void move_atoms_nve(void){
   int clones;
 #endif
 
-#if defined(NVE) || !defined(EPITAX)
-  tot_kin_energy = 0.0;
-#endif
+  /* epitax may call this routine for other ensembles,
+     in which case we do not reset tot_kin_energy */
+  if ((ensemble==ENS_NVE) || (ensemble==ENS_CG)) tot_kin_energy = 0.0;
   fnorm   = 0.0;
   PxF     = 0.0;
   omega_E = 0.0;
@@ -72,9 +72,10 @@ void move_atoms_nve(void){
     for (i=0; i<p->n; ++i) { /* loop over all atoms in the cell */
 
 
-#if defined(EPITAX) && !defined(NVE) 
+#ifdef EPITAX 
         /* beam atoms are always integrated by NVE */
-        if ( (NUMMER(p,i) <= epitax_sub_n) && 
+        if ( (ensemble != ENS_NVE) &&
+             (NUMMER(p,i) <= epitax_sub_n) && 
              (POTENG(p,i) <= epitax_ctrl * epitax_poteng_min) ) continue;
 #endif
 
@@ -208,11 +209,7 @@ void move_atoms_nve(void){
 #endif
         PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif /* STRESS_TENS */
-      	
-#if defined(EPITAX) && !defined(NVE)
-    }   
-#endif
-    
+
 #ifdef CLONE
 	for(clones=1;clones<=nclones;clones++)
 	    { 	/* and now do the same to all the clones */

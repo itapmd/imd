@@ -286,9 +286,9 @@ void main_loop(void)
 
     move_atoms(); /* here PxF is recalculated */
 
-#if defined(EPITAX) && !defined(NVE)
+#ifdef EPITAX
     /* beam atoms are always integrated by NVE */
-    move_atoms_nve();
+    if (ensemble != ENS_NVE) move_atoms_nve();
 #endif
 
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
