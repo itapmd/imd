@@ -8,7 +8,10 @@
 
 Online visualization of an IMD simulation can be done with the 
 VolIMD program, which is a descendent of
-<A HREF="http://www.uni-stuttgart.de/RUSuser/vis/People/roland/volrend/volrend.html">VolRend</A>.
+<A
+HREF="http://www.uni-stuttgart.de/RUSuser/vis/People/roland/volrend/volrend.html">VolRend</A>. In two dimensions the 2dvis program can be used.
+<P>
+<H1>VolIMD</H1>
 VolIMD allows to communicate with a running IMD simulation via a 
 socket connection.  The user can direct VolIMD to post a request 
 to IMD. Every <TT>sock_int</TT> steps, IMD checks whether a request 
@@ -65,7 +68,63 @@ and should respect the aspect ratio of the sample.
 
 
 <P>
-<A HREF="imd.html">Back to IMD User's Guide</A> 
+<H1>2dvis</H1> 2dvis is a visualization program that obtains its data
+- a configuration or an energy distribution - either from a file or
+via a socket connection.
+<P>
+In case of a configuration each atom is
+represented by a circle. It can be colour encoded by its type or its
+potential energy. An element of the distribution array is displayed as
+a square. Its colour is an encoding of the potential or kinetic
+energy. Both data representations can be moved, rotated and
+zoomed. The data can be saved to a file or written to a picture
+(ppm-format).
+<P>
+To start the program enter '2dvis'. It might be necessary to set an
+environment variable first by entering<BR>
+<TT>setenv USEOWNCMAP 1</TT>.
+<P>
+Use the following keys to operate the program:<BR><BR>
+<TABLE>
+<TR><TD>1:</TD><TD>move configuration to the lower left</TD></TR>
+<TR><TD>2:</TD><TD>move configuration down</TD></TR>
+<TR><TD>3:</TD><TD>move configuration to the lower right</TD></TR>
+<TR><TD>4:</TD><TD>move configuration to the left</TD></TR>
+<TR><TD>6:</TD><TD>move configuration to the right</TD></TR>
+<TR><TD>7:</TD><TD>move configuration to the upper left</TD></TR>
+<TR><TD>8:</TD><TD>move configuration up</TD></TR>
+<TR><TD>9:</TD><TD>move configuration to the upper right</TD></TR>
+<TR><TD>0:</TD><TD>increase radius</TD></TR>
+<TR><TD>.:</TD><TD>decrease radius</TD></TR>
+<TR><TD>+:</TD><TD>scale configuration (larger)</TD></TR>
+<TR><TD>-:</TD><TD>scale configuration (smaller)</TD></TR>
+<TR><TD>*:</TD><TD>rotate about x-axis</TD></TR>
+<TR><TD>/:</TD><TD>rotate about y-axis</TD></TR>
+<TR><TD>a:</TD><TD>auto-scale</TD></TR>
+<TR><TD>b:</TD><TD>draw bonds</TD></TR>
+<TR><TD>c:</TD><TD>get configuration via socket</TD></TR>
+<TR><TD>d:</TD><TD>get distribution via socket</TD></TR>
+<TR><TD>e:</TD><TD>toggle type/energy encoding</TD></TR>
+<TR><TD>h:</TD><TD>display this help message</TD></TR>
+<TR><TD>k:</TD><TD>toggle potential/kinetic energy</TD></TR>
+<TR><TD>l:</TD><TD>load IMD-configuration from file</TD></TR>
+<TR><TD>p</TD><TD> make picture</TD></TR>
+<TR><TD>q:</TD><TD>quit program</TD></TR>
+<TR><TD>t:</TD><TD>toggle text on/off</TD></TR>
+<TR><TD>u:</TD><TD>read_unit_vectors</TD></TR>
+<TR><TD>w:</TD><TD>write to file</TD></TR>
+</TABLE>
+
+Additionally you can use the mouse to move, rotate and zoom the data
+representation. Use the following mouse keys:
+<TABLE>
+<TR><TD>left</TD><TD>move</TD></TR>
+<TR><TD>middle</TD><TD>rotate around x-axis</TD></TR>
+<TR><TD>middle+right</TD><TD>rotate around y-axis</TD></TR>
+<TR><TD>right</TD><TD>zoom</TD></TR>
+</TABLE>
+
+<A HREF="imd.html">Back to IMD User's Guide</A>
 
 </BODY>
 </HTML>
