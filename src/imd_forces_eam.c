@@ -122,7 +122,8 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 
  #ifndef NODBG_DIST
       if (0==radius2) { char msgbuf[256];
-        sprintf(msgbuf,"Pair distance is zero: i=%d (#%d), j=%d (#%d)\n",i,eam_pni,j,eam_pnj);
+        sprintf(msgbuf,"Pair distance is zero: i=%d (#%d), j=%d (#%d)\n",
+                i,eam_pni,j,eam_pnj);
         error(msgbuf);
       }
 #else
@@ -247,6 +248,9 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
           /* save #j in the #i array field k > 0  (-> calc of forces) */
           eam_ij[eam_pni*eam_len]         += (real) 1;
           eam_k                            = (integer) eam_ij[eam_pni*eam_len];
+          if (eam_k >= eam_len) {
+            error("neighbor table too small, increase eam_len");
+	  }
           eam_ij[eam_pni*eam_len+eam_k]    = (real) eam_pnj; 
           eam_dij_x[eam_pni*eam_len+eam_k] = d.x; 
           eam_dij_y[eam_pni*eam_len+eam_k] = d.y; 
@@ -257,6 +261,9 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
           /* save #i in the #j array field k > 0  (-> calc of forces) */
           eam_ij[eam_pnj*eam_len]         += (real) 1;
           eam_k                            = (integer) eam_ij[eam_pnj*eam_len];
+          if (eam_k >= eam_len) {
+            error("neighbor table too small, increase eam_len");
+	  }
           eam_ij[eam_pnj*eam_len+eam_k]    = (real) eam_pni; 
           eam_dij_x[eam_pnj*eam_len+eam_k] = -d.x; 
           eam_dij_y[eam_pnj*eam_len+eam_k] = -d.y; 
