@@ -1,12 +1,62 @@
+
+/******************************************************************************
+*
+*  IMD -- The ITAP Molecular Dynamics Program
+*
+*  Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+*  University of Stuttgart, D-70550 Stuttgart
+*
+*  $Revision$
+*  $Date$
+*
+******************************************************************************/
+
+/******************************************************************************
+*
+*  atdist is a utility program to analyse/convert atoms distribution files.
+*
+*  Compilation: 
+*
+*    gcc -O -o atdist atdist.c -lm
+*
+*  Usage for 2D distributions:
+*
+*    atdist <file>
+*
+*  writes a pgm file of the distribution for each atom type, and a ppm file
+*  if there are not more than tree atom types. The atoms types are then
+*  encoded in red, green, and blue.
+*
+*  Usage for 3D distributions:
+*
+*    atdist <file>
+*
+*  projects the distribution onto the three axis, and writes these 1D
+*  histograms to the terminal. This helps to find out where the dense
+*  planes in the distribution are.
+*
+*    atdist <file> <dir> <min> <max>
+*
+*  adds the slices from <min> to <max> perpendicular to <dir>, and writes 
+*  a pgm file for each atom type, and a ppm file if there are not more than 
+*  tree atom types. The atoms types are then encoded in red, green, and blue.
+*
+*    atdist <file> <xmin> <ymin> <zmin> <xmax> <ymax> <zmax>
+*
+*  cuts a rectangular block from the volume and writes it in virvo xvf format.
+*
+******************************************************************************/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
 
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
 
-float *atoms_dist;
-int dim, dimx, dimy, dimz, ntypes, size;
+float *atoms_dist, ddx, ddy, ddz;;
+int dim, dimx, dimy, dimz, ntypes, size, my_endian;
 
 /******************************************************************************
 *
@@ -39,10 +89,53 @@ int endian(void)
 *
 ******************************************************************************/
 
-void do_endian_swap_4(char *str) {
+void do_endian_swap_4(char *str)
+{
   char *c;
   *c = * str;    * str    = *(str+3); *(str+3) = *c;
   *c = *(str+1); *(str+1) = *(str+2); *(str+2) = *c;
+}
+
+/******************************************************************************
+*
+*  copy 2 bytes to big endian
+*
+******************************************************************************/
+
+void copy2bytes(char *str, void *source)
+{
+  char *c;
+  c = source;
+  if (my_endian==1) {
+    * str    = * c   ;
+    *(str+1) = *(c+1);
+  } else {
+    * str    = *(c+1);
+    *(str+1) = * c   ;
+  }
+}
+
+/******************************************************************************
+*
+*  copy 4 bytes to big endian
+*
+******************************************************************************/
+
+void copy4bytes(char *str, void *source)
+{
+  char *c;
+  c = source;
+  if (my_endian==1) {
+    * str    = * c   ;
+    *(str+1) = *(c+1);
+    *(str+2) = *(c+2);
+    *(str+3) = *(c+3);
+  } else {
+    * str    = *(c+3);
+    *(str+1) = *(c+2);
+    *(str+2) = *(c+1);
+    *(str+3) = * c   ;
+  }
 }
 
 /******************************************************************************
@@ -71,6 +164,9 @@ int read_atoms_dist(char *fname)
         sscanf(line+2,"%d %d %d",&input_endian,&dim,&ntypes);
       } else  if (line[1]=='D') {
         if (dim!=sscanf(line+2,"%d %d %d",&dimx,&dimy,&dimz))
+          error("file header corrupt (dimension)!");
+      } else  if (line[1]=='S') {
+        if (dim!=sscanf(line+2,"%f %f %f",&ddx,&ddy,&ddz))
           error("file header corrupt (dimension)!");
       } else  if (line[1]=='E') {
 	cont=0;
@@ -180,7 +276,7 @@ void xy_pictures_3d(char *infile, int min, int max)
           hist[(t * dimy + j) * dimx + i] += atoms_dist[l];
 	}
 
-  /* renormalize atoms distribution for pgm files*/
+  /* renormalize atoms distribution for pgm files */
   fmax = 0.0;
   for (i=0; i<ntypes*dimxy; i++) fmax = MAX(fmax,hist[i]);
   fmax = 255/fmax;
@@ -252,7 +348,7 @@ void xz_pictures_3d(char *infile, int min, int max)
           hist[(t * dimz + k) * dimx + i] += atoms_dist[l];
 	}
 
-  /* renormalize atoms distribution for pgm files*/
+  /* renormalize atoms distribution for pgm files */
   fmax = 0.0;
   for (i=0; i<ntypes*dimxz; i++) fmax = MAX(fmax,hist[i]);
   fmax = 255/fmax;
@@ -324,7 +420,7 @@ void yz_pictures_3d(char *infile, int min, int max)
           hist[(t * dimz + k) * dimy + j] += atoms_dist[l];
 	}
 
-  /* renormalize atoms distribution for pgm files*/
+  /* renormalize atoms distribution for pgm files */
   fmax = 0.0;
   for (i=0; i<ntypes*dimyz; i++) fmax = MAX(fmax,hist[i]);
   fmax = 255/fmax;
@@ -395,7 +491,7 @@ void pictures_2d(char *infile)
           hist[(t * dimy + j) * dimx + i] = atoms_dist[l];
 	}
 
-  /* renormalize atoms distribution for pgm files*/
+  /* renormalize atoms distribution for pgm files */
   fmax = 0.0;
   for (i=0; i<ntypes*dimxy; i++) fmax = MAX(fmax,hist[i]);
   fmax = 255/fmax;
@@ -440,17 +536,123 @@ void pictures_2d(char *infile)
 
 /******************************************************************************
 *
+*  virvo volume data
+*
+******************************************************************************/
+
+void virvo_picture_3d(char *infile, int min_x, int min_y, int min_z,
+                                    int max_x, int max_y, int max_z)
+{
+  float *hist, fmax, fl;
+  unsigned char *vol;
+  int   len, len4, dx, dy, dz, t, i, j, k, l, m;
+  unsigned short us;
+  unsigned int   ui;
+  unsigned char  uc;
+  char  fname[255], header[48], *str; 
+  FILE  *out;
+
+  min_x = MAX(min_x,0); max_x = MIN(max_x,dimx); dx = max_x - min_x;
+  min_y = MAX(min_y,0); max_y = MIN(max_y,dimy); dy = max_y - min_y;
+  min_z = MAX(min_z,0); max_z = MIN(max_z,dimz); dz = max_z - min_z;
+  len   = dx * dy * dz;
+  len4  = 4 * len;
+
+  /* make volume file header */
+  my_endian=endian();
+  str = header;
+  sprintf(str,"%s","VIRVO-XVF");      str +=9;   /* file type */
+  us = 48; copy2bytes(str,&us);       str +=2;   /* header size */
+  ui = dx; copy4bytes(str,&ui);       str +=4;   /* dim_x */
+  ui = dy; copy4bytes(str,&ui);       str +=4;   /* dim_y */
+  ui = dz; copy4bytes(str,&ui);       str +=4;   /* dim_z */
+  ui =  1; copy4bytes(str,&ui);       str +=4;   /* number of frames */
+  uc = 32; (unsigned char) *str = uc; str++;     /* bits per voxel */
+  fl = 1.0/ddx; copy4bytes(str,&fl);  str +=4;   /* x-length of voxel */
+  fl = 1.0/ddy; copy4bytes(str,&fl);  str +=4;   /* y-length of voxel */
+  fl = 1.0/ddz; copy4bytes(str,&fl);  str +=4;   /* z-length of voxel */
+  fl = 1.0;     copy4bytes(str,&fl);  str +=4;   /* secs per frame */
+  us =  0; copy2bytes(str,&us);       str +=2;   /* number of transf. func. */
+  us =  0; copy2bytes(str,&us);       str +=2;   /* type of transf. func. */
+
+  hist = (float          *) calloc( len,  sizeof(float) );
+  vol  = (unsigned char  *) calloc( len4, sizeof(char ) );
+  if ((hist==NULL) || (vol==NULL)) error("out of memory");
+
+  /* compute renormalization factor */
+  for (t=0; t<ntypes; t++)
+    for (i=min_x; i<max_x; i++)
+      for (j=min_y; j<max_y; j++)
+        for (k=min_z; k<max_z; k++) {
+          l = ((t * dimx + i) * dimy + j) * dimz + k;
+          m = ((k-min_z) * dy + (j-min_y)) * dx + (i-min_x);
+          hist[m] += atoms_dist[l];
+	}
+  fmax = 0.0;
+  for (i=0; i<len; i++) fmax = MAX(fmax,hist[i]);
+  fmax = 255/fmax;
+
+  /* compute volume data */
+  for (t=0; t<ntypes; t++)
+    for (i=min_x; i<max_x; i++)
+      for (j=min_y; j<max_y; j++)
+        for (k=min_z; k<max_z; k++) {
+          l = ((t * dimx + i) * dimy + j) * dimz + k;
+          m = ((k-min_z) * dy + (j-min_y)) * dx + (i-min_x);
+          vol[4*m+t] = (unsigned char) (atoms_dist[l]*fmax);
+          vol[4*m+3] = (unsigned char) (hist[m]      *fmax);
+	}
+
+  /* make all colors bright */
+  for (i=0; i<len; i++) {
+    if (vol[4*i]<vol[4*i+1]) {
+      vol[4*i]=0;
+      if (vol[4*i+1]<vol[4*i+2]) {
+        vol[4*i+1]=  0;
+        vol[4*i+2]=255;
+      } else {
+        vol[4*i+2]=  0;
+        vol[4*i+1]=255;
+      }
+    } else {
+      vol[4*i+1]=0;
+      if (vol[4*i]<vol[4*i+2]) {
+        vol[4*i  ]=  0;
+        vol[4*i+2]=255;
+      } else {
+        vol[4*i+2]=  0;
+        vol[4*i  ]=255;
+      }
+    }
+  }
+
+  /* write volume data */
+  sprintf(fname,"%s.xvf",infile);
+  if (NULL==(out=fopen(fname,"w"))) 
+    error("Cannot open volume file.");
+  if (48!=fwrite(header,sizeof(char),48,out))
+    error("Cannot write volume file header.");
+  if (len4!=fwrite(vol,sizeof(char),len4,out))
+    error("Cannot write volume file data.");
+  fclose(out);
+
+}
+
+/******************************************************************************
+*
 *  main
 *
 ******************************************************************************/
 
 int main(int argc, char **argv) 
 {
-  int dim, dir, min, max;
+  int dim, dir=0, min, max;
+  int min_x, min_y, min_z, max_x, max_y, max_z;
 
   /* check number of arguments */
-  if ((argc!=2) && (argc!=5)) {
+  if ((argc!=2) && (argc!=5) && (argc!=8)) {
      printf("Usage:  %s infile [dir min max]\n",argv[0]);
+     printf("        %s infile xmin ymin zmin xmax ymax zmax\n",argv[0]);
      exit(1);
   }
 
@@ -460,9 +662,20 @@ int main(int argc, char **argv)
     sscanf(argv[3], "%d", &min); 
     sscanf(argv[4], "%d", &max);
   }
+  if (argc==8) {
+    sscanf(argv[2], "%d", &min_x);
+    sscanf(argv[3], "%d", &min_y); 
+    sscanf(argv[4], "%d", &min_z);
+    sscanf(argv[5], "%d", &max_x);
+    sscanf(argv[6], "%d", &max_y); 
+    sscanf(argv[7], "%d", &max_z);
+  }
 
   /* read atom distribution */
   dim = read_atoms_dist(argv[1]);
+  if ((dim!=3) && (argc==8)) {
+    error("This mode is for 3D data only!");
+  }
 
   /* write summary or pictures */
   if ((argc==2) && (dim==3)) {
@@ -476,6 +689,8 @@ int main(int argc, char **argv)
       xz_pictures_3d(argv[1],min,max);
     } else if (dir==1) {
       yz_pictures_3d(argv[1],min,max);
+    } else if (dir==0) {
+      virvo_picture_3d(argv[1],min_x,min_y,min_z,max_x,max_y,max_z);
     }
   }
   return 0;
