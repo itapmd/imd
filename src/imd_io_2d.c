@@ -393,6 +393,10 @@ void write_properties(int steps)
   };
 #endif
 
+#ifdef NVT
+  fprintf(out," %10.4e", eta );
+#endif
+
   putc('\n',out);
 
   fclose(out);
