@@ -68,22 +68,13 @@ int main(int argc, char **argv)
       translate(xloc-xlocold,yloc-ylocold,.000001);
       draw_scene(scene_type);
     }
-    if (mkey==2) { 
+    if (mkey==2) {
       xlocold=xloc;
       ylocold=yloc;
       while ((mkey=slocator(&xloc,&yloc))==2)
 	;
-      delta=sqrt((xloc-xlocold)*(xloc-xlocold)+(yloc-ylocold)*(yloc-ylocold));
-      rotate(100*delta,'x');
-      draw_scene(scene_type);
-    }
-    if (mkey==4) { 
-      xlocold=xloc;
-      ylocold=yloc;
-      while ((mkey=slocator(&xloc,&yloc))==4)
-	;
-      delta=sqrt((xloc-xlocold)*(xloc-xlocold)+(yloc-ylocold)*(yloc-ylocold));
-      rotate(100*delta,'y');
+      rotate(100*(xlocold-xloc),'y');
+      rotate(100*(ylocold-yloc),'x');
       draw_scene(scene_type);
     }
     if (mkey==3) { 
@@ -339,6 +330,7 @@ void draw_scene(int scene_type) {
 	  mapcolor(i+8,cv,cv,cv);
 	  color(i+8);
 	}
+	printf("%f %f %f\n", xx, x[i], scalex);
 	xx=x[i]*scalex-1;
 	yy=y[i]*scaley-1;
 	if (radectyp)

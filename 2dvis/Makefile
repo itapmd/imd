@@ -8,12 +8,12 @@ CC_i386-linux = gcc
 CC_alpha = gcc
 CC = $(CC_$(HOSTTYPE))
 
-CFLAGS = -g -DTWOD
+CFLAGS = -DTWOD
 LIBP = -L/usr/X11/lib
 LIBS = -lvogle -lX11 -lm
 
 all:	2dvis
-#	mv 2dvis $(HOME)/bin/$(HOSTTYPE)
+	mv 2dvis $(HOME)/bin/$(HOSTTYPE)
 
 2dvis:	2dvis.o client.o sockutil.o param.o
 	$(CC) $(LIBP) $(CFLAGS) -o 2dvis 2dvis.o client.o sockutil.o param.o $(LIBS)

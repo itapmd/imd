@@ -28,7 +28,7 @@ extern float scalex,scaley,scalepot,scalekin,offspot,offskin;
 /*-----------------------------------------------------------------*/
 int receive_conf()
 {
-  int i;
+  int i,size;
   double tmp;
   int itmp;
   int anz;
@@ -48,7 +48,8 @@ int receive_conf()
   mink=1000;
 
   ReadFull(socket_id, (void *)&anz, sizeof(int));
-  printf("%d\n", anz);
+  printf("%d\n", anz);fflush(stdout);
+
   nummer = (int *)calloc(anz, sizeof(int));
   sorte  = (short int *)calloc(anz, sizeof(int));
   masse  = (double *)calloc(anz, sizeof(double));
@@ -66,6 +67,36 @@ int receive_conf()
   kin    = (double *)calloc(anz, sizeof(double));
   bcode  = (int    *)calloc(anz, sizeof(double));
 
+  size=anz*sizeof(int);
+  ReadFull(socket_id,(void *) &nummer[0], size);
+  size=anz*sizeof(short int);
+  ReadFull(socket_id,(void *) &sorte[0], size);
+  size=anz*sizeof(double);
+  ReadFull(socket_id,(void *) &masse[0], size);
+  ReadFull(socket_id,(void *) &x[0], size);
+  ReadFull(socket_id,(void *) &y[0], size);
+#ifdef TWOD
+  ReadFull(socket_id,(void *) &z[0], size);
+#endif
+  ReadFull(socket_id,(void *) &vx[0], size);
+  ReadFull(socket_id,(void *) &vy[0], size);
+#ifdef TWOD
+  ReadFull(socket_id,(void *) &vz[0], size);
+#endif
+  ReadFull(socket_id,(void *) &pot[0], size);
+
+  for (i=0;i<anz;i++) {
+    kin[i] = vx[i]*vx[i]+vy[i]*vy[i];
+    if (maxx<x[i]) maxx=x[i];
+    if (minx>x[i]) minx=x[i];
+    if (maxy<y[i]) maxy=y[i];
+    if (miny>y[i]) miny=y[i];
+    if (maxp<pot[i]) maxp=pot[i];
+    if (minp>pot[i]) minp=pot[i];
+    if (maxk<kin[i]) maxk=kin[i];
+    if (mink>kin[i]) mink=kin[i];
+  }
+ /*
   for (i=0;i<anz;i++) {
     kin[i]=0;
     ReadFull(socket_id, (void *)&itmp, sizeof(int));
@@ -106,6 +137,7 @@ int receive_conf()
     if (maxk<kin[i]) maxk=kin[i];
     if (mink>kin[i]) mink=kin[i];
   }
+  */
 
   scalex=2.0/(maxx-minx);
   scaley=2.0/(maxy-miny);
@@ -168,6 +200,9 @@ int receive_dist()
   if (potarray==NULL) {printf("No memory for pot\n");return 0;}
   if (kinarray==NULL) {printf("No memory for kin\n");return 0;}
 
+  ReadFull(socket_id,(void *) &potarray[0], size);
+  ReadFull(socket_id,(void *) &kinarray[0], size);
+  /*
   for (i=0;i<x_res*y_res;i++) { 
     ReadFull(socket_id, (void *) &dummy, sizeof(float));
     potarray[i]=dummy;
@@ -176,6 +211,7 @@ int receive_dist()
     ReadFull(socket_id, (void *) &dummy, sizeof(float));
     kinarray[i]=dummy;
   }
+  */
   for (i=0;i<x_res*y_res;i++) {
     if (maxp<potarray[i]) maxp=potarray[i];
     if (minp>potarray[i]) minp=potarray[i];
@@ -188,7 +224,6 @@ int receive_dist()
   offskin=mink;
   scalepot=COLRES*1.0/(maxp-minp);
   scalekin=COLRES*1.0/(maxk-mink);
-  printf("hello: %f %f %f %f\n", maxk,mink,scalekin);
 
   return x_res*y_res;
 }
