@@ -85,7 +85,7 @@
 
 /* Shear */
 
-#ifdef MIKSHEAR
+#ifdef SHEAR
 #define NOPBC
 #endif
 

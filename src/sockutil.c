@@ -119,7 +119,7 @@ int OpenServerSocket(u_short MyPort)
     perror("Accept failed");
     return -1;
   }
-  printf("returning \n");
+  printf("returning\n");
   close(soc);
   return soc1;
 }

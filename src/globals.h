@@ -57,6 +57,7 @@ EXTERN int rep_interval INIT(0); /* Period of checkpoints ==0 for no checkpoints
 EXTERN int eng_interval INIT(0); /* Period of data output ==0 for no energy data */
 EXTERN int dis_interval INIT(0); /* Period of spatial eng. distrib output ==0 for no data */
 EXTERN int pic_interval INIT(0); /* Period of data output ==0 for no energy data */
+EXTERN int onl_interval INIT(0); /* Period of online visualization */
 EXTERN int dist_binary_io INIT(0); /* Flag for binary I/O */
 EXTERN ivektor dist_dim INIT(nullivektor); /* Resolution of spatial distrib */
 EXTERN str255 rundesc; /* Description */
@@ -92,9 +93,10 @@ EXTERN char *paramfilename INIT(0L);    /* Parameter File */
 
 /* construction of PN-dislocations */
 EXTERN int pn INIT(0);  /* construct a Peierls-Nabarro-dislocation? (0==no) */
-EXTERN real glideplane INIT(0);         /* y/z (2/3D)-coordinate of glidep. */
-EXTERN real burgersv INIT(1);           /* length of Burgers-vector */
+EXTERN real burgersv INIT(0);/* Burgers-vector */
 EXTERN real width INIT(1);              /* width of Burgers-vector density */
+EXTERN real upperplane INIT(0);         /* y/z (2/3D)-coordinate of glidep. */
+EXTERN real lowerplane INIT(0);         /* y/z (2/3D)-coordinate of glidep. */
 
 /* Parameters for displacement map */
 EXTERN str255 reffilename INIT("\0");   /* Parameter File */
@@ -104,8 +106,6 @@ EXTERN str255 reffilename INIT("\0");   /* Parameter File */
 EXTERN vektor2d pic_scale INIT(nullvektor); /* Scale factor x/y for pictures     */
 EXTERN vektor2d ecut_kin INIT(nullvektor);  /* Kin. Energy interval for pictures */
 EXTERN vektor2d ecut_pot INIT(nullvektor);  /* Pot. Energy interval for pictures */   
-EXTERN vektor2d  conf_ll INIT(nullvektor);  /* lower left corner conf */
-EXTERN vektor2d  conf_ur INIT(nullvektor);  /* upper right corner conf*/
 EXTERN vektor2d  pic_ll  INIT(nullvektor);  /* lower left corner */
 EXTERN vektor2d  pic_ur  INIT(nullvektor);  /* upper right corner */
 EXTERN ivektor2d pic_res INIT(nullivektor); /* number of pixels in x/y dir.*/
@@ -116,8 +116,6 @@ EXTERN int      projection INIT(0);         /* projection type 0/1 */
 EXTERN vektor3d pic_scale INIT(nullvektor); /* Scale factor x/y for pictures     */
 EXTERN vektor3d ecut_kin INIT(nullvektor);  /* Kin. Energy interval for pictures */
 EXTERN vektor3d ecut_pot INIT(nullvektor);  /* Pot. Energy interval for pictures */   
-EXTERN vektor3d  conf_llf INIT(nullvektor); /* lower left corner conf */
-EXTERN vektor3d  conf_urb INIT(nullvektor); /* upper right corner conf*/
 EXTERN vektor3d  pic_ll  INIT(nullvektor);  /* lower left corner */
 EXTERN vektor3d  pic_ur  INIT(nullvektor);  /* upper right corner */
 EXTERN ivektor3d pic_res INIT(nullivektor); /* number of pixels in x/y dir.*/
@@ -258,8 +256,15 @@ EXTERN real   gamma_bar INIT(0.0);    /* Damping prefactor */
 EXTERN real   gamma_cut INIT(0.0);    /* Damping cutoff */
 #endif
 
-#if defined(FRAC) || defined(PULL) || defined(SHOCK) || defined(MIKSHEAR)
+#if defined(FRAC) || defined(PULL) || defined(SHOCK)
+EXTERN int    dnoshsteps INIT(0);     /* counting steps between 2 shears */
 EXTERN real   strip INIT(0.0);        /* Strip width */    
+EXTERN real   ekin_threshold INIT(0.0); /* threshold for ekin */    
+EXTERN int    annealsteps INIT(0);    /* number of annealing steps */    
+EXTERN int    maxdnoshsteps INIT(0);  /* max. steps between 2 shear steps */  
+EXTERN int initial_shift INIT(0);  /* flag whether the sample is shifted */
+EXTERN vektor ins INIT(nullvektor);/* initial shift */
+EXTERN int shear_steps INIT(0);   /* number of shear_steps */
 #endif
 
 /*  #ifdef FRAC */
@@ -271,16 +276,6 @@ EXTERN vektor2d tip INIT(nullvektor2d);          /* Location of crack Tip */
 
 #ifdef PULL
 EXTERN vektor   delta;      /* atoms in strip move by this amount */
-#endif
-
-#ifdef MIKSHEAR
-EXTERN real glideplane INIT(0);    /* coordinate of the glide plane */
-EXTERN real shear_delta INIT(0);   /* shear increment */
-EXTERN int shear_steps INIT(0);   /* number of shear_steps */
-EXTERN int stepssincelastshear INIT(0);   /* number of shear_steps */
-EXTERN int annealsteps INIT(0);    /* annealing steps */
-EXTERN int maxshearrelaxsteps INIT(0);   /* number of shear_steps */
-EXTERN real shear_epsilon INIT(0); /* energy difference to abort relaxation */
 #endif
 
 #ifdef DISLOC

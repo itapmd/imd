@@ -59,15 +59,15 @@ MPISOURCES2D  = ${MPISOURCES} imd_main_mpi_2d.c imd_geom_mpi_2d.c
 MPISOURCES3D  = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c \
 		imd_savemem_3d.c
 
-PACXSOURCES2D   = ${MPISOURCES2D} imd_pacx.c
-PACXSOURCES3D   = ${MPISOURCES3D} imd_pacx.c
+PACXSOURCES2D = ${MPISOURCES2D} imd_pacx.c
+PACXSOURCES3D = ${MPISOURCES3D} imd_pacx.c
 
 SOCKHEADERS   = socket_tokens.h sockets.h sockutil.h
 SOCKSOURCES   = socket_io.c sockutil.c
 
 FRACSOURCES   = imd_load.c
 
-SHEARSOURCES  = imd_mikshear.c
+SHEARSOURCES  = imd_shear.c
 
 QUASISOURCES  = imd_qc.c
 
@@ -138,8 +138,8 @@ CFLAGS_MPI_cray-t3e		= ${CFLAGS_MPI_t3e}
 CFLAGS_MPI_cray-t3e_DEBUG	= ${CFLAGS_MPI_t3e_DEBUG}
 CFLAGS_MPI_HITACHI		= -DMPI +O4 +Ol +Oprefetch -I/usr/local/mpi/include  -DMPI_hmpp2
 CFLAGS_MPI_HITACHI_DEBUG	= -DMPI -g -I/usr/local/mpi/include  -DMPI_hmpp2
-CFLAGS_MPI_i386                 = -DMPI -O3 -m486
-CFLAGS_MPI_i386_DEBUG           = -DMPI -O -g -Wall -m486
+CFLAGS_MPI_i386-linux		= -DMPI -O3 -m486
+CFLAGS_MPI_i386-linux_DEBUG	= -DMPI -O -g -Wall -m486
 
 # PACX MPI
 
@@ -189,7 +189,7 @@ CC_MPI_t3e			= cc
 CC_MPI_cray-t3e			= cc
 CC_MPI_c90			= cc -Tcray_t3d
 CC_MPI_HITACHI			= cc
-CC_MPI_i386			= hcc
+CC_MPI_i386-linux		= hcc
 
 CC_PACX_paragon			= cc
 CC_PACX_t3e			= cc
@@ -206,7 +206,7 @@ MPILIBS_paragon			= -lmpi -nx
 MPILIBS_decstation		= 
 MPILIBS_sx4			= -lmpi -lpthread
 MPILIBS_HITACHI			= -L/usr/local/mpi/lib/hmpp2/cml -lmpi
-MPILIBS_i386                    = -lmpi
+MPILIBS_i386-linux		= -lmpi
 
 PACXLIBS_t3e			= -L ${PACXDIR}/lib -lpacx -llzo -lmpi
 PACXLIBS_cray-t3e		= -L ${PACXDIR}/lib -lpacx -llzo -lmpi
@@ -415,8 +415,8 @@ ifneq (,$(findstring mik,${MAKETARGET}))
 CFLAGS += -DMIK
 endif
 
-ifneq (,$(findstring mikshear,${MAKETARGET}))
-CFLAGS += -DMIKSHEAR
+ifneq (,$(findstring shear,${MAKETARGET}))
+CFLAGS += -DSHEAR
 SOURCES += ${SHEARSOURCES}
 endif
 
@@ -494,14 +494,16 @@ OBJECTS := $(subst .c,.o,${SOURCES})
 #
 ###########################################################################
 
+
 # How to compile *.c files
 %.o: %.c ${HEADERS}
 	${CC} ${CFLAGS} -c $(subst .o,.c,$@)
 
 # How to link
 ${MAKETARGET}: ${OBJECTS} ${HEADERS}
-	${CC} ${CFLAGS} -o $@ ${OBJECTS} ${LIBS}
-#	mv $@ ${HOME}/${BINDIR}/${HOSTTYPE}
+	${CC} ${CFLAGS} -o $@ ${OBJECTS} ${LIBS} ${ONLINELIBS}
+	mv $@ ${HOME}/${BINDIR}/${HOSTTYPE}
+
 
 # First recursion only set the MAKETARGET Variable
 .DEFAULT:
@@ -527,7 +529,7 @@ endif
 ###########################################################################
 
 clean:
-	rm -f *.o *.u *~ *.V *.T *.O
+	rm -f *.o *.u *~ \#* *.V *.T *.O
 
 release:	Makefile ${IMDHEADERS} ${SOURCES3D} ${RISCSOURCES3D} ${MPISOURCES3D} ${PACXSOURCES3D}  ${SOURCES2D} ${RISCSOURCES2D} ${MPISOURCES2D} ${PACXSOURCES2D} ${MISCSOURCES} ${FRACSOURCES} ${SOCKHEADERS} ${SOCKSOURCES}
 	cp Makefile         ${RELEASEPATH}
@@ -552,4 +554,5 @@ archive:
 count:
 	wc -l Makefile *.[ch]
 
-
+help:
+	echo "Usage: gmake imd_<ensemble>_<architeture>[_<suffix>...]"

@@ -5,6 +5,7 @@
 #define T_WRITE_QUIT  100
 #define T_WRITE_DISTRIB 1
 #define T_WRITE_PICTURE 2
+#define T_WRITE_CONF_SOCKET 9
 
 /*
 #define T_QUIT         99 
@@ -17,5 +18,6 @@
 #define T_LOAD_DISTRIB 6
 #define T_DISTRIBUTION 7
 #define T_PICTURE 8 
+#define T_WRITE_CONF_SOCKET 9
 */
 #endif

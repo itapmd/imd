@@ -64,9 +64,15 @@ void write_vrmls(int steps);
 void check_socket(int steps);
 void do_forces(cell *p, cell *q, vektor pbc);
 void maxwell(real TEMP);
-
 float gasdev(long *idum);
 float ran1(long *idum);
+
+#ifdef TWOD
+void write_conf_using_socket(void);
+void write_rgb_picture_to_socket(void);
+#else
+void write_distrib_using_sockets();
+#endif
 
 #ifdef MC
 real mc_epot_diff( vektor old_pos, vektor new_pos, 
@@ -131,7 +137,7 @@ void copy_forces(msgbuf *b, int k, int l, int m);
 void move_atoms_ar(msgbuf *b, int k, int l, int m);
 void copy_atoms_ar(msgbuf *b, int k, int l, int m);
 
-#ifdef MIKSHEAR
+#ifdef SHEAR
 void apply_shear(void);
 void shear1step(int steps);
 void write_shear_energy(int steps, int shear_steps);
@@ -184,3 +190,4 @@ void decorate(int i, int j, int k);
 void locate(real x, real y, real z, int i, int j, int k);
 void borders(void);
 #endif
+void display_conf(int steps);
