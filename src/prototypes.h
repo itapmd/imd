@@ -230,8 +230,8 @@ void do_boundaries(void);
 void fix_cells(void);
 #ifdef MPI
 void copy_atoms_buf(msgbuf *to, msgbuf *from);
-void copy_one_atom (msgbuf *to, minicell *from, int index, int delete );
-void copy_atom     (msgbuf *to, cell *from, int index );
+void copy_one_atom (msgbuf *to, int to_cpu, minicell *from, int index,int del);
+void copy_atom     (msgbuf *to, int to_cpu, cell *from, int index );
 void process_buffer(msgbuf *b,  cell *p);
 void send_atoms(void);
 #endif

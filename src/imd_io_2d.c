@@ -108,7 +108,7 @@ void read_atoms(str255 infilename)
     input_buf[0].data  = (real *) NULL;
     input_buf[0].n_max = 0;
     input_buf[0].n     = 0;
-    for (i=1; i<=num_cpus; i++) {
+    for (i=1; i<num_cpus; i++) {
       input_buf[i].data  = (real *) malloc( INPUT_BUF_SIZE * sizeof(real) );
       if (NULL==input_buf[i].data) error("cannot allocate input buffer");
       input_buf[i].n_max = INPUT_BUF_SIZE;
@@ -242,7 +242,7 @@ void read_atoms(str255 infilename)
         num_sort[SORTE(input,0)]++;
         num_vsort[VSORTE(input,0)]++;
         b = input_buf + to_cpu;
-        copy_atom(b, input, 0);
+        copy_atom(b, to_cpu, input, 0);
         if (b->n_max - b->n < MAX_ATOM_SIZE) {
           MPI_Send(b->data, b->n, REAL, to_cpu, INBUF_TAG, cpugrid);
           b->n = 0;

@@ -96,7 +96,7 @@ int irecv_buf(msgbuf *b, int from, MPI_Request *req)
 *
 ******************************************************************************/
 
-void copy_atom(msgbuf *to, cell *p, int ind )
+void copy_atom(msgbuf *to, int to_cpu, cell *p, int ind )
 {
   /* Check the parameters */
   if ((0 > ind) || (ind >= p->n)) {
@@ -113,6 +113,7 @@ void copy_atom(msgbuf *to, cell *p, int ind )
 
   /* copy atom */
   /* data is packed in the same order as in the cell data structure */
+  to->data[ to->n++ ] = to_cpu; 
   to->data[ to->n++ ] = ORT(p,ind,X); 
   to->data[ to->n++ ] = ORT(p,ind,Y); 
 #ifndef TWOD
@@ -227,7 +228,7 @@ void copy_atom(msgbuf *to, cell *p, int ind )
 *
 ******************************************************************************/
 
-void copy_one_atom(msgbuf *to, minicell *from, int index, int delete )
+void copy_one_atom(msgbuf *to, int to_cpu, minicell *from, int index, int del)
 {
   cell *p;
   int  ind;
@@ -241,10 +242,10 @@ void copy_one_atom(msgbuf *to, minicell *from, int index, int delete )
 #endif
 
   /* copy the atom to the message buffer */
-  copy_atom(to, p, ind);
+  copy_atom(to, to_cpu, p, ind);
 
   /* Delete atom in original cell? */
-  if (delete==1) {
+  if (del==1) {
 
     p->n--;
 
@@ -399,6 +400,7 @@ void process_buffer(msgbuf *b, cell *p)
   /* we treat the data in the same order as in the cell data structure */
   if (b->n > 0) do {     
     input->n        = 1;
+    to_cpu          = (int) b->data[j++];
     ORT(input,0,X)  = b->data[j++];
     ORT(input,0,Y)  = b->data[j++];
 #ifndef TWOD
@@ -507,7 +509,7 @@ void process_buffer(msgbuf *b, cell *p)
       coord2=cell_coord( ORT(input,0,X), ORT(input,0,Y), ORT(input,0,Z) );
 #endif
       coord =local_cell_coord( coord2 );
-      to_cpu = cpu_coord( coord2 );
+      /* to_cpu = cpu_coord( coord2 ); determined by sendig CPU */
       if (to_cpu == myid) {
         minicell *to;
         to = PTR_VV(cell_array,coord,cell_dim);
@@ -779,7 +781,7 @@ void send_cell(minicell *p, int to_cpu, int tag)
   b = &send_buf_east;
   b->n = 0;
 
-  for (i=0; i<p->n; i++) copy_one_atom(b, p, i, 0);
+  for (i=0; i<p->n; i++) copy_one_atom(b, to_cpu, p, i, 0);
   MPI_Send(b->data, b->n, REAL, to_cpu, tag, cpugrid);
 }
 

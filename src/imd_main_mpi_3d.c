@@ -363,14 +363,14 @@ void fix_cells(void)
             else error("Atom jumped multiple CPUs");
 
             if (buf != NULL) {
-              copy_one_atom( buf, p, l, 1);
+              copy_one_atom( buf, to_cpu, p, l, 1);
 #ifdef CLONE
               if (l < p->n-nclones)
                 for (clone=1; clone<nclones; clone++)
-                  copy_one_atom( buf, p, l+clone, 1);
+                  copy_one_atom( buf, to_cpu, p, l+clone, 1);
               else /* we are dealing with the last in the stack */
                 for (clone=1; clone<nclones; clone++)
-                  copy_one_atom( buf, p, l, 1);
+                  copy_one_atom( buf, to_cpu, p, l, 1);
 #endif
 	    }
 	  }
