@@ -577,7 +577,7 @@ void write_config(int steps)
     out = fopen(fname,"w");
     if (NULL == out) error("Cannot write iteration file.");
 
-    fprintf(out,"startstep \t%d\n",steps);
+    fprintf(out,"startstep \t%d\n",steps+1);
     fprintf(out,"box_x \t%f %f %f\n",box_x.x,box_x.y,box_x.z);
     fprintf(out,"box_y \t%f %f %f\n",box_y.x,box_y.y,box_y.z);
     fprintf(out,"box_z \t%f %f %f\n",box_z.x,box_z.y,box_z.z);

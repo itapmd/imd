@@ -174,8 +174,19 @@ void main_loop(void)
     };
 #endif
 
-#ifndef NOPBC
-    do_boundaries();    
+#if defined(AND) || defined(NVT) || defined(NPT)
+    temperature += dtemp;
+#endif
+
+#ifdef TRANSPORT
+    tran_Tleft   += dtemp;
+    tran_Tright  -= dtemp;
+#endif
+
+#ifdef NPT
+    pressure_ext.x += d_pressure.x;
+    pressure_ext.y += d_pressure.y;
+    pressure_ext.z += d_pressure.z;
 #endif
 
 #ifdef MPI
@@ -194,13 +205,14 @@ void main_loop(void)
     /* Periodic I/O */
     if ((rep_interval > 0) && (0 == steps%rep_interval)) write_config(steps);
     if ((eng_interval > 0) && (0 == steps%eng_interval) && (0==myid)) 
-      write_properties(steps);
+       write_properties(steps);
     if ((dis_interval > 0) && (0 == steps%dis_interval)) write_distrib(steps);
     if ((pic_interval > 0) && (0 == steps%pic_interval)) write_pictures(steps);
 #ifdef DISLOC
     if (steps == up_ort_ref) update_ort_ref();
     if ((dem_interval > 0) && (0 == steps%dem_interval)) write_demmaps(steps);
-    if ((dsp_interval > up_ort_ref) && (0 == steps%dsp_interval)) write_dspmaps(steps);
+    if ((dsp_interval > up_ort_ref) && (0 == steps%dsp_interval)) 
+       write_dspmaps(steps);
 #endif
 
 #ifdef TRANSPORT
@@ -224,23 +236,12 @@ void main_loop(void)
     if ((socket_int>0) && (0==steps%socket_int)) check_socket(steps);
 #endif
 
-#if defined(AND) || defined(NVT) || defined(NPT)
-    temperature += dtemp;
-#endif
-
-#ifdef TRANSPORT
-    tran_Tleft   += dtemp;
-    tran_Tright  -= dtemp;
-#endif
-
-#ifdef NPT
-    pressure_ext.x += d_pressure.x;
-    pressure_ext.y += d_pressure.y;
-    pressure_ext.z += d_pressure.z;
-#endif
-
 #ifdef MPI
     mpi_addtime(&time_io);
+#endif
+
+#ifndef NOPBC
+    do_boundaries();    
 #endif
 
     /* fix_cells redistributes atoms across the cpus. Putting at the bottom 

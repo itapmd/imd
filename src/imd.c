@@ -113,7 +113,7 @@ int main(int argc, char **argv)
   /* execute further phases of the simulation */
   while (finished==0) {
     simulation++;
-    steps_min = steps_max;
+    steps_min = steps_max + 1;
     if (0==myid) getparamfile( paramfilename, simulation );
 #ifdef MPI
     broadcast_params();

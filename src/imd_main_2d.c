@@ -93,6 +93,10 @@ void main_loop(void)
     calc_forces(); 
 #endif
 
+#ifdef MPI
+    mpi_addtime(&time_calc);
+#endif
+
 #ifdef DISLOC
     if ((steps==reset_Epot_step) && (calc_Epot_ref==1)) reset_Epot_ref();
 #endif
@@ -136,25 +140,18 @@ void main_loop(void)
     };
 #endif
 
+#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
+    temperature += dtemp;
+#endif
+
 #ifdef TRANSPORT
-    if ((tran_interval > 0) && (0 == steps%tran_interval)) 
-       write_temp_dist(steps);
+    tran_Tleft   += dtemp;
+    tran_Tright  -= dtemp;
 #endif
 
-#ifdef STRESS_TENS
-#ifdef SHOCK
-    if ((press_interval > 0) && (0 == steps%press_interval)) 
-       write_press_dist_shock(steps);
-#else
-    if ((press_interval > 0) && (0 == steps%press_interval)) {
-      if (0==press_dim.x) write_press_atoms(steps);
-      else write_press_dist(steps);
-    }
-#endif
-#endif
-
-#ifndef NOPBC
-    do_boundaries();    
+#ifdef NPT
+    pressure_ext.x += d_pressure.x;
+    pressure_ext.y += d_pressure.y;
 #endif
 
 #ifdef MPI
@@ -173,35 +170,43 @@ void main_loop(void)
     /* Periodic I/O */
     if ((rep_interval > 0) && (0 == steps%rep_interval)) write_config(steps);
     if ((eng_interval > 0) && (0 == steps%eng_interval) && (0==myid)) 
-      write_properties(steps);
+       write_properties(steps);
     if ((dis_interval > 0) && (0 == steps%dis_interval)) write_distrib(steps);
     if ((pic_interval > 0) && (0 == steps%pic_interval)) write_pictures(steps);
 
 #ifdef DISLOC
     if ((dem_interval > 0) && (0 == steps%dem_interval)) write_demmaps(steps);
-    if ((dsp_interval > up_ort_ref) && (0 == steps%dsp_interval)) write_dspmaps(steps);
+    if ((dsp_interval > up_ort_ref) && (0 == steps%dsp_interval)) 
+       write_dspmaps(steps);
+#endif
+
+#ifdef TRANSPORT
+    if ((tran_interval > 0) && (0 == steps%tran_interval)) 
+       write_temp_dist(steps);
+#endif
+
+#ifdef STRESS_TENS
+#ifdef SHOCK
+    if ((press_interval > 0) && (0 == steps%press_interval)) 
+       write_press_dist_shock(steps);
+#else
+    if ((press_interval > 0) && (0 == steps%press_interval)) {
+      if (0==press_dim.x) write_press_atoms(steps);
+      else write_press_dist(steps);
+    }
+#endif
 #endif
 
 #ifdef USE_SOCKETS
     if ((socket_int>0) && (0==steps%socket_int)) check_socket(steps);
 #endif
 
-#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
-    temperature += dtemp;
-#endif
-
-#ifdef TRANSPORT
-    tran_Tleft   += dtemp;
-    tran_Tright  -= dtemp;
-#endif
-
-#ifdef NPT
-    pressure_ext.x += d_pressure.x;
-    pressure_ext.y += d_pressure.y;
-#endif
-
 #ifdef MPI
     mpi_addtime(&time_io);
+#endif
+
+#ifndef NOPBC
+    do_boundaries();    
 #endif
 
     fix_cells();

@@ -603,7 +603,7 @@ void write_config(int steps)
     out = fopen(fname,"w");
     if (NULL == out) error("Cannot write iteration file.");
 
-    fprintf(out,"startstep \t%d\n",steps);
+    fprintf(out,"startstep \t%d\n",steps+1);
     fprintf(out,"box_x \t%f %f\n",box_x.x,box_x.y);
     fprintf(out,"box_y \t%f %f\n",box_y.x,box_y.y);
     fprintf(out,"starttemp \t%f\n",temperature);
