@@ -1,0 +1,77 @@
+<HTML>
+<HEAD>
+<TITLE> EWALD </TITLE>
+</HEAD>
+
+<BODY BGCOLOR="#ffffff">
+<H1> Use of Coulomb potential with Ewald sum </H1>
+
+The option <B>ewald</B> allows the use of Coulomb potentials in
+addition to short range pair potenials. The implementation uses 
+the Ewald summation technique. Only three dimensional 
+systems with periodic boundary conditions in all directions can
+be simulated and the implementation is not parallelized.
+<P>
+
+The following form of the Ewald sum for a system of <I>N</I> charged 
+atoms is implemented:
+
+<P>
+
+<CENTER>
+<IMG SRC="ewald_trans.gif">
+</CENTER>
+
+<P>
+
+Here, <I>q<SUB>i</SUB></I> is the charge of atom <I>i</I>, 
+<B>r</B><I><SUB>ij</SUB></I>
+is the distance vector between atoms <I>i</I> and <I>j</I>, 
+<B>n</B> are linear combinations of the box vectors, and the
+prime means that <I>i=j</I> is excluded if <B>n</B>=<B>0</B>.
+<I>kappa</I> is a real parameter and erfc(x) is the 
+complementary error function.
+ 
+The sum over <B>k</B> extends over linear combinations of 
+the reciprocal vectors of the simulation box.
+
+<P>
+
+An additional short range two-body potential is read in as an IMD potential 
+table as usual using the IMD variable <TT>potfile</TT>.<P>
+
+For the 
+Ewald sum, the following parameters have to be specified in the parameter file:<P>
+
+The charges of the atoms have to be given for all types of atoms in a row.
+The corresponding IMD-parameter is <TT>charge</TT>. The value of the
+parameter <I>kappa</I> pertains to the IMD-paramter <TT>ew_kappa</TT>.
+Furthermore, the number of k-vectors has to be given separately ( i.e. as a 
+3d-vector ) for the three spatial
+directions belonging to the box vectors. The corresponding IMD-parameter is 
+<TT>ew_kmax</TT>. 
+The IMD-parameter <TT>ew_nmax</TT> determines the number
+of image simulation boxes taken into account in computing the
+first sum in the Ewald sum. If <TT>ew_nmax</TT> is chosen to be zero, the
+usual minimum image convention is applied.
+
+<P>
+
+<A HREF="imd.html">
+Back to IMD User's Guide</A>
+
+</BODY>
+</HTML>
+
+
+
+
+
+
+
+
+
+
+
+</BODY>
+</HTML>
