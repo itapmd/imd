@@ -1678,12 +1678,12 @@ void check_parameters_complete()
   if (ntypes == 0) {
     error("ntypes is missing or zero.");
   }
-#if defined(NPT) || defined(NVT) || defined(STM)
+#if defined(NPT) || defined(NVT) || defined(FRAC) || defined(FINNIS)
   if (temperature == 0) {
     error("starttemp is missing or zero.");
   }
 #endif
-#if defined(NPT) || defined(NVT) || defined(STM) || defined(FRAC)
+#if defined(NPT) || defined(NVT) || defined(FRAC) || defined(FINNIS)
   if (end_temp == 0) {
     error("endtemp is missing or zero.");
   }
