@@ -1,3 +1,21 @@
+/******************************************************************************
+*
+*  dist2rvf is a utility program to convert distribution files to 
+*  virvo .rvf format.
+*
+*  Compilation:
+*
+*    gcc -o dist2rvf dist2rvf.c
+*
+*  Usage:
+*
+*     dist2rvf <distfile>
+*
+*  It writes to the file dist2rvf. The distribution file must contain the
+*  standard header.
+*
+******************************************************************************/
+
 #include <stdio.h>
 #include <limits.h>
 
