@@ -65,7 +65,6 @@ void read_ppm( char *filename, ppm_t *pic )
   do fgets(str, 255, infile); while (str[0]=='#');
   sscanf(str, "%d", &depth);
   if (255 != depth) {
-    printf("%s %d",str,depth);
     error("Can deal only with 8 bit data");
   }
 
