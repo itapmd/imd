@@ -16,7 +16,7 @@
 
 /*****************************************************************************
 *
-* Basic NVE Verlet Integrator
+* Basic NVE Verlet Integrator (seems to be more of leapfrog type...)
 *
 *****************************************************************************/
 
@@ -196,7 +196,7 @@ void move_atoms_nve(void)
 
 /*****************************************************************************
 *
-* NVE Verlet Integrator with microconvergence relaxation 
+* NVE Verlet Integrator with microconvergence relaxation  (seems to be more of leapfrog type...)
 *
 *****************************************************************************/
 
@@ -399,7 +399,7 @@ void move_atoms_msd(void)
 
 /*****************************************************************************
 *
-* NVT Verlet Integrator with Nose Hoover Thermostat
+* NVT Verlet Integrator with Nose Hoover Thermostat  (seems to be more of leapfrog type...)
 *
 *****************************************************************************/
 
@@ -446,7 +446,16 @@ void move_atoms_nvt(void)
         rot_energie_1 +=  SPRODN(p->dreh_impuls,i,p->dreh_impuls,i) 
                                                   / p->traeg_moment[i];
 #endif
-
+#ifdef FBC
+	p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i)) 
+                           * eins_d_reibung * (restrictions + p->sorte[i])->x;
+        p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i)) 
+                           * eins_d_reibung * (restrictions + p->sorte[i])->y;
+#ifndef TWOD
+        p->impuls Z(i) = (p->impuls Z(i)*reibung + timestep * p->kraft Z(i)) 
+                           * eins_d_reibung * (restrictions + p->sorte[i])->z;
+#endif
+#else
         /* new momenta */
         p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i)) 
                            * eins_d_reibung;
@@ -455,6 +464,7 @@ void move_atoms_nvt(void)
 #ifndef TWOD
         p->impuls Z(i) = (p->impuls Z(i)*reibung + timestep * p->kraft Z(i)) 
                            * eins_d_reibung;
+#endif
 #endif
 
 #ifdef UNIAX
@@ -565,7 +575,7 @@ void move_atoms_nvt(void)
 
 /******************************************************************************
 *
-* NPT Verlet Integrator with Nose Hoover Thermostat
+* NPT Verlet Integrator with Nose Hoover Thermostat  (seems to be more of leapfrog type...)
 *
 ******************************************************************************/
 
@@ -761,7 +771,7 @@ void move_atoms_npt_iso(void)
 
 /******************************************************************************
 *
-* NPT Verlet Integrator with Nose Hoover Thermostat
+* NPT Verlet Integrator with Nose Hoover Thermostat  (seems to be more of leapfrog type...)
 *
 ******************************************************************************/
 
@@ -953,7 +963,7 @@ void move_atoms_npt_axial(void)
 
 /*****************************************************************************
 *
-* NVT Verlet Integrator with Andersen Thermostat for NVT 
+* NVT Verlet Integrator with Andersen Thermostat for NVT  (seems to be more of leapfrog type...)
 *
 *****************************************************************************/
 
@@ -1073,7 +1083,7 @@ void move_atoms_mc(void)
 /*****************************************************************************
 *
 * Verlet Integrator with stadium damping and fixed borders 
-* for fracture studies 
+* for fracture studies  (seems to be more of leapfrog type...)
 *
 *****************************************************************************/
 
@@ -1182,7 +1192,7 @@ void move_atoms_frac(void)
 
 /*****************************************************************************
 *
-* NVT Verlet Integrator with Stadium
+* NVT Verlet Integrator with Stadium (seems to be more of leapfrog type...)
 *
 *****************************************************************************/
 

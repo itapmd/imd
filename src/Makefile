@@ -429,6 +429,10 @@ ifneq (,$(findstring and,${MAKETARGET}))
 CFLAGS += -DAND
 endif
 
+ifneq (,$(findstring fbc,${MAKETARGET}))
+CFLAGS += -DFBC
+endif
+
 ifneq (,$(findstring npt_axial,${MAKETARGET}))
 CFLAGS += -DNPT -DNPT_axial
 endif

@@ -98,12 +98,19 @@ void maxwell(real temp)
                                xx * tran_nlayers / (box_x.x * (nhalf-1));
 	 }
 #endif
-
          if (NUMMER(p,i) >= 0) {
+#ifdef FBC
+	    p->impuls X(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i))*(restrictions + p->sorte[i])->x;
+            p->impuls Y(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i))*(restrictions + p->sorte[i])->y;
+#ifndef TWOD
+            p->impuls Z(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i))*(restrictions + p->sorte[i])->z;
+#endif
+#else
             p->impuls X(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i));
             p->impuls Y(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i));
 #ifndef TWOD
             p->impuls Z(i) = gasdev( &seed ) * sqrt(TEMP * MASSE(p,i));
+#endif
 #endif
             ++natom;
             tot_impuls.x += p->impuls X(i);
@@ -212,7 +219,11 @@ void maxwell(real temp)
 #ifndef TWOD
             p->impuls Z(i) -= tot_impuls.z;
 #endif
-         }
+	    /* set impuls 0 if restricted in this direction */
+
+
+    
+	 }
       }
    }
 } 
