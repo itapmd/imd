@@ -1,10 +1,10 @@
 <HTML>
 <HEAD>
-   <TITLE>IMD Utilities</TITLE>
+   <TITLE>IMD Utility Programs</TITLE>
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
-<H1>IMD Utilities</H1>
+<H1>IMD Utility Programs</H1>
 
 The following utility programs can be found in the <B>imd-utils</B> 
 directory.
@@ -14,7 +14,7 @@ directory.
 <TABLE Border=0 Cellpadding=4 >
 
 <TR ALIGN="LEFT">
-  <TD WIDTH=180><A HREF="#imd2ppm">imd2ppm</A>
+  <TD WIDTH=180><A HREF="#imd_power">imd_power</A>
   <TD WIDTH=180><A HREF="#imd_mklj">imd_mklj</A>
   <TD WIDTH=180><A HREF="#imd_pair">imd_pair</A>
   <TD WIDTH=180><A HREF="#imd_angle">imd_angle</A>
@@ -28,43 +28,36 @@ directory.
 <TR ALIGN="LEFT"> 
   <TD WIDTH=180><A HREF="#procdata">procdata</A>
   <TD WIDTH=180><A HREF="#imd_dist2pgm">imd_dist2pgm.perl</A>
+  <TD WIDTH=180><A HREF="#imd2ppm">imd2ppm</A>
 </TR>
 </TABLE>
 
 <P>
 
-<A NAME="imd2ppm">
-<H2>imd2ppm</H2>
+<A NAME="imd_power">
+<H2>imd_power.c</H2>
 </A>
 
-imd2ppm converts <A HREF="config.html">IMD configuration files</A> 
-or special <A HREF="pictures.html">.pic files</A> of 2D binary 
-tiling quasicrystals into ppm bitmaps, where each atom is drawn as 
-a disk of appropriate radius. Compilation goes as follows: 
+Computes the power spectrum of an IMD <TT>.eng</TT> file. Compile as follows:
 <PRE>
-    gcc -O [-DEPOT] [-DASCII] imd2ppm.c -lm
+    gcc -O imd_power.c -lm
 </PRE>
-If compiled with <TT>-DASCII</TT>, imd2ppm expects 
-<A HREF="config.html">IMD configuration files</A> as input,
-otherwise the special, binary <A HREF="pictures.html">.pic files</A>.
-If compiled with <TT>-DEPOT</TT>, the potential energy of each
-atom is used for the coloring, otherwise the kinetic energy is used.
-Usage is as follows:
-<PRE>
-    imd2ppm infile E_min E_max x0 y0 width height width_pix height_pix
-</PRE>
-The parameters are, in this order, the input file, the lower and
-upper energy treshold for the coloring, x and y coordinates of the
-lower left corner of the image, width and height of the image in
-user coordinates, and width and height of the image in pixels
-(resolution). The output files are called <TT>&lt;infile&gt;.kin.ppm</TT>
-or <TT>&lt;infile&gt;.pot.ppm</TT>, depending on whether the flag 
-<TT>-DEPOT</TT> was used or not.
 <P>
-If the option <B>disloc</B> is used, the difference of the actual 
-potential energy and a reference potential energy of each atom 
-is written to the configuration files and .pic files, and so this 
-difference is used for the coloring.
+Usage:
+<PRE>
+    imd_power &lt;n1&gt; &lt;n2&gt; &lt;engfile&gt;[.eng]
+</PRE>
+imd_power reads lines <TT>n1</TT> through <TT>n2</TT> (inclusive)
+from the given <TT>.eng</TT> file (disregarding comment lines), 
+and computes the fast Fourier 
+transform (FFT) of columns <TT>2</TT> to <TT>n</TT>, using the time 
+variable from column <TT>1</TT>. At present, a maximum of <TT>16</TT> 
+columns is supported. If <TT>n2-n1+1</TT> is not a power of <TT>2</TT>, 
+the remaining entries are filled with zeros (FFT requires that the 
+number of data items is a power of <TT>2</TT>). The output is
+written to file <TT>&lt;engfile&gt;.fft</TT>. The first column
+of the output file contains the angular frequency, and the remaining 
+columns the squared Fourier amplitudes for this frequency.
 <P>
 
 <A NAME="imd_mklj">
@@ -493,6 +486,40 @@ very special options are: (see source code)
 -RAlCuCo -CAlCuCo  rotates AlCuCo approximant
 and cuts out a rectangular piece (for approx2.inp)
 </PRE>
+<P>
+
+<A NAME="imd2ppm">
+<H2>imd2ppm</H2>
+</A>
+
+imd2ppm converts <A HREF="config.html">IMD configuration files</A> 
+or special <A HREF="pictures.html">.pic files</A> of 2D binary 
+tiling quasicrystals into ppm bitmaps, where each atom is drawn as 
+a disk of appropriate radius. Compilation goes as follows: 
+<PRE>
+    gcc -O [-DEPOT] [-DASCII] imd2ppm.c -lm
+</PRE>
+If compiled with <TT>-DASCII</TT>, imd2ppm expects 
+<A HREF="config.html">IMD configuration files</A> as input,
+otherwise the special, binary <A HREF="pictures.html">.pic files</A>.
+If compiled with <TT>-DEPOT</TT>, the potential energy of each
+atom is used for the coloring, otherwise the kinetic energy is used.
+Usage is as follows:
+<PRE>
+    imd2ppm infile E_min E_max x0 y0 width height width_pix height_pix
+</PRE>
+The parameters are, in this order, the input file, the lower and
+upper energy treshold for the coloring, x and y coordinates of the
+lower left corner of the image, width and height of the image in
+user coordinates, and width and height of the image in pixels
+(resolution). The output files are called <TT>&lt;infile&gt;.kin.ppm</TT>
+or <TT>&lt;infile&gt;.pot.ppm</TT>, depending on whether the flag 
+<TT>-DEPOT</TT> was used or not.
+<P>
+If the option <B>disloc</B> is used, the difference of the actual 
+potential energy and a reference potential energy of each atom 
+is written to the configuration files and .pic files, and so this 
+difference is used for the coloring.
 <P>
 
 <A NAME="imd_dist2pgm">
