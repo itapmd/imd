@@ -529,16 +529,16 @@ void move_atoms_npt_iso(void)
   xi.x = tmp;
 
   /* new box size */
-  box_x.x *= box_size.x;  ibox_x.x /= box_size.x;  tbox_x.x /= box_size.x;
-  box_x.y *= box_size.x;  ibox_x.x /= box_size.x;  tbox_x.x /= box_size.x;
-  box_y.x *= box_size.x;  ibox_y.x /= box_size.x;  tbox_y.x /= box_size.x;
-  box_y.y *= box_size.x;  ibox_y.x /= box_size.x;  tbox_y.x /= box_size.x;
+  box_x.x *= box_size.x;  tbox_x.x /= box_size.x;
+  box_x.y *= box_size.x;  tbox_x.x /= box_size.x;
+  box_y.x *= box_size.x;  tbox_y.x /= box_size.x;
+  box_y.y *= box_size.x;  tbox_y.x /= box_size.x;
 #ifndef TWOD
-  box_x.z *= box_size.x;  ibox_x.z /= box_size.x;  tbox_x.z /= box_size.x;
-  box_y.z *= box_size.x;  ibox_y.z /= box_size.x;  tbox_y.z /= box_size.x;
-  box_z.x *= box_size.x;  ibox_z.x /= box_size.x;  tbox_z.x /= box_size.x;
-  box_z.y *= box_size.x;  ibox_z.y /= box_size.x;  tbox_z.y /= box_size.x;
-  box_z.z *= box_size.x;  ibox_z.z /= box_size.x;  tbox_z.z /= box_size.x;
+  box_x.z *= box_size.x;  tbox_x.z /= box_size.x;
+  box_y.z *= box_size.x;  tbox_y.z /= box_size.x;
+  box_z.x *= box_size.x;  tbox_z.x /= box_size.x;
+  box_z.y *= box_size.x;  tbox_z.y /= box_size.x;
+  box_z.z *= box_size.x;  tbox_z.z /= box_size.x;
 #endif  
 
   /* old box_size relative to the current one, which is set to 1.0 */
@@ -715,10 +715,10 @@ void move_atoms_npt_axial(void)
 #endif
 
   /* new box size (box is rectangular) */
-  box_x.x *= box_size.x;  ibox_x.x /= box_size.x;  tbox_x.x /= box_size.x;
-  box_y.y *= box_size.y;  ibox_y.y /= box_size.y;  tbox_y.y /= box_size.y;
+  box_x.x *= box_size.x;  tbox_x.x /= box_size.x;
+  box_y.y *= box_size.y;  tbox_y.y /= box_size.y;
 #ifndef TWOD
-  box_z.z *= box_size.z;  ibox_z.z /= box_size.z;  tbox_z.z /= box_size.z;
+  box_z.z *= box_size.z;  tbox_z.z /= box_size.z;
 #endif  
 
   /* old box size relative to new one */

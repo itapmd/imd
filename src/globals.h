@@ -65,24 +65,19 @@ EXTERN str255 progname; /* Name of current executable argv[0] */
 EXTERN ivektor cellmin; /* Minimum index of local cells (1 with MPI, 0 otherwise) */
 EXTERN ivektor cellmax; /* Maximum index of local cells  */
 
-/* The simulation box and its inverse */
-EXTERN vektor box_x INIT(nullvektor);
-EXTERN vektor box_y INIT(nullvektor);
-#ifndef TWOD
-EXTERN vektor box_z INIT(nullvektor);
-#endif
 /* box parameters for generated structures */
 EXTERN ivektor box_param INIT(nullivektor);
-/* if initialization will be forgotten by user, then this could lead to division by zero, so we may have to check box_{x,y,z} later */
-EXTERN vektor ibox_x;
-EXTERN vektor ibox_y;
+
+/* The simulation box and its inverse */
+EXTERN vektor box_x  INIT(nullvektor);
+EXTERN vektor box_y  INIT(nullvektor);
 #ifndef TWOD
-EXTERN vektor ibox_z;
+EXTERN vektor box_z  INIT(nullvektor);
 #endif
-EXTERN vektor tbox_x;
-EXTERN vektor tbox_y;
+EXTERN vektor tbox_x INIT(nullvektor);
+EXTERN vektor tbox_y INIT(nullvektor);
 #ifndef TWOD
-EXTERN vektor tbox_z;
+EXTERN vektor tbox_z INIT(nullvektor);
 #endif
 
 /* Filenames */

@@ -23,6 +23,7 @@
 void make_box( void )
 {
   real det;
+  vektor3d ibox_x, ibox_y, ibox_z;
 
   /* Determinant */
   det = box_x.y * box_y.z * box_z.x +

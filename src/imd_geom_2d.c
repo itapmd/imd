@@ -28,17 +28,12 @@ void make_box( void )
   det = box_x.x * box_y.y - box_x.y * box_y.x;
   if ((0==myid) && (0==det)) error("Box Edges are parallel.");
 
-  /* Inverse box */
-  ibox_x.x =   box_y.y / det;
-  ibox_x.y = - box_y.x / det;
-  ibox_y.x = - box_x.y / det;
-  ibox_y.y =   box_x.x / det;
+  /* transposed inverse box */
+  tbox_x.x =   box_y.y / det;
+  tbox_x.y = - box_y.x / det;
+  tbox_y.x = - box_x.y / det;
+  tbox_y.y =   box_x.x / det;
 
-  /* Transpose */
-  tbox_x.x = ibox_x.x;
-  tbox_x.y = ibox_y.x;
-  tbox_y.x = ibox_x.y;
-  tbox_y.y = ibox_y.y;
 }
 
 
@@ -46,11 +41,16 @@ void make_box( void )
 
 ivektor maximal_cell_dim( void )
 {
-  real hx, hy;
+  real hxx, hxy, hyy, hx, hy;
   ivektor max_cell_dim;
 
-  hx = SPROD(box_x,box_x) - SPROD(box_x,box_y);
-  hy = SPROD(box_y,box_y) - SPROD(box_x,box_y);
+  hxx = SPROD(box_x,box_x);
+  hxy = SPROD(box_x,box_y);
+  hyy = SPROD(box_y,box_y);
+
+  hx  = hxx - hxy / sqrt( hyy );
+  hy  = hyy - hxy / sqrt( hxx );
+
   max_cell_dim.x = (int) (1.0 / sqrt( r2_cut / hx ));
   max_cell_dim.y = (int) (1.0 / sqrt( r2_cut / hy ));
   return(max_cell_dim);
@@ -71,7 +71,7 @@ void init_cells( void )
 
 {
   int i, j, k;
-  real hx, hy, tmp; 
+  real hxx, hxy, hyy, hx, hy, tmp; 
   vektor cell_scale;
   ivektor next_cell_dim, cell_dim_old;
   ivektor cellmin_old, cellmax_old, cellc;
@@ -102,15 +102,14 @@ void init_cells( void )
 #endif
 
   /* Calculate smallest possible cell (i.e. the height==cutoff) */
+  hxx = SPROD(box_x,box_x);
+  hxy = SPROD(box_x,box_y);
+  hyy = SPROD(box_y,box_y);
 
-  /* Height x */
-  hx = SPROD(box_x,box_x) - SPROD(box_x,box_y);
-  
-  /* Height y */
-  hy = SPROD(box_y,box_y) - SPROD(box_x,box_y);
-  
+  hx  = hxx - hxy / sqrt( hyy );
+  hy  = hyy - hxy / sqrt( hxx );
+
   /* Scaling factors box/cell */
-  
   cell_scale.x = sqrt( r2_cut / hx );
   cell_scale.y = sqrt( r2_cut / hy );
 #ifdef NPT
