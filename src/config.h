@@ -97,6 +97,10 @@
 #undef AR
 #endif
 
+#ifdef EAM2
+#undef AR
+#endif
+
 #ifdef TTBP
 #ifndef AR
 #define AR
@@ -161,3 +165,4 @@
 #define BINC 4
 #endif
 #endif
+

@@ -70,6 +70,8 @@ FRACSOURCES   = imd_load.c
 QUASISOURCES  = imd_qc.c
 
 EAMSOURCES    = imd_forces_eam.c
+EAM2SOURCES   = imd_forces_eam2.c
+
 TTBPSOURCES   = imd_forces_ttbp.c
 
 MCSOURCES     = imd_mc.c
@@ -488,11 +490,16 @@ ifneq (,$(findstring ordpar,${MAKETARGET}))
 CFLAGS += -DORDPAR
 endif
 
-# EAM
+# EAM2 or EAM
+ifneq (,$(strip $(findstring eam2,${MAKETARGET})))
+CFLAGS  += -DEAM2
+SOURCES += ${EAM2SOURCES}
+else
 ifneq (,$(strip $(findstring eam,${MAKETARGET})))
 CFLAGS  += -DEAM
 CFLAGS  += -UAR
 SOURCES += ${EAMSOURCES}
+endif
 endif
 
 # TTBP

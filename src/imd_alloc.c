@@ -13,8 +13,8 @@
 
 #include "imd.h"
 
-
-/******************************************************************************
+/*****************************************************************************
+*
 *
 *  Moves an atom from one cell to another. 
 *  Does not move atoms between CPUs!
@@ -65,6 +65,9 @@ void move_atom(ivektor cellc, cell *from, int index)
   to->sorte[to->n] = from->sorte[index]; 
   to->nummer[to->n] = from->nummer[index]; 
   to->pot_eng[to->n] = from->pot_eng[index];
+#ifdef EAM2
+  to->eam2_rho_h[to->n] = from->eam2_rho_h[index]; 
+#endif
 #ifdef DISLOC
   to->Epot_ref[to->n] = from->Epot_ref[index];
   to->ort_ref X (to->n) = from->ort_ref X(index);
@@ -133,6 +136,9 @@ void move_atom(ivektor cellc, cell *from, int index)
     from->sorte[index] = from->sorte[from->n]; 
     from->nummer[index] = from->nummer[from->n]; 
     from->pot_eng[index] = from->pot_eng[from->n];
+#ifdef EAM2
+    from->eam2_rho_h[index] = from->eam2_rho_h[from->n];
+#endif
 #ifdef DISLOC
     from->Epot_ref[index]  = from->Epot_ref[from->n];
     from->ort_ref X(index) = from->ort_ref X(from->n);
@@ -166,7 +172,6 @@ void move_atom(ivektor cellc, cell *from, int index)
     from->dreh_impuls Y(index) = from->dreh_impuls Y(from->n); 
     from->dreh_impuls Z(index) = from->dreh_impuls Z(from->n); 
 #endif
-
 #endif /* not MONOLJ */
   }
 }
@@ -227,7 +232,7 @@ neightab *alloc_neightab(neightab *neigh, int count)
 
 /******************************************************************************
 *
-*   Allocates memory for a cell. Space is allocated in a single
+*  Allocates memory for a cell. Space is allocated in a single
 *  chunk, so that we can send a cell in one MPI operation.
 *
 ******************************************************************************/
@@ -253,6 +258,9 @@ void alloc_cell(cell *thecell, int count)
     newcell.sorte  = NULL;
     newcell.masse  = NULL;
     newcell.pot_eng= NULL;
+#ifdef EAM2
+    newcell.eam2_rho_h =NULL;
+#endif
 #ifdef DISLOC
     newcell.Epot_ref = NULL;
     newcell.ort_ref = NULL;
@@ -319,6 +327,9 @@ void alloc_cell(cell *thecell, int count)
     newcell.sorte  = (shortint* ) malloc(count * sizeof(shortint));
     newcell.masse  = (real    * ) malloc(count * sizeof(real)    );
     newcell.pot_eng= (real    * ) malloc(count * sizeof(real)    );
+#ifdef EAM2
+    newcell.eam2_rho_h = (real *) malloc(count * sizeof(real)    );
+#endif
 #ifdef DISLOC
     newcell.Epot_ref = (real *) calloc(count,sizeof(real));
     newcell.ort_ref = (real *) calloc(count*DIM, sizeof(real));
@@ -358,6 +369,9 @@ void alloc_cell(cell *thecell, int count)
         || (NULL == newcell.sorte)
         || (NULL == newcell.masse)
         || (NULL == newcell.pot_eng)
+#ifdef EAM2
+	|| (NULL == newcell.eam2_rho_h)
+#endif
 #ifdef DISLOC
         || (NULL == newcell.Epot_ref)
         || (NULL == newcell.ort_ref)
@@ -388,7 +402,8 @@ void alloc_cell(cell *thecell, int count)
     }
   }
   
-  if (0 == thecell->n_max) { /* cell is just initialized */
+  if (0 == thecell->n_max) {
+    /* cell is just initialized */
     thecell->n = 0;
   } else {
 
@@ -414,6 +429,10 @@ void alloc_cell(cell *thecell, int count)
       memcpy(newcell.sorte ,  thecell->sorte,   thecell->n * sizeof(shortint));
       memcpy(newcell.masse ,  thecell->masse,   thecell->n * sizeof(real));
       memcpy(newcell.pot_eng, thecell->pot_eng, thecell->n * sizeof(real));
+#ifdef EAM2
+      memcpy(newcell.eam2_rho_h, thecell->eam2_rho_h, 
+             thecell->n * sizeof(real));
+#endif
 #ifdef DISLOC
       memcpy(newcell.Epot_ref, thecell->Epot_ref, 
                                thecell->n * sizeof(real));
@@ -427,9 +446,9 @@ void alloc_cell(cell *thecell, int count)
       memcpy(newcell.heatcond,  thecell->heatcond,  thecell->n * sizeof(real));
 #endif
 #ifdef STRESS_TENS
-      memcpy(newcell.presstens, thecell->presstens, 
+      memcpy(newcell.presstens,  thecell->presstens,  
              thecell->n * DIM * sizeof(real));
-      memcpy(newcell.presstens_offdia, thecell->presstens_offdia, 
+      memcpy(newcell.presstens_offdia,  thecell->presstens_offdia,  
              thecell->n * DIM * sizeof(real));
 #endif
 #ifdef UNIAX
@@ -455,6 +474,9 @@ void alloc_cell(cell *thecell, int count)
     free(thecell->sorte);
     free(thecell->masse);
     free(thecell->pot_eng);
+#ifdef EAM2
+    free(thecell->eam2_rho_h);
+#endif
 #ifdef DISLOC
     free(thecell->Epot_ref);
     free(thecell->ort_ref);
@@ -489,9 +511,12 @@ void alloc_cell(cell *thecell, int count)
   thecell->sorte    = newcell.sorte;
   thecell->masse    = newcell.masse;
   thecell->pot_eng  = newcell.pot_eng;
+#ifdef EAM2
+  thecell->eam2_rho_h = newcell.eam2_rho_h;
+#endif
 #ifdef DISLOC
   thecell->Epot_ref = newcell.Epot_ref;
-  thecell->ort_ref  = newcell.ort_ref;
+  thecell->ort_ref = newcell.ort_ref;
 #endif
 #ifdef REFPOS
   thecell->refpos = newcell.refpos;
@@ -500,7 +525,7 @@ void alloc_cell(cell *thecell, int count)
   thecell->heatcond = newcell.heatcond;
 #endif
 #ifdef STRESS_TENS
-  thecell->presstens        = newcell.presstens;
+  thecell->presstens = newcell.presstens;
   thecell->presstens_offdia = newcell.presstens_offdia;
 #endif
 #ifdef TTBP
@@ -516,6 +541,6 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #endif /* not MONOLJ */
 
-  thecell->n_max    = count;
+  thecell->n_max = count;
 
 }

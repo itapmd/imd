@@ -29,6 +29,11 @@ int main(int argc, char **argv)
 
 {
 
+#ifdef EAM2
+  /* just debuggingstuff*/
+  int i,j,k;
+#endif
+
   real tmp;
     
   int start;
@@ -81,16 +86,28 @@ int main(int argc, char **argv)
   if (myid == 0) init_client();
 #endif
 
-#ifndef UNIAX /* for uniaxial molecules calculate potential */
-#ifndef MONOLJ
+#if !(defined(UNIAX) || defined(MONOLJ))
+
+#ifndef EAM2
   /* Read Potential from file */
   read_potential(potfilename);
+#endif
+
 #ifdef TTBP
   /* Read TTBP Potential from file */
   read_ttbp_potential(ttbp_potfilename);
 #endif
-#endif /* not MONOLJ */
-#endif /* not UNIAX */
+
+#ifdef EAM2
+  /* Read the tabulated Core-Core Potential function*/
+  eam2_read_core_pot(eam2_core_pot_filename);
+  /* Read the tabulated embedding energy function*/
+  eam2_read_embedding_energy(eam2_emb_E_filename);
+  /* Read the tabulated electron density function*/
+  eam2_read_atomic_rho(eam2_at_rho_filename);
+#endif
+
+#endif /* not UNIAX and not MONOLJ */
 
 #ifdef MONOLJ
   r2_cut = tmp;

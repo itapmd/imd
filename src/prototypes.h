@@ -162,6 +162,14 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc);
 void do_forces_eam_2(cell *p);
 #endif
 
+#ifdef EAM2
+void eam2_read_core_pot(str255 core_pot_filename);
+void eam2_read_embedding_energy(str255 emb_E_filename);
+void eam2_read_atomic_rho(str255 at_rho_filename);
+void eam2_do_forces1(cell *p, cell *q, vektor pbc);
+void eam2_do_forces2(cell *p, cell *q, vektor pbc);
+#endif
+
 #ifdef TTBP
 void do_forces_ttbp(cell *p);
 void do_neightab(cell *p, cell *q, vektor pbc);

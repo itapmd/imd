@@ -471,10 +471,16 @@ void recv_atoms(void)
 *
 ******************************************************************************/
 
+
 void write_properties(int steps)
 {
   FILE *out;
   str255 fname;
+#ifdef EAM2
+  char *format=" %.16e";
+#else
+  char *format=" %e";
+#endif
   int i;
   real  vol; 
   real part_kin_energy;
@@ -499,25 +505,25 @@ void write_properties(int steps)
   out = fopen(fname,"a");
   if (NULL == out) error("Cannot open properties file.");
 
-  fprintf(out, "%10.4e", (double)(steps * timestep));
-  fprintf(out," %10.4e", (double)part_pot_energy);
+  fprintf(out, "%e",   (double)(steps * timestep));
+  fprintf(out, format, (double)part_pot_energy);
 #ifndef MC
-  fprintf(out," %10.4e", (double)part_kin_energy);
-  fprintf(out," %10.4e", (double)pressure);
+  fprintf(out, format, (double)part_kin_energy);
+  fprintf(out," %e",   (double)pressure);
 #else
-  fprintf(out," %10.4e", (double)(mc_accept/(real)mc_count));
+  fprintf(out," %e",   (double)(mc_accept/(real)mc_count));
   mc_accept = (real)0;
   mc_count  = 0;
 #endif
-  fprintf(out," %10.4e", (double)vol);
+  fprintf(out," %e",   (double)vol);
 
 #ifdef PAXTEST
   if (ensemble==ENS_NPT_AXIAL) {
-    fprintf(out," %10.4e %10.4e %10.4e", 
+    fprintf(out," %e %e %e", 
                   (double) stress.x, (double) stress.y, (double) stress.z );
-    fprintf(out," %10.4e %10.4e %10.4e", 
+    fprintf(out," %e %e %e", 
                   (double) box_x.x,  (double) box_y.y,  (double) box_z.z );
-  };
+  }
 #endif
   putc('\n',out);
 
@@ -566,7 +572,6 @@ void write_msqd(int steps)
 void write_config(int steps)
 
 /* Makro to write data of cell p to file out */
-
 #ifdef UNIAX
 #define WRITE_CELL     for (i = 0;i < p->n; ++i) \
              fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f\n",\

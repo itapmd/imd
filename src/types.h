@@ -79,43 +79,47 @@ typedef neightab* neighptr;
 #endif
 
 /* Basic Data Type - The Cell */
+
 typedef struct {
-    real        *ort;
+  real        *ort;
 #ifndef MONOLJ
-    shortint    *sorte;
-    real        *masse;
-    real        *pot_eng;
+  shortint    *sorte;
+  real        *masse;
+  real        *pot_eng;
+#ifdef EAM2                 /* EAM2: variable for the host electron density */
+  real        *eam2_rho_h;
+#endif
 #ifdef DISLOC
-    real        *Epot_ref;
-    real        *ort_ref;
+  real        *Epot_ref;
+  real        *ort_ref;
 #endif
 #ifdef REFPOS
-    real        *refpos;
+  real        *refpos;
 #endif
 #ifdef TRANSPORT
-    real        *heatcond;
+  real        *heatcond;
 #endif
 #ifdef STRESS_TENS
-    real        *presstens;
-    real        *presstens_offdia;
+  real        *presstens;
+  real        *presstens_offdia;
 #endif
-    integer     *nummer;
+  integer     *nummer;   
 #endif
-    real        *impuls;
-    real        *kraft;
+  real        *impuls;
+  real        *kraft;
 #ifdef TTBP
-    neightab    **neigh;
+  neightab    **neigh;
 #endif
 #ifdef UNIAX
-    real        *traeg_moment;
-    real        *achse;
-    real        *shape;
-    real        *pot_well;
-    real        *dreh_impuls;
-    real        *dreh_moment;
+  real        *traeg_moment;
+  real        *achse;
+  real        *shape;
+  real        *pot_well;
+  real        *dreh_impuls;
+  real        *dreh_moment;
 #endif
-    int         n;
-    int         n_max;
+  int         n;
+  int         n_max;
 } cell;
 
 typedef struct {
@@ -131,6 +135,7 @@ typedef struct { real    *data;
 		 int         n;
 		 int     n_max;
 	       } msgbuf;
+
 
 /* String used for Filenames etc. */
 typedef char str255[255];

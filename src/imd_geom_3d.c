@@ -88,6 +88,25 @@ ivektor maximal_cell_dim( void )
 #ifdef EAM  
   r2_cut2 = MAX( r2_cut2, eam_r2_cut );  
 #endif
+#ifdef EAM2  
+  /* the tables are in r2 */
+  /* get the biggest r_cut of eam2_phi_r_end */
+  r2_cut=0.0;
+  for(i=0;i<ntypes;i++)
+    for(j=0;j<ntypes;j++)
+      r2_cut = MAX( r2_cut, *PTR_2D(eam2_phi_r_end,i,j,ntypes,ntypes) );
+
+  /* get the biggest r_cut of eam2_r_end */
+  r2_cut2=0.0;
+  for(i=0;i<ntypes;i++)
+    for(j=0;j<ntypes;j++)
+      r2_cut2 = MAX( r2_cut2, *PTR_2D(eam2_r_end,i,j,ntypes,ntypes) );
+
+  /* take the biggest one as actual cut-off */
+  r2_cut2 = MAX(r2_cut2,r2_cut);
+  printf("The actual cut-off is %lf (cut-off of core-core Potential: %lf)\n",
+         r2_cut2, r2_cut);
+#endif
 #ifdef TTBP
   for (i=0; i<ntypes; ++i)
     for (j=0; j<ntypes; ++j)
@@ -180,6 +199,25 @@ void init_cells( void )
   r2_cut2 = r2_cut;
 #ifdef EAM  
   r2_cut2 = MAX( r2_cut2, eam_r2_cut );  
+#endif
+#ifdef EAM2  
+  /* the tables are in r2 */
+  /* get the biggest r_cut of eam2_phi_r_end */
+  r2_cut=0.0;
+  for(i=0;i<ntypes;i++)
+    for(j=0;j<ntypes;j++)
+      r2_cut = MAX( r2_cut, *PTR_2D(eam2_phi_r_end,i,j,ntypes,ntypes) );
+
+  /* get the biggest r_cut of eam2_r_end */
+  r2_cut2=0.0;
+  for(i=0;i<ntypes;i++)
+    for(j=0;j<ntypes;j++)
+      r2_cut2 = MAX( r2_cut2, *PTR_2D(eam2_r_end,i,j,ntypes,ntypes) );
+
+  /* take the biggest one as actual cut-off */
+  r2_cut2 = MAX(r2_cut2,r2_cut);
+  printf("The actual cut-off is %lf (cut-off of core-core Potential: %lf)\n",
+         r2_cut2, r2_cut);
 #endif
 #ifdef TTBP
   for (i=0; i<ntypes; ++i)

@@ -95,6 +95,9 @@ void calc_forces(void)
         p->neigh[j]->n = 0;
       }
 #endif
+#ifdef EAM2
+      p->eam2_rho_h[i] = 0.0; /* zero host electron density at atom site */
+#endif
     }
   }
   
@@ -113,15 +116,60 @@ void calc_forces(void)
 #ifdef EAM
       /* first EAM call */
       do_forces_eam_1(cell_array + P->np, cell_array + P->nq, pbc);
-#else
-#ifdef UNIAX
+#elif defined(EAM2)
+      eam2_do_forces1(cell_array + P->np, cell_array + P->nq, pbc);
+#elif defined(UNIAX)
       do_forces_uniax(cell_array + P->np, cell_array + P->nq, pbc);
 #else
       do_forces(cell_array + P->np, cell_array + P->nq, pbc);
 #endif
-#endif
     }
   }
+
+#ifdef EAM2
+  /* if EAM2, we have to loop a second time over pairs of distinct cells */
+  for (n=0; n<6; ++n) {
+    for (k=0; k<npairs[n]; ++k) {
+      vektor pbc;
+      pair *P;
+      P = pairs[n]+k;
+      pbc.x = -(P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x);
+      pbc.y = -(P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y);
+      pbc.z = -(P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z);
+      if (P->np != P->nq)
+        eam2_do_forces1(cell_array + P->nq, cell_array + P->np, pbc);
+    }
+  }
+
+  send_eam2_rho_h();
+
+  /* second EAM2 loop over all cells pairs */
+  for (n=0; n<6; ++n) {
+    for (k=0; k<npairs[n]; ++k) {
+      vektor pbc;
+      pair *P;
+      P = pairs[n]+k;
+      pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
+      pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
+      pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
+      eam2_do_forces2(cell_array + P->np, cell_array + P->nq, pbc);
+    }
+  }
+
+  /* if EAM2, we have to loop a second time over pairs of distinct cells */
+  for (n=0; n<6; ++n) {
+    for (k=0; k<npairs[n]; ++k) {
+      vektor pbc;
+      pair *P;
+      P = pairs[n]+k;
+      pbc.x = -(P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x);
+      pbc.y = -(P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y);
+      pbc.z = -(P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z);
+      if (P->np != P->nq)
+        eam2_do_forces2(cell_array + P->nq, cell_array + P->np, pbc);
+    }
+  }
+#endif /* EAM2 */
 
 #ifdef TTBP
   /* complete neighbor tables for remaining pairs of cells */
@@ -140,7 +188,7 @@ void calc_forces(void)
 
   mpi_addtime(&time_calc_local);
   
-#ifndef AR  
+#if !(defined(AR) || defined(EAM2))  
 
   /* If we don't use actio=reactio accross the cpus, we have do do
      the force loop also on the other half of the neighbours for the 
@@ -1691,6 +1739,227 @@ void send_forces_full(void)
     for (i=1; i < cell_dim.y-1; ++i) 
       for (j=1; j < cell_dim.z-1; ++j) 
 	add_forces( &recv_buf_east, 1, i, j);
+  }
+}
+
+
+/******************************************************************************
+*
+*  copy_cell_eam2_rho_h  -  copy eam2_rho_h of one cell to another cell
+*
+******************************************************************************/
+
+void copy_cell_eam2_rho_h( int k, int l, int m, int r, int s, int t)
+{
+  int i, tmp_n;
+  cell *from, *to;
+
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+  to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
+
+  tmp_n = from->n;
+  if (tmp_n >= to->n_max) {
+    to->n = 0;
+    alloc_cell(to, tmp_n);
+  }
+  
+  to->n = tmp_n;
+  for (i=0; i<to->n; ++i) {
+    to->eam2_rho_h[i] = from->eam2_rho_h[i];
+  }
+}
+
+
+/******************************************************************************
+*
+*  move_eam2_rho_h  -  move eam2_rho_h from MPI buffer to cells
+*
+******************************************************************************/
+
+void move_eam2_rho_h( msgbuf *b, int k, int l, int m )
+{
+  int i;
+  int tmp_n;
+  cell *to;
+
+  to = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+  tmp_n = (int) b->data[ b->n++ ];
+  
+  if (tmp_n >= to->n_max) {
+    to->n = 0;
+    alloc_cell(to, tmp_n);
+  }
+  
+  to->n = tmp_n;
+  for (i=0; i<to->n; ++i) {
+    to->eam2_rho_h[i] = b->data[ b->n++ ];
+  }
+  if (b->n_max <= b->n) error("Buffer overflow in move_atoms_force");
+}
+
+
+/******************************************************************************
+*
+*  copy_eam2_rho_h  -  copy eam2_rho_h to MPI buffer
+*
+******************************************************************************/
+
+void copy_eam2_rho_h( msgbuf *b, int k, int l, int m)
+{
+  int i;
+  cell *from;
+    
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+  b->data[ b->n++ ] = (real) from->n;
+    
+  for (i=0; i<from->n; ++i) {
+    b->data[ b->n++ ] = from->eam2_rho_h[i];
+  }
+  if (b->n_max <= b->n)  error("Buffer overflow in copy_atoms_force");
+}
+
+
+/******************************************************************************
+*
+* send_eam2_rho_h
+*
+* This sends eam2_rho_h to the neighbouring cpus using
+* Steve Plimptons comm scheme
+*
+* Data is sent only over the faces of the processors box in 
+* the order east-west, north-south, up-down
+*
+******************************************************************************/
+
+void send_eam2_rho_h()
+{
+  int i,j;
+
+  MPI_Status  stateast[2],  statwest[2];
+  MPI_Status statnorth[2], statsouth[2];
+  MPI_Status    statup[2],  statdown[2];
+
+  MPI_Request  reqeast[2],   reqwest[2];
+  MPI_Request reqnorth[2],  reqsouth[2];
+  MPI_Request    requp[2],   reqdown[2];
+
+  empty_mpi_buffers();
+  empty_buffer_cells();
+
+  /* exchange east/west */
+  if (cpu_dim.x==1) {
+    /* simply copy east/west atoms to buffer cells */
+    for (i=1; i < cell_dim.y-1; ++i)
+      for (j=1; j < cell_dim.z-1; ++j) { 
+        copy_cell_eam2_rho_h( 1, i, j, cell_dim.x-1, i, j );
+        copy_cell_eam2_rho_h( cell_dim.x-2, i, j, 0, i, j );
+      }
+  } else {
+    /* copy east atoms into send buffer, send east */
+    for (i=1; i < cell_dim.y-1; ++i)
+      for (j=1; j < cell_dim.z-1; ++j) 
+	copy_eam2_rho_h( &send_buf_east, 1, i, j);
+    irecv_buf( &recv_buf_west, nbwest, &reqwest[1] );
+    isend_buf( &send_buf_east, nbeast, &reqwest[0] );
+
+    /* copy west atoms into send buffer, send west */
+    for (i=1; i < cell_dim.y-1; ++i) 
+      for (j=1; j < cell_dim.z-1; ++j) 
+	copy_eam2_rho_h( &send_buf_west, cell_dim.x-2, i, j);
+    irecv_buf( &recv_buf_east, nbeast, &reqeast[1] );
+    isend_buf( &send_buf_west, nbwest, &reqeast[0] );
+
+    /* wait for atoms from west, move them to buffer cells */
+    MPI_Waitall(2, reqwest, statwest);
+    recv_buf_west.n = 0;
+    for (i=1; i < cell_dim.y-1; ++i)
+      for (j=1; j < cell_dim.z-1; ++j) 
+	move_eam2_rho_h( &recv_buf_west, cell_dim.x-1, i, j);
+
+    /* wait for atoms from east, move them to buffer cells */
+    MPI_Waitall(2, reqeast, stateast);
+    recv_buf_east.n = 0;
+    for (i=1; i < cell_dim.y-1; ++i) 
+      for (j=1; j < cell_dim.z-1; ++j) 
+	move_eam2_rho_h( &recv_buf_east, 0, i, j);
+  }
+  
+  /* exchange north/south */
+  if (cpu_dim.y==1) {
+    /* simply copy north/south atoms to buffer cells */
+    for (i=0; i < cell_dim.x; ++i)
+      for (j=1; j < cell_dim.z-1; ++j) {
+        copy_cell_eam2_rho_h( i, 1, j, i, cell_dim.y-1, j );
+        copy_cell_eam2_rho_h( i, cell_dim.y-2, j, i, 0, j );
+      }
+  } else {
+    /* copy north atoms into send buffer, send north */
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=1; j < cell_dim.z-1; ++j)
+	copy_eam2_rho_h( &send_buf_north, i, 1, j);
+    irecv_buf( &recv_buf_south, nbsouth, &reqsouth[1] );
+    isend_buf( &send_buf_north, nbnorth, &reqsouth[0] );
+
+    /* copy south atoms into send buffer, send south */
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=1; j < cell_dim.z-1; ++j)
+        copy_eam2_rho_h( &send_buf_south, i, cell_dim.y-2, j);
+    irecv_buf( &recv_buf_north, nbnorth, &reqnorth[1] );
+    isend_buf( &send_buf_south, nbsouth, &reqnorth[0] );
+
+    /* wait for atoms from south, move them to buffer cells */
+    MPI_Waitall(2, reqsouth, statsouth);
+    recv_buf_south.n = 0;
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=1; j < cell_dim.z-1; ++j)
+	move_eam2_rho_h( &recv_buf_south, i, cell_dim.y-1, j);
+
+    /* wait for atoms from north, move them to buffer cells */
+    MPI_Waitall(2, reqnorth, statnorth);
+    recv_buf_north.n = 0;
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=1; j < cell_dim.z-1; ++j)
+        move_eam2_rho_h( &recv_buf_north, i, 0, j);
+  }
+
+  /* exchange up/down */
+  if (cpu_dim.z==1) {
+    /* simply copy up/down atoms to buffer cells */
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=0; j < cell_dim.y; ++j) {
+	copy_cell_eam2_rho_h( i, j, 1, i, j, cell_dim.z-1 );
+        copy_cell_eam2_rho_h( i, j, cell_dim.z-2, i, j, 0 );
+      }
+  } else {
+    /* copy up atoms into send buffer, send up */
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=0; j < cell_dim.y; ++j)
+	copy_eam2_rho_h( &send_buf_up, i, j, 1);
+    irecv_buf( &recv_buf_down , nbdown, &reqdown[1]);
+    isend_buf( &send_buf_up   , nbup  , &reqdown[0]);
+
+    /* copy down atoms into send buffer, send down */
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=0; j < cell_dim.y; ++j)
+        copy_eam2_rho_h( &send_buf_down, i, j, cell_dim.z-2);
+    irecv_buf( &recv_buf_up  , nbup  , &requp[1] );
+    isend_buf( &send_buf_down, nbdown, &requp[0] );
+
+    /* wait for atoms from down, move them to buffer cells */
+    MPI_Waitall(2, reqdown, statdown);
+    recv_buf_down.n = 0;
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=0; j < cell_dim.y; ++j)
+	move_eam2_rho_h( &recv_buf_down, i, j, cell_dim.z-1);
+
+    /* wait for atoms from up, move them to buffer cells */
+    MPI_Waitall(2, requp, statup);
+    recv_buf_up.n = 0;
+    for (i=0; i < cell_dim.x; ++i) 
+      for (j=0; j < cell_dim.y; ++j)
+        move_eam2_rho_h( &recv_buf_up, i, j, 0);
   }
 }
 

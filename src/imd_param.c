@@ -859,6 +859,20 @@ void getparamfile(char *paramfname, int sim)
       getparam("eam_r_0",&eam_r_0,PARAM_REAL,1,1);
     }
 #endif
+#ifdef EAM2
+    else if (strcasecmp(token,"core_potential_file")==0) {
+      /* EAM2:Filename for the tabulated Core-Core Potenial (r^2) */
+      getparam("core_potential_file",eam2_core_pot_filename,PARAM_STR,1,255);
+    }
+    else if (strcasecmp(token,"embedding_energy_file")==0) {
+      /* EAM2:Filename for the tabulated Embedding Enery(rho_h) */
+      getparam("embedding_energy_file",eam2_emb_E_filename,PARAM_STR,1,255);
+    }
+   else if (strcasecmp(token,"atomic_e-density_file")==0) {
+      /* EAM2:Filename for the tabulated atomic electron density(r_ij^2) */
+      getparam("atomic_e-density_file",eam2_at_rho_filename,PARAM_STR,1,255);
+    }
+#endif
 #ifdef TTBP
     else if (strcasecmp(token,"ttbp_len")==0) {
       /* number of neighbors */

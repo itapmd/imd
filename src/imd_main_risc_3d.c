@@ -72,6 +72,9 @@ void calc_forces(void)
         p->neigh[j]->n = 0;
       }
 #endif
+#ifdef EAM2
+      p->eam2_rho_h[i] = 0.0; /* zero host electron density at atom site */
+#endif
     }
   }
 
@@ -88,15 +91,61 @@ void calc_forces(void)
 #ifdef EAM
       /* first EAM call */
       do_forces_eam_1(cell_array + P->np, cell_array + P->nq, pbc);
-#else
-#ifdef UNIAX
+#elif defined(EAM2)
+      eam2_do_forces1(cell_array + P->np, cell_array + P->nq, pbc);
+#elif defined(UNIAX)
       do_forces_uniax(cell_array + P->np, cell_array + P->nq, pbc);
 #else
       do_forces(cell_array + P->np, cell_array + P->nq, pbc);
 #endif
-#endif
     }
   }
+
+#ifdef EAM2
+  /* if EAM2, we have to loop a second time over pairs of distinct cells */
+  for (n=0; n<6; ++n) {
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+    for (k=0; k<npairs[n]; ++k) {
+      vektor pbc;
+      pair *P;
+      P = pairs[n]+k;
+      pbc.x = -(P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x);
+      pbc.y = -(P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y);
+      pbc.z = -(P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z);
+      if (P->np != P->nq)
+        eam2_do_forces1(cell_array + P->nq, cell_array + P->np, pbc);
+    }
+  }
+
+  /* second EAM2 loop over all cells pairs */
+  for (n=0; n<6; ++n) {
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+    for (k=0; k<npairs[n]; ++k) {
+      vektor pbc;
+      pair *P;
+      P = pairs[n]+k;
+      pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
+      pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
+      pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
+      eam2_do_forces2(cell_array + P->np, cell_array + P->nq, pbc);
+    }
+  }
+
+  /* if EAM2, we have to loop a second time over pairs of distinct cells */
+  for (n=0; n<6; ++n) {
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+    for (k=0; k<npairs[n]; ++k) {
+      vektor pbc;
+      pair *P;
+      P = pairs[n]+k;
+      pbc.x = -(P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x);
+      pbc.y = -(P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y);
+      pbc.z = -(P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z);
+      if (P->np != P->nq)
+        eam2_do_forces2(cell_array + P->nq, cell_array + P->np, pbc);
+    }
+  }
+#endif /* EAM2 */
 
 #ifdef EAM
   /* EAM cohesive function potential */

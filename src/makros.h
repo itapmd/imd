@@ -38,7 +38,7 @@
 
 /* Sqr quadriert sein Argument */
 #if defined(__GNUC__) || defined(__SASC)
-__inline static real SQR(real x)
+inline static real SQR(real x)
 {
   return x*x;
 }

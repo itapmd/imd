@@ -371,6 +371,34 @@ EXTERN real eam_r2_cut;             /* EAM cutoff radius ^2 */
 EXTERN real eam_A      INIT(0.0);   /* EAM cohesive function constant A */
 #endif
 
+/* EAM2 stuff */
+#ifdef EAM2
+EXTERN str255 eam2_emb_E_filename INIT("\0"); /* filenames for the tabulated functions */
+EXTERN str255 eam2_at_rho_filename INIT("\0");
+EXTERN str255 eam2_core_pot_filename INIT("\0");
+/* function tables */
+EXTERN real *eam2_f_i;                 /* table for the Embedding Energy as function of (rho_h) */
+EXTERN real *eam2_rho_at;              /* table for the electron density  as function of the distance */
+EXTERN real *eam2_phi;                 /* table for the core-core 2body Potential */
+/* layout of the tables: rho_at[atom_i][atom_j][mapping index]
+   i.e.                         0        1     int (r-r_end)/rstep 
+   the same for phi
+   and  for f_i[atom_i][mapping index]
+*/
+EXTERN real *eam2_rho_begin; /* for the most general case: the tables have different */
+EXTERN real *eam2_rho_end;   /* stepsizes, etc. for each atomtype                    */
+EXTERN real *eam2_rho_step;  /* layout of the fields:                                */
+EXTERN real *eam2_r_begin;   /* rho_begin[atom_i][atom_j][rho], etc.                 */
+EXTERN real *eam2_r_end;
+EXTERN real *eam2_r_step;
+EXTERN real *eam2_phi_r_begin;
+EXTERN real *eam2_phi_r_end;
+EXTERN real *eam2_phi_r_step;
+EXTERN int eam2_max_r_steps INIT(0);  /* info needed to access the tables */
+EXTERN int eam2_max_rho_steps INIT(0);
+EXTERN int eam2_max_phi_r_steps INIT(0);
+#endif
+
 #ifdef TTBP
 EXTERN str255 ttbp_potfilename INIT("\0");         /* TTBP Potential */
 EXTERN ivektor3d ttbp_pot_dim INIT(nullivektor3d); /* pot dimensions */
