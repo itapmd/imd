@@ -27,10 +27,9 @@ void do_forces_ttbp(cell *p)
   neightab *neigh;
   vektor force_j, force_k;
   cell   *jcell, *kcell;
-  int    i, j, k, p_typ, j_typ, knum, jnum;
-  real   *tmpptr, *potptr;
+  int    i, j, k, p_typ, j_typ, knum, jnum, col;
+  real   *tmpptr;
   real   pot_zwi, tmp_pot, tmp_grad, tmp, tmp_j, tmp_k;
-  real   chi, dv, d2v, pot_k0, pot_k1, pot_k2, r2j;
   real   tmp_f2, cos_theta, tmp_sp;
   real   tmp_virial = 0.0;
 #ifdef P_AXIAL
@@ -72,18 +71,8 @@ void do_forces_ttbp(cell *p)
       r[j]    = sqrt(r2[j]);
 
       /* smoothing potential */
-      r2j     = MAX( r2[j], ttbp_r2_0);
-      k       = (int) ((r2j - ttbp_r2_0) * ttbp_inv_r2_step);
-      chi     = (r2j - ttbp_r2_0 - k * ttbp_r2_step) * ttbp_inv_r2_step;
-      potptr  = PTR_3D_V(ttbp_potential, k, p_typ, j_typ, ttbp_pot_dim);
-      pot_k0  = *potptr; potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
-      pot_k1  = *potptr; potptr += ttbp_pot_dim.y * ttbp_pot_dim.z;
-      pot_k2  = *potptr;
-      dv      = pot_k1 - pot_k0;
-      d2v     = pot_k2 - 2 * pot_k1 + pot_k0;
-      grad[j] = 2 * ttbp_inv_r2_step * ( dv + (chi - 0.5) * d2v );
-      pot[j]  = pot_k0 + chi * dv + 0.5 * chi * (chi-1) * d2v;
-
+      col     = p_typ * ntypes + j_typ;
+      pair_int2(pot+j,grad+j,&smooth_pot,col,r2[j]);
     }
 
     /* for each pair of neighbors */
@@ -181,7 +170,7 @@ void do_forces_tersoff(cell *p)
   static vektor *dzeta_k = NULL; 
   cell   *jcell, *kcell;
   int    i, j, k, p_typ, j_typ, k_typ, knum, jnum;
-  real   *tmpptr, *potptr;
+  real   *tmpptr;
   real   pot_zwi, tmp_grad;
   real   cos_theta, cut_tmp, cut_tmp_j;
   real   zeta, g_theta, b_ij;
@@ -385,9 +374,9 @@ void do_neightab(cell *p, cell *q, vektor pbc)
 {
   int i, j, k;
   int jstart, jend;
-  int q_typ, p_typ;
+  int q_typ, p_typ, column;
   vektor d, tmp_d;
-  real *qptr, radius2, r2_short = r2_end;
+  real *qptr, radius2;
 
   /* For each atom in first cell */
   for (i=0; i<p->n; ++i) {
@@ -410,6 +399,7 @@ void do_neightab(cell *p, cell *q, vektor pbc)
       d.y = *qptr++ - tmp_d.y;
       d.z = *qptr++ - tmp_d.z;
 
+      column  = p_typ * ntypes + q_typ;
       radius2 = SPROD(d,d);
 
       if (0==radius2) { char msgbuf[256];
@@ -422,13 +412,13 @@ void do_neightab(cell *p, cell *q, vektor pbc)
       }
 #ifdef TTBP
       /* make neighbor tables for TTBP */
-      if (radius2 <= ttbp_r2_cut[p_typ][q_typ]) {
+      if (radius2 <= smooth_pot.end[column])
 #endif
 #ifdef TERSOFF
-	/* make neighbor tables for TERSOFF */
-        if (radius2 <= ter_r2_cut[p_typ][q_typ]) {
+      /* make neighbor tables for TERSOFF */
+      if (radius2 <= ter_r2_cut[p_typ][q_typ])
 #endif
-
+      {        
         neightab *neigh;
         real  *tmp_ptr;
 
@@ -465,15 +455,50 @@ void do_neightab(cell *p, cell *q, vektor pbc)
     } /* for j */
   } /* for i */
 
-#ifndef MONOLJ
-  if (r2_short < r2_0) printf("\n Short distance! r2: %f\n",r2_short);
-#endif
-
 }
 
 
+#ifdef TERSOFF
+void init_tersoff(void) {
 
+  int i, j;
+  real tmp;
 
+  /* parameters for more than one atom type */
+  for (i=0; i<ntypes; i++) {
+    ter_c2[i] = ters_c[i] * ters_c[i];
+    ter_d2[i] = ters_d[i] * ters_d[i];
+    for (j=0; j<ntypes; j++) { 
+      ter_r_cut[i][j] = sqrt( ters_r_cut[i] * ters_r_cut[j] );
+      ter_r2_cut[i][j] = ter_r_cut[i][j] * ter_r_cut[i][j];
+      ter_r0[i][j] = sqrt( ters_r0[i] * ters_r0[j] );
+      ter_a[i][j]  = sqrt( ters_a[i] * ters_a[j] );
+      ter_b[i][j]  = sqrt( ters_b[i] * ters_b[j] );
+      ter_la[i][j] = 0.5 * (ters_la[i] + ters_la[j] );
+      ter_mu[i][j] = 0.5 * (ters_mu[i] + ters_mu[j] );
+    }
+  }
+  for (i=0; i<ntypes; i++) ter_chi[i][i] = 1.0;
+  if ( ntypes>1 ) {
+    for (i=0; i<(ntypes-1); i++)
+      for (j=(i+1); j<ntypes; j++) {
+        ter_chi[i][j] = ter_chi[j][i] 
+                      = ters_chi[i * ( 2 * ntypes - i - 3 ) / 2 + j - 1]; 
+      }
+  }
+  for (i=0; i<ntypes; i++) ter_om[i][i] = 1.0;
+  if ( ntypes>1 ) {
+    for (i=0; i<(ntypes-1); i++)
+      for (j=(i+1); j<ntypes; j++) {
+        ter_om[i][j] = ter_om[j][i] 
+                     = ters_om[i * ( 2 * ntypes - i - 3 ) / 2 + j - 1]; 
+      }
+  }  
+  tmp = 0.0;
+  for (i=0; i<ntypes; ++i)
+    for (j=0; j<ntypes; ++j)
+      tmp = MAX( tmp, ter_r2_cut[i][j] );
+  cellsz = MAX(cellsz,tmp);
+}
 
-
-
+#endif 

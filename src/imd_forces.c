@@ -1,3 +1,4 @@
+
 /*****************************************************************************
 *
 * imd_forces -- force loop
@@ -5,16 +6,11 @@
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
 
 #include "imd.h"
-
-#if defined(PVPCRAY) || defined(SX4)
-#include "imd_forces_vec.c"
-#else
 
 /******************************************************************************
 *
@@ -40,17 +36,9 @@ void do_forces(cell *p, cell *q, vektor pbc)
 #endif
   real pot_zwi;
   real pot_grad;
+  real r2_short=cellsz;
   int jstart,jend;
-  int c;
-#ifdef MONOLJ
-  real sig_d_rad2,sig_d_rad6,sig_d_rad12;
-#else
-  real r2_short = r2_end;
-  real pot_k0,pot_k1,pot_k2;
-  real dv, d2v;
-  real *potptr;
-  real chi;
-#endif
+  int column, is_short=0;
   int q_typ,p_typ;
   real *qptr;
   
@@ -94,6 +82,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
       ++qptr;
 #endif
 
+      column  = p_typ * ntypes + q_typ;
       radius2 = SPROD(d,d);
 
       if (0==radius2) { char msgbuf[256];
@@ -115,45 +104,18 @@ void do_forces(cell *p, cell *q, vektor pbc)
       }
 
 #ifndef TERSOFF
-      /* 1. Cutoff: pair potential */
-      if (radius2 <= r2_cut) {
-
-        /* Calculate force, if distance smaller than cutoff */ 
 #ifdef MONOLJ
-        sig_d_rad2  = 2.0 / radius2;
-        sig_d_rad6  = sig_d_rad2 * sig_d_rad2 * sig_d_rad2;
-        sig_d_rad12 = sig_d_rad6 * sig_d_rad6;
-
-        pot_grad = - 6 * sig_d_rad2 * ( sig_d_rad12 - sig_d_rad6 );
-        pot_zwi  = sig_d_rad12 - 2.0 * sig_d_rad6;
+      if (radius2 <= monolj_r2_cut) {
+        pair_int_monolj(&pot_zwi,&pot_grad,radius2);
 #else
+      /* 1. Cutoff: pair potential */
+      if (radius2 <= pair_pot.end[column]) {
+
       	/* Check for distances, shorter than minimal distance in pot. table */
-	if (radius2 < r2_0) {
+        if (1==pair_int2(&pot_zwi,&pot_grad,&pair_pot,column,radius2)) {
           r2_short = MIN(r2_short,radius2);
-	  radius2 = r2_0; 
+	  is_short=1; 
 	}
-
-	/* Indices into potential table */
-	k     = (int) ((radius2 - r2_0) * inv_r2_step);
-	chi = (radius2 - r2_0 - k * r2_step) * inv_r2_step;
-	
-	/* A single access to the potential table involves two multiplications 
-	   We use a intermediate pointer to aviod this as much as possible.
-	   Note: This relies on layout of the pot-table in memory!!! */
-
-	potptr = PTR_3D_V(potential, k, p_typ, q_typ , pot_dim);
-	pot_k0 = *potptr; potptr += pot_dim.y * pot_dim.z;
-	pot_k1 = *potptr; potptr += pot_dim.y * pot_dim.z;
-	pot_k2 = *potptr;
-
-	dv  = pot_k1 - pot_k0;
-	d2v = pot_k2 - 2 * pot_k1 + pot_k0;
-
-        /* Norm of Gradient */
-        pot_grad = 2 * inv_r2_step * ( dv + (chi - 0.5) * d2v );
-
-        /* Potential energy of atom */
-        pot_zwi =  pot_k0 + chi * dv + 0.5 * chi * (chi - 1) * d2v;
 #endif  /* MONOLJ */
         
         /* Store forces in temp */
@@ -229,7 +191,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
 
 #ifdef TTBP
       /* 2. Cutoff: make neighbor tables for TTBP */
-      if (radius2 <= ttbp_r2_cut[p_typ][q_typ]) {
+      if (radius2 <= smooth_pot.end[column]) {
 #endif
 #ifdef TERSOFF
       /* 2. Cutoff: make neighbor tables for TERSOFF */ 
@@ -273,7 +235,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
 
 #ifndef TERSOFF
 #ifndef MONOLJ
-  if (r2_short < r2_0) printf("\n Short distance! r2: %f\n",r2_short);
+  if (is_short==1) printf("\n Short distance! r2: %f\n",r2_short);
 #endif
 
 #ifdef P_AXIAL
@@ -290,6 +252,4 @@ void do_forces(cell *p, cell *q, vektor pbc)
 #endif 
 #endif /* TERSOFF */ 
 
-} /* do_forces */
-
-#endif /* do_forces for scalar processors */
+}

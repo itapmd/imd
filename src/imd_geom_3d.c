@@ -1,6 +1,6 @@
 /******************************************************************************
 *
-* imd_geom.c -- Domain decomposition routines for the imd package
+* imd_geom_3d.c -- Domain decomposition routines for the imd package
 *
 ******************************************************************************/
 
@@ -54,7 +54,7 @@ void make_box( void )
 
 ivektor maximal_cell_dim( void ) 
 {
-  real    s1, s2,r2_cut2;
+  real    s1, s2, r2_cut, r2_cut2;
   vektor  hx,hy,hz;
   ivektor max_cell_dim;
   int     i,j;
@@ -84,10 +84,6 @@ ivektor maximal_cell_dim( void )
   hz.z = box_z.z - s1 * box_x.z - s2 * box_y.z;
   
   /* Scaling factors box/cell */
-  r2_cut2 = r2_cut;
-#ifdef EAM  
-  r2_cut2 = MAX( r2_cut2, eam_r2_cut );  
-#endif
 #ifdef EAM2  
   /* the tables are in r2 */
   /* get the biggest r_cut of eam2_phi_r_end */
@@ -106,27 +102,12 @@ ivektor maximal_cell_dim( void )
   r2_cut2 = MAX(r2_cut2,r2_cut);
   printf("The actual cut-off is %lf (cut-off of core-core Potential: %lf)\n",
          r2_cut2, r2_cut);
+  cellsz = MAX(cellsz, r2_cut2);
 #endif
-#ifdef TTBP
-  for (i=0; i<ntypes; ++i)
-    for (j=0; j<ntypes; ++j)
-      r2_cut2 = MAX( r2_cut2, ttbp_r2_cut[i][j] );
-#endif
-#ifdef TERSOFF
-  r2_cut2 = 0.0;
-  for (i=0; i<ntypes; ++i)
-    for (j=0; j<ntypes; ++j)
-      r2_cut2 = MAX( r2_cut2, ter_r2_cut[i][j] );
-  r2_cut = r2_cut2;
-#endif 
-#ifdef UNIAX 
-  r2_cut2 = uniax_r2_cut;
-  r2_cut  = uniax_r2_cut;
-#endif /* UNIAX */
 
-  max_cell_dim.x = (int) ( 1.0 / sqrt( r2_cut2 / SPROD(hx,hx) ));
-  max_cell_dim.y = (int) ( 1.0 / sqrt( r2_cut2 / SPROD(hy,hy) ));
-  max_cell_dim.z = (int) ( 1.0 / sqrt( r2_cut2 / SPROD(hz,hz) ));
+  max_cell_dim.x = (int) ( 1.0 / sqrt( cellsz / SPROD(hx,hx) ));
+  max_cell_dim.y = (int) ( 1.0 / sqrt( cellsz / SPROD(hy,hy) ));
+  max_cell_dim.z = (int) ( 1.0 / sqrt( cellsz / SPROD(hz,hz) ));
   return(max_cell_dim);
 
 }
@@ -146,17 +127,12 @@ void init_cells( void )
 {
   int i, j, k, l;
   vektor hx, hy, hz; 
-  real tmp, tmp2;
+  real tmp;
   vektor cell_scale;
   ivektor next_cell_dim, cell_dim_old;
   ivektor cellmin_old, cellmax_old, cellc;
   cell *p, *cell_array_old; 
-  real s1, s2, r2_cut2;
-
-#ifdef MONOLJ
-  tmp2 = r2_cut;
-  r2_cut = SQR(cellsz);
-#endif
+  real s1, s2, r2_cut, r2_cut2;
 
 #ifdef NPT
   if (0 == myid) {
@@ -203,10 +179,6 @@ void init_cells( void )
   hz.z = box_z.z - s1 * box_x.z - s2 * box_y.z;
   
   /* Scaling factors box/cell */
-  r2_cut2 = r2_cut;
-#ifdef EAM  
-  r2_cut2 = MAX( r2_cut2, eam_r2_cut );  
-#endif
 #ifdef EAM2  
   /* the tables are in r2 */
   /* get the biggest r_cut of eam2_phi_r_end */
@@ -225,57 +197,12 @@ void init_cells( void )
   r2_cut2 = MAX(r2_cut2,r2_cut);
   printf("The actual cut-off is %lf (cut-off of core-core Potential: %lf)\n",
          r2_cut2, r2_cut);
+  cellsz = MAX(cellsz, r2_cut2);
 #endif
-#ifdef TTBP
-  for (i=0; i<ntypes; ++i)
-    for (j=0; j<ntypes; ++j)
-      r2_cut2 = MAX( r2_cut2, ttbp_r2_cut[i][j] );
-#endif
-#ifdef TERSOFF
-  /* parameters for more than one atom type */
-  for (i=0; i<ntypes; i++) {
-    ter_c2[i] = ters_c[i] * ters_c[i];
-    ter_d2[i] = ters_d[i] * ters_d[i];
-    for (j=0; j<ntypes; j++) { 
-      ter_r_cut[i][j] = sqrt( ters_r_cut[i] * ters_r_cut[j] );
-      ter_r2_cut[i][j] = ter_r_cut[i][j] * ter_r_cut[i][j];
-      ter_r0[i][j] = sqrt( ters_r0[i] * ters_r0[j] );
-      ter_a[i][j]  = sqrt( ters_a[i] * ters_a[j] );
-      ter_b[i][j]  = sqrt( ters_b[i] * ters_b[j] );
-      ter_la[i][j] = 0.5 * (ters_la[i] + ters_la[j] );
-      ter_mu[i][j] = 0.5 * (ters_mu[i] + ters_mu[j] );
-    }
-  }
-  for (i=0; i<ntypes; i++)
-	ter_chi[i][i] = 1.0;
-      if ( ntypes>1 ) {
-  for (i=0; i<(ntypes-1); i++)
-    for (j=(i+1); j<ntypes; j++) {
-      ter_chi[i][j] = ter_chi[j][i] = ters_chi[i * ( 2 * ntypes - i - 3 ) / 2 + j - 1]; 
-	}
-      }
-  for (i=0; i<ntypes; i++)
-	ter_om[i][i] = 1.0;
-      if ( ntypes>1 ) {
-  for (i=0; i<(ntypes-1); i++)
-    for (j=(i+1); j<ntypes; j++) {
-      ter_om[i][j] = ter_om[j][i] = ters_om[i * ( 2 * ntypes - i - 3 ) / 2 + j - 1]; 
-	}
-      }  
-  r2_cut2 = 0.0;
-  for (i=0; i<ntypes; ++i)
-    for (j=0; j<ntypes; ++j)
-      r2_cut2 = MAX( r2_cut2, ter_r2_cut[i][j] );
-  r2_cut = r2_cut2;
-#endif 
-#ifdef UNIAX 
-  r2_cut2 = uniax_r2_cut;
-  r2_cut  = uniax_r2_cut;
-#endif /* UNIAX */
 
-  cell_scale.x = sqrt( r2_cut2 / SPROD(hx,hx) );
-  cell_scale.y = sqrt( r2_cut2 / SPROD(hy,hy) );
-  cell_scale.z = sqrt( r2_cut2 / SPROD(hz,hz) );
+  cell_scale.x = sqrt( cellsz / SPROD(hx,hx) );
+  cell_scale.y = sqrt( cellsz / SPROD(hy,hy) );
+  cell_scale.z = sqrt( cellsz / SPROD(hz,hz) );
 
 #ifdef NPT
   /* the NEXT cell array for a GROWING system; 
@@ -531,10 +458,6 @@ void init_cells( void )
     }
   }
 #endif /* NPT */
-
-#ifdef MONOLJ
-  r2_cut = tmp2;
-#endif
 
   make_cell_lists();
 

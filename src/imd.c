@@ -28,16 +28,7 @@
    Various versions are built by conditional compilation */
 
 int main(int argc, char **argv)
-
 {
-
-#ifdef EAM2
-  /* just debuggingstuff*/
-  int i,j,k;
-#endif
-
-  real tmp;
-    
   int start;
   time_t tstart, tend;
   real total_rtime = (real)0;
@@ -61,7 +52,6 @@ int main(int argc, char **argv)
   getrusage(RUSAGE_SELF,&start_ru);
 #endif
 
-
   /* Fire up MPI */
 #ifdef MPI
   init_mpi(argc,argv);
@@ -78,7 +68,6 @@ int main(int argc, char **argv)
 
   /* read command line and parameters for first simulation phase */
   read_parameters(argc,argv);
-
 #ifdef MPI
   broadcast_params();
 #endif
@@ -91,13 +80,17 @@ int main(int argc, char **argv)
 #if !(defined(UNIAX) || defined(MONOLJ))
 
 #if !(defined(EAM2) || defined(TERSOFF))
-  /* Read Potential from file */
-  read_potential(potfilename);
+  /* read potential from file */
+  read_pot_table1(&pair_pot,potfilename);
 #endif
 
 #ifdef TTBP
-  /* Read TTBP Potential from file */
-  read_ttbp_potential(ttbp_potfilename);
+  /* read TTBP smoothing potential from file */
+  read_pot_table1(&smooth_pot,ttbp_potfilename);
+#endif
+
+#ifdef TERSOFF
+  init_tersoff();
 #endif
 
 #ifdef EAM2
@@ -110,10 +103,6 @@ int main(int argc, char **argv)
 #endif
 
 #endif /* not UNIAX and not MONOLJ */
-
-#ifdef MONOLJ
-  r2_cut = tmp;
-#endif
 
   /* Filenames starting with denote internal 
   generation of the intitial configuration */
@@ -232,17 +221,17 @@ int main(int argc, char **argv)
 	   ((float)(steps_max+1)*(float)natoms)/total_time);
     printf("Time for pair interaction t_pair is: %.3e seconds\n",
            total_time / ((steps_max+1)*natoms*
-                         (4.0/3.0)*M_PI*pow(r2_cut,3.0/2.0)*(natoms/volume)));
+                         (4.0/3.0)*M_PI*pow(cellsz,3.0/2.0)*(natoms/volume)));
     printf("Time for pair interaction per cpu t_pair(P=1) is: %.3e seconds\n",
     total_time*num_cpus/ ((float)(steps_max+1)*(float)natoms*
-                          (4.0/3.0)*M_PI*pow(r2_cut,3.0/2.0)*(natoms/volume)));
+                          (4.0/3.0)*M_PI*pow(cellsz,3.0/2.0)*(natoms/volume)));
     printf("Comp. time: %e seconds or %.1f %% of total.\n",
            time_calc,100*time_calc/total_time);
     printf("I/O   time: %e seconds or %.1f %% of total.\n",
            time_io,100*time_io/total_time);
     printf("Comm. time: %e seconds or %.1f %% of total.\n",
            time_comm,100*time_comm/total_time);
-  };
+  }
 
   /* Kill MPI */
   shutdown_mpi();

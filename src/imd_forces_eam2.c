@@ -358,7 +358,7 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
   real tmp_energy;
   real tmp_virial=0.0;
   int jstart,jend;
-  real r2_short = r2_end;
+  real r2_short = cellsz;
   int q_typ,p_typ;
   real *qptr; 
 #ifdef P_AXIAL

@@ -1,4 +1,23 @@
 
+/*
+ *  This file contains code and code fragments needed or useful on
+ *  vector computers, in particular the NEC SX4. This is currently not
+ *  maintained
+ */
+
+#if defined(PVPCRAY) || defined(SX4)
+
+#ifdef STATIC_POT
+/* Dynamic array inhibits vectorization on SX4 */
+/* We have several copies of the pot table */
+/* this reduces bank conflicts on vector computers */
+#define MAXPOTLEN 4096
+#define MAXATOMTYPES 2
+EXTERN real potential[MAXATOMTYPES][MAXATOMTYPES][MAXPOTLEN];
+#else
+EXTERN real *potential;       /* Potential array */
+#endif
+
 
 #define MAXCELL 500
 
@@ -262,4 +281,4 @@ void do_forces(cell *ap, cell *aq, vektor apbc)
 
 }
 
-
+#endif

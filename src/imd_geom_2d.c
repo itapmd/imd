@@ -51,8 +51,8 @@ ivektor maximal_cell_dim( void )
   hx  = hxx - hxy / sqrt( hyy );
   hy  = hyy - hxy / sqrt( hxx );
 
-  max_cell_dim.x = (int) (1.0 / sqrt( r2_cut / hx ));
-  max_cell_dim.y = (int) (1.0 / sqrt( r2_cut / hy ));
+  max_cell_dim.x = (int) (1.0 / sqrt( cellsz / hx ));
+  max_cell_dim.y = (int) (1.0 / sqrt( cellsz / hy ));
   return(max_cell_dim);
 }
 
@@ -101,8 +101,8 @@ void init_cells( void )
   hy  = hyy - hxy / sqrt( hxx );
 
   /* Scaling factors box/cell */
-  cell_scale.x = sqrt( r2_cut / hx );
-  cell_scale.y = sqrt( r2_cut / hy );
+  cell_scale.x = sqrt( cellsz / hx );
+  cell_scale.y = sqrt( cellsz / hy );
 #ifdef NPT
   if ((ensemble == ENS_NPT_ISO) || (ensemble == ENS_NPT_AXIAL)) {
     /* the NEXT cell array for a GROWING system; 

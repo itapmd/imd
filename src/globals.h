@@ -168,28 +168,15 @@ EXTERN real fnorm INIT(0.0);  /* =f*f, f: global force vector: f=(f1.x, f1.y,...
 EXTERN real PxF INIT(0.0);
 #endif
 
-#ifndef MONOLJ
 /* Potential Table */
-#ifdef STATIC_POT
-/* Dynamic array inhibits vectorization on SX4 */
-/* We have several copies of the pot table */
-/* this reduces bank conflicts on vector computers */
-#define MAXPOTLEN 4096
-#define MAXATOMTYPES 2
-EXTERN real potential[MAXATOMTYPES][MAXATOMTYPES][MAXPOTLEN];
-#else
-EXTERN real *potential;       /* Potential array */
-#endif
-EXTERN ivektor3d pot_dim INIT(nullivektor3d);       /* its dimensions */
-EXTERN real r2_step;          /* delta between potential samples */
-EXTERN real inv_r2_step;      /* inverse thereof */
-EXTERN real r2_0;             /* minimum r^2 */
-EXTERN real r2_end;           /* maximum r^2 */
-#endif /* not MONOLJ */
-EXTERN real r2_cut;           /* cutoff^2 */   
-EXTERN real cellsz INIT(0);   /* cell diameter (needed for MONOLJ) */
-EXTERN int  initsz INIT(10);  /* initial number of atoms in cell */
-EXTERN int  incrsz INIT(10);  /* increment of number of atoms in cell */
+EXTERN pot_table_t pair_pot;         /* potential data structure */
+EXTERN real monolj_r2_cut INIT(0.0); /* cutoff^2 for MONOLJ */   
+EXTERN real monolj_shift INIT(0.0);  /* shift of monolj potential */   
+EXTERN real cellsz INIT(0);          /* minimal cell diameter */
+EXTERN int  initsz INIT(10);         /* initial number of atoms in cell */
+EXTERN int  incrsz INIT(10);         /* increment of number of atoms in cell */
+
+
 /* MPI housekeeping */
 EXTERN int myid INIT(0);                  /* Who am I? (0 if RISC) */
 #ifdef MPI
@@ -429,10 +416,10 @@ EXTERN real *eam2_phi;                 /* table for the core-core 2body Potentia
    the same for phi
    and  for f_i[atom_i][mapping index]
 */
-EXTERN real *eam2_rho_begin; /* for the most general case: the tables have different */
-EXTERN real *eam2_rho_end;   /* stepsizes, etc. for each atomtype                    */
-EXTERN real *eam2_rho_step;  /* layout of the fields:                                */
-EXTERN real *eam2_r_begin;   /* rho_begin[atom_i][atom_j][rho], etc.                 */
+EXTERN real *eam2_rho_begin; /* for the most general case: the tables have  */
+EXTERN real *eam2_rho_end;   /* different stepsizes, etc. for each atomtype */
+EXTERN real *eam2_rho_step;  /* layout of the fields:                       */
+EXTERN real *eam2_r_begin;   /* rho_begin[atom_i][atom_j][rho], etc.        */
 EXTERN real *eam2_r_end;
 EXTERN real *eam2_r_step;
 EXTERN real *eam2_phi_r_begin;
@@ -444,16 +431,10 @@ EXTERN int eam2_max_phi_r_steps INIT(0);
 #endif
 
 #ifdef TTBP
-EXTERN str255 ttbp_potfilename INIT("\0");         /* TTBP Potential */
-EXTERN ivektor3d ttbp_pot_dim INIT(nullivektor3d); /* pot dimensions */
-EXTERN real *ttbp_potential;      /* TTBP Potential array */
-EXTERN real ttbp_r2_cut[10][10];  /* cutoff^2;  less than 10 atom types! */
+EXTERN str255 ttbp_potfilename INIT("\0"); /* TTBP smoothing potential file */
+EXTERN pot_table_t smooth_pot;    /* TTBP smoothing potential */
 EXTERN real ttbp_constant[10];	  /* constants; less than 10 atom types! */
 EXTERN real ttbp_sp[10];          /* constants; less than 10 atom types! */
-EXTERN real ttbp_r2_0;            /* TTBP minimum r^2 */
-EXTERN real ttbp_r2_end;          /* TTBP maximum r^2 */
-EXTERN real ttbp_r2_step;         /* delta between potential samples */
-EXTERN real ttbp_inv_r2_step;     /* inverse thereof */
 #endif
 
 #ifdef TERSOFF
@@ -490,7 +471,6 @@ EXTERN int neigh_len INIT(50);     /* max neighbors */
 
 /* generate quasicrystal */
 #ifdef QUASI
-
 EXTERN int appr[3];                                /* approximant order */
 EXTERN int k1min[6],k1max[6];                      /* grid boundaries  */
 EXTERN real gx[6],gy[6],gz[6];                     /* grid vectors */
@@ -520,8 +500,8 @@ EXTERN void (*move_atoms)(void);        /* active integrator routine */
 
 /* global parameters for UNIAX */
 #ifdef UNIAX
-EXTERN real uniax_r_cut   INIT(0.0); 	/* cutoff radius for uniaxial molecules */
-EXTERN real uniax_r2_cut  INIT(0.0); 	/* cutoff radius ^2 for uniaxial molecules */
+EXTERN real uniax_r_cut  INIT(0.0);/* cutoff radius for uniaxial molecules */
+EXTERN real uniax_r2_cut INIT(0.0);/* cutoff radius^2 for uniaxial molecules */
 #endif
 
 

@@ -241,6 +241,7 @@ void getparamfile(char *paramfname, int sim)
   char *res;
   str255 tmpstr;
   int tmp;
+  real rtmp;
 #ifdef MC
   int mc_seed_int;
 #endif
@@ -590,12 +591,14 @@ void getparamfile(char *paramfname, int sim)
 #ifdef MONOLJ
     else if (strcasecmp(token,"r_cut")==0) {
       /* cutoff radius */
-      getparam("r_cut",&r2_cut,PARAM_REAL,1,1);
-      r2_cut = SQR(r2_cut);
+      getparam("r_cut",&monolj_r2_cut,PARAM_REAL,1,1);
+      monolj_r2_cut = SQR(monolj_r2_cut);
+      cellsz = MAX(cellsz,monolj_r2_cut);
     }
     else if (strcasecmp(token,"cellsize")==0) {
-      /* cell dimension */
-      getparam("cellsize",&cellsz,PARAM_REAL,1,1);
+      /* minimal cell diameter */
+      getparam("cellsize",&rtmp,PARAM_REAL,1,1);
+      cellsz = MAX(cellsz,SQR(rtmp));
     }
 #endif
     else if (strcasecmp(token,"initsize")==0) {
@@ -1004,7 +1007,8 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"eam_r_cut")==0) {
       /* EAM: cutoff of cohesive function */
       getparam("eam_r_cut",&eam_r_cut,PARAM_REAL,1,1);
-      eam_r2_cut = eam_r_cut * eam_r_cut;
+      eam_r2_cut = SQR(eam_r_cut);
+      cellsz = MAX(cellsz,eam_r2_cut);
     }
     else if (strcasecmp(token,"eam_r_0")==0) {
       /* EAM: minimum distance of cohesive function */
@@ -1049,7 +1053,7 @@ void getparamfile(char *paramfname, int sim)
     /* Parameters for Tersoff potential */
     else if (strcasecmp(token,"ters_r_cut")==0) {     
       getparam("ters_r_cut",ters_r_cut,PARAM_REAL,ntypes,ntypes);
-    }     
+    }
     else if (strcasecmp(token,"ters_r0")==0) {     
       getparam("ters_r0",ters_r0,PARAM_REAL,ntypes,ntypes);
     }
@@ -1058,7 +1062,7 @@ void getparamfile(char *paramfname, int sim)
     }
     else if (strcasecmp(token,"ters_b")==0) {     
       getparam("ters_b",ters_b,PARAM_REAL,ntypes,ntypes);
-    }   
+    }
     else if (strcasecmp(token,"ters_la")==0) {     
       getparam("ters_la",ters_la,PARAM_REAL,ntypes,ntypes);
     }
@@ -1091,7 +1095,8 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"uniax_r_cut")==0) {
       /* UNIAX: cutoff radius of uniaxial molecules */
       getparam("uniax_r_cut",&uniax_r_cut,PARAM_REAL,1,1);
-      uniax_r2_cut = uniax_r_cut * uniax_r_cut;
+      uniax_r2_cut = SQR(uniax_r_cut);
+      cellsz = MAX(cellsz,uniax_r2_cut);
     }
 #endif 
     else {
@@ -1112,32 +1117,34 @@ void getparamfile(char *paramfname, int sim)
 
 void check_parameters_complete()
 {
+  real tmp;
+
   if (ensemble == 0) {
     error("missing or unknown ensemble parameter.\n");
-  };
+  }
   if (timestep == (real)0) {
     error("timestep is missing or zero.\n");
-  };
+  }
   if (ntypes == 0) {
     error("ntypes is missing or zero.\n");
-  };
+  }
 #if defined(NPT) || defined(NVT) || defined(STM)
   if (temperature == 0) {
     error("starttemp is missing or zero.\n");
-  };
+  }
 #endif
 #if defined(NPT) || defined(NVT) || defined(STM)
   if (end_temp == 0) {
     error("endtemp is missing or zero.\n");
-  };
+  }
 #endif
 #if defined(CORRELATE) || defined(MSQD)
   if (correl_ts == 0) {
     if (eng_interval != 0) correl_ts = eng_interval;
     else {
       error("correl_ts is missing or zero.\n");
-    };
-  };
+    }
+  }
 #endif
 #ifdef CORRELATE
   if (ncorr_rmax == 0) {
@@ -1193,6 +1200,13 @@ void check_parameters_complete()
   if (uniax_r_cut == 0) {
     error("uniax_r_cut is missing or zero.\n");
   }
+#endif
+#ifdef MONOLJ
+  if (monolj_r2_cut == 0) {
+    error("monolj_r_cut is missing or zero.\n");
+  }
+  /* determine shift of potential at cutoff */
+  pair_int_monolj(&monolj_shift,&tmp,monolj_r2_cut);
 #endif
 }
 
@@ -1387,14 +1401,20 @@ void broadcast_params() {
   MPI_Bcast( outfilename , sizeof(outfilename), MPI_CHAR, 0, MPI_COMM_WORLD); 
   MPI_Bcast( infilename  , sizeof(infilename) , MPI_CHAR, 0, MPI_COMM_WORLD); 
   MPI_Bcast( reffilename , sizeof(reffilename), MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( potfilename , sizeof(potfilename), MPI_CHAR, 0, MPI_COMM_WORLD); 
+#ifdef TTBP
+  MPI_Bcast( ttbp_potfilename , sizeof(ttbp_potfilename), 
+             MPI_CHAR, 0, MPI_COMM_WORLD); 
+#endif
 
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
   MPI_Bcast( &end_temp , 1 , MPI_REAL,  0, MPI_COMM_WORLD); 
 #endif
 #ifdef MONOLJ
-  MPI_Bcast( &r2_cut, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &cellsz, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &monolj_r2_cut, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &monolj_shift,  1, MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
+  MPI_Bcast( &cellsz, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &initsz, 1, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &incrsz, 1, MPI_INT,  0, MPI_COMM_WORLD);
 
@@ -1529,11 +1549,12 @@ void broadcast_params() {
   MPI_Bcast( &eam_len,   1, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &eam_A,     1, MPI_REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &eam_r_cut, 1, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &eam_r2_cut,1, MPI_REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &eam_r_0,   1, MPI_REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef COVALENT
-  MPI_Bcast( &neigh_len,      1,      MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &neigh_len, 1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 
 #ifdef TTBP

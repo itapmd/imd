@@ -150,3 +150,12 @@ typedef struct { real    *data;
 /* String used for Filenames etc. */
 typedef char str255[255];
 
+/* data structure to store a potential table or a function table */ 
+typedef struct {
+  real *begin;      /* first value in the table */
+  real *end;        /* last value in the table (followed by extra zeros) */
+  real *step;       /* table increment */
+  real *invstep;    /* inverse of increment */
+  real maxsteps;    /* physical length of the table */
+  real *table;      /* the actual data */
+} pot_table_t;

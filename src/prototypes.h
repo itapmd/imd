@@ -11,7 +11,13 @@ void main_loop(void);
 void read_parameters(int argc, char **argv);
 void broadcast_params(void);
 void check_parameters_complete(void);
-void read_potential(str255 potfilename);
+void read_pot_table1( pot_table_t *pt, char *filename );
+void read_pot_table2( pot_table_t *pt, char *filename, int mode );
+int pair_int_monolj(real *pot, real *grad, real r2);
+int pair_int2(real *pot, real *grad, pot_table_t *pt, int col, real r2);
+int pair_int4(real *pot, real *grad, pot_table_t *pt, int col, real r2);
+int table_func2(real *val, pot_table_t *pt, int col, real x);
+int table_func4(real *val, pot_table_t *pt, int col, real x);
 void read_atoms(str255 infilename);
 void generate_atoms(str255 infilename);
 void init_cubic(void);
@@ -182,7 +188,6 @@ neightab *alloc_neightab(neightab *neigh, int count);
 
 #ifdef TTBP
 void do_forces_ttbp(cell *p);
-void read_ttbp_potential(str255 ttbp_potfilename);
 #endif
 
 #ifdef TERSOFF

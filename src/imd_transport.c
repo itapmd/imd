@@ -1029,12 +1029,3 @@ void write_press_atoms(int steps)
 }
 
 #endif /* STRESS_TENS */
-
-
-
-
-
-
-
-
-

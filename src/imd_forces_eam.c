@@ -1,18 +1,17 @@
+
 /*****************************************************************************
 *
-* imd_forces -- force loop
+* imd_forces_eam.c -- force loop for Finnis-Sinclair EAM
 *
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
 
 #include "imd.h"
 
-/* do forces, risc version; EAM - jh 5/98 */
 
 /* ----------------------------------------------------------------------
 *  EAM: Finnis/Sinclair Phil. Mag. A (1984) Vol 50 no 1 p 45 
@@ -60,18 +59,10 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 #endif
   real pot_zwi;
   real pot_grad;
+  real r2_short=cellsz;
   int jstart,jend;
-  int c;
-#ifdef MONOLJ
-  real sig_d_rad2,sig_d_rad6,sig_d_rad12;
-#else
-  real r2_short = r2_end;
-  real pot_k0,pot_k1,pot_k2;
-  real dv, d2v;
+  int column, is_short=0;
   int q_typ,p_typ;
-  real *potptr;
-  real chi;
-#endif
   real *qptr;
 
   integer  eam_k,eam_pni,eam_pnj;     /* dummy, atom number */
@@ -88,12 +79,12 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 #endif
 
   /* For each atom in first cell */
-  for (i = 0;i < p->n; ++i) {
+  for (i=0; i < p->n; ++i) {
 
     eam_pni = p->nummer[i];
     if (eam_pni < 0 ) {
       eam_pni = -eam_pni;
-    };
+    }
     /* Some compilers don't find the expressions that are invariant 
        to the inner loop. I'll have to define my own temp variables. */
     tmp_d.x = p->ort X(i) - pbc.x;
@@ -101,10 +92,8 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 #ifndef TWOD
     tmp_d.z = p->ort Z(i) - pbc.z;
 #endif
-#ifndef MONOLJ
-    p_typ   = p->sorte[i];
-#endif
-    
+    p_typ   = SORTE(p,i);
+
     /* atom i interacts with j */
     jstart = (p==q ? i+1 : 0);
 
@@ -116,11 +105,12 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 #ifndef TWOD
       d.z      = q->ort Z(j) - tmp_d.z;
 #endif
+      q_typ    = SORTE(q,j);
+      column   = p_typ * ntypes + q_typ;
       radius2  = SPROD(d,d);
       eam_r_ij = sqrt(radius2);
-      q_typ    = q->sorte[j];
 
- #ifndef NODBG_DIST
+#ifndef NODBG_DIST
       if (0==radius2) { char msgbuf[256];
         sprintf(msgbuf,"Pair distance is zero: i=%d (#%d), j=%d (#%d)\n",
                 i,eam_pni,j,eam_pnj);
@@ -130,45 +120,15 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
       if (0==radius2) error("Pair distance is zero.");
 #endif
 
-      /* 1. Cutoff: Calc of pair interaction and forces */
-      if (radius2 <= r2_cut) {
+      /* 1. Cutoff: pair potential */
+      if (radius2 <= pair_pot.end[column]) {
 
       	/* Check for distances, shorter than minimal distance in pot. table */
-	if (radius2 <= r2_0) {
-	  radius2 = r2_0; 
-	}; 
+        if (1==pair_int2(&pot_zwi,&pot_grad,&pair_pot,column,radius2)) {
+          r2_short = MIN(r2_short,radius2);
+	  is_short=1; 
+	}
 
-	/* Indices into potential table */
-	k      = (int) ((radius2 - r2_0) * inv_r2_step);
-	/* Abweichung von k (k ist int, chi ist real);
-	   entspricht dem Ausdruck (x-x0) in der Taylorreihe */
-	chi    = (radius2 - r2_0 - k * r2_step) * inv_r2_step;
-	
-	/* A single access to the potential table involves two multiplications 
-	   We use an intermediate pointer to avoid this as much as possible.
-	   Note: This relies on layout of the pot-table in memory!!! */
-	/* k0, k1, k2: Potentialwerte an drei aufeinanderfolgenden k */
- 	potptr = PTR_3D_V(potential, k, p_typ, q_typ , pot_dim);
-	pot_k0 = *potptr; potptr += pot_dim.y * pot_dim.z;
-	pot_k1 = *potptr; potptr += pot_dim.y * pot_dim.z;
-	pot_k2 = *potptr;
-
-	/* dv: 	1. Abl. des Pots in Einheiten der Einheitsschrittweite k
-	   d2v:	2. Abl. des Pots in Einheiten der Einheitsschrittweite k */
-	dv     = pot_k1 - pot_k0;
-	d2v    = pot_k2 - 2 * pot_k1 + pot_k0;
-
-  	/* - Calculation of the total energy 'tot_pot_energy'
-	   - Norm of Gradient: in x direction (y,z analog)
-	 	d
-	   	-- pot_zwi  = x * pot_grad
-	       	dx           			            
-	     (pot_grad includes negative sign!) 				*/ 
-	pot_grad = 2 * inv_r2_step * ( dv + (chi - 0.5) * d2v );
-        /* Potential energy of atom: 
-	   Taylorreihe um k0 mit Restglied -1/2 * chi * d2v */
-	pot_zwi  =  pot_k0 + chi * dv + 0.5 * chi * (chi - 1) * d2v;
-        
 	/* Store forces in temp */
 	force.x  = d.x * pot_grad;
 	force.y  = d.y * pot_grad;
@@ -242,7 +202,7 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 	  eam_pnj    = q->nummer[j];	
 	  if (eam_pnj < 0 ) {
 	    eam_pnj = -eam_pnj;
-	  };
+	  }
 	  /* EAM-CF:  fixed i and j */
 	  eam_phi_ij = (eam_r_ij-eam_r_cut)*(eam_r_ij-eam_r_cut);
 
@@ -272,19 +232,16 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
           /* EAM-CF: fixed j: sum of i's */
           eam_rho[eam_pnj] += eam_phi_ij;
 
-        }; /* if 2. Cutoff */
+        } /* if 2. Cutoff */
 
-      }; /* p_typ, q_typ ==0 */
+      } /* p_typ, q_typ ==0 */
 
-    }; /* for j */
+    } /* for j */
 
-  }; /* for i */
+  } /* for i */
 
-#ifndef MONOLJ
   /* A little security */
-  if (r2_short < r2_0) 
-    printf("\n Short distance! r2: %f\n",r2_short);
-#endif
+  if (is_short==1) printf("\n Short distance! r2: %f\n",r2_short);
 
 #ifdef P_AXIAL
   vir_vect.x += tmp_vir_vect.x;
@@ -323,13 +280,11 @@ void do_forces_eam_2(cell *p)
 #endif
   real tmp_virial;
   real radius2;
-  real pot_zwi;
-  real pot_grad;
   int q_typ, p_typ;
   int jstart,jend;
 
-  integer  eam_k;             /* dummy */
-  integer  eam_pni;           /* dummy */
+  integer  eam_k;         /* dummy */
+  integer  eam_pni;       /* dummy */
   real eam_r_ik;          /* distance, needed for eam forces */
   real eam_tmp_i;         /* dummy */
   real eam_tmp_k;         /* dummy */
@@ -360,7 +315,7 @@ void do_forces_eam_2(cell *p)
       eam_pni    = p->nummer[i];
       if ( eam_pni < 0 ) {
         eam_pni = -eam_pni;
-      };
+      }
 
       /* EAM-CF: sum of all i energies */
       eam_cf_i   = sqrt(eam_rho[eam_pni]);
@@ -431,11 +386,11 @@ void do_forces_eam_2(cell *p)
 #endif
 #endif
 
-      }; /* for j */
+      } /* for j */
 
-    }; /* p_typ == 0 */
+    } /* p_typ == 0 */
 
-  }; /* for i */
+  } /* for i */
 
   /* total energy: pair potential + cohesive function */
   tot_pot_energy  -= eam_A * eam_cf;

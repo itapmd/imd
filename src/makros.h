@@ -214,3 +214,7 @@ inline static real SQR(real x)
 #ifndef M_PI
 #define M_PI 4.0*atan(1.0)
 #endif
+
+/* macros for potential table modes */
+#define FUNTAB 0
+#define POTTAB 1
