@@ -49,7 +49,7 @@ void create_atom(int type, real mass, real temp)
 
    /* broadcast position */ 
 #ifdef MPI
-    MPI_Bcast( &pos, DIM, MPI_REAL, 0, cpugrid);
+    MPI_Bcast( &pos, DIM, REAL, 0, cpugrid);
 #endif
 
     dist2  = box_z.z * box_z.z;
@@ -104,7 +104,7 @@ void create_atom(int type, real mass, real temp)
 #endif
 	} /* for l,m,n */
 #ifdef MPI
-    MPI_Allreduce( &dist2, &min_dist2, 1, MPI_REAL, MPI_MIN, cpugrid); 
+    MPI_Allreduce( &dist2, &min_dist2, 1, REAL, MPI_MIN, cpugrid); 
 #else
     min_dist2 = dist2;
 #endif
@@ -242,7 +242,7 @@ real substrate_level(void)
   }
 
 #ifdef MPI
-  MPI_Allreduce( &tmp_level, &level, 1, MPI_REAL, MPI_MAX, cpugrid);
+  MPI_Allreduce( &tmp_level, &level, 1, REAL, MPI_MAX, cpugrid);
 #else
   level = tmp_level;
 #endif
@@ -271,7 +271,7 @@ void calc_poteng_min(void)
   }
 
 #ifdef MPI
-  MPI_Allreduce( &tmp_epot, &epitax_poteng_min, 1, MPI_REAL, MPI_MIN, cpugrid);
+  MPI_Allreduce( &tmp_epot, &epitax_poteng_min, 1, REAL, MPI_MIN, cpugrid);
 #else
   epitax_poteng_min = tmp_epot;
 #endif
@@ -356,7 +356,7 @@ void create_atom(int type, real mass, real temp)
 
    /* broadcast position */ 
 #ifdef MPI
-    MPI_Bcast( &pos, DIM, MPI_REAL, 0, cpugrid);
+    MPI_Bcast( &pos, DIM, REAL, 0, cpugrid);
 #endif
 
     dist2  = box_y.y * box_y.y;
@@ -401,7 +401,7 @@ void create_atom(int type, real mass, real temp)
 #endif
 	} /* for l,m,n */
 #ifdef MPI
-    MPI_Allreduce( &dist2, &min_dist2, 1, MPI_REAL, MPI_MIN, cpugrid); 
+    MPI_Allreduce( &dist2, &min_dist2, 1, REAL, MPI_MIN, cpugrid); 
 #else
     min_dist2 = dist2;
 #endif
@@ -532,7 +532,7 @@ real substrate_level(void)
   }
 
 #ifdef MPI
-  MPI_Allreduce( &tmp_level, &level, 1, MPI_REAL, MPI_MAX, cpugrid);
+  MPI_Allreduce( &tmp_level, &level, 1, REAL, MPI_MAX, cpugrid);
 #else
   level = tmp_level;
 #endif
@@ -561,7 +561,7 @@ void calc_poteng_min(void)
   }
 
 #ifdef MPI
-  MPI_Allreduce( &tmp_epot, &epitax_poteng_min, 1, MPI_REAL, MPI_MIN, cpugrid);
+  MPI_Allreduce( &tmp_epot, &epitax_poteng_min, 1, REAL, MPI_MIN, cpugrid);
 #else
   epitax_poteng_min = tmp_epot;
 #endif

@@ -2158,15 +2158,15 @@ void broadcast_params() {
 #endif
 
 #ifdef EPITAX
-  MPI_Bcast( epitax_rate,     ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( epitax_type,     ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( epitax_mass,     ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( epitax_temp,     ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &epitax_maxsteps,     1,  MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &epitax_startstep,    1,  MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &epitax_ctrl,         1,  MPI_REAL,0, MPI_COMM_WORLD);
-  MPI_Bcast( &epitax_height,       1,  MPI_REAL,0, MPI_COMM_WORLD);
-  MPI_Bcast( &epitax_speed,        1,  MPI_REAL,0, MPI_COMM_WORLD);
+  MPI_Bcast( epitax_rate,     ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( epitax_type,     ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( epitax_mass,     ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( epitax_temp,     ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &epitax_maxsteps,     1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &epitax_startstep,    1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &epitax_ctrl,         1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &epitax_height,       1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &epitax_speed,        1, REAL, 0, MPI_COMM_WORLD);
 #endif
   
   MPI_Bcast(&use_header,1, MPI_INT, 0, MPI_COMM_WORLD);
