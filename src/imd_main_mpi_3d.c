@@ -1742,6 +1742,7 @@ void send_forces_full(void)
   }
 }
 
+#ifdef EAM2
 
 /******************************************************************************
 *
@@ -1751,19 +1752,12 @@ void send_forces_full(void)
 
 void copy_cell_eam2_rho_h( int k, int l, int m, int r, int s, int t)
 {
-  int i, tmp_n;
+  int i;
   cell *from, *to;
 
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
   to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
 
-  tmp_n = from->n;
-  if (tmp_n >= to->n_max) {
-    to->n = 0;
-    alloc_cell(to, tmp_n);
-  }
-  
-  to->n = tmp_n;
   for (i=0; i<to->n; ++i) {
     to->eam2_rho_h[i] = from->eam2_rho_h[i];
   }
@@ -1779,23 +1773,13 @@ void copy_cell_eam2_rho_h( int k, int l, int m, int r, int s, int t)
 void move_eam2_rho_h( msgbuf *b, int k, int l, int m )
 {
   int i;
-  int tmp_n;
   cell *to;
 
   to = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
-  tmp_n = (int) b->data[ b->n++ ];
-  
-  if (tmp_n >= to->n_max) {
-    to->n = 0;
-    alloc_cell(to, tmp_n);
-  }
-  
-  to->n = tmp_n;
   for (i=0; i<to->n; ++i) {
     to->eam2_rho_h[i] = b->data[ b->n++ ];
   }
-  if (b->n_max <= b->n) error("Buffer overflow in move_atoms_force");
 }
 
 
@@ -1812,12 +1796,9 @@ void copy_eam2_rho_h( msgbuf *b, int k, int l, int m)
     
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
-  b->data[ b->n++ ] = (real) from->n;
-    
   for (i=0; i<from->n; ++i) {
     b->data[ b->n++ ] = from->eam2_rho_h[i];
   }
-  if (b->n_max <= b->n)  error("Buffer overflow in copy_atoms_force");
 }
 
 
@@ -1846,7 +1827,6 @@ void send_eam2_rho_h()
   MPI_Request    requp[2],   reqdown[2];
 
   empty_mpi_buffers();
-  empty_buffer_cells();
 
   /* exchange east/west */
   if (cpu_dim.x==1) {
@@ -1963,4 +1943,4 @@ void send_eam2_rho_h()
   }
 }
 
-
+#endif /* EAM2 */
