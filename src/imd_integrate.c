@@ -813,6 +813,7 @@ void calc_dyn_pressure(void)
     }
   }
 
+  /* twice the kinetic energy */
   Ekin_old  = dyn_stress_x + dyn_stress_y;
 #ifndef TWOD
   Ekin_old += dyn_stress_z;
@@ -1078,8 +1079,19 @@ void move_atoms_npt_axial(void)
     /* loop over atoms in cell */
     for (i=0; i<p->n; ++i) {
 
+      tmp = 1.0 / MASSE(p,i);
 #ifdef FNORM
-      fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
+      fnorm +=  SPRODN(p->kraft,i,p->kraft,i) * tmp;
+#endif
+#ifdef STRESS_TENS
+      p->presstens[i].xx += p->impuls X(i) * p->impuls X(i) * tmp;
+      p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i) * tmp;
+#ifndef TWOD
+      p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i) * tmp;
+      p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i) * tmp;
+      p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i) * tmp;
+#endif
+      p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i) * tmp;
 #endif
 
       /* new momenta */
@@ -1093,7 +1105,6 @@ void move_atoms_npt_axial(void)
 #endif
 
       /* new stress tensor (dynamic part only) */
-      tmp = 1.0 / MASSE(p,i);
       dyn_stress_x += p->impuls X(i) * p->impuls X(i) * tmp;
       dyn_stress_y += p->impuls Y(i) * p->impuls Y(i) * tmp;
 #ifndef TWOD
@@ -1101,25 +1112,14 @@ void move_atoms_npt_axial(void)
 #endif
 
       /* twice the new kinetic energy */ 
-      Ekin_new += SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+      Ekin_new += SPRODN(p->impuls,i,p->impuls,i) * tmp;
 	  
       /* new positions */
-      tmp = timestep / MASSE(p,i);
+      tmp *= timestep;
       p->ort X(i) = (rfric.x * p->ort X(i) + p->impuls X(i) * tmp) * rifric.x;
       p->ort Y(i) = (rfric.y * p->ort Y(i) + p->impuls Y(i) * tmp) * rifric.y;
 #ifndef TWOD
       p->ort Z(i) = (rfric.z * p->ort Z(i) + p->impuls Z(i) * tmp) * rifric.z;
-#endif
-
-#ifdef STRESS_TENS
-        p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
-        p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
-#ifndef TWOD
-        p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
-        p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
-#endif
-        p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
 #endif
     }
   }
