@@ -60,7 +60,7 @@ void write_config_select(int fzhlr, char *suffix,
   if (1==parallel_output) {
     /* write header to separate file */
     if ((myid==0) && (use_header)) {
-      sprintf(fname,"%s.%u.head",outfilename,fzhlr);
+      sprintf(fname,"%s.%u.%s.head",outfilename,fzhlr,suffix);
       out = fopen(fname, "w");
       if (NULL == out) { 
         sprintf(msg,"Cannot open output file %s",fname);
