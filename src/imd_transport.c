@@ -215,7 +215,8 @@ void write_temp_dist(int steps)
 
 #ifdef RNEMD
     /* write heat current density determined from heat transfer */
-    heat_transfer /= box_y.y * tran_interval * timestep;
+    /* heat flows away in two directions -> twice the cross section */
+    heat_transfer /= 2 * box_y.y * tran_interval * timestep;
 #ifndef TWOD
     heat_transfer /= box_z.z;
 #endif
