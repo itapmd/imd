@@ -551,7 +551,9 @@ void write_config(int steps)
   FILE *out;
   str255 fname;
   int fzhlr;
-
+#ifdef FBC
+  int n;
+#endif
   fzhlr = steps / rep_interval;
 
   /* write checkpoint */

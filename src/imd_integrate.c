@@ -26,10 +26,19 @@ void move_atoms_nve(void)
 {
   int k;
   real tmp;
+#ifdef BUG
+  real f1x=0.0;
+  real f1y=0.0;
+  real f1z=0.0;
+  real f2x=0.0;
+  real f2y=0.0;
+  real f2z=0.0;
+#endif
   static int count = 0;
   tot_kin_energy = 0.0;
   fnorm = 0.0;
   PxF   = 0.0;
+
 
   /* loop over all cells */
 #ifdef _OPENMP
@@ -68,6 +77,22 @@ void move_atoms_nve(void)
 #ifndef TWOD
 	p->kraft Z(i) += (fbc_forces + sort)->z;
 #endif
+#ifdef BUG
+	if (sort==1)
+	  {
+	    f1x +=(fbc_forces + sort)->x;
+	    f1y +=(fbc_forces + sort)->y;
+	    f1z +=(fbc_forces + sort)->z;
+	  }
+	if (sort==2)
+	  {
+	    f2x +=(fbc_forces + sort)->x;
+	    f2y +=(fbc_forces + sort)->y;
+	    f2z +=(fbc_forces + sort)->z;
+	  }
+
+#endif	
+
 #endif
 	/* and set their force (->momentum) in restricted directions to 0 */
 	p->kraft X(i) *= (restrictions + sort)->x;
@@ -198,6 +223,13 @@ void move_atoms_nve(void)
   if ((tmp_interval!=0) && (0==count%tmp_interval)) maxwell(temperature);
 #endif
 
+#ifdef BUG 
+  printf("Total force on vtypes 1:\n");
+  printf("%.21e  %.21e %.21e\n",f1x,f1y,f1z);
+  printf("Total force on vtypes 2:\n");
+  printf(" %.21e  %.21e %.21e\n",f2x,f2y,f2z);
+  fflush(stdout);
+#endif
 }
 
 #else

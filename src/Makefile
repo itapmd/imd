@@ -309,6 +309,7 @@ endif
 #general compiler flags
 ifneq (,$(findstring debug,${MAKETARGET}))
 CFLAGS += ${CFLAGS_${HOSTTYPE}_DEBUG}
+
 else
 CFLAGS += ${CFLAGS_${HOSTTYPE}}
 endif
@@ -430,6 +431,10 @@ endif
 
 ifneq (,$(findstring fbc,${MAKETARGET}))
 CFLAGS += -DFBC
+endif
+
+ifneq (,$(findstring bug,${MAKETARGET}))
+CFLAGS += -DBUG
 endif
 
 ifneq (,$(findstring smik,${MAKETARGET}))
