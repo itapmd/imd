@@ -45,18 +45,30 @@ two-body potential</a> can be enabled with the compilation option
 
 <p>
 For the Ewald sum, the following <b>parameters</b> have to be
-specified in the <a href="paramfile.html">parameter file</a>.
+specified in the <a href="params.html#ewald">parameter file</a>.
 The parameter <tt>charge</tt> specifies the charges of all atom 
 types (all on one line). The value of <i>kappa</i> is given with
-the parameter <tt>ew_kappa</tt>.
-The number of k-vectors included is specified with the parameter 
-<tt>ew_kmax</tt>, whose value is a 3d vector containing the number 
-of k-vectors in the three box directions. 
+the parameter <tt>ew_kappa</tt>. In the k-space sum, all k-vectors 
+within a ball of radius <tt>ew_kcut</tt> are included. 
 The parameter <tt>ew_nmax</tt>, whose value is an integer, determines 
 the number of image simulation boxes taken into account in computing 
-the first sum in the Ewald sum. The same number of boxes is included
-in all three directions. If <tt>ew_nmax</tt> is zero, the usual minimum 
-image convention is applied.</p>
+the real space sum. The same number of boxes is included in all three 
+directions. If <tt>ew_nmax</tt> is zero, the usual minimum image 
+convention is applied. For large systems, the desired real space
+cutoff is often larger than the simulation box. In this case, one
+can specify a negative value of <tt>ew_nmax</tt>, which has a special 
+meaning: the real space sum then is evaluated together with the other 
+pair interactions, up to a cutoff radius <tt>ew_rcut</tt>, which
+applies to all pairs of atom types, and which must not be larger than 
+the simulation box.
+</p>
+
+<p>
+<b>Note:</b> The current implemenation assumes that energies are 
+measured in electron volt, lengths in Angstrom, and charges in
+units of the elementary charge. Unlike for other interactions,
+it is not possible to chose a system of units.
+</p>
 
 <h1><a id="shell" name="shell">
 The Shell Model</a></h1>

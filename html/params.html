@@ -359,7 +359,9 @@ ters_om
 charge          # atomic charges (for all i=0 ...  (ntypes-1))
 ew_kappa        # parameter kappa
 ew_nmax         # determines number of image simulation boxes
-ew_kmax         # determines number of k-vectors (3d integer vector)
+ew_kcut         # k-space cutoff
+ew_rcut         # real space cutoff, if ew_nmax < 0
+ew_test         # flag for testing purposes
 
 # parameters for <a href=uniax.html>UNIAX</a> 
 # (Gay-Berne potential for uniaxial molecules)
