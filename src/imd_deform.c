@@ -73,6 +73,7 @@ void expand_sample(void)
 void shear_sample(void)
 {
   int k;
+  real tmpbox;
 
   /* Apply shear */
 #ifdef _OPENMP
@@ -92,8 +93,18 @@ void shear_sample(void)
   }
 
   /* new box size */
+  tmpbox = box_x.x;
+  box_x.x += shear_factor.x * box_x.y;
+  box_x.y += shear_factor.y * tmpbox;
+
+  tmpbox = box_y.x;
   box_y.x += shear_factor.x * box_y.y;
-  box_x.y += shear_factor.y * box_x.x;
+  box_y.y += shear_factor.y * tmpbox;
+
+  tmpbox = box_z.x;
+  box_z.x += shear_factor.x * box_z.y;
+  box_z.y += shear_factor.y * tmpbox;
+  
   make_box();
 
 } /* shear sample */
