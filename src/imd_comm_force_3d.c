@@ -965,12 +965,11 @@ void unpack_forces( msgbuf *b, int k, int l, int m )
 
 /******************************************************************************
 *
-*  copy eam2_rho_h of one cell to another cell
-*  copy eeam_p_h of one cell to another cell
+*  copy eam_dF and eeam_dM of one cell to another cell
 *
 ******************************************************************************/
 
-void copy_rho_h( int k, int l, int m, int r, int s, int t, vektor v )
+void copy_dF( int k, int l, int m, int r, int s, int t, vektor v )
 {
   int i;
   minicell *from, *to;
@@ -979,21 +978,21 @@ void copy_rho_h( int k, int l, int m, int r, int s, int t, vektor v )
   to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
 
   for (i=0; i<to->n; ++i) {
-    EAM_RHO(to,i) = EAM_RHO(from,i);
+    EAM_DF(to,i) = EAM_DF(from,i);
 #ifdef EEAM
-    EAM_P(to,i) = EAM_P(from,i);
+    EAM_DM(to,i) = EAM_DM(from,i);
 #endif
   }
 }
 
 /******************************************************************************
 *
-*  add eam2_rho_h of one cell to another cell
+*  add eam_rho of one cell to another cell
 *  add eeam_p_h of one cell to another cell
 *
 ******************************************************************************/
 
-void add_rho_h( int k, int l, int m, int r, int s, int t )
+void add_rho( int k, int l, int m, int r, int s, int t )
 {
   int i;
   minicell *from, *to;
@@ -1004,19 +1003,18 @@ void add_rho_h( int k, int l, int m, int r, int s, int t )
   for (i=0; i<to->n; ++i) {
     EAM_RHO(to,i) += EAM_RHO(from,i);
 #ifdef EEAM
-    EAM_P(to,i) += EAM_P(from,i);
+    EAM_P(to,i)   += EAM_P(from,i);
 #endif
   }
 }
 
 /******************************************************************************
 *
-*  pack eam2_rho_h_v into MPI buffer
-*  pack eeam_p_h_v into MPI buffer
+*  pack eam_dF and eeam_dM into MPI buffer
 *
 ******************************************************************************/
 
-void pack_rho_h_v( msgbuf *b, int k, int l, int m, vektor v )
+void pack_dF( msgbuf *b, int k, int l, int m, vektor v )
 {
   int i;
   minicell *from;
@@ -1024,21 +1022,21 @@ void pack_rho_h_v( msgbuf *b, int k, int l, int m, vektor v )
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
   for (i=0; i<from->n; ++i) {
-    b->data[ b->n++ ] = EAM_RHO(from,i);
+    b->data[ b->n++ ] = EAM_DF(from,i);
 #ifdef EEAM
-    b->data[ b->n++ ] = EAM_P(from,i);
+    b->data[ b->n++ ] = EAM_DM(from,i);
 #endif
   }
 }
 
 /******************************************************************************
 *
-*  pack eam2_rho_h into MPI buffer
+*  pack eam_rho into MPI buffer
 *  pack eeam_p_h into MPI buffer
 *
 ******************************************************************************/
 
-void pack_rho_h( msgbuf *b, int k, int l, int m )
+void pack_rho( msgbuf *b, int k, int l, int m )
 {
   int i;
   minicell *from;
@@ -1055,12 +1053,11 @@ void pack_rho_h( msgbuf *b, int k, int l, int m )
 
 /******************************************************************************
 *
-*  unpack eam2_rho_h from MPI buffer into cell
-*  unpack eeam_p_h from MPI buffer into cell
+*  unpack eam_dF and eeam_dM from MPI buffer into cell
 *
 ******************************************************************************/
 
-void unpack_rho_h( msgbuf *b, int k, int l, int m )
+void unpack_dF( msgbuf *b, int k, int l, int m )
 {
   int i;
   minicell *to;
@@ -1068,21 +1065,21 @@ void unpack_rho_h( msgbuf *b, int k, int l, int m )
   to = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
   for (i=0; i<to->n; ++i) {
-    EAM_RHO(to,i) = b->data[ b->n++ ];
+    EAM_DF(to,i) = b->data[ b->n++ ];
 #ifdef EEAM
-    EAM_P(to,i) = b->data[ b->n++ ];
+    EAM_DM(to,i) = b->data[ b->n++ ];
 #endif
   }
 }
 
 /******************************************************************************
 *
-*  unpack and add eam2_rho_h from MPI buffer into cell
+*  unpack and add eam_rho from MPI buffer into cell
 *  unpack and add eeam_p_h from MPI buffer into cell
 *
 ******************************************************************************/
 
-void unpack_add_rho_h( msgbuf *b, int k, int l, int m )
+void unpack_add_rho( msgbuf *b, int k, int l, int m )
 {
   int i;
   minicell *to;
@@ -1092,7 +1089,7 @@ void unpack_add_rho_h( msgbuf *b, int k, int l, int m )
   for (i=0; i<to->n; ++i) {
     EAM_RHO(to,i) += b->data[ b->n++ ];
 #ifdef EEAM
-    EAM_P(to,i) += b->data[ b->n++ ];
+    EAM_P(to,i)   += b->data[ b->n++ ];
 #endif
   }
 }

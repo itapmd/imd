@@ -126,9 +126,11 @@ void move_atom(cell *to, cell *from, int index)
   to->pot_eng[to->n] = from->pot_eng[index];
 #endif
 #ifdef EAM2
-  to->eam2_rho_h[to->n] = from->eam2_rho_h[index]; 
+  to->eam_rho[to->n] = from->eam_rho[index]; 
+  to->eam_dF [to->n] = from->eam_dF [index]; 
 #ifdef EEAM
   to->eeam_p_h[to->n] = from->eeam_p_h[index]; 
+  to->eeam_dM [to->n] = from->eeam_dM [index]; 
 #endif
 #endif
 #ifdef CG
@@ -238,9 +240,11 @@ void move_atom(cell *to, cell *from, int index)
     from->pot_eng[index] = from->pot_eng[from->n];
 #endif
 #ifdef EAM2
-    from->eam2_rho_h[index] = from->eam2_rho_h[from->n];
+    from->eam_rho[index] = from->eam_rho[from->n];
+    from->eam_dF [index] = from->eam_dF [from->n];
 #ifdef EEAM
     from->eeam_p_h[index] = from->eeam_p_h[from->n];
+    from->eeam_dM [index] = from->eeam_dM [from->n];
 #endif
 #endif
 #ifdef CG
@@ -420,9 +424,11 @@ void alloc_cell(cell *thecell, int count)
     newcell.masse  = NULL;
     newcell.pot_eng= NULL;
 #ifdef EAM2
-    newcell.eam2_rho_h =NULL;
+    newcell.eam_rho = NULL;
+    newcell.eam_dF  = NULL;
 #ifdef EEAM
-    newcell.eeam_p_h =NULL;
+    newcell.eeam_p_h = NULL;
+    newcell.eeam_dM  = NULL;
 #endif
 #endif
 #ifdef CG
@@ -518,9 +524,11 @@ void alloc_cell(cell *thecell, int count)
     newcell.masse  = (real    * ) malloc(count * sizeof(real)    );
     newcell.pot_eng= (real    * ) malloc(count * sizeof(real)    );
 #ifdef EAM2
-    newcell.eam2_rho_h = (real *) malloc(count * sizeof(real)    );
+    newcell.eam_rho = (real *) malloc(count * sizeof(real));
+    newcell.eam_dF  = (real *) malloc(count * sizeof(real));
 #ifdef EEAM
-    newcell.eeam_p_h = (real *) malloc(count * sizeof(real)    );
+    newcell.eeam_p_h = (real *) malloc(count * sizeof(real));
+    newcell.eeam_dM  = (real *) malloc(count * sizeof(real));
 #endif
 #endif
 #ifdef ORDPAR
@@ -572,9 +580,11 @@ void alloc_cell(cell *thecell, int count)
         || (NULL == newcell.masse)
         || (NULL == newcell.pot_eng)
 #ifdef EAM2
-	|| (NULL == newcell.eam2_rho_h)
+	|| (NULL == newcell.eam_rho)
+	|| (NULL == newcell.eam_dF)
 #ifdef EEAM
 	|| (NULL == newcell.eeam_p_h)
+	|| (NULL == newcell.eeam_dM)
 #endif
 #endif
 #ifdef ORDPAR
@@ -660,9 +670,11 @@ void alloc_cell(cell *thecell, int count)
       memcpy(newcell.masse,   thecell->masse,   ncopy * sizeof(real));
       memcpy(newcell.pot_eng, thecell->pot_eng, ncopy * sizeof(real));
 #ifdef EAM2
-      memcpy(newcell.eam2_rho_h, thecell->eam2_rho_h, ncopy * sizeof(real));
+      memcpy(newcell.eam_rho, thecell->eam_rho, ncopy * sizeof(real));
+      memcpy(newcell.eam_dF,  thecell->eam_dF,  ncopy * sizeof(real));
 #ifdef EEAM
       memcpy(newcell.eeam_p_h, thecell->eeam_p_h, ncopy * sizeof(real));
+      memcpy(newcell.eeam_dM,  thecell->eeam_dM,  ncopy * sizeof(real));
 #endif
 #endif
 #ifdef ORDPAR
@@ -709,9 +721,11 @@ void alloc_cell(cell *thecell, int count)
     free(thecell->masse);
     free(thecell->pot_eng);
 #ifdef EAM2
-    free(thecell->eam2_rho_h);
+    free(thecell->eam_rho);
+    free(thecell->eam_dF);
 #ifdef EEAM
     free(thecell->eeam_p_h);
+    free(thecell->eeam_dM);
 #endif
 #endif
 
@@ -764,9 +778,11 @@ void alloc_cell(cell *thecell, int count)
   thecell->masse    = newcell.masse;
   thecell->pot_eng  = newcell.pot_eng;
 #ifdef EAM2
-  thecell->eam2_rho_h = newcell.eam2_rho_h;
+  thecell->eam_rho = newcell.eam_rho;
+  thecell->eam_dF  = newcell.eam_dF;
 #ifdef EEAM
   thecell->eeam_p_h = newcell.eeam_p_h;
+  thecell->eeam_dM  = newcell.eeam_dM;
 #endif
 #endif
 #ifdef ORDPAR

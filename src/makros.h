@@ -78,9 +78,11 @@ INLINE static int MOD(shortint p, int q)
 #define IMPULS(cell,i,sub)      (atoms.impuls sub((cell)->ind[i]))
 
 #ifdef EAM2
-#define EAM_RHO(cell,i)         (atoms.eam2_rho_h[(cell)->ind[i]])
+#define EAM_RHO(cell,i)         (atoms.eam_rho[(cell)->ind[i]])
+#define EAM_DF(cell,i)          (atoms.eam_dF [(cell)->ind[i]])
 #ifdef EEAM
 #define EAM_P(cell,i)           (atoms.eeam_p_h[(cell)->ind[i]])
+#define EAM_DM(cell,i)          (atoms.eeam_dM [(cell)->ind[i]])
 #endif
 #endif
 
@@ -152,9 +154,11 @@ INLINE static int MOD(shortint p, int q)
 #define IMPULS(cell,i,sub)      ((cell)->impuls sub(i))
 
 #ifdef EAM2
-#define EAM_RHO(cell,i)         ((cell)->eam2_rho_h[i])
+#define EAM_RHO(cell,i)         ((cell)->eam_rho[i])
+#define EAM_DF(cell,i)          ((cell)->eam_dF [i])
 #ifdef EEAM
 #define EAM_P(cell,i)           ((cell)->eeam_p_h[i])
+#define EAM_DM(cell,i)          ((cell)->eeam_dM [i])
 #endif
 #endif
 

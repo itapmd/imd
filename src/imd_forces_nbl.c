@@ -194,7 +194,7 @@ void make_nblist(void)
 
 void calc_forces(int steps)
 {
-  int  i, b, k, n=0, is_short=0;
+  int  i, b, k, n=0, is_short=0, idummy=0;
   cell *p, *q;
   real tmpvec1[8], tmpvec2[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
@@ -550,9 +550,29 @@ void calc_forces(int steps)
 
 #ifdef EAM2
 
-  /* collect and redistribute host electron density */
-  send_forces(add_rho_h,pack_rho_h,unpack_add_rho_h);
-  send_cells(copy_rho_h,pack_rho_h_v,unpack_rho_h);
+  /* collect host electron density */
+  send_forces(add_rho,pack_rho,unpack_add_rho);
+
+  /* compute embedding energy and its derivative */
+  for (k=0; k<ncells; k++) {
+    p = CELLPTR(k);
+    real pot;
+    for (i=0; i<p->n; i++) {
+      PAIR_INT( pot, EAM_DF(p,i), embed_pot, SORTE(p,i), 
+                ntypes, EAM_RHO(p,i), idummy);
+      POTENG(p,i)    += pot;
+      tot_pot_energy += pot;
+#ifdef EEAM
+      PAIR_INT( pot, EAM_DM(p,i), emod_pot, SORTE(p,i), 
+                ntypes, EAM_P(p,i), idummy);
+      POTENG(p,i)    += pot;
+      tot_pot_energy += pot;
+#endif
+    }
+  }
+
+  /* distribute derivative of embedding energy */
+  send_cells(copy_dF,pack_dF,unpack_dF);
 
   /* EAM interactions - for all atoms */
   n=0;
@@ -563,33 +583,15 @@ void calc_forces(int steps)
       vektor d, force;
       real   pot, grad, *d1, *d2, r2, *ff;
 #ifdef EEAM
-      real   eeam_energy;
-#endif
-      real   f_i_strich, f_j_strich;
-#ifdef EEAM
-      real   M_i_strich, M_j_strich;
       real   rho_i, rho_j;
 #endif
       real   rho_i_strich, rho_j_strich;
       int    col1, col2, inc = ntypes * ntypes; 
-      int    m, j, it, jt, idummy=0;
+      int    m, j, it, jt;
 
       d1 = p->ort   + DIM * i;
       ff = p->kraft + DIM * i;
       it = SORTE(p,i);
-
-      /* f_i and f_i_strich */
-      PAIR_INT(pot, f_i_strich, embed_pot, it, ntypes, EAM_RHO(p,i), idummy);
-#ifdef EEAM
-      /* M_i and M_i_strich */
-      PAIR_INT(eeam_energy, M_i_strich, emod_pot, it, ntypes, EAM_P(p,i), idummy);
-#endif
-      POTENG(p,i)    += pot;
-      tot_pot_energy += pot;
-#ifdef EEAM
-      POTENG(p,i)    += eeam_energy;
-      tot_pot_energy += eeam_energy;
-#endif
 
       /* loop over neighbors */
       for (m=tl[n]; m<tl[n+1]; m++) {
@@ -610,13 +612,6 @@ void calc_forces(int steps)
         col2 = it * ntypes + jt;
 
         if ((r2 < rho_h_tab.end[col1]) || (r2 < rho_h_tab.end[col2])) {
-
-          /* f_j_strich(rho_h_j) */
-          DERIV_FUNC(f_j_strich, embed_pot, jt, ntypes, EAM_RHO(q,j), idummy);
-#ifdef EEAM
-          /* M_j_strich(p_h_j) */
-          DERIV_FUNC(M_j_strich, emod_pot, jt, ntypes, EAM_P(q,j), idummy);
-#endif
 
           /* take care: particle i gets its rho from particle j.    */
           /* This is tabulated in column it*ntypes+jt.              */
@@ -644,12 +639,12 @@ void calc_forces(int steps)
 #endif
 	  }
 
-          /* put together (f_i_strich and f_j_strich are by 0.5 too big) */
-          grad = 0.5 * (f_i_strich*rho_j_strich+f_j_strich*rho_i_strich);
+          /* put together (dF_i and dF_j are by 0.5 too big) */
+          grad = 0.5 * (EAM_DF(p,i)*rho_j_strich + EAM_DF(q,j)*rho_i_strich);
 #ifdef EEAM
           /* 0.5 times 2 from derivative simplified to 1 */
-          grad += (M_i_strich*rho_j*rho_j_strich
-                 + M_j_strich*rho_i*rho_i_strich);
+          grad += (EAM_DM(p,i) * rho_j * rho_j_strich +
+                   EAM_DM(q,j) * rho_i * rho_i_strich);
 #endif
 
           /* store force in temporary variable */

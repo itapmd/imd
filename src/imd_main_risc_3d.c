@@ -91,7 +91,8 @@ void calc_forces(int steps)
   /* compute forces for all pairs of cells */
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for schedule(runtime) reduction(+:tot_pot_energy,virial,vir_xx,vir_yy,vir_zz,vir_yz,vir_zx,vir_xy)
+#pragma omp parallel for schedule(runtime) \
+  reduction(+:tot_pot_energy,virial,vir_xx,vir_yy,vir_zz,vir_yz,vir_zx,vir_xy)
 #endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
@@ -107,9 +108,13 @@ void calc_forces(int steps)
   }
 
 #ifdef EAM2
+  /* compute embedding energy and its derivative */
+  do_embedding_energy();
+
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for schedule(runtime) reduction(+:tot_pot_energy,virial,vir_xx,vir_yy,vir_zz,vir_yz,vir_zx,vir_xy)
+#pragma omp parallel for schedule(runtime) \
+  reduction(+:virial,vir_xx,vir_yy,vir_zz,vir_yz,vir_zx,vir_xy)
 #endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
@@ -119,8 +124,7 @@ void calc_forces(int steps)
       pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
       pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
       do_forces_eam2(cell_array + P->np, cell_array + P->nq, pbc,
-                     &tot_pot_energy, &virial, &vir_xx, &vir_yy, &vir_zz,
-                                               &vir_yz, &vir_zx, &vir_xy);
+        &virial, &vir_xx, &vir_yy, &vir_zz, &vir_yz, &vir_zx, &vir_xy);
     }
   }
 #endif
@@ -128,7 +132,8 @@ void calc_forces(int steps)
 #ifdef COVALENT
 /* does not work correctly - different threads may write to same variables 
 #ifdef _OPENMP
-#pragma omp parallel for schedule(runtime) reduction(+:tot_pot_energy,virial,vir_xx,vir_yy,vir_zz,vir_yz,vir_zx,vir_xy)
+#pragma omp parallel for schedule(runtime) \
+  reduction(+:tot_pot_energy,virial,vir_xx,vir_yy,vir_zz,vir_yz,vir_zx,vir_xy)
 #endif
 */
   for (k=0; k<ncells; ++k) {

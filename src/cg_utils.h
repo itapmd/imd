@@ -1,3 +1,22 @@
+
+/******************************************************************************
+*
+* IMD -- The ITAP Molecular Dynamics Program
+*
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* University of Stuttgart, D-70550 Stuttgart
+*
+******************************************************************************/
+
+/******************************************************************************
+*
+* Routines for CG integrator - adapted from Numerical Recipies
+*
+* $Revision$
+* $Date$
+*
+******************************************************************************/
+
 #include <math.h>
 
 #define ITMAX 100
@@ -148,18 +167,3 @@ int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc)
 #undef ITMAX
 #undef CGOLD
 #undef ZEPS
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

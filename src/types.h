@@ -115,10 +115,12 @@ typedef struct {
   real        *masse;
   real        *pot_eng;
 #endif
-#ifdef EAM2                 /* EAM2: variable for the host electron density */
-  real        *eam2_rho_h;
-#ifdef EEAM                 /* EAM2/EEAM: variable for the energy modification term */
-  real        *eeam_p_h;
+#ifdef EAM2
+  real        *eam_rho;     /* host electron density */
+  real        *eam_dF;      /* derivative of embedding energy */
+#ifdef EEAM
+  real        *eeam_p_h;    /* energy modification term */
+  real        *eeam_dM;     /* derivative of energy modification */
 #endif
 #endif
 #ifdef CG                   

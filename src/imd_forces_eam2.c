@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -225,6 +225,39 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 
 #endif /* ASYMPOT */
 
+/******************************************************************************
+*
+*  compute embedding energy and its derivative for all atoms
+*
+******************************************************************************/
+
+void do_embedding_energy(void)
+{
+  int k;
+
+#ifdef _OPENMP
+#pragma omp parallel for schedule(runtime) reduction(+:tot_pot_energy)
+#endif
+  for (k=0; k<NCELLS; k++) {
+    int  i, idummy=0;
+    real pot;
+    cell *p;
+    p = CELLPTR(k);
+    for (i=0; i<p->n; i++) {
+      PAIR_INT( pot, EAM_DF(p,i), embed_pot, SORTE(p,i), 
+                ntypes, EAM_RHO(p,i), idummy);
+      POTENG(p,i)    += pot;
+      tot_pot_energy += pot;
+#ifdef EEAM
+      PAIR_INT( pot, EAM_DM(p,i), emod_pot, SORTE(p,i), 
+                ntypes, EAM_P(p,i), idummy);
+      POTENG(p,i)    += pot;
+      tot_pot_energy += pot;
+#endif
+    }
+  }
+}
+
 
 /******************************************************************************
 *
@@ -235,14 +268,12 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 *
 ******************************************************************************/
 
-void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot, real *Virial, 
+void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Virial, 
                     real *Vir_xx, real *Vir_yy, real *Vir_zz,
                     real *Vir_yz, real *Vir_zx, real *Vir_xy)
 {
   int i,j,k,same_cell;
-  vektor d;
-  vektor tmp_d;
-  vektor force;
+  vektor d, tmp_d, force;
   real r2;
   int  is_short=0, idummy=0;
   int  jstart, q_typ, p_typ;
@@ -252,16 +283,10 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #ifdef P_AXIAL
   vektor tmp_vir_vect = {0.0, 0.0, 0.0};
 #endif
-  real eam2_energy, eam2_force;
+  real eam2_force, rho_i_strich, rho_j_strich;;
 #ifdef EEAM
-  real eeam_energy;
-#endif
-  real f_i_strich, f_j_strich;
-#ifdef EEAM
-  real M_i_strich, M_j_strich;
   real rho_i, rho_j;
 #endif
-  real rho_i_strich, rho_j_strich;
 
   /* for each atom in first cell */
   for (i=0; i<p->n; ++i) {
@@ -277,31 +302,6 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #else
     same_cell = ((p==q) && (pbc.x==0) && (pbc.y==0) && (pbc.z==0));
 #endif
-
-    if (same_cell) {
-      /* f_i and f_i_strich */
-      PAIR_INT(eam2_energy, f_i_strich, embed_pot, p_typ, 
-               ntypes, EAM_RHO(p,i), idummy);
-#ifdef EEAM
-      /* M_i and M_i_strich */
-      PAIR_INT(eeam_energy, M_i_strich, emod_pot, p_typ, 
-               ntypes, EAM_P(p,i), idummy);
-#endif
-      /* add energy only once per particle (same_cell) */
-      POTENG(p,i)  += eam2_energy;
-      *Epot        += eam2_energy;
-#ifdef EEAM
-      POTENG(p,i)  += eeam_energy;
-      *Epot        += eeam_energy;
-#endif
-    } else {      
-      /* only f_i_strich */
-      DERIV_FUNC(f_i_strich, embed_pot, p_typ, ntypes, EAM_RHO(p,i), idummy);
-#ifdef EEAM
-      /* only M_i_strich(p_h_i) */
-      DERIV_FUNC(M_i_strich, emod_pot, p_typ, ntypes, EAM_P(p,i), idummy);
-#endif
-    }
 
     jstart = (same_cell ? i+1 : 0);
     qptr   = &ORT(q,jstart,X);
@@ -320,13 +320,6 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
       col2  = p_typ * ntypes + q_typ;
 
       if ((r2 < rho_h_tab.end[col1]) || (r2 < rho_h_tab.end[col2])) {
-
-        /* f_j_strich(rho_h_j) */
-        DERIV_FUNC(f_j_strich, embed_pot, q_typ, ntypes, EAM_RHO(q,j), idummy);
-#ifdef EEAM
-        /* M_j_strich(p_h_j) */
-        DERIV_FUNC(M_j_strich, emod_pot, q_typ, ntypes, EAM_P(q,j), idummy);
-#endif
 
         /* take care: particle i gets its rho from particle j.
            This is tabulated in column p_typ*ntypes+q_typ.
@@ -355,12 +348,12 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #endif
 	}
 
-        /* put together (f_i_strich and f_j_strich are by 0.5 too big) */
-        eam2_force = 0.5 * (f_i_strich*rho_j_strich+f_j_strich*rho_i_strich);
+        /* put together (dF_i and dF_j are by 0.5 too big) */
+        eam2_force = 0.5 * (EAM_DF(p,i)*rho_j_strich+EAM_DF(q,j)*rho_i_strich);
 #ifdef EEAM
         /* 0.5 times 2 from derivative simplified to 1 */
-        eam2_force += (M_i_strich*rho_j*rho_j_strich
-                     + M_j_strich*rho_i*rho_i_strich);
+        eam2_force += (EAM_DM(p,i) * rho_j * rho_j_strich +
+                     + EAM_DM(q,j) * rho_i * rho_i_strich);
 #endif
 
         /* store force in temporary variable */
