@@ -133,10 +133,12 @@ void do_forces(cell *p, cell *q, vektor pbc)
 #ifndef MONOLJ
 #ifdef ORDPAR
         if (radius2 < op_r2_cut[p_typ][q_typ]) {
-           p->pot_eng[i] += pot_zwi * op_weight[p_typ][q_typ];         
-           q->pot_eng[j] += pot_zwi * op_weight[q_typ][p_typ];         
-	   p->nbanz[i]++;
-	   q->nbanz[j]++;
+	  p->pot_eng[i] += op_weight[p_typ][q_typ]*pot_zwi;
+	  q->pot_eng[j] += op_weight[q_typ][p_typ]*pot_zwi;
+#ifndef TWOD
+	  p->nbanz[i]++;
+	  q->nbanz[j]++;
+#endif
         }
 #else
         q->pot_eng[j] += pot_zwi;
