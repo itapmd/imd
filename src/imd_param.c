@@ -1185,6 +1185,19 @@ void broadcast_params() {
   MPI_Bcast( &socket_int, 1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 
+#ifdef EAM
+  MPI_Bcast( &eam_len,   1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &eam_A,     1, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &eam_r_cut, 1, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &eam_r_0,   1, MPI_REAL, 0, MPI_COMM_WORLD);
+#endif
+
+#ifdef TTBP
+  MPI_Bcast( &ttbp_len,      1,      INTEGER,   0, MPI_COMM_WORLD);
+  MPI_Bcast( &ttbp_constant, ntypes, MPI_REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &ttbp_theta,    ntypes, MPI_REAL,  0, MPI_COMM_WORLD);
+#endif
+
   /* broadcast integrator to other CPU's */
 
   switch (ensemble) {
