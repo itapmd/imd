@@ -534,6 +534,7 @@ ifeq (Power4-cc-64,${IMDSYS})
   PROF_LIBS	+= -lpl
   PAPI_LIBS     =  -lpapi64 -lpmapi
   LIBS          += # -lmpiprof
+  LFLAGS        += -q64
 endif
 
 # Power4 regatta, 32bit
@@ -551,6 +552,7 @@ ifeq (Power4-cc-32,${IMDSYS})
   PROF_LIBS	+= -lpl
   PAPI_LIBS     =  -lpapi32 -lpmapi
   LIBS          += # -lmpiprof
+  LFLAGS        += -q32
 endif
 
 ###########################################################################
