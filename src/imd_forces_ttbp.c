@@ -21,7 +21,6 @@
 *		3 body potential: search for neighbors
 *	ttbp_2
 *		3 body potential: calc potential / store force		 
-*       ttbp_3  
 *		3 body potential: calc force and virial                   
 * ----------------------------------------------------------------------- */
 
@@ -35,9 +34,9 @@ void do_forces_ttbp_1(cell *p, cell *q, vektor pbc)
 #endif
   int    i,j,k;						       /* counter */
   int    q_typ,p_typ;					         /* sorte */
-  int    jstart,jend;			                  /* ttbp counter */
-  int    pni,pnj,tmp_k;	  		                    /* ttbp dummy */ 
-  int    *tmp_ptri;			                    /* ttbp dummy */
+  int    jstart;			                       /* ttbp counter */
+  int    pni,pnj,tmp_k=0;	  		                    /* ttbp dummy */ 
+  real   *tmp_ptri;			                    /* ttbp dummy */
   real   *tmp_ptr; 			                    /* ttbp dummy */
   real   radius2;					 /* distance ** 2 */
   real   r2_short = r2_end;				      /* distance */ 
@@ -68,11 +67,12 @@ void do_forces_ttbp_1(cell *p, cell *q, vektor pbc)
 
     jstart  = (p==q ? i+1 : 0);
     qptr    = q->ort + DIM * jstart;
-    
+
     /* For each atom in neighbouring cell */
     for (j = jstart; j < q->n; ++j) {
-      
+
       /* Calculate distance  */
+
       d.x     = *qptr - tmp_d.x; ++qptr;
       d.y     = *qptr - tmp_d.y; ++qptr;
       d.z     = *qptr - tmp_d.z; ++qptr;
@@ -80,7 +80,8 @@ void do_forces_ttbp_1(cell *p, cell *q, vektor pbc)
       q_typ   = q->sorte[j];
 #ifndef NODBG_DIST
       if (0==radius2) { char msgbuf[256];
-        sprintf(msgbuf,"Distance is zero: i=%d, j=%d\n",i,j);
+        sprintf(msgbuf,"(ttbp_1) Distance is zero: i=%d (#%d), j=%d (#%d)\n",
+		i,p->nummer[i],j,q->nummer[j]);
         error(msgbuf);
       }
 #else
@@ -144,21 +145,21 @@ void do_forces_ttbp_1(cell *p, cell *q, vektor pbc)
 	  pnj  = q->nummer[j];
 
 	  /* i interacts with j: save #j in array k>0 */
-	  ttbp_ij[pni*ttbp_len] += 1;
-	  tmp_k     = ttbp_ij[pni*ttbp_len];
+      ttbp_ij[pni*ttbp_len] += (real) 1;
+  	  tmp_k     = (int) ttbp_ij[pni*ttbp_len];
 	  tmp_ptri  = &ttbp_ij[pni*ttbp_len+tmp_k*2-1];
-	  *tmp_ptri = pnj; ++tmp_ptri;
-	  *tmp_ptri = q_typ;
+	  *tmp_ptri = (real) pnj; ++tmp_ptri;
+	  *tmp_ptri = (real) q_typ;
 	  tmp_ptr   = &ttbp_j[pni*ttbp_len+tmp_k*3-2];
 	  *tmp_ptr  = d.x; ++tmp_ptr; 
 	  *tmp_ptr  = d.y; ++tmp_ptr; 
 	  *tmp_ptr  = d.z;
 	  /* j interacts with i: save #i in array k>0 */
-	  ttbp_ij[pnj*ttbp_len] += 1;
-	  tmp_k     = ttbp_ij[pnj*ttbp_len];
+	  ttbp_ij[pnj*ttbp_len] += (real) 1;
+	  tmp_k     = (int) ttbp_ij[pnj*ttbp_len];
 	  tmp_ptri  = &ttbp_ij[pnj*ttbp_len+tmp_k*2-1];
-	  *tmp_ptri = pni; ++tmp_ptri;
-	  *tmp_ptri = p_typ;
+	  *tmp_ptri = (real) pni; ++tmp_ptri;
+	  *tmp_ptri = (real) p_typ;
 	  tmp_ptr   = &ttbp_j[pnj*ttbp_len+tmp_k*3-2];
 	  *tmp_ptr  = -d.x; ++tmp_ptr; 
 	  *tmp_ptr  = -d.y; ++tmp_ptr; 
@@ -193,16 +194,16 @@ void do_forces_ttbp_1(cell *p, cell *q, vektor pbc)
 void do_forces_ttbp_2(cell *p, cell *q, vektor pbc)
 
 {
-  vektor d,dd,tmp_d;
+  vektor d,dd;
+  vektor tmp_d;
   int    i,j,k,s_k;					       /* counter */
   int    jstart,jend;					       /* counter */
-  int	 pni,pnj,pnk,tmp_k;		                   /* atom number */	
+  int	 pni,pnj,pnk;		                   /* atom number */	
   int    p_typ,j_typ,k_typ;				         /* sorte */
-  int    *tmp_ptri;						 /* dummy */
+  real *tmp_ptri;						 /* dummy */
   real   *tmp_ptr;						 /* dummy */
   real   pot_zwi,tmp_pot;				           /* pot */
   real   radius,radius2,rradius,rradius2;		      /* distance */
-  real   x_j,y_j,z_j,x_k,y_k,z_k;  	                        /* coords */
   real   *s_potptr;				                   /* pot */
   real   s_chi,s_pot_k0,s_pot_k1,s_pot_k2;                         /* pot */
   real   s_dv,s_d2v;                                               /* pot */
@@ -228,6 +229,18 @@ void do_forces_ttbp_2(cell *p, cell *q, vektor pbc)
   real   ttbp_c0=0.34375;                                  /* fourier sp3 */
   real   ttbp_c1=0.37500;                                  /* fourier sp3 */
   real   ttbp_c2=0.28125;                                  /* fourier sp3 */
+  real   tmp_virial;
+#ifdef P_AXIAL
+  vektor tmp_vir_vect;
+#endif
+
+  tmp_virial     = 0.0;
+#ifdef P_AXIAL
+  vektor tmp_vir_vect;
+  tmp_vir_vect.x = 0.0;
+  tmp_vir_vect.y = 0.0;
+  tmp_vir_vect.z = 0.0;
+#endif
 
   tmp_pi = 3.141592654/180.0;
 
@@ -239,22 +252,17 @@ void do_forces_ttbp_2(cell *p, cell *q, vektor pbc)
     /* Some compilers don't find the expressions that are invariant 
        to the inner loop. I'll have to define my own temp variables. */
 
-    /* pbc not necessary for tmp_d */
-    tmp_d.x  = p->ort X(i);
-    tmp_d.y  = p->ort Y(i);
-    tmp_d.z  = p->ort Z(i);
     pni      = p->nummer[i];
     p_typ    = p->sorte[i];
 
     /* interaction of i with selected j's (from ttbp_1) */ 
     jstart   = 1;
-    jend     = ttbp_ij[pni*ttbp_len];
-
+    jend     = (int) ttbp_ij[pni*ttbp_len];
     for (j = jstart; j < jend; ++j) {
-   
+
       tmp_ptri = &ttbp_ij[pni*ttbp_len+j*2-1];
-      pnj      = *tmp_ptri; ++tmp_ptri;
-      j_typ    = *tmp_ptri;
+      pnj      = (int) *tmp_ptri; ++tmp_ptri;
+      j_typ    = (int) *tmp_ptri;
       tmp_ptr  = &ttbp_j[pni*ttbp_len+j*3-2];
       d.x      = *tmp_ptr; ++tmp_ptr;
       d.y      = *tmp_ptr; ++tmp_ptr;
@@ -268,7 +276,8 @@ void do_forces_ttbp_2(cell *p, cell *q, vektor pbc)
 
 #ifndef NODBG_DIST
       if (0==radius2) { char msgbuf[256];
-        sprintf(msgbuf,"Distance is zero: i=%d, j=%d\n",i,j);
+        sprintf(msgbuf,"(ttbp_2) Distance is zero: i=%d (#%d), j=%d (#%d)\n",
+		i,p->nummer[i],j,q->nummer[j]);
         error(msgbuf);
       }
 #else
@@ -294,8 +303,8 @@ void do_forces_ttbp_2(cell *p, cell *q, vektor pbc)
       for (k = j+1; k <= jend; ++k) {
 
         tmp_ptri = &ttbp_ij[pni*ttbp_len+k*2-1];
-	pnk      = *tmp_ptri; ++tmp_ptri;
-	k_typ    = *tmp_ptri;
+	pnk      = (int) *tmp_ptri; ++tmp_ptri;
+	k_typ    = (int) *tmp_ptri;
         tmp_ptr  = &ttbp_j[pni*ttbp_len+k*3-2];
         dd.x     = *tmp_ptr; ++tmp_ptr;
         dd.y     = *tmp_ptr; ++tmp_ptr;
@@ -309,7 +318,8 @@ void do_forces_ttbp_2(cell *p, cell *q, vektor pbc)
 
 #ifndef NODBG_DIST
         if (0==rradius2) { char msgbuf[256];
-          sprintf(msgbuf,"Distance is zero: i=%d, k=%d\n",i,k);
+          sprintf(msgbuf,"(ttbp_2) Distance is zero: i=%d (#%d), k=%d (#%d)\n",
+		  i,pni,k,pnk);
           error(msgbuf);
         }
 #else
@@ -469,31 +479,6 @@ void do_forces_ttbp_2(cell *p, cell *q, vektor pbc)
     }; /* for j */
   }; /* for i */
 
-  return;
-}
-
-
-/* ---------------------------------------------------------------------- */
-void do_forces_ttbp_3(cell *p, cell *q, vektor pbc)
-
-{
-  int    i,j,k;						       /* counter */
-  vektor tmp_d;				                      /* distance */
-  int 	 pni; 	                                                 /* dummy */
-  real   *tmp_ptr;						 /* dummy */
-  real   tmp_virial;
-#ifdef P_AXIAL
-  vektor tmp_vir_vect;
-#endif
-
-  tmp_virial     = 0.0;
-#ifdef P_AXIAL
-  vektor tmp_vir_vect;
-  tmp_vir_vect.x = 0.0;
-  tmp_vir_vect.y = 0.0;
-  tmp_vir_vect.z = 0.0;
-#endif
-
   /* For each atom in first cell */
   for (i = 0;i < p->n; ++i) {
 
@@ -537,6 +522,5 @@ void do_forces_ttbp_3(cell *p, cell *q, vektor pbc)
 #else
   virial     += tmp_virial;
 #endif
-
   return;
 }
