@@ -348,6 +348,10 @@ EXTERN int soc;                /* socket parameter after data request */
 EXTERN unsigned short baseport INIT(31913);  /* base port for VolIMD socket */
 EXTERN char display_host[256] INIT("");      /* name of controlling machine */
 EXTERN unsigned long varIP INIT(0);
+EXTERN int  use_socket_window INIT(0);        /* flag for using a window to write*/
+EXTERN vektor socketwin_ll  INIT(nullvektor);     /* lower left (front) corner */
+EXTERN vektor socketwin_ur  INIT(nullvektor);     /* upper right (back) corner */
+EXTERN int  socket_atoms INIT(0);        /* counter for atoms to send window */
 #endif
 
 /* EAM stuff */

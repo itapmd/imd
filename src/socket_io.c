@@ -341,6 +341,21 @@ void write_conf_using_sockets() {
 #endif
    pot    = (double *)    calloc(natoms, sizeof(double));
 
+   
+
+   if (use_socket_window){ /* write all atoms in the box */    
+     socketwin_ll.x = pic_ll.x;
+     socketwin_ll.y = pic_ll.y;
+     socketwin_ur.x = pic_ur.x;
+     socketwin_ur.y = pic_ur.y;
+     
+   }else{              /* write only atoms in the window */    
+     socketwin_ll.x = box_y.x;
+     socketwin_ll.y = box_x.y;
+     socketwin_ur.x = box_x.x;
+     socketwin_ur.y = box_y.y;
+   }
+
    /*  loop over all atoms */
    k=0;
    for ( r = cellmin.x; r < cellmax.x; ++r ) 
@@ -352,22 +367,29 @@ void write_conf_using_sockets() {
 	 p = PTR_3D_V(cell_array, r, s, t, cell_dim); 
 #endif
 	   for (i = 0;i < p->n; ++i) {
-	     nummer[k] = p->nummer[i];
-	     sorte[k]  = p->sorte[i];
-	     masse[k]  = p->masse[i];
-	     x[k]      = p->ort X(i);
-	     y[k]      = p->ort Y(i);
-#ifndef TWOD
-	     z[k]      = p->ort Z(i);
-#endif
-	     vx[k]     = p->impuls X(i);
-	     vy[k]     = p->impuls Y(i);
-#ifndef TWOD
-	     vz[k]     = p->impuls Z(i);
-#endif
-	     pot[k]    = p->pot_eng[i];
 
-	     k++;
+	     if( (p->ort X(i) >= socketwin_ll.x) && \
+		 (p->ort X(i) <= socketwin_ur.x) && \
+		 (p->ort Y(i) >= socketwin_ll.y) && \
+		 (p->ort Y(i) <= socketwin_ur.y) ){
+	       nummer[k] = p->nummer[i];
+	       sorte[k]  = p->sorte[i];
+	       masse[k]  = p->masse[i];
+	       x[k]      = p->ort X(i);
+	       y[k]      = p->ort Y(i);
+#ifndef TWOD
+	       z[k]      = p->ort Z(i);
+#endif
+	       vx[k]     = p->impuls X(i);
+	       vy[k]     = p->impuls Y(i);
+#ifndef TWOD
+	       vz[k]     = p->impuls Z(i);
+#endif
+	       pot[k]    = p->pot_eng[i];
+
+	       k++;
+	     }
+
 	   }
 	   
        }
@@ -375,21 +397,26 @@ void write_conf_using_sockets() {
      }
 #endif
 
-   WriteFull(soc,&natoms,sizeof(int)); 
-   WriteFull(soc,(void *) nummer, natoms*sizeof(int)); 
-   WriteFull(soc,(void *) sorte, natoms*sizeof(short int)); 
-   WriteFull(soc,(void *) masse, natoms*sizeof(double)); 
-   WriteFull(soc,(void *) x, natoms*sizeof(double)); 
-   WriteFull(soc,(void *) y, natoms*sizeof(double)); 
+   socket_atoms= k;
+   printf("socket_atoms= %d\n",socket_atoms);
+   printf("k= %d\n",k);
+   printf("natoms= %d\n",natoms);
+   
+   WriteFull(soc,&socket_atoms,sizeof(int)); 
+   WriteFull(soc,(void *) nummer, socket_atoms*sizeof(int)); 
+   WriteFull(soc,(void *) sorte, socket_atoms*sizeof(short int)); 
+   WriteFull(soc,(void *) masse, socket_atoms*sizeof(double)); 
+   WriteFull(soc,(void *) x, socket_atoms*sizeof(double)); 
+   WriteFull(soc,(void *) y, socket_atoms*sizeof(double)); 
 #ifndef TWOD
-   WriteFull(soc,(void *) z, natoms*sizeof(double)); 
+   WriteFull(soc,(void *) z, socket_atoms*sizeof(double)); 
 #endif
-   WriteFull(soc,(void *) vx, natoms*sizeof(double)); 
-   WriteFull(soc,(void *) vy, natoms*sizeof(double)); 
+   WriteFull(soc,(void *) vx, socket_atoms*sizeof(double)); 
+   WriteFull(soc,(void *) vy, socket_atoms*sizeof(double)); 
 #ifndef TWOD
-   WriteFull(soc,(void *) vz, natoms*sizeof(double)); 
+   WriteFull(soc,(void *) vz, socket_atoms*sizeof(double)); 
 #endif
-   WriteFull(soc,(void *) pot, natoms*sizeof(double));
+   WriteFull(soc,(void *) pot, socket_atoms*sizeof(double));
 
    /*   WriteFull(soc,&box_x.x,sizeof(real)); 
    WriteFull(soc,&box_y.y,sizeof(real)); */

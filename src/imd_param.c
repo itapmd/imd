@@ -801,6 +801,10 @@ void getparamfile(char *paramfname, int sim)
       getparam("baseport",&tmp,PARAM_INT,1,1);
       baseport = tmp; /* conversion to unsigned short */
     }
+    else if (strcasecmp(token,"use_socket_window")==0) {
+      getparam("use_socket_window",&use_socket_window,PARAM_INT,1,1);
+    }
+
 #endif
 #ifdef NPT
     else if (strcasecmp(token,"xi")==0) {
