@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include "realft.c"
+#include "fft.c"
 
 #define SQR(x) (x)*(x)
 
@@ -69,7 +69,8 @@ int main(int argc, char **argv)
 {
   int i;
   read_input(argc,argv);
-  for (i=1; i<n_cols; i++) realft(cols[i]-1, n_alloc, 1);
+  for (i=1; i<n_cols; i++) 
+    gsl_fft_real_radix2_transform(cols[i], 1, n_alloc);
   write_output();
   return 0;
 }
@@ -229,13 +230,13 @@ void write_output()
   for (i=1; i<n_alloc; i++) {
     fprintf(outfile, "%f ", i * omega);
     for (j=1; j<n_cols; j++) 
-      fprintf(outfile, "%f ", SQR(cols[j][2*i])+SQR(cols[j][2*i+1]));
+      fprintf(outfile, "%f ", SQR(cols[j][i])+SQR(cols[j][2*n_alloc-i]));
     fprintf(outfile, "\n");
   }
 
   /* write highest frequency */
   fprintf(outfile, "%f ", n_alloc * omega);
-  for (j=1; j<n_cols; j++) fprintf(outfile, "%f ", SQR(cols[j][1]));
+  for (j=1; j<n_cols; j++) fprintf(outfile, "%f ", SQR(cols[j][n_alloc]));
   fprintf(outfile, "\n");
 
   /* close output file */
