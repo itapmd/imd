@@ -1262,6 +1262,10 @@ void move_atoms_stm(void)
     real reibung, eins_d_reibung;
     real tmp1, tmp2;
     vektor d;
+#ifdef FBC
+    int sort=0;
+#endif
+
 
     p = cell_array + CELLS(k);
 
@@ -1286,7 +1290,23 @@ void move_atoms_stm(void)
         kin_energie_1 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
 
         /* new momenta */
+
+
+#ifdef FBC
+	sort=(p->sorte[i]);
+	p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i)) 
+                           * eins_d_reibung * (restrictions + sort)->x;
+        p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i)) 
+                           * eins_d_reibung * (restrictions + sort)->y;
+#else
+        /* new momenta */
         p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i)) 
+                           * eins_d_reibung;
+        p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i)) 
+                           * eins_d_reibung;
+#endif
+
+	p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i)) 
                          * eins_d_reibung;
         p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i)) 
                          * eins_d_reibung;
