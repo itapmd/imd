@@ -50,7 +50,7 @@ void read_atoms(str255 infilename)
   int p;
   vektor pos;
   vektor vau;
-#if defined(DISLOC) || defined(AVPOS)
+#ifdef DISLOC
   FILE *reffile;
   int pref;
   char refbuf[512];
@@ -293,16 +293,11 @@ void read_atoms(str255 infilename)
       input->kraft  X(0) = 0;
       input->kraft  Y(0) = 0;
       input->kraft  Z(0) = 0;
-#if defined(DISLOC) || defined(AVPOS)
+#ifdef DISLOC
       input->ort_ref X(0) = refpos.x;
       input->ort_ref Y(0) = refpos.y;
       input->ort_ref Z(0) = refpos.z;
       input->Epot_ref[0]  = refeng;
-#endif
-#ifdef AVPOS
-      input->sheet X(0) = 0;
-      input->sheet Y(0) = 0;
-      input->sheet Z(0) = 0;
 #endif
 
       cellc = cell_coord(pos.x,pos.y,pos.z);

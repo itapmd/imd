@@ -237,7 +237,6 @@ void calc_tot_presstens(void);
 #ifdef AVPOS
 void write_atoms_avp(FILE *out);
 void write_header_avp(FILE *out);
-void add_position(void);
 #endif
 
 void reduce_displacement(vektor *d);
@@ -304,13 +303,14 @@ real erfc1(real x);
 #endif
 
 /* support for dislocations - file imd_io.c */
-#if defined(DISLOC) || defined(AVPOS)
+#ifdef DISLOC
 void reset_Epot_ref(void);
 void update_ort_ref(void);
 #endif
 
 /* support for average over positions */
 #ifdef AVPOS
+void update_avpos(void);
 void add_positions(void);
 #endif
 
@@ -337,3 +337,6 @@ void rnemd_heat_exchange();
 #ifdef USE_SOCKETS
 void check_socket(int steps);
 #endif
+
+
+

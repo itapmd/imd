@@ -598,7 +598,7 @@ void write_atoms_dsp(FILE *out)
 
 #endif
 
-#if defined(DISLOC) || defined(AVPOS)
+#ifdef DISLOC
 
 /******************************************************************************
 *
@@ -636,23 +636,43 @@ void update_ort_ref(void)
     for (i=0; i<p->n; i++) {
       p->ort_ref X(i) = p->ort X(i);
       p->ort_ref Y(i) = p->ort Y(i);
-#ifdef AVPOS
-      p->sheet X(i)   = 0.0;
-      p->sheet Y(i)   = 0.0;
-#endif
 #ifndef TWOD
       p->ort_ref Z(i) = p->ort Z(i);
-#ifdef AVPOS
-      p->sheet Z(i)   = 0.0;
-#endif
 #endif
     }
   }
 }
 
-#endif /* DISLOC, AVPOS */
+#endif /* DISLOC */
 
 #ifdef AVPOS
+
+/******************************************************************************
+*
+* update_avpos updates avpos and resets av_epot
+*
+******************************************************************************/
+
+void update_avpos(void)
+{ 
+  int k;
+  for (k=0; k<ncells; k++) {
+    int i;
+    cell* p;
+    p = cell_array + CELLS(k);
+    for (i=0; i<p->n; i++) {
+      p->av_epot[i] = p->pot_eng[i];
+      p->avpos X(i) = p->ort X(i);
+      p->avpos Y(i) = p->ort Y(i);
+      p->sheet X(i) = 0.0;
+      p->sheet Y(i) = 0.0;
+#ifndef TWOD
+      p->avpos Z(i) = p->ort Z(i);
+      p->sheet Z(i) = 0.0;
+#endif
+    }
+  }
+}
 
 /******************************************************************************
 *
@@ -719,10 +739,10 @@ void write_atoms_avp(FILE *out)
 
 
 	/* Averaged coordinates of atoms */
-	avp_pos.x = p->ort_ref X(i) * avpos_res / ( avpos_int + avpos_res );
-	avp_pos.y = p->ort_ref Y(i) * avpos_res / ( avpos_int + avpos_res );
+	avp_pos.x = p->avpos X(i) * avpos_res / ( avpos_int + avpos_res );
+	avp_pos.y = p->avpos Y(i) * avpos_res / ( avpos_int + avpos_res );
 #ifndef TWOD
-	avp_pos.z = p->ort_ref Z(i) * avpos_res / ( avpos_int + avpos_res );
+	avp_pos.z = p->avpos Z(i) * avpos_res / ( avpos_int + avpos_res );
 #endif
 	/* Coefficients of coordinates with respect to box vectors */
 	coeff.x = SPROD( avp_pos, tbox_x );
@@ -746,7 +766,7 @@ void write_atoms_avp(FILE *out)
 	len += sprintf( outbuf+len,
 			"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f\n",
 			NUMMER(p,i), VSORTE(p,i), MASSE(p,i), 
-			x, y, z, p->Epot_ref[i] * avpos_res / avpos_int);
+			x, y, z, p->av_epot[i] * avpos_res / avpos_int);
 #else
 	x = coeff.x * box_x.x + coeff.y * box_y.x;
 	y = coeff.x * box_x.y + coeff.y * box_y.y;
@@ -754,7 +774,7 @@ void write_atoms_avp(FILE *out)
 	len += sprintf( outbuf+len,
 			"%d %d %12.16f %12.16f %12.16f %12.16f\n",
 			NUMMER(p,i), VSORTE(p,i), MASSE(p,i), 
-			x, y, p->Epot_ref[i] * avpos_res / avpos_int);
+			x, y, p->av_epot[i] * avpos_res / avpos_int);
 #endif
       /* flush or send outbuf if it is full */
       if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -763,7 +783,7 @@ void write_atoms_avp(FILE *out)
   flush_outbuf(out,&len,OUTBUF_TAG+1);
 }
 
-#endif
+#endif /* AVPOS */
 
 /******************************************************************************
 *

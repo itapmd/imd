@@ -70,21 +70,25 @@ void move_atom(cell *to, cell *from, int index)
 #ifdef ORDPAR
   to->nbanz[to->n] = from->nbanz[index]; 
 #endif
-#if defined(DISLOC) || defined(AVPOS)
+#ifdef DISLOC
   to->Epot_ref[to->n] = from->Epot_ref[index];
   to->ort_ref X (to->n) = from->ort_ref X(index);
   to->ort_ref Y (to->n) = from->ort_ref Y(index);
 #ifndef TWOD
   to->ort_ref Z (to->n) = from->ort_ref Z(index);
 #endif
-#endif /* DISLOC, AVPOS */
+#endif /* DISLOC */
 #ifdef AVPOS
+  to->av_epot[to->n] = from->av_epot[index];
+  to->avpos X(to->n) = from->avpos X(index);
+  to->avpos Y(to->n) = from->avpos Y(index);
   to->sheet X(to->n) = from->sheet X(index);
   to->sheet Y(to->n) = from->sheet Y(index);
 #ifndef TWOD
+  to->avpos Z(to->n) = from->avpos Z(index);
   to->sheet Z(to->n) = from->sheet Z(index);
 #endif
-#endif
+#endif /* AVPOS */
 #ifdef REFPOS
   to->refpos X(to->n) = from->refpos X(index);
   to->refpos Y(to->n) = from->refpos Y(index);
@@ -149,21 +153,25 @@ void move_atom(cell *to, cell *from, int index)
 #ifdef ORDPAR
     from->nbanz[index] = from->nbanz[from->n];
 #endif
-#if defined(DISLOC) || defined(AVPOS)
+#ifdef DISLOC
     from->Epot_ref[index]  = from->Epot_ref[from->n];
     from->ort_ref X(index) = from->ort_ref X(from->n);
     from->ort_ref Y(index) = from->ort_ref Y(from->n);
 #ifndef TWOD
     from->ort_ref Z(index) = from->ort_ref Z(from->n);
 #endif
-#endif /* DISLOC, AVPOS */
+#endif /* DISLOC */
 #ifdef AVPOS
+    from->av_epot[index] = from->av_epot[from->n];
+    from->avpos X(index) = from->avpos X(from->n);
+    from->avpos Y(index) = from->avpos Y(from->n);
     from->sheet X(index) = from->sheet X(from->n);
     from->sheet Y(index) = from->sheet Y(from->n);
 #ifndef TWOD
+    from->avpos Z(index) = from->avpos Z(from->n);
     from->sheet Z(index) = from->sheet Z(from->n);
 #endif
-#endif
+#endif /* AVPOS */
 #ifdef REFPOS
     from->refpos X(index) = from->refpos X(from->n);
     from->refpos Y(index) = from->refpos Y(from->n);
@@ -263,12 +271,14 @@ void alloc_cell(cell *thecell, int count)
 #ifdef ORDPAR
     newcell.nbanz = NULL;
 #endif
-#if defined(DISLOC) || defined(AVPOS)
+#ifdef DISLOC
     newcell.Epot_ref = NULL;
     newcell.ort_ref = NULL;
 #endif
 #ifdef AVPOS
-    newcell.sheet = NULL;
+    newcell.av_epot = NULL;
+    newcell.avpos   = NULL;
+    newcell.sheet   = NULL;
 #endif
 #ifdef REFPOS
     newcell.refpos = NULL;
@@ -337,12 +347,14 @@ void alloc_cell(cell *thecell, int count)
 #ifdef ORDPAR
     newcell.nbanz = (shortint *) malloc(count * sizeof(shortint));
 #endif
-#if defined(DISLOC) || defined(AVPOS)
+#ifdef DISLOC
     newcell.Epot_ref = (real *) calloc(count,sizeof(real));
     newcell.ort_ref = (real *) calloc(count*DIM, sizeof(real));
 #endif
 #ifdef AVPOS
-    newcell.sheet = (real *) malloc(count * DIM * sizeof(real));
+    newcell.av_epot = (real *) calloc(count,     sizeof(real));
+    newcell.avpos   = (real *) calloc(count*DIM, sizeof(real));
+    newcell.sheet   = (real *) malloc(count * DIM * sizeof(real));
 #endif
 #ifdef REFPOS
     newcell.refpos = (real *) malloc(count*DIM*sizeof(real));
@@ -384,12 +396,14 @@ void alloc_cell(cell *thecell, int count)
 #ifdef ORDPAR
 	|| (NULL == newcell.nbanz)
 #endif
-#if defined(DISLOC) || defined(AVPOS)
+#ifdef DISLOC
         || (NULL == newcell.Epot_ref)
         || (NULL == newcell.ort_ref)
 #endif
 #ifdef AVPOS
-	|| (NULL == newcell.sheet)
+	|| (NULL == newcell.av_epot)
+        || (NULL == newcell.avpos)
+        || (NULL == newcell.sheet)
 #endif
 #ifdef REFPOS
         || (NULL == newcell.refpos)
@@ -451,14 +465,18 @@ void alloc_cell(cell *thecell, int count)
       memcpy(newcell.nbanz, thecell->nbanz,
              thecell->n * sizeof(shortint));
 #endif
-#if defined(DISLOC) || defined(AVPOS)
+#ifdef DISLOC
       memcpy(newcell.Epot_ref, thecell->Epot_ref, 
                                thecell->n * sizeof(real));
       memcpy(newcell.ort_ref,  thecell->ort_ref, 
                                thecell->n * DIM * sizeof(real));
 #endif
 #ifdef AVPOS
-      memcpy(newcell.sheet, thecell->sheet, thecell->n * DIM * sizeof(real));
+      memcpy(newcell.av_epot, thecell->av_epot, 
+                              thecell->n * sizeof(real));
+      memcpy(newcell.avpos,   thecell->avpos, 
+                              thecell->n * DIM * sizeof(real));
+      memcpy(newcell.sheet,   thecell->sheet, thecell->n * DIM * sizeof(real));
 #endif
 #ifdef REFPOS
       memcpy(newcell.refpos, thecell->refpos, thecell->n * DIM * sizeof(real));
@@ -499,11 +517,13 @@ void alloc_cell(cell *thecell, int count)
 #ifdef ORDPAR
     free(thecell->nbanz);
 #endif
-#if defined(DISLOC) || defined(AVPOS)
+#ifdef DISLOC
     free(thecell->Epot_ref);
     free(thecell->ort_ref);
 #endif
 #ifdef AVPOS
+    free(thecell->av_epot);
+    free(thecell->avpos);
     free(thecell->sheet);
 #endif
 #ifdef REFPOS
@@ -541,12 +561,14 @@ void alloc_cell(cell *thecell, int count)
 #ifdef ORDPAR
   thecell->nbanz = newcell.nbanz;
 #endif
-#if defined(DISLOC) || defined(AVPOS)
+#ifdef DISLOC
   thecell->Epot_ref = newcell.Epot_ref;
-  thecell->ort_ref = newcell.ort_ref;
+  thecell->ort_ref  = newcell.ort_ref;
 #endif
 #ifdef AVPOS
-  thecell->sheet = newcell.sheet;
+  thecell->av_epot = newcell.av_epot;
+  thecell->avpos   = newcell.avpos;
+  thecell->sheet   = newcell.sheet;
 #endif
 #ifdef REFPOS
   thecell->refpos = newcell.refpos;

@@ -178,8 +178,7 @@ void main_loop(void)
 #endif
 #ifdef AVPOS
     if ( steps == avpos_start ) {
-       update_ort_ref();
-       reset_Epot_ref();
+       update_avpos();
     }
 #endif
 
@@ -298,8 +297,7 @@ void main_loop(void)
 	if ((avpos_int > 0) && (0 == (steps - avpos_start) % avpos_int) && steps > avpos_start) {
 	    write_config_select((steps-avpos_start)/avpos_int,"avp",
 				write_atoms_avp,write_header_avp);
-	    update_ort_ref();
-	    reset_Epot_ref();
+	    update_avpos();
 	}
     }
 #endif

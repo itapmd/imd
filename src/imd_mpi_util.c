@@ -128,7 +128,7 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
 #ifdef EAM2
   /* eam2_rho_h is not sent */
 #endif
-#if defined(DISLOC) || defined(AVPOS)
+#ifdef DISLOC
   to->data[ to->n++ ] = from->Epot_ref[index];
   to->data[ to->n++ ] = from->ort_ref X(index); 
   to->data[ to->n++ ] = from->ort_ref Y(index); 
@@ -137,9 +137,13 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
 #endif
 #endif 
 #ifdef AVPOS
+  to->data[ to->n++ ] = from->av_epot[index];
+  to->data[ to->n++ ] = from->avpos X(index); 
+  to->data[ to->n++ ] = from->avpos Y(index);
   to->data[ to->n++ ] = from->sheet X(index);
   to->data[ to->n++ ] = from->sheet Y(index);
 #ifndef TWOD
+  to->data[ to->n++ ] = from->avpos Z(index); 
   to->data[ to->n++ ] = from->sheet Z(index);
 #endif
 #endif
@@ -207,7 +211,7 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
 #ifdef EAM2
       /* eam2_rho_h need not be copied */
 #endif
-#if defined(DISLOC) || defined(AVPOS)
+#ifdef DISLOC
       from->Epot_ref[index]    = from->Epot_ref[from->n]; 
       from->ort_ref X(index)   = from->ort_ref X(from->n); 
       from->ort_ref Y(index)   = from->ort_ref Y(from->n); 
@@ -216,9 +220,13 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
 #endif
 #endif
 #ifdef AVPOS
+      from->av_epot[index]  = from->av_epot[from->n]; 
+      from->avpos X(index)  = from->avpos X(from->n); 
+      from->avpos Y(index)  = from->avpos Y(from->n); 
       from->sheet X(index)  = from->sheet X(from->n); 
       from->sheet Y(index)  = from->sheet Y(from->n); 
 #ifndef TWOD
+      from->avpos Z(index)  = from->avpos Z(from->n); 
       from->sheet Z(index)  = from->sheet Z(from->n); 
 #endif
 #endif
@@ -311,7 +319,7 @@ void process_buffer(msgbuf *b, cell *p)
 #ifdef EAM2
     /* don't send eam2_rho_h */
 #endif
-#if defined(DISLOC) || defined(AVPOS)
+#ifdef DISLOC
     input->Epot_ref[0]     = b->data[j++];
     input->ort_ref X(0)    = b->data[j++];
     input->ort_ref Y(0)    = b->data[j++];
@@ -320,9 +328,13 @@ void process_buffer(msgbuf *b, cell *p)
 #endif
 #endif
 #ifdef AVPOS
+    input->av_epot[0]      = b->data[j++];
+    input->avpos X(0)      = b->data[j++];
+    input->avpos Y(0)      = b->data[j++];
     input->sheet X(0)      = b->data[j++];
     input->sheet Y(0)      = b->data[j++];
 #ifndef TWOD
+    input->avpos Z(0)      = b->data[j++];
     input->sheet Z(0)      = b->data[j++];
 #endif
 #endif
@@ -678,6 +690,13 @@ void recv_cell(cell *p, int from_cpu, int tag)
   MPI_Recv(b->data, b->n, REAL, from_cpu, tag, cpugrid, &status);
   process_buffer(b,p);
 }
+
+
+
+
+
+
+
 
 
 

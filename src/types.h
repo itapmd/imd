@@ -114,12 +114,14 @@ typedef struct {
 #ifdef EAM2                 /* EAM2: variable for the host electron density */
   real        *eam2_rho_h;
 #endif
-#if defined(DISLOC) || defined(AVPOS)
+#ifdef DISLOC
   real        *Epot_ref;
   real        *ort_ref;
 #endif
 #ifdef AVPOS
   real        *sheet;
+  real        *avpos;
+  real        *av_epot;
 #endif
 #ifdef ORDPAR
   shortint    *nbanz;
