@@ -640,33 +640,43 @@ void getparamfile(char *paramfname, int sim)
       getparam("eta",&eta,PARAM_REAL,1,1);
     }
     else if (strcasecmp(token,"tau_eta")==0) {
-      /* time constant for thermostat */
-      getparam("tau_eta",&isq_tau_eta,PARAM_REAL,1,1);
-      if (isq_tau_eta == (real)0) {
+      /* time constant tau_eta for thermostat */
+      getparam("tau_eta",&inv_tau_eta,PARAM_REAL,1,1);
+      if (inv_tau_eta == (real)0) {
         error("tau_eta is zero.\n");
       }
-      isq_tau_eta = (real)1/SQR(isq_tau_eta);
+      inv_tau_eta = 1.0/inv_tau_eta;
     }
     else if (strcasecmp(token,"isq_tau_eta")==0) {
-      /* time constant for thermostat */
-      getparam("isq_tau_eta",&isq_tau_eta,PARAM_REAL,1,1);
+      /* inverse of square of time constant tau_eta for thermostat */
+      getparam("isq_tau_eta",&inv_tau_eta,PARAM_REAL,1,1);
+      inv_tau_eta = sqrt(inv_tau_eta);
+    }
+    else if (strcasecmp(token,"inv_tau_eta")==0) {
+      /* inverse of time constant tau_eta for thermostat */
+      getparam("inv_tau_eta",&inv_tau_eta,PARAM_REAL,1,1);
     }
 #ifdef UNIAX
     else if (strcasecmp(token,"eta_rot")==0) {
-      /* eta variable for NVT or NPT thermostat */
+      /* eta variable of rotational motion for NVT or NPT thermostat */
       getparam("eta_rot",&eta_rot,PARAM_REAL,1,1);
     }
     else if (strcasecmp(token,"tau_eta_rot")==0) {
-      /* time constant for thermostat of rotational motion */
-      getparam("tau_eta_rot",&isq_tau_eta_rot,PARAM_REAL,1,1);
-      if (isq_tau_eta_rot == (real)0) {
+      /* time constant tau_eta for thermostat of rotational motion */
+      getparam("tau_eta_rot",&inv_tau_eta_rot,PARAM_REAL,1,1);
+      if (inv_tau_eta_rot == (real)0) {
         error("tau_eta_rot is zero.\n");
       }
-      isq_tau_eta_rot = (real)1/SQR(isq_tau_eta_rot);
+      inv_tau_eta_rot = 1.0/inv_tau_eta_rot;
     }
     else if (strcasecmp(token,"isq_tau_eta_rot")==0) {
-      /* time constant for thermostat */
-      getparam("isq_tau_eta_rot",&isq_tau_eta_rot,PARAM_REAL,1,1);
+      /* squared inverse of time constant for thermostat of rot. motion */
+      getparam("isq_tau_eta_rot",&inv_tau_eta_rot,PARAM_REAL,1,1);
+      inv_tau_eta_rot = sqrt(inv_tau_eta_rot);
+    }
+    else if (strcasecmp(token,"inv_tau_eta_rot")==0) {
+      /* inverse of time constant for thermostat of rotational motion */
+      getparam("inv_tau_eta_rot",&inv_tau_eta_rot,PARAM_REAL,1,1);
     }
 #endif
 #endif
@@ -782,14 +792,6 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #if defined(FRAC) || defined(DEFORM)
-    else if (strcasecmp(token,"initial_shift")==0) {
-      /* shall the whole sample be shifted before MD */
-      getparam("initial_shift",&initial_shift,PARAM_INT,1,1);
-    }
-    else if (strcasecmp(token,"ins")==0) {
-      /* shift vector (whole sample) */
-      getparam("ins",&ins,PARAM_REAL,DIM,DIM);
-    }   
     else if (strcasecmp(token,"ekin_threshold")==0) {
       /* shear epsilon criterium, see imd_shear_new.c */
       getparam("ekin_threshold",&ekin_threshold,PARAM_REAL,1,1);
@@ -959,10 +961,6 @@ void getparamfile(char *paramfname, int sim)
     }   
 #endif
 #ifdef DEFORM
-    else if (strcasecmp(token,"strip_shift")==0) {
-      /* strip move per timestep - this is a vector */
-      getparam("strip_shift",&strip_shift,PARAM_REAL,DIM,DIM); 
-    }
     else if (strcasecmp(token,"deform_shift")==0) {
       /* deform shift for virtual types */
       /* format: type shift.x shift.y (shift.z) read in a temp. vektor */
@@ -1011,16 +1009,21 @@ void getparamfile(char *paramfname, int sim)
       getparam("pressure_end",&pressure_end,PARAM_REAL_COPY,1,DIM);
     }
     else if (strcasecmp(token,"tau_xi")==0) {
-      /* time constant tau for NPT thermostat algorithm */
-      getparam("tau_xi",&isq_tau_xi,PARAM_REAL,1,1);
-      if (isq_tau_xi == (real)0) {
+      /* time constant tau_xi for NPT thermostat algorithm */
+      getparam("tau_xi",&inv_tau_xi,PARAM_REAL,1,1);
+      if (inv_tau_xi == (real)0) {
         error("tau_xi is zero.\n");
-      };
-      isq_tau_xi = (real)1/SQR(isq_tau_xi);
+      }
+      inv_tau_xi = 1.0/inv_tau_xi;
     }
     else if (strcasecmp(token,"isq_tau_xi")==0) {
-      /* inverse of square of time constant tau for NPT thermostat */
-      getparam("isq_tau_xi",&isq_tau_xi,PARAM_REAL,1,1);
+      /* inverse of square of time constant tau_xi for NPT thermostat */
+      getparam("isq_tau_xi",&inv_tau_xi,PARAM_REAL,1,1);
+      inv_tau_xi = sqrt(inv_tau_xi);
+    }
+    else if (strcasecmp(token,"inv_tau_xi")==0) {
+      /* inverse of time constant tau_xi for NPT thermostat */
+      getparam("inv_tau_xi",&inv_tau_xi,PARAM_REAL,1,1);
     }
     else if (strcasecmp(token,"cell_size_tol")==0) {
       /* rel. tolerance for volume rescaling during NPT sim. */
@@ -1457,10 +1460,10 @@ void broadcast_params() {
 
 #if defined(NVT) || defined(NPT) || defined(STM)
   MPI_Bcast( &eta ,         1 , MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &isq_tau_eta , 1 , MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &inv_tau_eta , 1 , MPI_REAL, 0, MPI_COMM_WORLD); 
 #ifdef UNIAX
   MPI_Bcast( &eta_rot ,         1 , MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &isq_tau_eta_rot , 1 , MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &inv_tau_eta_rot , 1 , MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
 #endif
 
@@ -1471,7 +1474,7 @@ void broadcast_params() {
 
 #ifdef NPT
   MPI_Bcast( &xi,                DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &isq_tau_xi,          1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &inv_tau_xi,          1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &pressure_ext,      DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &pressure_end,      DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &cell_size_tolerance, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
@@ -1562,12 +1565,7 @@ void broadcast_params() {
   MPI_Bcast( &exp_interval , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &expansion ,  DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
-#ifdef DEFORM
-  MPI_Bcast( &strip_shift ,DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
-#endif
 #if defined(FRAC) || defined(DEFORM)
-  MPI_Bcast( &initial_shift ,  1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &ins ,          DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &ekin_threshold , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &annealsteps ,    1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &max_deform_int , 1, MPI_INT,  0, MPI_COMM_WORLD); 

@@ -232,12 +232,14 @@ EXTERN int tmp_interval INIT(0);     /* Interval in which the thermostat */
 
 #if defined(NVT) || defined(NPT) || defined(STM)
 EXTERN real eta INIT(0.0);          /* Nose-Hoover heat bath variable */
-EXTERN real isq_tau_eta INIT(0.0);  /* tau_eta: Nose-Hoover heat bath 'mass' */
-                               /* isq_tau_eta : inverse of square of tau_eta */
+EXTERN real inv_tau_eta INIT(0.0);  /* tau_eta: Nose-Hoover heat bath 'mass' */
+                                    /* inv_tau_eta : inverse of tau_eta */
 #ifdef UNIAX
-EXTERN real eta_rot INIT(0.0);      /* Nose-Hoover heat bath variable for rotational motion */
-EXTERN real isq_tau_eta_rot INIT(0.0);  /* tau_eta_rot: Nose-Hoover heat bath 'mass' for rotational motion */
-                               /* isq_tau_eta_rot : inverse of square of tau_eta_rot */
+/* Nose-Hoover heat bath variable for rotational motion */
+EXTERN real eta_rot INIT(0.0);      
+/* tau_eta_rot: Nose-Hoover heat bath 'mass' for rotational motion */
+/* inv_tau_eta_rot : inverse of tau_eta_rot */
+EXTERN real inv_tau_eta_rot INIT(0.0);  
 #endif
 #endif
 
@@ -248,7 +250,7 @@ EXTERN int    cells_too_small INIT(0);
 EXTERN int    revise_cell_division INIT(0);
 
 #ifdef NPT
-EXTERN real   isq_tau_xi INIT(0.0); /* inverse of square of tau_xi */
+EXTERN real   inv_tau_xi INIT(0.0); /* inverse of tau_xi */
 EXTERN real   cell_size_tolerance INIT(0.05);
 EXTERN vektor pressure_ext INIT(nullvektor);
 EXTERN vektor pressure_end INIT(nullvektor);
@@ -289,8 +291,6 @@ EXTERN real   strip_width INIT(0.0);   /* Strip width */
 EXTERN real   ekin_threshold INIT(0.0);/* threshold for ekin */    
 EXTERN int    annealsteps INIT(0);     /* number of annealing steps */    
 EXTERN int    max_deform_int INIT(0);  /* max. steps between 2 shear steps */  
-EXTERN int    initial_shift INIT(0);   /* flag whether the sample is shifted */
-EXTERN vektor ins INIT(nullvektor);    /* initial shift */
 #endif
 
 #ifdef FRAC
@@ -301,7 +301,6 @@ EXTERN vektor2d tip INIT(nullvektor2d); /* Location of crack Tip */
 #endif
 
 #ifdef DEFORM
-EXTERN vektor strip_shift INIT(nullvektor);/* shift of atoms in strip */
 EXTERN vektor *deform_shift;       /* shift for each vtype */
 #endif
 

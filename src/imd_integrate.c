@@ -439,17 +439,17 @@ void move_atoms_nvt(void)
 {
   int k;
   real kin_energie_1 = 0.0, kin_energie_2 = 0.0;
-  real reibung, eins_d_reibung, tmp;
+  real reibung, eins_d_reib, tmp;
 #ifdef UNIAX
   real rot_energie_1 = 0.0, rot_energie_2 = 0.0;
-  real reibung_rot,  eins_d_reibung_rot;
+  real reibung_rot,  eins_d_reib_rot;
 #endif
 
-  reibung        =        1.0 - eta * isq_tau_eta * timestep / 2.0;
-  eins_d_reibung = 1.0 / (1.0 + eta * isq_tau_eta * timestep / 2.0);
+  reibung     =        1.0 - eta * inv_tau_eta * timestep / 2.0;
+  eins_d_reib = 1.0 / (1.0 + eta * inv_tau_eta * timestep / 2.0);
 #ifdef UNIAX
-  reibung_rot    =            1.0 - eta_rot * timestep / 2.0;
-  eins_d_reibung_rot = 1.0 / (1.0 + eta_rot * timestep / 2.0);
+  reibung_rot     =        1.0 - eta_rot * inv_tau_eta_rot * timestep / 2.0;
+  eins_d_reib_rot = 1.0 / (1.0 + eta_rot * inv_tau_eta_rot * timestep / 2.0);
 #endif
    
 #ifdef _OPENMP
@@ -476,26 +476,26 @@ void move_atoms_nvt(void)
 #endif
 
 	sort = p->sorte[i];
-	p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i)) 
-                           * eins_d_reibung * (restrictions + sort)->x;
-        p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i)) 
-                           * eins_d_reibung * (restrictions + sort)->y;
+	p->impuls X(i) = (p->impuls X(i) * reibung + timestep * p->kraft X(i)) 
+                           * eins_d_reib * (restrictions + sort)->x;
+        p->impuls Y(i) = (p->impuls Y(i) * reibung + timestep * p->kraft Y(i)) 
+                           * eins_d_reib * (restrictions + sort)->y;
 #ifndef TWOD
-        p->impuls Z(i) = (p->impuls Z(i)*reibung + timestep * p->kraft Z(i)) 
-                           * eins_d_reibung * (restrictions + sort)->z;
+        p->impuls Z(i) = (p->impuls Z(i) * reibung + timestep * p->kraft Z(i)) 
+                           * eins_d_reib * (restrictions + sort)->z;
 #endif
 
 #ifdef UNIAX
         /* new angular momenta */
         dot = 2.0 * SPRODN(p->dreh_impuls,i,p->achse,i);
 
-        p->dreh_impuls X(i) = eins_d_reibung_rot
+        p->dreh_impuls X(i) = eins_d_reib_rot
             * ( p->dreh_impuls X(i) * reibung_rot
                 + timestep * p->dreh_moment X(i) - dot * p->achse X(i) );
-        p->dreh_impuls Y(i) = eins_d_reibung_rot
+        p->dreh_impuls Y(i) = eins_d_reib_rot
             * ( p->dreh_impuls Y(i) * reibung_rot
                 + timestep * p->dreh_moment Y(i) - dot * p->achse Y(i) );
-        p->dreh_impuls Z(i) = eins_d_reibung_rot
+        p->dreh_impuls Z(i) = eins_d_reib_rot
             * ( p->dreh_impuls Z(i) * reibung_rot
                 + timestep * p->dreh_moment Z(i) - dot * p->achse Z(i) );
 #endif
@@ -570,10 +570,10 @@ void move_atoms_nvt(void)
 
   /* time evolution of constraints */
   tmp  = nactive * temperature;
-  eta += timestep * (kin_energie_2 / tmp - 1.0) * isq_tau_eta;
+  eta += timestep * (kin_energie_2 / tmp - 1.0) * inv_tau_eta;
 #ifdef UNIAX
   tmp  = nactive_rot * temperature;
-  eta_rot += timestep * ( rot_energie_2 / tmp - 1.0 ) * isq_tau_eta_rot;
+  eta_rot += timestep * ( rot_energie_2 / tmp - 1.0 ) * inv_tau_eta_rot;
 #endif
   
 }
@@ -608,13 +608,14 @@ void move_atoms_npt_iso(void)
   real reib, ireib ;
 #endif
 
-  box_size.x      += 2.0 * timestep * xi.x;  /* relative box size change */  
+  /* relative box size change */
+  box_size.x      += 2.0 * timestep * xi.x * inv_tau_xi;
   actual_shrink.x *= box_size.x;
-  fric             =         1.0 - (xi.x + eta) * timestep / 2.0;
-  ifric            = 1.0 / ( 1.0 + (xi.x + eta) * timestep / 2.0 );
+  fric  =      1.0 - (xi.x * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0;
+  ifric = 1.0/(1.0 + (xi.x * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0);
 #ifdef UNIAX
-  reib             =         1.0 - eta_rot * timestep / 2.0;
-  ireib            = 1.0 / ( 1.0 + eta_rot * timestep / 2.0 );
+  reib  =      1.0 - eta_rot * inv_tau_eta_rot * timestep / 2.0;
+  ireib = 1.0/(1.0 + eta_rot * inv_tau_eta_rot * timestep / 2.0);
 #endif
 
   /* loop over all cells */
@@ -736,14 +737,14 @@ void move_atoms_npt_iso(void)
 
   /* time evolution of constraints */
   tmp  = nactive * temperature;
-  eta += timestep * (Ekin_new / tmp - 1.0) * isq_tau_eta;
+  eta += timestep * (Ekin_new / tmp - 1.0) * inv_tau_eta;
 #ifdef UNIAX
   tmp  = nactive_rot * temperature;
-  eta_rot += timestep * (Erot_new / tmp - 1.0) * isq_tau_eta_rot;
+  eta_rot += timestep * (Erot_new / tmp - 1.0) * inv_tau_eta_rot;
 #endif
 
   tmp = xi_old.x + timestep * 2.0 * (pressure - pressure_ext.x) * volume
-                          * isq_tau_xi * DIM / (nactive * temperature);
+                          * inv_tau_xi * DIM / (nactive * temperature);
   xi_old.x = xi.x;
   xi.x = tmp;
 
@@ -803,20 +804,21 @@ void move_atoms_npt_axial(void)
   Ekin             = 0.0;
   stress.x         = 0.0;
   stress.y         = 0.0;
-  box_size.x      += 2.0 * timestep * xi.x;  /* relative box size change */  
-  box_size.y      += 2.0 * timestep * xi.y;  /* relative box size change */  
+  /* relative box size change */ 
+  box_size.x      += 2.0 * timestep * xi.x * inv_tau_xi;  
+  box_size.y      += 2.0 * timestep * xi.y * inv_tau_xi;
   actual_shrink.x *= box_size.x;
   actual_shrink.y *= box_size.y;
-  fric.x           = 1.0 - (xi.x + eta) * timestep / 2.0;
-  fric.y           = 1.0 - (xi.y + eta) * timestep / 2.0;
-  ifric.x          = 1.0 / ( 1.0 + (xi.x + eta) * timestep / 2.0 );
-  ifric.y          = 1.0 / ( 1.0 + (xi.y + eta) * timestep / 2.0 );
+  fric.x  =    1.0 - (xi.x * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0;
+  fric.y  =    1.0 - (xi.y * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0;
+  ifric.x = 1/(1.0 + (xi.x * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0);
+  ifric.y = 1/(1.0 + (xi.y * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0);
 #ifndef TWOD
   stress.z         = 0.0;
-  box_size.z      += 2.0 * timestep * xi.z;  /* relative box size change */  
+  box_size.z      += 2.0 * timestep * xi.z * inv_tau_xi;  
   actual_shrink.z *= box_size.z;
-  fric.z           = 1.0 - (xi.z + eta) * timestep / 2.0;
-  ifric.z          = 1.0 / ( 1.0 + (xi.z + eta) * timestep / 2.0 );
+  fric.z  =    1.0 - (xi.z * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0;
+  ifric.z = 1/(1.0 + (xi.z * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0);
 #endif
 
   /* loop over all cells */
@@ -916,9 +918,9 @@ void move_atoms_npt_axial(void)
 
   /* update parameters */
   tmp  = nactive * temperature;
-  eta += timestep * (Ekin / tmp - 1.0) * isq_tau_eta;
+  eta += timestep * (Ekin / tmp - 1.0) * inv_tau_eta;
 
-  tmp  = timestep * 2.0 * volume * isq_tau_xi * DIM / (nactive * temperature);
+  tmp  = timestep * 2.0 * volume * inv_tau_xi * DIM / (nactive * temperature);
 
   xi_tmp   = xi_old.x + tmp * (stress.x - pressure_ext.x);
   xi_old.x = xi.x;
@@ -1130,7 +1132,7 @@ void move_atoms_stm(void)
 
     int i;
     cell *p;
-    real reibung, eins_d_reibung;
+    real reibung, eins_d_reib;
     real tmp1, tmp2;
     vektor d;
     int sort=0;
@@ -1145,10 +1147,10 @@ void move_atoms_stm(void)
         if (tmp <= 0) {
           /* We are inside the ellipse: */
           reibung = 1.0;
-          eins_d_reibung = 1.0;
+          eins_d_reib = 1.0;
         } else {
-          reibung        =      1 - eta * isq_tau_eta * timestep / 2.0;
-          eins_d_reibung = 1 / (1 + eta * isq_tau_eta * timestep / 2.0);
+          reibung     =      1 - eta * inv_tau_eta * timestep / 2.0;
+          eins_d_reib = 1 / (1 + eta * inv_tau_eta * timestep / 2.0);
         }
 
         /* twice the old kinetic energy */
@@ -1157,9 +1159,9 @@ void move_atoms_stm(void)
         /* new momenta */
 	sort=(p->sorte[i]);
 	p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i))
-                          * eins_d_reibung * (restrictions + sort)->x;
+                          * eins_d_reib * (restrictions + sort)->x;
         p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i))
-                          * eins_d_reibung * (restrictions + sort)->y;
+                          * eins_d_reib * (restrictions + sort)->y;
 
         /* twice the new kinetic energy */ 
         kin_energie_2 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
@@ -1183,7 +1185,7 @@ void move_atoms_stm(void)
 
   /* Zeitentwicklung der Parameter */
   tmp  = nactive * temperature;
-  eta += timestep * (kin_energie_2 / tmp - 1.0) * isq_tau_eta;
+  eta += timestep * (kin_energie_2 / tmp - 1.0) * inv_tau_eta;
 
 }
 
