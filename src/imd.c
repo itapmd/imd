@@ -74,6 +74,9 @@ int main(int argc, char **argv)
   read_pot_table(&rho_h_tab,eam2_at_rho_filename,ntypes*ntypes);
 #endif
 
+#ifdef STIWEB
+  init_stiweb();
+#endif
 #ifdef TERSOFF
   init_tersoff();
 #endif
