@@ -36,7 +36,7 @@ int main(int argc, char **argv)
   is_big_endian = endian();
   read_command_line(argc,argv);
 
-  /* loop for online visualisation */
+  /* loop for online visualization */
   do {
 
   time(&tstart);
@@ -126,7 +126,7 @@ int main(int argc, char **argv)
 
   /* initialize socket I/O */
 #ifdef USE_SOCKETS
-  if (myid == 0) init_socket();
+  if ((myid == 0) && (socket_int > 0)) init_socket();
 #endif
 
   start = steps_min;  /* keep starting step number */
@@ -245,6 +245,11 @@ int main(int argc, char **argv)
     max_height.z = 0.0;
 #endif
 
+    /* close open files */
+    if (myid==0) {
+      if ( eng_file!=NULL) fclose( eng_file);  eng_file=NULL;
+      if (msqd_file!=NULL) fclose(msqd_file); msqd_file=NULL;
+    }
   }
 
   } while (loop);
