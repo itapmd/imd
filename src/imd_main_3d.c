@@ -254,14 +254,15 @@ void main_loop(void)
 	    p->impuls Z(i) = 0.0;
 	  }
 	}
-      write_properties(steps); 
+      if (myid==0) write_properties(steps); 
       }
     /* properties as they were after setting p=0 and 
        calculating ekin_ and p. p should then = f*dt
        therefore PxF >0 and f*f = 2*M*ekin
     */
-    if(old_PxF<0.0)
-     write_properties(steps); 
+    if (myid==0)
+      if(old_PxF<0.0)
+	write_properties(steps); 
     old_PxF = PxF;
 #endif
 
