@@ -160,6 +160,8 @@ int main(int argc, char **argv)
   if (0 == myid) {
     time(&tend);
     steps_max -= start;
+    if (steps_max < 0)
+      error("Start step greater than maximum number of steps");
 
     printf("Done simulation.\n\n");
     printf("%s\n\n",progname);
