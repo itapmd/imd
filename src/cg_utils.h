@@ -8,7 +8,7 @@
 
 
 #define GOLD 1.618034
-#define GLIMIT 100.0
+#define GLIMIT 100.0/* was  100.0 */
 #define TINY 1.0e-20
 
 /* brent from Num. Rec. modified for our cg */
@@ -92,6 +92,8 @@ int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc)
 	int ctf;
 /*	*fa=(*func)(*ax);   = old_cgval */
 /*	*fb=(*func)(*bx);   is already initialised */ 
+	
+	/*  printf("start mnbrak\n");fflush(stdout); */
 
 	if (*fb > *fa) {
 		SHFT(dum,*ax,*bx,dum)
@@ -117,11 +119,11 @@ int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc)
 				*bx=u;
 				*fa=(*fb);
 				*fb=fu;
-				return;
+				return(ctf);
 			} else if (fu > *fb) {
 				*cx=u;
 				*fc=fu;
-				return;
+				return(ctf);
 			}
 			u=(*cx)+GOLD*(*cx-*bx);
 			/*fu=(*func)(u);*/
@@ -150,7 +152,8 @@ int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc)
 		}
 		SHFT(*ax,*bx,*cx,u)
 		SHFT(*fa,*fb,*fc,fu)
-	}
+	     }
+	/*   printf("in mnbrack: ctf = %d  \n",ctf);fflush(stdout); */
 	return(ctf);
 }
 #undef GOLD
@@ -165,6 +168,7 @@ int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc)
 #undef CGOLD
 #undef ZEPS
 /* (C) Copr. 1986-92 Numerical Recipes Software X!05.W4z4'>4. */
+
 
 
 

@@ -370,4 +370,6 @@ real set_hg(void);
 void calc_fnorm(void);
 real  calc_fnorm_g_h(void);
 void move_atoms_cg(real);
-
+int linmin(real fmax2, real old_cgval);
+int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc);
+int brent(real ax, real bx, real cx, real fb,real *alphamin);

@@ -279,3 +279,9 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #endif /* TERSOFF */ 
 
 }
+
+
+
+
+
+

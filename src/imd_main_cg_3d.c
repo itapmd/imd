@@ -1,4 +1,3 @@
-
 /******************************************************************************
 *
 * IMD -- The ITAP Molecular Dynamics Program
@@ -33,9 +32,7 @@ void main_loop(void)
   real old_cgval;
   real tmp_pot_energy;
 
-  int ctf;
-  int i,j,k;
-  cell *p;
+  int ctf=0;
 
   real fmax2;
   int cgsteps,linminsteps;
@@ -105,11 +102,11 @@ void main_loop(void)
 
     for (cgsteps = 0 ; cgsteps < cg_maxsteps; cgsteps++)
     {
-   /*    printf (" cgstep %d, CGVAL = %lf \n",cgsteps,CGVAL); */
+	/*  printf (" cgstep %d, CGVAL = %lf \n",cgsteps,CGVAL);fflush(stdout); */
 	/* minimization in one 'direction' */
 	linminsteps=linmin(fmax2,old_cgval);
 	ctf += linminsteps;
-/* 	printf (" cgstep %d, ctf %d linminsteps %d, CGVAL = %lf \n",cgsteps,ctf,linminsteps,CGVAL); */
+	/*  printf (" cgstep %d, ctf %d linminsteps %d, CGVAL = %lf \n",cgsteps,ctf,linminsteps,CGVAL);fflush(stdout); */
         /* Convergence test: change of Epot or smaller than fnorm*/
 #if defined(CGE) || defined(CGEF)
 	if (SQR(CGVAL - old_cgval) <= SQR(cg_threshold))  
@@ -298,12 +295,15 @@ int linmin(real fmax2, real old_cgval)
 	alpha_c = 0.02;
       }
     fa = old_cgval;
-    /* printf("before fonedim(%e), fmax= %lf \n",alpha_b,fmax);fflush(stdout); */
     fb = fonedim(alpha_b);
-    /*   printf("before mnbrak \n");fflush(stdout);*/
+  /*    printf("before mnbrak: fmax= %lf alpha_a= %lf alpha_b=%lf fa= %lf fb=%lf \n",fmax,alpha_a,alpha_b,fa,fb);fflush(stdout);     */
+ /*   printf("before mnbrak \n");fflush(stdout);*/
 /* decide which method to take to braket a mimimum, at the moment only mbrak, later zbrak? */
     iter1 = mnbrak (&alpha_a,&alpha_b,&alpha_c,&fa,&fb,&fc); /* call by reference Num Rec. p297 */
-
+   /*   if(iter1 <0) */
+/*      { */
+/*  	printf("error in mnbrak %lf %lf %lf %.12lf %.12lf %.12lf\n",&alpha_a,&alpha_b,&alpha_c,&fa,&fb,&fc);fflush(stdout); */
+/*      } */
     /*  printf("after mnbrak \n");fflush(stdout); */
 /* decide which method to take to search the mimimum */
 #ifdef CGEF /* not implemented yet */
@@ -311,7 +311,7 @@ int linmin(real fmax2, real old_cgval)
 #else
     iter2 =  brent (alpha_a,alpha_b,alpha_c,fb,&alphamin);
 #endif
-  /*   printf("in linmin: iter1= %d iter2 =%d \n",iter1,iter2);fflush(stdout); */
+   /*     printf("in linmin: iter1= %d iter2 =%d \n",iter1,iter2);fflush(stdout); */
     return (iter1 + iter2);
 }
 
@@ -322,7 +322,6 @@ real fonedim ( real alpha)  /* sets the global variables epot,fnorm correspondin
     move_atoms_cg(alpha);
     calc_forces(0);       /* why does calc_forces needs steps ? */
     calc_fnorm();
-
     return (CGVAL);
 }
 
@@ -588,6 +587,13 @@ real set_hg(void)
 
   return(fmax2);
 }
+
+
+
+
+
+
+
 
 
 
