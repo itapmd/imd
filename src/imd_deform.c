@@ -77,21 +77,15 @@ void shear_sample(void)
   ivektor max_cell_dim;
 
   /* Apply shear */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-      {
-#ifdef TWOD
-        p = PTR_2D_V(cell_array, r, s, cell_dim);
-#else
-        p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#endif
-        for (i = 0; i < p->n; ++i) {
-          p->ort Y(i) += shear_factor * p->ort X(i);
-	}
-      }
+#pragma omp parallel for
+  for (k=0; k<ncells; ++k) {
+    int i;
+    cell *p;
+    p = cell_array + CELLS(k);
+    for (i=0; i<p->n; ++i) {
+      p->ort Y(i) += shear_factor * p->ort X(i);
+    }
+  }
 
   /* new box size */
   box_x.y += shear_factor * box_x.x;
