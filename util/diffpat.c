@@ -27,23 +27,22 @@
 *  1D histograms to the terminal. This helps to find out where the dense
 *  planes are.
 *
-*    diffpat [-v] [-c fmax] [-l dyn] file dir min max
+*    diffpat [-v] [-c fmax] [-l fmin] file dir min max
 *
 *  adds the slices min..max-1 perpendicular to dir, and writes 
 *  a pgm file, or a virvo file if option -v is given. If fmax is given, 
 *  the intensity is cut at fmax. By default, the intensities are mapped 
 *  linearly to the gray values. If the option -l is given, the intensities 
-*  are mapped logarithmically to the gray values, and intensities more 
-*  than a factor dyn smaller than the maximum are set to zero. 
+*  are mapped logarithmically to the gray values, and intensities smaller 
+*  than fmin are set to zero. 
 *
-*    diffpat [-c fmax] [-l dyn] file xmin ymin zmin xmax ymax zmax
+*    diffpat [-c fmax] [-l fmin] file xmin ymin zmin xmax ymax zmax
 *
 *  cuts a rectangular block from the volume and writes it in virvo xvf 
 *  format. If fmax is given, the intensity is cut at fmax. By default, 
 *  the intensities are mapped linearly to the gray values. If the option 
 *  -l is given, the intensities are mapped logarithmically to the gray 
-*  values, and intensities more than a factor dyn smaller than the 
-*  maximum are set to zero. 
+*  values, and intensities smaller than fmin are set to zero. 
 *
 ******************************************************************************/
 
@@ -197,54 +196,61 @@ int read_diffpat(char *fname, float fmax, float dyn)
   diffpat = (float *) calloc( size, sizeof(float) );
   if (NULL==diffpat) error("Cannot allocate data for diffraction pattern");
 
-  /* +++ quadrant */
-  for (i=0; i<=nx; i++)
-    for (j=0; j<=ny; j++)
-      for (k=0; k<=nz; k++) {
-        ind1 = ((i + nx) * dimy + (j + ny)) * dimz + (k + nz);
-        ind2 = (i * nny + j) * nnz + k;
-        diffpat[ind1] = dist[ind2];
-      }
+  /* if pseudo-3d (single slice), do just a transposition */
+  if (nz==0) {
+    for (i=0; i<nnx; i++)
+      for (j=0; j<nny; j++)
+        diffpat[i * nny + j] = dist[j * nnx + i];
+  } 
+  else {
+    /* +++ quadrant */
+    for (i=0; i<=nx; i++)
+      for (j=0; j<=ny; j++)
+        for (k=0; k<=nz; k++) {
+          ind1 = ((i + nx) * dimy + (j + ny)) * dimz + (k + nz);
+          ind2 = (i * nny + j) * nnz + k;
+          diffpat[ind1] = dist[ind2];
+        }
 
-  /* -++ quadrant */
-  for (i=1; i<=nx; i++)
-    for (j=0; j<=ny; j++)
-      for (k=0; k<=nz; k++) {
-        ind1 = ((-i + nx) * dimy + (j + ny)) * dimz + (k + nz);
-        ind2 = ((nnx - i) * nny + j) * nnz + k;
-        diffpat[ind1] = dist[ind2];
-      }
+    /* -++ quadrant */
+    for (i=1; i<=nx; i++)
+      for (j=0; j<=ny; j++)
+        for (k=0; k<=nz; k++) {
+          ind1 = ((-i + nx) * dimy + (j + ny)) * dimz + (k + nz);
+          ind2 = ((nnx - i) * nny + j) * nnz + k;
+          diffpat[ind1] = dist[ind2];
+        }
 
-  /* +-+ quadrant */
-  for (i=0; i<=nx; i++)
-    for (j=1; j<=ny; j++)
-      for (k=0; k<=nz; k++) {
-        ind1 = ((i + nx) * dimy + (-j + ny)) * dimz + (k + nz);
-        ind2 = (i * nny + (nny - j)) * nnz + k;
-        diffpat[ind1] = dist[ind2];
-      }
+    /* +-+ quadrant */
+    for (i=0; i<=nx; i++)
+      for (j=1; j<=ny; j++)
+        for (k=0; k<=nz; k++) {
+          ind1 = ((i + nx) * dimy + (-j + ny)) * dimz + (k + nz);
+          ind2 = (i * nny + (nny - j)) * nnz + k;
+          diffpat[ind1] = dist[ind2];
+        }
 
-  /* --+ quadrant */
-  for (i=1; i<=nx; i++)
-    for (j=1; j<=ny; j++)
-      for (k=0; k<=nz; k++) {
-        ind1 = ((-i + nx) * dimy + (-j + ny)) * dimz + (k + nz);
-        ind2 = ((nnx - i) * nny + (nny - j)) * nnz + k;
-        diffpat[ind1] = dist[ind2];
-      }
+    /* --+ quadrant */
+    for (i=1; i<=nx; i++)
+      for (j=1; j<=ny; j++)
+        for (k=0; k<=nz; k++) {
+          ind1 = ((-i + nx) * dimy + (-j + ny)) * dimz + (k + nz);
+          ind2 = ((nnx - i) * nny + (nny - j)) * nnz + k;
+          diffpat[ind1] = dist[ind2];
+        }
 
-  /* lower half */
-  for (i=-nx; i<=nx; i++)
-    for (j=-ny; j<=ny; j++)
-      for (k=1; k<=nz; k++) {
-        ind1 = ((-i + nx) * dimy + (-j + ny)) * dimz + (-k + nz);
-        ind2 = (( i + nx) * dimy + ( j + ny)) * dimz + ( k + nz);
-        diffpat[ind1] = diffpat[ind2];
-      }
+    /* lower half */
+    for (i=-nx; i<=nx; i++)
+      for (j=-ny; j<=ny; j++)
+        for (k=1; k<=nz; k++) {
+          ind1 = ((-i + nx) * dimy + (-j + ny)) * dimz + (-k + nz);
+          ind2 = (( i + nx) * dimy + ( j + ny)) * dimz + ( k + nz);
+          diffpat[ind1] = diffpat[ind2];
+        }
 
-  /* free temporary memory */
-  free(dist);
-
+    /* free temporary memory */
+    free(dist);
+  }
   printf("f000: %e\n", diffpat[(nx * dimy + ny) * dimz + nz] );
 
   /* cut at fmax */
@@ -257,7 +263,10 @@ int read_diffpat(char *fname, float fmax, float dyn)
   /* logaritmic scale */
   if (dyn>0) {
     float x, y;
+    /*
     y = (float) log( (double) (diffpat[(nx * dimy + ny) * dimz + nz] / dyn) );
+    */
+    y = (float) log( (double) dyn );
     for (i=0; i<size; i++) {
       x = (float) (log( (double) diffpat[i] ) - y); 
       diffpat[i] = MAX(x,0.0);
@@ -373,13 +382,81 @@ void write_virvo_2d(char *outfile, char *pix, int dx, int dy,
 
 }
 
+void write_virvo_2d_16bit(char *outfile, unsigned short *pix, int dx, int dy, 
+                    float sx, float sy, float sz)
+{
+  unsigned short us;
+  unsigned int   ui;
+  unsigned char  uc;
+  float fl;
+  int   len = dx * dy * 2;
+  char  header[48], *str, fname[255]; 
+  FILE  *out;
+
+  /* make volume file header */
+  my_endian=endian();
+  str = header;
+  sprintf(str,"%s","VIRVO-XVF");     str +=9;   /* file type */
+  us =  48; copy_2_bytes(str,&us);   str +=2;   /* header size */
+  ui =  dx; copy_4_bytes(str,&ui);   str +=4;   /* dim_x */
+  ui =  dy; copy_4_bytes(str,&ui);   str +=4;   /* dim_y */
+  ui =   1; copy_4_bytes(str,&ui);   str +=4;   /* dim_z */
+  ui =   1; copy_4_bytes(str,&ui);   str +=4;   /* number of frames */
+  uc =  16; (unsigned char) *str = uc; str++;   /* bits per voxel */
+  fl =  sx; copy_4_bytes(str,&fl);   str +=4;   /* x-length of voxel */
+  fl =  sy; copy_4_bytes(str,&fl);   str +=4;   /* y-length of voxel */
+  fl =  sz; copy_4_bytes(str,&fl);   str +=4;   /* z-length of voxel */
+  fl = 1.0; copy_4_bytes(str,&fl);   str +=4;   /* secs per frame */
+  us =   0; copy_2_bytes(str,&us);   str +=2;   /* number of transf. func. */
+  us =   0; copy_2_bytes(str,&us);   str +=2;   /* type of transf. func. */
+
+  /* write virvo file */
+  sprintf(fname,"%s.xvf",outfile);
+  if (NULL==(out=fopen(fname,"w"))) 
+    error("Cannot open volume file.");
+  if (48!=fwrite(header,sizeof(char),48,out))
+    error("Cannot write volume file header.");
+  if (len!=fwrite(pix,sizeof(char),len,out))
+    error("Cannot write volume file data.");
+  fclose(out);
+
+}
+
+
+/******************************************************************************
+*
+*  write pseudo-2D diffraction pattern
+*
+******************************************************************************/
+
+void write_2d(char *fname, float *dist, int dx, int dy, 
+              float sx, float sy, float sz)
+{
+  char c;
+  int  n = dx * dy;
+  FILE *out;
+
+  if (NULL==(out=fopen(fname,"w"))) 
+    error("Cannot open output file.");
+  if (endian()) c='B'; 
+  else          c='L';
+  fprintf(out,"#F %c 3 0 1\n",c);
+  fprintf(out,"#D %d %d 1\n", dx, dy);
+  fprintf(out,"#S %f %f %f\n", sx, sy, sz);
+  fprintf(out,"#E\n");
+  if (n!=fwrite(dist,sizeof(float),n,out))
+    error("Cannot write output file");
+  fclose(out);
+}
+
+
 /******************************************************************************
 *
 *  write pictures of xy-slices
 *
 ******************************************************************************/
 
-void dist_xy(char *infile, int min, int max, int virvo)
+void dist_xy(char *infile, int min, int max, int mode)
 {
   float *hist, inv, fmax;
   char  *pix;
@@ -402,24 +479,37 @@ void dist_xy(char *infile, int min, int max, int virvo)
       }
 
   /* normalize distribution */
-  fmax = 0.0;
-  for (i=0; i<dimxy; i++) fmax = MAX(fmax,hist[i]);
-  inv = 255/fmax;
-  if (virvo)
-    for (i=0; i<dimxy; i++) pix[i] = (char) (      MIN(hist[i],fmax) * inv);
-  else
-    for (i=0; i<dimxy; i++) pix[i] = (char) (255 - MIN(hist[i],fmax) * inv);
+  if (mode<2) {
+    fmax = 0.0;
+    for (i=0; i<dimxy; i++) fmax = MAX(fmax,hist[i]);
+    inv = 255/fmax;
+    if (mode==1)
+      for (i=0; i<dimxy; i++) pix[i] = (char) (      MIN(hist[i],fmax) * inv);
+    else
+      for (i=0; i<dimxy; i++) pix[i] = (char) (255 - MIN(hist[i],fmax) * inv);
+  }
+
+  /* make file name */
+  if (nz==0) {
+    sprintf(fname,"%s",infile);
+  }
+  else if (max-min==1) {
+    sprintf(fname,"%s.xy.%d",infile,min);
+  }
+  else {
+    sprintf(fname,"%s.xy.%d-%d",infile,min,max-1);
+  }
 
   /* write distribution */
-  if (max-min==1) 
-    sprintf(fname,"%s.xy.%d",infile,min);
-  else
-    sprintf(fname,"%s.xy.%d-%d",infile,min,max-1);
-  if (virvo)
+  if (mode==1) {
     write_virvo_2d(fname, pix, dimx, dimy, ddx, ddy, ddz);
-  else
+  }
+  else if (mode==2) {
+    write_2d(fname, hist, dimx, dimy, ddx, ddy, ddz);
+  } 
+  else {
     write_pgm(fname, pix, dimx, dimy);
-
+  }
 }
 
 /******************************************************************************
@@ -428,7 +518,7 @@ void dist_xy(char *infile, int min, int max, int virvo)
 *
 ******************************************************************************/
 
-void dist_xz(char *infile, int min, int max, int virvo)
+void dist_xz(char *infile, int min, int max, int mode)
 {
   float *hist, inv, fmax;
   char  *pix;
@@ -451,24 +541,37 @@ void dist_xz(char *infile, int min, int max, int virvo)
       }
 
   /* normalize distribution */
-  fmax = 0.0;
-  for (i=0; i<dimxz; i++) fmax = MAX(fmax,hist[i]);
-  inv = 255/fmax;
-  if (virvo)
-    for (i=0; i<dimxz; i++) pix[i] = (char) (      MIN(hist[i],fmax) * inv);
-  else
-    for (i=0; i<dimxz; i++) pix[i] = (char) (255 - MIN(hist[i],fmax) * inv);
+  if (mode<2) {
+    fmax = 0.0;
+    for (i=0; i<dimxz; i++) fmax = MAX(fmax,hist[i]);
+    inv = 255/fmax;
+    if (mode==1)
+      for (i=0; i<dimxz; i++) pix[i] = (char) (      MIN(hist[i],fmax) * inv);
+    else
+      for (i=0; i<dimxz; i++) pix[i] = (char) (255 - MIN(hist[i],fmax) * inv);
+  }
 
-  /* write distribution */   
-  if (max-min==1) 
+  /* make file name */
+  if (nz==0) {
+    sprintf(fname,"%s",infile);
+  }
+  else if (max-min==1) {
     sprintf(fname,"%s.xz.%d",infile,min);
-  else
+  }
+  else {
     sprintf(fname,"%s.xz.%d-%d",infile,min,max-1);
-  if (virvo)
-    write_virvo_2d(fname, pix, dimx, dimz, ddx, ddz, ddy);
-  else
-    write_pgm(fname, pix, dimx, dimz);
+  }
 
+  /* write distribution */
+  if (mode==1) {
+    write_virvo_2d(fname, pix, dimx, dimz, ddx, ddz, ddy);
+  }
+  else if (mode==2) {
+    write_2d(fname, hist, dimx, dimz, ddx, ddz, ddy);
+  }
+  else {
+    write_pgm(fname, pix, dimx, dimz);
+  }
 }
 
 /******************************************************************************
@@ -477,7 +580,7 @@ void dist_xz(char *infile, int min, int max, int virvo)
 *
 ******************************************************************************/
 
-void dist_yz(char *infile, int min, int max, int virvo)
+void dist_yz(char *infile, int min, int max, int mode)
 {
   float *hist, inv, fmax;
   char  *pix;
@@ -500,24 +603,37 @@ void dist_yz(char *infile, int min, int max, int virvo)
       }
 
   /* normalize distribution */
-  fmax = 0.0;
-  for (i=0; i<dimyz; i++) fmax = MAX(fmax,hist[i]);
-  inv = 255/fmax;
-  if (virvo)
-    for (i=0; i<dimyz; i++) pix[i] = (char) (      MIN(hist[i],fmax) * inv);
-  else
-    for (i=0; i<dimyz; i++) pix[i] = (char) (255 - MIN(hist[i],fmax) * inv);
+  if (mode<2) {
+    fmax = 0.0;
+    for (i=0; i<dimyz; i++) fmax = MAX(fmax,hist[i]);
+    inv = 255/fmax;
+    if (mode==1)
+      for (i=0; i<dimyz; i++) pix[i] = (char) (      MIN(hist[i],fmax) * inv);
+    else
+      for (i=0; i<dimyz; i++) pix[i] = (char) (255 - MIN(hist[i],fmax) * inv);
+  }
+
+  /* make file name */
+  if (nz==0) {
+    sprintf(fname,"%s",infile);
+  }
+  else if (max-min==1) {
+    sprintf(fname,"%s.yz.%d",infile,min);
+  }
+  else {
+    sprintf(fname,"%s.yz.%d-%d",infile,min,max-1);
+  }
 
   /* write distribution */
-  if (max-min==1) 
-    sprintf(fname,"%s.yz.%d",infile,min);
-  else
-    sprintf(fname,"%s.yz.%d-%d",infile,min,max-1);
-  if (virvo)
+  if (mode==1) {
     write_virvo_2d(fname, pix, dimy, dimz, ddy, ddz, ddx);
-  else
+  }
+  else if (mode==2) {
+    write_2d(fname, hist, dimy, dimz, ddy, ddz, ddx);
+  }
+  else {
     write_pgm(fname, pix, dimy, dimz);
-
+  }
 }
 
 /******************************************************************************
@@ -616,7 +732,7 @@ void usage(char *progname)
 
 int main(int argc, char **argv) 
 {
-  int dim, dir=0, info=0, virvo=0, min, max;
+  int dim, dir=0, info=0, mode=0, min, max;
   int min_x, min_y, min_z, max_x, max_y, max_z;
   float fmax=0.0, dyn=0;
   char *progname, *infile;
@@ -640,7 +756,12 @@ int main(int argc, char **argv)
       argv += 1;
     }
     else if (argv[1][1]=='v') {
-      virvo = 1;
+      mode  = 1;
+      argc -= 1;
+      argv += 1;
+    }
+    else if (argv[1][1]=='r') {
+      mode  = 2;
       argc -= 1;
       argv += 1;
     }
@@ -675,11 +796,11 @@ int main(int argc, char **argv)
     axis_projections_3d();
   } else {
     if (dir==3) {
-      dist_xy(infile,min,max,virvo);
+      dist_xy(infile,min,max,mode);
     } else if (dir==2) { 
-      dist_xz(infile,min,max,virvo);
+      dist_xz(infile,min,max,mode);
     } else if (dir==1) {
-      dist_yz(infile,min,max,virvo);
+      dist_yz(infile,min,max,mode);
     } else if (dir==0) {
       virvo_picture_3d(infile,min_x,min_y,min_z,max_x,max_y,max_z);
     }
