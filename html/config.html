@@ -115,7 +115,7 @@ are supported:
 <TR><TD>_b2         <TD> crystal with B2 (CsCl) structure (3D)
 <TR><TD>_diamond    <TD> cubic diamond structure (3D)
 <TR><TD>_zincblende <TD> zincblende structure (3D)
-<TR><TD>_lav        <TD> a Laves phase (3D)
+<TR><TD>_lav        <TD> C15 Laves structure (3D)
 <TR><TD>_tiqc       <TD> truncated icosahedra quasicrystal (3D)
 <TR><TD>_hex        <TD> hexagonal crystal (2D)
 </TABLE>
@@ -138,9 +138,14 @@ and zincblende structure, the default lattice constant is 4.0. Thus,
 to obtain a structure with lattice constant <I>a</I>, the parameter
 <tt>box_unit</tt> has to be 0.25*<I>a</I>.
 <p>
-For the Laves crystal _lav, all three box parameters must be positive, 
-even integers. The structure can be scaled by the real parameter
-<tt>box_unit</tt> (default: 1).
+For the C15 Laves structure _lav, the three box parameters specify
+the number of unit cells in each direction (each with 24 atoms).
+In the parallel version, each CPU must have a block of entire cells,
+which means that the box parameters must be multiples of the
+components of <tt>cpu_dim</tt>. The size of the conventional cubic 
+unit cell is equal to <tt>box_unit</tt> (default: 1). For example, 
+in order to obtain a scale where the nearest neighbor distance of 
+small atoms (type 0) is 1, <tt>box_unit</tt> must be set to 2*sqrt(2). 
 <p>
 For the 2D hexagonal _hex structure, the dimension of the sample is 
 <TT>box_param.x*sqrt(3)*box_unit</TT> in x-direction, and 
