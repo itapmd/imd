@@ -139,7 +139,7 @@ void init_hex(void)
 /* generate hexagonal crystal */
 void generate_hex()
 {
-  cell    *input;
+  cell    *input, *to;
   vektor  min, max;
   ivektor cellc;
   int     to_cpu;
@@ -189,10 +189,12 @@ void generate_hex()
       to_cpu = cpu_coord(cellc);
       if (to_cpu==myid) {
         cellc = local_cell_coord(input->ort X(0), input->ort Y(0));
-        move_atom(cellc, input, 0);
+        to = PTR_VV(cell_array,cellc,cell_dim);
+        move_atom(to, input, 0);
       }
 #else
-      move_atom(cellc, input, 0);
+      to = PTR_VV(cell_array,cellc,cell_dim);
+      move_atom(to, input, 0);
 #endif
   }
 } 
@@ -215,7 +217,7 @@ void init_cubic(void)
 /* generate fcc or NaCl crystal */
 void generate_fcc(int maxtyp)
 {
-  cell    *input;
+  cell    *input, *to;
   vektor  min, max;
   ivektor cellc;
   int     to_cpu;
@@ -272,10 +274,12 @@ void generate_fcc(int maxtyp)
         if (to_cpu==myid) {
 	  cellc = local_cell_coord(input->ort X(0), input->ort Y(0), 
                                    input->ort Z(0));
-	  move_atom(cellc, input, 0);
+          to = PTR_VV(cell_array,cellc,cell_dim);
+	  move_atom(to, input, 0);
 	}
 #else
-	move_atom(cellc, input, 0);
+	to = PTR_VV(cell_array,cellc,cell_dim);
+        move_atom(to, input, 0);
 #endif
   }
 } 
@@ -284,7 +288,7 @@ void generate_fcc(int maxtyp)
 
 void generate_lav()
 {
-  cell    *input;
+  cell    *input, *to;
   vektor  min, max, lmin, lmax, rmax, rmin;
   ivektor cellc;
   int     to_cpu;
@@ -410,10 +414,12 @@ void generate_lav()
 	  if (to_cpu==myid) {
 	    cellc = local_cell_coord(input->ort X(0), input->ort Y(0), 
 				     input->ort Z(0));
-            move_atom(cellc, input, 0);
+            to = PTR_VV(cell_array,cellc,cell_dim);
+            move_atom(to, input, 0);
           }
 #else
-          move_atom(cellc, input, 0);
+          to = PTR_VV(cell_array,cellc,cell_dim);
+          move_atom(to, input, 0);
 #endif
         }
 } 

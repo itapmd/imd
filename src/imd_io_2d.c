@@ -220,7 +220,8 @@ void read_atoms(str255 infilename)
         }
         num_sort[SORTE(input,0)]++;
 	cellc = local_cell_coord(pos.x,pos.y);
-	move_atom(cellc, input, 0);
+        to = PTR_VV(cell_array,cellc,cell_dim);
+	move_atom(to, input, 0);
       }
 
 #else /* not MPI */
@@ -234,7 +235,8 @@ void read_atoms(str255 infilename)
         nactive += (int) (restrictions+s)->y;
       }
       num_sort[SORTE(input,0)]++;
-      move_atom(cellc, input, 0);
+      to = PTR_VV(cell_array,cellc,cell_dim);
+      move_atom(to, input, 0);
 
 #endif /* MPI */
 
@@ -517,8 +519,7 @@ void write_config(int steps)
       p = cell_array;  /* this is a pointer to the first (buffer) cell */
       for (m=1; m<num_cpus; ++m)
         for (k=0; k<ncells; k++) {
-          tag = CELL_TAG + CELLS(k);
-          recv_cell(p,m,tag);
+          recv_cell(p,MPI_ANY_SOURCE,CELL_TAG);
 	  write_cell(out,p);
 	}
       fclose(out);
@@ -528,8 +529,7 @@ void write_config(int steps)
       /* send data to cpu 0 */
       for (k=0; k<ncells; k++) {
         p = cell_array + CELLS(k);
-        tag = CELL_TAG + CELLS(k);
-        send_cell(p,0,tag);
+        send_cell(p,0,CELL_TAG);
       }
     }
   }

@@ -319,16 +319,13 @@ void write_conf_using_sockets()
    int i, j, ready; 
    int a; 
    cell *p;
-   int k=0;
+   int k=0, m;
    int *nummer;
    short int *sorte;
    real *masse, *x, *y, *vx, *vy, *pot;
    float f;
 #ifndef TWOD
    real *z, *vz;
-#endif
-#ifdef MPI
-   int m,tag;
 #endif
 
    /* allocs */
@@ -395,9 +392,7 @@ void write_conf_using_sockets()
       p = cell_array;  /* this is a pointer to the first (buffer) cell */
       for (m=1; m<num_cpus; ++m)
       for (j=0; j<ncells; ++j) {
-        p = cell_array + CELLS(j);
-        tag = CELL_TAG + j;
-        recv_cell(p,m,tag);
+        recv_cell(p,MPI_ANY_SOURCE,CELL_TAG);
         for (i=0; i < p->n; ++i) {
           if ( (p->ort X(i) >= socketwin_ll.x) &&
                (p->ort X(i) <= socketwin_ur.x) &&
@@ -426,8 +421,7 @@ void write_conf_using_sockets()
      /* Send data to cpu 0 */
      for (j=0; j<ncells; j++) {
        p = cell_array + CELLS(j);
-       tag = CELL_TAG + j;
-       send_cell(p,0,tag);
+       send_cell(p,0,CELL_TAG);
      }
    }
 

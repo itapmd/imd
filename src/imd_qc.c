@@ -665,7 +665,7 @@ void sortin (int ifeld[])
   int typ,sign,icell,i,hv,it,to_cpu;
   ivektor cellc;
   real x,y,z,dx,dy,dz,dist;
-  cell *p;
+  cell *p, *q;
   
   x=tx[0]*ifeld[0]+tx[1]*ifeld[1]+tx[2]*ifeld[2]+
     tx[3]*ifeld[3]+tx[4]*ifeld[4]+tx[5]*ifeld[5]+0.1-2.*gmin.x;
@@ -720,10 +720,9 @@ void sortin (int ifeld[])
 #ifdef MPI
 	      cellc = local_cell_coord(input->ort X(0), input->ort Y(0), 
 				       input->ort Z(0));
-	      move_atom(cellc, input, 0);
-#else
-	      move_atom(cellc, input, 0);
 #endif
+              q = PTR_VV(cell_array,cellc,cell_dim);
+	      move_atom(q, input, 0);
       }
     }
 }

@@ -355,7 +355,7 @@ void fix_cells(void)
         q = PTR_2D_VV(cell_array,coord,cell_dim);
         /* if it's in the wrong cell, move it to the right cell */
         if (p != q) 
-          move_atom(coord,p,l); 
+          move_atom(q,p,l); 
         else 
           ++l;
 #else
@@ -382,12 +382,13 @@ void fix_cells(void)
 
           /* Check, if atom is on my cpu */
           /* If not, copy into send buffer else move to correct cell */
-          if      ( 0 < dcpu.x ) copy_one_atom( &send_buf_west,  p, l);
-          else if ( 0 > dcpu.x ) copy_one_atom( &send_buf_east,  p, l);
-          else if ( 0 < dcpu.y ) copy_one_atom( &send_buf_south, p, l); 
-          else if ( 0 > dcpu.y ) copy_one_atom( &send_buf_north, p, l); 
+          if      ( 0 < dcpu.x ) copy_one_atom( &send_buf_west,  p, l, 1);
+          else if ( 0 > dcpu.x ) copy_one_atom( &send_buf_east,  p, l, 1);
+          else if ( 0 < dcpu.y ) copy_one_atom( &send_buf_south, p, l, 1); 
+          else if ( 0 > dcpu.y ) copy_one_atom( &send_buf_north, p, l, 1); 
           else { /* atom is on my cpu */
-            move_atom(coord, p, l);
+            q = PTR_VV(cell_array,coord,cell_dim);
+            move_atom(q, p, l);
           }
         }
 #endif /* MPI */

@@ -85,9 +85,11 @@ typedef neightab* neighptr;
 typedef struct {
   real        *ort;
 #ifndef MONOLJ
+  integer     *nummer;   
   shortint    *sorte;
   real        *masse;
   real        *pot_eng;
+#endif
 #ifdef EAM2                 /* EAM2: variable for the host electron density */
   real        *eam2_rho_h;
 #endif
@@ -95,10 +97,8 @@ typedef struct {
   real        *Epot_ref;
   real        *ort_ref;
 #endif
-#ifdef ORDPAR
-#ifndef TWOD
+#if defined(ORDPAR) && !defined(TWOD)
   shortint    *nbanz;
-#endif
 #endif
 #ifdef REFPOS
   real        *refpos;
@@ -109,8 +109,6 @@ typedef struct {
 #ifdef STRESS_TENS
   real        *presstens;
   real        *presstens_offdia;
-#endif
-  integer     *nummer;   
 #endif
   real        *impuls;
   real        *kraft;

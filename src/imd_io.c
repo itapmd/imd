@@ -49,8 +49,7 @@ void write_config_select(int fzhlr, char *suffix,
     p = cell_array;  /* this is a pointer to the first (buffer) cell */
     for (m=1; m<num_cpus; ++m)
       for (k=0; k<ncells; k++) {
-        tag = CELL_TAG + CELLS(k);
-        recv_cell(p,m,tag);
+        recv_cell(p,MPI_ANY_SOURCE,CELL_TAG);
         (*write_cell_fun)(out,p);
       }
 #endif
@@ -63,8 +62,7 @@ void write_config_select(int fzhlr, char *suffix,
     /* send data to cpu 0 */
     for (k=0; k<ncells; k++) {
       p = cell_array + CELLS(k);
-      tag = CELL_TAG + CELLS(k);
-      send_cell(p,0,tag);
+      send_cell(p,0,CELL_TAG);
     }
   }
 #endif

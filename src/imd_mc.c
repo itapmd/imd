@@ -244,7 +244,7 @@ void one_mc_step( void )
   ivektor cellc, newcellc;
   vektor  old_pos, new_pos;
   real    ediff;
-  cell    *p;
+  cell    *p, *q;
 
   /* for each cell */
   for (k=0; k < cell_dim.x; ++k)
@@ -296,7 +296,8 @@ void one_mc_step( void )
 #else
          newcellc = cell_coord( new_pos.x, new_pos.y );
 #endif
-         move_atom( newcellc, p, i );
+         q = PTR_VV(cell_array,newcellc,cell_dim);
+         move_atom( q, p, i );
        }
     }
   }

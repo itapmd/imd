@@ -90,7 +90,7 @@ vektor  back_into_box(vektor pos);
 void make_box(void);
 void init_cells(void);
 void make_cell_lists(void);
-void move_atom(ivektor cellc, cell *from, int index);
+void move_atom(cell *to, cell *from, int index);
 void alloc_cell(cell *thecell, int count);
 #ifdef TWOD
 ivektor       cell_coord(real x, real y);
@@ -167,7 +167,7 @@ void unpack_rho_h( msgbuf *b, int k, int l, int m );
 vektor global_pbc(int i,int j, int k);
 #endif
 #ifdef SAVEMEM  /* imd_savemem_3d.c */
-void send_atoms_by_cell(void);
+void send_cells_by_cell(void);
 #endif
 #endif /* 3D  */
 #endif /* MPI */
@@ -189,8 +189,8 @@ void do_boundaries(void);
 void fix_cells(void);
 #ifdef MPI
 void copy_atoms_buf(msgbuf *to, msgbuf *from);
-void copy_one_atom(msgbuf *to, cell *from, int index);
-void process_buffer(msgbuf *b);
+void copy_one_atom(msgbuf *to, cell *from, int index, int delete);
+void process_buffer(msgbuf *b, cell *p);
 void send_atoms(void);
 #ifdef SAVEMEM   /* imd_savemem_3d.c */
 void fix_cells_by_cell(void);
@@ -218,6 +218,8 @@ void write_cell_ef(FILE *out, cell *p);
 void write_cell_press(FILE *out, cell *p);
 #endif
 #ifdef MPI
+void recv_cell_old(cell *p, int from_cpu, int tag);
+void send_cell_old(cell *p, int to_cpu, int tag);
 void recv_cell(cell *p, int from_cpu, int tag);
 void send_cell(cell *p, int to_cpu, int tag);
 #endif

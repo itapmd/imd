@@ -1,4 +1,5 @@
 
+
 /******************************************************************************
 *
 * imd_savemem_3d.c -- routines for SAVEMEM option, three dimensions
@@ -140,7 +141,7 @@ void fix_cells_by_cell(void)
   int r,s,t;
   int odd;
   int tag;
-  cell *p, b;
+  cell *p, *q, b;
   ivektor coord,opposite,buf_coord;
   int to_cpu,from_cpu;
   int sum;
@@ -149,7 +150,7 @@ void fix_cells_by_cell(void)
   /* empty border cells and deallocate */
   empty_buffer_cells();
   
-      /* move atoms, use border cells when necessary */
+  /* move atoms, use border cells when necessary */
 
   b.n_max = 0;
   b.n     = 0;
@@ -192,23 +193,23 @@ void fix_cells_by_cell(void)
 		      coord.x = buf_coord.x;
 		      coord.y = buf_coord.y;
 		      coord.z = buf_coord.z;
-		    };
-		  };
+		    }
+		  }
 	      if (0==tag)  {
 		error("No matching buffer cell.");
-	      };
-	    };
+	      }
+	    }
 
-	    move_atom(coord, p, l);
+            q = PTR_VV(cell_array,coord,cell_dim);
+	    move_atom(q, p, l);
 
 	  } else {
 	    /* move_atom shuffles the atom in cell p around, 
 	       so we have to recheck atom number l after a move. */
 	    ++l;
-	  };
-
-	};
-      };
+	  }
+	}
+      }
 
   /* send border cells to neighbbours */
   for (i = 0; i <= 2; ++i)
@@ -261,7 +262,7 @@ void fix_cells_by_cell(void)
 	  } else {
 	    recv_cell( &b, from_cpu, tag );
 	    send_cell( p, to_cpu, tag );
-	  };
+	  }
 
 	  /* move_atom decrements b.n internally */
 	  while(0 < b.n) {
@@ -269,29 +270,30 @@ void fix_cells_by_cell(void)
 	    if ( myid !=  cpu_coord( global_cell_coord( coord ))) {
 	      error("Atom moved to wrong CPU.");
 	    }
-	    move_atom(coord, &b, 0);
-	  };
+            q = PTR_VV(cell_array,coord,cell_dim);
+	    move_atom(q, &b, 0);
+	  }
 	  if (0<b.n) error("Atom left in buffer.");
-	};
-      };
+	}
+      }
 
   /* Deallocate temorary workspace */
   alloc_cell(&b,0);
-    
+
 }
 
 
 /******************************************************************************
 *
-* send_atoms_by_cell
+* send_cells_by_cell
 *
 * This sends atoms to the neighbours on a cell by cell basis
 *
-* It generates more MPI Calls that send_atoms, but saves on memory
+* It generates more MPI Calls than send_cells, but saves on memory
 *
 ******************************************************************************/
 
-void send_atoms_by_cell()
+void send_cells_by_cell()
 {
   int i,j,k,l,m,n,u,v,w;
   ivektor neighbour;
@@ -355,7 +357,7 @@ void send_atoms_by_cell()
 
 /******************************************************************************
 *
-* send_cell_force lean version of send_cell for force_loop - UNUSED
+* send_cell_force lean version of send_cell for force_loop
 *
 ******************************************************************************/
 
@@ -370,7 +372,7 @@ void send_cell_force(cell *p, int to_cpu, int tag)
 
 /******************************************************************************
 *
-* recv_cell_force lean version of recv_cell for force_loop - UNUSED
+* recv_cell_force lean version of recv_cell for force_loop
 *
 ******************************************************************************/
 

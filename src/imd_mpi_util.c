@@ -1,3 +1,4 @@
+
 /******************************************************************************
 *
 * imd_mpi_util.c -- MPI utility routines
@@ -22,7 +23,6 @@ int isend_buf(msgbuf *b, int to_cpu, MPI_Request *req)
   return MPI_Isend(b->data, b->n, REAL, to_cpu, BUFFER_TAG, cpugrid, req);
 }
 
-
 /******************************************************************************
 *
 * irecv_buf lean version of recv_cell for force_loop
@@ -34,34 +34,72 @@ int irecv_buf(msgbuf *b, int from, MPI_Request *req)
   return MPI_Irecv(b->data, b->n_max, REAL, from, BUFFER_TAG, cpugrid, req);
 }
 
-
-/**********************************************************************
+/******************************************************************************
 *
-* moves an atom from one cell into a buffer
+* copy an atom from a cell into a buffer, and possibly delete it in the cell
 *
-***********************************************************************/
+******************************************************************************/
 
-void copy_one_atom(msgbuf *to, cell *from, int index)
+void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
 {
   /* Check the parameters */
   if ((0 > index) || (index >= from->n)) {
     printf("%d: i %d n %d\n",myid,index,from->n);
     error("copy_one_atom: index argument out of range.");
-  };
-  
+  }
+
   /* See if we need some space */
   if (to->n >= to->n_max) error("copy_one_atom: buffer overflow.");
 
   /* copy atom */
+  /* data is packed in the same order as in the cell data structure */
   to->data[ to->n++ ] = from->ort X(index); 
   to->data[ to->n++ ] = from->ort Y(index); 
 #ifndef TWOD
   to->data[ to->n++ ] = from->ort Z(index); 
 #endif
 #ifndef MONOLJ
+  to->data[ to->n++ ] = from->nummer[index];
   to->data[ to->n++ ] = from->sorte[index];
   to->data[ to->n++ ] = from->masse[index];
-  to->data[ to->n++ ] = from->nummer[index];
+  to->data[ to->n++ ] = from->pot_eng[index];
+#endif
+#ifdef EAM2
+  /* eam2_rho_h is not sent */
+#endif
+#ifdef DISLOC
+  to->data[ to->n++ ] = from->Epot_ref[index];
+  to->data[ to->n++ ] = from->ort_ref X(index); 
+  to->data[ to->n++ ] = from->ort_ref Y(index); 
+#ifndef TWOD
+  to->data[ to->n++ ] = from->ort_ref Z(index); 
+#endif
+#endif 
+#if defined(ORDPAR) && !defined(TWOD)
+  to->data[ to->n++ ] = from->nbanz[index]; 
+#endif
+#ifdef REFPOS
+  to->data[ to->n++ ] = from->refpos X(index);
+  to->data[ to->n++ ] = from->refpos Y(index);
+#ifndef TWOD
+  to->data[ to->n++ ] = from->refpos Z(index);
+#endif
+#endif
+#ifdef NVX
+  to->data[ to->n++ ] = from->heat_cond[index];
+#endif
+#ifdef STRESS_TENS
+  /* stress tensor is not sent */
+#endif
+  to->data[ to->n++ ] = from->impuls X(index); 
+  to->data[ to->n++ ] = from->impuls Y(index); 
+#ifndef TWOD
+  to->data[ to->n++ ] = from->impuls Z(index); 
+#endif
+  /* force is not sent */
+#ifdef COVALENT
+  /* neighbor table is not sent */
+#endif
 #ifdef UNIAX
   to->data[ to->n++ ] = from->traeg_moment[index];
   to->data[ to->n++ ] = from->achse X(index); 
@@ -76,113 +114,101 @@ void copy_one_atom(msgbuf *to, cell *from, int index)
   to->data[ to->n++ ] = from->dreh_impuls X(index); 
   to->data[ to->n++ ] = from->dreh_impuls Y(index); 
   to->data[ to->n++ ] = from->dreh_impuls Z(index); 
+  /* dreh_moment is not sent */
 #endif
-#ifdef REFPOS
-  to->data[ to->n++ ] = from->refpos X(index);
-  to->data[ to->n++ ] = from->refpos Y(index);
+
+  /* Delete atom in original cell? */
+  if (delete==1) {
+
+    --from->n;
+
+    /* we treat the data in the same order as in the cell data structure */
+    if (0 < from->n) {
+
+      from->ort X(index) = from->ort X(from->n); 
+      from->ort Y(index) = from->ort Y(from->n); 
 #ifndef TWOD
-  to->data[ to->n++ ] = from->refpos Z(index);
-#endif
-#endif
-#ifdef DISLOC
-  to->data[ to->n++ ] = from->Epot_ref[index];
-  to->data[ to->n++ ] = from->ort_ref X(index); 
-  to->data[ to->n++ ] = from->ort_ref Y(index); 
-#ifndef TWOD
-  to->data[ to->n++ ] = from->ort_ref Z(index); 
-#endif
-#endif 
-#endif /* not MONOLJ */
-
-  to->data[ to->n++ ] = from->impuls X(index); 
-  to->data[ to->n++ ] = from->impuls Y(index); 
-#ifndef TWOD
-  to->data[ to->n++ ] = from->impuls Z(index); 
-#endif
-
-  /* Delete atom in original cell */
-
-  --from->n;
-
-  if (0 < from->n) {
-
-    from->ort X(index) = from->ort X(from->n); 
-    from->ort Y(index) = from->ort Y(from->n); 
-#ifndef TWOD
-    from->ort Z(index) = from->ort Z(from->n); 
+      from->ort Z(index) = from->ort Z(from->n); 
 #endif
 #ifndef MONOLJ
-    from->sorte[index] = from->sorte[from->n];
-    from->masse[index] = from->masse[from->n]; 
-    from->nummer[index] = from->nummer[from->n]; 
-#ifdef UNIAX
-    from->traeg_moment[index] = from->traeg_moment[from->n]; 
-    from->achse X(index) = from->achse X(from->n); 
-    from->achse Y(index) = from->achse Y(from->n); 
-    from->achse Z(index) = from->achse Z(from->n); 
-    from->shape X(index) = from->shape X(from->n); 
-    from->shape Y(index) = from->shape Y(from->n); 
-    from->shape Z(index) = from->shape Z(from->n); 
-    from->pot_well X(index) = from->pot_well X(from->n); 
-    from->pot_well Y(index) = from->pot_well Y(from->n); 
-    from->pot_well Z(index) = from->pot_well Z(from->n); 
-    from->dreh_impuls X(index) = from->dreh_impuls X(from->n); 
-    from->dreh_impuls Y(index) = from->dreh_impuls Y(from->n); 
-    from->dreh_impuls Z(index) = from->dreh_impuls Z(from->n); 
-    from->dreh_moment X(index) = from->dreh_moment X(from->n); 
-    from->dreh_moment Y(index) = from->dreh_moment Y(from->n); 
-    from->dreh_moment Z(index) = from->dreh_moment Z(from->n); 
+      from->nummer[index]  = from->nummer[from->n]; 
+      from->sorte[index]   = from->sorte[from->n];
+      from->masse[index]   = from->masse[from->n]; 
+      from->pot_eng[index] = from->pot_eng[from->n]; 
 #endif
-    from->pot_eng[index] = from->pot_eng[from->n]; 
-#ifdef ORDPAR
-#ifndef TWOD
-    from->nbanz[index]   = from->nbanz[from->n]; 
-#endif
-#endif
-#ifdef REFPOS
-    from->refpos X(index) = from->refpos X(from->n);
-    from->refpos Y(index) = from->refpos Y(from->n);
-#ifndef TWOD
-    from->refpos Z(index) = from->refpos Z(from->n);
-#endif
+#ifdef EAM2
+      /* eam2_rho_h need not be copied */
 #endif
 #ifdef DISLOC
-    from->Epot_ref[index]    = from->Epot_ref[from->n]; 
-    from->ort_ref X(index)   = from->ort_ref X(from->n); 
-    from->ort_ref Y(index)   = from->ort_ref Y(from->n); 
+      from->Epot_ref[index]    = from->Epot_ref[from->n]; 
+      from->ort_ref X(index)   = from->ort_ref X(from->n); 
+      from->ort_ref Y(index)   = from->ort_ref Y(from->n); 
 #ifndef TWOD
-    from->ort_ref Z(index)   = from->ort_ref Z(from->n); 
+      from->ort_ref Z(index)   = from->ort_ref Z(from->n); 
 #endif
 #endif
-#endif /* not MONOLJ */
-    from->kraft X(index) = from->kraft X(from->n); 
-    from->kraft Y(index) = from->kraft Y(from->n); 
+#if defined(ORDPAR) && !defined(TWOD)
+      from->nbanz[index]    = from->nbanz[from->n]; 
+#endif
+#ifdef REFPOS
+      from->refpos X(index) = from->refpos X(from->n);
+      from->refpos Y(index) = from->refpos Y(from->n);
 #ifndef TWOD
-    from->kraft Z(index) = from->kraft Z(from->n); 
+      from->refpos Z(index) = from->refpos Z(from->n);
 #endif
-    from->impuls X(index) = from->impuls X(from->n); 
-    from->impuls Y(index) = from->impuls Y(from->n); 
+#endif
+#ifdef NVX
+      from->heatcond[index] = from->heatcond[from->n]; 
+#endif
+#ifdef STRESS_TENS
+      /* stress tensor need not be copied */
+#endif
+      from->impuls X(index) = from->impuls X(from->n); 
+      from->impuls Y(index) = from->impuls Y(from->n); 
 #ifndef TWOD
-    from->impuls Z(index) = from->impuls Z(from->n); 
+      from->impuls Z(index) = from->impuls Z(from->n); 
 #endif
-  }
+      /* force need not be copied */
+#ifdef COVALENT
+      /* neighbor table need not be copied */
+#endif
+#ifdef UNIAX
+      from->traeg_moment[index] = from->traeg_moment[from->n];
+      from->achse X(index) = from->achse X(from->n); 
+      from->achse Y(index) = from->achse Y(from->n); 
+      from->achse Z(index) = from->achse Z(from->n); 
+      from->shape X(index) = from->shape X(from->n); 
+      from->shape Y(index) = from->shape Y(from->n); 
+      from->shape Z(index) = from->shape Z(from->n); 
+      from->pot_well X(index) = from->pot_well X(from->n); 
+      from->pot_well Y(index) = from->pot_well Y(from->n); 
+      from->pot_well Z(index) = from->pot_well Z(from->n); 
+      from->dreh_impuls X(index) = from->dreh_impuls X(from->n); 
+      from->dreh_impuls Y(index) = from->dreh_impuls Y(from->n); 
+      from->dreh_impuls Z(index) = from->dreh_impuls Z(from->n); 
+      /* dreh_moment need not be copied */
+#endif
+    }
+  } /* delete or not delete */
 }
 
 
 /******************************************************************************
 *
-*  process buffer sorts particles from mpi buffer into buffer cells
-*  buffers have been filled with copy_atoms or copy_one_atom
+*  process buffer unpacks particles from mpi buffer.
+*  if p == NULL, they are sorted into the cell array,
+*  otherwise they are put into the cell pointed to by p.
+*  mpi buffers have been packed with copy_one_atom.
 *
 ******************************************************************************/
 
-void process_buffer(msgbuf *b)
+void process_buffer(msgbuf *b, cell *p)
 {
   ivektor coord, coord2;
-  int to_cpu;
+  int to_cpu, j;
   static cell *input = NULL;
-  int j;
-  
+  cell *to;
+
   if (NULL == input) {
     input = (cell *) malloc(sizeof(cell));
     if (0==input) error("Cannot allocate buffer cell.");
@@ -191,6 +217,7 @@ void process_buffer(msgbuf *b)
   }
 
   j=0;
+  /* we treat the data in the same order as in the cell data structure */
   if (b->n > 0) do {     
     input->n        = 1;
     input->ort X(0) = b->data[j++];
@@ -199,9 +226,47 @@ void process_buffer(msgbuf *b)
     input->ort Z(0) = b->data[j++];
 #endif
 #ifndef MONOLJ
-    input->sorte[0]  = b->data[j++];
-    input->masse[0]  = b->data[j++];
-    input->nummer[0] = b->data[j++];
+    input->nummer[0]  = b->data[j++];
+    input->sorte[0]   = b->data[j++];
+    input->masse[0]   = b->data[j++];
+    input->pot_eng[0] = b->data[j++];
+#endif
+#ifdef EAM2
+    /* don't send eam2_rho_h */
+#endif
+#ifdef DISLOC
+    input->Epot_ref[0]     = b->data[j++];
+    input->ort_ref X(0)    = b->data[j++];
+    input->ort_ref Y(0)    = b->data[j++];
+#ifndef TWOD
+    input->ort_ref Z(0)    = b->data[j++];
+#endif
+#endif
+#if defined(ORDPAR) && !defined(TWOD)
+    input->nbanz[0]        = b->data[j++];
+#endif
+#ifdef REFPOS
+    input->refpos X(0)     = b->data[j++];
+    input->refpos Y(0)     = b->data[j++];
+#ifndef TWOD
+    input->refpos Z(0)     = b->data[j++];
+#endif
+#endif
+#ifdef NVX
+    input->heatcond[0]     = b->data[j++];
+#endif
+#ifdef STRESS_TENS
+    /* don't send stress tensor */
+#endif
+    input->impuls X(0)     = b->data[j++];
+    input->impuls Y(0)     = b->data[j++];
+#ifndef TWOD
+    input->impuls Z(0)     = b->data[j++];
+#endif
+    /* don't send force */
+#ifdef COVALENT
+    /* don't send neighbor table */
+#endif
 #ifdef UNIAX
     input->traeg_moment[0] = b->data[j++];
     input->achse X(0) = b->data[j++];
@@ -216,40 +281,23 @@ void process_buffer(msgbuf *b)
     input->dreh_impuls X(0) = b->data[j++];
     input->dreh_impuls Y(0) = b->data[j++];
     input->dreh_impuls Z(0) = b->data[j++];
-#endif
-#ifdef REFPOS
-    input->refpos X(0)     = b->data[j++];
-    input->refpos Y(0)     = b->data[j++];
-#ifndef TWOD
-    input->refpos Z(0)     = b->data[j++];
-#endif
-#endif
-#ifdef DISLOC
-    input->Epot_ref[0]     = b->data[j++];
-    input->ort_ref X(0)    = b->data[j++];
-    input->ort_ref Y(0)    = b->data[j++];
-#ifndef TWOD
-    input->ort_ref Z(0)    = b->data[j++];
-#endif
-#endif
-#endif /* not MONOLJ */
-    input->impuls X(0)     = b->data[j++];
-    input->impuls Y(0)     = b->data[j++];
-#ifndef TWOD
-    input->impuls Z(0)     = b->data[j++];
+    /* don't send dreh_moment */
 #endif
 
+    if (p==NULL) {  /* distribute atom into cell array */
 #ifdef TWOD
-    coord  = local_cell_coord( input->ort X(0), input->ort Y(0) );
-    coord2 = cell_coord(       input->ort X(0), input->ort Y(0) );
+      coord =local_cell_coord( input->ort X(0), input->ort Y(0) );
+      coord2=cell_coord(       input->ort X(0), input->ort Y(0) );
 #else
-    coord  = local_cell_coord(input->ort X(0),input->ort Y(0),input->ort Z(0));
-    coord2 = cell_coord(      input->ort X(0),input->ort Y(0),input->ort Z(0));
+      coord =local_cell_coord(input->ort X(0),input->ort Y(0),input->ort Z(0));
+      coord2=cell_coord(      input->ort X(0),input->ort Y(0),input->ort Z(0));
 #endif
-
-    to_cpu = cpu_coord( coord2 );
-    if (to_cpu == myid) move_atom(coord, input, 0);
-
+      to_cpu = cpu_coord( coord2 );
+      to = PTR_VV(cell_array,coord,cell_dim);
+      if (to_cpu == myid) move_atom(to, input, 0);
+    } else {  /* put atom into cell pointed by p */
+      move_atom(p, input, 0);
+    }
   } while (j<b->n);
 
 }
@@ -503,11 +551,59 @@ void empty_mpi_buffers(void)
 
 /******************************************************************************
 *
-* send_cell send cell data to another process
+*  send_cell packs the data of all particles in the cell
+*  into a buffer, and sends the buffer to the destination cpu.
 *
 ******************************************************************************/
 
 void send_cell(cell *p, int to_cpu, int tag)
+{
+  int i;
+  msgbuf *b;
+
+  b = &send_buf_east;
+  b->n = 0;
+
+  for (i=0; i<p->n; i++) copy_one_atom(b, p, i, 0);
+  if  (b->n_max < b->n)  error("Buffer overflow in send_cell");
+
+  MPI_Send(b->data, b->n, REAL, to_cpu, tag, cpugrid);
+}
+
+
+/******************************************************************************
+*
+*  recv_cell receives in a buffer the data of the particles in one cell,
+*  and upacks the buffer into the cell pointed to by p.
+*
+******************************************************************************/
+
+void recv_cell(cell *p, int from_cpu, int tag)
+{
+  MPI_Status status;
+  msgbuf *b;
+
+  b = &recv_buf_east;
+
+  /* check message size */
+  MPI_Probe( from_cpu, tag, cpugrid, &status );
+  MPI_Get_count( &status, REAL, &(b->n) );
+  if (b->n_max < b->n) error("Buffer overflow in recv_cell");
+
+  /* upack data */
+  p->n = 0;
+  MPI_Recv(b->data, b->n, REAL, from_cpu, tag, cpugrid, &status);
+  process_buffer(b,p);
+}
+
+
+/******************************************************************************
+*
+*  send_cell_old send cell data to another process  (old version)
+*
+******************************************************************************/
+
+void send_cell_old(cell *p, int to_cpu, int tag)
 {
   MPI_Ssend( p->ort, DIM*p->n, REAL,    to_cpu, tag + ORT_TAG,    cpugrid);
 #ifndef MONOLJ
@@ -545,11 +641,11 @@ void send_cell(cell *p, int to_cpu, int tag)
 
 /******************************************************************************
 *
-* recv_cell receive cell data for cell
+* recv_cell_old receive cell data for cell  (old version)
 *
 ******************************************************************************/
 
-void recv_cell(cell *p, int from_cpu, int tag)
+void recv_cell_old(cell *p, int from_cpu, int tag)
 {
   int size;
   int newsize;

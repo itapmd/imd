@@ -1,3 +1,4 @@
+
 /******************************************************************************
 *
 * imd_geom_2d.c -- cell decomposition routines for the imd package 2d version
@@ -5,7 +6,6 @@
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
@@ -75,7 +75,7 @@ void init_cells( void )
   vektor cell_scale;
   ivektor next_cell_dim, cell_dim_old;
   ivektor cellmin_old, cellmax_old, cellc;
-  cell *p, *cell_array_old; 
+  cell *p, *cell_array_old, *to; 
 
 #ifdef NPT
   if (0 == myid) {
@@ -283,7 +283,8 @@ void init_cells( void )
 #else
           cellc = cell_coord(p->ort X(i),p->ort Y(i));
 #endif
-          move_atom( cellc, p, i );
+          to = PTR_VV(cell_array,cellc,cell_dim);
+          move_atom( to, p, i );
         }
         alloc_cell( p, 0 );  /* free old cell */
     }

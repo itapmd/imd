@@ -1,3 +1,4 @@
+
 /******************************************************************************
 *
 * imd_geom_3d.c -- Domain decomposition routines for the imd package
@@ -5,7 +6,6 @@
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
@@ -131,7 +131,7 @@ void init_cells( void )
   vektor cell_scale;
   ivektor next_cell_dim, cell_dim_old;
   ivektor cellmin_old, cellmax_old, cellc;
-  cell *p, *cell_array_old; 
+  cell *p, *cell_array_old, *to;
   real s1, s2, r2_cut, r2_cut2;
 
 #ifdef NPT
@@ -428,7 +428,8 @@ void init_cells( void )
 #else
             cellc = cell_coord(p->ort X(i),p->ort Y(i),p->ort Z(i));
 #endif
-            move_atom( cellc, p, i );
+            to = PTR_VV(cell_array,cellc,cell_dim);
+            move_atom( to, p, i );
           }
           alloc_cell( p, 0 );  /* free old cell */
     }

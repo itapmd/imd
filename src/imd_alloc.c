@@ -22,17 +22,8 @@
 *
 ******************************************************************************/
 
-void move_atom(ivektor cellc, cell *from, int index)
-
+void move_atom(cell *to, cell *from, int index)
 {
-  cell *to;
-
-#ifdef TWOD
-  to = PTR_2D_VV(cell_array,cellc,cell_dim);
-#else
-  to = PTR_3D_VV(cell_array,cellc,cell_dim);
-#endif
-
   /* Check the parameters */
   if ((0 > index) || (index >= from->n)) 
     error("move_atom: index argument out of range.");
