@@ -15,6 +15,7 @@ void usage(char *progname)
   printf("             -u <urx> <ury> <urz>  upper right corner\n");
   printf("             -i <min> <max>        data cutuff interval\n");
   printf("             -f <min> <max>        range of time steps\n");
+  printf("             -v <speed>            speed (seconds/frame)\n");
   printf("             -s <int>              time step interval\n");
   printf("             -t uv8|uv12|rvf|xvf   output format\n");
   printf("             -n <n>                index of data slot\n");
@@ -65,7 +66,7 @@ void write_header_rvf( FILE *fp, int dx, int dy, int dz)
 }
 
 void write_header_xvf( FILE *fp, float_dist_t *fl, 
-  int dx, int dy, int dz, int nf, float min, float max)
+  int dx, int dy, int dz, int nf, float min, float max, float v)
 {
   char header[69], *str;
   unsigned short us;
@@ -85,7 +86,7 @@ void write_header_xvf( FILE *fp, float_dist_t *fl,
   f  = fl->sx; copy_4_bytes(str,&f);  str +=4;   /* x-length of voxel */
   f  = fl->sy; copy_4_bytes(str,&f);  str +=4;   /* y-length of voxel */
   f  = fl->sz; copy_4_bytes(str,&f);  str +=4;   /* z-length of voxel */
-  f  = 0.1; copy_4_bytes(str,&f);     str +=4;   /* secs per frame */
+               copy_4_bytes(str,&v);  str +=4;   /* secs per frame */
   f  = min; copy_4_bytes(str,&f);     str +=4;   /* minimum data value */
   f  = max; copy_4_bytes(str,&f);     str +=4;   /* maximum data value */
   f  = 0.0; copy_4_bytes(str,&f);     str +=4;   /* x-pos of volume center */
@@ -98,14 +99,14 @@ void write_header_xvf( FILE *fp, float_dist_t *fl,
 }
 
 void write_header_xvf_sep( char *basename, float_dist_t *fl, 
-  int dx, int dy, int dz, int nf, float min, float max)
+  int dx, int dy, int dz, int nf, float min, float max, float v)
 {
   FILE *fp;
   char fname[255];
 
   sprintf(fname, "%s.xvf-header", basename );
   if (NULL==(fp=fopen(fname, "w"))) error("Cannot open parameter file");
-  write_header_xvf( fp, fl, dx, dy, dz, nf, min, max);
+  write_header_xvf( fp, fl, dx, dy, dz, nf, min, max, v);
   fclose(fp);
 }
 
@@ -116,7 +117,7 @@ int main( int argc, char **argv )
   FILE *fp;
   int have_ur=0, have_minmax=0, have_type=0, type, step=1, nsteps;
   int llx=0, lly=0, llz=0, urx, ury, urz, fmin=0, fmax=0, n=0, i;
-  float min, max;
+  float min, max, v=0.04;
   float_dist_t fl;
   byte_dist_t bt;
 
@@ -153,6 +154,11 @@ int main( int argc, char **argv )
     }
     else if (argv[1][1]=='s') {
       step = atoi(argv[2]);
+      argc -= 2;
+      argv += 2;
+    }
+    else if (argv[1][1]=='v') {
+      v     = atof(argv[2]);
       argc -= 2;
       argv += 2;
     }
@@ -222,13 +228,13 @@ int main( int argc, char **argv )
   if (NULL==fp) error("Cannot open output file");
   if (type==UV8) {
     write_header_uv(urx-llx,ury-lly,urz-llz,nsteps,tmpstr,"SCALAR8" );
-    write_header_xvf_sep(tmpstr,&fl,urx-llx,ury-lly,urz-llz,nsteps,min,max);
+    write_header_xvf_sep(tmpstr,&fl,urx-llx,ury-lly,urz-llz,nsteps,min,max,v);
   } else if (type==UV12) { 
     write_header_uv(urx-llx,ury-lly,urz-llz,nsteps,tmpstr,"SCALAR12");
   } else if (type==RVF) {
     write_header_rvf(fp, urx-llx, ury-lly, urz-llz);
   } else if (type==XVF ) {
-    write_header_xvf(fp, &fl, urx-llx, ury-lly, urz-llz, nsteps, min, max);
+    write_header_xvf(fp, &fl, urx-llx, ury-lly, urz-llz, nsteps, min, max, v);
   }
 
   /* loop over frames */
