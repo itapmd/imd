@@ -37,6 +37,7 @@ void read_atoms(str255 infilename)
   cell *input;
   FILE *infile;
   char buf[512];
+  str255 msg;
   int p;
   vektor pos;
   vektor vau;
@@ -94,8 +95,7 @@ void read_atoms(str255 infilename)
     return;
   }
 
-  if ((1!=parallel_input) || (NULL==infile)) 
-    infile = fopen(infilename,"r");
+  if ((1!=parallel_input) || (NULL==infile))
 #ifdef DISLOC
   if (calc_Epot_ref == 0) reffile = fopen(reffilename,"r");
 #endif
@@ -111,10 +111,15 @@ void read_atoms(str255 infilename)
 
 #endif /* MPI or not MPI */
 
-  if (NULL==infile) error("Cannot open atoms file.");
+  if (NULL==infile) {
+    sprintf(msg,"File %s not found",infilename);
+    error(msg);
+  }
 #ifdef DISLOC
-  if ((calc_Epot_ref == 0) && (NULL==reffile)) 
-    error("Cannot open reference file.");
+  if ((calc_Epot_ref == 0) && (NULL==reffile)) {
+    sprintf(msg,"File %s not found",reffilename);
+    error(msg);
+  }
 #endif
 
  /* Set up 1 atom input cell */
@@ -288,7 +293,7 @@ void read_atoms(str255 infilename)
         if (s < ntypes) {
           nactive += DIM;
 #ifdef UNIAX
-        nactive_rot += 2;
+          nactive_rot += 2;
 #endif
         } else {
           nactive += (int) (restrictions+s)->x;

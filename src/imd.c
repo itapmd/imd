@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 
 #endif /* not UNIAX and not MONOLJ */
 
-  /* filenames starting with denote internal 
+  /* filenames starting with _ denote internal 
      generation of the intitial configuration */
   if ('_' == infilename[0]) {
     if (0 == myid) { 

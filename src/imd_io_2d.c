@@ -37,6 +37,7 @@ void read_atoms(str255 infilename)
   cell *input;
   FILE *infile;
   char buf[512];
+  str255 msg;
   int p;
   vektor2d pos;
   vektor2d vau;
@@ -101,10 +102,15 @@ void read_atoms(str255 infilename)
 
 #endif /* MPI */
 
-  if (NULL==infile) error("Cannot open atoms file.");
+  if (NULL==infile) {
+    sprintf(msg,"File %s not found",infilename);
+    error(msg);
+  }
 #ifdef DISLOC
-  if ((calc_Epot_ref == 0) && (NULL==reffile)) 
-    error("Cannot open reference file.");
+  if ((calc_Epot_ref == 0) && (NULL==reffile)) {
+    sprintf(msg,"File %s not found",reffilename);
+    error(msg);
+  }
 #endif
 
   /* Set up 1 atom input cell */
