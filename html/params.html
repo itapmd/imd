@@ -214,6 +214,7 @@ expansionmode    # if 1 strain the sample in y direction
 strainrate       # with this strainrate
 gamma_bar        # damping coefficent
 dampingmode      # O: viscous damping (default) 1: Nose-Hover
+
 # additional parameters for FTG
 delta_ftg        # ???
 gamma_min
@@ -226,6 +227,7 @@ nslices_Right
 # parameters for SLLOD (with periodic boundary conditions)
 shear_rate      # yz-, zx-, and xy-component of the deformation rate tensor
 shear_rate2     # zy-, xz-, and yx-component of the deformation rate tensor
+
 # parameters for HOMDEF (with periodic boundary conditions)
 hom_interval    # number of steps between homogeneous shears
 shear_factor	# shear_factor*x-coord is added to y-coord in hom. shears
@@ -235,6 +237,9 @@ lindef_interval # number of steps between linear deformation
 lindef_x        # first row vector of the deformation matrix
 lindef_y        # second row vector of the deformation matrix
 lindef_z        # third row vector of the deformation matrix (only 3d)
+bulk_module     # bulk module (used for pressure relaxation)
+shear_module    # shear module (used for pressure relaxation)
+relax_rate      # pressure relaxation rate
 
 # parameters for DEFORM
 deform_shift    # type and shift vector, by which atoms of that type

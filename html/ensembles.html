@@ -123,6 +123,28 @@ mik, which can be verified using the option <a href="options.html#fnorm">
 fnorm</a>. glok now makes use of the parameters  annealsteps and
 ekin_threshold for better control of the relaxation.</p></dd>
 
+<dt><b>pressure relaxation</b></dt>
+<dd>
+<p>
+In combination with relaxation integrators, pressure relaxation can
+be switched on by setting the parameter <tt>relax_rate</tt> to a
+positive (but small) value. At each step, the pressure tensor of the
+sample is then calculated, and the box size and shape is changed by a 
+small amount in order to lower that pressure. The parameters
+<tt>bulk_module</tt> and <tt>shear_module</tt>, given in 
+<a href="units.html">units of pressure</a>, can be used to specify
+the sensitivity of the pressure tensor to box changes. With correctly 
+set bulk and shear modules, a value of 1e-5 for the
+<tt>relax_rate</tt> seems to work well. For higher values, the
+system might become unstable due to pressure fluctuations, which
+can be quite large initially. If the bulk and shear modules are
+not given, they default to 1. Some experimentation with 
+<tt>relax_rate</tt> should then quickly reveal a usable value.
+The pressure relaxation feature requires the compile options 
+<a href="options.html#homdef">homdef</a> and 
+<a href="options.html#stress_tens">stress.</a>
+</p></dd>
+
 </dl>
 
 <h2><a id="specialint" name="specialint">
