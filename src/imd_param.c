@@ -470,7 +470,7 @@ void getparamfile(char *paramfname, int sim)
     }
     else if (strcasecmp(token,"fbc_waitsteps")==0) {
       /* max nr of steps between shears */
-      getparam("rbc_waitsteps",&fbc_waitsteps,PARAM_INT,1,1);
+      getparam("fbc_waitsteps",&fbc_waitsteps,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"extra_dforce")==0) {
       /* extra force increment for virtual types */
