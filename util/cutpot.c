@@ -1,19 +1,22 @@
 
 /******************************************************************************
 *
-* IMD -- The ITAP Molecular Dynamics Program
+*  IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
-* University of Stuttgart, D-70550 Stuttgart
+*  Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+*  University of Stuttgart, D-70550 Stuttgart
+*
+*  $Revision$
+*  $Date$
 *
 ******************************************************************************/
 
-/*****************************************************************************
+/******************************************************************************
 *
 *  This utility program can be used to shorten pair potentials. For each 
 *  data column, a cutoff radius (or radius squared) must be specified. 
 *  Up to this radius, the returned potential is equal to the input 
-*  potential, but beyond thes radius it is replaced by a function which 
+*  potential, but beyond this radius it is replaced by a function which 
 *  tends smoothly to zero. The resulting potential is continuous and has 
 *  a continuous first derivative.  
 *
@@ -43,12 +46,15 @@
 *  rcut       1.4 1.6 1.6 1.6    # cutoff values, where tail function starts
 *  steepness  1.5 1.5 1.5 1.5    # steepness of exponential tail function
 *
+*  The optional keyword 'symmetric' in the parameter file indicates that
+*  the potential is symmetric in the atom types, and the input file 
+*  contains only the ntypes*(ntypes+1)/2 potential values V_ij with i<=j.
+*  cutpot then writes all ntypes*ntypes values to the output file, as
+*  required for IMD.
+*
 *  Compilation:  gcc -o cutpot -O cutpot.c -lm
 *
 *  Usage:        cutpot <paramfile>
-*
-*  $Revision$
-*  $Date$
 *
 ******************************************************************************/
 
@@ -93,7 +99,7 @@ typedef struct {
 
 /* global variables */
 str255 infilename="\0", outfilename="\0";
-int    ncols=0, nsteps=0, spacing=-1, tailtype=-1;
+int    ncols=0, ntypes=0, sym=0, nsteps=0, spacing=-1, tailtype=-1;
 real   *rcut=NULL, *a=NULL, *b=NULL, *c=NULL, *steepness=NULL;
 
 /******************************************************************************
@@ -308,6 +314,10 @@ void getparamfile(char *paramfname)
       /* number of columns */
       getparam(n,"ncols",&ncols,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token,"symmetric")==0) {
+      /* symmetric potential, ntypes*(ntypes+1)/2 columns */
+      sym=1;
+    }
     else if (strcasecmp(token,"nsteps")==0) {
       /* number of output potential lines */
       getparam(n,"nsteps",&nsteps,PARAM_INT,1,1);
@@ -350,8 +360,14 @@ void getparamfile(char *paramfname)
   else
     printf("Using %d data column(s)\n",ncols);
 
+  if (sym==1) {
+    ntypes = (int) sqrt(2.0*ncols);
+    if (ncols!=ntypes*(ntypes+1)/2)
+      error("keyword \"symmetric\" implies ntypes*(ntypes+1)/2 input columns");
+  }
+
   if (nsteps==0) 
-    error("ncols must be specified in parameter file");
+    error("nsteps must be specified in parameter file");
   else
     printf("Writing %d potential lines\n",nsteps);
 
@@ -375,11 +391,12 @@ void getparamfile(char *paramfname)
 
   if (tailtype==-1) 
     error("type of potential tail must be specified in parameter file");
-  else
+  else {
     if (tailtype==SQRTAIL)
       printf("Writing quadratic potential tail\n");
     else
       printf("Writing exponential potential tail\n");
+  }
 
   if (rcut==NULL)
     error("rcut must be specified in parameter file");
@@ -570,21 +587,23 @@ void pair_int2(real *pot, real *grad, pot_table_t *pt,
 *
 ******************************************************************************/
 
-
 int main(int argc, char **argv)
 {
-  int  i, col;
+  int  i, j, k, col, *off;
   real x, r2, rmax=0, r2step;
   pot_table_t pt; 
-  real grad, pot;    
+  real grad, *pot;    
   FILE *out;
 
   read_parameters(argc, argv);
 
-  a = (real *) malloc( ncols * sizeof(real) );
-  b = (real *) malloc( ncols * sizeof(real) );
-  c = (real *) malloc( ncols * sizeof(real) );
-  if ((a==NULL) || (b==NULL) || (c==NULL)) error("data allocation failed");
+  a   = (real *) malloc( ncols * sizeof(real) );
+  b   = (real *) malloc( ncols * sizeof(real) );
+  c   = (real *) malloc( ncols * sizeof(real) );
+  pot = (real *) malloc( ncols * sizeof(real) );
+  off = (int  *) malloc( ncols * sizeof(int ) );
+  if ((a==NULL) || (b==NULL) || (c==NULL) || (pot==NULL) || (off==NULL)) 
+    error("data allocation failed");
 
   /* read input potential */
   read_pot_table1(&pt,infilename);
@@ -594,24 +613,25 @@ int main(int argc, char **argv)
   printf("col  potential   gradient       rcut       rmax\n");
   for (col=0; col<ncols; col++) {
 
-    pair_int2(&pot,&grad,&pt,col,ncols,rcut[col]);
+    pair_int2(pot+col,&grad,&pt,col,ncols,rcut[col]);
 
     if (tailtype==SQRTAIL) {
-      a[col] = rcut[col]-2*pot/grad; 
-      b[col] = grad*grad*0.25/pot;
+      a[col] = rcut[col]-2*pot[col]/grad; 
+      b[col] = grad*grad*0.25/pot[col];
     } else {
-      a[col] = rcut[col]-steepness[col]*pot/grad;
-      b[col] = pot * exp(steepness[col]);
+      a[col] = rcut[col]-steepness[col]*pot[col]/grad;
+      b[col] = pot[col] * exp(steepness[col]);
       c[col] = (a[col]-rcut[col]) * steepness[col];
     }
 
-    if (spacing=SQRSPACING) {
+    if (spacing==SQRSPACING) {
       if (rmax<sqrt(a[col])) rmax=sqrt(a[col]);
     } else {
       if (rmax<a[col]) rmax=a[col];
     }
-    printf("%3d %10.6f %10.6f %10.6f %10.6f\n",col,pot,grad,rcut[col],a[col]);
-    if (pot*grad>=0) {
+    printf("%3d %10.6f %10.6f %10.6f %10.6f\n",
+           col,pot[col],grad,rcut[col],a[col]);
+    if (pot[col]*grad>=0) {
       fflush(stdout);
       error("potential and gradient must have different sign!");
     }
@@ -619,14 +639,22 @@ int main(int argc, char **argv)
   printf("\n");
 
   /* compute step width */
-  if (spacing=SQRSPACING) {
+  if (spacing==SQRSPACING) {
     r2step = (rmax*rmax - pt.begin[0])/(nsteps-10);
   } else {
     r2step = (rmax*rmax - pt.begin[0]*pt.begin[0])/(nsteps-10);
   }
 
-  /* process input file */
+  /* compute offsets */
+  if (sym==1) {
+    off[0]=0;
+    for (i=1;i<ntypes;i++) off[i]=off[i-1]+i;
+  }
+
+  /* write output potential */
   out=fopen(outfilename,"w");
+  if (sym==1) fprintf(out,"#F 1 %d\n#E\n",ntypes*ntypes);
+  else        fprintf(out,"#F 1 %d\n#E\n",ncols);
 
   for (i=0; i<nsteps; i++) {
 
@@ -638,22 +666,31 @@ int main(int argc, char **argv)
       r2 = i*r2step+pt.begin[0]*pt.begin[0];
       x  = sqrt(r2);
     }
-    fprintf(out,"%f", r2);
+    fprintf(out,"%e", r2);
 
-    /* potential values */
+    /* compute potential values */
     for (col=0; col<ncols; col++) {
       if (x<rcut[col])
-        pair_int2(&pot,&grad,&pt,col,ncols,x);
+        pair_int2(pot+col,&grad,&pt,col,ncols,x);
       else if (x<a[col])
         if (tailtype==SQRTAIL) {
-          pot = b[col]*(x-a[col])*(x-a[col]);
+          pot[col] = b[col]*(x-a[col])*(x-a[col]);
 	} else {
-          pot = b[col]*exp(-(c[col]/(a[col]-x)));
+          pot[col] = b[col]*exp(-(c[col]/(a[col]-x)));
 	}
-      else pot = 0;
-      fprintf(out," %f", pot);
+      else pot[col] = 0;
     }
-    fprintf(out,"\n");    
+
+    /* write potential values */
+    if (sym==0) {
+      for (col=0; col<ncols; col++) fprintf(out," %e", pot[col]);
+    } else {
+      for (j=0;j<ntypes;j++)
+        for (k=0;k<ntypes;k++)
+	  if (j<=k) fprintf(out," %e", pot[j*ntypes-off[j]+k]);
+          else      fprintf(out," %e", pot[k*ntypes-off[k]+j]);
+    }
+    fprintf(out,"\n");
   }
 
   fclose(out);
