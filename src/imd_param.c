@@ -1770,6 +1770,10 @@ void broadcast_params() {
   MPI_Bcast( &avpos_res,         1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
+#ifdef
+  error("Option ATDIST not supported under MPI");
+#endif
+
 #ifdef ORDPAR
   MPI_Bcast( &op_r2_cut,       4, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &op_weight,       4, REAL, 0, MPI_COMM_WORLD);
