@@ -122,7 +122,9 @@ void copy_atom(msgbuf *to, int to_cpu, cell *p, int ind )
 
 #ifndef MONOLJ
   to->data[ to->n++ ] = NUMMER(p,ind);
+#ifndef MONO
   to->data[ to->n++ ] = SORTE (p,ind);
+#endif
   to->data[ to->n++ ] = VSORTE(p,ind);
   to->data[ to->n++ ] = MASSE (p,ind);
   to->data[ to->n++ ] = POTENG(p,ind);
