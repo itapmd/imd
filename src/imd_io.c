@@ -133,11 +133,11 @@ void write_atoms_ef(FILE *out)
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; i++) {
       if ( pic_ur.x != (real)0 ) /*if pic_ur.x still 0, write everything */
-        if ((p->ort X(i) < pic_ll.x) && (p->ort X(i) > pic_ur.x) &&
+        if ((p->ort X(i) < pic_ll.x) || (p->ort X(i) > pic_ur.x) ||
 #ifndef TWOD
-            (p->ort Z(i) < pic_ll.z) && (p->ort Z(i) > pic_ur.z) && 
+            (p->ort Z(i) < pic_ll.z) || (p->ort Z(i) > pic_ur.z) || 
 #endif
-            (p->ort Y(i) < pic_ll.y) && (p->ort Y(i) > pic_ur.y)) continue;
+            (p->ort Y(i) < pic_ll.y) || (p->ort Y(i) > pic_ur.y)) continue;
 
       if ( (POTENG(p,i)>=lower_e_pot) && (POTENG(p,i)<=upper_e_pot) ) {
         len += sprintf( outbuf+len,
