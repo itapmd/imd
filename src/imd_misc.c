@@ -1015,11 +1015,6 @@ void generate_hex()
       if ((x < strip_width)   || (x > box_x.x - strip_width)) sign = -1;
 #endif
 
-#ifdef SHOCK
-      /* leave boundary open if necessary */
-      if ((x < strip_width/2) || (x > box_x.x - strip_width/2)) continue;
-#endif
-
       natoms++;
       if (sign>0) nactive++;
 
@@ -1106,11 +1101,6 @@ void generate_fcc(int maxtyp)
             (z+0.5 < strip_width/2) || (z+0.5 > box_z.z-strip_width/2)) continue;
         /* boundary atoms in x-direction get negatiave numbers */
         if ((x+0.5 < strip_width)   || (x+0.5 > box_x.x-strip_width)) sign=-1;
-#endif
-
-#ifdef SHOCK
-        /* leave boundary open if necessary */
-        if ((x+0.5 < strip_width/2) || (x+0.5 > box_x.x-strip_width/2)) continue;
 #endif
 
         /* if fcc, only atoms of type 0 */
@@ -1266,11 +1256,6 @@ void generate_lav()
 	      (z+co < strip_width/2) || (z+co > box_z.z-strip_width/2)) continue;
 	  /* boundary atoms in x-direction get negative numbers */
 	  if ((x+co < strip_width) || (x+co > box_x.x-strip_width)) sign=-1;
-#endif
-	  
-#ifdef SHOCK
-	  /* leave boundary open if necessary */
-	  if ((x+co < strip_width/2) || (x+co > box_x.x-strip_width/2)) continue;
 #endif
 	  
 	  ++natoms;

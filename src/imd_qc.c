@@ -706,10 +706,6 @@ void sortin (int ifeld[])
               if ((x > strip_width) && (x < box_x.x-strip_width)) sign=-1;
 #endif
 
-#ifdef SHOCK
-          if ((x>strip_width/2) && (x<box_x.x-strip_width/2)) 
-	    {
-#endif
 	      natoms++;
               if (sign>0) nactive++;
 
@@ -736,7 +732,7 @@ void sortin (int ifeld[])
 	      move_atom(cellc, input, 0);
 #endif
 
-#if defined(FRAC) || defined(DEFORM) || defined (SHOCK)
+#if defined(FRAC) || defined(DEFORM)
   }
 #endif
 

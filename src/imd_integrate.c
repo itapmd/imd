@@ -116,6 +116,13 @@ void move_atoms_nve(void)
 
 #ifdef STRESS_TENS
 #ifdef SHOCK
+        if (shock_mode == 1) {
+          if ( p->ort X(i) < shock_strip )
+            p->presstens X(i) += (p->impuls X(i) - shock_speed * MASSE(p,i)) 
+                    * (p->impuls X(i) - shock_speed * MASSE(p,i)) / MASSE(p,i);
+          else
+	    p->presstens X(i) += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
+        }
         if (shock_mode == 2) {
           if ( p->ort X(i) < box_x.x*0.5 )
             p->presstens X(i) += (p->impuls X(i) - shock_speed * MASSE(p,i)) 

@@ -638,10 +638,6 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #ifdef SHOCK
-    else if (strcasecmp(token,"strip_width")==0) { 
-      /* strip width (in x dir.) */
-      getparam("strip_width",&strip_width,PARAM_REAL,1,1);
-    }
     else if (strcasecmp(token,"shock_strip")==0) { 
       /* shock strip width (in x dir.) */
       getparam("shock_strip",&shock_strip,PARAM_REAL,1,1);
@@ -650,13 +646,10 @@ void getparamfile(char *paramfname, int sim)
       /* shock speed (in x dir.) */
       getparam("shock_speed",&shock_speed,PARAM_REAL,1,1); 
     }
-    else if (strcasecmp(token,"shock_elong")==0) { 
-       /* shock elong (in x dir.) */
-       getparam("shock_elong",&shock_elong,PARAM_REAL,1,1); 
-    }
     else if (strcasecmp(token,"shock_mode")==0) { 
-       /* shock elong (in x dir.) */
+       /* shock type: plate or half */
        getparam("shock_mode",&shock_mode,PARAM_INT,1,1); 
+       if (shock_mode != 2) shock_mode = 1;
     }
 #endif
 #ifdef MPI
@@ -1232,14 +1225,13 @@ void broadcast_params() {
   MPI_Bcast( &gamma_cut , 1, MPI_REAL, 0, MPI_COMM_WORLD);
 #endif
 
-#if defined(FRAC) || defined(DEFORM) || defined(SHOCK)
+#if defined(FRAC) || defined(DEFORM)
   MPI_Bcast( &strip_width, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef SHOCK
   MPI_Bcast( &shock_strip, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &shock_speed, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &shock_elong, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &shock_mode,  1, MPI_INT,  0, MPI_COMM_WORLD); 
 #endif
 

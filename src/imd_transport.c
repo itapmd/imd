@@ -361,17 +361,14 @@ void write_press_dist_shock(int steps)
                     *(p->impuls X(i)+shock_speed* MASSE(p,i))/(2* MASSE(p,i));
               }
               if (shock_mode == 1) {
-                if ( p->ort X(i) < strip_width/2 + shock_strip ) 
-                  {          
-                    if ( shock_speed > 0 )
-                      kin_histxxu_1[numx]+=
-                        (p->impuls X(i)-shock_speed* MASSE(p,i)) 
-                        *(p->impuls X(i)-shock_speed* MASSE(p,i))
-                        /(2* MASSE(p,i));
-                    else
-                      kin_histxxu_1[numx]+=p->impuls X(i)*p->impuls X(i)
-                        /(2* MASSE(p,i));
-                  }
+                if ( p->ort X(i) < shock_strip ) 
+		  kin_histxxu_1[numx]+=
+		    (p->impuls X(i)-shock_speed* MASSE(p,i)) 
+		    *(p->impuls X(i)-shock_speed* MASSE(p,i))
+		    /(2* MASSE(p,i));
+		else
+		  kin_histxxu_1[numx]+=p->impuls X(i)*p->impuls X(i)
+		    /(2* MASSE(p,i));
               }
 
               kin_histyy_1[numx] += p->impuls Y(i) * p->impuls Y(i) 
@@ -401,17 +398,14 @@ void write_press_dist_shock(int steps)
                     *(p->impuls X(i)+shock_speed* MASSE(p,i))/(2* MASSE(p,i));
               }
               if (shock_mode == 1) {
-                if ( p->ort X(i) < strip_width/2 + shock_strip ) 
-                  {          
-                    if ( shock_speed > 0 )
-                      kin_histxxu_1[numx]+=
-                        (p->impuls X(i)-shock_speed* MASSE(p,i)) 
-                        *(p->impuls X(i)-shock_speed* MASSE(p,i))
-                        /(2* MASSE(p,i));
-                    else
-                      kin_histxxu_1[numx]+=p->impuls X(i)*p->impuls X(i)
-                        /(2* MASSE(p,i));
-                  }
+                if ( p->ort X(i) < shock_strip ) 
+		  kin_histxxu_1[numx]+=
+		    (p->impuls X(i)-shock_speed* MASSE(p,i)) 
+		    *(p->impuls X(i)-shock_speed* MASSE(p,i))
+		    /(2* MASSE(p,i));
+		else
+		  kin_histxxu_1[numx]+=p->impuls X(i)*p->impuls X(i)
+		    /(2* MASSE(p,i));
               }
 
               kin_histyy_1[numx] += p->impuls Y(i) * p->impuls Y(i) 

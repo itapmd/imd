@@ -177,18 +177,9 @@ void maxwell(real temp)
 #endif /* UNIAX */
 
 #ifdef SHOCK
-	 if (shock_mode != 2) shock_mode = 1;
 	 if (shock_mode == 1) {
-	   if ( p->ort X(i) < strip_width/2 + shock_strip ) 
-	     {	     
-	       if ( shock_speed > 0 ) p->impuls X(i) += 
-                                    	shock_speed * MASSE(p,i);
-	       if ( shock_elong > 0 ) { 
-		 p->ort X(i) += shock_elong 
-		   + ( shock_strip + strip_width/2 - p->ort X(i) )
-		   * shock_elong / shock_strip;
-	       }
-	     }
+	   if ( p->ort X(i) < shock_strip ) 
+	       p->impuls X(i) += shock_speed * MASSE(p,i);
 	 }
 	 if (shock_mode == 2) {
 	   if ( p->ort X(i) < box_x.x*0.5 ) 

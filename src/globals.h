@@ -263,7 +263,7 @@ EXTERN real   gamma_bar INIT(0.0);      /* Damping prefactor */
 EXTERN real   gamma_cut INIT(0.0);      /* Damping cutoff */
 #endif
 
-#if defined(FRAC) || defined(DEFORM) || defined(SHOCK)
+#if defined(FRAC) || defined(DEFORM)
 EXTERN int    deform_int INIT(0);      /* counting steps between 2 shears */
 EXTERN real   strip_width INIT(0.0);   /* Strip width */    
 EXTERN real   ekin_threshold INIT(0.0);/* threshold for ekin */    
@@ -440,7 +440,6 @@ EXTERN cell *input;                                /* save data */
 #ifdef SHOCK
 EXTERN real shock_strip;                          /* width of shock strip */
 EXTERN real shock_speed INIT(0.0);                /* velocity in shock strip */
-EXTERN real shock_elong;                          /* atom elongation */
 EXTERN int  shock_mode INIT(2);                   /* type of shock */
 #endif
 
