@@ -92,7 +92,8 @@ void maxwell(real temp)
 
 /* #ifdef CLONE */
 /* 	  if(NUMMER(p,i)>=0) */
-/* 	      {  if orignal atom do everything normal with that atom */ 
+/* 	      {   */
+ /*if orignal atom do everything normal with that atom */ 
 /* #endif */
 
 #ifdef NVX
@@ -234,8 +235,8 @@ void maxwell(real temp)
 
 	    }
 	i+=nclones;
-       }
-	 /*  else */
+     /*   } */
+/* 	  else */
 /* 	      { */
 /* 		  sprintf(errmsg,"maxwell: expected original atom, but got clone nr. %d", */
 /* 			     NUMMER(p,i)); */
