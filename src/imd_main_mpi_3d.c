@@ -1316,7 +1316,7 @@ void add_forces( msgbuf *b, int k, int l, int m )
     to->pot_eng[i] += b->data[ b->n++ ];
 #endif
 #ifdef NVX
-    to->heatcond[i] += b->data[ b->n++ ],;
+    to->heatcond[i] += b->data[ b->n++ ];
 #endif
 #ifdef STRESS_TENS
     to->presstens X(i)        += b->data[ b->n++ ];
