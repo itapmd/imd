@@ -1,73 +1,60 @@
-
 <!--#include virtual="imdhead.html" -->
 
-<H1> Simulation of Vacuum Deposition of Atoms </H1>
+<h1>Simulation of Vacuum Deposition of Atoms</h1>
 
-The option <B>epitax</B> enables the simulation of vacuum deposition of atoms
-on a substrate. During the simulation, a particle beam is created in
-the negative z direction (negative y direction in 2d) as shown in the
-figure. A substrate can be given as an atom input file. The default
-boundary conditions are periodic boundary conditions in the x and y
-direction (x direction in 2d) and free boundary conditions in z
-direction (y direction in 2d). 
+<p>
+The option <b>epitax</b> enables the simulation of vacuum
+deposition of atoms on a substrate. During the simulation, a
+particle beam is created in the negative z direction (negative y
+direction in 2d) as shown in the figure. A substrate can be given
+as an atom input file. The default boundary conditions are periodic
+boundary conditions in the x and y direction (x direction in 2d)
+and free boundary conditions in z direction (y direction in 2d). </p>
 
-<P>
+<center><img src="epitax.gif" /></center>
 
-<CENTER>
-<IMG SRC="epitax.gif">
-</CENTER>
-
-<P>
-
-The creation of beam atoms begins at <TT>epitax_startstep</TT>
-(Default 0) and ends at <TT>epitax_maxsteps</TT>. The data for the
+<p>The creation of beam atoms begins at <tt>epitax_startstep</tt>
+(Default 0) and ends at <tt>epitax_maxsteps</tt>. The data for the
 atoms to be created must be given in the following form. The IMD
-parameter <TT>epitax_type</TT> contains the types of the atoms in a
+parameter <tt>epitax_type</tt> contains the types of the atoms in a
 row. The masses of the atoms correspond to the parameter
-<TT>epitax_mass</TT> and have to be specified in a row corresponding to
-the atom types. The rate of creation (in time steps) of the atoms must
-be given in a row with the IMD parameter <TT>epitax_rate</TT>. The
-velocity of the atoms can be prescribed for each type as the
-corresponding temperature with the IMD parameter <TT>epitax_temp</TT>.
+<tt>epitax_mass</tt> and have to be specified in a row
+corresponding to the atom types. The rate of creation (in time
+steps) of the atoms must be given in a row with the IMD parameter
+<tt>epitax_rate</tt>. The velocity of the atoms can be prescribed
+for each type as the corresponding temperature with the IMD
+parameter <tt>epitax_temp</tt>.</p>
 
-<P>
-
-At <TT>epitax_startstep</TT> the atoms are created at the height
-given by the IMD paramter <TT>epitax_height</TT>. The x and y
+<p>At <tt>epitax_startstep</tt> the atoms are created at the height
+given by the IMD paramter <tt>epitax_height</tt>. The x and y
 coordinate (x coordinate in 2d) are chosen randomly. However, the
-position is chosen in such a way that there is a distance larger than
-<TT>epitax_cutoff</TT> between the beam atoms. 
-During the simulation, the height of creation of particles is
-moved upwards with a velocity corresponding to the IMD parameter
-<TT>epitax_speed</TT>. 
+position is chosen in such a way that there is a distance larger
+than <tt>epitax_cutoff</tt> between the beam atoms. During the
+simulation, the height of creation of particles is moved upwards
+with a velocity corresponding to the IMD parameter
+<tt>epitax_speed</tt>.</p>
 
-<P>
-
-Atoms in the beam are always integrated in the NVE ensemble, that is,
-their energy is conserved. The atoms in the substrate are in the
-ensemble specified by the IMD parameter
-<TT>ensemble</TT> as usual. Atoms that are deposited on the substrate are
-integrated with the substrate ensemble where the change of ensemble is
+<p>Atoms in the beam are always integrated in the NVE ensemble,
+that is, their energy is conserved. The atoms in the substrate are
+in the ensemble specified by the IMD parameter <tt>ensemble</tt> as
+usual. Atoms that are deposited on the substrate are integrated
+with the substrate ensemble where the change of ensemble is
 performed as follows. At the beginning of the simulation, the mean
-potential energy <I>Epot_mean</I> of the atoms in the substrate 
-is computed. The potential energy of the beam atoms initially being
+potential energy <i>Epot_mean</i> of the atoms in the substrate is
+computed. The potential energy of the beam atoms initially being
 zero, the change of ensemble occurs if the potential energy of the
-beam atoms falls below <I>C * Epot_mean</I> where the control
-parameter <I>C</I> can be prescribed by the IMD parameter
-<TT>epitax_ctrl</TT> (Default 1).
- 
-<P>
+beam atoms falls below <i>C * Epot_mean</i> where the control
+parameter <i>C</i> can be prescribed by the IMD parameter
+<tt>epitax_ctrl</tt> (Default 1).</p>
 
-Beam atoms that bounce off the substrate or atoms ablated from the
-substrate are removed from the simulation cell when they reach the top
-array of cells in the IMD cell decomposition (trap cells in the figure). 
+<p>Beam atoms that bounce off the substrate or atoms ablated from
+the substrate are removed from the simulation cell when they reach
+the top array of cells in the IMD cell decomposition (trap cells in
+the figure).</p>
 
-<P>
-
-During the simulation, the atom number and the coordinates of the
-created atoms as well as the atom number and the z coordinates of the
-deleted atoms are given in the standard output.
-
-<P>
+<p>During the simulation, the atom number and the coordinates of
+the created atoms as well as the atom number and the z coordinates
+of the deleted atoms are given in the standard output.</p>
 
 <!--#include virtual="imdfoot.html" -->
+

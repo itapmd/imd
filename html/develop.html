@@ -10,7 +10,7 @@ some common pitfalls that are to be avoided.</p>
 <h2>Introducing new parameters</h2>
 
 <p>
-Before a new parameter can be used, it must be
+Before a new parameter can be used, it must be</p>
 <ul>
 <li>declared and initialized to default value (in file globals.h)</li>
 <li>read into IMD (routine getparamfile() in file imd_param.c)</li>
@@ -18,7 +18,7 @@ Before a new parameter can be used, it must be
     check_parameters_complete() in file imd_param.c)</li>
 <li>broadcast to the other CPUs (routine broadcast_params() in
     file imd_param.c)</li>
-</ul></p>
+</ul>
 
 <h2>Extending the particle data structure</h2>
 
@@ -30,7 +30,7 @@ the particle.</p>
 
 <p>
 In order to extend the particle data structure, the following
-must be done:
+must be done:</p>
 <ul>
 <li> the declaration of the type <tt>cell</tt> must be extended
      with the new data item (in file types.h)
@@ -41,7 +41,7 @@ must be done:
 <li> in order that the particle data move together with the particle 
      from one cell to another cell within the same CPU, the routine
      move_atom() in file imd_alloc.c must be extended
-     </LI>
+     </li>
 <li> in order that the particle data move together with the particle
      from one CPU to another CPU,
      the routines copy_one_atom() und process_buffer() in file
@@ -74,7 +74,7 @@ must be done:
      symbol AR in config.h. The size of the communication buffers as
      computed in setup_buffers() in file imd_mpi_util.c must be adjusted.
      </li>
-</ul></p>
+</ul>
 
 <p>
 Examples for such extensions of the particle data structure can

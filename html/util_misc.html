@@ -18,9 +18,7 @@
 </table>
 
 
-<a id="imd_power" name="imd_power">
-<h2>imd_power</h2>
-</a>
+<h2><a id="imd_power" name="imd_power">imd_power</a></h2>
 
 <p>
 Computes the power spectrum of an IMD properties file 
@@ -49,9 +47,7 @@ columns the squared Fourier amplitudes for this frequency.
 </p>
 
 
-<a id="name" name="rav">
-<h2>rav</h2>
-</a>
+<h2><a id="rav" name="rav">rav</a></h2>
 
 <p>
 <b>rav</b> is an awk script that computes the running average of a
@@ -82,23 +78,20 @@ where the value of <i>n</i> can be given as an optional parameter
 </pre>
 
 
-<a id="makeconf" name="makeconf">
-<h2>make_config</h2>
-</a>
+<h2><a id="makeconf" name="makeconf">make_config</a></h2>
 
 <p>
 The make_config utility program can be used to generate configuration
 files for some simple crystal structures.</p>
 
 <p>
-Compilation:
+Compilation:</p>
 <pre>
    gmake make_config
 </pre>
-</p>
 
 <p>
-The online help of make_config says:
+The online help of make_config says:</p>
 <pre>
    Usage: make_config &lt;type&gt; &lt;outfile&gt; [options] 
 
@@ -117,7 +110,6 @@ The online help of make_config says:
              -a &lt;a&gt;               lattice constant (default 1.0)
              -m &lt;m0&gt; [&lt;m1&gt;]       mass(es)         (default 1.0)
 </pre>
-</p>
 
 <p>
 For the 3D cubic crystal structures, the size parameters <tt>sx</tt>, 
@@ -130,21 +122,18 @@ structure (b2, nacl, zincblende, lav), the masses of both atom types
 must be given.</p>
 
 
-<a id="atcon" name="atcon">
-<h2>atcon</h2>
-</a>
+<h2><a id="atcon" name="atcon">atcon</a></h2>
 
 <p>
 Atcon is configuration file constructor/converter.</p>
 
 <p>
-Compilation:
+Compilation:</p>
 <pre>
   gmake atcon
 </pre>
-</p>
 
-<p>The online help of atcon says:
+<p>The online help of atcon says:</p>
 <pre>
 Usage: atcon &lt;in_format&gt;:lt;out_format&gt; \
        [-2d] [-bi] [-bo] [-help] [-i] &lt;infile&gt; [-o] &lt;outfile&gt;
@@ -161,12 +150,9 @@ POS: postscript
 VRM: vrml
 PDB: proteine database format (rasmol)
 </pre>
-</p>
 
 
-<a id="procdata" name="procdata">
-<h2>procdata</h2>
-</a>
+<h2><a id="procdata" name="procdata">procdata</a></h2>
 
 <p>
 Procdata converts configuration files between different formats.
@@ -175,14 +161,13 @@ a configuration, or to stack configurations periodically.
 </p>
 
 <p>
-Compilation:
+Compilation:</p>
 <pre>
   gmake procdata
 </pre>
-<p>
 
 <p>
-The online help of procdata says:
+The online help of procdata says:</p>
 <pre>
 Usage: procdata [-i{format}] [-f{format}] inputfile outputfile
 
@@ -209,12 +194,9 @@ very special options are: (see source code)
 -RAlCuCo -CAlCuCo  rotates AlCuCo approximant
 and cuts out a rectangular piece (for approx2.inp)
 </pre>
-<p>
 
 
-<a id="imd2ppm" name="imd2ppm">
-<h2>imd2ppm</h2>
-</a>
+<h2><a id="imd2ppm" name="imd2ppm">imd2ppm</a></h2>
 
 <p>
 imd2ppm converts <a href="config.html">IMD configuration files</a> 

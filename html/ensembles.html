@@ -3,10 +3,11 @@
 
 <h1>Integrators</h1>
 
+<p>
 The integrator is the routine which actually moves the atoms,
 depending on the current forces and velocities. The active integrator
 is selected in the parameter file via the <tt>ensemble</tt> parameter.
-Currently, each integrator to be used must be enabled at compile time.
+Currently, each integrator to be used must be enabled at compile time.</p>
 
 <p>
 There are integrators simulating different <a href="#ensembles">
@@ -15,20 +16,21 @@ relaxation simulations</a>, and some <a href="#specialint"> special
 purpose integrators</a> for the simulation of fracture, shear flow, 
 or heat conduction.</p>
 
-<a name="ensembles">
-<h2>Themodynamic Ensembles</h1>
-</a>
+<h2><a id="ensembles" name="ensembles">
+Themodynamic Ensembles</a></h2>
 
-<ul>
+<dl>
 
-<li><b> nve </b>
+<dt><b>nve</b></dt>
+<dd>
 <p>
 Constant volume, constant energy ensemble. This is the most reliable
 integrator, and thus the main work horse. No particular parameters
 are needed, except perhaps the initial temperature starttemp, if not 
-all atoms have their velocities given in the configuration file.</p></li>
+all atoms have their velocities given in the configuration file.</p></dd>
 
-<li><b> nvt </b>
+<dt><b>nvt</b></dt>
+<dd>
 <p>
 Constant volume, constant temperature ensemble, with 
 Nos&eacute;-Hoover thermostat (more precisely, this is an 
@@ -46,24 +48,27 @@ additional parameter tau_eta_rot is required. It provides the
 time constant for the coupling to the heat bath adjusting the 
 temperature for rotational motion. Like tau_eta, its inverse 
 inv_tau_eta, or its squared inverse isq_tau_eta, can be used
-as parameter.</p></li>
+as parameter.</p></dd>
 
-<li><b> and </b>
+<dt><b>and</b></dt>
+<dd>
 <p>
 This is actually an option which can be used together with the 
 nve or mik integrators. Every <tt>tempintv</tt> steps, the velocities
 are reinitialized to a random maxwell distribution of the imposed 
 external temperature, which is linearly interpolated between 
 <tt>starttemp</tt> and <tt>endtemp</tt>. With the nve integrator, 
-this corresponds to an NVT ensemble with Anderson thermostat.</p></li>
+this corresponds to an NVT ensemble with Anderson thermostat.</p></dd>
 
-<li><b> finnis </b>
+<dt><b>finnis</b></dt>
+<dd>
 <p>
 Local temperature control which resembles an electronic heat bath for the
 ions according to Finns et al (PRB 44, p.567, 1999). It is basically a 
-simplyfied implementation of ftg.
+simplyfied implementation of ftg.</p></dd>
 
-<li><b> npt_iso </b>
+<dt><b>npt_iso</b></dt>
+<dd>
 <p>
 Constant pressure, constant temperature ensemble, with isotropic 
 volume scaling. Nos&eacute;-Hoover type thermostat and volume control 
@@ -77,33 +82,35 @@ is required as a parameter. If inv_tau_xi or isq_tau_xi is zero,
 the volume remains constant. The cell subdivision includes a 
 rescaling tolerance cell_size_tol (parameter), which defaults to 
 0.05. If this tolerance is exceeded, the cell subdivision is 
-changed on the fly.</p></li>
+changed on the fly.</p></dd>
 
-<li><b> npt_axial </b>
+<dt><b>npt_axial</b></dt>
+<dd>
 <p>
 Constant pressure, constant temperature ensemble, 
 with volume rescaling along each axis independently.
 This works only for <b>orthogonal boxes</b> correctly. 
 Works the same way as npt_iso, with the same parameters, except that
-the three axial pressures can be specified separately.</p></li>
+the three axial pressures can be specified separately.</p></dd>
 
-</ul>
+</dl>
 
-<a name="relaxation">
-<h2>Relaxators</h1>
-</a>
+<h2><a id="relaxation" name="relaxation">
+Relaxators</a></h2>
 
-<ul>
+<dl>
 
-<li><b> mik </b>
+<dt><b>mik</b></dt>
+<dd>
 <p>
 Microconvergence integrator. After each step, if the velocity of an
 atom goes "uphill" in the potential landscape, it is reset to zero. 
 No particular parameter is needed, except perhaps the initial
 temperature, if not all atoms have their velocities given in the 
-configuration file.</p></li>
+configuration file.</p></dd>
 
-<li><b> glok </b>
+<dt><b>glok</b></dt>
+<dd>
 <p>
 This is an option, which can be used together with the nve integrator.
 It works like a global version of mik: if the scalar product of
@@ -114,17 +121,17 @@ Note that this concerns only translational forces, not the rotational
 ones in <a href="uniax.html">UNIAX</a>. glok should relax faster than
 mik, which can be verified using the option <a href="options.html#fnorm">
 fnorm</a>. glok now makes use of the parameters  annealsteps and
-	  ekin_threshold for better control of the relaxation.</p></li>
+ekin_threshold for better control of the relaxation.</p></dd>
 
-</ul>
+</dl>
 
-<a name="specialint">
-<h2>Special Purpose Integrators</h1>
-</a>
+<h2><a id="specialint" name="specialint">
+Special Purpose Integrators</a></h2>
 
-<ul>
+<dl>
 
-<li><b> frac </b>
+<dt><b>frac</b></dt>
+<dd>
 <p>
 Fracture simulation with stadium damping according to Gumbsch et al. 
 (PRB 55, p.3445, 1997). The crack (x: propagation direction, y: crack
@@ -137,9 +144,10 @@ The ramping of the damping depends on the ratio stadium.x/box.x, i.e full
 damping at the border of the box. With stadium2 one can introduce an
 outer ellipse outside which full damping is applied, the slope of the
 damping thus depends on the ratio stadium.x/stadium2.x. Additionally the 
-sample can be strained at strainrate in y direction.</p></li>
+sample can be strained at strainrate in y direction.</p></dd>
 
-<li><b> sllod </b>
+<dt><b>sllod</b></dt>
+<dd>
 <p> 
 SLLOD ensemble for simulation of shear flow
 with the help of a deformation rate tensor in combination with
@@ -154,15 +162,14 @@ xy- resp. to the yx-component of the applied deformation rate
 tensor. In 3D two vectors with three components, shear_rate and
 shear_rate2 must be specified. The components of shear_rate specify
 its yz-, the zx-, and its xy-component. The components of shear_rate2
-specify its zy-, the xz-, and its yx-component.</p></li>
+specify its zy-, the xz-, and its yx-component.</p></dd>
 
-<a name="nvx">
-<li><b> nvx </b>
-</a>
+<dt><a id="nvx" name="nvx"><b>nvx</b></a></dt>
+<dd>
 <p>
 Used for heat conductivity measurements. Forces a temperature
-gradient into the sample.</p></li>
+gradient into the sample.</p></dd>
 
-</ul>
+</dl>
 
 <!--#include virtual="imdfoot.html" -->

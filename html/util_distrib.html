@@ -24,14 +24,12 @@ The following utility programs deal with
 </table>
 
 
-<a id="dist2volume" name="dist2volume">
-<h2>dist2volume</h2>
-</a>
+<h2><a id="dist2volume" name="dist2volume">dist2volume</a></h2>
 
 <p>
 Converts IMD <a href="output.html#distributions">distribution 
 files</a> to volume data files in various formats. Also movies can be
-created.
+created.</p>
 <pre>
    Compilation: gmake dist2volume
 
@@ -47,6 +45,7 @@ created.
              -n &lt;n&gt;                index of data slot
              -h                    this help
 </pre>
+<p>
 Currently supported output formats are <tt>uv8</tt> and <tt>uv12</tt>
 (8 and 12 bit per voxel, respectively) for the 
 <a href="http://www.hpl.hp.com/ultravis">UltraVis renderer</a>,
@@ -55,13 +54,11 @@ and the <tt>rvf</tt> and <tt>xvf</tt> formats for the
 renderer</a>.</p>
 
 
-<a id="dist2ppm" name="dist2ppm">
-<h2>dist2ppm</h2>
-</a>
+<h2><a id="dist2ppm" name="dist2ppm">dist2ppm</a></h2>
 
 <p>
 Converts a two-dimensional IMD <a href="output.html#distributions">
-distribution file</a> to color PPM format.
+distribution file</a> to color PPM format.</p>
 <pre>
    Compilation: gmake dist2ppm
 
@@ -73,68 +70,58 @@ distribution file</a> to color PPM format.
              -n &lt;n&gt;           index of data slot
              -h               this help
 </pre>
-</p>
 
 
-<a id="dist2ascii" name="dist2ascii">
-<h2>dist2ascii</h2>
-</a>
+<h2><a id="dist2ascii" name="dist2ascii">dist2ascii</a></h2>
 
+<p>
 Writes a binary IMD <a href="output.html#distributions">distribution 
-file</a> in ASCII format to standard output, for easier inspection.
+file</a> in ASCII format to standard output, for easier inspection.</p>
 <pre>
    Compilation: gmake dist2ascii
 
    Usage: dist2ascii &lt;infile&gt;
 </pre>
-</p>
 
 
-<a id="dist2hist" name="dist2hist">
-<h2>dist2hist</h2>
-</a>
+<h2><a id="dist2hist" name="dist2hist">dist2hist</a></h2>
 
 <p>
 Writes a histogram of the selected data slot <tt>n</tt> in an 
 IMD <a href="output.html#distributions">distribution file</a>
-to standard output.
+to standard output. </p>
 <pre>
    Compilation: gmake dist2hist
 
    Usage: dist2hist &lt;infile&gt; &lt;n&gt;
 </pre>
-</p>
 
 
-<a id="dist_extract" name="dist_extract">
-<h2>dist_extract</h2>
-</a>
+<h2><a id="dist_extract" name="dist_extract">dist_extract</a></h2>
 
 <p>
 Extracts the distribution of data slot <tt>n</tt> of an 
 IMD <a href="output.html#distributions">distribution file</a>
 into a separate distribution file. The file extension is chosen
-according to the file contents.
+according to the file contents.</p>
 <pre>
    Compilation: gmake dist_extract
 
    Usage: dist_extract &lt;infile&gt; &lt;n&gt;
 </pre>
-</p>
 
 
-<a id="sample2dist" name="sample2dist">
-<h2>sample2dist</h2>
-</a>
+<h2><a id="sample2dist" name="sample2dist">sample2dist</a></h2>
 
 <p>
 Computes the distribution of the potential and the kinetic energy from an
-IMD <a href="output.html#configuration">checkpoint</a>.
+IMD <a href="output.html#configuration">checkpoint</a>.</p>
 <pre>
    Compilation: gmake sample2dist
 
    Usage: sample2dist &lt;dimx&gt; &lt;dimy&gt; &lt;dimz&gt; &lt;chkpt-file&gt; [--normalize]
 </pre>
+<p>
 dimx, dimy, and dimz are the dimensions of the distribution to be computed.
 If the flag --normalize is used, the distribution of the energy 
 per atom is written, otherwise the distribution of the total energy.
@@ -144,72 +131,75 @@ sample2dist creates two distribution files,
 </p>
 
 
-<a id="atdist" name="atdist">
-<h2>atdist</h2>
-</a>
+<h2><a id="atdist" name="atdist">atdist</a></h2>
 
 <p>
 atdist is a utility program to analyse/convert atoms distribution
 files. </p>
 
 <p>
-For 2D distributions,
+For 2D distributions,</p>
 <pre>
     atdist file
 </pre>
+<p>
 writes a pgm file for each atom type if there are more than tree atoms 
 types, and a ppm file otherwise. The atoms types are then encoded in red, 
 green, and blue.
 </p>
 
 <p>
-For 3D distributions,
+For 3D distributions,</p>
 <pre>
     atdist file
 </pre>
+<p>
 projects the distribution onto the three axis, and writes these 1D
 histograms to the terminal. This helps to find out where the dense
-planes in the distribution are.
+planes in the distribution are.</p>
 <pre>
     atdist file dir min max
 </pre>
+<p>
 adds the slices from <tt>min</tt> to <tt>max</tt> perpendicular to 
 <tt>dir</tt>, and writes a pgm file for each atom type if there 
 are more than tree atoms types, and a ppm file otherwise. 
-The atoms types are then encoded in red, green, and blue.
+The atoms types are then encoded in red, green, and blue.</p>
 <pre>
     atdist file xmin ymin zmin xmax ymax zmax
 </pre>
+<p>
 cuts a rectangular block from the volume and writes it in virvo xvf 
 (RGBA) format. This mode works only with up to three atoms types,
 which are encoded in red, green, and blue. </p>
 
 
-<a id="diffpat" name="diffpat">
-<h2>diffpat</h2>
-</a>
+<h2><a id="diffpat" name="diffpat">diffpat</a></h2>
 
 <p>
-diffpat is a utility program to analyse/convert 3D diffraction patterns.
+diffpat is a utility program to analyse/convert 3D diffraction patterns.</p>
 <pre>
     diffpat file 
 </pre>
+<p>
 projects the diffraction pattern onto the three axis, and writes these 
 1D histograms to the terminal. This helps to find out where the dense
-planes are.
+planes are.</p>
 <pre>
     diffpat [-v] [-c fmax] [-l dyn] file dir min max
 </pre>
+<p>
 adds the slices <tt>min..max-1</tt> perpendicular to <tt>dir</tt>, 
 and writes a pgm file, or a virvo file if option <tt>-v</tt> is
 given. If <tt>fmax</tt> is given, the intensity is cut at <tt>fmax</tt>. 
 By default, the intensities are mapped linearly to the gray values. 
 If the option <tt>-l</tt> is given, the intensities are mapped 
 logarithmically to the gray values, and intensities more 
-than a factor <tt>dyn</tt> smaller than the maximum are set to zero. 
+than a factor <tt>dyn</tt> smaller than the maximum are set to zero. </p>
 <pre>
     diffpat [-c fmax] [-l dyn] file xmin ymin zmin xmax ymax zmax
 </pre>
+<p>
 cuts a rectangular block from the volume and writes it in virvo xvf 
 format. If <tt>fmax</tt> is given, the intensity is cut at <tt>fmax</tt>. 
 By default, the intensities are mapped linearly to the gray values. 

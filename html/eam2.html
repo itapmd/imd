@@ -22,9 +22,11 @@ to be tabulated equidistant in r^2.</p>
 
 <p>
 The Embedded Atom Method (EAM) was implemented by Erik Bitzek. 
-<p>
-  <ul>
-<li><b>Basic Theory</b>
+</p>
+ 
+<dl>
+<dt><b>Basic Theory</b></dt>
+<dd>
 <p>
 The Embedded Atom Method was suggested by Daw and Baskes (M. S. Daw
 and M. I. Baskes, <EM>Phys. Rev. B </EM><B>29</B>, 6443 (1984);
@@ -33,15 +35,15 @@ S. M. Foiles, M. I. Baskes, and M. S. Daw, <EM> Phys. Rev. B </EM>
 <a href="http://www.fisica.uniud.it/~ercolessi/md/md/node47.html#SECTION00630000000000000000">
 problem with two-body potentials</a>: the coordination independence of
 the bond strength, while still being acceptable fast (about 2 times
-slower than pair potentials). 
+slower than pair potentials).</p> 
 <p>
 Ideas from the Density Functional Theory
 or the Tight Binding formalism may lead to the following form for the 
-total energy:
+total energy:</p>
 <p>
 E<sub>tot</sub> = \sum<sub>i,j</sub><sup>N</sup> \Phi<sub>ij</sub>(r<sub>ij</sub>)   + \sum<sub>i</sub><sup>N</sup> F(\rho<sup>h</sup><sub>i</sub>)                <BR>
 \rho<sup>h</sup><sub>i</sub> = \sum<sub>j</sub>
-\Rho<sup>at</sup><sub>ij</sub>(r<sub>ij</sub>)  <BR>
+\Rho<sup>at</sup><sub>ij</sub>(r<sub>ij</sub>) </p>
 <p>
 The pair potential term  \Phi<sub>ij</sub>(r<sub>ij</sub>) represents 
 the electrostatic core-core repulsion, the cohesive term  
@@ -50,61 +52,73 @@ gets when it is "embedded" in the local electron density
 \rho<sup>h</sup><sub>i</sub>. This local electron density  
 is constructed as a superposition of contributions
 \Rho<sup>at</sup><sub>ij</sub>(r<sub>ij</sub>) from neighboring
-atoms. 
+atoms. </p>
 <p>
 Also belonging to this analytical form are models like the <EM>glue
 model</EM>, and the <EM>Finnis-Sinclair potentials</EM>.
 See also the <a href="http://www.itap.physik.uni-stuttgart.de/~teesem/teeseminar_texte/">
-Teeseminar</a> about EAM.
-<p>
-<li><b>Use of eam</b>
+Teeseminar</a> about EAM.</p>
+</dd>
+
+<dt><b>Use of eam</b></dt>
+<dd>
 <p>
 The eam option works on risc and mpi plattforms. 
 It now uses actio=reactio between the atoms on the same processor.
 eam should work with most of the common options.
-See <A HREF = "#Tests">Tests</A> for options that are guaranteed to work.
+See <a href = "#Tests">Tests</a> for options that are guaranteed to work.</p>
 
 <p>
 To use eam one needs tables of three functions. 
 Therefore the parameter file should contain lines indicating these
-tables, e.g.:<p><CODE>
-core_potential_file     Potentials/Ni_u3/Phi_r2.Ni_u3.dat<BR>
-embedding_energy_file   Potentials/Ni_u3/F_rho.Ni_u3.dat<BR>
-atomic_e-density_file   Potentials/Ni_u3/Rho_r2.Ni_u3.dat<BR>
-</CODE>
+tables, e.g.:</p>
+<pre>
+core_potential_file     Potentials/Ni_u3/Phi_r2.Ni_u3.dat
+embedding_energy_file   Potentials/Ni_u3/F_rho.Ni_u3.dat
+atomic_e-density_file   Potentials/Ni_u3/Rho_r2.Ni_u3.dat
+</pre>
 <p>
 The potential file can be in either of two different 
-<a href="potformat.html">formats</a>.
+<a href="potformat.html">formats</a>.</p>
 <p>
 It is the responsibility of the creator of the potential to make
 sure, that the functions of r go smoothly to zero and that the last
 four values are 0.0. If you're having an exotic core potential with V_ij
-!= V_ji, you have to use the option <b>asympot</b>.
-<p>
-<li><b>Existing Potentials </b>
+!= V_ji, you have to use the option <b>asympot</b>.</p>
+</dd>
+
+<dt><b>Existing Potentials </b></dt>
+<dd>
 <p>
 Potentials with documentation and sample structures, parameter files
 and tools can be found in <a href="file:/common/share/itap/software/simulation/imd-samples/eam">
-<code>~imd/imd-samples/eam</code></a>.
-At the moment there are three potentials for Nickel and one for NiAl.
+<tt>~imd/imd-samples/eam</tt></a>.
+At the moment there are three potentials for Nickel and one for NiAl.</p>
+</dd>
+
+<dt><a id="Tests" name="Tests"><b>Tests</b></a></dt>
+<dd>
 <p>
-<li><A NAME = "Tests"><b>Tests </b></A>
-<p>
-The eam option was tested by
+The eam option was tested by</p>
 <ul>
 <li> comparing the energy output for a dynamical nve simulation with
-those produced by an other MD program (FEAT by Peter Gumbsch)
+those produced by an other MD program (FEAT by Peter Gumbsch)</li>
 <li> comparing the simulated values for the cohesive energy, vacancy
 formation energy, surface energy, bulkmodulus, lattice constant,
 surface relaxation,... for different potentials with published data
 for the specific potentials  and
-experimental data
-<li> checking the conservation of energy at different temperatures  
+experimental data</li>
+<li> checking the conservation of energy at different temperatures  </li>
 </ul>
+
 <p>
 Therefore one may conclude that the eam option leads to correct
 results at least for: one and two different atom types, with and
 without periodic boundary conditions, on risc and mpi plattforms,
-with the MIK, NVE, NVT options.
+with the MIK, NVE, NVT options.</p>
+
+</dd>
+
+</dl>
 
 <!--#include virtual="imdfoot.html" -->

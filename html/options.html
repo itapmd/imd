@@ -1,686 +1,735 @@
-
 <!--#include virtual="imdhead.html" -->
 
-<h1>Options</h1>
+<h1>Compilation Options</h1>
 
-In addition to selecting the <A HREF="ensembles.html">simulation ensemble</A>
-(i.e., the MD integrator), various options can be compiled into IMD. 
-Some options can be part of the <A HREF="compiling.html">compilation 
-target</A>, others can only be invoked by <A HREF="compiling.html"> 
-preprocessor flags</A>.
-<P>
-We give here a list of all possible options, and describe what 
-their purpose is and how they are used.
+<p>In addition to selecting the <a href="ensembles.html">simulation
+ensemble</a> (i.e., the MD integrator), various options can be
+compiled into IMD. Some options can be part of the 
+<a href="compiling.html">compilation target</a>, others can only be
+invoked by <a href="compiling.html">preprocessor flags</a>. </p>
 
-<H2>Possible Options in the Compilation Target</H2>
+<p>We give here a list of all possible options, and describe what
+their purpose is and how they are used.</p>
 
-<TABLE BORDER=0 CELLPADDING=4 >
+<h2>Possible Options in the Compilation Target</h2>
 
-<TR ALIGN="LEFT">
-  <TD WIDTH=120><A HREF="#2d">2d</A></TD>
-  <TD WIDTH=120><A HREF="#4point">4point</A></TD>
-  <TD WIDTH=120><a href="#atdist">atdist</a></TD>
-  <TD WIDTH=120><A HREF="#avpos">avpos</A></TD>
-  <TD WIDTH=120><A HREF="#mono, binary">binary</A></TD>
-  <TD WIDTH=120><A HREF="#correl">correl</A></TD>
-</TR>
-<TR ALIGN="LEFT">
-  <TD WIDTH=120><A HREF="#debug">debug</A></TD>
-  <TD WIDTH=120><A HREF="#deform">deform</A></TD>
-  <TD WIDTH=120><A HREF="#diffpat">diffpat</A></TD>
-  <TD WIDTH=120><A HREF="#disloc">disloc</A></TD>
-  <TD WIDTH=120><A HREF="#eam">eam</A></TD>
-  <TD WIDTH=120><A HREF="#efilter">efilter</A></TD>
-</TR>
-<TR ALIGN="LEFT">
-  <TD WIDTH=120><A HREF="#einstein">einstein</A></TD>
-  <TD WIDTH=120><A HREF="#epitax">epitax</A></TD>
-  <TD WIDTH=120><A HREF="#ewald">ewald</A></TD>
-  <TD WIDTH=120><A HREF="#FBC">fbc</A></TD>
-  <TD WIDTH=120><A HREF="#fnorm">fnorm</A></TD>
-  <TD WIDTH=120><A HREF="#glokdeform">glokdeform</A></TD>
-</TR>
-<TR ALIGN="LEFT">
-  <TD WIDTH=120><A HREF="#hpo">hpo</A></TD>
-  <TD WIDTH=120><A HREF="#homdef">homdef</A></TD>
-  <TD WIDTH=120><A HREF="#covalent">keating</A></TD>
-  <TD WIDTH=120><A HREF="#mono, binary">mono</A></TD>
-  <TD WIDTH=120><A HREF="#monolj">monolj</A></TD>
-  <TD WIDTH=120></TD>
-</TR>
-<TR ALIGN="LEFT">
-  <TD WIDTH=120><A HREF="#msqd">msqd</A></TD>
-  <TD WIDTH=120><A HREF="#ordpar">ordpar</A></TD>
-  <TD WIDTH=120><A HREF="#pacx">pacx</A></TD>
-  <TD WIDTH=120><A HREF="#pair">pair</A></TD>
-  <TD WIDTH=120><A HREF="#prof">prof</A></TD>
-  <TD WIDTH=120><A HREF="#quasi">quasi</A></TD>
-</TR>
-<TR ALIGN="LEFT">
-  <TD WIDTH=120><A HREF="#single">single</A></TD>
-  <TD WIDTH=120><A HREF="#sock">sock</A></TD>
-  <TD WIDTH=120><A HREF="#shock">shock</A></TD>
-  <TD WIDTH=120><A HREF="#snap">snap</A></TD>
-  <TD WIDTH=120></TD>
-  <TD WIDTH=120><A HREF="#covalent">stiweb</A></TD>
-</TR>
-<TR ALIGN="LEFT">
-  <TD WIDTH=120><A HREF="#stress_tens">stress</A></TD>
-  <TD WIDTH=120><A HREF="#covalent">tersoff</A></TD>
-  <TD WIDTH=120><A HREF="#timing">timing</A></TD>
-  <TD WIDTH=120><A HREF="#transport">transport</A></TD>
-  <TD WIDTH=120><A HREF="#covalent">ttbp</A></TD>
-  <TD WIDTH=120><A HREF="#uniax">uniax</A></TD>
-</TR>
-<TR ALIGN="LEFT">
-  <TD WIDTH=120><A HREF="#writef">writef</A></TD>
+<table border="0" cellpadding="4">
+<tr align="left">
+<td width="120"><a href="#twod">2d</a></td>
+<td width="120"><a href="#fourpoint">4point</a></td>
+<td width="120"><a href="#atdist">atdist</a></td>
+<td width="120"><a href="#avpos">avpos</a></td>
+<td width="120"><a href="#binary">binary</a></td>
+<td width="120"><a href="#correl">correl</a></td>
+</tr>
 
+<tr align="left">
+<td width="120"><a href="#debug">debug</a></td>
+<td width="120"><a href="#deform">deform</a></td>
+<td width="120"><a href="#diffpat">diffpat</a></td>
+<td width="120"><a href="#disloc">disloc</a></td>
+<td width="120"><a href="#eam">eam</a></td>
+<td width="120"><a href="#efilter">efilter</a></td>
+</tr>
 
-  </TR>
-</TABLE>
+<tr align="left">
+<td width="120"><a href="#einstein">einstein</a></td>
+<td width="120"><a href="#epitax">epitax</a></td>
+<td width="120"><a href="#ewald">ewald</a></td>
+<td width="120"><a href="#FBC">fbc</a></td>
+<td width="120"><a href="#fnorm">fnorm</a></td>
+<td width="120"><a href="#glokdeform">glokdeform</a></td>
+</tr>
 
-<UL>
+<tr align="left">
+<td width="120"><a href="#hpo">hpo</a></td>
+<td width="120"><a href="#homdef">homdef</a></td>
+<td width="120"><a href="#covalent">keating</a></td>
+<td width="120"><a href="#mono">mono</a></td>
+<td width="120"><a href="#monolj">monolj</a></td>
+<td width="120"></td>
+</tr>
 
-<A NAME="2d">
-<P><LI><B>2d</B><P>
-</A>
-2d simulation rather than 3d. The option 3d also exists - it is the
-default.
+<tr align="left">
+<td width="120"><a href="#msqd">msqd</a></td>
+<td width="120"><a href="#ordpar">ordpar</a></td>
+<td width="120"><a href="#pacx">pacx</a></td>
+<td width="120"><a href="#pair">pair</a></td>
+<td width="120"><a href="#prof">prof</a></td>
+<td width="120"><a href="#quasi">quasi</a></td>
+</tr>
 
-<A NAME="msqd">
-<P><LI><B>msqd</B><P>
-</A>
-This option enables the computation of the <B>mean square 
-displacements</B> (MSQDs) (for each atom type and each direction
-separately). It shares its parameters with the option correl. 
-The computation of the MSQDs is started at step 
-<TT>correl_start</TT>, and ends at step <TT>correl_end</TT>. 
-The reference positions are first stored at step 
-<TT>correl_start</TT>, and then they are reset every
-<TT>correl_int</TT> steps (or never, if <TT>correl_int=0</TT>, 
-which is the default). The MSQDs are computed every <TT>correl_ts</TT> 
-steps between <TT>correl_start</TT> and <TT>correl_end</TT>,
-and are written to the file <TT>&lt;outfiles&gt;.msqd</TT>,
-preceeded by the current simulation time. The format of the msqd file
-is:
-<PRE>
+<tr align="left">
+<td width="120"><a href="#single">single</a></td>
+<td width="120"><a href="#sock">sock</a></td>
+<td width="120"><a href="#shock">shock</a></td>
+<td width="120"><a href="#snap">snap</a></td>
+<td width="120"></td>
+<td width="120"><a href="#covalent">stiweb</a></td>
+</tr>
+
+<tr align="left">
+<td width="120"><a href="#stress_tens">stress</a></td>
+<td width="120"><a href="#covalent">tersoff</a></td>
+<td width="120"><a href="#timing">timing</a></td>
+<td width="120"><a href="#transport">transport</a></td>
+<td width="120"><a href="#covalent">ttbp</a></td>
+<td width="120"><a href="#uniax">uniax</a></td>
+</tr>
+
+<tr align="left">
+<td width="120"><a href="#writef">writef</a></td>
+</tr>
+</table>
+
+<dl>
+
+<dt><a id="twod" name="twod"><b>2d</b></a></dt>
+<dd>
+<p>
+2d simulation rather than 3d. The option 3d also exists - it is
+the default. </p>
+</dd>
+
+<dt><a id="msqd" name="msqd"><b>msqd</b></a>
+<dd>
+<p>
+This option enables the computation of the <b>mean square
+displacements</b> (MSQDs) (for each atom type and each direction
+separately). It shares its parameters with the option correl. The
+computation of the MSQDs is started at step <tt>correl_start</tt>,
+and ends at step <tt>correl_end</tt>. The reference positions are
+first stored at step <tt>correl_start</tt>, and then they are reset
+every <tt>correl_int</tt> steps (or never, if
+<tt>correl_int=0</tt>, which is the default). The MSQDs are
+computed every <tt>correl_ts</tt> steps between
+<tt>correl_start</tt> and <tt>correl_end</tt>, and are written to
+the file <tt>&lt;outfiles&gt;.msqd</tt>, preceeded by the current
+simulation time. The format of the msqd file is:</p>
+<pre>
   time d2x_1 d2y_1 [d2z_1] [d2x_2 d2y_2 [d2z_2]] ...
-</PRE>
-where <TT>d2x_n</TT> is the mean square displacement of particles of
-type <TT>n</TT> in <TT>x</TT> direction, etc. With the options
-<TT>msqd_ntypes</TT> (default 1) and <TT>msqd_vtypes</TT> (default 0)
-you can choose, whether you want mean square displacements for 
+</pre>
+<p>
+where <tt>d2x_n</tt> is the mean square displacement of particles
+of type <tt>n</tt> in <tt>x</tt> direction, etc. With the options
+<tt>msqd_ntypes</tt> (default 1) and <tt>msqd_vtypes</tt> (default
+0) you can choose, whether you want mean square displacements for
 real types only or for all virtual types separately. If you choose
 both options, the leading columns are for real types, the rear ones
-are for the virtual types.
-<P>
-The parameters <TT>correl_start</TT> and <TT>correl_end</TT> can be
-used to switch this option on and off during a multiphase simulation. 
+are for the virtual types. </p>
+<p>
+The parameters <tt>correl_start</tt> and <tt>correl_end</tt> can
+be used to switch this option on and off during a multiphase
+simulation. </p>
+</dd>
 
-<A NAME="correl">
-<P><LI><B>correl</B><P>
-</A>
-This option enables the computation of the (spherically averaged)
-<B>van Hove self-correlation function</B> (VHSCF).
-<P>
-The computation of the VHSCF is started at step 
-<TT>correl_start</TT>, and ends at step <TT>correl_end</TT>. 
-Every <TT>correl_int</TT> steps after <TT>correl_start</TT>, 
-the correlation histogram is written to files 
-<TT>&lt;basename&gt;.corr&lt;n&gt.&lt;i&gt;</TT>,
-where <TT>&lt;n&gt;</TT> is a running number and 
-<TT>&lt;i&gt;</TT> ist the atom type. Every <TT>correl_ts</TT>
-steps, correlation data is added to the histogram.
-<P>
+<dt><a id="correl" name="correl"><b>correl</b></a></dt>
+<dd>
+<p>
+This option enables the computation of the (spherically
+averaged) <b>van Hove self-correlation function</b> (VHSCF).</p>
+<p>
+The computation of the VHSCF is started at step
+<tt>correl_start</tt>, and ends at step <tt>correl_end</tt>. Every
+<tt>correl_int</tt> steps after <tt>correl_start</tt>, the
+correlation histogram is written to files
+<tt>&lt;basename&gt;.corr&lt;n&amp;gt.&lt;i&gt;</tt>, where
+<tt>&lt;n&gt;</tt> is a running number and <tt>&lt;i&gt;</tt> ist
+the atom type. Every <tt>correl_ts</tt> steps, correlation data is
+added to the histogram.</p>
+<p>
 The dimension of the correlation histogram is detemined by the
-parameters <TT>correl_tmax</TT> (time direction) and 
-<TT>correl_rmax</TT> (radial direction). The step width
-of the histogram is <TT>correl_ts</TT> in time direction,
-and (half) the diagonal of the box, divided by <TT>correl_rmax</TT>,
-in radial direction.
-<P>
+parameters <tt>correl_tmax</tt> (time direction) and
+<tt>correl_rmax</tt> (radial direction). The step width of the
+histogram is <tt>correl_ts</tt> in time direction, and (half) the
+diagonal of the box, divided by <tt>correl_rmax</tt>, in radial
+direction.</p>
+<p>
 There are several modes for the output format, determined by the
-parameter <TT>correl_omode</TT>:
-<PRE>
+parameter <tt>correl_omode</tt>:</p>
+<pre>
  1  for gnuplot files with 1 empty line between blocks
  2  for gnuplot files with 2 empty lines between blocks
  3  for large gnuplot files (fully occupied matrix) with no empty lines
  4  for short files (refer to source for documentation)
     (writes only a short header followed by matrix elements)
-</PRE>
-The third mode uses a further parameter, <TT>GS_rcut</TT>, which is
-a cutoff radius for the data to be written.
-<P>
-The parameters <TT>correl_start</TT> and <TT>correl_end</TT> can be
-used to switch this option on and off during a multiphase simulation. 
-<B>Beware:</B> in the current implementation, the histogram is allocated only
-once at the beginning of the simulation, and so the dimensions of the 
-histogram must not change during the simulation!
-
-<P>
-<B>Known bugs:</B>
-<P>
-Resetting the reference positions <TT>every correl_int</TT> 
-steps is fine, but why do we have to write out and clear the histogram
-each time?
-<P>
-The time in the histogram is taken modulo <TT>correl_tmax</TT>,
-but the reference positions are not reset, which spoils the
-whole histogram, if <TT>correl_tmax &gt; correl_int</TT>! 
-<P>
-Why don't we use a radial cutoff of the histogram right away, 
-instead of the wiered constuction with the diagonal, which works 
-only for orthogonal boxes anyway? In any case, it is better
-not to compute the parts of the histogram that are not needed,
-instead of just not writing them out (parameter GS_rcut)!
-
-<a is="disloc" name="disloc">
-<p><li><b>disloc</b><p>
-</a>
-
+</pre>
 <p>
-The disloc option enables certain features useful to see dislocations.</p>
-
+The third mode uses a further parameter, <tt>GS_rcut</tt>, which is
+a cutoff radius for the data to be written. </p>
 <p>
-If the disloc option is present, reference potential energies are
-provided for each particle. A differential potential energy (DE) is
-computed from the current and the reference value. Particles with DEs
-exceeding a threshold <tt>min_dpot</tt> (default 1.0) are plotted. </p>
-
-<p> 
-If the parameter
-<tt>calc_Epot_ref</tt> is set to 0 (default) the reference potential
-energy is read from a file specified in <tt>reffile</tt>. This is a
-normal checkpoint file which must contain the same particles at the
-same line as the input file. IMD checks the atom number. 
-If <tt>calc_Epot_ref</tt> is set to 1, the potential energy
-at step <tt>reset_Epot_ref</tt> (default: 0) becomes the reference
-potential energy.</p>
-
+The parameters <tt>correl_start</tt> and <tt>correl_end</tt> can
+be used to switch this option on and off during a multiphase
+simulation. <b>Beware:</b> in the current implementation, the
+histogram is allocated only once at the beginning of the
+simulation, and so the dimensions of the histogram must not change
+during the simulation!</p>
 <p>
-If the disloc option is present and the parameter <tt>Epot_diff</tt>
-is 1 (which is the default), the potential energy written to
-<a href="pictures.html"><tt>.pic</tt> files</a> and to 
-<a href="output.html#distributions">energy distribution files</a> is 
-the difference of the actual potential energy and the reference 
-potential energy. This can be switched off by setting
+<b>Known bugs:</b></p>
+<p>
+Resetting the reference positions <tt>every correl_int</tt>
+steps is fine, but why do we have to write out and clear the
+histogram each time?</p>
+<p>
+The time in the histogram is taken modulo <tt>correl_tmax</tt>,
+but the reference positions are not reset, which spoils the whole
+histogram, if <tt>correl_tmax &gt; correl_int</tt>!</p>
+<p>
+Why don't we use a radial cutoff of the histogram right away,
+instead of the wiered constuction with the diagonal, which works
+only for orthogonal boxes anyway? In any case, it is better not to
+compute the parts of the histogram that are not needed, instead of
+just not writing them out (parameter GS_rcut)! </p>
+</dd>
+
+<dt><a id="disloc" name="disloc"><b>disloc</b></a></dt>
+<dd>
+<p>
+The disloc option enables certain features useful to see
+dislocations.</p>
+<p>
+If the disloc option is present, reference potential energies
+are provided for each particle. A differential potential energy
+(DE) is computed from the current and the reference value.
+Particles with DEs exceeding a threshold <tt>min_dpot</tt> (default
+1.0) are plotted.</p>
+<p>
+If the parameter <tt>calc_Epot_ref</tt> is set to 0 (default)
+the reference potential energy is read from a file specified in
+<tt>reffile</tt>. This is a normal checkpoint file which must
+contain the same particles at the same line as the input file. IMD
+checks the atom number. If <tt>calc_Epot_ref</tt> is set to 1, the
+potential energy at step <tt>reset_Epot_ref</tt> (default: 0)
+becomes the reference potential energy.</p>
+<p>
+If the disloc option is present and the parameter
+<tt>Epot_diff</tt> is 1 (which is the default), the potential
+energy written to <a href="pictures.html"><tt>.pic</tt> files</a>
+and to <a href="output.html#distributions">energy distribution
+files</a> is the difference of the actual potential energy and the
+reference potential energy. This can be switched off by setting
 <tt>Epot_diff</tt> to 0.</p>
-
 <p>
-The disloc option also enables the writing of 
-<a href="output.html#disloc">differential energy maps</a> 
-in intervals of <tt>dem_int</tt>, 
-and of <a href="output.html#disloc">displacement maps</a> 
-in intervals of <tt>dsp_int</tt>.
-The parameters needed are described together with the 
-<a href="output.html#disloc">format of these files</a>.</p>
-
+The disloc option also enables the writing of <a
+href="output.html#disloc">differential energy maps</a> in intervals
+of <tt>dem_int</tt>, and of <a
+href="output.html#disloc">displacement maps</a> in intervals of
+<tt>dsp_int</tt>. The parameters needed are described together with
+the <a href="output.html#disloc">format of these files</a>.</p>
 <p>
-The writing of these files can be switched off by setting the 
-writing intervals to zero. </p>
-
+The writing of these files can be switched off by setting the
+writing intervals to zero.</p>
 <p>
 <b>Known bugs:</b> The reference potential energy can be set
 only once in each phase.</p>
+</dd>
 
-
-<A NAME="homdef">
-<P><LI><B> homdef </B><P>
-</A>
-<P>
+<dt><a id="homdef" name="homdef"><b>homdef</b></a></dt>
+<dd>
+<p>
 The homdef option allows to homogeneously expand or shear the
 sample. The box is deformed in this process, together with its
-contents. Note that this option requires <B>periodic</B> boundary 
-conditions.
-<UL>
-<P><LI>
-If <TT>exp_interval</TT> is positive, the sample is expanded every 
-<TT>exp_interval</TT> steps. The expansion factors in x-, y- and
-z-direction are given by the parameter <TT>expansion</TT>, which
-is a vector. The box vectors are updated automatically, and the
-cell subdivision is revised if cells have become too small
-(expansion factors smaller than 1 shrink the sample).
-</LI>
-<P>
-<LI>
-If <TT>hom_interval</TT> is positive, the sample is homogeneously 
-sheared every <TT>hom_interval</TT> steps. In each shear step,
-<TT>shear_factor</TT>*x-coord is added to the y-coord of every
-particale, and the box is updated accordingly. If cells become too 
-small because of the shearing, the cell subdivision is revised 
-automatically. It is assumed that the second and third box vector
-point into y- and z-direction, respectively.
-</LI>
-<P>
-<LI>
-If <TT>lindef_interval</TT> is positive, the sample is linear
-deformed every <TT>lindef_interval</TT> steps. The linear 
-deformation is given as a full deformation matrix <B>A</B> with
-row vectors <TT>lindef_x</TT>, <TT>lindef_y</TT>, and <TT>lindef_z</TT>,
-if three dimensions are simulated. The transformation rule is
-<B>x</B> -> <B>x</B> + <B>A</B> <B>x</B>  for both atomic positions
-and box vectors.
-</LI>
-</UL>
+contents. Note that this option requires <b>periodic</b> boundary
+conditions.</p>
 
-<A NAME="deform">
-<P><LI><B> deform </B><P>
-</A>
-<P>
-The deform option requires <B>free</B> boundary conditions
-(the box won't be deformed, but periodic boundary conditions can be
-used, e.g. when the deformation is orthogonal to the pbc (use
-at own risc, take care of centroid (angular) momentum)).
-A deform step is performed if either <TT>max_deform_int</TT> is
-positive and the last deform step was done <TT>max_deform_int</TT>
-steps ago, or if the temperature drops below <TT>ekin_threshold</TT>
-(useful with the mik integrator). In a deform step, all atoms of 
-virtual type v are shifted by the <TT>deform_shift</TT> vector for 
-that type v. A <TT>deform_shift</TT> for type v is specified as
-follows in the parameter file:
-<PRE>
-    deform_shift v shift_vector
-</PRE>
-During the first <TT>annealsteps</TT> steps, no deformations are
-done. This mechanism can be used both for shears (<TT>deform_shift</TT> 
-parallel to sample boundary) and for compressions or expansions
-(<TT>deform_shift</TT> perpendicular to sample boundary). The
-atoms with the virtual types concerned are usually located in two 
-boundary layers of the sample.
+<ul>
+<li>If <tt>exp_interval</tt> is positive, the sample is expanded
+every <tt>exp_interval</tt> steps. The expansion factors in x-, y-
+and z-direction are given by the parameter <tt>expansion</tt>,
+which is a vector. The box vectors are updated automatically, and
+the cell subdivision is revised if cells have become too small
+(expansion factors smaller than 1 shrink the sample).</li>
 
+<li>If <tt>hom_interval</tt> is positive, the sample is
+homogeneously sheared every <tt>hom_interval</tt> steps. In each
+shear step, <tt>shear_factor</tt>*x-coord is added to the y-coord
+of every particale, and the box is updated accordingly. If cells
+become too small because of the shearing, the cell subdivision is
+revised automatically. It is assumed that the second and third box
+vector point into y- and z-direction, respectively.</li>
+
+<li>If <tt>lindef_interval</tt> is positive, the sample is linear
+deformed every <tt>lindef_interval</tt> steps. The linear
+deformation is given as a full deformation matrix <b>A</b> with row
+vectors <tt>lindef_x</tt>, <tt>lindef_y</tt>, and
+<tt>lindef_z</tt>, if three dimensions are simulated. The
+transformation rule is <b>x</b> -&gt; <b>x</b> + <b>A</b> <b>x</b>
+for both atomic positions and box vectors.</li>
+</ul>
+</dd>
+
+<dt><a id="deform" name="deform"><b>deform</b></a></dt>
+<dd>
 <p>
-
-Besides translations of atoms, the option <b>deform</b> also allows
-shear transformations of atoms with a common virtual type. In this
-case, the additional parameter <tt>deform_shear</tt> has to be specified in the
-parameter file in the following format: 
+The deform option requires <b>free</b> boundary conditions (the
+box won't be deformed, but periodic boundary conditions can be
+used, e.g. when the deformation is orthogonal to the pbc (use at
+own risc, take care of centroid (angular) momentum)). A deform step
+is performed if either <tt>max_deform_int</tt> is positive and the
+last deform step was done <tt>max_deform_int</tt> steps ago, or if
+the temperature drops below <tt>ekin_threshold</tt> (useful with
+the mik integrator). In a deform step, all atoms of virtual type v
+are shifted by the <tt>deform_shift</tt> vector for that type v. A
+<tt>deform_shift</tt> for type v is specified as follows in the
+parameter file:</p>
+<pre>
+    deform_shift v shift_vector
+</pre>
+<p>
+During the first <tt>annealsteps</tt> steps, no deformations are
+done. This mechanism can be used both for shears
+(<tt>deform_shift</tt> parallel to sample boundary) and for
+compressions or expansions (<tt>deform_shift</tt> perpendicular to
+sample boundary). The atoms with the virtual types concerned are
+usually located in two boundary layers of the sample. </p>
+<p>
+Besides translations of atoms, the option <b>deform</b> also
+allows shear transformations of atoms with a common virtual type.
+In this case, the additional parameter <tt>deform_shear</tt> has to
+be specified in the parameter file in the following format:</p>
 <pre>
     deform_shear v shear_vector
 </pre>
-
-The shear transformation is given by
-
 <p>
+The shear transformation is given by </p>
+
 <table align="center" border="0" width="90%">
-<tr><td align="left">
-<b>x'</b> = <b>x</b> + <b>s</b>&middot;(<b>x</b>-<b>b</b>) <b>v</b>
-</td></tr>
+<tr>
+<td align="left"><b>x'</b> = <b>x</b> +
+<b>s</b>&middot;(<b>x</b>-<b>b</b>) <b>v</b></td>
+</tr>
 </table>
+
 <p>
-
-where the vector <b>s</b> is determined by <tt>deform_shear</tt> and
-<b>v</b> is represented by the parameter
-<tt>deform_shift</tt>. <tt>deform_shift</tt>, which should be a unit
-vector, has now the meaning of the shear direction.
-
-The base point <b>b</b> of the shear transformation can be specified
-through the parameter <tt>deform_base</tt> which is the origin of the
-simulation box by default. This point determines the invariant plane
-of the shear transformation. <tt>deform_base</tt> has to be given in
-the parameter file in the format 
+where the vector <b>s</b> is determined by <tt>deform_shear</tt>
+and <b>v</b> is represented by the parameter <tt>deform_shift</tt>.
+<tt>deform_shift</tt>, which should be a unit vector, has now the
+meaning of the shear direction. The base point <b>b</b> of the
+shear transformation can be specified through the parameter
+<tt>deform_base</tt> which is the origin of the simulation box by
+default. This point determines the invariant plane of the shear
+transformation. <tt>deform_base</tt> has to be given in the
+parameter file in the format</p>
 <pre>
     deform_base v base_point
 </pre>
+</dd>
 
-
-<A NAME="glokdeform">
-<P><LI><B> glokdeform </B><P>
-</A>
-<P>
-Like deform, just with the fnorm criterium, therefore with 
-parameter <TT>fnorm_threshold</TT>.
-
-<A NAME="FBC">
-<P><LI><B>fbc</B><P>
-</A>
-Force Boundary Conditions. With this option, one can define extra 
-forces that act on atoms of certain <A HREF="general.html#virtual">
-virtual types</A>. This is implemented for the nve, nvt and mik
-ensembles.
-<P> For each concerned virtual type, one can declare in the parameter 
-file the starting and the end value (in the simulation phase) of an 
-extra force vector that is added to the force acting on atoms of
-that virtual type.
-The parameters <TT>extra_startforce</TT> and <TT>extra_endforce</TT> 
-expect 1 integer and d real numbers, where d is the sample dimension. 
-The first integer number specifies the virtual atom type, the other 
-d real numbers specify the extra force vector. The values between
-<TT>extra_startforce</TT> and <TT>extra_endforce</TT> are linearly
-interpolated (like the temperature). 
-<P>
-For mik simulations, instead of <TT>extra_endforce</TT> the force 
-increment <TT>extra_dforce</TT> should be specified. It is added to 
-the applied force each time the temperature drops under 
-<TT>fbc_ekin_threshold</TT>, or after <TT>fbc_waitsteps</TT>. 
-During the initial <TT>fbc_annealsteps</TT> steps, no extra forces 
-are applied.
-<P>
-Note that the parameter <TT>total_types</TT> must be read 
-<STRONG>before</STRONG> any extra forces.
-</LI>
-
-<A NAME="sock">
-<P><LI><B>sock</B><P>
-</A>
-Provide support for sockets (for visualization).
-
-<A NAME="pair">
-<P><LI><B>pair</B><P>
-</A>
-Use tabulated pair potentials. This is the default option. Its only
-use currently is to enable IMD to employ additional pair potentials in
-the options <B>tersoff</B> and <B>ewald</B>.
-
-<A NAME="eam">
-<P><LI><B>eam</B><P>
-</A>
-<a href=eam2.html>Use Embedded Atom Method potentials.</a>
-
-<A NAME="covalent">
-<P><LI><B>keating</B>, <B>ttbp</B>, <B>stiweb</B>, and <B>tersoff</B><P>
-<A HREF="covalent.html">Use many-body potentials.</A>
-
-<A NAME="ewald">
-<P><LI><B>ewald</B><P>
-<A HREF="ewald.html">Use Coulomb potential with Ewald summation method.</A>
-
-<A NAME="uniax">
-<P><LI><B>uniax</B><P>
-</A>
-<a href=uniax.html>Use Gay-Berne potential for uniaxial molecules.</a>
-
-<A NAME="pacx">
-<P><LI><B>pacx</B><P>
-</A>
-Link with PACX libraries in addition to MPI. 
-Needed for Metacomputing, but also useful if certain MPI routines are
-not available. 
-PACX is an extension of MPI which allows the distribution of the
-simulation across a network of (possibly continent-widely) separated
-supercomputers. 
-<P>
-IMD uses MPI_Cart routines to set up the communication network between
-the PEs. This is not possible with PACX since one supercomputer sees
-only the communication nodes of the other and not its
-topology. Therefore the MPI_Cart routines have been replaced.
-<P>
-The PACX library is available from the PACX-Group at the RUS.
-A description of PACX and how to use it can be found <A
-HREF="http://www.hlrs.de/people/gabriel/PROJECTS/pacx/pacx.html">here</A>.
-
-<A NAME="shock">
-<P><LI><B>shock</B><P>
-</A>
-It is possible to simulate shockwaves with IMD. A shockwave is
-generated in the following way: We use a box which is  periodic
-along the y- and z-axis and has free boundaries in the x-direction.
-The shockwave is generated by setting the velocities
-of the atoms in routine imd_maxwell within a strip
-<TT>shock_strip</TT> orthogonal to the x-axis to a constant
-value <TT>shock_speed</TT>. The velocity direction is in the positive 
-x-axis. 
-<P>
-There are several modes set by <TT>shock_mode</TT>: <P><UL><LI>If <TT>shock_mode</TT>
-is set to 1 then the left part of the sample with thickness
-<TT>shock_strip</TT> is slammed into the right
-part. <LI>If the parameter is set to 2 then two halves of the sample are
-slammed into oneanother. <LI>If the parameter is set to 3 then the
-whole sample is slammed into a fixed wall.</UL>
-<P>
-<B>Important</B>: Currently, the atom velocities for the shockwave
-are set by the routine imd_maxwell, which is called at the start
-of the simulation only. It is therefore not possible to start
-a shockwave in a later phase of a multiphase simulation. 
-Therefore, this option is <A HREF="limitations.html">not multiphase 
-ready</A>.
-
-<A NAME="transport">
-<P><LI><B>transport</B><P>
-</A>
-This option enables IMD to compute the heat conductivty of a
-sample. It is automatically activated by the
-<A HREF="ensembles.html#nvx">nvx ensemble</A>.
-The sample is divided into <TT>tran_nlayers</TT> layers.
-The temperature of layer 0 is initialized to 
-<TT>starttemp + dTemp_start</TT>, and linearly moved to 
-<TT>starttemp + dTemp_end</TT> during the simulation. Similarly, 
-the temperature of layer <TT>tran_nlayers/2</TT> (in the middle of 
-the sample) is initially set to <TT>starttemp - dTemp_start</TT>,
-and linearly moved to <TT>starttemp - dTemp_end</TT>.
-The time, the heat conductivity, and the temperatures in
-layers 0 to <TT>tran_nlayers/2</TT> is written to the
-file <TT>&lt;basename&gt;.tempdist</TT> every
-<tt>tran_interval</tt> steps.
-
-<a id="stress_tens" name="stress_tens">
-<li><p><b>stress</b></p></li>
-</a>
+<dt><a id="glokdeform" name="glokdeform"><b>glokdeform</b></a></dt>
+<dd>
 <p>
-The option stress enables the computation of the stress or pressure 
-tensor. This is a non-negligible extra effort, and should be done 
-only when the pressure distribution or the pressure tensor is needed. 
-The global, scalar pressure is always computed. If the option stress 
-is enabled, the components of the global pressure tensor are written 
-to the <a href="output.html#properties">properties file</A> every 
-<tt>eng_int</tt> time steps. It is also possible to write out
-<a href="output.html#distributions">distributions</a> of the
-scalar or tensorial pressure, and to write out the pressure tensor
-contribution of each atom every <tt>press_int</tt> time steps,
-by setting the <tt>press_int</tt> parameter to a positive value.</p>
+Like deform, just with the fnorm criterium, therefore with
+parameter <tt>fnorm_threshold</tt>. </p>
+</dd>
 
-<A NAME="fnorm">
-<P><LI><B> fnorm </B><P>
-Writes the average of the modulus of a (random) force component to 
-the <TT>.eng</TT> file. This should be a good measure for the degree 
-of relaxation in a glok or mik simulation. 
+<dt><a id="fbc" name="fbc"><b>fbc</b></a></dt>
+<dd>
+<p>
+Force Boundary Conditions. With this option, one can define
+extra forces that act on atoms of certain 
+<a href="general.html#virtual">virtual types</a>. This is implemented
+for the nve, nvt and mik ensembles.</p>
+<p>
+For each concerned virtual type, one can declare in the
+parameter file the starting and the end value (in the simulation
+phase) of an extra force vector that is added to the force acting
+on atoms of that virtual type. The parameters
+<tt>extra_startforce</tt> and <tt>extra_endforce</tt> expect 1
+integer and d real numbers, where d is the sample dimension. The
+first integer number specifies the virtual atom type, the other d
+real numbers specify the extra force vector. The values between
+<tt>extra_startforce</tt> and <tt>extra_endforce</tt> are linearly
+interpolated (like the temperature).</p>
+<p>
+For mik simulations, instead of <tt>extra_endforce</tt> the
+force increment <tt>extra_dforce</tt> should be specified. It is
+added to the applied force each time the temperature drops under
+<tt>fbc_ekin_threshold</tt>, or after <tt>fbc_waitsteps</tt>.
+During the initial <tt>fbc_annealsteps</tt> steps, no extra forces
+are applied.</p>
+<p>
+Note that the parameter <tt>total_types</tt> must be read
+<strong>before</strong> any extra forces.</p>
+</dd>
 
-<A NAME="einstein">
-<P><LI><B> einstein </B><P>
-Writes the Einstein frequency to the <TT>.eng</TT> file. This value 
-can be used as <TT>inv_tau_eta</TT> for a Nose-Hoover thermostat.
-This option is supported in NVE, NVT and NPT simulations only.
+<dt><a id="sock" name="sock"><b>sock</b></a></dt>
+<dd>
+<p>
+Provide support for sockets (for visualization). </p>
+</dd>
 
-<A NAME="efilter">
-<P><LI><B> efilter </B><P>
-Only those atoms (no virtual atoms) which have a potential energy
-between e_pot_lower and e_pot_upper (must be specified for all ntypes) 
-are written in <TT>&lt;outfile&gt;.ef.&lt;n&gt;</TT>, where
-<TT>&lt;n&gt;</TT> is a running number. This happens every
-ef_checkpt_int step.
+<dt><a id="pair" name="pair"><b>pair</b></a></dt>
+<dd>
+<p>
+Use tabulated pair potentials. This is the default option. Its
+only use currently is to enable IMD to employ additional pair
+potentials in the options <b>tersoff</b> and <b>ewald</b>. </p>
+</dd>
 
-<A NAME="snap">
-<P><LI><B> snap </B><P>
+<dt><a id="eam" name="eam"><b>eam</b></a></dt>
+<dd>
+<p>
+<a href="eam2.html">Use Embedded Atom Method potentials.</a> </p>
+</dd>
+
+<dt><a id="covalent" name="covalent">
+<b>keating</b>, <b>ttbp</b>, <b>stiweb</b>, and <b>tersoff</b></a></dt>
+<dd>
+<p>
+<a href="covalent.html">Use many-body potentials.</a> </p>
+</dd>
+
+<dt><a id="ewald" name="ewald"><b>ewald</b></a></dt>
+<dd>
+<p>
+<a href="ewald.html">Use Coulomb potential with Ewald summation
+method.</a> </p>
+</dd>
+
+<dt><a id="uniax" name="uniax"><b>uniax</b></a></dt>
+<dd>
+<p>
+<a href="uniax.html">Use Gay-Berne potential for uniaxial
+molecules.</a> </p>
+</dd>
+
+<dt><a id="pacx" name="pacx"><b>pacx</b></a></dt>
+<dd>
+<p>
+Link with PACX libraries in addition to MPI. Needed for
+Metacomputing, but also useful if certain MPI routines are not
+available. PACX is an extension of MPI which allows the
+distribution of the simulation across a network of (possibly
+continent-widely) separated supercomputers.</p>
+<p>
+IMD uses MPI_Cart routines to set up the communication network
+between the PEs. This is not possible with PACX since one
+supercomputer sees only the communication nodes of the other and
+not its topology. Therefore the MPI_Cart routines have been
+replaced.</p>
+<p>
+The PACX library is available from the PACX-Group at the RUS. A
+description of PACX and how to use it can be found 
+<a href="http://www.hlrs.de/people/gabriel/PROJECTS/pacx/pacx.html">
+here</a>.</p>
+</dd>
+
+<dt><a id="shock" name="shock"><b>shock</b></a></dt>
+<dd>
+<p>
+It is possible to simulate shockwaves with IMD. A shockwave is
+generated in the following way: We use a box which is periodic
+along the y- and z-axis and has free boundaries in the x-direction.
+The shockwave is generated by setting the velocities of the atoms
+in routine imd_maxwell within a strip <tt>shock_strip</tt>
+orthogonal to the x-axis to a constant value <tt>shock_speed</tt>.
+The velocity direction is in the positive x-axis.</p>
+<p>
+There are several modes set by <tt>shock_mode</tt>:</p>
+
+<ul>
+<li>If <tt>shock_mode</tt> is set to 1 then the left part of the
+sample with thickness <tt>shock_strip</tt> is slammed into the
+right part.</li>
+
+<li>If the parameter is set to 2 then two halves of the sample are
+slammed into oneanother.</li>
+
+<li>If the parameter is set to 3 then the whole sample is slammed
+into a fixed wall.</li>
+</ul>
+
+<p><b>Important</b>: Currently, the atom velocities for the
+shockwave are set by the routine imd_maxwell, which is called at
+the start of the simulation only. It is therefore not possible to
+start a shockwave in a later phase of a multiphase simulation.
+Therefore, this option is <a href="limitations.html">not multiphase
+ready</a>. </p>
+</dd>
+
+<dt><a id="transport" name="transport"><b>transport</b></a></dt>
+<dd>
+<p>
+This option enables IMD to compute the heat conductivty of a
+sample. It is automatically activated by the <a
+href="ensembles.html#nvx">nvx ensemble</a>. The sample is divided
+into <tt>tran_nlayers</tt> layers. The temperature of layer 0 is
+initialized to <tt>starttemp + dTemp_start</tt>, and linearly moved
+to <tt>starttemp + dTemp_end</tt> during the simulation. Similarly,
+the temperature of layer <tt>tran_nlayers/2</tt> (in the middle of
+the sample) is initially set to <tt>starttemp - dTemp_start</tt>,
+and linearly moved to <tt>starttemp - dTemp_end</tt>. The time, the
+heat conductivity, and the temperatures in layers 0 to
+<tt>tran_nlayers/2</tt> is written to the file
+<tt>&lt;basename&gt;.tempdist</tt> every <tt>tran_interval</tt>
+steps. </p>
+</dd>
+
+<dt><a id="stress_tens" name="stress_tens"><b>stress</b></a></dt>
+<dd>
+<p>
+The option stress enables the computation of the stress or
+pressure tensor. This is a non-negligible extra effort, and should
+be done only when the pressure distribution or the pressure tensor
+is needed. The global, scalar pressure is always computed. If the
+option stress is enabled, the components of the global pressure
+tensor are written to the <a
+href="output.html#properties">properties file</a> every
+<tt>eng_int</tt> time steps. It is also possible to write out <a
+href="output.html#distributions">distributions</a> of the scalar or
+tensorial pressure, and to write out the pressure tensor
+contribution of each atom every <tt>press_int</tt> time steps, by
+setting the <tt>press_int</tt> parameter to a positive value.</p>
+</dd>
+
+<dt><a id="fnorm" name="fnorm"><b>fnorm</b></a></dt>
+<dd>
+<p>
+Writes the average of the modulus of a (random) force component
+to the <tt>.eng</tt> file. This should be a good measure for the
+degree of relaxation in a glok or mik simulation. </p>
+</dd>
+
+<dt><a id="einstein" name="einstein"><b>einstein</b></a></dt> 
+<dd>
+<p>
+Writes the Einstein frequency to the <tt>.eng</tt> file. This
+value can be used as <tt>inv_tau_eta</tt> for a Nose-Hoover
+thermostat. This option is supported in NVE, NVT and NPT
+simulations only. </p>
+</dd>
+
+<dt><a id="efilter" name="efilter"><b>efilter</b></a></dt>
+<dd>
+<p>
+Only those atoms (no virtual atoms) which have a potential
+energy between e_pot_lower and e_pot_upper (must be specified for
+all ntypes) are written in <tt>&lt;outfile&gt;.ef.&lt;n&gt;</tt>,
+where <tt>&lt;n&gt;</tt> is a running number. This happens every
+ef_checkpt_int step. </p>
+</dd>
+
+<dt><a id="snap" name="snap"><b>snap</b></a></dt>
+<dd>
+<p>
 Option to write snapshots of atomic configurations and the
-corresponding informations in 
-<TT>&lt;outfile&gt;.n.&lt;ss&gt;</TT>,
-<TT>&lt;outfile&gt;.n.&lt;ssitr&gt;</TT> and 
-<TT>&lt;outfile&gt;.eng</TT> when a certain condition is fullfilled. 
-At the moment only used by the option glokdeform.
+corresponding informations in
+<tt>&lt;outfile&gt;.n.&lt;ss&gt;</tt>,
+<tt>&lt;outfile&gt;.n.&lt;ssitr&gt;</tt> and
+<tt>&lt;outfile&gt;.eng</tt> when a certain condition is
+fullfilled. At the moment only used by the option glokdeform. </p>
+</dd>
 
+<dt><a id="writef" name="writef"><b>writef</b></a></dt>
+<dd>
+<p>
+Writes the forces on atoms of virtual types into
+<tt>&lt;outfile&gt;.wf.&lt;n&gt;</tt>, where <tt>&lt;n&gt;</tt> is
+a running number. This happens at the moment only in combination
+with snap. </p>
+</dd>
 
-<A NAME="writef">
-<P><LI><B> writef </B><P>
-Writes the forces on atoms of virtual types into  
-<TT>&lt;outfile&gt;.wf.&lt;n&gt;</TT>,
-where <TT>&lt;n&gt;</TT> is a running number. This happens at the moment 
-only in combination with snap.
-
-
-<A NAME="avpos">
-<P><LI><B> avpos </B><P> This option enables IMD to compute the
-average position of the atoms during a time interval. The averaging
-begins at step <TT>avpos_start</TT> (default 0) and ends at step
-<TT>avpos_end</TT> (default <TT>maxsteps</TT>). Every
-<TT>avpos_int</TT> steps, the averaged positions are written in an
-output file <TT>&lt;outfile&gt;.&lt;n&gt;.avp</TT>. The output file
+<dt><a id="avpos" name="avpos"><b>avpos</b></a></dt>
+<dd>
+<p>
+This option enables IMD to compute the average position of the
+atoms during a time interval. The averaging begins at step
+<tt>avpos_start</tt> (default 0) and ends at step
+<tt>avpos_end</tt> (default <tt>maxsteps</tt>). Every
+<tt>avpos_int</tt> steps, the averaged positions are written in an
+output file <tt>&lt;outfile&gt;.&lt;n&gt;.avp</tt>. The output file
 further contains the average potential energy of the atoms. After
 writing the output, the averaging begins with the actual atom
 positions. The number of steps between additions of coordinates is
-specified by the parameter <TT>avpos_res</TT>. For each avpos output
-file, an avpos iteration file is written which has the name
-<TT>&lt;outfile&gt;.&lt;n&gt;.avp.itr</TT> and contains the actual box
-vectors. When an NPT ensemble is used, the averaged box vectors are
-written in this file.
+specified by the parameter <tt>avpos_res</tt>. For each avpos
+output file, an avpos iteration file is written which has the name
+<tt>&lt;outfile&gt;.&lt;n&gt;.avp.itr</tt> and contains the actual
+box vectors. When an NPT ensemble is used, the averaged box vectors
+are written in this file. </p>
+</dd>
 
-<A NAME="quasi">
-<P><LI><B>quasi</B><P>
-</A>
-This option is required for the generation of truncated icosahedra
-quasicrystals, one of the few structure types IMD can
-<A HREF="config.html#generated">generate itself</A>.
+<dt><a id="quasi" name="quasi"><b>quasi</b></a></dt>
+<dd>
+<p>
+This option is required for the generation of truncated
+icosahedra quasicrystals, one of the few structure types IMD can 
+<a href="config.html#generated">generate itself</a>. </p>
+</dd>
 
-<A NAME="ordpar">
-<P><LI><B>ordpar</B><P>
-</A>
+<dt><a id="ordpar" name="ordpar"><b>ordpar</b></a></dt>
+<dd>
+<p>
 Order parameter closely related to the potential energy. In
 quasicrystals the potential energy of atoms of the same type can be
 quite different, depending on their neighbourhood, so that defects
-can be hard to detect. The order parameter - which is printed in the
-output files instead of the potential energy - narrows the potential
-energy distribution and improves the visibility of defects.
-<P>
-Only atoms within a sphere of a certain radius  which is specified in
-the ntypes<SUP>2</SUP>-dimensional vector <TT>op_rcut</TT> contribute 
-to the order parameter: their potential energy, weighted by the number
-specified in the ntypes<SUP>2</SUP>-dimensional vector <TT>op_weight</TT>
-is summed up.
-<P>
-For two-dimensional binary tiling quasicrystals in the ground state, 
-the numbers of neighbors of the different types obey a linear
-relation. With the choice
-<PRE>
+can be hard to detect. The order parameter - which is printed in
+the output files instead of the potential energy - narrows the
+potential energy distribution and improves the visibility of
+defects.</p>
+<p>
+Only atoms within a sphere of a certain radius which is
+specified in the ntypes<sup>2</sup>-dimensional vector
+<tt>op_rcut</tt> contribute to the order parameter: their potential
+energy, weighted by the number specified in the
+ntypes<sup>2</sup>-dimensional vector <tt>op_weight</tt> is summed
+up.</p>
+<p>
+For two-dimensional binary tiling quasicrystals in the ground
+state, the numbers of neighbors of the different types obey a
+linear relation. With the choice</p>
+<pre>
    op_rcut    1.50 1.25 1.25 0.85
    op_weight  1.00 0.25 0.50 1.00
-</PRE>
-all atoms will then have the same value of the order parameter.
-<P>
-In three dimensions no such simple relation can be found. Here the
-order parameter is in addition divided by the total number of 
-neighbours. This has proven useful for the detection of dislocations 
-and stacking faults. The number of neighbours is also being printed 
-in the configuration file.
-
-<a name="atdist" id="atdist">
-<p><li><b>atdist</b></p>
-</a>
+</pre>
 <p>
-Determines the time-averaged distribution of atoms in a <b>rectangular</b>
-block of material between the lower left corner <tt>atdist_ll</tt>
-and the upper right corner <tt>atdist_ur</tt>. For this purpose,
-the block is divided into a rectangular array of bins, of dimension
-<tt>atdist_dim</tt>. Each bin contains a counter for each atom type,
-and every <tt>atdist_int</tt> time steps such a counter is 
-incremented if an atom of the given type is located in that bin.
-This recording is started at time step <tt>atdist_start</tt>,
-and stopped at time step <tt>atdist_end</tt>. Small samples can
-be periodically extended in order to fill a large enough block,
-using the parameters <tt>atdist_per_ll</tt> and <tt>atdist_per_ur</tt>,
-which are integer vectors specifying the lower left and upper right 
-corners, respectively, of the the periodic array of copies of the
-sample. It is the user's responsibility to choose this array large
-enough. The parameter <tt>atdist_phi</tt>, which is given in multiples
-of 2 Pi, can be used to rotate the sample around the z-axis, before
-it is mapped to the array of bins. Furthermore, the positions
-and types of all atoms in the block are written every <tt>atdist_pos_int</tt>
+all atoms will then have the same value of the order parameter. </p>
+<p>
+In three dimensions no such simple relation can be found. Here
+the order parameter is in addition divided by the total number of
+neighbours. This has proven useful for the detection of
+dislocations and stacking faults. The number of neighbours is also
+being printed in the configuration file. </p>
+</dd>
+
+<dt><a name="atdist" id="atdist"><b>atdist</b></a></dt>
+<dd>
+<p>
+Determines the time-averaged distribution of atoms in a
+<b>rectangular</b> block of material between the lower left corner
+<tt>atdist_ll</tt> and the upper right corner <tt>atdist_ur</tt>.
+For this purpose, the block is divided into a rectangular array of
+bins, of dimension <tt>atdist_dim</tt>. Each bin contains a counter
+for each atom type, and every <tt>atdist_int</tt> time steps such a
+counter is incremented if an atom of the given type is located in
+that bin. This recording is started at time step
+<tt>atdist_start</tt>, and stopped at time step
+<tt>atdist_end</tt>. Small samples can be periodically extended in
+order to fill a large enough block, using the parameters
+<tt>atdist_per_ll</tt> and <tt>atdist_per_ur</tt>, which are
+integer vectors specifying the lower left and upper right corners,
+respectively, of the the periodic array of copies of the sample. It
+is the user's responsibility to choose this array large enough. The
+parameter <tt>atdist_phi</tt>, which is given in multiples of 2 Pi,
+can be used to rotate the sample around the z-axis, before it is
+mapped to the array of bins. Furthermore, the positions and types
+of all atoms in the block are written every <tt>atdist_pos_int</tt>
 time steps to files *.cpt, which can be used for visualization with
 the Covise program. The resulting distribution files *.atdist can
-be analysed and converted with the utility program 
-<a href="util_distrib.html#atdist">atdist</a>. </p>
-
+be analysed and converted with the utility program <a
+href="util_distrib.html#atdist">atdist</a>.</p>
 <p>
 This option is parallelized only by OpenMP, not by MPI.</p>
+</dd>
 
-<a name="diffpat" id="diffpat">
-<p><li><b>diffpat</b></p>
-</a>
+<dt><a name="diffpat" id="diffpat"><b>diffpat</b></a></dt>
+<dd>
 <p>
-Determines the diffraction pattern of a <b>rectangular</b>
-block of material between the lower left corner <tt>diffpat_ll</tt>
-and the upper right corner <tt>diffpat_ur</tt> by Fast Fourier
-Transform (FFT). For this purpose, the block is divided into
-an array of bins, of dimension <tt>diffpat_dim</tt>. Each bin 
-contains a counter for each atom type, and every time step such 
-a counter is incremented if an atom of the given type is located 
-in that bin. Every <tt>diffpat_int</tt> time steps, the FFT of
-the resulting distrbution is computed, its intensities
-are added up, and the array is cleared. In other words, the
-contributions of time slices of <tt>diffpat_int</tt> steps
-are added up incoherently. The recording of the diffraction
-pattern is started at time step <tt>diffpat_start</tt>, and
-stopped at time step <tt>diffpat_end</tt>. The scattering
-strength of the different atoms types, usually propotional
-to the charge of the nucleus, must be given with the parameter
-<tt>diffpat_weight</tt>. </p>
-
+Determines the diffraction pattern of a <b>rectangular</b> block
+of material between the lower left corner <tt>diffpat_ll</tt> and
+the upper right corner <tt>diffpat_ur</tt> by Fast Fourier
+Transform (FFT). For this purpose, the block is divided into an
+array of bins, of dimension <tt>diffpat_dim</tt>. Each bin contains
+a counter for each atom type, and every time step such a counter is
+incremented if an atom of the given type is located in that bin.
+Every <tt>diffpat_int</tt> time steps, the FFT of the resulting
+distrbution is computed, its intensities are added up, and the
+array is cleared. In other words, the contributions of time slices
+of <tt>diffpat_int</tt> steps are added up incoherently. The
+recording of the diffraction pattern is started at time step
+<tt>diffpat_start</tt>, and stopped at time step
+<tt>diffpat_end</tt>. The scattering strength of the different
+atoms types, usually propotional to the charge of the nucleus, must
+be given with the parameter <tt>diffpat_weight</tt>.</p>
 <p>
 Note that the resulution of the diffraction pattern (the size of
-its pixels) is inversely proportional to the size of the block
-of material, whereas the dimension of the distribution array
+its pixels) is inversely proportional to the size of the block of
+material, whereas the dimension of the distribution array
 determines the range of reciprocal space for which the diffraction
-pattern is computed. Unlike to option <a href="#adist">atdist</a>, 
+pattern is computed. Unlike to option <a href="#adist">atdist</a>,
 the sample is not periodically extended in order to fill the block.
 The resulting diffraction pattern files *.diffpat can be analysed
-and converted with the utility program 
-<a href="util_distrib.html#diffpat">diffpat</a>. </p>
-
+and converted with the utility program <a
+href="util_distrib.html#diffpat">diffpat</a>.</p>
 <p>
-This option is parallelized only by OpenMP, not by MPI. It also 
-requires the <a href="http://www.fftw.org">FFTW</a> library,
-whose location must be configured in the Makefile. </p>
+This option is parallelized only by OpenMP, not by MPI. It also
+requires the <a href="http://www.fftw.org">FFTW</a> library, whose
+location must be configured in the Makefile.</p>
+</dd>
 
-<A NAME="monolj">
-<P><LI><B>monolj</B><P>
-</A>
-Monoatomic Lennard-Jones system. The masses are all set to 1, and
-particles have no number. All this saves space, which is useful for 
-world records. 
-<P>
-<B>Editor's remark:</B> Part of this could also be achieved by
-using only one mass variable per atom type, instead of one per atom.
+<dt><a id="monolj" name="monolj"><b>monolj</b></a></dt>
+<dd>
+<p>
+Monoatomic Lennard-Jones system. The masses are all set to 1,
+and particles have no number. All this saves space, which is useful
+for world records.</p>
+<p>
+<b>Editor's remark:</b> Part of this could also be achieved by
+using only one mass variable per atom type, instead of one per
+atom. </p>
+</dd>
 
-<A NAME="mono, binary">
-<P><LI><B>mono, binary</B><P>
-</A>
-Hard coding of the number of different atom types make IMD faster.
+<dt><a id="mono" name="mono"><b>mono</b></a></dt>
+<dd>
+<p>
+Special version for one atom type. Hard coding of the number of 
+different atom types makes IMD faster. </p>
+</dd>
 
-<A NAME="single">
-<P><LI><B>single</B><P>
-</A>
-Do everything with single precision (default is double precision).
-This saves space, which is useful for world records.
+<dt><a id="binary" name="binary"><b>binary</b></a></dt>
+<dd>
+<p>
+Special version for binary system. Hard coding of the number of 
+different atom types makes IMD faster. </p>
+</dd>
 
-<A NAME="4point">
-<P><LI><B>4point</B><P>
-</A>
-Imd uses by default a 3-point Lagrange interpolation to determine the 
-interaction energy and the forces. This option switches to a 4-point
-Lagrange interpolation.
+<dt><a id="single" name="single"><b>single</b></a></dt>
+<dd>
+<p>
+Do everything with single precision (default is double precision). 
+This saves space, which is useful for world records. </p>
+</dd>
 
-<A NAME="hpo">
-<P><LI><B>hpo</B><P>
-</A>
-The output is written with a higher precision.
+<dt><a id="fourpoint" name="fourpoint"><b>4point</b></a></dt>
+<dd>
+<p>
+Imd uses by default a 3-point Lagrange interpolation to
+determine the interaction energy and the forces. This option
+switches to a 4-point Lagrange interpolation. </p>
+</dd>
 
-<A NAME="debug">
-<P><LI><B>debug</B><P>
-</A>
-Compile with debug flags.
+<dt><a id="hpo" name="hpo"><b>hpo</b></a></dt>
+<dd>
+<p>
+The output is written with a higher precision. </p>
+</dd>
 
-<A NAME="timing">
-<P><LI><B>timing</B><P>
-</A>
-This option gives an idea how much time is spent in IO  
+<dt><a id="debug" name="debug"><b>debug</b></a></dt>
+<dd>
+<p>
+Compile with debug flags. </p>
+</dd>
 
-<A NAME="prof">
-<P><LI><B>prof</B><P>
-</A>
-Compile with profiling support.
+<dt><a id="timing" name="timing"><b>timing</b></a></dt>
+<dd>
+<p>
+This option gives an idea how much time is spent in IO. </p>
+</dd> 
 
-<A NAME="epitax">
-<P><LI><B>epitax</B><P>
-</A>
-This option enables the simulation of vacuum deposition of atoms. 
-For more details take a look at the description of the 
-<A HREF="epitax.html">EPITAX implementation</A>.
+<dt><a id="prof" name="prof"><b>prof</b></a></dt>
+<dd>
+<p>
+Compile with profiling support. </p>
+</dd>
+
+<dt><a id="epitax" name="epitax"><b>epitax</b></a></dt>
+<dd>
+<p>
+This option enables the simulation of vacuum deposition of
+atoms. For more details take a look at the description of the 
+<a href="epitax.html">EPITAX implementation</a>. </p>
+</dd>
+
+</dl>
 
 <!--#include virtual="imdfoot.html" -->
+

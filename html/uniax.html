@@ -66,6 +66,10 @@ is supplemented by a rotational one. </p>
   arbitrary values of ex and ez.</li>
 </ul>
 
+<p>
+<b>Limitation</b>: The current implementation is limited to a 
+<b>single type</b> of Gay-Berne particle. </p>
+
 <h2>Gay-Berne Potential</h2>
 
 <p>
@@ -122,12 +126,12 @@ However, further parametres are required in the IMD input file. </p>
 <tr> <td>rcut  	      </td>  
      <td> cutoff radius for Gay-Berne interaction. 
           rcut = 4.0 for original parametrization of
-          the model. </th></tr>
+          the model. </td></tr>
 <tr> <td>tau_r  </td>  
      <td> time constant for coupling to the heat
           bath of Nos&eacute;-Hoover thermostat for 
           rotational motion. Can be set equal to
-          tau_eta. </th></tr>   
+          tau_eta. </td></tr>   
 </table>
 
 <h2>Compiling IMD for UNIAX</h2>
