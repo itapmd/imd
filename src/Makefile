@@ -510,7 +510,7 @@ ifeq (SX6,${IMDSYS})
 #  DEBUG_OMP_FLAGS	+= 
 #  DEBUG_OMPI_FLAGS	+= 
   PROF_FLAGS		+= -ftrace -DFTRACE
-#  PROF_LIBS		+= 
+  PROF_LIBS		+= -lftrace
 endif
 
 ###########################################################################
