@@ -64,7 +64,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
 #endif
     
   /* For each atom in first cell */
-  for (i = 0;i < p->n; ++i) {
+  for (i=0; i<p->n; ++i) {
 
     /* For each atom in neighbouring cell */
     /* Some compilers don't find the expressions that are invariant 
@@ -120,20 +120,19 @@ void do_forces(cell *p, cell *q, vektor pbc)
 
       if (radius2 <= r2_cut) {
 
-      /* Calculate force, if distance smaller than cutoff */ 
+        /* Calculate force, if distance smaller than cutoff */ 
 #ifdef MONOLJ
-      sig_d_rad2  = 2.0 / radius2;
-      sig_d_rad6  = sig_d_rad2 * sig_d_rad2 * sig_d_rad2;
-      sig_d_rad12 = sig_d_rad6 * sig_d_rad6;
+        sig_d_rad2  = 2.0 / radius2;
+        sig_d_rad6  = sig_d_rad2 * sig_d_rad2 * sig_d_rad2;
+        sig_d_rad12 = sig_d_rad6 * sig_d_rad6;
 
-      pot_grad = - 6 * sig_d_rad2 * ( sig_d_rad12 - sig_d_rad6 );
-      pot_zwi  = sig_d_rad12 - 2.0 * sig_d_rad6;
-
+        pot_grad = - 6 * sig_d_rad2 * ( sig_d_rad12 - sig_d_rad6 );
+        pot_zwi  = sig_d_rad12 - 2.0 * sig_d_rad6;
 #else
       	/* Check for distances, shorter than minimal distance in pot. table */
 	if (radius2 <= r2_0) {
 	  radius2 = r2_0; 
-	}; 
+	}
 
 	/* Indices into potential table */
 	k     = (int) ((radius2 - r2_0) * inv_r2_step);
@@ -156,7 +155,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
 	pot_grad = 2 * inv_r2_step * ( dv + (chi - 0.5) * d2v );
         /* Potential energy of atom */
 	pot_zwi =  pot_k0 + chi * dv + 0.5 * chi * (chi - 1) * d2v;
-#endif /* MONOLJ */
+#endif  /* MONOLJ */
         
 	/* Store forces in temp */
 	force.x = d.x * pot_grad;
@@ -199,22 +198,22 @@ void do_forces(cell *p, cell *q, vektor pbc)
 #endif
 	/* negativ, da pot_grad gleich force !! */
 #ifdef STRESS_TENS
-      p->presstens X(i) -= d.x * d.x * pot_grad;
-      p->presstens Y(i) -= d.y * d.y * pot_grad;
-      q->presstens X(j) -= d.x * d.x * pot_grad;
-      q->presstens Y(j) -= d.y * d.y * pot_grad;
+        p->presstens X(i) -= d.x * d.x * pot_grad;
+        p->presstens Y(i) -= d.y * d.y * pot_grad;
+        q->presstens X(j) -= d.x * d.x * pot_grad;
+        q->presstens Y(j) -= d.y * d.y * pot_grad;
 #ifdef TWOD
-      p->presstens_offdia[i] -= d.x * d.y * pot_grad;
-      q->presstens_offdia[j] -= d.x * d.y * pot_grad;
+        p->presstens_offdia[i] -= d.x * d.y * pot_grad;
+        q->presstens_offdia[j] -= d.x * d.y * pot_grad;
 #else
-      p->presstens Z(i) -= d.z * d.z * pot_grad;
-      q->presstens Z(j) -= d.z * d.z * pot_grad;
-      p->presstens_offdia X(i) -= d.y * d.z * pot_grad;
-      p->presstens_offdia  Y(i) -= d.z * d.x * pot_grad;
-      q->presstens_offdia  X(j) -= d.y * d.z * pot_grad;
-      q->presstens_offdia  Y(j) -= d.z * d.x * pot_grad;
-      p->presstens_offdia Z(i) -= d.x * d.y * pot_grad;
-      q->presstens_offdia Z(j) -= d.x * d.y * pot_grad;
+        p->presstens Z(i) -= d.z * d.z * pot_grad;
+        q->presstens Z(j) -= d.z * d.z * pot_grad;
+        p->presstens_offdia X(i) -= d.y * d.z * pot_grad;
+        p->presstens_offdia Y(i) -= d.z * d.x * pot_grad;
+        q->presstens_offdia X(j) -= d.y * d.z * pot_grad;
+        q->presstens_offdia Y(j) -= d.z * d.x * pot_grad;
+        p->presstens_offdia Z(i) -= d.x * d.y * pot_grad;
+        q->presstens_offdia Z(j) -= d.x * d.y * pot_grad;
 #endif
 #endif
 #ifdef TRANSPORT
@@ -222,11 +221,45 @@ void do_forces(cell *p, cell *q, vektor pbc)
         q->heatcond[j] += pot_zwi - radius2 * pot_grad;
 #endif
 
-      }; /* if */
+#if (defined(TTBP) && !defined(TWOD))
+	/* 2. Cutoff: make neighbor tables for TTBP */
+        if (radius2 <= ttbp_r2_cut[p_typ][q_typ]) {
 
-    }; /* for j */
+          neightab *neigh;
+          real  *tmp_ptr;
 
-  }; /* for i */
+          /* update neighbor table of particle i */
+          neigh = p->neigh[i];
+          if (neigh->n_max == neigh->n) {
+            error("neighbor table too small, increase ttbp_len");
+          }
+          neigh->typ[neigh->n] = q_typ;
+          tmp_ptr  = &neigh->dist[3*neigh->n];
+	  *tmp_ptr = d.x; ++tmp_ptr; 
+	  *tmp_ptr = d.y; ++tmp_ptr; 
+	  *tmp_ptr = d.z;
+          neigh->n++;
+
+          /* update neighbor table of particle j */
+          neigh = q->neigh[j];
+          if (neigh->n_max == neigh->n) {
+            error("neighbor table too small, increase ttbp_len");
+          }
+          neigh->typ[neigh->n] = p_typ;
+          tmp_ptr  = &neigh->dist[3*neigh->n];
+	  *tmp_ptr = -d.x; ++tmp_ptr; 
+	  *tmp_ptr = -d.y; ++tmp_ptr; 
+	  *tmp_ptr = -d.z;
+          neigh->n++;
+
+        }
+#endif  /* TTPB */
+
+      } /* if */
+
+    } /* for j */
+
+  } /* for i */
 
 #ifndef MONOLJ
   /* A little security */

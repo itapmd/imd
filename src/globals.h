@@ -149,10 +149,11 @@ EXTERN real r2_step;          /* delta between potential samples */
 EXTERN real inv_r2_step;      /* inverse thereof */
 EXTERN real r2_0;             /* minimum r^2 */
 EXTERN real r2_end;           /* maximum r^2 */
-#endif /* MONOLJ */
+#endif /* not MONOLJ */
 EXTERN real r2_cut;           /* cutoff^2 */   
-EXTERN real cellsz INIT(0);   /* cell size */
-EXTERN int  initsz INIT(0);   /* cell size */
+EXTERN real cellsz INIT(0);   /* cell diameter (needed for MONOLJ) */
+EXTERN int  initsz INIT(10);  /* initial number of atoms in cell */
+EXTERN int  incrsz INIT(10);  /* increment of number of atoms in cell */
 /* MPI housekeeping */
 EXTERN int myid INIT(0);                  /* Who am I? (0 if RISC) */
 #ifdef MPI
@@ -345,39 +346,35 @@ EXTERN unsigned long varIP INIT(0);
 /* EAM stuff */
 #ifdef EAM
 /* neighborlist for EAM forces in 2D array */
-EXTERN real *eam_ij    INIT(NULL);      /* neighbor array */
-EXTERN int  eam_len INIT(50);  	        /* max neighbors */
-EXTERN real *eam_rho   INIT(NULL);	/* cohesive function density */
-                                        /* (Finnis/Sinclair) */
-EXTERN real *eam_dij_x INIT(NULL);	/* distance in x direction */
-EXTERN real *eam_dij_y INIT(NULL);	/* distance in y direction */
-EXTERN real *eam_dij_z INIT(NULL);	/* distance in z direction */
-EXTERN real eam_r_cut  INIT(0.0);	/* EAM cutoff radius */
-EXTERN real eam_r_0    INIT(1.0);	/* EAM minimum distance */
-EXTERN real eam_r2_cut;  		/* EAM cutoff radius ^2 */
-EXTERN real eam_A      INIT(0.0);	/* EAM cohesive function constant A */
+EXTERN real *eam_ij    INIT(NULL);  /* neighbor array */
+EXTERN int  eam_len    INIT(50);    /* max neighbors */
+EXTERN real *eam_rho   INIT(NULL);  /* cohesive function density */ 
+				    /* (Finnis/Sinclair) */
+EXTERN real *eam_dij_x INIT(NULL);  /* distance in x direction */
+EXTERN real *eam_dij_y INIT(NULL);  /* distance in y direction */
+EXTERN real *eam_dij_z INIT(NULL);  /* distance in z direction */
+EXTERN real eam_r_cut  INIT(0.0);   /* EAM cutoff radius */
+EXTERN real eam_r_0    INIT(1.0);   /* EAM minimum distance */
+EXTERN real eam_r2_cut;             /* EAM cutoff radius ^2 */
+EXTERN real eam_A      INIT(0.0);   /* EAM cohesive function constant A */
 #endif
 
-/* TTBP */
 #ifdef TTBP
-/* neighborlist for TTBP */
-EXTERN real *ttbp_ij     INIT(NULL);       /* neighbor array */
-EXTERN int  ttbp_len     INIT(50);	   /* max neighbors */
-EXTERN real *ttbp_j 	 INIT(NULL);	   /* position array */
-EXTERN str255 ttbp_potfilename INIT("\0"); /* TTBP Potential */
-EXTERN real *ttbp_potential;         /* TTBP Potential array */
-EXTERN real ttbp_r2_cut[10][10];     /* cutoff^2;  less than 10 atom types! */
-EXTERN real ttbp_constant[10];	     /* constants; less than 10 atom types! */ 
-EXTERN real ttbp_sp[10];	     /* constants; less than 10 atom types! */ 
-EXTERN real ttbp_r2_0;             	/* TTBP minimum r^2 */
-EXTERN real ttbp_r2_end;           	/* TTBP maximum r^2 */
-EXTERN real ttbp_r2_step;          	/* delta between potential samples */
-EXTERN real ttbp_inv_r2_step;      	/* inverse thereof */
+EXTERN str255 ttbp_potfilename INIT("\0");         /* TTBP Potential */
 EXTERN ivektor3d ttbp_pot_dim INIT(nullivektor3d); /* pot dimensions */
-EXTERN real ttbp_c0[10];             	/* TTBP cosine constant for sp hybrid*/
-EXTERN real ttbp_c1[10];             	/* TTBP cosine constant for sp hybrid*/
-EXTERN real ttbp_c2[10];             	/* TTBP cosine constant for sp hybrid*/
-EXTERN real ttbp_c3[10];             	/* TTBP cosine constant for sp hybrid*/
+EXTERN int  ttbp_len INIT(50);	  /* max neighbors */
+EXTERN real *ttbp_potential;      /* TTBP Potential array */
+EXTERN real ttbp_r2_cut[10][10];  /* cutoff^2;  less than 10 atom types! */
+EXTERN real ttbp_constant[10];	  /* constants; less than 10 atom types! */
+EXTERN real ttbp_sp[10];          /* constants; less than 10 atom types! */
+EXTERN real ttbp_r2_0;            /* TTBP minimum r^2 */
+EXTERN real ttbp_r2_end;          /* TTBP maximum r^2 */
+EXTERN real ttbp_r2_step;         /* delta between potential samples */
+EXTERN real ttbp_inv_r2_step;     /* inverse thereof */
+EXTERN real ttbp_c0[10];          /* TTBP cosine constant for sp hybrid */
+EXTERN real ttbp_c1[10];          /* TTBP cosine constant for sp hybrid */
+EXTERN real ttbp_c2[10];          /* TTBP cosine constant for sp hybrid */
+EXTERN real ttbp_c3[10];          /* TTBP cosine constant for sp hybrid */
 #endif
 
 /* generate quasicrystal */

@@ -70,14 +70,6 @@ void calc_forces(void)
   memset(eam_dij_z, 0, (natoms+1)*eam_len*sizeof(real));
 #endif /* EAM */
 
-#ifdef TTBP
-#ifdef AR
-  error("TTBP force routine not defined in case of actio = reactio.");
-#endif
-  memset(ttbp_ij,   0,(natoms+1)*ttbp_len*2*sizeof(real));
-  memset(ttbp_j,    0,(natoms+1)*ttbp_len*3*sizeof(real));
-#endif /* TTBP */
-
   /* Zero Forces */
   for (p = cell_array; 
        p <= PTR_3D_V(cell_array,
@@ -104,6 +96,11 @@ void calc_forces(void)
 #endif      
 #ifndef MONOLJ
       p->pot_eng[i] = 0.0;
+#endif
+#ifdef TTBP
+      for (j=0; j<p->n; ++j) {
+        p->neigh[j]->n = 0;
+      }
 #endif
     };
   };
@@ -147,11 +144,9 @@ void calc_forces(void)
 #endif
 #ifdef EAM
 	      do_forces_eam_1(p,q,pbc);		/* first EAM call */
-#elif TTBP
-	      do_forces_ttbp_1(p,q,pbc);        /* first TTBP call */
 #else
 	      do_forces(p,q,pbc);
-#endif /* EAM TTBP classical */
+#endif /* EAM or TTBP & classical */
 
 	    };
 
@@ -204,14 +199,12 @@ void calc_forces(void)
               if ((0 == pbc.x) && (0 == pbc.y) && (0 == pbc.z))
 #endif
 #ifdef EAM
-        do_forces_eam_1(p,q,pbc);
-#elif TTBP
-        do_forces_ttbp_1(p,q,pbc);
+              do_forces_eam_1(p,q,pbc);
 #else
-		do_forces(p,q,pbc);
+              do_forces(p,q,pbc);  /* TTBP & classical */
 #endif
-	      };
-	    };
+	      }
+	    }
 
   /* use the previously saved values of potential energy and virial */
 
@@ -226,7 +219,7 @@ void calc_forces(void)
   mpi_addtime(&time_calc_nonlocal);
 #endif  /* ... ifndef AR */
 
-#if defined(EAM) || defined(TTBP)
+#if (defined(EAM) || defined(TTBP))
   /* EAM:  cohesive function potential: for each cell */
   /* TTBP: three body potential */
   for (i=1; i < cell_dim.x-1; ++i)
@@ -241,10 +234,8 @@ void calc_forces(void)
               /* Do the work */
 #ifdef EAM
               do_forces_eam_2(p,q,pbc);		/* second EAM call */
-#elif TTBP
-              do_forces_ttbp_2(p,q,pbc);             /* second TTBP call */
 #else
-	      error("Force routine not defined.");
+              do_forces_ttbp(p);
 #endif
       };
 #endif /* EAM || TTBP */
@@ -1237,7 +1228,7 @@ void move_atoms_ar( msgbuf *b, int k, int l, int m )
 #ifndef MONOLJ
     to->sorte[i] = (integer) b->data[ b->n++ ];
 #endif 
-#if defined(TTBP) || defined(EAM)
+#ifdef EAM
     to->nummer[i] = (integer) b->data[ b->n++ ];
 #endif
   }
@@ -1267,7 +1258,7 @@ void copy_atoms_ar( msgbuf *b, int k, int l, int m)
 #ifndef MONOLJ
     b->data[ b->n++ ] = (real) from->sorte[i];
 #endif
-#if defined(TTBP) || defined(EAM)
+#ifdef EAM
     b->data[ b->n++ ] = (real) from->nummer[i];
 #endif
   }

@@ -93,6 +93,14 @@
 #define STRESS_TENS
 #endif
 
+#ifdef EAM
+#undef AR
+#endif
+
+#ifdef TTBP
+#undef AR
+#endif
+
 /******************************************************************************
 *
 * Architectures
@@ -131,14 +139,14 @@
 *
 ******************************************************************************/
 
-/* Memory allocation increments for potential and cells */
-
+/* memory allocation increment for potential */
 #define PSTEP 50
+
+/* security margin for buffer sizes */
 #define CSTEP 10
 
-#ifdef TTBP 
-#define BINC 5
-#elif EAM
+/* number of items per atom to be communicated for force computation */ 
+#ifdef EAM 
 #define BINC 5
 #else
 #define BINC 4

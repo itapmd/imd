@@ -352,7 +352,8 @@ void read_ttbp_potential(str255 ttbp_potfilename)
 
     for (i=0;i<ntypes;++i) 
       for (j=0;j<ntypes;++j) {
-        printf("TTBP Smooth potential cutoff for %d and %d is: %f\n", i,j,sqrt(ttbp_r2_cut[i][j]));
+        printf("TTBP Smooth potential cutoff for %d and %d is: %f\n", 
+               i,j,sqrt(ttbp_r2_cut[i][j]));
     };
 
   /* Shift potential to zero */
@@ -371,22 +372,22 @@ void read_ttbp_potential(str255 ttbp_potfilename)
 #else
 	*PTR_3D(ttbp_potential,k,i,j,ttbp_nmax,ntypes,ntypes) -= delta;
 #endif
-    };
+    }
 
   printf("\n");
 
   /* The Interpolation uses k+1 and k+2, so we add zeros at end of table */
 
-  for(k=1; k<=5; ++k){
+  for (k=1; k<=5; ++k){
 #ifndef STATIC_POT
     /* still some space left? */ 
     if (((npot%PSTEP) == 0) && (npot>0)) {
       ttbp_tablesize = (npot+PSTEP)*ntypes*ntypes*sizeof(real);
-      ttbp_potential = (real *)
-	realloc(ttbp_potential,ttbp_tablesize);
-      if (NULL==ttbp_potential) error("Can't extend memory for ttbp potential.");
+      ttbp_potential = (real *) realloc(ttbp_potential,ttbp_tablesize);
+      if (NULL==ttbp_potential) 
+        error("Cannot extend memory for ttbp potential.");
       ttbp_nmax = npot+PSTEP;
-    };
+    }
 #endif
     for (i=0;i<ntypes;++i)
       for (j=0;j<ntypes;++j)	
@@ -396,15 +397,16 @@ void read_ttbp_potential(str255 ttbp_potfilename)
 	*PTR_3D(ttbp_potential,npot,i,j,ttbp_nmax,ntypes,ntypes) = 0.0;
 #endif
     ++npot;
-  };
+  }
 
 #ifdef STATIC_POT
-  if ((MAXPOTLEN<npot) || (MAXATOMTYPES<ntypes)) error("Messed up potenital table.");
+  if ((MAXPOTLEN<npot) || (MAXATOMTYPES<ntypes)) 
+    error("Messed up potenital table.");
 #endif
 
 
 #ifdef MPI
-  };
+  }
 
   /* Broadcast potential table to clients */
 
@@ -413,18 +415,19 @@ void read_ttbp_potential(str255 ttbp_potfilename)
   MPI_Bcast( &ttbp_r2_step  , 1, MPI_REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ttbp_r2_end   , 1, MPI_REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ttbp_r2_0     , 1, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ttbp_r2_cut, ntypes * ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
 
 #ifdef STATIC_POT
-
-  MPI_Bcast( ttbp_potential, MAXPOTLEN*MAXATOMTYPES*MAXATOMTYPES
-	    , MPI_REAL, 0, MPI_COMM_WORLD);
-
+  MPI_Bcast( ttbp_potential, MAXPOTLEN*MAXATOMTYPES*MAXATOMTYPES, 
+             MPI_REAL, 0, MPI_COMM_WORLD);
 #else
   if (0!=myid) ttbp_potential = (real *) malloc(ttbp_tablesize);
-  if (NULL==ttbp_potential) error("Can't allocate memory for ttbp_potential on client.");
-
-  MPI_Bcast( ttbp_potential, ttbp_tablesize / sizeof(real), MPI_REAL, 0, MPI_COMM_WORLD);
+  if (NULL==ttbp_potential) 
+    error("Can't allocate memory for ttbp_potential on client.");
+  MPI_Bcast( ttbp_potential, ttbp_tablesize / sizeof(real), 
+             MPI_REAL, 0, MPI_COMM_WORLD);
 #endif
+
 #endif
 
   /* Set cutoff */
@@ -446,12 +449,11 @@ void read_ttbp_potential(str255 ttbp_potfilename)
   
   ttbp_inv_r2_step = 1 / ttbp_r2_step;
   
-  return;
 } /* end of smooth TTBP potential */
 
 #endif /* TTBP */
 
-#endif /* MONOLJ */
+#endif /* not MONOLJ */
 
 
 /******************************************************************************

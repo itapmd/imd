@@ -43,11 +43,6 @@ void calc_forces(void)
   memset(eam_dij_z,0,(natoms+1)*eam_len*sizeof(real));
 #endif /* EAM */
 
-#ifdef TTBP
-  memset(ttbp_ij,   0,(natoms+1)*ttbp_len*2*sizeof(real));
-  memset(ttbp_j,    0,(natoms+1)*ttbp_len*3*sizeof(real));
-#endif /* TTBP */
-
   /* Zero Forces and potential energy */
   for (p = cell_array; 
        p <= PTR_3D_V(cell_array,
@@ -73,6 +68,11 @@ void calc_forces(void)
 #endif     
 #ifndef MONOLJ
       p->pot_eng[i] = 0.0;
+#endif
+#ifdef TTBP
+      for (j=0; j<p->n; ++j) {
+        p->neigh[j]->n = 0;
+      }
 #endif
     };
 
@@ -147,15 +147,13 @@ void calc_forces(void)
 #endif
 #ifdef EAM
 	      do_forces_eam_1(p,q,pbc);
-#elif TTBP
-	      do_forces_ttbp_1(p,q,pbc);
 #else
 	      do_forces(p,q,pbc);
-#endif /* EAM TTBP classical */
+#endif /* EAM or TTBP & classical */
 
       };
 
-#if defined(EAM) || defined(TTBP)
+#if (defined(EAM) || defined(TTBP))
   /* EAM cohesive function potential: for each cell */
   for (i=0; i < cell_dim.x; ++i)
     for (j=0; j < cell_dim.y; ++j)
@@ -177,11 +175,10 @@ void calc_forces(void)
 #endif
 #ifdef EAM
 	      do_forces_eam_2(p,q,pbc);
-#elif TTBP
-	      do_forces_ttbp_2(p,q,pbc);
 #else
+	      do_forces_ttbp(p);
 #endif
-      };
+      }
 #endif /* EAM || TTBP */
 
 }

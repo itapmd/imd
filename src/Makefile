@@ -499,11 +499,6 @@ CFLAGS  += -DTTBP
 SOURCES += ${TTBPSOURCES}
 endif
 
-# TTBPNC
-ifneq (,$(strip $(findstring ttbpnc,${MAKETARGET})))
-CFLAGS  += -DTTBPNC
-endif
-
 # Correlation
 ifneq (,$(strip $(findstring corr,${MAKETARGET})))
 CFLAGS  += -DCORRELATE -DCORR_PBC

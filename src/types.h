@@ -64,9 +64,19 @@ typedef vektor3d    vektor;
 typedef ivektor3d  ivektor;
 #endif
 
+#ifdef TTBP
+/* per particle neighbor table for TTBP */
+typedef struct {
+    real        *dist;
+    shortint    *typ;
+    int         n;
+    int         n_max;
+} neightab;
+
+typedef neightab* neighptr;
+#endif
 
 /* Basic Data Type - The Cell */
-
 typedef struct {
     real        *ort;
 #ifndef MONOLJ
@@ -91,6 +101,9 @@ typedef struct {
 #endif
     real        *impuls;
     real        *kraft;
+#ifdef TTBP
+    neightab    **neigh;
+#endif
     int         n;
     int         n_max;
 } cell;
@@ -101,7 +114,6 @@ typedef struct { real    *data;
 		 int         n;
 		 int     n_max;
 	       } msgbuf;
-
 
 /* String used for Filenames etc. */
 typedef char str255[255];

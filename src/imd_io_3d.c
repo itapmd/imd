@@ -329,7 +329,7 @@ void recv_atoms(void)
     target = PTR_3D_VV(cell_array,local_cellc,cell_dim);
 
     /* See if we need some space */
-    if (target->n >= target->n_max) alloc_cell(target,target->n_max+CSTEP);
+    if (target->n >= target->n_max) alloc_cell(target,target->n_max+incrsz);
 
     target->ort X(target->n)    = input->ort X(0);
     target->ort Y(target->n)    = input->ort Y(0);

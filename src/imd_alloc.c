@@ -2,7 +2,7 @@
 *
 * Allocation and moving of atom data
 *
-*   Contains routines move_atom() and alloc_cells(), which were in
+*   Contains routines move_atom() and alloc_cell(), which were in
 *   imd_geom.c and imd_geom_2d.c, but are dimension independent.  
 *
 * $RCSfile$
@@ -13,11 +13,14 @@
 
 #include "imd.h"
 
-/* 
-   Moves an atom from one cell to another. 
-   Does not move atoms between CPUs!
-   Does not really belong to file imd_alloc.c either!
-*/
+
+/******************************************************************************
+*
+*  Moves an atom from one cell to another. 
+*  Does not move atoms between CPUs!
+*  Does not really belong to file imd_alloc.c either!
+*
+******************************************************************************/
 
 void move_atom(ivektor cellc, cell *from, int index)
 
@@ -35,7 +38,7 @@ void move_atom(ivektor cellc, cell *from, int index)
     error("move_atom: index argument out of range.");
   
   /* See if we need some space */
-  if (to->n >= to->n_max) alloc_cell(to,to->n_max+CSTEP);
+  if (to->n >= to->n_max) alloc_cell(to,to->n_max+incrsz);
 
   /* Got some space, move atom */
   to->ort X(to->n) = from->ort X(index); 
@@ -120,9 +123,9 @@ void move_atom(ivektor cellc, cell *from, int index)
 #ifndef TWOD
     from->refpos Z(index) = from->refpos Z(from->n);
 #endif
-#endif
-#endif
-  };
+#endif /* REFPOS */
+#endif /* not MONOLJ */
+  }
 }
 
 
@@ -151,10 +154,42 @@ void reset_Epot_ref(void)
 #endif
 
 
-/*
-   Allocates memory for a cell. Space is allocated in a single
-   chunk, so that we can send a cell in one MPI operation.
-*/
+#ifdef TTBP
+/******************************************************************************
+*
+*  allocate neighbor table for one particle
+*
+******************************************************************************/
+
+neightab *alloc_neightab(neightab *neigh, int count)
+{
+  if (0 == count) { /* deallocate */
+    free(neigh->dist);
+    free(neigh->typ);
+    free(neigh);
+  } else { /* allocate */
+    neigh = (neightab *) malloc(sizeof(neightab));
+    if (neigh==NULL) {
+      error("TTBP: cannot allocate memory for neighbor table\n");
+    }
+    neigh->n     = 0;
+    neigh->n_max = count;
+    neigh->dist  = (real *)     malloc( count * DIM * sizeof(real) );
+    neigh->typ   = (shortint *) malloc( count *  sizeof(shortint) );
+    if ((neigh->dist==NULL) || (neigh->typ==0)) {
+      error("TTBP: cannot allocate memory for neighbor table");
+    }
+  }
+  return(neigh);
+}
+#endif
+
+/******************************************************************************
+*
+*   Allocates memory for a cell. Space is allocated in a single
+*  chunk, so that we can send a cell in one MPI operation.
+*
+******************************************************************************/
 
 void alloc_cell(cell *thecell, int count)
 
@@ -191,6 +226,9 @@ void alloc_cell(cell *thecell, int count)
 #endif
     newcell.sorte  = NULL;
     newcell.masse  = NULL;
+#endif
+#ifdef TTBP
+    newcell.neigh  = NULL;
 #endif
   }
   else {
@@ -230,6 +268,18 @@ void alloc_cell(cell *thecell, int count)
     newcell.presstens = (real *) malloc(count*DIM*sizeof(real));
     newcell.presstens_offdia = (real *) malloc(count*DIM*sizeof(real));
 #endif
+#if (defined(TTBP) && !defined(TWOD))
+    newcell.neigh = (neightab **) malloc( count * sizeof(neighptr) );
+    if (NULL == newcell.neigh) {
+      error("TTBP: cannot allocate neighbor tables");
+    }
+    for (i=0; i<thecell->n_max; ++i) {
+      newcell.neigh[i] = thecell->neigh[i];
+    }
+    for (i=thecell->n_max; i<count; ++i) {
+      newcell.neigh[i] = alloc_neightab(newcell.neigh[i], ttbp_len);
+    }
+#endif
     newcell.sorte  = (shortint* ) malloc(count * sizeof(shortint));
     newcell.masse  = (real    * ) malloc(count * sizeof(real)    );
 #endif
@@ -262,14 +312,26 @@ void alloc_cell(cell *thecell, int count)
 #endif
       printf("Have %d atoms.\n",natoms);
       error("Cannot allocate memory for cell.");
-    };
-  };
+    }
+  }
   
-  if (0 == thecell->n_max) {
-    /* cell is just initialized */
+  if (0 == thecell->n_max) { /* cell is just initialized */
     thecell->n = 0;
   } else {
-    if ( count >= thecell->n_max ) {
+
+    if (count < thecell->n_max) { /* cell shrinks, data is invalidated */
+      thecell->n = 0;
+#if (defined(TTBP) && !defined(TWOD))
+      /* deallocate all neighbor tables */
+      for (i=0; i<thecell->n_max; ++i) {
+        thecell->neigh[i] = alloc_neightab(thecell->neigh[i],0);
+      }
+      free(thecell->neigh);
+#endif
+    }
+
+    /* if there are valid particles in cell, copy them to new cell */
+    if (thecell->n > 0) {
       /* cell is enlarged, copy data from old to newcell location */
       memcpy(newcell.ort   , thecell->ort,    thecell->n * DIM * sizeof(real));
       memcpy(newcell.impuls, thecell->impuls, thecell->n * DIM * sizeof(real));
@@ -284,23 +346,23 @@ void alloc_cell(cell *thecell, int count)
                                thecell->n * DIM * sizeof(real));
 #endif
 #ifdef REFPOS
-      memcpy(newcell.refpos,  thecell->refpos,  thecell->n * DIM * sizeof(real));
+      memcpy(newcell.refpos, thecell->refpos, thecell->n * DIM * sizeof(real));
 #endif
 #ifdef TRANSPORT
       memcpy(newcell.heatcond,  thecell->heatcond,  thecell->n * sizeof(real));
 #endif
 #ifdef STRESS_TENS
-      memcpy(newcell.presstens,  thecell->presstens,  thecell->n * DIM * sizeof(real));
-      memcpy(newcell.presstens_offdia,  thecell->presstens_offdia,  thecell->n * DIM * sizeof(real));
+      memcpy(newcell.presstens, thecell->presstens, 
+             thecell->n * DIM * sizeof(real));
+      memcpy(newcell.presstens_offdia, thecell->presstens_offdia, 
+             thecell->n * DIM * sizeof(real));
 #endif
       memcpy(newcell.sorte ,  thecell->sorte,   thecell->n * sizeof(shortint));
       memcpy(newcell.masse ,  thecell->masse,   thecell->n * sizeof(real));
 #endif
     }
-    else {
-      /* cell is shrinking, data gets invalid */
-      thecell->n = 0;
-    };
+
+    /* deallocate old cell */
     free(thecell->ort);
 #ifndef MONOLJ
     free(thecell->nummer);
@@ -322,34 +384,40 @@ void alloc_cell(cell *thecell, int count)
     free(thecell->sorte);
     free(thecell->masse);
 #endif
-  };
+#ifdef TTBP
+    free(thecell->neigh);
+#endif
+  }
 
-  /* set pointers accordingly */
-  thecell->ort    = newcell.ort;
-  thecell->impuls = newcell.impuls;
-  thecell->kraft  = newcell.kraft;
+  /* set pointers to contents of new cell */
+  thecell->ort      = newcell.ort;
+  thecell->impuls   = newcell.impuls;
+  thecell->kraft    = newcell.kraft;
 #ifndef MONOLJ
-  thecell->nummer = newcell.nummer;
-  thecell->pot_eng= newcell.pot_eng;
+  thecell->nummer   = newcell.nummer;
+  thecell->pot_eng  = newcell.pot_eng;
 #ifdef DISLOC
   thecell->Epot_ref = newcell.Epot_ref;
-  thecell->ort_ref = newcell.ort_ref;
+  thecell->ort_ref  = newcell.ort_ref;
 #endif
 #ifdef REFPOS
-  thecell->refpos = newcell.refpos;
+  thecell->refpos   = newcell.refpos;
 #endif
 #ifdef TRANSPORT
   thecell->heatcond = newcell.heatcond;
 #endif
 #ifdef STRESS_TENS
-  thecell->presstens = newcell.presstens;
+  thecell->presstens        = newcell.presstens;
   thecell->presstens_offdia = newcell.presstens_offdia;
 #endif
-  thecell->sorte  = newcell.sorte;
-  thecell->masse  = newcell.masse;
+#ifdef TTBP
+  thecell->neigh    = newcell.neigh;
+#endif
+  thecell->sorte    = newcell.sorte;
+  thecell->masse    = newcell.masse;
 #endif
 
-  thecell->n_max = count;
+  thecell->n_max    = count;
 
 }
 

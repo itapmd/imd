@@ -1143,13 +1143,13 @@ void move_atoms_nvx(void)
 
 {
   cell *p;
-  int  i;
-  real Ekin_1, Ekin_2;
-  real Ekin_left = 0.0, Ekin_right = 0.0;
-  int  natoms_left = 0, natoms_right = 0;
-  real px, vol, real_tmp;
-  int  num, nhalf, r, s, t, int_tmp;  
-  real scale, rescale, Rescale;
+  int	i;
+  real  Ekin_1, Ekin_2;
+  real  Ekin_left = 0.0, Ekin_right = 0.0;
+  int   natoms_left = 0, natoms_right = 0;
+  real  px, vol, real_tmp;
+  int   num, nhalf, r, s, t, int_tmp;  
+  real	scale, rescale, Rescale;
   vektor tot_impuls_left, tot_impuls_right, vectmp;
   real inv_mass_left=0.0, inv_mass_right=0.0;
  

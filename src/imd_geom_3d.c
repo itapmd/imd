@@ -125,30 +125,20 @@ void init_cells( void )
 #endif
 
 #ifdef NPT
-  if (ensemble == ENS_NPT_ISO) {
-
-#ifdef MPI
-    if (0 == myid )
-#endif
-    printf("actual_shrink=%f limit_shrink=%f limit_growth=%f\n",
-            actual_shrink.x, limit_shrink.x, limit_growth.x );
-  }
-  else if (ensemble == ENS_NPT_AXIAL) {
-
-#ifdef MPI
-    if (0 == myid ) {
-#endif
+  if (0 == myid) {
+    if (ensemble == ENS_NPT_ISO) {
+      printf("actual_shrink=%f limit_shrink=%f limit_growth=%f\n",
+              actual_shrink.x, limit_shrink.x, limit_growth.x );
+    }
+    else if (ensemble == ENS_NPT_AXIAL) {
       printf("actual_shrink.x=%f limit_shrink.x=%f limit_growth.x=%f\n",
               actual_shrink.x,   limit_shrink.x,   limit_growth.x );
       printf("actual_shrink.y=%f limit_shrink.y=%f limit_growth.y=%f\n",
               actual_shrink.y,   limit_shrink.y,   limit_growth.y );
       printf("actual_shrink.z=%f limit_shrink.z=%f limit_growth.z=%f\n",
               actual_shrink.z,   limit_shrink.z,   limit_growth.z );
-#ifdef MPI
-    };
-#endif
-  };
-
+    }
+  }
 #endif
 
   /* Calculate smallest possible cell (i.e. the height==cutoff) */
@@ -199,16 +189,14 @@ void init_cells( void )
     cell_scale.x   /= (1.0 - cell_size_tolerance);
     cell_scale.y   /= (1.0 - cell_size_tolerance);
     cell_scale.z   /= (1.0 - cell_size_tolerance);
-  };
+  }
 #endif
   /* set up the CURRENT cell array dimensions */
   global_cell_dim.x = (int) ( 1.0 / cell_scale.x );
   global_cell_dim.y = (int) ( 1.0 / cell_scale.y );
   global_cell_dim.z = (int) ( 1.0 / cell_scale.z );
 
-#ifdef MPI
   if (0 == myid )
-#endif
   printf("Minimal cell size: \n\t ( %f %f %f ) \n\t ( %f %f %f ) \n\t ( %f %f %f )\n",
     box_x.x * cell_scale.x, box_x.y * cell_scale.x, box_x.z * cell_scale.x,
     box_y.x * cell_scale.y, box_y.y * cell_scale.y, box_y.z * cell_scale.y,
@@ -231,13 +219,13 @@ void init_cells( void )
        next_cell_dim.y = ((int)(next_cell_dim.y/cpu_dim.y))*cpu_dim.y;
     if (0 != (next_cell_dim.z % cpu_dim.z))
        next_cell_dim.z = ((int)(next_cell_dim.z/cpu_dim.z))*cpu_dim.z;
-  };
+  }
 #endif
 #endif
 
   /* Check if cell array is large enough */
-#ifdef MPI
   if ( 0 == myid ) {
+#ifdef MPI
     if (global_cell_dim.x < cpu_dim.x) error("global_cell_dim.x < cpu_dim.x");
     if (global_cell_dim.y < cpu_dim.y) error("global_cell_dim.y < cpu_dim.y");
     if (global_cell_dim.z < cpu_dim.z) error("global_cell_dim.z < cpu_dim.z");
@@ -245,14 +233,12 @@ void init_cells( void )
     if (global_cell_dim.x < 3)         error("global_cell_dim.x < 3");
     if (global_cell_dim.y < 3)         error("global_cell_dim.y < 3");
     if (global_cell_dim.z < 3)         error("global_cell_dim.z < 3");
-#ifdef MPI
-  };
-#endif
+  }
 
 #ifdef NPT
 
+  /* if system grows, the next cell division should have more cells */
   if ((ensemble == ENS_NPT_ISO) || (ensemble == ENS_NPT_AXIAL)) {  
-    /* if system grows, the next cell division should have more cells */
 #ifdef MPI
     if (next_cell_dim.x == global_cell_dim.x) next_cell_dim.x += cpu_dim.x;
     if (next_cell_dim.y == global_cell_dim.y) next_cell_dim.y += cpu_dim.y;
@@ -262,7 +248,7 @@ void init_cells( void )
     if (next_cell_dim.y == global_cell_dim.y) next_cell_dim.y += 1;
     if (next_cell_dim.z == global_cell_dim.z) next_cell_dim.z += 1;
 #endif
-  };
+  }
 
   if (ensemble == ENS_NPT_ISO) {
 
@@ -295,7 +281,7 @@ void init_cells( void )
     limit_shrink.y = cell_scale.y*global_cell_dim.y*(1.0-cell_size_tolerance);
     limit_shrink.z = cell_scale.z*global_cell_dim.z*(1.0-cell_size_tolerance);
  
- };
+ }
 
 #endif /* NPT */
 
@@ -305,17 +291,13 @@ void init_cells( void )
   cell_scale.y = 1.0 / global_cell_dim.y;
   cell_scale.z = 1.0 / global_cell_dim.z;
 
-#ifdef MPI
   if (0 == myid )
-#endif
   printf("Actual cell size: \n\t ( %f %f %f ) \n\t ( %f %f %f ) \n\t ( %f %f %f )\n",
     box_x.x * cell_scale.x, box_x.y * cell_scale.x, box_x.z * cell_scale.x,
     box_y.x * cell_scale.y, box_y.y * cell_scale.y, box_y.z * cell_scale.y,
     box_z.x * cell_scale.z, box_z.y * cell_scale.z, box_z.z * cell_scale.z);
 
-#ifdef MPI
   if (0==myid)
-#endif
   printf("Global cell array dimensions: %d %d %d\n",
           global_cell_dim.x,global_cell_dim.y,global_cell_dim.z);
 
@@ -333,7 +315,7 @@ void init_cells( void )
         error("cpu_dim.y no divisor of global_cell_dim.y");
      if ( 0 !=  global_cell_dim.z % cpu_dim.z ) 
         error("cpu_dim.z no divisor of global_cell_dim.z");
-  };
+  }
 
   cell_dim.x = global_cell_dim.x / cpu_dim.x + 2;  
   cell_dim.y = global_cell_dim.y / cpu_dim.y + 2;
@@ -375,10 +357,8 @@ void init_cells( void )
   cell_array_old = cell_array;
   cell_array = (cell *) malloc(
 		     cell_dim.x * cell_dim.y * cell_dim.z * sizeof(cell));
-#ifdef MPI
   if ( 0 == myid )
-#endif
-  if (NULL == cell_array) error("Can't allocate memory for cells");
+  if (NULL == cell_array) error("Cannot allocate memory for cells");
 
   /* Initialize cells */
   for (i=0; i < cell_dim.x; ++i)
@@ -388,19 +368,14 @@ void init_cells( void )
 	p = PTR_3D_V(cell_array, i, j, k, cell_dim);
 	p->n_max=0;
 #ifdef MPI
-            /* don't alloc data space for buffer cells */
+        /* don't alloc data space for buffer cells */
         if ((0!=i) && (0!=j) && (0!=k) &&
             (i != cell_dim.x-1) &&
             (j != cell_dim.y-1) &&
             (k != cell_dim.z-1))
 #endif
-
-#ifdef MONOLJ
             alloc_cell(p, initsz);
-#else
-	    alloc_cell(p, CSTEP);
-#endif
-  };
+  }
 
   /* on the first invocation we have to set up the MPI process topology */
 #ifdef MPI
@@ -429,53 +404,40 @@ void init_cells( void )
             cellc = cell_coord(p->ort X(i),p->ort Y(i),p->ort Z(i));
 #endif
             move_atom( cellc, p, i );
-          };
+          }
           alloc_cell( p, 0 );  /* free old cell */
-    };
+    }
     free(cell_array_old);
-  };
+  }
 
 #ifdef NPT
-
   if ((ensemble == ENS_NPT_ISO) || (ensemble == ENS_NPT_AXIAL)) {
-
     revise_cell_division = 0;
     cells_too_small      = 0;
     actual_shrink.x      = 1.0;
     actual_shrink.y      = 1.0;
     actual_shrink.z      = 1.0;
-
-  };
-
-  if (ensemble == ENS_NPT_ISO) {
-
-#ifdef MPI
-    if (0 == myid)
-#endif
+  }
+  if (0 == myid) {
+    if (ensemble == ENS_NPT_ISO) {
       printf("actual_shrink=%f limit_shrink=%f limit_growth=%f\n",
               actual_shrink.x, limit_shrink.x, limit_growth.x );
-  }
-  else if (ensemble == ENS_NPT_AXIAL) {
-
-#ifdef MPI
-    if (0 == myid ) {
-#endif
+    }
+    else if (ensemble == ENS_NPT_AXIAL) {
       printf("actual_shrink.x=%f limit_shrink.x=%f limit_growth.x=%f\n",
               actual_shrink.x,   limit_shrink.x,   limit_growth.x );
       printf("actual_shrink.y=%f limit_shrink.y=%f limit_growth.y=%f\n",
               actual_shrink.y,   limit_shrink.y,   limit_growth.y );
       printf("actual_shrink.z=%f limit_shrink.z=%f limit_growth.z=%f\n",
               actual_shrink.z,   limit_shrink.z,   limit_growth.z );
-#ifdef MPI
-    };
-#endif
-  };
-
+    }
+  }
 #endif /* NPT */
 
 #ifdef MONOLJ
   r2_cut = tmp2;
 #endif
+
 }
 
 

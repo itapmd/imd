@@ -156,9 +156,9 @@ void do_forces_eam_2(cell *p, cell *q, vektor pbc);
 #endif
 
 #ifdef TTBP
-void do_forces_ttbp_1(cell *p, cell *q, vektor pbc);
-void do_forces_ttbp_2(cell *p, cell *q, vektor pbc);
+void do_forces_ttbp(cell *p);
 void read_ttbp_potential(str255 ttbp_potfilename);
+neightab *alloc_neightab(neightab *neigh, int count);
 #endif
 
 #if defined(CORRELATE) || defined(MSQD)

@@ -286,12 +286,12 @@ void recv_cell_force(cell *p, int from_cpu,int tag)
     
   /* realloc cell if necessary */
   newsize = p->n_max; 
-  while ( newsize < size ) newsize += CSTEP;
+  while ( newsize < size ) newsize += incrsz;
   if (newsize > p->n_max) {
     /* Inihibit superfluous copy operation */
-    p->n_max = 0; p->n = 0;
+    p->n = 0;
     alloc_cell(p,newsize);
-  };
+  }
   p->n = size;
 
   MPI_Recv(p->ort, DIM*size, MPI_REAL, from_cpu, tag+ORT_TAG, cpugrid,&status);

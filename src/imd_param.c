@@ -449,11 +449,15 @@ void getparamfile(char *paramfname, int sim)
       /* cell dimension */
       getparam("cellsize",&cellsz,PARAM_REAL,1,1);
     }
+#endif
     else if (strcasecmp(token,"initsize")==0) {
       /* initial cell size */
       getparam("initsize",&initsz,PARAM_INT,1,1);
     }
-#endif
+    else if (strcasecmp(token,"incrsize")==0) {
+      /* initial cell size */
+      getparam("incrsize",&incrsz,PARAM_INT,1,1);
+    }
 #if AND
     else if (strcasecmp(token,"tempintv")==0) {
       /* temperature interval */
@@ -851,17 +855,11 @@ void getparamfile(char *paramfname, int sim)
     }
     else if (strcasecmp(token,"ttbp_constant")==0) {
       /* force constant (radians); type 0 */
-      getparam("ttbp_constant",&ttbp_constant,PARAM_REAL,ntypes,ntypes);
-      for (i=0;i<ntypes;i++) {
-        ttbp_constant[i] = ttbp_constant[i];
-      };
+      getparam("ttbp_constant",ttbp_constant,PARAM_REAL,ntypes,ntypes);
     }
     else if (strcasecmp(token,"ttbp_sp")==0) {
       /* hybridization of the element type */
-      getparam("ttbp_sp",&ttbp_sp,PARAM_REAL,ntypes,ntypes);
-      for (i=0;i<ntypes;i++) {
-        ttbp_sp[i] = ttbp_sp[i];
-      };
+      getparam("ttbp_sp",ttbp_sp,PARAM_REAL,ntypes,ntypes);
       for (i=0;i<ntypes;i++) {
         if (ttbp_sp[i] == 3) {
           ttbp_c0[i] = 0.34375;
@@ -870,12 +868,12 @@ void getparamfile(char *paramfname, int sim)
           ttbp_c3[i] = 0.00000;
         }
         else if (ttbp_sp[i] == 2) {
-          ttbp_c0[i] = 1.0;
-          ttbp_c1[i] = 0.0;
-          ttbp_c2[i] = 0.0;
+          ttbp_c0[i] =  1.0;
+          ttbp_c1[i] =  0.0;
+          ttbp_c2[i] =  0.0;
           ttbp_c3[i] = -1.0;
         }
-      };
+      }
     }
     else if (strcasecmp(token,"ttbp_potfile")==0) {
       /* filename for ttbp potential data */
@@ -1124,10 +1122,11 @@ void broadcast_params() {
   MPI_Bcast( &end_temp , 1 , MPI_REAL,  0, MPI_COMM_WORLD); 
 #endif
 #ifdef MONOLJ
-  MPI_Bcast( &r2_cut     , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &cellsz     , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &initsz     , 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &r2_cut, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &cellsz, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
+  MPI_Bcast( &initsz, 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &incrsz, 1, MPI_INT,  0, MPI_COMM_WORLD);
 
 #ifdef AND
   MPI_Bcast( &tmp_interval , 1 , MPI_INT, 0, MPI_COMM_WORLD); 
@@ -1250,9 +1249,13 @@ void broadcast_params() {
 #endif
 
 #ifdef TTBP
-  MPI_Bcast( &ttbp_len,      1,      MPI_INT,   0, MPI_COMM_WORLD);
-  MPI_Bcast( &ttbp_constant, ntypes, MPI_REAL,  0, MPI_COMM_WORLD);
-  MPI_Bcast( &ttbp_sp,       ntypes, MPI_REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &ttbp_len,      1,      MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( ttbp_constant,  ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ttbp_sp,        ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ttbp_c0,        ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ttbp_c1,        ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ttbp_c2,        ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ttbp_c3,        ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
 #endif
 
   /* broadcast integrator to other CPU's */

@@ -94,8 +94,8 @@ void copy_atoms(msgbuf *b, int k, int l, int m)
 #ifndef MONOLJ
     b->data[ b->n++ ] = from->sorte[i];
 #endif
-#if defined(TTBP) || defined(EAM)
-	b->data[ b->n++ ] = from->nummer[i];
+#ifdef EAM
+    b->data[ b->n++ ] = from->nummer[i];
 #endif
   }
 }
@@ -215,10 +215,10 @@ void process_buffer(msgbuf *b, int mode)
   
   if (NULL == input) {
     input = (cell *) malloc(sizeof(cell));
-    if (0==input) error("Can't allocate buffer cell.");
+    if (0==input) error("Cannot allocate buffer cell.");
     input->n_max=0;
     alloc_cell(input, 1);
-  };
+  }
 
   j=0;
   if (b->n > 0) do {     
@@ -231,10 +231,10 @@ void process_buffer(msgbuf *b, int mode)
 #ifndef MONOLJ
     input->sorte[0] = b->data[j++];
 #endif
-#if defined(TTBP) || defined(EAM)
-	if (mode == FORCE) {
+#ifdef EAM
+    if (mode == FORCE) {
       input->nummer[0] = b->data[j++];
-	};
+    }
 #endif
 
 #ifdef TWOD
@@ -635,12 +635,12 @@ void recv_cell(cell *p, int from_cpu,int tag)
 
   /* realloc cell if necessary */
   newsize = p->n_max; 
-  while ( newsize < size ) newsize += CSTEP;
+  while ( newsize < size ) newsize += incrsz;
   if (newsize > p->n_max) {
     /* Inihibit superfluous copy operation */
-    alloc_cell(p,0);
+    p->n = 0;
     alloc_cell(p,newsize);
-  };
+  }
   p->n = size;
 
   MPI_Recv(p->ort,     DIM * size, MPI_REAL, from_cpu, tag + ORT_TAG,
