@@ -1554,12 +1554,12 @@ void move_atoms_ftg(void)
   }
 
 #ifdef DEBUG
-  printf("\n%d: ", myid);
+  printf("%d: ", myid);
   for (j=0;j<nslices;j++)
-    printf("%3.6f ", *(gamma_ftg +j));
-    printf("\n");
+    printf("%3.6f ", *(E_kin_2 +j));
+  printf("\n");
 #endif
- 
+
 #ifdef MPI
   /* add up results from different CPUs */
   

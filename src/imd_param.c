@@ -766,7 +766,6 @@ void getparamfile(char *paramfname, int sim)
       if (tempvek.x>nslices-1)
 	error("actual Damping factorfor non existing slice\n");
       *(gamma_ftg + (int)tempvek.x) = tempvek.y;
-      printf("%d %3.6f\n", (int)tempvek.x, tempvek.y);
     }
     else if (strcasecmp(token,"nslices_Left")==0) {
       /* nuber of slices with Tleft*/
@@ -1523,6 +1522,8 @@ void read_parameters(int argc,char **argv)
 
 void broadcast_params() {
 
+  int i;
+
   MPI_Bcast( &finished    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &ensemble    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &simulation  , 1, MPI_INT,  0, MPI_COMM_WORLD); 
@@ -1709,8 +1710,9 @@ void broadcast_params() {
     gamma_ftg = (real*) malloc(nslices*sizeof(real));
     if (NULL==gamma_ftg)
       error("Cannot allocate memory for gamma_ftg vector on client.\n");
+    for(i=0;i<nslices;i++) *(gamma_ftg + i) = 0.0;
   }
-  MPI_Bcast( &gamma_ftg, nslices, REAL     , 0, MPI_COMM_WORLD);
+  MPI_Bcast( gamma_ftg, nslices, REAL     , 0, MPI_COMM_WORLD);
 #endif 
 
 
