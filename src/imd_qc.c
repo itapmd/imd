@@ -24,10 +24,17 @@ void init_qc(void)
  real    tau[3],period[3],tautl;
  integer np,no,na,nb,nc,nt;
 
+ if (box_param.x != 0) {
+    appr[0] = box_param.x;
+    appr[1] = box_param.y; 
+    appr[2] = box_param.z;
+ } else { /* backward compatibility */
+    appr[0] = (int) box_x.x;
+    appr[1] = (int) box_y.y; 
+    appr[2] = (int) box_z.z;
+ }
+
  /* defining constants */
- appr[0] = (int) box_x.x;
- appr[1] = (int) box_y.y; 
- appr[2] = (int) box_z.z;
  tautl = (sqrt(5.0)+1.0)*0.5;
 
  if (0==myid)

@@ -14,6 +14,7 @@ void check_parameters_complete(void);
 void read_potential(str255 potfilename);
 void read_atoms(str255 infilename);
 void generate_atoms(str255 infilename);
+void init_cubic(void);
 void generate_fcc(int maxtyp);
 void generate_lav(void);
 void init_hex(void);

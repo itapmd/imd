@@ -497,12 +497,15 @@ void generate_atoms(str255 mode)
     generate_hex();
 #else /* 3D */
   if (0 == strcmp(mode,".fcc")) {          /* fcc */
+    init_cubic();
     init_cells();
     generate_fcc(0);
   } else if (0 == strcmp(mode,".nacl")) {  /* NaCl */
+    init_cubic();
     init_cells();
     generate_fcc(1);
   } else if (0 == strcmp(mode,".lav")) {  /* Laves */
+    init_cubic();
     init_cells();
     generate_lav();
 #ifdef QUASI
@@ -578,10 +581,14 @@ void generate_atoms(str255 mode)
 /* initialize for hexagonal crystal */
 void init_hex(void)
 {
-  box_x.x = box_param.x * sqrt(3.0);
-  box_x.y = 0.0;
-  box_y.x = 0.0;
-  box_y.y = box_param.y;
+  if (box_param.x != 0) {
+    box_x.x = box_param.x * sqrt(3.0);
+    box_x.y = 0.0;
+    box_y.x = 0.0;
+    box_y.y = box_param.y;
+  } else { /* backward compatibility */
+    box_x.x *= sqrt(3.0);
+  }
 }
 
 /* generate hexagonal crystal */
@@ -659,6 +666,17 @@ void generate_hex()
 
 
 #ifndef TWOD
+
+/* initialize for cubic crystals */
+void init_cubic(void)
+{
+  if (box_param.x != 0) {
+    box_x.x = box_param.x; box_x.y = 0.0;         box_x.z = 0.0;
+    box_y.x = 0.0;         box_y.y = box_param.y; box_y.z = 0.0;
+    box_z.x = 0.0;         box_z.y = 0.0;         box_z.z = box_param.z;
+  }
+}
+
 /* generate fcc or NaCl crystal */
 void generate_fcc(int maxtyp)
 {
