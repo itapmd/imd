@@ -69,18 +69,37 @@ functionality has been integrated into the pull ensemble.
 Fracture simulation with stadium damping. Anyone know how this works?
 What do the parameters mean? 
 
+<P><LI><B> hom </B><P>
+The sample is sheared in y-direction using a homogeneous displacement
+field depending on the x-coordinate of the particle. The parameter
+<TT>shear_max</TT> must be specified. This is done
+every <TT>hom_interval</TT><SUP>th</SUP> step.<P>
+The displacement is scaled with the maximum value of the x-coordinates
+of all particles. The latter is computed before each shear step. Thus
+atoms with x=0 are not shifted, atoms with maximum x are shifted by
+<TT>shear_max</TT>.<P>
+Additionally the sample can be isotropically expanded every
+<TT>hom_interval</TT><SUP>th</SUP> step.<P>
+The rate of expansion is given by the parameter
+<TT>expansion</TT>. The box lengths are updated automatically.
+<B>Known bugs:</B>Neither the cells are fixed nor the atoms are
+redistributed after an expansion. So this should not work at all.
+
 <P><LI><B> pull </B><P>
-In this ensemble, a border strip (perpendicular to the x-axis) 
-of width <TT>strip_width</TT> is fixed and moved by an  
-amount <TT>sdelta</TT> in each time step. 
-The shift vector <TT>sdelta</TT> and the strip width
-<TT>strip_width</TT> are parameters. Depending on the
-shift vector, one can perform shear deformations 
-(shift vector perpendicular to the x-axis) as well as compressions and
-dilatations of the sample.
+This is no longer an ensemble. Choose an appropriate ensemble (for
+example mik for simulations with repeated shifts and relaxation between
+them.
 <P>
-In a shear/pull step, the fixed atoms are rigidly moved by the vector
-<TT>sdelta</TT>. After the simulation is finished, all atoms become
+A border strip (perpendicular to the x-axis) 
+of width <TT>strip_width</TT> is fixed and moved. The parameter
+<TT>strip_shift</TT> (a vector) specifies this motion.
+Depending on the shift vector, one can perform shear deformations 
+(shift vector perpendicular to the x-axis) as well as compressions and
+dilatations of the sample (shift vector parallel to the x-axis and any
+combination of these two.
+<P>
+In a pull step, the fixed atoms are rigidly moved by the vector
+<TT>strip_shift</TT>. After the simulation is finished, all atoms become
 mobile again. A shear step is only performed if either
 <UL>
 <LI>the total kinetic energy of the sample drops below a threshold
