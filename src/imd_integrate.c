@@ -459,7 +459,7 @@ void move_atoms_nvt(void)
 #endif
    
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:kin_energie_1,kin_energie_2,rot_energie_1,rot_energie_2) private(tmp)
+#pragma omp parallel for reduction(+:kin_energie_1,kin_energie_2,rot_energie_1,rot_energie_2,fnorm) private(tmp)
 #endif
 
   for (k=0; k<ncells; ++k) {
@@ -839,13 +839,13 @@ void move_atoms_npt_axial(void)
 
 {
   int k;
-  real Ekin, tmp, xi_tmp;
-  vektor fric, ifric, tmpvec;
+  real Ekin, tmp, xi_tmp, tmpvec1[4], tmpvec2[4];
+  vektor fric, ifric;
 
   /* initialize data, and compute new box size */
   Ekin             = 0.0;
-  stress.x         = 0.0;
-  stress.y         = 0.0;
+  stress_x         = 0.0;
+  stress_y         = 0.0;
   /* relative box size change */ 
   box_size.x      += 2.0 * timestep * xi.x * inv_tau_xi;  
   box_size.y      += 2.0 * timestep * xi.y * inv_tau_xi;
@@ -856,7 +856,7 @@ void move_atoms_npt_axial(void)
   ifric.x = 1/(1.0 + (xi.x * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0);
   ifric.y = 1/(1.0 + (xi.y * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0);
 #ifndef TWOD
-  stress.z         = 0.0;
+  stress_z         = 0.0;
   box_size.z      += 2.0 * timestep * xi.z * inv_tau_xi;  
   actual_shrink.z *= box_size.z;
   fric.z  =    1.0 - (xi.z * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0;
@@ -865,11 +865,7 @@ void move_atoms_npt_axial(void)
 
   /* loop over all cells */
 #ifdef _OPENMP
-#ifdef TWOD
-#pragma omp parallel for reduction(+:Ekin,stress.x,stress.y)
-#else
-#pragma omp parallel for reduction(+:Ekin,stress.x,stress.y,stress.z)
-#endif
+#pragma omp parallel for reduction(+:Ekin,stress_x,stress_y,stress_z)
 #endif
   for (k=0; k<ncells; ++k) {
 
@@ -882,10 +878,10 @@ void move_atoms_npt_axial(void)
     for (i=0; i<p->n; ++i) {
 
       /* contribution of old p's to stress */
-      stress.x += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
-      stress.y += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
+      stress_x += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
+      stress_y += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
 #ifndef TWOD
-      stress.z += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
+      stress_z += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
 #endif
 
       /* new momenta */
@@ -900,14 +896,14 @@ void move_atoms_npt_axial(void)
 
       /* new kinetic energy, and contribution of new p's to stress */
       tmp       = p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
-      stress.x += tmp;
+      stress_x += tmp;
       Ekin     += tmp;
       tmp       = p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
-      stress.y += tmp;
+      stress_y += tmp;
       Ekin     += tmp;
 #ifndef TWOD
       tmp       = p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
-      stress.z += tmp;
+      stress_z += tmp;
       Ekin     += tmp;
 #endif
 	  
@@ -938,23 +934,29 @@ void move_atoms_npt_axial(void)
 
 #ifdef MPI
   /* Add kinetic energy from all cpus */
-  MPI_Allreduce( &Ekin,   &tmp,      1, REAL, MPI_SUM, cpugrid);
-  MPI_Allreduce( &stress, &tmpvec, DIM, REAL, MPI_SUM, cpugrid);
-
-  Ekin     = tmp;
-  stress.x = tmpvec.x;
-  stress.y = tmpvec.y;
+  tmpvec1[0] = Ekin;
+  tmpvec1[1] = stress_x;
+  tmpvec1[2] = stress_y;
 #ifndef TWOD
-  stress.z = tmpvec.z;
+  tmpvec1[3] = stress_z;
+#endif
+
+  MPI_Allreduce( tmpvec1, tmpvec2, 1+DIM, REAL, MPI_SUM, cpugrid);
+
+  Ekin     = tmpvec2[0];
+  stress_x = tmpvec2[1];
+  stress_y = tmpvec2[2];
+#ifndef TWOD
+  stress_z = tmpvec2[3];
 #endif
 #endif
 
-  tot_kin_energy  = stress.x + stress.y;
-  stress.x        = (stress.x / 2.0 + vir_x) / volume;
-  stress.y        = (stress.y / 2.0 + vir_y) / volume;
+  tot_kin_energy  = stress_x + stress_y;
+  stress_x        = (stress_x / 2.0 + vir_x) / volume;
+  stress_y        = (stress_y / 2.0 + vir_y) / volume;
 #ifndef TWOD
-  tot_kin_energy += stress.z;
-  stress.z        = (stress.z / 2.0 + vir_z) / volume;
+  tot_kin_energy += stress_z;
+  stress_z        = (stress_z / 2.0 + vir_z) / volume;
 #endif
   tot_kin_energy /= 4.0;
 
@@ -964,14 +966,14 @@ void move_atoms_npt_axial(void)
 
   tmp  = timestep * 2.0 * volume * inv_tau_xi * DIM / (nactive * temperature);
 
-  xi_tmp   = xi_old.x + tmp * (stress.x - pressure_ext.x);
+  xi_tmp   = xi_old.x + tmp * (stress_x - pressure_ext.x);
   xi_old.x = xi.x;
   xi.x     = xi_tmp;
-  xi_tmp   = xi_old.y + tmp * (stress.y - pressure_ext.y);
+  xi_tmp   = xi_old.y + tmp * (stress_y - pressure_ext.y);
   xi_old.y = xi.y;
   xi.y     = xi_tmp;
 #ifndef TWOD
-  xi_tmp   = xi_old.z + tmp * (stress.z - pressure_ext.z);
+  xi_tmp   = xi_old.z + tmp * (stress_z - pressure_ext.z);
   xi_old.z = xi.z;
   xi.z     = xi_tmp;
 #endif

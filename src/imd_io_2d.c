@@ -367,7 +367,7 @@ void write_properties(int steps)
   fprintf(out," %e", (double)vol);
   if (ensemble==ENS_NPT_AXIAL) {
     fprintf(out," %e %e", 
-                  (double) stress.x, (double) stress.y );
+                  (double) stress_x, (double) stress_y );
     fprintf(out," %e %e", 
                   (double) box_x.x,  (double) box_y.y  );
   }

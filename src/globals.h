@@ -246,7 +246,8 @@ EXTERN real inv_tau_eta_rot INIT(0.0);
 
 /* diagonal of virial tensor */
 EXTERN real vir_x INIT(0.0), vir_y INIT(0.0), vir_z INIT(0.0);
-EXTERN vektor stress INIT(nullvektor);     /* diagonal of stress tensor */
+/* diagonal of stress tensor */
+EXTERN real stress_x INIT(0.0), stress_y INIT(0.0), stress_z INIT(0.0);
 
 EXTERN int    cells_too_small INIT(0);
 EXTERN int    revise_cell_division INIT(0);

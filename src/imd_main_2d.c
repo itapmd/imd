@@ -230,7 +230,8 @@ void main_loop(void)
 #ifdef NPT_axial
     if ((steps==steps_min) && (ensemble==ENS_NPT_AXIAL) && 
         (use_curr_pressure==1)) {
-      pressure_ext = stress;
+      pressure_ext.x = stress_x;
+      pressure_ext.y = stress_y;
       d_pressure.x = (pressure_end.x-pressure_ext.x) / (steps_max-steps_min);
       d_pressure.y = (pressure_end.y-pressure_ext.y) / (steps_max-steps_min);
       use_curr_pressure = 0;
