@@ -193,7 +193,7 @@ void calc_forces(void)
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
   for (k=0; k<ncells; ++k) {
-    do_forces2(cell_array + CELLS(k)
+    do_forces2(cell_array + CELLS(k),
                &tot_kin_energy, &virial, &vir_x, &vir_y, &vir_z);
   }
 #endif
