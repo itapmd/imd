@@ -68,6 +68,11 @@ void move_atom(ivektor cellc, cell *from, int index)
 #ifdef EAM2
   to->eam2_rho_h[to->n] = from->eam2_rho_h[index]; 
 #endif
+#ifdef ORDPAR
+#ifndef TWOD
+  to->nbanz[to->n] = from->nbanz[index]; 
+#endif
+#endif
 #ifdef DISLOC
   to->Epot_ref[to->n] = from->Epot_ref[index];
   to->ort_ref X (to->n) = from->ort_ref X(index);
@@ -138,6 +143,11 @@ void move_atom(ivektor cellc, cell *from, int index)
     from->pot_eng[index] = from->pot_eng[from->n];
 #ifdef EAM2
     from->eam2_rho_h[index] = from->eam2_rho_h[from->n];
+#endif
+#ifdef ORDPAR
+#ifndef TWOD
+    from->masse[index] = from->masse[from->n];
+#endif
 #endif
 #ifdef DISLOC
     from->Epot_ref[index]  = from->Epot_ref[from->n];
@@ -263,6 +273,11 @@ void alloc_cell(cell *thecell, int count)
 #ifdef EAM2
     newcell.eam2_rho_h =NULL;
 #endif
+#ifdef ORDPAR
+#ifndef TWOD
+    newcell.nbanz = NULL;
+#endif
+#endif
 #ifdef DISLOC
     newcell.Epot_ref = NULL;
     newcell.ort_ref = NULL;
@@ -332,6 +347,11 @@ void alloc_cell(cell *thecell, int count)
 #ifdef EAM2
     newcell.eam2_rho_h = (real *) malloc(count * sizeof(real)    );
 #endif
+#ifdef ORDPAR
+#ifndef TWOD
+    newcell.nbanz = (shortint *) malloc(count * sizeof(shortint));
+#endif
+#endif
 #ifdef DISLOC
     newcell.Epot_ref = (real *) calloc(count,sizeof(real));
     newcell.ort_ref = (real *) calloc(count*DIM, sizeof(real));
@@ -373,6 +393,11 @@ void alloc_cell(cell *thecell, int count)
         || (NULL == newcell.pot_eng)
 #ifdef EAM2
 	|| (NULL == newcell.eam2_rho_h)
+#endif
+#ifdef ORDPAR
+#ifndef TWOD
+	|| (NULL == newcell.nbanz)
+#endif
 #endif
 #ifdef DISLOC
         || (NULL == newcell.Epot_ref)
@@ -435,6 +460,12 @@ void alloc_cell(cell *thecell, int count)
       memcpy(newcell.eam2_rho_h, thecell->eam2_rho_h, 
              thecell->n * sizeof(real));
 #endif
+#ifdef ORDPAR
+#ifndef TWOD
+      memcpy(newcell.nbanz, thecell->nbanz,
+             thecell->n * sizeof(shortint));
+#endif
+#endif
 #ifdef DISLOC
       memcpy(newcell.Epot_ref, thecell->Epot_ref, 
                                thecell->n * sizeof(real));
@@ -479,6 +510,11 @@ void alloc_cell(cell *thecell, int count)
 #ifdef EAM2
     free(thecell->eam2_rho_h);
 #endif
+#ifdef ORDPAR
+#ifndef TWOD
+    free(thecell->nbanz);
+#endif
+#endif
 #ifdef DISLOC
     free(thecell->Epot_ref);
     free(thecell->ort_ref);
@@ -515,6 +551,9 @@ void alloc_cell(cell *thecell, int count)
   thecell->pot_eng  = newcell.pot_eng;
 #ifdef EAM2
   thecell->eam2_rho_h = newcell.eam2_rho_h;
+#endif
+#ifdef ORDPAR
+  thecell->nbanz = newcell.nbanz;
 #endif
 #ifdef DISLOC
   thecell->Epot_ref = newcell.Epot_ref;

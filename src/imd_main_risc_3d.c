@@ -69,6 +69,9 @@ void calc_forces(void)
 #ifndef MONOLJ
       p->pot_eng[i] = 0.0;
 #endif
+#ifdef ORDPAR
+      p->nbanz[i] = 0;
+#endif
 #ifdef COVALENT
       for (j=0; j<p->n; ++j) {
         p->neigh[j]->n = 0;

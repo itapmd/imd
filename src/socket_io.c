@@ -301,6 +301,11 @@ void write_ras_using_sockets() {
 #ifndef TWOD
 	     WriteFull(soc,&p->impuls Z(i),sizeof(double));
 #endif
+#ifdef ORDPAR
+#ifndef TWOD
+	     WriteFull(soc,&p->pot_eng[i]/&p->nbanz[i],sizeof(double));
+#endif
+#endif
 	     WriteFull(soc,&p->pot_eng[i],sizeof(double));
 	  }
 

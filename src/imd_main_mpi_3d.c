@@ -90,6 +90,9 @@ void calc_forces(void)
 #ifndef MONOLJ
       p->pot_eng[i] = 0.0;
 #endif
+#ifdef ORDPAR
+      p->nbanz[i] = 0;
+#endif
 #ifdef COVALENT
       for (j=0; j<p->n; ++j) {
         p->neigh[j]->n = 0;
@@ -1315,6 +1318,9 @@ void add_forces( msgbuf *b, int k, int l, int m )
 #ifndef MONOLJ
     to->pot_eng[i] += b->data[ b->n++ ];
 #endif
+#ifdef ORDPAR
+    to->nbanz[i] += b->data[ b->n++ ];
+#endif
 #ifdef NVX
     to->heatcond[i] += b->data[ b->n++ ];
 #endif
@@ -1349,6 +1355,9 @@ void copy_forces( msgbuf *b, int k, int l, int m)
     b->data[ b->n++ ] = from->kraft Z(i);
 #ifndef MONOLJ
     b->data[ b->n++ ] = from->pot_eng[i];
+#endif
+#ifdef ORDPAR
+    b->data[ b->n++ ] = from->nbanz[i];
 #endif
 #ifdef NVX
     b->data[ b->n++ ] = from->heatcond[i];
@@ -1670,6 +1679,9 @@ void add_cell_force( int k, int l, int m, int r, int s, int t)
     to->kraft Z(i) += from->kraft Z(i);
 #ifndef MONOLJ
     to->pot_eng[i] += from->pot_eng[i];
+#endif
+#ifdef ORDPAR
+    to->nbanz[i] += from->nbanz[i];
 #endif
   }
 }

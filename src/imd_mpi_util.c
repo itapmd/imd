@@ -151,6 +151,9 @@ void copy_one_atom(msgbuf *to, cell *from, int index)
     from->dreh_moment Z(index) = from->dreh_moment Z(from->n); 
 #endif
     from->pot_eng[index] = from->pot_eng[from->n]; 
+#ifdef ORDPAR
+    from->nbanz[index]   = from->nbanz[from->n]; 
+#endif
 #ifdef REFPOS
     from->refpos X(index) = from->refpos X(from->n);
     from->refpos Y(index) = from->refpos Y(from->n);
@@ -546,6 +549,9 @@ void send_cell(cell *p, int to_cpu, int tag)
   MPI_Ssend( p->dreh_moment,  DIM*p->n, MPI_REAL, to_cpu, tag + DREH_MOMENT_TAG,  cpugrid);
 #endif
   MPI_Ssend( p->pot_eng,p->n,     MPI_REAL, to_cpu, tag + POT_TAG,    cpugrid);
+#ifdef ORDPAR
+  MPI_Ssend( p->nbanz,p->n,     MPI_INT, to_cpu, tag + NBA_TAG,    cpugrid);
+#endif
 #ifdef REFPOS
   MPI_Ssend( p->refpos, DIM*p->n, MPI_REAL, to_cpu, tag + REFPOS_TAG, cpugrid);
 #endif
@@ -613,6 +619,9 @@ void recv_cell(cell *p, int from_cpu,int tag)
                                              cpugrid, &status);
 #endif
   MPI_Recv(p->pot_eng,       size, MPI_REAL, from_cpu, tag + POT_TAG, 
+#ifdef REFPOS
+  MPI_Recv(p->nbanz,       size, MPI_INT, from_cpu, tag + NBA_TAG, 
+#endif
                                              cpugrid, &status);
 #ifdef REFPOS
   MPI_Recv(p->refpos,  DIM * size, MPI_REAL, from_cpu, tag + REFPOS_TAG, 
