@@ -1,0 +1,201 @@
+<!--#include virtual="imdhead.html" -->
+
+<h1>MEAM Potentials (option meam)</h1>
+
+<p>The Modified Embedded Atom Method was formulated by Baskes
+(M.I.Baskes, <i>Phys.Rev.</i>B <b>46</b> (1992) 2727, M.I.Baskes,
+<i>Mater.Chem.Phys.</i> <b>50</b> (1997) 152). It consists of a
+generalization of the EAM potentials by including angular terms.
+</p>
+
+<p>The total energy for the MEAM potentials have a form similar to
+the EAM potentials:</p>
+
+<center>
+<img src="meam1.png">
+</center>
+
+<p>Here <i>F<sub>i</sub></i> is the embedding energy function,
+<i>rho<sub>i</sub></i> is the electron density at the position of atom
+<i>i</i>, <i>phi<sub>ij</sub></i> is a pair potential, and
+<i>S<sub>ij</sub></i> is the screening function defined below.</p>
+
+<p>For MEAM potentials, the electron density is given by</p>
+
+<center>
+<img src="meam2.png">
+</center>
+
+<p>where the parameters <i>t<sup>(s)</sup><sub>i</sub></i> are weight
+factors and the quantities <i>rho<sup>(s)</sup><sub>i</sub></i>,
+<i>s</i>=0,...,3, are partial electron densities defined by</p>
+
+<center>
+<img src="meam3.png">
+</center>
+
+<p>The functions <i>L<sup>(s)</sup>(z)</i> are Legendre polynomials,
+<i>L<sup>(0)</sup></i>(<i>z</i>) = 1, <i>L<sup>(1)</sup></i>(<i>z</i>)
+= <i>z</i>, <i>L<sup>(2)</sup></i>(<i>z</i>) =
+<i>z</i><sup>2</sup>-1/3, <i>L<sup>(3)</sup></i>(<i>z</i>) =
+<i>z</i><sup>3</sup>-3/5<i>z</i>. The atomic electron density
+functions from atom <i>j</i> at a distance <i>r<sub>ij</sub></i> from
+atom <i>i</i> are</p>
+
+<center>
+<img src="meam4.png">
+</center>
+
+<p>Here, <i>f<sup>0</sup><sub>i</sub></i>,
+<i>r<sup>0</sup><sub>i</sub></i>, and
+<i>beta<sup>(s)</sup><sub>i</sub></i> are parameters,
+<i>f<sub>c</sub></i> is a cutoff function, and <i>S<sub>ij</sub></i>
+is the screening function.</p>
+
+<p>The many-body screening function <i>S<sub>ij</sub></i> between
+atoms <i>i</i> and <i>j</i> is defined as the product of the screening
+factors <i>S<sub>ikj</sub></i> due to all other neighbour atoms <i>k</i>
+of <i>i</i> and <i>j</i>,</p>
+
+<center>
+<img src="meam5.png">
+</center>
+
+<p><i>S<sub>kij</sub></i> is given by</p>
+
+<center>
+<img src="meam6.png">
+</center>
+
+<p>where <i>C<sup>1</sup><sub>kij</sub></i> and
+<i>C<sup>0</sup><sub>kij</sub></i> are parameters and the function
+<i>g<sub>c</sub></i> is defined as</p>
+
+<center>
+<img src="meam7.png">
+</center>
+
+<p>The cutoff function <i>f<sub>c</sub></i> used in the atomic
+electron density functions is given by</p>
+
+<center>
+<img src="meam8.png">
+</center>
+
+<p>where <i>r<sup>c</sup><sub>ij</sub></i> is a cutoff length and
+<i>Delta_r<sub>ij</sub></i> is the width of the cutoff region.</p>
+
+<p>The indices of the parameters refer to the atom types involved.
+The following IMD parameters correspond to the MEAM potential
+parameters:</p>
+
+<table align="center" border="1" cellpadding="5" cellspacing="5" bgcolor="#99ccff" width="40%">
+<tr>
+   <td><tt>meam_cmin	       	</tt></td>
+   <td><i>C<sup>0</sup><sub>kij</sub></i>	</td>
+</tr>
+<tr>
+   <td><tt>meam_cmax	   	</tt></td>
+   <td><i>C<sup>1</sup><sub>kij</sub></i>	</td>
+</tr>
+<tr>
+   <td><tt>meam_t1	   	</tt></td>
+   <td><i>t<sup>(1)</sup><sub>i</sub></i></td>
+</tr>
+<tr>
+   <td><tt>meam_t2	   	</tt></td>
+   <td><i>t<sup>(2)</sup><sub>i</sub></i></td>
+</tr>
+<tr>
+   <td><tt>meam_t3	   	</tt></td>
+   <td><i>t<sup>(3)</sup><sub>i</sub></i></td>
+</tr>
+<tr>
+   <td><tt>meam_f0	   	</tt></td>
+   <td><i>f<sup>0</sup><sub>i</sub></i></td>
+</tr>
+<tr>
+   <td><tt>meam_r0	   	</tt></td>
+   <td><i>r<sup>0</sup><sub>i</sub></i></td>
+</tr>
+<tr>
+   <td><tt>meam_beta0	   	</tt></td>
+   <td><i>beta<sup>(0)</sup><sub>i</sub></i></td>
+</tr>
+<tr>
+   <td><tt>meam_beta1   	</tt></td>
+   <td><i>beta<sup>(1)</sup><sub>i</sub></i></td>
+</tr>
+<tr>
+   <td><tt>meam_beta2	   	</tt></td>
+   <td><i>beta<sup>(2)</sup><sub>i</sub></i></td>
+</tr>
+<tr>
+   <td><tt>meam_beta3	   	</tt></td>
+   <td><i>beta<sup>(3)</sup><sub>i</sub></i></td>
+</tr>
+<tr>
+   <td><tt>meam_deltar	   	                             </tt></td>
+   <td><i>Delta_r<sub>ij</sub></i></td>
+</tr>
+<tr>
+   <td><tt>meam_rcut	   	</tt></td>
+   <td><i>r<sup>c</sup><sub>ij</sub></i></td>
+</tr>
+
+</table>
+
+<p>The pair potential <i>phi<sub>ij</sub></i> has to be given as a potential
+table. The corresponding IMD parameter is <tt>core_potential_file</tt>.</p>
+
+
+<p>The embedding energy function <i>F<sub>i</sub></i> can be read in as a
+potential table using the IMD parameter
+<tt>embedding_energy_file</tt>. Alternatively, IMD computes the
+embedding energy analytically according to</p>
+
+<center>
+<img src="meam9.png">
+</center>
+
+<p>In this case, the parameters have to be specified using the following
+IMD parameters:</p>
+
+<table align="center" border="1" cellpadding="5" cellspacing="5" bgcolor="#99ccff" width="40%">
+<tr>
+   <td><tt>meam_a	       	</tt></td>
+   <td><i>A<sub>i</sub></i>	</td>
+</tr>
+<tr>
+   <td><tt>meam_e	       	</tt></td>
+   <td><i>E<sub>ci</sub></i>	</td>
+</tr>
+<tr>
+   <td><tt>meam_rho0	       	</tt></td>
+   <td><i>rho<sup>0</sup><sub>i</sub></i>	</td>
+</tr>
+
+</table>
+
+<p>The atomic electron density functions
+<i>rho<sup>a(s)</sup><sub>i</sub>(r)</i> are computed
+analytically. The function <i>rho<sup>a(0)</sup><sub>i</sub>(r)</i>,
+however, can be read in as a potential table using the IMD parameter
+<tt>el_density_file</tt>.</p>
+
+<p>The many-body interactions of the MEAM potential are computed using
+neighbour tables. In constrast to the covalent potentials the IMD
+parameter <tt>neigh_len</tt> has the default value 12.</p>
+
+<p>If more than one atom type are used, common values of the
+parameters <tt>meam_cmin</tt> and <tt>meam_cmax</tt> for all atom
+types can be chosen by specifying only one value for each
+parameter.</p>
+
+<p>The screening function <i>S<sub>ij</sub></i> can be switched off
+(that is, set to unity) by choosing the parameters <tt>meam_cmin</tt>
+and <tt>meam_cmax</tt> to be equal.</p>
+
+<!--#include virtual="imdfoot.html" -->
+
+
