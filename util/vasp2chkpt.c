@@ -26,6 +26,8 @@ vektor  pic_ur  = { 11.2,  0.8, 4.08 };               /* upper right corner */
 int     pic_int = 1;                       /* time interval for checkpoints */
 real    phi     = 0.0;       /* rotation angle -- gets multiplied with 2*Pi */
 char    outfiles[255] = "vasp";               /* base name for output files */
+int     rav_num = 0;                     /* atom number for running average */
+int     rav_int = 0;                        /* interval for running average */
 
 /*****************************************************************************
 *
@@ -72,7 +74,15 @@ void readparamfile(char *paramfname)
       /* rotation angle */
       getparam(token,&phi,PARAM_REAL,1,1);
     }
-    else if (strcasecmp(token,"outfiles")==0) {
+    else if (strcasecmp(token,"rav_int")==0) {
+      /* interval for running average */
+      getparam(token,&rav_int,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"rav_num")==0) {
+      /* atom number for running average */
+      getparam(token,&rav_num,PARAM_INT,1,1);
+    }
+     else if (strcasecmp(token,"outfiles")==0) {
       /* base name of output files */
       getparam(token,outfiles,PARAM_STR,1,254);
     }
@@ -248,8 +258,8 @@ void read_xdatcar()
 {
   FILE *infile;
   char buf[255];
-  vektor *a, *atoms;
-  int i, cnt;
+  vektor *a, *atoms, *rav, norm, sum = {0.0, 0.0, 0.0};
+  int i, cnt, cnt2;
 
   /* open POSCAR file */
   infile = fopen("XDATCAR","r");
@@ -262,6 +272,10 @@ void read_xdatcar()
   fgets(buf, 255, infile);
   atoms = (vektor *) malloc( natoms * sizeof(vektor) );
   if (NULL==atoms) error("Cannot allocate atoms list."); 
+  if (rav_int) {
+    rav = (vektor *) malloc( rav_int * sizeof(vektor) );
+    if (NULL==rav) error("Cannot allocate memory.");
+  }
   
   /* process configs */
   cnt = 0;
@@ -272,6 +286,34 @@ void read_xdatcar()
       if (3!=sscanf(buf, "%lf %lf %lf\n", &(a->x), &(a->y), &(a->z)))
 	error("Atom with less than three components!");
     } 
+    /* subtract running average */
+    if (rav_int) {
+      if (cnt < rav_int) {
+        rav[cnt].x = atoms[rav_num].x;
+	rav[cnt].y = atoms[rav_num].y;
+	rav[cnt].z = atoms[rav_num].z;
+        sum.x += rav[cnt].x;
+        sum.y += rav[cnt].y;
+        sum.z += rav[cnt].z;
+      } else {
+        if (cnt==rav_int) norm = sum;
+        cnt2 = cnt % rav_int;
+        sum.x -= rav[cnt2].x;
+        sum.y -= rav[cnt2].y;
+        sum.z -= rav[cnt2].z;
+        rav[cnt2].x = atoms[rav_num].x;
+        rav[cnt2].y = atoms[rav_num].y;
+        rav[cnt2].z = atoms[rav_num].z;
+        sum.x += rav[cnt2].x;
+        sum.y += rav[cnt2].y;
+        sum.z += rav[cnt2].z;
+        for (i=0; i<natoms; i++) {
+          atoms[i].x -= (sum.x - norm.x) / rav_int;
+          atoms[i].y -= (sum.y - norm.y) / rav_int;
+          atoms[i].z -= (sum.z - norm.z) / rav_int;
+	}
+      }
+    }
     if (0==cnt%pic_int) write_chkpt(cnt/pic_int, atoms);
     cnt++;
     fgets(buf, 255, infile);

@@ -289,8 +289,7 @@ void read_xdatcar()
 {
   FILE *infile;
   char buf[255];
-  vektor *a, *atoms;
-  real *rav, sum=0.0, norm;
+  vektor *a, *atoms, *rav, norm, sum = {0.0, 0.0, 0.0};
   int i, cnt, cnt2;
 
   /* open POSCAR file */
@@ -305,7 +304,7 @@ void read_xdatcar()
   atoms = (vektor *) malloc( natoms * sizeof(vektor) );
   if (NULL==atoms) error("Cannot allocate atoms list."); 
   if (rav_int) {
-    rav = (real *) malloc( rav_int * sizeof(real) );
+    rav = (vektor *) malloc( rav_int * sizeof(vektor) );
     if (NULL==rav) error("Cannot allocate memory.");
   }
   
@@ -317,18 +316,32 @@ void read_xdatcar()
       if (3!=sscanf(buf, "%lf %lf %lf\n", &(a->x), &(a->y), &(a->z)))
 	error("Atom with less than three components!");
     }
-    /* subtract running average in z-direction */
+    /* subtract running average */
     if (rav_int) {
       if (cnt < rav_int) {
-	rav[cnt] = atoms[rav_num].z;
-        sum += rav[cnt]; 
+        rav[cnt].x = atoms[rav_num].x;
+	rav[cnt].y = atoms[rav_num].y;
+	rav[cnt].z = atoms[rav_num].z;
+        sum.x += rav[cnt].x;
+        sum.y += rav[cnt].y;
+        sum.z += rav[cnt].z;
       } else {
         if (cnt==rav_int) norm = sum;
         cnt2 = cnt % rav_int;
-        sum -= rav[cnt2];
-	rav[cnt2] = atoms[rav_num].z;
-        sum += rav[cnt2]; 
-        for (i=0; i<natoms; i++) atoms[i].z -= (sum - norm) / rav_int;
+        sum.x -= rav[cnt2].x;
+        sum.y -= rav[cnt2].y;
+        sum.z -= rav[cnt2].z;
+        rav[cnt2].x = atoms[rav_num].x;
+        rav[cnt2].y = atoms[rav_num].y;
+        rav[cnt2].z = atoms[rav_num].z;
+        sum.x += rav[cnt2].x;
+        sum.y += rav[cnt2].y;
+        sum.z += rav[cnt2].z;
+        for (i=0; i<natoms; i++) {
+          atoms[i].x -= (sum.x - norm.x) / rav_int;
+          atoms[i].y -= (sum.y - norm.y) / rav_int;
+          atoms[i].z -= (sum.z - norm.z) / rav_int;
+	}
       }
     }
     update_atoms_dist(atoms);
