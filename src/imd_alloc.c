@@ -187,6 +187,7 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef STRESS_TENS
     newcell.presstens = NULL;
+    newcell.presstens_offdia = NULL;
 #endif
     newcell.sorte  = NULL;
     newcell.masse  = NULL;
@@ -227,6 +228,7 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef STRESS_TENS
     newcell.presstens = (real *) malloc(count*DIM*sizeof(real));
+    newcell.presstens_offdia = (real *) malloc(count*DIM*sizeof(real));
 #endif
     newcell.sorte  = (shortint* ) malloc(count * sizeof(shortint));
     newcell.masse  = (real    * ) malloc(count * sizeof(real)    );
@@ -248,6 +250,7 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef STRESS_TENS
         || (NULL == newcell.presstens)
+        || (NULL == newcell.presstens_offdia)
 #endif
         || (NULL == newcell.sorte)
         || (NULL == newcell.masse)
@@ -288,6 +291,7 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef STRESS_TENS
       memcpy(newcell.presstens,  thecell->presstens,  thecell->n * DIM * sizeof(real));
+      memcpy(newcell.presstens_offdia,  thecell->presstens_offdia,  thecell->n * DIM * sizeof(real));
 #endif
       memcpy(newcell.sorte ,  thecell->sorte,   thecell->n * sizeof(shortint));
       memcpy(newcell.masse ,  thecell->masse,   thecell->n * sizeof(real));
@@ -313,6 +317,7 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef STRESS_TENS
     free(thecell->presstens);
+    free(thecell->presstens_offdia);
 #endif
     free(thecell->sorte);
     free(thecell->masse);
@@ -338,6 +343,7 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef STRESS_TENS
   thecell->presstens = newcell.presstens;
+  thecell->presstens_offdia = newcell.presstens_offdia;
 #endif
   thecell->sorte  = newcell.sorte;
   thecell->masse  = newcell.masse;

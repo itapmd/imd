@@ -171,7 +171,8 @@ void write_temp(int steps);
 #endif
 
 #ifdef STRESS_TENS
-void write_press(int steps);
+void write_press_layers(int steps);
+void write_press_atoms(int steps);
 #endif
 
 /* generate quasicrystal */

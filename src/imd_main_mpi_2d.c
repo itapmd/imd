@@ -75,6 +75,7 @@ void calc_forces(void)
 #ifdef STRESS_TENS
       p->presstens X(i) = 0.0;
       p->presstens Y(i) = 0.0;
+      p->presstens_offdia X(i) = 0.0;
 #endif      
     };
 

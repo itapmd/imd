@@ -207,6 +207,17 @@ void do_forces(cell *p, cell *q, vektor pbc)
       p->presstens Z(i) -= d.z * d.z * pot_grad;
       q->presstens Z(j) -= d.z * d.z * pot_grad;
 #endif
+#ifndef TWOD
+      p->presstens_offdia X(i) -= d.y * d.z * pot_grad;
+      p->presstens_offdia  Y(i) -= d.z * d.x * pot_grad;
+      p->presstens_offdia  Z(i) -= d.x * d.y * pot_grad;
+      q->presstens_offdia  X(j) -= d.y * d.z * pot_grad;
+      q->presstens_offdia  Y(j) -= d.z * d.x * pot_grad;
+      q->presstens_offdia  Z(j) -= d.x * d.y * pot_grad;
+#else
+      p->presstens_offdia X(i) -= d.x * d.y * pot_grad;
+      q->presstens_offdia X(j) -= d.x * d.y * pot_grad;
+#endif
 #endif
 #ifdef TRANSPORT
         p->heatcond[i] += pot_zwi - radius2 * pot_grad;

@@ -85,6 +85,7 @@ typedef struct {
 #endif
 #ifdef STRESS_TENS
     real        *presstens;
+    real        *presstens_offdia;
 #endif
     integer     *nummer;
 #endif

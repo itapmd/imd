@@ -141,7 +141,8 @@ void main_loop(void)
 #endif
 
 #ifdef STRESS_TENS
-    if ((press_interval > 0) && (0 == steps%press_interval)) write_press(steps);
+    if ((press_interval > 0) && (0 == steps%press_interval) && (0!=press_nlayers.x*press_nlayers.y)) write_press_layers(steps);
+    if ((press_interval > 0) && (0 == steps%press_interval) && (0==press_nlayers.x*press_nlayers.y)) write_press_atoms(steps);
 #endif
 
 #ifndef NOPBC
