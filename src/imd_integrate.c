@@ -224,7 +224,7 @@ void move_atoms_nve(void)
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
   ++count;
-  if ((tmp_interval!=0) && (0==count%tmp_interval)) maxwell(temperature);
+  if ((tempintv!=0) && (0==count%tempintv)) maxwell(temperature);
 #endif
 
 
@@ -260,7 +260,7 @@ void move_atoms_mik(void)
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
   ++count;
-  if ((tmp_interval!=0) && (0==count%tmp_interval)) maxwell(temperature);
+  if ((tempintv!=0) && (0==count%tempintv)) maxwell(temperature);
 #endif
 
   /* loop over all cells */

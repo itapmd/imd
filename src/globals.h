@@ -104,35 +104,36 @@ EXTERN int steps INIT(0);        /* number of current MD step */
 EXTERN int steps_max INIT(0);    /* Maximum number of MD steps */
 EXTERN int steps_min INIT(0);    /* starting step nr for current phase */
 EXTERN int restart INIT(0);      /* file number for restart */
-EXTERN int rep_interval INIT(0); /* Period of checkpoints ==0 for no checkpoints */
-EXTERN int eng_interval INIT(0); /* Period of data output ==0 for no energy data */
-EXTERN int dis_interval INIT(0); /* Period of spatial eng. distrib output ==0 for no data */
-EXTERN int pic_interval INIT(0); /* Period of data output ==0 for no energy data */
-EXTERN int force_interval INIT(0); /* Period of force file writing */
-EXTERN int onl_interval INIT(0); /* Period of online visualization */
-EXTERN int dist_binary_io INIT(0); /* Flag for binary I/O */
-EXTERN int dist_has_coords INIT(0);/* Flag for writing bin coords to dists */
-EXTERN int dist_coord INIT(0);   /* Flag for writing dist coords */
-EXTERN int virvo_io INIT(0);     /* Flag for virvo (0 => normal dist ) */
-EXTERN ivektor dist_dim INIT(einsivektor); /* Resolution of spatial distrib */
-EXTERN int norm_hist INIT(0);    /* Flag whether to normalize distribs */
-EXTERN str255 rundesc; /* Description */
-EXTERN vektor  hist_ur  INIT(nullvektor);
-EXTERN vektor  hist_ll  INIT(nullvektor);
+EXTERN int checkpt_int INIT(0);  /* Period of checkpoints */
+EXTERN int eng_int INIT(0);      /* Period of data output */
+EXTERN int force_int INIT(0);    /* Period of force file writing */
 EXTERN str255 progname; /* Name of current executable argv[0] */
 EXTERN ivektor cellmin; /* Minimum index of local cells (1 with MPI, 0 otherwise) */
 EXTERN ivektor cellmax; /* Maximum index of local cells  */
 EXTERN int use_header INIT(1);   /* shall a header be written */
 
+/* controlling distribution output */
+EXTERN int dist_Ekin_flag        INIT(0); /* write Ekin dists? */
+EXTERN int dist_Epot_flag        INIT(0); /* write Epot dists? */
+EXTERN int dist_Ekin_long_flag   INIT(0); /* write Ekin_long dists? */
+EXTERN int dist_Ekin_trans_flag  INIT(0); /* write Ekin_trans dists? */
+EXTERN int dist_shock_shear_flag INIT(0); /* write shock shear dists? */
+EXTERN int dist_press_flag       INIT(0); /* write press dists? */
+EXTERN int dist_presstens_flag   INIT(0); /* write presstens dists? */
+EXTERN int dist_int              INIT(0); /* Period of distribution writes */
+EXTERN ivektor dist_dim          INIT(einsivektor); /* resolution of dist */
+EXTERN vektor  dist_ur           INIT(nullvektor);  /* lower left  corner */
+EXTERN vektor  dist_ll           INIT(nullvektor);  /* upper right corner */
+
 #ifdef EFILTER
-EXTERN int efrep_interval INIT(0); /* Period of checkpoints ==0 for no checkpoints */
-EXTERN real  lower_e_pot INIT(0.0); /* lower end of energy window */
-EXTERN real  upper_e_pot INIT(0.0); /* upper end of energy window */
+EXTERN int  ef_checkpt_int INIT(0);  /* Period of ef writes */
+EXTERN real lower_e_pot INIT(0.0);   /* lower end of energy window */
+EXTERN real upper_e_pot INIT(0.0);   /* upper end of energy window */
 #endif
 #ifdef NBFILTER
-EXTERN int nbrep_interval INIT(0); /* Period of checkpoints ==0 for no checkpoints */
-EXTERN int  *lower_nb_cut INIT(NULL); /* lower number of neighbours  */
-EXTERN int  *upper_nb_cut INIT(NULL); /* upper number of neighbours  */
+EXTERN int nb_checkpt_int INIT(0);   /* Period of nb writes */
+EXTERN int *lower_nb_cut INIT(NULL); /* lower number of neighbours  */
+EXTERN int *upper_nb_cut INIT(NULL); /* upper number of neighbours  */
 #endif
 /* data for generated structures */
 EXTERN ivektor box_param INIT(nullivektor);  /* box parameters */
@@ -172,6 +173,7 @@ EXTERN int flush_int INIT(50);          /* flush .eng and .msqd files
                                            every flush_int writes */
 
 /* Parameters for pictures */
+EXTERN int pic_int INIT(0);                 /* Period for picture output */
 EXTERN vektor2d ecut_kin INIT(nullvektor2d);/* Kin. Energy interval for pictures */
 EXTERN vektor2d ecut_pot INIT(nullvektor2d);/* Pot. Energy interval for pictures */   
 EXTERN vektor pic_scale INIT(nullvektor);   /* Scale factor x/y for pictures     */
@@ -266,8 +268,8 @@ EXTERN imd_timer time_io;
 /* Parameters for the various ensembles */
 
 #ifdef AND
-EXTERN int tmp_interval INIT(0);     /* Interval in which the thermostat */
-                                     /* kicks (in timesteps) */
+EXTERN int tempintv INIT(0);        /* Interval in which the thermostat */
+                                    /* kicks (in timesteps) */
 #endif
 
 #if defined(NVT) || defined(NPT) || defined(STM)
@@ -402,8 +404,8 @@ EXTERN int sscount INIT(0);
 #endif
 
 #ifdef DISLOC
-EXTERN int  dem_interval INIT(0);     /* Period of dem output ==0 */
-EXTERN int  dsp_interval INIT(0);     /* Period of dsp output ==0 */
+EXTERN int  dem_int INIT(0);          /* Period of dem output */
+EXTERN int  dsp_int INIT(0);          /* Period of dsp output */
 EXTERN int  up_ort_ref INIT(0);       /* time to update ort_ref ? */
 EXTERN real min_dpot INIT(1.0);       /* difference for dem */
 EXTERN int  dpotsorte INIT(0);        /* type to compute dem map */
@@ -483,9 +485,7 @@ EXTERN int  tran_nlayers  INIT(0);     /* number of layers*/
 
 #ifdef STRESS_TENS
 EXTERN sym_tensor tot_presstens INIT(nullsymtensor);/* global pressure tens. */
-EXTERN int  press_interval INIT(0);         /* interval for writing the */ 
-                                            /* pressure tensor */
-EXTERN ivektor press_dim INIT(nullivektor); /* pressure histogram dimension */
+EXTERN int press_int INIT(0);    /* interval for writing the pressure tensor */
 EXTERN int do_press_calc INIT(0);           /* flag whether to do press calc */
 #endif
 

@@ -586,7 +586,7 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
 
 #ifdef AND
   /* with Anderson thermostat, write external temperature */
-  if (tmp_interval>0) fprintf(out,"starttemp \t%f\n",temperature);
+  if (tempintv>0) fprintf(out,"starttemp \t%f\n",temperature);
 #endif
 
 #ifdef FBC

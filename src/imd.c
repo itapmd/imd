@@ -130,7 +130,7 @@ int main(int argc, char **argv)
   start = steps_min;  /* keep starting step number */
 
   /* write .eng file header */
-  if ((restart==0) && (eng_interval>0)) write_eng_file_header();
+  if ((restart==0) && (eng_int>0)) write_eng_file_header();
 
   imd_stop_timer(&time_setup);
   imd_start_timer(&time_main);

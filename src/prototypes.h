@@ -297,19 +297,19 @@ void write_distrib_using_sockets(void);
 void write_rgb_picture_to_socket(void);
 #endif
 
+/* write distributions - file imd_distrib.c */
+void make_distrib_select(dist_t*, int, int*, void (*fun)(float*, cell*, int));
+void write_distrib_select(dist_t*, int, int, int, char*, char*);
+void write_distrib_header(FILE*, dist_t*, int, int, char*);
+void write_distrib(int);
+void dist_Ekin_fun       (float*, cell*, int);
+void dist_Epot_fun       (float*, cell*, int);
+void dist_Ekin_long_fun  (float*, cell*, int);
+void dist_Ekin_trans_fun (float*, cell*, int);
+void dist_shock_shear_fun(float*, cell*, int);
+void dist_press_fun      (float*, cell*, int);
+void dist_presstens_fun  (float*, cell*, int);
 
-/* write distributions - files imd_histogram.c */
-void make_histograms(hist_t *hist);
-void write_distrib(int steps);
-void write_distrib_header(FILE *out, hist_t *hist, char *type);
-#ifdef STRESS_TENS
-void write_press_dist(int steps);
-void write_press_dist_header(FILE *out, hist_t *hist);
-#endif
-#ifdef SHOCK
-void write_press_dist_shock(int steps);
-void write_press_dist_shock_header(FILE *out, hist_t *hist);
-#endif
 #ifdef ATDIST
 void   init_atoms_dist(void);
 void update_atoms_dist(void);

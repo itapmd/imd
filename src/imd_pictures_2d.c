@@ -81,7 +81,7 @@ void write_pictures_bitmap(int steps)
 
   /* create filename */
   /* Dateiname fuer Ausgabedatei erzeugen */
-  fzhlr = steps / pic_interval;
+  fzhlr = steps / pic_int;
 
   sprintf(fname,"%s.%u.kin.ppm",outfilename,fzhlr);
 
@@ -313,7 +313,7 @@ void write_pictures(int steps)
 {
   switch (pic_type) {
     case 0: 
-      write_config_select(steps/pic_interval, "pic",
+      write_config_select(steps/pic_int, "pic",
                           write_atoms_pic, write_header_pic); 
       break;
     case 1: 

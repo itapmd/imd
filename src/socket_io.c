@@ -765,38 +765,42 @@ void write_conf_using_sockets()
 
 void write_distrib_using_sockets()
 {
-  hist_t hist;
+  hist_t Ekin_dist, Epot_dist;
   unsigned char resolution_buffer[6];
+  int *flag;
   float f;
 
-  hist.dim = dist_dim;
-  hist.ur  = hist_ur;
-  hist.ll  = hist_ll;
-  make_histograms(&hist);
+  Ekin_dist.dim = dist_dim; Epot_dist.dim = dist_dim;
+  Ekin_dist.ur  = hist_ur;  Epot_dist.ur  = hist_ur;
+  Ekin_dist.ll  = hist_ll;  Epot_dist.ll  = hist_ll;
+
+  *flag = 0;
+  make_distrib_select(&Epot_dist, 1, flag, dist_Epot_fun); 
+  make_distrib_select(&Ekin_dist, 1, flag, dist_Ekin_fun); 
 
   if (0==myid) {
 
-    resolution_buffer[0] = hist.dim.x / 256; /* high byte */
-    resolution_buffer[1] = hist.dim.x % 256; /* low byte */
-    resolution_buffer[2] = hist.dim.y / 256;
-    resolution_buffer[3] = hist.dim.y % 256;
+    resolution_buffer[0] = dist_dim.x / 256; /* high byte */
+    resolution_buffer[1] = dist_dim.x % 256; /* low byte */
+    resolution_buffer[2] = dist_dim.y / 256;
+    resolution_buffer[3] = dist_dim.y % 256;
 #ifndef TWOD
-    resolution_buffer[4] = hist.dim.z / 256;
-    resolution_buffer[5] = hist.dim.z % 256;
+    resolution_buffer[4] = dist_dim.z / 256;
+    resolution_buffer[5] = dist_dim.z % 256;
 #endif
 
 #ifdef TWOD
-    if ((hist.dim.x > 65535) || (hist.dim.y > 65535))
+    if ((dist_dim.x > 65535) || (dist_dim.y > 65535))
 #else
-    if ((hist.dim.x > 65535) || (hist.dim.y > 65535) || (hist.dim.z > 65535))
+    if ((dist_dim.x > 65535) || (dist_dim.y > 65535) || (dist_dim.z > 65535))
 #endif
       printf("Warning: sizes are larger than maximum size 65535!!!\n");
 
     f = (float)1.0;
     WriteFull(soc,(void *) &f, sizeof(float));
     WriteFull(soc,(void *) resolution_buffer, 2*DIM);
-    WriteFull(soc,(void *) hist.pot_hist, hist.size * sizeof(float));
-    WriteFull(soc,(void *) hist.kin_hist, hist.size * sizeof(float));
+    WriteFull(soc,(void *) Epot_dist.dat, Epot_dist.size * sizeof(float));
+    WriteFull(soc,(void *) Ekin_dist.dat, Ekin_dist.size * sizeof(float));
   }
 }
 

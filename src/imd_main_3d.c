@@ -124,8 +124,8 @@ void main_loop(void)
   for (steps=steps_min; steps <= steps_max; ++steps) {
 
 #ifdef STRESS_TENS
-    do_press_calc = (((eng_interval  >0) && (0==steps%eng_interval)) ||
-                     ((press_interval>0) && (0==steps%eng_interval)));
+    do_press_calc = (((eng_int  > 0) && (0 == steps % eng_int )) ||
+                     ((dist_int > 0) && (0 == steps % dist_int)) );
 #endif
 
 #ifdef EPITAX
@@ -168,9 +168,9 @@ void main_loop(void)
 #endif /* FBC */
 
 #ifdef HOMDEF
-    if ((exp_interval > 0) && (0 == steps%exp_interval)) expand_sample();
-    if ((hom_interval > 0) && (0 == steps%hom_interval)) shear_sample();
-    if ((lindef_interval > 0) && (0 == steps%lindef_interval)) lin_deform();
+    if ((exp_interval > 0) && (0 == steps % exp_interval)) expand_sample();
+    if ((hom_interval > 0) && (0 == steps % hom_interval)) shear_sample();
+    if ((lindef_interval > 0) && (0 == steps % lindef_interval)) lin_deform();
 #endif
 
 #ifdef DEFORM
@@ -232,9 +232,9 @@ void main_loop(void)
 
 #ifdef FORCE
     /* we have to write the forces *before* the atoms are moved */
-    if ((force_interval > 0) && (0 == steps%force_interval)) 
-       write_config_select(steps/force_interval, "force",
-                           write_atoms_force, write_header_force);
+    if ((force_int > 0) && (0 == steps % force_int)) 
+       write_config_select( steps/force_int, "force",
+                            write_atoms_force, write_header_force);
 #endif
 
 #ifdef WRITEF /* can be used as tool for postprocessing */
@@ -346,27 +346,27 @@ void main_loop(void)
 #ifdef TIMING
     imd_start_timer(&time_io);
 #endif
-    if ((rep_interval > 0) && (0 == steps%rep_interval)) 
-      write_config(steps/rep_interval, steps);
-    if ((eng_interval > 0) && (0 == steps%eng_interval)) write_eng_file(steps);
-    if ((dis_interval > 0) && (0 == steps%dis_interval)) write_distrib(steps);
-    if ((pic_interval > 0) && (0 == steps%pic_interval)) write_pictures(steps);
+    if ((checkpt_int > 0) && (0 == steps % checkpt_int)) 
+       write_config( steps/checkpt_int, steps);
+    if ((eng_int  > 0) && (0 == steps % eng_int )) write_eng_file(steps);
+    if ((dist_int > 0) && (0 == steps % dist_int)) write_distrib(steps);
+    if ((pic_int  > 0) && (0 == steps % pic_int )) write_pictures(steps);
 
 #ifdef EFILTER  /* just print atoms if in an energy-window */ 
-    if ((efrep_interval > 0) && (0 == steps%efrep_interval)) 
-       write_config_select(steps/efrep_interval, "ef",
-                           write_atoms_ef, write_header_ef);
+    if ((ef_checkpt_int > 0) && (0 == steps % ef_checkpt_int)) 
+       write_config_select( steps/ef_checkpt_int, "ef",
+                            write_atoms_ef, write_header_ef);
 #endif
 #ifdef NBFILTER  /* just print atoms by neighbour condition */ 
-    if ((nbrep_interval > 0) && (0 == steps%nbrep_interval)) 
-       write_config_select(steps/nbrep_interval, "nb",
-                           write_atoms_nb, write_header_nb);
+    if ((nb_checkpt_int > 0) && (0 == steps % nb_checkpt_int)) 
+       write_config_select( steps/nb_checkpt_int, "nb",
+                            write_atoms_nb, write_header_nb);
 #endif
 #ifdef DISLOC
     if (steps == up_ort_ref) update_ort_ref();
-    if ((dem_interval > 0) && (0 == steps%dem_interval)) 
+    if ((dem_int > 0) && (0 == steps % dem_int)) 
        write_config_select(steps, "dem", write_atoms_dem, write_header_dem);
-    if ((dsp_interval > up_ort_ref) && (0 == steps%dsp_interval)) 
+    if ((dsp_int > up_ort_ref) && (0 == steps % dsp_int)) 
        write_config_select(steps, "dsp", write_atoms_dsp, write_header_dsp);
 #endif
 #ifdef AVPOS
@@ -391,22 +391,14 @@ void main_loop(void)
 #endif
 
 #ifdef STRESS_TENS
-#ifdef SHOCK
-    if ((press_interval > 0) && (0 == steps%press_interval)) 
-       write_press_dist_shock(steps);
-#else
-    if ((press_interval > 0) && (0 == steps%press_interval)) {
-      if (0==press_dim.x) 
-        write_config_select(steps/press_interval, "press",
+    if ((press_int > 0) && (0 == steps % press_int)) {
+       write_config_select( steps/press_int, "press",
                             write_atoms_press, write_header_press);
-      else 
-        write_press_dist(steps);
     }
-#endif
 #endif
 
 #ifdef USE_SOCKETS
-    if ((socket_int>0) && (0==steps%socket_int)) check_socket();
+    if ((socket_int > 0) && (0 == steps % socket_int)) check_socket();
 #endif
 
 #ifdef TIMING

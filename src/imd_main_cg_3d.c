@@ -136,7 +136,7 @@ void main_loop(void)
     }
     
     /* write 'relaxed' config */
-    write_config(steps/rep_interval, steps);
+    write_config(steps/checkpt_int, steps);
 
 
 #ifdef USE_SOCKETS

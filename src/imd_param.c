@@ -385,7 +385,7 @@ void getparamfile(char *paramfname, int sim)
         /* move_atoms = move_atoms_cg; */
       }
      
- else {
+    else {
         error("unknown ensemble");
       }
     }
@@ -399,45 +399,59 @@ void getparamfile(char *paramfname, int sim)
     }
     else if (strcasecmp(token,"checkpt_int")==0) {
       /* number of steps between checkpoints / period for checkpoints */
-      getparam("checkpt_int",&rep_interval,PARAM_INT,1,1);
+      getparam("checkpt_int",&checkpt_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"eng_int")==0) {
       /* energy data output interval */
-      getparam("eng_int",&eng_interval,PARAM_INT,1,1);
+      getparam("eng_int",&eng_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"dist_int")==0) {
       /* number of steps between energy dist. writes */
-      getparam("dist_int",&dis_interval,PARAM_INT,1,1);
+      getparam(token,&dist_int,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"dist_binary_io")==0) {
-      /* binary io flag for energy distributions */
-      getparam("dist_binary_io",&dist_binary_io,PARAM_INT,1,1);
+    else if (strcasecmp(token,"dist_dim")==0) {
+      /* dimension of distributions */
+      getparam(token,&dist_dim,PARAM_INT,DIM,DIM);
     }
-    else if (strcasecmp(token,"dist_has_coords")==0) {
-      /* flag for writing coords to energy distributions */
-      getparam("dist_has_coords",&dist_has_coords,PARAM_INT,1,1);
+    else if (strcasecmp(token,"dist_ll")==0) {
+      /* lower left corner of distributions */
+      getparam(token,&dist_ll,PARAM_REAL,DIM,DIM);
     }
-    else if (strcasecmp(token,"dist_coord")==0) {
-      /* binary io flag for distribution coordinates */
-      getparam("dist_coord",&dist_coord,PARAM_INT,1,1);
+    else if (strcasecmp(token,"dist_ur")==0) {
+      /* upper right corner of distribution */
+      getparam(token,&dist_ur,PARAM_REAL,DIM,DIM);
     }
-    else if (strcasecmp(token,"virvo_io")==0) {
-      /* virvo io flag (0==volrend) */
-      getparam("virvo_io",&virvo_io,PARAM_INT,1,1);
+    else if (strcasecmp(token,"dist_Ekin_flag")==0) {
+      /* write Ekin dist? */
+      getparam(token,&dist_Ekin_flag,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"dist_Epot_flag")==0) {
+      /* write Epot dist? */
+      getparam(token,&dist_Epot_flag,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"dist_press_flag")==0) {
+      /* write press dist? */
+      getparam(token,&dist_press_flag,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"dist_presstens_flag")==0) {
+      /* write presstens dist? */
+      getparam(token,&dist_presstens_flag,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"dist_Ekin_long_flag")==0) {
+      /* write longitudinal Ekin dist? */
+      getparam(token,&dist_Ekin_long_flag,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"dist_Ekin_trans_flag")==0) {
+      /* write transversal Ekin dist? */
+      getparam(token,&dist_Ekin_trans_flag,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"dist_shock_shear_flag")==0) {
+      /* write shock shear dist? */
+      getparam(token,&dist_shock_shear_flag,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"pic_int")==0) {
       /* number of steps between picture writes */
-      getparam("pic_int",&pic_interval,PARAM_INT,1,1);
-    }
-    else if (strcasecmp(token,"onl_int")==0) {
-      /* number of steps between online visualization */
-      getparam("onl_int",&onl_interval,PARAM_INT,1,1);
-    }
-    else if (strcasecmp(token,"dist_dim")==0) {
-      getparam("dist_dim",&dist_dim,PARAM_INT,DIM,DIM);
-    }
-    else if (strcasecmp(token,"normalize_hist")==0) {
-      getparam("normalize_hist",&norm_hist,PARAM_INT,1,1);
+      getparam("pic_int",&pic_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"pbc_dirs")==0) {
       /* directions with periodic boundary conditions */
@@ -446,7 +460,7 @@ void getparamfile(char *paramfname, int sim)
 #ifdef EFILTER
     else if (strcasecmp(token,"ef_checkpt_int")==0) {
       /* number of steps between energy filtered checkpoints */
-      getparam("ef_checkpt_int",&efrep_interval,PARAM_INT,1,1);
+      getparam("ef_checkpt_int",&ef_checkpt_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"e_pot_lower")==0) {
       /* lower end of energy window */
@@ -459,7 +473,7 @@ void getparamfile(char *paramfname, int sim)
 #endif
 #ifdef NBFILTER
     else if (strcasecmp(token,"nb_checkpt_int")==0) {
-      getparam("nb_checkpt_int",&nbrep_interval,PARAM_INT,1,1);
+      getparam("nb_checkpt_int",&nb_checkpt_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"nb_cut_lower")==0) {
       	getparam("nb_cut_lower",lower_nb_cut,PARAM_INT,ntypes,ntypes);
@@ -703,7 +717,7 @@ void getparamfile(char *paramfname, int sim)
 #ifdef AND
     else if (strcasecmp(token,"tempintv")==0) {
       /* temperature interval */
-      getparam("tempintv",&tmp_interval,PARAM_INT,1,1);
+      getparam("tempintv",&tempintv,PARAM_INT,1,1);
     }
 #endif
 #if defined(NVT) || defined(NPT) || defined(STM)
@@ -1083,23 +1097,19 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #ifdef STRESS_TENS
-    else if (strcasecmp(token, "press_dim")==0){
-      /* pressure histogram dimension */
-      getparam("press_dim", &press_dim, PARAM_INT, DIM,DIM);
-    }
-     else if (strcasecmp(token, "press_interval")==0){
+     else if (strcasecmp(token, "press_int")==0){
       /*number of steps between press. writes  */
-      getparam("press_interval", &press_interval, PARAM_INT, 1,1);
+      getparam("press_int", &press_int, PARAM_INT, 1,1);
     }
 #endif
 #ifdef DISLOC
     else if (strcasecmp(token,"dem_int")==0) {
       /* number of steps between picture writes */
-      getparam("dem_int",&dem_interval,PARAM_INT,1,1);
+      getparam("dem_int",&dem_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"dsp_int")==0) {
       /* number of steps between picture writes */
-      getparam("dsp_int",&dsp_interval,PARAM_INT,1,1);
+      getparam("dsp_int",&dsp_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"up_ort_ref")==0) {
       /* step number to compute ort_ref */
@@ -1151,7 +1161,7 @@ void getparamfile(char *paramfname, int sim)
 #ifdef FORCE
     else if (strcasecmp(token,"force_int")==0) {
       /* number of steps between average position writes */
-      getparam("force_int",&force_interval,PARAM_INT,1,1);
+      getparam("force_int",&force_int,PARAM_INT,1,1);
     }
 #endif
 #ifdef ATDIST
@@ -1572,7 +1582,7 @@ void check_parameters_complete()
 #endif
 #if defined(CORRELATE) || defined(MSQD)
   if (correl_ts == 0) {
-    if (eng_interval != 0) correl_ts = eng_interval;
+    if (eng_int != 0) correl_ts = eng_int;
     else {
       error("correl_ts is missing or zero.");
     }
@@ -1654,9 +1664,9 @@ void check_parameters_complete()
   }
 #endif
 #ifdef AVPOS
-  fprintf(stderr, "%d %d\n", avpos_start, restart*rep_interval);
-  if (avpos_start <= restart*rep_interval)
-    avpos_start = restart*rep_interval+1; /* do not ask me why +1 ;-) */
+  fprintf(stderr, "%d %d\n", avpos_start, restart*checkpt_int);
+  if (avpos_start <= restart*checkpt_int)
+    avpos_start = restart*checkpt_int+1; /* do not ask me why +1 ;-) */
   /* Default initialisation of end time */ 
   if (0==avpos_end) avpos_end = steps_max;
 #endif
@@ -1665,14 +1675,6 @@ void check_parameters_complete()
   if (0==atoms_dist_end) atoms_dist_end = steps_max;
 #endif
 
-  /* backup if hist_ur is not set */
-  if (0.0==hist_ur.x) {
-    hist_ur.x = box_x.x;
-    hist_ur.y = box_y.y;
-#ifndef TWOD
-    hist_ur.z = box_z.z;
-#endif
-  }
 #ifdef GLOKDEFORM
   if ((fnorm_threshold==0.0) && (max_deform_int == 0))
   {
@@ -1761,31 +1763,15 @@ void read_parameters(int argc,char **argv)
       getparamfile(fname,1);
       finished = tmp;
     } else {
-      /* Delete energy file if not restart */
-      sprintf(fname,"%s.eng",outfilename);
-      unlink(fname);
-      /* Delete distrib minmax file if not restart */
-      sprintf(fname,"%s.minmax.dist",outfilename);
-      unlink(fname);
-      /* Delete tempdist file if not restart */
-      sprintf(fname,"%s.tempdist",outfilename);
-      unlink(fname);
-      /* write header to minmax file, if we possibly need it */
-      if ((dist_dim.x>0) && (dis_interval>0)) { 
-        FILE *fl;
-        fl = fopen(fname,"w");
-#ifdef TWOD
-        fprintf(fl,"# Dimension %d %d\n",dist_dim.x,dist_dim.y);
-#else
-        fprintf(fl,"# Dimension %d %d %d\n",dist_dim.x,dist_dim.y,dist_dim.z);
-#endif
-        fclose(fl);
-      }
-#ifdef MSQD
-      /* Delete msqd file if not restart */
-      sprintf(fname,"%s.msqd",outfilename);
-      unlink(fname);
-#endif
+      /* if not restart: delete files to which we append */
+      sprintf(fname,"%s.eng",              outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.Ekin",      outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.Epot",      outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.press",     outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.presstens", outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.shock",     outfilename); unlink(fname);
+      sprintf(fname,"%s.tempdist",         outfilename); unlink(fname);
+      sprintf(fname,"%s.msqd",             outfilename); unlink(fname);
     }
   }
 }
@@ -1811,10 +1797,21 @@ void broadcast_params() {
   MPI_Bcast( &steps_max   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &steps_min   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &restart     , 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &rep_interval, 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &eng_interval, 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dis_interval, 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &pic_interval, 1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &checkpt_int , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &eng_int     , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &pic_int     , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+
+  MPI_Bcast( &dist_int,              1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_dim,            DIM, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dist_ll,             DIM, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_ur,             DIM, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_Epot_flag,        1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_Ekin_flag,        1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_Ekin_long_flag,   1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_Ekin_trans_flag,  1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_press_flag,       1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_presstens_flag,   1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_shock_shear_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 
 
 #ifdef TWOD
   MPI_Bcast( &pic_scale   , 2, REAL, 0, MPI_COMM_WORLD);
@@ -1825,12 +1822,10 @@ void broadcast_params() {
 #endif
   MPI_Bcast( &pic_ll      , DIM, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &pic_ur      , DIM, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &hist_ll     , DIM, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &hist_ur     , DIM, REAL, 0, MPI_COMM_WORLD); 
 #ifdef EFILTER
   MPI_Bcast( &lower_e_pot,    1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &upper_e_pot,    1, REAL,    0, MPI_COMM_WORLD);
-  MPI_Bcast( &efrep_interval, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &ef_checkpt_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 #ifdef SNAPSHOT
   MPI_Bcast( &sscount, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -1894,7 +1889,7 @@ void broadcast_params() {
   }
   MPI_Bcast( lower_nb_cut,     ntypes, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( upper_nb_cut,     ntypes, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &nbrep_interval,  1,      MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &nb_checkpt_int,  1,      MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
   MPI_Bcast( masses,     ntypes, REAL,     0, MPI_COMM_WORLD); 
@@ -1902,7 +1897,6 @@ void broadcast_params() {
   MPI_Bcast( &timestep    ,   1, REAL,     0, MPI_COMM_WORLD); 
   MPI_Bcast( &temperature ,   1, REAL,     0, MPI_COMM_WORLD); 
   MPI_Bcast( &cpu_dim     , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dist_dim    , DIM, MPI_INT,  0, MPI_COMM_WORLD);
 
   MPI_Bcast( &parallel_output, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &parallel_input,  1, MPI_INT, 0, MPI_COMM_WORLD); 
@@ -1930,7 +1924,7 @@ void broadcast_params() {
   MPI_Bcast( &incrsz, 1, MPI_INT,  0, MPI_COMM_WORLD);
 
 #ifdef AND
-  MPI_Bcast( &tmp_interval, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &tempintv, 1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 
 #if defined(NVT) || defined(NPT) || defined(STM)
@@ -1980,10 +1974,8 @@ void broadcast_params() {
   MPI_Bcast( &tran_nlayers,  1, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &tran_interval, 1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
-
 #ifdef STRESS_TENS
-  MPI_Bcast( &press_dim,    DIM, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &press_interval, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &press_int    , 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 #if defined(FRAC) || defined(FTG) 
   MPI_Bcast( &dotepsilon0   , 1, REAL   , 0, MPI_COMM_WORLD); 
@@ -1993,8 +1985,6 @@ void broadcast_params() {
   MPI_Bcast( &gamma_damp    , 1, REAL   , 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dampingmode   , 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &delta_ftg     , 1, REAL   , 0, MPI_COMM_WORLD); 
-
-
 #endif
 
 #ifdef FTG
@@ -2059,8 +2049,8 @@ void broadcast_params() {
 #ifdef DISLOC
   MPI_Bcast( &min_dpot,        1, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ddelta,          1, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &dem_interval,    1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &dsp_interval,    1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dem_int,         1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dsp_int,         1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &calc_Epot_ref,   1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &reset_Epot_step, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &Epot_diff,       1, MPI_INT, 0, MPI_COMM_WORLD); 
@@ -2167,10 +2157,10 @@ void broadcast_params() {
 #endif
 
 #ifdef KEATING
-  MPI_Bcast( keating_r_cut,        ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( keating_alpha,        ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( keating_d    ,        ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( keating_beta , ntypes*ntypes*(ntypes+1)/2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( keating_r_cut,       ntypes*(ntypes+1)/2, REAL, 0,MPI_COMM_WORLD);
+  MPI_Bcast( keating_alpha,       ntypes*(ntypes+1)/2, REAL, 0,MPI_COMM_WORLD);
+  MPI_Bcast( keating_d,           ntypes*(ntypes+1)/2, REAL, 0,MPI_COMM_WORLD);
+  MPI_Bcast( keating_beta, ntypes*ntypes*(ntypes+1)/2, REAL, 0,MPI_COMM_WORLD);
 #endif
 
 #ifdef EPITAX
@@ -2207,5 +2197,3 @@ void broadcast_params() {
 }
 
 #endif /* MPI */
-
-
