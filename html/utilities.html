@@ -111,16 +111,16 @@ produces a binary using floats instead of doubles.
 imd_pair produces radial distribution histograms from IMD
 configuration files (or checkpoints). Usage is as follows:
 <PRE>
-    imd_pair [-r&lt;nn&gt;] [-a&lt;rmin&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
+    imd_pair [-v] [-r&lt;nn&gt;] [-a&lt;rmin&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
 </PRE>
 The parameter <TT>paramfile</TT> is mandatory. imd_pair reads the
 box size, the number of atom types, and the names of the configuration
-and checkpoint files from it. Also read is the parameter pbc_dirs,
+and checkpoint files from it. Also read is the parameter <TT>pbc_dirs</TT>,
 which determines (like in IMD) what boundary conditions are 
 used. The default is to use periodic boundary conditions.
 If the restart parameter
 <TT>-r&lt;nn&gt;</TT> is present, imd_pair takes the checkpoint
-file <TT>&lt;outfiles&gt;.&lt;nn&gt;</TT> as input, and
+file <TT>&lt;outfiles&gt;.&lt;nn&gt;.chkpt</TT> as input, and
 reads also the corresponding iteration file. Otherwise, 
 the input configuration <TT>&lt;coordname&gt;</TT> of the
 simulation described by <TT>paramfile</TT> is used as input.
@@ -134,11 +134,17 @@ histogram, one line is written:
 <PRE>
     r d_00 d_01 ... d_0N d_11 ... d_NN f_00 f_01 ... f_0N f_11 ... f_NN 
 </PRE>
-where <TT>r</TT> is the radius, <TT>N</TT> is <TT>ntypes-1</TT>, 
-<TT>d_ij</TT> is the number of times the distances <TT>r</TT> occurs 
-between atoms of types <TT>i</TT> and <TT>j</TT>, devided by <TT>natoms</TT>,
-and <TT>f_ij = d_ij/(4*pi*r^2)</TT> is a normalized radial
-distribution.
+The first entry <TT>r</TT> is the radius, the remaining entries are
+the histogram values for the different combinations of atom types.
+If the flag <TT>[-v]</TT> is present, all virtual atom types are treated
+as being different, and <TT>N</TT> equals <TT>vtypes-1</TT>, where 
+<TT>vtypes</TT> is the number of different virtual types. Otherwise, 
+all atom types are taken modulo <TT>ntypes</TT>, the number of different 
+real atom types, and <TT>N</TT> equals <TT>ntypes-1</TT>. The histogram entry
+<TT>d_ij</TT> is the number of times the distance <TT>r</TT> occurs 
+between atoms of types <TT>i</TT> and <TT>j</TT>, devided by 
+<TT>natoms</TT>, and <TT>f_ij = d_ij/(4*pi*r^2)</TT> is a normalized 
+radial distribution.
 
 <A NAME="imd_angle">
 <H2>imd_angle.c</H2>
@@ -157,16 +163,16 @@ produces a binary using floats instead of doubles.
 imd_angle produces angular distribution histograms from IMD
 configuration files (or checkpoints). Usage is as follows:
 <PRE>
-    imd_angle [-r&lt;nn&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
+    imd_angle [-v] [-r&lt;nn&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
 </PRE>
 The parameter <TT>paramfile</TT> is mandatory. imd_angle reads the
 box size, the number of atom types, and the names of the configuration
-and checkpoint files from it. Also read is the parameter pbc_dirs,
+and checkpoint files from it. Also read is the parameter <TT>pbc_dirs</TT>,
 which determines (like in IMD) what boundary conditions are 
 used. The default is to use periodic boundary conditions.
 If the restart parameter
 <TT>-r&lt;nn&gt;</TT> is present, imd_angle takes the checkpoint
-file <TT>&lt;outfiles&gt;.&lt;nn&gt;</TT> as input, and
+file <TT>&lt;outfiles&gt;.&lt;nn&gt;.chkpt</TT> as input, and
 reads also the corresponding iteration file. Otherwise, 
 the input configuration <TT>&lt;coordname&gt;</TT> of the
 simulation described by <TT>paramfile</TT> is used as input.
@@ -179,8 +185,15 @@ which angles between neighbouring atoms are computed. The default is
 <PRE>
     phi g_000 g_001 ... g_00N g_011 ... g_01N ... g_0NN g_100 ... g_NNN
 </PRE>
-where <TT>phi</TT> is the angle with range [0,180], <TT>N</TT> is
-<TT>ntypes-1</TT>, and <TT>g_ijk</TT> is the normalized number of times the angle
+The first entry <TT>phi</TT> is the angle with range [0,180], and the 
+remaining entries are the histogram values for the different 
+combinations of atom types.
+If the flag <TT>[-v]</TT> is present, all virtual atom types are
+treated as being different, and <TT>N</TT> equals <TT>vtypes-1</TT>, 
+where <TT>vtypes</TT> is the number of different virtual types. Otherwise, 
+all atom types are taken modulo <TT>ntypes</TT>, the number of different 
+real atom types, and <TT>N</TT> equals <TT>ntypes-1</TT>. The histogram entry
+<TT>g_ijk</TT> is the normalized number of times the angle
 <TT>phi</TT> occurs between the atoms of type <TT>i</TT>, <TT>j</TT>,
 and <TT>k</TT> where the angle is centered at <TT>i</TT>. <TT>g_ijk</TT>
 is normalized with respect to the total number of angles computed.
@@ -207,11 +220,11 @@ produces a binary using floats instead of doubles.
 imd_torsion produces torsion distribution histograms from IMD
 configuration files (or checkpoints). Usage is as follows:
 <PRE>
-    imd_torsion [-r&lt;nn&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
+    imd_torsion [-v] [-r&lt;nn&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
 </PRE>
 The parameter <TT>paramfile</TT> is mandatory. imd_torsion reads the
 box size, the number of atom types, and the names of the configuration
-and checkpoint files from it. Also read is the parameter pbc_dirs,
+and checkpoint files from it. Also read is the parameter <TT>pbc_dirs</TT>,
 which determines (like in IMD) what boundary conditions are 
 used. The default is to use periodic boundary conditions.
 If the restart parameter
@@ -229,9 +242,15 @@ default is 1.0. For every slot in the histogram, one line is written:
 <PRE>
     phi g_0000 g_0001 ... g_000N g_0011 ... g_001N ... g_00NN g_0100 ... g_NNNN
 </PRE>
-where <TT>phi</TT> is the angle with range [0,180], <TT>N</TT> is
-<TT>ntypes-1</TT>, and <TT>g_ijkl</TT> is the normalized number of
-times the torsion angle
+The first entry <TT>phi</TT> is the angle with range [0,180], the 
+remaining entries are
+the histogram values for the different combinations of atom types.
+If the flag <TT>[-v]</TT> is present, all virtual atom types are treated as 
+being different, and <TT>N</TT> equals <TT>vtypes-1</TT>, where 
+<TT>vtypes</TT> is the number of different virtual types. Otherwise, 
+all atom types are taken modulo <TT>ntypes</TT>, the number of different 
+real atom types, and <TT>N</TT> equals <TT>ntypes-1</TT>. The histogram entry
+<TT>g_ijkl</TT> is the normalized number of times the torsion angle
 <TT>phi</TT> occurs between the atoms of type <TT>i</TT>, <TT>j</TT>,
 <TT>k</TT>, and <TT>l</TT>. 
 
@@ -266,11 +285,11 @@ produces a binary using floats instead of doubles.
 imd_coord produces coordination numbers of atoms from IMD 
 configuration files (or checkpoints). Usage is as follows:
 <PRE>
-    imd_coord [-r&lt;nn&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
+    imd_coord [-v] [-r&lt;nn&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
 </PRE>
 The parameter <TT>paramfile</TT> is mandatory. imd_coord reads the
 box size, the number of atom types, and the names of the configuration
-and checkpoint files from it. Also read is the parameter pbc_dirs,
+and checkpoint files from it. Also read is the parameter <TT>pbc_dirs</TT>,
 which determines (like in IMD) what boundary conditions are 
 used. The default is to use periodic boundary conditions.
 If the restart parameter
@@ -299,8 +318,14 @@ is 1.0. imd_coord writes a table in the following format:
 
    NN    c_NN
 </PRE>
-where <TT>N</TT> is <TT>ntypes-1</TT> and <TT>c_ij</TT> is the average
-coordination number corresponding to the bond ij.
+where <TT>N</TT> is one less than the number of atom types, and 
+<TT>c_ij</TT> is the average coordination number corresponding to 
+the bond ij. If the flag <TT>[-v]</TT> is present, all virtual atom
+types are treated as being different, and <TT>N</TT> equals 
+<TT>vtypes-1</TT>, where <TT>vtypes</TT> is the number of different 
+virtual types. Otherwise, all atom types are taken modulo
+<TT>ntypes</TT>, the number of different real atom types, and 
+<TT>N</TT> equals <TT>ntypes-1</TT>.
 <P>
 
 <A NAME="imd_strain">
@@ -323,7 +348,7 @@ displacements. Usage is as follows:
 </PRE>
 The parameter <TT>paramfile</TT> is mandatory. imd_strain reads the
 box size and the names of the outfiles from it. Also read is the
-parameter pbc_dirs, which determines
+parameter <TT>pbc_dirs</TT>, which determines
 (like in IMD) what boundary conditions are used. The default is 
 to use periodic boundary conditions. 
 <P>
@@ -378,21 +403,22 @@ follows:
 Default is a program for 3D, but if the flag <TT>-DTWOD</TT> is 
 present, a program for 2D is compiled.
 <P>
-imd_stress computes the stress tensor from an imd <TT>.press</TT> file. Usage is as follows: 
+imd_stress computes the stress tensor from an imd <TT>.press</TT>
+file. Usage is as follows: 
 <PRE>
     imd_stress [-r&lt;nn&gt;] [-e&lt;rmax&gt;] -p &lt;paramfile&gt;
 </PRE>
 The parameter <TT>paramfile</TT> is mandatory. imd_stress reads the
 box size and the names of the outfiles from it. Also read is the
-parameter pbc_dirs, which determines
+parameter <TT>pbc_dirs</TT>, which determines
 (like in IMD) what boundary conditions are used. The default is 
 to use periodic boundary conditions. 
 <P>
 
-IMD determines the (bare) stress tensor by evaluating the virial corresponding
-to the atomic forces. imd_stress computes the true stress tensor by
-dividing the bare stress tensor of each atom by the volume of the Voronoi cell of the
-respective atom.
+IMD determines the (bare) stress tensor by evaluating the virial 
+corresponding to the atomic forces. imd_stress computes the true 
+stress tensor by dividing the bare stress tensor of each atom by 
+the volume of the Voronoi cell of the respective atom.
 The bare stress tensor must be given in a file with the 
 following format:
 <PRE>
@@ -404,7 +430,8 @@ The stress file must have the name
 <TT>&lt;outfiles&gt;.press</TT>.
 Alternatively, the bare stress file can be created using
 the option <B>stress</B> (with the parameter vector
-<TT>stress_dim</TT> set equal to zero). Then the restart parameter <TT>-r&lt;nn&gt;</TT>
+<TT>stress_dim</TT> set equal to zero). 
+Then the restart parameter <TT>-r&lt;nn&gt;</TT>
 should be given where <TT>&lt;nn&gt;</TT> is the number of steps
 corresponding to the stress file.
 <P>
@@ -421,7 +448,8 @@ The output file has the following format:
 </PRE>
 where <TT>s_ij</TT> are the components
 of the true stress tensor of the atom with coordinates <TT>x</TT>,
-<TT>y</TT>, <TT>z</TT> and <TT>v</TT> is the volume of the corresponding Voronoi cell.
+<TT>y</TT>, <TT>z</TT> and <TT>v</TT> is the volume of the 
+corresponding Voronoi cell.
 <P>
 imd_stress only computes the stress tensor if the Euler relation for a
 Voronoi cell is fullfilled. Otherwise, atoms are removed from the outfile.
