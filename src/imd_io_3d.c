@@ -600,9 +600,9 @@ void write_config(int steps)
 
 #else /* not UNIAX */
 #define WRITE_CELL     for (i = 0;i < p->n; ++i) \
-             fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f %12f %12f\n",\
+             fprintf(out,"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f\n",\
 	     NUMMER(p,i),\
-	     SORTE(p,i),\
+	     p->sorte[i],\
 	     MASSE(p,i),\
 	     p->ort X(i),\
 	     p->ort Y(i),\
@@ -618,7 +618,7 @@ void write_config(int steps)
   str255 fname;
   int fzhlr;
   cell *p,*q;
-  int i,j,k,l,m,tag;
+  int i,j,k,l,m,n,tag;
 
   /* Dateiname fuer Ausgabedatei erzeugen */
   fzhlr = steps / rep_interval;
@@ -724,9 +724,9 @@ void write_config(int steps)
     if (NULL == out) error("Cannot write iteration file.");
 
     fprintf(out,"startstep \t%d\n",steps+1);
-    fprintf(out,"box_x \t%f %f %f\n",box_x.x,box_x.y,box_x.z);
-    fprintf(out,"box_y \t%f %f %f\n",box_y.x,box_y.y,box_y.z);
-    fprintf(out,"box_z \t%f %f %f\n",box_z.x,box_z.y,box_z.z);
+    fprintf(out,"box_x \t%.16f %.16f %.16f\n",box_x.x,box_x.y,box_x.z);
+    fprintf(out,"box_y \t%.16f %.16f %.16f\n",box_y.x,box_y.y,box_y.z);
+    fprintf(out,"box_z \t%.16f %.16f %.16f\n",box_z.x,box_z.y,box_z.z);
     fprintf(out,"starttemp \t%f\n",temperature);
 #if defined(NVT) || defined(NPT)
     fprintf(out,"eta \t%f\n",eta);
@@ -734,6 +734,13 @@ void write_config(int steps)
     fprintf(out,"eta_rot \t%f\n",eta_rot);
 #endif
 #endif
+
+#ifdef FBC
+    for(n=0; n<vtypes;n++)
+      fprintf(out,"extra_startforce %d %.21g %.21g %.21g \n",
+	      n,(fbc_forces+n)->x,(fbc_forces+n)->y,(fbc_forces+n)->z);
+#endif
+
 #ifdef NPT
     if (ensemble==ENS_NPT_ISO) {
       fprintf(out,"pressure_ext \t%f\n",pressure_ext.x);

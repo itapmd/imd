@@ -12,7 +12,7 @@
 
 
 /* MAIN is defined only once in the main module */
-#ifdef MAIN
+#ifdef MAIN 
 #define EXTERN        /* define Variables in main */
 #define INIT(data) =data
 #ifdef TWOD
@@ -33,10 +33,10 @@
 #else
 #define EXTERN extern /* declare them extern otherwise */
 #define INIT(data)
-#define nullvektor
+/* #define nullvektor
 #define nullivektor
 #define einsvektor
-#define einsivektor
+#define einsivektor */
 #endif
 
 /* Where all the data lives */
@@ -47,7 +47,15 @@ EXTERN int ncells,nallcells INIT(0);     /* number of cells */
 EXTERN int npairs[2*DIM],npairs2[2*DIM]; /* number of cell pairs */
 EXTERN ivektor cell_dim;                 /* dimension of cell array (per cpu)*/
 EXTERN ivektor global_cell_dim;          /* dimension of cell array */
+
+/* Boundary Conditions */
 EXTERN ivektor pbc_dirs INIT(einsivektor);  /* directions with pbc */
+#ifdef FBC                       /* FBC uses the virtual atom types, */
+EXTERN int vtypes INIT(1);       /* vtypes = ntypes + ntypes*(types of forces) */
+EXTERN vektor *fbc_forces;       /* each vtype has its force */
+EXTERN vektor *fbc_beginforces;  /* begin & endvalues for linear interpolation */ 
+EXTERN vektor *fbc_endforces;   
+#endif
 
 /* Global bookkeeping */
 

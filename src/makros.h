@@ -18,7 +18,11 @@
 #define MASSE(cell,i) 1.0
 #define POTENG(cell,i) 0.0
 #else
+#ifdef FBC  /* Force Boundary Conditions, uses 'virtual' atomtypes */ 
+#define SORTE(cell,i) (((cell)->sorte[(i)])%ntypes)
+#else
 #define SORTE(cell,i) (cell)->sorte[(i)]
+#endif
 #define NUMMER(cell,i) (cell)->nummer[(i)]
 #define MASSE(cell,i) (cell)->masse[(i)]
 #define POTENG(cell,i) (cell)->pot_eng[(i)]
@@ -104,7 +108,7 @@ inline static real SQR(real x)
 
 /* Dynamically allocated 2D arrray -- sort of */
 #define PTR_2D(var,i,j,dim_i,dim_j) (((var) + \
-                                    ((i)*(dim_j)) + \
+                                   ((i)*(dim_j)) + \
                                      (j)))
                                          
 

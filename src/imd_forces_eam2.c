@@ -106,13 +106,13 @@ void eam2_do_forces1(cell *p, cell *q, vektor pbc)
 #ifndef TWOD
     tmp_d.z = p->ort Z(i) - pbc.z;
 #endif
-    p_typ   = p->sorte[i];
+    p_typ   = SORTE(p,i);
    
     jstart =0;                             /* we go over all particles */
     qptr   = q->ort + DIM * jstart;
     
     for (j = jstart; j < q->n; ++j) {
-       q_typ = q->sorte[j];
+       q_typ = SORTE(q,j);
       /* Calculate distance  */
       d.x = tmp_d.x - *qptr;
       ++qptr;
@@ -409,7 +409,7 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
 #ifndef TWOD
     tmp_d.z = p->ort Z(i) - pbc.z;
 #endif
-    p_typ   = p->sorte[i];
+    p_typ   = SORTE(p,i);
 
     /*go over ALL (except q==p && i==j) atoms, no "Actio = Reactio" */
     jstart = 0;                     
@@ -515,7 +515,7 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
 #endif
 	  }
 	else{                       /* don't compute 'selfinteraction' */
-	  q_typ = q->sorte[j];
+	  q_typ = SORTE(q,j);
 	  radius2 = SPROD(d,d);
 	
 	  /* eam2_r  = sqrt(radius2); sorry, i didn't changed the variable names to ...r2 */ 

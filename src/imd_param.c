@@ -24,8 +24,8 @@ extern char *strdup(char *);
 
 /* To do yet: improve checking of bad input files ! */
 /* e.g. for forgotten starttemp/endtemp              */
-/* clean up prototypes.h                            */
-
+/* clean up prototypes.h 
+                           */
 typedef enum ParamType {
   PARAM_STR, PARAM_STRPTR,
   PARAM_INT, PARAM_INT_COPY,
@@ -244,6 +244,19 @@ void getparamfile(char *paramfname, int sim)
 #ifdef MC
   int mc_seed_int;
 #endif
+
+#ifdef FBC
+#ifdef TWOD
+  vektor3d tempforce;
+  vektor nullv={0.0,0.0};
+#else 
+  vektor nullv={0.0,0.0,0.0};
+  vektor4d tempforce;
+#endif
+  vektor force;
+  int k;
+#endif
+
   int i;
 
   curline = 0;
@@ -393,6 +406,55 @@ void getparamfile(char *paramfname, int sim)
       /* directions with periodic boundary conditions */
       getparam("pbc_dirs",&pbc_dirs,PARAM_INT,DIM,DIM);
     }
+#ifdef FBC
+    else if (strcasecmp(token,"total_types")==0) {
+      /* TOTAL nuber of atoms: ntypes + virtualtypes */
+      getparam("total_types",&vtypes,PARAM_INT,1,1);
+      /* Allocation & Initialisation of fbc_forces */
+      fbc_forces = (vektor *) malloc(vtypes*DIM*sizeof(real));
+      if (NULL==fbc_forces)
+	error("Can't allocate memory for fbc_forces\n");
+      for(k=0; k<vtypes; k++)
+       *(fbc_forces+k) = nullv;
+      fbc_beginforces = (vektor *) malloc(vtypes*DIM*sizeof(real));
+      if (NULL==fbc_beginforces)
+	error("Can't allocate memory for fbc_beginforces\n");
+      for(k=0; k<vtypes; k++)
+       *(fbc_beginforces+k) = nullv;
+      fbc_endforces = (vektor *) malloc(vtypes*DIM*sizeof(real));
+      if (NULL==fbc_endforces)
+	error("Can't allocate memory for fbc_endforces\n");
+      for(k=0; k<vtypes; k++)
+       *(fbc_endforces+k) = nullv; 
+    }
+    else if (strcasecmp(token,"extra_startforce")==0) {
+      /* extra force for virtual types */
+      /* format: type force.x force.y (force.z) read in a temp. vektor */
+      getparam("extra_startforce",&tempforce,PARAM_REAL,DIM+1,DIM+1);
+      if (tempforce.x>vtypes-1)
+       error("Force defined for non existing virtual atom type\n");
+      force.x = tempforce.y;
+      force.y = tempforce.z;
+#ifndef TWOD
+      force.z = tempforce.z2;
+#endif
+      *(fbc_beginforces+(int)(tempforce.x)) = force;
+      *(fbc_forces+(int)(tempforce.x)) = force; 
+    }
+else if (strcasecmp(token,"extra_endforce")==0) {
+      /* extra force for virtual types */
+      /* format: type force.x force.y (force.z) read in a temp. vektor */
+      getparam("extra_endforce",&tempforce,PARAM_REAL,DIM+1,DIM+1);
+      if (tempforce.x>vtypes-1)
+       error("Force defined for non existing virtual atom type\n");
+      force.x = tempforce.y;
+      force.y = tempforce.z;
+#ifndef TWOD
+      force.z = tempforce.z2;
+#endif
+      *(fbc_endforces+(int)(tempforce.x)) = force;
+    }
+#endif
     else if (strcasecmp(token,"box_x")==0) {
       /* 'x' or first vector for box */
       getparam("box_x",&box_x,PARAM_REAL,DIM,DIM);
@@ -944,7 +1006,7 @@ void getparamfile(char *paramfname, int sim)
       getparam("uniax_r_cut",&uniax_r_cut,PARAM_REAL,1,1);
       uniax_r2_cut = uniax_r_cut * uniax_r_cut;
     }
-#endif
+#endif 
     else {
       fprintf(stderr,"**** WARNING: Unknown TAG %s ignored ****\n",token);
     }
@@ -1180,6 +1242,22 @@ void broadcast_params() {
   MPI_Bcast( &pic_type    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
 #endif
 
+#ifdef FBC
+  MPI_Bcast( &vtypes      , 1, MPI_INT,  0, MPI_COMM_WORLD);
+  if (0!=myid) fbc_forces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
+  if (NULL==fbc_forces) 
+    error("Can't allocate memory for fbc_forces on client."); 
+  MPI_Bcast( fbc_forces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+  if (0!=myid) fbc_beginforces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
+  if (NULL==fbc_beginforces) 
+    error("Can't allocate memory for fbc_beginforces on client."); 
+  MPI_Bcast( fbc_beginforces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+  if (0!=myid) fbc_endforces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
+  if (NULL==fbc_endforces) 
+    error("Can't allocate memory for fbc_endforces on client."); 
+  MPI_Bcast( fbc_endforces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+#endif
+
   MPI_Bcast( &pbc_dirs    , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &box_x       , DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &box_y       , DIM, MPI_REAL, 0, MPI_COMM_WORLD);
@@ -1388,6 +1466,7 @@ void broadcast_params() {
 }
 
 #endif /* MPI */
+
 
 
 

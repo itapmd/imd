@@ -32,10 +32,32 @@ void main_loop(void)
   int ref_step = correl_start;
 #endif
 
+#ifdef FBC 
+  int l;
+  vektor nullv={0.0,0.0,0.0};
+  vektor temp_df;
+  vektor *fbc_df;
+  fbc_df = (vektor *) malloc(vtypes*DIM*sizeof(real));
+      if (NULL==fbc_df)
+	error("Can't allocate memory for fbc_df\n");
+      for(l=0; l<vtypes; l++)
+       *(fbc_forces+l) = nullv; 
+#endif
+
   if (0==myid) printf( "Starting simulation %d\n", simulation );
 
 #if defined(AND) || defined(NVT) || defined(NPT)
   dtemp = (end_temp - temperature) / (steps_max - steps_min);
+#endif
+
+#ifdef FBC
+  for (l=0;l<vtypes;l++){
+    temp_df.x = (((fbc_endforces+l)->x) - ((fbc_beginforces+l)->x))/(steps_max - steps_min);
+    temp_df.y = (((fbc_endforces+l)->y) - ((fbc_beginforces+l)->y))/(steps_max - steps_min);
+    temp_df.z = (((fbc_endforces+l)->z) - ((fbc_beginforces+l)->z))/(steps_max - steps_min);
+    
+    *(fbc_df+l) = temp_df;
+  }
 #endif
 
 #ifdef NVX
@@ -191,6 +213,14 @@ void main_loop(void)
 #ifdef NVX
     tran_Tleft   += dtemp;
     tran_Tright  -= dtemp;
+#endif
+
+#ifdef FBC
+ for (l=0;l<vtypes;l++){               /*fbc_forces is already initialised with beginforces */
+   (fbc_forces+l)->x += (fbc_df+l)->x;
+   (fbc_forces+l)->y += (fbc_df+l)->y;
+   (fbc_forces+l)->z += (fbc_df+l)->z;
+  } 
 #endif
 
 #ifdef NPT

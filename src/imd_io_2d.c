@@ -483,7 +483,7 @@ void write_config(int steps)
   str255 fname;
   int fzhlr;
   cell *p,*q;
-  int i,j,k,l,m,tag;
+  int i,j,k,l,m,n,tag;
 
   /* Dateiname fuer Ausgabedatei erzeugen */
   fzhlr = steps / rep_interval;
@@ -583,6 +583,13 @@ void write_config(int steps)
 #if defined(NVT) || defined(NPT) || defined(STM) 
     fprintf(out,"eta \t%f\n",eta);
 #endif
+
+#ifdef FBC
+    for(n=0; n<vtypes;n++)
+      fprintf(out,"extra_startforce %d %.21g %.21g \n",
+	      n,(fbc_forces+n)->x,(fbc_forces+n)->y);
+#endif
+
 #ifdef NPT
     if (ensemble==ENS_NPT_ISO) {
       fprintf(out,"pressure_ext \t%f\n",pressure_ext.x);

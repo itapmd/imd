@@ -58,11 +58,18 @@ void move_atoms_nve(void)
 #ifdef UNIAX
         rot_energie_1 = SPRODN(p->dreh_impuls,i,p->dreh_impuls,i);
 #endif
-
+#ifdef FBC
+        p->impuls X(i) += timestep * ((p->kraft X(i)) + (fbc_forces + p->sorte[i])->x );
+        p->impuls Y(i) += timestep * ((p->kraft Y(i)) + (fbc_forces + p->sorte[i])->y );
+#ifndef TWOD
+        p->impuls Z(i) += timestep * ((p->kraft Z(i)) + (fbc_forces + p->sorte[i])->z );
+#endif
+#else
         p->impuls X(i) += timestep * p->kraft X(i);
         p->impuls Y(i) += timestep * p->kraft Y(i);
 #ifndef TWOD
         p->impuls Z(i) += timestep * p->kraft Z(i);
+#endif 
 #endif
 
 #ifdef UNIAX
@@ -205,11 +212,18 @@ void move_atoms_mik(void)
 
         kin_energie_1 = SPRODN(p->impuls,i,p->impuls,i);
 
-        /* new momenta */
+#ifdef FBC
+        p->impuls X(i) += timestep * ((p->kraft X(i)) + (fbc_forces + p->sorte[i])->x );
+        p->impuls Y(i) += timestep * ((p->kraft Y(i)) + (fbc_forces + p->sorte[i])->y );
+#ifndef TWOD
+        p->impuls Z(i) += timestep * ((p->kraft Z(i)) + (fbc_forces + p->sorte[i])->z );
+#endif
+#else
         p->impuls X(i) += timestep * p->kraft X(i);
         p->impuls Y(i) += timestep * p->kraft Y(i);
 #ifndef TWOD
         p->impuls Z(i) += timestep * p->kraft Z(i);
+#endif
 #endif
 
         /* Mikroconvergence Algorithm - set velocity zero if a*v < 0 */
@@ -277,7 +291,7 @@ void move_atoms_mik(void)
 
 #ifdef MSD
 
-void move_atoms_msd(void)
+void move_atoms_msd(void) 
 {
   int k;
   tot_kin_energy = 0.0;
