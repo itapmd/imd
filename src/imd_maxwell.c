@@ -59,7 +59,10 @@ void maxwell(real temp)
    real norm;
    real osq;
 #endif
-
+#ifdef CLONE
+      int clones;
+      char errmsg[126];
+#endif
    real   TEMP;
    real   scale, xx, tmp;
    int    num, nhalf, typ;
@@ -75,10 +78,7 @@ void maxwell(real temp)
    nhalf = tran_nlayers / 2;
    scale = tran_nlayers / box_x.x;
 #endif
-#ifdef CLONE
-      int clones;
-      char errmsg[126];
-#endif
+
 
    /* set temperature */
    for (k=0; k<ncells; ++k) {

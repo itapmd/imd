@@ -138,8 +138,10 @@ endif
 CC_DEFAULT_MPI_i586		= mpicc
 
 # gcc, serial
-CFLAGS_gcc_SERIAL_i586		= -O -funroll-all-loops -fomit-frame-pointer -march=pentiumpro -static -mfpmath=sse -msse
+CFLAGS_gcc_SERIAL_i586		= -O  -march=athlon -static -mfpmath=sse -msse
+# CFLAGS_gcc_SERIAL_i586		= -O -funroll-all-loops -fomit-frame-pointer -march=pentiumpro -static -mfpmath=sse -msse
 #CFLAGS_gcc_SERIAL_i586		= -mcpu=i686 -O3
+# -O -march=athlon-mp -msse -mfpmath=sse
 CFLAGS_gcc_SERIAL_i586_DEBUG	= -mcpu=i686 -g
 CFLAGS_gcc_SERIAL_i586_PROF	= -g3 -pg
 
@@ -166,7 +168,7 @@ CFLAGS_mpicc_MPI_i586		= -O -ip -axK -rcd
 CFLAGS_mpicc_MPI_i586_DEBUG	= -g
 CFLAGS_mpicc_MPI_i586_PROF	= -prof_gen
 else
-CFLAGS_mpicc_MPI_i586		= -O3
+CFLAGS_mpicc_MPI_i586		= -O -march=athlon-mp -static -mfpmath=sse -msse
 CFLAGS_mpicc_MPI_i586_DEBUG	= -g
 CFLAGS_mpicc_MPI_i586_PROF	= -g3 -pg
 endif
