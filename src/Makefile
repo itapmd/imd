@@ -153,16 +153,20 @@ CFLAGS_icc_SERIAL_i586_PROF	= -prof_gen
 CFLAGS_icc_OMP_i586        	= -O -ip -tpp6 -openmp 
 CFLAGS_icc_OMP_i586_PROF	= -prof_gen
 
-# icc, MPI
-# CFLAGS_icc_MPI_i586        	= -O -ip -tpp6
-
 # kcc, serial
 CFLAGS_KCC_SERIAL_i586       	= +K3 -O3 --diag_suppress 177,550
 
 # MPICH
+# there are many mpicc; if available, we take the Intel compiler
+ifneq (,${IA32ROOT})
+CFLAGS_mpicc_MPI_i586		= -O -ip -tpp6 -static
+CFLAGS_mpicc_MPI_i586_DEBUG	= -g
+CFLAGS_mpicc_MPI_i586_PROF	= -prof_gen
+else
 CFLAGS_mpicc_MPI_i586		= -O3
 CFLAGS_mpicc_MPI_i586_DEBUG	= -g
 CFLAGS_mpicc_MPI_i586_PROF	= -g3 -pg
+endif
 
 # guidec, OpenMP
 CFLAGS_guidec_OMP_i586         	= +K3 -O3 --diag_suppress 177,550
