@@ -702,6 +702,10 @@ ifneq (,$(findstring sendrec,${MAKETARGET}))
 CFLAGS += -DSR
 endif
 
+ifneq (,$(findstring einstein,${MAKETARGET}))
+CFLAGS += -DEINSTEIN
+endif
+
 ifneq (,$(findstring fnorm,${MAKETARGET}))
 CFLAGS += -DFNORM
 endif

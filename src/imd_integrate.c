@@ -32,17 +32,18 @@
 void move_atoms_nve(void)
 {
   int k;
-  real tmpvec1[3], tmpvec2[3];
+  real tmpvec1[4], tmpvec2[4];
   static int count = 0;
 #if defined(NVE) || !defined(EPITAX)
   tot_kin_energy = 0.0;
 #endif
-  fnorm = 0.0;
-  PxF   = 0.0;
+  fnorm   = 0.0;
+  PxF     = 0.0;
+  omega_E = 0.0;
 
   /* loop over all cells */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_kin_energy,fnorm,PxF)
+#pragma omp parallel for reduction(+:tot_kin_energy,fnorm,omega_E,PxF)
 #endif
   for (k=0; k<ncells; ++k) {
 
@@ -92,7 +93,10 @@ void move_atoms_nve(void)
 #endif
 
 #ifdef FNORM
-	fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
+	fnorm   += SPRODN(p->kraft,i,p->kraft,i);
+#endif
+#ifdef EINSTEIN
+	omega_E += SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
 #endif
 
 	p->impuls X(i) += timestep * p->kraft X(i);
@@ -207,12 +211,14 @@ void move_atoms_nve(void)
   tmpvec1[0] = tot_kin_energy;
   tmpvec1[1] = fnorm;
   tmpvec1[2] = PxF;
+  tmpvec1[3] = omega_E;
 
-  MPI_Allreduce( tmpvec1, tmpvec2, 3, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( tmpvec1, tmpvec2, 4, REAL, MPI_SUM, cpugrid);
 
   tot_kin_energy = tmpvec2[0];
   fnorm          = tmpvec2[1];
   PxF            = tmpvec2[2];
+  omega_E        = tmpvec2[3];
 #endif
   
 #ifdef AND
@@ -249,7 +255,7 @@ void move_atoms_mik(void)
   real tmpvec1[2], tmpvec2[2];
   static int count = 0;
   tot_kin_energy = 0.0;
-  fnorm = 0.0;
+  fnorm   = 0.0;
 
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
@@ -300,9 +306,8 @@ void move_atoms_mik(void)
 	p->kraft Z(i) *= (restrictions + sort)->z;
 #endif
 	
-
 #ifdef FNORM
-	fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
+	fnorm   += SPRODN(p->kraft,i,p->kraft,i);
 #endif
 
         p->impuls X(i) += timestep * p->kraft X(i);
@@ -393,14 +398,15 @@ void move_atoms_nvt(void)
 
 {
   int k;
-  real tmpvec1[3], tmpvec2[3], ttt;
+  real tmpvec1[5], tmpvec2[5], ttt;
   real E_kin_1 = 0.0, E_kin_2 = 0.0;
   real reibung, eins_d_reib;
   real E_rot_1 = 0.0, E_rot_2 = 0.0;
 #ifdef UNIAX
   real reibung_rot,  eins_d_reib_rot;
 #endif
-  fnorm = 0.0;
+  fnorm   = 0.0;
+  omega_E = 0.0;
 
   reibung         =        1.0 - eta * timestep / 2.0;
   eins_d_reib     = 1.0 / (1.0 + eta * timestep / 2.0);
@@ -410,7 +416,7 @@ void move_atoms_nvt(void)
 #endif
    
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:E_kin_1,E_kin_2,E_rot_1,E_rot_2,fnorm)
+#pragma omp parallel for reduction(+:E_kin_1,E_kin_2,E_rot_1,E_rot_2,fnorm,omega_E)
 #endif
   for (k=0; k<ncells; ++k) {
 
@@ -454,7 +460,10 @@ void move_atoms_nvt(void)
 	p->kraft Z(i) *= (restrictions + sort)->z;
 #endif
 #ifdef FNORM
-	fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
+	fnorm   += SPRODN(p->kraft,i,p->kraft,i);
+#endif
+#ifdef EINSTEIN
+	omega_E += SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
 #endif
 
 	p->impuls X(i) = (p->impuls X(i) * reibung + timestep * p->kraft X(i)) 
@@ -539,12 +548,16 @@ void move_atoms_nvt(void)
   tmpvec1[0] = tot_kin_energy;
   tmpvec1[1] = E_kin_2;
   tmpvec1[2] = E_rot_2;
+  tmpvec1[3] = fnorm;
+  tmpvec1[4] = omega_E;
 
-  MPI_Allreduce( tmpvec1, tmpvec2, 3, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid);
 
   tot_kin_energy = tmpvec2[0];
   E_kin_2        = tmpvec2[1];
   E_rot_2        = tmpvec2[2];
+  fnorm          = tmpvec2[3];
+  omega_E        = tmpvec2[4];
 #endif
 
   /* time evolution of constraints */
@@ -580,14 +593,14 @@ void move_atoms_sllod(void)
 
 {
   int k;
-  real tmpvec1[3], tmpvec2[3], ttt;
+  real tmpvec1[5], tmpvec2[5], ttt;
   real E_kin_1 = 0.0, E_kin_2 = 0.0;
   vektor reibung, eins_d_reib;
   real E_rot_1 = 0.0, E_rot_2 = 0.0;
 #ifdef UNIAX
   real reibung_rot,  eins_d_reib_rot;
 #endif
-  fnorm = 0.0;
+  fnorm   = 0.0;
 
   reibung.x         =        1.0 - (eta+shear_rate.x) * timestep / 2.0;
   eins_d_reib.x     = 1.0 / (1.0 + (eta+shear_rate.x) * timestep / 2.0);
@@ -642,7 +655,7 @@ void move_atoms_sllod(void)
 	p->kraft Z(i) *= (restrictions + sort)->z;
 #endif
 #ifdef FNORM
-	fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
+	fnorm   += SPRODN(p->kraft,i,p->kraft,i);
 #endif
 
 	p->impuls X(i) = (p->impuls X(i) * reibung.x + timestep * p->kraft X(i)) 
@@ -732,12 +745,14 @@ void move_atoms_sllod(void)
   tmpvec1[0] = tot_kin_energy;
   tmpvec1[1] = E_kin_2;
   tmpvec1[2] = E_rot_2;
+  tmpvec1[3] = fnorm;
 
-  MPI_Allreduce( tmpvec1, tmpvec2, 3, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( tmpvec1, tmpvec2, 4, REAL, MPI_SUM, cpugrid);
 
   tot_kin_energy = tmpvec2[0];
   E_kin_2        = tmpvec2[1];
   E_rot_2        = tmpvec2[2];
+  fnorm          = tmpvec2[3];
 #endif
 
   /* adjusting the box */
@@ -851,10 +866,11 @@ void move_atoms_npt_iso(void)
   int  k;
   real Ekin_new = 0.0, Erot_new = 0.0;
   real pfric, pifric, rfric, rifric;
-  real tmpvec1[5], tmpvec2[5], ttt;
+  real tmpvec1[4], tmpvec2[4], ttt;
   real reib, ireib;
 
   fnorm    = 0.0;
+  omega_E  = 0.0;
 #ifdef UNIAX
   pressure = (0.6 * (Ekin_old + Erot_old) + virial) / (DIM * volume);
 #else
@@ -877,7 +893,7 @@ void move_atoms_npt_iso(void)
 
   /* loop over all cells */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:Ekin_new,Erot_new,fnorm)
+#pragma omp parallel for reduction(+:Ekin_new,Erot_new,fnorm,omega_E)
 #endif
   for (k=0; k<ncells; ++k) {
 
@@ -893,7 +909,10 @@ void move_atoms_npt_iso(void)
     for (i=0; i<p->n; ++i) {
 
 #ifdef FNORM
-      fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
+      fnorm   += SPRODN(p->kraft,i,p->kraft,i);
+#endif
+#ifdef EINSTEIN
+      omega_E += SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
 #endif
 
       /* new momenta */
@@ -966,12 +985,14 @@ void move_atoms_npt_iso(void)
   tmpvec1[0] = Ekin_new;
   tmpvec1[1] = Erot_new;
   tmpvec1[2] = fnorm;
+  tmpvec1[3] = omega_E;
 
-  MPI_Allreduce( tmpvec1, tmpvec2, 3, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( tmpvec1, tmpvec2, 4, REAL, MPI_SUM, cpugrid);
 
   Ekin_new = tmpvec2[0];
   Erot_new = tmpvec2[1];
   fnorm    = tmpvec2[2];
+  omega_E  = tmpvec2[3];
 #endif
 
 #ifdef UNIAX
@@ -1029,10 +1050,11 @@ void move_atoms_npt_iso(void)
 void move_atoms_npt_axial(void)
 {
   int k;
-  real Ekin_new = 0.0, ttt, tmpvec1[5], tmpvec2[5];
+  real Ekin_new = 0.0, ttt, tmpvec1[6], tmpvec2[6];
   vektor pfric, pifric, rfric, rifric, tvec;
 
   fnorm    = 0.0;
+  omega_E  = 0.0;
   stress_x = (dyn_stress_x + vir_xx) / volume;  dyn_stress_x = 0.0;
   stress_y = (dyn_stress_y + vir_yy) / volume;  dyn_stress_y = 0.0;
 #ifndef TWOD
@@ -1065,7 +1087,7 @@ void move_atoms_npt_axial(void)
 
   /* loop over all cells */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:Ekin,dyn_stress_x,dyn_stress_y,dyn_stress_z,fnorm)
+#pragma omp parallel for reduction(+:Ekin,dyn_stress_x,dyn_stress_y,dyn_stress_z,fnorm,omega_E)
 #endif
   for (k=0; k<ncells; ++k) {
 
@@ -1079,7 +1101,10 @@ void move_atoms_npt_axial(void)
 
       tmp = 1.0 / MASSE(p,i);
 #ifdef FNORM
-      fnorm +=  SPRODN(p->kraft,i,p->kraft,i) * tmp;
+      fnorm   += SPRODN(p->kraft,i,p->kraft,i);
+#endif
+#ifdef EINSTEIN
+      omega_E += SPRODN(p->kraft,i,p->kraft,i) * tmp;
 #endif
 #ifdef STRESS_TENS
       p->presstens[i].xx += p->impuls X(i) * p->impuls X(i) * tmp;
@@ -1129,12 +1154,14 @@ void move_atoms_npt_axial(void)
   tmpvec1[2]   = dyn_stress_x;
   tmpvec1[3]   = dyn_stress_y;
   tmpvec1[4]   = dyn_stress_z;
-  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid);
+  tmpvec1[5]   = omega_E;
+  MPI_Allreduce( tmpvec1, tmpvec2, 6, REAL, MPI_SUM, cpugrid);
   Ekin_new     = tmpvec2[0];
   fnorm        = tmpvec2[1];
   dyn_stress_x = tmpvec2[2];
   dyn_stress_y = tmpvec2[3];
   dyn_stress_z = tmpvec2[4];
+  omega_E      = tmpvec2[5];
 #endif
 
   /* time evolution of eta */
@@ -1187,7 +1214,7 @@ void move_atoms_frac(void)
 
 {
   int k;
-  real tmpvec1[6], tmpvec2[6], ttt;
+  real tmpvec1[7], tmpvec2[7], ttt;
   real E_kin_1        = 0.0, E_kin_2        = 0.0; 
   real E_kin_damp1    = 0.0, E_kin_damp2    = 0.0;
   real E_kin_stadium1 = 0.0, E_kin_stadium2 = 0.0;
@@ -1274,7 +1301,7 @@ void move_atoms_frac(void)
 #endif
 
 #ifdef FNORM
-	fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
+	fnorm   += SPRODN(p->kraft,i,p->kraft,i);
 #endif
 
 	reibung       =        1.0 -  gamma_damp * f * timestep / 2.0;
@@ -1532,7 +1559,7 @@ void move_atoms_ftg(void)
 #endif
 
 #ifdef FNORM
-	fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
+	fnorm   += SPRODN(p->kraft,i,p->kraft,i);
 #endif
 
 	reibung       =        1.0 -  *(gamma_ftg + slice) * timestep / 2.0;

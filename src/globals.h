@@ -192,10 +192,12 @@ EXTERN int  use_curr_temp INIT(0);  /* which starting temp to use (flag) */
 EXTERN int  do_maxwell INIT(0.0);
 EXTERN long seed INIT(0);           /* seed for random number generator */
 
-/* scalar product of global force vector f=(f1.x, f1.y,...,fn.z) */
+/* square of global force vector f=(f1.x, f1.y,...,fn.z) */
 EXTERN real fnorm INIT(0.0);  
 /* scalar product of global force and momentum vectors */ 
 EXTERN real PxF INIT(0.0);
+/* Einstein frequency is similar as fnorm, but divided by the masses */ 
+EXTERN real omega_E INIT(0.0);
 
 /* Potential Table */
 EXTERN pot_table_t pair_pot;         /* potential data structure */

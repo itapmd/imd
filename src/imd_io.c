@@ -984,6 +984,9 @@ void write_eng_file_header()
 #ifdef GLOK
     fprintf(fl, "PxF ");
 #endif
+#ifdef EINSTEIN
+    fprintf(fl, "omega_E ");
+#endif
     fprintf(fl, "pressure ");
     fprintf(fl, "volume ");
 #if defined(NVT) || defined(NPT) || defined(STM) 
@@ -1128,10 +1131,13 @@ void write_eng_file(int steps)
 
 
 #ifdef FNORM
-  fprintf(eng_file, format,   (double) fnorm / nactive);
+  fprintf(eng_file, format,   (double) sqrt( (double) fnorm / nactive ) );
 #endif
 #ifdef GLOK
   fprintf(eng_file, format,   (double) PxF);
+#endif
+#ifdef EINSTEIN
+  fprintf(eng_file, format,   (double) omega_E / nactive);
 #endif
   fprintf(eng_file," %e",     (double) pressure);
   fprintf(eng_file," %e",     (double) vol);
