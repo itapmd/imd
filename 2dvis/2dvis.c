@@ -18,7 +18,10 @@ unsigned short base_port;
 float scalex,scaley,scalepot,scalekin,radius,offspot,offskin;
 int colmode,scene_type,text,engmode,qp,radectyp;
 float *ux,*uy;
+char *paramfilename;
 
+void read_parameters(int argc,char **argv);
+void usage(void);
 void make_picture(void);
 void draw_scene(int scene_type);
 void draw_bonds(void);
@@ -27,8 +30,9 @@ void display_help(void);
 int read_atoms(char *fname);
 void read_unit_vectors(void);
 void write_to_file(void);
+void getparamfile(char *paramfname);
 
-main()
+int main(int argc, char **argv)
 {
   float xloc,yloc,xlocold,ylocold,delta;
   char ch;
@@ -42,6 +46,8 @@ main()
   text=0;
   radius=.3;
   radectyp=0;
+
+  read_parameters(argc,argv);
 
   /* allocs */
   nummer=(int*)calloc(MAXNATOMS,sizeof(int));
@@ -423,7 +429,10 @@ void display_help(void) {
   sprintf(sysstring,"Use the following keys\n\nLMB:\tmove configuration\nMMB:\trotate configuration around x-axis\nR+MMBs\trotate configuration around y-axis\nRMB:\tscale configuration\n1:\tmove configuration to the lower left\n2:\tmove configuration down\n3:\tmove configuration to the lower right\n4:\tmove configuration to the left\n6:\tmove configuration to the right\n7:\tmove configuration to the upper left\n8:\tmove configuration up\n9:\tmove configuration to the upper right\n0:\tincrease radius\n.:\tdecrease radius\n+:\tscale configuration (larger)\n-:\tscale configuration (smaller)\n*:\trotate about x-axis\n/:\trotate about y-axis\na:\tauto-scale\nb:\tdraw bonds\nc:\tget configuration via socket\nd:\tget distribution via socket\ne:\ttoggle type/energy encoding\nh:\tdisplay this help message\nk:\ttoggle potential/kinetic energy\nl:\tload IMD-configuration from file\np\tmake picture\nq:\tquit program\nr:\ttoggle type encoding via radius\nt:\ttoggle text on/off\nu:\tread_unit_vectors\nw:\twrite to file\n");
   printf(sysstring);
   fflush(stdout);
-	 
+} 
+
+void usage(void) {
 }
+
 
 

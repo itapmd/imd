@@ -15,8 +15,8 @@ LIBS = -lvogle -lX11 -lm
 all:	2dvis
 	mv 2dvis $(HOME)/bin/$(HOSTTYPE)
 
-2dvis:	2dvis.o client.o sockutil.o
-	$(CC) $(LIBP) $(CFLAGS) -o 2dvis 2dvis.o client.o sockutil.o $(LIBS)
+2dvis:	2dvis.o client.o sockutil.o param.o
+	$(CC) $(LIBP) $(CFLAGS) -o 2dvis 2dvis.o client.o sockutil.o param.o $(LIBS)
 
 2dvis.o:	2dvis.c
 	$(CC) $(CFLAGS) -c 2dvis.c
@@ -27,8 +27,11 @@ client.o:	client.c client.h sockutil.h tokens.h
 sockutil.o:	sockutil.c sockutil.h
 	$(CC) $(CFLAGS) -c sockutil.c
 
+param.o:	param.c
+	$(CC) $(CFLAGS) -c param.c
+
 clean:
-	rm -f *.o 
+	rm -f *.o *~ \#* 
 
 
 
