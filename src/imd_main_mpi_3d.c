@@ -1318,9 +1318,6 @@ void add_forces( msgbuf *b, int k, int l, int m )
 #ifndef MONOLJ
     to->pot_eng[i] += b->data[ b->n++ ];
 #endif
-#ifdef ORDPAR
-    to->nbanz[i] += b->data[ b->n++ ];
-#endif
 #ifdef NVX
     to->heatcond[i] += b->data[ b->n++ ];
 #endif
@@ -1331,6 +1328,9 @@ void add_forces( msgbuf *b, int k, int l, int m )
     to->presstens_offdia X(i) += b->data[ b->n++ ];
     to->presstens_offdia Y(i) += b->data[ b->n++ ];
     to->presstens_offdia Z(i) += b->data[ b->n++ ];
+#endif
+#ifdef ORDPAR
+    to->nbanz[i] += (shortint) b->data[ b->n++ ];
 #endif
   }
   if (b->n_max <= b->n) error("Buffer overflow in add_forces.");
@@ -1356,9 +1356,6 @@ void copy_forces( msgbuf *b, int k, int l, int m)
 #ifndef MONOLJ
     b->data[ b->n++ ] = from->pot_eng[i];
 #endif
-#ifdef ORDPAR
-    b->data[ b->n++ ] = from->nbanz[i];
-#endif
 #ifdef NVX
     b->data[ b->n++ ] = from->heatcond[i];
 #endif
@@ -1369,6 +1366,9 @@ void copy_forces( msgbuf *b, int k, int l, int m)
     b->data[ b->n++ ] = from->presstens_offdia X(i);
     b->data[ b->n++ ] = from->presstens_offdia Y(i);
     b->data[ b->n++ ] = from->presstens_offdia Z(i);
+#endif
+#ifdef ORDPAR
+    b->data[ b->n++ ] = (real) from->nbanz[i];
 #endif
   }
   if (b->n_max <= b->n) error("Buffer overflow in copy_forces.");
@@ -1679,6 +1679,17 @@ void add_cell_force( int k, int l, int m, int r, int s, int t)
     to->kraft Z(i) += from->kraft Z(i);
 #ifndef MONOLJ
     to->pot_eng[i] += from->pot_eng[i];
+#endif
+#ifdef NVX
+    to->heatcond[i] += from->heatcond[i];
+#endif
+#ifdef STRESS_TENS
+    to->presstens X(i) += from->presstens X(i);
+    to->presstens Y(i) += from->presstens Y(i);
+    to->presstens Z(i) += from->presstens Z(i);
+    to->presstens_offdia X(i) += from->presstens_offdia X(i);
+    to->presstens_offdia Y(i) += from->presstens_offdia Y(i);
+    to->presstens_offdia Z(i) += from->presstens_offdia Z(i);
 #endif
 #ifdef ORDPAR
     to->nbanz[i] += from->nbanz[i];

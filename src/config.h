@@ -163,31 +163,3 @@
 /* security margin for buffer sizes */
 #define CSTEP 10
 
-/* number of items per atom to be communicated for force computation */ 
-#ifdef UNIAX
-#define BINC1 13
-#else
-#ifdef EAM 
-#define BINC1 5
-#else
-#define BINC1 4
-#endif
-#endif
-#ifdef AR
-#ifdef STRESS_TENS
-#ifdef NVX
-#define BINC2 11
-#else
-#define BINC2 10
-#endif
-#else /* not STRESS_TENS */
-#ifdef NVX
-#define BINC2 5
-#else
-#define BINC2 4
-#endif
-#endif /* STRESS_TENS */
-#else  /* not AR */
-#define BINC2 4
-#endif 
-#define BINC MAX(BINC1,BINC2)

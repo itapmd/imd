@@ -53,7 +53,6 @@ void move_atom(ivektor cellc, cell *from, int index)
   to->kraft Z(to->n) = from->kraft Z(index); 
 #endif
 
-  
   to->impuls X(to->n) = from->impuls X(index); 
   to->impuls Y(to->n) = from->impuls Y(index); 
 #ifndef TWOD
@@ -128,13 +127,11 @@ void move_atom(ivektor cellc, cell *from, int index)
     from->kraft Z(index) = from->kraft Z(from->n); 
 #endif
 
-
     from->impuls X(index) = from->impuls X(from->n); 
     from->impuls Y(index) = from->impuls Y(from->n); 
 #ifndef TWOD
     from->impuls Z(index) = from->impuls Z(from->n); 
 #endif
-
 
 #ifndef MONOLJ
     from->masse[index] = from->masse[from->n]; 
@@ -146,7 +143,7 @@ void move_atom(ivektor cellc, cell *from, int index)
 #endif
 #ifdef ORDPAR
 #ifndef TWOD
-    from->masse[index] = from->masse[from->n];
+    from->nbanz[index] = from->nbanz[from->n];
 #endif
 #endif
 #ifdef DISLOC
@@ -553,7 +550,9 @@ void alloc_cell(cell *thecell, int count)
   thecell->eam2_rho_h = newcell.eam2_rho_h;
 #endif
 #ifdef ORDPAR
+#ifndef TWOD
   thecell->nbanz = newcell.nbanz;
+#endif
 #endif
 #ifdef DISLOC
   thecell->Epot_ref = newcell.Epot_ref;

@@ -193,6 +193,7 @@ EXTERN int  incrsz INIT(10);  /* increment of number of atoms in cell */
 /* MPI housekeeping */
 EXTERN int myid INIT(0);                  /* Who am I? (0 if RISC) */
 #ifdef MPI
+EXTERN int binc INIT(0);                  /* buffer size per atom */
 EXTERN int num_cpus INIT(0);              /* How many cpus are there */
 EXTERN int *cpu_ranks INIT(0);            /* Mapping of coords to ranks */
 EXTERN ivektor cpu_dim INIT(nullivektor); /* Dimensions of CPU-Array */

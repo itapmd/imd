@@ -99,7 +99,9 @@ typedef struct {
   real        *ort_ref;
 #endif
 #ifdef ORDPAR
+#ifndef TWOD
   shortint    *nbanz;
+#endif
 #endif
 #ifdef REFPOS
   real        *refpos;

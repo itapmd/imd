@@ -152,7 +152,9 @@ void copy_one_atom(msgbuf *to, cell *from, int index)
 #endif
     from->pot_eng[index] = from->pot_eng[from->n]; 
 #ifdef ORDPAR
+#ifndef TWOD
     from->nbanz[index]   = from->nbanz[from->n]; 
+#endif
 #endif
 #ifdef REFPOS
     from->refpos X(index) = from->refpos X(from->n);
@@ -280,7 +282,7 @@ void copy_atoms_buf(msgbuf *to, msgbuf *from)
 {
   int i;
 
-  if ((to->n_max - BINC * CSTEP) < (to->n + from->n)) 
+  if ((to->n_max - binc * CSTEP) < (to->n + from->n)) 
       error("Buffer overflow in copy_buf.");
 
   for (i=0; i<from->n; ++i) 
@@ -305,6 +307,59 @@ void setup_buffers(void)
   int size_east;
   int size_north;
   int size_up;
+  int binc1, binc2;
+
+  /* determine buffer size per atom */
+  if (binc==0) {
+
+    /* for communication to buffer cells */
+#ifdef TWOD
+    binc1=2;     /* position */
+#else
+    binc1=3;     /* position */
+#fi;
+#ifndef MONOLJ
+    binc1++;     /* sorte */
+#fi
+#ifdef UNIAX
+    binc1+=9;    /* direction, etc. */
+#endif
+#ifdef EAM
+    binc1++;     /* nummer */
+#endif
+
+    /* for communication from buffer cells */
+#ifdef TWOD
+    binc2=2;     /* force */
+#else
+    binc2=3;     /* force */
+#fi;
+#ifndef MONOLJ
+    binc2++;     /* pot_eng */
+#fi
+#ifdef NVX
+    binc2++;     /* heatcond */
+#endif
+#ifdef STRESS_TENS
+#ifdef TWOD
+    binc2+=3;    /* presstens */
+#else
+    binc2+=6;    /* presstens */
+#endif
+#endif
+#ifdef ORDPAR
+#ifndef TWOD
+    binc2++;     /* nbanz */
+#endif
+#endif
+
+    /* one way or two ways */
+#ifdef AR
+    binc=MAX(binc1,binc2);
+#else
+    binc=binc1;
+#endif
+  }
 
   /* Find largest cell */
   for (k=0; k<ncells; ++k) {
@@ -320,9 +375,9 @@ void setup_buffers(void)
   largest_cell += CSTEP;
 
 #ifndef TWOD
-  size_east  = largest_cell * cell_dim.y * cell_dim.z * BINC;
-  size_north = largest_cell * cell_dim.x * cell_dim.z * BINC;
-  size_up    = largest_cell * cell_dim.x * cell_dim.y * BINC;
+  size_east  = largest_cell * cell_dim.y * cell_dim.z * binc;
+  size_north = largest_cell * cell_dim.x * cell_dim.z * binc;
+  size_up    = largest_cell * cell_dim.x * cell_dim.y * binc;
 #ifdef DEBUG
   if (0==myid) 
      printf("Max. cell is %d size east %d size north %d size up %d.\n", 
@@ -550,7 +605,9 @@ void send_cell(cell *p, int to_cpu, int tag)
 #endif
   MPI_Ssend( p->pot_eng,p->n,     MPI_REAL, to_cpu, tag + POT_TAG,    cpugrid);
 #ifdef ORDPAR
+#ifndef TWOD
   MPI_Ssend( p->nbanz,p->n,     MPI_INT, to_cpu, tag + NBA_TAG,    cpugrid);
+#endif
 #endif
 #ifdef REFPOS
   MPI_Ssend( p->refpos, DIM*p->n, MPI_REAL, to_cpu, tag + REFPOS_TAG, cpugrid);
@@ -620,7 +677,9 @@ void recv_cell(cell *p, int from_cpu,int tag)
 #endif
   MPI_Recv(p->pot_eng,       size, MPI_REAL, from_cpu, tag + POT_TAG, 
 #ifdef REFPOS
+#ifndef TWOD
   MPI_Recv(p->nbanz,       size, MPI_INT, from_cpu, tag + NBA_TAG, 
+#endif
 #endif
                                              cpugrid, &status);
 #ifdef REFPOS
