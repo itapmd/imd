@@ -70,7 +70,6 @@ void make_box( void )
 /******************************************************************************
 *
 *  Compute the size of the cells, and initialize the cell array.
-*  There must be at least two cells in each direction.
 *
 ******************************************************************************/
 

@@ -303,6 +303,10 @@ void getparamfile(char *paramfname, int sim)
       getparam("simulation",&tmp,PARAM_INT,1,1);
       if (sim < tmp) break;
     }
+    if (strcasecmp(token,"loop")==0) {
+      /* looping for online visualisation */
+      getparam(token,&loop,PARAM_INT,1,1);
+    }
     else if (strcasecmp(token,"seed")==0) {
       /* seed for random number generator in maxwell */
       int tmp;
@@ -1695,22 +1699,14 @@ void check_parameters_complete()
 
 /*****************************************************************
 *
-*  read command line and first set of parameters
+*  read command line on master process
 *
 ******************************************************************/
 
-void read_parameters(int argc,char **argv)
-
+void read_command_line(int argc,char **argv)
 {
-  str255 fname;
-  FILE *infile;
-#if defined(__GNUC__) && defined(__STRICT_ANSI__)
-  extern char *strdup(const char *);
-#endif
-
-  if ( 0 == myid ) { /* Read Parameters on Master Process */
-
-    /* Check for Restart, process options */
+  if (0==myid) { 
+    /* check for restart, process options */
     strcpy(progname,argv[0]);
     while ((argc > 1) && (argv[1][0] =='-')) {
       switch (argv[1][1]) {
@@ -1728,12 +1724,12 @@ void read_parameters(int argc,char **argv)
         case 'p':
           if (argv[1][2]=='\0') {
             if (NULL != argv[2]) {
-              paramfilename = strdup(argv[2]);
+              strcpy(paramfilename,argv[2]);
               --argc;
               ++argv;
             }
           }
-          else paramfilename = strdup(&argv[1][2]);
+          else strcpy(paramfilename,&argv[1][2]);
           break;
         default:
           printf("Illegal option %s \n",argv[1]);
@@ -1743,7 +1739,27 @@ void read_parameters(int argc,char **argv)
       ++argv;
       --argc;
     }
+  }
+#ifdef MPI
+  /* broadcast everything */
+  MPI_Bcast( paramfilename, 255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( progname,      255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &restart,        1, MPI_INT,  0, MPI_COMM_WORLD); 
+#endif
+}
 
+/*****************************************************************
+*
+*  read parameters for the first simulation phase
+*
+******************************************************************/
+
+void read_parameters(void)
+{
+  str255 fname;
+  FILE *infile;
+
+  if (0==myid) {
     getparamfile(paramfilename,1);
     /* read initial itr-file (if there is any), but keep steps_min value */
     if (0 < strlen(itrfilename)) {
@@ -1774,6 +1790,9 @@ void read_parameters(int argc,char **argv)
       sprintf(fname,"%s.msqd",             outfilename); unlink(fname);
     }
   }
+#ifdef MPI
+  broadcast_params();
+#endif
 }
 
 
@@ -1792,11 +1811,11 @@ void broadcast_params() {
   MPI_Bcast( &finished    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &ensemble    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &simulation  , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &loop        , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &seed        , 1, MPI_LONG, 0, MPI_COMM_WORLD); 
 
   MPI_Bcast( &steps_max   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &steps_min   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &restart     , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &checkpt_int , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &eng_int     , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &pic_int     , 1, MPI_INT,  0, MPI_COMM_WORLD); 

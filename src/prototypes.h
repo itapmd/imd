@@ -26,7 +26,8 @@ void main_loop(void);
 void init(void);
 
 /* read parameters - file imd_param.c */
-void read_parameters(int argc, char **argv);
+void read_command_line(int argc, char **argv);
+void read_parameters(void);
 void getparamfile(char *paramfname, int sim);
 void check_parameters_complete(void);
 void broadcast_params(void);
@@ -35,6 +36,7 @@ void broadcast_params(void);
 void read_pot_table ( pot_table_t*, char*, int );
 void read_pot_table1( pot_table_t*, int, char*, FILE* );
 void read_pot_table2( pot_table_t*, int, char*, FILE* );
+void free_pot_table ( pot_table_t*);
 void pair_int_monolj(real *pot, real *grad, real r2);
 void pair_int2  (real*, real*, int*, pot_table_t*, int, int, real);
 void pair_int3  (real*, real*, int*, pot_table_t*, int, int, real);
@@ -291,6 +293,7 @@ void vis_init_atoms(void);
 void vis_write_atoms(void);
 void vis_change_params(void);
 void vis_change_params_deform(integer flag);
+void vis_restart_simulation(void);
 void write_ras_using_sockets(void);
 void write_conf_using_sockets(void);
 void write_distrib_using_sockets(void);

@@ -29,7 +29,16 @@ int main(int argc, char **argv)
   str255 fname;
   FILE *fl;
   
+#ifdef MPI
+  init_mpi(&argc,argv);
+#endif
+
   is_big_endian = endian();
+  read_command_line(argc,argv);
+
+  /* loop for online visualisation */
+  do {
+
   time(&tstart);
 
   /* reset timers */
@@ -38,19 +47,12 @@ int main(int argc, char **argv)
   time_main.total  = 0.0;
   time_io.total    = 0.0;
 
-#ifdef MPI
-  init_mpi(&argc,argv);
-#endif
-
   /* start some timers (after starting MPI!) */
   imd_start_timer(&time_total);
   imd_start_timer(&time_setup);
 
-  /* read command line and parameters for first simulation phase */
-  read_parameters(argc,argv);
-#ifdef MPI
-  broadcast_params();
-#endif
+  /* read parameters for first simulation phase */
+  read_parameters();
 
   /* initialize random number generator */
   srand48(seed);
@@ -214,6 +216,32 @@ int main(int argc, char **argv)
      fflush(stderr);
   }
 
+  /* if looping, clean up old simulation */
+  if (loop) {
+
+    int k;
+
+    /* empty all cells */
+    for (k=0; k<nallcells; k++) cell_array[k].n = 0;
+
+    /* free potential tables */
+#if defined(PAIR_POT) || defined(PAIR_PRE)
+    free_pot_table(&pair_pot);
+#endif
+#ifdef TTBP
+    free_pot_table(&smooth_pot);
+#endif
+#ifdef EAM2
+    free_pot_table(&embed_pot);
+    free_pot_table(&rho_h_tab);
+#endif
+
+    volume_init = 0.0;
+
+  }
+
+  } while (loop);
+
   /* kill MPI */
 #ifdef MPI
   shutdown_mpi();
@@ -222,12 +250,3 @@ int main(int argc, char **argv)
   exit(0);
 
 }
-
-
-
-
-
-
-
-
-

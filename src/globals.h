@@ -161,7 +161,7 @@ EXTERN str255 infilename INIT("\0");    /* Input File */
 EXTERN str255 itrfilename INIT("\0");   /* initial itr-file */
 EXTERN str255 outfilename INIT("\0");   /* Output File */
 EXTERN str255 potfilename INIT("\0");   /* Potential */
-EXTERN char *paramfilename INIT(0L);    /* Parameter File */
+EXTERN str255 paramfilename INIT("\0"); /* Parameter File */
 
 /* Parameters for displacement map */
 EXTERN str255 reffilename INIT("\0");   /* Parameter File */
@@ -233,7 +233,7 @@ EXTERN ivektor cpu_dim INIT(einsivektor); /* Dimensions of CPU-Array */
 EXTERN int binc INIT(0);                  /* buffer size per atom */
 EXTERN int *cpu_ranks INIT(0);            /* Mapping of coords to ranks */
 EXTERN cell buf_one_atom;                 /* Buffer that holds one Atom */
-EXTERN MPI_Comm cpugrid;
+EXTERN MPI_Comm cpugrid;                  /* Cartesian MPI communicator */
 EXTERN ivektor my_coord;                  /* Cartesian coordinates of cpu */
 
 /* Send and Receive buffers */
@@ -694,6 +694,7 @@ EXTERN int  shock_mode INIT(2);                   /* type of shock */
 EXTERN int ensemble INIT(ENS_EMPTY);    /* active ensemble type */
 EXTERN int simulation INIT(1);          /* number of current simulation */
 EXTERN int finished INIT(0);            /* last phase of simulation? */
+EXTERN int loop INIT(0);                /* loop for online visualisation */
 EXTERN void (*move_atoms)(void);        /* active integrator routine */
 
 /* global parameters for UNIAX */

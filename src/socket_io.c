@@ -118,6 +118,9 @@ void check_socket() {
       case VIS_CHANGE_PARAMS:
         vis_change_params();
         break;
+      case VIS_RESTART:
+        vis_restart_simulation();
+        break;
       case T_WRITE_RAS:
 	write_ras_using_sockets();
         break;
@@ -491,7 +494,7 @@ void vis_write_atoms()
       if ((status.MPI_TAG != AT_BUF_TAG+1) && (status.MPI_TAG != AT_BUF_TAG))
         error("messages mixed up");
       if (status.MPI_TAG == AT_BUF_TAG+1) m++;
-      if (len>0) write_sock_buf_at( &len, AT_BUF_TAG );
+      if (len>0) vis_write_atoms_buf( &len, AT_BUF_TAG );
     } while (m < num_cpus);
   }
   /* do not send other messages before we are finished */
@@ -569,6 +572,21 @@ void vis_change_params_deform(integer flag)
   }
 }
 #endif
+
+/*****************************************************************************
+*
+*  restart the simulation 
+*
+*****************************************************************************/
+
+void vis_restart_simulation()
+{
+  /* decrease steps_max, so that we exit the main loop on the next iteration */
+  steps_max=steps;
+#ifdef MPI
+  MPI_Bcast( &steps_max, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
+}
 
 /*****************************************************************************
 *
@@ -765,14 +783,14 @@ void write_conf_using_sockets()
 
 void write_distrib_using_sockets()
 {
-  hist_t Ekin_dist, Epot_dist;
+  dist_t Ekin_dist, Epot_dist;
   unsigned char resolution_buffer[6];
   int *flag;
   float f;
 
   Ekin_dist.dim = dist_dim; Epot_dist.dim = dist_dim;
-  Ekin_dist.ur  = hist_ur;  Epot_dist.ur  = hist_ur;
-  Ekin_dist.ll  = hist_ll;  Epot_dist.ll  = hist_ll;
+  Ekin_dist.ur  = dist_ur;  Epot_dist.ur  = dist_ur;
+  Ekin_dist.ll  = dist_ll;  Epot_dist.ll  = dist_ll;
 
   *flag = 0;
   make_distrib_select(&Epot_dist, 1, flag, dist_Epot_fun); 

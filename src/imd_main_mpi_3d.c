@@ -531,26 +531,3 @@ void send_atoms()
 }
 
 #endif /* not SR */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

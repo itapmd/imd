@@ -21,6 +21,7 @@
 #define VIS_WRITE_ATOMS        20
 #define VIS_WRITE_DISTRIB      30
 #define VIS_CHANGE_PARAMS      40
+#define VIS_RESTART            50
 
 #define VIS_QUIT               99 
 #define VIS_WRITE_QUIT        100
