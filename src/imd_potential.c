@@ -201,10 +201,18 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename, FILE *infile)
     }
 
     /*  read in potential */
+#ifdef DOUBLE
     if ( 1 != fscanf(infile,"%lf",&r2) ) break;
+#else
+    if ( 1 != fscanf(infile,"%f",&r2) ) break;
+#endif
     if (npot==0) r2_start = r2;  /* catch first value */
     for (i=0; i<ncols; ++i) {
+#ifdef DOUBLE
       if (( 1 != fscanf(infile,"%lf", &val)) && (myid==0)) 
+#else
+      if (( 1 != fscanf(infile,"%f", &val)) && (myid==0)) 
+#endif
         error("Line incomplete in potential file.");
       *PTR_2D(pt->table,npot,i,pt->maxsteps,ncols) = val;
       if (val!=0.0) pt->end[i] = r2; /* catch last non-zero value */
@@ -293,7 +301,11 @@ void read_pot_table2(pot_table_t *pt, int ncols, char *filename, FILE *infile)
 
   /* read the info block of the function table */
   for(i=0; i<ncols; i++) {
+#ifdef DOUBLE
     if (3 != fscanf(infile, "%lf %lf %lf",
+#else
+    if (3 != fscanf(infile, "%f %f %f",
+#endif
                   &pt->begin[i], &pt->end[i], &pt->step[i])) {
       if (0==myid) { 
         sprintf(msg, "Info line in %s corrupt.", filename);
@@ -327,7 +339,11 @@ void read_pot_table2(pot_table_t *pt, int ncols, char *filename, FILE *infile)
   /* input loop */
   for (i=0; i<ncols; i++) {
     for (k=0; k<len[i]; k++) {
+#ifdef DOUBLE
       if (1 != fscanf(infile,"%lf", &val)) {
+#else
+      if (1 != fscanf(infile,"%f", &val)) {
+#endif
         if (0==myid) {
           sprintf(msg, "wrong format in file %s.", filename);
           error(msg);
