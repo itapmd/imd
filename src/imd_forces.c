@@ -83,6 +83,8 @@ void do_forces(cell *p, cell *q, vektor pbc)
     qptr   = q->ort + DIM * jstart;
     
     for (j = jstart; j < q->n; ++j) {
+
+      q_typ = q->sorte[j];
       
       /* Calculate distance  */
       d.x = *qptr - tmp_d.x;
@@ -126,31 +128,31 @@ void do_forces(cell *p, cell *q, vektor pbc)
         pot_grad = - 6 * sig_d_rad2 * ( sig_d_rad12 - sig_d_rad6 );
         pot_zwi  = sig_d_rad12 - 2.0 * sig_d_rad6;
 #else
-        /* Check for distances, shorter than minimal distance in pot. table */
-        if (radius2 < r2_0) {
+      	/* Check for distances, shorter than minimal distance in pot. table */
+	if (radius2 < r2_0) {
           r2_short = MIN(r2_short,radius2);
-          radius2 = r2_0; 
-        }
+	  radius2 = r2_0; 
+	}
 
-        /* Indices into potential table */
-        k     = (int) ((radius2 - r2_0) * inv_r2_step);
-        q_typ = q->sorte[j];
-        chi = (radius2 - r2_0 - k * r2_step) * inv_r2_step;
+	/* Indices into potential table */
+	k     = (int) ((radius2 - r2_0) * inv_r2_step);
+	chi = (radius2 - r2_0 - k * r2_step) * inv_r2_step;
+	
+	/* A single access to the potential table involves two multiplications 
+	   We use a intermediate pointer to aviod this as much as possible.
+	   Note: This relies on layout of the pot-table in memory!!! */
 
-        /* A single access to the potential table involves two multiplications 
-           We use a intermediate pointer to aviod this as much as possible.
-           Note: This relies on layout of the pot-table in memory!!! */
+	potptr = PTR_3D_V(potential, k, p_typ, q_typ , pot_dim);
+	pot_k0 = *potptr; potptr += pot_dim.y * pot_dim.z;
+	pot_k1 = *potptr; potptr += pot_dim.y * pot_dim.z;
+	pot_k2 = *potptr;
 
-        potptr = PTR_3D_V(potential, k, p_typ, q_typ , pot_dim);
-        pot_k0 = *potptr; potptr += pot_dim.y * pot_dim.z;
-        pot_k1 = *potptr; potptr += pot_dim.y * pot_dim.z;
-        pot_k2 = *potptr;
-
-        dv  = pot_k1 - pot_k0;
-        d2v = pot_k2 - 2 * pot_k1 + pot_k0;
+	dv  = pot_k1 - pot_k0;
+	d2v = pot_k2 - 2 * pot_k1 + pot_k0;
 
         /* Norm of Gradient */
         pot_grad = 2 * inv_r2_step * ( dv + (chi - 0.5) * d2v );
+
         /* Potential energy of atom */
         pot_zwi =  pot_k0 + chi * dv + 0.5 * chi * (chi - 1) * d2v;
 #endif  /* MONOLJ */
@@ -218,18 +220,18 @@ void do_forces(cell *p, cell *q, vektor pbc)
         p->heatcond[i] += pot_zwi - radius2 * pot_grad;
         q->heatcond[j] += pot_zwi - radius2 * pot_grad;
 #endif
-      }
+      }  /* if */
 
 #ifdef TTBP
       /* 2. Cutoff: make neighbor tables for TTBP */
-      if (radius2 <= ttbp_r2_cut[p_typ][q_typ]) {
+      if (radius2 <= 4 * ttbp_r2_cut[p_typ][q_typ]) {
 
         neightab *neigh;
         real  *tmp_ptr;
 
         /* update neighbor table of particle i */
         neigh = p->neigh[i];
-        if (neigh->n_max == neigh->n) {
+        if (neigh->n_max <= neigh->n) {
           error("neighbor table too small, increase ttbp_len");
         }
         neigh->typ[neigh->n] = q_typ;
@@ -241,7 +243,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
 
         /* update neighbor table of particle j */
         neigh = q->neigh[j];
-        if (neigh->n_max == neigh->n) {
+        if (neigh->n_max <= neigh->n) {
           error("neighbor table too small, increase ttbp_len");
         }
         neigh->typ[neigh->n] = p_typ;

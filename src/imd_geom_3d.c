@@ -57,6 +57,7 @@ ivektor maximal_cell_dim( void )
   real    s1, s2,r2_cut2;
   vektor  hx,hy,hz;
   ivektor max_cell_dim;
+  int     i,j;
 
   /* Height x */
   s1 = SPROD(box_x,box_y)/SPROD(box_y,box_y);
@@ -83,12 +84,15 @@ ivektor maximal_cell_dim( void )
   hz.z = box_z.z - s1 * box_x.z - s2 * box_y.z;
   
   /* Scaling factors box/cell */
-#ifdef EAM
-  /* increase the size of the cell by 2 for EAM */
-  r2_cut2 = MAX( r2_cut, eam_r2_cut ); 
-#else
   r2_cut2 = r2_cut;
-#endif /* EAM */ 
+#ifdef EAM  
+  r2_cut2 = MAX( r2_cut2, eam_r2_cut );  
+#endif
+#ifdef TTBP
+  for (i=0; i<ntypes; ++i)
+    for (j=0; j<ntypes; ++j)
+      r2_cut2 = MAX( r2_cut2, 4 * ttbp_r2_cut[i][j] );
+#endif 
 
   max_cell_dim.x = (int) ( 1.0 / sqrt( r2_cut2 / SPROD(hx,hx) ));
   max_cell_dim.y = (int) ( 1.0 / sqrt( r2_cut2 / SPROD(hy,hy) ));
@@ -169,12 +173,15 @@ void init_cells( void )
   hz.z = box_z.z - s1 * box_x.z - s2 * box_y.z;
   
   /* Scaling factors box/cell */
-#ifdef EAM
-  /* increase the size of the cell by 2 for EAM */
-  r2_cut2 = MAX( r2_cut, eam_r2_cut ); 
-#else
   r2_cut2 = r2_cut;
-#endif /* EAM */ 
+#ifdef EAM  
+  r2_cut2 = MAX( r2_cut2, eam_r2_cut );  
+#endif
+#ifdef TTBP
+  for (i=0; i<ntypes; ++i)
+    for (j=0; j<ntypes; ++j)
+      r2_cut2 = MAX( r2_cut2, 4 * ttbp_r2_cut[i][j] );
+#endif 
 
   cell_scale.x = sqrt( r2_cut2 / SPROD(hx,hx) );
   cell_scale.y = sqrt( r2_cut2 / SPROD(hy,hy) );
