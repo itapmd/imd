@@ -68,9 +68,6 @@ void move_atoms_nve(void)
 #endif
     for (i=0; i<p->n; ++i) {
 
-      /* do not move particles with negative numbers */
-      if (NUMMER(p,i)>=0) {
-
         kin_energie_1 = SPRODN(p->impuls,i,p->impuls,i);
 #ifdef UNIAX
         rot_energie_1 = SPRODN(p->dreh_impuls,i,p->dreh_impuls,i);
@@ -186,7 +183,6 @@ void move_atoms_nve(void)
         p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
 #endif
 #endif /* STRESS_TENS */
-      }
     }
   }
 
@@ -269,9 +265,6 @@ void move_atoms_mik(void)
 #pragma vdir vector,nodep
 #endif
     for (i=0; i<p->n; ++i) {
-
-      /* do not move particles with negative numbers */
-      if (NUMMER(p,i)>=0) {
 
         kin_energie_1 = SPRODN(p->impuls,i,p->impuls,i);
 
@@ -360,7 +353,6 @@ void move_atoms_mik(void)
         p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
 #endif
 #endif
-      }
     }
   }
 
@@ -414,15 +406,12 @@ void move_atoms_msd(void)
     p = cell_array + CELLS(k);
 
     for (i=0; i<p->n; ++i) {
-      /* new positions - do not move atoms with negative numbers */
-      if (NUMMER(p,i) >= 0) {
-        tmp = timestep / sqrt(SPRODN(p->kraft,i,p->kraft,i)) ;
-        p->ort X(i) += tmp * p->kraft X(i);
-        p->ort Y(i) += tmp * p->kraft Y(i);
+      tmp = timestep / sqrt(SPRODN(p->kraft,i,p->kraft,i)) ;
+      p->ort X(i) += tmp * p->kraft X(i);
+      p->ort Y(i) += tmp * p->kraft Y(i);
 #ifndef TWOD
-        p->ort Z(i) += tmp * p->kraft Z(i);
+      p->ort Z(i) += tmp * p->kraft Z(i);
 #endif 
-      }
       /* new momenta */
       p->impuls X(i) = 0.0;
       p->impuls Y(i) = 0.0;
@@ -431,7 +420,6 @@ void move_atoms_msd(void)
 #endif
     }
   }
-
 }
 
 #else  
@@ -485,8 +473,6 @@ void move_atoms_nvt(void)
     p = cell_array + CELLS(k);
 
     for (i=0; i<p->n; ++i) {
-
-      if (NUMMER(p,i)>=0) {
 
         /* twice the old kinetic energy */
         kin_energie_1 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
@@ -566,7 +552,6 @@ void move_atoms_nvt(void)
         p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
 #endif
 #endif
-      }
     }
   }
   
@@ -1028,9 +1013,6 @@ void move_atoms_and(void)
 
     for (i=0; i<p->n; ++i) {
 
-      /* do not move atoms with negative number */
-      if (NUMMER(p,i)>=0) {
-
         /* old kinetic energy */
         kin_energie_1 =  SPRODN(p->impuls,i,p->impuls,i);
 
@@ -1067,7 +1049,6 @@ void move_atoms_and(void)
         p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
 #endif
 #endif
-      }
     }
   }
 
@@ -1257,9 +1238,6 @@ void move_atoms_stm(void)
 
     for (i=0; i<p->n; ++i) {
 
-      /* do not move particles with negative numbers */
-      if (NUMMER(p,i)>=0) {
-
         /* Check if outside or inside the ellipse: */	
         tmp = SQR((p->ort X(i)-center.x)/stadium.x) +
               SQR((p->ort Y(i)-center.y)/stadium.y) - 1;
@@ -1289,7 +1267,6 @@ void move_atoms_stm(void)
         tmp = timestep * MASSE(p,i);
         p->ort X(i) += tmp * p->impuls X(i);
         p->ort Y(i) += tmp * p->impuls Y(i);
-      }
     }
   }
   
