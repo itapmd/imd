@@ -58,6 +58,16 @@ void main_loop(void)
   if(NULL   == eam_dij_z) error("Cannot allocate memory for eam_dij_z");
 #endif /* EAM */
 
+#ifdef TTBP
+  /* memory allocation */
+  ttbp_ij   =  calloc(natoms*ttbp_len*2,sizeof(integer));
+  if(NULL   == ttbp_ij)  error("Can't allocate memory for ttbp_ij");
+  ttbp_j    =  calloc((natoms+1)*ttbp_len,sizeof(real));
+  if(NULL   == ttbp_j) error("Can't allocate memory for ttbp_j");
+  ttbp_force=  calloc((natoms+1)*3,sizeof(real));
+  if(NULL   == ttbp_force)  error("Can't allocate memory for ttbp_force");
+#endif /* TTBP */
+
 #if defined(CORRELATE) || defined(MSQD)
   init_correl(ncorr_rmax,ncorr_tmax);
 #endif
@@ -248,8 +258,6 @@ void main_loop(void)
   mpi_addtime(&time_comm);
 #endif
 
-  if (0==myid) printf( "End of simulation %d\n", simulation );
-  
 #ifdef EAM
   free(eam_rho);
   free(eam_ij);
@@ -258,6 +266,14 @@ void main_loop(void)
   free(eam_dij_z);
 #endif
 
+#ifdef TTBP
+  free(ttbp_ij);
+  free(ttbp_j);
+  free(ttbp_force);
+#endif
+
+  if (0==myid) printf( "End of simulation %d\n", simulation );
+  
 }
 
 
