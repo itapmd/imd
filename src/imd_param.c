@@ -775,7 +775,7 @@ void getparamfile(char *paramfname, int sim)
     }
     else if (strcasecmp(token,"shear_factor")==0) {
       /* maximum shear */
-      getparam("shear_factor",&shear_factor,PARAM_REAL,1,1);
+      getparam("shear_factor",&shear_factor,PARAM_REAL,2,2);
     }
 #endif
 #if defined(FRAC) || defined(DEFORM)
@@ -1565,7 +1565,7 @@ void broadcast_params() {
 
 #ifdef HOMDEF
   MPI_Bcast( &hom_interval , 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &shear_factor , 1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &shear_factor , 2, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &exp_interval , 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &expansion ,  DIM, REAL,    0, MPI_COMM_WORLD); 
 #endif

@@ -278,7 +278,7 @@ EXTERN real   gamma_cut INIT(0.0);    /* Damping cutoff */
 EXTERN int    exp_interval INIT(0);       /* period of expansion steps */
 EXTERN vektor expansion INIT(einsvektor); /* expansion factors in x/y/z-dir */
 EXTERN int    hom_interval INIT(0);       /* period of homshear steps */
-EXTERN real   shear_factor INIT(0.0);     /* shear factor in y-direction */
+EXTERN vektor2d shear_factor INIT(nullvektor2d);/* shear factor in x,y-direction */
 #endif
 
 #ifdef SLLOD

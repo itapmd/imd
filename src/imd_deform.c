@@ -77,6 +77,7 @@ void shear_sample(void)
 {
   int k;
   ivektor max_cell_dim;
+  real tmport[2];
 
   /* Apply shear */
 #ifdef _OPENMP
@@ -87,12 +88,20 @@ void shear_sample(void)
     cell *p;
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i) {
-      p->ort Y(i) += shear_factor * p->ort X(i);
+      
+      tmport[0]  = shear_factor.x * p->ort Y(i);
+      tmport[1]  = shear_factor.y * p->ort X(i);
+      p->ort X(i) += tmport[0];
+      p->ort Y(i) += tmport[1];
     }
   }
 
   /* new box size */
-  box_x.y += shear_factor * box_x.x;
+  box_y.x += shear_factor.x * box_y.y;
+  box_x.y += shear_factor.y * box_x.x;
+  
+
+
   make_box();
 
   /* revise cell decomposition if necessary */
