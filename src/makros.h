@@ -25,12 +25,14 @@
 #elif defined(sgi)
 #pragma inline global (MOD)
 #endif
+#if !defined(MONO) && !defined(BINARY)
 INLINE static int MOD(shortint p, int q)
 {
   int stmp=p;
   while (stmp>=q) stmp-=q;
   return stmp;
 }
+#endif
 
 /* these macros should allow to avoid MONOLJ in many places */
 #ifdef MONOLJ

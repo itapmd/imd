@@ -216,17 +216,16 @@ CFLAGS_MPI_SR8000_PROF   = -G
 MPILIBS_SR8000		 = -L/usr/mpi/lib -lmpi
 
 # flags for Hitachi SR8000 OpenMP
-CC_MPI_SR8000		 = cc
-CFLAGS_MPI_SR8000	 = -DOMP -omp -procnum=8 +O4 +Ol
-CFLAGS_MPI_SR8000_DEBUG	 = -DOMP -omp -procnum=8 -g
-CFLAGS_MPI_SR8000_PROF   = -G
+CC_OMP_SR8000		 = cc
+CFLAGS_OMP_SR8000	 = -DOMP -omp -par +O4 +Ol
+CFLAGS_OMP_SR8000_DEBUG	 = -DOMP -omp -par=1 -O2 -g
+CFLAGS_OMP_SR8000_PROF   = -G
 
 # flags for Hitachi SR8000 MPI + OpenMP
-CC_MPI_SR8000		 = cc
-CFLAGS_MPI_SR8000	 = -DOMPI -omp -procnum=8 +O4 +Ol -I/usr/mpi/include
-CFLAGS_MPI_SR8000_DEBUG	 = -DOMPI -omp -procnum=8 -g -I/usr/mpi/include
-CFLAGS_MPI_SR8000_PROF   = -G
-MPILIBS_SR8000		 = -L/usr/mpi/lib -lmpi
+CC_OMPI_SR8000		 = cc
+CFLAGS_OMPI_SR8000	 = -DOMPI -omp -par +O4 +Ol -I/usr/mpi/include
+CFLAGS_OMPI_SR8000_DEBUG = -DOMPI -omp -par +O2 -g -I/usr/mpi/include
+CFLAGS_OMPI_SR8000_PROF  = -G
 
 
 ###########################################################################
