@@ -929,7 +929,7 @@ void write_atoms_avp(FILE *out)
 	len += sprintf( outbuf+len,
 			"%d %d %12.16f %12.16f %12.16f %12.16f\n",
 			NUMMER(p,i), VSORTE(p,i), MASSE(p,i), 
-			x, y, p->av_epot[i] * avpos_res / avpos_int);
+			x, y, p->av_epot[i] * avpos_res / (avpos_int + avpos_res ));
 #endif
       /* flush or send outbuf if it is full */
       if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);

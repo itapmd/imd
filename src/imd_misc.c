@@ -81,13 +81,13 @@ void error(char *msg)
 
 /******************************************************************************
 *
-* add_position adds coordinates and potential energy for computation of average
+* add_positions adds coordinates and potential energy for computation of average
 * 
 * position and potential energy
 *
 ******************************************************************************/
 
-void add_position(void)
+void add_positions(void)
 {
   int k;
   for (k=0; k<ncells; k++) {

@@ -323,7 +323,7 @@ void main_loop(void)
 #ifdef AVPOS
     if ( steps <= avpos_end ) {
 	if ((avpos_res > 0) && (0 == (steps - avpos_start) % avpos_res) && steps > avpos_start)
-	    add_position();
+	    add_positions();
 	if ((avpos_int > 0) && (0 == (steps - avpos_start) % avpos_int) && steps > avpos_start) {
 	    write_config_select((steps - avpos_start) / avpos_int,"avp",
 				write_atoms_avp,write_header_avp);
