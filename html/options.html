@@ -145,11 +145,24 @@ writing intervals to zero.
 <B>Known bugs:</B> The reference potential energy can be set
 only once in each phase.
 
+<A NAME="exp">
+<P><LI><B> exp </B><P>
+</A>
+<P>
+If <TT>exp_interval</TT> is positive, the sample is expanded every 
+<TT>exp_interval</TT> steps. The expansion factors in x-, y- and
+z-direction are given by the parameter <TT>expansion</TT>, which
+is a vector. The box lengths are updated automatically. This option
+uses periodic boundary conditions (unless stated otherwise).
+<B>Known bugs:</B> This currently works only for rectangular boxes
+correctly. The number of cells does not change, and so some care
+is needed when shrinking samples (the cells might get too small).
+
 <A NAME="deform">
 <P><LI><B> deform </B><P>
 </A>
 The deform option provides several possibilities to shear, expand
-of deform the sample in other ways.
+or deform the sample in other ways.
 <P>
 <UL>
 <P><LI>
@@ -160,11 +173,6 @@ particle. The displacement is scaled with the maximum value of the
 x-coordinates of all particles. The latter is computed before each 
 shear step. Atoms with x=0 are not shifted, whereas atoms with maximum
 x are shifted with a magnitude <TT>shear_max</TT>, which is a parameter.
-<P><LI>
-If <TT>exp_interval</TT> is positive, the sample is isotropically 
-expanded every <TT>exp_interval</TT> steps. The rate of expansion is 
-given by the parameter <TT>expansion</TT>. The box lengths are updated
-automatically.
 <P><LI>
 If <TT>max_deform_int</TT> is positive, or <TT>ekin_threshold</TT>
 is positive, atoms with negative numbers in the left half (in x
