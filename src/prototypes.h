@@ -252,14 +252,14 @@ void write_ras_using_sockets(void);
 /* write distributions - files imd_histogram.c, socket_io.c */
 void make_histograms(hist_t *hist);
 void write_distrib(int steps);
-void write_distrib_header(FILE *out, char *type);
+void write_distrib_header(FILE *out, hist_t *hist, char *type);
 #ifdef STRESS_TENS
 void write_press_dist(int steps);
-void write_press_dist_header(FILE *out);
+void write_press_dist_header(FILE *out, hist_t *hist);
 #endif
 #ifdef SHOCK
 void write_press_dist_shock(int steps);
-void write_press_dist_shock_header(FILE *out);
+void write_press_dist_shock_header(FILE *out, hist_t *hist);
 #endif
 #ifdef USE_SOCKETS
 void write_distrib_using_sockets(void);

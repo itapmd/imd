@@ -581,7 +581,7 @@ void make_histograms(hist_t *hist)
 *
 ******************************************************************************/
 
-void write_distrib_header(FILE *out, char *type)
+void write_distrib_header(FILE *out, hist_t *hist, char *type)
 {
   char c;
   time_t now;
@@ -608,9 +608,9 @@ void write_distrib_header(FILE *out, char *type)
 
   /* dimension line */
 #ifdef TWOD
-  fprintf(out, "# dim 2 %d %d\n",    dist_dim.x, dist_dim.y);
+  fprintf(out, "# dim 2 %d %d\n",    hist->dim.x, hist->dim.y);
 #else
-  fprintf(out, "# dim 3 %d %d %d\n", dist_dim.x, dist_dim.y, dist_dim.z);
+  fprintf(out, "# dim 3 %d %d %d\n", hist->dim.x, hist->dim.y, hist->dim.z);
 #endif
 
   /* endheader line */
@@ -650,8 +650,8 @@ void write_distrib(int steps)
 
     outminmax = fopen(fnameminmax, "a");
     if (use_header) {
-      write_distrib_header(outpot, "Epot");
-      write_distrib_header(outkin, "Ekin");
+      write_distrib_header(outpot, &hist, "Epot");
+      write_distrib_header(outkin, &hist, "Ekin");
       fprintf(outminmax, 
               "# contents count min_Epot max_Epot min_Ekin max_Ekin\n");
     }
@@ -712,7 +712,7 @@ void write_distrib(int steps)
 *
 ******************************************************************************/
 
-void write_press_dist_header(FILE *out)
+void write_press_dist_header(FILE *out, hist_t *hist)
 {
   char c;
   time_t now;
@@ -746,9 +746,9 @@ void write_press_dist_header(FILE *out)
 
   /* dimension line */
 #ifdef TWOD
-  fprintf(out, "# dim 2 %d %d\n",    dist_dim.x, dist_dim.y);
+  fprintf(out, "# dim 2 %d %d\n",    hist->dim.x, hist->dim.y);
 #else
-  fprintf(out, "# dim 3 %d %d %d\n", dist_dim.x, dist_dim.y, dist_dim.z);
+  fprintf(out, "# dim 3 %d %d %d\n", hist->dim.x, hist->dim.y, hist->dim.z);
 #endif
 
   /* endheader line */
@@ -780,7 +780,7 @@ void write_press_dist(int steps)
     sprintf(fname,"%s.%u.pressdist",outfilename,fzhlr);
     outfile = fopen(fname,"w");
     if (NULL == outfile) error("Cannot open pressure tensor file.");
-    write_press_dist_header(outfile);
+    write_press_dist_header(outfile, &hist);
 
     i=0;
     for (r=0; r<hist.dim.x; r++) {
@@ -822,7 +822,7 @@ void write_press_dist(int steps)
 *
 ******************************************************************************/
 
-void write_press_dist_shock_header(FILE *out)
+void write_press_dist_shock_header(FILE *out, hist_t *hist)
 {
   char c;
   time_t now;
@@ -851,7 +851,7 @@ void write_press_dist_shock_header(FILE *out)
 #endif
 
   /* dimension line - we make only a 1-dim histogram */
-  fprintf(out, "# dim 1 %d\n", dist_dim.x);
+  fprintf(out, "# dim 1 %d\n", hist->dim.x);
 
   /* endheader line */
   time(&now);
@@ -891,7 +891,7 @@ void write_press_dist_shock(int steps)
     sprintf(fname,"%s.%u.pressdist",outfilename,fzhlr);
     outfile = fopen(fname,"w");
     if (NULL == outfile) error("Cannot open pressure tensor file.");
-    write_press_dist_shock_header(outfile);
+    write_press_dist_shock_header(outfile, &hist);
 
     for (i = 0; i < hist.size; i++) {
       if (dist_has_coords) fprintf(outfile, "%d ", i);      
