@@ -57,8 +57,7 @@ void read_atoms(str255 infilename)
   int to_cpu;
   int addnumber = 0;
 #ifdef MPI
-  real a[MAX_ATOM_SIZE];
-  msgbuf mpibuf;
+  msgbuf *input_buf, *b;
 #endif
 
   /* allocate num_sort on all CPUs */
@@ -85,13 +84,25 @@ void read_atoms(str255 infilename)
     return;
   }
 
-  if ((1!=parallel_input) || (NULL==infile))
-    infile = fopen(infilename,"r");
+  if ((0==parallel_input) || (NULL==infile)) infile = fopen(infilename,"r");
 #ifdef DISLOC
   if (calc_Epot_ref == 0) reffile = fopen(reffilename,"r");
 #endif
 
-  mpibuf.data = a;
+  /* allocate temporary input buffer */
+  if (0==parallel_input) {
+    input_buf = (msgbuf *) malloc( num_cpus * sizeof(msgbuf) );
+    if (NULL==input_buf) error("cannot allocate input buffers");
+    input_buf[0].data  = (real *) NULL;
+    input_buf[0].n_max = 0;
+    input_buf[0].n     = 0;
+    for (i=1; i<=num_cpus; i++) {
+      input_buf[i].data  = (real *) malloc( INPUT_BUF_SIZE * sizeof(real) );
+      if (NULL==input_buf[i].data) error("cannot allocate input buffer");
+      input_buf[i].n_max = INPUT_BUF_SIZE;
+      input_buf[i].n     = 0;
+    }
+  }
 
 #else /* not MPI */
 
@@ -205,7 +216,7 @@ void read_atoms(str255 infilename)
 #ifdef MPI
 
       to_cpu = cpu_coord(cellc);
-      if ((myid != to_cpu) && (1!=parallel_input)) {
+      if ((myid != to_cpu) && (0==parallel_input)) {
         natoms++;
         /* we still have s == input->sorte[0] */
         if (s < ntypes)
@@ -215,9 +226,12 @@ void read_atoms(str255 infilename)
           nactive += (int) (restrictions+s)->y;
         }
         num_sort[SORTE(input,0)]++;
-        mpibuf.n = 0;
-        copy_one_atom(&mpibuf, input, 0, 0);
-        MPI_Send(mpibuf.data, mpibuf.n, REAL, to_cpu, CELL_TAG, cpugrid);
+        b = input_buf + to_cpu;
+        copy_one_atom(b, input, 0, 0);
+        if (b->n_max - b->n < MAX_ATOM_SIZE) {
+          MPI_Send(b->data, b->n, REAL, to_cpu, CELL_TAG, cpugrid);
+          b->n = 0;
+        }
       } else if (to_cpu==myid) {  
         natoms++;
         /* we still have s == input->sorte[0] */
@@ -260,9 +274,13 @@ void read_atoms(str255 infilename)
 #ifdef MPI
 
   /* Tell other CPUs that reading atoms is finished. (tag==0) */
-  if (1!=parallel_input)
-    for (s=1; s<num_cpus; s++)
-      MPI_Send(mpibuf.data, 1, REAL, s, 0, cpugrid);
+  if (0==parallel_input)
+    for (s=1; s<num_cpus; s++) {
+      b = input_buf + s;
+      if (b->n > 0) MPI_Send(b->data, b->n, REAL, s, CELL_TAG, cpugrid);
+      MPI_Send(b->data, 1, REAL, s, 0, cpugrid);
+      free(b->data);
+    }
 
   /* Add the number of atoms read (and kept) by each CPU */
   if (1==parallel_input) {
@@ -303,7 +321,7 @@ void read_atoms(str255 infilename)
 
 /******************************************************************************
 *
-*  recveive atoms one at a time from CPU 0
+*  recveive atoms in several chunks from CPU 0
 *  this is only used when parallel_input==0
 *
 ******************************************************************************/
@@ -311,17 +329,21 @@ void read_atoms(str255 infilename)
 void recv_atoms(void)
 {
   MPI_Status status;
-  real a[MAX_ATOM_SIZE];
-  msgbuf mpibuf;   
-  mpibuf.data = a;
+  msgbuf b;   
+
+  b.data  = (real *) malloc( INPUT_BUF_SIZE * sizeof(real) );
+  b.n_max = INPUT_BUF_SIZE;
+  if (NULL == b.data) error("cannot allocate input receive buffer");
 
   printf("Node %d listening.\n",myid);
   while ( 1 ) {
-    MPI_Recv(mpibuf.data, 100, REAL, 0, MPI_ANY_TAG, cpugrid, &status);
+    MPI_Recv(b.data, INPUT_BUF_SIZE, REAL, 0, MPI_ANY_TAG, cpugrid, &status);
     if (0 == status.MPI_TAG) break;
-    process_buffer( &mpibuf, (cell *) NULL );
+    MPI_Get_count(&status, REAL, &b.n);
+    process_buffer( &b, (cell *) NULL );
   }
   printf("Node %d leaves listen.\n",myid);
+  free(b.data);
 }
 
 #endif 

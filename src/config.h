@@ -131,3 +131,6 @@
 
 /* number of data items by which an MPI buffer is increased */
 #define BUFFER_SIZE_INC 1024 
+
+/* buffer size for serial read_atoms */
+#define INPUT_BUF_SIZE 16384
