@@ -1252,9 +1252,9 @@ void move_atoms_nvx(void)
   inv_mass_left                  = real_tmp;
   MPI_Allreduce( &inv_mass_right, &real_tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
   inv_mass_right                 = real_tmp;
-  MPI_Allreduce( tot_impuls_left,  vectmp, DIM, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &tot_impuls_left,&vectmp, DIM, MPI_REAL, MPI_SUM, cpugrid);
   tot_impuls_left                = vectmp;
-  MPI_Allreduce( tot_impuls_right, vectmp, DIM, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce(&tot_impuls_right,&vectmp, DIM, MPI_REAL, MPI_SUM, cpugrid);
   tot_impuls_right               = vectmp;
   MPI_Allreduce( &natoms_left,    &int_tmp,  1, MPI_INT,  MPI_SUM, cpugrid);
   natoms_left                    = int_tmp;
