@@ -325,9 +325,9 @@ void write_ras_using_sockets() {
 *
 *****************************************************************************/
 
-void write_conf_using_sockets() {
-
-   int r,s,t,i, ready; 
+void write_conf_using_sockets() 
+{
+   int i, j, ready; 
    int a; 
    cell *p;
    int k=0;
@@ -364,9 +364,7 @@ void write_conf_using_sockets() {
      socketwin_ll.y = pic_ll.y;
      socketwin_ur.x = pic_ur.x;
      socketwin_ur.y = pic_ur.y;
-     
-   }
-   else {              /* write only atoms in the window */    
+   } else {              /* write only atoms in the window */    
      socketwin_ll.x = box_y.x;
      socketwin_ll.y = box_x.y;
      socketwin_ur.x = box_x.x;
@@ -377,142 +375,101 @@ void write_conf_using_sockets() {
 
 #ifdef MPI
    if (0 == myid) { /* own data */
-     k=0;
-     for ( r = cellmin.x; r < cellmax.x; ++r ) 
-       for ( s = cellmin.y; s < cellmax.y; ++s ) { 
-#ifdef TWOD
-	 p = PTR_2D_V(cell_array, r, s, cell_dim); 
-#else
-	 for ( t = cellmin.z; t < cellmax.z; ++t ) { 
-	   p = PTR_3D_V(cell_array, r, s, t, cell_dim); 
-#endif
-	   for (i = 0;i < p->n; ++i) {
-	       if( (p->ort X(i) >= socketwin_ll.x) && \
-		   (p->ort X(i) <= socketwin_ur.x) && \
-		   (p->ort Y(i) >= socketwin_ll.y) && \
-		   (p->ort Y(i) <= socketwin_ur.y) ){
-		 nummer[k] = p->nummer[i];
-		 sorte[k]  = p->sorte[i];
-		 masse[k]  = p->masse[i];
-		 x[k]      = p->ort X(i);
-		 y[k]      = p->ort Y(i);
+      k=0;
+      for (j=0; j<ncells; ++j) {
+        p = cell_array + CELLS(j);
+        for (i=0; i < p->n; ++i) {
+          if ( (p->ort X(i) >= socketwin_ll.x) &&
+               (p->ort X(i) <= socketwin_ur.x) &&
+               (p->ort Y(i) >= socketwin_ll.y) &&
+               (p->ort Y(i) <= socketwin_ur.y) ) {
+            nummer[k] = p->nummer[i];
+            sorte[k]  = p->sorte[i];
+            masse[k]  = p->masse[i];
+            x[k]      = p->ort X(i);
+            y[k]      = p->ort Y(i);
 #ifndef TWOD
-		 z[k]      = p->ort Z(i);
+            z[k]      = p->ort Z(i);
 #endif
-		 vx[k]     = p->impuls X(i);
-		 vy[k]     = p->impuls Y(i);
+            vx[k]     = p->impuls X(i);
+            vy[k]     = p->impuls Y(i);
 #ifndef TWOD
-		 vz[k]     = p->impuls Z(i);
+            vz[k]     = p->impuls Z(i);
 #endif
-		 pot[k]    = p->pot_eng[i];
-		 k++;
-	       }
-	   }
-	   
-	 }
-#ifndef TWOD
-       }
-#endif
+            pot[k]    = p->pot_eng[i];
+            k++;
+          }
+        }
+      }
 
-     /* Receive data from other cpus and write that */
+      /* Receive data from other cpus and write that */
+      p = cell_array;  /* this is a pointer to the first (buffer) cell */
+      for (m=1; m<num_cpus; ++m)
+      for (j=0; j<ncells; ++j) {
+        p = cell_array + CELLS(j);
+        tag = CELL_TAG + j;
+        recv_cell(p,m,tag);
+        for (i=0; i < p->n; ++i) {
+          if ( (p->ort X(i) >= socketwin_ll.x) &&
+               (p->ort X(i) <= socketwin_ur.x) &&
+               (p->ort Y(i) >= socketwin_ll.y) &&
+               (p->ort Y(i) <= socketwin_ur.y) ) {
+            nummer[k] = p->nummer[i];
+            sorte[k]  = p->sorte[i];
+            masse[k]  = p->masse[i];
+            x[k]      = p->ort X(i);
+            y[k]      = p->ort Y(i);
 #ifndef TWOD
-     p   = PTR_3D_V(cell_array, 0, 0, 0, cell_dim);
-#else
-     p   = PTR_2D_V(cell_array, 0, 0, cell_dim);
+            z[k]      = p->ort Z(i);
 #endif
-     for ( m = 1; m < num_cpus; ++m)
-       for ( r = cellmin.x; r < cellmax.x; ++r ) 
-	 for ( s = cellmin.y; s < cellmax.y; ++s ) { 
-#ifdef TWOD
-	   tag = PTR_2D_V(CELL_TAG, r, s, cell_dim);
-#else
-	   for ( t = cellmin.z; t < cellmax.z; ++t ) { 
-	     tag = PTR_3D_V(CELL_TAG, r, s, t, cell_dim);
-#endif
-	     recv_cell( p, m, ORT_TAG );
-	     for (i = 0;i < p->n; ++i) {
-	       if( (p->ort X(i) >= socketwin_ll.x) && \
-		   (p->ort X(i) <= socketwin_ur.x) && \
-		   (p->ort Y(i) >= socketwin_ll.y) && \
-		   (p->ort Y(i) <= socketwin_ur.y) ){
-		 nummer[k] = p->nummer[i];
-		 sorte[k]  = p->sorte[i];
-		 masse[k]  = p->masse[i];
-		 x[k]      = p->ort X(i);
-		 y[k]      = p->ort Y(i);
+            vx[k]     = p->impuls X(i);
+            vy[k]     = p->impuls Y(i);
 #ifndef TWOD
-		 z[k]      = p->ort Z(i);
+            vz[k]     = p->impuls Z(i);
 #endif
-		 vx[k]     = p->impuls X(i);
-		 vy[k]     = p->impuls Y(i);
-#ifndef TWOD
-		 vz[k]     = p->impuls Z(i);
-#endif
-		 pot[k]    = p->pot_eng[i];
-		 k++;
-	       }
-	     }
-#ifndef TWOD
-	   }
-#endif
-	 }
-   }
-   else { /* myid != 0 */
-   /* Send data to cpu 0 */
-     for ( r = cellmin.x; r < cellmax.x; ++r ) 
-       for ( s = cellmin.y; s < cellmax.y; ++s ) { 
-#ifdef TWOD
-	 p = PTR_2D_V(cell_array, r, s, cell_dim); 
-	 tag = PTR_2D_V(CELL_TAG, r, s, cell_dim);
-#else
-	 for ( t = cellmin.z; t < cellmax.z; ++t ) { 
-	   p = PTR_3D_V(cell_array, r, s, t, cell_dim); 
-	   tag = PTR_3D_V(CELL_TAG, r, s, t, cell_dim);
-	   send_cell(p,0,ORT_TAG);
-	 }
-#endif
+            pot[k]    = p->pot_eng[i];
+            k++;
+	  }
+	}
+      }
 
-       }
+   } else { /* myid != 0 */
+     /* Send data to cpu 0 */
+     for (j=0; j<ncells; j++) {
+       p = cell_array + CELLS(j);
+       tag = CELL_TAG + j;
+       send_cell(p,0,tag);
+     }
    }
 
 #else /* #ifdef MPI */
 
    k=0;
-   for ( r = cellmin.x; r < cellmax.x; ++r ) 
-     for ( s = cellmin.y; s < cellmax.y; ++s ) { 
-#ifdef TWOD
-       p = PTR_2D_V(cell_array, r, s, cell_dim); 
-#else
-       for ( t = cellmin.z; t < cellmax.z; ++t ) { 
-	 p = PTR_3D_V(cell_array, r, s, t, cell_dim); 
-#endif
-	   for (i = 0;i < p->n; ++i) {
-	     if (p->ort X(i) > socketwin_ll.x &&\
-		 p->ort X(i) < socketwin_ur.x &&\
-		 p->ort Y(i) > socketwin_ll.y &&\
-		 p->ort Y(i) < socketwin_ur.y){
-
-	       nummer[k] = p->nummer[i];
-	       sorte[k]  = p->sorte[i];
-	       masse[k]  = p->masse[i];
-	       x[k]      = p->ort X(i);
-	       y[k]      = p->ort Y(i);
+   for (j=0; j<ncells; j++) {
+     p = cell_array + CELLS(j);
+     for (i = 0;i < p->n; ++i) {
+       if (p->ort X(i) > socketwin_ll.x &&
+           p->ort X(i) < socketwin_ur.x &&
+           p->ort Y(i) > socketwin_ll.y &&
+           p->ort Y(i) < socketwin_ur.y) {
+         nummer[k] = p->nummer[i];
+         sorte[k]  = p->sorte[i];
+         masse[k]  = p->masse[i];
+         x[k]      = p->ort X(i);
+         y[k]      = p->ort Y(i);
 #ifndef TWOD
-	       z[k]      = p->ort Z(i);
+         z[k]      = p->ort Z(i);
 #endif
-	       vx[k]     = p->impuls X(i);
-	       vy[k]     = p->impuls Y(i);
+         vx[k]     = p->impuls X(i);
+         vy[k]     = p->impuls Y(i);
 #ifndef TWOD
-	       vz[k]     = p->impuls Z(i);
+         vz[k]     = p->impuls Z(i);
 #endif
-	       pot[k]    = p->pot_eng[i];
-	       k++;
-	     }
-	   }
+         pot[k]    = p->pot_eng[i];
+         k++;
        }
-#ifndef TWOD
      }
-#endif
+   }
 
 #endif
    /* there are k atoms to write */
