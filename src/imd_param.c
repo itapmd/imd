@@ -422,26 +422,6 @@ void getparamfile(char *paramfname, int sim)
       /* set imposed temperature to current system temperature */
       use_curr_temp = 1;
     }
-    else if (strcasecmp(token,"pn")==0) {
-      /* z/y (3/2D)-coordinate of glideplane */
-      getparam("pn",&pn,PARAM_INT,1,1);
-    }
-    else if (strcasecmp(token,"upperplane")==0) {
-      /* z/y (3/2D)-coordinate of glideplane */
-      getparam("upperplane",&upperplane,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"lowerplane")==0) {
-      /* z/y (3/2D)-coordinate of glideplane */
-      getparam("lowerplane",&lowerplane,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"burgersv")==0) {
-      /* length of Burgers-vector */
-      getparam("burgersv",&burgersv,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"width")==0) {
-      /* width of dislocation */
-      getparam("width",&width,PARAM_REAL,1,1);
-    }
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)
     else if (strcasecmp(token,"endtemp")==0) {
       /* temperature at end of sim. */
@@ -456,7 +436,7 @@ void getparamfile(char *paramfname, int sim)
       getparam("center",&center,PARAM_REAL,2,2);
     }
 #endif
-#if MONOLJ
+#ifdef MONOLJ
     else if (strcasecmp(token,"r_cut")==0) {
       /* cutoff radius */
       getparam("r_cut",&r2_cut,PARAM_REAL,1,1);
@@ -556,14 +536,6 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #ifndef TWOD
-    else if (strcasecmp(token,"pic_ll")==0) { 
-      /* lower left front corner of configuration */
-      getparam("pic_ll", &pic_ll,PARAM_REAL,DIM,DIM);
-    }
-    else if (strcasecmp(token,"pic_ur")==0) { 
-      /* upper right back corner of configuration */
-      getparam("pic_ur", &pic_ur,PARAM_REAL,DIM,DIM);
-    }
     else if (strcasecmp(token,"view_pos")==0) { 
       /* view position */
       getparam("view_pos",&view_pos,PARAM_REAL,DIM,DIM);

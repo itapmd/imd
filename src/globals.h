@@ -90,13 +90,6 @@ EXTERN str255 outfilename INIT("\0");   /* Output File */
 EXTERN str255 potfilename INIT("\0");   /* Potential */
 EXTERN char *paramfilename INIT(0L);    /* Parameter File */
 
-/* construction of PN-dislocations */
-EXTERN int pn INIT(0);  /* construct a Peierls-Nabarro-dislocation? (0==no) */
-EXTERN real burgersv INIT(0);/* Burgers-vector */
-EXTERN real width INIT(1);              /* width of Burgers-vector density */
-EXTERN real upperplane INIT(0);         /* y/z (2/3D)-coordinate of glidep. */
-EXTERN real lowerplane INIT(0);         /* y/z (2/3D)-coordinate of glidep. */
-
 /* Parameters for displacement map */
 EXTERN str255 reffilename INIT("\0");   /* Parameter File */
 
