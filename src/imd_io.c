@@ -1,7 +1,7 @@
 
 /******************************************************************************
 *
-* imd_io.c -- dimension independent IO  routines 
+* imd_io.c -- dimension independent IO routines 
 *
 ******************************************************************************/
 
@@ -27,7 +27,7 @@ void write_config_select(int fzhlr, char *suffix,
   FILE *out;
   str255 fname,msg;
   cell *p;
-  int k,m,tag;
+  int k,m;
 
   /* create file name, and open file */
 #ifdef MPI
@@ -141,7 +141,7 @@ void write_cell_ef(FILE *out, cell *p)
 /******************************************************************************
 *
 *  filter function for write_config_select
-*  writes pressure tensor for each atom to files *.press.x
+*  writes pressure tensor for each atom to files *.nr.press
 *
 ******************************************************************************/
 
@@ -346,5 +346,3 @@ void write_msqd(int steps)
 }
 
 #endif
-
-

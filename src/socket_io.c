@@ -478,181 +478,43 @@ void write_conf_using_sockets()
 }
 
 
-/*****************************************************************************
+/******************************************************************************
 *
-*  sends 2D or 3D kinetic and potential energy distribution to the socket 
+* write_distrib_using_sockets (only energy distributions)
 *
-*****************************************************************************/
+******************************************************************************/
 
 void write_distrib_using_sockets()
 {
-  static size_t size;
-  vektor scale;
-  ivektor coord;
-  cell *p;
-  float *pot, *kin, f;
-  shortint *num;
-  int i,r,s,t;
+  hist_t hist;
   unsigned char resolution_buffer[6];
-  static float    *pot_hist_local=NULL;
-  static float    *kin_hist_local=NULL;
-  static shortint *num_hist_local=NULL;
-#ifdef MPI
-  static float    *pot_hist_global=NULL;
-  static float    *kin_hist_global=NULL;
-  static shortint *num_hist_global=NULL;
-#endif
-  float *pot_hist, *kin_hist;
-  shortint *num_hist;
+  float f;
 
-#ifdef TWOD
-  size = dist_dim.x * dist_dim.y;
-#else
-  size = dist_dim.x * dist_dim.y * dist_dim.z;
-#endif
+  hist.dim = dist_dim;
+  make_histograms(&hist);
 
-  /* allocate histogram arrays */
-  if (NULL==pot_hist_local) {
-    pot_hist_local = (float *) malloc(size*sizeof(float));
-    if (NULL==pot_hist_local) 
-      error("Cannot allocate distrib array.");
-  }
-  if (NULL==kin_hist_local) {
-    kin_hist_local = (float *) malloc(size*sizeof(float));
-    if (NULL==kin_hist_local) 
-      error("Cannot allocate distrib array.");
-  }
-  if (NULL==num_hist_local) {
-    num_hist_local = (shortint *) malloc(size*sizeof(shortint));
-    if (NULL==num_hist_local) 
-      error("Cannot allocate distrib array.");
-  }
-#ifdef MPI
-  if (NULL==pot_hist_global) {
-    pot_hist_global = (float *) malloc(size*sizeof(float));
-    if (NULL==pot_hist_global) 
-      error("Cannot allocate distrib array.");
-  }
-  if (NULL==kin_hist_global) {
-    kin_hist_global = (float *) malloc(size*sizeof(float));
-    if (NULL==kin_hist_global) 
-      error("Cannot allocate distrib array.");
-  }
-  if (NULL==num_hist_global) {
-    num_hist_global = (shortint *) malloc(size*sizeof(shortint));
-    if (NULL==num_hist_global) 
-      error("Cannot allocate distrib array.");
-  }
-#endif
+  if (0==myid) {
 
-  for (i=0; i<size; i++) {
-    pot_hist_local[i]=0.0;
-    kin_hist_local[i]=0.0;
-    num_hist_local[i]=0;
-  }
-
-  /* the dist bins are orthogonal boxes in space */
-  scale = box_x; 
-  if (scale.x < box_y.x) scale.x = box_y.x; 
-  if (scale.y < box_y.y) scale.y = box_y.y; 
+    resolution_buffer[0] = hist.dim.x / 256; /* high byte */
+    resolution_buffer[1] = hist.dim.x % 256; /* low byte */
+    resolution_buffer[2] = hist.dim.y / 256;
+    resolution_buffer[3] = hist.dim.y % 256;
 #ifndef TWOD
-  if (scale.z < box_y.z) scale.z = box_y.z; 
-  
-  if (scale.x < box_z.x) scale.x = box_z.x; 
-  if (scale.y < box_z.y) scale.y = box_z.y; 
-  if (scale.z < box_z.z) scale.z = box_z.z; 
-#endif
-
-  scale.x = dist_dim.x / scale.x;
-  scale.y = dist_dim.y / scale.y;
-#ifndef TWOD
-  scale.z = dist_dim.z / scale.z;
-#endif
-
-  /* loop over all atoms */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t ) 
-#endif
-      {	
-#ifdef TWOD
-        p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#else
-        p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#endif
-	for (i = 0;i < p->n; ++i) {
-          coord.x = (int) (p->ort X(i) * scale.x);
-          coord.y = (int) (p->ort Y(i) * scale.y);
-#ifndef TWOD
-          coord.z = (int) (p->ort Z(i) * scale.z);
-#endif
-          /* Check bounds */
-          if (coord.x<0          ) coord.x = 0;
-          if (coord.x>=dist_dim.x) coord.x = dist_dim.x-1;
-          if (coord.y<0          ) coord.y = 0;
-          if (coord.y>=dist_dim.y) coord.y = dist_dim.y-1;
-#ifndef TWOD
-          if (coord.z<0          ) coord.z = 0;
-          if (coord.z>=dist_dim.z) coord.z = dist_dim.z-1;
-#endif
-	  pot = PTR_VV(pot_hist_local, coord, dist_dim);
-	  kin = PTR_VV(kin_hist_local, coord, dist_dim);
-          num = PTR_VV(num_hist_local, coord, dist_dim);
-          (*num)++;
-#ifdef DISLOC
-          if (Epot_diff==1) { 
-            *pot += p->pot_eng[i] - p->Epot_ref[i];
-          } else
-#endif
-	  *pot += p->pot_eng[i];
-	  *kin += SPRODN(p->impuls,i,p->impuls,i) / (2*MASSE(p,i));
-        }
-      }
-
-#ifdef MPI
-  MPI_Reduce(pot_hist_local,pot_hist_global,size,MPI_FLOAT,MPI_SUM,0,cpugrid);
-  MPI_Reduce(kin_hist_local,kin_hist_global,size,MPI_FLOAT,MPI_SUM,0,cpugrid);
-  MPI_Reduce(num_hist_local,num_hist_global,size,    SHORT,MPI_SUM,0,cpugrid);
-  pot_hist=pot_hist_global;
-  kin_hist=kin_hist_global;
-  num_hist=num_hist_global;
-#else
-  pot_hist=pot_hist_local;
-  kin_hist=kin_hist_local;
-  num_hist=num_hist_local;
-#endif
-
-#ifdef MPI
-  if (0==myid)
-#endif
-  {
-    for (i=0; i<size; i++) {
-      if (num_hist[i]>0) {
-         pot_hist[i] /= num_hist[i];
-         kin_hist[i] /= num_hist[i];
-      }
-    }
-
-    resolution_buffer[0] = dist_dim.x / 256; /* high byte */
-    resolution_buffer[1] = dist_dim.x % 256; /* low byte */
-    resolution_buffer[2] = dist_dim.y / 256;
-    resolution_buffer[3] = dist_dim.y % 256;
-#ifndef TWOD
-    resolution_buffer[4] = dist_dim.z / 256;
-    resolution_buffer[5] = dist_dim.z % 256;
+    resolution_buffer[4] = hist.dim.z / 256;
+    resolution_buffer[5] = hist.dim.z % 256;
 #endif
 
 #ifdef TWOD
-    if ((dist_dim.x > 65535) || (dist_dim.y > 65535))
+    if ((hist.dim.x > 65535) || (hist.dim.y > 65535))
 #else
-    if ((dist_dim.x > 65535) || (dist_dim.y > 65535) || (dist_dim.z > 65535))
+    if ((hist.dim.x > 65535) || (hist.dim.y > 65535) || (hist.dim.z > 65535))
 #endif
       printf("Warning: sizes are larger than maximum size 65535!!!\n");
-    f=(float)1.0;
+
+    f = (float)1.0;
     WriteFull(soc,(void *) &f, sizeof(float));
     WriteFull(soc,(void *) resolution_buffer, 2*DIM);
-    WriteFull(soc,(void *) pot_hist, size*sizeof(float));
-    WriteFull(soc,(void *) kin_hist, size*sizeof(float));
+    WriteFull(soc,(void *) hist.pot_hist, hist.size * sizeof(float));
+    WriteFull(soc,(void *) hist.kin_hist, hist.size * sizeof(float));
   }
 }

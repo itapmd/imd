@@ -155,6 +155,38 @@ typedef struct {
   real *table;      /* the actual data */
 } pot_table_t;
 
+/* data structure for histograms */
+typedef struct {
+#ifdef STRESS_TENS
+#ifdef SHOCK
+  float *press_histxx, minpxx, maxpxx;
+  float *press_histyy, minpyy, maxpyy;
+  float *kin_histxx,   minkxx, maxkxx;
+  float *kin_histxxu,  minkxxu,maxkxxu;
+  float *kin_histyy,   minkyy, maxkyy;
+#ifndef TWOD
+  float *press_histzz, minpzz, maxpzz;
+  float *kin_histzz,   minkzz, maxkzz;
+#endif
+#else /* not SHOCK */
+  float *press_histxx, minpxx, maxpxx;
+  float *press_histyy, minpyy, maxpyy;
+  float *press_histxy, minpxy, maxpxy;
+#ifndef TWOD
+  float *press_histzz, minpzz, maxpzz;
+  float *press_histzx, minpzx, maxpzx;
+  float *press_histyz, minpyz, maxpyz;
+#endif
+#endif /* SHOCK */
+#endif /* STRESS_TENS */
+  float *kin_hist,     minkin, maxkin;
+  float *pot_hist,     minpot, maxpot;
+  integer *num_hist;
+  int     size;
+  ivektor dim;
+  real    binvol;
+} hist_t;
+
 /* data structure for timers */
 typedef struct {
 #ifdef MPI                /* with MPI_Wtime */

@@ -224,15 +224,17 @@ void write_conf_using_sockets(void);
 void write_ras_using_sockets(void);
 #endif
 
-/* write distributions - files imd_io_*.c, imd_transport.c, socket_io.c */
-/* should be merged and put in imd_histogram.c */
+/* write distributions - files imd_histogram.c, socket_io.c */
+void make_histograms(hist_t *hist);
 void write_distrib(int steps);
-#ifdef USE_SOCKETS
-void write_distrib_using_sockets(void);
-#endif
 #ifdef STRESS_TENS
 void write_press_dist(int steps);
+#endif
+#ifdef SHOCK
 void write_press_dist_shock(int steps);
+#endif
+#ifdef USE_SOCKETS
+void write_distrib_using_sockets(void);
 #endif
 
 /* write pictures - files imd_io_*.c, socket_io.c */
