@@ -193,22 +193,10 @@ int main(int argc, char **argv)
     printf("Stack ISRSS=%lu Bytes\n",(unsigned long)end_ru.ru_isrss);
 #endif
 #endif
-    printf("Used %f seconds cputime,\ndid %d steps with %d atoms\nfor %.3e cpuseconds per step and atom.\n",
-	   total_time, 
-           steps_max, 
-           natoms, 
-           total_time/ (steps_max * natoms));
-    printf("Inverse is %.3e steps * atom per cpusecond.\n",
-	   ((float)steps_max*(float)natoms)/total_time);
-#ifdef UNIAX
-    printf("Time for pair interaction t_pair is: %.3e seconds\n\n",
-           total_time / ((float)steps_max*(float)natoms*
-                         (4.0/3.0)*M_PI*pow(uniax_r2_cut,3.0/2.0)*(natoms/volume)));
-#else
-    printf("Time for pair interaction t_pair is: %.3e seconds\n\n",
-           total_time / ((float)steps_max*(float)natoms*
-                         (4.0/3.0)*M_PI*pow(r2_cut,3.0/2.0)*(natoms/volume)));
-#endif
+    printf("Did %d steps with %d atoms.\n", steps_max, natoms);
+    printf("Used %f seconds cputime,\n", total_time);
+    printf("%.3e cpuseconds per step and atom.\n\n",
+           total_time / (steps_max * natoms));
 #ifdef MPI
 
     time_comm += time_comm_force + time_comm_ar;
