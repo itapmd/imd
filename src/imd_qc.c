@@ -106,7 +106,7 @@ void init_qc(void)
   box_y.z=0;
   box_z.x=0;
   box_z.y=0;
-
+  make_box();
 }
 
 /******************************************************************************
@@ -214,10 +214,6 @@ void generate_qc( void )
       iper[i]=1.0/box[i];
     }
 
-  /* initialize 3d cell data structures */
-      
-      init_cells();
-      
       /* Set up 1 atom input cell */
 
       input = (cell *) malloc(sizeof(cell));

@@ -525,17 +525,6 @@ void move_atoms_nvt(void)
   /* new box size */
   box_y.x += epsilon * box_y.y;
   make_box();
-
-  /* revise cell division if necessary */
-  if ( (height.x < min_height.x) || (height.x > max_height.x)
-    || (height.y < min_height.y) || (height.y > max_height.y)
-#ifndef TWOD
-    || (height.z < min_height.z) || (height.z > max_height.z)
-#endif
-  ) {
-    init_cells();
-    fix_cells();
-  }  
 #endif
 
 #ifdef UNIAX
@@ -806,6 +795,7 @@ void move_atoms_npt_iso(void)
 
   /* time evolution of box size */
   ttt = (1.0 + xi.x * timestep / 2.0) / (1.0 - xi.x * timestep / 2.0);
+  if (ttt<0) error("box size has become negative!");
   box_x.x *= ttt;
   box_x.y *= ttt;
   box_y.x *= ttt;
@@ -964,12 +954,14 @@ void move_atoms_npt_axial(void)
   /* time evolution of box size */
   tvec.x   = (1.0 + xi.x * timestep / 2.0) / (1.0 - xi.x * timestep / 2.0);
   tvec.y   = (1.0 + xi.y * timestep / 2.0) / (1.0 - xi.y * timestep / 2.0);
+  if ((tvec.x<0) || (tvec.y<0)) error("box size has become negative!");
   box_x.x *= tvec.x;
   box_x.y *= tvec.x;
   box_y.x *= tvec.y;
   box_y.y *= tvec.y;
 #ifndef TWOD
   tvec.z = (1.0 + xi.z * timestep / 2.0) / (1.0 - xi.z * timestep / 2.0);
+  if (tvec.z<0) error("box size has become negative!");
   box_x.z *= tvec.x;
   box_y.z *= tvec.y;
   box_z.x *= tvec.z;

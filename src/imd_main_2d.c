@@ -332,15 +332,6 @@ void main_loop(void)
     do_boundaries();    
     fix_cells();
 
-#ifdef NPT
-    /* revise cell division if necessary */
-    if ( (height.x < min_height.x) || (height.x > max_height.x)
-      || (height.y < min_height.y) || (height.y > max_height.y) ) {
-      init_cells();
-      fix_cells();
-    }  
-#endif
-
   }
 
   /* clean up the current phase, and clear restart flag */

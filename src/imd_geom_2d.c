@@ -31,7 +31,13 @@
 *
 ******************************************************************************/
 
-/* compute transformation matrix */
+/******************************************************************************
+*
+*  compute box transformation matrix;
+*  initialize or revise the cell array if nessessary
+*
+******************************************************************************/
+
 void make_box( void )
 {
   /* volume */
@@ -47,6 +53,12 @@ void make_box( void )
   /* squares of the box heights perpendicular to the faces */
   height.x = 1.0 / SPROD(tbox_x,tbox_x);
   height.y = 1.0 / SPROD(tbox_y,tbox_y);
+
+  /* initialize or revise cell division if necessary */
+  if ( (height.x < min_height.x) || (height.x > max_height.x)
+    || (height.y < min_height.y) || (height.y > max_height.y)
+  ) init_cells();
+
 }
 
 
@@ -60,24 +72,22 @@ void make_box( void )
 void init_cells( void )
 {
   int i, j, k;
-  real tmp; 
+  real tmp, tol=1.0; 
   vektor cell_scale;
   ivektor next_cell_dim, cell_dim_old;
   ivektor cellmin_old, cellmax_old, cellc;
   cell *p, *cell_array_old, *to; 
 
-  /* compute scaling factors */
-  make_box();
-  cell_scale.x = sqrt( cellsz / height.x );
-  cell_scale.y = sqrt( cellsz / height.y );
-
 #ifdef NPT
   /* if NPT, we need some tolerance */
   if ((ensemble == ENS_NPT_ISO) || (ensemble == ENS_NPT_AXIAL)) {
-    cell_scale.x *= (1.0 + cell_size_tolerance);
-    cell_scale.y *= (1.0 + cell_size_tolerance);
+    tol = SQR(1.0 + cell_size_tolerance);
   }
 #endif
+
+  /* compute scaling factors */
+  cell_scale.x = sqrt( tol * cellsz / height.x );
+  cell_scale.y = sqrt( tol * cellsz / height.y );
 
   /* set up the cell array dimensions */
   global_cell_dim.x = (int) ( 1.0 / cell_scale.x );
@@ -134,16 +144,8 @@ void init_cells( void )
   /* maximal and minimal heights before a new cell division is needed */
   min_height.x = cellsz * SQR(global_cell_dim.x);
   min_height.y = cellsz * SQR(global_cell_dim.y);
-  max_height.x = cellsz * SQR(  next_cell_dim.x);
-  max_height.y = cellsz * SQR(  next_cell_dim.y);
-
-#ifdef NPT
-  /* if NPT, we should let it grow a a little more */
-  if ((ensemble == ENS_NPT_ISO) || (ensemble == ENS_NPT_AXIAL)) {
-    max_height.x *= SQR(1 + cell_size_tolerance);
-    max_height.y *= SQR(1 + cell_size_tolerance);
-  }
-#endif
+  max_height.x = cellsz * SQR(  next_cell_dim.x) * tol;
+  max_height.y = cellsz * SQR(  next_cell_dim.y) * tol;
 
   /* If an integer number of cells does not fit exactly into the box, the
      cells are enlarged accordingly */
@@ -232,6 +234,7 @@ void init_cells( void )
         alloc_cell( p, 0 );  /* free old cell */
     }
     free(cell_array_old);
+    fix_cells();
   }
 
   make_cell_lists();

@@ -61,17 +61,6 @@ void expand_sample(void)
 #endif
   make_box();
 
-  /* revise cell division if necessary */
-  if ( (height.x < min_height.x) || (height.x > max_height.x)
-    || (height.y < min_height.y) || (height.y > max_height.y)
-#ifndef TWOD
-    || (height.z < min_height.z) || (height.z > max_height.z)
-#endif
-  ) {
-    init_cells();
-    fix_cells();
-  }  
-
 } /* expand sample */
 
 
@@ -106,17 +95,6 @@ void shear_sample(void)
   box_y.x += shear_factor.x * box_y.y;
   box_x.y += shear_factor.y * box_x.x;
   make_box();
-
-  /* revise cell division if necessary */
-  if ( (height.x < min_height.x) || (height.x > max_height.x)
-    || (height.y < min_height.y) || (height.y > max_height.y)
-#ifndef TWOD
-    || (height.z < min_height.z) || (height.z > max_height.z)
-#endif
-  ) {
-    init_cells();
-    fix_cells();
-  }  
 
 } /* shear sample */
 

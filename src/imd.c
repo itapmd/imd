@@ -98,7 +98,7 @@ int main(int argc, char **argv)
     if (0 == myid) {
       printf("Reading atoms.\n");fflush(stdout);
     }
-    init_cells();
+    make_box();
     read_atoms(infilename);
   }
   if (0 == myid) printf("Done reading atoms.\n");
@@ -134,7 +134,7 @@ int main(int argc, char **argv)
     broadcast_params();
 #endif
     if (steps_min <= steps_max) {
-      init_cells();  /* a new cell division might be necessary or useful */
+      make_box();  /* make sure the box size is still ok */
       main_loop();
     }
   }
