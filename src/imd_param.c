@@ -565,9 +565,9 @@ void getparamfile(char *paramfname, int sim)
       getparam("pic_at_radius", pic_at_radius,PARAM_REAL_COPY,1,ntypes);
     }
 #ifdef DEFORM
-    else if (strcasecmp(token,"hom_int")==0) {
+    else if (strcasecmp(token,"hom_interval")==0) {
       /* period of homshear intervals */
-      getparam("hom_int",&hom_interval,PARAM_INTEGER,1,1);
+      getparam("hom_interval",&hom_interval,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"shear_max")==0) {
       /* maximum shear */
@@ -575,7 +575,7 @@ void getparamfile(char *paramfname, int sim)
     }
     else if (strcasecmp(token,"exp_interval")==0) {
       /* period of expansion intervals */
-      getparam("exp_interval",&exp_interval,PARAM_INTEGER,1,1);
+      getparam("exp_interval",&exp_interval,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"expansion")==0) {
       /* expansion */
@@ -585,7 +585,7 @@ void getparamfile(char *paramfname, int sim)
 #if defined(FRAC) || defined(DEFORM)
     else if (strcasecmp(token,"initial_shift")==0) {
       /* shall the whole sample be shifted before MD */
-      getparam("initial_shift",&initial_shift,PARAM_INTEGER,1,1);
+      getparam("initial_shift",&initial_shift,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"ins")==0) {
       /* shift vector (whole sample) */
@@ -1082,7 +1082,6 @@ void broadcast_params() {
   MPI_Bcast( infilename  , sizeof(infilename) , MPI_CHAR, 0, MPI_COMM_WORLD); 
   MPI_Bcast( reffilename , sizeof(reffilename), MPI_CHAR, 0, MPI_COMM_WORLD); 
 
-
 #if defined(AND) || defined(NVT) || defined(NPT)
   MPI_Bcast( &end_temp , 1 , MPI_REAL,  0, MPI_COMM_WORLD); 
 #endif
@@ -1178,7 +1177,17 @@ void broadcast_params() {
 #endif
 
 #ifdef DEFORM
-  MPI_Bcast( &strip_shift , DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &hom_interval , 1, MPI_INTEGER, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &exp_interval , 1, MPI_INTEGER, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &shear_max , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &expansion , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+#endif
+#if defined(FRAC) || defined(DEFORM)
+  MPI_Bcast( &initial_shift ,  1, MPI_INTEGER, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &ins ,          DIM, MPI_REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &ekin_threshold , 1, MPI_REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &annealsteps ,    1, MPI_INT,     0, MPI_COMM_WORLD); 
+  MPI_Bcast( &max_deform_int , 1, MPI_INT,     0, MPI_COMM_WORLD); 
 #endif  
 
 #ifdef USE_SOCKETS
