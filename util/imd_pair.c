@@ -171,10 +171,10 @@ int curline;         /* Number of current line for parameter reading */
 str255 error_msg;    /* string for error message */
 
 /* The simulation box and its inverse */
-vektor box_x, ibox_x, tbox_x;
-vektor box_y, ibox_y, tbox_y;
+vektor box_x, tbox_x;
+vektor box_y, tbox_y;
 #ifndef TWOD
-vektor box_z, ibox_z, tbox_z;
+vektor box_z, tbox_z;
 #endif
 
 /* Filenames */
@@ -382,60 +382,41 @@ void init_cells(void)
 
 #ifdef TWOD
 
-  /* Determinant first */
+  /* determinant */
   det = box_x.x * box_y.y - box_x.y * box_y.x;
-  if ( 0 == det) error("Box Edges are parallel.");
+  if (0==det) error("Box Edges are parallel.");
 
-  /* Inverse second */
-  ibox_x.x =   box_y.y / det;
-  ibox_x.y = - box_y.x / det;
-  ibox_y.x = - box_x.y / det;
-  ibox_y.y =   box_x.x / det;
-
-  /* Transpose */
-  tbox_x.x = ibox_x.x;
-  tbox_x.y = ibox_y.x;
-  tbox_y.x = ibox_x.y;
-  tbox_y.y = ibox_y.y;
+  /* transposed inverse box */
+  tbox_x.x =   box_y.y / det;
+  tbox_x.y = - box_y.x / det;
+  tbox_y.x = - box_x.y / det;
+  tbox_y.y =   box_x.x / det;
 
 #else /* 3D */
 
-  /* Determinant first */
+  /* determinant */
   det = box_x.y * box_y.z * box_z.x +
         box_z.z * box_y.x * box_z.y +
 	box_x.x * box_y.y * box_z.z -
         box_x.z * box_y.y * box_z.x -
         box_x.x * box_y.z * box_z.y -
 	box_x.y * box_y.x * box_z.z;
-  if ( 0 == det) error("Box Edges are paralell.");
+  if (0==det) error("Box Edges are parallel.");
 
-  /* Inverse second */
-  ibox_x.x = ( box_y.y * box_z.z - box_y.z * box_z.y ) / det;
-  ibox_x.y = ( box_x.z * box_z.y - box_x.y * box_z.z ) / det;
-  ibox_x.z = ( box_x.y * box_y.z - box_x.z * box_y.y ) / det;
+  /* transposed inverse box */
+  tbox_x.x = ( box_y.y * box_z.z - box_y.z * box_z.y ) / det;
+  tbox_y.x = ( box_x.z * box_z.y - box_x.y * box_z.z ) / det;
+  tbox_z.x = ( box_x.y * box_y.z - box_x.z * box_y.y ) / det;
 
-  ibox_y.x = ( box_y.z * box_z.x - box_y.x * box_z.z ) / det;
-  ibox_y.y = ( box_x.x * box_z.z - box_x.z * box_z.x ) / det;
-  ibox_y.z = ( box_x.z * box_y.x - box_x.x * box_y.z ) / det;
+  tbox_x.y = ( box_y.z * box_z.x - box_y.x * box_z.z ) / det;
+  tbox_y.y = ( box_x.x * box_z.z - box_x.z * box_z.x ) / det;
+  tbox_z.y = ( box_x.z * box_y.x - box_x.x * box_y.z ) / det;
 
-  ibox_z.x = ( box_y.x * box_z.y - box_y.y * box_z.x ) / det;
-  ibox_z.y = ( box_x.y * box_z.x - box_x.x * box_z.y ) / det;
-  ibox_z.z = ( box_x.x * box_y.y - box_x.y * box_y.x ) / det;
+  tbox_x.z = ( box_y.x * box_z.y - box_y.y * box_z.x ) / det;
+  tbox_y.z = ( box_x.y * box_z.x - box_x.x * box_z.y ) / det;
+  tbox_z.z = ( box_x.x * box_y.y - box_x.y * box_y.x ) / det;
 
-  /* Transpose */
-  tbox_x.x = ibox_x.x;
-  tbox_x.y = ibox_y.x;
-  tbox_x.z = ibox_z.x;
-
-  tbox_y.x = ibox_x.y;
-  tbox_y.y = ibox_y.y;
-  tbox_y.z = ibox_z.y;
-
-  tbox_z.x = ibox_x.z;
-  tbox_z.y = ibox_y.z;
-  tbox_z.z = ibox_z.z;
-
-#endif /* TWOD */
+#endif /* not TWOD */
 
 }
 
