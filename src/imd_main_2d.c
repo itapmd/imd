@@ -98,6 +98,7 @@ void main_loop(void)
 
     if ((steps==steps_min) && (use_curr_temp==1)) {
       temperature = 2 * tot_kin_energy / (DIM * natoms);
+      dtemp = (end_temp - temperature) / (steps_max - steps_min);
       use_curr_temp = 0;
     };
 
@@ -105,6 +106,8 @@ void main_loop(void)
     if ((steps==steps_min) && (ensemble==ENS_NPT_ISO) && 
         (use_curr_pressure==1)) {
       pressure_ext.x = pressure;
+      d_pressure.x = (pressure_end.x-pressure_ext.x) / (steps_max-steps_min);
+      d_pressure.y = (pressure_end.y-pressure_ext.y) / (steps_max-steps_min);
       use_curr_pressure = 0;
     };
 #endif
@@ -113,6 +116,8 @@ void main_loop(void)
     if ((steps==steps_min) && (ensemble==ENS_NPT_AXIAL) && 
         (use_curr_pressure==1)) {
       pressure_ext = stress;
+      d_pressure.x = (pressure_end.x-pressure_ext.x) / (steps_max-steps_min);
+      d_pressure.y = (pressure_end.y-pressure_ext.y) / (steps_max-steps_min);
       use_curr_pressure = 0;
     };
 #endif
