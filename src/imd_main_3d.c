@@ -125,6 +125,7 @@ void main_loop(void)
  if (steps > fbc_annealsteps)
  {
    nofbcsteps++; 
+
    if((tot_kin_energy/nactive < fbc_ekin_threshold) ||
         (nofbcsteps==fbc_waitsteps)) 
      {
@@ -135,18 +136,23 @@ void main_loop(void)
 	 (fbc_df+l)->z = (fbc_dforces+l)->z ;
 
 	 /* MIK affects the total impuls, especially in inhomogenous samples,
-	    so we set the velocities to 0 befor each force increment */
-	  
-	 for (k=0; k<ncells; ++k) {
-	   p = cell_array + CELLS(k);
-	     for (i=0; i<p->n; ++i) {
-	       p->impuls X(i) = 0.0;
-	       p->impuls Y(i) = 0.0;
-	       p->impuls Z(i) = 0.0;
+	    so we set the velocities to 0 befor each force increment 
+	    
+	    for (k=0; k<ncells; ++k) {
+	    p = cell_array + CELLS(k);
+	    for (i=0; i<p->n; ++i) {
+	     p->impuls X(i) = 0.0;
+	     p->impuls Y(i) = 0.0;
+	     p->impuls Z(i) = 0.0;
 	     }
-	 }
-
+	     }
+	 */
       }
+      /* to avoid an imense total impuls and to see more of the phase space,
+	 we do some AND steps here.... */
+#ifdef MIKAND
+      if ((nofbcsteps!=0) && (0==nofbcsteps%tmp_interval)) maxwell(temperature);
+#endif
      }
  }
 
@@ -228,8 +234,14 @@ void main_loop(void)
 #endif
 #endif
 
+#ifdef SMIK /* have relaxsteps nvesteps before mik */
+    if (steps<relaxsteps)
+      move_atoms_nve();
+    else
+      move_atoms();
+#else 
     move_atoms();
-
+#endif
 
 #if defined(AND) || defined(NVT) || defined(NPT)
     if ((steps==steps_min) && (use_curr_temp==1)) {

@@ -65,6 +65,10 @@ EXTERN vektor *fbc_endforces;
 EXTERN vektor *restrictions;     /* directions the atom is allowed to move in */
 #endif
 
+#ifdef SMIK
+EXTERN int    relaxsteps INIT(1);
+#endif
+
 /* Global bookkeeping */
 
 EXTERN int natoms  INIT(0);      /* Total number of atoms */

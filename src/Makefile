@@ -221,7 +221,6 @@ CC_MPI_alpha			= hcc
 CC_MPI_i386-linux		= hcc
 CC_MPI_i486-linux		= hcc
 CC_MPI_iris4d			= hcc
-
 CC_PACX_paragon			= cc
 CC_PACX_t3e			= cc
 CC_PACX_cray-t3e		= cc
@@ -431,6 +430,14 @@ endif
 
 ifneq (,$(findstring fbc,${MAKETARGET}))
 CFLAGS += -DFBC
+endif
+
+ifneq (,$(findstring smik,${MAKETARGET}))
+CFLAGS += -DSMIK
+endif
+
+ifneq (,$(findstring mikandfbc,${MAKETARGET}))
+CFLAGS += -DMIKAND
 endif
 
 ifneq (,$(findstring npt_axial,${MAKETARGET}))

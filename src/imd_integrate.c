@@ -20,7 +20,7 @@
 *
 *****************************************************************************/
 
-#ifdef NVE
+#if defined(NVE) || defined(SMIK)
 
 void move_atoms_nve(void)
 {
@@ -184,13 +184,13 @@ void move_atoms_nve(void)
 }
 
 #else
-
+#ifndef SMIK
 void move_atoms_nve(void) 
 {
   if (myid==0)
   error("the chosen ensemble NVE is not supported by this binary");
 }
-
+#endif
 #endif
 
 
@@ -279,8 +279,9 @@ void move_atoms_mik(void)
 #endif
 
 #endif
+
 	/* Mikroconvergence Algorithm - set velocity zero if a*v < 0 */
-	if (0 > SPRODN(p->impuls,i,p->kraft,i)) {
+	if (0.0 > SPRODN(p->impuls,i,p->kraft,i)) {
           p->impuls X(i) = 0.0;
           p->impuls Y(i) = 0.0;
 #ifndef TWOD
@@ -294,6 +295,7 @@ void move_atoms_mik(void)
           p->ort Z(i) += tmp * p->impuls Z(i);
 #endif
         }
+
 #ifdef ATNR
 	if(p->nummer[i]==ATNR){
 	printf("impuls: %.16f  %.16f  %.16f \n",(p->impuls X(i)),(p->impuls Y(i)),(p->impuls Z(i)));

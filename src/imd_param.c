@@ -459,6 +459,14 @@ void getparamfile(char *paramfname, int sim)
       *(fbc_beginforces+(int)(tempforce.x)) = force;
       *(fbc_forces+(int)(tempforce.x)) = force; 
     }
+
+#ifdef SMIK
+    else if (strcasecmp(token,"relaxsteps")==0) {
+      /* steps nve integration befor mik  */
+      getparam("relaxsteps",&relaxsteps,PARAM_INT,1,1);
+    }
+#endif
+
 #ifdef MIK
     else if (strcasecmp(token,"fbc_ekin_threshold")==0) {
       /* epsilon criterium to increment extra force*/
@@ -1311,6 +1319,9 @@ void broadcast_params() {
   if (NULL==fbc_beginforces) 
     error("Can't allocate memory for fbc_beginforces on client."); 
   MPI_Bcast( fbc_beginforces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+#ifdef SMIK
+  MPI_Bcast( &relaxsteps      , 1, MPI_INT,  0, MPI_COMM_WORLD);
+#endif
 #ifdef MIK
   MPI_Bcast( &fbc_ekin_threshold , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &fbc_waitsteps      , 1, MPI_INT,  0, MPI_COMM_WORLD);
