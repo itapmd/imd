@@ -113,9 +113,13 @@ int main(int argc, char **argv)
 
   /* execute further phases of the simulation */
   while (finished==0) {
+    str255 itrfilename;
     simulation++;
-    steps_min = steps_max + 1;
-    if (0==myid) getparamfile( paramfilename, simulation );
+    if (0==myid) {
+      getparamfile( paramfilename, simulation );
+      sprintf( itrfilename,"%s-final.itr", outfilename );
+      getparamfile( itrfilename, 1 );
+    }
 #ifdef MPI
     broadcast_params();
 #endif

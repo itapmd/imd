@@ -577,6 +577,58 @@ void write_cell(FILE *out, cell *p)
 
 /******************************************************************************
 *
+*  write iteration file
+*
+******************************************************************************/
+
+void write_itr_file(int fzhlr, int steps)
+{
+  FILE *out;
+  str255 fname;
+  int n;
+
+  if (fzhlr>=0) sprintf(fname,"%s.%u.itr",outfilename,fzhlr);
+  else          sprintf(fname,"%s-final.itr",outfilename);
+
+  out = fopen(fname,"w");
+  if (NULL == out) error("Cannot write iteration file.");
+
+  fprintf(out,"# checkpoint %d\n",fzhlr);
+  fprintf(out,"startstep \t%d\n",steps+1);
+  fprintf(out,"box_x \t%.16f %.16f %.16f\n",box_x.x,box_x.y,box_x.z);
+  fprintf(out,"box_y \t%.16f %.16f %.16f\n",box_y.x,box_y.y,box_y.z);
+  fprintf(out,"box_z \t%.16f %.16f %.16f\n",box_z.x,box_z.y,box_z.z);
+  fprintf(out,"starttemp \t%f\n",temperature);
+#if defined(NVT) || defined(NPT)
+  fprintf(out,"eta \t%f\n",eta);
+#ifdef UNIAX
+  fprintf(out,"eta_rot \t%f\n",eta_rot);
+#endif
+#endif
+
+#ifdef FBC
+  for(n=0; n<vtypes;n++)
+    fprintf(out,"extra_startforce %d %.21g %.21g %.21g \n",
+            n,(fbc_forces+n)->x,(fbc_forces+n)->y,(fbc_forces+n)->z);
+#endif
+
+#ifdef NPT
+  if (ensemble==ENS_NPT_ISO) {
+    fprintf(out,"pressure_ext \t%f\n",pressure_ext.x);
+    fprintf(out,"xi \t%f\n",xi.x);
+  }
+  if (ensemble==ENS_NPT_AXIAL) {
+    fprintf(out,"pressure_ext \t%f %f %f\n",
+            pressure_ext.x,pressure_ext.y,pressure_ext.z);
+    fprintf(out,"xi \t%f %f %f\n", xi.x,xi.y,xi.z);
+  }
+#endif /* NPT */
+
+  fclose(out);
+}
+
+/******************************************************************************
+*
 * write_config writes a configuration to a numbered file,
 * which can serve as a checkpoint; uses write_cell
 *
@@ -584,57 +636,15 @@ void write_cell(FILE *out, cell *p)
 
 void write_config(int steps)
 { 
-  FILE *out;
-  str255 fname;
-  int fzhlr;
-#ifdef FBC
-  int n;
-#endif
-  fzhlr = steps / rep_interval;
+  int fzhlr = steps / rep_interval;
 
   /* first make sure that every atom is inside the box and on the right CPU */
   do_boundaries();
   fix_cells();
 
   /* write checkpoint */
-  write_config_select(fzhlr,"chkpt",write_cell);
+  write_config_select(fzhlr, "chkpt", write_cell);
 
   /* write iteration file */
-  if (myid == 0) {
-    sprintf(fname,"%s.%u.itr",outfilename,fzhlr);
-    out = fopen(fname,"w");
-    if (NULL == out) error("Cannot write iteration file.");
-
-    fprintf(out,"# checkpoint %d\n",fzhlr);
-    fprintf(out,"startstep \t%d\n",steps+1);
-    fprintf(out,"box_x \t%.16f %.16f %.16f\n",box_x.x,box_x.y,box_x.z);
-    fprintf(out,"box_y \t%.16f %.16f %.16f\n",box_y.x,box_y.y,box_y.z);
-    fprintf(out,"box_z \t%.16f %.16f %.16f\n",box_z.x,box_z.y,box_z.z);
-    fprintf(out,"starttemp \t%f\n",temperature);
-#if defined(NVT) || defined(NPT)
-    fprintf(out,"eta \t%f\n",eta);
-#ifdef UNIAX
-    fprintf(out,"eta_rot \t%f\n",eta_rot);
-#endif
-#endif
-
-#ifdef FBC
-    for(n=0; n<vtypes;n++)
-      fprintf(out,"extra_startforce %d %.21g %.21g %.21g \n",
-	      n,(fbc_forces+n)->x,(fbc_forces+n)->y,(fbc_forces+n)->z);
-#endif
-
-#ifdef NPT
-    if (ensemble==ENS_NPT_ISO) {
-      fprintf(out,"pressure_ext \t%f\n",pressure_ext.x);
-      fprintf(out,"xi \t%f\n",xi.x);
-    }
-    if (ensemble==ENS_NPT_AXIAL) {
-      fprintf(out,"pressure_ext \t%f %f %f\n",
-              pressure_ext.x,pressure_ext.y,pressure_ext.z);
-      fprintf(out,"xi \t%f %f %f\n", xi.x,xi.y,xi.z);
-    }
-#endif /* NPT */
-    fclose(out);
-  }
+  if (myid == 0) write_itr_file(fzhlr, steps);
 }

@@ -208,6 +208,7 @@ void calc_properties(void);
 void write_properties(int steps);
 
 /* write configurations - files imd_io.c, imd_io_*.c */
+void write_itr_file(int fzhlr, int steps);
 void write_config(int steps);
 void write_config_select(int fzhlr, char *suffix, 
                          void (*write_cell_fun)(FILE *out, cell *p));

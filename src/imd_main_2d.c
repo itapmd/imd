@@ -328,8 +328,10 @@ void main_loop(void)
 
   /* clean up the current phase, and clear restart flag */
   restart=0;
-
-  if (0==myid) printf( "End of simulation %d\n", simulation );
+  if (0==myid) {
+    write_itr_file(-1, steps_max);
+    printf( "End of simulation %d\n", simulation );
+  }
 
 }
 
