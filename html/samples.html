@@ -51,8 +51,28 @@ the box size, and whether to leave empty a boundary strip
 Hexagonal crystals. The program imd_make_hex.c asks for the output file, 
 the box size, and whether to leave empty a boundary strip 
 (for frac or deform simulations).
-
-
+<P>
+<LI><B>eam2</B>
+<P>
+As one is usually using eV, Angstroms and picosec as basic units with
+the eam2 option, there are some programs to make samples that uses
+these units and rescale the mass to eV*psec^2/angstrom^2.
+<p>
+<ul>
+<li> <b>fcc</b>
+<p>
+FCC crystals. The program mk_fcc.c asks for the output file,the
+lattice constant, the mass in amu, the box size, 
+and whether to leave empty a boundary strip (for frac or deform simulations).
+<p>
+<li> <b>B2</b>
+<p>
+B2 (CsCl) crystals. The program mkB2.c asks for the output file, the
+lattice constant, the two masses in amu, the box size, 
+and whether to leave empty a boundary strip (for frac or deform simulations).
+</ul>
+<p>
+At the moment there are potentials for Ni and NiAl.
 </UL>
 
 <P>
@@ -60,3 +80,5 @@ the box size, and whether to leave empty a boundary strip
 
 </BODY>
 </HTML>
+
+

@@ -1,0 +1,106 @@
+       <HTML> <HEAD> <TITLE> EAM2 </TITLE>
+<!-- Changed by: Erik Bitzek, 24-Nov-1999 -->
+        </HEAD> <BODY BGCOLOR="#FFFFFF"> <H1><font color=blue>
+Implementation of EAM2</font></H1> 
+<p>
+The Embedded Atom Method (EAM) was implemented by Erik Bitzek. It is more
+general than the <a href=eam.html>eam implementation</a> because it is
+not limited to potentials of the Finnis-Sinclair type.
+<p>
+  <ul>
+<li><b>Basic Theory</b>
+<p>
+The Embedded Atom Method was suggested by Daw and Baskes (M. S. Daw
+and M. I. Baskes, <EM>Phys. Rev. B </EM><B>29</B>, 6443 (1984);
+S. M. Foiles, M. I. Baskes, and M. S. Daw, <EM> Phys. Rev. B </EM>
+<B>33</B>, 1986)
+as a way to overcome the main <A
+HREF="http://poirot.sissa.it/~furio/md/md/node47.html#SECTION00630000000000000000">
+problem with two-body potentials</A>: the coordination independance of
+the bond strenght. Ideas from the Density Functional Theory or the Tight
+Binding formalism may lead to the following form for the total energy:
+<p>
+E<sub>tot</sub> = \sum<sub>i,j</sub><sup>N</sup> \Phi<sub>ij</sub>(r<sub>ij</sub>)   + \sum<sub>i</sub><sup>N</sup> F(\rho<sup>h</sup><sub>i</sub>)                <BR>
+\rho<sup>h</sup><sub>i</sub> = \sum<sub>j</sub>
+\Rho<sup>at</sup><sub>ij</sub>(r<sub>ij</sub>)  <BR>
+<p>
+The pair potential term  \Phi<sub>ij</sub>(r<sub>ij</sub>) represents 
+the electrostatic core-core repulsion, the cohesive term  
+F(\rho<sup>h</sup><sub>i</sub>) represents the energy the ion core
+gets when it is "embedded" in the local electron density
+\rho<sup>h</sup><sub>i</sub>. This local electron density  
+is constructed as a superposition of contributions
+\Rho<sup>at</sup><sub>ij</sub>(r<sub>ij</sub>) from neighboring
+atoms. 
+<p>
+Also belonging to this analytical form are models like the <EM>glue
+model</EM>, and the <EM>Finnis-Sinclair potentials</EM>.
+See also the <a href="http:/user6/gabiz/public_html/teeseminar_texte
+">Teeseminar</a> about EAM.
+<p>
+<li><b>Use of eam2</b>
+<p>
+The eam2 option currently works on risc and mpi plattforms. It does
+definitvely not work with PVPCRAY or SX4, neither with 2D, ORDPAR or
+TRANSPORT. See <A HREF = "#Tests">Tests</A>
+for options that are guaranteed to work.
+
+<p>
+To use eam2 one needs tables of three functions. 
+Therefore the parameter file should contain lines indicating these
+tables, e.g.:<p><CODE>
+core_potential_file     Potentials/Ni_u3/Phi_r2.Ni_u3.dat<BR>
+embedding_energy_file   Potentials/Ni_u3/F_rho.Ni_u3.dat<BR>
+atomic_e-density_file   Potentials/Ni_u3/Rho_r2.Ni_u3.dat<BR>
+</CODE>
+<p>
+To allow different stepwidths and starting/ending points for the
+potentials, the tables have the following format: 
+<p>
+core_potential_file, atomic_e-density_file:  <BR>
+n*n lines with:<br>
+<tt>r_begin r_end dr </tt><BR>
+followed by n*n blocks of function values (equidistant in r^2) <BR>
+for the atom pairs ij: 00, 01,... 10, 11,... 
+<p>
+embedding_energy_file:<br>
+n lines with: <br>
+<tt>rho_begin rho_end drho </tt><br>
+followed by n blocks of values equidistant in rho
+<p>
+<li><b>Existing Potentials (todo/work in progress!)</b>
+<p>
+Potentials with documentation and sample structures, parameter files
+and tools can be found in <a href="file:/user6/imd/imd-samples/eam2">
+<code>~imd/imd-samples/eam2</code></a>.
+At the moment there are two potentials for Nickel and one for NiAl.
+<p> 
+<li><A NAME = "Tests"><b>Tests (todo/work in progress!)</b></A>
+<p>
+The eam2 option was tested by
+<ul>
+<li> comparing the energy output for a dynamical nve simulation with
+those produced by an other MD program (FEAT by Peter Gumbsch)
+<li> comparing the simulated values for the cohesive energy, vacancy
+formation energy, surface energy, bulkmodulus, lattice constant,
+surface relaxation,... for different potentials with published data
+for the specific potentials  and
+experimental data
+<li> checking the conservation of energy at different temperatures  
+</ul>
+<p>
+Therefore one may conclude that the eam2 option leads to correct
+results at least for: one and two different atom types, with and
+without periodic boundary conditions, on risc and mpi plattforms,
+with the MIK, NVE, NVT, AND options.
+<P>
+<A HREF="imd.html">Back to IMD User's Guide</A>  
+
+</BODY> </HTML>
+
+
+
+
+
+
+

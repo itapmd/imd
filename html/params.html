@@ -189,11 +189,17 @@ cell_size       # size of link cells
 initsize        # cells have space for initsize particles (needed for MONOLJ)
 
 # parameters for <a href=eam.html>EAM</a> 
-# (embedded atom method; Finnis/Sinclair)
+# (Finnis/Sinclair)
 eam_A           # EAM constant
 eam_r_cut       # cohesive function cutoff radius
 eam_r_0         # minimum distance
 eam_len         # maximum number of neighbors (for memory allocs)
+
+# parameters for <a href=eam2.html>EAM2</a> 
+# (general Embedded Atom Method)
+core_potential_file   # Core-core Pair Potential, tabulated in r**2 
+embedding_energy_file # Embedding Energy Function, tabulated in rho
+atomic_e-density_file # Electron Density, tabulated in r**2
 
 # parameters for <a href=ttbp.html>TTBP</a> (2 and 3 body potential)
 ttbp_len        # maxmimum number of neighbors (for memory allocs)

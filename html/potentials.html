@@ -17,7 +17,7 @@ is given are <B>equidistant</B>. If the potential does not extend
 down to r=0, it is extrapolated linearly. Further, IMD adds a
 constant to the potential, so that it ends at zero.
 
-<H2>EAM Potentials</H2>
+<H2>Finnis Sinclair Potentials: eam</H2>
 
 The pair interaction potential is used as described in 
 'IMD Potentials'. The cohesive energy term is computed
@@ -30,6 +30,31 @@ function and its first derivative should be straightforward.
 <p>
 For more details take a look at the description of the 
 <a href=eam.html>EAM implementation</a>.
+
+<H2>General EAM Potentials: eam2</H2>
+The energy in potentials of the Embedded Atom type consitsts of two
+parts:<p>
+A pair potential term (Phi(r)) representing the electrostatic core-core
+repulsion, and a cohesive term (F(rho)) representing the energy the ion
+core gets when it is "embedded" in the "Electron Sea". 
+This Embedding Energy is a function of the local electron density.
+This local electron density is in turn constructed as a superposition
+of contributions from neighboring atoms (Rho(r)).
+<p> 
+These functions depend on the type of atom i (F_i(rho)) and of the type of
+the other atom j (Rho_ij(r), Phi_ij(r)). We use function tables for
+all of them, the number of atom types n is limited only by memory.
+The format of the tables (equidistant in r^2) for Rho(r), Phi(r) is:
+<p>
+n*n times: r_begin r_end dr <p>
+followed by n*n blocks of function values for the n*n
+possible atom pairs ij: 00, 01,... 10, 11,...
+<p>
+F(rho) is tabulated equidistant in rho, beginning with n times rho_begin
+rho_end drho followed by n blocks of values.
+<p>
+For more details take a look at the description of the 
+<a href=eam2.html>EAM2 implementation</a>
 
 <H2>Two- and Three-Body Potentials</H2>
 
