@@ -85,6 +85,7 @@ EAM2SOURCES     = imd_forces.c imd_forces_eam2.c
 ASYMPOTSOURCES  = imd_forces_eam2.c
 COVALENTSOURCES = imd_forces.c imd_forces_covalent.c
 UNIAXSOURCES    = imd_forces_uniax.c imd_gay_berne.c
+EWALDSOURCES    = imd_forces.c imd_forces_ewald.c
 
 DEFORMSOURCES   = imd_deform.c
 
@@ -480,6 +481,12 @@ endif
 ifneq (,$(strip $(findstring uniax,${MAKETARGET})))
 CFLAGS  += -DUNIAX
 FORCESOURCES = ${UNIAXSOURCES}
+endif
+
+# EWALD
+ifneq (,$(strip $(findstring ewald,${MAKETARGET})))
+CFLAGS  += -DEWALD
+FORCESOURCES  = ${EWALDSOURCES}
 endif
 
 SOURCES += ${FORCESOURCES}

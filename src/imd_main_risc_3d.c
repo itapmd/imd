@@ -117,4 +117,9 @@ void calc_forces(void)
   }
 #endif
 
+#ifdef EWALD 
+  do_forces_ewald_real();
+  do_forces_ewald_fourier();
+#endif 
+
 }

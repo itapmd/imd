@@ -96,6 +96,11 @@ inline static real SQR(real x)
 #define Y(i) [DIM*(i)+1]
 #define Z(i) [DIM*(i)+2]
 
+#ifdef EWALD
+#define I(a,b,c) [(((2*(a)+1)*(b))+(c))]
+#define J(a,b,c) [(((a)*(b))+(c))]   
+#endif
+
 /* Skalarprodukt */
 /* Vectors */
 #define SPROD3D(a,b) (((a).x * (b).x) + ((a).y * (b).y) + ((a).z * (b).z))

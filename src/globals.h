@@ -436,6 +436,31 @@ EXTERN real ters_h[10];
 EXTERN int neigh_len INIT(50);     /* max neighbors */
 #endif 
 
+#ifdef EWALD
+EXTERN real     charge[10];     /* Charge of atoms */
+EXTERN real     ew_kappa;       /* Parameter kappa */
+EXTERN ivektor  ew_kmax;        /* Number of k-vectors in Ewald sum */
+EXTERN int      ew_nmax;        /* Number of image boxes */
+EXTERN int      ew_nx;
+EXTERN int      ew_ny;
+EXTERN int      ew_nz;
+EXTERN vektor   *ew_kvek;
+EXTERN real     *ew_expk;
+EXTERN int      ew_totk  INIT(0);
+EXTERN real     *coskx;
+EXTERN real     *sinkx;
+EXTERN real     *cosky;
+EXTERN real     *sinky;
+EXTERN real     *coskz;
+EXTERN real     *sinkz;
+EXTERN real     *coskr;
+EXTERN real     *sinkr;
+EXTERN real     ew_vorf;
+EXTERN real     ew_vorf1;
+EXTERN real     ew_eps;
+EXTERN real     twopi;
+#endif
+
 /* generate quasicrystal */
 #ifdef QUASI
 EXTERN int appr[3];                                /* approximant order */

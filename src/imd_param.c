@@ -1081,6 +1081,21 @@ void getparamfile(char *paramfname, int sim)
       getparam("ters_h",ters_h,PARAM_REAL,ntypes,ntypes);
     }
 #endif
+#ifdef EWALD
+    /* Parameters for Ewald summation */
+    else if (strcasecmp(token,"charge")==0) {     
+      getparam("charge",charge,PARAM_REAL,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"ew_kappa")==0) {     
+      getparam("ew_kappa",&ew_kappa,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"ew_kmax")==0) {     
+      getparam("ew_kmax",&ew_kmax,PARAM_INT,3,3);
+    }
+    else if (strcasecmp(token,"ew_nmax")==0) {     
+      getparam("ew_nmax",&ew_nmax,PARAM_INT,1,1);
+    }
+#endif 
 #ifdef UNIAX
     else if (strcasecmp(token,"uniax_r_cut")==0) {
       /* UNIAX: cutoff radius of uniaxial molecules */

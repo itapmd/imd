@@ -272,6 +272,14 @@ void do_neightab(cell *p, cell *q, vektor pbc);
 neightab *alloc_neightab(neightab *neigh, int count);
 #endif
 
+#ifdef EWALD
+/* support for computation of Coulomb forces */
+void do_forces_ewald_real(void);
+void do_forces_ewald_fourier(void);
+void init_ewald(void);
+real erfc1(real x);
+#endif
+
 /* support for dislocations - file imd_io.c */
 #if defined(DISLOC) || defined(AVPOS)
 void reset_Epot_ref(void);
