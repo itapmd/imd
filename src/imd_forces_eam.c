@@ -91,7 +91,9 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
   for (i = 0;i < p->n; ++i) {
 
     eam_pni = p->nummer[i];
-
+    if (eam_pni < 0 ) {
+      eam_pni = - eam_pni;
+    };
     /* Some compilers don't find the expressions that are invariant 
        to the inner loop. I'll have to define my own temp variables. */
     tmp_d.x = p->ort X(i) - pbc.x;
@@ -203,7 +205,7 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 	p->presstens Y(i) -= d.y * d.y * pot_grad;
 	q->presstens X(j) -= d.x * d.x * pot_grad;
 	q->presstens Y(j) -= d.y * d.y * pot_grad;
-ifndef TWOD
+#ifndef TWOD
 	p->presstens_offdia[i] -= d.x * d.y * pot_grad;
 	q->presstens_offdia[j] -= d.x * d.y * pot_grad;
 #else
@@ -236,6 +238,9 @@ ifndef TWOD
   	  }; 
 
 	  eam_pnj    = q->nummer[j];	
+	  if (eam_pnj < 0 ) {
+	    eam_pnj = - eam_pnj;
+	  };
 	  /* EAM-CF:  fixed i and j */
 	  eam_phi_ij = (eam_r_ij-eam_r_cut)*(eam_r_ij-eam_r_cut);
 
