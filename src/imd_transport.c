@@ -657,27 +657,27 @@ void write_press_layers(int steps)
                  press_nlayers_tot, INTEGER, MPI_SUM, cpugrid);
 
   MPI_Allreduce( kin_histxx_1, kin_histxx_2, 
-                 DIM * nlayer+, MPI_REAL, MPI_SUM, cpugrid);
+                 DIM * press_nlayer.x, MPI_REAL, MPI_SUM, cpugrid);
   kin_histxx = kin_histxx_2;
 
   MPI_Allreduce( kin_histxxu1, kin_histxxu_2, 
-                 DIM * nlayer+, MPI_REAL, MPI_SUM, cpugrid);
+                 DIM * press_nlayer.x, MPI_REAL, MPI_SUM, cpugrid);
   kin_histxxu = kin_histxxu_2;
 
   MPI_Allreduce( kin_histxxv_1, kin_histxxv_2, 
-                 DIM * nlayer+, MPI_REAL, MPI_SUM, cpugrid);
+                 DIM * press_nlayer.x, MPI_REAL, MPI_SUM, cpugrid);
   kin_histxxv = kin_histxxv_2;
 
   MPI_Allreduce( kin_histyy_1, kin_histyy_2, 
-                 DIM * nlayer+, MPI_REAL, MPI_SUM, cpugrid);
+                 DIM * press_nlayer.x, MPI_REAL, MPI_SUM, cpugrid);
   kin_histyy = kin_histyy_2;
 #ifndef TWOD
   MPI_Allreduce( kin_histzz_1, kin_histzz_2, 
-                 DIM * nlayer+, MPI_REAL, MPI_SUM, cpugrid);
+                 DIM * press_nlayer.x, MPI_REAL, MPI_SUM, cpugrid);
   kin_histzz = kin_histzz_2;
 #endif
   MPI_Allreduce( pot_hist_1, pot_hist_2, 
-                 DIM * nlayer+, MPI_REAL, MPI_SUM, cpugrid);
+                 DIM * press_nlayer.x, MPI_REAL, MPI_SUM, cpugrid);
   pot_hist = pot_hist_2;
   MPI_Allreduce( num_hist_1, num_hist_2, 
                  nlayer, INTEGER, MPI_SUM, cpugrid);
