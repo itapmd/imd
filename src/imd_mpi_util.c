@@ -122,7 +122,7 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
 #ifdef EAM2
   /* eam2_rho_h is not sent */
 #endif
-#ifdef DISLOC
+#if defined(DISLOC) || defined(AVPOS)
   to->data[ to->n++ ] = from->Epot_ref[index];
   to->data[ to->n++ ] = from->ort_ref X(index); 
   to->data[ to->n++ ] = from->ort_ref Y(index); 
@@ -130,6 +130,9 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
   to->data[ to->n++ ] = from->ort_ref Z(index); 
 #endif
 #endif 
+#ifdef AVPOS
+  to->data[ to->n++ ] = from->sheet[index];
+#endif
 #ifdef ORDPAR  
   to->data[ to->n++ ] = from->nbanz[index]; 
 #endif
@@ -194,13 +197,16 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
 #ifdef EAM2
       /* eam2_rho_h need not be copied */
 #endif
-#ifdef DISLOC
+#if defined(DISLOC) || defined(AVPOS)
       from->Epot_ref[index]    = from->Epot_ref[from->n]; 
       from->ort_ref X(index)   = from->ort_ref X(from->n); 
       from->ort_ref Y(index)   = from->ort_ref Y(from->n); 
 #ifndef TWOD
       from->ort_ref Z(index)   = from->ort_ref Z(from->n); 
 #endif
+#endif
+#ifdef AVPOS
+      from->sheet[index]    = from->sheet[from->n]; 
 #endif
 #ifdef ORDPAR 
       from->nbanz[index]    = from->nbanz[from->n]; 
@@ -291,13 +297,16 @@ void process_buffer(msgbuf *b, cell *p)
 #ifdef EAM2
     /* don't send eam2_rho_h */
 #endif
-#ifdef DISLOC
+#if defined(DISLOC) || defined(AVPOS)
     input->Epot_ref[0]     = b->data[j++];
     input->ort_ref X(0)    = b->data[j++];
     input->ort_ref Y(0)    = b->data[j++];
 #ifndef TWOD
     input->ort_ref Z(0)    = b->data[j++];
 #endif
+#endif
+#ifdef AVPOS
+    input->sheet[0]        = b->data[j++];
 #endif
 #ifdef ORDPAR
     input->nbanz[0]        = b->data[j++];
