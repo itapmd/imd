@@ -1659,7 +1659,7 @@ void move_atoms_ftg(void)
 	if(tmp2!=0) tmp /= (real)tmp2;
 	
 	/* calc damping factor form position */
-	gamma_tmp = (fabs(ORT(p,i,Y)-center.y) - stadium.y)/
+	gamma_tmp = (FABS(ORT(p,i,Y)-center.y) - stadium.y)/
 	  (stadium2.y-stadium.y);
 	if ( gamma_tmp < 0.0)  gamma_tmp = 0.0;
 	if ( gamma_tmp > 1.0)  gamma_tmp = 1.0;

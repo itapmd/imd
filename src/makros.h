@@ -353,14 +353,12 @@ inline static real SQR(real x)
 #define AT_BUF_TAG 500
 
 /* some systems have different versions of trunc and floor float and double */
-#ifdef t3e
 #ifdef DOUBLE
 #define FLOOR floor
+#define FABS  fabs
 #else
 #define FLOOR floorf
-#endif
-#else
-#define FLOOR floor
+#define FABS  fabsf
 #endif
 
 #ifndef M_PI

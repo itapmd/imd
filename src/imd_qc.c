@@ -720,8 +720,8 @@ void sortin (int ifeld[])
 	      NUMMER(input,0) = natoms;
 	      typ=ifeld[6]-1;
 
-	      if (fabs(x+2.*gmin.x) < 0.0001 && fabs(y+2.*gmin.y) < 0.0001 && 
-		  fabs(z+2.*gmin.z) < 0.0001) typ=0;
+	      if (FABS(x+2.*gmin.x) < 0.0001 && FABS(y+2.*gmin.y) < 0.0001 && 
+		  FABS(z+2.*gmin.z) < 0.0001) typ=0;
 
 	      if (typ == 1) typ=0; 
 	      if (typ == 2) typ=1;
@@ -760,8 +760,8 @@ void adjust()
 	typ = VSORTE(p,i);
 	
 	/* fix the type of the first atom */
-	if (fabs(x+2.*gmin.x) < 0.0001 && fabs(y+2.*gmin.y) < 0.0001 && 
-	    fabs(z+2.*gmin.z) < 0.0001) 
+	if (FABS(x+2.*gmin.x) < 0.0001 && FABS(y+2.*gmin.y) < 0.0001 && 
+	    FABS(z+2.*gmin.z) < 0.0001) 
         {
            typ=0;
            SORTE (p,i) = typ;
