@@ -179,6 +179,15 @@ x-direction, and <tt>1.0</tt> in the y-direction. <tt>box_unit</tt>,
 which defaults to <tt>1.0</tt>, is also equal to the nearest neighbor 
 distance.</p>
 
+<p>By default, the atoms of the elemental structures _hex, _fcc, _bcc,
+and _diamond get the type number 0 while the atoms of the binary
+structures _nacl, _b2, _cu3au, _cuau3, and _zincblende get the type
+numbers 0 and 1. With the IMD parameter <tt>types</tt>, these type
+numbers can be changed by specifying a single integer
+(&lt; <tt>ntypes</tt>) in the case of the elemental structures and two
+integers in the case of the binary structures. The masses used in the
+generated structures then correspond to the given types.</p>
+
 <p>
 For the quasicrystalline _tiqc phase, an approximant with a
 rectangular box is created. The three parameters are the orders
