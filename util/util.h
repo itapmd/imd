@@ -421,6 +421,7 @@ int       local  = -1;
 int       global = -1;
 int       c_max  = 10;
 ivektor2d num_dim;
+int       bonds = 0;     /* Total number of bonds */
 #endif
 
 #ifdef CONN

@@ -193,11 +193,11 @@ void write_data()
   /* Write global data to standard output */
   printf("\n");
   printf("---------------------\n");
-  printf(" Bond   Coordination\n\n");
+  printf(" Bond   Occurence\n\n");
 
   for (i=0; i<ntypes; ++i)
     for (j=i; j<ntypes; ++j)
-      printf("  %d%d     %f\n",i,j,*PTR_2D_V(numbers,i,j,num_dim)/natoms);
+      printf("  %d%d     %f %%\n",i,j,*PTR_2D_V(numbers,i,j,num_dim)/bonds*100);
 
   printf("\n");
   printf("---------------------\n");
@@ -258,8 +258,9 @@ void do_cell_pair(cell *p, cell *q, vektor pbc)
 	/* Compute average coordination number for each bond type */
 	if (q_typ > p_typ) {temp = p_typ; p_typ = q_typ; q_typ = temp;}
       
-	*PTR_2D_V(numbers, q_typ, p_typ, num_dim) += 2.0;
+	*PTR_2D_V(numbers, q_typ, p_typ, num_dim) += 1.0;
 
+	++bonds;
       }
 #else
       if ( radius <= ter_r_cut[p_typ][q_typ] ) {
@@ -282,7 +283,9 @@ void do_cell_pair(cell *p, cell *q, vektor pbc)
 	/* Compute average coordination number for each bond type */
 	if (q_typ > p_typ) {temp = p_typ; p_typ = q_typ; q_typ = temp;}
       
-	*PTR_2D_V(numbers, q_typ, p_typ, num_dim) += 2.0 * fc;
+	*PTR_2D_V(numbers, q_typ, p_typ, num_dim) += fc;
+
+	++bonds;
       }
 #endif
     }    
