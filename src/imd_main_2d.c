@@ -61,19 +61,11 @@ void main_loop(void)
   /* initializations for the current simulation phase, if not yet done */
   if (0==restart) init();
 
-#ifdef SHEAR
-  stepssincelastshear = 0;
+#ifdef PULL
+  dnoshsteps = 0;
 #endif
 
   for (steps=steps_min; steps <= steps_max; ++steps) { 
-
-#ifdef SHEAR
-  stepssincelastshear++;
-  if ((ensemble==ENS_SHEAR) && (steps > annealsteps) && ((tot_kin_energy/natoms < shear_epsilon) || ((stepssincelastshear % maxshearrelaxsteps) == 0))) {
-    shear1step(steps);
-    stepssincelastshear = 0;
-  }
-#endif
 
 #ifdef MPI
     /* we should do this in more appropriate intervals */

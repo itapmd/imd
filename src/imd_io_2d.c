@@ -66,6 +66,10 @@ void read_atoms(str255 infilename)
   if (1==parallel_input) {
     sprintf(buf,"%s.%u",infilename,myid); 
     infile = fopen(buf,"r");
+#ifdef DISLOC
+    sprintf(buf,"%s.%u",reffilename,myid); 
+    reffile = fopen(reffilename,"r");
+#endif
     /* When each cpu reads only part of the atoms, we have to add the
        number of atoms together to get the correct natoms. We set a
        flag here */
@@ -81,6 +85,10 @@ void read_atoms(str255 infilename)
 
   if ((1!=parallel_input) || (NULL==infile))
     infile = fopen(infilename,"r");
+#ifdef DISLOC
+  if ((1!=parallel_input) || (NULL==reffile))
+    reffile = fopen(reffilename,"r");
+#endif
 
 #else
   infile = fopen(infilename,"r");
@@ -111,14 +119,15 @@ void read_atoms(str255 infilename)
   while(!feof(infile)) {
 
     buf[0] = (char) NULL;
+    buf[0] = (char) NULL;
+    fgets(buf,sizeof(buf),infile);
+    while ('#'==buf[1]) fgets(buf,sizeof(buf),infile); /* eat comments */
+
 #ifdef DISLOC
     refbuf[0] = (char) NULL;
     fgets(refbuf,sizeof(refbuf),reffile);
     while ('#'==refbuf[1]) fgets(refbuf,sizeof(refbuf),reffile); /* eat comments */
 #endif
-    buf[0] = (char) NULL;
-    fgets(buf,sizeof(buf),infile);
-    while ('#'==buf[1]) fgets(buf,sizeof(buf),infile); /* eat comments */
 
     /* Should use temporary variable */
 #ifdef DISLOC
@@ -183,39 +192,6 @@ void read_atoms(str255 infilename)
 	input->kraft  X(0) = 0;
 	input->kraft  Y(0) = 0;
 	break;
-#ifdef DISLOC
-      case(6):     /* n, m, s, ort, pot_ref */
-	do_maxwell=1;
-	input->n = 1;
-	input->nummer[0] = n;
-	input->sorte[0] = s;
-	input->masse[0] = m;
-	input->ort    X(0) = pos.x;
-	input->ort    Y(0) = pos.y;
-	input->impuls X(0) = 0;
-	input->impuls Y(0) = 0;
-	input->kraft  X(0) = 0;
-	input->kraft  Y(0) = 0;
-	input->Epot_ref[0] = vau.x; /* vau.x misused as potengref ! */
-	input->ort_ref X(0) = refpos.x;
-	input->ort_ref Y(0) = refpos.y;
-	break;
-      case(8):     /* n, m, s, ort, vau, pot_ref */
-	input->n = 1;
-	input->nummer[0] = n;
-	input->sorte[0] = s;
-	input->masse[0] = m;
-	input->ort    X(0) = pos.x;
-	input->ort    Y(0) = pos.y;
-	input->impuls X(0) = vau.x * m;
-	input->impuls Y(0) = vau.y * m;
-	input->kraft  X(0) = 0;
-	input->kraft  Y(0) = 0;
-	input->Epot_ref[0] = refeng;
-	input->ort_ref X(0) = refpos.x;
-	input->ort_ref Y(0) = refpos.y;
-	break;
-#endif
       default:
         printf("%d is where we find an...\n", natoms+1);
 	error("Incomplete line in atoms file at line.\n");
@@ -594,6 +570,9 @@ void write_config(int steps)
 #endif
 
   /* write iteration file */
+#ifdef MPI
+  if (myid == 0) {
+#endif
   sprintf(fname,"%s.%u.itr",outfilename,fzhlr);
 
   out = fopen(fname,"w");
@@ -613,6 +592,10 @@ void write_config(int steps)
 #endif
 
   fclose(out);
+
+#ifdef MPI
+  }
+#endif
 
 }
 

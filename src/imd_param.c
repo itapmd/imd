@@ -565,7 +565,27 @@ void getparamfile(char *paramfname, int sim)
       };
       getparam("pic_at_radius", pic_at_radius,PARAM_REAL_COPY,1,ntypes);
     }
-#if defined(FRAC) || defined(PULL) || defined(SHOCK) || defined(SHEAR)
+#if defined(FRAC) || defined(PULL) || defined(SHOCK)
+    else if (strcasecmp(token,"initial_shift")==0) {
+      /* shall the whole sample be shifted before MD */
+      getparam("initial_shift",&initial_shift,PARAM_INTEGER,1,1);
+    }
+    else if (strcasecmp(token,"ins")==0) {
+      /* shift vector (whole sample) */
+      getparam("ins",&ins,PARAM_REAL,DIM,DIM);
+    }   
+    else if (strcasecmp(token,"ekin_threshold")==0) {
+      /* shear epsilon criterium, see imd_shear_new.c */
+      getparam("ekin_threshold",&ekin_threshold,PARAM_REAL,1,1);
+    }   
+    else if (strcasecmp(token,"annealsteps")==0) {
+      /* max nr of steps between shears */
+      getparam("annealsteps",&annealsteps,PARAM_INT,1,1);
+    }   
+    else if (strcasecmp(token,"maxdnoshsteps")==0) {
+      /* max nr of steps between shears */
+      getparam("maxdnoshsteps",&maxdnoshsteps,PARAM_INT,1,1);
+    }
     else if (strcasecmp(token,"strip_width")==0) { 
       /* strip width (in x dir.) */
       getparam("strip_width",&strip,PARAM_REAL,1,1);
@@ -649,28 +669,6 @@ void getparamfile(char *paramfname, int sim)
       /*number of steps between temp. writes  */
       getparam("tran_interval", &tran_interval, PARAM_INTEGER, 1,1);
     }
-#endif
-#ifdef SHEAR
-    else if (strcasecmp(token,"strip")==0) {
-      /* shear delta per timestep */
-      getparam("strip",&strip,PARAM_REAL,1,1);
-    }   
-    else if (strcasecmp(token,"shear_delta")==0) {
-      /* shear delta per timestep */
-      getparam("shear_delta",&shear_delta,PARAM_REAL,1,1);
-    }   
-    else if (strcasecmp(token,"shear_epsilon")==0) {
-      /* shear epsilon criterium, see imd_shear_new.c */
-      getparam("shear_epsilon",&shear_epsilon,PARAM_REAL,1,1);
-    }   
-    else if (strcasecmp(token,"annealsteps")==0) {
-      /* max nr of steps between shears */
-      getparam("annealsteps",&annealsteps,PARAM_INT,1,1);
-    }   
-    else if (strcasecmp(token,"maxshearrelaxsteps")==0) {
-      /* max nr of steps between shears */
-      getparam("maxshearrelaxsteps",&maxshearrelaxsteps,PARAM_INT,1,1);
-    }   
 #endif
 #ifdef DISLOC
     else if (strcasecmp(token,"dem_int")==0) {
@@ -1138,7 +1136,7 @@ void broadcast_params() {
     case ENS_AND:       move_atoms = move_atoms_and;       break;
     case ENS_MC:        move_atoms = move_atoms_mc;        break;
     case ENS_FRAC:      move_atoms = move_atoms_frac;      break;
-    case ENS_PULL:      move_atoms = move_atoms_pull;      break;
+    case ENS_PULL:      move_atoms = move_atoms_pull(int steps, int dnoshsteps);break;
     case ENS_SHEAR:  move_atoms = move_atoms_mik;       break;
     case ENS_NVX:       move_atoms = move_atoms_nvx;       break;
     case ENS_MSD:       move_atoms = move_atoms_msd;       break;

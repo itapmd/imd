@@ -31,7 +31,9 @@ void main_loop(void)
 #if defined(CORRELATE) || defined(MSQD)
   int ref_step = correl_start;
 #endif
-
+#ifdef PULL
+  int dnoshsteps;
+#endif
   if (0==myid) printf( "Starting simulation %d\n", simulation );
 
 #if defined(AND) || defined(NVT) || defined(NPT)
@@ -87,9 +89,8 @@ void main_loop(void)
   /* initializations for the current simulation phase, if not yet done */
   if (0==restart) init();
 
-#ifdef SHEAR
-  if (maxshearrelaxsteps == 0) maxshearrelaxsteps = 32767;
-  stepssincelastshear = 0;
+#ifdef PULL
+  dnoshsteps = 0;
 #endif
 
   for (steps=steps_min; steps <= steps_max; ++steps) {

@@ -1005,9 +1005,12 @@ void move_atoms_pull(void)
   vektor d;
   int r,s,t;
   real tmp = 0;
-  static int count = 0;
-  tot_kin_energy = 0;
+  real tot_kin_energy_prev;
 
+  static int count = 0;
+  tot_kin_energy_prev = tot_kin_energy;
+  tot_kin_energy = 0;
+  
 /* loop over all atoms */
   for ( r = cellmin.x; r < cellmax.x; ++r )
     for ( s = cellmin.y; s < cellmax.y; ++s )
@@ -1055,21 +1058,27 @@ void move_atoms_pull(void)
 	    p->ort Z(i)    += d.z;
 #endif
 	  } else {
+	    if ((dnoshsteps > annealsteps) && ((tot_kin_energy_prev < ekin_threshold) || (dnoshsteps > maxdnoshsteps))) {
                 /* Pull to the left or to the right? */
-            if (p->ort X(i) <= strip) { 
-                /* Pull on atom */
-              p->ort X(i) -= delta.x;
-              p->ort Y(i) -= delta.y;
+              if (p->ort X(i) <= strip) { 
+                  /* Pull on atom */
+                p->ort X(i) -= delta.x;
+                p->ort Y(i) -= delta.y;
 #ifndef TWOD
-              p->ort Z(i) -= delta.z;
+                p->ort Z(i) -= delta.z;
 #endif
-            } else {
-              p->ort X(i) += delta.x;
-              p->ort Y(i) += delta.y;
+              } else {
+                p->ort X(i) += delta.x;
+                p->ort Y(i) += delta.y;
 #ifndef TWOD
-              p->ort Z(i) += delta.z;
+                p->ort Z(i) += delta.z;
 #endif        
-            };
+              };
+	      dnoshsteps = 0;
+	    } else {
+	      dnoshsteps++;
+	    }
+
             p->impuls X(i) =0.0;
 	    p->impuls Y(i) =0.0;
 #ifndef TWOD

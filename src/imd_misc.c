@@ -716,17 +716,12 @@ void generate_fcc(int maxtyp)
   for (x=min.x ; x<max.x; x++)
     for (y=min.y; y<max.y; y++)
       for (z=min.z; z<max.z; z++) {
- 
-#if defined(FRAC) || defined(PULL) || defined(SHEAR)
+
+#if defined(FRAC) || defined(PULL) || defined(SHEAR) || defined(SHOCK)
         /* leave boundary open if necessary */
         if ((x+0.5 < strip/2) || (x+0.5 > box_x.x-strip/2) ||
             (y+0.5 < strip/2) || (y+0.5 > box_y.y-strip/2) ||
             (z+0.5 < strip/2) || (z+0.5 > box_z.z-strip/2)) continue;
-#endif
-
-#ifdef SHOCK
-        /* leave boundary open if necessary */
-        if ((x+0.5 < strip/2) || (x+0.5 > box_x.x-strip/2)) continue;
 #endif
 
         typ = (x+y+z) % 2;
@@ -737,9 +732,18 @@ void generate_fcc(int maxtyp)
 	++natoms;
 
         input->n = 1;
+
         input->ort X(0) = x + 0.5;
         input->ort Y(0) = y + 0.5;
         input->ort Z(0) = z + 0.5;
+
+#ifdef SHEAR
+        if (initial_shift) {
+          input->ort X(0) += ins.x;
+          input->ort Y(0) += ins.y;
+          input->ort Z(0) += ins.z;
+        }
+#endif
 	/* PN-dislocation ? */
         if (pn) construct_pn_disloc(&input->ort X(0), &input->ort Y(0), 
                                                       &input->ort Z(0));
@@ -768,8 +772,13 @@ void generate_fcc(int maxtyp)
 	move_atom(cellc, input, 0);
 #endif
 
+
   };
 
+#ifdef SHEAR
+        if (initial_shift)
+          strip += ins.y;
+#endif
 } 
 
 /* generate a cubic Laves structure crystal */
