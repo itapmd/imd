@@ -65,7 +65,8 @@ void insert_atom(minicell *to, cell *from, int index)
   /* put index of the inserted atom */
   to->ind[to->n++] = atoms.n;
 
-  /* put atom at the end of the cell */
+  /* put atom at the end of the cell; increase size if necessary */
+  if (atoms.n >= atoms.n_max) alloc_cell(&atoms, 2*atoms.n_max);
   move_atom(&atoms, from, index);
 
 #ifdef MPI

@@ -83,11 +83,11 @@ void read_atoms(str255 infilename)
     error("cannot allocate memory for num_vsort\n");
 
 #ifdef VEC
-  /* we need to figure out how many atoms per CPU we will have... */
+  /* allocate the space for all atoms in one step */
   atoms.n = 0;
   atoms.n_max = 0;
   atoms.n_buf = 0;
-  alloc_cell(&atoms, 50000);
+  alloc_cell(&atoms, atoms_per_cpu);
 #endif
 
 #ifdef MPI

@@ -86,6 +86,7 @@
 EXTERN minicell *cell_array INIT(NULL);  /* array of cells */
 #ifdef VEC
 EXTERN cell atoms;                       /* big cell in vector mode */
+EXTERN int  atoms_per_cpu INIT(150000);  /* estimated size of big cell */
 #endif
 EXTERN integer *cells INIT(NULL);        /* list if inner cell indices */
 #ifdef TWOD

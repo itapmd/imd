@@ -473,6 +473,12 @@ void getparamfile(char *paramfname, int sim)
       getparam(token,&nbl_margin,PARAM_REAL,1,1);
     }
 #endif
+#ifdef VEC
+    else if (strcasecmp(token,"atoms_per_cpu")==0) {
+      /* maximal number of atoms per CPU */
+      getparam(token,&atoms_per_cpu,PARAM_INT,1,1);
+    }
+#endif
 #ifdef EFILTER
     else if (strcasecmp(token,"ef_checkpt_int")==0) {
       /* number of steps between energy filtered checkpoints */
@@ -2177,7 +2183,10 @@ void broadcast_params() {
   }
 
 #ifdef NBLIST
-  MPI_Bcast( &nbl_margin, 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &nbl_margin,    1, REAL, 0, MPI_COMM_WORLD);
+#endif
+#ifdef VEC
+  MPI_Bcast( &atoms_per_cpu, 1,  INT, 0, MPI_COMM_WORLD);
 #endif
 #ifdef EFILTER
   if (0!=myid){

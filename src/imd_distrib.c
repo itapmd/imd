@@ -497,9 +497,46 @@ void update_atdist()
   cell *p;
   int  i, k, ix, iy, iz;
   real x, y, z, t, co, si;
+  static vektor tot_velocity = {0.0,0.0,0.0};
+  static int step_count=0, max_count=100;
+  int count=0;
 
   co = cos(atdist_phi);
   si = sin(atdist_phi);
+
+  /* correct center of mass velocity */
+  for (k=0; k<NCELLS; ++k) {
+    int i;
+    cell *p;
+    p = CELLPTR(k);
+    for (i=0; i<p->n; ++i) {
+      if (SORTE(p,i)>0) {
+        tot_velocity.x += IMPULS(p,i,X) / MASSE(p,i);
+        tot_velocity.y += IMPULS(p,i,Y) / MASSE(p,i);
+        tot_velocity.z += IMPULS(p,i,Z) / MASSE(p,i);
+        count++;
+      }
+    }
+  }
+  step_count++;
+  if (step_count % max_count) {
+    for (k=0; k<NCELLS; ++k) {
+      int i;
+      cell *p;
+      p = CELLPTR(k);
+      for (i=0; i<p->n; ++i) {
+        IMPULS(p,i,X) -= tot_velocity.x * MASSE(p,i) / count;
+        IMPULS(p,i,Y) -= tot_velocity.y * MASSE(p,i) / count;
+        IMPULS(p,i,Z) -= tot_velocity.z * MASSE(p,i) / count;
+      }
+    }
+    tot_velocity.x = 0.0;
+    tot_velocity.y = 0.0;
+    tot_velocity.z = 0.0;
+    count=0;
+  } else {
+    step_count++;
+  }
 
   /* loop over all atoms */
   for (k=0; k<NCELLS; ++k) {
