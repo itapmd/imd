@@ -122,8 +122,9 @@ fbc_annealsteps      # the same as annealsteps for deform
 
 # parameters to write selected atoms (efilter)
 ef_checkpt_int       # number of steps between output of selected atoms 
-e_pot_lower          # lower limit of potential energy
-e_pot_upper          # upper limit, only those atoms with pot. energy
+e_pot_lower          # vector with lower limits of potential energy
+e_pot_upper          # vector with upper limits of potential energy, 
+                     # only atoms (no virtual atoms) with pot. energy 
                      # within this range are printed
 pic_ll		     # location (vector) of lower left corner
 pic_ur		     # location of upper right corner,

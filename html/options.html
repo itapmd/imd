@@ -482,10 +482,11 @@ This option is supported in NVE, NVT and NPT simulations only.
 
 <A NAME="efilter">
 <P><LI><B> efilter </B><P>
-Only those atoms which have a potential energy between e_pot_lower and
-e_pot_upper are writen in <TT>&lt;outfile&gt;.ef.&lt;n&gt;</TT>,
-where <TT>&lt;n&gt;</TT> is a running number. This happens every
-ef_checkpt_int steps.
+Only those atoms (no virtual atoms) which have a potential energy
+between e_pot_lower and e_pot_upper (must be specified for all ntypes) 
+are written in <TT>&lt;outfile&gt;.ef.&lt;n&gt;</TT>, where
+<TT>&lt;n&gt;</TT> is a running number. This happens every
+ef_checkpt_int step.
 
 <A NAME="snap">
 <P><LI><B> snap </B><P>
