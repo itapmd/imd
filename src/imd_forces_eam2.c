@@ -34,7 +34,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
   vektor tmp_vir_vect;
 #endif
   real pot_zwi, pot_grad;
-  int col, col2, is_short=0, inc = ntypes * ntypes;
+  int col1, col2, is_short=0, inc = ntypes * ntypes;
   int jstart, q_typ, p_typ;
   real *qptr, *pfptr, *qfptr, *qpdptr, *ppdptr, *qpoptr, *ppoptr;
   
@@ -65,7 +65,8 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
       d.z = *qptr - tmp_d.z; ++qptr;
 
       q_typ = SORTE(q,j);
-      col   = p_typ * ntypes + q_typ;
+      col1  = p_typ * ntypes + q_typ;
+      col2  = q_typ * ntypes + p_typ;
       r2    = SPROD(d,d);
 
 #ifdef DEBUG
@@ -77,8 +78,8 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
 #endif
 
       /* compute pair interactions, first on particle i */
-      if (r2 <= pair_pot.end[col]) {
-        PAIR_INT(pot_zwi, pot_grad, pair_pot, col, inc, r2, is_short)
+      if (r2 <= pair_pot.end[col1]) {
+        PAIR_INT(pot_zwi, pot_grad, pair_pot, col1, inc, r2, is_short)
 
         /* store force in temporary variable */
         force.x = d.x * pot_grad;
@@ -123,9 +124,10 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
       }
 
       /* compute pair interactions, now on particle j */
-      col = q_typ * ntypes + p_typ;
-      if (r2 <= pair_pot.end[col]) {
-        PAIR_INT(pot_zwi, pot_grad, pair_pot, col, inc, r2, is_short)
+      if (r2 <= pair_pot.end[col2]) {
+        if (col1!=col2) {
+          PAIR_INT(pot_zwi, pot_grad, pair_pot, col2, inc, r2, is_short);
+	}
 
         /* store force in temporary variable */
         force.x = d.x * pot_grad;
@@ -170,19 +172,15 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
       }
 
       /* compute host electron density */
-      col = p_typ * ntypes + q_typ;
-      if (r2 < rho_h_tab.end[col])  {
-        VAL_FUNC(rho_h, rho_h_tab, col,  inc, r2, is_short);
+      if (r2 < rho_h_tab.end[col1])  {
+        VAL_FUNC(rho_h, rho_h_tab, col1, inc, r2, is_short);
         p->eam2_rho_h[i] += rho_h; 
       }
-      if (p_typ==q_typ) {
-        if (r2 < rho_h_tab.end[col]) q->eam2_rho_h[j] += rho_h; 
-      } else {
-        col2 = q_typ * ntypes + p_typ;
-        if (r2 < rho_h_tab.end[col2]) {
+      if (r2 < rho_h_tab.end[col2]) {
+        if (col1!=col2) {
           VAL_FUNC(rho_h, rho_h_tab, col2, inc, r2, is_short);
-          q->eam2_rho_h[j] += rho_h; 
         }
+        q->eam2_rho_h[j] += rho_h; 
       }
 
     } /* for j */
@@ -289,7 +287,7 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot,
         DERIV_FUNC(rho_i_strich, rho_h_tab, col1, inc, r2, is_short);
 
         /* rho_strich_j(r_ij) */
-        if (p_typ==q_typ) {
+        if (col1==col2) {
           rho_j_strich = rho_i_strich;
 	} else {
           DERIV_FUNC(rho_j_strich, rho_h_tab, col2, inc, r2, is_short);
