@@ -34,6 +34,7 @@ parallel_output	# parallel output flag (0 == serial (default),
                 # 1 == parallel, 2 == serial, but parallel picture writes)
 
 # simulation box - required
+box_param       # box parameters for generated samples
 box_x		# 'x' or first vector for box
 box_y		# 'y' or second vector for box
 box_z		# 'z' or third vector for box - only 3D
@@ -137,8 +138,7 @@ strip_shift	# strip shift per timestep (vector)
 strip_width	# width (in x dir) of strip that is moved
 ekin_threshold	# criterium for simulation abort
 sdelta     	# vector of shear/pull deformation
-annealsteps	# simulated annealing (first shear will not occur
-before)
+annealsteps	# simulated annealing (first shear will not occur before)
 maxdnoshsteps   # maximum number of steps between two shear/pulls
 
 
