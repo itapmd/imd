@@ -635,8 +635,12 @@ void write_config(int steps)
 	for (j = 1; j < cell_dim.x-1; ++j )
 	  for (k = 1; k < cell_dim.y-1; ++k )
 	    for (l = 1; l < cell_dim.z-1; ++l ) {
+#ifndef MONOLJ
 	      tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
 	      recv_cell( p, m, tag );
+#else
+	      recv_cell( p, m, ORT_TAG );
+#endif
 	      WRITE_CELL;
 	    };
 
@@ -647,8 +651,12 @@ void write_config(int steps)
 	for (k = 1; k < cell_dim.y-1; ++k )
 	  for (l = 1; l < cell_dim.z-1; ++l ) {
 	    p   = PTR_3D_V(cell_array, j, k, l, cell_dim);
+#ifndef MONOLJ
 	    tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
 	    send_cell( p, 0, tag );
+#else
+	    send_cell( p, 0, ORT_TAG );
+#endif
 	  };
     };
   };
@@ -770,8 +778,12 @@ void write_demmaps(int steps)
       for (j = 1; j < cell_dim.x-1; ++j )
         for (k = 1; k < cell_dim.y-1; ++k )
           for (l = 1; l < cell_dim.z-1; ++l ) {
+#ifndef MONOLJ
             tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
             recv_cell( p, m, tag );
+#else
+            recv_cell( p, m, POT_REF_TAG );
+#endif
 	    WRITE_CELL_DEM;
 	  };
 
@@ -783,8 +795,12 @@ void write_demmaps(int steps)
     for (k = 1; k < cell_dim.y-1; ++k )
       for (l = 1; l < cell_dim.z-1; ++l ) {
         p   = PTR_3D_V(cell_array, j, k, l, cell_dim);
+#ifndef MONOLJ
         tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
         send_cell( p, 0, tag );
+#else
+        send_cell( p, 0, POT_REF_TAG );
+#endif
       };
   };
 
@@ -886,8 +902,12 @@ void write_dspmaps(int steps)
       for (j = 1; j < cell_dim.x-1; ++j )
         for (k = 1; k < cell_dim.y-1; ++k )
           for (l = 1; l < cell_dim.z-1; ++l ) {
+#ifndef MONOLJ
             tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
             recv_cell( p, m, tag );
+#else
+            recv_cell( p, m, ORT_REF_TAG );
+#endif
 	    WRITE_CELL_DDM;
 	    }
 	  };
@@ -900,8 +920,12 @@ void write_dspmaps(int steps)
     for (k = 1; k < cell_dim.y-1; ++k )
       for (l = 1; l < cell_dim.z-1; ++l ) {
         p   = PTR_3D_V(cell_array, j, k, l, cell_dim);
+#ifndef MONOLJ
         tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
         send_cell( p, 0, tag );
+#else
+        send_cell( p, 0, ORT_REF_TAG );
+#endif
       };
   };
 
@@ -964,8 +988,12 @@ void update_ort_ref(void)
       for (j = 1; j < cell_dim.x-1; ++j )
         for (k = 1; k < cell_dim.y-1; ++k )
           for (l = 1; l < cell_dim.z-1; ++l ) {
+#ifndef MONOLJ
             tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
             recv_cell( p, m, tag );
+#else
+            recv_cell( p, m, ORT_REF_TAG );
+#endif
 	    for (i = 0;i < p->n; ++i) {
 	      p->ort_ref X(i) = p->ort X(i);
 	      p->ort_ref Y(i) = p->ort Y(i);
@@ -979,8 +1007,12 @@ void update_ort_ref(void)
     for (k = 1; k < cell_dim.y-1; ++k )
       for (l = 1; l < cell_dim.z-1; ++l ) {
         p   = PTR_3D_V(cell_array, j, k, l, cell_dim);
+#ifndef MONOLJ
         tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
         send_cell( p, 0, tag );
+#else
+        send_cell( p, 0, ORT_REF_TAG );
+#endif
       };
   };
 
