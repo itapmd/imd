@@ -1402,6 +1402,8 @@ void broadcast_params() {
 #ifdef EFILTER
   MPI_Bcast( &lower_e_pot,    1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &upper_e_pot,    1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &pic_ll      , DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &pic_ur      , DIM, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &efrep_interval, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
