@@ -1046,7 +1046,9 @@ void write_atoms_avp(FILE *out)
 
 void write_header_force(FILE *out)
 {
+#ifdef STRESS_TENS
   calc_tot_presstens();
+#endif
 
   /* number of atoms */
   fprintf(out, "%d\n", natoms);
