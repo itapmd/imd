@@ -148,7 +148,6 @@ inline static real SQR(real x)
 #define ENS_MC        7
 #define ENS_FRAC      8
 #define ENS_NVX      11
-#define ENS_MSD      12
 #define ENS_STM      13
 
 /* All the logic in this program */
@@ -159,7 +158,7 @@ inline static real SQR(real x)
 #ifdef MPI
 #define CELL_TAG   100
 #define SIZE_TAG   200
-#define BUFFER_TAG 300 /* for later use */
+#define BUFFER_TAG 300
 #define ORT_TAG      1
 #define SORTE_TAG    2
 #define MASSE_TAG    3 

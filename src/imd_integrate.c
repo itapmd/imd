@@ -373,58 +373,6 @@ void move_atoms_mik(void)
 
 #endif
 
-/*****************************************************************************
-*
-* Minimizer:
-*
-* A sort of ... Steepest Descent - JH 1999: 02/03/...
-*
-*****************************************************************************/
-
-#ifdef MSD
-
-void move_atoms_msd(void) 
-{
-  int k;
-  tot_kin_energy = 0.0;
-
-  /* loop over all cells */
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-  for (k=0; k<ncells; ++k) {
-
-    int  i;
-    cell *p;
-    real tmp;
-    p = cell_array + CELLS(k);
-
-    for (i=0; i<p->n; ++i) {
-      tmp = timestep / sqrt(SPRODN(p->kraft,i,p->kraft,i)) ;
-      p->ort X(i) += tmp * p->kraft X(i);
-      p->ort Y(i) += tmp * p->kraft Y(i);
-#ifndef TWOD
-      p->ort Z(i) += tmp * p->kraft Z(i);
-#endif 
-      /* new momenta */
-      p->impuls X(i) = 0.0;
-      p->impuls Y(i) = 0.0;
-#ifndef TWOD
-      p->impuls Z(i) = 0.0;
-#endif
-    }
-  }
-}
-
-#else  
-
-void move_atoms_msd(void) 
-{
-  if (myid==0)
-  error("the chosen ensemble MSD is not supported by this binary");
-}
-
-#endif 
 
 /*****************************************************************************
 *
