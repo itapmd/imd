@@ -374,7 +374,7 @@ void write_atoms_nb(FILE *out)
           ORT(p,i,Z),
 #endif
           IMPULS(p,i,X) / MASSE(p,i),
-          IMPULS(p,i,X) / MASSE(p,i),
+          IMPULS(p,i,Y) / MASSE(p,i),
 #ifndef TWOD
           IMPULS(p,i,Z) / MASSE(p,i),
 #endif
