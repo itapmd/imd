@@ -32,42 +32,43 @@ their purpose is and how they are used.
   <TD WIDTH=120><A HREF="#disloc">disloc</A></TD>
   <TD WIDTH=120><A HREF="#eam">eam</A></TD>
   <TD WIDTH=120><A HREF="#efilter">efilter</A></TD>
+  <TD WIDTH=120><A HREF="#einstein">einstein</A></TD>
   <TD WIDTH=120><A HREF="#epitax">epitax</A></TD>
-  <TD WIDTH=120><A HREF="#ewald">ewald</A></TD>
 </TR>
 <TR ALIGN="LEFT">
+  <TD WIDTH=120><A HREF="#ewald">ewald</A></TD>
   <TD WIDTH=120><A HREF="#FBC">fbc</A></TD>
   <TD WIDTH=120><A HREF="#fnorm">fnorm</A></TD>
   <TD WIDTH=120><A HREF="#glokdeform">glokdeform</A></TD>
   <TD WIDTH=120><A HREF="#hpo">hpo</A></TD>
   <TD WIDTH=120><A HREF="#homdef">homdef</A></TD>
-  <TD WIDTH=120><A HREF="#covalent">keating</A></TD>
 </TR>
 <TR ALIGN="LEFT">
+  <TD WIDTH=120><A HREF="#covalent">keating</A></TD>
   <TD WIDTH=120><A HREF="#mono, binary">mono</A></TD>
   <TD WIDTH=120><A HREF="#monolj">monolj</A></TD>
   <TD WIDTH=120><A HREF="#msqd">msqd</A></TD>
   <TD WIDTH=120><A HREF="#ordpar">ordpar</A></TD>
   <TD WIDTH=120><A HREF="#pacx">pacx</A></TD>
-  <TD WIDTH=120><A HREF="#prof">prof</A></TD>
 </TR>
 <TR ALIGN="LEFT">
+  <TD WIDTH=120><A HREF="#prof">prof</A></TD>
   <TD WIDTH=120><A HREF="#quasi">quasi</A></TD>
   <TD WIDTH=120><A HREF="#single">single</A></TD>
   <TD WIDTH=120><A HREF="#sock">sock</A></TD>
   <TD WIDTH=120><A HREF="#shock">shock</A></TD>
   <TD WIDTH=120><A HREF="#snap">snap</A></TD>
-  <TD WIDTH=120><A HREF="#spring">spring</A></TD>
 </TR>
 <TR ALIGN="LEFT">
- <TD WIDTH=120><A HREF="#covalent">stiweb</A></TD>
+  <TD WIDTH=120><A HREF="#spring">spring</A></TD>
+  <TD WIDTH=120><A HREF="#covalent">stiweb</A></TD>
   <TD WIDTH=120><A HREF="#stress_tens">stress</A></TD>
   <TD WIDTH=120><A HREF="#covalent">tersoff</A></TD>
   <TD WIDTH=120><A HREF="#timing">timing</A></TD>
   <TD WIDTH=120><A HREF="#transport">transport</A></TD>
-  <TD WIDTH=120><A HREF="#covalent">ttbp</A></TD>
 </TR>
 <TR ALIGN="LEFT">
+  <TD WIDTH=120><A HREF="#covalent">ttbp</A></TD>
   <TD WIDTH=120><A HREF="#uniax">uniax</A></TD>
   <TD WIDTH=120><A HREF="#writef">writef</A></TD>
 
@@ -426,13 +427,17 @@ of the x-coordinate only, and averaged over the y- and z-coordinate
 
 <A NAME="fnorm">
 <P><LI><B> fnorm </B><P>
+Writes the average of the modulus of a (random) force component to 
+the <TT>.eng</TT> file. This should be a good measure for the degree 
+of relaxation in a glok or mik simulation. 
+
+<A NAME="einstein">
+<P><LI><B> einstein </B><P>
 Writes the average of the square of a (random) force component devided
-by the mean atomic mass to the <TT>.eng</TT> file. 
-This should be a good measure for the degree 
-of relaxation in a glok or mik simulation. In an NVE simulation, 
-this value, divided by the temperature, is equal to the square
-of the Einstein frequency. The latter can be used as <TT>isq_tau_eta</TT> 
-for a Nose-Hoover thermostat.
+by the mean atomic mass to the <TT>.eng</TT> file. This value, divided 
+by the temperature, is equal to the square of the Einstein frequency. 
+The latter can be used as <TT>isq_tau_eta</TT> for a Nose-Hoover thermostat.
+This option is supported in NVE, NVT and NPT simulations only.
 
 <A NAME="efilter">
 <P><LI><B> efilter </B><P>
