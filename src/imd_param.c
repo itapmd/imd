@@ -322,9 +322,9 @@ void getparamfile(char *paramfname, int sim)
       /* force temperature initialization */
       getparam(token,&do_maxwell,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"use_box_from_header")==0) {
+    else if (strcasecmp(token,"box_from_header")==0) {
       /* read box from config file */
-      getparam(token,&use_box_from_header,PARAM_INT,1,1);
+      getparam(token,&box_from_header,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"coordname")==0) {
       /* file name for atom coordinate input data */
@@ -2235,7 +2235,7 @@ void broadcast_params() {
   MPI_Bcast( &dist_presstens_flag,   1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_shock_shear_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_shear_aniso_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &use_box_from_header,   1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &box_from_header,       1, MPI_INT, 0, MPI_COMM_WORLD); 
 
 #ifdef TWOD
   MPI_Bcast( &pic_scale   , 2, REAL, 0, MPI_COMM_WORLD);
