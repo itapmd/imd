@@ -105,29 +105,29 @@ configuration files for several kinds of structures.
 <H2>Generated Configurations</H2>
 </A>
 If the input configuration file name (parameter <TT>coordname</TT>) starts
-with a dot, IMD tries to interpret it and computes the initial atom
+with a underscore, IMD tries to interpret it and computes the initial atom
 positions, rather than reading them in. The following generated structures
 are supported:
 <TABLE>
-<TR><TD>.fcc      <TD> fcc crystal (3D)
-<TR><TD>.nacl     <TD> NaCl crystal (3D)
-<TR><TD>.lav      <TD> a Laves phase (3D)
-<TR><TD>.tiqc     <TD> truncated icosahedra quasicrystal (3D)
-<TR><TD>.hex      <TD> hexagonal crystal (2D)
+<TR><TD>_fcc      <TD> fcc crystal (3D)
+<TR><TD>_nacl     <TD> NaCl crystal (3D)
+<TR><TD>_lav      <TD> a Laves phase (3D)
+<TR><TD>_tiqc     <TD> truncated icosahedra quasicrystal (3D)
+<TR><TD>_hex      <TD> hexagonal crystal (2D)
 </TABLE>
 The size of the configuration is specified with the parameter
 <TT>box_param</TT>, an integer vector. For the cubic phases
-.fcc, .nacl and .lav, all three box parameters must be positive,
+_fcc, _nacl and _lav, all three box parameters must be positive,
 even integers. They specify the the dimensions of a rectangular
-box. For the quasicrystalline .tiqc phase, an approximant with a
+box. For the quasicrystalline _tiqc phase, an approximant with a
 rectangular box is created. The three parameters are the orders
 of the Fibonacci approximant in the three directions. For the 
-.hex phase, the dimension of the sample is 
+_hex phase, the dimension of the sample is 
 <TT>box_param.x*sqrt(3)</TT> in x-direction, and 
 <TT>box_param.y</TT> in y-direction. The nearest 
 neighbor distance is 1.
 <P>
-The <TT>.tiqc</TT> structure is an approximant of a truncated
+The <TT>_tiqc</TT> structure is an approximant of a truncated
 icosahedra quasicrystals (tiqc, truncated icosahedra clusters are also
 known as Bergman clusters). It requires the component <TT>quasi</TT> 
 to be contained in the <A HREF="compiling.html">compilation target</A>.

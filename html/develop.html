@@ -53,16 +53,10 @@ must be done:
      from one cell to another cell within the same CPU, the routine
      move_atom() in file imd_alloc.c must be extended</LI>
 <LI> in order that the particle data move together with the particle
-     from one CPU to another CPU, two things must be done: 
-     <UL>
-     <LI> the routines copy_one_atom() und process_buffer() in file
-          imd_mpi_util.c must be extended. These routines pack/unpack 
-          selected atoms with their data into/from a communications
-	  buffer.</LI>
-     <LI> the routines send_cell() und recv_cell() in file</LI>
-          imd_mpi_util.c must be extended. These routines send and
-          receive entire cells.</LI>
-     </UL></LI>
+     from one CPU to another CPU,
+     the routines copy_one_atom() und process_buffer() in file
+     imd_mpi_util.c must be extended. These routines pack/unpack 
+     selected atoms with their data into/from a communications buffer.
 <LI> If the force computation requires further data besides the atom 
      types and positions (like the direction of a non-pointlike
      particle), these must be sent to the buffer cells.
