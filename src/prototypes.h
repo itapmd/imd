@@ -168,6 +168,10 @@ void eam2_read_embedding_energy(str255 emb_E_filename);
 void eam2_read_atomic_rho(str255 at_rho_filename);
 void eam2_do_forces1(cell *p, cell *q, vektor pbc);
 void eam2_do_forces2(cell *p, cell *q, vektor pbc);
+void copy_cell_eam2_rho_h(int i, int j, int k, int l, int m, int n);
+void move_eam2_rho_h(msgbuf *b, int k, int l, int m);
+void copy_eam2_rho_h(msgbuf *b, int k, int l, int m);
+void send_eam2_rho_h(void);
 #endif
 
 #ifdef TTBP
