@@ -129,7 +129,11 @@ EXTERN int efrep_interval INIT(0); /* Period of checkpoints ==0 for no checkpoin
 EXTERN real  lower_e_pot INIT(0.0); /* lower end of energy window */
 EXTERN real  upper_e_pot INIT(0.0); /* upper end of energy window */
 #endif
-
+#ifdef NBFILTER
+EXTERN int nbrep_interval INIT(0); /* Period of checkpoints ==0 for no checkpoints */
+EXTERN int  *lower_nb_cut INIT(NULL); /* lower number of neighbours  */
+EXTERN int  *upper_nb_cut INIT(NULL); /* upper number of neighbours  */
+#endif
 /* data for generated structures */
 EXTERN ivektor box_param INIT(nullivektor);  /* box parameters */
 EXTERN real box_unit INIT(1.0);              /* lattice parameter */

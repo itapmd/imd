@@ -242,6 +242,10 @@ void write_header_dsp(FILE *out);
 void write_atoms_ef(FILE *out);
 void write_header_ef(FILE *out);
 #endif
+#ifdef NBFILTER
+void write_atoms_nb(FILE *out);
+void write_header_nb(FILE *out);
+#endif
 #ifdef WRITEF
 void write_atoms_wf(FILE *out);
 void write_header_wf(FILE *out);

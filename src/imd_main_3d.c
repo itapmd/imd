@@ -349,6 +349,11 @@ void main_loop(void)
        write_config_select(steps/efrep_interval, "ef",
                            write_atoms_ef, write_header_ef);
 #endif
+#ifdef NBFILTER  /* just print atoms by neighbour condition */ 
+    if ((nbrep_interval > 0) && (0 == steps%nbrep_interval)) 
+       write_config_select(steps/nbrep_interval, "nb",
+                           write_atoms_nb, write_header_nb);
+#endif
 #ifdef DISLOC
     if (steps == up_ort_ref) update_ort_ref();
     if ((dem_interval > 0) && (0 == steps%dem_interval)) 

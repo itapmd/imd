@@ -457,6 +457,17 @@ void getparamfile(char *paramfname, int sim)
       getparam("e_pot_upper",&upper_e_pot,PARAM_REAL,1,1);
     }
 #endif
+#ifdef NBFILTER
+    else if (strcasecmp(token,"nb_checkpt_int")==0) {
+      getparam("nb_checkpt_int",&nbrep_interval,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"nb_cut_lower")==0) {
+      	getparam("nb_cut_lower",lower_nb_cut,PARAM_INT,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"nb_cut_upper")==0) {
+	getparam("nb_cut_upper",upper_nb_cut,PARAM_INT,ntypes,ntypes);
+    }
+#endif
 #ifdef SNAPSHOT
     else if (strcasecmp(token,"sscount")==0) {
       /* actual snapshot nr., for restarting */
@@ -635,6 +646,14 @@ void getparamfile(char *paramfname, int sim)
 	error("Cannot allocate memory for masses array\n");
       for(k=0; k<ntypes; k++)
         *(masses+k) = 1.0;
+#ifdef NBFILTER
+      lower_nb_cut = (int *) calloc(ntypes, sizeof(int));
+      if (NULL==lower_nb_cut)
+	  error("Cannot allocate memory for lower_nb_cut\n");
+      upper_nb_cut = (int *) calloc(ntypes, sizeof(int));
+      if (NULL==upper_nb_cut)
+	  error("Cannot allocate memory for upper_nb_cut\n");
+#endif 
     }
     else if (strcasecmp(token,"starttemp")==0) {
       /* temperature at start of sim. */
@@ -1824,7 +1843,6 @@ void broadcast_params() {
   MPI_Bcast( &upper_e_pot,    1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &efrep_interval, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
-
 #ifdef SNAPSHOT
   MPI_Bcast( &sscount, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
@@ -1875,6 +1893,21 @@ void broadcast_params() {
     masses=(real*)realloc(masses,ntypes*sizeof(real));
     if (NULL==masses) error("Cannot allocate memory for masses array\n");
   }
+
+#ifdef NBFILTER
+  if (0!=myid){
+      lower_nb_cut = (int *) calloc(ntypes, sizeof(int));
+      if (NULL==lower_nb_cut)
+	  error("Cannot allocate memory for lower_nb_cut\n");
+      upper_nb_cut = (int *) calloc(ntypes, sizeof(int));
+      if (NULL==upper_nb_cut)
+	  error("Cannot allocate memory for upper_nb_cut\n");
+  }
+  MPI_Bcast( lower_nb_cut,     ntypes, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( upper_nb_cut,     ntypes, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &nbrep_interval,  1,      MPI_INT, 0, MPI_COMM_WORLD);
+#endif */
+
   MPI_Bcast( masses,     ntypes, REAL,     0, MPI_COMM_WORLD); 
 
   MPI_Bcast( &timestep    ,   1, REAL,     0, MPI_COMM_WORLD); 
