@@ -586,8 +586,8 @@ void move_atoms_npt_iso(void)
   real Erot_old = 0.0, Erot_new = 0.0;
   real reib, ireib ;
 
-  /* relative box size change */
-  box_size.x      += 2.0 * timestep * xi.x * inv_tau_xi;
+  /* new box size relative to old one */
+  box_size.x = 1.0 / box_size.x + 2.0 * timestep * xi.x * inv_tau_xi;
   fric  =      1.0 - (xi.x * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0;
   ifric = 1.0/(1.0 + (xi.x * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0);
 #ifdef UNIAX
@@ -645,12 +645,12 @@ void move_atoms_npt_iso(void)
 #endif
 
       /* new positions */
-      tmp = p->impuls X(i) * (1.0 + box_size.x) / (2.0 * MASSE(p,i));
+      tmp = p->impuls X(i) * 2.0 / ((1.0 + box_size.x) * MASSE(p,i));
       p->ort X(i) = box_size.x * ( p->ort X(i) + timestep * tmp );
-      tmp = p->impuls Y(i) * (1.0 + box_size.x) / (2.0 * MASSE(p,i));
+      tmp = p->impuls Y(i) * 2.0 / ((1.0 + box_size.x) * MASSE(p,i));
       p->ort Y(i) = box_size.x * ( p->ort Y(i) + timestep * tmp );
 #ifndef TWOD
-      tmp = p->impuls Z(i) * (1.0 + box_size.x) / (2.0 * MASSE(p,i));
+      tmp = p->impuls Z(i) * 2.0 / ((1.0 + box_size.x) * MASSE(p,i));
       p->ort Z(i) = box_size.x * ( p->ort Z(i) + timestep * tmp );
 #endif
 
@@ -740,10 +740,6 @@ void move_atoms_npt_iso(void)
   box_z.z *= box_size.x;
 #endif  
   make_box();
-
-  /* old box_size relative to the current one, which is set to 1.0 */
-  box_size.x = 1.0 / box_size.x;
-
 }
 
 #else
@@ -776,16 +772,16 @@ void move_atoms_npt_axial(void)
   Ekin             = 0.0;
   stress_x         = 0.0;
   stress_y         = 0.0;
-  /* relative box size change */ 
-  box_size.x      += 2.0 * timestep * xi.x * inv_tau_xi;  
-  box_size.y      += 2.0 * timestep * xi.y * inv_tau_xi;
+  /* new box size relative to old one */ 
+  box_size.x       = 1.0 / box_size.x + 2.0 * timestep * xi.x * inv_tau_xi;  
+  box_size.y       = 1.0 / box_size.y + 2.0 * timestep * xi.y * inv_tau_xi;
   fric.x  =    1.0 - (xi.x * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0;
   fric.y  =    1.0 - (xi.y * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0;
   ifric.x = 1/(1.0 + (xi.x * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0);
   ifric.y = 1/(1.0 + (xi.y * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0);
 #ifndef TWOD
   stress_z         = 0.0;
-  box_size.z      += 2.0 * timestep * xi.z * inv_tau_xi;  
+  box_size.z       = 1.0 / box_size.z + 2.0 * timestep * xi.z * inv_tau_xi;  
   fric.z  =    1.0 - (xi.z * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0;
   ifric.z = 1/(1.0 + (xi.z * inv_tau_xi + eta * inv_tau_eta) * timestep / 2.0);
 #endif
@@ -835,12 +831,12 @@ void move_atoms_npt_axial(void)
 #endif
 	  
       /* new positions */
-      tmp = p->impuls X(i) * (1.0 + box_size.x) / (2.0 * MASSE(p,i));
+      tmp = p->impuls X(i) * 2.0 / ((1.0 + box_size.x) * MASSE(p,i));
       p->ort X(i) = box_size.x * (p->ort X(i) + timestep * tmp);
-      tmp = p->impuls Y(i) * (1.0 + box_size.y) / (2.0 * MASSE(p,i));
+      tmp = p->impuls Y(i) * 2.0 / ((1.0 + box_size.y) * MASSE(p,i));
       p->ort Y(i) = box_size.y * (p->ort Y(i) + timestep * tmp);
 #ifndef TWOD
-      tmp = p->impuls Z(i) * (1.0 + box_size.z) / (2.0 * MASSE(p,i));
+      tmp = p->impuls Z(i) * 2-0 / ((1.0 + box_size.z) * MASSE(p,i));
       p->ort Z(i) = box_size.z * (p->ort Z(i) + timestep * tmp);
 #endif
 
@@ -905,21 +901,13 @@ void move_atoms_npt_axial(void)
   xi.z     = xi_tmp;
 #endif
 
-  /* new box size (box is rectangular) */
+  /* new box (box is rectangular) */
   box_x.x *= box_size.x;
   box_y.y *= box_size.y;
 #ifndef TWOD
   box_z.z *= box_size.z;
 #endif
   make_box();
-
-  /* old box size relative to new one */
-  box_size.x  = 1.0 / box_size.x;
-  box_size.y  = 1.0 / box_size.y;
-#ifndef TWOD
-  box_size.z  = 1.0 / box_size.z;
-#endif  
-
 }
 
 #else
