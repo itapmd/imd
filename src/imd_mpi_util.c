@@ -496,6 +496,9 @@ void setup_buffers(void)
 #ifdef ORDPAR
     binc2++;     /* nbanz */
 #endif
+#ifdef UNIAX
+    binc2+=3;    /* dreh_moment */
+#endif
 
     /* one way or two ways */
 #ifdef AR

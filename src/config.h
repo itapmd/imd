@@ -76,11 +76,6 @@
 /* AR is the default. We could make the default machine dependent */
 #define AR  
 
-/* UNIAX must not use AR - not implemented */
-#ifdef UNIAX
-#undef AR
-#endif
-
 /* for COVALENT, AR *must* be set */
 #ifdef COVALENT
 #ifndef AR

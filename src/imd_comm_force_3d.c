@@ -767,6 +767,11 @@ void add_forces( int k, int l, int m, int r, int s, int t )
 #ifdef ORDPAR
     to->nbanz[i] += from->nbanz[i];
 #endif
+#ifdef UNIAX
+    to->dreh_moment X(i) += from->dreh_moment X(i);
+    to->dreh_moment Y(i) += from->dreh_moment Y(i);
+    to->dreh_moment Z(i) += from->dreh_moment Z(i);
+#endif
   }
 }
 
@@ -802,6 +807,11 @@ void pack_forces( msgbuf *b, int k, int l, int m)
 #endif
 #ifdef ORDPAR
     b->data[ b->n++ ] = (real) from->nbanz[i];
+#endif
+#ifdef UNIAX
+    b->data[ b->n++ ] = from->dreh_moment X(i);
+    b->data[ b->n++ ] = from->dreh_moment Y(i);
+    b->data[ b->n++ ] = from->dreh_moment Z(i);
 #endif
   }
   if (b->n_max < b->n) error("Buffer overflow in pack_forces.");
@@ -839,6 +849,11 @@ void unpack_forces( msgbuf *b, int k, int l, int m )
 #endif
 #ifdef ORDPAR
     to->nbanz[i] += (shortint) b->data[ b->n++ ];
+#endif
+#ifdef UNIAX
+    to->dreh_moment X(i) += b->data[ b->n++ ];
+    to->dreh_moment Y(i) += b->data[ b->n++ ];
+    to->dreh_moment Z(i) += b->data[ b->n++ ];
 #endif
   }
   if (b->n_max < b->n) error("Buffer overflow in unpack_forces.");
