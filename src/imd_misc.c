@@ -868,16 +868,17 @@ void generate_lav()
   for (i=min.x ; i<max.x; i++)
     for (j=min.y; j<max.y; j++)
       for (k=min.z; k<max.z; k++) 
+
 	for (l=0;l<24;l++) {
 	  x=(px[l]+8.*i)/sqrt(8.);
 	  y=(py[l]+8.*j)/sqrt(8.);
 	  z=(pz[l]+8.*k)/sqrt(8.);
 	  typ=pa[l];
-          sign=-1;
+          sign=1;
 
-	  if ((x+co < rmin.x) || (x+co > rmax.x) ||
+/*	  if ((x+co < rmin.x) || (x+co > rmax.x) ||
 	      (y+co < rmin.y) || (y+co > rmax.y) ||
-	      (z+co < rmin.z) || (z+co > rmax.z)) continue;
+	      (z+co < rmin.z) || (z+co > rmax.z)) continue; */
 
 #if defined(FRAC) || defined(DEFORM)
 	  /* leave boundary open if necessary */
@@ -919,6 +920,7 @@ void generate_lav()
 	  
 	}
 } 
+
 
 #endif /* not TWOD */
 
