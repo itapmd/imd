@@ -871,6 +871,8 @@ void write_eng_file(int steps)
   FILE *out;
   str255 fname;
   int i;
+  real tmp;
+  
 
 #ifdef HPO
   char *format=" %.16e";
@@ -936,9 +938,9 @@ void write_eng_file(int steps)
 #endif
 
 #ifdef FTG
- for(i=0;i<nslices;i++)
-   if(*(ninslice + i) == 0) error("Slice is empty !");
-   fprintf(out, format, 2.0* *(E_kin_ftg+i)/ *(ninslice + i) ); 
+  for(i=0;i<nslices;i++){
+    fprintf(out, format, 2.0* *(E_kin_ftg+i)/ *(ninslice + i) ); 
+  }
 #endif
 
 
