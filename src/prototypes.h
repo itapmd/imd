@@ -52,6 +52,7 @@ void fix_cells(void);
 void calc_properties(void);
 void write_config(int steps);
 void write_properties(int steps);
+void write_surroundings(int steps);
 void write_distrib(int steps);
 void write_pic_cell( cell *p, FILE *out ); 
 void write_vrml_cell( cell *p, FILE *out ); 
@@ -67,8 +68,8 @@ void maxwell(real TEMP);
 float gasdev(long *idum);
 float ran1(long *idum);
 
-#ifdef TWOD
 void write_conf_using_socket(void);
+#ifdef TWOD
 void write_rgb_picture_to_socket(void);
 #else
 void write_distrib_using_sockets();

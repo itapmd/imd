@@ -18,6 +18,7 @@ void check_io_signal_using_select();
 int connect_server();
 void init_socket();
 void close_socket();
+void write_conf_using_socket();
 void write_distrib_using_sockets();
 void write_rgb_picture_to_socket();
 void write_to_socket(float *dist, int size);

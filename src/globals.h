@@ -109,6 +109,7 @@ EXTERN vektor2d ecut_pot INIT(nullvektor);  /* Pot. Energy interval for pictures
 EXTERN vektor2d  pic_ll  INIT(nullvektor);  /* lower left corner */
 EXTERN vektor2d  pic_ur  INIT(nullvektor);  /* upper right corner */
 EXTERN ivektor2d pic_res INIT(nullivektor); /* number of pixels in x/y dir.*/
+EXTERN int       numpix  INIT(1);           /* number of pixels in x/y dir.*/
 #else
 EXTERN vektor3d view_dir INIT(nullvektor);  /* view direction */
 EXTERN vektor3d view_pos INIT(nullvektor);  /* view position */
@@ -250,6 +251,13 @@ EXTERN vektor limit_growth INIT(einsvektor);
 EXTERN real end_temp INIT(0.0);        /* Temperature and at of simulation */
 #endif
 
+#if defined HOM
+EXTERN int    hom_interval INIT(0);    /* period of homshear steps */
+EXTERN real   shear_max INIT(0.0);     /* max shear in y-direction */
+EXTERN int    exp_interval INIT(0);    /* period of expansion steps */
+EXTERN real   expansion INIT(1.0);     /* max expansion in y-direction */
+#endif
+
 #if defined(FRAC) || defined(PULL)
 EXTERN vektor stadion INIT(nullvektor);      /* Damping stadion */
 EXTERN real   gamma_bar INIT(0.0);    /* Damping prefactor */
@@ -259,7 +267,7 @@ EXTERN real   gamma_cut INIT(0.0);    /* Damping cutoff */
 #if defined(FRAC) || defined(PULL) || defined(SHOCK)
 EXTERN int    dnoshsteps INIT(0);     /* counting steps between 2 shears */
 EXTERN real   strip INIT(0.0);        /* Strip width */    
-EXTERN real   ekin_threshold INIT(0.0); /* threshold for ekin */    
+EXTERN real   ekin_threshold INIT(1.0e+20); /* threshold for ekin */    
 EXTERN int    annealsteps INIT(0);    /* number of annealing steps */    
 EXTERN int    maxdnoshsteps INIT(0);  /* max. steps between 2 shear steps */  
 EXTERN int initial_shift INIT(0);  /* flag whether the sample is shifted */
