@@ -315,7 +315,7 @@ void read_pot_table2(pot_table_t *pt, int ncols, char *filename, FILE *infile)
     if (ncols==ntypes*ntypes) cellsz = MAX(cellsz,pt->end[i]);
     pt->invstep[i] = 1.0 / pt->step[i];
     numstep        = 1 + (pt->end[i] - pt->begin[i]) / pt->step[i];
-    len[i]         = (int) (numstep+0.5);  
+    len[i]         = (int) (numstep+0.49);  
     pt->maxsteps   = MAX(pt->maxsteps, len[i]);
 
     /* some security against rounding errors */
