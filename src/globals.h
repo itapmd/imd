@@ -159,6 +159,7 @@ EXTERN int dist_Epot_flag        INIT(0); /* write Epot dists? */
 EXTERN int dist_Ekin_long_flag   INIT(0); /* write Ekin_long dists? */
 EXTERN int dist_Ekin_trans_flag  INIT(0); /* write Ekin_trans dists? */
 EXTERN int dist_shock_shear_flag INIT(0); /* write shock shear dists? */
+EXTERN int dist_shear_aniso_flag INIT(0); /* write shear aniso dists? */
 EXTERN int dist_press_flag       INIT(0); /* write press dists? */
 EXTERN int dist_presstens_flag   INIT(0); /* write presstens dists? */
 EXTERN int dist_int              INIT(0); /* Period of distribution writes */

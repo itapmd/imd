@@ -94,6 +94,11 @@ void write_distrib(int steps)
     if (myid==0) write_distrib_select( &dist, dist_shock_shear_flag, 1, fzhlr, 
                                        "shock_shear", "shock_shear");
   }
+  if (dist_shear_aniso_flag) {
+    make_distrib_select( &dist, 1, &flag, dist_shear_aniso_fun);
+    if (myid==0) write_distrib_select( &dist, dist_shear_aniso_flag, 1, fzhlr, 
+                                       "shear_aniso", "shear_aniso");
+  }
 #endif /* SHOCK */
 
 }
@@ -176,6 +181,10 @@ void dist_presstens_fun(float *dat, cell *p, int i)
 void dist_shock_shear_fun(float *dat, cell *p, int i)
 {
   *dat += (PRESSTENS(p,i,xx)-(PRESSTENS(p,i,yy)+PRESSTENS(p,i,zz))/2.0)/2.0;
+}
+void dist_shear_aniso_fun(float *dat, cell *p, int i)
+{
+  *dat += PRESSTENS(p,i,yy)-PRESSTENS(p,i,zz);
 }
 #endif
 

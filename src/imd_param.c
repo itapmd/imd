@@ -459,6 +459,10 @@ void getparamfile(char *paramfname, int sim)
       /* write shock shear dist? */
       getparam(token,&dist_shock_shear_flag,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token,"dist_shear_aniso_flag")==0) {
+      /* write shear aniso dist? */
+      getparam(token,&dist_shear_aniso_flag,PARAM_INT,1,1);
+    }
     else if (strcasecmp(token,"pic_int")==0) {
       /* number of steps between picture writes */
       getparam("pic_int",&pic_int,PARAM_INT,1,1);
@@ -2143,6 +2147,7 @@ void broadcast_params() {
   MPI_Bcast( &dist_press_flag,       1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_presstens_flag,   1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_shock_shear_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_shear_aniso_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 
 
 #ifdef TWOD
   MPI_Bcast( &pic_scale   , 2, REAL, 0, MPI_COMM_WORLD);

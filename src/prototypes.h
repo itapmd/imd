@@ -334,6 +334,7 @@ void dist_Epot_fun       (float*, cell*, int);
 void dist_Ekin_long_fun  (float*, cell*, int);
 void dist_Ekin_trans_fun (float*, cell*, int);
 void dist_shock_shear_fun(float*, cell*, int);
+void dist_shear_aniso_fun(float*, cell*, int);
 void dist_press_fun      (float*, cell*, int);
 void dist_presstens_fun  (float*, cell*, int);
 
