@@ -27,8 +27,10 @@
 #else
 #ifdef EWALD
 #define TB_T unsigned short
+#define MAXCELL 65536
 #else
-#define TB_T unsigned int
+#define TB_T unsigned char
+#define MAXCELL 256
 #endif
 #endif
 
@@ -103,7 +105,7 @@ int estimate_nblist_size(void)
 void make_nblist(void)
 {
   static int at_max=0, nb_max=0, pa_max=0;
-  int  c, i, k, n, tn, at, cc;
+  int  c, i, k, n, tn, at, cc, max1=0, max2;
 
 #ifdef MPI
   if (0 == nbl_count % BUFSTEP) setup_buffers();
@@ -128,13 +130,23 @@ void make_nblist(void)
 #endif
     }
     at += p->n;
+    max1 = MAX(max1, p->n);
   }
 #ifdef COVALENT
   for (k=ncells; k<ncells2; k++) {
     cell *p = cell_array + cnbrs[k].np;
     at += p->n;
+    max1 = MAX(max1, p->n);
   }
 #endif
+
+#ifdef MPI
+  MPI_Allreduce( &max1, &max2, 1, MPI_INT, MPI_MAX, cpugrid); 
+#else
+  max2 = max1;
+#endif
+  if (max2>=MAXCELL) 
+    error("maximal cell occupancy exceeded - change TB_T");
 
   /* fill the buffer cells */
   send_cells(copy_cell,pack_cell,unpack_cell);
