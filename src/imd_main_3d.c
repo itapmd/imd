@@ -52,21 +52,21 @@ void main_loop(void)
 
 #ifdef EAM
   /* memory allocation */
-  eam_rho   =  calloc(natoms,sizeof(real));
+  eam_rho   =  calloc((natoms+1),sizeof(real));
   if(NULL   == eam_rho) error("Cannot allocate memory for eam_rho");
-  eam_ij    =  calloc(natoms*eam_len,sizeof(integer));
+  eam_ij    =  calloc((natoms+1)*eam_len,sizeof(real));
   if(NULL   == eam_ij) error("Cannot allocate memory for eam_ij");
-  eam_dij_x =  calloc(natoms*eam_len,sizeof(real));
+  eam_dij_x =  calloc((natoms+1)*eam_len,sizeof(real));
   if(NULL   == eam_dij_x) error("Cannot allocate memory for eam_dij_x");
-  eam_dij_y =  calloc(natoms*eam_len,sizeof(real));
+  eam_dij_y =  calloc((natoms+1)*eam_len,sizeof(real));
   if(NULL   == eam_dij_y) error("Cannot allocate memory for eam_dij_y");
-  eam_dij_z =  calloc(natoms*eam_len,sizeof(real));
+  eam_dij_z =  calloc((natoms+1)*eam_len,sizeof(real));
   if(NULL   == eam_dij_z) error("Cannot allocate memory for eam_dij_z");
 #endif /* EAM */
 
 #ifdef TTBP
   /* memory allocation */
-  ttbp_ij   =  calloc((natoms+1)*ttbp_len*2,sizeof(integer));
+  ttbp_ij   =  calloc((natoms+1)*ttbp_len*2,sizeof(real));
   if(NULL   == ttbp_ij) error("Can't allocate memory for ttbp_ij");
   ttbp_j    =  calloc((natoms+1)*ttbp_len*3,sizeof(real));
   if(NULL   == ttbp_j) error("Can't allocate memory for ttbp_j");
