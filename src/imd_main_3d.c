@@ -506,14 +506,23 @@ void main_loop(void)
       if (delta_epot < 0) delta_epot = -delta_epot;
 
       if ((ekin  <  ekin_threshold) || (fnorm2 < fnorm_threshold) || 
-          (f_max < f_max_threshold) || (delta_epot < delta_epot_threshold)) 
-        is_relaxed = 1;
+          (f_max < f_max_threshold) || (delta_epot < delta_epot_threshold))
+	{ 
+	  is_relaxed = 1;
+	}
+      
+      else
+	{
+	    is_relaxed = 0;
+	}
+
       old_epot = epot;
 
       if (is_relaxed) {
         stop = 1;
         write_eng_file(steps);
         write_ssconfig(steps);
+
         if (myid==0) {
           printf("nfc = %d epot = %22.16f\n", nfc, epot );
           printf("ekin = %e fnorm = %e f_max = %e delta_epot = %e\n", 
