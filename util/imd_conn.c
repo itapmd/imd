@@ -1,11 +1,9 @@
 
 /******************************************************************************
 *
-* imd_pair -- calculate pair distibution functions
+*  imd_conn -- calculate connection matrix
 *
-* Author: J. Stadler, ITAP, University of Stuttgart
-*
-* converted to new parameter format, added TWOD support (20.10.98, F. Gaehler)
+*  A descendent of imd_pair
 *
 ******************************************************************************/
 
@@ -14,20 +12,20 @@
 * $Date$
 ******************************************************************************/
 
-#define PAIR
+#define CONN
 #include "util.h"
 
 /******************************************************************************
 *
 *  Usage -- educate users
 *
-*  Compilation: gcc -O [-DTWOD] [-DSLOTS=<nnn>] [-DSINGLE] imd_pair.c -lm
+*  Compilation: gcc -O [-DTWOD] [-DSINGLE] imd_conn.c -lm 
 *
 ******************************************************************************/
 
 void usage(void)
 { 
-  printf("%s [-r<nnn>] [-a<nnn>] [-e<nnn>] [-p paramter-file]\n",progname); 
+  printf("%s [-r<nnn>] [-p paramter-file]\n",progname); 
   exit(1); 
 }
 
@@ -40,25 +38,15 @@ void usage(void)
 
 int main(int argc, char **argv)
 {
-  int tablesize;
-  int i,j,k;
+  int i,j;
 
   /* Read Parameters from parameter file */
   read_parameters(argc,argv);
 
-  tablesize = SLOTS*ntypes*ntypes*sizeof(real);
-  histogram = (real *) malloc(tablesize);
-  if (NULL==histogram) error("Cannot allocate memory for histograms.");
-  hist_dim.x = SLOTS;
-  hist_dim.y = ntypes;
-  hist_dim.z = ntypes;
-
-  for (i=0; i<SLOTS; ++i)
-    for (j=0; j<ntypes; ++j)
-      for (k=0; k<ntypes; ++k)
-	*PTR_3D_V(histogram,i,j,k,hist_dim) = 0.0;
-
-  r2_cut = SQR(r_max);
+  /* Calculate cutoff radius */
+  r2_cut = 0.0;
+  for (i=0; i<ntypes; i++)
+    for (j=0; j<ntypes; j++) r2_cut = MAX( r2_cut, SQR(r_max2d[i][j]));
 
   /* Initialize cell data structures */
   init_cells();
@@ -66,10 +54,18 @@ int main(int argc, char **argv)
   /* Read atoms */
   read_atoms(infilename);
 
-  /* Calculate the distances */
+  /* Allocate connection matrix */
+  nn  = (int *)    calloc(natoms, sizeof(int));
+  tp  = (int *)    malloc(natoms * sizeof(int));
+  cm  = (int *)    malloc(natoms * MAXNEIGH * sizeof(int));
+  pos = (vektor *) malloc(natoms * sizeof(vektor));
+  if ((nn==NULL) || (tp==NULL) | (cm==NULL) | (pos==NULL))
+    error("cannot allocate connection matrix");
+
+  /* Calculate connection matrix */
   do_work(do_cell_pair);
 
-  /* Output results */
+  /* Write connection matrix */
   write_data();
 
   return 0;
@@ -79,7 +75,7 @@ int main(int argc, char **argv)
 
 /******************************************************************************
 *
-*  write_data writes histogram to *.pair file
+*  write connection matrix
 *
 ******************************************************************************/
 
@@ -87,29 +83,22 @@ void write_data()
 {
   FILE *out;
   str255 fname;
-  int i,j,k;
-  real r;
-  real f;
+  int i,j;
 
   if (0==restart)
-    sprintf(fname,"%s.pair",infilename);
+    sprintf(fname,"%s.conn",infilename);
   else
-    sprintf(fname,"%s.%u.pair",outfilename,restart);
-
+    sprintf(fname,"%s.%u.conn",outfilename,restart);
   out = fopen(fname,"w");
-  if (NULL == out) error("Cannot open histograms file.");
+  if (NULL == out) error("Cannot open connection matrix file.");
 
-  for (i=1; i<SLOTS; ++i) {
-    r = ((float) i / SLOTS * (r_max - r_min)) + r_min;
-    fprintf(out,"%f ", r);
-    f = natoms;
-    for (j=0; j<ntypes; ++j)
-      for (k=j; k<ntypes; ++k)
-	fprintf(out,"%f ",*PTR_3D_V(histogram,i,j,k,hist_dim)/f);
-    f = natoms * 4 * 3.14159265 * SQR(r);
-    for (j=0; j<ntypes; ++j)
-      for (k=j; k<ntypes; ++k)
-	fprintf(out,"%f ",*PTR_3D_V(histogram,i,j,k,hist_dim)/f);
+  for (i=0; i<natoms; ++i) {
+#ifdef TWOD
+    fprintf(out,"%d %d %f %f %d",   i,tp[i],pos[i].x,pos[i].y,         nn[i]);
+#else
+    fprintf(out,"%d %d %f %f %f %d",i,tp[i],pos[i].x,pos[i].y,pos[i].z,nn[i]);
+#endif
+    for (j=0; j<nn[i]; j++) fprintf(out," %d",*PTR_2D_V(cm,i,j,cm_dim));
     fprintf(out,"\n");
   }
   fclose(out);
@@ -118,20 +107,24 @@ void write_data()
 
 /******************************************************************************
 *
-*  do_cell_pair calulates the distances for atoms in two cells
+*  calulate the distances and connection matrix entries for atoms in two cells
 *
 ******************************************************************************/
 
 void do_cell_pair(cell *p, cell *q, vektor pbc)
 {
-  int i,j,k;
-  int temp;
+  int i,j,ii,jj;
   vektor d;
   real radius;
   int p_typ,q_typ;
 
   /* For each atom in first cell */
-  for (i = 0;i < p->n; ++i) 
+  for (i=0; i<p->n; ++i) {
+
+    ii      = p->nummer[i];
+    tp[ii]  = p->sorte[i];
+    pos[ii] = p->ort[i];
+    
     /* For each atom in neighbouring cell */
     /* Nasty little trick: If p==q, use only rest of atoms */
     for (j = ((p==q) ? i+1 : 0); j < q->n; ++j) {
@@ -144,18 +137,14 @@ void do_cell_pair(cell *p, cell *q, vektor pbc)
 #endif
 
       radius = sqrt( (double)(SPROD(d,d)) );
-
-      k     = (int) ( SLOTS * (radius - r_min) / (r_max - r_min));
       p_typ = p->sorte[i];
       q_typ = q->sorte[j];
-
-      if (q_typ > p_typ) {temp = p_typ; p_typ = q_typ; q_typ = temp;}
-
-      if ((k>0) && (k<SLOTS))
-	*PTR_3D_V(histogram, k , q_typ, p_typ, hist_dim) += 2;
+      if (radius < r_max2d[p_typ][q_typ]) {
+        ii = p->nummer[i];
+        jj = q->nummer[j];
+        *PTR_2D_V(cm,ii,nn[ii],cm_dim) = jj;  nn[ii]++;
+        *PTR_2D_V(cm,jj,nn[jj],cm_dim) = ii;  nn[jj]++;
+      }
     }
+  }
 }
-
-
-
-
