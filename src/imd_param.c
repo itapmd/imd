@@ -2059,7 +2059,10 @@ void check_parameters_complete()
 #endif
 #ifdef HOMDEF
   if (relax_rate > 0.0) {
-#ifndef STRESS_TENS
+#ifdef STRESS_TENS
+    if (relax_mode == -1) relax_mode = RELAX_FULL;
+#else
+    if (relax_mode == -1) relax_mode = RELAX_ISO;
     if ((relax_mode == RELAX_FULL) || (relax_mode == RELAX_AXIAL))
       error("Pressure relaxation modes axial and full require option stress");
 #endif
