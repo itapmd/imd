@@ -524,8 +524,8 @@ void cg_calcgamma(void)
 /* find the maximum from all CPUs */
   /*  MPI_Allreduce( &tmp_fmax2, &fmax2, 1, MPI_REAL, MPI_MAX, cpugrid); */
 /* add up results from different CPUs */
-  MPI_Allreduce( &tmp_gg,gg , 3, REAL, MPI_SUM, cpugrid);
-  MPI_Allreduce( &tmp_dgg,dgg , 3, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &tmp_gg,&gg , 1, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &tmp_dgg,&dgg , 1, REAL, MPI_SUM, cpugrid);
 #else
   fmax2 = tmp_fmax2;
   gg = tmp_gg;
@@ -583,8 +583,8 @@ real set_hg(void)
 #ifdef MPI
    MPI_Allreduce( &tmp_fmax2, &fmax2, 1, MPI_REAL, MPI_MAX, cpugrid); 
 /* add up results from different CPUs */
-  MPI_Allreduce( &tmp_gg,gg , 3, REAL, MPI_SUM, cpugrid);
-  MPI_Allreduce( &tmp_dgg,dgg , 3, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &tmp_gg,&gg , 1, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &tmp_dgg,&dgg , 1, REAL, MPI_SUM, cpugrid);
 #else
   fmax2 = tmp_fmax2;
   gg = tmp_gg;
