@@ -605,7 +605,7 @@ void getparamfile(char *paramfname, int sim)
       /* masses for generated structures */
       if (ntypes==0) 
         error("specify parameter ntypes before parameter masses");
-      getparam("masses",&masses,PARAM_REAL,ntypes,ntypes);
+      getparam("masses",masses,PARAM_REAL,ntypes,ntypes);
     }
     else if (strcasecmp(token,"timestep")==0) {
       /* size of timestep (in MD units) */
