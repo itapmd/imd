@@ -299,6 +299,8 @@ EXTERN imd_timer time_total;
 EXTERN imd_timer time_setup;
 EXTERN imd_timer time_main;
 EXTERN imd_timer time_io;
+EXTERN imd_timer time_fft;
+EXTERN imd_timer time_fft_plan;
 
 /* Parameters for the various ensembles */
 
@@ -484,12 +486,29 @@ EXTERN ivektor atdist_dim    INIT(nullivektor);  /* dimension of atoms_dist */
 EXTERN ivektor atdist_per_ll INIT(nullivektor);  /* ll of periodic ext. */
 EXTERN ivektor atdist_per_ur INIT(einsivektor);  /* ur of periodic ext. */
 EXTERN vektor  atdist_scale  INIT(nullvektor );  /* scale of atoms dist bins */
+EXTERN vektor  atdist_ll     INIT(nullvektor);   /* lower left of dist */
+EXTERN vektor  atdist_ur     INIT(nullvektor);   /* upper right of dist */
 EXTERN int atdist_int INIT(0);        /* interval between atoms dist updates */
 EXTERN int atdist_start INIT(0);      /* start step of atoms distribution */
 EXTERN int atdist_end INIT(0);        /* stop step of atoms distribution */
 EXTERN int atdist_size INIT(0);       /* size of atoms distribution */
 EXTERN int atdist_pos_int INIT(0);    /* period of position writes */
 EXTERN real atdist_phi INIT(0.0);     /* rotation angle around z-axis */
+#endif
+
+#ifdef DIFFPAT
+EXTERN float *diffdist INIT(NULL);              /* atoms distribution */
+EXTERN float *diffpat  INIT(NULL);              /* diffraction pattern */
+EXTERN float diffpat_weight[10] INIT(zero10);   /* diffraction strengths */
+EXTERN ivektor diffpat_dim   INIT(nullivektor);  /* dimension of diffdist */
+EXTERN vektor  diffpat_scale INIT(nullvektor );  /* scale of atoms dist bins */
+EXTERN vektor  diffpat_ur INIT(nullvektor );   /* upper right corner of dist */
+EXTERN vektor  diffpat_ll INIT(nullvektor );   /* lower left  corner of dist */
+EXTERN int diffpat_int INIT(0);     /* interval between atoms dist updates */
+EXTERN int diffpat_start INIT(0);   /* start step of atoms distribution */
+EXTERN int diffpat_end INIT(0);     /* stop step of atoms distribution */
+EXTERN int diffpat_size INIT(0);    /* size of atoms distribution */
+EXTERN fftwf_plan diffpat_plan;     /* plan for FFT */
 #endif
 
 #ifdef ORDPAR

@@ -116,6 +116,10 @@ void main_loop(void)
   if (atdist_int > 0) init_atdist();
 #endif
 
+#ifdef DIFFPAT
+  if (diffpat_int > 0) init_diffpat();
+#endif
+
 #ifdef DEFORM
   deform_int = 0;
 #endif
@@ -208,9 +212,9 @@ void main_loop(void)
        update_avpos();
     }
 #endif
-#ifdef ATDIST
-    if ((atdist_int > 0) && (0 == steps % atdist_int) &&
-        (steps >= atdist_start) && (steps <= atdist_end)) update_atdist();
+#ifdef DIFFPAT
+    if ((diffpat_int > 0) && (steps >= diffpat_start) && 
+        (steps <= diffpat_end)) update_diffpat(steps);
 #endif
 
 #ifdef FBC
@@ -416,6 +420,9 @@ void main_loop(void)
 
 #ifdef ATDIST
     if ((atdist_int > 0) && (steps == atdist_end)) write_atdist();
+#endif
+#ifdef DIFFPAT
+    if ((diffpat_int > 0) && (steps == diffpat_end)) write_diffpat();
 #endif
 #ifdef MSQD
     if ((correl_end >0) && (steps==correl_end) || 

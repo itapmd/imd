@@ -460,23 +460,16 @@ void init_atdist()
 #endif
   size = atdist_size * ntypes;
 
-  /* backup if pic_ur is not set */
-  /************* Dieser Default ist so schlecht, dass man eigentlich 
-   ************  besser darauf verzichten sollte, ihn überhaupt zu
-   ************  setzen: Was passiert bei negativen Box-Vektoren? */
-  if (0.0==pic_ur.x) {
-    pic_ur.x = box_x.x;
-    pic_ur.y = box_y.y;
-#ifndef TWOD
-    pic_ur.z = box_z.z;
-#endif
+  /* diffpat_ll and diffpat_ur must be set */
+  if (0.0==atdist_ur.x) {
+    error("atdist_ll and atdist_ur must be set");
   }
 
   /* the bins are orthogonal boxes in space */
-  atdist_scale.x = atdist_dim.x / (pic_ur.x - pic_ll.x);
-  atdist_scale.y = atdist_dim.y / (pic_ur.y - pic_ll.y);
+  atdist_scale.x = atdist_dim.x / (atdist_ur.x - atdist_ll.x);
+  atdist_scale.y = atdist_dim.y / (atdist_ur.y - atdist_ll.y);
 #ifndef TWOD
-  atdist_scale.z = atdist_dim.z / (pic_ur.z - pic_ll.z);
+  atdist_scale.z = atdist_dim.z / (atdist_ur.z - atdist_ll.z);
 #endif
 
   /* allocate distribution array */
@@ -486,6 +479,9 @@ void init_atdist()
   }
 
   /* initialize distribution array */
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
   for (i=0; i<size; i++) atdist[i]=0.0;
 }
 
@@ -529,22 +525,22 @@ void update_atdist()
             x = t;
 
             /* continue if atom is not inside selected box */
-            if ((x < pic_ll.x) || (x > pic_ur.x) ||
+            if ((x < atdist_ll.x) || (x > atdist_ur.x) ||
 #ifndef TWOD
-                (z < pic_ll.z) || (z > pic_ur.z) || 
+                (z < atdist_ll.z) || (z > atdist_ur.z) || 
 #endif
-                (y < pic_ll.y) || (y > pic_ur.y)) continue;
+                (y < atdist_ll.y) || (y > atdist_ur.y)) continue;
 
             /* which bin? */
-            numx = atdist_scale.x * (x - pic_ll.x);
+            numx = atdist_scale.x * (x - atdist_ll.x);
             if (numx < 0)                   numx = 0;
             if (numx >= atdist_dim.x)   numx = atdist_dim.x-1;
-            numy = atdist_scale.y * (y - pic_ll.y);
+            numy = atdist_scale.y * (y - atdist_ll.y);
             if (numy < 0)                   numy = 0;
             if (numy >= atdist_dim.y)   numy = atdist_dim.y-1;
             num = numx * atdist_dim.y + numy;
 #ifndef TWOD
-            numz = atdist_scale.z * (z - pic_ll.z);
+            numz = atdist_scale.z * (z - atdist_ll.z);
             if (numz < 0)                   numz = 0;
             if (numz >= atdist_dim.z)   numz = atdist_dim.z-1;
             num = num  * atdist_dim.z + numz;
@@ -599,3 +595,192 @@ void write_atdist()
 }
 
 #endif /* ATDIST */
+
+#ifdef DIFFPAT
+
+/******************************************************************************
+*
+*  initialize atoms distribution array
+*
+******************************************************************************/
+  
+void init_diffpat()
+{
+  int size, i;
+
+#ifdef OMP
+  fftwf_init_threads();
+  fftwf_plan_with_nthreads(omp_get_max_threads());
+#endif
+
+#ifdef TIMING
+  time_fft.total      = 0.0;
+  time_fft_plan.total = 0.0;
+#endif
+
+  /* compute array size */
+  diffpat_size  = diffpat_dim.x * diffpat_dim.y * 2 * (diffpat_dim.z / 2 + 1);
+
+  /* diffpat_ll and diffpat_ur must be set */
+  if (0.0==diffpat_ur.x) {
+    error("diffpat_ll and diffpat_ur must be set");
+  }
+
+  /* diffpat_weight must be set */
+  if (0.0==diffpat_weight[0]) {
+    error("diffpat_weight must be set");
+  }
+
+  /* the bins are orthogonal boxes in space */
+  diffpat_scale.x = diffpat_dim.x / (diffpat_ur.x - diffpat_ll.x);
+  diffpat_scale.y = diffpat_dim.y / (diffpat_ur.y - diffpat_ll.y);
+  diffpat_scale.z = diffpat_dim.z / (diffpat_ur.z - diffpat_ll.z);
+
+  /* allocate arrays */
+  if (NULL==diffdist) {
+    diffdist = (float *) fftwf_malloc( diffpat_size * sizeof(float) );
+    diffpat  = (float *) malloc( (diffpat_size / 2) * sizeof(float) );
+    if ((NULL==diffdist) || (NULL==diffpat))
+      error("Cannot allocate diffraction pattern array.");
+  }
+
+  /* make fftw plan */
+#ifdef TIMING
+  imd_start_timer(&time_fft_plan);
+#endif
+  if ((diffpat_end - diffpat_start) % diffpat_int > 50)
+    diffpat_plan = fftwf_plan_dft_r2c_3d(
+      diffpat_dim.x, diffpat_dim.y, diffpat_dim.z,
+      diffdist, (fftwf_complex *) diffdist, FFTW_MEASURE);
+  else
+    diffpat_plan = fftwf_plan_dft_r2c_3d(
+      diffpat_dim.x, diffpat_dim.y, diffpat_dim.z,
+      diffdist, (fftwf_complex *) diffdist, FFTW_ESTIMATE);
+#ifdef TIMING
+  imd_stop_timer(&time_fft_plan);
+  printf("Time for FFT plan: %f\n", time_fft_plan.total);
+#endif
+
+  /* initialize arrays */
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+  for (i=0; i<diffpat_size;   i++) diffdist[i]=0.0;
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+  for (i=0; i<diffpat_size/2; i++) diffpat [i]=0.0;
+
+}
+
+/******************************************************************************
+*
+*  update atoms distribution array
+*
+******************************************************************************/
+  
+void update_diffpat(int steps)
+{
+  int   num, numx, numy, numz, k, i;
+  cell  *p;
+  real  x, y, z;
+  int   dimz  = 2 * (diffpat_dim.z / 2 + 1);
+  int   dimz2 =     (diffpat_dim.z / 2 + 1);
+  fftwf_complex *dist_out = (fftwf_complex *) diffdist;
+
+  /* loop over all atoms */
+  for (k=0; k<ncells; ++k) {
+    p = cell_array + CELLS(k);
+    for (i=0; i<p->n; ++i) {
+      x = ORT(p,i,X);
+      y = ORT(p,i,Y);
+      z = ORT(p,i,Z);
+      /* continue if atom is not inside selected box */
+      if ((x < diffpat_ll.x) || (x > diffpat_ur.x) ||
+          (z < diffpat_ll.z) || (z > diffpat_ur.z) || 
+          (y < diffpat_ll.y) || (y > diffpat_ur.y)) continue;
+      /* which bin? */
+      numx = diffpat_scale.x * (x - diffpat_ll.x);
+      if (numx < 0)              numx = 0;
+      if (numx >= diffpat_dim.x) numx = diffpat_dim.x-1;
+      numy = diffpat_scale.y * (y - diffpat_ll.y);
+      if (numy < 0)              numy = 0;
+      if (numy >= diffpat_dim.y) numy = diffpat_dim.y-1;
+      numz = diffpat_scale.z * (z - diffpat_ll.z);
+      if (numz < 0)              numz = 0;
+      if (numz >= diffpat_dim.z) numz = diffpat_dim.z-1;
+      num = (numx * diffpat_dim.y + numy) * dimz + numz;
+      diffdist[num] += diffpat_weight[ SORTE(p,i) ];
+    }
+  }
+
+  /* increment diffraction pattern */
+  if (0==steps%diffpat_int) {
+#ifdef TIMING
+    imd_start_timer(&time_fft);
+#endif
+    fftwf_execute(diffpat_plan);
+#ifdef TIMING
+    imd_stop_timer(&time_fft);
+#endif
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+    for (i=0; i<diffpat_size/2; i++)
+      diffpat[i] += (float)(SQR(dist_out[i][0])+SQR(dist_out[i][1]));
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+    for (i=0; i<diffpat_size; i++) diffdist[i]=0.0;
+  }
+
+}
+
+/******************************************************************************
+*
+*  write diffraction pattern
+*
+******************************************************************************/
+
+void write_diffpat()
+{
+  int  num, numx, numy, numz, len;
+  int  dimz2 = diffpat_dim.z / 2 + 1;
+  real pi, ddx, ddy, ddz;
+  char c;
+  str255 fname;
+  FILE *out;
+
+  if (myid == 0) {
+
+    /* open file */
+    sprintf(fname,"%s.diffpat",outfilename);
+    if (NULL==(out=fopen(fname,"w"))) error("Cannot open output file");
+
+    pi  = 4 * atan( (double) 1.0 );
+    ddx = 2 * pi * diffpat_scale.x / diffpat_dim.x;
+    ddy = 2 * pi * diffpat_scale.y / diffpat_dim.y;
+    ddz = 2 * pi * diffpat_scale.z / diffpat_dim.z;
+
+    /* write file header */
+    if (endian()) c='B'; else c='L';
+    fprintf(out, "#F %c 3 0 1\n", c );
+    fprintf(out, "#C Fourier\n");
+    fprintf(out, "#D %d %d %d\n", diffpat_dim.x, diffpat_dim.y, dimz2);
+    fprintf(out, "#S %e %e %e\n", ddx, ddy, ddz);
+    fprintf(out, "#E\n");
+
+    /* write data */
+    len = diffpat_size / 2;
+    if (len!=fwrite(diffpat, sizeof(float), len, out))
+      error("Cannot write distribution");
+    fclose(out);
+
+#ifdef TIMING
+    printf("Time for FFT: %f\n", time_fft.total);
+#endif
+
+  }
+}
+
+#endif /* DIFFPAT */

@@ -323,6 +323,12 @@ void write_atoms_atdist_pos(FILE*);
 void write_header_atdist_pos(FILE*);
 #endif
 
+#ifdef DIFFPAT
+void   init_diffpat(void);
+void update_diffpat(int );
+void  write_diffpat(void);
+#endif
+
 /* write pictures - files imd_io_*.c */
 void write_pictures(int steps);
 void write_pictures_bitmap(int steps);

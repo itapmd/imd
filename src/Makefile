@@ -142,6 +142,7 @@ ifeq (AthlonMP-icc,${IMDSYS})
   CC_MPI	= mpicc
   CC_OMPI	= mpicc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -ip -tpp6 -axK #-static
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp
@@ -155,6 +156,7 @@ ifeq (AthlonMP-gcc3,${IMDSYS})
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -march=athlon-mp # -static
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
@@ -167,6 +169,7 @@ ifeq (P4-icc,${IMDSYS})
   CC_MPI	= mpicc
   CC_OMPI	= mpicc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -ip -tpp7 #-static
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp
@@ -180,6 +183,7 @@ ifeq (P4-gcc3,${IMDSYS})
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -march=pentium4 # -static
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
@@ -192,6 +196,7 @@ ifeq (P3-icc,${IMDSYS})
   CC_MPI	= mpicc
   CC_OMPI	= mpicc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -ip -tpp6 -axK #-static
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp
@@ -205,6 +210,7 @@ ifeq (P3-gcc3,${IMDSYS})
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -march=pentium3 # -static
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
@@ -215,6 +221,7 @@ ifeq (ia32-gcc2,${IMDSYS})
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O3
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
@@ -773,6 +780,15 @@ ifneq (,$(findstring atdist,${MAKETARGET}))
 CFLAGS += -DATDIST
 endif
 
+ifneq (,$(findstring diffpat,${MAKETARGET}))
+CFLAGS += -DDIFFPAT -I ${FFTW_DIR}/include
+ifneq (,$(findstring omp,${MAKETARGET}))
+LIBS   += -L ${FFTW_DIR}/lib -lfftw3f_threads -lfftw3f
+else
+LIBS   += -L ${FFTW_DIR}/lib -lfftw3f
+endif
+endif
+
 ifneq (,$(findstring ordpar,${MAKETARGET}))
 CFLAGS += -DORDPAR
 endif
@@ -847,13 +863,13 @@ ${OBJECTS}: ${HEADERS}
 # How to compile *.c files
 # special rules for force computation
 imd_forces.o: imd_forces.c
-	${CC} ${CFLAGS} ${RCDFLAGS} -c imd_forces.c
+	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_forces.c
 
 imd_forces_eam2.o: imd_forces_eam2.c
-	${CC} ${CFLAGS} ${RCDFLAGS} -c imd_forces_eam2.c
+	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_forces_eam2.c
 
 imd_forces_covalent.o: imd_forces_covalent.c
-	${CC} ${CFLAGS} ${RCDFLAGS} -c imd_forces_covalent.c
+	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_forces_covalent.c
 
 # generic compilation rule
 .c.o:

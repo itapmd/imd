@@ -1260,7 +1260,7 @@ void getparamfile(char *paramfname, int sim)
       getparam(token,&atdist_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"atdist_pos_int")==0) {
-      /* interval between atoms distribution updates */
+      /* interval between atom position writes */
       getparam(token,&atdist_pos_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"atdist_start")==0) {
@@ -1270,6 +1270,14 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"atdist_end")==0) {
       /* step when recording atoms distribution is stopped */
       getparam(token,&atdist_end,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"atdist_ll")==0) {
+      /* lower left  corner of atoms distribution */
+      getparam(token,&atdist_ll,PARAM_REAL,DIM,DIM);
+    }
+    else if (strcasecmp(token,"atdist_ur")==0) {
+      /* upper right corner of atoms distribution */
+      getparam(token,&atdist_ur,PARAM_REAL,DIM,DIM);
     }
     else if (strcasecmp(token,"atdist_per_ll")==0) {
       /* lower left of periodic extension */
@@ -1283,6 +1291,39 @@ void getparamfile(char *paramfname, int sim)
       /* rotation angle around z-axis */
       getparam(token,&atdist_phi,PARAM_REAL,1,1);
       atdist_phi *= 8 * atan(1.0);
+    }
+#endif
+#ifdef DIFFPAT
+    else if (strcasecmp(token,"diffpat_dim")==0) {
+      /* dimension of atoms distribution array */
+      getparam(token,&diffpat_dim,PARAM_INT,DIM,DIM);
+    }
+    else if (strcasecmp(token,"diffpat_int")==0) {
+      /* interval between diffraction pattern updates */
+      getparam(token,&diffpat_int,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"diffpat_start")==0) {
+      /* step when diffraction pattern recording is started */
+      getparam(token,&diffpat_start,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"diffpat_end")==0) {
+      /* step when diffraction pattern recording is stopped */
+      getparam(token,&diffpat_end,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"diffpat_ur")==0) {
+      /* upper right corner of atoms distribution */
+      getparam(token,&diffpat_ur,PARAM_REAL,DIM,DIM);
+    }
+    else if (strcasecmp(token,"diffpat_ll")==0) {
+      /* lower left corner of atoms distribution */
+      getparam(token,&diffpat_ll,PARAM_REAL,DIM,DIM);
+    }
+    else if (strcasecmp(token,"diffpat_weight")==0) {
+      /* scattering strength of different atom types */
+      real w[10];
+      if (ntypes==0) error("specify parameter ntypes before diffpat_weight");
+      getparam(token,w,PARAM_REAL,ntypes,ntypes);
+      for (i=0; i<ntypes; i++) diffpat_weight[i] = (float) w[i];
     }
 #endif
 #ifdef ORDPAR
@@ -2328,7 +2369,14 @@ void broadcast_params() {
 #endif
 
 #ifdef ATDIST
-  error("Option ATDIST not supported under MPI");
+  error("Option ATDIST is not supported under MPI");
+#endif
+
+#ifdef DIFFPAT
+  error("Option DIFFPAT is not supported under MPI");
+#ifdef TWOD
+  error("Option DIFFPAT is not supported in 2D");
+#endif
 #endif
 
 #ifdef ORDPAR

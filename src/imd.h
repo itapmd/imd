@@ -41,6 +41,11 @@
 #include <omp.h>
 #endif
 
+/* FFT for diffraction patterns */
+#ifdef DIFFPAT
+#include <fftw3.h>
+#endif
+
 /* Konfiguration */
 #include "config.h"
 
