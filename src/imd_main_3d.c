@@ -189,7 +189,7 @@ void main_loop(void)
     }
 #endif
 #ifdef AVPOS
-    if ( steps == avpos_start ) {
+    if ((steps == steps_min) || (steps == avpos_start)) {
        update_avpos();
     }
 #endif

@@ -200,7 +200,7 @@ void main_loop(void)
     if ((steps==reset_Epot_step) && (calc_Epot_ref==1)) reset_Epot_ref();
 #endif
 #ifdef AVPOS
-    if ( steps == avpos_start ) {
+    if ((steps == steps_min) || (steps == avpos_start)) {
        update_avpos();
     }
 #endif
