@@ -86,7 +86,7 @@ EXTERN vektor *fbc_endforces;
 #endif
 
 /* Global bookkeeping */
-
+EXTERN int is_big_endian;        /* 1 if big endian, 0 if little endian */
 EXTERN int natoms  INIT(0);      /* Total number of atoms */
 EXTERN int nactive INIT(0);      /* number of transl. degrees of freedom */
 EXTERN int nactive_rot INIT(0);  /* number of rot. degrees of freedom */

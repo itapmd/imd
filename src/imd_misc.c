@@ -104,16 +104,14 @@ void add_position(void)
 
 /******************************************************************************
 *
-* test_endianness returns 1 if system is big endian otherwise 0
+*  endian returns 1 if system is big endian, 0 if little endian
 *
 ******************************************************************************/
 
-#define BIG_ENDIAN      0
-#define LITTLE_ENDIAN   1
-
-int test_endianness(void)
+int endian(void)
 {
-    short int word = 0x0001;
-    char *byte = (char *) &word;
-    return(byte[0] ? LITTLE_ENDIAN : BIG_ENDIAN);
+  unsigned short int word = 0x0001;
+  unsigned char  *byte    = (unsigned char *) &word;
+  return (byte[0] ? 0 : 1);
 }
+

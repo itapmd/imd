@@ -29,6 +29,7 @@ int main(int argc, char **argv)
   str255 fname;
   FILE *fl;
   
+  is_big_endian = endian();
   time(&tstart);
 
   /* reset timers */

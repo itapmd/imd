@@ -470,7 +470,7 @@ void recv_atoms(void)
 *
 ******************************************************************************/
 
-void write_atoms(FILE *out)
+void write_atoms_config(FILE *out)
 {
   int i, k, len=0;
   cell *p;

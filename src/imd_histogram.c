@@ -782,7 +782,7 @@ void write_dist_header(FILE *out, int type) {
 
   /* format line */
   if (dist_binary_io)
-    c = (test_endianness())?'B':'L';
+    c = is_big_endian ? 'B' : 'L';
   else
     c = 'A';
   fprintf(out, "# format d %c ", c);

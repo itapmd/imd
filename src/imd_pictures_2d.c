@@ -309,12 +309,13 @@ void write_pictures_bitmap(int steps)
   }
 }
 
-
 void write_pictures(steps)
 {
   switch (pic_type) {
     case 0: 
-      write_config_select(steps/pic_interval,"pic",write_atoms_pic); break;
+      write_config_select(steps/pic_interval, "pic",
+                          write_atoms_pic, write_header_pic); 
+      break;
     case 1: 
       write_pictures_bitmap(steps); break;
   }

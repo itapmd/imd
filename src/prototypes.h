@@ -67,7 +67,7 @@ void warning(char *msg);
 void imd_start_timer(imd_timer *timer);
 void imd_stop_timer(imd_timer *timer);
 void maxwell(real TEMP);
-int test_endianness(void);
+int  endian(void);
 
 /* start and stop MPI - files imd_mpi_util.c, imd_geom_mpi_*.c */
 #ifdef MPI
@@ -211,25 +211,31 @@ void write_eng_file_header(void);
 
 /* write configurations - files imd_io.c, imd_io_*.c */
 void write_itr_file(int fzhlr, int steps);
-void write_config_header(FILE *out);
 void write_config(int steps);
-void write_config_select(int fzhlr, char *suffix, 
-                         void (*write_atoms_fun)(FILE *out));
-void write_atoms(FILE *out);
+void write_config_select(int fzhlr, char *suffix,
+  void (*write_atoms_fun)(FILE *out), void (*write_header_fun)(FILE *out));
+void write_atoms_config(FILE *out);
+void write_header_config(FILE *out);
 void write_atoms_pic(FILE *out); 
+void write_header_pic(FILE *out); 
 #ifdef DISLOC
 void write_atoms_dem(FILE *out);
+void write_header_dem(FILE *out);
 void write_atoms_dsp(FILE *out);
+void write_header_dsp(FILE *out);
 #endif
 #ifdef EFILTER
 void write_atoms_ef(FILE *out);
+void write_header_ef(FILE *out);
 #endif
 #ifdef STRESS_TENS
 void write_atoms_press(FILE *out);
+void write_header_press(FILE *out);
 void calc_tot_presstens(void);
 #endif
 #ifdef AVPOS
 void write_atoms_avp(FILE *out);
+void write_header_avp(FILE *out);
 #endif
 
 void reduce_displacement(vektor *d);

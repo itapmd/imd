@@ -51,14 +51,25 @@ void flush_outbuf(FILE *out, int *len, int tag)
 ******************************************************************************/
 
 void write_config_select(int fzhlr, char *suffix, 
-                         void (*write_atoms_fun)(FILE *out))
+  void (*write_atoms_fun)(FILE *out), void (*write_header_fun)(FILE *out))
 {
   FILE *out=NULL;
   str255 fname, msg;
 
-  /* create file name, and open file */
 #ifdef MPI
   if (1==parallel_output) {
+    /* write header to separate file */
+    if ((myid==0) && (use_header)) {
+      sprintf(fname,"%s.%u.head",outfilename,fzhlr);
+      out = fopen(fname, "w");
+      if (NULL == out) { 
+        sprintf(msg,"Cannot open output file %s",fname);
+	error(msg);
+      }
+      (*write_header_fun)(out);
+      fclose(out);
+    }
+    /* open output file */
     sprintf(fname,"%s.%u.%s.%u",outfilename,fzhlr,suffix,myid);
     out = fopen(fname,"w");
     if (NULL == out) { 
@@ -68,14 +79,16 @@ void write_config_select(int fzhlr, char *suffix,
   } else
 #endif
   if (0==myid) {
+    /* open output file */
     sprintf(fname,"%s.%u.%s",outfilename,fzhlr,suffix);
     out = fopen(fname,"w");
     if (NULL == out) {
        sprintf(msg,"Cannot open output file %s",fname);
        error(msg);
     }
+    /* write header */
     if (use_header)
-      write_config_header(out);
+      (*write_header_fun)(out);
   }
 
   /* write or send own data */
@@ -110,11 +123,6 @@ void write_config_select(int fzhlr, char *suffix,
 
 void write_config(int steps)
 { 
-#ifdef MPI
-  FILE *out;
-  str255 fname, msg;
-#endif
-
   int fzhlr = steps / rep_interval;
 
   /* first make sure that every atom is inside the box and on the right CPU */
@@ -123,24 +131,8 @@ void write_config(int steps)
     fix_cells();
   }
 
-  /* header for checkpoint files */
-#ifdef MPI
-  if (use_header) {
-    if ((myid == 0)&&(parallel_output == 1)) {
-      sprintf(fname,"%s.%u.head",outfilename,fzhlr);
-      out = fopen(fname, "w");
-      if (NULL == out) { 
-	sprintf(msg,"Cannot open output file %s",fname);
-	error(msg);
-      }
-      write_config_header(out);
-      fclose(out);
-    }
-  }
-#endif
-
   /* write checkpoint */
-  write_config_select(fzhlr, "chkpt", write_atoms);
+  write_config_select(fzhlr, "chkpt", write_atoms_config, write_header_config);
 
   /* write iteration file */
   if (myid == 0) write_itr_file(fzhlr, steps);
@@ -154,6 +146,10 @@ void write_config(int steps)
 *  writes an 'energy filtered' configuration
 *
 ******************************************************************************/
+
+void write_header_ef(FILE *out) {
+
+}
 
 void write_atoms_ef(FILE *out)
 {
@@ -210,6 +206,10 @@ void write_atoms_ef(FILE *out)
 *
 ******************************************************************************/
 
+void write_header_press(FILE *out) {
+
+}
+
 void write_atoms_press(FILE *out)
 {
   int i, k, len=0;
@@ -247,6 +247,10 @@ void write_atoms_press(FILE *out)
 *  writes .pic files (raw data for pictures)
 *
 ******************************************************************************/
+
+void write_header_pic(FILE *out) {
+
+}
 
 void write_atoms_pic(FILE *out) 
 {
@@ -309,6 +313,10 @@ void write_atoms_pic(FILE *out)
 *
 ******************************************************************************/
 
+void write_header_dem(FILE *out) {
+
+}
+
 void write_atoms_dem(FILE *out)
 {
   int i, k, len=0;
@@ -343,6 +351,10 @@ void write_atoms_dem(FILE *out)
 *  writes a differential displacement map to files *.dsp.x
 *
 ******************************************************************************/
+
+void write_header_dsp(FILE *out) {
+
+}
 
 void write_atoms_dsp(FILE *out)
 {
@@ -430,6 +442,10 @@ void update_ort_ref(void)
 *  writes average position to files *.nr.avp
 *
 ******************************************************************************/
+
+void write_header_avp(FILE *out) {
+
+}
 
 void write_atoms_avp(FILE *out)
 {
@@ -741,14 +757,14 @@ void reduce_displacement(vektor *dist)
 *
 ******************************************************************************/
 
-void write_config_header(FILE *out) {
+void write_header_config(FILE *out) {
   char c;
   time_t now;
 
   /* format line */
   /* binary_io for checkpoints not implemented
    if (binary_io)
-     c = (test_endianness())?'B':'L';
+     c = is_big_endian ? 'B' : 'L';
    else
     */
     c = 'A';
@@ -788,5 +804,4 @@ void write_config_header(FILE *out) {
   fprintf(out, "# endheader\n");
   return;
 }
-
 
