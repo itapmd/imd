@@ -609,7 +609,7 @@ void getparamfile(char *paramfname, int sim)
       /* initial cell size */
       getparam("incrsize",&incrsz,PARAM_INT,1,1);
     }
-#if AND
+#ifdef AND
     else if (strcasecmp(token,"tempintv")==0) {
       /* temperature interval */
       getparam("tempintv",&tmp_interval,PARAM_INT,1,1);
