@@ -231,8 +231,7 @@ inline static real SQR(real x)
 #define BUFFER_TAG 200
 #define OUTBUF_TAG 300
 #define INBUF_TAG  400
-#define ORT_TAG      1
-#define SORTE_TAG    2
+#define AT_BUF_TAG 500
 
 /* some systems have different versions of trunc and floor float and double */
 #if sgi || t3e
@@ -261,17 +260,3 @@ inline static real SQR(real x)
 #ifdef CGF   /* minimization of total forces */
 #define CGVAL fnorm
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-

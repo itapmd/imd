@@ -275,12 +275,30 @@ void send_cell_old(cell *p, int to_cpu, int tag);
 void recv_cell(cell *p, int from_cpu, int tag);
 void send_cell(cell *p, int to_cpu, int tag);
 #endif
+
 #ifdef USE_SOCKETS
-void write_conf_using_sockets(void);
+void init_client(void);
+int  connect_server(void);
+void close_socket(void);
+void check_socket(void);
+void vis_init(void);
+void vis_write_config_quit(void);
+void vis_send_msg(char *msg);
+void vis_check_atoms_flags(void);
+void vis_write_atoms_buf(int *len, int tag);
+void vis_write_atoms_fun(void);
+void vis_init_atoms(void);
+void vis_write_atoms(void);
+void vis_change_params(void);
+void vis_change_params_deform(integer flag);
 void write_ras_using_sockets(void);
+void write_conf_using_sockets(void);
+void write_distrib_using_sockets(void);
+void write_rgb_picture_to_socket(void);
 #endif
 
-/* write distributions - files imd_histogram.c, socket_io.c */
+
+/* write distributions - files imd_histogram.c */
 void make_histograms(hist_t *hist);
 void write_distrib(int steps);
 void write_distrib_header(FILE *out, hist_t *hist, char *type);
@@ -292,23 +310,15 @@ void write_press_dist_header(FILE *out, hist_t *hist);
 void write_press_dist_shock(int steps);
 void write_press_dist_shock_header(FILE *out, hist_t *hist);
 #endif
-#ifdef USE_SOCKETS
-void write_distrib_using_sockets(void);
-#endif
 #ifdef ATDIST
 void   init_atoms_dist(void);
 void update_atoms_dist(void);
 void  write_atoms_dist(void);
 #endif
 
-/* write pictures - files imd_io_*.c, socket_io.c */
+/* write pictures - files imd_io_*.c */
 void write_pictures(int steps);
 void write_pictures_bitmap(int steps);
-#ifdef USE_SOCKETS
-#ifdef TWOD
-void write_rgb_picture_to_socket(void);
-#endif
-#endif
 
 /* shear, deform of load sample - files imd_deform.c, imd_load.c */
 #ifdef HOMDEF
@@ -377,10 +387,6 @@ void write_temp_dist(int steps);
 void rnemd_heat_exchange();
 #endif
 
-/* support for socket communication - file socket_io.c */
-#ifdef USE_SOCKETS
-void check_socket(int steps);
-#endif
 
 
 #ifdef CG

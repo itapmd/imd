@@ -22,3 +22,4 @@ void ReadSync(int fd);
 #ifdef CRAY
 #define NO_FASYNC
 #endif
+

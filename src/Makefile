@@ -109,7 +109,7 @@ EPITAXSOURCES   = imd_epitax.c
 
 DEFORMSOURCES   = imd_deform.c
 
-SOCKHEADERS     = socket_tokens.h sockets.h sockutil.h
+SOCKHEADERS     = sockets.h sockutil.h socket_io.h
 SOCKSOURCES     = socket_io.c sockutil.c
 
 QUASISOURCES    = imd_qc.c

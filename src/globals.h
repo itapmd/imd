@@ -491,18 +491,12 @@ EXTERN int do_press_calc INIT(0);           /* flag whether to do press calc */
 
 /* I/O via sockets */
 #ifdef USE_SOCKETS
-EXTERN int socket_int INIT(1); /* interval for reading socket */
-EXTERN struct sigaction act;   /* sigaction structure for signal handling */
-EXTERN struct sigaction oact;  /* sigaction structure for signal handling */
-EXTERN int socket_id;          /* initial socket parameter */
-EXTERN int soc;                /* socket parameter after data request */
+EXTERN int socket_int INIT(1);               /* interval for reading socket */
 EXTERN unsigned short baseport INIT(31913);  /* base port for VolIMD socket */
 EXTERN char display_host[256] INIT("");      /* name of controlling machine */
-EXTERN unsigned long varIP INIT(0);
-EXTERN int  use_socket_window INIT(0);        /* flag for using a window to write*/
-EXTERN vektor socketwin_ll  INIT(nullvektor);     /* lower left (front) corner */
-EXTERN vektor socketwin_ur  INIT(nullvektor);     /* upper right (back) corner */
-EXTERN int  socket_atoms INIT(0);        /* counter for atoms to send window */
+EXTERN int  use_socket_window INIT(0);  /* flag for using a window to write */
+EXTERN vektor socketwin_ll  INIT(nullvektor);  /* lower left (front) corner */
+EXTERN vektor socketwin_ur  INIT(nullvektor);  /* upper right (back) corner */
 #endif
 
 #ifdef PAIR_PRE

@@ -370,7 +370,7 @@ void main_loop(void)
 #endif
 
 #ifdef USE_SOCKETS
-    if ((socket_int>0) && (0==steps%socket_int)) check_socket(steps);
+    if ((socket_int>0) && (0==steps%socket_int)) check_socket();
 #endif
 
 #ifdef TIMING
