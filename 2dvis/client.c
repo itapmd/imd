@@ -11,13 +11,8 @@
 #include "client.h"
 #include "globals.h"
 #include "prototypes.h"
+#include "makros.h"
 
-/* definition of function for byte swapping (little endian <--> big endian) */
-#define swap(x,y)  x ^= y;  y ^= x;  x ^= y
-#define T_CONF 9
-#define T_DIST 1
-#define DIM 2
-#define COLRES 245
 
 char server_name[256]="visrn";
 /* array pointers for received data */

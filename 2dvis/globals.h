@@ -36,14 +36,14 @@ EXTERN double *kin;
 
 EXTERN unsigned short base_port INIT(31913);
 
-EXTERN float maxx;
-EXTERN float minx;
-EXTERN float maxy;
-EXTERN float miny;
-EXTERN float maxp;
-EXTERN float minp;
-EXTERN float maxk;
-EXTERN float mink;
+EXTERN float maxx INIT(-1000);
+EXTERN float minx INIT(-1000);
+EXTERN float maxy INIT(1000);
+EXTERN float miny INIT(1000);
+EXTERN float maxp INIT(-1000);
+EXTERN float minp INIT(1000);
+EXTERN float maxk INIT(-1000);
+EXTERN float mink INIT(1000);
 EXTERN float scalex;
 EXTERN float scaley;
 EXTERN float scalepot;
@@ -58,3 +58,5 @@ EXTERN float *uy;
 
 EXTERN char *paramfilename;
 EXTERN char uvfname[255];
+
+

@@ -412,15 +412,6 @@ int read_atoms(char *fname) {
   char line[200],str[255];
   int n;
 
-  maxx=-1000;
-  maxy=-1000;
-  minx=1000;
-  miny=1000;
-  maxp=-1000;
-  maxk=-1000;
-  minp=1000;
-  mink=1000;
-
   fp=fopen(fname, "r");
   if (fp==NULL) {
     printf("Datei %s existiert nicht\n",fname);
