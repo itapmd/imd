@@ -118,7 +118,11 @@ void shear_sample(void)
 *
 *****************************************************************************/
 
-void lin_deform(void)
+#ifdef TWOD
+void lin_deform(vektor dx, vektor dy,            double scale)
+#else
+void lin_deform(vektor dx, vektor dy, vektor dz, double scale)
+#endif
 {
    int k;
    real tmpbox[3];
@@ -132,35 +136,28 @@ void lin_deform(void)
     real tmport[3];
     p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
-       /* transform atom positions */
-      tmport[0] =   lindef_x.x * ORT(p,i,X) + lindef_x.y * ORT(p,i,Y)
-#ifndef TWOD
-                  + lindef_x.z * ORT(p,i,Z)
+      /* transform atom positions */
+#ifdef TWOD
+      tmport[0] = dx.x * ORT(p,i,X) + dx.y * ORT(p,i,Y);
+      tmport[1] = dy.x * ORT(p,i,X) + dy.y * ORT(p,i,Y);
+#else
+      tmport[0] = dx.x * ORT(p,i,X) + dx.y * ORT(p,i,Y) + dx.z * ORT(p,i,Z);
+      tmport[1] = dy.x * ORT(p,i,X) + dy.y * ORT(p,i,Y) + dy.z * ORT(p,i,Z);
+      tmport[2] = dz.x * ORT(p,i,X) + dz.y * ORT(p,i,Y) + dz.z * ORT(p,i,Z);
 #endif
-                                                 ;
-      tmport[1] =   lindef_y.x * ORT(p,i,X) + lindef_y.y * ORT(p,i,Y)
+      ORT(p,i,X) += scale * tmport[0];
+      ORT(p,i,Y) += scale * tmport[1];
 #ifndef TWOD
-                  + lindef_y.z * ORT(p,i,Z)
-#endif
-                                                 ;
-#ifndef TWOD
-      tmport[2] =   lindef_z.x * ORT(p,i,X) + lindef_z.y * ORT(p,i,Y)
-                  + lindef_z.z * ORT(p,i,Z) ;
-#endif
-
-      ORT(p,i,X) += deform_size * tmport[0];
-      ORT(p,i,Y) += deform_size * tmport[1];
-#ifndef TWOD
-      ORT(p,i,Z) += deform_size * tmport[2];
+      ORT(p,i,Z) += scale * tmport[2];
 #endif
     }
   }
 
   /* transform first box vector */
-  tmpbox[0] = deform_size * SPROD(lindef_x,box_x) ;
-  tmpbox[1] = deform_size * SPROD(lindef_y,box_x) ;
+  tmpbox[0] = scale * SPROD(dx,box_x);
+  tmpbox[1] = scale * SPROD(dy,box_x);
 #ifndef TWOD
-  tmpbox[2] = deform_size * SPROD(lindef_z,box_x) ;
+  tmpbox[2] = scale * SPROD(dz,box_x);
 #endif
 
   box_x.x += tmpbox[0];
@@ -170,10 +167,10 @@ void lin_deform(void)
 #endif
   
   /* transform second box vector */
-  tmpbox[0] = deform_size * SPROD(lindef_x,box_y) ;
-  tmpbox[1] = deform_size * SPROD(lindef_y,box_y) ;
+  tmpbox[0] = scale * SPROD(dx,box_y);
+  tmpbox[1] = scale * SPROD(dy,box_y);
 #ifndef TWOD
-  tmpbox[2] = deform_size * SPROD(lindef_z,box_y) ;
+  tmpbox[2] = scale * SPROD(dz,box_y);
 #endif
 
   box_y.x += tmpbox[0];
@@ -184,9 +181,9 @@ void lin_deform(void)
 
   /* transform third box vector */
 #ifndef TWOD
-  tmpbox[0] = deform_size * SPROD(lindef_x,box_z) ;
-  tmpbox[1] = deform_size * SPROD(lindef_y,box_z) ;
-  tmpbox[2] = deform_size * SPROD(lindef_z,box_z) ;
+  tmpbox[0] = scale * SPROD(dx,box_z);
+  tmpbox[1] = scale * SPROD(dy,box_z);
+  tmpbox[2] = scale * SPROD(dz,box_z);
 
   box_z.x += tmpbox[0];
   box_z.y += tmpbox[1];
@@ -198,6 +195,37 @@ void lin_deform(void)
  
 } /* lin_deform */
 
+/*****************************************************************************
+*
+* relax_pressure()
+*
+*****************************************************************************/
+
+void relax_pressure()
+{
+  vektor dx, dy, dz;
+  real press;
+
+  calc_tot_presstens();
+#ifdef TWOD
+  press = (tot_presstens.xx + tot_presstens.yy) / 2.0;
+#else
+  press = (tot_presstens.xx + tot_presstens.yy + tot_presstens.zz) / 3.0;
+#endif
+  dx.x = press / bulk_module + (tot_presstens.xx - press) / shear_module;
+  dy.y = press / bulk_module + (tot_presstens.yy - press) / shear_module;
+#ifndef TWOD
+  dz.z = press / bulk_module + (tot_presstens.zz - press) / shear_module;
+  dy.z = dz.y = tot_presstens.yz / shear_module;
+  dz.x = dx.z = tot_presstens.zx / shear_module;
+#endif
+  dx.y = dy.x = tot_presstens.xy / shear_module;
+#ifdef TWOD
+  lin_deform(dx, dy,     relax_rate);
+#else
+  lin_deform(dx, dy, dz, relax_rate);
+#endif
+}
 
 #endif /* HOMDEF */
 

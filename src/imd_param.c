@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -1059,6 +1059,18 @@ void getparamfile(char *paramfname, int sim)
       getparam("lindef_z",&lindef_z,PARAM_REAL,DIM,DIM);
     }
 #endif
+    else if (strcasecmp(token,"shear_module")==0) { 
+      /* estimate of shear module */
+      getparam(token,&shear_module,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"bulk_module")==0) { 
+      /* estimate of bulk module */
+      getparam(token,&bulk_module,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"relax_rate")==0) { 
+      /* pressure relaxation rate */
+      getparam(token,&relax_rate,PARAM_REAL,1,1);
+    }
 #endif
 #if defined(DEFORM)
  else if (strcasecmp(token,"annealsteps")==0) {
@@ -2471,6 +2483,9 @@ void broadcast_params() {
 #ifndef TWOD
   MPI_Bcast( &lindef_z,      DIM, REAL,    0, MPI_COMM_WORLD); 
 #endif
+  MPI_Bcast( &shear_module,    1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &bulk_module,     1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &relax_rate,      1, REAL,    0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef SHOCK

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -154,7 +154,8 @@ void main_loop(void)
 #ifdef HOMDEF
     if ((exp_interval > 0) && (0 == steps % exp_interval)) expand_sample();
     if ((hom_interval > 0) && (0 == steps % hom_interval)) shear_sample();
-    if ((lindef_interval > 0) && (0 == steps % lindef_interval)) lin_deform();
+    if ((lindef_interval > 0) && (0 == steps % lindef_interval)) 
+      lin_deform(lindef_x, lindef_y, deform_size);
 #endif
 
 #ifdef DEFORM

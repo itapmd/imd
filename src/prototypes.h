@@ -365,7 +365,12 @@ void write_pictures_bitmap(int steps);
 #ifdef HOMDEF
 void shear_sample(void);
 void expand_sample(void);
-void lin_deform(void);
+#ifdef TWOD
+void lin_deform(vektor,vektor,real);
+#else
+void lin_deform(vektor,vektor,vektor,real);
+#endif
+void relax_pressure(void);
 #endif
 #ifdef DEFORM
 void deform_sample(void);

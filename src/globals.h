@@ -394,6 +394,9 @@ EXTERN vektor lindef_y INIT(nullvektor);  /*  |  linear      */
 #ifndef TWOD                              /*   > deformation */
 EXTERN vektor lindef_z INIT(nullvektor);  /*  |  matrix      */
 #endif                                    /* /               */
+EXTERN real shear_module INIT(1.0);       /* estimate of the shear module */
+EXTERN real bulk_module  INIT(1.0);       /* estimate of the bulk module */
+EXTERN real relax_rate   INIT(0.0);       /* pressure relaxation rate */
 #endif
 
 #ifdef SLLOD
