@@ -3,7 +3,7 @@
 
    COMPILATION:  
 
-       gcc -O -o imd2ppm [-DEPOT] [-DASCII] imd2ppm.c -lm
+       gcc -O -o imd2ppm [-DEPOT] [-DHEAT] [-DASCII] imd2ppm.c -lm
 
        OPTIONS:
 
@@ -12,6 +12,9 @@
 
            -DASCII:  expect ASCII-formatted IMD configuration files 
                      as input, rather than the binary .pic files
+
+           -DHEAT:   use heat current for the coloring. This requires
+                     -DASCII, and must not be combined with -DEPOT.
 
    USAGE:  
 
@@ -149,7 +152,7 @@ int main (int argc, char **argv)
   /* (n lines and m columns) */
   int      i,j,col,row,p,q;
   double   x0,y0,b0,h0;
-  double   Emin, Emax, E;
+  double   Emin, Emax, E, H;
   double   fl_t;
 
   int      dx,dy,pointok,vectorok,num;
@@ -199,7 +202,11 @@ typedef       int integer;
 #ifdef EPOT
   strcat(targetname,".pot.ppm");
 #else
+#ifdef HEAT
+  strcat(targetname,".heat.ppm");
+#else
   strcat(targetname,".kin.ppm");
+#endif
 #endif
   sscanf(argv[2], "%lf", &Emin);
   sscanf(argv[3], "%lf", &Emax); 
@@ -260,18 +267,29 @@ typedef       int integer;
     rbuf[0] = (char) NULL;
     fgets(rbuf,sizeof(rbuf),source);
     while ('#'==rbuf[0]) fgets(rbuf,sizeof(rbuf),source); /* eat comments */
-    p = sscanf(rbuf,"%d %d %lf %lf %lf %lf %lf %lf",
-	            &num,&t,&mass,&x,&y,&vx,&vy,&E);
+    p = sscanf(rbuf,"%d %d %lf %lf %lf %lf %lf %lf %lf",
+	            &num,&t,&mass,&x,&y,&vx,&vy,&E,&H);
 #ifdef EPOT
     /* keep the potential energy in variable E to compute the color */
     if (p<8) break; 
+#else
+#ifdef HEAT
+    if (p<9) break;
+    /* compute the color using the heat current */
+    E = H;
 #else
     if (p<7) break;
     /* compute the color using the kinetic energy */
     E = 0.5 * mass * (vx*vx + vy*vy); 
 #endif
+#endif
 
 #else /* not ASCII - binary .pic input format */
+
+#ifdef HEAT
+    printf("Error: heat current pictures from .pic files not yet supported\n");
+    exit(1);
+#endif
 
     if (1 != fread( &picbuf, sizeof( picbuf ), 1, source ) ) break;
 
