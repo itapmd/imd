@@ -37,9 +37,7 @@ void main_loop(void)
   cell *p;
   real dtemp;
   vektor d_pressure;
-#ifdef GLOK
-  real old_PxF=1.0;
-#endif
+
 #if defined(CORRELATE) || defined(MSQD)
   int ref_step = correl_start;
 #endif
@@ -284,12 +282,6 @@ void main_loop(void)
 	write_eng_file(steps); 
       }
     }
-    /* properties as they were after setting p=0 and 
-       calculating ekin_ and p. p should then = f*dt
-       therefore PxF >0 and f*f = 2*M*ekin
-    */
-    if (old_PxF<0.0) write_eng_file(steps); 
-    old_PxF = PxF;
 #endif
 
     move_atoms(); /* here PxF is recalculated */
