@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2003 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -238,8 +238,12 @@ void alloc_cell(cell *cl, int count)
 #else
     cl->sorte         = NULL;
 #endif
-#if defined(CONN) || defined(ELCO) || defined(COORD)
+#if defined(CONN) || defined(ELCO) || defined(COORD) || defined(CNA)
     cl->nummer        = NULL;
+#endif
+#ifdef CNA
+    cl->mark          = NULL;
+    cl->masse         = NULL;
 #endif
 #ifdef COORD
     cl->coord         = NULL;
@@ -292,8 +296,12 @@ void alloc_cell(cell *cl, int count)
 #else
   cl->sorte  = (int    *) realloc(cl->sorte,  count * sizeof(int));
 #endif
-#if defined(CONN) || defined(ELCO) || defined(COORD)
+#if defined(CONN) || defined(ELCO) || defined(COORD) || defined(CNA)
   cl->nummer = (int    *) realloc(cl->nummer, count * sizeof(int));
+#endif
+#ifdef CNA
+  cl->mark   = (short  *) realloc(cl->mark,   count * sizeof(short));
+  cl->masse  = (real   *) realloc(cl->masse,  count * sizeof(real));
 #endif
 #ifdef COORD
   cl->coord  = (real   *) realloc(cl->coord,  ntypes * count * sizeof(real));
@@ -387,8 +395,12 @@ void alloc_cell(cell *cl, int count)
 #else   
     || (NULL==cl->sorte)
 #endif
-#if defined(CONN) || defined(ELCO) || defined(COORD)
+#if defined(CONN) || defined(ELCO) || defined(COORD) || defined(CNA)
     || (NULL==cl->nummer)
+#endif
+#ifdef CNA
+    || (NULL==cl->mark)
+    || (NULL==cl->masse)
 #endif
 #ifdef COORD
     || (NULL==cl->coord)
@@ -528,8 +540,12 @@ void read_atoms(str255 infilename)
 #if (!defined(STRAIN) && !defined(STRESS))
       to->sorte [to->n] = MOD(s,ntypes);
 #endif
-#if defined(CONN) || defined(ELCO) || defined(COORD)
+#if defined(CONN) || defined(ELCO) || defined(COORD) || defined(CNA)
       to->nummer[to->n] = n;
+#endif
+#ifdef CNA
+      to->mark[to->n]  = 0;
+      to->masse[to->n] = m;
 #endif
 #ifdef CONN
       n_min = MIN(n_min,n);
@@ -690,3 +706,26 @@ void do_work(void (*do_cell_pair)(cell *p, cell *q, vektor pbc))
             }
       }
 }
+
+#ifdef CNA
+
+/******************************************************************************
+*
+*  atom_in_pbox --  returns 1 if atom is in partial box defined by ll
+*                   and ur, 0 otherwise
+*
+******************************************************************************/
+
+int atom_in_pbox(vektor pos)
+{
+  if ( pos.x > ll.x && pos.y > ll.y && pos.x < ur.x && pos.y < ur.y
+#ifndef TWOD
+      && pos.z > ll.z && pos.z < ur.z 
+#endif
+      )
+    return 1;
+  else
+    return 0;
+}
+
+#endif

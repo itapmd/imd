@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2003 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -60,17 +60,47 @@ void read_command_line(int argc, char **argv)
       read_arg_bool(&argc, &argv, &use_vtypes);
       break;
 
-#if defined(ANGLE) || defined(PAIR) || defined(COORD)
+#if defined(ANGLE) || defined(PAIR) || defined(COORD) || defined(CNA)
       /* a - minimum radius */
     case 'a':
       read_arg_real(&argc, &argv, &r_min);
       break;
 #endif
 
-#if defined(ANGLE) || defined(PAIR) || defined(TORSION)
+#if defined(ANGLE) || defined(PAIR) || defined(TORSION) || defined(CNA)
       /* n - number of slots in histogram */
     case 'n':
       read_arg_int(&argc, &argv, &slots);
+      break;
+#endif
+
+#ifdef CNA
+      /* f - consider only nearest neighbour atoms */
+    case 'f':
+      read_arg_bool(&argc, &argv, &nearestneighbour);
+      break;
+      /* g - write radial distribution function */
+    case 'g':
+      read_arg_bool(&argc, &argv, &rdf);
+      break;
+     /* l - lower left coordinates of partial box */
+    case 'l':
+      read_arg_vektor(&argc, &argv, &ll);
+      use_ll = 1;
+      break;
+      /* u - upper right coordinates of partial box */
+    case 'u':
+      read_arg_vektor(&argc, &argv, &ur);
+      use_ur = 1;
+      break;
+    case 'w':
+      read_arg_int(&argc, &argv, &pair_type_short);
+      writeatoms = 1;
+      break;
+      /* W - pair type to be written out */
+    case 'W':
+      read_arg_ivektor4d(&argc, &argv, &pair_type);
+      writeatoms = 1;
       break;
 #endif
 
@@ -520,6 +550,34 @@ void read_arg_vektor(int *argcptr, char ***argvptr, vektor *parptr)
   }
 }
 
+#ifdef CNA
+void read_arg_ivektor4d(int *argcptr, char ***argvptr, ivektor4d *parptr)
+{
+  if ( (*argvptr)[1][2]=='\0' && NULL != (*argvptr)[2] && NULL != (*argvptr)[3]
+       && NULL != (*argvptr)[4]  && NULL != (*argvptr)[5] ) {
+
+    parptr->i = atoi( (*argvptr)[2] );
+    parptr->x = atoi( (*argvptr)[3] );
+    parptr->y = atoi( (*argvptr)[4] );
+    parptr->z = atoi( (*argvptr)[5] );
+
+    *argcptr -= 5;
+    *argvptr += 5;
+  }
+  else if ( NULL != (*argvptr)[2] && NULL != (*argvptr)[3] 
+	    && NULL != (*argvptr)[4] ) {
+
+    parptr->i = atof( &(*argvptr)[1][2] );
+    parptr->x = atof( (*argvptr)[2] );
+    parptr->y = atof( (*argvptr)[3] );
+    parptr->z = atof( (*argvptr)[4] );
+
+    *argcptr -= 4;
+    *argvptr += 4;
+  }
+}
+#endif
+
 /*****************************************************************************
 *
 *  Read parameters from parameter file
@@ -797,7 +855,7 @@ void getparamfile(char *paramfname)
       getparam("atomic_e-density_file",eam_at_rho_filename,PARAM_STR,1,255);
     }
 #endif
-#if defined(COORD) || defined(PS)
+#if defined(COORD) || defined(PS) || defined(CNA)
     else if (strcasecmp(token,"r_cut")==0) {
       /* Cutoff parameter */
       getparam("r_cut",&r_cut_vec,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2003 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -120,6 +120,12 @@ INLINE static int MOD(int p, int q)
 #define CSTEP   10
 #endif
 
+#ifdef CNA
+#define MAX_NEIGH 12
+#define MAX_BONDS 24
+#define MAX_TYPES 25
+#endif
+
 /* Tolerance values for imd_stress */
 #if defined(STRESS) || defined(ELCO)
 #define NUM        200
@@ -145,9 +151,12 @@ INLINE static int MOD(int p, int q)
 #define EAM_RHO(cell,i) ((cell)->eam_rho_h[i])
 #endif
 
+#if defined(PS) || defined(CNA)
+#define NSTEP 1
+#endif
+
 #ifdef PS
 #define ABS(a) ((a)>=0) ? (a) : (-(a))
-#define NSTEP 1
 #define PI 3.1415927
 #define PIN 0.017453293
 #define Max -1.0e10
@@ -232,8 +241,12 @@ typedef struct {
 #else
   int    *sorte;
 #endif
-#if defined(CONN) || defined(ELCO) || defined(COORD)
+#if defined(CONN) || defined(ELCO) || defined(COORD) || defined(CNA)
   int    *nummer;
+#endif
+#ifdef CNA
+  short  *mark;
+  real   *masse;
 #endif
 #ifdef COORD
   real    *coord;
@@ -332,6 +345,7 @@ void read_arg_long(int   *argcptr, char ***argvptr, long   *parptr);
 void read_arg_real(int   *argcptr, char ***argvptr, real   *parptr);
 void read_arg_string(int *argcptr, char ***argvptr, char  **parptr);
 void read_arg_vektor(int *argcptr, char ***argvptr, vektor *parptr);
+void read_arg_ivektor4d(int *argcptr, char ***argvptr, ivektor4d *parptr);
 void read_parameters(void);
 void getparamfile(char *infile);
 void read_atoms(str255 infilename);
@@ -347,6 +361,17 @@ void write_data(void);
 #ifdef ANGLE
 void do_angle(cell *p, cell *q, cell *qq, vektor pbc, vektor ppbc);
 void calc_angles(void);
+#endif
+
+#ifdef CNA
+void init_cna(void);
+void do_cna(cell *p, cell *q, vektor pbc);
+void domino(int start, int end, int listlength, int *max_chain, int *chain);
+void sort_pair_types(void);
+void write_atoms(void);
+void write_statistics(void);
+void write_rdf(void);
+int  atom_in_pbox(vektor pos);
 #endif
 
 #ifdef CONN
@@ -479,6 +504,7 @@ void calc_angles(void);
 #define nullivektor2d {0,0}
 #define nullvektor2d  {0.0,0.0}
 #define nullivektor   {0,0,0}
+#define nullivektor4d {0,0,0,0}
 #define einsivektor2d {1,1}
 #define einsivektor   {1,1,1}
 #define minvektor2d   {DBL_MAX,DBL_MAX}
@@ -537,18 +563,49 @@ EXTERN char *paramfilename;  /* parameter file */
 EXTERN int  restart INIT(-1);
 EXTERN int  avpos   INIT(-1);
 EXTERN real r2_cut;
-#if defined(ANGLE) || defined(COORD)
+#if defined(ANGLE) || defined(COORD) || defined(CNA) 
 EXTERN real r_min INIT(0.0);     /* default value */
 #else
 EXTERN real r_min INIT(1.0);     /* default value */
 #endif
 #ifdef PAIR
 EXTERN real r_max INIT(5.0);     /* default value */
+#elif CNA
+EXTERN real r_max INIT(-1.0);
 #else
 EXTERN real r_max INIT(1.0);     /* default value */
 #endif
 #if defined(ANGLE) || defined(TORSION)
 EXTERN int  nangles INIT(0);
+#endif
+
+#ifdef CNA
+EXTERN ivektor4d pair_type INIT(nullivektor4d);
+EXTERN int pair_type_short INIT(0);
+EXTERN int writeatoms INIT(0);
+EXTERN int rdf INIT(0);
+EXTERN int nearestneighbour INIT(0);
+EXTERN int cna_pairs INIT(0);
+EXTERN int bondlist[MAX_BONDS][3];
+EXTERN ivektor4d type_list[MAX_TYPES];
+EXTERN int type_count[MAX_TYPES];
+EXTERN int type_sort[MAX_TYPES];
+EXTERN int type_list_length INIT(0);
+EXTERN int *rdf_tab[MAX_TYPES];
+EXTERN real rcut;
+#endif
+
+#ifdef CNA
+/* use of partial box */
+#ifndef TWOD
+EXTERN vektor ll INIT(maxvektor3d);
+EXTERN vektor ur INIT(minvektor3d);
+#else
+EXTERN vektor ll INIT(maxvektor2d);
+EXTERN vektor ur INIT(minvektor2d);
+#endif
+EXTERN int    use_ll INIT(0);
+EXTERN int    use_ur INIT(0);
 #endif
 
 #ifdef CONN
@@ -579,7 +636,7 @@ EXTERN int sumfaces  INIT(0);
 #ifndef RING
 EXTERN real      *histogram;
 #endif
-#if defined(ANGLE) || defined(PAIR) || defined(TORSION)
+#if defined(ANGLE) || defined(PAIR) || defined(TORSION) || defined(CNA)
 EXTERN int slots INIT(1000);
 #endif
 #ifdef ANGLE
@@ -603,6 +660,11 @@ EXTERN real    area;            /* Area of Voronoi cell, 2d */
 #endif
 #endif
 
+#if defined(CNA) || defined(COORD)
+EXTERN real      r_cut_vec[55] INIT({-1.0});
+EXTERN real      r_cut[10][10];
+#endif
+
 #ifdef COORD
 EXTERN real      *numbers;
 EXTERN int       use_unity INIT(-1);
@@ -611,8 +673,6 @@ EXTERN int       global    INIT(-1);
 EXTERN int       c_max     INIT(10);
 EXTERN ivektor2d num_dim;
 EXTERN int       bonds     INIT(0); /* Total number of bonds */
-EXTERN real      r_cut_vec[55] INIT({-1.0});
-EXTERN real      r_cut[10][10];
 EXTERN int       write_poteng INIT(0);
 #endif
 

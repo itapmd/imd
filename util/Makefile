@@ -2,7 +2,7 @@
 #
 # IMD -- The ITAP Molecular Dynamics Program
 #
-# Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+# Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 # University of Stuttgart, D-70550 Stuttgart
 #
 #
@@ -137,6 +137,11 @@ endif
 ifneq (,$(strip $(findstring angle,${MAKETARGET})))
 FLAGS += -DANGLE
 SOURCES += imd_angle.c
+endif
+
+ifneq (,$(strip $(findstring cna,${MAKETARGET})))
+FLAGS += -DCNA -DCOVALENT
+SOURCES += imd_cna.c
 endif
 
 ifneq (,$(strip $(findstring conn,${MAKETARGET})))
