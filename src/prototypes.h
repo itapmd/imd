@@ -204,7 +204,7 @@ void fix_cells_by_cell(void);
 #endif
 #endif
 /* write properties - file imd_io_*.c */
-void write_properties(int steps);
+void write_end_file(int steps);
 void write_eng_file_header(void);
 
 /* write configurations - files imd_io.c, imd_io_*.c */

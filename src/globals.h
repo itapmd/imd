@@ -92,6 +92,7 @@ EXTERN int nactive INIT(0);      /* number of transl. degrees of freedom */
 EXTERN int nactive_rot INIT(0);  /* number of rot. degrees of freedom */
 EXTERN int ntypes INIT(0);       /* Total number of different atom types */
 EXTERN int *num_sort INIT(NULL); /* number of atoms for each type */
+EXTERN int steps INIT(0);        /* number of current MD step */
 EXTERN int steps_max INIT(0);    /* Maximum number of MD steps */
 EXTERN int steps_min INIT(0);    /* starting step nr for current phase */
 EXTERN int restart INIT(0);      /* file number for restart */

@@ -29,7 +29,6 @@
 
 void main_loop(void)
 {
-  int steps;
   real tmp_pot_energy;
   real tmp_kin_energy;
   int i,j,k;

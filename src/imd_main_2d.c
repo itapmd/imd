@@ -30,7 +30,6 @@
 
 void main_loop(void)
 {
-  int steps;
   int i,j,k;
   cell *p;
   real tmp_pot_energy;
