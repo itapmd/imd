@@ -856,11 +856,19 @@ void getparamfile(char *paramfname, int sim)
         ttbp_constant[i] = ttbp_constant[i];
       };
     }
-    else if (strcasecmp(token,"ttbp_theta")==0) {
-      /* equilibrium angle in radians */
-      getparam("ttbp_theta",&ttbp_theta,PARAM_REAL,ntypes,ntypes);
+    else if (strcasecmp(token,"ttbp_sp")==0) {
+      /* hybridization of the element type */
+      getparam("ttbp_sp",&ttbp_sp,PARAM_REAL,ntypes,ntypes);
       for (i=0;i<ntypes;i++) {
-        ttbp_theta[i] = ttbp_theta[i];
+        ttbp_sp[i] = ttbp_sp[i];
+      };
+      for (i=0;i<ntypes;i++) {
+        if (ttbp_sp[i] == 3) {
+          ttbp_c0[i] = 0.34375;
+          ttbp_c1[i] = 0.37500;
+          ttbp_c2[i] = 0.28125;
+          ttbp_c3[i] = 0.00000;
+        };
       };
     }
     else if (strcasecmp(token,"ttbp_potfile")==0) {
@@ -1238,7 +1246,6 @@ void broadcast_params() {
 #ifdef TTBP
   MPI_Bcast( &ttbp_len,      1,      INTEGER,   0, MPI_COMM_WORLD);
   MPI_Bcast( &ttbp_constant, ntypes, MPI_REAL,  0, MPI_COMM_WORLD);
-  MPI_Bcast( &ttbp_theta,    ntypes, MPI_REAL,  0, MPI_COMM_WORLD);
 #endif
 
   /* broadcast integrator to other CPU's */
