@@ -15,6 +15,7 @@ EXTERN int col_mode INIT(0);
 EXTERN int scene_type INIT(0);
 EXTERN int text INIT(0);
 EXTERN int eng_mode;
+EXTERN int eng_minmax INIT(0);
 EXTERN int qp;
 EXTERN int radectyp INIT(0);
 EXTERN int x_res;
@@ -37,8 +38,8 @@ EXTERN double *kin;
 EXTERN unsigned short base_port INIT(31913);
 
 EXTERN float maxx INIT(-1000);
-EXTERN float minx INIT(-1000);
-EXTERN float maxy INIT(1000);
+EXTERN float minx INIT(1000);
+EXTERN float maxy INIT(-1000);
 EXTERN float miny INIT(1000);
 EXTERN float maxp INIT(-1000);
 EXTERN float minp INIT(1000);
@@ -58,5 +59,4 @@ EXTERN float *uy;
 
 EXTERN char *paramfilename;
 EXTERN char uvfname[255];
-
 
