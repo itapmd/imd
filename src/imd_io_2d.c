@@ -452,6 +452,7 @@ void write_cell(FILE *out, cell *p)
     if( (p->ort X(i) >= pic_ll.x) && (p->ort X(i) <= pic_ur.x) &&
         (p->ort Y(i) >= pic_ll.y) && (p->ort Y(i) <= pic_ur.y) )
 #endif
+    {
 #ifdef TRANSPORT
       h  = SPRODN(p->impuls,i,p->impuls,i)/(2*p->masse[i])+p->heatcond[i];
       h *=  p->impuls X(i) /  p->masse[i];
@@ -471,6 +472,7 @@ void write_cell(FILE *out, cell *p)
         ,h
 #endif
       );
+    }
 }
 
 void write_config(int steps)
