@@ -100,7 +100,7 @@ void calc_forces(void)
 #endif
     }
   }
-  
+
   /* What follows is the standard one-cpu force 
      loop acting on our local data cells */
 
@@ -140,6 +140,88 @@ void calc_forces(void)
         eam2_do_forces1(cell_array + P->nq, cell_array + P->np, pbc);
     }
   }
+#endif
+
+#ifdef TTBP
+  /* complete neighbor tables for remaining pairs of cells */
+  for (n=0; n<6; ++n) {
+    for (k=npairs[n]; k<npairs2[n]; ++k) {
+      vektor pbc;
+      pair *P;
+      P = pairs[n] + k;
+      pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
+      pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
+      pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
+      do_neightab(cell_array + P->np, cell_array + P->nq, pbc);
+    }
+  }
+#endif
+
+  mpi_addtime(&time_calc_local);
+  
+#ifndef AR  
+
+  /* If we don't use actio=reactio accross the cpus, we have do do
+     the force loop also on the other half of the neighbours for the 
+     cells on the surface of the CPU */
+
+  /* potential energy and virial are already complete; to avoid double
+     counting, we keep a copy of the current value, which we use later */
+
+  tmp      = tot_pot_energy;
+  tmpvir   = virial;
+  tmpvec.x = vir_vect.x;
+  tmpvec.y = vir_vect.y;
+  tmpvec.z = vir_vect.z;
+
+  /* compute forces for remaining pairs of cells */
+  for (n=0; n<6; ++n) {
+    for (k=npairs[n]; k<npairs2[n]; ++k) {
+      vektor pbc;
+      pair *P;
+      P = pairs[n] + k;
+      pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
+      pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
+      pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
+#ifdef EAM
+      /* first EAM call */
+      do_forces_eam_1(cell_array + P->np, cell_array + P->nq, pbc);
+#elif defined(EAM2)
+      eam2_do_forces1(cell_array + P->np, cell_array + P->nq, pbc);
+#elif defined(UNIAX)
+      do_forces_uniax(cell_array + P->np, cell_array + P->nq, pbc);
+#else
+      do_forces(cell_array + P->np, cell_array + P->nq, pbc);
+#endif
+    }
+  }
+
+  /* use the previously saved values of potential energy and virial */
+  tot_pot_energy = tmp;
+  virial     = tmpvir;
+  vir_vect.x = tmpvec.x;
+  vir_vect.y = tmpvec.y;
+  vir_vect.z = tmpvec.z;
+
+  mpi_addtime(&time_calc_nonlocal);
+
+#endif  /* ... ifndef AR */
+
+#ifdef EAM
+  /* EAM cohesive function potential */
+  for (k=0; k<ncells; ++k) {
+    do_forces_eam_2(cell_array + CELLS(k));
+  }
+#endif /* EAM */
+
+#ifdef TTBP
+  /* TTBP: three body potential */
+  for (k=0; k<ncells; ++k) {
+    do_forces_ttbp(cell_array + CELLS(k));
+  }
+#endif /* TTBP */
+
+#ifdef EAM2
 
   send_eam2_rho_h();
 
@@ -169,26 +251,8 @@ void calc_forces(void)
         eam2_do_forces2(cell_array + P->nq, cell_array + P->np, pbc);
     }
   }
-#endif /* EAM2 */
 
-#ifdef TTBP
-  /* complete neighbor tables for remaining pairs of cells */
-  for (n=0; n<6; ++n) {
-    for (k=npairs[n]; k<npairs2[n]; ++k) {
-      vektor pbc;
-      pair *P;
-      P = pairs[n] + k;
-      pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
-      pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
-      pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
-      do_neightab(cell_array + P->np, cell_array + P->nq, pbc);
-    }
-  }
-#endif
-
-  mpi_addtime(&time_calc_local);
-  
-#if !(defined(AR) || defined(EAM2))  
+#ifndef AR
 
   /* If we don't use actio=reactio accross the cpus, we have do do
      the force loop also on the other half of the neighbours for the 
@@ -208,20 +272,11 @@ void calc_forces(void)
     for (k=npairs[n]; k<npairs2[n]; ++k) {
       vektor pbc;
       pair *P;
-      P = pairs[n] + k;
+      P = pairs[n]+k;
       pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
       pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
       pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
-#ifdef EAM
-      /* first EAM call */
-      do_forces_eam_1(cell_array + P->np, cell_array + P->nq, pbc);
-#else
-#ifdef UNIAX
-      do_forces_uniax(cell_array + P->np, cell_array + P->nq, pbc);
-#else
-      do_forces(cell_array + P->np, cell_array + P->nq, pbc);
-#endif
-#endif
+      eam2_do_forces2(cell_array + P->np, cell_array + P->nq, pbc);
     }
   }
 
@@ -232,23 +287,9 @@ void calc_forces(void)
   vir_vect.y = tmpvec.y;
   vir_vect.z = tmpvec.z;
 
-  mpi_addtime(&time_calc_nonlocal);
+#endif /* not AR */
 
-#endif  /* ... ifndef AR */
-
-#ifdef EAM
-  /* EAM cohesive function potential */
-  for (k=0; k<ncells; ++k) {
-    do_forces_eam_2(cell_array + CELLS(k));
-  }
-#endif /* EAM */
-
-#ifdef TTBP
-  /* TTBP: three body potential */
-  for (k=0; k<ncells; ++k) {
-    do_forces_ttbp(cell_array + CELLS(k));
-  }
-#endif /* TTBP */
+#endif /* EAM2 */
 
   /* sum up results of different CPUs */
   MPI_Allreduce( &tot_pot_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid); 
