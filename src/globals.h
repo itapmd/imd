@@ -117,7 +117,7 @@ EXTERN vektor *restrictions INIT(NULL);  /* directions the atom is allowed to mo
 #ifdef RELAX
 EXTERN real ekin_threshold       INIT(0.0); /* threshold for Ekin */
 EXTERN real fnorm_threshold      INIT(0.0); /* threshold for force norm */
-EXTERN real fmax_threshold       INIT(0.0); /* threshold for force maximum */
+EXTERN real f_max_threshold       INIT(0.0); /* threshold for force maximum */
 EXTERN real delta_epot_threshold INIT(0.0); /* threshold for delta Epot */
 #endif
 
@@ -264,7 +264,7 @@ EXTERN int  nbl_count  INIT(0);      /* counting neighbor list rebuild */
 
 /* square of global force vector f=(f1.x, f1.y,...,fn.z) */
 EXTERN real fnorm INIT(0.0);  
-EXTERN real fmax  INIT(0.0);  
+EXTERN real f_max INIT(0.0);  
 /* scalar product of global force and momentum vectors */ 
 EXTERN real PxF INIT(0.0);
 /* Einstein frequency is similar as fnorm, but divided by the masses */ 
@@ -466,7 +466,7 @@ EXTERN int    cg_fr INIT(0);            /* Fletcher-Reeves mode or not */
 EXTERN int    cg_reset_int INIT(0);     /* interval between cg resetting */
 
 /* Variables needed by CG */
-EXTERN real   fmax2         INIT(0.0);      /* max. force comp. ^2  */
+EXTERN real   f_max2        INIT(0.0);      /* max. force comp. ^2  */
 EXTERN real   cg_poteng     INIT(0.0);      /* potential energy per atom */
 EXTERN real   old_cg_poteng INIT(0.0);      /* old poteng value */ 
 EXTERN real   gg            INIT(0.0);      /* see Num. Rec. p.320 */       

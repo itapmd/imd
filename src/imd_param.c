@@ -618,9 +618,9 @@ void getparamfile(char *paramfname, int sim)
       /* threshold for sufficient relaxation */
       getparam(token,&fnorm_threshold,PARAM_REAL,1,1);
     }
-    else if (strcasecmp(token,"fmax_threshold")==0) {
+    else if (strcasecmp(token,"f_max_threshold")==0) {
       /* threshold for sufficient relaxation */
-      getparam(token,&fmax_threshold,PARAM_REAL,1,1);
+      getparam(token,&f_max_threshold,PARAM_REAL,1,1);
     }
     else if (strcasecmp(token,"delta_epot_threshold")==0) {
       /* threshold for sufficient relaxation */
@@ -2272,7 +2272,7 @@ void broadcast_params() {
 #ifdef RELAX
   MPI_Bcast( &ekin_threshold,       1, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &fnorm_threshold,      1, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &fmax_threshold,       1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &f_max_threshold,      1, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &delta_epot_threshold, 1, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &sscount,              1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &nfc,                  1, MPI_INT, 0, MPI_COMM_WORLD);

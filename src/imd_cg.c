@@ -29,7 +29,7 @@
 
 void reset_cg(void)
 {
-  /* initialisations: h, g, Fmax */
+  /* initialisations: h, g, f_max */
   calc_forces(0);
   calc_fnorm_g_h();
   cg_poteng = tot_pot_energy / natoms;
@@ -53,7 +53,7 @@ void cg_step(int steps)
   /* printf("new = %e\n", SQRT( fnorm / nactive ) ); */
   cg_calcgamma(); /* calc gg, dgg */
 
-  /* sets old_ort = ort, h, g, needs gamma and gets fmax2 */ 
+  /* sets old_ort = ort, h, g, needs gamma and gets f_max2 */ 
   set_hg();
 }
 
@@ -69,19 +69,19 @@ int linmin()
   real alpha_a=0.0, alpha_b, alpha_c, fa, fb, fc;
   real alphamin;
   static real old_alphamin = 0.1;
-  real fmax;
+  real f_max;
   int  iter1=0, iter2=0;
   
   /* can we do the scaling in an other way, additional lowest scale to move? */
-  fmax = sqrt(fmax2);
-  /* alpha_b = linmin_dmax/sqrt(fmax2);  got short distances: new scaling*/  
+  f_max = sqrt(f_max2);
+  /* alpha_b = linmin_dmax/sqrt(f_max2);  got short distances: new scaling*/  
 
   /* scaling: alpha_b should be 0.01 and alpha_c 0.02 */
-  if(fmax > 100*linmin_dmax) {
-    alpha_b = linmin_dmax/fmax;
+  if(f_max > 100*linmin_dmax) {
+    alpha_b = linmin_dmax/f_max;
   }
-  else if (fmax<linmin_dmin) {
-    alpha_b = linmin_dmax *linmin_dmin/fmax;
+  else if (f_max<linmin_dmin) {
+    alpha_b = linmin_dmax *linmin_dmin/f_max;
   }
   else {
     alpha_b = linmin_dmax;
@@ -114,8 +114,8 @@ int linmin()
 
   /* info message */
   if ((cg_infolevel>0) && (0==myid)) {
-    printf("iter1= %d iter2 =%d alphamin =%f fmax =%f\n",
-           iter1,iter2,alphamin,fmax);
+    printf("iter1= %d iter2 =%d alphamin =%f f_max =%f\n",
+           iter1,iter2,alphamin,f_max);
     fflush(stdout); 
   }
   return (iter1 + iter2);
@@ -190,7 +190,7 @@ void calc_fnorm(void)
 void calc_fnorm_g_h(void)
 {
   int k;
-  real tmp_fnorm=0.0, tmp_fmax2=0.0;
+  real tmp_fnorm=0.0, tmp_f_max2=0.0;
   fnorm = 0.0;
   
   /* loop over all cells */
@@ -242,22 +242,22 @@ void calc_fnorm_g_h(void)
 #endif
 
       /* determine the biggest force component */
-      tmp_fmax2 = MAX(SQR(KRAFT(p,i,X)),tmp_fmax2);
-      tmp_fmax2 = MAX(SQR(KRAFT(p,i,Y)),tmp_fmax2);
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
 #ifndef TWOD
-      tmp_fmax2 = MAX(SQR(KRAFT(p,i,Z)),tmp_fmax2);
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
 #endif
     }
   }
 
 #ifdef MPI
   /* find the maximum from all CPUs */
-  MPI_Allreduce( &tmp_fmax2, &fmax2, 1, REAL, MPI_MAX, cpugrid);
+  MPI_Allreduce( &tmp_f_max2, &f_max2, 1, REAL, MPI_MAX, cpugrid);
   /* add up results from different CPUs */
   MPI_Allreduce( &tmp_fnorm, &fnorm, 1, REAL, MPI_SUM, cpugrid);
 #else
   fnorm = tmp_fnorm;
-  fmax2 = tmp_fmax2;
+  f_max2 = tmp_f_max2;
 #endif
 
 }
@@ -267,7 +267,7 @@ void cg_calcgamma(void)
 {
   int k;
   vektor tmpvec;
-  real tmp_fmax2 = 0.0, tmp_gg = 0.0, tmp_dgg = 0.0;
+  real tmp_f_max2 = 0.0, tmp_gg = 0.0, tmp_dgg = 0.0;
 
   /* loop over all cells */
   for (k=0; k<NCELLS; ++k) {
@@ -312,7 +312,7 @@ void cg_calcgamma(void)
 void set_hg(void)
 {
   int k;
-  real tmp_fmax2 = 0.0;
+  real tmp_f_max2 = 0.0;
 
   /* loop over all cells */
   for (k=0; k<NCELLS; ++k) {
@@ -339,18 +339,18 @@ void set_hg(void)
       CG_H(p,i,Z) = KRAFT(p,i,Z) + cg_gamma * CG_H(p,i,Z);
 #endif
       /* determine the biggest force component*/
-      tmp_fmax2 = MAX(SQR(KRAFT(p,i,X)),tmp_fmax2);
-      tmp_fmax2 = MAX(SQR(KRAFT(p,i,Y)),tmp_fmax2);
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
 #ifndef TWOD
-      tmp_fmax2 = MAX(SQR(KRAFT(p,i,Z)),tmp_fmax2);
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
 #endif
     }
   }
 
 #ifdef MPI
-  MPI_Allreduce( &tmp_fmax2, &fmax2, 1, REAL, MPI_MAX, cpugrid);
+  MPI_Allreduce( &tmp_f_max2, &f_max2, 1, REAL, MPI_MAX, cpugrid);
 #else
-  fmax2 = tmp_fmax2;
+  f_max2 = tmp_f_max2;
 #endif
 
 }
