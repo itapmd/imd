@@ -250,6 +250,7 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
   real scalex, scaley, scalez, Ekin, tmp;
   int  num, numx, numy, numz, size;
   int  i, j, k;
+  static int n_max = 0;
   static float   *dat_1 = NULL, *dat_2 = NULL;
   static float   *min   = NULL, *max   = NULL;
   static integer *num_1 = NULL, *num_2 = NULL;
@@ -265,7 +266,7 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
   dist->size   = size;
 
   /* allocate distribution arrays */
-  if (NULL==dat_1) {
+  if (n > n_max) {
     dat_1 = (float   *) realloc( dat_1, n * size * sizeof(float  ) );
     num_1 = (integer *) realloc( num_1,     size * sizeof(integer) );
     min   = (float   *) realloc( min,   n *        sizeof(float  ) );
@@ -274,13 +275,14 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
       error("Cannot allocate distribution data.");
   }
 #ifdef MPI
-  if (NULL==dat_2) {
+  if (n > n_max) {
     dat_2 = (float   *) realloc( dat_2, n * size * sizeof(float  ) );
     num_2 = (integer *) realloc( num_2,     size * sizeof(integer) );
     if ((NULL==dat_2) || (NULL==num_2))
       error("Cannot allocate distribution data.");
   }
 #endif
+  if (n > n_max) n_max = n;
 
   /* clear distributions */
   for (i=0; i<n*size; i++) {
