@@ -1,3 +1,4 @@
+
 /*****************************************************************************
 *
 *  imd_forces_covalent.c -- force loops for many-body forces
@@ -5,12 +6,12 @@
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
 
 #include "imd.h"
+#include "potaccess.h"
 
 #ifdef TTBP
 
@@ -27,9 +28,10 @@ void do_forces_ttbp(cell *p)
   neightab *neigh;
   vektor force_j, force_k;
   cell   *jcell, *kcell;
-  int    i, j, k, p_typ, j_typ, knum, jnum, col;
+  int    i, j, k, p_typ, j_typ, knum, jnum, col, inc = ntypes * ntypes;
+  int    is_short=0;
   real   *tmpptr;
-  real   pot_zwi, tmp_pot, tmp_grad, tmp, tmp_j, tmp_k;
+  real   pot_zwi, tmp_pot, tmp_grad, tmp, tmp_j, tmp_k, r2_short=0.0;
   real   tmp_f2, cos_theta, tmp_sp;
   real   tmp_virial = 0.0;
 #ifdef P_AXIAL
@@ -71,8 +73,8 @@ void do_forces_ttbp(cell *p)
       r[j]    = sqrt(r2[j]);
 
       /* smoothing potential */
-      col     = p_typ * ntypes + j_typ;
-      pair_int2(pot+j,grad+j,&smooth_pot,col,r2[j]);
+      col = p_typ * ntypes + j_typ;
+      PAIR_INT2(pot[j],grad[j],smooth_pot,col,inc,r2[j],r2_short,is_short)
     }
 
     /* for each pair of neighbors */

@@ -11,7 +11,7 @@
 ******************************************************************************/
 
 #include "imd.h"
-
+#include "potaccess.h"
 
 /* ----------------------------------------------------------------------
 *  EAM: Finnis/Sinclair Phil. Mag. A (1984) Vol 50 no 1 p 45 
@@ -61,7 +61,7 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
   real pot_grad;
   real r2_short=cellsz;
   int jstart,jend;
-  int column, is_short=0;
+  int col, is_short=0, inc = ntypes * ntypes;
   int q_typ,p_typ;
   real *qptr;
 
@@ -106,7 +106,7 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
       d.z      = q->ort Z(j) - tmp_d.z;
 #endif
       q_typ    = SORTE(q,j);
-      column   = p_typ * ntypes + q_typ;
+      col      = p_typ * ntypes + q_typ;
       radius2  = SPROD(d,d);
       eam_r_ij = sqrt(radius2);
 
@@ -121,13 +121,9 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 #endif
 
       /* 1. Cutoff: pair potential */
-      if (radius2 <= pair_pot.end[column]) {
+      if (radius2 <= pair_pot.end[col]) {
 
-      	/* Check for distances, shorter than minimal distance in pot. table */
-        if (1==pair_int2(&pot_zwi,&pot_grad,&pair_pot,column,radius2)) {
-          r2_short = MIN(r2_short,radius2);
-	  is_short=1; 
-	}
+        PAIR_INT2(pot_zwi,pot_grad,pair_pot,col,inc,radius2,r2_short,is_short)
 
 	/* Store forces in temp */
 	force.x  = d.x * pot_grad;

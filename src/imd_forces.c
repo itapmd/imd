@@ -11,6 +11,7 @@
 ******************************************************************************/
 
 #include "imd.h"
+#include "potaccess.h"
 
 /******************************************************************************
 *
@@ -38,7 +39,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
   real pot_grad;
   real r2_short=cellsz;
   int jstart,jend;
-  int column, is_short=0;
+  int col, is_short=0, inc = ntypes * ntypes;
   int q_typ,p_typ;
   real *qptr;
   
@@ -82,7 +83,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
       ++qptr;
 #endif
 
-      column  = p_typ * ntypes + q_typ;
+      col  = p_typ * ntypes + q_typ;
       radius2 = SPROD(d,d);
 
       if (0==radius2) { char msgbuf[256];
@@ -106,16 +107,11 @@ void do_forces(cell *p, cell *q, vektor pbc)
 #ifndef TERSOFF
 #ifdef MONOLJ
       if (radius2 <= monolj_r2_cut) {
-        pair_int_monolj(&pot_zwi,&pot_grad,radius2);
+        PAIR_INT_MONOLJ(pot_zwi,pot_grad,radius2)
 #else
       /* 1. Cutoff: pair potential */
-      if (radius2 <= pair_pot.end[column]) {
-
-      	/* Check for distances, shorter than minimal distance in pot. table */
-        if (1==pair_int2(&pot_zwi,&pot_grad,&pair_pot,column,radius2)) {
-          r2_short = MIN(r2_short,radius2);
-	  is_short=1; 
-	}
+      if (radius2 <= pair_pot.end[col]) {
+        PAIR_INT2(pot_zwi,pot_grad,pair_pot,col,inc,radius2,r2_short,is_short)
 #endif  /* MONOLJ */
         
         /* Store forces in temp */
@@ -190,7 +186,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
 
 #ifdef TTBP
       /* 2. Cutoff: make neighbor tables for TTBP */
-      if (radius2 <= smooth_pot.end[column]) {
+      if (radius2 <= smooth_pot.end[col]) {
 #endif
 #ifdef TERSOFF
       /* 2. Cutoff: make neighbor tables for TERSOFF */ 

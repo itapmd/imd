@@ -14,7 +14,7 @@
 #
 # <architecture> is either risc or mpi or gcc
 #
-# <suffix> is one or several of 2d, debug, mono, app, prof
+# <suffix> is one or several of 2d, debug, monolj, prof
 #
 # This makefile analyzes the target name. It sets the 
 # preprocessor flags and chooses the source files accordingly.
@@ -88,13 +88,9 @@ SAVEMEMSOURCES = imd_savemem_3d.c
 # RISC Version Flags
 
 CFLAGS_iris4d			= -Dsgi -DRISC -O2 -n32 -mips3 -xansi
-CFLAGS_iris4d_DEBUG		= -Dsgi -DRISC -g -fullwarn -xansi  
-CFLAGS_decstation		= -DRISC -O -float -D_POSIX_SOURCE
-CFLAGS_decstation_DEBUG		= -DRISC -g -float -D_POSIX_SOURCE
-CFLAGS_alpha			= -DRISC -O3 -float -fp_reorder -tune host
-CFLAGS_alpha_DEBUG		= -DRISC -g  -float
-CFLAGS_speedy			= -DRISC -O3 -float -fp_reorder -arch host -tune host
-CFLAGS_speedy_DEBUG		= -DRISC -g -float
+CFLAGS_iris4d_DEBUG		= -Dsgi -DRISC -g -fullwarn -xansi
+CFLAGS_alpha			= -Dalpha -DRISC -O3 -float -fp_reorder -arch ev56 -tune host
+CFLAGS_alpha_DEBUG		= -Dalpha -DRISC -g3 -float
 CFLAGS_rs6000			= -DRISC -O3 -qarch=pwr2 -qtune=pwr2
 CFLAGS_c90			= -DRISC -O3 -htask0,report=fv -DPVPCRAY
 CFLAGS_c90_DEBUG		= -DRISC -g
@@ -570,7 +566,7 @@ SOURCES += ${UNIAXSOURCES}
 endif
 
 # MONOLJ Case
-ifneq (,$(findstring mono,${MAKETARGET}))
+ifneq (,$(findstring monolj,${MAKETARGET}))
 CFLAGS += -DMONOLJ
 ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
 SOURCES += ${SAVEMEMSOURCES}
@@ -580,6 +576,16 @@ endif
 # Single precision
 ifneq (,$(findstring single,${MAKETARGET}))
 CFLAGS += -DSINGLE
+endif
+
+# monoatomic system (performance tweak)
+ifneq (,$(findstring mono,${MAKETARGET}))
+CFLAGS += -DMONO
+endif
+
+# binary system (performance tweak)
+ifneq (,$(findstring binary,${MAKETARGET}))
+CFLAGS += -DBINARY
 endif
 
 # Substitute .o for .c to get the names of the object files

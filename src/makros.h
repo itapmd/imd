@@ -18,7 +18,13 @@
 #define MASSE(cell,i) 1.0
 #define POTENG(cell,i) 0.0
 #else
-#define SORTE(cell,i) (((cell)->sorte[(i)])%ntypes)
+#if defined(MONO)
+#define SORTE(cell,i) 0
+#elif defined(BINARY)
+#define SORTE(cell,i) (((cell)->sorte[(i)]) & 0x1)
+#else
+#define SORTE(cell,i) (((cell)->sorte[(i)]) % ntypes)
+#endif
 #define VSORTE(cell,i) ((cell)->sorte[(i)])
 #define NUMMER(cell,i) (cell)->nummer[(i)]
 #define MASSE(cell,i) (cell)->masse[(i)]

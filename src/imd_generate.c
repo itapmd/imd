@@ -78,7 +78,7 @@ void generate_atoms(str255 mode)
     generate_qc();
 #endif
 #endif /* 3D */
-  } else if (0==myid) error("Filename with dot specifies unknown structure.");
+  } else if (0==myid) error("Filename with _ specifies unknown structure.");
 
 #ifdef MPI
 #ifndef MONOLJ
