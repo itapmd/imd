@@ -597,7 +597,7 @@ void write_config(int steps)
 { 
   FILE *out;
   str255 fname;
-  int fzhlr,k,m,tag;
+  int fzhlr,k,m,tag,n;
   cell *p;
 
   fzhlr = steps / rep_interval;
