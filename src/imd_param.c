@@ -2034,9 +2034,7 @@ void broadcast_params() {
     case ENS_NVX:       move_atoms = move_atoms_nvx;       break;
     case ENS_STM:       move_atoms = move_atoms_stm;       break;  
     case ENS_FTG:       move_atoms = move_atoms_ftg;       break;  
-    /*
-    case ENS_CG:        move_atoms = move_atoms_cg;        break;  
-    */
+    case ENS_CG:     /* move_atoms = move_atoms_cg; */     break;  
     default: if (0==myid) error("unknown ensemble in broadcast"); break;
   }
   
