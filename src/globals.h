@@ -89,7 +89,7 @@ EXTERN str255 potfilename INIT("\0");   /* Potential */
 EXTERN char *paramfilename INIT(0L);    /* Parameter File */
 
 /* construction of PN-dislocations */
-EXTERN int pn INIT(0);                  /* construct a Peierls-Nabarro-dislocation? (0==no) */
+EXTERN int pn INIT(0);  /* construct a Peierls-Nabarro-dislocation? (0==no) */
 EXTERN real glideplane INIT(0);         /* y/z (2/3D)-coordinate of glidep. */
 EXTERN real burgersv INIT(1);           /* length of Burgers-vector */
 EXTERN real width INIT(1);              /* width of Burgers-vector density */
@@ -99,29 +99,29 @@ EXTERN str255 reffilename INIT("\0");   /* Parameter File */
 
 /* Parameters for pictures */
 #ifdef TWOD
-EXTERN vektor2d pic_scale INIT(nullvektor);   /* Scale factor x/y for pictures     */
-EXTERN vektor2d ecut_kin INIT(nullvektor);    /* Kin. Energy interval for pictures */
-EXTERN vektor2d ecut_pot INIT(nullvektor);    /* Pot. Energy interval for pictures */   
-EXTERN vektor2d  conf_ll INIT(nullvektor);    /* lower left corner conf */
-EXTERN vektor2d  conf_ur INIT(nullvektor);    /* upper right corner conf*/
-EXTERN vektor2d  pic_ll  INIT(nullvektor);    /* lower left corner */
-EXTERN vektor2d  pic_ur  INIT(nullvektor);    /* upper right corner */
-EXTERN ivektor2d pic_res INIT(nullivektor);   /* number of pixels in x/y dir.*/
+EXTERN vektor2d pic_scale INIT(nullvektor); /* Scale factor x/y for pictures     */
+EXTERN vektor2d ecut_kin INIT(nullvektor);  /* Kin. Energy interval for pictures */
+EXTERN vektor2d ecut_pot INIT(nullvektor);  /* Pot. Energy interval for pictures */   
+EXTERN vektor2d  conf_ll INIT(nullvektor);  /* lower left corner conf */
+EXTERN vektor2d  conf_ur INIT(nullvektor);  /* upper right corner conf*/
+EXTERN vektor2d  pic_ll  INIT(nullvektor);  /* lower left corner */
+EXTERN vektor2d  pic_ur  INIT(nullvektor);  /* upper right corner */
+EXTERN ivektor2d pic_res INIT(nullivektor); /* number of pixels in x/y dir.*/
 #else
-EXTERN vektor3d view_dir INIT(nullvektor);    /* view direction */
-EXTERN vektor3d view_pos INIT(nullvektor);    /* view position */
-EXTERN int      projection INIT(0);            /* projection type 0/1 */
-EXTERN vektor3d pic_scale INIT(nullvektor);   /* Scale factor x/y for pictures     */
-EXTERN vektor3d ecut_kin INIT(nullvektor);    /* Kin. Energy interval for pictures */
-EXTERN vektor3d ecut_pot INIT(nullvektor);    /* Pot. Energy interval for pictures */   
-EXTERN vektor3d  conf_llf INIT(nullvektor);   /* lower left corner conf */
-EXTERN vektor3d  conf_urb INIT(nullvektor);   /* upper right corner conf*/
-EXTERN vektor3d  pic_ll  INIT(nullvektor);    /* lower left corner */
-EXTERN vektor3d  pic_ur  INIT(nullvektor);    /* upper right corner */
-EXTERN ivektor3d pic_res INIT(nullivektor);   /* number of pixels in x/y dir.*/
+EXTERN vektor3d view_dir INIT(nullvektor);  /* view direction */
+EXTERN vektor3d view_pos INIT(nullvektor);  /* view position */
+EXTERN int      projection INIT(0);         /* projection type 0/1 */
+EXTERN vektor3d pic_scale INIT(nullvektor); /* Scale factor x/y for pictures     */
+EXTERN vektor3d ecut_kin INIT(nullvektor);  /* Kin. Energy interval for pictures */
+EXTERN vektor3d ecut_pot INIT(nullvektor);  /* Pot. Energy interval for pictures */   
+EXTERN vektor3d  conf_llf INIT(nullvektor); /* lower left corner conf */
+EXTERN vektor3d  conf_urb INIT(nullvektor); /* upper right corner conf*/
+EXTERN vektor3d  pic_ll  INIT(nullvektor);  /* lower left corner */
+EXTERN vektor3d  pic_ur  INIT(nullvektor);  /* upper right corner */
+EXTERN ivektor3d pic_res INIT(nullivektor); /* number of pixels in x/y dir.*/
 #endif
-EXTERN int       pic_type INIT(0);            /* picture type 0/1/2 */
-EXTERN real      *pic_at_radius INIT(NULL);   /* atom radius for pictures */
+EXTERN int       pic_type INIT(0);          /* picture type 0/1/2 */
+EXTERN real      *pic_at_radius INIT(NULL); /* atom radius for pictures */
 
 /* Monte Carlo stuff */
 #ifdef MC
@@ -284,7 +284,7 @@ EXTERN real shear_epsilon INIT(0); /* energy difference to abort relaxation */
 #ifdef DISLOC
 EXTERN int  dem_interval INIT(0);     /* Period of dem output ==0 */
 EXTERN int  dsp_interval INIT(0);     /* Period of dsp output ==0 */
-EXTERN int  up_ort_ref INIT(0);   /* time to update ort_ref ? */
+EXTERN int  up_ort_ref INIT(0);       /* time to update ort_ref ? */
 EXTERN real min_dpot INIT(1.0);       /* difference for dem */
 EXTERN int  dpotsorte INIT(0);        /* type to compute dem map */
 EXTERN real ddelta INIT(1.0);         /* distance for ddm */
@@ -311,6 +311,18 @@ EXTERN real GS_rcut INIT(0); /* cutoff radius for correlation data writes */
 EXTERN real inv_dr;                /* inverse of step size delta r */
 EXTERN integer ***GS INIT(NULL);    /* histogram array for self correlation */
 EXTERN integer correl_omode INIT(1); /* output mode for histogram */
+#endif
+
+#ifdef TRANSPORT
+EXTERN real dTemp_start   INIT(0.0);   /* deviation of starting heat bath 
+                                          temperature from mean temp. */
+EXTERN real dTemp_end 	  INIT(0.0);   /* deviation of final heat bath 
+                                          temperature from mean temp. */ 
+EXTERN real tran_Tleft 	  INIT(0.0);   /* temperature of the left=hot wall */
+EXTERN real tran_Tright   INIT(0.0);   /* temperature of the right=cold  wall*/
+EXTERN integer tran_interval INIT(0);  /* Intervalle der Temperaturaufz.*/
+EXTERN integer tran_nlayers  INIT(0);  /* number of layers*/
+EXTERN real heat_cond     INIT(0.0);   /* heat conductivity */
 #endif
 
 /* I/O via sockets */

@@ -43,6 +43,8 @@
 
 #endif
 
+
+
 /* Constant Temperature & Pressure */
 
 #ifdef NPT
@@ -58,6 +60,16 @@
 #ifdef NVT
 
 #endif
+
+
+/* TRANSPORT */
+
+#ifdef NVX
+#define TRANSPORT
+#define TRANS_PBC
+#endif
+
+
 
 /* Stadium damping for fracture */
 
@@ -88,6 +100,12 @@
 #ifdef CORRELATE
 #define REFPOS
 #endif
+
+
+#ifdef TRANSPORT                                      
+
+#endif
+
 
 /******************************************************************************
 *

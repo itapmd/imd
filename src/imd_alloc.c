@@ -13,7 +13,6 @@
 
 #include "imd.h"
 
-
 /* 
    Moves an atom from one cell to another. 
    Does not move atoms between CPUs!
@@ -182,6 +181,9 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
     newcell.refpos = NULL;
 #endif
+#ifdef TRANSPORT
+    newcell.heatcond = NULL;
+#endif
     newcell.sorte  = NULL;
     newcell.masse  = NULL;
 #endif
@@ -216,6 +218,9 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
     newcell.refpos = (real *) malloc(count*DIM*sizeof(real));
 #endif
+#ifdef TRANSPORT
+    newcell.heatcond = (real *) malloc(count*sizeof(real));
+#endif
     newcell.sorte  = (shortint* ) malloc(count * sizeof(shortint));
     newcell.masse  = (real    * ) malloc(count * sizeof(real)    );
 #endif
@@ -230,6 +235,9 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef REFPOS
         || (NULL == newcell.refpos)
+#endif
+#ifdef TRANSPORT
+        || (NULL == newcell.heatcond)
 #endif
         || (NULL == newcell.sorte)
         || (NULL == newcell.masse)
@@ -265,6 +273,9 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
       memcpy(newcell.refpos,  thecell->refpos,  thecell->n * DIM * sizeof(real));
 #endif
+#ifdef TRANSPORT
+      memcpy(newcell.heatcond,  thecell->heatcond,  thecell->n * sizeof(real));
+#endif
       memcpy(newcell.sorte ,  thecell->sorte,   thecell->n * sizeof(shortint));
       memcpy(newcell.masse ,  thecell->masse,   thecell->n * sizeof(real));
 #endif
@@ -284,6 +295,9 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
     free(thecell->refpos);
 #endif
+#ifdef TRANSPORT
+    free(thecell->heatcond);
+#endif
     free(thecell->sorte);
     free(thecell->masse);
 #endif
@@ -302,6 +316,9 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef REFPOS
   thecell->refpos = newcell.refpos;
+#endif
+#ifdef TRANSPORT
+  thecell->heatcond = newcell.heatcond;
 #endif
   thecell->sorte  = newcell.sorte;
   thecell->masse  = newcell.masse;

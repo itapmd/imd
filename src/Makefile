@@ -78,6 +78,8 @@ MCSOURCES     = imd_mc.c
 
 CORRSOURCES   = imd_correl.c
 
+TRANSSOURCES	= imd_transport.c
+
 # Collection of my favourite compiler flags
 
 # RISC Version Flags
@@ -375,6 +377,11 @@ ifneq (,$(findstring nve,${MAKETARGET}))
 CFLAGS += -DNVE
 endif
 
+ifneq (,$(findstring nvx,${MAKETARGET}))
+CFLAGS += -DNVX
+SOURCES += ${TRANSSOURCES}
+endif
+
 ifneq (,$(findstring nvt,${MAKETARGET}))
 CFLAGS += -DNVT
 endif
@@ -444,6 +451,12 @@ endif
 ifneq (,$(strip $(findstring corr,${MAKETARGET})))
 CFLAGS  += -DCORRELATE -DCORR_PBC
 SOURCES += ${CORRSOURCES}
+endif
+
+# Transport
+ifneq (,$(strip $(findstring transport,${MAKETARGET})))
+CFLAGS  += -DTRANSPORT -DTRANS_PBC
+SOURCES += ${TRANSSOURCES}
 endif
 
 # mean square displacement

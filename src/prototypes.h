@@ -44,6 +44,7 @@ void move_atoms_and(void);
 void move_atoms_mc(void);
 void move_atoms_frac(void);
 void move_atoms_pull(void);
+void move_atoms_nvx(void);
 void do_boundaries(void);
 void fix_cells(void);
 void calc_properties(void);
@@ -160,6 +161,10 @@ void correlate(int istep, int refstep, unsigned seqnum);
 
 #ifdef CORRELATE
 void write_add_corr(int it, int steps, unsigned seqnum);
+#endif
+
+#ifdef TRANSPORT
+void write_temp(int steps);
 #endif
 
 /* generate quasicrystal */

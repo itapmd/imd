@@ -411,6 +411,11 @@ void do_forces(cell *p, cell *q, vektor pbc)
         tmp_virial     -= radius2 * pot_grad;  
 #endif
 
+#ifdef TRANSPORT
+        p->heatcond[i] += pot_zwi - radius2 * pot_grad;
+        q->heatcond[j] += pot_zwi - radius2 * pot_grad;
+#endif
+
       }; /* if */
 
     }; /* for j */

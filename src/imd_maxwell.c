@@ -18,7 +18,7 @@
 *
 */
 
-void maxwell(real TEMP)
+void maxwell(real temp)
                
  
 /* *******************************************************************
@@ -41,10 +41,12 @@ void maxwell(real TEMP)
    cell        *p;
    vektor      tot_impuls;
    int         r,s,t;
-
+   real        TEMP;
    static long dummy = 0;
+   real scale, xx;
+   int num, nhalf;
 
-
+   TEMP = temp;
    tot_impuls.x = 0.0;
    tot_impuls.y = 0.0;
 
@@ -53,6 +55,8 @@ void maxwell(real TEMP)
 #endif
 
    natom = 0;
+   nhalf = tran_nlayers / 2;
+   scale = tran_nlayers / box_x.x;
 
    /* Temperatur setzen */
    for ( r = cellmin.x; r < cellmax.x; ++r )
@@ -60,45 +64,67 @@ void maxwell(real TEMP)
 #ifndef TWOD
        for ( t = cellmin.z; t < cellmax.z; ++t )
 #endif
-	 {
+       {
 #ifndef TWOD
-	   p = PTR_3D_V(cell_array, r, s, t, cell_dim);
+         p = PTR_3D_V(cell_array, r, s, t, cell_dim);
 #else
-	   p = PTR_2D_V(cell_array, r, s,    cell_dim);
+         p = PTR_2D_V(cell_array, r, s,    cell_dim);
 #endif
 	 for (i = 0;i < p->n; ++i) {
+
+#ifdef TRANSPORT
+           /* which layer? */
+           num = scale * p->ort X(i);
+           if (num < 0)             num = 0;
+           if (num >= tran_nlayers) num = tran_nlayers-1;
+
+           if (num == 0) {
+             TEMP = tran_Tleft;
+           } else if (num == nhalf) {
+             TEMP = tran_Tright;
+           } else if (num < nhalf) {
+             xx = p->ort X(i) - box_x.x / tran_nlayers;
+             TEMP = tran_Tleft + (tran_Tright - tran_Tleft) * 
+                                 xx * tran_nlayers / (box_x.x * (nhalf-1));
+           } else {
+             xx = box_x.x - p->ort X(i) - box_x.x / tran_nlayers;
+             TEMP = tran_Tleft + (tran_Tright - tran_Tleft) * 
+                                 xx * tran_nlayers / (box_x.x * (nhalf-1));
+	   }
+#endif
+
 #ifdef MONOLJ
-	   p->impuls X(i) = gasdev( &dummy ) * sqrt(TEMP);
-	   p->impuls Y(i) = gasdev( &dummy ) * sqrt(TEMP);
+         p->impuls X(i) = gasdev( &dummy ) * sqrt(TEMP);
+         p->impuls Y(i) = gasdev( &dummy ) * sqrt(TEMP);
 #ifndef TWOD
-	   p->impuls Z(i) = gasdev( &dummy ) * sqrt(TEMP);
+         p->impuls Z(i) = gasdev( &dummy ) * sqrt(TEMP);
 #endif
 #else
-	   p->impuls X(i) = gasdev( &dummy ) * sqrt(TEMP * p->masse[i]);
-	   p->impuls Y(i) = gasdev( &dummy ) * sqrt(TEMP * p->masse[i]);
+         p->impuls X(i) = gasdev( &dummy ) * sqrt(TEMP * p->masse[i]);
+         p->impuls Y(i) = gasdev( &dummy ) * sqrt(TEMP * p->masse[i]);
 #ifndef TWOD
-	   p->impuls Z(i) = gasdev( &dummy ) * sqrt(TEMP * p->masse[i]);
+         p->impuls Z(i) = gasdev( &dummy ) * sqrt(TEMP * p->masse[i]);
 #endif
 #endif
-	   ++natom;
-	   tot_impuls.x += p->impuls X(i);
-	   tot_impuls.y += p->impuls Y(i);
+         ++natom;
+         tot_impuls.x += p->impuls X(i);
+         tot_impuls.y += p->impuls Y(i);
 #ifndef TWOD
-	   tot_impuls.z += p->impuls Z(i);
+         tot_impuls.z += p->impuls Z(i);
 #endif
 #ifdef SHOCK
-	   if ( p->ort X(i) < strip/2 + shock_strip ) 
- 	     {	     
- 	       if ( shock_speed > 0 ) p->impuls X(i) = 
- 					shock_speed * p->masse[i];
- 	       if ( shock_elong > 0 ) p->ort X(i) += shock_elong + 
- 					( shock_strip + strip/2 - p->ort X(i) )
- 					* shock_elong / shock_strip;
- 	     };
+         if ( p->ort X(i) < strip/2 + shock_strip ) 
+         {	     
+           if ( shock_speed > 0 ) p->impuls X(i) = shock_speed * p->masse[i];
+           if ( shock_elong > 0 ) { 
+              p->ort X(i) += shock_elong 
+                           + ( shock_strip + strip/2 - p->ort X(i) )
+                           * shock_elong / shock_strip;
+           }
+         }
 #endif
-	 };
-       };
-
+       }
+     }
    /* CPU could be empty */
    if (0==natom) return;
 

@@ -129,6 +129,7 @@ __inline static real SQR(real x)
 #define ENS_FRAC      8
 #define ENS_PULL      9
 #define ENS_MIKSHEAR 10
+#define ENS_NVX      11
 
 /* All the logic in this program */
 #define TRUE         1

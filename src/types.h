@@ -80,6 +80,9 @@ typedef struct {
 #ifdef REFPOS
     real        *refpos;
 #endif
+#ifdef TRANSPORT
+    real        *heatcond;
+#endif
     integer     *nummer;
 #endif
     real        *impuls;

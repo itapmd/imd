@@ -69,6 +69,9 @@ void calc_forces(void)
       p->kraft X(i) = 0.0;
       p->kraft Y(i) = 0.0;
       p->pot_eng[i] = 0.0;
+#ifdef TRANSPORT
+      p->heatcond[i] = 0.0;
+#endif      
     };
 
   /* What follows is the standard one-cpu force 

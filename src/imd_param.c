@@ -303,7 +303,11 @@ void getparamfile(char *paramfname, int sim)
         ensemble = ENS_NVT;
         move_atoms = move_atoms_nvt;
       }
-      else if (strcasecmp(tmpstr,"npt_iso")==0) {
+      else if (strcasecmp(tmpstr,"nvx")==0) {
+        ensemble = ENS_NVX;
+        move_atoms = move_atoms_nvx;
+      }
+ else if (strcasecmp(tmpstr,"npt_iso")==0) {
         ensemble = ENS_NPT_ISO;
         move_atoms = move_atoms_npt_iso;
       }
@@ -607,6 +611,24 @@ void getparamfile(char *paramfname, int sim)
       getparam("correl_ts",&correl_ts,PARAM_INTEGER,1,1);
     }
 #endif
+#ifdef TRANSPORT
+    else if (strcasecmp(token, "dTemp_start")==0){
+      /*  temperature ...*/
+      getparam("dTemp_start", &dTemp_start, PARAM_REAL, 1,1);
+    }
+    else if (strcasecmp(token, "dTemp_end")==0){
+      /* temperature ...*/
+      getparam("dTemp_end", &dTemp_end, PARAM_REAL, 1,1);
+    }
+    else if (strcasecmp(token, "tran_nlayers")==0){
+      /*number of layer  */
+      getparam("tran_nlayers", &tran_nlayers, PARAM_INTEGER, 1,1);
+    }
+     else if (strcasecmp(token, "tran_interval")==0){
+      /*number of steps between temp. writes  */
+      getparam("tran_interval", &tran_interval, PARAM_INTEGER, 1,1);
+    }
+#endif
 #ifdef MIKSHEAR
     else if (strcasecmp(token,"shear_delta")==0) {
       /* shear delta per timestep */
@@ -807,6 +829,20 @@ void check_parameters_complete()
     error("correl_tmax is zero.\n");
   }
 #endif
+#ifdef TRANSPORT
+  	if (dTemp_start == 0){
+		error ("dTemp_start is missing or zero. \n ");
+	}
+	if (dTemp_end == 0){
+		error ("dTemp_end is missing or zero. \n ");
+	}
+	if (tran_interval == 0){
+		error ("tran_interval is zero. \n");
+	}
+	if (tran_nlayers == 0){
+		error ("tran_nlayers is zero. \n");
+        }
+#endif
 #ifdef MPI
   if ((cpu_dim.x==0) || (cpu_dim.y==0)
 #ifndef TWOD
@@ -1003,6 +1039,13 @@ void broadcast_params() {
   MPI_Bcast( &correl_ts,    1, INTEGER, 0, MPI_COMM_WORLD);
 #endif
 
+#ifdef TRANSPORT
+  MPI_Bcast( &dTemp_start,   1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dTemp_end,     1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &tran_nlayers,  1, INTEGER,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &tran_interval, 1, INTEGER,  0, MPI_COMM_WORLD);
+#endif
+
 #ifdef FRAC
   MPI_Bcast( &stadion   , DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &gamma_bar , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
@@ -1065,7 +1108,8 @@ void broadcast_params() {
     case ENS_FRAC:      move_atoms = move_atoms_frac;      break;
     case ENS_PULL:      move_atoms = move_atoms_pull;      break;
     case ENS_MIKSHEAR:  move_atoms = move_atoms_mik;       break;
-    /* the following should never be executed */
+    case ENS_NVX:       move_atoms = move_atoms_nvx;       break;
+   /* the following should never be executed */
     default: if (0==myid) error("unknown ensemble in broadcast"); break;
   };
   

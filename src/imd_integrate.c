@@ -1016,3 +1016,159 @@ void move_atoms_pull(void)
 
 #endif
 
+
+/******************************************************************************
+*
+*  NVX  Integrator for heat conductivity
+* 
+******************************************************************************/
+
+#ifdef NVX
+
+void move_atoms_nvx(void)
+
+{
+  cell *p;
+  int	i;
+  real  Ekin_1, Ekin_2;
+  real  Ekin_left = 0.0, Ekin_right = 0.0;
+  integer natoms_left = 0, natoms_right = 0;
+  real  px, vol, real_tmp;
+  integer num, nhalf, r, s, t, int_tmp;  
+  real	scale, rescale, Rescale;
+ 
+  heat_cond = 0.0;
+  tot_kin_energy = 0.0;
+  nhalf = tran_nlayers / 2;
+  scale = tran_nlayers / box_x.x;
+
+/* loop over all atoms */
+  for ( r = cellmin.x; r < cellmax.x; ++r )
+    for ( s = cellmin.y; s < cellmax.y; ++s )
+#ifndef TWOD
+      for ( t = cellmin.z; t < cellmax.z; ++t )
+#endif
+      {
+#ifdef TWOD
+        p = PTR_2D_V(cell_array, r, s,    cell_dim);
+#else
+        p = PTR_3D_V(cell_array, r, s, t, cell_dim);
+#endif
+	for (i=0; i<p->n; ++i) {
+
+	   Ekin_1 = SPRODN(p->impuls,i,p->impuls,i) / p->masse[i]; 
+           px = p->impuls X(i);
+
+	   /* Neue Impulse */
+	   p->impuls X(i) += timestep * p->kraft X(i); 
+	   p->impuls Y(i) += timestep * p->kraft Y(i); 
+#ifndef TWOD
+	   p->impuls Z(i) += timestep * p->kraft Z(i); 
+#endif
+	                   
+	   /* twice the new kinetic energy */ 
+	   Ekin_2 = SPRODN(p->impuls,i,p->impuls,i) / p->masse[i]; 
+           px = (px + p->impuls X(i)) / 2.0;
+
+	   /* Neue Orte */
+	   p->ort X(i) += timestep * p->impuls X(i) / p ->masse[i];
+	   p->ort Y(i) += timestep * p->impuls Y(i) / p ->masse[i];
+#ifndef TWOD
+	   p->ort Z(i) += timestep * p->impuls Z(i) / p ->masse[i];
+#endif
+
+           tot_kin_energy += (Ekin_1 + Ekin_2) / 4.0;
+
+           /* which layer */
+           num = scale * p->ort X(i);
+           if (num < 0)             num = 0;
+           if (num >= tran_nlayers) num = tran_nlayers-1;
+
+           /* temperature control and heat conductivity */
+           if (num == 0) {
+	      Ekin_left += Ekin_2;
+              natoms_left++;
+           } else if  (num == nhalf) {
+	      Ekin_right += Ekin_2;
+              natoms_right++;
+           } else if (num < nhalf) {
+              heat_cond += (p->heatcond[i] + (Ekin_1 + Ekin_2)/2.0 )
+                                       * px / p->masse[i];
+           } else {
+              heat_cond -= (p->heatcond[i] + (Ekin_1 + Ekin_2)/2.0 )
+                                       * px / p->masse[i];
+           }
+	}
+     }
+
+#ifdef MPI
+  /* Add up results from all cpus */
+  MPI_Allreduce( &tot_kin_energy, &real_tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  tot_kin_energy                 = real_tmp;
+  MPI_Allreduce( &heat_cond,      &real_tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  heat_cond                      = real_tmp;
+  MPI_Allreduce( &Ekin_left,      &real_tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  Ekin_left                      = real_tmp;
+  MPI_Allreduce( &Ekin_right,     &real_tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  Ekin_right                     = real_tmp;
+  MPI_Allreduce( &natoms_left,    &int_tmp,  1, INTEGER,  MPI_SUM, cpugrid);
+  natoms_left                    = int_tmp;
+  MPI_Allreduce( &natoms_right,   &int_tmp,  1, INTEGER,  MPI_SUM, cpugrid);
+  natoms_right                   = int_tmp;
+#endif
+
+#ifdef TWOD
+  vol = box_x.x * box_y.y           * (tran_nlayers-2) / tran_nlayers;
+#else
+  vol = box_x.x * box_y.y * box_z.z * (tran_nlayers-2) / tran_nlayers;
+#endif
+  heat_cond /= (2 * vol * (tran_Tleft -  tran_Tright));
+
+  /* rescale factors for momenta */
+  rescale = sqrt( DIM * tran_Tleft  * natoms_left  / Ekin_left  );
+  Rescale = sqrt( DIM * tran_Tright * natoms_right / Ekin_right );
+
+  for ( r = cellmin.x; r < cellmax.x; ++r )
+    for ( s = cellmin.y; s < cellmax.y; ++s )
+#ifndef TWOD
+      for ( t = cellmin.z; t < cellmax.z; ++t )
+#endif
+        {
+#ifdef TWOD
+  	   p = PTR_2D_V(cell_array, r, s,    cell_dim);
+#else
+  	   p = PTR_3D_V(cell_array, r, s, t, cell_dim);
+#endif
+           for (i=0; i<p->n; ++i) {
+
+              /* which layer? */
+              num = scale * p->ort X(i);
+              if (num < 0)             num = 0;
+              if (num >= tran_nlayers) num = tran_nlayers-1;
+
+              /* rescale momenta */
+ 	      if (num == 0) {
+                 p->impuls X(i) *= rescale;
+                 p->impuls Y(i) *= rescale;
+#ifndef TWOD
+                 p->impuls Z(i) *= rescale;
+#endif
+               } else if (num == nhalf) {
+                 p->impuls X(i) *= Rescale;
+                 p->impuls Y(i) *= Rescale;
+#ifndef TWOD
+                 p->impuls Z(i) *= Rescale;
+#endif
+ 	      }
+           }
+        }
+}
+
+#else
+
+void move_atoms_nvx(void) 
+{
+  error("the chosen ensemble is not supported by this binary");
+}
+
+#endif

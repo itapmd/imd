@@ -143,11 +143,13 @@ void main_loop(void)
 
     move_atoms();
 
+#if defined(AND) || defined(NVT) || defined(NPT)
     if ((steps==steps_min) && (use_curr_temp==1)) {
       temperature = 2 * tot_kin_energy / (DIM * natoms);
       dtemp = (end_temp - temperature) / (steps_max - steps_min);
       use_curr_temp = 0;
     };
+#endif
 
 #ifdef NPT_iso
     if ((steps==steps_min) && (ensemble==ENS_NPT_ISO) && 
