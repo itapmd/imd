@@ -105,21 +105,21 @@ void send_forces(void);
 void fix_cells_by_cell(void);
 
 #ifdef TWOD
+vektor global_pbc(int i,int j);
 void send_recv_cell(int i,int j,int l,int m);
 void recv_send_cell(int i,int j,int l,int m);
-vektor global_pbc(int i,int j);
 void copy_cell_force(int i, int j, int k, int l);
 void copy_atoms_force(msgbuf *b, int k, int l);
 void move_atoms_force(msgbuf *b, int k, int l);
 #else
+vektor global_pbc(int i,int j, int k);
 void send_recv_cell(int i,int j,int k,int l,int m,int n);
 void recv_send_cell(int i,int j,int k,int l,int m,int n);
-vektor global_pbc(int i,int j, int k);
-void copy_atoms(msgbuf *b, int k, int l, int m);
+void copy_cell_force(int i, int j, int k, int l, int m, int n);
+void move_atoms_force(msgbuf *b, int k, int l, int m);
+void copy_atoms_force(msgbuf *b, int k, int l, int m);
 void add_forces(msgbuf *b, int k, int l, int m);
 void copy_forces(msgbuf *b, int k, int l, int m);
-void move_atoms_ar(msgbuf *b, int k, int l, int m);
-void copy_atoms_ar(msgbuf *b, int k, int l, int m);
 #endif
 void recv_cell(cell *p, int from_cpu, int tag);
 void send_cell(cell *p, int to_cpu, int tag);

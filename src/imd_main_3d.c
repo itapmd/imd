@@ -108,7 +108,7 @@ void main_loop(void)
 #ifdef AR
     send_atoms_ar();
 #else
-    send_atoms(FORCE);
+    send_atoms_force();
 #endif
 #endif
     mpi_addtime(&time_comm_force);

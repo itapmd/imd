@@ -20,11 +20,7 @@
 
 int isend_buf(msgbuf *b, int to_cpu, MPI_Request *req)
 {
-#ifdef PACX
-  return MPI_Isend(b->data, b->n, MPI_REAL, to_cpu, b->n, cpugrid, req);
-#else
   return MPI_Isend(b->data, b->n, MPI_REAL, to_cpu, BUFFER_TAG, cpugrid, req);
-#endif
 }
 
 
@@ -36,11 +32,7 @@ int isend_buf(msgbuf *b, int to_cpu, MPI_Request *req)
 
 int irecv_buf(msgbuf *b, int from, MPI_Request *req)
 {
-#ifdef PACX
-  return MPI_Irecv(b->data,b->n_max,MPI_REAL,from,MPI_ANY_TAG,cpugrid,req);
-#else
   return MPI_Irecv(b->data,b->n_max,MPI_REAL,from,BUFFER_TAG,cpugrid,req);
-#endif
 }
 
 
@@ -57,47 +49,6 @@ void mpi_addtime(double *timer)
   time_now  = MPI_Wtime();
   *timer   += (time_now - time_last);
   time_last = time_now;
-}
-
-
-/******************************************************************************
-*
-* copy_atoms copies atoms into the mpi message buffer
-*
-******************************************************************************/
-
-#ifdef TWOD
-void copy_atoms(msgbuf *b, int k, int l)
-#else
-void copy_atoms(msgbuf *b, int k, int l, int m)
-#endif
-{
-  int i,j;
-  real *ptr;
-  cell *from;
-
-#ifdef TWOD
-  from = PTR_2D_V(cell_array, k, l, cell_dim);
-#else
-  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
-#endif
-  
-  if ((b->n_max - BINC * CSTEP) < (b->n + BINC * from->n)) 
-    error("Buffer overflow in copy_atoms.");
-
-  for (i=0; i<from->n; ++i) {
-    b->data[ b->n++ ] = from->ort X(i);
-    b->data[ b->n++ ] = from->ort Y(i);
-#ifndef TWOD
-    b->data[ b->n++ ] = from->ort Z(i);
-#endif
-#ifndef MONOLJ
-    b->data[ b->n++ ] = from->sorte[i];
-#endif
-#ifdef EAM
-    b->data[ b->n++ ] = from->nummer[i];
-#endif
-  }
 }
 
 
