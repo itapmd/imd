@@ -1045,6 +1045,8 @@ void write_atoms_avp(FILE *out)
 
 void write_header_force(FILE *out)
 {
+  calc_tot_presstens();
+
   /* number of atoms */
   fprintf(out, "%d\n", natoms);
   
@@ -1060,7 +1062,14 @@ void write_header_force(FILE *out)
 
   /* cohesive energy */
   fprintf(out, "%.16e\n",tot_pot_energy / natoms);
-
+  
+#ifdef STRESS_TENS
+  /* stress */
+  fprintf(out, "%.8e %.8e %.8e %.8e %.8e %.8e\n",tot_presstens.xx/volume,
+	  tot_presstens.yy/volume,tot_presstens.zz/volume,
+	  tot_presstens.xy/volume,tot_presstens.yz/volume,
+	  tot_presstens.zx/volume);
+#endif
 }
 
 /******************************************************************************
