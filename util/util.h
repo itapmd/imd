@@ -621,6 +621,9 @@ void read_parameters(int argc,char **argv)
       /* e - maximum radius */
     case 'e':
       r_max = atof(&argv[1][2]);
+#ifdef STRAIN
+      r_cell = r_max;
+#endif
       break;
 #endif
 #ifdef STRAIN
