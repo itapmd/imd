@@ -38,51 +38,16 @@
 *
 ******************************************************************************/
 
-/* Microcanonical */
-
-#ifdef NVE
-
-#endif
-
-
-
-/* Constant Temperature & Pressure */
-
-#ifdef NPT
-#define DYNAMIC_CELLS
-#endif
-
 #ifdef NPT_axial
 #define P_AXIAL
-#define PAXTEST
 #endif
-
-/* Canonical */
-
-#ifdef NVT
-
-#endif
-
 
 /* heat transport */
 #ifdef NVX
 #define RNEMD
 #endif
-#if defined(RNEMD) && !defined(NVX)
-/* #define NVE */
-#endif
 #if defined(NVX) || defined(RNEMD)
 #define TRANSPORT
-#endif
-
-/* Stadium damping for fracture */
-
-#ifdef FRAC
-#define NOPBC
-#endif
-
-#ifdef DEFORM
-/* #define NOPBC  */
 #endif
 
 #ifdef MSQD
@@ -145,11 +110,6 @@
 #undef USE_SOCKETS
 #endif
 
-/* Metacomputing */
-
-#ifdef PACX
-/* #define MPI_Ssend MPI_Send */
-#endif
 
 /******************************************************************************
 *

@@ -389,32 +389,28 @@ void write_properties(int steps)
   out = fopen(fname,"a");
   if (NULL == out) error("Cannot open properties file.");
 
-  fprintf(out,"%10.4e",  (double)(steps * timestep));
-  fprintf(out," %10.4e", (double)part_pot_energy);
+  fprintf(out,"%e",  (double)(steps * timestep));
+  fprintf(out," %e", (double)part_pot_energy);
 #ifndef MC
-  fprintf(out," %10.4e", (double)part_kin_energy);
+  fprintf(out," %e", (double)part_kin_energy);
 #ifdef FNORM
-  fprintf(out, "%10.4e", (double)fnorm);
+  fprintf(out, "%e", (double)fnorm);
 #endif
-  fprintf(out," %10.4e", (double)pressure);
+  fprintf(out," %e", (double)pressure);
 #else
-  fprintf(out," %10.4e", (double)(mc_accept/(real)mc_count));
+  fprintf(out," %e", (double)(mc_accept/(real)mc_count));
   mc_accept = (real)0;
   mc_count  = 0;
 #endif
-  fprintf(out," %10.4e", (double)vol);
-
-#ifdef PAXTEST
+  fprintf(out," %e", (double)vol);
   if (ensemble==ENS_NPT_AXIAL) {
-    fprintf(out," %10.4e %10.4e", 
+    fprintf(out," %e %e", 
                   (double) stress.x, (double) stress.y );
-    fprintf(out," %10.4e %10.4e", 
+    fprintf(out," %e %e", 
                   (double) box_x.x,  (double) box_y.y  );
-  };
-#endif
-
-#if defined(NVT) || defined(STM)
-  fprintf(out," %10.4e", eta );
+  }
+#if defined(NVT) || defined(NPT) || defined(STM)
+  fprintf(out," %e", eta );
 #endif
 
   putc('\n',out);

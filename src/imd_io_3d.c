@@ -372,7 +372,7 @@ void read_atoms(str255 infilename)
     for (i=0; i<ntypes; i++) {
       MPI_Allreduce( &num_sort[i], &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
       num_sort[i] = addnumber;
-    };
+    }
   } else { /* broadcast if serial io */
     MPI_Bcast( &natoms ,      1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast( &nactive,      1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -395,7 +395,7 @@ void read_atoms(str255 infilename)
     for (i=1; i<ntypes; i++) {
       printf(", %u",num_sort[i]);
       addnumber+=num_sort[i];
-    };
+    }
     printf(" ],  total = %u\n",addnumber);
   }
 }
@@ -561,15 +561,16 @@ void write_properties(int steps)
   mc_count  = 0;
 #endif
   fprintf(out," %e",   (double)vol);
-
-#ifdef PAXTEST
   if (ensemble==ENS_NPT_AXIAL) {
     fprintf(out," %e %e %e", 
                   (double) stress.x, (double) stress.y, (double) stress.z );
     fprintf(out," %e %e %e", 
                   (double) box_x.x,  (double) box_y.y,  (double) box_z.z );
   }
+#if defined(NVT) || defined(NPT)
+  fprintf(out," %e", eta );
 #endif
+
   putc('\n',out);
 
   fclose(out);
