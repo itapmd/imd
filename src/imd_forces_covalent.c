@@ -665,8 +665,8 @@ void do_forces2(cell *p, real *Epot, real *Virial,
       
       /* update force on particle j */
       KRAFT(jcell,jnum,X) += force_j.x;
-      KRAFT(jcell,jnum,X) += force_j.y;
-      KRAFT(jcell,jnum,X) += force_j.z;
+      KRAFT(jcell,jnum,Y) += force_j.y;
+      KRAFT(jcell,jnum,Z) += force_j.z;
       POTENG(jcell,jnum)  += fc[j] * pot_zwi;
 
       /* update force on particle i */
