@@ -92,7 +92,7 @@ void generate_atoms(str255 mode)
 #ifndef MONOLJ
   /* Get numbering of atoms right even across CPUs */
   ninc = 0;
-  if (0==myid)
+  if ((0==myid) && (num_cpus>1))
      MPI_Send( &natoms, 1, MPI_INT, myid + 1, 0, cpugrid );
   else if ((0<myid) && (myid<(num_cpus-1))) {
      MPI_Recv( &tmp,    1, MPI_INT, myid - 1, 0, cpugrid, &status );
