@@ -213,8 +213,11 @@ typedef struct {
 #else
   int    *sorte;
 #endif
-#if defined(CONN) || defined(ELCO)
+#if defined(CONN) || defined(ELCO) || defined(COORD)
   int    *nummer;
+#endif
+#ifdef COORD
+  real    *coord;
 #endif
 #ifdef COVALENT
   neightab *neightab_array;
@@ -414,6 +417,9 @@ real    area;            /* Area of Voronoi cell, 2d */
 
 #ifdef COORD
 real      *numbers;
+int       local  = -1;
+int       global = -1;
+int       c_max  = 10;
 ivektor2d num_dim;
 #endif
 
@@ -434,6 +440,7 @@ int    stresstens = 0, moduli = 0, all_moduli = 0;
 
 #ifdef COVALENT
 int  neigh_len;
+#endif
 #ifdef TERSOFF
 real ter_r_cut[10][10], ter_r2_cut[10][10], ters_r_cut[55] ;
 real ter_r0[10][10], ters_r0[55];
@@ -479,7 +486,6 @@ real keat_r_cut[10][10];
 real keat_r2_cut[10][10];
 real keating_beta[550];
 real keat_beta[10][10][10];
-#endif
 #endif
 
 /******************************************************************************
@@ -704,8 +710,11 @@ void alloc_cell(cell *cl, int count)
 #else
     cl->sorte         = NULL;
 #endif
-#if defined(CONN) || defined(ELCO)
+#if defined(CONN) || defined(ELCO) || defined(COORD)
     cl->nummer        = NULL;
+#endif
+#ifdef COORD
+    cl->coord         = NULL;
 #endif
 #ifdef COVALENT
     cl->neightab_array= NULL;
@@ -734,8 +743,11 @@ void alloc_cell(cell *cl, int count)
 #else
   cl->sorte  = (int    *) realloc(cl->sorte,  count * sizeof(int));
 #endif
-#if defined(CONN) || defined(ELCO)
+#if defined(CONN) || defined(ELCO) || defined(COORD)
   cl->nummer = (int    *) realloc(cl->nummer, count * sizeof(int));
+#endif
+#ifdef COORD
+  cl->coord  = (real   *) realloc(cl->coord,  ntypes * count * sizeof(real));
 #endif
 #ifdef ELCO
   cl->stress = (tensor *) realloc(cl->stress, count * sizeof(tensor));
@@ -779,8 +791,11 @@ void alloc_cell(cell *cl, int count)
 #else   
     || (NULL==cl->sorte)
 #endif
-#if defined(CONN) || defined(ELCO)
+#if defined(CONN) || defined(ELCO) || defined(COORD)
     || (NULL==cl->nummer)
+#endif
+#ifdef COORD
+    || (NULL==cl->coord)
 #endif
 #ifdef ELCO
     || (NULL==cl->stress)
@@ -863,6 +878,27 @@ void read_parameters(int argc,char **argv)
 #endif
       break;
 #endif
+#ifdef COORD
+     /* l - write local coordination numbers */
+    case 'l':
+      local  = 1;
+      break;
+     /* g - write global coordination numbers */
+    case 'g':
+      global = 1;
+      break; 
+      /* C - largest coordination number */
+    case 'C':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          c_max = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else c_max = atof(&argv[1][2]);
+      break;
+#endif 
 #if defined(STRAIN) || defined(ELCO)
       /* c - cell width */
     case 'c':
@@ -1320,7 +1356,7 @@ void read_atoms(str255 infilename)
 {
   FILE *infile;
   char buf[512];
-  int p, s, n;
+  int p, s, n, i;
   vektor pos;
   real m;
   cell *to;
@@ -1371,12 +1407,17 @@ void read_atoms(str255 infilename)
 #if (!defined(STRAIN) && !defined(STRESS))
       to->sorte [to->n] = MOD(s,ntypes);
 #endif
-#if defined(CONN) || defined(ELCO)
+#if defined(CONN) || defined(ELCO) || defined(COORD)
       to->nummer[to->n] = n;
 #endif
 #ifdef CONN
       n_min = MIN(n_min,n);
       n_max = MAX(n_max,n);
+#endif
+#ifdef COORD
+      /* Initialization */
+      for ( i=0; i<ntypes; i++) 
+	to->coord[to->n * ntypes + i] = 0.0;
 #endif
       to->n++;
       natoms++;
@@ -1499,3 +1540,7 @@ void do_work(void (*do_cell_pair)(cell *p, cell *q, vektor pbc))
             }
       }
 }
+
+
+
+
