@@ -53,7 +53,7 @@ typedef integer* intptr;
 
 void init_correl(int ncorr_rmax, int ncorr_tmax)
 {
-  int i,j;
+  int i,j,k;
 #ifdef CORRELATE
   real diagonal;
   char *filename;
@@ -61,7 +61,7 @@ void init_correl(int ncorr_rmax, int ncorr_tmax)
   GS = calloc(ntypes,sizeof(intptr));
   if (GS == NULL) {
     error("Cannot allocate histogram for correlation\n");
-  };
+  }
 
   for (i=0; i<ntypes; i++) {
     GS[i]=calloc(ncorr_tmax,sizeof(intptr));
@@ -103,6 +103,19 @@ void init_correl(int ncorr_rmax, int ncorr_tmax)
 #else
   msqd_global = msqd;
 #endif
+
+  /* initialize reference positions */
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+  for (k=0; k<ncells; ++k) {
+    int i;
+    cell *p;
+    p = cell_array + CELLS(k);
+    for (i=0; i<p->n*DIM; ++i) {
+      p->refpos[i] = p->ort[i];
+    }
+  }
 
 }
 
