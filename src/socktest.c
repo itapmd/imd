@@ -123,8 +123,7 @@ void vis_write_atoms()
 
   do {
     ReadFull(soc,&num,4);
-    printf("Expecting block of %d atoms\n", num);
-    printf("Received atoms with data:\n");
+    printf("Receiving block of %d atoms... ", num);
     for (i=0; i<num; i++) {
       ReadFull(soc,a,4*atlen);
 #ifdef DEBUG
@@ -132,6 +131,7 @@ void vis_write_atoms()
       printf("\n");
 #endif
     }
+    printf("done\n");
   } while (num); 
   printf("Receiving atoms finished\n");
 }

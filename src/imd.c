@@ -237,7 +237,11 @@ int main(int argc, char **argv)
 #endif
 
     volume_init = 0.0;
-
+    max_height.x = 0.0;
+    max_height.y = 0.0;
+#ifndef TWOD
+    max_height.z = 0.0;
+#endif
   }
 
   } while (loop);
