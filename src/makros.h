@@ -27,6 +27,9 @@
 #define MASSE(cell,i) (cell)->masse[(i)]
 #define POTENG(cell,i) (cell)->pot_eng[(i)]
 #endif
+#ifdef ORDPAR
+#define NBANZ(cell,i) (cell)->nbanz[(i)]
+#endif
 
 #ifdef MPI
 #define CELLS(k) cells[k]
@@ -192,6 +195,7 @@ inline static real SQR(real x)
 #define POT_WELL_TAG 15
 #define DREH_IMPULS_TAG 16
 #define DREH_MOMENT_TAG 17
+#define NBA_TAG 18
 #endif
 
 /* some systems have different versions of trunc and floor float and double */
