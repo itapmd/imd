@@ -1708,6 +1708,12 @@ void write_header_config(FILE *out)
 #else
   fprintf(out, " Epot" );
 #endif
+#ifdef EAM2
+  fprintf(out, " eam_rho" );
+#ifdef EEAM
+  fprintf(out, " eam_p");
+#endif
+#endif
   fprintf(out, "\n" );
 #endif
 
