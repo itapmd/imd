@@ -149,10 +149,10 @@ CFLAGS_GCC_alpha_PROF	= -g3 -pg
 #CFLAGS_OMP_alpha_PROF	= -g3 -pg
 
 # flags for alpha with LAM/MPI
-#CC_MPI_alpha		= hcc
-#CFLAGS_MPI_alpha	= -Dalpha -DMPI -O3
-#CFLAGS_MPI_alpha_DEBUG	= -Dalpha -DMPI -g
-#MPILIBS_alpha		= -lmpi -lots
+CC_MPI_alpha		= hcc
+CFLAGS_MPI_alpha	= -Dalpha -DMPI -O3
+CFLAGS_MPI_alpha_DEBUG	= -Dalpha -DMPI -g
+MPILIBS_alpha		= -lmpi -lots
 
 # flags for IRIX with cc
 CC_RISC_iris4d			= cc
@@ -173,9 +173,9 @@ CFLAGS_OMP_iris4d_DEBUG		= -Dsgi -DOMP -mp -g -xansi -woff 1174
 CFLAGS_OMP_iris4d_PROF		= -g3
 
 # flags for IRIX with LAM/MPI
-#CC_MPI_iris4d			= hcc
-#CFLAGS_MPI_iris4d		= -Dsgi -DMPI -O3
-#MPILIBS_iris4d			= -lmpi
+CC_MPI_iris4d			= hcc
+CFLAGS_MPI_iris4d		= -Dsgi -DMPI -O2
+MPILIBS_iris4d			= -lmpi
 
 # flags for T3E RISC
 CC_RISC_t3e		= cc
