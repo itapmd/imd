@@ -31,6 +31,9 @@ void main_loop(void)
   int ref_step = correl_start;
 #endif
 #ifdef FBC 
+#ifdef MIK
+  int nofbcsteps=0;
+#endif
   int l;
   vektor nullv={0.0,0.0};
   vektor temp_df;
@@ -91,22 +94,26 @@ void main_loop(void)
   for (steps=steps_min; steps <= steps_max; ++steps) { 
 
 #ifdef FBC
-#ifdef MIK  /* just increment the force if under threshold of e_kin */
- if ((tot_kin_energy/nactive < fbc_ekin_threshold) && (tot_kin_energy>0.0))
- {
-  for (l=0;l<vtypes;l++){
-    *(fbc_df+l) = *(fbc_dforces+l) ;
-  }
- }
- else
- {
+#ifdef MIK  
+/* just increment the force if under threshold of e_kin or after waitsteps
+  and after annelasteps */
   temp_df.x = 0.0;
   temp_df.y = 0.0;
- for (l=0;l<vtypes;l++)
-  {
-     *(fbc_df+l) = temp_df;
-  }
+   for (l=0;l<vtypes;l++)
+      *(fbc_df+l) = temp_df;
+
+ if (steps > fbc_annealsteps)
+ {
+   nofbcsteps++; 
+   if((tot_kin_energy/nactive < fbc_ekin_threshold) ||
+        (nofbcsteps==fbc_waitsteps)) 
+     {
+      nofbcsteps=0;
+      for (l=0;l<vtypes;l++)
+         *(fbc_df+l) = *(fbc_dforces+l) ;
+     }
  }
+
 #endif
 #endif
 

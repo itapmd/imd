@@ -464,6 +464,14 @@ void getparamfile(char *paramfname, int sim)
       /* epsilon criterium to increment extra force*/
       getparam("fbc_ekin_threshold",&fbc_ekin_threshold,PARAM_REAL,1,1);
     }
+    else if (strcasecmp(token,"fbc_annealsteps")==0) {
+      /* max nr of steps before shears */
+      getparam("annealsteps",&fbc_annealsteps,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"fbc_waitsteps")==0) {
+      /* max nr of steps between shears */
+      getparam("max_deform_int",&fbc_waitsteps,PARAM_INT,1,1);
+    }
     else if (strcasecmp(token,"extra_dforce")==0) {
       /* extra force increment for virtual types */
       /* format: type force.x force.y (force.z) read in a temp. vektor */
@@ -1308,6 +1316,8 @@ void broadcast_params() {
   MPI_Bcast( fbc_beginforces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
 #ifdef MIK
   MPI_Bcast( &fbc_ekin_threshold , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &fbc_waitsteps      , 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &fbc_annealsteps    , 1, MPI_INT,  0, MPI_COMM_WORLD);
 
   if (0!=myid) fbc_dforces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==fbc_dforces) 
