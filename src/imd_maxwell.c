@@ -116,7 +116,7 @@ void maxwell(real temp)
                                     	shock_speed * MASSE(p,i);
 	       if ( shock_elong > 0 ) { 
 		 p->ort X(i) += shock_elong 
-		   + ( shock_strip + strip/2 - p->ort X(i) )
+		   + ( shock_strip + strip_width/2 - p->ort X(i) )
 		   * shock_elong / shock_strip;
 	       }
 	     }

@@ -586,7 +586,7 @@ void getparamfile(char *paramfname, int sim)
       getparam("expansion",&expansion,PARAM_REAL,1,1);
     }
 #endif
-#if defined(FRAC) || defined(PULL) || defined(SHOCK)
+#if defined(FRAC) || defined(PULL)
     else if (strcasecmp(token,"initial_shift")==0) {
       /* shall the whole sample be shifted before MD */
       getparam("initial_shift",&initial_shift,PARAM_INTEGER,1,1);
@@ -613,6 +613,10 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #ifdef SHOCK
+    else if (strcasecmp(token,"strip_width")==0) { 
+      /* strip width (in x dir.) */
+      getparam("strip_width",&strip_width,PARAM_REAL,1,1);
+    }
     else if (strcasecmp(token,"shock_strip")==0) { 
       /* shock strip width (in x dir.) */
       getparam("shock_strip",&shock_strip,PARAM_REAL,1,1);
