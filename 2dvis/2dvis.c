@@ -16,7 +16,7 @@ int x_res,y_res;
 int natoms,nunits;
 unsigned short base_port;
 float scalex,scaley,scalepot,scalekin,radius,offspot,offskin;
-int colmode,scene_type,text,engmode,qp;
+int colmode,scene_type,text,engmode,qp,radectyp;
 float *ux,*uy;
 
 void draw_scene(int scene_type);
@@ -40,6 +40,7 @@ main()
   scene_type=0;
   text=0;
   radius=.3;
+  radectyp=0;
 
   /* allocs */
   nummer=(int*)calloc(MAXNATOMS,sizeof(int));
@@ -120,6 +121,7 @@ main()
     case 'k' : if (engmode) engmode=0; else engmode=1;draw_scene(scene_type);break;
     case 'l' : do { printf("Enter Filename: ");scanf("%s", fname);} while ((natoms=read_atoms(fname))<0);if (natoms==0) { printf("Kein Atom gelesen\n");exit(-1); };draw_scene(scene_type);break;
     case 'p' : make_picture();break;
+    case 'r' : if (radectyp) radectyp=0; else radectyp=1;draw_scene(scene_type);break;
     case 'q' : vexit(); exit(0);break;
     case 't' : if (text) text=0; else text=1;draw_scene(scene_type);break;
     case 'u' : read_unit_vectors();break;
@@ -209,7 +211,12 @@ void draw_scene(int scene_type) {
       }
       xx=x[i]*scalex-1;
       yy=y[i]*scaley-1;
-      circle(xx,yy,radius*scalex);
+      if (sorte[i]>10) sorte[i]=0;
+      printf("%d %d %d %f %f %f\n", i, nummer[i], sorte[i], masse[i], x[i], y[i]);fflush(stdout);
+      if (radectyp)
+	circle(xx,yy,radius*scalex);
+      else
+	circle(xx,yy,.5*(sorte[i]+1.0)*radius*scalex);
     }
     if (text) {
       color(CYAN);
@@ -258,7 +265,12 @@ void draw_scene(int scene_type) {
 	if (nb==5) color(WHITE);
 	if (nb==6) color(CYAN);
       }
-      circle(xx,yy,radius*scalex);
+      if (sorte[i]>10) sorte[i]==0;
+      printf("%d %f\n", i, sorte[i]);fflush(stdout);
+      if (radectyp)
+	circle(xx,yy,radius*scalex);
+      else
+	circle(xx,yy,.5*(sorte[i]+1)*radius*scalex);
     }
     if (text) {
       color(CYAN);
@@ -411,7 +423,7 @@ void display_help(void) {
 
   char sysstring[1000];
 
-  sprintf(sysstring,"Use the following keys\n\nLMB:\tmove configuration\nMMB:\trotate configuration around x-axis\nR+MMBs\trotate configuration around y-axis\nRMB:\tscale configuration\n1:\tmove configuration to the lower left\n2:\tmove configuration down\n3:\tmove configuration to the lower right\n4:\tmove configuration to the left\n6:\tmove configuration to the right\n7:\tmove configuration to the upper left\n8:\tmove configuration up\n9:\tmove configuration to the upper right\n0:\tincrease radius\n.:\tdecrease radius\n+:\tscale configuration (larger)\n-:\tscale configuration (smaller)\n*:\trotate about x-axis\n/:\trotate about y-axis\na:\tauto-scale\nb:\tdraw bonds\nc:\tget configuration via socket\nd:\tget distribution via socket\ne:\ttoggle type/energy encoding\nh:\tdisplay this help message\nk:\ttoggle potential/kinetic energy\nl:\tload IMD-configuration from file\np\tmake picture\nq:\tquit program\nt:\ttoggle text on/off\nu:\tread_unit_vectors\nw:\twrite to file\n");
+  sprintf(sysstring,"Use the following keys\n\nLMB:\tmove configuration\nMMB:\trotate configuration around x-axis\nR+MMBs\trotate configuration around y-axis\nRMB:\tscale configuration\n1:\tmove configuration to the lower left\n2:\tmove configuration down\n3:\tmove configuration to the lower right\n4:\tmove configuration to the left\n6:\tmove configuration to the right\n7:\tmove configuration to the upper left\n8:\tmove configuration up\n9:\tmove configuration to the upper right\n0:\tincrease radius\n.:\tdecrease radius\n+:\tscale configuration (larger)\n-:\tscale configuration (smaller)\n*:\trotate about x-axis\n/:\trotate about y-axis\na:\tauto-scale\nb:\tdraw bonds\nc:\tget configuration via socket\nd:\tget distribution via socket\ne:\ttoggle type/energy encoding\nh:\tdisplay this help message\nk:\ttoggle potential/kinetic energy\nl:\tload IMD-configuration from file\np\tmake picture\nq:\tquit program\nr:\ttoggle type encoding via radius\nt:\ttoggle text on/off\nu:\tread_unit_vectors\nw:\twrite to file\n");
   printf(sysstring);
   fflush(stdout);
 	 

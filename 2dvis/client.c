@@ -69,10 +69,14 @@ int receive_conf()
   masse = (double *)calloc(anz, sizeof(double));
   x = (double *)calloc(anz, sizeof(double));
   y = (double *)calloc(anz, sizeof(double));
+#ifdef TWOD
   z = (double *)calloc(anz, sizeof(double));
+#endif
   vx = (double *)calloc(anz, sizeof(double));
   vy = (double *)calloc(anz, sizeof(double));
+#ifdef TWOD
   vz = (double *)calloc(anz, sizeof(double));
+#endif
   pot = (double *)calloc(anz, sizeof(double));
 
   /*  ReadFull(socket_id, (void *)&boxx, sizeof(double));
