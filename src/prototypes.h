@@ -61,7 +61,7 @@ void imd_start_timer(imd_timer *timer);
 void imd_stop_timer(imd_timer *timer);
 void maxwell(real TEMP);
 
-/* start and stop MPI - files imd_main_mpi_*.c, imd_geom_mpi_*.c */
+/* start and stop MPI - files imd_mpi_util.c, imd_geom_mpi_*.c */
 #ifdef MPI
 void init_mpi(int argc,char **argv);
 void setup_mpi_topology(void);
@@ -164,6 +164,9 @@ vektor global_pbc(int i,int j, int k);
 #endif
 #ifdef SAVEMEM  /* imd_savemem_3d.c */
 void send_cells_by_cell(void);
+void send_recv_cell(int i, int j, int k, int l, int m, int n);
+void send_cell_force(cell *p, int to_cpu, int tag);
+void recv_cell_force(cell *p, int from_cpu,int tag);
 #endif
 #endif /* 3D  */
 #endif /* MPI */

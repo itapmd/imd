@@ -20,8 +20,6 @@
 * The forces of the atoms are calulated here. To achive this, atoms on
 * the surface of a cpu are exchanged with the neigbours.
 *
-* In 2D, we don't use actio=reactio across CPUs yet
-*
 * The force calculation is split into those steps:
 *
 * i)   send atoms positions of cells on surface neighbours, 
@@ -125,50 +123,6 @@ void calc_forces(void)
   vir_vect.x = tmpvec.x;
   vir_vect.y = tmpvec.y;
 
-}
-
-
-/******************************************************************************
-*
-* set up mpi
-*
-******************************************************************************/
-
-void init_mpi(int argc,char *argv[])
-{
-  /* Initialize MPI */
-  MPI_Init(&argc,&argv);
-  MPI_Comm_size(MPI_COMM_WORLD,&num_cpus);
-  MPI_Comm_rank(MPI_COMM_WORLD,&myid);
-
-  if (0 == myid) { 
-    printf("%s\n", argv[0]);
-    printf("Starting up MPI on %d nodes.\n",num_cpus);
-  }
-
-  /* Setup send/receive buffers */
-  send_buf_north.n_max = 0;
-  send_buf_south.n_max = 0;
-  send_buf_east.n_max  = 0;
-  send_buf_west.n_max  = 0;
-  recv_buf_north.n_max = 0;
-  recv_buf_south.n_max = 0;
-  recv_buf_east.n_max  = 0;
-  recv_buf_west.n_max  = 0;
-
-}
-
-
-/******************************************************************************
-*
-* shut down mpi
-*
-******************************************************************************/
-
-void shutdown_mpi(void)
-{
-  MPI_Barrier(MPI_COMM_WORLD);   /* Wait for all processes to arrive */
-  MPI_Finalize();                /* Shutdown */
 }
 
 

@@ -14,6 +14,37 @@
 
 /******************************************************************************
 *
+* set up mpi
+*
+******************************************************************************/
+
+void init_mpi(int argc,char *argv[])
+{
+  /* Initialize MPI */
+  MPI_Init(&argc,&argv);
+  MPI_Comm_size(MPI_COMM_WORLD,&num_cpus);
+  MPI_Comm_rank(MPI_COMM_WORLD,&myid);
+
+  if (0 == myid) { 
+    printf("%s\n", argv[0]);
+    printf("Starting up MPI on %d nodes.\n", num_cpus);
+  }
+}
+
+/******************************************************************************
+*
+* shut down mpi
+*
+******************************************************************************/
+
+void shutdown_mpi(void)
+{
+  MPI_Barrier(MPI_COMM_WORLD);   /* Wait for all processes to arrive */
+  MPI_Finalize();                /* Shutdown */
+}
+
+/******************************************************************************
+*
 * isend_buf lean version of send_cell for force_loop
 *
 ******************************************************************************/
@@ -49,7 +80,11 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
   }
 
   /* See if we need some space */
-  if (to->n >= to->n_max) error("copy_one_atom: buffer overflow.");
+  if (to->n + MAX_ATOM_SIZE > to->n_max) {
+    to->n_max += BUFFER_SIZE_INC;
+    to->data = (real *) realloc( to->data, to->n_max * sizeof(real) );
+    if (NULL == to->data) error("Cannot allocate buffer in copy_one_atom");
+  }
 
   /* copy atom */
   /* data is packed in the same order as in the cell data structure */
@@ -209,6 +244,8 @@ void process_buffer(msgbuf *b, cell *p)
   static cell *input = NULL;
   cell *to;
 
+  if (b->n > b->n_max) error("buffer overflow in process_buffer");
+
   if (NULL == input) {
     input = (cell *) malloc(sizeof(cell));
     if (0==input) error("Cannot allocate buffer cell.");
@@ -313,8 +350,11 @@ void copy_atoms_buf(msgbuf *to, msgbuf *from)
 {
   int i;
 
-  if ((to->n_max - binc * CSTEP) < (to->n + from->n)) 
-      error("Buffer overflow in copy_buf.");
+  if (to->n_max < to->n + from->n) {
+    while (to->n_max < to->n + from->n) to->n_max += BUFFER_SIZE_INC;
+    to->data = (real *) realloc( to->data, to->n_max * sizeof(real) );
+    if (NULL == to->data) error("Cannot allocate buffer in copy_atoms_buf");
+  }
 
   for (i=0; i<from->n; ++i) 
     to->data[ to->n++ ] = from->data[i];
@@ -324,9 +364,7 @@ void copy_atoms_buf(msgbuf *to, msgbuf *from)
 /******************************************************************************
 *
 * setup_buffers sets up the send/receive buffers
-*
 * This is called periodically to check the buffers are large enough
-*
 * The buffers never shrink. 
 * 
 ******************************************************************************/
@@ -565,8 +603,6 @@ void send_cell(cell *p, int to_cpu, int tag)
   b->n = 0;
 
   for (i=0; i<p->n; i++) copy_one_atom(b, p, i, 0);
-  if  (b->n_max < b->n)  error("Buffer overflow in send_cell");
-
   MPI_Send(b->data, b->n, REAL, to_cpu, tag, cpugrid);
 }
 
@@ -588,126 +624,15 @@ void recv_cell(cell *p, int from_cpu, int tag)
   /* check message size */
   MPI_Probe( from_cpu, tag, cpugrid, &status );
   MPI_Get_count( &status, REAL, &(b->n) );
-  if (b->n_max < b->n) error("Buffer overflow in recv_cell");
+  if (b->n_max < b->n) {
+    if (0 != b->n_max) free(b->data);
+    while (b->n_max < b->n) b->n_max += BUFFER_SIZE_INC;
+    b->data = (real *) malloc( b->n_max * sizeof(real) );
+    if (NULL == b->data) error("Cannot allocate buffer in recv_cell");
+  }
 
   /* upack data */
   p->n = 0;
   MPI_Recv(b->data, b->n, REAL, from_cpu, tag, cpugrid, &status);
   process_buffer(b,p);
-}
-
-
-/******************************************************************************
-*
-*  send_cell_old send cell data to another process  (old version)
-*
-******************************************************************************/
-
-void send_cell_old(cell *p, int to_cpu, int tag)
-{
-  MPI_Ssend( p->ort, DIM*p->n, REAL,    to_cpu, tag + ORT_TAG,    cpugrid);
-#ifndef MONOLJ
-  MPI_Ssend( p->sorte,  p->n,  SHORT,   to_cpu, tag + SORTE_TAG,  cpugrid);
-  MPI_Ssend( p->masse,  p->n,  REAL,    to_cpu, tag + MASSE_TAG,  cpugrid);
-  MPI_Ssend( p->nummer, p->n,  INTEGER, to_cpu, tag + NUMMER_TAG, cpugrid);
-#ifdef UNIAX
-  MPI_Ssend( p->traeg_moment, p->n, REAL,to_cpu,tag+TRAEG_MOMENT_TAG,cpugrid);
-  MPI_Ssend( p->achse, DIM*p->n,    REAL, to_cpu, tag + ACHSE_TAG,    cpugrid);
-  MPI_Ssend( p->shape, DIM*p->n,    REAL,to_cpu, tag + SHAPE_TAG,  cpugrid);
-  MPI_Ssend( p->pot_well, DIM*p->n, REAL,to_cpu, tag + POT_WELL_TAG,  cpugrid);
-  MPI_Ssend( p->dreh_impuls, DIM*p->n, REAL, to_cpu, tag + DREH_IMPULS_TAG, 
-             cpugrid);
-  MPI_Ssend( p->dreh_moment, DIM*p->n, REAL, to_cpu, tag + DREH_MOMENT_TAG,  
-             cpugrid);
-#endif
-  MPI_Ssend( p->pot_eng,p->n,     REAL, to_cpu, tag + POT_TAG,    cpugrid);
-#ifdef ORDPAR
-#ifndef TWOD
-  MPI_Ssend( p->nbanz,p->n,      SHORT, to_cpu, tag + NBA_TAG,    cpugrid);
-#endif
-#endif
-#ifdef REFPOS
-  MPI_Ssend( p->refpos, DIM*p->n, REAL, to_cpu, tag + REFPOS_TAG, cpugrid);
-#endif
-#ifdef DISLOC
-  MPI_Ssend( p->Epot_ref,p->n,    REAL, to_cpu, tag + POT_REF_TAG,cpugrid);
-  MPI_Ssend( p->ort_ref,DIM*p->n, REAL, to_cpu, tag + ORT_REF_TAG,cpugrid);
-#endif
-#endif /* not MONOLJ */
-  MPI_Ssend( p->impuls, DIM*p->n, REAL, to_cpu, tag + IMPULS_TAG, cpugrid);
-  MPI_Ssend( p->kraft,  DIM*p->n, REAL, to_cpu, tag + KRAFT_TAG,  cpugrid);
-}
-
-
-/******************************************************************************
-*
-* recv_cell_old receive cell data for cell  (old version)
-*
-******************************************************************************/
-
-void recv_cell_old(cell *p, int from_cpu, int tag)
-{
-  int size;
-  int newsize;
-  MPI_Status status;
-
-  MPI_Probe( from_cpu, tag + ORT_TAG, cpugrid, &status );
-  MPI_Get_count( &status, REAL, &size );
-  size /= DIM;
-
-  /* realloc cell if necessary */
-  newsize = p->n_max; 
-  while ( newsize < size ) newsize += incrsz;
-  if (newsize > p->n_max) {
-    /* Inihibit superfluous copy operation */
-    p->n = 0;
-    alloc_cell(p,newsize);
-  }
-  p->n = size;
-
-  MPI_Recv(p->ort,     DIM * size, REAL,     from_cpu, tag + ORT_TAG,
-                                             cpugrid, &status );
-#ifndef MONOLJ
-  MPI_Recv(p->sorte,         size, SHORT,    from_cpu, tag + SORTE_TAG , 
-                                             cpugrid, &status);
-  MPI_Recv(p->masse,         size, REAL,     from_cpu, tag + MASSE_TAG , 
-                                             cpugrid, &status);
-  MPI_Recv(p->nummer,        size, INTEGER,  from_cpu, tag + NUMMER_TAG, 
-                                             cpugrid, &status);
-#ifdef UNIAX
-  MPI_Recv(p->traeg_moment,      size, REAL, from_cpu, tag + TRAEG_MOMENT_TAG, 
-                                             cpugrid, &status);
-  MPI_Recv(p->achse,       DIM * size, REAL, from_cpu, tag + ACHSE_TAG,
-                                             cpugrid, &status );
-  MPI_Recv(p->shape,       DIM * size, REAL, from_cpu, tag + SHAPE_TAG,
-                                             cpugrid, &status );
-  MPI_Recv(p->pot_well,    DIM * size, REAL, from_cpu, tag + POT_WELL_TAG,
-                                             cpugrid, &status );
-  MPI_Recv(p->dreh_impuls, DIM * size, REAL, from_cpu, tag + DREH_IMPULS_TAG, 
-                                             cpugrid, &status);
-  MPI_Recv(p->dreh_moment, DIM * size, REAL, from_cpu, tag + DREH_MOMENT_TAG,  
-                                             cpugrid, &status);
-#endif
-  MPI_Recv(p->pot_eng, size, REAL,  from_cpu, tag + POT_TAG, cpugrid, &status);
-#ifdef ORDPAR
-#ifndef TWOD
-  MPI_Recv(p->nbanz,   size, SHORT, from_cpu, tag + NBA_TAG, cpugrid, &status);
-#endif
-#endif
-                                            
-#ifdef REFPOS
-  MPI_Recv(p->refpos,  DIM * size, REAL, from_cpu, tag + REFPOS_TAG, 
-                                         cpugrid, &status);
-#endif
-#ifdef DISLOC
-  MPI_Recv(p->Epot_ref,      size, REAL, from_cpu, tag + POT_REF_TAG , 
-                                         cpugrid, &status);
-  MPI_Recv(p->ort_ref, DIM * size, REAL, from_cpu, tag + ORT_REF_TAG, 
-                                         cpugrid, &status);
-#endif
-#endif /* not MONOLJ */
-  MPI_Recv(p->impuls,  DIM * size, REAL, from_cpu, tag + IMPULS_TAG, 
-                                         cpugrid, &status);
-  MPI_Recv(p->kraft,   DIM * size, REAL, from_cpu, tag + KRAFT_TAG,  
-                                         cpugrid, &status);
 }

@@ -100,7 +100,7 @@ void maxwell(real temp)
 #endif
 
          tmp = sqrt(TEMP * MASSE(p,i));
-         typ = p->sorte[i];
+         typ = VSORTE(p,i);
          p->impuls X(i) = gasdev( &seed ) * tmp * (restrictions + typ)->x;
          p->impuls Y(i) = gasdev( &seed ) * tmp * (restrictions + typ)->y;
 #ifndef TWOD
@@ -192,7 +192,7 @@ void maxwell(real temp)
       cell *p;
       p = cell_array + CELLS(k);
       for (i=0; i<p->n; ++i) {
-         typ = p->sorte[i];
+         typ = VSORTE(p,i);
          p->impuls X(i) -= tot_impuls.x * (restrictions + typ)->x;
          p->impuls Y(i) -= tot_impuls.y * (restrictions + typ)->y;
 #ifndef TWOD

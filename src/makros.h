@@ -13,11 +13,13 @@
 /* these macros should allow to avoid MONOLJ in many places */
 #ifdef MONOLJ
 #define SORTE(cell,i) 0
+#define VSORTE(cell,i) 0
 #define NUMMER(cell,i) 0
 #define MASSE(cell,i) 1.0
 #define POTENG(cell,i) 0.0
 #else
 #define SORTE(cell,i) (((cell)->sorte[(i)])%ntypes)
+#define VSORTE(cell,i) ((cell)->sorte[(i)])
 #define NUMMER(cell,i) (cell)->nummer[(i)]
 #define MASSE(cell,i) (cell)->masse[(i)]
 #define POTENG(cell,i) (cell)->pot_eng[(i)]

@@ -406,8 +406,10 @@ void generate_lav()
 	  input->ort Y(0) = y + co;
 	  input->ort Z(0) = z + co;
 	  cellc = cell_coord(input->ort X(0),input->ort Y(0),input->ort Z(0));
+#ifndef MONOLJ
 	  input->nummer[0] = natoms;
 	  input->sorte[0] = typ;
+#endif
 	  num_sort[typ]++;
 #ifdef MPI
 	  to_cpu = cpu_coord(cellc);

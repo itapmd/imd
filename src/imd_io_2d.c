@@ -56,7 +56,7 @@ void read_atoms(str255 infilename)
   int to_cpu;
   int addnumber = 0;
 #ifdef MPI
-  real a[100];
+  real a[MAX_ATOM_SIZE];
   msgbuf mpibuf;
 #endif
 
@@ -302,7 +302,7 @@ void read_atoms(str255 infilename)
 void recv_atoms(void)
 {
   MPI_Status status;
-  real a[100];
+  real a[MAX_ATOM_SIZE];
   msgbuf mpibuf;   
   mpibuf.data = a;
 

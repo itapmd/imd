@@ -69,7 +69,7 @@ void move_atoms_nve(void)
         rot_energie_1 = SPRODN(p->dreh_impuls,i,p->dreh_impuls,i);
 #endif
 
-        sort = p->sorte[i];
+        sort = VSORTE(p,i);
 #ifdef FBC
         /* give virtual particles their extra force */
 	p->kraft X(i) += (fbc_forces + sort)->x;
@@ -286,7 +286,7 @@ void move_atoms_mik(void)
 
         kin_energie_1 = SPRODN(p->impuls,i,p->impuls,i);
 
-	sort = p->sorte[i];
+	sort = VSORTE(p,i);
 #ifdef FBC
 #ifdef ATNR /* debugging  stuff */
 	if(p->nummer[i]==ATNR) {
@@ -455,7 +455,7 @@ void move_atoms_nvt(void)
                                                   / p->traeg_moment[i];
 #endif
 
-	sort = p->sorte[i];
+	sort = VSORTE(p,i);
 	p->impuls X(i) = (p->impuls X(i) * reibung + timestep * p->kraft X(i)) 
                            * eins_d_reib * (restrictions + sort)->x;
         p->impuls Y(i) = (p->impuls Y(i) * reibung + timestep * p->kraft Y(i)) 
@@ -1137,7 +1137,7 @@ void move_atoms_stm(void)
         kin_energie_1 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
 
         /* new momenta */
-	sort=(p->sorte[i]);
+	sort = VSORTE(p,i);
 	p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i))
                           * eins_d_reib * (restrictions + sort)->x;
         p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i))

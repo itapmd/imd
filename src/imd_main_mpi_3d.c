@@ -518,56 +518,6 @@ vektor global_pbc(int i, int j, int k)
 
 /******************************************************************************
 *
-* set up mpi
-*
-******************************************************************************/
-
-void init_mpi(int argc,char *argv[])
-{
-  ivektor nbcoord;
-
-  /* Initialize MPI */
-  MPI_Init(&argc,&argv);
-  MPI_Comm_size(MPI_COMM_WORLD,&num_cpus);
-  MPI_Comm_rank(MPI_COMM_WORLD,&myid);
-
-  if (0 == myid) { 
-    printf("%s\n", argv[0]);
-    printf("Starting up MPI on %d nodes.\n",num_cpus);
-  };
-
-  /* Setup send/receive buffers */
-  send_buf_north.n_max = 0;
-  send_buf_south.n_max = 0;
-  send_buf_east.n_max  = 0;
-  send_buf_west.n_max  = 0;
-  send_buf_up.n_max    = 0;
-  send_buf_down.n_max  = 0;
-  recv_buf_north.n_max = 0;
-  recv_buf_south.n_max = 0;
-  recv_buf_east.n_max  = 0;
-  recv_buf_west.n_max  = 0;
-  recv_buf_up.n_max    = 0;
-  recv_buf_down.n_max  = 0;
-
-}
-
-
-/******************************************************************************
-*
-* shut down mpi
-*
-******************************************************************************/
-
-void shutdown_mpi(void)
-{
-  MPI_Barrier(MPI_COMM_WORLD);  /* Wait for all processes to arrive */
-  MPI_Finalize();               /* Shutdown */
-}
-
-
-/******************************************************************************
-*
 * send_atoms
 *
 * This sends the atom positions to the neighbouring cpus using

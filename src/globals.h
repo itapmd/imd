@@ -34,6 +34,8 @@
 #define nullvektor3d { 0.0, 0.0, 0.0 }
 #define nullivektor3d { 0, 0, 0 }
 
+#define nullbuffer  {NULL, 0, 0 }
+
 #else
 #define EXTERN extern /* declare them extern otherwise */
 #define INIT(data)
@@ -192,18 +194,18 @@ EXTERN int parallel_output INIT(0);       /* Flag for parallel output */
 EXTERN int parallel_input  INIT(1);       /* Flag for parallel input */
 
 /* Send and Receive buffers */
-EXTERN msgbuf send_buf_east;
-EXTERN msgbuf send_buf_west;
-EXTERN msgbuf send_buf_north;
-EXTERN msgbuf send_buf_south;
-EXTERN msgbuf send_buf_up;
-EXTERN msgbuf send_buf_down;
-EXTERN msgbuf recv_buf_east;
-EXTERN msgbuf recv_buf_west;
-EXTERN msgbuf recv_buf_north;
-EXTERN msgbuf recv_buf_south;
-EXTERN msgbuf recv_buf_up;
-EXTERN msgbuf recv_buf_down;
+EXTERN msgbuf send_buf_east  INIT(nullbuffer);
+EXTERN msgbuf send_buf_west  INIT(nullbuffer);
+EXTERN msgbuf send_buf_north INIT(nullbuffer);
+EXTERN msgbuf send_buf_south INIT(nullbuffer);
+EXTERN msgbuf send_buf_up    INIT(nullbuffer);
+EXTERN msgbuf send_buf_down  INIT(nullbuffer);
+EXTERN msgbuf recv_buf_east  INIT(nullbuffer);
+EXTERN msgbuf recv_buf_west  INIT(nullbuffer);
+EXTERN msgbuf recv_buf_north INIT(nullbuffer);
+EXTERN msgbuf recv_buf_south INIT(nullbuffer);
+EXTERN msgbuf recv_buf_up    INIT(nullbuffer);
+EXTERN msgbuf recv_buf_down  INIT(nullbuffer);
 
 /* Neighbours */
 EXTERN int nbwest, nbeast, nbnorth, nbsouth, nbup, nbdown; /* Faces */

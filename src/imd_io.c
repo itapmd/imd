@@ -203,15 +203,15 @@ void write_cell_pic(FILE *out, cell *p)
     picbuf.E_kin = (float) SPRODN(p->impuls,i,p->impuls,i)/(2*MASSE(p,i));
 #ifdef DISLOC
     if (Epot_diff==1)
-      picbuf.E_pot = (float) p->pot_eng[i] - p->Epot_ref[i];
+      picbuf.E_pot = (float) POTENG(p,i) - p->Epot_ref[i];
     else
 #endif
 #if defined(ORDPAR) && !defined(TWOD)
     picbuf.E_pot = (p->nbanz[i]==0) ? 0 : p->pot_eng[i]/p->nbanz[i];
 #else
-    picbuf.E_pot = p->pot_eng[i];
+    picbuf.E_pot = POTENG(p,i);
 #endif
-    picbuf.type  = (integer) SORTE(p,i);
+    picbuf.type  = (integer) VSORTE(p,i);
     fwrite(&picbuf, sizeof(picbuf), 1, out); 
   }
 }
