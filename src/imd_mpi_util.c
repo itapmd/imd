@@ -161,8 +161,15 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
   to->data[ to->n++ ] = from->heat_cond[index];
 #endif
 #ifdef STRESS_TENS
-  /* stress tensor is not sent */
+  to->data[ to->n++ ] = from->presstens[index].xx;   
+  to->data[ to->n++ ] = from->presstens[index].yy;   
+  to->data[ to->n++ ] = from->presstens[index].xy;   
+#ifndef TWOD
+  to->data[ to->n++ ] = from->presstens[index].zz;   
+  to->data[ to->n++ ] = from->presstens[index].yz;   
+  to->data[ to->n++ ] = from->presstens[index].zx;   
 #endif
+#endif /* STRESS_TENS */
   to->data[ to->n++ ] = from->impuls X(index); 
   to->data[ to->n++ ] = from->impuls Y(index); 
 #ifndef TWOD
@@ -244,8 +251,15 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
       from->heatcond[index] = from->heatcond[from->n]; 
 #endif
 #ifdef STRESS_TENS
-      /* stress tensor need not be copied */
+      from->presstens[index].xx = from->presstens[from->n].xx;   
+      from->presstens[index].yy = from->presstens[from->n].yy;   
+      from->presstens[index].xy = from->presstens[from->n].xy;   
+#ifndef TWOD
+      from->presstens[index].zz = from->presstens[from->n].zz;   
+      from->presstens[index].yz = from->presstens[from->n].yz;   
+      from->presstens[index].zx = from->presstens[from->n].zx;   
 #endif
+#endif /* STRESS_TENS */
       from->impuls X(index) = from->impuls X(from->n); 
       from->impuls Y(index) = from->impuls Y(from->n); 
 #ifndef TWOD
@@ -352,8 +366,15 @@ void process_buffer(msgbuf *b, cell *p)
     input->heatcond[0]     = b->data[j++];
 #endif
 #ifdef STRESS_TENS
-    /* don't send stress tensor */
+    input->presstens[0].xx = b->data[j++];   
+    input->presstens[0].yy = b->data[j++];   
+    input->presstens[0].xy = b->data[j++];   
+#ifndef TWOD
+    input->presstens[0].zz = b->data[j++];   
+    input->presstens[0].yz = b->data[j++];   
+    input->presstens[0].zx = b->data[j++];   
 #endif
+#endif /* STRESS_TENS */
     input->impuls X(0)     = b->data[j++];
     input->impuls Y(0)     = b->data[j++];
 #ifndef TWOD
