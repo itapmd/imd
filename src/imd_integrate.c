@@ -109,6 +109,14 @@ void move_atoms_nve(void)
           };
 #endif /* MONOLJ */
 
+#ifdef STRESS_TENS
+          p-> presstens X(i) += p->impuls X(i) * p->impuls X(i) / p->masse[i];
+          p-> presstens Y(i) += p->impuls Y(i) * p->impuls Y(i) / p->masse[i];
+#ifndef TWOD
+          p-> presstens Z(i) += p->impuls Z(i) * p->impuls Z(i) / p->masse[i];
+#endif
+#endif
+
         }; /* for i */
         
       }; /* for all cells */
@@ -218,8 +226,15 @@ void move_atoms_mik(void)
 #else
           tmp += (kin_energie_1 + kin_energie_2) / ( 4.0 * p->masse[i] );
 #endif
-	};
-      };
+#ifdef STRESS_TENS
+          p-> presstens X(i) += p->impuls X(i) * p->impuls X(i) / p->masse[i];
+          p-> presstens Y(i) += p->impuls Y(i) * p->impuls Y(i) / p->masse[i];
+#ifndef TWOD
+          p-> presstens Z(i) += p->impuls Z(i) * p->impuls Z(i) / p->masse[i];
+#endif
+#endif
+	}; /* for all i */
+      }; /* for all cells */
 
 #ifdef MPI
   /* Add kinetic energy form all cpus */
@@ -404,8 +419,15 @@ void move_atoms_nvt(void)
 	    p->impuls Z(i) =0.0;
 #endif
 	  };
-        };
-      }
+#ifdef STRESS_TENS
+          p-> presstens X(i) += p->impuls X(i) * p->impuls X(i) / p->masse[i];
+          p-> presstens Y(i) += p->impuls Y(i) * p->impuls Y(i) / p->masse[i];
+#ifndef TWOD
+          p-> presstens Z(i) += p->impuls Z(i) * p->impuls Z(i) / p->masse[i];
+#endif
+#endif
+        }; /* for all i */
+      }; /* for all cells */
   
   tot_kin_energy = (kin_energie_1 + kin_energie_2) / 4.0;
 
@@ -495,6 +517,14 @@ void move_atoms_npt_iso(void)
 #ifndef TWOD
           tmp = p->impuls Z(i) * (1.0 + box_size.x) / (2.0 * p->masse[i]);
 	  p->ort Z(i) = box_size.x * ( p->ort Z(i) + timestep * tmp );
+#endif
+
+#ifdef STRESS_TENS
+          p-> presstens X(i) += p->impuls X(i) * p->impuls X(i) / p->masse[i];
+          p-> presstens Y(i) += p->impuls Y(i) * p->impuls Y(i) / p->masse[i];
+#ifndef TWOD
+          p-> presstens Z(i) += p->impuls Z(i) * p->impuls Z(i) / p->masse[i];
+#endif
 #endif
 
 	};
@@ -647,6 +677,14 @@ void move_atoms_npt_axial(void)
 #ifndef TWOD
           tmp = p->impuls Z(i) * (1.0 + box_size.z) / (2.0 * p->masse[i]);
 	  p->ort Z(i) = box_size.z * (p->ort Z(i) + timestep * tmp);
+#endif
+
+#ifdef STRESS_TENS
+          p-> presstens X(i) += p->impuls X(i) * p->impuls X(i) / p->masse[i];
+          p-> presstens Y(i) += p->impuls Y(i) * p->impuls Y(i) / p->masse[i];
+#ifndef TWOD
+          p-> presstens Z(i) += p->impuls Z(i) * p->impuls Z(i) / p->masse[i];
+#endif
 #endif
 
 	};
@@ -817,8 +855,15 @@ void move_atoms_and(void)
 	    p->impuls Z(i) =0.0;
 #endif
 	  };
-	};
-      };
+#ifdef STRESS_TENS
+          p-> presstens X(i) += p->impuls X(i) * p->impuls X(i) / p->masse[i];
+          p-> presstens Y(i) += p->impuls Y(i) * p->impuls Y(i) / p->masse[i];
+#ifndef TWOD
+          p-> presstens Z(i) += p->impuls Z(i) * p->impuls Z(i) / p->masse[i];
+#endif
+#endif
+	}; /* for all i */
+      }; /* for all cells */
 
 #ifdef MPI
   /* Add kinetic energy for all CPUs */
@@ -966,9 +1011,16 @@ void move_atoms_frac(void)
 	    p->impuls Z(i) =0.0;
 #endif
 	  };
-	};
+#ifdef STRESS_TENS
+          p-> presstens X(i) += p->impuls X(i) * p->impuls X(i) / p->masse[i];
+          p-> presstens Y(i) += p->impuls Y(i) * p->impuls Y(i) / p->masse[i];
+#ifndef TWOD
+          p-> presstens Z(i) += p->impuls Z(i) * p->impuls Z(i) / p->masse[i];
+#endif
+#endif
+	}; /*for all i*/
 
-      };
+      }; /* for all cells */
 
 #ifdef MPI
   /* Add kinetic energy for all CPUs */
@@ -1084,8 +1136,15 @@ void move_atoms_pull(void)
 	    p->impuls Z(i) =0.0;
 #endif
 	  };
-	};
-      };
+#ifdef STRESS_TENS
+          p-> presstens X(i) += p->impuls X(i) * p->impuls X(i) / p->masse[i];
+          p-> presstens Y(i) += p->impuls Y(i) * p->impuls Y(i) / p->masse[i];
+#ifndef TWOD
+          p-> presstens Z(i) += p->impuls Z(i) * p->impuls Z(i) / p->masse[i];
+#endif
+#endif
+	}; /* for all i */
+      }; /* for all cells */
 
 #ifdef MPI
   /* Add kinetic energy for all CPUs */
@@ -1269,33 +1328,40 @@ void move_atoms_nvx(void)
 #endif
         {
 #ifdef TWOD
-  	   p = PTR_2D_V(cell_array, r, s,    cell_dim);
+	  p = PTR_2D_V(cell_array, r, s,    cell_dim);
 #else
-  	   p = PTR_3D_V(cell_array, r, s, t, cell_dim);
+	  p = PTR_3D_V(cell_array, r, s, t, cell_dim);
 #endif
-           for (i=0; i<p->n; ++i) {
-
-              /* which layer? */
-              num = scale * p->ort X(i);
-              if (num < 0)             num = 0;
-              if (num >= tran_nlayers) num = tran_nlayers-1;
-
-              /* rescale momenta */
- 	      if (num == 0) {
-                 p->impuls X(i) = (p->impuls X(i)-tot_impuls_left.x)*rescale;
-                 p->impuls Y(i) = (p->impuls Y(i)-tot_impuls_left.y)*rescale;
+	  for (i=0; i<p->n; ++i) {
+	    
+	    /* which layer? */
+	    num = scale * p->ort X(i);
+	    if (num < 0)             num = 0;
+	    if (num >= tran_nlayers) num = tran_nlayers-1;
+	    
+	    /* rescale momenta */
+	    if (num == 0) {
+	      p->impuls X(i) = (p->impuls X(i)-tot_impuls_left.x)*rescale;
+	      p->impuls Y(i) = (p->impuls Y(i)-tot_impuls_left.y)*rescale;
 #ifndef TWOD
-                 p->impuls Z(i) = (p->impuls Z(i)-tot_impuls_left.z)*rescale;
+	      p->impuls Z(i) = (p->impuls Z(i)-tot_impuls_left.z)*rescale;
 #endif
-               } else if (num == nhalf) {
-                 p->impuls X(i) = (p->impuls X(i)-tot_impuls_right.x)*Rescale;
-                 p->impuls Y(i) = (p->impuls Y(i)-tot_impuls_right.y)*Rescale;
+	    } else if (num == nhalf) {
+	      p->impuls X(i) = (p->impuls X(i)-tot_impuls_right.x)*Rescale;
+	      p->impuls Y(i) = (p->impuls Y(i)-tot_impuls_right.y)*Rescale;
 #ifndef TWOD
-                 p->impuls Z(i) = (p->impuls Z(i)-tot_impuls_right.z)*Rescale;
+	      p->impuls Z(i) = (p->impuls Z(i)-tot_impuls_right.z)*Rescale;
 #endif
- 	      }
-           }
-        }
+	    }
+#ifdef STRESS_TENS
+	    p-> presstens X(i) += p->impuls X(i) * p->impuls X(i) / p->masse[i];
+	    p-> presstens Y(i) += p->impuls Y(i) * p->impuls Y(i) / p->masse[i];
+#ifndef TWOD
+	    p-> presstens Z(i) += p->impuls Z(i) * p->impuls Z(i) / p->masse[i];
+#endif
+#endif
+	  }; /* for all i */
+        }; /* for all cells */
 }
 
 #else

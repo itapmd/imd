@@ -176,6 +176,10 @@ void write_add_corr(int it, int steps, unsigned seqnum);
 void write_temp(int steps);
 #endif
 
+#ifdef STRESS_TENS
+void write_press(int steps);
+#endif
+
 /* generate quasicrystal */
 #ifdef QUASI
 real r2 (real ai, real aj, real bi, real bj, real b, real ci, real cj,

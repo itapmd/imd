@@ -83,6 +83,9 @@ typedef struct {
 #ifdef TRANSPORT
     real        *heatcond;
 #endif
+#ifdef STRESS_TENS
+    real        *presstens;
+#endif
     integer     *nummer;
 #endif
     real        *impuls;

@@ -628,6 +628,10 @@ void getparamfile(char *paramfname, int sim)
        /* shock elong (in x dir.) */
        getparam("shock_elong",&shock_elong,PARAM_REAL,1,1); 
     }
+    else if (strcasecmp(token,"shock_mode")==0) { 
+       /* shock elong (in x dir.) */
+       getparam("shock_mode",&shock_mode,PARAM_INT,1,1); 
+    }
 #endif
 #ifdef MPI
     else if (strcasecmp(token,"cpu_dim")==0) {
@@ -692,6 +696,16 @@ void getparamfile(char *paramfname, int sim)
      else if (strcasecmp(token, "tran_interval")==0){
       /*number of steps between temp. writes  */
       getparam("tran_interval", &tran_interval, PARAM_INTEGER, 1,1);
+    }
+#endif
+#ifdef STRESS_TENS
+    else if (strcasecmp(token, "press_nlayers")==0){
+      /*number of layer  */
+      getparam("press_nlayers", &press_nlayers, PARAM_INTEGER, 1,1);
+    }
+     else if (strcasecmp(token, "press_interval")==0){
+      /*number of steps between press. writes  */
+      getparam("press_interval", &press_interval, PARAM_INTEGER, 1,1);
     }
 #endif
 #ifdef DISLOC
@@ -888,6 +902,14 @@ void check_parameters_complete()
 	}
 	if (tran_nlayers == 0){
 		error ("tran_nlayers is zero. \n");
+        }
+#endif
+#ifdef STRESS_TENS
+	if (press_interval == 0){
+		error ("press_interval is zero. \n");
+	}
+	if (press_nlayers == 0){
+		error ("press_nlayers is zero. \n");
         }
 #endif
 #ifdef MPI
@@ -1101,6 +1123,11 @@ void broadcast_params() {
   MPI_Bcast( &tran_interval, 1, INTEGER,  0, MPI_COMM_WORLD);
 #endif
 
+#ifdef STRESS_TENS
+  MPI_Bcast( &press_nlayers,  1, INTEGER,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &press_interval, 1, INTEGER,  0, MPI_COMM_WORLD);
+#endif
+
 #ifdef FRAC
   MPI_Bcast( &stadion   , DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &gamma_bar , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
@@ -1115,6 +1142,7 @@ void broadcast_params() {
   MPI_Bcast( &shock_strip, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &shock_speed, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &shock_elong, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &shock_mode, 1, INTEGER, 0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef FRAC

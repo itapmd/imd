@@ -218,6 +218,10 @@ void main_loop(void)
     if ((tran_interval > 0) && (0 == steps%tran_interval)) write_temp(steps);
 #endif
 
+#ifdef STRESS_TENS
+    if ((press_interval > 0) && (0 == steps%press_interval)) write_press(steps);
+#endif
+
 #ifdef USE_SOCKETS
     if ((socket_int>0) && (0==steps%socket_int)) check_socket(steps);
 #endif

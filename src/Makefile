@@ -100,9 +100,17 @@ CFLAGS_i386-linux		= -DRISC -O3 -m486
 CFLAGS_i386-linux_DEBUG		= -DRISC -g -m486
 CFLAGS_i386-FreeBSD		= -DRISC -O3 -m486
 CFLAGS_i386-FreeBSD_DEBUG	= -DRISC -g -m486
+# tcsh-Version
+CFLAGS_i486-linux		= -DRISC -O3 -m486
+CFLAGS_i486-linux_DEBUG		= -DRISC -g -m486
+CFLAGS_i486-FreeBSD		= -DRISC -O3 -m486
+CFLAGS_i486-FreeBSD_DEBUG	= -DRISC -g -m486
 # Linux/FreeBSD mit bash
 CFLAGS_i386			= -DRISC -O3 -m486
 CFLAGS_i386_DEBUG		= -DRISC -g -m486
+# Linux/FreeBSD mit bash
+CFLAGS_i486			= -DRISC -O3 -m486
+CFLAGS_i486_DEBUG		= -DRISC -g -m486
 CFLAGS_sx4			= -DRISC -Oinfomsg,div,move,nooverlap -T1 -pvctl,fullmsg -DSX4
 CFLAGS_sx4_DEBUG		= -DRISC -g -T1 -DSX4
 CFLAGS_t3e			= -Dt3e -DRISC -O3 -haggress,report=isf -X1
@@ -119,9 +127,14 @@ CFLAGS_GCC_iris4d		= -DRISC -mcpu=r4000 -mips2 -O2
 CFLAGS_GCC_iris4d_DEBUG		= -DRISC -g
 CFLAGS_GCC_i386-linux		= -DRISC -O3 -m486
 CFLAGS_GCC_i386-linux_DEBUG	= -DRISC -m486 -g
+CFLAGS_GCC_i486-linux		= -DRISC -O3 -m486
+CFLAGS_GCC_i486-linux_DEBUG	= -DRISC -m486 -g
 # Pentium GCC (pgcc) mit bash
 CFLAGS_GCC_i386			= -DRISC -O3 -mpentium
 CFLAGS_GCC_i386_DEBUG		= -DRISC -mpentium -g
+# Pentium GCC (pgcc) mit bash
+CFLAGS_GCC_i486			= -DRISC -O3 -mpentium
+CFLAGS_GCC_i486_DEBUG		= -DRISC -mpentium -g
 
 # Generic MPI
 
@@ -142,6 +155,8 @@ CFLAGS_MPI_alpha		= -DMPI -O3
 CFLAGS_MPI_iris4d		= -DMPI -O3
 CFLAGS_MPI_i386-linux		= -DMPI -O3 -m486
 CFLAGS_MPI_i386-linux_DEBUG	= -DMPI -O -g -Wall -m486
+CFLAGS_MPI_i486-linux		= -DMPI -O3 -m486
+CFLAGS_MPI_i486-linux_DEBUG	= -DMPI -O -g -Wall -m486
 
 # PACX MPI
 
@@ -169,9 +184,15 @@ CC_RISC_cray-t3e		= cc
 # Linux mit tcsh
 CC_RISC_i386-linux		= gcc
 CC_RISC_i386-linux_DEBUG	= gcc
+# Linux mit tcsh
+CC_RISC_i486-linux		= gcc
+CC_RISC_i486-linux_DEBUG	= gcc
 # Linux mit bash
 CC_RISC_i386 			= gcc
 CC_RISC_i386_DEBUG		= gcc
+# Linux mit bash
+CC_RISC_i486 			= gcc
+CC_RISC_i486_DEBUG		= gcc
 # FreeBSD mit tcsh
 CC_RISC_i386-FreeBSD		= gcc
 CC_RISC_i386-FreeBSD_DEBUG	= gcc
@@ -181,6 +202,8 @@ CC_GCC_alpha_debug		= gcc
 CC_GCC_iris4d			= gcc
 CC_GCC_i386-linux		= /app/bin/gcc
 CC_GCC_i386			= /usr/local/bin/gcc
+CC_GCC_i486-linux		= /app/bin/gcc
+CC_GCC_i486			= /usr/local/bin/gcc
 
 #CC_MPI_paragon			= mpicc
 CC_MPI_paragon			= cc
@@ -193,6 +216,7 @@ CC_MPI_c90			= cc -Tcray_t3d
 CC_MPI_HITACHI			= cc
 CC_MPI_alpha			= hcc
 CC_MPI_i386-linux		= hcc
+CC_MPI_i486-linux		= hcc
 CC_MPI_iris4d			= hcc
 
 CC_PACX_paragon			= cc
@@ -213,6 +237,7 @@ MPILIBS_HITACHI			= -L/usr/local/mpi/lib/hmpp2/cml -lmpi
 MPILIBS_alpha			= -lmpi
 MPILIBS_iris4d			= -lmpi
 MPILIBS_i386-linux		= -lmpi
+MPILIBS_i486-linux		= -lmpi
 
 PACXLIBS_t3e			= -L ${PACXDIR}/lib -lpacx -llzo -lmpi
 PACXLIBS_cray-t3e		= -L ${PACXDIR}/lib -lpacx -llzo -lmpi
@@ -226,8 +251,8 @@ LIBS_PROF_cray-t3e 		:= -lapp
 # currently, there are CLFAGS for the following HOSTTYPES:
 # 
 # iris4d		SGI Irix 5.3		RISC MPI
-# i386-linux		SGI Irix 5.3		RISC MPI
-# decstation            DEC Ultirx 4.4          RISC MPI
+# i386-linux		Linux    		RISC MPI
+# decstation            DEC Ultrix 4.4          RISC MPI
 # alpha                 DEC UNIX 3.2            RISC
 # rs6000                AIX (Power2 arch)       RISC MPI
 # paragon               Intel Paragon                MPI
@@ -416,6 +441,7 @@ endif
 
 ifneq (,$(findstring shock,${MAKETARGET}))
 CFLAGS += -DSHOCK
+SOURCES += ${TRANSSOURCES}
 endif
 
 ifneq (,$(findstring mik,${MAKETARGET}))

@@ -185,6 +185,9 @@ void alloc_cell(cell *thecell, int count)
 #ifdef TRANSPORT
     newcell.heatcond = NULL;
 #endif
+#ifdef STRESS_TENS
+    newcell.presstens = NULL;
+#endif
     newcell.sorte  = NULL;
     newcell.masse  = NULL;
 #endif
@@ -222,6 +225,9 @@ void alloc_cell(cell *thecell, int count)
 #ifdef TRANSPORT
     newcell.heatcond = (real *) malloc(count*sizeof(real));
 #endif
+#ifdef STRESS_TENS
+    newcell.presstens = (real *) malloc(count*DIM*sizeof(real));
+#endif
     newcell.sorte  = (shortint* ) malloc(count * sizeof(shortint));
     newcell.masse  = (real    * ) malloc(count * sizeof(real)    );
 #endif
@@ -239,6 +245,9 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef TRANSPORT
         || (NULL == newcell.heatcond)
+#endif
+#ifdef STRESS_TENS
+        || (NULL == newcell.presstens)
 #endif
         || (NULL == newcell.sorte)
         || (NULL == newcell.masse)
@@ -277,6 +286,9 @@ void alloc_cell(cell *thecell, int count)
 #ifdef TRANSPORT
       memcpy(newcell.heatcond,  thecell->heatcond,  thecell->n * sizeof(real));
 #endif
+#ifdef STRESS_TENS
+      memcpy(newcell.presstens,  thecell->presstens,  thecell->n * DIM * sizeof(real));
+#endif
       memcpy(newcell.sorte ,  thecell->sorte,   thecell->n * sizeof(shortint));
       memcpy(newcell.masse ,  thecell->masse,   thecell->n * sizeof(real));
 #endif
@@ -299,6 +311,9 @@ void alloc_cell(cell *thecell, int count)
 #ifdef TRANSPORT
     free(thecell->heatcond);
 #endif
+#ifdef STRESS_TENS
+    free(thecell->presstens);
+#endif
     free(thecell->sorte);
     free(thecell->masse);
 #endif
@@ -320,6 +335,9 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef TRANSPORT
   thecell->heatcond = newcell.heatcond;
+#endif
+#ifdef STRESS_TENS
+  thecell->presstens = newcell.presstens;
 #endif
   thecell->sorte  = newcell.sorte;
   thecell->masse  = newcell.masse;

@@ -185,6 +185,25 @@ void do_forces(cell *ap, cell *aq, vektor apbc)
 #else
       tmp_virial     -= radius2 * pot_grad;  
 #endif
+	/* negativ, da pot_grad gleich force !! */
+#ifdef STRESS_TENS
+
+      printf("here I am");
+
+      p->presstens X(i) -= d.x * d.x * pot_grad;
+      p->presstens Y(i) -= d.y * d.y * pot_grad;
+      q->presstens X(i) -= d.x * d.x * pot_grad;
+      q->presstens Y(i) -= d.y * d.y * pot_grad;
+#ifndef TWOD
+      p->presstens Z(i) -= d.z * d.z * pot_grad;
+      q->presstens Z(i) -= d.z * d.z * pot_grad;
+#endif
+#endif
+#ifdef TRANSPORT
+        p->heatcond[i] += pot_zwi - radius2 * pot_grad;
+        q->heatcond[j] += pot_zwi - radius2 * pot_grad;
+#endif
+
 
     };
   };
@@ -410,7 +429,17 @@ void do_forces(cell *p, cell *q, vektor pbc)
 #else
         tmp_virial     -= radius2 * pot_grad;  
 #endif
-
+	/* negativ, da pot_grad gleich force !! */
+#ifdef STRESS_TENS
+      p->presstens X(i) -= d.x * d.x * pot_grad;
+      p->presstens Y(i) -= d.y * d.y * pot_grad;
+      q->presstens X(j) -= d.x * d.x * pot_grad;
+      q->presstens Y(j) -= d.y * d.y * pot_grad;
+#ifndef TWOD
+      p->presstens Z(i) -= d.z * d.z * pot_grad;
+      q->presstens Z(j) -= d.z * d.z * pot_grad;
+#endif
+#endif
 #ifdef TRANSPORT
         p->heatcond[i] += pot_zwi - radius2 * pot_grad;
         q->heatcond[j] += pot_zwi - radius2 * pot_grad;

@@ -466,9 +466,10 @@ void write_properties(int steps)
 #ifndef MC
   fprintf(out," %10.4e", (double)part_kin_energy);
   fprintf(out," %10.4e", (double)pressure);
-#ifdef TRANSPORT
-  fprintf(out," %10.4e", (double)heat_cond); 
-#endif
+  /* The heat conduction is now written to the file tempdist
+     #ifdef TRANSPORT
+     fprintf(out," %10.4e", (double)heat_cond); 
+     #endif */
 #else
   fprintf(out," %10.4e", (double)(mc_accept/(real)mc_count));
   mc_accept = (real)0;

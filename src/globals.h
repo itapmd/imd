@@ -318,7 +318,7 @@ EXTERN integer ***GS INIT(NULL);    /* histogram array for self correlation */
 EXTERN integer correl_omode INIT(1); /* output mode for histogram */
 #endif
 
-#ifdef TRANSPORT
+#if defined(TRANSPORT)
 EXTERN real dTemp_start   INIT(0.0);   /* deviation of starting heat bath 
                                           temperature from mean temp. */
 EXTERN real dTemp_end 	  INIT(0.0);   /* deviation of final heat bath 
@@ -328,6 +328,12 @@ EXTERN real tran_Tright   INIT(0.0);   /* temperature of the right=cold  wall*/
 EXTERN integer tran_interval INIT(0);  /* Intervalle der Temperaturaufz.*/
 EXTERN integer tran_nlayers  INIT(0);  /* number of layers*/
 EXTERN real heat_cond     INIT(0.0);   /* heat conductivity */
+#endif
+
+#ifdef STRESS_TENS
+EXTERN integer press_interval INIT(0);  /* Intervalle der Aufzeichnung */ 
+                                          /* des Drucktensors */
+EXTERN integer press_nlayers INIT(0);     /* Zahl der Schichten */
 #endif
 
 /* I/O via sockets */
@@ -399,6 +405,7 @@ EXTERN cell *input;                                /* save data */
 EXTERN real shock_strip;                          /* width of shock strip */
 EXTERN real shock_speed;                          /* velocity in shock strip */
 EXTERN real shock_elong;                          /* atom elongation */
+EXTERN int shock_mode;                           /* type of shock */
 #endif
 
 EXTERN int ensemble INIT(ENS_EMPTY);    /* active ensemble type */

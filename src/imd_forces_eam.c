@@ -192,6 +192,18 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 #else
         tmp_virial     -= radius2 * pot_grad;  
 #endif
+	/* negativ, da pot_grad gleich force !! */
+#ifdef STRESS_TENS
+	p->presstens X(i) -= d.x * d.x * pot_grad;
+	p->presstens Y(i) -= d.y * d.y * pot_grad;
+	q->presstens X(j) -= d.x * d.x * pot_grad;
+	q->presstens Y(j) -= d.y * d.y * pot_grad;
+#ifndef TWOD
+	p->presstens Z(i) -= d.z * d.z * pot_grad;
+	q->presstens Z(j) -= d.z * d.z * pot_grad;
+#endif
+#endif
+
 
       }; /* if 1. Cutoff */
 
@@ -356,6 +368,18 @@ void do_forces_eam_2(cell *p, cell *q, vektor pbc)
 #else
       tmp_virial     -= radius2 * eam_pot_grad;  
 #endif
+	/* negativ, da pot_grad gleich force !! */
+#ifdef STRESS_TENS
+      p->presstens X(i) -= d.x * d.x * eam_pot_grad;
+      p->presstens Y(i) -= d.y * d.y * eam_pot_grad;
+      q->presstens X(j) -= d.x * d.x * eam_pot_grad;
+      q->presstens Y(j) -= d.y * d.y * eam_pot_grad;
+#ifndef TWOD
+      p->presstens Z(i) -= d.z * d.z * eam_pot_grad;
+      q->presstens Z(j) -= d.z * d.z * eam_pot_grad;
+#endif
+#endif
+
 
     }; /* for j */
 

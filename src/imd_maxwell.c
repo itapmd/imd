@@ -115,15 +115,25 @@ void maxwell(real temp)
          tot_impuls.z += p->impuls Z(i);
 #endif
 #ifdef SHOCK
-         if ( p->ort X(i) < strip/2 + shock_strip ) 
-         {	     
-           if ( shock_speed > 0 ) p->impuls X(i) = shock_speed * p->masse[i];
-           if ( shock_elong > 0 ) { 
-              p->ort X(i) += shock_elong 
-                           + ( shock_strip + strip/2 - p->ort X(i) )
-                           * shock_elong / shock_strip;
-           }
-         }
+	 if (shock_mode != 2) shock_mode = 1;
+	 if (shock_mode == 1) {
+	   if ( p->ort X(i) < strip/2 + shock_strip ) 
+	     {	     
+	       if ( shock_speed > 0 ) p->impuls X(i) += 
+					shock_speed * p->masse[i];
+	       if ( shock_elong > 0 ) { 
+		 p->ort X(i) += shock_elong 
+		   + ( shock_strip + strip/2 - p->ort X(i) )
+		   * shock_elong / shock_strip;
+	       }
+	     }
+	 }
+	 if (shock_mode == 2) {
+	   if ( p->ort X(i) < strip/2 + shock_strip ) 
+	     p->impuls X(i) += shock_speed * p->masse[i];
+	   else
+	     p->impuls X(i) -= shock_speed * p->masse[i];
+	 }
 #endif
        }
      }

@@ -64,6 +64,11 @@ void calc_forces(void)
 #ifdef TRANSPORT
       p->heatcond[i] = 0.0;
 #endif     
+#ifdef STRESS_TENS
+      p->presstens X(i) = 0.0;
+      p->presstens Y(i) = 0.0;
+      p->presstens Z(i) = 0.0;
+#endif     
 #ifndef MONOLJ
       p->pot_eng[i] = 0.0;
 #endif

@@ -69,8 +69,6 @@
 #define TRANS_PBC
 #endif
 
-
-
 /* Stadium damping for fracture */
 
 #ifdef FRAC
@@ -106,6 +104,9 @@
 
 #endif
 
+#ifdef SHOCK
+#define STRESS_TENS
+#endif
 
 /******************************************************************************
 *
