@@ -303,32 +303,43 @@ of the x-coordinate only, and averaged over the y- and z-coordinate
 (in 3d). For that purpose, the second and third component of
 <tt>press_dim</TT> have to be set to 1. 
 <A NAME="FBC">
-<P><LI><B>FBC</B><P>
+<P><LI><B>fbc</B><P>
 </A>
 Force Boundary Conditions. If set, one can define extra forces that
 are added on special atoms. To destinguish these atoms the concept of
 'virtual' atomtypes is introduced. A virtual atom of type v has the
 same physical properties as an atom of (real) type v modulo ntypes.
-total_types is the number of real atomtypes + virtual atom types.<p>
-For each virtual atomtype one can declare in the parameter file the
-starting and the end value of an extra force vector. The values between
-extra_startforce and extra_endforce are linearly interpolated (like
-the temperature). For mik simulations one specifies no extra_endforce,
-but an force increment extra_dforce that is added, when the kinetic
-energy per atom drops under fbc_ekin_threshold or after fbc_waitsteps
-(there is also a parameter fbc_annealsteps (like in deform)).<p> 
+The parameter <TT>total_types</TT> must be set to the number of real
+atomtypes + virtual atom types.  <P> For each virtual atomtype one can
+declare in the parameter file the starting and the end value of an
+extra force vector. The parameters <TT>extra_startforce</TT> and
+<TT>extra_startforce</TT> expect d+1 integer numbers where d is the
+sample dimension. The first integer number specifies the virtual atom
+type, the other d specify the extra force vector.The values between
+<TT>extra_startforce</TT> and <TT>extra_endforce</TT> are linearly
+interpolated (like the temperature). For mik simulations one specifies
+no <TT>extra_endforce</TT>, but a force increment
+<TT>extra_dforce</TT> that is added each time the kinetic energy per
+atom drops under <TT>fbc_ekin_threshold</TT> or after
+<TT>fbc_waitsteps</TT> (there is also a parameter
+<TT>fbc_annealsteps</TT>, see the deform option for details).  <P>
 This option should work with risc and mpi versions and at least with
-the NVE, NVT, AND and MIK integrators, 
-and also with the 2d and eam2 options.<p>
-There is also the posibility to restrict the movement of atomtypes to
-certain directions. Therefore one defines a restrictionvector for each
-type, with elements equal to zero in the forbidden directions. 
-This is still a little bit experimantal - it requires a responsible
-user: the begining velocities should be 0 and the temperature should
-be corrected for non existing degrees of freedom. One should also keep
-in mind, that restricting the motion of some atoms corresponds to a
-force which might affect the total impuls.
-
+the NVE, NVT, AND and MIK integrators, and also with the 2d and eam2
+options.<p> There is also the possibility to restrict the movement of
+atomtypes to certain directions. Therefore one defines a restriction
+vector for each type, with elements equal to zero in the forbidden
+directions. The parameter <TT>restrictionvector</TT> expects d+1
+integer numbers where d is the sample dimension. The first integer
+number specifies the virtual atom type, the others must be zero for
+directions into which no motion should take place. Otherwise use any
+non-zero number.  This is still a little bit experimantal - it
+requires a responsible user: the begining velocities should be 0 and
+the temperature should be corrected for non existing degrees of
+freedom. One should also keep in mind, that restricting the motion of
+some atoms corresponds to a force which might affect the total impuls.
+<P>Note that in the parameter file the line containing the parameter
+<TT>total_types</TT> must appear <STRONG>before</STRONG> all other
+parameters described in this section.
 <A NAME="fnorm">
 <P><LI><B> fnorm </B><P>
 Calculates the scalar product of the global force vector, output in
