@@ -193,24 +193,24 @@ void deform_atoms(void) {
 
   tot_kin_energy_prev = tot_kin_energy;
 
+  if ((dnoshsteps > annealsteps) && 
+      ((tot_kin_energy_prev < ekin_threshold) || 
+       (dnoshsteps > maxdnoshsteps))) {
   /* loop over all atoms */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
+    for ( r = cellmin.x; r < cellmax.x; ++r )
+      for ( s = cellmin.y; s < cellmax.y; ++s )
 #ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t )
+	for ( t = cellmin.z; t < cellmax.z; ++t )
 #endif
 	{
 
 #ifndef TWOD
-	p = PTR_3D_V(cell_array, r, s, t, cell_dim);
+	  p = PTR_3D_V(cell_array, r, s, t, cell_dim);
 #else
-	p = PTR_2D_V(cell_array, r, s,    cell_dim);
+	  p = PTR_2D_V(cell_array, r, s,    cell_dim);
 #endif
 
-	for (i = 0;i < p->n; ++i) { 
-	  if ((dnoshsteps > annealsteps) && 
-	      ((tot_kin_energy_prev < ekin_threshold) || 
-	       (dnoshsteps > maxdnoshsteps))) {
+	  for (i = 0;i < p->n; ++i) {
 	    /* which direction of pulling? */
 	    if (p->ort X(i) <= strip_width) {
 	      p->ort X(i) -= strip_shift.x;
@@ -226,17 +226,12 @@ void deform_atoms(void) {
 	      p->ort Z(i) += strip_shift.z;
 #endif        
 	    }
-	    dnoshsteps = 0;
-	  } else {
+	  } /* i - loop */
+	} /* cell loop */
+    dnoshsteps = 0;
+  } else {
 	    dnoshsteps++;
 	  }
-	  p->impuls X(i) = 0.0;
-	  p->impuls Y(i) = 0.0;
-#ifndef TWOD
-	  p->impuls Z(i) = 0.0;
-#endif
-	} /* i - loop */
-      }
 
 } /* deform_atoms */
 
