@@ -183,7 +183,9 @@ typedef struct { real xx, xy, xz, yx, yy, yz, zx, zy, zz; } tensor;
 typedef struct { real c11, c12, c13, c14, c15, c16, c22, c23, c24, 
   c25, c26, c33, c34, c35, c36, c44, c45, c46, c55, c56, c66;
 } tensor6d; 
+#endif
 
+#if defined(TERSOFF) || defined(STIWEB) 
 /* Neighbor table for Tersoff potential */
 typedef struct {
   real        *dist;
@@ -215,8 +217,10 @@ typedef struct {
 #ifdef CONN
   int    *nummer;
 #endif
-#ifdef ELCO
+#if defined(TERSOFF) || defined(STIWEB)
   neightab *neightab_array;
+#endif 
+#ifdef ELCO
   tensor   *stress;
   tensor6d *elco;
   real     *vol;
@@ -225,7 +229,7 @@ typedef struct {
   int     n_max;
 } cell;
 
-#ifdef ELCO
+#if defined(TERSOFF) || defined(STIWEB)
 typedef cell* cellptr;
 #endif
 
@@ -278,8 +282,7 @@ void read_displacement(str255 infilename);
 void calc_strain(void);
 #endif
 
-#ifdef STRESS
-void read_stress(str255 infilename);
+#if defined(STRESS) || defined(ELCO)
 void voronoi(void);
 #ifdef TWOD
 void do_voronoi_2d(void);
@@ -287,6 +290,10 @@ void do_voronoi_2d(void);
 void do_voronoi_3d(void);
 #endif
 void sort(void);
+#endif
+
+#ifdef STRESS
+void read_stress(str255 infilename);
 void write_stress(int restart);
 #endif
 
@@ -300,18 +307,18 @@ void calc_angles(void);
 void make_numbers(void);
 #endif
 
-#ifdef ELCO
-void realloc_neightab(neightab *neigh, int cll);
 #ifdef TERSOFF
 void init_tersoff(void);
-void do_elco_tersoff(void);
 #elif defined(STIWEB)
 void init_stiweb(void);
+#endif
+
+#ifdef ELCO
+#ifdef TERSOFF
+void do_elco_tersoff(void);
+#elif defined(STIWEB)
 void do_elco_stiweb(void);
 #endif
-void voronoi(void);
-void sort(void);
-void do_voronoi(void);
 void write_stress(void);
 void write_elco(void);
 #endif
@@ -368,7 +375,7 @@ int  n_min=0, n_max=0;
 #ifdef STRAIN
 real r_cell = 1.0;    /* default value */
 #endif
-#ifdef STRESS
+#if defined(STRESS) || defined(ELCO)
 int  atomcount = 0;   /* statistics */ 
 int  maxneigh  = 0, sumneigh  = 0;
 int  maxvert   = 0, sumvert   = 0;
@@ -416,24 +423,28 @@ vektor *pos;
 #ifdef ELCO
 tensor6d c = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 tensor sigma = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+real   r_cell = -1.0;
 real   vol, epot = 0.0, dbulkm_dp = 0.0;
-int    neigh_len;
 int    stresstens = 0, moduli = 0, all_moduli = 0;
+#endif
+
 #ifdef TERSOFF
-real   ter_r_cut[10][10], ter_r2_cut[10][10], ters_r_cut[55] ;
-real   ter_r0[10][10], ters_r0[55];
-real   ter_a[10][10], ters_a[55];
-real   ter_b[10][10], ters_b[55];
-real   ter_la[10][10], ters_la[55];
-real   ter_mu[10][10], ters_mu[55];
-real   ters_ga[10];
-real   ters_n[10];
-real   ter_c2[10], ters_c[10];
-real   ter_d2[10], ters_d[10];
-real   ters_h[10];
-real   ter_chi[10][10], ters_chi[45];
-real   ter_om[10][10], ters_om[45];
+int  neigh_len;
+real ter_r_cut[10][10], ter_r2_cut[10][10], ters_r_cut[55] ;
+real ter_r0[10][10], ters_r0[55];
+real ter_a[10][10], ters_a[55];
+real ter_b[10][10], ters_b[55];
+real ter_la[10][10], ters_la[55];
+real ter_mu[10][10], ters_mu[55];
+real ters_ga[10];
+real ters_n[10];
+real ter_c2[10], ters_c[10];
+real ter_d2[10], ters_d[10];
+real ters_h[10];
+real ter_chi[10][10], ters_chi[45];
+real ter_om[10][10], ters_om[45];
 #elif defined(STIWEB)
+int  neigh_len;
 real stiweb_a[55];
 real sw_a[10][10];
 real stiweb_b[55];
@@ -454,7 +465,6 @@ real sw_la[10][10][10];
 real stiweb_ga[55];
 real sw_ga[10][10];
 real sw_r_cut[10][10];
-#endif
 #endif
 
 /******************************************************************************
@@ -660,6 +670,9 @@ ivektor cell_coord(vektor ort)
 void alloc_cell(cell *cl, int count)
 {
   int i;
+#if defined(TERSOFF) || defined(STIWEB)
+  neightab *neigh;
+#endif
 
   /* initialize if it is the first call */
   if (cl->n_max == 0) {
@@ -679,10 +692,12 @@ void alloc_cell(cell *cl, int count)
 #ifdef CONN
     cl->nummer        = NULL;
 #endif
+#if defined(TERSOFF) || defined(STIWEB)
+    cl->neightab_array= NULL;
+#endif
 #ifdef ELCO
     cl->stress        = NULL;
     cl->elco          = NULL;
-    cl->neightab_array= NULL;
     cl->vol           = NULL;
 #endif
     cl->n             = 0;
@@ -700,7 +715,7 @@ void alloc_cell(cell *cl, int count)
   cl->stress = (vektor *) realloc(cl->stress, count * sizeof(vektor));
   cl->stress_offdia = (vektor *) realloc(cl->stress_offdia,
                                               count * sizeof(vektor));
-  cl->vol    = (real   *) realloc(cl->vol,  count * sizeof(real));
+  cl->vol    = (real   *) realloc(cl->vol,    count * sizeof(real));
 #else
   cl->sorte  = (int    *) realloc(cl->sorte,  count * sizeof(int));
 #endif
@@ -710,18 +725,29 @@ void alloc_cell(cell *cl, int count)
 #ifdef ELCO
   cl->stress = (tensor *) realloc(cl->stress, count * sizeof(tensor));
   cl->elco   = (tensor6d *) realloc(cl->elco, count * sizeof(tensor6d));
-  cl->vol    = (real   *) realloc(cl->vol,  count * sizeof(real));
-  cl->neightab_array = (neightab *) realloc( cl->neightab_array, count * sizeof(neightab) );
+  cl->vol    = (real   *) realloc(cl->vol,    count * sizeof(real));
+#endif
+#if defined(TERSOFF) || defined(STIWEB)
+  cl->neightab_array = (neightab *) realloc( cl->neightab_array, 
+					      count * sizeof(neightab));
    if (NULL == cl->neightab_array) 
       error("Cannot allocate neighbor tables");
 
-  for (i=0; i<count; ++i) {
-      if( cl->n_max==0 ) { 
-	  realloc_neightab(&cl->neightab_array[i],0);
-      }
-      else 
-	  realloc_neightab(&cl->neightab_array[i],1);
-  }
+   /* Allocate memory for neighbour tables */
+   for (i = cl->n_max; i < count; ++i) {
+     neigh = cl->neightab_array + i;
+
+     neigh->n     = 0;
+     neigh->n_max = neigh_len;
+     neigh->dist  = (real *)  malloc( neigh_len * 3 * sizeof(real) );
+     neigh->typ   = (short *) malloc( neigh_len * sizeof(short) );
+     neigh->cl    = (void **) malloc( neigh_len * sizeof(cellptr) );
+     neigh->num   = (int *)   malloc( neigh_len * sizeof(int) );
+
+     if ((neigh->dist==NULL) || (neigh->typ==NULL) || 
+	 (neigh->cl  ==NULL) || (neigh->num==NULL) )
+       error("Cannot allocate memory for neighbor table");
+   }
 #endif
 
   /* check if it worked */
@@ -741,10 +767,12 @@ void alloc_cell(cell *cl, int count)
 #ifdef CONN
     || (NULL==cl->nummer)
 #endif
+#if defined(TERSOFF) || defined(STIWEB)
+    || (NULL==cl->neightab_array)
+#endif
 #ifdef ELCO
     || (NULL==cl->stress)
     || (NULL==cl->elco)
-    || (NULL==cl->neightab_array)
     || (NULL==cl->vol)
 #endif
   ) error("Cannot allocate memory for cell.");
@@ -823,7 +851,7 @@ void read_parameters(int argc,char **argv)
 #endif
       break;
 #endif
-#ifdef STRAIN
+#if defined(STRAIN) || defined(ELCO)
       /* c - cell width */
     case 'c':
       if (argv[1][2]=='\0') {
@@ -1140,11 +1168,12 @@ void getparamfile(char *paramfname)
       getparam("r_cut",r_cut,PARAM_REAL,nn,nn);
     }
 #endif
-#ifdef ELCO
+#if defined(TERSOFF) || defined(STIWEB)
     else if (strcasecmp(token,"neigh_len")==0) {
       /* number of neighbors */
       getparam("neigh_len",&neigh_len,PARAM_INT,1,1);
     }
+#endif
 #ifdef TERSOFF
     else if (strcasecmp(token,"ters_r_cut")==0) {     
       getparam("ters_r_cut",ters_r_cut,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
@@ -1213,7 +1242,6 @@ void getparamfile(char *paramfname)
     else if (strcasecmp(token,"stiweb_la")==0) {     
       getparam("stiweb_la",stiweb_la,PARAM_REAL,ntypes*ntypes*(ntypes+1)/2,ntypes*ntypes*(ntypes+1)/2);
     }
-#endif
 #endif
   } while (!feof(pf));
   fclose(pf);

@@ -24,10 +24,16 @@
 #define ELCO
 
 #ifndef STIWEB
+#undef TERSOFF
 #define TERSOFF
 #endif
 
+#if defined(TERSOFF) || defined(STIWEB)
+#undef TWOD
+#endif
+
 #include "util.h"
+#include "imd_stress.c"
 
 /******************************************************************************
 *
@@ -39,7 +45,7 @@
 
 void usage(void)
 { 
-  printf("%s [-r<nnn>] [-A<nnn>] [-e<nnn>] [-m] [-M] [-s] -p paramter-file]\n",progname); 
+  printf("%s [-r<nnn>] [-A<nnn>] [-e<nnn>] [-c] [-m] [-M] [-s] -p paramter-file]\n",progname); 
   
   exit(1); 
 }
@@ -103,35 +109,6 @@ int main(int argc, char **argv)
 
 }
 
-
-/******************************************************************************
-*
-*  allocate neighbor table for one particle
-*
-******************************************************************************/
-
-void realloc_neightab(neightab *neigh, int cll)
-{
-
-  if (cll==0) {
-      neigh->dist = NULL;
-      neigh->typ  = NULL;
-      neigh->cl   = NULL;
-      neigh->num  = NULL;
-  }
-
-  neigh->n    = 0;
-  neigh->n_max    = neigh_len;
-  neigh->dist     = (real *)     realloc( neigh->dist, neigh_len * 3 * sizeof(real) );
-  neigh->typ      = (short *)    realloc( neigh->typ, neigh_len * sizeof(short) );
-  neigh->cl       = (void **)    realloc( neigh->cl, neigh_len * sizeof(cellptr) );
-  neigh->num      = (int *)      realloc( neigh->num, neigh_len * sizeof(int) );
-
-  if ((neigh->dist==NULL) || (neigh->typ==NULL) || 
-      (neigh->cl  ==NULL) || (neigh->num==NULL) )
-    error("Cannot allocate memory for neighbor table");
-}
-
 #ifdef TERSOFF
 
 /******************************************************************************
@@ -160,6 +137,7 @@ void init_tersoff(void) {
       ++n;      
     }
   }
+
   for (i=0; i<ntypes; i++) ter_chi[i][i] = 1.0;
   if ( ntypes>1 ) {
     for (i=0; i<(ntypes-1); i++)
@@ -168,6 +146,7 @@ void init_tersoff(void) {
                       = ters_chi[i * ( 2 * ntypes - i - 3 ) / 2 + j - 1]; 
       }
   }
+
   for (i=0; i<ntypes; i++) ter_om[i][i] = 1.0;
   if ( ntypes>1 ) {
     for (i=0; i<(ntypes-1); i++)
@@ -175,12 +154,17 @@ void init_tersoff(void) {
         ter_om[i][j] = ter_om[j][i] 
                      = ters_om[i * ( 2 * ntypes - i - 3 ) / 2 + j - 1]; 
       }
-  }  
-  tmp = 0.0;
-  for (i=0; i<ntypes; ++i)
-    for (j=0; j<ntypes; ++j)
-      tmp = MAX( tmp, ter_r2_cut[i][j] );
-      r2_cut = MAX(r2_cut,tmp);
+  }
+ 
+  if( r_cell != -1.0)
+    r2_cut = SQR(r_cell);
+  else { 
+    tmp = 0.0;
+    for (i=0; i<ntypes; ++i)
+      for (j=0; j<ntypes; ++j)
+	tmp = MAX( tmp, ter_r2_cut[i][j] );
+    r2_cut = MAX(r2_cut,tmp);
+  }
 
 }
 
@@ -222,16 +206,19 @@ void init_stiweb(void) {
 
   for (i=0; i<ntypes; ++i)
     for (j=0; j<ntypes; ++j) 
-      sw_r_cut[i][j] = MAX(sw_a1[i][j], sw_a2[i][j] ); 
-
-  tmp = 0.0;
-  for (i=0; i<ntypes; ++i)
-    for (j=0; j<ntypes; ++j) {
-      tmp = MAX( tmp, sw_a1[i][j] );
-      tmp = MAX( tmp, sw_a2[i][j] );
-    }
-  r2_cut = MAX(r2_cut,tmp*tmp);
-
+      sw_r_cut[i][j] = MAX(sw_a1[i][j], sw_a2[i][j] );
+ 
+  if( r_cell != -1.0)
+    r2_cut = SQR(r_cell);
+  else { 
+    tmp = 0.0;
+    for (i=0; i<ntypes; ++i)
+      for (j=0; j<ntypes; ++j) {
+	tmp = MAX( tmp, sw_a1[i][j] );
+	tmp = MAX( tmp, sw_a2[i][j] );
+      }
+    r2_cut = MAX(r2_cut,tmp*tmp);
+  }
 }
 
 #endif
@@ -2374,491 +2361,3 @@ void do_elco_stiweb(void)
 }
 
 #endif
-
-/******************************************************************************
-*
-*  voronoi -- calculates neighbouring points for Voronoi construction
-*             and calls calculation of volume/area
-*
-******************************************************************************/
-
-void voronoi(void)
-
-{
-  cell *p, *q;
-  int i, j, k, l, m, n, r, s, t;
-  int v, w, neighcount;
-  vektor tmp;
-  vektor pbc;
-  real tmpdist2;
-  int num = NUM;
-
-  candcoord = (vektor *) malloc( num * sizeof(vektor));
-  canddist2 = (real   *) malloc( num * sizeof(real));
-
-  r2_cut = SQR(r_max);
-
-  /* For each cell */
-  for (i=0; i < cell_dim.x; ++i)
-    for (j=0; j < cell_dim.y; ++j)
-      for (k=0; k < cell_dim.z; ++k)
-      {
-        p = PTR_3D_V(cell_array,i,j,k,cell_dim);
-
-	/* For each atom in first cell */
-	for (v=0; v<p->n; ++v)
-	  {
-	    neighcount = 0;
-
-	    /* For each neighbor of this cell */
-	    for (l=-1; l <= 1; ++l)
-	      for (m=-1; m <= 1; ++m)
-		for (n=-1; n <= 1; ++n)
-		  {
-		    /* Calculate Indices of Neighbor */
-		    r = i+l;  pbc.x = 0;
-		    s = j+m;  pbc.y = 0;
-		    t = k+n;  pbc.z = 0;
-
-		    /* Deal with periodic boundary conditions if necessary */
-		    if (r<0) {
-		      if (pbc_dirs.x==1) {
-			r = cell_dim.x-1; 
-			pbc.x -= box_x.x;      
-			pbc.y -= box_x.y;
-			pbc.z -= box_x.z;
-		      } else continue;
-		    }
-		    if (s<0) {
-		      if (pbc_dirs.y==1) {
-			s = cell_dim.y-1;
-			pbc.x -= box_y.x;      
-			pbc.y -= box_y.y;
-			pbc.z -= box_y.z;
-		      } else continue;
-		    }
-		    if (t<0) {
-		      if (pbc_dirs.z==1) {
-			t = cell_dim.z-1;
-			pbc.x -= box_z.x;      
-			pbc.y -= box_z.y;
-			pbc.z -= box_z.z;
-		      } else continue;
-		    }
-		    if (r>cell_dim.x-1) {
-		      if (pbc_dirs.x==1) {
-			r = 0; 
-			pbc.x += box_x.x;      
-			pbc.y += box_x.y;
-			pbc.z += box_x.z;
-		      } else continue;
-		    }
-		    if (s>cell_dim.y-1) {
-		      if (pbc_dirs.y==1) {
-			s = 0; 
-			pbc.x += box_y.x;      
-			pbc.y += box_y.y;
-			pbc.z += box_y.z;
-		      } else continue;
-		    }
-		    if (t>cell_dim.z-1) {
-		      if (pbc_dirs.z==1) {
-			t = 0; 
-			pbc.x += box_z.x;      
-			pbc.y += box_z.y;
-			pbc.z += box_z.z;
-		      } else continue;
-		    }
-	    
-		    /* Neighbor cell (note that p==q ist possible) */
-		    q = PTR_3D_V(cell_array,r,s,t,cell_dim);
-
-		    /* For each particle in second cell */
-		    for (w=0; w<q->n; ++w)
-		      {
-			tmp.x    = q->ort[w].x - p->ort[v].x + pbc.x;
-			tmp.y    = q->ort[w].y - p->ort[v].y + pbc.y;
-			tmp.z    = q->ort[w].z - p->ort[v].z + pbc.z;
-
-			tmpdist2 = SPROD( tmp, tmp );
-		       
-			/* Candidates for Voronoi cells */
-			if( (tmpdist2 <= r2_cut) && (tmpdist2 > TOL2))
-			  {
-			    if( neighcount > num-1 )
-			      {
-				num += 10;
-				candcoord = (vektor *) realloc(candcoord, num * sizeof(vektor));
-				canddist2 = (real   *) realloc(canddist2, num * sizeof(real));
-			      }
-
-			    candcoord[neighcount].x    = tmp.x;
-			    candcoord[neighcount].y    = tmp.y;
-			    candcoord[neighcount].z    = tmp.z;
-			    canddist2[neighcount]      = tmpdist2;
-
-			    ++ neighcount;
-
-			  }
-
-		      } /* w */
-
-		  } /* lmn */
-
-	    /* If there are less than four (three) points, a polyhedron (polygon) cannot
-	       be constructed */
-	    if( (neighnum = neighcount) < 4 )  volume = 0.0;
-	    else
-	      {
-		/* Sort candidates in ascending order of distance */
-		sort();
-
-		/* Perform Voronoi analysis */
-
-		do_voronoi(); 
-	      }
- 
-	    p->vol[v] = volume;
-
-	  } /* v */
-
-      } /* ijk */
-
-}
-
-/******************************************************************************
-*
-*  sort -- Sorts candidates for neighbour atoms in increasing order of distance
-*
-******************************************************************************/
-
-void sort(void)
-
-{
-  int i, j;
-  vektor tmp;
-  real tmpdist2;
-
-  for (i=(neighnum-1); i>0; --i)
-    for (j=0; j<i; ++j)
-      if( canddist2[j] > canddist2[j+1] )
-	{
-	  tmp.x            = candcoord[j].x;
-	  tmp.y            = candcoord[j].y;
-	  tmp.z            = candcoord[j].z;
-	  tmpdist2         = canddist2[j];
-
-	  candcoord[j].x   = candcoord[j+1].x;
-	  candcoord[j].y   = candcoord[j+1].y;
-	  candcoord[j].z   = candcoord[j+1].z;
-	  canddist2[j]     = canddist2[j+1];
-
-	  candcoord[j+1].x = tmp.x;
-	  candcoord[j+1].y = tmp.y;
-	  candcoord[j+1].z = tmp.z;
-	  canddist2[j+1]   = tmpdist2;
-	}
-
-}
-
-/******************************************************************************
-*
-*  do_voronoi -- Calculates Voronoi cells and volume
-*
-******************************************************************************/
-
-void do_voronoi(void)
-
-{
-  int       i, j, k, l, n;
-  real      ab, bc, ca, da, db, dc, det, detinv, tmp;
-  vektor    icoord, jcoord, kcoord;
-  real      idist2, jdist2, kdist2;
-  vektor    tmpvek, tmpvertex, vertex[NUM];
-  int       ok, vertexcount, vertexnum, facesnum, edgesnum;
-  int       *vertexnumi;
-  real      area_i, height;
-  real      sin, cos, maxcos;
-  int       mink, ord[NUM], index[NUM], surfind[NUM];
-  vektor    *coord, center;
-  vektorstr *vertexloc;
-
-
-  /* Allocate memory for vertices */
-  vertexnumi  = (int *) malloc( neighnum * sizeof(int));
-  coord       = (vektor *) malloc( neighnum * sizeof(vektor));
-  vertexloc   = (vektorstr *) malloc( neighnum * sizeof(vektorstr));
-
-  if( vertexloc == NULL || coord == NULL || vertexnumi == NULL ) 
-    error("Cannot allocate memory for vertices!\n");
-
-  vertexcount = 0;
-  volume      = 0.0;
-  /* Each possible vertex defined by the intersection of 3 planes is examined */
-  for (i=0; i<neighnum-2; ++i)
-    {
-      icoord.x = candcoord[i].x;
-      icoord.y = candcoord[i].y;
-      icoord.z = candcoord[i].z;
-      idist2   = -canddist2[i];
-
-      for (j=i+1; j<neighnum-1; ++j)
-	{
-	  jcoord.x = candcoord[j].x;
-	  jcoord.y = candcoord[j].y;
-	  jcoord.z = candcoord[j].z;
-	  jdist2   = -canddist2[j];
-
-	  ab = icoord.x * jcoord.y - jcoord.x * icoord.y;
-	  bc = icoord.y * jcoord.z - jcoord.y * icoord.z;
-	  ca = icoord.z * jcoord.x - jcoord.z * icoord.x;
-	  da = idist2   * jcoord.x - jdist2   * icoord.x;
-	  db = idist2   * jcoord.y - jdist2   * icoord.y;
-	  dc = idist2   * jcoord.z - jdist2   * icoord.z;
-
-	  for (k=j+1; k<neighnum; ++k)
-	    {
-	      kcoord.x = candcoord[k].x;
-	      kcoord.y = candcoord[k].y;
-	      kcoord.z = candcoord[k].z;
-	      kdist2   = -canddist2[k];
-
-	      det = kcoord.x * bc + kcoord.y * ca + kcoord.z * ab;
-
-	      /* Check whether planes intersect */
-	      if( SQR(det) > TOL2 )
-		{
-		  detinv = 1.0 / det;
-
-		  tmpvertex.x = ( -kdist2 * bc + kcoord.y * dc - kcoord.z * db ) * detinv;
-		  tmpvertex.y = ( -kcoord.x * dc - kdist2 * ca + kcoord.z * da ) * detinv;
-		  tmpvertex.z = (  kcoord.x * db - kcoord.y * da - kdist2 * ab ) * detinv;
-		  /* Check whether vertex belongs to the Voronoi cell */
-		  l  = 0;
-		  ok = 1;
-
-		  do {
-		    if( l!=i && l!=j && l!=k)
-		      ok = ( SPROD( candcoord[l], tmpvertex ) <= canddist2[l] + TOL_VERT2 )    ;
-	      
-		    ++l;
-
-		  } while( ok && (l<neighnum));
-		    
-		    if( ok )
-		      {
-			vertex[vertexcount].x  = 0.5 * tmpvertex.x;
-			vertex[vertexcount].y  = 0.5 * tmpvertex.y;
-			vertex[vertexcount].z  = 0.5 * tmpvertex.z;
-	
-			++vertexcount;
-		      }
-
-		} /* Planes intersect */
-
-	    } /* k */
-	} /* j */
-    } /* i */
-
-  vertexnum = vertexcount;
-
-  /* Check whether some vertices coincide */
-  for ( i=0; i<vertexnum; ++i )
-    {
-      index[i] = 1;
-      for ( j=i+1; j<vertexnum; ++j )
-	{
-	  tmpvek.x = vertex[j].x - vertex[i].x;
-	  tmpvek.y = vertex[j].y - vertex[i].y;
-	  tmpvek.z = vertex[j].z - vertex[i].z;
-
-	  if ( SPROD( tmpvek, tmpvek) < TOL2 )
-	    index[i] = 0;
-	}  
-    }
-  /* Remove coincident vertices */
-  j = 0;
-  for ( i=0; i<vertexnum; ++i )
-    if ( index[i] != 0 )
-      {
-	vertex[j].x  = vertex[i].x;
-	vertex[j].y  = vertex[i].y;
-	vertex[j].z  = vertex[i].z;
-
-	++j;
-      }
-
-  vertexnum = j;
-
-  /* Number of vertices of Voronoi cell must be greater than 3 */
-  if(vertexnum > 3 )  
-    {
-      /* Check whether faces exist */
-      facesnum = 0;
-
-      /* Each neighbour atom i corresponds to at most one surface * 
-       * Sum over all surfaces */
-      for (i=0; i<neighnum; ++i)
-	{
-	  /* Coordinates of center of surface i */
-	  coord[i].x = 0.5 * candcoord[i].x;
-	  coord[i].y = 0.5 * candcoord[i].y;
-	  coord[i].z = 0.5 * candcoord[i].z;
-
-          /* Look for vertices that belong to surface i */
-          vertexnumi[i] = 0;
-	  for (j=0; j<vertexnum; ++j)
-	    {
-	      surfind[j] = 0;
-
-	      vertexloc[i][j].x = vertex[j].x - coord[i].x;
-	      vertexloc[i][j].y = vertex[j].y - coord[i].y;
-	      vertexloc[i][j].z = vertex[j].z - coord[i].z;
-
-	      tmp = SPROD(coord[i],vertexloc[i][j]);
-
-	      if( SQR(tmp) < TOL_DIST2 )
-		{
-		  /* Vertex j belongs to surface i */
-		  surfind[j] = 1; 
-		  ++vertexnumi[i];
-		}
-	    }
-	  /* Surface i exists */
-	  if (vertexnumi[i] > 2)
-	    {
-	      ++facesnum;
-
-	      /* Compute coordinates of vertices belonging to surface i */
-	      k = 0;
-	      for (j=0; j<vertexnum; ++j)
-		if( surfind[j] == 1)
-		  {
-		    vertexloc[i][k].x = vertexloc[i][j].x;
-		    vertexloc[i][k].y = vertexloc[i][j].y;
-		    vertexloc[i][k].z = vertexloc[i][j].z;
-
-		    ++k;
-		  }
-	    }
-	  /* Transform into center of mass system */
-	  center.x = 0.0;
-	  center.y = 0.0; 
-	  center.z = 0.0;
-	  
-	  if( vertexnumi[i] > 2)
-	    {
-	      for ( j=0; j<vertexnumi[i]; ++j)
-		{
-		  center.x += vertexloc[i][j].x;
-		  center.y += vertexloc[i][j].y;
-		  center.z += vertexloc[i][j].z;
-		}
-	      
-	      tmp       = 1.0 / vertexnumi[i];
-	      center.x *= tmp;
-	      center.y *= tmp;
-	      center.z *= tmp;
-	      
-	      for ( j=0; j<vertexnumi[i]; ++j)
-		{
-		  vertexloc[i][j].x -= center.x;
-		  vertexloc[i][j].y -= center.y;
-		  vertexloc[i][j].z -= center.z;
-		}
-
-	    }
-
-	} /* i */
-
-      /* Number of edges of Voronoi cell */
-      edgesnum = 0;
-
-      for ( n=0; n<neighnum; ++n)
-	if( vertexnumi[n] > 2)
-	  edgesnum += vertexnumi[n];
-      
-      edgesnum /= 2;
-
-      /* Check whether Euler relation holds */
-      if ( (vertexnum - edgesnum + facesnum) == 2 )
-	{   
-
-	  /* Compute volume of Voronoi cell */
-
-	  /* For all potential faces */
-	  for (i=0; i<neighnum; ++i)
-	    /* Surface i exists */
-	    if(vertexnumi[i] > 2)
-	      {
-		/* Sort vertices of face i */
-		ord[0] = 0;
-		for (j=0; j<vertexnumi[i]-1; ++j)
-		  {
-		    maxcos = -1.0;
-		    for (k=0; k<vertexnumi[i]; ++k)
-		      {
-			tmpvek.x = vertexloc[i][k].y * vertexloc[i][ord[j]].z - vertexloc[i][k].z * vertexloc[i][ord[j]].y;
-			tmpvek.y = vertexloc[i][k].z * vertexloc[i][ord[j]].x - vertexloc[i][k].x * vertexloc[i][ord[j]].z;
-			tmpvek.z = vertexloc[i][k].x * vertexloc[i][ord[j]].y - vertexloc[i][k].y * vertexloc[i][ord[j]].x; 
- 
-			sin = SPROD( tmpvek, coord[i]);
-		      
-			if( sin > TOL )
-			  {
-			    cos = SPROD( vertexloc[i][k], vertexloc[i][ord[j]] )/ sqrt(SPROD(vertexloc[i][k],vertexloc[i][k]))/ sqrt(SPROD(vertexloc[i][ord[j]],vertexloc[i][ord[j]]));
-			    if( cos > maxcos )
-			      {
-				maxcos = cos;
-				mink   = k;
-			      }
-			  }
-		      }
-
-		    ord[j+1] = mink;
-		  
-		  }
-
-		/* Compute area of surface i */
-		area_i = 0.0;
-		height = sqrt(SPROD( coord[i], coord[i] ));
-		tmp    = 1.0 / height;
-
-		for (j=0; j<vertexnumi[i]-1; ++j)
-		    {
-		      tmpvek.x = vertexloc[i][ord[j+1]].y * vertexloc[i][ord[j]].z - vertexloc[i][ord[j+1]].z * vertexloc[i][ord[j]].y;
-		      tmpvek.y = vertexloc[i][ord[j+1]].z * vertexloc[i][ord[j]].x - vertexloc[i][ord[j+1]].x * vertexloc[i][ord[j]].z;
-		      tmpvek.z = vertexloc[i][ord[j+1]].x * vertexloc[i][ord[j]].y - vertexloc[i][ord[j+1]].y * vertexloc[i][ord[j]].x; 
-			      
-		      area_i += 0.5 * SPROD( tmpvek, coord[i] ) * tmp;
-	
-		    }
-		tmpvek.x = vertexloc[i][ord[0]].y * vertexloc[i][ord[vertexnumi[i]-1]].z - vertexloc[i][ord[0]].z * vertexloc[i][ord[vertexnumi[i]-1]].y;
-		tmpvek.y = vertexloc[i][ord[0]].z * vertexloc[i][ord[vertexnumi[i]-1]].x - vertexloc[i][ord[0]].x * vertexloc[i][ord[vertexnumi[i]-1]].z;
-		tmpvek.z = vertexloc[i][ord[0]].x * vertexloc[i][ord[vertexnumi[i]-1]].y - vertexloc[i][ord[0]].y * vertexloc[i][ord[vertexnumi[i]-1]].x; 
-		  
-		area_i +=  0.5 * SPROD( tmpvek, coord[i] ) * tmp;
-	
-		/* Volume of Voronoi cell */	  
-		volume += area_i * height / 3.0;
-
-	      } /* vertexnum[i] > 2 */
-
-	} /* Euler relation holds */
-
-    } /* Number of vertices > 3 */
-
-
-  free(vertexloc);
-  free(coord);
-  free(vertexnumi);
-
-}
-		
-
-
-
-
-
-
-

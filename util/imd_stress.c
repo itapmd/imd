@@ -22,9 +22,12 @@
 * $Date$
 ******************************************************************************/
 
+#ifndef ELCO
 #define STRESS
 #include "util.h"
+#endif
 
+#ifdef STRESS
 
 /******************************************************************************
 *
@@ -35,7 +38,7 @@
 void usage(void)
 
 { 
-  printf("%s [-r<nnn>] [-e<nnn>] [-p paramter-file]\n",progname); 
+  printf("%s [-r<nnn>] [-e<nnn>] [-p paramter-file]\n", progname); 
   exit(1); 
 }
 
@@ -215,6 +218,7 @@ void write_stress(int restart)
     printf("No Voronoi cell found.\n");
 }
 
+#endif /* STRESS */
 
 /******************************************************************************
 *
