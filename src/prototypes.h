@@ -193,6 +193,7 @@ void move_atoms_sllod(void);
 void move_atoms_nvx(void);
 void move_atoms_msd(void);
 void move_atoms_stm(void);
+void move_atoms_ftg(void);
 
 /* fix distribution on cells - files imd_main_*.c, imd_mpi_util.c */
 void do_boundaries(void);

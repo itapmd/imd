@@ -366,6 +366,10 @@ void getparamfile(char *paramfname, int sim)
         ensemble = ENS_FRAC;
         move_atoms = move_atoms_frac;
       }
+      else if (strcasecmp(tmpstr,"ftg")==0) {
+        ensemble = ENS_FTG;
+        move_atoms = move_atoms_ftg;
+      }
       else if (strcasecmp(tmpstr,"sllod")==0) {
         ensemble = ENS_SLLOD;
         move_atoms = move_atoms_sllod;
@@ -702,14 +706,7 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #endif
-#ifdef FRAC
-    else if (strcasecmp(token,"gamma_bar")==0) { 
-       /* Damping prefactor gamma_bar */
-	getparam("gamma_bar",&gamma_bar,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"gamma_damp")==0) { /* actual Damping factor */
-	getparam("gamma_damp",&gamma_damp,PARAM_REAL,1,1);
-    }
+#if defined(FRAC) || defined(FTG)
     else if (strcasecmp(token,"strainrate")==0) {
 	/* strain rate for crack loading */
 	getparam("strainrate",&dotepsilon0,PARAM_REAL,1,1);
@@ -719,11 +716,60 @@ void getparamfile(char *paramfname, int sim)
 	/* strain mode for crack loading */
 	getparam("expansionmode",&expansionmode,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token,"gamma_bar")==0) { 
+       /* Damping prefactor gamma_bar */
+	getparam("gamma_bar",&gamma_bar,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"gamma_damp")==0) { /* actual Damping factor */
+	getparam("gamma_damp",&gamma_damp,PARAM_REAL,1,1);
+    }
     else if (strcasecmp(token,"dampingmode")==0) {
 	/* damping mode for stadium geometry */
 	getparam("dampingmode",&dampingmode,PARAM_INT,1,1);
     }
 #endif
+#ifdef FTG
+    else if (strcasecmp(token,"Tleft")==0) {
+      /* damping mode for stadium geometry */
+      getparam("Tleft",&Tleft,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"Tright")==0) {
+      /* damping mode for stadium geometry */
+      getparam("Tright",&Tright,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"nslices")==0) {
+      /* nuber of slices*/
+      getparam("nslices",&nslices,PARAM_INT,1,1);
+
+      ninslice=(int*)realloc(ninslice,nslices*sizeof(int));
+      if (NULL==ninslice)
+	error("Cannot allocate memory for ninslice vector\n");
+      for(k=0; k<nslices; k++)
+       *(ninslice+k) = 0;
+
+      gamma_ftg=(real*)realloc(gamma_ftg,nslices*sizeof(real));
+      if (NULL==gamma_ftg)
+	error("Cannot allocate memory for gamma_ftg vector\n");
+      for(k=0; k<nslices; k++)
+	*(gamma_ftg+k) = 0.0;
+      
+      E_kin_ftg=(real*)realloc(E_kin_ftg,nslices*sizeof(real));
+      if (NULL==E_kin_ftg)
+	error("Cannot allocate memory for E_kin_ftg vector\n");
+      for(k=0; k<nslices; k++)
+	*(E_kin_ftg+k) = 0.0;
+    }
+    else if (strcasecmp(token,"nslices_Left")==0) {
+      /* nuber of slices with Tleft*/
+      getparam("nslices_Left",&nslices_Left,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"nslices_Right")==0) {
+      /* nuber of slices with Right*/
+      getparam("nslices_Right",&nslices_Right,PARAM_INT,1,1);
+    }
+#endif 
+
+
 #ifndef TWOD
     else if (strcasecmp(token,"view_pos")==0) { 
       /* view position */
@@ -1300,6 +1346,17 @@ void check_parameters_complete()
 		error ("tran_nlayers is zero.");
         }
 #endif
+#ifdef FTG
+	if (nslices < 2){
+	  error ("nslices is missing or less than 2.");
+	}
+	if (Tleft == 0 ){
+	  error ("Tleft is missing or zero.");
+	}
+	if (Tright == 0 ){
+	  error ("Tright is missing or zero.");
+	}
+#endif
 #ifdef STRESS_TENS
 	if (press_interval == 0) {
 		error ("press_interval is zero.");
@@ -1518,6 +1575,19 @@ void broadcast_params() {
     error("Cannot allocate memory for restriction vectors on client."); 
   MPI_Bcast( restrictions, vtypes*DIM, REAL, 0, MPI_COMM_WORLD);  
 
+#ifdef FTG
+  if (0!=myid) ninslice = (int*) realloc(ninslice,nslices*sizeof(int));
+  if (NULL==ninslice)
+    error("Cannot allocate memory for ninslice vector on client.\n");
+
+  if (0!=myid) gamma_ftg = (real*) realloc(gamma_ftg,nslices*sizeof(real));
+  if (NULL==gamma_ftg)
+    error("Cannot allocate memory for gamma_ftg vector on client.\n");
+
+  if (0!=myid) E_kin_ftg=(real*)realloc(E_kin_ftg,nslices*sizeof(real));
+  if (NULL==E_kin_ftg) 
+    error("Cannot allocate memory for E_kin_ftg vector on client.\n");
+#endif 
 
   MPI_Bcast( &pbc_dirs    , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &box_x       , DIM, REAL,     0, MPI_COMM_WORLD); 
@@ -1615,13 +1685,20 @@ void broadcast_params() {
   MPI_Bcast( &press_dim,    DIM, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &press_interval, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
-
-#ifdef FRAC
-  MPI_Bcast( &gamma_bar     , 1, REAL   , 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &gamma_damp    , 1, REAL   , 0, MPI_COMM_WORLD); 
+#if defined(FRAC) || defined(FTG) 
   MPI_Bcast( &dotepsilon0   , 1, REAL   , 0, MPI_COMM_WORLD); 
   MPI_Bcast( &expansionmode , 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &gamma_bar     , 1, REAL   , 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &gamma_damp    , 1, REAL   , 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dampingmode   , 1, MPI_INT, 0, MPI_COMM_WORLD); 
+#endif
+
+#ifdef FTG
+  MPI_Bcast( &Tleft,         1, REAL      , 0, MPI_COMM_WORLD);
+  MPI_Bcast( &Tright,        1, REAL      , 0, MPI_COMM_WORLD);
+  MPI_Bcast( &nslices,       1, MPI_INT   , 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &nslices_Left,  1, MPI_INT   , 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &nslices_Right, 1, MPI_INT   , 0, MPI_COMM_WORLD); 
 #endif
 
 #if defined(DEFORM)
@@ -1736,9 +1813,12 @@ void broadcast_params() {
     case ENS_FRAC:      move_atoms = move_atoms_frac;      break;
     case ENS_NVX:       move_atoms = move_atoms_nvx;       break;
     case ENS_STM:       move_atoms = move_atoms_stm;       break;  
+    case ENS_FTG:      move_atoms = move_atoms_ftg;      break;  
     default: if (0==myid) error("unknown ensemble in broadcast"); break;
   }
   
 }
 
 #endif /* MPI */
+
+

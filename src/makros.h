@@ -179,6 +179,7 @@ inline static real SQR(real x)
 #define ENS_SLLOD     9
 #define ENS_NVX      11
 #define ENS_STM      13
+#define ENS_FTG      14
 
 /* All the logic in this program */
 #define TRUE         1

@@ -796,6 +796,8 @@ void write_eng_file_header()
   str255 fname;
   FILE *fl;
 
+  int i;
+
   if (myid == 0) {
 
     sprintf(fname,"%s.eng",outfilename);
@@ -811,6 +813,11 @@ void write_eng_file_header()
 
 #ifdef FRAC
     fprintf(fl, "dampingtemp ");
+#endif
+
+#ifdef FTG
+    for(i=0;i<nslices;i++)
+      fprintf(fl, "temp %d ", i);
 #endif
 
 #ifdef FNORM
@@ -863,6 +870,8 @@ void write_eng_file(int steps)
 {
   FILE *out;
   str255 fname;
+  int i;
+
 #ifdef HPO
   char *format=" %.16e";
 #else
@@ -925,6 +934,12 @@ void write_eng_file(int steps)
 #ifdef FRAC
   fprintf(out, format,   (double) Temp_damp);
 #endif
+
+#ifdef FTG
+ for(i=0;i<nslices;i++)
+   fprintf(out, format, 2.0* *(E_kin_ftg+i)/ *(ninslice + i) ); 
+#endif
+
 
 #ifdef FNORM
   fprintf(out, format,   (double) fnorm / nactive);

@@ -44,7 +44,7 @@
 #   SR2201, HITACHI	 	HI-UX/MPP	mpi
 #
 # <ensemble> is one or several of nve, mik, nvt, npt_iso, npt_axial, 
-# frac, nvx, stm
+# frac, nvx, ftg, stm
 #
 # <option> is one or several of 2d, debug, prof, mono, binary, ....
 #
@@ -549,12 +549,16 @@ endif
 
 ifneq (,$(findstring frac,${MAKETARGET}))
 CFLAGS += -DFRAC
-SOURCES += ${FRACSOURCES}
+# SOURCES += ${FRACSOURCES}
 endif
 
 ifneq (,$(findstring nvx,${MAKETARGET}))
 CFLAGS += -DNVX
 SOURCES += ${TRANSSOURCES}
+endif
+
+ifneq (,$(findstring ftg,${MAKETARGET}))
+CFLAGS += -DFTG
 endif
 
 ifneq (,$(findstring stm,${MAKETARGET}))

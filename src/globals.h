@@ -312,17 +312,33 @@ EXTERN int    n_stadium INIT(0);            /* number of transl. degrees
 					       of freedom in the stadium */
 #endif
 
-#ifdef FRAC
+#if defined(FRAC) || defined(FTG)  
 EXTERN real gamma_damp INIT(0.0);         /* Damping prefactor */
 EXTERN real gamma_bar INIT(0.0);          /* Damping factor */
-EXTERN real E_kin_damp INIT(0.0);         /* weighted !!  kin dampenergy  */
-EXTERN real sum_f INIT(0.0);              /* Sum of stadium function */
+EXTERN int  dampingmode  INIT(0);         /* damping mode  1: Nose-Hoover*/
+                                          /*               0: viscous damping*/
+
 EXTERN real dotepsilon INIT(0.0);         /* strain rate for crack loading */
 EXTERN real dotepsilon0 INIT(0.0);        /* initial strain rate */
 EXTERN int  expansionmode INIT(1);        /* loading */
-EXTERN int  dampingmode  INIT(0);        /* damping mode  1: Nose-Hoover*/
-                                          /*              0: viscous damping*/
 #endif
+
+#ifdef FRAC
+EXTERN real E_kin_damp INIT(0.0);         /* weighted !!  kin dampenergy  */
+EXTERN real sum_f INIT(0.0);              /* Sum of stadium function */
+#endif
+
+#ifdef FTG
+EXTERN real  Tleft   INIT(0.0);          /* Temperature of the left  wall*/
+EXTERN real  Tright  INIT(0.0);          /* Temperature of the right wall*/
+EXTERN int   nslices INIT(1);            /* Number of slices*/
+EXTERN int   nslices_Left  INIT(1);      /* Number of slices with Tleft */
+EXTERN int   nslices_Right INIT(1);      /* Number of slices with Tright*/
+EXTERN int  *ninslice;                   /* Number of atoms in slice*/
+EXTERN real *gamma_ftg;                  /* Damping prefactor for slices*/
+EXTERN real *E_kin_ftg;                  /* kin energy of the slices */
+#endif
+
 
 #if defined(DEFORM)
 EXTERN int    deform_int INIT(0);      /* counting steps between 2 shears */

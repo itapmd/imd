@@ -1382,6 +1382,238 @@ void move_atoms_frac(void)
 
 #endif
 
+/*****************************************************************************
+*
+*  Integrator for fracture studies with temperature gradient 
+*  
+*
+*****************************************************************************/
+
+#ifdef FTG
+
+void move_atoms_ftg(void)
+
+{
+  int j, k;
+  static real *E_kin_1 = NULL;  static real *E_kin_2 = NULL;
+  static real *tmpvec1 = NULL;  static real *tmpvec2 = NULL;
+  real ttt;
+  real reibung, reibung_y, eins_d_reib, eins_d_reib_y;
+  real epsilontmp, eins_d_epsilontmp;
+  int slice;
+
+  /* printf("%d\n\n", nslices);*/
+  /* alloc vector versions of E_kin and  tmpvect*/
+  if (NULL==E_kin_1) {
+    E_kin_1=(real*)malloc(nslices*sizeof(real));
+    if (NULL==E_kin_1) 
+      error("Cannot allocate memory for E_kin_1 vector\n");
+  }
+  if (NULL==E_kin_2) {
+    E_kin_2=(real*)malloc(nslices*sizeof(real));
+    if (NULL==E_kin_2) 
+      error("Cannot allocate memory for E_kin_2 vector\n");
+  }
+  if (NULL==tmpvec1) {
+    tmpvec1=(real*)malloc(nslices*sizeof(real));
+    if (NULL==tmpvec1) 
+      error("Cannot allocate memory for tmpvec1 vector\n");
+  }
+  if (NULL==tmpvec2) {
+    tmpvec2=(real*)malloc(nslices*sizeof(real));
+    if (NULL==tmpvec2) 
+      error("Cannot allocate memory for tmpvec2 vector\n");
+  }
+  
+  for (j=0; j<nslices; ++j) {
+    *(E_kin_1   +j) = 0.0;
+    *(E_kin_2   +j) = 0.0;
+    *(E_kin_ftg +j) = 0.0; 
+    *(ninslice  +j) = 0.0;
+  }
+
+
+  fnorm     = 0.0;
+
+  if(expansionmode==1)
+      dotepsilon = dotepsilon0 / (1.0 + dotepsilon0 * steps * timestep);
+      
+
+  /* loop over all atoms */
+
+  for (k=0; k<ncells; ++k) {
+
+    int i;
+    int sort;
+    cell *p;
+    real tmp,tmp1,tmp2;
+
+    p = cell_array + CELLS(k);
+
+    for (i=0; i<p->n; ++i) {
+	
+      /* calc slice */
+      tmp1 = p->ort X(i)/box_x.x;
+      slice = floor(nslices *tmp1);
+      if (slice<0)        slice = 0;
+      if (slice>=nslices) slice = nslices -1;;      
+
+      if (slice<0 || slice > nslices) printf("%d\n", slice);
+
+      sort = VSORTE(p,i);
+      /* add up degrees of freedom  considering restriction vector  */
+#ifdef TWOD
+      *(ninslice + slice) += ( (restrictions + sort)->x + 
+			       (restrictions + sort)->y   );
+#else
+      *(ninslice + slice) += ( (restrictions + sort)->x + 
+			       (restrictions + sort)->y +  
+			       (restrictions + sort)->z  );
+#endif
+	
+       	/* twice the old kinetic energy */
+      *(E_kin_1 + slice) +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
+	
+#ifdef FBC
+        /* give virtual particles their extra force */
+	p->kraft X(i) += (fbc_forces + sort)->x;
+	p->kraft Y(i) += (fbc_forces + sort)->y;
+#ifndef TWOD
+	p->kraft Z(i) += (fbc_forces + sort)->z;
+#endif
+#endif
+
+	p->kraft X(i) *= (restrictions + sort)->x;
+	p->kraft Y(i) *= (restrictions + sort)->y;
+#ifndef TWOD
+	p->kraft Z(i) *= (restrictions + sort)->z;
+#endif
+
+#ifdef FNORM
+	fnorm +=  SPRODN(p->kraft,i,p->kraft,i) / MASSE(p,i);
+#endif
+
+	reibung       =        1.0 -  *(gamma_ftg + slice) * timestep / 2.0;
+	eins_d_reib   = 1.0 / (1.0 +  *(gamma_ftg + slice) * timestep / 2.0);
+	reibung_y     =        1.0 - (*(gamma_ftg + slice) + dotepsilon) * 
+	                        timestep / 2.0;
+	eins_d_reib_y = 1.0 / (1.0 + (*(gamma_ftg + slice) + dotepsilon) * 
+			        timestep / 2.0);
+	
+        /* new momenta */
+	p->impuls X(i) = (p->impuls X(i)   * reibung   + timestep * p->kraft X(i)) 
+                           * eins_d_reib   * (restrictions + sort)->x;
+        p->impuls Y(i) = (p->impuls Y(i)   * reibung_y + timestep * p->kraft Y(i)) 
+                           * eins_d_reib_y * (restrictions + sort)->y;
+#ifndef TWOD
+        p->impuls Z(i) = (p->impuls Z(i)   * reibung   + timestep * p->kraft Z(i)) 
+                           * eins_d_reib   * (restrictions + sort)->z;
+#endif                  
+
+	/* twice the new kinetic energy */ 
+	*(E_kin_2 + slice) +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i); 
+	
+	/* new positions */
+        tmp = timestep / MASSE(p,i);
+	epsilontmp =               1.0 + dotepsilon * timestep / 2.0;
+	eins_d_epsilontmp = 1.0 / (1.0 - dotepsilon * timestep / 2.0);
+
+        p->ort X(i) +=  tmp * p->impuls X(i);
+        p->ort Y(i)  = (tmp * p->impuls Y(i) + epsilontmp * p->ort Y(i))
+	                * eins_d_epsilontmp;
+
+#ifndef TWOD
+        p->ort Z(i) +=  tmp * p->impuls Z(i);
+#endif
+
+#ifdef STRESS_TENS
+        p->presstens[i].xx += p->impuls X(i) * p->impuls X(i)/MASSE(p,i);
+        p->presstens[i].yy += p->impuls Y(i) * p->impuls Y(i)/MASSE(p,i);
+#ifndef TWOD
+        p->presstens[i].zz += p->impuls Z(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens[i].yz += p->impuls Y(i) * p->impuls Z(i)/MASSE(p,i);
+        p->presstens[i].zx += p->impuls Z(i) * p->impuls X(i)/MASSE(p,i);
+#endif
+        p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
+#endif
+    }
+  }
+
+
+  tot_kin_energy = 0.0; 
+  for (j=0; j<nslices; ++j){
+    tot_kin_energy += ( *(E_kin_1 + j) + *(E_kin_2 + j)) / 4.0;
+    *(E_kin_ftg+j)  = ( *(E_kin_1 + j) + *(E_kin_2 + j)) / 4.0;
+  }
+
+
+
+#ifdef MPI
+  /* add up results from different CPUs */
+  *(tmpvec1) = tot_kin_energy;
+  for (j=0; j<nslices; ++j) {
+    *(tmpvec1 +            j+1) = *(E_kin_ftg + j);
+    *(tmpvec1 +  nslices + j+1) = *(E_kin_2    + j);
+    *(tmpvec1 +2*nslicesj+ j+1) = *(ninslice   + j);
+  }
+
+  
+  MPI_Allreduce( tmpvec1, tmpvec2, 6, REAL, MPI_SUM, cpugrid);
+
+  for (j=0; j<nslices; ++j) {
+    *(E_kin_ftg  + j) = *(tmpvec2 +             j+1);
+    *(E_kin_2    + j) = *(tmpvec2 +   nslices + j+1);
+    *(ninslice   + j) = *(tmpvec2 + 2*nslicesj+ j+1);
+  }
+
+  tot_kin_energy = *(tmpvec1);
+#endif
+
+#ifdef DEBUG
+   if (myid==0)printf("\n\n");  
+#endif
+  for (j=0; j<nslices; ++j) {
+    
+    temperature =  Tleft + (Tright-Tleft)*(j-nslices_Left+1) /
+      (real) (nslices-nslices_Left-nslices_Right+1);
+    
+    if(j>=nslices-nslices_Right)  temperature = Tright;
+    if(j<nslices_Left)            temperature = Tleft;
+
+    
+    ttt   = temperature * *(ninslice+j);
+
+    /* time evolution of constraints */
+    /* dampingmode: 0 -> viscous damping (default); 
+       1 -> Nose-Hoover; */
+    if(dampingmode == 1){
+      *(gamma_ftg+j) += timestep * ( *(E_kin_2+j) / ttt - 1.0) * gamma_bar;
+   } else {
+      *(gamma_ftg+j)  =            (1.0 - ttt /  *(E_kin_2+j)) * gamma_bar;
+    }
+#ifdef DEBUG
+/*    printf("%3.6f ", *(E_kin_2+j));
+      printf("%3.6f ", ttt);*/
+    if (myid==0) printf("%3.6f ", temperature);
+/*      printf("%3.6f ", *(gamma_ftg + j));*/
+#endif
+
+  } 
+}
+
+#else
+
+void move_atoms_ftg(void) 
+{
+  if (myid==0)
+  error("the chosen ensemble FTG is not supported by this binary");
+}
+
+#endif
+
+
+
+
 #ifdef STM
 
 /*****************************************************************************

@@ -51,6 +51,7 @@ void maxwell(real temp)
    vektor      tot_impuls;
    ivektor     nactive_vec;
    static long dummy = 0;
+   int slice;
 
 #ifdef UNIAX
    real xisq;
@@ -108,7 +109,21 @@ void maxwell(real temp)
 	 }
 #endif
 
-         tmp = sqrt(TEMP * MASSE(p,i));
+#ifdef FTG
+	  /* calc slice and set TEMP  */
+	 tmp = p->ort X(i)/box_x.x;
+	 slice = floor(nslices *tmp);
+	 if (slice<0)        slice = 0;
+	 if (slice>=nslices) slice = nslices -1;;
+	 
+	 TEMP=  Tleft + (Tright-Tleft)*(slice-nslices_Left+1) /
+	   (real) (nslices-nslices_Left-nslices_Right+1);
+    
+	 if(slice>=nslices-nslices_Right)  TEMP = Tright;
+	 if(slice<nslices_Left)            TEMP=  Tleft;
+#endif
+         
+	 tmp = sqrt(TEMP * MASSE(p,i));
          typ = VSORTE(p,i);
          p->impuls X(i) = gasdev( &seed ) * tmp * (restrictions + typ)->x;
          p->impuls Y(i) = gasdev( &seed ) * tmp * (restrictions + typ)->y;
