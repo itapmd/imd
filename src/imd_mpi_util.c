@@ -129,6 +129,7 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
 #ifdef EAM2
   /* eam2_rho_h is not sent */
 #endif
+
 #ifdef CG
   to->data[ to->n++ ] = from->h X(index); 
   to->data[ to->n++ ] = from->h Y(index); 
@@ -146,6 +147,7 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
   to->data[ to->n++ ] = from->old_ort Z(index); 
 #endif
 #endif /* CG */
+
 #ifdef DISLOC
   to->data[ to->n++ ] = from->Epot_ref[index];
   to->data[ to->n++ ] = from->ort_ref X(index); 
@@ -237,6 +239,7 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
 #ifdef EAM2
       /* eam2_rho_h need not be copied */
 #endif
+
 #ifdef CG
       from->h X(index) = from->h X(from->n); 
       from->h Y(index) = from->h Y(from->n); 
@@ -253,8 +256,8 @@ void copy_one_atom(msgbuf *to, cell *from, int index, int delete)
 #ifndef TWOD
       from->old_ort Z(index) = from->old_ort Z(from->n); 
 #endif
-
 #endif /* CG */
+
 #ifdef DISLOC
       from->Epot_ref[index]    = from->Epot_ref[from->n]; 
       from->ort_ref X(index)   = from->ort_ref X(from->n); 
@@ -370,6 +373,7 @@ void process_buffer(msgbuf *b, cell *p)
 #ifdef EAM2
     /* don't send eam2_rho_h */
 #endif
+
 #ifdef CG
     input->h X(0) = b->data[j++];
     input->h Y(0) = b->data[j++];
@@ -387,6 +391,7 @@ void process_buffer(msgbuf *b, cell *p)
     input->old_ort Z(0) = b->data[j++];
 #endif
 #endif /* CG */
+
 #ifdef DISLOC
     input->Epot_ref[0]     = b->data[j++];
     input->ort_ref X(0)    = b->data[j++];
@@ -516,58 +521,40 @@ void setup_buffers(void)
   if (binc==0) {
 
     /* for communication to buffer cells */
-#ifdef TWOD
-    binc1=2;     /* position */
-#else
-    binc1=3;     /* position */
-#endif
+    binc1 = DIM;     /* position */
 #ifndef MONOLJ
-    binc1++;     /* sorte */
+    binc1++;         /* sorte */
 #endif
 #ifdef CG
-#ifdef TWOD
-    binc1=6;     /* old_ort, h,g */
-#else
-    binc1=9;     /* old_ort, h,g */
-#endif
-
+    binc1 += DIM;    /* old_ort */
 #endif
 #ifdef UNIAX
-    binc1+=9;    /* direction, etc. */
+    binc1 += 9;      /* direction, etc. */
 #endif
 
     /* for communication from buffer cells */
-#ifdef TWOD
-    binc2=2;     /* force */
-#else
-    binc2=3;     /* force */
-#endif
+    binc2 = DIM;     /* force */
 #ifndef MONOLJ
-    binc2++;     /* pot_eng */
+    binc2++;         /* pot_eng */
 #endif
 #ifdef CG
-#ifdef TWOD
-    binc2=6;          /* old_ort, h,g */
-#else
-    binc2=9;          /* old_ort, h,g */
-#endif
-
+    binc2 += 2*DIM;  /* h, g */
 #endif
 #ifdef NVX
-    binc2++;     /* heatcond */
+    binc2++;         /* heatcond */
 #endif
 #ifdef STRESS_TENS
 #ifdef TWOD
-    binc2+=3;    /* presstens */
+    binc2 += 3;      /* presstens */
 #else
-    binc2+=6;    /* presstens */
+    binc2 += 6;      /* presstens */
 #endif
 #endif
 #ifdef ORDPAR
-    binc2++;     /* nbanz */
+    binc2++;         /* nbanz */
 #endif
 #ifdef UNIAX
-    binc2+=3;    /* dreh_moment */
+    binc2 += 3;      /* dreh_moment */
 #endif
 
     /* one way or two ways */

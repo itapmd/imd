@@ -638,7 +638,6 @@ void copy_cell( int k, int l, int m, int r, int s, int t )
     to->old_ort X(i) = from->old_ort X(i);
     to->old_ort Y(i) = from->old_ort Y(i);
     to->old_ort Z(i) = from->old_ort Z(i);
-
 #endif
 #ifndef MONOLJ
     to->sorte[i] = from->sorte[i];
