@@ -25,10 +25,14 @@ ensemble        # simulation ensemble (MD integrator)
 maxsteps	# step number at which simulation phase ends
 startstep       # starting step number (default 0)
 timestep	# size of timestep (in MD units)
-ntypes		# number of atom types (types vary in [0..ntypes-1])
+total_types     # TOTAL number of atom types (including virtual types)
+                # total_types >= ntypes
+ntypes		# number of real atom types (types vary in [0..ntypes-1])
 seed            # seed for random number generator in maxwell
 initsize        # initially allocated cells get space for initsize particles
 incrsize        # memory in cells is incremented by incrsize particles
+restrictionvector    # format: typenr 1 1 0 
+                     # (i.e no movement in z-direction)
 
 # control parameters for parallel simulation
 cpu_dim		# CPU array dimension - required if parallel
@@ -89,17 +93,13 @@ cell_size_tol	     # relative tolerance for volume rescaling during
                      # NPT simulation
 
 # parameters for use with Force Boundary Conditions (FBC)
-total_types          # TOTAL nuber of atoms: ntypes + virtualtypes
 extra_startforce     # start-/endforce for each virtual type
-extra_endforce       # format: typenr forcevector
-                     # or (using mik)
-extra_dforce         # force increment for each virtual type 
-fbc_ekin_threshold   # that is added when E_kin per atom
-                     # drops under the thresholdvalue
+extra_endforce       # format: typenr force vector
+extra_dforce         # force increment for each virtual type (for mik)
+fbc_ekin_threshold   # extra_dforce is added when temperature
+                     # drops below the threshold value
 fbc_waitsteps        # or  after a given number of steps
 fbc_annealsteps      # the same as annealsteps for deform
-restrictionvector    # format: typenr 1 1 0 
-                     # (i.e no movement in z-direction)
 
 # parameters for use with Energy filter (efilter)
 ef_checkpt_int       # number of steps between output of selected atoms 
@@ -167,14 +167,13 @@ exp_interval    # number of steps between homogeneous expansions
 expansion	# expansion factos in x,y,z-direction (vector)
 
 # parameters for DEFORM
-strip_shift	# shift vector of strip atoms (per timestep)
-strip_width	# width (in x dir) of strip that is moved
+deform_shift    # type and shift vector, by which atoms of that type
+                # are shifted in each deform step (default is no shift)
 annealsteps	# no deformation before annealsteps steps (default 0)
-ekin_threshold	# deform if Ekin drops below threshold (default 0)
+ekin_threshold	# deform if temperature drops below threshold (default 0)
 max_deform_int  # deform if number of steps since last deformation is
                 # max_deform_int (default 0 - no deformation)
-initial_shift   # flag (0/1); determines whether initial shift is done
-ins             # initial shift vector
+
 
 # parameters for SHOCK
 shock_strip      # shock strip width (in x dir.)

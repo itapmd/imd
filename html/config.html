@@ -39,10 +39,8 @@ These items stand for:
 <P>
 Note that:
 <UL>
-<LI> the sample size has to be at least 3 times the potential
+<LI> the sample size has to be at least 2 times the potential
      cutoff-distance in each direction.
-<LI> atoms with negative numbers are immobile in certain ensembles.
-<LI> it is recommended not to use zero as a particle number.
 <LI> if <A HREF="#boundary">free boundary conditions</A> are used,
      it is the user's responsibility that the system fits into the
      simulation box (spanned by the box vectors starting at the
@@ -85,8 +83,6 @@ version is ex : ey : ez = 1 : 1 : 0.2
 Note that:
 <UL>
 <LI> Only the 3D version of the Gay-Berne model is implemented.
-<LI> Molecules with negative numbers are immobile in certain ensembles.
-<LI> It is recommended not to use zero as a particle number.
 <LI> If <A HREF="#boundary">free boundary conditions</A> are used,
      it is the user's responsibility that the system fits into the
      simulation box (spanned by the box vectors starting at the
@@ -130,14 +126,6 @@ of the Fibonacci approximant in the three directions. For the
 <TT>box_param.x*sqrt(3)</TT> in x-direction, and 
 <TT>box_param.y</TT> in y-direction. The nearest 
 neighbor distance is 1.
-<P>
-If the ensembles/options <B>frac</B>, <B>deform</B> or
-<B>shock</B> are contained in the exectuble, a layer of width
-<TT>strip_width/2</TT> is left empty at the boundary of the box 
-for all generated structures (only for layers perpendicular 
-to the x-axis in the case of the shock option), and the atoms
-in another layer of width <TT>strip_width/2</TT> perpendicular
-to the x-axis get negative numbers, which makes them immobile. 
 <P>
 The <TT>.tiqc</TT> structure is an approximant of a truncated
 icosahedra quasicrystals (tiqc, truncated icosahedra clusters are also

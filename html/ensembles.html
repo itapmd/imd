@@ -25,37 +25,40 @@ ensemble with external temperature control - the temperature
 can actually vary during the simulation). The imposed temperature
 varies linearly from starttemp to endtemp (parameters).
 A further required parameter is the time constant of the
-temperature control, tau_eta. Alternatively, the parameter
-isq_tau_eta can be specified, which is equal to the inverse
-square of tau_eta. isq_tau_eta can be zero, which means constant
+temperature control, tau_eta. Alternatively, the inverse
+of tau_eta, inv_tau_eta, can be specified. For historical
+reasons, even the squared inverse isq_tau_eta is accepted.
+inv_tau_eta or isq_tau_eta can be zero, which means constant
 energy simulation (nve). 
-If the option  <a href=uniax.html>UNIAX</a>
-is switched on, an additional parameter tau_eta_rot is required.
-Its provides the time constant for the coupling to the heat bath
-adjusting the temperature for rotational motion.
+If the option <A HREF=uniax.html>UNIAX</A> is switched on, an 
+additional parameter tau_eta_rot is required. It provides the 
+time constant for the coupling to the heat bath adjusting the 
+temperature for rotational motion. Like tau_eta, its inverse 
+inv_tau_eta, or its squared inverse isq_tau_eta, can be used
+as parameter.
 
 <P><LI><B> and </B><P>
-This is now an option, that can be used on its own as an integrator,
-or with the nve or mik integrators. You choose the integrator in your
-parameter file and activate the Anderson constant volume, constant 
-temperature thermostat by setting the parameter tempintv.
-So every tempintv steps the velocities are reset to give a Maxwell
-distribution corresponding to the given temperature. 
-tau_eta is not needed here. Can be used with FBC.
+This is actually an option which can be used together with the 
+nve or mik integrators. Every tempintv steps, the velocities
+are reinitialized to a random maxwell distribution of the imposed 
+external temperature, which is linearly interpolated between starttemp 
+and endtemp. With the nve integrator, this corresponds to an NVT
+ensemble with Anderson thermostat.
 
 <P><LI><B> npt_iso </B><P>
 Constant pressure, constant temperature ensemble, with isotropic 
 volume scaling. Nos&eacute;-Hoover type thermostat and volume control 
 are employed. Temperature control is as in nvt, with the same parameters.
-(Again, if the option  <a href=uniax.html>UNIAX</a>
+(Again, if the option  <A HREF=uniax.html>UNIAX</A>
 is switched on, an additional parameter tau_eta_rot is required.)
 The pressure varies linearly from pressure_start to pressure_end
 (parameters). A time constant for the pressure control, tau_xi,
-or its inverse square, isq_tau_xi, is required as a parameter.
-If isq_tau_xi is zero, the volume remains constant. The cell
-subdivision includes a rescaling tolerance cell_size_tol (parameter),
-which defaults to 0.05. If this tolerance is exceeded, the cell
-subdivision is changed on the fly.
+or its inverse inv_tau_xi, or its squared inverse, isq_tau_xi, 
+is required as a parameter. If inv_tau_xi or isq_tau_xi is zero, 
+the volume remains constant. The cell subdivision includes a 
+rescaling tolerance cell_size_tol (parameter), which defaults to 
+0.05. If this tolerance is exceeded, the cell subdivision is 
+changed on the fly.
 
 <P><LI><B> npt_axial </B><P>
 Constant pressure, constant temperature ensemble, 
@@ -65,19 +68,22 @@ Works the same way as npt_iso, with the same parameters, except that
 the three axial pressures can be specified separately. 
 
 <P><LI><B> mik </B><P>
-Microconvergence integrator. After each step, the velocity component
-"uphill" in the potential landscape is reset to zero. No particular
-parameter is needed, except perhaps the initial temperature, if not 
-all atoms have their velocities given in the configuration file.
-Can be used with AND and FBC.
+Microconvergence integrator. After each step, if the velocity of an
+atom goes "uphill" in the potential landscape, it is reset to zero. 
+No particular parameter is needed, except perhaps the initial
+temperature, if not all atoms have their velocities given in the 
+configuration file.
 
 <P><LI><B> glok </B><P>
-This is a kind of "global" mik. It works by now with the nve
-integrator (compile with glok_nve, ensemble is nve) in 2D and 3D, but not with uniax. Here the velocities of
-all atoms are set to 0, when the scalar product of the GLOBAL force
-and impuls vectors is smaller than 0. This should give a faster
-relaxation than mik, espacially if non-local stuff should be relaxed.
-This can be shown with fnorm.
+This is an option, which can be used together with the nve integrator.
+It works like a global version of mik: if the scalar product of
+the global force and momentum vectors (containing the force and
+momentum components of all atoms) is negative (momentum goes "uphill"
+in the potential landscape), all momenta are reset to zero.
+Note that this concerns only translational forces, not the rotational
+ones in <a href=uniax.html>UNIAX</a>. glok should relax faster than
+mik, which can be verified using the option <A HREF="options.html#fnorm">
+fnorm</A>.
 
 <P><LI><B> frac </B><P>
 Fracture simulation with stadium damping. Anyone know how this works?

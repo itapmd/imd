@@ -179,27 +179,51 @@ point into y- and z-direction, respectively.
 </A>
 <P>
 The deform option requires <B>free</B> boundary conditions.
-If <TT>max_deform_int</TT> is positive, or <TT>ekin_threshold</TT>
-is positive, atoms with negative numbers in the left half (in x
-direction) of the sample are rigidly moved by an amount
-<TT>strip_shift</TT>, which is a vector. Atoms with negative
-numbers in the right half of the sample are moved by the opposite
-vector. This happens if either the kinetic energy per particle drops 
-below <TT>ekin_threshold</TT> (useful with the mik integrator),
-or if the last deformation step was done <TT>max_deform_int</TT>
-steps ago. If <TT>annealsteps</TT> is positive, no deformations
-are done during the first <TT>annealsteps</TT> steps.
-This mechanism can be used both for shears (<TT>strip_shift</TT>
+A deform step is performed if either <TT>max_deform_int</TT> is
+positive and the last deform step was done <TT>max_deform_int</TT>
+steps ago, or if the temperature drops below <TT>ekin_threshold</TT>
+(useful with the mik integrator). In a deform step, all atoms of 
+virtual type v are shifted by the <TT>deform_shift</TT> vector for 
+that type v. A <TT>deform_shift</TT> for type v is specified as
+follows in the parameter file:
+<PRE>
+    deform_shift v shift_vector
+</PRE>
+During the first <TT>annealsteps</TT> steps, no deformations are
+done. This mechanism can be used both for shears (<TT>deform_shift</TT> 
 parallel to sample boundary) and for compressions or expansions
-(<TT>strip_shift</TT> perpendicular to sample boundary). The
-atoms with negative numbers are usually located in two boundary
-layers perpendicular to the x-axis.
+(<TT>deform_shift</TT> perpendicular to sample boundary). The
+atoms with the virtual types concerned are usually located in two 
+boundary layers of the sample.
+
+<A NAME="FBC">
+<P><LI><B>fbc</B><P>
+</A>
+Force Boundary Conditions. With this option, one can define extra 
+forces that act on atoms of certain <A HREF="general.html#virtual">
+virtual types</A>. This is implemented for the nve, nvt and mik
+ensembles.
+<P> For each concerned virtual type, one can declare in the parameter 
+file the starting and the end value (in the simulation phase) of an 
+extra force vector that is added to the force acting on atoms of
+that virtual type.
+The parameters <TT>extra_startforce</TT> and <TT>extra_endforce</TT> 
+expect 1 integer and d real numbers, where d is the sample dimension. 
+The first integer number specifies the virtual atom type, the other 
+d real numbers specify the extra force vector. The values between
+<TT>extra_startforce</TT> and <TT>extra_endforce</TT> are linearly
+interpolated (like the temperature). 
 <P>
-As automatic generation of samples may lead to atoms with coordinates
-close to zero (which would become negative after several shear steps) 
-it is possible to apply an initial shift to the sample. For this the
-flag <TT>initial_shift</TT> must be set to 1, and the vector
-<TT>ins</TT> must be set to the desired value.
+For mik simulations, instead of <TT>extra_endforce</TT> the force 
+increment <TT>extra_dforce</TT> should be specified. It is added to 
+the applied force each time the temperature drops under 
+<TT>fbc_ekin_threshold</TT>, or after <TT>fbc_waitsteps</TT>. 
+During the initial <TT>fbc_annealsteps</TT> steps, no extra forces 
+are applied.
+<P>
+Note that the parameter <TT>total_types</TT> must be read 
+<STRONG>before</STRONG> any extra forces.
+</LI>
 
 <A NAME="sock">
 <P><LI><B>sock</B><P>
@@ -302,44 +326,7 @@ tensor is written. Further, the histogram is written as a function
 of the x-coordinate only, and averaged over the y- and z-coordinate 
 (in 3d). For that purpose, the second and third component of
 <tt>press_dim</TT> have to be set to 1. 
-<A NAME="FBC">
-<P><LI><B>fbc</B><P>
-</A>
-Force Boundary Conditions. If set, one can define extra forces that
-are added on special atoms. To destinguish these atoms the concept of
-'virtual' atomtypes is introduced. A virtual atom of type v has the
-same physical properties as an atom of (real) type v modulo ntypes.
-The parameter <TT>total_types</TT> must be set to the number of real
-atomtypes + virtual atom types.  <P> For each virtual atomtype one can
-declare in the parameter file the starting and the end value of an
-extra force vector. The parameters <TT>extra_startforce</TT> and
-<TT>extra_startforce</TT> expect d+1 integer numbers where d is the
-sample dimension. The first integer number specifies the virtual atom
-type, the other d specify the extra force vector.The values between
-<TT>extra_startforce</TT> and <TT>extra_endforce</TT> are linearly
-interpolated (like the temperature). For mik simulations one specifies
-no <TT>extra_endforce</TT>, but a force increment
-<TT>extra_dforce</TT> that is added each time the kinetic energy per
-atom drops under <TT>fbc_ekin_threshold</TT> or after
-<TT>fbc_waitsteps</TT> (there is also a parameter
-<TT>fbc_annealsteps</TT>, see the deform option for details).  <P>
-This option should work with risc and mpi versions and at least with
-the NVE, NVT, AND and MIK integrators, and also with the 2d and eam2
-options.<p> There is also the possibility to restrict the movement of
-atomtypes to certain directions. Therefore one defines a restriction
-vector for each type, with elements equal to zero in the forbidden
-directions. The parameter <TT>restrictionvector</TT> expects d+1
-integer numbers where d is the sample dimension. The first integer
-number specifies the virtual atom type, the others must be zero for
-directions into which no motion should take place. Otherwise use any
-non-zero number.  This is still a little bit experimantal - it
-requires a responsible user: the begining velocities should be 0 and
-the temperature should be corrected for non existing degrees of
-freedom. One should also keep in mind, that restricting the motion of
-some atoms corresponds to a force which might affect the total impuls.
-<P>Note that in the parameter file the line containing the parameter
-<TT>total_types</TT> must appear <STRONG>before</STRONG> all other
-parameters described in this section.
+
 <A NAME="fnorm">
 <P><LI><B> fnorm </B><P>
 Calculates the scalar product of the global force vector, output in
