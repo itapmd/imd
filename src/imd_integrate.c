@@ -1299,7 +1299,7 @@ void move_atoms_frac(void)
 #else
 	sum_f+= f * ( (restrictions + sort)->x + 
 		      (restrictions + sort)->y +  
-		      (restrictions + sort)->z  )/3.0;
+		      (restrictions + sort)->z  )/2.0;
 #endif
 	
        	/* twice the old kinetic energy */
@@ -1546,7 +1546,7 @@ void move_atoms_ftg(void)
 	/* to share the code with the non local version we overwrite 
 	 the gamma values every timestep */
 	*(gamma_ftg+slice)  = (gamma_min + gamma_bar * gamma_tmp) 
-	  * MASSE(p,i) * (tmp-temperature) 
+	  * (tmp-temperature) 
 	  / sqrt(SQR(tmp) + SQR(temperature/delta_ftg));     
       } 
 
