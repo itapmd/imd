@@ -159,7 +159,6 @@ void read_atoms(str255 infilename)
           error("Numbers in infile and reffile are different.\n");
         }
       }
-      if (pn) construct_pn_disloc(&pos.x,&pos.y,&pos.z);
 #endif /* DISLOC */
 
 #ifndef NOPBC
