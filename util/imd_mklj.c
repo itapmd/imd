@@ -9,7 +9,7 @@
 
 #include <stdio.h>
 #include <math.h>
-#include "makros.h"
+#define SQR(a) ((a)*(a))
 
 
 int main(void)
