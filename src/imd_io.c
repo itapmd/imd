@@ -508,8 +508,8 @@ void write_header_press(FILE *out)
   fprintf(out, "#F %c 0 0 0 2 0 3\n", c);
   fprintf(out, "#C x y P_xx P_yy P_xy\n");
 #else
-  fprintf(out, "#F %c 0 0 0 3 0 6\n", c);
-  fprintf(out, "#C x y z P_xx P_yy P_zz P_yz P_zx P_xy\n");
+  fprintf(out, "#F %c 1 1 1 3 0 6\n", c);
+  fprintf(out, "#C number typ mass x y z P_xx P_yy P_zz P_yz P_zx P_xy\n");
 #endif
 
   /* box lines */
@@ -551,8 +551,10 @@ void write_atoms_press(FILE *out)
         PRESSTENS(p,i,xx), PRESSTENS(p,i,yy), PRESSTENS(p,i,xy) );
 #else
       len += sprintf( outbuf+len,
-        "%10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e\n", 
-        ORT(p,i,X),ORT(p,i,Y),ORT(p,i,Z),
+		      /*        "%d %d %f %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e\n", */
+        "%d %d %f %12f %12f %12f %12f %12f %12f %12f %12f %12f\n", 
+
+         NUMMER(p,i), VSORTE(p,i), MASSE(p,i),ORT(p,i,X),ORT(p,i,Y),ORT(p,i,Z),
         PRESSTENS(p,i,xx), PRESSTENS(p,i,yy), PRESSTENS(p,i,zz),
         PRESSTENS(p,i,yz), PRESSTENS(p,i,zx), PRESSTENS(p,i,xy) );
 #endif

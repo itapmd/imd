@@ -712,7 +712,7 @@ void getparamfile(char *paramfname, int sim)
       /* set imposed temperature to current system temperature */
       use_curr_temp = 1;
     }
-#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
+#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)|| defined(FINNIS)
     else if (strcasecmp(token,"endtemp")==0) {
       /* temperature at end of sim. */
       getparam("endtemp",&end_temp,PARAM_REAL,1,1);
