@@ -148,6 +148,12 @@ void move_atoms_nve(void)
         p->ort Z(i) += tmp * p->impuls Z(i);
 #endif
 
+#ifdef SHOCK
+	if (shock_mode == 3) {
+	  if (p->ort X(i) > box_x.x) p->impuls X(i) = -p->impuls X(i);
+	}
+#endif
+
         /* new molecular axes */
 #ifdef UNIAX
         cross.x = p->dreh_impuls Y(i) * p->achse Z(i)
