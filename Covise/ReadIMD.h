@@ -4,9 +4,6 @@
 ** Description: Read IMD checkpoint files from ITAP.                      **
 **                                                                        **
 **                                                                        **
-**                                                                        **
-**                                                                        **
-**                                                                        **
 ** Author:                                                                **
 **                                                                        **
 **                     Juergen Schulze-Doebold                            **
@@ -21,6 +18,25 @@
 #define _READ_IMD_H_
 
 #include <coModule.h>
+
+/** Routines for checkpoint file handling.
+*/
+class coCheckpointFile
+{
+  public:
+    vvArray<char*> paramNames;  ///< names of atom parameters (x, y, z, vx, vy, vz, type, mass, ...)
+    float boxSize[3][3];        ///< size of simulation box
+    FILE* fp;                   ///< current file pointer
+    coModule* module;           ///< module in which this class is used
+
+    coCheckpointFile(coModule*, FILE*);
+    virtual ~coCheckpointFile();
+    void clearParamNames();
+    int getParamIndex(char*);
+    void getSpeedIndices(int*, int*, int*);
+    void getLocationIndices(int*, int*, int*);
+    bool parseHeader();
+};
 
 /** Reader module for IMD checkpoint files. The file format was developed
     at the ITAP at the University of Stuttgart.
@@ -40,30 +56,41 @@
 */
 class coReadIMD : public coModule
 {
-    private:
-        // Ports:
-        coOutPort* poPoints;
-        coOutPort* poType;
-        coOutPort* poMass;
-        coOutPort* poSpeed;
-        coOutPort* poEpot;
-        
-        // Parameters:
-        coBrowserParam* pbrCheckpointFile;    ///< name of first checkpoint file of a sequence
-        coBooleanParam* pboPeriodic;          ///< true = use periodic boundaries with specified center, false = no periodic boundaries
-        coFloatVectorParam* pfvPeriodic;      ///< bottom left front corner of bounding box for periodic boundary conditions
-        coBooleanParam* pboConstrainSpeed;    ///< true = atom display is constrained to a certain speed range, false = no constraints
-        coFloatScalarParam* pfsSpeedMin;      ///< minimum absolute speed value to display
-        coFloatScalarParam* pfsSpeedMax;      ///< maximum absolute speed value to display
-        coFloatScalarParam* pfsTypeOffset;    ///< offset value to add to type information
-        coBooleanParam* pboIgnoreWarnings;    ///< true = don't display warnings when reading a file
-        
-        // Methods:
-        virtual int compute();
-        float absVector(float, float, float);
+  private:
+    // Ports:
+    coOutPort* poPoints;
+    coOutPort* poSpeed;
+    coOutPort* poScalar1;
+    coOutPort* poScalar2;
+    
+    // Parameters:
+    coBrowserParam* pbrCheckpointFile;    ///< name of first checkpoint file of a sequence
+    coBooleanParam* pboPeriodic;          ///< true = use periodic boundaries with specified center, false = no periodic boundaries
+    coFloatVectorParam* pfvPeriodic;      ///< bottom left front corner of bounding box for periodic boundary conditions
+    coBooleanParam* pboConstrainSpeed;    ///< true = atom display is constrained to a certain speed range, false = no constraints
+    coFloatScalarParam* pfsSpeedMin;      ///< minimum absolute speed value to display
+    coFloatScalarParam* pfsSpeedMax;      ///< maximum absolute speed value to display
+    coChoiceParam* pchScalar1;            ///< choice box for selection of output parameter 1
+    coChoiceParam* pchScalar2;            ///< choice box for selection of output parameter 2
+    coFloatScalarParam* pfsFactor1;       ///< factor to multiply scalar parameter 1 with
+    coFloatScalarParam* pfsFactor2;       ///< factor to multiply scalar parameter 2 with
+    coFloatScalarParam* pfsOffset1;       ///< offset value to add to scalar parameter 1
+    coFloatScalarParam* pfsOffset2;       ///< offset value to add to scalar parameter 2
+    coBooleanParam* pboWarnings;          ///< true = display warnings when reading a file
+    
+    // Attributes:
+    vvArray<char*> paramNames;            ///< names of atom parameters in header (atom type, Epot,...)
 
-    public:
-        coReadIMD();
+    // Methods:
+    virtual int compute();
+    virtual void param(const char*);
+    void readParameters();
+    void updateParameters(char**);
+    float absVector(float, float, float);
+
+  public:
+    coReadIMD();
+    bool displayWarnings();
 };
 
 #endif                                       
