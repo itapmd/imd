@@ -51,6 +51,51 @@ Note that:
      distribution with the desired temperature.
 </UL>
 
+<H2>Configuration Files for <a href=uniax.html>UNIAX</a></H2>
+
+In case that the option <a href=uniax.html>UNIAX</a> is switched on
+(uniaxial molecules interacting via the Gay-Berne pair potential),
+the data structure of the IMD configuration
+file is enlarged. Again, the ASCII file contains one
+line for each atom. The format is for each line now is: <br>
+
+<TD>number type mass inertia rx ry rz ux uy uz sx sy
+sz ex ey ez [vx vy vz wx wy wz]
+<P>
+These items stand for:
+<P><TABLE>
+<TR><TD>number	    <TD>number of the molecule; should be unique
+<TR><TD>type        <TD>type of the molecule; must be set equal to 1
+<TR><TD>mass        <TD>mass of the molecule; must be positive
+<TR><TD>inertia     <TD>moment of inertia of the molecule; must be positive
+<TR><TD>rx ry rz    <TD>coordinates of the center of mass of the molecule
+<TR><TD>ux uy uz    <TD>cartesian components of the unit vector
+pointing along the main axis of the molecule
+<TR><TD>sx sy sz    <TD>lengths of the main axes of uniaxial
+ellipsoid; sx must be sy, original version is sx : sy : sz = 1 : 1 : 3 
+<TR><TD>ex ey ez    <TD>energy for the potential well depths for
+parallel molecules along principal axes; ex must be ey, original
+version is ex : ey : ez = 1 : 1 : 0.2
+<TR><TD>vx vy vz    <TD>velocity components of the molecule
+<TR><TD>wx wy wz    <TD>angular velocity components of the molecule
+</TABLE>
+<P>
+Note that:
+<UL>
+<LI> Only the 3D version of the Gay-Berne model is implemented.
+<LI> Molecules with negative numbers are immobile in certain ensembles.
+<LI> It is recommended not to use zero as a particle number.
+<LI> If <A HREF="#boundary">free boundary conditions</A> are used,
+     it is the user's responsibility that the system fits into the
+     simulation box (spanned by the box vectors starting at the
+     origin). With <A HREF="#boundary">periodic boundary conditions</A>, 
+     atoms outside the box are mapped back into the box.
+<LI> If there are atoms with missing velocities and angular velocities
+     in the input file, the initial velocities and angular velocities
+     are set according to a Maxwell-Boltzmann
+     distribution with the desired temperature.
+</UL>
+
 <A NAME="makeconfig"> 
 <H2>Making Configurations Files</H2>
 </A>

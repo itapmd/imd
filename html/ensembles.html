@@ -28,7 +28,11 @@ A further required parameter is the time constant of the
 temperature control, tau_eta. Alternatively, the parameter
 isq_tau_eta can be specified, which is equal to the inverse
 square of tau_eta. isq_tau_eta can be zero, which means constant
-energy simulation (nve).
+energy simulation (nve). 
+If the option  <a href=uniax.html>UNIAX</a>
+is switched on, an additional parameter tau_eta_rot is required.
+Its provides the time constant for the coupling to the heat bath
+adjusting the temperature for rotational motion.
 
 <P><LI><B> and </B><P>
 Constant volume, constant temperature ensemble, with Anderson
@@ -40,6 +44,8 @@ steps (parameter). tau_eta is not needed here.
 Constant pressure, constant temperature ensemble, with isotropic 
 volume scaling. Nos&eacute;-Hoover type thermostat and volume control 
 are employed. Temperature control is as in nvt, with the same parameters.
+(Again, if the option  <a href=uniax.html>UNIAX</a>
+is switched on, an additional parameter tau_eta_rot is required.)
 The pressure varies linearly from pressure_start to pressure_end
 (parameters). A time constant for the pressure control, tau_xi,
 or its inverse square, isq_tau_xi, is required as a parameter.
