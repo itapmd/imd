@@ -492,9 +492,9 @@ void generate_atoms(str255 mode)
 
 #ifdef TWOD
   if (0 == strcmp(mode,".hex")) {          /* hexagonal crystal */
-    ivektor v=init_hex();
+    init_hex();
     init_cells();
-    generate_hex(v);
+    generate_hex();
 #else /* 3D */
   if (0 == strcmp(mode,".fcc")) {          /* fcc */
     init_cells();
@@ -576,17 +576,16 @@ void generate_atoms(str255 mode)
 #ifdef TWOD
 
 /* initialize for hexagonal crystal */
-ivektor init_hex(void)
+void init_hex(void)
 {
-  ivektor v;
-  v.x = box_x.x;
-  v.y = box_y.y;
-  box_x.x *= sqrt(3.0);
-  return(v);
+  box_x.x = box_param.x * sqrt(3.0);
+  box_x.y = 0.0;
+  box_y.x = 0.0;
+  box_y.y = box_param.y;
 }
 
 /* generate hexagonal crystal */
-void generate_hex(ivektor v)
+void generate_hex()
 {
   cell    *input;
   vektor  min, max;
@@ -596,13 +595,13 @@ void generate_hex(ivektor v)
   real    x, y;
 
 #ifdef MPI
-  min.x =  my_coord.x      * 2 * v.x / cpu_dim.x;
-  max.x = (my_coord.x + 1) * 2 * v.x / cpu_dim.x;
-  min.y =  my_coord.y      * 2 * v.y / cpu_dim.y;
-  max.y = (my_coord.y + 1) * 2 * v.y / cpu_dim.y;
+  min.x =  my_coord.x      * 2 * box_param.x / cpu_dim.x;
+  max.x = (my_coord.x + 1) * 2 * box_param.x / cpu_dim.x;
+  min.y =  my_coord.y      * 2 * box_param.y / cpu_dim.y;
+  max.y = (my_coord.y + 1) * 2 * box_param.y / cpu_dim.y;
 #else
-  min.x = 0; max.x = 2 * v.x;
-  min.y = 0; max.y = 2 * v.y;
+  min.x = 0; max.x = 2 * box_param.x;
+  min.y = 0; max.y = 2 * box_param.y;
 #endif
 
   /* Set up 1 atom input cell */

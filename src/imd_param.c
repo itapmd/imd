@@ -384,6 +384,10 @@ void getparamfile(char *paramfname, int sim)
       getparam("box_z",&box_z,PARAM_REAL,DIM,DIM);
     }
 #endif
+    else if (strcasecmp(token,"box_param")==0) {
+      /*  box parameters for generated structures */
+      getparam("box_param",&box_param,PARAM_INT,DIM,DIM);
+    }
     else if (strcasecmp(token,"timestep")==0) {
       /* size of timestep (in MD units) */
       getparam("timestep",&timestep,PARAM_REAL,1,1);
@@ -994,6 +998,7 @@ void broadcast_params() {
 #ifndef TWOD
   MPI_Bcast( &box_z       , DIM, MPI_REAL, 0, MPI_COMM_WORLD);
 #endif 
+  MPI_Bcast( &box_param   , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
 
   MPI_Bcast( &timestep    , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &ntypes      , 1, MPI_INT,  0, MPI_COMM_WORLD); 

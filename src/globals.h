@@ -70,6 +70,8 @@ EXTERN vektor box_y INIT(nullvektor);
 #ifndef TWOD
 EXTERN vektor box_z INIT(nullvektor);
 #endif
+/* box parameters for generated structures */
+EXTERN ivektor box_param INIT(nullivektor);
 /* if initialization will be forgotten by user, then this could lead to division by zero, so we may have to check box_{x,y,z} later */
 EXTERN vektor ibox_x;
 EXTERN vektor ibox_y;
