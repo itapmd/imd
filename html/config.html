@@ -85,12 +85,12 @@ of the Fibonacci approximant in the three directions. For the
 neighbor distance is 1.
 <P>
 If the ensembles/options <B>frac</B>, <B>deform</B> or
-<B>shock</B> are contained in the exectuble, a layer of with
+<B>shock</B> are contained in the exectuble, a layer of width
 <TT>strip_width/2</TT> is left empty at the boundary of the box 
-for all generated structures, and the remaining atoms in a
-layer of with <TT>strip_width</TT> get negative numbers,
-which makes them immobile. For the shock option, this applies
-only to the layers perpendicular to the x-axis.
+for all generated structures (only for layers perpendicular 
+to the x-axis in the case of the shock option), and the atoms
+in another layer of width <TT>strip_width/2</TT> perpendicular
+to the x-axis get negative numbers, which makes them immobile. 
 <P>
 The <TT>.tiqc</TT> structure is an approximant of a truncated
 icosahedra quasicrystals (tiqc, truncated icosahedra clusters are also
