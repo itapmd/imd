@@ -194,10 +194,13 @@ typedef       int integer;
   }
 
   sourcename = argv[1];
-  targetname = malloc( strlen(sourcename)+5 );
+  targetname = malloc( strlen(sourcename)+9 );
   strcpy(targetname,sourcename);
-  strcat(targetname,".ppm");
-
+#ifdef EPOT
+  strcat(targetname,".pot.ppm");
+#else
+  strcat(targetname,".kin.ppm");
+#endif
   sscanf(argv[2], "%lf", &Emin);
   sscanf(argv[3], "%lf", &Emax); 
   sscanf(argv[4], "%lf", &x0);
