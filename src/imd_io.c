@@ -1187,7 +1187,7 @@ void write_eng_file(int steps)
 #ifdef CG
   fprintf(eng_file, "%d",     steps);
   fprintf(eng_file, " %.16e", (double) Epot);
-  fprintf(eng_file, format,   (double) fnorm / nactive);
+  fprintf(eng_file, format,   (double) sqrt( (double) fnorm / nactive ) );
 #else
   fprintf(eng_file, "%e",     (double) (steps * timestep));
   fprintf(eng_file, " %.16e", (double) Epot);

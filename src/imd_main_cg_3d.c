@@ -489,7 +489,7 @@ void set_hg(void)
   }
 
 #ifdef MPI
-  MPI_Allreduce( &tmp_fmax2, &fmax2, 1, MPI_REAL, MPI_MAX, cpugrid);
+  MPI_Allreduce( &tmp_fmax2, &fmax2, 1, REAL, MPI_MAX, cpugrid);
 #else
   fmax2 = tmp_fmax2;
 #endif
