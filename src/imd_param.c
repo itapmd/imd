@@ -299,7 +299,7 @@ void getparamfile(char *paramfname, int sim)
     if (token[0]=='#') continue; /* skip comments */
 
     if (strcasecmp(token,"simulation")==0) {
-      /* file name for atom coordinate input data */
+      /* get number of the simulation phase */
       getparam("simulation",&tmp,PARAM_INT,1,1);
       if (sim < tmp) break;
     }
@@ -313,6 +313,10 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"coordname")==0) {
       /* file name for atom coordinate input data */
       getparam("coordname",infilename,PARAM_STR,1,255);
+    }
+    else if (strcasecmp(token,"itrname")==0) {
+      /* file name for initial itr-file */
+      getparam("itrname",itrfilename,PARAM_STR,1,255);
     }
     else if (strcasecmp(token,"outfiles")==0) {
       /* output file basename */
@@ -1279,6 +1283,12 @@ void read_parameters(int argc,char **argv)
     }
 
     getparamfile(paramfilename,1);
+    /* read initial itr-file (if there is any), but keep steps_min value */
+    if (0 < strlen(itrfilename)) {
+      int tmp = steps_min;
+      getparamfile(itrfilename,1);
+      steps_min = tmp;
+    }
     check_parameters_complete();
 
     /* Get restart parameters if restart */
@@ -1606,10 +1616,3 @@ void broadcast_params() {
 }
 
 #endif /* MPI */
-
-
-
-
-
-
-

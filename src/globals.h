@@ -135,6 +135,7 @@ EXTERN vektor min_height INIT(nullvektor);
 /* Filenames */
 EXTERN char outbuf[OUTPUT_BUF_SIZE] INIT("\0");  /* output buffer */
 EXTERN str255 infilename INIT("\0");    /* Input File */
+EXTERN str255 itrfilename INIT("\0");   /* initial itr-file */
 EXTERN str255 outfilename INIT("\0");   /* Output File */
 EXTERN str255 potfilename INIT("\0");   /* Potential */
 EXTERN char *paramfilename INIT(0L);    /* Parameter File */

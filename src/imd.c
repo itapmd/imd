@@ -123,7 +123,6 @@ int main(int argc, char **argv)
 
   /* execute further phases of the simulation */
   while (finished==0) {
-    str255 itrfilename;
     simulation++;
     if (0==myid) {
       getparamfile( paramfilename, simulation );
