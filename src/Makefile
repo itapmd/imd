@@ -450,12 +450,12 @@ endif
 
 # Power4 regatta, 64 bit
 ifeq (Power4-cc-64,${IMDSYS})
-  CC_SERIAL	= xlc_r
+  CC_SERIAL	= xlc
   CC_MPI	= mpcc_r
   CC_OMP	= xlc_r
   CC_OMPI	= mpcc_r
   BIN_DIR	= ${HOME}/bin/powerpc
-  OPT_FLAGS	+= -O4 -w -q64 # -qtbtable=full
+  OPT_FLAGS	+= -O4 -w -q64 -qunroll -qalign # -qtbtable=full
   OMP_FLAGS	+= -DUSE_WALLTIME -qsmp=omp
   OMPI_FLAGS	+= -qsmp=omp
   DEBUG_FLAGS	+= -g -q64
@@ -472,7 +472,7 @@ ifeq (Power4-cc-32,${IMDSYS})
   CC_OMP	= xlc_r
   CC_OMPI	= mpcc_r
   BIN_DIR	= ${HOME}/bin/powerpc
-  OPT_FLAGS	+= -O4 -w -q32 # -qtbtable=full
+  OPT_FLAGS	+= -O4 -w -q32 -qunroll -qalign # -qtbtable=full
   OMP_FLAGS	+= -DUSE_WALLTIME -qsmp=omp
   OMPI_FLAGS	+= -qsmp=omp
   DEBUG_FLAGS	+= -g -q64
