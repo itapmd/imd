@@ -632,7 +632,7 @@ void generate_hex()
       x = (i+0.5) * sqrt(3.0) * 0.5;
       y = (j+0.5) * 0.5;
 
-#if defined(FRAC) || defined(PULL) || defined(MIKSHEAR)
+#if defined(FRAC) || defined(PULL) || defined(SHEAR)
       /* leave boundary open if necessary */
       if ((x+0.5 < strip/2) || (x+0.5 > box_x.x-strip/2) ||
           (y+0.5 < strip/2) || (y+0.5 > box_y.y-strip/2)) continue;
@@ -717,7 +717,7 @@ void generate_fcc(int maxtyp)
     for (y=min.y; y<max.y; y++)
       for (z=min.z; z<max.z; z++) {
  
-#if defined(FRAC) || defined(PULL) || defined(MIKSHEAR)
+#if defined(FRAC) || defined(PULL) || defined(SHEAR)
         /* leave boundary open if necessary */
         if ((x+0.5 < strip/2) || (x+0.5 > box_x.x-strip/2) ||
             (y+0.5 < strip/2) || (y+0.5 > box_y.y-strip/2) ||
@@ -746,7 +746,7 @@ void generate_fcc(int maxtyp)
         cellc = cell_coord(input->ort X(0), input->ort Y(0), input->ort Z(0));
 #ifndef MONOLJ
 	if (pn) { /* immobile if around glideplane */
-	  if ((input->ort Z(0)<glideplane+1)&&(input->ort Z(0)> glideplane-1))
+	  if ((input->ort Z(0)<=upperplane)&&(input->ort Z(0)>= lowerplane))
             input->nummer[0] = -natoms;
 	  else
 	    input->nummer[0] = natoms;
@@ -882,7 +882,7 @@ void generate_lav()
 	      (y+co < rmin.y) || (y+co > rmax.y) ||
 	      (z+co < rmin.z) || (z+co > rmax.z)) continue;
 
-#if defined(FRAC) || defined(PULL) || defined(MIKSHEAR)
+#if defined(FRAC) || defined(PULL) || defined(SHEAR)
 	  /* leave boundary open if necessary */
 	  if ((x+co < strip/2) || (x+co > box_x.x-strip/2) ||
 	      (y+co < strip/2) || (y+co > box_y.y-strip/2) ||
@@ -932,14 +932,28 @@ void construct_pn_disloc(real *x, real *y, real *z) {
   /* computation of params for PN-formula */
   invwidth = 1/width;
   hfboxl = .5*box_x.x;
-  pf = burgersv / M_PI;
+  pf = .5 * burgersv / M_PI;
 
 #ifndef TWOD
-            if (*z > glideplane) /* above glideplane? move! */
+            if (*z > lowerplane)
 #else
-            if (*y > glideplane) /* above glideplane? move! */
+            if (*y > lowerplane)
 #endif
-              *x += burgersv/2 -pf*atan((*x - hfboxl) * invwidth);
-
+              *x += burgersv/2;
+#ifndef TWOD
+            if (*z == lowerplane)
+#else
+            if (*y == lowerplane)
+#endif
+              *x -= pf*atan((*x - hfboxl) * invwidth);
+#ifndef TWOD
+            if (*z == upperplane)
+#else
+            if (*y == upperplane)
+#endif
+              *x += pf*atan((*x - hfboxl) * invwidth);
 }
+
+
+
 

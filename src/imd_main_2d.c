@@ -61,15 +61,15 @@ void main_loop(void)
   /* initializations for the current simulation phase, if not yet done */
   if (0==restart) init();
 
-#ifdef MIKSHEAR
+#ifdef SHEAR
   stepssincelastshear = 0;
 #endif
 
   for (steps=steps_min; steps <= steps_max; ++steps) { 
 
-#ifdef MIKSHEAR
+#ifdef SHEAR
   stepssincelastshear++;
-  if ((ensemble==ENS_MIKSHEAR) && (steps > annealsteps) && ((tot_kin_energy/natoms < shear_epsilon) || ((stepssincelastshear % maxshearrelaxsteps) == 0))) {
+  if ((ensemble==ENS_SHEAR) && (steps > annealsteps) && ((tot_kin_energy/natoms < shear_epsilon) || ((stepssincelastshear % maxshearrelaxsteps) == 0))) {
     shear1step(steps);
     stepssincelastshear = 0;
   }
@@ -376,12 +376,12 @@ void init(void)
   xi.y = 0.0;
 #endif
   
-#if defined(PULL) || defined(FRAC) || defined(MIKSHEAR)
+#if defined(PULL) || defined(FRAC) || defined(SHEAR)
   /* Atoms with negative numbers are not moved */
   /* loop over all atoms */
   /* for each cell in bulk */
   if ((ensemble==ENS_PULL) || (ensemble==ENS_FRAC) ||
-      (ensemble==ENS_MIKSHEAR)) 
+      (ensemble==ENS_SHEAR)) 
   for (r=cellmin.x; r < cellmax.x; ++r)
     for (s=cellmin.x; s < cellmax.y; ++s) {
       p = PTR_2D_V(cell_array, r, s, cell_dim);
@@ -408,10 +408,10 @@ void epilogue(void)
   int r, s, i;
   cell *p;
   
-#if defined(PULL) || defined(FRAC) || defined(MIKSHEAR)
+#if defined(PULL) || defined(FRAC) || defined(SHEAR)
   /* make all atoms mobile again */
   if ((ensemble==ENS_PULL) || (ensemble==ENS_FRAC) || 
-      (ensemble==ENS_MIKSHEAR)) 
+      (ensemble==ENS_SHEAR)) 
   for (r=1; r < cell_dim.x-1; ++r)
     for (s=1; s < cell_dim.y-1; ++s) {
       p = PTR_2D_V(cell_array, r, s, cell_dim);

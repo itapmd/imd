@@ -92,7 +92,7 @@ void write_vrml_cell( cell *p, FILE *out )
 	if (ind < -1) continue;
 	if (ind > 3) continue;
 
-        /* Get RBG values from linear interpolation */
+        /* Get RGB values from linear interpolation */
 	red = -4.0 * (tabred[ind] - tabred[ind+1]) * E_pot + (tabred[ind] * (ind+1) - ind * tabred[ind+1] );
 
 	green = -4.0 * (tabgreen[ind] - tabgreen[ind+1]) * E_pot + (tabgreen[ind] * (ind+1) - ind * tabgreen[ind+1] );
@@ -383,9 +383,9 @@ void write_pictures_bins(int steps)
    	  p = PTR_3D_V(cell_array, r, s, t, cell_dim);
 
 	  for (i = 0;i < p->n; ++i) {
-          if ( (p->ort X(i) < conf_llf.x) || (p->ort X(i) > conf_urb.x) ||
-               (p->ort Y(i) < conf_llf.y) || (p->ort Y(i) > conf_urb.y) ||
-               (p->ort Z(i) < conf_llf.z) || (p->ort Z(i) > conf_urb.z) )
+          if ( (p->ort X(i) < pic_ll.x) || (p->ort X(i) > pic_ur.x) ||
+               (p->ort Y(i) < pic_ll.y) || (p->ort Y(i) > pic_ur.y) ||
+               (p->ort Z(i) < pic_ll.z) || (p->ort Z(i) > pic_ur.z) )
             continue;
           coord.x = (int)floor((p->ort X(i)*a.x + p->ort Y(i)*a.y + p->ort Z(i)*a.z + xshift)*scale.x);
           coord.y = (int)floor((p->ort X(i)*b.x + p->ort Y(i)*b.y + p->ort Z(i)*b.z + yshift)*scale.y);
@@ -525,9 +525,9 @@ if (0==myid) {
 	p = PTR_3D_V(cell_array, r, s, t, cell_dim);
 
 	for (i = 0;i < p->n; ++i) {
-          if ( (p->ort X(i) < conf_llf.x) || (p->ort X(i) > conf_urb.x) ||
-               (p->ort Y(i) < conf_llf.y) || (p->ort Y(i) > conf_urb.y) ||
-               (p->ort Z(i) < conf_llf.z) || (p->ort Z(i) > conf_urb.z) )
+          if ( (p->ort X(i) < pic_ll.x) || (p->ort X(i) > pic_ur.x) ||
+               (p->ort Y(i) < pic_ll.y) || (p->ort Y(i) > pic_ur.y) ||
+               (p->ort Z(i) < pic_ll.z) || (p->ort Z(i) > pic_ur.z) )
             continue;
           coord.x = (int)floor((p->ort X(i)*a.x + p->ort Y(i)*a.y + p->ort Z(i)*a.z + xshift)*scale.x);
           coord.y = (int)floor((p->ort X(i)*b.x + p->ort Y(i)*b.y + p->ort Z(i)*b.z + yshift)*scale.y);

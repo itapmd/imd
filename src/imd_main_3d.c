@@ -87,16 +87,16 @@ void main_loop(void)
   /* initializations for the current simulation phase, if not yet done */
   if (0==restart) init();
 
-#ifdef MIKSHEAR
+#ifdef SHEAR
   if (maxshearrelaxsteps == 0) maxshearrelaxsteps = 32767;
   stepssincelastshear = 0;
 #endif
 
   for (steps=steps_min; steps <= steps_max; ++steps) {
 
-#ifdef MIKSHEAR
+#ifdef SHEAR
   stepssincelastshear++;
-  if ((ensemble==ENS_MIKSHEAR) && (steps > annealsteps) && ((tot_kin_energy/natoms < shear_epsilon) || ((stepssincelastshear % maxshearrelaxsteps) == 0))) {
+  if ((steps > annealsteps) && ((tot_kin_energy/natoms < shear_epsilon) || ((stepssincelastshear % maxshearrelaxsteps) == 0))) {
     shear1step(steps);
     stepssincelastshear = 0;
   }
@@ -500,10 +500,10 @@ void init(void)
   xi.z = 0.0;
 #endif
   
-#if defined(PULL) || defined(FRAC) || defined(MIKSHEAR)
+#if defined(PULL) || defined(FRAC) || defined(SHEAR)
   /* Atoms with negative numbers are immobile */
   if ((ensemble==ENS_PULL) || (ensemble==ENS_FRAC) ||
-      (ensemble==ENS_MIKSHEAR)) 
+      (ensemble==ENS_SHEAR)) 
   for (r=cellmin.x; r < cellmax.x; ++r)
     for (s=cellmin.y; s < cellmax.y; ++s)
       for (t=cellmin.z; t < cellmax.z; ++t) {
@@ -531,9 +531,9 @@ void epilogue(void)
   int r, s, t, i;
   cell *p;
   
-#if defined(PULL) || defined(FRAC) || defined(MIKSHEAR)
+#if defined(PULL) || defined(FRAC) || defined(SHEAR)
   /* make all atoms mobile again */
-  if ((ensemble==ENS_PULL) || (ensemble==ENS_FRAC)) 
+  if ((ensemble==ENS_PULL) || (ensemble==ENS_FRAC) || (ensemble==ENS_SHEAR)) 
   for (r=cellmin.x; r < cellmax.x; ++r)
     for (s=cellmin.y; s < cellmax.y; ++s)
       for (t=cellmin.z; t < cellmax.z; ++t) {

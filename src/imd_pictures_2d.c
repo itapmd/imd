@@ -325,7 +325,7 @@ if (0==myid) {
 
   for (j=0; j<pic_res.y; j++ ) {
     for (i=0; i<pic_res.x; i++ ) {
-      buf[3*i  ] = (unsigned char) redbit[j*pic_res.x+i];
+      buf[3*i  ] = (char) redbit[j*pic_res.x+i];
       buf[3*i+1] = (char) greenbit[j*pic_res.x+i];
       buf[3*i+2] = (char) bluebit[j*pic_res.x+i];
     };
@@ -347,11 +347,11 @@ if (0==myid) {
 
 
   /* Zero bitmap */
-  for (i=0; i<pic_res.y; i++ ) {
-    for (j=0; j<pic_res.x; j++ ) {
-      bluebit[i*pic_res.x+j]  = 0;
-      greenbit[i*pic_res.x+j] = 0;
-      redbit[i*pic_res.x+j]   = 0;
+  for (j=0; j<pic_res.y; j++ ) {
+    for (i=0; i<pic_res.x; i++ ) {
+      bluebit[j*pic_res.x+i]  = 0;
+      greenbit[j*pic_res.x+i] = 0;
+      redbit[j*pic_res.x+i]   = 0;
     };
   };
 
@@ -394,11 +394,10 @@ Pixels not in the default interval */
 
           /* Set & Copy Pixel */
           for (j=0;j<np;++j)
-             for (k=0;k<np;++k) {
+            for (k=0;k<np;++k) {
               pixcoord.x = coord.x + j;
               pixcoord.y = coord.y + k;
 
-              if ((pixcoord.x<pic_res.x) && (pixcoord.y<pic_res.y)) {
 
                  pix =  redbit  [pixcoord.y*pic_res.x+pixcoord.x] + (SFACTOR * 255 * red  );
                  redbit  [pixcoord.y*pic_res.x+pixcoord.x] = (shortint) pix < 255 ? pix : 255;
@@ -408,7 +407,6 @@ Pixels not in the default interval */
 
                  pix = greenbit[pixcoord.y*pic_res.x+pixcoord.x] + (SFACTOR * 255 * green);
                  greenbit[pixcoord.y*pic_res.x+pixcoord.x] = (shortint) pix < 255 ? pix : 255;
-              };
            }; 
 	};
        };
@@ -451,13 +449,13 @@ if (0==myid) {
 #endif
 
   out = fopen(fname,"w");
-  if (NULL == out) error("Can`t open bitmap file.");
+  if (NULL == out) error("Cannot open bitmap file.");
 
   fprintf(out,"P6 %d %d 255\n", pic_res.x, pic_res.y);
 
 
-  for (j=0; j<pic_res.x; j++ ) {
-    for (i=0; i<pic_res.y; i++ ) {
+  for (j=0; j<pic_res.y; j++ ) {
+    for (i=0; i<pic_res.x; i++ ) {
       buf[3*i  ] = (char) redbit[j*pic_res.x+i];
       buf[3*i+1] = (char) greenbit[j*pic_res.x+i];
       buf[3*i+2] = (char) bluebit[j*pic_res.x+i];

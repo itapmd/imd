@@ -506,7 +506,7 @@ void write_config(int steps)
   int i,j,k,l,m,tag;
 
   /* Dateiname fuer Ausgabedatei erzeugen */
-#ifdef MIKSHEAR
+#ifdef SHEAR
   fzhlr = steps;
 #else
   fzhlr = steps / rep_interval;

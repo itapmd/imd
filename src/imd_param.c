@@ -291,8 +291,8 @@ void getparamfile(char *paramfname, int sim)
         ensemble = ENS_NVE;
         move_atoms = move_atoms_nve;
       }
-      else if (strcasecmp(tmpstr,"mikshear")==0) {
-        ensemble = ENS_MIKSHEAR;
+      else if (strcasecmp(tmpstr,"shear")==0) {
+        ensemble = ENS_SHEAR;
         move_atoms = move_atoms_mik;
       }
       else if (strcasecmp(tmpstr,"mik")==0) {
@@ -367,6 +367,10 @@ void getparamfile(char *paramfname, int sim)
       /* number of steps between picture writes */
       getparam("pic_int",&pic_interval,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token,"onl_int")==0) {
+      /* number of steps between online visualization */
+      getparam("onl_int",&onl_interval,PARAM_INT,1,1);
+    }
     else if (strcasecmp(token,"dist_dim")==0) {
       getparam("dist_dim",&dist_dim,PARAM_INT,DIM,DIM);
     }
@@ -408,9 +412,13 @@ void getparamfile(char *paramfname, int sim)
       /* z/y (3/2D)-coordinate of glideplane */
       getparam("pn",&pn,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"glideplane")==0) {
+    else if (strcasecmp(token,"upperplane")==0) {
       /* z/y (3/2D)-coordinate of glideplane */
-      getparam("glideplane",&glideplane,PARAM_REAL,1,1);
+      getparam("upperplane",&upperplane,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"lowerplane")==0) {
+      /* z/y (3/2D)-coordinate of glideplane */
+      getparam("lowerplane",&lowerplane,PARAM_REAL,1,1);
     }
     else if (strcasecmp(token,"burgersv")==0) {
       /* length of Burgers-vector */
@@ -499,13 +507,13 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #ifndef TWOD
-    else if (strcasecmp(token,"conf_llf")==0) { 
+    else if (strcasecmp(token,"pic_ll")==0) { 
       /* lower left front corner of configuration */
-      getparam("conf_llf", &conf_llf,PARAM_REAL,DIM,DIM);
+      getparam("pic_ll", &pic_ll,PARAM_REAL,DIM,DIM);
     }
-    else if (strcasecmp(token,"conf_urb")==0) { 
+    else if (strcasecmp(token,"pic_ur")==0) { 
       /* upper right back corner of configuration */
-      getparam("conf_urb", &conf_urb,PARAM_REAL,DIM,DIM);
+      getparam("pic_ur", &pic_ur,PARAM_REAL,DIM,DIM);
     }
     else if (strcasecmp(token,"view_pos")==0) { 
       /* view position */
@@ -518,15 +526,6 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"projection")==0) {
       /* projection (0=orthogonal, 1=perspective) */
       getparam("projection",&projection,PARAM_INT,1,1);
-    }
-#else
-    else if (strcasecmp(token,"conf_ll")==0) { 
-      /* lower left corner of configuration */
-      getparam("conf_ll", &conf_ll,PARAM_REAL,DIM,DIM);
-    }
-    else if (strcasecmp(token,"conf_ur")==0) { 
-      /* upper right corner of configuration */
-      getparam("conf_ur", &conf_ur,PARAM_REAL,DIM,DIM);
     }
 #endif
     else if (strcasecmp(token,"ecut_kin")==0) { 
@@ -566,7 +565,7 @@ void getparamfile(char *paramfname, int sim)
       };
       getparam("pic_at_radius", pic_at_radius,PARAM_REAL_COPY,1,ntypes);
     }
-#if defined(FRAC) || defined(PULL) || defined(SHOCK) || defined(MIKSHEAR)
+#if defined(FRAC) || defined(PULL) || defined(SHOCK) || defined(SHEAR)
     else if (strcasecmp(token,"strip_width")==0) { 
       /* strip width (in x dir.) */
       getparam("strip_width",&strip,PARAM_REAL,1,1);
@@ -651,7 +650,11 @@ void getparamfile(char *paramfname, int sim)
       getparam("tran_interval", &tran_interval, PARAM_INTEGER, 1,1);
     }
 #endif
-#ifdef MIKSHEAR
+#ifdef SHEAR
+    else if (strcasecmp(token,"strip")==0) {
+      /* shear delta per timestep */
+      getparam("strip",&strip,PARAM_REAL,1,1);
+    }   
     else if (strcasecmp(token,"shear_delta")==0) {
       /* shear delta per timestep */
       getparam("shear_delta",&shear_delta,PARAM_REAL,1,1);
@@ -1024,6 +1027,8 @@ void broadcast_params() {
   MPI_Bcast( &parallel_input,  1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( outfilename , sizeof(outfilename), MPI_CHAR, 0, MPI_COMM_WORLD); 
   MPI_Bcast( infilename  , sizeof(infilename) , MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( reffilename , sizeof(reffilename), MPI_CHAR, 0, MPI_COMM_WORLD); 
+
 
 #if defined(AND) || defined(NVT) || defined(NPT)
   MPI_Bcast( &end_temp , 1 , MPI_REAL,  0, MPI_COMM_WORLD); 
@@ -1080,7 +1085,7 @@ void broadcast_params() {
   MPI_Bcast( &gamma_cut , 1, MPI_REAL, 0, MPI_COMM_WORLD);
 #endif
 
-#if defined(FRAC) || defined(PULL) || defined(SHOCK) || defined(MIKSHEAR)
+#if defined(FRAC) || defined(PULL) || defined(SHOCK) || defined(SHEAR)
   MPI_Bcast( &strip, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
 
@@ -1098,7 +1103,7 @@ void broadcast_params() {
   MPI_Bcast( &tip.y , 1, MPI_REAL, 0, MPI_COMM_WORLD);
 #endif
 
-#ifdef MIKSHEAR
+#ifdef SHEAR
   MPI_Bcast( &shear_delta,   1, MPI_REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &shear_epsilon, 1, MPI_REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &glideplane,    1, MPI_REAL, 0, MPI_COMM_WORLD);
@@ -1108,7 +1113,6 @@ void broadcast_params() {
   MPI_Bcast( &min_dpot,        1, MPI_REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ddelta,          1, MPI_REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &dem_interval,    1, MPI_INT,  0, MPI_COMM_WORLD);
-  MPI_Bcast( &ddm_interval,    1, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &dsp_interval,    1, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &calc_Epot_ref,   1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &reset_Epot_step, 1, MPI_INT,  0, MPI_COMM_WORLD); 
@@ -1135,7 +1139,7 @@ void broadcast_params() {
     case ENS_MC:        move_atoms = move_atoms_mc;        break;
     case ENS_FRAC:      move_atoms = move_atoms_frac;      break;
     case ENS_PULL:      move_atoms = move_atoms_pull;      break;
-    case ENS_MIKSHEAR:  move_atoms = move_atoms_mik;       break;
+    case ENS_SHEAR:  move_atoms = move_atoms_mik;       break;
     case ENS_NVX:       move_atoms = move_atoms_nvx;       break;
     case ENS_MSD:       move_atoms = move_atoms_msd;       break;
     default: if (0==myid) error("unknown ensemble in broadcast"); break;

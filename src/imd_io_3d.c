@@ -66,12 +66,16 @@ void read_atoms(str255 infilename)
   if (1==parallel_input) {
     sprintf(buf,"%s.%u",infilename,myid); 
     infile = fopen(buf,"r");
+#ifdef DISLOC
+    sprintf(buf,"%s.%u",reffilename,myid); 
+    reffile = fopen(reffilename,"r");
+#endif
     /* When each cpu reads only part of the atoms, we have to add the
        number of atoms together to get the correct natoms. We set a
        flag here */
     if (NULL!=infile) addnumber=1;
   } else if (0!=myid) {
-    recv_atoms(); 
+    recv_atoms();
     /* If CPU 0 found velocities in its data, no initialisation is done */
     MPI_Bcast( &natoms,       1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast( num_sort, ntypes, MPI_INT, 0, MPI_COMM_WORLD);
@@ -81,6 +85,8 @@ void read_atoms(str255 infilename)
 
   if ((1!=parallel_input) || (NULL==infile))
     infile = fopen(infilename,"r");
+  if ((1!=parallel_input) || (NULL==reffile))
+    reffile = fopen(reffilename,"r");
 
 #else
   infile = fopen(infilename,"r");
@@ -171,13 +177,13 @@ void read_atoms(str255 infilename)
 #ifdef DOUBLE
     p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf %lf",
 	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z, &refeng);
-    pref = sscanf(refbuf,"%d %d %lf %lf %lf %lf",
-	      &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refpos.z);
+    pref = sscanf(refbuf,"%d %d %lf %lf %lf %lf %lf %lf %lf %lf",
+	      &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refpos.z,&fdummy,&fdummy,&fdummy,&refeng);
 #else
     p = sscanf(buf,"%d %d %f %f %f %f %f %f %f %f",
 	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z, &refeng);  
     pref = sscanf(refbuf,"%d %d %f %f %f %f",
-	      &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refpos.z);
+	      &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refpos.z,&refeng);
 #endif
     if ((ABS(refn)) != (ABS(n))) {printf("%d %d\n", n, refn); error("Numbers in infile and reffile are different.\n");}
 
@@ -187,9 +193,10 @@ void read_atoms(str255 infilename)
 	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);  
 #else
     p = sscanf(buf,"%d %d %f %f %f %f %f %f %f",
-	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);  
+	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);
 #endif
 #endif
+    if (pn) construct_pn_disloc(&pos.x,&pos.y,&pos.z);
 
 #ifndef NOPBC
     pos = back_into_box(pos);
@@ -200,7 +207,7 @@ void read_atoms(str255 infilename)
       switch( p ) {
       case(6):      /* n, m, s, ort */
 #ifdef DISLOC
-        calc_Epot_ref=1;
+        calc_Epot_ref=0;
 #endif
 	do_maxwell=1;
 	input->n = 1;
@@ -216,6 +223,7 @@ void read_atoms(str255 infilename)
 	input->kraft  X(0) = 0;
 	input->kraft  Y(0) = 0;
 	input->kraft  Z(0) = 0;
+	input->Epot_ref[0] = refeng;
 	break;
       case(9):      /* n, m, s, ort, vau */
 #ifdef DISLOC
@@ -252,7 +260,7 @@ void read_atoms(str255 infilename)
 	input->kraft  X(0) = 0;
 	input->kraft  Y(0) = 0;
 	input->kraft  Z(0) = 0;
-	input->Epot_ref[0] = vau.x; /* vau.x misused as potengref ! */
+	input->Epot_ref[0] = refeng;
 	input->ort_ref X(0) = refpos.x;
 	input->ort_ref Y(0) = refpos.y;
 	input->ort_ref Z(0) = refpos.z;
@@ -580,7 +588,7 @@ void write_config(int steps)
   int i,j,k,l,m,tag;
 
   /* Dateiname fuer Ausgabedatei erzeugen */
-#ifdef MIKSHEAR
+#ifdef SHEAR
   fzhlr = steps;
 #else
   fzhlr = steps / rep_interval;
@@ -893,8 +901,7 @@ void write_dspmaps(int steps)
       for (l = 1; l < cell_dim.z-1; ++l ) {
 	p = PTR_3D_V(cell_array, j, k, l, cell_dim);
 	WRITE_CELL_DDM;
-	}
-      };
+      }
 
   /* Receive data from other cpus and write that */
   p   = PTR_3D_V(cell_array, 0, 0, 0, cell_dim);
@@ -909,9 +916,7 @@ void write_dspmaps(int steps)
             recv_cell( p, m, ORT_REF_TAG );
 #endif
 	    WRITE_CELL_DDM;
-	    }
-	  };
-
+	  }
   fclose(ddmout);      
 
   } else { 
