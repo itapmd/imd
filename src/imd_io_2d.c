@@ -437,27 +437,29 @@ void write_atoms_config(FILE *out)
 *
 ******************************************************************************/
 
-void write_itr_file(int fzhlr, int steps,char *suffix)
+void write_itr_file(int fzhlr, int steps, char *suffix)
 {
   FILE *out;
   str255 fname;
   int m;
 
-#ifdef SNAPSHOT
-  if (fzhlr>=0) sprintf(fname,"%s.%05d.%sitr",outfilename,fzhlr,suffix);
-  else          sprintf(fname,"%s-final.%sitr",outfilename,suffix);
-#else
-  if (fzhlr>=0) sprintf(fname,"%s.%05d.itr",outfilename,fzhlr);
-  else          sprintf(fname,"%s-final.itr",outfilename);
-#endif
+  if (strcasecmp(suffix,"ss")==0) {
+    if (fzhlr>=0) sprintf(fname,"%s.%05d.%sitr",outfilename,fzhlr,suffix);
+    else          sprintf(fname,"%s-final.%sitr",outfilename,suffix);
+  }
+  else {
+    if (fzhlr>=0) sprintf(fname,"%s.%05d.itr",outfilename,fzhlr);
+    else          sprintf(fname,"%s-final.itr",outfilename);
+  }
 
   out = fopen(fname,"w");
   if (NULL == out) error("Cannot write iteration file.");
 
   fprintf(out,"# checkpoint %d\n",fzhlr);
   fprintf(out,"startstep \t%d\n",steps+1);
-#ifdef SNAPSHOT
-  fprintf(out,"sscounr \t%d\n",sscount);
+#ifdef RELAX
+  fprintf(out,"sscount \t%d\n",sscount);
+  fprintf(out,"nfc \t%d\n",nfc);
 #endif
   fprintf(out,"box_x \t%f %f\n",box_x.x,box_x.y);
   fprintf(out,"box_y \t%f %f\n",box_y.x,box_y.y);

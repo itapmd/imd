@@ -27,15 +27,14 @@
 *
 *****************************************************************************/
 
-#ifndef CG  /* CG has different main loop */
-
 void main_loop(void)
 {
   real tmp_pot_energy, tmp_kin_energy;
   int  i, j, k, l;
   int  steps_diff = steps_max - steps_min;
-  int  nofbcsteps = 0;
-  real dtemp, dshock_speed;
+  int  deform_int = 0, fbc_int = 0, do_fbc_incr = 0, is_relaxed = 0;
+  int  have_fbc_incr = 0;
+  real dtemp, dshock_speed, old_epot = 0.0;
   vektor d_pressure, *fbc_df;
 #ifdef TWOD
   vektor nullv={0.0,0.0};
@@ -62,8 +61,8 @@ void main_loop(void)
   }
 #endif
 
-  /* initialize temperature, if necessary */
   if (0==imdrestart) {
+    /* initialize temperature, if necessary */
     if (do_maxwell) maxwell(temperature);
     do_maxwell=0;
   }
@@ -83,17 +82,28 @@ void main_loop(void)
 #endif
 
 #ifdef FBC
-#ifndef MIK
-  /* dynamic loading, increment linearly each timestep */
-  for (l=0;l<vtypes;l++){
-    (fbc_df+l)->x = ((fbc_endforces+l)->x - (fbc_beginforces+l)->x)/steps_diff;
-    (fbc_df+l)->y = ((fbc_endforces+l)->y - (fbc_beginforces+l)->y)/steps_diff;
+#ifdef RELAX
+  for (l=0; l<vtypes; l++) {
+    if ((fbc_dforces+l)->x != 0.0) have_fbc_incr = 1;
+    if ((fbc_dforces+l)->y != 0.0) have_fbc_incr = 1;
 #ifndef TWOD
-    (fbc_df+l)->z = ((fbc_endforces+l)->z - (fbc_beginforces+l)->z)/steps_diff;
+    if ((fbc_dforces+l)->z != 0.0) have_fbc_incr = 1;
 #endif
   }
+#else
+  /* dynamic loading, increment linearly at each timestep */
+  if ((ensemble!=ENS_MIK) && (ensemble!=ENS_GLOK) && (ensemble!=ENS_CG)) {
+    for (l=0;l<vtypes;l++){
+      (fbc_df+l)->x = ((fbc_endforces+l)->x-(fbc_beginforces+l)->x)/steps_diff;
+      (fbc_df+l)->y = ((fbc_endforces+l)->y-(fbc_beginforces+l)->y)/steps_diff;
+#ifndef TWOD
+      (fbc_df+l)->z = ((fbc_endforces+l)->z-(fbc_beginforces+l)->z)/steps_diff;
 #endif
-#endif
+    }
+    do_fbc_incr = 1;
+  }
+#endif /* RELAX */
+#endif /* FBC */
 
 #ifdef NVX
   dtemp = (dTemp_end - dTemp_start) / steps_diff;
@@ -123,12 +133,12 @@ void main_loop(void)
   if (diffpat_int > 0) init_diffpat();
 #endif
 
-#ifdef DEFORM
-  deform_int = 0;
-#endif
-
 #ifdef NBLIST
   make_nblist();
+#endif
+
+#ifdef CG
+  if (ensemble == ENS_CG) reset_cg();
 #endif
 
   /* simulation loop */
@@ -147,7 +157,7 @@ void main_loop(void)
 	      }
 	  }
       }
-  }
+    }
 #endif
 
 #ifdef STRESS_TENS
@@ -170,24 +180,20 @@ void main_loop(void)
     }
 #endif
 
-#ifdef FBC
-#ifdef MIK  
-    /* just increment the force if under threshold of e_kin or after 
-       waitsteps and after annelasteps */
-    for (l=0; l<vtypes; l++) *(fbc_df+l) = nullv;
-
-    if (steps > fbc_annealsteps) {
-      nofbcsteps++; 
-
-      if ((2.0*tot_kin_energy/nactive < fbc_ekin_threshold) ||
-          (nofbcsteps==fbc_waitsteps)) 
-      {
-        nofbcsteps=0;
+#if defined(FBC) && defined(RELAX)
+    /* set fbc increment if necessary */
+    if ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) {
+      if ((is_relaxed) || (fbc_int > max_fbc_int)) { 
         for (l=0; l<vtypes; l++) fbc_df[l] = fbc_dforces[l];
+        fbc_int = 0;
+        do_fbc_incr = 1;
+      }
+      else {
+        for (l=0; l<vtypes; l++) *(fbc_df+l) = nullv;
+        do_fbc_incr = 0;
       }
     }
-#endif /* MIK */
-#endif /* FBC */
+#endif
 
 #ifdef HOMDEF
     if ((exp_interval > 0) && (0 == steps % exp_interval)) expand_sample();
@@ -201,31 +207,16 @@ void main_loop(void)
 #endif
 
 #ifdef DEFORM
-#ifdef GLOKDEFORM
-    if (steps > annealsteps) {
-      deform_int++;
-      if ((fnorm < fnorm_threshold) || (deform_int==max_deform_int)) {
-#ifdef SNAPSHOT
-	  write_eng_file(steps);
-	  write_ssconfig(steps);
-	  sscount++;
+    if (max_deform_int > 0) {
+      if ((is_relaxed) || (deform_int == max_deform_int)) {
+        deform_sample();
+        deform_int=0;
+#ifdef CG
+        if (ensemble == ENS_CG) reset_cg();
 #endif
-	  /* maxwell(temperature); doesn't seem to work better */ 
-	  deform_sample();
-	  deform_int=0;
       }
+      deform_int++;
     }
-#endif
-#ifndef GLOKDEFORM
-    if (steps > annealsteps) {
-	deform_int++;
-	if ((2.0*tot_kin_energy/nactive < ekin_threshold) || 
-	    (deform_int==max_deform_int)) {
-	    deform_sample();
-	    deform_int=0;
-	}
-    }
-#endif
 #endif
 
 #ifdef AVPOS
@@ -243,17 +234,25 @@ void main_loop(void)
 #endif
 
 #ifdef FBC
-    /* fbc_forces is already initialised with beginforces */
-    for (l=0; l<vtypes; l++){ 
-      /* fbc_df=0 if MIK && ekin> ekin_threshold */
-      (fbc_forces+l)->x += (fbc_df+l)->x;  
-      (fbc_forces+l)->y += (fbc_df+l)->y;
+    /* apply fbc increment if necessary */
+    if (do_fbc_incr == 1) {
+      for (l=0; l<vtypes; l++){ 
+        (fbc_forces+l)->x += (fbc_df+l)->x;  
+        (fbc_forces+l)->y += (fbc_df+l)->y;
 #ifndef TWOD
-      (fbc_forces+l)->z += (fbc_df+l)->z;
+        (fbc_forces+l)->z += (fbc_df+l)->z;
 #endif
-    } 
+      } 
+#ifdef CG
+      if (ensemble == ENS_CG) reset_cg();
+#endif
+    }
 #endif
 
+#ifdef CG
+    if (ensemble == ENS_CG) cg_step(steps);
+    else
+#endif
     calc_forces(steps);
 
 #ifdef FORCE
@@ -290,8 +289,9 @@ void main_loop(void)
 
 #ifdef GLOK 
     /* "global convergence": set momenta to 0 if P*F < 0 (global vectors) */
-    if (steps > glok_annealsteps) {
-      if ((PxF<0.0)||(2.0*tot_kin_energy/nactive > glok_ekin_threshold)) {
+    if (ensemble == ENS_GLOK) {
+      real ekin = 2 * tot_kin_energy / nactive;
+      if ((PxF < 0) || (ekin > glok_ekin_threshold) || (steps == steps_min)) {
         for (k=0; k<NCELLS; ++k) {
           cell *p;
           p = CELLPTR(k);
@@ -308,7 +308,7 @@ void main_loop(void)
     }
 #endif
 
-    move_atoms(); /* here PxF is recalculated */
+    if (ensemble != ENS_CG) move_atoms(); /* here PxF is recalculated */
 
 #ifdef EPITAX
     /* beam atoms are always integrated by NVE */
@@ -445,11 +445,43 @@ void main_loop(void)
 #endif
 
 #ifdef HOMDEF
-    if (relax_rate > 0.0) 
-#ifdef GLOK
-      if (steps > glok_annealsteps)
+    if (relax_rate > 0.0) relax_pressure();
 #endif
-        relax_pressure();
+
+#ifdef RELAX
+    if ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) {
+
+      int stop = 0;
+      real fnorm2 = SQRT( fnorm / nactive );
+      real ekin   = 2 * tot_kin_energy / nactive;
+      real epot   = tot_pot_energy / natoms;
+      real delta_epot = old_epot - epot;
+      if (delta_epot < 0) delta_epot = -delta_epot;
+
+      if ((ekin < ekin_threshold) || (fnorm2 < fnorm_threshold) || 
+          (fmax < fmax_threshold) || (delta_epot < delta_epot_threshold)) 
+        is_relaxed = 1;
+      old_epot = epot;
+
+      if (is_relaxed) {
+        stop = 1;
+        write_eng_file(steps);
+        write_ssconfig(steps);
+        if (myid==0) {
+          printf("nfc = %d epot = %22.16f\n", nfc, epot );
+          printf("ekin = %e fnorm = %e fmax = %e delta_epot = %e\n", 
+                 ekin, fnorm2, fmax, delta_epot);
+        }
+      }
+
+#ifdef DEFORM
+      if (max_deform_int > 0) stop=0;
+#endif
+#ifdef FBC
+      if (have_fbc_incr) stop=0;
+#endif
+      if (stop) steps_max = steps;
+    }
 #endif
 
 #ifdef NBLIST
@@ -496,7 +528,6 @@ void main_loop(void)
   }  
 }
 
-#endif /* CG */
 
 /******************************************************************************
 *

@@ -114,19 +114,21 @@ EXTERN ivektor pbc_dirs INIT(einsivektor); /* directions with pbc */
 
 EXTERN vektor *restrictions INIT(NULL);  /* directions the atom is allowed to move in */
 
-#ifdef FBC    /* FBC uses the virtual atom types, */
-EXTERN vektor *fbc_forces;       /* each vtype has its force */
-EXTERN vektor *fbc_beginforces;  /* begin & endvalues for linear interpolation */ 
-#if defined(MIK) ||defined (CG)                       /* or ... */
-EXTERN vektor *fbc_dforces;      /* each vtype has its force increment */
-EXTERN real   fbc_ekin_threshold INIT(0.0);/* threshold for ekin */ 
-EXTERN int    fbc_waitsteps INIT(1); /* between increase of forces */
-EXTERN int    fbc_annealsteps INIT(1); /* times before 1. + df */
-EXTERN vektor *fbc_endforces;   
-#else
-EXTERN vektor *fbc_endforces;   
+#ifdef RELAX
+EXTERN real ekin_threshold       INIT(0.0); /* threshold for Ekin */
+EXTERN real fnorm_threshold      INIT(0.0); /* threshold for force norm */
+EXTERN real fmax_threshold       INIT(0.0); /* threshold for force maximum */
+EXTERN real delta_epot_threshold INIT(0.0); /* threshold for delta Epot */
 #endif
 
+#ifdef FBC                                 /* FBC uses virtual atom types, */
+EXTERN vektor *fbc_forces      INIT(NULL); /* each vtype has its force */
+EXTERN vektor *fbc_beginforces INIT(NULL); /* begin values for interpolation */
+EXTERN vektor *fbc_endforces   INIT(NULL); /* end values for interpolation */
+#ifdef RELAX
+EXTERN vektor *fbc_dforces     INIT(NULL); /* force increment */
+EXTERN int    max_fbc_int      INIT(1);    /* max int for force increment */
+#endif
 #endif /* FBC */
 
 /* Global bookkeeping */
@@ -262,6 +264,7 @@ EXTERN int  nbl_count  INIT(0);      /* counting neighbor list rebuild */
 
 /* square of global force vector f=(f1.x, f1.y,...,fn.z) */
 EXTERN real fnorm INIT(0.0);  
+EXTERN real fmax  INIT(0.0);  
 /* scalar product of global force and momentum vectors */ 
 EXTERN real PxF INIT(0.0);
 /* Einstein frequency is similar as fnorm, but divided by the masses */ 
@@ -365,19 +368,14 @@ EXTERN real end_temp INIT(0.0);        /* Temperature and at of simulation */
 
 #ifdef GLOK
 EXTERN real   glok_ekin_threshold INIT(100.0); /* threshold for ekin */  
-EXTERN int    glok_annealsteps INIT(0);      /* number of annealing steps */
 #endif
 #ifdef DEFORM
-EXTERN int    deform_int INIT(0);       /* counting steps between 2 shears */
 EXTERN int    max_deform_int INIT(0);   /* max. steps between 2 shear steps */
 EXTERN real   deform_size INIT(1.0);    /* scale factor for deformation */
-EXTERN real   fnorm_threshold INIT(0.0);/* threshold for fnorm */    
 EXTERN vektor *deform_shift;            /* shift for each vtype */
 EXTERN vektor *deform_shear;            /* shear for each vtype */
 EXTERN vektor *deform_base;             /* base point for shear deformation */
 EXTERN int    *shear_def;               /* shear flag for each vtype */
-EXTERN real   ekin_threshold INIT(0.0); /* threshold for ekin */    
-EXTERN int    annealsteps INIT(0);      /* number of annealing steps */    
 #endif
 
 #ifdef HOMDEF
@@ -458,26 +456,28 @@ EXTERN real *E_kin_ftg;                  /* kin energy of the slices */
 
 #ifdef CG
 /* Parameters used by CG */
-EXTERN real   cg_threshold INIT(0.0);   /* threshold for cg */    
-EXTERN int    cg_maxsteps  INIT(0);     /* max number of cg steps */    
-EXTERN int    linmin_maxsteps  INIT(0); /* max number of linmin steps */    
-EXTERN real   linmin_tol  INIT(0.0);    /* tolerance between 2 linmin steps */
-EXTERN real   linmin_dmax  INIT(0.0);   /* max. search steps in linmin  */ 
-#ifndef DEFORM                          /* no double definition */
-EXTERN int    annealsteps INIT(0);      /* number of annealing steps */    
-#endif
+EXTERN int    linmin_maxsteps  INIT(100); /* max number of linmin steps */    
+EXTERN real   linmin_tol  INIT(0.0002);    /* tolerance between 2 linmin steps */
+EXTERN real   linmin_dmax  INIT(0.01);   /* max. search steps in linmin  */ 
+EXTERN real   linmin_dmin  INIT(0.001);   /* min. search steps in linmin  */ 
+EXTERN int    cg_infolevel INIT(0);     /* cg_infolevel controls verbosity */
+EXTERN int    cg_mode INIT(0);          /* CG mode */
+EXTERN int    cg_fr INIT(0);            /* Fletcher-Reeves mode or not */
+EXTERN int    cg_reset_int INIT(0);     /* interval between cg resetting */
+
 /* Variables needed by CG */
-EXTERN int    cgsteps   INIT(0);        /* current nr of CG step */
-EXTERN real   fmax2     INIT(0.0);      /* max. force comp. ^2  */    
-EXTERN real   old_cgval  INIT(0.0);      /* old value to minimize */ 
-EXTERN real   gg         INIT(0.0);      /* see Num. Rec. p.320 */       
-EXTERN real   dgg        INIT(0.0);      /* see Num. Rec. p.320 */    
-EXTERN real   cg_gamma   INIT(0.0);      /* see Num. Rec. p.320 */    
+EXTERN real   fmax2         INIT(0.0);      /* max. force comp. ^2  */
+EXTERN real   cg_poteng     INIT(0.0);      /* potential energy per atom */
+EXTERN real   old_cg_poteng INIT(0.0);      /* old poteng value */ 
+EXTERN real   gg            INIT(0.0);      /* see Num. Rec. p.320 */       
+EXTERN real   dgg           INIT(0.0);      /* see Num. Rec. p.320 */    
+EXTERN real   cg_gamma      INIT(0.0);      /* see Num. Rec. p.320 */    
 #endif
 
-#ifdef SNAPSHOT
-EXTERN int sscount INIT(0);
+#ifdef RELAX
+EXTERN int sscount INIT(0);           /* snapshot counter */
 #endif
+EXTERN int nfc INIT(0);               /* counts force computations */
 
 #ifdef DISLOC
 EXTERN int  dem_int INIT(0);          /* Period of dem output */

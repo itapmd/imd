@@ -351,7 +351,7 @@ void getparamfile(char *paramfname, int sim)
 #endif
     else if (strcasecmp(token,"ensemble")==0) {
       /* ensemble */
-      getparam("ensemble",tmpstr,PARAM_STR,1,255);
+      getparam(token,tmpstr,PARAM_STR,1,255);
       if (strcasecmp(tmpstr,"nve")==0) {
         ensemble = ENS_NVE;
         move_atoms = move_atoms_nve;
@@ -375,6 +375,10 @@ void getparamfile(char *paramfname, int sim)
       else if (strcasecmp(tmpstr,"npt_axial")==0) {
         ensemble = ENS_NPT_AXIAL;
         move_atoms = move_atoms_npt_axial;
+      }
+      else if (strcasecmp(tmpstr,"glok")==0) {
+        ensemble = ENS_GLOK;
+        move_atoms = move_atoms_nve;
       }
       else if (strcasecmp(tmpstr,"and")==0) {
         error("please use nve ensemble with option and");
@@ -401,12 +405,8 @@ void getparamfile(char *paramfname, int sim)
       } 
       else if (strcasecmp(tmpstr,"cg")==0) {
         ensemble = ENS_CG;
-        /* the following have different types; */
-        /* move_atoms_cg is never used as move_atoms */
-        /* move_atoms = move_atoms_cg; */
       }
-     
-    else {
+      else {
         error("unknown ensemble");
       }
     }
@@ -425,6 +425,10 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"eng_int")==0) {
       /* energy data output interval */
       getparam("eng_int",&eng_int,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"flush_int")==0) {
+      /* interval for flushing .eng file */
+      getparam(token,&flush_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"dist_int")==0) {
       /* number of steps between energy dist. writes */
@@ -539,12 +543,6 @@ void getparamfile(char *paramfname, int sim)
       getparam("nb_cut_upper",upper_nb_cut,PARAM_INT,ntypes,ntypes);
     }
 #endif
-#ifdef SNAPSHOT
-    else if (strcasecmp(token,"sscount")==0) {
-      /* actual snapshot nr., for restarting */
-      getparam("sscount",&sscount,PARAM_INT,1,1);
-    }
-#endif
     else if (strcasecmp(token,"total_types")==0) {
       /* TOTAL nuber of atom types: ntypes + virtual types */
       getparam("total_types",&vtypes,PARAM_INT,1,1);
@@ -566,7 +564,7 @@ void getparamfile(char *paramfname, int sim)
 	error("Cannot allocate memory for fbc_beginforces\n");
       for(k=0; k<vtypes; k++)
        *(fbc_beginforces+k) = nullv;
-#ifdef MIK
+#ifdef RELAX
       fbc_dforces = (vektor *) malloc(vtypes*DIM*sizeof(real));
       if (NULL==fbc_dforces)
 	error("Cannot allocate memory for fbc_dforces\n");
@@ -611,6 +609,33 @@ void getparamfile(char *paramfname, int sim)
 #endif
     }
 
+#ifdef RELAX
+    else if (strcasecmp(token,"ekin_threshold")==0) {
+      /* threshold for sufficient relaxation */
+      getparam(token,&ekin_threshold,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"fnorm_threshold")==0) {
+      /* threshold for sufficient relaxation */
+      getparam(token,&fnorm_threshold,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"fmax_threshold")==0) {
+      /* threshold for sufficient relaxation */
+      getparam(token,&fmax_threshold,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"delta_epot_threshold")==0) {
+      /* threshold for sufficient relaxation */
+      getparam(token,&delta_epot_threshold,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"sscount")==0) {
+      /* snapshot counter, for restarting */
+      getparam(token,&sscount,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"nfc")==0) {
+      /* nfc counter, for restart */
+      getparam(token,&nfc,PARAM_INT,1,1);
+    }
+#endif
+
 #ifdef FBC
     else if (strcasecmp(token,"extra_startforce")==0) {
       /* extra force for virtual types */
@@ -626,19 +651,20 @@ void getparamfile(char *paramfname, int sim)
       *(fbc_beginforces+(int)(tempforce.x)) = force;
       *(fbc_forces+(int)(tempforce.x)) = force; 
     }
-
-#ifdef MIK
+#ifdef RELAX
     else if (strcasecmp(token,"fbc_ekin_threshold")==0) {
       /* epsilon criterium to increment extra force*/
-      getparam("fbc_ekin_threshold",&fbc_ekin_threshold,PARAM_REAL,1,1);
+      getparam(token,&ekin_threshold,PARAM_REAL,1,1);
+      warning("Parameter fbc_ekin_threshold replaced by ekin_threshold"); 
     }
-    else if (strcasecmp(token,"fbc_annealsteps")==0) {
-      /* max nr of steps before shears */
-      getparam("fbc_annealsteps",&fbc_annealsteps,PARAM_INT,1,1);
+    else if (strcasecmp(token,"max_fbc_int")==0) {
+      /* max nr of steps between fbc increments */
+      getparam(token,&max_fbc_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"fbc_waitsteps")==0) {
-      /* max nr of steps between shears */
-      getparam("fbc_waitsteps",&fbc_waitsteps,PARAM_INT,1,1);
+      /* max nr of steps between fbc increments */
+      getparam(token,&max_fbc_int,PARAM_INT,1,1);
+      warning("Parameter fbc_waitsteps replaced by max_fbc_int"); 
     }
     else if (strcasecmp(token,"extra_dforce")==0) {
       /* extra force increment for virtual types */
@@ -1095,31 +1121,15 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #ifdef GLOK
-    else if (strcasecmp(token,"glok_annealsteps")==0) {
-      /* number of annealing steps */
-      getparam(token,&glok_annealsteps,PARAM_INT,1,1);
-    }
     else if (strcasecmp(token,"glok_ekin_threshold")==0) {
       /* threshold for ekin */
       getparam(token,&glok_ekin_threshold,PARAM_REAL,1,1);
     }
 #endif
 #ifdef DEFORM
-    else if (strcasecmp(token,"annealsteps")==0) {
-      /* max nr of steps between shears */
-      getparam(token,&annealsteps,PARAM_INT,1,1);
-    }
-    else if (strcasecmp(token,"ekin_threshold")==0) {
-      /* shear epsilon criterium, see imd_shear_new.c */
-      getparam(token,&ekin_threshold,PARAM_REAL,1,1);
-    }
     else if (strcasecmp(token,"max_deform_int")==0) {
       /* max nr of steps between shears */
       getparam("max_deform_int",&max_deform_int,PARAM_INT,1,1);
-    }
-    else if (strcasecmp(token,"fnorm_threshold")==0) {
-      /* criterium to contiune deformation */
-      getparam("fnorm_threshold",&fnorm_threshold,PARAM_REAL,1,1);
     }
     else if (strcasecmp(token,"deform_size")==0) { 
       /* scale factor for deformation */
@@ -1167,14 +1177,6 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif /* DEFORM */
 #ifdef CG
-    else if (strcasecmp(token,"cg_threshold")==0) {
-      /* criterium to contiune relaxation */
-      getparam("cg_threshold",&cg_threshold,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"cg_maxsteps")==0) {
-      /* max steps of relaxation */
-      getparam("cg_maxsteps",&cg_maxsteps,PARAM_INT,1,1);
-    }
     else if (strcasecmp(token,"linmin_maxsteps")==0) {
       /* max steps to find min in one direction */
       getparam("linmin_maxsteps",&linmin_maxsteps,PARAM_INT,1,1);
@@ -1186,10 +1188,35 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"linmin_dmax")==0) {
       /* max. length of trial step in 1d minimum search */
       getparam("linmin_dmax",&linmin_dmax,PARAM_REAL,1,1);
+    } 
+    else if (strcasecmp(token,"linmin_dmin")==0) {
+      /* max. length of trial step in 1d minimum search */
+      getparam("linmin_dmin",&linmin_dmin,PARAM_REAL,1,1);
     }
-    else if (strcasecmp(token,"annealsteps")==0) {
-      /* max nr of steps between shears */
-      getparam("annealsteps",&annealsteps,PARAM_INT,1,1);
+    else if (strcasecmp(token,"cg_fr")==0) {
+      /* Fletcher-Reeves mode or not*/
+      getparam(token,&cg_fr,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"cg_reset_int")==0) {
+      /* interval for resetting cg */
+      getparam(token,&cg_reset_int,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"cg_infolevel")==0) {
+      /* cg_infolevel controls verbosity */
+      getparam(token,&cg_infolevel,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"cg_mode")==0) {
+      /* conjugate gradient mode - at present just the default one */
+      getparam(token,tmpstr,PARAM_STR,1,255);
+      if (strcasecmp(tmpstr,"cge")==0) {
+        cg_mode = CGE;
+      }
+      /* not implemented yet
+      else if (strcasecmp(tmpstr,"cgef")==0) {
+        cg_mode = CGEF;
+      }
+      */
+      else error_str("unknown CG mode %s",tmpstr);
     }
 #endif /* CG */
 #ifdef SHOCK
@@ -2053,21 +2080,10 @@ void check_parameters_complete()
   if (0==atdist_end) atdist_end = steps_max;
 #endif
 
-#ifdef GLOKDEFORM
-  if ((fnorm_threshold==0.0) && (max_deform_int == 0))
-  {
-       error("You have to define fnorm_threshold and max_deform_int ");
-  }
-#endif
 #ifdef CG
-  if ((cg_threshold==0.0) || (cg_maxsteps==0))
-  {
-       error("You have to define cg_threshold and cg_maxsteps  ");
-  }
-  if ((linmin_maxsteps==0) || (linmin_tol==0.0) || (linmin_dmax==0.0))
-  {
-       error("You have to parameters for the linmin search  ");
-  }
+  if ((linmin_maxsteps==0) || (linmin_tol==0.0) || 
+      (linmin_dmax==0.0) || (linmin_dmin==0.0))
+    error("You have to set parameters for the linmin search");
 #endif
 #ifdef HOMDEF
   if (relax_rate > 0.0) {
@@ -2219,6 +2235,7 @@ void broadcast_params() {
   MPI_Bcast( &steps_min   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &checkpt_int , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &eng_int     , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &flush_int   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &pic_int     , 1, MPI_INT,  0, MPI_COMM_WORLD); 
 
   MPI_Bcast( &dist_int,              1, MPI_INT, 0, MPI_COMM_WORLD); 
@@ -2249,12 +2266,17 @@ void broadcast_params() {
 #ifdef CLONE
   MPI_Bcast( &nclones, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
-#ifdef SNAPSHOT
-  MPI_Bcast( &sscount, 1, MPI_INT, 0, MPI_COMM_WORLD);
-#endif
 
   MPI_Bcast( &vtypes,         1, MPI_INT, 0, MPI_COMM_WORLD);
 
+#ifdef RELAX
+  MPI_Bcast( &ekin_threshold,       1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &fnorm_threshold,      1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &fmax_threshold,       1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &delta_epot_threshold, 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &sscount,              1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &nfc,                  1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
 #ifdef FBC
   if (0!=myid) fbc_forces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==fbc_forces) 
@@ -2265,11 +2287,8 @@ void broadcast_params() {
   if (NULL==fbc_beginforces) 
     error("Cannot allocate memory for fbc_beginforces on client."); 
   MPI_Bcast( fbc_beginforces, vtypes*DIM, REAL, 0, MPI_COMM_WORLD); 
-#ifdef MIK
-  MPI_Bcast( &fbc_ekin_threshold , 1, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &fbc_waitsteps      , 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &fbc_annealsteps    , 1, MPI_INT, 0, MPI_COMM_WORLD);
-
+#ifdef RELAX
+  MPI_Bcast( &max_fbc_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
   if (0!=myid) fbc_dforces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==fbc_dforces) 
     error("Cannot allocate memory for fbc_dforces on client."); 
@@ -2473,16 +2492,12 @@ void broadcast_params() {
   MPI_Bcast( &delta_finnis     , 1, REAL   , 0, MPI_COMM_WORLD); 
   MPI_Bcast( &zeta_0           , 1, REAL   , 0, MPI_COMM_WORLD); 
 #endif
-#if defined(GLOK)
-  MPI_Bcast( &glok_annealsteps,    1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &glok_ekin_threshold, 1, REAL,    0, MPI_COMM_WORLD); 
+#ifdef GLOK
+  MPI_Bcast( &glok_ekin_threshold, 1, REAL, 0, MPI_COMM_WORLD); 
 #endif
 #ifdef DEFORM
-  MPI_Bcast( &annealsteps,         1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &ekin_threshold,      1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &max_deform_int,  1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &deform_size,     1, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &fnorm_threshold, 1, REAL,    0, MPI_COMM_WORLD); 
   if (0!=myid) deform_shift = (vektor *) malloc( vtypes * DIM * sizeof(real) );
   if (NULL==deform_shift) 
     error("Cannot allocate memory for deform_shift on client."); 
@@ -2566,14 +2581,14 @@ void broadcast_params() {
 #endif
 
 #ifdef CG
-  MPI_Bcast( &cg_threshold,    1, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &cg_maxsteps,     1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &cg_fr,           1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &cg_reset_int,    1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &linmin_maxsteps, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &linmin_tol,      1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &linmin_dmax,     1, REAL,    0, MPI_COMM_WORLD); 
-#ifndef DEFORM
-  MPI_Bcast( &annealsteps,     1, MPI_INT, 0, MPI_COMM_WORLD); 
-#endif
+  MPI_Bcast( &linmin_dmin,     1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &cg_infolevel,    1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &cg_mode,         1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef USE_SOCKETS
@@ -2684,15 +2699,16 @@ void broadcast_params() {
     case ENS_NVE:       move_atoms = move_atoms_nve;       break;
     case ENS_MIK:       move_atoms = move_atoms_mik;       break;
     case ENS_NVT:       move_atoms = move_atoms_nvt;       break;
-    case ENS_SLLOD:     move_atoms = move_atoms_sllod;     break;
     case ENS_NPT_ISO:   move_atoms = move_atoms_npt_iso;   break;
     case ENS_NPT_AXIAL: move_atoms = move_atoms_npt_axial; break;
+    case ENS_GLOK:      move_atoms = move_atoms_nve;       break;
     case ENS_FRAC:      move_atoms = move_atoms_frac;      break;
+    case ENS_SLLOD:     move_atoms = move_atoms_sllod;     break;
     case ENS_NVX:       move_atoms = move_atoms_nvx;       break;
     case ENS_STM:       move_atoms = move_atoms_stm;       break;  
     case ENS_FTG:       move_atoms = move_atoms_ftg;       break;  
     case ENS_FINNIS:    move_atoms = move_atoms_finnis;    break;  
-    case ENS_CG:     /* move_atoms = move_atoms_cg; */     break;  
+    case ENS_CG:                                           break;  
     default: if (0==myid) error("unknown ensemble in broadcast"); break;
   }
   

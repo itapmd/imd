@@ -554,21 +554,23 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
   str255 fname;
   int m,n;
 
-#ifdef SNAPSHOT
-  if (fzhlr>=0) sprintf(fname,"%s.%05d.%sitr",outfilename,fzhlr,suffix);
-  else          sprintf(fname,"%s-final.%sitr",outfilename,suffix);
-#else
-  if (fzhlr>=0) sprintf(fname,"%s.%05d.itr",outfilename,fzhlr);
-  else          sprintf(fname,"%s-final.itr",outfilename);
-#endif
+  if (strcasecmp(suffix,"ss")==0) {
+    if (fzhlr>=0) sprintf(fname,"%s.%05d.%sitr",outfilename,fzhlr,suffix);
+    else          sprintf(fname,"%s-final.%sitr",outfilename,suffix);
+  }
+  else {
+    if (fzhlr>=0) sprintf(fname,"%s.%05d.itr",outfilename,fzhlr);
+    else          sprintf(fname,"%s-final.itr",outfilename);
+  }
 
   out = fopen(fname,"w");
   if (NULL == out) error("Cannot write iteration file.");
 
   fprintf(out,"# checkpoint %d\n",fzhlr);
   fprintf(out,"startstep \t%d\n",steps+1);
-#ifdef SNAPSHOT
+#ifdef RELAX
   fprintf(out,"sscount \t%d\n",sscount);
+  fprintf(out,"nfc \t%d\n",nfc);
 #endif
   fprintf(out,"box_x \t%.16f %.16f %.16f\n",box_x.x,box_x.y,box_x.z);
   fprintf(out,"box_y \t%.16f %.16f %.16f\n",box_y.x,box_y.y,box_y.z);

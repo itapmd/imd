@@ -212,6 +212,7 @@ void calc_forces(int steps)
   vir_zz = 0.0;
   vir_yz = 0.0;
   vir_zx = 0.0;
+  nfc++;
 
   /* clear per atom accumulation variables */
   for (k=0; k<nallcells; k++) {

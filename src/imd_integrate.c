@@ -27,24 +27,25 @@
 *
 *****************************************************************************/
 
-#if defined(NVE) || defined(EPITAX) || defined(CG)
+#if defined(NVE) || defined(EPITAX)
 
 void move_atoms_nve(void)
 {
   int k;
-  real tmpvec1[4], tmpvec2[4], rand;
+  real tmpvec1[5], tmpvec2[5], pnorm;
   static int count = 0;
 
   /* epitax may call this routine for other ensembles,
      in which case we do not reset tot_kin_energy */
-  if ((ensemble==ENS_NVE) || (ensemble==ENS_CG)) tot_kin_energy = 0.0;
+  if ((ensemble==ENS_NVE) || (ensemble==ENS_GLOK)) tot_kin_energy = 0.0;
   fnorm   = 0.0;
+  pnorm   = 0.0;
   PxF     = 0.0;
   omega_E = 0.0;
 
   /* loop over all cells */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_kin_energy,fnorm,omega_E,PxF)
+#pragma omp parallel for reduction(+:tot_kin_energy,fnorm,omega_E,PxF,pnorm)
 #endif
   for (k=0; k<NCELLS; ++k) { /* loop over all cells */
 
@@ -123,8 +124,9 @@ void move_atoms_nve(void)
 
 	/* "Globale Konvergenz": like mik, just with the global 
            force and momentum vectors */
-#ifdef GLOK              
-	PxF += SPRODN( &IMPULS(p,i,X), &KRAFT(p,i,X) );
+#ifdef GLOK
+        PxF   += SPRODN( &IMPULS(p,i,X), &KRAFT(p,i,X) );
+        pnorm += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
 #endif
 
 #ifdef UNIAX
@@ -164,7 +166,7 @@ void move_atoms_nve(void)
 	  }
 	}
 	if (shock_mode == 4) {
-	  rand = shock_speed_l * timestep * steps ;
+	  real rand = shock_speed_l * timestep * steps ;
 	  if (ORT(p,i,X) < rand ) {
 	    IMPULS(p,i,X) = -IMPULS(p,i,X) + 2 * shock_speed_l * MASSE(p,i);
 	    ORT(p,i,X) = 2 * rand - ORT(p,i,X);
@@ -271,15 +273,21 @@ void move_atoms_nve(void)
   tmpvec1[1] = fnorm;
   tmpvec1[2] = PxF;
   tmpvec1[3] = omega_E;
+  tmpvec1[4] = pnorm;
 
-  MPI_Allreduce( tmpvec1, tmpvec2, 4, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid);
 
   tot_kin_energy = tmpvec2[0];
   fnorm          = tmpvec2[1];
   PxF            = tmpvec2[2];
   omega_E        = tmpvec2[3];
+  pnorm          = tmpvec2[4];
 #endif
-  
+
+#ifdef GLOK
+  PxF /= (SQRT(fnorm) * SQRT(pnorm));
+#endif
+
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
   ++count;
@@ -2278,11 +2286,11 @@ void move_atoms_nvx(void)
 
 /*****************************************************************************
 *
-* Move the atoms for the  Conjugated Gradient
+* Move the atoms for the Conjugated Gradient relaxator
 *
 *****************************************************************************/
 
-#if defined(CG) 
+#ifdef CG 
 
 void move_atoms_cg(real alpha)
 {
@@ -2303,11 +2311,6 @@ void move_atoms_cg(real alpha)
         KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
 #ifndef TWOD
         KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
-#endif
-        IMPULS(p,i+j,X) = IMPULS(p,i,X);
-        IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
-#ifndef TWOD
-        IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
 #endif
       }
 #endif /* CLONE */

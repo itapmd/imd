@@ -19,7 +19,7 @@
 
 #include <math.h>
 
-#define ITMAX 100
+/* #define ITMAX 100 */
 #define CGOLD 0.3819660
 #define ZEPS 1.0e-10
 #define GOLD 1.618034
@@ -31,16 +31,24 @@
 /* brent from Num. Rec. modified for our cg */
 /* fb should be the minimal value */
 
-int brent(real ax, real bx, real cx, real fb, real *alphamin)
+int brent(real ax, real bx, real cx, real fa, real fb, real fc, real *alphamin)
 {
-  int iter;
+  int iter,ITMAX;
   real a, b, etemp, fu, fv, fw, fx, p, q, r, tol1, tol2, u, v, w, x, xm;
   real e = 0.0, d = 0.0, tol = linmin_tol;
+  ITMAX=linmin_maxsteps;
+
 
   a = (ax < cx) ? ax : cx;
   b = (ax > cx) ? ax : cx;
   x = w = v = bx;
   fw = fv = fx = fb;
+
+  /* 
+   a = ax;           b = cx;
+   x = bx;  w = ax;  v = cx;
+  fx = fv; fw = fa; fv = fc;
+  */
 
   for (iter = 1; iter <= ITMAX; iter++) {
     xm = 0.5 * (a+b);
@@ -157,6 +165,21 @@ int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc)
     SHFT(*ax, *bx, *cx,  u)
     SHFT(*fa, *fb, *fc, fu)
   }
+
+  /* order *ax, *bx, and *cx in ascending order, including the function vals */
+  if (*ax > *bx) {
+    SHFT(dum,*ax,*bx,dum)
+    SHFT(dum,*fa,*fb,dum)
+  }
+  if (*bx > *cx) {
+    SHFT(dum,*bx,*cx,dum)
+    SHFT(dum,*fb,*fc,dum)
+  }
+  if (*ax > *bx) {
+    SHFT(dum,*ax,*bx,dum)
+    SHFT(dum,*fa,*fb,dum)
+  }
+
   return ctf;
 }
 
@@ -164,6 +187,8 @@ int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc)
 #undef GLIMIT
 #undef TINY
 #undef SHFT
-#undef ITMAX
+
 #undef CGOLD
 #undef ZEPS
+
+/* #undef ITMAX */

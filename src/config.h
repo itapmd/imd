@@ -106,9 +106,27 @@
 
 /******************************************************************************
 *
-* Statistical Ensembles
+* Statistical Ensembles and Integrators
 *
 ******************************************************************************/
+
+#if defined(CG) || defined(MIK) || defined(GLOK) || defined(DEFORM)
+#ifndef FNORM
+#define FNORM
+#endif
+#endif
+
+/* relaxation integrators */
+#if defined(MIK) || defined(GLOK) || defined(CG)
+#define RELAX
+#endif
+
+/* GLOK is NVE with additional features */
+#ifdef GLOK
+#ifndef NVE
+#define NVE
+#endif
+#endif
 
 #ifdef NPT_axial
 #define P_AXIAL

@@ -176,6 +176,7 @@ void calc_forces(int steps)
   /* clear global accumulation variables */
   tot_pot_energy = 0.0;
   virial = 0.0;
+  nfc++;
 
   /* clear per atom accumulation variables */
   for (k=0; k<atoms.n_buf; k++) {

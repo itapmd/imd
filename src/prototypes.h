@@ -440,6 +440,8 @@ void rnemd_heat_exchange();
 #endif
 
 #ifdef CG
+void reset_cg(void);
+void cg_step(int steps);
 void write_cgconfig(int steps);
 real fonedim (real) ;
 void cg_calcgamma(void);
@@ -449,5 +451,5 @@ void calc_fnorm_g_h(void);
 void move_atoms_cg(real);
 int linmin();
 int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc);
-int brent(real ax, real bx, real cx, real fb,real *alphamin);
+int brent(real ax, real bx, real cx, real fa, real fb, real fc,real *alphamin);
 #endif

@@ -638,7 +638,7 @@ NBLSOURCES3D    = imd_geom_mpi_3d.c imd_comm_force_3d.c imd_fix_cells_3d.c
 PAIRSOURCES     = imd_forces.c
 EAM2SOURCES     = imd_forces_eam2.c
 MEAMSOURCES     = imd_forces_meam.c
-CGSOURCES	= imd_main_cg_3d.c
+CGSOURCES	= imd_cg.c
 COVALENTSOURCES = imd_forces_covalent.c
 UNIAXSOURCES    = imd_forces_uniax.c imd_gay_berne.c
 EWALDSOURCES    = imd_forces_ewald.c
@@ -806,19 +806,6 @@ ifneq (,$(strip $(findstring cg,${MAKETARGET})))
 SOURCES += ${CGSOURCES}
 IMDHEADERS += cg_util.h  
 CFLAGS  += -DCG
-ifneq (,$(strip $(findstring cgef,${MAKETARGET})))
-CFLAGS  += -DCGEF
-else
-ifneq (,$(strip $(findstring cge,${MAKETARGET})))
-CFLAGS  += -DCGE
-endif
-endif
-ifneq (,$(strip $(findstring cgf,${MAKETARGET})))
-CFLAGS  += -DCGF
-endif
-ifneq (,$(strip $(findstring fr,${MAKETARGET})))
-CFLAGS  += -DFR
-endif
 endif
 
 ifneq (,$(findstring nvt,${MAKETARGET}))
@@ -909,7 +896,7 @@ CFLAGS += -DFNORM
 endif
 
 ifneq (,$(findstring glok,${MAKETARGET}))
-CFLAGS += -DGLOK -DFNORM
+CFLAGS += -DGLOK
 endif
 
 ifneq (,$(findstring efilter,${MAKETARGET}))
@@ -931,14 +918,6 @@ endif
 ifneq (,$(findstring deform,${MAKETARGET}))
 CFLAGS += -DDEFORM
 SOURCES += ${DEFORMSOURCES}
-endif
-
-ifneq (,$(findstring glokdeform,${MAKETARGET}))
-CFLAGS += -DGLOKDEFORM
-endif
-
-ifneq (,$(findstring snap,${MAKETARGET}))
-CFLAGS += -DSNAPSHOT
 endif
 
 ifneq (,$(findstring homdef,${MAKETARGET}))

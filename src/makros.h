@@ -332,6 +332,7 @@ inline static real SQR(real x)
 #define ENS_NVT       3
 #define ENS_NPT_ISO   4
 #define ENS_NPT_AXIAL 5
+#define ENS_GLOK      6
 #define ENS_FRAC      8
 #define ENS_SLLOD     9
 #define ENS_NVX      11
@@ -356,13 +357,15 @@ inline static real SQR(real x)
 #define INBUF_TAG  400
 #define AT_BUF_TAG 500
 
-/* some systems have different versions of trunc and floor float and double */
+/* different versions of math functions for float and double */
 #ifdef DOUBLE
 #define FLOOR floor
 #define FABS  fabs
+#define SQRT  sqrt
 #else
 #define FLOOR floorf
 #define FABS  fabsf
+#define SQRT  sqrtf
 #endif
 
 #ifndef M_PI
@@ -370,12 +373,5 @@ inline static real SQR(real x)
 #endif
 
 /* Definition of the value that should be minimized */
-#ifdef CGE   /* completely based on energy, no use of gradient information */
-#define CGVAL tot_pot_energy
-#endif
-#ifdef CGEF   /* minimization of epot, but uses gradient information */
-#define CGVAL tot_pot_energy
-#endif
-#ifdef CGF   /* minimization of total forces */
-#define CGVAL fnorm
-#endif
+#define CGE  0 /* completely based on energy, no use of gradient information */
+#define CGEF 1 /* minimization of epot, but uses gradient information */

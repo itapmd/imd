@@ -41,6 +41,7 @@ void calc_forces(int steps)
   vir_yz = 0.0;
   vir_zx = 0.0;
   vir_xy = 0.0;
+  nfc++;
 
   /* clear per atom accumulation variables */
 #ifdef _OPENMP

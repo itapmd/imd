@@ -143,7 +143,7 @@ void write_config(int fzhlr, int steps)
   if (myid == 0) write_itr_file(fzhlr, steps,"");
 }
 
-#ifdef SNAPSHOT
+#ifdef RELAX
 /******************************************************************************
 *
 *  write_ssconfig writes a configuration to a numbered file,
@@ -153,7 +153,6 @@ void write_config(int fzhlr, int steps)
 
 void write_ssconfig(int steps)
 { 
-  
   /* first make sure that every atom is inside the box and on the right CPU */
   if (1==parallel_output) {
 #ifdef NBLIST
@@ -165,10 +164,13 @@ void write_ssconfig(int steps)
   }
 
   /* write checkpoint */
-  write_config_select(sscount, "ss", write_atoms_config, write_header_config);
+  write_config_select(sscount,"ss", write_atoms_config, write_header_config);
 
   /* write iteration file */
   if (myid == 0) write_itr_file(sscount, steps,"ss");
+
+  sscount++;
+
 }
 #endif
 
@@ -1246,11 +1248,12 @@ void write_eng_file_header()
     fl = fopen(fname,"w");
     if (NULL == fl) error("Cannot open properties file.");
 
-#ifdef CG
-    fprintf(fl, "# ctf Epot fnorm");
+#ifdef RELAX
+    fprintf(fl, "# nfc ");
 #else
-    fprintf(fl, "# time Epot ");
-    fprintf(fl, "temperature ");
+    fprintf(fl, "# time ");
+#endif
+    fprintf(fl, "Epot temperature ");
 
 #if defined(STM) || defined(FRAC) 
     fprintf(fl, "stadiontemp ");
@@ -1300,7 +1303,6 @@ void write_eng_file_header()
     fprintf(fl, "Press_zz ");
     fprintf(fl, "Press_yz Press_xz Press_xy");
 #endif    
-#endif
 #endif
     putc('\n',fl);
 
@@ -1359,13 +1361,15 @@ void write_eng_file(int steps)
 
   Epot =       tot_pot_energy / natoms;
 
-#ifndef CG
+  if (ensemble == ENS_CG) {
+    Temp = 0.0;
+  } else {
 #ifdef UNIAX
-  Temp = 2.0 * tot_kin_energy / (nactive + nactive_rot);
+    Temp = 2.0 * tot_kin_energy / (nactive + nactive_rot);
 #else
-  Temp = 2.0 * tot_kin_energy / nactive;
+    Temp = 2.0 * tot_kin_energy / nactive;
 #endif
-#endif
+  }
 
 #ifdef STM 
   Temp     = 2.0 * tot_kin_energy / (nactive - n_stadium);
@@ -1383,10 +1387,8 @@ void write_eng_file(int steps)
   }
 #endif
 
-  vol  = volume / natoms;
-#ifndef CG
+  vol = volume / natoms;
   pressure = Temp / vol + virial / (DIM * volume);
-#endif
 
   /* open .eng file if it is not yet open */
   if (NULL == eng_file) {
@@ -1395,12 +1397,11 @@ void write_eng_file(int steps)
     if (NULL == eng_file) error("Cannot open properties file.");
   }
 
-#ifdef CG
-  fprintf(eng_file, "%d",     steps);
-  fprintf(eng_file, " %.16e", (double) Epot);
-  fprintf(eng_file, format,   (double) sqrt( (double) fnorm / nactive ) );
+#ifdef RELAX
+  fprintf(eng_file, "%d",     nfc);
 #else
   fprintf(eng_file, "%e",     (double) (steps * timestep));
+#endif
   fprintf(eng_file, " %.16e", (double) Epot);
   fprintf(eng_file, format,   (double) Temp);
 #if defined(STM) || defined(FRAC)
@@ -1420,15 +1421,14 @@ void write_eng_file(int steps)
   }
 #endif
 
-
 #ifdef FNORM
-  fprintf(eng_file, format,   (double) sqrt( (double) fnorm / nactive ) );
+  fprintf(eng_file, format,   (double) SQRT( fnorm / nactive ) );
 #endif
 #ifdef GLOK
   fprintf(eng_file, format,   (double) PxF);
 #endif
 #ifdef EINSTEIN
-  fprintf(eng_file, format,   sqrt((double) omega_E / (nactive * Temp)));
+  fprintf(eng_file, format,   SQRT( omega_E / (nactive * Temp) );
 #endif
   fprintf(eng_file," %e",     (double) pressure);
   fprintf(eng_file," %e",     (double) vol);
@@ -1461,7 +1461,6 @@ void write_eng_file(int steps)
 	  (double) Press_yz, (double) Press_zx, (double) Press_xy);
 #endif    
 #endif
-#endif /* CG */
   putc('\n',eng_file);
   flush_count++;
 
@@ -1700,9 +1699,7 @@ void write_header_config(FILE *out)
 #endif
 
   /* contents line */
-#ifdef CG
-  fprintf(out, "#C number type mass x y z vx vy vz Epot \n");
-#elif defined(UNIAX)
+#ifdef UNIAX
   fprintf(out, "#C number type mass pos(3) axis(3)");
   fprintf(out, " velocities(3) ang_veloc(3) Epot\n");
 #else
@@ -1722,9 +1719,8 @@ void write_header_config(FILE *out)
   fprintf(out, " eam_p");
 #endif
 #endif
+#endif /* UNIAX */
   fprintf(out, "\n" );
-#endif
-
 
   /* box lines */
 #ifdef TWOD
