@@ -1391,11 +1391,6 @@ void check_parameters_complete()
 	  error ("Tright is missing or zero.");
 	}
 #endif
-#ifdef STRESS_TENS
-	if (press_interval == 0) {
-		error ("press_interval is zero.");
-	}
-#endif
 #ifdef MPI
 #ifdef TWOD
         if ((cpu_dim.x==0) || (cpu_dim.y==0))
