@@ -160,14 +160,14 @@ void read_atoms(str255 infilename)
   /* Read the input file line by line */
   while(!feof(infile)) {
 
-    buf[0] = (char) NULL;
+    buf[0] = '\0';
     fgets(buf,sizeof(buf),infile);
     /* eat comments */
     while ('#'==buf[1]) fgets(buf,sizeof(buf),infile); 
 
 #ifdef DISLOC
     if (calc_Epot_ref == 0) {
-      refbuf[0] = (char) NULL;
+      refbuf[0] = '\0';
       fgets(refbuf,sizeof(refbuf),reffile);
       /* eat comments */
       while ('#'==refbuf[1]) fgets(refbuf,sizeof(refbuf),reffile);

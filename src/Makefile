@@ -136,7 +136,7 @@ CFLAGS_GCC_i586_PROF	= -g3 -pg
 
 # flags for Linux with MPICH
 CC_MPI_i586		= mpicc
-CFLAGS_MPI_i586		= -DMPI -mcpu=i686 -O3 -fomit-frame-pointer
+CFLAGS_MPI_i586		= -DMPI -mcpu=i686 -O3
 CFLAGS_MPI_i586_DEBUG	= -DMPI -mcpu=i686 -g
 CFLAGS_MPI_i586_PROF	= -g3 -pg
 #MPILIBS_i586		= -lmpich
