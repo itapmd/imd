@@ -143,9 +143,9 @@ void combine_ppm( ppm_t *pic, ppm_t *pic1, ppm_t *pic2, int xoff, int yoff,
     for (i=0; i<pic2->dimx; i++) {
       ind  = PIXEL(pic, i,j,xoff2,yoff2);
       ind2 = PIXEL(pic2,i,j,0,    0    );
-      pic->data[ind  ] = pic1->data[ind2  ];
-      pic->data[ind+1] = pic1->data[ind2+1];
-      pic->data[ind+2] = pic1->data[ind2+2];
+      pic->data[ind  ] = pic2->data[ind2  ];
+      pic->data[ind+1] = pic2->data[ind2+1];
+      pic->data[ind+2] = pic2->data[ind2+2];
     }
 }
 
