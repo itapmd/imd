@@ -397,10 +397,13 @@ ef_checkpt_int steps.
 <A NAME="avpos">
 <P><LI><B> avpos </B><P>
 This option enables to compute the average position of the atoms
-during a simulation. The result will be written in an output file
-<TT>&lt;outfile&gt;.&lt;n&gt;.avp</TT>. The output file further 
-contains the average potential energy of the atoms. The writing
-interval is given by the parameter <TT>avpos_int</TT>. The number of
+during a time interval. The averaging begins at step
+<TT>avpos_start</TT> (default 0) and ends at step
+<TT>avpos_end</TT> (default <TT>maxsteps</TT>). Every
+<TT>avpos_int</TT> steps, the averaged positions are written in an 
+output file <TT>&lt;outfile&gt;.&lt;n&gt;.avp</TT>. The output file further 
+contains the average potential energy of the atoms. After writing the
+output, the averaging begins with the actual atom positions. The number of
 steps between additions of coordinates is specified by the parameter
 <TT>avpos_res</TT>.
 
