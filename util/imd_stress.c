@@ -352,7 +352,11 @@ void voronoi(void)
 			tmpdist2 = SPROD( tmp, tmp );
 		       
 			/* Candidates for Voronoi cells */
+#ifdef STRESS
 			if( (tmpdist2 <= r2_cut) && (tmpdist2 > TOL2))
+#else
+			if( (tmpdist2 <= SQR(r_max)) && (tmpdist2 > TOL2))
+#endif
 			  {
 			    if( neighcount > num-1 )
 			      {

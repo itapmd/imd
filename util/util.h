@@ -128,7 +128,7 @@ INLINE static int MOD(int p, int q)
 
 /* Tolerance values for imd_stress */
 #if defined(STRESS) || defined(ELCO)
-#define NUM        100
+#define NUM        200
 #define TOL        1.0e-6
 #define TOL2       1.0e-10
 #define TOL_VERT2  1.0e-6
@@ -184,8 +184,7 @@ typedef struct { real c11, c12, c13, c14, c15, c16, c22, c23, c24,
   c25, c26, c33, c34, c35, c36, c44, c45, c46, c55, c56, c66;
 } tensor6d; 
 #endif
-
-#if defined(TERSOFF) || defined(STIWEB) 
+#ifdef COVALENT
 /* Neighbor table for Tersoff potential */
 typedef struct {
   real        *dist;
@@ -214,12 +213,12 @@ typedef struct {
 #else
   int    *sorte;
 #endif
-#ifdef CONN
+#if defined(CONN) || defined(ELCO)
   int    *nummer;
 #endif
-#if defined(TERSOFF) || defined(STIWEB)
+#ifdef COVALENT
   neightab *neightab_array;
-#endif 
+#endif
 #ifdef ELCO
   tensor   *stress;
   tensor6d *elco;
@@ -229,14 +228,14 @@ typedef struct {
   int     n_max;
 } cell;
 
-#if defined(TERSOFF) || defined(STIWEB)
+#ifdef COVALENT
 typedef cell* cellptr;
 #endif
 
 /* String used for Filenames etc. */
 typedef char str255[255];
 
-#if defined(STRESS)||defined(ELCO)
+#if defined(STRESS) || defined(ELCO)
 #ifndef TWOD
 typedef vektor vektorstr[NUM]; 
 #endif
@@ -309,15 +308,20 @@ void make_numbers(void);
 
 #ifdef TERSOFF
 void init_tersoff(void);
-#elif defined(STIWEB)
+#elif STIWEB
 void init_stiweb(void);
+#elif KEATING
+void init_keating(void);
 #endif
 
 #ifdef ELCO
+void init_elco(void);
 #ifdef TERSOFF
 void do_elco_tersoff(void);
-#elif defined(STIWEB)
+#elif STIWEB
 void do_elco_stiweb(void);
+#elif KEATING
+void do_elco_keating(void);
 #endif
 void write_stress(void);
 void write_elco(void);
@@ -424,12 +428,13 @@ vektor *pos;
 tensor6d c = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
 tensor sigma = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 real   r_cell = -1.0;
-real   vol, epot = 0.0, dbulkm_dp = 0.0;
+real   vol, epot = 0.0, bulkm = 0.0, dbulkm_dp = 0.0;
 int    stresstens = 0, moduli = 0, all_moduli = 0;
 #endif
 
-#ifdef TERSOFF
+#ifdef COVALENT
 int  neigh_len;
+#ifdef TERSOFF
 real ter_r_cut[10][10], ter_r2_cut[10][10], ters_r_cut[55] ;
 real ter_r0[10][10], ters_r0[55];
 real ter_a[10][10], ters_a[55];
@@ -443,8 +448,7 @@ real ter_d2[10], ters_d[10];
 real ters_h[10];
 real ter_chi[10][10], ters_chi[45];
 real ter_om[10][10], ters_om[45];
-#elif defined(STIWEB)
-int  neigh_len;
+#elif STIWEB
 real stiweb_a[55];
 real sw_a[10][10];
 real stiweb_b[55];
@@ -465,6 +469,17 @@ real sw_la[10][10][10];
 real stiweb_ga[55];
 real sw_ga[10][10];
 real sw_r_cut[10][10];
+#elif KEATING
+real keating_alpha[55];
+real keat_alpha[10][10];
+real keating_d[55];
+real keat_d[10][10];
+real keating_r_cut[55];
+real keat_r_cut[10][10];
+real keat_r2_cut[10][10];
+real keating_beta[550];
+real keat_beta[10][10][10];
+#endif
 #endif
 
 /******************************************************************************
@@ -670,7 +685,7 @@ ivektor cell_coord(vektor ort)
 void alloc_cell(cell *cl, int count)
 {
   int i;
-#if defined(TERSOFF) || defined(STIWEB)
+#ifdef COVALENT
   neightab *neigh;
 #endif
 
@@ -689,10 +704,10 @@ void alloc_cell(cell *cl, int count)
 #else
     cl->sorte         = NULL;
 #endif
-#ifdef CONN
+#if defined(CONN) || defined(ELCO)
     cl->nummer        = NULL;
 #endif
-#if defined(TERSOFF) || defined(STIWEB)
+#ifdef COVALENT
     cl->neightab_array= NULL;
 #endif
 #ifdef ELCO
@@ -719,7 +734,7 @@ void alloc_cell(cell *cl, int count)
 #else
   cl->sorte  = (int    *) realloc(cl->sorte,  count * sizeof(int));
 #endif
-#ifdef CONN
+#if defined(CONN) || defined(ELCO)
   cl->nummer = (int    *) realloc(cl->nummer, count * sizeof(int));
 #endif
 #ifdef ELCO
@@ -727,7 +742,7 @@ void alloc_cell(cell *cl, int count)
   cl->elco   = (tensor6d *) realloc(cl->elco, count * sizeof(tensor6d));
   cl->vol    = (real   *) realloc(cl->vol,    count * sizeof(real));
 #endif
-#if defined(TERSOFF) || defined(STIWEB)
+#ifdef COVALENT
   cl->neightab_array = (neightab *) realloc( cl->neightab_array, 
 					      count * sizeof(neightab));
    if (NULL == cl->neightab_array) 
@@ -764,11 +779,8 @@ void alloc_cell(cell *cl, int count)
 #else   
     || (NULL==cl->sorte)
 #endif
-#ifdef CONN
+#if defined(CONN) || defined(ELCO)
     || (NULL==cl->nummer)
-#endif
-#if defined(TERSOFF) || defined(STIWEB)
-    || (NULL==cl->neightab_array)
 #endif
 #ifdef ELCO
     || (NULL==cl->stress)
@@ -1169,7 +1181,7 @@ void getparamfile(char *paramfname)
       getparam("r_cut",r_cut,PARAM_REAL,nn,nn);
     }
 #endif
-#if defined(TERSOFF) || defined(STIWEB)
+#ifdef COVALENT
     else if (strcasecmp(token,"neigh_len")==0) {
       /* number of neighbors */
       getparam("neigh_len",&neigh_len,PARAM_INT,1,1);
@@ -1215,7 +1227,7 @@ void getparamfile(char *paramfname)
     else if (strcasecmp(token,"ters_h")==0) {     
       getparam("ters_h",ters_h,PARAM_REAL,ntypes,ntypes);
     }
-#elif defined(STIWEB)
+#elif STIWEB
     else if (strcasecmp(token,"stiweb_a")==0) {     
       getparam("stiweb_a",stiweb_a,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
     }
@@ -1242,6 +1254,19 @@ void getparamfile(char *paramfname)
     }
     else if (strcasecmp(token,"stiweb_la")==0) {     
       getparam("stiweb_la",stiweb_la,PARAM_REAL,ntypes*ntypes*(ntypes+1)/2,ntypes*ntypes*(ntypes+1)/2);
+    }
+#elif KEATING
+    else if (strcasecmp(token,"keating_alpha")==0) {     
+      getparam("keating_alpha",keating_alpha,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"keating_d")==0) {     
+      getparam("keating_d",keating_d,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"keating_r_cut")==0) {     
+      getparam("keating_r_cut",keating_r_cut,PARAM_REAL,ntypes*(ntypes+1)/2,ntypes*(ntypes+1)/2);
+    }
+    else if (strcasecmp(token,"keating_beta")==0) {     
+      getparam("keating_beta",keating_beta,PARAM_REAL,ntypes*ntypes*(ntypes+1)/2,ntypes*ntypes*(ntypes+1)/2);
     }
 #endif
   } while (!feof(pf));
@@ -1346,8 +1371,10 @@ void read_atoms(str255 infilename)
 #if (!defined(STRAIN) && !defined(STRESS))
       to->sorte [to->n] = MOD(s,ntypes);
 #endif
-#ifdef CONN
+#if defined(CONN) || defined(ELCO)
       to->nummer[to->n] = n;
+#endif
+#ifdef CONN
       n_min = MIN(n_min,n);
       n_max = MAX(n_max,n);
 #endif
