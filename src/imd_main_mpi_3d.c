@@ -474,7 +474,6 @@ vektor global_pbc(int i, int j, int k)
   local_coord.y = j;
   local_coord.z = k;
 
-  /* Cannot use global_cell_coord function, this includes already pbc */
   global_coord.x = local_coord.x - 1 + my_coord.x * (cell_dim.x - 2);
   global_coord.y = local_coord.y - 1 + my_coord.y * (cell_dim.y - 2);
   global_coord.z = local_coord.z - 1 + my_coord.z * (cell_dim.z - 2);

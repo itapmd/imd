@@ -127,52 +127,6 @@ void calc_forces(void)
 
 /******************************************************************************
 *
-*  global_pbc tells if a local buffer cell is across the boundaries
-*
-*  no longer used
-*
-******************************************************************************/
-
-vektor global_pbc(int i, int j)
-{
-  ivektor global_coord;
-  ivektor local_coord;
-  vektor pbc = {0.0, 0.0};
-
-  local_coord.x = i;
-  local_coord.y = j;
-
-  /* Cannot use global_cell_coord function, this includes already pbc */
-  global_coord.x = local_coord.x - 1 + my_coord.x * (cell_dim.x - 2);
-  global_coord.y = local_coord.y - 1 + my_coord.y * (cell_dim.y - 2);
-
-  if (global_coord.x < 0) {
-    pbc.x -= box_x.x;      
-    pbc.y -= box_x.y;
-  };
-
-  if (global_coord.x >= global_cell_dim.x) {
-    pbc.x += box_x.x;      
-    pbc.y += box_x.y;
-  };
-
-  if (global_coord.y < 0) {
-    pbc.x -= box_y.x;      
-    pbc.y -= box_y.y;
-  };
-
-  if (global_coord.y >= global_cell_dim.y) {
-    pbc.x += box_y.x;      
-    pbc.y += box_y.y;
-  };
-
-  return pbc;
-
-}
-
-
-/******************************************************************************
-*
 * set up mpi
 *
 ******************************************************************************/

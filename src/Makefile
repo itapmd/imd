@@ -54,8 +54,7 @@ RISCSOURCES3D = imd_main_risc_3d.c
 
 MPISOURCES    = imd_mpi_util.c
 MPISOURCES2D  = ${MPISOURCES} imd_main_mpi_2d.c imd_geom_mpi_2d.c
-MPISOURCES3D  = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c \
-		imd_savemem_3d.c
+MPISOURCES3D  = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c
 
 PACXSOURCES2D = ${MPISOURCES2D} imd_pacx.c
 PACXSOURCES3D = ${MPISOURCES3D} imd_pacx.c
@@ -81,6 +80,8 @@ CORRSOURCES   = imd_correl.c
 UNIAXSOURCES  = imd_forces_uniax.c imd_gay_berne.c
 
 TRANSSOURCES  = imd_transport.c
+
+SAVEMEMSOURCES = imd_savemem_3d.c
 
 # Collection of my favourite compiler flags
 
@@ -539,6 +540,7 @@ endif
 # MONOLJ Case
 ifneq (,$(findstring mono,${MAKETARGET}))
 CFLAGS += -DMONOLJ
+SOURCES += ${SAVEMEMSOURCES}
 endif
 
 # Single precision

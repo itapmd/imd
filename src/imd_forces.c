@@ -48,10 +48,10 @@ void do_forces(cell *p, cell *q, vektor pbc)
   real r2_short = r2_end;
   real pot_k0,pot_k1,pot_k2;
   real dv, d2v;
-  int q_typ,p_typ;
   real *potptr;
   real chi;
 #endif
+  int q_typ,p_typ;
   real *qptr;
   
   tmp_virial     = 0.0;
@@ -75,16 +75,14 @@ void do_forces(cell *p, cell *q, vektor pbc)
 #ifndef TWOD
     tmp_d.z = p->ort Z(i) - pbc.z;
 #endif
-#ifndef MONOLJ
-    p_typ   = p->sorte[i];
-#endif
+    p_typ   = SORTE(p,i);
 
     jstart = (p==q ? i+1 : 0);
     qptr   = q->ort + DIM * jstart;
     
     for (j = jstart; j < q->n; ++j) {
 
-      q_typ = q->sorte[j];
+      q_typ = SORTE(q,j);
       
       /* Calculate distance  */
       d.x = *qptr - tmp_d.x;

@@ -15,6 +15,32 @@
 
 /******************************************************************************
 *
+*  global_cell_coord computes the global coordinates of a cell from the
+*  local ones. PBC are always applied. Is used only for SAVEMEM.
+*
+******************************************************************************/
+
+ivektor global_cell_coord(ivektor local_coord)
+{
+  ivektor global_coord;
+
+  global_coord.x = local_coord.x - 1 + my_coord.x * (cell_dim.x - 2);
+  global_coord.y = local_coord.y - 1 + my_coord.y * (cell_dim.y - 2);
+  global_coord.z = local_coord.z - 1 + my_coord.z * (cell_dim.z - 2);
+
+  if (global_coord.x < 0)                  global_coord.x += global_cell_dim.x;
+  if (global_coord.x >= global_cell_dim.x) global_coord.x -= global_cell_dim.x;
+  if (global_coord.y < 0)                  global_coord.y += global_cell_dim.y;
+  if (global_coord.y >= global_cell_dim.y) global_coord.y -= global_cell_dim.y;
+  if (global_coord.z < 0)                  global_coord.z += global_cell_dim.z;
+  if (global_coord.z >= global_cell_dim.z) global_coord.z -= global_cell_dim.z;
+
+  return(global_coord);
+}
+
+
+/******************************************************************************
+*
 * fix_cells_by_cell
 *
 * check if each atom is in the correct cell and on the correct CPU 

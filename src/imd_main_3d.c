@@ -333,7 +333,7 @@ void fix_cells(void)
 {
   int i,j,k,l;
   cell *p, *q;
-  ivektor coord, to_coord;
+  ivektor coord, lcoord;
   int to_cpu;
 
 #ifdef MPI
@@ -361,18 +361,20 @@ void fix_cells(void)
           else
             ++l;
 #else
-	  coord = local_cell_coord(p->ort X(l),p->ort Y(l),p->ort Z(l));
+	  lcoord = local_cell_coord(p->ort X(l),p->ort Y(l),p->ort Z(l));
  	  /* see if atom is in wrong cell */
-	  if ((coord.x == i) && (coord.y == j) && (coord.z == k)) {
+	  if ((lcoord.x == i) && (lcoord.y == j) && (lcoord.z == k)) {
             l++;
           } 
           else {
 
-            to_cpu = cpu_coord( global_cell_coord( coord ));
+            /* global cell coord and CPU */
+            coord  = cell_coord(p->ort X(l),p->ort Y(l),p->ort Z(l));
+            to_cpu = cpu_coord(coord);
 
             /* atom is on my cpu */
             if (to_cpu==myid)
-                move_atom(coord, p, l);
+                move_atom(lcoord, p, l);
             
             /* west */
             else if 

@@ -94,28 +94,18 @@ ivektor local_cell_coord(real x, real y);
 #else
 ivektor local_cell_coord(real x, real y, real z);
 #endif
-ivektor global_cell_coord(ivektor coords);
-void create_cell_type(int index);
 void recv_atoms(void);
 void send_atoms(int mode);
 void send_atoms_force(void);
 void send_atoms_ar(void);
-void send_atoms_by_cell(void);
 void send_forces(void);
 void send_forces_full(void);
-void fix_cells_by_cell(void);
-
 #ifdef TWOD
-vektor global_pbc(int i,int j);
-void send_recv_cell(int i,int j,int l,int m);
-void recv_send_cell(int i,int j,int l,int m);
 void copy_cell_force(int i, int j, int k, int l);
 void copy_atoms_force(msgbuf *b, int k, int l);
 void move_atoms_force(msgbuf *b, int k, int l);
 #else
 vektor global_pbc(int i,int j, int k);
-void send_recv_cell(int i,int j,int k,int l,int m,int n);
-void recv_send_cell(int i,int j,int k,int l,int m,int n);
 void copy_cell_force(int i, int j, int k, int l, int m, int n);
 void add_cell_force(int i, int j, int k, int l, int m, int n);
 void move_atoms_force(msgbuf *b, int k, int l, int m);
@@ -125,8 +115,8 @@ void copy_forces(msgbuf *b, int k, int l, int m);
 #endif
 void recv_cell(cell *p, int from_cpu, int tag);
 void send_cell(cell *p, int to_cpu, int tag);
-int irecv_buf( msgbuf *b, int from_cpu, MPI_Request *req);
-int isend_buf( msgbuf *b, int to_cpu,   MPI_Request *req);
+int  irecv_buf( msgbuf *b, int from_cpu, MPI_Request *req);
+int  isend_buf( msgbuf *b, int to_cpu,   MPI_Request *req);
 void mpi_addtime(double *timer);
 void copy_atoms_buf(msgbuf *to, msgbuf *from);
 void process_buffer(msgbuf *b, int mode);
@@ -135,6 +125,12 @@ void empty_buffer_cells(void);
 void copy_one_atom(msgbuf *to, cell *from, int index);
 void empty_mpi_buffers(void);
 ivektor cpu_coord_v(ivektor cellc);
+#ifdef SAVEMEM
+ivektor global_cell_coord(ivektor coords);
+void fix_cells_by_cell(void);
+void send_atoms_by_cell(void);
+void send_recv_cell(int i,int j,int k,int l,int m,int n);
+#endif
 #endif
 
 #ifdef PACX
