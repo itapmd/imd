@@ -239,6 +239,13 @@ core_potential_file   # Core-core Pair Potential, tabulated in r**2
 embedding_energy_file # Embedding Energy Function, tabulated in rho
 atomic_e-density_file # Electron Density, tabulated in r**2
 
+# parameters for <A href="covalent.html#keating">KEATING</A> (Keating potential)
+neigh_len       # maxmimum number of neighbors (for memory allocs)
+keating_alpha   # parameters for the Keating potential
+keating_beta    #   for all (i=0 ... (ntypes-1))
+keating_d
+keating_r_cut
+
 # parameters for <A href="covalent.html#ttbp">TTBP</A> (2 and 3 body potential)
 neigh_len       # maxmimum number of neighbors (for memory allocs)
 ttbp_constant   # force constants (for all i=0 ... (ntypes-1))

@@ -7,10 +7,49 @@
 <BODY BGCOLOR="#ffffff">
 <H1> Use of Many-Body Potentials </H1>
 
-IMD allows to use many-body potentials of the <B>Stillinger-Weber</B> type
-and the <B>Tersoff</B> potential.
+IMD allows to use many-body potentials of the <B>Stillinger-Weber</B>
+type, the <B>Keating</B> potential, and the <B>Tersoff</B> potential.
 
 <UL>
+
+<LI><A NAME="keating">The option <B>keating</B> enables IMD to use the
+Keating potential. The form of the potential is
+
+<P>
+<CENTER>
+<IMG SRC="covalent18.gif"><BR><P>
+</CENTER>
+
+where the sums are over atoms <I>i</I> and nearest neighbour atoms
+<I>j</I>,<I>k</I> with distance vectors <I><B>r</B><SUB>ij</SUB></I>
+and <I><B>r</B><SUB>ik</SUB></I>. The parameters <I>d<SUB>ij</SUB></I>
+are the equilibrium distances between the atoms. They have to be
+specified in the IMD parameter <TT>keating_d</TT>. The values of these
+parameters have to be given for all types of atoms in the following
+format:<P>
+
+<CENTER>
+<I>d<SUB>00</SUB> d<SUB>01</SUB> ... d<SUB>0(n-1)</SUB> d<SUB>11</SUB>
+ d<SUB>12</SUB> ... d<SUB>(n-1)(n-1)</SUB></I> ,
+</CENTER><P>
+
+where <I>n</I> is the number of atoms.
+
+The force constants <IMG WIDTH="20" HEIGHT="20" SRC="covalent19.gif">
+and <IMG WIDTH="32" HEIGHT="24" SRC="covalent20.gif"> correspond to
+the IMD parameters <TT>keating_alpha</TT> and <TT>keating_beta</TT>.
+<TT>keating_alpha</TT> has to be given in the same format as
+<TT>keating_d</TT>. For <TT>keating_beta</TT>, the index <I>i</I>
+takes on all values from <I>0</I> to <I>n-1</I> while the other two
+indices are read in like the two-index parameters. <P>
+
+The IMD parameter <TT>keating_r_cut</TT> corresponds to a cutoff
+length for all pairs of atom types. It is used to determine the
+nearest neighbour atoms. The format of <TT>keating_r_cut</TT> is the
+same as for <TT>keating_d</TT>.  The maximal number of nearest
+neighbours must be specified as a parameter with the IMD variable
+<TT>neigh_len</TT>. It is used to allocate memory for the neighbour
+tables.<P>
 
 <LI> <A NAME="stiweb">The option <B>stiweb</B> enables IMD to use the
 Stillinger-Weber potential (F. H. Stillinger and T. A. Weber,
