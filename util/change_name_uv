@@ -1,0 +1,11 @@
+#!/bin/sh
+#
+# copy an UltraVis data set and its header file to a new name
+#
+# Usage: change_name_uv <oldname> <newname>
+#
+# Filenames are needed without extensions
+#
+cp    $1.uvd $2.uvd
+cp -f $1.xvf $2.xvf
+sed "s/$1/$2/g" $1.uhd > $2.uhd

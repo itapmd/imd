@@ -90,6 +90,18 @@ void write_header_xvf( FILE *fp, float_dist_t *fl,
   if (48!=fwrite(header, sizeof(char), 48, fp)) error("Cannot write header!");
 }
 
+void write_header_xvf_sep( char *basename, float_dist_t *fl, 
+  int dx, int dy, int dz, int nf)
+{
+  FILE *fp;
+  char fname[255];
+
+  sprintf(fname, "%s.xvf", basename );
+  if (NULL==(fp=fopen(fname, "w"))) error("Cannot open parameter file");
+  write_header_xvf( fp, fl, dx, dy, dz, nf);
+  fclose(fp);
+}
+
 int main( int argc, char **argv ) 
 {
   char *progname, *infilebase, *suffix, *ext;
@@ -197,6 +209,7 @@ int main( int argc, char **argv )
   if (NULL==fp) error("Cannot open output file");
   if (type==UV8) {
     write_header_uv(urx-llx,ury-lly,urz-llz,fmax-fmin+1,tmpstr,"SCALAR8" );
+    write_header_xvf_sep(tmpstr, &fl, urx-llx, ury-lly, urz-llz, fmax-fmin+1);
   } else if (type==UV12) { 
     write_header_uv(urx-llx,ury-lly,urz-llz,fmax-fmin+1,tmpstr,"SCALAR12");
   } else if (type==RVF) {

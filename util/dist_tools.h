@@ -27,6 +27,7 @@ typedef struct {
 void error(char *msg);
 int  endian(void);
 void swap_4_bytes(void*);
+void swap_2_bytes(void*);
 void copy_2_bytes(char*,void*);
 void copy_4_bytes(char*,void*);
 void rgbcolor( unsigned char *dat, float val);

@@ -42,6 +42,19 @@ void swap_4_bytes(void *data)
 
 /******************************************************************************
 *
+*  do endian swap for a two byte quantity
+*
+******************************************************************************/
+
+void swap_2_bytes(void *data)
+{
+  char c, *str;
+  str = (char *) data;
+  c = str[0]; str[0] = str[1]; str[1] = c;
+}
+
+/******************************************************************************
+*
 *  copy 2 bytes to big endian
 *
 ******************************************************************************/
@@ -371,7 +384,7 @@ void float2scalar8_dist( float_dist_t *fl, byte_dist_t *bt, float min,
 void float2scalar12_dist( float_dist_t *fl, byte_dist_t *bt, float min, 
   float max, int n, int llx, int lly, int llz, int urx, int ury, int urz)
 {
-  int ix, iy, iz, j, k;
+  int ix, iy, iz, i, j, k;
   unsigned short *us;
   float tmp, sc;
 
@@ -403,8 +416,13 @@ void float2scalar12_dist( float_dist_t *fl, byte_dist_t *bt, float min,
       for (ix=llx; ix<urx; ix++) {
         tmp = MAX( min, ELM(fl,ix,iy,iz,n) );
         tmp = MIN( tmp, max ) * sc;
-        bt->dat[k++] = (unsigned short) tmp;
+        us[k++] = (unsigned short) tmp;
       }
+
+  /* endian swap if necessary - we need big endian */
+  if (!endian()) 
+    for (i=0; i<k; i++) swap_2_bytes( (void *) (us+i) );
+
 }
 
 /******************************************************************************
