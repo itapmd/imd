@@ -66,8 +66,9 @@ void move_atoms_nve(void)
     for (i=0; i<p->n; ++i) {
 
 #if defined(EPITAX) && !defined(NVE) 
-      /* beam atoms are always integrated by NVE */
-      if ( (NUMMER(p,i)>epitax_sub_n) && (POTENG(p,i)>(epitax_ctrl * epitax_poteng_min)) ) {
+        /* beam atoms are always integrated by NVE */
+        if ( (NUMMER(p,i) <= epitax_sub_n) && 
+             (POTENG(p,i) <= epitax_ctrl * epitax_poteng_min) ) continue;
 #endif
 
         kin_energie_1 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
@@ -201,9 +202,6 @@ void move_atoms_nve(void)
         PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif /* STRESS_TENS */
     }
-#if defined(EPITAX) && !defined(NVE)
-    }
-#endif
   }
 
 #ifdef MPI
@@ -283,8 +281,9 @@ void move_atoms_mik(void)
     for (i=0; i<p->n; ++i) {
 
 #ifdef EPITAX
-      /* only substrate atoms are integrated by MIK */
-      if ( (NUMMER(p,i)<=epitax_sub_n) || (POTENG(p,i)<=(epitax_ctrl * epitax_poteng_min)) ) {
+        /* only substrate atoms are integrated by MIK */
+        if ( (NUMMER(p,i) > epitax_sub_n) && 
+             (POTENG(p,i) > epitax_ctrl * epitax_poteng_min) ) continue;
 #endif
 
         kin_energie_1 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
@@ -357,9 +356,6 @@ void move_atoms_mik(void)
         PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
     }
-#ifdef EPITAX
-    }
-#endif
   }
 
 #ifdef MPI
@@ -433,9 +429,9 @@ void move_atoms_nvt(void)
     for (i=0; i<p->n; ++i) {
 
 #ifdef EPITAX
-      /* only substrate atoms are integrated by NVT */
-      if ( (NUMMER(p,i)<=epitax_sub_n) || 
-           (POTENG(p,i)<=(epitax_ctrl * epitax_poteng_min)) ) {
+        /* only substrate atoms are integrated by NVT */
+        if ( (NUMMER(p,i) > epitax_sub_n) && 
+             (POTENG(p,i) > epitax_ctrl * epitax_poteng_min) ) continue;
 #endif
 
         /* twice the old kinetic energy */
@@ -742,9 +738,6 @@ void move_atoms_sllod(void)
         PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
     }
-#ifdef EPITAX
-    }
-#endif
   }
   
 #ifdef UNIAX
@@ -992,14 +985,14 @@ void move_atoms_npt_iso(void)
 #endif
 
 #ifdef STRESS_TENS
-        PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
-        PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
+      PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
+      PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
 #ifndef TWOD
-        PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
-        PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
-        PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
+      PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
+      PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
+      PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
 #endif
-        PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
+      PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif
     }
   }

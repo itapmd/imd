@@ -356,6 +356,7 @@ void create_atom(int type, real mass, real temp);
 void delete_atoms(void);
 real substrate_level(void);
 void calc_poteng_min(void);
+void check_boxheight(void);
 ivektor cell_map(ivektor cellc);
 #endif
 
