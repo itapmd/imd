@@ -366,25 +366,31 @@ quasicrystals, one of the few structure types IMD can
 </A>
 Order parameter closely related to the potential energy. In
 quasicrystals the potential energy of atoms of the same type can be
-quite different depending on their neighbourhood so that defects
-hardly can be detected. The order parameter - which is printed in the
-output files - narrows the energy distribution and improves the
-visibility of defects.
+quite different, depending on their neighbourhood, so that defects
+can be hard to detect. The order parameter - which is printed in the
+output files instead of the potential energy - narrows the potential
+energy distribution and improves the visibility of defects.
 <P>
 Only atoms within a sphere of a certain radius  which is specified in
-the d<SUP>2</SUP>-dimensional vector <TT>op_rcut</TT> contribute to the
-order parameter: their potential energy, weighted by the number
-specified in the d<SUP>2</SUP>-dimensional vector <TT>op_weight</TT>
+the ntypes<SUP>2</SUP>-dimensional vector <TT>op_rcut</TT> contribute 
+to the order parameter: their potential energy, weighted by the number
+specified in the ntypes<SUP>2</SUP>-dimensional vector <TT>op_weight</TT>
 is summed up.
 <P>
-As in two dimensions the numbers of an atom's nearest neighbours of a
-certain type obey a linear relation, all atoms can be set to the same
-value of the order parameter.
+For two-dimensional binary tiling quasicrystals in the ground state, 
+the numbers of neighbors of the different types obey a linear
+relation. With the choice
+<PRE>
+   op_rcut   = (1.5, 1.25, 1.25, 0.85),
+   op_weight = (1, 0.25, 0.5, 1),
+</PRE>
+all atoms will then have the same value of the order parameter.
 <P>
 In three dimensions no such simple relation can be found. Here the
-order parameter is divided by the number of neighbours which has shown
-to be useful in the detection of dislocations and stacking faults. The
-number of neighbours is also being printed in the configuration file.
+order parameter is in addition divided by the total number of 
+neighbours. This has proven useful for the detection of dislocations 
+and stacking faults. The number of neighbours is also being printed 
+in the configuration file.
 
 <A NAME="monolj">
 <P><LI><B>monolj</B><P>
