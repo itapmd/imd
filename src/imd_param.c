@@ -667,7 +667,7 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"tau_eta_rot")==0) {
       /* time constant tau_eta for thermostat of rotational motion */
       getparam("tau_eta_rot",&isq_tau_eta_rot,PARAM_REAL,1,1);
-      if (inv_tau_eta_rot == (real)0) {
+      if (isq_tau_eta_rot == (real)0) {
         error("tau_eta_rot is zero.\n");
       }
       isq_tau_eta_rot = 1.0 / SQR(isq_tau_eta_rot);
@@ -1433,10 +1433,10 @@ void broadcast_params() {
 
 #if defined(NVT) || defined(NPT) || defined(STM)
   MPI_Bcast( &eta ,         1 , REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &inv_tau_eta , 1 , REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &isq_tau_eta , 1 , REAL, 0, MPI_COMM_WORLD); 
 #ifdef UNIAX
   MPI_Bcast( &eta_rot ,         1 , REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &inv_tau_eta_rot , 1 , REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &isq_tau_eta_rot , 1 , REAL, 0, MPI_COMM_WORLD); 
 #endif
 #endif
 
@@ -1447,7 +1447,7 @@ void broadcast_params() {
 
 #ifdef NPT
   MPI_Bcast( &xi,                DIM, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &inv_tau_xi,          1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &isq_tau_xi,          1, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &pressure_ext,      DIM, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &pressure_end,      DIM, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &cell_size_tolerance, 1, REAL, 0, MPI_COMM_WORLD); 
