@@ -194,7 +194,7 @@ void calc_forces(void)
 #endif
   for (k=0; k<ncells; ++k) {
     do_forces2(cell_array + CELLS(k),
-               &tot_kin_energy, &virial, &vir_x, &vir_y, &vir_z);
+               &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
   }
 #endif
 
@@ -215,7 +215,7 @@ void calc_forces(void)
       pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
       pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
       do_forces_eam2(cell_array + P->np, cell_array + P->nq, pbc,
-                     &tot_kin_energy, &virial, &vir_x, &vir_y, &vir_z);
+                     &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
     }
   }
 
@@ -233,7 +233,7 @@ void calc_forces(void)
       pbc.z = -(P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z);
       if (P->np != P->nq)
         do_forces_eam2(cell_array + P->nq, cell_array + P->np, pbc,
-                       &tot_kin_energy, &virial, &vir_x, &vir_y, &vir_z);
+                       &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
     }
   }
 
