@@ -140,13 +140,13 @@ ifeq (x86_64-gcc3,${IMDSYS})
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
   MPICH_CC      = gcc
-  MPICH_CLINKER = gcc
+#  MPICH_CLINKER = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
 #  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -m64 # -static
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
-  export        MPICH_CC MPICH_CLINKER
+  export        MPICH_CC # MPICH_CLINKER
 endif
 
 # Athlon MP or XP, icc
@@ -156,7 +156,7 @@ ifeq (AthlonMP-icc,${IMDSYS})
   CC_MPI	= mpicc
   CC_OMPI	= mpicc
   MPICH_CC      = icc
-  MPICH_CLINKER = icc
+#  MPICH_CLINKER = icc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -ip -tpp6 -axK # -static
@@ -165,7 +165,7 @@ ifeq (AthlonMP-icc,${IMDSYS})
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -prof_gen
   RCD_FLAGS	+= -DRCD -rcd
-  export MPICH_CC MPICH_CLINKER
+  export MPICH_CC # MPICH_CLINKER
 endif
 
 # Athlon MP or XP, gcc3
@@ -173,13 +173,13 @@ ifeq (AthlonMP-gcc3,${IMDSYS})
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
   MPICH_CC      = gcc
-  MPICH_CLINKER = gcc
+#  MPICH_CLINKER = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -march=athlon-mp # -static
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
-  export        MPICH_CC MPICH_CLINKER
+  export        MPICH_CC # MPICH_CLINKER
 endif
 
 # Pentium 4 or Xeon, icc
@@ -189,7 +189,7 @@ ifeq (P4-icc,${IMDSYS})
   CC_MPI	= mpicc 
   CC_OMPI	= mpicc
   MPICH_CC      = icc
-  MPICH_CLINKER = icc
+#  MPICH_CLINKER = icc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -ip -tpp7 # -static
@@ -198,7 +198,7 @@ ifeq (P4-icc,${IMDSYS})
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -prof_gen
   RCD_FLAGS	+= -DRCD -rcd
-  export        MPICH_CC MPICH_CLINKER
+  export        MPICH_CC # MPICH_CLINKER
 endif
 
 # Pentium 4 or Xeon, gcc3
@@ -206,7 +206,7 @@ ifeq (P4-gcc3,${IMDSYS})
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
   MPICH_CC      = gcc
-  MPICH_CLINKER = gcc
+#  MPICH_CLINKER = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -march=pentium4 # -static
@@ -214,7 +214,7 @@ ifeq (P4-gcc3,${IMDSYS})
   PROF_FLAGS	+= -g3 -pg
   PAPI_INC      =  -I /opt/include
   PAPI_LIBS     =  -L /opt/lib -lpapi -lperfctr
-  export        MPICH_CC MPICH_CLINKER
+  export        MPICH_CC # MPICH_CLINKER
 endif
 
 # Pentium III, icc
@@ -224,7 +224,7 @@ ifeq (P3-icc,${IMDSYS})
   CC_MPI	= mpicc
   CC_OMPI	= mpicc
   MPICH_CC      = icc
-  MPICH_CLINKER = icc
+#  MPICH_CLINKER = icc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -ip -tpp6 -axK # -static
@@ -233,7 +233,7 @@ ifeq (P3-icc,${IMDSYS})
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -prof_gen
   RCD_FLAGS	+= -DRCD -rcd
-  export        MPICH_CC MPICH_CLINKER
+  export        MPICH_CC # MPICH_CLINKER
 endif
 
 # Pentium III, gcc3
@@ -241,13 +241,13 @@ ifeq (P3-gcc3,${IMDSYS})
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
   MPICH_CC      = gcc
-  MPICH_CLINKER = gcc
+#  MPICH_CLINKER = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -mcpu=pentium3 # -static
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
-  export        MPICH_CC MPICH_CLINKER
+  export        MPICH_CC # MPICH_CLINKER
 endif
 
 # generic ia32 CPU, gcc 2.95 - slow!
@@ -255,13 +255,13 @@ ifeq (ia32-gcc2,${IMDSYS})
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
   MPICH_CC      = gcc
-  MPICH_CLINKER = gcc
+#  MPICH_CLINKER = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O3
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
-  export        MPICH_CC MPICH_CLINKER
+  export        MPICH_CC # MPICH_CLINKER
 endif
 
 ###########################################################################
@@ -1035,7 +1035,7 @@ imd_forces_covalent.o: imd_forces_covalent.c
 
 # How to link
 ${MAKETARGET}: ${OBJECTS} 
-	${CC} ${CFLAGS} -o $@ ${OBJECTS} ${LIBS}
+	${CC} -o $@ ${OBJECTS} ${LIBS}
 	${MV} $@ ${BIN_DIR}; rm -f $@
 
 # First recursion only set the MAKETARGET Variable
