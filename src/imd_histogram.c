@@ -642,6 +642,8 @@ void write_distrib(int steps)
   str255 fnamepot, fnamekin, fnameminmax;
   hist_t hist;
   int    fzhlr, i, r, s, t, count_pot, count_kin;
+  unsigned char c;
+  char d;
 
   hist.dim = dist_dim;
   hist.ll  = hist_ll;
@@ -651,9 +653,15 @@ void write_distrib(int steps)
   if (0==myid) {
 
     fzhlr = steps / dis_interval;
-    sprintf(fnamepot,"%s.%u.pot.dist",outfilename,fzhlr);
-    sprintf(fnamekin,"%s.%u.kin.dist",outfilename,fzhlr);
-    sprintf(fnameminmax,"%s.minmax.dist",outfilename);
+    if (virvo_io==1) {
+      sprintf(fnamepot,"%s.%u.pot.rvf",outfilename,fzhlr);
+      sprintf(fnamekin,"%s.%u.kin.rvf",outfilename,fzhlr);
+      sprintf(fnameminmax,"%s.minmax_for_rvf",outfilename);
+    } else {
+      sprintf(fnamepot,"%s.%u.pot.dist",outfilename,fzhlr);
+      sprintf(fnamekin,"%s.%u.kin.dist",outfilename,fzhlr);
+      sprintf(fnameminmax,"%s.minmax.dist",outfilename);
+    }
 
     outpot = fopen(fnamepot,"w");
     if (NULL == outpot) error("Cannot open pot distrib file.");
@@ -661,12 +669,35 @@ void write_distrib(int steps)
     if (NULL == outkin) error("Cannot open kin distrib file.");
 
     outminmax = fopen(fnameminmax, "a");
-    if (use_header) {
+    if ((virvo_io==0)&&(use_header)) {
       write_distrib_header(outpot, &hist, "Epot");
       write_distrib_header(outkin, &hist, "Ekin");
       fprintf(outminmax, 
               "# contents count min_Epot max_Epot min_Ekin max_Ekin\n");
     }
+    if (virvo_io==1) {
+      c = (unsigned char)((hist.dim.x & 65280)>>8);
+      fprintf(outpot, "%c", c);
+      fputc(c, outkin);
+      c = (unsigned char)(hist.dim.x & 255); 
+      fprintf(outpot, "%c", c);
+      fputc(c, outkin);
+      c = (unsigned char)((hist.dim.y & 65280)>>8);
+      fprintf(outpot, "%c", c);
+      fputc(c, outkin);
+      c = (unsigned char)(hist.dim.y & 255); 
+      fprintf(outpot, "%c", c);
+      fputc(c, outkin);
+#ifndef TWOD
+      c = (unsigned char)((hist.dim.z & 65280)>>8);
+      fprintf(outpot, "%c", c);
+      fputc(c, outkin);
+      c = (unsigned char)(hist.dim.z & 255); 
+      fprintf(outpot, "%c", c);
+      fputc(c, outkin);
+#endif
+    }
+
     fprintf(outminmax, "%d %f %f %f %f\n", 
             fzhlr, hist.minpot, hist.maxpot, hist.minkin, hist.maxkin);
     fclose(outminmax);
@@ -695,17 +726,36 @@ void write_distrib(int steps)
 	      fprintf(outkin, "%d ", t);
 #endif
 	    }
-            fprintf(outpot,"%f\n", hist.pot_hist[i]);
-            fprintf(outkin,"%f\n", hist.kin_hist[i]);
-            i++;
+	    if (virvo_io==1) {
+	      c = (unsigned char)(256.0*(hist.pot_hist[i]-hist.minpot)/(hist.maxpot-hist.minpot));
+	      fputc(c, outpot);
+	      c = (unsigned char)(256.0*(hist.kin_hist[i]-hist.minkin)/(hist.maxkin-hist.minkin));
+	      fputc(c, outkin);
+	      i++;
+	    } else {
+	      if (norm_hist) {
+		fprintf(outpot,"%f\n", 
+			(hist.num_hist[i])?hist.pot_hist[i]/hist.num_hist[i]:-10000.0);
+		fprintf(outkin,"%f\n", 
+			(hist.num_hist[i])?hist.kin_hist[i]/hist.num_hist[i]:0.0);
+	      } else {
+		fprintf(outpot,"%f\n", hist.pot_hist[i]);
+		fprintf(outkin,"%f\n", hist.kin_hist[i]);
+	      }
+	      i++;
+	    }
 #ifndef TWOD
-          }
-          fprintf(outpot,"\n");
-          fprintf(outkin,"\n");
+	  }
+	  if (virvo_io==0) {
+	    fprintf(outpot,"\n");
+	    fprintf(outkin,"\n");
+	  }
 #endif
 	}
-        fprintf(outpot,"\n");
-        fprintf(outkin,"\n");
+	if (virvo_io==0) {
+	  fprintf(outpot,"\n");
+	  fprintf(outkin,"\n");
+	}
       }
     }
     fclose(outpot);
@@ -811,7 +861,7 @@ void write_press_dist(int steps)
         if (dist_has_coords) fprintf(outfile, "%d %d ", r, s);
         fprintf(outfile, "%e %e %e %e %e %e\n", 
 	        hist.press_histxx[i], hist.press_histyy[i],
-                hist.press_histxy[i], hist.num_hist[i] / hist.binvol,
+q                hist.press_histxy[i], hist.num_hist[i] / hist.binvol,
                 hist.kin_hist[i], hist.pot_hist[i] );
         i++;
 #else
