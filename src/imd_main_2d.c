@@ -266,20 +266,20 @@ void main_loop(void)
 
 #ifdef EFILTER  /* just print atoms in an energy-window */ 
     if ((efrep_interval > 0) && (0 == steps%efrep_interval)) 
-       write_config_select(steps/efrep_interval,"ef",write_cell_ef);
+       write_config_select(steps/efrep_interval,"ef",write_atoms_ef);
 #endif
 #ifdef DISLOC
     if (steps == up_ort_ref) update_ort_ref();
     if ((dem_interval > 0) && (0 == steps%dem_interval)) 
-       write_config_select(steps,"dem",write_cell_dem);
+       write_config_select(steps,"dem",write_atoms_dem);
     if ((dsp_interval > up_ort_ref) && (0 == steps%dsp_interval)) 
-       write_config_select(steps,"dsp",write_cell_dsp);
+       write_config_select(steps,"dsp",write_atoms_dsp);
 #endif
 #ifdef AVPOS
     if ((avpos_res > 0) && (0 == steps%avpos_res) && steps > 0)
        add_position();
     if ((avpos_int > 0) && (0 == steps%avpos_int) && steps > 0)
-       write_avpos(steps);
+       write_config_select(steps/avpos_int,"avp",write_atoms_avp);
 #endif
 
 #ifdef TRANSPORT
@@ -298,7 +298,7 @@ void main_loop(void)
 #else
     if ((press_interval > 0) && (0 == steps%press_interval)) {
       if (0==press_dim.x) 
-        write_config_select(steps/press_interval,"press",write_cell_press);
+        write_config_select(steps/press_interval,"press",write_atoms_press);
       else 
         write_press_dist(steps);
     }

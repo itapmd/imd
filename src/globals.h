@@ -122,6 +122,7 @@ EXTERN vektor tbox_z INIT(nullvektor);
 #endif
 
 /* Filenames */
+EXTERN char outbuf[OUTPUT_BUF_SIZE] INIT("\0");  /* output buffer */
 EXTERN str255 infilename INIT("\0");    /* Input File */
 EXTERN str255 outfilename INIT("\0");   /* Output File */
 EXTERN str255 potfilename INIT("\0");   /* Potential */
@@ -182,6 +183,8 @@ EXTERN int  incrsz INIT(10);         /* increment of number of atoms in cell */
 
 /* MPI housekeeping */
 EXTERN int myid INIT(0);                  /* Who am I? (0 if RISC) */
+EXTERN int parallel_output INIT(0);       /* Flag for parallel output */
+EXTERN int parallel_input  INIT(1);       /* Flag for parallel input */
 #ifdef MPI
 EXTERN int binc INIT(0);                  /* buffer size per atom */
 EXTERN int num_cpus INIT(0);              /* How many cpus are there */
@@ -190,8 +193,6 @@ EXTERN ivektor cpu_dim INIT(nullivektor); /* Dimensions of CPU-Array */
 EXTERN cell buf_one_atom;                 /* Buffer that holds one Atom */
 EXTERN MPI_Comm cpugrid;
 EXTERN ivektor my_coord;                  /* Cartesian coordinates of cpu */
-EXTERN int parallel_output INIT(0);       /* Flag for parallel output */
-EXTERN int parallel_input  INIT(1);       /* Flag for parallel input */
 
 /* Send and Receive buffers */
 EXTERN msgbuf send_buf_east  INIT(nullbuffer);

@@ -211,19 +211,23 @@ void write_properties(int steps);
 void write_itr_file(int fzhlr, int steps);
 void write_config(int steps);
 void write_config_select(int fzhlr, char *suffix, 
-                         void (*write_cell_fun)(FILE *out, cell *p));
-void write_cell(FILE *out, cell *p);
-void write_cell_pic(FILE *out, cell *p); 
+                         void (*write_atoms_fun)(FILE *out));
+void write_atoms(FILE *out);
+void write_atoms_pic(FILE *out); 
 #ifdef DISLOC
-void write_cell_dem(FILE *out, cell *p);
-void write_cell_dsp(FILE *out, cell *p);
+void write_atoms_dem(FILE *out);
+void write_atoms_dsp(FILE *out);
 #endif
 #ifdef EFILTER
-void write_cell_ef(FILE *out, cell *p);
+void write_atoms_ef(FILE *out);
 #endif
 #ifdef STRESS_TENS
-void write_cell_press(FILE *out, cell *p);
+void write_atoms_press(FILE *out);
 #endif
+#ifdef AVPOS
+void write_atoms_avp(FILE *out);
+#endif
+
 void reduce_displacement(vektor *d);
 #ifdef MPI
 void recv_cell_old(cell *p, int from_cpu, int tag);
@@ -285,7 +289,6 @@ void update_ort_ref(void);
 /* support for average over positions */
 #ifdef AVPOS
 void add_positions(void);
-void write_avpos(int steps);
 #endif
 
 /* support for correlation functions - file imd_correl.c */

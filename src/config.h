@@ -142,3 +142,6 @@
 
 /* buffer size for serial read_atoms */
 #define INPUT_BUF_SIZE 16384
+
+/* output buffer size (in bytes) */
+#define OUTPUT_BUF_SIZE 131072

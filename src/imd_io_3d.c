@@ -316,7 +316,7 @@ void read_atoms(str255 infilename)
         b = input_buf + to_cpu;
         copy_one_atom(b, input, 0, 0);
         if (b->n_max - b->n < MAX_ATOM_SIZE) {
-          MPI_Send(b->data, b->n, REAL, to_cpu, CELL_TAG, cpugrid);
+          MPI_Send(b->data, b->n, REAL, to_cpu, INBUF_TAG, cpugrid);
           b->n = 0;
         }
       } else if (to_cpu==myid) {
@@ -368,12 +368,14 @@ void read_atoms(str255 infilename)
 
 #ifdef MPI
 
-  /* Tell other CPUs that reading atoms is finished. (tag==0) */
+  /* The last buffer is sent with a different tag, which tells the
+     target CPU that reading is finished; we increase the size by
+     one, so that the buffer is sent even if it is empty */
   if (0==parallel_input)
     for (s=1; s<num_cpus; s++) {
       b = input_buf + s;
-      if (b->n > 0) MPI_Send(b->data, b->n, REAL, s, CELL_TAG, cpugrid);
-      MPI_Send(b->data, 1, REAL, s, 0, cpugrid);
+      b->data[b->n++] = 0.0;
+      MPI_Send(b->data, b->n, REAL, s, INBUF_TAG+1, cpugrid);
       free(b->data);
     }
 
@@ -431,6 +433,7 @@ void read_atoms(str255 infilename)
 void recv_atoms(void)
 {
   MPI_Status status;
+  int finished=0;
   msgbuf b;   
 
   b.data  = (real *) malloc( INPUT_BUF_SIZE * sizeof(real) );
@@ -438,12 +441,12 @@ void recv_atoms(void)
   if (NULL == b.data) error("cannot allocate input receive buffer");
 
   printf("Node %d listening.\n",myid);
-  while ( 1 ) {
+  do {
     MPI_Recv(b.data, INPUT_BUF_SIZE, REAL, 0, MPI_ANY_TAG, cpugrid, &status);
-    if (0 == status.MPI_TAG) break;
     MPI_Get_count(&status, REAL, &b.n);
+    if (status.MPI_TAG==INBUF_TAG+1) { b.n--; finished=1; } /* last buffer */
     process_buffer( &b, (cell *) NULL );
-  }
+  } while (0==finished);
   printf("Node %d leaves listen.\n",myid);
   free(b.data);
 }
@@ -527,52 +530,65 @@ void write_properties(int steps)
 
 /******************************************************************************
 *
-*  write_cell - utility routine for write_config
+*  filter function for write_config_select
+*  writes data of all atoms for checkpoints
 *
 ******************************************************************************/
 
-void write_cell(FILE *out, cell *p)
+void write_atoms(FILE *out)
 {
-  int i;
+  int i, k, len=0;
+  cell *p;
 
 #ifdef HPO
 #define RESOL1 " %12.16f"
 #define RESOL3 " %12.16f %12.16f %12.16f"
 #else
-#define RESOL1 " %12f"
-#define RESOL3 " %12f %12f %12f"
+#define RESOL1 " %f"
+#define RESOL3 " %f %f %f"
 #endif
 
-  for (i=0; i<p->n; i++) {
-      fprintf(out, "%d %d", NUMMER(p,i), VSORTE(p,i));
-      fprintf(out, RESOL1, MASSE(p,i));
+  for (k=0; k<ncells; k++) {
+    p = cell_array + CELLS(k);
+    for (i=0; i<p->n; i++) {
+      len += sprintf(outbuf+len, "%d %d", NUMMER(p,i), VSORTE(p,i));
+      len += sprintf(outbuf+len, RESOL1, MASSE(p,i));
 #ifdef UNIAX
-      fprintf(out, RESOL1, p->traeg_moment[i]);
+      len += sprintf(outbuf+len, RESOL1, p->traeg_moment[i]);
 #endif
-      fprintf(out, RESOL3, p->ort X(i), p->ort Y(i), p->ort Z(i));
+      len += sprintf(outbuf+len, 
+        RESOL3, p->ort X(i), p->ort Y(i),p->ort Z(i));
 #ifdef UNIAX
-      fprintf(out, RESOL3, p->achse X(i), p->achse Y(i), p->achse Z(i));
-      fprintf(out, RESOL3, p->shape X(i), p->shape Y(i), p->shape Z(i));
-      fprintf(out, RESOL3, p->pot_well X(i),p->pot_well Y(i),p->pot_well Z(i));
+      len += sprintf(outbuf+len, 
+        RESOL3, p->achse X(i), p->achse Y(i), p->achse Z(i));
+      len += sprintf(outbuf+len, 
+        RESOL3, p->shape X(i), p->shape Y(i), p->shape Z(i));
+      len += sprintf(outbuf+len, 
+        RESOL3, p->pot_well X(i),p->pot_well Y(i),p->pot_well Z(i));
 #endif
-      fprintf(out, RESOL3,
+      len += sprintf(outbuf+len, RESOL3,
         p->impuls X(i) / MASSE(p,i), 
         p->impuls Y(i) / MASSE(p,i), 
         p->impuls Z(i) / MASSE(p,i));
 #ifdef UNIAX
-      fprintf(out, RESOL3,
+      len += sprintf(outbuf+len, RESOL3,
         p->dreh_impuls X(i) / p->traeg_moment[i],
         p->dreh_impuls Y(i) / p->traeg_moment[i],
         p->dreh_impuls Z(i) / p->traeg_moment[i]); 
 #endif
 #ifdef ORDPAR
-      fprintf(out, RESOL1, NBANZ(p,i)==0 ? 0 : POTENG(p,i) / NBANZ(p,i));
-      fprintf(out, " %d", NBANZ(p,i));
+      len += sprintf(outbuf+len, 
+        RESOL1, NBANZ(p,i)==0 ? 0 : POTENG(p,i) / NBANZ(p,i));
+      len += sprintf(outbuf+len, " %d", NBANZ(p,i));
 #else
-      fprintf(out, RESOL1, POTENG(p,i));
+      len += sprintf(outbuf+len, RESOL1, POTENG(p,i));
 #endif
-      fprintf(out,"\n");
+      len += sprintf(outbuf+len,"\n");
+      /* flush or send outbuf if it is full */
+      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+    }
   }
+  flush_outbuf(out,&len,OUTBUF_TAG+1);
 }
 
 /******************************************************************************
@@ -625,26 +641,4 @@ void write_itr_file(int fzhlr, int steps)
 #endif /* NPT */
 
   fclose(out);
-}
-
-/******************************************************************************
-*
-* write_config writes a configuration to a numbered file,
-* which can serve as a checkpoint; uses write_cell
-*
-******************************************************************************/
-
-void write_config(int steps)
-{ 
-  int fzhlr = steps / rep_interval;
-
-  /* first make sure that every atom is inside the box and on the right CPU */
-  do_boundaries();
-  fix_cells();
-
-  /* write checkpoint */
-  write_config_select(fzhlr, "chkpt", write_cell);
-
-  /* write iteration file */
-  if (myid == 0) write_itr_file(fzhlr, steps);
 }

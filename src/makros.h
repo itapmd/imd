@@ -171,29 +171,12 @@ inline static real SQR(real x)
 #define FALSE        0
 
 /* Some constants for Message passing, should all have unique values */
-#ifdef MPI
 #define CELL_TAG   100
-#define SIZE_TAG   200
-#define BUFFER_TAG 300
+#define BUFFER_TAG 200
+#define OUTBUF_TAG 300
+#define INBUF_TAG  400
 #define ORT_TAG      1
 #define SORTE_TAG    2
-#define MASSE_TAG    3 
-#define NUMMER_TAG   4
-#define IMPULS_TAG   5
-#define KRAFT_TAG    6
-#define POT_TAG      7
-#define POT_INIT_TAG 8 /* obsolete */
-#define POT_REF_TAG  9
-#define ORT_REF_TAG  10
-#define REFPOS_TAG   11
-#define TRAEG_MOMENT_TAG 12
-#define ACHSE_TAG 13
-#define SHAPE_TAG 14
-#define POT_WELL_TAG 15
-#define DREH_IMPULS_TAG 16
-#define DREH_MOMENT_TAG 17
-#define NBA_TAG 18
-#endif
 
 /* some systems have different versions of trunc and floor float and double */
 #if sgi || t3e

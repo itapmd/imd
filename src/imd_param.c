@@ -1554,8 +1554,8 @@ void broadcast_params() {
 #endif
 
 #ifdef AVPOS
-  MPI_Bcast( &avp_int,         1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &avp_res,         1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &avpos_int,       1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &avpos_res,       1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef ORDPAR
