@@ -200,7 +200,7 @@ void write_chkpt(int num, vektor *atoms)
   int  k, ix, iy, iz;
 
   /* open checkpoint file */
-  sprintf(fname, "%s.%04d.cpt", outfiles, num);
+  sprintf(fname, "%s.%05d.cpt", outfiles, num);
   outfile = fopen(fname, "w");
   if (NULL==outfile) error("Cannot open checkpoint file.");
 
