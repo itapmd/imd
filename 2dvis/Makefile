@@ -8,12 +8,12 @@ CC_i386-linux = gcc
 CC_alpha = gcc
 CC = $(CC_$(HOSTTYPE))
 
-CFLAGS = -DTWOD
+CFLAGS = -g -DTWOD
 LIBP = -L/usr/X11/lib
 LIBS = -lvogle -lX11 -lm
 
 all:	2dvis
-	mv 2dvis $(HOME)/bin/$(HOSTTYPE)
+#	mv 2dvis $(HOME)/bin/$(HOSTTYPE)
 
 2dvis:	2dvis.o client.o sockutil.o param.o
 	$(CC) $(LIBP) $(CFLAGS) -o 2dvis 2dvis.o client.o sockutil.o param.o $(LIBS)
@@ -31,7 +31,7 @@ param.o:	param.c
 	$(CC) $(CFLAGS) -c param.c
 
 clean:
-	rm -f *.o *~ \#* 
+	rm -f *.o *~ \#*  
 
 
 

@@ -31,6 +31,7 @@ int read_atoms(char *fname);
 void read_unit_vectors(void);
 void write_to_file(void);
 void getparamfile(char *paramfname);
+void error(char *mesg);
 
 int main(int argc, char **argv)
 {
@@ -49,7 +50,7 @@ int main(int argc, char **argv)
 
   read_parameters(argc,argv);
 
-  /* allocs */
+  /* allocs
   nummer=(int*)calloc(MAXNATOMS,sizeof(int));
   sorte=(int*)calloc(MAXNATOMS,sizeof(int));
   masse=(double*)calloc(MAXNATOMS,sizeof(float));
@@ -60,6 +61,7 @@ int main(int argc, char **argv)
   pot=(double*)calloc(MAXNATOMS,sizeof(float));
   kin=(double*)calloc(MAXNATOMS,sizeof(float));
   bcode=(int*)calloc(MAXNATOMS,sizeof(int));
+  */
 
   init_graph();
 
@@ -434,5 +436,15 @@ void display_help(void) {
 void usage(void) {
 }
 
+void error(char *mesg)
 
-
+{
+  
+#ifdef MPI
+  fprintf(stderr,"CPU %d: %s\n",myid,mesg);
+  MPI_Abort(MPI_COMM_WORLD, 1);
+#else
+  fprintf(stderr,"Error: %s\n",mesg);
+#endif
+  exit(2);
+}

@@ -39,7 +39,9 @@ int WriteFull(int fd, const void *buffer, int bytes)
   
   while (nbytes>0) {
     written = write(fd,(void *) bptr,nbytes);
+#ifdef DEBUG
     printf("Sent %d Bytes package\n",written);
+#endif
     if (written < 0) return written; /* ERROR */
     nbytes-=written;
     bptr+=written;
@@ -61,7 +63,9 @@ int ReadFull(int filedes, const void *buffer, int bytes)
   
   while (nbytes>0) {
     nread = read(filedes,(void *) bptr,nbytes);
-    /*    printf("nbytes=%d, Received %d Byte package\n",nbytes,nread);*/
+#ifdef DEBUG
+    printf("nbytes=%d, Received %d Byte package\n",nbytes,nread);*/
+#endif
     if (nread < 0) return nread; /* ERROR */
     nbytes-=nread;
     bptr+=nread;
@@ -84,20 +88,26 @@ int OpenServerSocket(u_short MyPort)
     perror("Socket creation failed:");
     return -1;
   }
+#ifdef DEBUG
   printf("server socket #%d\n",soc);
-  
+#endif
+
   bzero((char *) &ServAddr, sizeof(ServAddr));
   ServAddr.sin_family        = PF_INET;
   ServAddr.sin_addr.s_addr   = INADDR_ANY;
   ServAddr.sin_port          = MyPort;
   
+#ifdef DEBUG
   printf("calling bind \n");
+#endif
   if ( bind(soc,&ServAddr,sizeof(ServAddr)) ) {
     perror("Bind failed");
     return -1;
   }
   
+#ifdef DEBUG
   printf("calling listening \n");
+#endif
   if ( listen(soc,5) ) {
     perror("Listen failed");
     return -1;
@@ -107,65 +117,19 @@ int OpenServerSocket(u_short MyPort)
   CliAddr.sin_family        = PF_INET;
   CliAddrLen=sizeof(CliAddr);
   
+#ifdef DEBUG
   printf("calling accept \n");
+#endif
   soc1=accept(soc,&CliAddr,&CliAddrLen);
   if (soc1 == -1) {
     perror("Accept failed");
     return -1;
   }
+#ifdef DEBUG
   printf("returning\n");
+#endif
   close(soc);
   return soc1;
-}
-
-
-/* #####################################################################
-   ### Open Socket for SERVER without accept: Port in Network-ByteOrder###
-   ##################################################################### */
-
-int OpenNBServerSocket(u_short MyPort)
-{
-  struct sockaddr_in ServAddr;
-  int soc;
-
-  soc = socket(AF_INET,SOCK_STREAM,0);
-  if (soc == -1) {
-    perror("Socket creation failed:");
-    return -1;
-  }
-  printf("server socket #%d\n",soc);
-  
-  bzero((char *) &ServAddr, sizeof(ServAddr));
-  ServAddr.sin_family        = AF_INET;
-  ServAddr.sin_addr.s_addr   = INADDR_ANY;
-  ServAddr.sin_port          = MyPort;
-  
-  if(fcntl(soc, F_SETFL, FNDELAY)<0){
-    perror("fcntl F_SETOWN");
-    exit(1);
-  }
-  printf("calling bind \n");
-  if ( bind(soc,&ServAddr,sizeof(ServAddr)) ) {
-    perror("Bind failed");
-    return -1;
-  }
-  
-  printf("calling listening \n");
-  if ( listen(soc,5) ) {
-    perror("Listen failed");
-    return -1;
-  }
-  if(fcntl(soc, F_SETOWN, getpid())<0){
-    perror("fcntl F_SETOWN");
-    exit(1);
-  }
-  if (fcntl(soc, F_SETFL, FASYNC) < 0) {
-    perror("fcntl F_SETFL, FASYNC");
-    exit(1);
-  }
-  
-  printf("returning \n");
-  return soc;
 }
 
 
@@ -180,7 +144,9 @@ int OpenClientSocket(u_long toIP, u_short toPort)
   struct sockaddr_in ServAddr;
 
   soc = socket(PF_INET,SOCK_STREAM,0);
+#ifdef DEBUG
   printf("client socket #%d\n",soc);
+#endif
   if (soc == -1) {
     perror("Socket creation failed:");
     return -1;
@@ -197,40 +163,13 @@ int OpenClientSocket(u_long toIP, u_short toPort)
     printf("error return is %d\n",errno);
     return -1;
   }
+#ifdef DEBUG
  printf("return socket #%d\n",soc);
+#endif
  return soc;
 }
 
-/* #####################################
-   ### Schreibe Sync-Byte nach <soc> ###
-   ##################################### */
 
-
-void WriteSync(int fd)
-{
-  char sync=0x2f;
-  int res;
-  while (1!=(res=write(fd,&sync,1)))
-    if (res==-1) {
-      perror("Write Sync:");
-      return;
-    }
-}
-
-/* ################################
-   ### Lies Sync-Byte von <soc> ###
-   ################################ */
-
-void ReadSync(int fd)
-{
-  char sync=0x2f;
-  int res;
-  while (1!=(res=read(fd,&sync,1)))
-    if (res==-1) {
-      perror("Read Sync:");
-      return;
-    }
-}
 
 
 

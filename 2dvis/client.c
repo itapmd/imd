@@ -47,28 +47,29 @@ int receive_conf()
   mink=1000;
 
   ReadFull(socket_id, (void *)&anz, sizeof(int));
+  printf("%d\n", anz);
   nummer = (int *)calloc(anz, sizeof(int));
-  sorte = (int *)calloc(anz, sizeof(int));
-  masse = (double *)calloc(anz, sizeof(double));
-  x = (double *)calloc(anz, sizeof(double));
-  y = (double *)calloc(anz, sizeof(double));
+  sorte  = (int *)calloc(anz, sizeof(int));
+  masse  = (double *)calloc(anz, sizeof(double));
+  x      = (double *)calloc(anz, sizeof(double));
+  y      = (double *)calloc(anz, sizeof(double));
 #ifdef TWOD
-  z = (double *)calloc(anz, sizeof(double));
+  z      = (double *)calloc(anz, sizeof(double));
 #endif
-  vx = (double *)calloc(anz, sizeof(double));
-  vy = (double *)calloc(anz, sizeof(double));
+  vx     = (double *)calloc(anz, sizeof(double));
+  vy     = (double *)calloc(anz, sizeof(double));
 #ifdef TWOD
-  vz = (double *)calloc(anz, sizeof(double));
+  vz     = (double *)calloc(anz, sizeof(double));
 #endif
-  pot = (double *)calloc(anz, sizeof(double));
+  pot    = (double *)calloc(anz, sizeof(double));
+  kin    = (double *)calloc(anz, sizeof(double));
 
-  /*  ReadFull(socket_id, (void *)&boxx, sizeof(double));
-  ReadFull(socket_id, (void *)&boxy, sizeof(double));*/
   for (i=0;i<anz;i++) {
     kin[i]=0;
     ReadFull(socket_id, (void *)&itmp, sizeof(int));
     nummer[i] = itmp;
     ReadFull(socket_id, (void *)&itmp, sizeof(int));
+    printf("%d %d\n", i, itmp);
     sorte[i] = itmp;
     ReadFull(socket_id, (void *)&tmp, sizeof(double));
     masse[i] = tmp;
