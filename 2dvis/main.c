@@ -298,7 +298,6 @@ void draw_scene(int scene_type) {
 
   epsilon=.1;
   backbuffer();
-  polyfill(0);
   color(BLACK);
   clear();
 
@@ -429,11 +428,10 @@ void draw_scene(int scene_type) {
 	    color(nb+1);
 	  else { /* bond_mode == 0 */
 	    if (eng_mode)
-	      cv=(int)(scalekin*(kin[i]+offskin));
+	      cv=(int)(scalekin*(kin[i]-mink));
 	    else
-	      cv=(int)(scalepot*(pot[i]+offspot));
-	    mapcolor(i+8,cv,cv,cv);
-	    color(i+8);
+	      cv=(int)(scalepot*(pot[i]-minp));
+	    color(cv+10);
 	  }
         }
 	if (radectyp)
