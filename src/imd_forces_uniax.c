@@ -10,7 +10,7 @@
 
 /* do_forces_uniax, risc version */
 
-void do_forces_uniax(cell *p, cell *q, vektor pbc)
+void do_forces(cell *p, cell *q, vektor pbc)
 
 {
   int i, j ;

@@ -21,7 +21,7 @@
 *
 ******************************************************************************/
 
-void do_forces_ttbp(cell *p)
+void do_forces2(cell *p)
 {
   static real   *r2 = NULL, *r = NULL, *pot = NULL, *grad = NULL;
   static vektor *d  = NULL;
@@ -163,7 +163,7 @@ void do_forces_ttbp(cell *p)
 *
 ******************************************************************************/
 
-void do_forces_tersoff(cell *p)
+void do_forces2(cell *p)
 {
   static real   *r = NULL, *fc = NULL, *dfc = NULL;
   static vektor *d  = NULL;

@@ -111,23 +111,16 @@ int     cpu_grid_coord(ivektor cellc);
 /* force computation - files imd_main_*.c, imd_forces_*.c */
 void calc_forces(void);
 void do_forces(cell *p, cell *q, vektor pbc);
-#ifdef EAM
-void do_forces_eam_1(cell *p, cell *q, vektor pbc);
-void do_forces_eam_2(cell *p);
+#if (defined(EAM) || defined(TTBP) || defined(TERSOFF))
+void do_forces2(cell *p);
 #endif
 #ifdef EAM2
-void eam2_do_forces1(cell *p, cell *q, vektor pbc);
-void eam2_do_forces2(cell *p, cell *q, vektor pbc);
-#endif
-#ifdef TTBP
-void do_forces_ttbp(cell *p);
+void do_forces_eam2(cell *p, cell *q, vektor pbc);
 #endif
 #ifdef TERSOFF
 void init_tersoff(void);
-void do_forces_tersoff(cell *p);
 #endif
 #ifdef UNIAX
-void do_forces_uniax(cell *p, cell *q, vektor pbc);
 void gay_berne ( vektor r12, vektor e1, vektor e2, 
 		 real rsqr, vektor s1, vektor w1, 
 		 real *pot12, vektor *force12, 

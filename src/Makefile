@@ -60,46 +60,46 @@
 #
 ###########################################################################
 
-IMDHEADERS    = config.h globals.h imd.h makros.h potaccess.h prototypes.h types.h 
+IMDHEADERS      = config.h globals.h imd.h makros.h potaccess.h \
+                  prototypes.h types.h 
 
-SOURCES       = imd.c imd_maxwell.c imd_integrate.c imd_forces.c \
-	        imd_misc.c imd_param.c imd_alloc.c imd_io.c imd_potential.c \
-                imd_time.c imd_generate.c imd_histogram.c
-SOURCES2D     = ${SOURCES} imd_main_2d.c imd_io_2d.c imd_geom_2d.c \
-		imd_pictures_2d.c
-SOURCES3D     = ${SOURCES} imd_main_3d.c imd_io_3d.c imd_geom_3d.c \
-		imd_pictures_3d.c
+SOURCES         = imd.c imd_maxwell.c imd_integrate.c imd_misc.c \
+	          imd_param.c imd_alloc.c imd_io.c imd_potential.c \
+                  imd_time.c imd_generate.c imd_histogram.c
+SOURCES2D       = ${SOURCES} imd_main_2d.c imd_io_2d.c imd_geom_2d.c \
+		  imd_pictures_2d.c
+SOURCES3D       = ${SOURCES} imd_main_3d.c imd_io_3d.c imd_geom_3d.c \
+		  imd_pictures_3d.c
 
-RISCSOURCES2D = imd_main_risc_2d.c
-RISCSOURCES3D = imd_main_risc_3d.c
+RISCSOURCES2D   = imd_main_risc_2d.c
+RISCSOURCES3D   = imd_main_risc_3d.c
 
-MPISOURCES    = imd_mpi_util.c
-MPISOURCES2D  = ${MPISOURCES} imd_main_mpi_2d.c imd_geom_mpi_2d.c \
-		imd_comm_force_2d.c
-MPISOURCES3D  = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c \
-		imd_comm_force_3d.c
+MPISOURCES      = imd_mpi_util.c
+MPISOURCES2D    = ${MPISOURCES} imd_main_mpi_2d.c imd_geom_mpi_2d.c \
+		  imd_comm_force_2d.c
+MPISOURCES3D    = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c \
+		  imd_comm_force_3d.c
 
-DEFORMSOURCES = imd_deform.c
+PAIRSOURCES     = imd_forces.c
+EAMSOURCES      = imd_forces_eam.c
+EAM2SOURCES     = imd_forces_eam2.c
+COVALENTSOURCES = imd_forces.c imd_forces_covalent.c
+UNIAXSOURCES    = imd_forces_uniax.c imd_gay_berne.c
 
-SOCKHEADERS   = socket_tokens.h sockets.h sockutil.h
-SOCKSOURCES   = socket_io.c sockutil.c
+DEFORMSOURCES   = imd_deform.c
 
-FRACSOURCES   = imd_load.c
+SOCKHEADERS     = socket_tokens.h sockets.h sockutil.h
+SOCKSOURCES     = socket_io.c sockutil.c
 
-QUASISOURCES  = imd_qc.c
+FRACSOURCES     = imd_load.c
 
-EAMSOURCES    = imd_forces_eam.c
-EAM2SOURCES   = imd_forces_eam2.c
+QUASISOURCES    = imd_qc.c
 
-COVALENTSOURCES = imd_forces_covalent.c
+CORRSOURCES     = imd_correl.c
 
-CORRSOURCES   = imd_correl.c
+TRANSSOURCES    = imd_transport.c
 
-UNIAXSOURCES  = imd_forces_uniax.c imd_gay_berne.c
-
-TRANSSOURCES  = imd_transport.c
-
-SAVEMEMSOURCES = imd_savemem_3d.c
+SAVEMEMSOURCES  = imd_savemem_3d.c
 
 
 ###########################################################################
@@ -448,6 +448,44 @@ endif
 endif
 
 
+###  INTERACTION  #######################################
+
+# pair interaction is the default
+FORCESOURCES = ${PAIRSOURCES}
+
+# EAM2 or EAM
+ifneq (,$(strip $(findstring eam2,${MAKETARGET})))
+CFLAGS  += -DEAM2
+FORCESOURCES = ${EAM2SOURCES}
+else
+ifneq (,$(strip $(findstring eam,${MAKETARGET})))
+CFLAGS  += -DEAM
+CFLAGS  += -UAR
+FORCESOURCES = ${EAMSOURCES}
+endif
+endif
+
+# TTBP
+ifneq (,$(strip $(findstring ttbp,${MAKETARGET})))
+CFLAGS  += -DTTBP
+FORCESOURCES = ${COVALENTSOURCES}
+endif
+
+# TERSOFF
+ifneq (,$(strip $(findstring tersoff,${MAKETARGET})))
+CFLAGS  += -DTERSOFF
+FORCESOURCES = ${COVALENTSOURCES}
+endif
+
+# UNIAX
+ifneq (,$(strip $(findstring uniax,${MAKETARGET})))
+CFLAGS  += -DUNIAX
+FORCESOURCES = ${UNIAXSOURCES}
+endif
+
+SOURCES += ${FORCESOURCES}
+
+
 ###  ENSEMBLES  #########################################
 
 ifneq (,$(findstring nve,${MAKETARGET}))
@@ -566,30 +604,6 @@ ifneq (,$(findstring ordpar,${MAKETARGET}))
 CFLAGS += -DORDPAR
 endif
 
-# EAM2 or EAM
-ifneq (,$(strip $(findstring eam2,${MAKETARGET})))
-CFLAGS  += -DEAM2
-SOURCES += ${EAM2SOURCES}
-else
-ifneq (,$(strip $(findstring eam,${MAKETARGET})))
-CFLAGS  += -DEAM
-CFLAGS  += -UAR
-SOURCES += ${EAMSOURCES}
-endif
-endif
-
-# TTBP
-ifneq (,$(strip $(findstring ttbp,${MAKETARGET})))
-CFLAGS  += -DTTBP
-SOURCES += ${COVALENTSOURCES}
-endif
-
-# TERSOFF
-ifneq (,$(strip $(findstring tersoff,${MAKETARGET})))
-CFLAGS  += -DTERSOFF
-SOURCES += ${COVALENTSOURCES}
-endif
-
 # Correlation
 ifneq (,$(strip $(findstring corr,${MAKETARGET})))
 CFLAGS  += -DCORRELATE
@@ -606,12 +620,6 @@ endif
 ifneq (,$(strip $(findstring msqd,${MAKETARGET})))
 CFLAGS  += -DMSQD
 SOURCES += ${CORRSOURCES}
-endif
-
-# UNIAX
-ifneq (,$(strip $(findstring uniax,${MAKETARGET})))
-CFLAGS  += -DUNIAX
-SOURCES += ${UNIAXSOURCES}
 endif
 
 # MONOLJ Case

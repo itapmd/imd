@@ -93,16 +93,7 @@ void calc_forces(void)
       pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
       pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
       pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
-#ifdef EAM
-      /* first EAM call */
-      do_forces_eam_1(cell_array + P->np, cell_array + P->nq, pbc);
-#elif defined(EAM2)
-      eam2_do_forces1(cell_array + P->np, cell_array + P->nq, pbc);
-#elif defined(UNIAX)
-      do_forces_uniax(cell_array + P->np, cell_array + P->nq, pbc);
-#else
       do_forces(cell_array + P->np, cell_array + P->nq, pbc);
-#endif
     }
   }
 
@@ -119,8 +110,8 @@ void calc_forces(void)
       pbc.x = -(P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x);
       pbc.y = -(P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y);
       pbc.z = -(P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z);
-      if (P->np != P->nq)
-        eam2_do_forces1(cell_array + P->nq, cell_array + P->np, pbc);
+      if (P->np != P->nq) 
+        do_forces(cell_array + P->nq, cell_array + P->np, pbc);
     }
   }
 
@@ -136,7 +127,7 @@ void calc_forces(void)
       pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
       pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
       pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
-      eam2_do_forces2(cell_array + P->np, cell_array + P->nq, pbc);
+      do_forces_eam2(cell_array + P->np, cell_array + P->nq, pbc);
     }
   }
 
@@ -153,38 +144,18 @@ void calc_forces(void)
       pbc.y = -(P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y);
       pbc.z = -(P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z);
       if (P->np != P->nq)
-        eam2_do_forces2(cell_array + P->nq, cell_array + P->np, pbc);
+        do_forces_eam2(cell_array + P->nq, cell_array + P->np, pbc);
     }
   }
 #endif /* EAM2 */
 
-#ifdef EAM
-  /* EAM cohesive function potential */
+#if (defined(EAM) || defined(TTBP) || defined(TERSOFF))
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
   for (k=0; k<ncells; ++k) {
-    do_forces_eam_2(cell_array + k);
+    do_forces2(cell_array + k);
   }
-#endif /* EAM */
-
-#ifdef TTBP
-  /* TTBP: three body potential */
-#ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
-  for (k=0; k<ncells; ++k) {
-    do_forces_ttbp(cell_array + k);
-  }
-#endif /* TTBP */
-
-#ifdef TERSOFF
-#ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
-#endif
-  for (k=0; k<ncells; ++k) {
-    do_forces_tersoff(cell_array + k); 
-  }
-#endif /* TERSOFF */
 
 }

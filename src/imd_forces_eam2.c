@@ -35,7 +35,7 @@
 *    doesn't use 'actio = reactio' !!!!
 ******************************************************************************/
 
-void eam2_do_forces1(cell *p, cell *q, vektor pbc)     
+void do_forces(cell *p, cell *q, vektor pbc)     
 {
   int i,j,k;
   vektor d;
@@ -329,7 +329,7 @@ void eam2_do_forces1(cell *p, cell *q, vektor pbc)
    uses Phi(r2), Rho(r2), F(rho) and it's derivatives
 */
 
-void eam2_do_forces2(cell *p, cell *q, vektor pbc)
+void do_forces_eam2(cell *p, cell *q, vektor pbc)
 {
   int i,j,k;
   vektor d;

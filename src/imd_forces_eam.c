@@ -40,7 +40,7 @@
 * -------------------------------------------------------------------- */
 
 /* -------------------------------------------- */
-void do_forces_eam_1(cell *p, cell *q, vektor pbc)
+void do_forces(cell *p, cell *q, vektor pbc)
 
 /* Part 1: calc of pair potential and its derivative 
 *  and save the eam neighbors */
@@ -254,7 +254,7 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 } /* do_forces_eam_1 */
 
 /* -------------------------------------------- */
-void do_forces_eam_2(cell *p)
+void do_forces2(cell *p)
 
 /* Part 2: calc of cohesive potential function 
 *
