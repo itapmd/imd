@@ -20,13 +20,13 @@
 *  We use Steve Plimptons communication scheme: we send only along
 *  the main axis of the system, so that edge cells travel twice,
 *  and corner cells three times. In AR mode, one cell wall (including
-*  adjacent edge and corner cells) is not needed in the buffer sells.
+*  adjacent edge and corner cells) is not needed in the buffer cells.
 *
 ******************************************************************************/
 
 void send_cells(void (*copy_func)  (int, int, int, int, int, int),
                 void (*pack_func)  (msgbuf*, int, int, int),
-                void (*unpack_func)(msgbuf*, int, int, int))
+                void (*unpack_func)(msgbuf*, int, int, int), int clear)
 {
   int i,j;
 
@@ -39,7 +39,7 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int),
   MPI_Request    requp[2],   reqdown[2];
 
   empty_mpi_buffers();
-  empty_buffer_cells();
+  if (clear==1) empty_buffer_cells();
 
   /* exchange up/down */
   if (cpu_dim.z==1) {
