@@ -293,17 +293,19 @@ void init_cells( void )
           ALLOC_MINICELL( p, 0 );  /* free old cell */
     }
     free(cell_array_old);
+    make_cell_lists();
 #ifdef NBLIST
+    make_cell_lists_nblist();
     make_nblist();
 #else
     fix_cells();
 #endif
-  }
-
-  make_cell_lists();
+  } else {
+    make_cell_lists();
 #ifdef NBLIST
-  make_cell_lists_nblist();
+    make_cell_lists_nblist();
 #endif
+  }
 }
 
 
