@@ -139,7 +139,7 @@ typedef enum ParamType {
 *
 *****************************************************************************/
 
-void main (int argc, char **argv);
+int  main (int argc, char **argv);
 void read_parameters(int argc, char **argv);
 void read_atoms(str255 infilename);
 void usage(void);
@@ -199,7 +199,7 @@ real r2_cut;
 *
 *****************************************************************************/
 
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 
 {
   int tablesize;
@@ -233,6 +233,8 @@ void main(int argc, char **argv)
 
   /* Output results */
   write_histograms(restart);
+
+  exit(0);
 
 }
 

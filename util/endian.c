@@ -5,9 +5,10 @@ int endian(void);
 
 char *lbtext[2] = {"little", "big"};
 
-main()
+int main()
 {
   printf("This machine is %s endian\n",lbtext[endian()]);
+  exit(0);
 }
 
 #endif

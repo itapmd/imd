@@ -25,7 +25,7 @@
 /* Main module of the IMD Package
    Various versions are built by conditional compilation */
 
-void main(int argc, char **argv)
+int main(int argc, char **argv)
 
 {
   real tmp;

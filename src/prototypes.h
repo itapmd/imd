@@ -6,7 +6,7 @@
 ******************************************************************************/
 
 
-void main (int argc, char **argv);
+int  main (int argc, char **argv);
 void main_loop(void);
 void read_parameters(int argc, char **argv);
 void broadcast_params(void);

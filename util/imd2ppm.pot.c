@@ -135,7 +135,7 @@ void MidpointLine(int x0, int y0, int dx, int dy, int col, int row,
 
 /******************* main *******************/
 
-void main (int argc, char **argv) 
+int main (int argc, char **argv) 
 
 {
 		/* (n lines and m columns) */
@@ -355,6 +355,7 @@ typedef       int integer;
   }
   */
   fclose( target );
+  exit(0);
 
 }
 

@@ -12,7 +12,7 @@
 #include "makros.h"
 
 
-void main(void)
+int main(void)
 
 { FILE *out;
 
@@ -55,6 +55,8 @@ void main(void)
        r2 += r_step;
   } while (r2<SQR(r_end));
   fclose(out);
+
+  exit(0);
 
 }
 
