@@ -38,6 +38,8 @@ void move_atoms_nve(void)
   tot_kin_energy = 0.0;
 #ifdef FNORM
   fnorm = 0.0;
+#endif
+#ifdef GLOK
   PxF   = 0.0;
 #endif
 
