@@ -79,7 +79,7 @@ void init_cells( void )
   int i, j, k;
   real tmp, tol=1.0; 
   vektor cell_scale;
-  ivektor next_cell_dim, cell_dim_old;
+  ivektor next_cell_dim, cell_dim_old, cd;
   ivektor cellmin_old, cellmax_old, cellc;
   cell *p, *cell_array_old, *to; 
 
@@ -103,23 +103,18 @@ void init_cells( void )
 	 box_x.x * cell_scale.x, box_x.y * cell_scale.x, 
 	 box_y.x * cell_scale.y, box_y.y * cell_scale.y); 
 
-#ifdef MPI 
- /* cpu_dim must be a divisor of global_cell_dim */
- if (0 != (global_cell_dim.x % cpu_dim.x))
-     global_cell_dim.x = ((int)(global_cell_dim.x/cpu_dim.x))*cpu_dim.x;
-  if (0 != (global_cell_dim.y % cpu_dim.y))
-     global_cell_dim.y = ((int)(global_cell_dim.y/cpu_dim.y))*cpu_dim.y;
-#elif defined(MPI) && defined(OMP) 
-  /* cpu_dim must be a divisor of 2 * global_cell_dim */
-  if (0 != (global_cell_dim.x % (2*cpu_dim.x)))
-     global_cell_dim.x = ((int)(global_cell_dim.x/(2*cpu_dim.x)))*2*cpu_dim.x;
-  if (0 != (global_cell_dim.y % cpu_dim.y))
-     global_cell_dim.y = ((int)(global_cell_dim.y/(2*cpu_dim.y)))*2*cpu_dim.y;
-#elif defined(OMP)
-  /* global_cell_dim must be even */
-  if (0 != (global_cell_dim.x % 2)) global_cell_dim.x -= 1;
-  if (0 != (global_cell_dim.y % 2)) global_cell_dim.y -= 1;
+  /* global_cell_dim must be a multiple of cd */
+#ifdef OMP
+  cd.x = cpu_dim.x * 2;
+  cd.y = cpu_dim.y * 2;
+#else
+  cd.x = cpu_dim.x;
+  cd.y = cpu_dim.y;
 #endif
+  if (0 != (global_cell_dim.x % cd.x))
+     global_cell_dim.x = ((int)(global_cell_dim.x / cd.x)) * cd.x;
+  if (0 != (global_cell_dim.y % cd.y))
+     global_cell_dim.y = ((int)(global_cell_dim.y / cd.y)) * cd.y;
   
   /* Check if cell array is large enough */
   if (0 == myid ) {
@@ -132,19 +127,8 @@ void init_cells( void )
   }
 
   /* if system grows, the next cell division should have more cells */
-#ifdef MPI
-  next_cell_dim.x = global_cell_dim.x + cpu_dim.x;
-  next_cell_dim.y = global_cell_dim.y + cpu_dim.y;
-#elif defined(MPI) && defined(OMP)
-  next_cell_dim.x = global_cell_dim.x + 2 * cpu_dim.x;
-  next_cell_dim.y = global_cell_dim.y + 2 * cpu_dim.y;
-#elif defined(OMP)
-  next_cell_dim.x = global_cell_dim.x + 2;
-  next_cell_dim.y = global_cell_dim.y + 2;
-#else
-  next_cell_dim.x = global_cell_dim.x + 1;
-  next_cell_dim.y = global_cell_dim.y + 1;
-#endif
+  next_cell_dim.x = global_cell_dim.x + cd.x;
+  next_cell_dim.y = global_cell_dim.y + cd.y;
 
   /* maximal and minimal heights before a new cell division is needed */
   min_height.x = cellsz * SQR(global_cell_dim.x);
@@ -284,8 +268,8 @@ void make_cell_lists(void)
 #endif
 
   /* Make lists with pairs of interacting cells, taking account of 
-     the boundary conditions. We distribute pairs on several lists 
-     such that among the pairs in any list there is no cell that 
+     the boundary conditions. For OpenMP, we distribute pairs on several 
+     lists such that among the pairs in any list there is no cell that 
      occurs twice. This allows to update forces independently
      for the pairs from the same list.
   */

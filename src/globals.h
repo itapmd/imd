@@ -211,9 +211,13 @@ EXTERN int num_cpus INIT(1);              /* How many cpus are there */
 EXTERN int parallel_output INIT(0);       /* Flag for parallel output */
 EXTERN int parallel_input  INIT(1);       /* Flag for parallel input */
 #ifdef MPI
+EXTERN ivektor cpu_dim INIT(nullivektor); /* Dimensions of CPU-Array */
+#else
+EXTERN ivektor cpu_dim INIT(einsivektor); /* Dimensions of CPU-Array */
+#endif
+#ifdef MPI
 EXTERN int binc INIT(0);                  /* buffer size per atom */
 EXTERN int *cpu_ranks INIT(0);            /* Mapping of coords to ranks */
-EXTERN ivektor cpu_dim INIT(nullivektor); /* Dimensions of CPU-Array */
 EXTERN cell buf_one_atom;                 /* Buffer that holds one Atom */
 EXTERN MPI_Comm cpugrid;
 EXTERN ivektor my_coord;                  /* Cartesian coordinates of cpu */
