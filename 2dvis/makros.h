@@ -5,3 +5,4 @@
 #define T_TEMP 7
 #define T_DIST 1
 #define DIM 2
+#define TAU 1.618034

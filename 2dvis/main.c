@@ -58,9 +58,9 @@ void draw_text(void) {
   }
   else
     sprintf(str2,"Atom type is encoded");
-  if (bond_mode==1)
+  if (bond_type==0)
       sprintf(str3,"Static bonds");
-  if (bond_mode==1)
+  if (bond_type==1)
       sprintf(str3,"Dynamic bonds");
   else
     sprintf(str3,"");
@@ -91,7 +91,7 @@ void draw_scene_wrapper(int scene_type) {
 /* draw_scene - what a name */
 void draw_scene(int scene_type) {
 
-  int i,j,k,l,cv,nb,vgl;
+  int i,j,k,l,cv,vgl;
   int n;
   float points[8][3];
   double xx,yy,xxj,yyj;
@@ -130,7 +130,7 @@ void draw_scene(int scene_type) {
       xx=(x[i]-minx)*scalex-1.0;
       yy=(y[i]-miny)*scaley-1.0;
 #ifndef TWOD
-      zz=(z[i]-minz)*scalez*-1.0;
+      zz=(z[i]-minz)*scalez-1.0;
       zz*=.2; /* looks better */
 #endif
       switch(col_mode) {
@@ -149,22 +149,11 @@ void draw_scene(int scene_type) {
 	color(cv+10);
 	break;
       case 4:
-	color(nb+1);
+	color(bcode[i]+1);
 	break;
       case 5:
 	color(nummer[i]<0?YELLOW:BLUE);
 	break;
-      }
-
-      /* if we shall draw bonds afterwards we compute
-	 the number of neighbours here */
-      if (bond_mode==1) {
-	nb=0;
-	for(k=0;k<nunits;k++)
-	  if (bcode[i]&(int)pow(2,k))
-	    nb++;
-
-	/*	color(nb+1);*/
       }
 
       if (size_mode)
@@ -193,7 +182,7 @@ void draw_scene(int scene_type) {
 	draw(xx+.01,yy+.01,zz+.01);
 	closepoly();
 #else
-	circle(xx,yy,.01);
+	circle(xx,yy,.1*scalex);
 #endif
       } /* radius encoding */
     } /* for i= */
@@ -210,10 +199,11 @@ void draw_bonds() {
 #ifndef TWOD
   float zz,zzj,dz;
 #endif
-  epsilon=.1;
+  epsilon=.25;
 
   color(MAGENTA);
   for (i=0;i<natoms;i++) {
+    bcode[i]=0;
     xx=(x[i]-minx)*scalex-1;
     yy=(y[i]-miny)*scaley-1;
 #ifndef TWOD
@@ -228,7 +218,7 @@ void draw_bonds() {
       zzj*=.2; /* looks better */
 #endif
       if (i==j) continue;
-      if (bond_mode == 1) {
+      if (bond_type == 0) {
 	if (qp) {
 #ifdef TWOD
 	  if (sorte[i]!=sorte[j]) continue;
@@ -238,12 +228,12 @@ void draw_bonds() {
 #endif
 	}
 	dx=x[i]-x[j];
-	if (ABS(dx)>2.4) continue;
+	if (ABS(dx)>16.4) continue;
 	dy=y[i]-y[j];
-	if (ABS(dy)>2.4) continue;
+	if (ABS(dy)>16.4) continue;
 #ifndef TWOD
 	dz=z[i]-z[j];
-	if (ABS(dz)>2.4) continue;	    
+	if (ABS(dz)>16.4) continue;	    
 #endif
 	for (k=0;k<nunits;k++) {
 	  if (ABS(dx-ux[k])<epsilon)
@@ -253,11 +243,14 @@ void draw_bonds() {
 #endif
 		bcode[i]+=pow(2,k);
 #ifndef TWOD
-		color(MAGENTA);
-		if (k<2) color(YELLOW);
-	        if (k>3) color(CYAN);
-		move(xx,yy,zz);
-		draw(xxj,yyj,zzj);
+		if (bond_mode==2) {
+		  /* encode: 0,1 MAGENTA;3,4 YELLOW;5,6 CYAN */
+		  color(MAGENTA);
+		  if (k<2) color(YELLOW);
+		  if (k>3) color(CYAN);
+		  move(xx,yy,zz);
+		  draw(xxj,yyj,zzj);
+		}
 	      }
 #else
 	      move2(xx,yy);
@@ -266,11 +259,22 @@ void draw_bonds() {
 	    }
 	}
       }
-      if (bond_mode==2) {
+      else { /* bond_type != 0 */
 	if (qp) {
 #ifndef TWOD
-	  if (sorte[i]!=0) continue;
-	  if (sorte[j]!=0) continue;
+	  if (qp==1) { /* normale Atomkodierung des IBT */
+	    if (sorte[i]!=0) continue;
+	    if (sorte[j]!=0) continue;
+	  }
+	  if (qp==2) { /* Eck- und Kantenatome unterschiedlich */
+	    if (sorte[i]==2) continue;
+	    if (sorte[j]==2) continue;
+	    if (sorte[i]==sorte[j]) continue;
+	  }
+	  if (qp==3) { /* verallg BV */
+	    if (sorte[i]) continue;
+	    if (sorte[j]) continue;
+	  }
 #else
 	  if (sorte[i]==sorte[j]) continue;
 #endif
@@ -278,20 +282,34 @@ void draw_bonds() {
 	  dy=y[i]-y[j];
 #ifndef TWOD
 	  dz=z[i]-z[j];
-	  dr=dx*dx+dy*dy+dz*dz;
+	  if (qp==3) { /* verallg. BV */
+	    if (ABS(dz)>.1) continue;
+	    dr=dx*dx+dy*dy;
+	  }
+	  else {
+	    dr=dx*dx+dy*dy+dz*dz;
+	  }
 #else
 	  dr=dx*dx+dy*dy;
 #endif
-	  if (ABS(dr)<.9) continue;
-	  if (ABS(dr)>1.1) continue;
-#ifndef TWOD
-	  move(xx,yy,zz);
-	  draw(xxj,yyj,zzj);
-#else
-	  move2(xx,yy);
-	  draw2(xxj,yyj);
-#endif
+	  if (qp<3) {
+	    if (ABS(dr)<.9) continue;
+	    if (ABS(dr)>1.1) continue;
+	  }
+	  if (qp==3) {
+	    if (ABS(dr)<1.8) continue;
+	    if (ABS(dr)>10.4) continue;
+	  }
 	  bcode[i]++;
+	  if (bond_mode==2) {
+#ifndef TWOD
+	    move(xx,yy,zz);
+	    draw(xxj,yyj,zzj);
+#else
+	    move2(xx,yy);
+	    draw2(xxj,yyj);
+#endif
+	  }
 	}
 	else {
 	  dx=x[i]-x[j];
@@ -304,14 +322,54 @@ void draw_bonds() {
 #endif
 	  if (ABS(dr)>1.1) continue;
 	  if (ABS(dr)<.9) continue;
-#ifndef TWOD
-	  move(xx,yy,zz);
-	  draw(xxj,yyj,zzj);
-#else
-	  move2(xx,yy);
-	  draw2(xxj,yyj);
-#endif
 	  bcode[i]++;
+	  if ((dx>.851-epsilon)&&(dx<.851+epsilon)&&(dy>-epsilon)&&(dy<epsilon)&&(dz>.526-epsilon)&&(dz<.526+epsilon)) {
+	    color(RED);
+	  }
+	  if ((dx>.851-epsilon)&&(dx<.851+epsilon)&&(dy>-epsilon)&&(dy<epsilon)&&(dz>-.526-epsilon)&&(dz<-.526+epsilon)) {
+	    color(RED);
+	  }
+	  if ((dx>-epsilon)&&(dx<epsilon)&&(dy>.526-epsilon)&&(dy<.526+epsilon)&&(dz>.851-epsilon)&&(dz<.851+epsilon)) {
+	    color(GREEN);
+	  }
+	  if ((dx>-epsilon)&&(dx<epsilon)&&(dy>-.526-epsilon)&&(dy<-.526+epsilon)&&(dz>.851-epsilon)&&(dz<.851+epsilon)) {
+	    color(GREEN);
+	  }
+	  if ((dx>.526-epsilon)&&(dx<.526+epsilon)&&(dy>.851-epsilon)&&(dy<.851+epsilon)&&(dz>-epsilon)&&(dz<epsilon)) {
+		    color(BLUE);
+	  }
+	  if ((dx>-.526-epsilon)&&(dx<-.526+epsilon)&&(dy>.851-epsilon)&&(dy<.851+epsilon)&&(dz>-epsilon)&&(dz<epsilon)) {
+	    color(BLUE);
+	  }
+	  
+	  if ((dx>-.851-epsilon)&&(dx<-.851+epsilon)&&(dy>-epsilon)&&(dy<epsilon)&&(dz>-.526-epsilon)&&(dz<-.526+epsilon)) {
+	    color(RED);
+	  }
+	  if ((dx>-.851-epsilon)&&(dx<-.851+epsilon)&&(dy>-epsilon)&&(dy<epsilon)&&(dz>.526-epsilon)&&(dz<.526+epsilon)) {
+	    color(RED);
+	  }
+	  if ((dx>-epsilon)&&(dx<epsilon)&&(dy>-.526-epsilon)&&(dy<-.526+epsilon)&&(dz>-.851-epsilon)&&(dz<-.851+epsilon)) {
+	    color(GREEN);
+	  }
+	  if ((dx>-epsilon)&&(dx<epsilon)&&(dy>.526-epsilon)&&(dy<.526+epsilon)&&(dz>-.851-epsilon)&&(dz<-.851+epsilon)) {
+	    color(GREEN);
+	  }
+	  if ((dx>-.526-epsilon)&&(dx<-.526+epsilon)&&(dy>-.851-epsilon)&&(dy<-.851+epsilon)&&(dz>-epsilon)&&(dz<epsilon)) {
+		color(BLUE);
+	  }
+	  if ((dx>.526-epsilon)&&(dx<.526+epsilon)&&(dy>-.851-epsilon)&&(dy<-.851+epsilon)&&(dz>-epsilon)&&(dz<epsilon)) {
+		color(BLUE);
+	  }
+
+	  if (bond_mode==2) {
+#ifndef TWOD
+	    move(xx,yy,zz);
+	    draw(xxj,yyj,zzj);
+#else
+	    move2(xx,yy);
+	    draw2(xxj,yyj);
+#endif
+	  }
 	}
       }
     } /* for j... */
@@ -392,8 +450,9 @@ int read_configuration(char *fname) {
   }
   else
     scalex=2.0/(maxx-minx);
+
   if (maxy==miny) {
-    minx=0; 
+    miny=0; 
     scaley=1.0;
   }
   else
@@ -421,7 +480,7 @@ int read_configuration(char *fname) {
   return n;
 }
 
-  /* reading of a configuration from file */
+  /* writing a configuration to a file */
 int write_configuration(char *fname) {
 
   FILE *fp;
@@ -434,7 +493,7 @@ int write_configuration(char *fname) {
     return -1;
   }
 
-  for (n=0;n<=natoms;n++)
+  for (n=0;n<natoms;n++)
 #ifdef TWOD
     fprintf(fp,"%d %d %lf %lf %lf %lf %lf %lf\n",nummer[n],sorte[n],masse[n],x[n],y[n],vx[n],vy[n],pot[n]);
 #else
@@ -443,6 +502,214 @@ int write_configuration(char *fname) {
 
   fclose(fp);
   return n;
+}
+
+  /* writing a configuration to a file */
+int write_vrml(char *fname) {
+
+  FILE *fp;
+  char str[255],colstr[9];
+  int i,j,k;
+  float dx,dy,dz,dr,length,phi;
+  float epsilon=.25;
+
+  sprintf(colstr,"1 1 1");
+  fp=fopen(fname, "w");
+  if (fp==NULL) {
+    printf("Kann Datei %s nicht anlegen.\n",fname);
+    return -1;
+  }
+
+  fprintf(fp,"#VRML V1.0 ascii\n\nSeparator {\n");
+
+  if (atom_mode) {
+    for (i=0;i<natoms;i++) {
+#ifdef TWOD
+      fprintf(fp,"  Separator {\n    Material { diffuseColor %d %d %d }\n    Translation { translation %lf %lf 0 }\n    Sphere { radius .3 }\n", (int)(sorte[i]/2.0),x[i],y[i]);
+#else
+      fprintf(fp,"  Separator {\n    Material { diffuseColor %d %d %d }\n    Translation { translation %f %f %f }\n    Sphere { radius .3 }\n  }\n",(sorte[i]==0),(sorte[i]==1),(sorte[i]==2),x[i],y[i],z[i]);
+#endif
+      }
+    }
+
+    if (bond_mode) {
+      for (i=0;i<natoms;i++) {
+	for (j=0;j<natoms;j++) {
+	  if (i==j) continue;
+	  if (bond_type == 0) {
+	    if (qp) {
+#ifdef TWOD
+	      if (sorte[i]!=sorte[j]) continue;
+#else
+	      if (sorte[i]!=0) continue;
+	      if (sorte[j]!=0) continue;
+#endif
+	    }
+	    dx=x[i]-x[j];
+	    if (ABS(dx)>1.2) continue;
+	    dy=y[i]-y[j];
+	    if (ABS(dy)>1.2) continue;
+#ifndef TWOD
+	    dz=z[i]-z[j];
+	    if (ABS(dz)>1.2) continue;	    
+#endif
+	    for (k=0;k<nunits;k++) {
+	      if (ABS(dx-ux[k])<epsilon)
+		if (ABS(dy-uy[k])<epsilon) {
+#ifndef TWOD
+		  if (ABS(dz-uz[k])<epsilon) {
+#endif
+#ifndef TWOD
+		    if (bond_mode==2) {
+		      length=sqrt(dx*dx+dy*dy+dz*dz);
+		      phi=-acos(dy/length);
+		      fprintf(fp,"  Separator {\n    Material { diffuseColor 1 1 1 }\n    Translation { translation %f %f %f }\n    Rotation { rotation %f 0 %f %f }\n    Translation { translation 0 .5 0 }\n    Cylinder { radius .1 height %f }\n  }\n",x[i],y[i],z[i],-dz,dx,phi,length);
+		    }
+		  }
+#else
+		  move2(xx,yy);
+		  draw2(xxj,yyj);
+#endif
+		}
+	    }
+	  }
+	  else { /* bond_type != 0 */
+	    if (qp) {
+#ifndef TWOD
+	      if (qp==1) { /* normale Atomkodierung des IBT */
+		if (sorte[i]!=0) continue;
+		if (sorte[j]!=0) continue;
+	      }
+	      else { /* Eck- und Kantenatome unterschiedlich */
+		if (sorte[i]==2) continue;
+		if (sorte[j]==2) continue;
+		if (sorte[i]==sorte[j]) continue;
+	      }
+#else
+	      if (sorte[i]==sorte[j]) continue;
+#endif
+	      dx=x[i]-x[j];
+	      dy=y[i]-y[j];
+#ifndef TWOD
+	      dz=z[i]-z[j];
+	      dr=dx*dx+dy*dy+dz*dz;
+#else
+	      dr=dx*dx+dy*dy;
+#endif
+	      if (ABS(dr)<.9) continue;
+	      if (ABS(dr)>1.1) continue;
+	      if ((dx>.851-epsilon)&&(dx<.851+epsilon)&&(dy>-epsilon)&&(dy<epsilon)&&(dz>.526-epsilon)&&(dz<.526+epsilon)) {
+		    sprintf(colstr,"1 0 0");
+		  }
+	      if ((dx>.851-epsilon)&&(dx<.851+epsilon)&&(dy>-epsilon)&&(dy<epsilon)&&(dz>-.526-epsilon)&&(dz<-.526+epsilon)) {
+		    sprintf(colstr,".5 0 0");
+		  }
+	      if ((dx>-epsilon)&&(dx<epsilon)&&(dy>.526-epsilon)&&(dy<.526+epsilon)&&(dz>.851-epsilon)&&(dz<.851+epsilon)) {
+	    continue;
+		    sprintf(colstr,"0 1 0");
+		  }
+	      if ((dx>-epsilon)&&(dx<epsilon)&&(dy>-.526-epsilon)&&(dy<-.526+epsilon)&&(dz>.851-epsilon)&&(dz<.851+epsilon)) {
+	    continue;
+		    sprintf(colstr,"0 .5 0");
+		  }
+	      if ((dx>.526-epsilon)&&(dx<.526+epsilon)&&(dy>.851-epsilon)&&(dy<.851+epsilon)&&(dz>-epsilon)&&(dz<epsilon)) {
+		    sprintf(colstr,"0 0 1");
+		  }
+	      if ((dx>-.526-epsilon)&&(dx<-.526+epsilon)&&(dy>.851-epsilon)&&(dy<.851+epsilon)&&(dz>-epsilon)&&(dz<epsilon)) {
+		    sprintf(colstr,"0 0 .5");
+		  }
+
+	      if ((dx>-.851-epsilon)&&(dx<-.851+epsilon)&&(dy>-epsilon)&&(dy<epsilon)&&(dz>-.526-epsilon)&&(dz<-.526+epsilon)) {
+		    sprintf(colstr,"1 0 0");
+		  }
+	      if ((dx>-.851-epsilon)&&(dx<-.851+epsilon)&&(dy>-epsilon)&&(dy<epsilon)&&(dz>.526-epsilon)&&(dz<.526+epsilon)) {
+		    sprintf(colstr,".5 0 0");
+		  }
+	      if ((dx>-epsilon)&&(dx<epsilon)&&(dy>-.526-epsilon)&&(dy<-.526+epsilon)&&(dz>-.851-epsilon)&&(dz<-.851+epsilon)) {
+	    continue;
+		    sprintf(colstr,"0 1 0");
+		  }
+	      if ((dx>-epsilon)&&(dx<epsilon)&&(dy>.526-epsilon)&&(dy<.526+epsilon)&&(dz>-.851-epsilon)&&(dz<-.851+epsilon)) {
+	    continue;
+		    sprintf(colstr,"0 .5 0");
+		  }
+	      if ((dx>-.526-epsilon)&&(dx<-.526+epsilon)&&(dy>-.851-epsilon)&&(dy<-.851+epsilon)&&(dz>-epsilon)&&(dz<epsilon)) {
+		    sprintf(colstr,"0 0 1");
+		  }
+	      if ((dx>.526-epsilon)&&(dx<.526+epsilon)&&(dy>-.851-epsilon)&&(dy<-.851+epsilon)&&(dz>-epsilon)&&(dz<epsilon)) {
+		    sprintf(colstr,"0 0 .5");
+		  }
+
+	      if (bond_mode==2) {
+#ifndef TWOD
+		length=sqrt(dx*dx+dy*dy+dz*dz);
+		phi=3.14-acos(dy/length);
+		fprintf(fp,"  Separator {\n    Material { diffuseColor %s }\n    Translation { translation %f %f %f }\n    Rotation { rotation %f 0 %f %f }\n    Translation { translation 0 .5 0 }\n    Cylinder { radius .1 height %f }\n  }\n",colstr,x[i],y[i],z[i],-dz,dx,phi,length);
+#else
+		move2(xx,yy);
+		draw2(xxj,yyj);
+#endif
+	      }
+	    }
+	    else {
+	      dx=x[i]-x[j];
+	      dy=y[i]-y[j];
+#ifndef TWOD
+	      dz=z[i]-z[j];
+	      dr=dx*dx+dy*dy+dz*dz;
+#else
+	      dr=dx*dx+dy*dy;
+#endif
+	      if (ABS(dr)>1.1) continue;
+	      if (ABS(dr)<.9) continue;
+
+	      if (bond_mode==2) {
+#ifndef TWOD
+		length=sqrt(dx*dx+dy*dy+dz*dz);
+		phi=3.14-acos(dy/length);
+		fprintf(fp,"  Separator {\n    Material { diffuseColor 1 1 1 }\n    Translation { translation %f %f %f }\n    Rotation { rotation %f 0 %f %f }\n    Translation { translation 0 .5 0 }\n    Cylinder { radius .1 height %f }\n  }\n",x[i],y[i],z[i],-dz,dx,phi,length);
+#else
+		move2(xx,yy);
+		draw2(xxj,yyj);
+#endif
+	      }
+	    }
+	  }
+	} /* for j... */
+      } /* for i... */
+    } /* if bond_mode */
+
+    fprintf(fp,"}\n");
+
+  fclose(fp);
+  return i;
+}
+
+  /* writing a configuration to a file */
+int write_pdb(char *fname) {
+
+  FILE *fp;
+  char str[255];
+  int n;
+
+  MessageDialog("Gibt es noch nicht!");
+  /*
+  fp=fopen(fname, "w");
+  if (fp==NULL) {
+    printf("Kann Datei %s nicht anlegen.\n",fname);
+    return -1;
+  }
+
+  for (n=0;n<natoms;n++)
+#ifdef TWOD
+    fprintf(fp,"%d %d %lf %lf %lf %lf %lf %lf\n",nummer[n],sorte[n],masse[n],x[n],y[n],vx[n],vy[n],pot[n]);
+#else
+    fprintf(fp,"%d %d %lf %lf %lf %lf %lf %lf\n",nummer[n],sorte[n],masse[n],x[n],y[n],z[n],vx[n],vy[n],vz[n],pot[n]);
+#endif
+
+  fclose(fp);
+  return n;
+  */
 }
 
 int write_distribution(char *fname) {

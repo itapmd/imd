@@ -131,8 +131,14 @@ int receive_conf()
     if (mink>kin[i]) mink=kin[i];
   }
 
-  scalex=2.0/(maxx-minx);
-  scaley=2.0/(maxy-miny);
+  if (maxx==minx)
+    scalex=1.0;
+  else
+    scalex=2.0/(maxx-minx);
+  if (maxy==miny)
+    scaley=1.0;
+  else
+    scaley=2.0/(maxy-miny);
 #ifndef TWOD
   scalez=2.0/(maxz-minz);
 #endif

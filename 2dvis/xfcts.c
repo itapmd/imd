@@ -229,6 +229,34 @@ int QuestionDialog(char *MessageText) {
 }
 
 /* color encoding dialog */
+int SaveImageDialog(char *MessageText) {
+  Widget popup;
+  int var;
+  String names[] = {
+       " gif  ",
+       " vrml ",
+       " pdb",
+       0
+  };
+  int values[] = {
+       1,
+       2,
+       3,
+  };
+  static DialogButtonType buttons[] =
+  { { "defaultButton", "     OK     ", CB_OK, (XtPointer) OK_BUTTON, NULL }};
+
+  /* create radio box */
+  popup = CreateRadioBox(MessageText,MessageText, buttons, ENTRIES(buttons),names,values,&var,savimg_mode+1);
+  StartDialog(popup);
+  /* wait for radio box to complete */
+  DialogEventLoop(&ReturnCode);
+  EndDialog(popup);
+
+  return radiovalue;
+}
+
+/* color encoding dialog */
 int ColorEncodingDialog(char *MessageText) {
   Widget popup;
   int var;
@@ -289,13 +317,65 @@ int SizeEncodingDialog(char *MessageText) {
 }
 
 /* Bond mode dialog */
+int BondTypeDialog(char *MessageText) {
+  Widget popup;
+  int var;
+  String names[] = {
+       " static",
+       "dynamic",
+       0
+  };
+  int values[] = {
+       1,
+       2,
+  };
+  static DialogButtonType buttons[] =
+  { { "defaultButton", "     OK     ", CB_OK, (XtPointer) OK_BUTTON, NULL }};
+
+  /* create radio box */
+  popup = CreateRadioBox(MessageText,MessageText, buttons, ENTRIES(buttons),names,values,&var,bond_type+1);
+  StartDialog(popup);
+  /* wait for radio box to complete */
+  DialogEventLoop(&ReturnCode);
+  EndDialog(popup);
+
+  return radiovalue;
+}
+
+/* Atom mode dialog */
+int AtomModeDialog(char *MessageText) {
+  Widget popup;
+  int var;
+  String names[] = {
+       "   off    ",
+       "draw atoms",
+       0
+  };
+  int values[] = {
+       1,
+       2,
+  };
+  static DialogButtonType buttons[] =
+  { { "defaultButton", "     OK     ", CB_OK, (XtPointer) OK_BUTTON, NULL }};
+
+  /* create radio box */
+  popup = CreateRadioBox(MessageText,MessageText, buttons, ENTRIES(buttons),names,values,&var,atom_mode+1);
+  StartDialog(popup);
+  /* wait for radio box to complete */
+  DialogEventLoop(&ReturnCode);
+  EndDialog(popup);
+
+  return radiovalue;
+}
+
+/* Bond mode dialog */
 int BondModeDialog(char *MessageText) {
   Widget popup;
   int var;
   String names[] = {
-       "  no bonds  ",
-       "static bonds",
-       " dyn. bonds ",
+       "off",
+       "just count",
+       "draw bonds",
        0
   };
   int values[] = {
@@ -321,19 +401,23 @@ int QuasiSwitchDialog(char *MessageText) {
   Widget popup;
   int var;
   String names[] = {
-       "   periodic  ",
-       "quasiperiodic",
+       "    periodic   ",
+       "quasip. 2 types",
+       "quasip. 3 types",
+       "genburgers     ",
        0
   };
   int values[] = {
        1,
        2,
+       3,
+       4,
   };
   static DialogButtonType buttons[] =
   { { "defaultButton", "     OK     ", CB_OK, (XtPointer) OK_BUTTON, NULL }};
 
   /* create radio box */
-  popup = CreateRadioBox(MessageText,MessageText, buttons, ENTRIES(buttons),names,values,&var,qp);
+  popup = CreateRadioBox(MessageText,MessageText, buttons, ENTRIES(buttons),names,values,&var,qp+1);
   StartDialog(popup);
   /* wait for radio box to complete */
   DialogEventLoop(&ReturnCode);

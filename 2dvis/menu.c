@@ -68,7 +68,7 @@ XtEventHandler release_event(Widget w,struct drag_struct *drag,XButtonEvent *ev)
 }
 
 void LoadConfiguration(Widget w, XtPointer client, XtPointer call) {
-  natoms=read_configuration("tmp.id");
+  natoms=read_configuration("test.id");
   draw_scene_wrapper(0);
 }
 
@@ -85,7 +85,21 @@ void SaveDistribution(Widget w, XtPointer client, XtPointer call) {
 }
 
 void SaveImage(Widget w, XtPointer client, XtPointer call) {
-  system("import -window \"beavis2d\" out.gif");
+  int rc;
+  rc=SaveImageDialog("Save Image");
+  savimg_mode=rc-1;
+  if (savimg_mode==0) {
+#ifdef TWOD
+    system("import -window \"beavis2d\" out.gif");
+#else
+    system("import -window \"beavis3d\" out.gif");
+#endif
+  }
+  if (savimg_mode==1)
+    write_vrml("out.wrl");
+  if (savimg_mode==2)
+    write_pdb();
+
 }
 
 void GetConfiguration(Widget w, XtPointer client, XtPointer call) {
@@ -115,12 +129,6 @@ void DisplayAtoms(Widget w, XtPointer client, XtPointer call) {
 }
 
 void DisplayBonds(Widget w, XtPointer client, XtPointer call) {
-  if (bond_mode)
-    bond_mode=0;
-  else {
-    bond_mode=1;
-    read_unit_vectors();
-  }
   draw_scene_wrapper(scene_type);  
 }
 
@@ -150,10 +158,28 @@ void SizeEncoding(Widget w, XtPointer client, XtPointer call) {
   draw_scene_wrapper(scene_type);
 }
 
+void AtomMode(Widget w, XtPointer client, XtPointer call) {
+  int rc;
+  rc=AtomModeDialog("Atom Mode");
+  atom_mode=rc-1;
+  movie_mode=0;
+  draw_scene_wrapper(scene_type);
+}
+
 void BondMode(Widget w, XtPointer client, XtPointer call) {
   int rc;
   rc=BondModeDialog("Bond Mode");
   bond_mode=rc-1;
+  movie_mode=0;
+  draw_scene_wrapper(scene_type);
+}
+
+void BondType(Widget w, XtPointer client, XtPointer call) {
+  int rc;
+  rc=BondTypeDialog("Bond Type");
+  bond_type=rc-1;
+  if (bond_type==0)
+    read_unit_vectors();
   movie_mode=0;
   draw_scene_wrapper(scene_type);
 }
@@ -252,7 +278,9 @@ void window_main(int argc, char **argv) {
   Widget SpecPort;
   Widget ColEnc;
   Widget SizEnc;
+  Widget AtmMod;
   Widget BonMod;
+  Widget BonTyp;
   Widget QuaSwi;
   Widget Mov;
   Widget SelTemp;
@@ -382,6 +410,14 @@ void window_main(int argc, char **argv) {
 			       menu3, NULL, 0);
   XtAddCallback(SizEnc, XtNcallback, SizeEncoding, "Size Encoding");
   
+  AtmMod = XtCreateManagedWidget("Atom Mode", smeBSBObjectClass,
+			       menu3, NULL, 0);
+  XtAddCallback(AtmMod, XtNcallback, AtomMode, "Atom Mode");
+
+  BonTyp = XtCreateManagedWidget("Bond Type", smeBSBObjectClass,
+			       menu3, NULL, 0);
+  XtAddCallback(BonTyp, XtNcallback, BondType, "Bond Type");
+
   BonMod = XtCreateManagedWidget("Bond Mode", smeBSBObjectClass,
 			       menu3, NULL, 0);
   XtAddCallback(BonMod, XtNcallback, BondMode, "Bond Mode");
@@ -389,6 +425,7 @@ void window_main(int argc, char **argv) {
   QuaSwi = XtCreateManagedWidget("Quasi Switch", smeBSBObjectClass,
 			       menu3, NULL, 0);
   XtAddCallback(QuaSwi, XtNcallback, QuasiSwitch, "Quasi Switch");
+
   line33 = XtCreateManagedWidget("line33", smeLineObjectClass,
 				menu3, NULL, 0);
   
@@ -435,9 +472,10 @@ void window_main(int argc, char **argv) {
   vo_xt_window(dpy, win, 512, 512);
   vinit("X11");
 
-  for (n=0;n<245;n++)
+  /*
+    for (n=0;n<245;n++)
     mapcolor(n+10,n,0,245-n);
-
+  */
 
   /*  MessageDialog("Welcome to Beavis!");*/
 
