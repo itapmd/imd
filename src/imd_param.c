@@ -1200,7 +1200,7 @@ void getparamfile(char *paramfname, int sim)
       /* number of steps between picture writes */
       getparam("dsp_int",&dsp_int,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"up_ort_ref")==0) {
+    else if (strcasecmp(token,"update_ort_ref")==0) {
       /* step number to compute ort_ref */
       getparam("update_ort_ref",&up_ort_ref,PARAM_INT,1,1);
     }
