@@ -80,7 +80,7 @@ void my_cart_rank(ivektor my_coord)
   int rank;
   int *ort;
 
-  xfactor=cpudim.y;
+  xfactor=cpu_dim.y;
 
   rank=my_coord.y+xfactor*my_coord.x;
   ort=PTR_2D_VV(cpu_ranks, my_coord, cpu_dim);
