@@ -799,7 +799,7 @@ void read_ttbp_potential(str255 ttbp_potfilename)
   MPI_Bcast( &ttbp_r2_step  , 1, MPI_REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ttbp_r2_end   , 1, MPI_REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ttbp_r2_0     , 1, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ttbp_r2_cut, ntypes * ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ttbp_r2_cut,   100, MPI_REAL, 0, MPI_COMM_WORLD);
 
 #ifdef STATIC_POT
 
