@@ -34,7 +34,7 @@ int receive_conf()
   int anz;
   extern double *x, *y, *z, *vx, *vy, *vz;
   extern double *pot, *kin, *masse;
-  extern int *nummer, *sorte;
+  extern int *nummer, *sorte, *bcode;
   float maxx,maxy,minx,miny,maxp,minp,maxk,mink;
 
   maxx=-1000;
@@ -63,14 +63,15 @@ int receive_conf()
 #endif
   pot    = (double *)calloc(anz, sizeof(double));
   kin    = (double *)calloc(anz, sizeof(double));
+  bcode  = (int    *)calloc(anz, sizeof(double));
 
   for (i=0;i<anz;i++) {
     kin[i]=0;
     ReadFull(socket_id, (void *)&itmp, sizeof(int));
-    nummer[i] = itmp;
-    ReadFull(socket_id, (void *)&itmp, sizeof(int));
     printf("%d %d\n", i, itmp);
     sorte[i] = itmp;
+    ReadFull(socket_id, (void *)&itmp, sizeof(int));
+    nummer[i] = itmp;
     ReadFull(socket_id, (void *)&tmp, sizeof(double));
     masse[i] = tmp;
     ReadFull(socket_id, (void *)&tmp, sizeof(double));

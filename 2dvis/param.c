@@ -31,8 +31,8 @@ typedef enum ParamType {
 int curline; /* number of current line */
 int finished=0;
 
-extern int scene_type,colmode,radectyp;
-extern char *paramfilename;
+extern int scene_type,col_mode,radectyp;
+extern char *paramfilename, *uvfname;
 
 /*****************************************************************************
 *
@@ -269,13 +269,17 @@ void getparamfile(char *paramfname, int sim)
       /* type of scene*/
       getparam("scene_type",&scene_type,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"colmode")==0) {
+    else if (strcasecmp(token,"col_mode")==0) {
       /* color mode */
-      getparam("colmode",&colmode,PARAM_INT,1,1);
+      getparam("col_mode",&col_mode,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"radectyp")==0) {
       /* radius encodes type ? */
       getparam("radectyp",&radectyp,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"uvfname")==0) {
+      /* name of unit vectors file? */
+      getparam("uvfname",&uvfname,PARAM_STR,1,255);
     }
     else {
       fprintf(stderr,"**** WARNING: Unknown TAG %s ignored ****\n",token);

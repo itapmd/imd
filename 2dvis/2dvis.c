@@ -6,7 +6,6 @@
 /* Abs berechnet den Betrag einer Zahl */
 #define ABS(a) ((a) >0 ? (a) : -(a))
 
-#define MAXNATOMS 12000
 #define COLRES 245
 
 int *nummer,*sorte,columns,*bcode;
@@ -16,15 +15,16 @@ int x_res,y_res;
 int natoms,nunits;
 unsigned short base_port;
 float scalex,scaley,scalepot,scalekin,radius,offspot,offskin;
-int colmode,scene_type,text,engmode,qp,radectyp;
+int bond_mode,atom_mode,col_mode,scene_type,text,eng_mode,qp,radectyp;
 float *ux,*uy;
 char *paramfilename;
+char uvfname[255];
 
 void read_parameters(int argc,char **argv);
 void usage(void);
 void make_picture(void);
 void draw_scene(int scene_type);
-void draw_bonds(void);
+void compute_bonds(void);
 void init_graph(void);
 void display_help(void);
 int read_atoms(char *fname);
@@ -42,26 +42,16 @@ int main(int argc, char **argv)
 
   /* inits */
   base_port=31913;
-  colmode=0;
+  atom_mode=1;
+  col_mode=0;
+  bond_mode=0;
   scene_type=0;
   text=0;
   radius=.3;
   radectyp=0;
+  strcpy(uvfname,"unitvecs");
 
   read_parameters(argc,argv);
-
-  /* allocs
-  nummer=(int*)calloc(MAXNATOMS,sizeof(int));
-  sorte=(int*)calloc(MAXNATOMS,sizeof(int));
-  masse=(double*)calloc(MAXNATOMS,sizeof(float));
-  x=(double*)calloc(MAXNATOMS,sizeof(float));
-  y=(double*)calloc(MAXNATOMS,sizeof(float));
-  vx=(double*)calloc(MAXNATOMS,sizeof(float));
-  vy=(double*)calloc(MAXNATOMS,sizeof(float));
-  pot=(double*)calloc(MAXNATOMS,sizeof(float));
-  kin=(double*)calloc(MAXNATOMS,sizeof(float));
-  bcode=(int*)calloc(MAXNATOMS,sizeof(int));
-  */
 
   init_graph();
 
@@ -108,33 +98,157 @@ int main(int argc, char **argv)
       draw_scene(scene_type);
     }
     switch (ch) {
-    case '0' : radius*=1.5;draw_scene(scene_type);break;
-    case '.' : radius/=1.5;draw_scene(scene_type);break;
-    case '1' : translate(-.1,-.1,.000001);draw_scene(scene_type);break;
-    case '2' : translate(.000001,-.1,.000001);draw_scene(scene_type);break;
-    case '3' : translate(.1,-.1,.000001);draw_scene(scene_type);break;
-    case '4' : translate(-.1,.000001,.000001);draw_scene(scene_type);break;
-    case '6' : translate(.1,.000001,.000001);draw_scene(scene_type);break;
-    case '7' : translate(-.1,.1,.000001);draw_scene(scene_type);break;
-    case '8' : translate(.000001,.1,.000001);draw_scene(scene_type);break;
-    case '9' : translate(.1,.1,.000001);draw_scene(scene_type);break;
-    case '+' : scale(1.1,1.1,1.1);draw_scene(scene_type);break;
-    case '-' : scale(.9,.9,.9);draw_scene(scene_type);break;
-    case '*' : rotate(.1,'x');draw_scene(scene_type);break;
-    case '/' : rotate(.1,'y');draw_scene(scene_type);break;
-    case 'b' : scene_type=2;draw_bonds();draw_scene(scene_type);break;
-    case 'c' : scene_type=0;if (connect_client(9)==0) {printf("No atoms!\n");exit(-1);};draw_scene(scene_type);break;
-    case 'd' : scene_type=1;if (connect_client(1)==0) {printf("No distribution!\n");exit(-1);}draw_scene(scene_type);break;
-    case 'e' : if (colmode) colmode=0; else colmode=1;draw_scene(scene_type);break;
-    case 'h' : display_help();break;
-    case 'k' : if (engmode) engmode=0; else engmode=1;draw_scene(scene_type);break;
-    case 'l' : do { printf("Enter Filename: ");scanf("%s", fname);} while ((natoms=read_atoms(fname))<0);if (natoms==0) { printf("Kein Atom gelesen\n");exit(-1); };draw_scene(scene_type);break;
-    case 'p' : make_picture();break;
-    case 'r' : if (radectyp) radectyp=0; else radectyp=1;draw_scene(scene_type);break;
-    case 'q' : vexit(); exit(0);break;
-    case 't' : if (text) text=0; else text=1;draw_scene(scene_type);break;
-    case 'u' : read_unit_vectors();break;
-    case 'w' : write_to_file();break;
+    case '0' : 
+      radius*=1.5;
+      draw_scene(scene_type);
+      break;
+    case '.' : 
+      radius/=1.5;
+      draw_scene(scene_type);
+      break;
+    case '1' : 
+      translate(-.1,-.1,.000001);
+      draw_scene(scene_type);
+      break;
+    case '2' : 
+      translate(.000001,-.1,.000001);
+      draw_scene(scene_type);
+      break;
+    case '3' : 
+      translate(.1,-.1,.000001);
+      draw_scene(scene_type);
+      break;
+    case '4' : 
+      translate(-.1,.000001,.000001);
+      draw_scene(scene_type);
+      break;
+    case '6' : 
+      translate(.1,.000001,.000001);
+      draw_scene(scene_type);
+      break;
+    case '7' : 
+      translate(-.1,.1,.000001);
+      draw_scene(scene_type);
+      break;
+    case '8' : 
+      translate(.000001,.1,.000001);
+      draw_scene(scene_type);
+      break;
+    case '9' : 
+      translate(.1,.1,.000001);
+      draw_scene(scene_type);
+      break;
+    case '+' : 
+      scale(1.1,1.1,1.1);
+      draw_scene(scene_type);
+      break;
+    case '-' : 
+      scale(.9,.9,.9);
+      draw_scene(scene_type);
+      break;
+    case '*' : 
+      rotate(.1,'x');
+      draw_scene(scene_type);
+      break;
+    case '/' : 
+      rotate(.1,'y');
+      draw_scene(scene_type);
+      break;
+    case 'a' :
+      if (atom_mode)
+	atom_mode=0;
+      else {
+	atom_mode=1;
+      }
+      draw_scene(scene_type);
+      break;
+    case 'b' : 
+      if (bond_mode)
+	bond_mode=0;
+      else {
+	bond_mode=1;
+	read_unit_vectors();
+      }
+      draw_scene(scene_type);
+      break;
+    case 'c' : 
+      scene_type=0;
+      if (connect_client(9)==0) {
+	printf("No atoms!\n");
+	exit(-1);
+      }
+      draw_scene(scene_type);
+      break;
+    case 'd' : 
+      scene_type=1;
+      if (connect_client(1)==0) {
+	printf("No distribution!\n");
+	exit(-1);
+      }
+      draw_scene(scene_type);
+      break;
+    case 'e' : 
+      if (col_mode) 
+	col_mode=0; 
+      else
+	col_mode=1;
+      draw_scene(scene_type);
+      break;
+    case 'h' : 
+      display_help();
+      break;
+    case 'k' : 
+      if (eng_mode)
+	eng_mode=0;
+      else 
+	eng_mode=1;
+      draw_scene(scene_type);
+      break;
+    case 'l' : 
+      do { 
+	printf("Enter Filename: ");
+	scanf("%s", fname);
+      } 
+      while ((natoms=read_atoms(fname))<0);
+      if (natoms==0) {
+	printf("Kein Atom gelesen\n");
+	exit(-1);
+      }
+      draw_scene(scene_type);
+      break;
+    case 'm' : 
+      while (!((ch = checkkey()) || (mkey = slocator (&xloc, &yloc)))) {
+      if (connect_client(9)==0) {
+	printf("No atoms!\n");
+	exit(-1);
+      }
+      draw_scene(scene_type);
+      }
+      break;
+    case 'p' : 
+      make_picture();
+      break;
+    case 'r' : 
+      if (radectyp) 
+	radectyp=0; 
+      else 
+	radectyp=1;
+      draw_scene(scene_type);
+      break;
+    case 'q' : 
+      vexit();
+      exit(0);
+      break;
+    case 't' : 
+      if (text) 
+	text=0; 
+      else 
+	text=1;
+      draw_scene(scene_type);
+      break;
+    case 'w' : 
+      write_to_file();
+      break;
     default: break;
     }
   }
@@ -165,11 +279,15 @@ void init_graph(void) {
 /* draw_scene - what a name */
 void draw_scene(int scene_type) {
 
-  int i,cv,nb,k;
-  double xx,yy;
+  int i,j,k,cv,nb;
+  double xx,yy,xxj,yyj;
   int ixx,iyy;
   char str[200];
-  color(BLACK);clear();
+  float epsilon,dx,dy;
+
+  epsilon=.1;
+  color(BLACK);
+  clear();
 
   /* scene_type determines whether we deal with a distr. or a conf. */
   if (scene_type==1) {
@@ -179,7 +297,7 @@ void draw_scene(int scene_type) {
       ixx=(i-iyy) / y_res;
       xx=(float)(ixx)*scalex-1;
       yy=(float)(iyy)*scaley-1;
-      if (engmode)
+      if (eng_mode)
 	cv=(int)floor(scalekin*(kinarray[i]-offskin));
       else
 	cv=(int)floor(scalepot*(potarray[i]-offspot));
@@ -192,102 +310,130 @@ void draw_scene(int scene_type) {
       move(0.0,0.7);
       sprintf(str,"Distribution, size %dx%d\n",x_res,y_res);
       drawstr(str);
-      if (engmode)
+      if (eng_mode)
 	sprintf(str,"Kinetic energy is encoded");
       else
 	sprintf(str,"Potential energy is encoded");
       drawstr(str);
     }
   }
-  if (scene_type==0) {
-    for (i=0;i<natoms;i++) {
-      if (colmode==0) {
-	if (sorte[i]==0) color(RED);
-	if (sorte[i]==1) color(GREEN);
-	if (sorte[i]==2) color(MAGENTA);
-	if (sorte[i]==3) color(WHITE);
-	if (sorte[i]==4) color(BLUE);
-	if (sorte[i]==5) color(YELLOW);
-	if (sorte[i]==6) color(CYAN);
-      }
-      else {
-	if (engmode)
-	  cv=(int)(scalekin*(kin[i]+offskin));
-	else
-	  cv=(int)(scalepot*(pot[i]+offspot));
-	mapcolor(i+8,cv,cv,cv);
-	color(i+8);
-      }
-      xx=x[i]*scalex-1;
-      yy=y[i]*scaley-1;
-      /*      printf("%d %d %d %f %f %f\n", i, nummer[i], sorte[i], masse[i], x[i], y[i]);fflush(stdout);*/
-      if (radectyp)
-	circle(xx,yy,.5*(sorte[i]+1)*radius*scalex);
-      else
-	circle(xx,yy,radius*scalex);
-    }
-    if (text) {
-      color(CYAN);
-      move(0.0,0.7);
-      sprintf(str,"Configuration with %d atoms\n",natoms);
-      drawstr(str);
-      if (colmode)
-	if (engmode)
-	  sprintf(str,"Kinetic energy is encoded");
-	else
-	  sprintf(str,"Potential energy is encoded");
-      else
-	sprintf(str,"Atom type is encoded");
-      drawstr(str);
-    }
-  }
 
-  if (scene_type==2) {
-    for (i=0;i<natoms;i++) {
-      nb=0;
-      xx=x[i]*scalex-1;
-      yy=y[i]*scaley-1;
-      color(CYAN);
-      for(k=0;k<nunits;k++)
-	if (bcode[i]&(int)pow(2,k)) {
-	  move2(xx,yy);
-	  draw2(xx-ux[k]*.5*scalex,yy-uy[k]*.5*scaley);
-	  nb++;
+  if (scene_type==0) {
+    if (bond_mode==0) {
+      for (i=0;i<natoms;i++) {
+	if (col_mode==0) {
+	  if (sorte[i]==0) color(RED);
+	  if (sorte[i]==1) color(GREEN);
+	  if (sorte[i]==2) color(MAGENTA);
+	  if (sorte[i]==3) color(WHITE);
+	  if (sorte[i]==4) color(BLUE);
+	  if (sorte[i]==5) color(YELLOW);
+	  if (sorte[i]==6) color(CYAN);
 	}
-      if (colmode==0) {
-	if (sorte[i]==0) color(RED);
-	if (sorte[i]==1) color(GREEN);
-	if (sorte[i]==2) color(MAGENTA);
-	if (sorte[i]==3) color(WHITE);
-	if (sorte[i]==4) color(BLUE);
-	if (sorte[i]==5) color(YELLOW);
-	if (sorte[i]==6) color(CYAN);
+	else {
+	  if (eng_mode)
+	    cv=(int)(scalekin*(kin[i]+offskin));
+	  else
+	    cv=(int)(scalepot*(pot[i]+offspot));
+	  mapcolor(i+8,cv,cv,cv);
+	  color(i+8);
+	}
+	xx=x[i]*scalex-1;
+	yy=y[i]*scaley-1;
+	if (radectyp)
+	  circle(xx,yy,.5*(sorte[i]+1)*radius*scalex);
+	else
+	  circle(xx,yy,radius*scalex);
       }
-      else {
-	color(WHITE);
-	if (nb==0) color(RED);
-	if (nb==1) color(BLUE);
-	if (nb==2) color(GREEN);
-	if (nb==3) color(YELLOW);
-	if (nb==4) color(MAGENTA);
-	if (nb==5) color(WHITE);
-	if (nb==6) color(CYAN);
+      if (text) {
+	color(CYAN);
+	move(0.0,0.7);
+	sprintf(str,"Configuration with %d atoms\n",natoms);
+	drawstr(str);
+	if (col_mode)
+	  if (eng_mode)
+	    sprintf(str,"Kinetic energy is encoded");
+	  else
+	    sprintf(str,"Potential energy is encoded");
+	else
+	  sprintf(str,"Atom type is encoded");
+	drawstr(str);
       }
-      if (radectyp)
-	circle(xx,yy,.5*(sorte[i]+1)*radius*scalex);
-      else
-	circle(xx,yy,radius*scalex);
     }
-    if (text) {
-      color(CYAN);
-      move(0.0,0.7);
-      sprintf(str,"Configuration with %d atoms\n",natoms);
-      drawstr(str);
-      if (colmode)
-	sprintf(str,"Potential energy is encoded");
-      else
-	sprintf(str,"Atom type is encoded");
-      drawstr(str);
+    else {
+      for (i=0;i<natoms;i++) {
+	xx=x[i]*scalex-1;
+	yy=y[i]*scaley-1;
+	bcode[i]=0;
+      }
+      color(MAGENTA);
+      for (i=0;i<natoms;i++) {
+	xx=x[i]*scalex-1;
+	yy=y[i]*scaley-1;
+	for (j=0;j<natoms;j++) {
+	  xxj=x[j]*scalex-1;
+	  yyj=y[j]*scaley-1;
+	  if (i==j) continue;
+	  dx=x[i]-x[j];
+	  if (ABS(dx)>1.4) continue;
+	  dy=y[i]-y[j];
+	  if (ABS(dy)>1.4) continue;
+	  for (k=0;k<nunits;k++) {
+	    if (ABS(dx-ux[k])<epsilon)
+	      if (ABS(dy-uy[k])<epsilon) {
+		move2(xx,yy);
+		draw2(xxj,yyj);
+		bcode[i]+=pow(2,k);
+	      }
+	  }
+	}
+      }
+      
+      if (atom_mode) {
+      for (i=0;i<natoms;i++) {
+	xx=x[i]*scalex-1;
+	yy=y[i]*scaley-1;
+	nb=0;
+	for(k=0;k<nunits;k++)
+	  if (bcode[i]&(int)pow(2,k)) {
+	    nb++;
+	  }
+	if (col_mode==0) {
+	  if (sorte[i]==0) color(RED);
+	  if (sorte[i]==1) color(GREEN);
+	  if (sorte[i]==2) color(MAGENTA);
+	  if (sorte[i]==3) color(WHITE);
+	  if (sorte[i]==4) color(BLUE);
+	  if (sorte[i]==5) color(YELLOW);
+	  if (sorte[i]==6) color(CYAN);
+	}
+	else {
+	  color(WHITE);
+	  if (nb==0) color(RED);
+	  if (nb==1) color(BLUE);
+	  if (nb==2) color(GREEN);
+	  if (nb==3) color(YELLOW);
+	  if (nb==4) color(MAGENTA);
+	  if (nb==5) color(WHITE);
+	  if (nb==6) color(CYAN);
+	}
+	if (radectyp)
+	  circle(xx,yy,.5*(sorte[i]+1)*radius*scalex);
+	else
+	  circle(xx,yy,radius*scalex);
+      }
+      if (text) {
+	color(CYAN);
+	move(0.0,0.7);
+	sprintf(str,"Configuration with %d atoms\n",natoms);
+	drawstr(str);
+	if (col_mode)
+	  sprintf(str,"Potential energy is encoded");
+	else
+	  sprintf(str,"Atom type is encoded");
+	drawstr(str);
+      }
+      } 
     }
   }
 }
@@ -309,15 +455,31 @@ int read_atoms(char *fname) {
   minp=1000;
   mink=1000;
 
-#ifndef TWOD
-  z=(double*)calloc(MAXNATOMS,sizeof(float));
-#endif
-
   fp=fopen(fname, "r");
   if (fp==NULL) {
     printf("Datei %s existiert nicht\n",fname);
     return -1;
   }
+  n=0;
+
+  while(fgets(line,200,fp)) {
+    n++;
+  }
+
+  fclose(fp);
+  fp=fopen(fname, "r");
+
+  nummer=(int*)calloc(n,sizeof(int));
+  sorte=(int*)calloc(n,sizeof(int));
+  masse=(double*)calloc(n,sizeof(double));
+  x=(double*)calloc(n,sizeof(double));
+  y=(double*)calloc(n,sizeof(double));
+  vx=(double*)calloc(n,sizeof(double));
+  vy=(double*)calloc(n,sizeof(double));
+  pot=(double*)calloc(n,sizeof(double));
+  kin=(double*)calloc(n,sizeof(double));
+  bcode=(int*)calloc(n,sizeof(int));
+
   n=0;
   while (fgets(line,200,fp)) {
 #ifdef TWOD
@@ -330,13 +492,16 @@ int read_atoms(char *fname) {
     if (maxy<y[n]) maxy=y[n];
     if (minx>x[n]) minx=x[n];
     if (miny>y[n]) miny=y[n];
-    if (maxp<pot[n]) minp=pot[n];
-    if (minp>pot[n]) minp=pot[n];
+    if (columns==6) {
+      if (maxp<pot[n]) minp=pot[n];
+      if (minp>pot[n]) minp=pot[n];
+    }
     n++;
   }
 
   scalex=2.0/(maxx-minx);
   scaley=2.0/(maxy-miny);
+
   fclose(fp);
   return n;
 }
@@ -355,7 +520,7 @@ void write_to_file(void) {
 
   if (scene_type) {
     fp=fopen("2dvis.dist","w");
-    fprintf(fp,"%d %d %s\n", x_res,y_res,(engmode)?"kin":"pot");
+    fprintf(fp,"%d %d %s\n", x_res,y_res,(eng_mode)?"kin":"pot");
     for (i=0;i<x_res*y_res;i++)
       fprintf(fp,"%f %f\n",potarray[i],kinarray[i]);
   }
@@ -376,7 +541,7 @@ void read_unit_vectors(void) {
   char line[255];
   int i;
 
-  fp=fopen("unitvecs","r");
+  fp=fopen(uvfname,"r");
 
   fgets(line,200,fp);
   if (strncmp(line,"periodic",8))
@@ -398,37 +563,12 @@ void read_unit_vectors(void) {
   fclose(fp);
 }
 
-void draw_bonds(void) {
-
-  float epsilon=.1;
-  int i,j,k;
-  float dx,dy;
-
-  for (i=0;i<natoms;i++)
-    bcode[i]=0;
-
-  for (i=0;i<natoms;i++) {
-    for (j=0;j<natoms;j++) {
-      if (i==j) continue;
-      dx=x[i]-x[j];
-      if (ABS(dx)>1.4) continue;
-      dy=y[i]-y[j];
-      if (ABS(dy)>1.4) continue;
-      for (k=0;k<nunits;k++) {
-	if (ABS(dx-ux[k])<epsilon)
-	  if (ABS(dy-uy[k])<epsilon)
-	    bcode[i]+=pow(2,k);
-      }
-    }
-  }
-}
-
 /* sos */
 void display_help(void) {
 
   char sysstring[1000];
 
-  sprintf(sysstring,"Use the following keys\n\nLMB:\tmove configuration\nMMB:\trotate configuration around x-axis\nR+MMBs\trotate configuration around y-axis\nRMB:\tscale configuration\n1:\tmove configuration to the lower left\n2:\tmove configuration down\n3:\tmove configuration to the lower right\n4:\tmove configuration to the left\n6:\tmove configuration to the right\n7:\tmove configuration to the upper left\n8:\tmove configuration up\n9:\tmove configuration to the upper right\n0:\tincrease radius\n.:\tdecrease radius\n+:\tscale configuration (larger)\n-:\tscale configuration (smaller)\n*:\trotate about x-axis\n/:\trotate about y-axis\na:\tauto-scale\nb:\tdraw bonds\nc:\tget configuration via socket\nd:\tget distribution via socket\ne:\ttoggle type/energy encoding\nh:\tdisplay this help message\nk:\ttoggle potential/kinetic energy\nl:\tload IMD-configuration from file\np\tmake picture\nq:\tquit program\nr:\ttoggle type encoding via radius\nt:\ttoggle text on/off\nu:\tread_unit_vectors\nw:\twrite to file\n");
+  sprintf(sysstring,"Use the following keys\n\nLMB:\tmove configuration\nMMB:\trotate configuration around x-axis\nR+MMBs\trotate configuration around y-axis\nRMB:\tscale configuration\n1:\tmove configuration to the lower left\n2:\tmove configuration down\n3:\tmove configuration to the lower right\n4:\tmove configuration to the left\n6:\tmove configuration to the right\n7:\tmove configuration to the upper left\n8:\tmove configuration up\n9:\tmove configuration to the upper right\n0:\tincrease radius\n.:\tdecrease radius\n+:\tscale configuration (larger)\n-:\tscale configuration (smaller)\n*:\trotate about x-axis\n/:\trotate about y-axis\na:\tauto-modus (movie)\nb:\tdraw bonds\nc:\tget configuration via socket\nd:\tget distribution via socket\ne:\ttoggle type/energy encoding\nh:\tdisplay this help message\nk:\ttoggle potential/kinetic energy\nl:\tload IMD-configuration from file\np\tmake picture\nq:\tquit program\nr:\ttoggle type encoding via radius\nt:\ttoggle text on/off\nw:\twrite to file\n");
   printf(sysstring);
   fflush(stdout);
 } 
