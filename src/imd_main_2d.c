@@ -124,7 +124,12 @@ void main_loop(void)
       }
     }
 #endif
-
+#ifdef FBC
+ for (l=0;l<vtypes;l++){               /* fbc_forces is already initialised with beginforces */
+   (fbc_forces+l)->x += (fbc_df+l)->x; /* fbc_df=0 if MIK && ekin> ekin_threshold */ 
+   (fbc_forces+l)->y += (fbc_df+l)->y;
+  } 
+#endif
 #ifdef MPI
     /* we should do this in more appropriate intervals */
     if (((eng_interval != 0) && (0 == steps%eng_interval)) || 
@@ -193,12 +198,7 @@ void main_loop(void)
     tran_Tright  -= dtemp;
 #endif
 
-#ifdef FBC
- for (l=0;l<vtypes;l++){               /* fbc_forces is already initialised with beginforces */
-   (fbc_forces+l)->x += (fbc_df+l)->x; /* fbc_df=0 if MIK && ekin> ekin_threshold */ 
-   (fbc_forces+l)->y += (fbc_df+l)->y;
-  } 
-#endif
+
 
 #ifdef NPT
     pressure_ext.x += d_pressure.x;
