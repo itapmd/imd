@@ -488,7 +488,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
   real   zeta, g_theta, b_ij;
   real   tmp_jk, tmp_j2, tmp_k2;
   real   phi_r, phi_a;
-  real   tmp_1, tmp_2, tmp_3, tmp_4, tmp_5, tmp_6;
+  real   tmp, tmp_1, tmp_2, tmp_3, tmp_4, tmp_5, tmp_6;
   real   tmp_virial = 0.0;
 #ifdef P_AXIAL
   vektor tmp_vir_vect = {0.0, 0.0, 0.0};
@@ -546,6 +546,8 @@ void do_forces2(cell *p, real *Epot, real *Virial,
     for (j=0; j<neigh->n; ++j){
 
       j_typ = neigh->typ[j];
+      jcell = (cell *) neigh->cl [j];
+      jnum  = neigh->num[j];
 
       zeta = 0.0;     
       dzeta_i.x = 0.0; dzeta_i.y = 0.0; dzeta_i.z = 0.0;
@@ -635,22 +637,32 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 #endif
 #ifdef STRESS_TENS
         if (do_press_calc) {
-  	  kcell->presstens[knum].xx -=   d[k].x * tmp_5 * dzeta_k[k].x;
-	  kcell->presstens[knum].yy -=   d[k].y * tmp_5 * dzeta_k[k].y;
-	  kcell->presstens[knum].zz -=   d[k].z * tmp_5 * dzeta_k[k].z;
-	  kcell->presstens[knum].yz -= ( d[k].y * tmp_5 * dzeta_k[k].z + 
-                                         d[k].z * tmp_5 * dzeta_k[k].y ) / 2;
-	  kcell->presstens[knum].zx -= ( d[k].z * tmp_5 * dzeta_k[k].x + 
-                                         d[k].x * tmp_5 * dzeta_k[k].z ) / 2;
-	  kcell->presstens[knum].xy -= ( d[k].x * tmp_5 * dzeta_k[k].y + 
-                                         d[k].y * tmp_5 * dzeta_k[k].x ) / 2;
+	  tmp = 0.5 * d[k].x * tmp_5 * dzeta_k[k].x;
+	  p->presstens[i].xx        -= tmp;
+  	  jcell->presstens[jnum].xx -= tmp;
+	  tmp = 0.5 * d[k].y * tmp_5 * dzeta_k[k].y;
+	  p->presstens[i].yy        -= tmp;
+  	  jcell->presstens[jnum].yy -= tmp;
+	  tmp = 0.5 * d[k].z * tmp_5 * dzeta_k[k].z;
+	  p->presstens[i].zz        -= tmp;
+  	  jcell->presstens[jnum].zz -= tmp;
+	  tmp = 0.25 * ( d[k].y * tmp_5 * dzeta_k[k].z + 
+                         d[k].z * tmp_5 * dzeta_k[k].y );
+	  p->presstens[i].yz        -= tmp;
+  	  jcell->presstens[jnum].yz -= tmp;
+	  tmp = 0.25 * ( d[k].z * tmp_5 * dzeta_k[k].x + 
+                         d[k].x * tmp_5 * dzeta_k[k].z );
+	  p->presstens[i].zx        -= tmp;
+  	  jcell->presstens[jnum].zx -= tmp;	  
+	  tmp = 0.25 * ( d[k].x * tmp_5 * dzeta_k[k].y + 
+			 d[k].y * tmp_5 * dzeta_k[k].x );
+	  p->presstens[i].xy        -= tmp;
+  	  jcell->presstens[jnum].xy -= tmp;
 	}
 #endif 
       }
       
       /* update force on particle j */
-      jcell = (cell *) neigh->cl [j];
-      jnum  = neigh->num[j];
       jcell->kraft X(jnum) += force_j.x;
       jcell->kraft Y(jnum) += force_j.y;
       jcell->kraft Z(jnum) += force_j.z;
@@ -671,12 +683,24 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 #endif
 #ifdef STRESS_TENS
       if (do_press_calc) {
-        jcell->presstens[jnum].xx -=  d[j].x * force_j.x;
-        jcell->presstens[jnum].yy -=  d[j].y * force_j.y;
-        jcell->presstens[jnum].zz -=  d[j].z * force_j.z;
-        jcell->presstens[jnum].yz -= (d[j].y * force_j.z + d[j].z*force_j.y)/2;
-        jcell->presstens[jnum].zx -= (d[j].z * force_j.x + d[j].x*force_j.z)/2;
-        jcell->presstens[jnum].xy -= (d[j].x * force_j.y + d[j].y*force_j.x)/2;
+	tmp = 0.5 * d[j].x * force_j.x; 
+	p->presstens[i].xx        -= tmp;
+	jcell->presstens[jnum].xx -= tmp;
+	tmp = 0.5 * d[j].y * force_j.y;
+	p->presstens[i].yy        -= tmp;
+	jcell->presstens[jnum].yy -= tmp;
+	tmp = 0.5 * d[j].z * force_j.z;
+	p->presstens[i].zz        -= tmp;
+	jcell->presstens[jnum].zz -= tmp;
+	tmp = 0.25 * ( d[j].y * force_j.z + d[j].z*force_j.y );
+	p->presstens[i].yz        -= tmp;
+	jcell->presstens[jnum].yz -= tmp;
+	tmp = 0.25 * ( d[j].z * force_j.x + d[j].x*force_j.z );
+	p->presstens[i].zx        -= tmp;
+	jcell->presstens[jnum].zx -= tmp;
+	tmp = 0.25 * ( d[j].x * force_j.y + d[j].y*force_j.x );
+	p->presstens[i].xy        -= tmp;
+	jcell->presstens[jnum].xy -= tmp;
       }
 #endif
 
