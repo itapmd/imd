@@ -476,23 +476,28 @@ void write_conf_using_sockets() {
 	 p = PTR_3D_V(cell_array, r, s, t, cell_dim); 
 #endif
 	   for (i = 0;i < p->n; ++i) {
-	     nummer[k] = p->nummer[i];
-	     sorte[k]  = p->sorte[i];
-	     masse[k]  = p->masse[i];
-	     x[k]      = p->ort X(i);
-	     y[k]      = p->ort Y(i);
+	     if (p->ort X(i) > socketwin_ll.x &&\
+		 p->ort X(i) < socketwin_ur.x &&\
+		 p->ort Y(i) > socketwin_ll.y &&\
+		 p->ort Y(i) < socketwin_ur.y){
+
+	       nummer[k] = p->nummer[i];
+	       sorte[k]  = p->sorte[i];
+	       masse[k]  = p->masse[i];
+	       x[k]      = p->ort X(i);
+	       y[k]      = p->ort Y(i);
 #ifndef TWOD
-	     z[k]      = p->ort Z(i);
+	       z[k]      = p->ort Z(i);
 #endif
-	     vx[k]     = p->impuls X(i);
-	     vy[k]     = p->impuls Y(i);
+	       vx[k]     = p->impuls X(i);
+	       vy[k]     = p->impuls Y(i);
 #ifndef TWOD
-	     vz[k]     = p->impuls Z(i);
+	       vz[k]     = p->impuls Z(i);
 #endif
-	     pot[k]    = p->pot_eng[i];
-	     k++;
+	       pot[k]    = p->pot_eng[i];
+	       k++;
+	     }
 	   }
-	   
        }
 #ifndef TWOD
      }
