@@ -58,11 +58,11 @@ void read_atoms(str255 infilename)
   int addnumber = 0;
 
   /* allocate num_sort on all CPUs */
-  if ((num_sort=calloc(ntypes,sizeof(int)))==NULL) {
-      error("cannot allocate memory for num_sort\n");
-  };
+  if ((num_sort=calloc(ntypes,sizeof(int)))==NULL)
+    error("cannot allocate memory for num_sort\n");
 
 #ifdef MPI
+
   /* Try opening a per cpu file first when parallel_input is active */
   if (1==parallel_input) {
     sprintf(buf,"%s.%u",infilename,myid); 
@@ -78,7 +78,7 @@ void read_atoms(str255 infilename)
     MPI_Bcast( num_sort, ntypes, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast( &do_maxwell,   1, MPI_INT, 0, MPI_COMM_WORLD);
     return;
-  };
+  }
 
   if ((1!=parallel_input) || (NULL==infile))
     infile = fopen(infilename,"r");
@@ -87,17 +87,20 @@ void read_atoms(str255 infilename)
     reffile = fopen(reffilename,"r");
 #endif
 
-#else
+#else /* not MPI */
+
   infile = fopen(infilename,"r");
 #ifdef DISLOC
   if (calc_Epot_ref == 0)
     reffile = fopen(reffilename,"r");
 #endif
-#endif
-  if (NULL==infile) error("Cannot open atoms file.");
 
+#endif /* MPI */
+
+  if (NULL==infile) error("Cannot open atoms file.");
 #ifdef DISLOC
-  if ((calc_Epot_ref == 0)&&(NULL==reffile)) error("Cannot open reference file.");
+  if ((calc_Epot_ref == 0)&&(NULL==reffile)) 
+    error("Cannot open reference file.");
 #endif
 
   /* Set up 1 atom input cell */
@@ -117,99 +120,80 @@ void read_atoms(str255 infilename)
   while(!feof(infile)) {
 
     buf[0] = (char) NULL;
-    buf[0] = (char) NULL;
     fgets(buf,sizeof(buf),infile);
-    while ('#'==buf[1]) fgets(buf,sizeof(buf),infile); /* eat comments */
+    /* eat comments */
+    while ('#'==buf[1]) fgets(buf,sizeof(buf),infile); 
 
 #ifdef DISLOC
     if (calc_Epot_ref == 0) {
       refbuf[0] = (char) NULL;
       fgets(refbuf,sizeof(refbuf),reffile);
-      while ('#'==refbuf[1]) fgets(refbuf,sizeof(refbuf),reffile); /* eat comments */
+      /* eat comments */
+      while ('#'==refbuf[1]) fgets(refbuf,sizeof(refbuf),reffile);
     }
 #endif
 
-    /* Should use temporary variable */
-#ifdef DISLOC
 #ifdef DOUBLE
     p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf",
 	      &n,&s,&m,&pos.x,&pos.y,&vau.x,&vau.y);
-    if (calc_Epot_ref == 0)
-      pref = sscanf(refbuf,"%d %d %lf %lf %lf %lf %lf %lf",
-		    &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&fdummy,&fdummy,&refeng);
 #else
     p = sscanf(buf,"%d %d %f %f %f %f %f",
 	      &n,&s,&m,&pos.x,&pos.y,&vau.x,&vau.y);  
-    if (calc_Epot_ref == 0)
-      pref = sscanf(refbuf,"%d %d %f %f %f %f %f %f",
-		    &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&fdummy,&fdummy,&refeng);
 #endif
-    if (calc_Epot_ref == 0)
-      if (ABS(refn) != ABS(n)) error("Numbers in infile and reffile are different.\n");
 
-#else /* not DISLOC */
+    if (p>0) {  /* skip empty lines at end of file */
+
+#ifdef DISLOC
+      if (calc_Epot_ref == 0) {
 #ifdef DOUBLE
-    p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf",
-	      &n,&s,&m,&pos.x,&pos.y,&vau.x,&vau.y);
+        pref = sscanf(refbuf,"%d %d %lf %lf %lf %lf %lf %lf",
+	 	      &refn,&idummy,&fdummy,&refpos.x,&refpos.y,
+                      &fdummy,&fdummy,&refeng);
 #else
-    p = sscanf(buf,"%d %d %f %f %f %f %f",
-	      &n,&s,&m,&pos.x,&pos.y,&vau.x,&vau.y);  
+        pref = sscanf(refbuf,"%d %d %f %f %f %f %f %f",
+		      &refn,&idummy,&fdummy,&refpos.x,&refpos.y,
+                      &fdummy,&fdummy,&refeng);
 #endif
+        if (ABS(refn) != ABS(n)) 
+          error("Numbers in infile and reffile are different.\n");
+      }
 #endif /* DISLOC */
 
 #ifndef NOPBC
-    pos = back_into_box(pos);
+      pos = back_into_box(pos);
 #endif
 
-    if (0>=m) error("Mass zero or negative.\n");
-    if (p>0) {
-      switch( p ) {
-      case(5):  /* n, m, s, ort */
-	do_maxwell=1;
-	input->n = 1;
-	input->nummer[0] = n;
-	input->sorte[0] = s;
-	input->masse[0] = m;
-	input->ort    X(0) = pos.x;
-	input->ort    Y(0) = pos.y;
-	input->impuls X(0) = 0;
-	input->impuls Y(0) = 0;
-	input->kraft  X(0) = 0;
-	input->kraft  Y(0) = 0;
-#ifdef DISLOC
-	input->ort_ref X(0) = refpos.x;
-	input->ort_ref Y(0) = refpos.y;
-	input->Epot_ref[0] = refeng;
-#endif
-	break;
-      case(7):  /* n, m, s, ort, vau */
-	input->n = 1;
-	input->nummer[0] = n;
-	input->sorte[0] = s;
-	input->masse[0] = m;
-        input->ort    X(0) = pos.x;
-	input->ort    Y(0) = pos.y;
+      if (0>=m) error("Mass zero or negative.\n");
+      if ((p!=5) && (p<7)) error("incorrect line in configuration file.");
+
+      input->n = 1;
+      input->nummer[0] = n;
+      input->sorte[0]  = s;
+      input->masse[0]  = m;
+      input->ort X(0)  = pos.x;
+      input->ort Y(0)  = pos.y;
+      if (p==5) {
+        do_maxwell=1;
+        input->impuls X(0) = 0;
+        input->impuls Y(0) = 0;
+      } else {
 	input->impuls X(0) = vau.x * m;
 	input->impuls Y(0) = vau.y * m;
-	input->kraft  X(0) = 0;
-	input->kraft  Y(0) = 0;
+      }
+      input->kraft X(0) = 0;
+      input->kraft Y(0) = 0;
 #ifdef DISLOC
-	input->ort_ref X(0) = refpos.x;
-	input->ort_ref Y(0) = refpos.y;
-	input->Epot_ref[0] = refeng;
+      input->ort_ref X(0) = refpos.x;
+      input->ort_ref Y(0) = refpos.y;
+      input->Epot_ref[0]  = refeng;
 #endif
-break;
-      default:
-        printf("%d is where we find an...\n", natoms+1);
-	error("Incomplete line in atoms file at line.\n");
-      };
 
       cellc = cell_coord(pos.x,pos.y);
 
 #ifdef MPI
+
       to_cpu = cpu_coord(cellc);
-      
-      if ((myid != to_cpu) && (1!=parallel_input)) {
+            if ((myid != to_cpu) && (1!=parallel_input)) {
         natoms++;
         num_sort[input->sorte[0]]++;
 	MPI_Send( input->ort,     DIM, MPI_REAL, to_cpu, ORT_TAG,    cpugrid);
@@ -226,19 +210,22 @@ break;
         num_sort[input->sorte[0]]++;
 	cellc = local_cell_coord(pos.x,pos.y);
 	move_atom(cellc, input, 0);
-      };
-#else
+      }
+
+#else /* not MPI */
+
       natoms++;
       num_sort[input->sorte[0]]++;
       move_atom(cellc, input, 0);
-#endif
-    };
-  };
+
+#endif /* MPI */
+
+    } /* (p>0) */
+  } /* !feof(infile) */
 
   fclose(infile);  
 #ifdef DISLOC
-  if (calc_Epot_ref == 0)
-    fclose(reffile);
+  if (calc_Epot_ref == 0) fclose(reffile);
 #endif
 
 #ifdef MPI
@@ -255,11 +242,11 @@ break;
     for (i=0; i<ntypes; i++) {
       MPI_Allreduce(&num_sort[i], &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
       num_sort[i]=addnumber;
-    };
+    }
   } else { /* broadcast */
     MPI_Bcast( &natoms ,      1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Bcast( num_sort, ntypes, MPI_INT, 0, MPI_COMM_WORLD);
-  };
+  }
 
   /* If CPU 0 found velocities in its data, no initialisation is done */
   MPI_Bcast( &do_maxwell, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -276,8 +263,7 @@ break;
       addnumber+=num_sort[i];
     };
     printf(" ],  total = %u\n",addnumber);
-  };
-
+  }
 }
 
 
