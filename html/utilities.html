@@ -26,16 +26,464 @@ directory.
   <TD WIDTH=180><A HREF="#imd_power">imd_power</A>
 </TR>
 <TR ALIGN="LEFT"> 
+  <TD WIDTH=180><A HREF="#imd_ps">imd_ps</A>
   <TD WIDTH=180><A HREF="#imd_ring">imd_ring</A>
   <TD WIDTH=180><A HREF="#imd_strain">imd_strain</A>
   <TD WIDTH=180><A HREF="#imd_stress">imd_stress</A>
-  <TD WIDTH=180><A HREF="#imd_torsion">imd_torsion</A>
 </TR>
 <TR ALIGN="LEFT"> 
+  <TD WIDTH=180><A HREF="#imd_torsion">imd_torsion</A>
   <TD WIDTH=180><A HREF="#imd2ppm">imd2ppm</A>
   <TD WIDTH=180><A HREF="#procdata">procdata</A>
   <TD WIDTH=180><A HREF="#rav">rav</A>
 </TR>
+</TABLE>
+
+<P>
+
+<A NAME="imd_ps">
+<H2>imd_ps.c</H2>
+</A>
+
+Creates a (vector) PostScript file from an IMD configuration. Compile as
+follows:
+<PRE>
+    gcc -O -lm [-DTWOD] [-DDOUBLE] imd_ps.c
+</PRE> 
+Default is a program for 3D, but if the flag <TT>-DTWOD</TT> is 
+present, a program for 2D is compiled. The flag <TT>-DDOUBLE</TT> 
+produces a binary using doubles instead of floats.
+<P>
+<B>imd_ps</B> produces ball and stick visualizations of IMD configuration files,
+checkpoints or avpos outfiles. Usage is as follows:
+<PRE>
+    imd_ps [-r&lt;nn&gt;] [-A&lt;nn&gt;] [-e&lt;rmax&gt;] [-v] [-OPTION&lt;nn&gt;] -p &lt;paramfile&gt;
+</PRE>
+The parameter <TT>paramfile</TT> is mandatory. <B>imd_ps</B> reads the
+box size and the names of the configuration and checkpoint files from
+it. If the restart parameter <TT>-r&lt;nn&gt;</TT> is present,
+<B>imd_ps</B> takes the checkpoint file
+<TT>&lt;outfiles&gt;.&lt;nn&gt;.chkpt</TT> as input, and reads also
+the corresponding iteration file. Otherwise, the input configuration
+<TT>&lt;coordname&gt;</TT> of the simulation described by
+<TT>paramfile</TT> is used as input.  If the parameter
+<TT>-A&lt;nn&gt;</TT> is present, <B>imd_ps</B> takes the avpos
+outfile <TT>&lt;outfiles&gt;.&lt;nn&gt;.avp</TT> as input, and reads
+also the corresponding iteration file
+<TT>&lt;outfiles&gt;.&lt;nn&gt;.avp.itr</TT>.  The output file name of
+<B>imd_ps</B> is the input file name, but with <TT>.eps</TT> appended.
+<P>
+
+The parameter <TT>-e&lt;rmax&gt;</TT> specifies the maximal distance
+for which neighbouring atoms are taken into account for drawing
+bonds. The default is 1.0. However, if the cutoff radii for all atom
+types are given in the parameter file by the parameters <TT>r_cut</TT>
+or <TT>ters_r_cut</TT>, the optional parameter <TT>-e&lt;rmax&gt;</TT>
+is ignored.
+<P>
+
+The geometrical setup of the projection (3D) is shown in the following
+figure.<P>
+
+<CENTER>
+<IMG SRC="imd_ps.png">
+</CENTER>
+
+<P>
+<B>imd_ps</B> allows many optional parameters affecting the
+visualization (Grey background means that the option is available
+only in the 3D version):
+<P>
+<TABLE BORDER=0 CELLPADDING=5 CELLSPACING=3>
+
+<TR><TH><TT>OPTION</TT></TH><TH>Values</TH><TH>Default value<TH>Description</TH></TR>
+
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>a</TT></TD>
+<TD ALIGN=CENTER>0,1</TD>
+<TD ALIGN=CENTER>0</TD>
+<TD>Draw coordinate axes. The axes are drawn into the bounding
+box of the unrotated system (option&nbsp;<TT>u</TT>) or the simulation box
+(option&nbsp;<TT>o</TT>). The <I>x</I> axis is red, 
+the <I>y</I> axis is yellow, and the <I>z</I> axis (3D only) is green.
+</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>b</TT></TD>
+<TD ALIGN=CENTER>real, [-1,1]</TD>
+<TD ALIGN=CENTER>-0.3</TD>
+<TD>Brightness of bond colors. Positive values mean bright colors and
+negative values mean dark colors.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>B</TT></TD>
+<TD>real, >= 0.0</TD>
+<TD ALIGN=CENTER>estimated</TD>
+<TD>Radius of cylinders representing bonds in real (IMD) units. 
+<TT>B</TT> must be smaller than <TT>R</TT>. </TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>c</TT></TD>
+<TD>real, >= 0.0</TD>
+<TD ALIGN=CENTER>20</TD>
+<TD>Boundary strip around bounding box (in pt).</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>C</TT></TD>
+<TD ALIGN=CENTER>integer</TD>
+<TD ALIGN=CENTER>1</TD>
+<TD>Color of atoms. Negative numbers produce greyscales.
+The value 0 corresponds to white. <B>imd_ps</B> predefines 9 different 
+colors represented by integers as follows:<P>
+<TABLE BORDER=1 CELLPADDING=4>
+<TR>
+<TD BGCOLOR=#FF0000 WIDTH=15 ALIGN=CENTER>1</TD>
+<TD BGCOLOR=#FFFF00 WIDTH=15 ALIGN=CENTER>2</TD>
+<TD BGCOLOR=#00FF00 WIDTH=15 ALIGN=CENTER>3</TD>
+<TD BGCOLOR=#0000FF WIDTH=15 ALIGN=CENTER><FONT COLOR=WHITE>4</TD>
+<TD BGCOLOR=#FF00FF WIDTH=15 ALIGN=CENTER>5</TD>
+<TD BGCOLOR=#00FFFF WIDTH=15 ALIGN=CENTER>6</TD>
+<TD BGCOLOR=#FFB333 WIDTH=15 ALIGN=CENTER>7</TD>
+<TD BGCOLOR=#B3B3B3 WIDTH=15 ALIGN=CENTER>8</TD>
+<TD BGCOLOR=#FFFFFF WIDTH=15 ALIGN=CENTER>9</TD>
+</TR>
+</TABLE><P>
+C allows positive integer values with up to 9 figures which denote 
+the colors of atom types 0,1,2,.... The default colors correspond to the value 123456789.<BR>
+For negative values, the encoding is similar, where 9 greyscales are available with the values<P>
+<TABLE BORDER=1 CELLPADDING=4>
+<TR>
+<TD BGCOLOR=#FFFFFF WIDTH=15 ALIGN=CENTER>1</TD>
+<TD BGCOLOR=#808080 WIDTH=15 ALIGN=CENTER><FONT COLOR=WHITE>2</TD>
+<TD BGCOLOR=#CDCDCD WIDTH=15 ALIGN=CENTER>3</TD>
+<TD BGCOLOR=#4D4D4D WIDTH=15 ALIGN=CENTER><FONT COLOR=WHITE>4</TD>
+<TD BGCOLOR=#E6E6E6 WIDTH=15 ALIGN=CENTER>5</TD>
+<TD BGCOLOR=#666666 WIDTH=15 ALIGN=CENTER><FONT COLOR=WHITE>6</TD>
+<TD BGCOLOR=#B3B3B3 WIDTH=15 ALIGN=CENTER>7</TD>
+<TD BGCOLOR=#333333 WIDTH=15 ALIGN=CENTER><FONT COLOR=#FFFFFF>8</FONT></TD>
+<TD BGCOLOR=#000000 WIDTH=15 ALIGN=CENTER><FONT COLOR=#FFFFFF>9</FONT></TD>
+</TR>
+</TABLE>
+</TD></TR>
+
+<TR VALIGN=TOP BGCOLOR=LIGHTGREY><TD ALIGN=CENTER><TT>d</TT></TD>
+<TD>real, [0,1]</TD>
+<TD ALIGN=CENTER>0</TD>
+<TD>Brightness of atom and bond colors with depth. 1 corresponds to
+black atoms and bonds in the background, 0 means the same colors
+for all atoms and bonds.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>D</TT></TD>
+<TD ALIGN=CENTER>integer, >=0</TD>
+<TD ALIGN=CENTER>0</TD>
+<TD>Represent types of atoms by different radii of the spheres. As in
+the case of the atom colors given by the parameter <TT>C</TT>, the
+association of atom types with sphere radii is done by an integer with
+up to 9 figures. The encoding is given by the following table:<P>
+<TABLE BORDER=1 CELLPADDING=4>
+<TR>
+<TD WIDTH=15 ALIGN=CENTER>1</TD>
+<TD WIDTH=15 ALIGN=CENTER>2</TD>
+<TD WIDTH=15 ALIGN=CENTER>3</TD>
+<TD WIDTH=15 ALIGN=CENTER>4</TD>
+<TD WIDTH=15 ALIGN=CENTER>5</TD>
+<TD WIDTH=15 ALIGN=CENTER>6</TD>
+<TD WIDTH=15 ALIGN=CENTER>7</TD>
+<TD WIDTH=15 ALIGN=CENTER>8</TD>
+<TD WIDTH=15 ALIGN=CENTER>9</TD>
+</TR>
+<TR>
+<TD WIDTH=15 ALIGN=CENTER>1</TD>
+<TD WIDTH=15 ALIGN=CENTER>1/2</TD>
+<TD WIDTH=15 ALIGN=CENTER>3/4</TD>
+<TD WIDTH=15 ALIGN=CENTER>1/4</TD>
+<TD WIDTH=15 ALIGN=CENTER>5/8</TD>
+<TD WIDTH=15 ALIGN=CENTER>3/8</TD>
+<TD WIDTH=15 ALIGN=CENTER>7/8</TD>
+<TD WIDTH=15 ALIGN=CENTER>1/8</TD>
+<TD WIDTH=15 ALIGN=CENTER>0</TD>
+</TR>
+</TABLE><P>
+The second row gives the radii of the atoms in units of the largest
+radius specified by the parameter <TT>R</TT>. In the case of the
+number 9 corresponding to the radius 0, no atoms of the corresponding
+type are drawn and the bonds of this type are also omitted.
+</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>E</TT></TD>
+<TD>integer</TD>
+<TD ALIGN=CENTER>-</TD>
+<TD>Color encoding of the potential energy as specified in the 10th
+column of an IMD configuration file. The value of <TT>E</TT> determines the
+colors used in the encoding. Each figure of <TT>E</TT> corresponds to
+a color as given in the following table:<P>
+<TABLE BORDER=1 CELLPADDING=4>
+<TR>
+<TD BGCOLOR=#4C4C4C WIDTH=15 ALIGN=CENTER><FONT COLOR=WHITE>1</FONT></TD>
+<TD BGCOLOR=#FF0000 WIDTH=15 ALIGN=CENTER>2</TD>
+<TD BGCOLOR=#00FF00 WIDTH=15 ALIGN=CENTER>3</TD>
+<TD BGCOLOR=#0000FF WIDTH=15 ALIGN=CENTER><FONT COLOR=WHITE>4</FONT></TD>
+<TD BGCOLOR=#00FFFF WIDTH=15 ALIGN=CENTER>5</TD>
+<TD BGCOLOR=#FF00FF WIDTH=15 ALIGN=CENTER>6</TD>
+<TD BGCOLOR=#FFFF00 WIDTH=15 ALIGN=CENTER>7</TD>
+<TD BGCOLOR=#FFFFFF WIDTH=15 ALIGN=CENTER>8</TD>
+</TR>
+</TABLE><P>
+The sequence of figures in <TT>E</TT> then corresponds to a path in
+the rgb cube which is used to color encode the potential energy from
+the lowest energy to the highest energy. If only one positive figure
+is given, a path with two colors is taken where the second color is white.
+Negative numbers correspond to
+preselected paths as follows:<P>
+<TABLE BORDER=1 CELLPADDING=4>
+<TR><TH>Value of <TT>E</TT></TH><TH colspan=10>Color path</TH></TR>
+<TR><TD>-1</TD>
+<TD BGCOLOR=#FF0000 WIDTH=15 ALIGN=CENTER>2</TD>
+<TD BGCOLOR=#FFFF00 WIDTH=15 ALIGN=CENTER>7</TD>
+<TD BGCOLOR=#00FF00 WIDTH=15 ALIGN=CENTER>3</TD>
+<TD BGCOLOR=#00FFFF WIDTH=15 ALIGN=CENTER>5</TD>
+<TD BGCOLOR=#0000FF WIDTH=15 ALIGN=CENTER><FONT COLOR=WHITE>4</FONT></TD>
+<TD BGCOLOR=#FF00FF WIDTH=15 ALIGN=CENTER>6</TD>
+</TR>
+<TR><TD>-2</TD>
+<TD BGCOLOR=#FF0000 WIDTH=15 ALIGN=CENTER>2</TD>
+<TD BGCOLOR=#FFFF00 WIDTH=15 ALIGN=CENTER>7</TD>
+<TD BGCOLOR=#FFFFFF WIDTH=15 ALIGN=CENTER>8</TD>
+</TR>
+<TR><TD>-3</TD>
+<TD BGCOLOR=#FF0000 WIDTH=15 ALIGN=CENTER>2</TD>
+<TD BGCOLOR=#FFFFFF WIDTH=15 ALIGN=CENTER>8</TD>
+<TD BGCOLOR=#00FFFF WIDTH=15 ALIGN=CENTER>5</TD>
+<TD BGCOLOR=#0000FF WIDTH=15 ALIGN=CENTER><FONT COLOR=WHITE>4</TD>
+</TR>
+<TR><TD>-4</TD>
+<TD BGCOLOR=#FF0000 WIDTH=15 ALIGN=CENTER>2</TD>
+<TD BGCOLOR=#FFFFFF WIDTH=15 ALIGN=CENTER>8</TD>
+<TD BGCOLOR=#FFFF00 WIDTH=15 ALIGN=CENTER>7</TD>
+<TD BGCOLOR=#00FF00 WIDTH=15 ALIGN=CENTER>3</TD>
+</TR>
+<TR><TD>-5</TD>
+<TD BGCOLOR=#FF0000 WIDTH=15 ALIGN=CENTER>2</TD>
+<TD BGCOLOR=#FF00FF WIDTH=15 ALIGN=CENTER>6</TD>
+<TD BGCOLOR=#0000FF WIDTH=15 ALIGN=CENTER><FONT COLOR=WHITE>4</TD>
+</TR>
+<TR><TD>-6</TD>
+<TD BGCOLOR=#00FF00 WIDTH=15 ALIGN=CENTER>3</TD>
+<TD BGCOLOR=#00FFFF WIDTH=15 ALIGN=CENTER>5</TD>
+<TD BGCOLOR=#0000FF WIDTH=15 ALIGN=CENTER><FONT COLOR=WHITE>4</TD>
+</TR>
+</TABLE><P>
+The spectrum of the used color encoding
+can be plotted with the additional option <TT>k</TT>.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>f</TT></TD>
+<TD ALIGN=CENTER>integer</TD>
+<TD ALIGN=CENTER>9</TD>
+<TD>Draw bounding box with linewidth <TT>F</TT>. 
+A negative value means no boundary box is drawn. 
+Positive values correspond to colors according to the 
+color scheme of <TT>C</TT>. </TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>F</TT></TD>
+<TD ALIGN=CENTER>real</TD>
+<TD ALIGN=CENTER>2.0</TD>
+<TD>Linewidth of bounding box (in pt). 
+Negative values correspond to dashed lines.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>g</TT></TD>
+<TD ALIGN=CENTER>real, >=-1.0</TD>
+<TD ALIGN=CENTER>0.0</TD>
+<TD>Background color. White by default. Positive integer values
+correspond to colors according to the color scheme of parameter <TT>C</TT>. 
+Figures after the comma mean a shading of the corrresponding color. 
+Negative values from -1 to 0 correspond to a shading from black to white.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>G</TT></TD>
+<TD ALIGN=CENTER>integer, >0</TD>
+<TD ALIGN=CENTER>-</TD>
+<TD>Draw color encoding of the 11th column (9th column in 2D) 
+of input file. Similar to the parameter <TT>E</TT>.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>h</TT></TD>
+<TD ALIGN=CENTER>real, >=0</TD>
+<TD ALIGN=CENTER>-</TD>
+<TD>Produce eps files with the height <TT>h</TT> in cm.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>H</TT></TD>
+<TD ALIGN=CENTER>real, >=0.0</TD>
+<TD ALIGN=CENTER>0.1</TD>
+<TD>Linewidth used for borders of atoms, bonds, and bond 
+    separators (in pt). See also the options <TT>L</TT>, <TT>l</TT>, and
+    <TT>P</TT> for separate adjustments.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>i, j</TT></TD>
+<TD ALIGN=CENTER>real</TD>
+<TD ALIGN=CENTER>0, 0</TD>
+<TD>Translation in x and y direction.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>I</TT></TD>
+<TD ALIGN=CENTER>real, >0</TD>
+<TD ALIGN=CENTER>1.0</TD>
+<TD>Brightness of shading of atoms.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>J</TT></TD>
+<TD ALIGN=CENTER>real, [-1,1]</TD>
+<TD ALIGN=CENTER>0</TD>
+<TD>Brightness of atom colors. Positive values mean bright colors and
+negative values mean dark colors.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>k</TT></TD>
+<TD ALIGN=CENTER>real</TD>
+<TD ALIGN=CENTER>-</TD>
+<TD>Draw a spectrum of the colors belonging to the different color
+encodings. The spectrum is placed below the bounding box, separated by
+a line. The Linethickness is given by the value of <TT>k</TT> (in pt).
+</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>K</TT></TD>
+<TD ALIGN=CENTER>-</TD>
+<TD ALIGN=CENTER>-</TD>
+<TD>Write a file with all settings of the options. The filename is the
+output filename with the extension .eps.opt. The .eps.opt file contains the
+complete command to run <B>imd_ps</B> with the current options.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>l</TT></TD>
+<TD ALIGN=CENTER>real, >=0.0</TD>
+<TD ALIGN=CENTER>0.1</TD>
+<TD>Linewidth used for bond borders (in pt).</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>L</TT></TD>
+<TD ALIGN=CENTER>real, >=0</TD>
+<TD ALIGN=CENTER>0.1</TD>
+<TD>Linewidth used for atom borders (in pt).</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>m</TT></TD>
+<TD ALIGN=CENTER>real, >=0</TD>
+<TD ALIGN=CENTER>1</TD>
+<TD>Zoom.</TD></TR>
+
+<TR VALIGN=TOP BGCOLOR=LIGHTGREY><TD ALIGN=CENTER><TT>M</TT></TD>
+<TD ALIGN=CENTER>real, >=0</TD>
+<TD ALIGN=CENTER>1</TD>
+<TD>Parameter to enhance the shrinking of atoms and bonds with depth.</TD></TR>
+
+<TR VALIGN=TOP BGCOLOR=LIGHTGREY><TD ALIGN=CENTER><TT>n</TT></TD>
+<TD ALIGN=CENTER>real >=0</TD>
+<TD ALIGN=CENTER>-</TD>
+<TD>Draw lightshadow. <TT>n</TT> determines the linewidth (in pt).</TD></TR>
+
+<TR VALIGN=TOP BGCOLOR=LIGHTGREY><TD ALIGN=CENTER><TT>N</TT></TD>
+<TD ALIGN=CENTER>real, [0,1]</TD>
+<TD ALIGN=CENTER>1</TD>
+<TD>Draw bonds as needles.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>o</TT></TD>
+<TD ALIGN=CENTER>integer</TD>
+<TD ALIGN=CENTER>-1</TD>
+<TD>Draw simulation box with linewidth <TT>O</TT>. 
+A negative value means no simulation box is drawn. 
+Positive values correspond to colors according to the color scheme 
+of parameter <TT>C</TT>.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>O</TT></TD>
+<TD ALIGN=CENTER>real</TD>
+<TD ALIGN=CENTER>1.0</TD>
+<TD>Linewidth used for simulation box (in pt). 
+Negative values correspond to dashed lines.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>P</TT></TD>
+<TD ALIGN=CENTER>real >=0</TD>
+<TD ALIGN=CENTER>0.1</TD>
+<TD>Linewidth used for bond separator (in pt).</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>q</TT></TD>
+<TD ALIGN=CENTER>integer</TD>
+<TD ALIGN=CENTER>-1</TD>
+<TD>Draw border to boxes with linewidth <TT>Q</TT>. 
+A negative value means no border is drawn. 
+Positive values correspond to colors according to the color scheme 
+of parameter <TT>C</TT>.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>Q</TT></TD>
+<TD ALIGN=CENTER>real</TD>
+<TD ALIGN=CENTER>1.0</TD>
+<TD>Linewidth used for border of boxes (in pt). 
+Negative values correspond to dashed lines.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>R</TT></TD>
+<TD>real, >= 0.0</TD>
+<TD ALIGN=CENTER>estimated</TD>
+<TD>Radius of spheres
+representing atoms in real (IMD) units.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>s</TT></TD>
+<TD ALIGN=CENTER>real, >=0</TD>
+<TD ALIGN=CENTER>1</TD>
+<TD>Scaling of the picture. In contrast to the zoom <TT>m</TT>, the size of the entire picture 
+is also scaled.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>S</TT></TD>
+<TD ALIGN=CENTER>real, >=0</TD>
+<TD ALIGN=CENTER>45</TD>
+<TD>Shading of atoms. The value of <TT>S</TT> corresponds to the 
+angle of the light position.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>t</TT></TD>
+<TD ALIGN=CENTER>integer</TD>
+<TD ALIGN=CENTER>-</TD>
+<TD>Draw color encoding of kinetic energy. Similar to parameter <TT>E</TT>.</TD/</TR>
+
+<TR VALIGN=TOP BGCOLOR=LIGHTGREY><TD ALIGN=CENTER><TT>T</TT></TD>
+<TD ALIGN=CENTER>real, >= 0.0</TD>
+<TD ALIGN=CENTER>estimated</TD>
+<TD>z-coordinate of projection plane (in real (IMD) units). 
+<TT>T</TT> must be smaller than <TT>Z</TT>.</TD/</TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>u</TT></TD>
+<TD ALIGN=CENTER>integer</TD>
+<TD ALIGN=CENTER>-1</TD>
+<TD>Draw bounding box of unrotated sytem with linewidth <TT>U</TT>. 
+A negative value means no simulation box is drawn. 
+Positive values correspond to colors according to the color 
+scheme of parameter <TT>C</TT>.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>U</TT></TD>
+<TD ALIGN=CENTER>real</TD>
+<TD ALIGN=CENTER>1.0</TD>
+<TD>Linewidth used for bounding box of unrotated system (in pt). Negative
+values correspond to dashed lines.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>V</TT></TD>
+<TD ALIGN=CENTER>integer</TD>
+<TD ALIGN=CENTER>0</TD>
+<TD>Color of bonds. The value 0 means the bonds are colored like the
+atoms. Other values correspond to colors according to the color scheme
+of option <TT>C</TT>.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>w</TT></TD>
+<TD ALIGN=CENTER>real, >=0</TD>
+<TD ALIGN=CENTER>-</TD>
+<TD>Produce eps files with the width <TT>w</TT> in cm.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>W</TT></TD>
+<TD ALIGN=CENTER>real, >=0</TD>
+<TD ALIGN=CENTER>-</TD>
+<TD>Produce wireframes with line width <TT>W</TT> (in real (IMD)
+units). If the atom radius
+specified by the option <TT>R</TT> is larger than <TT>W</TT>, atoms
+are drawn as specified by the corresponding options.</TD></TR>
+
+<TR VALIGN=TOP><TD ALIGN=CENTER><TT>x, y, z</TT></TD>
+<TD ALIGN=CENTER>real, real, real</TD>
+<TD ALIGN=CENTER>0, 0, 0</TD>
+<TD>Rotation angles about <I>x</I>, <I>y</I>, and <I>z</I> axis 
+(only <I>z</I> axis in 2D version)
+of IMD configuration in 
+degrees.</TD></TR>
+
+<TR VALIGN=TOP BGCOLOR=LIGHTGREY><TD ALIGN=CENTER><TT>X, Y, Z</TT></TD>
+<TD ALIGN=CENTER>real, real, >0</TD>
+<TD ALIGN=CENTER>0, 0, estimated</TD>
+<TD>Location of focal point of perspective projection (in real (IMD)
+units).
+</TD></TR>
+
 </TABLE>
 
 <P>
