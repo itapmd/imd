@@ -159,7 +159,7 @@ ifeq (AthlonMP-icc,${IMDSYS})
   MPICH_CLINKER = icc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
-  OPT_FLAGS	+= -O -ip -tpp6 -axK #-static
+  OPT_FLAGS	+= -O -ip -tpp6 -axK # -static
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp
   DEBUG_FLAGS	+= -g

@@ -64,15 +64,15 @@ void read_atoms(str255 infilename)
   cell *to;
   ivektor2d cellc;
   int to_cpu;
-  int addnumber = 0;
+  long addnumber = 0;
 #ifdef MPI
   msgbuf *input_buf, *b;
 #endif
 
   /* allocate num_sort and num_vsort on all CPUs */
-  if ((num_sort = (int *) calloc(ntypes,sizeof(int)))==NULL)
+  if ((num_sort = (long *) calloc(ntypes,sizeof(long)))==NULL)
     error("cannot allocate memory for num_sort\n");
-  if ((num_vsort = (int *) calloc(vtypes,sizeof(int)))==NULL)
+  if ((num_vsort = (long *) calloc(vtypes,sizeof(long)))==NULL)
     error("cannot allocate memory for num_vsort\n");
 
 #ifdef MPI
@@ -88,11 +88,11 @@ void read_atoms(str255 infilename)
   } else if (0!=myid) {
     recv_atoms(); 
     /* If CPU 0 found velocities in its data, no initialisation is done */
-    MPI_Bcast( &natoms,        1, MPI_INT, 0, MPI_COMM_WORLD);  
-    MPI_Bcast( &nactive,       1, MPI_INT, 0, MPI_COMM_WORLD);  
-    MPI_Bcast( num_sort,  ntypes, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( num_vsort, vtypes, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( &do_maxwell,    1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &natoms,        1, MPI_LONG, 0, MPI_COMM_WORLD);  
+    MPI_Bcast( &nactive,       1, MPI_LONG, 0, MPI_COMM_WORLD);  
+    MPI_Bcast( num_sort,  ntypes, MPI_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast( num_vsort, vtypes, MPI_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &do_maxwell,    1, MPI_INT,  0, MPI_COMM_WORLD);
     return;
   }
 
@@ -236,8 +236,8 @@ void read_atoms(str255 infilename)
         if (s < ntypes)
           nactive += DIM;
         else {
-          nactive += (int) (restrictions+s)->x;
-          nactive += (int) (restrictions+s)->y;
+          nactive += (long) (restrictions+s)->x;
+          nactive += (long) (restrictions+s)->y;
         }
         num_sort[SORTE(input,0)]++;
         num_vsort[VSORTE(input,0)]++;
@@ -253,8 +253,8 @@ void read_atoms(str255 infilename)
         if (s < ntypes)
           nactive += DIM;
         else {
-          nactive += (int) (restrictions+s)->x;
-          nactive += (int) (restrictions+s)->y;
+          nactive += (long) (restrictions+s)->x;
+          nactive += (long) (restrictions+s)->y;
         }
         num_sort[SORTE(input,0)]++;
         num_vsort[VSORTE(input,0)]++;
@@ -270,8 +270,8 @@ void read_atoms(str255 infilename)
       if (s < ntypes)
         nactive += DIM;
       else {
-        nactive += (int) (restrictions+s)->x;
-        nactive += (int) (restrictions+s)->y;
+        nactive += (long) (restrictions+s)->x;
+        nactive += (long) (restrictions+s)->y;
       }
       num_sort[SORTE(input,0)]++;
       num_vsort[VSORTE(input,0)]++;
@@ -303,23 +303,23 @@ void read_atoms(str255 infilename)
 
   /* Add the number of atoms read (and kept) by each CPU */
   if (1==parallel_input) {
-    MPI_Allreduce( &natoms,  &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
+    MPI_Allreduce( &natoms,  &addnumber, 1, MPI_LONG, MPI_SUM, cpugrid);
     natoms = addnumber;
-    MPI_Allreduce( &nactive, &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
+    MPI_Allreduce( &nactive, &addnumber, 1, MPI_LONG, MPI_SUM, cpugrid);
     nactive = addnumber;
     for (i=0; i<ntypes; i++) {
-      MPI_Allreduce(&num_sort[i], &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
+      MPI_Allreduce(&num_sort[i], &addnumber, 1, MPI_LONG, MPI_SUM, cpugrid);
       num_sort[i]=addnumber;
     }
     for (i=0; i<vtypes; i++) {
-      MPI_Allreduce(&num_vsort[i], &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
+      MPI_Allreduce(&num_vsort[i], &addnumber, 1, MPI_LONG, MPI_SUM, cpugrid);
       num_vsort[i]=addnumber;
     }
   } else { /* broadcast */
-    MPI_Bcast( &natoms ,       1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( &nactive,       1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( num_sort,  ntypes, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( num_vsort, vtypes, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &natoms ,       1, MPI_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast( &nactive,       1, MPI_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast( num_sort,  ntypes, MPI_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast( num_vsort, vtypes, MPI_LONG, 0, MPI_COMM_WORLD);
   }
 
   /* If CPU 0 found velocities in its data, no initialisation is done */

@@ -322,9 +322,9 @@ void read_atoms(str255 infilename)
           nactive_rot += 2;
 #endif
         } else {
-          nactive += (int) (restrictions+s)->x;
-          nactive += (int) (restrictions+s)->y;
-          nactive += (int) (restrictions+s)->z;
+          nactive += (long) (restrictions+s)->x;
+          nactive += (long) (restrictions+s)->y;
+          nactive += (long) (restrictions+s)->z;
         }
         num_sort[SORTE(input,0)]++;
         num_vsort[VSORTE(input,0)]++;
@@ -343,9 +343,9 @@ void read_atoms(str255 infilename)
         nactive_rot += 2;
 #endif
         } else {
-          nactive += (int) (restrictions+s)->x;
-          nactive += (int) (restrictions+s)->y;
-          nactive += (int) (restrictions+s)->z;
+          nactive += (long) (restrictions+s)->x;
+          nactive += (long) (restrictions+s)->y;
+          nactive += (long) (restrictions+s)->z;
         }
         num_sort[SORTE(input,0)]++;
         num_vsort[VSORTE(input,0)]++;
@@ -364,9 +364,9 @@ void read_atoms(str255 infilename)
         nactive_rot += 2;
 #endif
       } else {
-        nactive += (int) (restrictions+s)->x;
-        nactive += (int) (restrictions+s)->y;
-        nactive += (int) (restrictions+s)->z;
+        nactive += (long) (restrictions+s)->x;
+        nactive += (long) (restrictions+s)->y;
+        nactive += (long) (restrictions+s)->z;
       }
       num_sort[SORTE(input,0)]++;
       num_vsort[VSORTE(input,0)]++;

@@ -46,7 +46,7 @@ void maxwell(real temp)
 { 
    int         k;
    vektor      tot_impuls;
-   long        nactive_x, nactive_y, nactive_z;
+   int         nactive_x, nactive_y, nactive_z;
    static long dummy = 0;
    int slice;
 
