@@ -121,7 +121,7 @@ EXTERN vektor *restrictions INIT(NULL);  /* directions the atom is allowed to mo
 #ifdef RELAX
 EXTERN real ekin_threshold       INIT(0.0); /* threshold for Ekin */
 EXTERN real fnorm_threshold      INIT(0.0); /* threshold for force norm */
-EXTERN real f_max_threshold       INIT(0.0); /* threshold for force maximum */
+EXTERN real f_max_threshold       INIT(-1.0); /* threshold for force maximum */
 EXTERN real delta_epot_threshold INIT(0.0); /* threshold for delta Epot */
 #endif
 

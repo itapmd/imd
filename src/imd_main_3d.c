@@ -338,7 +338,7 @@ void main_loop(void)
     /* "global convergence": set momenta to 0 if P*F < 0 (global vectors) */
     if (ensemble == ENS_GLOK) {
       real ekin = 2 * tot_kin_energy / nactive;
-      if ((PxF < 0) || (ekin > glok_ekin_threshold) || (steps == steps_min)) {
+      if ((PxF < 0) || (ekin > glok_ekin_threshold)) {
         for (k=0; k<NCELLS; ++k) {
           cell *p;
           p = CELLPTR(k);
