@@ -94,7 +94,7 @@ EXTERN int  npairs[9], npairs2[9];       /* number of cell pairs */
 #else
 EXTERN pair *pairs[27];                  /* arrays of cell pairs */  
 EXTERN int  npairs[27], npairs2[27];     /* number of cell pairs */
-#ifdef VEC
+#if defined(VEC) || defined(NBLIST)
 EXTERN cell_nbrs_t *cnbrs INIT(NULL);    /* neighbors of each cell */ 
 #endif
 #endif
@@ -246,8 +246,8 @@ EXTERN int  use_curr_temp INIT(0);   /* which starting temp to use (flag) */
 EXTERN int  do_maxwell INIT(0.0);
 EXTERN long seed INIT(0);            /* seed for random number generator */
 #ifdef NBLIST
-EXTERN real nblist_margin INIT(0.1); /* neighbor list margin */
-EXTERN int  nblist_count  INIT(0);   /* counting neighbor list rebuild */
+EXTERN real nbl_margin INIT(0.4);    /* neighbor list margin */
+EXTERN int  nbl_count  INIT(0);      /* counting neighbor list rebuild */
 #endif
 
 /* square of global force vector f=(f1.x, f1.y,...,fn.z) */
@@ -279,7 +279,7 @@ EXTERN int parallel_input  INIT(1);       /* Flag for parallel input */
 EXTERN ivektor my_coord INIT(nullivektor);/* Cartesian coordinates of cpu */
 EXTERN ivektor cpu_dim INIT(einsivektor); /* Dimensions of CPU-Array */
 EXTERN int binc INIT(0);                  /* buffer size per atom */
-EXTERN int *cpu_ranks INIT(0);            /* Mapping of coords to ranks */
+EXTERN int *cpu_ranks INIT(NULL);         /* Mapping of coords to ranks */
 #ifdef MPI
 EXTERN MPI_Comm cpugrid;                  /* Cartesian MPI communicator */
 

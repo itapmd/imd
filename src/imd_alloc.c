@@ -198,6 +198,9 @@ void move_atom(cell *to, cell *from, int index)
 #ifdef COVALENT
   /* neighbor table is not copied */
 #endif
+#ifdef NBLIST
+  /* reference positions of neighbor list are not copied */
+#endif
 #ifdef UNIAX
   to->traeg_moment[to->n] = from->traeg_moment[index]; 
   to->achse X(to->n) = from->achse X(index); 
@@ -239,20 +242,20 @@ void move_atom(cell *to, cell *from, int index)
     from->eam2_rho_h[index] = from->eam2_rho_h[from->n];
 #endif
 #ifdef CG
-  from->h X(index) = from->h X(from->n); 
-  from->h Y(index) = from->h Y(from->n); 
+    from->h X(index) = from->h X(from->n); 
+    from->h Y(index) = from->h Y(from->n); 
 #ifndef TWOD
-  from->h Z(index) = from->h Z(from->n); 
+    from->h Z(index) = from->h Z(from->n); 
 #endif 
-  from->g X(index) = from->g X(from->n); 
-  from->g Y(index) = from->g Y(from->n); 
+    from->g X(index) = from->g X(from->n); 
+    from->g Y(index) = from->g Y(from->n); 
 #ifndef TWOD
-  from->g Z(index) = from->g Z(from->n); 
+    from->g Z(index) = from->g Z(from->n); 
 #endif  
-  from->old_ort X(index) = from->old_ort X(from->n); 
-  from->old_ort Y(index) = from->old_ort Y(from->n); 
+    from->old_ort X(index) = from->old_ort X(from->n); 
+    from->old_ort Y(index) = from->old_ort Y(from->n); 
 #ifndef TWOD
-  from->old_ort Z(index) = from->old_ort Z(from->n); 
+    from->old_ort Z(index) = from->old_ort Z(from->n); 
 #endif
 #endif
 #ifdef DISLOC
@@ -309,6 +312,9 @@ void move_atom(cell *to, cell *from, int index)
 #endif
 #ifdef COVALENT
     /* neighbor table is not copied */
+#endif
+#ifdef NBLIST
+    /* reference positions of neighbor list are not copied */
 #endif
 #ifdef UNIAX
     from->traeg_moment[index] = from->traeg_moment[from->n]; 
@@ -449,6 +455,9 @@ void alloc_cell(cell *thecell, int count)
 #ifdef COVALENT
     newcell.neigh  = NULL;
 #endif
+#ifdef NBLIST
+    newcell.nbl_pos  = NULL;
+#endif
 #ifdef UNIAX
     newcell.traeg_moment = NULL;
     newcell.achse = NULL;
@@ -547,6 +556,9 @@ void alloc_cell(cell *thecell, int count)
       newcell.neigh[i] = alloc_neightab(newcell.neigh[i], neigh_len);
     }
 #endif
+#ifdef NBLIST
+    newcell.nbl_pos = (real *) malloc(count*DIM*sizeof(real));
+#endif
 #ifdef UNIAX
     newcell.traeg_moment  = (real    * ) malloc(count * sizeof(real)    );
     newcell.shape = (real *) malloc(count*DIM*sizeof(real));
@@ -586,6 +598,9 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef STRESS_TENS
         || (NULL == newcell.presstens)
+#endif
+#ifdef NBLIST
+        || (NULL == newcell.nbl_pos)
 #endif
 #ifdef UNIAX
         || (NULL == newcell.traeg_moment)
@@ -673,6 +688,9 @@ void alloc_cell(cell *thecell, int count)
 #ifdef STRESS_TENS
       memcpy(newcell.presstens, thecell->presstens, ncopy*sizeof(sym_tensor));
 #endif
+#ifdef NBLIST
+      memcpy(newcell.nbl_pos,  thecell->nbl_pos,  ncopy * sizeof(real));
+#endif
 #ifdef UNIAX
       memcpy(newcell.traeg_moment, thecell->traeg_moment, ncopy*sizeof(real));
       memcpy(newcell.achse ,   thecell->achse,    ncopy * DIM * sizeof(real));
@@ -721,6 +739,9 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef COVALENT
     free(thecell->neigh);
+#endif
+#ifdef NBLIST
+    free(thecell->nbl_pos);
 #endif
 #ifdef UNIAX
     free(thecell->traeg_moment);
@@ -773,6 +794,9 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef COVALENT
   thecell->neigh = newcell.neigh;
+#endif
+#ifdef NBLIST
+  thecell->nbl_pos = newcell.nbl_pos;
 #endif
 #ifdef UNIAX
   thecell->traeg_moment = newcell.traeg_moment;

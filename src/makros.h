@@ -109,6 +109,9 @@ INLINE static int MOD(shortint p, int q)
 #ifdef COVALENT
 /* not supported in VEC mode */
 #endif
+#ifdef NBLIST
+#define NBL_POS(cell,i,sub)     (atoms.nbl_pos sub((cell)->ind[i]))
+#endif
 #ifdef UNIAX
 #define TRAEG_MOMENT(cell,i)    (atoms.traeg_moment   [(cell)->ind[i]])
 #define ACHSE(cell,i,sub)       (atoms.achse       sub((cell)->ind[i]))
@@ -180,6 +183,9 @@ INLINE static int MOD(shortint p, int q)
 #define NSORTE(neigh,i)         ((neigh)->typ[i])
 #define NZELLE(neigh,i)         ((cell *) (neigh)->cl[i])
 #define NNUMMER(neigh,i)        ((neigh)->num[i])
+#endif
+#ifdef NBLIST
+#define NBL_POS(cell,i,sub)     ((cell)->nbl_pos sub(i))
 #endif
 #ifdef UNIAX
 #define TRAEG_MOMENT(cell,i)    ((cell)->traeg_moment[i])

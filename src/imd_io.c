@@ -129,7 +129,7 @@ void write_config(int fzhlr, int steps)
   /* first make sure that every atom is inside the box and on the right CPU */
   if (1==parallel_output) {
 #ifdef NBLIST
-    make_nblist(steps);
+    make_nblist();
 #else
     do_boundaries();
     fix_cells();
@@ -157,7 +157,7 @@ void write_ssconfig(int steps)
   /* first make sure that every atom is inside the box and on the right CPU */
   if (1==parallel_output) {
 #ifdef NBLIST
-    make_nblist(steps);
+    make_nblist();
 #else
     do_boundaries();
     fix_cells();
@@ -186,7 +186,7 @@ void write_cgconfig(int steps)
   /* first make sure that every atom is inside the box and on the right CPU */
   if (1==parallel_output) {
 #ifdef NBLIST
-    make_nblist(steps);
+    make_nblist();
 #else
     do_boundaries();
     fix_cells();

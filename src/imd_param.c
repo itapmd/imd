@@ -468,9 +468,9 @@ void getparamfile(char *paramfname, int sim)
       getparam("pbc_dirs",&pbc_dirs,PARAM_INT,DIM,DIM);
     }
 #ifdef NBLIST
-    else if (strcasecmp(token,"nblist_margin")==0) {
+    else if (strcasecmp(token,"nbl_margin")==0) {
       /* margin of neighbor list */
-      getparam(token,&nblist_margin,PARAM_REAL,1,1);
+      getparam(token,&nbl_margin,PARAM_REAL,1,1);
     }
 #endif
 #ifdef EFILTER
@@ -2177,7 +2177,7 @@ void broadcast_params() {
   }
 
 #ifdef NBLIST
-  MPI_Bcast( nblist_margin, 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &nbl_margin, 1, REAL, 0, MPI_COMM_WORLD);
 #endif
 #ifdef EFILTER
   if (0!=myid){

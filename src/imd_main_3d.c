@@ -122,7 +122,7 @@ void main_loop(void)
 #endif
 
 #ifdef NBLIST
-  make_nblist(0);
+  make_nblist();
 #endif
 
   /* simulation loop */
@@ -417,7 +417,7 @@ void main_loop(void)
 #endif
 
 #ifdef NBLIST
-    check_nblist(steps);
+    check_nblist();
 #else
     do_boundaries();    
     fix_cells();  

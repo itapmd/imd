@@ -53,6 +53,10 @@ void main_loop(void)
   deform_int = 0;
 #endif
 
+#ifdef NBLIST
+  make_nblist(0);
+#endif
+
 /********************** outer simulation loop ****************************/
 /* steps now no 'time' steps, one step equals a total relaxation         */
 
@@ -95,20 +99,22 @@ void main_loop(void)
 #endif
 
 #ifdef DEFORM
-	if(steps>0)     /* first relax undeformed sample */
-	deform_sample();
+    if(steps>0)     /* first relax undeformed sample */
+    deform_sample();
 #endif
-  /* initialize with random noise ("temperature"), if necessary *
-   * -> let the system evolve anealsteps with nve                        */
-     if (do_maxwell) maxwell(temperature);
-     for(astep=0;astep<annealsteps;astep++)
-    {
+    /* initialize with random noise ("temperature"), if necessary */
+    /* -> let the system evolve anealsteps with nve               */
+    if (do_maxwell) maxwell(temperature);
+    for(astep=0;astep<annealsteps;astep++) {
 	calc_forces(astep);
 	ctf++;
 	move_atoms_nve(); 
+#ifdef NBLIST
+        check_nblist();
+#else
 	do_boundaries();    
 	fix_cells();  
-	
+#endif
     }
 
     /***** Now do the Conjugate gradient ************/
@@ -255,11 +261,16 @@ int linmin()
 
 
 /* ondimensional function, used by brent */
-real fonedim ( real alpha)  /* sets the global variables epot,fnorm corresponding to alpha */
+/* sets the global variables epot,fnorm corresponding to alpha */
+real fonedim ( real alpha)  
 {
     move_atoms_cg(alpha);
+#ifdef NBLIST
+    check_nblist();
+#else
     do_boundaries();    
     fix_cells();
+#endif
     calc_forces(1);       /* why does calc_forces needs steps ? */
     calc_fnorm();
     return (CGVAL);

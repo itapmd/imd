@@ -120,8 +120,8 @@ vektor  vec_prod(vektor u, vektor v);
 void make_box(void);
 void init_cells(void);
 void make_cell_lists(void);
-#ifdef VEC
-void make_cell_lists_vec(void);
+#ifdef NBLIST
+void make_cell_lists_nblist(void);
 #endif
 void check_pairs(void);
 void move_atom(cell *to, cell *from, int index);
@@ -151,8 +151,9 @@ void do_forces2(cell*, real*, real*, real*, real*, real*, real*, real*, real*);
 void do_forces_eam2(cell*, cell*, vektor, real*, real*, real*, real*, real*, real*, real*, real*);
 #endif
 #ifdef NBLIST
-void make_nblist(int);
-void check_nblist(int);
+int  estimate_nblist_size(void);
+void make_nblist(void);
+void check_nblist(void);
 #endif
 #ifdef MEAM
 void init_meam(void);
@@ -175,7 +176,7 @@ void gay_berne ( vektor r12, vektor e1, vektor e2,
 #endif
 
 /* communication for force computation - files imd_comm_force_2/3d.c */
-#if defined(MPI) || defined(VEC)
+#if defined(MPI) || defined(NBLIST)
 #ifdef TWOD
 void send_cells (void (*copy_func)  (int, int, int, int),
                  void (*pack_func)  (msgbuf*, int, int),
@@ -211,7 +212,7 @@ void unpack_rho_h    ( msgbuf *b, int k, int l, int m );
 void unpack_add_rho_h( msgbuf *b, int k, int l, int m );
 #endif
 #endif /* 3D  */
-#endif /* MPI or VEC */
+#endif /* MPI or NBLIST */
 
 /* integrators - file imd_integrate.c */
 void move_atoms_nve(void);

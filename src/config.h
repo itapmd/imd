@@ -75,15 +75,18 @@
    so that the forces go continuously to zero */
 #define POT_TAIL 0.05
 
-/* with VEC or MPI we always use buffer cells */
-#if defined(MPI) || defined(VEC)
+/* with VEC or MPI or NBL we always use buffer cells */
+#if defined(MPI) || defined(VEC) || defined(NBL)
 #define BUFCELLS
 #endif
 
 #ifdef VEC
 /* #define MULTIPOT */
 #define N_POT_TAB 128
-#define REFPOS
+#define NBLIST
+#endif
+
+#ifdef NBL
 #define NBLIST
 #endif
 

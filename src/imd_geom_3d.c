@@ -109,7 +109,7 @@ void init_cells( void )
 
 #ifdef NBLIST
   /* add neighbor list margin */
-  cellsz = SQR( sqrt((double) cellsz) + nblist_margin );
+  cellsz = SQR( sqrt((double) cellsz) + nbl_margin );
 #endif
 
 #ifdef NPT
@@ -294,15 +294,15 @@ void init_cells( void )
     }
     free(cell_array_old);
 #ifdef NBLIST
-    make_nblist(0);
+    make_nblist();
 #else
     fix_cells();
 #endif
   }
 
   make_cell_lists();
-#ifdef VEC
-  make_cell_lists_vec();
+#ifdef NBLIST
+  make_cell_lists_nblist();
 #endif
 }
 
@@ -455,7 +455,7 @@ void make_cell_lists(void)
                 P = pairs[nn] + npairs[nn];
                 P->np = i*cell_dim.y*cell_dim.z + j*cell_dim.z + k;
                 P->nq = r*cell_dim.y*cell_dim.z + s*cell_dim.z + t;
-#ifndef VEC
+#ifndef NBLIST
                 P->ipbc[0] = ipbc.x;
                 P->ipbc[1] = ipbc.y;
                 P->ipbc[2] = ipbc.z;
@@ -531,7 +531,7 @@ void make_cell_lists(void)
                   P = pairs[nn] + npairs2[nn];
                   P->np = i*cell_dim.y*cell_dim.z + j*cell_dim.z + k;
                   P->nq = r*cell_dim.y*cell_dim.z + s*cell_dim.z + t;
-#ifndef VEC
+#ifndef NBLIST
                   P->ipbc[0] = ipbc.x;
                   P->ipbc[1] = ipbc.y;
                   P->ipbc[2] = ipbc.z;
@@ -579,15 +579,15 @@ void check_pairs()
   free(lst);
 }
 
-#ifdef VEC
+#ifdef NBLIST
 
 /******************************************************************************
 *
-*  make_cell_lists_vec creates for each cell a list of neighbor cells
+*  make_cell_lists_nblist creates for each cell a list of neighbor cells
 *
 ******************************************************************************/
 
-void make_cell_lists_vec(void)
+void make_cell_lists_nblist(void)
 {
   int i,j,k, l,m,n, r,s,t, nn, ncnbrs=0;
   cell_nbrs_t *CN;

@@ -92,6 +92,7 @@ void setup_mpi_topology( void )
 void setup_mpi_topology(void)
 {
   cpu_ranks = (int *) calloc(1, sizeof(int));
+  if (NULL==cpu_ranks) error("cannot allocate cpu_ranks");
 }
 
 #endif

@@ -22,13 +22,11 @@
 #include "imd.h"
 #include "potaccess.h"
 
-#define N0 17000     /* at least atoms.n */
+#define N0 140000     /* at least atoms.n */
 #define MC 40        /* maximum number of particles in cell */
 #define BS 100
 #define N1 MC*14
 #define N2 MC*4
-
-#define VERSION3
 
 /******************************************************************************
 *
@@ -40,12 +38,16 @@
 *
 *  We can use two versions of calc_forces:
 *
-*     VERSION2:  vectorizing LLC algorithm as in Grest, Dünwald, Kremer
-*     VERSION3:  keep one atom fixed, run over neighbors
+*     VEC2:  vectorizing LLC algorithm as in Grest, Dünwald, Kremer
+*     VEC3:  keep one atom fixed, run over neighbors
 *
 ******************************************************************************/
 
-#ifdef VERSION2
+#if !defined(VEC2) && !defined(VEC3)
+#define VEC2
+#endif
+
+#ifdef VEC2
 
 int li[N0*N2], lj[N0*N2], col[N0*N2], lbeg[N1], lend[N1], ltot; 
 
@@ -58,7 +60,7 @@ int li[N0*N2], lj[N0*N2], col[N0*N2], lbeg[N1], lend[N1], ltot;
 *
 ******************************************************************************/
 
-void make_nblist(int steps)
+void make_nblist()
 {
   long   i, j, k, l, m, n, len1, len2, max_cell;
   int    li1[N0], lj1[N0];
@@ -72,7 +74,7 @@ void make_nblist(int steps)
   fix_cells();
 
   /* update reference positions */
-  for (i=0; i<DIM*atoms.n; i++) atoms.refpos[i] = atoms.ort[i];
+  for (i=0; i<DIM*atoms.n; i++) atoms.nbl_pos[i] = atoms.ort[i];
 
   /* fill the buffer cells */
   send_cells(copy_cell,pack_cell,unpack_cell);
@@ -146,7 +148,7 @@ void make_nblist(int steps)
       if (lend[ltot] > lbeg[ltot]) ltot++;
     }
   }
-  nblist_count++;
+  nbl_count++;
 }
 
 /******************************************************************************
@@ -280,9 +282,9 @@ void calc_forces(int steps)
 
 }
 
-#endif /* VERSION2 */
+#endif /* VEC2 */
 
-#ifdef VERSION3
+#ifdef VEC3
 
 int tab[N2*N0], tlen[N0];
 
@@ -294,7 +296,7 @@ int tab[N2*N0], tlen[N0];
 *
 ******************************************************************************/
 
-void make_nblist(int steps)
+void make_nblist()
 {
   int  c, i, tb[N1];
 
@@ -307,7 +309,7 @@ void make_nblist(int steps)
   fix_cells();
 
   /* update reference positions */
-  for (i=0; i<DIM*atoms.n; i++) atoms.refpos[i] = atoms.ort[i];
+  for (i=0; i<DIM*atoms.n; i++) atoms.nbl_pos[i] = atoms.ort[i];
 
   /* fill the buffer cells */
   send_cells(copy_cell,pack_cell,unpack_cell);
@@ -364,7 +366,7 @@ void make_nblist(int steps)
       tlen[ii] = tn;
     }
   }
-  nblist_count++;
+  nbl_count++;
 }
 
 /******************************************************************************
@@ -544,7 +546,7 @@ void calc_forces(int steps)
 
 }
 
-#endif /* VERSION3 */
+#endif /* VEC3 */
 
 /******************************************************************************
 *
@@ -552,15 +554,15 @@ void calc_forces(int steps)
 *
 ******************************************************************************/
 
-void check_nblist(int steps)
+void check_nblist()
 {
   int  i;
   real dx, dy, dz, r2, max1=0.0, max2;
 
   for (i=0; i<atoms.n; i++) {
-    dx = atoms.ort X(i) - atoms.refpos X(i);
-    dy = atoms.ort Y(i) - atoms.refpos Y(i);
-    dz = atoms.ort Z(i) - atoms.refpos Z(i);
+    dx = atoms.ort X(i) - atoms.nbl_pos X(i);
+    dy = atoms.ort Y(i) - atoms.nbl_pos Y(i);
+    dz = atoms.ort Z(i) - atoms.nbl_pos Z(i);
     r2 = dx*dx + dy*dy +dz*dz;
     if (r2 > max1) max1 = r2;
   }
@@ -570,5 +572,5 @@ void check_nblist(int steps)
 #else
   max2 = max1;
 #endif
-  if (max2 > SQR(nblist_margin)) make_nblist(steps);
+  if (max2 > SQR(nbl_margin)) make_nblist();
 }

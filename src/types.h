@@ -146,6 +146,9 @@ typedef struct {
 #ifdef COVALENT
   neightab    **neigh;
 #endif
+#ifdef NBLIST
+  real        *nbl_pos;
+#endif
 #ifdef UNIAX
   real        *traeg_moment;
   real        *achse;
@@ -178,12 +181,12 @@ typedef cell minicell;
 
 typedef struct {
   integer np, nq;
-#ifndef VEC
+#ifndef NBLIST
   signed char ipbc[4];
 #endif
 } pair;
 
-#ifdef VEC
+#ifdef NBLIST
 typedef struct {
   integer np, nq[14];
 } cell_nbrs_t;

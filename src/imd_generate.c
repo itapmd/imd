@@ -426,7 +426,7 @@ void generate_lav()
   real     px[24],py[24],pz[24];
   real     xx, yy, zz;
   int      i,j,k,l,typ,pa[24];
-  long     count;
+  int      count;
 
 #ifdef MPI
   if (myid==0)
@@ -479,7 +479,7 @@ void generate_lav()
 #ifdef VEC
   /* estimate number of atoms per CPU, and allocate cell */
   count = (max.x-min.x) * (max.y-min.y) * (max.z-min.z) * 24;
-  count = (count * nallcells * 5) / (ncells * 4);
+  count = (int) (count * (1.25 * nallcells / ncells));
   atoms.n = 0;
   atoms.n_max = 0;
   atoms.n_buf = 0;

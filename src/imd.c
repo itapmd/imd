@@ -216,7 +216,7 @@ int main(int argc, char **argv)
 
 #ifdef NBLIST
     printf("Neighbor list update every %d steps on average\n\n", 
-           steps_max / nblist_count);
+           steps_max / nbl_count);
 #endif
 
 #ifdef EPITAX

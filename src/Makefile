@@ -591,8 +591,7 @@ MPISOURCES2D    = ${MPISOURCES} imd_main_mpi_2d.c imd_geom_mpi_2d.c \
 MPISOURCES3D    = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c \
 		  imd_comm_force_3d.c imd_fix_cells_3d.c
 
-VECSOURCES3D    = imd_main_vec_3d.c imd_geom_mpi_3d.c imd_comm_force_3d.c \
-                  imd_fix_cells_3d.c
+NBLSOURCES3D    = imd_geom_mpi_3d.c imd_comm_force_3d.c imd_fix_cells_3d.c
 
 PAIRSOURCES     = imd_forces.c
 EAM2SOURCES     = imd_forces_eam2.c
@@ -626,6 +625,7 @@ HEADERS := ${IMDHEADERS}
 
 # twod or not twod
 ifneq (,$(strip $(findstring 2d,${MAKETARGET})))
+
 # 2d, serial or mpi
 ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
 SOURCES	:= ${SOURCES2D} ${MPISOURCES2D}
@@ -633,19 +633,33 @@ else
 SOURCES	:= ${SOURCES2D} ${RISCSOURCES2D}
 endif
 CFLAGS  += -DTWOD
+
 else
+
 # 3d, vec, serial, mpi
 ifneq (,$(strip $(findstring vec,${MAKETARGET})))
+
+SOURCES	:= ${SOURCES3D} ${NBLSOURCES3D}
 ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
-SOURCES	:= ${SOURCES3D} ${VECSOURCES3D} ${MPISOURCES}
-else
-SOURCES	:= ${SOURCES3D} ${VECSOURCES3D}
+SOURCES	+= ${MPISOURCES}
 endif
+
 else
+
+ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
+SOURCES	:= ${SOURCES3D} ${NBLSOURCES3D}
+ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
+SOURCES	+= ${MPISOURCES}
+endif
+
+else
+
 ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
 SOURCES	:= ${SOURCES3D} ${MPISOURCES3D}
 else
 SOURCES	:= ${SOURCES3D} ${RISCSOURCES3D}
+endif
+
 endif
 endif
 endif
@@ -654,9 +668,13 @@ endif
 
 # pair interaction is the default
 ifneq (,$(strip $(findstring vec,${MAKETARGET})))
-FORCESOURCES =
+FORCESOURCES = imd_main_vec_3d.c
+else
+ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
+FORCESOURCES = imd_forces_nbl.c
 else
 FORCESOURCES = ${PAIRSOURCES}
+endif
 endif
 
 # PAIR
@@ -678,7 +696,9 @@ ifneq (,$(strip $(findstring asympot,${MAKETARGET})))
 CFLAGS += -DASYMPOT
 FORCESOURCES = ${EAM2SOURCES}
 else
+ifeq (,$(strip $(findstring nbl,${MAKETARGET})))
 FORCESOURCES += ${EAM2SOURCES}
+endif
 endif
 endif
 endif
@@ -790,6 +810,20 @@ endif
 # vector mode
 ifneq (,$(findstring vec,${MAKETARGET}))
 CFLAGS += -DVEC
+
+ifneq (,$(findstring vec2,${MAKETARGET}))
+CFLAGS += -DVEC2
+else
+ifneq (,$(findstring vec3,${MAKETARGET}))
+CFLAGS += -DVEC3
+endif
+endif
+
+endif
+
+# with neighbor lists
+ifneq (,$(findstring nbl,${MAKETARGET}))
+CFLAGS += -DNBL
 endif
 
 # socket interface
@@ -990,6 +1024,9 @@ ${OBJECTS}: ${HEADERS}
 # special rules for force computation
 imd_forces.o: imd_forces.c
 	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_forces.c
+
+imd_main_nbl_3d.o: imd_main_nbl_3d.c
+	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_main_nbl_3d.c
 
 imd_forces_eam2.o: imd_forces_eam2.c
 	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_forces_eam2.c

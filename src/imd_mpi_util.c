@@ -200,6 +200,9 @@ void copy_atom(msgbuf *to, int to_cpu, cell *p, int ind )
 #ifdef COVALENT
   /* neighbor table is not sent */
 #endif
+#ifdef NBLIST
+  /* neighbor list reference positions are not sent */
+#endif
 #ifdef UNIAX
   to->data[ to->n++ ] = TRAEG_MOMENT(p,ind);
   to->data[ to->n++ ] = ACHSE(p,ind,X); 
@@ -352,6 +355,9 @@ void copy_one_atom(msgbuf *to, int to_cpu, minicell *from, int index, int del)
 #ifdef COVALENT
       /* neighbor table need not be copied */
 #endif
+#ifdef NBLIST
+      /* neighbor list reference positions are not copied */
+#endif
 #ifdef UNIAX
       TRAEG_MOMENT(p,ind) = TRAEG_MOMENT(p,p->n);
       ACHSE(p,ind,X) = ACHSE(p,p->n,X); 
@@ -484,6 +490,9 @@ void process_buffer(msgbuf *b, cell *p)
     /* don't send force */
 #ifdef COVALENT
     /* don't send neighbor table */
+#endif
+#ifdef NBLIST
+    /* neighbor list reference positions are not sent */
 #endif
 #ifdef UNIAX
     TRAEG_MOMENT(input,0) = b->data[j++];

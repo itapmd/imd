@@ -52,6 +52,8 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int, vektor),
 
 #ifdef VEC
   atoms.n_buf = atoms.n;
+#endif
+#ifdef NBLIST
   if (pbc_dirs.x==1) {
     if (my_coord.x==0) evec = box_x;
     if (my_coord.x==cpu_dim.x-1) {
@@ -237,6 +239,8 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int, vektor),
 
 #ifdef VEC
   atoms.n_buf = atoms.n;
+#endif
+#ifdef NBLIST
   if (pbc_dirs.x==1) {
     if (my_coord.x==0) evec = box_x;
     if (my_coord.x==cpu_dim.x-1) {
