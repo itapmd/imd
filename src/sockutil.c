@@ -16,7 +16,8 @@
 #include <netinet/in.h>
 #include <netdb.h>
 #include <fcntl.h>
-#include "string.h"
+#include <errno.h>
+#include <string.h>
 #include "sockutil.h"
 
 #define min(a,b) ( ( (a) < (b) ) ? (a) : (b) )
@@ -58,7 +59,10 @@ int WriteFull(int fd, const void *buffer, int bytes)
 #ifdef DEBUG
     printf("Sent %d Bytes package\n",written);
 #endif
-    if (written < 0) return written; /* ERROR */
+    if (written < 0) {
+      perror("WriteFull");
+      return written; /* ERROR */
+    }
     nbytes-=written;
     bptr+=written;
     if (written==0) 
@@ -82,7 +86,10 @@ int ReadFull(int filedes, const void *buffer, int bytes)
 #ifdef DEBUG
     printf("Received %d Byte package\n",nread);
 #endif
-    if (nread < 0) return nread; /* ERROR */
+    if (nread < 0) {
+      perror("ReadFull");
+      return nread; /* ERROR */
+    }
     nbytes-=nread;
     bptr+=nread;
     /*    if (nread==0) break;*/

@@ -46,7 +46,6 @@ void init_socket()
     fprintf(stderr, "Opening server socket on port %d ... ", baseport);
     soc = OpenServerSocket(htons(baseport));
     if (soc < 1) error("Cannot open server socket");
-    fcntl(soc, F_SETFL, O_NONBLOCK);
   }
 
   /* IMD acts as client */
@@ -85,10 +84,13 @@ int connect_visualization()
   int flag = 0;
 
   if (server_socket) {
+    /* switch temporarily to non-blocking I/O on socket */
+    fcntl(soc, F_SETFL, O_NONBLOCK);
     if (1==read(soc, &byte, 1)) {
       flag = byte; /* convert to int */
       fprintf(stderr, "received socket_flag: %d\n", flag);
     }
+    fcntl(soc, F_SETFL, O_SYNC);
   } else {
     soc=OpenClientSocket(varIP,baseport);
     if (soc > 0) {
@@ -137,7 +139,10 @@ void check_socket() {
         vis_init();
         break;
       case VIS_QUIT:
-        if (0==myid) error("Termination request received.");
+        if (0==myid) {
+	  close_socket();
+          error("Termination request received.");
+	}
 	break;
       case VIS_WRITE_QUIT:
         vis_write_config_quit();
@@ -186,11 +191,13 @@ void check_socket() {
 void vis_init()
 {
   unsigned char data[4];
-  data[0] = PROTOCOL_VERSION_MAJOR;
-  data[1] = PROTOCOL_VERSION_MINOR;
-  data[2] = endian();
-  data[3] = DIM;
-  WriteFull( soc, (void *) data, 4 );
+  if (0==myid) {
+    data[0] = PROTOCOL_VERSION_MAJOR;
+    data[1] = PROTOCOL_VERSION_MINOR;
+    data[2] = endian();
+    data[3] = DIM;
+    WriteFull( soc, (void *) data, 4 );
+  }
 }
 
 /******************************************************************************
@@ -205,22 +212,10 @@ void vis_write_config_quit()
 #ifdef MPI
   MPI_Barrier(cpugrid);
 #endif
-  if (0==myid) error("Termination request received.");
-}
-
-/******************************************************************************
-*
-*  write an error message to socket; to announce it, 
-*  it is preceded by the negative of its length
-*
-******************************************************************************/
-
-void vis_send_msg(char *msg)
-{
-  integer len;
-  len = -(strlen(msg) + 1);
-  WriteFull( soc, (void *) &len, sizeof(integer) );
-  WriteFull( soc, (void *) msg, len );
+  if (0==myid) {
+    close_socket();
+    error("Termination request received.");
+  }
 }
 
 /******************************************************************************
@@ -308,9 +303,11 @@ void vis_init_atoms()
 #endif
 
   /* write the result to socket */
-  WriteFull( soc, &flags,   ATOMS_FLAG_SIZE * sizeof(integer) );
-  WriteFull( soc, &tot_min, ATOMS_FILT_SIZE * sizeof(float)   );
-  WriteFull( soc, &tot_max, ATOMS_FILT_SIZE * sizeof(float)   );
+  if (0==myid) {
+    WriteFull( soc, &flags,   ATOMS_FLAG_SIZE * sizeof(integer) );
+    WriteFull( soc, &tot_min, ATOMS_FILT_SIZE * sizeof(float)   );
+    WriteFull( soc, &tot_max, ATOMS_FILT_SIZE * sizeof(float)   );
+  }
 }
 
 
@@ -856,16 +853,15 @@ void write_distrib_using_sockets()
 {
   dist_t Ekin_dist, Epot_dist;
   unsigned char resolution_buffer[6];
-  int *flag;
+  int flag=1;
   float f;
 
   Ekin_dist.dim = dist_dim; Epot_dist.dim = dist_dim;
   Ekin_dist.ur  = dist_ur;  Epot_dist.ur  = dist_ur;
   Ekin_dist.ll  = dist_ll;  Epot_dist.ll  = dist_ll;
 
-  *flag = 0;
-  make_distrib_select(&Epot_dist, 1, flag, dist_Epot_fun); 
-  make_distrib_select(&Ekin_dist, 1, flag, dist_Ekin_fun); 
+  make_distrib_select(&Epot_dist, 1, &flag, dist_Epot_fun); 
+  make_distrib_select(&Ekin_dist, 1, &flag, dist_Ekin_fun); 
 
   if (0==myid) {
 
