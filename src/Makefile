@@ -1,4 +1,4 @@
-##############################################################################
+#############################################################################
 #
 # IMD -- The ITAP Molecular Dynamics Program
 #
@@ -127,9 +127,10 @@ TRANSSOURCES    = imd_transport.c
 
 # default compilers and libraries
 # if available, we take the Intel compiler
-ifneq (,${IA32ROOT})
+ifneq (,$(strip $(findstring ia32,${PATH})))
 CC_DEFAULT_SERIAL_i586		= icc
 CC_DEFAULT_OMP_i586		= icc
+CC_DEFAULT_OMPI_i586		= mpicc
 else
 CC_DEFAULT_SERIAL_i586		= gcc
 CC_DEFAULT_OMP_i586		= guidec
@@ -137,21 +138,23 @@ endif
 CC_DEFAULT_MPI_i586		= mpicc
 
 # gcc, serial
-CFLAGS_gcc_SERIAL_i586		= -mcpu=i686 -O3
+#CFLAGS_gcc_SERIAL_i586		= -O6 -funroll-all-loops -fomit-frame-pointer -march=pentiumpro -static -mfpmath=sse -msse -mmmx
+CFLAGS_gcc_SERIAL_i586		= -O -funroll-all-loops -fomit-frame-pointer -march=pentiumpro -static -mfpmath=sse -msse #-mmmx
+#CFLAGS_gcc_SERIAL_i586		= -mcpu=i686 -O3
 CFLAGS_gcc_SERIAL_i586_DEBUG	= -mcpu=i686 -g
 CFLAGS_gcc_SERIAL_i586_PROF	= -g3 -pg
 
 # pgcc, serial
-CFLAGS_pgcc_SERIAL_i586        	= -fast
+CFLAGS_pgcc_SERIAL_i586        	= -fast -tp p6 -Mvect=sse
 CFLAGS_pgcc_SERIAL_i586_DEBUG  	= -g -Xa
 CFLAGS_pgcc_SERIAL_i586_PROF   	= -Mprof=func
 
 # icc, serial
-CFLAGS_icc_SERIAL_i586        	= -O -ip -tpp6
+CFLAGS_icc_SERIAL_i586        	= -O -ip -xK
 CFLAGS_icc_SERIAL_i586_PROF	= -prof_gen
 
 # icc, OpenMP
-CFLAGS_icc_OMP_i586        	= -O -ip -tpp6 -openmp 
+CFLAGS_icc_OMP_i586        	= -O -ip -openmp -static 
 CFLAGS_icc_OMP_i586_PROF	= -prof_gen
 
 # kcc, serial
@@ -159,14 +162,27 @@ CFLAGS_KCC_SERIAL_i586       	= +K3 -O3 --diag_suppress 177,550
 
 # MPICH
 # there are many mpicc; if available, we take the Intel compiler
-ifneq (,${IA32ROOT})
-CFLAGS_mpicc_MPI_i586		= -O -ip -tpp6 -static
+ifneq (,$(strip $(findstring ia32,${PATH})))
+#CFLAGS_mpicc_MPI_i586		= -O -ip -tpp7 -static -L. -lgm
+CFLAGS_mpicc_MPI_i586		= -O -ip -static 
 CFLAGS_mpicc_MPI_i586_DEBUG	= -g
 CFLAGS_mpicc_MPI_i586_PROF	= -prof_gen
 else
 CFLAGS_mpicc_MPI_i586		= -O3
 CFLAGS_mpicc_MPI_i586_DEBUG	= -g
 CFLAGS_mpicc_MPI_i586_PROF	= -g3 -pg
+endif
+
+# MPICH + OpenMP
+# there are many mpicc; if available, we take the Intel compiler
+ifneq (,$(strip $(findstring ia32,${PATH})))
+CFLAGS_mpicc_OMPI_i586		= -O -ip -openmp -static
+CFLAGS_mpicc_OMPI_i586_DEBUG	= -g
+CFLAGS_mpicc_OMPI_i586_PROF	= -prof_gen
+#else
+#CFLAGS_mpicc_OMPI_i586		= -O3
+#CFLAGS_mpicc_OMPI_i586_DEBUG	= -g
+#CFLAGS_mpicc_OMPI_i586_PROF	= -g3 -pg
 endif
 
 # guidec, OpenMP
@@ -183,6 +199,28 @@ CFLAGS_pgcc_OMP_i586         	= -fast
 CFLAGS_pgcc_OMP_i586_DEBUG   	= -g -Xa
 CFLAGS_pgcc_OMP_i586_PROF    	= -fast -Mprof=func
 
+###########################################################################
+#
+# flags for Linux IA64
+#
+###########################################################################
+
+# default compilers and libraries
+CC_DEFAULT_SERIAL_ia64		= ecc
+CC_DEFAULT_OMP_ia64		= ecc
+#CC_DEFAULT_OMPI_ia64		= mpicc
+
+# ecc, serial
+CFLAGS_ecc_SERIAL_ia64        	= -O -ipo -static
+CFLAGS_ecc_SERIAL_ia64_PROF	= -prof_gen
+
+# ecc, OpenMP
+CFLAGS_ecc_OMP_ia64        	= -O -ipo -static -openmp
+CFLAGS_ecc_OMP_ia64_PROF	= -prof_gen
+
+# gcc, serial
+CFLAGS_gcc_SERIAL_ia64        	= -O3
+CFLAGS_gcc_SERIAL_ia64_PROF	= -pg
 
 ###########################################################################
 #
@@ -470,6 +508,10 @@ endif
 # icc
 ifneq (,$(strip $(findstring icc,${MAKETARGET})))
 CC = icc
+endif
+# ecc
+ifneq (,$(strip $(findstring ecc,${MAKETARGET})))
+CC = ecc
 endif
 # kcc
 ifneq (,$(strip $(findstring kcc,${MAKETARGET})))
