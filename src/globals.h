@@ -94,7 +94,7 @@ EXTERN int dis_interval INIT(0); /* Period of spatial eng. distrib output ==0 fo
 EXTERN int pic_interval INIT(0); /* Period of data output ==0 for no energy data */
 EXTERN int onl_interval INIT(0); /* Period of online visualization */
 EXTERN int dist_binary_io INIT(0); /* Flag for binary I/O */
-EXTERN ivektor dist_dim INIT(nullivektor); /* Resolution of spatial distrib */
+EXTERN ivektor dist_dim INIT(einsivektor); /* Resolution of spatial distrib */
 EXTERN str255 rundesc; /* Description */
 EXTERN str255 progname; /* Name of current executable argv[0] */
 EXTERN ivektor cellmin; /* Minimum index of local cells (1 with MPI, 0 otherwise) */
