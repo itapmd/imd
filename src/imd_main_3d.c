@@ -271,7 +271,7 @@ void main_loop(void)
     if (steps > glok_annealsteps) {
       if ((PxF<0.0)||(2.0*tot_kin_energy/nactive > glok_ekin_threshold)) {
 	for (k=0; k<NCELLS; ++k) {
-          cell *p:
+          cell *p;
 	  p = CELLPTR(k);
 	  for (i=0; i<p->n; ++i) {
 	    IMPULS(p,i,X) = 0.0;
