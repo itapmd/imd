@@ -1078,6 +1078,7 @@ void alloc_cell(cell *cl, int count)
 void read_parameters(int argc,char **argv)
 {
   str255 fname;
+  FILE *testfile;
 
 /* Check for Restart, process options */
 
@@ -1762,24 +1763,70 @@ void read_parameters(int argc,char **argv)
   /* Get restart parameters if restart */
   if (-1 != restart) {
     sprintf(fname,"%s.%d.itr",outfilename,restart);
+    testfile = fopen(fname,"r");
+    if (NULL==testfile) { 
+      sprintf(fname,"%s.%05d.itr",outfilename,restart);
+    } else {
+      fclose(testfile);
+    }
     getparamfile(fname);
   }
   else if  (-1 != avpos) {
     sprintf(fname,"%s.%d.avp.itr",outfilename,avpos);
+    testfile = fopen(fname,"r");
+    if (NULL==testfile) { 
+      sprintf(fname,"%s.%05d.avp.itr",outfilename,avpos);
+    } else {
+      fclose(testfile);
+    }
     getparamfile(fname);
   }
 
 #ifdef STRAIN
-  sprintf(infilename, "%s.dsp", outfilename);
-
-  if (-1 != restart) sprintf(infilename,"%s.%u.dsp",outfilename,restart);
+  if (-1 == restart) {
+    sprintf(infilename, "%s.dsp", outfilename);
+  }
+  else {
+    sprintf(infilename,"%s.%u.dsp",outfilename,restart);
+    testfile = fopen(infilename,"r");
+    if (NULL==testfile) { 
+      sprintf(infilename,"%s.%05d.dsp",outfilename,restart);
+    } else {
+      fclose(testfile);
+    }
+  }
 #elif defined(STRESS)
-  sprintf(infilename, "%s.press",outfilename);
-
-  if (-1 != restart) sprintf(infilename,"%s.%u.press",outfilename,restart);
+  if (-1 == restart) {
+    sprintf(infilename, "%s.press",outfilename);
+  }
+  else {
+    sprintf(infilename,"%s.%u.press",outfilename,restart);
+    testfile = fopen(infilename,"r");
+    if (NULL==testfile) { 
+      sprintf(infilename,"%s.%05d.press",outfilename,restart);
+    } else {
+      fclose(testfile);
+    }
+  }
 #else
-  if (-1 != restart) sprintf(infilename,"%s.%u",outfilename,restart);
-  else if (-1 != avpos) sprintf(infilename,"%s.%u.avp",outfilename,avpos);
+  if (-1 != restart) {
+    sprintf(infilename,"%s.%u.chkpt",outfilename,restart);
+    testfile = fopen(infilename,"r");
+    if (NULL==testfile) { 
+      sprintf(infilename,"%s.%05d.chkpt",outfilename,restart);
+    } else {
+      fclose(testfile);
+    }
+  }
+  else if (-1 != avpos) {
+    sprintf(infilename,"%s.%u.avp",outfilename,avpos);
+    testfile = fopen(infilename,"r");
+    if (NULL==testfile) { 
+      sprintf(infilename,"%s.%05d.avp",outfilename,avpos);
+    } else {
+      fclose(testfile);
+    }
+  }
 #endif
 
 #ifdef STRAIN
@@ -2176,7 +2223,7 @@ void read_atoms(str255 infilename)
 {
   FILE *infile;
   char buf[512];
-  int p, s, n;
+  int i, p, s, n;
   vektor pos, v;
   real m, e, c;
 #ifdef PS
