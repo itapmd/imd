@@ -910,9 +910,10 @@ void check_parameters_complete()
 	}
 #endif
 #ifdef MPI
-        if (cpu_dim.x==0) || (cpu_dim.y==0)
-#ifndef TWOD
-        || (cpu_dim.z==0)
+#ifdef TWOD
+        if ((cpu_dim.x==0) || (cpu_dim.y==0))
+#else
+        if ((cpu_dim.x==0) || (cpu_dim.y==0) || (cpu_dim.z==0))
 #endif
 	{
            error("cpu_dim is missing or zero\n");
