@@ -1782,7 +1782,7 @@ void broadcast_params() {
   MPI_Bcast( &avpos_res,         1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
-#ifdef
+#ifdef ATDIST
   error("Option ATDIST not supported under MPI");
 #endif
 
