@@ -75,6 +75,10 @@ cutpot: cutpot.c
 imd_power: fft.c imd_power.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ imd_power.c -lm
 
+#ppm_on_ppm
+ppm_on_ppm: ppm_on_ppm.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ ppm_on_ppm.c -lm
+
 #imd2ppm
 imd2ppm: imd2ppm.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ imd2ppm.c -lm
