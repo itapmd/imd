@@ -270,12 +270,9 @@ void getparamfile(char *paramfname, int sim)
   curline = 0;
   pf = fopen(paramfname,"r");
   if (NULL == pf) {
-    perror("getparam");
-#ifdef MPI
-    MPI_Abort(MPI_COMM_WORLD, 1);
-#endif
-    exit(10);
-  };
+    sprintf(tmpstr,"Could not open parameter file with name %s\n",paramfname);
+    error(tmpstr);
+  }
 
   /* set the random number generator seed to the */
   /* negative of the current time in seconds */
@@ -1257,85 +1254,79 @@ void read_parameters(int argc,char **argv)
   extern char *strdup(const char *);
 #endif
 
-#ifdef MPI
   if ( 0 == myid ) { /* Read Parameters on Master Process */
-#endif
 
-/* Check for Restart, process options */
-
-  strcpy(progname,argv[0]);
-  while ((argc > 1) && (argv[1][0] =='-')) {
-    switch (argv[1][1]) {
-      /* r - restart */
-    case 'r':
-      restart = atoi(&argv[1][2]);
-      break;
-    case 'p':
-      if (argv[1][2]=='\0') {
-        if (NULL != argv[2]) {
-          paramfilename = strdup(argv[2]);
-          --argc;
-          ++argv;
-        };
+    /* Check for Restart, process options */
+    strcpy(progname,argv[0]);
+    while ((argc > 1) && (argv[1][0] =='-')) {
+      switch (argv[1][1]) {
+        /* r - restart */
+        case 'r':
+          if (argv[1][2]=='\0') {
+            if (NULL != argv[2]) {
+              restart = atoi(argv[2]);
+              --argc;
+              ++argv;
+            }
+          }
+          else restart = atoi(&argv[1][2]);
+          break;
+        case 'p':
+          if (argv[1][2]=='\0') {
+            if (NULL != argv[2]) {
+              paramfilename = strdup(argv[2]);
+              --argc;
+              ++argv;
+            }
+          }
+          else paramfilename = strdup(&argv[1][2]);
+          break;
+        default:
+          printf("Illegal option %s \n",argv[1]);
+          usage();
+          exit(-1);
       }
-      else paramfilename = strdup(&argv[1][2]);
-#ifdef DEBUG
-      if (paramfilename) printf("%s\n",paramfilename);
-#endif
-      break;
-    default:
-      printf("Illegal option %s \n",argv[1]);
-      usage();
-      exit(-1);
+      ++argv;
+      --argc;
     }
-    ++argv;
-    --argc;
-  };
 
-#ifdef DEBUG
-  printf("getparamfile(%s);\n",paramfilename);
-#endif
-  getparamfile(paramfilename,1);
-  check_parameters_complete();
+    getparamfile(paramfilename,1);
+    check_parameters_complete();
 
-  /* Get restart parameters if restart */
-  if (0 != restart) {
-    sprintf(fname,"%s.%d.itr",outfilename,restart);
-    sprintf(infilename,"%s.%d.%s",outfilename,restart,"chkpt");
-    printf("Restarting from %s.\n",infilename);
-    getparamfile(fname,1);
-  } else {
-    /* Delete energy file if not restart */
-    sprintf(fname,"%s.eng",outfilename);
-    unlink(fname);
-    /* Delete distrib minmax file if not restart */
-    sprintf(fname,"%s.minmax.dist",outfilename);
-    unlink(fname);
-    /* Delete tempdist file if not restart */
-    sprintf(fname,"%s.tempdist",outfilename);
-    unlink(fname);
-    /* write header to minmax file, if we possibly need it */
-    if ((dist_dim.x>0) && (dis_interval>0)) { 
-      FILE *fl;
-      fl = fopen(fname,"w");
+    /* Get restart parameters if restart */
+    if (0 != restart) {
+      sprintf(fname,"%s.%d.itr",outfilename,restart);
+      sprintf(infilename,"%s.%d.%s",outfilename,restart,"chkpt");
+      printf("Restarting from %s.\n",infilename);
+      getparamfile(fname,1);
+    } else {
+      /* Delete energy file if not restart */
+      sprintf(fname,"%s.eng",outfilename);
+      unlink(fname);
+      /* Delete distrib minmax file if not restart */
+      sprintf(fname,"%s.minmax.dist",outfilename);
+      unlink(fname);
+      /* Delete tempdist file if not restart */
+      sprintf(fname,"%s.tempdist",outfilename);
+      unlink(fname);
+      /* write header to minmax file, if we possibly need it */
+      if ((dist_dim.x>0) && (dis_interval>0)) { 
+        FILE *fl;
+        fl = fopen(fname,"w");
 #ifdef TWOD
-      fprintf(fl,"# Dimension %d %d\n",dist_dim.x,dist_dim.y);
+        fprintf(fl,"# Dimension %d %d\n",dist_dim.x,dist_dim.y);
 #else
-      fprintf(fl,"# Dimension %d %d %d\n",dist_dim.x,dist_dim.y,dist_dim.z);
+        fprintf(fl,"# Dimension %d %d %d\n",dist_dim.x,dist_dim.y,dist_dim.z);
 #endif
-      fclose(fl);
-    }
+        fclose(fl);
+      }
 #ifdef MSQD
-    /* Delete msqd file if not restart */
-    sprintf(fname,"%s.msqd",outfilename);
-    unlink(fname);
+      /* Delete msqd file if not restart */
+      sprintf(fname,"%s.msqd",outfilename);
+      unlink(fname);
 #endif
-  };
-
-#ifdef MPI
-  };
-#endif
-
+    }
+  }
 }
 
 
