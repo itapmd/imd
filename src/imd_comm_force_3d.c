@@ -634,8 +634,9 @@ void copy_cell( int k, int l, int m, int r, int s, int t )
     ORT(to,i,X)   = ORT(from,i,X);
     ORT(to,i,Y)   = ORT(from,i,Y);
     ORT(to,i,Z)   = ORT(from,i,Z);
-#ifndef MONOLJ
+#ifndef MONO
     VSORTE(to,i)  = VSORTE(from,i);
+#endif
 #ifdef UNIAX
     ACHSE(to,i,X) = ACHSE(from,i,X);
     ACHSE(to,i,Y) = ACHSE(from,i,Y);
@@ -646,7 +647,6 @@ void copy_cell( int k, int l, int m, int r, int s, int t )
     POT_WELL(to,i,X) = POT_WELL(from,i,X);
     POT_WELL(to,i,Y) = POT_WELL(from,i,Y);
     POT_WELL(to,i,Z) = POT_WELL(from,i,Z);
-#endif
 #endif
   }
 }
@@ -670,8 +670,9 @@ void pack_cell( msgbuf *b, int k, int l, int m )
     b->data[ b->n++ ] = ORT(from,i,X);
     b->data[ b->n++ ] = ORT(from,i,Y);
     b->data[ b->n++ ] = ORT(from,i,Z);
-#ifndef MONOLJ
+#ifndef MONO
     b->data[ b->n++ ] = (real) VSORTE(from,i);
+#endif
 #ifdef UNIAX
     b->data[ b->n++ ] = ACHSE(from,i,X);
     b->data[ b->n++ ] = ACHSE(from,i,Y);
@@ -682,7 +683,6 @@ void pack_cell( msgbuf *b, int k, int l, int m )
     b->data[ b->n++ ] = POT_WELL(from,i,X);
     b->data[ b->n++ ] = POT_WELL(from,i,Y);
     b->data[ b->n++ ] = POT_WELL(from,i,Z);
-#endif
 #endif
   }
   if (b->n_max < b->n)  error("Buffer overflow in pack_cell");
@@ -714,8 +714,9 @@ void unpack_cell( msgbuf *b, int k, int l, int m )
     ORT(to,i,X) = b->data[ b->n++ ];
     ORT(to,i,Y) = b->data[ b->n++ ];
     ORT(to,i,Z) = b->data[ b->n++ ];
-#ifndef MONOLJ
+#ifndef MONO
     VSORTE(to,i) = (shortint) b->data[ b->n++ ];
+#endif
 #ifdef UNIAX
     ACHSE(to,i,X) = b->data[ b->n++ ];
     ACHSE(to,i,Y) = b->data[ b->n++ ];
@@ -726,7 +727,6 @@ void unpack_cell( msgbuf *b, int k, int l, int m )
     POT_WELL(to,i,X) = b->data[ b->n++ ];
     POT_WELL(to,i,Y) = b->data[ b->n++ ];
     POT_WELL(to,i,Z) = b->data[ b->n++ ];
-#endif
 #endif
   }
   if (b->n_max < b->n) error("Buffer overflow in unpack_cell");
@@ -782,7 +782,7 @@ void add_forces( int k, int l, int m, int r, int s, int t )
 ******************************************************************************/
 
 void pack_forces( msgbuf *b, int k, int l, int m)
- {
+{
   int i;
   cell *from;
     

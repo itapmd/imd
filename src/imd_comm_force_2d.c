@@ -431,7 +431,9 @@ void copy_cell( int j, int k, int l, int m )
   for (i=0; i<to->n; ++i) {
     ORT(to,i,X)  = ORT(from,i,X);
     ORT(to,i,Y)  = ORT(from,i,Y);
+#ifndef MONO
     VSORTE(to,i) = VSORTE(from,i);
+#endif
   }
 }
 
@@ -453,7 +455,9 @@ void pack_cell( msgbuf *b, int j, int k )
   for (i=0; i<from->n; ++i) {
     b->data[ b->n++ ] = ORT(from,i,X);
     b->data[ b->n++ ] = ORT(from,i,Y);
+#ifndef MONO
     b->data[ b->n++ ] = (real) VSORTE(from,i);
+#endif
   }
   if (b->n_max < b->n)  error("Buffer overflow in pack_cell");
 }
@@ -483,7 +487,9 @@ void unpack_cell( msgbuf *b, int j, int k )
   for (i=0; i<to->n; ++i) {
     ORT(to,i,X)  = b->data[ b->n++ ];
     ORT(to,i,Y)  = b->data[ b->n++ ];
+#ifndef MONO
     VSORTE(to,i) = (shortint) b->data[ b->n++ ];
+#endif
   }
   if (b->n_max < b->n) error("Buffer overflow in unpack_cell");
 }
