@@ -117,13 +117,13 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 	  }
 	  else 
               PAIR_INT(pot_zwi, pot_grad, pair_pot, col, inc, r2, is_short)   
-#elif MONOLJ
+#elif defined(MONOLJ)
       if (r2 <= monolj_r2_cut) {
         PAIR_INT_MONOLJ(pot_zwi, pot_grad, r2)
-#elif KEATING
+#elif defined(KEATING)
       if (r2 < keat_r2_cut[p_typ][q_typ]) {
 	PAIR_INT_KEATING(pot_zwi, pot_grad, p_typ, q_typ, r2)
-#elif STIWEB  
+#elif defined(STIWEB)  
       if (r2 < sw_2_a1[p_typ][q_typ]) {
 	PAIR_INT_STIWEB(pot_zwi, pot_grad, p_typ, q_typ, r2)
 #else
@@ -284,7 +284,6 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
     } /* for j */
   } /* for i */
 
-#ifndef TERSOFF
 #ifndef MONOLJ
   if (is_short==1) printf("\n Short distance!\n");
 #endif
@@ -300,12 +299,6 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #else
   *Virial += tmp_virial;
 #endif 
-#endif /* TERSOFF */ 
 
 }
-
-
-
-
-
 

@@ -149,7 +149,7 @@ CFLAGS_pgcc_SERIAL_i586_DEBUG  	= -g -Xa
 CFLAGS_pgcc_SERIAL_i586_PROF   	= -Mprof=func
 
 # icc, serial
-CFLAGS_icc_SERIAL_i586        	= -O -ip -axK -static
+CFLAGS_icc_SERIAL_i586        	= -O -ip -axK #-static
 CFLAGS_icc_SERIAL_i586_PROF	= -prof_gen
 RCDFLAGS_icc_SERIAL_i586	= -DRCD -rcd
 CFLAGS_icc_SERIAL_i586_DEBUG  	= -g
