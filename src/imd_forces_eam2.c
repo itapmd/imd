@@ -717,3 +717,5 @@ void eam2_do_forces2(cell *p, cell *q, vektor pbc)
 } /* eam2_do_forces2 */
 
 
+
+

@@ -585,7 +585,7 @@ void eam2_read_atomic_rho(str255 at_rho_filename)
       r_begin=*PTR_2D(eam2_r_begin,i,j,ntypes,ntypes);
       r_step =*PTR_2D(eam2_r_step,i,j,ntypes,ntypes);
       numstep=1+(r_end - r_begin)/r_step;
-      number_of_steps = (int) rint(numstep);
+      number_of_steps = (int) (numstep+0.5);
       for(k=0;k<number_of_steps;k++){
 	if ( 1 != fscanf(infile,"%lf", &val)) 
 	    error("wrong format of atomic_e-density_file.");
