@@ -447,6 +447,12 @@ void getparamfile(char *paramfname, int sim)
       getparam("e_pot_upper",&upper_e_pot,PARAM_REAL,1,1);
     }
 #endif
+#ifdef SNAPSHOT
+    else if (strcasecmp(token,"sscount")==0) {
+      /* actual snapshot nr., for restarting */
+      getparam("sscount",&sscount,PARAM_INT,1,1);
+    }
+#endif
     else if (strcasecmp(token,"total_types")==0) {
       /* TOTAL nuber of atoms: ntypes + virtualtypes */
       getparam("total_types",&vtypes,PARAM_INT,1,1);
@@ -1660,6 +1666,10 @@ void broadcast_params() {
   MPI_Bcast( &lower_e_pot,    1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &upper_e_pot,    1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &efrep_interval, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
+
+#ifdef SNAPSHOT
+  MPI_Bcast( &sscount, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
   MPI_Bcast( &vtypes,         1, MPI_INT, 0, MPI_COMM_WORLD);

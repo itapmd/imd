@@ -95,7 +95,7 @@ void write_config_select(int fzhlr, char *suffix,
   (*write_atoms_fun)(out);
 #ifdef MPI
   /* if serial output, receive and write foreign data */
-  if ((0==myid) && (parallel_output==0) && (num_cpus>1)) {
+  if ((0==myid) && (parallel_output==0)) {
     MPI_Status status;
     int m=1, len;
     do {
@@ -328,7 +328,7 @@ void write_atoms_wf(FILE *out)
 #ifdef TWOD
           "%d %d %12f %12f %12f %12g %12g %12f\n",
 #else
-          "%d %d %12f %12f %12f %12f %12g %12g %12g %12f\n",
+          "%d %d %12f %12f %12f %12f %12e %12e %12e %12f\n",
 #endif
           NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
           p->ort X(i),

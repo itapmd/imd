@@ -181,11 +181,9 @@ void main_loop(void)
 #ifdef SNAPSHOT
 	  write_eng_file(steps);
 	  write_ssconfig(steps);
-#ifdef WRITEF
-	  write_config_select(sscount, "wf",write_atoms_wf, write_header_wf);
-#endif
 	  sscount++;
 #endif
+	  /* maxwell(temperature); doesn't seem to work better */ 
 	  deform_sample();
 	  deform_int=0;
       }
@@ -229,6 +227,10 @@ void main_loop(void)
 #endif
 
     calc_forces(steps);
+
+#ifdef WRITEF /* can be used as tool for postprocessing */
+    write_config_select(sscount, "wf",write_atoms_wf, write_header_wf);
+#endif
 
 #ifdef EPITAX
     if (steps == steps_min) {

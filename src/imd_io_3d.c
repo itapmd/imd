@@ -553,6 +553,9 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
 
   fprintf(out,"# checkpoint %d\n",fzhlr);
   fprintf(out,"startstep \t%d\n",steps+1);
+#ifdef SNAPSHOT
+  fprintf(out,"sscount \t%d\n",sscount);
+#endif
   fprintf(out,"box_x \t%.16f %.16f %.16f\n",box_x.x,box_x.y,box_x.z);
   fprintf(out,"box_y \t%.16f %.16f %.16f\n",box_y.x,box_y.y,box_y.z);
   fprintf(out,"box_z \t%.16f %.16f %.16f\n",box_z.x,box_z.y,box_z.z);

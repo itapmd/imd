@@ -156,7 +156,26 @@ void main_loop(void)
     if ((hom_interval > 0) && (0 == steps%hom_interval)) shear_sample();
     if ((lindef_interval > 0) && (0 == steps%lindef_interval)) lin_deform();
 #endif
+
 #ifdef DEFORM
+#ifdef GLOKDEFORM
+    if (steps > annealsteps) {
+      deform_int++;
+      if ((fnorm < fnorm_threshold) || 
+          (deform_int==max_deform_int)) 
+      {
+#ifdef SNAPSHOT
+	  write_eng_file(steps);
+	  write_ssconfig(steps);
+	  sscount++;
+#endif
+	  maxwell(temperature);
+	  deform_sample();
+	  deform_int=0;
+      }
+    }
+#endif
+#ifndef GLOKDEFORM
     if (steps > annealsteps) {
       deform_int++;
       if ((2.0*tot_kin_energy/nactive < ekin_threshold) || 
@@ -165,6 +184,7 @@ void main_loop(void)
         deform_int=0;
       }
     }
+#endif
 #endif
 
 #ifdef FBC
@@ -177,6 +197,10 @@ void main_loop(void)
 #endif
 
     calc_forces(steps); 
+
+#ifdef WRITEF /* can be used as tool for postprocessing */
+    write_config_select(sscount, "wf",write_atoms_wf, write_header_wf);
+#endif
 
 #ifdef EPITAX
     if (steps == steps_min) {
