@@ -912,7 +912,12 @@ void read_atoms(str255 infilename)
   cell *to;
   ivektor cellc;
 
+  /* we first try the old checkpoint name, then the new */
   infile = fopen(infilename,"r");
+  if ((NULL==infile) && (restart!=0)) {
+    infilename = strcat(infilename,".chkpt");
+    infile = fopen(infilename,"r");
+  }
   if (NULL==infile) {
     sprintf(error_msg,"Cannot open atoms file %s",infilename);
     error(error_msg);
