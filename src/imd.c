@@ -103,6 +103,13 @@ int main(int argc, char **argv)
   }
   if (0 == myid) printf("Done reading atoms.\n");
 
+#ifdef EPITAX
+  if (0 == myid) printf("EPITAX: Largest substrate atom number: %d\n", epitax_sub_n);
+  epitax_number = epitax_sub_n;
+  epitax_level  = substrate_level();
+  check_boxheight();
+#endif
+
 #ifdef EWALD
   init_ewald();
 #endif
@@ -158,6 +165,10 @@ int main(int argc, char **argv)
     printf("%s\n\n",progname);
     printf("started at %s", ctime(&tstart));
     printf("finished at %s\n", ctime(&tend));
+
+#ifdef EPITAX
+    if (0 == myid) printf("EPITAX: %d atoms created.\n", nepitax);
+#endif
 
 #ifdef MPI
     printf("Did %d steps with %d atoms and %d CPUs.\n", 

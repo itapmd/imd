@@ -302,6 +302,15 @@ void init_ewald(void);
 real erfc1(real x);
 #endif
 
+#ifdef EPITAX
+/* support for molecular beam epitaxy - file imd_epitax.c */
+void create_atom(int type, real mass, real temp);
+void delete_atoms(void);
+real substrate_level(void);
+void calc_poteng_min(void);
+ivektor cell_map(ivektor cellc);
+#endif
+
 /* support for dislocations - file imd_io.c */
 #ifdef DISLOC
 void reset_Epot_ref(void);

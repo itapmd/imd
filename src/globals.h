@@ -30,6 +30,7 @@
 #define nullivektor { 0, 0 }
 #define einsvektor  { 1.0, 1.0 }
 #define einsivektor { 1, 1 }
+#define parteinsivektor { 1, 0 }
 #define nullsymtensor { 0.0, 0.0, 0.0 }
 
 #else
@@ -37,6 +38,7 @@
 #define nullivektor { 0, 0, 0 }
 #define einsvektor  { 1.0, 1.0, 1.0 }
 #define einsivektor { 1, 1, 1 }
+#define parteinsivektor { 1, 1, 0 }
 #define nullsymtensor { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #endif
 
@@ -68,7 +70,11 @@ EXTERN ivektor cell_dim;                 /* dimension of cell array (per cpu)*/
 EXTERN ivektor global_cell_dim;          /* dimension of cell array */
 
 /* Boundary Conditions */
+#ifdef EPITAX
+EXTERN ivektor pbc_dirs INIT(parteinsivektor);
+#else
 EXTERN ivektor pbc_dirs INIT(einsivektor); /* directions with pbc */
+#endif
 
 EXTERN int vtypes INIT(0);   /* vtypes = ntypes + ntypes*(types of forces) */
 EXTERN vektor *restrictions INIT(NULL);  /* directions the atom is allowed to move in */
@@ -454,6 +460,25 @@ EXTERN real ters_h[10];
 #ifdef COVALENT  
 EXTERN int neigh_len INIT(50);     /* max neighbors */
 #endif 
+
+/* for EPITAX */
+#ifdef EPITAX
+EXTERN int epitax_rate[10];        /* creation rate of atoms */
+EXTERN int epitax_type[10];        /* type of atom to be created */
+EXTERN real epitax_mass[10];       /* mass of atom to be created */
+EXTERN real epitax_temp[10];       /* temperature of atom to be created */
+EXTERN real epitax_cutoff INIT(0.0);  
+EXTERN int epitax_maxsteps;        /* number of timesteps with atom creation */
+EXTERN int epitax_startstep INIT(0);  /* timestep where cretion begins */
+EXTERN real epitax_ctrl INIT(1.0);    /* parameter for change NVE -> NVT */ 
+EXTERN real epitax_height;
+EXTERN real epitax_level;
+EXTERN int epitax_number;
+EXTERN int nepitax INIT(0);
+EXTERN int epitax_sub_n INIT(0);
+EXTERN real epitax_poteng_min INIT(0);
+EXTERN real epitax_speed INIT(1.0);
+#endif
 
 #ifdef EWALD
 EXTERN real     charge[10];     /* Charge of atoms */

@@ -105,6 +105,8 @@ COVALENTSOURCES = imd_forces.c imd_forces_covalent.c
 UNIAXSOURCES    = imd_forces_uniax.c imd_gay_berne.c
 EWALDSOURCES    = imd_forces.c imd_forces_ewald.c
 
+EPITAXSOURCES   = imd_epitax.c
+
 DEFORMSOURCES   = imd_deform.c
 
 SOCKHEADERS     = socket_tokens.h sockets.h sockutil.h
@@ -634,6 +636,12 @@ endif
 
 ifneq (,$(findstring ordpar,${MAKETARGET}))
 CFLAGS += -DORDPAR
+endif
+
+# EPITAX
+ifneq (,$(strip $(findstring epitax,${MAKETARGET})))
+CFLAGS  += -DEPITAX
+SOURCES += ${EPITAXSOURCES}
 endif
 
 # Correlation

@@ -29,14 +29,16 @@
 *
 *****************************************************************************/
 
-#ifdef NVE
+#if defined(NVE) || defined(EPITAX)
 
 void move_atoms_nve(void)
 {
   int k;
   real tmpvec1[3], tmpvec2[3];
   static int count = 0;
+#if defined(NVE) || !defined(EPITAX)
   tot_kin_energy = 0.0;
+#endif
   fnorm = 0.0;
   PxF   = 0.0;
 
@@ -63,6 +65,11 @@ void move_atoms_nve(void)
 #pragma vdir vector,nodep
 #endif
     for (i=0; i<p->n; ++i) {
+
+#if defined(EPITAX) && !defined(NVE) 
+      /* beam atoms are always integrated by NVE */
+      if ( (NUMMER(p,i)>epitax_sub_n) && (p->pot_eng[i]>(epitax_ctrl * epitax_poteng_min)) ) {
+#endif
 
         kin_energie_1 = SPRODN(p->impuls,i,p->impuls,i);
 #ifdef UNIAX
@@ -192,6 +199,9 @@ void move_atoms_nve(void)
         p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
 #endif /* STRESS_TENS */
     }
+#if defined(EPITAX) && !defined(NVE)
+    }
+#endif
   }
 
 #ifdef MPI
@@ -268,6 +278,11 @@ void move_atoms_mik(void)
 #endif
     for (i=0; i<p->n; ++i) {
 
+#ifdef EPITAX
+      /* only substrate atoms are integrated by MIK */
+      if ( (NUMMER(p,i)<=epitax_sub_n) || (p->pot_eng[i]<=(epitax_ctrl * epitax_poteng_min)) ) {
+#endif
+
         kin_energie_1 = SPRODN(p->impuls,i,p->impuls,i);
 
 	sort = VSORTE(p,i);
@@ -339,6 +354,9 @@ void move_atoms_mik(void)
         p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
 #endif
     }
+#ifdef EPITAX
+    }
+#endif
   }
 
 #ifdef MPI
@@ -409,6 +427,11 @@ void move_atoms_nvt(void)
     p = cell_array + CELLS(k);
 
     for (i=0; i<p->n; ++i) {
+
+#ifdef EPITAX
+      /* only substrate atoms are integrated by NVT */
+      if ( (NUMMER(p,i)<=epitax_sub_n) || (p->pot_eng[i]<=(epitax_ctrl * epitax_poteng_min)) ) {
+#endif
 
         /* twice the old kinetic energy */
         E_kin_1 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
@@ -513,6 +536,9 @@ void move_atoms_nvt(void)
         p->presstens[i].xy += p->impuls X(i) * p->impuls Y(i)/MASSE(p,i);
 #endif
     }
+#ifdef EPITAX
+    }
+#endif
   }
   
 #ifdef SLLOD

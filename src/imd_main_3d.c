@@ -121,6 +121,19 @@ void main_loop(void)
   /* simulation loop */
   for (steps=steps_min; steps <= steps_max; ++steps) {
 
+#ifdef EPITAX
+    for (i=0; i<ntypes; ++i ) {
+      if ( (steps >= epitax_startstep) && (steps <= epitax_maxsteps) ) {  
+	if ( (epitax_rate[i] != 0) && ((steps-steps_min)%epitax_rate[i]) == 0 ) {
+	  delete_atoms(); 
+	  create_atom(i, epitax_mass[i], epitax_temp[i]);
+	}
+	else if ( (epitax_rate[i] != 0) && (steps > epitax_maxsteps) && ((steps-steps_min)%epitax_rate[i]) == 0 ) 
+	  delete_atoms();
+      }
+    }
+#endif
+
 #ifdef FBC
 #ifdef MIK  
     /* just increment the force if under threshold of e_kin or after 
@@ -217,6 +230,14 @@ void main_loop(void)
     imd_stop_timer(&time_force_calc);
 #endif
 
+#ifdef EPITAX
+    if (steps == steps_min) {
+      calc_poteng_min();
+      if (0 == myid) 
+	printf("EPITAX: Minimal potential energy = %lf\n", epitax_poteng_min);
+    }
+#endif
+
 #ifdef DISLOC
     if ((steps==reset_Epot_step) && (calc_Epot_ref==1)) reset_Epot_ref();
 #endif
@@ -264,6 +285,11 @@ void main_loop(void)
 #endif
 
     move_atoms(); /* here PxF is recalculated */
+
+#if defined(EPITAX) && !defined(NVE)
+    /* beam atoms are always integrated by NVE */
+    move_atoms_nve();
+#endif
 
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
     if ((steps==steps_min) && (use_curr_temp==1)) {

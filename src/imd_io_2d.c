@@ -217,6 +217,11 @@ void read_atoms(str255 infilename)
       input->Epot_ref[0]  = refeng;
 #endif
 
+#ifdef EPITAX
+      /* determine largest atom number of substrate atoms */
+      epitax_sub_n = MAX( n, epitax_sub_n );
+#endif
+
       cellc = cell_coord(pos.x,pos.y);
 
 #ifdef MPI

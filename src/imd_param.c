@@ -1141,6 +1141,49 @@ void getparamfile(char *paramfname, int sim)
       getparam("ew_nmax",&ew_nmax,PARAM_INT,1,1);
     }
 #endif 
+#ifdef EPITAX
+    /* Parameters for option epitax */
+    else if (strcasecmp(token,"epitax_rate")==0) {
+      /* rate of creation of particles */
+      getparam("epitax_rate",epitax_rate,PARAM_INT,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"epitax_type")==0) {
+      /* type of particles to be created */
+      getparam("epitax_type",epitax_type,PARAM_INT,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"epitax_mass")==0) {
+      /* mass of particles to be created */
+      getparam("epitax_mass",epitax_mass,PARAM_REAL,ntypes,ntypes);
+    } 
+    else if (strcasecmp(token,"epitax_temp")==0) {
+      /* temperature of particles to be created */
+      getparam("epitax_temp",epitax_temp,PARAM_REAL,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"epitax_cutoff")==0) {
+      /* parameter for cutoff */
+      getparam("epitax_cutoff",&epitax_cutoff,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"epitax_maxsteps")==0) {
+      /* maximal steps in epitax simulation */
+      getparam("epitax_maxsteps",&epitax_maxsteps,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"epitax_startstep")==0) {
+      /* steps before atom creation starts */
+      getparam("epitax_startstep",&epitax_startstep,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"epitax_ctrl")==0) {
+      /* parameter for change of integrator  */
+      getparam("epitax_ctrl",&epitax_ctrl,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"epitax_height")==0) {
+      /* height of beam creation */
+      getparam("epitax_height",&epitax_height,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"epitax_speed")==0) {
+      /* height of beam creation */
+      getparam("epitax_speed",&epitax_speed,PARAM_REAL,1,1);
+    }
+#endif
 #ifdef UNIAX
     else if (strcasecmp(token,"uniax_r_cut")==0) {
       /* UNIAX: cutoff radius of uniaxial molecules */
@@ -1627,6 +1670,17 @@ void broadcast_params() {
   MPI_Bcast( ters_c,                  ntypes, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_d,                  ntypes, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_h,                  ntypes, REAL, 0, MPI_COMM_WORLD);
+#endif
+#ifdef EPITAX
+  MPI_Bcast( epitax_rate,     ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( epitax_type,     ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( epitax_mass,     ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( epitax_temp,     ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &epitax_maxsteps,     1,  MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &epitax_startstep,    1,  MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &epitax_ctrl,         1,  MPI_REAL,0, MPI_COMM_WORLD);
+  MPI_Bcast( &epitax_height,       1,  MPI_REAL,0, MPI_COMM_WORLD);
+  MPI_Bcast( &epitax_speed,        1,  MPI_REAL,0, MPI_COMM_WORLD);
 #endif
   
   MPI_Bcast(&use_header,1, MPI_INT, 0, MPI_COMM_WORLD);
