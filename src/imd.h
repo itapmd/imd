@@ -11,30 +11,17 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
 #include <time.h>
 #ifndef USE_CLOCK
 #include <sys/times.h>
 #endif
-#ifndef HAVE_NO_STDLIB
-#include <stdlib.h>
-#else
-#include <malloc.h>
-#endif
-#ifdef sgi
-#include <bstring.h>
-#endif
-#ifdef OMP
-#include <omp.h>
-#endif
-/* #include <sys/stat.h> */
-/* #include <sys/types.h> */
-
 
 /* Machine specific headers */
 #ifdef MPI
 #include <mpi.h>
+#endif
+#ifdef OMP
+#include <omp.h>
 #endif
 
 /* Konfiguration */

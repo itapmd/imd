@@ -17,9 +17,11 @@
 
 /* Include file also declares global Variables and has Function Prototypes */
 #include "imd.h"
+
 #ifdef USE_RUSAGE
 #include <sys/time.h>
 #include <sys/resource.h>
+#include <unistd.h>
 #endif
 
 /* Main module of the IMD Package
@@ -195,8 +197,9 @@ int main(int argc, char **argv)
 #endif
     printf("Did %d steps with %d atoms.\n", steps_max, natoms);
     printf("Used %f seconds cputime,\n", total_time);
-    printf("%.3e cpuseconds per step and atom.\n\n",
+    printf("%.3e cpuseconds per step and atom\n",
            total_time / (steps_max * natoms));
+    printf("(inverse is %.3e).\n\n", (steps_max * natoms) / total_time);
 #ifdef MPI
 
     time_comm += time_comm_force + time_comm_ar;

@@ -8,12 +8,11 @@
 *
 ******************************************************************************/
 
-#include <stdio.h>
-#include <string.h>
+#include "imd.h"
+
+/* the following are needed for gettimeofday */
 #include <sys/time.h>
 #include <unistd.h>
-
-#include "imd.h"
 
 #if defined(__GNUC__) && defined(__STRICT_ANSI__)
 extern char *strdup(char *);
