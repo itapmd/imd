@@ -1105,7 +1105,7 @@ void write_atoms_dist()
     fprintf(out,"\n");
 #ifdef TWOD
     fprintf(out,"#D %d %d\n", atoms_dist_dim.x, atoms_dist_dim.y);
-    fprintf(out,"#S %f %f\n", 1.0/atoms_dist_scale.x, 1-0/atoms_dist_scale.y);
+    fprintf(out,"#S %f %f\n", 1.0/atoms_dist_scale.x, 1.0/atoms_dist_scale.y);
 #else
     fprintf(out,"#D %d %d %d\n",
       atoms_dist_dim.x, atoms_dist_dim.y, atoms_dist_dim.z);
