@@ -489,6 +489,7 @@ endif
 # EAM
 ifneq (,$(strip $(findstring eam,${MAKETARGET})))
 CFLAGS  += -DEAM
+CFLAGS  += -UAR
 SOURCES += ${EAMSOURCES}
 endif
 
