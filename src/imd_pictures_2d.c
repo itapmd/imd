@@ -144,6 +144,7 @@ void write_pictures_raw(int steps)
 void write_pictures_bins(int steps)
 
 #define SFACTOR 1.0
+#define NUMPIX 8
 
 {
 
@@ -179,6 +180,7 @@ void write_pictures_bins(int steps)
   int pix;
   int np;
 
+  numpix *= NUMPIX;
 #ifdef MPI
   sum_red = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
   sum_green = (shortint*)calloc(pic_res.x*pic_res.y, sizeof(shortint));
@@ -386,7 +388,7 @@ if (0==myid) {
 /* Values that are not in the interval are set to MINIMUM */
           val = val > 1.0 ? 0.0 : val;
           val = val < 0.0 ? 0.0 : val;
-          np  = numpix*(1+p->sorte[i]);
+          np  = numpix;
           /* Get index into table */
 	  ind = (int)(val * 3.9999);
 
@@ -612,7 +614,7 @@ void write_pictures_cooked(int steps)
 	     val = (val - ecut_kin.x) / (ecut_kin.y - ecut_kin.x);
              val = val > 1.0 ? 1.0 : val;
              val = val < 0.0 ? 0.0 : val;
-             np  = NUMPIX * (1 + p->sorte[i]);
+             np  = NUMPIX;
              /* Get index into table */
 	     ind = (int)(val * 3.9999);
 
@@ -754,11 +756,10 @@ if (0==myid) {
 /* Values that are not in the interval are set to MINIMUM */
           val = val > 1.0 ? 0.0 : val;
           val = val < 0.0 ? 0.0 : val;
-          np  = NUMPIX * (1 + p->sorte[i]);
+          np  = NUMPIX;
 /* Defects in potential energy are rather point-like, so we enlarge all
-Pixels not in the default interval
+Pixels not in the default interval */
           if ((val<1.0) && (val>0.0)) np = 3 * NUMPIX; else np = NUMPIX;
-*/
           /* Get index into table */
 	  ind = (int)(val * 3.9999);
 
