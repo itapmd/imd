@@ -4,121 +4,168 @@
 <h1> Covalent Many-Body Potentials </h1>
 
 <p>
-IMD allows to use many-body potentials of the <B>Stillinger-Weber</B>
-type, the <B>Keating</B> potential, and the <B>Tersoff</B> potential.
-</p>
+IMD supports different types of many-body potentials for covalent
+materials, notably <a href="covalent.html#tersoff">Tersoff</a>
+potentials, <a href="covalent.html#stiweb">Stillinger-Weber</a>
+potentials, and <a href="covalent.html#keating">Keating</a>
+potentials. All these potentials are defined through analytic
+formulae, whose parameters are read from the <a href="paramfile.html">
+parameter file</a>. Stillinger-Weber type potentials can also
+be <a href="covalent.html#ttbp">defined</a> via 
+<a href="potformat.html">tabulated parameter functions</a>.</p>
 
-<a id="keating" name="keating">
-<h2>Keating Potential</h2>
+
+<a id="tersoff" name="tersoff">
+<h2>Tersoff Potential</h2>
 </a>
 
 <p>
-The option <B>keating</B> enables IMD to use the
-Keating potential. The form of the potential is
+The Tersoff potential (J. Tersoff, Phys. Rev. B <b>39</b>, 5566 (1989)),
+which is enabled with the compilation option <b>tersoff</b>, is computed
+from its analytic expression, using parameters read from the 
+<a href="paramfile.html">parameter file</a>. Using the compilation
+option <b>pair</b>, it can be combined with an additional short
+range <a href="pairpot.html">pair interaction</a>. The Tersoff
+potential takes the following form:</p>
 
-<P>
-<CENTER>
-<IMG SRC="covalent18.gif"><BR><P>
-</CENTER>
+<p>
+<center>
+<img src="covalent4.gif" alt="Tersoff potential formula 1" />
+</center><br />
+where
+<center>
+<img src="covalent5.gif" alt="Tersoff potential formula 2" />
+</center></p>
 
-where the sums are over atoms <I>i</I> and nearest neighbour atoms
-<I>j</I>,<I>k</I> with distance vectors <I><B>r</B><SUB>ij</SUB></I>
-and <I><B>r</B><SUB>ik</SUB></I>. The parameters <I>d<SUB>ij</SUB></I>
-are the equilibrium distances between the atoms. They have to be
-specified in the IMD parameter <TT>keating_d</TT>. The values of these
-parameters have to be given for all types of atoms in the following
-format:<P>
+<p>
+The two-body potential is implicitly contained in this expression,
+so that an additional pair potential need not be given. It is 
+possible, however, to add an extra pair interaction using the
+option <b>pair</b>. The cutoff function is also given analytically, 
+by the following expression:
+<center>
+<img src="covalent6.gif"  alt="Tersoff cutoff function" />
+</center></p>
 
-<CENTER>
-<I>d<SUB>00</SUB> d<SUB>01</SUB> ... d<SUB>0(n-1)</SUB> d<SUB>11</SUB>
- d<SUB>12</SUB> ... d<SUB>(n-1)(n-1)</SUB></I> ,
-</CENTER><P>
+<p>
+The indices of the parameters refer to atom types involved. 
+The following IMD parameters correspond to the Tersoff potential
+parameters:</p>
 
-where <I>n</I> is the number of atoms.
+<table>
+<tr><td><tt> ters_a          </tt></td><td><i> A_ij      </i></td></tr>
+<tr><td><tt> ters_b          </tt></td><td><i> B_ij      </i></td></tr>
+<tr><td><tt> ters_la         </tt></td><td><i> lambda_ij </i></td></tr>
+<tr><td><tt> ters_mu         </tt></td><td><i> mu_ij     </i></td></tr>
+<tr><td><tt> ters_ga         </tt></td><td><i> gamma_ij  </i></td></tr>
+<tr><td><tt> ters_n          </tt></td><td><i> n_i       </i></td></tr>
+<tr><td><tt> ters_c          </tt></td><td><i> c_i       </i></td></tr>
+<tr><td><tt> ters_d          </tt></td><td><i> d_i       </i></td></tr>
+<tr><td><tt> ters_h          </tt></td><td><i> h_i       </i></td></tr>
+<tr><td><tt> ters_r_cut&nbsp;</tt></td><td><i> S_ij      </i></td></tr>
+<tr><td><tt> ters_r0         </tt></td><td><i> R_ij      </i></td></tr>
+<tr><td><tt> ters_chi        </tt></td><td><i> chi_ij    </i></td></tr>
+<tr><td><tt> ters_om         </tt></td><td><i> omega_ij  </i></td></tr>
+</table>
 
-The force constants <IMG WIDTH="20" HEIGHT="20" SRC="covalent19.gif">
-and <IMG WIDTH="32" HEIGHT="24" SRC="covalent20.gif"> correspond to
-the IMD parameters <TT>keating_alpha</TT> and <TT>keating_beta</TT>.
-<TT>keating_alpha</TT> has to be given in the same format as
-<TT>keating_d</TT>. For <TT>keating_beta</TT>, the index <I>i</I>
-takes on all values from <I>0</I> to <I>n-1</I> while the other two
-indices are read in like the two-index parameters. <P>
+<p>
+The values of the single-index parameters have to be given for all 
+atom types in a row. The values of the parameters <tt>ters_a</tt>, 
+<tt>ters_b</tt>, <tt>ters_la</tt>, <tt>ters_mu</tt>, 
+<tt>ters_r_cut</tt> and <tt>ters_r0</tt> are read in using the 
+following format:</p>
 
-The IMD parameter <TT>keating_r_cut</TT> corresponds to a cutoff
-length for all pairs of atom types. It is used to determine the
-nearest neighbour atoms. The format of <TT>keating_r_cut</TT> is the
-same as for <TT>keating_d</TT>.  The maximal number of nearest
-neighbours must be specified as a parameter with the IMD variable
-<TT>neigh_len</TT>. It is used to allocate memory for the neighbour
-tables.<P>
+<p>
+<center>
+<i>A<sub>00</sub> A<sub>01</sub> ... A<sub>0(n-1)</sub> A<sub>11</sub>
+ A<sub>12</sub> ... A<sub>(n-1)(n-1)</sub></i>
+</center><br />
+where <i>n</i> is the number of atom types. In the case of the 
+variables <tt>ters_chi</tt> and <tt>ters_om</tt>, the diagonal 
+values of the matrix are equal to 1 and the non-diagonal
+values are read using the following format:</p>
+
+<p>
+<center>
+<img src="covalent12.gif" />
+</center>
+</p>
+
+<p>
+The parameters <tt>ters_chi</tt> and <tt>ters_om</tt> are only
+required if there is more than one atom type.<p>
+
+<p>
+As in the case of the Stillinger-Weber potential, the value of the variable
+<tt>neigh_len</tt> must also be specified.<p>
+
+<p>
+The maximal number of nearest neighbours must be specified with the 
+parameter <tt>neigh_len</tt>. It is used to allocate memory for the 
+neighbour tables.</p>
 
 <a id="stiweb" name="stiweb">
 <h2>Stillinger-Weber Potential (analytic)</h2>
 </a>
 
 <p>
-The option <B>stiweb</B> enables IMD to use the
-Stillinger-Weber potential (F. H. Stillinger and T. A. Weber,
-<I>Phys. Rev. B</I> <B>31</B> (1985) 5262) extended for the
-simulations of atoms of different types. The general form of the
-potential is
+The Stillinger-Weber potential (F. H. Stillinger and T. A. Weber, 
+Phys. Rev. B <b>31</b>, 5262 (1985)) computed from in its analytic 
+formula is enabled with the compilation option <b>stiweb</b>.
+Note that there is is also the <a href="covalent.html#ttbp">
+possibility</a> to define potentials of this type by 
+<a href="potformat.html">tabulated parameter functions</a>, using the 
+compilation option <b>ttbp</b>.</p>
+ 
+<p>
+The Stillinger-Weber potential is given by
+<center>
+<img src="covalent1.gif" />
+</center><br />
+where <i>V<sub>2</sub></i> and <i>V<sub>3</sub></i> are given by
+<center>
+<img src="covalent14.gif" />
+</center></p>
 
-<P>
-<CENTER>
-<IMG SRC="covalent1.gif"><BR><P>
-</CENTER>
+<p>
+The angle <i>theta_jik</i> is the bond angle between the bonds <i>ij</i>
+and <i>ik</i>. <i>V<sub>2</sub></i> and <i>V<sub>3</sub></i> are zero 
+for <i>r<sub>ij</sub></i> larger or equal to <i>a<sup>1</sup><sub>ij</sub></i>
+and <i>a<sup>2</sup><sub>ij</sub></i>, respectively. The following IMD 
+parameters corresponding to the potential parameters:</p>
 
-where <I>V<SUB>2</SUB></I> and <I>V<SUB>3</SUB></I> are given by
+<table>
+<tr><td><tt> stiweb_a        </tt></td><td><i> A_ij      </i></td></tr>
+<tr><td><tt> stiweb_b        </tt></td><td><i> B_ij      </i></td></tr>
+<tr><td><tt> stiweb_p        </tt></td><td><i> p_ij      </i></td></tr>
+<tr><td><tt> stiweb_q        </tt></td><td><i> q_ij      </i></td></tr>
+<tr><td><tt> stiweb_de       </tt></td><td><i> delta_ij  </i></td></tr>
+<tr><td><tt> stiweb_a1       </tt></td><td><i> a1_ij     </i></td></tr>
+<tr><td><tt> stiweb_ga&nbsp; </tt></td><td><i> gamma_ij  </i></td></tr>
+<tr><td><tt> stiweb_a2       </tt></td><td><i> a2_ij     </i></td></tr>
+<tr><td><tt> stiweb_la       </tt></td><td><i> lamda_ijk </i></td></tr>
+</table>
 
-<P>
-<CENTER>
-<IMG SRC="covalent14.gif"><BR><P>
-</CENTER>
-
-The angle <IMG WIDTH="35" HEIGHT="38" ALIGN="MIDDLE" BORDER="0"
- SRC="covalent3.gif"> is the bond angle between the bonds <I>ij</I>
- and <I>ik</I>. <I>V<SUB>2</SUB></I> and <I>V<SUB>3</SUB></I> are zero
- for <I>r<SUB>ij</SUB></I> larger or equal to
- <I>a<SUP>1</SUP><SUB>ij</SUB></I> and
- <I>a<SUP>2</SUP><SUB>ij</SUB></I>, respectively.  The IMD parameters
- and the corresponding potential parameters are the following: <P>
-
-<TABLE>
-<TR> <TD> <TT>stiweb_a</TT> </TD> <TD></TD><TD> <I>A<SUB>ij</SUB></I> </TD> </TR>
-<TR> <TD> <TT>stiweb_b</TT> </TD> <TD></TD> <TD> <I>B<SUB>ij</SUB></I> </TD> </TR>
-<TR> <TD> <TT>stiweb_p</TT> </TD> <TD></TD> <TD> <I>p<SUB>ij</SUB></I></TD> </TR>
-<TR> <TD> <TT>stiweb_q</TT> </TD> <TD></TD> <TD> <I>q<SUB>ij</SUB></I></TD> </TR>
-<TR> <TD> <TT>stiweb_de</TT> </TD> <TD></TD>  <TD> <IMG WIDTH="23" HEIGHT="20" ALIGN="MIDDLE" BORDER="0"
-            SRC="covalent15.gif"> </TD> </TR>
-<TR> <TD> <TT>stiweb_a1</TT> </TD> <TD></TD> <TD> <I>a<SUP>1</SUP><SUB>ij</SUB></I> </TD> </TR>
-<TR> <TD> <TT>stiweb_ga</TT> </TD> <TD></TD>  <TD> <IMG WIDTH="23" HEIGHT="15" ALIGN="MIDDLE" BORDER="0"
-            SRC="covalent16.gif"> </TD> </TR>
-<TR> <TD> <TT>stiweb_a2</TT> </TD> <TD></TD> <TD> <I>a<SUP>2</SUP><SUB>ij</SUB></I> </TD> </TR>
-<TR> <TD> <TT>stiweb_la</TT> </TD> <TD></TD>  <TD> <IMG WIDTH="23" HEIGHT="20" ALIGN="MIDDLE" BORDER="0"
-            SRC="covalent17.gif"> </TD> </TR>
-
-</TABLE>
-<P>
-
+<p>
 The values of the two-index parameters have to be given for all types
 of atoms in the following format:<P>
 
-<CENTER>
-<I>A<SUB>00</SUB> A<SUB>01</SUB> ... A<SUB>0(n-1)</SUB> A<SUB>11</SUB>
- A<SUB>12</SUB> ... A<SUB>(n-1)(n-1)</SUB></I> ,
-</CENTER><P>
+<center>
+<i>A<sub>00</sub> A<sub>01</sub> ... A<sub>0(n-1)</sub> A<sub>11</sub>
+ A<sub>12</sub> ... A<sub>(n-1)(n-1)</sub></i> ,
+</center><P>
 
-where <I>n</I> is the number of atoms.
+where <i>n</i> is the number of atoms.
 
-In the case of <TT>stiweb_la</TT>, the first index takes on all values
-from <I>0</I> to <I>n-1</I> while the last two indices are read in like
+In the case of <tt>stiweb_la</tt>, the first index takes on all values
+from <i>0</i> to <i>n-1</i> while the last two indices are read in like
 the two-index parameters. <P>
 
 As a result of the short range nature of the potential, only
 the nearest neighbours have to be considered in the computation of the
 potential and the forces. The maximal number of nearest neighbours
 must be specified as a parameter with the IMD variable
-<TT>neigh_len</TT>. It is used to allocate memory for the neighbour tables.<P>
+<tt>neigh_len</tt>. It is used to allocate memory for the neighbour tables.<P>
 
 
 <a id="ttbp" name="ttbp">
@@ -126,125 +173,91 @@ must be specified as a parameter with the IMD variable
 </a>
 
 <p>
-The option <B>ttbp</B> (<B>t</B>wo- and <B>t</B>hree-<B>b</B>ody
-<B>p</B>otentials) enables IMD to use the Stillinger-Weber potential
-with a general pair potential.  The three-body term in this case is<P>
+Using the compilation option <b>ttbp</b> (<b>t</b>wo- and 
+<b>t</b>hree-<b>b</b>ody <b>p</b>otentials), it is also possible to
+specify Stillinger-Weber type potentials with <a href="potformat.html">
+tabulated parameter functions</a>. </p>
 
-<CENTER>
-<IMG SRC="covalent2.gif"><BR><P>
-</CENTER>
+<p>
+The two-body part is then treated as any other short range 
+<a href="pairpot.html">pair potential</a>, and can be specified 
+independently of the three-body term. It is usually read from
+from the potential file specified by the parameter <tt>potfile</tt>,
+but one could use also one of the <a href="pairpot.html#analyt">
+analytically defined</a> potentials.</p>
 
-where <I>Z</I> is the force constant and <I>f<SUB>c</SUB> (r)</I> is a
-cutoff function The parameter <I>h</I> indicates the hybridization
-<I>sp<SUP>h</SUP></I> of the atoms. In the case <I>h</I>=3 the
-coordination is fourfold while in the case <I>h</I>=2 the coordination
-number is three.
-<P>
+<p>
+The three-body term takes the following general form:
+<center>
+<img src="covalent2.gif" alt="Stillinger-Weber three-body term" />
+</center><br />
+<i>Z</i> is the force constant and <i>f<sub>c</sub> (r)</i> is a
+cutoff function. The parameter <i>h</i> indicates the
+hybridization <i>sp<sup>h</sup></i> of the atoms. In the case 
+<i>h</i>=3 the coordination is fourfold, whereas in the case 
+<i>h</i>=2 the coordination is threefold.</p>
 
-The two-body potential is read in as an IMD potential table as usual
-using the IMD variable <TT>potfile</TT>. The cutoff function
-<I>f<SUB>c</SUB> (r)</I> has also to be given as a file in the same
-format as the potential table. The corresponding IMD variable is 
-<TT>ttbp_potfile</TT>.<P>
+<p>
+The cutoff function <i>f<sub>c</sub> (r)</i> must be given in 
+<a href="potformat.html">tabulated form</a>, and is read from the
+file specified by the parameter <tt>ttbp_potfile</tt>. The
+paramter <tt>ttbp_constant</tt> specifies the force constant 
+<i>Z</i>, and the parameter <tt>ttbp_sp</tt> the hybridization
+constant <i>h</i>. The maximal number of nearest neighbours must be 
+given with the parameter <tt>neigh_len</tt>.</p>
 
-The parameter <I>Z</I> corresponds to the IMD variable
-<TT>ttbp_constant</TT> and the hybridization pertains to 
-the variable <TT>ttbp_sp</TT>. The maximal number of nearest
-neighbours must be given with the IMD variable <TT>neigh_len</TT>.<P>
-
-<a id="tersoff" name="tersoff">
-<h2>Tersoff Potential</h2>
+<a id="keating" name="keating">
+<h2>Keating Potential</h2>
 </a>
 
 <p>
-The option <B>tersoff</B> enables the use of the Tersoff potential.</p>
+The Keating potential (P. N. Keating, Phys. Rev. <b>145</b>, 637 (1966)),
+which is enabled in IMD with the compilation option <b>keating</b>, 
+was one of the first many-body potentials for covalent systems. 
+It is suitable only for small displacements from the ideal positions, 
+and therefore mainly of historic interest. In particular, it should 
+not be used for disordered systems.</p>
 
-In the present implementation, the following form of the Tersoff
-potential is used (J. Tersoff, <I>Phys. Rev. B</I> <B>39</B> (1989) 5566):<P>
+<p>
+The Keating potential, whose parameters have to be specified in the
+<a href="paramfile.html">parameter file</a>, takes the following form:</p>
 
-<CENTER>
-<IMG SRC="covalent4.gif"><BR><P>
-</CENTER>
+<p>
+<center>
+<img src="covalent18.gif" alt="Keating potential formula" />
+</center></p>
 
-where
+<p>
+where the sums are over atoms <i>i</i> and nearest neighbour atoms
+<i>j</i>,<i>k</i> with distance vectors <i><b>r</b><sub>ij</sub></i>
+and <i><b>r</b><sub>ik</sub></i>. The parameters <i>d<sub>ij</sub></i>
+are the equilibrium distances between the atoms. They have to be
+specified in the IMD parameter <tt>keating_d</tt>. The values of these
+parameters have to be given for all pairs of atom types in the following
+format:</p>
 
-<CENTER>
-<IMG SRC="covalent5.gif"><BR><P>
-</CENTER>
+<p>
+<center>
+<i>d<sub>00</sub> d<sub>01</sub> ... d<sub>0(n-1)</sub> d<sub>11</sub>
+ d<sub>12</sub> ... d<sub>(n-1)(n-1)</sub></i>
+</center>
+Here, <i>n</i> is the number of atom types.</p>
 
-The two-body potential is implicitely contained in this
-expression. Hence, an additional pair potential has not to be given.
-In contrast to the Stillinger-Weber potential, the cutoff function 
-<I>f<SUB>c</SUB> (r)</I> is not read in as a function table but is 
-computed analytically during the simulation according to<P>
+<p>
+The IMD parameters <tt>keating_alpha</tt> and <tt>keating_beta</tt>
+correspond to the force constants <i>alpha_ij</i> and <i>beta_ij</i>.
+<tt>keating_alpha</tt> has to be given in the same format as
+<tt>keating_d</tt>. For <tt>keating_beta</tt>, the index <i>i</i>
+runs from <i>0</i> to <i>n-1</i>, whereas the other two
+indices are read in like the two-index parameters. </p>
 
-<CENTER>
-<IMG SRC="covalent6.gif"><BR><P>
-</CENTER>
-
-The indices of the parameters may refer to different types of
-atoms. <P>
-
-The IMD variables with the corresponding parameters are as
-follows:<P>
-
-<TABLE>
-<TR> <TD> <TT>ters_a</TT> </TD>  <TD></TD><TD> <I>A<SUB>ij</SUB></I> </TD> </TR>
-<TR> <TD> <TT>ters_b</TT> </TD> <TD></TD> <TD> <I>B<SUB>ij</SUB></I> </TD> </TR>
-<TR> <TD> <TT>ters_la</TT> </TD> <TD></TD> <TD> <IMG WIDTH="29" HEIGHT="38" ALIGN="MIDDLE" BORDER="0"
-            SRC="covalent9.gif"> </TD> </TR>
-<TR> <TD> <TT>ters_mu</TT> </TD> <TD></TD>  <TD> <IMG WIDTH="30" HEIGHT="36" ALIGN="MIDDLE" BORDER="0"
-            SRC="covalent10.gif"> </TD> </TR>
-<TR> <TD> <TT>ters_ga</TT> </TD> <TD></TD> <TD> <IMG WIDTH="22" HEIGHT="36" ALIGN="MIDDLE" BORDER="0"
-            SRC="covalent11.gif"> </TD> </TR>
-
-<TR> <TD> <TT>ters_n</TT> </TD> <TD></TD> <TD> <I>n<SUB>i</SUB></I> </TD> </TR>
-<TR> <TD> <TT>ters_c</TT> </TD><TD></TD>  <TD> <I>c<SUB>i</SUB></I> </TD> </TR>
-<TR> <TD> <TT>ters_d</TT> </TD><TD></TD>  <TD> <I>d<SUB>i</SUB></I> </TD> </TR>
-<TR> <TD> <TT>ters_h</TT> </TD><TD></TD>  <TD> <I>h<SUB>i</SUB></I> </TD> </TR>
-<TR> <TD> <TT>ters_r_cut</TT> </TD><TD></TD>  <TD> <I>S<SUB>ij</SUB></I> </TD> </TR>
-<TR> <TD> <TT>ters_r0</TT> </TD><TD></TD>  <TD> <I>R<SUB>ij</SUB></I> </TD> </TR>
-
-<TR> <TD> <TT>ters_chi</TT> </TD><TD></TD>  <TD> <IMG WIDTH="30" HEIGHT="36" ALIGN="MIDDLE" BORDER="0"
-            SRC="covalent8.gif"> </TD>
-</TR>
-<TR> <TD> <TT>ters_om</TT> </TD><TD></TD>  <TD> <IMG WIDTH="30" HEIGHT="36" ALIGN="MIDDLE" BORDER="0"
-            SRC="covalent13.gif"> </TD>
-</TR>
-
-</TABLE>
-<P>
-
-The values of the single-index parameters have to be given for all atom types in a
-row. 
-The values of the parameters <TT>ters_a</TT>, <TT>ters_b</TT>,
-<TT>ters_la</TT>, <TT>ters_mu</TT>, <TT>ters_r_cut</TT> and <TT>ters_r0</TT> are read in using the following format:<P>
-<CENTER>
-<I>A<SUB>00</SUB> A<SUB>01</SUB> ... A<SUB>0(n-1)</SUB> A<SUB>11</SUB>
- A<SUB>12</SUB> ... A<SUB>(n-1)(n-1)</SUB></I> ,
-</CENTER><P>
-
-where <I>n</I> is the number of atom types.
-In the case of the variables <TT>ters_chi</TT> and <TT>ters_om</TT>,
-the diagonal values of the matrix are equal to 1 and the non-diagonal
-values are read in using the following format:<P>
-
-<CENTER>
-<IMG SRC="covalent12.gif"><BR><P>
-</CENTER>
-
-<P>
-
-The parameters <TT>ters_chi</TT> and <TT>ters_om</TT> are only
-required if there is more than one atom type.<P>
-
-As in the case of the Stillinger-Weber potential, the value of the variable
-<TT>neigh_len</TT> must also be specified.<P>
-
-It is possible to use a two-body potential in addition to the Tersoff
-potential. If the option <B>pair</B> is used, the potential is read in
-as an IMD potential table as usual using the IMD variable
-<TT>potfile</TT>. It is also possible to use some 
-<A HREF="predefined_potentials.html">predefined pair potentials</A>.<P>
+<p>
+The IMD parameter <tt>keating_r_cut</tt> corresponds to a cutoff
+length for all pairs of atom types. It is used to determine the
+nearest neighbour atoms. The format of <tt>keating_r_cut</tt> is the
+same as for <tt>keating_d</tt>. The maximal number of nearest
+neighbours must be specified with the parameter <tt>neigh_len</tt>. 
+It is used to allocate memory for the neighbour tables.</p>
 
 <!--#include virtual="imdfoot.html" -->
+

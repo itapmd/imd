@@ -168,10 +168,9 @@ correl_omode	# output mode for correlation data
 # parameters for DISLOC
 dem_int         # number of steps between DEM writes
 dsp_int		# number of steps between DSP writes
-reffile		# reference file name for DSP writes
-min_dpot	# threshold for plotting atoms
-dpotsorte	# type of atoms to be plotted
-ddelta          # threshold for plotting distance vector
+reffile		# reference file name for DSP and DEM writes
+min_dpot	# threshold for differential energy writes
+min_dsp2        # threshold for displacement writes
 reset_Epot_step # step at which to compute Epot_ref (if calc_Epot_ref==1)
 calc_Epot_ref   # read (0) or compute (1) reference potential energy
 reffile         # file to read reference potential energy from
@@ -263,29 +262,31 @@ server_port     # port number on server side - always required
 client_port     # port number on client side (in client mode, optional)
 
 # parameters for MONOLJ (record version)
-r_cut           # potential cutoff radius 
-cell_size       # size of link cells 
+cell_size       # minimal size of link cells 
                 # (In ordinary IMD cell_size = r_cut + epsilon)
 initsize        # cells have space for initsize particles (needed for MONOLJ)
 
-# parameters for <A HREF="predefined_potentials.html">predefined pair potentials</A> (LJ, MORSE, BUCK)
+# parameters for <a href="pairpot.html#analyt">analytic pair potentials</a> 
 r_cut           # potential cutoff radii
 r_begin		# potential start radii
 pot_res		# numbers of tabulated potential values
 
-# parameters for <A HREF="predefined_potentials.html#lj">LJ</A> (Lennard-Jones potential)
+# parameters for <a href="pairpot.html#lj">Lennard-Jones</a> potential
 lj_epsilon
 lj_sigma
 
-# parameters for <A HREF="predefined_potentials.html#morse">MORSE</A> (Morse potential)
+# parameters for <a href="pairpot.html#morse">Morse</a> potential
 morse_epsilon
 morse_sigma
 morse_alpha
 
-# parameters for <A HREF="predefined_potentials.html#buck">BUCK</A> (Buckingham potential)
+# parameters for <a href="pairpot.html#buck">Buckingham</a> potential
 buck_a
 buck_c
 buck_sigma
+
+# parameters for harmonic potential (shell model)
+spring_const    # spring constants for atoms of different type
 
 # parameters for <a href=eam2.html>EAM</a> (Embedded Atom Method potentials)
 core_potential_file   # Core-core Pair Potential, tabulated in r**2 
@@ -338,10 +339,6 @@ charge          # atomic charges (for all i=0 ...  (ntypes-1))
 ew_kappa        # parameter kappa
 ew_nmax         # determines number of image simulation boxes
 ew_kmax         # determines number of k-vectors (3d integer vector)
-
-# parameters for SPRING (Harmonic potential)
-spring_const    # spring constants for atoms of different type
-spring_r_cut    # cutoff lengths for atoms of different type
 
 # parameters for <a href=uniax.html>UNIAX</a> 
 # (Gay-Berne potential for uniaxial molecules)

@@ -3,231 +3,60 @@
 
 <h1>Interactions</h1>
 
-<a name="POTFORMAT">
-<h2>Potential File Format</h2>
-</a>
+<p>
+IMD supports a large variety of different (mostly short range)
+effective potentials. Some of these potentials are defined by tabulated
+functions read from a <a href="potformat.html">potential file</a>,
+others are defined analytically by parameters read from the
+<a href="paramfile.html">parameter file</a>. The potentials
+supported include <a href="pairpot.html">central pair potentials</a>,
+<a href="eam2.html">Embedded Atom Method (EAM)</a> potentials for 
+metals, different <a href="covalent.html">covalent potentials</a>,
+notably <a href="covalent.html#tersoff">Tersoff</a>,
+Stillinger-Weber (<a href="covalent.html#stiweb">analytic</a>
+and <a href="covalent.html#ttbp">tabulated</a>), and
+<a href="covalent.html#keating">Keating</a> potentials,
+<a href="ewald.html">Coulomb</a> and <a href="ewald.html#shell">shell 
+model</a> potentials for ionic solids, and
+<a href="uniax.html">Gay-Berne</a> potentials for nematic
+liquid crystals.</p>
 
 <p>
-IMD supports several different kinds of interactions. Most of them
-are defined in terms of tabulated functions. Typical such functions 
-are central pair potentials, which depend on the distance of two atoms 
-and the two atom types involved. Such functions have to be tabulated 
-with steps which are equidistant in the <b>square of the distance</b>. 
-For EAM interactions one also needs functions which depend on one 
-atom type and the host electron density at the position of that atom. 
-Such functions are tabulated with steps equidistant in the electron
-density.</p>
-
-<h3>Potential File Header</h3>
-
-<p>
-Tabulated functions can be given in either of two formats. The header
-specifies in which format the current file is, and how many data
-columns the tabulated function has for each argument. The number
-of data columns is either the number of atom type pairs (i.e., the
-square of the number of atom types), or, in the case of the EAM host 
-electron density, the number of atom types. The header has the
-following format:</p>
-
-<pre>
-## this is just a comment line
-#F f n
-## this is another comment line
-#E this is the very last header line
-</pre>
-
+Since the computation of the forces is the most time-critical part
+of a molecular dynamics simulation, support for each type of
+interaction has to be enabled explicitly by a compilation option.
+If no interaction type is specified, central pair potentials
+are assumed by default. Different interaction types can be
+combined with each other, by enabling more than one type
+of interaction. Their contributions are then just added. This is 
+still somewhat experimental, and there are some restrictions.
+Here are some guidelines:
+<ul>
+<li>At most <b>one</b> of the <a href="covalent.html">covalent  
+    potentials</a> can be used at a time.</li>
+<li><a href="pairpot.html">Central pair potentials</a>, 
+    <a href="eam2.html">EAM potentials</a>, and one of 
+    <a href="covalent.html#tersoff">Tersoff</a> or
+    <a href="covalent.html#ttbp">tabulated Stillinger-Weber
+    potentials</a> <b>can be combined</b> with each other. 
+    The central pair potential part contained in these interactions 
+    (except in <a href="covalent.html#tersoff">Tersoff</a> potentials) 
+    is <b>shared</b>.</li>
+<li>The option <b>pair</b> can be used to enable a (short range)
+    <a href="pairpot.html">pair potential</a> part together with 
+    <a href="ewald.html">Coulomb</a> or <a href="covalent.html#tersoff">
+    Tersoff</a> potentials.
+    The same option is also used to enable the harmonic potential
+    used for the <a href="ewald.html#shell">shell model</a> in 
+    combination with <a href="ewald.html">Coulomb interactions</a>.</li> 
+<li><a href="ewald.html">Coulomb potentials</a> can be combined with 
+    everything else, whether or not this makes sense.</li>
+<li><a href="covalent.html#keating">Keating</a>, 
+    <a href="covalent.html#stiweb">analytic Stillinger-Weber</a>, 
+    and <a href="uniax.html">Gay-Berne</a> potentials <b>cannot</b> be 
+    combined with anything else, except with <a href="ewald.html">Coulomb 
+    potentials</a>.</li>
+</ul>
 </p>
-Header lines start with the character '#'. If the second character is
-'F', then the format specifyer f (either 1 or 2) and the number n of 
-data columns of the tabulated functions are read from the rest of the 
-line. The very last header line must have a character 'E' at the 
-second position. Header lines with a second character different from 
-'F' or 'E' are treated as comments, but it is recommended that such 
-lines start with two '#' characters. </p>
-
-<h3>Format 1</h3>
-
-<p>
-In a potential file in format 1, each line contains first the function 
-argument, either the square of the distance (radius) or the host 
-electron density, and then all data columns, i.e., the function values 
-for this argument for the different atom type pairs or atom types. 
-If the atom types run from 0 to N, the lines in a format 1 file have
-either of the following formats:</p>
-
-<pre>
-r^2    V_00 V_01 ... V_0N V_10 V_11 ... V_NN 
-</pre>
-<pre>
-rho_h  E_0 ... E_N
-</pre>
-
-<p>
-Note that if a function of the square of the distance given in format
-1 does not vanish at the end of the tabulation, it is shifted so that
-it does vanish. This is for backwards compatibility; it would be
-better to change the potential file once and for all.</p>
-
-<p>
-The disadvantage of format 1 is that all data columns have to be tabulated
-for the same range and with the same spacing. </p>
- 
-<h3>Format 2</h3>
-
-<p>
-In a potential file in format 2, each data column has its own range
-and spacing. If we have n data columns, the file starts with n lines
-of the form
-<pre>
-x_begin x_end dx
-</pre>
-specifying the start, end, and spacing of the tabulation of the
-n data columns. The argument x is either the square of the atom 
-distance, or the host electron density. These n lines are then
-followed by n blocks with the function values, one for each atom 
-type pair or atom type. The number of function values is computed 
-from the begin, end, and spacing values of the corresponding table.
-They can be different for the different data columns. The order
-of the different data columns is as described for format 1.</p>
-
-<h3>Backwards Compatibility</h3>
-
-<p>
-For backwards compatibility, potential files without header are also 
-accepted, but a warning is printed. A default format is then assumed,
-which is format 2 for EAM interactions, and format 1 for everything else.</p>
-
-<a name="PAIRPOT">
-<h2>Central Pair Potentials</h2>
-</a>
-
-<p>
-As a default, IMD uses classical, central two-body potentials, which
-are tabulated in the potential file. The potential file can be in
-either of two <a href="#POTFORMAT">formats</a>. It is essential that
-the potential is tabulated equidistant in the <b>square</b> of the
-atom distance. Note that if the potential does not extend down to
-r^2=0, it is extrapolated linearly. In the options <b>tersoff</b> and
-<b>ewald</b>, tabulated pair potentials are not used by default. In
-these cases, the option <b>pair</b> can be chosen to use an additional
-pair potential.</p>
-
-<p>
-IMD allows to use some <a href="predefined_potentials.html">predefined pair
-potentials</a>. (options <b>lj</b>, <b>morse</b>, and <b>buck</b>) In
-this case, the forces are either computed analytically during the
-simulation or from a potential table created at the start of the
-simulation.</p>
-
-<a name="EAMPOT">
-<h2>EAM Potentials (option eam)</h2>
-</a>
-
-<p>
-The energy in potentials of the Embedded Atom type consitsts of two
-parts, a pair potential term specifyed by the function Phi(r)
-representing the electrostatic core-core repulsion, and a cohesive
-term specifyed by the function F(rho) representing the energy the ion
-core gets when it is "embedded" in the "Electron Sea". This Embedding 
-Energy is a function of the local electron density, which in turn
-is constructed as a superposition of contributions from neighboring 
-atoms. This electron transfer is specifyed by the function Rho(r).</p>
-
-<p> 
-These functions depend on the type of the embedded atom (F_i(rho)), 
-or on the types i and j of the two atoms involved (Rho_ij(r), Phi_ij(r)). 
-The corresponding tabulated functions can be given in either of
-two <a href="#POTFORMAT">formats</a>. Note that Rho and Phi have
-to be tabulated equidistant in r^2.</p>
-
-<p>
-For more details take a look at the description of the 
-<a href=eam2.html>EAM implementation</a></p>
-
-<a name="TTBPPOT">
-<h2>Keating Potential (option keating)</h2>
-</a>
-
-<p>
-For the option keating, the Keating potential is computed analytically
-in the IMD implementation. The potential parameters have to be given in
-the parameter file.</p>
-
-<p>
-For more details take a look at the description of the 
-<a href="covalent.html#keating">KEATING implementation</a>.</p>
-
-<h2>Stillinger-Weber Potentials (options stiweb and ttbp)</h2>
-
-<p>
-For the option stiweb, the Stillinger-Weber potential is computed
-analytically in the IMD implementation. The potential parameters have
-to be given in the parameter file.</p>
-
-<p>
-The option ttbp uses a general pair interaction potential which has to
-be given in a potential table as described for simulations with 
-<a href="#PAIRPOT">pair potentials</a>. The three-body interaction
-potential is computed from parameters. However, a cutoff function has
-to be specified. Its possible input formats can be the same as for the
-pair potential.</p>
-
-<p>
-For more details take a look at the description of the 
-<a href="covalent.html">STIWEB and TTBP implementation</a>.</p>
-
-<a name="TERSOFFPOT">
-<h2>Tersoff Potential (option tersoff)</h2>
-</a>
-
-<p>
-The Tersoff potential is computed analytically in the
-IMD implementation. A set of parameters, however, has
-to be given in the parameter file.</p>
-
-<p>
-For more details take a look at the description of the 
-<a href="covalent.html#tersoff">TERSOFF implementation</a>.</p>
-
-<a name="EWALDPOT">
-<h2>Coulomb Potential (option ewald)</h2>
-</a>
-
-<p>
-The Coulomb potential is computed using Ewald summation
-technique. An additional short range pair interaction
-potential can be used.</p>
- 
-<p>
-For more details take a look at the description ot the
-<a href="ewald.html">EWALD implementation</a>.</p>
-
-<a name="SPRING">
-<h2>Harmonic Potential (option spring)</h2>
-</a>
-
-<p>
-This potential can be used together with Coulomb potentials and other
-short range pair potentials in the shell model. Only the spring
-constants for atoms of different type have to be specified in the
-paramter file. </p>
-
-<a name="GAYBERNEPOT">
-<h2>Gay-Berne Potential (option uniax)</h2>
-</a>
-
-<p>
-The Gay-Berne potential models the pair interaction 
-of uniaxial molecules. It depends not only on the scalar
-distance of their centres of mass but also on their
-mutual orientation. Due to this complicated dependence
-the Gay-Berne interaction cannot be tabulated. In IMD
-it is calculated from its analytical expression. Forces
-and torques are also evaluated analytically as 
-derivatives of the potential.</p>
-
-<p>
-For more details take a look at the description of the 
-<a href=uniax.html>UNIAX implementation</a>.</p>
 
 <!--#include virtual="imdfoot.html" -->

@@ -1,62 +1,110 @@
 
 <!--#include virtual="imdhead.html" -->
 
-<H1> Use of Coulomb potential with Ewald sum </H1>
+<h1>Coulomb Potentials for Ionic Solids</h1>
 
-The option <B>ewald</B> allows the use of Coulomb potentials in
-addition to short range pair potenials. The implementation uses 
-the Ewald summation technique. Only three dimensional 
-systems with periodic boundary conditions in all directions can
-be simulated and the implementation is not parallelized.
-<P>
+<p>
+Due to their long range nature, Coulomb potentials require a special
+treatment. They are enabled with the compilation option <b>ewald</b>,
+which refers to the fact that the current implementation uses the 
+<b>Ewald summation technique</b>. Coulomb potentials can be combined 
+with many other potentials. In particular, an additional short range 
+<a href="pairpot.html">two-body potential</a> can be enabled with the 
+compilation option <b>pair</b>. In order to allow for
+polarizability of the atoms, the <a href="ewald.html#shell">shell 
+model</a> is often used together with Coulomb potentials.
+The shell model is activated with the option <b>shell</b>.</p> 
 
-The following form of the Ewald sum for a system of <I>N</I> charged 
-atoms is implemented:
+<p>
+Due to the Ewald summation technique, only three dimensional 
+systems with periodic boundary conditions in all directions are 
+supported, and the implementation is currently not parallelized.</p>
 
-<P>
-
-<CENTER>
-<IMG SRC="ewald_trans.gif">
-</CENTER>
-
-<P>
-
-Here, <I>q<SUB>i</SUB></I> is the charge of atom <I>i</I>, 
-<B>r</B><I><SUB>ij</SUB></I>
-is the distance vector between atoms <I>i</I> and <I>j</I>, 
-<B>n</B> are linear combinations of the box vectors, and the
-prime means that <I>i=j</I> is excluded if <B>n</B>=<B>0</B>.
-<I>kappa</I> is a real parameter and erfc(x) is the 
+<p>
+The following form of the Ewald sum for a system of <i>N</i> charged 
+atoms is implemented:</p>
+<center>
+  <img src="ewald_trans.gif" />
+</center></p>
+Here, <i>q<sub>i</sub></i> is the charge of atom <i>i</i>, 
+<b>r</b><i><sub>ij</sub></i>
+is the distance vector between atoms <i>i</i> and <i>j</i>, 
+<b>n</b> are linear combinations of the box vectors, and the
+prime means that <i>i=j</i> is excluded if <b>n</b>=<b>0</b>.
+<i>kappa</i> is a real parameter and erfc(x) is the 
 complementary error function.
- 
 The sum over <B>k</B> extends over linear combinations of 
 the reciprocal vectors of the simulation box.
+</p>
 
-<P>
+<p>
+Coulomb potentials can be combined with many other potentials.
+In particular, an additional short range <a href="pairpot.html">
+two-body potential</a> can be enabled with the compilation option 
+<b>pair</b>.</p>
 
-An additional short range two-body potential can be used. If the
-option <B>pair</B> is used, the potential is read in as an IMD
-potential table as usual using the IMD variable <TT>potfile</TT>. It
-is also possible to use some <A
-HREF="predefined_potentials.html">predefined pair potentials</A>.
+<p>
+For the Ewald sum, the following <b>parameters</b> have to be
+specified in the <a href="paramfile.html">parameter file</a>.
+The parameter <tt>charge</tt> specifies the charges of all atom 
+types (all on one line). The value of <i>kappa</i> is given with
+the parameter <tt>ew_kappa</tt>.
+The number of k-vectors included is specified with the parameter 
+<tt>ew_kmax</tt>, whose value is a 3d vector containing the number 
+of k-vectors in the three box directions. 
+The parameter <tt>ew_nmax</tt>, whose value is an integer, determines 
+the number of image simulation boxes taken into account in computing 
+the first sum in the Ewald sum. The same number of boxes is included
+in all three directions. If <tt>ew_nmax</tt> is zero, the usual minimum 
+image convention is applied.</p>
 
-<P>
+<a id="shell" name="shell">
+<h1>The Shell Model</h1>
+</a>
 
-For the Ewald sum, the following parameters have to be specified in
-the parameter file:<P>
+<p>
+The shell model of Dick and Overhauser (Phys. Rev. <b>112</b>, 90 (1958))
+is often used to add polarizability to the atoms of a Coulombic system.
+For this purpose, an atom is split into two parts, a charged ionic
+core, and a massless, charged shell around the core. By displacing 
+the shell with respect to the core, the atom is polarized. Shells 
+and cores are treated as separate particles. They all interact with 
+<a href="ewald.html">Coulomb interactions</a>. In addition to that,
+nearby shells interact with a short range <a href="pairpot.html">pair 
+potential</a>, usually of the form of a <a href="pairpot.html#buck">
+Buckingham potential</a>, and a harmonic potential (with minimum at
+distance zero) acts against the displacement of the core and its 
+associated shell. If used together with the option <a href="ewald.html">
+ewald</a>, these short range pair potentials have to be enabled
+with the compilation option <b>pair</b>.</p>
 
-The charges of the atoms have to be given for all types of atoms in a row.
-The corresponding IMD-parameter is <TT>charge</TT>. The value of the
-parameter <I>kappa</I> pertains to the IMD-paramter <TT>ew_kappa</TT>.
-Furthermore, the number of k-vectors has to be given separately ( i.e. as a 
-3d-vector ) for the three spatial
-directions belonging to the box vectors. The corresponding IMD-parameter is 
-<TT>ew_kmax</TT>. 
-The IMD-parameter <TT>ew_nmax</TT> determines the number
-of image simulation boxes taken into account in computing the
-first sum in the Ewald sum. If <TT>ew_nmax</TT> is chosen to be zero, the
-usual minimum image convention is applied.
+<p>
+The shell is assumed massless, because the (fast moving) electrons 
+are expected to be always in their instantaneous ground state. 
+This poses a problem in treating the shells as normal particles. 
+In principle, the shell positions would have to be fully relaxed 
+at each time step, which is very expensive. A way out is to assign 
+a very small mass to the shells, so that they move much faster than 
+the ionic cores. This requires, however, a correspondingly small 
+time step.</p>
 
-<P>
+<p>
+The harmonic potential of the shell model is specified by the
+parameter <tt>spring_const</tt>, which requires 
+<tt>ntypes*(ntypes-1)/2</tt> values (only particles of different 
+types (shells and cores) can interact with this potential).
+For type combinations which do not correspond to cores and the
+associated shells, the spring constant must be zero. The parameter 
+specifying the cutoff radius, <tt>r_cut</tt>, is shared with the 
+other <a href="pairpot.html#analyt">analytically defined</a> 
+pair potentials. This is no restriction, since shells and cores
+are expected to interact only with the harmonic potential.
+Similarly, the parameters <tt>r_begin</tt> and <tt>pot_res</tt>
+are shared with the <a href="pairpot.html#analyt">analytically defined</a> 
+pair potentials. <tt>r_begin</tt> specifies the starting value in
+the potential table (which must be zero for type combinations 
+interacting with the harmonic potential), and <tt>pot_res</tt>
+specifies the number of tabulated values of the potential table.
+</p>
 
 <!--#include virtual="imdfoot.html" -->

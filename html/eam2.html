@@ -1,8 +1,25 @@
 
 <!--#include virtual="imdhead.html" -->
 
-<h1>Implementation of EAM Potentials</h1>
- 
+<h1>EAM Potentials (option eam)</h1>
+
+<p>
+The energy in potentials of the Embedded Atom type consitsts of two
+parts, a pair potential term specifyed by the function Phi(r)
+representing the electrostatic core-core repulsion, and a cohesive
+term specifyed by the function F(rho) representing the energy the ion
+core gets when it is "embedded" in the "Electron Sea". This Embedding 
+Energy is a function of the local electron density, which in turn
+is constructed as a superposition of contributions from neighboring 
+atoms. This electron transfer is specifyed by the function Rho(r).</p>
+
+<p> 
+These functions depend on the type of the embedded atom (F_i(rho)), 
+or on the types i and j of the two atoms involved (Rho_ij(r), Phi_ij(r)). 
+The corresponding tabulated functions can be given in either of
+two <a href="potformat.html">formats</a>. Note that Rho and Phi have
+to be tabulated equidistant in r^2.</p>
+
 <p>
 The Embedded Atom Method (EAM) was implemented by Erik Bitzek. 
 <p>
@@ -12,10 +29,9 @@ The Embedded Atom Method (EAM) was implemented by Erik Bitzek.
 The Embedded Atom Method was suggested by Daw and Baskes (M. S. Daw
 and M. I. Baskes, <EM>Phys. Rev. B </EM><B>29</B>, 6443 (1984);
 S. M. Foiles, M. I. Baskes, and M. S. Daw, <EM> Phys. Rev. B </EM>
-<B>33</B>, 7983 (1986))
-as a way to overcome the main <!-- broken link
-<A HREF="http://poirot.sissa.it/~furio/md/md/node47.html#SECTION00630000000000000000"> -->
-problem with two-body potentials<!--</A>-->: the coordination independence of
+<B>33</B>, 7983 (1986)) as a way to overcome the main 
+<a href="http://www.fisica.uniud.it/~ercolessi/md/md/node47.html#SECTION00630000000000000000">
+problem with two-body potentials</a>: the coordination independence of
 the bond strength, while still being acceptable fast (about 2 times
 slower than pair potentials). 
 <p>
@@ -58,7 +74,7 @@ atomic_e-density_file   Potentials/Ni_u3/Rho_r2.Ni_u3.dat<BR>
 </CODE>
 <p>
 The potential file can be in either of two different 
-<A HREF="potentials.html#POTFORMAT">formats</A>.
+<a href="potformat.html">formats</a>.
 <p>
 It is the responsibility of the creator of the potential to make
 sure, that the functions of r go smoothly to zero and that the last
