@@ -11,7 +11,7 @@
 ******************************************************************************/
 
 #include "imd.h"
-
+/*#define ATNR 2826  easier debuging... */
 
 /*****************************************************************************
 *
@@ -225,11 +225,27 @@ void move_atoms_mik(void)
         kin_energie_1 = SPRODN(p->impuls,i,p->impuls,i);
 
 #ifdef FBC
+#ifdef ATNR
+	if(p->nummer[i]==ATNR){
+	printf("kraft vorher: %.16f  %.16f  %.16f \n",(p->kraft X(i)),(p->kraft Y(i)),(p->kraft Z(i)));
+	printf("fbc_forces: %.16f  %.16f  %.16f \n", ((fbc_forces + p->sorte[i])->x),((fbc_forces + p->sorte[i])->y),((fbc_forces + p->sorte[i])->z));
+	fflush(stdout);
+	}
+#endif
         /* give virtual particles their extra force */
 	(p->kraft X(i)) += ((fbc_forces + p->sorte[i])->x);
 	(p->kraft Y(i)) += ((fbc_forces + p->sorte[i])->y);
 #ifndef TWOD
 	(p->kraft Z(i)) += ((fbc_forces + p->sorte[i])->z);
+#endif
+#ifdef ATNR
+	if(p->nummer[i]==ATNR){
+	printf("kraft nachher: %.16f  %.16f  %.16f \n",(p->kraft X(i)),(p->kraft Y(i)),(p->kraft Z(i)));
+	fflush(stdout);
+	printf("impuls  vorher: %.16f  %.16f  %.16f \n",(p->impuls X(i)),(p->impuls Y(i)),(p->impuls Z(i)));
+	fflush(stdout);
+	}
+
 #endif
 	/* and set their impuls in restricted directions to 0 */
 	p->impuls X(i) += timestep * p->kraft X(i)*(restrictions + p->sorte[i])->x;
@@ -237,6 +253,7 @@ void move_atoms_mik(void)
 #ifndef TWOD
         p->impuls Z(i) += timestep * p->kraft Z(i)*(restrictions + p->sorte[i])->z;
 #endif
+
 
 #else
 
@@ -262,7 +279,13 @@ void move_atoms_mik(void)
           p->ort Z(i) += tmp * p->impuls Z(i);
 #endif
         }
-
+#ifdef ATNR
+	if(p->nummer[i]==ATNR){
+	printf("impuls: %.16f  %.16f  %.16f \n",(p->impuls X(i)),(p->impuls Y(i)),(p->impuls Z(i)));
+	printf("ort:  %.16f  %.16f  %.16f \n",(p->ort X(i)),(p->ort Y(i)),(p->ort Z(i)));
+	fflush(stdout);
+	}
+#endif
         kin_energie_2 =  SPRODN(p->impuls,i,p->impuls,i);
 
         /* sum up kinetic energy on this CPU */ 

@@ -11,7 +11,7 @@
 ******************************************************************************/
 
 #include "imd.h"
-
+/*#define ATNR 2826   easier debuging... /*
 
 /*****************************************************************************
 *
@@ -129,8 +129,11 @@ void main_loop(void)
         (nofbcsteps==fbc_waitsteps)) 
      {
       nofbcsteps=0;
-      for (l=0;l<vtypes;l++)
-         *(fbc_df+l) = *(fbc_dforces+l) ;
+      for (l=0;l<vtypes;l++){
+         (fbc_df+l)->x = (fbc_dforces+l)->x ;
+	 (fbc_df+l)->y = (fbc_dforces+l)->y ;
+	 (fbc_df+l)->z = (fbc_dforces+l)->z ;
+      }
      }
  }
 
@@ -157,6 +160,10 @@ void main_loop(void)
    (fbc_forces+l)->y += (fbc_df+l)->y;
    (fbc_forces+l)->z += (fbc_df+l)->z;
   } 
+#ifdef ATNR
+ printf(" step: %d \n",steps); 
+ fflush(stdout);
+#endif
 #endif
 
 #ifdef MPI
