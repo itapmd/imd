@@ -1875,7 +1875,15 @@ void broadcast_params() {
   MPI_Bcast( &shear_factor , 2, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &exp_interval , 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &expansion ,  DIM, REAL,    0, MPI_COMM_WORLD); 
+
+  MPI_Bcast( &lindef_interval , 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &lindef_x        ,  DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &lindef_y        ,  DIM, REAL, 0, MPI_COMM_WORLD); 
+#ifndef TWOD
+  MPI_Bcast( &lindef_z        ,  DIM, REAL, 0, MPI_COMM_WORLD); 
 #endif
+#endif
+
 #if defined(DEFORM)
   MPI_Bcast( &ekin_threshold , 1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &annealsteps ,    1, MPI_INT, 0, MPI_COMM_WORLD); 
