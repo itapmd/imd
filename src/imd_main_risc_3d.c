@@ -1,3 +1,4 @@
+
 /******************************************************************************
 *
 * imd_main_risc_3d.c -- main loop, risc specific part, three dimensions
@@ -5,7 +6,6 @@
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
@@ -25,10 +25,10 @@ void calc_forces(void)
 
   /* clear global accumulation variables */
   tot_pot_energy = 0.0;
-  virial         = 0.0;
-  vir_vect.x     = 0.0;
-  vir_vect.y     = 0.0;
-  vir_vect.z     = 0.0;
+  virial = 0.0;
+  vir_x  = 0.0;
+  vir_y  = 0.0;
+  vir_z  = 0.0;
   
 #ifdef EAM
   memset(eam_rho,  0,(natoms+1)*        sizeof(real));
@@ -86,7 +86,7 @@ void calc_forces(void)
   /* compute forces for all pairs of cells */
   for (n=0; n<6; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
@@ -112,7 +112,7 @@ void calc_forces(void)
   /* if EAM2, we have to loop a second time over pairs of distinct cells */
   for (n=0; n<6; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
@@ -129,7 +129,7 @@ void calc_forces(void)
   /* second EAM2 loop over all cells pairs */
   for (n=0; n<6; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
@@ -145,7 +145,7 @@ void calc_forces(void)
   /* if EAM2, we have to loop a second time over pairs of distinct cells */
   for (n=0; n<6; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
@@ -163,7 +163,7 @@ void calc_forces(void)
 #ifdef EAM
   /* EAM cohesive function potential */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
   for (k=0; k<ncells; ++k) {
     do_forces_eam_2(cell_array + k);
@@ -173,7 +173,7 @@ void calc_forces(void)
 #ifdef TTBP
   /* TTBP: three body potential */
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
   for (k=0; k<ncells; ++k) {
     do_forces_ttbp(cell_array + k);
@@ -182,7 +182,7 @@ void calc_forces(void)
 
 #ifdef TERSOFF
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
   for (k=0; k<ncells; ++k) {
     do_forces_tersoff(cell_array + k); 

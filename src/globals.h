@@ -166,12 +166,10 @@ EXTERN int  use_curr_temp INIT(0);  /* which starting temp to use (flag) */
 EXTERN int  do_maxwell INIT(0.0);
 EXTERN long seed INIT(0);           /* seed for random number generator */
 
-#if defined(FNORM) || defined(GLOK)
 /* scalar product of global force vector f=(f1.x, f1.y,...,fn.z) */
 EXTERN real fnorm INIT(0.0);  
 /* scalar product of global force and momentum vectors */ 
 EXTERN real PxF INIT(0.0);
-#endif
 
 /* Potential Table */
 EXTERN pot_table_t pair_pot;         /* potential data structure */
@@ -246,7 +244,8 @@ EXTERN real inv_tau_eta_rot INIT(0.0);
 #endif
 #endif
 
-EXTERN vektor vir_vect INIT(nullvektor);   /* diagonal of virial tensor */
+/* diagonal of virial tensor */
+EXTERN real vir_x INIT(0.0), vir_y INIT(0.0), vir_z INIT(0.0);
 EXTERN vektor stress INIT(nullvektor);     /* diagonal of stress tensor */
 
 EXTERN int    cells_too_small INIT(0);

@@ -141,14 +141,14 @@ void do_forces_ttbp(cell *p)
   } /* i */
 
 #ifdef P_AXIAL
-  vir_vect.x += tmp_vir_vect.x;
-  virial     += tmp_vir_vect.x;
-  vir_vect.y += tmp_vir_vect.y;
-  virial     += tmp_vir_vect.y;
-  vir_vect.z += tmp_vir_vect.z;
-  virial     += tmp_vir_vect.z;
+  vir_x  += tmp_vir_vect.x;
+  virial += tmp_vir_vect.x;
+  vir_y  += tmp_vir_vect.y;
+  virial += tmp_vir_vect.y;
+  vir_z  += tmp_vir_vect.z;
+  virial += tmp_vir_vect.z;
 #else
-  virial     += tmp_virial;
+  virial += tmp_virial;
 #endif
 
 }
@@ -368,14 +368,14 @@ void do_forces_tersoff(cell *p)
   } /* i */
 
 #ifdef P_AXIAL
-  vir_vect.x += tmp_vir_vect.x;
-  virial     += tmp_vir_vect.x;
-  vir_vect.y += tmp_vir_vect.y;
-  virial     += tmp_vir_vect.y;
-  vir_vect.z += tmp_vir_vect.z;
-  virial     += tmp_vir_vect.z;
+  vir_x  += tmp_vir_vect.x;
+  virial += tmp_vir_vect.x;
+  vir_y  += tmp_vir_vect.y;
+  virial += tmp_vir_vect.y;
+  vir_z  += tmp_vir_vect.z;
+  virial += tmp_vir_vect.z;
 #else
-  virial     += tmp_virial;
+  virial += tmp_virial;
 #endif
 
 }

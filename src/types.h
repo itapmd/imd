@@ -160,7 +160,7 @@ typedef struct {
   real *end;        /* last value in the table (followed by extra zeros) */
   real *step;       /* table increment */
   real *invstep;    /* inverse of increment */
-  real maxsteps;    /* physical length of the table */
+  int  maxsteps;    /* physical length of the table */
   real *table;      /* the actual data */
 } pot_table_t;
 

@@ -14,6 +14,7 @@
 # risc	compile for serial execution, with cc where available
 # gcc	compile for serial execution, with gcc
 # mpi	compile for parallel execution, using MPI
+# omp   compile for parallel execution, using OpenMP
 # pacx  compile for parallel execution, using PACX
 #
 # Machine and compiler specific flags, libraries, etc., are chosen as
@@ -24,7 +25,7 @@
 #
 #   i?86-linux, i686		Linux    		risc gcc
 #   alpha			True64 Unix             risc gcc
-#   iris4d			SGI Irix		risc gcc
+#   iris4d			SGI Irix		risc gcc omp
 #   t3e				Cray Unicos/mk		risc mpi pacx
 #   HITACHI, SR2201		HI-UX/MPP		mpi
 #
@@ -141,6 +142,12 @@ CFLAGS_GCC_alpha	= -Dalpha -DRISC -O3
 CFLAGS_GCC_alpha_DEBUG	= -Dalpha -DRISC -g
 CFLAGS_GCC_alpha_PROF	= -g3 -pg
 
+# flags for alpha with OpenMP
+#CC_OMP_alpha		= cc.alt
+#CFLAGS_OMP_alpha	= -Dalpha -DOMP -mp -O3 -float -fp_reorder -arch ev56 -tune host
+#CFLAGS_OMP_alpha_DEBUG	= -Dalpha -DOMP -mp -g
+#CFLAGS_OMP_alpha_PROF	= -g3 -pg
+
 # flags for alpha with LAM/MPI
 #CC_MPI_alpha		= hcc
 #CFLAGS_MPI_alpha	= -Dalpha -DMPI -O3
@@ -149,8 +156,8 @@ CFLAGS_GCC_alpha_PROF	= -g3 -pg
 
 # flags for IRIX with cc
 CC_RISC_iris4d			= cc
-CFLAGS_RISC_iris4d		= -Dsgi -DRISC -O3 -n32 -mips3 -xansi
-CFLAGS_RISC_iris4d_DEBUG	= -Dsgi -DRISC -g -fullwarn -xansi
+CFLAGS_RISC_iris4d		= -Dsgi -DRISC -O3 -n32 -mips3 -xansi -woff 1174
+CFLAGS_RISC_iris4d_DEBUG	= -Dsgi -DRISC -g -xansi -woff 1174
 CFLAGS_RISC_iris4d_PROF		= -g3
 
 # flags for IRIX with gcc
@@ -158,6 +165,12 @@ CC_GCC_iris4d			= gcc
 CFLAGS_GCC_iris4d		= -Dsgi -DRISC -O3
 CFLAGS_GCC_iris4d_DEBUG		= -Dsgi -DRISC -g
 CFLAGS_GCC_iris4d_PROF		= -g3 -pg
+
+# flags for IRIX with OpenMP
+CC_OMP_iris4d			= cc
+CFLAGS_OMP_iris4d		= -Dsgi -DOMP -mp -O3 -n32 -mips3 -xansi -woff 1174
+CFLAGS_OMP_iris4d_DEBUG		= -Dsgi -DOMP -mp -g -xansi -woff 1174
+CFLAGS_OMP_iris4d_PROF		= -g3
 
 # flags for IRIX with LAM/MPI
 #CC_MPI_iris4d			= hcc
@@ -220,6 +233,7 @@ endif
 CC_RISC           = ${CC_RISC_${IMDHOST}}
 CC_GCC		  = ${CC_GCC_${IMDHOST}}
 CC_MPI		  = ${CC_MPI_${IMDHOST}}
+CC_OMP		  = ${CC_OMP_${IMDHOST}}
 CC_PACX		  = ${CC_PACX_${IMDHOST}}
 
 # to link or not to link
@@ -320,6 +334,34 @@ endif
 ifneq (,$(findstring prof,${MAKETARGET}))
 CFLAGS += ${CFLAGS_MPI_${IMDHOST}_PROF}
 LIBS   += ${LIBS_PROF_${IMDHOST}}
+endif
+
+endif
+
+
+###  OpenMP  ############################################
+
+ifneq (,$(strip $(findstring omp,${MAKETARGET})))
+CC      := ${CC_OMP}
+
+# twod or not twod
+ifneq (,$(strip $(findstring 2d,${MAKETARGET})))
+HEADERS := ${IMDHEADERS}
+SOURCES	:= ${SOURCES2D} ${RISCSOURCES2D}
+CFLAGS  += -DTWOD
+else
+HEADERS := ${IMDHEADERS}
+SOURCES	:= ${SOURCES3D} ${RISCSOURCES3D}
+endif
+
+# general compiler flags
+ifneq (,$(findstring debug,${MAKETARGET}))
+CFLAGS += ${CFLAGS_OMP_${IMDHOST}_DEBUG}
+else
+CFLAGS += ${CFLAGS_OMP_${IMDHOST}}
+endif
+ifneq (,$(findstring prof,${MAKETARGET}))
+CFLAGS += ${CFLAGS_OMP_${IMDHOST}_PROF}
 endif
 
 endif

@@ -217,16 +217,16 @@ void do_forces(cell *ap, cell *aq, vektor apbc)
   tot_pot_energy += tmp_energy;
 
 #ifdef P_AXIAL
-  vir_vect.x += tmp_vir_vect.x;
-  vir_vect.y += tmp_vir_vect.y;
-  virial     += tmp_vir_vect.x;
-  virial     += tmp_vir_vect.y;
+  vir_x  += tmp_vir_vect.x;
+  vir_y  += tmp_vir_vect.y;
+  virial += tmp_vir_vect.x;
+  virial += tmp_vir_vect.y;
 #ifndef TWOD
-  vir_vect.z += tmp_vir_vect.z;
-  virial     += tmp_vir_vect.z;
+  vir_z  += tmp_vir_vect.z;
+  virial += tmp_vir_vect.z;
 #endif
 #else
-  virial     += tmp_virial;
+  virial += tmp_virial;
 #endif
 
 

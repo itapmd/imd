@@ -40,15 +40,14 @@
 void calc_forces(void)
 {
   int n, k;
-  real tmp, tmpvir;
-  vektor tmpvec;
+  real tmpvec1[5], tmpvec2[5];
 
   /* clear global accumulation variables */
   tot_pot_energy = 0.0;
   virial         = 0.0;
-  vir_vect.x     = 0.0;
-  vir_vect.y     = 0.0;
-  vir_vect.z     = 0.0;
+  vir_x          = 0.0;
+  vir_y          = 0.0;
+  vir_z          = 0.0;
 
 #ifdef EAM
 #ifdef AR
@@ -168,11 +167,11 @@ void calc_forces(void)
   /* potential energy and virial are already complete; to avoid double
      counting, we keep a copy of the current value, which we use later */
 
-  tmp      = tot_pot_energy;
-  tmpvir   = virial;
-  tmpvec.x = vir_vect.x;
-  tmpvec.y = vir_vect.y;
-  tmpvec.z = vir_vect.z;
+  tmpvec1[0] = tot_pot_energy;
+  tmpvec1[1] = vir_x;
+  tmpvec1[2] = vir_y;
+  tmpvec1[3] = vir_z;
+  tmpvec1[4] = virial;
 
   /* compute forces for remaining pairs of cells */
   for (n=0; n<6; ++n) {
@@ -197,11 +196,11 @@ void calc_forces(void)
   }
 
   /* use the previously saved values of potential energy and virial */
-  tot_pot_energy = tmp;
-  virial     = tmpvir;
-  vir_vect.x = tmpvec.x;
-  vir_vect.y = tmpvec.y;
-  vir_vect.z = tmpvec.z;
+  tot_pot_energy = tmpvec1[0];
+  vir_x          = tmpvec1[1];
+  vir_y          = tmpvec1[2];
+  vir_z          = tmpvec1[3];
+  virial         = tmpvec1[4];
 
 #endif  /* ... ifndef AR */
 
@@ -266,11 +265,11 @@ void calc_forces(void)
   /* potential energy and virial are already complete; to avoid double
      counting, we keep a copy of the current value, which we use later */
 
-  tmp      = tot_pot_energy;
-  tmpvir   = virial;
-  tmpvec.x = vir_vect.x;
-  tmpvec.y = vir_vect.y;
-  tmpvec.z = vir_vect.z;
+  tmpvec1[0] = tot_pot_energy;
+  tmpvec1[1] = vir_x;
+  tmpvec1[2] = vir_y;
+  tmpvec1[3] = vir_z;
+  tmpvec1[4] = virial;
 
   /* compute forces for remaining pairs of cells */
   for (n=0; n<6; ++n) {
@@ -286,27 +285,30 @@ void calc_forces(void)
   }
 
   /* use the previously saved values of potential energy and virial */
-  tot_pot_energy = tmp;
-  virial     = tmpvir;
-  vir_vect.x = tmpvec.x;
-  vir_vect.y = tmpvec.y;
-  vir_vect.z = tmpvec.z;
+  tot_pot_energy = tmpvec1[0];
+  vir_x          = tmpvec1[1];
+  vir_y          = tmpvec1[2];
+  vir_z          = tmpvec1[3];
+  virial         = tmpvec1[4];
 
 #endif /* not AR */
 
 #endif /* EAM2 */
 
   /* sum up results of different CPUs */
-  MPI_Allreduce( &tot_pot_energy, &tmp, 1, REAL, MPI_SUM, cpugrid); 
-  tot_pot_energy = tmp; 
+  tmpvec1[0] = tot_pot_energy;
+  tmpvec1[1] = vir_x;
+  tmpvec1[2] = vir_y;
+  tmpvec1[3] = vir_z;
+  tmpvec1[4] = virial;
 
-  MPI_Allreduce( &virial,   &tmpvir,    1, REAL, MPI_SUM, cpugrid);
-  virial = tmpvir;
+  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid); 
 
-  MPI_Allreduce( &vir_vect, &tmpvec,  DIM, REAL, MPI_SUM, cpugrid);
-  vir_vect.x = tmpvec.x;
-  vir_vect.y = tmpvec.y;
-  vir_vect.z = tmpvec.z;
+  tot_pot_energy = tmpvec2[0];
+  vir_x          = tmpvec2[1];
+  vir_y          = tmpvec2[2];
+  vir_z          = tmpvec2[3];
+  virial         = tmpvec2[4];
 
 }
 
@@ -327,17 +329,9 @@ void calc_forces(void)
   int u,v,w;
   vektor pbc = {0.0,0.0,0.0};
   real tmp, tmpvir;
-#ifdef P_AXIAL
-  vektor tmpvec;
-#endif
 
   tot_pot_energy = 0.0;
   virial         = 0.0;
-#ifdef P_AXIAL
-  vir_vect.x     = 0.0;
-  vir_vect.y     = 0.0;
-  vir_vect.z     = 0.0;
-#endif
 
   /* Zero Forces */
   for (k=0; k<nallcells; ++k) {
@@ -387,11 +381,6 @@ void calc_forces(void)
 
   tmp      = tot_pot_energy;
   tmpvir   = virial;
-#ifdef P_AXIAL
-  tmpvec.x = vir_vect.x;
-  tmpvec.y = vir_vect.y;
-  tmpvec.z = vir_vect.z;
-#endif
 
   /* for each cell in bulk */
   for (i=1; i < cell_dim.x-1; ++i)
@@ -426,11 +415,6 @@ void calc_forces(void)
   /* use the previously saved values of potential energy and virial */
   tot_pot_energy = tmp;
   virial     = tmpvir;
-#ifdef P_AXIAL
-  vir_vect.x = tmpvec.x;
-  vir_vect.y = tmpvec.y;
-  vir_vect.z = tmpvec.z;
-#endif
 
 #endif  /* ... ifndef AR */
 
@@ -440,13 +424,6 @@ void calc_forces(void)
 
   MPI_Allreduce( &virial, &tmp,         1, REAL, MPI_SUM, cpugrid);
   virial = tmp;
-
-#ifdef P_AXIAL
-  MPI_Allreduce( &vir_vect, &tmpvec,  DIM, REAL, MPI_SUM, cpugrid);
-  vir_vect.x = tmpvec.x;
-  vir_vect.y = tmpvec.y;
-  vir_vect.z = tmpvec.z;
-#endif
 
 }
 

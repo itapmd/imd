@@ -1,4 +1,3 @@
-#ifdef UNIAX
 
 /*****************************************************************************
 *
@@ -132,11 +131,10 @@ void do_forces_uniax(cell *p, cell *q, vektor pbc)
 
   }; /* for i */
 
-  vir_vect.x += tmp_vir_vect.x;
-  vir_vect.y += tmp_vir_vect.y;
-  vir_vect.z += tmp_vir_vect.z;
-  virial     += tmp_virial ;
+  vir_x  += tmp_vir_vect.x;
+  vir_y  += tmp_vir_vect.y;
+  vir_z  += tmp_vir_vect.z;
+  virial += tmp_virial ;
 
 } /* do_forces_uniax */
 
-#endif

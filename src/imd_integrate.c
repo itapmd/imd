@@ -950,11 +950,11 @@ void move_atoms_npt_axial(void)
 #endif
 
   tot_kin_energy  = stress.x + stress.y;
-  stress.x        = (stress.x / 2.0 + vir_vect.x) / volume;
-  stress.y        = (stress.y / 2.0 + vir_vect.y) / volume;
+  stress.x        = (stress.x / 2.0 + vir_x) / volume;
+  stress.y        = (stress.y / 2.0 + vir_y) / volume;
 #ifndef TWOD
   tot_kin_energy += stress.z;
-  stress.z        = (stress.z / 2.0 + vir_vect.z) / volume;
+  stress.z        = (stress.z / 2.0 + vir_z) / volume;
 #endif
   tot_kin_energy /= 4.0;
 

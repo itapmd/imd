@@ -35,13 +35,12 @@
 void calc_forces(void)
 {
   int    n, k;
-  real   tmp, tmpvir;
-  vektor tmpvec;
+  real   tmpvec1[4], tmpvec2[4];
 
   tot_pot_energy = 0.0;
   virial         = 0.0;
-  vir_vect.x     = 0.0;
-  vir_vect.y     = 0.0;
+  vir_x          = 0.0;
+  vir_y          = 0.0;
 
   /* Zero Forces */
   for (k=0; k<nallcells; ++k) {
@@ -90,10 +89,10 @@ void calc_forces(void)
   /* potential energy and virial are already complete; to avoid double
      counting, we keep a copy of the current value, which we use later */
 
-  tmp      = tot_pot_energy;
-  tmpvir   = virial;
-  tmpvec.x = vir_vect.x;
-  tmpvec.y = vir_vect.y;
+  tmpvec1[0] = tot_pot_energy;
+  tmpvec1[1] = vir_x;
+  tmpvec1[2] = vir_y;
+  tmpvec1[3] = virial;
 
   /* compute forces for remaining pairs of cells */
   for (n=0; n<4; ++n) {
@@ -108,23 +107,25 @@ void calc_forces(void)
   }
 
   /* use the previously saved values of potential energy and virial */
-  tot_pot_energy = tmp;
-  virial     = tmpvir;
-  vir_vect.x = tmpvec.x;
-  vir_vect.y = tmpvec.y;
+  tot_pot_energy = tmpvec1[0];
+  vir_x          = tmpvec1[1];
+  vir_y          = tmpvec1[2];
+  virial         = tmpvec1[3];
 
 #endif /* AR */
 
   /* sum up results of different CPUs */
-  MPI_Allreduce( &tot_pot_energy, &tmp, 1, REAL, MPI_SUM, cpugrid); 
-  tot_pot_energy = tmp; 
+  tmpvec1[0] = tot_pot_energy;
+  tmpvec1[1] = vir_x;
+  tmpvec1[2] = vir_y;
+  tmpvec1[3] = virial;
 
-  MPI_Allreduce( &virial,   &tmpvir,    1, REAL, MPI_SUM, cpugrid);
-  virial = tmpvir;
+  MPI_Allreduce( tmpvec1, tmpvec2, 4, REAL, MPI_SUM, cpugrid); 
 
-  MPI_Allreduce( &vir_vect, &tmpvec,  DIM, REAL, MPI_SUM, cpugrid);
-  vir_vect.x = tmpvec.x;
-  vir_vect.y = tmpvec.y;
+  tot_pot_energy = tmpvec2[0];
+  vir_x          = tmpvec2[1];
+  vir_y          = tmpvec2[2];
+  virial         = tmpvec2[3];
 
 }
 
