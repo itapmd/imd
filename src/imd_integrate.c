@@ -357,8 +357,8 @@ void move_atoms_nvt(void)
   real reibung_rot,  eins_d_reibung_rot;
 #endif
 
-  reibung        =      1.0 - eta * timestep / 2.0;
-  eins_d_reibung = 1.0 / (1.0 + eta * timestep / 2.0);
+  reibung        =      1.0 - eta * isq_tau_eta * timestep / 2.0;
+  eins_d_reibung = 1.0 / (1.0 + eta * isq_tau_eta * timestep / 2.0);
 #ifdef UNIAX
   reibung_rot    =      1.0 - eta_rot * timestep / 2.0;
   eins_d_reibung_rot = 1.0 / (1.0 + eta_rot * timestep / 2.0);
@@ -1160,8 +1160,8 @@ void move_atoms_stm(void)
           reibung = 1.0;
           eins_d_reibung = 1.0;
         } else {
-          reibung        =      1 - eta * timestep / 2.0;
-          eins_d_reibung = 1 / (1 + eta * timestep / 2.0);
+          reibung        =      1 - eta * isq_tau_eta * timestep / 2.0;
+          eins_d_reibung = 1 / (1 + eta * isq_tau_eta * timestep / 2.0);
         }
 
         /* twice the old kinetic energy */
