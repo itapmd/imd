@@ -30,19 +30,20 @@ machine. Here are some important examples:
 <TR><TD>Hitachi:        <TD>mpirun -np P imd_program [-rN] -p parameter_file
 </TABLE>
 <P>
-On a cluster of workstations where <A
-HREF=http://www.mpi.nd.edu/lam/>LAM-MPI</A> is installed boot the
+On a <B>cluster of workstations</B> where <A
+HREF=http://www.bioinf.cs.uni-potsdam.de/doc/Multiprocessing/lam.html>LAM-MPI</A> is installed boot the
 cluster with<BR><BR>
 lamboot -v &lt;<TT>hostfile</TT>&gt;<BR><BR>
-where <TT>hostfile</TT> contains lines with the workstations that
+where <TT>hostfile</TT> contains lines with the hostnames of the
+workstations (or their IP-addresses) that
 shall be part of the cluster. Then start IMD by typing<BR><BR>
-mpirun -np P imd_program [-rN] -p parameter_file
-<BR><BR>
-
-<P> 
-In all these examples, P is the number of processors to be used,
-which must agree with the number of processors requested in the
-parameter file.
+mpirun -np imd_program -- -p parameter_file<BR><BR>
+Here p is a list of numbers specifying the machines of the cluster
+that shall be used in the simulation. For example if the whole cluster
+of, say, 8 machines shall be used, select p = 0-7.
+The cluster is destroyed by invoking<BR><BR>
+wipe &lt;<TT>hostfile</TT>&gt;<BR><BR>
+where <TT>hostfile 
 <P>
 Interesting Cray T3E commands: <B>fpart</B> and <B>grmview</B> show the free partitions
 and the partitioning of the machine.
