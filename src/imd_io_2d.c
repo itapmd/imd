@@ -433,12 +433,7 @@ void write_cell(FILE *out, cell *p)
   int i;
   double h;
 
-  for (i=0; i<p->n; i++)
-#ifdef ZOOM
-    if( (p->ort X(i) >= pic_ll.x) && (p->ort X(i) <= pic_ur.x) &&
-        (p->ort Y(i) >= pic_ll.y) && (p->ort Y(i) <= pic_ur.y) )
-#endif
-    {
+  for (i=0; i<p->n; i++) {
 #ifdef NVX
       h  = SPRODN(p->impuls,i,p->impuls,i)/(2*p->masse[i])+p->heatcond[i];
       h *=  p->impuls X(i) /  p->masse[i];
@@ -448,17 +443,17 @@ void write_cell(FILE *out, cell *p)
 #endif
         p->nummer[i],
         p->sorte[i],
-	p->masse[i],
-	p->ort X(i),
-	p->ort Y(i),
-	p->impuls X(i) / p->masse[i],
-	p->impuls Y(i) / p->masse[i],
+        p->masse[i],
+        p->ort X(i),
+        p->ort Y(i),
+        p->impuls X(i) / p->masse[i],
+        p->impuls Y(i) / p->masse[i],
         p->pot_eng[i]
 #ifdef NVX
         ,h
 #endif
       );
-    }
+  }
 }
 
 /******************************************************************************
@@ -473,67 +468,11 @@ void write_config(int steps)
   FILE *out;
   str255 fname;
   int fzhlr;
-  cell *p;
-  int k,m,tag;
 
-  /* make output file name */
   fzhlr = steps / rep_interval;
 
-#ifdef MPI  
-  if (1==parallel_output)
-    sprintf(fname,"%s.%u.%u",outfilename,fzhlr,myid);
-  else
-#endif
-    sprintf(fname,"%s.%u",outfilename,fzhlr);
-
-#ifdef MPI
-  if (1==parallel_output) {
-#endif
-
-    /* open output file */
-    out = fopen(fname,"w");
-    if (NULL == out) error("Cannot open output file for config.");
-
-    for (k=0; k<ncells; k++) {
-      p = cell_array + CELLS(k);
-      write_cell(out,p);
-    }
-    fclose(out);
-
-#ifdef MPI
-  } else { 
-
-    if (0==myid) {
-
-      /* open output file */
-      out = fopen(fname,"w");
-      if (NULL == out) error("Cannot open output file for config.");
-
-      /* write own data */
-      for (k=0; k<ncells; k++) {
-        p = cell_array + CELLS(k);
-        write_cell(out,p);
-      }
-
-      /* receive data from other cpus and write that */
-      p = cell_array;  /* this is a pointer to the first (buffer) cell */
-      for (m=1; m<num_cpus; ++m)
-        for (k=0; k<ncells; k++) {
-          recv_cell(p,MPI_ANY_SOURCE,CELL_TAG);
-	  write_cell(out,p);
-	}
-      fclose(out);
-
-    } else { 
-
-      /* send data to cpu 0 */
-      for (k=0; k<ncells; k++) {
-        p = cell_array + CELLS(k);
-        send_cell(p,0,CELL_TAG);
-      }
-    }
-  }
-#endif
+  /* write checkpoint */
+  write_config_select(fzhlr,"chkpt",write_cell);
 
   /* write iteration file */
   if (myid == 0) {

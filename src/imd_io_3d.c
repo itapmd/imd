@@ -589,16 +589,8 @@ void write_cell(FILE *out, cell *p)
 {
   int i;
 
-  for (i=0; i<p->n; i++)
-#ifdef ZOOM
-    if ( (p->ort X(i) >= pic_ll.x) && (p->ort X(i) <= pic_ur.x) &&
-         (p->ort Y(i) >= pic_ll.y) && (p->ort Y(i) <= pic_ur.y) &&
-         (p->ort Z(i) >= pic_ll.z) && (p->ort Z(i) <= pic_ur.z) )
-#endif
-    {
-#ifndef MONOLJ
-      fprintf(out,"%d %d %12.16f ", p->nummer[i], p->sorte[i], p->masse[i]);
-#endif
+  for (i=0; i<p->n; i++) {
+      fprintf(out,"%d %d %12.16f ", NUMMER(p,i), SORTE(p,i), MASSE(p,i));
 #ifdef UNIAX
       fprintf(out,"%12.16f ", p->traeg_moment[i]);
 #endif
@@ -629,7 +621,7 @@ void write_cell(FILE *out, cell *p)
       fprintf(out,"%12.16f", POTENG(p,i));
 #endif
       fprintf(out,"\n");
-    }
+  }
 }
 
 /******************************************************************************
@@ -643,62 +635,12 @@ void write_config(int steps)
 { 
   FILE *out;
   str255 fname;
-  int fzhlr,k,m,tag,n;
-  cell *p;
+  int fzhlr;
 
   fzhlr = steps / rep_interval;
-#ifdef MPI  
-  if (1==parallel_output)
-    sprintf(fname,"%s.%u.%u",outfilename,fzhlr,myid);
-  else
-#endif
-    sprintf(fname,"%s.%u",outfilename,fzhlr);
 
-#ifdef MPI
-  if (1==parallel_output) {
-#endif
-
-    out = fopen(fname,"w");
-    if (NULL == out) error("Cannot open output file for config.");
-    for (k=0; k<ncells; k++) {
-      p = cell_array + CELLS(k);
-      write_cell(out,p);
-    }
-    fclose(out);
-
-#ifdef MPI
-  } else { 
-
-    if (0==myid) {
-
-      out = fopen(fname,"w");
-      if (NULL == out) error("Cannot open output file for config.");
-
-      /* write own data */
-      for (k=0; k<ncells; k++) {
-        p = cell_array + CELLS(k);
-        write_cell(out,p);
-      }
-
-      /* receive data from other cpus and write that */
-      p = cell_array;  /* this is a pointer to the first (buffer) cell */
-      for (m=1; m<num_cpus; ++m)
-        for (k=0; k<ncells; k++) {
-          recv_cell(p,MPI_ANY_SOURCE,CELL_TAG);
-          write_cell(out,p);
-        }
-      fclose(out);      
-
-    } else { 
-
-      /* send data to cpu 0 */
-      for (k=0; k<ncells; k++) {
-        p = cell_array + CELLS(k);
-        send_cell(p,0,CELL_TAG);
-      }
-    }
-  }
-#endif /* MPI */
+  /* write checkpoint */
+  write_config_select(fzhlr,"chkpt",write_cell);
 
   /* write iteration file */
   if (myid == 0) {

@@ -29,43 +29,62 @@ void write_config_select(int fzhlr, char *suffix,
   cell *p;
   int k,m,tag;
 
+  /* create file name, and open file */
+#ifdef MPI
+  if (1==parallel_output) {
+    sprintf(fname,"%s.%u.%s.%u",outfilename,fzhlr,suffix,myid);
+    out = fopen(fname,"w");
+    if (NULL == out) { 
+       sprintf(msg,"Cannot open output file %s",fname);
+       error(msg);
+    }
+  } else
+#endif
   if (0==myid) {
-
-    /* open output file */
-    sprintf(fname,"%s.%s.%u",outfilename,suffix,fzhlr);
+    sprintf(fname,"%s.%u.%s",outfilename,fzhlr,suffix);
     out = fopen(fname,"w");
     if (NULL == out) {
        sprintf(msg,"Cannot open output file %s",fname);
        error(msg);
     }
+  }
 
+  /* write data */
+#ifndef MPI
+  for (k=0; k<ncells; k++) {
+    p = cell_array + CELLS(k);
+    (*write_cell_fun)(out,p);
+  }
+  fclose(out);
+#else
+  if (1==parallel_output) {
+    for (k=0; k<ncells; k++) {
+      p = cell_array + CELLS(k);
+      (*write_cell_fun)(out,p);
+    }
+    fclose(out);
+  } else if (0==myid) {
     /* write own data */
     for (k=0; k<ncells; k++) {
       p = cell_array + CELLS(k);
       (*write_cell_fun)(out,p);
     }
-
-#ifdef MPI
+    /* write foreign data */
     p = cell_array;  /* this is a pointer to the first (buffer) cell */
     for (m=1; m<num_cpus; ++m)
       for (k=0; k<ncells; k++) {
-        recv_cell(p,MPI_ANY_SOURCE,CELL_TAG);
+        recv_cell(p,MPI_ANY_SOURCE,CELL_TAG); /* accept cells in any order */
         (*write_cell_fun)(out,p);
       }
-#endif
-
     fclose(out);      
-  } 
-
-#ifdef MPI
-  else { 
+  } else { 
     /* send data to cpu 0 */
     for (k=0; k<ncells; k++) {
       p = cell_array + CELLS(k);
       send_cell(p,0,CELL_TAG);
     }
   }
-#endif
+#endif /* MPI */
 
 }
 
