@@ -69,7 +69,7 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 #endif
   real *qptr;
 
-  int  eam_k,eam_pni,eam_pnj;     /* dummy, atom number */
+  integer  eam_k,eam_pni,eam_pnj;     /* dummy, atom number */
   real eam_phi_ij;        /* interaction between i and j */
   real eam_r_ij;          /* distance, needed for eam forces */
 
@@ -221,9 +221,9 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 	eam_phi_ij = (eam_r_ij-eam_r_cut)*(eam_r_ij-eam_r_cut);
 
         /* save #j in the #i array field k > 0  (-> calc of forces) */
-        eam_ij[eam_pni*eam_len]         += 1;
-        eam_k                            = eam_ij[eam_pni*eam_len];
-        eam_ij[eam_pni*eam_len+eam_k]    = q->nummer[j]; 
+        eam_ij[eam_pni*eam_len]         += (real) 1;
+        eam_k                            = (integer) eam_ij[eam_pni*eam_len];
+        eam_ij[eam_pni*eam_len+eam_k]    = (real) q->nummer[j]; 
         eam_dij_x[eam_pni*eam_len+eam_k] = d.x; 
         eam_dij_y[eam_pni*eam_len+eam_k] = d.y; 
         eam_dij_z[eam_pni*eam_len+eam_k] = d.z; 
@@ -231,9 +231,9 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
         eam_rho[eam_pni] += eam_phi_ij;
 
         /* save #i in the #j array field k > 0  (-> calc of forces) */
-        eam_ij[eam_pnj*eam_len]         += 1;
-        eam_k                            = eam_ij[eam_pnj*eam_len];
-        eam_ij[eam_pnj*eam_len+eam_k]    = p->nummer[i]; 
+        eam_ij[eam_pnj*eam_len]         += (real) 1;
+        eam_k                            = (integer) eam_ij[eam_pnj*eam_len];
+        eam_ij[eam_pnj*eam_len+eam_k]    = (real) p->nummer[i]; 
         eam_dij_x[eam_pnj*eam_len+eam_k] = -d.x; 
         eam_dij_y[eam_pnj*eam_len+eam_k] = -d.y; 
         eam_dij_z[eam_pnj*eam_len+eam_k] = -d.z; 
@@ -295,8 +295,8 @@ void do_forces_eam_2(cell *p, cell *q, vektor pbc)
   int q_typ, p_typ;
   int jstart,jend;
 
-  int  eam_k;             /* dummy */
-  int  eam_pni;           /* dummy */
+  integer  eam_k;             /* dummy */
+  integer  eam_pni;           /* dummy */
   real eam_r_ik;          /* distance, needed for eam forces */
   real eam_tmp_i;         /* dummy */
   real eam_tmp_k;         /* dummy */
@@ -326,7 +326,7 @@ void do_forces_eam_2(cell *p, cell *q, vektor pbc)
 
     eam_tmp_i  = 1.0/eam_cf_i;
     jstart     = 1;
-    jend       = eam_ij[eam_pni*eam_len];
+    jend       = (integer) eam_ij[eam_pni*eam_len];
 
     /* pair potential and cohesive function for atom i */
     p->pot_eng[i] -= eam_A * eam_cf_i; 
@@ -345,7 +345,7 @@ void do_forces_eam_2(cell *p, cell *q, vektor pbc)
       eam_r_ik = sqrt(radius2);
 
       /* number of atom k */
-      eam_k    	    = eam_ij[eam_pni*eam_len+j];  
+      eam_k    	    = (integer) eam_ij[eam_pni*eam_len+j];  
       eam_tmp_k     = 1.0/sqrt(eam_rho[eam_k]);
       eam_pot_grad  = -eam_A*(eam_tmp_i+eam_tmp_k)*(eam_r_ik-eam_r_cut)/eam_r_ik;
       
