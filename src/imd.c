@@ -136,6 +136,10 @@ int main(int argc, char **argv)
 #ifdef MPI
     broadcast_params();
 #endif
+#ifdef TERSOFF
+    init_tersoff();
+#endif
+
     if (steps_min <= steps_max) {
       make_box();  /* make sure the box size is still ok */
       main_loop();
