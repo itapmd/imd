@@ -708,31 +708,62 @@ void write_atoms_avp(FILE *out)
   int i, k, len=0;
   cell *p;
   real x, y, z;
+  vektor avp_pos, coeff;
 
   for (k=0; k<ncells; k++) {
     cell* p;
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; i++) {
-      x = p->ort_ref X(i) * avpos_res / avpos_int;
-      if ( pbc_dirs.x == 1 && x > box_x.x)  x -= box_x.x;
-      else if ( pbc_dirs.x == 1 && x < 0.0) x += box_x.x;
-      y = p->ort_ref Y(i) * avpos_res / avpos_int;
-      if ( pbc_dirs.y == 1 && y > box_y.y)  y -= box_y.y;
-      else if ( pbc_dirs.y == 1 && y < 0.0) y += box_y.y;
-#ifndef TWOD
-      z = p->ort_ref Z(i) * avpos_res / avpos_int;
-      if ( pbc_dirs.z == 1 && z > box_z.z)  z -= box_z.z;
-      else if ( pbc_dirs.z == 1 && z < 0.0) z += box_z.z;
 
-      len += sprintf( outbuf+len,
-        "%d %d %12.16f %12.16f %12.16f %12.16f %12.16f\n ",
-        NUMMER(p,i), VSORTE(p,i), MASSE(p,i), 
-        x, y, z, p->Epot_ref[i] * avpos_res / avpos_int);
+#ifndef TWOD
+	/* Averaged coordinates of atoms */
+	avp_pos.x = p->ort_ref X(i) * avpos_res / avpos_int;
+	avp_pos.y = p->ort_ref Y(i) * avpos_res / avpos_int;
+	avp_pos.z = p->ort_ref Z(i) * avpos_res / avpos_int;
+
+	/* Coefficients of coordinates with respect to box vectors */
+	coeff.x = SPROD( avp_pos, tbox_x );
+	coeff.y = SPROD( avp_pos, tbox_y );
+	coeff.z = SPROD( avp_pos, tbox_z );
+
+	/* For periodic boundary conditions map coordinates into box */
+	if( pbc_dirs.x == 1 ) 
+	    coeff.x -= floor(coeff.x);
+	if( pbc_dirs.y ==1 )
+	    coeff.y -= floor(coeff.y);
+	if( pbc_dirs.z == 1 ) 
+	    coeff.z -= floor(coeff.z);
+	
+	x = coeff.x * box_x.x + coeff.y * box_y.x + coeff.z * box_z.x;
+	y = coeff.x * box_x.y + coeff.y * box_y.y + coeff.z * box_z.y;
+	z = coeff.x * box_x.z + coeff.y * box_y.z + coeff.z * box_z.z;
+		
+	len += sprintf( outbuf+len,
+			"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f\n ",
+			NUMMER(p,i), VSORTE(p,i), MASSE(p,i), 
+			x, y, z, p->Epot_ref[i] * avpos_res / avpos_int);
 #else
-      len += sprintf( outbuf+len,
-        "%d %d %12.16f %12.16f %12.16f %12.16f\n ",
-        NUMMER(p,i), VSORTE(p,i), MASSE(p,i), 
-        x, y, p->Epot_ref[i] * avpos_res / avpos_int);
+	/* Averaged coordinates of atoms */ 
+	avp_pos.x = p->ort_ref X(i) * avpos_res / avpos_int;
+	avp_pos.y = p->ort_ref Y(i) * avpos_res / avpos_int;
+
+	/* Coefficients of coordinates with respect to box vectors */
+	coeff.x = SPROD( avp_pos, tbox_x );
+	coeff.y = SPROD( avp_pos, tbox_y );
+
+	/* For periodic boundary conditions map coordinates into box */
+	if( pbc_dirs.x == 1 ) 
+	    coeff.x -= floor(coeff.x);
+	if( pbc_dirs.y ==1 )
+	    coeff.y -= floor(coeff.y);
+
+	x = coeff.x * box_x.x + coeff.y * box_y.x;
+	y = coeff.x * box_x.y + coeff.y * box_y.y;
+
+	len += sprintf( outbuf+len,
+			"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f\n ",
+			NUMMER(p,i), VSORTE(p,i), MASSE(p,i), 
+			x, y, z, p->Epot_ref[i] * avpos_res / avpos_int);
 #endif
       /* flush or send outbuf if it is full */
       if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
