@@ -890,6 +890,7 @@ void read_parameters(int argc,char **argv)
       break;
     case 'v':
       use_vtypes=1;
+      break;
     default:
       printf("Illegal option %s \n",argv[1]);
       usage();
