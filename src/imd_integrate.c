@@ -11,6 +11,7 @@
 ******************************************************************************/
 
 #include "imd.h"
+
 /*#define ATNR 2826  easier debuging... */
 
 /*****************************************************************************
@@ -25,6 +26,7 @@ void move_atoms_nve(void)
 {
   int k;
   real tmp;
+  static int count = 0;
   tot_kin_energy = 0.0;
 
   /* loop over all cells */
@@ -173,6 +175,12 @@ void move_atoms_nve(void)
   tot_kin_energy = tmp;
 #endif
 
+#ifdef AND
+  /* Andersen Thermostat -- Initialize the velocities now and then */
+  ++count;
+  if ((tmp_interval!=0) && (0==count%tmp_interval)) maxwell(temperature);
+#endif
+
 }
 
 #else
@@ -198,7 +206,14 @@ void move_atoms_mik(void)
 {
   int k;
   real tmp;
+  static int count = 0;
   tot_kin_energy = 0.0;
+
+#ifdef AND
+  /* Andersen Thermostat -- Initialize the velocities now and then */
+  ++count;
+  if ((tmp_interval!=0) && (0==count%tmp_interval)) maxwell(temperature);
+#endif
 
   /* loop over all cells */
 #ifdef _OPENMP
