@@ -470,10 +470,10 @@ void move_atoms_nvt(void)
 
   /* time evolution of constraints */
 
-  tmp  = DIM * natoms * temperature;
+  tmp  = DIM * nactive * temperature;
   eta += timestep * (kin_energie_2 / tmp - 1.0) * isq_tau_eta;
 #ifdef UNIAX
-  tmp  = 2.0 * natoms * temperature;
+  tmp  = 2.0 * nactive * temperature;
   eta_rot += timestep * ( rot_energie_2 / tmp - 1.0 ) * isq_tau_eta_rot;
 #endif
   
@@ -637,16 +637,15 @@ void move_atoms_npt_iso(void)
 
   /* time evolution of constraints */
 
-  tmp  = DIM * natoms * temperature;
+  tmp  = DIM * nactive * temperature;
   eta += timestep * (Ekin_new / tmp - 1.0) * isq_tau_eta;
 #ifdef UNIAX
-  tmp  = 2.0 * natoms * temperature;
+  tmp  = 2.0 * nactive * temperature;
   eta_rot += timestep * (Erot_new / tmp - 1.0) * isq_tau_eta_rot;
 #endif
 
-
   tmp = xi_old.x + timestep * 2.0 * (pressure - pressure_ext.x) * volume
-                          * isq_tau_xi / (natoms * temperature);
+                          * isq_tau_xi / (nactive * temperature);
   xi_old.x = xi.x;
   xi.x = tmp;
 
@@ -818,10 +817,10 @@ void move_atoms_npt_axial(void)
   tot_kin_energy /= 4.0;
 
   /* update parameters */
-  tmp  = DIM * natoms * temperature;
+  tmp  = DIM * nactive * temperature;
   eta += timestep * (Ekin / tmp - 1.0) * isq_tau_eta;
 
-  tmp  = timestep * 2.0 * volume * isq_tau_xi / (natoms * temperature);
+  tmp  = timestep * 2.0 * volume * isq_tau_xi / (nactive * temperature);
   
   xi_tmp   = xi_old.x + tmp * (stress.x - pressure_ext.x);
   xi_old.x = xi.x;
@@ -1182,7 +1181,7 @@ void move_atoms_stm(void)
 #endif
 
   /* Zeitentwicklung der Parameter */
-  tmp  = DIM * natoms * temperature;
+  tmp  = DIM * nactive * temperature;
   eta += timestep * (kin_energie_2 / tmp - 1.0) * isq_tau_eta;
 
 }
