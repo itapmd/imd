@@ -47,14 +47,16 @@ These items stand for:</p>
 <p>
 Note that:</p>
 <ul>
-<li> the sample size has to be at least 2 times the potential
-     cutoff-distance in each direction.</li>
-<li> if <a href="#boundary">free boundary conditions</a> are used,
+<li> In all directions in which <a href="#boundary">periodic boundary 
+     conditions</a> are used, the sample must have a size of at least 
+     the potential cutoff distance. This distance is measured
+     perpendicular to the corresponding face.</li>
+<li> If <a href="#boundary">free boundary conditions</a> are used,
      it is the user's responsibility that the system fits into the
      simulation box (spanned by the box vectors starting at the
      origin). With <a href="#boundary">periodic boundary conditions</a>, 
      atoms outside the box are mapped back into the box.</li>
-<li> if there are atoms with missing velocities in the input file,
+<li> If there are atoms with missing velocities in the input file,
      the initial velocities are set to some random Maxwell
      distribution with the desired temperature.</li>
 </ul>
