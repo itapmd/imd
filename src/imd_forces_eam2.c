@@ -167,7 +167,7 @@ void eam2_do_forces1(cell *p, cell *q, vektor pbc)
 	  eam2_r0 = *PTR_2D(eam2_phi_r_begin,p_typ,q_typ,ntypes,ntypes);
 	  eam2_dr = *PTR_2D(eam2_phi_r_step,p_typ,q_typ,ntypes,ntypes);  
 	  eam2_dr_inv = 1.0/eam2_dr;
-	  eam2_nsteps = (int) rint( (eam2_r_cut - eam2_r0)*eam2_dr_inv ); /*rounding?*/
+	  eam2_nsteps = (int)( (eam2_r_cut - eam2_r0)*eam2_dr_inv +0.5 ); /*rounding?*/
       
 	  /* one quick hack to treat the borders of table */
 	  eam2_x= (eam2_r - eam2_r0)*eam2_dr_inv;
@@ -279,7 +279,7 @@ void eam2_do_forces1(cell *p, cell *q, vektor pbc)
 	    /* get informatio nabaout the table, depending on type */
 	    eam2_dr = *PTR_2D(eam2_r_step,p_typ,q_typ,ntypes,ntypes);
 	    eam2_dr_inv =1.0/eam2_dr;
-	    eam2_nsteps = (int) rint((eam2_r_cut - eam2_r0 )*eam2_dr_inv);/*rounding?*/
+	    eam2_nsteps = (int)((eam2_r_cut - eam2_r0 )*eam2_dr_inv +0.5);/*rounding?*/
 
 	    /* one quick hack to treat the boarders of table */
 	    eam2_x= (eam2_r - eam2_r0)*eam2_dr_inv;
