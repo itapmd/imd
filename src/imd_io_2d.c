@@ -484,35 +484,6 @@ void write_cell(FILE *out, cell *p)
 }
 
 void write_config(int steps)
-
-/* Makro to write data of cell p to file out */
-#ifdef ZOOM
-/* write only atoms inside the picture frame */
-#define WRITE_CELL     for (i = 0;i < p->n; ++i) \
-            if( (p->ort X(i) >= pic_ll.x) && (p->ort X(i) <= pic_ur.x) && \
-	        (p->ort Y(i) >= pic_ll.y) && (p->ort Y(i) <= pic_ur.y) ) \
-             fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f\n",\
-	     p->nummer[i],\
-	     p->sorte[i],\
-	     p->masse[i],\
-	     p->ort X(i),\
-	     p->ort Y(i),\
-	     p->impuls X(i) / p->masse[i],\
-	     p->impuls Y(i) / p->masse[i],\
-             p->pot_eng[i])
-#else
-#define WRITE_CELL     for (i = 0;i < p->n; ++i) \
-             fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f\n",\
-	     p->nummer[i],\
-	     p->sorte[i],\
-	     p->masse[i],\
-	     p->ort X(i),\
-	     p->ort Y(i),\
-	     p->impuls X(i) / p->masse[i],\
-	     p->impuls Y(i) / p->masse[i],\
-             p->pot_eng[i])
-#endif
-
 { 
   FILE *out;
   str255 fname;
