@@ -146,7 +146,7 @@ int main(int argc, char **argv)
 #endif
     printf("Used %f seconds cputime,\n", time_total.total);
     printf("%f seconds excluding setup time,\n", time_main.total);
-    tmp =  time_main.total / ((steps_max+1) * natoms);
+    tmp =  (time_main.total / (steps_max+1)) / natoms;
     printf("%.3e cpuseconds per step and atom\n", tmp);
     printf("(inverse is %.3e).\n\n", 1.0/tmp);
 
