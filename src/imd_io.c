@@ -1743,3 +1743,52 @@ void write_header_config(FILE *out)
 
 }
 
+/******************************************************************************
+*
+* read_box reads the box from the config file
+*
+******************************************************************************/
+
+void read_box(str255 infilename)
+{
+  FILE   *infile;
+  str255 line, fname;
+
+  if (myid==0) {
+#ifdef MPI
+    if (1==parallel_input) {
+      sprintf(fname,"%s.head",infilename);
+      infile = fopen(fname,"r");
+      if (NULL==infile) infile = fopen(infilename,"r");
+    } else
+#endif
+    infile = fopen(infilename,"r");
+    if (NULL==infile) error_str("cannot open input file %s", infilename);
+    fgets(line, 255, infile);
+    while (line[0]=='#') {
+#ifdef TWOD
+      if      (line[1]=='X') 
+        sscanf(line+2, "%lf %lf", &box_x.x, &box_x.y);
+      else if (line[1]=='Y') 
+        sscanf(line+2, "%lf %lf", &box_y.x, &box_y.y);
+#else
+      if      (line[1]=='X') 
+        sscanf(line+2, "%lf %lf %lf", &box_x.x, &box_x.y, &box_x.z);
+      else if (line[1]=='Y') 
+        sscanf(line+2, "%lf %lf %lf", &box_y.x, &box_y.y, &box_y.z);
+      else if (line[1]=='Z') 
+        sscanf(line+2, "%lf %lf %lf", &box_z.x, &box_z.y, &box_z.z);
+#endif
+      fgets(line, 255, infile);
+      if (feof(infile)) break;
+    }
+    fclose(infile);
+  }
+#ifdef MPI
+  MPI_Bcast( &box_x, DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &box_y, DIM, REAL, 0, MPI_COMM_WORLD);
+#ifndef TWOD
+  MPI_Bcast( &box_z, DIM, REAL, 0, MPI_COMM_WORLD);
+#endif 
+#endif
+}

@@ -248,6 +248,7 @@ void write_eng_file(int steps);
 void write_eng_file_header(void);
 
 /* write configurations - files imd_io.c, imd_io_*.c */
+void read_box(str255);
 void flush_outbuf(FILE *out, int *len, int tag);
 void write_itr_file(int fzhlr, int steps,char *suffix);
 void write_config(int fzhlr, int steps);
