@@ -82,11 +82,12 @@ EXTERN vektor *restrictions INIT(NULL);  /* directions the atom is allowed to mo
 #ifdef FBC    /* FBC uses the virtual atom types, */
 EXTERN vektor *fbc_forces;       /* each vtype has its force */
 EXTERN vektor *fbc_beginforces;  /* begin & endvalues for linear interpolation */ 
-#ifdef MIK                       /* or ... */
+#if defined(MIK) ||defined (CG)                       /* or ... */
 EXTERN vektor *fbc_dforces;      /* each vtype has its force increment */
 EXTERN real   fbc_ekin_threshold INIT(0.0);/* threshold for ekin */ 
 EXTERN int    fbc_waitsteps INIT(1); /* between increase of forces */
 EXTERN int    fbc_annealsteps INIT(1); /* times before 1. + df */
+EXTERN vektor *fbc_endforces;   
 #else
 EXTERN vektor *fbc_endforces;   
 #endif

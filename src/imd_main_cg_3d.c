@@ -61,18 +61,32 @@ void main_loop(void)
 
   /******* changing the boundary / initial  conditions after relaxation ***/
  
-#ifdef FBC
-    temp_df.x = 0.0;
-    temp_df.y = 0.0;
-    temp_df.z = 0.0;  
-    for (l=0; l<vtypes; l++) *(fbc_df+l) = temp_df;
+/* #ifdef FBC */
+/*     temp_df.x = 0.0; */
+/*     temp_df.y = 0.0; */
+/*     temp_df.z = 0.0;   */
+/*     for (l=0; l<vtypes; l++) *(fbc_df+l) = temp_df; */
 
-    for (l=0;l<vtypes;l++) {
-	(fbc_df+l)->x = (fbc_dforces+l)->x;
-	(fbc_df+l)->y = (fbc_dforces+l)->y;
-	(fbc_df+l)->z = (fbc_dforces+l)->z;
-    } 
-#endif /* FBC */
+/*     for (l=0;l<vtypes;l++) { */
+/* 	(fbc_df+l)->x = (fbc_dforces+l)->x; */
+/* 	(fbc_df+l)->y = (fbc_dforces+l)->y; */
+/* 	(fbc_df+l)->z = (fbc_dforces+l)->z; */
+/*     }  */
+/* #endif  */
+/* FBC */
+
+#ifdef FBC
+#ifndef MIK
+/* dynamic loading, increment linearly each timestep */
+  for (l=0;l<vtypes;l++){
+    temp_df.x = (((fbc_endforces+l)->x) - ((fbc_beginforces+l)->x))/(steps_max - steps_min);
+    temp_df.y = (((fbc_endforces+l)->y) - ((fbc_beginforces+l)->y))/(steps_max - steps_min);
+    temp_df.z = (((fbc_endforces+l)->z) - ((fbc_beginforces+l)->z))/(steps_max - steps_min);
+    
+    *(fbc_df+l) = temp_df;
+  }
+#endif
+#endif
 
 #ifdef HOMDEF
     if ((exp_interval > 0)  expand_sample();
