@@ -268,12 +268,17 @@ void main_loop(void)
 	sorte = VSORTE(p,i);
 	if ( superatom[sorte] > -1 ) {
 	  superforce[superatom[sorte]].x += KRAFT(p,i,X);
-	    + (fbc_forces+sorte)->x;
 	  superforce[superatom[sorte]].y += KRAFT(p,i,Y);
-	    + (fbc_forces+sorte)->y;
 #ifndef TWOD
 	  superforce[superatom[sorte]].z += KRAFT(p,i,Z);
-	    + (fbc_forces+sorte)->z;
+#endif
+
+#ifdef FBC
+	 superforce[superatom[sorte]].x += (fbc_forces+sorte)->x;
+	 superforce[superatom[sorte]].y += (fbc_forces+sorte)->y;
+#ifndef TWOD
+	 superforce[superatom[sorte]].z += (fbc_forces+sorte)->z;
+#endif
 #endif
 	}
       }
