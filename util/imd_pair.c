@@ -401,7 +401,7 @@ void init_cells(void)
 
   /* determinant */
   det = box_x.y * box_y.z * box_z.x +
-        box_z.z * box_y.x * box_z.y +
+        box_x.z * box_y.x * box_z.y +
 	box_x.x * box_y.y * box_z.z -
         box_x.z * box_y.y * box_z.x -
         box_x.x * box_y.z * box_z.y -
