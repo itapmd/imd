@@ -1274,6 +1274,21 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"ew_nmax")==0) {     
       getparam("ew_nmax",&ew_nmax,PARAM_INT,1,1);
     }
+#endif
+#ifdef SPRING
+    /* Parameters for harmonic potential */
+    else if (strcasecmp(token,"spring_const")==0) {     
+      getparam("spring_const",spring_const,PARAM_REAL,ntypes*(ntypes-1)/2,ntypes*(ntypes-1)/2);
+      /* Initialize parameters */
+      for (i=0; i<ntypes; i++) spring_cst[i][i] = 0.0;
+      if ( ntypes>1 ) {
+	for (i=0; i<(ntypes-1); i++)
+	  for (k=(i+1); k<ntypes; k++) {
+	    spring_cst[i][k] = spring_cst[k][i] 
+	      = spring_const[i * ( 2 * ntypes - i - 3 ) / 2 + k - 1]; 
+	  }
+      }
+    }
 #endif 
 #ifdef EPITAX
     /* Parameters for option epitax */

@@ -104,6 +104,12 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
       if (r2 <= pair_pot.end[col]) {
         PAIR_INT(pot_zwi, pot_grad, pair_pot, col, inc, r2, is_short)
 #endif
+#ifdef SPRING
+      if ( spring_cst[p_typ][q_typ] != 0.0 ) {
+	pot_zwi  = 0.5 * spring_cst[p_typ][q_typ] * r2;
+	pot_grad = spring_cst[p_typ][q_typ];
+      }
+#endif
 
         /* store force in temporary variable */
         force.x = d.x * pot_grad;

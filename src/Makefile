@@ -552,6 +552,11 @@ CFLAGS  += -DEWALD
 FORCESOURCES  += ${EWALDSOURCES}
 endif
 
+# SPRING
+ifneq (,$(strip $(findstring spring,${MAKETARGET})))
+CFLAGS  += -DSPRING
+endif
+
 SOURCES += ${FORCESOURCES}
 
 

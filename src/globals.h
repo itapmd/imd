@@ -584,6 +584,11 @@ EXTERN real     ew_eps;
 EXTERN real     twopi;
 #endif
 
+#ifdef SPRING
+EXTERN real     spring_const[45];    /* Spring constant */
+EXTERN real     spring_cst[10][10];
+#endif
+
 /* generate quasicrystal */
 #ifdef QUASI
 EXTERN int appr[3];                                /* approximant order */
