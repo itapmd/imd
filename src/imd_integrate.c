@@ -537,7 +537,7 @@ void move_atoms_nvt(void)
 #endif
 
 #ifdef SLLOD
-	p->ort X(i) += epsilon / box_y.y * p->ort Y(i);
+	p->ort X(i) += epsilon * p->ort Y(i);
 #endif /* SLLOD */
 
 #ifdef UNIAX
