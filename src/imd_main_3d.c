@@ -263,16 +263,18 @@ void main_loop(void)
 
 #ifdef GLOK 
     /* "global convergence": set momenta to 0 if P*F < 0 (global vectors) */
-    if (PxF<0.0) {
-      for (k=0; k<ncells; ++k) {
-        p = cell_array + CELLS(k);
-        for (i=0; i<p->n; ++i) {
-          IMPULS(p,i,X) = 0.0;
-          IMPULS(p,i,Y) = 0.0;
-          IMPULS(p,i,Z) = 0.0;
-        }
+    if (steps > annealsteps) {
+      if ((PxF<0.0)||(2.0*tot_kin_energy/nactive > ekin_threshold)) {
+	for (k=0; k<ncells; ++k) {
+	  p = cell_array + CELLS(k);
+	  for (i=0; i<p->n; ++i) {
+	    IMPULS(p,i,X) = 0.0;
+	    IMPULS(p,i,Y) = 0.0;
+	    IMPULS(p,i,Z) = 0.0;
+	  }
+	}
+	write_eng_file(steps); 
       }
-      write_eng_file(steps); 
     }
     /* properties as they were after setting p=0 and 
        calculating ekin_ and p. p should then = f*dt

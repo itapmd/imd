@@ -307,6 +307,10 @@ EXTERN vektor xi INIT(nullvektor), xi_old INIT(nullvektor);
 #endif
 
 EXTERN real end_temp INIT(0.0);        /* Temperature and at of simulation */
+#ifdef GLOK
+EXTERN real   ekin_threshold INIT(100.0); /* threshold for ekin */    
+EXTERN int    annealsteps INIT(0);      /* number of annealing steps */    
+#endif
 
 #ifdef DEFORM
 EXTERN int    deform_int INIT(0);       /* counting steps between 2 shears */
