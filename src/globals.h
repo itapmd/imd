@@ -405,8 +405,8 @@ EXTERN real eam_r2_cut;             /* EAM cutoff radius ^2 */
 EXTERN real eam_A      INIT(0.0);   /* EAM cohesive function constant A */
 #endif
 
-/* EAM2 stuff */
 #ifdef EAM2
+EXTERN pot_table_t core_pot, embed_pot, rho_h_tab;
 EXTERN str255 eam2_emb_E_filename INIT("\0"); /* filenames for the tabulated functions */
 EXTERN str255 eam2_at_rho_filename INIT("\0");
 EXTERN str255 eam2_core_pot_filename INIT("\0");

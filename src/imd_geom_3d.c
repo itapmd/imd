@@ -72,30 +72,6 @@ void init_cells( void )
   ivektor next_cell_dim, cell_dim_old;
   ivektor cellmin_old, cellmax_old, cellc;
   cell *p, *cell_array_old, *to;
-  real r2_cut, r2_cut2;
-
-#ifdef EAM2
-  /* this belongs to where these tables are read ! */  
-  /* the tables are in r2 */
-  /* get the biggest r_cut of eam2_phi_r_end */
-  r2_cut=0.0;
-  for(i=0;i<ntypes;i++)
-    for(j=0;j<ntypes;j++)
-      r2_cut = MAX( r2_cut, *PTR_2D(eam2_phi_r_end,i,j,ntypes,ntypes) );
-
-  /* get the biggest r_cut of eam2_r_end */
-  r2_cut2=0.0;
-  for(i=0;i<ntypes;i++)
-    for(j=0;j<ntypes;j++)
-      r2_cut2 = MAX( r2_cut2, *PTR_2D(eam2_r_end,i,j,ntypes,ntypes) );
-
-  /* take the biggest one as actual cut-off */
-  r2_cut2 = MAX(r2_cut2,r2_cut);
-  if (myid==0) 
-    printf("The actual cut-off is %lf (cut-off of core-core Potential: %lf)\n",
-           r2_cut2, r2_cut);
-  cellsz = MAX(cellsz, r2_cut2);
-#endif
 
   /* compute scaling factors */
   make_box();

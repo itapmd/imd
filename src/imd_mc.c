@@ -19,7 +19,7 @@ real mc_epot_diff( vektor old_pos, vektor new_pos,
   vektor pbc, tmp_new, tmp_old, d_new, d_old;
   real   *qptr, pot_tmp, grad_tmp, radius2, result = 0.0;
   cell   *q;
-  real   t_old=0.0,t_new=0.0,r2_short=0.0;
+  real   t_old=0.0,t_new=0.0;
   ivektor ipbc;
 
   /* For all neighbours of this cell */
@@ -110,7 +110,7 @@ real mc_epot_diff( vektor old_pos, vektor new_pos,
           /* contribution of new position */
           radius2 = SPROD(d_new,d_new);
           if (radius2 <= pair_pot.end[col]) {
-            PAIR_INT2(pot_tmp,grad_tmp,pair_pot,col,inc,radius2,r2_short,is_short)
+            PAIR_INT2(pot_tmp,grad_tmp,pair_pot,col,inc,radius2,is_short)
             t_new  += pot_tmp;
             result += pot_tmp;
           }
@@ -118,7 +118,7 @@ real mc_epot_diff( vektor old_pos, vektor new_pos,
           /* contribution of old position */
           radius2 = SPROD(d_old,d_old);
           if (radius2 <= pair_pot.end[col]) {
-            PAIR_INT2(pot_tmp,grad_tmp,pair_pot,col,inc,radius2,r2_short,is_short)
+            PAIR_INT2(pot_tmp,grad_tmp,pair_pot,col,inc,radius2,is_short)
             t_old  += pot_tmp;
             result -= pot_tmp;
           }
@@ -137,7 +137,7 @@ real mc_epot_atom( vektor pos, int p_num, int p_typ, ivektor cellc )
 {
   int    q_typ, col, inc=ntypes*ntypes, is_short=0, i, j, k, l, m, n, r, s, t;
   vektor pbc, tmp, d;
-  real   *qptr, pot_tmp, grad_tmp, radius2, result = 0.0, r2_short=0;
+  real   *qptr, pot_tmp, grad_tmp, radius2, result = 0.0;
   cell   *q;
   ivektor ipbc;
 
@@ -223,7 +223,7 @@ real mc_epot_atom( vektor pos, int p_num, int p_typ, ivektor cellc )
           /* potential energy */
           radius2 = SPROD(d,d);
           if (radius2 <= pair_pot.end[col]) {
-            PAIR_INT2(pot_tmp,grad_tmp,pair_pot,col,inc,radius2,r2_short,is_short)
+            PAIR_INT2(pot_tmp,grad_tmp,pair_pot,col,inc,radius2,is_short)
             result += pot_tmp;
           }
 	}

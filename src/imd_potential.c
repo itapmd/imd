@@ -1,7 +1,9 @@
 
 /*****************************************************************************
 *
-*  Routines for reading and accessing tabulated potentials and functions
+*  Routines for reading tabulated potentials and functions.
+*  The tables are accessed with the macros in potaccess.h.
+*  The acces functions in this file are currently not used.
 *  Potentials are stored in a data structure of type pot_table_t.
 *  When reading a new potential, cellsz must be set to the maximum
 *  of cellsz and the maximum of the new squared potential cutoffs.
@@ -13,7 +15,6 @@
 ******************************************************************************/
 
 #include "imd.h"
-
 
 /*****************************************************************************
 *
@@ -130,7 +131,7 @@ void read_pot_table1( pot_table_t *pt, char *filename )
     if (0==myid) printf("\n");
 
     /* The interpolation uses k+1 and k+2, so we add zeros at end of table */
-    for(k=1; k<=5; ++k) {
+    for (k=1; k<=3; ++k) {
       /* still some space left? */ 
       if (((npot%PSTEP) == 0) && (npot>0)) {
         pt->maxsteps += PSTEP;
@@ -168,7 +169,6 @@ void read_pot_table1( pot_table_t *pt, char *filename )
 
 }
 
-
 /*****************************************************************************
 *
 *  read potential in second format: at the beginning ntypes*ntypes times 
@@ -183,23 +183,21 @@ void read_pot_table1( pot_table_t *pt, char *filename )
 *
 ******************************************************************************/
 
-void read_pot_table2( pot_table_t *pt, char *filename, int mode )
+void read_pot_table2( pot_table_t *pt, char *filename, int cols )
 {
   FILE *infile;
   int i, k, *len;
-  int size, tablesize;
+  int tablesize;
   real val, numstep;
   str255 msg;
 
   /* allocate info block of function table */
-  size = ntypes;
-  if (mode==POTTAB) size *= ntypes;
   pt->maxsteps = 0;
-  pt->begin    = (real *) malloc(size*sizeof(real));
-  pt->end      = (real *) malloc(size*sizeof(real));
-  pt->step     = (real *) malloc(size*sizeof(real));
-  pt->invstep  = (real *) malloc(size*sizeof(real));
-  len          = (int  *) malloc(size*sizeof(real));
+  pt->begin    = (real *) malloc(cols * sizeof(real));
+  pt->end      = (real *) malloc(cols * sizeof(real));
+  pt->step     = (real *) malloc(cols * sizeof(real));
+  pt->invstep  = (real *) malloc(cols * sizeof(real));
+  len          = (int  *) malloc(cols * sizeof(real));
   if ((pt->begin   == NULL) || (pt->end == NULL) || (pt->step == NULL) || 
       (pt->invstep == NULL) || (len == NULL)) {
     sprintf(msg,"Cannot allocate info block for function table %s.",filename);
@@ -218,7 +216,7 @@ void read_pot_table2( pot_table_t *pt, char *filename, int mode )
     }
 
     /* read the info block of the function table */
-    for(i=0; i<size; i++) {
+    for(i=0; i<cols; i++) {
       if ((0==myid) && (3!=fscanf(infile, "%lf %lf %lf",
                               &pt->begin[i], &pt->end[i], &pt->step[i]))) { 
         sprintf(msg, "Info line in %s corrupt.", filename);
@@ -240,32 +238,36 @@ void read_pot_table2( pot_table_t *pt, char *filename, int mode )
     }
 
     /* allocate the function table */
-    tablesize = size * pt->maxsteps;
-    pt->table = (real *) malloc(tablesize*sizeof(real));
+    /* allow some extra values at the end for interpolation */
+    tablesize = cols * (pt->maxsteps+3);
+    pt->table = (real *) malloc(tablesize * sizeof(real));
     if (NULL==pt->table) {
       sprintf(msg,"Cannot allocate memory for function table %s.",filename);
       error(msg);
     }
 
     /* input loop */
-    for (i=0; i<size; i++)
+    for (i=0; i<cols; i++) {
       for (k=0; k<len[i]; k++) {
         if ((1 != fscanf(infile,"%lf", &val)) && (0==myid)) {
           sprintf(msg,"wrong format in file %s.",filename);
           error(msg);
         }
-        *PTR_2D(pt->table,k,i,pt->maxsteps,size) = val;
+        *PTR_2D(pt->table,k,i,pt->maxsteps,cols) = val;
       }
-
+      /* make some copies of the last value for interpolation */
+      for (k=len[i]; k<len[i]+3; k++)
+        *PTR_2D(pt->table,k,i,pt->maxsteps,cols) = val;
+    }
     fclose(infile);
 
     if (0==myid) {
-      if (mode==FUNTAB) {
+      if (cols==ntypes) {
         printf("Read tabulated function %s for %d atoms types.\n",
-               filename,size);
+               filename,cols);
       } else {
         printf("Read tabulated function %s for %d pairs of atoms types.\n",
-               filename,size);
+               filename,cols);
       }
       printf("Maximal length of table is %d.\n",pt->maxsteps);
     }
@@ -275,13 +277,13 @@ void read_pot_table2( pot_table_t *pt, char *filename, int mode )
   if (0==parallel_input) {
     /* Broadcast table to other CPUs */
     MPI_Bcast( &(pt->maxsteps), 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->begin,    size, REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->end,      size, REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->step,     size, REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->invstep,  size, REAL, 0, MPI_COMM_WORLD);
-    tablesize = pt->maxsteps * size;
+    MPI_Bcast( pt->begin,    cols, REAL, 0, MPI_COMM_WORLD);
+    MPI_Bcast( pt->end,      cols, REAL, 0, MPI_COMM_WORLD);
+    MPI_Bcast( pt->step,     cols, REAL, 0, MPI_COMM_WORLD);
+    MPI_Bcast( pt->invstep,  cols, REAL, 0, MPI_COMM_WORLD);
+    tablesize = pt->maxsteps * cols;
     if (0 != myid) {
-      pt->table = (real *) malloc(tablesize*sizeof(real));
+      pt->table = (real *) malloc(tablesize * sizeof(real));
       if (NULL==pt->table)
         error("Cannot allocate memory for function table");
     }
@@ -292,14 +294,13 @@ void read_pot_table2( pot_table_t *pt, char *filename, int mode )
 
 }
 
-
 /*****************************************************************************
 *
 *  Evaluate monolj potential 
 *
 ******************************************************************************/
 
-int pair_int_monolj(real *pot, real *grad, real r2)
+void pair_int_monolj(real *pot, real *grad, real r2)
 {
   real sig_d_rad2, sig_d_rad6, sig_d_rad12;
 
@@ -309,41 +310,36 @@ int pair_int_monolj(real *pot, real *grad, real r2)
 
   *grad = - 6 * sig_d_rad2 * ( sig_d_rad12 - sig_d_rad6 );
   *pot  = sig_d_rad12 - 2.0 * sig_d_rad6 - monolj_shift;
-  return 0;
 }
-
 
 /*****************************************************************************
 *
 *  Evaluate potential table with quadratic interpolation. 
-*  Returned are potential value V and gradient (dV/dr)/r.
+*  Returns the potential value and twice the derivative.
+*  Note: we need (1/r)(dV/dr) = 2 * dV/dr^2 --> use with equidistant r^2 
 *  col is p_typ * ntypes + q_typ
 *
 ******************************************************************************/
 
-int pair_int2(real *pot, real *grad, pot_table_t *pt, int col, real r2)
+void pair_int2(real *pot, real *grad, int *is_short, pot_table_t *pt, 
+               int col, int inc, real r2)
 {
-  real r2a, istep, chi, p0, p1, p2, dv, d2v;
-  real *ptr;
-  int  k, inc, is_short=0;
+  real r2a, istep, chi, p0, p1, p2, dv, d2v, *ptr;
+  int  k;
 
   /* check for distances shorter than minimal distance in table */
   r2a = r2 - pt->begin[col];
   if (r2a < 0) {
     r2a   = 0;
-    is_short = 1;
+    *is_short = 1;
   }
 
-  /* Indices into potential table */
+  /* indices into potential table */
   istep = pt->invstep[col];
   k     = (int) (r2a * istep);
   chi   = (r2a - k * pt->step[col]) * istep;
 
-  /* A single access to the potential table involves two multiplications 
-     We use a intermediate pointer to avoid this as much as possible.
-     Note: This relies on layout of the pot-table in memory!!! */
-
-  inc = ntypes * ntypes;
+  /* intermediate values */
   ptr = PTR_2D(pt->table, k, col, pt->maxsteps, inc);
   p0  = *ptr; ptr += inc;
   p1  = *ptr; ptr += inc;
@@ -351,47 +347,222 @@ int pair_int2(real *pot, real *grad, pot_table_t *pt, int col, real r2)
   dv  = p1 - p0;
   d2v = p2 - 2 * p1 + p0;
 
-  /* norm of gradient and potential energy */
-  *grad = 2 * istep * (dv + (chi - 0.5) * d2v);
+  /* potential and twice the derivative */
   *pot  = p0 + chi * dv + 0.5 * chi * (chi - 1) * d2v;
-  return is_short;
-
+  *grad = 2 * istep * (dv + (chi - 0.5) * d2v);
 }
-
 
 /*****************************************************************************
 *
-*  Evaluate potential table with quartic interpolation. 
-*  Returned are potential value and gradient.
+*  Evaluate potential table with cubic interpolation. 
+*  Returns the potential value and twice the derivative.
+*  Note: we need (1/r)(dV/dr) = 2 * dV/dr^2 --> use with equidistant r^2 
 *  col is p_typ * ntypes + q_typ
 *
 ******************************************************************************/
 
-int pair_int4(real *pot, real *grad, pot_table_t *pt, int col, real r2)
+void pair_int3(real *pot, real *grad, int *is_short, pot_table_t *pt, 
+               int col, int inc, real r2)
 {
-  return 0;
-}
+  real r2a, istep, chi, p0, p1, p2, p3, *ptr;
+  real fac0, fac1, fac2, fac3, dfac0, dfac1, dfac2, dfac3;
+  int  k;
 
+  /* check for distances shorter than minimal distance in table */
+  /* we need one extra value at the lower end for interpolation */
+  r2a = r2 - pt->begin[col] + pt->step[col];
+  if (r2a < 0) {
+    r2a = 0;
+    *is_short = 1;
+  }
+
+  /* indices into potential table */
+  istep = pt->invstep[col];
+  k     = (int) (r2a * istep);
+  chi   = (r2a - k * pt->step[col]) * istep;
+
+  /* factors for the interpolation */
+  fac0 = -(1.0/6.0) * chi * (chi-1.0) * (chi-2.0);
+  fac1 =        0.5 * (chi*chi-1.0) * (chi-2.0);
+  fac2 =       -0.5 * chi * (chi+1.0) * (chi-2.0);
+  fac3 =  (1.0/6.0) * chi * (chi*chi-1.0);
+
+  /* factors for the interpolation of the derivative */
+  dfac0 = -(1.0/6.0) * ((3.0*chi-6.0)*chi+2.0);
+  dfac1 =        0.5 * ((3.0*chi-4.0)*chi-1.0);
+  dfac2 =       -0.5 * ((3.0*chi-2.0)*chi-2.0);
+  dfac3 =    1.0/6.0 * (3.0*chi*chi-1.0);
+
+  /* intermediate values */
+  ptr = PTR_2D(pt->table, k, col, pt->maxsteps, inc);
+  p0  = *ptr; ptr += inc;
+  p1  = *ptr; ptr += inc;
+  p2  = *ptr; ptr += inc;
+  p3  = *ptr;
+
+  /* potential energy */ 
+  *pot = fac0 * p0 + fac1 * p1 + fac2 * p2 + fac3 * p3;
+
+  /* twice the derivative */
+  *grad = 2 * istep * (dfac0 * p0 + dfac1 * p1 + dfac2 * p2 + dfac3 * p3);
+}
 
 /*****************************************************************************
 *
-*  Evaluate function table with quadratic interpolation. 
+*  Evaluate tabulated function with quadratic interpolation. 
 *
 ******************************************************************************/
 
-int table_func2(real *val, pot_table_t *pt, int col, real x)
+void val_func2(real *val, int *is_short, pot_table_t *pt, 
+               int col, int inc, real r2)
 {
-  return 0;
-}
+  real r2a, istep, chi, p0, p1, p2, dv, d2v, *ptr;
+  int  k;
 
+  /* check for distances shorter than minimal distance in table */
+  r2a = r2 - pt->begin[col];
+  if (r2a < 0) {
+    r2a = 0;
+    *is_short = 1;
+  }
+
+  /* indices into potential table */
+  istep = pt->invstep[col];
+  k     = (int) (r2a * istep);
+  chi   = (r2a - k * pt->step[col]) * istep;
+
+  /* intermediate values */
+  ptr = PTR_2D(pt->table, k, col, pt->maxsteps, inc);
+  p0  = *ptr; ptr += inc;
+  p1  = *ptr; ptr += inc;
+  p2  = *ptr;
+  dv  = p1 - p0;
+  d2v = p2 - 2 * p1 + p0;
+
+  /* the function value */
+  *val = p0 + chi * dv + 0.5 * chi * (chi - 1) * d2v;
+}
 
 /*****************************************************************************
 *
-*  Evaluate function table with quartic interpolation. 
+*  Evaluate tabulated function with cubic interpolation. 
 *
 ******************************************************************************/
 
-int table_func4(real *val, pot_table_t *pt, int col, real x)
+void val_func3(real *val, int *is_short, pot_table_t *pt, 
+               int col, int inc, real r2)
 {
-  return 0;
+  real r2a, istep, chi, p0, p1, p2, p3;
+  real fac0, fac1, fac2, fac3, *ptr;
+  int  k;
+
+  /* check for distances shorter than minimal distance in table */
+  /* we need one extra value at the lower end for interpolation */
+  r2a = r2 - pt->begin[col] + pt->step[col];
+  if (r2a < 0) {
+    r2a = 0;
+    *is_short = 1;
+  }
+
+  /* indices into potential table */
+  istep = pt->invstep[col];
+  k     = (int) (r2a * istep);
+  chi   = (r2a - k * pt->step[col]) * istep;
+
+  /* factors for the interpolation */
+  fac0 = -(1.0/6.0) * chi * (chi-1.0) * (chi-2.0);
+  fac1 =        0.5 * (chi*chi-1.0) * (chi-2.0);
+  fac2 =       -0.5 * chi * (chi+1.0) * (chi-2.0);
+  fac3 =  (1.0/6.0) * chi * (chi*chi-1.0);
+
+  /* intermediate values */
+  ptr = PTR_2D(pt->table, k, col, pt->maxsteps, inc);
+  p0  = *ptr; ptr += inc;
+  p1  = *ptr; ptr += inc;
+  p2  = *ptr; ptr += inc;
+  p3  = *ptr;
+
+  /* the function value */ 
+  *val = fac0 * p0 + fac1 * p1 + fac2 * p2 + fac3 * p3;
+}
+
+/*****************************************************************************
+*
+*  Evaluate the derivative of a function with quadratic interpolation. 
+*  Returns *twice* the derivative.
+*
+******************************************************************************/
+
+void deriv_func2(real *grad, int *is_short, pot_table_t *pt, 
+                 int col, int inc, real r2)
+{
+  real r2a, istep, chi, p0, p1, p2, dv, d2v, *ptr;
+  int  k;
+
+  /* check for distances shorter than minimal distance in table */
+  r2a = r2 - pt->begin[col];
+  if (r2a < 0) {
+    r2a   = 0;
+    *is_short = 1;
+  }
+
+  /* indices into potential table */
+  istep = pt->invstep[col];
+  k     = (int) (r2a * istep);
+  chi   = (r2a - k * pt->step[col]) * istep;
+
+  /* intermediate values */
+  ptr = PTR_2D(pt->table, k, col, pt->maxsteps, inc);
+  p0  = *ptr; ptr += inc;
+  p1  = *ptr; ptr += inc;
+  p2  = *ptr;
+  dv  = p1 - p0;
+  d2v = p2 - 2 * p1 + p0;
+
+  /* twice the derivative */
+  *grad = 2 * istep * (dv + (chi - 0.5) * d2v);
+}
+
+/*****************************************************************************
+*
+*  Evaluate the derivative of a function with cubic interpolation. 
+*  Returns *twice* the derivative.
+*
+******************************************************************************/
+
+void deriv_func3(real *grad, int *is_short, pot_table_t *pt, 
+                 int col, int inc, real r2)
+{
+  real r2a, istep, chi, p0, p1, p2, p3, *ptr;
+  real dfac0, dfac1, dfac2, dfac3;
+  int  k;
+
+  /* check for distances shorter than minimal distance in table */
+  /* we need one extra value at the lower end for interpolation */
+  r2a = r2 - pt->begin[col] + pt->step[col];
+  if (r2a < 0) {
+    r2a = 0;
+    *is_short = 1;
+  }
+
+  /* indices into potential table */
+  istep = pt->invstep[col];
+  k     = (int) (r2a * istep);
+  chi   = (r2a - k * pt->step[col]) * istep;
+
+  /* factors for the interpolation of the 1. derivative */
+  dfac0 = -(1.0/6.0) * ((3.0*chi-6.0)*chi+2.0);
+  dfac1 =        0.5 * ((3.0*chi-4.0)*chi-1.0);
+  dfac2 =       -0.5 * ((3.0*chi-2.0)*chi-2.0);
+  dfac3 =    1.0/6.0 * (3.0*chi*chi-1.0);
+
+  /* intermediate values */
+  ptr = PTR_2D(pt->table, k, col, pt->maxsteps, inc);
+  p0  = *ptr; ptr += inc;
+  p1  = *ptr; ptr += inc;
+  p2  = *ptr; ptr += inc;
+  p3  = *ptr;
+
+  /* twice the derivative */
+  *grad = 2 * istep * (dfac0 * p0 + dfac1 * p1 + dfac2 * p2 + dfac3 * p3);
 }

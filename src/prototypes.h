@@ -24,12 +24,14 @@ void broadcast_params(void);
 
 /* read and access potential tables - file imd_potential.c */
 void read_pot_table1( pot_table_t *pt, char *filename );
-void read_pot_table2( pot_table_t *pt, char *filename, int mode );
-int  pair_int_monolj(real *pot, real *grad, real r2);
-int  pair_int2(real *pot, real *grad, pot_table_t *pt, int col, real r2);
-int  pair_int4(real *pot, real *grad, pot_table_t *pt, int col, real r2);
-int  table_func2(real *val, pot_table_t *pt, int col, real x);
-int  table_func4(real *val, pot_table_t *pt, int col, real x);
+void read_pot_table2( pot_table_t *pt, char *filename, int cols );
+void pair_int_monolj(real *pot, real *grad, real r2);
+void pair_int2  (real*, real*, int*, pot_table_t*, int, int, real);
+void pair_int3  (real*, real*, int*, pot_table_t*, int, int, real);
+void   val_func2(real*,        int*, pot_table_t*, int, int, real);
+void   val_func3(real*,        int*, pot_table_t*, int, int, real);
+void deriv_func2(       real*, int*, pot_table_t*, int, int, real);
+void deriv_func3(       real*, int*, pot_table_t*, int, int, real);
 #ifdef EAM2  /* file imd_misc.c, to be replaced */
 void eam2_read_core_pot(str255 core_pot_filename);
 void eam2_read_embedding_energy(str255 emb_E_filename);

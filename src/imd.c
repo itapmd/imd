@@ -75,11 +75,11 @@ int main(int argc, char **argv)
 
 #ifdef EAM2
   /* read the tabulated core-core Potential function */
-  eam2_read_core_pot(eam2_core_pot_filename);
+  read_pot_table2(&core_pot,eam2_core_pot_filename,ntypes*ntypes);
   /* read the tabulated embedding energy function */
-  eam2_read_embedding_energy(eam2_emb_E_filename);
+  read_pot_table2(&embed_pot,eam2_emb_E_filename,ntypes);
   /* read the tabulated electron density function */
-  eam2_read_atomic_rho(eam2_at_rho_filename);
+  read_pot_table2(&rho_h_tab,eam2_at_rho_filename,ntypes*ntypes);
 #endif
 
 #endif /* not UNIAX and not MONOLJ */

@@ -32,7 +32,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
   int    i, j, k, p_typ, j_typ, knum, jnum, col, inc = ntypes * ntypes;
   int    is_short=0;
   real   *tmpptr;
-  real   pot_zwi, tmp_pot, tmp_grad, tmp, tmp_j, tmp_k, r2_short=0.0;
+  real   pot_zwi, tmp_pot, tmp_grad, tmp, tmp_j, tmp_k;
   real   tmp_f2, cos_theta, tmp_sp;
   real   tmp_virial = 0.0;
 #ifdef P_AXIAL
@@ -75,7 +75,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 
       /* smoothing potential */
       col = p_typ * ntypes + j_typ;
-      PAIR_INT2(pot[j],grad[j],smooth_pot,col,inc,r2[j],r2_short,is_short)
+      PAIR_INT2(pot[j],grad[j],smooth_pot,col,inc,r2[j],is_short)
     }
 
     /* for each pair of neighbors */
@@ -140,6 +140,8 @@ void do_forces2(cell *p, real *Epot, real *Virial,
     } /* neighbor pairs */
 
   } /* i */
+
+  if (is_short==1) printf("\n Short distance!\n");
 
 #ifdef P_AXIAL
   *Vir_x  += tmp_vir_vect.x;

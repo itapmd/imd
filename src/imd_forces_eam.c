@@ -60,7 +60,6 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
 #endif
   real pot_zwi;
   real pot_grad;
-  real r2_short=cellsz;
   int jstart,jend;
   int col, is_short=0, inc = ntypes * ntypes;
   int q_typ,p_typ;
@@ -124,7 +123,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
       /* 1. Cutoff: pair potential */
       if (radius2 <= pair_pot.end[col]) {
 
-        PAIR_INT2(pot_zwi,pot_grad,pair_pot,col,inc,radius2,r2_short,is_short)
+        PAIR_INT2(pot_zwi,pot_grad,pair_pot,col,inc,radius2,is_short)
 
 	/* Store forces in temp */
 	force.x  = d.x * pot_grad;
@@ -237,7 +236,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
   } /* for i */
 
   /* A little security */
-  if (is_short==1) printf("\n Short distance! r2: %f\n",r2_short);
+  if (is_short==1) printf("\n Short distance!\n");
 
 #ifdef P_AXIAL
   *Vir_x  += tmp_vir_vect.x;
