@@ -192,20 +192,25 @@ comparison of the speed of convergence between different integrators.
 <p>
 In combination with relaxation integrators, pressure relaxation can
 be switched on by setting the parameter <tt>relax_rate</tt> to a
-positive (but small) value. At each step, the pressure tensor of the
-sample is then calculated, and the box size and shape is changed by a 
-small amount in order to lower that pressure. The parameters
-<tt>bulk_module</tt> and <tt>shear_module</tt>, given in 
+positive (sufficiently small) value. At each step, the pressure tensor 
+of the sample is then calculated, and the box size and shape is
+changed by a small amount in order to lower that pressure. The 
+parameters <tt>bulk_module</tt> and <tt>shear_module</tt>, given in 
 <a href="units.html">units of pressure</a>, can be used to specify
 the sensitivity of the pressure tensor to box changes. With correctly 
-set bulk and shear modules, a value of 1e-5 for the
+set bulk and shear modules, a value of 0.1 - 0.5 for the
 <tt>relax_rate</tt> seems to work well. For higher values, the
 system might become unstable due to pressure fluctuations, which
-can be quite large initially. If the bulk and shear modules are
-not given, they default to 1. Some experimentation with 
-<tt>relax_rate</tt> should then quickly reveal a usable value.
-The parameter <tt>relax_mode</tt>, which can take values
-<tt>full</tt>, <tt>axial</tt>, and <tt>iso</tt>, determines wich
+can be quite large initially. If large volume changes are needed
+to relax the pressure, or if the estimate for the elastic constants
+is not accurate enough, a smaller value may be necessary. If the 
+bulk and shear modules are not given, they default to 1. Some 
+experimentation with <tt>relax_rate</tt> should then quickly reveal 
+a usable value.
+<p>
+</p>
+The parameter <tt>relax_mode</tt>, which can take 
+values <tt>full</tt>, <tt>axial</tt>, and <tt>iso</tt>, determines wich
 part of the pressure tensor is relaxed. <tt>full</tt> means full
 relaxation, <tt>axial</tt> means relaxation of pressure along
 main axes of a rectangular box, and <tt>iso</tt> relaxes the scalar
@@ -215,6 +220,21 @@ and modes <tt>full</tt> and <tt>axial</tt> also the compile option
 <a href="options.html#stress_tens">stress</a>. Default mode is
 <tt>full</tt> if <a href="options.html#stress_tens">stress</a>
 is compiled, and <tt>iso</tt> otherwise.
+</p>
+<p>
+If option <a href="options.html#stress_tens">stress</a> is compiled,
+it is also possible to relax to a given external pressure tensor read
+from the parameter file, in the following form:
+<pre>
+    presstens_ext  xx yy xy             # 2D  
+    presstens_ext  xx yy zz yz zx xy    # 3D
+</pre>
+The default for <tt>presstens_ext</tt> is zero. All three relaxation
+modes are supported. If <tt>relax_mode = axial</tt>, only the diagonal
+pressure components are relaxed, and if <tt>relax_mode = iso</tt>,
+only the isotropic pressure is relaxed to the average of the
+diagonal components. In any case, the full <tt>presstens_ext</tt>
+must be given, even if some of its components are ignored.
 </p></dd>
 
 </dl>
