@@ -21,13 +21,16 @@ void DisplayAtoms(Widget w, XtPointer client, XtPointer call);
 void DisplayBonds(Widget w, XtPointer client, XtPointer call);
 void SpecifyHost(Widget w, XtPointer client, XtPointer call);
 void SpecifyPort(Widget w, XtPointer client, XtPointer call);
+void ColorEncoding(Widget w, XtPointer client, XtPointer call);
 void Quit(Widget w, XtPointer client, XtPointer call);
 void draw_scene(int scene_type);
 void draw_bonds(void);
 void draw_text(void);
+void repaint(void);
+void resize(void);
+void window_main(int argc,char **argv);
 
 int read_configuration(char *fname);
 int write_configuration(char *fname);
 int read_distribution(char *fname);
 int write_distribution(char *fname);
-

@@ -11,7 +11,7 @@ EXTERN int columns;
 EXTERN int *bcode;
 EXTERN int bond_mode;
 EXTERN int atom_mode INIT(1);
-EXTERN int col_mode INIT(0);
+EXTERN int col_mode INIT(1);
 EXTERN int stat_bond INIT(1);
 EXTERN int scene_type INIT(0);
 EXTERN int endian_byte_swap INIT(0);

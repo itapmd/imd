@@ -16,8 +16,8 @@ CC_alpha = gcc
 CC = $(CC_$(HOSTTYPE))
 
 # Headers
-HEADERS 	= sockutil.h tokens.h globals.h prototypes.h makros.h
-SOURCES		= main.c client.c sockutil.c param.c menu.c
+HEADERS 	= sockutil.h tokens.h globals.h prototypes.h makros.h xfcts.h
+SOURCES		= main.c client.c sockutil.c param.c menu.c xfcts.c
 
 # Compiler flags
 #CFLAGS = -g

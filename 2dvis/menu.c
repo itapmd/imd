@@ -11,11 +11,12 @@
 #include <X11/Xaw/SmeLine.h> 
 #include <X11/Xaw/Dialog.h> 
 #include "vogle.h"
-
 #include "prototypes.h"
 #include "globals.h"
 #include "makros.h"
 
+Display	*dpy;
+Window	win;
 Widget	canvas,toplevel;
 short int button;
 int oldmousex,oldmousey,mousex,mousey;
@@ -33,6 +34,7 @@ XtEventHandler press_event(Widget w,struct drag_struct *drag,XButtonEvent *ev) {
 }
 
 XtEventHandler motion_event(Widget w,struct drag_struct *drag,XButtonEvent *ev) {
+  repaint();
 }
 
 XtEventHandler release_event(Widget w,struct drag_struct *drag,XButtonEvent *ev) {
@@ -88,7 +90,7 @@ void SaveImage(Widget w, XtPointer client, XtPointer call) {
 
 void GetConfiguration(Widget w, XtPointer client, XtPointer call) {
   scene_type=0;
-  if (connect_client(9)==0) {
+  if (connect_client(T_CONF)==0) {
     printf("No atoms!\n");
     exit(-1);
   }
@@ -97,7 +99,7 @@ void GetConfiguration(Widget w, XtPointer client, XtPointer call) {
 
 void GetDistribution(Widget w, XtPointer client, XtPointer call) {
   scene_type=1;
-  if (connect_client(1)==0) {
+  if (connect_client(T_DIST)==0) {
     printf("No distribution!\n");
     exit(-1);
   }
@@ -130,26 +132,44 @@ void SpecifyHost(Widget w, XtPointer client, XtPointer call) {
 
 void SpecifyPort(Widget w, XtPointer client, XtPointer call) {
   printf("hallo %s\n",client);
-  
+}
+
+void ColorEncoding(Widget w, XtPointer client, XtPointer call) {
+  int rc;
+  rc=ColorEncodingDialog("Color Encoding");
+  if ((rc==4)&&(bond_mode==0))
+    MessageDialog("Geht nicht! Erst Bond-Mode einschalten");
+  else
+    col_mode=rc;
+  draw_scene(scene_type);
+}
+
+void Movie(Widget w, XtPointer client, XtPointer call) {
+  char ch,mkey;
+  float xloc,yloc;
+  while(1) {
+    if (scene_type)
+      connect_client(T_CONF);
+    else
+      connect_client(T_DIST);
+    draw_scene(scene_type);
+    if (ch = checkkey()) break;
+    if (mkey = slocator (&xloc, &yloc)) break;
+  }
+}
+
+void AdjustTemperature(Widget w, XtPointer client, XtPointer call) {
+  printf("temp %s\n",client);
 }
 
 void Quit(Widget w, XtPointer client, XtPointer call) {
-  exit(0);
+  int rc;
+  rc=QuestionDialog("Really Quit?");
+  if (rc)
+    exit(0);
 }
 
-
-#define SIZE	512
-
-
-Display	*dpy;
-Window	win;
-
-XtCallbackProc quit() {
-  vexit();
-  exit(0);
-}
-
-resize() {
+void resize() {
   Dimension       w, h;
   Arg             arg[2];
 
@@ -162,8 +182,7 @@ resize() {
   viewport(-1.0, 1.0, -1.0, 1.0);
 }
 
-repaint() {
-  fprintf(stderr, "repaint() called\n");
+void repaint() {
   color(BLACK);
   clear();
 }
@@ -186,7 +205,7 @@ GC		gc;
  * simple program to display a polygon file
  */
 
-window_main(int argc, char **argv) {
+void window_main(int argc, char **argv) {
   int		w, h;
   Widget panel,
     qbut,
@@ -205,9 +224,11 @@ window_main(int argc, char **argv) {
   Widget button1;
   Widget button2;
   Widget button3;
+  Widget button4;
   Widget menu1;
   Widget menu2;
   Widget menu3;
+  Widget menu4;
   Widget line11;
   Widget line12;
   Widget line22;
@@ -223,6 +244,9 @@ window_main(int argc, char **argv) {
   Widget DispBds;
   Widget SpecHost;
   Widget SpecPort;
+  Widget ColEnc;
+  Widget Mov;
+  Widget AdjTemp;
   Widget quit;
 
   int n;
@@ -260,6 +284,14 @@ window_main(int argc, char **argv) {
   XtSetArg(wargs[n], XtNfromHoriz, button2); n++;
   XtSetArg(wargs[n], XtNmenuName, "menu3"); n++;
   XtSetValues(button3, wargs, n);
+
+  button4 = XtCreateManagedWidget("Interactive", menuButtonWidgetClass,
+				  panel, NULL, 0);
+
+  n = 0;
+  XtSetArg(wargs[n], XtNfromHoriz, button3); n++;
+  XtSetArg(wargs[n], XtNmenuName, "menu4"); n++;
+  XtSetValues(button4, wargs, n);
 
   /* create the first pull down menu */
 
@@ -333,11 +365,26 @@ window_main(int argc, char **argv) {
   line22 = XtCreateManagedWidget("line2", smeLineObjectClass,
 				menu3, NULL, 0);
 
-  quit = XtCreateManagedWidget("quit", smeBSBObjectClass,
+  ColEnc = XtCreateManagedWidget("Color Encoding", smeBSBObjectClass,
 			       menu3, NULL, 0);
-
-  XtAddCallback(quit, XtNcallback, Quit, NULL);
+  XtAddCallback(ColEnc, XtNcallback, ColorEncoding, "Color Encoding");
   
+  Mov = XtCreateManagedWidget("Movie Mode", smeBSBObjectClass,
+			       menu3, NULL, 0);
+  XtAddCallback(Mov, XtNcallback, Movie, "Movie");
+
+  /*
+   *  create the fourth pull down menu
+   */
+
+  menu4 = XtCreatePopupShell("menu4", simpleMenuWidgetClass,
+			     button4, NULL, 0);
+
+  AdjTemp = XtCreateManagedWidget("Adjust Temperature", smeBSBObjectClass,
+			       menu4, NULL, 0);
+  XtAddCallback(AdjTemp, XtNcallback, AdjustTemperature, "Adjust Temperature");
+  
+
   XtSetArg(wargs[0], XtNwidth, 512);
   XtSetArg(wargs[1], XtNheight, 512);
   canvas = XtCreateManagedWidget("canvas", 
@@ -359,12 +406,13 @@ window_main(int argc, char **argv) {
 
   XtRealizeWidget(toplevel);
 
-
   dpy = XtDisplay(canvas);
   win = XtWindow(canvas);
 
   vo_xt_window(dpy, win, 512, 512);
   vinit("X11");
+
+  /*  MessageDialog("Welcome to Beavis!");*/
 
   while(1) {
     XEvent	event;
@@ -377,6 +425,3 @@ window_main(int argc, char **argv) {
 
   }
 }
-
-
-

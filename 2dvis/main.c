@@ -129,15 +129,21 @@ void draw_scene(int scene_type) {
       zz=(z[i]-minz)*scalez-1;
       zz*=.2; /* looks better */
 #endif
-      if (col_mode==0)
+      switch(col_mode) {
+      case 1: 
 	color(sorte[i]+1);
-      else {
-	if (eng_mode)
-	  cv=(int)(scalekin*(kin[i]+offskin));
-	else
-	  cv=(int)(scalepot*(pot[i]+offspot));
-	mapcolor(i+8,cv,cv,cv);
+	break;
+      case 2: 
+	cv=(int)(scalepot*(pot[i]+offspot));
 	color(i+8);
+	break;
+      case 3: 
+	cv=(int)(scalekin*(kin[i]+offskin));
+	color(i+8);
+	break;
+      case 4:
+	color(nb+1);
+	break;
       }
 
       /* if we shall draw bonds afterwards we compute
