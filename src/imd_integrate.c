@@ -1419,8 +1419,8 @@ void move_atoms_nvx(void)
     }
   }
 #ifdef RNEMD
-  heat_transfer += tran_Tleft  * natoms_left  * DIM/2 - Ekin_left;  /* hot  */ 
-  heat_transfer -= tran_Tright * natoms_right * DIM/2 - Ekin_right; /* cold */
+  heat_transfer += tran_Tleft *natoms_left  * DIM/2 - Ekin_left/2;  /* hot  */ 
+  heat_transfer -= tran_Tright*natoms_right * DIM/2 - Ekin_right/2; /* cold */
 #endif
 }
 
