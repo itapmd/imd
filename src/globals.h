@@ -108,6 +108,7 @@ EXTERN int rep_interval INIT(0); /* Period of checkpoints ==0 for no checkpoints
 EXTERN int eng_interval INIT(0); /* Period of data output ==0 for no energy data */
 EXTERN int dis_interval INIT(0); /* Period of spatial eng. distrib output ==0 for no data */
 EXTERN int pic_interval INIT(0); /* Period of data output ==0 for no energy data */
+EXTERN int force_interval INIT(0); /* Period of force file writing */
 EXTERN int onl_interval INIT(0); /* Period of online visualization */
 EXTERN int dist_binary_io INIT(0); /* Flag for binary I/O */
 EXTERN int dist_has_coords INIT(0);/* Flag for writing bin coords to dists */

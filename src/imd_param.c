@@ -1125,6 +1125,12 @@ void getparamfile(char *paramfname, int sim)
       getparam("avpos_int",&avpos_int,PARAM_INT,1,1);
     }
 #endif
+#ifdef FORCE
+    else if (strcasecmp(token,"force_int")==0) {
+      /* number of steps between average position writes */
+      getparam("force_int",&force_interval,PARAM_INT,1,1);
+    }
+#endif
 #ifdef ATDIST
     else if (strcasecmp(token,"atoms_dist_dim")==0) {
       /* dimension of atoms distribution array */

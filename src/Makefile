@@ -805,6 +805,10 @@ ifneq (,$(findstring avpos,${MAKETARGET}))
 CFLAGS += -DAVPOS
 endif
 
+ifneq (,$(findstring force,${MAKETARGET}))
+CFLAGS += -DFORCE
+endif
+
 ifneq (,$(findstring atdist,${MAKETARGET}))
 CFLAGS += -DATDIST
 endif

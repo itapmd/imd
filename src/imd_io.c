@@ -940,6 +940,86 @@ void write_atoms_avp(FILE *out)
 
 #endif /* AVPOS */
 
+#ifdef FORCE
+
+/******************************************************************************
+*
+*  writes header for force file
+*
+******************************************************************************/
+
+void write_header_force(FILE *out)
+{
+  char c;
+
+  /* format line */
+  /* binary_io for checkpoints not implemented
+   if (binary_io)
+     c = is_big_endian ? 'B' : 'L';
+   else
+    */
+    c = 'A';
+  fprintf(out, "#F %c 0 1 0 %d 0 %d\n", c, DIM, DIM);
+  
+  /* contents line */
+#ifdef TWOD
+  fprintf(out, "#C type x y f_x f_y\n");
+#else
+  fprintf(out, "#C type x y z f_x f_y f_z\n");
+#endif
+
+  /* number of atoms */
+  fprintf(out, "#N %d\n", natoms);
+  
+  /* box lines */
+#ifdef TWOD
+  fprintf(out, "#X %e %e\n",    box_x.x , box_x.y);
+  fprintf(out, "#Y %e %e\n",    box_y.x , box_y.y);
+#else
+  fprintf(out, "#X %e %e %e\n", box_x.x , box_x.y , box_x.z);
+  fprintf(out, "#Y %e %e %e\n", box_y.x , box_y.y , box_y.z);
+  fprintf(out, "#Z %e %e %e\n", box_z.x , box_z.y , box_z.z);
+#endif
+
+  /* endheader line */
+  fprintf(out, "#E\n");
+
+}
+
+/******************************************************************************
+*
+*  filter function for write_config_select
+*  writes forces to files *.nr.force
+*
+******************************************************************************/
+
+void write_atoms_force(FILE *out)
+{
+  int k, len=0;
+
+  for (k=0; k<ncells; k++) {
+    cell* p;
+    int i;
+    p = cell_array + CELLS(k);
+    for (i=0; i<p->n; i++) {
+#ifdef TWOD
+      len += sprintf( outbuf+len, "%d %e %e %e %e\n",
+                      SORTE(p,i), p->ort X(i), p->ort Y(i),
+                      p->kraft X(i), p->kraft Y(i) );
+#else
+      len += sprintf( outbuf+len, "%d %e %e %e %e %e %e\n",
+                      SORTE(p,i), p->ort X(i), p->ort Y(i), p->ort Z(i),
+                      p->kraft X(i), p->kraft Y(i), p->kraft Z(i) );
+#endif
+      /* flush or send outbuf if it is full */
+      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+    }
+  }
+  flush_outbuf(out,&len,OUTBUF_TAG+1);
+}
+
+#endif /* FORCE */
+
 /******************************************************************************
 *
 *  write header of properties file  - keep in sync with write_properties

@@ -332,7 +332,11 @@ void main_loop(void)
 	}
     }
 #endif
-
+#ifdef FORCE
+    if ((force_interval > 0) && (0 == steps%force_interval)) 
+       write_config_select(steps/force_interval, "force",
+                           write_atoms_force, write_header_force);
+#endif
 #ifdef TRANSPORT
     if ((tran_interval > 0) && (steps > 0) && (0 == steps%tran_interval)) 
        write_temp_dist(steps);

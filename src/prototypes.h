@@ -243,6 +243,10 @@ void write_atoms_avp(FILE *out);
 void write_header_avp(FILE *out);
 void write_avpos_itr_file(int fzhlr, int steps);
 #endif
+#ifdef FORCE
+void write_atoms_force(FILE *out);
+void write_header_force(FILE *out);
+#endif
 #ifdef MSQD
 void write_atoms_sqd(FILE *out);
 void write_header_sqd(FILE *out);
