@@ -542,10 +542,10 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
   int m,n;
 
 #ifdef SNAPSHOT
-  if (fzhlr>=0) sprintf(fname,"%s.%u.%sitr",outfilename,fzhlr,suffix);
+  if (fzhlr>=0) sprintf(fname,"%s.%05d.%sitr",outfilename,fzhlr,suffix);
   else          sprintf(fname,"%s-final.%sitr",outfilename,suffix);
 #else
-  if (fzhlr>=0) sprintf(fname,"%s.%u.itr",outfilename,fzhlr);
+  if (fzhlr>=0) sprintf(fname,"%s.%05d.itr",outfilename,fzhlr);
   else          sprintf(fname,"%s-final.itr",outfilename);
 #endif
 
@@ -625,7 +625,7 @@ void write_avpos_itr_file(int fzhlr, int steps)
   str255 fname;
   real tmp;
 
-  if (fzhlr>=0) sprintf(fname,"%s.%u.avp.itr",outfilename,fzhlr);
+  if (fzhlr>=0) sprintf(fname,"%s.%05d.avp.itr",outfilename,fzhlr);
   else          sprintf(fname,"%s-final.avp.itr",outfilename);
 
   out = fopen(fname,"w");

@@ -1801,7 +1801,7 @@ void read_command_line(int argc,char **argv)
 void read_parameters(void)
 {
   str255 fname;
-  FILE *infile;
+  FILE *testfile;
 
   if (0==myid) {
     getparamfile(paramfilename,1);
@@ -1818,7 +1818,19 @@ void read_parameters(void)
     if (0 != restart) {
       int tmp = finished;
       sprintf(fname,"%s.%d.itr",outfilename,restart);
-      sprintf(infilename,"%s.%05d.%s",outfilename,restart,"chkpt");
+      testfile = fopen(fname,"r");
+      if (NULL==testfile) { 
+        sprintf(infilename,"%s.%05d.itr",outfilename,restart);
+      } else {
+        fclose(testfile);
+      }
+      sprintf(infilename,"%s.%d.%s",outfilename,restart,"chkpt");
+      testfile = fopen(infilename,"r");
+      if (NULL==testfile) { 
+        sprintf(infilename,"%s.%05d.%s",outfilename,restart,"chkpt");
+      } else {
+        fclose(testfile);
+      }
       printf("Restarting from %s.\n",infilename);
       getparamfile(fname,1);
       finished = tmp;
