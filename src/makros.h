@@ -18,6 +18,7 @@
 
 /* avoid p % q, which is terribly slow */
 /* on SGI, inline doesn't really work :-( */
+#if !defined(MONO) && !defined(BINARY)
 #if defined(t3e)
 #pragma _CRI inline(MOD)
 #elif defined(alpha)
@@ -25,7 +26,6 @@
 #elif defined(sgi)
 #pragma inline global (MOD)
 #endif
-#if !defined(MONO) && !defined(BINARY)
 INLINE static int MOD(shortint p, int q)
 {
   int stmp=p;
