@@ -368,15 +368,19 @@ CFLAGS_xmpicc_OMPI_i586_PROF  	= -Xfuncmonitor
 ###########################################################################
 
 # default compilers and libraries
+CC_DEFAULT_SERIAL_rs6000	= cc
 CC_DEFAULT_MPI_rs6000		= mpcc
 CC_DEFAULT_OMP_rs6000		= xlc_r
 CC_DEFAULT_OMPI_rs6000		= mpcc_r #?
 LIBS_PROF_rs6000		= -lpl   #?
 
+# SERIAL
+CFLAGS_cc_SERIAL_rs6000        	= -O4 -qtune=auto  # -O4 automatically invokes -qarch=auto
+
 # MPI
-CFLAGS_mpicc_MPI_rs6000        	= -O4 -qtune=auto -c # -O4 automatically invokes -qarch=auto
-CFLAGS_mpicc_MPI_rs6000_DEBUG  	= -g -c
-CFLAGS_mpicc_MPI_rs6000_PROF   	= -p -c
+CFLAGS_mpcc_MPI_rs6000        	= -O4 -qtune=auto  # -O4 automatically invokes -qarch=auto
+CFLAGS_mpcc_MPI_rs6000_DEBUG  	= -g 
+CFLAGS_mpcc_MPI_rs6000_PROF   	= -p 
 
 # OpenMP
 #CFLAGS_cc_OMP_SR8000	 	= -omp -par -O4 +Op -msg=e
