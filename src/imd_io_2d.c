@@ -564,33 +564,31 @@ void write_config(int steps)
 #endif
 
   /* write iteration file */
-#ifdef MPI
   if (myid == 0) {
+    sprintf(fname,"%s.%u.itr",outfilename,fzhlr);
+
+    out = fopen(fname,"w");
+    if (NULL == out) error("Cannot write iteration file.");
+
+    fprintf(out,"startstep \t%d\n",steps);
+    fprintf(out,"box_x \t%f %f\n",box_x.x,box_x.y);
+    fprintf(out,"box_y \t%f %f\n",box_y.x,box_y.y);
+    fprintf(out,"starttemp \t%f\n",temperature);
+#if defined(NVT) || defined(NPT)
+    fprintf(out,"eta \t%f\n",eta);
 #endif
-  sprintf(fname,"%s.%u.itr",outfilename,fzhlr);
-
-  out = fopen(fname,"w");
-  if (NULL == out) error("Cannot write checkpoint file.");
-
-  fprintf(out,"startstep \t%d\n",steps);
-  fprintf(out,"box_x \t%f %f\n",box_x.x,box_x.y);
-  fprintf(out,"box_y \t%f %f\n",box_y.x,box_y.y);
-  fprintf(out,"starttemp \t%f\n",temperature);
 #ifdef NPT
-  if (ensemble==ENS_NPT_ISO) {
-    fprintf(out,"pressure_ext \t%f\n",pressure_ext.x);
-  };
-  if (ensemble==ENS_NPT_AXIAL) {
-    fprintf(out,"pressure_ext \t%f %f\n",pressure_ext.x,pressure_ext.y);
-  };
+    if (ensemble==ENS_NPT_ISO) {
+      fprintf(out,"pressure_ext \t%f\n",pressure_ext.x);
+      fprintf(out,"xi \t%f\n",xi.x);
+    }
+    if (ensemble==ENS_NPT_AXIAL) {
+      fprintf(out,"pressure_ext \t%f %f\n",pressure_ext.x,pressure_ext.y);
+      fprintf(out,"xi \t%f %f\n",xi.x,xi.y);
+    }
 #endif
-
-  fclose(out);
-
-#ifdef MPI
+    fclose(out);
   }
-#endif
-
 }
 
 

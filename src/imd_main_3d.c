@@ -496,15 +496,5 @@ void init(void)
   if(ensemble==ENS_FRAC) load_sample(); 
 #endif
 
-#if defined(NVT) || defined(NPT)
-  eta = 0.0;
-#endif
-
-#ifdef NPT
-  xi.x = 0.0;
-  xi.y = 0.0;
-  xi.z = 0.0;
-#endif
-  
 }
 

@@ -583,14 +583,18 @@ void write_config(int steps)
     fprintf(out,"box_y \t%f %f %f\n",box_y.x,box_y.y,box_y.z);
     fprintf(out,"box_z \t%f %f %f\n",box_z.x,box_z.y,box_z.z);
     fprintf(out,"starttemp \t%f\n",temperature);
-
+#if defined(NVT) || defined(NPT)
+    fprintf(out,"eta \t%f\n",eta);
+#endif
 #ifdef NPT
     if (ensemble==ENS_NPT_ISO) {
       fprintf(out,"pressure_ext \t%f\n",pressure_ext.x);
+      fprintf(out,"xi \t%f\n",xi.x);
     }
     if (ensemble==ENS_NPT_AXIAL) {
       fprintf(out,"pressure_ext \t%f %f %f\n",
               pressure_ext.x,pressure_ext.y,pressure_ext.z);
+      fprintf(out,"xi \t%f %f %f\n", xi.x,xi.y,xi.z);
     }
 #endif /* NPT */
     fclose(out);

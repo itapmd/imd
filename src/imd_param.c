@@ -450,6 +450,10 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #if defined(NVT) || defined(NPT)
+    else if (strcasecmp(token,"eta")==0) {
+      /* eta variable for NVT or NPT thermostat */
+      getparam("eta",&eta,PARAM_REAL,1,1);
+    }
     else if (strcasecmp(token,"tau_eta")==0) {
       /* time constant for thermostat */
       getparam("tau_eta",&isq_tau_eta,PARAM_REAL,1,1);
@@ -776,6 +780,10 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #ifdef NPT
+    else if (strcasecmp(token,"xi")==0) {
+      /* xi variable for NPT thermostat */
+      getparam("xi",&xi,PARAM_REAL,1,DIM);
+    }
     else if (strcasecmp(token,"pressure_start")==0) {
       /* external starting pressure or stress for NPT */
       getparam("pressure_start",&pressure_ext,PARAM_REAL_COPY,1,DIM);
@@ -1099,11 +1107,13 @@ void broadcast_params() {
 #endif
 
 #if defined(NVT) || defined(NPT)
+  MPI_Bcast( &eta ,         1 , MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &isq_tau_eta , 1 , MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef NPT
-  MPI_Bcast( &isq_tau_xi         , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &xi,                DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &isq_tau_xi,          1, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &pressure_ext,      DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &cell_size_tolerance, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
