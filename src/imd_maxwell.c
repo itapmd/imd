@@ -37,10 +37,8 @@ void maxwell(real temp)
  
  
 { 
-   int         i,natom;
-   cell        *p;
+   int         k, natom;
    vektor      tot_impuls;
-   int         r,s,t;
    real        TEMP;
    real scale, xx;
    int num, nhalf;
@@ -60,18 +58,13 @@ void maxwell(real temp)
 #endif
 
    /* Temperatur setzen */
-   for ( r = cellmin.x; r < cellmax.x; ++r )
-     for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-       for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-       {
-#ifndef TWOD
-         p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#else
-         p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#endif
-	 for (i = 0;i < p->n; ++i) {
+   for (k=0; k<ncells; ++k) {
+
+      int i;
+      cell *p;
+      p = cell_array + CELLS(k);
+
+      for (i=0; i<p->n; ++i) {
 
 #ifdef TRANSPORT
            /* which layer? */
@@ -127,8 +120,9 @@ void maxwell(real temp)
 	     p->impuls X(i) -= shock_speed * MASSE(p,i);
 	 }
 #endif
-       }
-     }
+      }
+   }
+
    /* CPU could be empty */
    if (0==natom) return;
 
@@ -139,29 +133,18 @@ void maxwell(real temp)
 #endif
 
    /* Temperatur setzen */
-   for ( r = cellmin.x; r < cellmax.x; ++r )
-       for ( s = cellmin.y; s < cellmax.y; ++s )
+   for (k=0; k<ncells; ++k) {
+      int i;
+      cell *p;
+      p = cell_array + CELLS(k);
+      for (i = 0;i < p->n; ++i) { 
+         p->impuls X(i) -= tot_impuls.x;
+         p->impuls Y(i) -= tot_impuls.y;
 #ifndef TWOD
-           for ( t = cellmin.z; t < cellmax.z; ++t )
+         p->impuls Z(i) -= tot_impuls.z;
 #endif
-           {
-   
-
-#ifndef TWOD
-             p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#else
-             p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#endif
-             for (i = 0;i < p->n; ++i) { 
-               p->impuls X(i) -= tot_impuls.x;
-               p->impuls Y(i) -= tot_impuls.y;
-#ifndef TWOD
-               p->impuls Z(i) -= tot_impuls.z;
-#endif
-             };
-           };
-   return;
- 
+      }
+   }
 } 
  
  

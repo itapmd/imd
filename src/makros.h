@@ -24,6 +24,12 @@
 #define POTENG(cell,i) (cell)->pot_eng[(i)]
 #endif
 
+#ifdef MPI
+#define CELLS(k) cells[k]
+#else
+#define CELLS(k) k
+#endif
+
 /* Max gibt den groesseren von zwei Werten */
 #define MAX(a,b) ((a) > (b) ? (a) : (b))
 

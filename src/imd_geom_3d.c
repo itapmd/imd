@@ -438,6 +438,205 @@ void init_cells( void )
   r2_cut = tmp2;
 #endif
 
+  make_cell_lists();
+
+}
+
+
+/******************************************************************************
+*
+*  make_cell_lists creates a list of indices of all inner cells
+*  (only if MPI), and a list of all pairs of interacting cells.
+*  These lists make it easy to loop over these cells and pairs.
+*
+******************************************************************************/
+
+void make_cell_lists(void)
+{
+  int i,j,k,l,m,n,r,s,t,nbrank_cell,nn;
+  ivektor ipbc, neigh;
+  pair *P;
+
+  /* initialize pairs before creating the first pair lists */
+  if (nallcells==0) for (i=0; i<6; ++i) pairs[i] = NULL;
+
+  nallcells = cell_dim.x * cell_dim.y * cell_dim.z;
+#ifdef MPI
+  ncells = (cell_dim.x-2) * (cell_dim.y-2) * (cell_dim.z-2);
+  /* make list of inner cell indices */
+  cells  = (integer*) realloc( cells, ncells * sizeof(integer) );
+  l = 0;
+  for (i=cellmin.x; i<cellmax.x; ++i)
+    for (j=cellmin.y; j<cellmax.y; ++j)
+      for (k=cellmin.z; k<cellmax.z; ++k) {
+        cells[l] = i * cell_dim.y * cell_dim.z + j * cell_dim.z + k;
+        l++;
+      }
+#else
+  ncells = cell_dim.x * cell_dim.y * cell_dim.z;
+#endif
+
+#if !(defined(MPI) && defined(MONOLJ)) /* i.e., not world record */ 
+
+  /* Make lists with pairs of interacting cells, taking account of 
+     the boundary conditions. We distribute pairs on several lists 
+     such that among the pairs in any list there is no cell that 
+     occurs twice. This allows to update forces independently
+     for the pairs from the same list.
+  */
+
+  nn = sizeof(pair) * (cell_dim.x * cell_dim.y * ((cell_dim.z+1)/2));
+  pairs[0] = (pair *) realloc( pairs[0], nn * 2 );  npairs[0] = 0;
+  pairs[1] = (pair *) realloc( pairs[1], nn * 2 );  npairs[1] = 0;
+  nn = sizeof(pair) * (cell_dim.x * ((cell_dim.y+1)/2) * cell_dim.z);
+  pairs[2] = (pair *) realloc( pairs[2], nn * 3 );  npairs[2] = 0;
+  pairs[3] = (pair *) realloc( pairs[3], nn * 3 );  npairs[3] = 0;
+  nn = sizeof(pair) * (((cell_dim.x+1)/2) * cell_dim.y * cell_dim.z);
+  pairs[4] = (pair *) realloc( pairs[4], nn * 9 );  npairs[4] = 0;
+  pairs[5] = (pair *) realloc( pairs[5], nn * 9 );  npairs[5] = 0;
+  if ((pairs[0]==NULL) || (pairs[1]==NULL) || (pairs[2]==NULL) ||
+      (pairs[3]==NULL) || (pairs[4]==NULL) || (pairs[5]==NULL)) 
+      error("cannot allocate pair lists");
+
+  /* for each cell */
+  for (i=cellmin.x; i<cellmax.x; ++i)
+    for (j=cellmin.y; j<cellmax.y; ++j)
+      for (k=cellmin.z; k<cellmax.z; ++k)
+
+	/* For half of the neighbours of this cell */
+	for (l=0; l <= 1; ++l)
+	  for (m=-l; m <= 1; ++m)
+	    for (n=(l==0 ? -m  : -l ); n <= 1; ++n) { 
+
+              /* array where to put the pairs */
+              if (l==0) {
+                if (m==0) { if (k % 2 == 0) nn=0; else nn=1; }
+                else      { if (j % 2 == 0) nn=2; else nn=3; }
+              } else      { if (i % 2 == 0) nn=4; else nn=5; }
+
+#ifdef MPI
+              r = i+l - 1 + my_coord.x * (cell_dim.x - 2);
+              s = j+m - 1 + my_coord.y * (cell_dim.y - 2);
+              t = k+n - 1 + my_coord.z * (cell_dim.z - 2);
+#else
+              r = i+l;
+              s = j+m;
+              t = k+n;
+#endif
+
+              /* Apply periodic boundaries */
+              ipbc.x = 0;
+              if (r<0) ipbc.x--; else if (r>global_cell_dim.x-1) ipbc.x++;
+
+              ipbc.y = 0;
+              if (s<0) ipbc.y--; else if (s>global_cell_dim.y-1) ipbc.y++;
+
+              ipbc.z = 0;
+              if (t<0) ipbc.z--; else if (t>global_cell_dim.z-1) ipbc.z++;
+
+#ifdef MPI
+              r = i+l;
+              s = j+m;
+              t = k+n;
+#else
+              if (r<0) r=cell_dim.x-1; 
+              else if (r>cell_dim.x-1) r=0;
+
+              if (s<0) s=cell_dim.y-1; 
+              else if (s>cell_dim.y-1) s=0;
+
+              if (t<0) t=cell_dim.z-1; 
+              else if (t>cell_dim.z-1) t=0;
+#endif
+
+#ifdef SHOCK
+              if (0 == ipbc.x)
+#endif
+#ifdef NOPBC
+              if ((0 == ipbc.x) && (0 == ipbc.y) && (0 == ipbc.z))
+#endif
+              {
+                /* add pair to list */
+                P = pairs[nn] + npairs[nn];
+                P->np = i*cell_dim.y*cell_dim.z + j*cell_dim.z + k;
+                P->nq = r*cell_dim.y*cell_dim.z + s*cell_dim.z + t;
+                P->ipbc[0] = ipbc.x;
+                P->ipbc[1] = ipbc.y;
+                P->ipbc[2] = ipbc.z;
+                npairs[nn]++;
+	      }
+	    }
+
+#ifdef MPI
+
+  /* Since we don't use actio=reactio accross cpus, we have to do
+     the force loop also on the other half of the neighbours for the 
+     cells on the surface of the CPU */
+
+  for (i=0; i<6; ++i) npairs2[i] = npairs[i];
+
+  /* for each cell */
+  for (i=cellmin.x; i<cellmax.x; ++i)
+    for (j=cellmin.y; j<cellmax.y; ++j)
+      for (k=cellmin.z; k<cellmax.z; ++k)
+
+	/* for the other half of the neighbours of this cell */
+	for (l=0; l <= 1; ++l)
+	  for (m=-l; m <= 1; ++m)
+	    for (n=(l==0 ? -m  : -l ); n <= 1; ++n) { 
+
+              neigh.x = i-l;
+              neigh.y = j-m;
+              neigh.z = k-n;
+
+	      /* Calculate neighbour's CPU via buffer cell */
+	      nbrank_cell = cpu_coord(global_cell_coord( neigh ));
+
+              /* if the neighbor's original is on a different CPU */
+	      if ( nbrank_cell != myid ) {
+
+                /* array where to put the pairs */
+                if (l==0) {
+                  if (m==0) { if (k % 2 == 0) nn=0; else nn=1; }
+                  else      { if (j % 2 == 0) nn=2; else nn=3; }
+                } else      { if (i % 2 == 0) nn=4; else nn=5; }
+
+                /* Apply periodic boundaries */
+                ipbc.x = 0; r = neigh.x - 1 + my_coord.x * (cell_dim.x - 2);
+                if (r<0) ipbc.x--; else if (r>global_cell_dim.x-1) ipbc.x++;
+                r = neigh.x;
+
+                ipbc.y = 0; s = neigh.y - 1 + my_coord.y * (cell_dim.y - 2);
+                if (s<0) ipbc.y--; else if (s>global_cell_dim.y-1) ipbc.y++;
+                s = neigh.y;
+
+                ipbc.z = 0; t = neigh.z - 1 + my_coord.z * (cell_dim.z - 2);
+                if (t<0) ipbc.z--; else if (t>global_cell_dim.z-1) ipbc.z++;
+                t = neigh.z;
+
+#ifdef SHOCK
+                if (0 == ipbc.x)
+#endif
+#ifdef NOPBC
+                if ((0 == ipbc.x) && (0 == ipbc.y) && (0 == ipbc.z))
+#endif
+                {
+                  /* add pair to list */
+                  P = pairs[nn] + npairs2[nn];
+                  P->np = i*cell_dim.y*cell_dim.z + j*cell_dim.z + k;
+                  P->nq = r*cell_dim.y*cell_dim.z + s*cell_dim.z + t;
+                  P->ipbc[0] = ipbc.x;
+                  P->ipbc[1] = ipbc.y;
+                  P->ipbc[2] = ipbc.z;
+                  npairs2[nn]++;
+	        }
+	      }
+	    }
+
+#endif /* MPI */
+
+#endif /* !(defined(MPI) && definded(MONOLJ)), i.e., not world record */
+
 }
 
 
@@ -448,29 +647,18 @@ void init_cells( void )
 */
 
 ivektor cell_coord(real x, real y, real z)
-
 {
   ivektor coord;
-  vektor ort;
-
-  /* Yes, this _IS_ ugly */
-  ort.x = x;
-  ort.y = y;
-  ort.z = z;
 
   /* Map positions to boxes */
-  coord.x = (int) TRUNC( global_cell_dim.x * SPROD(ort,tbox_x) );
-  coord.y = (int) TRUNC( global_cell_dim.y * SPROD(ort,tbox_y) );
-  coord.z = (int) TRUNC( global_cell_dim.z * SPROD(ort,tbox_z) );
+  coord.x = (int)(global_cell_dim.x * (x*tbox_x.x + y*tbox_x.y + z*tbox_x.z));
+  coord.y = (int)(global_cell_dim.y * (x*tbox_y.x + y*tbox_y.y + z*tbox_y.z));
+  coord.z = (int)(global_cell_dim.z * (x*tbox_z.x + y*tbox_z.y + z*tbox_z.z));
 
   /* Roundoff errors put atoms slightly out of the simulation cell */
-  /* Great mess, needs more investigation */
-  coord.x = coord.x <   0                ?                    0 : coord.x;
-  coord.x = coord.x >= global_cell_dim.x ? global_cell_dim.x -1 : coord.x;
-  coord.y = coord.y <   0                ?                    0 : coord.y;
-  coord.y = coord.y >= global_cell_dim.y ? global_cell_dim.y -1 : coord.y;
-  coord.z = coord.z <   0                ?                    0 : coord.z;
-  coord.z = coord.z >= global_cell_dim.z ? global_cell_dim.z -1 : coord.z;
+  coord.x = (coord.x < global_cell_dim.x) ? coord.x : global_cell_dim.x - 1;
+  coord.y = (coord.y < global_cell_dim.y) ? coord.y : global_cell_dim.y - 1;
+  coord.z = (coord.z < global_cell_dim.z) ? coord.z : global_cell_dim.z - 1;
 
   return(coord);
 

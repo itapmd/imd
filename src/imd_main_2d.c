@@ -156,9 +156,6 @@ void main_loop(void)
 
 #ifdef MPI
     mpi_addtime(&time_calc);
-    MPI_Allreduce(&tot_pot_energy,&tmp_pot_energy,1,MPI_REAL,MPI_SUM,cpugrid); 
-    tot_pot_energy = tmp_pot_energy; 
-    mpi_addtime(&time_comm);
 #endif
 
     calc_properties(); 
@@ -332,28 +329,29 @@ void fix_cells(void)
 
 void do_boundaries(void)
 {
-  int i,j,k,l;
-  cell *p;
-  vektor d;
+  int k;
 
   /* for each cell in bulk */
-  for (i=cellmin.x; i < cellmax.x; ++i)
-    for (j=cellmin.y; j < cellmax.y; ++j) {
-      p = PTR_2D_V(cell_array, i, j, cell_dim);
-        for (l=0; l<p->n; ++l) {
+#pragma omp parallel for
+  for (k=0; k<ncells; ++k) {
 
-          /* Apply periodic boundaries */
-          d.x = -FLOOR(SPRODX(p->ort,l,tbox_x)) * box_x.x;
-          d.y = -FLOOR(SPRODX(p->ort,l,tbox_x)) * box_x.y;
+    int l;
+    cell *p;
+    vektor d;
 
-          d.x -= FLOOR(SPRODX(p->ort,l,tbox_y)) * box_y.x;
-          d.y -= FLOOR(SPRODX(p->ort,l,tbox_y)) * box_y.y;
+    p = cell_array + CELLS(k);
+
+    for (l=0; l<p->n; ++l) {
+
+      /* Apply periodic boundaries */
+      d.x = -FLOOR(SPRODX(p->ort,l,tbox_x));
+      d.y = -FLOOR(SPRODX(p->ort,l,tbox_y));
 
 #ifndef SHOCK
-	  p->ort X(l) += d.x;
+      p->ort X(l) += d.x * box_x.x + d.y * box_y.x;
 #endif
-	  p->ort Y(l) += d.y;
-      	}
+      p->ort Y(l) += d.x * box_x.y + d.y * box_y.y;
+    }
   }
 }
 
@@ -380,9 +378,6 @@ void calc_properties(void)
 
 void init(void)
 {
-  int r, s, i;
-  cell *p;
-
   /* Set Up Initial Temperature */
   if (do_maxwell) maxwell(temperature);
   do_maxwell=0;

@@ -37,32 +37,21 @@
 
 void calc_forces(void)
 {
-  cell *p,*q;
-  int i,j,k;
-  int l,m,n;
-  int r,s,t;
-  int u,v,w;
-  vektor pbc = {0.0, 0.0};
-  real tmp, tmpvir;
-#ifdef P_AXIAL
+  int    n, k;
+  real   tmp, tmpvir;
   vektor tmpvec;
-#endif
 
   tot_pot_energy = 0.0;
   virial         = 0.0;
-#ifdef P_AXIAL
   vir_vect.x     = 0.0;
   vir_vect.y     = 0.0;
-#endif
 
   /* Zero Forces */
-  for (p = cell_array; 
-       p <= PTR_2D_V(cell_array,
-		     cell_dim.x-1,
-		     cell_dim.y-1,
-		     cell_dim);
-       ++p ) 
-    for (i = 0;i < p->n; ++i) {
+  for (k=0; k<nallcells; ++k) {
+    int i;
+    cell *p;
+    p = cell_array + k;
+    for (i=0; i<p->n; ++i) {
       p->kraft X(i) = 0.0;
       p->kraft Y(i) = 0.0;
       p->pot_eng[i] = 0.0;
@@ -74,114 +63,73 @@ void calc_forces(void)
       p->presstens Y(i) = 0.0;
       p->presstens_offdia[i] = 0.0;
 #endif      
-    };
+    }
+  }
 
   /* What follows is the standard one-cpu force 
      loop acting on our local data cells */
 
-  /* for each cell in bulk */
-  for (i=1; i < cell_dim.x-1; ++i)
-    for (j=1; j < cell_dim.y-1; ++j)
-
-	/* For half of the neighbours of this cell */
-
-	for (l=0; l <= 1; ++l)
-	  for (m=-l; m <= 1; ++m) {
-
-	      /* Given cell */
-	      p = PTR_2D_V(cell_array,i,j,cell_dim);
-	      /* Calculate Indicies of Neighbour */
-	      r = i + l;
-	      s = j + m;
-	      /* Neighbour (note that p==q ist possible) */
-	      q = PTR_2D_V(cell_array,r,s,cell_dim);
-#ifndef NOPBC
-	      /* Apply periodic boundaries */
-	      pbc = global_pbc(r,s);
-#endif
-	      /* Do the work */
-#ifdef SHOCK
-              if (0 == pbc.x)
-#endif
-#ifdef NOPBC
-              if ((0 == pbc.x) && (0 == pbc.y))
-#endif
-	      do_forces(p,q,pbc);
-	    };
+  /* compute forces for all pairs of cells */
+  for (n=0; n<4; ++n) {
+    for (k=0; k<npairs[n]; ++k) {
+      vektor pbc;
+      pair *P;
+      P = pairs[n] + k;
+      pbc.x = P->ipbc[0] * box_x.x + P->ipbc[1] * box_y.x;
+      pbc.y = P->ipbc[0] * box_x.y + P->ipbc[1] * box_y.y;
+      do_forces(cell_array + P->np, cell_array + P->nq, pbc);
+    }
+  }
 
   /* Since we don't use actio=reactio accross the cpus, we have do do
-     the force loop also on the UPPER half of neighbour for the cells
-     on the surface of the CPU */
+     the force loop also on the other half of the neighbours for the 
+     cells on the surface of the CPU */
 
   /* potential energy and virial are already complete; to avoid double
      counting, we keep a copy of the current value, which we use later */
 
   tmp      = tot_pot_energy;
   tmpvir   = virial;
-#ifdef P_AXIAL
   tmpvec.x = vir_vect.x;
   tmpvec.y = vir_vect.y;
-#endif
 
-  /* for each cell in bulk */
-  for (i=1; i < cell_dim.x-1; ++i)
-    for (j=1; j < cell_dim.y-1; ++j)
-
-	/* For half of the neighbours of this cell */
-
-	for (l=0; l <= 1; ++l)
-	  for (m=-l; m <= 1; ++m) {
-
-	      /* Given cell */
-	      p = PTR_2D_V(cell_array,i,j,cell_dim);
-
-	      /* Calculate Indicies of Neighbour */
-              r = i - l;
-              s = j - m;
-
-              /* if second cell is a buffer cell */
-              if ((r == 0) || (r == cell_dim.x-1) || 
-                  (s == 0) || (s == cell_dim.y-1)) 
-              {
-		q = PTR_2D_V(cell_array,r,s,cell_dim);
-#ifndef NOPBC
-		/* Apply periodic boundaries */
-		pbc = global_pbc(r,s);
-#endif
-		/* Do the work */
-#ifdef SHOCK
-                if (0 == pbc.x)
-#endif
-#ifdef NOPBC
-                if ((0 == pbc.x) && (0 == pbc.y))
-#endif
-		do_forces(p,q,pbc);
-	      };
-	    };
+  /* compute forces for remaining pairs of cells */
+  for (n=0; n<4; ++n) {
+    for (k=npairs[n]; k<npairs2[n]; ++k) {
+      vektor pbc;
+      pair *P;
+      P = pairs[n] + k;
+      pbc.x = P->ipbc[0] * box_x.x + P->ipbc[1] * box_y.x;
+      pbc.y = P->ipbc[0] * box_x.y + P->ipbc[1] * box_y.y;
+      do_forces(cell_array + P->np, cell_array + P->nq, pbc);
+    }
+  }
 
   /* use the previously saved values of potential energy and virial */
   tot_pot_energy = tmp;
   virial     = tmpvir;
-#ifdef P_AXIAL
   vir_vect.x = tmpvec.x;
   vir_vect.y = tmpvec.y;
-#endif
 
-  MPI_Allreduce( &virial,   &tmp,      1, MPI_REAL, MPI_SUM, cpugrid);
-  virial = tmp;
+  /* sum up results of different CPUs */
+  MPI_Allreduce( &tot_pot_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid); 
+  tot_pot_energy = tmp; 
 
-#ifdef P_AXIAL
-  MPI_Allreduce( &vir_vect, &tmpvec, DIM, MPI_REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( &virial,   &tmpvir,    1, MPI_REAL, MPI_SUM, cpugrid);
+  virial = tmpvir;
+
+  MPI_Allreduce( &vir_vect, &tmpvec,  DIM, MPI_REAL, MPI_SUM, cpugrid);
   vir_vect.x = tmpvec.x;
   vir_vect.y = tmpvec.y;
-#endif
 
 }
 
 
 /******************************************************************************
 *
-* global_pbc tells if a local buffer cell is across the boundaries
+*  global_pbc tells if a local buffer cell is across the boundaries
+*
+*  no longer used
 *
 ******************************************************************************/
 

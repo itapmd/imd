@@ -191,9 +191,6 @@ void main_loop(void)
 
 #ifdef MPI
     mpi_addtime(&time_calc);
-    MPI_Allreduce(&tot_pot_energy,&tmp_pot_energy,1,MPI_REAL,MPI_SUM,cpugrid); 
-    tot_pot_energy = tmp_pot_energy; 
-    mpi_addtime(&time_comm);
 #endif
 
     calc_properties(); 
@@ -422,36 +419,31 @@ void fix_cells(void)
 
 void do_boundaries(void)
 {
-  int i,j,k,l;
-  cell *p;
-  vektor d;
+  int k;
 
   /* for each cell in bulk */
-  for (i=cellmin.x; i < cellmax.x; ++i)
-    for (j=cellmin.y; j < cellmax.y; ++j)
-      for (k=cellmin.z; k < cellmax.z; ++k) {
-	p = PTR_3D_V(cell_array, i, j, k, cell_dim);
-	for (l=0; l<p->n; ++l) {
+#pragma omp parallel for
+  for (k=0; k<ncells; ++k) {
 
-	  /* Apply periodic boundaries */
-          d.x = -FLOOR(SPRODX(p->ort,l,tbox_x)) * box_x.x;
-          d.y = -FLOOR(SPRODX(p->ort,l,tbox_x)) * box_x.y;
-          d.z = -FLOOR(SPRODX(p->ort,l,tbox_x)) * box_x.z;
+    int l;
+    cell *p;
+    vektor d;
 
-          d.x -= FLOOR(SPRODX(p->ort,l,tbox_y)) * box_y.x;
-          d.y -= FLOOR(SPRODX(p->ort,l,tbox_y)) * box_y.y;
-          d.z -= FLOOR(SPRODX(p->ort,l,tbox_y)) * box_y.z;
+    p = cell_array + CELLS(k);
 
-          d.x -= FLOOR(SPRODX(p->ort,l,tbox_z)) * box_z.x;
-          d.y -= FLOOR(SPRODX(p->ort,l,tbox_z)) * box_z.y;
-          d.z -= FLOOR(SPRODX(p->ort,l,tbox_z)) * box_z.z;
+    for (l=0; l<p->n; ++l) {
+
+      /* Apply periodic boundaries */
+      d.x = -FLOOR(SPRODX(p->ort,l,tbox_x));
+      d.y = -FLOOR(SPRODX(p->ort,l,tbox_y));
+      d.z = -FLOOR(SPRODX(p->ort,l,tbox_z));
 
 #ifndef SHOCK
-          p->ort X(l) += d.x;
+      p->ort X(l) += d.x * box_x.x + d.y * box_y.x + d.z * box_z.x;
 #endif
-          p->ort Y(l) += d.y;
-          p->ort Z(l) += d.z;
-        }
+      p->ort Y(l) += d.x * box_x.y + d.y * box_y.y + d.z * box_z.y;
+      p->ort Z(l) += d.x * box_x.z + d.y * box_y.z + d.z * box_z.z;
+    }
   }
 }
 
@@ -480,9 +472,6 @@ void calc_properties(void)
 
 void init(void)
 {
-  int i, r, s, t;
-  cell *p;
-
   /* Set Up Initial Temperature */
   if (do_maxwell) maxwell(temperature);
   do_maxwell=0;

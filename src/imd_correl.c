@@ -112,37 +112,24 @@ void init_correl(int ncorr_rmax, int ncorr_tmax)
 
 void correlate(int step, int ref_step, unsigned seqnum)
 {
-  cell *p;
-  integer i,r,s,t;
+  integer k;
 
 #if defined(MPI) && defined(CORRELATE)
   int *global_corr;
 #endif
 
   if (step == ref_step) { /* initialize reference positions */
-
     /* loop over all cells */
-    for (r=cellmin.x; r<cellmax.x; ++r)
-      for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-        for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-	{
-        /* loop over atoms in cell */
-#ifndef TWOD
-	  p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#else
-	  p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#endif
-	  for (i = 0; i < p->n*DIM; i+=DIM) {
-	    p->refpos[i]   = p->ort[i];   /* x */
-	    p->refpos[i+1] = p->ort[i+1]; /* y */
-#ifndef TWOD
-	    p->refpos[i+2] = p->ort[i+2]; /* z */
-#endif
-	  }
-	}
-  }
+#pragma omp parallel for
+    for (k=0; k<ncells; ++k) {
+      int i;
+      cell *p;
+      p = cell_array + CELLS(k);
+      for (i=0; i<p->n*DIM; ++i) {
+        p->refpos[i] = p->ort[i];
+      }
+    }
+  } 
   else { /* calculate displacement relative to reference position */
 #ifdef CORRELATE
     integer it;
@@ -163,18 +150,12 @@ void correlate(int step, int ref_step, unsigned seqnum)
     for (i=0; i<ntypes; i++) msqd[i] = (real)0;
 
     /* loop over all cells */
-    for (r=cellmin.x; r<cellmax.x; ++r)
-      for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-        for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-	{
-        /* loop over atoms in cell */
-#ifndef TWOD
-	  p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#else
-	  p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#endif
+    for (k=0; k<ncells; ++k) {
+
+      int i;
+      cell *p;
+      p = cell_array + CELLS(k);
+
 	  for (i = 0; i < p->n; ++i) {
             vektor dist;
 #ifdef CORR_PBC
@@ -311,7 +292,7 @@ void correlate(int step, int ref_step, unsigned seqnum)
             GS[p->sorte[i]][it][idr]++; /* calculate histogram for self part */
 #endif /* CORRELATE */
 	  } /* for i */
-        }
+    }
 
 #ifdef CORRELATE
 #ifdef MPI

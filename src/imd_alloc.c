@@ -77,8 +77,8 @@ void move_atom(ivektor cellc, cell *from, int index)
 #ifndef TWOD
   to->refpos Z(to->n) = from->refpos Z(index);
 #endif
-#endif
-#endif
+#endif /* REFPOS */
+#endif /* not MONOLJ */
   ++to->n;
 
   /* Delete atom in original cell */
@@ -132,24 +132,16 @@ void move_atom(ivektor cellc, cell *from, int index)
 #ifdef DISLOC
 void reset_Epot_ref(void)
 {
-  int  i, j, k, l;
-  cell *p;
-
-  for (j = 1; j < cell_dim.x-1; ++j )
-    for (k = 1; k < cell_dim.y-1; ++k )
-#ifndef TWOD
-      for (l = 1; l < cell_dim.z-1; ++l )
-#endif
-      {
-#ifdef TWOD
-        p = PTR_2D_V(cell_array, j, k,    cell_dim);
-#else
-        p = PTR_3D_V(cell_array, j, k, l, cell_dim);
-#endif
-        for (i=0; i<p->n; ++i ){
-          p->Epot_ref[i] = p->pot_eng[i];
-        };
-      };
+  int  k;
+#pragma omp parallel for
+  for (k=0; k<ncells; ++k) {
+    int  i;
+    cell *p;
+    p = cell_array + CELLS(k);
+    for (i=0; i<p->n; ++i) {
+      p->Epot_ref[i] = p->pot_eng[i];
+    }
+  }
 }
 #endif
 
@@ -183,6 +175,7 @@ neightab *alloc_neightab(neightab *neigh, int count)
   return(neigh);
 }
 #endif
+
 
 /******************************************************************************
 *

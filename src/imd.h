@@ -25,6 +25,9 @@
 #ifdef sgi
 #include <bstring.h>
 #endif
+#ifdef OMP
+#include <omp.h>
+#endif
 /* #include <sys/stat.h> */
 /* #include <sys/types.h> */
 

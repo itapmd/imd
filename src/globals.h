@@ -41,9 +41,13 @@
 #endif
 
 /* Where all the data lives */
-EXTERN cell *cell_array INIT(NULL);    /* 3d Array of Cells */
-EXTERN ivektor cell_dim;    /* Dimension of above (per cpu)*/
-EXTERN ivektor global_cell_dim;    /* Dimension of above */
+EXTERN cell *cell_array INIT(NULL);      /* array of cells */
+EXTERN integer *cells INIT(NULL);        /* list if inner cell indices */
+EXTERN pair *pairs[2*DIM];               /* arrays of cell pairs */  
+EXTERN int ncells,nallcells INIT(0);     /* number of cells */
+EXTERN int npairs[2*DIM],npairs2[2*DIM]; /* number of cell pairs */
+EXTERN ivektor cell_dim;                 /* dimension of cell array (per cpu)*/
+EXTERN ivektor global_cell_dim;          /* dimension of cell array */
 
 /* Global bookkeeping */
 
@@ -217,10 +221,8 @@ EXTERN real isq_tau_eta INIT(0.0);  /* tau_eta: Nose-Hoover heat bath 'mass' */
                                /* isq_tau_eta : inverse of square of tau_eta */
 #endif
 
-#ifdef P_AXIAL
-EXTERN vektor vir_vect INIT(nullvektor);
-EXTERN vektor stress INIT(nullvektor);
-#endif
+EXTERN vektor vir_vect INIT(nullvektor);   /* diagonal of virial tensor */
+EXTERN vektor stress INIT(nullvektor);     /* diagonal of stress tensor */
 
 EXTERN int    cells_too_small INIT(0);
 EXTERN int    revise_cell_division INIT(0);

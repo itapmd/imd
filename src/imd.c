@@ -121,8 +121,8 @@ int main(int argc, char **argv)
     if (steps_min <= steps_max) {
       init_cells();  /* a new cell division might be necessary or useful */
       main_loop();
-    };
-  };
+    }
+  }
   
 /* Write execution time summary */
 

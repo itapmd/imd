@@ -188,7 +188,7 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
 	q->pot_eng[j]  += pot_zwi;
 	p->pot_eng[i]  += pot_zwi;
 #endif
-	tot_pot_energy += 2*pot_zwi;
+	tot_pot_energy += pot_zwi;
 
 #ifdef P_AXIAL
         tmp_vir_vect.x -= d.x * d.x * pot_grad;
@@ -291,11 +291,10 @@ void do_forces_eam_1(cell *p, cell *q, vektor pbc)
   virial     += tmp_virial;
 #endif
 
-  return;
 } /* do_forces_eam_1 */
 
 /* -------------------------------------------- */
-void do_forces_eam_2(cell *p, cell *q, vektor pbc)
+void do_forces_eam_2(cell *p)
 
 /* Part 2: calc of cohesive potential function 
 *
@@ -380,7 +379,7 @@ void do_forces_eam_2(cell *p, cell *q, vektor pbc)
         eam_r_ik = sqrt(radius2);
 
         /* number of atom k */
-        eam_k    	    = (integer) eam_ij[eam_pni*eam_len+j];  
+        eam_k         = (integer) eam_ij[eam_pni*eam_len+j];  
         eam_tmp_k     = 1.0/sqrt(eam_rho[eam_k]);
         eam_pot_grad  = -eam_A*(eam_tmp_i+eam_tmp_k)*(eam_r_ik-eam_r_cut)/eam_r_ik;
       
@@ -446,6 +445,5 @@ void do_forces_eam_2(cell *p, cell *q, vektor pbc)
   virial     += tmp_virial;
 #endif
 
-  return;
 } /* do_forces_eam_2 */
 

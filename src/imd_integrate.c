@@ -22,31 +22,19 @@
 #ifdef NVE
 
 void move_atoms_nve(void)
-
 {
-  cell *p;
-  int i;
-  real kin_energie_1,kin_energie_2;
-  int r,s,t;  
-  real tmp = 0;
-  int iend;
+  int k;
+  real tmp;
+  tot_kin_energy = 0.0;
 
-  tot_kin_energy = 0;
+  /* loop over all cells */
+#pragma omp parallel for reduction(+:tot_kin_energy) private(tmp)
+  for (k=0; k<ncells; ++k) {
 
-  /* loop over all atoms */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-	{
-
-#ifndef TWOD
-	p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#else
-	p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#endif
-	iend = p->n;
+    int  i;
+    cell *p;
+    real kin_energie_1, kin_energie_2;
+    p = cell_array + CELLS(k);
 
 #ifdef PVPCRAY
 #pragma ivdep
@@ -54,9 +42,9 @@ void move_atoms_nve(void)
 #ifdef SX4
 #pragma vdir vector,nodep
 #endif
-	for (i = 0;i < iend; ++i) {
+    for (i=0; i<p->n; ++i) {
 
-	  kin_energie_1 =  SPRODN(p->impuls,i,p->impuls,i);
+	  kin_energie_1 = SPRODN(p->impuls,i,p->impuls,i);
 
 	  /* new momenta */
 	  p->impuls X(i) += timestep * p->kraft X(i);
@@ -65,17 +53,18 @@ void move_atoms_nve(void)
 	  p->impuls Z(i) += timestep * p->kraft Z(i);
 #endif
 
-	  kin_energie_2 =  SPRODN(p->impuls,i,p->impuls,i);
+	  kin_energie_2 = SPRODN(p->impuls,i,p->impuls,i);
 
           /* sum up kinetic energy on this CPU */
-          tmp += (kin_energie_1 + kin_energie_2) / ( 4 * MASSE(p,i) );
+          tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4 * MASSE(p,i));
 
           /* new positions - do not move atoms with negative numbers */
 	  if (NUMMER(p,i) >= 0) {
-	    p->ort X(i) += timestep * p->impuls X(i) / MASSE(p,i);
-	    p->ort Y(i) += timestep * p->impuls Y(i) / MASSE(p,i);
+            tmp = timestep / MASSE(p,i);
+	    p->ort X(i) += tmp * p->impuls X(i);
+	    p->ort Y(i) += tmp * p->impuls Y(i);
 #ifndef TWOD
-            p->ort Z(i) += timestep * p->impuls Z(i) / MASSE(p,i);
+            p->ort Z(i) += tmp * p->impuls Z(i);
 #endif
 	  } else {
 	    p->impuls X(i) = 0.0;
@@ -87,32 +76,33 @@ void move_atoms_nve(void)
 
 #ifdef STRESS_TENS
 #ifdef SHOCK
-	  if (shock_mode == 2) {
-                if ( p->ort X(i) < box_x.x*0.5 )
-		  p->presstens X(i) += ( p->impuls X(i) - shock_speed * MASSE(p,i)) * (p->impuls X(i) - shock_speed *MASSE(p,i))/ MASSE(p,i);
-		else
-		  p->presstens X(i) += ( p->impuls X(i) + shock_speed * MASSE(p,i)) * (p->impuls X(i) + shock_speed *MASSE(p,i))/ MASSE(p,i);
-	      }
-#else
-          p->presstens X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
-#endif
-          p->presstens Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
-#ifdef TWOD
-          p-> presstens_offdia[i] += p->impuls X(i) * p->impuls Y(i) /  MASSE(p,i);
-#else
-          p->presstens Z(i) += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
-          p-> presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) /  MASSE(p,i);
-          p-> presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) /  MASSE(p,i);
-          p-> presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) /  MASSE(p,i);
-#endif
-#endif
-        }
+      if (shock_mode == 2) {
+        if ( p->ort X(i) < box_x.x*0.5 )
+          p->presstens X(i) += (p->impuls X(i) - shock_speed * MASSE(p,i)) 
+                    * (p->impuls X(i) - shock_speed * MASSE(p,i)) / MASSE(p,i);
+        else
+          p->presstens X(i) += (p->impuls X(i) + shock_speed * MASSE(p,i)) 
+                    * (p->impuls X(i) + shock_speed * MASSE(p,i)) / MASSE(p,i);
       }
+#else
+      p->presstens X(i)        += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
+#endif
+      p->presstens Y(i)        += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
+#ifdef TWOD
+      p-> presstens_offdia[i]  += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
+#else
+      p->presstens        Z(i) += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
+      p->presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) / MASSE(p,i);
+      p->presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) / MASSE(p,i);
+      p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
+#endif
+#endif
+    }
+  }
 
 #ifdef MPI
-  /* Add kinetic energy form all cpus */
-  MPI_Allreduce( &tmp, &tot_kin_energy, 1, MPI_REAL, MPI_SUM, cpugrid);
-#else
+  /* Add kinetic energy from all cpus */
+  MPI_Allreduce( &tot_kin_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
   tot_kin_energy = tmp;
 #endif
 
@@ -138,31 +128,19 @@ void move_atoms_nve(void)
 #ifdef MIK
 
 void move_atoms_mik(void)
-
 {
-  cell *p;
-  int i,iend;
-  real kin_energie_1,kin_energie_2;
-  int r,s,t;  
-  real tmp = 0.0; 
-  real tmp2;
-
+  int k;
+  real tmp;
   tot_kin_energy = 0.0;
 
-  /* loop over all atoms */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-	{
+  /* loop over all cells */
+#pragma omp parallel for reduction(+:tot_kin_energy) private(tmp)
+  for (k=0; k<ncells; ++k) {
 
-#ifndef TWOD
-	p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#else
-	p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#endif
-	iend = p->n;
+    int  i;
+    cell *p;
+    real kin_energie_1, kin_energie_2;
+    p = cell_array + CELLS(k);
 
 #ifdef PVPCRAY
 #pragma ivdep
@@ -170,9 +148,9 @@ void move_atoms_mik(void)
 #ifdef SX4
 #pragma vdir vector,nodep
 #endif
-	for (i = 0;i < iend; ++i) {
+    for (i=0; i<p->n; ++i) {
 
-	  kin_energie_1 =  SPRODN(p->impuls,i,p->impuls,i);
+	  kin_energie_1 = SPRODN(p->impuls,i,p->impuls,i);
 
 	  /* Neue Impulse */
 	  p->impuls X(i) += timestep * p->kraft X(i);
@@ -190,38 +168,38 @@ void move_atoms_mik(void)
 	    p->impuls Z(i) = 0.0;
 #endif
           } else { /* new positions */
-            tmp2 = timestep / MASSE(p,i);
-            p->ort X(i) += tmp2 * p->impuls X(i);
-            p->ort Y(i) += tmp2 * p->impuls Y(i);
+            tmp = timestep / MASSE(p,i);
+            p->ort X(i) += tmp * p->impuls X(i);
+            p->ort Y(i) += tmp * p->impuls Y(i);
 #ifndef TWOD
-            p->ort Z(i) += tmp2 * p->impuls Z(i);
+            p->ort Z(i) += tmp * p->impuls Z(i);
 #endif
  	  }
 
 	  kin_energie_2 =  SPRODN(p->impuls,i,p->impuls,i);
 
        	  /* sum up kinetic energy on this CPU */ 
-          tmp += (kin_energie_1 + kin_energie_2) / ( 4.0 * MASSE(p,i) );
+          tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4.0*MASSE(p,i));
 
 #ifdef STRESS_TENS
-          p-> presstens X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
-          p-> presstens Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
+      p->presstens        X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
+      p->presstens        Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
 #ifdef TWOD
-          p-> presstens_offdia[i] += p->impuls X(i) * p->impuls Y(i) /  MASSE(p,i);
+      p->presstens_offdia[i]   += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
 #else
-          p-> presstens Z(i) += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
-          p-> presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) /  MASSE(p,i);
-          p-> presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) /  MASSE(p,i);
-          p-> presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) /  MASSE(p,i);
+      p->presstens Z(i)        += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
+      p->presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) / MASSE(p,i);
+      p->presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) / MASSE(p,i);
+      p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
 #endif
 #endif
-	}
-      }
+
+    }
+  }
 
 #ifdef MPI
-  /* Add kinetic energy form all cpus */
-  MPI_Allreduce( &tmp, &tot_kin_energy, 1, MPI_REAL, MPI_SUM, cpugrid);
-#else  
+  /* Add kinetic energy from all cpus */
+  MPI_Allreduce( &tot_kin_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
   tot_kin_energy = tmp;
 #endif
 
@@ -248,58 +226,37 @@ void move_atoms_mik(void)
 #ifdef MSD
 
 void move_atoms_msd(void)
-
 {
-  cell *p;
-  int i,iend;
-  real tmp_msd  = 0.0;
-  real tmp_step = 0.0;
-  int r,s,t;  
-  real tmp = 0.0; 				/* tot_kin_energy = 0 ! */
+  int k;
+  tot_kin_energy = 0.0;
 
-  /* loop over all atoms */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-        {
+  /* loop over all cells */
+#pragma omp parallel for
+  for (k=0; k<ncells; ++k) {
 
-#ifndef TWOD
-        p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#else
-        p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#endif
+    int  i;
+    cell *p;
+    real tmp;
+    p = cell_array + CELLS(k);
 
-        tmp_step = timestep; 
-        iend = p->n;
-        for (i = 0;i < iend; ++i) {
-          
-          /* new positions - do not move atoms with negative numbers */
-          if (NUMMER(p,i) >= 0) {
-            tmp_msd = tmp_step / sqrt(SPRODN(p->kraft,i,p->kraft,i)) ;
-            p->ort X(i) += tmp_msd * p->kraft X(i);
-            p->ort Y(i) += tmp_msd * p->kraft Y(i);
+    for (i=0; i<p->n; ++i) {
+      /* new positions - do not move atoms with negative numbers */
+      if (NUMMER(p,i) >= 0) {
+        tmp = timestep / sqrt(SPRODN(p->kraft,i,p->kraft,i)) ;
+        p->ort X(i) += tmp * p->kraft X(i);
+        p->ort Y(i) += tmp * p->kraft Y(i);
 #ifndef TWOD
-            p->ort Z(i) += tmp_msd * p->kraft Z(i);
+        p->ort Z(i) += tmp * p->kraft Z(i);
 #endif 
-          }
-
-          /* new momenta */
-          p->impuls X(i) = 0.0;
-          p->impuls Y(i) = 0.0;
-#ifndef TWOD
-          p->impuls Z(i) = 0.0;
-#endif
-        }
       }
-
-#ifdef MPI
-  /* Add kinetic energy form all cpus */
-  MPI_Allreduce( &tmp, &tot_kin_energy, 1, MPI_REAL, MPI_SUM, cpugrid);
-#else  
-  tot_kin_energy = tmp;
+      /* new momenta */
+      p->impuls X(i) = 0.0;
+      p->impuls Y(i) = 0.0;
+#ifndef TWOD
+      p->impuls Z(i) = 0.0;
 #endif
+    }
+  }
 
 }
 
@@ -324,35 +281,22 @@ void move_atoms_msd(void)
 void move_atoms_nvt(void)
 
 {
-  cell *p;
-  int i;
-  real kin_energie_1,kin_energie_2;
-  int r,s,t;  
-  real reibung;
-  real eins_d_reibung;
-  real tmp,tmp2;
+  int k;
+  real kin_energie_1 = 0.0, kin_energie_2 = 0.0;
+  real reibung, eins_d_reibung, tmp;
 
-  tot_kin_energy = 0;
-  kin_energie_1  = 0;
-  kin_energie_2  = 0;
   reibung        =      1 - eta * timestep / 2.0;
   eins_d_reibung = 1 / (1 + eta * timestep / 2.0);
    
   /* loop over all atoms */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-      {
-        
-#ifndef TWOD
-	p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#else
-	p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#endif
+#pragma omp parallel for reduction(+:kin_energie_1,kin_energie_2) private(tmp)
+  for (k=0; k<ncells; ++k) {
 
-	for (i = 0;i < p->n; ++i) {
+    int i;
+    cell *p;
+    p = cell_array + CELLS(k);
+
+    for (i=0; i<p->n; ++i) {
 
           /* twice the old kinetic energy */
 	  kin_energie_1 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
@@ -372,10 +316,11 @@ void move_atoms_nvt(void)
 	  
           /* new positions - do not move atoms with negative numbers */
 	  if (NUMMER(p,i) >= 0) {
-	    p->ort X(i) += timestep * p->impuls X(i) / MASSE(p,i);
-	    p->ort Y(i) += timestep * p->impuls Y(i) / MASSE(p,i);
+            tmp = timestep / MASSE(p,i);
+	    p->ort X(i) += tmp * p->impuls X(i);
+	    p->ort Y(i) += tmp * p->impuls Y(i);
 #ifndef TWOD
-	    p->ort Z(i) += timestep * p->impuls Z(i) / MASSE(p,i);
+	    p->ort Z(i) += tmp * p->impuls Z(i);
 #endif
 	  } else {
 	    p->impuls X(i) = 0.0;
@@ -386,29 +331,29 @@ void move_atoms_nvt(void)
 	  }
 
 #ifdef STRESS_TENS
-          p->presstens X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
-          p->presstens Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
+      p->presstens        X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
+      p->presstens        Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
 #ifdef TWOD
-          p-> presstens_offdia[i] += p->impuls X(i) * p->impuls Y(i) /  MASSE(p,i);
+      p->presstens_offdia[i]   += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
 #else
-          p->presstens Z(i) += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
-          p-> presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) /  MASSE(p,i);
-          p-> presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) /  MASSE(p,i);
-          p-> presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) /  MASSE(p,i);
+      p->presstens Z(i)        += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
+      p->presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) / MASSE(p,i);
+      p->presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) / MASSE(p,i);
+      p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
 #endif
 #endif
-        }
-      }
+
+    }
+  }
   
   tot_kin_energy = (kin_energie_1 + kin_energie_2) / 4.0;
 
 #ifdef MPI
   /* add kinetic energy from all cpus */
-  MPI_Allreduce( &tot_kin_energy, &tmp,  1, MPI_REAL, MPI_SUM, cpugrid);
-  MPI_Allreduce( &kin_energie_2,  &tmp2, 1, MPI_REAL, MPI_SUM, cpugrid);
-
+  MPI_Allreduce( &tot_kin_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
   tot_kin_energy = tmp;
-  kin_energie_2  = tmp2;
+  MPI_Allreduce( &kin_energie_2,  &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  kin_energie_2  = tmp;
 #endif
 
   /* update parameters */
@@ -439,35 +384,25 @@ void move_atoms_nvt(void)
 void move_atoms_npt_iso(void)
 
 {
-  cell *p;
-  int  i, r, s, t;
-  real Ekin_old, Ekin_new;
-  real tmp, tmp1, tmp2;
-  real fric, ifric;
+  int  k;
+  real Ekin_old = 0.0, Ekin_new = 0.0;
+  real fric, ifric, tmp;
 
-  Ekin_old         = 0.0;
-  Ekin_new         = 0.0;
   box_size.x      += 2.0 * timestep * xi.x;  /* relative box size change */  
   actual_shrink.x *= box_size.x;
   fric             = 1.0 - (xi.x + eta) * timestep / 2.0;
   ifric            = 1.0 / ( 1.0 + (xi.x + eta) * timestep / 2.0 );
 
   /* loop over all cells */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-      {
+#pragma omp parallel for reduction(+:Ekin_old,Ekin_new) private(tmp)
+  for (k=0; k<ncells; ++k) {
 
-#ifndef TWOD
-	p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#else
-	p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#endif
+    int i;
+    cell *p;
+    p = cell_array + CELLS(k);
 
-        /* loop over atoms in cell */
-	for (i = 0;i < p->n; ++i) {
+    /* loop over atoms in cell */
+    for (i=0; i<p->n; ++i) {
       
 	  /* twice the old kinetic energy */ 
 	  Ekin_old += SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
@@ -493,27 +428,27 @@ void move_atoms_npt_iso(void)
 #endif
 
 #ifdef STRESS_TENS
-          p-> presstens X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
-          p-> presstens Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
+      p->presstens        X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
+      p->presstens        Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
 #ifdef TWOD
-          p-> presstens_offdia[i] += p->impuls X(i) * p->impuls Y(i) /  MASSE(p,i);
+      p->presstens_offdia[i]   += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
 #else
-          p-> presstens Z(i) += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
-          p-> presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) /  MASSE(p,i);
-          p-> presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) /  MASSE(p,i);
-          p-> presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) /  MASSE(p,i);
+      p->presstens Z(i)        += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
+      p->presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) / MASSE(p,i);
+      p->presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) / MASSE(p,i);
+      p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
 #endif
 #endif
-	}
-      }
+
+    }
+  }
 
 #ifdef MPI
   /* add data from all cpus */
-  MPI_Allreduce( &Ekin_old, &tmp,  1, MPI_REAL, MPI_SUM, cpugrid);
-  MPI_Allreduce( &Ekin_new, &tmp1, 1, MPI_REAL, MPI_SUM, cpugrid);
-
+  MPI_Allreduce( &Ekin_old, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
   Ekin_old = tmp;
-  Ekin_new = tmp1;
+  MPI_Allreduce( &Ekin_new, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  Ekin_new = tmp;
 #endif
 
   tot_kin_energy  = (Ekin_old + Ekin_new) / 4.0;
@@ -552,7 +487,6 @@ void move_atoms_npt_iso(void)
        || (actual_shrink.x > limit_growth.x)) {
      revise_cell_division = 1;
   }
-
 }
 
 #else
@@ -577,8 +511,7 @@ void move_atoms_npt_iso(void)
 void move_atoms_npt_axial(void)
 
 {
-  cell *p;
-  int i, r, s, t;
+  int k;
   real Ekin, tmp, xi_tmp;
   vektor fric, ifric, tmpvec;
 
@@ -603,20 +536,20 @@ void move_atoms_npt_axial(void)
 #endif
 
   /* loop over all cells */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-	{
-#ifndef TWOD
-	p = PTR_3D_V(cell_array, r, s, t, cell_dim);
+#ifdef TWOD
+#pragma omp parallel for reduction(+:Ekin,stress.x,stress.y)
 #else
-	p = PTR_2D_V(cell_array, r, s,    cell_dim);
+#pragma omp parallel for reduction(+:Ekin,stress.x,stress.y,stress.z)
 #endif
+  for (k=0; k<ncells; ++k) {
 
-        /* loop over atoms in cell */
-	for (i = 0;i < p->n; ++i) {
+    int i;
+    cell *p;
+    real tmp;
+    p = cell_array + CELLS(k);
+
+    /* loop over atoms in cell */
+    for (i=0; i<p->n; ++i) {
 
           /* contribution of old p's to stress */
           stress.x += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
@@ -659,23 +592,23 @@ void move_atoms_npt_axial(void)
 #endif
 
 #ifdef STRESS_TENS
-          p-> presstens X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
-          p-> presstens Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
+      p->presstens        X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
+      p->presstens        Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
 #ifdef TWOD
-          p-> presstens_offdia[i] += p->impuls X(i) * p->impuls Y(i) /  MASSE(p,i);
+      p->presstens_offdia[i]   += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
 #else
-          p-> presstens Z(i) += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
-          p-> presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) /  MASSE(p,i);
-          p-> presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) /  MASSE(p,i);
-          p-> presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) /  MASSE(p,i);
+      p->presstens Z(i)        += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
+      p->presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) / MASSE(p,i);
+      p->presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) / MASSE(p,i);
+      p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
 #endif
 #endif
 
-	}
-      }
+    }
+  }
 
 #ifdef MPI
-  /* Add kinetic energy form all cpus */
+  /* Add kinetic energy from all cpus */
   MPI_Allreduce( &Ekin,   &tmp,      1, MPI_REAL, MPI_SUM, cpugrid);
   MPI_Allreduce( &stress, &tmpvec, DIM, MPI_REAL, MPI_SUM, cpugrid);
 
@@ -736,7 +669,7 @@ void move_atoms_npt_axial(void)
 #endif
      ) {
      cells_too_small = 1;
-  };
+  }
   if  ((actual_shrink.x < limit_shrink.x) || (actual_shrink.x > limit_growth.x)
     || (actual_shrink.y < limit_shrink.y) || (actual_shrink.y > limit_growth.y)
 #ifndef TWOD
@@ -744,8 +677,7 @@ void move_atoms_npt_axial(void)
 #endif
      ) {
      revise_cell_division = 1;
-  };
-
+  }
 }
 
 #else
@@ -770,30 +702,21 @@ void move_atoms_npt_axial(void)
 void move_atoms_and(void)
 
 {
-  cell *p;
-  int i;
-  real kin_energie_1,kin_energie_2;
-  int r,s,t;  
-  real tmp = 0;
+  int k;
+  real tmp;
   static int count = 0;
 
   tot_kin_energy = 0;
 
-  /* loop over all atoms */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-	{
+#pragma omp parallel for reduction(+:tot_kin_energy) private(tmp)
+  for (k=0; k<ncells; ++k) {
 
-#ifndef TWOD
-	p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#else
-	p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#endif
+    int i;
+    cell *p;
+    real kin_energie_1, kin_energie_2;
+    p = cell_array + CELLS(k);
 
-	for (i = 0;i < p->n; ++i) {
+    for (i=0; i<p->n; ++i) {
 
 	  kin_energie_1 =  SPRODN(p->impuls,i,p->impuls,i);
 
@@ -811,10 +734,11 @@ void move_atoms_and(void)
 	  
           /* new positions - do not move atoms  with negative numbers */
 	  if (NUMMER(p,i) >= 0) {
-	    p->ort X(i) += timestep * p->impuls X(i) / MASSE(p,i);
-	    p->ort Y(i) += timestep * p->impuls Y(i) / MASSE(p,i);
+            tmp = timestep / MASSE(p,i);
+	    p->ort X(i) += tmp * p->impuls X(i);
+	    p->ort Y(i) += tmp * p->impuls Y(i);
 #ifndef TWOD
-	    p->ort Z(i) += timestep * p->impuls Z(i) / MASSE(p,i);
+	    p->ort Z(i) += tmp * p->impuls Z(i);
 #endif
 	  } else {
 	    p->impuls X(i) = 0.0;
@@ -825,19 +749,20 @@ void move_atoms_and(void)
 	  }
 
 #ifdef STRESS_TENS
-          p-> presstens X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
-          p-> presstens Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
+      p->presstens        X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
+      p->presstens        Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
 #ifdef TWOD
-          p-> presstens_offdia[i] += p->impuls X(i) * p->impuls Y(i) /  MASSE(p,i);
+      p->presstens_offdia[i]   += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
 #else
-          p-> presstens Z(i) += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
-          p-> presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) /  MASSE(p,i);
-          p-> presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) /  MASSE(p,i);
-          p-> presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) /  MASSE(p,i);
+      p->presstens Z(i)        += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
+      p->presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) / MASSE(p,i);
+      p->presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) / MASSE(p,i);
+      p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
 #endif
 #endif
-	}
-      }
+
+    }
+  }
 
 #ifdef MPI
   /* Add kinetic energy for all CPUs */
@@ -898,13 +823,9 @@ void move_atoms_mc(void)
 void move_atoms_frac(void)
 
 {
-  cell *p;
-  int i;
-  real kin_energie_1,kin_energie_2;
-  int r,s,t;  
+  int k;
   vektor stad, c_halbe;
-  real gamma;
-  real tmp = 0;
+  real tmp;
   static int count = 0;
   tot_kin_energy = 0;
 
@@ -915,20 +836,15 @@ void move_atoms_frac(void)
   c_halbe.y = box_y.y / 2.0;
 
   /* loop over all atoms */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-	{
+#pragma omp parallel for reduction(+:tot_kin_energy)
+  for (k=0; k<ncells; ++k) {
 
-#ifndef TWOD
-	p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#else
-	p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#endif
+    int i;
+    cell *p;
+    real kin_energie_1, kin_energie_2, gamma, tmp1, tmp2;
+    p = cell_array + CELLS(k);
 
-	for (i = 0;i < p->n; ++i) {
+    for (i=0; i<p->n; ++i) {
 
           kin_energie_1 =  SPRODN(p->impuls,i,p->impuls,i);
 
@@ -940,24 +856,17 @@ void move_atoms_frac(void)
                  - SQR( (p->ort Y(i) - c_halbe.y) / 2*stadium.y))
                     + 1);
 
-              if (gamma_cut <= gamma) gamma = gamma_cut;
-              if ((SQR((p->ort X(i) - c_halbe.x)  * stad.x)
-                  + SQR((p->ort Y(i) - c_halbe.y) * stad.y)) < 1.0) gamma=0;
+          if (gamma_cut <= gamma) gamma = gamma_cut;
+          if ((SQR((p->ort X(i) - c_halbe.x)  * stad.x)
+              + SQR((p->ort Y(i) - c_halbe.y) * stad.y)) < 1.0) gamma=0;
                   
 	  /* new momenta */
-	  p->impuls X(i) = 
-	    (p->kraft X(i) * timestep 
-	      + p->impuls X(i) * (1-(1/(2 * MASSE(p,i))) * gamma * timestep))
-	      / (1 + (1/(2 * MASSE(p,i))) * gamma * timestep);
-	  p->impuls Y(i) = 
-	    (p->kraft Y(i) * timestep 
-	      + p->impuls Y(i) * (1-(1/(2 * MASSE(p,i))) * gamma * timestep))
-	      / (1 + (1/(2 * MASSE(p,i))) * gamma * timestep);
+          tmp1 = (1 - (1/(2 * MASSE(p,i))) * gamma * timestep);
+          tmp2 = (1 + (1/(2 * MASSE(p,i))) * gamma * timestep);
+	  p->impuls X(i) = (p->kraft X(i)*timestep + p->impuls X(i)*tmp1)/tmp2;
+	  p->impuls Y(i) = (p->kraft Y(i)*timestep + p->impuls Y(i)*tmp1)/tmp2;
 #ifndef TWOD
-	  p->impuls Z(i) = 
-	    (p->kraft Z(i) * timestep 
-	      + p->impuls Z(i) * (1-(1/(2 * MASSE(p,i))) * gamma * timestep))
-	      / (1 + (1/(2 * MASSE(p,i))) * gamma * timestep);
+	  p->impuls Z(i) = (p->kraft Z(i)*timestep + p->impuls Z(i)*tmp1)/tmp2;
 #endif
 
 	  kin_energie_2 =  SPRODN(p->impuls,i,p->impuls,i);
@@ -967,10 +876,11 @@ void move_atoms_frac(void)
 	  
 	  /* new positions - do not move atoms with negative numbers */
 	  if (NUMMER(p,i) >= 0) {
-	    p->ort X(i) += timestep * p->impuls X(i) / MASSE(p,i);
-	    p->ort Y(i) += timestep * p->impuls Y(i) / MASSE(p,i);
+            tmp1 = timestep / MASSE(p,i);
+	    p->ort X(i) += tmp1 * p->impuls X(i);
+	    p->ort Y(i) += tmp1 * p->impuls Y(i);
 #ifndef TWOD
-	    p->ort Z(i) += timestep * p->impuls Z(i) / MASSE(p,i);
+	    p->ort Z(i) += tmp1 * p->impuls Z(i);
 #endif
 	  } else {
 	    p->impuls X(i) = 0.0;
@@ -981,19 +891,20 @@ void move_atoms_frac(void)
 	  }
 
 #ifdef STRESS_TENS
-          p-> presstens X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
-          p-> presstens Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
+      p->presstens        X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
+      p->presstens        Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
 #ifdef TWOD
-          p-> presstens_offdia[i] += p->impuls X(i) * p->impuls Y(i) /  MASSE(p,i);
+      p->presstens_offdia[i]   += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
 #else
-          p-> presstens Z(i) += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
-          p-> presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) /  MASSE(p,i);
-          p-> presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) /  MASSE(p,i);
-          p-> presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) /  MASSE(p,i);
+      p->presstens Z(i)        += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
+      p->presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) / MASSE(p,i);
+      p->presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) / MASSE(p,i);
+      p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
 #endif
 #endif
-	}
-      }
+
+    }
+  }
 
 #ifdef MPI
   /* Add kinetic energy for all CPUs */
@@ -1017,44 +928,37 @@ void move_atoms_frac(void)
 
 /*****************************************************************************
 *
-* move_atom
-*
 * NVT Verlet Integrator with Stadium
 *
 *****************************************************************************/
+
 void move_atoms_stm(void)
 
 {
-  cell *p;
-  int i;
-  real kin_energie_1,kin_energie_2;
-  vektor d;
-  int r,s,t;  
-  real reibung;
-  real eins_d_reibung;
-  real tmp,tmp2;
-
-  real inside,local_atom=0.0;
-
-  tot_kin_energy = 0;
-  kin_energie_1  = 0;
-  kin_energie_2  = 0;
-  reibung        =      1 - eta * timestep / 2.0;
-  eins_d_reibung = 1 / (1 + eta * timestep / 2.0);
+  int k;
+  real kin_energie_1 = 0.0, kin_energie_2 = 0.0, tmp;
    
-/* loop over all atoms */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-      {
-        
-	p = PTR_2D_V(cell_array, r, s,    cell_dim);
+  /* loop over all atoms */
+#pragma omp parallel for reduction(+:kin_energie_1,kin_energie_2) private(tmp)
+  for (k=0; k<ncells; ++k) {
 
-	for (i = 0;i < p->n; ++i) {
+    int i;
+    cell *p;
+    real reibung, eins_d_reibung;
+    real inside, local_atom = 0.0;
+    real tmp1,tmp2;
+    vektor d;
+
+    p = cell_array + CELLS(k);
+
+    for (i=0; i<p->n; ++i) {
           
 	  /* Check if outside or inside the ellipse: */	
-	  if( (p->ort X(i)-center.x)*(p->ort X(i)-center.x)/(stadium.x*stadium.x) +
-	      (p->ort Y(i)-center.y)*(p->ort Y(i)-center.y)/(stadium.y*stadium.y) -1
-	      <=0 ) {
+	  if( (p->ort X(i)-center.x)*(p->ort X(i)-center.x)
+                                             /(stadium.x*stadium.x) +
+	      (p->ort Y(i)-center.y)*(p->ort Y(i)-center.y)
+                                             /(stadium.y*stadium.y) - 1 <=0 ) 
+          {
 	    /* We are inside the ellipse: */
 	    reibung = 1.0;
 	    eins_d_reibung = 1.0;
@@ -1071,7 +975,7 @@ void move_atoms_stm(void)
 	  /* move it */
 
           /* twice the old kinetic energy */
-	  kin_energie_1 +=  SPRODN(p->impuls,i,p->impuls,i) / p->masse[i];
+	  kin_energie_1 +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
 
 	  /* Neue Impulse */
 	  p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i)) 
@@ -1080,37 +984,32 @@ void move_atoms_stm(void)
 	                   * eins_d_reibung;
 
 	  /* twice the new kinetic energy */ 
-	  kin_energie_2  +=  SPRODN(p->impuls,i,p->impuls,i) / p->masse[i];
+	  kin_energie_2  +=  SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i);
 	  
 	  /* Neue Orte */
           /* Do not move atoms in strip or with negative numbers */
-	  if (p->nummer[i]>=0) {
+	  if (NUMMER(p,i)>=0) {
 
 	    /* Neue Orte */
-	    d.x = timestep * p->impuls X(i) / p->masse[i];
-	    d.y = timestep * p->impuls Y(i) / p->masse[i];
-
-	    p->ort X(i)    += d.x;
-	    p->ort Y(i)    += d.y;
+            tmp = timestep * MASSE(p,i);
+	    p->ort X(i) += tmp * p->impuls X(i);
+	    p->ort Y(i) += tmp * p->impuls Y(i);
 
 	  } else {
-	    p->impuls X(i) =0.0;
-	    p->impuls Y(i) =0.0;
-	  };
-        };
-        
-      }
+	    p->impuls X(i) = 0.0;
+	    p->impuls Y(i) = 0.0;
+	  }
+    }
+  }
   
-
   tot_kin_energy = (kin_energie_1 + kin_energie_2) / 4.0;
 
 #ifdef MPI
   /* Add kinetic energy form all cpus */
-  MPI_Allreduce( &tot_kin_energy, &tmp,  1, MPI_REAL, MPI_SUM, cpugrid);
-  MPI_Allreduce( &kin_energie_2,  &tmp2, 1, MPI_REAL, MPI_SUM, cpugrid);
-
+  MPI_Allreduce( &tot_kin_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
   tot_kin_energy = tmp;
-  kin_energie_2  = tmp2;
+  MPI_Allreduce( &kin_energie_2,  &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
+  kin_energie_2  = tmp;
 #endif
 
   /* Zeitentwicklung der Parameter */
@@ -1127,8 +1026,6 @@ void move_atoms_stm(void)
   error("the chosen ensemble STM is not supported by this binary");
 }
 
-
-
 #endif
 
 /******************************************************************************
@@ -1142,14 +1039,13 @@ void move_atoms_stm(void)
 void move_atoms_nvx(void)
 
 {
-  cell *p;
-  int	i;
-  real  Ekin_1, Ekin_2;
-  real  Ekin_left = 0.0, Ekin_right = 0.0;
-  int   natoms_left = 0, natoms_right = 0;
-  real  px, vol, real_tmp;
-  int   num, nhalf, r, s, t, int_tmp;  
-  real	scale, rescale, Rescale;
+  int  k;
+  real Ekin_1, Ekin_2;
+  real Ekin_left = 0.0, Ekin_right = 0.0;
+  int  natoms_left = 0, natoms_right = 0;
+  real px, vol, real_tmp;
+  int  num, nhalf, int_tmp;  
+  real scale, rescale, Rescale;
   vektor tot_impuls_left, tot_impuls_right, vectmp;
   real inv_mass_left=0.0, inv_mass_right=0.0;
  
@@ -1168,18 +1064,13 @@ void move_atoms_nvx(void)
   scale = tran_nlayers / box_x.x;
 
   /* loop over all atoms */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-      {
-#ifdef TWOD
-        p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#else
-        p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#endif
-	for (i=0; i<p->n; ++i) {
+  for (k=0; k<ncells; ++k) {
+
+    int i;
+    cell *p;
+    p = cell_array + CELLS(k);
+
+    for (i=0; i<p->n; ++i) {
 
 	   Ekin_1 = SPRODN(p->impuls,i,p->impuls,i) / MASSE(p,i); 
            px = p->impuls X(i);
@@ -1235,8 +1126,8 @@ void move_atoms_nvx(void)
               heat_cond -= (p->heatcond[i] + (Ekin_1 + Ekin_2)/2.0 )
                                        * px / MASSE(p,i);
            }
-	}
-     }
+    }
+  }
 
 #ifdef MPI
   /* Add up results from all cpus */
@@ -1288,18 +1179,13 @@ void move_atoms_nvx(void)
              - inv_mass_right * SPROD(tot_impuls_right,tot_impuls_right);
   Rescale = sqrt( DIM * tran_Tright * natoms_right / real_tmp  );
 
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t )
-#endif
-        {
-#ifdef TWOD
-	  p = PTR_2D_V(cell_array, r, s,    cell_dim);
-#else
-	  p = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#endif
-	  for (i=0; i<p->n; ++i) {
+  for (k=0; k<ncells; ++k) {
+
+    int i;
+    cell *p;
+    p = cell_array + CELLS(k);
+
+    for (i=0; i<p->n; ++i) {
 	    
 	    /* which layer? */
 	    num = scale * p->ort X(i);
@@ -1320,20 +1206,22 @@ void move_atoms_nvx(void)
 	      p->impuls Z(i) = (p->impuls Z(i)-tot_impuls_right.z)*Rescale;
 #endif
 	    }
+
 #ifdef STRESS_TENS
-	    p-> presstens X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
-	    p-> presstens Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
+      p->presstens        X(i) += p->impuls X(i) * p->impuls X(i) / MASSE(p,i);
+      p->presstens        Y(i) += p->impuls Y(i) * p->impuls Y(i) / MASSE(p,i);
 #ifdef TWOD
-            p-> presstens_offdia[i] += p->impuls X(i) * p->impuls Y(i) /  MASSE(p,i);
+      p->presstens_offdia[i]   += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
 #else
-	    p-> presstens Z(i) += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
-            p-> presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) /  MASSE(p,i);
-            p-> presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) /  MASSE(p,i);
-            p-> presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) /  MASSE(p,i);
+      p->presstens Z(i)        += p->impuls Z(i) * p->impuls Z(i) / MASSE(p,i);
+      p->presstens_offdia X(i) += p->impuls Y(i) * p->impuls Z(i) / MASSE(p,i);
+      p->presstens_offdia Y(i) += p->impuls Z(i) * p->impuls X(i) / MASSE(p,i);
+      p->presstens_offdia Z(i) += p->impuls X(i) * p->impuls Y(i) / MASSE(p,i);
 #endif
 #endif
-	  }
-        }
+
+    }
+  }
 }
 
 #else

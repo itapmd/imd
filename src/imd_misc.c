@@ -477,7 +477,7 @@ void generate_atoms(str255 mode)
 {
   cell *to;
   int addnumber, tmp, ninc;
-  int r, s, t, i;
+  int r, s, t, i, k;
 #ifdef MPI
   MPI_Status status;
 #endif
@@ -522,7 +522,6 @@ void generate_atoms(str255 mode)
 
 #ifdef MPI
 #ifndef MONOLJ
-
   /* Get numbering of atoms right even across CPUs */
   ninc = 0;
   if (0==myid)
@@ -537,23 +536,14 @@ void generate_atoms(str255 mode)
   else if (myid==(num_cpus-1)) {
      MPI_Recv( &tmp,    1, MPI_INT, myid - 1, 0, cpugrid, &status );
      ninc = tmp;
-  };
-
+  }
   /* loop over all atoms, fix numbers */
-  for ( r = cellmin.x; r < cellmax.x; ++r )
-    for ( s = cellmin.y; s < cellmax.y; ++s )
-#ifndef TWOD
-      for ( t = cellmin.z; t < cellmax.z; ++t ) 
-#endif
-      {
-#ifdef TWOD
-        to = PTR_2D_V(cell_array, r, s,    cell_dim);
-#else
-	to = PTR_3D_V(cell_array, r, s, t, cell_dim);
-#endif
-	for (i = 0; i < to->n; ++i) to->nummer[i] += ninc;
-      }
-
+  for (k=0; k<ncells; ++k) {
+    int i;
+    cell *p;
+    p = cell_array + CELLS(k);
+    for (i=0; i<p->n; ++i) p->nummer[i] += ninc;
+  }
 #endif /* MONOLJ */
 
   MPI_Allreduce( &natoms, &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
@@ -561,7 +551,7 @@ void generate_atoms(str255 mode)
   for (i=0; i<ntypes; i++) {
     MPI_Allreduce(&num_sort[i], &addnumber, 1, MPI_INT, MPI_SUM, cpugrid);
     num_sort[i] = addnumber;
-  };
+  }
 #endif /* MPI */
 
   if (0== myid) {
@@ -573,8 +563,7 @@ void generate_atoms(str255 mode)
       addnumber+=num_sort[i];
     };
     printf(" ],  total = %u\n",addnumber);
-  };
-
+  }
   return;
 }
 

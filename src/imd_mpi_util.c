@@ -348,26 +348,17 @@ void copy_atoms_buf(msgbuf *to, msgbuf *from)
 void setup_buffers(void)
 {
   int largest_cell, largest_local_cell=0;
-  int i,j,k;
-  cell *p;
+  int k;
   int size_east;
   int size_north;
   int size_up;
 
   /* Find largest cell */
-  for (i=1; i < cell_dim.x-1; ++i)
-    for (j=1; j < cell_dim.y-1; ++j)
-#ifndef TWOD
-      for (k=1; k < cell_dim.z-1; ++k)
-#endif
-	{
-#ifdef TWOD
-	p = PTR_2D_V(cell_array, i, j, cell_dim);
-#else
-	p = PTR_3D_V(cell_array, i, j, k, cell_dim);
-#endif
-	if (largest_local_cell <= p->n) largest_local_cell = p->n;
-    };
+  for (k=0; k<ncells; ++k) {
+    int n;
+    n = (cell_array + CELLS(k))->n;
+    if (largest_local_cell < n) largest_local_cell = n;
+  }
 
   MPI_Allreduce( &largest_local_cell, &largest_cell, 1, 
                  MPI_INT, MPI_MAX, cpugrid);

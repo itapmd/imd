@@ -21,27 +21,21 @@
 
 void calc_forces(void)
 {
-  cell *p,*q;
-  int i,j,k;
-  int l,m,n;
-  int r,s,t;
-  vektor pbc;
+  int n, k;
 
+  /* clear global accumulation variables */
   tot_pot_energy = 0.0;
   virial         = 0.0;
-#ifdef P_AXIAL
   vir_vect.x     = 0.0;
   vir_vect.y     = 0.0;
-#endif
 
-  /* Zero Forces */
-  for (p = cell_array; 
-       p <= PTR_2D_V(cell_array,
-		     cell_dim.x-1,
-		     cell_dim.y-1,
-		     cell_dim);
-       ++p ) 
-    for (i = 0;i < p->n; ++i) {
+  /* clear per atom accumulation variables */
+#pragma omp parallel for
+  for (k=0; k<ncells; ++k) {
+    int  i;
+    cell *p;
+    p = cell_array + k;
+    for (i=0; i<p->n; ++i) {
       p->kraft X(i) = 0.0;
       p->kraft Y(i) = 0.0;
       p->pot_eng[i] = 0.0;
@@ -53,61 +47,21 @@ void calc_forces(void)
       p->presstens Y(i) = 0.0;
       p->presstens_offdia[i] = 0.0;
 #endif      
-    };
+    }
+  }
 
-  /* for each cell */
-  for (i=0; i < cell_dim.x; ++i)
-    for (j=0; j < cell_dim.y; ++j)
-
-	/* For half of the neighbours of this cell */
-	for (l=0; l <= 1; ++l)
-	  for (m=-l; m <= 1; ++m) {
-
-	      /* Given cell */
-              /* Hey optimizer, this is invariant to the last three loops!! */
-	      p = PTR_2D_V(cell_array,i,j,cell_dim);
-	      /* Calculate Indicies of Neighbour */
-	      r = i+l;
-	      s = j+m;
-	      /* Apply periodic boundaries */
-	      pbc.x = 0;
-	      pbc.y = 0;
-
-	      if (r<0) {
-		r = cell_dim.x-1; 
-		pbc.x -= box_x.x;      
-		pbc.y -= box_x.y;
-	      };
-	      if (s<0) {
-		s = cell_dim.y-1;
-		pbc.x -= box_y.x;      
-		pbc.y -= box_y.y;
-	      };
-	      if (r>cell_dim.x-1) {
-		r = 0; 
-		pbc.x += box_x.x;      
-		pbc.y += box_x.y;
-	      };
-	      if (s>cell_dim.y-1) {
-		s = 0; 
-		pbc.x += box_y.x;      
-		pbc.y += box_y.y;
-	      };
-
-#ifdef SHOCK
-              if (0 == pbc.x)
-#endif
-#ifdef NOPBC
-              if ((0 == pbc.x) && (0 == pbc.y))
-#endif
-	      {
-                /* Neighbour (note that p==q ist possible) */
-                q = PTR_2D_V(cell_array,r,s,cell_dim);
-
-                /* Do the work */
-                do_forces(p,q,pbc);
-              }
-      }
+  /* compute forces for all pairs of cells */
+  for (n=0; n<4; ++n ) {
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y)
+    for (k=0; k<npairs[n]; ++k) {
+      vektor pbc;
+      pair *P;
+      P = pairs[n]+k;
+      pbc.x = P->ipbc[0] * box_x.x + P->ipbc[1] * box_y.x;
+      pbc.y = P->ipbc[0] * box_x.y + P->ipbc[1] * box_y.y;
+      do_forces(cell_array + P->np, cell_array + P->nq, pbc);
+    }
+  }
 }
 
 

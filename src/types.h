@@ -108,6 +108,11 @@ typedef struct {
     int         n_max;
 } cell;
 
+typedef struct {
+  integer np, nq;
+  signed char ipbc[4];
+} pair;
+
 /* Buffer for messages */
 
 typedef struct { real    *data;

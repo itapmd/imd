@@ -21,19 +21,14 @@
 
 void calc_forces(void)
 {
-  cell *p,*q;
-  int i,j,k;
-  int l,m,n;
-  int r,s,t;
-  vektor pbc;
+  int n, k;
 
+  /* clear global accumulation variables */
   tot_pot_energy = 0.0;
   virial         = 0.0;
-#ifdef P_AXIAL
   vir_vect.x     = 0.0;
   vir_vect.y     = 0.0;
   vir_vect.z     = 0.0;
-#endif
   
 #ifdef EAM
   memset(eam_rho,  0,(natoms+1)*        sizeof(real));
@@ -43,15 +38,13 @@ void calc_forces(void)
   memset(eam_dij_z,0,(natoms+1)*eam_len*sizeof(real));
 #endif /* EAM */
 
-  /* Zero Forces and potential energy */
-  for (p = cell_array; 
-       p <= PTR_3D_V(cell_array,
-		     cell_dim.x-1,
-		     cell_dim.y-1,
-		     cell_dim.z-1,
-		     cell_dim);
-       ++p ) 
-    for (i = 0;i < p->n; ++i) {
+  /* clear per atom accumulation variables */
+#pragma omp parallel for
+  for (k=0; k<ncells; ++k) {
+    int  i,j;
+    cell *p;
+    p = cell_array + k;
+    for (i=0; i<p->n; ++i) {
       p->kraft X(i) = 0.0;
       p->kraft Y(i) = 0.0;
       p->kraft Z(i) = 0.0;
@@ -74,111 +67,42 @@ void calc_forces(void)
         p->neigh[j]->n = 0;
       }
 #endif
-    };
+    }
+  }
 
-  /* for each cell */
-  for (i=0; i < cell_dim.x; ++i)
-    for (j=0; j < cell_dim.y; ++j)
-      for (k=0; k < cell_dim.z; ++k)
-
-	/* For half of the neighbours of this cell */
-	for (l=0; l <= 1; ++l)
-	  for (m=-l; m <= 1; ++m)
-	    for (n=(l==0 ? -m  : -l ); n <= 1; ++n) { 
-
-	      /* Given cell */
-              /* Hey optimizer, this is invariant to the last three loops!! */
-	      p = PTR_3D_V(cell_array,i,j,k,cell_dim);
-	      /* Calculate Indicies of Neighbour */
-	      r = i+l;
-	      s = j+m;
-	      t = k+n;
-	      /* Apply periodic boundaries */
-	      pbc.x = 0;
-	      pbc.y = 0;
-	      pbc.z = 0;
-
-	      if (r<0) {
-		r = cell_dim.x-1; 
-		pbc.x -= box_x.x;      
-		pbc.y -= box_x.y;
-		pbc.z -= box_x.z;
-	      };
-	      if (s<0) {
-		s = cell_dim.y-1;
-		pbc.x -= box_y.x;      
-		pbc.y -= box_y.y;
-		pbc.z -= box_y.z;
-	      };
-	      if (t<0) {
-		t = cell_dim.z-1;
-		pbc.x -= box_z.x;      
-		pbc.y -= box_z.y;
-		pbc.z -= box_z.z;
-	      };
-	      if (r>cell_dim.x-1) {
-		r = 0; 
-		pbc.x += box_x.x;      
-		pbc.y += box_x.y;
-		pbc.z += box_x.z;
-	      };
-	      if (s>cell_dim.y-1) {
-		s = 0; 
-		pbc.x += box_y.x;      
-		pbc.y += box_y.y;
-		pbc.z += box_y.z;
-	      };
-	      if (t>cell_dim.z-1) {
-		t = 0; 
-		pbc.x += box_z.x;      
-		pbc.y += box_z.y;
-		pbc.z += box_z.z;
-	      };
-
-	      /* Neighbour (note that p==q ist possible) */
-	      q = PTR_3D_V(cell_array,r,s,t,cell_dim);
-	      /* Do the work */
-
-#ifdef SHOCK
-              if (0 == pbc.x)
-#endif
-#ifdef NOPBC
-              if ((0 == pbc.x) && (0 == pbc.y) && (0 == pbc.z))
-#endif
+  /* compute forces for all pairs of cells */
+  for (n=0; n<6; ++n) {
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+    for (k=0; k<npairs[n]; ++k) {
+      vektor pbc;
+      pair *P;
+      P = pairs[n]+k;
+      pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
+      pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
+      pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
 #ifdef EAM
-	      do_forces_eam_1(p,q,pbc);
+      /* first EAM call */
+      do_forces_eam_1(cell_array + P->np, cell_array + P->nq, pbc);
 #else
-	      do_forces(p,q,pbc);
-#endif /* EAM or TTBP & classical */
-
-      };
-
-#if (defined(EAM) || defined(TTBP))
-  /* EAM cohesive function potential: for each cell */
-  for (i=0; i < cell_dim.x; ++i)
-    for (j=0; j < cell_dim.y; ++j)
-      for (k=0; k < cell_dim.z; ++k) {
-	      /* Given cell */
-              /* Hey optimizer, this is invariant to the last three loops!! */
-	      p = PTR_3D_V(cell_array,i,j,k,cell_dim);
-	      pbc.x = 0;
-	      pbc.y = 0;
-	      pbc.z = 0;
-	      /* Neighbour (dummy; p==q) */
-              q = p;
-	      /* Do the work */
-#ifdef SHOCK
-              if (0 == pbc.x)
+      do_forces(cell_array + P->np, cell_array + P->nq, pbc);
 #endif
-#ifdef NOPBC
-              if ((0 == pbc.x) && (0 == pbc.y) && (0 == pbc.z))
-#endif
+    }
+  }
+
 #ifdef EAM
-	      do_forces_eam_2(p,q,pbc);
-#else
-	      do_forces_ttbp(p);
-#endif
-      }
-#endif /* EAM || TTBP */
+  /* EAM cohesive function potential */
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+  for (k=0; k<ncells; ++k) {
+    do_forces_eam_2(cell_array + k);
+  }
+#endif /* EAM */
+
+#ifdef TTBP
+  /* TTBP: three body potential */
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+  for (k=0; k<ncells; ++k) {
+    do_forces_ttbp(cell_array + k);
+  }
+#endif /* TTBP */
 
 }

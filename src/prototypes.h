@@ -25,6 +25,7 @@ void getparamfile(char *paramfname, int sim);
 void make_box(void);
 ivektor maximal_cell_dim(void);
 void init_cells(void);
+void make_cell_lists(void);
 void error(char *mesg);
 #ifdef TWOD
 ivektor cell_coord(real x, real y);
@@ -154,7 +155,7 @@ void update_ort_ref(void);
 
 #ifdef EAM
 void do_forces_eam_1(cell *p, cell *q, vektor pbc);
-void do_forces_eam_2(cell *p, cell *q, vektor pbc);
+void do_forces_eam_2(cell *p);
 #endif
 
 #ifdef TTBP
