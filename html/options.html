@@ -145,35 +145,39 @@ writing intervals to zero.
 <B>Known bugs:</B> The reference potential energy can be set
 only once in each phase.
 
-<A NAME="exp">
-<P><LI><B> exp </B><P>
+<A NAME="homdef">
+<P><LI><B> homdef </B><P>
 </A>
 <P>
+The homdef option allows to homogeneously expand or shear the
+sample. The box is deformed in this process, together with its
+contents. Note that this option uses <B>periodic</B> boundary 
+conditions.
+<UL>
+<P><LI>
 If <TT>exp_interval</TT> is positive, the sample is expanded every 
 <TT>exp_interval</TT> steps. The expansion factors in x-, y- and
 z-direction are given by the parameter <TT>expansion</TT>, which
-is a vector. The box lengths are updated automatically. This option
-uses periodic boundary conditions (unless stated otherwise).
-<B>Known bugs:</B> This currently works only for rectangular boxes
-correctly. The number of cells does not change, and so some care
-is needed when shrinking samples (the cells might get too small).
+is a vector. The box vectors are updated automatically, and the
+cell subdivision is revised if cells have become too small
+(expansion factors smaller than 1 shrink the sample).
+</LI>
+<P>
+<LI>
+If <TT>hom_interval</TT> is positive, the sample is homogeneously 
+sheared every <TT>hom_interval</TT> steps. In each shear step,
+<TT>shear_factor</TT>*x-coord is added to the y-coord of every
+particale, and the box is updated accordingly. If cells become too 
+small because of the shearing, the cell subdivision is revised 
+automatically. It is assumed that the second and third box vector
+point into y- and z-direction, respectively.
+</LI>
+</UL>
 
 <A NAME="deform">
 <P><LI><B> deform </B><P>
 </A>
-The deform option provides several possibilities to shear, expand
-or deform the sample in other ways.
 <P>
-<UL>
-<P><LI>
-If <TT>hom_interval</TT> is positive, the sample is homogeneously
-sheared in y-direction every <TT>hom_interval</TT> steps, using a 
-homogeneous displacement field depending on the x-coordinate of the 
-particle. The displacement is scaled with the maximum value of the 
-x-coordinates of all particles. The latter is computed before each 
-shear step. Atoms with x=0 are not shifted, whereas atoms with maximum
-x are shifted with a magnitude <TT>shear_max</TT>, which is a parameter.
-<P><LI>
 If <TT>max_deform_int</TT> is positive, or <TT>ekin_threshold</TT>
 is positive, atoms with negative numbers in the left half (in x
 direction) of the sample are rigidly moved by an amount
@@ -195,7 +199,6 @@ close to zero (which would become negative after several shear steps)
 it is possible to apply an initial shift to the sample. For this the
 flag <TT>initial_shift</TT> must be set to 1, and the vector
 <TT>ins</TT> must be set to the desired value.
-</UL>
 
 <A NAME="sock">
 <P><LI><B>sock</B><P>

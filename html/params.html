@@ -135,11 +135,13 @@ kel		# Shear modulus
 crktip		# Crack tip location
 strip_width	# strip width (in x dir)
 
-# parameters for DEFORM
+# parameters for HOMDEF (with periodic boundary conditions)
 hom_interval    # number of steps between homogeneous shears
+shear_factor	# shear_factor*x-coord is added to y-coord in hom. shears
 exp_interval    # number of steps between homogeneous expansions
-shear_max	# maximum hom. shear (scaled by the largest x-coordinate)
-expansion	# homogeneous expansion rate
+expansion	# expansion factos in x,y,z-direction (vector)
+
+# parameters for DEFORM
 strip_shift	# shift vector of strip atoms (per timestep)
 strip_width	# width (in x dir) of strip that is moved
 annealsteps	# no deformation before annealsteps steps (default 0)
