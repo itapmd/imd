@@ -41,7 +41,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
   int jstart,jend;
   int col, is_short=0, inc = ntypes * ntypes;
   int q_typ,p_typ;
-  real *qptr;
+  real *qptr, *pfptr, *qfptr, *qpdptr, *ppdptr, *qpoptr, *ppoptr;
   
   tmp_virial     = 0.0;
 #ifdef P_AXIAL
@@ -68,19 +68,16 @@ void do_forces(cell *p, cell *q, vektor pbc)
 
     jstart = (p==q ? i+1 : 0);
     qptr   = q->ort + DIM * jstart;
-    
+
     for (j = jstart; j < q->n; ++j) {
 
       q_typ = SORTE(q,j);
       
       /* Calculate distance  */
-      d.x = *qptr - tmp_d.x;
-      ++qptr;
-      d.y = *qptr - tmp_d.y;
-      ++qptr;
+      d.x = *qptr - tmp_d.x; ++qptr;
+      d.y = *qptr - tmp_d.y; ++qptr;
 #ifndef TWOD
-      d.z = *qptr - tmp_d.z;
-      ++qptr;
+      d.z = *qptr - tmp_d.z; ++qptr;
 #endif
 
       col  = p_typ * ntypes + q_typ;
@@ -122,13 +119,15 @@ void do_forces(cell *p, cell *q, vektor pbc)
 #endif
 
         /* Accumulate forces */
-        p->kraft X(i) += force.x;
-        p->kraft Y(i) += force.y;
-        q->kraft X(j) -= force.x;
-        q->kraft Y(j) -= force.y;
+        pfptr = p->kraft + DIM * i;
+        qfptr = q->kraft + DIM * j;
+        *pfptr     += force.x; 
+        *qfptr     -= force.x; 
+        *(++pfptr) += force.y; 
+        *(++qfptr) -= force.y; 
 #ifndef TWOD
-        p->kraft Z(i) += force.z;
-        q->kraft Z(j) -= force.z;
+        *(++pfptr) += force.z; 
+        *(++qfptr) -= force.z; 
 #endif
 
 #ifndef MONOLJ
@@ -147,32 +146,40 @@ void do_forces(cell *p, cell *q, vektor pbc)
         tot_pot_energy += pot_zwi;
 
 #ifdef P_AXIAL
-        tmp_vir_vect.x -= d.x * d.x * pot_grad;
-        tmp_vir_vect.y -= d.y * d.y * pot_grad;
+        tmp_vir_vect.x -= d.x * force.x;
+        tmp_vir_vect.y -= d.y * force.y;
 #ifndef TWOD
-        tmp_vir_vect.z -= d.z * d.z * pot_grad;
+        tmp_vir_vect.z -= d.z * force.z;
 #endif
 #else
         tmp_virial     -= radius2 * pot_grad;  
 #endif
-        /* negativ, da pot_grad gleich force !! */
+
 #ifdef STRESS_TENS
-        p->presstens X(i) -= d.x * d.x * pot_grad;
-        p->presstens Y(i) -= d.y * d.y * pot_grad;
-        q->presstens X(j) -= d.x * d.x * pot_grad;
-        q->presstens Y(j) -= d.y * d.y * pot_grad;
+        ppdptr = p->presstens + DIM * i;
+        qpdptr = q->presstens + DIM * j;
+        *ppdptr     -= d.x * force.x;
+        *qpdptr     -= d.x * force.x;
+        *(++ppdptr) -= d.y * force.y;
+        *(++qpdptr) -= d.y * force.y;
 #ifdef TWOD
-        p->presstens_offdia[i] -= d.x * d.y * pot_grad;
-        q->presstens_offdia[j] -= d.x * d.y * pot_grad;
+#ifndef SHOCK
+        p->presstens_offdia[i] -= d.x * force.y;
+        q->presstens_offdia[j] -= d.x * force.y;
+#endif
 #else
-        p->presstens Z(i) -= d.z * d.z * pot_grad;
-        q->presstens Z(j) -= d.z * d.z * pot_grad;
-        p->presstens_offdia X(i) -= d.y * d.z * pot_grad;
-        p->presstens_offdia Y(i) -= d.z * d.x * pot_grad;
-        q->presstens_offdia X(j) -= d.y * d.z * pot_grad;
-        q->presstens_offdia Y(j) -= d.z * d.x * pot_grad;
-        p->presstens_offdia Z(i) -= d.x * d.y * pot_grad;
-        q->presstens_offdia Z(j) -= d.x * d.y * pot_grad;
+        *(++ppdptr) -= d.z * force.z;
+        *(++qpdptr) -= d.z * force.z;
+#ifndef SHOCK
+        ppoptr = p->presstens_offdia + DIM * i;
+        qpoptr = q->presstens_offdia + DIM * j;
+        *ppoptr     -= d.y * force.z;
+        *qpoptr     -= d.y * force.z;
+        *(++ppoptr) -= d.z * force.x;
+        *(++qpoptr) -= d.z * force.x;
+        *(++ppoptr) -= d.x * force.y;
+        *(++qpoptr) -= d.x * force.y;
+#endif
 #endif
 #endif
 #ifdef NVX
