@@ -124,11 +124,14 @@ int main(int argc, char **argv)
 
   /* execute further phases of the simulation */
   while (finished==0) {
+    int tmp;
     simulation++;
     if (0==myid) {
       getparamfile( paramfilename, simulation );
       sprintf( itrfilename,"%s-final.itr", outfilename );
+      tmp = finished;
       getparamfile( itrfilename, 1 );
+      finished = tmp;
     }
 #ifdef MPI
     broadcast_params();

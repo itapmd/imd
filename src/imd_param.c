@@ -1303,18 +1303,21 @@ void read_parameters(int argc,char **argv)
     getparamfile(paramfilename,1);
     /* read initial itr-file (if there is any), but keep steps_min value */
     if (0 < strlen(itrfilename)) {
-      int tmp = steps_min;
+      int tmp_steps = steps_min, tmp_finished = finished;
       getparamfile(itrfilename,1);
-      steps_min = tmp;
+      steps_min = tmp_steps;
+      finished  = tmp_finished;
     }
     check_parameters_complete();
 
     /* Get restart parameters if restart */
     if (0 != restart) {
+      int tmp = finished;
       sprintf(fname,"%s.%d.itr",outfilename,restart);
       sprintf(infilename,"%s.%d.%s",outfilename,restart,"chkpt");
       printf("Restarting from %s.\n",infilename);
       getparamfile(fname,1);
+      finished = tmp;
     } else {
       /* Delete energy file if not restart */
       sprintf(fname,"%s.eng",outfilename);
