@@ -1137,7 +1137,7 @@ void write_eng_file(int steps)
   fprintf(eng_file, format,   (double) PxF);
 #endif
 #ifdef EINSTEIN
-  fprintf(eng_file, format,   (double) omega_E / nactive);
+  fprintf(eng_file, format,   sqrt((double) omega_E / (nactive * Temp)));
 #endif
   fprintf(eng_file," %e",     (double) pressure);
   fprintf(eng_file," %e",     (double) vol);
