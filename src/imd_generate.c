@@ -29,14 +29,17 @@
 * but a crystal structure to generate as an initial configuration:
 *
 * _fcc      -- generates fcc structure
-* _bcc      -- generates fcc structure
+* _bcc      -- generates bcc structure
 * _b2       -- generates B2 structure
 * _nacl     -- generates binary nacl structure (atom type 0 and 1)
+* _diamond  -- generates cubic diamond structure
+* _zincblende -- generates zincblende structure
 * _tiqc     -- generates a truncated icosahedra quasicrystal
 * _hex      -- generates 2D hexagonal crystal
 * _lav      -- generates a cubic Laves structure A15 (MgCu2)
 *
 * The lattice constant of the crystal structures (fcc and nacl) is 2.0.
+* The lattice constant of the diamond and zincblende structure is 4.0.
 *
 ******************************************************************************/
 
@@ -77,6 +80,12 @@ void generate_atoms(str255 mode)
   } else if (0 == strcmp(mode,"_b2")) {    /* B2, CsCl */
     init_cubic();
     generate_fcc(3);
+  } else if (0 == strcmp(mode,"_diamond")) {  /* cubic diamond */
+    init_cubic();
+    generate_fcc(4);
+  } else if (0 == strcmp(mode,"_zincblende")) { /* zincblende */
+    init_cubic();
+    generate_fcc(5);
   } else if (0 == strcmp(mode,"_lav")) {   /* Laves */
     init_cubic();
     generate_lav();
@@ -266,6 +275,22 @@ void generate_fcc(int maxtyp)
       for (z=min.z; z<max.z; z++) {
  
         typ  = (x+y+z) % 2;
+
+	/* cubic diamond and zincblende case */
+	if (maxtyp == 4 || maxtyp == 5) {
+	    if ( ((x+y+z)%4==0) && 
+		 (z%2==0) && (y%2==0) && (x%2==0)  ) {
+		typ=0;
+	    }
+	    else if ( ((x+y+z)%4==3) && 
+		      (z%2==1) && (y%2==1) && (x%2==1) ) {
+		if (maxtyp == 4)
+		    typ=0;
+		else
+		    typ=1;
+	    }
+	    else continue;
+	}
 
         /* B2 == CsCl structure */
         if (maxtyp ==3) {
