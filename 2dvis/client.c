@@ -15,7 +15,7 @@
 #define T_CONF 9
 #define T_DIST 1
 #define DIM 2
-#define COLRES 245.0
+#define COLRES 245
 
 extern unsigned short base_port;
 char server_name[256]="visrn";
@@ -55,12 +55,12 @@ int receive_conf()
   masse  = (double *)calloc(anz, sizeof(double));
   x      = (double *)calloc(anz, sizeof(double));
   y      = (double *)calloc(anz, sizeof(double));
-#ifdef TWOD
+#ifndef TWOD
   z      = (double *)calloc(anz, sizeof(double));
 #endif
   vx     = (double *)calloc(anz, sizeof(double));
   vy     = (double *)calloc(anz, sizeof(double));
-#ifdef TWOD
+#ifndef TWOD
   vz     = (double *)calloc(anz, sizeof(double));
 #endif
   pot    = (double *)calloc(anz, sizeof(double));
@@ -75,12 +75,12 @@ int receive_conf()
   ReadFull(socket_id,(void *) &masse[0], size);
   ReadFull(socket_id,(void *) &x[0], size);
   ReadFull(socket_id,(void *) &y[0], size);
-#ifdef TWOD
+#ifndef TWOD
   ReadFull(socket_id,(void *) &z[0], size);
 #endif
   ReadFull(socket_id,(void *) &vx[0], size);
   ReadFull(socket_id,(void *) &vy[0], size);
-#ifdef TWOD
+#ifndef TWOD
   ReadFull(socket_id,(void *) &vz[0], size);
 #endif
   ReadFull(socket_id,(void *) &pot[0], size);
