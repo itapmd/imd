@@ -314,6 +314,9 @@ EXTERN int    annealsteps INIT(0);      /* number of annealing steps */
 EXTERN int    max_deform_int INIT(0);   /* max. steps between 2 shear steps */
 EXTERN real   fnorm_threshold INIT(0.0);/* threshold for fnorm */    
 EXTERN vektor *deform_shift;            /* shift for each vtype */
+EXTERN vektor *deform_shear;            /* shear for each vtype */
+EXTERN vektor *deform_base;             /* base point for shear deformation */
+EXTERN int    *shear_def;               /* shear flag for each vtype */
 #endif
 
 #if defined(DEFORM) || defined(HOMDEF)

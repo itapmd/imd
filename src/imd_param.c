@@ -268,6 +268,7 @@ void getparamfile(char *paramfname, int sim)
   vektor force;
   vektor vek;
   vektor shift;
+  vektor shear, base;
   int k;
 
 
@@ -540,6 +541,27 @@ void getparamfile(char *paramfname, int sim)
 	error("Cannot allocate memory for deform_shift\n");
       for(k=0; k<vtypes; k++)
        *(deform_shift+k) = nullv;
+
+      /* Allocation & Initialisation of shear_def */
+      shear_def = (int *) malloc( vtypes * sizeof(int) );
+      if (NULL==shear_def)
+	error("Cannot allocate memory for shear_def\n");
+      for(k=0; k<vtypes; k++)
+       *(shear_def+k) = 0;
+
+      /* Allocation & Initialisation of deform_shift */
+      deform_shift = (vektor *) malloc( vtypes * DIM * sizeof(real) );
+      if (NULL==deform_shift)
+	error("Cannot allocate memory for deform_shift\n");
+      for(k=0; k<vtypes; k++)
+       *(deform_shift+k) = nullv;
+
+      /* Allocation & Initialisation of deform_base */
+      deform_base = (vektor *) malloc( vtypes * DIM * sizeof(real) );
+      if (NULL==deform_base)
+	error("Cannot allocate memory for deform_base\n");
+      for(k=0; k<vtypes; k++)
+       *(deform_base+k) = nullv;
 #endif
     }
 
@@ -989,6 +1011,33 @@ void getparamfile(char *paramfname, int sim)
       shift.z = tempshift.z2;
 #endif
       *(deform_shift+(int)(tempshift.x)) = shift; 
+    }
+    else if (strcasecmp(token,"deform_shear")==0) {
+      /* deform shear for virtual types */
+      /* format: type shear.x shear.y (shear.z) read in a temp. vektor */
+      getparam("deform_shear",&tempshift,PARAM_REAL,DIM+1,DIM+1);
+      if (tempshift.x>vtypes-1)
+       error("Shear defined for non existing virtual atom type\n");
+      shear.x = tempshift.y;
+      shear.y = tempshift.z;
+#ifndef TWOD
+      shear.z = tempshift.z2;
+#endif
+      *(deform_shear+(int)(tempshift.x)) = shear; 
+      *(shear_def+(int)(tempshift.x))    = 1;
+    }
+    else if (strcasecmp(token,"deform_base")==0) {
+      /* deform base for virtual types */
+      /* format: type shear.x shear.y (shear.z) read in a temp. vektor */
+      getparam("deform_shear",&tempshift,PARAM_REAL,DIM+1,DIM+1);
+      if (tempshift.x>vtypes-1)
+       error("Shear base defined for non existing virtual atom type\n");
+      base.x = tempshift.y;
+      base.y = tempshift.z;
+#ifndef TWOD
+      base.z = tempshift.z2;
+#endif
+      *(deform_base+(int)(tempshift.x)) = base;
     }
 #endif /* DEFORM */
 #ifdef CG
@@ -2101,6 +2150,22 @@ void broadcast_params() {
   if (NULL==deform_shift) 
     error("Cannot allocate memory for deform_shift on client."); 
   MPI_Bcast( deform_shift, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
+  if (0!=myid) shear_def = (int *) malloc( vtypes * sizeof(int) );
+  if (NULL==shear_def) 
+    error("Cannot allocate memory for shear_def on client."); 
+  MPI_Bcast( shear_def, vtypes, MPI_INT, 0, MPI_COMM_WORLD);
+  if (0!=myid) { 
+    for(i=0; i<vtypes; i++)
+      *(shear_def+i) = 0;
+  }
+  if (0!=myid) deform_shear = (vektor *) malloc( vtypes * DIM * sizeof(real) );
+  if (NULL==deform_shear) 
+    error("Cannot allocate memory for deform_shear on client."); 
+  MPI_Bcast( deform_shear, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
+  if (0!=myid) deform_base = (vektor *) malloc( vtypes * DIM * sizeof(real) );
+  if (NULL==deform_base) 
+    error("Cannot allocate memory for deform_base on client."); 
+  MPI_Bcast( deform_base, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef HOMDEF

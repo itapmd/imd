@@ -221,14 +221,29 @@ void deform_sample(void)
     int i;
     cell *p;
     int sort;
+    vektor ort;
+    real shear;
+
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; ++i) {
       sort = VSORTE(p,i);
-      /* move particles with virtual types  */
-      ORT(p,i,X) += deform_size * (deform_shift + sort)->x;
-      ORT(p,i,Y) += deform_size * (deform_shift + sort)->y;
+
+      if ( *(shear_def + sort) == 1 ) {
+	  ort.x = ORT(p,i,X) - (deform_base + sort)->x;
+	  ort.y = ORT(p,i,Y) - (deform_base + sort)->y;
 #ifndef TWOD
-      ORT(p,i,Z) += deform_size * (deform_shift + sort)->z;
+	  ort.z = ORT(p,i,Z) - (deform_base + sort)->z;
+#endif
+	  shear = SPROD( *(deform_shear + sort), ort);
+	}
+      else
+	shear = 1.0;
+
+      /* move particles with virtual types  */
+      ORT(p,i,X) += shear * deform_size * (deform_shift + sort)->x;
+      ORT(p,i,Y) += shear * deform_size * (deform_shift + sort)->y;
+#ifndef TWOD
+      ORT(p,i,Z) += shear * deform_size * (deform_shift + sort)->z;
 #endif
     }
   }
