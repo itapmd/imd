@@ -75,7 +75,7 @@ int main(int argc, char **argv)
 
 #ifdef EAM2
   /* read the tabulated core-core Potential function */
-  read_pot_table2(&core_pot,eam2_core_pot_filename,ntypes*ntypes);
+  read_pot_table2(&pair_pot,eam2_core_pot_filename,ntypes*ntypes);
   /* read the tabulated embedding energy function */
   read_pot_table2(&embed_pot,eam2_emb_E_filename,ntypes);
   /* read the tabulated electron density function */

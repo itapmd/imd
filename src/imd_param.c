@@ -1396,13 +1396,17 @@ void broadcast_params() {
 
   MPI_Bcast( &parallel_output, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &parallel_input,  1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( outfilename , sizeof(outfilename), MPI_CHAR, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( infilename  , sizeof(infilename) , MPI_CHAR, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( reffilename , sizeof(reffilename), MPI_CHAR, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( potfilename , sizeof(potfilename), MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( outfilename,            255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( infilename,             255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( reffilename,            255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( potfilename,            255, MPI_CHAR, 0, MPI_COMM_WORLD); 
 #ifdef TTBP
-  MPI_Bcast( ttbp_potfilename , sizeof(ttbp_potfilename), 
-             MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( ttbp_potfilename,       255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+#endif
+#ifdef EAM2
+  MPI_Bcast( eam2_core_pot_filename, 255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( eam2_emb_E_filename,    255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( eam2_at_rho_filename,   255, MPI_CHAR, 0, MPI_COMM_WORLD); 
 #endif
 
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM)

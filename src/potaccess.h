@@ -10,10 +10,8 @@
 *
 ******************************************************************************/
 
-/* cubic or quadratic interpolation of function tables */
-/* #define CUBIC */
-
-#ifdef CUBIC
+/* 4-point (cubic) or 3-point (quadratic) interpolation of function tables */
+#ifdef FOURPOINT
 #define   PAIR_INT   PAIR_INT3
 #define   VAL_FUNC   VAL_FUNC3
 #define DERIV_FUNC DERIV_FUNC3

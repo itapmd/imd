@@ -1,7 +1,7 @@
 
 /******************************************************************************
 *
-*  force loops for EAM2
+*  do_forces for ASYMPOT, and second force loop for EAM2
 *
 ******************************************************************************/
 
@@ -13,172 +13,183 @@
 #include "imd.h"
 #include "potaccess.h"
 
-/* Personal Debug Switch 
-#define DEBUG_INFO 1000 
-#define NR 94
-*/
-
-/*#define ATOMNR 100  quick hack to print the position of a special atom
-		      better (later) Nr. in parameterfile... */ 
-
 /******************************************************************************
 *
-*  do_forces for EAM2
-*
-*  first loop, calculates forces and energy for the core-core potential, 
-*  and the embedding electron density at the atoms' sites
-*
-*  doesn't use 'actio = reactio' !!!!
+*  special version of do_forces for asymmetric core potentials
 *
 ******************************************************************************/
 
+#ifdef ASYMPOT
+
 void do_forces(cell *p, cell *q, vektor pbc, real *Epot, 
-               real *Virial, real *Vir_x, real *Vir_y, real *Vir_z)     
+               real *Virial, real *Vir_x, real *Vir_y, real *Vir_z)
 {
   int i,j,k;
   vektor d;
   vektor tmp_d;
   vektor force;
   real r2, rho_h;
-  real tmp_virial = 0.0;
+  real tmp_virial;
 #ifdef P_AXIAL
-  vektor tmp_vir_vect = {0.0, 0.0, 0.0};
+  vektor tmp_vir_vect;
 #endif
   real pot_zwi, pot_grad;
-  int  col, inc = ntypes * ntypes, is_short=0;
-  int  q_typ,p_typ;
-  real *qptr;  
-
+  int col, col2, is_short=0, inc = ntypes * ntypes;
+  int jstart, q_typ, p_typ;
+  real *qptr, *pfptr, *qfptr, *qpdptr, *ppdptr, *qpoptr, *ppoptr;
+  
   tmp_virial     = 0.0;
 #ifdef P_AXIAL
   tmp_vir_vect.x = 0.0;
   tmp_vir_vect.y = 0.0;
-#ifndef TWOD
   tmp_vir_vect.z = 0.0;
 #endif
-#endif
-
-  /* For each atom in first cell */
+    
+  /* for each atom in first cell */
   for (i=0; i<p->n; ++i) {
-
-    /* For each atom in neighbouring cell */
-    /* Some compilers don't find the expressions that are invariant 
-       to the inner loop. I'll have to define my own temp variables. */
 
     tmp_d.x = p->ort X(i) - pbc.x;
     tmp_d.y = p->ort Y(i) - pbc.y;
-#ifndef TWOD
     tmp_d.z = p->ort Z(i) - pbc.z;
-#endif
-    p_typ   = SORTE(p,i);
-    qptr    = q->ort;
-    
-    for (j=0; j<q->n; ++j) {
 
-      /* Calculate distance  */
-      d.x = tmp_d.x - *qptr;  ++qptr;
-      d.y = tmp_d.y - *qptr;  ++qptr;
-#ifndef TWOD
-      d.z = tmp_d.z - *qptr;  ++qptr;
-#endif
+    p_typ  = SORTE(p,i);
+    jstart = (p==q ? i+1 : 0);
+    qptr   = q->ort + DIM * jstart;
 
-      /* don't compute self interaction */
-      if (!(p==q && i==j)) {
+    /* for each atom in neighbouring cell */
+    for (j = jstart; j < q->n; ++j) {
 
-        q_typ = SORTE(q,j);
-        col   = p_typ * ntypes + q_typ;
-        r2    = SPROD(d,d);
+      /* calculate distance */
+      d.x = *qptr - tmp_d.x; ++qptr;
+      d.y = *qptr - tmp_d.y; ++qptr;
+      d.z = *qptr - tmp_d.z; ++qptr;
 
-#ifdef DEBUG_INFO
-	/* check if distance == 0 */
-	if (0==r2) { char msgbuf[256];
-          sprintf(msgbuf, "Distance is zero between particles %d and %d!\n",
-                  NUMMER(p,i), NUMMER(q,j));
-          error(msgbuf);
-	}
+      q_typ = SORTE(q,j);
+      col   = p_typ * ntypes + q_typ;
+      r2    = SPROD(d,d);
+
+#ifdef DEBUG
+      if (0==r2) { char msgbuf[256];
+        sprintf(msgbuf, "Distance is zero between particles %d and %d!\n",
+                NUMMER(p,i), NUMMER(q,j));
+        error(msgbuf);
+      }
 #endif
 
-        if (r2 < core_pot.end[col]) {
+      /* compute pair interactions, first on particle i */
+      if (r2 <= pair_pot.end[col]) {
+        PAIR_INT(pot_zwi, pot_grad, pair_pot, col, inc, r2, is_short)
 
-          PAIR_INT(pot_zwi, pot_grad, core_pot, col, inc, r2, is_short);
+        /* store force in temporary variable */
+        force.x = d.x * pot_grad;
+        force.y = d.y * pot_grad;
+        force.z = d.z * pot_grad;
 
-	  /* Store forces in temp */
-	  force.x = d.x * pot_grad;
-	  force.y = d.y * pot_grad;
-#ifndef TWOD
-	  force.z = d.z * pot_grad;
-#endif
-	  
-          /* Accumulate forces due to core-core potential */
-	  p->kraft X(i) -= force.x;
-	  p->kraft Y(i) -= force.y;
-#ifndef TWOD
-	  p->kraft Z(i) -= force.z;
-#endif
+        /* accumulate forces */
+        pfptr = p->kraft + DIM * i;
+        *pfptr     += force.x; 
+        *(++pfptr) += force.y; 
+        *(++pfptr) += force.z; 
 
-	  p->pot_eng[i] += pot_zwi * 0.5;  /* avoid double counting */
-	  *Epot         += pot_zwi * 0.5;  /* each pair occurs twice */
-          /* virial and pressure tensor are updated twice for each pair */
-          pot_grad      *= 0.5;
+        /* the first half of the pot. energy of this bond */
+        pot_zwi       *= 0.5;
+        *Epot         += pot_zwi;
+        p->pot_eng[i] += pot_zwi;
 
-#ifdef DEBUG_INFO
-	  if (p->nummer[i]==NR){
-	    printf("d.x: %lf d.y: %lf d.z: %lf -> r: %lf\n",
-                   d.x,d.y,d.z,eam2_r);
-	    printf("-Phi'(r): %lf -> force: %.16lf %.16lf %.16lf\n",
-		   eam2_r* pot_grad,force.x, force.y,force.z);
-	    printf("Ges. Kraft: f.x: %.16lf f.y:%.16lf f.z:%.16lf\n",
-		   p->kraft X(i),p->kraft Y(i),p->kraft Z(i));
-	    printf("p_typ: %d, q_typ: %d  p->pot_eng[i]: %.12lf\n",
-                   p_typ,q_typ,p->pot_eng[i]);
-	  }
-#endif
-	  
+        /* for the virial, we take the mean forces on the two particle */
+        force.x       *= 0.5;
+        force.y       *= 0.5;
+        force.z       *= 0.5;
+        pot_grad      *= 0.5;
+
 #ifdef P_AXIAL
-	  tmp_vir_vect.x += d.x * d.x * pot_grad;
-	  tmp_vir_vect.y += d.y * d.y * pot_grad;
-#ifndef TWOD
-	  tmp_vir_vect.z += d.z * d.z * pot_grad;
-#endif
+        tmp_vir_vect.x -= d.x * force.x;
+        tmp_vir_vect.y -= d.y * force.y;
+        tmp_vir_vect.z -= d.z * force.z;
 #else
-	  tmp_virial     += r2  * pot_grad;  
+        tmp_virial     -= r2 * pot_grad;
 #endif
 
 #ifdef STRESS_TENS
-	  p->presstens X(i) += d.x * d.x * pot_grad;
-	  p->presstens Y(i) += d.y * d.y * pot_grad;
-#ifdef TWOD
-	  p->presstens_offdia[i] += d.x * d.y * pot_grad;
-#else
-	  p->presstens Z(i) += d.z * d.z * pot_grad;
-	  p->presstens_offdia X(i) += d.y * d.z * pot_grad;
-	  p->presstens_offdia Y(i) += d.z * d.x * pot_grad;
-	  p->presstens_offdia Z(i) += d.x * d.y * pot_grad;
+        ppdptr = p->presstens + DIM * i;
+        *ppdptr     -= d.x * force.x;
+        *(++ppdptr) -= d.y * force.y;
+        *(++ppdptr) -= d.z * force.z;
+        ppoptr = p->presstens_offdia + DIM * i;
+        *ppoptr     -= d.y * force.z;
+        *(++ppoptr) -= d.z * force.x;
+        *(++ppoptr) -= d.x * force.y;
 #endif
-#endif
-	} /* core potential */
-
-        if (r2 < rho_h_tab.end[col]) {
-          VAL_FUNC(rho_h, rho_h_tab, col, inc, r2, is_short);
-          p->eam2_rho_h[i] += rho_h; 
-        }
-
-      } /* if ! q==p.. */
-
-#ifdef DEBUG_INFO
-      else{
-	if (p->nummer[i]==NR)
-	  printf("++++++ Ort von Teilchen %d : x: %lf y: %lf z:%lf \n",
-		 p->nummer[i],tmp_d.x,tmp_d.y,tmp_d.z);
       }
+
+      /* compute pair interactions, now on particle j */
+      col = q_typ * ntypes + p_typ;
+      if (r2 <= pair_pot.end[col]) {
+        PAIR_INT(pot_zwi, pot_grad, pair_pot, col, inc, r2, is_short)
+
+        /* store force in temporary variable */
+        force.x = d.x * pot_grad;
+        force.y = d.y * pot_grad;
+        force.z = d.z * pot_grad;
+
+        /* accumulate forces */
+        qfptr = q->kraft + DIM * j;
+        *qfptr     -= force.x; 
+        *(++qfptr) -= force.y; 
+        *(++qfptr) -= force.z; 
+
+        /* the second half of the pot. energy of this bond */
+        pot_zwi       *= 0.5;
+        *Epot         += pot_zwi;
+        q->pot_eng[j] += pot_zwi;
+
+        /* for the virial, we take the mean forces on the two particle */
+        force.x       *= 0.5;
+        force.y       *= 0.5;
+        force.z       *= 0.5;
+        pot_grad      *= 0.5;
+
+#ifdef P_AXIAL
+        tmp_vir_vect.x -= d.x * force.x;
+        tmp_vir_vect.y -= d.y * force.y;
+        tmp_vir_vect.z -= d.z * force.z;
+#else
+        tmp_virial     -= r2 * pot_grad;
 #endif
+
+#ifdef STRESS_TENS
+        qpdptr = q->presstens + DIM * j;
+        *qpdptr     -= d.x * force.x;
+        *(++qpdptr) -= d.y * force.y;
+        *(++qpdptr) -= d.z * force.z;
+        qpoptr = q->presstens_offdia + DIM * j;
+        *qpoptr     -= d.y * force.z;
+        *(++qpoptr) -= d.z * force.x;
+        *(++qpoptr) -= d.x * force.y;
+#endif
+      }
+
+      /* compute host electron density */
+      col = p_typ * ntypes + q_typ;
+      if (r2 < rho_h_tab.end[col])  {
+        VAL_FUNC(rho_h, rho_h_tab, col,  inc, r2, is_short);
+        p->eam2_rho_h[i] += rho_h; 
+      }
+      if (p_typ==q_typ) {
+        if (r2 < rho_h_tab.end[col]) q->eam2_rho_h[j] += rho_h; 
+      } else {
+        col2 = q_typ * ntypes + p_typ;
+        if (r2 < rho_h_tab.end[col2]) {
+          VAL_FUNC(rho_h, rho_h_tab, col2, inc, r2, is_short);
+          q->eam2_rho_h[j] += rho_h; 
+        }
+      }
 
     } /* for j */
   } /* for i */
 
-  /* print warning if short distance occurred */
-  if (is_short==1) fprintf(stderr, "\n Short distance!\n");
-  
+  if (is_short==1) printf("\n Short distance!\n");
+
 #ifdef P_AXIAL
   *Vir_x  += tmp_vir_vect.x;
   *Vir_y  += tmp_vir_vect.y;
@@ -190,16 +201,18 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
 #endif
 #else
   *Virial += tmp_virial;
-#endif  
+#endif 
 
-} /* do_forces */ 
+}
+
+#endif /* ASYMPOT */
 
 
 /******************************************************************************
 *
 *  second force loop, calculates the force and the energy 
 *  caused by the embedding electron density
-*  uses Phi(r2), Rho(r2), F(rho) and it's derivatives
+*  uses Phi(r2), Rho(r2), F(rho) and its derivatives
 *
 ******************************************************************************/
 
@@ -212,125 +225,122 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Epot,
   vektor force;
   real r2;
   int  is_short=0, idummy=0;
+  int  jstart, q_typ, p_typ;
+  int  col1, col2, inc=ntypes*ntypes;
+  real *qptr, *pfptr, *qfptr, *qpdptr, *ppdptr, *qpoptr, *ppoptr;
   real tmp_virial=0.0;
-  int q_typ,p_typ;
-  real *qptr; 
 #ifdef P_AXIAL
   vektor tmp_vir_vect = {0.0, 0.0, 0.0};
 #endif
-  real dummy, eam2_energy, eam2_force;
+  real eam2_energy, eam2_force;
   real f_i_strich, f_j_strich;
   real rho_i_strich, rho_j_strich;
 
-  /* For each atom in first cell */
+  /* for each atom in first cell */
   for (i=0; i<p->n; ++i) {
+
     tmp_d.x = p->ort X(i) - pbc.x;
     tmp_d.y = p->ort Y(i) - pbc.y;
-#ifndef TWOD
     tmp_d.z = p->ort Z(i) - pbc.z;
-#endif
+
     p_typ   = SORTE(p,i);
 
     if (p==q) {
-      /* f_i and f_i_strich -- TEST CUTOFF?? */
+      /* f_i and f_i_strich */
       PAIR_INT(eam2_energy, f_i_strich, embed_pot, p_typ, 
                ntypes, p->eam2_rho_h[i], idummy);
       /* add energy only once per particle (p==q) */
       p->pot_eng[i]  += eam2_energy;
       *Epot          += eam2_energy;
     } else {      
-      /* only f_i_strich -- TEST CUTOFF?? */
+      /* only f_i_strich */
       DERIV_FUNC(f_i_strich, embed_pot, p_typ, 
                  ntypes, p->eam2_rho_h[i], idummy);
     }
 
-    /* go over ALL (except q==p && i==j) atoms, no "Actio = Reactio" */
-    qptr = q->ort;
-    for (j=0; j<q->n; ++j) {
+    jstart = (p==q ? i+1 : 0);
+    qptr   = q->ort + DIM * jstart;
 
-      /* calculate distance -- before the next if! */ 
-      d.x = tmp_d.x - *qptr;	++qptr;
-      d.y = tmp_d.y - *qptr;	++qptr;
-#ifndef TWOD
-      d.z = tmp_d.z - *qptr;	++qptr;
-#endif
+    /* for each atom in neighbouring cell */
+    for (j=jstart; j<q->n; ++j) {
 
-      /* don't compute 'selfinteraction' */
-      if (!((q==p) && (i==j))) {
+      /* calculate distance */ 
+      d.x = *qptr - tmp_d.x; ++qptr;
+      d.y = *qptr - tmp_d.y; ++qptr;
+      d.z = *qptr - tmp_d.z; ++qptr;
 
-        q_typ = SORTE(q,j);
-        r2    = SPROD(d,d);
+      q_typ = SORTE(q,j);
+      r2    = SPROD(d,d);
+      col1  = q_typ * ntypes + p_typ;
+      col2  = p_typ * ntypes + q_typ;
 
-        if ((r2<rho_h_tab.end[p_typ*ntypes+q_typ]) || 
-            (r2<rho_h_tab.end[q_typ*ntypes+p_typ])) {
+      if ((r2 < rho_h_tab.end[col1]) || (r2 < rho_h_tab.end[col2])) {
 
-          /* f_j_strich(rho_h_j) -- TEST CUTOFF??? */
-          DERIV_FUNC(f_j_strich, embed_pot, q_typ, 
-                     ntypes, q->eam2_rho_h[j], idummy);
+        /* f_j_strich(rho_h_j) */
+        DERIV_FUNC(f_j_strich, embed_pot, q_typ, 
+                   ntypes, q->eam2_rho_h[j], idummy);
 
-          /* Take care: particle i gets its rho from particle j.
-             This is tabulated in column p_typ*ntypes+q_typ.
-             Here we need the giving part from column q_typ*ntypes+p_typ.
-           */
+        /* take care: particle i gets its rho from particle j.
+           This is tabulated in column p_typ*ntypes+q_typ.
+           Here we need the giving part from column q_typ*ntypes+p_typ.
+         */
 
-          /* rho_strich_i(r_ij) */
-          DERIV_FUNC(rho_i_strich, rho_h_tab, q_typ*ntypes+p_typ, 
-                     ntypes*ntypes, r2, is_short);
+        /* rho_strich_i(r_ij) */
+        DERIV_FUNC(rho_i_strich, rho_h_tab, col1, inc, r2, is_short);
 
-          /* rho_strich_j(r_ij) */
-          DERIV_FUNC(rho_j_strich, rho_h_tab, p_typ*ntypes+q_typ, 
-                     ntypes*ntypes, r2, is_short);
+        /* rho_strich_j(r_ij) */
+        if (p_typ==q_typ) {
+          rho_j_strich = rho_i_strich;
+	} else {
+          DERIV_FUNC(rho_j_strich, rho_h_tab, col2, inc, r2, is_short);
+	}
 
-          /* put together (f_i_strich and f_j_strich are by 0.5 too big) */
-	  eam2_force = -0.5*(f_i_strich*rho_j_strich+f_j_strich*rho_i_strich);
+        /* put together (f_i_strich and f_j_strich are by 0.5 too big) */
+        eam2_force = 0.5 * (f_i_strich*rho_j_strich+f_j_strich*rho_i_strich);
 
-          p->kraft X(i) += d.x  * eam2_force;
-          p->kraft Y(i) += d.y  * eam2_force;
-#ifndef TWOD
-          p->kraft Z(i) += d.z  * eam2_force;
-#endif
+        /* store force in temporary variable */
+        force.x = d.x * eam2_force;
+        force.y = d.y * eam2_force;
+        force.z = d.z * eam2_force;
 
-#ifdef DEBUG_INFO
-          if (p->nummer[i]==NR){
-            printf("****TTTT p_typ: %d, q_typ: %d\n",p_typ,q_typ);
-            printf("**** r=%.12lf thisrho:%.14lf other_rho:%.14lf\n",
-                   r2, p->eam2_rho_h[i], q->eam2_rho_h[j]);
-            printf("**** f_i`: %.14lf rho_j`: %.14lf  f_j`: %.12lf rho_i`: %.14lf\n",
-	           f_i_strich, rho_j_strich, f_j_strich, rho_i_strich);
-            printf("**** eam2_force: %.14lf f.x:%.16lf f.y:%.16lf f.z:%.16lf \n",
-		   eam2_force, d.x*eam2_force, d.y*eam2_force, d.z*eam2_force);
-            printf("**** d.x:%lf d.y:%lf d.z:%lf\n",d.x,d.y,d.z);
-            printf("**** Total Force :f.x: %.16lf f.y:%.16lf f.z:%.16lf\n",
-		   p->kraft X(i),p->kraft Y(i),p->kraft Z(i));
-	  }
-#endif
+        /* accumulate forces */
+        pfptr = p->kraft + DIM * i;
+        qfptr = q->kraft + DIM * j;
+        *pfptr     += force.x; 
+        *qfptr     -= force.x; 
+        *(++pfptr) += force.y; 
+        *(++qfptr) -= force.y; 
+        *(++pfptr) += force.z; 
+        *(++qfptr) -= force.z; 
 
-          /* virial and pressure tensor are updated twice for each pair */
-          eam2_force *= 0.5;
 #ifdef P_AXIAL
-          tmp_vir_vect.x -= d.x * d.x * eam2_force;
-          tmp_vir_vect.y -= d.y * d.y * eam2_force;
-#ifndef TWOD
-          tmp_vir_vect.z -= d.z * d.z * eam2_force;
-#endif
+        tmp_vir_vect.x -= d.x * force.x;
+        tmp_vir_vect.y -= d.y * force.y;
+        tmp_vir_vect.z -= d.z * force.z;
 #else
-          tmp_virial     -= r2 * eam2_force;  
+        tmp_virial     -= r2  * eam2_force;
 #endif
 
 #ifdef STRESS_TENS
-          p->presstens X(i) -= d.x * d.x * eam2_force;
-          p->presstens Y(i) -= d.y * d.y * eam2_force;
-#ifdef TWOD
-          p->presstens_offdia[i] -= d.x * d.y * eam2_force;
-#else
-          p->presstens Z(i) -= d.z * d.z * eam2_force;
-          p->presstens_offdia X(i) -= d.y * d.z * eam2_force;
-          p->presstens_offdia  Y(i) -= d.z * d.x * eam2_force;
-          p->presstens_offdia Z(i) -= d.x * d.y * eam2_force;
+        ppdptr = p->presstens + DIM * i;
+        qpdptr = q->presstens + DIM * j;
+        *ppdptr     -= d.x * force.x;
+        *qpdptr     -= d.x * force.x;
+        *(++ppdptr) -= d.y * force.y;
+        *(++qpdptr) -= d.y * force.y;
+        *(++ppdptr) -= d.z * force.z;
+        *(++qpdptr) -= d.z * force.z;
+        ppoptr = p->presstens_offdia + DIM * i;
+        qpoptr = q->presstens_offdia + DIM * j;
+        *ppoptr     -= d.y * force.z;
+        *qpoptr     -= d.y * force.z;
+        *(++ppoptr) -= d.z * force.x;
+        *(++qpoptr) -= d.z * force.x;
+        *(++ppoptr) -= d.x * force.y;
+        *(++qpoptr) -= d.x * force.y;
 #endif
-#endif
-	} /* if in the cutoff range */
-      } /* if not the same particle */    
+
+      } /* if in the cutoff range */
     } /* for j */
   } /* for i */
 

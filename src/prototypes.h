@@ -32,11 +32,6 @@ void   val_func2(real*,        int*, pot_table_t*, int, int, real);
 void   val_func3(real*,        int*, pot_table_t*, int, int, real);
 void deriv_func2(       real*, int*, pot_table_t*, int, int, real);
 void deriv_func3(       real*, int*, pot_table_t*, int, int, real);
-#ifdef EAM2  /* file imd_misc.c, to be replaced */
-void eam2_read_core_pot(str255 core_pot_filename);
-void eam2_read_embedding_energy(str255 emb_E_filename);
-void eam2_read_atomic_rho(str255 at_rho_filename);
-#endif
 
 /* read configuration - files imd_io_2/3d.c */
 void   read_atoms(str255 infilename);

@@ -123,26 +123,6 @@ void calc_forces(void)
     }
   }
 
-#ifdef EAM2
-  /* if EAM2, we have to loop a second time over pairs of distinct cells */
-  for (n=0; n<nlists; ++n) {
-#ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
-#endif
-    for (k=0; k<npairs[n]; ++k) {
-      vektor pbc;
-      pair *P;
-      P = pairs[n]+k;
-      pbc.x = -(P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x);
-      pbc.y = -(P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y);
-      pbc.z = -(P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z);
-      if (P->np != P->nq)
-        do_forces(cell_array + P->nq, cell_array + P->np, pbc,
-                  &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
-    }
-  }
-#endif
-
 #ifdef COVALENT
   /* complete neighbor tables for remaining pairs of cells */
   for (n=0; n<nlists; ++n) {
@@ -162,7 +142,6 @@ void calc_forces(void)
 #endif
 
 #ifndef AR  
-
   /* If we don't use actio=reactio accross the cpus, we have do do
      the force loop also on the other half of the neighbours for the 
      cells on the surface of the CPU */
@@ -185,8 +164,7 @@ void calc_forces(void)
                 tmpvec2, tmpvec2+1, tmpvec2+2, tmpvec2+3, tmpvec2+4);
     }
   }
-
-#endif  /* ... ifndef AR */
+#endif  /* not AR */
 
 #if (defined(EAM) || defined(TTBP) || defined(TERSOFF))
 #ifdef _OPENMP
@@ -219,28 +197,7 @@ void calc_forces(void)
     }
   }
 
-  /* if EAM2, we have to loop a second time over pairs of distinct cells */
-  for (n=0; n<nlists; ++n) {
-#ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
-#endif
-    for (k=0; k<npairs[n]; ++k) {
-      vektor pbc;
-      pair *P;
-      P = pairs[n]+k;
-      pbc.x = -(P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x);
-      pbc.y = -(P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y);
-      pbc.z = -(P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z);
-      if (P->np != P->nq)
-        do_forces_eam2(cell_array + P->nq, cell_array + P->np, pbc,
-                       &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
-    }
-  }
-
-#endif /* EAM2 */
-
-#if defined(EAM2) && !defined(AR)
-
+#ifndef AR
   /* If we don't use actio=reactio accross the cpus, we have do do
      the force loop also on the other half of the neighbours for the 
      cells on the surface of the CPU */
@@ -263,8 +220,9 @@ void calc_forces(void)
                      tmpvec2, tmpvec2+1, tmpvec2+2, tmpvec2+3, tmpvec2+4);
     }
   }
+#endif /* not AR */
 
-#endif /* EAM2 and not AR */
+#endif /* EAM2 */
 
   /* sum up results of different CPUs */
   tmpvec1[0] = tot_pot_energy;

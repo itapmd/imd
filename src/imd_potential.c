@@ -217,10 +217,12 @@ void read_pot_table2( pot_table_t *pt, char *filename, int cols )
 
     /* read the info block of the function table */
     for(i=0; i<cols; i++) {
-      if ((0==myid) && (3!=fscanf(infile, "%lf %lf %lf",
-                              &pt->begin[i], &pt->end[i], &pt->step[i]))) { 
-        sprintf(msg, "Info line in %s corrupt.", filename);
-        error(msg);
+      if (3 != fscanf(infile, "%lf %lf %lf",
+                    &pt->begin[i], &pt->end[i], &pt->step[i])) {
+        if (0==myid) { 
+          sprintf(msg, "Info line in %s corrupt.", filename);
+          error(msg);
+	}
       }
       cellsz = MAX(cellsz,pt->end[i]);
       pt->invstep[i] = 1.0 / pt->step[i];
@@ -249,9 +251,11 @@ void read_pot_table2( pot_table_t *pt, char *filename, int cols )
     /* input loop */
     for (i=0; i<cols; i++) {
       for (k=0; k<len[i]; k++) {
-        if ((1 != fscanf(infile,"%lf", &val)) && (0==myid)) {
-          sprintf(msg,"wrong format in file %s.",filename);
-          error(msg);
+        if (1 != fscanf(infile,"%lf", &val)) {
+          if (0==myid) {
+            sprintf(msg, "wrong format in file %s.", filename);
+            error(msg);
+	  }
         }
         *PTR_2D(pt->table,k,i,pt->maxsteps,cols) = val;
       }
@@ -328,7 +332,8 @@ void pair_int2(real *pot, real *grad, int *is_short, pot_table_t *pt,
   int  k;
 
   /* check for distances shorter than minimal distance in table */
-  r2a = r2 - pt->begin[col];
+  r2a = MIN(r2,pt->end[col]);
+  r2a = r2a - pt->begin[col];
   if (r2a < 0) {
     r2a   = 0;
     *is_short = 1;
@@ -370,7 +375,8 @@ void pair_int3(real *pot, real *grad, int *is_short, pot_table_t *pt,
 
   /* check for distances shorter than minimal distance in table */
   /* we need one extra value at the lower end for interpolation */
-  r2a = r2 - pt->begin[col] + pt->step[col];
+  r2a = MIN(r2,pt->end[col]);
+  r2a = r2a - pt->begin[col] + pt->step[col];
   if (r2a < 0) {
     r2a = 0;
     *is_short = 1;
@@ -420,7 +426,8 @@ void val_func2(real *val, int *is_short, pot_table_t *pt,
   int  k;
 
   /* check for distances shorter than minimal distance in table */
-  r2a = r2 - pt->begin[col];
+  r2a = MIN(r2,pt->end[col]);
+  r2a = r2a - pt->begin[col];
   if (r2a < 0) {
     r2a = 0;
     *is_short = 1;
@@ -458,7 +465,8 @@ void val_func3(real *val, int *is_short, pot_table_t *pt,
 
   /* check for distances shorter than minimal distance in table */
   /* we need one extra value at the lower end for interpolation */
-  r2a = r2 - pt->begin[col] + pt->step[col];
+  r2a = MIN(r2,pt->end[col]);
+  r2a = r2a - pt->begin[col] + pt->step[col];
   if (r2a < 0) {
     r2a = 0;
     *is_short = 1;
@@ -500,7 +508,8 @@ void deriv_func2(real *grad, int *is_short, pot_table_t *pt,
   int  k;
 
   /* check for distances shorter than minimal distance in table */
-  r2a = r2 - pt->begin[col];
+  r2a = MIN(r2,pt->end[col]);
+  r2a = r2a - pt->begin[col];
   if (r2a < 0) {
     r2a   = 0;
     *is_short = 1;
@@ -539,7 +548,8 @@ void deriv_func3(real *grad, int *is_short, pot_table_t *pt,
 
   /* check for distances shorter than minimal distance in table */
   /* we need one extra value at the lower end for interpolation */
-  r2a = r2 - pt->begin[col] + pt->step[col];
+  r2a = MIN(r2,pt->end[col]);
+  r2a = r2a - pt->begin[col] + pt->step[col];
   if (r2a < 0) {
     r2a = 0;
     *is_short = 1;

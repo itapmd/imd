@@ -389,7 +389,6 @@ EXTERN vektor socketwin_ur  INIT(nullvektor);     /* upper right (back) corner *
 EXTERN int  socket_atoms INIT(0);        /* counter for atoms to send window */
 #endif
 
-/* EAM stuff */
 #ifdef EAM
 /* neighborlist for EAM forces in 2D array */
 EXTERN real *eam_ij    INIT(NULL);  /* neighbor array */
@@ -406,31 +405,11 @@ EXTERN real eam_A      INIT(0.0);   /* EAM cohesive function constant A */
 #endif
 
 #ifdef EAM2
-EXTERN pot_table_t core_pot, embed_pot, rho_h_tab;
-EXTERN str255 eam2_emb_E_filename INIT("\0"); /* filenames for the tabulated functions */
-EXTERN str255 eam2_at_rho_filename INIT("\0");
-EXTERN str255 eam2_core_pot_filename INIT("\0");
-/* function tables */
-EXTERN real *eam2_f_i;                 /* table for the Embedding Energy as function of (rho_h) */
-EXTERN real *eam2_rho_at;              /* table for the electron density  as function of the distance */
-EXTERN real *eam2_phi;                 /* table for the core-core 2body Potential */
-/* layout of the tables: rho_at[atom_i][atom_j][mapping index]
-   i.e.                         0        1     int (r-r_end)/rstep 
-   the same for phi
-   and  for f_i[atom_i][mapping index]
-*/
-EXTERN real *eam2_rho_begin; /* for the most general case: the tables have  */
-EXTERN real *eam2_rho_end;   /* different stepsizes, etc. for each atomtype */
-EXTERN real *eam2_rho_step;  /* layout of the fields:                       */
-EXTERN real *eam2_r_begin;   /* rho_begin[atom_i][atom_j][rho], etc.        */
-EXTERN real *eam2_r_end;
-EXTERN real *eam2_r_step;
-EXTERN real *eam2_phi_r_begin;
-EXTERN real *eam2_phi_r_end;
-EXTERN real *eam2_phi_r_step;
-EXTERN int eam2_max_r_steps INIT(0);  /* info needed to access the tables */
-EXTERN int eam2_max_rho_steps INIT(0);
-EXTERN int eam2_max_phi_r_steps INIT(0);
+EXTERN pot_table_t embed_pot;                     /* embedding energy table  */
+EXTERN pot_table_t rho_h_tab;                     /* electron transfer table */
+EXTERN str255 eam2_emb_E_filename INIT("\0");     /* embedding energy file   */
+EXTERN str255 eam2_at_rho_filename INIT("\0");    /* electron transfer file  */
+EXTERN str255 eam2_core_pot_filename INIT("\0");  /* core potential file     */
 #endif
 
 #ifdef TTBP

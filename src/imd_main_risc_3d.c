@@ -99,25 +99,6 @@ void calc_forces(void)
   }
 
 #ifdef EAM2
-  /* if EAM2, we have to loop a second time over pairs of distinct cells */
-  for (n=0; n<nlists; ++n) {
-#ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
-#endif
-    for (k=0; k<npairs[n]; ++k) {
-      vektor pbc;
-      pair *P;
-      P = pairs[n]+k;
-      pbc.x = -(P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x);
-      pbc.y = -(P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y);
-      pbc.z = -(P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z);
-      if (P->np != P->nq) 
-        do_forces(cell_array + P->nq, cell_array + P->np, pbc,
-                  &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
-    }
-  }
-
-  /* second EAM2 loop over all cells pairs */
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
@@ -133,25 +114,7 @@ void calc_forces(void)
                      &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
     }
   }
-
-  /* if EAM2, we have to loop a second time over pairs of distinct cells */
-  for (n=0; n<nlists; ++n) {
-#ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
-    for (k=0; k<npairs[n]; ++k) {
-      vektor pbc;
-      pair *P;
-      P = pairs[n]+k;
-      pbc.x = -(P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x);
-      pbc.y = -(P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y);
-      pbc.z = -(P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z);
-      if (P->np != P->nq)
-        do_forces_eam2(cell_array + P->nq, cell_array + P->np, pbc,
-                       &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);
-    }
-  }
-#endif /* EAM2 */
 
 #if (defined(EAM) || defined(TTBP) || defined(TERSOFF))
 #ifdef _OPENMP

@@ -28,16 +28,14 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
   vektor d;
   vektor tmp_d;
   vektor force;
-  real radius2;
+  real r2, rho_h;
   real tmp_virial;
 #ifdef P_AXIAL
   vektor tmp_vir_vect;
 #endif
-  real pot_zwi;
-  real pot_grad;
-  int jstart,jend;
-  int col, is_short=0, inc = ntypes * ntypes;
-  int q_typ,p_typ;
+  real pot_zwi, pot_grad;
+  int col, col2, is_short=0, inc = ntypes * ntypes;
+  int jstart, q_typ, p_typ;
   real *qptr, *pfptr, *qfptr, *qpdptr, *ppdptr, *qpoptr, *ppoptr;
   
   tmp_virial     = 0.0;
@@ -49,73 +47,59 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
 #endif
 #endif
     
-  /* For each atom in first cell */
+  /* for each atom in first cell */
   for (i=0; i<p->n; ++i) {
-
-    /* For each atom in neighbouring cell */
-    /* Some compilers don't find the expressions that are invariant 
-       to the inner loop. I'll have to define my own temp variables. */
 
     tmp_d.x = p->ort X(i) - pbc.x;
     tmp_d.y = p->ort Y(i) - pbc.y;
 #ifndef TWOD
     tmp_d.z = p->ort Z(i) - pbc.z;
 #endif
-    p_typ   = SORTE(p,i);
 
+    p_typ  = SORTE(p,i);
     jstart = (p==q ? i+1 : 0);
     qptr   = q->ort + DIM * jstart;
 
+    /* for each atom in neighbouring cell */
     for (j = jstart; j < q->n; ++j) {
 
-      q_typ = SORTE(q,j);
-      
-      /* Calculate distance  */
+      /* calculate distance */
       d.x = *qptr - tmp_d.x; ++qptr;
       d.y = *qptr - tmp_d.y; ++qptr;
 #ifndef TWOD
       d.z = *qptr - tmp_d.z; ++qptr;
 #endif
 
-      col  = p_typ * ntypes + q_typ;
-      radius2 = SPROD(d,d);
+      q_typ = SORTE(q,j);
+      col   = p_typ * ntypes + q_typ;
+      r2    = SPROD(d,d);
 
-      if (0==radius2) { char msgbuf[256];
-#ifdef TWOD
-        sprintf(msgbuf,
-                "Distance is zero: nrs=%d %d\norte: %f %f, %f %f\n",
-                NUMMER(p,i),NUMMER(q,i),
-                p->ort X(i),p->ort Y(i),
-                q->ort X(j),q->ort Y(j));
+#ifdef DEBUG
+      if (0==r2) { char msgbuf[256];
+        sprintf(msgbuf, "Distance is zero between particles %d and %d!\n",
+                NUMMER(p,i), NUMMER(q,j));
         error(msgbuf);
-#else
-        sprintf(msgbuf,
-                "Distance is zero: nrs=%d %d\norte: %f %f %f, %f %f %f\n",
-                NUMMER(p,i),NUMMER(q,i),
-                p->ort X(i),p->ort Y(i),p->ort Z(i),
-                q->ort X(j),q->ort Y(j),q->ort Z(j));
-        error(msgbuf);
-#endif
       }
+#endif
 
+      /* compute pair interactions */
 #ifndef TERSOFF
 #ifdef MONOLJ
-      if (radius2 <= monolj_r2_cut) {
-        PAIR_INT_MONOLJ(pot_zwi,pot_grad,radius2)
+      if (r2 <= monolj_r2_cut) {
+        PAIR_INT_MONOLJ(pot_zwi, pot_grad, r2)
 #else
-      /* 1. Cutoff: pair potential */
-      if (radius2 <= pair_pot.end[col]) {
-        PAIR_INT2(pot_zwi,pot_grad,pair_pot,col,inc,radius2,is_short)
-#endif  /* MONOLJ */
-        
-        /* Store forces in temp */
+      if (r2 <= pair_pot.end[col]) {
+        PAIR_INT(pot_zwi, pot_grad, pair_pot, col, inc, r2, is_short)
+#endif
+
+        /* store force in temporary variable */
         force.x = d.x * pot_grad;
         force.y = d.y * pot_grad;
 #ifndef TWOD
         force.z = d.z * pot_grad;
 #endif
 
-        /* Accumulate forces */
+        /* accumulate forces */
         pfptr = p->kraft + DIM * i;
         qfptr = q->kraft + DIM * j;
         *pfptr     += force.x; 
@@ -126,12 +110,16 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
         *(++pfptr) += force.z; 
         *(++qfptr) -= force.z; 
 #endif
+        *Epot      += pot_zwi;
 
 #ifndef MONOLJ
+#ifdef EAM2
+        pot_zwi *= 0.5;   /* avoid double counting */
+#endif
 #ifdef ORDPAR
-        if (radius2 < op_r2_cut[p_typ][q_typ]) {
-	  p->pot_eng[i] += op_weight[p_typ][q_typ]*pot_zwi;
-	  q->pot_eng[j] += op_weight[q_typ][p_typ]*pot_zwi;
+        if (r2 < op_r2_cut[p_typ][q_typ]) {
+	  p->pot_eng[i] += op_weight[p_typ][q_typ] * pot_zwi;
+	  q->pot_eng[j] += op_weight[q_typ][p_typ] * pot_zwi;
 	  p->nbanz[i]++;
 	  q->nbanz[j]++;
         }
@@ -140,7 +128,6 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
         p->pot_eng[i] += pot_zwi;
 #endif
 #endif
-        *Epot   += pot_zwi;
 
 #ifdef P_AXIAL
         tmp_vir_vect.x -= d.x * force.x;
@@ -149,7 +136,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
         tmp_vir_vect.z -= d.z * force.z;
 #endif
 #else
-        tmp_virial     -= radius2 * pot_grad;  
+        tmp_virial     -= r2 * pot_grad;
 #endif
 
 #ifdef STRESS_TENS
@@ -183,18 +170,34 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
         p->heatcond[i] += pot_zwi - radius2 * pot_grad;
         q->heatcond[j] += pot_zwi - radius2 * pot_grad;
 #endif
-      }  /* if */
-#endif /* TERSOFF */
+      }
+#endif /* not TERSOFF */
 
+#ifdef EAM2
+      /* compute host electron density */
+      if (r2 < rho_h_tab.end[col])  {
+        VAL_FUNC(rho_h, rho_h_tab, col,  inc, r2, is_short);
+        p->eam2_rho_h[i] += rho_h; 
+      }
+      if (p_typ==q_typ) {
+        if (r2 < rho_h_tab.end[col]) q->eam2_rho_h[j] += rho_h; 
+      } else {
+        col2 = q_typ * ntypes + p_typ;
+        if (r2 < rho_h_tab.end[col2]) {
+          VAL_FUNC(rho_h, rho_h_tab, col2, inc, r2, is_short);
+          q->eam2_rho_h[j] += rho_h; 
+        }
+      }
+#endif
+
+#ifdef COVALENT
+      /* make neighbor tables for covalent systems */
 #ifdef TTBP
-      /* 2. Cutoff: make neighbor tables for TTBP */
-      if (radius2 <= smooth_pot.end[col]) {
+      if (r2 <= smooth_pot.end[col]) {
 #endif
 #ifdef TERSOFF
-      /* 2. Cutoff: make neighbor tables for TERSOFF */ 
-      if (radius2 <= ter_r2_cut[p_typ][q_typ]) {
+      if (r2 <= ter_r2_cut[p_typ][q_typ]) {
 #endif 
-#ifdef COVALENT
         neightab *neigh;
         real  *tmp_ptr;
 
@@ -227,6 +230,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
         neigh->n++;
       }
 #endif  /* COVALENT */
+
     } /* for j */
   } /* for i */
 
@@ -234,7 +238,6 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot,
 #ifndef MONOLJ
   if (is_short==1) printf("\n Short distance!\n");
 #endif
-
 #ifdef P_AXIAL
   *Vir_x  += tmp_vir_vect.x;
   *Vir_y  += tmp_vir_vect.y;

@@ -82,7 +82,8 @@ MPISOURCES3D    = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c \
 
 PAIRSOURCES     = imd_forces.c
 EAMSOURCES      = imd_forces_eam.c
-EAM2SOURCES     = imd_forces_eam2.c
+EAM2SOURCES     = imd_forces.c imd_forces_eam2.c
+ASYMPOTSOURCES  = imd_forces_eam2.c
 COVALENTSOURCES = imd_forces.c imd_forces_covalent.c
 UNIAXSOURCES    = imd_forces_uniax.c imd_gay_berne.c
 
@@ -456,7 +457,12 @@ FORCESOURCES = ${PAIRSOURCES}
 # EAM2 or EAM
 ifneq (,$(strip $(findstring eam2,${MAKETARGET})))
 CFLAGS  += -DEAM2
+ifneq (,$(strip $(findstring asympot,${MAKETARGET})))
+CFLAGS += -DASYMPOT
+FORCESOURCES = ${ASYMPOTSOURCES}
+else
 FORCESOURCES = ${EAM2SOURCES}
+endif
 else
 ifneq (,$(strip $(findstring eam,${MAKETARGET})))
 CFLAGS  += -DEAM
@@ -648,6 +654,16 @@ endif
 # high precision output (checkpoints)
 ifneq (,$(findstring hpo,${MAKETARGET}))
 CFLAGS += -DHPO
+endif
+
+# use 4-point-interpolation
+ifneq (,$(findstring 4point,${MAKETARGET}))
+CFLAGS += -DFOURPOINT
+endif
+
+# debug flag
+ifneq (,$(findstring debug,${MAKETARGET}))
+CFLAGS += -DDEBUG
 endif
 
 # Substitute .o for .c to get the names of the object files
