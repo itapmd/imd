@@ -129,7 +129,7 @@ void make_nblist(void)
     tl = (int *) realloc(tl, at_max * sizeof(int));
   }
   if (nbl_count==0) {
-    nb_max = (int) (1.2*estimate_nblist_size());
+    nb_max = (int) (1.1*estimate_nblist_size());
     tb = (TB_T *) realloc(tb, nb_max * sizeof(TB_T));
 #ifndef SAVEMEM
     cl = (int  *) realloc(cl, nb_max * sizeof(int ));
