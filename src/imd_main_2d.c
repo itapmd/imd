@@ -395,10 +395,18 @@ void fix_cells(void)
 
           /* Check, if atom is on my cpu */
           /* If not, copy into send buffer else move to correct cell */
-          if      ( 0 < dcpu.x ) copy_one_atom( &send_buf_west,  p, l, 1);
-          else if ( 0 > dcpu.x ) copy_one_atom( &send_buf_east,  p, l, 1);
-          else if ( 0 < dcpu.y ) copy_one_atom( &send_buf_south, p, l, 1); 
-          else if ( 0 > dcpu.y ) copy_one_atom( &send_buf_north, p, l, 1); 
+          if      ((0<dcpu.x) && (cpu_dim.x>1))
+            copy_one_atom( &send_buf_west,  p, l, 1);
+
+          else if ((0>dcpu.x) && (cpu_dim.x>1)) 
+            copy_one_atom( &send_buf_east,  p, l, 1);
+
+          else if (0<dcpu.y) 
+            copy_one_atom( &send_buf_south, p, l, 1); 
+
+          else if (0>dcpu.y) 
+            copy_one_atom( &send_buf_north, p, l, 1); 
+
           else { /* atom is on my cpu */
             q = PTR_VV(cell_array,coord,cell_dim);
             move_atom(q, p, l);

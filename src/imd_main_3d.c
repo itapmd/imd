@@ -485,34 +485,36 @@ void fix_cells(void)
             }
 
             /* west */
-            else if 
+            else if ((cpu_dim.x>1) && 
                ((to_cpu==nbwest) || (to_cpu==nbnw)  || (to_cpu==nbws) ||
                 (to_cpu==nbuw  ) || (to_cpu==nbunw) || (to_cpu==nbuws)||
-                (to_cpu==nbdw  ) || (to_cpu==nbdwn) || (to_cpu==nbdsw))
-                copy_one_atom( &send_buf_west,  p, l, 1);
+                (to_cpu==nbdw  ) || (to_cpu==nbdwn) || (to_cpu==nbdsw)))
+                copy_one_atom( &send_buf_west, p, l, 1);
             
             /* east */
-            else if
+            else if ((cpu_dim.x>1) &&
                 ((to_cpu==nbeast) || (to_cpu==nbse)  || (to_cpu==nben) ||
                  (to_cpu==nbue  ) || (to_cpu==nbuse) || (to_cpu==nbuen)||
-                 (to_cpu==nbde  ) || (to_cpu==nbdes) || (to_cpu==nbdne))
-                copy_one_atom( &send_buf_east,  p, l, 1);
+                 (to_cpu==nbde  ) || (to_cpu==nbdes) || (to_cpu==nbdne)))
+                 copy_one_atom( &send_buf_east, p, l, 1);
                         
             /* south  */
-            else if ((to_cpu==nbsouth) || (to_cpu==nbus)  || (to_cpu==nbds))
-                copy_one_atom( &send_buf_south,  p, l, 1);
+            else if ((cpu_dim.y>1) &&
+                ((to_cpu==nbsouth) || (to_cpu==nbus)  || (to_cpu==nbds)))
+                copy_one_atom( &send_buf_south, p, l, 1);
                         
             /* north  */
-            else if ((to_cpu==nbnorth) || (to_cpu==nbun)  || (to_cpu==nbdn))
-                copy_one_atom( &send_buf_north,  p, l, 1);
+            else if ((cpu_dim.y>1) &&
+                ((to_cpu==nbnorth) || (to_cpu==nbun)  || (to_cpu==nbdn)))
+                copy_one_atom( &send_buf_north, p, l, 1);
             
             /* down  */
-            else if (to_cpu==nbdown)
-                copy_one_atom( &send_buf_down,  p, l, 1);
+            else if ((cpu_dim.z>1) && (to_cpu==nbdown))
+                copy_one_atom( &send_buf_down, p, l, 1);
             
             /* up  */
-            else if (to_cpu==nbup)
-                copy_one_atom( &send_buf_up  ,  p, l, 1);
+            else if ((cpu_dim.z>1) && (to_cpu==nbup))
+                copy_one_atom( &send_buf_up, p, l, 1);
 
             else error("Atom jumped multiple CPUs");
                         
