@@ -76,7 +76,7 @@ void write_header_xvf( FILE *fp, float_dist_t *fl,
   /* make volume file header */
   str = header;
   sprintf(str,"%s","VIRVO-XVF");      str +=9;   /* file type */
-  us = 48; copy_2_bytes(str,&us);     str +=2;   /* header size */
+  us = 69; copy_2_bytes(str,&us);     str +=2;   /* header size */
   ui = dx; copy_4_bytes(str,&ui);     str +=4;   /* dim_x */
   ui = dy; copy_4_bytes(str,&ui);     str +=4;   /* dim_y */
   ui = dz; copy_4_bytes(str,&ui);     str +=4;   /* dim_z */
