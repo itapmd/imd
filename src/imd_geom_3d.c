@@ -708,10 +708,14 @@ ivektor cell_coord(real x, real y, real z)
   coord.y = (int)(global_cell_dim.y * (x*tbox_y.x + y*tbox_y.y + z*tbox_y.z));
   coord.z = (int)(global_cell_dim.z * (x*tbox_z.x + y*tbox_z.y + z*tbox_z.z));
 
-  /* Roundoff errors put atoms slightly out of the simulation cell */
-  coord.x = (coord.x < global_cell_dim.x) ? coord.x : global_cell_dim.x - 1;
-  coord.y = (coord.y < global_cell_dim.y) ? coord.y : global_cell_dim.y - 1;
-  coord.z = (coord.z < global_cell_dim.z) ? coord.z : global_cell_dim.z - 1;
+  /* rounding errors may put atoms slightly outside the simulation cell */
+  /* in the case of no pbc they may even be far outside */
+  if      (coord.x >= global_cell_dim.x) coord.x = global_cell_dim.x - 1;
+  else if (corrd.x < 0)                  coord.x = 0;
+  if      (coord.y >= global_cell_dim.y) coord.y = global_cell_dim.y - 1;
+  else if (corrd.y < 0)                  coord.y = 0;
+  if      (coord.z >= global_cell_dim.z) coord.z = global_cell_dim.z - 1;
+  else if (corrd.z < 0)                  coord.z = 0;
 
   return(coord);
 
