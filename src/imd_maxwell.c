@@ -92,7 +92,7 @@ void maxwell(real temp)
 
 /* #ifdef CLONE */
 /* 	  if(NUMMER(p,i)>=0) */
-/* 	      { /* if orignal atom do everything normal with that atom */ */
+/* 	      {  if orignal atom do everything normal with that atom */ 
 /* #endif */
 
 #ifdef NVX
