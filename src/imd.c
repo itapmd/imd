@@ -195,13 +195,13 @@ int main(int argc, char **argv)
     printf("Stack ISRSS=%lu Bytes\n",(unsigned long)end_ru.ru_isrss);
 #endif
 #endif
-    printf("Did %d steps with %d atoms.\n", steps_max, natoms);
+    printf("Did %d steps with %d atoms.\n", steps_max+1, natoms);
     printf("Used %f seconds cputime,\n", total_time);
     printf("%.3e cpuseconds per step and atom\n",
-           total_time / (steps_max * natoms));
-    printf("(inverse is %.3e).\n\n", (steps_max * natoms) / total_time);
-#ifdef MPI
+           total_time / ((steps_max+1) * natoms));
+    printf("(inverse is %.3e).\n\n", ((steps_max+1) * natoms) / total_time);
 
+#ifdef MPI
     time_comm += time_comm_force + time_comm_ar;
     time_calc += time_calc_local + time_calc_nonlocal;
 
@@ -225,16 +225,16 @@ int main(int argc, char **argv)
     total_time -= time_setup;
     printf("Used %f seconds cputime,\ndid %d steps with %d atoms\nfor %.3e cpuseconds per step and atom.\n",
 	   total_time, 
-           steps_max, 
+           steps_max+1, 
            natoms, 
-           total_time/ (steps_max*natoms));
+           total_time/ ((steps_max+1)*natoms));
     printf("Inverse is %.3e steps * atom per cpusecond.\n",
-	   ((float)steps_max*(float)natoms)/total_time);
+	   ((float)(steps_max+1)*(float)natoms)/total_time);
     printf("Time for pair interaction t_pair is: %.3e seconds\n",
-           total_time / (steps_max*natoms*
+           total_time / ((steps_max+1)*natoms*
                          (4.0/3.0)*M_PI*pow(r2_cut,3.0/2.0)*(natoms/volume)));
     printf("Time for pair interaction per cpu t_pair(P=1) is: %.3e seconds\n",
-    total_time*num_cpus/ ((float)steps_max*(float)natoms*
+    total_time*num_cpus/ ((float)(steps_max+1)*(float)natoms*
                           (4.0/3.0)*M_PI*pow(r2_cut,3.0/2.0)*(natoms/volume)));
     printf("Comp. time: %e seconds or %.1f %% of total.\n",
            time_calc,100*time_calc/total_time);
