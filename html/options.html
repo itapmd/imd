@@ -331,8 +331,9 @@ of the x-coordinate only, and averaged over the y- and z-coordinate
 
 <A NAME="fnorm">
 <P><LI><B> fnorm </B><P>
-Writes the average of the square of a (random) force component
-to the <TT>.eng</TT> file. This should be a good measure for the degree 
+Writes the average of the square of a (random) force component devided
+by the mean atomic mass to the <TT>.eng</TT> file. 
+This should be a good measure for the degree 
 of relaxation in a glok or mik simulation. In an NVE simulation, 
 this value, divided by the temperature, is equal to the square
 of the Einstein frequency. The latter can be used as <TT>inv_tau_eta</TT> 
@@ -403,16 +404,47 @@ world records.
 <B>Editor's remark:</B> Part of this could also be achieved by
 using only one mass variable per atom type, instead of one per atom.
 
+<A NAME="mono, binary">
+<P><LI><B>mono, binary</B><P>
+</A>
+The hard coding of the number of different atom types speeds up imd.
+Caution: do not use mono when using different atomtypes... 
+
 <A NAME="single">
 <P><LI><B>single</B><P>
 </A>
 Do everything with single precision (default is double precision).
 This saves space, which is useful for world records.
 
+<A NAME="4point">
+<P><LI><B>4point</B><P>
+</A>
+Imd uses by default a 3-point Lagrange interpolation to determine the 
+interaction energy and the forces. This option switches to a 4-point
+Lagrange interpolation.
+
+<A NAME="4point">
+<P><LI><B>4point</B><P>
+</A>
+Imd uses by default a 3-point Lagrange interpolation to determine the 
+interaction energy and the forces. This option switches to a 4-point
+Lagrange interpolation.
+
+<A NAME="hpo">
+<P><LI><B>hpo</B><P>
+</A>
+The output is writen with a higher precision.
+
 <A NAME="debug">
 <P><LI><B>debug</B><P>
 </A>
 Compile with debug flags.
+
+<A NAME="timing">
+<P><LI><B>timing</B><P>
+</A>
+This option gives an idea howmuch time is spent in the force
+calculation, IO,...  
 
 <A NAME="prof">
 <P><LI><B>prof</B><P>

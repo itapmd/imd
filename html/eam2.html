@@ -1,5 +1,5 @@
        <HTML> <HEAD> <TITLE> EAM2 </TITLE>
-<!-- Changed by: Erik Bitzek, 31. Dec 2000 -->
+<!-- Changed by: Erik Bitzek, Mon Feb 12 21:08:00 MET 2001 -->
         </HEAD> <BODY BGCOLOR="#FFFFFF"> <H1><font color=blue>
 Implementation of EAM2</font></H1> 
 <p>
@@ -44,10 +44,10 @@ Teeseminar</a> about EAM.
 <p>
 <li><b>Use of eam2</b>
 <p>
-The eam2 option currently works on risc and mpi plattforms. It does
-definitvely not work with PVPCRAY or SX4, neither with 2D, AR, ORDPAR or
-TRANSPORT. See <A HREF = "#Tests">Tests</A>
-for options that are guaranteed to work.
+The eam2 option works on risc and mpi plattforms. 
+It now uses actio=reaction between the atoms on the same processor.
+eam2 should work with most of the common options.
+See <A HREF = "#Tests">Tests</A> for options that are guaranteed to work.
 
 <p>
 To use eam2 one needs tables of three functions. 
@@ -69,7 +69,8 @@ for the atom pairs ij: 00, 01,... 10, 11,...
 <p>
 It is the responsibility of the creator of the potential to make
 sure, that the functions of r go smoothly to zero and that the last
-four values are 0.0
+four values are 0.0. If you're having an exotic core potential with ij
+!= ji, you have to use the option <b>asympot</b>.
 
 <p>
 embedding_energy_file:<br>
