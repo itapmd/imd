@@ -219,6 +219,8 @@ void init_cubic(void)
 {
   if ((box_param.x==0) || (box_param.y==0) || (box_param.z==0))
     error("box_param not set!");
+  if ((box_param.x%2==1) || (box_param.y%2==1) || (box_param.z%2==1))
+    error("box_param must consist of three even numbers!");
   box_x.x = box_param.x; box_x.y = 0.0;         box_x.z = 0.0;
   box_y.x = 0.0;         box_y.y = box_param.y; box_y.z = 0.0;
   box_z.x = 0.0;         box_z.y = 0.0;         box_z.z = box_param.z;
