@@ -280,6 +280,41 @@ parallel to sample boundary) and for compressions or expansions
 atoms with the virtual types concerned are usually located in two 
 boundary layers of the sample.
 
+<p>
+
+Besides translations of atoms, the option <b>deform</b> also allows
+shear transformations of atoms with a common virtual type. In this
+case, the additional parameter <tt>deform_shear</tt> has to be specified in the
+parameter file in the following format: 
+<pre>
+    deform_shear v shear_vector
+</pre>
+
+The shear transformation is given by
+
+<p>
+<table align="center" border="0" width="90%">
+<tr><td align="left">
+<b>x'</b> = <b>x</b> + <b>s</b>&middot;(<b>x</b>-<b>b</b>) <b>v</b>
+</td></tr>
+</table>
+<p>
+
+where the vector <b>s</b> is determined by <tt>deform_shear</tt> and
+<b>v</b> is represented by the parameter
+<tt>deform_shift</tt>. <tt>deform_shift</tt>, which should be a unit
+vector, has now the meaning of the shear direction.
+
+The base point <b>b</b> of the shear transformation can be specified
+through the parameter <tt>deform_base</tt> which is the origin of the
+simulation box by default. This point determines the invariant plane
+of the shear transformation. <tt>deform_base</tt> has to be given in
+the parameter file in the format 
+<pre>
+    deform_base v base_point
+</pre>
+
+
 <A NAME="glokdeform">
 <P><LI><B> glokdeform </B><P>
 </A>
