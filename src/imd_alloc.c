@@ -169,20 +169,20 @@ void move_atom(cell *to, cell *from, int index)
     from->eam2_rho_h[index] = from->eam2_rho_h[from->n];
 #endif
 #ifdef CG
-  from->h[index] = from->h[from->n]; 
-  from->h[index] = from->h[from->n]; 
+  from->h X(index) = from->h X(from->n); 
+  from->h Y(index) = from->h Y(from->n); 
 #ifndef TWOD
-  from->h[index] = from->h[from->n];
+  from->h Z(index) = from->h Z(from->n); 
 #endif 
-  from->g[index] = from->g[from->n]; 
-  from->g[index] = from->g[from->n]; 
+  from->g X(index) = from->g X(from->n); 
+  from->g Y(index) = from->g Y(from->n); 
 #ifndef TWOD
-  from->g[index] = from->g[from->n];
+  from->g Z(index) = from->g Z(from->n); 
 #endif  
-  from->old_ort[index] = from->old_ort[from->n]; 
-  from->old_ort[index] = from->old_ort[from->n]; 
+  from->old_ort X(index) = from->old_ort X(from->n); 
+  from->old_ort Y(index) = from->old_ort Y(from->n); 
 #ifndef TWOD
-  from->old_ort[index] = from->old_ort[from->n]; 
+  from->old_ort Z(index) = from->old_ort Z(from->n); 
 #endif
 #endif
 #ifdef DISLOC

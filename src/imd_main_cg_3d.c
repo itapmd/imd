@@ -128,17 +128,18 @@ void main_loop(void)
 	
         /* sets ort = old_ort, h, g, needs gamma and gets fmax2*/ 
 	set_hg();
-	/* overwrites the checkpoint file after each cgstep */  
-
+	
+	do_boundaries();    
+	fix_cells();
+    
+        /* overwrites the checkpoint file after each cgstep */  
 	write_config_select(0,"cgchkpt",write_atoms_config,write_header_config);  
 	write_eng_file(ctf);
     }
     
     /* write 'relaxed' config */
 
-    do_boundaries();    
-    fix_cells();  
-	
+   
     write_config(steps);
 
 
