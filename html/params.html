@@ -159,11 +159,24 @@ reffile         # file to read reference potential energy from
 Epot_diff       # whether to write the potential energy difference 
                 # (1, default), or the potential energy (0)
 
-#parameters for AVPOS
+# parameters for AVPOS
 avpos_start     # when to start writing average positions (default: 0)
 avpos_end       # when to end   writing average positions (default: maxsteps)
 avpos_int       # number of steps between AVP writes
 avpos_res       # number of steps between coordinate addition
+
+# parameters for <A HREF="epitax.html">EPITAX</A> (simulation of vacuum deposition)
+epitax_startstep # start time for vacuum deposition (default: 0)
+epitax_maxstep   # end time for vacuum deposition
+epitax_type      # types of atoms to be created
+epitax_mass      # mass of atoms to be created for each type
+epitax_rate      # rate of creation of atoms for each type
+epitax_temp      # temperature of atoms to be created for each type
+epitax_height    # z (2d: y) coordinate of atom creation at start time
+epitax_speed     # velocity of lifting the creation height
+epitax_cutoff	 # minimum distance between atoms in particle beam
+epitax_ctrl      # control parameter for switch of ensemble for
+                   deposited atoms
 
 # parameters for FRAC
 dampstadion	# Damping stadion
