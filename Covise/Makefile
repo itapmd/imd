@@ -5,7 +5,14 @@
 ## Author: Uwe Woessner, Andreas Wierse  Date: 29.08.97 ##
 ##########################################################
 
-COVISEDIR = /common/linux/paket/Covise/covise_5.2.3_HLRS_SNAP_0309/covise
+ARCH=${HOSTTYPE}
+ifneq (,$(strip $(findstring linux,${HOSTTYPE})))
+ARCH = linux
+endif
+ifneq (,$(strip $(findstring iris,${HOSTTYPE})))
+ARCH = irix
+endif
+COVISEDIR = /common/$(ARCH)/paket/Covise/covise_5.2.3_HLRS_SNAP_0309/covise
 OBJDIR = .
 
 # Name of the module executable:
@@ -22,7 +29,7 @@ ADD_INC = -I$(VIRVODIR) \
           -I$(COVISEDIR)/src/covise_api \
 	  -I$(COVISEDIR)/src/appl_lib \
 	  -I$(COVISEDIR)/src/covise_lib
-COVISE_LIBDIR = -L$(COVISEDIR)/linux/bin  
+COVISE_LIBDIR = -L$(COVISEDIR)/$(ARCH)/bin  
 COVISEAPI = -lcovise_api
 APPLLIB = -lappl
 COVISELIB = -lcovise
