@@ -101,10 +101,12 @@ void shear_sample(void)
   box_y.x += shear_factor.x * box_y.y;
   box_y.y += shear_factor.y * tmpbox;
 
+#ifndef TWOD
   tmpbox = box_z.x;
   box_z.x += shear_factor.x * box_z.y;
   box_z.y += shear_factor.y * tmpbox;
-  
+#endif
+
   make_box();
 
 } /* shear sample */
