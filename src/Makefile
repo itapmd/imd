@@ -320,14 +320,14 @@ ifeq (ia64-icc,${IMDSYS})
   CC_MPI	= mpicc
   CC_OMPI	= mpicc
   BIN_DIR	= ${HOME}/bin/ia64
-  OPT_FLAGS	+= -O -ip #-static
+  OPT_FLAGS	+= -O -ip -ivdep_parallel -wd1572 # -static
   MPI_FLAGS     += -quiet
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp -quiet
   PROF_FLAGS	+= -prof_gen
   DEBUG_FLAGS	+= -g
-  PAPI_INC      =  -I /opt/papi/include
-  PAPI_LIBS     =  -L /opt/papi/lib -lpapi
+  PAPI_INC      =  -I /opt/papi/3.0/include
+  PAPI_LIBS     =  -L /opt/papi/3.0/lib -lpapi
 endif
 
 # Itanium 2, ecc
@@ -337,7 +337,7 @@ ifeq (ia64-ecc,${IMDSYS})
   CC_MPI	= mpicc
   CC_OMPI	= mpicc
   BIN_DIR	= ${HOME}/bin/ia64
-  OPT_FLAGS	+= -O -ip #-static
+  OPT_FLAGS	+= -O -ip -ivdep_parallel #-static
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp
   PROF_FLAGS	+= -prof_gen

@@ -39,37 +39,47 @@ int  *cl, *tl;
 
 int estimate_nblist_size(void)
 {
-  int  c, c1, i, tn=1;
-  cell *p, *q;
+  int  c, tn=1;
 
   /* for all cells */
   for (c=0; c<ncells2; c++) {
 
-    c1 = cnbrs[c].np;
-    p  = cell_array + c1;
+    int i, c1 = cnbrs[c].np;
+    cell *p   = cell_array + c1;
 
     /* for each atom in cell */
     for (i=0; i<p->n; i++) {
 
-      int    m, c2, jstart, j;
-      real   *d1, *d2, r2;
-      vektor d;
+      int    m;
+      vektor d1;
 
-      d1 = p->ort + DIM * i;
+      d1.x = ORT(p,i,X);
+      d1.y = ORT(p,i,Y);
+#ifndef TWOD
+      d1.z = ORT(p,i,Z);
+#endif
 
       /* for each neighboring atom */
       for (m=0; m<14; m++) {   /* this is not TWOD ready! */
+
+        int    c2, jstart, j;
+        real   r2;
+        cell   *q;
+
         c2 = cnbrs[c].nq[m];
         if (c2<0) continue;
         if (c2==c1) jstart = i+1;
         else        jstart = 0;
         q = cell_array + c2;
+#ifdef ia64
+#pragma ivdep
+#endif
         for (j=jstart; j<q->n; j++) {
-          d2  = q->ort + DIM*j;
-          d.x = d2[0]-d1[0];
-          d.y = d2[1]-d1[1];
+          vektor d;
+          d.x = ORT(q,j,X) - d1.x;
+          d.y = ORT(q,j,Y) - d1.y;
 #ifndef TWOD
-          d.z = d2[2]-d1[2];
+          d.z = ORT(q,j,Z) - d1.z;
 #endif
           r2  = SPROD(d,d);
           if (r2 < cellsz) tn++;
@@ -89,8 +99,7 @@ int estimate_nblist_size(void)
 void make_nblist(void)
 {
   static int at_max=0, nb_max=0, pa_max=0;
-  int  c, c1, i, k, n, tn, at, cc;
-  cell *p, *q;
+  int  c, i, k, n, tn, at, cc;
 
 #ifdef MPI
   if (0 == nbl_count % BUFSTEP) setup_buffers();
@@ -103,7 +112,10 @@ void make_nblist(void)
   /* update reference positions */
   at=1;
   for (k=0; k<ncells; k++) {
-    p = cell_array + cnbrs[k].np;
+    cell *p = cell_array + cnbrs[k].np;
+#ifdef ia64
+#pragma ivdep,swp
+#endif
     for (i=0; i<p->n; i++) {
       NBL_POS(p,i,X) = ORT(p,i,X);
       NBL_POS(p,i,Y) = ORT(p,i,Y);
@@ -115,7 +127,7 @@ void make_nblist(void)
   }
 #ifdef COVALENT
   for (k=ncells; k<ncells2; k++) {
-    p   = cell_array + cnbrs[k].np;
+    cell *p = cell_array + cnbrs[k].np;
     at += p->n;
   }
 #endif
@@ -141,31 +153,40 @@ void make_nblist(void)
   n=0; tn=0; tl[0]=0;
   for (c=0; c<ncells2; c++) {
 
-    c1 = cnbrs[c].np;
-    p  = cell_array + c1;
+    int  c1 = cnbrs[c].np;
+    cell *p = cell_array + c1;
 
     /* for each atom in cell */
     for (i=0; i<p->n; i++) {
 
-      int    m, c2, jstart, j;
-      real   *d1, *d2, r2;
-      vektor d;
+      int    m;
+      vektor d1;
 
-      d1 = p->ort + DIM*i;
+      d1.x = ORT(p,i,X);
+      d1.y = ORT(p,i,Y);
+#ifndef TWOD
+      d1.z = ORT(p,i,Z);
+#endif
 
       /* for each neighboring atom */
       for (m=0; m<14; m++) {   /* this is not TWOD ready! */
+        int  c2, jstart, j;
+        cell *q;
         c2 = cnbrs[c].nq[m];
         if (c2<0) continue;
         if (c2==c1) jstart = i+1;
         else        jstart = 0;
         q = cell_array + c2;
+#ifdef ia64
+#pragma ivdep
+#endif
         for (j=jstart; j<q->n; j++) {
-          d2  = q->ort + DIM*j;
-          d.x = d2[0]-d1[0];
-          d.y = d2[1]-d1[1];
+          vektor d;
+          real   r2;
+          d.x = ORT(q,j,X) - d1.x;
+          d.y = ORT(q,j,Y) - d1.y;
 #ifndef TWOD
-          d.z = d2[2]-d1[2];
+          d.z = ORT(q,j,Z) - d1.z;
 #endif
           r2  = SPROD(d,d);
           if (r2 < cellsz) {
@@ -197,7 +218,6 @@ void make_nblist(void)
 void calc_forces(int steps)
 {
   int  i, b, k, n=0, is_short=0, idummy=0;
-  cell *p, *q;
   real tmpvec1[8], tmpvec2[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
   /* fill the buffer cells */
@@ -216,7 +236,10 @@ void calc_forces(int steps)
 
   /* clear per atom accumulation variables */
   for (k=0; k<nallcells; k++) {
-    p = cell_array + k;
+    cell *p = cell_array + k;
+#ifdef ia64
+#pragma ivdep,swp
+#endif
     for (i=0; i<p->n; i++) {
       KRAFT(p,i,X) = 0.0;
       KRAFT(p,i,Y) = 0.0;
@@ -268,20 +291,43 @@ void calc_forces(int steps)
 
   /* pair interactions - for all atoms */
   for (k=0; k<ncells; k++) {
-    p = cell_array + cnbrs[k].np;
+    cell *p = cell_array + cnbrs[k].np;
     for (i=0; i<p->n; i++) {
 
-      vektor d, force;
-      real   pot, grad, *d1, *d2, r2, *ff, rho_h;
-      int    col, col2, inc = ntypes * ntypes; 
-      int    m, j, it, jt;
+#ifdef STRESS_TENS
+#ifdef TWOD
+      sym_tensor pp = {0.0,0.0,0.0};
+#else
+      sym_tensor pp = {0.0,0.0,0.0,0.0,0.0,0.0};
+#endif
+#endif
+#ifdef TWOD
+      vektor d1, ff = {0.0,0.0};
+#else
+      vektor d1, ff = {0.0,0.0,0.0};
+#endif
+      real   ee = 0.0, hc = 0.0;
+      real   eam_r = 0.0, eam_p = 0.0;
+      int    m, it, nb = 0;
 
-      d1 = p->ort   + DIM * i;
-      ff = p->kraft + DIM * i;
-      it = SORTE(p,i);
+      d1.x = ORT(p,i,X);
+      d1.y = ORT(p,i,Y);
+#ifndef TWOD
+      d1.z = ORT(p,i,Z);
+#endif
+      it   = SORTE(p,i);
 
       /* loop over neighbors */
+#ifdef ia64
+#pragma ivdep
+#endif
       for (m=tl[n]; m<tl[n+1]; m++) {
+
+        vektor d, force;
+        cell   *q;
+        real   pot, grad, r2, rho_h;
+        int    j, jt, col, col2, inc = ntypes * ntypes;
+
 #ifdef SAVEMEM
         j   = tb[m] & 255U;
         q   = cell_array + (tb[m] >> 8);
@@ -289,11 +335,10 @@ void calc_forces(int steps)
         j   = tb[m];
         q   = cell_array + cl[m];
 #endif
-        d2  = q->ort + DIM * j;
-        d.x = d2[0]-d1[0];
-        d.y = d2[1]-d1[1];
+        d.x = ORT(q,j,X) - d1.x;
+        d.y = ORT(q,j,Y) - d1.y;
 #ifndef TWOD
-        d.z = d2[2]-d1[2];
+        d.z = ORT(q,j,Z) - d1.z;
 #endif
         r2  = SPROD(d,d);
         jt  = SORTE(q,j);
@@ -328,10 +373,10 @@ void calc_forces(int steps)
 #ifndef TWOD
           KRAFT(q,j,Z) -= force.z;
 #endif
-          ff[0]        += force.x;
-          ff[1]        += force.y;
+          ff.x         += force.x;
+          ff.y         += force.y;
 #ifndef TWOD
-          ff[2]        += force.z;
+          ff.z         += force.z;
 #endif
 
 #ifndef MONOLJ
@@ -340,13 +385,13 @@ void calc_forces(int steps)
 #endif
 #ifdef ORDPAR
           if (r2 < op_r2_cut[it][jt]) {
-            POTENG(p,i) += op_weight[it][jt] * pot;
+            ee          += op_weight[it][jt] * pot;
             POTENG(q,j) += op_weight[jt][it] * pot;
-            NBANZ(p,i)++;
+            nb++;
             NBANZ(q,j)++;
           }
 #else
-          POTENG(p,i) += pot;
+          ee          += pot;
           POTENG(q,j) += pot;
 #endif
 #endif
@@ -368,24 +413,24 @@ void calc_forces(int steps)
 #ifndef TWOD
             force.z *= 0.5;
 #endif
-            PRESSTENS(p,i,xx) -= d.x * force.x;
+            pp.xx             -= d.x * force.x;
             PRESSTENS(q,j,xx) -= d.x * force.x;
-            PRESSTENS(p,i,yy) -= d.y * force.y;
+            pp.yy             -= d.y * force.y;
             PRESSTENS(q,j,yy) -= d.y * force.y;
-            PRESSTENS(p,i,xy) -= d.x * force.y;
+            pp.xy             -= d.x * force.y;
             PRESSTENS(q,j,xy) -= d.x * force.y;
 #ifndef TWOD
-            PRESSTENS(p,i,zz) -= d.z * force.z;
+            pp.zz             -= d.z * force.z;
             PRESSTENS(q,j,zz) -= d.z * force.z;
-            PRESSTENS(p,i,yz) -= d.y * force.z;
+            pp.yz             -= d.y * force.z;
             PRESSTENS(q,j,yz) -= d.y * force.z;
-            PRESSTENS(p,i,zx) -= d.z * force.x;
+            pp.zx             -= d.z * force.x;
             PRESSTENS(q,j,zx) -= d.z * force.x;
 #endif
 	  }
 #endif
 #ifdef NVX
-          HEATCOND(p,i) += pot - r2 * grad;
+          hc            += pot - r2 * grad;
           HEATCOND(q,j) += pot - r2 * grad;
 #endif
         }
@@ -396,9 +441,9 @@ void calc_forces(int steps)
         /* compute host electron density */
         if (r2 < rho_h_tab.end[col])  {
           VAL_FUNC(rho_h, rho_h_tab, col, inc, r2, is_short);
-          EAM_RHO(p,i) += rho_h; 
+          eam_r += rho_h; 
 #ifdef EEAM
-          EAM_P(p,i) += rho_h*rho_h; 
+          eam_p += rho_h*rho_h; 
 #endif
         }
         if (it==jt) {
@@ -425,7 +470,6 @@ void calc_forces(int steps)
         if (r2 < neightab_r2cut[col]) {
 
           neightab *neigh;
-          real  *tmp_ptr;
 
           /* update neighbor table of particle i */
           neigh = NEIGH(p,i);
@@ -435,10 +479,9 @@ void calc_forces(int steps)
           neigh->typ[neigh->n] = jt;
           neigh->cl [neigh->n] = q;
           neigh->num[neigh->n] = j;
-          tmp_ptr  = &neigh->dist[3*neigh->n];
-          *tmp_ptr = d.x; ++tmp_ptr; 
-          *tmp_ptr = d.y; ++tmp_ptr; 
-          *tmp_ptr = d.z;
+          neigh->dist[3*neigh->n  ] = d.x;
+          neigh->dist[3*neigh->n+1] = d.y;
+          neigh->dist[3*neigh->n+2] = d.z;
           neigh->n++;
 
           /* update neighbor table of particle j */
@@ -449,15 +492,42 @@ void calc_forces(int steps)
           neigh->typ[neigh->n] = it;
           neigh->cl [neigh->n] = p;
           neigh->num[neigh->n] = i;
-          tmp_ptr  = &neigh->dist[3*neigh->n];
-          *tmp_ptr = -d.x; ++tmp_ptr; 
-          *tmp_ptr = -d.y; ++tmp_ptr; 
-          *tmp_ptr = -d.z;
+          neigh->dist[3*neigh->n  ] = -d.x;
+          neigh->dist[3*neigh->n+1] = -d.y;
+          neigh->dist[3*neigh->n+2] = -d.z;
           neigh->n++;
         }
 #endif  /* COVALENT */
 
       }
+      KRAFT(p,i,X) += ff.x;
+      KRAFT(p,i,Y) += ff.y;
+      KRAFT(p,i,Z) += ff.z;
+#ifndef MONOLJ
+      POTENG(p,i)  += ee;
+#endif
+#ifdef EAM2
+      EAM_RHO(p,i) += eam_r;
+#ifdef EEAM
+      EAM_P(p,i)   += eam_p;
+#endif
+#endif
+#ifdef STRESS_TENS
+      PRESSTENS(p,i,xx) += pp.xx;
+      PRESSTENS(p,i,yy) += pp.yy;
+      PRESSTENS(p,i,xy) += pp.xy;
+#ifndef TWOD
+      PRESSTENS(p,i,zz) += pp.zz;
+      PRESSTENS(p,i,yz) += pp.yz;
+      PRESSTENS(p,i,zx) += pp.zx;
+#endif
+#endif
+#ifdef ORDPAR
+      NBANZ(p,i)    += nb;
+#endif
+#ifdef NVX
+      HEATCOND(p,i) += hc;
+#endif
       n++;
     }
   }
@@ -467,19 +537,25 @@ void calc_forces(int steps)
 
   /* complete neighbor tables for covalent systems */
   for (k=ncells; k<ncells2; k++) {
-    p = cell_array +cnbrs[k].np;
+    cell *p = cell_array +cnbrs[k].np;
     for (i=0; i<p->n; i++) {
 
-      vektor d;
-      real   *d1, *d2, r2;
-      int    col, inc = ntypes * ntypes; 
-      int    m, j, it, jt;
+      vektor d1;
+      int    m, it;
 
-      d1 = p->ort   + DIM * i;
-      it = SORTE(p,i);
+      d1.x = ORT(p,i,X);
+      d1.y = ORT(p,i,Y);
+      d1.z = ORT(p,i,Z);
+      it   = SORTE(p,i);
 
       /* loop over neighbors */
       for (m=tl[n]; m<tl[n+1]; m++) {
+
+        int    j, jt, col, inc = ntypes * ntypes; 
+        vektor d;
+        real   r2;
+        cell   *q;
+
 #ifdef SAVEMEM
         j   = tb[m] & 255U;
         q   = cell_array + (tb[m] >> 8);
@@ -487,10 +563,9 @@ void calc_forces(int steps)
         j   = tb[m];
         q   = cell_array + cl[m];
 #endif
-        d2  = q->ort + DIM * j;
-        d.x = d2[0]-d1[0];
-        d.y = d2[1]-d1[1];
-        d.z = d2[2]-d1[2];
+        d.x = ORT(q,j,X) - d1.x;
+        d.y = ORT(q,j,Y) - d1.y;
+        d.z = ORT(q,j,Z) - d1.z;
         r2  = SPROD(d,d);
         jt  = SORTE(q,j);
         col = it * ntypes + jt;
@@ -499,7 +574,6 @@ void calc_forces(int steps)
         if (r2 <= neightab_r2cut[col]) {
 
           neightab *neigh;
-          real  *tmp_ptr;
 
           /* update neighbor table of particle i */
           neigh = NEIGH(p,i);
@@ -509,10 +583,9 @@ void calc_forces(int steps)
           neigh->typ[neigh->n] = jt;
           neigh->cl [neigh->n] = q;
           neigh->num[neigh->n] = j;
-          tmp_ptr  = &neigh->dist[3*neigh->n];
-          *tmp_ptr = d.x; ++tmp_ptr; 
-          *tmp_ptr = d.y; ++tmp_ptr; 
-          *tmp_ptr = d.z;
+          neigh->dist[3*neigh->n  ] = d.x;
+          neigh->dist[3*neigh->n+1] = d.y;
+          neigh->dist[3*neigh->n+2] = d.z;
           neigh->n++;
 
           /* update neighbor table of particle j */
@@ -524,10 +597,9 @@ void calc_forces(int steps)
           neigh->typ[neigh->n] = it;
           neigh->cl [neigh->n] = p;
           neigh->num[neigh->n] = i;
-          tmp_ptr  = &neigh->dist[3*neigh->n];
-          *tmp_ptr = -d.x; ++tmp_ptr; 
-          *tmp_ptr = -d.y; ++tmp_ptr; 
-          *tmp_ptr = -d.z;
+          neigh->dist[3*neigh->n  ] = -d.x;
+          neigh->dist[3*neigh->n+1] = -d.y;
+          neigh->dist[3*neigh->n+2] = -d.z;
           neigh->n++;
           */
         }
@@ -552,8 +624,11 @@ void calc_forces(int steps)
 
   /* compute embedding energy and its derivative */
   for (k=0; k<ncells; k++) {
-    p = CELLPTR(k);
+    cell *p = CELLPTR(k);
     real pot;
+#ifdef ia64
+#pragma ivdep,swp
+#endif
     for (i=0; i<p->n; i++) {
       PAIR_INT( pot, EAM_DF(p,i), embed_pot, SORTE(p,i), 
                 ntypes, EAM_RHO(p,i), idummy);
@@ -574,24 +649,31 @@ void calc_forces(int steps)
   /* EAM interactions - for all atoms */
   n=0;
   for (k=0; k<ncells; k++) {
-    p = CELLPTR(k);
+    cell *p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
 
-      vektor d, force;
-      real   pot, grad, *d1, *d2, r2, *ff;
-#ifdef EEAM
-      real   rho_i, rho_j;
+#ifdef STRESS_TENS
+      sym_tensor pp = {0.0,0.0,0.0,0.0,0.0,0.0};
 #endif
-      real   rho_i_strich, rho_j_strich;
-      int    col1, col2, inc = ntypes * ntypes; 
-      int    m, j, it, jt;
+      vektor d1, ff = {0.0,0.0,0.0};
+      int m, it;
 
-      d1 = p->ort   + DIM * i;
-      ff = p->kraft + DIM * i;
-      it = SORTE(p,i);
+      d1.x = ORT(p,i,X);
+      d1.y = ORT(p,i,Y);
+      d1.z = ORT(p,i,Z);
+      it   = SORTE(p,i);
 
       /* loop over neighbors */
+#ifdef ia64
+#pragma ivdep,swp
+#endif
       for (m=tl[n]; m<tl[n+1]; m++) {
+
+        vektor d, force;
+        real   pot, grad, rho_i_strich, rho_j_strich, rho_i, rho_j, r2, *d2;
+        int    j, jt, col1, col2, inc = ntypes * ntypes;
+        cell   *q;
+
 #ifdef SAVEMEM
         j    = tb[m] & 255U;
         q    = cell_array + (tb[m] >> 8);
@@ -599,10 +681,9 @@ void calc_forces(int steps)
         j    = tb[m];
         q    = cell_array + cl[m];
 #endif
-        d2   = q->ort + DIM * j;
-        d.x  = d2[0]-d1[0];
-        d.y  = d2[1]-d1[1];
-        d.z  = d2[2]-d1[2];
+        d.x  = ORT(q,j,X) - d1.x;
+        d.y  = ORT(q,j,Y) - d1.y;
+        d.z  = ORT(q,j,Z) - d1.z;
         r2   = SPROD(d,d);
         jt   = SORTE(q,j);
         col1 = jt * ntypes + it;
@@ -653,9 +734,9 @@ void calc_forces(int steps)
           KRAFT(q,j,X) -= force.x;
           KRAFT(q,j,Y) -= force.y;
           KRAFT(q,j,Z) -= force.z;
-          ff[0]        += force.x;
-          ff[1]        += force.y;
-          ff[2]        += force.z;
+          ff.x         += force.x;
+          ff.y         += force.y;
+          ff.z         += force.z;
 #ifdef P_AXIAL
           vir_xx       -= d.x * force.x;
           vir_yy       -= d.y * force.y;
@@ -671,23 +752,34 @@ void calc_forces(int steps)
             force.y *= 0.5;
             force.z *= 0.5;
  
-            PRESSTENS(p,i,xx) -= d.x * force.x;
-            PRESSTENS(p,i,yy) -= d.y * force.y;
-            PRESSTENS(p,i,zz) -= d.z * force.z;
-            PRESSTENS(p,i,yz) -= d.y * force.z;
-            PRESSTENS(p,i,zx) -= d.z * force.x;
-            PRESSTENS(p,i,xy) -= d.x * force.y;
+            pp.xx -= d.x * force.x;
+            pp.yy -= d.y * force.y;
+            pp.zz -= d.z * force.z;
+            pp.yz -= d.y * force.z;
+            pp.zx -= d.z * force.x;
+            pp.xy -= d.x * force.y;
 
-            PRESSTENS(q,j,xx) -= d.x * force.x;
-            PRESSTENS(q,j,yy) -= d.y * force.y;
-            PRESSTENS(q,j,zz) -= d.z * force.z;
-            PRESSTENS(q,j,yz) -= d.y * force.z;
-            PRESSTENS(q,j,zx) -= d.z * force.x;
-            PRESSTENS(q,j,xy) -= d.x * force.y;
+            PRESSTENS(q,j,xx) += d.x * force.x;
+            PRESSTENS(q,j,yy) += d.y * force.y;
+            PRESSTENS(q,j,zz) += d.z * force.z;
+            PRESSTENS(q,j,yz) += d.y * force.z;
+            PRESSTENS(q,j,zx) += d.z * force.x;
+            PRESSTENS(q,j,xy) += d.x * force.y;
           }
 #endif
         }
       }
+      KRAFT(p,i,X) += ff.x;
+      KRAFT(p,i,Y) += ff.y;
+      KRAFT(p,i,Z) += ff.z;
+#ifdef STRESS_TENS
+      PRESSTENS(p,i,xx) -= pp.xx;
+      PRESSTENS(p,i,yy) -= pp.yy;
+      PRESSTENS(p,i,zz) -= pp.zz;
+      PRESSTENS(p,i,yz) -= pp.yz;
+      PRESSTENS(p,i,zx) -= pp.zx;
+      PRESSTENS(p,i,xy) -= pp.xy;
+#endif
       n++;
     }
   }
@@ -741,8 +833,10 @@ void check_nblist()
   /* compare with reference positions */
   for (k=0; k<NCELLS; k++) {
     int  i;
-    cell *p;
-    p = CELLPTR(k);
+    cell *p = CELLPTR(k);
+#ifdef ia64
+#pragma ivdep,swp
+#endif
     for (i=0; i<p->n; i++) {
       d.x = ORT(p,i,X) - NBL_POS(p,i,X);
       d.y = ORT(p,i,Y) - NBL_POS(p,i,Y);
