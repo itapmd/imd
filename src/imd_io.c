@@ -1040,45 +1040,24 @@ void write_atoms_avp(FILE *out)
 /******************************************************************************
 *
 *  writes header for force file
+*  this is a special purpose header for potfit
 *
 ******************************************************************************/
 
 void write_header_force(FILE *out)
 {
-  char c;
-
-  /* format line */
-  /* binary_io for checkpoints not implemented
-   if (binary_io)
-     c = is_big_endian ? 'B' : 'L';
-   else
-    */
-    c = 'A';
-  fprintf(out, "#F %c 0 1 0 %d 0 %d\n", c, DIM, DIM);
-  
-  /* contents line */
-#ifdef TWOD
-  fprintf(out, "#C type x y f_x f_y\n");
-#else
-  fprintf(out, "#C type x y z f_x f_y f_z\n");
-#endif
-
   /* number of atoms */
-  fprintf(out, "#N %d\n", natoms);
+  fprintf(out, "%d\n", natoms);
   
   /* box lines */
 #ifdef TWOD
-  fprintf(out, "#X %.16e %.16e\n",       box_x.x , box_x.y);
-  fprintf(out, "#Y %.16e %.16e\n",       box_y.x , box_y.y);
+  fprintf(out, "%.16e %.16e\n", box_x.x, box_x.y );
+  fprintf(out, "%.16e %.16e\n", box_y.x, box_y.y );
 #else
-  fprintf(out, "#X %.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
-  fprintf(out, "#Y %.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
-  fprintf(out, "#Z %.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
+  fprintf(out, "%.16e %.16e %.16e\n", box_x.x, box_x.y, box_x.z );
+  fprintf(out, "%.16e %.16e %.16e\n", box_y.x, box_y.y, box_y.z );
+  fprintf(out, "%.16e %.16e %.16e\n", box_z.x, box_z.y, box_z.z );
 #endif
-
-  /* endheader line */
-  fprintf(out, "#E\n");
-
 }
 
 /******************************************************************************
