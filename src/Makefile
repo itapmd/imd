@@ -565,7 +565,9 @@ endif
 # MONOLJ Case
 ifneq (,$(findstring mono,${MAKETARGET}))
 CFLAGS += -DMONOLJ
+ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
 SOURCES += ${SAVEMEMSOURCES}
+endif
 endif
 
 # Single precision
