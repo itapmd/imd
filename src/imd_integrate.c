@@ -58,11 +58,17 @@ void move_atoms_nve(void)
 #ifdef UNIAX
         rot_energie_1 = SPRODN(p->dreh_impuls,i,p->dreh_impuls,i);
 #endif
+	
 #ifdef FBC
-        p->impuls X(i) += timestep * ((p->kraft X(i)) + (fbc_forces + p->sorte[i])->x );
-        p->impuls Y(i) += timestep * ((p->kraft Y(i)) + (fbc_forces + p->sorte[i])->y );
+	/* give virtual particles their extra force */
+	/* and set their impuls in restricted directions to 0 */
+        p->impuls X(i) += timestep * ((p->kraft X(i)) + (fbc_forces + p->sorte[i])->x* 
+				      (restrictions + p->sorte[i])->x);
+        p->impuls Y(i) += timestep * ((p->kraft Y(i)) + (fbc_forces + p->sorte[i])->y*
+				      (restrictions + p->sorte[i])->y);
 #ifndef TWOD
-        p->impuls Z(i) += timestep * ((p->kraft Z(i)) + (fbc_forces + p->sorte[i])->z );
+        p->impuls Z(i) += timestep * ((p->kraft Z(i)) + (fbc_forces + p->sorte[i])->z*
+				      (restrictions + p->sorte[i])->z); 
 #endif
 #else
         p->impuls X(i) += timestep * p->kraft X(i);
@@ -213,10 +219,15 @@ void move_atoms_mik(void)
         kin_energie_1 = SPRODN(p->impuls,i,p->impuls,i);
 
 #ifdef FBC
-        p->impuls X(i) += timestep * ((p->kraft X(i)) + (fbc_forces + p->sorte[i])->x );
-        p->impuls Y(i) += timestep * ((p->kraft Y(i)) + (fbc_forces + p->sorte[i])->y );
+        /* give virtual particles their extra force */
+	/* and set their impuls in restricted directions to 0 */
+	p->impuls X(i) += timestep *( (p->kraft X(i)) + (fbc_forces + p->sorte[i])->x* 
+				      (restrictions + p->sorte[i])->x );
+        p->impuls Y(i) += timestep * ((p->kraft Y(i)) + (fbc_forces + p->sorte[i])->y*
+				      (restrictions + p->sorte[i])->y);
 #ifndef TWOD
-        p->impuls Z(i) += timestep * ((p->kraft Z(i)) + (fbc_forces + p->sorte[i])->z );
+        p->impuls Z(i) += timestep * ((p->kraft Z(i)) + (fbc_forces + p->sorte[i])->z*
+				      (restrictions + p->sorte[i])->z);
 #endif
 #else
         p->impuls X(i) += timestep * p->kraft X(i);

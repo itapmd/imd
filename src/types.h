@@ -47,6 +47,7 @@ typedef struct {int x; int y; int z; } ivektor3d;
 #ifdef FBC 
 /* 4d Vector real for temp. input */
 typedef struct {real x; real y; real z; real z2; } vektor4d;
+typedef struct {int x; int y; int z; int z2; } ivektor4d; 
 #endif
 
 /*

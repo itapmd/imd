@@ -249,11 +249,16 @@ void getparamfile(char *paramfname, int sim)
 #ifdef TWOD
   vektor3d tempforce;
   vektor nullv={0.0,0.0};
+  ivektor3d tempivek;
+  ivektor einsv={1,1};
 #else 
-  vektor nullv={0.0,0.0,0.0};
   vektor4d tempforce;
+  vektor nullv={0.0,0.0,0.0};
+  ivektor4d tempivek;
+  ivektor einsv={1,1,1};
 #endif
   vektor force;
+  ivektor ivek;
   int k;
 #endif
 
@@ -406,6 +411,7 @@ void getparamfile(char *paramfname, int sim)
       /* directions with periodic boundary conditions */
       getparam("pbc_dirs",&pbc_dirs,PARAM_INT,DIM,DIM);
     }
+
 #ifdef FBC
     else if (strcasecmp(token,"total_types")==0) {
       /* TOTAL nuber of atoms: ntypes + virtualtypes */
@@ -425,7 +431,12 @@ void getparamfile(char *paramfname, int sim)
       if (NULL==fbc_endforces)
 	error("Can't allocate memory for fbc_endforces\n");
       for(k=0; k<vtypes; k++)
-       *(fbc_endforces+k) = nullv; 
+       *(fbc_endforces+k) = nullv;
+      restrictions = (ivektor *) malloc(vtypes*DIM*sizeof(int));
+      if (NULL==restrictions)
+	error("Can't allocate memory for restriction vectors\n");
+      for(k=0; k<vtypes; k++)
+       *(restrictions+k) = einsv;
     }
     else if (strcasecmp(token,"extra_startforce")==0) {
       /* extra force for virtual types */
@@ -441,7 +452,7 @@ void getparamfile(char *paramfname, int sim)
       *(fbc_beginforces+(int)(tempforce.x)) = force;
       *(fbc_forces+(int)(tempforce.x)) = force; 
     }
-else if (strcasecmp(token,"extra_endforce")==0) {
+    else if (strcasecmp(token,"extra_endforce")==0) {
       /* extra force for virtual types */
       /* format: type force.x force.y (force.z) read in a temp. vektor */
       getparam("extra_endforce",&tempforce,PARAM_REAL,DIM+1,DIM+1);
@@ -454,7 +465,21 @@ else if (strcasecmp(token,"extra_endforce")==0) {
 #endif
       *(fbc_endforces+(int)(tempforce.x)) = force;
     }
+    else if (strcasecmp(token,"restrictionvector")==0) {
+      /* restrictions for virtual types */
+      /* format: type  1 1 (1) (=all directions ok) read in a temp. vektor */
+      getparam("restrictionvector",&tempivek,PARAM_INT,DIM+1,DIM+1);
+      if (tempivek.x>vtypes-1)
+       error("Restriction defined for non existing virtual atom type\n");
+      ivek.x = tempivek.y;
+      ivek.y = tempivek.z;
+#ifndef TWOD
+      ivek.z = tempivek.z2;
 #endif
+      *(restrictions+(tempivek.x)) = ivek;
+    }
+#endif /* FBC */
+
     else if (strcasecmp(token,"box_x")==0) {
       /* 'x' or first vector for box */
       getparam("box_x",&box_x,PARAM_REAL,DIM,DIM);
@@ -1244,18 +1269,26 @@ void broadcast_params() {
 
 #ifdef FBC
   MPI_Bcast( &vtypes      , 1, MPI_INT,  0, MPI_COMM_WORLD);
+
   if (0!=myid) fbc_forces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==fbc_forces) 
     error("Can't allocate memory for fbc_forces on client."); 
-  MPI_Bcast( fbc_forces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( fbc_forces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD);
+ 
   if (0!=myid) fbc_beginforces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==fbc_beginforces) 
     error("Can't allocate memory for fbc_beginforces on client."); 
   MPI_Bcast( fbc_beginforces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+
   if (0!=myid) fbc_endforces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==fbc_endforces) 
     error("Can't allocate memory for fbc_endforces on client."); 
   MPI_Bcast( fbc_endforces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+
+  if (0!=myid) restrictions  = (ivektor *) malloc(vtypes*DIM*sizeof(int));
+  if (NULL==restrictions) 
+    error("Can't allocate memory for restriction vectors on client."); 
+  MPI_Bcast( restrictions, vtypes*DIM, MPI_INT, 0, MPI_COMM_WORLD);  
 #endif
 
   MPI_Bcast( &pbc_dirs    , DIM, MPI_INT,  0, MPI_COMM_WORLD); 

@@ -55,6 +55,7 @@ EXTERN int vtypes INIT(1);       /* vtypes = ntypes + ntypes*(types of forces) *
 EXTERN vektor *fbc_forces;       /* each vtype has its force */
 EXTERN vektor *fbc_beginforces;  /* begin & endvalues for linear interpolation */ 
 EXTERN vektor *fbc_endforces;   
+EXTERN ivektor *restrictions;     /* directions the atom is allowed to move in */
 #endif
 
 /* Global bookkeeping */
