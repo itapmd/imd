@@ -162,16 +162,12 @@ void write_press_dist_shock(int steps)
   
   /* the press bins are orthogonal boxes in space */
 
-#ifdef SHOCK
-  if (press_dim.y>1) press_dim.y=1;
-#endif
+  press_dim.y=1;
   scalex = press_dim.x / box_x.x;
   scaley = press_dim.y / box_y.y;
   press_dim_tot = press_dim.x*press_dim.y;
 #ifndef TWOD
-#ifdef SHOCK
-  if (press_dim.z>1) press_dim.z=1;
-#endif
+  press_dim.z=1;
   scalez = press_dim.z / box_z.z;
   press_dim_tot = press_dim.x*press_dim.y*press_dim.z;
 #endif
