@@ -466,11 +466,11 @@ void getparamfile(char *paramfname, int sim)
     }
     else if (strcasecmp(token,"fbc_annealsteps")==0) {
       /* max nr of steps before shears */
-      getparam("annealsteps",&fbc_annealsteps,PARAM_INT,1,1);
+      getparam("fbc_annealsteps",&fbc_annealsteps,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"fbc_waitsteps")==0) {
       /* max nr of steps between shears */
-      getparam("max_deform_int",&fbc_waitsteps,PARAM_INT,1,1);
+      getparam("rbc_waitsteps",&fbc_waitsteps,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"extra_dforce")==0) {
       /* extra force increment for virtual types */
