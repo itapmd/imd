@@ -110,7 +110,7 @@ void maxwell(real temp)
 #ifdef SHOCK
 	 if (shock_mode != 2) shock_mode = 1;
 	 if (shock_mode == 1) {
-	   if ( p->ort X(i) < strip/2 + shock_strip ) 
+	   if ( p->ort X(i) < strip_width/2 + shock_strip ) 
 	     {	     
 	       if ( shock_speed > 0 ) p->impuls X(i) += 
                                     	shock_speed * MASSE(p,i);

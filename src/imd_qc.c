@@ -697,14 +697,14 @@ void sortin (int ifeld[])
 
 	{
 #if defined(FRAC) || defined(PULL) || defined(SHEAR)
-          if ((x>strip/2) && (x<box_x.x-strip/2) &&
-              (y>strip/2) && (y<box_y.y-strip/2) &&
-              (z>strip/2) && (z<box_z.z-strip/2))
+          if ((x>strip_width/2) && (x<box_x.x-strip_width/2) &&
+              (y>strip_width/2) && (y<box_y.y-strip_width/2) &&
+              (z>strip_width/2) && (z<box_z.z-strip_width/2))
 	    {
 #endif
 
 #ifdef SHOCK
-          if ((x>strip/2) && (x<box_x.x-strip/2)) 
+          if ((x>strip_width/2) && (x<box_x.x-strip_width/2)) 
 	    {
 #endif
 	      natoms++;

@@ -75,6 +75,16 @@ void main_loop(void)
     mpi_addtime(&time_comm);
 #endif
 
+    /* shear, pull, frac and hom */
+#ifdef HOM
+    if ((hom_interval > 0) && (0 == steps%hom_interval)) shear_sample();
+    if ((exp_interval > 0) && (0 == steps%exp_interval)) expand_sample();
+#endif
+#ifdef PULL
+    deform_atoms();
+#endif
+
+
 #ifndef MC
     calc_forces(); 
 #endif
@@ -153,10 +163,6 @@ void main_loop(void)
       write_properties(steps);
     if ((dis_interval > 0) && (0 == steps%dis_interval)) write_distrib(steps);
     if ((pic_interval > 0) && (0 == steps%pic_interval)) write_pictures(steps);
-#ifdef HOM
-    if ((hom_interval > 0) && (0 == steps%hom_interval)) shear_sample(steps);
-    if ((exp_interval > 0) && (0 == steps%exp_interval)) expand_sample(steps);
-#endif
 
 #ifdef DISLOC
     if ((dem_interval > 0) && (0 == steps%dem_interval)) write_demmaps(steps);
@@ -375,18 +381,33 @@ void init(void)
   xi.y = 0.0;
 #endif
   
-#if defined(PULL) || defined(FRAC) || defined(SHEAR)
+#if defined(FRAC) || defined(SHEAR)
   /* Atoms with negative numbers are not moved */
   /* loop over all atoms */
   /* for each cell in bulk */
-  if ((ensemble==ENS_PULL) || (ensemble==ENS_FRAC) ||
-      (ensemble==ENS_SHEAR)) 
+  if ((ensemble==ENS_FRAC) || (ensemble==ENS_SHEAR)) 
+    for (r=cellmin.x; r < cellmax.x; ++r)
+      for (s=cellmin.x; s < cellmax.y; ++s) {
+	p = PTR_2D_V(cell_array, r, s, cell_dim);
+	for (i = 0;i < p->n; ++i) {
+	  /* Make Atom numbers in strip negative */
+	  if ((p->ort X(i) < strip_width) || (p->ort X(i) > (box_x.x - strip_width))) {
+	    if (0<p->nummer[i]) p->nummer[i] = - p->nummer[i];
+	  };
+	};
+      };
+#endif
+
+#ifdef PULL
+  /* Atoms with negative numbers are not moved */
+  /* loop over all atoms */
+  /* for each cell in bulk */
   for (r=cellmin.x; r < cellmax.x; ++r)
     for (s=cellmin.x; s < cellmax.y; ++s) {
       p = PTR_2D_V(cell_array, r, s, cell_dim);
       for (i = 0;i < p->n; ++i) {
         /* Make Atom numbers in strip negative */
-        if ((p->ort X(i) < strip) || (p->ort X(i) > (box_x.x - strip))) {
+        if ((p->ort X(i) < strip_width) || (p->ort X(i) > (box_x.x - strip_width))) {
           if (0<p->nummer[i]) p->nummer[i] = - p->nummer[i];
         };
       };

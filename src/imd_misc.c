@@ -634,13 +634,13 @@ void generate_hex()
 
 #if defined(FRAC) || defined(PULL) || defined(MIKSHEAR)
       /* leave boundary open if necessary */
-      if ((x+0.5 < strip/2) || (x+0.5 > box_x.x-strip/2) ||
-          (y+0.5 < strip/2) || (y+0.5 > box_y.y-strip/2)) continue;
+      if ((x+0.5 < strip_width/2) || (x+0.5 > box_x.x-strip_width/2) ||
+          (y+0.5 < strip_width/2) || (y+0.5 > box_y.y-strip_width/2)) continue;
 #endif
 
 #ifdef SHOCK
       /* leave boundary open if necessary */
-      if ((x+0.5 < strip/2) || (x+0.5 > box_x.x-strip/2)) continue;
+      if ((x+0.5 < strip_width/2) || (x+0.5 > box_x.x-strip_width/2)) continue;
 #endif
 
       natoms++;
@@ -720,14 +720,14 @@ void generate_fcc(int maxtyp)
  
 #if defined(FRAC) || defined(PULL) || defined(MIKSHEAR)
         /* leave boundary open if necessary */
-        if ((x+0.5 < strip/2) || (x+0.5 > box_x.x-strip/2) ||
-            (y+0.5 < strip/2) || (y+0.5 > box_y.y-strip/2) ||
-            (z+0.5 < strip/2) || (z+0.5 > box_z.z-strip/2)) continue;
+        if ((x+0.5 < strip_width/2) || (x+0.5 > box_x.x-strip_width/2) ||
+            (y+0.5 < strip_width/2) || (y+0.5 > box_y.y-strip_width/2) ||
+            (z+0.5 < strip_width/2) || (z+0.5 > box_z.z-strip_width/2)) continue;
 #endif
 
 #ifdef SHOCK
         /* leave boundary open if necessary */
-        if ((x+0.5 < strip/2) || (x+0.5 > box_x.x-strip/2)) continue;
+        if ((x+0.5 < strip_width/2) || (x+0.5 > box_x.x-strip_width/2)) continue;
 #endif
 
         typ = (x+y+z) % 2;
@@ -886,14 +886,14 @@ void generate_lav()
 
 #if defined(FRAC) || defined(PULL) || defined(MIKSHEAR)
 	  /* leave boundary open if necessary */
-	  if ((x+co < strip/2) || (x+co > box_x.x-strip/2) ||
-	      (y+co < strip/2) || (y+co > box_y.y-strip/2) ||
-	      (z+co < strip/2) || (z+co > box_z.z-strip/2)) continue;
+	  if ((x+co < strip_width/2) || (x+co > box_x.x-strip_width/2) ||
+	      (y+co < strip_width/2) || (y+co > box_y.y-strip_width/2) ||
+	      (z+co < strip_width/2) || (z+co > box_z.z-strip_width/2)) continue;
 #endif
 	  
 #ifdef SHOCK
 	  /* leave boundary open if necessary */
-	  if ((x+co < strip/2) || (x+co > box_x.x-strip/2)) continue;
+	  if ((x+co < strip_width/2) || (x+co > box_x.x-strip_width/2)) continue;
 #endif
 	  
 	  ++natoms;

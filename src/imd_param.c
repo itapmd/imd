@@ -333,10 +333,6 @@ void getparamfile(char *paramfname, int sim)
         ensemble = ENS_FRAC;
         move_atoms = move_atoms_frac;
       }
-      else if (strcasecmp(tmpstr,"pull")==0) {
-        ensemble = ENS_PULL;
-        move_atoms = move_atoms_pull;
-      }
       else {
         error("unknown ensemble");
       }
@@ -613,7 +609,7 @@ void getparamfile(char *paramfname, int sim)
     }
     else if (strcasecmp(token,"strip_width")==0) { 
       /* strip width (in x dir.) */
-      getparam("strip_width",&strip,PARAM_REAL,1,1);
+      getparam("strip_width",&strip_width,PARAM_REAL,1,1);
     }
 #endif
 #ifdef SHOCK
@@ -764,7 +760,7 @@ void getparamfile(char *paramfname, int sim)
 #ifdef PULL
     else if (strcasecmp(token,"strip_shift")==0) {
       /* strip move per timestep - this is a vector */
-      getparam("strip_shift",&delta,PARAM_REAL,DIM,DIM); 
+      getparam("strip_shift",&strip_shift,PARAM_REAL,DIM,DIM); 
     }
 #endif
 #ifdef USE_SOCKETS
@@ -1148,7 +1144,7 @@ void broadcast_params() {
 #endif
 
 #if defined(FRAC) || defined(PULL) || defined(SHOCK) || defined(SHEAR)
-  MPI_Bcast( &strip, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &strip_width, 1, MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef SHOCK
@@ -1188,7 +1184,7 @@ void broadcast_params() {
 #endif
 
 #ifdef PULL
-  MPI_Bcast( &delta , DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &strip_shift , DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
 #endif  
 
 #ifdef USE_SOCKETS

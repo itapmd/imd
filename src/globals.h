@@ -259,7 +259,7 @@ EXTERN real   gamma_cut INIT(0.0);    /* Damping cutoff */
 
 #if defined(FRAC) || defined(PULL) || defined(SHOCK)
 EXTERN int    dnoshsteps INIT(0);     /* counting steps between 2 shears */
-EXTERN real   strip INIT(0.0);        /* Strip width */    
+EXTERN real   strip_width INIT(0.0);        /* Strip width */    
 EXTERN real   ekin_threshold INIT(1.0e+20); /* threshold for ekin */    
 EXTERN int    annealsteps INIT(0);    /* number of annealing steps */    
 EXTERN int    maxdnoshsteps INIT(0);  /* max. steps between 2 shear steps */  
@@ -272,11 +272,11 @@ EXTERN int shear_steps INIT(0);   /* number of shear_steps */
 EXTERN real kcrit INIT(0.0);          /* Stress Intensity Factor */
 EXTERN real mue INIT(0.0);            /* Youngs Modulus */
 EXTERN real kel INIT(0.0);            /* Shear Modulus */
-EXTERN vektor2d tip INIT(nullvektor2d);          /* Location of crack Tip */
+EXTERN vektor2d tip INIT(nullvektor2d); /* Location of crack Tip */
 /* #endif */
 
 #ifdef PULL
-EXTERN vektor   delta;      /* atoms in strip move by this amount */
+EXTERN vektor   strip_shift INIT(nullvektor);/* shift of atoms in strip */
 #endif
 
 #ifdef DISLOC

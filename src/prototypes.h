@@ -44,7 +44,6 @@ void move_atoms_npt_axial(void);
 void move_atoms_and(void);
 void move_atoms_mc(void);
 void move_atoms_frac(void);
-void move_atoms_pull(void);
 void move_atoms_nvx(void);
 void move_atoms_msd(void);
 void do_boundaries(void);
@@ -141,6 +140,15 @@ void copy_atoms_ar(msgbuf *b, int k, int l, int m);
 void apply_shear(void);
 void shear1step(int steps);
 void write_shear_energy(int steps, int shear_steps);
+#endif
+
+#ifdef HOM
+void shear_sample(void);
+void expand_sample(void);
+#endif
+
+#ifdef PULL
+void deform_atoms(void);
 #endif
 
 #ifdef DISLOC

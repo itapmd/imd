@@ -62,7 +62,7 @@ void load_sample(void)
 
                   /* Lock atoms in strip */
               
-              if ((p->ort X(i) < strip) || (p->ort X(i) > (box_x.x - strip))
+              if ((p->ort X(i) < strip_width) || (p->ort X(i) > (box_x.x - strip_width))
                   && p->nummer[i] > 0)
                   p->nummer[i] = - p->nummer[i];
 

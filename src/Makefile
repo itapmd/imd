@@ -10,7 +10,7 @@
 #
 # <target> has the form imd_<ensemble>_<architecture>[_<suffix>...]
 #
-# <ensemble> is one of nve, nvt, and, mik, frac, pull, npt_iso, npt_axial
+# <ensemble> is one of nve, nvt, and, mik, frac, npt_iso, npt_axial
 #
 # <architecture> is either risc or mpi or gcc
 #
@@ -62,12 +62,15 @@ MPISOURCES3D  = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c \
 PACXSOURCES2D = ${MPISOURCES2D} imd_pacx.c
 PACXSOURCES3D = ${MPISOURCES3D} imd_pacx.c
 
+PULLSOURCES   = imd_deform.c
+
+SHEARSOURCES  = imd_deform.c
 SOCKHEADERS   = socket_tokens.h sockets.h sockutil.h
 SOCKSOURCES   = socket_io.c sockutil.c
 
 FRACSOURCES   = imd_load.c
 
-HOMSOURCES     = imd_homshear.c imd_transport.c
+HOMSOURCES     = imd_deform.c imd_transport.c
 
 QUASISOURCES  = imd_qc.c
 
@@ -442,6 +445,7 @@ endif
 
 ifneq (,$(findstring pull,${MAKETARGET}))
 CFLAGS += -DPULL
+SOURCES += ${PULLSOURCES}
 endif
 
 ifneq (,$(findstring shock,${MAKETARGET}))

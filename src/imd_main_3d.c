@@ -120,6 +120,14 @@ void main_loop(void)
     mpi_addtime(&time_comm_force);
 #endif
 
+#ifdef HOM
+    if ((hom_interval > 0) && (0 == steps%hom_interval)) shear_sample();
+    if ((exp_interval > 0) && (0 == steps%exp_interval)) expand_sample();
+#endif
+#ifdef PULL
+    deform_atoms();
+#endif
+
 #ifndef MC
     calc_forces(); 
 #endif
@@ -203,12 +211,6 @@ void main_loop(void)
       write_properties(steps);
     if ((dis_interval > 0) && (0 == steps%dis_interval)) write_distrib(steps);
     if ((pic_interval > 0) && (0 == steps%pic_interval)) write_pictures(steps);
-#ifdef HOM
-    printf("%d %d\n", hom_interval, steps);fflush(stdout); 
-    if ((hom_interval > 0) && (0 == steps%hom_interval)) shear_sample(steps);
-    if ((exp_interval > 0) && (0 == steps%exp_interval)) expand_sample(steps);
-#endif
-
 #ifdef DISLOC
     if (steps == up_ort_ref) update_ort_ref();
     if ((dem_interval > 0) && (0 == steps%dem_interval)) write_demmaps(steps);
@@ -520,7 +522,7 @@ void init(void)
 	p = PTR_3D_V(cell_array, r, s, t, cell_dim);
         for (i = 0; i < p->n; ++i) {
           /* Make Atom numbers in strip negative */
-	  if ((p->ort X(i) < strip) || (p->ort X(i) > (box_x.x - strip))) {
+	  if ((p->ort X(i) < strip_width) || (p->ort X(i) > (box_x.x - strip_width))) {
             if (0<p->nummer[i]) p->nummer[i] = - p->nummer[i];
           }
         }
