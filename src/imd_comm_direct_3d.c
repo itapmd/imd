@@ -68,7 +68,6 @@ void send_cells_direct(void)
 
   /* Clear buffers */
   empty_mpi_buffers();
-  empty_buffer_cells();
   
   /* Exchange faces */
   /* Fill send buffers */

@@ -26,7 +26,7 @@
 
 void send_cells(void (*copy_func)  (int, int, int, int, int, int),
                 void (*pack_func)  (msgbuf*, int, int, int),
-                void (*unpack_func)(msgbuf*, int, int, int), int clear)
+                void (*unpack_func)(msgbuf*, int, int, int))
 {
   int i,j;
 
@@ -39,7 +39,6 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int),
   MPI_Request    requp[2],   reqdown[2];
 
   empty_mpi_buffers();
-  if (clear==1) empty_buffer_cells();
 
   /* exchange up/down */
   if (cpu_dim.z==1) {
@@ -327,7 +326,7 @@ void copy_cell( int k, int l, int m, int r, int s, int t )
   to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
 
   tmp_n = from->n;
-  if (tmp_n >= to->n_max) {
+  if (tmp_n > to->n_max) {
     to->n = 0;
     alloc_cell(to, tmp_n);
   }
@@ -395,7 +394,7 @@ void pack_cell( msgbuf *b, int k, int l, int m )
     b->data[ b->n++ ] = (real) from->nummer[i];
 #endif
   }
-  if (b->n_max <= b->n)  error("Buffer overflow in copy_atoms_force");
+  if (b->n_max < b->n)  error("Buffer overflow in pack_cell");
 }
 
 
@@ -415,7 +414,7 @@ void unpack_cell( msgbuf *b, int k, int l, int m )
 
   tmp_n = (int) b->data[ b->n++ ];
   
-  if (tmp_n >= to->n_max) {
+  if (tmp_n > to->n_max) {
     to->n = 0;
     alloc_cell(to, tmp_n);
   }
@@ -443,7 +442,7 @@ void unpack_cell( msgbuf *b, int k, int l, int m )
     to->nummer[i] = (integer) b->data[ b->n++ ];
 #endif
   }
-  if (b->n_max <= b->n) error("Buffer overflow in move_atoms_force");
+  if (b->n_max < b->n) error("Buffer overflow in unpack_cell");
 }
 
 
@@ -520,7 +519,7 @@ void pack_forces( msgbuf *b, int k, int l, int m)
     b->data[ b->n++ ] = (real) from->nbanz[i];
 #endif
   }
-  if (b->n_max <= b->n) error("Buffer overflow in copy_forces.");
+  if (b->n_max < b->n) error("Buffer overflow in pack_forces.");
 }
 
 
@@ -558,7 +557,7 @@ void unpack_forces( msgbuf *b, int k, int l, int m )
     to->nbanz[i] += (shortint) b->data[ b->n++ ];
 #endif
   }
-  if (b->n_max <= b->n) error("Buffer overflow in add_forces.");
+  if (b->n_max < b->n) error("Buffer overflow in unpack_forces.");
 }
 
 

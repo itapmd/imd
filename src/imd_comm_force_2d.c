@@ -20,7 +20,7 @@
 *  We use Steve Plimptons communication scheme: we send only along
 *  the main axis of the system, so that corner cells travel twice.
 *  In AR mode, one cell wall (including adjacent corner cells) is not 
-*  needed in the buffer sells.
+*  needed in the buffer cells.
 *
 ******************************************************************************/
 
@@ -37,7 +37,6 @@ void send_cells(void (*copy_func)  (int, int, int, int),
   MPI_Request reqnorth[2],  reqsouth[2];
 
   empty_mpi_buffers();
-  empty_buffer_cells();
 
   /* exchange north/south */
   if (cpu_dim.y==1) {
@@ -228,7 +227,7 @@ void copy_cell( int j, int k, int l, int m )
   to   = PTR_2D_V(cell_array, l, m, cell_dim);
 
   tmp_n = from->n;
-  if (tmp_n >= to->n_max) {
+  if (tmp_n > to->n_max) {
     to->n = 0;
     alloc_cell(to, tmp_n);
   }
@@ -262,7 +261,7 @@ void pack_cell( msgbuf *b, int j, int k )
     b->data[ b->n++ ] = from->ort Y(i);
     b->data[ b->n++ ] = (real) from->sorte[i];
   }
-  if (b->n_max <= b->n)  error("Buffer overflow in copy_atoms_force");
+  if (b->n_max < b->n)  error("Buffer overflow in pack_cell");
 }
 
 
@@ -282,7 +281,7 @@ void unpack_cell( msgbuf *b, int j, int k )
 
   tmp_n = (int) b->data[ b->n++ ];
   
-  if (tmp_n >= to->n_max) {
+  if (tmp_n > to->n_max) {
     to->n = 0;
     alloc_cell(to, tmp_n);
   }
@@ -293,7 +292,7 @@ void unpack_cell( msgbuf *b, int j, int k )
     to->ort Y(i) = b->data[ b->n++ ];
     to->sorte[i] = (shortint) b->data[ b->n++ ];
   }
-  if (b->n_max <= b->n) error("Buffer overflow in move_atoms_force");
+  if (b->n_max < b->n) error("Buffer overflow in unpack_cell");
 }
 
 
@@ -323,9 +322,6 @@ void add_forces( int j, int k, int l, int m )
     to->presstens Y(i)      += from->presstens Y(i);
     to->presstens_offdia[i] += from->presstens_offdia[i];
 #endif
-#ifdef ORDPAR
-    to->nbanz[i] += from->nbanz[i];
-#endif
   }
 }
 
@@ -354,11 +350,8 @@ void pack_forces( msgbuf *b, int j, int k )
     b->data[ b->n++ ] = from->presstens Y(i);
     b->data[ b->n++ ] = from->presstens_offdia[i];
 #endif
-#ifdef ORDPAR
-    b->data[ b->n++ ] = (real) from->nbanz[i];
-#endif
   }
-  if (b->n_max <= b->n) error("Buffer overflow in copy_forces.");
+  if (b->n_max < b->n) error("Buffer overflow in pack_forces.");
 }
 
 
@@ -386,9 +379,6 @@ void unpack_forces( msgbuf *b, int j, int k )
     to->presstens Y(i)      += b->data[ b->n++ ];
     to->presstens_offdia[i] += b->data[ b->n++ ];
 #endif
-#ifdef ORDPAR
-    to->nbanz[i] += (shortint) b->data[ b->n++ ];
-#endif
   }
-  if (b->n_max <= b->n) error("Buffer overflow in add_forces.");
+  if (b->n_max < b->n) error("Buffer overflow in unpack_forces.");
 }

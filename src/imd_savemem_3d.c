@@ -12,6 +12,67 @@
 
 #include "imd.h"
 
+
+/******************************************************************************
+*
+* empty buffer cells -- set number of atoms in buffer cells to zero
+*
+******************************************************************************/
+
+void empty_buffer_cells(void)
+{
+  cell *p;
+  int i,j;
+
+#ifdef TWOD
+  /* xz surface */
+  for (i=0; i < cell_dim.x; ++i) {
+    p = PTR_2D_V(cell_array, i, cell_dim.y-1, cell_dim);
+    p->n = 0;
+    p = PTR_2D_V(cell_array, i,            0, cell_dim);
+    p->n = 0;
+  }
+
+  /* yz surface */
+  for (i=0; i < cell_dim.y; ++i) {
+    p = PTR_2D_V(cell_array, cell_dim.x-1, i, cell_dim);
+    p->n = 0;
+    p = PTR_2D_V(cell_array,            0, i, cell_dim);
+    p->n = 0;
+  }
+#else
+  /* empty the buffer cells */
+  /* xy surface */
+  for (i=0; i < cell_dim.x; ++i) 
+    for (j=0; j < cell_dim.y; ++j) {
+      p = PTR_3D_V(cell_array, i, j, cell_dim.z-1, cell_dim);
+      p->n = 0;
+      p = PTR_3D_V(cell_array, i, j,            0, cell_dim);
+      p->n = 0;
+    }
+
+  /* xz surface */
+  for (i=0; i < cell_dim.x; ++i) 
+    for (j=0; j < cell_dim.z; ++j) {
+      p = PTR_3D_V(cell_array, i, cell_dim.y-1, j, cell_dim);
+      p->n = 0;
+      p = PTR_3D_V(cell_array, i,            0, j, cell_dim);
+      p->n = 0;
+    }
+
+  /* yz surface */
+  for (i=0; i < cell_dim.y; ++i) 
+    for (j=0; j < cell_dim.z; ++j) {
+      p = PTR_3D_V(cell_array, cell_dim.x-1, i, j, cell_dim);
+      p->n = 0;
+      p = PTR_3D_V(cell_array,            0, i, j, cell_dim);
+      p->n = 0;
+    }
+#endif
+
+}
+
+
 /******************************************************************************
 *
 *  global_cell_coord computes the global coordinates of a cell from the

@@ -397,7 +397,7 @@ void setup_buffers(void)
 	(NULL == send_buf_west.data ) ||
 	(NULL == recv_buf_east.data ) ||
 	(NULL == recv_buf_west.data )) 
-        error("Can't allocate east/west buffer.");
+        error("Cannot allocate east/west buffer.");
 
     send_buf_east.n_max = size_east;
     send_buf_west.n_max = size_east;
@@ -427,7 +427,7 @@ void setup_buffers(void)
 	(NULL == send_buf_south.data ) ||
 	(NULL == recv_buf_north.data ) ||
 	(NULL == recv_buf_south.data )) 
-        error("Can't allocate north/south buffer.");
+        error("Cannot allocate north/south buffer.");
 
     send_buf_north.n_max = size_north;
     send_buf_south.n_max = size_north;
@@ -459,7 +459,7 @@ void setup_buffers(void)
 	(NULL == send_buf_down.data ) ||
 	(NULL == recv_buf_up.data ) ||
 	(NULL == recv_buf_down.data )) 
-        error("Can't allocate up/down buffer.");
+        error("Cannot allocate up/down buffer.");
 
     send_buf_up.n_max   = size_up;
     send_buf_down.n_max = size_up;
@@ -467,66 +467,6 @@ void setup_buffers(void)
     recv_buf_down.n_max = size_up;
   }
 
-#endif
-
-}
-
-
-/******************************************************************************
-*
-* empty buffer cells -- set number of atoms in buffer cells to zero
-*
-******************************************************************************/
-
-void empty_buffer_cells(void)
-{
-  cell *p;
-  int i,j;
-
-#ifdef TWOD
-  /* xz surface */
-  for (i=0; i < cell_dim.x; ++i) {
-    p = PTR_2D_V(cell_array, i, cell_dim.y-1, cell_dim);
-    p->n = 0;
-    p = PTR_2D_V(cell_array, i,            0, cell_dim);
-    p->n = 0;
-  }
-
-  /* yz surface */
-  for (i=0; i < cell_dim.y; ++i) {
-    p = PTR_2D_V(cell_array, cell_dim.x-1, i, cell_dim);
-    p->n = 0;
-    p = PTR_2D_V(cell_array,            0, i, cell_dim);
-    p->n = 0;
-  }
-#else
-  /* empty the buffer cells */
-  /* xy surface */
-  for (i=0; i < cell_dim.x; ++i) 
-    for (j=0; j < cell_dim.y; ++j) {
-      p = PTR_3D_V(cell_array, i, j, cell_dim.z-1, cell_dim);
-      p->n = 0;
-      p = PTR_3D_V(cell_array, i, j,            0, cell_dim);
-      p->n = 0;
-    }
-
-  /* xz surface */
-  for (i=0; i < cell_dim.x; ++i) 
-    for (j=0; j < cell_dim.z; ++j) {
-      p = PTR_3D_V(cell_array, i, cell_dim.y-1, j, cell_dim);
-      p->n = 0;
-      p = PTR_3D_V(cell_array, i,            0, j, cell_dim);
-      p->n = 0;
-    }
-
-  /* yz surface */
-  for (i=0; i < cell_dim.y; ++i) 
-    for (j=0; j < cell_dim.z; ++j) {
-      p = PTR_3D_V(cell_array, cell_dim.x-1, i, j, cell_dim);
-      p->n = 0;
-      p = PTR_3D_V(cell_array,            0, i, j, cell_dim);
-      p->n = 0;
-    }
 #endif
 
 }

@@ -194,7 +194,7 @@ void main_loop(void)
     send_atoms_by_cell();
 #else
     if ((0 == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
-    send_cells(copy_cell,pack_cell,unpack_cell,1);
+    send_cells(copy_cell,pack_cell,unpack_cell);
 #endif
 #ifdef TIMING
     imd_stop_timer(&time_force_comm);
@@ -432,7 +432,6 @@ void fix_cells(void)
 
 #ifdef MPI
   empty_mpi_buffers();
-  empty_buffer_cells();
 #endif
 
   /* for each cell in bulk */
