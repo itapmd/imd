@@ -3,25 +3,18 @@
 
    COMPILATION:  
 
-       gcc -O -o imd2ppm [-DEPOT] [-DHEAT] [-DASCII] imd2ppm.c -lm
-
-       OPTIONS:
-
-           -DEPOT:   use potential energy for the coloring,
-                     rather than kinetic energy
-
-           -DASCII:  expect ASCII-formatted IMD configuration files 
-                     as input, rather than the binary .pic files
-
-           -DHEAT:   use heat current for the coloring. This requires
-                     -DASCII, and must not be combined with -DEPOT.
+       gcc -O -o imd2ppm imd2ppm.c -lm
 
    USAGE:  
 
-       imd2ppm input Emin Emax x0 y0 b0 h0  b1 h1
+       imd2ppm [-p] [-a] input Emin Emax x0 y0 b0 h0  b1 h1
 
        where:
 
+           -p           use potential energy for the coloring,
+                        rather than kinetic energy
+           -a           expect ASCII-formatted IMD configuration files 
+                        as input, rather than the binary .pic files
            input        name of input file (output = input.ppm)
            Emin, Emax   bounderies of energy interval for coloring
            x0 y0        lower left corner of selected range in user coords
@@ -32,8 +25,8 @@
    INPUT FORMAT:
 
        Input files can be ASCII-formatted IMD configuration files
-       (compilation switch -DASCII), or binary .pic files. The latter
-       consist of structs of the following form:
+       (flag -a), or binary .pic files. The latter consist of 
+       structs of the following form:
 
        struct { 
            float    pos_x, pos_y, E_kin, E_pot;
@@ -155,6 +148,8 @@ int main (int argc, char **argv)
   double   Emin, Emax, E, H;
   double   fl_t;
 
+  int      ascii=0, epot=0;  /* default is .pic files, Ekin for coloring */
+
   int      dx,dy,pointok,vectorok,num;
 
   int      maxcolor = 255;
@@ -190,24 +185,32 @@ typedef       int integer;
   double  dE,val,red,green,blue,dummy,sat_r,sat_g,sat_b;
   int     t,maxc,ind;
 
+  while ((argc > 1) && (argv[1][0] =='-')) {
+    if (argv[1][1]=='a') {
+      ascii=1;
+      argc--;
+      argv++;
+    }
+    else if (argv[1][1]=='p') {
+      epot=1;
+      argc--;
+      argv++;
+    }
+  }
+
   if (argc < 10) {
-     printf("\n------> not enough parameters <----- \n");
-     printf("Infile Emin Emax x0 y0 b0 h0 b1 h1\n\n");
-     exit(1);
+    printf("Usage: imd2ppm [-p] [-a] Infile Emin Emax x0 y0 b0 h0 b1 h1\n");
+    exit(1);
   }
 
   sourcename = argv[1];
   targetname = malloc( strlen(sourcename)+9 );
   strcpy(targetname,sourcename);
-#ifdef EPOT
-  strcat(targetname,".pot.ppm");
-#else
-#ifdef HEAT
-  strcat(targetname,".heat.ppm");
-#else
-  strcat(targetname,".kin.ppm");
-#endif
-#endif
+  if (epot) {
+    strcat(targetname,".pot.ppm");
+  } else {
+    strcat(targetname,".kin.ppm");
+  }
   sscanf(argv[2], "%lf", &Emin);
   sscanf(argv[3], "%lf", &Emax); 
   sscanf(argv[4], "%lf", &x0);
@@ -257,52 +260,46 @@ typedef       int integer;
   if ( NULL == source ) {
      printf("input file not found\n");
      return 1;
-  };
+  }
+
+  /* eat header in .pic files */
+  if (0==ascii) {
+    do {
+      fgets(rbuf,sizeof(rbuf),source);
+    } while (rbuf[2]!='E');
+  }
 
   do   /* read one atom at a time */
   {
-
-#ifdef ASCII /* input in ASCII format */
-
-    rbuf[0] = (char) NULL;
-    fgets(rbuf,sizeof(rbuf),source);
-    while ('#'==rbuf[0]) fgets(rbuf,sizeof(rbuf),source); /* eat comments */
-    p = sscanf(rbuf,"%d %d %lf %lf %lf %lf %lf %lf %lf",
-	            &num,&t,&mass,&x,&y,&vx,&vy,&E,&H);
-#ifdef EPOT
-    /* keep the potential energy in variable E to compute the color */
-    if (p<8) break; 
-#else
-#ifdef HEAT
-    if (p<9) break;
-    /* compute the color using the heat current */
-    E = H;
-#else
-    if (p<7) break;
-    /* compute the color using the kinetic energy */
-    E = 0.5 * mass * (vx*vx + vy*vy); 
-#endif
-#endif
-
-#else /* not ASCII - binary .pic input format */
-
-#ifdef HEAT
-    printf("Error: heat current pictures from .pic files not yet supported\n");
-    exit(1);
-#endif
-
-    if (1 != fread( &picbuf, sizeof( picbuf ), 1, source ) ) break;
-
-    t  = picbuf.type;
-    x  = picbuf.pos_x;
-    y  = picbuf.pos_y;
-#ifdef EPOT
-    E  = picbuf.E_pot;   /* compute the color using the kinetic energy */
-#else
-    E  = picbuf.E_kin;   /* compute the color using the potential energy */
-#endif
-
-#endif /* ASCII */
+    /* input in ASCII format */
+    if (ascii) {
+      rbuf[0] = (char) NULL;
+      fgets(rbuf,sizeof(rbuf),source);
+      while ('#'==rbuf[0]) fgets(rbuf,sizeof(rbuf),source); /* eat comments */
+      p = sscanf(rbuf,"%d %d %lf %lf %lf %lf %lf %lf",
+	              &num,&t,&mass,&x,&y,&vx,&vy,&E);
+      if (epot) {
+        /* keep the potential energy in variable E to compute the color */
+        if (p<8) break; 
+      }
+      else {
+        if (p<7) break;
+        /* compute the color using the kinetic energy */
+        E = 0.5 * mass * (vx*vx + vy*vy); 
+      }
+    } 
+    /* not ASCII - binary .pic input format */
+    else { 
+      if (1 != fread( &picbuf, sizeof( picbuf ), 1, source ) ) break;
+      t  = picbuf.type;
+      x  = picbuf.pos_x;
+      y  = picbuf.pos_y;
+      if (epot) {
+        E  = picbuf.E_pot;   /* compute the color using the kinetic energy */
+      } else {
+        E  = picbuf.E_kin;   /* compute the color using the potential energy */
+      }
+    }
 
     dE = Emax-Emin;
 

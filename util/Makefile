@@ -71,6 +71,10 @@ cutpot: cutpot.c
 imd_power: fft.c imd_power.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ imd_power.c -lm
 
+#imd2ppm
+imd2ppm: imd2ppm.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ imd2ppm.c -lm
+
 
 ############################################################################
 #
@@ -95,7 +99,7 @@ dist2hist: ${DISTSOURCE} dist2hist.c
 dist_extract: ${DISTSOURCE} dist_extract.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ dist_extract.c -lm
 
-# quick hack; needs to be replaced by better version
+# quick hack; superseeded by dist2volume
 dist2rvf: dist2rvf.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ dist2rvf.c -lm
 
