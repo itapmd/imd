@@ -81,10 +81,10 @@ void write_header_xvf( FILE *fp, float_dist_t *fl,
   ui = dz; copy_4_bytes(str,&ui);     str +=4;   /* dim_z */
   ui = nf; copy_4_bytes(str,&ui);     str +=4;   /* number of frames */
   uc =  8; (unsigned char) *str = uc; str++;     /* bits per voxel */
-  f  = fl->sx; copy_4_bytes(str,&fl); str +=4;   /* x-length of voxel */
-  f  = fl->sy; copy_4_bytes(str,&fl); str +=4;   /* y-length of voxel */
-  f  = fl->sz; copy_4_bytes(str,&fl); str +=4;   /* z-length of voxel */
-  f  = 1.0; copy_4_bytes(str,&fl);    str +=4;   /* secs per frame */
+  f  = fl->sx; copy_4_bytes(str,&f);  str +=4;   /* x-length of voxel */
+  f  = fl->sy; copy_4_bytes(str,&f);  str +=4;   /* y-length of voxel */
+  f  = fl->sz; copy_4_bytes(str,&f);  str +=4;   /* z-length of voxel */
+  f  = 1.0; copy_4_bytes(str,&f);     str +=4;   /* secs per frame */
   us =   0; copy_2_bytes(str,&us);    str +=2;   /* number of transf. func. */
   us =   0; copy_2_bytes(str,&us);    str +=2;   /* type of transf. func. */
   if (48!=fwrite(header, sizeof(char), 48, fp)) error("Cannot write header!");
