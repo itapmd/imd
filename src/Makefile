@@ -48,7 +48,8 @@ SOURCES       = imd.c imd_maxwell.c imd_integrate.c imd_forces.c \
 	        imd_misc.c imd_param.c imd_alloc.c
 SOURCES2D     = ${SOURCES} imd_main_2d.c imd_io_2d.c imd_geom_2d.c \
 		imd_pictures_2d.c
-SOURCES3D     = ${SOURCES} imd_main_3d.c imd_io_3d.c imd_geom_3d.c
+SOURCES3D     = ${SOURCES} imd_main_3d.c imd_io_3d.c imd_geom_3d.c \
+		imd_pictures_3d.c
 
 RISCSOURCES2D = imd_main_risc_2d.c
 RISCSOURCES3D = imd_main_risc_3d.c
