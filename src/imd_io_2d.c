@@ -437,6 +437,10 @@ void write_config(int steps)
 
   fzhlr = steps / rep_interval;
 
+  /* first make sure that every atom is inside the box and on the right CPU */
+  do_boundaries();
+  fix_cells();
+
   /* write checkpoint */
   write_config_select(fzhlr,"chkpt",write_cell);
 
