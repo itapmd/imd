@@ -1,6 +1,6 @@
 <HTML>
 <HEAD>
-   <TITLE>Limitations of the current implemetation of IMD</TITLE>
+   <TITLE>Limitations of the current implementation of IMD</TITLE>
 </HEAD>
 <BODY BGCOLOR="#FFFFFF">
 
@@ -33,6 +33,11 @@ capabilities. There are probably no such feature left :-)
 The type of <B>interaction</B> (pair potentials, EAM potentials, 
 two- and three-body potentials) is global to an entire IMD executable.
 The potential tables can not be changed during a simulation.
+<P>
+The option <B>stress_tens</B> is not implemented for three body
+potentials. The option is limited to the diagonal part of the stress
+tensor, and the stress tensor distribution is averaged over the y- and
+z-coordinate (in 3d).
 <P>
 <A HREF="imd.html">Back to IMD User's Guide</A> 
 
