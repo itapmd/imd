@@ -3,6 +3,7 @@ void read_parameters(int argc,char **argv);
 void usage(void);
 void make_picture(void);
 void draw_scene(int scene_type);
+void draw_scene_wrapper(int scene_type);
 void compute_bonds(void);
 void init_graph(void);
 void display_help(void);

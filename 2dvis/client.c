@@ -61,22 +61,25 @@ int receive_conf()
     iendian(&anz);
   }
 
-  nummer = (int *)calloc(anz, sizeof(int));
-  sorte  = (short int *)calloc(anz, sizeof(int));
-  masse  = (double *)calloc(anz, sizeof(double));
-  x      = (double *)calloc(anz, sizeof(double));
-  y      = (double *)calloc(anz, sizeof(double));
+  if (allocated==0) {
+    allocated=1;
+    nummer = (int *)calloc(anz, sizeof(int));
+    sorte  = (short int *)calloc(anz, sizeof(int));
+    masse  = (double *)calloc(anz, sizeof(double));
+    x      = (double *)calloc(anz, sizeof(double));
+    y      = (double *)calloc(anz, sizeof(double));
 #ifndef TWOD
-  z      = (double *)calloc(anz, sizeof(double));
+    z      = (double *)calloc(anz, sizeof(double));
 #endif
-  vx     = (double *)calloc(anz, sizeof(double));
-  vy     = (double *)calloc(anz, sizeof(double));
+    vx     = (double *)calloc(anz, sizeof(double));
+    vy     = (double *)calloc(anz, sizeof(double));
 #ifndef TWOD
-  vz     = (double *)calloc(anz, sizeof(double));
+    vz     = (double *)calloc(anz, sizeof(double));
 #endif
-  pot    = (double *)calloc(anz, sizeof(double));
-  kin    = (double *)calloc(anz, sizeof(double));
-  bcode  = (int    *)calloc(anz, sizeof(double));
+    pot    = (double *)calloc(anz, sizeof(double));
+    kin    = (double *)calloc(anz, sizeof(double));
+    bcode  = (int    *)calloc(anz, sizeof(double));
+  }
 
   size=anz*sizeof(int);
   ReadFull(socket_id,(void *) &nummer[0], size);

@@ -12,9 +12,7 @@
 
 int main(int argc, char **argv)
 {
-  float xloc,yloc,xlocold,ylocold,delta;
-  char ch;
-  int mkey;
+  int i;
   char fname[255];
 
   /* inits */
@@ -39,11 +37,6 @@ void init_graph(void) {
   color(BLACK);
   clear();
   polyfill(1);
-
-  for (i=0;i<COLRES;i++)
-    mapcolor(i+10,i,0,245-i);
-
-
 
 }
 
@@ -81,6 +74,19 @@ void draw_text(void) {
   printf("%s\n%s\n%s\n", str1,str2,str3);fflush(stdout);
 }
 
+void draw_scene_wrapper(int scene_type) {
+  char ch,mkey;
+  float xloc,yloc;
+
+  do {
+    if (movie_mode)
+      connect_client(9);
+    draw_scene(scene_type);
+    if (ch = checkkey()) { movie_mode=0; break;}
+    if (mkey = slocator(&xloc, &yloc)) { movie_mode=0;break;}
+  }
+  while(movie_mode);
+}
 
 /* draw_scene - what a name */
 void draw_scene(int scene_type) {
@@ -109,9 +115,9 @@ void draw_scene(int scene_type) {
       ixx=(i-iyy) / y_res;
       xx=(float)(ixx)*scalex-1;
       yy=(float)(iyy)*scaley-1;
-      if (eng_mode)
+      if (col_mode==2)
 	cv=(int)floor(scalekin*(kinarray[i]-offskin));
-      else
+      if (col_mode==3)
 	cv=(int)floor(scalepot*(potarray[i]-offspot));
       color(cv+10);
       rect(xx,yy,xx+scalex,yy+scaley);
@@ -121,10 +127,10 @@ void draw_scene(int scene_type) {
   /* now configuration */ 
   if ((scene_type==0)&&(atom_mode==1)) {
     for (i=0;i<natoms;i++) {
-      xx=(x[i]-minx)*scalex-1;
-      yy=(y[i]-miny)*scaley-1;
+      xx=(x[i]-minx)*scalex-1.0;
+      yy=(y[i]-miny)*scaley-1.0;
 #ifndef TWOD
-      zz=(z[i]-minz)*scalez-1;
+      zz=(z[i]-minz)*scalez*-1.0;
       zz*=.2; /* looks better */
 #endif
       switch(col_mode) {
@@ -135,15 +141,18 @@ void draw_scene(int scene_type) {
 	color(sorte[i]+1);
 	break;
       case 2: 
-	cv=(int)(scalepot*(pot[i]+offspot));
-	color(i+8);
+	cv=(int)(scalepot*(pot[i]-offspot));
+	color(cv+10);
 	break;
       case 3: 
-	cv=(int)(scalekin*(kin[i]+offskin));
-	color(i+8);
+	cv=(int)(scalekin*(kin[i]-offskin));
+	color(cv+10);
 	break;
       case 4:
 	color(nb+1);
+	break;
+      case 5:
+	color(nummer[i]<0?YELLOW:BLUE);
 	break;
       }
 
@@ -184,7 +193,7 @@ void draw_scene(int scene_type) {
 	draw(xx+.01,yy+.01,zz+.01);
 	closepoly();
 #else
-	circle(xx,yy,radius*scalex);
+	circle(xx,yy,.01);
 #endif
       } /* radius encoding */
     } /* for i= */
@@ -293,8 +302,8 @@ void draw_bonds() {
 #else
 	  dr=dx*dx+dy*dy;
 #endif
-	  if (ABS(dr)>maxbl) continue;
-	  if (ABS(dr)<minbl) continue;
+	  if (ABS(dr)>1.1) continue;
+	  if (ABS(dr)<.9) continue;
 #ifndef TWOD
 	  move(xx,yy,zz);
 	  draw(xxj,yyj,zzj);

@@ -238,6 +238,7 @@ int ColorEncodingDialog(char *MessageText) {
        "pot. energy",
        "kin. energy",
        "#neighbours",
+       "   number  ",
        0
   };
   int values[] = {
@@ -245,7 +246,8 @@ int ColorEncodingDialog(char *MessageText) {
        2,
        3,
        4,
-       5
+       5,
+       6
   };
   static DialogButtonType buttons[] =
   { { "defaultButton", "     OK     ", CB_OK, (XtPointer) OK_BUTTON, NULL }};

@@ -51,16 +51,16 @@ XtEventHandler release_event(Widget w,struct drag_struct *drag,XButtonEvent *ev)
   switch(button) {
   case 1: 
     translate(dx*.01,-dy*.01,.000001);
-    draw_scene(scene_type);
+    draw_scene_wrapper(scene_type);
     break;
   case 2: 
     rotate(dx*.1,'y');
     rotate(dy*.1,'x');
-    draw_scene(scene_type);
+    draw_scene_wrapper(scene_type);
     break;
   case 3: 
     scale(1+d*.01,1+d*.01,1+d*.01);
-    draw_scene(scene_type);
+    draw_scene_wrapper(scene_type);
     break;
   default:
     break;
@@ -69,7 +69,7 @@ XtEventHandler release_event(Widget w,struct drag_struct *drag,XButtonEvent *ev)
 
 void LoadConfiguration(Widget w, XtPointer client, XtPointer call) {
   natoms=read_configuration("tmp.id");
-  draw_scene(0);
+  draw_scene_wrapper(0);
 }
 
 void LoadDistribution(Widget w, XtPointer client, XtPointer call) {
@@ -94,7 +94,7 @@ void GetConfiguration(Widget w, XtPointer client, XtPointer call) {
     printf("No atoms!\n");
     exit(-1);
   }
-  draw_scene(scene_type);
+  draw_scene_wrapper(scene_type);
 }
 
 void GetDistribution(Widget w, XtPointer client, XtPointer call) {
@@ -103,7 +103,7 @@ void GetDistribution(Widget w, XtPointer client, XtPointer call) {
     printf("No distribution!\n");
     exit(-1);
   }
-  draw_scene(scene_type);
+  draw_scene_wrapper(scene_type);
 }
 
 void DisplayAtoms(Widget w, XtPointer client, XtPointer call) {
@@ -111,7 +111,7 @@ void DisplayAtoms(Widget w, XtPointer client, XtPointer call) {
     atom_mode=0;
   else
     atom_mode=1;
-  draw_scene(scene_type);
+  draw_scene_wrapper(scene_type);
 }
 
 void DisplayBonds(Widget w, XtPointer client, XtPointer call) {
@@ -121,7 +121,7 @@ void DisplayBonds(Widget w, XtPointer client, XtPointer call) {
     bond_mode=1;
     read_unit_vectors();
   }
-  draw_scene(scene_type);  
+  draw_scene_wrapper(scene_type);  
 }
 
 void SpecifyHost(Widget w, XtPointer client, XtPointer call) {
@@ -136,50 +136,48 @@ void SpecifyPort(Widget w, XtPointer client, XtPointer call) {
 void ColorEncoding(Widget w, XtPointer client, XtPointer call) {
   int rc;
   rc=ColorEncodingDialog("Color Encoding");
-  if ((rc==4)&&(bond_mode==0))
+  if ((rc==5)&&(bond_mode==0))
     MessageDialog("Geht nicht! Erst Bond-Mode einschalten");
   else
     col_mode=rc-1;
-  draw_scene(scene_type);
+  draw_scene_wrapper(scene_type);
 }
 
 void SizeEncoding(Widget w, XtPointer client, XtPointer call) {
   int rc;
   rc=SizeEncodingDialog("Size Encoding");
   size_mode=rc-1;
-  draw_scene(scene_type);
+  draw_scene_wrapper(scene_type);
 }
 
 void BondMode(Widget w, XtPointer client, XtPointer call) {
   int rc;
   rc=BondModeDialog("Bond Mode");
   bond_mode=rc-1;
-  draw_scene(scene_type);
+  movie_mode=0;
+  draw_scene_wrapper(scene_type);
 }
 
 void QuasiSwitch(Widget w, XtPointer client, XtPointer call) {
   int rc;
   rc=QuasiSwitchDialog("Quasiperiodic/Periodic");
   qp=rc-1;
-  draw_scene(scene_type);
+  movie_mode=0;
+  draw_scene_wrapper(scene_type);
 }
 
 void Movie(Widget w, XtPointer client, XtPointer call) {
-  char ch,mkey;
-  float xloc,yloc;
-  while(1) {
-    if (scene_type)
-      connect_client(T_DIST);
-    else
-      connect_client(T_CONF);
-    draw_scene(scene_type);
-    if (ch = checkkey()) break;
-    if (mkey = slocator (&xloc, &yloc)) break;
-  }
+  if (movie_mode)
+    movie_mode=0;
+  else
+    movie_mode=1;
+  draw_scene_wrapper(scene_type);
 }
 
 void SelectTemperature(Widget w, XtPointer client, XtPointer call) {
   TemperatureDialog("Select Temperature");
+  movie_mode=0;
+  draw_scene_wrapper(scene_type);
 }
 
 void Quit(Widget w, XtPointer client, XtPointer call) {
@@ -436,6 +434,10 @@ void window_main(int argc, char **argv) {
 
   vo_xt_window(dpy, win, 512, 512);
   vinit("X11");
+
+  for (n=0;n<245;n++)
+    mapcolor(n+10,n,0,245-n);
+
 
   /*  MessageDialog("Welcome to Beavis!");*/
 
