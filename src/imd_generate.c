@@ -20,6 +20,8 @@
 * but a crystal structure to generate as an initial configuration:
 *
 * _fcc      -- generates fcc structure
+* _bcc      -- generates fcc structure
+* _b2       -- generates B2 structure
 * _nacl     -- generates binary nacl structure (atom type 0 and 1)
 * _tiqc     -- generates a truncated icosahedra quasicrystal
 * _hex      -- generates 2D hexagonal crystal
@@ -67,6 +69,10 @@ void generate_atoms(str255 mode)
     init_cubic();
     init_cells();
     generate_fcc(2);
+  } else if (0 == strcmp(mode,"_b2")) {  /* B2 */
+    init_cubic();
+    init_cells();
+    generate_fcc(3);
   } else if (0 == strcmp(mode,"_lav")) {   /* Laves */
     init_cubic();
     init_cells();
@@ -257,6 +263,17 @@ void generate_fcc(int maxtyp)
       for (z=min.z; z<max.z; z++) {
  
         typ  = (x+y+z) % 2;
+
+        if (maxtyp ==3) {
+          if ((z%2==0)&&(y%2==0)&&(x%2==0)) {
+             typ=0;
+          }
+          else if ((z%2==1)&&(y%2==1)&&(x%2==1)) {
+             typ=1;
+          }
+          else
+            continue;
+        }
 
         /* bcc case - all atoms get typ 0 */
         if (maxtyp == 2) {
