@@ -24,4 +24,66 @@ the mass unit is 1&nbsp;amu = 1.6605e-27&nbsp;kg, we have for the unit
 of time 1.018e-14&nbsp;s = 10.18&nbsp;fs. The unit of pressure then 
 is 160.2&nbsp;GPa = 1602&nbsp;kbar.</p> 
 
+<h3><a id="timestep" name="timestep">Time step</h3>
+
+<p>
+For simulating a solid, a time step of 1 femtosecond is usually a
+good starting point. Whether a certain time step is a reasonable
+choice can be checked by making an NVE simulation for some 10000
+time steps, with <tt>eng_int</tt> set to 1 (writing the energy at
+every time step). The resulting .eng file can then be Fourier
+transformed with the utility program <a href="util_misc.html#imd_power">
+imd_power</a>, revealing the frequency spectrum of the fluctuations of
+the kinetic energy and other quantities. If the mode with the highest 
+essential frequency omega_max in that spectrum shall be tracked with, 
+say, 30 time steps, then the time step must satisfy 2*pi/30*omega_max. 
+If the initial time step was too small, this procedure should be 
+repeated.</p> 
+
+<h3><a id="temp_control" name="temp_control">
+Time constant for temperature control</h3>
+
+<p>
+The <a href="ensembles.html#ensembles">integrators</a> nvt, npt_iso, 
+and npt_axial offer a Nose-Hoover thermostat, which requires a time 
+constant <tt>inv_tau_eta</tt> to be set appropriately. This time 
+constant defines another frequency in the system; in order for the 
+thermostat to work well, it must couple effectively to the native 
+freqency spectrum of the system. A good estimate for a suitable 
+value of <tt>inv_tau_eta</tt> can be obtained in an 
+<a href="ensembles.html#ensembles">NVE simulation</a> with the compile 
+option <a href="options.html#einstein">einstein</a> switched on. 
+The Einstein frequency is then written to the <tt>.eng</tt> file,
+whose average (or two thirds thereof) can be used as an initial
+value of <tt>inv_tau_eta</tt>. With that value, an 
+<a href="ensembles.html#ensembles">NVT simulation</a>
+should then be performed, and the frequency spectrum analysed with
+the utility program <a href="util_misc.html#imd_power">imd_power</a>.
+With a bad choice of <tt>inv_tau_eta</tt>, an extra peak outside
+the native frequency spectrum is visible, whose position is
+proportional to <tt>inv_tau_eta</tt>, which can then be corrected
+accordingly. For a good choice of <tt>inv_tau_eta</tt>, the frequency
+spectrum is only slighly distorted. The optimal value of 
+<tt>inv_tau_eta</tt> is usually not very critical, and changes only
+slowly with temperature and pressure.</p>
+
+<h3><a id="press_control" name="press_control">
+Time constant for pressure control</h3>
+
+<p>
+Besides a time constant for temperature control (which should be
+determined first and then kept fixed), the 
+<a href="ensembles.html#ensembles">ensembles</a> npt_iso and 
+npt_axial also require a time constant for pressure
+control, <tt>inv_tau_xi</tt>. Its determination is analoguous
+to the determination of <tt>inv_tau_eta</tt>, except that here
+one looks at pressure fluctuations. Also, there is no analogue
+of the Einstein frequency as initial guess, so that some 
+experimentation is necessary. One usually obtains a very large 
+and sharp peak in the fluctuation spectrum, which suggests how 
+to change <tt>inv_tau_xi</tt>. It is in fact not so easy to find 
+a value for which there is no large extra peak in the spectrum. 
+The value of <tt>inv_tau_xi</tt> needs to be determined much 
+more precisely than <tt>inv_tau_eta</tt>. </p>
+
 <!--#include virtual="imdfoot.html" -->

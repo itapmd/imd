@@ -16,6 +16,11 @@ relaxation simulations</a>, and some <a href="#specialint"> special
 purpose integrators</a> for the simulation of fracture, shear flow, 
 or heat conduction.</p>
 
+<p>
+Each integrator requires the use of a suitable 
+<a href="units.html#timestep">time step</a>.
+</p>
+
 <h2><a id="ensembles" name="ensembles">
 Thermodynamic Ensembles</a></h2>
 
@@ -37,12 +42,12 @@ Nos&eacute;-Hoover thermostat (more precisely, this is an
 ensemble with external temperature control - the temperature
 can actually vary during the simulation). The imposed temperature
 varies linearly from starttemp to endtemp (parameters).
-A further required parameter is the time constant of the
-temperature control, tau_eta. Alternatively, the inverse
-of tau_eta, inv_tau_eta, can be specified. For historical
-reasons, even the squared inverse isq_tau_eta is accepted.
-inv_tau_eta or isq_tau_eta can be zero, which means constant
-energy simulation (nve). 
+A further required parameter is the <a href="units.html#temp_control">
+time constant of the temperature control</a>, tau_eta. 
+Alternatively, the inverse of tau_eta, inv_tau_eta, can be specified. 
+For historical reasons, even the squared inverse isq_tau_eta is 
+accepted. inv_tau_eta or isq_tau_eta can be zero, which means 
+constant energy simulation (nve). 
 If the option <a href="uniax.html">UNIAX</a> is switched on, an 
 additional parameter tau_eta_rot is required. It provides the 
 time constant for the coupling to the heat bath adjusting the 
@@ -72,12 +77,13 @@ simplyfied implementation of ftg.</p></dd>
 <p>
 Constant pressure, constant temperature ensemble, with isotropic 
 volume scaling. Nos&eacute;-Hoover type thermostat and volume control 
-are employed. Temperature control is as in nvt, with the same parameters.
-(Again, if the option  <a href="uniax.html">UNIAX</a>
-is switched on, an additional parameter tau_eta_rot is required.)
-The pressure varies linearly from pressure_start to pressure_end
-(parameters). A time constant for the pressure control, tau_xi,
-or its inverse inv_tau_xi, or its squared inverse, isq_tau_xi, 
+are employed. <a href="units.html#temp_control">Temperature control</a> 
+is as in nvt, with the same parameters. (Again, if the option  
+<a href="uniax.html">UNIAX</a> is switched on, an additional 
+parameter tau_eta_rot is required.) The pressure varies linearly 
+from pressure_start to pressure_end (parameters). A 
+<a href="units.html#press_control">time constant for pressure control</a>, 
+tau_xi, or its inverse inv_tau_xi, or its squared inverse, isq_tau_xi, 
 is required as a parameter. If inv_tau_xi or isq_tau_xi is zero, 
 the volume remains constant. The cell subdivision includes a 
 rescaling tolerance cell_size_tol (parameter), which defaults to 
