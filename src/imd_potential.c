@@ -649,7 +649,7 @@ void pair_int3(real *pot, real *grad, int *is_short, pot_table_t *pt,
   /* check for distances shorter than minimal distance in table */
   /* we need one extra value at the lower end for interpolation */
   r2a = MIN(r2,pt->end[col]);
-  r2a = r2a - pt->begin[col] + pt->step[col];
+  r2a = r2a - pt->begin[col] - pt->step[col];
   if (r2a < 0) {
     r2a = 0;
     *is_short = 1;
@@ -739,7 +739,7 @@ void val_func3(real *val, int *is_short, pot_table_t *pt,
   /* check for distances shorter than minimal distance in table */
   /* we need one extra value at the lower end for interpolation */
   r2a = MIN(r2,pt->end[col]);
-  r2a = r2a - pt->begin[col] + pt->step[col];
+  r2a = r2a - pt->begin[col] - pt->step[col];
   if (r2a < 0) {
     r2a = 0;
     *is_short = 1;
@@ -822,7 +822,7 @@ void deriv_func3(real *grad, int *is_short, pot_table_t *pt,
   /* check for distances shorter than minimal distance in table */
   /* we need one extra value at the lower end for interpolation */
   r2a = MIN(r2,pt->end[col]);
-  r2a = r2a - pt->begin[col] + pt->step[col];
+  r2a = r2a - pt->begin[col] - pt->step[col];
   if (r2a < 0) {
     r2a = 0;
     *is_short = 1;
