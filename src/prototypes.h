@@ -154,7 +154,6 @@ void do_forces_eam_2(cell *p, cell *q, vektor pbc);
 #ifdef TTBP
 void do_forces_ttbp_1(cell *p, cell *q, vektor pbc);
 void do_forces_ttbp_2(cell *p, cell *q, vektor pbc);
-void do_forces_ttbp_3(cell *p, cell *q, vektor pbc);
 void read_ttbp_potential(str255 ttbp_potfilename);
 #endif
 

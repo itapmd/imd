@@ -349,7 +349,7 @@ EXTERN unsigned long varIP INIT(0);
 /* EAM stuff */
 #ifdef EAM
 /* neighborlist for EAM forces in 2D array */
-EXTERN integer *eam_ij INIT(NULL);  	/* neighbor array */
+EXTERN real *eam_ij    INIT(NULL);  /* neighbor array */
 EXTERN integer eam_len INIT(50);  	/* max neighbors */
 EXTERN real *eam_rho   INIT(NULL);	/* cohesive function density (Finnis/Sinclair) */
 EXTERN real *eam_dij_x INIT(NULL);	/* distance in x direction */
@@ -364,7 +364,7 @@ EXTERN real eam_A      INIT(0.0);	/* EAM cohesive function constant A */
 /* TTBP */
 #ifdef TTBP
 /* neighborlist for TTBP */
-EXTERN integer *ttbp_ij     INIT(NULL); /* neighbor array */
+EXTERN real *ttbp_ij     INIT(NULL); /* neighbor array */
 EXTERN integer ttbp_len     INIT(50);	/* max neighbors */
 EXTERN real *ttbp_j 	    INIT(NULL);	/* position array */
 EXTERN real *ttbp_force     INIT(NULL); /* force array */
