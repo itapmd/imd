@@ -986,7 +986,7 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #endif
-#if defined(GLOK) || defined(DEFORM)
+#if defined(DEFORM)
  else if (strcasecmp(token,"annealsteps")==0) {
       /* max nr of steps between shears */
       getparam("annealsteps",&annealsteps,PARAM_INT,1,1);
@@ -995,6 +995,8 @@ void getparamfile(char *paramfname, int sim)
       /* shear epsilon criterium, see imd_shear_new.c */
       getparam("ekin_threshold",&ekin_threshold,PARAM_REAL,1,1);
     }
+#endif
+#if defined(GLOK)
  else if (strcasecmp(token,"glok_annealsteps")==0) {
       /* number of annealing steps */
       getparam(token,&glok_annealsteps,PARAM_INT,1,1);
@@ -2152,13 +2154,13 @@ void broadcast_params() {
  MPI_Bcast( &delta_finnis     , 1, REAL   , 0, MPI_COMM_WORLD); 
  MPI_Bcast( &zeta_0           , 1, REAL   , 0, MPI_COMM_WORLD); 
 #endif
-#if defined(GLOK) || defined(DEFORM)
- MPI_Bcast( &annealsteps,         1, MPI_INT, 0, MPI_COMM_WORLD); 
- MPI_Bcast( &ekin_threshold,      1, REAL,    0, MPI_COMM_WORLD); 
+#if defined(GLOK)
  MPI_Bcast( &glok_annealsteps,    1, MPI_INT, 0, MPI_COMM_WORLD); 
  MPI_Bcast( &glok_ekin_threshold, 1, REAL,    0, MPI_COMM_WORLD); 
 #endif
 #ifdef DEFORM
+ MPI_Bcast( &annealsteps,         1, MPI_INT, 0, MPI_COMM_WORLD); 
+ MPI_Bcast( &ekin_threshold,      1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &max_deform_int,  1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &deform_size,     1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &fnorm_threshold, 1, REAL,    0, MPI_COMM_WORLD); 
