@@ -135,14 +135,8 @@
 #define PSTEP 50
 #define CSTEP 10
 
-
-
-
-
-
-
-
-
-
-
-
+#if defined(TTBP) || defined(EAM)
+#define BINC 5
+#else
+#define BINC 4
+#endif

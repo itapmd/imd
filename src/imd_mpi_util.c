@@ -75,7 +75,6 @@ void copy_atoms(msgbuf *b, int k, int l, int m)
   int i,j;
   real *ptr;
   cell *from;
-  int  inc = 4;
 
 #ifdef TWOD
   from = PTR_2D_V(cell_array, k, l, cell_dim);
@@ -83,7 +82,7 @@ void copy_atoms(msgbuf *b, int k, int l, int m)
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
 #endif
   
-  if ((b->n_max - inc * CSTEP) < (b->n + inc * from->n)) 
+  if ((b->n_max - BINC * CSTEP) < (b->n + BINC * from->n)) 
     error("Buffer overflow in copy_atoms.");
 
   for (i=0; i<from->n; ++i) {
@@ -94,6 +93,9 @@ void copy_atoms(msgbuf *b, int k, int l, int m)
 #endif
 #ifndef MONOLJ
     b->data[ b->n++ ] = from->sorte[i];
+#endif
+#if defined(TTBP) || defined(EAM)
+	b->data[ b->n++ ] = from->nummer[i];
 #endif
   }
 }
@@ -229,6 +231,11 @@ void process_buffer(msgbuf *b, int mode)
 #ifndef MONOLJ
     input->sorte[0] = b->data[j++];
 #endif
+#if defined(TTBP) || defined(EAM)
+	if (mode == FORCE) {
+      input->nummer[0] = b->data[j++];
+	};
+#endif
 
 #ifdef TWOD
     coord = local_cell_coord( input->ort X(0), input->ort Y(0) );
@@ -320,7 +327,7 @@ void copy_atoms_buf(msgbuf *to, msgbuf *from)
 {
   int i;
 
-  if ((to->n_max - 4 * CSTEP) < (to->n + from->n)) 
+  if ((to->n_max - BINC * CSTEP) < (to->n + from->n)) 
       error("Buffer overflow in copy_buf.");
 
   for (i=0; i<from->n; ++i) 
@@ -369,17 +376,17 @@ void setup_buffers(void)
   largest_cell += CSTEP;
 
 #ifndef TWOD
-  size_east  = largest_cell * cell_dim.y * cell_dim.z * 4;
-  size_north = largest_cell * cell_dim.x * cell_dim.z * 4;
-  size_up    = largest_cell * cell_dim.x * cell_dim.y * 4;
+  size_east  = largest_cell * cell_dim.y * cell_dim.z * BINC;
+  size_north = largest_cell * cell_dim.x * cell_dim.z * BINC;
+  size_up    = largest_cell * cell_dim.x * cell_dim.y * BINC;
 #ifdef DEBUG
   if (0==myid) 
      printf("Max. cell is %d size east %d size north %d size up %d.\n", 
 		      largest_cell,size_east,size_north,size_up);
 #endif
 #else
-  size_east  = largest_cell * cell_dim.y * 4;
-  size_north = largest_cell * cell_dim.x * 4;
+  size_east  = largest_cell * cell_dim.y * BINC;
+  size_north = largest_cell * cell_dim.x * BINC;
 #ifdef DEBUG
   if (0==myid) printf("Max. cell is %d size east %d size north %d.\n", 
 		      largest_cell,size_east,size_north);
