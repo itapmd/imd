@@ -32,6 +32,7 @@
 * _fcc        -- generates FCC structure
 * _bcc        -- generates BCC structure
 * _b2         -- generates B2 structure
+* _l12        -- generates L1_2 structure
 * _nacl       -- generates NaCl structure
 * _diamond    -- generates cubic diamond structure
 * _zincblende -- generates zincblende structure
@@ -86,6 +87,12 @@ void generate_atoms(str255 mode)
   } else if (0 == strcmp(mode,"_zincblende")) { /* zincblende */
     init_cubic();
     generate_fcc(5);
+  } else if (0 == strcmp(mode,"_cu3au")) { /* L1_2, Cu3Au */
+    init_cubic();
+    generate_fcc(6);
+  } else if (0 == strcmp(mode,"_cuau3")) { /* L1_2, CuAu3 */
+    init_cubic();
+    generate_fcc(7);
   } else if (0 == strcmp(mode,"_lav")) {   /* C15 Laves */
     init_cubic();
     generate_lav();
@@ -247,7 +254,7 @@ void generate_fcc(int maxtyp)
   int     x, y, z, typ;
 
   /* conventional unit cell has size box_unit */
-  if (maxtyp < 4) {    /* FCC, BCC, B2, NaCl  */
+  if (maxtyp < 4 || maxtyp==6 || maxtyp==7) {  /* FCC, BCC, B2, NaCl, L1_2 */
     box_param.x *= 2; 
     box_param.y *= 2; 
     box_param.z *= 2; 
@@ -288,6 +295,24 @@ void generate_fcc(int maxtyp)
  
         typ  = (x+y+z) % 2;
 
+	/* L1_2 structure, cuau3 */
+	if (maxtyp == 7) {
+	  if (typ==1) 
+	    continue;
+	  else if (x%2==1 || y%2==1 || z%2==1)
+	    typ = 1;
+	}
+
+	/* L1_2 structure, cu3au */
+	if (maxtyp == 6) {
+	  if (typ==1) 
+	    continue;
+	  else if (x%2==1 || y%2==1 || z%2==1)
+	    typ = 0;
+	  else
+	    typ = 1;
+	}
+
 	/* cubic diamond and zincblende case */
 	if (maxtyp == 4 || maxtyp == 5) {
 	    if ( ((x+y+z)%4==0) && 
@@ -305,7 +330,7 @@ void generate_fcc(int maxtyp)
 	}
 
         /* B2 == CsCl structure */
-        if (maxtyp ==3) {
+        if (maxtyp == 3) {
           if ((z%2==0) && (y%2==0) && (x%2==0)) {
              typ=0;
           }
