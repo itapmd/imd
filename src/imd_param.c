@@ -2150,14 +2150,13 @@ void broadcast_params() {
   if (NULL==deform_shift) 
     error("Cannot allocate memory for deform_shift on client."); 
   MPI_Bcast( deform_shift, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
-  if (0!=myid) shear_def = (int *) malloc( vtypes * sizeof(int) );
-  if (NULL==shear_def) 
-    error("Cannot allocate memory for shear_def on client."); 
-  MPI_Bcast( shear_def, vtypes, MPI_INT, 0, MPI_COMM_WORLD);
-  if (0!=myid) { 
-    for(i=0; i<vtypes; i++)
-      *(shear_def+i) = 0;
+  if (0!=myid) {
+    shear_def = (int *) malloc( vtypes * sizeof(int) );
+    if (NULL==shear_def) 
+      error("Cannot allocate memory for shear_def on client."); 
+    for(i=0; i<vtypes; i++) *(shear_def+i) = 0;
   }
+  MPI_Bcast( shear_def, vtypes, MPI_INT, 0, MPI_COMM_WORLD);
   if (0!=myid) deform_shear = (vektor *) malloc( vtypes * DIM * sizeof(real) );
   if (NULL==deform_shear) 
     error("Cannot allocate memory for deform_shear on client."); 
