@@ -250,6 +250,8 @@ void alloc_cell(cell *thecell, int count)
     newcell.kraft = NULL;
 #ifndef MONOLJ
     newcell.nummer = NULL;
+    newcell.sorte  = NULL;
+    newcell.masse  = NULL;
     newcell.pot_eng= NULL;
 #ifdef DISLOC
     newcell.Epot_ref = NULL;
@@ -258,7 +260,6 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
     newcell.refpos = NULL;
 #endif
-    newcell.sorte  = NULL;
 #ifdef TRANSPORT
     newcell.heatcond = NULL;
 #endif
@@ -266,7 +267,6 @@ void alloc_cell(cell *thecell, int count)
     newcell.presstens = NULL;
     newcell.presstens_offdia = NULL;
 #endif
-    newcell.masse  = NULL;
 #ifdef TTBP
     newcell.neigh  = NULL;
 #endif
@@ -314,8 +314,10 @@ void alloc_cell(cell *thecell, int count)
     newcell.dreh_moment = tmp; tmp += DIM * count;
 #endif
 #ifndef MONOLJ
-        /* Allocate rest of variables */
+    /* Allocate rest of variables */
     newcell.nummer = (integer * ) malloc(count * sizeof(integer) );
+    newcell.sorte  = (shortint* ) malloc(count * sizeof(shortint));
+    newcell.masse  = (real    * ) malloc(count * sizeof(real)    );
     newcell.pot_eng= (real    * ) malloc(count * sizeof(real)    );
 #ifdef DISLOC
     newcell.Epot_ref = (real *) calloc(count,sizeof(real));
@@ -324,8 +326,6 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
     newcell.refpos = (real *) malloc(count*DIM*sizeof(real));
 #endif
-    newcell.sorte  = (shortint* ) malloc(count * sizeof(shortint));
-    newcell.masse  = (real    * ) malloc(count * sizeof(real)    );
 #ifdef TRANSPORT
     newcell.heatcond = (real *) malloc(count*sizeof(real));
 #endif
@@ -345,7 +345,6 @@ void alloc_cell(cell *thecell, int count)
       newcell.neigh[i] = alloc_neightab(newcell.neigh[i], ttbp_len);
     }
 #endif
-    newcell.masse  = (real    * ) malloc(count * sizeof(real)    );
 #ifdef UNIAX
     newcell.traeg_moment  = (real    * ) malloc(count * sizeof(real)    );
     newcell.shape = (real *) malloc(count*DIM*sizeof(real));
@@ -356,6 +355,8 @@ void alloc_cell(cell *thecell, int count)
     if ((NULL == space)
 #ifndef MONOLJ
         || (NULL == newcell.nummer)
+        || (NULL == newcell.sorte)
+        || (NULL == newcell.masse)
         || (NULL == newcell.pot_eng)
 #ifdef DISLOC
         || (NULL == newcell.Epot_ref)
@@ -364,8 +365,6 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
         || (NULL == newcell.refpos)
 #endif
-        || (NULL == newcell.sorte)
-        || (NULL == newcell.masse)
 #ifdef TRANSPORT
         || (NULL == newcell.heatcond)
 #endif
@@ -373,7 +372,6 @@ void alloc_cell(cell *thecell, int count)
         || (NULL == newcell.presstens)
         || (NULL == newcell.presstens_offdia)
 #endif
-        || (NULL == newcell.masse)
 #ifdef UNIAX
         || (NULL == newcell.traeg_moment)
 	|| (NULL == newcell.shape)
@@ -413,6 +411,8 @@ void alloc_cell(cell *thecell, int count)
       memcpy(newcell.kraft , thecell->kraft,  thecell->n * DIM * sizeof(real));
 #ifndef MONOLJ
       memcpy(newcell.nummer,  thecell->nummer,  thecell->n * sizeof(integer));
+      memcpy(newcell.sorte ,  thecell->sorte,   thecell->n * sizeof(shortint));
+      memcpy(newcell.masse ,  thecell->masse,   thecell->n * sizeof(real));
       memcpy(newcell.pot_eng, thecell->pot_eng, thecell->n * sizeof(real));
 #ifdef DISLOC
       memcpy(newcell.Epot_ref, thecell->Epot_ref, 
@@ -423,8 +423,6 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
       memcpy(newcell.refpos, thecell->refpos, thecell->n * DIM * sizeof(real));
 #endif
-      memcpy(newcell.sorte ,  thecell->sorte,   thecell->n * sizeof(shortint));
-      memcpy(newcell.masse ,  thecell->masse,   thecell->n * sizeof(real));
 #ifdef TRANSPORT
       memcpy(newcell.heatcond,  thecell->heatcond,  thecell->n * sizeof(real));
 #endif
@@ -434,16 +432,18 @@ void alloc_cell(cell *thecell, int count)
       memcpy(newcell.presstens_offdia, thecell->presstens_offdia, 
              thecell->n * DIM * sizeof(real));
 #endif
-      memcpy(newcell.masse ,  thecell->masse,   thecell->n * sizeof(real));
 #ifdef UNIAX
-      memcpy(newcell.traeg_moment ,  thecell->traeg_moment,  thecell->n * sizeof(real));
+      memcpy(newcell.traeg_moment, thecell->traeg_moment, 
+                               thecell->n * sizeof(real));
       memcpy(newcell.achse , thecell->achse,  thecell->n * DIM * sizeof(real));
       memcpy(newcell.shape, thecell->shape, 
                                thecell->n * DIM * sizeof(real));
       memcpy(newcell.pot_well, thecell->pot_well, 
                                thecell->n * DIM * sizeof(real));
-      memcpy(newcell.dreh_impuls , thecell->dreh_impuls,  thecell->n * DIM * sizeof(real));
-      memcpy(newcell.dreh_moment , thecell->dreh_moment,  thecell->n * DIM * sizeof(real));
+      memcpy(newcell.dreh_impuls, thecell->dreh_impuls, 
+                               thecell->n * DIM * sizeof(real));
+      memcpy(newcell.dreh_moment, thecell->dreh_moment, 
+                               thecell->n * DIM * sizeof(real));
 #endif
 #endif /* not MONOLJ */
     }
@@ -452,6 +452,8 @@ void alloc_cell(cell *thecell, int count)
     free(thecell->ort);
 #ifndef MONOLJ
     free(thecell->nummer);
+    free(thecell->sorte);
+    free(thecell->masse);
     free(thecell->pot_eng);
 #ifdef DISLOC
     free(thecell->Epot_ref);
@@ -460,7 +462,6 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
     free(thecell->refpos);
 #endif
-    free(thecell->sorte);
 #ifdef TRANSPORT
     free(thecell->heatcond);
 #endif
@@ -468,7 +469,6 @@ void alloc_cell(cell *thecell, int count)
     free(thecell->presstens);
     free(thecell->presstens_offdia);
 #endif
-    free(thecell->masse);
 #ifdef TTBP
     free(thecell->neigh);
 #endif
@@ -486,6 +486,8 @@ void alloc_cell(cell *thecell, int count)
   thecell->kraft  = newcell.kraft;
 #ifndef MONOLJ
   thecell->nummer   = newcell.nummer;
+  thecell->sorte    = newcell.sorte;
+  thecell->masse    = newcell.masse;
   thecell->pot_eng  = newcell.pot_eng;
 #ifdef DISLOC
   thecell->Epot_ref = newcell.Epot_ref;
@@ -494,8 +496,6 @@ void alloc_cell(cell *thecell, int count)
 #ifdef REFPOS
   thecell->refpos = newcell.refpos;
 #endif
-  thecell->sorte  = newcell.sorte;
-  thecell->masse  = newcell.masse;
 #ifdef TRANSPORT
   thecell->heatcond = newcell.heatcond;
 #endif
@@ -504,7 +504,7 @@ void alloc_cell(cell *thecell, int count)
   thecell->presstens_offdia = newcell.presstens_offdia;
 #endif
 #ifdef TTBP
-  thecell->neigh    = newcell.neigh;
+  thecell->neigh = newcell.neigh;
 #endif
 #ifdef UNIAX
   thecell->traeg_moment = newcell.traeg_moment;
