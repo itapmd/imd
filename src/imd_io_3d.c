@@ -550,38 +550,39 @@ void write_cell(FILE *out, cell *p)
          (p->ort Z(i) >= pic_ll.z) && (p->ort Z(i) <= pic_ur.z) )
 #endif
     {
-#ifdef UNIAX
-      fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f %12f\n",
-#elif defined(ORDPAR)
-      fprintf(out,"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %d\n",
-#else
-      fprintf(out,"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f\n",
+#ifndef MONOLJ
+      fprintf(out,"%d %d %12.16f ", p->nummer[i], p->sorte[i], p->masse[i]);
 #endif
-        p->nummer[i], p->sorte[i], p->masse[i],
 #ifdef UNIAX
-        p->traeg_moment[i],
+      fprintf(out,"%12.16f ", p->traeg_moment[i]);
 #endif
-        p->ort X(i), p->ort Y(i), p->ort Z(i),
+      fprintf(out,"%12.16f %12.16f %12.16f ",
+              p->ort X(i), p->ort Y(i), p->ort Z(i));
 #ifdef UNIAX
-        p->achse X(i), p->achse Y(i), p->achse Z(i),
-        p->shape X(i), p->shape Y(i), p->shape Z(i),
-        p->pot_well X(i), p->pot_well Y(i), p->pot_well Z(i),
+      fprintf(out,"%12.16f %12.16f ",
+        p->achse X(i), p->achse Y(i), p->achse Z(i));
+      fprintf(out,"%12.16f %12.16f ",
+        p->shape X(i), p->shape Y(i), p->shape Z(i));
+      fprintf(out,"%12.16f %12.16f ",
+        p->pot_well X(i), p->pot_well Y(i), p->pot_well Z(i));
 #endif
+      fprintf(out,"%12.16f %12.16f %12.16f ",
         p->impuls X(i) / MASSE(p,i), 
         p->impuls Y(i) / MASSE(p,i), 
-        p->impuls Z(i) / MASSE(p,i),
+        p->impuls Z(i) / MASSE(p,i));
 #ifdef UNIAX
+      fprintf(out,"%12.16f %12.16f %12.16f ",
         p->dreh_impuls X(i) / p->traeg_moment[i],
         p->dreh_impuls Y(i) / p->traeg_moment[i],
-        p->dreh_impuls Z(i) / p->traeg_moment[i], 
+        p->dreh_impuls Z(i) / p->traeg_moment[i]); 
 #endif
 #ifdef ORDPAR
-        NBANZ(p,i)==0 ? 0 : POTENG(p,i) / NBANZ(p,i),
-        NBANZ(p,i)
+      fprintf(out,"%12.16f %d ",
+        NBANZ(p,i)==0 ? 0 : POTENG(p,i) / NBANZ(p,i), NBANZ(p,i));
 #else
-        POTENG(p,i)
+      fprintf(out,"%12.16f", POTENG(p,i));
 #endif
-      );
+      fprintf(out,"\n");
     }
 }
 
