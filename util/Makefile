@@ -99,6 +99,9 @@ DISTSOURCE = dist_tools.c dist_tools.h
 dist2volume: ${DISTSOURCE} dist2volume.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ dist2volume.c -lm
 
+dist2gplt: ${DISTSOURCE} dist2gplt.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ dist2gplt.c -lm
+
 dist2ppm: ${DISTSOURCE} dist2ppm.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ dist2ppm.c -lm
 

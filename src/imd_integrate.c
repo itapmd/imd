@@ -162,9 +162,9 @@ void move_atoms_nve(void)
 	}
 	if (shock_mode == 4) {
 	  if (ORT(p,i,X) < shock_speed_l * timestep * steps) 
-	      IMPULS(p,i,X) = -IMPULS(p,i,X) + shock_speed_l * MASSE(p,i);
+	      IMPULS(p,i,X) = -IMPULS(p,i,X) + 2 * shock_speed_l * MASSE(p,i);
 	  if (ORT(p,i,X) > box_x.x - shock_speed_r * timestep * steps) 
-	      IMPULS(p,i,X) = -IMPULS(p,i,X) - shock_speed_r * MASSE(p,i);
+	      IMPULS(p,i,X) = -IMPULS(p,i,X) - 2 * shock_speed_r * MASSE(p,i);
 	}
 #endif
 
