@@ -1340,7 +1340,11 @@ void move_atoms_nvx(void)
 #else
   vol = box_x.x * box_y.y * box_z.z * (tran_nlayers-2) / tran_nlayers;
 #endif
+  heat_cond /= vol;
+
+  /* before we devided also by temperature gradient:
   heat_cond *= box_x.x / (2 * vol * (tran_Tleft -  tran_Tright));
+  */
 
   inv_mass_left      /= 2.0;
   inv_mass_right     /= 2.0;
@@ -1403,6 +1407,10 @@ void move_atoms_nvx(void)
 #endif
     }
   }
+#ifdef RNEMD
+  heat_transfer += tran_Tleft  * natoms_left  * DIM/2 - Ekin_left;  /* hot  */ 
+  heat_transfer -= tran_Tright * natoms_right * DIM/2 - Ekin_right; /* cold */
+#endif
 }
 
 #else

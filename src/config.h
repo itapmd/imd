@@ -65,8 +65,13 @@
 
 
 /* heat transport */
+#ifdef NVX
+#define RNEMD
+#endif
+#if defined(RNEMD) && !defined(NVX)
+/* #define NVE */
+#endif
 #if defined(NVX) || defined(RNEMD)
-#define NVE
 #define TRANSPORT
 #endif
 

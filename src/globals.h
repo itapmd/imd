@@ -340,7 +340,7 @@ EXTERN real heat_cond     INIT(0.0);   /* heat conductivity */
 #endif
 #ifdef RNEMD
 EXTERN real heat_transfer INIT(0.0);   /* total (integrated) heat transfer */
-EXTERN int  exch_interval INIT(0.0);   /* interval between particle exchange */
+EXTERN int  exch_interval INIT(0);     /* interval between particle exchange */
 #endif
 #ifdef TRANSPORT
 EXTERN int  tran_interval INIT(0);     /* Intervalle der Temperaturaufz.*/

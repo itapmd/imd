@@ -99,6 +99,8 @@ void write_temp_dist(int steps)
   int  num, nlayer, k, i, nhalf;
   static real    *temp_hist, *temp_hist_1 = NULL, *temp_hist_2 = NULL;
   static integer *num_hist,   *num_hist_1 = NULL,  *num_hist_2 = NULL;
+  int numb = 0, numb_tmp;
+  real a, SxiTi=0.0, Sxi=0.0, STi=0.0, Sxisq=0.0, temp, xx, tmp;
   
   /* the temp bins are orthogonal boxes in space */
   nhalf = tran_nlayers / 2;
@@ -144,7 +146,7 @@ void write_temp_dist(int steps)
     cell *p;
     p = cell_array + CELLS(k);
 
-    for (i = 0;i < p->n; ++i) {
+    for (i=0; i<p->n; ++i) {
 
       /* which layer? */
       num = scale * p->ort X(i);
@@ -152,8 +154,20 @@ void write_temp_dist(int steps)
       if (num >= tran_nlayers) num = tran_nlayers-1;
       if (num > nhalf) num = tran_nlayers - num;
 
-      temp_hist_1[num] += SPRODN(p->impuls,i,p->impuls,i)/ MASSE(p,i);
+      temp = SPRODN(p->impuls,i,p->impuls,i)/ MASSE(p,i);
+      temp_hist_1[num] += temp;
       num_hist_1[num]++;
+
+      /* fit temperature gradient */
+      if ((num!=0) && (num!=nhalf)) {
+        xx = p->ort X(i);
+        if (num>nhalf) xx = box_x.x - xx + box_x.x / tran_nlayers; 
+        Sxi += xx;
+        STi += temp;
+        SxiTi += temp * xx;
+        Sxisq += xx * xx;
+        numb++;
+      }
 
     }
   }
@@ -166,28 +180,62 @@ void write_temp_dist(int steps)
   MPI_Reduce( num_hist_1, num_hist_2, 
               nhalf+1, INTEGER,  MPI_SUM, 0, cpugrid);
   num_hist  = num_hist_2;
+  MPI_Reduce( &Sxi, &tmp, 1, MPI_REAL, MPI_SUM, 0, cpugrid );
+  Sxi = tmp;
+  MPI_Reduce( &STi, &tmp, 1, MPI_REAL, MPI_SUM, 0, cpugrid );
+  STi = tmp;
+  MPI_Reduce( &SxiTi, &tmp, 1, MPI_REAL, MPI_SUM, 0, cpugrid );
+  SxiTi = tmp;
+  MPI_Reduce( &Sxisq, &tmp, 1, MPI_REAL, MPI_SUM, 0, cpugrid );
+  Sxisq = tmp;
+  MPI_Reduce( &numb, &numb_tmp, 1, MPI_INT, MPI_SUM, 0, cpugrid );
+  numb = numb_tmp; 
 #else
   temp_hist = temp_hist_1;
   num_hist  = num_hist_1;
 #endif
 
+
   /* write temperature distribution */
   if (myid==0) {
-    real tmp;
+
+    Sxi /= numb;
+    STi /= numb;
+    SxiTi /= numb;
+    Sxisq /= numb;
+    a = (SxiTi - Sxi * STi) / (Sxisq - Sxi * Sxi);
+
     sprintf(fnametemp,"%s.tempdist",outfilename);
     outtemp = fopen(fnametemp,"a");
     if (NULL == outtemp) error("Cannot open temperatur file.");
 
+    /* write current time */
     fprintf(outtemp,"%10.4e", steps * timestep);
-#ifdef NVX
-    fprintf(outtemp," %10.4e", heat_cond);
-#elif RNEMD
-    tmp = box_y.y * tran_interval * timestep;
+
+#ifdef RNEMD
+    /* write heat current density determined from heat transfer */
+    heat_transfer /= box_y.y * tran_interval * timestep;
 #ifndef TWOD
-    tmp *= box_z.z;
+    heat_transfer /= box_z.z;
 #endif
-    fprintf(outtemp," %10.4e", heat_transfer/tmp);
+    fprintf(outtemp," %10.4e", heat_transfer);
+    heat_transfer = 0.0;
 #endif
+
+#ifdef NVX
+    /* write heat current density determined by Gillan-Evans-Algorithm */
+    fprintf(outtemp," %10.4e", heat_cond);
+#endif
+
+    /* write measured temperature gradient */
+    fprintf(outtemp," %10.4e", a);
+
+#ifdef NVX
+    /* write nominal temperature gradient */
+    fprintf(outtemp," %10.4e", (tran_Tleft - tran_Tright) / (2 * box_x.x));
+#endif
+
+    /* write temperature histogram */
     for (i = 0; i <= nhalf; i++) {
       if (num_hist[i] > 0) temp_hist[i] /= (2*num_hist[i]);
 #ifndef TWOD   
@@ -195,12 +243,10 @@ void write_temp_dist(int steps)
 #endif
       fprintf(outtemp," %10.4e", temp_hist[i] );
     }
+
     fprintf(outtemp,"\n");
     fclose(outtemp);
   }
-#ifdef RNEMD
-  heat_transfer = 0;
-#endif
 }
 
 #endif
