@@ -578,7 +578,7 @@ ivektor init_hex(void)
   ivektor v;
   v.x = box_x.x;
   v.y = box_y.y;
-  box_x.x *= sqrt(3);
+  box_x.x *= sqrt(3.0);
   return(v);
 }
 
@@ -617,7 +617,7 @@ void generate_hex(ivektor v)
       typ = (i+j) % 2;
       if (typ > 0) continue;
 
-      x = (i+0.5) * sqrt(3) * 0.5;
+      x = (i+0.5) * sqrt(3.0) * 0.5;
       y = (j+0.5) * 0.5;
 
 #if defined(FRAC) || defined(PULL) || defined(MIKSHEAR)
