@@ -196,7 +196,7 @@ void reset_Epot_ref(void)
 #endif
 
 
-#ifdef TTBP
+#ifdef COVALENT
 /******************************************************************************
 *
 *  allocate neighbor table for one particle
@@ -214,7 +214,7 @@ neightab *alloc_neightab(neightab *neigh, int count)
   } else { /* allocate */
     neigh = (neightab *) malloc(sizeof(neightab));
     if (neigh==NULL) {
-      error("TTBP: cannot allocate memory for neighbor table\n");
+      error("COVALENT: cannot allocate memory for neighbor table\n");
     }
     neigh->n     = 0;
     neigh->n_max = count;
@@ -224,7 +224,7 @@ neightab *alloc_neightab(neightab *neigh, int count)
     neigh->num   = (integer *)  malloc( count * sizeof(integer) );
     if ((neigh->dist==NULL) || (neigh->typ==0) ||
         (neigh->cl  ==NULL) || (neigh->num==0)) {
-      error("TTBP: cannot allocate memory for neighbor table");
+      error("COVALENT: cannot allocate memory for neighbor table");
     }
   }
   return(neigh);
@@ -277,7 +277,7 @@ void alloc_cell(cell *thecell, int count)
     newcell.presstens = NULL;
     newcell.presstens_offdia = NULL;
 #endif
-#ifdef TTBP
+#ifdef COVALENT
     newcell.neigh  = NULL;
 #endif
 #ifdef UNIAX
@@ -346,16 +346,16 @@ void alloc_cell(cell *thecell, int count)
     newcell.presstens = (real *) malloc(count*DIM*sizeof(real));
     newcell.presstens_offdia = (real *) malloc(count*DIM*sizeof(real));
 #endif
-#if (defined(TTBP) && !defined(TWOD))
+#if (defined(COVALENT) && !defined(TWOD))
     newcell.neigh = (neightab **) malloc( count * sizeof(neighptr) );
     if (NULL == newcell.neigh) {
-      error("TTBP: cannot allocate neighbor tables");
+      error("COVALENT: cannot allocate neighbor tables");
     }
     for (i=0; i<thecell->n_max; ++i) {
       newcell.neigh[i] = thecell->neigh[i];
     }
     for (i=thecell->n_max; i<count; ++i) {
-      newcell.neigh[i] = alloc_neightab(newcell.neigh[i], ttbp_len);
+      newcell.neigh[i] = alloc_neightab(newcell.neigh[i], neigh_len);
     }
 #endif
 #ifdef UNIAX
@@ -411,7 +411,7 @@ void alloc_cell(cell *thecell, int count)
 
     if (count < thecell->n_max) { /* cell shrinks, data is invalidated */
       thecell->n = 0;
-#if (defined(TTBP) && !defined(TWOD))
+#if (defined(COVALENT) && !defined(TWOD))
       /* deallocate all neighbor tables */
       for (i=0; i<thecell->n_max; ++i) {
         thecell->neigh[i] = alloc_neightab(thecell->neigh[i],0);
@@ -493,7 +493,7 @@ void alloc_cell(cell *thecell, int count)
     free(thecell->presstens);
     free(thecell->presstens_offdia);
 #endif
-#ifdef TTBP
+#ifdef COVALENT
     free(thecell->neigh);
 #endif
 #ifdef UNIAX
@@ -530,7 +530,7 @@ void alloc_cell(cell *thecell, int count)
   thecell->presstens = newcell.presstens;
   thecell->presstens_offdia = newcell.presstens_offdia;
 #endif
-#ifdef TTBP
+#ifdef COVALENT
   thecell->neigh = newcell.neigh;
 #endif
 #ifdef UNIAX

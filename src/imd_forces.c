@@ -114,6 +114,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
 #endif
       }
 
+#ifndef TERSOFF
       /* 1. Cutoff: pair potential */
       if (radius2 <= r2_cut) {
 
@@ -220,18 +221,24 @@ void do_forces(cell *p, cell *q, vektor pbc)
         q->heatcond[j] += pot_zwi - radius2 * pot_grad;
 #endif
       }  /* if */
+#endif /* TERSOFF */
 
 #ifdef TTBP
       /* 2. Cutoff: make neighbor tables for TTBP */
       if (radius2 <= ttbp_r2_cut[p_typ][q_typ]) {
-
+#endif
+#ifdef TERSOFF
+      /* 2. Cutoff: make neighbor tables for TERSOFF */ 
+      if (radius2 <= ter_r2_cut[p_typ][q_typ]) {
+#endif 
+#ifdef COVALENT
         neightab *neigh;
         real  *tmp_ptr;
 
         /* update neighbor table of particle i */
         neigh = p->neigh[i];
         if (neigh->n_max <= neigh->n) {
-          error("neighbor table too small, increase ttbp_len");
+          error("neighbor table too small, increase neigh_len");
         }
         neigh->typ[neigh->n] = q_typ;
         neigh->cl [neigh->n] = q;
@@ -245,7 +252,7 @@ void do_forces(cell *p, cell *q, vektor pbc)
         /* update neighbor table of particle j */
         neigh = q->neigh[j];
         if (neigh->n_max <= neigh->n) {
-          error("neighbor table too small, increase ttbp_len");
+          error("neighbor table too small, increase neigh_len");
         }
         neigh->typ[neigh->n] = p_typ;
         neigh->cl [neigh->n] = p;
@@ -256,10 +263,11 @@ void do_forces(cell *p, cell *q, vektor pbc)
         *tmp_ptr = -d.z;
         neigh->n++;
       }
-#endif  /* TTPB */
+#endif  /* COVALENT */
     } /* for j */
   } /* for i */
 
+#ifndef TERSOFF
 #ifndef MONOLJ
   if (r2_short < r2_0) printf("\n Short distance! r2: %f\n",r2_short);
 #endif
@@ -275,7 +283,8 @@ void do_forces(cell *p, cell *q, vektor pbc)
 #endif
 #else
   virial     += tmp_virial;
-#endif  
+#endif 
+#endif /* TERSOFF */ 
 
 } /* do_forces */
 

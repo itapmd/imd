@@ -69,7 +69,7 @@ void calc_forces(void)
 #ifndef MONOLJ
       p->pot_eng[i] = 0.0;
 #endif
-#ifdef TTBP
+#ifdef COVALENT
       for (j=0; j<p->n; ++j) {
         p->neigh[j]->n = 0;
       }
@@ -176,5 +176,14 @@ void calc_forces(void)
     do_forces_ttbp(cell_array + k);
   }
 #endif /* TTBP */
+
+#ifdef TERSOFF
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_vect.x,vir_vect.y,vir_vect.z)
+#endif
+  for (k=0; k<ncells; ++k) {
+    do_forces_tersoff(cell_array + k); 
+  }
+#endif /* TERSOFF */
 
 }

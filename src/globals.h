@@ -402,7 +402,6 @@ EXTERN int eam2_max_phi_r_steps INIT(0);
 #ifdef TTBP
 EXTERN str255 ttbp_potfilename INIT("\0");         /* TTBP Potential */
 EXTERN ivektor3d ttbp_pot_dim INIT(nullivektor3d); /* pot dimensions */
-EXTERN int  ttbp_len INIT(50);	  /* max neighbors */
 EXTERN real *ttbp_potential;      /* TTBP Potential array */
 EXTERN real ttbp_r2_cut[10][10];  /* cutoff^2;  less than 10 atom types! */
 EXTERN real ttbp_constant[10];	  /* constants; less than 10 atom types! */
@@ -411,11 +410,37 @@ EXTERN real ttbp_r2_0;            /* TTBP minimum r^2 */
 EXTERN real ttbp_r2_end;          /* TTBP maximum r^2 */
 EXTERN real ttbp_r2_step;         /* delta between potential samples */
 EXTERN real ttbp_inv_r2_step;     /* inverse thereof */
-EXTERN real ttbp_c0[10];          /* TTBP cosine constant for sp hybrid */
-EXTERN real ttbp_c1[10];          /* TTBP cosine constant for sp hybrid */
-EXTERN real ttbp_c2[10];          /* TTBP cosine constant for sp hybrid */
-EXTERN real ttbp_c3[10];          /* TTBP cosine constant for sp hybrid */
 #endif
+
+#ifdef TERSOFF
+EXTERN real ters_r_cut[10];  /* cutoff^2;  less than 10 atom types! */
+EXTERN real ter_r_cut[10][10];
+EXTERN real ter_r2_cut[10][10];
+EXTERN real ters_r0[10];        
+EXTERN real ter_r0[10][10];
+EXTERN real ters_a[10];        /* Parameters for Tersoff potential  */
+EXTERN real ter_a[10][10];
+EXTERN real ters_b[10];
+EXTERN real ter_b[10][10];
+EXTERN real ters_la[10];
+EXTERN real ter_la[10][10];
+EXTERN real ters_mu[10];
+EXTERN real ter_mu[10][10];
+EXTERN real ters_chi[55];
+EXTERN real ter_chi[10][10];
+EXTERN real ters_ga[10];
+EXTERN real ters_n[10];
+EXTERN real ters_c[10];
+EXTERN real ter_c2[10];
+EXTERN real ters_d[10];
+EXTERN real ter_d2[10];
+EXTERN real ters_h[10];
+#endif
+
+/* for TTBP and TERSOFF */
+#ifdef COVALENT  
+EXTERN int neigh_len INIT(50);     /* max neighbors */
+#endif 
 
 /* generate quasicrystal */
 #ifdef QUASI
@@ -452,3 +477,14 @@ EXTERN void (*move_atoms)(void);        /* active integrator routine */
 EXTERN real uniax_r_cut   INIT(0.0); 	/* cutoff radius for uniaxial molecules */
 EXTERN real uniax_r2_cut  INIT(0.0); 	/* cutoff radius ^2 for uniaxial molecules */
 #endif
+
+
+
+
+
+
+
+
+
+
+

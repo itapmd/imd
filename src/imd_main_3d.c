@@ -106,7 +106,7 @@ void main_loop(void)
     if (((eng_interval != 0) && (0 == steps%eng_interval)) || 
         (steps == steps_min)) setup_buffers();
     mpi_addtime(&time_io);
-#if (defined(AR) && !defined(TTBP))
+#if (defined(AR) && !defined(COVALENT))
     send_atoms_ar();
 #else
     send_atoms_force();
@@ -138,7 +138,7 @@ void main_loop(void)
 
 #ifdef MPI
 #ifdef AR
-#ifdef TTBP
+#ifdef COVALENT
     send_forces_full();
 #else
     send_forces();

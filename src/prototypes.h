@@ -170,11 +170,18 @@ void copy_eam2_rho_h(msgbuf *b, int k, int l, int m);
 void send_eam2_rho_h(void);
 #endif
 
+#ifdef COVALENT
+void do_neightab(cell *p, cell *q, vektor pbc);
+neightab *alloc_neightab(neightab *neigh, int count);
+#endif
+
 #ifdef TTBP
 void do_forces_ttbp(cell *p);
-void do_neightab(cell *p, cell *q, vektor pbc);
 void read_ttbp_potential(str255 ttbp_potfilename);
-neightab *alloc_neightab(neightab *neigh, int count);
+#endif
+
+#ifdef TERSOFF
+void do_forces_tersoff(cell *p);
 #endif
 
 #ifdef UNIAX
@@ -220,3 +227,12 @@ void locate(real x, real y, real z, int i, int j, int k);
 void borders(void);
 #endif
 void display_conf(int steps);
+
+
+
+
+
+
+
+
+

@@ -90,7 +90,7 @@ void calc_forces(void)
 #ifndef MONOLJ
       p->pot_eng[i] = 0.0;
 #endif
-#ifdef TTBP
+#ifdef COVALENT
       for (j=0; j<p->n; ++j) {
         p->neigh[j]->n = 0;
       }
@@ -142,7 +142,7 @@ void calc_forces(void)
   }
 #endif
 
-#ifdef TTBP
+#ifdef COVALENT
   /* complete neighbor tables for remaining pairs of cells */
   for (n=0; n<6; ++n) {
     for (k=npairs[n]; k<npairs2[n]; ++k) {
@@ -220,6 +220,13 @@ void calc_forces(void)
     do_forces_ttbp(cell_array + CELLS(k));
   }
 #endif /* TTBP */
+
+#ifdef TERSOFF
+  /* Tersoff potential */
+  for (k=0; k<ncells; ++k) {
+    do_forces_tersoff(cell_array + CELLS(k));
+  }
+#endif /* TERSOFF */
 
 #ifdef EAM2
 

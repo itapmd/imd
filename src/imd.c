@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 
 #if !(defined(UNIAX) || defined(MONOLJ))
 
-#ifndef EAM2
+#if !(defined(EAM2) || defined(TERSOFF))
   /* Read Potential from file */
   read_potential(potfilename);
 #endif

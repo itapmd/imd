@@ -111,6 +111,13 @@ ivektor maximal_cell_dim( void )
   for (i=0; i<ntypes; ++i)
     for (j=0; j<ntypes; ++j)
       r2_cut2 = MAX( r2_cut2, ttbp_r2_cut[i][j] );
+#endif
+#ifdef TERSOFF
+  r2_cut2 = 0.0;
+  for (i=0; i<ntypes; ++i)
+    for (j=0; j<ntypes; ++j)
+      r2_cut2 = MAX( r2_cut2, ter_r2_cut[i][j] );
+  r2_cut = r2_cut2;
 #endif 
 #ifdef UNIAX 
   r2_cut2 = uniax_r2_cut;
@@ -223,6 +230,35 @@ void init_cells( void )
   for (i=0; i<ntypes; ++i)
     for (j=0; j<ntypes; ++j)
       r2_cut2 = MAX( r2_cut2, ttbp_r2_cut[i][j] );
+#endif
+#ifdef TERSOFF
+  /* parameters for more than one atom type */
+  for (i=0; i<ntypes; i++) {
+    ter_c2[i] = ters_c[i] * ters_c[i];
+    ter_d2[i] = ters_d[i] * ters_d[i];
+    for (j=0; j<ntypes; j++) { 
+      ter_r_cut[i][j] = sqrt( ters_r_cut[i] * ters_r_cut[j] );
+      ter_r2_cut[i][j] = ter_r_cut[i][j] * ter_r_cut[i][j];
+      ter_r0[i][j] = sqrt( ters_r0[i] * ters_r0[j] );
+      ter_a[i][j]  = sqrt( ters_a[i] * ters_a[j] );
+      ter_b[i][j]  = sqrt( ters_b[i] * ters_b[j] );
+      ter_la[i][j] = 0.5 * (ters_la[i] + ters_la[j] );
+      ter_mu[i][j] = 0.5 * (ters_mu[i] + ters_mu[j] );
+    }
+  }
+  for (i=0; i<ntypes; i++)
+	ter_chi[i][i] = 1.0;
+      if ( ntypes>1 ) {
+  for (i=0; i<(ntypes-1); i++)
+    for (j=(i+1); j<ntypes; j++) {
+      ter_chi[i][j] = ter_chi[j][i] = ters_chi[i * ( 2 * ntypes - i - 3 ) / 2 + j - 1]; 
+	}
+      }
+  r2_cut2 = 0.0;
+  for (i=0; i<ntypes; ++i)
+    for (j=0; j<ntypes; ++j)
+      r2_cut2 = MAX( r2_cut2, ter_r2_cut[i][j] );
+  r2_cut = r2_cut2;
 #endif 
 #ifdef UNIAX 
   r2_cut2 = uniax_r2_cut;

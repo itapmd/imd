@@ -292,10 +292,12 @@ void getparamfile(char *paramfname, int sim)
       /* output file basename */
       getparam("outfiles",outfilename,PARAM_STR,1,255);
     }
+#ifndef TERSOFF
     else if (strcasecmp(token,"potfile")==0) {
       /* filename for potential data */
       getparam("potfile",potfilename,PARAM_STR,1,255);
     }
+#endif
 #ifdef DISLOC
     else if (strcasecmp(token,"reffile")==0) {
       /* filename for reference configuration */
@@ -869,11 +871,13 @@ void getparamfile(char *paramfname, int sim)
       getparam("atomic_e-density_file",eam2_at_rho_filename,PARAM_STR,1,255);
     }
 #endif
-#ifdef TTBP
-    else if (strcasecmp(token,"ttbp_len")==0) {
+#ifdef COVALENT
+    else if (strcasecmp(token,"neigh_len")==0) {
       /* number of neighbors */
-      getparam("ttbp_len",&ttbp_len,PARAM_INT,1,1);
+      getparam("neigh_len",&neigh_len,PARAM_INT,1,1);
     }
+#endif
+#ifdef TTBP
     else if (strcasecmp(token,"ttbp_constant")==0) {
       /* force constant (radians); type 0 */
       getparam("ttbp_constant",ttbp_constant,PARAM_REAL,ntypes,ntypes);
@@ -881,24 +885,49 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"ttbp_sp")==0) {
       /* hybridization of the element type */
       getparam("ttbp_sp",ttbp_sp,PARAM_REAL,ntypes,ntypes);
-      for (i=0;i<ntypes;i++) {
-        if (ttbp_sp[i] == 3) {
-          ttbp_c0[i] = 0.34375;
-          ttbp_c1[i] = 0.37500;
-          ttbp_c2[i] = 0.28125;
-          ttbp_c3[i] = 0.00000;
-        }
-        else if (ttbp_sp[i] == 2) {
-          ttbp_c0[i] =  1.0;
-          ttbp_c1[i] =  0.0;
-          ttbp_c2[i] =  0.0;
-          ttbp_c3[i] = -1.0;
-        }
-      }
     }
     else if (strcasecmp(token,"ttbp_potfile")==0) {
       /* filename for ttbp potential data */
       getparam("ttbp_potfile",ttbp_potfilename,PARAM_STR,1,255);
+    }
+#endif
+#ifdef TERSOFF
+    /* Parameters for Tersoff potential */
+    else if (strcasecmp(token,"ters_r_cut")==0) {     
+      getparam("ters_r_cut",ters_r_cut,PARAM_REAL,ntypes,ntypes);
+    }     
+    else if (strcasecmp(token,"ters_r0")==0) {     
+      getparam("ters_r0",ters_r0,PARAM_REAL,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"ters_a")==0) {     
+      getparam("ters_a",ters_a,PARAM_REAL,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"ters_b")==0) {     
+      getparam("ters_b",ters_b,PARAM_REAL,ntypes,ntypes);
+    }   
+    else if (strcasecmp(token,"ters_la")==0) {     
+      getparam("ters_la",ters_la,PARAM_REAL,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"ters_mu")==0) {     
+      getparam("ters_mu",ters_mu,PARAM_REAL,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"ters_chi")==0) {     
+      getparam("ters_chi",ters_chi,PARAM_REAL,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"ters_ga")==0) {     
+      getparam("ters_ga",ters_ga,PARAM_REAL,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"ters_n")==0) {     
+      getparam("ters_n",ters_n,PARAM_REAL,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"ters_c")==0) {     
+      getparam("ters_c",ters_c,PARAM_REAL,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"ters_d")==0) {     
+      getparam("ters_d",ters_d,PARAM_REAL,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"ters_h")==0) {     
+      getparam("ters_h",ters_h,PARAM_REAL,ntypes,ntypes);
     }
 #endif
 #ifdef UNIAX
@@ -1291,16 +1320,30 @@ void broadcast_params() {
   MPI_Bcast( &eam_r_0,   1, MPI_REAL, 0, MPI_COMM_WORLD);
 #endif
 
-#ifdef TTBP
-  MPI_Bcast( &ttbp_len,      1,      MPI_INT,  0, MPI_COMM_WORLD);
-  MPI_Bcast( ttbp_constant,  ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ttbp_sp,        ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ttbp_c0,        ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ttbp_c1,        ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ttbp_c2,        ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ttbp_c3,        ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+#ifdef COVALENT
+  MPI_Bcast( &neigh_len,      1,      MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 
+#ifdef TTBP
+  MPI_Bcast( ttbp_constant,  ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ttbp_sp,        ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+#endif
+
+#ifdef TERSOFF
+  MPI_Bcast( ters_r_cut,      ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_r0,         ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_a,          ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_b,          ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_la,         ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_mu,         ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_chi,        ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_ga,         ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_n,          ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_c,          ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_d,          ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_h,          ntypes, MPI_REAL, 0, MPI_COMM_WORLD);
+#endif
+  
   /* broadcast integrator to other CPU's */
 
   switch (ensemble) {
@@ -1321,3 +1364,9 @@ void broadcast_params() {
 }
 
 #endif /* MPI */
+
+
+
+
+
+

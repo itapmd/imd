@@ -71,7 +71,7 @@ QUASISOURCES  = imd_qc.c
 EAMSOURCES    = imd_forces_eam.c
 EAM2SOURCES   = imd_forces_eam2.c
 
-TTBPSOURCES   = imd_forces_ttbp.c
+COVALENTSOURCES = imd_forces_covalent.c
 
 MCSOURCES     = imd_mc.c
 
@@ -506,7 +506,13 @@ endif
 # TTBP
 ifneq (,$(strip $(findstring ttbp,${MAKETARGET})))
 CFLAGS  += -DTTBP
-SOURCES += ${TTBPSOURCES}
+SOURCES += ${COVALENTSOURCES}
+endif
+
+# TERSOFF
+ifneq (,$(strip $(findstring tersoff,${MAKETARGET})))
+CFLAGS  += -DTERSOFF
+SOURCES += ${COVALENTSOURCES}
 endif
 
 # Correlation

@@ -64,8 +64,8 @@ typedef vektor3d    vektor;
 typedef ivektor3d  ivektor;
 #endif
 
-#ifdef TTBP
-/* per particle neighbor table for TTBP */
+#ifdef COVALENT
+/* per particle neighbor table for COVALENT */
 typedef struct {
     real        *dist;
     shortint    *typ;
@@ -107,7 +107,7 @@ typedef struct {
 #endif
   real        *impuls;
   real        *kraft;
-#ifdef TTBP
+#ifdef COVALENT
   neightab    **neigh;
 #endif
 #ifdef UNIAX

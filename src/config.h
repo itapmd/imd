@@ -78,7 +78,7 @@
 #endif
 
 #ifdef DEFORM
-#define NOPBC
+/* #define NOPBC  */
 #endif
 
 #ifdef MSQD
@@ -101,7 +101,11 @@
 #undef AR
 #endif
 
-#ifdef TTBP
+#if defined(TTBP) || defined(TERSOFF)
+#define COVALENT
+#endif
+
+#ifdef COVALENT
 #ifndef AR
 #define AR
 #endif
