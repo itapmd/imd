@@ -1,0 +1,87 @@
+
+Protokoll fuer die Kommunikation zwischen Covise und IMD
+
+Fuer jede Anfrage sendet Vis erst einen unsigned char. Je nach dessen 
+Wert werden weitere Daten nach folgende Subprotokollen gesendet. 
+Angegeben ist jeweils die weitere Spezifikation der Anfrage durch Vis, 
+und die Antwort durch Sim.
+
+Bemerkungen: der Typ integer hat auf jeder Maschine 4 Bytes. Es wird
+angenommen, dass die Daten in atoms_flag_t und atoms_filt_t (siehe
+socket_io.h) mit 4-Byte-Alignment gespeichert sind, also ohne Luecken.
+
+VIS_INIT:
+
+  Vis: nichts weiter
+
+  Sim: 4 Bytes (unsigned char): PROTOCOL_VERSION_MAJOR, 
+       PROTOCOL_VERSION_MINOR, is_bigendian (0/1), dimension (2/3)
+
+
+VIS_INIT_ATOMS:
+
+  Vis: nichts weiter
+
+  Sim: 1 atoms_flag_t, enthaelt Flags, die angeben, welche Daten verfuegbar 
+       sind;
+       2 atoms_filt_t, der erste mit Minimal-, der zweite mit Maximalwerten 
+       der verfuegbaren Groessen (Nullen fuer nichtverfuegbare Groessen)
+
+
+VIS_WRITE_ATOMS:
+
+  Vis: 2 atoms_flag_t, der erste mit Flags, welche Daten gesandt werden 
+       sollen, der zweite mit Flags, nach welchen Daten gefiltert werden soll;
+       2 atoms_filt_t, der erste mit Minimal-, der zweite mit Maximalwerten 
+       der zu filternden Groessen; Werte fuer andere Groessen werden nicht
+       beachtet
+
+  Sim: 2 integer, steps und atlen (aktuelle Schrittnummer, Zahl der Daten 
+       pro Atom (nur Sicherheitscheck));
+       Ein oder mehrere Bloecke von Atomen; Ein Block besteht aus:
+
+         1 integer: natoms (Zahl der Atome im Block)
+         natoms * atlen floats: Daten fuer die Atome
+
+       Der letzte Block enthaelt 0 Atome, also nur die Laengenangabe, 
+       keine Daten
+
+
+VIS_CHANGE_PARAMS:
+
+  Vis: 2 integer (Parametergruppe, change flag)
+
+  Sim: vorerst nichts
+
+  dann wird das Subprotokoll der Parametergruppe aufgerufen; folgende Werte
+  fuer die Parametergruppe sind unterstuetzt:
+
+  VIS_PARAM_DEFORM:
+
+    Vis: falls change flag gesetzt: 1 weiterer float (deform_size), 
+         sonst nichts
+
+    Sim: 1 integer (Schrittnummer), 1 float (deform_size)
+
+
+VIS_RESTART:
+
+  Vis: nichts weiter
+
+  Sim: keine Antwort. Aktuelle Simulation wird beendet und neu gestartet.
+
+
+VIS_QUIT:
+
+  Vis: nichts weiter
+
+  Sim: keine Antwort
+
+
+VIS_WRITE_QUIT:
+
+  Vis: nichts weiter
+
+  Sim: keine Antwort
+
+
