@@ -147,7 +147,7 @@ void main_loop(void)
 #ifdef TIMING
     imd_start_timer(&time_force_comm);
 #endif
-    if ((0 == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
+    if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
     send_cells(copy_cell,pack_cell,unpack_cell);
 #ifdef TIMING
     imd_stop_timer(&time_force_comm);

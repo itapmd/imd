@@ -193,7 +193,7 @@ void main_loop(void)
 #ifdef SAVEMEM
     send_cells_by_cell();
 #else
-    if ((0 == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
+    if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
     send_cells(copy_cell,pack_cell,unpack_cell);
 #endif
 #ifdef TIMING
