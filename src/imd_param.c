@@ -1936,19 +1936,32 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #ifdef EWALD
-    /* Parameters for Ewald summation */
+    /* charges */
     else if (strcasecmp(token,"charge")==0) {
       if (ntypes==0) error("specify parameter ntypes before charge");
-      getparam("charge",charge,PARAM_REAL,ntypes,ntypes);
+      getparam(token,charge,PARAM_REAL,ntypes,ntypes);
     }
+    /* smoothing parameter */
     else if (strcasecmp(token,"ew_kappa")==0) {
-      getparam("ew_kappa",&ew_kappa,PARAM_REAL,1,1);
+      getparam(token,&ew_kappa,PARAM_REAL,1,1);
     }
-    else if (strcasecmp(token,"ew_kmax")==0) {
-      getparam("ew_kmax",&ew_kmax,PARAM_INT,3,3);
+    /* k-space cutoff */
+    else if (strcasecmp(token,"ew_kcut")==0) {
+      getparam(token,&ew_kcut,PARAM_REAL,1,1);
     }
+    /* r-space cutoff */
+    else if (strcasecmp(token,"ew_rcut")==0) {
+      getparam(token,&rtmp,PARAM_REAL,1,1);
+      ew_r2_cut = SQR(rtmp);
+      have_pre_pot = 1;
+    }
+    /* number of image boxes */
     else if (strcasecmp(token,"ew_nmax")==0) {
-      getparam("ew_nmax",&ew_nmax,PARAM_INT,1,1);
+      getparam(token,&ew_nmax,PARAM_INT,1,1);
+    }
+    /* test flag */
+    else if (strcasecmp(token,"ew_test")==0) {
+      getparam(token,&ew_test,PARAM_INT,1,1);
     }
 #endif
 #ifdef EPITAX

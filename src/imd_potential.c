@@ -397,7 +397,7 @@ void create_pot_table(pot_table_t *pt)
       for (j=i; j<ntypes; j++) {
         if (r_cut_lin[column]>0) {
           r2_begin[i][j]   = r2_begin[j][i]   = SQR(r_begin[column]);
-          r2_end[i][j]     = r2_end[j][i]     = SQR(r_cut_lin[column]);
+          r2_end[i][j]     = r2_end[j][i]     = MAX( SQR(r_cut_lin[column]), ew_r2_cut);
           r2_step[i][j]    = r2_step[j][i] 
                            = (r2_end[i][j]-r2_begin[i][j])/(pot_res[column]-1);
           r2_invstep[i][j] = r2_invstep[j][i] = 1.0 / r2_step[i][j];
@@ -445,7 +445,7 @@ void create_pot_table(pot_table_t *pt)
                 pair_int_lj(&pot, &grad, i, j, r2);
                 val += pot - lj_shift[i][j];
               }
-              else {
+              else if (r2 <= r2_cut[i][j]) {
                 val += lj_aaa[i][j] * SQR(r2_cut[i][j] - r2);
               }
             }
@@ -455,7 +455,7 @@ void create_pot_table(pot_table_t *pt)
                 pair_int_morse(&pot, &grad, i, j, r2);
                 val += pot - morse_shift[i][j];
               }
-              else {
+              else if (r2 <= r2_cut[i][j]) {
                 val += morse_aaa[i][j] * SQR(r2_cut[i][j] - r2);
               }
             }
@@ -465,7 +465,7 @@ void create_pot_table(pot_table_t *pt)
                 pair_int_buck(&pot, &grad, i, j, r2);
                 val += pot - buck_shift[i][j];
               }
-              else {
+              else if (r2 <= r2_cut[i][j]) {
                 val += buck_aaa[i][j] * SQR(r2_cut[i][j] - r2);
               }
             }
@@ -475,13 +475,13 @@ void create_pot_table(pot_table_t *pt)
             }
 #ifdef EWALD
             /* Coulomb potential for Ewald */
-            if (ew_nmax < 0) {
-              if (r2 < (1.0 - POT_TAIL) * r2_cut[i][j]) {
+            if (ew_r2_cut > 0) {
+              if (r2 < (1.0 - POT_TAIL) * ew_r2_cut) {
                 pair_int_ewald(&pot, &grad, i, j, r2);
                 val += pot - ew_shift[i][j];
               }
-              else {
-                val += ew_aaa[i][j] * SQR(r2_cut[i][j] - r2);
+              else if (r2 <= ew_r2_cut) {
+                val += ew_aaa[i][j] * SQR(ew_r2_cut - r2);
               }
 	    }
 #endif
@@ -550,7 +550,7 @@ void init_pre_pot(void) {
 
 #ifdef EWALD
       /* Coulomb for Ewald */
-      if ((ew_nmax < 0) && (r_begin[n]==0)) r_begin[n] = 0.2;
+      if ((ew_r2_cut > 0) && (r_begin[n]==0)) r_begin[n] = 0.2;
 #endif
 
       n++;
@@ -570,6 +570,9 @@ void init_pre_pot(void) {
     for (j=0; j<ntypes; ++j)
       tmp = MAX( tmp, r2_cut[i][j] );
   
+#ifdef EWALD
+  tmp    = MAX(tmp,ew_r2_cut);
+#endif
   cellsz = MAX(cellsz,tmp);
 
   /* Shift of potentials */
@@ -610,28 +613,27 @@ void init_pre_pot(void) {
 	           i, j, -buck_shift[i][j]);
 	}
         else buck_shift[i][j] = 0.0;
-#ifdef EWALD
-        /* Coulomb for Ewald */
-        if (ew_nmax < 0) {
-          pair_int_ewald( &ew_shift[i][j], &tmp, i, j, 
-                          (1.0 - POT_TAIL) * r2_cut[i][j]);
-          ew_shift[i][j] +=  0.25 * tmp *  POT_TAIL * r2_cut[i][j];
-          ew_aaa  [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
-          if (myid==0)
-            printf("Coulomb potential %1d %1d shifted by %f\n", 
-	           i, j, -ew_shift[i][j]);
-        } 
-        else ew_shift[i][j] = 0.0;
-#endif
       } 
       else {
         lj_shift   [i][j] = 0.0;
         morse_shift[i][j] = 0.0;
         buck_shift [i][j] = 0.0;
-#ifdef EWALD
-        if (ew_nmax < 0) ew_shift[i][j] = 0.0;
-#endif
       }
+#ifdef EWALD
+      /* Coulomb for Ewald */
+      if (ew_r2_cut > 0) {
+        if (SQR(charge[i]*charge[j]) > 0.0) {
+          pair_int_ewald( &ew_shift[i][j], &tmp, i, j, 
+                          (1.0 - POT_TAIL) * ew_r2_cut);
+          ew_shift[i][j] +=  0.25 * tmp *  POT_TAIL * ew_r2_cut;
+          ew_aaa  [i][j]  = -0.25 * tmp / (POT_TAIL * ew_r2_cut);
+          if (myid==0)
+            printf("Coulomb potential %1d %1d shifted by %f\n", 
+	           i, j, -ew_shift[i][j]);
+        } 
+        else ew_shift[i][j] = 0.0;
+      }
+#endif
     }
 
   /* Create or update potential table */
@@ -916,6 +918,7 @@ void pair_int_lj(real *pot, real *grad, int p_typ, int q_typ, real r2)
   sig_d_rad12 = sig_d_rad6 * sig_d_rad6;
 
   *pot = lj_epsilon[p_typ][q_typ] * ( sig_d_rad12 - 2.0 * sig_d_rad6 );
+  /* return (1/r)*dV/dr as derivative */
   *grad = -12.0 * lj_epsilon[p_typ][q_typ] / r2 
     * ( sig_d_rad12 - sig_d_rad6 );  
 }
@@ -936,6 +939,7 @@ void pair_int_morse(real *pot, real *grad, int p_typ, int q_typ, real r2)
   cexppot = 1.0 - exppot;
  
   *pot  = morse_epsilon[p_typ][q_typ] * ( cexppot * cexppot - 1.0 );
+  /* return (1/r)*dV/dr as derivative */
   *grad = 2.0 * morse_alpha[p_typ][q_typ] * morse_epsilon[p_typ][q_typ] / r
     * exppot * cexppot;
 }
@@ -957,6 +961,7 @@ void pair_int_buck(real *pot, real *grad, int p_typ, int q_typ, real r2)
   invs2   = 1.0 / ( buck_sigma[p_typ][q_typ] * buck_sigma[p_typ][q_typ] );
 
   *pot = exppot - powpot;
+  /* return (1/r)*dV/dr as derivative */
   *grad = ( - exppot * rinv + 6 * powpot * rinv2 ) * invs2;
 }
 
@@ -975,7 +980,8 @@ void pair_int_ewald(real *pot, real *grad, int p_typ, int q_typ, real r2)
   chg   = charge[p_typ] * charge[q_typ] * ew_eps;
   fac   = chg * 2.0 * ew_kappa / sqrt( M_PI );
   *pot  = chg * erfc1(ew_kappa * r) / r;
-  *grad = -2.0 * (*pot + fac * exp( -SQR(ew_kappa*r) ) ) / r2; 
+  /* return (1/r)*dV/dr as derivative */
+  *grad = - (*pot + fac * exp( -SQR(ew_kappa)*r2 ) ) / r2; 
 }
 
 #endif /* EWALD */

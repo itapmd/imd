@@ -821,18 +821,21 @@ EXTERN real epitax_poteng_min INIT(0);
 EXTERN real epitax_speed INIT(1.0);
 #endif
 
+EXTERN real     ew_r2_cut INIT(0.0);     /* EWALD r-space cutoff */
 #ifdef EWALD
 EXTERN imd_timer ewald_time;
 EXTERN real     charge[10] INIT(zero10); /* Charge of atoms */
 EXTERN real     ew_kappa;                /* Parameter kappa */
-EXTERN ivektor  ew_kmax;                 /* Number of k-vectors in Ewald sum */
+EXTERN real     ew_kcut;                 /* k-space cutoff */
 EXTERN int      ew_nmax;                 /* Number of image boxes */
+EXTERN int      ew_totk;
 EXTERN int      ew_nx;
 EXTERN int      ew_ny;
 EXTERN int      ew_nz;
+EXTERN int      ew_test INIT(0);
 EXTERN vektor   *ew_kvek;
+EXTERN ivektor  *ew_ivek;
 EXTERN real     *ew_expk;
-EXTERN int      ew_totk  INIT(0);
 EXTERN real     *coskx;
 EXTERN real     *sinkx;
 EXTERN real     *cosky;
@@ -842,7 +845,6 @@ EXTERN real     *sinkz;
 EXTERN real     *coskr;
 EXTERN real     *sinkr;
 EXTERN real     ew_vorf;
-EXTERN real     ew_vorf1;
 EXTERN real     ew_eps INIT(14.38); /* this is e^2/(2*pi*epsilon_0) in eV A */
 EXTERN real     twopi;
 #endif
