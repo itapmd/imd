@@ -59,9 +59,6 @@ MPISOURCES2D  = ${MPISOURCES} imd_main_mpi_2d.c imd_geom_mpi_2d.c \
 MPISOURCES3D  = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c \
 		imd_comm_force_3d.c
 
-PACXSOURCES2D = ${MPISOURCES2D} imd_pacx.c
-PACXSOURCES3D = ${MPISOURCES3D} imd_pacx.c
-
 DEFORMSOURCES = imd_deform.c
 
 SOCKHEADERS   = socket_tokens.h sockets.h sockutil.h
@@ -165,7 +162,6 @@ CFLAGS_MPI_i486-linux		= -DMPI -O3 -m486
 CFLAGS_MPI_i486-linux_DEBUG	= -DMPI -O -g -Wall -m486
 
 # PACX MPI
-
 PACXDIR				= ${HOME}/WORK/PACX
 
 CFLAGS_PACX_t3e			= -Dt3e -DPACX -DMPI -I${PACXDIR}/include -DAR -O3 -htolerant,aggress,report=isf
@@ -283,10 +279,6 @@ T3DLIBS  	:= -lmpi -lsci
 # Executeables are put into $HOME/$BINDIR$/HOSTTYPE
 BINDIR   = bin
 
-# Local releases are done by coping the source to /app/itapsoft
-RELEASEPATH = /app/itapsoft/simulation/imd
-
-
 ###########################################################################
 #
 #	 IMD Configuration rules
@@ -360,11 +352,11 @@ LIBS    += ${PACXLIBS_${HOSTTYPE}}
 # twod?
 ifneq (,$(strip $(findstring 2d,${MAKETARGET})))
 HEADERS := ${IMDHEADERS}
-SOURCES	:= ${SOURCES2D} ${PACXSOURCES2D}
+SOURCES	:= ${SOURCES2D} ${MPISOURCES2D}
 CFLAGS  += -DTWOD
 else
 HEADERS := ${IMDHEADERS}
-SOURCES	:= ${SOURCES3D} ${PACXSOURCES3D}
+SOURCES	:= ${SOURCES3D} ${MPISOURCES3D}
 endif
 
 #general compiler flags
@@ -628,24 +620,6 @@ endif
 
 clean:
 	rm -f *.o *.u *~ \#* *.V *.T *.O
-
-release:	Makefile ${IMDHEADERS} ${SOURCES3D} ${RISCSOURCES3D} ${MPISOURCES3D} ${PACXSOURCES3D}  ${SOURCES2D} ${RISCSOURCES2D} ${MPISOURCES2D} ${PACXSOURCES2D} ${MISCSOURCES} ${FRACSOURCES} ${HOMSOURCES} ${SOCKHEADERS} ${SOCKSOURCES}
-	cp Makefile         ${RELEASEPATH}
-	cp ${IMDHEADERS}    ${RELEASEPATH}
-	cp ${SOURCES3D}     ${RELEASEPATH}
-	cp ${RISCSOURCES3D} ${RELEASEPATH}
-	cp ${MPISOURCES3D}  ${RELEASEPATH}
-	cp ${PACXSOURCES3D} ${RELEASEPATH}
-	cp ${SOURCES2D}     ${RELEASEPATH}
-	cp ${RISCSOURCES2D} ${RELEASEPATH}
-	cp ${MPISOURCES2D}  ${RELEASEPATH}
-	cp ${PACXSOURCES2D} ${RELEASEPATH}
-	cp ${MISCSOURCES}   ${RELEASEPATH}
-	cp ${SOCKHEADERS}   ${RELEASEPATH}
-	cp ${SOCKSOURCES}   ${RELEASEPATH}
-	cp ${HOMSOURCES}   ${RELEASEPATH}
-	cp ${FRACSOURCES}   ${RELEASEPATH}
-	cp ${QUASISOURCES}   ${RELEASEPATH}
 
 archive:
 	tar -zcvf imd-arch.tar.gz Makefile Parameters README *.[ch] *.perl

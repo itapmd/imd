@@ -6,74 +6,54 @@
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
 
 #include "imd.h"
 
-/* set up the MPI communication topology */
+/******************************************************************************
+*
+*  set up the MPI communication topology
+*
+******************************************************************************/
 
 void setup_mpi_topology( void )
-
 {
   int tmp;
   int period[3] = { 1, 1, 1 };
   ivektor cpuc, nbcoord;
 
-/* Set Up process topology */
-
+  /* Set up process topology */
   if (0==myid) {
     printf("Global cpu array dimensions: %d %d %d\n",
 	   cpu_dim.x,cpu_dim.y,cpu_dim.z);
-  };
-  
-  tmp = cpu_dim.x*cpu_dim.y*cpu_dim.z;
-  if ( 0 == myid ) {
-    printf("Want %d cpus, have %d cpus.\n",(int) tmp,num_cpus);
+    tmp = cpu_dim.x * cpu_dim.y * cpu_dim.z;
+    printf("Want %d cpus, have %d cpus.\n", (int) tmp, num_cpus);
     if (tmp > num_cpus) error("Not enough cpus."); 
-  };
-
-#ifndef PACX
-  MPI_Cart_create( MPI_COMM_WORLD, 3, (int *) &cpu_dim, period, 1, &cpugrid );
-  MPI_Comm_rank(cpugrid,&myid);
-  MPI_Comm_size(cpugrid,&num_cpus);
+  }
+  
+  MPI_Cart_create(MPI_COMM_WORLD, 3, (int *) &cpu_dim, period, 1, &cpugrid);
+  MPI_Comm_rank(cpugrid, &myid);
+  MPI_Comm_size(cpugrid, &num_cpus);
   MPI_Cart_coords(cpugrid, myid, 3, (int *) &my_coord);
-#else
-  /* kopiere Communicator */
-  cpugrid=MPI_COMM_WORLD;
-  /* ermittle int myid, unnoetig, da MPI_COMM_WOLRD = cpu_grid */
-  /* MPI_Comm_rank(cpugrid,&myid); */
-  /* MPI_Comm_size(cpugrid,&num_cpus); */
-  /* berechne aus int myid eigene CPU Koordinaten ivektor my_coord*/
-  my_coord = my_cart_coords( myid );
-#endif
   
   cpu_ranks = (int *) malloc( cpu_dim.x * cpu_dim.y * cpu_dim.z * sizeof(int));
-  if ( 0 == myid )
-    if (NULL == cpu_ranks) error("Can't allocate memory for cpu_ranks");
 
-      for (cpuc.x=0; cpuc.x < cpu_dim.x; ++cpuc.x)
-         for (cpuc.y=0; cpuc.y < cpu_dim.y; ++cpuc.y)
-            for (cpuc.z=0; cpuc.z < cpu_dim.z; ++cpuc.z) 
+  for (cpuc.x=0; cpuc.x < cpu_dim.x; ++cpuc.x)
+    for (cpuc.y=0; cpuc.y < cpu_dim.y; ++cpuc.y)
+      for (cpuc.z=0; cpuc.z < cpu_dim.z; ++cpuc.z) 
+        MPI_Cart_rank(cpugrid, (int *) &cpuc, PTR_VV(cpu_ranks,cpuc,cpu_dim));
 
-#ifndef PACX
-              MPI_Cart_rank( cpugrid, (int *) &cpuc, 
-                            PTR_3D_VV(cpu_ranks, cpuc, cpu_dim));
-#else
-  /* durchlaufe alle CPUs (ivektor cpuc) und berechne pointer cpu_ranks */
-              my_cart_rank( cpuc );
-#endif
-
-/* set up neighbour cpus ids */
-/* faces */
+  /* set up neighbour cpus ids */
+  /* faces */
   nbcoord = my_coord; --nbcoord.x; nbeast = cpu_grid_coord( nbcoord );
   nbcoord = my_coord; ++nbcoord.x; nbwest = cpu_grid_coord( nbcoord );
   nbcoord = my_coord; --nbcoord.y; nbnorth= cpu_grid_coord( nbcoord );
   nbcoord = my_coord; ++nbcoord.y; nbsouth= cpu_grid_coord( nbcoord );
   nbcoord = my_coord; --nbcoord.z; nbup   = cpu_grid_coord( nbcoord );
   nbcoord = my_coord; ++nbcoord.z; nbdown = cpu_grid_coord( nbcoord );
+
   /* edges */
   nbcoord = my_coord; ++nbcoord.x; --nbcoord.y; nbnw = cpu_grid_coord(nbcoord);
   nbcoord = my_coord; ++nbcoord.x; ++nbcoord.y; nbws = cpu_grid_coord(nbcoord);
@@ -87,7 +67,8 @@ void setup_mpi_topology( void )
   nbcoord = my_coord; --nbcoord.x; ++nbcoord.z; nbde = cpu_grid_coord(nbcoord);
   nbcoord = my_coord; ++nbcoord.y; ++nbcoord.z; nbds = cpu_grid_coord(nbcoord);
   nbcoord = my_coord; ++nbcoord.x; ++nbcoord.z; nbdw = cpu_grid_coord(nbcoord);
-  /* corners */ 
+
+  /* corners */
   nbcoord = my_coord; ++nbcoord.x; --nbcoord.y; --nbcoord.z; nbunw = cpu_grid_coord( nbcoord );
   nbcoord = my_coord; ++nbcoord.x; ++nbcoord.y; --nbcoord.z; nbuws = cpu_grid_coord( nbcoord );
   nbcoord = my_coord; --nbcoord.x; ++nbcoord.y; --nbcoord.z; nbuse = cpu_grid_coord( nbcoord );

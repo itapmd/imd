@@ -6,51 +6,43 @@
 ******************************************************************************/
 
 /******************************************************************************
-* $RCSfile$
 * $Revision$
 * $Date$
 ******************************************************************************/
 
 #include "imd.h"
 
-/* set up the MPI communication topology */
+/******************************************************************************
+*
+*  set up the MPI communication topology
+*
+******************************************************************************/
 
 void setup_mpi_topology( void )
-
 {
   int tmp;
   int period[2] = { 1, 1 };
   ivektor cpuc, nbcoord;
 
-/* set up process topology */
-
+  /* set up process topology */
   if (0==myid) {
-    printf("Global cpu array dimensions: %d %d\n",
-	   cpu_dim.x,cpu_dim.y);
-  };
-
-  tmp = cpu_dim.x*cpu_dim.y;
-  if ( 0 == myid ) {
-    printf("Want %d cpus, have %d cpus.\n",(int) tmp,num_cpus);
+    printf("Global cpu array dimensions: %d %d\n", cpu_dim.x, cpu_dim.y);
+    tmp = cpu_dim.x * cpu_dim.y;
+    printf("Want %d cpus, have %d cpus.\n", (int) tmp, num_cpus);
     if (tmp > num_cpus) error("Not enough cpus."); 
-  };
+  }
 
   MPI_Cart_create( MPI_COMM_WORLD, 2, (int *) &cpu_dim, period, 1, &cpugrid );
-
   MPI_Comm_rank(cpugrid,&myid);
   MPI_Comm_size(cpugrid,&num_cpus);
   MPI_Cart_coords(cpugrid, myid, 2, (int *) &my_coord);
 
   cpu_ranks = (int *) malloc( cpu_dim.x * cpu_dim.y * sizeof(int));
-  if ( 0 == myid )
-  if (NULL == cpu_ranks) error("Can't allocate memory for cpu_ranks");
-
   for (cpuc.x=0; cpuc.x < cpu_dim.x; ++cpuc.x)
     for (cpuc.y=0; cpuc.y < cpu_dim.y; ++cpuc.y)
-	MPI_Cart_rank( cpugrid, (int *) &cpuc, 
-                       PTR_2D_VV(cpu_ranks, cpuc, cpu_dim));
+      MPI_Cart_rank( cpugrid, (int *) &cpuc, PTR_VV(cpu_ranks, cpuc, cpu_dim));
 
- /* set up neighbour cpus ids */
+  /* set up neighbour cpus ids */
   nbcoord.x = my_coord.x - 1;
   nbcoord.y = my_coord.y;
   nbeast = cpu_grid_coord( nbcoord );

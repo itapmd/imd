@@ -61,15 +61,11 @@ void imd_start_timer(imd_timer *timer);
 void imd_stop_timer(imd_timer *timer);
 void maxwell(real TEMP);
 
-/* start and stop MPI - files imd_main_mpi_*.c, imd_geom_mpi_*.c, imd_pacx.c */
+/* start and stop MPI - files imd_main_mpi_*.c, imd_geom_mpi_*.c */
 #ifdef MPI
 void init_mpi(int argc,char **argv);
 void setup_mpi_topology(void);
 void shutdown_mpi(void);
-#ifdef PACX
-ivektor my_cart_coords(int myid);
-void my_cart_rank(ivektor my_coord);
-#endif
 #endif
 
 /* manage MPI buffers and buffer cells - file imd_mpi_util.c */
