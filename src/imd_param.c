@@ -1006,6 +1006,9 @@ void read_parameters(int argc,char **argv)
     /* Delete distrib minmax file if not restart */
     sprintf(fname,"%s.minmax.dist",outfilename);
     unlink(fname);
+    /* Delete tempdist file if not restart */
+    sprintf(fname,"%s.tempdist",outfilename);
+    unlink(fname);
     /* write header to minmax file, if we possibly need it */
     if ((dist_dim.x>0) && (dis_interval>0)) { 
       FILE *fl;
