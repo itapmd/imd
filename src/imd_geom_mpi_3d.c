@@ -172,32 +172,73 @@ ivektor cpu_coord_v(ivektor cellc)
 
 /******************************************************************************
 *
-*  calc_cpu_dim chooses the cpu dimension if no array dimension is given
-*  or if cpu_dim does not correspond to the available number of cpus
+*  calc_cpu_dim chooses the CPU dimensions if no array dimensions are given
+*  or if cpu_dim does not correspond to the available number of CPUs.
+*  The number of CPUs is factorized evenly.
 *
 ******************************************************************************/
 
 void calc_cpu_dim(void)
 {
   int trial, n;
+  int *cpu_dim_ptr[3];
+  int *tmpptr, tmp;
+  ivektor fctr;
 
+  /* sort cpu_dim by size. cpu_dim_ptr[0] points to the largest component */
+  cpu_dim_ptr[0] = &cpu_dim.x;
+  cpu_dim_ptr[1] = &cpu_dim.y;
+  cpu_dim_ptr[2] = &cpu_dim.z;
+  if ( *cpu_dim_ptr[2] > *cpu_dim_ptr[1] ) {
+    tmpptr         = cpu_dim_ptr[1];
+    cpu_dim_ptr[1] = cpu_dim_ptr[2];
+    cpu_dim_ptr[2] = tmpptr;
+  }
+  if ( *cpu_dim_ptr[1] > *cpu_dim_ptr[0] ) {
+    tmpptr         = cpu_dim_ptr[0];
+    cpu_dim_ptr[0] = cpu_dim_ptr[1];    
+    cpu_dim_ptr[1] = tmpptr;
+  }
+  if ( *cpu_dim_ptr[2] > *cpu_dim_ptr[1] ) {
+    tmpptr         = cpu_dim_ptr[1];
+    cpu_dim_ptr[1] = cpu_dim_ptr[2];
+    cpu_dim_ptr[2] = tmpptr;
+  }  
+
+   /* factorize num_cpus evenly */
   n = num_cpus;
 
-  /* estimate cpu_dim.x */
   trial = (int) ceil(pow(n, 1.0/3.0));
 
-  for( cpu_dim.x=trial; cpu_dim.x>0; cpu_dim.x--)
-    if ( n%cpu_dim.x == 0 )
+  for( fctr.x=trial; fctr.x>0; fctr.x--)
+    if ( n%fctr.x == 0 )
       break;
-  n /= cpu_dim.x;
+  n /= fctr.x;
 
-  /* estimate cpu_dim.y */
-  trial = (int) ceil( sqrt(n));
-
-  for( cpu_dim.y=trial; cpu_dim.y>0; cpu_dim.y--)
-    if ( n%cpu_dim.y == 0 )
+  for( fctr.y=trial; fctr.y>0; fctr.y--)
+    if ( n%fctr.y == 0 )
       break;
 
-  cpu_dim.z = n/cpu_dim.y;
+  fctr.z = n/fctr.y;
   
+  /* sort factorization by size */
+  if ( fctr.z > fctr.y ) {
+    tmp = fctr.y;
+    fctr.y = fctr.z;
+    fctr.z = tmp;
+  }
+  if ( fctr.y > fctr.x ) {
+    tmp = fctr.x;
+    fctr.x = fctr.y;
+    fctr.y = tmp;
+  }
+  if ( fctr.z > fctr.y ) {
+    tmp = fctr.y;
+    fctr.y = fctr.z;
+    fctr.z = tmp;
+  }
+
+  *cpu_dim_ptr[0] = fctr.x;
+  *cpu_dim_ptr[1] = fctr.y;
+  *cpu_dim_ptr[2] = fctr.z;
 }

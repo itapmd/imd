@@ -148,24 +148,46 @@ ivektor cpu_coord_v(ivektor cellc)
 
 /******************************************************************************
 *
-*  calc_cpu_dim chooses the cpu dimension if no array dimension is given
-*  or if cpu_dim does not correspond to the available number of cpus
+*  calc_cpu_dim chooses the CPU dimensions if no array dimensions are given
+*  or if cpu_dim does not correspond to the available number of CPUs.
+*  The number of CPUs is factorized evenly.
 *
 ******************************************************************************/
 
 void calc_cpu_dim(void)
 {
-  int trial, n;
+  int trial, n, tmp;
+  int *cpu_dim_ptr[2];
+  ivektor fctr;
 
+  /* sort cpu_dim by size. cpu_dim_ptr[0] points to the largest component */
+  if ( cpu_dim.x > cpu_dim.y ) {
+    cpu_dim_ptr[0] = &cpu_dim.x;
+    cpu_dim_ptr[1] = &cpu_dim.y;
+  }
+  else {
+    cpu_dim_ptr[0] = &cpu_dim.y;
+    cpu_dim_ptr[1] = &cpu_dim.x;
+  }
+
+  /* factorize num_cpus evenly */
   n = num_cpus;
 
-  /* estimate cpu_dim.x */
-  trial = (int) ceil( sqrt(n));
+  trial = (int) ceil(sqrt(n));
 
-  for( cpu_dim.x=trial; cpu_dim.x>0; cpu_dim.x--)
-    if ( n%cpu_dim.x == 0 )
+  for( fctr.x=trial; fctr.x>0; fctr.x--)
+    if ( n%fctr.x == 0 )
       break;
 
-  cpu_dim.y = n/cpu_dim.x;
-  
+  fctr.y = n/fctr.x;
+
+  /* sort factorization by size */
+  if ( fctr.y > fctr.x ) {
+    tmp = fctr.y;
+    fctr.y = fctr.x;
+    fctr.x = tmp;
+  }
+
+  *cpu_dim_ptr[0] = fctr.x;
+  *cpu_dim_ptr[1] = fctr.y;  
 }
