@@ -38,6 +38,12 @@ void main_loop(void)
   dtemp = (end_temp - temperature) / (steps_max - steps_min);
 #endif
 
+#ifdef TRANSPORT
+  dtemp = (dTemp_end - dTemp_start)/(steps_max - steps_min);
+  tran_Tleft  = temperature + dTemp_start;
+  tran_Tright = temperature - dTemp_start;
+#endif
+
 #ifdef NPT
   d_pressure.x = (pressure_end.x - pressure_ext.x) / (steps_max - steps_min);
   d_pressure.y = (pressure_end.y - pressure_ext.y) / (steps_max - steps_min);
@@ -203,12 +209,21 @@ void main_loop(void)
     if ((dsp_interval > up_ort_ref) && (0 == steps%dsp_interval)) write_dspmaps(steps);
 #endif
 
+#ifdef TRANSPORT
+    if ((tran_interval > 0) && (0 == steps%tran_interval)) write_temp(steps);
+#endif
+
 #ifdef USE_SOCKETS
     if ((socket_int>0) && (0==steps%socket_int)) check_socket(steps);
 #endif
 
 #if defined(AND) || defined(NVT) || defined(NPT)
     temperature += dtemp;
+#endif
+
+#ifdef TRANSPORT
+    tran_Tleft   += dtemp;
+    tran_Tright  -= dtemp;
 #endif
 
 #ifdef NPT
