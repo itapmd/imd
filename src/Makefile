@@ -27,7 +27,7 @@
 #   alpha			True64 Unix             risc gcc
 #   iris4d			SGI Irix		risc gcc omp
 #   t3e				Cray Unicos/mk		risc mpi pacx
-#   HITACHI, SR2201		HI-UX/MPP		mpi
+#   SR2201, HITACHI		HI-UX/MPP		mpi
 #
 # <ensemble> is one of nve, mik, nvt, npt_iso, npt_axial, mc, frac, nvx, stm
 #
@@ -199,12 +199,12 @@ PACXLIBS_t3e		= -L ${PACXDIR}/lib -lpacx -llzo -lmpi
 
 LIBS_PROF_t3e 		:= -lapp
 
-# flags for HITACHI
-CC_MPI_HITACHI		 = cc
-CFLAGS_MPI_HITACHI	 = -DMPI +O4 +Ol +Oprefetch -I/usr/local/mpi/include  -DMPI_hmpp2
-CFLAGS_MPI_HITACHI_DEBUG = -DMPI -g -I/usr/local/mpi/include  -DMPI_hmpp2
-CFLAGS_MPI_HITACHI_PROF  = -G
-MPILIBS_HITACHI		 = -L/usr/local/mpi/lib/hmpp2/cml -lmpi
+# flags for Hitachi SR2201
+CC_MPI_SR2201		 = cc
+CFLAGS_MPI_SR2201	 = -DMPI +O4 +Ol +Oprefetch -I/usr/local/mpi/include  -DMPI_hmpp2
+CFLAGS_MPI_SR2201_DEBUG = -DMPI -g -I/usr/local/mpi/include  -DMPI_hmpp2
+CFLAGS_MPI_SR2201_PROF  = -G
+MPILIBS_SR2201		 = -L/usr/local/mpi/lib/hmpp2/cml -lmpi
 
 
 ###########################################################################
@@ -226,8 +226,8 @@ endif
 ifneq (,$(strip $(findstring cray,${HOSTTYPE})))
 IMDHOST = t3e
 endif
-ifneq (,$(strip $(findstring SR2201,${HOSTTYPE})))
-IMDHOST = HITACHI
+ifneq (,$(strip $(findstring HITACHI,${HOSTTYPE})))
+IMDHOST = SR2201
 endif
 
 CC_RISC           = ${CC_RISC_${IMDHOST}}
