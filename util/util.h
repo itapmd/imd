@@ -187,7 +187,9 @@ typedef struct { real c11, c12, c13, c14, c15, c16, c22, c23, c24,
 #ifdef COVALENT
 /* Neighbor table for Tersoff potential */
 typedef struct {
+#ifndef RING
   real        *dist;
+#endif
   short       *typ;
   void        **cl;
   int         *num;
@@ -227,6 +229,14 @@ typedef struct {
   tensor6d *elco;
   real     *vol;
 #endif
+#ifdef RING
+  int      *del;
+  int      *hops;
+  int      *sp_hops;
+  int      *color;
+  int      *sp_color;
+  neightab * perm_neightab_array;
+#endif
   int     n;
   int     n_max;
 } cell;
@@ -242,6 +252,20 @@ typedef char str255[255];
 #ifndef TWOD
 typedef vektor vektorstr[NUM]; 
 #endif
+#endif
+
+#ifdef RING
+typedef struct atom_ {
+  cell *cl;
+  int  num;
+  int  status;
+} atom;
+
+typedef struct queue_elmt {
+  cell              *cl;
+  int               num;
+  struct queue_elmt *next;
+} Queue_elmt;
 #endif
 
 /* for parameter reading */
@@ -309,6 +333,10 @@ void calc_angles(void);
 void make_numbers(void);
 #endif
 
+#ifdef COVALENT
+void do_neighbour_tables(cell *p, cell *q, vektor pbc);
+#endif
+
 #ifdef TERSOFF
 void init_tersoff(void);
 #elif STIWEB
@@ -328,6 +356,16 @@ void do_elco_keating(void);
 #endif
 void write_stress(void);
 void write_elco(void);
+#endif
+#ifdef RING
+void search_rings(void);
+void go_forward(void);
+void compute_hops(void);
+int sp_ring(void);
+void write_data(void);
+Queue_elmt *queue_create(cell *cl, int num);
+Queue_elmt *queue_enqueue(Queue_elmt *queue, cell *cl, int num);
+void queue_dequeue(Queue_elmt **qptr, cell **clptr, int *numptr); 
 #endif
 
 /*****************************************************************************
@@ -393,7 +431,9 @@ int  maxfaces  = 0, sumfaces  = 0;
 #endif
 
 /* The histograms */
+#ifndef RING
 real      *histogram;
+#endif
 #ifdef PAIR
 ivektor3d hist_dim;
 #endif
@@ -441,7 +481,7 @@ int    stresstens = 0, moduli = 0, all_moduli = 0;
 #endif
 
 #ifdef COVALENT
-int  neigh_len;
+int  neigh_len = 4;
 #endif
 #ifdef TERSOFF
 real ter_r_cut[10][10], ter_r2_cut[10][10], ters_r_cut[55] ;
@@ -488,6 +528,19 @@ real keat_r_cut[10][10];
 real keat_r2_cut[10][10];
 real keating_beta[550];
 real keat_beta[10][10][10];
+#endif
+
+#ifdef RING
+int *histogram;
+int total_rings = 0; /* Number of sp rings found */
+int first = 1;       /* =1: First generation of neighbour tables */
+int max_length = 10; /* Maximum length of paths, default 10 */
+Queue_elmt *queue;
+int queue_length;
+Queue_elmt *sp_queue;
+int sp_queue_length;
+atom *stack;
+int stack_end;
 #endif
 
 /******************************************************************************
@@ -726,6 +779,14 @@ void alloc_cell(cell *cl, int count)
     cl->elco          = NULL;
     cl->vol           = NULL;
 #endif
+#ifdef RING
+    cl->del            = NULL;
+    cl->hops           = NULL;
+    cl->sp_hops        = NULL;
+    cl->color          = NULL;
+    cl->sp_color       = NULL;
+    cl->perm_neightab_array = NULL;
+#endif
     cl->n             = 0;
   }
 
@@ -756,6 +817,13 @@ void alloc_cell(cell *cl, int count)
   cl->elco   = (tensor6d *) realloc(cl->elco, count * sizeof(tensor6d));
   cl->vol    = (real   *) realloc(cl->vol,    count * sizeof(real));
 #endif
+#ifdef RING
+  cl->del      = (int    *) realloc(cl->del,      count * sizeof(int));
+  cl->hops     = (int    *) realloc(cl->hops,     count * sizeof(int));
+  cl->sp_hops  = (int    *) realloc(cl->sp_hops,  count * sizeof(int));
+  cl->color    = (int    *) realloc(cl->color,    count * sizeof(int));
+  cl->sp_color = (int    *) realloc(cl->sp_color, count * sizeof(int));
+#endif
 #ifdef COVALENT
   cl->neightab_array = (neightab *) realloc( cl->neightab_array, 
 					      count * sizeof(neightab));
@@ -768,14 +836,41 @@ void alloc_cell(cell *cl, int count)
 
      neigh->n     = 0;
      neigh->n_max = neigh_len;
+#ifndef RING
      neigh->dist  = (real *)  malloc( neigh_len * 3 * sizeof(real) );
+#endif
      neigh->typ   = (short *) malloc( neigh_len * sizeof(short) );
      neigh->cl    = (void **) malloc( neigh_len * sizeof(cellptr) );
      neigh->num   = (int *)   malloc( neigh_len * sizeof(int) );
 
-     if ((neigh->dist==NULL) || (neigh->typ==NULL) || 
-	 (neigh->cl  ==NULL) || (neigh->num==NULL) )
+     if (
+#ifndef RING
+       (neigh->dist==NULL) || 
+#endif
+       (neigh->typ==NULL) || 
+       (neigh->cl  ==NULL) || (neigh->num==NULL) )
        error("Cannot allocate memory for neighbor table");
+   }
+#endif
+#ifdef RING
+  cl->perm_neightab_array = (neightab *) realloc( cl->perm_neightab_array, 
+					      count * sizeof(neightab));
+   if (NULL == cl->perm_neightab_array) 
+      error("Cannot allocate permanent neighbor tables");
+
+   /* Allocate memory for permanent neighbour tables */
+   for (i = cl->n_max; i < count; ++i) {
+     neigh = cl->perm_neightab_array + i;
+
+     neigh->n     = 0;
+     neigh->n_max = neigh_len;
+     neigh->typ   = (short *) malloc( neigh_len * sizeof(short) );
+     neigh->cl    = (void **) malloc( neigh_len * sizeof(cellptr) );
+     neigh->num   = (int *)   malloc( neigh_len * sizeof(int) );
+
+     if ((neigh->typ==NULL) || (neigh->cl  ==NULL) || 
+	 (neigh->num==NULL) )
+       error("Cannot allocate memory for permanent neighbor table");
    }
 #endif
 
@@ -803,6 +898,13 @@ void alloc_cell(cell *cl, int count)
     || (NULL==cl->stress)
     || (NULL==cl->elco)
     || (NULL==cl->vol)
+#endif
+#ifdef RING
+    || (NULL==cl->del)
+    || (NULL==cl->hops)
+    || (NULL==cl->sp_hops)
+    || (NULL==cl->color)
+    || (NULL==cl->sp_color)
 #endif
   ) error("Cannot allocate memory for cell.");
   cl->n_max  = count;
@@ -932,6 +1034,30 @@ void read_parameters(int argc,char **argv)
       all_moduli = 1;
       break;
 #endif
+#ifdef RING
+      /* l - Maximal length of rings */
+    case 'l':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          max_length = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else max_length = atof(&argv[1][2]);
+      break;
+      /* n - Size of neighbour tables */
+    case 'n':
+      if (argv[1][2]=='\0') {
+        if (NULL != argv[2]) {
+          neigh_len = atof(argv[2]);
+          --argc;
+          ++argv;
+        }
+      }
+      else neigh_len = atof(&argv[1][2]);
+      break;
+#endif
     case 'p':
       if (argv[1][2]=='\0') {
         if (NULL != argv[2]) {
@@ -985,7 +1111,7 @@ void read_parameters(int argc,char **argv)
   if (r_cell < r_max) error("Cell smaller than cutoff radius!");
   r2_cut = SQR(r_cell);
 #endif
-#ifdef STRESS
+#if defined(STRESS) || defined (RING)
   r2_cut = SQR(r_max);  
 #endif
 
@@ -1424,6 +1550,9 @@ void read_atoms(str255 infilename)
       /* Initialization */
       for ( i=0; i<ntypes; i++) 
 	to->coord[to->n * ntypes + i] = 0.0;
+#endif
+#ifdef RING
+      to->del[to->n] = 0;
 #endif
       to->n++;
       natoms++;
