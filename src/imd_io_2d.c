@@ -379,7 +379,7 @@ void write_properties(int steps)
 #ifndef MC
   fprintf(out," %10.4e", (double)part_kin_energy);
 #ifdef FNORM
-  fprintf(out, format, (double)fnorm);
+  fprintf(out, "%10.4e", (double)fnorm);
 #endif
   fprintf(out," %10.4e", (double)pressure);
 #else
@@ -606,6 +606,144 @@ void write_config(int steps)
     fclose(out);
   }
 }
+
+/******************************************************************************
+*
+* efwrite_config writes a 'filtered' configuration to a numbered file
+*
+******************************************************************************/
+#ifdef EFILTER
+void efwrite_cell(FILE *out, cell *p)
+{
+  int i;
+  double h;
+
+  for (i=0; i < p->n; i++)
+#ifdef ZOOM
+    if( (p->ort X(i) >= pic_ll.x) && (p->ort X(i) <= pic_ur.x) &&
+        (p->ort Y(i) >= pic_ll.y) && (p->ort Y(i) <= pic_ur.y) )
+#endif
+      {
+
+	if((POTENG(p,i)>=lower_e_pot)&&(POTENG(p,i)<=upper_e_pot))
+	  {
+#ifdef NVX
+	    h  = SPRODN(p->impuls,i,p->impuls,i)/(2*p->masse[i])+p->heatcond[i];
+	    h *=  p->impuls X(i) /  p->masse[i];
+	    fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f %12f\n",
+#else
+	    fprintf(out,"%d %d %12f %12f %12f %12f %12f %12f\n",
+#endif
+		    p->nummer[i],
+		    p->sorte[i],
+		    p->masse[i],
+		    p->ort X(i),
+		    p->ort Y(i),
+		    p->impuls X(i) / p->masse[i],
+		    p->impuls Y(i) / p->masse[i],
+		    p->pot_eng[i]
+#ifdef NVX
+		    ,h
+#endif
+		    );
+		    
+		    }}
+}
+
+void efwrite_config(int steps)
+{ 
+  FILE *out;
+  str255 fname;
+  int fzhlr;
+  cell *p,*q;
+  int i,j,k,l,m,n,tag;
+
+  /* Dateiname fuer Ausgabedatei erzeugen */
+  fzhlr = steps / efrep_interval;
+
+#ifdef MPI  
+  if (1==parallel_output)
+    sprintf(fname,"%s.%u.%u",outfilename,fzhlr,myid);
+  else
+#endif
+    sprintf(fname,"%s.%u",outfilename,fzhlr);
+
+#ifdef MPI
+
+  if (1==parallel_output) {
+
+    /* Ausgabedatei oeffnen */
+    out = fopen(fname,"w");
+    if (NULL == out) error("Cannot open output file for config.");
+
+    for (j = 1; j < cell_dim.x-1; ++j )
+      for (k = 1; k < cell_dim.y-1; ++k ) {
+ 	  p = PTR_2D_V(cell_array, j, k, cell_dim);
+	  efwrite_cell(out,p);
+	};
+    
+    fclose(out);
+
+  } else { 
+
+    if (0==myid) {
+
+      /* Ausgabedatei oeffnen */
+      out = fopen(fname,"w");
+      if (NULL == out) error("Cannot open output file for config.");
+
+      /* Write data on CPU 0 */
+
+      /* Write own data */
+      for (j = 1; j < cell_dim.x-1; ++j )
+	for (k = 1; k < cell_dim.y-1; ++k ) {
+	  p = PTR_2D_V(cell_array, j, k, cell_dim);
+	  efwrite_cell(out,p);
+	};
+
+      /* Receive data from other cpus and write that */
+      p   = PTR_2D_V(cell_array, 0, 0, cell_dim);
+      for ( m = 1; m < num_cpus; ++m)
+	for (j = 1; j < cell_dim.x-1; ++j )
+	  for (k = 1; k < cell_dim.y-1; ++k ) {
+	    tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
+	    recv_cell( p, m, tag );
+	    efwrite_cell(out,p);
+	  };
+
+      fclose(out);      
+    } else { 
+      /* Send data to cpu 0 */
+      for (j = 1; j < cell_dim.x-1; ++j )
+	for (k = 1; k < cell_dim.y-1; ++k ) {
+	  p   = PTR_2D_V(cell_array, j, k, cell_dim);
+	  tag = PTR_2D_V(CELL_TAG, j, k, cell_dim);
+	  send_cell( p, 0, tag );
+	}
+    }
+  }
+
+#else
+
+  /* Ausgabedatei oeffnen */
+  out = fopen(fname,"w");
+  if (NULL == out) error("Cannot open output file for config.");
+
+  for (p = cell_array; 
+       p <= PTR_2D_V(cell_array,
+		     cell_dim.x-1,
+		     cell_dim.y-1,
+		     cell_dim);
+       ++p ) 
+
+    efwrite_cell(out,p);
+
+  fclose(out);  
+
+#endif
+
+}
+#endif
 
 
 #ifdef DISLOC

@@ -230,9 +230,9 @@ void locate(real x, real y, real z, int i, int j, int k);
 void borders(void);
 #endif
 void display_conf(int steps);
-
-
-
+#ifdef EFILTER
+void efwrite_config(int steps);
+#endif
 
 
 

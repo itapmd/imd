@@ -15,21 +15,25 @@
 #ifdef MAIN 
 #define EXTERN        /* define Variables in main */
 #define INIT(data) =data
+
 #ifdef TWOD
 #define nullvektor  { 0.0, 0.0 }
 #define nullivektor { 0, 0 }
 #define einsvektor  { 1.0, 1.0 }
 #define einsivektor { 1, 1 }
+
 #else
 #define nullvektor  { 0.0, 0.0, 0.0 }
 #define nullivektor { 0, 0, 0 }
 #define einsvektor  { 1.0, 1.0, 1.0 }
 #define einsivektor { 1, 1, 1 }
 #endif
+
 #define nullvektor2d { 0.0, 0.0 }
 #define nullivektor2d { 0, 0 }
 #define nullvektor3d { 0.0, 0.0, 0.0 }
 #define nullivektor3d { 0, 0, 0 }
+
 #else
 #define EXTERN extern /* declare them extern otherwise */
 #define INIT(data)
@@ -89,6 +93,12 @@ EXTERN str255 rundesc; /* Description */
 EXTERN str255 progname; /* Name of current executable argv[0] */
 EXTERN ivektor cellmin; /* Minimum index of local cells (1 with MPI, 0 otherwise) */
 EXTERN ivektor cellmax; /* Maximum index of local cells  */
+
+#ifdef EFILTER
+EXTERN int efrep_interval INIT(0); /* Period of checkpoints ==0 for no checkpoints */
+EXTERN real  lower_e_pot INIT(0.0); /* lower end of energy window */
+EXTERN real  upper_e_pot INIT(0.0); /* upper end of energy window */
+#endif
 
 /* box parameters for generated structures */
 EXTERN ivektor box_param INIT(nullivektor);

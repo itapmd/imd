@@ -762,6 +762,140 @@ void write_config(int steps)
   }
 }
 
+#ifdef EFILTER
+/******************************************************************************
+*
+* efwrite_config writes a  energy-filtered configuration to a numbered file
+*
+******************************************************************************/
+
+void efwrite_config(int steps)
+
+/* Makro to write data of cell p to file out */
+/* just write those atoms which potential energy is within *
+ * a specified energy window, not yet for uniax            */
+#define EFWRITE_CELL     for (i = 0;i < p->n; ++i) \
+             if((POTENG(p,i)>=lower_e_pot)&&(POTENG(p,i)<=upper_e_pot)) \
+             fprintf(out,"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f %12.16f\n",\
+	     NUMMER(p,i),\
+	     p->sorte[i],\
+	     MASSE(p,i),\
+	     p->ort X(i),\
+	     p->ort Y(i),\
+	     p->ort Z(i),\
+	     p->impuls X(i) / MASSE(p,i),\
+	     p->impuls Y(i) / MASSE(p,i),\
+	     p->impuls Z(i) / MASSE(p,i),\
+		     POTENG(p,i)) 
+{ 
+  FILE *out;
+  str255 fname;
+  int fzhlr;
+  cell *p,*q;
+  int i,j,k,l,m,n,tag;
+
+  /* Dateiname fuer Ausgabedatei erzeugen */
+  fzhlr = steps / efrep_interval;
+
+#ifdef MPI  
+  if (1==parallel_output)
+    sprintf(fname,"%s.ef.%u.%u",outfilename,fzhlr,myid);
+  else
+#endif
+    sprintf(fname,"%s.ef.%u",outfilename,fzhlr);
+
+#ifdef MPI
+
+  if (1==parallel_output) {
+
+    /* Ausgabedatei oeffnen */
+    out = fopen(fname,"w");
+    if (NULL == out) error("Cannot open output file for config.");
+
+
+    for (j = 1; j < cell_dim.x-1; ++j )
+      for (k = 1; k < cell_dim.y-1; ++k )
+	for (l = 1; l < cell_dim.z-1; ++l ) {
+ 	  p = PTR_3D_V(cell_array, j, k, l, cell_dim);
+	  EFWRITE_CELL;
+	};
+    
+    fclose(out);
+
+  } else { 
+
+    if (0==myid) {
+
+      /* Ausgabedatei oeffnen */
+      out = fopen(fname,"w");
+      if (NULL == out) error("Cannot open output file for config.");
+
+      /* Write data on CPU 0 */
+
+      /* Write own data */
+      for (j = 1; j < cell_dim.x-1; ++j )
+	for (k = 1; k < cell_dim.y-1; ++k )
+	  for (l = 1; l < cell_dim.z-1; ++l ) {
+	    p = PTR_3D_V(cell_array, j, k, l, cell_dim);
+	    EFWRITE_CELL;
+	  };
+
+      /* Receive data from other cpus and write that */
+      p   = PTR_3D_V(cell_array, 0, 0, 0, cell_dim);
+      for ( m = 1; m < num_cpus; ++m)
+	for (j = 1; j < cell_dim.x-1; ++j )
+	  for (k = 1; k < cell_dim.y-1; ++k )
+	    for (l = 1; l < cell_dim.z-1; ++l ) {
+#ifndef MONOLJ
+	      tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
+	      recv_cell( p, m, tag );
+#else
+	      recv_cell( p, m, ORT_TAG );
+#endif
+	      EFWRITE_CELL;
+	    };
+
+      fclose(out);      
+    } else { 
+      /* Send data to cpu 0 */
+      for (j = 1; j < cell_dim.x-1; ++j )
+	for (k = 1; k < cell_dim.y-1; ++k )
+	  for (l = 1; l < cell_dim.z-1; ++l ) {
+	    p   = PTR_3D_V(cell_array, j, k, l, cell_dim);
+#ifndef MONOLJ
+	    tag = PTR_3D_V(CELL_TAG, j, k, l, cell_dim);
+	    send_cell( p, 0, tag );
+#else
+	    send_cell( p, 0, ORT_TAG );
+#endif
+	  };
+    };
+  };
+#else
+
+  /* Ausgabedatei oeffnen */
+  out = fopen(fname,"w");
+  if (NULL == out) error("Cannot open output file for config.");
+
+  for (p = cell_array; 
+       p <= PTR_3D_V(cell_array,
+                     cell_dim.x-1,
+                     cell_dim.y-1,
+                     cell_dim.z-1,
+                     cell_dim);
+       ++p ) 
+    
+      EFWRITE_CELL;
+
+  fclose(out);  
+
+#endif
+
+  /* write iteration file */
+}
+
+
+#endif /* EFILTER */
 
 #ifdef DISLOC
 

@@ -11,7 +11,7 @@
 ******************************************************************************/
 
 #include "imd.h"
-/*#define ATNR 2826   easier debuging... /*
+/*#define ATNR 2826   easier debuging... */
 
 /*****************************************************************************
 *
@@ -243,13 +243,16 @@ void main_loop(void)
 
 #ifdef GLOK /* "globale konvergenz": set impulses=0 if P*F <0 (global vectors) */
     if (PxF<0.0)
-      for (k=0; k<ncells; ++k) {
-	p = cell_array + CELLS(k);
-	for (i=0; i<p->n; ++i) {
-	  p->impuls X(i) = 0.0;
-	  p->impuls Y(i) = 0.0;
-	  p->impuls Z(i) = 0.0;
+      {
+	for (k=0; k<ncells; ++k) {
+	  p = cell_array + CELLS(k);
+	  for (i=0; i<p->n; ++i) {
+	    p->impuls X(i) = 0.0;
+	    p->impuls Y(i) = 0.0;
+	    p->impuls Z(i) = 0.0;
+	  }
 	}
+	write_properties(steps);
       }
 #endif
 
@@ -317,6 +320,9 @@ void main_loop(void)
 #endif
 
     /* Periodic I/O */
+#ifdef EFILTER  /* just print atoms if in an energy-window */ 
+    if ((efrep_interval > 0) && (0 == steps%efrep_interval)) efwrite_config(steps);
+#endif
     if ((rep_interval > 0) && (0 == steps%rep_interval)) write_config(steps);
     if ((eng_interval > 0) && (0 == steps%eng_interval) && (0==myid)) 
        write_properties(steps);

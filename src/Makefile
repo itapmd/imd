@@ -448,6 +448,10 @@ ifneq (,$(findstring glok,${MAKETARGET}))
 CFLAGS += -DGLOK
 endif
 
+ifneq (,$(findstring efilter,${MAKETARGET}))
+CFLAGS += -DEFILTER
+endif
+
 ifneq (,$(findstring npt_axial,${MAKETARGET}))
 CFLAGS += -DNPT -DNPT_axial
 endif

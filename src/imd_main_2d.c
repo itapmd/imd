@@ -23,6 +23,8 @@
 void main_loop(void)
 {
   int steps;
+  int i,j,k;
+  cell *p;
   real tmp_pot_energy;
   real tmp_kin_energy;
   real dtemp;
@@ -241,6 +243,9 @@ void main_loop(void)
 #endif
 
     /* Periodic I/O */
+#ifdef EFILTER  /* just print atoms if in an energy-window */ 
+    if ((efrep_interval > 0) && (0 == steps%efrep_interval)) efwrite_config(steps);
+#endif
     if ((rep_interval > 0) && (0 == steps%rep_interval)) write_config(steps);
     if ((eng_interval > 0) && (0 == steps%eng_interval) && (0==myid)) 
        write_properties(steps);

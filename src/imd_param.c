@@ -382,6 +382,7 @@ void getparamfile(char *paramfname, int sim)
       /* number of steps between checkpoints / period for checkpoints */
       getparam("checkpt_int",&rep_interval,PARAM_INT,1,1);
     }
+
     else if (strcasecmp(token,"eng_int")==0) {
       /* energy data output interval */
       getparam("eng_int",&eng_interval,PARAM_INT,1,1);
@@ -409,7 +410,20 @@ void getparamfile(char *paramfname, int sim)
       /* directions with periodic boundary conditions */
       getparam("pbc_dirs",&pbc_dirs,PARAM_INT,DIM,DIM);
     }
-
+#ifdef EFILTER
+    else if (strcasecmp(token,"ef_checkpt_int")==0) {
+      /* number of steps between energy filtered checkpoints */
+      getparam("ef_checkpt_int",&efrep_interval,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"e_pot_lower")==0) {
+      /* lower end of energy window */
+      getparam("e_pot_lower",&lower_e_pot,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"e_pot_upper")==0) {
+      /* upper end of energy window */
+      getparam("e_pot_upper",&upper_e_pot,PARAM_REAL,1,1);
+    }
+#endif
 #ifdef FBC
     else if (strcasecmp(token,"total_types")==0) {
       /* TOTAL nuber of atoms: ntypes + virtualtypes */
@@ -1305,6 +1319,12 @@ void broadcast_params() {
   MPI_Bcast( &pic_ur      , 2, MPI_REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &pic_res     , 2, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &pic_type    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+#endif
+
+#ifdef EFILTER
+  MPI_Bcast( &lower_e_pot , 1, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &upper_e_pot , 1, MPI_REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &efrep_interval   , 1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 
 #ifdef FBC
