@@ -83,14 +83,14 @@ type 1 and type 2<BR>
 
 Computes radial distribution histograms. Compile as follows:
 <PRE>
-    cc -O [-DTWOD] [-DNOPBC] [-DSLOTS=&lt;nnn&gt;] [-DDOUBLE] imd_pair.c -lm
+    cc -O [-DTWOD] [-DNOPBC] [-DSLOTS=&lt;nnn&gt;] [-DSINGLE] imd_pair.c -lm
 </PRE>
 Default is a program for 3D, but if the flag <TT>-DTWOD</TT> is 
 present, a program for 2D is compiled. With the flag 
 <TT>-DSLOTS=&lt;nnn&gt;</TT>, the number of slots in the histogram
 can be chosen. The default is 1000. <TT>-DNOPBC</TT> switches
-off periodic boundary conditions, and <TT>-DDOUBLE</TT>
-produces a binary using doubles instead of floats.
+off periodic boundary conditions, and <TT>-DSINGLE</TT>
+produces a binary using floats instead of doubles.
 <P>
 imd_pair produces radial distribution histograms from IMD
 configuration files (or checkpoints). Usage is as follows:
