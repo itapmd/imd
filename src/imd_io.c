@@ -715,22 +715,25 @@ void write_atoms_avp(FILE *out)
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; i++) {
 
-#ifndef TWOD
+
 	/* Averaged coordinates of atoms */
 	avp_pos.x = p->ort_ref X(i) * avpos_res / ( avpos_int + avpos_res );
 	avp_pos.y = p->ort_ref Y(i) * avpos_res / ( avpos_int + avpos_res );
+#ifndef TWOD
 	avp_pos.z = p->ort_ref Z(i) * avpos_res / ( avpos_int + avpos_res );
-
+#endif
 	/* Coefficients of coordinates with respect to box vectors */
 	coeff.x = SPROD( avp_pos, tbox_x );
 	coeff.y = SPROD( avp_pos, tbox_y );
+#ifndef TWOD
 	coeff.z = SPROD( avp_pos, tbox_z );
-
+#endif
 	/* For periodic boundary conditions map coordinates into box */
 	if( pbc_dirs.x == 1 ) 
 	    coeff.x -= floor(coeff.x);
-	if( pbc_dirs.y ==1 )
+	if( pbc_dirs.y == 1 )
 	    coeff.y -= floor(coeff.y);
+#ifndef TWOD
 	if( pbc_dirs.z == 1 ) 
 	    coeff.z -= floor(coeff.z);
 	
@@ -739,29 +742,15 @@ void write_atoms_avp(FILE *out)
 	z = coeff.x * box_x.z + coeff.y * box_y.z + coeff.z * box_z.z;
 		
 	len += sprintf( outbuf+len,
-			"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f\n ",
+			"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f\n",
 			NUMMER(p,i), VSORTE(p,i), MASSE(p,i), 
 			x, y, z, p->Epot_ref[i] * avpos_res / avpos_int);
 #else
-	/* Averaged coordinates of atoms */ 
-	avp_pos.x = p->ort_ref X(i) * avpos_res / ( avpos_int + avpos_res );
-	avp_pos.y = p->ort_ref Y(i) * avpos_res / ( avpos_int + avpos_res );
-
-	/* Coefficients of coordinates with respect to box vectors */
-	coeff.x = SPROD( avp_pos, tbox_x );
-	coeff.y = SPROD( avp_pos, tbox_y );
-
-	/* For periodic boundary conditions map coordinates into box */
-	if( pbc_dirs.x == 1 ) 
-	    coeff.x -= floor(coeff.x);
-	if( pbc_dirs.y ==1 )
-	    coeff.y -= floor(coeff.y);
-
 	x = coeff.x * box_x.x + coeff.y * box_y.x;
 	y = coeff.x * box_x.y + coeff.y * box_y.y;
 
 	len += sprintf( outbuf+len,
-			"%d %d %12.16f %12.16f %12.16f %12.16f\n ",
+			"%d %d %12.16f %12.16f %12.16f %12.16f\n",
 			NUMMER(p,i), VSORTE(p,i), MASSE(p,i), 
 			x, y, p->Epot_ref[i] * avpos_res / avpos_int);
 #endif
