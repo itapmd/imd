@@ -47,6 +47,7 @@
 void generate_atoms(str255 mode)
 {
   cell *to;
+  int  maxc1=0, maxc2;
   long addnumber, tmp, ninc, i, k;
 #ifdef MPI
   MPI_Status status;
@@ -152,6 +153,16 @@ void generate_atoms(str255 mode)
     }
     printf(" ],  total = %ld\n",addnumber);
   }
+
+  /* determine maximal cell occupancy */
+  for (k=0; k<ncells; k++) maxc1 = MAX( maxc1, CELLPTR(k)->n );
+#ifdef MPI
+  MPI_Reduce( &maxc1, &maxc2, 1, MPI_INT, MPI_MAX, 0, cpugrid);
+#else
+  maxc2 = maxc1;
+#endif
+  if (myid==0) printf("maximal cell occupancy: %d\n", maxc2);
+  
 }
 
 
@@ -268,10 +279,10 @@ void init_cubic(void)
 /* generate cubic crystal structures (not just fcc...) */
 void generate_fcc(int maxtyp)
 {
-  ivektor  min, max, cellc, lcellc;
+  ivektor  min, max, cellc, lcellc, bp;
   minicell *to;
   cell     *input;
-  real     xx, yy, zz;
+  real     xx, yy, zz, bu;
   int      to_cpu;
   int      x, y, z, typ;
   int      count;
@@ -286,30 +297,30 @@ void generate_fcc(int maxtyp)
   /* conventional unit cell has size box_unit */
   /* FCC, BCC, B2, NaCl, L1_2 */
   if ((maxtyp < 4) || (maxtyp==6) || (maxtyp==7)) {
-    box_param.x *= 2; 
-    box_param.y *= 2; 
-    box_param.z *= 2; 
-    box_unit    /= 2;
+    bp.x = box_param.x * 2; 
+    bp.y = box_param.y * 2; 
+    bp.z = box_param.z * 2; 
+    bu   = box_unit    / 2;
   }
   /* diamond and zincblende */
   else {
-    box_param.x *= 4; 
-    box_param.y *= 4; 
-    box_param.z *= 4; 
-    box_unit    /= 4;
+    bp.x = box_param.x * 4; 
+    bp.y = box_param.y * 4; 
+    bp.z = box_param.z * 4; 
+    bu   = box_unit    / 4;
   }
 
 #ifdef BUFCELLS
-  min.x =  my_coord.x      * box_param.x / cpu_dim.x;
-  max.x = (my_coord.x + 1) * box_param.x / cpu_dim.x;
-  min.y =  my_coord.y      * box_param.y / cpu_dim.y;
-  max.y = (my_coord.y + 1) * box_param.y / cpu_dim.y;
-  min.z =  my_coord.z      * box_param.z / cpu_dim.z;
-  max.z = (my_coord.z + 1) * box_param.z / cpu_dim.z;
+  min.x =  my_coord.x      * bp.x / cpu_dim.x;
+  max.x = (my_coord.x + 1) * bp.x / cpu_dim.x;
+  min.y =  my_coord.y      * bp.y / cpu_dim.y;
+  max.y = (my_coord.y + 1) * bp.y / cpu_dim.y;
+  min.z =  my_coord.z      * bp.z / cpu_dim.z;
+  max.z = (my_coord.z + 1) * bp.z / cpu_dim.z;
 #else
-  min.x = 0; max.x = box_param.x;
-  min.y = 0; max.y = box_param.y;
-  min.z = 0; max.z = box_param.z;
+  min.x = 0; max.x = bp.x;
+  min.y = 0; max.y = bp.y;
+  min.z = 0; max.z = bp.z;
 #endif
 
 #ifdef VEC
@@ -398,9 +409,9 @@ void generate_fcc(int maxtyp)
         nactive += 3;
 
         input->n = 1;
-        xx = (x + 0.5) * box_unit;
-        yy = (y + 0.5) * box_unit;
-        zz = (z + 0.5) * box_unit;
+        xx = (x + 0.5) * bu;
+        yy = (y + 0.5) * bu;
+        zz = (z + 0.5) * bu;
         cellc = cell_coord( xx, yy, zz );
         ORT(input,0,X) = xx;
         ORT(input,0,Y) = yy;
@@ -439,7 +450,7 @@ void generate_lav()
   ivektor  min, max, cellc, lcellc;
   int      to_cpu;
   real     px[24],py[24],pz[24];
-  real     xx, yy, zz;
+  real     xx, yy, zz, bu;
   int      i,j,k,l,typ,pa[24];
   int      count;
 
@@ -510,7 +521,7 @@ void generate_lav()
   natoms  = 0;
   nactive = 0;
 
-  box_unit /= 8.0;
+  bu = box_unit / 8.0;
   for (i=min.x; i<max.x; i++)
     for (j=min.y; j<max.y; j++)
       for (k=min.z; k<max.z; k++) 
@@ -521,9 +532,9 @@ void generate_lav()
 	  typ = pa[l];
 
 	  input->n = 1;
-	  xx  = (px[l] + 8*i + 0.5) * box_unit;
-	  yy  = (py[l] + 8*j + 0.5) * box_unit;
-	  zz  = (pz[l] + 8*k + 0.5) * box_unit;
+	  xx  = (px[l] + 8*i + 0.5) * bu;
+	  yy  = (py[l] + 8*j + 0.5) * bu;
+	  zz  = (pz[l] + 8*k + 0.5) * bu;
           ORT(input,0,X)  = xx;
 	  ORT(input,0,Y)  = yy;
 	  ORT(input,0,Z)  = zz;

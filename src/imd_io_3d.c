@@ -47,7 +47,7 @@ void read_atoms(str255 infilename)
   FILE *infile;
   char buf[512];
   str255 msg;
-  int p;
+  int p, k, maxc1=0, maxc2;
   vektor pos;
   vektor vau;
 #ifdef DISLOC
@@ -519,6 +519,16 @@ void read_atoms(str255 infilename)
     }
 #endif
   }
+
+  /* determine maximal cell occupancy */
+  for (k=0; k<ncells; k++) maxc1 = MAX( maxc1, CELLPTR(k)->n );
+#ifdef MPI
+  MPI_Reduce( &maxc1, &maxc2, 1, MPI_INT, MPI_MAX, 0, cpugrid);
+#else
+  maxc2 = maxc1;
+#endif
+  if (myid==0) printf("maximal cell occupancy: %d\n", maxc2);
+
 }
 
 #ifdef MPI
