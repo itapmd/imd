@@ -2,20 +2,21 @@
 #
 # IMD -- The ITAP Molecular Dynamics Program
 #
-# Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+# Copyright 1996-2003 Institute for Theoretical and Applied Physics,
 # University of Stuttgart, D-70550 Stuttgart
-#
-#
-# IMD Makefile - works only with GNU make
 #
 # $Revision$
 # $Date$
 # 
-# Usage: make <target>
+############################################################################
+#
+# Beware: This Makefile works only with GNU make (gmake)!
+#
+# Usage:  gmake <target>
 #
 # <target> has the form 
 #
-#    imd[_<comp>][_<parallel>]_<ensemble>[_<option>[_<option>...]]
+#    imd[_<parallel>][_<option>[_<option>...]]
 #
 # The parallelization method <parallel> can be one of:
 #
@@ -24,58 +25,448 @@
 #    ompi  compile for parallel execution, using OpenMP and MPI
 #    pacx  compile for parallel execution, using PACX
 #
-# If no parallelization method is specified, the default is
-# "serial". For each machine-parallelization method combination
-# (including serial), a default compiler is defined. If a different
-# compiler is desired, its name can be specified as the <comp> 
-# componend in the make target. For each compiler-parallelization
-# method-machine combination, a suitable set of compiler flags can
-# be defined. This is already done for many such combinations.
-# The machine type is derived from the shell variable HOSTTYPE.
-# Currently supported machine-parallelization combinations are:
+# The compilation options, whose names are parsed from the make target,
+# must include at least one ensemble (integrator).
 #
-#   HOSTTYPE			OS		Parallelization
+###########################################################################
 #
-#   i?86-linux,i686,i386	Linux    	serial mpi omp
-#   alpha		 	True64 Unix     serial mpi omp
-#   iris4d		 	SGI Irix	serial mpi omp
-#   t3e			 	Cray Unicos/mk	serial mpi pacx
-#   SR8000               	HI-UX/MPP       mpi omp ompi
-#   SR2201, HITACHI	 	HI-UX/MPP	mpi
-#   rs6000			AIX             serial mpi
+# Customizing this Makefile
 #
-# <ensemble> is one or several of nve, mik, nvt, npt_iso, npt_axial, 
-# frac, nvx, ftg, stm
+# As IMD supports a large number of compile options, you will have to 
+# compile IMD freqently. Before doing so, however, you must check whether 
+# the settings in this Makefile fit your needs. You possibly have to 
+# customize these setttings. Before you can do that, we have to explain 
+# a bit how the compilation process works.
 #
-# <option> is one or several of 2d, debug, prof, mono, binary, ....
+# The compilation process requires the environment variable IMDSYS to 
+# be set to a recognized value. It specifies what system you have, and 
+# what compiler you are using. The flags for the compiler and the linker 
+# are then selected as a function of this variable. It is also possible 
+# to pass the value of IMDSYS on the command line, e.g.:
 #
-# The executable, which has the name <target>, is moved to the directory
-# $HOME/bin/$HOSTTYPE, which must exist, and which should be in the
-# search $PATH.
+#   gmake IMDSYS=P4-icc imd_mpi_nve 
 #
-# A comprehensive list of options can be found below in this makefile.
-# Further compiler flags can be handed over with the EXTRAFLAGS variable.
-# The makefile analyzes the target name. It sets the preprocessor flags 
-# and chooses the source files accordingly.
+# Another important ingredient is the parallelization method, which is
+# determined from the make target. The parallelization method is stored
+# in the variable PARALLEL, which takes as value one of SERIAL, MPI,
+# OMP, OMPI, or PACX. 
 #
-# Examples:
+# Depending on the value of ${IMDSYS}, a number of variables must be
+# set, from which everything else is constructed.
 #
-# make imd_nve                          ; single CPU 3d nve simulation
-# make imd_mpi_frac_debug_2d            ; 2d fracture simlation with debugging
-# make imd_nvt_prof                     ; 3d NVT simulation with profiling
-# make EXTRAFLAGS=-DMYSYMB imd_gcc_mik  ; define preprocessor flag MYSYMB,
-#                                       ; compile with gcc
+# CC_${PARALLEL} defines the compiler to be used for parallelization 
+# method ${PARALLEL}. If not defined, the parallelization method 
+# ${PARALLEL} is not available.
 #
-# On some machines EXTRAFLAGS might work only if the shell used by make
-# is the same as the shell from which make is invoked (T3E, e.g.).
-# In those cases it is possible to set the shell used by make to your
-# working shell, by uncommenting and adapting the following line. 
-# SHELL         = tcsh
+# BIN_DIR defines the directory where the IMD binary is put. Note that
+# this directory must exist.
+#
+# MV defines the program used to move the IMD binary to ${BIN_DIR}.
+# The default is mv, which is usually ok.
+#
+# The compilation options are stored in the variable CFLAGS.
+# The initial value of CFLAGS is set to the variable FLAGS,
+# which can be given on the command line as explained above for 
+# IMDSYS, although this is usually not necessary.
+#
+# If the option debug was specified, ${DEBUG_FLAGS} is then appended 
+# to ${CFLAGS}, otherwise ${OPT_FLAGS}. If the option prof was specified 
+# (for profiling), ${PROF_FLAGS} is also appended to ${CFLAGS}. However, 
+# before appending ${OPT_FLAGS} or ${DEBUG_FLAGS} to ${CFLAGS}, some 
+# parallelization specific flags are appended to them: 
+#
+#   OPT_FLAGS   += ${${PARALLEL}_FLAGS} ${OPT_${PARALLEL}_FLAGS}
+#   DEBUG_FLAGS += ${${PARALLEL}_FLAGS} ${DEBUG_${PARALLEL}_FLAGS}
+#
+# If any of these variables is not defined, it is assumed to be empty.
+# This setup should provide sufficient flexibility to set one's favorite
+# flags, depending on parallelization, profiling, and optimization/debugging.
+#
+# Similarly, the link libraries are stored in the variable LIBS,
+# to which ${${PARALLEL}_LIBS} and possibly ${PROF_LIBS} (for profiling)
+# is appended.
+#
+# You may have to change the setting for an existing value of IMDSYS.
+# or you have to add support for a new value of IMDSYS. The latter is
+# best done by using the folloing template for IMDSYS=sys-cc:
+#
+# ifeq (sys-cc,${IMDSYS})
+#   CC_SERIAL		= serial-compiler
+#   CC_OMP		= OpenMP-compiler
+#   CC_MPI		= MPI-compiler
+#   CC_OMPI		= OpenMP+MPI-compiler
+#   BIN_DIR		= ${HOME}/bin
+#   OPT_FLAGS		+= generic flags for optimization
+#   OPT_MPI_FLAGS	+= MPI-specific flags for optimization
+#                          similar variables for other parallelizations
+#   MPI_FLAGS		+= MPI-specific flags
+#                          similar variables for other parallelizations
+#   DEBUG_FLAGS		+= generic flags for debugging
+#   DEBUG_MPI_FLAGS	+= MPI-specific flags for debugging
+#                          similar variables for other parallelizations
+#   PROF_FLAGS		+= flags for profiling
+#   LIBS		+= generically needed libraries
+#   MPI_LIBS		+= MPI-specific libraries
+#                          similar variables for other parallelizations
+#   PROF_LIBS		+= libraries for profiling
+# endif
+#
+# Variables remaining empty need not be mentioned.
 
 
 ###########################################################################
 #
-#  The IMD sources
+#  Defaults for some variables
+#
+###########################################################################
+
+MV		= mv      # program to move imd binary to ${BIN_DIR}
+LIBS		+= -lm
+MPI_FLAGS	+= -DMPI
+OMP_FLAGS	+= -DOMP
+OMPI_FLAGS	+= -DMPI -DOMP
+PACX_FLAGS	+= -DMPI -DPACX
+DEBUG_FLAGS	+= -DDEBUG
+
+
+###########################################################################
+#
+#  flags for IA32-Linux
+#
+###########################################################################
+
+# Athlon MP or XP, icc
+ifeq (AthlonMP-icc,${IMDSYS})
+  CC_SERIAL	= icc
+  CC_OMP	= icc
+  CC_MPI	= mpicc
+  CC_OMPI	= mpicc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS	+= -O -ip -tpp6 -axK #-static
+  OMP_FLAGS	+= -openmp
+  OMPI_FLAGS	+= -openmp
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -prof_gen
+  RCD_FLAGS	+= -DRCD -rcd
+endif
+
+# Athlon MP or XP, gcc3
+ifeq (AthlonMP-gcc3,${IMDSYS})
+  CC_SERIAL	= gcc
+  CC_MPI	= mpicc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS	+= -O -march=athlon-mp # -static
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -g3 -pg
+endif
+
+# Pentium 4 or Xeon, icc
+ifeq (P4-icc,${IMDSYS})
+  CC_SERIAL	= icc
+  CC_OMP	= icc
+  CC_MPI	= mpicc
+  CC_OMPI	= mpicc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS	+= -O -ip -tpp7 #-static
+  OMP_FLAGS	+= -openmp
+  OMPI_FLAGS	+= -openmp
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -prof_gen
+  RCD_FLAGS	+= -DRCD -rcd
+endif
+
+# Pentium 4 or Xeon, gcc3
+ifeq (P4-gcc3,${IMDSYS})
+  CC_SERIAL	= gcc
+  CC_MPI	= mpicc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS	+= -O -march=pentium4 # -static
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -g3 -pg
+endif
+
+# Pentium III, icc
+ifeq (P3-icc,${IMDSYS})
+  CC_SERIAL	= icc
+  CC_OMP	= icc
+  CC_MPI	= mpicc
+  CC_OMPI	= mpicc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS	+= -O -ip -tpp6 -axK #-static
+  OMP_FLAGS	+= -openmp
+  OMPI_FLAGS	+= -openmp
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -prof_gen
+  RCD_FLAGS	+= -DRCD -rcd
+endif
+
+# Pentium III, gcc3
+ifeq (P3-gcc3,${IMDSYS})
+  CC_SERIAL	= gcc
+  CC_MPI	= mpicc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS	+= -O -march=pentium3 # -static
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -g3 -pg
+endif
+
+# generic ia32 CPU, gcc 2.95 - slow!
+ifeq (ia32-gcc2,${IMDSYS})
+  CC_SERIAL	= gcc
+  CC_MPI	= mpicc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS	+= -O3
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -g3 -pg
+endif
+
+###########################################################################
+#
+#  flags for IA64-Linux
+#
+###########################################################################
+
+# Itanium 2, ecc
+ifeq (ia64-ecc,${IMDSYS})
+  CC_SERIAL	= ecc
+  CC_OMP	= ecc
+  CC_MPI	= mpicc
+  CC_OMPI	= mpicc
+  BIN_DIR	= ${HOME}/bin/ia64
+  OPT_FLAGS	+= -O -ipo #-static
+  OMP_FLAGS	+= -openmp
+  OMPI_FLAGS	+= -openmp
+  PROF_FLAGS	+= -prof_gen
+  DEBUG_FLAGS	+= -g
+endif
+
+###########################################################################
+#
+#  flags for alpha
+#
+###########################################################################
+
+# alpha ev56 or higher, cc
+ifeq (alpha-cc,${IMDSYS})
+  CC_SERIAL	= cc
+  CC_OMP	= cc
+  BIN_DIR	= ${HOME}/bin/alpha
+  OPT_FLAGS	+= -DALPHA -O3 -float -fp_reorder -arch ev56 -tune host
+  OMP_FLAGS	+= -mp
+  OMPI_FLAGS	+= -mp
+  PROF_FLAGS	+= -prof_gen
+  DEBUG_FLAGS	+= -g3 -pg
+endif
+
+# alpha, gcc2 - slow!
+ifeq (alpha-gcc2,${IMDSYS})
+  CC_SERIAL	= gcc
+  BIN_DIR	= ${HOME}/bin/$alpha
+  OPT_FLAGS	+= -DALPHA -O3
+  PROF_FLAGS	+= -g3 -pg
+  DEBUG_FLAGS	+= -g
+endif
+
+###########################################################################
+#
+#  flags for IRIX
+#
+###########################################################################
+
+# irix-mips3, cc
+ifeq (irix-cc,${IMDSYS})
+  CC_SERIAL	= cc
+  CC_OMP	= cc
+  BIN_DIR	= ${HOME}/bin/iris4d
+  OPT_FLAGS	+= -Dsgi -O3 -n32 -mips3 -xansi -woff 1174
+  OMP_FLAGS	+= -mp
+  OMPI_FLAGS	+= -mp
+  PROF_FLAGS	+= -g3
+  DEBUG_FLAGS	+= -Dsgi -g  -n32 -mips3 -xansi -woff 1174
+endif
+
+# irix, gcc2 - slow!
+ifeq (irix-gcc2,${IMDSYS})
+  CC_SERIAL	= gcc
+  BIN_DIR	= ${HOME}/bin/iris4d
+  OPT_FLAGS	+= -Dsgi -O3
+  PROF_FLAGS	+= -g3 -pg
+  DEBUG_FLAGS	+= -Dsgi -g
+endif
+
+###########################################################################
+#
+#  flags for sparc
+#
+###########################################################################
+
+# UltraSparc III, cc
+ifeq (USparc3-cc,${IMDSYS})
+  CC_SERIAL	= cc
+  CC_OMP	= cc
+  CC_MPI	= mpcc
+  BIN_DIR	= ${HOME}/bin/sparc
+  MPI_LIBS	+= -lmpi
+  OPT_FLAGS	+= -fast -xtarget=ultra3 -xarch=v9b
+  OMP_FLAGS	+= -xopenmp
+  OMPI_FLAGS	+= -xopenmp
+  PROF_FLAGS	+= -p
+  DEBUG_FLAGS	+= -g -xO3
+endif
+
+# sparc, gcc2 - slow!
+ifeq (sparc-gcc2,${IMDSYS})
+  CC_SERIAL	= gcc
+  BIN_DIR	= ${HOME}/bin/sparc
+  OPT_FLAGS	+= -O3
+  PROF_FLAGS	+= -g3 -pg
+  DEBUG_FLAGS	+= -g
+endif
+
+###########################################################################
+#
+#  flags for T3E
+#
+###########################################################################
+
+# Cray T3E, cc
+ifeq (T3E-cc,${IMDSYS})
+  CC_MPI	= cc
+  CC_PACX	= cc
+  BIN_DIR	= ${HOME}/bin/t3e
+  MPI_LIBS	+= -lmpi
+  PROF_LIBS	+= -lapp
+  OPT_FLAGS	+= -Dt3e -O3 -htolerant,aggress,report=isf
+  PROF_FLAGS	+= -Gf -happrentice
+  DEBUG_FLAGS	+= -Dt3e -g
+  PACX_DIR	= ${HOME}/WORK/PACX
+  PACX_LIBS	+= -L ${PACX_DIR}/lib -lpacx -llzo -lmpi
+  PACX_FLAGS	+= -I${PACX_DIR}/include
+endif
+
+###########################################################################
+#
+#  flags for Hitachi SR8000
+#
+###########################################################################
+
+# Hitachi sr8k, cc
+ifeq (sr8k-cc,${IMDSYS})
+  CC_MPI		= mpicc
+  CC_OMP		= cc
+  CC_OMPI		= mpicc
+  BIN_DIR		= ${HOME}/bin/SR8000
+  OPT_FLAGS		+= -O4 +Op -msg=e
+  OPT_MPI_FLAGS		+= -noparallel
+  OPT_OMP_FLAGS		+= -omp -par
+  OPT_OMPI_FLAGS	+= -omp -par
+  DEBUG_FLAGS		+= -g
+  DEBUG_OMP_FLAGS	+= -omp -par=1 -O2
+  DEBUG_OMPI_FLAGS	+= -omp -par   -O2
+  PROF_FLAGS		+= -Xfuncmonitor
+  PROF_LIBS		+= -lpl
+endif
+
+# Hitachi sr8k, xcc cross compiler
+ifeq (sr8k-xcc,${IMDSYS})
+  CC_MPI		= xmpicc
+  CC_OMP		= xcc
+  CC_OMPI		= xmpicc
+  BIN_DIR		= hwwfs1:sr8k/bin/SR8000
+  MV			= scp   # we move binary to different machine
+  OPT_FLAGS		+= -O4 +Op -msg=e
+  OPT_MPI_FLAGS		+= -noparallel
+  OPT_OMP_FLAGS		+= -omp -par
+  OPT_OMPI_FLAGS	+= -omp -par
+  DEBUG_FLAGS		+= -g
+  DEBUG_OMP_FLAGS	+= -omp -par=1 -O2
+  DEBUG_OMPI_FLAGS	+= -omp -par   -O2
+  PROF_FLAGS		+= -Xfuncmonitor
+  PROF_LIBS		+= -lpl
+endif
+
+###########################################################################
+#
+#  flags for IBM SP
+#
+###########################################################################
+
+# Power4 regatta
+ifeq (Power4-cc,${IMDSYS})
+  CC_SERIAL	= xlc
+  CC_MPI	= mpcc
+  CC_OMP	= xlc_r
+  CC_OMPI	= mpcc_r
+  BIN_DIR	= ${HOME}/bin/powerpc
+  OPT_FLAGS	+= -O4 -w
+  OMP_FLAGS	+= -DUSE_WALLTIME -qsmp=omp
+  OMPI_FLAGS	+= -qsmp=omp
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -p
+  PROF_LIBS	+= -lpl
+endif
+
+
+###########################################################################
+#
+#  Parallelization method
+#
+###########################################################################
+
+# default is serial
+PARALLEL = SERIAL
+# MPI
+ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
+PARALLEL = MPI
+endif
+# OpenMP
+ifneq (,$(strip $(findstring omp,${MAKETARGET})))
+PARALLEL = OMP
+endif
+# MPI + OpenMP
+ifneq (,$(strip $(findstring ompi,${MAKETARGET})))
+PARALLEL = OMPI
+endif
+# PACX
+ifneq (,$(strip $(findstring pacx,${MAKETARGET})))
+PARALLEL = PACX
+endif
+
+
+###########################################################################
+#
+#  Compiler, flags, libraries
+#
+###########################################################################
+
+# compiler; if empty, we issue an error later
+CC = ${CC_${PARALLEL}}
+
+# optimization flags
+OPT_FLAGS   += ${${PARALLEL}_FLAGS} ${OPT_${PARALLEL}_FLAGS}
+DEBUG_FLAGS += ${${PARALLEL}_FLAGS} ${DEBUG_${PARALLEL}_FLAGS}
+
+# libraries
+LIBS += ${${PARALLEL}_LIBS}
+
+# optimization or debug
+CFLAGS := ${FLAGS}
+ifneq (,$(findstring debug,${MAKETARGET}))
+CFLAGS += ${DEBUG_FLAGS}
+else
+CFLAGS += ${OPT_FLAGS}
+endif
+
+# profiling support
+ifneq (,$(findstring prof,${MAKETARGET}))
+CFLAGS += ${PROF_FLAGS}
+LIBS   += ${PROF_LIBS}
+endif
+
+
+###########################################################################
+#
+# IMD sources
 #
 ###########################################################################
 
@@ -120,442 +511,6 @@ CORRSOURCES     = imd_correl.c
 TRANSSOURCES    = imd_transport.c
 
 
-###########################################################################
-#
-# flags for Linux
-#
-###########################################################################
-
-# default compilers and libraries
-# if available, we take the Intel compiler
-ifneq (,$(strip $(findstring ia32,${PATH})))
-CC_DEFAULT_SERIAL_i586		= icc
-CC_DEFAULT_OMP_i586		= icc
-CC_DEFAULT_OMPI_i586		= mpicc
-else
-CC_DEFAULT_SERIAL_i586		= gcc
-CC_DEFAULT_OMP_i586		= guidec
-endif
-CC_DEFAULT_MPI_i586		= mpicc
-
-# gcc, serial
-CFLAGS_gcc_SERIAL_i586		= -O -march=athlon-mp -mfpmath=sse -msse -static  -funroll-all-loops -fomit-frame-pointer
-#CFLAGS_gcc_SERIAL_i586		= -mcpu=i686 -O3
-CFLAGS_gcc_SERIAL_i586_DEBUG	= -mcpu=i686 -g
-CFLAGS_gcc_SERIAL_i586_PROF	= -g3 -pg
-
-# pgcc, serial
-CFLAGS_pgcc_SERIAL_i586        	= -fast -tp p6 -Mvect=sse
-CFLAGS_pgcc_SERIAL_i586_DEBUG  	= -g -Xa
-CFLAGS_pgcc_SERIAL_i586_PROF   	= -Mprof=func
-
-# icc, serial
-CFLAGS_icc_SERIAL_i586        	= -O -ip -axK #-static
-CFLAGS_icc_SERIAL_i586_PROF	= -prof_gen
-RCDFLAGS_icc_SERIAL_i586	= -DRCD -rcd
-CFLAGS_icc_SERIAL_i586_DEBUG  	= -g
-
-# icc, OpenMP
-CFLAGS_icc_OMP_i586        	= -O -ip -axK -openmp -static
-CFLAGS_icc_OMP_i586_PROF	= -prof_gen
-RCDFLAGS_icc_OMP_i586		= -DRCD -rcd
-
-# kcc, serial
-CFLAGS_KCC_SERIAL_i586       	= +K3 -O3 --diag_suppress 177,550
-
-# MPICH
-# there are many mpicc; if available, we take the Intel compiler
-ifneq (,$(strip $(findstring ia32,${PATH})))
-CFLAGS_mpicc_MPI_i586		= -O -ip -axK -static
-CFLAGS_mpicc_MPI_i586_DEBUG	= -g
-CFLAGS_mpicc_MPI_i586_PROF	= -prof_gen
-RCDFLAGS_mpicc_MPI_i586		= -DRCD -rcd
-else
-CFLAGS_mpicc_MPI_i586		= -O -march=athlon-mp -mfpmath=sse -msse
-#CFLAGS_mpicc_MPI_i586		= -O3 -mcpu=i686
-CFLAGS_mpicc_MPI_i586_DEBUG	= -g
-CFLAGS_mpicc_MPI_i586_PROF	= -g3 -pg
-endif
-
-# MPICH + OpenMP
-# there are many mpicc; if available, we take the Intel compiler
-ifneq (,$(strip $(findstring ia32,${PATH})))
-CFLAGS_mpicc_OMPI_i586		= -O -ip -axK -openmp -static
-CFLAGS_mpicc_OMPI_i586_DEBUG	= -g
-CFLAGS_mpicc_OMPI_i586_PROF	= -prof_gen
-RCDFLAGS_mpicc_OMPI_i586	= -DRCD -rcd
-endif
-
-# guidec, OpenMP
-CFLAGS_guidec_OMP_i586         	= +K3 -O3 --diag_suppress 177,550
-CFLAGS_guidec_OMP_i586_DEBUG   	= -g +K0 -WGstrict --diag_suppress 177,550
-CFLAGS_guidec_OMP_i586_PROF    	= -p
-
-# omni, OpenMP
-CFLAGS_omcc_OMP_i586         	= -O
-CFLAGS_omcc_OMP_i586_DEBUG   	= -g
-
-# pgcc, OpenMP
-CFLAGS_pgcc_OMP_i586         	= -fast
-CFLAGS_pgcc_OMP_i586_DEBUG   	= -g -Xa
-CFLAGS_pgcc_OMP_i586_PROF    	= -fast -Mprof=func
-
-###########################################################################
-#
-# flags for Linux IA64
-#
-###########################################################################
-
-# default compilers and libraries
-CC_DEFAULT_SERIAL_ia64		= ecc
-CC_DEFAULT_OMP_ia64		= ecc
-#CC_DEFAULT_OMPI_ia64		= mpicc
-
-# ecc, serial
-CFLAGS_ecc_SERIAL_ia64        	= -O -ipo -static
-CFLAGS_ecc_SERIAL_ia64_PROF	= -prof_gen
-
-# ecc, OpenMP
-CFLAGS_ecc_OMP_ia64        	= -O -ipo -static -openmp
-CFLAGS_ecc_OMP_ia64_PROF	= -prof_gen
-
-# gcc, serial
-CFLAGS_gcc_SERIAL_ia64        	= -O3
-CFLAGS_gcc_SERIAL_ia64_PROF	= -pg
-
-###########################################################################
-#
-# flags for alpha
-#
-###########################################################################
-
-# default compilers and libraries
-CC_DEFAULT_SERIAL_alpha		= cc
-CC_DEFAULT_OMP_alpha		= cc.alt
-CC_DEFAULT_MPI_alpha		= hcc
-MPILIBS_alpha			= -lmpi -lots
-
-# cc, serial
-CFLAGS_cc_SERIAL_alpha		= -DALPHA -O3 -float -fp_reorder -arch ev56 -tune host
-CFLAGS_cc_SERIAL_alpha_DEBUG	= -DALPHA -g
-CFLAGS_cc_SERIAL_alpha_PROF	= -g3 -pg
-
-# gcc, serial
-CFLAGS_gcc_SERIAL_alpha		= -DALPHA -O3
-CFLAGS_gcc_SERIAL_alpha_DEBUG	= -DALPHA -g
-CFLAGS_gcc_SERIAL_alpha_PROF	= -g3 -pg
-
-# OpenMP
-CFLAGS_cc.alt_OMP_alpha		= -DALPHA -mp -O3 -float -fp_reorder -arch ev56 -tune host
-CFLAGS_cc.alt_OMP_alpha_DEBUG	= -DALPHA -mp -g
-CFLAGS_cc.alt_OMP_alpha_PROF	= -g3 -pg
-
-# LAM/MPI
-CFLAGS_hcc_MPI_alpha		= -DALPHA -O3
-CFLAGS_hcc_MPI_alpha_DEBUG	= -DALPHA -g
-
-
-###########################################################################
-#
-# flags for IRIX
-#
-###########################################################################
-
-# default compilers and libraries
-CC_DEFAULT_SERIAL_iris4d	= cc
-CC_DEFAULT_OMP_iris4d		= cc
-
-# cc
-CFLAGS_cc_SERIAL_iris4d		= -Dsgi -O3 -n32 -mips3 -xansi -woff 1174
-CFLAGS_cc_SERIAL_iris4d_DEBUG	= -Dsgi -g -xansi -woff 1174
-CFLAGS_cc_SERIAL_iris4d_PROF	= -g3
-
-# gcc
-CFLAGS_gcc_SERIAL_iris4d	= -Dsgi -O3
-CFLAGS_gcc_SERIAL_iris4d_DEBUG	= -Dsgi -g
-CFLAGS_gcc_SERIAL_iris4d_PROF	= -g3 -pg
-
-# OpenMP
-CFLAGS_cc_OMP_iris4d		= -Dsgi -mp -O3 -n32 -mips3 -xansi -woff 1174
-CFLAGS_cc_OMP_iris4d_DEBUG	= -Dsgi -mp -g -xansi -woff 1174
-CFLAGS_cc_OMP_iris4d_PROF	= -g3
-
-
-###########################################################################
-#
-# flags for sparc
-#
-###########################################################################
-
-# default compilers and libraries
-CC_DEFAULT_SERIAL_sparc		= cc
-CC_DEFAULT_OMP_sparc		= cc
-CC_DEFAULT_MPI_sparc		= mpcc
-MPILIBS_sparc			= -lmpi
-
-# cc
-CFLAGS_cc_SERIAL_sparc		= -fast -xtarget=ultra3 -xarch=v9b
-CFLAGS_cc_SERIAL_sparc_DEBUG	= -g -xO3
-CFLAGS_cc_SERIAL_sparc_PROF	= -p
-
-# gcc - slow
-CFLAGS_gcc_SERIAL_sparc		= -O3
-CFLAGS_gcc_SERIAL_sparc_DEBUG	= -g
-CFLAGS_gcc_SERIAL_sparc_PROF	= -g3 -pg
-
-# cc
-CFLAGS_cc_OMP_sparc		= -fast -xopenmp -xtarget=ultra3 -xarch=v9b
-CFLAGS_cc_OMP_sparc_DEBUG	= -g -xopenmp -xO3
-CFLAGS_cc_OMP_sparc_PROF	= -p
-
-# MPI
-CFLAGS_mpcc_MPI_sparc		= -fast -xtarget=ultra3 -xarch=v9b
-CFLAGS_mpcc_MPI_sparc_DEBUG	= -g -xO3
-CFLAGS_mpcc_MPI_sparc_PROF	= -p
-
-
-###########################################################################
-#
-# flags for T3E
-#
-###########################################################################
-
-# default compilers and libraries
-CC_DEFAULT_SERIAL_t3e		= cc
-CC_DEFAULT_MPI_t3e		= cc
-CC_DEFAULT_PACX_t3e		= cc
-MPILIBS_t3e	    	        = -lmpi 
-PACXDIR				= ${HOME}/WORK/PACX
-PACXLIBS_t3e			= -L ${PACXDIR}/lib -lpacx -llzo -lmpi
-LIBS_PROF_t3e	 		= -lapp
-
-# serial
-CFLAGS_cc_SERIAL_t3e		= -Dt3e -O3 -haggress,report=isf -X1
-CFLAGS_cc_SERIAL_t3e_DEBUG	= -Dt3e -g -X1
-CFLAGS_cc_SERIAL_t3e_PROF	= -Gf -happrentice
-
-# MPI
-CFLAGS_cc_MPI_t3e		= -Dt3e -O3 -htolerant,aggress,report=isf
-CFLAGS_cc_MPI_t3e_DEBUG		= -Dt3e -g
-CFLAGS_cc_MPI_t3e_PROF		= -Gf -happrentice
-
-# PACX
-CFLAGS_cc_PACX_t3e		= -Dt3e -I${PACXDIR}/include -O3 -htolerant,aggress,report=isf
-CFLAGS_cc_PACX_t3e_DEBUG	= -Dt3e -I${PACXDIR}/include -g
-CFLAGS_cc_PACX_t3e_PROF		= -Gf -happrentice
-
-###########################################################################
-#
-# flags for Hitachi SR2201
-#
-###########################################################################
-
-# default compilers and libraries
-CC_DEFAULT_MPI_SR2201	 	= cc
-MPILIBS_SR2201		 	= -L/usr/local/mpi/lib/hmpp2/cml -lmpi
-
-# MPI
-CFLAGS_cc_MPI_SR2201	 	= +O4 +Ol +Oprefetch -I/usr/local/mpi/include  -DMPI_hmpp2
-CFLAGS_cc_MPI_SR2201_DEBUG   	= -g -I/usr/local/mpi/include -DMPI_hmpp2
-CFLAGS_cc_MPI_SR2201_PROF  	= -G
-
-###########################################################################
-#
-# flags for Hitachi SR8000
-#
-###########################################################################
-
-# default compilers and libraries
-CC_DEFAULT_MPI_SR8000		= mpicc
-CC_DEFAULT_OMP_SR8000		= cc
-CC_DEFAULT_OMPI_SR8000		= mpicc
-LIBS_PROF_SR8000		= -lpl
-
-# MPI
-CFLAGS_mpicc_MPI_SR8000        	= -O4 +Op -noparallel -msg=e
-CFLAGS_mpicc_MPI_SR8000_DEBUG  	= -g
-CFLAGS_mpicc_MPI_SR8000_PROF   	= -Xfuncmonitor
-
-# OpenMP
-CFLAGS_cc_OMP_SR8000	 	= -omp -par -O4 +Op -msg=e
-CFLAGS_cc_OMP_SR8000_DEBUG	= -omp -par=1 -O2 -g
-CFLAGS_cc_OMP_SR8000_PROF   	= -Xfuncmonitor
-
-# MPI + OpenMP
-CFLAGS_mpicc_OMPI_SR8000	= -omp -par -O4 +Op -msg=e
-CFLAGS_mpicc_OMPI_SR8000_DEBUG 	= -omp -par -O2 -g
-CFLAGS_mpicc_OMPI_SR8000_PROF  	= -Xfuncmonitor
-
-# MPI (crosscompiler linux -> SR8000)
-CFLAGS_xmpicc_MPI_i586        	= -O4 +Op -noparallel -msg=e
-CFLAGS_xmpicc_MPI_i586_DEBUG  	= -g
-CFLAGS_xmpicc_MPI_i586_PROF   	= -Xfuncmonitor
-
-# OpenMP (crosscompiler linux -> SR8000)
-CFLAGS_xcc_OMP_i586	 	= -omp -par -O4 +Op -msg=e
-CFLAGS_xcc_OMP_i586_DEBUG	= -omp -par=1 -O2 -g
-CFLAGS_xcc_OMP_i586_PROF   	= -Xfuncmonitor
-
-# MPI + OpenMP (crosscompiler linux -> SR8000)
-CFLAGS_xmpicc_OMPI_i586		= -omp -par -O4 +Op -msg=e
-CFLAGS_xmpicc_OMPI_i586_DEBUG 	= -omp -par -O2 -g
-CFLAGS_xmpicc_OMPI_i586_PROF  	= -Xfuncmonitor
-
-###########################################################################
-#
-# flags for IBM SP-SMP
-#
-###########################################################################
-
-# default compilers and libraries
-CC_DEFAULT_SERIAL_rs6000	= cc
-CC_DEFAULT_MPI_rs6000		= mpcc
-CC_DEFAULT_OMP_rs6000		= xlc_r
-CC_DEFAULT_OMPI_rs6000		= mpcc_r #?
-LIBS_PROF_rs6000		= -lpl   #?
-
-# SERIAL
-CFLAGS_cc_SERIAL_rs6000        	= -O4 -qtune=auto  # -O4 automatically invokes -qarch=auto
-
-# MPI
-CFLAGS_mpcc_MPI_rs6000        	= -O3 -qtune=auto  # -O4 automatically invokes -qarch=auto
-CFLAGS_mpcc_MPI_rs6000_DEBUG  	= -g 
-CFLAGS_mpcc_MPI_rs6000_PROF   	= -p 
-
-# OpenMP
-CFLAGS_xlc_OMP_rs6000	 	= -O4 -qtune=auto -qsmp=omp 
-#CFLAGS_cc_OMP_SR8000_DEBUG	= -omp -par=1 -O2 -g
-#CFLAGS_cc_OMP_SR8000_PROF   	= -Xfuncmonitor
-
-# MPI + OpenMP
-CFLAGS_mpicc_OMPI_SR8000	= -omp -par -O4 +Op -msg=e
-#CFLAGS_mpicc_OMPI_SR8000_DEBUG 	= -omp -par -O2 -g
-#CFLAGS_mpicc_OMPI_SR8000_PROF  	= -Xfuncmonitor
-
-
-###########################################################################
-#
-#  IMD host type
-#
-###########################################################################
-
-# the default for IMDHOST is the shell variable HOSTTYPE
-IMDHOST=${HOSTTYPE}
-
-# deal with some special cases:
-ifneq (,$(strip $(findstring linux,${HOSTTYPE})))
-IMDHOST = i586
-endif
-ifneq (,$(strip $(findstring i686,${HOSTTYPE})))
-IMDHOST = i586
-endif
-ifneq (,$(strip $(findstring i386,${HOSTTYPE})))
-IMDHOST = i586
-endif
-ifneq (,$(strip $(findstring cray,${HOSTTYPE})))
-IMDHOST = t3e
-endif
-ifneq (,$(strip $(findstring HITACHI,${HOSTTYPE})))
-IMDHOST = SR2201
-endif
-
-
-###########################################################################
-#
-#  Parallelization method
-#
-###########################################################################
-
-# default is serial
-PARALLEL = SERIAL
-# MPI
-ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
-PARALLEL = MPI
-CFLAGS  += -DMPI
-LIBS    += ${MPILIBS_${IMDHOST}}
-endif
-# OpenMP
-ifneq (,$(strip $(findstring omp,${MAKETARGET})))
-PARALLEL = OMP
-CFLAGS  += -DOMP
-endif
-# MPI + OpenMP
-ifneq (,$(strip $(findstring ompi,${MAKETARGET})))
-PARALLEL = OMPI
-endif
-# PACX
-ifneq (,$(strip $(findstring pacx,${MAKETARGET})))
-PARALLEL = PACX
-CFLAGS  += -DMPI -DPACX
-LIBS    += PACXLIBS_${IMDHOST}
-endif
-
-
-###########################################################################
-#
-#  Compiler
-#
-###########################################################################
-
-CC = ${CC_DEFAULT_${PARALLEL}_${IMDHOST}}
-# gcc
-ifneq (,$(strip $(findstring gcc,${MAKETARGET})))
-CC = gcc
-endif
-# pgcc
-ifneq (,$(strip $(findstring pgcc,${MAKETARGET})))
-CC = pgcc
-endif
-# icc
-ifneq (,$(strip $(findstring icc,${MAKETARGET})))
-CC = icc
-endif
-# ecc
-ifneq (,$(strip $(findstring ecc,${MAKETARGET})))
-CC = ecc
-endif
-# kcc
-ifneq (,$(strip $(findstring kcc,${MAKETARGET})))
-CC = KCC
-endif
-# guidec
-ifneq (,$(strip $(findstring guidec,${MAKETARGET})))
-CC = guidec
-endif
-# omni
-ifneq (,$(strip $(findstring omcc,${MAKETARGET})))
-CC = omcc
-endif
-# SR8000 crosscompiler
-ifneq (,$(strip $(findstring sr8k,${MAKETARGET})))
-ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
-CC = xmpicc
-else
-CC = xcc
-endif
-endif
-
-
-###########################################################################
-#
-#  Libraries
-#
-###########################################################################
-
-LIBS    	 += -lm
-MPILIBS		  = ${MPILIBS_${IMDHOST}}	
-PACXLIBS	  = ${PACXLIBS_${IMDHOST}}	
-
-# where to put executable
-ifneq (,$(strip $(findstring sr8k,${MAKETARGET})))
-BINDIR = hwwfs1:sr8k/bin/SR8000
-MV = scp
-else
-BINDIR   = ${HOME}/bin/${HOSTTYPE}
-MV =mv
-endif
-
-
 #########################################################
 #
 # IMD Configuration rules
@@ -563,9 +518,10 @@ endif
 #########################################################
 
 HEADERS := ${IMDHEADERS}
+
 # twod or not twod
 ifneq (,$(strip $(findstring 2d,${MAKETARGET})))
-# serial or mpi
+# 2d, serial or mpi
 ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
 SOURCES	:= ${SOURCES2D} ${MPISOURCES2D}
 else
@@ -573,27 +529,13 @@ SOURCES	:= ${SOURCES2D} ${RISCSOURCES2D}
 endif
 CFLAGS  += -DTWOD
 else
-# serial or mpi
+# 3d, serial or mpi
 ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
 SOURCES	:= ${SOURCES3D} ${MPISOURCES3D}
 else
 SOURCES	:= ${SOURCES3D} ${RISCSOURCES3D}
 endif
 endif
-
-# general compiler flags, debug and profile
-ifneq (,$(findstring debug,${MAKETARGET}))
-CFLAGS += ${CFLAGS_${CC}_${PARALLEL}_${IMDHOST}_DEBUG}
-else
-CFLAGS += ${CFLAGS_${CC}_${PARALLEL}_${IMDHOST}}
-endif
-ifneq (,$(findstring prof,${MAKETARGET}))
-CFLAGS += ${CFLAGS_${CC}_${PARALLEL}_${IMDHOST}_PROF}
-LIBS   += ${LIBS_PROF_${IMDHOST}}
-endif
-
-RCDFLAGS = ${RCDFLAGS_${CC}_${PARALLEL}_${IMDHOST}}
-
 
 ###  INTERACTION  #######################################
 
@@ -722,17 +664,11 @@ ifneq (,$(findstring finnis,${MAKETARGET}))
 CFLAGS += -DFINNIS
 endif
 
-
 ifneq (,$(findstring stm,${MAKETARGET}))
 CFLAGS += -DSTM
 endif
 
 ###  OPTIONS  ############################################
-
-# extra preprocessor flags
-ifneq (,$(strip $(EXTRAFLAGS)))
-CFLAGS += ${EXTRAFLAGS}
-endif
 
 # socket interface
 ifneq (,$(strip $(findstring sock,${MAKETARGET})))
@@ -895,11 +831,6 @@ ifneq (,$(findstring 4point,${MAKETARGET}))
 CFLAGS += -DFOURPOINT
 endif
 
-# debug flag
-ifneq (,$(findstring debug,${MAKETARGET}))
-CFLAGS += -DDEBUG
-endif
-
 # Substitute .o for .c to get the names of the object files
 OBJECTS := $(subst .c,.o,${SOURCES})
 
@@ -931,11 +862,19 @@ imd_forces_covalent.o: imd_forces_covalent.c
 # How to link
 ${MAKETARGET}: ${OBJECTS} 
 	${CC} ${CFLAGS} -o $@ ${OBJECTS} ${LIBS}
-	${MV} $@ ${BINDIR}; rm -f $@
+	${MV} $@ ${BIN_DIR}; rm -f $@
 
 # First recursion only set the MAKETARGET Variable
 .DEFAULT:
+ifneq (,${CC}) 
 	${MAKE} MAKETARGET='$@' STAGE2
+else
+ifneq (,${IMDSYS})
+	@echo "IMDSYS variable ${IMDSYS} is not recognized"
+else
+	@echo "IMDSYS variable is not set"
+endif
+endif
 
 # Second recursion sets MAKETARGET variable and compiles
 # An empty MAKETARGET variable would create an infinite recursion, so we check
@@ -955,14 +894,8 @@ endif
 clean:
 	rm -f *.o *.u *~ \#* *.V *.T *.O *.il
 
-archive:
-	tar -zcvf imd-arch.tar.gz Makefile Parameters README *.[ch] *.perl
-
-count:
-	wc -l Makefile *.[ch]
-
 help:
-	echo "Usage: gmake imd_<ensemble>_<architeture>[_<suffix>...]"
+	@echo "Usage: gmake imd[_<parallel>][_<option>[_<option>...]]"
 
 socktest:
 	gcc -o ${BINDIR}/socktest sockutil.c socktest.c
