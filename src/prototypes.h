@@ -97,19 +97,28 @@ ivektor global_cell_coord(ivektor coords);
 void create_cell_type(int index);
 void recv_atoms(void);
 void send_atoms(int mode);
-void fix_cells_by_cell(void);
+void send_atoms_force(void);
+void send_atoms_ar(void);
 void send_atoms_by_cell(void);
+void send_forces(void);
+void fix_cells_by_cell(void);
 
 #ifdef TWOD
 void send_recv_cell(int i,int j,int l,int m);
 void recv_send_cell(int i,int j,int l,int m);
 vektor global_pbc(int i,int j);
-void copy_atoms(msgbuf *b, int k, int l);
+void copy_cell_force(int i, int j, int k, int l);
+void copy_atoms_force(msgbuf *b, int k, int l);
+void move_atoms_force(msgbuf *b, int k, int l);
 #else
 void send_recv_cell(int i,int j,int k,int l,int m,int n);
 void recv_send_cell(int i,int j,int k,int l,int m,int n);
 vektor global_pbc(int i,int j, int k);
 void copy_atoms(msgbuf *b, int k, int l, int m);
+void add_forces(msgbuf *b, int k, int l, int m);
+void copy_forces(msgbuf *b, int k, int l, int m);
+void move_atoms_ar(msgbuf *b, int k, int l, int m);
+void copy_atoms_ar(msgbuf *b, int k, int l, int m);
 #endif
 void recv_cell(cell *p, int from_cpu, int tag);
 void send_cell(cell *p, int to_cpu, int tag);
@@ -129,13 +138,6 @@ ivektor cpu_coord_v(ivektor cellc);
 ivektor my_cart_coords(int myid);
 void my_cart_rank(ivektor my_coord);
 #endif
-
-void send_forces(void);
-void send_atoms_ar(void);
-void add_forces(msgbuf *b, int k, int l, int m);
-void copy_forces(msgbuf *b, int k, int l, int m);
-void move_atoms_ar(msgbuf *b, int k, int l, int m);
-void copy_atoms_ar(msgbuf *b, int k, int l, int m);
 
 #ifdef DEFORM
 void shear_sample(void);

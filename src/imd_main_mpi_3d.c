@@ -1226,7 +1226,7 @@ void move_atoms_ar( msgbuf *b, int k, int l, int m )
     to->ort Y(i) = b->data[ b->n++ ];
     to->ort Z(i) = b->data[ b->n++ ];
 #ifndef MONOLJ
-    to->sorte[i] = (integer) b->data[ b->n++ ];
+    to->sorte[i] = (shortint) b->data[ b->n++ ];
 #endif 
 #ifdef EAM
     to->nummer[i] = (integer) b->data[ b->n++ ];

@@ -85,7 +85,7 @@ void main_loop(void)
     /* we should do this in more appropriate intervals */
     if (((eng_interval != 0) && (0 == steps%eng_interval)) || 
         (steps == steps_min)) setup_buffers();
-    send_atoms(FORCE);
+    send_atoms_force();
     mpi_addtime(&time_comm);
 #endif
 
@@ -294,8 +294,10 @@ void fix_cells(void)
 
 #ifndef NOPBC
           /* Consider PBC */
-          dcpu.x -= ((int) (dcpu.x / (cpu_dim.x/2)) * cpu_dim.x);
-          dcpu.y -= ((int) (dcpu.y / (cpu_dim.y/2)) * cpu_dim.y);
+          if (cpu_dim.x == 1) dcpu.x = 0; 
+          else dcpu.x -= ((int) (dcpu.x / (cpu_dim.x/2)) * cpu_dim.x);
+          if (cpu_dim.y == 1) dcpu.y = 0;
+          else dcpu.y -= ((int) (dcpu.y / (cpu_dim.y/2)) * cpu_dim.y);
 #endif
           /* Check, if atom is on my cpu */
           /* If not, copy into send buffer else move to correct cell */
