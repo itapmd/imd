@@ -528,8 +528,10 @@ ifneq (,$(strip $(findstring eam,${MAKETARGET})))
 CFLAGS  += -DEAM2
 ifneq (,$(strip $(findstring asympot,${MAKETARGET})))
 CFLAGS += -DASYMPOT
-endif
+FORCESOURCES = ${EAM2SOURCES}
+else
 FORCESOURCES += ${EAM2SOURCES}
+endif
 endif
 
 # TTBP
