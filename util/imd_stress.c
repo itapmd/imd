@@ -99,7 +99,8 @@ void read_stress(str255 infilename)
   cell *to;
   FILE *infile;
   char buf[512];
-  int p;
+  int p,nr,typ;
+  double mass;
   vektor pos, sigma, sigma_offdia;
   ivektor cellc;
 
@@ -123,8 +124,8 @@ void read_stress(str255 infilename)
     p = sscanf(buf,"%lf %lf %lf %lf %lf",
                &pos.x,&pos.y,&sigma.x,&sigma.y,&sigma_offdia.x);
 #else
-    p = sscanf(buf,"%lf %lf %lf %lf %lf %lf %lf %lf %lf",
-               &pos.x,&pos.y,&pos.z,&sigma.x,&sigma.y,&sigma.z,
+    p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
+               &nr,&typ,&mass,&pos.x,&pos.y,&pos.z,&sigma.x,&sigma.y,&sigma.z,
                &sigma_offdia.x,&sigma_offdia.y,&sigma_offdia.z);
 #endif
 
@@ -187,7 +188,7 @@ void write_stress(int restart)
 #ifdef TWOD
 		fprintf(out, "%10.4e %10.4e %10.4e %10.4e %10.4e %10.4e\n", p->ort[l].x, p->ort[l].y, p->stress[l].x*tmp, p->stress[l].y*tmp, p->stress_offdia[l].x*tmp, p->vol[l]);
 #else
-	      fprintf(out, "%10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e\n", p->ort[l].x, p->ort[l].y, p->ort[l].z, p->stress[l].x*tmp, p->stress[l].y*tmp, p->stress[l].z*tmp, p->stress_offdia[l].x*tmp, p->stress_offdia[l].y*tmp, p->stress_offdia[l].z*tmp, p->vol[l]);
+	      fprintf(out, "%.16f %.16f %.16f %.16f %.16f %.16f %.16f %.16f %.16f %.16f\n", p->ort[l].x, p->ort[l].y, p->ort[l].z, p->stress[l].x*tmp, p->stress[l].y*tmp, p->stress[l].z*tmp, p->stress_offdia[l].x*tmp, p->stress_offdia[l].y*tmp, p->stress_offdia[l].z*tmp, p->vol[l]);
 #endif
 	      }
 	  }
