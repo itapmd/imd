@@ -139,10 +139,18 @@ CFLAGS_gcc_SERIAL_i586_PROF	= -g3 -pg
 # pgcc, serial
 CFLAGS_pgcc_SERIAL_i586        	= -fast
 CFLAGS_pgcc_SERIAL_i586_DEBUG  	= -g -Xa
-CFLAGS_pgcc_SERIAL_i586_PROF   	= -fast -Mprof=func
+CFLAGS_pgcc_SERIAL_i586_PROF   	= -Mprof=func
 
 # icc, serial
-CFLAGS_icc_SERIAL_i586        	= -O -tpp6
+CFLAGS_icc_SERIAL_i586        	= -O -ip -tpp6
+CFLAGS_icc_SERIAL_i586_PROF	= -prof_gen
+
+# icc, OpenMP
+CFLAGS_icc_OMP_i586        	= -O -ip -tpp6 -openmp 
+CFLAGS_icc_OMP_i586_PROF	= -prof_gen
+
+# icc, MPI
+# CFLAGS_icc_MPI_i586        	= -O -ip -tpp6
 
 # kcc, serial
 CFLAGS_KCC_SERIAL_i586       	= +K3 -O3 --diag_suppress 177,550
