@@ -6,8 +6,8 @@
 void usage(char *progname)
 {
   printf("\n");
-  printf("   Usage: %s <infile> <n>\n\n", progname);
-  printf("   Writes histogram of entry <n> of distribution to stdout\n\n");
+  printf("   Usage: %s <infile> [<n>]\n\n", progname);
+  printf("   Writes histogram of entry <n> (default 0) of distribution to stdout\n\n");
 }
 
 int main(int argc, char **argv) 
@@ -15,9 +15,9 @@ int main(int argc, char **argv)
   float_dist_t fl;
   float d, min;
   int hist[NBIN];
-  int   n, i, j, k, ix, iy, iz;
+  int n=0, i, j, k, ix, iy, iz;
 
-  if ((argc<3) || (argv[1][0]=='-')) {
+  if ((argc<2) || (argv[1][0]=='-')) {
     usage(argv[0]);
     exit(-1);
   }
@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 
   for (i=0; i<NBIN; i++) hist[i]=0;
 
-  n = atoi(argv[2]);
+  if (argc==3) n = atoi(argv[2]);
   if (n>=fl.n) error("Not enough components in distribution!");
 
   printf("# Histogram of %s\n", fl.cont[n]);
