@@ -53,6 +53,7 @@ void write_pic_cell( cell *p, FILE *out );
 void write_vrml_cell( cell *p, FILE *out ); 
 void write_pictures(int steps);
 void write_pictures_raw(int steps);
+void write_pictures_cooked(int steps);
 void write_pictures_atoms(int steps);
 void write_pictures_bins(int steps);
 void write_vrmls(int steps);

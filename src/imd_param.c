@@ -453,6 +453,14 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #ifndef TWOD
+    else if (strcasecmp(token,"conf_llf")==0) { 
+      /* lower left front corner of configuration */
+      getparam("conf_llf", &conf_llf,PARAM_REAL,DIM,DIM);
+    }
+    else if (strcasecmp(token,"conf_urb")==0) { 
+      /* upper right back corner of configuration */
+      getparam("conf_urb", &conf_urb,PARAM_REAL,DIM,DIM);
+    }
     else if (strcasecmp(token,"view_pos")==0) { 
       /* view position */
       getparam("view_pos",&view_pos,PARAM_REAL,DIM,DIM);
@@ -464,6 +472,15 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"projection")==0) {
       /* projection (0=orthogonal, 1=perspective) */
       getparam("projection",&projection,PARAM_INT,1,1);
+    }
+#else
+    else if (strcasecmp(token,"conf_ll")==0) { 
+      /* lower left corner of configuration */
+      getparam("conf_ll", &conf_ll,PARAM_REAL,DIM,DIM);
+    }
+    else if (strcasecmp(token,"conf_ur")==0) { 
+      /* upper right corner of configuration */
+      getparam("conf_ur", &conf_ur,PARAM_REAL,DIM,DIM);
     }
 #endif
     else if (strcasecmp(token,"ecut_kin")==0) { 
@@ -481,14 +498,6 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"pic_ur")==0) { 
       /* upper right corner of picture */
       getparam("pic_ur", &pic_ur,PARAM_REAL,DIM,DIM);
-    }
-    else if (strcasecmp(token,"conf_ll")==0) { 
-      /* lower left corner of configuration */
-      getparam("conf_ll", &conf_ll,PARAM_REAL,DIM,DIM);
-    }
-    else if (strcasecmp(token,"conf_ur")==0) { 
-      /* upper right corner of configuration */
-      getparam("conf_ur", &conf_ur,PARAM_REAL,DIM,DIM);
     }
     else if (strcasecmp(token,"pic_res")==0) { 
       /* number of pixels in x/y direction */

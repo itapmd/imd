@@ -105,8 +105,8 @@ EXTERN int      projection INIT(0);            /* projection type 0/1 */
 EXTERN vektor3d pic_scale INIT(nullvektor);   /* Scale factor x/y for pictures     */
 EXTERN vektor3d ecut_kin INIT(nullvektor);    /* Kin. Energy interval for pictures */
 EXTERN vektor3d ecut_pot INIT(nullvektor);    /* Pot. Energy interval for pictures */   
-EXTERN vektor3d  conf_ll INIT(nullvektor);    /* lower left corner conf */
-EXTERN vektor3d  conf_ur INIT(nullvektor);    /* upper right corner conf*/
+EXTERN vektor3d  conf_llf INIT(nullvektor);   /* lower left corner conf */
+EXTERN vektor3d  conf_urb INIT(nullvektor);   /* upper right corner conf*/
 EXTERN vektor3d  pic_ll  INIT(nullvektor);    /* lower left corner */
 EXTERN vektor3d  pic_ur  INIT(nullvektor);    /* upper right corner */
 EXTERN ivektor3d pic_res INIT(nullivektor);   /* number of pixels in x/y dir.*/
