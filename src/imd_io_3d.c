@@ -457,7 +457,7 @@ void recv_atoms(void)
 /******************************************************************************
 *
 * write_properties writes selected properties to *.eng file
-*
+* please keep the header in imd.c up to date
 ******************************************************************************/
 
 void write_properties(int steps)

@@ -79,8 +79,14 @@ int main(int argc, char **argv)
       fprintf(fl,"vol ");
 if (ensemble==ENS_NPT_AXIAL) 
   {
-    fprintf(fl,"stress_x stress_y stress_z ");
-    fprintf(fl,"box_x.x box_x.y box_x.z ");
+    fprintf(fl,"stress_x stress_y " );
+#ifndef TWOD     
+fprintf(fl,"stress_z ");
+#endif
+    fprintf(fl,"box_x.x box_x.y ");
+#ifndef TWOD     
+fprintf(fl,"box_x.z ");
+#endif
   }
 #if defined(NVT) || defined(NPT)
 fprintf(fl,"eta ");

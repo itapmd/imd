@@ -66,7 +66,7 @@ int curline; /* number of current line */
                   Fehler, wenn mindestens pnum_min Werte abgesaettigt
                   wurden. Falls weniger als pnum_max Werte vorhanden sind,
                   werden die restlichen Werte mit Kopien des zuletzt gelesenen
-                  Werts aufgefuellt.
+                  Werts aufgefuellt. 
 
   Resultat:
   nichtkopierende Routinen: Die Anzahl der gelesenen Werte wird zurueckgegeben.
