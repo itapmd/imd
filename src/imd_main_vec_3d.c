@@ -573,5 +573,5 @@ void check_nblist()
 #else
   max2 = max1;
 #endif
-  if (max2 > SQR(nbl_margin)) make_nblist();
+  if (max2 > SQR(0.5*nbl_margin)) make_nblist();
 }

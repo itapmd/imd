@@ -734,7 +734,7 @@ void calc_forces(int steps)
 
 void check_nblist()
 {
-  real   r2, max1=0.0, max2, eps=0.0001;
+  real   r2, max1=0.0, max2;
   vektor d;
   int    k;
 
@@ -759,5 +759,5 @@ void check_nblist()
 #else
   max2 = max1;
 #endif
-  if (max2+eps > SQR(nbl_margin)) make_nblist();
+  if (max2 > SQR(0.5*nbl_margin)) make_nblist();
 }
