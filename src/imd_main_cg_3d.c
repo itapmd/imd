@@ -92,24 +92,26 @@ void main_loop(void)
 	calc_forces(astep);
 	ctf++;
 	move_atoms_nve(); 
+	do_boundaries();    
+	fix_cells();  
+	
     }
 
     /***** Now do the Conjugate gradient ************/
 
     /* initialisations: h,g, Fmax */
     calc_forces(steps);
-    fmax2 = calc_fnorm_g_h();
+    calc_fnorm_g_h();
 
-    printf(" fmax2= %lf \n",sqrt(fmax2));fflush(stdout);
+    printf(" fmax= %lf \n",sqrt(fmax2));fflush(stdout);
     old_cgval = CGVAL;
-
-
 
     for (cgsteps = 0 ; cgsteps < cg_maxsteps; cgsteps++)
     {
 	/*  printf (" cgstep %d, CGVAL = %lf \n",cgsteps,CGVAL);fflush(stdout); */
 	/* minimization in one 'direction' */
-	linminsteps=linmin(fmax2,old_cgval);
+	
+	linminsteps=linmin();
 	ctf += linminsteps;
 	/*  printf (" cgstep %d, ctf %d linminsteps %d, CGVAL = %lf \n",cgsteps,ctf,linminsteps,CGVAL);fflush(stdout); */
         /* Convergence test: change of Epot or smaller than fnorm*/
@@ -125,16 +127,18 @@ void main_loop(void)
 	cg_calcgamma();         /* calc gg, dgg */
 	
         /* sets ort = old_ort, h, g, needs gamma and gets fmax2*/ 
-	fmax2 = set_hg();
+	set_hg();
 	/* overwrites the checkpoint file after each cgstep */  
-	
+
 	write_config_select(0,"cgchkpt",write_atoms_config,write_header_config);  
 	write_eng_file(ctf);
     }
     
     /* write 'relaxed' config */
 
-    
+    do_boundaries();    
+    fix_cells();  
+	
     write_config(steps);
 
 
@@ -145,10 +149,6 @@ void main_loop(void)
 #ifdef TIMING
     imd_stop_timer(&time_io);
 #endif
-
-    do_boundaries();    
-    fix_cells();  
-
 
 #ifdef FBC
     /* fbc_forces is already initialised with beginforces */
@@ -170,7 +170,7 @@ void main_loop(void)
     printf( "End of simulation %d\n", simulation );
   } 
   
-  steps = ctf; /* for easier comparison */
+  steps = ctf; /* for easier comparison of the time spent */
 }
 
 
@@ -267,7 +267,7 @@ void do_boundaries(void)
  *
  ******************************************************************************/
 
-int linmin(real fmax2, real old_cgval)
+int linmin()
 {
     real alpha_a, alpha_b, alpha_c, fa,fb,fc;
     real alphamin;
@@ -302,8 +302,8 @@ int linmin(real fmax2, real old_cgval)
     fa = old_cgval;
     fb = fonedim(alpha_b);
 
-    printf("ID: %d before mnbrak: fmax= %lf alpha_a= %lf alpha_b=%lf fa= %lf fb=%lf \n",myid,fmax,alpha_a,alpha_b,fa,fb);
-    fflush(stdout);     
+/*      printf("ID: %d before mnbrak: fmax= %lf alpha_a= %lf alpha_b=%lf fa= %lf fb=%lf \n",myid,fmax,alpha_a,alpha_b,fa,fb); */
+/*      fflush(stdout);      */
  
 /* decide which method to take to braket a mimimum, at the moment only mbrak, later zbrak? */
     iter1 = mnbrak (&alpha_a,&alpha_b,&alpha_c,&fa,&fb,&fc); /* call by reference Num Rec. p297 */
@@ -318,7 +318,7 @@ int linmin(real fmax2, real old_cgval)
 #else
     iter2 =  brent (alpha_a,alpha_b,alpha_c,fb,&alphamin);
 #endif
-    printf("ID: %d  in linmin: iter1= %d iter2 =%d \n",myid,iter1,iter2);fflush(stdout); 
+  /*    printf("ID: %d  in linmin: iter1= %d iter2 =%d \n",myid,iter1,iter2);fflush(stdout);  */
     return (iter1 + iter2);
 }
 
@@ -388,18 +388,16 @@ void  calc_fnorm(void)
 
 }
 
-real  calc_fnorm_g_h(void)
+void calc_fnorm_g_h(void)
 {
   int k;
   real tmp_fnorm;
   real tmp_fmax2;
-  real fmax2;
-
+  
   static int count = 0;
   fnorm = 0.0;
   tmp_fmax2 = 0.0;
-  fmax2 = 0.0;
-
+  
   /* loop over all cells */
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_kin_energy,fnorm)
@@ -467,7 +465,7 @@ real  calc_fnorm_g_h(void)
   fmax2 = tmp_fmax2;
 #endif
 
-  return (fmax2);  
+  return;  
 }
 
 /* calculation of gamma, dgg,gg */
@@ -476,15 +474,12 @@ void cg_calcgamma(void)
   int k;
   real tmpvec1[3], tmpvec2[3];
   vektor tmpvec;
-  real tmp_fmax2,fmax2,tmp_gg,tmp_dgg;
+  real tmp_fmax2,tmp_gg,tmp_dgg;
 
   static int count = 0;
   tmp_fmax2 = 0.0;
-  fmax2 = 0.0;
   tmp_dgg = 0.0;
-  dgg   =0;
   tmp_gg = 0.0;
-  gg   =0;
 
   /* loop over all cells */
   for (k=0; k<ncells; ++k) 
@@ -535,20 +530,17 @@ void cg_calcgamma(void)
 
 }
 
-real set_hg(void)
+void set_hg(void)
 {
   int k;
   real tmpvec1[3], tmpvec2[3];
   vektor tmpvec;
-  real tmp_fmax2,fmax2,tmp_gg,tmp_dgg;
+  real tmp_fmax2,tmp_gg,tmp_dgg;
 
   static int count = 0;
   tmp_fmax2 = 0.0;
-  fmax2 = 0.0;
   tmp_dgg = 0.0;
-  dgg   =0;
   tmp_gg = 0.0;
-  gg   =0;
 
   /* loop over all cells */
   for (k=0; k<ncells; ++k) {
@@ -581,7 +573,9 @@ real set_hg(void)
   }
 
 #ifdef MPI
-   MPI_Allreduce( &tmp_fmax2, &fmax2, 1, MPI_REAL, MPI_MAX, cpugrid); 
+/*    printf("ID: %d  tmp_fmax2: %lf\n",myid,tmp_fmax2);fflush(stdout); */
+   MPI_Allreduce( &tmp_fmax2, &fmax2, 1, MPI_REAL, MPI_MAX, cpugrid);
+/*    printf("ID: %d  fmax2: %lf\n",myid,fmax2);fflush(stdout);  */
 /* add up results from different CPUs */
   MPI_Allreduce( &tmp_gg,&gg , 1, REAL, MPI_SUM, cpugrid);
   MPI_Allreduce( &tmp_dgg,&dgg , 1, REAL, MPI_SUM, cpugrid);
@@ -592,8 +586,41 @@ real set_hg(void)
 #endif
   cg_gamma = dgg/gg;
 
-  return(fmax2);
+  return;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
