@@ -51,6 +51,24 @@ void main_loop(void)
 #endif
 
 #ifdef FBC
+#ifdef MIK  /* just increment the force if under threshold of e_kin */
+ if (tot_kin_energy/nactive < fbc_ekin_threshold)
+ {
+  for (l=0;l<vtypes;l++)
+    *(fbc_df+l) = *(fbc_dforces+l) ;
+ }
+ else
+ {
+  for (l=0;l<vtypes;l++)
+  {
+    temp_df.x = 0.0;
+    temp_df.y = 0.0;
+    temp_df.z = 0.0;
+    
+    *(fbc_df+l) = temp_df;
+  }
+ }
+#else  /* dynamic loading, increment linearly each timestep */
   for (l=0;l<vtypes;l++){
     temp_df.x = (((fbc_endforces+l)->x) - ((fbc_beginforces+l)->x))/(steps_max - steps_min);
     temp_df.y = (((fbc_endforces+l)->y) - ((fbc_beginforces+l)->y))/(steps_max - steps_min);
@@ -58,6 +76,7 @@ void main_loop(void)
     
     *(fbc_df+l) = temp_df;
   }
+#endif
 #endif
 
 #ifdef NVX
@@ -216,8 +235,8 @@ void main_loop(void)
 #endif
 
 #ifdef FBC
- for (l=0;l<vtypes;l++){               /*fbc_forces is already initialised with beginforces */
-   (fbc_forces+l)->x += (fbc_df+l)->x;
+ for (l=0;l<vtypes;l++){               /* fbc_forces is already initialised with beginforces */
+   (fbc_forces+l)->x += (fbc_df+l)->x; /* fbc_df=0 if MIK && ekin> ekin_threshold */ 
    (fbc_forces+l)->y += (fbc_df+l)->y;
    (fbc_forces+l)->z += (fbc_df+l)->z;
   } 

@@ -49,14 +49,32 @@ void main_loop(void)
 #endif
 
 #ifdef FBC
+#ifdef MIK  /* just increment the force if under threshold of e_kin */
+ if (tot_kin_energy/nactive < fbc_ekin_threshold)
+ {
+  for (l=0;l<vtypes;l++)
+    *(fbc_df+l) = *(fbc_dforces+l) ;
+ }
+ else
+ {
+  for (l=0;l<vtypes;l++)
+  {
+    temp_df.x = 0.0;
+    temp_df.y = 0.0;
+    
+    *(fbc_df+l) = temp_df;
+  }
+ }
+#else  /* dynamic loading, increment linearly each timestep */ 
   for (l=0;l<vtypes;l++){
     temp_df.x = (((fbc_endforces+l)->x) - ((fbc_beginforces+l)->x))/(steps_max - steps_min);
     temp_df.y = (((fbc_endforces+l)->y) - ((fbc_beginforces+l)->y))/(steps_max - steps_min);
      
     *(fbc_df+l) = temp_df;
   }
-    
+#endif    
 #endif
+
 #ifdef NVX
   dtemp = (dTemp_end - dTemp_start)/(steps_max - steps_min);
   tran_Tleft  = temperature + dTemp_start;

@@ -420,16 +420,25 @@ void getparamfile(char *paramfname, int sim)
 	error("Can't allocate memory for fbc_forces\n");
       for(k=0; k<vtypes; k++)
        *(fbc_forces+k) = nullv;
+
       fbc_beginforces = (vektor *) malloc(vtypes*DIM*sizeof(real));
       if (NULL==fbc_beginforces)
 	error("Can't allocate memory for fbc_beginforces\n");
       for(k=0; k<vtypes; k++)
        *(fbc_beginforces+k) = nullv;
+#ifdef MIK
+      fbc_dforces = (vektor *) malloc(vtypes*DIM*sizeof(real));
+      if (NULL==fbc_dforces)
+	error("Can't allocate memory for fbc_dforces\n");
+      for(k=0; k<vtypes; k++)
+       *(fbc_dforces+k) = nullv; 
+#else
       fbc_endforces = (vektor *) malloc(vtypes*DIM*sizeof(real));
       if (NULL==fbc_endforces)
 	error("Can't allocate memory for fbc_endforces\n");
       for(k=0; k<vtypes; k++)
        *(fbc_endforces+k) = nullv;
+#endif
       restrictions = (ivektor *) malloc(vtypes*DIM*sizeof(int));
       if (NULL==restrictions)
 	error("Can't allocate memory for restriction vectors\n");
@@ -450,6 +459,25 @@ void getparamfile(char *paramfname, int sim)
       *(fbc_beginforces+(int)(tempforce.x)) = force;
       *(fbc_forces+(int)(tempforce.x)) = force; 
     }
+#ifdef MIK
+    else if (strcasecmp(token,"fbc_ekin_threshold")==0) {
+      /* epsilon criterium to increment extra force*/
+      getparam("fbc_ekin_threshold",&fbc_ekin_threshold,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"extra_dforce")==0) {
+      /* extra force increment for virtual types */
+      /* format: type force.x force.y (force.z) read in a temp. vektor */
+      getparam("extra_dforce",&tempforce,PARAM_REAL,DIM+1,DIM+1);
+      if (tempforce.x>vtypes-1)
+       error("Force increment defined for non existing virtual atom type\n");
+      force.x = tempforce.y;
+      force.y = tempforce.z;
+#ifndef TWOD
+      force.z = tempforce.z2;
+#endif
+      *(fbc_dforces+(int)(tempforce.x)) = force;
+    }
+#else
     else if (strcasecmp(token,"extra_endforce")==0) {
       /* extra force for virtual types */
       /* format: type force.x force.y (force.z) read in a temp. vektor */
@@ -463,6 +491,7 @@ void getparamfile(char *paramfname, int sim)
 #endif
       *(fbc_endforces+(int)(tempforce.x)) = force;
     }
+#endif
     else if (strcasecmp(token,"restrictionvector")==0) {
       /* restrictions for virtual types */
       /* format: type  1 1 (1) (=all directions ok) read in a temp. vektor */
@@ -1277,12 +1306,19 @@ void broadcast_params() {
   if (NULL==fbc_beginforces) 
     error("Can't allocate memory for fbc_beginforces on client."); 
   MPI_Bcast( fbc_beginforces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+#ifdef MIK
+  MPI_Bcast( &fbc_ekin_threshold , 1, MPI_REAL, 0, MPI_COMM_WORLD); 
 
+  if (0!=myid) fbc_dforces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
+  if (NULL==fbc_dforces) 
+    error("Can't allocate memory for fbc_dforces on client."); 
+  MPI_Bcast( fbc_dforces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
+#else
   if (0!=myid) fbc_endforces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
   if (NULL==fbc_endforces) 
     error("Can't allocate memory for fbc_endforces on client."); 
   MPI_Bcast( fbc_endforces, vtypes*DIM, MPI_REAL, 0, MPI_COMM_WORLD); 
-
+#endif
   if (0!=myid) restrictions  = (ivektor *) malloc(vtypes*DIM*sizeof(int));
   if (NULL==restrictions) 
     error("Can't allocate memory for restriction vectors on client."); 

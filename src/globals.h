@@ -54,7 +54,12 @@ EXTERN ivektor pbc_dirs INIT(einsivektor);  /* directions with pbc */
 EXTERN int vtypes INIT(1);       /* vtypes = ntypes + ntypes*(types of forces) */
 EXTERN vektor *fbc_forces;       /* each vtype has its force */
 EXTERN vektor *fbc_beginforces;  /* begin & endvalues for linear interpolation */ 
+#ifdef MIK                        /* or ... */
+EXTERN vektor *fbc_dforces;       /* each vtype has its force increment */
+EXTERN real   fbc_ekin_threshold INIT(0.0);/* threshold for ekin */ 
+#else
 EXTERN vektor *fbc_endforces;   
+#endif
 EXTERN ivektor *restrictions;     /* directions the atom is allowed to move in */
 #endif
 
