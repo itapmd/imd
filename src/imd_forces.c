@@ -185,8 +185,8 @@ void do_forces(cell *p, cell *q, vektor pbc)
 	q->pot_eng[j] += pot_zwi;
 	p->pot_eng[i] += pot_zwi;
 #endif
-	tot_pot_energy += pot_zwi;
 #endif
+	tot_pot_energy += pot_zwi;
 
 #ifdef P_AXIAL
         tmp_vir_vect.x -= d.x * d.x * pot_grad;
