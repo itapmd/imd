@@ -440,6 +440,10 @@ ifneq (,$(findstring mikandfbc,${MAKETARGET}))
 CFLAGS += -DMIKAND
 endif
 
+ifneq (,$(findstring fnorm,${MAKETARGET}))
+CFLAGS += -DFNORM
+endif
+
 ifneq (,$(findstring npt_axial,${MAKETARGET}))
 CFLAGS += -DNPT -DNPT_axial
 endif

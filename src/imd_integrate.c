@@ -36,6 +36,7 @@ void move_atoms_nve(void)
   for (k=0; k<ncells; ++k) {
 
     int  i;
+    int sort=0;
     cell *p;
     real kin_energie_1, kin_energie_2;
 #ifdef UNIAX    
@@ -62,29 +63,29 @@ void move_atoms_nve(void)
 #endif
 
 #ifdef FBC
+	sort=(p->sorte[i]);
         /* give virtual particles their extra force */
-	(p->kraft X(i)) += ((fbc_forces + p->sorte[i])->x);
-	(p->kraft Y(i)) += ((fbc_forces + p->sorte[i])->y);
+	(p->kraft X(i)) += ((fbc_forces + sort)->x);
+	(p->kraft Y(i)) += ((fbc_forces + sort)->y);
 #ifndef TWOD
-	(p->kraft Z(i)) += ((fbc_forces + p->sorte[i])->z);
-#endif
-	/* and set their impuls in restricted directions to 0 */
-	p->impuls X(i) += timestep * p->kraft X(i)*(restrictions + p->sorte[i])->x;
-        p->impuls Y(i) += timestep * p->kraft Y(i)*(restrictions + p->sorte[i])->y;
-#ifndef TWOD
-        p->impuls Z(i) += timestep * p->kraft Z(i)*(restrictions + p->sorte[i])->z;
+	(p->kraft Z(i)) += ((fbc_forces + sort)->z);
 #endif
 
-#else
+	/* and set their force (->impulse) in restricted directions to 0 */
+	(p->kraft X(i)) *= ((restrictions + sort)->x);
+	(p->kraft Y(i)) *= ((restrictions + sort)->y);
+#ifndef TWOD
+	(p->kraft Z(i)) *= ((restrictions + sort)->z);
+#endif
 
-        p->impuls X(i) += timestep * p->kraft X(i);
+#endif /* FBC */
+
+	p->impuls X(i) += timestep * p->kraft X(i);
         p->impuls Y(i) += timestep * p->kraft Y(i);
 #ifndef TWOD
         p->impuls Z(i) += timestep * p->kraft Z(i);
 #endif
 
-#endif
-	
 
 #ifdef UNIAX
         dot = 2.0 * SPRODN(p->dreh_impuls,i,p->achse,i);
@@ -205,9 +206,13 @@ void move_atoms_nve(void)
 void move_atoms_mik(void)
 {
   int k;
-  real tmp;
+  real tmp,tmp2;
   static int count = 0;
   tot_kin_energy = 0.0;
+
+#ifdef FNORM
+  fnorm = 0.0;
+#endif
 
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
@@ -222,6 +227,7 @@ void move_atoms_mik(void)
   for (k=0; k<ncells; ++k) {
 
     int  i;
+    int sort=0;
     cell *p;
     real kin_energie_1, kin_energie_2;
     p = cell_array + CELLS(k);
@@ -240,19 +246,27 @@ void move_atoms_mik(void)
         kin_energie_1 = SPRODN(p->impuls,i,p->impuls,i);
 
 #ifdef FBC
-#ifdef ATNR
+	sort=(p->sorte[i]);
+#ifdef ATNR /* debugging  stuff */
 	if(p->nummer[i]==ATNR){
 	printf("kraft vorher: %.16f  %.16f  %.16f \n",(p->kraft X(i)),(p->kraft Y(i)),(p->kraft Z(i)));
-	printf("fbc_forces: %.16f  %.16f  %.16f \n", ((fbc_forces + p->sorte[i])->x),((fbc_forces + p->sorte[i])->y),((fbc_forces + p->sorte[i])->z));
+	printf("fbc_forces: %.16f  %.16f  %.16f \n", ((fbc_forces + sort)->x),((fbc_forces + sort)->y),((fbc_forces + sort)->z));
 	fflush(stdout);
 	}
 #endif
         /* give virtual particles their extra force */
-	(p->kraft X(i)) += ((fbc_forces + p->sorte[i])->x);
-	(p->kraft Y(i)) += ((fbc_forces + p->sorte[i])->y);
+	(p->kraft X(i)) += ((fbc_forces + sort)->x);
+	(p->kraft Y(i)) += ((fbc_forces + sort)->y);
 #ifndef TWOD
-	(p->kraft Z(i)) += ((fbc_forces + p->sorte[i])->z);
+	(p->kraft Z(i)) += ((fbc_forces + sort)->z);
 #endif
+	/* and set their force (->impulse) in restricted directions to 0 */
+	(p->kraft X(i)) *= ((restrictions + sort)->x);
+	(p->kraft Y(i)) *= ((restrictions + sort)->y);
+#ifndef TWOD
+	(p->kraft Z(i)) *= ((restrictions + sort)->z);
+#endif
+	
 #ifdef ATNR
 	if(p->nummer[i]==ATNR){
 	printf("kraft nachher: %.16f  %.16f  %.16f \n",(p->kraft X(i)),(p->kraft Y(i)),(p->kraft Z(i)));
@@ -260,24 +274,18 @@ void move_atoms_mik(void)
 	printf("impuls  vorher: %.16f  %.16f  %.16f \n",(p->impuls X(i)),(p->impuls Y(i)),(p->impuls Z(i)));
 	fflush(stdout);
 	}
-
-#endif
-	/* and set their impuls in restricted directions to 0 */
-	p->impuls X(i) += timestep * p->kraft X(i)*(restrictions + p->sorte[i])->x;
-        p->impuls Y(i) += timestep * p->kraft Y(i)*(restrictions + p->sorte[i])->y;
-#ifndef TWOD
-        p->impuls Z(i) += timestep * p->kraft Z(i)*(restrictions + p->sorte[i])->z;
 #endif
 
+#endif  /*FBC */
 
-#else
+#ifdef FNORM
+	fnorm +=  SPRODN(p->kraft,i,p->kraft,i);
+#endif
 
         p->impuls X(i) += timestep * p->kraft X(i);
         p->impuls Y(i) += timestep * p->kraft Y(i);
 #ifndef TWOD
         p->impuls Z(i) += timestep * p->kraft Z(i);
-#endif
-
 #endif
 
 	/* Mikroconvergence Algorithm - set velocity zero if a*v < 0 */
@@ -328,6 +336,11 @@ void move_atoms_mik(void)
   /* Add kinetic energy from all cpus */
   MPI_Allreduce( &tot_kin_energy, &tmp, 1, MPI_REAL, MPI_SUM, cpugrid);
   tot_kin_energy = tmp;
+#ifdef FNORM
+  /* Add all the (local) scalars of the local scalar products of the global force vector */ 
+  MPI_Allreduce( &fnorm, &tmp2, 1, MPI_REAL, MPI_SUM, cpugrid);
+  fnorm = tmp2;
+#endif
 #endif
 
 }
@@ -431,6 +444,7 @@ void move_atoms_nvt(void)
   for (k=0; k<ncells; ++k) {
 
     int i;
+    int sort=0;
     cell *p;
 #ifdef UNIAX
     real dot, norm ;
@@ -449,13 +463,14 @@ void move_atoms_nvt(void)
                                                   / p->traeg_moment[i];
 #endif
 #ifdef FBC
+	sort=(p->sorte[i]);
 	p->impuls X(i) = (p->impuls X(i)*reibung + timestep * p->kraft X(i)) 
-                           * eins_d_reibung * (restrictions + p->sorte[i])->x;
+                           * eins_d_reibung * (restrictions + sort)->x;
         p->impuls Y(i) = (p->impuls Y(i)*reibung + timestep * p->kraft Y(i)) 
-                           * eins_d_reibung * (restrictions + p->sorte[i])->y;
+                           * eins_d_reibung * (restrictions + sort)->y;
 #ifndef TWOD
         p->impuls Z(i) = (p->impuls Z(i)*reibung + timestep * p->kraft Z(i)) 
-                           * eins_d_reibung * (restrictions + p->sorte[i])->z;
+                           * eins_d_reibung * (restrictions + sort)->z;
 #endif
 #else
         /* new momenta */

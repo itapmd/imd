@@ -151,6 +151,10 @@ EXTERN int  use_curr_temp INIT(0);  /* which starting temp to use (flag) */
 EXTERN int  do_maxwell INIT(0.0);
 EXTERN long seed INIT(0);           /* seed for random number generator */
 
+#ifdef FNORM
+EXTERN real fnorm INIT(0.0);  /* =f*f, f: global force vector: f=(f1.x, f1.y,...,fn.z) */ 
+#endif
+
 #ifndef MONOLJ
 /* Potential Table */
 #ifdef STATIC_POT

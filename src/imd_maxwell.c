@@ -219,9 +219,6 @@ void maxwell(real temp)
 #ifndef TWOD
             p->impuls Z(i) -= tot_impuls.z;
 #endif
-	    /* set impuls 0 if restricted in this direction */
-
-
     
 	 }
       }
