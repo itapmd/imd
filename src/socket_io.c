@@ -499,6 +499,8 @@ void write_distrib_using_sockets()
   float f;
 
   hist.dim = dist_dim;
+  hist.ur  = hist_ur;
+  hist.ll  = hist_ll;
   make_histograms(&hist);
 
   if (0==myid) {
