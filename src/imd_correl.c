@@ -97,11 +97,11 @@ void init_correl(int ncorr_rmax, int ncorr_tmax)
 #endif /* CORRELATE */
 
   /* Allocate msqd arrays */
-  msqd=malloc(ntypes*sizeof(real));
+  msqd = (real *) malloc(ntypes*sizeof(real));
 #ifdef MPI
-  msqd_global=malloc(ntypes*sizeof(real));
+  msqd_global = (real *) malloc(ntypes*sizeof(real));
 #else
-  msqd_global=msqd;
+  msqd_global = msqd;
 #endif
 
 }

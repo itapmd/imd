@@ -123,7 +123,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
         p->pot_eng[i] += pot_zwi;
 
         /* update force on particle j */
-        jcell = neigh->cl [j];
+        jcell = (cell *) neigh->cl [j];
         jnum  = neigh->num[j];
         jcell->kraft X(jnum) -= force_j.x;
         jcell->kraft Y(jnum) -= force_j.y;
@@ -131,7 +131,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
         jcell->pot_eng[jnum] += pot_zwi;
 
         /* update force on particle k */
-        kcell = neigh->cl [k];
+        kcell = (cell *) neigh->cl [k];
         knum  = neigh->num[k];
         kcell->kraft X(knum) -= force_k.x;
         kcell->kraft Y(knum) -= force_k.y;
@@ -324,7 +324,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
       /* update force on particle k */
       for (k=0; k<neigh->n; ++k) 
 	if (k!=j) {
-        kcell = neigh->cl [k];
+        kcell = (cell *) neigh->cl [k];
         knum  = neigh->num[k];
         kcell->kraft X(knum) += tmp_5 * dzeta_k[k].x;
         kcell->kraft Y(knum) += tmp_5 * dzeta_k[k].y;
@@ -347,7 +347,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 	}
       
       /* update force on particle j */
-      jcell = neigh->cl [j];
+      jcell = (cell *) neigh->cl [j];
       jnum  = neigh->num[j];
       jcell->kraft X(jnum) += force_j.x;
       jcell->kraft Y(jnum) += force_j.y;

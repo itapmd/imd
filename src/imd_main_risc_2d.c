@@ -67,7 +67,7 @@ void calc_forces(void)
   /* compute forces for all pairs of cells */
   for (n=0; n<nlists; ++n ) {
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y)
+#pragma omp parallel for schedule(dynamic) reduction(+:tot_pot_energy,virial,vir_x,vir_y)
 #endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;

@@ -85,7 +85,7 @@ void calc_forces(void)
   /* compute forces for all pairs of cells */
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#pragma omp parallel for schedule(dynamic) reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
@@ -102,7 +102,7 @@ void calc_forces(void)
 #ifdef EAM2
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#pragma omp parallel for schedule(dynamic) reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
@@ -119,7 +119,7 @@ void calc_forces(void)
 
 #ifdef COVALENT
 #ifdef _OPENMP
-#pragma omp parallel for reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
+#pragma omp parallel for schedule(dynamic) reduction(+:tot_pot_energy,virial,vir_x,vir_y,vir_z)
 #endif
   for (k=0; k<ncells; ++k) {
     do_forces2(cell_array+k, &tot_pot_energy, &virial, &vir_x, &vir_y, &vir_z);

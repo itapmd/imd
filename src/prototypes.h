@@ -237,6 +237,7 @@ void calc_tot_presstens(void);
 #ifdef AVPOS
 void write_atoms_avp(FILE *out);
 void write_header_avp(FILE *out);
+void add_position(void);
 #endif
 
 void reduce_displacement(vektor *d);
@@ -315,8 +316,10 @@ void add_positions(void);
 
 /* support for correlation functions - file imd_correl.c */
 #if defined(CORRELATE) || defined(MSQD)
+void init_correl(int, int);
 void alloc_correl(int, int);
 void correlate(int istep, int refstep, unsigned seqnum);
+void write_msqd(int);
 #endif
 #ifdef CORRELATE
 void write_add_corr(int it, int steps, unsigned seqnum);

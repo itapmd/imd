@@ -217,7 +217,7 @@ neightab *alloc_neightab(neightab *neigh, int count)
     neigh->n_max = count;
     neigh->dist  = (real *)     malloc( count * DIM * sizeof(real) );
     neigh->typ   = (shortint *) malloc( count * sizeof(shortint) );
-    neigh->cl    = (void *)     malloc( count * sizeof(cellptr) );
+    neigh->cl    = (void **)    malloc( count * sizeof(cellptr) );
     neigh->num   = (integer *)  malloc( count * sizeof(integer) );
     if ((neigh->dist==NULL) || (neigh->typ==0) ||
         (neigh->cl  ==NULL) || (neigh->num==0)) {
