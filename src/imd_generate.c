@@ -223,11 +223,11 @@ void generate_hex()
       ORT(input,0,Y)  = y;
       NUMMER(input,0) = natoms;
 #ifndef MONO
-      SORTE (input,0) = typ;
+      SORTE (input,0) = gtypes[typ];
 #endif
-      VSORTE(input,0) = typ;
-      MASSE(input,0)  = masses[typ];
-      num_sort[typ]++;
+      VSORTE(input,0) = gtypes[typ];
+      MASSE(input,0)  = masses[gtypes[typ]];
+      num_sort[gtypes[typ]]++;
       cellc = cell_coord(x,y);
 #ifdef MPI
       to_cpu = cpu_coord(cellc);
@@ -408,12 +408,12 @@ void generate_fcc(int maxtyp)
 #ifndef MONOLJ
         NUMMER(input,0) = natoms;
 #ifndef MONO
-        SORTE (input,0) = typ;
+        SORTE (input,0) = gtypes[typ];
 #endif
-        VSORTE(input,0) = typ;
-        MASSE (input,0) = masses[typ];
+        VSORTE(input,0) = gtypes[typ];
+        MASSE (input,0) = masses[gtypes[typ]];
 #endif
-        num_sort[typ]++;
+        num_sort[gtypes[typ]]++;
 
 #ifdef BUFCELLS
 	to_cpu = cpu_coord(cellc);

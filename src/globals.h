@@ -187,6 +187,7 @@ EXTERN ivektor box_param INIT(nullivektor);  /* box parameters */
 EXTERN int  size_per_cpu INIT(0);            /* box_param is given per cpu */
 EXTERN real box_unit INIT(1.0);              /* lattice parameter */
 EXTERN real *masses INIT(NULL);              /* masses */
+EXTERN int  *gtypes INIT(NULL);               /* types */
 
 /* The simulation box and its inverse */
 EXTERN vektor box_x  INIT(nullvektor);

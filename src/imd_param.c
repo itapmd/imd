@@ -699,6 +699,12 @@ void getparamfile(char *paramfname, int sim)
         error("specify parameter ntypes before parameter masses");
       getparam(token,masses,PARAM_REAL,ntypes,ntypes);
     }
+    else if (strcasecmp(token,"types")==0) {
+      /* types for generated structures */
+      if (ntypes==0) 
+        error("specify parameter ntypes before parameter types");
+      getparam(token,gtypes,PARAM_INT,1,ntypes);
+    }
     else if (strcasecmp(token,"timestep")==0) {
       /* size of timestep (in MD units) */
       getparam(token,&timestep,PARAM_REAL,1,1);
@@ -733,6 +739,12 @@ void getparamfile(char *paramfname, int sim)
 	error("Cannot allocate memory for masses array\n");
       for(k=0; k<ntypes; k++)
         *(masses+k) = 1.0;
+      /* array of types for generated structures */
+      gtypes=(int*)realloc(gtypes,ntypes*sizeof(int));
+      if (NULL==gtypes)
+	error("Cannot allocate memory for types array\n");
+      for(k=0; k<ntypes; k++)
+        *(gtypes+k) = k;
 #ifdef EFILTER
       lower_e_pot = (real *) calloc(ntypes, sizeof(real));
       if (NULL==lower_e_pot)
@@ -2239,7 +2251,10 @@ void broadcast_params() {
     masses=(real*)realloc(masses,ntypes*sizeof(real));
     if (NULL==masses) error("Cannot allocate memory for masses array\n");
   }
-
+  if (0!=myid) {
+    gtypes=(int*)realloc(gtypes,ntypes*sizeof(int));
+    if (NULL==gtypes) error("Cannot allocate memory for types array\n");
+  }
 #ifdef NBLIST
   MPI_Bcast( &nbl_margin,    1, REAL, 0, MPI_COMM_WORLD);
 #endif
@@ -2275,6 +2290,7 @@ void broadcast_params() {
 #endif
 
   MPI_Bcast( masses,     ntypes, REAL,     0, MPI_COMM_WORLD); 
+  MPI_Bcast( gtypes,     ntypes, MPI_INT,  0, MPI_COMM_WORLD); 
 
   MPI_Bcast( &timestep    ,   1, REAL,     0, MPI_COMM_WORLD); 
   MPI_Bcast( &temperature ,   1, REAL,     0, MPI_COMM_WORLD); 
