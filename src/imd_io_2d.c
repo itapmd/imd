@@ -45,7 +45,8 @@ void read_atoms(str255 infilename)
   FILE *reffile;
   int pref;
   char refbuf[512];
-  real refeng, fdummy;
+  real refeng=0;
+  real fdummy;
   int refn, idummy;
   vektor2d refpos;
 #endif
@@ -66,12 +67,6 @@ void read_atoms(str255 infilename)
   if (1==parallel_input) {
     sprintf(buf,"%s.%u",infilename,myid); 
     infile = fopen(buf,"r");
-#ifdef DISLOC
-  if (calc_Epot_ref == 0) {
-    sprintf(buf,"%s.%u",reffilename,myid); 
-    reffile = fopen(reffilename,"r");
-  }
-#endif
     /* When each cpu reads only part of the atoms, we have to add the
        number of atoms together to get the correct natoms. We set a
        flag here */
@@ -88,9 +83,8 @@ void read_atoms(str255 infilename)
   if ((1!=parallel_input) || (NULL==infile))
     infile = fopen(infilename,"r");
 #ifdef DISLOC
-  if ((1!=parallel_input) || (NULL==reffile))
-    if (calc_Epot_ref == 0)
-      reffile = fopen(reffilename,"r");
+  if ((calc_Epot_ref == 0) || (NULL==reffile))
+    reffile = fopen(reffilename,"r");
 #endif
 
 #else
@@ -103,8 +97,7 @@ void read_atoms(str255 infilename)
   if (NULL==infile) error("Cannot open atoms file.");
 
 #ifdef DISLOC
-  if (calc_Epot_ref == 0)
-    if (NULL==reffile) error("Cannot open reference file.");
+  if ((calc_Epot_ref == 0)&&(NULL==reffile)) error("Cannot open reference file.");
 #endif
 
   /* Set up 1 atom input cell */
@@ -129,30 +122,32 @@ void read_atoms(str255 infilename)
     while ('#'==buf[1]) fgets(buf,sizeof(buf),infile); /* eat comments */
 
 #ifdef DISLOC
-    refbuf[0] = (char) NULL;
-    fgets(refbuf,sizeof(refbuf),reffile);
-    while ('#'==refbuf[1]) fgets(refbuf,sizeof(refbuf),reffile); /* eat comments */
+    if (calc_Epot_ref == 0) {
+      refbuf[0] = (char) NULL;
+      fgets(refbuf,sizeof(refbuf),reffile);
+      while ('#'==refbuf[1]) fgets(refbuf,sizeof(refbuf),reffile); /* eat comments */
+    }
 #endif
 
     /* Should use temporary variable */
 #ifdef DISLOC
 #ifdef DOUBLE
-    p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf",
-	      &n,&s,&m,&pos.x,&pos.y,&vau.x,&vau.y, &refeng);
+    p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf",
+	      &n,&s,&m,&pos.x,&pos.y,&vau.x,&vau.y);
     if (calc_Epot_ref == 0)
-      pref = sscanf(refbuf,"%d %d %lf %lf %lf %lf",
-		    &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refeng);
+      pref = sscanf(refbuf,"%d %d %lf %lf %lf %lf %lf %lf",
+		    &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&fdummy,&fdummy,&refeng);
 #else
-    p = sscanf(buf,"%d %d %f %f %f %f %f %f",
-	      &n,&s,&m,&pos.x,&pos.y,&vau.x,&vau.y, &refeng);  
+    p = sscanf(buf,"%d %d %f %f %f %f %f",
+	      &n,&s,&m,&pos.x,&pos.y,&vau.x,&vau.y);  
     if (calc_Epot_ref == 0)
-      pref = sscanf(refbuf,"%d %d %f %f %f %f",
-		    &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refeng);
+      pref = sscanf(refbuf,"%d %d %f %f %f %f %f %f",
+		    &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&fdummy,&fdummy,&refeng);
 #endif
     if (calc_Epot_ref == 0)
       if (ABS(refn) != ABS(n)) error("Numbers in infile and reffile are different.\n");
 
-#else
+#else /* not DISLOC */
 #ifdef DOUBLE
     p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf",
 	      &n,&s,&m,&pos.x,&pos.y,&vau.x,&vau.y);
@@ -160,7 +155,7 @@ void read_atoms(str255 infilename)
     p = sscanf(buf,"%d %d %f %f %f %f %f",
 	      &n,&s,&m,&pos.x,&pos.y,&vau.x,&vau.y);  
 #endif
-#endif
+#endif /* DISLOC */
 
 #ifndef NOPBC
     pos = back_into_box(pos);
@@ -212,7 +207,6 @@ break;
       cellc = cell_coord(pos.x,pos.y);
 
 #ifdef MPI
-
       to_cpu = cpu_coord(cellc);
       
       if ((myid != to_cpu) && (1!=parallel_input)) {

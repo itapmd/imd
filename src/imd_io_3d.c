@@ -45,7 +45,8 @@ void read_atoms(str255 infilename)
   FILE *reffile;
   int pref;
   char refbuf[512];
-  real refeng, fdummy;
+  real refeng=0;
+  real fdummy;
   int refn, idummy;
   vektor3d refpos;
 #endif
@@ -66,10 +67,6 @@ void read_atoms(str255 infilename)
   if (1==parallel_input) {
     sprintf(buf,"%s.%u",infilename,myid); 
     infile = fopen(buf,"r");
-#ifdef DISLOC
-    sprintf(buf,"%s.%u",reffilename,myid); 
-    reffile = fopen(reffilename,"r");
-#endif
     /* When each cpu reads only part of the atoms, we have to add the
        number of atoms together to get the correct natoms. We set a
        flag here */
@@ -86,20 +83,21 @@ void read_atoms(str255 infilename)
   if ((1!=parallel_input) || (NULL==infile))
     infile = fopen(infilename,"r");
 #ifdef DISLOC
-  if ((1!=parallel_input) || (NULL==reffile))
+  if ((calc_Epot_ref == 0) || (NULL==reffile))
     reffile = fopen(reffilename,"r");
 #endif
 
 #else
   infile = fopen(infilename,"r");
 #ifdef DISLOC
-  reffile = fopen(reffilename,"r");
+  if (calc_Epot_ref == 0)
+    reffile = fopen(reffilename,"r");
 #endif
 #endif
   if (NULL==infile) error("Cannot open atoms file.");
 
 #ifdef DISLOC
-  if (NULL==reffile) error("Cannot open reference file.");
+  if ((calc_Epot_ref == 0)&&(NULL==reffile)) error("Cannot open reference file.");
 #endif
 
  /* Set up 1 atom input cell */
@@ -123,9 +121,11 @@ void read_atoms(str255 infilename)
     while ('#'==buf[1]) fgets(buf,sizeof(buf),infile); /* eat comments */
 
 #ifdef DISLOC
-    refbuf[0] = (char) NULL;
-    fgets(refbuf,sizeof(refbuf),reffile);
-    while ('#'==refbuf[1]) fgets(refbuf,sizeof(refbuf),reffile); /* eat comments */
+    if (calc_Epot_ref == 0) {
+      refbuf[0] = (char) NULL;
+      fgets(refbuf,sizeof(refbuf),reffile);
+      while ('#'==refbuf[1]) fgets(refbuf,sizeof(refbuf),reffile); /* eat comments */
+    }
 #endif
 
   /* Should use temporary variable */
@@ -177,19 +177,22 @@ void read_atoms(str255 infilename)
 
 #ifdef DISLOC
 #ifdef DOUBLE
-    p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf %lf",
-	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z, &refeng);
-    pref = sscanf(refbuf,"%d %d %lf %lf %lf %lf %lf %lf %lf %lf",
-	      &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refpos.z,&fdummy,&fdummy,&fdummy,&refeng);
+    p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf",
+	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);
+    if (calc_Epot_ref == 0)
+      pref = sscanf(refbuf,"%d %d %lf %lf %lf %lf %lf",
+		    &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refpos.z,&fdummy,&fdummy,&fdummy,&refeng);
 #else
     p = sscanf(buf,"%d %d %f %f %f %f %f %f %f %f",
 	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z, &refeng);  
-    pref = sscanf(refbuf,"%d %d %f %f %f %f",
-	      &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refpos.z,&fdummy,&fdummy,&fdummy,&refeng);
+    if (calc_Epot_ref == 0)
+      pref = sscanf(refbuf,"%d %d %f %f %f %f",
+		    &refn,&idummy,&fdummy,&refpos.x,&refpos.y,&refpos.z,&fdummy,&fdummy,&fdummy,&refeng);
 #endif
-    if ((ABS(refn)) != (ABS(n))) {printf("%d %d\n", n, refn); error("Numbers in infile and reffile are different.\n");}
+    if (calc_Epot_ref == 0)
+      if ((ABS(refn)) != (ABS(n))) {printf("%d %d\n", n, refn); error("Numbers in infile and reffile are different.\n");}
 
-#else
+#else /* not DISLOC */
 #ifdef DOUBLE
     p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf",
 	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);  
@@ -197,7 +200,7 @@ void read_atoms(str255 infilename)
     p = sscanf(buf,"%d %d %f %f %f %f %f %f %f",
 	      &n,&s,&m,&pos.x,&pos.y,&pos.z,&vau.x,&vau.y,&vau.z);
 #endif
-#endif
+#endif /* DISLOC */
     if (pn) construct_pn_disloc(&pos.x,&pos.y,&pos.z);
 
 #ifndef NOPBC
@@ -208,9 +211,6 @@ void read_atoms(str255 infilename)
     if (p>0) {
       switch( p ) {
       case(6):      /* n, m, s, ort */
-#ifdef DISLOC
-        calc_Epot_ref=0;
-#endif
 	do_maxwell=1;
 	input->n = 1;
 	input->nummer[0] = n;
@@ -233,9 +233,6 @@ void read_atoms(str255 infilename)
 #endif
 	break;
       case(9):      /* n, m, s, ort, vau */
-#ifdef DISLOC
-        calc_Epot_ref=1;
-#endif
 	input->n = 1;
 	input->nummer[0] = n;
 	input->sorte[0] = s;
@@ -310,7 +307,8 @@ void read_atoms(str255 infilename)
 
   fclose(infile);  
 #ifdef DISLOC
-  fclose(reffile);
+  if (calc_Epot_ref==0)
+    fclose(reffile);
 #endif
 
 #ifdef MPI
