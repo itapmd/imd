@@ -358,7 +358,7 @@ void write_properties(int steps)
   if (NULL == out) error("Cannot open properties file.");
 
   fprintf(out,"%e",  (double)(steps * timestep));
-  fprintf(out," %e", (double)part_pot_energy);
+  fprintf(out," %.10e", (double)part_pot_energy);
 #ifndef MC
   fprintf(out," %e", (double)part_kin_energy);
 #ifdef FNORM
