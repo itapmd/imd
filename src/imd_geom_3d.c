@@ -85,7 +85,7 @@ ivektor maximal_cell_dim( void )
   /* Scaling factors box/cell */
 #ifdef EAM
   /* increase the size of the cell by 2 for EAM */
-  r2_cut2 = MAX( r2_cut, 2 * eam_r2_cut ); 
+  r2_cut2 = MAX( r2_cut, eam_r2_cut ); 
 #else
   r2_cut2 = r2_cut;
 #endif /* EAM */ 
@@ -171,7 +171,7 @@ void init_cells( void )
   /* Scaling factors box/cell */
 #ifdef EAM
   /* increase the size of the cell by 2 for EAM */
-  r2_cut2 = MAX( r2_cut, 2 * eam_r2_cut ); 
+  r2_cut2 = MAX( r2_cut, eam_r2_cut ); 
 #else
   r2_cut2 = r2_cut;
 #endif /* EAM */ 
