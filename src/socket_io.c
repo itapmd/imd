@@ -499,25 +499,25 @@ void write_conf_using_sockets() {
 #endif
 
 #endif
-
+   /* there are k atoms to write */
    if (0==myid) {
      f=(float)1.0;
      WriteFull(soc,&f, sizeof(float));
-     WriteFull(soc,&natoms,sizeof(int)); 
-     WriteFull(soc,(void *) nummer, natoms*sizeof(int)); 
-     WriteFull(soc,(void *) sorte, natoms*sizeof(short int)); 
-     WriteFull(soc,(void *) masse, natoms*sizeof(double)); 
-     WriteFull(soc,(void *) x, natoms*sizeof(double)); 
-     WriteFull(soc,(void *) y, natoms*sizeof(double)); 
+     WriteFull(soc,&k,sizeof(int)); 
+     WriteFull(soc,(void *) nummer, k*sizeof(int)); 
+     WriteFull(soc,(void *) sorte, k*sizeof(short int)); 
+     WriteFull(soc,(void *) masse, k*sizeof(double)); 
+     WriteFull(soc,(void *) x, k*sizeof(double)); 
+     WriteFull(soc,(void *) y, k*sizeof(double)); 
 #ifndef TWOD
-     WriteFull(soc,(void *) z, natoms*sizeof(double)); 
+     WriteFull(soc,(void *) z, k*sizeof(double)); 
 #endif
-     WriteFull(soc,(void *) vx, natoms*sizeof(double)); 
-     WriteFull(soc,(void *) vy, natoms*sizeof(double)); 
+     WriteFull(soc,(void *) vx, k*sizeof(double)); 
+     WriteFull(soc,(void *) vy, k*sizeof(double)); 
 #ifndef TWOD
-     WriteFull(soc,(void *) vz, natoms*sizeof(double)); 
+     WriteFull(soc,(void *) vz, k*sizeof(double)); 
 #endif
-     WriteFull(soc,(void *) pot, natoms*sizeof(double));
+     WriteFull(soc,(void *) pot, k*sizeof(double));
    }
 }
 
