@@ -374,9 +374,9 @@ CC_DEFAULT_OMPI_rs6000		= mpcc_r #?
 LIBS_PROF_rs6000		= -lpl   #?
 
 # MPI
-CFLAGS_mpicc_MPI_rs6000        	= -O4 -qtune # -O4 automatically invokes -qarch=auto
-CFLAGS_mpicc_MPI_rs6000_DEBUG  	= -g
-CFLAGS_mpicc_MPI_rs6000_PROF   	= -p
+CFLAGS_mpicc_MPI_rs6000        	= -O4 -qtune=auto -c # -O4 automatically invokes -qarch=auto
+CFLAGS_mpicc_MPI_rs6000_DEBUG  	= -g -c
+CFLAGS_mpicc_MPI_rs6000_PROF   	= -p -c
 
 # OpenMP
 #CFLAGS_cc_OMP_SR8000	 	= -omp -par -O4 +Op -msg=e
