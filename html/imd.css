@@ -18,23 +18,27 @@ li {margin-top: 0.5em; margin-bottom: 0.5em; }
 
 pre { 
   font-family: monospace;
-  font-size: 11pt; 
+  /* font-size: 11pt; */ 
 }
 
 tt { 
   font-family: monospace; 
-  font-size: 11pt; 
+  /* font-size: 11pt; */ 
 }
 
 p.indented { margin-left: 3%; }
 
-div { 
-  font-family: serif; 
-  font-size: 11pt; 
-}
-
 tr { vertical-align: top; }
 th { text-align: left; }
+
+div { 
+  font-family: serif; 
+  /* font-size: 11pt; */ 
+}
+
+div.sub {
+  margin-left: 1.2em;
+}
 
 span.sub {
   margin-left: 1.2em;
