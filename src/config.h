@@ -140,6 +140,11 @@
 /* interval for checking MPI buffers */
 #define BUFSTEP 100
 
+#ifdef COVALENT
+#define NEIGH_LEN_INIT 4
+#define NEIGH_LEN_INC  2
+#endif
+
 /* maximum number of data items an atom can have */
 #ifdef TWOD
 #define MAX_ATOM_SIZE 20

@@ -665,7 +665,7 @@ EXTERN real keat_beta[10][10][10];
 #endif
 
 #ifdef COVALENT  
-EXTERN int neigh_len INIT(50);     /* max neighbors */
+EXTERN int neigh_len INIT(NEIGH_LEN_INIT); /* initial neighbor table length */
 #endif 
 
 #ifdef EPITAX

@@ -14,6 +14,16 @@ parameter file</a>. Stillinger-Weber type potentials can also
 be <a href="covalent.html#ttbp">defined</a> via 
 <a href="potformat.html">tabulated parameter functions</a>.</p>
 
+<p>
+The three-body interactions of all covalent potentials are computed 
+using neighbour tables. The initial length of a neighbour table can 
+be specified with the parameter <tt>neigh_len</tt>, whose default 
+value is 4. This is the typical number of neighbours in a covalent 
+crystal. If necessary, the initial length of the neighbor tables is 
+extended automatically. For the simulation of systems with more 
+neighbors, such as liquids or amorphous systems, performance may 
+improve if a higher initial neighbour table length is specified.</p>
+
 
 <a id="tersoff" name="tersoff">
 <h2>Tersoff Potential</h2>
@@ -95,14 +105,6 @@ values are read using the following format:</p>
 The parameters <tt>ters_chi</tt> and <tt>ters_om</tt> are only
 required if there is more than one atom type.<p>
 
-<p>
-As in the case of the Stillinger-Weber potential, the value of the variable
-<tt>neigh_len</tt> must also be specified.<p>
-
-<p>
-The maximal number of nearest neighbours must be specified with the 
-parameter <tt>neigh_len</tt>. It is used to allocate memory for the 
-neighbour tables.</p>
 
 <a id="stiweb" name="stiweb">
 <h2>Stillinger-Weber Potential (analytic)</h2>
@@ -148,24 +150,15 @@ parameters corresponding to the potential parameters:</p>
 
 <p>
 The values of the two-index parameters have to be given for all types
-of atoms in the following format:<P>
-
+of atoms in the following format:
 <center>
 <i>A<sub>00</sub> A<sub>01</sub> ... A<sub>0(n-1)</sub> A<sub>11</sub>
  A<sub>12</sub> ... A<sub>(n-1)(n-1)</sub></i> ,
-</center><P>
-
-where <i>n</i> is the number of atoms.
-
-In the case of <tt>stiweb_la</tt>, the first index takes on all values
-from <i>0</i> to <i>n-1</i> while the last two indices are read in like
-the two-index parameters. <P>
-
-As a result of the short range nature of the potential, only
-the nearest neighbours have to be considered in the computation of the
-potential and the forces. The maximal number of nearest neighbours
-must be specified as a parameter with the IMD variable
-<tt>neigh_len</tt>. It is used to allocate memory for the neighbour tables.<P>
+</center><br /
+where <i>n</i> is the number of atoms. In the case of
+<tt>stiweb_la</tt>, the first index runs from <i>0</i> to <i>n-1</i>, 
+whereas the last two indices are expected like for the two-index 
+parameters. </p>
 
 
 <a id="ttbp" name="ttbp">
@@ -203,8 +196,7 @@ The cutoff function <i>f<sub>c</sub> (r)</i> must be given in
 file specified by the parameter <tt>ttbp_potfile</tt>. The
 paramter <tt>ttbp_constant</tt> specifies the force constant 
 <i>Z</i>, and the parameter <tt>ttbp_sp</tt> the hybridization
-constant <i>h</i>. The maximal number of nearest neighbours must be 
-given with the parameter <tt>neigh_len</tt>.</p>
+constant <i>h</i>. </p>
 
 <a id="keating" name="keating">
 <h2>Keating Potential</h2>
@@ -220,14 +212,10 @@ not be used for disordered systems.</p>
 
 <p>
 The Keating potential, whose parameters have to be specified in the
-<a href="paramfile.html">parameter file</a>, takes the following form:</p>
-
-<p>
+<a href="paramfile.html">parameter file</a>, takes the following form:
 <center>
 <img src="covalent18.gif" alt="Keating potential formula" />
-</center></p>
-
-<p>
+</center><br />
 where the sums are over atoms <i>i</i> and nearest neighbour atoms
 <i>j</i>,<i>k</i> with distance vectors <i><b>r</b><sub>ij</sub></i>
 and <i><b>r</b><sub>ik</sub></i>. The parameters <i>d<sub>ij</sub></i>
@@ -240,7 +228,7 @@ format:</p>
 <center>
 <i>d<sub>00</sub> d<sub>01</sub> ... d<sub>0(n-1)</sub> d<sub>11</sub>
  d<sub>12</sub> ... d<sub>(n-1)(n-1)</sub></i>
-</center>
+</center><br />
 Here, <i>n</i> is the number of atom types.</p>
 
 <p>
@@ -255,9 +243,8 @@ indices are read in like the two-index parameters. </p>
 The IMD parameter <tt>keating_r_cut</tt> corresponds to a cutoff
 length for all pairs of atom types. It is used to determine the
 nearest neighbour atoms. The format of <tt>keating_r_cut</tt> is the
-same as for <tt>keating_d</tt>. The maximal number of nearest
-neighbours must be specified with the parameter <tt>neigh_len</tt>. 
-It is used to allocate memory for the neighbour tables.</p>
+same as for <tt>keating_d</tt>. </p>
+
 
 <!--#include virtual="imdfoot.html" -->
 

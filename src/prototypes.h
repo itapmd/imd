@@ -341,6 +341,7 @@ void load_sample(void);
 #ifdef COVALENT
 void do_neightab(cell *p, cell *q, vektor pbc);
 neightab *alloc_neightab(neightab *neigh, int count);
+void increase_neightab(neightab *neigh, int count);
 #endif
 
 #ifdef EWALD

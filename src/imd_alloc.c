@@ -296,6 +296,27 @@ neightab *alloc_neightab(neightab *neigh, int count)
   }
   return(neigh);
 }
+
+/******************************************************************************
+*
+*  increase already existing neighbor table for one particle
+*
+******************************************************************************/
+
+void increase_neightab(neightab *neigh, int count)
+{
+  neigh->dist = (real *)     realloc( neigh->dist, count * DIM * sizeof(real));
+  neigh->typ  = (shortint *) realloc( neigh->typ,  count * sizeof(shortint) );
+  neigh->cl   = (void **)    realloc( neigh->cl,   count * sizeof(cellptr) );
+  neigh->num  = (integer *)  realloc( neigh->num,  count * sizeof(integer) );
+  if ((neigh->dist==NULL) || (neigh->typ==0) ||
+      (neigh->cl  ==NULL) || (neigh->num==0)) {
+    error("COVALENT: cannot extend memory for neighbor table");
+  }
+  neigh->n_max = count;
+  /* update maximal neighbor table length on *this* CPU */
+  neigh_len = MAX( neigh_len, count );
+}
 #endif
 
 

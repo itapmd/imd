@@ -47,7 +47,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
   vektor tmp_vir_vect = {0.0, 0.0, 0.0};
 #endif
 
-  d    = (vektor *) realloc( d,    neigh_len * sizeof(vektor) );
+  d    = (vektor *) realloc( d, neigh_len * sizeof(vektor) );
   if ( d==NULL )
     error("cannot allocate memory for temporary neighbor data");
 
@@ -476,7 +476,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
                 real *Vir_yz, real *Vir_zx, real *Vir_xy)
 {
   static real   *r = NULL, *fc = NULL, *dfc = NULL;
-  static vektor *d  = NULL;
+  static vektor *d = NULL;
   neightab *neigh;
   vektor dcos_j, dcos_k, dzeta_i, dzeta_j, force_j;
   static vektor *dzeta_k = NULL; 
@@ -796,7 +796,7 @@ void do_neightab(cell *p, cell *q, vektor pbc)
         /* update neighbor table of particle i */
         neigh = NEIGH(p,i);
         if (neigh->n_max <= neigh->n) {
-          error("neighbor table too small, increase neigh_len");
+          increase_neightab( neigh, neigh->n_max + NEIGH_LEN_INC );
         }
         neigh->typ[neigh->n] = q_typ;
         neigh->cl [neigh->n] = q;
@@ -811,7 +811,7 @@ void do_neightab(cell *p, cell *q, vektor pbc)
         /* we do not need a neighbor table in buffer cells
         neigh = q->neigh[j];
         if (neigh->n_max <= neigh->n) {
-          error("neighbor table too small, increase neigh_len");
+          increase_neightab( neigh, neigh->n_max + NEIGH_LEN_INC );
         }
         neigh->typ[neigh->n] = p_typ;
         neigh->cl [neigh->n] = p;

@@ -223,7 +223,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
         /* update neighbor table of particle i */
         neigh = NEIGH(p,i);
         if (neigh->n_max <= neigh->n) {
-          error("neighbor table too small, increase neigh_len");
+          increase_neightab( neigh, neigh->n_max + NEIGH_LEN_INC );
         }
         neigh->typ[neigh->n] = q_typ;
         neigh->cl [neigh->n] = q;
@@ -237,7 +237,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
         /* update neighbor table of particle j */
         neigh = NEIGH(q,j);
         if (neigh->n_max <= neigh->n) {
-          error("neighbor table too small, increase neigh_len");
+          increase_neightab( neigh, neigh->n_max + NEIGH_LEN_INC );
         }
         neigh->typ[neigh->n] = p_typ;
         neigh->cl [neigh->n] = p;
