@@ -376,7 +376,11 @@ void main_loop(void)
 #endif
 
 #ifdef HOMDEF
-    if (relax_rate > 0.0) relax_pressure();
+    if (relax_rate > 0.0)
+#ifdef GLOK
+      if (steps > glok_annealsteps)
+#endif
+        relax_pressure();
 #endif
 
     do_boundaries();    
