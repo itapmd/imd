@@ -107,7 +107,12 @@ is:
   time d2x_1 d2y_1 [d2z_1] [d2x_2 d2y_2 [d2z_2]] ...
 </PRE>
 where <TT>d2x_n</TT> is the mean square displacement of particles of
-type <TT>n</TT> in <TT>x</TT> direction, etc.
+type <TT>n</TT> in <TT>x</TT> direction, etc. With the options
+<TT>msqd_ntypes</TT> (default 1) and <TT>msqd_vtypes</TT> (default 0)
+you can choose, whether you want mean square displacements for 
+real types only or for all virtual types separately. If you choose
+both options, the leading columns are for real types, the rear ones
+are for the virtual types.
 <P>
 The parameters <TT>correl_start</TT> and <TT>correl_end</TT> can be
 used to switch this option on and off during a multiphase simulation. 
