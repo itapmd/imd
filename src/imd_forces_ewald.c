@@ -33,6 +33,7 @@ void clear_forces(void)
       KRAFT(p,i,Z) = 0.0;
     }
   }
+  tot_pot_energy = 0.0;
 }
 
 real force_norm(void)
@@ -60,12 +61,12 @@ real force_norm(void)
 void do_forces_ewald(int steps)
 {
   int n;
-  real old1, old2;
+  real tot=0.0;
 
   if ((steps==0) && (ew_test)) {
-    old1 = tot_pot_energy / natoms;
-    printf( "Ewald pair int: Epot = %e, force = %e time = %e\n", 
-            old1, force_norm(), ewald_time.total);
+    tot += tot_pot_energy / natoms;
+    printf( "Ewald pair:   Epot = %e, force = %e time = %e\n", 
+            tot_pot_energy / natoms, force_norm(), ewald_time.total);
     ewald_time.total = 0.0;
     imd_start_timer( &ewald_time );
     clear_forces();
@@ -74,11 +75,11 @@ void do_forces_ewald(int steps)
   /* real space part; if ew_nmax < 0, we do it with the other pair forces */
   if (ew_nmax >= 0) do_forces_ewald_real();
 
-  if ((steps==0) && (ew_test)) {
+  if ((steps==0) && (ew_test) && (ew_nmax>=0)) {
     imd_stop_timer( &ewald_time );
-    old2 = tot_pot_energy / natoms;
-    printf( "Ewald real space: Epot = %e, force = %e, time = %e\n", 
-            old2 - old1, force_norm(), ewald_time.total);
+    tot += tot_pot_energy / natoms;
+    printf( "Ewald pair2:  Epot = %e, force = %e, time = %e\n", 
+            tot_pot_energy / natoms, force_norm(), ewald_time.total);
     ewald_time.total = 0.0;
     imd_start_timer( &ewald_time );
     clear_forces();
@@ -87,11 +88,11 @@ void do_forces_ewald(int steps)
   /* Fourier space part */
   if (ew_kcut > 0) do_forces_ewald_fourier();
 
-  if ((steps==0) && (ew_test)) {
+  if ((steps==0) && (ew_test) && (ew_kcut>0)) {
     imd_stop_timer( &ewald_time );
-    old1 = tot_pot_energy / natoms;
-    printf( "Ewald Fourier space: Epot = %e, force = %e, time = %e\n", 
-            old1 - old2, force_norm(), ewald_time.total);
+    tot += tot_pot_energy / natoms;
+    printf( "Ewald smooth: Epot = %e, force = %e, time = %e\n", 
+            tot_pot_energy / natoms, force_norm(), ewald_time.total);
     ewald_time.total = 0.0;
     imd_start_timer( &ewald_time );
     clear_forces();
@@ -105,10 +106,10 @@ void do_forces_ewald(int steps)
 
   if ((steps==0) && (ew_test)) {
     imd_stop_timer( &ewald_time );
-    old2 = tot_pot_energy / natoms;
-    printf( "Ewald self-energy: Epot = %e, force = %e, time = %e\n", 
-            old2 - old1, force_norm(), ewald_time.total);
-    printf( "Ewald total: Epot = %f\n", old2);
+    tot += tot_pot_energy / natoms;
+    printf( "Ewald self:   Epot = %e, force = %e, time = %e\n", 
+            tot_pot_energy / natoms, force_norm(), ewald_time.total);
+    printf( "Ewald total:  Epot = %f\n", tot);
     clear_forces();
   }
 }
@@ -124,75 +125,82 @@ void do_forces_ewald(int steps)
 void do_forces_ewald_fourier(void)
 {
   int    i, j, k, l, m, n, c;
-  int    count, typ, offx, offy, offz;
+  int    cnt, typ, offx, offy, offz;
+  int    px, py, pz, mx, my, mz;
   real   tmp, tmp_virial=0.0, sum_cos, sum_sin;
   real   kforce, kpot;
 
-  offx = ew_nx; 
-  offy = ew_ny; 
-  offz = ew_nz;
-
   /* Compute exp(ikr) recursively */
+  px = (ew_nx+1) * natoms;  mx = (ew_nx-1) * natoms;
+  py = (ew_ny+1) * natoms;  my = (ew_ny-1) * natoms;
+  pz = (ew_nz+1) * natoms;  mz = (ew_nz-1) * natoms;
+  cnt = 0;
   for (c=0; c<ncells; c++) {
-
     cell *p = CELLPTR(c);
-
     for (i=0; i<p->n; i++) {
-
       tmp = twopi * SPRODX(&ORT(p,i,X),tbox_x);
-      coskx[offx+1] =  cos(tmp);
-      coskx[offx-1] =  coskx[offx+1];
-      sinkx[offx+1] =  sin(tmp);
-      sinkx[offx-1] = -sinkx[offx+1]; 
-
+      coskx[px+cnt] =  cos(tmp);
+      coskx[mx+cnt] =  coskx[px+cnt];
+      sinkx[px+cnt] =  sin(tmp);
+      sinkx[mx+cnt] = -sinkx[px+cnt]; 
       tmp = twopi * SPRODX(&ORT(p,i,X),tbox_y);
-      cosky[offy+1] =  cos(tmp);
-      cosky[offy-1] =  cosky[offy+1];
-      sinky[offy+1] =  sin(tmp);
-      sinky[offy-1] = -sinky[offy+1];
-
+      cosky[py+cnt] =  cos(tmp);
+      cosky[my+cnt] =  cosky[py+cnt];
+      sinky[py+cnt] =  sin(tmp);
+      sinky[my+cnt] = -sinky[py+cnt];
       tmp = twopi * SPRODX(&ORT(p,i,X),tbox_z);
-      coskz[offz+1] = cos(tmp);
-      sinkz[offz+1] = sin(tmp);
+      coskz[pz+cnt] = cos(tmp);
+      sinkz[pz+cnt] = sin(tmp);
+      cnt++;
+    }
+  }
 
-      for (j=2; j<=ew_nx; j++) {
-        coskx[offx+j] =   coskx[offx+j-1] * coskx[offx+1] 
-                        - sinkx[offx+j-1] * sinkx[offx+1];
-        coskx[offx-j] =   coskx[offx+j];
-        sinkx[offx+j] =   coskx[offx+j-1] * sinkx[offx+1] 
-                        - sinkx[offx+j-1] * coskx[offx+1];
-        sinkx[offx-j] = - sinkx[offx+j];
-      }
+  for (j=2; j<=ew_nx; j++) {
+    int pp, qq, mm, ee, i;
+    pp  = (ew_nx+j  ) * natoms;
+    qq  = (ew_nx+j-1) * natoms;
+    mm  = (ew_nx-j  ) * natoms;
+    ee  = (ew_nx  +1) * natoms;
+    for (i=0; i<natoms; i++) {
+      coskx[pp+i] =   coskx[qq+i] * coskx[ee+i] - sinkx[qq+i] * sinkx[ee+i];
+      coskx[mm+i] =   coskx[pp+i];
+      sinkx[pp+i] =   coskx[qq+i] * sinkx[ee+i] - sinkx[qq+i] * coskx[ee+i];
+      sinkx[mm+i] = - sinkx[pp+i];
+    }
+  }
 
-      for (j=2; j<=ew_ny; j++) {
-        cosky[offy+j] =   cosky[offy+j-1] * cosky[offy+1] 
-                        - sinky[offy+j-1] * sinky[offy+1];
-        cosky[offy-j] =   cosky[offy+j];
-        sinky[offy+j] =   cosky[offy+j-1] * sinky[offy+1] 
-                        - sinky[offy+j-1] * cosky[offy+1];
-        sinky[offy-j] = - sinky[offy+j];
-      }
+  for (j=2; j<=ew_ny; j++) {
+    int pp, qq, mm, ee, i;
+    pp  = (ew_ny+j  ) * natoms;
+    qq  = (ew_ny+j-1) * natoms;
+    mm  = (ew_ny-j  ) * natoms;
+    ee  = (ew_ny  +1) * natoms;
+    for (i=0; i<natoms; i++) {
+      cosky[pp+i] =   cosky[qq+i] * cosky[ee+i] - sinky[qq+i] * sinky[ee+i];
+      cosky[mm+i] =   cosky[pp+i];
+      sinky[pp+i] =   cosky[qq+i] * sinky[ee+i] - sinky[qq+i] * cosky[ee+i];
+      sinky[mm+i] = - sinky[pp+i];
+    }
+  }
 
-      for (j=2; j<=ew_nz; j++) {
-        coskz[offz+j] =   coskz[offz+j-1] * coskz[offz+1] 
-                        - sinkz[offz+j-1] * sinkz[offz+1];
-        sinkz[offz+j] =   coskz[offz+j-1] * sinkz[offz+1] 
-                        - sinkz[offz+j-1] * coskz[offz+1];
-      }
-
-      offx += ew_dx;
-      offy += ew_dy;
-      offz += ew_dz;
+  for (j=2; j<=ew_nz; j++) {
+    int pp, qq, ee, i;
+    pp  = (ew_nz+j  ) * natoms;
+    qq  = (ew_nz+j-1) * natoms;
+    ee  = (ew_nz  +1) * natoms;
+    for (i=0; i<natoms; i++) {
+      coskz[pp+i] =   coskz[qq+i] * coskz[ee+i] - sinkz[qq+i] * sinkz[ee+i];
+      sinkz[pp+i] =   coskz[qq+i] * sinkz[ee+i] - sinkz[qq+i] * coskz[ee+i];
     }
   }
 
   /* Loop over all reciprocal vectors */
   for (k=0; k<ew_totk; k++) {
 
-    count   = 0; 
-    offx    = ew_ivek[k].x;
-    offy    = ew_ivek[k].y;
-    offz    = ew_ivek[k].z;
+    cnt     = 0; 
+    offx    = ew_ivek[k].x * natoms;
+    offy    = ew_ivek[k].y * natoms;
+    offz    = ew_ivek[k].z * natoms;
     sum_cos = 0.0;
     sum_sin = 0.0;
 
@@ -203,24 +211,21 @@ void do_forces_ewald_fourier(void)
 
       for (i=0; i<p->n; i++) {
 
-        coskr[count] =   coskx[offx] * cosky[offy] * coskz[offz]
-                       - sinkx[offx] * sinky[offy] * coskz[offz]
-                       - sinkx[offx] * cosky[offy] * sinkz[offz] 
-                       - coskx[offx] * sinky[offy] * sinkz[offz];
+        coskr[cnt] =   coskx[offx+cnt] * cosky[offy+cnt] * coskz[offz+cnt]
+                     - sinkx[offx+cnt] * sinky[offy+cnt] * coskz[offz+cnt]
+                     - sinkx[offx+cnt] * cosky[offy+cnt] * sinkz[offz+cnt] 
+                     - coskx[offx+cnt] * sinky[offy+cnt] * sinkz[offz+cnt];
 
-        sinkr[count] = - sinkx[offx] * sinky[offy] * sinkz[offz]
-                       + sinkx[offx] * cosky[offy] * coskz[offz]
-                       + coskx[offx] * sinky[offy] * coskz[offz]
-                       + coskx[offx] * cosky[offy] * sinkz[offz];
+        sinkr[cnt] = - sinkx[offx+cnt] * sinky[offy+cnt] * sinkz[offz+cnt]
+                     + sinkx[offx+cnt] * cosky[offy+cnt] * coskz[offz+cnt]
+                     + coskx[offx+cnt] * sinky[offy+cnt] * coskz[offz+cnt]
+                     + coskx[offx+cnt] * cosky[offy+cnt] * sinkz[offz+cnt];
 
         typ      = SORTE(p,i);
-        sum_cos += charge[typ] * coskr[count];
-        sum_sin += charge[typ] * sinkr[count]; 
+        sum_cos += charge[typ] * coskr[cnt];
+        sum_sin += charge[typ] * sinkr[cnt];
 
-        offx += ew_dx;
-        offy += ew_dy;
-        offz += ew_dz;
-        count++;
+        cnt++;
       }
     }
 
@@ -228,7 +233,7 @@ void do_forces_ewald_fourier(void)
     tot_pot_energy += ew_expk[k] * (SQR(sum_sin) + SQR(sum_cos));
 
     /* update energies and forces */
-    count = 0;
+    cnt = 0;
     for (c=0; c<ncells; c++) {
 
       cell *p = CELLPTR(c);
@@ -239,18 +244,18 @@ void do_forces_ewald_fourier(void)
 
         /* update potential energy */
         kpot   = charge[typ] * ew_expk[k]
-	         * (sinkr[count] * sum_sin + coskr[count] * sum_cos);
+	         * (sinkr[cnt] * sum_sin + coskr[cnt] * sum_cos);
         POTENG(p,i)  += kpot;
 
         /* update force */
         kforce = charge[typ] * ew_expk[k] 
-                 * (sinkr[count] * sum_cos - coskr[count] * sum_sin);
+                 * (sinkr[cnt] * sum_cos - coskr[cnt] * sum_sin);
         KRAFT(p,i,X) += ew_kvek[k].x * kforce;
         KRAFT(p,i,Y) += ew_kvek[k].y * kforce;
         KRAFT(p,i,Z) += ew_kvek[k].z * kforce;
         tmp_virial   += kforce * SPRODX( &ORT(p,i,X), ew_kvek[k] );
 	  
-        count++;
+        cnt++;
       }
     }
 
@@ -500,22 +505,16 @@ void init_ewald(void)
     error("EWALD: Cannot allocate memory for exp(ikr)");
 
   /* Position independent initializations */
-  offx = ew_nx; 
-  offy = ew_ny; 
-  offz = ew_nz;
-  for (k=0; k<ncells; k++) {
-    cell *p = CELLPTR(k);
-    for (i=0; i<p->n; i++) {
-      coskx[offx] = 1.0;
-      sinkx[offx] = 0.0;
-      cosky[offy] = 1.0;
-      sinky[offy] = 0.0;
-      coskz[offz] = 1.0;
-      sinkz[offz] = 0.0;
-      offx += ew_dx;
-      offy += ew_dy;
-      offz += ew_dz;
-    }
+  offx = ew_nx * natoms; 
+  offy = ew_ny * natoms; 
+  offz = ew_nz * natoms;
+  for (i=0; i<natoms; i++) {
+    coskx[offx+i] = 1.0;
+    sinkx[offx+i] = 0.0;
+    cosky[offy+i] = 1.0;
+    sinky[offy+i] = 0.0;
+    coskz[offz+i] = 1.0;
+    sinkz[offz+i] = 0.0;
   }
 }
 
