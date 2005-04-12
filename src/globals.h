@@ -660,8 +660,8 @@ EXTERN real buck_aaa  [10][10];
 EXTERN real spring_const[45] INIT(zero45);
 EXTERN real spring_cst[10][10];
 #ifdef EWALD
-EXTERN real ew_shift[10][10];
-EXTERN real ew_aaa  [10][10];
+EXTERN real ew_shift [10][10];
+EXTERN real ew_fshift[10][10];
 #endif
 #endif
 
@@ -834,7 +834,7 @@ EXTERN imd_timer ewald_time;
 EXTERN real     charge[10] INIT(zero10); /* Charge of atoms */
 EXTERN real     ew_kappa;                /* Parameter kappa */
 EXTERN real     ew_kcut;                 /* k-space cutoff */
-EXTERN int      ew_nmax;                 /* Number of image boxes */
+EXTERN int      ew_nmax INIT(-1);        /* Number of image boxes */
 EXTERN int      ew_totk;
 EXTERN int      ew_nx;
 EXTERN int      ew_ny;

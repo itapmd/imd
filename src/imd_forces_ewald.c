@@ -40,8 +40,14 @@ real force_norm(void)
 {
   int k;
   double norm = 0.0;
-  for (k=0; k<nallcells; k++) {
-    cell *p = cell_array + k;
+
+#ifdef BUFCELLS
+  /* collect forces from buffer cells */
+  send_forces(add_forces,pack_forces,unpack_forces);
+#endif
+
+  for (k=0; k<ncells; k++) {
+    cell *p = CELLPTR(k);
     int i;
     for (i=0; i<p->n; i++) {
       norm += SQR( KRAFT(p,i,X) );
@@ -49,7 +55,7 @@ real force_norm(void)
       norm += SQR( KRAFT(p,i,Z) );
     }
   }
-  return norm / (DIM*natoms);
+  return sqrt(norm / (DIM*natoms));
 }
 
 /******************************************************************************
@@ -63,22 +69,13 @@ void do_forces_ewald(int steps)
   int n;
   real tot=0.0;
 
-  if ((steps==0) && (ew_test)) {
-    tot += tot_pot_energy / natoms;
-    printf( "Ewald pair:   Epot = %e, force = %e time = %e\n", 
-            tot_pot_energy / natoms, force_norm(), ewald_time.total);
-    ewald_time.total = 0.0;
-    imd_start_timer( &ewald_time );
-    clear_forces();
-  }
-
   /* real space part; if ew_nmax < 0, we do it with the other pair forces */
   if (ew_nmax >= 0) do_forces_ewald_real();
 
-  if ((steps==0) && (ew_test) && (ew_nmax>=0)) {
+  if ((steps==0) && (ew_test)) {
     imd_stop_timer( &ewald_time );
     tot += tot_pot_energy / natoms;
-    printf( "Ewald pair2:  Epot = %e, force = %e, time = %e\n", 
+    printf( "Ewald pair:   Epot = %e, force = %e, time = %e\n", 
             tot_pot_energy / natoms, force_norm(), ewald_time.total);
     ewald_time.total = 0.0;
     imd_start_timer( &ewald_time );
@@ -105,12 +102,9 @@ void do_forces_ewald(int steps)
   }
 
   if ((steps==0) && (ew_test)) {
-    imd_stop_timer( &ewald_time );
     tot += tot_pot_energy / natoms;
-    printf( "Ewald self:   Epot = %e, force = %e, time = %e\n", 
-            tot_pot_energy / natoms, force_norm(), ewald_time.total);
+    printf( "Ewald self:   Epot = %e\n", tot_pot_energy / natoms );
     printf( "Ewald total:  Epot = %f\n", tot);
-    clear_forces();
   }
 }
 

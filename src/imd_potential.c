@@ -476,13 +476,11 @@ void create_pot_table(pot_table_t *pt)
             }
 #ifdef EWALD
             /* Coulomb potential for Ewald */
-            if (ew_r2_cut > 0) {
-              if (r2 < (1.0 - POT_TAIL) * ew_r2_cut) {
+            if ((ew_r2_cut > 0) && (ew_nmax<0)) {
+              if (r2 < ew_r2_cut) {
                 pair_int_ewald(&pot, &grad, i, j, r2);
                 val += pot - ew_shift[i][j];
-              }
-              else if (r2 <= ew_r2_cut) {
-                val += ew_aaa[i][j] * SQR(ew_r2_cut - r2);
+                val -= SQRT(r2)*ew_fshift[i][j]*(SQRT(r2)-SQRT(ew_r2_cut));
               }
 	    }
 #endif
@@ -551,7 +549,8 @@ void init_pre_pot(void) {
 
 #ifdef EWALD
       /* Coulomb for Ewald */
-      if ((ew_r2_cut > 0) && (r_begin[n]==0)) r_begin[n] = 0.2;
+      if ((ew_r2_cut > 0) && (ew_nmax < 0) && (r_begin[n]==0)) 
+        r_begin[n] = 0.2;
 #endif
 
       n++;
@@ -572,7 +571,7 @@ void init_pre_pot(void) {
       tmp = MAX( tmp, r2_cut[i][j] );
   
 #ifdef EWALD
-  tmp    = MAX(tmp,ew_r2_cut);
+  if (ew_nmax < 0) tmp = MAX(tmp,ew_r2_cut);
 #endif
   cellsz = MAX(cellsz,tmp);
 
@@ -622,17 +621,17 @@ void init_pre_pot(void) {
       }
 #ifdef EWALD
       /* Coulomb for Ewald */
-      if (ew_r2_cut > 0) {
+      if ((ew_r2_cut > 0) && (ew_nmax < 0)) {
         if (SQR(charge[i]*charge[j]) > 0.0) {
-          pair_int_ewald( &ew_shift[i][j], &tmp, i, j, 
-                          (1.0 - POT_TAIL) * ew_r2_cut);
-          ew_shift[i][j] +=  0.25 * tmp *  POT_TAIL * ew_r2_cut;
-          ew_aaa  [i][j]  = -0.25 * tmp / (POT_TAIL * ew_r2_cut);
+          pair_int_ewald( &ew_shift[i][j], &ew_fshift[i][j], i, j, ew_r2_cut);
           if (myid==0)
             printf("Coulomb potential %1d %1d shifted by %f\n", 
 	           i, j, -ew_shift[i][j]);
         } 
-        else ew_shift[i][j] = 0.0;
+        else {
+          ew_shift [i][j] = 0.0;
+          ew_fshift[i][j] = 0.0;
+	}
       }
 #endif
     }
@@ -1274,5 +1273,3 @@ void deriv_func3(real *grad, int *is_short, pot_table_t *pt,
   /* twice the derivative */
   *grad = 2 * istep * (dfac0 * p0 + dfac1 * p1 + dfac2 * p2 + dfac3 * p3);
 }
-
-
