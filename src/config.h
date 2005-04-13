@@ -60,7 +60,7 @@
 #endif
 
 /* ADP also implies EAM2 */
-#if defined(APD) && !defined(EAM2)
+#if defined(ADP) && !defined(EAM2)
 #define EAM2
 #endif
 

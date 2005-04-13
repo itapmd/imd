@@ -724,9 +724,9 @@ void calc_forces(int steps)
       tmp = ADP_LAMBDA(p,i,xx) - tr; pot  = SQR(tmp);
       tmp = ADP_LAMBDA(p,i,yy) - tr; pot += SQR(tmp);
       tmp = ADP_LAMBDA(p,i,zz) - tr; pot += SQR(tmp);
-      tmp = ADP_LAMBDA(p,i,yz);      pot += SQR(tmp);
-      tmp = ADP_LAMBDA(p,i,zx);      pot += SQR(tmp);
-      tmp = ADP_LAMBDA(p,i,xy);      pot += SQR(tmp);
+      tmp = ADP_LAMBDA(p,i,yz);      pot += SQR(tmp) * 2.0;
+      tmp = ADP_LAMBDA(p,i,zx);      pot += SQR(tmp) * 2.0;
+      tmp = ADP_LAMBDA(p,i,xy);      pot += SQR(tmp) * 2.0;
       tmp = ADP_MU    (p,i,X);       pot += SQR(tmp);
       tmp = ADP_MU    (p,i,Y);       pot += SQR(tmp);
       tmp = ADP_MU    (p,i,Z);       pot += SQR(tmp);
