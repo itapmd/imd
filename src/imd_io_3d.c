@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -240,7 +240,8 @@ void read_atoms(str255 infilename)
       }
 #endif /* DISLOC */
 
-      pos = back_into_box(pos);
+      /* with per CPU input files, avoid back_into_box */
+      if (0==addnumber) pos = back_into_box(pos);
 
       if (0>=m) error("Mass zero or negative.\n");
 #ifdef UNIAX
@@ -345,11 +346,12 @@ void read_atoms(str255 infilename)
           MPI_Send(b->data, b->n, REAL, to_cpu, INBUF_TAG, cpugrid);
           b->n = 0;
         }
-      } else 
+      } else
 
 #endif /* MPI */
 
-      if (to_cpu==myid) {
+      /* with per CPU input files, make sure we keep all atoms */
+      if ((to_cpu==myid) || ((1==parallel_input) && (1==addnumber))) {
         natoms++;  
         /* we still have s == input->vsorte[0] */
         if (s < ntypes) {
