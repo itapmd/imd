@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -240,8 +240,7 @@ void read_atoms(str255 infilename)
       }
 #endif /* DISLOC */
 
-      /* with per CPU input files, avoid back_into_box */
-      if (0==addnumber) pos = back_into_box(pos);
+      pos = back_into_box(pos);
 
       if (0>=m) error("Mass zero or negative.\n");
 #ifdef UNIAX
@@ -346,12 +345,11 @@ void read_atoms(str255 infilename)
           MPI_Send(b->data, b->n, REAL, to_cpu, INBUF_TAG, cpugrid);
           b->n = 0;
         }
-      } else
+      } else 
 
 #endif /* MPI */
 
-      /* with per CPU input files, make sure we keep all atoms */
-      if ((to_cpu==myid) || ((1==parallel_input) && (1==addnumber))) {
+      if (to_cpu==myid) {
         natoms++;  
         /* we still have s == input->vsorte[0] */
         if (s < ntypes) {
@@ -621,6 +619,10 @@ void write_atoms_config(FILE *out)
       len += sprintf(outbuf+len, RESOL1, EAM_P(p,i));
 #endif
 #endif
+
+#ifdef DAMP
+      len += sprintf(outbuf+len, RESOL1, DAMPF(p,i));
+#endif
       len += sprintf(outbuf+len,"\n");
       /* flush or send outbuf if it is full */
       if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -681,6 +683,11 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
   fprintf(out,"strainrate \t%f\n",dotepsilon);
 #endif
 
+#ifdef DAMP
+  fprintf(out,"center \t%f %f %f\n",center.x,center.y,center.z);
+  fprintf(out,"stadium \t%f %f %f\n",stadium.x,stadium.y,stadium.z);
+  fprintf(out,"stadium2 \t%f %f %f\n",stadium2.x,stadium2.y,stadium2.z);
+#endif
 #ifdef FTG
   for(m=0; m<nslices;m++)
   fprintf(out,"gamma_ftg %d\t%f\n",m , *(gamma_ftg + m));

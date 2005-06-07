@@ -133,6 +133,11 @@ void move_atom(cell *to, cell *from, int index)
   to->eeam_dM [to->n] = from->eeam_dM [index]; 
 #endif
 #endif
+
+#ifdef DAMP
+  to->damp_f[to->n] = from->damp_f[index]; 
+#endif
+
 #ifdef ADP
   to->adp_mu   X(to->n)    = from->adp_mu   X(index); 
   to->adp_mu   Y(to->n)    = from->adp_mu   Y(index); 
@@ -258,6 +263,11 @@ void move_atom(cell *to, cell *from, int index)
     from->eeam_dM [index] = from->eeam_dM [from->n];
 #endif
 #endif
+
+#ifdef DAMP
+    from->damp_f[index] = from->damp_f[from->n];
+#endif
+
 #ifdef ADP
     from->adp_mu   X(index)    = from->adp_mu   X(from->n); 
     from->adp_mu   Y(index)    = from->adp_mu   Y(from->n); 
@@ -453,6 +463,9 @@ void alloc_cell(cell *thecell, int count)
     newcell.eeam_dM  = NULL;
 #endif
 #endif
+#ifdef DAMP
+    newcell.damp_f = NULL;
+#endif
 #ifdef ADP
     newcell.adp_mu     = NULL;
     newcell.adp_lambda = NULL;
@@ -557,6 +570,9 @@ void alloc_cell(cell *thecell, int count)
     newcell.eeam_dM  = (real *) malloc(count * sizeof(real));
 #endif
 #endif
+#ifdef DAMP
+    newcell.damp_f = (real *) malloc(count * sizeof(real));
+#endif
 #ifdef ADP
     newcell.adp_mu     = (real       *) malloc(count * DIM * sizeof(real));
     newcell.adp_lambda = (sym_tensor *) malloc(count * sizeof(sym_tensor));
@@ -616,6 +632,9 @@ void alloc_cell(cell *thecell, int count)
 	|| (NULL == newcell.eeam_p_h)
 	|| (NULL == newcell.eeam_dM)
 #endif
+#endif
+#ifdef DAMP
+	|| (NULL == newcell.damp_f)
 #endif
 #ifdef ADP
 	|| (NULL == newcell.adp_mu)
@@ -711,6 +730,9 @@ void alloc_cell(cell *thecell, int count)
       memcpy(newcell.eeam_dM,  thecell->eeam_dM,  ncopy * sizeof(real));
 #endif
 #endif
+#ifdef DAMP
+      memcpy(newcell.damp_f, thecell->damp_f, ncopy * sizeof(real));
+#endif
 #ifdef ADP
       memcpy(newcell.adp_mu,     thecell->adp_mu,  ncopy * DIM * sizeof(real));
       memcpy(newcell.adp_lambda, thecell->adp_lambda,ncopy*sizeof(sym_tensor));
@@ -765,6 +787,9 @@ void alloc_cell(cell *thecell, int count)
     free(thecell->eeam_p_h);
     free(thecell->eeam_dM);
 #endif
+#endif
+#ifdef DAMP
+    free(thecell->damp_f);
 #endif
 #ifdef ADP
     free(thecell->adp_mu);
@@ -826,6 +851,9 @@ void alloc_cell(cell *thecell, int count)
   thecell->eeam_dM  = newcell.eeam_dM;
 #endif
 #endif
+#ifdef DAMP
+  thecell->damp_f = newcell.damp_f;
+#endif 
 #ifdef ADP
   thecell->adp_mu     = newcell.adp_mu;
   thecell->adp_lambda = newcell.adp_lambda;

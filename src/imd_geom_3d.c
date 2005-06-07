@@ -278,6 +278,15 @@ void init_cells( void )
               cellc = cell_coord( ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z) );
 #ifdef BUFCELLS
               cellc = local_cell_coord( cellc );
+              /* strangly, some atoms get into buffer cells; 
+                 we push them back into the real cells, 
+                 so that we don't lose them  */
+              if (cellc.x < 1) cellc.x = 1;
+              if (cellc.y < 1) cellc.y = 1;
+              if (cellc.z < 1) cellc.z = 1;
+              if (cellc.x > cellmax.x-1) cellc.x = cellmax.x-1;
+              if (cellc.y > cellmax.y-1) cellc.y = cellmax.y-1;
+              if (cellc.z > cellmax.z-1) cellc.z = cellmax.z-1;
 #endif
               to = PTR_VV(cell_array,cellc,cell_dim);
               MOVE_ATOM( to, p, i );

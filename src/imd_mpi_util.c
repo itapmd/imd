@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -412,7 +412,7 @@ void process_buffer(msgbuf *b, cell *p)
   /* we treat the data in the same order as in the cell data structure */
   if (b->n > 0) do {     
     input->n        = 1;
-    to_cpu          = (int) (b->data[j++] + 0.1);
+    to_cpu          = (int) b->data[j++];
     ORT(input,0,X)  = b->data[j++];
     ORT(input,0,Y)  = b->data[j++];
 #ifndef TWOD

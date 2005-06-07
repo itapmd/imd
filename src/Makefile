@@ -837,6 +837,10 @@ CFLAGS += -DFRAC
 # SOURCES += ${FRACSOURCES}
 endif
 
+ifneq (,$(findstring damp,${MAKETARGET}))
+CFLAGS += -DDAMP
+endif
+
 ifneq (,$(findstring nvx,${MAKETARGET}))
 CFLAGS += -DNVX
 SOURCES += ${TRANSSOURCES}

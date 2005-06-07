@@ -890,6 +890,28 @@ void getparamfile(char *paramfname, int sim)
       getparam("center",&center,PARAM_REAL,2,2);
     }
 #endif
+#ifdef DAMP
+    /* keep to old stadium convention  */
+    else if (strcasecmp(token,"stadium")==0) {
+      getparam("stadium",&stadium,PARAM_REAL,3,3);
+    }
+    else if (strcasecmp(token,"stadium2")==0) {
+      getparam("stadium2",&stadium2,PARAM_REAL,3,3);
+    }
+    else if (strcasecmp(token,"center")==0) {
+      getparam("center",&center,PARAM_REAL,3,3);
+    }
+    else if (strcasecmp(token,"damptemp")==0) { /* actual Damping factor */
+	getparam("damptemp",&damptemp,PARAM_REAL,1,1);
+    }
+    /* Damping prefactor */
+    else if (strcasecmp(token,"zeta_0")==0) {
+	getparam("zeta_0",&zeta_0,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"delta_finnis")==0) { /* actual Damping factor */
+	getparam("delta_finnis",&delta_finnis,PARAM_REAL,1,1);
+    }
+#endif
     else if (strcasecmp(token,"cellsize")==0) {
       /* minimal cell diameter */
       getparam("cellsize",&rtmp,PARAM_REAL,1,1);
@@ -2506,6 +2528,15 @@ void broadcast_params() {
   MPI_Bcast( &stadium,          2 , REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &stadium2,         2 , REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &center,           2 , REAL, 0, MPI_COMM_WORLD); 
+#endif
+
+#ifdef DAMP
+  MPI_Bcast( &stadium,          3 , REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &stadium2,         3 , REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &center,           3 , REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &damptemp,         1 , REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &delta_finnis,     1 , REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &zeta_0,           1 , REAL, 0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef NPT
