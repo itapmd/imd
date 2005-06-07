@@ -225,12 +225,12 @@ void move_atoms_nve(void)
                 zeta_finnis = zeta_0 * (tmp-rampedtemp)
                     / sqrt(SQR(tmp) + SQR(rampedtemp*delta_finnis)+1e-11) * DAMPF(p,i);
                 /* new momenta */
-                IMPULS(p,i,X) += (-1.0*IMPULS(p,i,X) * zeta_finnis  + timestep * KRAFT(p,i,X))
+                IMPULS(p,i,X) += (-1.0*IMPULS(p,i,X) * zeta_finnis + KRAFT(p,i,X)) * timestep
                     * (restrictions + sort)->x ;
-                IMPULS(p,i,Y) += (-1.0*IMPULS(p,i,Y) * zeta_finnis + timestep * KRAFT(p,i,Y))
+                IMPULS(p,i,Y) += (-1.0*IMPULS(p,i,Y) * zeta_finnis + KRAFT(p,i,Y)) * timestep
                     * (restrictions + sort)->y;
 #ifndef TWOD
-                IMPULS(p,i,Z) += (-1.0*IMPULS(p,i,Z) * zeta_finnis + timestep * KRAFT(p,i,Z))
+                IMPULS(p,i,Z) += (-1.0*IMPULS(p,i,Z) * zeta_finnis + KRAFT(p,i,Z)) * timestep
                     * (restrictions + sort)->z;
 #endif
                 //  }
@@ -2104,12 +2104,12 @@ void move_atoms_finnis(void)
 #endif
 
       /* new momenta */
-      IMPULS(p,i,X) += (-1.0*IMPULS(p,i,X) * zeta_finnis  + timestep * KRAFT(p,i,X))
+      IMPULS(p,i,X) += (-1.0*IMPULS(p,i,X) * zeta_finnis + KRAFT(p,i,X)) * timestep 
                        * rest->x;
-      IMPULS(p,i,Y) += (-1.0*IMPULS(p,i,Y) * zeta_finnis + timestep * KRAFT(p,i,Y))
+      IMPULS(p,i,Y) += (-1.0*IMPULS(p,i,Y) * zeta_finnis + KRAFT(p,i,Y)) * timestep 
                        * rest->y;
 #ifndef TWOD
-      IMPULS(p,i,Z) += (-1.0*IMPULS(p,i,Z) * zeta_finnis + timestep * KRAFT(p,i,Z))
+      IMPULS(p,i,Z) += (-1.0*IMPULS(p,i,Z) * zeta_finnis + KRAFT(p,i,Z)) * timestep 
                        * rest->z;
 #endif                  
 
