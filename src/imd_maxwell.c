@@ -49,6 +49,9 @@ void maxwell(real temp)
    int         nactive_x, nactive_y, nactive_z;
    static long dummy = 0;
    int slice;
+#ifdef DAMP
+   real tmp1,tmp2,tmp3,f,maxax,maxax2;
+#endif
 
 #ifdef UNIAX
    real xisq;
@@ -106,6 +109,31 @@ void maxwell(real temp)
             TEMP = tran_Tleft + (tran_Tright - tran_Tleft) * 
                                xx * tran_nlayers / (box_x.x * (nhalf-1));
 	 }
+#endif
+#ifdef DAMP
+            /* Calculate stadium function f */
+         maxax = MAX(MAX(stadium.x,stadium.y),stadium.z);
+         maxax2 = MAX(MAX(stadium2.x,stadium2.y),stadium2.z);
+
+         tmp1 = (stadium2.x == 0) ? 0 : SQR((ORT(p,i,X)-center.x)/(2.0*stadium2.x));
+         tmp2 = (stadium2.y == 0) ? 0 : SQR((ORT(p,i,Y)-center.y)/(2.0*stadium2.y));
+         tmp3 = (stadium2.z == 0) ? 0 : SQR((ORT(p,i,Z)-center.z)/(2.0*stadium2.z));
+
+         f    = (tmp1+tmp2+tmp3-SQR(maxax/(2.0*maxax2)))/\
+             (.25- SQR(maxax/(2.0*maxax2)));
+
+         if (f<= 0.0)
+             f = 0.0;
+         else if (f>1.0)
+             f = 1.0;
+
+      /* we smooth the stadium function: to get a real bath tub !
+        fully damped atoms have temp=0, temperature gradient determined
+          by bath tub */
+         if (f !=0)
+             TEMP = damptemp * (1.0 - 0.5 * (1 + sin(-M_PI/2.0 + M_PI*f)));
+         else TEMP= temp;
+
 #endif
 
 #ifdef FTG

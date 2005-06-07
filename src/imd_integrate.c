@@ -32,7 +32,7 @@
 void move_atoms_nve(void)
 {
   int k;
-  real tmpvec1[5], tmpvec2[5], pnorm;
+  real tmpvec1[7], tmpvec2[7], pnorm; /* increased tempvec for DAMP */
   static int count = 0;
 
   /* epitax may call this routine for other ensembles,
@@ -42,6 +42,14 @@ void move_atoms_nve(void)
   pnorm   = 0.0;
   PxF     = 0.0;
   omega_E = 0.0;
+
+#ifdef DAMP
+  n_damp  = 0;
+  tot_kin_energy_damp = 0.0;
+#endif
+#ifdef DAMP
+  real tmp1,tmp2,tmp3,f,maxax,maxax2;
+#endif
 
   /* loop over all cells */
 #ifdef _OPENMP
@@ -60,6 +68,10 @@ void move_atoms_nve(void)
 #ifdef RIGID
     int satom;
     real relmass;
+#endif
+
+#ifdef DAMP
+    real kin_energie_damp_1,kin_energie_damp_2,tmp2,rampedtemp,zeta_finnis;
 #endif
 
     p = CELLPTR(k);
@@ -91,8 +103,10 @@ void move_atoms_nve(void)
              (NUMMER(p,i) <= epitax_sub_n) && 
              (POTENG(p,i) <= epitax_ctrl * epitax_poteng_min) ) continue;
 #endif
-
+#ifndef DAMP
         kin_energie_1 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+#endif
+
 #ifdef UNIAX
         rot_energie_1 = SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) );
 #endif
@@ -139,11 +153,94 @@ void move_atoms_nve(void)
 	omega_E += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) ) / MASSE(p,i);
 #endif
 
+#ifndef DAMP /*  Normal NVE */
 	IMPULS(p,i,X) += timestep * KRAFT(p,i,X);
         IMPULS(p,i,Y) += timestep * KRAFT(p,i,Y);
 #ifndef TWOD
         IMPULS(p,i,Z) += timestep * KRAFT(p,i,Z);
 #endif
+#else    /* Damping layers */
+
+        /* use a local thermostat: Finnis
+           We fix a temperature gradient from temp to zero
+           in the same way the damping constant is ramped up.
+           the mean temperature in the damping layers
+           has no meaning, only temperature of the inner part is outputted */
+
+        /*  the stadium function for each atom could also be calculated in forces_nbl
+              to save time */
+      /* it is the users responsability that stadium.i/stadium2.i
+         is equal for all i */
+
+      maxax = MAX(MAX(stadium.x,stadium.y),stadium.z);
+      maxax2 = MAX(MAX(stadium2.x,stadium2.y),stadium2.z);
+
+            /* Calculate stadium function f */
+      tmp1 = (stadium2.x == 0) ? 0 : SQR((ORT(p,i,X)-center.x)/(2.0*stadium2.x));
+      tmp2 = (stadium2.y == 0) ? 0 : SQR((ORT(p,i,Y)-center.y)/(2.0*stadium2.y));
+      tmp3 = (stadium2.z == 0) ? 0 : SQR((ORT(p,i,Z)-center.z)/(2.0*stadium2.z));
+
+      f    = (tmp1+tmp2+tmp3-SQR(maxax/(2.0*maxax2)))/\
+             (.25- SQR(maxax/(2.0*maxax2)));
+      //      printf("pos: %f %f %f   damp_f %f\n",ORT(p,i,X), ORT(p,i,Y),ORT(p,i,Z),f);
+      if (f<= 0.0)
+          f = 0.0;
+      else if (f>1.0)
+          f = 1.0;
+
+      /* we smooth the stadium function: to get a real bath tub !*/
+       DAMPF(p,i) = .5 * (1 + sin(-M_PI/2.0 + M_PI*f));
+
+
+       if (DAMPF(p,i) == 0.0) /* take care of possible rounding errors ? */
+            {
+                kin_energie_1 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+
+                IMPULS(p,i,X) += timestep * KRAFT(p,i,X);
+                IMPULS(p,i,Y) += timestep * KRAFT(p,i,Y);
+#ifndef TWOD
+                IMPULS(p,i,Z) += timestep * KRAFT(p,i,Z);
+#endif
+                kin_energie_2 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+                tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4 * MASSE(p,i));
+            }
+        else
+            {
+                kin_energie_damp_1 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+
+                tmp  = kin_energie_damp_1 / MASSE(p,i); /* local temp */
+#ifdef TWOD
+                tmp2 = (restrictions + sort)->x + (restrictions + sort)->y;
+#else
+                tmp2 = (restrictions + sort)->x + (restrictions + sort)->y + (restrictions + sort)->z;
+#endif
+                n_damp += tmp2;
+
+                if (tmp2 != 0) tmp /= tmp2;
+
+                rampedtemp  = damptemp * (1.0 - DAMPF(p,i));
+
+                //              if( !((tmp==0.0) && (rampedtemp==0.0))) /* else atom  will not move */
+                //  {
+                zeta_finnis = zeta_0 * (tmp-rampedtemp)
+                    / sqrt(SQR(tmp) + SQR(rampedtemp*delta_finnis)+1e-11) * DAMPF(p,i);
+                /* new momenta */
+                IMPULS(p,i,X) += (-1.0*IMPULS(p,i,X) * zeta_finnis  + timestep * KRAFT(p,i,X))
+                    * (restrictions + sort)->x ;
+                IMPULS(p,i,Y) += (-1.0*IMPULS(p,i,Y) * zeta_finnis + timestep * KRAFT(p,i,Y))
+                    * (restrictions + sort)->y;
+#ifndef TWOD
+                IMPULS(p,i,Z) += (-1.0*IMPULS(p,i,Z) * zeta_finnis + timestep * KRAFT(p,i,Z))
+                    * (restrictions + sort)->z;
+#endif
+                //  }
+                kin_energie_damp_2 =  SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+                tot_kin_energy_damp += (kin_energie_damp_1 + kin_energie_damp_2) /(4.0 * MASSE(p,i)) ;
+            }
+
+#endif /* DAMP */
+
+
 
 	/* "Globale Konvergenz": like mik, just with the global 
            force and momentum vectors */
@@ -162,12 +259,17 @@ void move_atoms_nve(void)
                                - dot * ACHSE(p,i,Z);
 #endif
 
+#ifndef DAMP
         kin_energie_2 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+#endif
 #ifdef UNIAX
         rot_energie_2 = SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) ); 
 #endif
         /* sum up kinetic energy on this CPU */
+#ifndef DAMP
         tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4 * MASSE(p,i));
+#endif
+
 #ifdef UNIAX
         tot_kin_energy += (rot_energie_1 + rot_energie_2) / (4 * uniax_inert);
 #endif	  
@@ -297,8 +399,15 @@ void move_atoms_nve(void)
   tmpvec1[2] = PxF;
   tmpvec1[3] = omega_E;
   tmpvec1[4] = pnorm;
-
+#ifdef DAMP
+  tmpvec1[5] = tot_kin_energy_damp;
+  tmpvec1[6] = n_damp;
+  MPI_Allreduce( tmpvec1, tmpvec2, 7, REAL, MPI_SUM, cpugrid);
+  tot_kin_energy_damp = tmpvec2[5];
+  n_damp =  tmpvec2[6];
+#else
   MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid);
+#endif
 
   tot_kin_energy = tmpvec2[0];
   fnorm          = tmpvec2[1];

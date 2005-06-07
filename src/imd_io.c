@@ -1263,6 +1263,11 @@ void write_eng_file_header()
     fprintf(fl, "dampingtemp ");
 #endif
 
+#ifdef DAMP
+    fprintf(fl, "tempdamping ");
+    fprintf(fl, "n_damp ");
+#endif
+
 #ifdef FTG
     for(i=0;i<nslices;i++)
       fprintf(fl, "temp_%d ", i);
@@ -1335,6 +1340,9 @@ void write_eng_file(int steps)
 #if defined(STM) || defined(FRAC)
   real Temp_damp, Temp_stadium = 0.0;
 #endif
+#ifdef DAMP
+ real Temp_stadium = 0.0;
+#endif
 
 #ifdef STRESS_TENS
   real Press_xx,Press_yy, Press_xy;
@@ -1366,6 +1374,8 @@ void write_eng_file(int steps)
   } else {
 #ifdef UNIAX
     Temp = 2.0 * tot_kin_energy / (nactive + nactive_rot);
+#elif defined(DAMP)
+    Temp = 2.0 * tot_kin_energy / (nactive - n_damp);
 #else
     Temp = 2.0 * tot_kin_energy / nactive;
 #endif
@@ -1385,6 +1395,9 @@ void write_eng_file(int steps)
   } else {
       Temp_damp = 0.0;
   }
+#endif
+#ifdef DAMP
+  if(n_damp != 0)  Temp_stadium = 2.0 * tot_kin_energy_damp / n_damp;
 #endif
 
   vol = volume / natoms;
@@ -1410,6 +1423,11 @@ void write_eng_file(int steps)
 
 #ifdef FRAC
   fprintf(eng_file, format,   (double) Temp_damp);
+#endif
+
+#ifdef DAMP
+  fprintf(eng_file, " %.8e",   (double) Temp_stadium);
+  fprintf(eng_file, " %d",    n_damp);
 #endif
 
 #ifdef FTG
@@ -1689,6 +1707,9 @@ void write_header_config(FILE *out)
 #ifdef EEAM
   atompar++;
 #endif
+#ifdef DAMP
+  atompar++;
+#endif
 #endif
 
 #ifdef ORDPAR
@@ -1717,6 +1738,9 @@ void write_header_config(FILE *out)
   fprintf(out, " eam_rho" );
 #ifdef EEAM
   fprintf(out, " eam_p");
+#endif
+#ifdef DAMP
+  fprintf(out, " damp_f");
 #endif
 #endif
 #endif /* UNIAX */

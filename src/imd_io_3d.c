@@ -621,6 +621,10 @@ void write_atoms_config(FILE *out)
       len += sprintf(outbuf+len, RESOL1, EAM_P(p,i));
 #endif
 #endif
+#ifdef DAMP
+      len += sprintf(outbuf+len, RESOL1, DAMPF(p,i));
+#endif
+
       len += sprintf(outbuf+len,"\n");
       /* flush or send outbuf if it is full */
       if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -679,6 +683,11 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
  /* with FRAC ensemble, write actual damping factor and strainrate*/
   fprintf(out,"gamma_damp \t%f\n",gamma_damp);
   fprintf(out,"strainrate \t%f\n",dotepsilon);
+#endif
+#ifdef DAMP
+  fprintf(out,"center \t%f %f %f\n",center.x,center.y,center.z);
+  fprintf(out,"stadium \t%f %f %f\n",stadium.x,stadium.y,stadium.z);
+  fprintf(out,"stadium2 \t%f %f %f\n",stadium2.x,stadium2.y,stadium2.z);
 #endif
 
 #ifdef FTG
