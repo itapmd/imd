@@ -1970,7 +1970,7 @@ void move_atoms_finnis(void)
       /* to share the code with the non local version we overwrite 
 	 the zeta values every timestep */
       zeta_finnis = zeta_0 * (tmp-temperature) 
-	/ sqrt(SQR(tmp) + SQR(temperature/delta_finnis));     
+	/ sqrt(SQR(tmp) + SQR(temperature*delta_finnis));     
 
     /* twice the old kinetic energy */
       E_kin_1 += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);
@@ -1994,17 +1994,14 @@ void move_atoms_finnis(void)
       fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
 #endif
 
-      reibung       =        1.0 -  zeta_finnis * timestep / 2.0;
-      eins_d_reib   = 1.0 / (1.0 +  zeta_finnis * timestep / 2.0);
-
       /* new momenta */
-      IMPULS(p,i,X) = (IMPULS(p,i,X) * reibung + timestep * KRAFT(p,i,X))
-                       * eins_d_reib * rest->x;
-      IMPULS(p,i,Y) = (IMPULS(p,i,Y) * reibung + timestep * KRAFT(p,i,Y))
-                       * eins_d_reib * rest->y;
+      IMPULS(p,i,X) += (-1.0*IMPULS(p,i,X) * zeta_finnis  + timestep * KRAFT(p,i,X))
+                       * rest->x;
+      IMPULS(p,i,Y) += (-1.0*IMPULS(p,i,Y) * zeta_finnis + timestep * KRAFT(p,i,Y))
+                       * rest->y;
 #ifndef TWOD
-      IMPULS(p,i,Z) = (IMPULS(p,i,Z) * reibung + timestep * KRAFT(p,i,Z))
-                       * eins_d_reib * rest->z;
+      IMPULS(p,i,Z) += (-1.0*IMPULS(p,i,Z) * zeta_finnis + timestep * KRAFT(p,i,Z))
+                       * rest->z;
 #endif                  
 
       /* twice the new kinetic energy */ 
