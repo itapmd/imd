@@ -95,11 +95,6 @@ INLINE static int MOD(shortint p, int q)
 #define CG_H(cell,i,sub)        (atoms.h       sub((cell)->ind[i]))
 #define OLD_ORT(cell,i,sub)     (atoms.old_ort sub((cell)->ind[i]))
 #endif
-
-#ifdef DAMP
-#define DAMPF(cell,i)           (atoms.damp_f[(cell)->ind[i]])
-#endif
-
 #ifdef DISLOC
 #define EPOT_REF(cell,i)        (atoms.Epot_ref   [(cell)->ind[i]])
 #define ORT_REF(cell,i,sub)     (atoms.ort_ref sub((cell)->ind[i]))
@@ -170,11 +165,6 @@ INLINE static int MOD(shortint p, int q)
 #define EAM_DM(cell,i)          ((cell)->eeam_dM [i])
 #endif
 #endif
-
-#ifdef DAMP
-#define DAMPF(cell,i)           ((cell)->damp_f[i])
-#endif
-
 #ifdef ADP
 #define ADP_MU(cell,i,sub)      ((cell)->adp_mu sub(i))
 #define ADP_LAMBDA(cell,i,sub)  ((cell)->adp_lambda[i].sub)
@@ -185,8 +175,6 @@ INLINE static int MOD(shortint p, int q)
 #define CG_H(cell,i,sub)        ((cell)->h sub(i))
 #define OLD_ORT(cell,i,sub)     ((cell)->old_ort sub(i))
 #endif
-
-
 #ifdef DISLOC
 #define EPOT_REF(cell,i)        ((cell)->Epot_ref[i])
 #define ORT_REF(cell,i,sub)     ((cell)->ort_ref sub(i))

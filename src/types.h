@@ -132,9 +132,6 @@ typedef struct {
   real        *g;           /* Conjugated Gradient: old forces */
   real        *old_ort;     /* CG: old locations, needed for linmin */
 #endif
-#ifdef DAMP
-  real        *damp_f; /* damping function for that atom, position dependent */
-#endif
 #ifdef DISLOC
   real        *Epot_ref;
   real        *ort_ref;

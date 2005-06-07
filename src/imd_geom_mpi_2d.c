@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -75,12 +75,18 @@ void setup_mpi_topology( void )
 
 ivektor local_cell_coord(ivektor global_coord)
 {
-  ivektor local_coord;
+  ivektor cellc;
 
-  local_coord.x = global_coord.x - my_coord.x * (cell_dim.x - 2) + 1;
-  local_coord.y = global_coord.y - my_coord.y * (cell_dim.y - 2) + 1;
+  cellc.x = global_coord.x - my_coord.x * (cell_dim.x - 2) + 1;
+  cellc.y = global_coord.y - my_coord.y * (cell_dim.y - 2) + 1;
 
-  return local_coord;
+  /* make sure we have a real cell, so that we don't loose atoms */
+  if (cellc.x < 1) cellc.x = 1;
+  if (cellc.y < 1) cellc.y = 1;
+  if (cellc.x > cellmax.x-1) cellc.x = cellmax.x-1;
+  if (cellc.y > cellmax.y-1) cellc.y = cellmax.y-1;
+
+  return cellc;
 }
 
 

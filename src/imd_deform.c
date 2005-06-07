@@ -61,17 +61,6 @@ void expand_sample(void)
 #endif
   make_box();
 
-#ifdef DAMP /* deform the stadium correspondingly */
-#ifdef TWOD
-  center.x   *= expansion.x;  center.y   *= expansion.y; 
-  stadium.x  *= expansion.x;  stadium.y  *= expansion.y;
-  stadium2.x *= expansion.x;  stadium2.y *= expansion.y;
-#else
-  center.x   *= expansion.x;  center.y   *= expansion.y;  center.z   *= expansion.z;
-  stadium.x  *= expansion.x;  stadium.y  *= expansion.y;  stadium.z  *= expansion.z;
-  stadium2.x *= expansion.x;  stadium2.y *= expansion.y;  stadium2.z *= expansion.z;
-#endif
-#endif
 } /* expand sample */
 
 
@@ -120,20 +109,6 @@ void shear_sample(void)
 
   make_box();
 
-#ifdef DAMP /* deform the stadium correspondingly */
-  tmpbox = center.x;
-  center.x += shear_factor.x * center.y;
-  center.y += shear_factor.y * tmpbox;
-
-  tmpbox = stadium.x;
-  stadium.x += shear_factor.x * stadium.y;
-  stadium.y += shear_factor.y * tmpbox;
-
-  tmpbox = stadium2.x;
-  stadium2.x += shear_factor.x * stadium2.y;
-  stadium2.y += shear_factor.y * tmpbox;
-
-#endif
 } /* shear sample */
 
 
@@ -218,48 +193,6 @@ void lin_deform(vektor dx, vektor dy, vektor dz, real scale)
   /* apply box changes */
   make_box();
  
-#ifdef DAMP /* deform the stadium correspondingly */
-
-  tmpbox[0] = scale * SPROD(dx,center);
-  tmpbox[1] = scale * SPROD(dy,center);
-#ifndef TWOD
-  tmpbox[2] = scale * SPROD(dz,center);
-#endif
-
-  center.x += tmpbox[0];
-  center.y += tmpbox[1];
-#ifndef TWOD
-  center.z += tmpbox[2];
-#endif
-
-  tmpbox[0] = scale * SPROD(dx,stadium);
-  tmpbox[1] = scale * SPROD(dy,stadium);
-#ifndef TWOD
-  tmpbox[2] = scale * SPROD(dz,stadium);
-#endif
-
-  stadium.x += tmpbox[0];
-  stadium.y += tmpbox[1];
-#ifndef TWOD
-  stadium.z += tmpbox[2];
-#endif
-
-
-  tmpbox[0] = scale * SPROD(dx,stadium2);
-  tmpbox[1] = scale * SPROD(dy,stadium2);
-#ifndef TWOD
-  tmpbox[2] = scale * SPROD(dz,stadium2);
-#endif
-
-  stadium2.x += tmpbox[0];
-  stadium2.y += tmpbox[1];
-#ifndef TWOD
-  stadium2.z += tmpbox[2];
-#endif
-
-#endif
-
-
 } /* lin_deform */
 
 /*****************************************************************************

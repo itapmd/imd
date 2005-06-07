@@ -448,22 +448,8 @@ EXTERN real dotepsilon0 INIT(0.0);        /* initial strain rate */
 EXTERN int  expansionmode INIT(1);        /* mode for loading */
 #endif
 
-#ifdef DAMP
-EXTERN vektor   center  INIT(nullvektor); /* center of stadium */
-EXTERN vektor  stadium  INIT(nullvektor); /* half axes of Damping stadium */
-EXTERN vektor  stadium2 INIT(nullvektor); /* half axes where the max. 
-						damping factor  is reached  */
-EXTERN real delta_finnis INIT(0.05);       /* time constant in finnis */ 
-EXTERN real zeta_0       INIT(0.0);        /* prefactor for finnis*/
-
-EXTERN real damptemp INIT(0.0);
-EXTERN real tot_kin_energy_damp INIT(0.0);       /* kin energy of the damping layers */
-EXTERN int n_damp INIT(0);             /* number of transl. degrees 
-					       of freedom in the damping layers */
-#endif
-
 #ifdef FINNIS
-EXTERN real delta_finnis INIT(0.05);       /* time constant in finnis */ 
+EXTERN real delta_finnis INIT(10.0);       /* time constant in finnis */ 
 EXTERN real zeta_0       INIT(0.0);        /* prefactor for finnis*/
 #endif
 

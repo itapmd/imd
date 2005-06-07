@@ -106,9 +106,6 @@ void make_nblist(void)
 {
   static int at_max=0, nb_max=0, pa_max=0;
   int  c, i, k, n, tn, at, cc, max1=0, max2;
-/* #ifdef DAMP */
-/*   real tmp1,tmp2,tmp3,f,maxax,maxax2; */
-/* #endif */
 
 #ifdef MPI
   if (0 == nbl_count % BUFSTEP) setup_buffers();
@@ -131,33 +128,6 @@ void make_nblist(void)
 #ifndef TWOD
       NBL_POS(p,i,Z) = ORT(p,i,Z);
 #endif
-
-/* #ifdef DAMP /* calculate here the stadium function for each atom */
-/* 	      to save time */
-/*       /* it is the users responsability that stadium.i/stadium2.i */
-/* 	 is equal for all i */
-      
-/*       maxax = MAX(MAX(stadium.x,stadium.y),stadium.z); */
-/*       maxax2 = MAX(MAX(stadium2.x,stadium2.y),stadium2.z); */
-      
-/* 	    /* Calculate stadium function f */
-/*       tmp1 = (stadium2.x == 0) ? 0 : SQR((ORT(p,i,X)-center.x)/(2.0*stadium2.x)); */
-/*       tmp2 = (stadium2.y == 0) ? 0 : SQR((ORT(p,i,Y)-center.y)/(2.0*stadium2.y)); */
-/*       tmp3 = (stadium2.z == 0) ? 0 : SQR((ORT(p,i,Z)-center.z)/(2.0*stadium2.z)); */
-      
-/*       f    = (tmp1+tmp2+tmp3-SQR(maxax/(2.0*maxax2)))/\ */
-/* 	     (.25- SQR(maxax/(2.0*maxax2))); */
-/*       //      printf("pos: %f %f %f   damp_f %f\n",ORT(p,i,X), ORT(p,i,Y),ORT(p,i,Z),f); */
-/*       if (f<= 0.0)  */
-/* 	  f = 0.0; */
-/*       else if (f>1.0)  */
-/* 	  f = 1.0; */
-
-/*       /* we smooth the stadium function: to get a real bath tub !*/  
-/*        DAMPF(p,i) = .5 * (1 + sin(-M_PI/2.0 + M_PI*f)); */
-     
-/* #endif */
-
     }
     at += p->n;
     max1 = MAX(max1, p->n);
