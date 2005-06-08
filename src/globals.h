@@ -457,15 +457,15 @@ EXTERN real delta_finnis INIT(0.05);       /* time constant in finnis */
 EXTERN real zeta_0       INIT(0.0);        /* prefactor for finnis*/
 
 EXTERN real damptemp INIT(0.0);
-EXTERN real tot_kin_energy_damp INIT(0.0);       /* kin energy of the damping layers */
-EXTERN int n_damp INIT(0);             /* number of transl. degrees                                                                      /* of freedom in the damping layers */
+EXTERN real tot_kin_energy_damp INIT(0.0); /* kin energy of damping layers  */
+EXTERN int n_damp INIT(0);                 /* number of transl. degrees of  */
+                                           /* freedom in the damping layers */
 #endif
 
 #ifdef FINNIS
 EXTERN real delta_finnis INIT(10.0);       /* time constant in finnis */ 
-EXTERN real zeta_0       INIT(0.0);        /* prefactor for finnis*/
+EXTERN real zeta_0       INIT(0.0);        /* prefactor for finnis */
 #endif
-
 
 #ifdef FRAC
 EXTERN real E_kin_damp INIT(0.0);         /* weighted !!  kin dampenergy  */
