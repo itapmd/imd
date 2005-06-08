@@ -239,6 +239,7 @@ void fix_cells(void)
 #endif
           }
           if (buf != NULL) {
+            int to_cpu = cpu_coord( coord );
             copy_one_atom( buf, to_cpu, p, l, 1); 
 #ifdef CLONE
             if (l < p->n-nclones)
