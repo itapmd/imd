@@ -218,7 +218,9 @@ void move_atoms_nve(void)
 
                 if (tmp2 != 0) tmp /= tmp2;
 
-                rampedtemp  = damptemp * (1.0 - DAMPF(p,i));
+
+		/* to account for restricted mobilities */
+		rampedtemp  = (tmp2 !=0) ? (tmp2/3.0 * damptemp * (1.0 - DAMPF(p,i))) : 0.0;
 
                 //              if( !((tmp==0.0) && (rampedtemp==0.0))) /* else atom  will not move */
                 //  {
@@ -2029,9 +2031,7 @@ void move_atoms_finnis(void)
   real E_kin_1, E_kin_2;
   real tmp, tmp1, tmp2;
   real ttt;
-  real reibung, reibung_y, eins_d_reib, eins_d_reib_y;
-  real epsilontmp, eins_d_epsilontmp;
-  int slice;
+  real temperature_at;
   real zeta_finnis;
 
   fnorm = 0.0;
@@ -2075,11 +2075,13 @@ void move_atoms_finnis(void)
       tmp2 = rest->x + rest->y + rest->z;
 #endif
       if (tmp2 != 0) tmp /= tmp2;
+      /* to account for restricted mobilities and to avoid singularities */
+      temperature_at = (tmp2 !=0) ? (tmp2/3.0 * temperature) : (1e-10); 
 
       /* to share the code with the non local version we overwrite 
 	 the zeta values every timestep */
-      zeta_finnis = zeta_0 * (tmp-temperature) 
-	/ sqrt(SQR(tmp) + SQR(temperature*delta_finnis));     
+      zeta_finnis = zeta_0 * (tmp-temperature_at) 
+	/ sqrt(SQR(tmp) + SQR(temperature_at*delta_finnis));     
 
     /* twice the old kinetic energy */
       E_kin_1 += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / MASSE(p,i);

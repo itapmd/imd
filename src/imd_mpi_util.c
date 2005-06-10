@@ -157,7 +157,9 @@ void copy_atom(msgbuf *to, int to_cpu, cell *p, int ind )
   to->data[ to->n++ ] = OLD_ORT(p,ind,Z); 
 #endif
 #endif /* CG */
-
+#ifdef DAMP
+  to->data[ to->n++ ] = DAMPF(p,ind);
+#endif
 #ifdef DISLOC
   to->data[ to->n++ ] = EPOT_REF(p,ind);
   to->data[ to->n++ ] = ORT_REF (p,ind,X); 
@@ -316,7 +318,9 @@ void copy_one_atom(msgbuf *to, int to_cpu, minicell *from, int index, int del)
       OLD_ORT(p,ind,Z) = OLD_ORT(p,p->n,Z); 
 #endif
 #endif /* CG */
-
+#ifdef DAMP
+      DAMPF(p,ind) = DAMPF(p,p->n); 
+#endif
 #ifdef DISLOC
       EPOT_REF(p,ind)   = EPOT_REF(p,p->n); 
       ORT_REF (p,ind,X) = ORT_REF (p,p->n,X); 
@@ -455,7 +459,9 @@ void process_buffer(msgbuf *b, cell *p)
     OLD_ORT(input,0,Z) = b->data[j++];
 #endif
 #endif /* CG */
-
+#ifdef DAMP
+    DAMPF(input,0) = b->data[j++];
+#endif
 #ifdef DISLOC
     EPOT_REF(input,0)   = b->data[j++];
     ORT_REF (input,0,X) = b->data[j++];

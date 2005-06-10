@@ -362,7 +362,7 @@ void main_loop(void)
     if (ensemble != ENS_NVE) move_atoms_nve();
 #endif
 
-#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
+#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC) || defined(FINNIS)
     if ((steps==steps_min) && (use_curr_temp==1)) {
 #ifdef UNIAX
       temperature = 2.0 * tot_kin_energy / (nactive + nactive_rot);
@@ -404,7 +404,7 @@ void main_loop(void)
     }
 #endif
 
-#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
+#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC) || defined(FINNIS)
     temperature += dtemp;
 #endif
 
