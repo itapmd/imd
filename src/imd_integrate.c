@@ -408,7 +408,8 @@ void move_atoms_nve(void)
   tot_kin_energy_damp = tmpvec2[5];
   n_damp =  tmpvec2[6];
 #else
-  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid);
+  /*  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid); */
+  MPI_Allreduce( tmpvec1, tmpvec2, 7, REAL, MPI_SUM, cpugrid); 
 #endif
 
   tot_kin_energy = tmpvec2[0];
