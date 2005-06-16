@@ -111,14 +111,6 @@ ivektor local_cell_coord(ivektor global_coord)
   cellc.y = global_coord.y - my_coord.y * (cell_dim.y - 2) + 1;
   cellc.z = global_coord.z - my_coord.z * (cell_dim.z - 2) + 1;
 
-  /* make sure we have a real cell, so that we don't loose atoms */
-  if (cellc.x < 1) cellc.x = 1;
-  if (cellc.y < 1) cellc.y = 1;
-  if (cellc.z < 1) cellc.z = 1;
-  if (cellc.x > cellmax.x-1) cellc.x = cellmax.x-1;
-  if (cellc.y > cellmax.y-1) cellc.y = cellmax.y-1;
-  if (cellc.z > cellmax.z-1) cellc.z = cellmax.z-1;
-
   return cellc;
 }
 
