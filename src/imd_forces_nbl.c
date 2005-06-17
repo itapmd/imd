@@ -913,12 +913,12 @@ void calc_forces(int steps)
             pp.zx -= d.z * force.x;
             pp.xy -= d.x * force.y;
 
-            PRESSTENS(q,j,xx) += d.x * force.x;
-            PRESSTENS(q,j,yy) += d.y * force.y;
-            PRESSTENS(q,j,zz) += d.z * force.z;
-            PRESSTENS(q,j,yz) += d.y * force.z;
-            PRESSTENS(q,j,zx) += d.z * force.x;
-            PRESSTENS(q,j,xy) += d.x * force.y;
+            PRESSTENS(q,j,xx) -= d.x * force.x;
+            PRESSTENS(q,j,yy) -= d.y * force.y;
+            PRESSTENS(q,j,zz) -= d.z * force.z;
+            PRESSTENS(q,j,yz) -= d.y * force.z;
+            PRESSTENS(q,j,zx) -= d.z * force.x;
+            PRESSTENS(q,j,xy) -= d.x * force.y;
           }
 #endif
         }
@@ -928,12 +928,12 @@ void calc_forces(int steps)
       KRAFT(p,i,Z) += ff.z;
 #ifdef STRESS_TENS
       if (do_press_calc) {
-        PRESSTENS(p,i,xx) -= pp.xx;
-        PRESSTENS(p,i,yy) -= pp.yy;
-        PRESSTENS(p,i,zz) -= pp.zz;
-        PRESSTENS(p,i,yz) -= pp.yz;
-        PRESSTENS(p,i,zx) -= pp.zx;
-        PRESSTENS(p,i,xy) -= pp.xy;
+        PRESSTENS(p,i,xx) += pp.xx;
+        PRESSTENS(p,i,yy) += pp.yy;
+        PRESSTENS(p,i,zz) += pp.zz;
+        PRESSTENS(p,i,yz) += pp.yz;
+        PRESSTENS(p,i,zx) += pp.zx;
+        PRESSTENS(p,i,xy) += pp.xy;
       }
 #endif
       n++;
