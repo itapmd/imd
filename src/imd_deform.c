@@ -229,6 +229,7 @@ void lin_deform(vektor dx, vektor dy, vektor dz, real scale)
 #ifndef TWOD
   tmpbox[2] = scale * SPROD(dz,center);
 #endif
+#endif
 
 } /* lin_deform */
 
