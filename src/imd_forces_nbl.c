@@ -21,21 +21,27 @@
 #include "imd.h"
 #include "potaccess.h"
 
-/* to save memory, we can store cell number and particle index in one Uint */
-#ifdef SAVEMEM
-#define TB_T unsigned int
-#else
-#ifdef EWALD
-#define TB_T unsigned short
-#define MAXCELL 65536
-#else
-#define TB_T unsigned char
-#define MAXCELL 256
-#endif
-#endif
+/*****************************************************************************
 
-TB_T *tb=NULL;
-int  *cl, *tl;
+  Neighbor list format
+
+  Normally, each atom is identified by its cell number k, and the number
+  i within that cell. Here, we want to identify it with a single number n. 
+  To translate between the two labellings, two auxiliary arrays cl_off
+  and cl_num are used, such that the following relations hold:
+  n = cl_off[k] + i, k = cl_num[n]. Note that this numbering also
+  includes buffer cell atoms. It runs consecutively over the atoms
+  in cell 0, cell 1, etc.
+  
+  The neighbors of atom i are stored in the array tb, in the index range
+  tl[i] .. tl[i+1]-1. Unlike the numbers of neighbor atoms, i enumerates 
+  only the real atoms, not buffer atoms, and refers to a different numbering 
+  scheme. It runs first over the atoms in the first inner cell, then those 
+  in the second inner cell, etc.
+
+******************************************************************************/
+
+int  *tl=NULL, *tb=NULL, *cl_off=NULL, *cl_num=NULL;
 
 /******************************************************************************
 *
@@ -105,7 +111,7 @@ int estimate_nblist_size(void)
 void make_nblist(void)
 {
   static int at_max=0, nb_max=0, pa_max=0;
-  int  c, i, k, n, tn, at, cc, max1=0, max2;
+  int  c, i, k, n, tn, at, cc;
 
 #ifdef MPI
   if (0 == nbl_count % BUFSTEP) setup_buffers();
@@ -115,8 +121,10 @@ void make_nblist(void)
   do_boundaries();
   fix_cells();
 
+  /* fill the buffer cells */
+  send_cells(copy_cell,pack_cell,unpack_cell);
+
   /* update reference positions */
-  at=1;
   for (k=0; k<ncells; k++) {
     cell *p = cell_array + cnbrs[k].np;
 #ifdef ia64
@@ -129,41 +137,43 @@ void make_nblist(void)
       NBL_POS(p,i,Z) = ORT(p,i,Z);
 #endif
     }
-    at += p->n;
-    max1 = MAX(max1, p->n);
   }
-#ifdef COVALENT
-  for (k=ncells; k<ncells2; k++) {
-    cell *p = cell_array + cnbrs[k].np;
-    at += p->n;
-    max1 = MAX(max1, p->n);
+
+  /* allocate cl_off */
+  if (nbl_count==0) {
+    cl_off = (int *) malloc( nallcells * sizeof(int) );
+    if (cl_off==NULL) error("cannot allocate neighbor table");
   }
-#endif
 
-#ifdef MPI
-  MPI_Allreduce( &max1, &max2, 1, MPI_INT, MPI_MAX, cpugrid); 
-#else
-  max2 = max1;
-#endif
-  if (max2>=MAXCELL) 
-    error("maximal cell occupancy exceeded - change TB_T");
-
-  /* fill the buffer cells */
-  send_cells(copy_cell,pack_cell,unpack_cell);
+  /* count atom numbers (including buffer atoms) */
+  at=0;
+  for (k=0; k<nallcells; k++) {
+    cell *p = cell_array + k;
+    cl_off[k] = at;
+    at += p->n;
+  }
 
   /* (re-)allocate neighbor table */
   if (at >= at_max) {
-    at_max = (int) (1.1*at);
-    tl = (int *) realloc(tl, at_max * sizeof(int));
+    free(tl);
+    free(cl_num);
+    at_max = (int) (1.1 * at);
+    tl     = (int *) malloc(at_max * sizeof(int));
+    cl_num = (int *) malloc(at_max * sizeof(int));
   }
   if (nbl_count==0) {
-    nb_max = (int) (nbl_size*estimate_nblist_size());
-    tb = (TB_T *) realloc(tb, nb_max * sizeof(TB_T));
-#ifndef SAVEMEM
-    cl = (int  *) realloc(cl, nb_max * sizeof(int ));
-#endif
+    nb_max = (int  ) (nbl_size * estimate_nblist_size());
+    tb     = (int *) malloc(nb_max * sizeof(int));
   }
-  if ((tl==NULL) || (tb==NULL)) error("cannot allocate neighbor table");
+  if ((tl==NULL) || (tb==NULL) || (cl_num==NULL)) 
+    error("cannot allocate neighbor table");
+
+  /* set cl_num */
+  n=0;
+  for (k=0; k<nallcells; k++) {
+    cell *p = cell_array + k;
+    for (i=0; i<p->n; i++) cl_num[n++] = k;
+  }
 
   /* for all cells */
   n=0; tn=0; tl[0]=0;
@@ -206,13 +216,7 @@ void make_nblist(void)
 #endif
           r2  = SPROD(d,d);
           if (r2 < cellsz) {
-#ifdef SAVEMEM
-            tb[tn] = (c2 << 8) + j;
-#else
-            tb[tn] = j;
-            cl[tn] = c2;
-#endif
-            tn++;
+            tb[tn++] = cl_off[c2] + j;
           }
         }
       }
@@ -366,15 +370,12 @@ void calc_forces(int steps)
         vektor d, force;
         cell   *q;
         real   pot, grad, r2, rho_h;
-        int    j, jt, col, col2, inc = ntypes * ntypes;
+        int    c, j, jt, col, col2, inc = ntypes * ntypes;
 
-#ifdef SAVEMEM
-        j   = tb[m] & 255U;
-        q   = cell_array + (tb[m] >> 8);
-#else
-        j   = tb[m];
-        q   = cell_array + cl[m];
-#endif
+        c = cl_num[ tb[m] ];
+        j = tb[m] - cl_off[c];
+        q = cell_array + c;
+
         d.x = ORT(q,j,X) - d1.x;
         d.y = ORT(q,j,Y) - d1.y;
 #ifndef TWOD
@@ -630,18 +631,15 @@ void calc_forces(int steps)
       /* loop over neighbors */
       for (m=tl[n]; m<tl[n+1]; m++) {
 
-        int    j, jt, col, inc = ntypes * ntypes; 
+        int    c, j, jt, col, inc = ntypes * ntypes; 
         vektor d;
         real   r2;
         cell   *q;
 
-#ifdef SAVEMEM
-        j   = tb[m] & 255U;
-        q   = cell_array + (tb[m] >> 8);
-#else
-        j   = tb[m];
-        q   = cell_array + cl[m];
-#endif
+        c = cl_num[ tb[m] ];
+        j = tb[m] - cl_off[c];
+        q = cell_array + c;
+
         d.x = ORT(q,j,X) - d1.x;
         d.y = ORT(q,j,Y) - d1.y;
         d.z = ORT(q,j,Z) - d1.z;
@@ -780,16 +778,13 @@ void calc_forces(int steps)
 
         vektor d, force = {0.0,0.0,0.0};
         real   r2;
-        int    j, jt, col1, col2, inc = ntypes * ntypes, have_force=0;
+        int    c, j, jt, col1, col2, inc = ntypes * ntypes, have_force=0;
         cell   *q;
 
-#ifdef SAVEMEM
-        j    = tb[m] & 255U;
-        q    = cell_array + (tb[m] >> 8);
-#else
-        j    = tb[m];
-        q    = cell_array + cl[m];
-#endif
+        c = cl_num[ tb[m] ];
+        j = tb[m] - cl_off[c];
+        q = cell_array + c;
+
         d.x  = ORT(q,j,X) - d1.x;
         d.y  = ORT(q,j,Y) - d1.y;
         d.z  = ORT(q,j,Z) - d1.z;
