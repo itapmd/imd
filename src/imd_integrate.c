@@ -57,7 +57,7 @@ void move_atoms_nve(void)
 #endif
   for (k=0; k<NCELLS; ++k) { /* loop over all cells */
 
-    int  i, sort;
+    int  i,j, sort;
     cell *p;
     real kin_energie_1, kin_energie_2, tmp;
 #ifdef UNIAX    
