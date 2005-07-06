@@ -84,7 +84,7 @@ int curline; /* number of current line */
                        zurueckgegeben. Resultat = pnum_max - Anzahl der Kopien
 */
 
-int getparam(char *param_name, void *param, PARAMTYPE ptype, 
+static int getparam(char *param_name, void *param, PARAMTYPE ptype, 
              int pnum_min, int pnum_max)
 {
   static char errmsg[256];
