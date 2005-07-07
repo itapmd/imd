@@ -86,8 +86,9 @@ int linmin()
   else {
     alpha_b = linmin_dmax;
   }
-  alpha_b = linmin_dmax;
-  alpha_b = old_alphamin;
+  // this looks like total nonsense to me...
+  //  alpha_b = linmin_dmax;
+  //alpha_b = old_alphamin;
   alpha_c = 2.0 * alpha_b;
   fa = old_cg_poteng;
   fb = fonedim(alpha_b);
@@ -114,7 +115,7 @@ int linmin()
 
   /* info message */
   if ((cg_infolevel>0) && (0==myid)) {
-    printf("iter1= %d iter2 =%d alphamin =%f f_max =%f\n",
+    printf("iter1= %d iter2 = %d alphamin = %e f_max = %e\n",
            iter1,iter2,alphamin,f_max);
     fflush(stdout); 
   }

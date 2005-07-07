@@ -22,8 +22,10 @@
 /* #define ITMAX 100 */
 #define CGOLD 0.3819660
 #define ZEPS 1.0e-10
+//#define ZEPS 1.0e-9
 #define GOLD 1.618034
 #define GLIMIT 100.0  /* was  100.0 */
+//#define GLIMIT 20.0  /* was  100.0 */
 #define TINY 1.0e-20
 #define SHFT(a,b,c,d) (a)=(b);(b)=(c);(c)=(d);
 #define SIGN(a,b) ((b) >= 0.0 ? FABS(a) : -FABS(a))
@@ -42,6 +44,8 @@ int brent(real ax, real bx, real cx, real fa, real fb, real fc, real *alphamin)
   a = (ax < cx) ? ax : cx;
   b = (ax > cx) ? ax : cx;
   x = w = v = bx;
+  // new  - we need this ? like in PEters and numrec.
+  fb = fonedim(b);
   fw = fv = fx = fb;
 
   /* 
