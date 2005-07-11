@@ -33,6 +33,7 @@ void move_atoms_nve(void)
 {
   int k;
   real tmpvec1[7], tmpvec2[7], pnorm; /* increased tempvec for DAMP */
+  real tmp_f_max2=0.0;
   static int count = 0;
 
   /* epitax may call this routine for other ensembles,
@@ -148,6 +149,12 @@ void move_atoms_nve(void)
 
 #ifdef FNORM
 	fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+     /* determine the biggest force component */
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
+#ifndef TWOD
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
+#endif
 #endif
 #ifdef EINSTEIN
 	omega_E += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) ) / MASSE(p,i);
@@ -417,11 +424,23 @@ void move_atoms_nve(void)
   PxF            = tmpvec2[2];
   omega_E        = tmpvec2[3];
   pnorm          = tmpvec2[4];
+
+#ifdef FNORM
+  MPI_Allreduce( &tmp_f_max2, &f_max2, 1, REAL, MPI_MAX, cpugrid);
 #endif
+
+#else
+#ifdef FNORM
+  f_max2 = tmp_f_max2;
+#endif
+
+#endif
+
 
 #ifdef GLOK
   PxF /= (SQRT(fnorm) * SQRT(pnorm));
 #endif
+
 
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
@@ -453,6 +472,7 @@ void move_atoms_mik(void)
 {
   int k;
   real tmpvec1[2], tmpvec2[2];
+  real tmp_f_max2=0.0;
 
   static int count = 0;
   tot_kin_energy = 0.0;
@@ -546,6 +566,12 @@ void move_atoms_mik(void)
 	
 #ifdef FNORM
 	fnorm += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+     /* determine the biggest force component */
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
+#ifndef TWOD
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
+#endif
 #endif
 
         IMPULS(p,i,X) += timestep * KRAFT(p,i,X);
@@ -596,6 +622,16 @@ void move_atoms_mik(void)
 
   tot_kin_energy = tmpvec2[0];
   fnorm          = tmpvec2[1];
+
+#ifdef FNORM
+  MPI_Allreduce( &tmp_f_max2, &f_max2, 1, REAL, MPI_MAX, cpugrid);
+#endif
+
+#else
+#ifdef FNORM
+  f_max2 = tmp_f_max2;
+#endif
+
 #endif
 
 }
@@ -627,6 +663,7 @@ void move_atoms_nvt(void)
   real E_kin_1 = 0.0, E_kin_2 = 0.0;
   real reibung, eins_d_reib;
   real E_rot_1 = 0.0, E_rot_2 = 0.0;
+ real tmp_f_max2=0.0;
 #ifdef UNIAX
   real reibung_rot,  eins_d_reib_rot;
 #endif
@@ -725,6 +762,12 @@ void move_atoms_nvt(void)
 #endif
 #ifdef FNORM
 	fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+     /* determine the biggest force component */
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
+#ifndef TWOD
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
+#endif
 #endif
 #ifdef EINSTEIN
 	omega_E += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) ) / MASSE(p,i);
@@ -822,6 +865,17 @@ void move_atoms_nvt(void)
   E_rot_2        = tmpvec2[2];
   fnorm          = tmpvec2[3];
   omega_E        = tmpvec2[4];
+
+
+#ifdef FNORM
+  MPI_Allreduce( &tmp_f_max2, &f_max2, 1, REAL, MPI_MAX, cpugrid);
+#endif
+
+#else
+#ifdef FNORM
+  f_max2 = tmp_f_max2;
+#endif
+
 #endif
 
   /* time evolution of constraints */
@@ -861,6 +915,7 @@ void move_atoms_sllod(void)
   real E_kin_1 = 0.0, E_kin_2 = 0.0;
   vektor reibung, eins_d_reib;
   real E_rot_1 = 0.0, E_rot_2 = 0.0;
+ real tmp_f_max2=0.0;
 #ifdef UNIAX
   real reibung_rot,  eins_d_reib_rot;
 #endif
@@ -925,6 +980,12 @@ void move_atoms_sllod(void)
 #endif
 #ifdef FNORM
 	fnorm += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+     /* determine the biggest force component */
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
+#ifndef TWOD
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
+#endif
 #endif
 
 	IMPULS(p,i,X) = (IMPULS(p,i,X) * reibung.x + timestep * KRAFT(p,i,X)) 
@@ -1026,6 +1087,16 @@ void move_atoms_sllod(void)
   E_kin_2        = tmpvec2[1];
   E_rot_2        = tmpvec2[2];
   fnorm          = tmpvec2[3];
+
+#ifdef FNORM
+  MPI_Allreduce( &tmp_f_max2, &f_max2, 1, REAL, MPI_MAX, cpugrid);
+#endif
+
+#else
+#ifdef FNORM
+  f_max2 = tmp_f_max2;
+#endif
+
 #endif
 
   /* adjusting the box */
@@ -1152,6 +1223,7 @@ void move_atoms_npt_iso(void)
   real pfric, pifric, rfric, rifric;
   real tmpvec1[4], tmpvec2[4], ttt;
   real reib, ireib;
+  real tmp_f_max2=0.0;
 
   fnorm    = 0.0;
   omega_E  = 0.0;
@@ -1210,6 +1282,12 @@ void move_atoms_npt_iso(void)
 
 #ifdef FNORM
       fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+     /* determine the biggest force component */
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
+#ifndef TWOD
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
+#endif
 #endif
 #ifdef EINSTEIN
       omega_E += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) ) / MASSE(p,i);
@@ -1294,6 +1372,16 @@ void move_atoms_npt_iso(void)
   Erot_new = tmpvec2[1];
   fnorm    = tmpvec2[2];
   omega_E  = tmpvec2[3];
+#ifdef FNORM
+  MPI_Allreduce( &tmp_f_max2, &f_max2, 1, REAL, MPI_MAX, cpugrid);
+#endif
+
+#else
+#ifdef FNORM
+  f_max2 = tmp_f_max2;
+#endif
+
+
 #endif
 
 #ifdef UNIAX
@@ -1351,6 +1439,7 @@ void move_atoms_npt_iso(void)
 void move_atoms_npt_axial(void)
 {
   int k;
+  real tmp_f_max2=0.0;
   real Ekin_new = 0.0, ttt, tmpvec1[6], tmpvec2[6];
   vektor pfric, pifric, rfric, rifric, tvec;
 
@@ -1403,6 +1492,12 @@ void move_atoms_npt_axial(void)
       tmp = 1.0 / MASSE(p,i);
 #ifdef FNORM
       fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+     /* determine the biggest force component */
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
+#ifndef TWOD
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
+#endif
 #endif
 #ifdef EINSTEIN
       omega_E += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) ) * tmp;
@@ -1463,6 +1558,15 @@ void move_atoms_npt_axial(void)
   dyn_stress_y = tmpvec2[3];
   dyn_stress_z = tmpvec2[4];
   omega_E      = tmpvec2[5];
+#ifdef FNORM
+  MPI_Allreduce( &tmp_f_max2, &f_max2, 1, REAL, MPI_MAX, cpugrid);
+#endif
+
+#else
+#ifdef FNORM
+  f_max2 = tmp_f_max2;
+#endif
+
 #endif
 
   /* time evolution of eta */
@@ -1515,7 +1619,7 @@ void move_atoms_frac(void)
 {
   int  k;
   real tmpvec1[7], tmpvec2[7], ttt;
-
+  real tmp_f_max2=0.0;
   real E_kin_1        = 0.0, E_kin_2        = 0.0; 
   real E_kin_damp1    = 0.0, E_kin_damp2    = 0.0;
   real E_kin_stadium1 = 0.0, E_kin_stadium2 = 0.0;
@@ -1617,6 +1721,12 @@ void move_atoms_frac(void)
 
 #ifdef FNORM
 	fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+     /* determine the biggest force component */
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
+#ifndef TWOD
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
+#endif
 #endif
 
 	reibung       =        1.0 -  gamma_damp * f * timestep / 2.0;
@@ -1735,7 +1845,7 @@ void move_atoms_ftg(void)
 
 {
   int j, k;
-
+   real tmp_f_max2=0.0;
   static real *E_kin_1     = NULL; static real *E_kin_2     = NULL;
   static real *ftgtmpvec1  = NULL; static real *ftgtmpvec2  = NULL;
   static int  *iftgtmpvec1 = NULL; static int  *iftgtmpvec2 = NULL;
@@ -1893,6 +2003,12 @@ void move_atoms_ftg(void)
 
 #ifdef FNORM
 	fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+     /* determine the biggest force component */
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
+#ifndef TWOD
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
+#endif
 #endif
 
 	reibung       =        1.0 -  *(gamma_ftg + slice) * timestep / 2.0;
@@ -2034,7 +2150,7 @@ void move_atoms_finnis(void)
   real ttt;
   real temperature_at;
   real zeta_finnis;
-
+  real tmp_f_max2=0.0;
   fnorm = 0.0;
 
   /* loop over all cells */
@@ -2104,6 +2220,12 @@ void move_atoms_finnis(void)
 
 #ifdef FNORM
       fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+     /* determine the biggest force component */
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
+#ifndef TWOD
+      tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
+#endif
 #endif
 
       /* new momenta */
@@ -2173,6 +2295,7 @@ void move_atoms_stm(void)
 
 {
   int k;
+  real tmp_f_max2=0.0;
   /* we handle 2 ensembles ensindex = 0 -> NVT ;ensindex = 1 -> NVE */
   int ensindex = 0;
   real kin_energie_1[2] = {0.0,0.0}, kin_energie_2[2] = {0.0,0.0};

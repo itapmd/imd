@@ -93,7 +93,8 @@ int linmin()
   // else if (f_max<linmin_dmin) {
     //alpha_b = linmin_dmax *linmin_dmin/f_max;
   else if (old_alphamin<linmin_dmin) {
-    alpha_b=2.0 * linmin_dmin/old_alphamin;
+    // alpha_b=2.0 * linmin_dmin/old_alphamin;
+    alpha_b=2.0 * 0.1;
   }
   else {
     alpha_b = 2.0* old_alphamin;  

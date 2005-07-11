@@ -271,6 +271,7 @@ EXTERN int  nbl_count  INIT(0);      /* counting neighbor list rebuild */
 /* square of global force vector f=(f1.x, f1.y,...,fn.z) */
 EXTERN real fnorm INIT(0.0);  
 EXTERN real f_max INIT(0.0);  
+EXTERN real f_max2 INIT(0.0);  
 /* scalar product of global force and momentum vectors */ 
 EXTERN real PxF INIT(0.0);
 /* Einstein frequency is similar as fnorm, but divided by the masses */ 
@@ -497,7 +498,6 @@ EXTERN int    cg_fr INIT(0);            /* Fletcher-Reeves mode or not */
 EXTERN int    cg_reset_int INIT(0);     /* interval between cg resetting */
 
 /* Variables needed by CG */
-EXTERN real   f_max2        INIT(0.0);      /* max. force comp. ^2  */
 EXTERN real   cg_poteng     INIT(0.0);      /* potential energy per atom */
 EXTERN real   old_cg_poteng INIT(0.0);      /* old poteng value */ 
 EXTERN real   gg            INIT(0.0);      /* see Num. Rec. p.320 */       

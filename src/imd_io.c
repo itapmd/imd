@@ -1275,6 +1275,7 @@ void write_eng_file_header()
 
 #ifdef FNORM
     fprintf(fl, "fnorm ");
+    fprintf(fl, "fmax ");
 #endif
 #ifdef GLOK
     fprintf(fl, "PxF ");
@@ -1441,6 +1442,7 @@ void write_eng_file(int steps)
 
 #ifdef FNORM
   fprintf(eng_file, format,   (double) SQRT( fnorm / nactive ) );
+  fprintf(eng_file, format,   (double) SQRT( f_max2 ) );
 #endif
 #ifdef GLOK
   fprintf(eng_file, format,   (double) PxF);
