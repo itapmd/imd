@@ -1,4 +1,3 @@
-
 /******************************************************************************
 *
 * IMD -- The ITAP Molecular Dynamics Program
@@ -1276,6 +1275,14 @@ void getparamfile(char *paramfname, int sim)
       /* max. length of trial step in 1d minimum search */
       getparam("linmin_dmin",&linmin_dmin,PARAM_REAL,1,1);
     }
+    else if (strcasecmp(token,"cg_glimit")==0) {
+      /* limit in mnbrak */
+      getparam("cg_glimit",&cg_glimit,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"cg_zeps")==0) {
+      /* in brent */
+      getparam("cg_zeps",&cg_zeps,PARAM_REAL,1,1);
+    }
     else if (strcasecmp(token,"cg_fr")==0) {
       /* Fletcher-Reeves mode or not*/
       getparam(token,&cg_fr,PARAM_INT,1,1);
@@ -2191,8 +2198,7 @@ void check_parameters_complete()
 #endif
 
 #ifdef CG
-  if ((linmin_maxsteps==0) || (linmin_tol==0.0) || 
-      (linmin_dmax==0.0) || (linmin_dmin==0.0))
+  if ((linmin_maxsteps==0) || (linmin_tol==0.0) )
     error("You have to set parameters for the linmin search");
 #endif
 #ifdef HOMDEF
@@ -2726,6 +2732,8 @@ void broadcast_params() {
   MPI_Bcast( &linmin_tol,      1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &linmin_dmax,     1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &linmin_dmin,     1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &cg_glimit,       1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &cg_zeps,         1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &cg_infolevel,    1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &cg_mode,         1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif

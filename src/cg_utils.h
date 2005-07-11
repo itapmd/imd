@@ -18,14 +18,12 @@
 ******************************************************************************/
 
 #include <math.h>
-
+// these are now parameters:
 /* #define ITMAX 100 */
+//#define ZEPS 1.0e-10
+//#define GLIMIT 100.0  /* was  100.0 */
 #define CGOLD 0.3819660
-#define ZEPS 1.0e-10
-//#define ZEPS 1.0e-9
 #define GOLD 1.618034
-#define GLIMIT 100.0  /* was  100.0 */
-//#define GLIMIT 20.0  /* was  100.0 */
 #define TINY 1.0e-20
 #define SHFT(a,b,c,d) (a)=(b);(b)=(c);(c)=(d);
 #define SIGN(a,b) ((b) >= 0.0 ? FABS(a) : -FABS(a))
@@ -40,24 +38,30 @@ int brent(real ax, real bx, real cx, real fa, real fb, real fc, real *alphamin)
   real e = 0.0, d = 0.0, tol = linmin_tol;
   ITMAX=linmin_maxsteps;
 
-
-  a = (ax < cx) ? ax : cx;
-  b = (ax > cx) ? ax : cx;
+ 
+  /* sorting is already done in mnbrak */
+/*   a = (ax < cx) ? ax : cx; */
+/*   b = (ax > cx) ? ax : cx; */
+  a=ax; b=bx;
   x = w = v = bx;
-  // new  - we need this ? like in PEters and numrec.
-  fb = fonedim(b);
+  
+  // fb = fonedim(b); 
+ 
   fw = fv = fx = fb;
-
-  /* 
-   a = ax;           b = cx;
-   x = bx;  w = ax;  v = cx;
-  fx = fv; fw = fa; fv = fc;
-  */
-
+ if ((cg_infolevel>0) && (0==myid)) {
+      printf("in brent starting with  a %.12e b %.12e fb %.12e\n",a,b,fb);
+      fflush(stdout);
+  }
   for (iter = 1; iter <= ITMAX; iter++) {
     xm = 0.5 * (a+b);
-    tol1 = tol * FABS(x) + ZEPS;
+    tol1 = tol * FABS(x) + cg_zeps;
     tol2 = 2.0 * tol1;
+
+    if ((cg_infolevel>0) && (0==myid)) {
+      printf("in brent, iter %d x %e v %e w %e fx %e fv %e fw %e\n",iter, x,v,w,fx,fv,fw);
+      fflush(stdout);
+  }
+
     if (FABS(x-xm) <= (tol2-0.5*(b-a))) {
       *alphamin = x;
       return iter;
@@ -114,27 +118,35 @@ int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc)
   real ulim, u, r, q, fu, dum;
   int  ctf;
 
+  /* fb is calculated in linmin, fa is the old value at alpha_a=0 */
   if (*fb > *fa) {
     SHFT(dum, *ax, *bx, dum)
     SHFT(dum, *fb, *fa, dum)
-  }
+      }
   *cx = (*bx) + GOLD * (*bx-*ax);
+  
+  /* changed to num rec., make sure i'm not going in the wrong direction */
+  if (*cx <0.0)
+    {
+      *cx = (*bx) - 1.0/GOLD * (*bx-*ax);
+    }
+
   *fc = fonedim(*cx);
   ctf = 1;
 
-  while (*fb > *fc) {
+  while (*fb >= *fc) {  // Peters code: >=
     r = (*bx-*ax) * (*fb-*fc);
     q = (*bx-*cx) * (*fb-*fa);
-    u = *bx - ((*bx-*cx)*q - (*bx-*ax)*r) / 
+    u = (*bx) - ((*bx-*cx)*q - (*bx-*ax)*r) / 
           (2.0 * SIGN( MAX(FABS(q-r), TINY), q-r));
-    ulim = *bx + GLIMIT * (*cx-*bx);
+    ulim = (*bx) + cg_glimit * (*cx-*bx);
     if ((*bx-u) * (u-*cx) > 0.0) {
       fu = fonedim(u);
       ctf++;
       if (fu < *fc) {
-        *ax = *bx;
+        *ax = (*bx);
         *bx = u;
-        *fa = *fb;
+        *fa = (*fb);
         *fb = fu;
 	return ctf;
       } 
@@ -143,7 +155,7 @@ int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc)
         *fc = fu;
         return ctf;
       }
-      u  = *cx + GOLD * (*cx-*bx);
+      u  = (*cx) + GOLD * (*cx-*bx);
       fu = fonedim(u);
       ctf++;
     } 
@@ -162,37 +174,24 @@ int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc)
       ctf++;
     } 
     else {
-      u  = *cx + GOLD * (*cx-*bx);
+      u  = (*cx) + GOLD * (*cx-*bx);
       fu = fonedim(u);
       ctf++;
     }
     SHFT(*ax, *bx, *cx,  u)
     SHFT(*fa, *fb, *fc, fu)
-  }
-
-  /* order *ax, *bx, and *cx in ascending order, including the function vals */
-  if (*ax > *bx) {
-    SHFT(dum,*ax,*bx,dum)
-    SHFT(dum,*fa,*fb,dum)
-  }
-  if (*bx > *cx) {
-    SHFT(dum,*bx,*cx,dum)
-    SHFT(dum,*fb,*fc,dum)
-  }
-  if (*ax > *bx) {
-    SHFT(dum,*ax,*bx,dum)
-    SHFT(dum,*fa,*fb,dum)
-  }
-
+      }
+  
+ 
   return ctf;
 }
 
 #undef GOLD
-#undef GLIMIT
+//#undef GLIMIT
 #undef TINY
-#undef SHFT
+//#undef SHFT
 
 #undef CGOLD
-#undef ZEPS
+//#undef ZEPS
 
 /* #undef ITMAX */

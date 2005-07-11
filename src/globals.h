@@ -488,7 +488,9 @@ EXTERN real *E_kin_ftg;                  /* kin energy of the slices */
 EXTERN int    linmin_maxsteps  INIT(100); /* max number of linmin steps */    
 EXTERN real   linmin_tol  INIT(0.0002);    /* tolerance between 2 linmin steps */
 EXTERN real   linmin_dmax  INIT(0.01);   /* max. search steps in linmin  */ 
-EXTERN real   linmin_dmin  INIT(0.001);   /* min. search steps in linmin  */ 
+EXTERN real   linmin_dmin  INIT(0.001);   /* min. search steps in linmin  */
+EXTERN real   cg_glimit  INIT(100);   
+EXTERN real   cg_zeps  INIT(1e-10);   
 EXTERN int    cg_infolevel INIT(0);     /* cg_infolevel controls verbosity */
 EXTERN int    cg_mode INIT(0);          /* CG mode */
 EXTERN int    cg_fr INIT(0);            /* Fletcher-Reeves mode or not */

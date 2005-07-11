@@ -32,7 +32,8 @@ void reset_cg(void)
   /* initialisations: h, g, f_max */
   calc_forces(0);
   calc_fnorm_g_h();
-  cg_poteng = tot_pot_energy / natoms;
+  //cg_poteng = tot_pot_energy / natoms; calculate with larger numbers
+  cg_poteng = tot_pot_energy;
   old_cg_poteng = cg_poteng;
 }
 
@@ -48,13 +49,20 @@ void cg_step(int steps)
   if (cg_reset_int>0) {
     if (0==steps%cg_reset_int) reset_cg();
   }
-  /* printf("fnorm old = %e ", SQRT( fnorm / nactive ) ); */
+  cg_poteng = tot_pot_energy;
+  old_cg_poteng = cg_poteng;
+
+  //  if ((cg_infolevel>0) && (0==myid)) { printf("fnorm old = %e\n", SQRT( fnorm / nactive ) );}
+  
   linmin();
-  /* printf("new = %e\n", SQRT( fnorm / nactive ) ); */
+  
+  // if ((cg_infolevel>0) && (0==myid)) { printf("fnorm new = %e\n", SQRT( fnorm / nactive ) );}
+  
   cg_calcgamma(); /* calc gg, dgg */
 
   /* sets old_ort = ort, h, g, needs gamma and gets f_max2 */ 
   set_hg();
+  
 }
 
 
@@ -66,7 +74,7 @@ void cg_step(int steps)
 
 int linmin()
 {
-  real alpha_a=0.0, alpha_b, alpha_c, fa, fb, fc;
+  real alpha_a, alpha_b, alpha_c, fa, fb, fc,dum;
   real alphamin;
   static real old_alphamin = 0.1;
   real f_max;
@@ -77,31 +85,77 @@ int linmin()
   /* alpha_b = linmin_dmax/sqrt(f_max2);  got short distances: new scaling*/  
 
   /* scaling: alpha_b should be 0.01 and alpha_c 0.02 */
+  /* this can be achived by setting linmin_dmax to 0.001 */
+
   if(f_max > 100*linmin_dmax) {
     alpha_b = linmin_dmax/f_max;
   }
-  else if (f_max<linmin_dmin) {
-    alpha_b = linmin_dmax *linmin_dmin/f_max;
+  // else if (f_max<linmin_dmin) {
+    //alpha_b = linmin_dmax *linmin_dmin/f_max;
+  else if (old_alphamin<linmin_dmin) {
+    alpha_b=2.0 * linmin_dmin/old_alphamin;
   }
   else {
-    alpha_b = linmin_dmax;
+    alpha_b = 2.0* old_alphamin;  
+    //    alpha_b = linmin_dmax;
   }
-  // this looks like total nonsense to me...
-  //  alpha_b = linmin_dmax;
-  //alpha_b = old_alphamin;
+  
+  
+  // this is anyhow set in mnbrak
   alpha_c = 2.0 * alpha_b;
+  alpha_a = 0.0;
+
   fa = old_cg_poteng;
+  
   fb = fonedim(alpha_b);
 
   /* decide which method to take to braket a mimimum, */
   /* at the moment only mbrak, later zbrak? */
   /* call by reference Num Rec. p297 */
+  
+  if ((cg_infolevel>0) && (0==myid)) {
+  printf("befor mnbrak alpha_a %le alpha_b %le alpha_c %le %.12lf %.12lf %.12lf\n",
+           alpha_a,alpha_b,alpha_c,fa,fb,fc);
+  fflush(stdout);
+  }
+
+  
   iter1 = mnbrak(&alpha_a,&alpha_b,&alpha_c,&fa,&fb,&fc); 
-  if(iter1 <0) {
+
+
+  if (alpha_a > alpha_b) {
+     SHFT(dum,alpha_a,alpha_b,dum)
+     SHFT(dum,fa,fb,dum)
+       }
+  if (alpha_b > alpha_c) {
+    SHFT(dum,alpha_b,alpha_c,dum)
+      SHFT(dum,fb,fc,dum)
+       }
+  if (alpha_a > alpha_b) {
+    SHFT(dum,alpha_a,alpha_b,dum)
+      SHFT(dum,fa,fb,dum)
+      }
+  
+ if ((cg_infolevel>0) && (0==myid)) {
+  printf("after mnbrak alpha_a %le alpha_b %le alpha_c %le %.12lf %.12lf %.12lf\n",
+           alpha_a,alpha_b,alpha_c,fa,fb,fc);
+  fflush(stdout);
+  }
+
+  if(iter1 <1) {
     printf("error in mnbrak %lf %lf %lf %.12lf %.12lf %.12lf\n",
-           &alpha_a,&alpha_b,&alpha_c,&fa,&fb,&fc);
+           alpha_a,alpha_b,alpha_c,fa,fb,fc);
     fflush(stdout);
   }
+
+  
+
+/*   if ((cg_infolevel>0) && (0==myid)) { */
+/*   printf("after mnbrak alpha_a %le alpha_b %le alpha_c %le %.12lf %.12lf %.12lf\n", */
+/*            alpha_a,alpha_b,alpha_c,fa,fb,fc); */
+/*   fflush(stdout); */
+/*   } */
+
 
   /* decide which method to take to search the mimimum */
   if (cg_mode == CGEF) { /* not implemented yet */
@@ -115,8 +169,8 @@ int linmin()
 
   /* info message */
   if ((cg_infolevel>0) && (0==myid)) {
-    printf("iter1= %d iter2 = %d alphamin = %e f_max = %e\n",
-           iter1,iter2,alphamin,f_max);
+    printf("iter1= %d iter2 = %d alphamin = %e f_max = %e fnorm %e  epot %.12e \n",
+           iter1,iter2,alphamin,f_max,sqrt(fnorm/nactive),tot_pot_energy);
     fflush(stdout); 
   }
   return (iter1 + iter2);
@@ -136,7 +190,8 @@ real fonedim(real alpha)
 #endif
   calc_forces(1);
   calc_fnorm();
-  return tot_pot_energy / natoms;
+  // return tot_pot_energy / natoms;
+  return tot_pot_energy;
 }
 
 
