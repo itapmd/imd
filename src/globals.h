@@ -268,8 +268,13 @@ EXTERN real nbl_size   INIT(1.1);    /* neighbor list size */
 EXTERN int  nbl_count  INIT(0);      /* counting neighbor list rebuild */
 #endif
 
+/* quantities relevant for checking the relaxation process */
 /* square of global force vector f=(f1.x, f1.y,...,fn.z) */
+EXTERN real old_epot INIT(0.0);
+EXTERN real xnorm INIT(0.0);  
+EXTERN real x_max2 INIT(0.0);  
 EXTERN real fnorm INIT(0.0);  
+EXTERN real fnorm_old INIT(0.0);  
 EXTERN real f_max INIT(0.0);  
 EXTERN real f_max2 INIT(0.0);  
 /* scalar product of global force and momentum vectors */ 

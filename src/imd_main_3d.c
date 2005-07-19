@@ -34,7 +34,7 @@ void main_loop(void)
   int  steps_diff = steps_max - steps_min;
   int  deform_int = 0, fbc_int = 0, do_fbc_incr = 0, is_relaxed = 0;
   int  have_fbc_incr = 0;
-  real dtemp, dshock_speed, old_epot = 0.0;
+  real dtemp, dshock_speed;
   vektor d_pressure, *fbc_df;
   real tmpvec1[DIM], tmpvec2[DIM];
 #ifdef TWOD
@@ -141,6 +141,8 @@ void main_loop(void)
 #ifdef CG
   if (ensemble == ENS_CG) reset_cg();
 #endif
+
+
 
   /* simulation loop */
   for (steps=steps_min; steps <= steps_max; ++steps) {

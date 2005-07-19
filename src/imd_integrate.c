@@ -32,14 +32,17 @@
 void move_atoms_nve(void)
 {
   int k;
-  real tmpvec1[7], tmpvec2[7], pnorm; /* increased tempvec for DAMP */
+  real tmpvec1[8], tmpvec2[8], pnorm; /* increased tempvec for DAMP */
   real tmp_f_max2=0.0;
+  real tmp_x_max2=0.0;
+
   static int count = 0;
 
   /* epitax may call this routine for other ensembles,
      in which case we do not reset tot_kin_energy */
   if ((ensemble==ENS_NVE) || (ensemble==ENS_GLOK)) tot_kin_energy = 0.0;
   fnorm   = 0.0;
+  xnorm   = 0.0;
   pnorm   = 0.0;
   PxF     = 0.0;
   omega_E = 0.0;
@@ -291,6 +294,16 @@ void move_atoms_nve(void)
         ORT(p,i,Z) += tmp * IMPULS(p,i,Z);
 #endif
 
+#ifdef RELAXINFO
+	xnorm   += tmp * SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+     /* determine the biggest force component */
+      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,X)),tmp_x_max2);
+      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,Y)),tmp_x_max2);
+#ifndef TWOD
+      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,Z)),tmp_x_max2);
+#endif
+#endif
+
 #ifdef SHOCK
 	if (shock_mode == 3) {
 
@@ -408,15 +421,17 @@ void move_atoms_nve(void)
   tmpvec1[2] = PxF;
   tmpvec1[3] = omega_E;
   tmpvec1[4] = pnorm;
+  tmpvec1[5] = xnorm;
+
 #ifdef DAMP
-  tmpvec1[5] = tot_kin_energy_damp;
-  tmpvec1[6] = n_damp;
-  MPI_Allreduce( tmpvec1, tmpvec2, 7, REAL, MPI_SUM, cpugrid);
-  tot_kin_energy_damp = tmpvec2[5];
-  n_damp =  tmpvec2[6];
+  tmpvec1[6] = tot_kin_energy_damp;
+  tmpvec1[7] = n_damp;
+  MPI_Allreduce( tmpvec1, tmpvec2, 8, REAL, MPI_SUM, cpugrid);
+  tot_kin_energy_damp = tmpvec2[6];
+  n_damp =  tmpvec2[7];
 #else
   /*  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid); */
-  MPI_Allreduce( tmpvec1, tmpvec2, 7, REAL, MPI_SUM, cpugrid); 
+  MPI_Allreduce( tmpvec1, tmpvec2, 8, REAL, MPI_SUM, cpugrid); 
 #endif
 
   tot_kin_energy = tmpvec2[0];
@@ -424,14 +439,20 @@ void move_atoms_nve(void)
   PxF            = tmpvec2[2];
   omega_E        = tmpvec2[3];
   pnorm          = tmpvec2[4];
+  xnorm          = tmpvec2[5];
 
 #ifdef FNORM
   MPI_Allreduce( &tmp_f_max2, &f_max2, 1, REAL, MPI_MAX, cpugrid);
 #endif
-
+#ifdef RELAXINFO
+ MPI_Allreduce( &tmp_x_max2, &x_max2, 1, REAL, MPI_MAX, cpugrid);
+#endif
 #else
 #ifdef FNORM
   f_max2 = tmp_f_max2;
+#endif
+#ifdef RELAXINFO
+  x_max2 = tmp_x_max2;
 #endif
 
 #endif
@@ -471,12 +492,14 @@ void move_atoms_nve(void)
 void move_atoms_mik(void)
 {
   int k;
-  real tmpvec1[2], tmpvec2[2];
+  real tmpvec1[3], tmpvec2[3];
   real tmp_f_max2=0.0;
+  real tmp_x_max2=0.0;
 
   static int count = 0;
   tot_kin_energy = 0.0;
   fnorm   = 0.0;
+  xnorm   = 0.0;
 
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
@@ -595,6 +618,15 @@ void move_atoms_mik(void)
           ORT(p,i,Z) += tmp * IMPULS(p,i,Z);
 #endif
         }
+#ifdef RELAXINFO
+	xnorm   += tmp * SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+     /* determine the biggest force component */
+      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,X)),tmp_x_max2);
+      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,Y)),tmp_x_max2);
+#ifndef TWOD
+      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,Z)),tmp_x_max2);
+#endif
+#endif
         kin_energie_2 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
 
         /* sum up kinetic energy on this CPU */ 
@@ -617,19 +649,26 @@ void move_atoms_mik(void)
   /* add up results from different CPUs */
   tmpvec1[0] = tot_kin_energy;
   tmpvec1[1] = fnorm;
+  tmpvec1[2] = xnorm;
 
-  MPI_Allreduce( tmpvec1, tmpvec2, 2, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( tmpvec1, tmpvec2, 3, REAL, MPI_SUM, cpugrid);
 
   tot_kin_energy = tmpvec2[0];
   fnorm          = tmpvec2[1];
+  xnorm          = tmpvec2[2];
 
 #ifdef FNORM
   MPI_Allreduce( &tmp_f_max2, &f_max2, 1, REAL, MPI_MAX, cpugrid);
 #endif
-
+#ifdef RELAXINFO
+  MPI_Allreduce( &tmp_x_max2, &x_max2, 1, REAL, MPI_MAX, cpugrid);
+#endif
 #else
 #ifdef FNORM
   f_max2 = tmp_f_max2;
+#endif
+#ifdef RELAXINFO
+  x_max2 = tmp_x_max2;
 #endif
 
 #endif
@@ -658,12 +697,13 @@ void move_atoms_mik(void)
 void move_atoms_nvt(void)
 {
   int k;
-  real tmpvec1[5], tmpvec2[5], ttt;
+  real tmpvec1[6], tmpvec2[6], ttt;
 
   real E_kin_1 = 0.0, E_kin_2 = 0.0;
   real reibung, eins_d_reib;
   real E_rot_1 = 0.0, E_rot_2 = 0.0;
- real tmp_f_max2=0.0;
+  real tmp_f_max2=0.0;
+  real tmp_x_max2=0.0;
 #ifdef UNIAX
   real reibung_rot,  eins_d_reib_rot;
 #endif
@@ -811,7 +851,15 @@ void move_atoms_nvt(void)
 #ifndef TWOD
         ORT(p,i,Z) += tmp * IMPULS(p,i,Z);
 #endif
-
+#ifdef RELAXINFO
+	xnorm   += tmp *  SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+     /* determine the biggest force component */
+      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,X)),tmp_x_max2);
+      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,Y)),tmp_x_max2);
+#ifndef TWOD
+      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,Z)),tmp_x_max2);
+#endif
+#endif
 #ifdef UNIAX
         cross.x = DREH_IMPULS(p,i,Y) * ACHSE(p,i,Z)
                 - DREH_IMPULS(p,i,Z) * ACHSE(p,i,Y);
@@ -857,25 +905,30 @@ void move_atoms_nvt(void)
   tmpvec1[2] = E_rot_2;
   tmpvec1[3] = fnorm;
   tmpvec1[4] = omega_E;
+  tmpvec1[5] = xnorm;
 
-  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( tmpvec1, tmpvec2, 6, REAL, MPI_SUM, cpugrid);
 
   tot_kin_energy = tmpvec2[0];
   E_kin_2        = tmpvec2[1];
   E_rot_2        = tmpvec2[2];
   fnorm          = tmpvec2[3];
   omega_E        = tmpvec2[4];
-
+  xnorm          = tmpvec2[5];
 
 #ifdef FNORM
   MPI_Allreduce( &tmp_f_max2, &f_max2, 1, REAL, MPI_MAX, cpugrid);
 #endif
-
+#ifdef RELAXINFO
+  MPI_Allreduce( &tmp_x_max2, &x_max2, 1, REAL, MPI_MAX, cpugrid);
+#endif
 #else
 #ifdef FNORM
   f_max2 = tmp_f_max2;
 #endif
-
+#ifdef RELAXINFO
+  x_max2 = tmp_x_max2;
+#endif
 #endif
 
   /* time evolution of constraints */
@@ -2595,8 +2648,10 @@ void move_atoms_nvx(void)
 void move_atoms_cg(real alpha)
 {
   int k;
-
+  real tmp_x_max2 = 0.0;
+  real tmpvec1[1], tmpvec2[1];
   /* loop over all cells */
+  xnorm=0;
   for (k=0; k<NCELLS; ++k) {
 
     int  i, j, sort;
@@ -2622,8 +2677,38 @@ void move_atoms_cg(real alpha)
 #ifndef TWOD
       ORT(p,i,Z) = OLD_ORT(p,i,Z) + alpha * CG_H(p,i,Z);
 #endif
+
+#ifdef RELAXINFO
+      xnorm   += alpha * alpha *  SPRODN( &CG_H(p,i,X), &CG_H(p,i,X) );
+     /* determine the biggest force component */
+      tmp_x_max2 = MAX( alpha * alpha *SQR(CG_H(p,i,X)),tmp_x_max2);
+      tmp_x_max2 = MAX( alpha * alpha *SQR(CG_H(p,i,Y)),tmp_x_max2);
+#ifndef TWOD
+      tmp_x_max2 = MAX( alpha * alpha *SQR(CG_H(p,i,Z)),tmp_x_max2);
+#endif
+
+#endif
+
     }
   }
+
+#ifdef RELAXINFO
+#ifdef MPI
+  tmpvec1[0] = xnorm;
+  MPI_Allreduce( tmpvec1, tmpvec2, 1, REAL, MPI_SUM, cpugrid); 
+  xnorm          = tmpvec2[0];
+  MPI_Allreduce( &tmp_x_max2, &x_max2, 1, REAL, MPI_MAX, cpugrid);
+#else
+  x_max2 = tmp_x_max2;
+#endif
+#endif
+ if ((cg_infolevel>0) && (0==myid)) 
+{
+  printf("moveatoms, alpha %.12e , xmax %.12e\n",alpha,SQRT(x_max2));fflush(stdout);
+}
+
+
+
 }
 
 #else

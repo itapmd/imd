@@ -33,7 +33,7 @@ void reset_cg(void)
   calc_forces(0);
   calc_fnorm_g_h();
   //cg_poteng = tot_pot_energy / natoms; calculate with larger numbers
-  cg_poteng = tot_pot_energy;
+  cg_poteng = tot_pot_energy  ;
   old_cg_poteng = cg_poteng;
 }
 
@@ -49,7 +49,7 @@ void cg_step(int steps)
   if (cg_reset_int>0) {
     if (0==steps%cg_reset_int) reset_cg();
   }
-  cg_poteng = tot_pot_energy;
+  cg_poteng = tot_pot_energy ;
   old_cg_poteng = cg_poteng;
 
   //  if ((cg_infolevel>0) && (0==myid)) { printf("fnorm old = %e\n", SQRT( fnorm / nactive ) );}
@@ -94,7 +94,7 @@ int linmin()
     //alpha_b = linmin_dmax *linmin_dmin/f_max;
   else if (old_alphamin<linmin_dmin) {
     // alpha_b=2.0 * linmin_dmin/old_alphamin;
-    alpha_b=2.0 * 0.1;
+    alpha_b=0.05;
   }
   else {
     alpha_b = 2.0* old_alphamin;  
@@ -171,7 +171,7 @@ int linmin()
   /* info message */
   if ((cg_infolevel>0) && (0==myid)) {
     printf("iter1= %d iter2 = %d alphamin = %e f_max = %e fnorm %e  epot %.12e \n",
-           iter1,iter2,alphamin,f_max,sqrt(fnorm/nactive),tot_pot_energy);
+           iter1,iter2,alphamin,f_max,sqrt(fnorm/nactive),tot_pot_energy );
     fflush(stdout); 
   }
   return (iter1 + iter2);
@@ -192,7 +192,7 @@ real fonedim(real alpha)
   calc_forces(1);
   calc_fnorm();
   // return tot_pot_energy / natoms;
-  return tot_pot_energy;
+  return tot_pot_energy ;
 }
 
 
@@ -363,6 +363,10 @@ void cg_calcgamma(void)
   dgg = tmp_dgg;
 #endif
   cg_gamma = dgg/gg;
+  // if ((cg_infolevel>0) && (0==myid)) 
+  //{
+  //printf("cg_gamma %.12e   gg %.12e\n",cg_gamma,gg);fflush(stdout);
+  //}
 
 }
 

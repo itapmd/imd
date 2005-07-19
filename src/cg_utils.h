@@ -124,13 +124,21 @@ int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc)
     SHFT(dum, *fb, *fa, dum)
       }
   *cx = (*bx) + GOLD * (*bx-*ax);
-  
+  if( (*bx-*ax) <= 1e-4)
+    {
+      *cx = (*bx) + 0.05;
+    }
+
   /* changed to num rec., make sure i'm not going in the wrong direction */
   if (*cx <0.0)
     {
       *cx = (*bx) - 1.0/GOLD * (*bx-*ax);
     }
-
+  if (*cx >=1.0)
+    {
+      *cx = 1.0;
+    }
+  
   *fc = fonedim(*cx);
   ctf = 1;
 
