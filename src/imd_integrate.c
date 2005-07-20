@@ -295,12 +295,12 @@ void move_atoms_nve(void)
 #endif
 
 #ifdef RELAXINFO
-	xnorm   += tmp * SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+	xnorm   += tmp * tmp * SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
      /* determine the biggest force component */
-      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,X)),tmp_x_max2);
-      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,Y)),tmp_x_max2);
+      tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,X)),tmp_x_max2);
+      tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,Y)),tmp_x_max2);
 #ifndef TWOD
-      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,Z)),tmp_x_max2);
+      tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,Z)),tmp_x_max2);
 #endif
 #endif
 
@@ -619,12 +619,12 @@ void move_atoms_mik(void)
 #endif
         }
 #ifdef RELAXINFO
-	xnorm   += tmp * SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+	xnorm   += tmp * tmp* SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
      /* determine the biggest force component */
-      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,X)),tmp_x_max2);
-      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,Y)),tmp_x_max2);
+      tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,X)),tmp_x_max2);
+      tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,Y)),tmp_x_max2);
 #ifndef TWOD
-      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,Z)),tmp_x_max2);
+      tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,Z)),tmp_x_max2);
 #endif
 #endif
         kin_energie_2 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
@@ -852,12 +852,12 @@ void move_atoms_nvt(void)
         ORT(p,i,Z) += tmp * IMPULS(p,i,Z);
 #endif
 #ifdef RELAXINFO
-	xnorm   += tmp *  SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+	xnorm   += tmp * tmp* SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
      /* determine the biggest force component */
-      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,X)),tmp_x_max2);
-      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,Y)),tmp_x_max2);
+      tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,X)),tmp_x_max2);
+      tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,Y)),tmp_x_max2);
 #ifndef TWOD
-      tmp_x_max2 = tmp* MAX(SQR(IMPULS(p,i,Z)),tmp_x_max2);
+      tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,Z)),tmp_x_max2);
 #endif
 #endif
 #ifdef UNIAX
