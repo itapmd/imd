@@ -340,11 +340,16 @@ void main_loop(void)
     /* "global convergence": set momenta to 0 if P*F < 0 (global vectors) */
     if (ensemble == ENS_GLOK) {
       real ekin = 2 * tot_kin_energy / nactive;
-      if ((PxF < 0) || (ekin > glok_ekin_threshold)) {
+      if ((PxF < 0.0) || (ekin > glok_ekin_threshold)) {
         for (k=0; k<NCELLS; ++k) {
           cell *p;
           p = CELLPTR(k);
           for (i=0; i<p->n; ++i) {
+	    ORT(p,i,X) -= timestep / MASSE(p,i) * IMPULS(p,i,X);
+	    ORT(p,i,Y) -= timestep / MASSE(p,i) * IMPULS(p,i,Y);
+#ifndef TWOD
+	    ORT(p,i,Z) -= timestep / MASSE(p,i) * IMPULS(p,i,Z);
+#endif
             IMPULS(p,i,X) = 0.0;
             IMPULS(p,i,Y) = 0.0;
 #ifndef TWOD

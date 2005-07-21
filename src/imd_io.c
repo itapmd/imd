@@ -1421,7 +1421,7 @@ void write_eng_file(int steps)
 #else
   fprintf(eng_file, "%e",     (double) (steps * timestep));
 #endif
-  fprintf(eng_file, " %.16e", (double) Epot);
+  fprintf(eng_file, " %.18e", (double) Epot);
   fprintf(eng_file, format,   (double) Temp);
 #if defined(STM) || defined(FRAC)
   fprintf(eng_file, format,   (double) Temp_stadium);
@@ -1451,7 +1451,7 @@ void write_eng_file(int steps)
  
 #endif
 #ifdef RELAXINFO
-  fprintf(eng_file, format,   (double)  Epot - old_epot);
+  fprintf(eng_file, " %.21e",   (double)  Epot - old_epot);
   fprintf(eng_file, format,   (double) SQRT( xnorm / nactive ) );
   fprintf(eng_file, format,   (double) SQRT( x_max2 ) );
 #endif
