@@ -381,6 +381,18 @@ EXTERN real end_temp INIT(0.0);        /* Temperature and at of simulation */
 #ifdef GLOK
 EXTERN real   glok_ekin_threshold INIT(100.0); /* threshold for ekin */  
 #endif
+#ifdef ADAPTGLOK
+EXTERN real glok_incfac      INIT(1.02);     
+EXTERN real glok_decfac      INIT(0.5);     
+EXTERN real glok_maxtimestep INIT(0.025);   
+EXTERN int  glok_minsteps    INIT(100000000); /* threshold for minsteps */  
+EXTERN int  nPxF             INIT(0);  
+EXTERN int  min_nPxF         INIT(0);  
+#endif 
+
+EXTERN real glok_fmaxcrit    INIT(10000);
+
+
 #ifdef DEFORM
 EXTERN int    max_deform_int INIT(0);   /* max. steps between 2 shear steps */
 EXTERN real   deform_size INIT(1.0);    /* scale factor for deformation */

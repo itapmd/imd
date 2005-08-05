@@ -113,6 +113,9 @@
 #
 # Variables remaining empty need not be mentioned.
 
+#DATEOFVERSION=$( shell ll -rt  --time-style +%m\/%d\/%y:%H:%M *c *h Makefile | grep -v version.h | tail -1 | awk '{}{printf("#define LASTCHANGE \"%s\"\n",$6)}' > version.h  )
+
+#DATEOFVERSION=$(shell bash version.bsh)
 
 ###########################################################################
 #
@@ -813,6 +816,7 @@ ifneq (,$(findstring mik,${MAKETARGET}))
 CFLAGS += -DMIK
 endif
 
+
 # CG
 ifneq (,$(strip $(findstring cg,${MAKETARGET})))
 SOURCES += ${CGSOURCES}
@@ -921,6 +925,10 @@ endif
 
 ifneq (,$(findstring glok,${MAKETARGET}))
 CFLAGS += -DGLOK
+endif
+
+ifneq (,$(findstring adaptglok,${MAKETARGET}))
+CFLAGS += -DADAPTGLOK
 endif
 
 ifneq (,$(findstring efilter,${MAKETARGET}))

@@ -37,6 +37,11 @@ void main_loop(void)
   real dtemp, dshock_speed;
   vektor d_pressure, *fbc_df;
   real tmpvec1[DIM], tmpvec2[DIM];
+#ifdef GLOK
+  int glok_int   = 0;
+  int glok_start = steps_min; 
+#endif
+
 #ifdef TWOD
   vektor nullv={0.0,0.0};
 #else
@@ -339,8 +344,31 @@ void main_loop(void)
 #ifdef GLOK 
     /* "global convergence": set momenta to 0 if P*F < 0 (global vectors) */
     if (ensemble == ENS_GLOK) {
+      glok_int   = steps - glok_start;
+
+#ifdef ADAPTGLOK
+      /* increase the timestep, but not immediately after P*F was < 0 */ 
+       if ( (nPxF>= min_nPxF)  && (glok_int > glok_minsteps))
+	{
+	  timestep = (timestep * glok_incfac > glok_maxtimestep)? glok_maxtimestep : timestep * glok_incfac;
+	}
+#endif
+
       real ekin = 2 * tot_kin_energy / nactive;
-      if ((PxF < 0.0) || (ekin > glok_ekin_threshold)) {
+
+      if ((PxF < 0.0) || (ekin > glok_ekin_threshold)  || (sqrt(f_max2) >= glok_fmaxcrit) && steps >5) {
+
+#ifdef ADAPTGLOK
+	if (PxF < 0.0)
+	  nPxF++;
+	/* decrease the timestep, but only when it has been increased before */	
+	if (glok_int > glok_minsteps )
+	  {
+	    if (timestep > 0.0005)
+	      timestep *=glok_decfac;
+	  }
+#endif
+
         for (k=0; k<NCELLS; ++k) {
           cell *p;
           p = CELLPTR(k);
@@ -357,7 +385,7 @@ void main_loop(void)
 #endif
           }
         }
-        write_eng_file(steps); 
+        glok_start = steps;
       }
     }
 #endif
@@ -449,7 +477,7 @@ void main_loop(void)
        write_config_select( steps/nb_checkpt_int, "nb",
                             write_atoms_nb, write_header_nb);
 #endif
-#ifdef ATDIST
+#ifdef TADIST
     if ((atdist_pos_int > 0) && (0 == steps % atdist_pos_int))
        write_config_select( steps / atdist_pos_int, "cpt", 
                             write_atoms_atdist_pos, write_header_atdist_pos);
@@ -513,7 +541,7 @@ void main_loop(void)
       if (delta_epot < 0) delta_epot = -delta_epot;
 
       if ((ekin  <  ekin_threshold) || (fnorm2 < fnorm_threshold) || 
-          (f_max < f_max_threshold) || (delta_epot < delta_epot_threshold))
+          (delta_epot < delta_epot_threshold))
 	{ 
 	  is_relaxed = 1;
 	}

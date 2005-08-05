@@ -35,7 +35,6 @@ void move_atoms_nve(void)
   real tmpvec1[8], tmpvec2[8], pnorm; /* increased tempvec for DAMP */
   real tmp_f_max2=0.0;
   real tmp_x_max2=0.0;
-
   static int count = 0;
 
   /* epitax may call this routine for other ensembles,
@@ -151,7 +150,23 @@ void move_atoms_nve(void)
 #endif
 
 #ifdef FNORM
-	fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+		fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+/* 	tmpkraft.x =KRAFT(p,i,X); */
+/* 	tmpkraft.y =KRAFT(p,i,Y); */
+/* 	tmpkraft.z =KRAFT(p,i,Z); */
+/*        if( (fbc_forces + sort)->x != 0.0) */
+/* 	 { */
+/* 	   tmpkraft.x =0.0; */
+/* 	 } */
+/*        if( (fbc_forces + sort)->y != 0.0) */
+/* 	 { */
+/* 	   tmpkraft.y =0.0; */
+/* 	 } */
+/*        if( (fbc_forces + sort)->z != 0.0) */
+/* 	 { */
+/* 	   tmpkraft.z =0.0; */
+/* 	 } */
+/*        fnorm += tmpkraft.x * tmpkraft.x + tmpkraft.y * tmpkraft.y + tmpkraft.z * tmpkraft.z; */
      /* determine the biggest force component */
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
@@ -257,8 +272,33 @@ void move_atoms_nve(void)
 	/* "Globale Konvergenz": like mik, just with the global 
            force and momentum vectors */
 #ifdef GLOK
-        PxF   += SPRODN( &IMPULS(p,i,X), &KRAFT(p,i,X) );
-        pnorm += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+       /* try not to account for the force boundary conditions */
+
+/*        tmpimpuls.x =IMPULS(p,i,X); */
+/*        tmpimpuls.y =IMPULS(p,i,Y); */
+/*        tmpimpuls.z =IMPULS(p,i,Z); */
+/*        tmpkraft.x =KRAFT(p,i,X); */
+/*        tmpkraft.y =KRAFT(p,i,Y); */
+/*        tmpkraft.z =KRAFT(p,i,Z); */
+/*        if( (fbc_forces + sort)->x != 0.0) */
+/* 	 { */
+/* 	   tmpimpuls.x=0.0; */
+/* 	   tmpkraft.x =0.0; */
+/* 	 } */
+/*        if( (fbc_forces + sort)->y != 0.0) */
+/* 	 { */
+/* 	   tmpimpuls.y=0.0; */
+/* 	   tmpkraft.y =0.0; */
+/* 	 } */
+/*        if( (fbc_forces + sort)->z != 0.0) */
+/* 	 { */
+/* 	   tmpimpuls.z=0.0; */
+/* 	   tmpkraft.z =0.0; */
+/* 	 } */
+/*        PxF += tmpimpuls.x * tmpkraft.x + tmpimpuls.y * tmpkraft.y + tmpimpuls.z * tmpkraft.z; */
+/*        pnorm +=  tmpimpuls.x * tmpimpuls.x + tmpimpuls.y * tmpimpuls.y + tmpimpuls.z * tmpimpuls.z; */
+       PxF   += SPRODN( &IMPULS(p,i,X), &KRAFT(p,i,X) );
+       pnorm += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
 #endif
 
 #ifdef UNIAX
@@ -285,6 +325,7 @@ void move_atoms_nve(void)
 #ifdef UNIAX
         tot_kin_energy += (rot_energie_1 + rot_energie_2) / (4 * uniax_inert);
 #endif	  
+
 
         /* new positions */
         tmp = timestep / MASSE(p,i);
@@ -495,11 +536,18 @@ void move_atoms_mik(void)
   real tmpvec1[3], tmpvec2[3];
   real tmp_f_max2=0.0;
   real tmp_x_max2=0.0;
+  real mass = 0.006084;
 
   static int count = 0;
-  tot_kin_energy = 0.0;
+ 
+
+  /* implementation of adaptive mik time step */
+
+
+ tot_kin_energy = 0.0;
   fnorm   = 0.0;
   xnorm   = 0.0;
+
 
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */

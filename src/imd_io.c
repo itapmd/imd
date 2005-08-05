@@ -1250,6 +1250,7 @@ void write_eng_file_header()
 
 #ifdef RELAX
     fprintf(fl, "# nfc ");
+    fprintf(fl, "timestep ");
 #else
     fprintf(fl, "# time ");
 #endif
@@ -1418,6 +1419,7 @@ void write_eng_file(int steps)
 
 #ifdef RELAX
   fprintf(eng_file, "%d",     nfc);
+  fprintf(eng_file, " %f",    timestep);
 #else
   fprintf(eng_file, "%e",     (double) (steps * timestep));
 #endif

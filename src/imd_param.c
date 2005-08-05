@@ -1207,7 +1207,34 @@ void getparamfile(char *paramfname, int sim)
       /* threshold for ekin */
       getparam(token,&glok_ekin_threshold,PARAM_REAL,1,1);
     }
+ 
 #endif
+#ifdef ADAPTGLOK
+   else if (strcasecmp(token,"glok_minsteps")==0) {
+      /* minimum of steps before increasing the timestep */
+      getparam(token,&glok_minsteps,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"min_nPxF")==0) {
+      /* minimum gloks before increasing the timestep */
+      getparam(token,&min_nPxF,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"glok_fmaxcrit")==0) {
+      /* critical max. force component  */
+      getparam(token,&glok_fmaxcrit,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"glok_incfac")==0) {
+      /* factor to increase the timestep */
+      getparam(token,&glok_incfac,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"glok_decfac")==0) {
+      /* factor to increase the timestep */
+      getparam(token,&glok_decfac,PARAM_REAL,1,1);
+    }
+   else if (strcasecmp(token,"glok_maxtimestep")==0) {
+      /* max timestep */
+      getparam(token,&glok_maxtimestep,PARAM_REAL,1,1);
+    }
+#endif 
 #ifdef DEFORM
     else if (strcasecmp(token,"max_deform_int")==0) {
       /* max nr of steps between shears */
@@ -2625,6 +2652,14 @@ void broadcast_params() {
 #endif
 #ifdef GLOK
   MPI_Bcast( &glok_ekin_threshold, 1, REAL, 0, MPI_COMM_WORLD); 
+#endif
+#ifdef ADAPTGLOK
+  MPI_Bcast( &glok_fmaxcrit, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &glok_incfac, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &glok_decfac, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &glok_maxtimestep, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &glok_minsteps, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &min_nPxF, 1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 #ifdef RIGID
  MPI_Bcast( &nsuperatoms,         1, MPI_INT, 0, MPI_COMM_WORLD);
