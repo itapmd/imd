@@ -663,6 +663,10 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
   fprintf(out,"sscount \t%d\n",sscount);
   fprintf(out,"nfc \t%d\n",nfc);
 #endif
+#ifdef ADAPTGLOK
+  fprintf(out,"timestep \t%d\n",timestep);
+  fprintf(out,"glok_int \t%d\n",glok_int);
+#endif
   fprintf(out,"box_x \t%.16f %.16f %.16f\n",box_x.x,box_x.y,box_x.z);
   fprintf(out,"box_y \t%.16f %.16f %.16f\n",box_y.x,box_y.y,box_y.z);
   fprintf(out,"box_z \t%.16f %.16f %.16f\n",box_z.x,box_z.y,box_z.z);

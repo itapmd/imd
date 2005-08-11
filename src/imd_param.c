@@ -636,8 +636,8 @@ void getparamfile(char *paramfname, int sim)
 	error("Cannot allocate memory for deform_base\n");
       for(k=0; k<vtypes; k++)
        *(deform_base+k) = nullv;
-#endif
-    }
+#endif 
+   }
 #ifdef RIGID
     else if (strcasecmp(token,"rigid")==0) {
       /* virtual types forming superparticle */
@@ -1233,6 +1233,10 @@ void getparamfile(char *paramfname, int sim)
    else if (strcasecmp(token,"glok_maxtimestep")==0) {
       /* max timestep */
       getparam(token,&glok_maxtimestep,PARAM_REAL,1,1);
+    }
+   else if (strcasecmp(token,"glok_int")==0) {
+      /* only needed for restarting */
+      getparam(token,&glok_int,PARAM_INT,1,1);
     }
 #endif 
 #ifdef DEFORM
@@ -2660,6 +2664,7 @@ void broadcast_params() {
   MPI_Bcast( &glok_maxtimestep, 1, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &glok_minsteps, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &min_nPxF, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &glok_int, 1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 #ifdef RIGID
  MPI_Bcast( &nsuperatoms,         1, MPI_INT, 0, MPI_COMM_WORLD);

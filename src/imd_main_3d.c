@@ -38,7 +38,6 @@ void main_loop(void)
   vektor d_pressure, *fbc_df;
   real tmpvec1[DIM], tmpvec2[DIM];
 #ifdef GLOK
-  int glok_int   = 0;
   int glok_start = steps_min; 
 #endif
 
