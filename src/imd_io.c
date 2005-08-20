@@ -1717,7 +1717,7 @@ void write_header_config(FILE *out)
   fprintf(out, "#F %c 1 1 1 %d %d 1\n", c, 2*DIM, 2*DIM);
 #else
   fprintf(out, "#F %c 1 1 1 %d %d ", c, DIM, DIM);
-#ifdef EAM2
+#if defined(EAM2) && !defined(NORHOH)
   atompar++;
 #ifdef EEAM
   atompar++;
@@ -1749,7 +1749,7 @@ void write_header_config(FILE *out)
 #else
   fprintf(out, " Epot" );
 #endif
-#ifdef EAM2
+#if defined(EAM2) && !defined(NORHOH)
   fprintf(out, " eam_rho" );
 #ifdef EEAM
   fprintf(out, " eam_p");

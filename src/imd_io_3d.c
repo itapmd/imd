@@ -615,7 +615,8 @@ void write_atoms_config(FILE *out)
 #ifdef ORDPAR
       len += sprintf(outbuf+len, " %d",  NBANZ(p,i));
 #endif
-#ifdef EAM2
+
+#if defined(EAM2) && !defined(NORHOH)
       len += sprintf(outbuf+len, RESOL1, EAM_RHO(p,i));
 #ifdef EEAM
       len += sprintf(outbuf+len, RESOL1, EAM_P(p,i));

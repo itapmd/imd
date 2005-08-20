@@ -84,7 +84,8 @@ int curline; /* number of current line */
 */
 
 static int getparam(char *param_name, void *param, PARAMTYPE ptype, 
-             int pnum_min, int pnum_max)
+		    int pnum_min, int pnum_max)
+
 {
   static char errmsg[256];
   char *str;

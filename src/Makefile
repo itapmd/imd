@@ -923,6 +923,10 @@ ifneq (,$(findstring relaxinfo,${MAKETARGET}))
 CFLAGS += -DRELAXINFO
 endif
 
+ifneq (,$(findstring norhoh,${MAKETARGET}))
+CFLAGS += -DNORHOH
+endif
+
 ifneq (,$(findstring glok,${MAKETARGET}))
 CFLAGS += -DGLOK
 endif
