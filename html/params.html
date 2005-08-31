@@ -23,6 +23,9 @@ ensemble        # simulation ensemble (MD integrator)
 maxsteps	# step number at which simulation phase ends
 maxwalltime     # maximum allowed walltime in seconds; if exceeded (and > 0),
                 # IMD writes a checkpoint and stops
+watch_int	# if > 0, check every watch_int steps for the existence
+                # of an empty file "write". If found, write a checkpoint
+	        # and continue.
 stop_int        # if > 0, check every stop_int steps for the existence
                 # of a file "stop". If found, write a checkpoint and stop.
 startstep       # starting step number (default 0)
