@@ -139,6 +139,8 @@ are supported:</p>
 			      (L1<sub>2</sub>) (3D)                  </td></tr>
 <tr><td>_cuau3      </td><td> CuAu<sub>3</sub> structure 
 			      (L1<sub>2</sub>) (3D)                  </td></tr>
+<tr><td>_d03        </td><td> D0<sub>3</sub> structure 
+                              (AlFe<sub>3</sub>) (3D)                </td></tr>
 <tr><td>_diamond    </td><td> cubic diamond structure (3D)           </td></tr>
 <tr><td>_zincblende </td><td> zincblende structure (3D)              </td></tr>
 <tr><td>_lav        </td><td> C15 Laves structure (3D)               </td></tr>
@@ -155,7 +157,7 @@ the parameter <tt>masses</tt>, which requires <tt>ntypes</tt>
 real values.</p>
 
 <p> For the cubic crystal structures _fcc, _bcc, _nacl, _b2, _cu3au,
-_cuau3, _diamond, _zincblende, and _lav, the three components of the
+_cuau3, _d03, _diamond, _zincblende, and _lav, the three components of the
 parameter <tt>box_param</tt> specify the number of conventional cubic
 unit cells in each direction. The size of such a cubic unit cell is
 given by the parameter <tt>box_unit</tt>, which defaults to
@@ -181,7 +183,7 @@ distance.</p>
 
 <p>By default, the atoms of the elemental structures _hex, _fcc, _bcc,
 and _diamond get the type number 0 while the atoms of the binary
-structures _nacl, _b2, _cu3au, _cuau3, and _zincblende get the type
+structures _nacl, _b2, _cu3au, _cuau3, _d03, and _zincblende get the type
 numbers 0 and 1. With the IMD parameter <tt>types</tt>, these type
 numbers can be changed by specifying a single integer
 (&lt; <tt>ntypes</tt>) in the case of the elemental structures and two
