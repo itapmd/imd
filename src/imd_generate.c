@@ -34,6 +34,7 @@
 * _b2         -- generates B2 structure
 * _l12        -- generates L1_2 structure
 * _nacl       -- generates NaCl structure
+* _d03        -- generates D0_3 structure (AlFe3)
 * _diamond    -- generates cubic diamond structure
 * _zincblende -- generates zincblende structure
 * _lav        -- generates a cubic Laves structure C15 (MgCu2)
@@ -96,6 +97,9 @@ void generate_atoms(str255 mode)
   } else if (0 == strcmp(mode,"_cuau3")) { /* L1_2, CuAu3 */
     init_cubic();
     generate_fcc(7);
+  } else if (0 == strcmp(mode,"_d03")) { /* D0_3, AlFe3 */
+    init_cubic();
+    generate_fcc(8);
   } else if (0 == strcmp(mode,"_lav")) {   /* C15 Laves */
     init_cubic();
     generate_lav();
@@ -302,7 +306,7 @@ void generate_fcc(int maxtyp)
     bp.z = box_param.z * 2; 
     bu   = box_unit    / 2;
   }
-  /* diamond and zincblende */
+  /* diamond, zincblende, and D0_3 */
   else {
     bp.x = box_param.x * 4; 
     bp.y = box_param.y * 4; 
@@ -327,7 +331,7 @@ void generate_fcc(int maxtyp)
   /* estimate number of atoms per CPU, and allocate cell */
   count = (max.x-min.x) * (max.y-min.y) * (max.z-min.z);
   if ((maxtyp==0) || (maxtyp==6) || (maxtyp==7)) count /=2; /* fcc */ 
-  else if ((maxtyp==2) || (maxtyp==3))           count /=4; /* bcc */
+  else if ((maxtyp==2) || (maxtyp==3) || (maxtyp==8)) count /=4; /* bcc */
   else if ((maxtyp==4) || (maxtyp==5))           count /=8; /* diamond */
   count = (int) (count * (1.25 * nallcells / ncells));
   atoms.n = 0;
@@ -350,6 +354,20 @@ void generate_fcc(int maxtyp)
       for (z=min.z; z<max.z; z++) {
  
         typ  = (x+y+z) % 2;
+
+	/* D0_3 structure */
+	if (maxtyp == 8) {
+	  if ( x%2==0 && y%2==0 && z%2==0 ) {
+	    if ( (x+y+z)%4==2 )
+	      typ = 0;
+	    else if ( (x+y+z)%4==0 )
+	      typ = 1;
+	  }
+	  else if ( x%2==1 && y%2==1 && z%2==1 )
+	    typ = 1;
+	  else
+	    continue;
+	}
 
 	/* L1_2 structure, cuau3 */
 	if (maxtyp == 7) {
