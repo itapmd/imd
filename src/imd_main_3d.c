@@ -593,6 +593,26 @@ void main_loop(void)
       write_config_select(0, "sqd", write_atoms_sqd, write_header_sqd);
 #endif
 
+    /* write checkpoint, if empty write file is found */
+    if ((watch_int > 0) && (0==steps%watch_int)) {
+      int write = 0;
+      if (0 == myid) {
+        FILE *testfile = fopen("write","r");
+        if (NULL!=testfile && fgetc(testfile)==EOF) { 
+          fclose(testfile);
+          remove("write");
+          write = 1;
+	}
+      }
+#ifdef MPI
+      MPI_Bcast( &write, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
+      if (write) {
+        if (myid == 0) printf("Write file found after %d steps\n", steps);
+        write_config(-2,steps);
+      }
+    }
+
     /* finish, if stop file is found */
     if ((stop_int > 0) && (0==steps%stop_int)) {
       int stop = 0;

@@ -532,8 +532,9 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
     else          sprintf(fname,"%s-final.%sitr",outfilename,suffix);
   }
   else {
-    if (fzhlr>=0) sprintf(fname,"%s.%05d.itr",outfilename,fzhlr);
-    else          sprintf(fname,"%s-final.itr",outfilename);
+    if (fzhlr>=0)       sprintf(fname,"%s.%05d.itr",outfilename,fzhlr);
+    else if (fzhlr==-1) sprintf(fname,"%s-final.itr",outfilename);
+    else                sprintf(fname,"%s-interm.itr",outfilename);
   }
 
   out = fopen(fname,"w");

@@ -61,7 +61,8 @@ void write_config_select(int fzhlr, char *suffix,
     /* write header to separate file */
     if ((myid==0) && (use_header)) {
       if (fzhlr>=0) sprintf(fname,"%s.%05d.%s.head",outfilename,fzhlr,suffix);
-      else          sprintf(fname,"%s-final.%s.head",outfilename,suffix);
+      else if (fzhlr==-1) sprintf(fname,"%s-final.%s.head",outfilename,suffix);
+      else sprintf(fname,"%s-interm.%s.head",outfilename,suffix);
       out = fopen(fname, "w");
       if (NULL == out) { 
         sprintf(msg,"Cannot open output file %s",fname);
@@ -71,8 +72,12 @@ void write_config_select(int fzhlr, char *suffix,
       fclose(out);
     }
     /* open output file */
-    if (fzhlr>=0) sprintf(fname,"%s.%05d.%s.%u",outfilename,fzhlr,suffix,myid);
-    else          sprintf(fname,"%s-final.%s.%u", outfilename,suffix,myid);
+    if (fzhlr>=0) 
+	sprintf(fname,"%s.%05d.%s.%u",outfilename,fzhlr,suffix,myid);
+    else if (fzhlr==-1) 
+	sprintf(fname,"%s-final.%s.%u", outfilename,suffix,myid);
+    else 
+	sprintf(fname,"%s-interm.%s.%u", outfilename,suffix,myid);
     out = fopen(fname,"w");
     if (NULL == out) { 
        sprintf(msg,"Cannot open output file %s",fname);
@@ -83,7 +88,8 @@ void write_config_select(int fzhlr, char *suffix,
   if (0==myid) {
     /* open output file */
     if (fzhlr >= 0) sprintf(fname,"%s.%05d.%s", outfilename,fzhlr,suffix);
-    else            sprintf(fname,"%s-final.%s", outfilename,suffix);
+    else if (fzhlr==-1) sprintf(fname,"%s-final.%s", outfilename,suffix);
+    else sprintf(fname,"%s-interm.%s", outfilename,suffix);
     out = fopen(fname,"w");
     if (NULL == out) {
        sprintf(msg,"Cannot open output file %s",fname);

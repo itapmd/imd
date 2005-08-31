@@ -310,6 +310,11 @@ void getparamfile(char *paramfname, int sim)
       /* maximal walltime limit */
       getparam(token,&maxwalltime,PARAM_REAL,1,1);
     }
+    else if (strcasecmp(token,"watch_int")==0) {
+      /* interval for checking write file */
+      getparam(token,&watch_int,PARAM_INT,1,1);
+      stop_int = watch_int;
+    }
     else if (strcasecmp(token,"stop_int")==0) {
       /* interval for checking stop file */
       getparam(token,&stop_int,PARAM_INT,1,1);
@@ -2375,7 +2380,8 @@ void broadcast_params() {
   MPI_Bcast( &ensemble    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &simulation  , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &maxwalltime , 1, REAL,     0, MPI_COMM_WORLD); 
-  MPI_Bcast( &hyper_threads,1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &hyper_threads,1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &watch_int   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &stop_int    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &loop        , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &seed        , 1, MPI_LONG, 0, MPI_COMM_WORLD); 
