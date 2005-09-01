@@ -345,6 +345,21 @@ void main_loop(void)
     if (ensemble == ENS_GLOK) {
       glok_int   = steps - glok_start;
 
+      /* always start glok with new dynamics, not with old velocities */
+      if (glok_int ==0)
+	{
+	  for (k=0; k<NCELLS; ++k) {
+	    cell *p;
+	    p = CELLPTR(k);
+	    for (i=0; i<p->n; ++i) {
+	      IMPULS(p,i,X) = 0.0;
+	      IMPULS(p,i,Y) = 0.0;
+#ifndef TWOD
+	      IMPULS(p,i,Z) = 0.0;
+#endif
+	    }
+	  }
+	}
 #ifdef ADAPTGLOK
       /* increase the timestep, but not immediately after P*F was < 0 */ 
        if ( (nPxF>= min_nPxF)  && (glok_int > glok_minsteps))
