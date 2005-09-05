@@ -499,6 +499,23 @@ endif
 #
 ###########################################################################
 
+ifeq (SX8,${IMDSYS})
+  CC_SERIAL             = sxcc
+#  CC_MPI		= 
+#  CC_OMP		= 
+#  CC_OMPI		= 
+  BIN_DIR		= ${HOME}/bin/sx8
+  OPT_FLAGS		+= -Xa -O -sx8 -C hopt -pi auto -pi file=imd_geom_3d.c:imd_geom_mpi_3d.c -pvctl fullmsg -w off=177:550 -O extendreorder # -gv
+#  OPT_MPI_FLAGS	+= 
+#  OPT_OMP_FLAGS	+= 
+#  OPT_OMPI_FLAGS	+= 
+  DEBUG_FLAGS		+= -Xa -sx8 -gv 
+#  DEBUG_OMP_FLAGS	+= 
+#  DEBUG_OMPI_FLAGS	+= 
+  PROF_FLAGS		+= -ftrace -DFTRACE
+  PROF_LIBS		+= -lftrace
+endif
+
 ifeq (SX6,${IMDSYS})
   CC_SERIAL             = sxcc
 #  CC_MPI		= 

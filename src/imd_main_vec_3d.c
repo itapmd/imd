@@ -23,7 +23,7 @@
 #include "potaccess.h"
 
 #define N0 140000     /* at least atoms.n */
-#define MC 40        /* maximum number of particles in cell */
+#define MC 100        /* maximum number of particles in cell */
 #define BS 100
 #define N1 MC*14
 #define N2 MC*4
@@ -52,7 +52,7 @@
 #ifdef MONO
 #define COL(i) 0
 #else
-#define COL(i) col[(i)]
+#define COL(i) col[i]
 #endif
 
 int li[N0*N2], lj[N0*N2], col[N0*N2], lbeg[N1], lend[N1], ltot; 
@@ -130,7 +130,7 @@ void make_nblist()
 
       /* reduce pair list */
       for (l=0; l<len1; l++) {
-        real *d1, *d2, dx, dy, dz, r2;
+        real * restrict d1, * restrict d2, dx, dy, dz, r2;
         d1 = atoms.ort + DIM * li1[l];
         d2 = atoms.ort + DIM * lj1[l];
         dx = d2[0]-d1[0];
@@ -140,22 +140,36 @@ void make_nblist()
         if (r2 < cellsz) {
           li[len2] = li1[l];
           lj[len2] = lj1[l];
-#ifndef MONO
-          /* put in separate loop outside if? */
-          col[len2] = SORTE(&atoms,li1[l]) * ntypes + SORTE(&atoms,lj1[l]);
-#endif
           len2++;
         }
       }
 
 #ifdef FTRACE
-      ftrace_region_end  ("nbl_calc_distances");
+      ftrace_region_end("nbl_calc_distances");
 #endif
 
       lend[ltot]=len2;
       if (lend[ltot] > lbeg[ltot]) ltot++;
     }
   }
+
+#ifndef MONO
+
+#ifdef FTRACE
+  ftrace_region_begin("nbl_make_col");
+#endif
+
+  /* precompute potential column for each atom pair */
+  for (l=0; l<lend[ltot-1]; l++) {
+    col[len2] = SORTE(&atoms,li[l]) * ntypes + SORTE(&atoms,lj[l]);
+  }
+
+#ifdef FTRACE
+  ftrace_region_end("nbl_make_col");
+#endif
+
+#endif /* not MONO */
+
   nbl_count++;
 }
 
@@ -170,9 +184,10 @@ void make_nblist()
 
 void calc_forces(int steps)
 {
-  int    k, m, is_short=0, li1[N0], lj1[N0], flag[N0];
-  real   rr[N0], ee[N0], tmpvec1[2], tmpvec2[2] = {0.0, 0.0};
-  vektor dd[N0], ff[N0];
+  int    k, m, is_short=0;
+  real   rr, ee, tmpvec1[2], tmpvec2[2] = {0.0, 0.0};
+  vektor dd, ff;
+  real   kraft1[2*DIM*N0], pot_eng1[2*N0];
 
 #ifdef MPI
   if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
@@ -189,6 +204,8 @@ void calc_forces(int steps)
   /* clear per atom accumulation variables */
   for (k=0; k<DIM*atoms.n_buf; k++) atoms.kraft  [k] = 0.0;
   for (k=0; k<    atoms.n_buf; k++) atoms.pot_eng[k] = 0.0;
+  for (k=0; k<DIM*atoms.n_buf; k++)      kraft1  [k] = 0.0;
+  for (k=0; k<    atoms.n_buf; k++)      pot_eng1[k] = 0.0;
 
   /* loop over independent pair sublists */
   for (k=0; k<ltot; k++) {
@@ -204,78 +221,74 @@ void calc_forces(int steps)
     for (m=0; m<lend[k]-lbeg[k]; m++) {
 
       real grad, *d1, *d2;
-      int  j, l; 
+      int  i, j, l = lbeg[k] + m; 
       const int inc = ntypes * ntypes;
-
-      l       = lbeg[k] + m;
-      d1      = atoms.ort + DIM * li[l];
-      d2      = atoms.ort + DIM * lj[l];
-      dd[m].x = d2[0]-d1[0];
-      dd[m].y = d2[1]-d1[1];
-      dd[m].z = d2[2]-d1[2];
-      rr[m]   = dd[m].x*dd[m].x + dd[m].y*dd[m].y + dd[m].z*dd[m].z;
-      flag[m] = 0;
+      d1   = atoms.ort + DIM * li[l];
+      d2   = atoms.ort + DIM * lj[l];
+      dd.x = d2[0]-d1[0];
+      dd.y = d2[1]-d1[1];
+      dd.z = d2[2]-d1[2];
+      rr   = SPROD(dd,dd);
 
       /* compute pair interactions */
-      if (rr[m] <= pair_pot.end[COL(l)]) {
+      if (rr <= pair_pot.end[COL(l)]) {
 
         /* beware: we must not use k as index in the macro's arguments! */
 #ifdef MULTIPOT
         int pp = m % N_POT_TAB;
-        PAIR_INT(ee[m], grad, pair_pot_ar[pp], COL(l), inc, rr[m], is_short)
+        PAIR_INT(ee, grad, pair_pot_ar[pp], COL(l), inc, rr, is_short)
 #else
 #ifdef LINPOT
-        PAIR_INT_LIN(ee[m], grad, pair_pot_lin, COL(l), inc, rr[m], is_short)
+        PAIR_INT_LIN(ee, grad, pair_pot_lin, COL(l), inc, rr, is_short)
 #else
 #ifdef LJ
-        PAIR_INT_LJ_VEC(ee[m], grad, COL(l), rr[m])
+        PAIR_INT_LJ_VEC(ee, grad, COL(l), rr)
 #else
-        PAIR_INT(ee[m], grad, pair_pot, COL(l), inc, rr[m], is_short)
+        PAIR_INT(ee, grad, pair_pot, COL(l), inc, rr, is_short)
 #endif
 #endif
 #endif
         /* store force in temporary variables */
-        ff[m].x         = dd[m].x * grad;
-        ff[m].y         = dd[m].y * grad;
-        ff[m].z         = dd[m].z * grad;
-        virial         -= rr[m]   * grad;
-        tot_pot_energy += ee[m];
+        ff.x            = dd.x * grad;
+        ff.y            = dd.y * grad;
+        ff.z            = dd.z * grad;
+        virial         -= rr   * grad;
+        tot_pot_energy += ee;
+
+        /* store force to first particle */
+        i = li[l];
+        kraft1 X(i) += ff.x;
+        kraft1 Y(i) += ff.y;
+        kraft1 Z(i) += ff.z;
+        pot_eng1[i] += ee;
 
         /* store force to second particle */
         j = lj[l];
-        atoms.kraft X(j) -= ff[m].x;
-        atoms.kraft Y(j) -= ff[m].y;
-        atoms.kraft Z(j) -= ff[m].z;
-        atoms.pot_eng[j] += ee[m];
-        flag[m] = 1;
+        atoms.kraft X(j) -= ff.x;
+        atoms.kraft Y(j) -= ff.y;
+        atoms.kraft Z(j) -= ff.z;
+        atoms.pot_eng[j] += ee;
       }
     }
 
 #ifdef FTRACE
-    ftrace_region_end  ("calc_forces");
-    ftrace_region_begin("store_forces");
-#endif
-
-#ifdef SX
-#pragma vdir vector,nodep
-#endif
-    /* accumulate remaining forces */
-    for (m=0; m<lend[k]-lbeg[k]; m++) {
-      if (flag[m]) {  /* right way to deal with this? */
-        int i = li[m+lbeg[k]];
-        atoms.kraft X(i) += ff[m].x;
-        atoms.kraft Y(i) += ff[m].y;
-        atoms.kraft Z(i) += ff[m].z;
-        atoms.pot_eng[i] += ee[m];
-      }
-    }
-
-#ifdef FTRACE
-    ftrace_region_end("store_forces");
+    ftrace_region_end("calc_forces");
 #endif
 
   }
   if (is_short) printf("short distance!\n");
+
+#ifdef FTRACE
+  ftrace_region_begin("store_forces");
+#endif
+
+  /* add up forces on first and second particles */
+  for (k=0; k<DIM*atoms.n_buf; k++) atoms.kraft  [k] += kraft1  [k];
+  for (k=0; k<    atoms.n_buf; k++) atoms.pot_eng[k] += pot_eng1[k];
+
+#ifdef FTRACE
+    ftrace_region_end("store_forces");
+#endif
 
 #ifdef MPI
   /* sum up results of different CPUs */

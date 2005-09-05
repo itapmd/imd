@@ -87,6 +87,7 @@ void alloc_minicell(minicell *p, int count)
     free(p->ind);
   }
   else {  /* cell is allocated or enlarged */
+    if (p->n_max==0) p->ind = NULL;
     p->ind = (int *) realloc( p->ind, count * sizeof(int) );
     if (NULL==p->ind) error("minicell allocation failed");
     p->n_max = count;

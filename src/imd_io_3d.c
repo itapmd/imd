@@ -523,7 +523,7 @@ void read_atoms(str255 infilename)
   }
 
   /* determine maximal cell occupancy */
-  for (k=0; k<ncells; k++) maxc1 = MAX( maxc1, CELLPTR(k)->n );
+  for (k=0; k<ncells; k++) maxc1 = MAX( maxc1, (cell_array+CELLS(k))->n );
 #ifdef MPI
   MPI_Reduce( &maxc1, &maxc2, 1, MPI_INT, MPI_MAX, 0, cpugrid);
 #else
