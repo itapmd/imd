@@ -364,7 +364,7 @@ void main_loop(void)
       /* increase the timestep, but not immediately after P*F was < 0 */ 
        if ( (nPxF>= min_nPxF)  && (glok_int > glok_minsteps))
 	{
-	  timestep = (timestep * glok_incfac > glok_maxtimestep)? glok_maxtimestep : timestep * glok_incfac;
+	  	  timestep = (timestep * glok_incfac > glok_maxtimestep)? glok_maxtimestep : timestep * glok_incfac;
 	}
 #endif
 
@@ -378,8 +378,8 @@ void main_loop(void)
 	/* decrease the timestep, but only when it has been increased before */	
 	if (glok_int > glok_minsteps )
 	  {
-	    if (timestep > 0.0005)
-	      timestep *=glok_decfac;
+	     if (timestep > 0.0005)
+	    	      timestep *=glok_decfac;
 	  }
 #endif
 
