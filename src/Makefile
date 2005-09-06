@@ -2,7 +2,7 @@
 #
 # IMD -- The ITAP Molecular Dynamics Program
 #
-# Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+# Copyright 1996-2005 Institute for Theoretical and Applied Physics,
 # University of Stuttgart, D-70550 Stuttgart
 #
 # $Revision$
@@ -112,10 +112,6 @@
 # endif
 #
 # Variables remaining empty need not be mentioned.
-
-#DATEOFVERSION=$( shell ll -rt  --time-style +%m\/%d\/%y:%H:%M *c *h Makefile | grep -v version.h | tail -1 | awk '{}{printf("#define LASTCHANGE \"%s\"\n",$6)}' > version.h  )
-
-#DATEOFVERSION=$(shell bash version.bsh)
 
 ###########################################################################
 #
@@ -1130,6 +1126,7 @@ ${MAKETARGET}: ${OBJECTS}
 # First recursion only set the MAKETARGET Variable
 .DEFAULT:
 ifneq (,${CC}) 
+	./version.sh
 	${MAKE} MAKETARGET='$@' STAGE2
 else
 ifneq (,${IMDSYS})

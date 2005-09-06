@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -12,6 +12,11 @@
 *
 * imd.h -- Header file for all modules of IMD
 *
+******************************************************************************/
+
+/******************************************************************************
+* $Revision$
+* $Date$
 ******************************************************************************/
 
 /* C stuff */
@@ -46,7 +51,10 @@
 #include <fftw3.h>
 #endif
 
-/* Konfiguration */
+/* IMD version */
+#include "version.h"
+
+/* Configuration */
 #include "config.h"
 
 /* Data types */
