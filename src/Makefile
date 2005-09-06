@@ -952,6 +952,10 @@ ifneq (,$(findstring adaptglok,${MAKETARGET}))
 CFLAGS += -DADAPTGLOK
 endif
 
+ifneq (,$(findstring mix,${MAKETARGET}))
+CFLAGS += -DMIX
+endif
+
 ifneq (,$(findstring efilter,${MAKETARGET}))
 CFLAGS += -DEFILTER
 endif

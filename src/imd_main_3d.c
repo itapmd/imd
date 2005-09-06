@@ -387,10 +387,10 @@ void main_loop(void)
           cell *p;
           p = CELLPTR(k);
           for (i=0; i<p->n; ++i) {
-	    ORT(p,i,X) -= timestep / MASSE(p,i) * IMPULS(p,i,X);
-	    ORT(p,i,Y) -= timestep / MASSE(p,i) * IMPULS(p,i,Y);
+	    ORT(p,i,X) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,X);
+	    ORT(p,i,Y) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,Y);
 #ifndef TWOD
-	    ORT(p,i,Z) -= timestep / MASSE(p,i) * IMPULS(p,i,Z);
+	    ORT(p,i,Z) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,Z);
 #endif
             IMPULS(p,i,X) = 0.0;
             IMPULS(p,i,Y) = 0.0;

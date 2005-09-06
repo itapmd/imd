@@ -1215,6 +1215,12 @@ void getparamfile(char *paramfname, int sim)
     }
  
 #endif
+#ifdef MIX
+    else if (strcasecmp(token,"glok_mix")==0) {
+      /* factor to turn velocities more parallel to forces */
+      getparam(token,&glok_mix,PARAM_REAL,1,1);
+    }
+#endif
 #ifdef ADAPTGLOK
    else if (strcasecmp(token,"glok_minsteps")==0) {
       /* minimum of steps before increasing the timestep */
@@ -2663,6 +2669,9 @@ void broadcast_params() {
 #endif
 #ifdef GLOK
   MPI_Bcast( &glok_ekin_threshold, 1, REAL, 0, MPI_COMM_WORLD); 
+#endif
+#ifdef MIX
+  MPI_Bcast( &glok_mix, 1, REAL, 0, MPI_COMM_WORLD); 
 #endif
 #ifdef ADAPTGLOK
   MPI_Bcast( &glok_fmaxcrit, 1, REAL, 0, MPI_COMM_WORLD); 

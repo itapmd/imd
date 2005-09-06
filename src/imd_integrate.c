@@ -37,15 +37,19 @@ void move_atoms_nve(void)
   real tmp_x_max2=0.0;
   static int count = 0;
 
+  real tmppnorm,tmpfnorm;
+
   /* epitax may call this routine for other ensembles,
      in which case we do not reset tot_kin_energy */
   if ((ensemble==ENS_NVE) || (ensemble==ENS_GLOK)) tot_kin_energy = 0.0;
+
   fnorm   = 0.0;
   xnorm   = 0.0;
   pnorm   = 0.0;
   PxF     = 0.0;
   omega_E = 0.0;
 
+  
 #ifdef DAMP
   n_damp  = 0;
   tot_kin_energy_damp = 0.0;
@@ -98,7 +102,11 @@ void move_atoms_nve(void)
 #ifdef SX
 #pragma vdir vector,nodep
 #endif
+
     for (i=0; i<p->n; ++i) { /* loop over all atoms in the cell */
+
+      tmppnorm=0.0;
+      tmpfnorm=0.0;
 
 #ifdef EPITAX 
         /* beam atoms are always integrated by NVE */
@@ -150,7 +158,8 @@ void move_atoms_nve(void)
 #endif
 
 #ifdef FNORM
-		fnorm   += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+	tmpfnorm= SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+	fnorm   += tmpfnorm;
 /* 	tmpkraft.x =KRAFT(p,i,X); */
 /* 	tmpkraft.y =KRAFT(p,i,Y); */
 /* 	tmpkraft.z =KRAFT(p,i,Z); */
@@ -272,34 +281,28 @@ void move_atoms_nve(void)
 	/* "Globale Konvergenz": like mik, just with the global 
            force and momentum vectors */
 #ifdef GLOK
-       /* try not to account for the force boundary conditions */
 
-/*        tmpimpuls.x =IMPULS(p,i,X); */
-/*        tmpimpuls.y =IMPULS(p,i,Y); */
-/*        tmpimpuls.z =IMPULS(p,i,Z); */
-/*        tmpkraft.x =KRAFT(p,i,X); */
-/*        tmpkraft.y =KRAFT(p,i,Y); */
-/*        tmpkraft.z =KRAFT(p,i,Z); */
-/*        if( (fbc_forces + sort)->x != 0.0) */
-/* 	 { */
-/* 	   tmpimpuls.x=0.0; */
-/* 	   tmpkraft.x =0.0; */
-/* 	 } */
-/*        if( (fbc_forces + sort)->y != 0.0) */
-/* 	 { */
-/* 	   tmpimpuls.y=0.0; */
-/* 	   tmpkraft.y =0.0; */
-/* 	 } */
-/*        if( (fbc_forces + sort)->z != 0.0) */
-/* 	 { */
-/* 	   tmpimpuls.z=0.0; */
-/* 	   tmpkraft.z =0.0; */
-/* 	 } */
-/*        PxF += tmpimpuls.x * tmpkraft.x + tmpimpuls.y * tmpkraft.y + tmpimpuls.z * tmpkraft.z; */
-/*        pnorm +=  tmpimpuls.x * tmpimpuls.x + tmpimpuls.y * tmpimpuls.y + tmpimpuls.z * tmpimpuls.z; */
+#ifdef MIX
+       /* 'turn' the velocities a little bit */
+       /*  more along the forces... */
+       tmppnorm =  SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+       if (tmpfnorm >= 1e-20)
+	 {
+	   tmpfnorm=SQRT(tmpfnorm);
+	   tmppnorm=SQRT(tmppnorm);
+	   IMPULS(p,i,X) = (1.0-glok_mix)*IMPULS(p,i,X) + glok_mix * KRAFT(p,i,X)/tmpfnorm * tmppnorm;
+	   IMPULS(p,i,Y) = (1.0-glok_mix)*IMPULS(p,i,Y) + glok_mix * KRAFT(p,i,Y)/tmpfnorm * tmppnorm;
+	   IMPULS(p,i,Z) = (1.0-glok_mix)*IMPULS(p,i,Z) + glok_mix * KRAFT(p,i,Z)/tmpfnorm * tmppnorm;
+	 }
+#endif   
+
+
        PxF   += SPRODN( &IMPULS(p,i,X), &KRAFT(p,i,X) );
-       pnorm += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+       pnorm += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );;
+      
+
 #endif
+
 
 #ifdef UNIAX
         dot = 2.0 * SPRODN( &DREH_IMPULS(p,i,X), &ACHSE(p,i,X) );

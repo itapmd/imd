@@ -383,6 +383,9 @@ EXTERN real end_temp INIT(0.0);        /* Temperature and at of simulation */
 EXTERN real   glok_ekin_threshold INIT(100.0); /* threshold for ekin */  
 EXTERN int    glok_int       INIT(0);
 #endif
+#ifdef MIX
+EXTERN real glok_mix      INIT(0.0); 
+#endif
 #ifdef ADAPTGLOK
 EXTERN real glok_incfac      INIT(1.02);     
 EXTERN real glok_decfac      INIT(0.5);     
