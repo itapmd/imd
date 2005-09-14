@@ -32,7 +32,7 @@
 void move_atoms_nve(void)
 {
   int k;
-  real tmpvec1[8], tmpvec2[8], pnorm; /* increased tempvec for DAMP */
+  real tmpvec1[8], tmpvec2[8]; /* increased tempvec for DAMP */
   real tmp_f_max2=0.0;
   real tmp_x_max2=0.0;
   static int count = 0;
@@ -280,25 +280,41 @@ void move_atoms_nve(void)
 
 	/* "Globale Konvergenz": like mik, just with the global 
            force and momentum vectors */
-#ifdef GLOK
+#if defined (GLOK)|| defined(MIX)
+
+
+       // localized version of MIX
+/* #ifdef MIX */
+/*        /\* 'turn' the velocities a little bit *\/ */
+/*        /\*  more along the forces... *\/ */
+/*        tmppnorm =  SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ); */
+/*        if (tmpfnorm >= 1e-20) */
+/* 	 { */
+/* 	   tmpfnorm=SQRT(tmpfnorm); */
+/* 	   tmppnorm=SQRT(tmppnorm); */
+/* 	   IMPULS(p,i,X) = (1.0-glok_mix)*IMPULS(p,i,X) + glok_mix * KRAFT(p,i,X)/tmpfnorm * tmppnorm; */
+/* 	   IMPULS(p,i,Y) = (1.0-glok_mix)*IMPULS(p,i,Y) + glok_mix * KRAFT(p,i,Y)/tmpfnorm * tmppnorm; */
+/* 	   IMPULS(p,i,Z) = (1.0-glok_mix)*IMPULS(p,i,Z) + glok_mix * KRAFT(p,i,Z)/tmpfnorm * tmppnorm; */
+/* 	 } */
+/* #endif    */
+
+//change to velocity norm, change names later...
+       PxF   += SPRODN( &IMPULS(p,i,X), &KRAFT(p,i,X) )/MASSE(p,i);
+       pnorm += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) )/MASSE(p,i)/MASSE(p,i);
+
+
 
 #ifdef MIX
+       /* global version of MIX  with adaptive mixing, works only with adaptglok?*/
        /* 'turn' the velocities a little bit */
        /*  more along the forces... */
-       tmppnorm =  SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
-       if (tmpfnorm >= 1e-20)
-	 {
-	   tmpfnorm=SQRT(tmpfnorm);
-	   tmppnorm=SQRT(tmppnorm);
-	   IMPULS(p,i,X) = (1.0-glok_mix)*IMPULS(p,i,X) + glok_mix * KRAFT(p,i,X)/tmpfnorm * tmppnorm;
-	   IMPULS(p,i,Y) = (1.0-glok_mix)*IMPULS(p,i,Y) + glok_mix * KRAFT(p,i,Y)/tmpfnorm * tmppnorm;
-	   IMPULS(p,i,Z) = (1.0-glok_mix)*IMPULS(p,i,Z) + glok_mix * KRAFT(p,i,Z)/tmpfnorm * tmppnorm;
-	 }
+ 
+       IMPULS(p,i,X) = (1.0-mix)*IMPULS(p,i,X) + mix * KRAFT(p,i,X)* mixforcescalefac * MASSE(p,i);
+       IMPULS(p,i,Y) = (1.0-mix)*IMPULS(p,i,Y) + mix * KRAFT(p,i,Y)* mixforcescalefac * MASSE(p,i);
+       IMPULS(p,i,Z) = (1.0-mix)*IMPULS(p,i,Z) + mix * KRAFT(p,i,Z)* mixforcescalefac * MASSE(p,i);
+	
 #endif   
 
-
-       PxF   += SPRODN( &IMPULS(p,i,X), &KRAFT(p,i,X) );
-       pnorm += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );;
       
 
 #endif
@@ -502,7 +518,7 @@ void move_atoms_nve(void)
 #endif
 
 
-#ifdef GLOK
+#if defined (GLOK) || defined (MIX)
   PxF /= (SQRT(fnorm) * SQRT(pnorm));
 #endif
 

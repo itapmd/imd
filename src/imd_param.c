@@ -1220,6 +1220,10 @@ void getparamfile(char *paramfname, int sim)
       /* factor to turn velocities more parallel to forces */
       getparam(token,&glok_mix,PARAM_REAL,1,1);
     }
+    else if (strcasecmp(token,"glok_mixdec")==0) {
+      /*decrease factor to turn velocities more parallel to forces */
+      getparam(token,&glok_mixdec,PARAM_REAL,1,1);
+    }
 #endif
 #ifdef ADAPTGLOK
    else if (strcasecmp(token,"glok_minsteps")==0) {
@@ -1239,7 +1243,7 @@ void getparamfile(char *paramfname, int sim)
       getparam(token,&glok_incfac,PARAM_REAL,1,1);
     }
     else if (strcasecmp(token,"glok_decfac")==0) {
-      /* factor to increase the timestep */
+      /* factor to decrease the timestep */
       getparam(token,&glok_decfac,PARAM_REAL,1,1);
     }
    else if (strcasecmp(token,"glok_maxtimestep")==0) {
@@ -2672,6 +2676,7 @@ void broadcast_params() {
 #endif
 #ifdef MIX
   MPI_Bcast( &glok_mix, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &glok_mixdec, 1, REAL, 0, MPI_COMM_WORLD); 
 #endif
 #ifdef ADAPTGLOK
   MPI_Bcast( &glok_fmaxcrit, 1, REAL, 0, MPI_COMM_WORLD); 

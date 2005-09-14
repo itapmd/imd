@@ -275,6 +275,7 @@ EXTERN real old_epot INIT(0.0);
 EXTERN real xnorm INIT(0.0);  
 EXTERN real x_max2 INIT(0.0);  
 EXTERN real fnorm INIT(0.0);  
+EXTERN real pnorm INIT(0.0);  
 EXTERN real fnorm_old INIT(0.0);  
 EXTERN real f_max INIT(0.0);  
 EXTERN real f_max2 INIT(0.0);  
@@ -384,7 +385,10 @@ EXTERN real   glok_ekin_threshold INIT(100.0); /* threshold for ekin */
 EXTERN int    glok_int       INIT(0);
 #endif
 #ifdef MIX
-EXTERN real glok_mix      INIT(0.0); 
+EXTERN real mix              INIT(0.0); 
+EXTERN real glok_mix         INIT(0.0); 
+EXTERN real glok_mixdec      INIT(1.0);
+EXTERN real mixforcescalefac  INIT(0.0);  
 #endif
 #ifdef ADAPTGLOK
 EXTERN real glok_incfac      INIT(1.02);     

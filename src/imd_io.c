@@ -1298,8 +1298,9 @@ void write_eng_file_header()
     fprintf(fl, "xnorm ");
     fprintf(fl, "xmax ");
 #endif
-#ifdef GLOK
+#if defined (GLOK) || defined(MIX)
     fprintf(fl, "PxF ");
+    fprintf(fl, "mix ");
 #endif
 #ifdef EINSTEIN
     fprintf(fl, "omega_E ");
@@ -1472,8 +1473,9 @@ void write_eng_file(int steps)
   fprintf(eng_file, format,   (double) SQRT( xnorm / nactive ) );
   fprintf(eng_file, format,   (double) SQRT( x_max2 ) );
 #endif
-#ifdef GLOK
+#if defined (GLOK) ||defined(MIX)
   fprintf(eng_file, format,   (double) PxF);
+  fprintf(eng_file, format,   (double) mix);
 #endif
 #ifdef EINSTEIN
   fprintf(eng_file, format,   SQRT( omega_E / (nactive * Temp) ));

@@ -146,7 +146,9 @@ void main_loop(void)
   if (ensemble == ENS_CG) reset_cg();
 #endif
 
-
+#ifdef MIX
+  mix =glok_mix;
+#endif
 
   /* simulation loop */
   for (steps=steps_min; steps <= steps_max; ++steps) {
@@ -365,12 +367,21 @@ void main_loop(void)
        if ( (nPxF>= min_nPxF)  && (glok_int > glok_minsteps))
 	{
 	  	  timestep = (timestep * glok_incfac > glok_maxtimestep)? glok_maxtimestep : timestep * glok_incfac;
+#ifdef MIX
+		  mix *= glok_mixdec;
+#endif
 	}
+#endif
+
+#ifdef MIX
+       if(fnorm >=1e-20)
+	 mixforcescalefac = SQRT(pnorm/fnorm);
 #endif
 
       real ekin = 2 * tot_kin_energy / nactive;
 
-      if ((PxF < 0.0) || (ekin > glok_ekin_threshold)  || (sqrt(f_max2) >= glok_fmaxcrit) && steps >5) {
+      if ((PxF < 0.0) || (ekin > glok_ekin_threshold)  || (sqrt(f_max2) >= glok_fmaxcrit) && steps >5) 
+	{
 
 #ifdef ADAPTGLOK
 	if (PxF < 0.0)
@@ -381,6 +392,10 @@ void main_loop(void)
 	     if (timestep > 0.0005)
 	    	      timestep *=glok_decfac;
 	  }
+#endif
+
+#ifdef MIX
+	mix = glok_mix;
 #endif
 
         for (k=0; k<NCELLS; ++k) {
@@ -588,6 +603,54 @@ void main_loop(void)
       if (stop) steps_max = steps;
     }
 #endif
+
+    
+#ifdef RELAX
+    if ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) {
+
+      int stop = 0;
+      real fnorm2 = SQRT( fnorm / nactive );
+      real ekin   = 2 * tot_kin_energy / nactive;
+      real epot   = tot_pot_energy / natoms;
+      real delta_epot = old_epot - epot;
+      if (delta_epot < 0) delta_epot = -delta_epot;
+
+      if ((ekin  <  ekin_threshold) || (fnorm2 < fnorm_threshold) || 
+          (delta_epot < delta_epot_threshold))
+	{ 
+	  is_relaxed = 1;
+	}
+      
+      else
+	{
+	    is_relaxed = 0;
+	}
+
+      old_epot = epot;
+
+      if (is_relaxed) {
+        stop = 1;
+        write_eng_file(steps);
+        write_ssconfig(steps);
+
+        if (myid==0) {
+          printf("nfc = %d epot = %22.16f\n", nfc, epot );
+          printf("ekin = %e fnorm = %e f_max = %e delta_epot = %e\n", 
+                 ekin, fnorm2, f_max, delta_epot);
+        }
+      }
+
+#ifdef DEFORM
+      if (max_deform_int > 0) stop=0;
+#endif
+#ifdef FBC
+      if (have_fbc_incr) stop=0;
+#endif
+      if (stop) steps_max = steps;
+      }
+#endif
+
+
 
 #ifdef NBLIST
     check_nblist();
