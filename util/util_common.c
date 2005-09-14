@@ -138,6 +138,13 @@ void init_cells(void)
 #ifndef TWOD
   cell_dim.z = (int) ( 1.0 / cell_scale.z );
 #endif
+
+#ifdef TWOD
+  if ((cell_dim.x==0) || (cell_dim.y==0))
+#else
+  if ((cell_dim.x==0) || (cell_dim.y==0) || (cell_dim.z==0))
+#endif
+    error("cutoff radius must be smaller than box diameter");
   
   /* If an integer number of cells does not fit exactly into the box, the
      cells are enlarged accordingly */
