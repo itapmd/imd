@@ -131,6 +131,9 @@
 #ifndef NVE
 #define NVE
 #endif
+#ifndef MIX
+#define MIX
+#endif
 #endif
 
 #ifdef NPT_axial
