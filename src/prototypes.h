@@ -292,6 +292,9 @@ void write_atoms_press(FILE *out);
 void write_header_press(FILE *out);
 void calc_tot_presstens(void);
 #endif
+#ifdef REFPOS
+void init_refpos(void);
+#endif
 #ifdef AVPOS
 void write_atoms_avp(FILE *out);
 void write_header_avp(FILE *out);
@@ -459,4 +462,9 @@ void move_atoms_cg(real);
 int linmin();
 int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc);
 int brent(real ax, real bx, real cx, real fa, real fb, real fc,real *alphamin);
+#endif
+
+#ifdef NMOLDYN
+void init_nmoldyn(void);
+void write_nmoldyn(int);
 #endif

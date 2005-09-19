@@ -1444,6 +1444,16 @@ void getparamfile(char *paramfname, int sim)
       getparam("msqd_vtypes",&msqd_vtypes,PARAM_INT,1,1);
     }
 #endif
+#ifdef NMOLDYN
+    else if (strcasecmp(token,"nmoldyn_int")==0) {
+      /* interval for nmoldyn trajectory writes */
+      getparam(token,&nmoldyn_int,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"nmoldyn_veloc")==0) {
+      /* include velocities in nmoldyn trajectory? */
+      getparam(token,&nmoldyn_veloc,PARAM_INT,1,1);
+    }
+#endif
 #ifdef NVX
     else if (strcasecmp(token, "dTemp_start")==0){
       /* temperature asymmetry at start */

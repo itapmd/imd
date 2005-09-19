@@ -160,6 +160,10 @@
 #define STRESS_TENS
 #endif
 
+#ifdef NMOLDYN
+#define REFPOS
+#endif
+
 /******************************************************************************
 *
 * Architectures

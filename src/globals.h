@@ -942,3 +942,7 @@ EXTERN real uniax_r_cut  INIT(0.0);        /* cutoff radius */
 EXTERN real uniax_r2_cut INIT(0.0);        /* square of cutoff radius */
 #endif
 
+#ifdef NMOLDYN
+EXTERN int nmoldyn_int   INIT(0);
+EXTERN int nmoldyn_veloc INIT(0);
+#endif

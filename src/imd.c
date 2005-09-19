@@ -169,6 +169,10 @@ int main(int argc, char **argv)
   PAPI_flops(&rtime,&ptime,&flpins,&mflops);
 #endif
 
+#ifdef REFPOS
+  init_refpos();
+#endif
+
   /* first phase of the simulation */
   if (steps_min <= steps_max) main_loop();
 

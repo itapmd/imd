@@ -1007,6 +1007,10 @@ ifneq (,$(findstring force,${MAKETARGET}))
 CFLAGS += -DFORCE
 endif
 
+ifneq (,$(findstring nmoldyn,${MAKETARGET}))
+CFLAGS += -DNMOLDYN
+endif
+
 ifneq (,$(findstring atdist,${MAKETARGET}))
 CFLAGS += -DATDIST
 endif

@@ -910,6 +910,33 @@ void update_ort_ref(void)
 
 #endif /* DISLOC */
 
+#ifdef REFPOS
+
+/******************************************************************************
+*
+* initialize reference positions
+*
+******************************************************************************/
+
+void init_refpos(void)
+{ 
+  int k;
+  for (k=0; k<NCELLS; k++) {
+    int i;
+    cell* p;
+    p = CELLPTR(k);
+    for (i=0; i<p->n; i++) {
+      REF_POS(p,i,X) = ORT(p,i,X);
+      REF_POS(p,i,Y) = ORT(p,i,Y);
+#ifndef TWOD
+      REF_POS(p,i,Z) = ORT(p,i,Z);
+#endif
+    }
+  }
+}
+
+#endif
+
 #ifdef AVPOS
 
 /******************************************************************************
@@ -1846,3 +1873,109 @@ void read_box(str255 infilename)
 #endif 
 #endif
 }
+
+#ifdef NMOLDYN
+
+/******************************************************************************
+*
+*  write MD trajectory into single file, to be used with nMolDyn
+*  use only with small systems, not parallelized
+*
+******************************************************************************/
+
+void init_nmoldyn(void)
+{
+  FILE *out=NULL;
+  str255 fname;
+  int n, k, i, t;
+
+#ifdef MPI
+  if (myid==0) error("option nmoldyn is not parallelized");
+#endif
+
+  /* change particle numbers, and initialize reference positions */
+  n = 0;
+  for (t=0; t<ntypes; t++) {
+    for (k=0; k<ncells; k++) {
+      cell *p = CELLPTR(k); 
+      for (i=0; i<p->n; i++) {
+        if (t==SORTE(p,i)) {
+          NUMMER(p,i)    = n;
+          REF_POS(p,i,X) = 0.0;
+          REF_POS(p,i,Y) = 0.0;
+          REF_POS(p,i,Z) = 0.0;
+          n++;
+	}
+      }
+    }
+  }
+
+  /* write header of .nmoldyn file */
+  sprintf(fname,"%s.%s",outfilename,"nmoldyn");
+  out = fopen(fname, "w");
+  for (n=0; n<ntypes; n++) fprintf(out, "%d ", num_sort[n]);
+  fprintf(out, "\n");
+  if ( (FABS(box_x.y)<1e-6) && (FABS(box_y.z)<1e-6) && (FABS(box_z.x)<1e-6) &&
+       (FABS(box_y.x)<1e-6) && (FABS(box_z.y)<1e-6) && (FABS(box_x.z)<1e-6) )
+    fprintf(out, "%f %f %f\n", box_x.x, box_y.y, box_z.z);
+  fclose(out);
+
+}
+
+void write_nmoldyn(int step)
+{
+  FILE *out=NULL;
+  str255 fname;
+  int n, k, i;
+  static int count=0;
+  static vektor *nml_pos = NULL, *nml_vel = NULL;
+
+  /* allocate nml arrays */
+  if (NULL==nml_pos) {
+    nml_pos = (vektor *) malloc( natoms * sizeof(vektor) );
+    if (NULL==nml_pos) error("cannot allocate array for nmoldyn");
+  }
+  if ((NULL==nml_vel) && (nmoldyn_veloc)) {
+    nml_vel = (vektor *) malloc( natoms * sizeof(vektor) );
+    if (NULL==nml_vel) error("cannot allocate array for nmoldyn");
+  }  
+
+  /* prepare nmoldyn data */
+  for (k=0; k<ncells; k++) {
+    cell *p = CELLPTR(k); 
+    for (i=0; i<p->n; i++) {
+      n = NUMMER(p,i);
+      nml_pos[n].x = ORT(p,i,X) - REF_POS(p,i,X);
+      nml_pos[n].y = ORT(p,i,Y) - REF_POS(p,i,Y);
+      nml_pos[n].z = ORT(p,i,Z) - REF_POS(p,i,Z);
+      if (nmoldyn_veloc) {
+        real tmp = 1.0 / MASSE(p,i);
+        nml_vel[n].x = IMPULS(p,i,X) * tmp;
+        nml_vel[n].y = IMPULS(p,i,Y) * tmp;
+        nml_vel[n].z = IMPULS(p,i,Z) * tmp;
+      }
+    }
+  }
+
+  /* append it to nmoldyn file */
+  sprintf(fname,"%s.%s",outfilename,"nmoldyn");
+  out = fopen(fname, "a");
+  if (NULL == out) error_str("Cannot open output file %s",fname);
+  fprintf(out, "%e\n", count * nmoldyn_int * timestep );
+  for (n=0; n<natoms; n++) {
+    if (nmoldyn_veloc) {
+      fprintf(out,"%e %e %e %e %e %e\n", 
+              nml_pos[n].x, nml_pos[n].y, nml_pos[n].z,
+              nml_vel[n].x, nml_vel[n].y, nml_vel[n].z);
+    } 
+    else {
+      fprintf(out,"%e %e %e\n", 
+              nml_pos[n].x, nml_pos[n].y, nml_pos[n].z);
+    }
+  }
+  count++;
+  fclose(out);
+
+}
+
+#endif /* NMOLDYN */

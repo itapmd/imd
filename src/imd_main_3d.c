@@ -130,6 +130,10 @@ void main_loop(void)
   init_correl(ncorr_rmax,ncorr_tmax);
 #endif
 
+#ifdef NMOLDYN
+  if (nmoldyn_int > 0) init_nmoldyn();
+#endif
+
 #ifdef ATDIST
   if (atdist_int > 0) init_atdist();
 #endif
@@ -546,6 +550,9 @@ void main_loop(void)
                             write_atoms_press, write_header_press);
     }
 #endif
+#ifdef NMOLDYN
+    if ((nmoldyn_int > 0) && (0 == steps % nmoldyn_int)) write_nmoldyn(steps);
+#endif
 
 #ifdef USE_SOCKETS
     if ((socket_int > 0) && (0 == steps % socket_int)) check_socket();
@@ -774,7 +781,7 @@ void do_boundaries(void)
 #ifndef TWOD
       ORT(p,l,Z)     += i * box_x.z;
 #endif
-#ifdef MSQD
+#if defined(MSQD) || defined(NMOLDYN)
       REF_POS(p,l,X) += i * box_x.x;
       REF_POS(p,l,Y) += i * box_x.y;
 #ifndef TWOD
@@ -799,7 +806,7 @@ void do_boundaries(void)
 #ifndef TWOD
       ORT(p,l,Z)     += i * box_y.z;
 #endif
-#ifdef MSQD
+#if defined(MSQD) || defined(NMOLDYN)
       REF_POS(p,l,X) += i * box_y.x;
       REF_POS(p,l,Y) += i * box_y.y;
 #ifndef TWOD
@@ -823,7 +830,7 @@ void do_boundaries(void)
       ORT(p,l,X)     += i * box_z.x;
       ORT(p,l,Y)     += i * box_z.y;
       ORT(p,l,Z)     += i * box_z.z;
-#ifdef MSQD
+#if defined(MSQD) || defined(NMOLDYN)
       REF_POS(p,l,X) += i * box_z.x;
       REF_POS(p,l,Y) += i * box_z.y;
       REF_POS(p,l,Z) += i * box_z.z;
