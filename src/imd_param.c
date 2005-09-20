@@ -1353,9 +1353,38 @@ void getparamfile(char *paramfname, int sim)
         cg_mode = CGEF;
       }
       */
+#ifdef ACG
+      else if (strcasecmp(token,"acg_alpha")==0) {
+	/* starting alpha */
+	getparam(token,&acg_alpha,PARAM_REAL,1,1);
+      }
+      else if (strcasecmp(token,"acg_infac")==0) {
+	/* increase alpha */
+	getparam(token,&acg_incfac,PARAM_REAL,1,1);
+      }
+      else if (strcasecmp(token,"acg_decfac")==0) {
+	/* decrease alpha */
+	getparam(token,&acg_decfac,PARAM_REAL,1,1);
+      }
+#endif
       else error_str("unknown CG mode %s",tmpstr);
     }
 #endif /* CG */
+
+#ifdef ACG
+      else if (strcasecmp(token,"acg_alpha")==0) {
+	/* starting alpha */
+	getparam(token,&acg_alpha,PARAM_REAL,1,1);
+      }
+      else if (strcasecmp(token,"acg_incfac")==0) {
+	/* increase alpha */
+	getparam(token,&acg_incfac,PARAM_REAL,1,1);
+      }
+      else if (strcasecmp(token,"acg_decfac")==0) {
+	/* decrease alpha */
+	getparam(token,&acg_decfac,PARAM_REAL,1,1);
+      }
+#endif
 #ifdef SHOCK
     else if (strcasecmp(token,"shock_strip")==0) { 
       /* shock strip width (in x dir.) */
@@ -2807,6 +2836,11 @@ void broadcast_params() {
   MPI_Bcast( &cg_zeps,         1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &cg_infolevel,    1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &cg_mode,         1, MPI_INT, 0, MPI_COMM_WORLD); 
+#endif
+#ifdef ACG
+  MPI_Bcast( &acg_alpha,      1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &acg_decfac,     1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &acg_incfac,     1, REAL,    0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef USE_SOCKETS

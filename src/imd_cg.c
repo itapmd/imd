@@ -42,7 +42,7 @@ void reset_cg(void)
 *  one cg line minimization
 *
 *****************************************************************************/
-
+#if defined (CG)&& !defined(ACG)
 void cg_step(int steps)
 {
   /* minimization in one 'direction' */
@@ -63,6 +63,26 @@ void cg_step(int steps)
   /* sets old_ort = ort, h, g, needs gamma and gets f_max2 */ 
   set_hg();
   
+}
+#endif
+
+void acg_step(int steps)
+{
+  /* minimization in one 'direction' */
+  if (cg_reset_int>0) {
+    if (0==steps%cg_reset_int) reset_cg();
+  }
+  cg_poteng = tot_pot_energy ;
+  old_cg_poteng = cg_poteng;
+
+  findalpha();
+  
+  cg_calcgamma(); /* calc gg, dgg */
+
+  /* sets old_ort = ort, h, g, needs gamma and gets f_max2 */ 
+  set_hg();
+
+  acg_alpha *= acg_incfac;
 }
 
 
@@ -180,6 +200,50 @@ int linmin()
   }
   return (iter1 + iter2);
 }
+
+
+
+
+#ifdef ACG
+
+/******************************************************************************
+ *
+ * findalpha: simplified line minimization for acg from Kai Nordlund
+ *
+ *****************************************************************************/
+
+int findalpha()
+{
+
+  int  iter=0;
+  real fb;
+
+  fb =old_cg_poteng;
+  while (fb >= old_cg_poteng)
+    {
+      fb = fonedim(acg_alpha);
+      iter++;
+      if (fb>=old_cg_poteng)
+	{
+	  acg_alpha = (acg_alpha<=1e-10 || iter>50) ? acg_alpha *acg_incfac : acg_alpha * acg_decfac;
+	}
+      if (iter > 100)
+	{
+	  printf("iter > 100");
+	  reset_cg();
+	  break;
+	}
+    }
+
+  return (iter);
+}
+
+#endif
+
+
+
+
+
 
 
 /* ondimensional function, used by brent */

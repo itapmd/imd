@@ -464,7 +464,14 @@ int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc);
 int brent(real ax, real bx, real cx, real fa, real fb, real fc,real *alphamin);
 #endif
 
+#ifdef ACG
+void acg_step(int steps);
+int findalpha();
+#endif
+
+
 #ifdef NMOLDYN
 void init_nmoldyn(void);
 void write_nmoldyn(int);
 #endif
+

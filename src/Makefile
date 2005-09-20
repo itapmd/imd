@@ -836,6 +836,9 @@ SOURCES += ${CGSOURCES}
 IMDHEADERS += cg_util.h  
 CFLAGS  += -DCG
 endif
+ifneq (,$(strip $(findstring acg,${MAKETARGET})))
+CFLAGS  += -DACG
+endif
 
 ifneq (,$(findstring nvt,${MAKETARGET}))
 CFLAGS += -DNVT

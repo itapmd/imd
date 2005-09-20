@@ -531,6 +531,12 @@ EXTERN real   dgg           INIT(0.0);      /* see Num. Rec. p.320 */
 EXTERN real   cg_gamma      INIT(0.0);      /* see Num. Rec. p.320 */    
 #endif
 
+#ifdef ACG
+EXTERN real   acg_alpha         INIT(0.005);      /* Kai Nordlunds adaptive CG */
+EXTERN real   acg_incfac        INIT(1.05);      /* Kai Nordlunds adaptive CG */
+EXTERN real   acg_decfac        INIT(0.5);      /* Kai Nordlunds adaptive CG */
+#endif
+
 #ifdef RELAX
 EXTERN int sscount INIT(0);           /* snapshot counter */
 #endif

@@ -263,9 +263,12 @@ void main_loop(void)
     }
 #endif
 
-#ifdef CG
+#if defined (CG)&& !defined(ACG)
     if (ensemble == ENS_CG) cg_step(steps);
     else
+#elif defined(ACG)
+      if (ensemble == ENS_CG) acg_step(steps);
+      else
 #endif
 
     calc_forces(steps);
