@@ -154,10 +154,10 @@ ifeq (x86_64-icc,${IMDSYS})
   CC_SERIAL	= icc
   CC_MPI	= mpicc
   MPICH_CC      = icc
-#  MPICH_CLINKER = gcc
+  MPICH_CLINKER = icc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
 #  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
-  OPT_FLAGS	+= -O3 -ip -axP
+  OPT_FLAGS	+= -O3 -ip # -axP # remove -axP for Opteron
   MPI_FLAGS     += 
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp
@@ -166,7 +166,7 @@ ifeq (x86_64-icc,${IMDSYS})
   RCD_FLAGS	+= # -DRCD -rcd
   MPI_LIBS      += 
   LFLAGS        += # -static
-  export        MPICH_CC # MPICH_CLINKER
+  export        MPICH_CC MPICH_CLINKER
 endif
 
 # Intel EM64T "AMD inside", icc, Infiniband
