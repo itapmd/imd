@@ -283,7 +283,7 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Virial,
 #ifdef P_AXIAL
   vektor tmp_vir_vect = {0.0, 0.0, 0.0};
 #endif
-  real eam2_force, rho_i_strich, rho_j_strich;;
+  real eam2_force, rho_i_strich, rho_j_strich;
 #ifdef EEAM
   real rho_i, rho_j;
 #endif
