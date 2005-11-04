@@ -44,5 +44,9 @@ span.sub {
   margin-left: 1.2em;
 }
 
+div.nowrap { whitespace: nowrap; }
+
 .white { color: white; }
+.red   { color: red; }
+.blue  { color: blue; }
 
