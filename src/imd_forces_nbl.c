@@ -870,7 +870,7 @@ void calc_forces(int steps)
           v.z = la.zx * d.x + la.yz * d.y + la.zz * d.z;
           nu  = (la.xx + la.yy + la.zz) / 3.0;
           f1  = 2.0 * pot;
-          f2  = (SPROD(v,d) + nu * r2) * grad + nu * f1; 
+          f2  = (SPROD(v,d) - nu * r2) * grad - nu * f1; 
           force.x += f1 * v.x + f2 * d.x;
           force.y += f1 * v.y + f2 * d.y;
           force.z += f1 * v.z + f2 * d.z;
