@@ -212,6 +212,32 @@ int linmin()
  *
  *****************************************************************************/
 
+/* int findalpha() */
+/* { */
+
+/*   int  iter=0; */
+/*   real fb; */
+
+/*   fb =old_cg_poteng; */
+/*   while (fb >= old_cg_poteng) */
+/*     { */
+/*       fb = fonedim(acg_alpha); */
+/*       iter++; */
+/*       if (fb>=old_cg_poteng) */
+/* 	{ */
+/* 	  acg_alpha = (acg_alpha<=1e-10 || iter>50) ? acg_alpha *acg_incfac : acg_alpha * acg_decfac; */
+/* 	} */
+/*       if (iter > 100) */
+/* 	{ */
+/* 	  printf("iter > 100"); */
+/* 	  reset_cg(); */
+/* 	  break; */
+/* 	} */
+/*     } */
+
+/*   return (iter); */
+/* } */
+
 int findalpha()
 {
 
@@ -221,20 +247,32 @@ int findalpha()
   fb =old_cg_poteng;
   while (fb >= old_cg_poteng)
     {
-      fb = fonedim(acg_alpha);
-      iter++;
-      if (fb>=old_cg_poteng)
-	{
-	  acg_alpha = (acg_alpha<=1e-10 || iter>50) ? acg_alpha *acg_incfac : acg_alpha * acg_decfac;
-	}
-      if (iter > 100)
-	{
-	  printf("iter > 100");
-	  reset_cg();
-	  break;
-	}
+	if (iter <4)     // this is ACG as in Kain Nordlunds script
+	    {
+		fb = fonedim(acg_alpha);
+		iter++;
+		if (fb>=old_cg_poteng)
+		    {
+			acg_alpha =  acg_alpha * acg_decfac;
+		    }
+	    }
+	else if (iter>50)  // bail-out by Kai Nordlund
+	    {
+		if (myid==0)
+		    error("ACG not able to find step minimizing fonedim");
+	    }
+	else          
+	    {
+		fb = fonedim_sd(acg_alpha);
+		iter++;
+		if (fb>=old_cg_poteng)
+		    {
+			acg_alpha =  acg_alpha * acg_decfac;
+		    }
+	    }
+    
+	
     }
-
   return (iter);
 }
 
@@ -251,6 +289,24 @@ int findalpha()
 real fonedim(real alpha)  
 {
   move_atoms_cg(alpha);
+#ifdef NBLIST
+  check_nblist();
+#else
+  do_boundaries();    
+  fix_cells();
+#endif
+  calc_forces(1);
+  calc_fnorm();
+  // return tot_pot_energy / natoms;
+  return tot_pot_energy ;
+}
+
+
+/* ondimensional function, used by brent */
+/* sets the global variables epot,fnorm corresponding to alpha */
+real fonedim_sd(real alpha)  
+{
+  move_atoms_sd(alpha);
 #ifdef NBLIST
   check_nblist();
 #else

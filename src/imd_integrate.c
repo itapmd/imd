@@ -2787,3 +2787,85 @@ void move_atoms_cg(real alpha)
 }
 
 #endif
+
+
+/* steepest descent step, needed for ACG , could also be used just 
+   to do a steepest descent */
+
+#if defined(CG) || defined(SD) 
+
+void move_atoms_sd(real alpha)
+{
+  int k;
+  real tmp_x_max2 = 0.0;
+  real tmpvec1[1], tmpvec2[1];
+  /* loop over all cells */
+  xnorm=0;
+  for (k=0; k<NCELLS; ++k) {
+
+    int  i, j, sort;
+    cell *p;
+
+    p = CELLPTR(k);
+
+#ifdef CLONE
+    for (i=0; i<p->n; i+=nclones)
+      for (j=1; j<nclones; j++) {
+        KRAFT(p,i+j,X)  = KRAFT(p,i,X);
+        KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
+#ifndef TWOD
+        KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
+#endif
+      }
+#endif /* CLONE */
+
+    for (i=0; i<p->n; ++i) {
+      /* CG:  move atoms in force direction for linmin */
+      ORT(p,i,X) = OLD_ORT(p,i,X) + alpha * KRAFT(p,i,X);
+      ORT(p,i,Y) = OLD_ORT(p,i,Y) + alpha * KRAFT(p,i,Y);
+#ifndef TWOD
+      ORT(p,i,Z) = OLD_ORT(p,i,Z) + alpha * KRAFT(p,i,Z);
+#endif
+
+#ifdef RELAXINFO
+      xnorm   += alpha * alpha *  SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+     /* determine the biggest force component */
+      tmp_x_max2 = MAX( alpha * alpha *SQR(KRAFT(p,i,X)),tmp_x_max2);
+      tmp_x_max2 = MAX( alpha * alpha *SQR(KRAFT(p,i,Y)),tmp_x_max2);
+#ifndef TWOD
+      tmp_x_max2 = MAX( alpha * alpha *SQR(KRAFT(p,i,Z)),tmp_x_max2);
+#endif
+
+#endif
+
+    }
+  }
+
+#ifdef RELAXINFO
+#ifdef MPI
+  tmpvec1[0] = xnorm;
+  MPI_Allreduce( tmpvec1, tmpvec2, 1, REAL, MPI_SUM, cpugrid); 
+  xnorm          = tmpvec2[0];
+  MPI_Allreduce( &tmp_x_max2, &x_max2, 1, REAL, MPI_MAX, cpugrid);
+#else
+  x_max2 = tmp_x_max2;
+#endif
+#endif
+ if ((cg_infolevel>0) && (0==myid)) 
+{
+  printf("moveatoms, alpha %.12e , xmax %.12e\n",alpha,SQRT(x_max2));fflush(stdout);
+}
+
+
+
+}
+
+#else
+
+void move_atoms_sd(real alpha) 
+{
+  if (myid==0)
+    error("the chosen ensemble CG or SD is not supported by this binary");
+}
+
+#endif
