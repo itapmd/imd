@@ -533,6 +533,7 @@ EXTERN real   cg_gamma      INIT(0.0);      /* see Num. Rec. p.320 */
 
 #ifdef ACG
 EXTERN real   acg_alpha         INIT(0.005);      /* Kai Nordlunds adaptive CG */
+EXTERN real   acg_init_alpha         INIT(0.005);      /* Kai Nordlunds adaptive CG */
 EXTERN real   acg_incfac        INIT(1.05);      /* Kai Nordlunds adaptive CG */
 EXTERN real   acg_decfac        INIT(0.5);      /* Kai Nordlunds adaptive CG */
 #endif

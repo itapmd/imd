@@ -263,12 +263,14 @@ int findalpha()
 	    }
 	else          
 	    {
-		fb = fonedim_sd(acg_alpha);
-		iter++;
-		if (fb>=old_cg_poteng)
-		    {
-			acg_alpha =  acg_alpha * acg_decfac;
-		    }
+	      if (iter==4)
+			acg_alpha=acg_init_alpha;
+	      fb = fonedim_sd(acg_alpha);
+	      iter++;
+	      if (fb>=old_cg_poteng)
+		{
+		  acg_alpha =  acg_alpha * acg_decfac;
+		}
 	    }
     
 	

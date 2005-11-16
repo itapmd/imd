@@ -40,7 +40,9 @@ void main_loop(void)
 #ifdef GLOK
   int glok_start = steps_min; 
 #endif
-
+#ifdef ACG
+ acg_alpha = acg_init_alpha;
+#endif
 #ifdef TWOD
   vektor nullv={0.0,0.0};
 #else
@@ -267,6 +269,7 @@ void main_loop(void)
     if (ensemble == ENS_CG) cg_step(steps);
     else
 #elif defined(ACG)
+     
       if (ensemble == ENS_CG) acg_step(steps);
       else
 #endif
