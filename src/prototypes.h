@@ -469,6 +469,7 @@ int brent(real ax, real bx, real cx, real fa, real fb, real fc,real *alphamin);
 #ifdef ACG
 void acg_step(int steps);
 int findalpha();
+
 #endif
 
 

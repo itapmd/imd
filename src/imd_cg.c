@@ -66,6 +66,7 @@ void cg_step(int steps)
 }
 #endif
 
+#ifdef ACG
 void acg_step(int steps)
 {
   /* minimization in one 'direction' */
@@ -84,7 +85,7 @@ void acg_step(int steps)
 
   acg_alpha *= acg_incfac;
 }
-
+#endif
 
 /******************************************************************************
  *
