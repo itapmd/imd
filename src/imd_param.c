@@ -1362,7 +1362,7 @@ void getparamfile(char *paramfname, int sim)
 	/* starting alpha */
 	getparam(token,&acg_init_alpha,PARAM_REAL,1,1);
       }
-      else if (strcasecmp(token,"acg_infac")==0) {
+      else if (strcasecmp(token,"acg_incfac")==0) {
 	/* increase alpha */
 	getparam(token,&acg_incfac,PARAM_REAL,1,1);
       }
