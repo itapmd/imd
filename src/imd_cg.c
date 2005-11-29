@@ -259,9 +259,17 @@ int findalpha()
 	    }
 	else if (iter>50)  // bail-out by Kai Nordlund
 	    {
-		if (myid==0)
-		    error("ACG not able to find step minimizing fonedim");
+		write_eng_file(nfc+iter);
+		write_cgconfig(nfc+iter);
+
+		if (myid==0) {
+		  /*printf("ACG not able to find step minimizing fonedim\n");*/
+		  printf("nfc = %d epot = %22.16f\n", nfc, old_cg_poteng );
+		  error("ACG not able to find step minimizing fonedim");
+		}
+
 	    }
+
 	else          
 	    {
 	      if (iter==4)
