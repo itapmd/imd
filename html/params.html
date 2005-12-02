@@ -8,7 +8,7 @@ Following is a complete list of IMD parameters, together with a short
 description of their meaning, and indications when they are needed.
 Floating point numbers should be given in decimal notation. Vectors
 are given as a list of components, separated by spaces or tabs (all 
-on one line).</o>
+on one line).</p>
 
 <pre>
 # file names - required
@@ -183,14 +183,22 @@ correl_omode	# output mode for correlation data
 # parameters for DISLOC
 dem_int         # number of steps between DEM writes
 dsp_int		# number of steps between DSP writes
-reffile		# reference file name for DSP and DEM writes
 min_dpot	# threshold for differential energy writes
 min_dsp2        # threshold for displacement writes
 reset_Epot_step # step at which to compute Epot_ref (if calc_Epot_ref==1)
 calc_Epot_ref   # read (0) or compute (1) reference potential energy
-reffile         # file to read reference potential energy from
 Epot_diff       # whether to write the potential energy difference 
                 # (1, default), or the potential energy (0)
+
+# parameters for ORDPAR
+op_rcut         # cutoff radii for order parameter
+op_weight       # weights for order parameter
+
+# parameters for NNBR
+nb_rcut         # cutoff radii for coordination numbers
+nb_checkpt_int  # interval for coordination file writes
+nb_cut_lower    # particle with fewer neighbors are written 
+nb_cut_upper    # particle with more neighbors are written 
 
 # parameters for AVPOS
 avpos_start     # when to start writing average positions (default: 0)
@@ -397,6 +405,10 @@ diffpat_end     # step when diffraction pattern recording is stopped
 diffpat_ur      # upper right corner of atoms distribution
 diffpat_ll      # lower left  corner of atoms distribution
 diffpat_weight  # scattering strength of different atom types
+
+# parameters for option nmoldyn
+nmoldyn_int     # interval for nMoldyn trajectory writes
+nmoldyn_veloc   # include velocities in trajectory? (0/1)
 
 </pre>
 
