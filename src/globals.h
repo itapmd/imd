@@ -45,6 +45,7 @@
 #define nullivektor2d { 0, 0 }
 #define nullvektor3d { 0.0, 0.0, 0.0 }
 #define nullivektor3d { 0, 0, 0 }
+#define nullvektor4d { 0.0, 0.0, 0.0, 0.0 }
 
 #define nullbuffer  {NULL, 0, 0 }
 
@@ -181,6 +182,8 @@ EXTERN ivektor dist_dim          INIT(einsivektor); /* resolution of dist */
 EXTERN vektor  dist_ur           INIT(nullvektor);  /* lower left  corner */
 EXTERN vektor  dist_ll           INIT(nullvektor);  /* upper right corner */
 
+EXTERN int binary_output INIT(0);  /* write binary atoms data? */
+
 #ifdef EFILTER
 EXTERN int  ef_checkpt_int INIT(0);  /* Period of ef writes */
 EXTERN real *lower_e_pot INIT(NULL); /* lower end of energy window */
@@ -188,11 +191,13 @@ EXTERN real *upper_e_pot INIT(NULL); /* upper end of energy window */
 #endif
 EXTERN int  nclones INIT(1);         /* number of clones */
 
-#ifdef NBFILTER
-EXTERN int nb_checkpt_int INIT(0);   /* Period of nb writes */
-EXTERN int *lower_nb_cut INIT(NULL); /* lower number of neighbours  */
-EXTERN int *upper_nb_cut INIT(NULL); /* upper number of neighbours  */
+#ifdef NNBR
+EXTERN int  nb_checkpt_int INIT(0);    /* Period of nb writes */
+EXTERN int  *lower_nb_cut  INIT(NULL); /* lower bound for neighbours  */
+EXTERN int  *upper_nb_cut  INIT(NULL); /* upper bound for neighbours  */
+EXTERN real *nb_r2_cut     INIT(NULL); /* cutoff for neighbor determination */
 #endif
+
 /* data for generated structures */
 EXTERN ivektor box_param INIT(nullivektor);  /* box parameters */
 EXTERN int  size_per_cpu INIT(0);            /* box_param is given per cpu */
@@ -222,9 +227,6 @@ EXTERN str255 itrfilename INIT("\0");   /* initial itr-file */
 EXTERN str255 outfilename INIT("\0");   /* Output File */
 EXTERN str255 potfilename INIT("\0");   /* Potential */
 EXTERN str255 paramfilename INIT("\0"); /* Parameter File */
-
-/* Parameters for displacement map */
-EXTERN str255 reffilename INIT("\0");   /* Parameter File */
 
 /* pointers to files that are kept open */
 EXTERN FILE  *eng_file INIT(NULL);      /* pointer to .eng file  */
@@ -512,10 +514,10 @@ EXTERN real *E_kin_ftg;                  /* kin energy of the slices */
 
 #ifdef CG
 /* Parameters used by CG */
-EXTERN int    linmin_maxsteps  INIT(100); /* max number of linmin steps */    
-EXTERN real   linmin_tol  INIT(0.0002);    /* tolerance between 2 linmin steps */
+EXTERN int    linmin_maxsteps  INIT(100);/* max number of linmin steps */    
+EXTERN real   linmin_tol  INIT(0.0002);  /* tolerance between 2 linmin steps */
 EXTERN real   linmin_dmax  INIT(0.01);   /* max. search steps in linmin  */ 
-EXTERN real   linmin_dmin  INIT(0.001);   /* min. search steps in linmin  */
+EXTERN real   linmin_dmin  INIT(0.001);  /* min. search steps in linmin  */
 EXTERN real   cg_glimit  INIT(100);   
 EXTERN real   cg_zeps  INIT(1e-10);   
 EXTERN int    cg_infolevel INIT(0);     /* cg_infolevel controls verbosity */
@@ -532,10 +534,10 @@ EXTERN real   cg_gamma      INIT(0.0);      /* see Num. Rec. p.320 */
 #endif
 
 #ifdef ACG
-EXTERN real   acg_alpha         INIT(0.005);      /* Kai Nordlunds adaptive CG */
-EXTERN real   acg_init_alpha         INIT(0.005);      /* Kai Nordlunds adaptive CG */
-EXTERN real   acg_incfac        INIT(1.05);      /* Kai Nordlunds adaptive CG */
-EXTERN real   acg_decfac        INIT(0.5);      /* Kai Nordlunds adaptive CG */
+EXTERN real   acg_alpha         INIT(0.005);  /* Kai Nordlunds adaptive CG */
+EXTERN real   acg_init_alpha    INIT(0.005);  /* Kai Nordlunds adaptive CG */
+EXTERN real   acg_incfac        INIT(1.05);   /* Kai Nordlunds adaptive CG */
+EXTERN real   acg_decfac        INIT(0.5);    /* Kai Nordlunds adaptive CG */
 #endif
 
 #ifdef RELAX
@@ -600,9 +602,8 @@ EXTERN fftwf_plan diffpat_plan;     /* plan for FFT */
 #endif
 
 #ifdef ORDPAR
-#define nullvektor4d { 0.0, 0.0, 0.0, 0.0 }
-EXTERN real op_weight[2][2] INIT(nullvektor4d);
-EXTERN real op_r2_cut[2][2] INIT(nullvektor4d);
+EXTERN real *op_weight INIT(NULL);
+EXTERN real *op_r2_cut INIT(NULL);
 #endif
 
 /* Global data for MSQD & correlation */

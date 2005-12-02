@@ -222,12 +222,11 @@ void write_header_ef(FILE *out)
 {
   char c;
   time_t now;
+
   /* format line */
-  /* binary_io for checkpoints not implemented
-   if (binary_io)
-     c = is_big_endian ? 'B' : 'L';
-   else
-    */
+  if (binary_output)
+    c = is_big_endian ? 'b' : 'l';
+  else
     c = 'A';
   fprintf(out, "#F %c 1 1 1 %d %d 1\n", c, DIM, DIM);
   
@@ -248,7 +247,7 @@ void write_header_ef(FILE *out)
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
 #endif
 
-  /* endheader line */
+  /* generation date and endheader line */
   time(&now);
   fprintf(out, "## Generated on %s", ctime(&now) ); 
   fprintf(out, "## by %s (version of %s)\n", progname, DATE);
@@ -265,13 +264,13 @@ void write_header_ef(FILE *out)
 
 void write_atoms_ef(FILE *out)
 {
-  int i, k, len=0;
-  cell *p;
-  double h;
+  int i, k, n, len=0;
+  i_or_f *data;
 
   for (k=0; k<NCELLS; k++) {
-    p = CELLPTR(k);
+    cell *p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
+
       if ( pic_ur.x != (real)0 ) /* if pic_ur.x still 0, write everything */
         if ((ORT(p,i,X) < pic_ll.x) || (ORT(p,i,X) > pic_ur.x) ||
 #ifndef TWOD
@@ -279,31 +278,47 @@ void write_atoms_ef(FILE *out)
 #endif
             (ORT(p,i,Y) < pic_ll.y) || (ORT(p,i,Y) > pic_ur.y)) continue;
 
-      if ( (SORTE(p,i) == VSORTE(p,i)) &&
-           (POTENG(p,i)>=lower_e_pot[SORTE(p,i)]) && 
-           (POTENG(p,i)<=upper_e_pot[SORTE(p,i)]) ){
-          len += sprintf( outbuf+len,
-#ifdef TWOD
-          "%d %d %12f %12f %12f %12f %12f %12f\n",
-#else
-          "%d %d %12f %12f %12f %12f %12f %12f %12f %12f\n",
-#endif
-          NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
-          ORT(p,i,X),
-          ORT(p,i,Y),
+      if ( (SORTE(p,i) != VSORTE(p,i)) ||
+           (POTENG(p,i) < lower_e_pot[SORTE(p,i)]) || 
+           (POTENG(p,i) > upper_e_pot[SORTE(p,i)]) ) continue;
+
+      /* binary output */
+      if (binary_output) {
+        n = 0;
+        data = (i_or_f *) (outbuf+len);
+        data[n++].i = (integer) NUMMER(p,i);
+        data[n++].i = (integer) VSORTE(p,i);
+        data[n++].f = (float)   MASSE (p,i);
+        data[n++].f = (float)   ORT (p,i,X);
+        data[n++].f = (float)   ORT (p,i,Y);
 #ifndef TWOD
-          ORT(p,i,Z),
+        data[n++].f = (float)   ORT (p,i,Z);
 #endif
-          IMPULS(p,i,X) / MASSE(p,i),
-          IMPULS(p,i,Y) / MASSE(p,i),
+        data[n++].f = (float)   IMPULS(p,i,X) / MASSE(p,i);
+        data[n++].f = (float)   IMPULS(p,i,Y) / MASSE(p,i);
 #ifndef TWOD
-          IMPULS(p,i,Z) / MASSE(p,i),
+        data[n++].f = (float)   IMPULS(p,i,Z) / MASSE(p,i);
 #endif
-          POTENG(p,i)
-        );
-        /* flush or send outbuf if it is full */
-        if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+        data[n++].f = (float)   POTENG(p,i);
+        len += n * sizeof(i_or_f);
       }
+      /* ASCII output */
+      else {
+#ifdef TWOD
+        len += sprintf( outbuf+len,
+          "%d %d %12f %12f %12f %12f %12f %12f\n",
+          NUMMER(p,i), VSORTE(p,i), MASSE(p,i), ORT(p,i,X), ORT(p,i,Y),
+          IMPULS(p,i,X) / MASSE(p,i), IMPULS(p,i,Y) / MASSE(p,i), POTENG(p,i));
+#else
+        len += sprintf( outbuf+len,
+          "%d %d %12f %12f %12f %12f %12f %12f %12f %12f\n",
+          NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
+          ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), IMPULS(p,i,X) / MASSE(p,i), 
+          IMPULS(p,i,Y) / MASSE(p,i), IMPULS(p,i,Z) / MASSE(p,i), POTENG(p,i));
+#endif
+      }
+      /* flush or send outbuf if it is full */
+      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
@@ -311,7 +326,7 @@ void write_atoms_ef(FILE *out)
 #endif /* EFILTER */
 
 
-#ifdef NBFILTER
+#ifdef NNBR
 
 /******************************************************************************
 *
@@ -325,19 +340,17 @@ void write_header_nb(FILE *out)
   time_t now;
 
   /* format line */
-  /* binary_io for checkpoints not implemented
-   if (binary_io)
-     c = is_big_endian ? 'B' : 'L';
-   else
-    */
+  if (binary_output)
+    c = is_big_endian ? 'b' : 'l';
+  else
     c = 'A';
   fprintf(out, "#F %c 1 1 1 %d %d 1\n", c, DIM, DIM);
   
   /* contents line */
 #ifdef TWOD
-  fprintf(out, "#C number type mass x y vx vy Epot\n");
+  fprintf(out, "#C number type x y vx vy Epot\n");
 #else
-  fprintf(out, "#C number type mass x y z vx vy vz Epot\n");
+  fprintf(out, "#C number type x y z vx vy vz Epot\n");
 #endif
 
   /* box lines */
@@ -350,7 +363,7 @@ void write_header_nb(FILE *out)
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
 #endif
 
-  /* endheader line */
+  /* generation date and endheader line */
   time(&now);
   fprintf(out, "## Generated on %s", ctime(&now) ); 
   fprintf(out, "## by %s (version of %s)\n", progname, DATE);
@@ -361,19 +374,19 @@ void write_header_nb(FILE *out)
 /******************************************************************************
 *
 *  filter function for write_config_select
-*  writes an 'neighbours filtered' configuration
+*  writes a 'neighbours filtered' configuration
 *
 ******************************************************************************/
 
 void write_atoms_nb(FILE *out)
 {
-  int i, k, len=0;
-  cell *p;
-  double h;
+  int i, k, n, len=0;
+  i_or_f *data;
 
   for (k=0; k<NCELLS; k++) {
-    p = CELLPTR(k);
+    cell *p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
+
       if ( pic_ur.x != (real)0 ) /* if pic_ur.x still 0, write everything */
         if ((ORT(p,i,X) < pic_ll.x) || (ORT(p,i,X) > pic_ur.x) ||
 #ifndef TWOD
@@ -381,36 +394,53 @@ void write_atoms_nb(FILE *out)
 #endif
             (ORT(p,i,Y) < pic_ll.y) || (ORT(p,i,Y) > pic_ur.y)) continue;
 
-      if ( (SORTE(p,i) == VSORTE(p,i)) && 
-	   ((NBANZ(p,i)< lower_nb_cut[SORTE(p,i)]) || 
-	    (NBANZ(p,i)> upper_nb_cut[SORTE(p,i)]))){
-	  len += sprintf( outbuf+len,
-#ifdef TWOD
-          "%d %d %12f %12f %12f %12f %12f %12f\n",
-#else
-          "%d %d %12f %12f %12f %12f %12f %12f %12f %12f\n",
-#endif
-          NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
-          ORT(p,i,X),
-          ORT(p,i,Y),
+      if ( (SORTE(p,i) != VSORTE(p,i)) || 
+	   ((NBANZ(p,i) > lower_nb_cut[SORTE(p,i)]) && 
+	    (NBANZ(p,i) < upper_nb_cut[SORTE(p,i)])) ) continue;
+
+      /* binary output */
+      if (binary_output) {
+        n = 0;
+        data = (i_or_f *) (outbuf+len);
+        data[n++].i = (integer) NUMMER(p,i);
+        data[n++].i = (integer) VSORTE(p,i);
+        data[n++].f = (float)   MASSE (p,i);
+        data[n++].f = (float)   ORT (p,i,X);
+        data[n++].f = (float)   ORT (p,i,Y);
 #ifndef TWOD
-          ORT(p,i,Z),
+        data[n++].f = (float)   ORT (p,i,Z);
 #endif
-          IMPULS(p,i,X) / MASSE(p,i),
-          IMPULS(p,i,Y) / MASSE(p,i),
+        data[n++].f = (float)   IMPULS(p,i,X) / MASSE(p,i);
+        data[n++].f = (float)   IMPULS(p,i,Y) / MASSE(p,i);
 #ifndef TWOD
-          IMPULS(p,i,Z) / MASSE(p,i),
+        data[n++].f = (float)   IMPULS(p,i,Z) / MASSE(p,i);
 #endif
-          POTENG(p,i)
-        );
-        /* flush or send outbuf if it is full */
-        if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+        data[n++].f = (float)   POTENG(p,i);
+        len += n * sizeof(i_or_f);
       }
+      /* ASCII output */
+      else {
+#ifdef TWOD
+        len += sprintf( outbuf+len,
+          "%d %d %12f %12f %12f %12f %12f %12f\n",
+          NUMMER(p,i), VSORTE(p,i), MASSE (p,i), 
+          ORT(p,i,X), ORT(p,i,Y),
+          IMPULS(p,i,X) / MASSE(p,i), IMPULS(p,i,Y) / MASSE(p,i), POTENG(p,i));
+#else
+        len += sprintf( outbuf+len,
+          "%d %d %12f %12f %12f %12f %12f %12f %12f %12f\n",
+          NUMMER(p,i), VSORTE(p,i), MASSE (p,i), 
+          ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), IMPULS(p,i,X) / MASSE(p,i), 
+          IMPULS(p,i,Y) / MASSE(p,i), IMPULS(p,i,X) / MASSE(p,i), POTENG(p,i));
+#endif
+      }
+      /* flush or send outbuf if it is full */
+      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
 }
-#endif /* NBFILTER */
+#endif /* NNBR */
 
 #ifdef WRITEF
 
@@ -426,11 +456,9 @@ void write_header_wf(FILE *out)
   time_t now;
 
   /* format line */
-  /* binary_io for checkpoints not implemented
-   if (binary_io)
-     c = is_big_endian ? 'B' : 'L';
-   else
-    */
+  if (binary_output)
+    c = is_big_endian ? 'b' : 'l';
+  else
     c = 'A';
   fprintf(out, "#F %c 1 1 1 %d %d 1\n", c, DIM, DIM);
   
@@ -451,7 +479,7 @@ void write_header_wf(FILE *out)
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
 #endif
 
-  /* endheader line */
+  /* generation date and endheader line */
   time(&now);
   fprintf(out, "## Generated on %s", ctime(&now) ); 
   fprintf(out, "## by %s (version of %s)\n", progname, DATE);
@@ -462,45 +490,60 @@ void write_header_wf(FILE *out)
 /******************************************************************************
 *
 *  filter function for write_config_select
-*  writes an 'energy filtered' configuration
+*  writes forces of boundary particles
 *
 ******************************************************************************/
 
 void write_atoms_wf(FILE *out)
 {
-  int i, k, len=0;
-  cell *p;
-  double h;
+  int i, k, n, len=0;
+  i_or_f *data;
 
   for (k=0; k<NCELLS; k++) {
-    p = CELLPTR(k);
+    cell *p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
-      if(SORTE(p,i) != VSORTE(p,i)){
-        len += sprintf( outbuf+len,
-#ifdef TWOD
-          "%d %d %12f %12f %12f %12g %12g %12f\n",
-#else
-          "%d %d %12f %12f %12f %12f %12e %12e %12e %12f\n",
-#endif
-          NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
-          ORT(p,i,X),
-          ORT(p,i,Y),
-#ifndef TWOD
-          ORT(p,i,Z),
-#endif
-          KRAFT(p,i,X),
-          KRAFT(p,i,Y),
-#ifndef TWOD
-          KRAFT(p,i,Z),
-#endif
-          POTENG(p,i)
-        );
-        /* flush or send outbuf if it is full */
-        if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
-      }
-      }
-    }
 
+      if (SORTE(p,i) == VSORTE(p,i)) continue;
+
+      /* binary output */
+      if (binary_output) {
+        n = 0;
+        data = (i_or_f *) (outbuf+len);
+        data[n++].i = (integer) NUMMER(p,i);
+        data[n++].i = (integer) VSORTE(p,i);
+        data[n++].f = (float)   MASSE (p,i);
+        data[n++].f = (float)   ORT(p,i,X);
+        data[n++].f = (float)   ORT(p,i,Y);
+#ifndef TWOD
+        data[n++].f = (float)   ORT(p,i,Z);
+#endif
+        data[n++].f = (float)   KRAFT(p,i,X);
+        data[n++].f = (float)   KRAFT(p,i,Y);
+#ifndef TWOD
+        data[n++].f = (float)   KRAFT(p,i,Z);
+#endif
+        data[n++].f = (float)   POTENG(p,i);
+        len += n * sizeof(i_or_f);
+      }
+      /* ASCII output */
+      else {
+#ifdef TWOD
+        len += sprintf( outbuf+len,
+          "%d %d %12f %12f %12f %12g %12g %12f\n",
+          NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
+          ORT(p,i,X), ORT(p,i,Y), KRAFT(p,i,X), KRAFT(p,i,Y), POTENG(p,i));
+#else
+        len += sprintf( outbuf+len,
+          "%d %d %12f %12f %12f %12f %12e %12e %12e %12f\n",
+          NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
+          ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z),
+          KRAFT(p,i,X), KRAFT(p,i,Y), KRAFT(p,i,Z), POTENG(p,i));
+#endif
+      }
+      /* flush or send outbuf if it is full */
+      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+    }
+  }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
 }
 #endif /* WRITEF */
@@ -520,20 +563,18 @@ void write_header_press(FILE *out)
   time_t now;
 
   /* format line */
-  /* binary_io for checkpoints not implemented
-   if (binary_io)
-     c = is_big_endian ? 'B' : 'L';
-   else
-    */
+  if (binary_output)
+    c = is_big_endian ? 'b' : 'l';
+  else
     c = 'A';
   
   /* format and contents lines */
 #ifdef TWOD
-  fprintf(out, "#F %c 0 0 0 2 0 3\n", c);
-  fprintf(out, "#C x y P_xx P_yy P_xy\n");
+  fprintf(out, "#F %c 1 1 1 2 0 3\n", c);
+  fprintf(out, "#C number type mass x y P_xx P_yy P_xy\n");
 #else
   fprintf(out, "#F %c 1 1 1 3 0 6\n", c);
-  fprintf(out, "#C number typ mass x y z P_xx P_yy P_zz P_yz P_zx P_xy\n");
+  fprintf(out, "#C number type mass x y z P_xx P_yy P_zz P_yz P_zx P_xy\n");
 #endif
 
   /* box lines */
@@ -563,26 +604,51 @@ void write_header_press(FILE *out)
 
 void write_atoms_press(FILE *out)
 {
-  int i, k, len=0;
-  cell *p;
+  int i, k, n, len=0;
+  i_or_f *data;
 
   for (k=0; k<NCELLS; k++) {
-    p = CELLPTR(k);
+    cell *p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
-#ifdef TWOD
-      len += sprintf( outbuf+len, 
-        "%10.4e %10.4e %10.4e %10.4e %10.4e\n", 
-        ORT(p,i,X),ORT(p,i,Y),
-        PRESSTENS(p,i,xx), PRESSTENS(p,i,yy), PRESSTENS(p,i,xy) );
-#else
-      len += sprintf( outbuf+len,
-		      /*        "%d %d %f %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e %10.4e\n", */
-        "%d %d %f %.12f %.12f %.12f %.12f %.12f %.12f %.12f %.12f %.12f\n", 
-
-         NUMMER(p,i), VSORTE(p,i), MASSE(p,i),ORT(p,i,X),ORT(p,i,Y),ORT(p,i,Z),
-        PRESSTENS(p,i,xx), PRESSTENS(p,i,yy), PRESSTENS(p,i,zz),
-        PRESSTENS(p,i,yz), PRESSTENS(p,i,zx), PRESSTENS(p,i,xy) );
+      /* binary output */
+      if (binary_output) {
+        n = 0;
+        data = (i_or_f *) (outbuf+len);
+        data[n++].i = (integer) NUMMER(p,i);
+        data[n++].i = (integer) VSORTE(p,i);
+        data[n++].f = (float)   MASSE (p,i);
+        data[n++].f = (float)   ORT (p,i,X);
+        data[n++].f = (float)   ORT (p,i,Y);
+#ifndef TWOD
+        data[n++].f = (float)   ORT (p,i,Z);
 #endif
+        data[n++].f = (float)   PRESSTENS(p,i,xx);
+        data[n++].f = (float)   PRESSTENS(p,i,yy);
+#ifndef TWOD
+        data[n++].f = (float)   PRESSTENS(p,i,zz);
+        data[n++].f = (float)   PRESSTENS(p,i,yz);
+        data[n++].f = (float)   PRESSTENS(p,i,zx);
+#endif
+        data[n++].f = (float)   PRESSTENS(p,i,xy);
+        len += n * sizeof(i_or_f);
+      }
+      /* ASCII output */
+      else {
+#ifdef TWOD
+        len += sprintf( outbuf+len, 
+          "%d %d %f %.12f %.12f %.12f %.12f %.12f\n", 
+          "%10.4e %10.4e %10.4e %10.4e %10.4e\n", 
+          NUMMER(p,i), VSORTE(p,i), MASSE(p,i), ORT(p,i,X),ORT(p,i,Y),
+          PRESSTENS(p,i,xx), PRESSTENS(p,i,yy), PRESSTENS(p,i,xy) );
+#else
+        len += sprintf( outbuf+len,
+          "%d %d %f %.12f %.12f %.12f %.12f %.12f %.12f %.12f %.12f %.12f\n", 
+          NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
+          ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z),
+          PRESSTENS(p,i,xx), PRESSTENS(p,i,yy), PRESSTENS(p,i,zz),
+          PRESSTENS(p,i,yz), PRESSTENS(p,i,zx), PRESSTENS(p,i,xy) );
+#endif
+      }
       /* flush or send outbuf if it is full */
       if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
@@ -603,7 +669,7 @@ void write_header_pic(FILE *out)
   time_t now;
 
   /* format line; format is always binary */
-  c = is_big_endian ? 'B' : 'L';
+  c = is_big_endian ? 'b' : 'l';
   fprintf(out, "#F %c 0 0 0 %d 0 3\n", c, DIM);
 
   /* contents line */
@@ -614,7 +680,7 @@ void write_header_pic(FILE *out)
 #endif
 #ifdef DISLOC
   if (Epot_diff==1)
-    fprintf(out, " Epot-Epot_ref type\n");
+    fprintf(out, " delta_Epot type\n");
   else
 #endif
 #ifdef ORDPAR 
@@ -650,49 +716,38 @@ void write_header_pic(FILE *out)
 
 void write_atoms_pic(FILE *out) 
 {
-  typedef struct { 
-    float   pos_x, pos_y;
-#ifndef TWOD
-    float   pos_z; 
-#endif
-    float   E_kin, E_pot;
-    integer type;
-    integer end;   /* this must be the last component of picbuf_t! */
-  } picbuf_t;
-
-  int i, k, len=0, sz;
-  picbuf_t *picbuf, dummy_buf;
-  cell *p;
-
-  /* get the real size of picbuf_t in bytes */
-  sz = ((char *) &dummy_buf.end) - ((char *) &dummy_buf);
+  int i, k, n, len=0;
+  i_or_f *data;
 
   for (k=0; k<NCELLS; k++) {
-    p = CELLPTR(k);
+    cell *p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
-      picbuf = (picbuf_t *) (outbuf+len);
-      picbuf->pos_x = (float) ORT(p,i,X);
-      picbuf->pos_y = (float) ORT(p,i,Y);
-#ifndef TWOD
-      picbuf->pos_z = (float) ORT(p,i,Z);
-#endif
-      if ( pic_ur.x != (real)0 ) /* if pic_ur still 0, write everything */
-      if ( (picbuf->pos_x < pic_ll.x) || (picbuf->pos_x > pic_ur.x) ||
-#ifndef TWOD
-           (picbuf->pos_z < pic_ll.z) || (picbuf->pos_z > pic_ur.z) ||
-#endif
-           (picbuf->pos_y < pic_ll.y) || (picbuf->pos_y > pic_ur.y) ) continue;
 
-      picbuf->E_kin = (float) SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / 
+      if ( pic_ur.x != (real)0 ) /* if pic_ur still 0, write everything */
+      if ( (ORT(p,i,X) < pic_ll.x) || (ORT(p,i,X) > pic_ur.x) ||
+#ifndef TWOD
+           (ORT(p,i,Z) < pic_ll.z) || (ORT(p,i,Z) > pic_ur.z) ||
+#endif
+           (ORT(p,i,Y) < pic_ll.y) || (ORT(p,i,Y) > pic_ur.y) ) continue;
+
+      n = 0;
+      data = (i_or_f *) (outbuf+len);
+      data[n++].f = (float) ORT(p,i,X);
+      data[n++].f = (float) ORT(p,i,Y);
+#ifndef TWOD
+      data[n++].f = (float) ORT(p,i,Z);
+#endif
+      data[n++].f = (float) SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / 
                                                             (2 * MASSE(p,i));
 #ifdef DISLOC
       if (Epot_diff==1)
-        picbuf->E_pot = (float) (POTENG(p,i) - EPOT_REF(p,i));
+        data[n++].f = (float) (POTENG(p,i) - EPOT_REF(p,i));
       else
 #endif
-      picbuf->E_pot = POTENG(p,i);
-      picbuf->type  = (integer) VSORTE(p,i);
-      len += sz;
+      data[n++].f = POTENG(p,i);
+      data[n++].i = (integer) VSORTE(p,i);
+      len += n * sizeof(i_or_f);
+
       /* flush or send outbuf if it is full */
       if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
@@ -715,11 +770,9 @@ void write_header_dem(FILE *out)
   time_t now;
 
   /* format line */
-  /* binary_io for checkpoints not implemented
-   if (binary_io)
-     c = is_big_endian ? 'B' : 'L';
-   else
-    */
+  if (binary_output)
+    c = is_big_endian ? 'b' : 'l';
+  else
     c = 'A';
   fprintf(out, "#F %c 0 1 0 %d 0 1\n", c, DIM);
   
@@ -757,15 +810,32 @@ void write_header_dem(FILE *out)
 
 void write_atoms_dem(FILE *out)
 {
-  int i, k, len=0;
-  cell *p;
+  int i, k, n, len=0;
+  i_or_f *data;
   real dpot;
 
   for (k=0; k<NCELLS; k++) {
-    p = CELLPTR(k);
+    cell *p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
+
       dpot = ABS(POTENG(p,i) - EPOT_REF(p,i));
-      if (dpot > min_dpot) {
+      if (dpot <= min_dpot) continue;
+
+      /* binary output */
+      if (binary_output) {
+        n = 0;
+        data = (i_or_f *) (outbuf+len);
+        data[n++].i = (integer) VSORTE(p,i);
+        data[n++].f = (float)   ORT (p,i,X);
+        data[n++].f = (float)   ORT (p,i,Y);
+#ifndef TWOD
+        data[n++].f = (float)   ORT (p,i,Z);
+#endif
+        data[n++].f = (float)   dpot;
+        len += n * sizeof(i_or_f);
+      }
+      /* ASCII output */
+      else {
 #ifdef TWOD
         len += sprintf( outbuf+len, "%d %e %e %e\n",
                         VSORTE(p,i), ORT(p,i,X), ORT(p,i,Y), dpot);
@@ -773,9 +843,9 @@ void write_atoms_dem(FILE *out)
         len += sprintf( outbuf+len, "%d %e %e %e %e\n",
                         VSORTE(p,i), ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), dpot);
 #endif
-        /* flush or send outbuf if it is full */
-        if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
       }
+      /* flush or send outbuf if it is full */
+      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
@@ -793,11 +863,9 @@ void write_header_dsp(FILE *out)
   time_t now;
 
   /* format line */
-  /* binary_io for checkpoints not implemented
-   if (binary_io)
-     c = is_big_endian ? 'B' : 'L';
-   else
-    */
+  if (binary_output)
+    c = is_big_endian ? 'b' : 'l';
+  else
     c = 'A';
   fprintf(out, "#F %c 0 1 0 %d 0 %d\n", c, DIM, DIM);
   
@@ -835,20 +903,41 @@ void write_header_dsp(FILE *out)
 
 void write_atoms_dsp(FILE *out)
 {
-  int i, k, len=0;
-  cell *p;
+  int i, k, n, len=0;
+  i_or_f *data;
   vektor d;
 
   for (k=0; k<NCELLS; k++) {
-    p = CELLPTR(k);
+    cell *p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
+
       d.x = ORT(p,i,X) - ORT_REF(p,i,X);
       d.y = ORT(p,i,Y) - ORT_REF(p,i,Y);
 #ifndef TWOD 
       d.z = ORT(p,i,Z) - ORT_REF(p,i,Z);
 #endif
       reduce_displacement(&d);
-      if (SPROD(d,d) > min_dsp2) {
+      if (SPROD(d,d) <= min_dsp2) continue;
+
+      /* binary output */
+      if (binary_output) {
+        n = 0;
+        data = (i_or_f *) (outbuf+len);
+        data[n++].i = (integer) VSORTE(p,i);
+        data[n++].f = (float)   ORT (p,i,X);
+        data[n++].f = (float)   ORT (p,i,Y);
+#ifndef TWOD
+        data[n++].f = (float)   ORT (p,i,Z);
+#endif
+        data[n++].f = (float)   d.x;
+        data[n++].f = (float)   d.y;
+#ifndef TWOD
+        data[n++].f = (float)   d.z;
+#endif
+        len += n * sizeof(i_or_f);
+      }
+      /* ASCII output */
+      else {
 #ifdef TWOD
         len += sprintf( outbuf+len, "%d %e %e %e %e\n",
           VSORTE(p,i), ORT(p,i,X), ORT(p,i,Y), d.x, d.y);
@@ -856,9 +945,9 @@ void write_atoms_dsp(FILE *out)
         len += sprintf( outbuf+len, "%d %e %e %e %e %e %e\n",
           VSORTE(p,i), ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), d.x, d.y, d.z);
 #endif
-        /* flush or send outbuf if it is full */
-        if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
       }
+      /* flush or send outbuf if it is full */
+      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
@@ -991,11 +1080,9 @@ void write_header_avp(FILE *out)
   time_t now;
 
   /* format line */
-  /* binary_io for checkpoints not implemented
-   if (binary_io)
-     c = is_big_endian ? 'B' : 'L';
-   else
-    */
+  if (binary_output)
+    c = is_big_endian ? 'b' : 'l';
+  else
     c = 'A';
   fprintf(out, "#F %c 0 0 0 %d 0 1\n", c, DIM);
   
@@ -1033,53 +1120,76 @@ void write_header_avp(FILE *out)
 
 void write_atoms_avp(FILE *out)
 {
-  int i, k, len=0;
-  real x, y, z;
+  int i, k, n, len=0;
+  real x, y, z, tmp;
   vektor avp_pos, coeff;
+  i_or_f *data;
 
+  tmp = avpos_res / ( avpos_int + avpos_res );
   for (k=0; k<NCELLS; k++) {
     cell* p;
     p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
 
-	/* Averaged coordinates of atoms */
-	avp_pos.x = AV_POS(p,i,X) * avpos_res / ( avpos_int + avpos_res );
-	avp_pos.y = AV_POS(p,i,Y) * avpos_res / ( avpos_int + avpos_res );
+      /* Averaged coordinates of atoms */
+      avp_pos.x = AV_POS(p,i,X) * tmp;
+      avp_pos.y = AV_POS(p,i,Y) * tmp;
 #ifndef TWOD
-	avp_pos.z = AV_POS(p,i,Z) * avpos_res / ( avpos_int + avpos_res );
+      avp_pos.z = AV_POS(p,i,Z) * tmp;
 #endif
-	/* Coefficients of coordinates with respect to box vectors */
-	coeff.x = SPROD( avp_pos, tbox_x );
-	coeff.y = SPROD( avp_pos, tbox_y );
+      /* Coefficients of coordinates with respect to box vectors */
+      coeff.x = SPROD( avp_pos, tbox_x );
+      coeff.y = SPROD( avp_pos, tbox_y );
 #ifndef TWOD
-	coeff.z = SPROD( avp_pos, tbox_z );
+      coeff.z = SPROD( avp_pos, tbox_z );
 #endif
-	/* For periodic boundary conditions map coordinates into box */
-	if( pbc_dirs.x == 1 ) 
-	    coeff.x -= floor(coeff.x);
-	if( pbc_dirs.y == 1 )
-	    coeff.y -= floor(coeff.y);
+      /* For periodic boundary conditions map coordinates into box */
+      if( pbc_dirs.x == 1 ) 
+        coeff.x -= floor(coeff.x);
+      if( pbc_dirs.y == 1 )
+        coeff.y -= floor(coeff.y);
 #ifndef TWOD
-	if( pbc_dirs.z == 1 ) 
-	    coeff.z -= floor(coeff.z);
-	
-	x = coeff.x * box_x.x + coeff.y * box_y.x + coeff.z * box_z.x;
-	y = coeff.x * box_x.y + coeff.y * box_y.y + coeff.z * box_z.y;
-	z = coeff.x * box_x.z + coeff.y * box_y.z + coeff.z * box_z.z;
-		
+      if( pbc_dirs.z == 1 ) 
+         coeff.z -= floor(coeff.z);
+#endif
+#ifdef TWOD
+      x = coeff.x * box_x.x + coeff.y * box_y.x;
+      y = coeff.x * box_x.y + coeff.y * box_y.y;
+#else
+      x = coeff.x * box_x.x + coeff.y * box_y.x + coeff.z * box_z.x;
+      y = coeff.x * box_x.y + coeff.y * box_y.y + coeff.z * box_z.y;
+      z = coeff.x * box_x.z + coeff.y * box_y.z + coeff.z * box_z.z;
+#endif
+
+      /* binary output */
+      if (binary_output) {
+        n = 0;
+        data = (i_or_f *) (outbuf+len);
+        data[n++].i = (integer) NUMMER(p,i);
+        data[n++].i = (integer) VSORTE(p,i);
+        data[n++].f = (float)   MASSE (p,i);
+        data[n++].f = (float)   x;
+        data[n++].f = (float)   y;
+#ifndef TWOD
+        data[n++].f = (float)   z;
+#endif
+        data[n++].f = (float)   AV_EPOT(p,i) * tmp;
+        len += n * sizeof(i_or_f);
+      }
+      /* ASCII output */
+      else {
+#ifdef TWOD
 	len += sprintf( outbuf+len,
 			"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f\n",
 			NUMMER(p,i), VSORTE(p,i), MASSE(p,i), 
-			x, y, z, AV_EPOT(p,i) * avpos_res / avpos_int);
+			x, y, z, AV_EPOT(p,i) * tmp);
 #else
-	x = coeff.x * box_x.x + coeff.y * box_y.x;
-	y = coeff.x * box_x.y + coeff.y * box_y.y;
-
 	len += sprintf( outbuf+len,
 			"%d %d %12.16f %12.16f %12.16f %12.16f\n",
 			NUMMER(p,i), VSORTE(p,i), MASSE(p,i), x, y, 
-			AV_EPOT(p,i) * avpos_res / (avpos_int + avpos_res ));
+			AV_EPOT(p,i) * tmp);
 #endif
+      }
       /* flush or send outbuf if it is full */
       if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
@@ -1177,11 +1287,9 @@ void write_header_atdist_pos(FILE *out)
   time_t now;
 
   /* format line */
-  /* binary_io for checkpoints not implemented
-   if (binary_io)
-     c = is_big_endian ? 'B' : 'L';
-   else
-    */
+  if (binary_output)
+    c = is_big_endian ? 'b' : 'l';
+  else
     c = 'A';
   fprintf(out, "#F %c 0 1 0 %d 0 0\n", c, DIM);
   
@@ -1218,8 +1326,9 @@ void write_header_atdist_pos(FILE *out)
 
 void write_atoms_atdist_pos(FILE *out)
 {
-  int k, len=0, ix, iy, iz;
+  int k, n, len=0, ix, iy, iz;
   real x, y, z, t, co, si;
+  i_or_f *data;
 
   co = cos(atdist_phi);
   si = sin(atdist_phi);
@@ -1255,13 +1364,28 @@ void write_atoms_atdist_pos(FILE *out)
 #endif
                 (y < pic_ll.y) || (y > pic_ur.y)) continue;
 
-#ifdef TWOD
-            len += sprintf( outbuf+len, "%d %e %e\n", SORTE(p,i), 
-                            x - pic_ll.x, y - pic_ll.y );
-#else
-            len += sprintf( outbuf+len, "%d %e %e %e\n", SORTE(p,i), 
-                            x - pic_ll.x, y - pic_ll.y, z - pic_ll.z );
+            /* binary output */
+            if (binary_output) {
+              n = 0;
+              data = (i_or_f *) (outbuf+len);
+              data[n++].i = (integer) SORTE(p,i);
+              data[n++].f = (float)   x - pic_ll.x;
+              data[n++].f = (float)   y - pic_ll.y;
+#ifndef TWOD
+              data[n++].f = (float)   z - pic_ll.z;
 #endif
+              len += n * sizeof(i_or_f);
+            }
+            /* ASCII output */
+            else {
+#ifdef TWOD
+              len += sprintf( outbuf+len, "%d %e %e\n", SORTE(p,i), 
+                              x - pic_ll.x, y - pic_ll.y );
+#else
+              len += sprintf( outbuf+len, "%d %e %e %e\n", SORTE(p,i), 
+                              x - pic_ll.x, y - pic_ll.y, z - pic_ll.z );
+#endif
+            }
             /* flush or send outbuf if it is full */
             if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
 	  }
@@ -1636,12 +1760,10 @@ void write_header_sqd(FILE *out)
   time_t now;
 
   /* format line */
-  /* binary_io for checkpoints not implemented
-   if (binary_io)
-     c = is_big_endian ? 'B' : 'L';
-   else
-    */
-  c = 'A';
+  if (binary_output)
+    c = is_big_endian ? 'b' : 'l';
+  else
+    c = 'A';
   fprintf(out, "#F %c 0 1 0 0 0 %d\n", c, DIM);
   
   /* contents line */
@@ -1667,23 +1789,41 @@ void write_header_sqd(FILE *out)
 
 void write_atoms_sqd(FILE *out)
 {
-  int i, k, len=0;
+  int i, k, n, len=0;
+  i_or_f *data;
   vektor d;
 
   for (k=0; k<NCELLS; k++) {
     cell* p;
     p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
+
       d.x = SQR( ORT(p,i,X) - REF_POS(p,i,X) );
       d.y = SQR( ORT(p,i,Y) - REF_POS(p,i,Y) );
 #ifndef TWOD
       d.z = SQR( ORT(p,i,Z) - REF_POS(p,i,Z) );
 #endif
-#ifdef TWOD
-      len += sprintf( outbuf+len, "%d %e %e\n",    VSORTE(p,i), d.x, d.y     );
-#else
-      len += sprintf( outbuf+len, "%d %e %e %e\n", VSORTE(p,i), d.x, d.y, d.z);
+
+      /* binary output */
+      if (binary_output) {
+        n = 0;
+        data = (i_or_f *) (outbuf+len);
+        data[n++].i = (integer) VSORTE(p,i);
+        data[n++].f = (float)   d.x;
+        data[n++].f = (float)   d.y;
+#ifndef TWOD
+        data[n++].f = (float)   d.z;
 #endif
+        len += n * sizeof(i_or_f);
+      }
+      /* ASCII output */
+      else {
+#ifdef TWOD
+        len += sprintf(outbuf+len,"%d %e %e\n",    VSORTE(p,i), d.x, d.y     );
+#else
+        len += sprintf(outbuf+len,"%d %e %e %e\n", VSORTE(p,i), d.x, d.y, d.z);
+#endif
+      }
       /* flush or send outbuf if it is full */
       if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
@@ -1755,61 +1895,93 @@ void reduce_displacement(vektor *dist)
 
 void write_header_config(FILE *out)
 {
-  int atompar=1; 		/* number of atomic parameter */
+  int atompar=1; /* number of atomic parameter */
   char c;
   time_t now;
 
   /* format line */
-  /* binary_io for checkpoints not implemented
-   if (binary_io)
-     c = is_big_endian ? 'B' : 'L';
-   else
-    */
+  if (binary_output)
+#ifdef DOUBLE
+    c = is_big_endian ? 'B' : 'L';
+#else
+    c = is_big_endian ? 'b' : 'l';
+#endif
+  else
     c = 'A';
 #ifdef UNIAX
   fprintf(out, "#F %c 1 1 1 %d %d 1\n", c, 2*DIM, 2*DIM);
 #else
-  fprintf(out, "#F %c 1 1 1 %d %d ", c, DIM, DIM);
+  if (ensemble == ENS_CG)
+    fprintf(out, "#F %c 1 1 1 %d %d ", c, DIM, 0  );
+  else
+    fprintf(out, "#F %c 1 1 1 %d %d ", c, DIM, DIM);
 #if defined(EAM2) && !defined(NORHOH)
   atompar++;
 #ifdef EEAM
   atompar++;
 #endif
+#endif
 #ifdef DAMP
   atompar++;
 #endif
+#ifdef NNBR
+  atompar++;
 #endif
-
-#ifdef ORDPAR
-  fprintf(out, "%d\n",atompar+1 );
-#else
-  fprintf(out, "%d\n", atompar );
+#if defined(REFPOS) || defined(DISLOC)
+  atompar += DIM;
 #endif
+#ifdef DISLOC
+  atompar++;
 #endif
+  fprintf(out, "%d\n", atompar);
+#endif /* UNIAX */
 
   /* contents line */
-#ifdef UNIAX
-  fprintf(out, "#C number type mass pos(3) axis(3)");
-  fprintf(out, " velocities(3) ang_veloc(3) Epot\n");
-#else
 #ifdef TWOD
-  fprintf(out, "#C number type mass x y vx vy");
+  fprintf(out, "#C number type mass x y");
 #else
-  fprintf(out, "#C number type mass x y z vx vy vz");
+  fprintf(out, "#C number type mass x y z");
+#endif
+
+#ifdef UNIAX
+  fprintf(out, " axe_x axe_y axe_z vx vy vz omega_x omega_y omega_z Epot\n");
+#else
+  if (ensemble != ENS_CG) 
+#ifdef TWOD
+    fprintf(out, " vx vy");
+#else
+    fprintf(out, " vx vy vz");
 #endif
 #ifdef ORDPAR
-  fprintf(out, " ordpar nbanz" );
+  fprintf(out, " ordpar" );
 #else
   fprintf(out, " Epot" );
+#endif
+#ifdef NNBR
+  fprintf(out, " n_nbr" );
+#endif
+#ifdef REFPOS 
+#ifdef TWOD
+  fprintf(out, " refpos_x refpos_y" );
+#else
+  fprintf(out, " refpos_x refpos_y refpos_z" );
+#endif
+#endif
+#ifdef DISLOC
+#ifdef TWOD
+  fprintf(out, " x_ref y_ref Epot_ref" );
+#else
+  fprintf(out, " x_ref y_ref z_ref Epot_ref" );
+#endif
 #endif
 #if defined(EAM2) && !defined(NORHOH)
   fprintf(out, " eam_rho" );
 #ifdef EEAM
   fprintf(out, " eam_p");
 #endif
+#endif
 #ifdef DAMP
   fprintf(out, " damp_f");
-#endif
 #endif
 #endif /* UNIAX */
   fprintf(out, "\n" );
@@ -1824,7 +1996,7 @@ void write_header_config(FILE *out)
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
 #endif
 
-  /* endheader line */
+  /* generation data and endheader line */
   time(&now);
   fprintf(out, "## Generated on %s", ctime(&now) ); 
   fprintf(out, "## by %s (version of %s)\n", progname, DATE);
@@ -1880,6 +2052,112 @@ void read_box(str255 infilename)
   MPI_Bcast( &box_z, DIM, REAL, 0, MPI_COMM_WORLD);
 #endif 
 #endif
+}
+
+/******************************************************************************
+*
+* read_header reads the header of a config file
+*
+******************************************************************************/
+
+int read_header(header_info_t *info, str255 infilename)
+{
+  FILE   *infile;
+  str255 line, fname, str;
+  int    have_format, have_header;
+  int    p, n, t, m, np, nv, nd;
+
+#ifdef MPI
+  if (1==parallel_input) {
+    sprintf(fname,"%s.head",infilename);
+    infile = fopen(fname,"r");
+    if (NULL==infile) infile = fopen(infilename,"r");
+  } else
+#endif
+  infile = fopen(infilename,"r");
+  if (NULL==infile) error_str("cannot open input file %s", infilename);
+
+#ifdef REFPOS
+  info->n_refpos_x = -1;
+#endif
+#ifdef DISLOC
+  info->n_x_ref    = -1;
+  info->n_Epot_ref = -1;
+#endif
+
+  have_header = 0;
+  fgets(line, 255, infile);
+  while (line[0]=='#') {
+    /* format line */
+    if      (line[1]=='F') {
+      p = sscanf(line+2, "%s %d %d %d %d %d %d", str,&n,&t,&m,&np,&nv,&nd );
+      if (p<7) error_str("Format line of file %s corrupt", infilename);
+      have_format    = 1;
+      info->format   = str[0];
+      info->n_number = n;
+      info->n_type   = t;
+      info->n_mass   = m;
+      info->n_pos    = np;
+      info->n_vel    = nv;
+      info->n_data   = nd;
+      info->n_items  = n + t + m + np + nv + nd;
+      if ((info->format == 'B') || (info->format == 'b'))
+        info->endian = 1;
+      else
+        info->endian = 0;
+    }
+    /* contents line */
+    else if (line[1]=='C') {
+      char *token = strtok(line+2, " \t\r\n");
+      int  count  = 0;
+      while (token != NULL) {
+#ifdef REFPOS
+        if (strcmp(token, "refpos_x")==0) {
+          info->n_x_ref = count;
+        }
+#endif
+#ifdef DISLOC
+        if (strcmp(token, "x_ref")==0) {
+          info->n_x_ref = count;
+        }
+        if (strcmp(token, "Epot_ref")==0) {
+          info->n_Epot_ref = count;
+        }
+#endif
+        count++;
+        token = strtok(NULL, " \t\r\n");
+      }
+    }
+    /* endheader line */
+    else if (line[1]=='E') {
+      if (have_format) have_header = 1;
+    }
+    fgets(line, 255, infile);
+    if (feof(infile)) break;
+  }
+  fclose(infile);
+
+  /* check whether file contains what we need */
+  if (have_header) {
+    if (info->n_items > MAX_ITEMS_CONFIG + 2)
+      error("too many items per atom in config file");
+    if (info->n_vel==0) do_maxwell = 1;
+#ifdef REFPOS
+    if ((imdrestart) && (info->n_refpos_x < 0))
+      error_str("Configuration file %s contains no reference positions",
+                infilename);
+#endif
+#ifdef DISLOC
+    if ((up_ort_ref < 0) && (info->n_x_ref < 0))
+      error_str("Configuration file %s contains no reference positions",
+                infilename);
+    if ((calc_Epot_ref == 0) && (info->n_Epot_ref < 0))
+      error_str("Configuration file %s contains no Epot_ref",infilename);
+#endif
+  } 
+
+  return have_header;
+
 }
 
 #ifdef NMOLDYN

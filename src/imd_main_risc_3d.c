@@ -74,7 +74,7 @@ void calc_forces(int steps)
 #ifndef MONOLJ
       POTENG(p,i) = 0.0;
 #endif
-#ifdef ORDPAR
+#ifdef NNBR
       NBANZ(p,i) = 0;
 #endif
 #ifdef COVALENT

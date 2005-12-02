@@ -70,7 +70,7 @@ void calc_forces(int steps)
       KRAFT(p,i,X) = 0.0;
       KRAFT(p,i,Y) = 0.0;
       POTENG(p,i)  = 0.0;
-#ifdef ORDPAR
+#ifdef NNBR
       NBANZ(p,i) = 0;
 #endif
 #ifdef NVX

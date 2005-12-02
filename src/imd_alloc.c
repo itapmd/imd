@@ -186,7 +186,7 @@ void move_atom(cell *to, cell *from, int index)
   to->sheet Z(to->n) = from->sheet Z(index);
 #endif
 #endif /* AVPOS */
-#ifdef ORDPAR
+#ifdef NNBR
   to->nbanz[to->n] = from->nbanz[index]; 
 #endif
 #ifdef REFPOS
@@ -316,7 +316,7 @@ void move_atom(cell *to, cell *from, int index)
     from->sheet Z(index) = from->sheet Z(from->n);
 #endif
 #endif /* AVPOS */
-#ifdef ORDPAR
+#ifdef NNBR
     from->nbanz[index] = from->nbanz[from->n];
 #endif
 #ifdef REFPOS
@@ -476,7 +476,7 @@ void alloc_cell(cell *thecell, int count)
     newcell.g = NULL;
     newcell.old_ort = NULL;
 #endif
-#ifdef ORDPAR
+#ifdef NNBR
     newcell.nbanz = NULL;
 #endif
 #ifdef DISLOC
@@ -578,7 +578,7 @@ void alloc_cell(cell *thecell, int count)
     newcell.adp_mu     = (real       *) malloc(count * DIM * sizeof(real));
     newcell.adp_lambda = (sym_tensor *) malloc(count * sizeof(sym_tensor));
 #endif
-#ifdef ORDPAR
+#ifdef NNBR
     newcell.nbanz = (shortint *) malloc(count * sizeof(shortint));
 #endif
 #ifdef DISLOC
@@ -641,7 +641,7 @@ void alloc_cell(cell *thecell, int count)
 	|| (NULL == newcell.adp_mu)
 	|| (NULL == newcell.adp_lambda)
 #endif
-#ifdef ORDPAR
+#ifdef NNBR
 	|| (NULL == newcell.nbanz)
 #endif
 #ifdef DISLOC
@@ -738,7 +738,7 @@ void alloc_cell(cell *thecell, int count)
       memcpy(newcell.adp_mu,     thecell->adp_mu,  ncopy * DIM * sizeof(real));
       memcpy(newcell.adp_lambda, thecell->adp_lambda,ncopy*sizeof(sym_tensor));
 #endif
-#ifdef ORDPAR
+#ifdef NNBR
       memcpy(newcell.nbanz, thecell->nbanz, ncopy * sizeof(shortint));
 #endif
 #ifdef DISLOC
@@ -796,7 +796,7 @@ void alloc_cell(cell *thecell, int count)
     free(thecell->adp_mu);
     free(thecell->adp_lambda);
 #endif
-#ifdef ORDPAR
+#ifdef NNBR
     free(thecell->nbanz);
 #endif
 #ifdef DISLOC
@@ -859,7 +859,7 @@ void alloc_cell(cell *thecell, int count)
   thecell->adp_mu     = newcell.adp_mu;
   thecell->adp_lambda = newcell.adp_lambda;
 #endif
-#ifdef ORDPAR
+#ifdef NNBR
   thecell->nbanz = newcell.nbanz;
 #endif
 #ifdef DISLOC

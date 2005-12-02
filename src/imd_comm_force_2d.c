@@ -520,7 +520,7 @@ void add_forces( int j, int k, int l, int m )
     PRESSTENS(to,i,yy) += PRESSTENS(from,i,yy);
     PRESSTENS(to,i,xy) += PRESSTENS(from,i,xy);
 #endif
-#ifdef ORDPAR
+#ifdef NNBR
     NBANZ(to,i) += NBANZ(from,i);
 #endif
   }
@@ -550,7 +550,7 @@ void pack_forces( msgbuf *b, int j, int k )
     b->data[ b->n++ ] = PRESSTENS(from,i,yy);
     b->data[ b->n++ ] = PRESSTENS(from,i,xy);
 #endif
-#ifdef ORDPAR
+#ifdef NNBR
     b->data[ b->n++ ] = (real) NBANZ(from,i);
 #endif
   }
@@ -581,7 +581,7 @@ void unpack_forces( msgbuf *b, int j, int k )
     PRESSTENS(to,i,yy) += b->data[ b->n++ ];
     PRESSTENS(to,i,xy) += b->data[ b->n++ ];
 #endif
-#ifdef ORDPAR
+#ifdef NNBR
     NBANZ(to,i) += (shortint) b->data[ b->n++ ];
 #endif
   }

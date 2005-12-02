@@ -95,6 +95,9 @@ void imd_start_timer(imd_timer *timer);
 void imd_stop_timer(imd_timer *timer);
 void maxwell(real TEMP);
 int  endian(void);
+integer SwappedInteger(integer);
+float   SwappedFloat  (float  );
+double  SwappedDouble (double );
 
 /* start and stop MPI - files imd_mpi_util.c, imd_geom_mpi_*.c */
 #ifdef MPI
@@ -255,6 +258,7 @@ void write_eng_file_header(void);
 
 /* write configurations - files imd_io.c, imd_io_*.c */
 void read_box(str255);
+int  read_header(header_info_t *, str255);
 void flush_outbuf(FILE *out, int *len, int tag);
 void write_itr_file(int fzhlr, int steps,char *suffix);
 void write_config(int fzhlr, int steps);
@@ -279,7 +283,7 @@ void write_header_dsp(FILE *out);
 void write_atoms_ef(FILE *out);
 void write_header_ef(FILE *out);
 #endif
-#ifdef NBFILTER
+#ifdef NNBR
 void write_atoms_nb(FILE *out);
 void write_header_nb(FILE *out);
 #endif

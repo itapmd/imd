@@ -86,6 +86,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 
       q_typ = SORTE(q,j);
       col   = p_typ * ntypes + q_typ;
+      col2  = q_typ * ntypes + p_typ;
       r2    = SPROD(d,d);
 
 #ifdef DEBUG
@@ -138,13 +139,13 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #ifdef EAM2
         pot_zwi *= 0.5;   /* avoid double counting */
 #endif
+#ifdef NNBR
+        if (r2 < nb_r2_cut[col ]) NBANZ(p,i)++;
+        if (r2 < nb_r2_cut[col2]) NBANZ(q,j)++;
+#endif
 #ifdef ORDPAR
-        if (r2 < op_r2_cut[p_typ][q_typ]) {
-	  POTENG(p,i) += op_weight[p_typ][q_typ] * pot_zwi;
-	  POTENG(q,j) += op_weight[q_typ][p_typ] * pot_zwi;
-	  NBANZ(p,i)++;
-	  NBANZ(q,j)++;
-        }
+        if (r2 < op_r2_cut[col ]) POTENG(p,i) += op_weight[col ] * pot_zwi;
+        if (r2 < op_r2_cut[col2]) POTENG(q,j) += op_weight[col2] * pot_zwi;
 #else
         POTENG(p,i) += pot_zwi;
         POTENG(q,j) += pot_zwi;

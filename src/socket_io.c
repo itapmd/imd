@@ -243,7 +243,7 @@ void vis_init_atoms()
   int first=1, k, i;
   float Ekin;
 
-#ifdef ORDPAR
+#ifdef NNBR
   flags.nbanz = 1;
 #endif
 
@@ -272,7 +272,7 @@ void vis_init_atoms()
 	max.Ekin  = Ekin; 
         min.Epot  = POTENG(p,i); 
 	max.Epot  = POTENG(p,i); 
-#ifdef ORDPAR
+#ifdef NNBR
         min.nbanz = NBANZ(p,i); 
 	max.nbanz = NBANZ(p,i); 
 #else
@@ -297,7 +297,7 @@ void vis_init_atoms()
 	max.Ekin  = MAX( max.Ekin,  Ekin        ); 
         min.Epot  = MIN( min.Epot,  POTENG(p,i) ); 
 	max.Epot  = MAX( max.Epot,  POTENG(p,i) ); 
-#ifdef ORDPAR
+#ifdef NNBR
         min.nbanz = MIN( min.nbanz, NBANZ(p,i)  ); 
 	max.nbanz = MAX( max.nbanz, NBANZ(p,i)  ); 
 #endif
@@ -365,7 +365,7 @@ void vis_check_atoms_flags()
     if (at_send_flags.Ekin  ) atlen += 1;
     if (at_send_flags.Epot  ) atlen += 1;
     if (at_send_flags.nbanz ) {
-#ifdef ORDPAR
+#ifdef NNBR
       atlen += 1;
 #else
       printf("Coordination number not available");
@@ -479,7 +479,7 @@ void vis_write_atoms_fun()
       if (at_filt_flags.Epot) {
         if ((min->Epot > POTENG(p,i)) || (max->Epot < POTENG(p,i))) continue;
       }
-#ifdef ORDPAR
+#ifdef NNBR
       if (at_filt_flags.nbanz) {
         if ((min->nbanz > NBANZ(p,i)) || (max->nbanz < NBANZ(p,i))) continue;
       }
@@ -513,7 +513,7 @@ void vis_write_atoms_fun()
       if (at_send_flags.Epot) {
         sock_buf_at[len++] = POTENG(p,i);
       }
-#ifdef ORDPAR
+#ifdef NNBR
       if (at_send_flags.nbanz) {
         sock_buf_at[len++] = NBANZ(p,i);
       }
@@ -711,7 +711,7 @@ void write_ras_using_sockets()
        WriteFull(soc,&IMPULS(p,i,Z),sizeof(real));
 #endif
        WriteFull(soc,&POTENG(p,i),sizeof(real));
-#ifdef ORDPAR
+#ifdef NNBR
        WriteFull(soc,&NBANZ(p,i),sizeof(shortint)); 
 #endif
      }

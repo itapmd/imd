@@ -179,7 +179,7 @@ void copy_atom(msgbuf *to, int to_cpu, cell *p, int ind )
   to->data[ to->n++ ] = SHEET  (p,ind,Z);
 #endif
 #endif
-#ifdef ORDPAR  
+#ifdef NNBR  
   to->data[ to->n++ ] = NBANZ(p,ind); 
 #endif
 #ifdef REFPOS
@@ -340,7 +340,7 @@ void copy_one_atom(msgbuf *to, int to_cpu, minicell *from, int index, int del)
       SHEET  (p,ind,Z) = SHEET  (p,p->n,Z); 
 #endif
 #endif
-#ifdef ORDPAR 
+#ifdef NNBR 
       NBANZ(p,ind)     = NBANZ(p,p->n); 
 #endif
 #ifdef REFPOS
@@ -481,7 +481,7 @@ void process_buffer(msgbuf *b, cell *p)
     SHEET  (input,0,Z)  = b->data[j++];
 #endif
 #endif
-#ifdef ORDPAR
+#ifdef NNBR
     NBANZ(input,0)      = b->data[j++];
 #endif
 #ifdef REFPOS
@@ -617,7 +617,7 @@ void setup_buffers(void)
     binc2 += 6;      /* presstens */
 #endif
 #endif
-#ifdef ORDPAR
+#ifdef NNBR
     binc2++;         /* nbanz */
 #endif
 #ifdef UNIAX

@@ -1,8 +1,9 @@
+
 /******************************************************************************
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -359,12 +360,6 @@ void getparamfile(char *paramfname, int sim)
       getparam("potfile",potfilename,PARAM_STR,1,255);
       have_potfile = 1;
     }
-#ifdef DISLOC
-    else if (strcasecmp(token,"reffile")==0) {
-      /* filename for reference configuration */
-      getparam("reffile",reffilename,PARAM_STR,1,255);
-    }
-#endif
     else if (strcasecmp(token,"ensemble")==0) {
       /* ensemble */
       getparam(token,tmpstr,PARAM_STR,1,255);
@@ -546,7 +541,13 @@ void getparamfile(char *paramfname, int sim)
       getparam(token,&nclones,PARAM_INT,1,1);
     }
 #endif
-#ifdef NBFILTER
+#ifdef NNBR
+    else if (strcasecmp(token,"nb_rcut")==0) {
+      /* cutoff radius for coordination number */
+      if (ntypes==0) error("specify parameter ntypes before nb_rcut");
+      getparam(token,nb_r2_cut,PARAM_REAL,ntypes*ntypes,ntypes*ntypes);
+      for (k=0; k<ntypes*ntypes; k++) nb_r2_cut[k] = SQR(nb_r2_cut[k]);
+    }
     else if (strcasecmp(token,"nb_checkpt_int")==0) {
       getparam("nb_checkpt_int",&nb_checkpt_int,PARAM_INT,1,1);
     }
@@ -823,9 +824,6 @@ void getparamfile(char *paramfname, int sim)
 #ifdef MONO
       if (ntypes!=1) error("this executable is for monoatomic systems only!");
 #endif
-#ifdef BINARY
-      if (ntypes!=2) error("this executable is for binary systems only!");
-#endif
       ntypepairs = ((ntypes+1)*ntypes)/2;
       ntypetriples = ntypes * ntypepairs;
 #ifdef TERSOFF
@@ -861,14 +859,25 @@ void getparamfile(char *paramfname, int sim)
       if (NULL==upper_e_pot)
 	  error("Cannot allocate memory for upper_e_pot\n");
 #endif 
-#ifdef NBFILTER
+#ifdef NNBR
       lower_nb_cut = (int *) calloc(ntypes, sizeof(int));
       if (NULL==lower_nb_cut)
-	  error("Cannot allocate memory for lower_nb_cut\n");
+        error("Cannot allocate memory for lower_nb_cut\n");
       upper_nb_cut = (int *) calloc(ntypes, sizeof(int));
       if (NULL==upper_nb_cut)
-	  error("Cannot allocate memory for upper_nb_cut\n");
+        error("Cannot allocate memory for upper_nb_cut\n");
+      nb_r2_cut = (real *) calloc(ntypes*ntypes, sizeof(real));
+      if (NULL==nb_r2_cut)
+        error("Cannot allocate memory for nb_r2_cut");
 #endif 
+#ifdef ORDPAR
+      op_r2_cut = (real *) calloc(ntypes*ntypes, sizeof(real));
+      if (NULL==op_r2_cut)
+        error("Cannot allocate memory for op_r2_cut");
+      op_weight = (real *) calloc(ntypes*ntypes, sizeof(real));
+      if (NULL==op_weight)
+        error("Cannot allocate memory for op_weight");
+#endif
     }
     else if (strcasecmp(token,"starttemp")==0) {
       /* temperature at start of sim. */
@@ -1407,15 +1416,21 @@ void getparamfile(char *paramfname, int sim)
 #ifdef MPI
     else if (strcasecmp(token,"cpu_dim")==0) {
       /* CPU array dimension */
-      getparam("cpu_dim",&cpu_dim,PARAM_INT,DIM,DIM);    
+      getparam(token,&cpu_dim,PARAM_INT,DIM,DIM);    
     }
     else if (strcasecmp(token,"parallel_output")==0) {
       /* parallel output flag */
-      getparam("parallel_output",&parallel_output,PARAM_INT,1,1);    }
+      getparam(token,&parallel_output,PARAM_INT,1,1);
+    }
     else if (strcasecmp(token,"parallel_input")==0) {
       /* parallel input flag */
-      getparam("parallel_input",&parallel_input,PARAM_INT,1,1);    }
+      getparam(token,&parallel_input,PARAM_INT,1,1);
+    }
 #endif
+    else if (strcasecmp(token,"binary_output")==0) {
+      /* binary output flag */
+      getparam(token,&binary_output,PARAM_INT,1,1);
+    }
 #ifdef CORRELATE
     else if (strcasecmp(token,"correl_rmax")==0) {
       /* dimension of histogram in r domain */
@@ -1507,21 +1522,26 @@ void getparamfile(char *paramfname, int sim)
     }
 #endif
 #ifdef DISLOC
+     else if (strcasecmp(token,"reffile")==0) {
+       /* filename for reference configuration */
+       error(
+       "Parameter reffile no longer supported - consult DISLOC documentation");
+     }
     else if (strcasecmp(token,"dem_int")==0) {
       /* number of steps between picture writes */
-      getparam("dem_int",&dem_int,PARAM_INT,1,1);
+      getparam(token,&dem_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"dsp_int")==0) {
       /* number of steps between picture writes */
-      getparam("dsp_int",&dsp_int,PARAM_INT,1,1);
+      getparam(token,&dsp_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"update_ort_ref")==0) {
       /* step number to compute ort_ref */
-      getparam("update_ort_ref",&up_ort_ref,PARAM_INT,1,1);
+      getparam(token,&up_ort_ref,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"min_dpot")==0) {
       /* minimum Epot difference */
-      getparam("min_dpot",&min_dpot,PARAM_REAL,1,1);
+      getparam(token,&min_dpot,PARAM_REAL,1,1);
     }
     else if (strcasecmp(token,"min_dsp2")==0) {
       /* minimum square displacement in .dsp files */
@@ -1529,15 +1549,15 @@ void getparamfile(char *paramfname, int sim)
     }
     else if (strcasecmp(token,"reset_Epot_step")==0) {
       /* step at which to compute Epot_ref (if calc_Epot_ref==1) */
-      getparam("reset_Epot_step",&reset_Epot_step,PARAM_INT,1,1);
+      getparam(token,&reset_Epot_step,PARAM_INT,1,1);
     }   
     else if (strcasecmp(token,"calc_Epot_ref")==0) {
       /* read (0) or compute (1) reference potential energy */
-      getparam("calc_Epot_ref",&calc_Epot_ref,PARAM_INT,1,1);
+      getparam(token,&calc_Epot_ref,PARAM_INT,1,1);
     }   
     else if (strcasecmp(token,"Epot_diff")==0) {
       /* write Epot (0) or Epot_diff (1) */
-      getparam("Epot_diff",&Epot_diff,PARAM_INT,1,1);
+      getparam(token,&Epot_diff,PARAM_INT,1,1);
     }   
 #endif
 #ifdef AVPOS
@@ -1643,15 +1663,14 @@ void getparamfile(char *paramfname, int sim)
 #ifdef ORDPAR
     else if (strcasecmp(token,"op_rcut")==0) {
       /* cutoff radius for order parameter */
-      getparam("op_rcut",op_r2_cut,PARAM_REAL,4,4);
-      op_r2_cut[0][0] = SQR(op_r2_cut[0][0]);
-      op_r2_cut[0][1] = SQR(op_r2_cut[0][1]);
-      op_r2_cut[1][0] = SQR(op_r2_cut[1][0]);
-      op_r2_cut[1][1] = SQR(op_r2_cut[1][1]);
+      if (ntypes==0) error("specify parameter ntypes before op_rcut");
+      getparam(token,op_r2_cut,PARAM_REAL,ntypes*ntypes,ntypes*ntypes);
+      for (k=0; k<ntypes*ntypes; k++) op_r2_cut[k] = SQR(op_r2_cut[k]);
     }   
     else if (strcasecmp(token,"op_weight")==0) {
       /* weights for order parameter */
-      getparam("op_weight",op_weight,PARAM_REAL,4,4);
+      if (ntypes==0) error("specify parameter ntypes before op_weight");
+      getparam(token,op_weight,PARAM_REAL,ntypes*ntypes,ntypes*ntypes);
     }
 #endif
 #ifdef USE_SOCKETS
@@ -2285,6 +2304,10 @@ void check_parameters_complete()
 #endif
   }
 #endif
+#if defined(DIFFPAT) && defined(TWOD)
+  error("Option DIFFPAT is not supported in 2D");
+#endif
+
 }
 
 /*****************************************************************
@@ -2537,18 +2560,22 @@ void broadcast_params() {
   MPI_Bcast( &ef_checkpt_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
-#ifdef NBFILTER
-  if (0!=myid){
-      lower_nb_cut = (int *) calloc(ntypes, sizeof(int));
-      if (NULL==lower_nb_cut)
-	  error("Cannot allocate memory for lower_nb_cut\n");
-      upper_nb_cut = (int *) calloc(ntypes, sizeof(int));
-      if (NULL==upper_nb_cut)
-	  error("Cannot allocate memory for upper_nb_cut\n");
+#ifdef NNBR
+  if (0!=myid) {
+    lower_nb_cut = (int *) calloc(ntypes, sizeof(int));
+    if (NULL==lower_nb_cut)
+      error("Cannot allocate memory for lower_nb_cut\n");
+    upper_nb_cut = (int *) calloc(ntypes, sizeof(int));
+    if (NULL==upper_nb_cut)
+      error("Cannot allocate memory for upper_nb_cut\n");
+    nb_r2_cut = (real *) calloc(ntypes*ntypes, sizeof(real));
+    if (NULL==nb_r2_cut)
+      error("Cannot allocate memory for nb_r2_cut\n");
   }
   MPI_Bcast( lower_nb_cut,     ntypes, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( upper_nb_cut,     ntypes, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &nb_checkpt_int,  1,      MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( nb_r2_cut, ntypes*ntypes,    REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &nb_checkpt_int,       1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
   MPI_Bcast( masses,     ntypes, REAL,     0, MPI_COMM_WORLD); 
@@ -2561,9 +2588,9 @@ void broadcast_params() {
 
   MPI_Bcast( &parallel_output, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &parallel_input,  1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &binary_output,   1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( outfilename,            255, MPI_CHAR, 0, MPI_COMM_WORLD); 
   MPI_Bcast( infilename,             255, MPI_CHAR, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( reffilename,            255, MPI_CHAR, 0, MPI_COMM_WORLD); 
   MPI_Bcast( potfilename,            255, MPI_CHAR, 0, MPI_COMM_WORLD); 
 #ifdef TTBP
   MPI_Bcast( ttbp_potfilename,       255, MPI_CHAR, 0, MPI_COMM_WORLD); 
@@ -2802,14 +2829,19 @@ void broadcast_params() {
 
 #ifdef DIFFPAT
   error("Option DIFFPAT is not supported under MPI");
-#ifdef TWOD
-  error("Option DIFFPAT is not supported in 2D");
-#endif
 #endif
 
 #ifdef ORDPAR
-  MPI_Bcast( &op_r2_cut,       4, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &op_weight,       4, REAL, 0, MPI_COMM_WORLD);
+  if (0!=myid) {
+    op_r2_cut = (real *) calloc(ntypes*ntypes, sizeof(real));
+    if (NULL==op_r2_cut)
+      error("Cannot allocate memory for op_r2_cut\n");
+    op_weight = (real *) calloc(ntypes*ntypes, sizeof(real));
+    if (NULL==op_weight)
+      error("Cannot allocate memory for op_weight\n");
+  }
+  MPI_Bcast( &op_r2_cut, ntypes*ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &op_weight, ntypes*ntypes, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef CG

@@ -1,3 +1,4 @@
+
 /******************************************************************************
 *
 * IMD -- The ITAP Molecular Dynamics Program
@@ -279,7 +280,7 @@ void calc_forces(int steps)
 #ifndef MONOLJ
       POTENG(p,i) = 0.0;
 #endif
-#ifdef ORDPAR
+#ifdef NNBR
       NBANZ(p,i) = 0;
 #endif
 #ifdef COVALENT
@@ -384,6 +385,7 @@ void calc_forces(int steps)
         r2  = SPROD(d,d);
         jt  = SORTE(q,j);
         col = it * ntypes + jt;
+        col2= jt * ntypes + it;
 
         /* compute pair interactions */
 #if defined(PAIR) || defined(KEATING) || defined(STIWEB)
@@ -424,13 +426,13 @@ void calc_forces(int steps)
 #ifdef EAM2
           pot *= 0.5;   /* avoid double counting */
 #endif
+#ifdef NNBR
+          if (r2 < nb_r2_cut[col ]) nb++;
+          if (r2 < nb_r2_cut[col2]) NBANZ(q,j)++;
+#endif
 #ifdef ORDPAR
-          if (r2 < op_r2_cut[it][jt]) {
-            ee          += op_weight[it][jt] * pot;
-            POTENG(q,j) += op_weight[jt][it] * pot;
-            nb++;
-            NBANZ(q,j)++;
-          }
+          if (r2 < op_r2_cut[col ]) ee          += op_weight[col ] * pot;
+          if (r2 < op_r2_cut[col2]) POTENG(q,j) += op_weight[col2] * pot;
 #else
           ee          += pot;
           POTENG(q,j) += pot;
@@ -495,7 +497,6 @@ void calc_forces(int steps)
 #endif
           } 
         } else {
-          col2 = jt * ntypes + it;
           if (r2 < rho_h_tab.end[col2]) {
             VAL_FUNC(rho_h, rho_h_tab, col2, inc, r2, is_short);
             EAM_RHO(q,j) += rho_h; 
@@ -596,7 +597,7 @@ void calc_forces(int steps)
 #endif
       }
 #endif
-#ifdef ORDPAR
+#ifdef NNBR
       NBANZ(p,i)    += nb;
 #endif
 #ifdef NVX

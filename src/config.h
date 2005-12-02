@@ -227,3 +227,5 @@
 /* output buffer size (in bytes) */
 #define OUTPUT_BUF_SIZE 131072
 
+/* maximum number of items per atom in config file (plus number and type) */
+#define MAX_ITEMS_CONFIG 16

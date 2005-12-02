@@ -511,12 +511,12 @@ void main_loop(void)
        write_config_select( steps/ef_checkpt_int, "ef",
                             write_atoms_ef, write_header_ef);
 #endif
-#ifdef NBFILTER  /* just print atoms by neighbour condition */ 
+#ifdef NNBR  /* just print atoms by neighbour condition */ 
     if ((nb_checkpt_int > 0) && (0 == steps % nb_checkpt_int)) 
        write_config_select( steps/nb_checkpt_int, "nb",
                             write_atoms_nb, write_header_nb);
 #endif
-#ifdef TADIST
+#ifdef ATDIST
     if ((atdist_pos_int > 0) && (0 == steps % atdist_pos_int))
        write_config_select( steps / atdist_pos_int, "cpt", 
                             write_atoms_atdist_pos, write_header_atdist_pos);
@@ -525,7 +525,7 @@ void main_loop(void)
     if (steps == up_ort_ref) update_ort_ref();
     if ((dem_int > 0) && (0 == steps % dem_int)) 
        write_config_select(steps, "dem", write_atoms_dem, write_header_dem);
-    if ((dsp_int > up_ort_ref) && (0 == steps % dsp_int)) 
+    if ((dsp_int > 0) && (steps > up_ort_ref) && (0 == steps % dsp_int)) 
        write_config_select(steps, "dsp", write_atoms_dsp, write_header_dsp);
 #endif
 #ifdef AVPOS

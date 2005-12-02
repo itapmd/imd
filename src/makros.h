@@ -109,7 +109,7 @@ INLINE static int MOD(shortint p, int q)
 #define SHEET(cell,i,sub)       (atoms.sheet sub((cell)->ind[i]))
 #define AV_EPOT(cell,i)         (atoms.av_epot  [(cell)->ind[i]])
 #endif
-#ifdef ORDPAR
+#ifdef NNBR
 #define NBANZ(cell,i)           (atoms.nbanz[(cell)->ind[i]])
 #endif
 #ifdef REFPOS
@@ -194,7 +194,7 @@ INLINE static int MOD(shortint p, int q)
 #define SHEET(cell,i,sub)       ((cell)->sheet sub(i))
 #define AV_EPOT(cell,i)         ((cell)->av_epot[i])
 #endif
-#ifdef ORDPAR
+#ifdef NNBR
 #define NBANZ(cell,i)           (cell)->nbanz[(i)]
 #endif
 #ifdef REFPOS

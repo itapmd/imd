@@ -108,7 +108,7 @@ typedef neightab* neighptr;
 
 typedef struct {
   real        *ort;
-#ifndef MONOLJ
+#ifndef MONOqLJ
   integer     *nummer;   
   shortint    *sorte;
   shortint    *vsorte;
@@ -144,7 +144,7 @@ typedef struct {
   real        *avpos;
   real        *av_epot;
 #endif
-#ifdef ORDPAR
+#ifdef NNBR
   shortint    *nbanz;
 #endif
 #ifdef REFPOS
@@ -190,6 +190,44 @@ typedef struct {
 #else
 typedef cell minicell;
 #endif
+
+typedef struct {
+  char format;
+  int  endian;
+  int  n_number;
+  int  n_type;
+  int  n_mass;
+  int  n_pos;
+  int  n_vel;
+  int  n_data;
+  int  n_items;
+#ifdef REFPOS
+  int  n_refpos_x;
+#endif
+#ifdef DISLOC
+  int  n_x_ref;
+  int  n_Epot_ref;
+#endif
+} header_info_t;
+
+typedef union {
+  integer i;
+  float   f;
+} i_or_f;
+
+typedef union {
+#ifdef DOUBLE
+  integer i[2];
+#else
+  integer i;
+#endif
+  real    r;
+} i_or_r;
+
+typedef union {
+  integer i[2];
+  double  d;
+} i_or_d;
 
 typedef struct {
   integer np, nq;
