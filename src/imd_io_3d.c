@@ -110,6 +110,15 @@ void read_atoms(str255 infilename)
     MPI_Bcast( num_sort,  ntypes, MPI_LONG, 0, MPI_COMM_WORLD);
     MPI_Bcast( num_vsort, vtypes, MPI_LONG, 0, MPI_COMM_WORLD);
     MPI_Bcast( &do_maxwell,    1, MPI_INT,  0, MPI_COMM_WORLD);
+#ifdef RIGID
+    if ( nsuperatoms > 0 ) {
+      MPI_Bcast( num_ssort, nsuperatoms, MPI_LONG, 0, MPI_COMM_WORLD);
+    }
+    MPI_Bcast( &nactive,      1, MPI_LONG, 0, MPI_COMM_WORLD);
+#endif
+    /* determine maximal cell occupancy */
+    for (k=0; k<ncells; k++) maxc1 = MAX( maxc1, (cell_array+CELLS(k))->n );
+    MPI_Reduce( &maxc1, &maxc2, 1, MPI_INT, MPI_MAX, 0, cpugrid);
     return;
   }
 
