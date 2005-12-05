@@ -126,7 +126,6 @@ void read_atoms(str255 infilename)
     infile = fopen(infilename,"r");
     if (NULL==infile) error_str("File %s not found", infilename);
     have_header = read_header( &info, infilename );
-    if (have_header) have_header++;
   }
 
   /* allocate temporary input buffer */
@@ -234,8 +233,9 @@ void read_atoms(str255 infilename)
       if (info.endian == is_big_endian) {
         n = data[0].i[0];
         s = data[0].i[1];
-        for (k=0; k < info.n_items-2; k++) 
+        for (k=0; k < info.n_items-2; k++) { 
           d[k] = (real) data[k+1].d;
+	}
       }
       else {
         n = SwappedInteger(data[0].i[0]);
@@ -664,62 +664,62 @@ void write_atoms_config(FILE *out)
         n = 0;
         data = (i_or_r *) (outbuf+len);
 #ifdef DOUBLE
-        data[n  ].i[0] = (integer) NUMMER(p,i);
-        data[n++].i[1] = (integer) VSORTE(p,i);
+        data[n  ].i[0] = NUMMER(p,i);
+        data[n++].i[1] = VSORTE(p,i);
 #else
-        data[n++].i    = (integer) NUMMER(p,i);
-        data[n++].i    = (integer) VSORTE(p,i);
+        data[n++].i    = NUMMER(p,i);
+        data[n++].i    = VSORTE(p,i);
 #endif
-        data[n++].r = (real) MASSE(p,i);
-        data[n++].r = (real) ORT(p,i,X);
-        data[n++].r = (real) ORT(p,i,Y);
+        data[n++].r = MASSE(p,i);
+        data[n++].r = ORT(p,i,X);
+        data[n++].r = ORT(p,i,Y);
 #ifndef TWOD
-        data[n++].r = (real) ORT(p,i,Z);
+        data[n++].r = ORT(p,i,Z);
 #endif
 #ifdef UNIAX
-        data[n++].r = (real) ACHSE(p,i,X);
-        data[n++].r = (real) ACHSE(p,i,Y);
-        data[n++].r = (real) ACHSE(p,i,Z);
+        data[n++].r = ACHSE(p,i,X);
+        data[n++].r = ACHSE(p,i,Y);
+        data[n++].r = ACHSE(p,i,Z);
 #endif
         if (ensemble != ENS_CG) {
-          data[n++].r = (real) (IMPULS(p,i,X) / MASSE(p,i));
-          data[n++].r = (real) (IMPULS(p,i,Y) / MASSE(p,i));
+          data[n++].r = (IMPULS(p,i,X) / MASSE(p,i));
+          data[n++].r = (IMPULS(p,i,Y) / MASSE(p,i));
 #ifndef TWOD
-          data[n++].r = (real) (IMPULS(p,i,Z) / MASSE(p,i));
+          data[n++].r = (IMPULS(p,i,Z) / MASSE(p,i));
 #endif
 	}
 #ifdef UNIAX
-        data[n++].r = (real) DREH_IMPULS(p,i,X) / uniax_inert;
-        data[n++].r = (real) DREH_IMPULS(p,i,Y) / uniax_inert;
-        data[n++].r = (real) DREH_IMPULS(p,i,Z) / uniax_inert; 
+        data[n++].r = DREH_IMPULS(p,i,X) / uniax_inert;
+        data[n++].r = DREH_IMPULS(p,i,Y) / uniax_inert;
+        data[n++].r = DREH_IMPULS(p,i,Z) / uniax_inert; 
 #endif
-        data[n++].r = (real) POTENG(p,i);
+        data[n++].r = POTENG(p,i);
 #ifdef NNBR
         data[n++].r = (real) NBANZ(p,i);
 #endif
 #ifdef REFPOS
-        data[n++].r = (real) REF_POS(p,i,X);
-        data[n++].r = (real) REF_POS(p,i,Y);
+        data[n++].r = REF_POS(p,i,X);
+        data[n++].r = REF_POS(p,i,Y);
 #ifndef TWOD
-        data[n++].r = (real) REF_POS(p,i,Z);
+        data[n++].r = REF_POS(p,i,Z);
 #endif
 #endif
 #ifdef DISLOC
-        data[n++].r = (real) ORT_REF(p,i,X);
-        data[n++].r = (real) ORT_REF(p,i,Y);
+        data[n++].r = ORT_REF(p,i,X);
+        data[n++].r = ORT_REF(p,i,Y);
 #ifndef TWOD
-        data[n++].r = (real) ORT_REF(p,i,Z);
+        data[n++].r = ORT_REF(p,i,Z);
 #endif
-        data[n++].r = (real) EPOT_REF(p,i);
+        data[n++].r = EPOT_REF(p,i);
 #endif
 #if defined(EAM2) && !defined(NORHOH)
-        data[n++].r = (real) EAM_RHO(p,i);
+        data[n++].r = EAM_RHO(p,i);
 #ifdef EEAM
-        data[n++].r = (real) EAM_P(p,i);
+        data[n++].r = EAM_P(p,i);
 #endif
 #endif
 #ifdef DAMP
-        data[n++].r = (real) DAMPF(p,i);
+        data[n++].r = DAMPF(p,i);
 #endif
         len += n * sizeof(i_or_r);
       }

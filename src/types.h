@@ -108,7 +108,7 @@ typedef neightab* neighptr;
 
 typedef struct {
   real        *ort;
-#ifndef MONOqLJ
+#ifndef MONOLJ
   integer     *nummer;   
   shortint    *sorte;
   shortint    *vsorte;
