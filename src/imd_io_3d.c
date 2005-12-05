@@ -199,9 +199,12 @@ void read_atoms(str255 infilename)
 
     /* ASCII input */
     if (info.format == 'A') {
-      fgets(buf,sizeof(buf),infile);
+      p = 1;
+      if (NULL==fgets(buf,sizeof(buf),infile)) p=0;
       /* eat comments */
-      while ('#'==buf[0]) fgets(buf,sizeof(buf),infile); 
+      while (('#'==buf[0]) && !feof(infile))
+        if (NULL==fgets(buf,sizeof(buf),infile)) p=0;
+      if (p==0) break;
 #ifdef DOUBLE
       p = sscanf( buf,
        "%d %d %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
@@ -249,7 +252,6 @@ void read_atoms(str255 infilename)
           d[k] = (real) SwappedFloat(data[k+2].f);
       }
     }
-
     /* skip empty lines at end of file */
     if (p>0) {
 
