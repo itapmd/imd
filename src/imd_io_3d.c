@@ -264,7 +264,7 @@ void read_atoms(str255 infilename)
     /* skip empty lines at end of file */
     if (p>0) {
 
-      if ((p != info.n_items) && (p != info.n_items - info.n_vel)) {
+      if ((p < info.n_items) && (p != info.n_items - info.n_vel)) {
         error("incorrect line in configuration file.");
       }
 
