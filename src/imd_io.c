@@ -2064,7 +2064,7 @@ int read_header(header_info_t *info, str255 infilename)
 {
   FILE   *infile;
   str255 line, fname, str;
-  int    have_format, have_header;
+  int    have_format=0, have_header=0;
   int    p, n, t, m, np, nv, nd;
 
 #ifdef MPI
@@ -2085,7 +2085,6 @@ int read_header(header_info_t *info, str255 infilename)
   info->n_Epot_ref = -1;
 #endif
 
-  have_header = 0;
   fgets(line, 255, infile);
   while (line[0]=='#') {
     /* format line */

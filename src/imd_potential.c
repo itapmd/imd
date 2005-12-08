@@ -42,10 +42,10 @@
 
 void read_pot_table( pot_table_t *pt, char *filename, int ncols, int radial )
 {
-  FILE *infile;
+  FILE *infile=NULL;
   char buffer[1024], msg[255];
   char *token, *res;
-  int  have_header=0, have_format=0, end_header;
+  int  have_header=0, have_format=0, end_header=0;
   int  size=ncols, tablesize, npot=0;
   int  format=DEFAULT_POTFILE_TYPE;  /* 2 for EAM2, 1 otherwise */
   int  i, k;
@@ -183,7 +183,7 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename,
   int i, k;
   int tablesize, npot=0;
   real val, numstep, delta;
-  real r2, r2_start, r2_step;
+  real r2, r2_start=0.0, r2_step;
   str255 msg;
 
   /* allocate the function table */

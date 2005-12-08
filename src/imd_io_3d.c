@@ -45,17 +45,17 @@ void read_atoms(str255 infilename)
 {
   header_info_t info;
   cell *input;
-  FILE *infile;
+  FILE *infile=NULL;
   char buf[1024];
   long addnumber = 0;
-  int  p, k, maxc1=0, maxc2;
-  int  i, s, n, to_cpu, have_header, count;
+  int  p=0, k, maxc1=0, maxc2;
+  int  i, s, n, to_cpu, have_header=0, count;
   vektor   pos, axe;
   ivektor  cellc;
   real     m, d[MAX_ITEMS_CONFIG];
   minicell *to;
 #ifdef MPI
-  msgbuf   *input_buf, *b;
+  msgbuf   *input_buf=NULL, *b;
 #endif
 
   /* allocate num_sort and num_vsort on all CPUs */

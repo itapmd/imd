@@ -142,7 +142,7 @@ ifeq (x86_64-gcc3,${IMDSYS})
 #  MPICH_CLINKER = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
 #  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
-  OPT_FLAGS	+= -O -m64
+  OPT_FLAGS	+= -O -m64 -Wno-unused
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
   LFLAGS        += # -static
