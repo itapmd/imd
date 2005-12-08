@@ -55,7 +55,8 @@
 #define COL(i) col[i]
 #endif
 
-int li[N0*N2], lj[N0*N2], col[N0*N2], lbeg[N1], lend[N1], ltot; 
+/* int li[N0*N2], lj[N0*N2], col[N0*N2], lbeg[N1], lend[N1], ltot; */ 
+int *li=NULL, *lj=NULL, *col=NULL, *lbeg=NULL, *lend=NULL, ltot; 
 
 /******************************************************************************
 *
@@ -68,8 +69,10 @@ int li[N0*N2], lj[N0*N2], col[N0*N2], lbeg[N1], lend[N1], ltot;
 
 void make_nblist()
 {
+  static int max_atoms=0, max_pairs=0, max_cell_max=0;
   long   i, j, k, l, m, n, len1, len2, max_cell;
-  int    li1[N0], lj1[N0];
+  int    *li1 = NULL, *lj1 = NULL;
+  /* int    li1[N0], lj1[N0]; */
 
 #ifdef MPI
   if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
@@ -91,7 +94,37 @@ void make_nblist()
     n = (cell_array+i)->n;
     if (max_cell < n) max_cell = n;
   }
-  if (max_cell>MC) error("maximum cell occupancy exceeded!");
+
+  /* allocate neighbor table arrays */
+  if (max_atoms < atoms.n) {
+    free(li1);
+    free(lj1);
+    max_atoms = (int) (atoms.n * 1.2);
+    li1 = (int *) malloc( max_atoms * sizeof(int) );
+    lj1 = (int *) malloc( max_atoms * sizeof(int) );
+    if ((li1==NULL) || (lj1==NULL))
+      error("cannot allocate temporary pair arrays");
+  }
+  if (max_pairs < 4 * max_cell * atoms.n) {
+    free(li);
+    free(lj);
+    free(col);
+    max_pairs = (int) (4 * max_cell * atoms.n * 1.2);
+    li  = (int *) malloc( max_pairs * sizeof(int) );
+    lj  = (int *) malloc( max_pairs * sizeof(int) );
+    col = (int *) malloc( max_pairs * sizeof(int) );
+    if ((li==NULL) || (lj==NULL) || (col==NULL))
+      error("cannot allocate temporary pair arrays");
+  }
+  if (max_cell_max < max_cell) {
+    free(lbeg);
+    free(lend);
+    max_cell_max = (int) (max_cell * 1.2);
+    lbeg = (int *) malloc( 14 * max_cell_max * sizeof(int) );
+    lend = (int *) malloc( 14 * max_cell_max * sizeof(int) );
+    if ((lbeg==NULL) || (lend==NULL))
+      error("cannot allocate temporary arrays");
+  }
 
   len2=0;
   ltot=0;
@@ -122,6 +155,7 @@ void make_nblist()
           len1++;
 	}
       }
+      if (len1 > max_atoms) printf("max_atoms %d %d\n", max_atoms, len1 );
 
 #ifdef FTRACE
       ftrace_region_end  ("nbl_get_indices");
@@ -152,6 +186,7 @@ void make_nblist()
       if (lend[ltot] > lbeg[ltot]) ltot++;
     }
   }
+  if (max_pairs < len2) error("neighbor table overflow"); 
 
 #ifndef MONO
 
@@ -184,10 +219,11 @@ void make_nblist()
 
 void calc_forces(int steps)
 {
+  static int len=0;
   int    k, m, is_short=0;
   real   rr, ee, tmpvec1[2], tmpvec2[2] = {0.0, 0.0};
   vektor dd, ff;
-  real   kraft1[2*DIM*N0], pot_eng1[2*N0];
+  static real *kraft1 = NULL, *pot_eng1 = NULL;
 
 #ifdef MPI
   if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
@@ -200,6 +236,17 @@ void calc_forces(int steps)
   tot_pot_energy = 0.0;
   virial = 0.0;
   nfc++;
+
+  /* (re)allocate temporary force and energy arrays */
+  if (len < atoms.n_buf) {
+    free(pot_eng1);
+    free(kraft1);
+    len = (int) (atoms.n_buf * 1.2);
+    pot_eng1 = (real *) malloc(       len * sizeof(real) );
+    kraft1   = (real *) malloc( DIM * len * sizeof(real) );
+    if ((pot_eng1 == NULL) || (kraft1 == NULL))
+      error("cannot allocate temporary force and energy arrays");
+  }
 
   /* clear per atom accumulation variables */
   for (k=0; k<DIM*atoms.n_buf; k++) atoms.kraft  [k] = 0.0;
