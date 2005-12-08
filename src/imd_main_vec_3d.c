@@ -23,7 +23,7 @@
 #include "potaccess.h"
 
 #define N0 140000     /* at least atoms.n */
-#define MC 100        /* maximum number of particles in cell */
+#define MC 150        /* maximum number of particles in cell */
 #define BS 100
 #define N1 MC*14
 #define N2 MC*4
@@ -161,7 +161,7 @@ void make_nblist()
 
   /* precompute potential column for each atom pair */
   for (l=0; l<lend[ltot-1]; l++) {
-    col[len2] = SORTE(&atoms,li[l]) * ntypes + SORTE(&atoms,lj[l]);
+    col[l] = SORTE(&atoms,li[l]) * ntypes + SORTE(&atoms,lj[l]);
   }
 
 #ifdef FTRACE
