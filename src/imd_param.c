@@ -2544,7 +2544,7 @@ void broadcast_params() {
   MPI_Bcast( &nbl_size,      1, REAL, 0, MPI_COMM_WORLD);
 #endif
 #ifdef VEC
-  MPI_Bcast( &atoms_per_cpu, 1,  INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &atoms_per_cpu, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 #ifdef EFILTER
   if (0!=myid){

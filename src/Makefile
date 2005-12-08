@@ -497,7 +497,7 @@ endif
 
 ifeq (SX8,${IMDSYS})
   CC_SERIAL             = sxcc
-#  CC_MPI		= 
+  CC_MPI		= sxmpicc
 #  CC_OMP		= 
 #  CC_OMPI		= 
   BIN_DIR		= ${HOME}/bin/sx8
