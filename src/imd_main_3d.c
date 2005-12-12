@@ -660,7 +660,7 @@ void main_loop(void)
       if (have_fbc_incr) stop=0;
 #endif
       if (stop) steps_max = steps;
-      }
+    }
 #endif
 
 

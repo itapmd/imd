@@ -221,6 +221,11 @@ void init_cells( void )
           cellc = cell_coord( ORT(p,i,X), ORT(p,i,Y) );
 #ifdef MPI
           cellc = local_cell_coord( cellc );
+          /* make sure atoms don't end up in buffer cells */
+          if      (cellc.x <  cellmin.x) cellc.x = cellmin.x; 
+          else if (cellc.x >= cellmax.x) cellc.x = cellmax.x-1;
+          if      (cellc.y <  cellmin.y) cellc.y = cellmin.y; 
+          else if (cellc.y >= cellmax.y) cellc.y = cellmax.y-1;
 #endif
           to = PTR_VV(cell_array,cellc,cell_dim);
           MOVE_ATOM( to, p, i );
@@ -229,7 +234,10 @@ void init_cells( void )
     }
     free(cell_array_old);
     fix_cells();
-  }
+#ifdef MPI
+    setup_buffers();
+#endif
+ }
 
   make_cell_lists();
 
