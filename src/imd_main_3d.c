@@ -399,7 +399,7 @@ void main_loop(void)
 	/* decrease the timestep, but only when it has been increased before */	
 	if (glok_int > glok_minsteps )
 	  {
-	     if (timestep > 0.0005)
+	     if (timestep > glok_maxtimestep/50.0)
 	    	      timestep *=glok_decfac;
 	  }
 #endif

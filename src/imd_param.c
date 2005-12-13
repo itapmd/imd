@@ -2179,9 +2179,11 @@ void check_parameters_complete()
   if (ensemble == 0) {
     error("missing or unknown ensemble parameter.");
   }
-  if (timestep == (real)0) {
+ 
+ if (timestep == (real)0) {
     error("timestep is missing or zero.");
   }
+
   if (ntypes == 0) {
     error("ntypes is missing or zero.");
   }
