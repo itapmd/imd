@@ -2531,6 +2531,7 @@ void broadcast_params() {
   MPI_Bcast( &box_unit,       1, REAL,     0, MPI_COMM_WORLD); 
   MPI_Bcast( &ntypes,         1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &ntypepairs,     1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &ntypetriples,   1, MPI_INT,  0, MPI_COMM_WORLD); 
   if (0!=myid) {
     masses=(real*)realloc(masses,ntypes*sizeof(real));
     if (NULL==masses) error("Cannot allocate memory for masses array\n");
@@ -2609,6 +2610,27 @@ void broadcast_params() {
 #ifdef MEAM
   MPI_Bcast( meam_emb_E_filename,    255, MPI_CHAR, 0, MPI_COMM_WORLD); 
   MPI_Bcast( meam_eldensity_filename,255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( meam_t1,             ntypes, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( meam_t2,             ntypes, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( meam_t3,             ntypes, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( meam_f0,             ntypes, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( meam_r0,             ntypes, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( meam_beta0,          ntypes, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( meam_beta1,          ntypes, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( meam_beta2,          ntypes, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( meam_beta3,          ntypes, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( meam_rcut_lin,   ntypepairs, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( meam_deltar_lin, ntypepairs, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( meam_cmin_lin, ntypetriples, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( meam_cmax_lin, ntypetriples, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( meam_e,              ntypes, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( meam_a,              ntypes, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( meam_rho0,           ntypes, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( &meam_t_average,          1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &have_pre_embed_pot,      1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &have_potfile,            1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &have_eldensity_file,     1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &have_embed_potfile,      1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
