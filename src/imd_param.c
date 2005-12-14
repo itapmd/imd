@@ -2309,7 +2309,6 @@ void check_parameters_complete()
 #if defined(DIFFPAT) && defined(TWOD)
   error("Option DIFFPAT is not supported in 2D");
 #endif
-
 }
 
 /*****************************************************************
@@ -2435,7 +2434,12 @@ void read_parameters(void)
 
 void broadcast_params() {
 
-  int i, nvalues;
+  int i, k, nvalues;
+#ifdef TWOD
+  vektor nullv = {0,0};
+#else
+  vektor nullv = {0,0,0};
+#endif
 
   MPI_Bcast( &finished    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &ensemble    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
@@ -2765,16 +2769,25 @@ void broadcast_params() {
   MPI_Bcast( &glok_int, 1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 #ifdef RIGID
- MPI_Bcast( &nsuperatoms,         1, MPI_INT, 0, MPI_COMM_WORLD);
-  if (0!=myid)  superatom = (int *) malloc( vtypes * sizeof(int) );
-  if (NULL==superatom)
-    error("Cannot allocate memory for superatom on client.");
-  MPI_Bcast( superatom, vtypes     , MPI_INT, 0, MPI_COMM_WORLD);
-  if (0!=myid) superrestrictions=(vektor*)malloc(vtypes*DIM*sizeof(real));
-  if (NULL==superrestrictions)
-    error("Cannot allocate memory for superrestrictions on client.");
-  MPI_Bcast( superrestrictions, vtypes*DIM , MPI_INT, 0, MPI_COMM_WORLD);
-  if (0!=myid) superforce = (vektor *) malloc( vtypes * sizeof(vektor));
+  MPI_Bcast( &nsuperatoms, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  if (NULL==superatom) {
+    superatom = (int *) malloc( vtypes * sizeof(int) );
+    if (NULL==superatom)
+      error("Cannot allocate memory for superatom on client.");
+    else
+      for (k=0; k<vtypes; k++) superatom[k] = -1;
+  }
+  MPI_Bcast( superatom, vtypes, MPI_INT, 0, MPI_COMM_WORLD);
+  if (NULL==superrestrictions) {
+    superrestrictions = (vektor *) malloc( vtypes * DIM * sizeof(real) );
+    if (NULL==superrestrictions)
+      error("Cannot allocate memory for superrestrictions on client.");
+    else 
+      for (k=0; k<vtypes; k++) *(superrestrictions+k) = nullv;
+  }
+  MPI_Bcast( superrestrictions, vtypes * DIM, MPI_INT, 0, MPI_COMM_WORLD);
+  if (NULL==superforce) 
+    superforce = (vektor *) malloc( vtypes * sizeof(vektor) );
   if (NULL==superforce)
     error("Cannot allocate memory for superforce on client.");  
 #endif

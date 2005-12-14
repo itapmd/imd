@@ -101,24 +101,7 @@ void read_atoms(str255 infilename)
     if (NULL!=infile) addnumber=1;
   } else if (0!=myid) {
     recv_atoms();
-    /* If CPU 0 found velocities in its data, no initialisation is done */
-    MPI_Bcast( &natoms,        1, MPI_LONG, 0, MPI_COMM_WORLD);
-    MPI_Bcast( &nactive,       1, MPI_LONG, 0, MPI_COMM_WORLD);
-#ifdef UNIAX
-    MPI_Bcast( &nactive_rot,   1, MPI_LONG, 0, MPI_COMM_WORLD);
-#endif
-    MPI_Bcast( num_sort,  ntypes, MPI_LONG, 0, MPI_COMM_WORLD);
-    MPI_Bcast( num_vsort, vtypes, MPI_LONG, 0, MPI_COMM_WORLD);
-    MPI_Bcast( &do_maxwell,    1, MPI_INT,  0, MPI_COMM_WORLD);
-#ifdef RIGID
-    if ( nsuperatoms > 0 ) {
-      MPI_Bcast( num_ssort, nsuperatoms, MPI_LONG, 0, MPI_COMM_WORLD);
-    }
-    MPI_Bcast( &nactive,      1, MPI_LONG, 0, MPI_COMM_WORLD);
-#endif
-    /* determine maximal cell occupancy */
-    for (k=0; k<ncells; k++) maxc1 = MAX( maxc1, (cell_array+CELLS(k))->n );
-    MPI_Reduce( &maxc1, &maxc2, 1, MPI_INT, MPI_MAX, 0, cpugrid);
+    read_atoms_cleanup();
     return;
   }
 
@@ -462,7 +445,6 @@ void read_atoms(str255 infilename)
   fclose(infile);  
 
 #ifdef MPI
-
   /* The last buffer is sent with a different tag, which tells the
      target CPU that reading is finished; we increase the size by
      one, so that the buffer is sent even if it is empty */
@@ -473,24 +455,45 @@ void read_atoms(str255 infilename)
       MPI_Send(b->data, b->n, REAL, s, INBUF_TAG+1, cpugrid);
       free(b->data);
     }
+#endif
+
+  /* the following routine contains stuff that must be executed
+     on all CPUs, also if parallel_input = 0 */
+  read_atoms_cleanup();
+
+}
+
+/******************************************************************************
+*
+*  read_atoms_cleanup contains stuff that must be executed
+*  on all CPUs, also if parallel_input = 0
+*
+******************************************************************************/
+
+void read_atoms_cleanup(void)
+{
+  int  k, i, s, maxc1=0, maxc2;
+  long tmp;
+
+#ifdef MPI
 
   /* Add the number of atoms read (and kept) by each CPU */
   if (1==parallel_input) {
-    MPI_Allreduce( &natoms,  &addnumber, 1, MPI_LONG, MPI_SUM, cpugrid);
-    natoms = addnumber;
-    MPI_Allreduce( &nactive, &addnumber, 1, MPI_LONG, MPI_SUM, cpugrid);
-    nactive = addnumber;
+    MPI_Allreduce( &natoms,  &tmp, 1, MPI_LONG, MPI_SUM, cpugrid);
+    natoms = tmp;
+    MPI_Allreduce( &nactive, &tmp, 1, MPI_LONG, MPI_SUM, cpugrid);
+    nactive = tmp;
 #ifdef UNIAX
-    MPI_Allreduce( &nactive_rot, &addnumber, 1, MPI_LONG, MPI_SUM, cpugrid);
-    nactive_rot = addnumber;
+    MPI_Allreduce( &nactive_rot, &tmp, 1, MPI_LONG, MPI_SUM, cpugrid);
+    nactive_rot = tmp;
 #endif
     for (i=0; i<ntypes; i++) {
-      MPI_Allreduce( &num_sort[i], &addnumber, 1, MPI_LONG, MPI_SUM, cpugrid);
-      num_sort[i] = addnumber;
+      MPI_Allreduce( &num_sort[i], &tmp, 1, MPI_LONG, MPI_SUM, cpugrid);
+      num_sort[i] = tmp;
     }
     for (i=0; i<vtypes; i++) {
-      MPI_Allreduce( &num_vsort[i], &addnumber, 1, MPI_LONG, MPI_SUM, cpugrid);
-      num_vsort[i] = addnumber;
+      MPI_Allreduce( &num_vsort[i], &tmp, 1, MPI_LONG, MPI_SUM, cpugrid);
+      num_vsort[i] = tmp;
     }
   } else { /* broadcast if serial io */
     MPI_Bcast( &natoms ,      1, MPI_LONG, 0, MPI_COMM_WORLD);
@@ -499,11 +502,11 @@ void read_atoms(str255 infilename)
     MPI_Bcast( &nactive_rot,  1, MPI_LONG, 0, MPI_COMM_WORLD);
 #endif
     MPI_Bcast( num_sort, ntypes, MPI_LONG, 0, MPI_COMM_WORLD);
-    MPI_Bcast( num_vsort, vtypes,MPI_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast( num_vsort,vtypes, MPI_LONG, 0, MPI_COMM_WORLD);
   }
 
   /* If CPU 0 found velocities in its data, no initialisation is done */
-  MPI_Bcast( &do_maxwell , 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &do_maxwell, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 #endif /* MPI */
 
@@ -517,11 +520,11 @@ void read_atoms(str255 infilename)
       }
     }
 #ifdef MPI
-    MPI_Bcast( num_ssort, nsuperatoms,MPI_LONG, 0, MPI_COMM_WORLD);
+    MPI_Bcast( num_ssort, nsuperatoms, MPI_LONG, 0, MPI_COMM_WORLD);
 #endif
 
     if (0==myid) {
-      /* compute nactive */
+      /* recompute nactive */
       nactive = 0;
       for (i=0; i<vtypes; i++) {
 	/* translational degrees of freedom of nonrigid vtypes */
@@ -558,27 +561,28 @@ void read_atoms(str255 infilename)
     }
   }
 #ifdef MPI
-    MPI_Bcast( &nactive,      1, MPI_LONG, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &nactive, 1, MPI_LONG, 0, MPI_COMM_WORLD);
 #endif
-#endif
+
+#endif /* RIGID */
 
   /* print number of atoms */
   if (0==myid) {
     printf("Read structure with %ld atoms.\n",natoms);
-    addnumber=num_sort[0];
+    tmp = num_sort[0];
     printf("num_sort = [ %ld",num_sort[0]);
     for (i=1; i<ntypes; i++) {
       printf(", %ld",num_sort[i]);
-      addnumber+=num_sort[i];
+      tmp += num_sort[i];
     }
-    printf(" ],  total = %ld\n",addnumber);
-    addnumber=num_vsort[0];
+    printf(" ],  total = %ld\n",tmp);
+    tmp = num_vsort[0];
     printf("num_vsort = [ %ld",num_vsort[0]);
     for (i=1; i<vtypes; i++) {
       printf(", %ld",num_vsort[i]);
-      addnumber+=num_vsort[i];
+      tmp += num_vsort[i];
     }
-    printf(" ],  total = %ld\n",addnumber);
+    printf(" ],  total = %ld\n",tmp);
 #ifdef RIGID
     if ( nsuperatoms>0 ) {
       printf("num_ssort = [ %u",num_ssort[0]);

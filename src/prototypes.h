@@ -66,9 +66,10 @@ void init_threepoint(pot_table_t*, int);
 #endif
 
 /* read configuration - files imd_io_2/3d.c */
-void   read_atoms(str255 infilename);
+void read_atoms(str255 infilename);
+void read_atoms_cleanup(void);  
 #ifdef MPI
-void   recv_atoms(void);
+void recv_atoms(void);
 #endif
 
 /* generate configuration - file imd_generate.c */
