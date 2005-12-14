@@ -119,7 +119,6 @@ void make_nblist(void)
 #endif
 
   /* update cell decomposition */
-  do_boundaries();
   fix_cells();
 
   /* fill the buffer cells */

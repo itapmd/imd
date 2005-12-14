@@ -108,6 +108,9 @@ void fix_cells(void)
   cell *p, *q;
   ivektor coord, dcpu, to_coord;
 
+  /* apply periodic boundary conditions */
+  do_boundaries();
+
   /* for each cell in bulk */
   for (i=cellmin.x; i < cellmax.x; ++i)
     for (j=cellmin.y; j < cellmax.y; ++j) {

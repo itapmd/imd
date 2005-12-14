@@ -79,7 +79,6 @@ void make_nblist()
 #endif
 
   /* update cell decomposition */
-  do_boundaries();
   fix_cells();
 
   /* update reference positions */
@@ -380,7 +379,6 @@ void make_nblist()
 #endif
 
   /* update cell decomposition */
-  do_boundaries();
   fix_cells();
 
   /* update reference positions */

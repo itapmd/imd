@@ -303,7 +303,6 @@ real fonedim(real alpha)
 #ifdef NBLIST
   check_nblist();
 #else
-  do_boundaries();    
   fix_cells();
 #endif
   calc_forces(1);
@@ -321,7 +320,6 @@ real fonedim_sd(real alpha)
 #ifdef NBLIST
   check_nblist();
 #else
-  do_boundaries();    
   fix_cells();
 #endif
   calc_forces(1);

@@ -137,7 +137,6 @@ void write_config(int fzhlr, int steps)
 #ifdef NBLIST
     make_nblist();
 #else
-    do_boundaries();
     fix_cells();
 #endif
   }
@@ -164,7 +163,6 @@ void write_ssconfig(int steps)
 #ifdef NBLIST
     make_nblist();
 #else
-    do_boundaries();
     fix_cells();
 #endif
   }
@@ -196,7 +194,6 @@ void write_cgconfig(int steps)
 #ifdef NBLIST
     make_nblist();
 #else
-    do_boundaries();
     fix_cells();
 #endif
   }

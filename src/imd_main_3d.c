@@ -668,7 +668,6 @@ void main_loop(void)
 #ifdef NBLIST
     check_nblist();
 #else
-    do_boundaries();    
     fix_cells();  
 #endif
 
