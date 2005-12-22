@@ -70,8 +70,8 @@ int *li=NULL, *lj=NULL, *col=NULL, *lbeg=NULL, *lend=NULL, ltot;
 void make_nblist()
 {
   static int max_atoms=0, max_pairs=0, max_cell_max=0;
+  static int *li1 = NULL, *lj1 = NULL;
   long   i, j, k, l, m, n, len1, len2, max_cell;
-  int    *li1 = NULL, *lj1 = NULL;
   /* int    li1[N0], lj1[N0]; */
 
 #ifdef MPI
