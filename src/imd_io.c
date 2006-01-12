@@ -1063,6 +1063,8 @@ void update_avpos(void)
   av_box_z.z = box_z.z;
 #endif
 #endif
+  avpos_cnt = 1;
+
 }
 
 /******************************************************************************
@@ -1081,7 +1083,7 @@ void write_header_avp(FILE *out)
     c = is_big_endian ? 'b' : 'l';
   else
     c = 'A';
-  fprintf(out, "#F %c 0 0 0 %d 0 1\n", c, DIM);
+  fprintf(out, "#F %c 1 1 1 %d 0 1\n", c, DIM);
   
   /* contents line */
 #ifdef TWOD
@@ -1122,7 +1124,7 @@ void write_atoms_avp(FILE *out)
   vektor avp_pos, coeff;
   i_or_f *data;
 
-  tmp = avpos_res / ( avpos_int + avpos_res );
+  tmp = 1.0 / avpos_cnt;
   for (k=0; k<NCELLS; k++) {
     cell* p;
     p = CELLPTR(k);
@@ -1177,14 +1179,14 @@ void write_atoms_avp(FILE *out)
       else {
 #ifdef TWOD
 	len += sprintf( outbuf+len,
-			"%d %d %12.16f %12.16f %12.16f %12.16f %12.16f\n",
-			NUMMER(p,i), VSORTE(p,i), MASSE(p,i), 
-			x, y, z, AV_EPOT(p,i) * tmp);
+                        "%d %d %12.16f %12.16f %12.16f %12.16f\n",
+                        NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
+                        x, y, AV_EPOT(p,i) * tmp);
 #else
 	len += sprintf( outbuf+len,
-			"%d %d %12.16f %12.16f %12.16f %12.16f\n",
-			NUMMER(p,i), VSORTE(p,i), MASSE(p,i), x, y, 
-			AV_EPOT(p,i) * tmp);
+                        "%d %d %12.16f %12.16f %12.16f %12.16f %12.16f\n",
+                        NUMMER(p,i), VSORTE(p,i), MASSE(p,i), 
+                        x, y, z, AV_EPOT(p,i) * tmp);
 #endif
       }
       /* flush or send outbuf if it is full */

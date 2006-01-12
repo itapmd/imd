@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -116,9 +116,8 @@ void error_str_str(char *msg, char *str1, char *str2)
 
 /******************************************************************************
 *
-* add_positions adds coordinates and potential energy for computation of average
-* 
-* position and potential energy
+* add_positions adds coordinates and potential energy for computation of 
+* average position and potential energy
 *
 ******************************************************************************/
 
@@ -152,6 +151,7 @@ void add_positions(void)
   av_box_z.z += box_z.z;  
 #endif
 #endif
+  avpos_cnt++;
 
 }
   
