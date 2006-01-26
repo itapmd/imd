@@ -2158,6 +2158,36 @@ int read_header(header_info_t *info, str255 infilename)
 
 }
 
+#ifdef MPI
+
+/******************************************************************************
+*
+* broadcast_header distributes the header of a config file
+*
+******************************************************************************/
+
+void broadcast_header(header_info_t *info)
+{
+  MPI_Bcast( &(info->format),     1, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &(info->endian),     1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &(info->n_number),   1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &(info->n_type),     1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &(info->n_mass),     1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &(info->n_pos),      1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &(info->n_vel),      1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &(info->n_data),     1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &(info->n_items),    1, MPI_INT,  0, MPI_COMM_WORLD); 
+#ifdef REFPOS
+  MPI_Bcast( &(info->n_refpos_x), 1, MPI_INT,  0, MPI_COMM_WORLD); 
+#endif
+#ifdef DISLOC
+  MPI_Bcast( &(info->n_x_ref),    1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &(info->n_Epot_ref), 1, MPI_INT,  0, MPI_COMM_WORLD); 
+#endif
+}
+
+#endif
+
 #ifdef NMOLDYN
 
 /******************************************************************************

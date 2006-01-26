@@ -89,16 +89,19 @@ void read_atoms(str255 infilename)
   if (1==parallel_input) {
     sprintf(buf,"%s.%u",infilename,myid); 
     infile = fopen(buf,"r");
-    sprintf(buf,"%s.head",infilename); 
     if (NULL!=infile) {
-      have_header = read_header(&info, buf);
-      /* have_header==2 indicates header in separate file */
-      if (have_header) have_header++;  
+      if (0==myid) {
+        sprintf(buf,"%s.head",infilename); 
+        have_header = read_header(&info, buf);
+        /* have_header==2 indicates header in separate file */
+        if (have_header) have_header++;
+      }
+      MPI_Bcast( &have_header, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+      /* When each cpu reads only part of the atoms, we have to add up the
+         number of atoms to get the correct natoms. We set a flag here. */
+      addnumber=1;
+      if (have_header) broadcast_header(&info);
     }
-    /* When each cpu reads only part of the atoms, we have to add the
-       number of atoms together to get the correct natoms. We set a
-       flag here */
-    if (NULL!=infile) addnumber=1;
   } else if (0!=myid) {
     recv_atoms();
     read_atoms_cleanup();
