@@ -2111,7 +2111,7 @@ int read_header(header_info_t *info, str255 infilename)
       while (token != NULL) {
 #ifdef REFPOS
         if (strcmp(token, "refpos_x")==0) {
-          info->n_x_ref = count;
+          info->n_refpos_x = count;
         }
 #endif
 #ifdef DISLOC
