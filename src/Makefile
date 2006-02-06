@@ -2,7 +2,7 @@
 #
 # IMD -- The ITAP Molecular Dynamics Program
 #
-# Copyright 1996-2005 Institute for Theoretical and Applied Physics,
+# Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 # University of Stuttgart, D-70550 Stuttgart
 #
 # $Revision$
@@ -319,12 +319,14 @@ ifeq (ia64-icc,${IMDSYS})
   CC_MPI	= mpicc
   CC_OMPI	= mpicc
   BIN_DIR	= ${HOME}/bin/ia64
-  OPT_FLAGS	+= -O -ip -ivdep_parallel -wd1572 # -static
-  MPI_FLAGS     += -quiet
+  OPT_FLAGS	+= -O -ip -ivdep_parallel -wd1572 # remove -wd1572 for icc 8.0
+  NOALIAS       = -fno-fnalias
+  MPI_FLAGS     += 
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp -quiet
   PROF_FLAGS	+= -prof_gen
   DEBUG_FLAGS	+= -g
+  LFLAGS        += -static # -p
   PAPI_INC      =  -I /opt/papi/3.0/include
   PAPI_LIBS     =  -L /opt/papi/3.0/lib -lpapi
 endif
@@ -336,11 +338,12 @@ ifeq (ia64-ecc,${IMDSYS})
   CC_MPI	= mpicc
   CC_OMPI	= mpicc
   BIN_DIR	= ${HOME}/bin/ia64
-  OPT_FLAGS	+= -O -ip -ivdep_parallel #-static
+  OPT_FLAGS	+= -O -ip -ivdep_parallel
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp
-  PROF_FLAGS	+= -prof_gen
+  PROF_FLAGS	+= -p
   DEBUG_FLAGS	+= -g
+  LFLAGS        += # -p -static
 endif
 
 ###########################################################################
@@ -1111,7 +1114,7 @@ imd_forces.o: imd_forces.c
 	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_forces.c
 
 imd_forces_nbl.o: imd_forces_nbl.c
-	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_forces_nbl.c
+	${CC} ${CFLAGS} ${RCD_FLAGS} ${NOALIAS} -c imd_forces_nbl.c
 
 imd_main_nbl_3d.o: imd_main_nbl_3d.c
 	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_main_nbl_3d.c
