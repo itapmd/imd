@@ -776,7 +776,7 @@ void pack_cell( msgbuf *b, int k, int l, int m, vektor v )
   b->data[ j++ ] = (real) from->n;
 
 #ifdef VEC
-#pragma cdir vec
+#pragma cdir nodep
 #endif    
   for (i=0; i<from->n; ++i) {
     b->data[ j++ ] = ORT(from,i,X) + v.x;
@@ -1189,7 +1189,7 @@ void unpack_add_rho( msgbuf *b, int k, int l, int m )
   to = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
 #ifdef VEC
-#pragma cdir vec
+#pragma cdir nodep
 #endif
   for (i=0; i<to->n; ++i) {
     EAM_RHO(to,i) += b->data[ j++ ];
