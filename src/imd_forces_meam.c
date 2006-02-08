@@ -612,52 +612,63 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 
 void init_meam(void) {
 
-  int  i, j, k, n, m;
-  int have_common_cmax;
+  int  i, j, k, n;
+  int have_common_cmax = 0;
+  int have_common_cmin = 0;
 
   if ( ntypes == 1 || meam_cmax_lin[1] == 0.0 )
-    have_common_cmax = 1;
+      have_common_cmax = 1;
+  if ( ntypes == 1 || meam_cmin_lin[1] == 0.0 )
+      have_common_cmin = 1;
 
-  n = 0; m = 0;
+  n = 0;
   for (i=0; i<ntypes; i++) {
-
-    if (meam_r0[i]==0.0)
-      error("meam_r0 is zero!");
-    else
-      invmeam_r0[i] = 1.0 / meam_r0[i];
-
-    if (meam_r0[i]==0.0)
-      error("meam_rho0 is zero!");
-    else
-      invmeam_rho0[i] = 1.0 / meam_rho0[i];
-
-    for (j=i; j<ntypes; j++) {
-      meam_deltar[i][j]  = meam_deltar[j][i]  = meam_deltar_lin[n];
-      meam_rcut[i][j]    = meam_rcut[j][i]    = meam_rcut_lin[n];
-      meam_r2_cut[i][j]  = meam_r2_cut[j][i]  = SQR(meam_rcut[i][j]); 
-      n++;
-      for (k=0; k<ntypes; k++) {
-	if ( have_common_cmax ) {
-	  meam_cmin[k][i][j] = meam_cmin[k][j][i] = meam_cmin_lin[0];
-	  meam_cmax[k][i][j] = meam_cmax[k][j][i] = meam_cmax_lin[0];
-	}
-	else {
-	  meam_cmin[k][i][j] = meam_cmin[k][j][i] = meam_cmin_lin[m];
-	  meam_cmax[k][i][j] = meam_cmax[k][j][i] = meam_cmax_lin[m];
-	  m++;
-	}
+      
+      if (meam_r0[i]==0.0)
+	  error("meam_r0 is zero!");
+      else
+	  invmeam_r0[i] = 1.0 / meam_r0[i];
+      
+      if (meam_r0[i]==0.0)
+	  error("meam_rho0 is zero!");
+      else
+	  invmeam_rho0[i] = 1.0 / meam_rho0[i];
+      
+      for (j=i; j<ntypes; j++) {
+	  meam_deltar[i][j]  = meam_deltar[j][i]  = meam_deltar_lin[n];
+	  meam_rcut[i][j]    = meam_rcut[j][i]    = meam_rcut_lin[n];
+	  meam_r2_cut[i][j]  = meam_r2_cut[j][i]  = SQR(meam_rcut[i][j]); 
+	  n++;
       }
-    }
   }
-
+  
+  n = 0;
+  for (k=0; k<ntypes; k++)
+      for (i=0; i<ntypes; i++)
+	  for (j=i; j<ntypes; j++) {
+	      if ( have_common_cmax ) 
+		  meam_cmax[k][i][j] = meam_cmax[k][j][i] = meam_cmax_lin[0];
+	      else
+		  meam_cmax[k][i][j] = meam_cmax[k][j][i] = meam_cmax_lin[n];
+	      
+	      if ( have_common_cmin )
+		  meam_cmin[k][i][j] = meam_cmin[k][j][i] = meam_cmin_lin[0];
+	      else
+		  meam_cmin[k][i][j] = meam_cmin[k][j][i] = meam_cmin_lin[n];
+	      
+	      n++;
+	  }
+  
   /* update neighbor table cutoff */
   if (NULL==neightab_r2cut) {
-    neightab_r2cut = (real *) calloc( ntypes * ntypes, sizeof(real) );
-    if (NULL==neightab_r2cut) 
-      error("cannot allocate memory for neightab_r2cut");
+      neightab_r2cut = (real *) calloc( ntypes * ntypes, sizeof(real) );
+      if (NULL==neightab_r2cut) 
+	  error("cannot allocate memory for neightab_r2cut");
   }
   for (i=0; i<ntypes; i++)
-    for (j=0; j<ntypes; j++)
-      neightab_r2cut[i*ntypes+j] = 
+      for (j=0; j<ntypes; j++)
+	  neightab_r2cut[i*ntypes+j] = 
 	MAX( neightab_r2cut[i*ntypes+j], meam_r2_cut[i][j] );
 }
+
+
