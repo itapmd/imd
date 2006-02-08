@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -104,6 +104,9 @@ double  SwappedDouble (double );
 #ifdef MPI
 void init_mpi(int *argc_pointer, char **argv);
 void shutdown_mpi(void);
+void alloc_msgbuf(msgbuf*, int);
+void realloc_msgbuf(msgbuf*, int);
+void free_msgbuf(msgbuf*);
 #endif
 void setup_mpi_topology(void);
 void calc_cpu_dim(void);

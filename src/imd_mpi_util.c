@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -50,6 +50,56 @@ void shutdown_mpi(void)
 {
   MPI_Barrier(MPI_COMM_WORLD);   /* Wait for all processes to arrive */
   MPI_Finalize();                /* Shutdown */
+}
+
+/******************************************************************************
+*
+* allocate/deallocate a message buffer
+*
+******************************************************************************/
+
+void alloc_msgbuf(msgbuf *b, int size)
+{
+#ifdef MPI2
+  MPI_Free_mem(b->data);
+  MPI_Alloc_mem( size * sizeof(real), MPI_INFO_NULL, &(b->data) );
+#else
+  free(b->data);
+  b->data = (real *) malloc( size * sizeof(real) );
+#endif
+  if (NULL == b->data) error("cannot allocate message buffer");
+  b->n = 0;
+  b->n_max = size;
+}
+
+void realloc_msgbuf(msgbuf *b, int size)
+{
+  int  i;
+  real *new;
+
+#ifdef MPI2
+  MPI_Alloc_mem( size * sizeof(real), MPI_INFO_NULL, &new );
+#else
+  new = (real *) malloc( size * sizeof(real) );
+#endif
+  if (NULL == new) error("cannot allocate message buffer");
+  for (i=0; i<b->n; i++) new[i] = b->data[i];
+#ifdef MPI2
+  MPI_Free_mem(b->data);
+#else
+  free(b->data);
+#endif
+  b->data = new;
+  b->n_max = size;
+}
+
+void free_msgbuf(msgbuf *b)
+{
+#ifdef MPI2
+  MPI_Free_mem(b->data);
+#else
+  free(b->data);
+#endif
 }
 
 #ifdef SR
@@ -106,9 +156,7 @@ void copy_atom(msgbuf *to, int to_cpu, cell *p, int ind )
 
   /* See if we need some space */
   if (to->n + MAX_ATOM_SIZE > to->n_max) {
-    to->n_max += BUFFER_SIZE_INC;
-    to->data = (real *) realloc( to->data, to->n_max * sizeof(real) );
-    if (NULL == to->data) error("Cannot allocate buffer in copy_atom");
+    realloc_msgbuf(to, to->n_max + BUFFER_SIZE_INC);
   }
 
   /* copy atom */
@@ -563,9 +611,7 @@ void copy_atoms_buf(msgbuf *to, msgbuf *from)
   int i;
 
   if (to->n_max < to->n + from->n) {
-    while (to->n_max < to->n + from->n) to->n_max += BUFFER_SIZE_INC;
-    to->data = (real *) realloc( to->data, to->n_max * sizeof(real) );
-    if (NULL == to->data) error("Cannot allocate buffer in copy_atoms_buf");
+    realloc_msgbuf(to, to->n + from->n + BUFFER_SIZE_INC);
   }
 
   for (i=0; i<from->n; ++i) 
@@ -680,103 +726,34 @@ void setup_buffers(void)
 
   /* Allocate east/west buffers */
   if (size_east > send_buf_east.n_max) {
-
-    /* Buffer size is zero only at startup */
-    if (0 != send_buf_east.n_max) {
-      free(send_buf_east.data);
-      free(send_buf_west.data);
-      free(recv_buf_east.data);
-      free(recv_buf_west.data);
-    }
-
-    /* Allocate buffers */
-    send_buf_east.data = (real *) malloc( size_east * sizeof(real) );
-    send_buf_west.data = (real *) malloc( size_east * sizeof(real) );
-    recv_buf_east.data = (real *) malloc( size_east * sizeof(real) );
-    recv_buf_west.data = (real *) malloc( size_east * sizeof(real) );
-
-    /* Always check malloc results */
-    if ((NULL == send_buf_east.data ) ||
-	(NULL == send_buf_west.data ) ||
-	(NULL == recv_buf_east.data ) ||
-	(NULL == recv_buf_west.data )) 
-        error("Cannot allocate east/west buffer.");
-
-    send_buf_east.n_max = size_east;
-    send_buf_west.n_max = size_east;
-    recv_buf_east.n_max = size_east;
-    recv_buf_west.n_max = size_east;
+    alloc_msgbuf(&send_buf_east, size_east);
+    alloc_msgbuf(&send_buf_west, size_east);
+    alloc_msgbuf(&recv_buf_east, size_east);
+    alloc_msgbuf(&recv_buf_west, size_east);
   }
 
   /* Allocate north/south buffers */
   if (size_north > send_buf_north.n_max) {
-
-    /* Buffer size is zero only at startup */
-    if (0 != send_buf_north.n_max) {
-      free(send_buf_north.data);
-      free(send_buf_south.data);
-      free(recv_buf_north.data);
-      free(recv_buf_south.data);
-    }
-
-    /* Allocate buffers */
-    send_buf_north.data = (real *) malloc( size_north * sizeof(real) );
-    send_buf_south.data = (real *) malloc( size_north * sizeof(real) );
-    recv_buf_north.data = (real *) malloc( size_north * sizeof(real) );
-    recv_buf_south.data = (real *) malloc( size_north * sizeof(real) );
-
-    /* Always check malloc results */
-    if ((NULL == send_buf_north.data ) ||
-	(NULL == send_buf_south.data ) ||
-	(NULL == recv_buf_north.data ) ||
-	(NULL == recv_buf_south.data )) 
-        error("Cannot allocate north/south buffer.");
-
-    send_buf_north.n_max = size_north;
-    send_buf_south.n_max = size_north;
-    recv_buf_north.n_max = size_north;
-    recv_buf_south.n_max = size_north;
-
+    alloc_msgbuf(&send_buf_north, size_north);
+    alloc_msgbuf(&send_buf_south, size_north);
+    alloc_msgbuf(&recv_buf_north, size_north);
+    alloc_msgbuf(&recv_buf_south, size_north);
   }
 
 #ifndef TWOD
   /* Allocate up/down buffers */
   if (size_up > send_buf_up.n_max) {
-
-    /* Buffer size is zero only at startup */
-    if (0 != send_buf_up.n_max) {
-      free(send_buf_up.data);
-      free(send_buf_down.data);
-      free(recv_buf_up.data);
-      free(recv_buf_down.data);
-    }
-
-    /* Allocate buffers */
-    send_buf_up.data   = (real *) malloc( size_up * sizeof(real) );
-    send_buf_down.data = (real *) malloc( size_up * sizeof(real) );
-    recv_buf_up.data   = (real *) malloc( size_up * sizeof(real) );
-    recv_buf_down.data = (real *) malloc( size_up * sizeof(real) );
-
-    /* Always check malloc results */
-    if ((NULL == send_buf_up.data ) ||
-	(NULL == send_buf_down.data ) ||
-	(NULL == recv_buf_up.data ) ||
-	(NULL == recv_buf_down.data )) 
-        error("Cannot allocate up/down buffer.");
-
-    send_buf_up.n_max   = size_up;
-    send_buf_down.n_max = size_up;
-    recv_buf_up.n_max   = size_up;
-    recv_buf_down.n_max = size_up;
+    alloc_msgbuf(&send_buf_up,   size_up);
+    alloc_msgbuf(&send_buf_down, size_up);
+    alloc_msgbuf(&recv_buf_up,   size_up);
+    alloc_msgbuf(&recv_buf_down, size_up);
   }
 
 #endif
 
 #ifdef SHOCK
   if (0==dump_buf.n_max) {
-    dump_buf.data = (real *) malloc( BUFFER_SIZE_INC * sizeof(real) );
-    if (NULL==dump_buf.data) error("cannot allocate buffer");
-    dump_buf.n_max = BUFFER_SIZE_INC;
+    alloc_msgbuf(&dump_buf, BUFFER_SIZE_INC);
   }
 #endif
 
@@ -851,10 +828,7 @@ void recv_cell(minicell *p, int from_cpu, int tag)
   MPI_Probe( from_cpu, tag, cpugrid, &status );
   MPI_Get_count( &status, REAL, &(b->n) );
   if (b->n_max < b->n) {
-    if (0 != b->n_max) free(b->data);
-    while (b->n_max < b->n) b->n_max += BUFFER_SIZE_INC;
-    b->data = (real *) malloc( b->n_max * sizeof(real) );
-    if (NULL == b->data) error("Cannot allocate buffer in recv_cell");
+    alloc_msgbuf(b, b->n + BUFFER_SIZE_INC); 
   }
 
   /* upack data */

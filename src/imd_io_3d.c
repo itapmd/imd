@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -118,14 +118,12 @@ void read_atoms(str255 infilename)
   if (0==parallel_input) {
     input_buf = (msgbuf *) malloc( num_cpus * sizeof(msgbuf) );
     if (NULL==input_buf) error("cannot allocate input buffers");
-    input_buf[0].data  = (real *) NULL;
+    input_buf[0].data  = NULL;
     input_buf[0].n_max = 0;
     input_buf[0].n     = 0;
     for (i=1; i<num_cpus; i++) {
-      input_buf[i].data  = (real *) malloc( INPUT_BUF_SIZE * sizeof(real) );
-      if (NULL==input_buf[i].data) error("cannot allocate input buffer");
-      input_buf[i].n_max = INPUT_BUF_SIZE;
-      input_buf[i].n     = 0;
+      input_buf[i].data = NULL;
+      alloc_msgbuf(input_buf+i, INPUT_BUF_SIZE);
     }
   }
 
@@ -451,13 +449,15 @@ void read_atoms(str255 infilename)
   /* The last buffer is sent with a different tag, which tells the
      target CPU that reading is finished; we increase the size by
      one, so that the buffer is sent even if it is empty */
-  if (0==parallel_input)
+  if (0==parallel_input) {
     for (s=1; s<num_cpus; s++) {
       b = input_buf + s;
       b->data[b->n++] = 0.0;
       MPI_Send(b->data, b->n, REAL, s, INBUF_TAG+1, cpugrid);
-      free(b->data);
+      free_msgbuf(b);
     }
+    free(input_buf);
+  }
 #endif
 
   /* the following routine contains stuff that must be executed
@@ -619,13 +619,10 @@ void read_atoms_cleanup(void)
 void recv_atoms(void)
 {
   MPI_Status status;
-  int finished=0;
-  msgbuf b;   
+  int finished = 0;
+  msgbuf b = {NULL,0,0};   
 
-  b.data  = (real *) malloc( INPUT_BUF_SIZE * sizeof(real) );
-  b.n_max = INPUT_BUF_SIZE;
-  if (NULL == b.data) error("cannot allocate input receive buffer");
-
+  alloc_msgbuf(&b, INPUT_BUF_SIZE);
   printf("Node %d listening.\n",myid);
   do {
     MPI_Recv(b.data, INPUT_BUF_SIZE, REAL, 0, MPI_ANY_TAG, cpugrid, &status);
@@ -634,7 +631,7 @@ void recv_atoms(void)
     process_buffer( &b, (cell *) NULL );
   } while (0==finished);
   printf("Node %d leaves listen.\n",myid);
-  free(b.data);
+  free_msgbuf(&b);
 }
 
 #endif /* MPI */ 

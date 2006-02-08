@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -170,8 +170,8 @@
 *
 ******************************************************************************/
 
-#ifdef SX4
-#undef USE_SOCKETS
+#if defined(MPI) && (MPI_VERSION==2)
+#define MPI2
 #endif
 
 /******************************************************************************
