@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -716,7 +716,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
 
 void copy_cell( int k, int l, int m, int r, int s, int t, vektor v )
 {
-  int i;
+  int i, count;
   minicell *from, *to;
 
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
@@ -735,9 +735,13 @@ void copy_cell( int k, int l, int m, int r, int s, int t, vektor v )
 #endif
 
   to->n = from->n;
+#ifdef VEC
+  count = atoms.n_buf;
+#pragma cdir nodep
+#endif
   for (i=0; i<to->n; ++i) {
 #ifdef VEC
-    to->ind[i]    = atoms.n_buf++;
+    to->ind[i]    = count++;
 #endif
     ORT(to,i,X)   = ORT(from,i,X) + v.x;
     ORT(to,i,Y)   = ORT(from,i,Y) + v.y;
@@ -751,6 +755,9 @@ void copy_cell( int k, int l, int m, int r, int s, int t, vektor v )
     ACHSE(to,i,Z) = ACHSE(from,i,Z);
 #endif
   }
+#ifdef VEC
+  atoms.n_buf = count;
+#endif
 }
 
 /******************************************************************************
@@ -761,27 +768,31 @@ void copy_cell( int k, int l, int m, int r, int s, int t, vektor v )
 
 void pack_cell( msgbuf *b, int k, int l, int m, vektor v )
 {
-  int i;
+  int i, j = b->n;
   minicell *from;
     
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
-  b->data[ b->n++ ] = (real) from->n;
-    
+  b->data[ j++ ] = (real) from->n;
+
+#ifdef VEC
+#pragma cdir vec
+#endif    
   for (i=0; i<from->n; ++i) {
-    b->data[ b->n++ ] = ORT(from,i,X) + v.x;
-    b->data[ b->n++ ] = ORT(from,i,Y) + v.y;
-    b->data[ b->n++ ] = ORT(from,i,Z) + v.z;
+    b->data[ j++ ] = ORT(from,i,X) + v.x;
+    b->data[ j++ ] = ORT(from,i,Y) + v.y;
+    b->data[ j++ ] = ORT(from,i,Z) + v.z;
 #ifndef MONO
-    b->data[ b->n++ ] = (real) SORTE(from,i);
+    b->data[ j++ ] = (real) SORTE(from,i);
 #endif
 #ifdef UNIAX
-    b->data[ b->n++ ] = ACHSE(from,i,X);
-    b->data[ b->n++ ] = ACHSE(from,i,Y);
-    b->data[ b->n++ ] = ACHSE(from,i,Z);
+    b->data[ j++ ] = ACHSE(from,i,X);
+    b->data[ j++ ] = ACHSE(from,i,Y);
+    b->data[ j++ ] = ACHSE(from,i,Z);
 #endif
   }
   if (b->n_max < b->n)  error("Buffer overflow in pack_cell");
+  b->n = j;
 }
 
 /******************************************************************************
@@ -792,13 +803,12 @@ void pack_cell( msgbuf *b, int k, int l, int m, vektor v )
 
 void unpack_cell( msgbuf *b, int k, int l, int m )
 {
-  int i;
-  int tmp_n;
+  int i, j = b->n, count, tmp_n;
   minicell *to;
 
   to = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
-  tmp_n = (int) b->data[ b->n++ ];
+  tmp_n = (int) b->data[ j++ ];
   
   /* increase minicell size if necessary */
   if (tmp_n > to->n_max) {
@@ -814,23 +824,31 @@ void unpack_cell( msgbuf *b, int k, int l, int m )
 
   /* copy indices and atoms */
   to->n = tmp_n;
+#ifdef VEC
+  count = atoms.n_buf;
+#pragma cdir nodep
+#endif
   for (i=0; i<to->n; ++i) {
 #ifdef VEC
-    to->ind[i]  = atoms.n_buf++;
+    to->ind[i]  = count++;
 #endif
-    ORT(to,i,X) = b->data[ b->n++ ];
-    ORT(to,i,Y) = b->data[ b->n++ ];
-    ORT(to,i,Z) = b->data[ b->n++ ];
+    ORT(to,i,X) = b->data[ j++ ];
+    ORT(to,i,Y) = b->data[ j++ ];
+    ORT(to,i,Z) = b->data[ j++ ];
 #ifndef MONO
-    SORTE(to,i) = (shortint) b->data[ b->n++ ];
+    SORTE(to,i) = (shortint) b->data[ j++ ];
 #endif
 #ifdef UNIAX
-    ACHSE(to,i,X) = b->data[ b->n++ ];
-    ACHSE(to,i,Y) = b->data[ b->n++ ];
-    ACHSE(to,i,Z) = b->data[ b->n++ ];
+    ACHSE(to,i,X) = b->data[ j++ ];
+    ACHSE(to,i,Y) = b->data[ j++ ];
+    ACHSE(to,i,Z) = b->data[ j++ ];
 #endif
   }
   if (b->n_max < b->n) error("Buffer overflow in unpack_cell");
+#ifdef VEC
+  atoms.n_buf = count;
+#endif
+  b->n = j;
 }
 
 /******************************************************************************
@@ -847,6 +865,9 @@ void add_forces( int k, int l, int m, int r, int s, int t )
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
   to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
 
+#ifdef VEC
+#pragma cdir nodep
+#endif
   for (i=0; i<to->n; ++i) {
     KRAFT(to,i,X)  += KRAFT(from,i,X);
     KRAFT(to,i,Y)  += KRAFT(from,i,Y);
@@ -884,38 +905,42 @@ void add_forces( int k, int l, int m, int r, int s, int t )
 
 void pack_forces( msgbuf *b, int k, int l, int m)
 {
-  int i;
+  int i, j = b->n;
   minicell *from;
     
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+#ifdef VEC
+#pragma cdir nodep
+#endif
   for (i=0; i<from->n; ++i) {
-    b->data[ b->n++ ] = KRAFT(from,i,X);
-    b->data[ b->n++ ] = KRAFT(from,i,Y);
-    b->data[ b->n++ ] = KRAFT(from,i,Z);
+    b->data[ j++ ] = KRAFT(from,i,X);
+    b->data[ j++ ] = KRAFT(from,i,Y);
+    b->data[ j++ ] = KRAFT(from,i,Z);
 #ifndef MONOLJ
-    b->data[ b->n++ ] = POTENG(from,i);
+    b->data[ j++ ] = POTENG(from,i);
 #endif
 #ifdef NVX
-    b->data[ b->n++ ] = HEATCOND(from,i);
+    b->data[ j++ ] = HEATCOND(from,i);
 #endif
 #ifdef STRESS_TENS
-    b->data[ b->n++ ] = PRESSTENS(from,i,xx);
-    b->data[ b->n++ ] = PRESSTENS(from,i,yy);
-    b->data[ b->n++ ] = PRESSTENS(from,i,zz);
-    b->data[ b->n++ ] = PRESSTENS(from,i,yz);
-    b->data[ b->n++ ] = PRESSTENS(from,i,zx);
-    b->data[ b->n++ ] = PRESSTENS(from,i,xy);
+    b->data[ j++ ] = PRESSTENS(from,i,xx);
+    b->data[ j++ ] = PRESSTENS(from,i,yy);
+    b->data[ j++ ] = PRESSTENS(from,i,zz);
+    b->data[ j++ ] = PRESSTENS(from,i,yz);
+    b->data[ j++ ] = PRESSTENS(from,i,zx);
+    b->data[ j++ ] = PRESSTENS(from,i,xy);
 #endif
 #ifdef NNBR
-    b->data[ b->n++ ] = (real) NBANZ(from,i);
+    b->data[ j++ ] = (real) NBANZ(from,i);
 #endif
 #ifdef UNIAX
-    b->data[ b->n++ ] = DREH_MOMENT(from,i,X);
-    b->data[ b->n++ ] = DREH_MOMENT(from,i,Y);
-    b->data[ b->n++ ] = DREH_MOMENT(from,i,Z);
+    b->data[ j++ ] = DREH_MOMENT(from,i,X);
+    b->data[ j++ ] = DREH_MOMENT(from,i,Y);
+    b->data[ j++ ] = DREH_MOMENT(from,i,Z);
 #endif
   }
   if (b->n_max < b->n) error("Buffer overflow in pack_forces.");
+  b->n = j;
 }
 
 /******************************************************************************
@@ -926,38 +951,42 @@ void pack_forces( msgbuf *b, int k, int l, int m)
 
 void unpack_forces( msgbuf *b, int k, int l, int m )
  {
-  int i;
+  int i, j = b->n;
   minicell *to;
 
   to = PTR_3D_V(cell_array, k, l, m, cell_dim);
+#ifdef VEC
+#pragma cdir nodep
+#endif
   for (i=0; i<to->n; ++i) {
-    KRAFT(to,i,X)  += b->data[ b->n++ ];
-    KRAFT(to,i,Y)  += b->data[ b->n++ ];
-    KRAFT(to,i,Z)  += b->data[ b->n++ ];
+    KRAFT(to,i,X)  += b->data[ j++ ];
+    KRAFT(to,i,Y)  += b->data[ j++ ];
+    KRAFT(to,i,Z)  += b->data[ j++ ];
 #ifndef MONOLJ
-    POTENG(to,i)   += b->data[ b->n++ ];
+    POTENG(to,i)   += b->data[ j++ ];
 #endif
 #ifdef NVX
-    HEATCOND(to,i) += b->data[ b->n++ ];
+    HEATCOND(to,i) += b->data[ j++ ];
 #endif
 #ifdef STRESS_TENS
-    PRESSTENS(to,i,xx) += b->data[ b->n++ ];
-    PRESSTENS(to,i,yy) += b->data[ b->n++ ];
-    PRESSTENS(to,i,zz) += b->data[ b->n++ ];
-    PRESSTENS(to,i,yz) += b->data[ b->n++ ];
-    PRESSTENS(to,i,zx) += b->data[ b->n++ ];
-    PRESSTENS(to,i,xy) += b->data[ b->n++ ];
+    PRESSTENS(to,i,xx) += b->data[ j++ ];
+    PRESSTENS(to,i,yy) += b->data[ j++ ];
+    PRESSTENS(to,i,zz) += b->data[ j++ ];
+    PRESSTENS(to,i,yz) += b->data[ j++ ];
+    PRESSTENS(to,i,zx) += b->data[ j++ ];
+    PRESSTENS(to,i,xy) += b->data[ j++ ];
 #endif
 #ifdef NNBR
-    NBANZ(to,i) += (shortint) b->data[ b->n++ ];
+    NBANZ(to,i) += (shortint) b->data[ j++ ];
 #endif
 #ifdef UNIAX
-    DREH_MOMENT(to,i,X) += b->data[ b->n++ ];
-    DREH_MOMENT(to,i,Y) += b->data[ b->n++ ];
-    DREH_MOMENT(to,i,Z) += b->data[ b->n++ ];
+    DREH_MOMENT(to,i,X) += b->data[ j++ ];
+    DREH_MOMENT(to,i,Y) += b->data[ j++ ];
+    DREH_MOMENT(to,i,Z) += b->data[ j++ ];
 #endif
   }
   if (b->n_max < b->n) error("Buffer overflow in unpack_forces.");
+  b->n = j;
 }
 
 
@@ -977,6 +1006,9 @@ void copy_dF( int k, int l, int m, int r, int s, int t, vektor v )
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
   to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
 
+#ifdef VEC
+#pragma cdir nodep
+#endif
   for (i=0; i<to->n; ++i) {
     EAM_DF    (to,i)    = EAM_DF    (from,i);
 #ifdef EEAM
@@ -1011,6 +1043,9 @@ void add_rho( int k, int l, int m, int r, int s, int t )
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
   to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
 
+#ifdef VEC
+#pragma cdir nodep
+#endif
   for (i=0; i<to->n; ++i) {
     EAM_RHO(to,i) += EAM_RHO(from,i);
 #ifdef EEAM
@@ -1038,28 +1073,32 @@ void add_rho( int k, int l, int m, int r, int s, int t )
 
 void pack_dF( msgbuf *b, int k, int l, int m, vektor v )
 {
-  int i;
+  int i, j = b->n;
   minicell *from;
     
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
+#ifdef VEC
+#pragma cdir nodep
+#endif
   for (i=0; i<from->n; ++i) {
-    b->data[ b->n++ ] = EAM_DF    (from,i);
+    b->data[ j++ ] = EAM_DF    (from,i);
 #ifdef EEAM
-    b->data[ b->n++ ] = EAM_DM    (from,i);
+    b->data[ j++ ] = EAM_DM    (from,i);
 #endif
 #ifdef ADP
-    b->data[ b->n++ ] = ADP_MU    (from,i,X);
-    b->data[ b->n++ ] = ADP_MU    (from,i,X);
-    b->data[ b->n++ ] = ADP_MU    (from,i,X);
-    b->data[ b->n++ ] = ADP_LAMBDA(from,i,xx);
-    b->data[ b->n++ ] = ADP_LAMBDA(from,i,yy);
-    b->data[ b->n++ ] = ADP_LAMBDA(from,i,zz);
-    b->data[ b->n++ ] = ADP_LAMBDA(from,i,yz);
-    b->data[ b->n++ ] = ADP_LAMBDA(from,i,zx);
-    b->data[ b->n++ ] = ADP_LAMBDA(from,i,xy);
+    b->data[ j++ ] = ADP_MU    (from,i,X);
+    b->data[ j++ ] = ADP_MU    (from,i,X);
+    b->data[ j++ ] = ADP_MU    (from,i,X);
+    b->data[ j++ ] = ADP_LAMBDA(from,i,xx);
+    b->data[ j++ ] = ADP_LAMBDA(from,i,yy);
+    b->data[ j++ ] = ADP_LAMBDA(from,i,zz);
+    b->data[ j++ ] = ADP_LAMBDA(from,i,yz);
+    b->data[ j++ ] = ADP_LAMBDA(from,i,zx);
+    b->data[ j++ ] = ADP_LAMBDA(from,i,xy);
 #endif
   }
+  b->n = j;
 }
 
 /******************************************************************************
@@ -1071,28 +1110,32 @@ void pack_dF( msgbuf *b, int k, int l, int m, vektor v )
 
 void pack_rho( msgbuf *b, int k, int l, int m )
 {
-  int i;
+  int i, j = b->n;
   minicell *from;
     
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
+#ifdef VEC
+#pragma cdir nodep
+#endif
   for (i=0; i<from->n; ++i) {
-    b->data[ b->n++ ] = EAM_RHO(from,i);
+    b->data[ j++ ] = EAM_RHO(from,i);
 #ifdef EEAM
-    b->data[ b->n++ ] = EAM_P(from,i);
+    b->data[ j++ ] = EAM_P(from,i);
+#endif
+#ifdef ADP
+    b->data[ j++ ] = ADP_MU    (from,i,X);
+    b->data[ j++ ] = ADP_MU    (from,i,X);
+    b->data[ j++ ] = ADP_MU    (from,i,X);
+    b->data[ j++ ] = ADP_LAMBDA(from,i,xx);
+    b->data[ j++ ] = ADP_LAMBDA(from,i,yy);
+    b->data[ j++ ] = ADP_LAMBDA(from,i,zz);
+    b->data[ j++ ] = ADP_LAMBDA(from,i,yz);
+    b->data[ j++ ] = ADP_LAMBDA(from,i,zx);
+    b->data[ j++ ] = ADP_LAMBDA(from,i,xy);
 #endif
   }
-#ifdef ADP
-    b->data[ b->n++ ] = ADP_MU    (from,i,X);
-    b->data[ b->n++ ] = ADP_MU    (from,i,X);
-    b->data[ b->n++ ] = ADP_MU    (from,i,X);
-    b->data[ b->n++ ] = ADP_LAMBDA(from,i,xx);
-    b->data[ b->n++ ] = ADP_LAMBDA(from,i,yy);
-    b->data[ b->n++ ] = ADP_LAMBDA(from,i,zz);
-    b->data[ b->n++ ] = ADP_LAMBDA(from,i,yz);
-    b->data[ b->n++ ] = ADP_LAMBDA(from,i,zx);
-    b->data[ b->n++ ] = ADP_LAMBDA(from,i,xy);
-#endif
+  b->n = j;
 }
 
 /******************************************************************************
@@ -1103,28 +1146,32 @@ void pack_rho( msgbuf *b, int k, int l, int m )
 
 void unpack_dF( msgbuf *b, int k, int l, int m )
 {
-  int i;
+  int i, j = b->n;
   minicell *to;
 
   to = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
+#ifdef VEC
+#pragma cdir nodep
+#endif
   for (i=0; i<to->n; ++i) {
-    EAM_DF    (to,i)    = b->data[ b->n++ ];
+    EAM_DF    (to,i)    = b->data[ j++ ];
 #ifdef EEAM
-    EAM_DM    (to,i)    = b->data[ b->n++ ];
+    EAM_DM    (to,i)    = b->data[ j++ ];
 #endif
 #ifdef ADP
-    ADP_MU    (to,i,X)  = b->data[ b->n++ ];
-    ADP_MU    (to,i,Y)  = b->data[ b->n++ ];
-    ADP_MU    (to,i,Z)  = b->data[ b->n++ ];
-    ADP_LAMBDA(to,i,xx) = b->data[ b->n++ ];
-    ADP_LAMBDA(to,i,yy) = b->data[ b->n++ ];
-    ADP_LAMBDA(to,i,zz) = b->data[ b->n++ ];
-    ADP_LAMBDA(to,i,yz) = b->data[ b->n++ ];
-    ADP_LAMBDA(to,i,zx) = b->data[ b->n++ ];
-    ADP_LAMBDA(to,i,xy) = b->data[ b->n++ ];
+    ADP_MU    (to,i,X)  = b->data[ j++ ];
+    ADP_MU    (to,i,Y)  = b->data[ j++ ];
+    ADP_MU    (to,i,Z)  = b->data[ j++ ];
+    ADP_LAMBDA(to,i,xx) = b->data[ j++ ];
+    ADP_LAMBDA(to,i,yy) = b->data[ j++ ];
+    ADP_LAMBDA(to,i,zz) = b->data[ j++ ];
+    ADP_LAMBDA(to,i,yz) = b->data[ j++ ];
+    ADP_LAMBDA(to,i,zx) = b->data[ j++ ];
+    ADP_LAMBDA(to,i,xy) = b->data[ j++ ];
 #endif
   }
+  b->n = j;
 }
 
 /******************************************************************************
@@ -1136,28 +1183,32 @@ void unpack_dF( msgbuf *b, int k, int l, int m )
 
 void unpack_add_rho( msgbuf *b, int k, int l, int m )
 {
-  int i;
+  int i, j = b->n;
   minicell *to;
 
   to = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
+#ifdef VEC
+#pragma cdir vec
+#endif
   for (i=0; i<to->n; ++i) {
-    EAM_RHO(to,i) += b->data[ b->n++ ];
+    EAM_RHO(to,i) += b->data[ j++ ];
 #ifdef EEAM
-    EAM_P(to,i)   += b->data[ b->n++ ];
+    EAM_P(to,i)   += b->data[ j++ ];
 #endif
 #ifdef ADP
-    ADP_MU    (to,i,X)  += b->data[ b->n++ ];
-    ADP_MU    (to,i,Y)  += b->data[ b->n++ ];
-    ADP_MU    (to,i,Z)  += b->data[ b->n++ ];
-    ADP_LAMBDA(to,i,xx) += b->data[ b->n++ ];
-    ADP_LAMBDA(to,i,yy) += b->data[ b->n++ ];
-    ADP_LAMBDA(to,i,zz) += b->data[ b->n++ ];
-    ADP_LAMBDA(to,i,yz) += b->data[ b->n++ ];
-    ADP_LAMBDA(to,i,zx) += b->data[ b->n++ ];
-    ADP_LAMBDA(to,i,xy) += b->data[ b->n++ ];
+    ADP_MU    (to,i,X)  += b->data[ j++ ];
+    ADP_MU    (to,i,Y)  += b->data[ j++ ];
+    ADP_MU    (to,i,Z)  += b->data[ j++ ];
+    ADP_LAMBDA(to,i,xx) += b->data[ j++ ];
+    ADP_LAMBDA(to,i,yy) += b->data[ j++ ];
+    ADP_LAMBDA(to,i,zz) += b->data[ j++ ];
+    ADP_LAMBDA(to,i,yz) += b->data[ j++ ];
+    ADP_LAMBDA(to,i,zx) += b->data[ j++ ];
+    ADP_LAMBDA(to,i,xy) += b->data[ j++ ];
 #endif
   }
+  b->n = j;
 }
 
 #endif /* EAM2 */
