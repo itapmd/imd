@@ -32,9 +32,10 @@
 * _fcc        -- generates FCC structure
 * _bcc        -- generates BCC structure
 * _b2         -- generates B2 structure
-* _l12        -- generates L1_2 structure
+* _l12        -- generates L1_2 structure (Cu3Au)
 * _nacl       -- generates NaCl structure
 * _d03        -- generates D0_3 structure (AlFe3)
+* _l10        -- generates L1_0 structure (CuAu)
 * _diamond    -- generates cubic diamond structure
 * _zincblende -- generates zincblende structure
 * _lav        -- generates a cubic Laves structure C15 (MgCu2)
@@ -91,13 +92,13 @@ void generate_atoms(str255 mode)
   } else if (0 == strcmp(mode,"_zincblende")) { /* zincblende */
     init_cubic();
     generate_fcc(5);
-  } else if (0 == strcmp(mode,"_cu3au")) { /* L1_2, Cu3Au */
+  } else if (0 == strcmp(mode,"_l12")) { /* L1_2, Cu3Au */
     init_cubic();
     generate_fcc(6);
-  } else if (0 == strcmp(mode,"_cuau3")) { /* L1_2, CuAu3 */
+  } else if (0 == strcmp(mode,"_d03")) { /* D0_3, AlFe3 */
     init_cubic();
     generate_fcc(7);
-  } else if (0 == strcmp(mode,"_d03")) { /* D0_3, AlFe3 */
+  } else if (0 == strcmp(mode,"_l10")) { /* L1_0, CuAu */
     init_cubic();
     generate_fcc(8);
   } else if (0 == strcmp(mode,"_lav")) {   /* C15 Laves */
@@ -299,8 +300,8 @@ void generate_fcc(int maxtyp)
 #endif
 
   /* conventional unit cell has size box_unit */
-  /* FCC, BCC, B2, NaCl, L1_2 */
-  if ((maxtyp < 4) || (maxtyp==6) || (maxtyp==7)) {
+  /* FCC, BCC, B2, NaCl, L1_2, L1_0 */
+  if ((maxtyp < 4) || (maxtyp==6) || (maxtyp==8)) {
     bp.x = box_param.x * 2; 
     bp.y = box_param.y * 2; 
     bp.z = box_param.z * 2; 
@@ -355,8 +356,18 @@ void generate_fcc(int maxtyp)
  
         typ  = (x+y+z) % 2;
 
-	/* D0_3 structure */
+	/* L1_0 structure */
 	if (maxtyp == 8) {
+	  if ( z%2==0 && (x+y)%2==0 )
+	    typ = 0;
+	  else if ( z%2==1 && (x+y)%2==1 )
+	    typ = 1;
+	  else
+	    continue;
+	}
+
+	/* D0_3 structure */
+	if (maxtyp == 7) {
 	  if ( x%2==0 && y%2==0 && z%2==0 ) {
 	    if ( (x+y+z)%4==2 )
 	      typ = 0;
@@ -369,15 +380,7 @@ void generate_fcc(int maxtyp)
 	    continue;
 	}
 
-	/* L1_2 structure, cuau3 */
-	if (maxtyp == 7) {
-	  if (typ==1) 
-	    continue;
-	  else if (x%2==1 || y%2==1 || z%2==1)
-	    typ = 1;
-	}
-
-	/* L1_2 structure, cu3au */
+	/* L1_2 structure */
 	if (maxtyp == 6) {
 	  if (typ==1) 
 	    continue;
