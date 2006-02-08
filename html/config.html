@@ -135,10 +135,10 @@ are supported:</p>
 <tr><td>_bcc        </td><td> bcc crystal (3D)                       </td></tr>
 <tr><td>_nacl       </td><td> NaCl crystal structure (3D)            </td></tr>
 <tr><td>_b2         </td><td> crystal with B2 (CsCl) structure (3D)  </td></tr>
-<tr><td>_cu3au      </td><td> Cu<sub>3</sub>Au structure 
-			      (L1<sub>2</sub>) (3D)                  </td></tr>
-<tr><td>_cuau3      </td><td> CuAu<sub>3</sub> structure 
-			      (L1<sub>2</sub>) (3D)                  </td></tr>
+<tr><td>_l12        </td><td> L1<sub>2</sub> structure 
+			      (Cu<sub>3</sub>Au) (3D)                </td></tr>
+<tr><td>_l10        </td><td> L1<sub>0</sub> structure 
+			      (CuAu) (3D)                            </td></tr>
 <tr><td>_d03        </td><td> D0<sub>3</sub> structure 
                               (AlFe<sub>3</sub>) (3D)                </td></tr>
 <tr><td>_diamond    </td><td> cubic diamond structure (3D)           </td></tr>
@@ -156,11 +156,11 @@ the masses of the different atoms types can be specified with
 the parameter <tt>masses</tt>, which requires <tt>ntypes</tt>
 real values.</p>
 
-<p> For the cubic crystal structures _fcc, _bcc, _nacl, _b2, _cu3au,
-_cuau3, _d03, _diamond, _zincblende, and _lav, the three components of the
-parameter <tt>box_param</tt> specify the number of conventional cubic
-unit cells in each direction. The size of such a cubic unit cell is
-given by the parameter <tt>box_unit</tt>, which defaults to
+<p> For the cubic crystal structures _fcc, _bcc, _nacl, _b2, _l12,
+_l10, _d03, _diamond, _zincblende, and _lav, the three components of
+the parameter <tt>box_param</tt> specify the number of conventional
+cubic unit cells in each direction. The size of such a cubic unit cell
+is given by the parameter <tt>box_unit</tt>, which defaults to
 <tt>1.0</tt>. So, in order to obtain an FCC crystal with nearest
 neighbor distance <tt>sqrt(2)</tt>, <tt>box_unit</tt> must be set to
 <tt>2.0</tt>.</p>
@@ -183,12 +183,13 @@ distance.</p>
 
 <p>By default, the atoms of the elemental structures _hex, _fcc, _bcc,
 and _diamond get the type number 0 while the atoms of the binary
-structures _nacl, _b2, _cu3au, _cuau3, _d03, and _zincblende get the type
+structures _nacl, _b2, _l12, _l10, _d03, and _zincblende get the type
 numbers 0 and 1. With the IMD parameter <tt>types</tt>, these type
-numbers can be changed by specifying a single integer
-(&lt; <tt>ntypes</tt>) in the case of the elemental structures and two
+numbers can be changed by specifying a single integer (&lt;
+<tt>ntypes</tt>) in the case of the elemental structures and two
 integers in the case of the binary structures. The masses used in the
-generated structures then correspond to the given types.</p>
+generated structures correspond to the types in the original order
+(0, 1, ..., <tt>ntypes</tt>-1).</p>
 
 <p>
 For the quasicrystalline _tiqc phase, an approximant with a
