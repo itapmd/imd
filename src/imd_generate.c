@@ -92,7 +92,9 @@ void generate_atoms(str255 mode)
   } else if (0 == strcmp(mode,"_zincblende")) { /* zincblende */
     init_cubic();
     generate_fcc(5);
-  } else if (0 == strcmp(mode,"_l12")) { /* L1_2, Cu3Au */
+  } else if (0 == strcmp(mode,"_l12") 
+	     || (0 == strcmp(mode,"_cu3au"))) { /* L1_2, Cu3Au */
+    /* (_cu3au is accepted for downward compatibility) */
     init_cubic();
     generate_fcc(6);
   } else if (0 == strcmp(mode,"_d03")) { /* D0_3, AlFe3 */
