@@ -275,7 +275,8 @@ void write_atoms_ef(FILE *out)
 #endif
             (ORT(p,i,Y) < pic_ll.y) || (ORT(p,i,Y) > pic_ur.y)) continue;
 
-      if ( (SORTE(p,i) != VSORTE(p,i)) ||
+      /*  if ( (SORTE(p,i) != VSORTE(p,i)) || */
+      if ( 
            (POTENG(p,i) < lower_e_pot[SORTE(p,i)]) || 
            (POTENG(p,i) > upper_e_pot[SORTE(p,i)]) ) continue;
 

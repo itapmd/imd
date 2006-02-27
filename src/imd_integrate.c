@@ -258,8 +258,15 @@ void move_atoms_nve(void)
 
                 //              if( !((tmp==0.0) && (rampedtemp==0.0))) /* else atom  will not move */
                 //  {
-                zeta_finnis = zeta_0 * (tmp-rampedtemp)
-                    / sqrt(SQR(tmp) + SQR(rampedtemp*delta_finnis)+1e-11) * DAMPF(p,i);
+
+		if(rampedtemp !=0.0)
+		  {
+		    zeta_finnis = zeta_0 * (tmp-rampedtemp)
+		      / sqrt(SQR(tmp) + SQR(rampedtemp*delta_finnis)) * DAMPF(p,i);
+		  }
+		else
+		  zeta_finnis = zeta_0;
+		
                 /* new momenta */
                 IMPULS(p,i,X) += (-1.0*IMPULS(p,i,X) * zeta_finnis + KRAFT(p,i,X)) * timestep
                     * (restrictions + sort)->x ;
