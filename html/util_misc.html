@@ -12,6 +12,8 @@
     <td>running averages</td></tr>
 <tr><td><a href="#makeconf">make_config</a></td>
     <td>configuration file generator</td></tr>
+<tr><td><a href="#imd2imd">imd2imd</a></td>
+    <td>create multiple copies of a unit cell</td></tr>
 <tr><td><a href="#atcon">atcon</a></td>
     <td>configuration file converter (not up-to-date)</td></tr>
 <tr><td><a href="#procdata">procdata</a></td>
@@ -153,6 +155,22 @@ atom distance <tt>a</tt>. If the option <tt>-m</tt> is used for a binary
 structure (b2, nacl, zincblende, lav), the masses of both atom types
 must be given.</p>
 
+<h2><a id="imd2imd" name="imd2imd">imd2imd</a></h2>
+
+<p>
+<b>imd2imd</b> is a shell script. It creates multiple periodic copies of a
+starting configuration. </p>
+
+<p>Usage:</p>
+<pre>
+   imd2imd &lt;infile&gt; &lt;outfile&gt; &lt;i&gt; &lt;j&gt; &lt;k&gt;
+</pre>
+<p>All parameters are required parameters. &lt;infile&gt; and &lt;outfile&gt;
+are checkpoint files, and &lt;i&gt;, &lt;j&gt; and &lt;k&gt; are positive
+integers. The box vectors and atom locations from &lt;infile&gt; are read, and
+&lt;i&gt;&times;&lt;j&gt;&times;&lt;k&gt; adjacent copies (&lt;i&gt; along the
+first box vector, &lt;j&gt; along the second box vector and &lt;k&gt; along the
+third box vector) are written to &lt;outfile&gt;.</p>
 
 <h2><a id="atcon" name="atcon">atcon</a></h2>
 
