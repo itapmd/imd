@@ -690,86 +690,85 @@ HEADERS := ${IMDHEADERS}
 # twod or not twod
 ifneq (,$(strip $(findstring 2d,${MAKETARGET})))
 
-# 2d, serial or mpi
-ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
-SOURCES	:= ${SOURCES2D} ${MPISOURCES2D}
-else
-SOURCES	:= ${SOURCES2D} ${RISCSOURCES2D}
-endif
-CFLAGS  += -DTWOD
+  # 2d, serial or mpi
+  ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
+    SOURCES	:= ${SOURCES2D} ${MPISOURCES2D}
+  else
+    SOURCES	:= ${SOURCES2D} ${RISCSOURCES2D}
+  endif
+  CFLAGS  += -DTWOD
 
 else
 
-# 3d, vec, serial, mpi
-ifneq (,$(strip $(findstring vec,${MAKETARGET})))
+  # 3d, vec, serial, mpi
+  ifneq (,$(strip $(findstring vec,${MAKETARGET})))
 
-SOURCES	:= ${SOURCES3D} ${NBLSOURCES3D}
-ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
-SOURCES	+= ${MPISOURCES}
-endif
+    SOURCES	:= ${SOURCES3D} ${NBLSOURCES3D}
+    ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
+      SOURCES	+= ${MPISOURCES}
+    endif
 
-else
+  else
 
-ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
-SOURCES	:= ${SOURCES3D} ${NBLSOURCES3D}
-ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
-SOURCES	+= ${MPISOURCES}
-endif
+    ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
+      SOURCES	:= ${SOURCES3D} ${NBLSOURCES3D}
+      ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
+        SOURCES	+= ${MPISOURCES}
+      endif
 
-else
+    else
 
-ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
-SOURCES	:= ${SOURCES3D} ${MPISOURCES3D}
-else
-SOURCES	:= ${SOURCES3D} ${RISCSOURCES3D}
-endif
+      ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
+        SOURCES	:= ${SOURCES3D} ${MPISOURCES3D}
+      else
+        SOURCES	:= ${SOURCES3D} ${RISCSOURCES3D}
+      endif
 
-endif
-endif
+    endif
+  endif
 endif
 
 ###  INTERACTION  #######################################
 
 # pair interaction is the default
 ifneq (,$(strip $(findstring vec,${MAKETARGET})))
-FORCESOURCES = imd_main_vec_3d.c
+  FORCESOURCES = imd_main_vec_3d.c
 else
-ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
-FORCESOURCES = imd_forces_nbl.c
-else
-FORCESOURCES = ${PAIRSOURCES}
-endif
+  ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
+    FORCESOURCES = imd_forces_nbl.c
+  else
+    FORCESOURCES = ${PAIRSOURCES}
+  endif
 endif
 
 # PAIR
 ifneq (,$(strip $(findstring pair,${MAKETARGET})))
-CFLAGS  += -DPAIR
+  CFLAGS  += -DPAIR
 endif
 
 # EAM2 or EAM  -  this is now the same
 ifneq (,$(strip $(findstring eam,${MAKETARGET})))
-
-# EEAM
-ifneq (,$(strip $(findstring eeam,${MAKETARGET})))
-CFLAGS  += -DEEAM
-endif
-
-# MEAM
-ifneq (,$(strip $(findstring meam,${MAKETARGET})))
-CFLAGS  += -DMEAM
-FORCESOURCES += ${MEAMSOURCES}
-else
-
-CFLAGS  += -DEAM2
-ifneq (,$(strip $(findstring asympot,${MAKETARGET})))
-CFLAGS += -DASYMPOT
-FORCESOURCES = ${EAM2SOURCES}
-else
-ifeq (,$(strip $(findstring nbl,${MAKETARGET})))
-FORCESOURCES += ${EAM2SOURCES}
-endif
-endif
-endif
+  # EEAM
+  ifneq (,$(strip $(findstring eeam,${MAKETARGET})))
+    CFLAGS  += -DEEAM
+  endif
+  # MEAM
+  ifneq (,$(strip $(findstring meam,${MAKETARGET})))
+    CFLAGS  += -DMEAM
+    FORCESOURCES += ${MEAMSOURCES}
+  else
+    CFLAGS  += -DEAM2
+    ifneq (,$(strip $(findstring asympot,${MAKETARGET})))
+      CFLAGS += -DASYMPOT
+      FORCESOURCES += ${EAM2SOURCES}
+    else
+      ifeq (,$(strip $(findstring nbl,${MAKETARGET})))
+        ifeq (,$(strip $(findstring vec,${MAKETARGET})))
+          FORCESOURCES += ${EAM2SOURCES}
+        endif
+      endif
+    endif
+  endif
 endif
 
 # ADP

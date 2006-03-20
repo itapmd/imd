@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -22,6 +22,11 @@
 #include "imd.h"
 #include "potaccess.h"
 
+#ifndef SX
+#define restrict
+#endif
+
+/* for VEC2, the following are no longer used */
 #define N0 140000     /* at least atoms.n */
 #define MC 150        /* maximum number of particles in cell */
 #define BS 100
@@ -50,13 +55,19 @@
 #ifdef VEC2
 
 #ifdef MONO
-#define COL(i) 0
+#define COL(i)  0
+#define COL2(i) 0
 #else
-#define COL(i) col[i]
+#define COL(i)  col[i]
+#define COL2(i) col2[i]
 #endif
 
 /* int li[N0*N2], lj[N0*N2], col[N0*N2], lbeg[N1], lend[N1], ltot; */ 
-int *li=NULL, *lj=NULL, *col=NULL, *lbeg=NULL, *lend=NULL, ltot; 
+long *li=NULL, *lj=NULL, *col=NULL, *col2=NULL, *lbeg=NULL, *lend=NULL, ltot; 
+long *pair_filt=NULL;
+long *eam_filt0=NULL, *eam_filt1=NULL, *eam_filt2=NULL, *eam_filt3=NULL;
+real *rr=NULL, *grad=NULL;
+vektor *dd=NULL, *ff=NULL;
 
 /******************************************************************************
 *
@@ -69,13 +80,13 @@ int *li=NULL, *lj=NULL, *col=NULL, *lbeg=NULL, *lend=NULL, ltot;
 
 void make_nblist()
 {
-  static int max_atoms=0, max_pairs=0, max_cell_max=0;
-  static int *li1 = NULL, *lj1 = NULL;
-  long   i, j, k, l, m, n, len1, len2, max_cell;
+  static long max_atoms=0, max_pairs=0, max_cell_max=0, max_sub_len=0;
+  static long *li1 = NULL, *lj1 = NULL;
+  long   i, j, k, l, m, n, len1, len2, max_cell, max_len=0;
   /* int    li1[N0], lj1[N0]; */
 
 #ifdef MPI
-  if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
+  if (steps == steps_min) setup_buffers();
 #endif
 
   /* update cell decomposition */
@@ -98,9 +109,9 @@ void make_nblist()
   if (max_atoms < atoms.n) {
     free(li1);
     free(lj1);
-    max_atoms = (int) (atoms.n * 1.2);
-    li1 = (int *) malloc( max_atoms * sizeof(int) );
-    lj1 = (int *) malloc( max_atoms * sizeof(int) );
+    max_atoms = (long) (atoms.n * 1.2);
+    li1 = (long *) malloc( max_atoms * sizeof(long) );
+    lj1 = (long *) malloc( max_atoms * sizeof(long) );
     if ((li1==NULL) || (lj1==NULL))
       error("cannot allocate temporary pair arrays");
   }
@@ -108,19 +119,25 @@ void make_nblist()
     free(li);
     free(lj);
     free(col);
-    max_pairs = (int) (4 * max_cell * atoms.n * 1.2);
-    li  = (int *) malloc( max_pairs * sizeof(int) );
-    lj  = (int *) malloc( max_pairs * sizeof(int) );
-    col = (int *) malloc( max_pairs * sizeof(int) );
+    max_pairs = (long) (4 * max_cell * atoms.n * 1.2);
+    li   = (long *) malloc( max_pairs * sizeof(long) );
+    lj   = (long *) malloc( max_pairs * sizeof(long) );
+    col  = (long *) malloc( max_pairs * sizeof(long) );
     if ((li==NULL) || (lj==NULL) || (col==NULL))
       error("cannot allocate temporary pair arrays");
+#if defined(EAM2) || defined(NNBR)
+    free(col2);
+    col2 = (long *) malloc( max_pairs * sizeof(long) );
+    if (col2==NULL)
+      error("cannot allocate temporary pair arrays");
+#endif
   }
   if (max_cell_max < max_cell) {
     free(lbeg);
     free(lend);
-    max_cell_max = (int) (max_cell * 1.2);
-    lbeg = (int *) malloc( 14 * max_cell_max * sizeof(int) );
-    lend = (int *) malloc( 14 * max_cell_max * sizeof(int) );
+    max_cell_max = (long) (max_cell * 1.2);
+    lbeg = (long *) malloc( 14 * max_cell_max * sizeof(long) );
+    lend = (long *) malloc( 14 * max_cell_max * sizeof(long) );
     if ((lbeg==NULL) || (lend==NULL))
       error("cannot allocate temporary arrays");
   }
@@ -144,7 +161,7 @@ void make_nblist()
         if ((n==0) && (j<=i)) continue;  /* twice the same cell */
         for (m=0; m<ncells; m++) {
           minicell *ci, *cj;
-          int cjn = cnbrs[m].nq[n];
+          long cjn = cnbrs[m].nq[n];
           if (cjn==-1) continue;
           ci = cell_array + cnbrs[m].np;
           cj = cell_array + cjn;
@@ -182,10 +199,50 @@ void make_nblist()
 #endif
 
       lend[ltot]=len2;
+      max_len = MAX( max_len, lend[ltot] - lbeg[ltot] );
       if (lend[ltot] > lbeg[ltot]) ltot++;
     }
   }
   if (max_pairs < len2) error("neighbor table overflow"); 
+
+  /* allocate arrays for filter flags */
+  if (max_len > max_sub_len) {
+    max_sub_len = (long) (1.2 * max_len);
+    free(dd);
+    free(ff);
+    free(rr);
+    free(grad);
+    free(pair_filt);
+#ifdef EAM2
+    free(eam_filt0);
+    free(eam_filt1);
+    free(eam_filt2);
+#ifndef MONO
+    free(eam_filt3);
+#endif
+#endif
+    rr   = (real   *) malloc( max_sub_len * sizeof(real  ) );
+    grad = (real   *) malloc( max_sub_len * sizeof(real  ) );
+    dd   = (vektor *) malloc( max_sub_len * sizeof(vektor) );
+    ff   = (vektor *) malloc( max_sub_len * sizeof(vektor) );
+    pair_filt = (long *) malloc( max_sub_len * sizeof(long) );
+    if ((dd==NULL) || (rr==NULL) || (grad==NULL) || 
+        (pair_filt==NULL) || (ff==NULL))
+      error("cannot allocate temporary pair arrays");
+#ifdef EAM2
+    eam_filt0 = (long *) malloc( max_sub_len * sizeof(long) );
+    eam_filt1 = (long *) malloc( max_sub_len * sizeof(long) );
+    eam_filt2 = (long *) malloc( max_sub_len * sizeof(long) );
+#ifdef MONO
+    eam_filt3 = eam_filt0;
+#else
+    eam_filt3 = (long *) malloc( max_sub_len * sizeof(long) );
+#endif
+    if ((eam_filt0==NULL) || (eam_filt1==NULL) || (eam_filt2==NULL) ||
+        (eam_filt3==NULL))
+      error("cannot allocate temporary pair arrays");
+#endif
+  }
 
 #ifndef MONO
 
@@ -195,7 +252,10 @@ void make_nblist()
 
   /* precompute potential column for each atom pair */
   for (l=0; l<lend[ltot-1]; l++) {
-    col[l] = SORTE(&atoms,li[l]) * ntypes + SORTE(&atoms,lj[l]);
+    col [l] = SORTE(&atoms,li[l]) * ntypes + SORTE(&atoms,lj[l]);
+#if defined(EAM2) || defined(NNBR)
+    col2[l] = SORTE(&atoms,li[l]) + ntypes * SORTE(&atoms,lj[l]);
+#endif
   }
 
 #ifdef FTRACE
@@ -219,13 +279,14 @@ void make_nblist()
 void calc_forces(int steps)
 {
   static int len=0;
-  int    k, m, is_short=0;
-  real   rr, ee, tmpvec1[2], tmpvec2[2] = {0.0, 0.0};
-  vektor dd, ff;
-  static real *kraft1 = NULL, *pot_eng1 = NULL;
+  long   k, m, is_short=0, idummy=0;
+  real   tmpvec1[5], tmpvec2[5] = {0.0,0.0,0.0,0.0,0.0};
+  static real *kraft1 = NULL, *pot_eng1 = NULL, *eam_rho1 = NULL;
+  static shortint *nbanz1 = NULL;
+  static sym_tensor *presstens1 = NULL;
 
 #ifdef MPI
-  if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
+  if (0 == steps % BUFSTEP) setup_buffers();
 #endif
 
   /* fill the buffer cells */
@@ -234,17 +295,36 @@ void calc_forces(int steps)
   /* clear global accumulation variables */
   tot_pot_energy = 0.0;
   virial = 0.0;
+  vir_xx = 0.0;
+  vir_yy = 0.0;
+  vir_zz = 0.0;
   nfc++;
 
   /* (re)allocate temporary force and energy arrays */
   if (len < atoms.n_buf) {
     free(pot_eng1);
+    free(eam_rho1);
     free(kraft1);
     len = (int) (atoms.n_buf * 1.2);
     pot_eng1 = (real *) malloc(       len * sizeof(real) );
     kraft1   = (real *) malloc( DIM * len * sizeof(real) );
     if ((pot_eng1 == NULL) || (kraft1 == NULL))
       error("cannot allocate temporary force and energy arrays");
+#ifdef EAM2
+    eam_rho1 = (real *) malloc( len * sizeof(real) );
+    if (eam_rho1 == NULL)
+      error("cannot allocate temporary host electron density array");
+#endif
+#ifdef NNBR
+    nbanz1 = (shortint *) malloc( len * sizeof(shortint) );
+    if (nbanz1 == NULL)
+      error("cannot allocate temporary coordination number array");
+#endif
+#ifdef STRESS_TENS
+    presstens1 = (sym_tensor *) malloc( len * sizeof(sym_tensor) );
+    if (presstens1 == NULL)
+      error("cannot allocate temporary pressure tensor array");
+#endif
   }
 
   /* clear per atom accumulation variables */
@@ -252,77 +332,488 @@ void calc_forces(int steps)
   for (k=0; k<    atoms.n_buf; k++) atoms.pot_eng[k] = 0.0;
   for (k=0; k<DIM*atoms.n_buf; k++)      kraft1  [k] = 0.0;
   for (k=0; k<    atoms.n_buf; k++)      pot_eng1[k] = 0.0;
+#ifdef EAM2
+  for (k=0; k<    atoms.n_buf; k++) atoms.eam_rho[k] = 0.0;
+  for (k=0; k<    atoms.n_buf; k++)      eam_rho1[k] = 0.0;
+#endif
+#ifdef NNBR
+  for (k=0; k<    atoms.n_buf; k++) atoms.nbanz[k]   = 0;
+  for (k=0; k<    atoms.n_buf; k++)      nbanz1[k]   = 0;
+#endif
+#ifdef STRESS_TENS
+  for (k=0; k<atoms.n_buf; k++) {
+    atoms.presstens[k].xx = 0.0;
+    atoms.presstens[k].yy = 0.0;
+    atoms.presstens[k].zz = 0.0;
+    atoms.presstens[k].yz = 0.0;
+    atoms.presstens[k].zx = 0.0;
+    atoms.presstens[k].xy = 0.0;
+  }
+  for (k=0; k<atoms.n_buf; k++) {
+    presstens1[k].xx = 0.0;
+    presstens1[k].yy = 0.0;
+    presstens1[k].zz = 0.0;
+    presstens1[k].yz = 0.0;
+    presstens1[k].zx = 0.0;
+    presstens1[k].xy = 0.0;
+  }
+#endif
 
   /* loop over independent pair sublists */
   for (k=0; k<ltot; k++) {
 
+    long s, pfmax=0, ef0max=0, ef1max=0, ef2max=0;
+
 #ifdef FTRACE
-    ftrace_region_begin("calc_forces");
+    ftrace_region_begin("calc_forces1");
 #endif
 
 #ifdef SX
-#pragma vdir vector,nodep
+#pragma cdir vector,nodep
 #endif
-    /* compute forces */
+    /* compute distances */
     for (m=0; m<lend[k]-lbeg[k]; m++) {
 
-      real grad, *d1, *d2;
-      int  i, j, l = lbeg[k] + m; 
-      const int inc = ntypes * ntypes;
-      d1   = atoms.ort + DIM * li[l];
-      d2   = atoms.ort + DIM * lj[l];
-      dd.x = d2[0]-d1[0];
-      dd.y = d2[1]-d1[1];
-      dd.z = d2[2]-d1[2];
-      rr   = SPROD(dd,dd);
+      const long l = lbeg[k] + m;
+      real *d1, *d2;
+      d1 = atoms.ort + DIM * li[l];
+      d2 = atoms.ort + DIM * lj[l];
+      dd[m].x = d2[0]-d1[0];
+      dd[m].y = d2[1]-d1[1];
+      dd[m].z = d2[2]-d1[2];
+      rr[m] = SQR(dd[m].x) + SQR(dd[m].y) + SQR(dd[m].z);
 
-      /* compute pair interactions */
-      if (rr <= pair_pot.end[COL(l)]) {
+      /* filter interacting pairs */
+      if (rr[m] <= pair_pot.end[COL(l)]) {
+        pair_filt[pfmax++] = m;
+      }
 
-        /* beware: we must not use k as index in the macro's arguments! */
-#ifdef MULTIPOT
-        int pp = m % N_POT_TAB;
-        PAIR_INT(ee, grad, pair_pot_ar[pp], COL(l), inc, rr, is_short)
-#else
-#ifdef LINPOT
-        PAIR_INT_LIN(ee, grad, pair_pot_lin, COL(l), inc, rr, is_short)
-#else
+#ifdef EAM2
+      /* filter interacting pairs for EAM */
+      if (COL(l)==COL2(l)) {
+        if (rr[m] < rho_h_tab.end[COL(l) ]) {
+          eam_filt0[ef0max++] = m;
+        }
+      }
+#ifndef MONO
+      else {
+        if (rr[m] < rho_h_tab.end[COL(l) ]) {
+          eam_filt1[ef1max++] = m;
+        }
+        if (rr[m] < rho_h_tab.end[COL2(l)]) {
+          eam_filt2[ef2max++] = m;
+        }
+      }
+#endif /* not MONO */
+#endif /* EAM2 */
+
+    }
+
+#ifdef FTRACE
+    ftrace_region_end("calc_forces1");
+    ftrace_region_begin("calc_forces2");
+#endif
+
+    /* compute pair forces */
+#ifdef SX
+#pragma cdir vector,nodep
+#endif
+    for (s=0; s<pfmax; s++) {
+
+      const long m = pair_filt[s], l = lbeg[k] + m;
+      const long i = li[l], j = lj[l];
+      const long inc = ntypes * ntypes;
+      real  ee, grad, r2c;
+      vektor f;
+
 #ifdef LJ
-        PAIR_INT_LJ_VEC(ee, grad, COL(l), rr)
+      PAIR_INT_LJ_VEC(ee, grad, COL(l), rr[m])
 #else
-        PAIR_INT(ee, grad, pair_pot, COL(l), inc, rr, is_short)
+      r2c = MAX(0.0, rr[m] - pair_pot.begin[COL(l)]);
+      PAIR_INT_VEC(ee, grad, pair_pot, COL(l), inc, r2c)
 #endif
-#endif
-#endif
-        /* store force in temporary variables */
-        ff.x            = dd.x * grad;
-        ff.y            = dd.y * grad;
-        ff.z            = dd.z * grad;
-        virial         -= rr   * grad;
-        tot_pot_energy += ee;
 
-        /* store force to first particle */
-        i = li[l];
-        kraft1 X(i) += ff.x;
-        kraft1 Y(i) += ff.y;
-        kraft1 Z(i) += ff.z;
-        pot_eng1[i] += ee;
+      /* store force in temporary variables */
+      f.x             = dd[m].x * grad;
+      f.y             = dd[m].y * grad;
+      f.z             = dd[m].z * grad;
+#ifdef P_AXIAL
+      vir_xx         -= dd[m].x * f.x;
+      vir_yy         -= dd[m].y * f.y;
+      vir_zz         -= dd[m].z * f.z;
+#else
+      virial         -= rr[m]   * grad;
+#endif
+      tot_pot_energy += ee;
+#ifdef EAM2
+      ee *= 0.5;   /* avoid double counting */
+#endif
 
-        /* store force to second particle */
-        j = lj[l];
-        atoms.kraft X(j) -= ff.x;
-        atoms.kraft Y(j) -= ff.y;
-        atoms.kraft Z(j) -= ff.z;
-        atoms.pot_eng[j] += ee;
+      /* store force to first particle */
+      kraft1 X(i) += f.x;
+      kraft1 Y(i) += f.y;
+      kraft1 Z(i) += f.z;
+      pot_eng1[i] += ee;
+
+      /* store force to second particle */
+      atoms.kraft X(j) -= f.x;
+      atoms.kraft Y(j) -= f.y;
+      atoms.kraft Z(j) -= f.z;
+      atoms.pot_eng[j] += ee;
+
+#ifdef STRESS_TENS
+      /* we need to keep a copy; avoid double counting of the virial */
+      /* if (do_press_calc) {...} would prevent vectorisation */
+      ff[m].x = 0.5 * f.x;
+      ff[m].y = 0.5 * f.y;
+      ff[m].z = 0.5 * f.z;
+#endif
+    }
+
+#ifdef FTRACE
+    ftrace_region_end("calc_forces2");
+#endif
+
+#ifdef NNBR
+    for (s=0; s<pfmax; s++) {
+      const long m = pair_filt[s], l = lbeg[k] + m;
+      const long i = li[l], j = lj[l];
+      if (rr[m] < nb_r2_cut[COL(l) ]) nbanz1[i]++;
+      if (rr[m] < nb_r2_cut[COL2(l)]) atoms.nbanz[j]++;
+    }
+#endif
+
+#ifdef STRESS_TENS
+
+#ifdef FTRACE
+    ftrace_region_begin("calc_forces3");
+#endif
+
+    if (do_press_calc) {
+#ifdef SX
+#pragma cdir vector,nodep
+#endif
+      for (s=0; s<pfmax; s++) {
+
+        const long m = pair_filt[s], l = lbeg[k] + m;
+        const long i = li[l], j = lj[l];
+
+        presstens1     [i].xx -= dd[m].x * ff[m].x;
+        atoms.presstens[j].xx -= dd[m].x * ff[m].x;
+        presstens1     [i].yy -= dd[m].y * ff[m].y;
+        atoms.presstens[j].yy -= dd[m].y * ff[m].y;
+        presstens1     [i].zz -= dd[m].z * ff[m].z;
+        atoms.presstens[j].zz -= dd[m].z * ff[m].z;
+        presstens1     [i].yz -= dd[m].y * ff[m].z;
+        atoms.presstens[j].yz -= dd[m].y * ff[m].z;
+        presstens1     [i].zx -= dd[m].z * ff[m].x;
+        atoms.presstens[j].zx -= dd[m].z * ff[m].x;
+        presstens1     [i].xy -= dd[m].x * ff[m].y;
+        atoms.presstens[j].xy -= dd[m].x * ff[m].y;
       }
     }
 
 #ifdef FTRACE
-    ftrace_region_end("calc_forces");
+    ftrace_region_end("calc_forces3");
 #endif
+
+#endif
+
+#ifdef EAM2
+
+    /* compute host electron density */
+
+#ifdef FTRACE
+    ftrace_region_begin("eam_rho");
+#endif
+
+#ifdef SX
+#pragma cdir vector,nodep
+#endif
+    for (s=0; s<ef0max; s++) {
+      const long m   = eam_filt0[s], l = lbeg[k] + m;
+      const long inc = ntypes * ntypes;
+      real  r2c, rho_h;
+      r2c = MAX(0.0, rr[m] - rho_h_tab.begin[COL(l)]);
+      VAL_FUNC_VEC(rho_h, rho_h_tab, COL(l), inc, r2c);
+      atoms.eam_rho[ li[l] ] += rho_h; 
+      eam_rho1     [ lj[l] ] += rho_h;
+    }
+
+#ifndef MONO
+
+#ifdef SX
+#pragma cdir vector,nodep
+#endif
+    for (s=0; s<ef1max; s++) {
+      const long m   = eam_filt1[s], l = lbeg[k] + m;
+      const long inc = ntypes * ntypes;
+      real  r2c, rho_h;
+      r2c = MAX(0.0, rr[m] - rho_h_tab.begin[COL(l)]);
+      VAL_FUNC_VEC(rho_h, rho_h_tab, COL(l), inc, r2c);
+      atoms.eam_rho[ li[l] ] += rho_h; 
+    }
+
+#ifdef SX
+#pragma cdir vector,nodep
+#endif
+    for (s=0; s<ef2max; s++) {
+      const long m   = eam_filt2[s], l = lbeg[k] + m;
+      const long inc = ntypes * ntypes;
+      real  r2c, rho_h;
+      r2c = MAX(0.0, rr[m] - rho_h_tab.begin[COL2(l)]);
+      VAL_FUNC_VEC(rho_h, rho_h_tab, COL2(l), inc, r2c);
+      eam_rho1[ lj[l] ] += rho_h; 
+    }
+
+#endif /* not MONO */
+
+#ifdef FTRACE
+    ftrace_region_end("eam_rho");
+#endif
+
+#endif /* EAM2 */
 
   }
   if (is_short) printf("short distance!\n");
+
+#ifdef EAM2
+
+  /* add up eam_rho on first and second particles */
+  for (k=0; k<atoms.n_buf; k++) atoms.eam_rho[k] += eam_rho1[k];
+
+  /* collect host electron density */
+  send_forces(add_rho,pack_rho,unpack_add_rho);
+
+#ifdef FTRACE
+  ftrace_region_begin("eam_energy");
+#endif
+
+  /* compute embedding energy and its derivative */
+#ifdef SX
+#pragma cdir vector,nodep
+#endif
+  for (m=0; m<atoms.n; m++) {
+    long st = SORTE(&atoms,m);
+    real pot, rho = MAX( 0.0, atoms.eam_rho[m] - embed_pot.begin[st] );
+    PAIR_INT_VEC( pot, atoms.eam_dF[m], embed_pot, st, ntypes, rho);
+    atoms.pot_eng[m] += pot;
+    tot_pot_energy   += pot;
+  }
+
+#ifdef FTRACE
+  ftrace_region_end("eam_energy");
+#endif
+
+  /* distribute derivative of embedding energy */
+  send_cells(copy_dF,pack_dF,unpack_dF);
+
+  /* EAM forces - loop over independent pair sublists */
+  for (k=0; k<ltot; k++) {
+
+    long s, ef0max=0, ef1max=0, ef2max=0, ef3max=0;
+
+#ifdef FTRACE
+    ftrace_region_begin("eam_forces1");
+#endif
+
+#ifdef SX
+#pragma cdir vector,nodep
+#endif
+    for (m=0; m<lend[k]-lbeg[k]; m++) {
+
+      const long l = lbeg[k] + m;
+      real *d1, *d2;
+      d1 = atoms.ort + DIM * li[l];
+      d2 = atoms.ort + DIM * lj[l];
+      dd[m].x = d2[0]-d1[0];
+      dd[m].y = d2[1]-d1[1];
+      dd[m].z = d2[2]-d1[2];
+      rr[m]   = SQR(dd[m].x) + SQR(dd[m].y) + SQR(dd[m].z);
+      grad[m] = 0.0;
+    }
+
+#ifdef FTRACE
+    ftrace_region_end("eam_forces1");
+    ftrace_region_begin("eam_forces2");
+#endif
+
+    /* filter interacting pairs */
+#ifdef MONO
+
+#ifdef SX
+#pragma cdir vector,nodep
+#endif
+    for (m=0; m<lend[k]-lbeg[k]; m++) {
+      if (rr[m] < rho_h_tab.end[0]) {
+        eam_filt0[ef0max++] = m;
+      }
+    }
+    ef3max = ef0max;
+
+#else  /* not MONO */
+
+#ifdef SX
+#pragma cdir vector,nodep
+#endif
+    for (m=0; m<lend[k]-lbeg[k]; m++) {
+      const long l = lbeg[k] + m;
+      if (COL(l)==COL2(l)) {
+        if (rr[m] < rho_h_tab.end[COL2(l)]) {
+          eam_filt0[ef0max++] = m;
+        }
+      }
+      else {
+        if (rr[m] < rho_h_tab.end[COL2(l)]) {
+          eam_filt1[ef1max++] = m;
+        }
+        if (rr[m] < rho_h_tab.end[COL(l) ]) {
+          eam_filt2[ef2max++] = m;
+        }
+      }
+      if ((rr[m]<rho_h_tab.end[COL(l)]) || (rr[m]<rho_h_tab.end[COL2(l)])) {
+        eam_filt3[ef3max++] = m;
+      }
+    }
+#endif /* not MONO */
+
+#ifdef FTRACE
+    ftrace_region_end("eam_forces2");
+    ftrace_region_begin("eam_forces3");
+#endif
+
+    /* compute potential derivatives */
+#ifdef SX
+#pragma cdir vector,nodep
+#endif
+    for (s=0; s<ef0max; s++) {
+      const long inc = ntypes * ntypes;
+      const long m = eam_filt0[s], l = lbeg[k] + m;
+      real  r2c, rho_i_str;
+      r2c = MAX( 0.0, rr[m] - rho_h_tab.begin[COL2(l)] );
+      DERIV_FUNC_VEC(rho_i_str, rho_h_tab, COL2(l), inc, r2c);
+      grad[m] = 0.5 * (atoms.eam_dF[li[l]] + atoms.eam_dF[lj[l]]) * rho_i_str;
+    }
+
+#ifndef MONO
+
+#ifdef SX
+#pragma cdir vector,nodep
+#endif
+    for (s=0; s<ef1max; s++) {
+      const long inc = ntypes * ntypes;
+      const long m = eam_filt1[s], l = lbeg[k] + m;
+      real  r2c, rho_i_str;
+      r2c = MAX( 0.0, rr[m] - rho_h_tab.begin[COL2(l)] );
+      DERIV_FUNC_VEC(rho_i_str, rho_h_tab, COL2(l), inc, r2c);
+      grad[m] += 0.5 * atoms.eam_dF[lj[l]] * rho_i_str;
+    }
+
+#ifdef SX
+#pragma cdir vector,nodep
+#endif
+    for (s=0; s<ef2max; s++) {
+      const long inc = ntypes * ntypes;
+      const long m = eam_filt2[s], l = lbeg[k] + m;
+      real  r2c, rho_j_str;
+      r2c = MAX( 0.0, rr[m] - rho_h_tab.begin[COL(l)] );
+      DERIV_FUNC_VEC(rho_j_str, rho_h_tab, COL(l), inc, r2c);
+      grad[m] += 0.5 * atoms.eam_dF[li[l]] * rho_j_str;
+    }
+
+#endif /* not MONO */
+
+#ifdef FTRACE
+    ftrace_region_end("eam_forces3");
+    ftrace_region_begin("eam_forces4");
+#endif
+
+    /* compute EAM forces */
+#ifdef SX
+#pragma cdir vector,nodep
+#endif
+    for (s=0; s<ef3max; s++) {
+
+      const long m = eam_filt3[s], l = lbeg[k] + m;
+      const long i = li[l], j = lj[l]; 
+      vektor f;
+
+      /* store force in temporary variable */
+      f.x     = dd[m].x * grad[m];
+      f.y     = dd[m].y * grad[m];
+      f.z     = dd[m].z * grad[m];
+#ifdef P_AXIAL
+      vir_xx -= dd[m].x * f.x;
+      vir_yy -= dd[m].y * f.y;
+      vir_zz -= dd[m].z * f.z;
+#else
+      virial -= rr[m]   * grad[m];
+#endif
+
+      /* store force to first particle */
+      kraft1 X(i) += f.x;
+      kraft1 Y(i) += f.y;
+      kraft1 Z(i) += f.z;
+
+      /* store force to second particle */
+      atoms.kraft X(j) -= f.x;
+      atoms.kraft Y(j) -= f.y;
+      atoms.kraft Z(j) -= f.z;
+
+#ifdef STRESS_TENS
+      /* we need to keep a copy; avoid double counting of the virial */
+      /* if (do_press_calc) {...} would prevent vectorisation */
+      ff[m].x = 0.5 * f.x;
+      ff[m].y = 0.5 * f.y;
+      ff[m].z = 0.5 * f.z;
+#endif
+
+    }
+
+#ifdef FTRACE
+    ftrace_region_end("eam_forces4");
+#endif
+
+#ifdef STRESS_TENS
+
+#ifdef FTRACE
+    ftrace_region_begin("eam_forces5");
+#endif
+
+    if (do_press_calc) {
+#ifdef SX
+#pragma cdir vector,nodep
+#endif
+      for (s=0; s<ef3max; s++) {
+
+        const long m = eam_filt3[s], l = lbeg[k] + m;
+        const long i = li[l], j = lj[l]; 
+
+        presstens1     [i].xx -= dd[m].x * ff[m].x;
+        atoms.presstens[j].xx -= dd[m].x * ff[m].x;
+        presstens1     [i].yy -= dd[m].y * ff[m].y;
+        atoms.presstens[j].yy -= dd[m].y * ff[m].y;
+        presstens1     [i].zz -= dd[m].z * ff[m].z;
+        atoms.presstens[j].zz -= dd[m].z * ff[m].z;
+        presstens1     [i].yz -= dd[m].y * ff[m].z;
+        atoms.presstens[j].yz -= dd[m].y * ff[m].z;
+        presstens1     [i].zx -= dd[m].z * ff[m].x;
+        atoms.presstens[j].zx -= dd[m].z * ff[m].x;
+        presstens1     [i].xy -= dd[m].x * ff[m].y;
+        atoms.presstens[j].xy -= dd[m].x * ff[m].y;
+      }
+    }
+
+#ifdef FTRACE
+    ftrace_region_end("eam_forces5");
+#endif
+
+#endif  /* STRESS_TENS */
+
+  }
+  if (is_short) printf("short distance!\n");
+
+#endif  /* EAM2 */
 
 #ifdef FTRACE
   ftrace_region_begin("store_forces");
@@ -331,6 +822,19 @@ void calc_forces(int steps)
   /* add up forces on first and second particles */
   for (k=0; k<DIM*atoms.n_buf; k++) atoms.kraft  [k] += kraft1  [k];
   for (k=0; k<    atoms.n_buf; k++) atoms.pot_eng[k] += pot_eng1[k];
+#ifdef NNBR
+  for (k=0; k<    atoms.n_buf; k++) atoms.nbanz[k]   += nbanz1[k];
+#endif
+#ifdef STRESS_TENS
+  for (k=0; k<atoms.n_buf; k++) {
+    atoms.presstens[k].xx += presstens1[k].xx;
+    atoms.presstens[k].yy += presstens1[k].yy;
+    atoms.presstens[k].zz += presstens1[k].zz;
+    atoms.presstens[k].yz += presstens1[k].yz;
+    atoms.presstens[k].zx += presstens1[k].zx;
+    atoms.presstens[k].xy += presstens1[k].xy;
+  }
+#endif
 
 #ifdef FTRACE
     ftrace_region_end("store_forces");
@@ -340,9 +844,15 @@ void calc_forces(int steps)
   /* sum up results of different CPUs */
   tmpvec1[0] = tot_pot_energy;
   tmpvec1[1] = virial;
-  MPI_Allreduce( tmpvec1, tmpvec2, 2, REAL, MPI_SUM, cpugrid); 
+  tmpvec1[2] = vir_xx;
+  tmpvec1[3] = vir_yy;
+  tmpvec1[4] = vir_zz;
+  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid); 
   tot_pot_energy = tmpvec2[0];
   virial         = tmpvec2[1];
+  vir_xx         = tmpvec2[2];
+  vir_yy         = tmpvec2[3];
+  vir_zz         = tmpvec2[4];
 #endif
 
   /* add forces back to original cells/cpus */
@@ -422,7 +932,7 @@ void make_nblist()
       tt = tab + N2*ii;
       d1 = atoms.ort + DIM * ii;
 #ifdef SX
-#pragma vdir vector,nodep
+#pragma cdir vector,nodep
 #endif
       for (k=0; k<tl; k++) {
         real *d2, dx, dy, dz, r2;
@@ -508,7 +1018,7 @@ void calc_forces(int steps)
       d1[2] = atoms.ort Z(i);
       ityp  = SORTE(&atoms,i);
 #ifdef SX
-#pragma vdir vector,loopcnt=256
+#pragma cdir vector,loopcnt=256
 #endif
       for (k=0; k<tlen[i]; k++) {
         j  = tab[N2*i+k];
@@ -576,7 +1086,7 @@ void calc_forces(int steps)
 
     for (i=imin; i<imax; i++) {
 #ifdef SX
-#pragma vdir vector,nodep,loopcnt=256
+#pragma cdir vector,nodep,loopcnt=256
 #endif
       for (k=lbeg[i-imin]; k<lend[i-imin]; k++) {
         if (flag[k]) {  /* is there a better way to deal with this? */

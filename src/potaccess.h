@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -75,6 +75,85 @@
 									   \
   pot  = lj_epsilon_vec[col] * (sig_d_rad12 - 2.0 * sig_d_rad6);           \
   grad = - 12.0 * lj_epsilon_vec[col] * (sig_d_rad12 - sig_d_rad6) / (r2); \
+}
+
+/*****************************************************************************
+*
+*  Evaluate potential table with quadratic interpolation. 
+*  Returns the potential value and twice the derivative.
+*  Note: we need (1/r)(dV/dr) = 2 * dV/dr^2 --> use with equidistant r^2 
+*  col is p_typ * ntypes + q_typ
+*
+******************************************************************************/
+
+#define PAIR_INT_VEC(pot, grd, pt, col, inc, r2)                             \
+{                                                                            \
+  real r2a, istep, chi, p0, p1, p2, dv, d2v, *ptr;                           \
+  long kk;                                                                   \
+                                                                             \
+  /* indices into potential table */                                         \
+  istep = (pt).invstep[col];                                                 \
+  r2a   = r2 * istep;                                                        \
+  kk    = (long) (r2a);                                                      \
+  chi   = r2a - kk;                                                          \
+                                                                             \
+  /* intermediate values */                                                  \
+  ptr = PTR_2D((pt).table, kk, (col), (pt).maxsteps, (inc));                 \
+  p0  = *ptr; ptr += (inc);                                                  \
+  p1  = *ptr; ptr += (inc);                                                  \
+  p2  = *ptr;                                                                \
+  dv  = p1 - p0;                                                             \
+  d2v = p2 - 2 * p1 + p0;                                                    \
+                                                                             \
+  /* potential and twice the derivative */                                   \
+  pot = p0 + chi * dv + 0.5 * chi * (chi - 1) * d2v;                         \
+  grd = 2 * istep * (dv + (chi - 0.5) * d2v);                                \
+}
+
+#define VAL_FUNC_VEC(pot, pt, col, inc, r2)                                  \
+{                                                                            \
+  real r2a, istep, chi, p0, p1, p2, dv, d2v, *ptr;                           \
+  long kk;                                                                   \
+                                                                             \
+  /* indices into potential table */                                         \
+  istep = (pt).invstep[col];                                                 \
+  r2a   = r2 * istep;                                                        \
+  kk    = (long) (r2a);                                                      \
+  chi   = r2a - kk;                                                          \
+                                                                             \
+  /* intermediate values */                                                  \
+  ptr = PTR_2D((pt).table, kk, (col), (pt).maxsteps, (inc));                 \
+  p0  = *ptr; ptr += (inc);                                                  \
+  p1  = *ptr; ptr += (inc);                                                  \
+  p2  = *ptr;                                                                \
+  dv  = p1 - p0;                                                             \
+  d2v = p2 - 2 * p1 + p0;                                                    \
+                                                                             \
+  /* potential value */                                                      \
+  pot = p0 + chi * dv + 0.5 * chi * (chi - 1) * d2v;                         \
+}
+
+#define DERIV_FUNC_VEC(grd, pt, col, inc, r2)                                \
+{                                                                            \
+  real r2a, istep, chi, p0, p1, p2, dv, d2v, *ptr;                           \
+  long kk;                                                                   \
+                                                                             \
+  /* indices into potential table */                                         \
+  istep = (pt).invstep[col];                                                 \
+  r2a   = r2 * istep;                                                        \
+  kk    = (long) (r2a);                                                      \
+  chi   = r2a - kk;                                                          \
+                                                                             \
+  /* intermediate values */                                                  \
+  ptr = PTR_2D((pt).table, kk, (col), (pt).maxsteps, (inc));                 \
+  p0  = *ptr; ptr += (inc);                                                  \
+  p1  = *ptr; ptr += (inc);                                                  \
+  p2  = *ptr;                                                                \
+  dv  = p1 - p0;                                                             \
+  d2v = p2 - 2 * p1 + p0;                                                    \
+                                                                             \
+  /* twice the derivative */                                                 \
+  grd = 2 * istep * (dv + (chi - 0.5) * d2v);                                \
 }
 
 #endif
