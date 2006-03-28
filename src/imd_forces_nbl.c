@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -111,7 +111,7 @@ int estimate_nblist_size(void)
 
 void make_nblist(void)
 {
-  static int at_max=0, nb_max=0, pa_max=0;
+  static int at_max=0, nb_max=0, pa_max=0, ncell_max=0;
   int  c, i, k, n, tn, at, cc;
 
 #ifdef MPI
@@ -139,10 +139,11 @@ void make_nblist(void)
     }
   }
 
-  /* allocate cl_off */
-  if (nbl_count==0) {
-    cl_off = (int *) malloc( nallcells * sizeof(int) );
+  /* (re)allocate cl_off */
+  if (nallcells > ncell_max) {
+    cl_off = (int *) realloc( cl_off, nallcells * sizeof(int) );
     if (cl_off==NULL) error("cannot allocate neighbor table");
+    ncell_max = nallcells;
   }
 
   /* count atom numbers (including buffer atoms) */

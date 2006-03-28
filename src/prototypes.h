@@ -132,9 +132,6 @@ vektor  vec_prod(vektor u, vektor v);
 void make_box(void);
 void init_cells(void);
 void make_cell_lists(void);
-#ifdef NBLIST
-void make_cell_lists_nblist(void);
-#endif
 void check_pairs(void);
 void move_atom(cell *to, cell *from, int index);
 #ifdef VEC

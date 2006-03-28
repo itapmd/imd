@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -187,15 +187,15 @@ void init_cells( void )
   cell_scale.y = 1.0 / global_cell_dim.y;
   cell_scale.z = 1.0 / global_cell_dim.z;
 
-  if (0 == myid )
-  printf("Actual cell size: \n\t ( %f %f %f ) \n\t ( %f %f %f ) \n\t ( %f %f %f )\n",
-    box_x.x * cell_scale.x, box_x.y * cell_scale.x, box_x.z * cell_scale.x,
-    box_y.x * cell_scale.y, box_y.y * cell_scale.y, box_y.z * cell_scale.y,
-    box_z.x * cell_scale.z, box_z.y * cell_scale.z, box_z.z * cell_scale.z);
+  if (0==myid)
+    printf("Actual cell size: \n\t ( %f %f %f ) \n\t ( %f %f %f ) \n\t ( %f %f %f )\n",
+      box_x.x * cell_scale.x, box_x.y * cell_scale.x, box_x.z * cell_scale.x,
+      box_y.x * cell_scale.y, box_y.y * cell_scale.y, box_y.z * cell_scale.y,
+      box_z.x * cell_scale.z, box_z.y * cell_scale.z, box_z.z * cell_scale.z);
 
   if (0==myid)
-  printf("Global cell array dimensions: %d %d %d\n",
-          global_cell_dim.x,global_cell_dim.y,global_cell_dim.z);
+    printf("Global cell array dimensions: %d %d %d\n",
+      global_cell_dim.x,global_cell_dim.y,global_cell_dim.z);
 
   /* keep a copy of cell_dim, so that we can redistribute the atoms */
   cell_dim_old = cell_dim;
@@ -229,7 +229,7 @@ void init_cells( void )
   cell_array_old = cell_array;
   cell_array = (minicell *) malloc(
                cell_dim.x * cell_dim.y * cell_dim.z * sizeof(minicell));
-  if ( 0 == myid )
+  if (0==myid)
     if (NULL == cell_array) error("Cannot allocate memory for cells");
 
   /* Initialize cells */
@@ -283,8 +283,8 @@ void init_cells( void )
               else if (cellc.x >= cellmax.x) cellc.x = cellmax.x-1;
               if      (cellc.y <  cellmin.y) cellc.y = cellmin.y; 
               else if (cellc.y >= cellmax.y) cellc.y = cellmax.y-1;
-              if      (cellc.z <  cellmin.z) cellc.z = cellmin.x; 
-              else if (cellc.z >= cellmax.z) cellc.z = cellmax.x-1;
+              if      (cellc.z <  cellmin.z) cellc.z = cellmin.z; 
+              else if (cellc.z >= cellmax.z) cellc.z = cellmax.z-1;
 #endif
               to = PTR_VV(cell_array,cellc,cell_dim);
               MOVE_ATOM( to, p, i );
@@ -295,7 +295,6 @@ void init_cells( void )
     free(cell_array_old);
     make_cell_lists();
 #ifdef NBLIST
-    make_cell_lists_nblist();
     make_nblist();
 #else
     fix_cells();
@@ -305,12 +304,11 @@ void init_cells( void )
 #endif
   } else {
     make_cell_lists();
-#ifdef NBLIST
-    make_cell_lists_nblist();
-#endif
   }
 }
 
+
+#ifndef NBLIST
 
 /******************************************************************************
 *
@@ -460,11 +458,9 @@ void make_cell_lists(void)
                 P = pairs[nn] + npairs[nn];
                 P->np = i*cell_dim.y*cell_dim.z + j*cell_dim.z + k;
                 P->nq = r*cell_dim.y*cell_dim.z + s*cell_dim.z + t;
-#ifndef NBLIST
                 P->ipbc[0] = ipbc.x;
                 P->ipbc[1] = ipbc.y;
                 P->ipbc[2] = ipbc.z;
-#endif
                 npairs[nn]++;
 	      }
 	    }
@@ -536,11 +532,9 @@ void make_cell_lists(void)
                   P = pairs[nn] + npairs2[nn];
                   P->np = i*cell_dim.y*cell_dim.z + j*cell_dim.z + k;
                   P->nq = r*cell_dim.y*cell_dim.z + s*cell_dim.z + t;
-#ifndef NBLIST
                   P->ipbc[0] = ipbc.x;
                   P->ipbc[1] = ipbc.y;
                   P->ipbc[2] = ipbc.z;
-#endif
                   npairs2[nn]++;
 	        }
 	      }
@@ -584,19 +578,32 @@ void check_pairs()
   free(lst);
 }
 
+#endif /* not NBLIST */
+
 #ifdef NBLIST
 
 /******************************************************************************
 *
-*  make_cell_lists_nblist creates for each cell a list of neighbor cells
+*  In the neighbor list version, make_cell_lists creates for each cell 
+*  a list of neighbor cells
 *
 ******************************************************************************/
 
-void make_cell_lists_nblist(void)
+void make_cell_lists(void)
 {
   int i,j,k, l,m,n, r,s,t, nn, qq, flag, ncnbrs=0;
   cell_nbrs_t *CN;
   ivektor ipbc;
+
+  nallcells = cell_dim.x * cell_dim.y * cell_dim.z;
+  ncells = (cell_dim.x-2) * (cell_dim.y-2) * (cell_dim.z-2);
+  /* make list of inner cell indices */
+  cells  = (integer*) realloc( cells, ncells * sizeof(integer) );
+  l = 0;
+  for (i=cellmin.x; i<cellmax.x; ++i)
+    for (j=cellmin.y; j<cellmax.y; ++j)
+      for (k=cellmin.z; k<cellmax.z; ++k)
+        cells[l++] = i * cell_dim.y * cell_dim.z + j * cell_dim.z + k;
 
   ncells2 = ncells;
   cnbrs = (cell_nbrs_t *) realloc( cnbrs, nallcells * sizeof(cell_nbrs_t) );
@@ -608,7 +615,7 @@ void make_cell_lists_nblist(void)
     for (j=cellmin.y; j<cellmax.y; ++j)
       for (k=cellmin.z; k<cellmax.z; ++k) {
 
-        CN->np = i*cell_dim.y*cell_dim.z + j*cell_dim.z + k;
+        CN->np = i * cell_dim.y * cell_dim.z + j * cell_dim.z + k;
         nn = 0;
 
 	/* For half of the neighbours of this cell */
@@ -655,7 +662,7 @@ void make_cell_lists_nblist(void)
     for (j=cellmin.y; j<cellmax.y; ++j)
       for (k=cellmin.z; k<cellmax.z; ++k) {
 
-        CN->np = i*cell_dim.y*cell_dim.z + j*cell_dim.z + k;
+        CN->np = i * cell_dim.y * cell_dim.z + j * cell_dim.z + k;
         for (nn=0; nn<14; nn++) CN->nq[nn] = -1;
         flag = 0;
         nn   = 0;
