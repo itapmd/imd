@@ -290,7 +290,7 @@ void move_atoms_nve(void)
 #if defined (GLOK)|| defined(MIX)
 
 
-       // localized version of MIX
+       /* localized version of MIX */
 /* #ifdef MIX */
 /*        /\* 'turn' the velocities a little bit *\/ */
 /*        /\*  more along the forces... *\/ */
@@ -305,7 +305,7 @@ void move_atoms_nve(void)
 /* 	 } */
 /* #endif    */
 
-//change to velocity norm, change names later...
+/*change to velocity norm, change names later... */
        PxF   += SPRODN( &IMPULS(p,i,X), &KRAFT(p,i,X) )/MASSE(p,i);
        pnorm += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) )/MASSE(p,i)/MASSE(p,i);
 
