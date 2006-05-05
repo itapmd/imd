@@ -216,7 +216,7 @@ void dist_presszx_fun(float *dat, cell *p, int i)
 }
 #endif
 
-/* longitudinal kinetic energy */
+/* transversal kinetic energy */
 void dist_Ekin_trans_fun(float *dat, cell *p, int i)
 {
   *dat += (SQR(IMPULS(p,i,Y)) + SQR(IMPULS(p,i,Z))) / (4 * MASSE(p,i));
@@ -228,7 +228,7 @@ void dist_Ekin_comp_fun(float *dat, cell *p, int i)
   *dat += (SQR(IMPULS(p,i,Y)) - SQR(IMPULS(p,i,Z))) / (2 * MASSE(p,i));
 }
 
-/* transversal kinetic energy */
+/* longitudinal kinetic energy */
 void dist_Ekin_long_fun(float *dat, cell *p, int i)
 {
   float tmp;
