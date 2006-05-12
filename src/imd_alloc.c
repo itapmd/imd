@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -209,6 +209,9 @@ void move_atom(cell *to, cell *from, int index)
   to->presstens[to->n].zx = from->presstens[index].zx;   
 #endif
 #endif /* STRESS_TENS */
+#ifdef SHOCK
+  to->pxavg[to->n] = from->pxavg[index];   
+#endif
   to->impuls X(to->n) = from->impuls X(index); 
   to->impuls Y(to->n) = from->impuls Y(index); 
 #ifndef TWOD
@@ -339,6 +342,9 @@ void move_atom(cell *to, cell *from, int index)
     from->presstens[index].zx = from->presstens[from->n].zx;   
 #endif
 #endif /* STRESS_TENS */
+#ifdef SHOCK
+    from->pxavg[index] = from->pxavg[from->n];
+#endif
     from->impuls X(index) = from->impuls X(from->n); 
     from->impuls Y(index) = from->impuls Y(from->n); 
 #ifndef TWOD
@@ -497,6 +503,9 @@ void alloc_cell(cell *thecell, int count)
 #ifdef STRESS_TENS
     newcell.presstens = NULL;
 #endif
+#ifdef SHOCK
+    newcell.pxavg = NULL;
+#endif
 #ifdef COVALENT
     newcell.neigh  = NULL;
 #endif
@@ -599,6 +608,9 @@ void alloc_cell(cell *thecell, int count)
 #ifdef STRESS_TENS
     newcell.presstens = (sym_tensor *) malloc(count*sizeof(sym_tensor));
 #endif
+#ifdef SHOCK
+    newcell.pxavg = (real *) malloc(count*sizeof(real));
+#endif
 #if (defined(COVALENT) && !defined(TWOD))
     newcell.neigh = (neightab **) malloc( count * sizeof(neighptr) );
     if (NULL == newcell.neigh) {
@@ -661,6 +673,9 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef STRESS_TENS
         || (NULL == newcell.presstens)
+#endif
+#ifdef SHOCK
+        || (NULL == newcell.pxavg)
 #endif
 #ifdef NBLIST
         || (NULL == newcell.nbl_pos)
@@ -759,6 +774,9 @@ void alloc_cell(cell *thecell, int count)
 #ifdef STRESS_TENS
       memcpy(newcell.presstens, thecell->presstens, ncopy*sizeof(sym_tensor));
 #endif
+#ifdef SHOCK
+      memcpy(newcell.pxavg,  thecell->pxavg,  ncopy * sizeof(real));
+#endif
 #ifdef NBLIST
       memcpy(newcell.nbl_pos,  thecell->nbl_pos,  ncopy * sizeof(real));
 #endif
@@ -816,6 +834,9 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef STRESS_TENS
     free(thecell->presstens);
+#endif
+#ifdef SHOCK
+    free(thecell->pxavg);
 #endif
 #ifdef COVALENT
     free(thecell->neigh);
@@ -879,6 +900,9 @@ void alloc_cell(cell *thecell, int count)
 #endif
 #ifdef STRESS_TENS
   thecell->presstens = newcell.presstens;
+#endif
+#ifdef SHOCK
+  thecell->pxavg = newcell.pxavg;
 #endif
 #ifdef COVALENT
   thecell->neigh = newcell.neigh;

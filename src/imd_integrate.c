@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -32,12 +32,14 @@
 void move_atoms_nve(void)
 {
   int k;
-  real tmpvec1[8], tmpvec2[8]; /* increased tempvec for DAMP */
+  static int count = 0;
+  real tmpvec1[8], tmpvec2[8];
   real tmp_f_max2=0.0;
   real tmp_x_max2=0.0;
-  static int count = 0;
-
-  real tmppnorm,tmpfnorm;
+  real tmppnorm, tmpfnorm;
+#ifdef DAMP
+  real tmp1, tmp2, tmp3, f, maxax, maxax2;
+#endif
 
   /* epitax may call this routine for other ensembles,
      in which case we do not reset tot_kin_energy */
@@ -48,14 +50,13 @@ void move_atoms_nve(void)
   pnorm   = 0.0;
   PxF     = 0.0;
   omega_E = 0.0;
-
-  
 #ifdef DAMP
   n_damp  = 0;
   tot_kin_energy_damp = 0.0;
 #endif
-#ifdef DAMP
-  real tmp1,tmp2,tmp3,f,maxax,maxax2;
+
+#ifdef SHOCK
+  if (do_press_calc) calc_pxavg();
 #endif
 
   /* loop over all cells */
@@ -109,74 +110,58 @@ void move_atoms_nve(void)
       tmpfnorm=0.0;
 
 #ifdef EPITAX 
-        /* beam atoms are always integrated by NVE */
-        if ( (ensemble != ENS_NVE) &&
-             (NUMMER(p,i) <= epitax_sub_n) && 
-             (POTENG(p,i) <= epitax_ctrl * epitax_poteng_min) ) continue;
+      /* beam atoms are always integrated by NVE */
+      if ( (ensemble != ENS_NVE) &&
+           (NUMMER(p,i) <= epitax_sub_n) && 
+           (POTENG(p,i) <= epitax_ctrl * epitax_poteng_min) ) continue;
 #endif
 #ifndef DAMP
-        kin_energie_1 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+      kin_energie_1 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
 #endif
 
 #ifdef UNIAX
-        rot_energie_1 = SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) );
+      rot_energie_1 = SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) );
 #endif
 
-        sort = VSORTE(p,i);
+      sort = VSORTE(p,i);
 
 #ifdef RIGID
-	if ( superatom[sort] > -1 ) {
+      if ( superatom[sort] > -1 ) {
 
-	  satom   = superatom[sort];
-	  relmass = MASSE(p,i) / supermass[satom];
+        satom   = superatom[sort];
+        relmass = MASSE(p,i) / supermass[satom];
 
-	  if ( (superrestrictions + satom)->x )
-	    KRAFT(p,i,X) = superforce[satom].x * relmass; 
-	  if ( (superrestrictions + satom)->y )
-	    KRAFT(p,i,Y) = superforce[satom].y * relmass;
+        if ( (superrestrictions + satom)->x )
+          KRAFT(p,i,X) = superforce[satom].x * relmass; 
+        if ( (superrestrictions + satom)->y )
+          KRAFT(p,i,Y) = superforce[satom].y * relmass;
 #ifndef TWOD
-	  if ( (superrestrictions + satom)->z )
-	    KRAFT(p,i,Z) = superforce[satom].z * relmass;
+        if ( (superrestrictions + satom)->z )
+          KRAFT(p,i,Z) = superforce[satom].z * relmass;
 #endif
-	}
+      }
 #endif
 
 #if defined(FBC) && !defined(RIGID)
-        /* give virtual particles their extra force */
-	KRAFT(p,i,X) += (fbc_forces + sort)->x;
-	KRAFT(p,i,Y) += (fbc_forces + sort)->y;
+      /* give virtual particles their extra force */
+      KRAFT(p,i,X) += (fbc_forces + sort)->x;
+      KRAFT(p,i,Y) += (fbc_forces + sort)->y;
 #ifndef TWOD
-	KRAFT(p,i,Z) += (fbc_forces + sort)->z;
+      KRAFT(p,i,Z) += (fbc_forces + sort)->z;
 #endif
 #endif
 
-	/* and set their force (->momentum) in restricted directions to 0 */
-	KRAFT(p,i,X) *= (restrictions + sort)->x;
-	KRAFT(p,i,Y) *= (restrictions + sort)->y;
+      /* and set their force (->momentum) in restricted directions to 0 */
+      KRAFT(p,i,X) *= (restrictions + sort)->x;
+      KRAFT(p,i,Y) *= (restrictions + sort)->y;
 #ifndef TWOD
-	KRAFT(p,i,Z) *= (restrictions + sort)->z;
+      KRAFT(p,i,Z) *= (restrictions + sort)->z;
 #endif
 
 #ifdef FNORM
-	tmpfnorm= SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
-	fnorm   += tmpfnorm;
-/* 	tmpkraft.x =KRAFT(p,i,X); */
-/* 	tmpkraft.y =KRAFT(p,i,Y); */
-/* 	tmpkraft.z =KRAFT(p,i,Z); */
-/*        if( (fbc_forces + sort)->x != 0.0) */
-/* 	 { */
-/* 	   tmpkraft.x =0.0; */
-/* 	 } */
-/*        if( (fbc_forces + sort)->y != 0.0) */
-/* 	 { */
-/* 	   tmpkraft.y =0.0; */
-/* 	 } */
-/*        if( (fbc_forces + sort)->z != 0.0) */
-/* 	 { */
-/* 	   tmpkraft.z =0.0; */
-/* 	 } */
-/*        fnorm += tmpkraft.x * tmpkraft.x + tmpkraft.y * tmpkraft.y + tmpkraft.z * tmpkraft.z; */
-     /* determine the biggest force component */
+      tmpfnorm= SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+      fnorm   += tmpfnorm;
+      /* determine the biggest force component */
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
 #ifndef TWOD
@@ -184,186 +169,148 @@ void move_atoms_nve(void)
 #endif
 #endif
 #ifdef EINSTEIN
-	omega_E += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) ) / MASSE(p,i);
+      omega_E += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) ) / MASSE(p,i);
 #endif
 
 #ifndef DAMP /*  Normal NVE */
-	IMPULS(p,i,X) += timestep * KRAFT(p,i,X);
-        IMPULS(p,i,Y) += timestep * KRAFT(p,i,Y);
+      IMPULS(p,i,X) += timestep * KRAFT(p,i,X);
+      IMPULS(p,i,Y) += timestep * KRAFT(p,i,Y);
 #ifndef TWOD
-        IMPULS(p,i,Z) += timestep * KRAFT(p,i,Z);
+      IMPULS(p,i,Z) += timestep * KRAFT(p,i,Z);
 #endif
-#else    /* Damping layers */
+#else  /* Damping layers */
 
-        /* use a local thermostat: Finnis
-           We fix a temperature gradient from temp to zero
-           in the same way the damping constant is ramped up.
-           the mean temperature in the damping layers
-           has no meaning, only temperature of the inner part is outputted */
-
-        /*  the stadium function for each atom could also be calculated in forces_nbl
-              to save time */
-      /* it is the users responsability that stadium.i/stadium2.i
+      /* use a local thermostat: Finnis
+         We fix a temperature gradient from temp to zero
+         in the same way the damping constant is ramped up.
+         The mean temperature in the damping layers
+         has no meaning, only temperature of the inner part is output */
+      /* the stadium function for each atom could also be calculated 
+         in forces_nbl to save time */
+      /* it is the users responsability that stadium.i / stadium2.i
          is equal for all i */
 
       maxax = MAX(MAX(stadium.x,stadium.y),stadium.z);
       maxax2 = MAX(MAX(stadium2.x,stadium2.y),stadium2.z);
 
-            /* Calculate stadium function f */
-      tmp1 = (stadium2.x == 0) ? 0 : SQR((ORT(p,i,X)-center.x)/(2.0*stadium2.x));
-      tmp2 = (stadium2.y == 0) ? 0 : SQR((ORT(p,i,Y)-center.y)/(2.0*stadium2.y));
-      tmp3 = (stadium2.z == 0) ? 0 : SQR((ORT(p,i,Z)-center.z)/(2.0*stadium2.z));
+      /* Calculate stadium function f */
+      tmp1 = (stadium2.x==0) ? 0 : SQR((ORT(p,i,X)-center.x)/(2.0*stadium2.x));
+      tmp2 = (stadium2.y==0) ? 0 : SQR((ORT(p,i,Y)-center.y)/(2.0*stadium2.y));
+      tmp3 = (stadium2.z==0) ? 0 : SQR((ORT(p,i,Z)-center.z)/(2.0*stadium2.z));
 
-      f    = (tmp1+tmp2+tmp3-SQR(maxax/(2.0*maxax2)))/\
-             (.25- SQR(maxax/(2.0*maxax2)));
-      //      printf("pos: %f %f %f   damp_f %f\n",ORT(p,i,X), ORT(p,i,Y),ORT(p,i,Z),f);
-      if (f<= 0.0)
-          f = 0.0;
-      else if (f>1.0)
-          f = 1.0;
+      f    = (tmp1+tmp2+tmp3-SQR(maxax / (2.0*maxax2)) ) /
+                (0.25 - SQR(maxax / (2.0*maxax2)) );
+      if      (f<= 0.0) f = 0.0;
+      else if (f>1.0)   f = 1.0;
 
       /* we smooth the stadium function: to get a real bath tub !*/
-       DAMPF(p,i) = .5 * (1 + sin(-M_PI/2.0 + M_PI*f));
+      DAMPF(p,i) = .5 * (1 + sin(-M_PI/2.0 + M_PI*f));
 
 
-       if (DAMPF(p,i) == 0.0) /* take care of possible rounding errors ? */
-            {
-                kin_energie_1 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+      if (DAMPF(p,i) == 0.0) { /* take care of possible rounding errors ? */
 
-                IMPULS(p,i,X) += timestep * KRAFT(p,i,X);
-                IMPULS(p,i,Y) += timestep * KRAFT(p,i,Y);
+        kin_energie_1 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+
+        IMPULS(p,i,X) += timestep * KRAFT(p,i,X);
+        IMPULS(p,i,Y) += timestep * KRAFT(p,i,Y);
 #ifndef TWOD
-                IMPULS(p,i,Z) += timestep * KRAFT(p,i,Z);
+        IMPULS(p,i,Z) += timestep * KRAFT(p,i,Z);
 #endif
-                kin_energie_2 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
-                tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4 * MASSE(p,i));
-            }
-        else
-            {
-                kin_energie_damp_1 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+        kin_energie_2 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+        tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4 * MASSE(p,i));
+      }
+      else {
+        kin_energie_damp_1 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
 
-                tmp  = kin_energie_damp_1 / MASSE(p,i); /* local temp */
-#ifdef TWOD
-                tmp2 = (restrictions + sort)->x + (restrictions + sort)->y;
-#else
-                tmp2 = (restrictions + sort)->x + (restrictions + sort)->y + (restrictions + sort)->z;
-#endif
-                n_damp += tmp2;
-
-                if (tmp2 != 0) tmp /= tmp2;
-
-
-		/* to account for restricted mobilities */
-		rampedtemp  = (tmp2 !=0) ? (tmp2/3.0 * damptemp * (1.0 - DAMPF(p,i))) : 0.0;
-
-                //              if( !((tmp==0.0) && (rampedtemp==0.0))) /* else atom  will not move */
-                //  {
-
-		if(rampedtemp !=0.0)
-		  {
-		    zeta_finnis = zeta_0 * (tmp-rampedtemp)
-		      / sqrt(SQR(tmp) + SQR(rampedtemp*delta_finnis)) * DAMPF(p,i);
-		  }
-		else
-		  zeta_finnis = zeta_0;
-		
-                /* new momenta */
-                IMPULS(p,i,X) += (-1.0*IMPULS(p,i,X) * zeta_finnis + KRAFT(p,i,X)) * timestep
-                    * (restrictions + sort)->x ;
-                IMPULS(p,i,Y) += (-1.0*IMPULS(p,i,Y) * zeta_finnis + KRAFT(p,i,Y)) * timestep
-                    * (restrictions + sort)->y;
+        tmp   = kin_energie_damp_1 / MASSE(p,i); /* local temp */
+        tmp2  = (restrictions + sort)->x + (restrictions + sort)->y;
 #ifndef TWOD
-                IMPULS(p,i,Z) += (-1.0*IMPULS(p,i,Z) * zeta_finnis + KRAFT(p,i,Z)) * timestep
-                    * (restrictions + sort)->z;
+        tmp2 += (restrictions + sort)->z;
 #endif
-                //  }
-                kin_energie_damp_2 =  SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
-                tot_kin_energy_damp += (kin_energie_damp_1 + kin_energie_damp_2) /(4.0 * MASSE(p,i)) ;
-            }
+        n_damp += tmp2;
 
+        if (tmp2 != 0) tmp /= tmp2;
+
+        /* to account for restricted mobilities */
+	rampedtemp  = (tmp2 !=0) ? 
+          (tmp2/3.0 * damptemp * (1.0 - DAMPF(p,i))) : 0.0;
+
+        if(rampedtemp !=0.0) {
+          zeta_finnis = zeta_0 * (tmp-rampedtemp)
+             / sqrt(SQR(tmp) + SQR(rampedtemp*delta_finnis)) * DAMPF(p,i);
+        }
+	else zeta_finnis = zeta_0;
+
+        /* new momenta */
+        IMPULS(p,i,X) += (-1.0*IMPULS(p,i,X) * zeta_finnis + KRAFT(p,i,X)) 
+                         * timestep * (restrictions + sort)->x ;
+        IMPULS(p,i,Y) += (-1.0*IMPULS(p,i,Y) * zeta_finnis + KRAFT(p,i,Y)) 
+                         * timestep * (restrictions + sort)->y;
+#ifndef TWOD
+        IMPULS(p,i,Z) += (-1.0*IMPULS(p,i,Z) * zeta_finnis + KRAFT(p,i,Z)) 
+                         * timestep * (restrictions + sort)->z;
+#endif
+        kin_energie_damp_2 =  SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+        tot_kin_energy_damp += (kin_energie_damp_1 + kin_energie_damp_2) 
+                               / (4.0 * MASSE(p,i)) ;
+      }
 #endif /* DAMP */
 
-
-
-	/* "Globale Konvergenz": like mik, just with the global 
-           force and momentum vectors */
 #if defined (GLOK)|| defined(MIX)
 
-
-       /* localized version of MIX */
-/* #ifdef MIX */
-/*        /\* 'turn' the velocities a little bit *\/ */
-/*        /\*  more along the forces... *\/ */
-/*        tmppnorm =  SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ); */
-/*        if (tmpfnorm >= 1e-20) */
-/* 	 { */
-/* 	   tmpfnorm=SQRT(tmpfnorm); */
-/* 	   tmppnorm=SQRT(tmppnorm); */
-/* 	   IMPULS(p,i,X) = (1.0-glok_mix)*IMPULS(p,i,X) + glok_mix * KRAFT(p,i,X)/tmpfnorm * tmppnorm; */
-/* 	   IMPULS(p,i,Y) = (1.0-glok_mix)*IMPULS(p,i,Y) + glok_mix * KRAFT(p,i,Y)/tmpfnorm * tmppnorm; */
-/* 	   IMPULS(p,i,Z) = (1.0-glok_mix)*IMPULS(p,i,Z) + glok_mix * KRAFT(p,i,Z)/tmpfnorm * tmppnorm; */
-/* 	 } */
-/* #endif    */
-
-/*change to velocity norm, change names later... */
-       PxF   += SPRODN( &IMPULS(p,i,X), &KRAFT(p,i,X) )/MASSE(p,i);
-       pnorm += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) )/MASSE(p,i)/MASSE(p,i);
-
-
+      /* "Global Convergence": */ 
+      /* like mik, just with the global force and momentum vectors */
+      /* change to velocity norm, change names later... */
+      PxF   += SPRODN( &IMPULS(p,i,X), &KRAFT(p,i,X) )/MASSE(p,i);
+      pnorm += SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) )/MASSE(p,i)/MASSE(p,i);
 
 #ifdef MIX
-       /* global version of MIX  with adaptive mixing, works only with adaptglok?*/
-       /* 'turn' the velocities a little bit */
-       /*  more along the forces... */
- 
-       IMPULS(p,i,X) = (1.0-mix)*IMPULS(p,i,X) + mix * KRAFT(p,i,X)* mixforcescalefac * MASSE(p,i);
-       IMPULS(p,i,Y) = (1.0-mix)*IMPULS(p,i,Y) + mix * KRAFT(p,i,Y)* mixforcescalefac * MASSE(p,i);
-       IMPULS(p,i,Z) = (1.0-mix)*IMPULS(p,i,Z) + mix * KRAFT(p,i,Z)* mixforcescalefac * MASSE(p,i);
-	
+      /* global version of MIX  with adaptive mixing */  
+      /* 'turn' the velocities a little bit more along the forces... */
+      IMPULS(p,i,X) = (1.0-mix)*IMPULS(p,i,X) + mix * KRAFT(p,i,X)
+                      * mixforcescalefac * MASSE(p,i);
+      IMPULS(p,i,Y) = (1.0-mix)*IMPULS(p,i,Y) + mix * KRAFT(p,i,Y)
+                      * mixforcescalefac * MASSE(p,i);
+      IMPULS(p,i,Z) = (1.0-mix)*IMPULS(p,i,Z) + mix * KRAFT(p,i,Z)
+                      * mixforcescalefac * MASSE(p,i);
 #endif   
 
-      
-
-#endif
-
+#endif /* GLOK || MIX */
 
 #ifdef UNIAX
-        dot = 2.0 * SPRODN( &DREH_IMPULS(p,i,X), &ACHSE(p,i,X) );
-        DREH_IMPULS(p,i,X) += timestep * DREH_MOMENT(p,i,X)
-                               - dot * ACHSE(p,i,X);
-        DREH_IMPULS(p,i,Y) += timestep * DREH_MOMENT(p,i,Y)
-                               - dot * ACHSE(p,i,Y);
-        DREH_IMPULS(p,i,Z) += timestep * DREH_MOMENT(p,i,Z)
-                               - dot * ACHSE(p,i,Z);
+      dot = 2.0 * SPRODN( &DREH_IMPULS(p,i,X), &ACHSE(p,i,X) );
+      DREH_IMPULS(p,i,X) += timestep * DREH_MOMENT(p,i,X)
+                             - dot * ACHSE(p,i,X);
+      DREH_IMPULS(p,i,Y) += timestep * DREH_MOMENT(p,i,Y)
+                             - dot * ACHSE(p,i,Y);
+      DREH_IMPULS(p,i,Z) += timestep * DREH_MOMENT(p,i,Z)
+                             - dot * ACHSE(p,i,Z);
 #endif
 
 #ifndef DAMP
-        kin_energie_2 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+      kin_energie_2 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
 #endif
 #ifdef UNIAX
-        rot_energie_2 = SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) ); 
+      rot_energie_2 = SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) ); 
 #endif
-        /* sum up kinetic energy on this CPU */
 #ifndef DAMP
-        tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4 * MASSE(p,i));
+      tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4 * MASSE(p,i));
 #endif
-
 #ifdef UNIAX
-        tot_kin_energy += (rot_energie_1 + rot_energie_2) / (4 * uniax_inert);
+      tot_kin_energy += (rot_energie_1 + rot_energie_2) / (4 * uniax_inert);
 #endif	  
 
-
-        /* new positions */
-        tmp = timestep / MASSE(p,i);
-        ORT(p,i,X) += tmp * IMPULS(p,i,X);
-        ORT(p,i,Y) += tmp * IMPULS(p,i,Y);
+      /* new positions */
+      tmp = timestep / MASSE(p,i);
+      ORT(p,i,X) += tmp * IMPULS(p,i,X);
+      ORT(p,i,Y) += tmp * IMPULS(p,i,Y);
 #ifndef TWOD
-        ORT(p,i,Z) += tmp * IMPULS(p,i,Z);
+      ORT(p,i,Z) += tmp * IMPULS(p,i,Z);
 #endif
 
 #ifdef RELAXINFO
-	xnorm   += tmp * tmp * SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
-     /* determine the biggest force component */
+      xnorm += tmp * tmp * SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+      /* determine the biggest force component */
       tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,X)),tmp_x_max2);
       tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,Y)),tmp_x_max2);
 #ifndef TWOD
@@ -372,104 +319,59 @@ void move_atoms_nve(void)
 #endif
 
 #ifdef SHOCK
-	if (shock_mode == 3) {
-
-	  if (ORT(p,i,X) > box_x.x) {
-	    IMPULS(p,i,X) = -IMPULS(p,i,X);
-	    ORT(p,i,X) = 2 * box_x.x - ORT(p,i,X);
-	  }
-	}
-	if (shock_mode == 4) {
-	  real rand = shock_speed_l * timestep * steps ;
-	  if (ORT(p,i,X) < rand ) {
-	    IMPULS(p,i,X) = -IMPULS(p,i,X) + 2 * shock_speed_l * MASSE(p,i);
-	    ORT(p,i,X) = 2 * rand - ORT(p,i,X);
-	  }
-	  if (ORT(p,i,X) > box_x.x - rand ) {
-	    IMPULS(p,i,X) = -IMPULS(p,i,X) - 2 * shock_speed_r * MASSE(p,i);
-	    ORT(p,i,X) = 2 * ( box_x.x - rand ) - ORT(p,i,X);
-	  }
-	}
+      if (shock_mode == 3) {
+        if (ORT(p,i,X) > box_x.x) {
+          IMPULS(p,i,X) = -IMPULS(p,i,X);
+          ORT(p,i,X) = 2 * box_x.x - ORT(p,i,X);
+        }
+      }
+      if (shock_mode == 4) {
+        real rand = shock_speed_l * timestep * steps ;
+        if (ORT(p,i,X) < rand ) {
+          IMPULS(p,i,X) = -IMPULS(p,i,X) + 2 * shock_speed_l * MASSE(p,i);
+          ORT(p,i,X) = 2 * rand - ORT(p,i,X);
+        }
+        if (ORT(p,i,X) > box_x.x - rand ) {
+          IMPULS(p,i,X) = -IMPULS(p,i,X) - 2 * shock_speed_r * MASSE(p,i);
+          ORT(p,i,X) = 2 * ( box_x.x - rand ) - ORT(p,i,X);
+        }
+      }
 #endif
 
-        /* new molecular axes */
 #ifdef UNIAX
-        cross.x = DREH_IMPULS(p,i,Y) * ACHSE(p,i,Z)
-                - DREH_IMPULS(p,i,Z) * ACHSE(p,i,Y);
-        cross.y = DREH_IMPULS(p,i,Z) * ACHSE(p,i,X)
-                - DREH_IMPULS(p,i,X) * ACHSE(p,i,Z);
-        cross.z = DREH_IMPULS(p,i,X) * ACHSE(p,i,Y)
-                - DREH_IMPULS(p,i,Y) * ACHSE(p,i,X);
+      /* new molecular axes */
+      cross.x = DREH_IMPULS(p,i,Y) * ACHSE(p,i,Z)
+              - DREH_IMPULS(p,i,Z) * ACHSE(p,i,Y);
+      cross.y = DREH_IMPULS(p,i,Z) * ACHSE(p,i,X)
+              - DREH_IMPULS(p,i,X) * ACHSE(p,i,Z);
+      cross.z = DREH_IMPULS(p,i,X) * ACHSE(p,i,Y)
+              - DREH_IMPULS(p,i,Y) * ACHSE(p,i,X);
 
-        ACHSE(p,i,X) += timestep * cross.x / uniax_inert;
-        ACHSE(p,i,Y) += timestep * cross.y / uniax_inert;
-        ACHSE(p,i,Z) += timestep * cross.z / uniax_inert;
+      ACHSE(p,i,X) += timestep * cross.x / uniax_inert;
+      ACHSE(p,i,Y) += timestep * cross.y / uniax_inert;
+      ACHSE(p,i,Z) += timestep * cross.z / uniax_inert;
 
-        norm = sqrt( SPRODN( &ACHSE(p,i,X), &ACHSE(p,i,X) ) );
+      norm = sqrt( SPRODN( &ACHSE(p,i,X), &ACHSE(p,i,X) ) );
 	    
-        ACHSE(p,i,X) /= norm;
-        ACHSE(p,i,Y) /= norm;
-        ACHSE(p,i,Z) /= norm;
+      ACHSE(p,i,X) /= norm;
+      ACHSE(p,i,Y) /= norm;
+      ACHSE(p,i,Z) /= norm;
 #endif    
 
 #ifdef STRESS_TENS
+      if (do_press_calc) {
 #ifdef SHOCK
-	/* plate against bulk */
-        if (shock_mode == 1) {
-          if ( ORT(p,i,X) < shock_strip ) {
-            PRESSTENS(p,i,xx) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) 
-                    * (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) / MASSE(p,i);
-            PRESSTENS(p,i,xy) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) 
-                    * IMPULS(p,i,Y) / MASSE(p,i);
-            PRESSTENS(p,i,zx) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) 
-                    * IMPULS(p,i,Z) / MASSE(p,i);
-	  }
-          else {
-	    PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
-	    PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
-	    PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
-	  }
-        }
-	/* two halves against one another */
-        if (shock_mode == 2) {
-          if ( ORT(p,i,X) < box_x.x*0.5 ) {
-            PRESSTENS(p,i,xx) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) 
-                    * (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) / MASSE(p,i);
-            PRESSTENS(p,i,xy) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) 
-                    * IMPULS(p,i,Y) / MASSE(p,i);
-            PRESSTENS(p,i,zx) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) 
-                    * IMPULS(p,i,Z) / MASSE(p,i);
-	  }
-          else {
-            PRESSTENS(p,i,xx) += (IMPULS(p,i,X) + shock_speed * MASSE(p,i)) 
-                    * (IMPULS(p,i,X) + shock_speed * MASSE(p,i)) / MASSE(p,i);
-            PRESSTENS(p,i,xy) += (IMPULS(p,i,X) + shock_speed * MASSE(p,i)) 
-                    * IMPULS(p,i,Y) / MASSE(p,i);
-            PRESSTENS(p,i,zx) += (IMPULS(p,i,X) + shock_speed * MASSE(p,i)) 
-                    * IMPULS(p,i,Z) / MASSE(p,i);
-	  }
-        }
-	/* bulk against wall */
-        if (shock_mode == 3) {
-	  PRESSTENS(p,i,xx) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) * 
-	    (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) / MASSE(p,i);
-	  PRESSTENS(p,i,xy) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) * 
-	    IMPULS(p,i,Y) / MASSE(p,i);
-	  PRESSTENS(p,i,zx) += (IMPULS(p,i,X) - shock_speed * MASSE(p,i)) * 
-	    IMPULS(p,i,Z) / MASSE(p,i);
-	}
-	
-	/* two mirrors */
-        if (shock_mode == 4) {
-	    PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
-	    PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
-	    PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
-	}
-        
-	PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
-#else
+        PRESSTENS(p,i,xx) += (IMPULS(p,i,X) - PXAVG(p,i)) * 
+                             (IMPULS(p,i,X) - PXAVG(p,i))  / MASSE(p,i); 
+        PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
+        PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,zx) += (IMPULS(p,i,X) - PXAVG(p,i)) * 
+                              IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,xy) += (IMPULS(p,i,X) - PXAVG(p,i)) *
+                              IMPULS(p,i,Y) / MASSE(p,i);
+#else /* not SHOCK */
         PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
-#endif
         PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
 #ifndef TWOD
         PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
@@ -477,6 +379,8 @@ void move_atoms_nve(void)
         PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
 #endif
         PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
+#endif /* SHOCK */
+      }
 #endif /* STRESS_TENS */
     }
   }
@@ -514,7 +418,9 @@ void move_atoms_nve(void)
 #ifdef RELAXINFO
  MPI_Allreduce( &tmp_x_max2, &x_max2, 1, REAL, MPI_MAX, cpugrid);
 #endif
-#else
+
+#else /* not MPI */
+
 #ifdef FNORM
   f_max2 = tmp_f_max2;
 #endif
@@ -522,7 +428,7 @@ void move_atoms_nve(void)
   x_max2 = tmp_x_max2;
 #endif
 
-#endif
+#endif /* MPI */
 
 
 #if defined (GLOK) || defined (MIX)
@@ -2754,7 +2660,7 @@ void move_atoms_cg(real alpha)
 
 #ifdef RELAXINFO
       xnorm   += alpha * alpha *  SPRODN( &CG_H(p,i,X), &CG_H(p,i,X) );
-     /* determine the biggest force component */
+      /* determine the biggest force component */
       tmp_x_max2 = MAX( alpha * alpha *SQR(CG_H(p,i,X)),tmp_x_max2);
       tmp_x_max2 = MAX( alpha * alpha *SQR(CG_H(p,i,Y)),tmp_x_max2);
 #ifndef TWOD
@@ -2770,18 +2676,17 @@ void move_atoms_cg(real alpha)
 #ifdef MPI
   tmpvec1[0] = xnorm;
   MPI_Allreduce( tmpvec1, tmpvec2, 1, REAL, MPI_SUM, cpugrid); 
-  xnorm          = tmpvec2[0];
+  xnorm  = tmpvec2[0];
   MPI_Allreduce( &tmp_x_max2, &x_max2, 1, REAL, MPI_MAX, cpugrid);
 #else
   x_max2 = tmp_x_max2;
 #endif
 #endif
- if ((cg_infolevel>0) && (0==myid)) 
-{
-  printf("moveatoms, alpha %.12e , xmax %.12e\n",alpha,SQRT(x_max2));fflush(stdout);
-}
 
-
+  if ((cg_infolevel>0) && (0==myid)) {
+    printf("moveatoms, alpha %.12e , xmax %.12e\n", alpha, SQRT(x_max2));
+    fflush(stdout);
+  }
 
 }
 
@@ -2858,12 +2763,11 @@ void move_atoms_sd(real alpha)
   x_max2 = tmp_x_max2;
 #endif
 #endif
- if ((cg_infolevel>0) && (0==myid)) 
-{
-  printf("moveatoms, alpha %.12e , xmax %.12e\n",alpha,SQRT(x_max2));fflush(stdout);
-}
 
-
+  if ((cg_infolevel>0) && (0==myid)) {
+    printf("moveatoms, alpha %.12e , xmax %.12e\n", alpha, SQRT(x_max2) );
+    fflush(stdout);
+  }
 
 }
 
@@ -2873,6 +2777,98 @@ void move_atoms_sd(real alpha)
 {
   if (myid==0)
     error("the chosen ensemble CG or SD is not supported by this binary");
+}
+
+#endif
+
+#ifdef SHOCK
+
+/*****************************************************************************
+*
+* Calculate average momentum in x direction
+*
+*****************************************************************************/
+
+void calc_pxavg(void) 
+{
+  integer *num_1, *num_2;
+  real *dat_1, *dat_2, scale;
+  int i, k;
+
+#ifdef MPI
+  dat_1 = (real    *) malloc( dist_dim.x * sizeof(real  ) );
+  num_1 = (integer *) malloc( dist_dim.x * sizeof(integer) );
+  dat_2 = (real    *) malloc( dist_dim.x * sizeof(real  ) );
+  num_2 = (integer *) malloc( dist_dim.x * sizeof(integer) );
+  if ((NULL==dat_1) || (NULL==num_1) || (NULL==dat_2) || (NULL==num_2))
+    error("Cannot allocate distribution data.");
+#else
+  dat_1 = (real    *) malloc( dist_dim.x * sizeof(real  ) );
+  num_1 = (integer *) malloc( dist_dim.x * sizeof(integer) );
+  dat_2 = dat_1;
+  num_2 = num_1;
+  if ((NULL==dat_1) || (NULL==num_1))
+    error("Cannot allocate distribution data.");
+#endif
+
+  /* the bins are orthogonal slices in space */
+  scale = dist_dim.x / (dist_ur.x - dist_ll.x);
+
+  /* clear distributions */
+  for (i=0; i<dist_dim.x; i++) {
+    dat_1[i] = 0.0;
+    num_1[i] = 0;
+  }
+
+  /* loop over all atoms */
+  for (k=0; k<NCELLS; ++k) {
+    cell *p = CELLPTR(k);
+    for (i=0; i<p->n; ++i) {
+      int n = (int) (scale * (ORT(p,i,X) - dist_ll.x));
+      if ((n < 0) || (n >= dist_dim.x)) continue;
+      num_1[n]++;
+      dat_1[n] += IMPULS(p,i,X);
+    }
+  }
+
+#ifdef MPI  /* add up results form different CPUs */
+  MPI_Allreduce( dat_1, dat_2, dist_dim.x, REAL,    MPI_SUM, cpugrid);
+  MPI_Allreduce( num_1, num_2, dist_dim.x, INTEGER, MPI_SUM, cpugrid);
+#endif
+
+  /* normalize distribution */
+  for (i=0; i<dist_dim.x; i++) {
+    if (num_2[i] > 0) dat_2[i] /= num_2[i];
+  }
+
+  /* loop over all atoms */
+  for (k=0; k<NCELLS; ++k) {
+    cell *p = CELLPTR(k);
+    for (i=0; i<p->n; ++i) {
+      int n = (int) (scale * (ORT(p,i,X) - dist_ll.x) - 0.5);
+      if (n < 0) {
+        PXAVG(p,i) = dat_2[0];
+      } 
+      else if (n >= dist_dim.x-1) {
+        PXAVG(p,i) = dat_2[dist_dim.x-1];
+      }
+      else {
+        real chi = (ORT(p,i,X) - n / scale) * scale; 
+        PXAVG(p,i) = dat_2[n] * (1-chi) + chi * dat_2[n+1];
+      }
+    }
+  }
+
+#ifdef MPI
+  free(dat_1);
+  free(num_1);
+  free(dat_2);
+  free(num_2);
+#else
+  free(dat_1);
+  free(num_1);
+#endif
+
 }
 
 #endif

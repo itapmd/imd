@@ -61,7 +61,7 @@ void shutdown_mpi(void)
 void alloc_msgbuf(msgbuf *b, int size)
 {
 #ifdef MPI2
-  MPI_Free_mem(b->data);
+  if (b->data) MPI_Free_mem(b->data);
   MPI_Alloc_mem( size * sizeof(real), MPI_INFO_NULL, &(b->data) );
 #else
   free(b->data);
@@ -85,7 +85,7 @@ void realloc_msgbuf(msgbuf *b, int size)
   if (NULL == new) error("cannot allocate message buffer");
   for (i=0; i<b->n; i++) new[i] = b->data[i];
 #ifdef MPI2
-  MPI_Free_mem(b->data);
+  if (b->data) MPI_Free_mem(b->data);
 #else
   free(b->data);
 #endif
@@ -96,7 +96,7 @@ void realloc_msgbuf(msgbuf *b, int size)
 void free_msgbuf(msgbuf *b)
 {
 #ifdef MPI2
-  MPI_Free_mem(b->data);
+  if (b->data) MPI_Free_mem(b->data);
 #else
   free(b->data);
 #endif
@@ -250,6 +250,9 @@ void copy_atom(msgbuf *to, int to_cpu, cell *p, int ind )
   to->data[ to->n++ ] = PRESSTENS(p,ind,zx);   
 #endif
 #endif /* STRESS_TENS */
+#ifdef SHOCK
+  to->data[ to->n++ ] = PXAVG(p,ind);
+#endif
   to->data[ to->n++ ] = IMPULS(p,ind,X); 
   to->data[ to->n++ ] = IMPULS(p,ind,Y); 
 #ifndef TWOD
@@ -411,6 +414,9 @@ void copy_one_atom(msgbuf *to, int to_cpu, minicell *from, int index, int del)
       PRESSTENS(p,ind,zx) = PRESSTENS(p,p->n,zx);   
 #endif
 #endif /* STRESS_TENS */
+#ifdef SHOCK
+      PXAVG(p,ind)    = PXAVG(p,p->n); 
+#endif
       IMPULS(p,ind,X) = IMPULS(p,p->n,X); 
       IMPULS(p,ind,Y) = IMPULS(p,p->n,Y); 
 #ifndef TWOD
@@ -552,6 +558,9 @@ void process_buffer(msgbuf *b, cell *p)
     PRESSTENS(input,0,zx) = b->data[j++];   
 #endif
 #endif /* STRESS_TENS */
+#ifdef SHOCK
+    PXAVG(input,0)        = b->data[j++];
+#endif
     IMPULS(input,0,X)     = b->data[j++];
     IMPULS(input,0,Y)     = b->data[j++];
 #ifndef TWOD

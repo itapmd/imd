@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -121,6 +121,9 @@ INLINE static int MOD(shortint p, int q)
 #ifdef STRESS_TENS
 #define PRESSTENS(cell,i,sub)   (atoms.presstens[(cell)->ind[i]].sub)
 #endif
+#ifdef SHOCK
+#define PXAVG(cell,i)           (atoms.pxavg[(cell)->ind[i]])
+#endif
 #ifdef COVALENT
 /* not supported in VEC mode */
 #endif
@@ -205,6 +208,9 @@ INLINE static int MOD(shortint p, int q)
 #endif
 #ifdef STRESS_TENS
 #define PRESSTENS(cell,i,sub)   ((cell)->presstens[i].sub)
+#endif
+#ifdef SHOCK
+#define PXAVG(cell,i)           ((cell)->pxavg[i])
 #endif
 #ifdef COVALENT
 #define NEIGH(cell,i)           ((cell)->neigh[i])

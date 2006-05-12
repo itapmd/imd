@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -156,6 +156,9 @@ typedef struct {
 #ifdef STRESS_TENS
   sym_tensor  *presstens;
 #endif
+#ifdef SHOCK
+  real        *pxavg;
+#endif
   real        *impuls;
   real        *kraft;
 #ifdef COVALENT
@@ -282,7 +285,7 @@ typedef struct {
 
 /* data structure for distributions */
 typedef struct {
-  float   *dat, *min, *max;
+  float   *dat, min[6], max[6];
   integer *num;
   int     size;
   ivektor dim;

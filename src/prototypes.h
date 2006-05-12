@@ -242,6 +242,9 @@ void move_atoms_msd(void);
 void move_atoms_stm(void);
 void move_atoms_ftg(void);
 void move_atoms_finnis(void);
+#ifdef SHOCK
+void calc_pxavg(void);
+#endif
 
 /* fix distribution on cells - files imd_main_*.c, imd_mpi_util.c */
 void do_boundaries(void);
@@ -479,7 +482,6 @@ void acg_step(int steps);
 int findalpha();
 
 #endif
-
 
 #ifdef NMOLDYN
 void init_nmoldyn(void);

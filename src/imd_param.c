@@ -2309,6 +2309,16 @@ void check_parameters_complete()
 #if defined(DIFFPAT) && defined(TWOD)
   error("Option DIFFPAT is not supported in 2D");
 #endif
+
+  /* backup if dist_ur is not set */
+  if (0.0==dist_ur.x) {
+    dist_ur.x = box_x.x;
+    dist_ur.y = box_y.y;
+#ifndef TWOD
+    dist_ur.z = box_z.z;
+#endif
+  }
+
 }
 
 /*****************************************************************

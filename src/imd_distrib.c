@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -21,6 +21,9 @@
 
 #include "imd.h"
 
+float   *dat_1 = NULL, *dat_2 = NULL;
+integer *num_1 = NULL, *num_2 = NULL;
+
 /******************************************************************************
 *
 *  write distributions
@@ -30,21 +33,33 @@
 void write_distrib(int steps)
 {
   char contents[255];
-  static dist_t dist;
-  int flag, fzhlr;
-
-  /* backup if dist_ur is not set */
-  if (0.0==dist_ur.x) {
-    dist_ur.x = box_x.x;
-    dist_ur.y = box_y.y;
-#ifndef TWOD
-    dist_ur.z = box_z.z;
-#endif
-  }
+  dist_t dist;
+  int flag, fzhlr, size, n, i, j, k;
 
   dist.dim = dist_dim;
   dist.ll  = dist_ll;
   dist.ur  = dist_ur;
+  size     = dist.dim.x * dist.dim.y;
+#ifndef TWOD
+  size    *= dist.dim.z;
+#endif
+  dist.size = size;
+  n = dist_presstens_flag ? 6 : 1; 
+
+  /* allocate distribution arrays */
+#ifdef MPI
+  dat_1 = (float   *) malloc( n * size * sizeof(float  ) );
+  num_1 = (integer *) malloc(     size * sizeof(integer) );
+  dat_2 = (float   *) malloc( n * size * sizeof(float  ) );
+  num_2 = (integer *) malloc(     size * sizeof(integer) );
+  if ((NULL==dat_1) || (NULL==num_1) || (NULL==dat_2) || (NULL==num_2))
+    error("Cannot allocate distribution data.");
+#else
+  dat_1 = (float   *) malloc( n * size * sizeof(float  ) );
+  num_1 = (integer *) malloc(     size * sizeof(integer) );
+  if ((NULL==dat_1) || (NULL==num_1))
+    error("Cannot allocate distribution data.");
+#endif
 
   flag = 1;
   fzhlr = steps / dist_int;
@@ -116,6 +131,17 @@ void write_distrib(int steps)
 				       "presszx", "presszx");
   }
 #endif /* SHOCK */
+
+  /* free distribution arrays */
+#ifdef MPI
+  free(dat_1);
+  free(num_1);
+  free(dat_2);
+  free(num_2);
+#else
+  free(dat_1);
+  free(num_1);
+#endif
 
 }
 
@@ -231,30 +257,7 @@ void dist_Ekin_comp_fun(float *dat, cell *p, int i)
 /* longitudinal kinetic energy */
 void dist_Ekin_long_fun(float *dat, cell *p, int i)
 {
-  float tmp;
-
-  /* average v_xx - u_p  relative to moving pistons */
-  tmp = shock_speed * MASSE(p,i);
-  /* plate against bulk */
-  if (shock_mode == 1) {
-    if ( ORT(p,i,X) < shock_strip ) 
-      *dat += SQR(IMPULS(p,i,X) - tmp) / (2*MASSE(p,i));
-    else
-      *dat += SQR(IMPULS(p,i,X)) / (2*MASSE(p,i));
-  }
-  /* two halves against one another */
-  if (shock_mode == 2) {
-    if ( ORT(p,i,X) < box_x.x*0.5 )
-      *dat += SQR(IMPULS(p,i,X) - tmp) / (2*MASSE(p,i));
-    else
-      *dat += SQR(IMPULS(p,i,X) + tmp) / (2*MASSE(p,i));
-  }
-  /* bulk against wall */
-  if (shock_mode == 3) 
-    *dat += SQR(IMPULS(p,i,X) - tmp) / (2*MASSE(p,i));
-  /* two mirrors */
-  if (shock_mode == 4) 
-    *dat += SQR(IMPULS(p,i,X)) / (2*MASSE(p,i));
+  *dat += SQR(IMPULS(p,i,X) - PXAVG(p,i)) / (2*MASSE(p,i));
 }
 
 #endif /* SHOCK */
@@ -273,41 +276,14 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
   real scalex, scaley, scalez, Ekin, tmp;
   int  num, numx, numy, numz, size;
   int  i, j, k;
-  static int n_max = 0;
-  static float   *dat_1 = NULL, *dat_2 = NULL;
-  static float   *min   = NULL, *max   = NULL;
-  static integer *num_1 = NULL, *num_2 = NULL;
-
-/*    printf("make_distrib_select %d\n",n); */
 
   /* the bins are orthogonal boxes in space */
   scalex = dist->dim.x / (dist->ur.x - dist->ll.x);
   scaley = dist->dim.y / (dist->ur.y - dist->ll.y);
-  size   = dist->dim.x * dist->dim.y;
 #ifndef TWOD
   scalez = dist->dim.z / (dist->ur.z - dist->ll.z);
-  size  *= dist->dim.z;
 #endif
-  dist->size   = size;
-
-  /* allocate distribution arrays */
-  if (n > n_max) {
-    dat_1 = (float   *) realloc( dat_1, n * size * sizeof(float  ) );
-    num_1 = (integer *) realloc( num_1,     size * sizeof(integer) );
-    min   = (float   *) realloc( min,   n *        sizeof(float  ) );
-    max   = (float   *) realloc( max,   n *        sizeof(float  ) );
-    if ((NULL==dat_1) || (NULL==num_1) || (NULL==min) || (NULL==max))
-      error("Cannot allocate distribution data.");
-  }
-#ifdef MPI
-  if (n > n_max) {
-    dat_2 = (float   *) realloc( dat_2, n * size * sizeof(float  ) );
-    num_2 = (integer *) realloc( num_2,     size * sizeof(integer) );
-    if ((NULL==dat_2) || (NULL==num_2))
-      error("Cannot allocate distribution data.");
-  }
-#endif
-  if (n > n_max) n_max = n;
+  size   = dist->size;
 
   /* clear distributions */
   for (i=0; i<n*size; i++) {
@@ -350,8 +326,6 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
   dist->dat = dat_1; 
   dist->num = num_1;
 #endif
-  dist->min = min;
-  dist->max = max;
 
   /* normalize distributions */
   if (myid==0) {
@@ -367,12 +341,14 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
     j=0;
     while (dist->num[j]==0) j++;
     for (k=0; k<n; k++) {
-      min[k] = dist->dat[j];
-      max[k] = dist->dat[j];
-      for (i=j+1; i<size; i++) {
-        if (dist->num[i]>0) {
-          dist->min[k]  = MIN( min[k],  dist->dat[n*i+k] );
-          dist->max[k]  = MAX( max[k],  dist->dat[n*i+k] );
+      dist->min[k] = dist->dat[n*j+k];
+      dist->max[k] = dist->dat[n*j+k];
+    }
+    for (i=j+1; i<size; i++) {
+      if (dist->num[i]>0) {
+        for (k=0; k<n; k++) {
+          dist->min[k]  = MIN( dist->min[k],  dist->dat[n*i+k] );
+          dist->max[k]  = MAX( dist->max[k],  dist->dat[n*i+k] );
 	}
       }
     }
