@@ -2852,9 +2852,12 @@ void calc_pxavg(void)
       else if (n >= dist_dim.x-1) {
         PXAVG(p,i) = dat_2[dist_dim.x-1];
       }
-      else {
+      else if (num_2[n]>0){
         real chi = (ORT(p,i,X) - n / scale) * scale; 
         PXAVG(p,i) = dat_2[n] * (1-chi) + chi * dat_2[n+1];
+      }
+      else { 
+	PXAVG(p,i) = dat_2[n];
       }
     }
   }

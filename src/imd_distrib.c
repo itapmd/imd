@@ -298,6 +298,7 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
   int  num, numx, numy, numz, size;
   int  i, j, k;
   int tmpdens;
+
   static int n_max = 0;
   static float   *dat_1 = NULL, *dat_2 = NULL;
   static float   *min   = NULL, *max   = NULL;
