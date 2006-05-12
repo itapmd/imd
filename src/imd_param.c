@@ -2318,15 +2318,6 @@ void check_parameters_complete()
   error("Option DIFFPAT is not supported in 2D");
 #endif
 
-  /* backup if dist_ur is not set */
-  if (0.0==dist_ur.x) {
-    dist_ur.x = box_x.x;
-    dist_ur.y = box_y.y;
-#ifndef TWOD
-    dist_ur.z = box_z.z;
-#endif
-  }
-
 }
 
 /*****************************************************************
@@ -2425,14 +2416,35 @@ void read_parameters(void)
       finished = tmp;
     } else {
       /* if not restart: delete files to which we append */
-      sprintf(fname,"%s.eng",              outfilename); unlink(fname);
-      sprintf(fname,"%s.minmax.Ekin",      outfilename); unlink(fname);
-      sprintf(fname,"%s.minmax.Epot",      outfilename); unlink(fname);
-      sprintf(fname,"%s.minmax.press",     outfilename); unlink(fname);
-      sprintf(fname,"%s.minmax.presstens", outfilename); unlink(fname);
-      sprintf(fname,"%s.minmax.shock",     outfilename); unlink(fname);
-      sprintf(fname,"%s.tempdist",         outfilename); unlink(fname);
-      sprintf(fname,"%s.msqd",             outfilename); unlink(fname);
+      sprintf(fname,"%s.eng",                 outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.Ekin",         outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.Epot",         outfilename); unlink(fname);
+#ifdef STRESS_TENS
+      sprintf(fname,"%s.minmax.press",        outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.presstens",    outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.presstens_xx", outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.presstens_yy", outfilename); unlink(fname);
+#ifndef TWOD
+      sprintf(fname,"%s.minmax.presstens_zz", outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.presstens_yz", outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.presstens_zx", outfilename); unlink(fname);
+#endif
+      sprintf(fname,"%s.minmax.presstens_xy", outfilename); unlink(fname);
+#endif /* STRESS_TENS */
+#ifdef SHOCK
+      sprintf(fname,"%s.minmax.vxavg",        outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.Ekin_long",    outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.Ekin_trans",   outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.Ekin_comp",    outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.shock_shear",  outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.shear_aniso",  outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.pressxy",      outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.pressyz",      outfilename); unlink(fname);
+      sprintf(fname,"%s.minmax.presszx",      outfilename); unlink(fname);
+#endif
+      sprintf(fname,"%s.minmax.dens",         outfilename); unlink(fname);
+      sprintf(fname,"%s.tempdist",            outfilename); unlink(fname);
+      sprintf(fname,"%s.msqd",                outfilename); unlink(fname);
     }
   }
 #ifdef MPI

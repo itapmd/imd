@@ -362,6 +362,14 @@ void dist_shock_shear_fun(float*, cell*, int);
 void dist_shear_aniso_fun(float*, cell*, int);
 void dist_press_fun      (float*, cell*, int);
 void dist_presstens_fun  (float*, cell*, int);
+void dist_presstens_xx_fun  (float*, cell*, int);
+void dist_presstens_yy_fun  (float*, cell*, int);
+#ifndef TWOD
+void dist_presstens_zz_fun  (float*, cell*, int);
+void dist_presstens_yz_fun  (float*, cell*, int);
+void dist_presstens_zx_fun  (float*, cell*, int);
+#endif
+void dist_presstens_xy_fun  (float*, cell*, int);
 void dist_pressoff_fun   (float*, cell*, int);
 void dist_pressxy_fun   (float*, cell*, int);
 void dist_pressyz_fun   (float*, cell*, int);

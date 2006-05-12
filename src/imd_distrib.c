@@ -35,6 +35,15 @@ void write_distrib(int steps)
   dist_t dist;
   int flag, fzhlr, size, n, i, j, k;
 
+  /* backup if dist_ur is not set */
+  if (0.0==dist_ur.x) {
+    dist_ur.x = box_x.x;
+    dist_ur.y = box_y.y;
+#ifndef TWOD
+    dist_ur.z = box_z.z;
+#endif
+  }
+
   dist.dim = dist_dim;
   dist.ll  = dist_ll;
   dist.ur  = dist_ur;
@@ -43,10 +52,21 @@ void write_distrib(int steps)
   size    *= dist.dim.z;
 #endif
   dist.size = size;
-  n = dist_presstens_flag ? 6 : 1; 
+#ifdef BGL
+  n = 1; /* here we write presstens components in separate files */
+#else
+  n = dist_presstens_flag ? DIM*(DIM+1)/2 : 1; 
+#endif
 
   /* allocate distribution arrays */
-#ifdef MPI
+#ifdef MPI2
+  MPI_Alloc_mem( n * size * sizeof(float),   MPI_INFO_NULL, &dat_1 );
+  MPI_Alloc_mem(     size * sizeof(integer), MPI_INFO_NULL, &num_1 );
+  MPI_Alloc_mem( n * size * sizeof(float),   MPI_INFO_NULL, &dat_2 );
+  MPI_Alloc_mem(     size * sizeof(integer), MPI_INFO_NULL, &num_2 );
+  if ((NULL==dat_1) || (NULL==num_1) || (NULL==dat_2) || (NULL==num_2))
+    error("Cannot allocate distribution data.");
+#elif defined(MPI)
   dat_1 = (float   *) malloc( n * size * sizeof(float  ) );
   num_1 = (integer *) malloc(     size * sizeof(integer) );
   dat_2 = (float   *) malloc( n * size * sizeof(float  ) );
@@ -86,18 +106,37 @@ void write_distrib(int steps)
 #else
     sprintf(contents, "P_xx P_yy P_zz P_yz P_zx P_xy");
 #endif
+#ifdef BGL
+    /* to save memory, we write each componend in separate file */
+    make_distrib_select( &dist, 1, &flag, dist_presstens_xx_fun);
+    if (myid==0) write_distrib_select( &dist, dist_presstens_flag, 
+                       1, fzhlr, "presstens_xx", "presstens_xx" );
+    make_distrib_select( &dist, 1, &flag, dist_presstens_yy_fun);
+    if (myid==0) write_distrib_select( &dist, dist_presstens_flag, 
+                       1, fzhlr, "presstens_yy", "presstens_yy" );
+#ifndef TWOD
+    make_distrib_select( &dist, 1, &flag, dist_presstens_zz_fun);
+    if (myid==0) write_distrib_select( &dist, dist_presstens_flag, 
+                       1, fzhlr, "presstens_zz", "presstens_zz" );
+    make_distrib_select( &dist, 1, &flag, dist_presstens_yz_fun);
+    if (myid==0) write_distrib_select( &dist, dist_presstens_flag, 
+                       1, fzhlr, "presstens_yz", "presstens_yz" );
+    make_distrib_select( &dist, 1, &flag, dist_presstens_zx_fun);
+    if (myid==0) write_distrib_select( &dist, dist_presstens_flag, 
+                       1, fzhlr, "presstens_zx", "presstens_zx" );
+#endif
+    make_distrib_select( &dist, 1, &flag, dist_presstens_xy_fun);
+    if (myid==0) write_distrib_select( &dist, dist_presstens_flag, 
+                       1, fzhlr, "presstens_xy", "presstens_xy" );
+#else
     make_distrib_select( &dist, DIM*(DIM+1)/2, &flag, dist_presstens_fun);
     if (myid==0) write_distrib_select( &dist, dist_presstens_flag, 
                               DIM*(DIM+1)/2, fzhlr, "presstens", contents);
+#endif /* BGL */
   }
 #endif /* STRESS_TENS */
 
 #ifdef SHOCK
-  if (dist_dens_flag) {
-    make_distrib_select( &dist, -1, &flag, dist_dens_fun);
-    if (myid==0) write_distrib_select( &dist, dist_dens_flag, -1, fzhlr, 
-                                       "dens", "dens");
-  }
   if (dist_vxavg_flag) {
     make_distrib_select( &dist, 1, &flag, dist_vxavg_fun);
     if (myid==0) write_distrib_select( &dist, dist_vxavg_flag, 1, fzhlr, 
@@ -141,8 +180,29 @@ void write_distrib(int steps)
   }
 #endif /* SHOCK */
 
+  if (dist_dens_flag) {
+    /* if we haven't filled dist.num yet */
+    if (flag) make_distrib_select( &dist, 1, &flag, dist_Epot_fun);
+    if (myid==0) {
+      real fac = size / volume;
+      dist.max[0] = 0.0;
+      dist.min[0] = 1e10;
+      for (i=0; i<size; i++) { 
+        dist.dat[i] = dist.num[i] * fac;
+        dist.max[0] = MAX( dist.max[0], dist.dat[i] );
+        dist.min[0] = MIN( dist.min[0], dist.dat[i] );
+      }
+      write_distrib_select( &dist, dist_dens_flag, 1, fzhlr, "dens", "dens");
+    }
+  }
+
   /* free distribution arrays */
-#ifdef MPI
+#ifdef MPI2
+  MPI_Free_mem(dat_1);
+  MPI_Free_mem(num_1);
+  MPI_Free_mem(dat_2);
+  MPI_Free_mem(num_2);
+#elif defined(MPI)
   free(dat_1);
   free(num_1);
   free(dat_2);
@@ -200,7 +260,7 @@ void dist_press_fun(float *dat, cell *p, int i)
 
 /******************************************************************************
 *
-*  selection function for pressure tensor
+*  selection functions for pressure tensor
 *
 ******************************************************************************/
 
@@ -215,6 +275,40 @@ void dist_presstens_fun(float *dat, cell *p, int i)
   dat[k++] += PRESSTENS(p,i,zx);
 #endif
   dat[k++] += PRESSTENS(p,i,xy);
+}
+
+void dist_presstens_xx_fun(float *dat, cell *p, int i)
+{
+  *dat += PRESSTENS(p,i,xx);
+}
+
+void dist_presstens_yy_fun(float *dat, cell *p, int i)
+{
+  *dat += PRESSTENS(p,i,yy);
+}
+
+#ifndef TWOD
+
+void dist_presstens_zz_fun(float *dat, cell *p, int i)
+{
+  *dat += PRESSTENS(p,i,zz);
+}
+
+void dist_presstens_yz_fun(float *dat, cell *p, int i)
+{
+  *dat += PRESSTENS(p,i,yz);
+}
+
+void dist_presstens_zx_fun(float *dat, cell *p, int i)
+{
+  *dat += PRESSTENS(p,i,zx);
+}
+
+#endif
+
+void dist_presstens_xy_fun(float *dat, cell *p, int i)
+{
+  *dat += PRESSTENS(p,i,xy);
 }
 
 #endif /* STRESS_TENS */
@@ -269,12 +363,6 @@ void dist_Ekin_long_fun(float *dat, cell *p, int i)
   *dat += SQR(IMPULS(p,i,X) - PXAVG(p,i)) / (2*MASSE(p,i));
 }
 
-/* average density */
-void dist_dens_fun(float *dat, cell *p, int i)
-{
-  *dat += 1.;
-}
-
 /* average sample velocity */
 void dist_vxavg_fun(float *dat, cell *p, int i)
 {
@@ -297,7 +385,6 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
   real scalex, scaley, scalez, Ekin, tmp;
   int  num, numx, numy, numz, size;
   int  i, j, k;
-  int tmpdens;
 
   /* the bins are orthogonal boxes in space */
   scalex = dist->dim.x / (dist->ur.x - dist->ll.x);
@@ -306,9 +393,6 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
   scalez = dist->dim.z / (dist->ur.z - dist->ll.z);
 #endif
   size   = dist->size;
-
-  tmpdens=0;
-  if (n==-1) {n=1;tmpdens=1;}
 
   /* clear distributions */
   for (i=0; i<n*size; i++) {
@@ -356,9 +440,7 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
   if (myid==0) {
     for (i=0; i < size; i++) {
       if (dist->num[i] > 0) {
-	if (tmpdens==0) {
-	  for (j=0; j<n; j++) dist->dat[n*i+j] /= dist->num[i];
-	}
+        for (j=0; j<n; j++) dist->dat[n*i+j] /= dist->num[i];
       }
     }
   }
@@ -395,10 +477,6 @@ void write_distrib_select( dist_t *dist, int mode, int n, int fzhlr,
   FILE *outfile;
   char fname[255];
   int i, j, count, r, s, t;
-  int tmpdens;
-
-  tmpdens=0;
-  if (n==-1) {n=1;tmpdens=1;}
 
   /* write minmax */
   sprintf(fname, "%s.minmax.%s", outfilename, suffix);
@@ -435,12 +513,7 @@ void write_distrib_select( dist_t *dist, int mode, int n, int fzhlr,
             fprintf(outfile, "%d %d %d", r, s, t);
 #endif
           }
-	  if (tmpdens==0) {
-	    for (j=0; j<n; j++) fprintf(outfile," %e", dist->dat[i++]);
-	  }
-	  if (tmpdens==1) {
-	    for (j=0; j<n; j++) fprintf(outfile," %e", dist->dat[i++]*dist->dim.x/box_x.x*dist->dim.y/box_y.y*dist->dim.z/box_z.z);
-	  }
+          for (j=0; j<n; j++) fprintf(outfile," %e", dist->dat[i++]);
           fprintf(outfile, "\n");
         }
   }
