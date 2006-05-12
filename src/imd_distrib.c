@@ -299,18 +299,6 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
   int  i, j, k;
   int tmpdens;
 
-  static int n_max = 0;
-  static float   *dat_1 = NULL, *dat_2 = NULL;
-  static float   *min   = NULL, *max   = NULL;
-  static integer *num_1 = NULL, *num_2 = NULL;
-
-/*  printf("%d ",n); */
-
-  tmpdens=0;
-  if (n==-1) {n=1;tmpdens=1;}
-
-/*    printf("make_distrib_select %d\n",n); */
-
   /* the bins are orthogonal boxes in space */
   scalex = dist->dim.x / (dist->ur.x - dist->ll.x);
   scaley = dist->dim.y / (dist->ur.y - dist->ll.y);
@@ -318,6 +306,9 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
   scalez = dist->dim.z / (dist->ur.z - dist->ll.z);
 #endif
   size   = dist->size;
+
+  tmpdens=0;
+  if (n==-1) {n=1;tmpdens=1;}
 
   /* clear distributions */
   for (i=0; i<n*size; i++) {
