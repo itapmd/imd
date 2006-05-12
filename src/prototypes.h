@@ -366,6 +366,8 @@ void dist_pressoff_fun   (float*, cell*, int);
 void dist_pressxy_fun   (float*, cell*, int);
 void dist_pressyz_fun   (float*, cell*, int);
 void dist_presszx_fun   (float*, cell*, int);
+void dist_dens_fun   (float*, cell*, int);
+void dist_vxavg_fun   (float*, cell*, int);
 
 #ifdef ATDIST
 void   init_atdist(void);

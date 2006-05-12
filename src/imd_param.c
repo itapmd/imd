@@ -497,6 +497,14 @@ void getparamfile(char *paramfname, int sim)
       /* write shear aniso dist? */
       getparam(token,&dist_shear_aniso_flag,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token,"dist_dens_flag")==0) {
+      /* write density dist? */
+      getparam(token,&dist_dens_flag,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"dist_vxavg_flag")==0) {
+      /* write average sample velocity? */
+      getparam(token,&dist_vxavg_flag,PARAM_INT,1,1);
+    }
     else if (strcasecmp(token,"pic_int")==0) {
       /* number of steps between picture writes */
       getparam("pic_int",&pic_int,PARAM_INT,1,1);
@@ -1159,7 +1167,7 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"exp_interval")==0) {
       /* period of expansion intervals */
       getparam(token,&exp_interval,PARAM_INT,1,1);
-      warning_str("Paramter %s is deprecated, please consult manual!",token);
+      warning_str("Parameter %s is deprecated, please consult manual!",token);
     }
     else if (strcasecmp(token,"expansion")==0) {
       /* expansion */
@@ -1168,7 +1176,7 @@ void getparamfile(char *paramfname, int sim)
     else if (strcasecmp(token,"hom_interval")==0) {
       /* period of homshear intervals */
       getparam(token,&hom_interval,PARAM_INT,1,1);
-      warning_str("Paramter %s is deprecated, please consult manual!",token);
+      warning_str("Parameter %s is deprecated, please consult manual!",token);
     }
     else if (strcasecmp(token,"shear_factor")==0) {
       /* maximum shear */
@@ -2483,6 +2491,8 @@ void broadcast_params() {
   MPI_Bcast( &dist_presstens_flag,   1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_shock_shear_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_shear_aniso_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_dens_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_vxavg_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &box_from_header,       1, MPI_INT, 0, MPI_COMM_WORLD); 
 
 #ifdef TWOD

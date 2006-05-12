@@ -177,6 +177,8 @@ EXTERN int dist_shear_aniso_flag INIT(0); /* write shear aniso dists? */
 EXTERN int dist_press_flag       INIT(0); /* write press dists? */
 EXTERN int dist_pressoff_flag    INIT(0); /* write press off diag dists? */
 EXTERN int dist_presstens_flag   INIT(0); /* write presstens dists? */
+EXTERN int dist_dens_flag   INIT(0); /* write density dists? */
+EXTERN int dist_vxavg_flag   INIT(0); /* write average sample velocity dists? */
 EXTERN int dist_int              INIT(0); /* Period of distribution writes */
 EXTERN ivektor dist_dim          INIT(einsivektor); /* resolution of dist */
 EXTERN vektor  dist_ur           INIT(nullvektor);  /* lower left  corner */

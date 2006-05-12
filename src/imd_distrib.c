@@ -1,4 +1,3 @@
-
 /******************************************************************************
 *
 * IMD -- The ITAP Molecular Dynamics Program
@@ -94,6 +93,16 @@ void write_distrib(int steps)
 #endif /* STRESS_TENS */
 
 #ifdef SHOCK
+  if (dist_dens_flag) {
+    make_distrib_select( &dist, -1, &flag, dist_dens_fun);
+    if (myid==0) write_distrib_select( &dist, dist_dens_flag, -1, fzhlr, 
+                                       "dens", "dens");
+  }
+  if (dist_vxavg_flag) {
+    make_distrib_select( &dist, 1, &flag, dist_vxavg_fun);
+    if (myid==0) write_distrib_select( &dist, dist_vxavg_flag, 1, fzhlr, 
+                                       "vxavg", "vxavg");
+  }
   if (dist_Ekin_long_flag) {
     make_distrib_select( &dist, 1, &flag, dist_Ekin_long_fun);
     if (myid==0) write_distrib_select( &dist, dist_Ekin_long_flag, 1, fzhlr, 
@@ -260,6 +269,18 @@ void dist_Ekin_long_fun(float *dat, cell *p, int i)
   *dat += SQR(IMPULS(p,i,X) - PXAVG(p,i)) / (2*MASSE(p,i));
 }
 
+/* average density */
+void dist_dens_fun(float *dat, cell *p, int i)
+{
+  *dat += 1.;
+}
+
+/* average sample velocity */
+void dist_vxavg_fun(float *dat, cell *p, int i)
+{
+  *dat += IMPULS(p,i,X) / MASSE(p,i);
+}
+
 #endif /* SHOCK */
 
 
@@ -276,6 +297,18 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
   real scalex, scaley, scalez, Ekin, tmp;
   int  num, numx, numy, numz, size;
   int  i, j, k;
+  int tmpdens;
+  static int n_max = 0;
+  static float   *dat_1 = NULL, *dat_2 = NULL;
+  static float   *min   = NULL, *max   = NULL;
+  static integer *num_1 = NULL, *num_2 = NULL;
+
+/*  printf("%d ",n); */
+
+  tmpdens=0;
+  if (n==-1) {n=1;tmpdens=1;}
+
+/*    printf("make_distrib_select %d\n",n); */
 
   /* the bins are orthogonal boxes in space */
   scalex = dist->dim.x / (dist->ur.x - dist->ll.x);
@@ -331,10 +364,12 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
   if (myid==0) {
     for (i=0; i < size; i++) {
       if (dist->num[i] > 0) {
-        for (j=0; j<n; j++) dist->dat[n*i+j] /= dist->num[i];
+	if (tmpdens==0) {
+	  for (j=0; j<n; j++) dist->dat[n*i+j] /= dist->num[i];
+	}
       }
     }
-  } 
+  }
 
   /* compute minima and maxima of distributions */
   if (myid==0) {
@@ -368,6 +403,10 @@ void write_distrib_select( dist_t *dist, int mode, int n, int fzhlr,
   FILE *outfile;
   char fname[255];
   int i, j, count, r, s, t;
+  int tmpdens;
+
+  tmpdens=0;
+  if (n==-1) {n=1;tmpdens=1;}
 
   /* write minmax */
   sprintf(fname, "%s.minmax.%s", outfilename, suffix);
@@ -404,7 +443,12 @@ void write_distrib_select( dist_t *dist, int mode, int n, int fzhlr,
             fprintf(outfile, "%d %d %d", r, s, t);
 #endif
           }
-          for (j=0; j<n; j++) fprintf(outfile," %e", dist->dat[i++]);
+	  if (tmpdens==0) {
+	    for (j=0; j<n; j++) fprintf(outfile," %e", dist->dat[i++]);
+	  }
+	  if (tmpdens==1) {
+	    for (j=0; j<n; j++) fprintf(outfile," %e", dist->dat[i++]*dist->dim.x/box_x.x*dist->dim.y/box_y.y*dist->dim.z/box_z.z);
+	  }
           fprintf(outfile, "\n");
         }
   }
