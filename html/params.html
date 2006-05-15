@@ -73,12 +73,21 @@ dist_ur         # upper right corner in user coords
 # 0=no (default), 1=binary, 2=ASCII with bin coords, 3=ASCII no bin coords)
 dist_Epot_flag         # potential energy 
 dist_Ekin_flag         # kinetic energy 
-dist_Ekin_long_flag    # longitudinal kinetic energy (shock wave simulation) 
-dist_Ekin_trans_flag   # transversal kinetic energy (shock wave simulation) 
-dist_press_flag        # scalar pressure (requires option stress) 
 dist_presstens_flag    # pressure tensor (option stress, 
                        # all components in one file) 
+dist_Ekin_long_flag    # longitudinal kinetic energy (shock wave simulation) 
+dist_Ekin_trans_flag   # transversal kinetic energy (shock wave simulation) 
+dist_Ekin_comp_flag    # transversal kinetic energy difference between
+                       # transverse directions for anisotopic samples (shock
+		       # wave simulation) 
+dist_press_flag        # scalar pressure (requires option stress) 
+dist_pressoff_flag     # off-diagonal entries of the pressure tensor (shock
+                       # wave simulation) 
 dist_shock_shear_flag  # shear stress (shock wave simulation)
+dist_shear_aniso_flag  # shear stress difference between transverse directions
+                       # for anisotopic samples (shock wave simulation)
+dist_dens_flag         # local density (shock wave simulation)
+dist_vxavg_flag        # local sample velocity
 
 # temperature, pressure, and related stuff
 # required if ensemble supports temperature or pressure control
