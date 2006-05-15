@@ -277,10 +277,15 @@ max_deform_int  # deform if number of steps since last deformation is
 rigid           # types and restrictions for definition of superatoms
 
 # parameters for <a href="options.html#shock">shock</a>
-shock_strip      # shock strip width (in x dir.)
-shock_speed      # shock speed (in x dir.)
-shock_mode       # 1 left part is slammed into right part
-                 # 2 both parts are slammed into oneanother
+shock_strip       # shock strip width (in x dir.)
+shock_speed       # shock speed (in x dir.)
+shock_mode        # 1 left part is slammed into right part
+                  # 2 both parts are slammed into oneanother
+                  # 3 sample against fixed wall
+                  # 4 both parts are slammed into oneanother
+shock_incr        # for shock mode 3: linear acceleration of the piston
+shock_speed_left  # for shock mode 4: speed of the left mirror
+shock_speed_right # for shock mode 4: speed of the right mirror
 
 # parameters for STRESS_TENS
 press_dim        # dimensions of pressure histogram
