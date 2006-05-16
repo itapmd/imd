@@ -44,40 +44,41 @@ their purpose is and how they are used.</p>
 <tr align="left">
 <td width="120"><a href="#homdef">homdef</a></td>
 <td width="120"><a href="#covalent">keating</a></td>
+<td width="120"><a href="#laser">laser</a></td>
 <td width="120"><a href="#mono">mono</a></td>
 <td width="120"><a href="#monolj">monolj</a></td>
 <td width="120"><a href="#msqd">msqd</a></td>
-<td width="120"><a href="#nbl">nbl</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#nbl">nbl</a></td>
 <td width="120"><a href="#nnbr">nnbr</a></td>
 <td width="120"><a href="#ordpar">ordpar</a></td>
 <td width="120"><a href="#pacx">pacx</a></td>
 <td width="120"><a href="#pair">pair</a></td>
 <td width="120"><a href="#prof">prof</a></td>
-<td width="120"><a href="#quasi">quasi</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#quasi">quasi</a></td>
 <td width="120"><a href="#rigid">rigid</a></td>
 <td width="120"><a href="#single">single</a></td>
 <td width="120"><a href="#sock">sock</a></td>
 <td width="120"><a href="#shock">shock</a></td>
 <td width="120"><a href="#covalent">stiweb</a></td>
-<td width="120"><a href="#stress_tens">stress</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#stress_tens">stress</a></td>
 <td width="120"><a href="#covalent">tersoff</a></td>
 <td width="120"><a href="#covalent">tersoff2</a></td>
 <td width="120"><a href="#timing">timing</a></td>
 <td width="120"><a href="#transport">transport</a></td>
 <td width="120"><a href="#covalent">ttbp</a></td>
-<td width="120"><a href="#uniax">uniax</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#uniax">uniax</a></td>
 <td width="120"><a href="#writef">writef</a></td>
 </tr>
 </table>
@@ -524,6 +525,18 @@ the start of the simulation only. It is therefore not possible to
 start a shockwave in a later phase of a multiphase simulation.
 Therefore, this option is <a href="limitations.html">not multiphase
 ready</a>. </p>
+</dd>
+
+<dt><a id="laser" name="laser"><b>laser</b></a></dt>
+<dd>
+<p>This option incorporates parameters for laser irradiation of
+sample surfaces. At the moment, this is limited to inscribing
+exponential temperature profiles in the do_maxwell routine at timestep 0, and only at timestep 0. Usage of the <b>laser</b> toolbox is therefore <a href="limitations.html">not multiphase
+ready</a> either. This will change with the implementation of a temperature scaling algorithm in the near future.
+
+</p>
+<p>
+</p>
 </dd>
 
 <dt><a id="transport" name="transport"><b>transport</b></a></dt>

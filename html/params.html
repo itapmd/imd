@@ -237,6 +237,26 @@ strainrate       # with this strainrate
 gamma_bar        # damping coefficent
 dampingmode      # O: viscous damping (default) 1: Nose-Hover
 
+# parameters for LASER option
+
+laser_dir        # direction of incidence of laser, only along one
+                 # coordinate axis. ( e.g. 1 0 0 for incidence along x )
+                 # The sample should not reach into the negative range of
+                 # this axis, its surface should be at 0.
+laser_delta_temp # if != 0, modifies the effect of the do_maxwell option
+                 # to inscribe an exponential temperature profile along
+                 # laser_dir into the sample, assuming that its surface
+                 # lies at 0. This option will give the temperature at its
+                 # maximum on the surface, together with the starttemp option,
+                 # which will add to the temperature profile.
+                 # Don't forget to set
+                 # do_maxwell 1 if you intend to use this.
+laser_mu         # absorption coefficient, or inverse absorption length
+                 # for the exponential temperature gradient and the scaling
+                 # laser heating, the latter still to be implemented.
+                 # laser intensity will have fallen to 1/e after penetrating to
+                 # a depth of 1/laser_mu.
+
 # additional parameters for FTG
 delta_ftg        # ???
 gamma_min
