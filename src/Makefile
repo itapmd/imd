@@ -782,6 +782,11 @@ CFLAGS  += -DKEATING
 FORCESOURCES += ${COVALENTSOURCES}
 endif
 
+#LASER
+ifneq (,$(strip $(findstring laser,${MAKETARGET})))
+CFLAGS += -DLASER
+endif
+
 # UNIAX
 ifneq (,$(strip $(findstring uniax,${MAKETARGET})))
 CFLAGS  += -DUNIAX

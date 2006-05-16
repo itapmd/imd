@@ -31,6 +31,7 @@
 #define einsvektor  { 1.0, 1.0 }
 #define einsivektor { 1, 1 }
 #define parteinsivektor { 1, 0 }
+#define xivektor    { 1, 0 }
 #define nullsymtensor { 0.0, 0.0, 0.0 }
 #else
 #define nullvektor  { 0.0, 0.0, 0.0 }
@@ -38,6 +39,7 @@
 #define einsvektor  { 1.0, 1.0, 1.0 }
 #define einsivektor { 1, 1, 1 }
 #define parteinsivektor { 1, 1, 0 }
+#define xivektor    { 1, 0, 0 }
 #define nullsymtensor { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
 #endif
 
@@ -647,8 +649,18 @@ EXTERN real heat_transfer INIT(0.0);   /* total (integrated) heat transfer */
 EXTERN int  exch_interval INIT(0);     /* interval between particle exchange */
 #endif
 #ifdef TRANSPORT
-EXTERN int  tran_interval INIT(0);     /* Intervalle der Temperaturaufz.*/
+EXTERN int  tran_interval INIT(0);     /* Intervals of temperature recording.*/
 EXTERN int  tran_nlayers  INIT(0);     /* number of layers*/
+#endif
+
+#ifdef LASER /* Inscribe continuous exponential temperature gradient
+		in maxwell(real temp).
+		Default values will result in no gradient.                   */
+
+EXTERN real laser_delta_temp INIT(0.0);   /* maximum Temperature added
+				             (at surface of the sample)      */
+EXTERN real laser_mu	  INIT(0.0);   /* absorption coefficient             */
+EXTERN ivektor laser_dir  INIT(xivektor); /* direction of laser incidence    */
 #endif
 
 #ifdef STRESS_TENS

@@ -73,6 +73,22 @@ void main_loop(void)
     if (do_maxwell) maxwell(temperature);
     do_maxwell=0;
   }
+#ifdef LASER
+if (0==myid) {
+      printf( "Parameter laser_delta_temp is  %1.10f\n", laser_delta_temp );
+      printf( "Laser irradiates from direction (%d, %d, %d)\n", laser_dir.x,
+	      laser_dir.y
+#ifndef TWOD
+            , laser_dir.z
+#endif /*TWOD*/
+             );
+      if (laser_mu==0.0) {
+	printf( "Absorption length is infinite.\n\n" );
+      } else {
+        printf( "Absorption length is %1.10f\n\n", 1.0/laser_mu );
+      }
+  }
+#endif /*LASER*/
 
 #if defined(FRAC) || defined(FTG) 
   if (0==myid) {

@@ -52,6 +52,9 @@ void maxwell(real temp)
 #ifdef DAMP
    real tmp1,tmp2,tmp3,f,maxax,maxax2;
 #endif
+#ifdef LASER
+   real depth;
+#endif
 
 #ifdef UNIAX
    real xisq;
@@ -89,6 +92,18 @@ void maxwell(real temp)
       p = CELLPTR(k);
 
       for (i=0; i<p->n; ++i) {
+#ifdef LASER
+	 depth =   laser_dir.x * ORT(p,i,X)
+		 + laser_dir.y * ORT(p,i,Y)
+#ifndef TWOD
+		 + laser_dir.z * ORT(p,i,Z)
+#endif
+	 ;
+	 
+	 TEMP =  laser_delta_temp * exp(-laser_mu * depth);
+         TEMP += temperature; /* add base temperature of sample */
+
+#endif /* LASER */
 
 #ifdef NVX
          /* which layer? */

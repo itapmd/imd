@@ -1519,6 +1519,21 @@ void getparamfile(char *paramfname, int sim)
       getparam("tran_interval", &tran_interval, PARAM_INT, 1,1);
     }
 #endif
+#ifdef LASER
+else if (strcasecmp(token, "laser_delta_temp")==0){
+      /* maximum heat added by laser (generally at the surface) */
+      getparam("laser_delta_temp", &laser_delta_temp, PARAM_REAL, 1,1);
+    }
+else if (strcasecmp(token, "laser_mu")==0){
+      /* absorption coefficient */
+      getparam("laser_mu", &laser_mu, PARAM_REAL, 1,1);
+    }
+else if (strcasecmp(token, "laser_dir")==0){
+      /* direction of incidence of laser
+       ( for now only along coordinate axes ) */
+      getparam("laser_dir", &laser_dir, PARAM_INT, DIM, DIM);
+    }
+#endif
 #ifdef STRESS_TENS
      else if (strcasecmp(token, "press_int")==0){
       /* number of steps between pressure writes  */
@@ -2258,6 +2273,33 @@ void check_parameters_complete()
 	  error ("Tright is missing or zero.");
 	}
 #endif
+#ifdef LASER
+        if (laser_dir.x!=0){
+	  laser_dir.x=1;
+          if (laser_dir.y!=0
+#ifndef TWOD
+	      || laser_dir.z!=0
+#endif
+              ){
+            error("Sorry: Laser incidence only along a single coordinate axis (for the moment).\n");
+          }
+        }   
+        else if (laser_dir.y!=0){
+          laser_dir.y=1;
+#ifndef TWOD
+          if (laser_dir.z!=0){
+            error("Sorry: Laser incidence only along a single coordinate axis (for the moment).\n");
+          }
+        }
+        else if (laser_dir.z!=0){
+          laser_dir.z=1;
+#endif
+        }
+        else{
+          error("Please give the direction of laser incidence (option laser_dir in the parameter file).\n");
+        }
+
+#endif
 #ifdef MPI
         {
 #ifdef TWOD
@@ -2739,6 +2781,11 @@ void broadcast_params() {
 #ifdef TRANSPORT
   MPI_Bcast( &tran_nlayers,  1, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &tran_interval, 1, MPI_INT,  0, MPI_COMM_WORLD);
+#endif
+#ifdef LASER
+  MPI_Bcast( &laser_dir,  DIM , MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &laser_mu,         1, REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &laser_delta_temp, 1, REAL,  0, MPI_COMM_WORLD);
 #endif
 #ifdef STRESS_TENS
   MPI_Bcast( &press_int    , 1, MPI_INT, 0, MPI_COMM_WORLD);
