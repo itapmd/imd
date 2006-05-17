@@ -86,16 +86,30 @@ Currently, distributions of the following quantities are are supported:
 <tr><th>Flag name             </th><th> Quantity                     </th></tr>
 <tr><td>dist_Epot_flag        </td><td> potential energy             </td></tr>
 <tr><td>dist_Ekin_flag        </td><td> kinetic energy               </td></tr>
+<tr><td>dist_presstens_flag   </td><td> pressure tensor (option stress, 
+                                        all components in one file)  </td></tr>
 <tr><td>dist_Ekin_long_flag   </td><td> longitudinal kinetic energy 
                                         (shock wave simulation)      </td></tr>
 <tr><td>dist_Ekin_trans_flag  </td><td> transversal kinetic energy 
                                         (shock wave simulation)      </td></tr>
+<tr><td>dist_Ekin_comp_flag   </td><td> transversal kinetic energy difference between </td></tr>
+  <tr><td>               </td><td> transverse directions for anisotropic samples </td></tr>
+ <tr><td>                   </td><td>  (shock wave simulation) </td></tr>
 <tr><td>dist_press_flag       </td><td> scalar pressure (requires 
                                         option stress)               </td></tr>
-<tr><td>dist_presstens_flag   </td><td> pressure tensor (option stress, 
-                                        all components in one file)  </td></tr>
+<tr><td>dist_pressoff_flag    </td><td>   off-diagonal entries of the pressure tensor (shock </td></tr>
+<tr><td>                       </td><td>  wave simulation)  </td></tr>
 <tr><td>dist_shock_shear_flag </td><td> shear stress 
                                         (shock wave simulation)      </td></tr>
+
+<tr><td>dist_shear_aniso_flag  </td><td>  shear stress difference between transverse directions </td></tr>
+  <tr><td>                     </td><td>  for anisotopic samples (shock wave simulation) </td></tr>
+<tr><td>dist_dens_flag         </td><td>  local density (shock wave simulation) </td></tr>
+<tr><td>dist_vxavg_flag        </td><td>  local sample velocity </td></tr>
+
+
+
+
 </table>
 
 <h2><a id="disloc" name="disloc">Writing Selected Atoms</a></h2>
