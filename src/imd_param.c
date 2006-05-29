@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -298,9 +298,11 @@ void getparamfile(char *paramfname, int sim)
     res=fgets(buffer,1024,pf);
     if (NULL == res) { finished=1; break; }; /* probably EOF reached */
     curline++;
+    /* delete comments */
+    res = strchr(buffer, '#');
+    if (res) *res = '\0';
     token = strtok(buffer," =\t\r\n");
     if (NULL == token) continue; /* skip blank lines */
-    if (token[0]=='#') continue; /* skip comments */
 
     if (strcasecmp(token,"simulation")==0) {
       /* get number of the simulation phase */
@@ -661,7 +663,6 @@ void getparamfile(char *paramfname, int sim)
       for (i=0; rigidv[i]!=-1; i++)
 	;
       superatomsize = i - DIM;
-
       /* construct vector superatom */
       for (i=0; i<superatomsize; i++) {
 	if ( rigidv[i] > vtypes - 1 )
