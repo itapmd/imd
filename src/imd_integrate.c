@@ -319,7 +319,7 @@ void move_atoms_nve(void)
 #endif
 
 #ifdef SHOCK
-      if (shock_mode == 3) {
+      if (shock_mode == 3 && timestep > 1) {
         if (ORT(p,i,X) > box_x.x) {
           IMPULS(p,i,X) = -IMPULS(p,i,X);
           ORT(p,i,X) = 2 * box_x.x - ORT(p,i,X);
