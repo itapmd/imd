@@ -176,7 +176,7 @@ void read_atoms(str255 infilename)
   natoms  = 0;
   nactive = 0;
 #ifdef SHOCK
-  do_maxwell=1;
+  if ( steps_min ==0 ) do_maxwell=1;
 #endif
 
   /* read away header; if have_header==2, header is in separate file */
