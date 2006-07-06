@@ -1088,8 +1088,8 @@ void pack_dF( msgbuf *b, int k, int l, int m, vektor v )
 #endif
 #ifdef ADP
     b->data[ j++ ] = ADP_MU    (from,i,X);
-    b->data[ j++ ] = ADP_MU    (from,i,X);
-    b->data[ j++ ] = ADP_MU    (from,i,X);
+    b->data[ j++ ] = ADP_MU    (from,i,Y);
+    b->data[ j++ ] = ADP_MU    (from,i,Z);
     b->data[ j++ ] = ADP_LAMBDA(from,i,xx);
     b->data[ j++ ] = ADP_LAMBDA(from,i,yy);
     b->data[ j++ ] = ADP_LAMBDA(from,i,zz);
@@ -1125,8 +1125,8 @@ void pack_rho( msgbuf *b, int k, int l, int m )
 #endif
 #ifdef ADP
     b->data[ j++ ] = ADP_MU    (from,i,X);
-    b->data[ j++ ] = ADP_MU    (from,i,X);
-    b->data[ j++ ] = ADP_MU    (from,i,X);
+    b->data[ j++ ] = ADP_MU    (from,i,Y);
+    b->data[ j++ ] = ADP_MU    (from,i,Z);
     b->data[ j++ ] = ADP_LAMBDA(from,i,xx);
     b->data[ j++ ] = ADP_LAMBDA(from,i,yy);
     b->data[ j++ ] = ADP_LAMBDA(from,i,zz);
