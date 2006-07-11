@@ -10,7 +10,7 @@
 
 /******************************************************************************
 *
-* imd_io_3d.c -- 3D-specific IO routines
+* imd_io_3d.c -- 3D-specific IO routines (now also used for 2D)
 *
 ******************************************************************************/
 
@@ -48,7 +48,7 @@ void read_atoms(str255 infilename)
   FILE *infile=NULL;
   char buf[1024];
   long addnumber = 0;
-  int  p=0, k, maxc1=0, maxc2;
+  int  p=0, k, maxc1=0, maxc2, count_atom;
   int  i, s, n, to_cpu, have_header=0, count;
   vektor   pos, axe;
   ivektor  cellc;
@@ -85,7 +85,12 @@ void read_atoms(str255 infilename)
 
 #ifdef MPI
 
-  /* Try opening a per cpu file first when parallel_input is active */
+  /* size of temporary input buffers */
+  if (inp_grp_size > 1)
+    inbuf_size = INPUT_BUF_SIZE * 1048576 / (sizeof(real) * inp_grp_size); 
+
+#ifndef BGL
+  /* Try opening first a per cpu file - not supported on BlueGene/L */
   if (1==parallel_input) {
     sprintf(buf,"%s.%u",infilename,myid); 
     infile = fopen(buf,"r");
@@ -102,28 +107,37 @@ void read_atoms(str255 infilename)
       addnumber=1;
       if (have_header) broadcast_header(&info);
     }
-  } else if (0!=myid) {
+  } else 
+#endif
+  if (myid != my_inp_id) {
     recv_atoms();
     read_atoms_cleanup();
     return;
   }
 
-  if ((0==parallel_input) || (NULL==infile)) {
+  if (NULL==infile) {
     infile = fopen(infilename,"r");
     if (NULL==infile) error_str("File %s not found", infilename);
     have_header = read_header( &info, infilename );
   }
 
   /* allocate temporary input buffer */
-  if (0==parallel_input) {
+  if (inp_grp_size > 1) {
     input_buf = (msgbuf *) malloc( num_cpus * sizeof(msgbuf) );
     if (NULL==input_buf) error("cannot allocate input buffers");
     input_buf[0].data  = NULL;
     input_buf[0].n_max = 0;
     input_buf[0].n     = 0;
-    for (i=1; i<num_cpus; i++) {
-      input_buf[i].data = NULL;
-      alloc_msgbuf(input_buf+i, INPUT_BUF_SIZE);
+    for (i=0; i<num_cpus; i++) {
+      input_buf[i].data  = NULL;
+      input_buf[i].n     = 0;
+      input_buf[i].n_max = 0;
+#ifdef BGL
+      if ((i != myid) && ((parallel_input==0) || (my_inp_grp == io_grps[i])))
+#else
+      if (i != myid)
+#endif
+        alloc_msgbuf(input_buf+i, inbuf_size);
     }
   }
 
@@ -364,38 +378,42 @@ void read_atoms(str255 infilename)
 #ifdef BUFCELLS
 
       to_cpu = cpu_coord(cellc);
+      count_atom = 0;
 
 #ifdef MPI
 
-      if ((myid != to_cpu) && (0==parallel_input)) {
-        natoms++;
-        /* we still have s == input->vsorte[0] */
-        if (s < ntypes) {
-          nactive += DIM;
-#ifdef UNIAX
-          nactive_rot += 2;
-#endif
-        } else {
-          nactive += (long) (restrictions+s)->x;
-          nactive += (long) (restrictions+s)->y;
-#ifndef TWOD
-          nactive += (long) (restrictions+s)->z;
-#endif
-        }
-        num_sort [ SORTE(input,0)]++;
-        num_vsort[VSORTE(input,0)]++;
+      /* to_cpu is in my input group, but not myself */
+      if ((inp_grp_size > 1) && (myid != to_cpu)) {
         b = input_buf + to_cpu;
-        copy_atom(b, to_cpu, input, 0);
-        if (b->n_max - b->n < MAX_ATOM_SIZE) {
-          MPI_Send(b->data, b->n, REAL, to_cpu, INBUF_TAG, cpugrid);
-          b->n = 0;
-        }
+        if (b->data != NULL) {
+          copy_atom(b, to_cpu, input, 0);
+          if (b->n_max - b->n < MAX_ATOM_SIZE) {
+            MPI_Send(b->data, b->n, REAL, to_cpu, INBUF_TAG, cpugrid);
+            b->n = 0;
+          }
+          count_atom = 1;
+	}
       } else
 
 #endif /* MPI */
 
       /* with per CPU input files, make sure we keep all atoms */
       if ((to_cpu==myid) || ((1==parallel_input) && (1==addnumber))) {
+	cellc = local_cell_coord(cellc);
+        to = PTR_VV(cell_array,cellc,cell_dim);
+	INSERT_ATOM(to, input, 0);
+        count_atom = 1;
+      }
+
+#else /* not BUFCELLS */
+
+      to = PTR_VV(cell_array,cellc,cell_dim);
+      INSERT_ATOM(to, input, 0);
+      count_atom = 1;
+
+#endif /* BUFCELLS or not BUFCELLS */
+
+      if (count_atom) {
         natoms++;  
         /* we still have s == input->vsorte[0] */
         if (s < ntypes) {
@@ -412,49 +430,23 @@ void read_atoms(str255 infilename)
         }
         num_sort [ SORTE(input,0)]++;
         num_vsort[VSORTE(input,0)]++;
-	cellc = local_cell_coord(cellc);
-        to = PTR_VV(cell_array,cellc,cell_dim);
-	INSERT_ATOM(to, input, 0);
       }
-
-#else /* not BUFCELLS */
-
-      natoms++;  
-      /* we still have s == input->vsorte[0] */
-      if (s < ntypes) {
-        nactive += DIM;
-#ifdef UNIAX
-        nactive_rot += 2;
-#endif
-      } else {
-        nactive += (long) (restrictions+s)->x;
-        nactive += (long) (restrictions+s)->y;
-#ifndef TWOD
-        nactive += (long) (restrictions+s)->z;
-#endif
-      }
-      num_sort [ SORTE(input,0)]++;
-      num_vsort[VSORTE(input,0)]++;
-      to = PTR_VV(cell_array,cellc,cell_dim);
-      INSERT_ATOM(to, input, 0);
-
-#endif /* BUFCELLS or not BUFCELLS */
-
     } /* (p>0) */
   } /* !feof(infile) */
-
   fclose(infile);  
 
 #ifdef MPI
-  /* The last buffer is sent with a different tag, which tells the
-     target CPU that reading is finished; we increase the size by
-     one, so that the buffer is sent even if it is empty */
-  if (0==parallel_input) {
-    for (s=1; s<num_cpus; s++) {
+  if (inp_grp_size > 1) {
+    /* The last buffer is sent with a different tag, which tells the
+       target CPU that reading is finished; we increase the size by
+       one, so that the buffer is sent even if it is empty */
+    for (s=0; s<num_cpus; s++) {
       b = input_buf + s;
-      b->data[b->n++] = 0.0;
-      MPI_Send(b->data, b->n, REAL, s, INBUF_TAG+1, cpugrid);
-      free_msgbuf(b);
+      if (b->data) {
+        b->data[b->n++] = 0.0;
+        MPI_Send(b->data, b->n, REAL, s, INBUF_TAG+1, cpugrid);
+        free_msgbuf(b);
+      }
     }
     free(input_buf);
   }
@@ -612,25 +604,23 @@ void read_atoms_cleanup(void)
 /******************************************************************************
 *
 *  recveive atoms in several chunks from CPU 0
-*  this is only used when parallel_input==0
+*  this is only used when parallel_input==0, or on BlueGene/L
 *
 ******************************************************************************/
 
 void recv_atoms(void)
 {
   MPI_Status status;
-  int finished = 0;
-  msgbuf b = {NULL,0,0};   
+  int finished = 0, src = my_inp_id;
+  msgbuf b = {NULL,0,0};
 
-  alloc_msgbuf(&b, INPUT_BUF_SIZE);
-  printf("Node %d listening.\n",myid);
+  alloc_msgbuf(&b, inbuf_size);
   do {
-    MPI_Recv(b.data, INPUT_BUF_SIZE, REAL, 0, MPI_ANY_TAG, cpugrid, &status);
+    MPI_Recv(b.data, inbuf_size, REAL, src, MPI_ANY_TAG, cpugrid, &status);
     MPI_Get_count(&status, REAL, &b.n);
     if (status.MPI_TAG==INBUF_TAG+1) { b.n--; finished=1; } /* last buffer */
     process_buffer( &b, (cell *) NULL );
   } while (0==finished);
-  printf("Node %d leaves listen.\n",myid);
   free_msgbuf(&b);
 }
 
@@ -794,7 +784,7 @@ void write_atoms_config(FILE *out)
         len += sprintf(outbuf+len,"\n");
       }
       /* flush or send outbuf if it is full */
-      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+      if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);

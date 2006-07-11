@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -225,7 +225,8 @@ EXTERN vektor max_height INIT(nullvektor);
 EXTERN vektor min_height INIT(nullvektor);
 
 /* Filenames */
-EXTERN char outbuf[OUTPUT_BUF_SIZE] INIT("\0");  /* output buffer */
+EXTERN char *outbuf INIT(NULL);         /* output buffer */
+EXTERN int outbuf_size INIT(OUTPUT_BUF_SIZE * 1048576);
 EXTERN str255 infilename INIT("\0");    /* Input File */
 EXTERN str255 itrfilename INIT("\0");   /* initial itr-file */
 EXTERN str255 outfilename INIT("\0");   /* Output File */
@@ -312,7 +313,16 @@ EXTERN int parallel_input  INIT(1);       /* Flag for parallel input */
 EXTERN ivektor my_coord INIT(nullivektor);/* Cartesian coordinates of cpu */
 EXTERN ivektor cpu_dim INIT(einsivektor); /* Dimensions of CPU-Array */
 EXTERN int binc INIT(0);                  /* buffer size per atom */
-EXTERN int *cpu_ranks INIT(NULL);         /* Mapping of coords to ranks */
+EXTERN int *cpu_ranks  INIT(NULL);        /* Mapping of coords to ranks */
+EXTERN int *io_grps    INIT(NULL);  /* mapping of ranks to IO groups */
+EXTERN int my_inp_grp   INIT(0);    /* my input group */
+EXTERN int my_inp_id    INIT(0);    /* input rank for my input group */
+EXTERN int inp_grp_size INIT(1);    /* size of my input group */
+EXTERN int n_inp_grps   INIT(1);    /* number of input groups */
+EXTERN int my_out_grp   INIT(0);    /* my output group */
+EXTERN int my_out_id    INIT(0);    /* output rank for my output group */
+EXTERN int out_grp_size INIT(1);    /* size of my output group */
+EXTERN int n_out_grps   INIT(1);    /* number of output groups */
 #ifdef MPI
 EXTERN MPI_Comm cpugrid;                  /* Cartesian MPI communicator */
 
@@ -330,6 +340,7 @@ EXTERN msgbuf recv_buf_south INIT(nullbuffer);
 EXTERN msgbuf recv_buf_up    INIT(nullbuffer);
 EXTERN msgbuf recv_buf_down  INIT(nullbuffer);
 EXTERN msgbuf dump_buf       INIT(nullbuffer);
+EXTERN int inbuf_size;
 
 /* Neighbours */
 EXTERN int nbwest, nbeast, nbnorth, nbsouth, nbup, nbdown; /* Faces */
@@ -347,6 +358,7 @@ EXTERN imd_timer time_main;
 EXTERN imd_timer time_io;
 EXTERN imd_timer time_fft;
 EXTERN imd_timer time_fft_plan;
+EXTERN imd_timer time_inp;
 
 /* Parameters for the various ensembles */
 

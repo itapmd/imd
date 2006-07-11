@@ -123,6 +123,7 @@ int  irecv_buf(msgbuf *b, int from_cpu, MPI_Request *req);
 int  isend_buf(msgbuf *b, int to_cpu,   MPI_Request *req);
 #endif
 void empty_buffer_cells(void);
+void init_io(void);
 #endif
 
 /* make and maintain cells and their geometry - files imd_geom_*.c */

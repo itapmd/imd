@@ -221,11 +221,11 @@
 /* number of data items by which an MPI buffer is increased */
 #define BUFFER_SIZE_INC 1024 
 
-/* buffer size for serial read_atoms */
-#define INPUT_BUF_SIZE 16384
+/* total buffer size in MB for serial read_atoms */
+#define INPUT_BUF_SIZE 64
 
-/* output buffer size (in bytes) */
-#define OUTPUT_BUF_SIZE 131072
+/* output buffer size in MB */
+#define OUTPUT_BUF_SIZE 16
 
 /* maximum number of items per atom in config file (plus number and type) */
 #define MAX_ITEMS_CONFIG 16

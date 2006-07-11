@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -84,6 +84,8 @@ void setup_mpi_topology( void )
   nbcoord = my_coord; --nbcoord.x; ++nbcoord.y; ++nbcoord.z; nbdes = cpu_grid_coord( nbcoord );
   nbcoord = my_coord; ++nbcoord.x; ++nbcoord.y; ++nbcoord.z; nbdsw = cpu_grid_coord( nbcoord );
   nbcoord = my_coord; ++nbcoord.x; --nbcoord.y; ++nbcoord.z; nbdwn = cpu_grid_coord( nbcoord );
+
+  init_io();
 
 }
 

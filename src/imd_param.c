@@ -948,6 +948,11 @@ void getparamfile(char *paramfname, int sim)
       /* initial cell size */
       getparam("incrsize",&incrsz,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token,"outbuf_size")==0) {
+      /* output buffer size in MB */
+      getparam(token,&outbuf_size,PARAM_INT,1,1);
+      outbuf_size *= 1048576;
+    }
 #ifdef AND
     else if (strcasecmp(token,"tempintv")==0) {
       /* temperature interval */
@@ -2720,6 +2725,7 @@ void broadcast_params() {
   MPI_Bcast( &cellsz, 1, REAL,     0, MPI_COMM_WORLD); 
   MPI_Bcast( &initsz, 1, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &incrsz, 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &outbuf_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 #ifdef AND
   MPI_Bcast( &tempintv, 1, MPI_INT, 0, MPI_COMM_WORLD); 

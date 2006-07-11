@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -35,6 +35,9 @@ int main(int argc, char **argv)
   
 #ifdef MPI
   init_mpi(&argc,argv);
+#ifdef MPI2
+  if (myid==0) printf("Using MPI2\n");
+#endif
 #endif
 
   is_big_endian = endian();
@@ -50,6 +53,7 @@ int main(int argc, char **argv)
   time_setup.total = 0.0;
   time_main.total  = 0.0;
   time_io.total    = 0.0;
+  time_inp.total   = 0.0;
 
   /* start some timers (after starting MPI!) */
   imd_start_timer(&time_total);
@@ -123,6 +127,9 @@ int main(int argc, char **argv)
   init_tersoff();
 #endif
 
+#ifdef TIMING
+  imd_start_timer(&time_inp);
+#endif
   /* filenames starting with _ denote internal 
      generation of the intitial configuration */
   if ('_' == infilename[0]) {
@@ -140,6 +147,9 @@ int main(int argc, char **argv)
     read_atoms(infilename);
   }
   if (0 == myid) printf("Done reading atoms.\n");
+#ifdef TIMING
+  imd_stop_timer(&time_inp);
+#endif
 
 #ifdef EPITAX
   if (0 == myid) 
@@ -269,8 +279,10 @@ int main(int argc, char **argv)
     printf("(inverse is %e).\n\n", 1.0/tmp);
 
 #ifdef TIMING
-    printf("Input/Output time:   %e seconds or %.1f %% of main loop\n",
-           time_io.total,100*time_io.total/time_main.total);
+    printf("Output time:   %e seconds or %.1f %% of main loop\n",
+           time_io.total, 100*time_io.total /time_main.total);
+    printf("Input  time:   %e seconds or %.1f %% of main loop\n",
+           time_inp.total,100*time_inp.total/time_main.total);
 #endif
   
      fflush(stdout);

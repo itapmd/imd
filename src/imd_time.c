@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -20,6 +20,10 @@
 ******************************************************************************/
 
 #include "imd.h"
+#ifdef BGL
+#include <rts.h>
+double bgl_clockspeed=1.0e-6/700.0;
+#endif
 
 /******************************************************************************
 *
@@ -30,7 +34,11 @@
 void imd_start_timer(imd_timer *timer)
 {
 #ifdef MPI
+#ifdef BGL
+  timer->start = rts_get_timebase() * bgl_clockspeed;
+#else
   timer->start = MPI_Wtime();
+#endif
 #elif defined(USE_WALLTIME)
   gettimeofday(&(timer->start),NULL);
 #elif defined(OMP)
@@ -51,7 +59,11 @@ void imd_start_timer(imd_timer *timer)
 void imd_stop_timer(imd_timer *timer)
 {
 #ifdef MPI
+#ifdef BGL
+  timer->total += rts_get_timebase() * bgl_clockspeed - timer->start;
+#else
   timer->total += MPI_Wtime() - timer->start;
+#endif
 #elif defined(USE_WALLTIME)
   struct timeval now;
   gettimeofday(&now,NULL);

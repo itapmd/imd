@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -23,20 +23,30 @@
 
 /******************************************************************************
 *
-*  flush outbuf to disk, or send it to CPU 0
+*  flush outbuf to disk, or send it to my output CPU
 *  the last buffer is sent with a different tag
 *
 ******************************************************************************/
 
 void flush_outbuf(FILE *out, int *len, int tag)
 {
-  if (*len+1>OUTPUT_BUF_SIZE) error("outbuf overflow");
-  if ((myid==0) || (parallel_output==1)) {
+  if (*len+1 > outbuf_size) error("outbuf overflow");
+  if (myid==my_out_id) {
     if (*len>0) fwrite(outbuf, 1, *len, out);
   }
 #ifdef MPI
-  else /* we add 1 to the length so that even an empty message is sent */
-    MPI_Send( outbuf, *len+1, MPI_CHAR, 0, tag, cpugrid );
+  else {
+#ifdef BGL
+    MPI_Status status;
+    int tmp=*len+1;
+    /* tell CPU 0 that we have something (and how much) */
+    MPI_Send( &tmp, 1, MPI_INT, my_out_id, ANNOUNCE_TAG, cpugrid );
+    /* wait until CPU 0 is ready */
+    MPI_Recv( &tmp, 1, MPI_INT, my_out_id, ANNOUNCE_TAG, cpugrid, &status );
+#endif
+    /* we add 1 to the length so that even an empty message is sent */
+    MPI_Send( (void *) outbuf, *len+1, MPI_CHAR, my_out_id, tag, cpugrid );
+  }
 #endif
   *len=0;
 }
@@ -54,7 +64,14 @@ void write_config_select(int fzhlr, char *suffix,
   void (*write_atoms_fun)(FILE *out), void (*write_header_fun)(FILE *out))
 {
   FILE *out=NULL;
-  str255 fname, msg;
+  str255 fname;
+
+#ifdef MPI2
+  MPI_Alloc_mem(outbuf_size * sizeof(char), MPI_INFO_NULL, &outbuf);
+#else
+  outbuf = (char *) malloc(outbuf_size * sizeof(char));
+#endif
+  if (NULL==outbuf) error("cannot allocate output buffer");
 
 #ifdef MPI
   if (1==parallel_output) {
@@ -64,24 +81,20 @@ void write_config_select(int fzhlr, char *suffix,
       else if (fzhlr==-1) sprintf(fname,"%s-final.%s.head",outfilename,suffix);
       else sprintf(fname,"%s-interm.%s.head",outfilename,suffix);
       out = fopen(fname, "w");
-      if (NULL == out) { 
-        sprintf(msg,"Cannot open output file %s",fname);
-	error(msg);
-      }
+      if (NULL == out) error_str("Cannot open output file %s",fname);
       (*write_header_fun)(out);
       fclose(out);
     }
     /* open output file */
-    if (fzhlr>=0) 
-	sprintf(fname,"%s.%05d.%s.%u",outfilename,fzhlr,suffix,myid);
-    else if (fzhlr==-1) 
-	sprintf(fname,"%s-final.%s.%u", outfilename,suffix,myid);
-    else 
-	sprintf(fname,"%s-interm.%s.%u", outfilename,suffix,myid);
-    out = fopen(fname,"w");
-    if (NULL == out) { 
-       sprintf(msg,"Cannot open output file %s",fname);
-       error(msg);
+    if (myid == my_out_id) {
+      if (fzhlr>=0) 
+        sprintf(fname,"%s.%05d.%s.%u",outfilename,fzhlr,suffix,my_out_grp);
+      else if (fzhlr==-1) 
+        sprintf(fname,"%s-final.%s.%u", outfilename,suffix,my_out_grp);
+      else 
+        sprintf(fname,"%s-interm.%s.%u", outfilename,suffix,my_out_grp);
+      out = fopen(fname,"w");
+      if (NULL == out) error_str("Cannot open output file %s",fname);
     }
   } else
 #endif
@@ -91,26 +104,29 @@ void write_config_select(int fzhlr, char *suffix,
     else if (fzhlr==-1) sprintf(fname,"%s-final.%s", outfilename,suffix);
     else sprintf(fname,"%s-interm.%s", outfilename,suffix);
     out = fopen(fname,"w");
-    if (NULL == out) {
-       sprintf(msg,"Cannot open output file %s",fname);
-       error(msg);
-    }
+    if (NULL == out) error_str("Cannot open output file %s",fname);
     /* write header */
-    if (use_header)
-      (*write_header_fun)(out);
+    if (use_header) (*write_header_fun)(out);
   }
 
   /* write or send own data */
   (*write_atoms_fun)(out);
 #ifdef MPI
-  /* if serial output, receive and write foreign data */
-  if ((0==myid) && (parallel_output==0)) {
+  /* if not fully parallel output, receive and write foreign data */
+  if ((myid == my_out_id) && (out_grp_size > 1)) {
     MPI_Status status;
-    int m=1, len;
-    while (m < num_cpus) {
-      MPI_Recv(outbuf, OUTPUT_BUF_SIZE, MPI_CHAR, MPI_ANY_SOURCE, 
+    int m=1, len, source;
+    while (m < out_grp_size) {
+#ifdef BGL
+      MPI_Recv(&len, 1, MPI_INT,MPI_ANY_SOURCE,ANNOUNCE_TAG, cpugrid, &status);
+      source = status.MPI_SOURCE;
+      MPI_Send(&len, 1, MPI_INT, source, ANNOUNCE_TAG, cpugrid);
+      MPI_Recv(outbuf, len, MPI_CHAR, source, MPI_ANY_TAG, cpugrid, &status);
+#else
+      MPI_Recv(outbuf, outbuf_size, MPI_CHAR, MPI_ANY_SOURCE, 
                MPI_ANY_TAG, cpugrid, &status);
       MPI_Get_count(&status, MPI_CHAR, &len);
+#endif
       if ((status.MPI_TAG!=OUTBUF_TAG+1) && (status.MPI_TAG!=OUTBUF_TAG))
         error("messages mixed up");
       if (status.MPI_TAG==OUTBUF_TAG+1) m++;
@@ -118,9 +134,16 @@ void write_config_select(int fzhlr, char *suffix,
     }
   }
   /* don't send non-io messages before we are finished */
-  MPI_Barrier(cpugrid);
+  MPI_Barrier(MPI_COMM_WORLD);
 #endif /* MPI */
-  if ((0==myid) || (1==parallel_output)) fclose(out);
+  if (out) fclose(out);
+
+#ifdef MPI2
+  MPI_Free_mem(outbuf);
+#else
+  free(outbuf);
+#endif
+
 }
 
 /******************************************************************************
@@ -316,7 +339,7 @@ void write_atoms_ef(FILE *out)
 #endif
       }
       /* flush or send outbuf if it is full */
-      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+      if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
@@ -433,7 +456,7 @@ void write_atoms_nb(FILE *out)
 #endif
       }
       /* flush or send outbuf if it is full */
-      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+      if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
@@ -539,7 +562,7 @@ void write_atoms_wf(FILE *out)
 #endif
       }
       /* flush or send outbuf if it is full */
-      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+      if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
@@ -648,7 +671,7 @@ void write_atoms_press(FILE *out)
 #endif
       }
       /* flush or send outbuf if it is full */
-      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+      if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
@@ -747,7 +770,7 @@ void write_atoms_pic(FILE *out)
       len += n * sizeof(i_or_f);
 
       /* flush or send outbuf if it is full */
-      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+      if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
@@ -843,7 +866,7 @@ void write_atoms_dem(FILE *out)
 #endif
       }
       /* flush or send outbuf if it is full */
-      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+      if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
@@ -945,7 +968,7 @@ void write_atoms_dsp(FILE *out)
 #endif
       }
       /* flush or send outbuf if it is full */
-      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+      if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
@@ -1191,7 +1214,7 @@ void write_atoms_avp(FILE *out)
 #endif
       }
       /* flush or send outbuf if it is full */
-      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+      if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
@@ -1265,7 +1288,7 @@ void write_atoms_force(FILE *out)
                       KRAFT(p,i,X), KRAFT(p,i,Y), KRAFT(p,i,Z) );
 #endif
       /* flush or send outbuf if it is full */
-      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+      if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
@@ -1387,7 +1410,7 @@ void write_atoms_atdist_pos(FILE *out)
 #endif
             }
             /* flush or send outbuf if it is full */
-            if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+            if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
 	  }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
@@ -1825,7 +1848,7 @@ void write_atoms_sqd(FILE *out)
 #endif
       }
       /* flush or send outbuf if it is full */
-      if (len > OUTPUT_BUF_SIZE - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+      if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);

@@ -553,6 +553,19 @@ ifeq (Power4-cc-32,${IMDSYS})
   LFLAGS        += -q32
 endif
 
+# IBM GlueGene/L
+ifeq (bgl-cc,${IMDSYS})
+  BGLSYS 	= /bgl/BlueLight/ppcfloor/bglsys
+  CC_SERIAL	= dummy
+  CC_MPI	= blrts_xlc -DBGL -I${BGLSYS}/include
+  BIN_DIR	= ${HOME}/bin/bgl
+  OPT_FLAGS	+= -O3 -qarch=440 -qtune=440 
+#  OPT_FLAGS	+= -O3 -qarch=440d -qtune=440 -qhot -qlist -qsource -qdebug=diagnostic
+  DEBUG_FLAGS	+= -g
+  LIBS          += -L${BGLSYS}/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts 
+  LFLAGS        += 
+endif
+
 ###########################################################################
 #
 #  Parallelization method

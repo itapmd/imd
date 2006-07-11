@@ -375,6 +375,7 @@ inline static real SQR(real x)
 #define OUTBUF_TAG 300
 #define INBUF_TAG  400
 #define AT_BUF_TAG 500
+#define ANNOUNCE_TAG 600
 
 /* different versions of math functions for float and double */
 #ifdef DOUBLE

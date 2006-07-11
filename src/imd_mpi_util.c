@@ -20,6 +20,10 @@
 ******************************************************************************/
 
 #include "imd.h"
+#ifdef BGL
+#include <rts.h>
+#include <bglpersonality.h>
+#endif
 
 /******************************************************************************
 *
@@ -50,6 +54,118 @@ void shutdown_mpi(void)
 {
   MPI_Barrier(MPI_COMM_WORLD);   /* Wait for all processes to arrive */
   MPI_Finalize();                /* Shutdown */
+}
+
+/******************************************************************************
+*
+* initialize I/O parameters
+*
+******************************************************************************/
+
+void init_io(void)
+{
+
+#ifdef BGL
+  BGLPersonality personality;
+  int *tmp, i;
+
+  tmp     = (int *) malloc( num_cpus * sizeof(int) );
+  io_grps = (int *) malloc( num_cpus * sizeof(int) );
+  if ((NULL==tmp) || (NULL==io_grps)) 
+    error("cannot allocate io_grps array");
+
+  rts_get_personality(&personality, sizeof(personality));
+
+  /* I/O group as a function of the rank */
+  for (i=0; i<num_cpus; i++) tmp[i] = 0;
+  tmp[myid] = BGLPersonality_psetNum(&personality);
+  MPI_Allreduce(tmp, io_grps, num_cpus, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+  /* input parameters */
+  if (parallel_input==1) {
+    n_inp_grps   = BGLPersonality_numPsets(&personality);
+    my_inp_grp   = BGLPersonality_psetNum (&personality);
+    inp_grp_size = BGLPersonality_numNodesInPset(&personality);
+    if (BGLPersonality_virtualNodeMode(&personality)) inp_grp_size *= 2;
+    my_inp_id = 0;  while (my_inp_grp != io_grps[my_inp_id]) my_inp_id++;
+  }
+  else {
+    n_inp_grps   = 1;
+    my_inp_grp   = 0;
+    my_inp_id    = 0;
+    inp_grp_size = num_cpus;
+  }
+
+  /* output parameters */
+  if (parallel_output==1) {
+    n_out_grps   = BGLPersonality_numPsets(&personality);
+    my_out_grp   = BGLPersonality_psetNum (&personality);
+    out_grp_size = BGLPersonality_numNodesInPset(&personality);
+    if (BGLPersonality_virtualNodeMode(&personality)) out_grp_size *= 2;
+    my_out_id = 0;  while (my_out_grp != io_grps[my_out_id]) my_out_id++;
+  }
+  else {
+    n_out_grps   = 1;
+    my_out_grp   = 0;
+    my_out_id    = 0;
+    out_grp_size = num_cpus;
+  }
+
+#ifdef DEBUG
+  /* some debug output */
+  if (myid==my_inp_id)
+    printf("myid=%d inpgrp=%d inpgrp_size=%d n_inpgrps=%d n_cpus=%d\n", 
+      myid, my_inp_grp, inp_grp_size, n_inp_grps, num_cpus);
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (myid==my_out_id)
+    printf("myid=%d outgrp=%d outgrp_size=%d n_outgrps=%d n_cpus=%d\n", 
+      myid, my_out_grp, out_grp_size, n_out_grps, num_cpus);
+
+  MPI_Barrier(MPI_COMM_WORLD);
+  if (myid==0) {
+    for (i=0; i<num_cpus; i++) printf("%d ", io_grps[i]);
+    printf("\n");
+  }
+#else
+  if (0==myid) 
+    printf("%d input group(s), %d output group(s)\n", n_inp_grps, n_out_grps);
+#endif
+
+  free(tmp);
+
+#else /* not BGL */
+
+  /* input parameters */
+  if (parallel_input==1) {
+    n_inp_grps   = num_cpus;
+    my_inp_grp   = myid;
+    my_inp_id    = myid;
+    inp_grp_size = 1;
+  }
+  else {
+    n_inp_grps   = 1;
+    my_inp_grp   = 0;
+    my_inp_id    = 0;
+    inp_grp_size = num_cpus;
+  }
+
+  /* output parameters */
+  if (parallel_output==1) {
+    n_out_grps = num_cpus;
+    my_out_grp = myid;
+    my_out_id  = myid;
+    out_grp_size = 1;
+  }
+  else {
+    n_out_grps   = 1;
+    my_out_grp   = 0;
+    my_out_id    = 0;
+    out_grp_size = num_cpus;
+  }
+
+#endif
+
 }
 
 /******************************************************************************
