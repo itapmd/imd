@@ -2,7 +2,7 @@
 #
 # IMD -- The ITAP Molecular Dynamics Program
 #
-# Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+# Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 # University of Stuttgart, D-70550 Stuttgart
 #
 #
@@ -17,7 +17,7 @@
 CFLAGS = ${FLAGS}
 ifneq (,$(strip $(findstring i386,${HOSTTYPE})))
 CC      = icc
-FLAGS  += -O #-static
+FLAGS  += -O # -static
 endif
 
 ifneq (,$(strip $(findstring alpha,${HOSTTYPE})))
@@ -91,6 +91,10 @@ ppm_on_ppm: ppm_on_ppm.c
 imd2ppm: imd2ppm.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ imd2ppm.c -lm
 
+#conf2conf
+conf2conf: conf2conf.c conf_tools.c conf_tools.h misc.c misc.h
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ misc.c conf_tools.c conf2conf.c -lm
+
 
 ############################################################################
 #
@@ -133,8 +137,8 @@ sample2dist: sample2dist.c
 #
 ###########################################################################
 
-SOURCES = param.c util_param.c util_common.c
-HEADERS = util.h param.h
+SOURCES = misc.c param.c util_param.c util_common.c conf_tools.c
+HEADERS = misc.h util.h param.h conf_tools.h
 LIBS    = -lm
 
 ifneq (,$(strip $(findstring 2d,${MAKETARGET})))

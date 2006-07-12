@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -20,6 +20,7 @@
 ******************************************************************************/
 
 #include "util.h"
+#include "conf_tools.h"
 
 /******************************************************************************
 *
@@ -443,35 +444,41 @@ void alloc_cell(cell *cl, int count)
 
 /******************************************************************************
 *
-*  error -- Complain and abort
+* read_box reads the box from the config file
 *
 ******************************************************************************/
 
-void error(char *mesg)
+void read_box(str255 infilename)
 {
-  printf("Error: %s\n",mesg);
-  exit(2);
-}
+  FILE   *infile;
+  str255 line, fname;
 
+  infile = fopen(infilename,"r");
+  if (NULL==infile) error_str("cannot open input file %s", infilename);
+  fgets(line, 255, infile);
+  while ((line[0]=='#') && (line[1]!='E')) {
+#ifdef TWOD
+    if      (line[1]=='X') 
+      sscanf(line+2, "%lf %lf", &box_x.x, &box_x.y);
+    else if (line[1]=='Y') 
+      sscanf(line+2, "%lf %lf", &box_y.x, &box_y.y);
+#else
+    if      (line[1]=='X') 
+      sscanf(line+2, "%lf %lf %lf", &box_x.x, &box_x.y, &box_x.z);
+    else if (line[1]=='Y') 
+      sscanf(line+2, "%lf %lf %lf", &box_y.x, &box_y.y, &box_y.z);
+    else if (line[1]=='Z') 
+      sscanf(line+2, "%lf %lf %lf", &box_z.x, &box_z.y, &box_z.z);
+#endif
+    fgets(line, 255, infile);
+    if (feof(infile)) break;
+  }
+  fclose(infile);
+}
 
 /******************************************************************************
 *
-*  read_atoms - reads atoms and velocities into the cell-array
-*
-*  The file format is flat ascii, one atom per line, lines beginning
-*  with '#' denote comments. Each line consists of
-*
-*  number type mass x y [z] vx vy [vz] e [rest]
-*
-*  where
-*
-*  number   is an arbitrary integer number assigned to each atom
-*  type     is the atom's index to the potenital table
-*  mass     is the mass of the atom
-*  x,y,z    are the atom's coordinates
-*  vx,vy,vz are the atoms's velocities
-*  e        is the atom's potential energy
-*  rest     is ignored until end of line
+*  read_atoms - reads atoms into the cell-array
 *
 ******************************************************************************/
 
@@ -479,17 +486,12 @@ void read_atoms(str255 infilename)
 {
   FILE *infile;
   char buf[512];
-  int p, s, n;
-  vektor pos, v;
-  real m, e, c;
-#ifdef COORD
-  int i;
-#endif
-#ifdef PS
-  real tmp = 0.0;
-#endif
+  int  p, s, n, i, have_header;
+  real m, e, c, tmp;
   cell *to;
   ivektor cellc;
+  header_info_t info;
+  atom_t atom;
 
   /* we first try the old checkpoint name, then the new */
   infile = fopen(infilename,"r");
@@ -497,73 +499,71 @@ void read_atoms(str255 infilename)
     infilename = strcat(infilename,".chkpt");
     infile = fopen(infilename,"r");
   }
-  if (NULL==infile) {
-    sprintf(error_msg,"Cannot open atoms file %s",infilename);
-    error(error_msg);
-  }
+  if (NULL==infile) error_str("Cannot open atoms file %s", infilename);
 
+  /* read file header */
+  have_header = read_header(&info, infilename);
   natoms=0;
-  
-  /* Read the input file line by line */
+
+  /* eat header, if there is one */
+  if (have_header) {
+    fgets(buf,sizeof(buf),infile);
+    while (('#'==buf[0]) && ('E'!=buf[1]) && !feof(infile)) {
+      fgets(buf,sizeof(buf),infile);
+    }
+  }
+ 
+  /* read the config file */
   while (!feof(infile)) {
 
-    buf[0] = (char) NULL;
-    fgets(buf,sizeof(buf),infile);
-    while ('#'==buf[1]) fgets(buf,sizeof(buf),infile); /* eat comments */
-
-#ifdef TWOD
-    p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf",
-	       &n,&s,&m,&pos.x,&pos.y,&v.x,&v.y,&e,&c);
-#else
-    p = sscanf(buf,"%d %d %lf %lf %lf %lf %lf %lf %lf %lf %lf",
-	       &n,&s,&m,&pos.x,&pos.y,&pos.z,&v.x, &v.y, &v.z,&e,&c);
-#endif
+    p = read_atom(&info, infile, &atom);
+    if (info.n_number == 0) atom.number = natoms;
 
     if (p>0) {
 
 #ifdef PS
       /* Determine bounding box before rotation */
-      real_minl = minvektor(real_minl, pos);
-      real_maxl = maxvektor(real_maxl, pos);
+      real_minl = minvektor(real_minl, atom.pos);
+      real_maxl = maxvektor(real_maxl, atom.pos);
 
       /* Rotations of atom positions */
 #ifndef TWOD
       if ( angx != 0.0 ) 
-	pos = xrotate(pos, angx);
+	atom.pos = xrotate(atom.pos, angx);
       if ( angy != 0.0 ) 
-	pos = yrotate(pos, angy);
+	atom.pos = yrotate(atom.pos, angy);
 #endif
       if ( angz != 0.0 ) 
-	pos = zrotate(pos, angz);
+	atom.pos = zrotate(atom.pos, angz);
 #endif
 
       /* compute target cell */
-      cellc = cell_coord(pos);
+      cellc = cell_coord(atom.pos);
       to = PTR_VV(cell_array,cellc,cell_dim);
       /* enlarge it if necessary */
       if (to->n >= to->n_max) alloc_cell(to,to->n_max+CSTEP);
       /* put the data */
-      to->ort   [to->n] = pos;
+      to->ort   [to->n] = atom.pos;
 #if (!defined(STRAIN) && !defined(STRESS))
-      to->sorte [to->n] = MOD(s,ntypes);
+      to->sorte [to->n] = MOD(atom.type,ntypes);
 #endif
 #if defined(CONN) || defined(ELCO) || defined(COORD) || defined(CNA)
-      to->nummer[to->n] = n;
+      to->nummer[to->n] = atom.number;
 #endif
 #ifdef CNA
       to->mark[to->n]  = 0;
-      to->masse[to->n] = m;
+      to->masse[to->n] = atom.mass;
 #endif
 #ifdef CONN
-      n_min = MIN(n_min,n);
-      n_max = MAX(n_max,n);
+      n_min = MIN(n_min,atom.number);
+      n_max = MAX(n_max,atom.number);
 #endif
 #ifdef COORD
       /* Initialization */
       for ( i=0; i<ntypes; i++) 
 	to->coord[to->n * ntypes + i] = 0.0;
-      /* Read potential energy */
-      to->poteng[to->n] = e;
+      /* store potential energy */
+      to->poteng[to->n] = atom.data[0];
 #endif
 #ifdef RING
       to->del[to->n] = 0;
@@ -571,25 +571,18 @@ void read_atoms(str255 infilename)
 
 #ifdef PS
       /* Determine bounding box after rotation */
-      minl = minvektor( minl, pos);
-      maxl = maxvektor( maxl, pos);
-
-#ifndef TWOD
+      minl = minvektor( minl, atom.pos);
+      maxl = maxvektor( maxl, atom.pos);
       if ( p > 6 && ( eng != 0 || kineng != 0 || color_enc != 0 ) ) {
-#else
-      if ( p > 5 && ( eng != 0 || kineng != 0 || color_enc != 0 ) ) {
-#endif
-	if ( eng != 0 )
-	  tmp = e;
-	else if ( kineng != 0 ) 
-	  tmp = 0.5 * m * SPROD(v,v);
-	else if ( color_enc != 0 )
-	  tmp = c;
-
-	maxeng = MAX(maxeng, tmp);
-	mineng = MIN(mineng, tmp);
-
-	to->enc[to->n] = tmp;
+        if ( eng != 0 )
+          tmp = atom.data[0];
+        else if ( kineng != 0 ) 
+          tmp = 0.5 * atom.mass * SPROD(atom.vel,atom.vel);
+        else if ( color_enc != 0 )
+          tmp = atom.data[1];
+        maxeng = MAX(maxeng, tmp);
+        mineng = MIN(mineng, tmp);
+        to->enc[to->n] = tmp;
       }
 #endif
 

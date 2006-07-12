@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -70,6 +70,9 @@ int main(int argc, char **argv)
 	*PTR_3D_V(histogram,i,j,k,hist_dim) = 0.0;
 
   r2_cut = SQR(r_max);
+
+  /* read box from file header */
+  if (box_from_header) read_box(infilename);
 
   /* Initialize cell data structures */
   init_cells();

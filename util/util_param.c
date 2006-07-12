@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -691,10 +691,7 @@ void getparamfile(char *paramfname)
   char *res;
 
   pf = fopen(paramfname,"r");
-  if (NULL == pf) {
-    sprintf(error_msg,"Cannot open parameter file %s",paramfname);
-    error(error_msg);
-  }
+  if (NULL == pf) error_str("Cannot open parameter file %s", paramfname);
 
   do {
     res=fgets(buffer,1024,pf);
@@ -714,6 +711,10 @@ void getparamfile(char *paramfname)
     else if (strcasecmp(token,"box_x")==0) {
       /* 'x' or first vector for box */
       getparam("box_x",&box_x,PARAM_REAL,DIM,DIM);
+    }
+    else if (strcasecmp(token,"box_from_header")==0) {
+      /* read box from config file header */
+      getparam(token,&box_from_header,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"box_y")==0) {
       /* 'y' or second vector for box */

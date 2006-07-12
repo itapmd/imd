@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -54,6 +54,9 @@ int main(int argc, char **argv)
 
   /* Read Parameters from parameter file */
   read_parameters();
+
+  /* read box from file header */
+  if (box_from_header) read_box(infilename);
 
   /* Compute parameters, setup colors, rotate box vectors */
   init_ps();

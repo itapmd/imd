@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -53,8 +53,11 @@ int main(int argc, char **argv)
   int tablesize;
   int n,i,j,k,l;
 
+  /* Read command line arguments */
+  read_command_line(argc,argv);
+
   /* Read Parameters from parameter file */
-  read_parameters(argc,argv);
+  read_parameters();
 
   tablesize = slots*ntypes*ntypes*ntypes*ntypes*sizeof(real);
   histogram = (real *) malloc(tablesize);
@@ -73,6 +76,9 @@ int main(int argc, char **argv)
 	    *PTR_5D_V(histogram,n,i,j,k,l,hist_dim) = 0.0;
 
   r2_cut = SQR(r_max);
+
+  /* read box from file header */
+  if (box_from_header) read_box(infilename);
 
   /* Initialize cell data structures */
   init_cells();

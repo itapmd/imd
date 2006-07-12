@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -25,6 +25,8 @@
 *  some usful makros 
 *
 ******************************************************************************/
+
+#define UTIL_H
 
 /* number of slots in the histograms */
 #ifdef TWOD
@@ -349,10 +351,13 @@ void read_arg_ivektor4d(int *argcptr, char ***argvptr, ivektor4d *parptr);
 void read_parameters(void);
 void getparamfile(char *infile);
 void read_atoms(str255 infilename);
+void read_box(str255);
 void usage(void);
 ivektor cell_coord(vektor pos);
 void init_cells(void);
 void error(char *mesg);
+void error_str(char *msg, char *str);
+void error_str_str(char *msg, char *str1, char *str2);
 void alloc_cell(cell *cl, int count);
 void do_work(void (*do_cell_pair)(cell *p, cell *q, vektor pbc));
 void do_cell_pair(cell *p, cell *q, vektor pbc);
@@ -534,6 +539,7 @@ EXTERN int use_vtypes INIT(0); /* flag for using virtual types */
 EXTERN str255 progname;        /* Name of current executable argv[0] */
 EXTERN int curline;            /* Number of current line for parameter reading */
 EXTERN str255 error_msg;       /* string for error message */
+EXTERN int box_from_header INIT(0); /* read box from config file header */
 /* The simulation box and its inverse */
 EXTERN vektor box_x, tbox_x;
 EXTERN vektor box_y, tbox_y;

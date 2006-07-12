@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -61,6 +61,9 @@ int main(int argc, char **argv)
   /* Calculate cutoff radius */
   r2_cut = 0.0;
   for (i=0; i<SQR(ntypes); i++) r2_cut = MAX( r2_cut, SQR(r_cut[i]));
+
+  /* read box from file header */
+  if (box_from_header) read_box(infilename);
 
   /* Initialize cell data structures */
   init_cells();
