@@ -4,8 +4,8 @@
 
 <p>
 <table cellpadding="4">
-<tr><td><a href="#imd_power">imd_power</a></td>
-    <td>power spectrum of data in properties file</td></tr>
+<tr><td><a href="#conf2conf">conf2conf</a></td>
+    <td>converter between different configuration file formats</td></tr>
 <tr><td><a href="#imd2cfg.perl">imd2cfg.perl</a></td>
     <td>perl script to convert IMD atom files to AtomEye cfg format</td></tr>
 <tr><td><a href="#rav">rav</a></td>
@@ -22,6 +22,38 @@
     <td>image of 2d binary tiling quasicrystal</td></tr>
 </table>
 </p>
+
+<h2><a id="conf2conf" name="conf2conf">conf2conf</a></h2>
+
+<p>
+Converts IMD configuration files and atom data files between 
+different formats, and possibly strips off unwanted data.
+</p>
+
+<pre>
+   Compilation: gmake conf2conf
+
+   Usage: conf2conf [options] &lt;infile&gt; &lt;outfile&gt;
+
+   Options:  -f &lt;F&gt;     Output format; &lt;F&gt; can be:
+
+                          - A for ASCII (default)
+                          - l for single precision binary (little endian)
+                          - b for single precision binary (big endian)
+                          - L for double precision binary (little endian)
+                          - B for double precision binary (big endian)
+
+             -v         Include velocities in output
+
+             -m         Include mass in output
+
+             -k         Compute Ekin from mass and velocities, and append it
+
+             -d &lt;cols&gt;  Comma separated indices of data columns to be
+                        included in output, like 0,2
+
+             -h         This help
+</pre>
 
 <h2><a id="imd_power" name="imd_power">imd_power</a></h2>
 
