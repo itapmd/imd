@@ -30,13 +30,13 @@ of the file, and the number and type of data it contains for each atom:
 <pre>
 #F  f n t m c v d
 </pre>
-where f is a letter and the other values are numbers:</p>
+where f is a letter and the other values are integer numbers:</p>
 
-<p>
 <table>
 <tr>
   <td>f:</td>
-  <td>A for ASCII, B for binary big endian, L for binary little endian</td>
+  <td>A for ASCII, B or b for binary big endian, L or l for binary 
+      little endian</td>
 </tr>
 <tr>
   <td>n:</td>
@@ -63,6 +63,11 @@ where f is a letter and the other values are numbers:</p>
   <td>number of columns for the atom data, e.g. Epot (0, 1,...)</td>
 </tr>
 </table>
+
+<p>For the binary formats with capital format letters (B and L),
+the floating point data is given in doubles, and for lower case
+format letters (b and l) in floats. Atom number and atom type are always
+given in 32bit integers.</p>
 
 <p>
 The contents line (key <tt>C</tt>) specifies a string for each data column,
