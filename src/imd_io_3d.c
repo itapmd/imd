@@ -86,8 +86,7 @@ void read_atoms(str255 infilename)
 #ifdef MPI
 
   /* size of temporary input buffers */
-  if (inp_grp_size > 1)
-    inbuf_size = INPUT_BUF_SIZE * 1048576 / (sizeof(real) * inp_grp_size); 
+  if (inp_grp_size > 1) inbuf_size /= (sizeof(real) * (inp_grp_size-1)); 
 
 #ifndef BGL
   /* Try opening first a per cpu file - not supported on BlueGene/L */

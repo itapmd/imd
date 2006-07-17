@@ -953,6 +953,11 @@ void getparamfile(char *paramfname, int sim)
       getparam(token,&outbuf_size,PARAM_INT,1,1);
       outbuf_size *= 1048576;
     }
+    else if (strcasecmp(token,"inbuf_size")==0) {
+      /* total input buffer size in MB */
+      getparam(token,&inbuf_size,PARAM_INT,1,1);
+      inbuf_size *= 1048576;
+    }
 #ifdef AND
     else if (strcasecmp(token,"tempintv")==0) {
       /* temperature interval */
@@ -2728,6 +2733,7 @@ void broadcast_params() {
   MPI_Bcast( &initsz, 1, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &incrsz, 1, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &outbuf_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &inbuf_size,  1, MPI_INT, 0, MPI_COMM_WORLD);
 
 #ifdef AND
   MPI_Bcast( &tempintv, 1, MPI_INT, 0, MPI_COMM_WORLD); 

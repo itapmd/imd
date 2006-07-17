@@ -210,7 +210,7 @@ EXTERN ivektor box_param INIT(nullivektor);  /* box parameters */
 EXTERN int  size_per_cpu INIT(0);            /* box_param is given per cpu */
 EXTERN real box_unit INIT(1.0);              /* lattice parameter */
 EXTERN real *masses INIT(NULL);              /* masses */
-EXTERN int  *gtypes INIT(NULL);               /* types */
+EXTERN int  *gtypes INIT(NULL);              /* types */
 
 /* The simulation box and its inverse */
 EXTERN vektor box_x  INIT(nullvektor);
@@ -230,6 +230,7 @@ EXTERN vektor min_height INIT(nullvektor);
 /* Filenames */
 EXTERN char *outbuf INIT(NULL);         /* output buffer */
 EXTERN int outbuf_size INIT(OUTPUT_BUF_SIZE * 1048576);
+EXTERN int inbuf_size  INIT(INPUT_BUF_SIZE  * 1048576);
 EXTERN str255 infilename INIT("\0");    /* Input File */
 EXTERN str255 itrfilename INIT("\0");   /* initial itr-file */
 EXTERN str255 outfilename INIT("\0");   /* Output File */
@@ -343,7 +344,6 @@ EXTERN msgbuf recv_buf_south INIT(nullbuffer);
 EXTERN msgbuf recv_buf_up    INIT(nullbuffer);
 EXTERN msgbuf recv_buf_down  INIT(nullbuffer);
 EXTERN msgbuf dump_buf       INIT(nullbuffer);
-EXTERN int inbuf_size;
 
 /* Neighbours */
 EXTERN int nbwest, nbeast, nbnorth, nbsouth, nbup, nbdown; /* Faces */
