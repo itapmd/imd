@@ -388,8 +388,8 @@ void calc_forces(int steps)
         col2= jt * ntypes + it;
 
         /* compute pair interactions */
-#if defined(PAIR) || defined(KEATING) || defined(STIWEB)
-        /* PAIR, KEATING, and STIWEB are mutually exclusive */
+#if defined(PAIR) || defined(KEATING)
+        /* PAIR and KEATING are mutually exclusive */
 #if defined(PAIR)
         if (r2 <= pair_pot.end[col]) {
 #ifdef LINPOT
@@ -400,9 +400,6 @@ void calc_forces(int steps)
 #elif defined(KEATING)
         if (r2 < keat_r2_cut[it][jt]) {
           PAIR_INT_KEATING(pot, grad, it, jt, r2)
-#elif defined(STIWEB)  
-        if (r2 < sw_2_a1[it][jt]) {
-	  PAIR_INT_STIWEB(pot, grad, it, jt, r2)
 #endif
 
           tot_pot_energy += pot;
@@ -478,7 +475,7 @@ void calc_forces(int steps)
 #endif
         }
 
-#endif /* PAIR || KEATING || STIWEB */
+#endif /* PAIR || KEATING */
 
 #ifdef EAM2
         /* compute host electron density */

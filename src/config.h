@@ -50,10 +50,9 @@
 #define DEFAULT_POTFILE_TYPE 1
 #endif
 
-/* we always need PAIR, unless MEAM, TERSOFF, KEATING, STIWEB, UNIAX, 
-   or EWALD */
+/* we always need PAIR, unless MEAM, KEATING, UNIAX, or EWALD */
 /* Note that PAIR is the default, if no interaction is specified */
-#if !(defined(MEAM) || defined(TERSOFF) || defined(STIWEB) || defined(KEATING) || defined(UNIAX) || defined(EWALD))
+#if !(defined(MEAM) || defined(KEATING) || defined(UNIAX) || defined(EWALD))
 #ifndef PAIR
 #define PAIR
 #endif

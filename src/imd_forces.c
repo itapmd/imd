@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -98,8 +98,8 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #endif
 
       /* compute pair interactions */
-#if defined(PAIR) || defined(KEATING) || defined(STIWEB)
-      /* PAIR, KEATING, and STIWEB are mutually exclusive */
+#if defined(PAIR) || defined(KEATING)
+      /* PAIR and KEATING are mutually exclusive */
 #if defined(PAIR)
       if (r2 <= pair_pot.end[col]) {
 #ifdef LINPOT
@@ -110,9 +110,6 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #elif defined(KEATING)
       if (r2 < keat_r2_cut[p_typ][q_typ]) {
 	PAIR_INT_KEATING(pot_zwi, pot_grad, p_typ, q_typ, r2)
-#elif defined(STIWEB)  
-      if (r2 < sw_2_a1[p_typ][q_typ]) {
-	PAIR_INT_STIWEB(pot_zwi, pot_grad, p_typ, q_typ, r2)
 #endif
 
         /* store force in temporary variable */
@@ -192,7 +189,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
         HEATCOND(q,j) += pot_zwi - r2 * pot_grad;
 #endif
       }
-#endif /* PAIR || KEATING || STIWEB */
+#endif /* PAIR || KEATING */
 
 #ifdef EAM2
       /* compute host electron density */

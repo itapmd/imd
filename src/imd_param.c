@@ -1999,6 +1999,7 @@ else if (strcasecmp(token, "laser_dir")==0){
     else if (strcasecmp(token,"stiweb_a1")==0) {
       if (ntypes==0) error("specify parameter ntypes before stiweb_a1");
       getparam(token, stiweb_a1, PARAM_REAL, ntypepairs, ntypepairs);
+      have_pre_pot = 1;
     }
     else if (strcasecmp(token,"stiweb_de")==0) {
       if (ntypes==0) error("specify parameter ntypes before stiweb_de");
@@ -2030,6 +2031,7 @@ else if (strcasecmp(token, "laser_dir")==0){
     else if (strcasecmp(token,"ters_a")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_a");
       getparam(token, ters_a, PARAM_REAL, ntypepairs, ntypepairs);
+      have_pre_pot = 1;
     }
     else if (strcasecmp(token,"ters_b")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_b");

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -36,6 +36,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
                 real *Vir_yz, real *Vir_zx, real *Vir_xy)
 {
   static vektor *d  = NULL;
+  static int    curr_len = 0;
   neightab *neigh;
   vektor force_j, force_k;
   cell   *jcell, *kcell;
@@ -47,9 +48,11 @@ void do_forces2(cell *p, real *Epot, real *Virial,
   vektor tmp_vir_vect = {0.0, 0.0, 0.0};
 #endif
 
-  d    = (vektor *) realloc( d, neigh_len * sizeof(vektor) );
-  if ( d==NULL )
-    error("cannot allocate memory for temporary neighbor data");
+  if (curr_len < neigh_len) {
+    d    = (vektor *) realloc( d, neigh_len * sizeof(vektor) );
+    if ( d==NULL )
+      error("cannot allocate memory for temporary neighbor data");
+  }
 
   /* For each atom in cell */
   for (i=0; i<p->n; ++i) {
@@ -124,6 +127,38 @@ void do_forces2(cell *p, real *Epot, real *Virial,
         tmp_virial     += SPROD(d[j],force_j) + SPROD(d[k],force_k);
 #endif
 
+#ifdef STRESS_TENS /* Distribute stress among atoms */
+        if (do_press_calc) {
+          tmp = 0.25 * ( force_j.x * d[j].x + force_k.x * d[k].x );
+          PRESSTENS(p,i,xx)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,xx) += tmp;
+          PRESSTENS(kcell,knum,xx) += tmp;
+          tmp = 0.25 * ( force_j.y * d[j].y + force_k.y * d[k].y );
+          PRESSTENS(p,i,yy)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,yy) += tmp;
+          PRESSTENS(kcell,knum,yy) += tmp;
+          tmp = 0.25 * ( force_j.z * d[j].z + force_k.z * d[k].z );
+          PRESSTENS(p,i,zz)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,zz) += tmp;
+          PRESSTENS(kcell,knum,zz) += tmp;
+          tmp = 0.125 * ( force_j.y * d[j].z + force_k.y * d[k].z 
+                        + force_j.z * d[j].y + force_k.z * d[k].y );
+          PRESSTENS(p,i,yz)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,yz) += tmp;
+          PRESSTENS(kcell,knum,yz) += tmp;	
+          tmp =  0.125 * ( force_j.z * d[j].x + force_k.z * d[k].x 
+                         + force_j.x * d[j].z + force_k.x * d[k].z );
+          PRESSTENS(p,i,zx)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,zx) += tmp;
+          PRESSTENS(kcell,knum,zx) += tmp;	
+          tmp =  0.125 * ( force_j.x * d[j].y + force_k.x * d[k].y 
+                         + force_j.y * d[j].x + force_k.y * d[k].x );
+          PRESSTENS(p,i,xy)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,xy) += tmp;
+          PRESSTENS(kcell,knum,xy) += tmp;
+        }
+#endif
+
     } /* neighbor pairs */
 
   } /* i */
@@ -157,6 +192,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 {
   static real   *r2 = NULL, *r = NULL, *pot = NULL, *grad = NULL;
   static vektor *d  = NULL;
+  static int    curr_len = 0;
   neightab *neigh;
   vektor force_j, force_k;
   cell   *jcell, *kcell;
@@ -170,13 +206,15 @@ void do_forces2(cell *p, real *Epot, real *Virial,
   vektor tmp_vir_vect = {0.0, 0.0, 0.0};
 #endif
 
-  d    = (vektor *) realloc( d,    neigh_len * sizeof(vektor) );
-  r2   = (real *)   realloc( r2,   neigh_len * sizeof(real)   );
-  r    = (real *)   realloc( r,    neigh_len * sizeof(real)   );
-  pot  = (real *)   realloc( pot,  neigh_len * sizeof(real)   );
-  grad = (real *)   realloc( grad, neigh_len * sizeof(real)   );
-  if ((d==NULL) || (r2==NULL) || (r==NULL) || (pot==NULL) || (grad==NULL))
-    error("cannot allocate memory for temporary neighbor data");
+  if (curr_len < neigh_len) {
+    d    = (vektor *) realloc( d,    neigh_len * sizeof(vektor) );
+    r2   = (real *)   realloc( r2,   neigh_len * sizeof(real)   );
+    r    = (real *)   realloc( r,    neigh_len * sizeof(real)   );
+    pot  = (real *)   realloc( pot,  neigh_len * sizeof(real)   );
+    grad = (real *)   realloc( grad, neigh_len * sizeof(real)   );
+    if ((d==NULL) || (r2==NULL) || (r==NULL) || (pot==NULL) || (grad==NULL))
+      error("cannot allocate memory for temporary neighbor data");
+  }
 
   /*           j
               /|
@@ -191,6 +229,9 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 
     p_typ   = SORTE(p,i);
     neigh   = NEIGH(p,i);
+
+    /* shortcut for types without 3-body interactions */
+    if (ttbp_constant[p_typ] == 0.0) continue;
 
     /* construct some data for all neighbors */
     tmpptr = neigh->dist;
@@ -268,6 +309,38 @@ void do_forces2(cell *p, real *Epot, real *Virial,
         tmp_virial     += SPROD(d[j],force_j) + SPROD(d[k],force_k);
 #endif
 
+#ifdef STRESS_TENS /* Distribute stress among atoms */
+        if (do_press_calc) {
+          tmp = 0.25 * ( force_j.x * d[j].x + force_k.x * d[k].x );
+          PRESSTENS(p,i,xx)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,xx) += tmp;
+          PRESSTENS(kcell,knum,xx) += tmp;
+          tmp = 0.25 * ( force_j.y * d[j].y + force_k.y * d[k].y );
+          PRESSTENS(p,i,yy)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,yy) += tmp;
+          PRESSTENS(kcell,knum,yy) += tmp;
+          tmp = 0.25 * ( force_j.z * d[j].z + force_k.z * d[k].z );
+          PRESSTENS(p,i,zz)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,zz) += tmp;
+          PRESSTENS(kcell,knum,zz) += tmp;
+          tmp = 0.125 * ( force_j.y * d[j].z + force_k.y * d[k].z 
+                        + force_j.z * d[j].y + force_k.z * d[k].y );
+          PRESSTENS(p,i,yz)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,yz) += tmp;
+          PRESSTENS(kcell,knum,yz) += tmp;	
+          tmp =  0.125 * ( force_j.z * d[j].x + force_k.z * d[k].x 
+                         + force_j.x * d[j].z + force_k.x * d[k].z );
+          PRESSTENS(p,i,zx)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,zx) += tmp;
+          PRESSTENS(kcell,knum,zx) += tmp;	
+          tmp =  0.125 * ( force_j.x * d[j].y + force_k.x * d[k].y 
+                         + force_j.y * d[j].x + force_k.y * d[k].x );
+          PRESSTENS(p,i,xy)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,xy) += tmp;
+          PRESSTENS(kcell,knum,xy) += tmp;
+        }
+#endif
+
     } /* neighbor pairs */
 
   } /* i */
@@ -304,26 +377,28 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 {
   static vektor  *d = NULL;
   static real    *r = NULL, *fc = NULL, *dfc = NULL;
+  static int     curr_len = 0;
   neightab *neigh;
   int      i, j, k, p_typ, k_typ, j_typ, jnum, knum, col;
-  vektor         force_j, force_k;
-  cell           *jcell, *kcell;
+  vektor   force_j, force_k;
+  cell     *jcell, *kcell;
   real     *tmpptr;
   real     tmp_r, tmp_sp, cos_theta, tmp, pot_zwi;
   real     tmp_grad1, tmp_grad2, tmp_jj, tmp_kk, tmp_jk;
   real     tmp_1, tmp_2;
-  real   tmp_virial = 0.0;
+  real     tmp_virial = 0.0;
 #ifdef P_AXIAL
-  vektor tmp_vir_vect = {0.0, 0.0, 0.0};
+  vektor   tmp_vir_vect = {0.0, 0.0, 0.0};
 #endif
 
-  d    = (vektor *) realloc( d,    neigh_len * sizeof(vektor) );
-  r    = (real *)   realloc( r,    neigh_len * sizeof(real)   );
-  fc   = (real *)   realloc( fc,   neigh_len * sizeof(real)   );
-  dfc  = (real *)   realloc( dfc,  neigh_len * sizeof(real)   );
-
-  if ( (d==NULL) || (r==NULL) || (fc==NULL) || (dfc==NULL) )
-    error("cannot allocate memory for temporary neighbor data");
+  if (curr_len < neigh_len) {
+    d    = (vektor *) realloc( d,    neigh_len * sizeof(vektor) );
+    r    = (real *)   realloc( r,    neigh_len * sizeof(real)   );
+    fc   = (real *)   realloc( fc,   neigh_len * sizeof(real)   );
+    dfc  = (real *)   realloc( dfc,  neigh_len * sizeof(real)   );
+    if ( (d==NULL) || (r==NULL) || (fc==NULL) || (dfc==NULL) )
+      error("cannot allocate memory for temporary neighbor data");
+  }
 
   /* For each atom in cell */
   for (i=0; i<p->n; ++i) {
@@ -337,7 +412,6 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 
       /* type, distance vector, radii */
       j_typ   = neigh->typ[j];
-      col     = p_typ * ( ntypes - 1 ) + j_typ;
       d[j].x  = *tmpptr++;
       d[j].y  = *tmpptr++;
       d[j].z  = *tmpptr++;
@@ -360,6 +434,9 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 	k_typ = neigh->typ[k];
 	kcell = (cell *) neigh->cl [k];
 	knum  = neigh->num[k];
+
+        /* shortcut for types without 3-body interactions */
+        if (sw_la[p_typ][j_typ][k_typ] == 0.0) continue;
 
 	/* potential term */
 	tmp_sp    = SPROD(d[j],d[k]);
@@ -414,34 +491,37 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 #else
 	tmp_virial     += SPROD(d[j],force_j) + SPROD(d[k],force_k);
 #endif
+
 #ifdef STRESS_TENS /* Distribute stress among atoms */
-	tmp = 0.25 * ( force_j.x * d[j].x + force_k.x * d[k].x );
-	PRESSTENS(p,i,xx)        += 2.0 * tmp;
-	PRESSTENS(jcell,jnum,xx) += tmp;
-	PRESSTENS(kcell,knum,xx) += tmp;
-	tmp = 0.25 * ( force_j.y * d[j].y + force_k.y * d[k].y );
-	PRESSTENS(p,i,yy)        += 2.0 * tmp;
-	PRESSTENS(jcell,jnum,yy) += tmp;
-	PRESSTENS(kcell,knum,yy) += tmp;
-	tmp = 0.25 * ( force_j.z * d[j].z + force_k.z * d[k].z );
-	PRESSTENS(p,i,zz)        += 2.0 * tmp;
-	PRESSTENS(jcell,jnum,zz) += tmp;
-	PRESSTENS(kcell,knum,zz) += tmp;
-	tmp = 0.125 * ( force_j.y * d[j].z + force_k.y * d[k].z 
-		      + force_j.z * d[j].y + force_k.z * d[k].y );
-	PRESSTENS(p,i,yz)        += 2.0 * tmp;
-	PRESSTENS(jcell,jnum,yz) += tmp;
-	PRESSTENS(kcell,knum,yz) += tmp;	
-	tmp =  0.125 * ( force_j.z * d[j].x + force_k.z * d[k].x 
-		       + force_j.x * d[j].z + force_k.x * d[k].z );
-	PRESSTENS(p,i,zx)        += 2.0 * tmp;
-	PRESSTENS(jcell,jnum,zx) += tmp;
-	PRESSTENS(kcell,knum,zx) += tmp;	
-	tmp =  0.125 * ( force_j.x * d[j].y + force_k.x * d[k].y 
-		       + force_j.y * d[j].x + force_k.y * d[k].x );
-	PRESSTENS(p,i,xy)        += 2.0 * tmp;
-	PRESSTENS(jcell,jnum,xy) += tmp;
-	PRESSTENS(kcell,knum,xy) += tmp;
+        if (do_press_calc) {
+          tmp = 0.25 * ( force_j.x * d[j].x + force_k.x * d[k].x );
+          PRESSTENS(p,i,xx)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,xx) += tmp;
+          PRESSTENS(kcell,knum,xx) += tmp;
+          tmp = 0.25 * ( force_j.y * d[j].y + force_k.y * d[k].y );
+          PRESSTENS(p,i,yy)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,yy) += tmp;
+          PRESSTENS(kcell,knum,yy) += tmp;
+          tmp = 0.25 * ( force_j.z * d[j].z + force_k.z * d[k].z );
+          PRESSTENS(p,i,zz)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,zz) += tmp;
+          PRESSTENS(kcell,knum,zz) += tmp;
+          tmp = 0.125 * ( force_j.y * d[j].z + force_k.y * d[k].z 
+                        + force_j.z * d[j].y + force_k.z * d[k].y );
+          PRESSTENS(p,i,yz)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,yz) += tmp;
+          PRESSTENS(kcell,knum,yz) += tmp;	
+          tmp =  0.125 * ( force_j.z * d[j].x + force_k.z * d[k].x 
+                         + force_j.x * d[j].z + force_k.x * d[k].z );
+          PRESSTENS(p,i,zx)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,zx) += tmp;
+          PRESSTENS(kcell,knum,zx) += tmp;	
+          tmp =  0.125 * ( force_j.x * d[j].y + force_k.x * d[k].y 
+                         + force_j.y * d[j].x + force_k.y * d[k].x );
+          PRESSTENS(p,i,xy)        += 2.0 * tmp;
+          PRESSTENS(jcell,jnum,xy) += tmp;
+          PRESSTENS(kcell,knum,xy) += tmp;
+        }
 #endif
 
       } /* neighbor pairs */
@@ -477,6 +557,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 {
   static real   *r = NULL, *fc = NULL, *dfc = NULL;
   static vektor *d = NULL;
+  static int    curr_len = 0;
   neightab *neigh;
   vektor dcos_j, dcos_k, dzeta_i, dzeta_j, force_j;
   static vektor *dzeta_k = NULL; 
@@ -494,19 +575,20 @@ void do_forces2(cell *p, real *Epot, real *Virial,
   vektor tmp_vir_vect = {0.0, 0.0, 0.0};
 #endif
 
-  d    = (vektor *) realloc( d,    neigh_len * sizeof(vektor) );
-  r    = (real *)   realloc( r,    neigh_len * sizeof(real)   );
-  fc   = (real *)   realloc( fc,   neigh_len * sizeof(real)   );
-  dfc  = (real *)   realloc( dfc,  neigh_len * sizeof(real)   );
-  dzeta_k = (vektor *) realloc( dzeta_k,  neigh_len * sizeof(vektor) );
-  if ((d==NULL) || (r==NULL) || (fc==NULL) || (dfc==NULL) || (dzeta_k==NULL))
-    error("cannot allocate memory for temporary neighbor data");
+  if (curr_len < neigh_len) {
+    d    = (vektor *) realloc( d,    neigh_len * sizeof(vektor) );
+    r    = (real *)   realloc( r,    neigh_len * sizeof(real)   );
+    fc   = (real *)   realloc( fc,   neigh_len * sizeof(real)   );
+    dfc  = (real *)   realloc( dfc,  neigh_len * sizeof(real)   );
+    dzeta_k = (vektor *) realloc( dzeta_k,  neigh_len * sizeof(vektor) );
+    if ((d==NULL) || (r==NULL) || (fc==NULL) || (dfc==NULL) || (dzeta_k==NULL))
+      error("cannot allocate memory for temporary neighbor data");
+  }
 
   /*     k
           \
            \
 	    i----j  */
-
 
   /* For each atom in cell */
   for (i=0; i<p->n; ++i) {
@@ -543,9 +625,13 @@ void do_forces2(cell *p, real *Epot, real *Virial,
     } /* j */
 
     /* for each neighbor of i */
-    for (j=0; j<neigh->n; ++j){
+    for (j=0; j<neigh->n; ++j) {
 
       j_typ = neigh->typ[j];
+
+      /* shortcut for types without 3-body interactions */
+      if (ter_b[p_typ][j_typ] == 0.0) continue;
+
       jcell = (cell *) neigh->cl [j];
       jnum  = neigh->num[j];
 
@@ -554,8 +640,9 @@ void do_forces2(cell *p, real *Epot, real *Virial,
       dzeta_j.x = 0.0; dzeta_j.y = 0.0; dzeta_j.z = 0.0;
       
       /* for each neighbor of i other than j */
-      for (k=0; k<neigh->n; ++k) 
-	if (k!=j) {
+      for (k=0; k<neigh->n; ++k) {
+ 
+	if (k==j) continue;
 
 	k_typ = neigh->typ[k];
   
@@ -612,27 +699,25 @@ void do_forces2(cell *p, real *Epot, real *Virial,
  
       } /* k */
 
-      phi_r  = 0.5 * ter_a[p_typ][j_typ] * exp(- ter_la[p_typ][j_typ] * r[j]);
-      phi_a  = 0.5 * ter_b[p_typ][j_typ] * exp(- ter_mu[p_typ][j_typ] * r[j]);
+      phi_a = 0.5 * ter_b[p_typ][j_typ] * exp(- ter_mu[p_typ][j_typ] * r[j]);
 #ifdef TERSOFF2
-      tmp_4  = pow( ter_ga[p_typ][j_typ] * zeta, ter_n[p_typ][j_typ] );
+      tmp_4 = pow( ter_ga[p_typ][j_typ] * zeta, ter_n[p_typ][j_typ] );
 
-     b_ij  = ter_chi[p_typ][j_typ] 
-       * pow( 1 + tmp_4, -1 / ( 2 * ter_n[p_typ][j_typ] ));
+      b_ij  = pow( 1 + tmp_4, -1 / ( 2 * ter_n[p_typ][j_typ] ));
 #else
-     tmp_4  = pow( ters_ga[p_typ] * zeta, ters_n[p_typ] );
+      tmp_4 = pow( ters_ga[p_typ] * zeta, ters_n[p_typ] );
 
-     b_ij  = ter_chi[p_typ][j_typ] 
-       * pow( 1 + tmp_4, -1 / ( 2 * ters_n[p_typ] ));
+      b_ij  = pow( 1 + tmp_4, -1 / ( 2 * ters_n[p_typ] ));
 #endif
-      pot_zwi  = phi_r - b_ij * phi_a;
+      pot_zwi  = - b_ij * phi_a;
       *Epot   += fc[j] * pot_zwi;
 
       if ( zeta == 0.0 )   /* only one neighbor of i */
 	tmp_5 = 0.0;
       else
         tmp_5 = - b_ij * fc[j] * phi_a * tmp_4 / ( 2 * zeta * ( 1 + tmp_4 ) );
-      tmp_6   = ( fc[j] * (- phi_r * ter_la[p_typ][j_typ] + phi_a * ter_mu[p_typ][j_typ] * b_ij)  + dfc[j] * pot_zwi ) / r[j];
+      tmp_6   = ( fc[j] * phi_a * ter_mu[p_typ][j_typ] * b_ij  
+                  + dfc[j] * pot_zwi ) / r[j];
 
       /* tmp force on particle j */
       force_j.x = - tmp_6 * d[j].x + tmp_5 * dzeta_j.x;
@@ -835,6 +920,13 @@ void do_neightab(cell *p, cell *q, vektor pbc)
 }
 
 #ifdef KEATING
+
+/******************************************************************************
+*
+*  init_keating
+*
+******************************************************************************/
+
 void init_keating(void) {
 
   int  i, j, k, n, m;
@@ -872,9 +964,16 @@ void init_keating(void) {
 	MAX( neightab_r2cut[i*ntypes+j], keat_r2_cut[i][j] );
 }
 
-#endif
+#endif /* KEATING */
 
 #ifdef TTBP
+
+/******************************************************************************
+*
+*  init_ttbp
+*
+******************************************************************************/
+
 void init_ttbp(void) {
   int  i;
   /* update neighbor table cutoff */
@@ -886,44 +985,20 @@ void init_ttbp(void) {
   for (i=0; i<ntypes*ntypes; i++)
     neightab_r2cut[i] = MAX( neightab_r2cut[i], smooth_pot.end[i] );
 }
-#endif
+
+#endif /* TTBP */
 
 #ifdef STIWEB
+
+/******************************************************************************
+*
+*  init_stiweb
+*
+******************************************************************************/
+
 void init_stiweb(void) {
 
-  int  i, j, k, n, m;
-  real tmp;
-
-  /* parameters for more than one atom type */
-  n = 0; m = 0;
-  for (i=0; i<ntypes; i++) 
-    for (j=i; j<ntypes; j++) {
-      sw_a[i][j]  = sw_a[j][i]  = stiweb_a[n];
-      sw_b[i][j]  = sw_b[j][i]  = stiweb_b[n];
-      sw_p[i][j]  = sw_p[j][i]  = stiweb_p[n];
-      sw_q[i][j]  = sw_q[j][i]  = stiweb_q[n];
-      sw_a1[i][j] = sw_a1[j][i] = stiweb_a1[n];
-      sw_de[i][j] = sw_de[j][i] = stiweb_de[n];
-      sw_ga[i][j] = sw_ga[j][i] = stiweb_ga[n];
-      sw_a2[i][j] = sw_a2[j][i] = stiweb_a2[n];
-      n++;
-      for (k=0; k<ntypes; k++) {
-	sw_la[k][i][j] = sw_la[k][j][i] = stiweb_la[m];
-	m++;
-      }
-    }
-
-  for (i=0; i<ntypes; ++i)
-    for (j=0; j<ntypes; ++j) 
-      sw_2_a1[i][j] = sw_a1[i][j] * sw_a1[i][j];
-
-  tmp = 0.0;
-  for (i=0; i<ntypes; ++i)
-    for (j=0; j<ntypes; ++j) {
-      tmp = MAX( tmp, stiweb_a1[i*ntypes+j] );
-      tmp = MAX( tmp, stiweb_a2[i*ntypes+j] );
-    }
-  cellsz = MAX(cellsz,tmp*tmp);
+  int  i, j;
 
   /* update neighbor table cutoff */
   if (NULL==neightab_r2cut) {
@@ -932,13 +1007,23 @@ void init_stiweb(void) {
       error("cannot allocate memory for neightab_r2cut");
   }
   for (i=0; i<ntypes; i++)
-    for (j=0; j<ntypes; j++)
-      neightab_r2cut[i*ntypes+j] = 
-	MAX( neightab_r2cut[i*ntypes+j], sw_2_a1[i][j] );
+    for (j=0; j<ntypes; j++) {
+      real tmp = SQR(sw_a2[i][j]);
+      neightab_r2cut[i*ntypes+j] = MAX( neightab_r2cut[i*ntypes+j], tmp );
+      cellsz = MAX( cellsz, tmp );
+    }
 }
-#endif
+
+#endif /* STIWEB */
 
 #ifdef TERSOFF
+
+/******************************************************************************
+*
+*  init_tersoff
+*
+******************************************************************************/
+
 void init_tersoff(void) {
 
   int i, j, n = 0;
@@ -970,14 +1055,16 @@ void init_tersoff(void) {
       ++n;      
     }
   }
-  for (i=0; i<ntypes; i++) ter_chi[i][i] = 1.0;
+
+  /* absorb ters_chi into ter_b */
   if ( ntypes>1 ) {
     for (i=0; i<(ntypes-1); i++)
       for (j=(i+1); j<ntypes; j++) {
-        ter_chi[i][j] = ter_chi[j][i] 
-                      = ters_chi[i * ( 2 * ntypes - i - 3 ) / 2 + j - 1]; 
+        ter_b[i][j] *= ters_chi[i * ( 2 * ntypes - i - 3 ) / 2 + j - 1]; 
+        ter_b[j][i] *= ters_chi[i * ( 2 * ntypes - i - 3 ) / 2 + j - 1]; 
       }
   }
+
   for (i=0; i<ntypes; i++) ter_om[i][i] = 1.0;
   if ( ntypes>1 ) {
     for (i=0; i<(ntypes-1); i++)
@@ -985,7 +1072,8 @@ void init_tersoff(void) {
         ter_om[i][j] = ter_om[j][i] 
                      = ters_om[i * ( 2 * ntypes - i - 3 ) / 2 + j - 1]; 
       }
-  }  
+  }
+
   tmp = 0.0;
   for (i=0; i<ntypes; ++i)
     for (j=0; j<ntypes; ++j)
@@ -1004,4 +1092,4 @@ void init_tersoff(void) {
 	MAX( neightab_r2cut[i*ntypes+j], ter_r2_cut[i][j] );
 }
 
-#endif 
+#endif /* TERSOFF */

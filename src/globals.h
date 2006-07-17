@@ -56,6 +56,9 @@
 #define zero45       {0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
  0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0}
 
+#define one45        {1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1,\
+ 1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1,1,1,1,1,1, 1,1,1,1,1}
+
 #define zero55       {0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
  0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
  0,0,0,0,0}
@@ -816,7 +819,6 @@ EXTERN real stiweb_a1[55] INIT(zero55);
 EXTERN real sw_a1[10][10];
 EXTERN real stiweb_de[55] INIT(zero55);
 EXTERN real sw_de[10][10];
-EXTERN real sw_2_a1[10][10];
 EXTERN real stiweb_a2[55] INIT(zero55);
 EXTERN real sw_a2[10][10];
 EXTERN real stiweb_la[550] INIT(zero550);
@@ -841,9 +843,8 @@ EXTERN real ters_la[55] INIT(zero55);
 EXTERN real ter_la[10][10];
 EXTERN real ters_mu[55] INIT(zero55);
 EXTERN real ter_mu[10][10];
-EXTERN real ters_chi[45] INIT(zero45);
-EXTERN real ter_chi[10][10];
-EXTERN real ters_om[45] INIT(zero45);
+EXTERN real ters_chi[45] INIT(one45);
+EXTERN real ters_om[45] INIT(one45);
 EXTERN real ter_om[10][10];
 #ifdef TERSOFF2
 EXTERN real ters_ga[55] INIT(zero55);

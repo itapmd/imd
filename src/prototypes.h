@@ -181,6 +181,7 @@ void init_ttbp(void);
 #endif
 #ifdef TERSOFF
 void init_tersoff(void);
+void pair_int_tersoff(real *pot, int p_typ, int q_typ, real r2);
 #endif
 #ifdef UNIAX
 void gay_berne ( vektor r12, vektor e1, vektor e2, 

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -50,8 +50,8 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols, int radial )
   int  format=DEFAULT_POTFILE_TYPE;  /* 2 for EAM2, 1 otherwise */
   int  i, k;
 
-  /* read header only on master processor? */
-  if ((0==myid) || (1==parallel_input)) {
+  /* read header */
+  if (0==myid) {
 
     /* open file */
     infile = fopen(filename,"r");
@@ -122,32 +122,30 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols, int radial )
     pt->len[i] = 0;
   }
 
-  /* read table only on master processor? */
-  if ((0==myid) || (1==parallel_input)) {
+  /* read table */
+  if (0==myid) {
     if (format==1) read_pot_table1(pt, ncols, filename, infile, radial);
     if (format==2) read_pot_table2(pt, ncols, filename, infile, radial);
     fclose(infile);
   }
 
 #ifdef MPI
-  if (0==parallel_input) {
-    /* Broadcast table to other CPUs */
-    MPI_Bcast( &(pt->maxsteps), 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( &(pt->ncols),    1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->begin,   ncols, REAL,    0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->end,     ncols, REAL,    0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->step,    ncols, REAL,    0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->invstep, ncols, REAL,    0, MPI_COMM_WORLD);
-    MPI_Bcast( pt->len,     ncols, MPI_INT, 0, MPI_COMM_WORLD);
-    tablesize = (pt->maxsteps + 2) * ncols;
-    if (0 != myid) {
-      pt->table = (real *) malloc(tablesize*sizeof(real));
-      if (NULL==pt->table)
-        error("Cannot allocate memory for function table");
-    }
-    MPI_Bcast( pt->table, tablesize, REAL, 0, MPI_COMM_WORLD);
-    MPI_Bcast( &cellsz,           1, REAL, 0, MPI_COMM_WORLD);
+  /* Broadcast table to other CPUs */
+  MPI_Bcast( &(pt->maxsteps), 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &(pt->ncols),    1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( pt->begin,   ncols, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( pt->end,     ncols, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( pt->step,    ncols, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( pt->invstep, ncols, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( pt->len,     ncols, MPI_INT, 0, MPI_COMM_WORLD);
+  tablesize = (pt->maxsteps + 2) * ncols;
+  if (0 != myid) {
+    pt->table = (real *) malloc(tablesize*sizeof(real));
+    if (NULL==pt->table)
+      error("Cannot allocate memory for function table");
   }
+  MPI_Bcast( pt->table, tablesize, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &cellsz,           1, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #if   defined(FOURPOINT)
@@ -474,6 +472,18 @@ void create_pot_table(pot_table_t *pt)
             if (spring_cst[i][j]>0) {
 	      val = 0.5 * spring_cst[i][j] * r2;
             }
+#ifdef STIWEB
+            if ((sw_a1[i][j] > 0) && (SQR(sw_a1[i][j]) > r2)) {
+              pair_int_stiweb(&pot, &grad, i, j, r2);
+              val += pot;
+            }
+#endif
+#ifdef TERSOFF
+            if ((ter_a[i][j] > 0) && (ter_r2_cut[i][j] > r2)) {
+              pair_int_tersoff(&pot, i, j, r2);
+              val += pot;
+            }
+#endif
 #ifdef EWALD
             /* Coulomb potential for Ewald */
             if ((ew_r2_cut > 0) && (ew_nmax<0)) {
@@ -512,16 +522,22 @@ void create_pot_table(pot_table_t *pt)
 
 void init_pre_pot(void) {
 
-  int  i, j, k, n;
+  int  i, j, k, m, n;
   real tmp = 0.0;
 
-  n=0;
+  n=0; m=0;
   for (i=0; i<ntypes; i++) 
     for (j=i; j<ntypes; j++) {
 
+#ifdef STIWEB
+      r_cut_lin[n] = MAX( r_cut_lin[n], stiweb_a1[n] );
+#endif
+#ifdef TERSOFF
+      r_cut_lin[n] = MAX( r_cut_lin[n], ters_r_cut[n] );
+#endif
       r_cut [i][j] = r_cut [j][i] =     r_cut_lin[n];
       r2_cut[i][j] = r2_cut[j][i] = SQR(r_cut_lin[n]);
-      if (pot_res[n]==0) pot_res[n] = 1000;
+      if (pot_res[n]==0) pot_res[n] = 10000;
 
       /* Lennard-Jones */
       lj_epsilon[i][j] = lj_epsilon[j][i] = lj_epsilon_lin[n]; 
@@ -546,6 +562,33 @@ void init_pre_pot(void) {
       buck_sigma[i][j] = buck_sigma[j][i] = buck_sigma_lin[n];
       if ((r_begin[n]==0) && (buck_sigma_lin[n]>0)) 
         r_begin[n] = 0.1 * buck_sigma_lin[n];
+
+#ifdef STIWEB
+      /* Stillinger-Weber */
+      sw_a[i][j]  = sw_a[j][i]  = stiweb_a[n];
+      sw_b[i][j]  = sw_b[j][i]  = stiweb_b[n];
+      sw_p[i][j]  = sw_p[j][i]  = stiweb_p[n];
+      sw_q[i][j]  = sw_q[j][i]  = stiweb_q[n];
+      sw_a1[i][j] = sw_a1[j][i] = stiweb_a1[n];
+      sw_de[i][j] = sw_de[j][i] = stiweb_de[n];
+      sw_ga[i][j] = sw_ga[j][i] = stiweb_ga[n];
+      sw_a2[i][j] = sw_a2[j][i] = stiweb_a2[n];
+      for (k=0; k<ntypes; k++) {
+	sw_la[k][i][j] = sw_la[k][j][i] = stiweb_la[m];
+	m++;
+      }
+      if ((r_begin[n]==0) && (stiweb_a1[n]>0)) 
+        r_begin[n] = 0.05 * stiweb_a1[n];
+#endif
+
+#ifdef TERSOFF
+      /* Tersoff */
+      ter_r_cut [i][j] = ter_r_cut [j][i] = ters_r_cut[n];
+      ter_r2_cut[i][j] = ter_r2_cut[j][i] = SQR(ter_r_cut[i][j]);
+      ter_r0    [i][j] = ter_r0    [j][i] = ters_r0[n];
+      ter_a     [i][j] = ter_a     [j][i] = ters_a [n];
+      ter_la    [i][j] = ter_la    [j][i] = ters_la[n];
+#endif
 
 #ifdef EWALD
       /* Coulomb for Ewald */
@@ -1012,6 +1055,31 @@ void pair_int_stiweb(real *pot, real *grad, int p_typ, int q_typ, real r2)
 	    - f_cut * inv_r * ( sw_p[p_typ][q_typ] * phi_r 
 			      + sw_q[p_typ][q_typ] * phi_a ) ) * inv_r; 
 
+}
+
+#endif
+
+#ifdef TERSOFF
+
+/*****************************************************************************
+*
+*  Evaluate pair part of Tersoff potential 
+*
+******************************************************************************/
+
+void pair_int_tersoff(real *pot, int p_typ, int q_typ, real r2)
+{
+  real r, tmp, fc;
+
+  r   = sqrt(r2);
+  tmp = M_PI / ( ter_r_cut[p_typ][q_typ] - ter_r0[p_typ][q_typ] );
+  tmp = tmp * ( r - ter_r0[p_typ][q_typ] );
+
+  if      ( r < ter_r0   [p_typ][q_typ] ) fc = 1.0; 
+  else if ( r > ter_r_cut[p_typ][q_typ] ) fc = 0.0;
+  else    fc = 0.5 * ( 1.0 + cos( tmp ) );  
+
+  *pot = fc * ter_a[p_typ][q_typ] * exp( -ter_la[p_typ][q_typ] * r ); 
 }
 
 #endif
