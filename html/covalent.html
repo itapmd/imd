@@ -32,9 +32,7 @@ Tersoff Potential</a></h2>
 (1989)), which is enabled with the compilation option <b>tersoff</b>
 or <b>tersoff2</b>, is computed from its analytic expression, using
 parameters read from the <a href="paramfile.html">parameter
-file</a>. Using the compilation option <b>pair</b>, it can be combined
-with an additional short range <a href="pairpot.html">pair
-interaction</a>. The Tersoff potential in its original form is enabled
+file</a>. The Tersoff potential in its original form is enabled
 using the compilation option <b>tersoff</b>. It takes the following
 form:</p>
 
@@ -48,10 +46,12 @@ where
 </center></p>
 
 <p>
-The two-body potential is implicitly contained in this expression,
-so that an additional pair potential need not be given. It is 
-possible, however, to add an extra pair interaction using the
-option <b>pair</b>.</p>
+For the computation, the attractive two-body part contained 
+in this expression is computed from the parameters and filled 
+into the corresponding potential table. Alternatively, it is 
+possible to set the coupling constants <i>A<sub>ij</sub></i> 
+to zero, and use an arbitrary tabulated pair potential instead.
+</p>
 
 <p>
 The cutoff function is also given analytically, 
@@ -112,7 +112,7 @@ parameters:</p>
 <p>
 The values of the single-index parameters have to be given for all 
 atom types in a row. The values of the two-index parameters except
-<tt>ters_chi</tt> and <tt>ters_om</tt> are read in using the 
+<tt>ters_chi</tt> and <tt>ters_om</tt> are read using the 
 following format:</p>
 
 <p>
@@ -132,8 +132,11 @@ values are read using the following format:</p>
 </p>
 
 <p>
-The parameters <tt>ters_chi</tt> and <tt>ters_om</tt> are only
-required if there is more than one atom type.<p>
+The parameters <tt>ters_chi</tt> and <tt>ters_om</tt> are meaningful
+only if there is more than one atom type. They both default to 1 for
+all components. Note that the parameters <tt>ters_chi</tt> can be 
+absorbed into the parameters <tt>ters_b</tt>, in which case the
+default values for <tt>ters_chi</tt> can be used.<p>
 
 
 <h2><a id="stiweb" name="stiweb">
@@ -141,7 +144,7 @@ Stillinger-Weber Potential (analytic)</a></h2>
 
 <p>
 The Stillinger-Weber potential (F. H. Stillinger and T. A. Weber, 
-Phys. Rev. B <b>31</b>, 5262 (1985)) computed from in its analytic 
+Phys. Rev. B <b>31</b>, 5262 (1985)) computed from its analytic 
 formula is enabled with the compilation option <b>stiweb</b>.
 Note that there is is also the <a href="covalent.html#ttbp">
 possibility</a> to define potentials of this type by 
@@ -166,7 +169,7 @@ The angle <i>theta_jik</i> is the bond angle between the bonds <i>ij</i>
 and <i>ik</i>. <i>V<sub>2</sub></i> and <i>V<sub>3</sub></i> are zero 
 for <i>r<sub>ij</sub></i> larger or equal to <i>a<sup>1</sup><sub>ij</sub></i>
 and <i>a<sup>2</sup><sub>ij</sub></i>, respectively. The following IMD 
-parameters corresponding to the potential parameters:</p>
+parameters correspond to the potential parameters:</p>
 
 <table align="center" border="1" cellpadding="5" cellspacing="5" bgcolor="#99ccff" width="40%">
 <tr align="center"><td><tt> stiweb_a        </tt></td><td><i> A_ij      </i></td></tr>
@@ -181,14 +184,14 @@ parameters corresponding to the potential parameters:</p>
 </table>
 
 <p>
-The values of the two-index parameters have to be given for all types
-of atoms in the following format:</p>
+The values of the two-index parameters have to be given for all atom types
+in the following format:</p>
 <p>
 <center>
 <i>A<sub>00</sub> A<sub>01</sub> ... A<sub>0(n-1)</sub> A<sub>11</sub>
  A<sub>12</sub> ... A<sub>(n-1)(n-1)</sub></i> ,
 </center><br />
-where <i>n</i> is the number of atoms. In the case of
+where <i>n</i> is the number of atom types. In the case of
 <tt>stiweb_la</tt>, the first index runs from <i>0</i> to <i>n-1</i>, 
 whereas the last two indices are expected like for the two-index 
 parameters. </p>
