@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2003 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -26,16 +26,18 @@ void do_forces2(cell *p, real *Epot, real *Virial,
                 real *Vir_xx, real *Vir_yy, real *Vir_zz,
                 real *Vir_yz, real *Vir_zx, real *Vir_xy)
 {
+  static vektor *d    = NULL, *dfc  = NULL, *ds   = NULL;
+  static vektor *dfl1 = NULL, *dfl2 = NULL, *dfl3 = NULL; 
+  static real *r = NULL, *invr = NULL, *r2 = NULL, *invr2 = NULL;
+  static real *cos = NULL, *fc = NULL, *s = NULL;
+  static real *rho_a0 = NULL, *rho_a1 = NULL, *rho_a2 = NULL, *rho_a3 = NULL;
+  static real *fl1  = NULL, *fl2  = NULL, *fl3  = NULL;
+  static int  curr_len = 0;
   cell     *jcell, *kcell;
   int      i, j, k, l, m, jnum, knum, p_typ, j_typ, k_typ;
   neightab *neigh;
-  static vektor *d = NULL;
   vektor   d_jk;
   real     r2_jk;
-  static real *r = NULL, *invr = NULL, *r2 = NULL, *invr2 = NULL;
-  static real    *cos = NULL, *fc = NULL;
-  static vektor  *dfc = NULL;
-  static real *rho_a0 = NULL, *rho_a1 = NULL, *rho_a2 = NULL, *rho_a3 = NULL;
   real     f, df, phi, dphi, pot_zwi;
   int      col1, col2, is_short=0, idummy=0, inc = ntypes * ntypes;
   real     x_ik, x_jk;
@@ -45,57 +47,48 @@ void do_forces2(cell *p, real *Epot, real *Virial,
   real     *tmpptr;
   real     c, c_red, invdelta_c, s_kij, dgc;
   real     l1, l2, l3, dl1, dl2, dl3;
-  static real    *s = NULL;
-  static vektor *ds = NULL;
   vektor   force_j, force_k;
   real     g, gamma, egamma;
   real     pref1, pref2;
   real     rho, drho, rho_0, rho2_1, rho2_2, rho2_3;
   vektor   drho_0, drho2_1, drho2_2, drho2_3;
-  static real   *fl1  = NULL, *fl2  = NULL, *fl3  = NULL;
-  static vektor *dfl1 = NULL, *dfl2 = NULL, *dfl3 = NULL;
   real     epsilon = 1e-10;
   real     meam_t1_av, meam_t2_av, meam_t3_av;
   real     t1, t2, t3;
-  real     tmp_virial;
+  real     tmp_virial = 0.0;
 #ifdef P_AXIAL
-  vektor   tmp_vir_vect;
+  vektor   tmp_vir_vect = {0.0, 0.0, 0.0};
 #endif
 
-  tmp_virial     = 0.0;
-#ifdef P_AXIAL
-  tmp_vir_vect.x = 0.0;
-  tmp_vir_vect.y = 0.0;
-  tmp_vir_vect.z = 0.0;
-#endif
-
-  d       = (vektor *) realloc( d,      neigh_len * sizeof(vektor) );
-  r       = (real   *) realloc( r,      neigh_len * sizeof(real) );
-  invr    = (real   *) realloc( invr,   neigh_len * sizeof(real) );
-  r2      = (real   *) realloc( r2,     neigh_len * sizeof(real) );
-  invr2   = (real   *) realloc( invr2,  neigh_len * sizeof(real) );
-  fc      = (real   *) realloc( fc,     neigh_len * sizeof(real) );
-  dfc     = (vektor *) realloc( dfc,    neigh_len * sizeof(vektor) );
-  rho_a0  = (real   *) realloc( rho_a0, neigh_len * sizeof(real) );
-  rho_a1  = (real   *) realloc( rho_a1, neigh_len * sizeof(real) );
-  rho_a2  = (real   *) realloc( rho_a2, neigh_len * sizeof(real) );
-  rho_a3  = (real   *) realloc( rho_a3, neigh_len * sizeof(real) );
-  fl1     = (real   *) realloc( fl1,    neigh_len * sizeof(real) );
-  fl2     = (real   *) realloc( fl2,    neigh_len * sizeof(real) );
-  fl3     = (real   *) realloc( fl3,    neigh_len * sizeof(real) );
-  dfl1    = (vektor *) realloc( dfl1,   neigh_len * sizeof(vektor) );
-  dfl2    = (vektor *) realloc( dfl2,   neigh_len * sizeof(vektor) );
-  dfl3    = (vektor *) realloc( dfl3,   neigh_len * sizeof(vektor) );
-  s       = (real   *) realloc( s,      neigh_len * sizeof(real) );
-  ds      = (vektor *) realloc( ds,  neigh_len * neigh_len * sizeof(vektor) );
-  cos     = (real   *) realloc( cos, neigh_len * neigh_len * sizeof(real) );
-
-  if ( d==NULL || r==NULL || fc==NULL || dfc==NULL || rho_a0==NULL 
-      || rho_a1==NULL || rho_a2==NULL || rho_a3==NULL || fl1==NULL 
-      || fl2==NULL || fl3==NULL || dfl1==NULL || dfl2==NULL || dfl3==NULL 
-      || s==NULL || ds==NULL || invr==NULL || r2==NULL || invr2==NULL 
-      || cos==NULL )
-    error("Cannot allocate memory for neighbour data!");
+  if (curr_len < neigh_len) {
+    d       = (vektor *) realloc( d,      neigh_len * sizeof(vektor) );
+    r       = (real   *) realloc( r,      neigh_len * sizeof(real) );
+    invr    = (real   *) realloc( invr,   neigh_len * sizeof(real) );
+    r2      = (real   *) realloc( r2,     neigh_len * sizeof(real) );
+    invr2   = (real   *) realloc( invr2,  neigh_len * sizeof(real) );
+    fc      = (real   *) realloc( fc,     neigh_len * sizeof(real) );
+    dfc     = (vektor *) realloc( dfc,    neigh_len * sizeof(vektor) );
+    rho_a0  = (real   *) realloc( rho_a0, neigh_len * sizeof(real) );
+    rho_a1  = (real   *) realloc( rho_a1, neigh_len * sizeof(real) );
+    rho_a2  = (real   *) realloc( rho_a2, neigh_len * sizeof(real) );
+    rho_a3  = (real   *) realloc( rho_a3, neigh_len * sizeof(real) );
+    fl1     = (real   *) realloc( fl1,    neigh_len * sizeof(real) );
+    fl2     = (real   *) realloc( fl2,    neigh_len * sizeof(real) );
+    fl3     = (real   *) realloc( fl3,    neigh_len * sizeof(real) );
+    dfl1    = (vektor *) realloc( dfl1,   neigh_len * sizeof(vektor) );
+    dfl2    = (vektor *) realloc( dfl2,   neigh_len * sizeof(vektor) );
+    dfl3    = (vektor *) realloc( dfl3,   neigh_len * sizeof(vektor) );
+    s       = (real   *) realloc( s,      neigh_len * sizeof(real) );
+    ds      = (vektor *) realloc( ds,  neigh_len * neigh_len * sizeof(vektor));
+    cos     = (real   *) realloc( cos, neigh_len * neigh_len * sizeof(real) );
+    if ( d==NULL || r==NULL || fc==NULL || dfc==NULL || rho_a0==NULL 
+        || rho_a1==NULL || rho_a2==NULL || rho_a3==NULL || fl1==NULL 
+        || fl2==NULL || fl3==NULL || dfl1==NULL || dfl2==NULL || dfl3==NULL 
+        || s==NULL || ds==NULL || invr==NULL || r2==NULL || invr2==NULL 
+        || cos==NULL )
+      error("Cannot allocate memory for neighbour data!");
+    curr_len = neigh_len;
+  }
 
   /* for each atom in cell */
   for (i=0; i<p->n; ++i) {

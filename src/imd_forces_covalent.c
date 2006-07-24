@@ -49,9 +49,10 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 #endif
 
   if (curr_len < neigh_len) {
-    d    = (vektor *) realloc( d, neigh_len * sizeof(vektor) );
+    d = (vektor *) realloc( d, neigh_len * sizeof(vektor) );
     if ( d==NULL )
       error("cannot allocate memory for temporary neighbor data");
+    curr_len = neigh_len;
   }
 
   /* For each atom in cell */
@@ -214,6 +215,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
     grad = (real *)   realloc( grad, neigh_len * sizeof(real)   );
     if ((d==NULL) || (r2==NULL) || (r==NULL) || (pot==NULL) || (grad==NULL))
       error("cannot allocate memory for temporary neighbor data");
+    curr_len = neigh_len;
   }
 
   /*           j
@@ -398,6 +400,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
     dfc  = (real *)   realloc( dfc,  neigh_len * sizeof(real)   );
     if ( (d==NULL) || (r==NULL) || (fc==NULL) || (dfc==NULL) )
       error("cannot allocate memory for temporary neighbor data");
+    curr_len = neigh_len;
   }
 
   /* For each atom in cell */
@@ -583,6 +586,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
     dzeta_k = (vektor *) realloc( dzeta_k,  neigh_len * sizeof(vektor) );
     if ((d==NULL) || (r==NULL) || (fc==NULL) || (dfc==NULL) || (dzeta_k==NULL))
       error("cannot allocate memory for temporary neighbor data");
+    curr_len = neigh_len;
   }
 
   /*     k
