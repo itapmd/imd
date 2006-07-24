@@ -134,29 +134,30 @@ DEBUG_FLAGS	+= -DDEBUG
 #
 ###########################################################################
 
-# AMD Opteron, gcc3
+# AMD Opteron or Intel EM46T, gcc3
 ifeq (x86_64-gcc3,${IMDSYS})
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
   MPICH_CC      = gcc
-#  MPICH_CLINKER = gcc
+#  MPICH_CLINKER = icc
+  OMPI_MPICC    = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
-#  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -m64 -Wno-unused
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
-  LFLAGS        +=  -static
-  export        MPICH_CC # MPICH_CLINKER
+  LFLAGS        += # -static
+  export        OMPI_MPICC MPICH_CC # MPICH_CLINKER
 endif
 
-# Intel EM64T "AMD inside", icc
+# AMD Opteron or Intel EM64T, icc
 ifeq (x86_64-icc,${IMDSYS})
   CC_SERIAL	= icc
   CC_MPI	= mpicc
   MPICH_CC      = icc
   MPICH_CLINKER = icc
+  OMPI_MPICC    = icc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
-  OPT_FLAGS	+= -O3 -ip -fno-builtin # -axP # remove -axP for Opteron
+  OPT_FLAGS	+= -O3 -ip # -fno-builtin # -axP # remove -axP for Opteron
   MPI_FLAGS     += 
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp
@@ -164,8 +165,8 @@ ifeq (x86_64-icc,${IMDSYS})
   PROF_FLAGS	+= -prof_gen
   RCD_FLAGS	+= # -DRCD -rcd
   MPI_LIBS      += 
-  LFLAGS        +=  #-static
-  export        MPICH_CC MPICH_CLINKER
+  LFLAGS        += #-static
+  export        OMPI_MPICC MPICH_CC MPICH_CLINKER
 endif
 
 # Athlon MP or XP, icc
@@ -176,15 +177,16 @@ ifeq (AthlonMP-icc,${IMDSYS})
   CC_OMPI	= mpicc
   MPICH_CC      = icc
   MPICH_CLINKER = icc
+  OMPI_MPICC    = icc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
-  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
-  OPT_FLAGS	+= -O -ip -tpp6 -axK # -static
+  OPT_FLAGS	+= -O -ip -tpp6 -axK
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -prof_gen
   RCD_FLAGS	+= -DRCD -rcd
-  export MPICH_CC  MPICH_CLINKER
+  LFLAGS        += #-static
+  export OMPI_MPICC MPICH_CC  MPICH_CLINKER
 endif
 
 # Athlon MP or XP, gcc3
@@ -193,12 +195,13 @@ ifeq (AthlonMP-gcc3,${IMDSYS})
   CC_MPI	= mpicc
   MPICH_CC      = gcc
 #  MPICH_CLINKER = gcc
+  OMPI_MPICC    = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
-  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
-  OPT_FLAGS	+= -O -march=athlon-mp # -static
+  OPT_FLAGS	+= -O -march=athlon-mp 
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
-  export        MPICH_CC # MPICH_CLINKER
+  LFLAGS        += #-static
+  export        OMPI_MPICC MPICH_CC # MPICH_CLINKER
 endif
 
 # Pentium 4 or Xeon, icc
@@ -209,8 +212,8 @@ ifeq (P4-icc,${IMDSYS})
   CC_OMPI	= mpicc
   MPICH_CC      = icc
   MPICH_CLINKER = icc
+  OMPI_MPICC    = icc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
-  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -ip -tpp7
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp
@@ -218,7 +221,7 @@ ifeq (P4-icc,${IMDSYS})
   PROF_FLAGS	+= -prof_gen
   RCD_FLAGS	+= -DRCD -rcd
   LFLAGS        += # -static
-  export        MPICH_CC  MPICH_CLINKER
+  export        OMPI_MPICC MPICH_CC MPICH_CLINKER
 endif
 
 # Pentium 4 or Xeon, gcc3
@@ -226,16 +229,16 @@ ifeq (P4-gcc3,${IMDSYS})
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
   MPICH_CC      = gcc
+  OMPI_MPICC    = gcc
 #  MPICH_CLINKER = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
-  FFTW_DIR 	= /common/linux/paket/fftw-3.0.1
   OPT_FLAGS	+= -O -march=pentium4
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
   PAPI_INC      =  -I /opt/include
   PAPI_LIBS     =  -L /opt/lib -lpapi -lperfctr
   LFLAGS        += # -static
-  export        MPICH_CC # MPICH_CLINKER
+  export        OMPI_MPICC MPICH_CC # MPICH_CLINKER
 endif
 
 # Pentium III, icc

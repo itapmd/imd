@@ -269,9 +269,6 @@ void getparamfile(char *paramfname, int sim)
   vektor vek;
   vektor shift;
   vektor shear, base;
-#ifdef RIGID
-  int superatomsize;
-#endif
   int nvalues;
   int k;
   int i;
@@ -666,33 +663,31 @@ void getparamfile(char *paramfname, int sim)
     }
 #ifdef RIGID
     else if (strcasecmp(token,"rigid")==0) {
+      int count, tmp, rigidv[15];
       if (vtypes==0)
         error("specify parameter total_types before rigid");
       /* virtual types forming superparticle */
-      getparam("rigid",rigidv,PARAM_INT,1,vtypes+DIM);
+      i = getparam(token,rigidv,PARAM_INT,1+DIM,vtypes+DIM);
       /* determine number of types in superparticle */
-      for (i=0; rigidv[i]!=-1; i++)
-	;
-      superatomsize = i - DIM;
-      /* construct vector superatom */
-      for (i=0; i<superatomsize; i++) {
-	if ( rigidv[i] > vtypes - 1 )
-	  error("Atom type in superparticle does not exist\n");
-	if ( superatom[rigidv[i]] > -1 && superatom[rigidv[i]] < nsuperatoms )
-	  error("Intersecting superparticles\n");
-	superatom[rigidv[i]] = nsuperatoms;
-	rigidv[i] = -1;
+      count = i - DIM;
+      /* construct superatom vector */
+      tmp = superatom[rigidv[0]];  
+      for (i=0; i<count; i++) {
+        if ( rigidv[i] > vtypes - 1 )
+          error("Atom type in superparticle does not exist\n");
+        if ( superatom[rigidv[i]] != tmp )
+          error("Intersecting superparticles\n");
+        if (tmp < 0)
+          superatom[rigidv[i]] = nsuperatoms;
       }
-
-      (superrestrictions + nsuperatoms)->x = rigidv[superatomsize];
-      rigidv[superatomsize] = -1;
-      (superrestrictions + nsuperatoms)->y = rigidv[superatomsize+1];
-      rigidv[superatomsize+1] = -1;
+      if (tmp < 0) {
+        superrestrictions[nsuperatoms].x = rigidv[count  ];
+        superrestrictions[nsuperatoms].y = rigidv[count+1];
 #ifndef TWOD
-      (superrestrictions + nsuperatoms)->z = rigidv[superatomsize+2];
-      rigidv[superatomsize+2] = -1;
+        superrestrictions[nsuperatoms].z = rigidv[count+2];
 #endif
-      ++nsuperatoms;
+        nsuperatoms++;
+      }
     }
 #endif
 

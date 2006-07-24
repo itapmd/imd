@@ -452,7 +452,6 @@ EXTERN vektor2d shear_factor INIT(nullvektor2d);/* shear factor in x,y-dir */
 EXTERN real relax_rate   INIT(0.0);       /* pressure relaxation rate */
 
 #ifdef RIGID
-EXTERN int  rigidv[50] INIT(minusone50);  /* virtual types in a superatom */
 EXTERN int  nsuperatoms INIT(0);          /* number of superatoms */
 EXTERN int  *superatom INIT(NULL);   /* maps virtual types to superatoms */
 EXTERN vektor *superrestrictions INIT(NULL); /* restricted rigidity */
