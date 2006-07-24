@@ -523,7 +523,7 @@ EXTERN real sum_f INIT(0.0);              /* Sum of stadium function */
 #ifdef FTG
 EXTERN real  Tleft   INIT(0.0);          /* Temperature of the left  wall*/
 EXTERN real  Tright  INIT(0.0);          /* Temperature of the right wall*/
-EXTERN int   nslices INIT(1);            /* Number of slices*/
+EXTERN int   nslices INIT(0);            /* Number of slices*/
 EXTERN int   nslices_Left  INIT(1);      /* Number of slices with Tleft */
 EXTERN int   nslices_Right INIT(1);      /* Number of slices with Tright*/
 EXTERN int  *ninslice;                   /* Number of atoms in slice*/

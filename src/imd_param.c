@@ -86,7 +86,6 @@ int curline; /* number of current line */
 
 static int getparam(char *param_name, void *param, PARAMTYPE ptype, 
 		    int pnum_min, int pnum_max)
-
 {
   static char errmsg[256];
   char *str;
@@ -572,91 +571,103 @@ void getparamfile(char *paramfname, int sim)
 #endif
     else if (strcasecmp(token,"total_types")==0) {
       /* TOTAL nuber of atom types: ntypes + virtual types */
-      getparam("total_types",&vtypes,PARAM_INT,1,1);
-      restrictions=(vektor*)realloc(restrictions,vtypes*DIM*sizeof(real));
-      if (NULL==restrictions)
-	error("Cannot allocate memory for restriction vectors\n");
-      for(k=0; k<vtypes; k++)
-       *(restrictions+k) = einsv;
+      int vt, init = (vtypes==0);
+      getparam(token,&vt,PARAM_INT,1,1);
+      if (init) {
+        vtypes = vt;
+      }
+      else if (vt != vtypes) {
+        error("total_types must be constant during a simulation");
+      }
+      /* do some allocations and initialisations */
+      if (init) {
+        restrictions = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==restrictions)
+	  error("Cannot allocate memory for restriction vectors\n");
+        for (k=0; k<vtypes; k++)
+          restrictions[k] = einsv;
 #ifdef FBC
-      /* Allocation & Initialisation of fbc_forces */
-      fbc_forces = (vektor *) malloc(vtypes*DIM*sizeof(real));
-      if (NULL==fbc_forces)
-	error("Cannot allocate memory for fbc_forces\n");
-      for(k=0; k<vtypes; k++)
-       *(fbc_forces+k) = nullv;
+        /* Allocation & Initialisation of fbc_forces */
+        fbc_forces = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==fbc_forces)
+	  error("Cannot allocate memory for fbc_forces\n");
+        for (k=0; k<vtypes; k++)
+          fbc_forces[k] = nullv;
 
-      fbc_beginforces = (vektor *) malloc(vtypes*DIM*sizeof(real));
-      if (NULL==fbc_beginforces)
-	error("Cannot allocate memory for fbc_beginforces\n");
-      for(k=0; k<vtypes; k++)
-       *(fbc_beginforces+k) = nullv;
+        fbc_beginforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==fbc_beginforces)
+          error("Cannot allocate memory for fbc_beginforces\n");
+        for (k=0; k<vtypes; k++)
+          fbc_beginforces[k] = nullv;
 #ifdef RELAX
-      fbc_dforces = (vektor *) malloc(vtypes*DIM*sizeof(real));
-      if (NULL==fbc_dforces)
-	error("Cannot allocate memory for fbc_dforces\n");
-      for(k=0; k<vtypes; k++)
-       *(fbc_dforces+k) = nullv; 
+        fbc_dforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==fbc_dforces)
+	  error("Cannot allocate memory for fbc_dforces\n");
+        for (k=0; k<vtypes; k++)
+          fbc_dforces[k] = nullv; 
 #else
-      fbc_endforces = (vektor *) malloc(vtypes*DIM*sizeof(real));
-      if (NULL==fbc_endforces)
-	error("Cannot allocate memory for fbc_endforces\n");
-      for(k=0; k<vtypes; k++)
-       *(fbc_endforces+k) = nullv;
+        fbc_endforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==fbc_endforces)
+	  error("Cannot allocate memory for fbc_endforces\n");
+        for (k=0; k<vtypes; k++)
+          fbc_endforces[k] = nullv;
 #endif
 #endif /*FBC*/
 #ifdef RIGID
-      /* Allocation & Initialization of superatom */
-      superatom = (int *) malloc( vtypes * sizeof(int) );
-      if (NULL==superatom)
-	error("Cannot allocate memory for superatom vector\n");
-      for(k=0; k<vtypes; k++)
-	superatom[k] = -1;
+        /* Allocation & Initialization of superatom */
+        superatom = (int *) malloc( vtypes * sizeof(int) );
+        if (NULL==superatom)
+	  error("Cannot allocate memory for superatom vector\n");
+        for (k=0; k<vtypes; k++)
+	  superatom[k] = -1;
 
-      /* Allocation of superforce */
-      superforce = (vektor *) malloc( vtypes * sizeof(vektor));
-      if (NULL==superforce)
-	error("Cannot allocate memory for superforce vector\n");
+        /* Allocation of superforce */
+        superforce = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==superforce)
+          error("Cannot allocate memory for superforce vector\n");
 
-      /* Allocation & Initialization of superrestrictions */
-      superrestrictions=(vektor*)realloc(superrestrictions,vtypes*DIM*sizeof(real));
-      if (NULL==superrestrictions)
-	error("Cannot allocate memory for superrestriction vectors\n");
-      for(k=0; k<vtypes; k++)
-       *(superrestrictions+k) = nullv;
+        /* Allocation & Initialization of superrestrictions */
+        superrestrictions = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==superrestrictions)
+	  error("Cannot allocate memory for superrestriction vectors\n");
+        for (k=0; k<vtypes; k++)
+          superrestrictions[k] = nullv;
 #endif
 #ifdef DEFORM
-      /* Allocation & Initialisation of deform_shift */
-      deform_shift = (vektor *) malloc( vtypes * DIM * sizeof(real) );
-      if (NULL==deform_shift)
-	error("Cannot allocate memory for deform_shift\n");
-      for(k=0; k<vtypes; k++)
-       *(deform_shift+k) = nullv;
+        /* Allocation & Initialisation of deform_shift */
+        deform_shift = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==deform_shift)
+          error("Cannot allocate memory for deform_shift\n");
+        for (k=0; k<vtypes; k++)
+          deform_shift[k] = nullv;
 
-      /* Allocation & Initialisation of shear_def */
-      shear_def = (int *) malloc( vtypes * sizeof(int) );
-      if (NULL==shear_def)
-	error("Cannot allocate memory for shear_def\n");
-      for(k=0; k<vtypes; k++)
-       *(shear_def+k) = 0;
+        /* Allocation & Initialisation of shear_def */
+        shear_def = (int *) malloc( vtypes * sizeof(int) );
+        if (NULL==shear_def)
+          error("Cannot allocate memory for shear_def\n");
+        for (k=0; k<vtypes; k++)
+          shear_def[k] = 0;
 
-      /* Allocation & Initialisation of deform_shear */
-      deform_shear = (vektor *) malloc( vtypes * DIM * sizeof(real) );
-      if (NULL==deform_shear)
-	error("Cannot allocate memory for deform_shear\n");
-      for(k=0; k<vtypes; k++)
-       *(deform_shear+k) = nullv;
+        /* Allocation & Initialisation of deform_shear */
+        deform_shear = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==deform_shear)
+          error("Cannot allocate memory for deform_shear\n");
+        for (k=0; k<vtypes; k++)
+          deform_shear[k] = nullv;
 
-      /* Allocation & Initialisation of deform_base */
-      deform_base = (vektor *) malloc( vtypes * DIM * sizeof(real) );
-      if (NULL==deform_base)
-	error("Cannot allocate memory for deform_base\n");
-      for(k=0; k<vtypes; k++)
-       *(deform_base+k) = nullv;
+        /* Allocation & Initialisation of deform_base */
+        deform_base = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==deform_base)
+          error("Cannot allocate memory for deform_base\n");
+        for (k=0; k<vtypes; k++)
+          deform_base[k] = nullv;
 #endif 
-   }
+      }
+    }
 #ifdef RIGID
     else if (strcasecmp(token,"rigid")==0) {
+      if (vtypes==0)
+        error("specify parameter total_types before rigid");
       /* virtual types forming superparticle */
       getparam("rigid",rigidv,PARAM_INT,1,vtypes+DIM);
       /* determine number of types in superparticle */
@@ -714,18 +725,20 @@ void getparamfile(char *paramfname, int sim)
 
 #ifdef FBC
     else if (strcasecmp(token,"extra_startforce")==0) {
+      if (vtypes==0)
+        error("specify parameter total_types before extra_startforce");
       /* extra force for virtual types */
-      /* format: type force.x force.y (force.z) read in a temp. vektor */
-      getparam("extra_startforce",&tempforce,PARAM_REAL,DIM+1,DIM+1);
+      /* format: type force.x force.y (force.z) */
+      getparam(token,&tempforce,PARAM_REAL,DIM+1,DIM+1);
       if (tempforce.x>vtypes-1)
-       error("Force defined for non existing virtual atom type\n");
+        error("Force defined for non existing virtual atom type\n");
       force.x = tempforce.y;
       force.y = tempforce.z;
 #ifndef TWOD
       force.z = tempforce.z2;
 #endif
-      *(fbc_beginforces+(int)(tempforce.x)) = force;
-      *(fbc_forces+(int)(tempforce.x)) = force; 
+      fbc_beginforces[(int)(tempforce.x)] = force;
+      fbc_forces     [(int)(tempforce.x)] = force; 
     }
 #ifdef RELAX
     else if (strcasecmp(token,"fbc_ekin_threshold")==0) {
@@ -743,47 +756,52 @@ void getparamfile(char *paramfname, int sim)
       warning("Parameter fbc_waitsteps replaced by max_fbc_int"); 
     }
     else if (strcasecmp(token,"extra_dforce")==0) {
+      if (vtypes==0)
+        error("specify parameter total_types before extra_dforce");
       /* extra force increment for virtual types */
-      /* format: type force.x force.y (force.z) read in a temp. vektor */
-      getparam("extra_dforce",&tempforce,PARAM_REAL,DIM+1,DIM+1);
+      /* format: type force.x force.y (force.z)  */
+      getparam(token,&tempforce,PARAM_REAL,DIM+1,DIM+1);
       if (tempforce.x>vtypes-1)
-       error("Force increment defined for non existing virtual atom type\n");
+        error("Force increment defined for non existing virtual atom type\n");
       force.x = tempforce.y;
       force.y = tempforce.z;
 #ifndef TWOD
       force.z = tempforce.z2;
 #endif
-      *(fbc_dforces+(int)(tempforce.x)) = force;
+      fbc_dforces[(int)(tempforce.x)] = force;
     }
 #else
     else if (strcasecmp(token,"extra_endforce")==0) {
+      if (vtypes==0)
+        error("specify parameter total_types before extra_endforce");
       /* extra force for virtual types */
-      /* format: type force.x force.y (force.z) read in a temp. vektor */
-      getparam("extra_endforce",&tempforce,PARAM_REAL,DIM+1,DIM+1);
+      /* format: type force.x force.y (force.z) */
+      getparam(token,&tempforce,PARAM_REAL,DIM+1,DIM+1);
       if (tempforce.x>vtypes-1)
-       error("Force defined for non existing virtual atom type\n");
+        error("Force defined for non existing virtual atom type\n");
       force.x = tempforce.y;
       force.y = tempforce.z;
 #ifndef TWOD
       force.z = tempforce.z2;
 #endif
-      *(fbc_endforces+(int)(tempforce.x)) = force;
+      fbc_endforces[(int)(tempforce.x)] = force;
     }
 #endif
 #endif /* FBC */
-
     else if (strcasecmp(token,"restrictionvector")==0) {
+      if (vtypes==0)
+        error("specify parameter total_types before restrictionvector");
       /* restrictions for virtual types */
-      /* format: type  1 1 (1) (=all directions ok) read in a temp. vektor */
-      getparam("restrictionvector",&tempvek,PARAM_REAL,DIM+1,DIM+1);
+      /* format: type  1 1 (1) (=all directions ok) */
+      getparam(token,&tempvek,PARAM_REAL,DIM+1,DIM+1);
       if (tempvek.x>vtypes-1)
-       error("Restriction defined for non existing virtual atom type\n");
+        error("Restriction defined for non existing virtual atom type\n");
       vek.x = tempvek.y;
       vek.y = tempvek.z;
 #ifndef TWOD
       vek.z = tempvek.z2;
 #endif
-      *(restrictions+(int)(tempvek.x)) = vek;
+      restrictions[(int)(tempvek.x)] = vek;
     }
     else if (strcasecmp(token,"box_x")==0) {
       /* 'x' or first vector for box */
@@ -829,64 +847,66 @@ void getparamfile(char *paramfname, int sim)
     }
     else if (strcasecmp(token,"ntypes")==0) {
       /* number of atom types */
-      getparam(token,&ntypes,PARAM_INT,1,1);
+      int nt, init = (ntypes==0);
+      getparam(token,&nt,PARAM_INT,1,1);
+      if (init) {
+        ntypes = nt;
+      } else if (nt != ntypes) {
+        error("ntypes must be constant during a simulation");
+      }
+      if (init) {
 #ifdef MONO
-      if (ntypes!=1) error("this executable is for monoatomic systems only!");
+        if (ntypes!=1) 
+        error("this executable is for monoatomic systems only!");
 #endif
-      ntypepairs = ((ntypes+1)*ntypes)/2;
-      ntypetriples = ntypes * ntypepairs;
+        ntypepairs = ((ntypes+1)*ntypes)/2;
+        ntypetriples = ntypes * ntypepairs;
 #ifdef TERSOFF
-      nvalues = ntypes;
+        nvalues = ntypes;
 #ifdef TERSOFF2
-      nvalues = ntypepairs;
+        nvalues = ntypepairs;
 #endif
-#endif      
-      /* if there are no virtual atom types */
-      if (vtypes==0) vtypes=ntypes;
-      restrictions=(vektor*)realloc(restrictions,vtypes*DIM*sizeof(real));
-      if (NULL==restrictions)
-	error("Cannot allocate memory for restriction vectors\n");
-      for(k=0; k<ntypes; k++)
-        *(restrictions+k) = einsv;
-      /* array of masses for generated structures */
-      masses=(real*)realloc(masses,ntypes*sizeof(real));
-      if (NULL==masses)
-	error("Cannot allocate memory for masses array\n");
-      for(k=0; k<ntypes; k++)
-        *(masses+k) = 1.0;
-      /* array of types for generated structures */
-      gtypes=(int*)realloc(gtypes,ntypes*sizeof(int));
-      if (NULL==gtypes)
-	error("Cannot allocate memory for types array\n");
-      for(k=0; k<ntypes; k++)
-        *(gtypes+k) = k;
+#endif
+        /* array of masses for generated structures */
+        masses = (real *) malloc( ntypes * sizeof(real) );
+        if (NULL==masses)
+          error("Cannot allocate memory for masses array\n");
+        for (k=0; k<ntypes; k++)
+          masses[k] = 1.0;
+        /* array of types for generated structures */
+        gtypes = (int *) malloc( ntypes * sizeof(int) );
+        if (NULL==gtypes)
+          error("Cannot allocate memory for types array\n");
+        for (k=0; k<ntypes; k++)
+          gtypes[k] = k;
 #ifdef EFILTER
-      lower_e_pot = (real *) calloc(ntypes, sizeof(real));
-      if (NULL==lower_e_pot)
-	  error("Cannot allocate memory for lower_e_pot\n");
-      upper_e_pot = (real *) calloc(ntypes, sizeof(real));
-      if (NULL==upper_e_pot)
-	  error("Cannot allocate memory for upper_e_pot\n");
+        lower_e_pot = (real *) calloc(ntypes, sizeof(real));
+        if (NULL==lower_e_pot)
+          error("Cannot allocate memory for lower_e_pot\n");
+        upper_e_pot = (real *) calloc(ntypes, sizeof(real));
+        if (NULL==upper_e_pot)
+          error("Cannot allocate memory for upper_e_pot\n");
 #endif 
 #ifdef NNBR
-      lower_nb_cut = (int *) calloc(ntypes, sizeof(int));
-      if (NULL==lower_nb_cut)
-        error("Cannot allocate memory for lower_nb_cut\n");
-      upper_nb_cut = (int *) calloc(ntypes, sizeof(int));
-      if (NULL==upper_nb_cut)
-        error("Cannot allocate memory for upper_nb_cut\n");
-      nb_r2_cut = (real *) calloc(ntypes*ntypes, sizeof(real));
-      if (NULL==nb_r2_cut)
-        error("Cannot allocate memory for nb_r2_cut");
+        lower_nb_cut = (int *) calloc(ntypes, sizeof(int));
+        if (NULL==lower_nb_cut)
+          error("Cannot allocate memory for lower_nb_cut\n");
+        upper_nb_cut = (int *) calloc(ntypes, sizeof(int));
+        if (NULL==upper_nb_cut)
+          error("Cannot allocate memory for upper_nb_cut\n");
+        nb_r2_cut = (real *) calloc(ntypes*ntypes, sizeof(real));
+        if (NULL==nb_r2_cut)
+          error("Cannot allocate memory for nb_r2_cut");
 #endif 
 #ifdef ORDPAR
-      op_r2_cut = (real *) calloc(ntypes*ntypes, sizeof(real));
-      if (NULL==op_r2_cut)
-        error("Cannot allocate memory for op_r2_cut");
-      op_weight = (real *) calloc(ntypes*ntypes, sizeof(real));
-      if (NULL==op_weight)
-        error("Cannot allocate memory for op_weight");
+        op_r2_cut = (real *) calloc(ntypes*ntypes, sizeof(real));
+        if (NULL==op_r2_cut)
+          error("Cannot allocate memory for op_r2_cut");
+        op_weight = (real *) calloc(ntypes*ntypes, sizeof(real));
+        if (NULL==op_weight)
+          error("Cannot allocate memory for op_weight");
 #endif
+      }
     }
     else if (strcasecmp(token,"starttemp")==0) {
       /* temperature at start of sim. */
@@ -1055,11 +1075,11 @@ void getparamfile(char *paramfname, int sim)
   
 #endif
 #ifdef FTG
-  else if (strcasecmp(token,"delta_ftg")==0) {
+    else if (strcasecmp(token,"delta_ftg")==0) {
       /* time constant delta for local temperature control  */
       getparam("delta_ftg",&delta_ftg,PARAM_REAL,1,1);
     } 
-  else if (strcasecmp(token,"gamma_min")==0) { 
+    else if (strcasecmp(token,"gamma_min")==0) { 
        /* minimal damping prefactor gamma_bar */
 	getparam("gamma_min",&gamma_min,PARAM_REAL,1,1);
     }
@@ -1073,49 +1093,56 @@ void getparamfile(char *paramfname, int sim)
     }
     else if (strcasecmp(token,"nslices")==0) {
       /* nuber of slices*/
-      getparam("nslices",&nslices,PARAM_INT,1,1);
-
-      ninslice=(int*) malloc(nslices*sizeof(int));
-      if (NULL==ninslice)
-	error("Cannot allocate memory for ninslice vector\n");
-      for(k=0; k<nslices; k++)
-       *(ninslice+k) = 0;
-
-      gamma_ftg=(real*) malloc(nslices*sizeof(real));
-      if (NULL==gamma_ftg)
-	error("Cannot allocate memory for gamma_ftg vector\n");
-      for(k=0; k<nslices; k++)
-	*(gamma_ftg+k) = 0.0;
-      
-      E_kin_ftg=(real*) malloc(nslices*sizeof(real));
-      if (NULL==E_kin_ftg)
-	error("Cannot allocate memory for E_kin_ftg vector\n");
-      for(k=0; k<nslices; k++)
-	*(E_kin_ftg+k) = 0.0;
+      int ns, init = (nslices==0);
+      getparam(token,&ns,PARAM_INT,1,1);
+      if (init) {
+        nslices = ns;
+      } else if ( ns != nslices) {
+        error("nslices must be constant during a simulation");
+      }
+      if (init) {
+        ninslice = (int *) malloc(nslices*sizeof(int));
+        if (NULL==ninslice)
+          error("Cannot allocate memory for ninslice vector\n");
+        for (k=0; k<nslices; k++)
+          ninslice[k] = 0;
+        gamma_ftg = (real *) malloc(nslices*sizeof(real));
+        if (NULL==gamma_ftg)
+          error("Cannot allocate memory for gamma_ftg vector\n");
+        for (k=0; k<nslices; k++)
+	  gamma_ftg[k] = 0.0;
+        E_kin_ftg = (real*) malloc(nslices*sizeof(real));
+        if (NULL==E_kin_ftg)
+          error("Cannot allocate memory for E_kin_ftg vector\n");
+        for (k=0; k<nslices; k++)
+	  E_kin_ftg[k] = 0.0;
+      }
     }
     else if (strcasecmp(token,"gamma_ftg")==0) {
       /* actual Damping factor for each slice */
-      /* format: slice gamma_ftg  read in a temp. vektor */
-      getparam("gamma_ftg",&tempvek,PARAM_REAL,2,2);
+      if (nslices==0)
+        error("specify parameter nslices before gamma_ftg");
+      /* format: slice gamma_ftg */
+      getparam(token,&tempvek,PARAM_REAL,2,2);
       if (tempvek.x>nslices-1)
 	error("actual Damping factorfor non existing slice\n");
-      *(gamma_ftg + (int)tempvek.x) = tempvek.y;
+      gamma_ftg[(int)(tempvek.x)] = tempvek.y;
     }
     else if (strcasecmp(token,"nslices_Left")==0) {
-      /* nuber of slices with Tleft*/
-      getparam("nslices_Left",&nslices_Left,PARAM_INT,1,1);
+      /* nuber of slices with Tleft */
+      getparam(token,&nslices_Left,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"nslices_Right")==0) {
-      /* nuber of slices with Right*/
-      getparam("nslices_Right",&nslices_Right,PARAM_INT,1,1);
+      /* nuber of slices with Right */
+      getparam(token,&nslices_Right,PARAM_INT,1,1);
     }
 #endif 
 #ifdef FINNIS
-  else if (strcasecmp(token,"delta_finnis")==0) {
+    else if (strcasecmp(token,"delta_finnis")==0) {
       /* time constant delta for local temperature control  */
       getparam("delta_finnis",&delta_finnis,PARAM_REAL,1,1);
     } 
-  else if (strcasecmp(token,"zeta_0")==0) {
+    else if (strcasecmp(token,"zeta_0")==0) {
       /* time constant delta for local temperature control  */
       getparam("zeta_0",&zeta_0,PARAM_REAL,1,1);
     } 
@@ -1294,43 +1321,49 @@ void getparamfile(char *paramfname, int sim)
     }
     else if (strcasecmp(token,"deform_shift")==0) {
       /* deform shift for virtual types */
-      /* format: type shift.x shift.y (shift.z) read in a temp. vektor */
-      getparam("deform_shift",&tempshift,PARAM_REAL,DIM+1,DIM+1);
+      /* format: type shift.x shift.y (shift.z) */
+      if (vtypes==0)
+        error("specify parameter total_types before deform_shift");
+      getparam(token,&tempshift,PARAM_REAL,DIM+1,DIM+1);
       if (tempshift.x>vtypes-1)
-       error("Shift defined for non existing virtual atom type\n");
+        error("Shift defined for non existing virtual atom type\n");
       shift.x = tempshift.y;
       shift.y = tempshift.z;
 #ifndef TWOD
       shift.z = tempshift.z2;
 #endif
-      *(deform_shift+(int)(tempshift.x)) = shift; 
+      deform_shift[(int)(tempshift.x)] = shift; 
     }
     else if (strcasecmp(token,"deform_shear")==0) {
       /* deform shear for virtual types */
-      /* format: type shear.x shear.y (shear.z) read in a temp. vektor */
-      getparam("deform_shear",&tempshift,PARAM_REAL,DIM+1,DIM+1);
+      /* format: type shear.x shear.y (shear.z) */
+      if (vtypes==0)
+        error("specify parameter total_types before deform_shear");
+      getparam(token,&tempshift,PARAM_REAL,DIM+1,DIM+1);
       if (tempshift.x>vtypes-1)
-       error("Shear defined for non existing virtual atom type\n");
+        error("Shear defined for non existing virtual atom type\n");
       shear.x = tempshift.y;
       shear.y = tempshift.z;
 #ifndef TWOD
       shear.z = tempshift.z2;
 #endif
-      *(deform_shear+(int)(tempshift.x)) = shear; 
-      *(shear_def+(int)(tempshift.x))    = 1;
+      deform_shear[(int)(tempshift.x)] = shear; 
+      shear_def   [(int)(tempshift.x)] = 1;
     }
     else if (strcasecmp(token,"deform_base")==0) {
       /* deform base for virtual types */
-      /* format: type shear.x shear.y (shear.z) read in a temp. vektor */
-      getparam("deform_shear",&tempshift,PARAM_REAL,DIM+1,DIM+1);
+      /* format: type shear.x shear.y (shear.z) */
+      if (vtypes==0)
+        error("specify parameter total_types before deform_base");
+      getparam(token,&tempshift,PARAM_REAL,DIM+1,DIM+1);
       if (tempshift.x>vtypes-1)
-       error("Shear base defined for non existing virtual atom type\n");
+        error("Shear base defined for non existing virtual atom type\n");
       base.x = tempshift.y;
       base.y = tempshift.z;
 #ifndef TWOD
       base.z = tempshift.z2;
 #endif
-      *(deform_base+(int)(tempshift.x)) = base;
+      deform_base[(int)(tempshift.x)] = base;
     }
 #endif /* DEFORM */
 #ifdef CG
@@ -2211,18 +2244,40 @@ else if (strcasecmp(token, "laser_dir")==0){
 void check_parameters_complete()
 {
   real tmp;
+  int  k;
+#ifdef TWOD
+  vektor einsv = {1.0,1.0};
+#else
+  vektor einsv = {1.0,1.0,1.0};
+#endif
   
   if (ensemble == 0) {
     error("missing or unknown ensemble parameter.");
   }
  
- if (timestep == (real)0) {
+  if (timestep == (real)0) {
     error("timestep is missing or zero.");
   }
 
   if (ntypes == 0) {
     error("ntypes is missing or zero.");
   }
+
+#if defined(FBC) || defined(RIGID) || defined(DEFORM)
+  if (vtypes == 0)
+    error("FBC, RIGID, and DEFORM require parameter total_types to be set");
+#endif
+  if (vtypes == 0) {
+    vtypes = ntypes;
+    restrictions = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==restrictions)
+      error("Cannot allocate memory for restriction vectors\n");
+    for (k=0; k<vtypes; k++)
+      restrictions[k] = einsv;
+  }
+  if (vtypes < ntypes)
+    error("total_types must not be smaller than ntypes");
+
 #ifdef PAIR
   if ((have_potfile==0) && (have_pre_pot==0))
     error("You must specify a pair interaction!");
@@ -2558,8 +2613,8 @@ void broadcast_params() {
   MPI_Bcast( &dist_presstens_flag,   1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_shock_shear_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_shear_aniso_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dist_dens_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dist_vxavg_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_dens_flag,        1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_vxavg_flag,       1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &box_from_header,       1, MPI_INT, 0, MPI_COMM_WORLD); 
 
 #ifdef TWOD
@@ -2575,7 +2630,7 @@ void broadcast_params() {
   MPI_Bcast( &nclones, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
-  MPI_Bcast( &vtypes,         1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &vtypes, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 #ifdef RELAX
   MPI_Bcast( &ekin_threshold,       1, REAL, 0, MPI_COMM_WORLD);
@@ -2586,32 +2641,41 @@ void broadcast_params() {
   MPI_Bcast( &nfc,                  1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 #ifdef FBC
-  if (0!=myid) fbc_forces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
-  if (NULL==fbc_forces) 
-    error("Cannot allocate memory for fbc_forces on client."); 
-  MPI_Bcast( fbc_forces, vtypes*DIM, REAL, 0, MPI_COMM_WORLD);
- 
-  if (0!=myid) fbc_beginforces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
-  if (NULL==fbc_beginforces) 
-    error("Cannot allocate memory for fbc_beginforces on client."); 
-  MPI_Bcast( fbc_beginforces, vtypes*DIM, REAL, 0, MPI_COMM_WORLD); 
+  if (NULL==fbc_forces) {
+    fbc_forces = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==fbc_forces) 
+      error("Cannot allocate memory for fbc_forces on client."); 
+  }
+  MPI_Bcast( fbc_forces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
+  if (NULL==fbc_beginforces) {
+    fbc_beginforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==fbc_beginforces) 
+      error("Cannot allocate memory for fbc_beginforces on client."); 
+  }
+  MPI_Bcast( fbc_beginforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
 #ifdef RELAX
   MPI_Bcast( &max_fbc_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  if (0!=myid) fbc_dforces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
-  if (NULL==fbc_dforces) 
-    error("Cannot allocate memory for fbc_dforces on client."); 
-  MPI_Bcast( fbc_dforces, vtypes*DIM, REAL, 0, MPI_COMM_WORLD); 
+  if (NULL==fbc_dforces) {
+    fbc_dforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==fbc_dforces) 
+      error("Cannot allocate memory for fbc_dforces on client."); 
+  }
+  MPI_Bcast( fbc_dforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
 #else
-  if (0!=myid) fbc_endforces  = (vektor *) malloc(vtypes*DIM*sizeof(real));
-  if (NULL==fbc_endforces) 
-    error("Cannot allocate memory for fbc_endforces on client."); 
-  MPI_Bcast( fbc_endforces, vtypes*DIM, REAL, 0, MPI_COMM_WORLD); 
+  if (NULL==fbc_endforces) {
+    fbc_forces = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==fbc_endforces) 
+      error("Cannot allocate memory for fbc_endforces on client."); 
+  }
+  MPI_Bcast( fbc_endforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
 #endif
 #endif
-  if (0!=myid) restrictions  = (vektor *) malloc(vtypes*DIM*sizeof(real));
-  if (NULL==restrictions) 
-    error("Cannot allocate memory for restriction vectors on client."); 
-  MPI_Bcast( restrictions, vtypes*DIM, REAL, 0, MPI_COMM_WORLD);  
+  if (NULL==restrictions) {
+    restrictions = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==restrictions) 
+      error("Cannot allocate memory for restriction vectors on client."); 
+  }
+  MPI_Bcast( restrictions, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);  
 
   MPI_Bcast( &pbc_dirs    , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &box_x       , DIM, REAL,     0, MPI_COMM_WORLD); 
@@ -2625,14 +2689,18 @@ void broadcast_params() {
   MPI_Bcast( &ntypes,         1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &ntypepairs,     1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &ntypetriples,   1, MPI_INT,  0, MPI_COMM_WORLD); 
-  if (0!=myid) {
-    masses=(real*)realloc(masses,ntypes*sizeof(real));
-    if (NULL==masses) error("Cannot allocate memory for masses array\n");
+  if (NULL==masses) {
+    masses = (real *) malloc( ntypes * sizeof(real) );
+    if (NULL==masses) 
+      error("Cannot allocate memory for masses array\n");
   }
-  if (0!=myid) {
-    gtypes=(int*)realloc(gtypes,ntypes*sizeof(int));
-    if (NULL==gtypes) error("Cannot allocate memory for types array\n");
+  MPI_Bcast( masses, ntypes, REAL,     0, MPI_COMM_WORLD); 
+  if (NULL==gtypes) {
+    gtypes = (int *) malloc( ntypes * sizeof(int) );
+    if (NULL==gtypes) 
+      error("Cannot allocate memory for types array\n");
   }
+  MPI_Bcast( gtypes, ntypes, MPI_INT,  0, MPI_COMM_WORLD); 
 #ifdef NBLIST
   MPI_Bcast( &nbl_margin,    1, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &nbl_size,      1, REAL, 0, MPI_COMM_WORLD);
@@ -2641,13 +2709,15 @@ void broadcast_params() {
   MPI_Bcast( &atoms_per_cpu, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 #ifdef EFILTER
-  if (0!=myid){
-      lower_e_pot = (real *) calloc(ntypes, sizeof(real));
-      if (NULL==lower_e_pot)
-	  error("Cannot allocate memory for lower_e_pot\n");
-      upper_e_pot = (real *) calloc(ntypes, sizeof(real));
-      if (NULL==upper_e_pot)
-	  error("Cannot allocate memory for upper_e_pot\n");
+  if (NULL==lower_e_pot) {
+    lower_e_pot = (real *) calloc(ntypes, sizeof(real));
+    if (NULL==lower_e_pot)
+      error("Cannot allocate memory for lower_e_pot\n");
+  }
+  if (NULL==upper_e_pot) {
+    upper_e_pot = (real *) calloc(ntypes, sizeof(real));
+    if (NULL==upper_e_pot)
+      error("Cannot allocate memory for upper_e_pot\n");
   }
   MPI_Bcast( lower_e_pot, ntypes,   REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( upper_e_pot, ntypes,   REAL, 0, MPI_COMM_WORLD);
@@ -2655,13 +2725,17 @@ void broadcast_params() {
 #endif
 
 #ifdef NNBR
-  if (0!=myid) {
+  if (NULL==lower_nb_cut) {
     lower_nb_cut = (int *) calloc(ntypes, sizeof(int));
     if (NULL==lower_nb_cut)
       error("Cannot allocate memory for lower_nb_cut\n");
+  }
+  if (NULL==upper_nb_cut) {
     upper_nb_cut = (int *) calloc(ntypes, sizeof(int));
     if (NULL==upper_nb_cut)
       error("Cannot allocate memory for upper_nb_cut\n");
+  }
+  if (NULL==nb_r2_cut) {
     nb_r2_cut = (real *) calloc(ntypes*ntypes, sizeof(real));
     if (NULL==nb_r2_cut)
       error("Cannot allocate memory for nb_r2_cut\n");
@@ -2671,9 +2745,6 @@ void broadcast_params() {
   MPI_Bcast( nb_r2_cut, ntypes*ntypes,    REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &nb_checkpt_int,       1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
-
-  MPI_Bcast( masses,     ntypes, REAL,     0, MPI_COMM_WORLD); 
-  MPI_Bcast( gtypes,     ntypes, MPI_INT,  0, MPI_COMM_WORLD); 
 
   MPI_Bcast( &timestep    ,   1, REAL,     0, MPI_COMM_WORLD); 
   MPI_Bcast( &temperature ,   1, REAL,     0, MPI_COMM_WORLD); 
@@ -2822,25 +2893,25 @@ void broadcast_params() {
   MPI_Bcast( &nslices,       1, MPI_INT   , 0, MPI_COMM_WORLD); 
   MPI_Bcast( &nslices_Left,  1, MPI_INT   , 0, MPI_COMM_WORLD); 
   MPI_Bcast( &nslices_Right, 1, MPI_INT   , 0, MPI_COMM_WORLD); 
-
-  if (0!=myid){ 
-    ninslice  = (int*) malloc(nslices*sizeof(int));
+  if (NULL==ninslice) { 
+    ninslice  = (int *) malloc(nslices*sizeof(int));
     if (NULL==ninslice)
       error("Cannot allocate memory for ninslice vector on client.\n");
   }                   
-  if (0!=myid){ 
-    E_kin_ftg = (real*) malloc(nslices*sizeof(real));
+  if (NULL==E_kin_ftg) { 
+    E_kin_ftg = (real *) malloc(nslices*sizeof(real));
     if (NULL==E_kin_ftg) 
       error("Cannot allocate memory for E_kin_ftg vector on client.\n");
   }
-  if (0!=myid){
-    gamma_ftg = (real*) malloc(nslices*sizeof(real));
+  if (NULL==gamma_ftg) {
+    gamma_ftg = (real *) malloc(nslices*sizeof(real));
     if (NULL==gamma_ftg)
       error("Cannot allocate memory for gamma_ftg vector on client.\n");
-    for(i=0;i<nslices;i++) *(gamma_ftg + i) = 0.0;
+    for (i=0;i<nslices;i++) 
+      gamma_ftg[i] = 0.0;
   }
-  MPI_Bcast( gamma_ftg, nslices, REAL     , 0, MPI_COMM_WORLD);
-#endif 
+  MPI_Bcast( gamma_ftg, nslices, REAL, 0, MPI_COMM_WORLD);
+#endif
 
 #ifdef FINNIS
   MPI_Bcast( &delta_finnis     , 1, REAL   , 0, MPI_COMM_WORLD); 
@@ -2873,13 +2944,13 @@ void broadcast_params() {
   }
   MPI_Bcast( superatom, vtypes, MPI_INT, 0, MPI_COMM_WORLD);
   if (NULL==superrestrictions) {
-    superrestrictions = (vektor *) malloc( vtypes * DIM * sizeof(real) );
+    superrestrictions = (vektor *) malloc( vtypes * sizeof(vektor) );
     if (NULL==superrestrictions)
       error("Cannot allocate memory for superrestrictions on client.");
     else 
-      for (k=0; k<vtypes; k++) *(superrestrictions+k) = nullv;
+      for (k=0; k<vtypes; k++) superrestrictions[k] = nullv;
   }
-  MPI_Bcast( superrestrictions, vtypes * DIM, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( superrestrictions, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
   if (NULL==superforce) 
     superforce = (vektor *) malloc( vtypes * sizeof(vektor) );
   if (NULL==superforce)
@@ -2888,24 +2959,30 @@ void broadcast_params() {
 #ifdef DEFORM
   MPI_Bcast( &max_deform_int,  1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &deform_size,     1, REAL,    0, MPI_COMM_WORLD); 
-  if (0!=myid) deform_shift = (vektor *) malloc( vtypes * DIM * sizeof(real) );
-  if (NULL==deform_shift) 
-    error("Cannot allocate memory for deform_shift on client."); 
+  if (NULL==deform_shift) {
+    deform_shift = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==deform_shift) 
+      error("Cannot allocate memory for deform_shift on client."); 
+  }
   MPI_Bcast( deform_shift, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
-  if (0!=myid) {
+  if (NULL==shear_def) {
     shear_def = (int *) malloc( vtypes * sizeof(int) );
     if (NULL==shear_def) 
       error("Cannot allocate memory for shear_def on client."); 
-    for(i=0; i<vtypes; i++) *(shear_def+i) = 0;
+    for (i=0; i<vtypes; i++) shear_def[i] = 0;
   }
   MPI_Bcast( shear_def, vtypes, MPI_INT, 0, MPI_COMM_WORLD);
-  if (0!=myid) deform_shear = (vektor *) malloc( vtypes * DIM * sizeof(real) );
-  if (NULL==deform_shear) 
-    error("Cannot allocate memory for deform_shear on client."); 
+  if (NULL==deform_shear) {
+    deform_shear = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==deform_shear) 
+      error("Cannot allocate memory for deform_shear on client."); 
+  }
   MPI_Bcast( deform_shear, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
-  if (0!=myid) deform_base = (vektor *) malloc( vtypes * DIM * sizeof(real) );
-  if (NULL==deform_base) 
-    error("Cannot allocate memory for deform_base on client."); 
+  if (NULL==deform_base) {
+    deform_base = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==deform_base) 
+      error("Cannot allocate memory for deform_base on client."); 
+  }
   MPI_Bcast( deform_base, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
 #endif
 
@@ -2963,15 +3040,17 @@ void broadcast_params() {
 #endif
 
 #ifdef ORDPAR
-  if (0!=myid) {
+  if (NULL==op_r2_cut) {
     op_r2_cut = (real *) calloc(ntypes*ntypes, sizeof(real));
     if (NULL==op_r2_cut)
       error("Cannot allocate memory for op_r2_cut\n");
+  }
+  MPI_Bcast( &op_r2_cut, ntypes*ntypes, REAL, 0, MPI_COMM_WORLD);
+  if (NULL==op_weight) {
     op_weight = (real *) calloc(ntypes*ntypes, sizeof(real));
     if (NULL==op_weight)
       error("Cannot allocate memory for op_weight\n");
   }
-  MPI_Bcast( &op_r2_cut, ntypes*ntypes, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &op_weight, ntypes*ntypes, REAL, 0, MPI_COMM_WORLD);
 #endif
 
