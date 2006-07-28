@@ -270,9 +270,10 @@ void copy_atom(msgbuf *to, int to_cpu, cell *p, int ind )
     error("copy_atom: index argument out of range.");
   }
 
-  /* See if we need some space */
+  /* check if buffer is large enough; we can't just increase it, */ 
+  /* as destination buffer wouldn't know about it                */
   if (to->n + MAX_ATOM_SIZE > to->n_max) {
-    realloc_msgbuf(to, to->n_max + BUFFER_SIZE_INC);
+    error("buffer overflow in copy_atom");
   }
 
   /* copy atom */
@@ -735,8 +736,10 @@ void copy_atoms_buf(msgbuf *to, msgbuf *from)
 {
   int i;
 
+  /* check if buffer is large enough; we can't just increase it, */ 
+  /* as destination buffer wouldn't know about it                */
   if (to->n_max < to->n + from->n) {
-    realloc_msgbuf(to, to->n + from->n + BUFFER_SIZE_INC);
+    error("buffer overflow in copy_atoms_buf");
   }
 
   for (i=0; i<from->n; ++i) 
@@ -829,7 +832,7 @@ void setup_buffers(void)
                  MPI_INT, MPI_MAX, cpugrid);
 
   /* Add security */
-  largest_cell += CSTEP;
+  largest_cell = (int) largest_cell * msgbuf_size;
 
 #ifndef TWOD
   size_east  = largest_cell * cell_dim.y * cell_dim.z * binc;

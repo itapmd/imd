@@ -344,6 +344,7 @@ EXTERN msgbuf recv_buf_south INIT(nullbuffer);
 EXTERN msgbuf recv_buf_up    INIT(nullbuffer);
 EXTERN msgbuf recv_buf_down  INIT(nullbuffer);
 EXTERN msgbuf dump_buf       INIT(nullbuffer);
+EXTERN real   msgbuf_size    INIT(1.2);
 
 /* Neighbours */
 EXTERN int nbwest, nbeast, nbnorth, nbsouth, nbup, nbdown; /* Faces */

@@ -1473,6 +1473,10 @@ void getparamfile(char *paramfname, int sim)
       /* parallel input flag */
       getparam(token,&parallel_input,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token,"msgbuf_size")==0) {
+      /* security factor of message buffer size */
+      getparam(token,&msgbuf_size,PARAM_REAL,1,1);
+    }
 #endif
     else if (strcasecmp(token,"binary_output")==0) {
       /* binary output flag */
@@ -2748,6 +2752,7 @@ void broadcast_params() {
 
   MPI_Bcast( &parallel_output, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &parallel_input,  1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &msgbuf_size,     1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &binary_output,   1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( outfilename,            255, MPI_CHAR, 0, MPI_COMM_WORLD); 
   MPI_Bcast( infilename,             255, MPI_CHAR, 0, MPI_COMM_WORLD); 

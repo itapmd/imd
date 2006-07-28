@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -185,24 +185,28 @@ void send_atoms()
     MPI_Get_count( &stat, REAL, &recv_buf_east.n );
     process_buffer( &recv_buf_east, (cell *) NULL );
 
-    /* append atoms from west and east to north send buffer */
-    copy_atoms_buf( &send_buf_north, &recv_buf_west );
-    copy_atoms_buf( &send_buf_north, &recv_buf_east );
-    /* check special case cpu_dim.y==2 */ 
-    if (nbsouth!=nbnorth) {
-      /* append atoms from west and east to south send buffer */
-      copy_atoms_buf( &send_buf_south, &recv_buf_west );
-      copy_atoms_buf( &send_buf_south, &recv_buf_east );
+    if (cpu_dim.y > 1) {
+      /* append atoms from west and east to north send buffer */
+      copy_atoms_buf( &send_buf_north, &recv_buf_west );
+      copy_atoms_buf( &send_buf_north, &recv_buf_east );
+      /* check special case cpu_dim.y==2 */ 
+      if (nbsouth!=nbnorth) {
+        /* append atoms from west and east to south send buffer */
+        copy_atoms_buf( &send_buf_south, &recv_buf_west );
+        copy_atoms_buf( &send_buf_south, &recv_buf_east );
+      }
     }
 
-    /* append atoms from west and east to up send buffer */
-    copy_atoms_buf( &send_buf_up, &recv_buf_east );
-    copy_atoms_buf( &send_buf_up, &recv_buf_west );
-    /* check special case cpu_dim.z==2 */ 
-    if (nbdown!=nbup) {
-      /* append atoms from west and east to down send buffer */
-      copy_atoms_buf( &send_buf_down, &recv_buf_east );
-      copy_atoms_buf( &send_buf_down, &recv_buf_west );
+    if (cpu_dim.z > 1) {
+      /* append atoms from west and east to up send buffer */
+      copy_atoms_buf( &send_buf_up, &recv_buf_east );
+      copy_atoms_buf( &send_buf_up, &recv_buf_west );
+      /* check special case cpu_dim.z==2 */ 
+      if (nbdown!=nbup) {
+        /* append atoms from west and east to down send buffer */
+        copy_atoms_buf( &send_buf_down, &recv_buf_east );
+        copy_atoms_buf( &send_buf_down, &recv_buf_west );
+      }
     }
   }
 
@@ -217,14 +221,16 @@ void send_atoms()
     MPI_Get_count( &stat, REAL, &recv_buf_north.n );
     process_buffer( &recv_buf_north, (cell *) NULL );
 
-    /* append atoms from north and south to up send buffer */
-    copy_atoms_buf( &send_buf_up, &recv_buf_north );
-    copy_atoms_buf( &send_buf_up, &recv_buf_south );
-    /* check special case cpu_dim.z==2 */ 
-    if (nbdown!=nbup) {
-      /* append atoms from north and south to down send buffer */
-      copy_atoms_buf( &send_buf_down, &recv_buf_north );
-      copy_atoms_buf( &send_buf_down, &recv_buf_south );
+    if (cpu_dim.z > 1) {
+      /* append atoms from north and south to up send buffer */
+      copy_atoms_buf( &send_buf_up, &recv_buf_north );
+      copy_atoms_buf( &send_buf_up, &recv_buf_south );
+      /* check special case cpu_dim.z==2 */ 
+      if (nbdown!=nbup) {
+        /* append atoms from north and south to down send buffer */
+        copy_atoms_buf( &send_buf_down, &recv_buf_north );
+        copy_atoms_buf( &send_buf_down, &recv_buf_south );
+      }
     }
   }
 
@@ -279,24 +285,28 @@ void send_atoms()
     MPI_Get_count( &stateast[1], REAL, &recv_buf_east.n );
     process_buffer( &recv_buf_east, (cell *) NULL );
 
-    /* append atoms from west and east to north send buffer */
-    copy_atoms_buf( &send_buf_north, &recv_buf_west );
-    copy_atoms_buf( &send_buf_north, &recv_buf_east );
-    /* check special case cpu_dim.y==2 */ 
-    if (nbsouth!=nbnorth) {
-      /* append atoms from west and east to south send buffer */
-      copy_atoms_buf( &send_buf_south, &recv_buf_east );
-      copy_atoms_buf( &send_buf_south, &recv_buf_west );
+    if (cpu_dim.y > 1) {
+      /* append atoms from west and east to north send buffer */
+      copy_atoms_buf( &send_buf_north, &recv_buf_west );
+      copy_atoms_buf( &send_buf_north, &recv_buf_east );
+      /* check special case cpu_dim.y==2 */ 
+      if (nbsouth!=nbnorth) {
+        /* append atoms from west and east to south send buffer */
+        copy_atoms_buf( &send_buf_south, &recv_buf_east );
+        copy_atoms_buf( &send_buf_south, &recv_buf_west );
+      }
     }
 
-    /* append atoms from west and east to up send buffer */
-    copy_atoms_buf( &send_buf_up, &recv_buf_east );
-    copy_atoms_buf( &send_buf_up, &recv_buf_west );
-    /* check special case cpu_dim.z==2 */ 
-    if (nbdown!=nbup) {
-      /* append atoms from west and east to down send buffer */
-      copy_atoms_buf( &send_buf_down, &recv_buf_east );
-      copy_atoms_buf( &send_buf_down, &recv_buf_west );
+    if (cpu_dim.z > 1) {
+      /* append atoms from west and east to up send buffer */
+      copy_atoms_buf( &send_buf_up, &recv_buf_east );
+      copy_atoms_buf( &send_buf_up, &recv_buf_west );
+      /* check special case cpu_dim.z==2 */ 
+      if (nbdown!=nbup) {
+        /* append atoms from west and east to down send buffer */
+        copy_atoms_buf( &send_buf_down, &recv_buf_east );
+        copy_atoms_buf( &send_buf_down, &recv_buf_west );
+      }
     }
   }
 
@@ -319,14 +329,16 @@ void send_atoms()
     MPI_Get_count( &statnorth[1], REAL, &recv_buf_north.n );
     process_buffer( &recv_buf_north, (cell *) NULL );
 
-    /* append atoms from north and south to up send buffer */
-    copy_atoms_buf( &send_buf_up, &recv_buf_north );
-    copy_atoms_buf( &send_buf_up, &recv_buf_south );
-    /* check special case cpu_dim.z==2 */ 
-    if (nbdown!=nbup) {
-      /* append atoms from north and south to down send buffer */
-      copy_atoms_buf( &send_buf_down, &recv_buf_north );
-      copy_atoms_buf( &send_buf_down, &recv_buf_south );
+    if (cpu_dim.z > 1) {
+      /* append atoms from north and south to up send buffer */
+      copy_atoms_buf( &send_buf_up, &recv_buf_north );
+      copy_atoms_buf( &send_buf_up, &recv_buf_south );
+      /* check special case cpu_dim.z==2 */ 
+      if (nbdown!=nbup) {
+        /* append atoms from north and south to down send buffer */
+        copy_atoms_buf( &send_buf_down, &recv_buf_north );
+        copy_atoms_buf( &send_buf_down, &recv_buf_south );
+      }
     }
   }
 

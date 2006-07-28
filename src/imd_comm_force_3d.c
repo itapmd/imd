@@ -791,8 +791,9 @@ void pack_cell( msgbuf *b, int k, int l, int m, vektor v )
     b->data[ j++ ] = ACHSE(from,i,Z);
 #endif
   }
-  if (b->n_max < b->n)  error("Buffer overflow in pack_cell");
   b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in pack_cell - increase msgbuf_size");
 }
 
 /******************************************************************************
@@ -844,11 +845,12 @@ void unpack_cell( msgbuf *b, int k, int l, int m )
     ACHSE(to,i,Z) = b->data[ j++ ];
 #endif
   }
-  if (b->n_max < b->n) error("Buffer overflow in unpack_cell");
 #ifdef VEC
   atoms.n_buf = count;
 #endif
   b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in unpack_cell - increase msgbuf_size");
 }
 
 /******************************************************************************
@@ -939,8 +941,9 @@ void pack_forces( msgbuf *b, int k, int l, int m)
     b->data[ j++ ] = DREH_MOMENT(from,i,Z);
 #endif
   }
-  if (b->n_max < b->n) error("Buffer overflow in pack_forces.");
   b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in pack_forces - increase msgbuf_size");
 }
 
 /******************************************************************************
@@ -985,8 +988,9 @@ void unpack_forces( msgbuf *b, int k, int l, int m )
     DREH_MOMENT(to,i,Z) += b->data[ j++ ];
 #endif
   }
-  if (b->n_max < b->n) error("Buffer overflow in unpack_forces.");
   b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in unpack_forces - increase msgbuf_size");
 }
 
 
@@ -1099,6 +1103,8 @@ void pack_dF( msgbuf *b, int k, int l, int m, vektor v )
 #endif
   }
   b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in pack_dF - increase msgbuf_size");
 }
 
 /******************************************************************************
@@ -1136,6 +1142,8 @@ void pack_rho( msgbuf *b, int k, int l, int m )
 #endif
   }
   b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in pack_rho - increase msgbuf_size");
 }
 
 /******************************************************************************
@@ -1172,6 +1180,8 @@ void unpack_dF( msgbuf *b, int k, int l, int m )
 #endif
   }
   b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in unpack_dF - increase msgbuf_size");
 }
 
 /******************************************************************************
@@ -1209,6 +1219,8 @@ void unpack_add_rho( msgbuf *b, int k, int l, int m )
 #endif
   }
   b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in unpack_add_rho - increase msgbuf_size");
 }
 
 #endif /* EAM2 */
