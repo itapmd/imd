@@ -58,27 +58,39 @@ void write_distrib(int steps)
 #else
   n = dist_presstens_flag ? DIM*(DIM+1)/2 : 1; 
 #endif
+#if defined(BGL) && (defined(TIMING) || defined(DEBUG))
+  if (myid==0) 
+    printf("%d MB free before distribution allocation\n", get_free_mem());
+#endif
 
   /* allocate distribution arrays */
 #ifdef MPI2
   MPI_Alloc_mem( n * size * sizeof(float),   MPI_INFO_NULL, &dat_1 );
   MPI_Alloc_mem(     size * sizeof(integer), MPI_INFO_NULL, &num_1 );
+#ifndef BGL
   MPI_Alloc_mem( n * size * sizeof(float),   MPI_INFO_NULL, &dat_2 );
   MPI_Alloc_mem(     size * sizeof(integer), MPI_INFO_NULL, &num_2 );
-  if ((NULL==dat_1) || (NULL==num_1) || (NULL==dat_2) || (NULL==num_2))
-    error("Cannot allocate distribution data.");
+#else
+  dat_2 = dat_1;
+  num_2 = (integer *) dat_1;
+#endif
 #elif defined(MPI)
   dat_1 = (float   *) malloc( n * size * sizeof(float  ) );
   num_1 = (integer *) malloc(     size * sizeof(integer) );
   dat_2 = (float   *) malloc( n * size * sizeof(float  ) );
   num_2 = (integer *) malloc(     size * sizeof(integer) );
-  if ((NULL==dat_1) || (NULL==num_1) || (NULL==dat_2) || (NULL==num_2))
-    error("Cannot allocate distribution data.");
 #else
   dat_1 = (float   *) malloc( n * size * sizeof(float  ) );
   num_1 = (integer *) malloc(     size * sizeof(integer) );
-  if ((NULL==dat_1) || (NULL==num_1))
+  dat_2 = dat_1;
+  num_2 = num_1;
+#endif
+  if ((NULL==dat_1) || (NULL==num_1) || (NULL==dat_2) || (NULL==num_2))
     error("Cannot allocate distribution data.");
+
+#if defined(BGL) && (defined(TIMING) || defined(DEBUG))
+  if (myid==0) 
+    printf("%d MB free after distribution allocation\n", get_free_mem());
 #endif
 
   flag = 1;
@@ -201,8 +213,10 @@ void write_distrib(int steps)
 #ifdef MPI2
   MPI_Free_mem(dat_1);
   MPI_Free_mem(num_1);
+#ifndef BGL
   MPI_Free_mem(dat_2);
   MPI_Free_mem(num_2);
+#endif
 #elif defined(MPI)
   free(dat_1);
   free(num_1);
@@ -211,6 +225,11 @@ void write_distrib(int steps)
 #else
   free(dat_1);
   free(num_1);
+#endif
+
+#if defined(BGL) && (defined(TIMING) || defined(DEBUG))
+  if (myid==0) 
+    printf("%d MB free after distribution deallocation\n", get_free_mem());
 #endif
 
 }
@@ -395,13 +414,43 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
 #endif
   size   = dist->size;
 
-  /* clear distributions */
-  for (i=0; i<n*size; i++) {
-    dat_1[i] = 0.0;
+  dist->num = num_1;
+  dist->dat = dat_1;
+
+  /* compute number density, if necessary */
+  if (*flag) {
+
+    /* clear distribution */
+    for (i=0; i<size; i++) num_2[i] = 0;
+
+    /* loop over all atoms */
+    for (k=0; k<NCELLS; ++k) {
+      p = CELLPTR(k);
+      for (i=0; i<p->n; ++i) {
+        /* which bin? */
+        numx = scalex * (ORT(p,i,X) - dist->ll.x);
+        if ((numx < 0) || (numx >= dist->dim.x)) continue;
+        numy = scaley * (ORT(p,i,Y) - dist->ll.y);
+        if ((numy < 0) || (numy >= dist->dim.y)) continue;
+        num = numx * dist->dim.y + numy;
+#ifndef TWOD
+        numz = scalez * (ORT(p,i,Z) - dist->ll.z);
+        if ((numz < 0) || (numz >= dist->dim.z)) continue;
+        num = num * dist->dim.z + numz;
+#endif
+        num_2[num]++;
+      }
+    }
+
+    /* add up results form different CPUs */
+#ifdef MPI  
+    MPI_Reduce( num_2, num_1, size, INTEGER, MPI_SUM, 0, cpugrid);
+#endif
+    *flag = 0;
   }
-  for (i=0; i<size; i++) {
-    num_1[i] = 0;
-  }
+
+  /* clear distribution */
+  for (i=0; i<n*size; i++) dat_2[i] = 0.0;
 
   /* loop over all atoms */
   for (k=0; k<NCELLS; ++k) {
@@ -418,30 +467,30 @@ void make_distrib_select(dist_t *dist, int n, int *flag,
       if ((numz < 0) || (numz >= dist->dim.z)) continue;
       num = num * dist->dim.z + numz;
 #endif
-      num_1[num]++;
-      num *= n;
-      (*fun)(dat_1 + num, p, i);
+      (*fun)(dat_2 + n * num, p, i);
     }
   }
 
-#ifdef MPI  /* add up results form different CPUs */
-  MPI_Reduce( dat_1, dat_2, n * size, MPI_FLOAT, MPI_SUM, 0, cpugrid);
-  dist->dat = dat_2;
-  if (*flag) { /* communicate the same num only once */
-    MPI_Reduce( num_1, num_2, size, INTEGER,   MPI_SUM, 0, cpugrid);
-    dist->num = num_2;
-    *flag = 0;
+  /* add up results form different CPUs */
+#ifdef BGL  /* here, we do an in-place reduction */
+  if (0==myid) {
+    MPI_Reduce( MPI_IN_PLACE, dat_2, n * size, MPI_FLOAT, MPI_SUM, 0, cpugrid);
+  } else {
+    MPI_Reduce( dat_2, NULL, n * size, MPI_FLOAT, MPI_SUM, 0, cpugrid);
   }
-#else
-  dist->dat = dat_1; 
-  dist->num = num_1;
+#elif defined(MPI)
+  MPI_Reduce( dat_2, dat_1, n * size, MPI_FLOAT, MPI_SUM, 0, cpugrid);
 #endif
 
   /* normalize distributions */
   if (myid==0) {
     for (i=0; i < size; i++) {
       if (dist->num[i] > 0) {
+#ifdef BGL
+        dist->dat[i] /= dist->num[i];
+#else
         for (j=0; j<n; j++) dist->dat[n*i+j] /= dist->num[i];
+#endif
       }
     }
   }

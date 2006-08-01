@@ -216,3 +216,14 @@ double SwappedDouble( double d )
   return dat2.d;
 }
 
+#ifdef BGL
+
+int get_free_mem(void)
+{
+  unsigned long tmp[1024], mem;
+  tmp[0] = 12345;
+  mem = (unsigned long) &tmp[1023] - (unsigned long) sbrk(0);
+  return (int) (mem / 1048576);
+}
+
+#endif

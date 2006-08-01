@@ -499,3 +499,6 @@ void init_nmoldyn(void);
 void write_nmoldyn(int);
 #endif
 
+#ifdef BGL
+int get_free_mem(void);
+#endif
