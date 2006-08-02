@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -374,64 +374,55 @@ if (0==myid) {
       glok_int   = steps - glok_start;
 
       /* always start glok with new dynamics, not with old velocities */
-      if (glok_int ==0)
-	{
-	  for (k=0; k<NCELLS; ++k) {
-	    cell *p;
-	    p = CELLPTR(k);
-	    for (i=0; i<p->n; ++i) {
-	      IMPULS(p,i,X) = 0.0;
-	      IMPULS(p,i,Y) = 0.0;
+      if (glok_int ==0)	{
+        for (k=0; k<NCELLS; ++k) {
+          cell *p = CELLPTR(k);
+          for (i=0; i<p->n; ++i) {
+            IMPULS(p,i,X) = 0.0;
+            IMPULS(p,i,Y) = 0.0;
 #ifndef TWOD
-	      IMPULS(p,i,Z) = 0.0;
+            IMPULS(p,i,Z) = 0.0;
 #endif
-	    }
-	  }
-	}
+          }
+        }
+      }
 #ifdef ADAPTGLOK
       /* increase the timestep, but not immediately after P*F was < 0 */ 
-       if ( (nPxF>= min_nPxF)  && (glok_int > glok_minsteps))
-	{
-	  	  timestep = (timestep * glok_incfac > glok_maxtimestep)? glok_maxtimestep : timestep * glok_incfac;
+      if ( (nPxF>= min_nPxF)  && (glok_int > glok_minsteps)) {
+        timestep = (timestep * glok_incfac > glok_maxtimestep) ? 
+                   glok_maxtimestep : timestep * glok_incfac;
 #ifdef MIX
-		  mix *= glok_mixdec;
+        mix *= glok_mixdec;
 #endif
-	}
+      }
 #endif
 
 #ifdef MIX
-       if(fnorm >=1e-20)
-	 mixforcescalefac = SQRT(pnorm/fnorm);
+      if (fnorm >=1e-20) mixforcescalefac = SQRT(pnorm/fnorm);
 #endif
-
       real ekin = 2 * tot_kin_energy / nactive;
 
-      if ((PxF < 0.0) || (ekin > glok_ekin_threshold)  || (sqrt(f_max2) >= glok_fmaxcrit) && steps >5) 
-	{
+      if ((PxF < 0.0) || (ekin > glok_ekin_threshold)  || 
+          (sqrt(f_max2) >= glok_fmaxcrit) && steps >5) {
 
 #ifdef ADAPTGLOK
-	if (PxF < 0.0)
-	  nPxF++;
-	/* decrease the timestep, but only when it has been increased before */	
-	if (glok_int > glok_minsteps )
-	  {
-	     if (timestep > glok_maxtimestep/50.0)
-	    	      timestep *=glok_decfac;
-	  }
+	if (PxF < 0.0) nPxF++;
+        /* decrease timestep, but only when it has been increased before */
+        if (glok_int > glok_minsteps ) {
+          if (timestep > glok_maxtimestep/50.0) timestep *=glok_decfac;
+        }
 #endif
 
 #ifdef MIX
-	mix = glok_mix;
+        mix = glok_mix;
 #endif
-
         for (k=0; k<NCELLS; ++k) {
-          cell *p;
-          p = CELLPTR(k);
+          cell *p = CELLPTR(k);
           for (i=0; i<p->n; ++i) {
-	    ORT(p,i,X) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,X);
-	    ORT(p,i,Y) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,Y);
+            ORT(p,i,X) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,X);
+            ORT(p,i,Y) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,Y);
 #ifndef TWOD
-	    ORT(p,i,Z) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,Z);
+            ORT(p,i,Z) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,Z);
 #endif
             IMPULS(p,i,X) = 0.0;
             IMPULS(p,i,Y) = 0.0;
@@ -599,15 +590,8 @@ if (0==myid) {
       if (delta_epot < 0) delta_epot = -delta_epot;
 
       if ((ekin  <  ekin_threshold) || (fnorm2 < fnorm_threshold) || 
-          (delta_epot < delta_epot_threshold))
-	{ 
-	  is_relaxed = 1;
-	}
-      
-      else
-	{
-	    is_relaxed = 0;
-	}
+          (delta_epot < delta_epot_threshold)) is_relaxed = 1;
+      else is_relaxed = 0;
 
       old_epot = epot;
 
@@ -631,55 +615,7 @@ if (0==myid) {
 #endif
       if (stop) steps_max = steps;
     }
-#endif
-
-    
-#ifdef RELAX
-    if ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) {
-
-      int stop = 0;
-      real fnorm2 = SQRT( fnorm / nactive );
-      real ekin   = 2 * tot_kin_energy / nactive;
-      real epot   = tot_pot_energy / natoms;
-      real delta_epot = old_epot - epot;
-      if (delta_epot < 0) delta_epot = -delta_epot;
-
-      if ((ekin  <  ekin_threshold) || (fnorm2 < fnorm_threshold) || 
-          (delta_epot < delta_epot_threshold))
-	{ 
-	  is_relaxed = 1;
-	}
-      
-      else
-	{
-	    is_relaxed = 0;
-	}
-
-      old_epot = epot;
-
-      if (is_relaxed) {
-        stop = 1;
-        write_eng_file(steps);
-        write_ssconfig(steps);
-
-        if (myid==0) {
-          printf("nfc = %d epot = %22.16f\n", nfc, epot );
-          printf("ekin = %e fnorm = %e f_max = %e delta_epot = %e\n", 
-                 ekin, fnorm2, f_max, delta_epot);
-        }
-      }
-
-#ifdef DEFORM
-      if (max_deform_int > 0) stop=0;
-#endif
-#ifdef FBC
-      if (have_fbc_incr) stop=0;
-#endif
-      if (stop) steps_max = steps;
-    }
-#endif
-
-
+#endif /* RELAX */
 
 #ifdef NBLIST
     check_nblist();
