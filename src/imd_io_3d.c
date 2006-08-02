@@ -385,7 +385,7 @@ void read_atoms(str255 infilename)
       if ((inp_grp_size > 1) && (myid != to_cpu)) {
         b = input_buf + to_cpu;
         if (b->data != NULL) {
-          copy_atom(b, to_cpu, input, 0);
+          copy_atom_cell_buf(b, to_cpu, input, 0);
           if (b->n_max - b->n < MAX_ATOM_SIZE) {
             MPI_Send(b->data, b->n, REAL, to_cpu, INBUF_TAG, cpugrid);
             b->n = 0;
@@ -618,7 +618,7 @@ void recv_atoms(void)
     MPI_Recv(b.data, inbuf_size, REAL, src, MPI_ANY_TAG, cpugrid, &status);
     MPI_Get_count(&status, REAL, &b.n);
     if (status.MPI_TAG==INBUF_TAG+1) { b.n--; finished=1; } /* last buffer */
-    process_buffer( &b, (cell *) NULL );
+    process_buffer( &b );
   } while (0==finished);
   free_msgbuf(&b);
 }

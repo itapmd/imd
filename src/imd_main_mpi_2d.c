@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -99,7 +99,8 @@ void calc_forces(int steps)
   /* compute forces for all pairs of cells */
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
-#pragma omp parallel for schedule(runtime) reduction(+:tot_pot_energy,virial,vir_xx,vir_yy,vir_xy)
+#pragma omp parallel for schedule(runtime) \
+  reduction(+:tot_pot_energy,virial,vir_xx,vir_yy,vir_xy)
 #endif
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
@@ -278,21 +279,23 @@ void send_atoms()
     /* send east, receive west, move atoms from west to cells */
     sendrecv_buf( &send_buf_east, nbeast, &recv_buf_west, nbwest, &stat);
     MPI_Get_count( &stat, REAL, &recv_buf_west.n );
-    process_buffer( &recv_buf_west, (cell *) NULL );
+    process_buffer( &recv_buf_west );
 
     /* send west, receive east, move atoms from east to cells */
     sendrecv_buf( &send_buf_west, nbwest, &recv_buf_east, nbeast, &stat );
     MPI_Get_count( &stat, REAL, &recv_buf_east.n );
-    process_buffer( &recv_buf_east, (cell *) NULL );
+    process_buffer( &recv_buf_east );
 
-    /* append atoms from east & west to north send buffer */
-    copy_atoms_buf( &send_buf_north, &recv_buf_west );
-    copy_atoms_buf( &send_buf_north, &recv_buf_east );
-    /* check special case cpu_dim.y==2 */ 
-    if (nbsouth!=nbnorth) {
-      /* append atoms from east & west to south send buffer */
-      copy_atoms_buf( &send_buf_south, &recv_buf_east );
-      copy_atoms_buf( &send_buf_south, &recv_buf_west );
+    if (cpu_dim.y > 1) {
+      /* append atoms from east & west to north send buffer */
+      copy_atoms_buf( &send_buf_north, &recv_buf_west );
+      copy_atoms_buf( &send_buf_north, &recv_buf_east );
+      /* check special case cpu_dim.y==2 */ 
+      if (nbsouth!=nbnorth) {
+        /* append atoms from east & west to south send buffer */
+        copy_atoms_buf( &send_buf_south, &recv_buf_east );
+        copy_atoms_buf( &send_buf_south, &recv_buf_west );
+      }
     }
   }
 
@@ -300,12 +303,12 @@ void send_atoms()
     /* send north, receive south, move atoms from south to cells */
     sendrecv_buf( &send_buf_north, nbnorth, &recv_buf_south, nbsouth, &stat);
     MPI_Get_count( &stat, REAL, &recv_buf_south.n );
-    process_buffer( &recv_buf_south, (cell *) NULL );   
+    process_buffer( &recv_buf_south );   
 
     /* send south, receive north, move atoms from north to cells */
     sendrecv_buf( &send_buf_south, nbsouth, &recv_buf_north, nbnorth, &stat);
     MPI_Get_count( &stat, REAL, &recv_buf_north.n );
-    process_buffer( &recv_buf_north, (cell *) NULL );   
+    process_buffer( &recv_buf_north );   
   }
 
 }
@@ -335,21 +338,23 @@ void send_atoms()
     /* wait for atoms from west, move them to cells */
     MPI_Waitall(2, reqwest, statwest);
     MPI_Get_count( &statwest[1], REAL, &recv_buf_west.n );
-    process_buffer( &recv_buf_west, (cell *) NULL );
+    process_buffer( &recv_buf_west );
 
     /* wait for atoms from east, move them to cells */
     MPI_Waitall(2, reqeast, stateast);
     MPI_Get_count( &stateast[1], REAL, &recv_buf_east.n );
-    process_buffer( &recv_buf_east, (cell *) NULL );
+    process_buffer( &recv_buf_east );
 
-    /* append atoms from east & west to north send buffer */
-    copy_atoms_buf( &send_buf_north, &recv_buf_west );
-    copy_atoms_buf( &send_buf_north, &recv_buf_east );
-    /* check special case cpu_dim.y==2 */ 
-    if (nbsouth!=nbnorth) {
-      /* append atoms from east & west to south send buffer */
-      copy_atoms_buf( &send_buf_south, &recv_buf_east );
-      copy_atoms_buf( &send_buf_south, &recv_buf_west );
+    if (cpu_dim.y > 1) {
+      /* append atoms from east & west to north send buffer */
+      copy_atoms_buf( &send_buf_north, &recv_buf_west );
+      copy_atoms_buf( &send_buf_north, &recv_buf_east );
+      /* check special case cpu_dim.y==2 */ 
+      if (nbsouth!=nbnorth) {
+        /* append atoms from east & west to south send buffer */
+        copy_atoms_buf( &send_buf_south, &recv_buf_east );
+        copy_atoms_buf( &send_buf_south, &recv_buf_west );
+      }
     }
   }
 
@@ -365,12 +370,12 @@ void send_atoms()
     /* wait for atoms from south, move them to cells */
     MPI_Waitall(2, reqsouth, statsouth);
     MPI_Get_count( &statsouth[1], REAL, &recv_buf_south.n );
-    process_buffer( &recv_buf_south, (cell *) NULL );   
+    process_buffer( &recv_buf_south );   
 
     /* Wait for atoms from north, move them to cells */
     MPI_Waitall(2, reqnorth, statnorth);
     MPI_Get_count( &statnorth[1], REAL, &recv_buf_north.n );
-    process_buffer( &recv_buf_north, (cell *) NULL );   
+    process_buffer( &recv_buf_north );   
   }
 
 }

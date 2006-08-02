@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -62,11 +62,6 @@
 
 /* Some makros */
 #include "makros.h"
-
-/* Socket headers */
-#ifdef USE_SOCKETS
-#include "sockets.h"
-#endif
 
 /* Function Prototypes */
 #include "prototypes.h"

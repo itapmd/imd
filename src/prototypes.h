@@ -135,6 +135,7 @@ void init_cells(void);
 void make_cell_lists(void);
 void check_pairs(void);
 void move_atom(cell *to, cell *from, int index);
+void copy_atom_cell_cell(cell *to, int i, cell *from, int j);
 #ifdef VEC
 void move_atom_mini(minicell *, minicell *, int);
 void insert_atom(minicell *, cell *, int);
@@ -254,8 +255,9 @@ void fix_cells(void);
 #ifdef MPI
 void copy_atoms_buf(msgbuf *to, msgbuf *from);
 void copy_one_atom (msgbuf *to, int to_cpu, minicell *from, int index,int del);
-void copy_atom     (msgbuf *to, int to_cpu, cell *from, int index );
-void process_buffer(msgbuf *b,  cell *p);
+void copy_atom_cell_buf(msgbuf *to, int to_cpu, minicell *from, int index );
+void copy_atom_buf_cell(minicell *to, msgbuf *b, int start);
+void process_buffer(msgbuf *b);
 void send_atoms(void);
 #endif
 /* write properties - file imd_io_*.c */
@@ -327,7 +329,7 @@ void recv_cell(minicell *p, int from_cpu, int tag);
 void send_cell(minicell *p, int to_cpu, int tag);
 #endif
 
-#ifdef USE_SOCKETS
+#ifdef SOCKET_IO
 void init_socket(void);
 int  connect_visualization(void);
 void close_socket(void);
@@ -343,10 +345,6 @@ void vis_write_atoms(void);
 void vis_change_params(void);
 void vis_change_params_deform(integer flag);
 void vis_restart_simulation(void);
-void write_ras_using_sockets(void);
-void write_conf_using_sockets(void);
-void write_distrib_using_sockets(void);
-void write_rgb_picture_to_socket(void);
 #endif
 
 /* write distributions - file imd_distrib.c */

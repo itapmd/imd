@@ -258,22 +258,22 @@ int irecv_buf(msgbuf *b, int from, MPI_Request *req)
 
 /******************************************************************************
 *
-* copy an atom from a cell into a buffer
+* copy an atom from a (mini)cell into a buffer
 *
 ******************************************************************************/
 
-void copy_atom(msgbuf *to, int to_cpu, cell *p, int ind )
+void copy_atom_cell_buf(msgbuf *to, int to_cpu, minicell *p, int ind )
 {
   /* Check the parameters */
   if ((0 > ind) || (ind >= p->n)) {
-    printf("%d: i %d n %d\n",myid,ind,p->n);
-    error("copy_atom: index argument out of range.");
+    printf("%d: i %d n %d\n", myid, ind, p->n);
+    error("copy_atom_cell_buf: index argument out of range.");
   }
 
   /* check if buffer is large enough; we can't just increase it, */ 
   /* as destination buffer wouldn't know about it                */
   if (to->n + MAX_ATOM_SIZE > to->n_max) {
-    error("buffer overflow in copy_atom");
+    error("buffer overflow in copy_atom_cell_buf");
   }
 
   /* copy atom */
@@ -418,7 +418,7 @@ void copy_one_atom(msgbuf *to, int to_cpu, minicell *from, int index, int del)
 #endif
 
   /* copy the atom to the message buffer */
-  copy_atom(to, to_cpu, p, ind);
+  copy_atom_cell_buf(to, to_cpu, p, ind);
 
   /* Delete atom in original cell? */
   if (del==1) {
@@ -438,314 +438,197 @@ void copy_one_atom(msgbuf *to, int to_cpu, minicell *from, int index, int del)
       p->ind[ind] = p->ind[p->n];
     }
     from->n--;
-    if (0 < from->n) from->ind[index] = from->ind[from->n];
+    if (index < from->n) from->ind[index] = from->ind[from->n];
 #endif
 
-    /* we treat the data in the same order as in the cell data structure */
-    if (0 < p->n) {
+    /* copy data of last atom into empty slot */
+    if (ind < p->n) copy_atom_cell_cell(p, ind, p, p->n);
 
-      ORT(p,ind,X)  = ORT(p,p->n,X); 
-      ORT(p,ind,Y)  = ORT(p,p->n,Y); 
-#ifndef TWOD
-      ORT(p,ind,Z)  = ORT(p,p->n,Z); 
-#endif
-#ifndef MONOLJ
-      NUMMER(p,ind) = NUMMER(p,p->n); 
-#ifndef MONO
-      SORTE (p,ind) = SORTE (p,p->n);
-#endif
-      VSORTE(p,ind) = VSORTE(p,p->n);
-      MASSE (p,ind) = MASSE (p,p->n); 
-      POTENG(p,ind) = POTENG(p,p->n); 
-#endif
-#ifdef EAM2
-      EAM_RHO(p,ind) = EAM_RHO(p,p->n); 
-      /* eam_dF  need not be copied */
-#ifdef EEAM
-      EAM_P  (p,ind) = EAM_P  (p,p->n); 
-      /* eam_dM  need not be copied */
-#endif
-#endif
-#ifdef ADP
-  /* adp_mu and adp_lambda need not be copied */
-#endif
-#ifdef CG
-      CG_H(p,ind,X) = CG_H(p,p->n,X); 
-      CG_H(p,ind,Y) = CG_H(p,p->n,Y); 
-#ifndef TWOD
-      CG_H(p,ind,Z) = CG_H(p,p->n,Z); 
-#endif
-      CG_G(p,ind,X) = CG_G(p,p->n,X); 
-      CG_G(p,ind,Y) = CG_G(p,p->n,Y); 
-#ifndef TWOD
-      CG_G(p,ind,Z) = CG_G(p,p->n,Z); 
-#endif
-      OLD_ORT(p,ind,X) = OLD_ORT(p,p->n,X); 
-      OLD_ORT(p,ind,Y) = OLD_ORT(p,p->n,Y); 
-#ifndef TWOD
-      OLD_ORT(p,ind,Z) = OLD_ORT(p,p->n,Z); 
-#endif
-#endif /* CG */
-#ifdef DAMP
-      DAMPF(p,ind) = DAMPF(p,p->n); 
-#endif
-#ifdef DISLOC
-      EPOT_REF(p,ind)   = EPOT_REF(p,p->n); 
-      ORT_REF (p,ind,X) = ORT_REF (p,p->n,X); 
-      ORT_REF (p,ind,Y) = ORT_REF (p,p->n,Y); 
-#ifndef TWOD
-      ORT_REF (p,ind,Z) = ORT_REF (p,p->n,Z); 
-#endif
-#endif
-#ifdef AVPOS
-      AV_EPOT(p,ind)   = AV_EPOT(p,p->n); 
-      AV_POS (p,ind,X) = AV_POS (p,p->n,X); 
-      AV_POS (p,ind,Y) = AV_POS (p,p->n,Y); 
-      SHEET  (p,ind,X) = SHEET  (p,p->n,X); 
-      SHEET  (p,ind,Y) = SHEET  (p,p->n,Y); 
-#ifndef TWOD
-      AV_POS (p,ind,Z) = AV_POS (p,p->n,Z); 
-      SHEET  (p,ind,Z) = SHEET  (p,p->n,Z); 
-#endif
-#endif
-#ifdef NNBR 
-      NBANZ(p,ind)     = NBANZ(p,p->n); 
-#endif
-#ifdef REFPOS
-      REF_POS(p,ind,X) = REF_POS(p,p->n,X);
-      REF_POS(p,ind,Y) = REF_POS(p,p->n,Y);
-#ifndef TWOD
-      REF_POS(p,ind,Z) = REF_POS(p,p->n,Z);
-#endif
-#endif
-#ifdef NVX
-      HEATCOND(p,ind)  = HEATCOND(p,p->n); 
-#endif
-#ifdef STRESS_TENS
-      PRESSTENS(p,ind,xx) = PRESSTENS(p,p->n,xx);   
-      PRESSTENS(p,ind,yy) = PRESSTENS(p,p->n,yy);   
-      PRESSTENS(p,ind,xy) = PRESSTENS(p,p->n,xy);   
-#ifndef TWOD
-      PRESSTENS(p,ind,zz) = PRESSTENS(p,p->n,zz);   
-      PRESSTENS(p,ind,yz) = PRESSTENS(p,p->n,yz);   
-      PRESSTENS(p,ind,zx) = PRESSTENS(p,p->n,zx);   
-#endif
-#endif /* STRESS_TENS */
-#ifdef SHOCK
-      PXAVG(p,ind)    = PXAVG(p,p->n); 
-#endif
-      IMPULS(p,ind,X) = IMPULS(p,p->n,X); 
-      IMPULS(p,ind,Y) = IMPULS(p,p->n,Y); 
-#ifndef TWOD
-      IMPULS(p,ind,Z) = IMPULS(p,p->n,Z); 
-#endif
-      /* force need not be copied */
-#ifdef COVALENT
-      /* neighbor table need not be copied */
-#endif
-#ifdef NBLIST
-      /* neighbor list reference positions are not copied */
-#endif
-#ifdef UNIAX
-      ACHSE(p,ind,X) = ACHSE(p,p->n,X); 
-      ACHSE(p,ind,Y) = ACHSE(p,p->n,Y); 
-      ACHSE(p,ind,Z) = ACHSE(p,p->n,Z); 
-      DREH_IMPULS(p,ind,X) = DREH_IMPULS(p,p->n,X); 
-      DREH_IMPULS(p,ind,Y) = DREH_IMPULS(p,p->n,Y); 
-      DREH_IMPULS(p,ind,Z) = DREH_IMPULS(p,p->n,Z); 
-      /* dreh_moment need not be copied */
-#endif
-    }
   } /* delete or not delete */
 }
 
 /******************************************************************************
 *
-*  process buffer unpacks particles from mpi buffer.
-*  if p == NULL, they are sorted into the cell array,
-*  otherwise they are put into the cell pointed to by p.
-*  mpi buffers have been packed with copy_one_atom.
+*  Append atom from message buffer to cell
 *
 ******************************************************************************/
 
-void process_buffer(msgbuf *b, cell *p)
+void copy_atom_buf_cell(minicell *to, msgbuf *b, int start)
 {
-  ivektor coord, coord2;
-  int to_cpu, j;
-  static cell *input = NULL;
+  int ind, j = start + 1;  /* the first entry is the CPU number */
 
-  if (b->n > b->n_max) error("buffer overflow in process_buffer");
+#ifdef VEC
+  if (to->n >= to->n_max) alloc_minicell(to,to->n_max+incrsz);
+  to->ind[to->n] = atoms.n;
+  if (atoms.n >= atoms.n_max) alloc_cell(&atoms, 2*atoms.n_max);
+#ifdef MPI
+  atoms.ind[atoms.n] = to->n; /* pointer from atom to index in its minicell */
+#endif
+  ind = atoms.n++;
+  to->n++;
+#else
+  if (to->n >= to->n_max) alloc_cell(to,to->n_max+incrsz);
+  ind = to->n++;
+#endif
 
-  if (NULL == input) {
-    input = (cell *) malloc(sizeof(cell));
-    if (0==input) error("Cannot allocate buffer cell.");
-    input->n_max=0;
-    alloc_cell(input, 1);
-  }
-
-  j=0;
-  /* we treat the data in the same order as in the cell data structure */
-  if (b->n > 0) do {     
-    input->n        = 1;
-    to_cpu          = (int) (b->data[j++] + 0.1);
-    ORT(input,0,X)  = b->data[j++];
-    ORT(input,0,Y)  = b->data[j++];
+  ORT(to,ind,X)  = b->data[j++];
+  ORT(to,ind,Y)  = b->data[j++];
 #ifndef TWOD
-    ORT(input,0,Z)  = b->data[j++];
+  ORT(to,ind,Z)  = b->data[j++];
 #endif
 #ifndef MONOLJ
-    NUMMER(input,0) = b->data[j++];
+  NUMMER(to,ind) = b->data[j++];
 #ifndef MONO
-    SORTE (input,0) = b->data[j++];
+  SORTE (to,ind) = b->data[j++];
 #endif
-    VSORTE(input,0) = b->data[j++];
-    MASSE (input,0) = b->data[j++];
-    POTENG(input,0) = b->data[j++];
+  VSORTE(to,ind) = b->data[j++];
+  MASSE (to,ind) = b->data[j++];
+  POTENG(to,ind) = b->data[j++];
 #endif
 #ifdef EAM2
-    EAM_RHO(input,0) = b->data[j++];
-    /* don't send eam_dF  */
+  EAM_RHO(to,ind) = b->data[j++];
+  /* don't send eam_dF  */
 #ifdef EEAM
-    EAM_P  (input,0) = b->data[j++];
-    /* don't send eam_dM  */
+  EAM_P  (to,ind) = b->data[j++];
+  /* don't send eam_dM  */
 #endif
 #endif
 #ifdef ADP
   /* don't send adp_mu and adp_lambda */
 #endif
 #ifdef CG
-    CG_H(input,0,X) = b->data[j++];
-    CG_H(input,0,Y) = b->data[j++];
+  CG_H(to,ind,X) = b->data[j++];
+  CG_H(to,ind,Y) = b->data[j++];
 #ifndef TWOD
-    CG_H(input,0,Z) = b->data[j++];
+  CG_H(to,ind,Z) = b->data[j++];
 #endif
-    CG_G(input,0,X) = b->data[j++];
-    CG_G(input,0,Y) = b->data[j++];
+  CG_G(to,ind,X) = b->data[j++];
+  CG_G(to,ind,Y) = b->data[j++];
 #ifndef TWOD
-    CG_G(input,0,Z) = b->data[j++];
+  CG_G(to,ind,Z) = b->data[j++];
 #endif
-    OLD_ORT(input,0,X) = b->data[j++];
-    OLD_ORT(input,0,Y) = b->data[j++];
+  OLD_ORT(to,ind,X) = b->data[j++];
+  OLD_ORT(to,ind,Y) = b->data[j++];
 #ifndef TWOD
-    OLD_ORT(input,0,Z) = b->data[j++];
+  OLD_ORT(to,ind,Z) = b->data[j++];
 #endif
 #endif /* CG */
 #ifdef DAMP
-    DAMPF(input,0) = b->data[j++];
+  DAMPF(to,ind) = b->data[j++];
 #endif
 #ifdef DISLOC
-    EPOT_REF(input,0)   = b->data[j++];
-    ORT_REF (input,0,X) = b->data[j++];
-    ORT_REF (input,0,Y) = b->data[j++];
+  EPOT_REF(to,ind)   = b->data[j++];
+  ORT_REF (to,ind,X) = b->data[j++];
+  ORT_REF (to,ind,Y) = b->data[j++];
 #ifndef TWOD
-    ORT_REF (input,0,Z) = b->data[j++];
+  ORT_REF (to,ind,Z) = b->data[j++];
 #endif
 #endif
 #ifdef AVPOS
-    AV_EPOT(input,0)    = b->data[j++];
-    AV_POS (input,0,X)  = b->data[j++];
-    AV_POS (input,0,Y)  = b->data[j++];
-    SHEET  (input,0,X)  = b->data[j++];
-    SHEET  (input,0,Y)  = b->data[j++];
+  AV_EPOT(to,ind)    = b->data[j++];
+  AV_POS (to,ind,X)  = b->data[j++];
+  AV_POS (to,ind,Y)  = b->data[j++];
+  SHEET  (to,ind,X)  = b->data[j++];
+  SHEET  (to,ind,Y)  = b->data[j++];
 #ifndef TWOD
-    AV_POS (input,0,Z)  = b->data[j++];
-    SHEET  (input,0,Z)  = b->data[j++];
+  AV_POS (to,ind,Z)  = b->data[j++];
+  SHEET  (to,ind,Z)  = b->data[j++];
 #endif
 #endif
 #ifdef NNBR
-    NBANZ(input,0)      = b->data[j++];
+  NBANZ(to,ind)      = b->data[j++];
 #endif
 #ifdef REFPOS
-    REF_POS(input,0,X)  = b->data[j++];
-    REF_POS(input,0,Y)  = b->data[j++];
+  REF_POS(to,ind,X)  = b->data[j++];
+  REF_POS(to,ind,Y)  = b->data[j++];
 #ifndef TWOD
-    REF_POS(input,0,Z)  = b->data[j++];
+  REF_POS(to,ind,Z)  = b->data[j++];
 #endif
 #endif
 #ifdef NVX
-    HEATCOND(input,0)   = b->data[j++];
+  HEATCOND(to,ind)   = b->data[j++];
 #endif
 #ifdef STRESS_TENS
-    PRESSTENS(input,0,xx) = b->data[j++];   
-    PRESSTENS(input,0,yy) = b->data[j++];   
-    PRESSTENS(input,0,xy) = b->data[j++];   
+  PRESSTENS(to,ind,xx) = b->data[j++];   
+  PRESSTENS(to,ind,yy) = b->data[j++];   
+  PRESSTENS(to,ind,xy) = b->data[j++];   
 #ifndef TWOD
-    PRESSTENS(input,0,zz) = b->data[j++];   
-    PRESSTENS(input,0,yz) = b->data[j++];   
-    PRESSTENS(input,0,zx) = b->data[j++];   
+  PRESSTENS(to,ind,zz) = b->data[j++];   
+  PRESSTENS(to,ind,yz) = b->data[j++];   
+  PRESSTENS(to,ind,zx) = b->data[j++];   
 #endif
 #endif /* STRESS_TENS */
 #ifdef SHOCK
-    PXAVG(input,0)        = b->data[j++];
+  PXAVG(to,ind)        = b->data[j++];
 #endif
-    IMPULS(input,0,X)     = b->data[j++];
-    IMPULS(input,0,Y)     = b->data[j++];
+  IMPULS(to,ind,X)     = b->data[j++];
+  IMPULS(to,ind,Y)     = b->data[j++];
 #ifndef TWOD
-    IMPULS(input,0,Z)     = b->data[j++];
+  IMPULS(to,ind,Z)     = b->data[j++];
 #endif
-    /* don't send force */
+  /* don't send force */
 #ifdef COVALENT
-    /* don't send neighbor table */
+  /* don't send neighbor table */
 #endif
 #ifdef NBLIST
-    /* neighbor list reference positions are not sent */
+  /* neighbor list reference positions are not sent */
 #endif
 #ifdef UNIAX
-    ACHSE(input,0,X) = b->data[j++];
-    ACHSE(input,0,Y) = b->data[j++];
-    ACHSE(input,0,Z) = b->data[j++];
-    DREH_IMPULS(input,0,X) = b->data[j++];
-    DREH_IMPULS(input,0,Y) = b->data[j++];
-    DREH_IMPULS(input,0,Z) = b->data[j++];
-    /* don't send dreh_moment */
+  ACHSE(to,ind,X) = b->data[j++];
+  ACHSE(to,ind,Y) = b->data[j++];
+  ACHSE(to,ind,Z) = b->data[j++];
+  DREH_IMPULS(to,ind,X) = b->data[j++];
+  DREH_IMPULS(to,ind,Y) = b->data[j++];
+  DREH_IMPULS(to,ind,Z) = b->data[j++];
+  /* don't send dreh_moment */
 #endif
-
-    if (p==NULL) {  /* distribute atom into cell array */
-#ifdef TWOD
-      coord2=cell_coord( ORT(input,0,X), ORT(input,0,Y) );
-#else
-      coord2=cell_coord( ORT(input,0,X), ORT(input,0,Y), ORT(input,0,Z) );
-#endif
-      coord =local_cell_coord( coord2 );
-      /* to_cpu = cpu_coord( coord2 ); determined by sendig CPU */
-      if (to_cpu == myid) {
-        minicell *to;
-        to = PTR_VV(cell_array,coord,cell_dim);
-        INSERT_ATOM(to, input, 0);
-      }
-    } else {  /* put atom into cell pointed by p */
-#ifdef VEC
-      /* we arrive here only in outdated socket communication code */
-      error("not supported in vector mode");
-#else
-      move_atom(p, input, 0);
-#endif
-    }
-  } while (j<b->n);
 
 }
 
+/******************************************************************************
+*
+*  unpack atoms from message buffer
+*
+******************************************************************************/
+
+void process_buffer(msgbuf *b)
+{
+  int i;
+  minicell *to;
+  ivektor coord;
+
+  for (i=0; i<b->n; i+=atom_size) {
+    if (myid != (int) (b->data[i] + 0.1)) continue;
+#ifdef TWOD
+    coord = cell_coord( b->data[i+1], b->data[i+2] );
+#else
+    coord = cell_coord( b->data[i+1], b->data[i+2], b->data[i+3] );
+#endif
+    coord = local_cell_coord( coord );
+    to = PTR_VV(cell_array, coord, cell_dim);
+    copy_atom_buf_cell(to, b, i);
+  }
+}
 
 /******************************************************************************
 *
-* copy_atoms_buf copies atoms from one message buffer to another
+* copy atoms from one message buffer to another
 *
 ******************************************************************************/
 
 void copy_atoms_buf(msgbuf *to, msgbuf *from)
 {
-  int i;
+  int i, j;
 
-  /* check if buffer is large enough; we can't just increase it, */ 
-  /* as destination buffer wouldn't know about it                */
-  if (to->n_max < to->n + from->n) {
-    error("buffer overflow in copy_atoms_buf");
+  /* copy only atoms which have to go elsewhere */
+  for (i=0; i<from->n; i+=atom_size) {
+    if (myid != from->data[i]) {
+      if (to->n_max < to->n + atom_size) 
+        error("buffer overflow in copy_atoms_buf");
+      for (j=0; j<atom_size; j++) to->data[to->n++] = from->data[i+j];
+    }
   }
-
-  for (i=0; i<from->n; ++i) 
-    to->data[ to->n++ ] = from->data[i];
 }
-
 
 /******************************************************************************
 *
@@ -758,7 +641,7 @@ void copy_atoms_buf(msgbuf *to, msgbuf *from)
 void setup_buffers(void)
 {
   int largest_cell, largest_local_cell=0;
-  int k;
+  int k, tmp=0;
   int size_east;
   int size_north;
   int size_up;
@@ -885,8 +768,22 @@ void setup_buffers(void)
   }
 #endif
 
-}
+  /* find size of space an atom occupies in buffer */
+  if (atom_size==0) {
+    k = 0;
+    do {
+      cell *p = CELLPTR(k);
+      if (p->n > 0) {
+        copy_one_atom(&send_buf_east, 0, p, 0, 0);
+        tmp = send_buf_east.n;
+        send_buf_east.n = 0;
+      }
+      k++;
+    } while ((tmp==0) && (k<NCELLS));
+    MPI_Allreduce( &tmp, &atom_size, 1, MPI_INT, MPI_MAX, cpugrid);
+  }
 
+}
 
 /******************************************************************************
 *
@@ -896,7 +793,7 @@ void setup_buffers(void)
 
 void empty_mpi_buffers(void)
 {
- /* Empty MPI buffers */
+  /* Empty MPI buffers */
   send_buf_north.n = 0;
   send_buf_south.n = 0;
   send_buf_east.n  = 0;
@@ -916,53 +813,3 @@ void empty_mpi_buffers(void)
 
 }
 
-#ifdef USE_SOCKETS
-
-/******************************************************************************
-*
-*  send_cell packs the data of all particles in the cell
-*  into a buffer, and sends the buffer to the destination cpu.
-*
-******************************************************************************/
-
-void send_cell(minicell *p, int to_cpu, int tag)
-{
-  int i;
-  msgbuf *b;
-
-  b = &send_buf_east;
-  b->n = 0;
-
-  for (i=0; i<p->n; i++) copy_one_atom(b, to_cpu, p, i, 0);
-  MPI_Send(b->data, b->n, REAL, to_cpu, tag, cpugrid);
-}
-
-
-/******************************************************************************
-*
-*  recv_cell receives in a buffer the data of the particles in one cell,
-*  and upacks the buffer into the cell pointed to by p.
-*
-******************************************************************************/
-
-void recv_cell(minicell *p, int from_cpu, int tag)
-{
-  MPI_Status status;
-  msgbuf *b;
-
-  b = &recv_buf_east;
-
-  /* check message size */
-  MPI_Probe( from_cpu, tag, cpugrid, &status );
-  MPI_Get_count( &status, REAL, &(b->n) );
-  if (b->n_max < b->n) {
-    alloc_msgbuf(b, b->n + BUFFER_SIZE_INC); 
-  }
-
-  /* upack data */
-  p->n = 0;
-  MPI_Recv(b->data, b->n, REAL, from_cpu, tag, cpugrid, &status);
-  process_buffer(b,p);
-}
-
-#endif

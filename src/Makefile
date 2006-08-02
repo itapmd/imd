@@ -906,7 +906,7 @@ endif
 ifneq (,$(strip $(findstring sock,${MAKETARGET})))
 HEADERS += ${SOCKHEADERS}
 SOURCES += ${SOCKSOURCES}
-CFLAGS  += -DUSE_SOCKETS
+CFLAGS  += -DSOCKET_IO
 endif
 
 # timing

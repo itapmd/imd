@@ -164,7 +164,7 @@ int main(int argc, char **argv)
 #endif
 
   /* initialize socket I/O */
-#ifdef USE_SOCKETS
+#ifdef SOCKET_IO
   if ((myid == 0) && (socket_int > 0)) init_socket();
 #endif
 

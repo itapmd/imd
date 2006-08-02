@@ -345,6 +345,7 @@ EXTERN msgbuf recv_buf_up    INIT(nullbuffer);
 EXTERN msgbuf recv_buf_down  INIT(nullbuffer);
 EXTERN msgbuf dump_buf       INIT(nullbuffer);
 EXTERN real   msgbuf_size    INIT(1.2);
+EXTERN int    atom_size      INIT(0);
 
 /* Neighbours */
 EXTERN int nbwest, nbeast, nbnorth, nbsouth, nbup, nbdown; /* Faces */
@@ -686,7 +687,7 @@ EXTERN int do_press_calc INIT(0);           /* flag whether to do press calc */
 #endif
 
 /* I/O via sockets */
-#ifdef USE_SOCKETS
+#ifdef SOCKET_IO
 EXTERN int server_socket INIT(1);          /* socket mode: client or server */
 EXTERN int socket_int INIT(1);               /* interval for reading socket */
 EXTERN unsigned short client_port INIT(0);        /* client port for socket */

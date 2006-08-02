@@ -1739,7 +1739,7 @@ else if (strcasecmp(token, "laser_dir")==0){
       getparam(token,op_weight,PARAM_REAL,ntypes*ntypes,ntypes*ntypes);
     }
 #endif
-#ifdef USE_SOCKETS
+#ifdef SOCKET_IO
     else if (strcasecmp(token,"socket_mode")==0) {
       /* socket mode: client or server */
       getparam(token,tmpstr,PARAM_STR,1,255);
@@ -2379,7 +2379,7 @@ void check_parameters_complete()
             warning("cpu_dim incompatible with available CPUs, using default");
         }
 #endif
-#ifdef USE_SOCKETS
+#ifdef SOCKET_IO
   if ((!server_socket) && (display_host[0]=='\0')) {
     error("display_host name or IP address missing.");
   }
@@ -3072,7 +3072,7 @@ void broadcast_params() {
   MPI_Bcast( &acg_incfac,     1, REAL,    0, MPI_COMM_WORLD); 
 #endif
 
-#ifdef USE_SOCKETS
+#ifdef SOCKET_IO
   MPI_Bcast( &socket_int, 1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 

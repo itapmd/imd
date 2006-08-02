@@ -98,7 +98,6 @@ void alloc_minicell(minicell *p, int count)
 
 /*****************************************************************************
 *
-*
 *  Moves an atom from one cell to another. 
 *  Does not move atoms between CPUs!
 *
@@ -106,121 +105,138 @@ void alloc_minicell(minicell *p, int count)
 
 void move_atom(cell *to, cell *from, int index)
 {
-  /* Check the parameters */
+  /* check the parameters */
   if ((0 > index) || (index >= from->n)) 
     error("move_atom: index argument out of range.");
  
-  /* See if we need some space */
+  /* see if we need more space */
   if (to->n >= to->n_max) alloc_cell(to,to->n_max+incrsz);
   
-  /* Got some space, move atom */
-  to->ort X(to->n) = from->ort X(index); 
-  to->ort Y(to->n) = from->ort Y(index); 
+  /* append atom to target cell */
+  copy_atom_cell_cell(to, to->n, from, index);
+  ++to->n;
+
+  /* delete atom in original cell, by moving the last one to the empty slot */
+  --from->n;
+  if (index < from->n) copy_atom_cell_cell(from, index, from, from->n);
+
+}
+
+/*****************************************************************************
+*
+*  Low-level copying of atom data from one cell to another 
+*
+******************************************************************************/
+
+void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
+{
+  to->ort X(i) = from->ort X(j); 
+  to->ort Y(i) = from->ort Y(j); 
 #ifndef TWOD
-  to->ort Z(to->n) = from->ort Z(index); 
+  to->ort Z(i) = from->ort Z(j); 
 #endif
 #ifndef MONOLJ
-  to->nummer [to->n] = from->nummer [index]; 
-  to->sorte  [to->n] = from->sorte  [index]; 
-  to->vsorte [to->n] = from->vsorte [index]; 
-  to->masse  [to->n] = from->masse  [index]; 
-  to->pot_eng[to->n] = from->pot_eng[index];
+  to->nummer [i] = from->nummer [j]; 
+  to->sorte  [i] = from->sorte  [j]; 
+  to->vsorte [i] = from->vsorte [j]; 
+  to->masse  [i] = from->masse  [j]; 
+  to->pot_eng[i] = from->pot_eng[j];
 #endif
 #ifdef EAM2
-  to->eam_rho[to->n] = from->eam_rho[index]; 
-  to->eam_dF [to->n] = from->eam_dF [index]; 
+  to->eam_rho[i] = from->eam_rho[j]; 
+  to->eam_dF [i] = from->eam_dF [j]; 
 #ifdef EEAM
-  to->eeam_p_h[to->n] = from->eeam_p_h[index]; 
-  to->eeam_dM [to->n] = from->eeam_dM [index]; 
+  to->eeam_p_h[i] = from->eeam_p_h[j]; 
+  to->eeam_dM [i] = from->eeam_dM [j]; 
 #endif
 #endif
 
 #ifdef DAMP
-  to->damp_f[to->n] = from->damp_f[index];
+  to->damp_f[i] = from->damp_f[j];
 #endif
 
 #ifdef ADP
-  to->adp_mu   X(to->n)    = from->adp_mu   X(index); 
-  to->adp_mu   Y(to->n)    = from->adp_mu   Y(index); 
-  to->adp_mu   Z(to->n)    = from->adp_mu   Z(index); 
-  to->adp_lambda[to->n].xx = from->adp_lambda[index].xx;   
-  to->adp_lambda[to->n].yy = from->adp_lambda[index].yy;   
-  to->adp_lambda[to->n].zz = from->adp_lambda[index].zz;   
-  to->adp_lambda[to->n].yz = from->adp_lambda[index].yz;   
-  to->adp_lambda[to->n].zx = from->adp_lambda[index].zx;   
-  to->adp_lambda[to->n].xy = from->adp_lambda[index].xy;   
+  to->adp_mu   X(i)    = from->adp_mu   X(j); 
+  to->adp_mu   Y(i)    = from->adp_mu   Y(j); 
+  to->adp_mu   Z(i)    = from->adp_mu   Z(j); 
+  to->adp_lambda[i].xx = from->adp_lambda[j].xx;   
+  to->adp_lambda[i].yy = from->adp_lambda[j].yy;   
+  to->adp_lambda[i].zz = from->adp_lambda[j].zz;   
+  to->adp_lambda[i].yz = from->adp_lambda[j].yz;   
+  to->adp_lambda[i].zx = from->adp_lambda[j].zx;   
+  to->adp_lambda[i].xy = from->adp_lambda[j].xy;   
 #endif
 #ifdef CG
-  to->h  X(to->n) = from->h X(index); 
-  to->h  Y(to->n) = from->h Y(index); 
+  to->h  X(i) = from->h X(j); 
+  to->h  Y(i) = from->h Y(j); 
 #ifndef TWOD
-  to->h  Z(to->n) = from->h Z(index);
+  to->h  Z(i) = from->h Z(j);
 #endif 
-  to->g  X(to->n) = from->g X(index); 
-  to->g  Y(to->n) = from->g Y(index); 
+  to->g  X(i) = from->g X(j); 
+  to->g  Y(i) = from->g Y(j); 
 #ifndef TWOD
-  to->g  Z(to->n) = from->g Z(index);
+  to->g  Z(i) = from->g Z(j);
 #endif  
-  to->old_ort  X(to->n) = from->old_ort X(index); 
-  to->old_ort  Y(to->n) = from->old_ort Y(index); 
+  to->old_ort  X(i) = from->old_ort X(j); 
+  to->old_ort  Y(i) = from->old_ort Y(j); 
 #ifndef TWOD
-  to->old_ort  Z(to->n) = from->old_ort Z(index); 
+  to->old_ort  Z(i) = from->old_ort Z(j); 
 #endif
 #endif
 #ifdef DISLOC
-  to->Epot_ref  [to->n] = from->Epot_ref[index];
-  to->ort_ref X (to->n) = from->ort_ref X(index);
-  to->ort_ref Y (to->n) = from->ort_ref Y(index);
+  to->Epot_ref  [i] = from->Epot_ref[j];
+  to->ort_ref X (i) = from->ort_ref X(j);
+  to->ort_ref Y (i) = from->ort_ref Y(j);
 #ifndef TWOD
-  to->ort_ref Z (to->n) = from->ort_ref Z(index);
+  to->ort_ref Z (i) = from->ort_ref Z(j);
 #endif
 #endif /* DISLOC */
 #ifdef AVPOS
-  to->av_epot[to->n] = from->av_epot[index];
-  to->avpos X(to->n) = from->avpos X(index);
-  to->avpos Y(to->n) = from->avpos Y(index);
-  to->sheet X(to->n) = from->sheet X(index);
-  to->sheet Y(to->n) = from->sheet Y(index);
+  to->av_epot[i] = from->av_epot[j];
+  to->avpos X(i) = from->avpos X(j);
+  to->avpos Y(i) = from->avpos Y(j);
+  to->sheet X(i) = from->sheet X(j);
+  to->sheet Y(i) = from->sheet Y(j);
 #ifndef TWOD
-  to->avpos Z(to->n) = from->avpos Z(index);
-  to->sheet Z(to->n) = from->sheet Z(index);
+  to->avpos Z(i) = from->avpos Z(j);
+  to->sheet Z(i) = from->sheet Z(j);
 #endif
 #endif /* AVPOS */
 #ifdef NNBR
-  to->nbanz[to->n] = from->nbanz[index]; 
+  to->nbanz[i] = from->nbanz[j]; 
 #endif
 #ifdef REFPOS
-  to->refpos X(to->n) = from->refpos X(index);
-  to->refpos Y(to->n) = from->refpos Y(index);
+  to->refpos X(i) = from->refpos X(j);
+  to->refpos Y(i) = from->refpos Y(j);
 #ifndef TWOD
-  to->refpos Z(to->n) = from->refpos Z(index);
+  to->refpos Z(i) = from->refpos Z(j);
 #endif
 #endif /* REFPOS */
 #ifdef NVX
-  to->heatcond[to->n] = from->heatcond[index];   
+  to->heatcond[i] = from->heatcond[j];   
 #endif
 #ifdef STRESS_TENS
-  to->presstens[to->n].xx = from->presstens[index].xx;   
-  to->presstens[to->n].yy = from->presstens[index].yy;   
-  to->presstens[to->n].xy = from->presstens[index].xy;   
+  to->presstens[i].xx = from->presstens[j].xx;   
+  to->presstens[i].yy = from->presstens[j].yy;   
+  to->presstens[i].xy = from->presstens[j].xy;   
 #ifndef TWOD
-  to->presstens[to->n].zz = from->presstens[index].zz;   
-  to->presstens[to->n].yz = from->presstens[index].yz;   
-  to->presstens[to->n].zx = from->presstens[index].zx;   
+  to->presstens[i].zz = from->presstens[j].zz;   
+  to->presstens[i].yz = from->presstens[j].yz;   
+  to->presstens[i].zx = from->presstens[j].zx;   
 #endif
 #endif /* STRESS_TENS */
 #ifdef SHOCK
-  to->pxavg[to->n] = from->pxavg[index];   
+  to->pxavg[i] = from->pxavg[j];   
 #endif
-  to->impuls X(to->n) = from->impuls X(index); 
-  to->impuls Y(to->n) = from->impuls Y(index); 
+  to->impuls X(i) = from->impuls X(j); 
+  to->impuls Y(i) = from->impuls Y(j); 
 #ifndef TWOD
-  to->impuls Z(to->n) = from->impuls Z(index); 
+  to->impuls Z(i) = from->impuls Z(j); 
 #endif
-  to->kraft X(to->n) = from->kraft X(index); 
-  to->kraft Y(to->n) = from->kraft Y(index); 
+  to->kraft X(i) = from->kraft X(j); 
+  to->kraft Y(i) = from->kraft Y(j); 
 #ifndef TWOD
-  to->kraft Z(to->n) = from->kraft Z(index); 
+  to->kraft Z(i) = from->kraft Z(j); 
 #endif
 #ifdef COVALENT
   /* neighbor table is not copied */
@@ -229,151 +245,17 @@ void move_atom(cell *to, cell *from, int index)
   /* reference positions of neighbor list are not copied */
 #endif
 #ifdef UNIAX
-  to->achse X(to->n) = from->achse X(index); 
-  to->achse Y(to->n) = from->achse Y(index); 
-  to->achse Z(to->n) = from->achse Z(index); 
-  to->dreh_impuls X(to->n) = from->dreh_impuls X(index); 
-  to->dreh_impuls Y(to->n) = from->dreh_impuls Y(index); 
-  to->dreh_impuls Z(to->n) = from->dreh_impuls Z(index); 
-  to->dreh_moment X(to->n) = from->dreh_moment X(index); 
-  to->dreh_moment Y(to->n) = from->dreh_moment Y(index); 
-  to->dreh_moment Z(to->n) = from->dreh_moment Z(index); 
+  to->achse X(i) = from->achse X(j); 
+  to->achse Y(i) = from->achse Y(j); 
+  to->achse Z(i) = from->achse Z(j); 
+  to->dreh_impuls X(i) = from->dreh_impuls X(j); 
+  to->dreh_impuls Y(i) = from->dreh_impuls Y(j); 
+  to->dreh_impuls Z(i) = from->dreh_impuls Z(j); 
+  to->dreh_moment X(i) = from->dreh_moment X(j); 
+  to->dreh_moment Y(i) = from->dreh_moment Y(j); 
+  to->dreh_moment Z(i) = from->dreh_moment Z(j); 
 #endif
 
-  ++to->n;
-
-  /* Delete atom in original cell */
-
-  --from->n;
-
-  if (0 < from->n) {
-    from->ort X(index) = from->ort X(from->n); 
-    from->ort Y(index) = from->ort Y(from->n); 
-#ifndef TWOD
-    from->ort Z(index) = from->ort Z(from->n); 
-#endif
-#ifndef MONOLJ
-    from->nummer [index] = from->nummer [from->n]; 
-    from->sorte  [index] = from->sorte  [from->n]; 
-    from->vsorte [index] = from->vsorte [from->n]; 
-    from->masse  [index] = from->masse  [from->n]; 
-    from->pot_eng[index] = from->pot_eng[from->n];
-#endif
-#ifdef EAM2
-    from->eam_rho[index] = from->eam_rho[from->n];
-    from->eam_dF [index] = from->eam_dF [from->n];
-#ifdef EEAM
-    from->eeam_p_h[index] = from->eeam_p_h[from->n];
-    from->eeam_dM [index] = from->eeam_dM [from->n];
-#endif
-#endif
-
-#ifdef DAMP
-    from->damp_f[index] = from->damp_f[from->n];
-#endif
-
-#ifdef ADP
-    from->adp_mu   X(index)    = from->adp_mu   X(from->n); 
-    from->adp_mu   Y(index)    = from->adp_mu   Y(from->n); 
-    from->adp_mu   Z(index)    = from->adp_mu   Z(from->n); 
-    from->adp_lambda[index].xx = from->adp_lambda[from->n].xx;   
-    from->adp_lambda[index].yy = from->adp_lambda[from->n].yy;   
-    from->adp_lambda[index].zz = from->adp_lambda[from->n].zz;   
-    from->adp_lambda[index].yz = from->adp_lambda[from->n].yz;   
-    from->adp_lambda[index].zx = from->adp_lambda[from->n].zx;   
-    from->adp_lambda[index].xy = from->adp_lambda[from->n].xy;   
-#endif
-#ifdef CG
-    from->h X(index) = from->h X(from->n); 
-    from->h Y(index) = from->h Y(from->n); 
-#ifndef TWOD
-    from->h Z(index) = from->h Z(from->n); 
-#endif 
-    from->g X(index) = from->g X(from->n); 
-    from->g Y(index) = from->g Y(from->n); 
-#ifndef TWOD
-    from->g Z(index) = from->g Z(from->n); 
-#endif  
-    from->old_ort X(index) = from->old_ort X(from->n); 
-    from->old_ort Y(index) = from->old_ort Y(from->n); 
-#ifndef TWOD
-    from->old_ort Z(index) = from->old_ort Z(from->n); 
-#endif
-#endif
-#ifdef DISLOC
-    from->Epot_ref [index] = from->Epot_ref[from->n];
-    from->ort_ref X(index) = from->ort_ref X(from->n);
-    from->ort_ref Y(index) = from->ort_ref Y(from->n);
-#ifndef TWOD
-    from->ort_ref Z(index) = from->ort_ref Z(from->n);
-#endif
-#endif /* DISLOC */
-#ifdef AVPOS
-    from->av_epot[index] = from->av_epot[from->n];
-    from->avpos X(index) = from->avpos X(from->n);
-    from->avpos Y(index) = from->avpos Y(from->n);
-    from->sheet X(index) = from->sheet X(from->n);
-    from->sheet Y(index) = from->sheet Y(from->n);
-#ifndef TWOD
-    from->avpos Z(index) = from->avpos Z(from->n);
-    from->sheet Z(index) = from->sheet Z(from->n);
-#endif
-#endif /* AVPOS */
-#ifdef NNBR
-    from->nbanz[index] = from->nbanz[from->n];
-#endif
-#ifdef REFPOS
-    from->refpos X(index) = from->refpos X(from->n);
-    from->refpos Y(index) = from->refpos Y(from->n);
-#ifndef TWOD
-    from->refpos Z(index) = from->refpos Z(from->n);
-#endif
-#endif /* REFPOS */
-#ifdef NVX
-    from->heatcond[index] = from->heatcond[from->n];
-#endif
-#ifdef STRESS_TENS
-    from->presstens[index].xx = from->presstens[from->n].xx;   
-    from->presstens[index].yy = from->presstens[from->n].yy;   
-    from->presstens[index].xy = from->presstens[from->n].xy;   
-#ifndef TWOD
-    from->presstens[index].zz = from->presstens[from->n].zz;   
-    from->presstens[index].yz = from->presstens[from->n].yz;   
-    from->presstens[index].zx = from->presstens[from->n].zx;   
-#endif
-#endif /* STRESS_TENS */
-#ifdef SHOCK
-    from->pxavg[index] = from->pxavg[from->n];
-#endif
-    from->impuls X(index) = from->impuls X(from->n); 
-    from->impuls Y(index) = from->impuls Y(from->n); 
-#ifndef TWOD
-    from->impuls Z(index) = from->impuls Z(from->n); 
-#endif
-    from->kraft X(index) = from->kraft X(from->n); 
-    from->kraft Y(index) = from->kraft Y(from->n); 
-#ifndef TWOD
-    from->kraft Z(index) = from->kraft Z(from->n); 
-#endif
-#ifdef COVALENT
-    /* neighbor table is not copied */
-#endif
-#ifdef NBLIST
-    /* reference positions of neighbor list are not copied */
-#endif
-#ifdef UNIAX
-    from->achse X(index) = from->achse X(from->n); 
-    from->achse Y(index) = from->achse Y(from->n); 
-    from->achse Z(index) = from->achse Z(from->n); 
-    from->dreh_impuls X(index) = from->dreh_impuls X(from->n); 
-    from->dreh_impuls Y(index) = from->dreh_impuls Y(from->n); 
-    from->dreh_impuls Z(index) = from->dreh_impuls Z(from->n); 
-    from->dreh_moment X(index) = from->dreh_moment X(from->n); 
-    from->dreh_moment Y(index) = from->dreh_moment Y(from->n); 
-    from->dreh_moment Z(index) = from->dreh_moment Z(from->n); 
-#endif
-
-  }
 }
 
 #ifdef COVALENT

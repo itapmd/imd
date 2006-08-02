@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -30,13 +30,6 @@
 #define VIS_WRITE_QUIT        100
 
 #define VIS_PARAM_DEFORM        1
-
-
-/* legacy stuff */
-#define T_WRITE_DISTRIB         1
-#define T_WRITE_PICTURE         2
-#define T_WRITE_RAS             8
-#define T_WRITE_CONF_SOCKET     9
 
 #define ATOMS_FLAG_SIZE 6
 typedef struct {
