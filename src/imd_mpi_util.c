@@ -166,6 +166,21 @@ void init_io(void)
 
 #endif
 
+  /* find size of space an atom occupies in message buffer */
+  { 
+    msgbuf b = {NULL, 0, 0};
+    cell   c;
+    alloc_msgbuf( &b, 256 );
+    c.n_max=0;
+    alloc_cell( &c, 1 );
+    c.n = 1;
+    b.n = 0;
+    copy_one_atom( &b, 0, &c, 0, 0);
+    atom_size = b.n;
+    free_msgbuf( &b );
+    alloc_cell( &c, 0 );
+  }
+
 }
 
 /******************************************************************************
@@ -767,21 +782,6 @@ void setup_buffers(void)
     alloc_msgbuf(&dump_buf, BUFFER_SIZE_INC);
   }
 #endif
-
-  /* find size of space an atom occupies in buffer */
-  if (atom_size==0) {
-    k = 0;
-    do {
-      cell *p = CELLPTR(k);
-      if (p->n > 0) {
-        copy_one_atom(&send_buf_east, 0, p, 0, 0);
-        tmp = send_buf_east.n;
-        send_buf_east.n = 0;
-      }
-      k++;
-    } while ((tmp==0) && (k<NCELLS));
-    MPI_Allreduce( &tmp, &atom_size, 1, MPI_INT, MPI_MAX, cpugrid);
-  }
 
 }
 
