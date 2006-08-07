@@ -278,6 +278,8 @@ EXTERN int  box_from_header INIT(0); /* read box from config file */
 EXTERN real nbl_margin INIT(0.4);    /* neighbor list margin */
 EXTERN real nbl_size   INIT(1.1);    /* neighbor list size */
 EXTERN int  nbl_count  INIT(0);      /* counting neighbor list rebuild */
+EXTERN int  have_valid_nbl INIT(0);
+EXTERN int  last_nbl_len   INIT(0);
 #endif
 
 /* quantities relevant for checking the relaxation process */

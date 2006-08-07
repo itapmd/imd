@@ -294,11 +294,7 @@ void init_cells( void )
     }
     free(cell_array_old);
     make_cell_lists();
-#ifdef NBLIST
-    make_nblist();
-#else
     fix_cells();
-#endif
 #ifdef MPI
     setup_buffers();
 #endif

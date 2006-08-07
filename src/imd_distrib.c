@@ -62,6 +62,13 @@ void write_distrib(int steps)
   if (myid==0) 
     printf("%d MB free before distribution allocation\n", get_free_mem());
 #endif
+#if defined(BGL) && defined(NBLIST)
+  deallocate_nblist();
+#endif
+#if defined(BGL) && defined(NBLIST) && (defined(TIMING) || defined(DEBUG))
+  if (myid==0) 
+    printf("%d MB free after nblist deallocation\n", get_free_mem());
+#endif
 
   /* allocate distribution arrays */
 #ifdef MPI2

@@ -160,10 +160,6 @@ if (0==myid) {
   if (diffpat_int > 0) init_diffpat();
 #endif
 
-#ifdef NBLIST
-  make_nblist();
-#endif
-
 #ifdef CG
   if (ensemble == ENS_CG) reset_cg();
 #endif

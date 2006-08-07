@@ -166,6 +166,7 @@ void do_embedding_energy(void);
 int  estimate_nblist_size(void);
 void make_nblist(void);
 void check_nblist(void);
+void deallocate_nblist(void);
 #endif
 #ifdef MEAM
 void init_meam(void);
@@ -255,7 +256,7 @@ void fix_cells(void);
 #ifdef MPI
 void copy_atoms_buf(msgbuf *to, msgbuf *from);
 void copy_one_atom (msgbuf *to, int to_cpu, minicell *from, int index,int del);
-void copy_atom_cell_buf(msgbuf *to, int to_cpu, minicell *from, int index );
+void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *from, int index );
 void copy_atom_buf_cell(minicell *to, msgbuf *b, int start);
 void process_buffer(msgbuf *b);
 void send_atoms(void);

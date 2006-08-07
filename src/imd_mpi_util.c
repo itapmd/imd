@@ -167,18 +167,27 @@ void init_io(void)
 #endif
 
   /* find size of space an atom occupies in message buffer */
+  /* we do this before having read or generated any atoms  */
   { 
     msgbuf b = {NULL, 0, 0};
-    cell   c;
+    minicell c;
     alloc_msgbuf( &b, 256 );
-    c.n_max=0;
-    alloc_cell( &c, 1 );
+    c.n_max = 0;
+    ALLOC_MINICELL( &c, 1 );
     c.n = 1;
-    b.n = 0;
+#ifdef VEC
+    c.ind[0] = 0;
+    atoms.n_max = 0;
+    alloc_cell( &atoms, 1 );
+    atoms.n = 1;
+#endif
     copy_one_atom( &b, 0, &c, 0, 0);
     atom_size = b.n;
     free_msgbuf( &b );
-    alloc_cell( &c, 0 );
+    ALLOC_MINICELL( &c, 0 );
+#ifdef VEC
+    alloc_cell( &atoms, 0 );
+#endif
   }
 
 }
@@ -277,7 +286,7 @@ int irecv_buf(msgbuf *b, int from, MPI_Request *req)
 *
 ******************************************************************************/
 
-void copy_atom_cell_buf(msgbuf *to, int to_cpu, minicell *p, int ind )
+void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *p, int ind )
 {
   /* Check the parameters */
   if ((0 > ind) || (ind >= p->n)) {
@@ -468,20 +477,23 @@ void copy_one_atom(msgbuf *to, int to_cpu, minicell *from, int index, int del)
 *
 ******************************************************************************/
 
-void copy_atom_buf_cell(minicell *to, msgbuf *b, int start)
+void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
 {
-  int ind, j = start + 1;  /* the first entry is the CPU number */
+  int  ind, j = start + 1;  /* the first entry is the CPU number */
+  cell *to;
 
 #ifdef VEC
-  if (to->n >= to->n_max) alloc_minicell(to,to->n_max+incrsz);
-  to->ind[to->n] = atoms.n;
+  if (p->n >= p->n_max) alloc_minicell(p,p->n_max+incrsz);
+  p->ind[p->n] = atoms.n;
   if (atoms.n >= atoms.n_max) alloc_cell(&atoms, 2*atoms.n_max);
 #ifdef MPI
-  atoms.ind[atoms.n] = to->n; /* pointer from atom to index in its minicell */
+  atoms.ind[atoms.n] = p->n; /* pointer from atom to index in its minicell */
 #endif
   ind = atoms.n++;
-  to->n++;
+  p->n++;
+  to = &atoms;
 #else
+  to = p;
   if (to->n >= to->n_max) alloc_cell(to,to->n_max+incrsz);
   ind = to->n++;
 #endif

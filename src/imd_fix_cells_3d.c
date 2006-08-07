@@ -158,6 +158,11 @@ void fix_cells(void)
   send_atoms();
 #endif
 
+#ifdef NBLIST
+  /* tag neighbor list as outdated */
+  have_valid_nbl = 0;
+#endif
+
 }
 
 #ifdef MPI

@@ -66,6 +66,10 @@ void write_config_select(int fzhlr, char *suffix,
   FILE *out=NULL;
   str255 fname;
 
+#if defined(BGL) && defined(NBLIST)
+  deallocate_nblist();
+#endif
+
 #ifdef MPI2
   MPI_Alloc_mem(outbuf_size * sizeof(char), MPI_INFO_NULL, &outbuf);
 #else
@@ -156,13 +160,7 @@ void write_config_select(int fzhlr, char *suffix,
 void write_config(int fzhlr, int steps)
 { 
   /* first make sure that every atom is inside the box and on the right CPU */
-  if (1==parallel_output) {
-#ifdef NBLIST
-    make_nblist();
-#else
-    fix_cells();
-#endif
-  }
+  if (1==parallel_output) fix_cells();
 
   /* write checkpoint */
   write_config_select(fzhlr, "chkpt", write_atoms_config, write_header_config);
@@ -182,13 +180,7 @@ void write_config(int fzhlr, int steps)
 void write_ssconfig(int steps)
 { 
   /* first make sure that every atom is inside the box and on the right CPU */
-  if (1==parallel_output) {
-#ifdef NBLIST
-    make_nblist();
-#else
-    fix_cells();
-#endif
-  }
+  if (1==parallel_output) fix_cells();
 
   /* write checkpoint */
   write_config_select(sscount,"ss", write_atoms_config, write_header_config);
@@ -213,13 +205,7 @@ void write_cgconfig(int steps)
 { 
   
   /* first make sure that every atom is inside the box and on the right CPU */
-  if (1==parallel_output) {
-#ifdef NBLIST
-    make_nblist();
-#else
-    fix_cells();
-#endif
-  }
+  if (1==parallel_output) fix_cells();
 
   /* write checkpoint */
   write_config_select(steps,"cgchkpt",write_atoms_config, write_header_config);

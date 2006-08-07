@@ -85,18 +85,8 @@ void make_nblist()
   long   i, j, k, l, m, n, len1, len2, max_cell, max_len=0;
   /* int    li1[N0], lj1[N0]; */
 
-#ifdef MPI
-  if (steps == steps_min) setup_buffers();
-#endif
-
-  /* update cell decomposition */
-  fix_cells();
-
   /* update reference positions */
   for (i=0; i<DIM*atoms.n; i++) atoms.nbl_pos[i] = atoms.ort[i];
-
-  /* fill the buffer cells */
-  send_cells(copy_cell,pack_cell,unpack_cell);
 
   /* get maximum cell occupancy */
   max_cell = 0;
@@ -264,6 +254,7 @@ void make_nblist()
 
 #endif /* not MONO */
 
+  have_valid_nbl = 1;
   nbl_count++;
 }
 
@@ -285,12 +276,20 @@ void calc_forces(int steps)
   static shortint *nbanz1 = NULL;
   static sym_tensor *presstens1 = NULL;
 
+  if (0==have_valid_nbl) {
 #ifdef MPI
-  if (0 == steps % BUFSTEP) setup_buffers();
+    /* check message buffer size */
+    if (0 == nbl_count % BUFSTEP) setup_buffers();
 #endif
+    /* update cell decomposition */
+    fix_cells();
+  }
 
   /* fill the buffer cells */
   send_cells(copy_cell,pack_cell,unpack_cell);
+
+  /* make new neighbor lists */
+  if (0==have_valid_nbl) make_nblist();
 
   /* clear global accumulation variables */
   tot_pot_energy = 0.0;
@@ -884,18 +883,8 @@ void make_nblist()
 {
   int  c, i, tb[N1];
 
-#ifdef MPI
-  if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
-#endif
-
-  /* update cell decomposition */
-  fix_cells();
-
   /* update reference positions */
   for (i=0; i<DIM*atoms.n; i++) atoms.nbl_pos[i] = atoms.ort[i];
-
-  /* fill the buffer cells */
-  send_cells(copy_cell,pack_cell,unpack_cell);
 
   /* for all cells */
   for (c=0; c<ncells; c++) {
@@ -949,6 +938,7 @@ void make_nblist()
       tlen[ii] = tn;
     }
   }
+  have_valid_nbl = 1;
   nbl_count++;
 }
 
@@ -968,12 +958,20 @@ void calc_forces(int steps)
   real   rr[BS*N2], ee[BS*N2], ei[N0];
   real   tmpvec1[2], tmpvec2[2] = {0.0, 0.0};
 
+  if (0==have_valid_nbl) {
 #ifdef MPI
-  if ((steps == steps_min) || (0 == steps % BUFSTEP)) setup_buffers();
+    /* check message buffer size */
+    if (0 == nbl_count % BUFSTEP) setup_buffers();
 #endif
+    /* update cell decomposition */
+    fix_cells();
+  }
 
   /* fill the buffer cells */
   send_cells(copy_cell,pack_cell,unpack_cell);
+
+  /* make new neighbor lists */
+  if (0==have_valid_nbl) make_nblist();
 
   /* clear global accumulation variables */
   tot_pot_energy = 0.0;
@@ -1159,5 +1157,5 @@ void check_nblist()
 #else
   max2 = max1;
 #endif
-  if (max2 > SQR(0.5*nbl_margin)) make_nblist();
+  if (max2 > SQR(0.5*nbl_margin)) have_valid_nbl = 0;
 }

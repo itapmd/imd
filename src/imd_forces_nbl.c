@@ -46,6 +46,19 @@ int  *tl=NULL, *tb=NULL, *cl_off=NULL, *cl_num=NULL;
 
 /******************************************************************************
 *
+*  deallocate (largest part of) neighbor list
+*
+******************************************************************************/
+
+void deallocate_nblist(void)
+{
+  if (tb) free(tb);
+  tb = NULL;
+  have_valid_nbl = 0;
+}
+
+/******************************************************************************
+*
 *  estimate_nblist_size
 *
 ******************************************************************************/
@@ -114,16 +127,6 @@ void make_nblist(void)
   static int at_max=0, nb_max=0, pa_max=0, ncell_max=0;
   int  c, i, k, n, tn, at, cc;
 
-#ifdef MPI
-  if (0 == nbl_count % BUFSTEP) setup_buffers();
-#endif
-
-  /* update cell decomposition */
-  fix_cells();
-
-  /* fill the buffer cells */
-  send_cells(copy_cell,pack_cell,unpack_cell);
-
   /* update reference positions */
   for (k=0; k<ncells; k++) {
     cell *p = cell_array + cnbrs[k].np;
@@ -162,8 +165,14 @@ void make_nblist(void)
     tl     = (int *) malloc(at_max * sizeof(int));
     cl_num = (int *) malloc(at_max * sizeof(int));
   }
-  if (nbl_count==0) {
-    nb_max = (int  ) (nbl_size * estimate_nblist_size());
+  if (NULL==tb) {
+    if (0==last_nbl_len) nb_max = (int) (nbl_size * estimate_nblist_size());
+    else                 nb_max = (int) (nbl_size * last_nbl_len);
+    tb = (int *) malloc(nb_max * sizeof(int));
+  }
+  else if (last_nbl_len * sqrt(nbl_size) > nb_max) {
+    free(tb);
+    nb_max = (int  ) (nbl_size * last_nbl_len);
     tb     = (int *) malloc(nb_max * sizeof(int));
   }
   if ((tl==NULL) || (tb==NULL) || (cl_num==NULL)) 
@@ -223,10 +232,13 @@ void make_nblist(void)
       }
       pa_max = MAX(pa_max,tn-tl[n]);
       tl[++n] = tn;
-      if (tn > nb_max-2*pa_max) 
+      if (tn > nb_max-2*pa_max) {
         error("neighbor table full - increase nbl_size");
+      }
     }
   }
+  last_nbl_len   = tn;
+  have_valid_nbl = 1;
   nbl_count++;
 }
 
@@ -241,8 +253,20 @@ void calc_forces(int steps)
   int  i, b, k, n=0, is_short=0, idummy=0;
   real tmpvec1[8], tmpvec2[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
+  if (0==have_valid_nbl) {
+#ifdef MPI
+    /* check message buffer size */
+    if (0 == nbl_count % BUFSTEP) setup_buffers();
+#endif
+    /* update cell decomposition */
+    fix_cells();
+  }
+
   /* fill the buffer cells */
   send_cells(copy_cell,pack_cell,unpack_cell);
+
+  /* make new neighbor lists */
+  if (0==have_valid_nbl) make_nblist();
 
   /* clear global accumulation variables */
   tot_pot_energy = 0.0;
@@ -1001,5 +1025,5 @@ void check_nblist()
 #else
   max2 = max1;
 #endif
-  if (max2 > SQR(0.5*nbl_margin)) make_nblist();
+  if (max2 > SQR(0.5*nbl_margin)) have_valid_nbl = 0;
 }
