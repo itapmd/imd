@@ -537,7 +537,7 @@ void init_pre_pot(void) {
 #endif
       r_cut [i][j] = r_cut [j][i] =     r_cut_lin[n];
       r2_cut[i][j] = r2_cut[j][i] = SQR(r_cut_lin[n]);
-      if (pot_res[n]==0) pot_res[n] = 10000;
+      if (pot_res[n]==0) pot_res[n] = 1000;
 
       /* Lennard-Jones */
       lj_epsilon[i][j] = lj_epsilon[j][i] = lj_epsilon_lin[n]; 

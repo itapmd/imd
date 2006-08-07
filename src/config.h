@@ -197,28 +197,10 @@
 #define NEIGH_LEN_INC  2
 #endif
 
-/* maximum number of data items an atom can have */
-#ifdef TWOD
-#define MAX_ATOM_SIZE 20
-#else
-#ifdef UNIAX
-#define MAX_ATOM_SIZE 40
-#else
-#ifdef CG
-#define MAX_ATOM_SIZE 35
-#else
-#define MAX_ATOM_SIZE 25
-#endif
-#endif
-#endif
-
 /* pressure relaxation */
 #define RELAX_FULL     0
 #define RELAX_AXIAL    1
 #define RELAX_ISO      2
-
-/* number of data items by which an MPI buffer is increased */
-#define BUFFER_SIZE_INC 1024 
 
 /* total buffer size in MB for serial read_atoms */
 #define INPUT_BUF_SIZE 64

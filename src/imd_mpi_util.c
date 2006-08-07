@@ -287,7 +287,7 @@ void copy_atom_cell_buf(msgbuf *to, int to_cpu, minicell *p, int ind )
 
   /* check if buffer is large enough; we can't just increase it, */ 
   /* as destination buffer wouldn't know about it                */
-  if (to->n + MAX_ATOM_SIZE > to->n_max) {
+  if (to->n + atom_size > to->n_max) {
     error("buffer overflow in copy_atom_cell_buf");
   }
 
@@ -779,7 +779,7 @@ void setup_buffers(void)
 
 #ifdef SHOCK
   if (0==dump_buf.n_max) {
-    alloc_msgbuf(&dump_buf, BUFFER_SIZE_INC);
+    alloc_msgbuf(&dump_buf, 1024);
   }
 #endif
 
