@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -40,27 +40,29 @@ int brent(real ax, real bx, real cx, real fa, real fb, real fc, real *alphamin)
 
  
   /* sorting is already done in mnbrak */
-/*   a = (ax < cx) ? ax : cx; */
-/*   b = (ax > cx) ? ax : cx; */
+  /*   a = (ax < cx) ? ax : cx; */
+  /*   b = (ax > cx) ? ax : cx; */
   a=ax; b=bx;
   x = w = v = bx;
   
   // fb = fonedim(b); 
  
   fw = fv = fx = fb;
- if ((cg_infolevel>0) && (0==myid)) {
+  if ((cg_infolevel>0) && (0==myid)) {
       printf("in brent starting with  a %.12e b %.12e fb %.12e\n",a,b,fb);
       fflush(stdout);
   }
+
   for (iter = 1; iter <= ITMAX; iter++) {
     xm = 0.5 * (a+b);
     tol1 = tol * FABS(x) + cg_zeps;
     tol2 = 2.0 * tol1;
 
     if ((cg_infolevel>0) && (0==myid)) {
-      printf("in brent, iter %d x %e v %e w %e fx %e fv %e fw %e\n",iter, x,v,w,fx,fv,fw);
+      printf("in brent, iter %d x %e v %e w %e fx %e fv %e fw %e\n",
+             iter, x,v,w,fx,fv,fw);
       fflush(stdout);
-  }
+    }
 
     if (FABS(x-xm) <= (tol2-0.5*(b-a))) {
       *alphamin = x;
@@ -108,6 +110,7 @@ int brent(real ax, real bx, real cx, real fa, real fb, real fc, real *alphamin)
     }
   }
   error("Too many iterations in brent");
+  return 0;
 }
 
 
@@ -122,22 +125,20 @@ int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc)
   if (*fb > *fa) {
     SHFT(dum, *ax, *bx, dum)
     SHFT(dum, *fb, *fa, dum)
-      }
+  }
+
   *cx = (*bx) + GOLD * (*bx-*ax);
-  if( (*bx-*ax) <= 1e-4)
-    {
-      *cx = (*bx) + 0.05;
-    }
+  if( (*bx-*ax) <= 1e-4) {
+    *cx = (*bx) + 0.05;
+  }
 
   /* changed to num rec., make sure i'm not going in the wrong direction */
-  if (*cx <0.0)
-    {
-      *cx = (*bx) - 1.0/GOLD * (*bx-*ax);
-    }
-  if (*cx >=1.0)
-    {
-      *cx = 1.0;
-    }
+  if (*cx <0.0) {
+    *cx = (*bx) - 1.0/GOLD * (*bx-*ax);
+  }
+  if (*cx >=1.0) {
+    *cx = 1.0;
+  }
   
   *fc = fonedim(*cx);
   ctf = 1;
@@ -188,9 +189,7 @@ int mnbrak(real *ax, real *bx, real *cx, real *fa, real *fb, real *fc)
     }
     SHFT(*ax, *bx, *cx,  u)
     SHFT(*fa, *fb, *fc, fu)
-      }
-  
- 
+  }
   return ctf;
 }
 

@@ -2,7 +2,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -140,32 +140,31 @@ int linmin()
   /* call by reference Num Rec. p297 */
   
   if ((cg_infolevel>0) && (0==myid)) {
-  printf("befor mnbrak alpha_a %le alpha_b %le alpha_c %le %.12lf %.12lf %.12lf\n",
-           alpha_a,alpha_b,alpha_c,fa,fb,fc);
-  fflush(stdout);
+    printf("befor mnbrak alpha_a %le alpha_b %le alpha_c %le %.12lf %.12lf\n",
+           alpha_a,alpha_b,alpha_c,fa,fb);
+    fflush(stdout);
   }
 
-  
   iter1 = mnbrak(&alpha_a,&alpha_b,&alpha_c,&fa,&fb,&fc); 
 
 
   if (alpha_a > alpha_b) {
      SHFT(dum,alpha_a,alpha_b,dum)
      SHFT(dum,fa,fb,dum)
-       }
+  }
   if (alpha_b > alpha_c) {
     SHFT(dum,alpha_b,alpha_c,dum)
       SHFT(dum,fb,fc,dum)
-       }
+  }
   if (alpha_a > alpha_b) {
     SHFT(dum,alpha_a,alpha_b,dum)
       SHFT(dum,fa,fb,dum)
-      }
+  }
   
- if ((cg_infolevel>0) && (0==myid)) {
-  printf("after mnbrak alpha_a %le alpha_b %le alpha_c %le %.12lf %.12lf %.12lf\n",
+  if ((cg_infolevel>0) && (0==myid)) {
+    printf("after mnbrak alpha_a %le alpha_b %le alpha_c %le %.12lf %.12lf %.12lf\n",
            alpha_a,alpha_b,alpha_c,fa,fb,fc);
-  fflush(stdout);
+    fflush(stdout);
   }
 
   if(iter1 <1) {
@@ -173,8 +172,6 @@ int linmin()
            alpha_a,alpha_b,alpha_c,fa,fb,fc);
     fflush(stdout);
   }
-
-  
 
 /*   if ((cg_infolevel>0) && (0==myid)) { */
 /*   printf("after mnbrak alpha_a %le alpha_b %le alpha_c %le %.12lf %.12lf %.12lf\n", */
@@ -201,8 +198,6 @@ int linmin()
   }
   return (iter1 + iter2);
 }
-
-
 
 
 #ifdef ACG
