@@ -498,6 +498,15 @@ void init_nmoldyn(void);
 void write_nmoldyn(int);
 #endif
 
+/* Laser heating - file imd_laser.c */
+#ifdef LASER
+real laser_calc_depth(cell *, int);
+void laser_rescale_dummy(void);
+void laser_rescale_1(void);
+void laser_rescale_2(void);
+void laser_rescale_3(void);
+#endif
+
 #ifdef BGL
 int get_free_mem(void);
 #endif

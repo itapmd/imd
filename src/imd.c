@@ -183,6 +183,16 @@ int main(int argc, char **argv)
   init_refpos();
 #endif
 
+#ifdef LASER
+  //init_laser(); /*maybe later*/
+
+  // peak power density (at surface and t_0)
+  laser_p_peak=laser_mu*laser_sigma_e/laser_sigma_t/sqrt(M_PI);
+
+  laser_sigma_t_squared=laser_sigma_t*laser_sigma_t;
+
+#endif
+
   /* first phase of the simulation */
   if (steps_min <= steps_max) main_loop();
 

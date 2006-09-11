@@ -75,18 +75,24 @@ void main_loop(void)
   }
 #ifdef LASER
 if (0==myid) {
+      printf( "Parameter laser_rescale_mode is %d\n", laser_rescale_mode );
       printf( "Parameter laser_delta_temp is  %1.10f\n", laser_delta_temp );
-      printf( "Laser irradiates from direction (%d, %d, %d)\n", laser_dir.x,
-	      laser_dir.y
 #ifndef TWOD
-            , laser_dir.z
+      printf( "Laser irradiates from direction (%d, %d, %d)\n", laser_dir.x,
+	      laser_dir.y, laser_dir.z);
+#else
+printf( "Laser irradiates from direction (%d, %d)\n", laser_dir.x,
+	      laser_dir.y);
 #endif /*TWOD*/
-             );
+
       if (laser_mu==0.0) {
-	printf( "Absorption length is infinite.\n\n" );
+	printf( "Absorption length is infinite.\n" );
       } else {
-        printf( "Absorption length is %1.10f\n\n", 1.0/laser_mu );
+        printf( "Absorption length is %1.10f\n", 1.0/laser_mu );
       }
+      printf( "Laser energy density is %1.10f\n", laser_sigma_e);
+      printf( "Laser pulse duration (sigma) is %1.10f\n", laser_sigma_t);
+      printf( "Time t_0 of laser pulse is %1.10f (%1.10f time steps after start of simulation)\n\n", laser_t_0, laser_t_0/timestep);
   }
 #endif /*LASER*/
 
@@ -431,6 +437,13 @@ if (0==myid) {
       }
     }
 #endif
+
+#ifdef LASER
+
+/* do rescaling of atom velocities to simulate absorption of laser pulse*/
+do_laser_rescale();
+
+#endif /* LASER */
 
     if (ensemble != ENS_CG) move_atoms(); /* here PxF is recalculated */
 

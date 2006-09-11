@@ -673,6 +673,8 @@ CORRSOURCES     = imd_correl.c
 
 TRANSSOURCES    = imd_transport.c
 
+LASERSOURCES	= imd_laser.c
+
 
 #########################################################
 #
@@ -688,7 +690,7 @@ ifneq (,$(strip $(findstring 2d,${MAKETARGET})))
   # 2d, serial or mpi
   ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
     SOURCES	:= ${SOURCES2D} ${MPISOURCES2D}
-  else
+    else
     SOURCES	:= ${SOURCES2D} ${RISCSOURCES2D}
   endif
   CFLAGS  += -DTWOD
@@ -701,6 +703,7 @@ else
     SOURCES	:= ${SOURCES3D} ${NBLSOURCES3D}
     ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
       SOURCES	+= ${MPISOURCES}
+     
     endif
 
   else
@@ -709,6 +712,7 @@ else
       SOURCES	:= ${SOURCES3D} ${NBLSOURCES3D}
       ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
         SOURCES	+= ${MPISOURCES}
+       
       endif
 
     else
@@ -801,6 +805,7 @@ endif
 #LASER
 ifneq (,$(strip $(findstring laser,${MAKETARGET})))
 CFLAGS += -DLASER
+SOURCES += ${LASERSOURCES}
 endif
 
 # UNIAX

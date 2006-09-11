@@ -282,7 +282,7 @@ void getparamfile(char *paramfname, int sim)
 
   /* set the random number generator seed to the */
   /* negative of the current time in seconds */
-  /* this will be superseeded by a fixed value from the parameter file */
+  /* this will be superseded by a fixed value from the parameter file */
   { 
     struct timeval tv;
     struct timezone tz;
@@ -1564,17 +1564,54 @@ void getparamfile(char *paramfname, int sim)
 #endif
 #ifdef LASER
 else if (strcasecmp(token, "laser_delta_temp")==0){
-      /* maximum heat added by laser (generally at the surface) */
+      /* maximum heat added by laser (at the surface) (in maxwell routine) */
       getparam("laser_delta_temp", &laser_delta_temp, PARAM_REAL, 1,1);
     }
 else if (strcasecmp(token, "laser_mu")==0){
-      /* absorption coefficient */
+      /* absorption coefficient (always needed)*/
       getparam("laser_mu", &laser_mu, PARAM_REAL, 1,1);
     }
 else if (strcasecmp(token, "laser_dir")==0){
       /* direction of incidence of laser
-       ( for now only along coordinate axes ) */
+       ( for now only along coordinate axes ) (always needed)*/
       getparam("laser_dir", &laser_dir, PARAM_INT, DIM, DIM);
+    }
+else if (strcasecmp(token, "laser_sigma_e")==0){
+      /* area density of pulse energy (for rescaling method) */
+      getparam("laser_sigma_e", &laser_sigma_e, PARAM_REAL, 1,1);
+    }
+else if (strcasecmp(token, "laser_sigma_t")==0){
+      /* Pulse duration ( power is 1/e*P_max at t=t_0 +/- sigma_t ) */
+      getparam("laser_sigma_t", &laser_sigma_t, PARAM_REAL, 1,1);
+    }
+else if (strcasecmp(token, "laser_t_0")==0){
+      /* time of maximum pulse intensity */
+      getparam("laser_t_0", &laser_t_0, PARAM_REAL, 1,1);
+    }
+else if (strcasecmp(token, "laser_atom_vol")==0){
+      /* Volume per particle (inverse density) */
+      getparam("laser_atom_vol", &laser_atom_vol, PARAM_REAL, 1,1);
+    }
+else if (strcasecmp(token,"laser_rescale_mode")==0) {
+      /* What rescale mode? */
+      getparam("laser_rescale_mode",&laser_rescale_mode,PARAM_INT,1,1);
+      switch ( laser_rescale_mode ) {
+        case 0 :
+          do_laser_rescale = laser_rescale_dummy;
+          break;
+        case 1 :
+          do_laser_rescale = laser_rescale_1;
+          break;
+        case 2 :
+          do_laser_rescale = laser_rescale_2;
+          break;
+        case 3 :
+          do_laser_rescale = laser_rescale_3;
+          break;
+        default :
+          error("Illegal value for parameter laser_rescale_mode.\n");
+          break;
+      } /* switch */      
     }
 #endif
 #ifdef STRESS_TENS
@@ -2365,8 +2402,10 @@ void check_parameters_complete()
         else{
           error("Please give the direction of laser incidence (option laser_dir in the parameter file).\n");
         }
-
-#endif
+	if ( (laser_rescale_mode < 0) || (laser_rescale_mode > 3) ) {
+          error("Parameter laser_rescale_mode must be a positive integer <4!");
+	}
+#endif //LASER
 #ifdef MPI
         {
 #ifdef TWOD
@@ -2567,7 +2606,7 @@ void read_parameters(void)
 
 /****************************************************************************
 *
-*  Broadcast all parameters to other CPU's (MPI only) 
+*  Broadcast all parameters to other CPUs (MPI only) 
 *
 *****************************************************************************/
 
@@ -2869,9 +2908,14 @@ void broadcast_params() {
   MPI_Bcast( &tran_interval, 1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 #ifdef LASER
+  MPI_Bcast( &laser_rescale_mode,1,MPI_INT,0,MPI_COMM_WORLD);
   MPI_Bcast( &laser_dir,  DIM , MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &laser_mu,         1, REAL,  0, MPI_COMM_WORLD);
   MPI_Bcast( &laser_delta_temp, 1, REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &laser_sigma_e,    1, REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &laser_sigma_t,    1, REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &laser_t_0,        1, REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &laser_atom_vol,   1, REAL,  0, MPI_COMM_WORLD);
 #endif
 #ifdef STRESS_TENS
   MPI_Bcast( &press_int    , 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -3174,7 +3218,7 @@ void broadcast_params() {
   
   MPI_Bcast(&use_header,1, MPI_INT, 0, MPI_COMM_WORLD);
 
-  /* broadcast integrator to other CPU's */
+  /* broadcast integrator to other CPUs */
 
   switch (ensemble) {
     case ENS_NVE:       move_atoms = move_atoms_nve;       break;
@@ -3192,7 +3236,18 @@ void broadcast_params() {
     case ENS_CG:                                           break;  
     default: if (0==myid) error("unknown ensemble in broadcast"); break;
   }
-  
+
+
+#ifdef LASER
+  /* broadcast laser rescaling routine to other CPUs */
+  switch (laser_rescale_mode) {
+    case 0:       do_laser_rescale = laser_rescale_dummy;  break;
+    case 1:       do_laser_rescale = laser_rescale_1;   break;
+    case 2:       do_laser_rescale = laser_rescale_2;   break;
+    case 3:       do_laser_rescale = laser_rescale_3;   break;
+    default: if (0==myid) error("unknown laser rescaling mode in broadcast"); break;
+  }
+#endif /* LASER */
 }
 
 #endif /* MPI */

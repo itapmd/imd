@@ -9,7 +9,7 @@
 
 /******************************************************************************
 *
-* maxwell.c -- initialize velocity with a maxwell distribution
+* imd_maxwell.c -- initialize velocity with a maxwell distribution
 *
 ******************************************************************************/
 
@@ -24,7 +24,7 @@ real gaussian(const real);
 
 /*
 *
-* Converted directely from an example in the book of Allen and Tildesley
+* Converted directly from an example in the book of Allen and Tildesley
 *
 */
 
@@ -99,6 +99,7 @@ void maxwell(real temp)
 		 + laser_dir.z * ORT(p,i,Z)
 #endif
 	 ;
+         if (depth < 0) depth=0; // we don't want to exceed laser_delta_temp
 	 
 	 TEMP =  laser_delta_temp * exp(-laser_mu * depth);
          TEMP += temperature; /* add base temperature of sample */

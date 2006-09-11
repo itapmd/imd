@@ -671,14 +671,26 @@ EXTERN int  tran_interval INIT(0);     /* Intervals of temperature recording.*/
 EXTERN int  tran_nlayers  INIT(0);     /* number of layers*/
 #endif
 
-#ifdef LASER /* Inscribe continuous exponential temperature gradient
-		in maxwell(real temp).
-		Default values will result in no gradient.                   */
+#ifdef LASER /* Laser parameters */
 
 EXTERN real laser_delta_temp INIT(0.0);   /* maximum Temperature added
 				             (at surface of the sample)      */
 EXTERN real laser_mu	  INIT(0.0);   /* absorption coefficient             */
 EXTERN ivektor laser_dir  INIT(xivektor); /* direction of laser incidence    */
+EXTERN real laser_sigma_e INIT(0.0);   /* area density of pulse energy (for rescaling method) */
+EXTERN real laser_sigma_t INIT(0.5);   /* half pulse duration (sigma of gaussian pulse) (rescaling) */
+EXTERN real laser_sigma_t_squared INIT(0.25); /* same, squared */
+EXTERN real laser_t_0	  INIT(1.0);   /* time of maximum intensity of pulse (rescaling) */
+EXTERN real laser_p_peak  INIT(0.0);   /* Peak power density (calculated in imd.c from previous parameters)*/
+EXTERN real laser_atom_vol INIT(16.6);  /* Volume per particle (inverse density)*/
+EXTERN int  laser_rescale_mode INIT(0); /* Mode for laser velocity rescaling */
+
+EXTERN void (*do_laser_rescale)(void);  /* Function pointer for rescaling routine */
+
+//EXTERN int  laser_damp    INIT(0);     /* Use damping slope at other end?    */
+//EXTERN real laser_damp_depth INIT(0.0);/* Use slope from what depth?         */
+//EXTERN real laser_damp_width INIT(0.0);/* Transition width of damping funct. */
+//EXTERN int  laser_damp_smooth INIT(1); /* Smooth transition (sine)?	     */
 #endif
 
 #ifdef STRESS_TENS
