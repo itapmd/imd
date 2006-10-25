@@ -345,9 +345,9 @@ void getparamfile(char *paramfname, int sim)
       /* file name for atom coordinate input data */
       getparam("coordname",infilename,PARAM_STR,1,255);
     }
-    else if (strcasecmp(token,"itrame")==0) {
+    else if (strcasecmp(token,"itrname")==0) {
       /* file name for initial itr-file */
-      getparam("itrname",itrfilename,PARAM_STR,1,255);
+      getparam(token,itrfilename,PARAM_STR,1,255);
     }
     else if (strcasecmp(token,"outfiles")==0) {
       /* output file basename */
@@ -2701,7 +2701,7 @@ void broadcast_params() {
   MPI_Bcast( fbc_dforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
 #else
   if (NULL==fbc_endforces) {
-    fbc_forces = (vektor *) malloc( vtypes * sizeof(vektor) );
+    fbc_endforces = (vektor *) malloc( vtypes * sizeof(vektor) );
     if (NULL==fbc_endforces) 
       error("Cannot allocate memory for fbc_endforces on client."); 
   }
