@@ -421,10 +421,15 @@ void do_forces2(cell *p, real *Epot, real *Virial,
       r[j]    = sqrt(SPROD(d[j],d[j]));
       
       /* cutoff function */
-      tmp_r  = 1.0 / ( r[j] - sw_a2[p_typ][j_typ] );
-      fc[j]  = exp( sw_ga[p_typ][j_typ] * tmp_r );
-      dfc[j] = - fc[j] * sw_ga[p_typ][j_typ] * tmp_r * tmp_r / r[j];
-      
+      tmp_r = r[j] - sw_a2[p_typ][j_typ];
+      if (tmp_r < -0.01 * sw_ga[p_typ][j_typ]) {
+        tmp_r  = 1.0 / tmp_r;
+        fc [j] = exp( sw_ga[p_typ][j_typ] * tmp_r );
+        dfc[j] = - fc[j] * sw_ga[p_typ][j_typ] * tmp_r * tmp_r / r[j];
+      } else {
+        fc [j] = 0.0;
+        dfc[j] = 0.0;
+      }      
     } /* j */
 
     /* for each pair of neighbors */

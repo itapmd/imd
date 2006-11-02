@@ -1046,15 +1046,19 @@ void pair_int_stiweb(real *pot, real *grad, int p_typ, int q_typ, real r2)
   radius = sqrt(r2);
   phi_r  =   sw_a[p_typ][q_typ] * pow( radius, - sw_p[p_typ][q_typ] );
   phi_a  = - sw_b[p_typ][q_typ] * pow( radius, - sw_q[p_typ][q_typ] );
-  inv_c  = 1.0 / ( radius - sw_a1[p_typ][q_typ] );
-  inv_r  = 1.0 / radius;
-  f_cut  = exp( sw_de[p_typ][q_typ] * inv_c );
-
-  *pot  = ( phi_r + phi_a ) * f_cut;
-  *grad = ( - *pot * sw_de[p_typ][q_typ] * inv_c * inv_c 
-	    - f_cut * inv_r * ( sw_p[p_typ][q_typ] * phi_r 
-			      + sw_q[p_typ][q_typ] * phi_a ) ) * inv_r; 
-
+  inv_c  = radius - sw_a1[p_typ][q_typ];
+  if (inv_c < -0.01 * sw_de[p_typ][q_typ]) {
+    inv_c = 1.0 / inv_c;
+    inv_r = 1.0 / radius;
+    f_cut = exp( sw_de[p_typ][q_typ] * inv_c );
+    *pot  = ( phi_r + phi_a ) * f_cut;
+    *grad = ( - *pot * sw_de[p_typ][q_typ] * inv_c * inv_c 
+	      - f_cut * inv_r * ( sw_p[p_typ][q_typ] * phi_r 
+                                + sw_q[p_typ][q_typ] * phi_a ) ) * inv_r;
+  } else {
+    *pot  = 0.0;
+    *grad = 0.0;
+  }
 }
 
 #endif
