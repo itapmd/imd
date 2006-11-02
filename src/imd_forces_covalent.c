@@ -449,8 +449,11 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 	/* potential term */
 	tmp_sp    = SPROD(d[j],d[k]);
 	cos_theta = tmp_sp / (r[j] * r[k]);
+#ifdef TERNBCC
+	tmp=cos(3./2.*3.14159265*cos_theta);
+#else
 	tmp       = cos_theta + 1.0 / 3.0;
-
+#endif
 	pot_zwi   = sw_la[p_typ][j_typ][k_typ] * fc[j] * fc[k] * tmp * tmp;
 
 	/* total potential */
@@ -462,15 +465,22 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 	tmp_jj = 1.0 / ( r[j] * r[j] );
 	tmp_kk = 1.0 / ( r[k] * r[k] );
 	tmp_jk = 1.0 / ( r[j] * r[k] );
+#ifdef TERNBCC
+	tmp_1 = tmp_grad2 * dfc[j] * fc[k] - tmp_grad1 * -3./4.*3.14159265*sin(3.*3.14159625*cos_theta) * tmp_jj;
+#else
 	tmp_1 = tmp_grad2 * dfc[j] * fc[k] - tmp_grad1 * cos_theta * tmp_jj;
+#endif
 	tmp_2 = tmp_grad1 * tmp_jk;
 
 	force_j.x = tmp_1 * d[j].x + tmp_2 * d[k].x;
 	force_j.y = tmp_1 * d[j].y + tmp_2 * d[k].y;
 	force_j.z = tmp_1 * d[j].z + tmp_2 * d[k].z;
 
+#ifdef TERNBCC
+	tmp_1 = tmp_grad2 * dfc[j] * fc[k] - tmp_grad1 * -3./4.*3.14159265*sin(3.*3.14159625*cos_theta) * tmp_jj;
+#else
 	tmp_1 = tmp_grad2 * dfc[k] * fc[j] - tmp_grad1 * cos_theta * tmp_kk;
-	
+#endif	
 	force_k.x = tmp_1 * d[k].x + tmp_2 * d[j].x;
 	force_k.y = tmp_1 * d[k].y + tmp_2 * d[j].y;
 	force_k.z = tmp_1 * d[k].z + tmp_2 * d[j].z;

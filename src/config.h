@@ -71,7 +71,7 @@
 #endif
 
 /* shortcut for covalent interactions */
-#if defined(MEAM) || defined(KEATING) || defined(TTBP) || defined(TERSOFF) || defined(STIWEB)
+#if defined(MEAM) || defined(KEATING) || defined(TTBP) || defined(TERSOFF) || defined(STIWEB) || defined(TERNBCC)
 #define COVALENT
 #endif
 

@@ -787,6 +787,12 @@ CFLAGS  += -DSTIWEB
 FORCESOURCES += ${COVALENTSOURCES}
 endif
 
+# TERNBCC
+ifneq (,$(strip $(findstring ternbcc,${MAKETARGET})))
+CFLAGS  += -DSTIWEB -DTERNBCC
+FORCESOURCES += ${COVALENTSOURCES}
+endif
+
 # TERSOFF
 ifneq (,$(strip $(findstring tersoff,${MAKETARGET})))
 CFLAGS  += -DTERSOFF
