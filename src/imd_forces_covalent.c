@@ -260,9 +260,13 @@ void do_forces2(cell *p, real *Epot, real *Virial,
         tmp_sp    = SPROD(d[j],d[k]);
         cos_theta = tmp_sp / (r[j] * r[k]);
         tmp       = cos_theta + 1.0 / ttbp_sp[p_typ];
+#ifdef XT
+        tmp_pot   = ttbp_constant[p_typ] * g(cos_theta);
+        tmp_grad  = ttbp_constant[p_typ] * dg(cos_theta);
+#else
         tmp_pot   = ttbp_constant[p_typ] * tmp * tmp;
         tmp_grad  = ttbp_constant[p_typ] * 2 * tmp;
-
+#endif
         /* smoothing potential, total potential */
         tmp_f2   = pot[j]  * pot[k];
         pot_zwi  = tmp_pot * tmp_f2;
@@ -449,38 +453,35 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 	/* potential term */
 	tmp_sp    = SPROD(d[j],d[k]);
 	cos_theta = tmp_sp / (r[j] * r[k]);
-#ifdef TERNBCC
-	tmp=cos(3./2.*3.14159265*cos_theta);
-#else
 	tmp       = cos_theta + 1.0 / 3.0;
-#endif
+#ifdef TERNBCC
+	pot_zwi   = sw_la[p_typ][j_typ][k_typ] * fc[j] * fc[k] * g(cos_theta);
+#else
 	pot_zwi   = sw_la[p_typ][j_typ][k_typ] * fc[j] * fc[k] * tmp * tmp;
+#endif
 
 	/* total potential */
 	*Epot   += pot_zwi;
 
 	/* forces */
+#ifdef TERNBCC
+	tmp_grad1  = sw_la[p_typ][j_typ][k_typ] * fc[j] * fc[k] * dg(cos_theta);
+	tmp_grad2  = sw_la[p_typ][j_typ][k_typ] * g(cos_theta);
+#else
 	tmp_grad1  = sw_la[p_typ][j_typ][k_typ] * fc[j] * fc[k] * 2 * tmp;
 	tmp_grad2  = sw_la[p_typ][j_typ][k_typ] * tmp * tmp;
+#endif
 	tmp_jj = 1.0 / ( r[j] * r[j] );
 	tmp_kk = 1.0 / ( r[k] * r[k] );
 	tmp_jk = 1.0 / ( r[j] * r[k] );
-#ifdef TERNBCC
-	tmp_1 = tmp_grad2 * dfc[j] * fc[k] - tmp_grad1 * -3./4.*3.14159265*sin(3.*3.14159625*cos_theta) * tmp_jj;
-#else
 	tmp_1 = tmp_grad2 * dfc[j] * fc[k] - tmp_grad1 * cos_theta * tmp_jj;
-#endif
 	tmp_2 = tmp_grad1 * tmp_jk;
 
 	force_j.x = tmp_1 * d[j].x + tmp_2 * d[k].x;
-	force_j.y = tmp_1 * d[j].y + tmp_2 * d[k].y;
+       	force_j.y = tmp_1 * d[j].y + tmp_2 * d[k].y;
 	force_j.z = tmp_1 * d[j].z + tmp_2 * d[k].z;
 
-#ifdef TERNBCC
-	tmp_1 = tmp_grad2 * dfc[j] * fc[k] - tmp_grad1 * -3./4.*3.14159265*sin(3.*3.14159625*cos_theta) * tmp_jj;
-#else
 	tmp_1 = tmp_grad2 * dfc[k] * fc[j] - tmp_grad1 * cos_theta * tmp_kk;
-#endif	
 	force_k.x = tmp_1 * d[k].x + tmp_2 * d[j].x;
 	force_k.y = tmp_1 * d[k].y + tmp_2 * d[j].y;
 	force_k.z = tmp_1 * d[k].z + tmp_2 * d[j].z;
@@ -560,6 +561,55 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 }
 
 #endif /* STIWEB */
+
+#if defined (TERNBCC) || defined(XT)
+
+/******************************************************************************
+*
+*  g(cos_theta) for ternary BCC potential
+*
+******************************************************************************/
+
+real g(real cos_theta){
+  real gc;
+  if (                         cos_theta < -5. / 6. ) 
+    gc=             (cos_theta + 1. ) * (cos_theta + 1. );
+  if (cos_theta >= -5. / 6. && cos_theta < -3. / 6. ) 
+    gc= 1. / 18. - (cos_theta + 2. / 3. ) * (cos_theta + 2. / 3. );
+  if (cos_theta >= -3. / 6. && cos_theta < -1. /6. )
+    gc=            (cos_theta + 1. / 3. ) * (cos_theta + 1. / 3. );
+  if (cos_theta >= -1. / 6. && cos_theta <  1. /6. )
+    gc= 1. / 18. -  cos_theta * cos_theta ;
+  if (cos_theta >=  1. / 6. )
+    gc=            (cos_theta - 1. / 3. ) * (cos_theta - 1. / 3. );
+  return gc;
+/*  return (cos(3./2.*3.14159265*cos_theta)); */
+/* return cos_theta + 1. /3. ; */
+}
+
+/******************************************************************************
+*
+*  dg(cos_theta) for ternary BCC potential
+*
+******************************************************************************/
+
+real dg(real cos_theta){
+  real dgc;
+  if (                         cos_theta < -5. / 6. ) 
+    dgc=             cos_theta + 1. ;
+  if (cos_theta >= -5. / 6. && cos_theta < -3. / 6. ) 
+    dgc=            -(cos_theta + 2. /3. );
+  if (cos_theta >= -3. / 6. && cos_theta < -1. / 6. )
+    dgc=             cos_theta + 1. /3. ;
+  if (cos_theta >= -1. / 6. && cos_theta <  1. / 6. )
+    dgc=            -cos_theta;
+  if (cos_theta >=  1. / 6. )
+    dgc=             cos_theta - 1. / 3. ;
+  return dgc;
+/*  return (-3./4.*3.14159265*sin(3.*3.14159625*cos_theta)); */
+/* return cos_theta + 1. / 3.; */
+}
+#endif
 
 #ifdef TERSOFF
 

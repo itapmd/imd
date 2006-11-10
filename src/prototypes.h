@@ -185,6 +185,12 @@ void init_ttbp(void);
 void init_tersoff(void);
 void pair_int_tersoff(real *pot, int p_typ, int q_typ, real r2);
 #endif
+
+#if defined (TERNBCC) || defined (XT)
+real g(real cos_theta);
+real dg(real cos_theta);
+#endif
+
 #ifdef UNIAX
 void gay_berne ( vektor r12, vektor e1, vektor e2, 
 		 real rsqr, vektor s1, vektor w1, 
