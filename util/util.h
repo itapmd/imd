@@ -123,9 +123,9 @@ INLINE static int MOD(int p, int q)
 #endif
 
 #ifdef CNA
-#define MAX_NEIGH 12
-#define MAX_BONDS 24
-#define MAX_TYPES 25
+#define MAX_NEIGH 120
+#define MAX_BONDS 240
+#define MAX_TYPES 250
 #endif
 
 /* Tolerance values for imd_stress */
