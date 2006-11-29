@@ -635,7 +635,7 @@ endif
 IMDHEADERS      = config.h globals.h imd.h makros.h potaccess.h \
                   prototypes.h types.h 
 
-SOURCES         = imd.c imd_maxwell.c imd_integrate.c imd_misc.c \
+SOURCES         = imd_maxwell.c imd_integrate.c imd_misc.c \
 	          imd_param.c imd_alloc.c imd_io.c imd_io_3d.c \
                   imd_potential.c imd_time.c imd_generate.c \
                   imd_distrib.c imd_main_3d.c
@@ -703,16 +703,15 @@ else
     SOURCES	:= ${SOURCES3D} ${NBLSOURCES3D}
     ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
       SOURCES	+= ${MPISOURCES}
-     
     endif
 
   else
 
     ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
+
       SOURCES	:= ${SOURCES3D} ${NBLSOURCES3D}
       ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
         SOURCES	+= ${MPISOURCES}
-       
       endif
 
     else
@@ -725,6 +724,13 @@ else
 
     endif
   endif
+endif
+
+ifneq (,$(strip $(findstring jvis,${MAKETARGET})))
+  SOURCES += jvis_imd.c
+  CFLAGS  += -DNVE -DNVT -DNPT -DNPT_iso -DREFPOS
+else
+  SOURCES += imd.c
 endif
 
 ###  INTERACTION  #######################################

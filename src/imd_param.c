@@ -2325,7 +2325,7 @@ void check_parameters_complete()
 #endif
 #if defined(NPT) || defined(NVT) || defined(FRAC) || defined(FINNIS)
   if (end_temp == 0) {
-    error("endtemp is missing or zero.");
+    end_temp = temperature;
   }
 #endif
 #if defined(CORRELATE) || defined(MSQD)

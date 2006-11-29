@@ -104,7 +104,7 @@ void init_cells( void )
   global_cell_dim.x = (int) ( 1.0 / cell_scale.x );
   global_cell_dim.y = (int) ( 1.0 / cell_scale.y );
 
-  if (0 == myid )
+  if (0 == myid)
   printf("Minimal cell size: \n\t ( %f %f ) \n\t ( %f %f ) \n",
 	 box_x.x * cell_scale.x, box_x.y * cell_scale.x, 
 	 box_y.x * cell_scale.y, box_y.y * cell_scale.y); 
@@ -123,7 +123,7 @@ void init_cells( void )
      global_cell_dim.y = ((int)(global_cell_dim.y / cd.y)) * cd.y;
   
   /* Check if cell array is large enough */
-  if (0 == myid ) {
+  if (0 == myid) {
     if (global_cell_dim.x < cd.x) {
       sprintf(msg,"global_cell_dim.x too small, need at least %d",cd.x);
       error(msg);
@@ -232,15 +232,16 @@ void init_cells( void )
         }
         ALLOC_MINICELL( p, 0 );  /* free old cell */
     }
+    make_cell_lists();
     free(cell_array_old);
     fix_cells();
 #ifdef MPI
     setup_buffers();
 #endif
- }
-
-  make_cell_lists();
-
+  }
+  else {
+    make_cell_lists();
+  }
 }
 
 
