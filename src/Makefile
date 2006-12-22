@@ -165,7 +165,7 @@ ifeq (x86_64-icc,${IMDSYS})
   PROF_FLAGS	+= -prof_gen
   RCD_FLAGS	+= # -DRCD -rcd
   MPI_LIBS      += 
-  LFLAGS        += #-static
+  LFLAGS        += -i-static
   export        OMPI_MPICC MPICH_CC MPICH_CLINKER
 endif
 
@@ -185,7 +185,7 @@ ifeq (AthlonMP-icc,${IMDSYS})
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -prof_gen
   RCD_FLAGS	+= -DRCD -rcd
-  LFLAGS        += #-static
+  LFLAGS        += -i-static
   export OMPI_MPICC MPICH_CC  MPICH_CLINKER
 endif
 
@@ -220,7 +220,7 @@ ifeq (P4-icc,${IMDSYS})
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -prof_gen
   RCD_FLAGS	+= -DRCD -rcd
-  LFLAGS        += # -static
+  LFLAGS        += -i-static
   export        OMPI_MPICC MPICH_CC MPICH_CLINKER
 endif
 
@@ -257,6 +257,7 @@ ifeq (P3-icc,${IMDSYS})
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -prof_gen
   RCD_FLAGS	+= -DRCD -rcd
+  LFLAGS        += -i-static
   export        MPICH_CC  MPICH_CLINKER
 endif
 
@@ -308,7 +309,7 @@ ifeq (ia64-icc,${IMDSYS})
   OMPI_FLAGS	+= -openmp -quiet
   PROF_FLAGS	+= -prof_gen
   DEBUG_FLAGS	+= -g
-  LFLAGS        += -static # -p
+  LFLAGS        += -i-static # -p
   PAPI_INC      =  -I /opt/papi/3.0/include
   PAPI_LIBS     =  -L /opt/papi/3.0/lib -lpapi
 endif
@@ -325,7 +326,7 @@ ifeq (ia64-ecc,${IMDSYS})
   OMPI_FLAGS	+= -openmp
   PROF_FLAGS	+= -p
   DEBUG_FLAGS	+= -g
-  LFLAGS        += # -p -static
+  LFLAGS        += -i-static -p -static
 endif
 
 ###########################################################################
