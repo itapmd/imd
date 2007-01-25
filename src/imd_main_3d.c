@@ -37,6 +37,7 @@ void main_loop(void)
   real dtemp, dshock_speed;
   vektor d_pressure, *fbc_df;
   real tmpvec1[DIM], tmpvec2[DIM];
+  char tmp_str[9];
 #ifdef GLOK
   int glok_start = steps_min; 
 #endif
@@ -253,6 +254,19 @@ printf( "Laser irradiates from direction (%d, %d)\n", laser_dir.x,
     }
 #endif
 
+#ifdef CNA
+    if (steps <= cna_end) {
+      if (0 == (steps - cna_start)%(cna_int)) {
+	/* activate computation of neighbour tables */ 
+	for (i=0; i<ntypes*ntypes; i++)
+	  neightab_r2cut[i] = cna_rcut * cna_rcut;
+	/* activate CNA */
+	cna = 1;
+	cna_pairs = 0;
+      }
+    }
+#endif
+
 #ifdef AVPOS
     if ((steps == steps_min) || (steps == avpos_start)) {
        update_avpos();
@@ -359,6 +373,31 @@ printf( "Laser irradiates from direction (%d, %d)\n", laser_dir.x,
 
 #ifdef DISLOC
     if ((steps==reset_Epot_step) && (calc_Epot_ref==1)) reset_Epot_ref();
+#endif
+
+#ifdef CNA
+    if (cna) {
+      if (0==myid && cna_write_statistics) {
+	/* works not correctly in parallel version */
+	sort_pair_types();
+	write_statistics();
+      }
+      for (k=0; k<MAX_TYPES; k++)
+	type_count[k] = 0;
+      /* deactivate computation of neighbour tables */
+      for (i=0; i<ntypes*ntypes; i++)
+	neightab_r2cut[i] = -1.0;
+      /* deactivate CNA */
+      cna = 0;
+      /* write CNA atoms */
+      cna_writec = 1;
+      for (k=0; k<cna_write_n; k++) {
+	sprintf(tmp_str, "%d.cna", cna_writev[k]);
+	write_config_select((steps-1)/cna_int, tmp_str,
+			    write_atoms_cna, write_header_cna);
+	cna_writec *= 2;
+      }
+    }
 #endif
 
 #if defined(CORRELATE) || defined(MSQD)

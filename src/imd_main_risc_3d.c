@@ -74,6 +74,10 @@ void calc_forces(int steps)
 #ifndef MONOLJ
       POTENG(p,i) = 0.0;
 #endif
+#ifdef CNA
+      if (cna)
+	MARK(p,i) = 0;
+#endif
 #ifdef NNBR
       NBANZ(p,i) = 0;
 #endif
@@ -152,7 +156,7 @@ void calc_forces(int steps)
   }
 #endif
 
-#ifdef COVALENT
+#if defined(COVALENT) && !defined(CNA)
 /* does not work correctly - different threads may write to same variables 
 #ifdef _OPENMP
 #pragma omp parallel for schedule(runtime) \
@@ -162,6 +166,28 @@ void calc_forces(int steps)
   for (k=0; k<ncells; ++k) {
     do_forces2(cell_array+k, &tot_pot_energy, &virial, 
                &vir_xx, &vir_yy, &vir_zz, &vir_yz, &vir_zx, &vir_xy);
+  }
+#endif
+
+#ifdef CNA
+  /* perform common-neighbour analysis */
+  if (cna) {
+    for (n=0; n<nlists; ++n) {
+#ifdef _OPENMP
+#pragma omp parallel for schedule(runtime) \
+  reduction(+:tot_pot_energy,virial,vir_xx,vir_yy,vir_zz,vir_yz,vir_zx,vir_xy)
+#endif
+      for (k=0; k<npairs[n]; ++k) {
+	vektor pbc;
+	pair *P;
+	P = pairs[n]+k;
+	pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
+	pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
+	pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
+
+	do_cna(cell_array + P->np, cell_array + P->nq, pbc);
+      }
+    }
   }
 #endif
 

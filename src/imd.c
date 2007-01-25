@@ -183,6 +183,10 @@ int main(int argc, char **argv)
   init_refpos();
 #endif
 
+#ifdef CNA
+  init_cna();
+#endif
+
 #ifdef LASER
   //init_laser(); /*maybe later*/
 

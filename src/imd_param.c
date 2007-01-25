@@ -1624,6 +1624,40 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       getparam(token, &presstens_ext, PARAM_REAL, DIM*(DIM+1)/2,DIM*(DIM+1)/2);
     }
 #endif
+#ifdef CNA
+    else if (strcasecmp(token,"cna_start")==0) {
+      /* step at which CNA begins */
+      getparam("cna_start",&cna_start,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"cna_end")==0) {
+      /* step at which CNA ends */
+      getparam("cna_end",&cna_end,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"cna_int")==0) {
+      /* number of steps between CNA */
+      getparam("cna_int",&cna_int,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token, "cna_rcut")==0){
+      /* cutoff */
+      getparam("cna_rcut", &cna_rcut, PARAM_REAL, 1,1);
+    }
+    else if (strcasecmp(token,"cna_write")==0) {
+      /* pair type to be written out */
+      cna_write_n = getparam("cna_write",cna_writev,PARAM_INT,1,8);
+    }
+    else if (strcasecmp(token,"cna_ll")==0) { 
+      /* lower left corner of partial box */
+      getparam("cna_ll", &cna_ll,PARAM_REAL,DIM,DIM);
+    }
+    else if (strcasecmp(token,"cna_ur")==0) { 
+      /* upper right corner of partial box */
+      getparam("cna_ur", &cna_ur,PARAM_REAL,DIM,DIM);
+    }
+    else if (strcasecmp(token,"cna_stat")==0) {
+      /* write statistics */
+      cna_write_statistics = 1;
+    }
+#endif
 #ifdef DISLOC
      else if (strcasecmp(token,"reffile")==0) {
        /* filename for reference configuration */
@@ -3056,6 +3090,18 @@ void broadcast_params() {
   MPI_Bcast( &shock_speed_r, 1, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &shock_incr, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &shock_mode,  1, MPI_INT, 0, MPI_COMM_WORLD); 
+#endif
+
+#ifdef CNA
+  MPI_Bcast( &cna_start,       1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &cna_end,         1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &cna_int,         1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &cna_rcut,        1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &cna_ll,          3, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &cna_ur,          3, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &cna_writev,      8, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &cna_write_n,     1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &cna_write_statistics, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef DISLOC

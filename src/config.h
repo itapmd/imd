@@ -197,6 +197,12 @@
 #define NEIGH_LEN_INC  2
 #endif
 
+#ifdef CNA
+#define MAX_NEIGH 12
+#define MAX_BONDS 24
+#define MAX_TYPES 25
+#endif
+
 /* pressure relaxation */
 #define RELAX_FULL     0
 #define RELAX_AXIAL    1

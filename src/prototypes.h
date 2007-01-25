@@ -297,6 +297,15 @@ void write_header_dem(FILE *out);
 void write_atoms_dsp(FILE *out);
 void write_header_dsp(FILE *out);
 #endif
+#ifdef CNA
+void do_cna(cell *p, cell* q, vektor pbc);
+void domino(int start, int end, int listlength, int *max_chain, int *chain);
+void write_atoms_cna(FILE *out);
+void write_header_cna(FILE *out);
+void init_cna(void);
+void write_statistics(void);
+void sort_pair_types(void);
+#endif
 #ifdef EFILTER
 void write_atoms_ef(FILE *out);
 void write_header_ef(FILE *out);

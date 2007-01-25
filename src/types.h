@@ -139,6 +139,9 @@ typedef struct {
   real        *Epot_ref;
   real        *ort_ref;
 #endif
+#ifdef CNA
+  shortint    *mark;
+#endif
 #ifdef AVPOS
   real        *sheet;
   real        *avpos;

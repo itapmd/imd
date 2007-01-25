@@ -567,6 +567,27 @@ EXTERN int sscount INIT(0);           /* snapshot counter */
 #endif
 EXTERN int nfc INIT(0);               /* counts force computations */
 
+#ifdef CNA
+EXTERN int cna_start INIT(0);
+EXTERN int cna_end INIT(0);
+EXTERN int cna_int INIT(0);
+EXTERN real cna_rcut INIT(1.0);
+EXTERN real cna_r2cut INIT(1.0);
+EXTERN vektor cna_ll  INIT(nullvektor);     /* lower left (front) corner */
+EXTERN vektor cna_ur  INIT(nullvektor);     /* upper right (back) corner */
+EXTERN int cna INIT(0);
+EXTERN int cna_pairs INIT(0);
+EXTERN int cna_writev[8];
+EXTERN int cna_writec INIT(0);
+EXTERN int cna_write_n INIT(0);
+EXTERN int cna_write_statistics INIT(0);
+EXTERN int bondlist[MAX_BONDS][3];
+EXTERN int type_list[MAX_TYPES];
+EXTERN int type_count[MAX_TYPES];
+EXTERN int type_sort[MAX_TYPES];
+EXTERN int type_list_length INIT(0);
+#endif
+
 #ifdef DISLOC
 EXTERN int  dem_int INIT(0);          /* Period of dem output */
 EXTERN int  dsp_int INIT(0);          /* Period of dsp output */

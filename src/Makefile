@@ -661,6 +661,8 @@ COVALENTSOURCES = imd_forces_covalent.c
 UNIAXSOURCES    = imd_forces_uniax.c imd_gay_berne.c
 EWALDSOURCES    = imd_forces_ewald.c
 
+CNASOURCES      = imd_cna.c
+
 EPITAXSOURCES   = imd_epitax.c
 
 DEFORMSOURCES   = imd_deform.c
@@ -919,6 +921,13 @@ CFLAGS += -DVEC3
 endif
 endif
 
+endif
+
+# common-neighbour analysis
+ifneq (,$(findstring cna,${MAKETARGET}))
+SOURCES += ${CNASOURCES}
+SOURCES += ${COVALENTSOURCES}
+CFLAGS += -DCNA -DCOVALENT
 endif
 
 # with neighbor lists

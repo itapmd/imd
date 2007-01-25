@@ -104,6 +104,9 @@ INLINE static int MOD(shortint p, int q)
 #define EPOT_REF(cell,i)        (atoms.Epot_ref   [(cell)->ind[i]])
 #define ORT_REF(cell,i,sub)     (atoms.ort_ref sub((cell)->ind[i]))
 #endif
+#ifdef CNA
+#define MARK(cell,i)            (atoms.mark[(cell)->ind[i]])
+#endif
 #ifdef AVPOS
 #define AV_POS(cell,i,sub)      (atoms.avpos sub((cell)->ind[i]))
 #define SHEET(cell,i,sub)       (atoms.sheet sub((cell)->ind[i]))
@@ -191,6 +194,9 @@ INLINE static int MOD(shortint p, int q)
 #ifdef DISLOC
 #define EPOT_REF(cell,i)        ((cell)->Epot_ref[i])
 #define ORT_REF(cell,i,sub)     ((cell)->ort_ref sub(i))
+#endif
+#ifdef CNA
+#define MARK(cell,i)            ((cell)->mark[i])
 #endif
 #ifdef AVPOS
 #define AV_POS(cell,i,sub)      ((cell)->avpos sub(i))

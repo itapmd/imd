@@ -191,6 +191,9 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
   to->ort_ref Z (i) = from->ort_ref Z(j);
 #endif
 #endif /* DISLOC */
+#ifdef CNA
+  to->mark[i] = from->mark[j];
+#endif
 #ifdef AVPOS
   to->av_epot[i] = from->av_epot[j];
   to->avpos X(i) = from->avpos X(j);
@@ -371,6 +374,9 @@ void alloc_cell(cell *thecell, int count)
     newcell.Epot_ref = NULL;
     newcell.ort_ref = NULL;
 #endif
+#ifdef CNA
+    newcell.mark = NULL;
+#endif
 #ifdef AVPOS
     newcell.av_epot = NULL;
     newcell.avpos   = NULL;
@@ -476,6 +482,9 @@ void alloc_cell(cell *thecell, int count)
     newcell.Epot_ref = (real *) calloc(count,sizeof(real));
     newcell.ort_ref = (real *) calloc(count*DIM, sizeof(real));
 #endif
+#ifdef CNA
+    newcell.mark = (shortint *) calloc(count,sizeof(shortint));
+#endif
 #ifdef AVPOS
     newcell.av_epot = (real *) calloc(count,     sizeof(real));
     newcell.avpos   = (real *) calloc(count*DIM, sizeof(real));
@@ -541,6 +550,9 @@ void alloc_cell(cell *thecell, int count)
 #ifdef DISLOC
         || (NULL == newcell.Epot_ref)
         || (NULL == newcell.ort_ref)
+#endif
+#ifdef CNA
+        || (NULL == newcell.mark)
 #endif
 #ifdef AVPOS
 	|| (NULL == newcell.av_epot)
@@ -642,6 +654,9 @@ void alloc_cell(cell *thecell, int count)
       memcpy(newcell.Epot_ref, thecell->Epot_ref, ncopy * sizeof(real));
       memcpy(newcell.ort_ref,  thecell->ort_ref,  ncopy * DIM * sizeof(real));
 #endif
+#ifdef CNA
+      memcpy(newcell.mark, thecell->mark, ncopy * sizeof(shortint));
+#endif
 #ifdef AVPOS
       memcpy(newcell.av_epot, thecell->av_epot, ncopy * sizeof(real));
       memcpy(newcell.avpos,   thecell->avpos, ncopy * DIM * sizeof(real));
@@ -702,6 +717,9 @@ void alloc_cell(cell *thecell, int count)
 #ifdef DISLOC
     free(thecell->Epot_ref);
     free(thecell->ort_ref);
+#endif
+#ifdef CNA
+    free(thecell->mark);
 #endif
 #ifdef AVPOS
     free(thecell->av_epot);
@@ -768,6 +786,9 @@ void alloc_cell(cell *thecell, int count)
 #ifdef DISLOC
   thecell->Epot_ref = newcell.Epot_ref;
   thecell->ort_ref  = newcell.ort_ref;
+#endif
+#ifdef CNA
+  thecell->mark = newcell.mark;
 #endif
 #ifdef AVPOS
   thecell->av_epot = newcell.av_epot;
