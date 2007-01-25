@@ -19,65 +19,66 @@ their purpose is and how they are used.</p>
 <td width="120"><a href="#fourpoint">4point</a></td>
 <td width="120"><a href="#atdist">atdist</a></td>
 <td width="120"><a href="#avpos">avpos</a></td>
+<td width="120"><a href="#cna">cna</a></td>
 <td width="120"><a href="#correl">correl</a></td>
-<td width="120"><a href="#debug">debug</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#debug">debug</a></td>
 <td width="120"><a href="#deform">deform</a></td>
 <td width="120"><a href="#diffpat">diffpat</a></td>
 <td width="120"><a href="#disloc">disloc</a></td>
 <td width="120"><a href="#eam">eam</a></td>
 <td width="120"><a href="#eeam">eeam</a></td>
-<td width="120"><a href="#efilter">efilter</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#efilter">efilter</a></td>
 <td width="120"><a href="#einstein">einstein</a></td>
 <td width="120"><a href="#epitax">epitax</a></td>
 <td width="120"><a href="#ewald">ewald</a></td>
 <td width="120"><a href="#fbc">fbc</a></td>
 <td width="120"><a href="#fnorm">fnorm</a></td>
-<td width="120"><a href="#hpo">hpo</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#hpo">hpo</a></td>
 <td width="120"><a href="#homdef">homdef</a></td>
 <td width="120"><a href="#covalent">keating</a></td>
 <td width="120"><a href="#laser">laser</a></td>
 <td width="120"><a href="#mono">mono</a></td>
 <td width="120"><a href="#monolj">monolj</a></td>
-<td width="120"><a href="#msqd">msqd</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#msqd">msqd</a></td>
 <td width="120"><a href="#nbl">nbl</a></td>
 <td width="120"><a href="#nnbr">nnbr</a></td>
 <td width="120"><a href="#ordpar">ordpar</a></td>
 <td width="120"><a href="#pacx">pacx</a></td>
 <td width="120"><a href="#pair">pair</a></td>
-<td width="120"><a href="#prof">prof</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#prof">prof</a></td>
 <td width="120"><a href="#quasi">quasi</a></td>
 <td width="120"><a href="#rigid">rigid</a></td>
 <td width="120"><a href="#single">single</a></td>
 <td width="120"><a href="#sock">sock</a></td>
 <td width="120"><a href="#shock">shock</a></td>
-<td width="120"><a href="#covalent">stiweb</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#covalent">stiweb</a></td>
 <td width="120"><a href="#stress_tens">stress</a></td>
 <td width="120"><a href="#covalent">tersoff</a></td>
 <td width="120"><a href="#covalent">tersoff2</a></td>
 <td width="120"><a href="#timing">timing</a></td>
 <td width="120"><a href="#transport">transport</a></td>
-<td width="120"><a href="#covalent">ttbp</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#covalent">ttbp</a></td>
 <td width="120"><a href="#uniax">uniax</a></td>
 <td width="120"><a href="#writef">writef</a></td>
 </tr>
@@ -90,6 +91,26 @@ their purpose is and how they are used.</p>
 <p>
 2d simulation rather than 3d. The option 3d also exists - it is
 the default. </p>
+</dd>
+
+<dt><a id="cna" name="cna"><b>cna</b></a>
+<dd>
+<p>
+This option enables IMD to perform the <b>Common-Neighbour
+Analysis</b> (CNA) during a simulation. The CNA is done in the same
+way as in the utility program <a
+href="util_config.html#imd_cna">imd_cna</a>.
+
+The CNA starts at step <tt>cna_start</tt> (default: 0) and ends at
+<tt>cna_end</tt> (default: <tt>maxsteps</tt>). The CNA is performed
+every <tt>cna_int</tt> steps. The nearest neighbour distance for
+common neighbours must be given by the parameter <tt>cna_rcut</tt>.
+Using the parameter <tt>cna_write</tt> a list of (up to eight)
+four-digit pair types
+<i>ijkl</i> can be given. Atoms belonging to these pair types are
+written to the files
+<tt>&lt;outfiles&gt;.&lt;n&gt;.&lt;<i>ijkl</i>&gt;.cna</tt>.
+</p>
 </dd>
 
 <dt><a id="rigid" name="rigid"><b>rigid</b></a></dt> 
