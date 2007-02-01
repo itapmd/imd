@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -234,6 +234,11 @@ void pack_rho      ( msgbuf *b, int k, int l, int m );
 void unpack_dF     ( msgbuf *b, int k, int l, int m );
 void unpack_add_rho( msgbuf *b, int k, int l, int m );
 #endif
+#ifdef CNA
+void add_mark       ( int k, int l, int m, int r, int s, int t );
+void pack_mark      ( msgbuf *b, int k, int l, int m );
+void unpack_add_mark( msgbuf *b, int k, int l, int m );
+#endif
 #endif /* 3D  */
 #endif /* MPI or NBLIST */
 
@@ -298,7 +303,8 @@ void write_atoms_dsp(FILE *out);
 void write_header_dsp(FILE *out);
 #endif
 #ifdef CNA
-void do_cna(cell *p, cell* q, vektor pbc);
+void do_cna(void);
+void do_cna_func(cell *p, cell* q, vektor pbc);
 void domino(int start, int end, int listlength, int *max_chain, int *chain);
 void write_atoms_cna(FILE *out);
 void write_header_cna(FILE *out);

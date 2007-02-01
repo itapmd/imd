@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -306,6 +306,9 @@ void calc_forces(int steps)
 #endif
 #ifdef NNBR
       NBANZ(p,i) = 0;
+#endif
+#ifdef CNA
+      if (cna) MARK(p,i) = 0;
 #endif
 #ifdef COVALENT
       NEIGH(p,i)->n = 0;
@@ -707,12 +710,14 @@ void calc_forces(int steps)
     }
   }
 
+#ifndef CNA
   /* second force loop for covalent systems */
   for (k=0; k<ncells; ++k) {
     do_forces2(cell_array + cnbrs[k].np,
                &tot_pot_energy, &virial, &vir_xx, &vir_yy, &vir_zz,
                                          &vir_yz, &vir_zx, &vir_xy);
   }
+#endif
 
 #endif /* COVALENT */
 

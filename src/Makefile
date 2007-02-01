@@ -2,7 +2,7 @@
 #
 # IMD -- The ITAP Molecular Dynamics Program
 #
-# Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+# Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 # University of Stuttgart, D-70550 Stuttgart
 #
 # $Revision$
@@ -927,7 +927,7 @@ endif
 ifneq (,$(findstring cna,${MAKETARGET}))
 SOURCES += ${CNASOURCES}
 SOURCES += ${COVALENTSOURCES}
-CFLAGS += -DCNA -DCOVALENT
+CFLAGS += -DCNA
 endif
 
 # with neighbor lists

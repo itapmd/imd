@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -1224,3 +1224,69 @@ void unpack_add_rho( msgbuf *b, int k, int l, int m )
 }
 
 #endif /* EAM2 */
+
+#ifdef CNA
+
+/******************************************************************************
+*
+*  add CNA mark of one cell to another cell
+*
+******************************************************************************/
+
+void add_mark( int k, int l, int m, int r, int s, int t )
+{
+  int i;
+  minicell *from, *to;
+
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+  to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
+
+  for (i=0; i<to->n; ++i) {
+    MARK(to,i) = MARK(to,i) | MARK(from,i);
+  }
+}
+
+/******************************************************************************
+*
+*  pack CNA mark into MPI buffer
+*
+******************************************************************************/
+
+void pack_mark( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *from;
+    
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+  for (i=0; i<from->n; ++i) {
+    b->data[j++] = MARK(from,i);
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in pack_mark - increase msgbuf_size");
+}
+
+
+/******************************************************************************
+*
+*  unpack and add CNA mark from MPI buffer into cell
+*
+******************************************************************************/
+
+void unpack_add_mark( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *to;
+
+  to = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+  for (i=0; i<to->n; ++i) {
+    MARK(to,i) = MARK(to,i) | ((shortint) b->data[j++]);
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in unpack_add_mark - increase msgbuf_size");
+}
+
+#endif /* CNA */

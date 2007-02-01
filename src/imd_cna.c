@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -27,7 +27,50 @@
 *
 ******************************************************************************/
 
-void do_cna(cell *p, cell *q, vektor pbc) {
+#ifdef NBLIST
+
+void do_cna(void)
+{
+  vektor pbc = {0.0, 0.0, 0.0}; /* atoms in buffer cells have pbc applied */
+  int c, c1, c2, m;
+
+  for (c=0; c<ncells; c++) {
+    c1 = cnbrs[c].np;
+    for (m=0; m<14; m++) {
+      c2 = cnbrs[c].nq[m];
+      if (c2<0) continue;
+      do_cna_func(cell_array + c1, cell_array + c2, pbc);
+    }
+  }
+  /* collect mark variables */
+  send_forces(add_mark,pack_mark,unpack_add_mark);
+}
+
+#else
+
+void do_cna(void)
+{
+  vektor pbc;
+  int n, k;
+
+  for (n=0; n<nlists; ++n) {
+    for (k=0; k<npairs[n]; ++k) {
+      pair *P = pairs[n] + k;
+      pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
+      pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
+      pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
+      do_cna_func(cell_array + P->np, cell_array + P->nq, pbc);
+    }
+  }
+#ifdef MPI
+  /* collect mark variables */
+  send_forces(add_mark,pack_mark,unpack_add_mark);
+#endif
+}
+
+#endif
+
+void do_cna_func(cell *p, cell *q, vektor pbc) {
 
   int       i, j, jstart, k, l, m;
   neightab  *ineigh, *neigh;
