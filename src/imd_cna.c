@@ -84,8 +84,9 @@ void do_cna_func(cell *p, cell *q, vektor pbc) {
   int       start, end;
   int       type;
   int       pair_index;
-  vektor    d, *di=NULL, dj;
-  int       curr_len = 0;
+  vektor    d, dj;
+  static vektor *di = NULL;
+  static int    curr_len = 0;
   real      *tmpptr, dj2;
   real      r2, distance;
   int       index;
