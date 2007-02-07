@@ -28,56 +28,58 @@ their purpose is and how they are used.</p>
 <td width="120"><a href="#deform">deform</a></td>
 <td width="120"><a href="#diffpat">diffpat</a></td>
 <td width="120"><a href="#disloc">disloc</a></td>
+<td width="120"><a href="#dsf">dsf</a></td>
 <td width="120"><a href="#eam">eam</a></td>
-<td width="120"><a href="#eeam">eeam</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#eeam">eeam</a></td>
 <td width="120"><a href="#efilter">efilter</a></td>
 <td width="120"><a href="#einstein">einstein</a></td>
 <td width="120"><a href="#epitax">epitax</a></td>
 <td width="120"><a href="#ewald">ewald</a></td>
 <td width="120"><a href="#fbc">fbc</a></td>
-<td width="120"><a href="#fnorm">fnorm</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#fnorm">fnorm</a></td>
 <td width="120"><a href="#hpo">hpo</a></td>
 <td width="120"><a href="#homdef">homdef</a></td>
 <td width="120"><a href="#covalent">keating</a></td>
 <td width="120"><a href="#laser">laser</a></td>
 <td width="120"><a href="#mono">mono</a></td>
-<td width="120"><a href="#monolj">monolj</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#monolj">monolj</a></td>
 <td width="120"><a href="#msqd">msqd</a></td>
 <td width="120"><a href="#nbl">nbl</a></td>
 <td width="120"><a href="#nnbr">nnbr</a></td>
 <td width="120"><a href="#ordpar">ordpar</a></td>
-<td width="120"><a href="#pacx">pacx</a></td>
-<td width="120"><a href="#pair">pair</a></td>
+<td width="120"><a href="#nmoldyn">nmoldyn</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#pacx">pacx</a></td>
+<td width="120"><a href="#pair">pair</a></td>
 <td width="120"><a href="#prof">prof</a></td>
 <td width="120"><a href="#quasi">quasi</a></td>
 <td width="120"><a href="#rigid">rigid</a></td>
 <td width="120"><a href="#single">single</a></td>
-<td width="120"><a href="#sock">sock</a></td>
-<td width="120"><a href="#shock">shock</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#sock">sock</a></td>
+<td width="120"><a href="#shock">shock</a></td>
 <td width="120"><a href="#covalent">stiweb</a></td>
 <td width="120"><a href="#stress_tens">stress</a></td>
 <td width="120"><a href="#covalent">tersoff</a></td>
 <td width="120"><a href="#covalent">tersoff2</a></td>
-<td width="120"><a href="#timing">timing</a></td>
-<td width="120"><a href="#transport">transport</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#timing">timing</a></td>
+<td width="120"><a href="#transport">transport</a></td>
 <td width="120"><a href="#covalent">ttbp</a></td>
 <td width="120"><a href="#uniax">uniax</a></td>
 <td width="120"><a href="#writef">writef</a></td>
@@ -93,7 +95,7 @@ their purpose is and how they are used.</p>
 the default. </p>
 </dd>
 
-<dt><a id="cna" name="cna"><b>cna</b></a>
+<dt><a id="cna" name="cna"><b>cna</b></a></dt>
 <dd>
 <p>
 This option enables IMD to perform the <b>Common-Neighbour
@@ -143,7 +145,7 @@ is currently implemented only for the ensembles nve, mik, and nvt.</p>
 
 </dd>
 
-<dt><a id="nbl" name="nbl"><b>nbl</b></a>
+<dt><a id="nbl" name="nbl"><b>nbl</b></a></dt>
 <dd>
 <p>
 This option enables the usage of <b>neighbor lists</b>, which can
@@ -190,7 +192,72 @@ can change at any time.
 </p>
 </dd>
 
-<dt><a id="msqd" name="msqd"><b>msqd</b></a>
+<dt><a id="nmoldyn" name="nmoldyn"><b>nmoldyn</b></a></dt>
+<dd>
+<p>
+<a href="http://dirac.cnrs-orleans.fr/nMOLDYN/">nMoldyn</a> is a 
+postprocessor which computes from an MD trajectory various correlation
+functions, especially ones which can be measured by inelastic neutron
+scattering. The functionality of nMoldyn is described in J. Comput. Chem. 
+<b>24</b>, 657-667 (2003). The option <b>nmoldyn</b> enables IMD to
+write an MD trajectory to a single file, which can subsequently be
+converted with the utility program 
+<a href="util_correl.html#nmoldyn">imd2nc.py</a> to the netCDF format
+required by nMoldyn.</p>
+
+<p>
+IMD writes every <tt>nmoldyn_int</tt> timesteps a configuration to 
+the <tt>.nmoldyn</tt> trajectory file. The writing interval determines
+the maximal frequency available in the correlation functions, whereas
+the length of the trajectory determines the lowest frequency. It is
+usually not required to write at every step, but only every 10 steps 
+or so, depending on the frequency range required. If the flag 
+<tt>nmoldyn_veloc=1</tt>, the velocities are also included in the 
+trajectory file, otherwise they are computed numerically from the
+positions. This is accurate enough only for very small values of
+<tt>nmoldyn_int</tt>. For larger <tt>nmoldyn_int</tt> it is 
+recommended to write also the velocities (this is the default).</p>
+
+<p>
+The nMoldyn trajectory files can get rather large. Especially for
+single particle correlation functions it is not necessary to have
+the trajectories of all atoms, but only those of a representative 
+subset. For this reason, IMD writes only atoms with virtual types
+smaller than <tt>ntypes</tt> to the trajectory file. By giving part
+of the atoms larges virtual types, excessively large trajectory
+files can be avoided.</p>
+</dd>
+
+<dt><a id="dsf" name="dsf"><b>dsf</b></a></dt>
+<dd>
+<p>
+The option <b>dsf</b> allows to compute the dynamical structure factor
+in an MD simulation, using an NVE integrator. Every <tt>dsf_int</tt> 
+steps, IMD computes the spacial Fourier transform for a number of 
+k-vectors, and writes it to a <tt>.dsf</tt> File. The value of
+<tt>dsf_int</tt> determines the maximal frequency in the resulting
+time series, whereas the resolution in k-space is determined by
+the size of the sample (the density of the reciprocal lattice).
+The temporal Fourier transform of the autocorrelation of time series 
+in the <tt>.dsf</tt> file is then computed with the postprocessor 
+<a href="util_correl.html#dynsf">dynsf</a>.
+The weights of the different atom types, usually the coherent scattering 
+length, is given by the parameter <tt>dsf_weight</tt>, which requires
+<tt>ntypes</tt> values. The spacial Fourier transform is computed for 
+<tt>dsf_nk</tt> series of k-vectors, each of which is given in the 
+following format:</p>
+<pre>
+   dsf_k   k0_x k0_y k0_z   kdir_x kdir_y kdir_z   n
+</pre>
+<p>
+representing the series of k-vectors <tt>k0 + i * kdir, i=0,...,n</tt>.
+<tt>dsf_nk</tt> must be specified before any <tt>dsf_l</tt> entry,
+and there must be exactly <tt>dsf_nk</tt> such entries. The k-vectors
+are given with respect to the reciprocal basis of the box vectors.
+</p>
+</dd>
+
+<dt><a id="msqd" name="msqd"><b>msqd</b></a></dt>
 <dd>
 <p>
 This option enables the computation of the <b>mean square
@@ -526,9 +593,9 @@ towards the right part ("target").</li>
 moved towards oneanother ("symmetric impact method").</li>
 
 <li>If <tt>shock_mode</tt> is set to 3 then the whole sample is moved
-against into a fixed wall ("momentum mirror method").</li>
+against a fixed wall ("momentum mirror method").
 If the parameter <tt>shock_incr</tt> is set, then the shock wave velocity is
-increased linearly from 0 to the final <tt>shock_speed</tt>.
+increased linearly from 0 to the final <tt>shock_speed</tt>.</li>
 
 <li>If <tt>shock_mode</tt> is set to 4 then the sample is compressed by two
 mirrors moving at the velocities <tt>shock_speed_left</tt> and
@@ -550,14 +617,14 @@ ready</a>. </p>
 
 <dt><a id="laser" name="laser"><b>laser</b></a></dt>
 <dd>
-<p>This option incorporates parameters for laser irradiation of
-sample surfaces. At the moment, this is limited to inscribing
-exponential temperature profiles in the do_maxwell routine at timestep 0, and only at timestep 0. Usage of the <b>laser</b> toolbox is therefore <a href="limitations.html">not multiphase
-ready</a> either. This will change with the implementation of a temperature scaling algorithm in the near future.
-
-</p>
 <p>
-</p>
+This option incorporates parameters for laser irradiation of
+sample surfaces. At the moment, this is limited to inscribing
+exponential temperature profiles in the do_maxwell routine at timestep 0, 
+and only at timestep 0. Usage of the <b>laser</b> toolbox is therefore 
+<a href="limitations.html">not multiphase ready</a> either. 
+This will change with the implementation of a temperature scaling 
+algorithm in the near future.</p>
 </dd>
 
 <dt><a id="transport" name="transport"><b>transport</b></a></dt>
