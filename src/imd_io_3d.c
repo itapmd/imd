@@ -272,6 +272,7 @@ void read_atoms(str255 infilename)
 #ifndef MONO
       SORTE (input,0) = MOD(s,ntypes);
 #endif
+      if (s>=vtypes) error("atom type must not exceed total_types");
       VSORTE(input,0) = s;
       if (info.n_mass) m = d[count++];
       else             m = masses[SORTE(input,0)];

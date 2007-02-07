@@ -511,12 +511,16 @@ int brent(real ax, real bx, real cx, real fa, real fb, real fc,real *alphamin);
 #ifdef ACG
 void acg_step(int steps);
 int findalpha();
-
 #endif
 
 #ifdef NMOLDYN
 void init_nmoldyn(void);
 void write_nmoldyn(int);
+#endif
+
+#ifdef DSF
+void update_dsf(void);
+void write_dsf(void);
 #endif
 
 /* Laser heating - file imd_laser.c */
@@ -531,3 +535,4 @@ void laser_rescale_3(void);
 #ifdef BGL
 int get_free_mem(void);
 #endif
+

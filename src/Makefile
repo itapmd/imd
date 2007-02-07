@@ -1050,6 +1050,11 @@ ifneq (,$(findstring nmoldyn,${MAKETARGET}))
 CFLAGS += -DNMOLDYN
 endif
 
+ifneq (,$(findstring dsf,${MAKETARGET}))
+CFLAGS += -DDSF
+LFLAGS += -lfftw3
+endif
+
 ifneq (,$(findstring atdist,${MAKETARGET}))
 CFLAGS += -DATDIST
 endif

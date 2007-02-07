@@ -1016,5 +1016,15 @@ EXTERN real uniax_r2_cut INIT(0.0);        /* square of cutoff radius */
 
 #ifdef NMOLDYN
 EXTERN int nmoldyn_int   INIT(0);
-EXTERN int nmoldyn_veloc INIT(0);
+EXTERN int nmoldyn_veloc INIT(1);
+#endif
+
+#ifdef DSF
+EXTERN int  dsf_int     INIT(0);
+EXTERN int  dsf_nk      INIT(0);
+EXTERN int  dsf_nkmax   INIT(0);
+EXTERN int  *dsf_k0     INIT(NULL);
+EXTERN int  *dsf_kdir   INIT(NULL);
+EXTERN int  *dsf_kmax   INIT(NULL);
+EXTERN real *dsf_weight INIT(NULL);
 #endif

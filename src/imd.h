@@ -47,7 +47,7 @@
 #endif
 
 /* FFT for diffraction patterns */
-#ifdef DIFFPAT
+#if defined(DIFFPAT) || defined(CISF)
 #include <fftw3.h>
 #endif
 

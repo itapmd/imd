@@ -1536,6 +1536,47 @@ void getparamfile(char *paramfname, int sim)
       getparam(token,&nmoldyn_veloc,PARAM_INT,1,1);
     }
 #endif
+#ifdef DSF
+    else if (strcasecmp(token,"dsf_int")==0) {
+      /* interval for dsf updates */
+      getparam(token,&dsf_int,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"dsf_weight")==0) {
+      /* weights for dsf (usually coherent scattering length) */
+      if (0==ntypes) error("specify parameter ntypes before dsf_weight");
+      dsf_weight = (real *) malloc( ntypes * sizeof(real) );
+      if (NULL==dsf_weight) error("cannot allocate dsf_weight");
+      getparam(token,dsf_weight,PARAM_REAL,ntypes,ntypes);
+    }
+    else if (strcasecmp(token,"dsf_nk")==0) {
+      /* number of k-point series */
+      getparam(token,&dsf_nkmax,PARAM_INT,1,1);
+      dsf_k0   = (int *) malloc( dsf_nkmax * DIM * sizeof(int) );
+      dsf_kdir = (int *) malloc( dsf_nkmax * DIM * sizeof(int) );
+      dsf_kmax = (int *) malloc( dsf_nkmax       * sizeof(int) );
+      if ((NULL==dsf_k0) || (NULL==dsf_kdir) || (NULL==dsf_kmax))
+        error("cannot allocate dsf arrays");
+    }
+    else if (strcasecmp(token,"dsf_k")==0) {
+      /* k-point series */
+      int i=0, tmp[2*DIM+1];
+      if (dsf_nk>=dsf_nkmax) 
+        error("number of k-point series exceeds dsf_nkmax");
+      getparam(token,tmp,PARAM_INT,2*DIM+1,2*DIM+1);
+      dsf_k0  [DIM*dsf_nk  ] = tmp[i++];
+      dsf_k0  [DIM*dsf_nk+1] = tmp[i++];
+#ifndef TWOD
+      dsf_k0  [DIM*dsf_nk+2] = tmp[i++];
+#endif
+      dsf_kdir[DIM*dsf_nk  ] = tmp[i++];
+      dsf_kdir[DIM*dsf_nk+1] = tmp[i++];
+#ifndef TWOD
+      dsf_kdir[DIM*dsf_nk+2] = tmp[i++];
+#endif
+      dsf_kmax[    dsf_nk  ] = tmp[i++];
+      dsf_nk++;
+    }
+#endif
 #ifdef NVX
     else if (strcasecmp(token, "dTemp_start")==0){
       /* temperature asymmetry at start */
@@ -2928,6 +2969,31 @@ void broadcast_params() {
   MPI_Bcast( &correl_ts,    1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &msqd_ntypes,  1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &msqd_vtypes,  1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
+
+#ifdef NMOLDYN
+  MPI_Bcast( &nmoldyn_int,   1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &nmoldyn_veloc, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
+
+#ifdef DSF
+  MPI_Bcast( &dsf_int,       1, MPI_INT, 0, MPI_COMM_WORLD);
+  if (NULL==dsf_weight) {
+    dsf_weight = (real *) malloc( ntypes * sizeof(real) );
+    if (NULL==dsf_weight) error("cannot allocate dsf_weight");
+  }
+  MPI_Bcast( dsf_weight,   ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dsf_nk,        1, MPI_INT, 0, MPI_COMM_WORLD);
+  if ((myid>0) && (dsf_nk>0)) {
+    dsf_k0   = (int *) malloc( DIM * dsf_nk * sizeof(int) );
+    dsf_kdir = (int *) malloc( DIM * dsf_nk * sizeof(int) );
+    dsf_kmax = (int *) malloc(       dsf_nk * sizeof(int) );
+    if ((NULL==dsf_k0) || (NULL==dsf_kdir) || (NULL==dsf_kmax))
+      error("cannot allocate dsf arrays");
+  }
+  MPI_Bcast( dsf_k0,   DIM*dsf_nk, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( dsf_kdir, DIM*dsf_nk, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( dsf_kmax,     dsf_nk, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef NVX

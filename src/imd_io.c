@@ -2318,7 +2318,6 @@ void broadcast_header(header_info_t *info)
 /******************************************************************************
 *
 *  write MD trajectory into single file, to be used with nMolDyn
-*  use only with small systems, not parallelized
 *
 ******************************************************************************/
 
@@ -2326,38 +2325,45 @@ void init_nmoldyn(void)
 {
   FILE *out=NULL;
   str255 fname;
-  int n, k, i, t;
+  int n, k, i, t, orth_box, binary_io = 1, *nt = NULL;
+  float box[3] = { box_x.x, box_y.y, box_z.z };
 
-#ifdef MPI
-  if (myid==0) error("option nmoldyn is not parallelized");
-#endif
-
-  /* change particle numbers, and initialize reference positions */
-  n = 0;
-  for (t=0; t<ntypes; t++) {
-    for (k=0; k<ncells; k++) {
-      cell *p = CELLPTR(k); 
-      for (i=0; i<p->n; i++) {
-        if (t==SORTE(p,i)) {
-          NUMMER(p,i)    = n;
-          REF_POS(p,i,X) = 0.0;
-          REF_POS(p,i,Y) = 0.0;
-          REF_POS(p,i,Z) = 0.0;
-          n++;
-	}
-      }
+  /* initialize reference positions - used to unfold application of PBC */
+  for (k=0; k<ncells; k++) {
+    cell *p = CELLPTR(k); 
+    for (i=0; i<p->n; i++) {
+      REF_POS(p,i,X) = 0.0;
+      REF_POS(p,i,Y) = 0.0;
+      REF_POS(p,i,Z) = 0.0;
     }
   }
 
   /* write header of .nmoldyn file */
-  sprintf(fname,"%s.%s",outfilename,"nmoldyn");
-  out = fopen(fname, "w");
-  for (n=0; n<ntypes; n++) fprintf(out, "%d ", num_sort[n]);
-  fprintf(out, "\n");
-  if ( (FABS(box_x.y)<1e-6) && (FABS(box_y.z)<1e-6) && (FABS(box_z.x)<1e-6) &&
-       (FABS(box_y.x)<1e-6) && (FABS(box_z.y)<1e-6) && (FABS(box_x.z)<1e-6) )
-    fprintf(out, "%f %f %f\n", box_x.x, box_y.y, box_z.z);
-  fclose(out);
+  if (0==myid) {
+    /* check whether box is orthorhombic and oriented along main axes */
+    orth_box = ( (FABS(box_x.y)<1e-6) && (FABS(box_y.z)<1e-6) && 
+                 (FABS(box_z.x)<1e-6) && (FABS(box_y.x)<1e-6) && 
+                 (FABS(box_z.y)<1e-6) && (FABS(box_x.z)<1e-6) );
+    sprintf(fname,"%s.%s",outfilename,"nmoldyn");
+    out = fopen(fname, "w");
+    nt = (int *) malloc( ntypes * sizeof(int) );
+    if (NULL==nt) error("cannot allocate nt array");
+    for (k=0; k<ntypes; k++) nt[k] = num_vsort[k]; /* num_vsort is long */
+    if (binary_io) {
+      fwrite( &ntypes,           sizeof(int  ), 1,      out );
+      fwrite( &orth_box,         sizeof(int  ), 1,      out );
+      fwrite( &nmoldyn_veloc,    sizeof(int  ), 1,      out );
+      fwrite( nt,                sizeof(int  ), ntypes, out );
+      if (orth_box) fwrite( box, sizeof(float), 3,      out );
+    }
+    else {
+      for (k=0; k<ntypes; k++) fprintf(out, "%d ", nt[k]);
+      fprintf(out, "\n");
+      if (orth_box) fprintf(out, "%f %f %f\n", box_x.x, box_y.y, box_z.z);
+    }
+    fclose(out);
+    free(nt);
+  }
 
 }
 
@@ -2365,56 +2371,227 @@ void write_nmoldyn(int step)
 {
   FILE *out=NULL;
   str255 fname;
-  int n, k, i;
-  static int count=0;
-  static vektor *nml_pos = NULL, *nml_vel = NULL;
+  int n, k, i, binary_io = 1;
+  static int count=0, n_at = 0, nitems = 0;
+  static float *nml = NULL, *nml2 = NULL;
 
-  /* allocate nml arrays */
-  if (NULL==nml_pos) {
-    nml_pos = (vektor *) malloc( natoms * sizeof(vektor) );
-    if (NULL==nml_pos) error("cannot allocate array for nmoldyn");
+  /* allocate nml array */
+  if (NULL==nml) {
+    if (nmoldyn_veloc) nitems = 6;
+    else               nitems = 3;
+    for (k=0; k<ntypes; k++) n_at += num_vsort[k];
+    nml = (float *) malloc( n_at * nitems * sizeof(float) );
+    if (NULL==nml) error("cannot allocate array for nmoldyn");
+#ifdef MPI
+    nml2 = (float *) malloc( n_at * nitems * sizeof(float) );
+    if (NULL==nml2) error("cannot allocate array for nmoldyn");
+#else
+    nml2 = nml;
+#endif
   }
-  if ((NULL==nml_vel) && (nmoldyn_veloc)) {
-    nml_vel = (vektor *) malloc( natoms * sizeof(vektor) );
-    if (NULL==nml_vel) error("cannot allocate array for nmoldyn");
-  }  
+
+#ifdef MPI
+  /* clear nml array */
+  for (k=0; k < n_at * nitems; k++) nml[k] = 0.0; 
+#endif
 
   /* prepare nmoldyn data */
-  for (k=0; k<ncells; k++) {
+  for (k=0; k<NCELLS; k++) {
     cell *p = CELLPTR(k); 
     for (i=0; i<p->n; i++) {
-      n = NUMMER(p,i);
-      nml_pos[n].x = ORT(p,i,X) - REF_POS(p,i,X);
-      nml_pos[n].y = ORT(p,i,Y) - REF_POS(p,i,Y);
-      nml_pos[n].z = ORT(p,i,Z) - REF_POS(p,i,Z);
+      float *ptr = nml + nitems * NUMMER(p,i);
+      if (VSORTE(p,i) >= ntypes) continue;
+      ptr[0] = ORT(p,i,X) - REF_POS(p,i,X);
+      ptr[1] = ORT(p,i,Y) - REF_POS(p,i,Y);
+      ptr[2] = ORT(p,i,Z) - REF_POS(p,i,Z);
       if (nmoldyn_veloc) {
         real tmp = 1.0 / MASSE(p,i);
-        nml_vel[n].x = IMPULS(p,i,X) * tmp;
-        nml_vel[n].y = IMPULS(p,i,Y) * tmp;
-        nml_vel[n].z = IMPULS(p,i,Z) * tmp;
+        ptr[3] = IMPULS(p,i,X) * tmp;
+        ptr[4] = IMPULS(p,i,Y) * tmp;
+        ptr[5] = IMPULS(p,i,Z) * tmp;
       }
     }
   }
 
-  /* append it to nmoldyn file */
-  sprintf(fname,"%s.%s",outfilename,"nmoldyn");
-  out = fopen(fname, "a");
-  if (NULL == out) error_str("Cannot open output file %s",fname);
-  fprintf(out, "%e\n", count * nmoldyn_int * timestep );
-  for (n=0; n<natoms; n++) {
-    if (nmoldyn_veloc) {
-      fprintf(out,"%e %e %e %e %e %e\n", 
-              nml_pos[n].x, nml_pos[n].y, nml_pos[n].z,
-              nml_vel[n].x, nml_vel[n].y, nml_vel[n].z);
-    } 
-    else {
-      fprintf(out,"%e %e %e\n", 
-              nml_pos[n].x, nml_pos[n].y, nml_pos[n].z);
+#ifdef MPI
+  /* bring everything to CPU 0 */
+  MPI_Reduce( nml, nml2, n_at * nitems, MPI_FLOAT, MPI_SUM, 0, cpugrid);
+#endif
+
+  /* append data to nmoldyn file */
+  if (0==myid) {
+    sprintf(fname,"%s.%s",outfilename,"nmoldyn");
+    out = fopen(fname, "a");
+    if (NULL == out) error_str("Cannot open output file %s",fname);
+    if (binary_io) {
+      float time = count * nmoldyn_int * timestep;
+      fwrite(&time, sizeof(float), 1, out);
+      fwrite(nml2, sizeof(float), n_at * nitems, out);
     }
+    else {
+      fprintf(out, "%e\n", count * nmoldyn_int * timestep );
+      i=0;
+      for (n=0; n < n_at; n++) {
+        for (k=0; k<nitems; k++) fprintf(out, "%e ", nml2[i++] );
+        fprintf( out, "\n" );
+      }
+    }
+    count++;
+    fclose(out);
   }
-  count++;
-  fclose(out);
 
 }
 
 #endif /* NMOLDYN */
+
+#ifdef DSF
+
+/******************************************************************************
+*
+*  dynamical structure factor
+*
+******************************************************************************/
+
+void write_dsf()
+{
+  int    i, j, k, n;
+  double wtot = 0.0, twopi = 2*M_PI;
+  static int    *koff = NULL, count = 0, nk;
+  static double *data = NULL, *data2 = NULL;
+  static vektor *k0   = NULL, *kdir  = NULL;
+
+  /* allocate data arrays, and initialize data */
+  if (NULL==data) {
+    koff = (int    *) malloc( dsf_nk * sizeof(int)    );
+    kdir = (vektor *) malloc( dsf_nk * sizeof(vektor) );
+    k0   = (vektor *) malloc( dsf_nk * sizeof(vektor) );
+    if ((NULL==koff) || (NULL==kdir) || (NULL==k0))
+      error("cannot allocate dsf arrays");
+    nk = 0;
+    for (i=0; i<dsf_nk; i++) {
+      koff[i] = nk;
+      nk += dsf_kmax[i] + 1;
+#ifdef TWOD
+      k0  [i].x = (dsf_k0  [2*i]*tbox_x.x + dsf_k0  [2*i+1]*tbox_y.x)*twopi;
+      k0  [i].y = (dsf_k0  [2*i]*tbox_x.y + dsf_k0  [2*i+1]*tbox_y.y)*twopi;
+      kdir[i].x = (dsf_kdir[2*i]*tbox_x.x + dsf_kdir[2*i+1]*tbox_y.x)*twopi;
+      kdir[i].y = (dsf_kdir[2*i]*tbox_x.y + dsf_kdir[2*i+1]*tbox_y.y)*twopi;
+#else
+      k0  [i].x = (dsf_k0  [3*i  ] * tbox_x.x + dsf_k0  [3*i+1] * tbox_y.x +
+                   dsf_k0  [3*i+2] * tbox_z.x) * twopi;
+      k0  [i].y = (dsf_k0  [3*i  ] * tbox_x.y + dsf_k0  [3*i+1] * tbox_y.y +
+                   dsf_k0  [3*i+2] * tbox_z.y) * twopi;
+      k0  [i].z = (dsf_k0  [3*i  ] * tbox_x.z + dsf_k0  [3*i+1] * tbox_y.z +
+                   dsf_k0  [3*i+2] * tbox_z.z) * twopi;
+      kdir[i].x = (dsf_kdir[3*i  ] * tbox_x.x + dsf_kdir[3*i+1] * tbox_y.x +
+                   dsf_kdir[3*i+2] * tbox_z.x) * twopi;
+      kdir[i].y = (dsf_kdir[3*i  ] * tbox_x.y + dsf_kdir[3*i+1] * tbox_y.y +
+                   dsf_kdir[3*i+2] * tbox_z.y) * twopi;
+      kdir[i].z = (dsf_kdir[3*i  ] * tbox_x.z + dsf_kdir[3*i+1] * tbox_y.z +
+                   dsf_kdir[3*i+2] * tbox_z.z) * twopi;
+#endif
+    }
+    data  = (double *) malloc( 2 * nk * sizeof(real) );
+    if (NULL==data) error("cannot allocate dsf array");
+#ifdef MPI
+    data2 = (double *) malloc( 2 * nk * sizeof(real) );
+    if (NULL==data2) error("cannot allocate dsf array");
+#else
+    data2 = data;
+#endif
+    /* normalize weights */
+    for (i=0; i<ntypes; i++) wtot += num_sort[i] * dsf_weight[i];
+    for (i=0; i<ntypes; i++) dsf_weight[i] /= wtot;
+  }
+
+  /* clear data array */
+  for (j=0; j<2*nk; j++) data[j] = 0.0;
+
+  /* compute data */
+  for (k=0; k<NCELLS; k++) {
+    cell *p = CELLPTR(k); 
+    for (i=0; i<p->n; i++) {
+      for (n=0; n<dsf_nk; n++) {
+        double x, y, w, co, si, co_1, si_1, tt;
+        int    m = 2 * koff[n];
+        x = SPRODX( &ORT(p,i,X), k0  [n] );
+        y = SPRODX( &ORT(p,i,X), kdir[n] );
+        w = dsf_weight[SORTE(p,i)];
+        co = cos(x) * w;  co_1 = cos(y);
+        si = sin(x) * w;  si_1 = sin(y);
+        for (j=0; j<=dsf_kmax[n]; j++) {
+          data[m+2*j  ] += co;
+          data[m+2*j+1] += si;
+          tt = co * co_1 - si * si_1;
+          si = co * si_1 + si * co_1;
+          co = tt;
+        }
+/*
+        for (j=0; j<=dsf_kmax[n]; j++) {
+          real tmp = x + j * y;
+          data[2*(koff[n]+j)  ] += cos(tmp)*w;
+          data[2*(koff[n]+j)+1] += sin(tmp)*w;
+        }
+*/
+      }
+    }
+  }  
+
+#ifdef MPI
+  /* collect data from different CPUs */
+  MPI_Reduce( data, data2, 2*nk, MPI_DOUBLE, MPI_SUM, 0, cpugrid);
+#endif
+
+  /* write data to a file */
+  if (0==myid) {
+
+    FILE   *out;
+    str255 fname;  
+    time_t now;
+
+    /* open file */
+    sprintf(fname,"%s.%s",outfilename,"dsf");
+    if (0==count) unlink(fname);
+    out = fopen(fname, "a");
+    if (NULL == out) error_str("Cannot open output file %s",fname);
+
+    /* write header */
+    if (0==count) {
+      fprintf(out, "#F %c %d %d\n", is_big_endian?'B':'L', DIM, dsf_nk); 
+      fprintf(out, "#T %e\n", dsf_int * timestep);
+#ifdef TWOD
+      fprintf(out, "#X %e %e\n", twopi * tbox_x.x, twopi * tbox_x.y);
+      fprintf(out, "#Y %e %e\n", twopi * tbox_y.x, twopi * tbox_y.y);
+#else
+      fprintf(out, "#X %e %e %e\n", 
+              twopi * tbox_x.x, twopi * tbox_x.y, twopi * tbox_x.z);
+      fprintf(out, "#Y %e %e %e\n", 
+              twopi * tbox_y.x, twopi * tbox_y.y, twopi * tbox_y.z);
+      fprintf(out, "#Z %e %e %e\n", 
+              twopi * tbox_z.x, twopi * tbox_z.y, twopi * tbox_z.z);
+#endif
+      for (n=0; n<dsf_nk; n++) {
+        int j = DIM * n;
+#ifdef TWOD
+        fprintf(out, "#K %d %d   %d %d   %d\n", dsf_k0[j], dsf_k0[j+1], 
+                dsf_kdir[j], dsf_kdir[j+1], dsf_kmax[n]);
+#else
+        fprintf(out, "#K %d %d %d   %d %d %d  %d\n", 
+                dsf_k0  [j], dsf_k0  [j+1], dsf_k0  [j+2],
+                dsf_kdir[j], dsf_kdir[j+1], dsf_kdir[j+2], dsf_kmax[n]);
+#endif
+      }
+      time(&now);
+      fprintf(out, "## Generated on %s", ctime(&now) ); 
+      fprintf(out, "## by %s (version of %s)\n", progname, DATE);
+      fprintf(out, "#E\n");
+    }
+
+    /* write data and close file */
+    fwrite( data2, sizeof(double), 2*nk, out);
+    fclose(out);
+    count++;
+  }
+}
+
+#endif

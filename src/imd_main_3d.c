@@ -615,6 +615,9 @@ do_laser_rescale();
 #ifdef NMOLDYN
     if ((nmoldyn_int > 0) && (0 == steps % nmoldyn_int)) write_nmoldyn(steps);
 #endif
+#ifdef DSF
+    if ((dsf_int > 0) && (0 == steps % dsf_int)) write_dsf();
+#endif
 
 #ifdef SOCKET_IO
     if ((socket_int > 0) && (0 == steps % socket_int)) check_socket();
