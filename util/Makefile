@@ -91,6 +91,9 @@ ppm_on_ppm: ppm_on_ppm.c
 imd2ppm: imd2ppm.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ imd2ppm.c -lm
 
+#dynsf
+dynsf: dynsf.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ dynsf.c -lfftw3 -lm
 #conf2conf
 conf2conf: conf2conf.c conf_tools.c conf_tools.h misc.c misc.h
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ misc.c conf_tools.c conf2conf.c -lm

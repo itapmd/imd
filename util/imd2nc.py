@@ -7,7 +7,8 @@
 ###############################################################################
 
 # import the modules we need
-import sys, string, time              # basic services
+import sys, string, time, struct      # basic services
+from struct  import *
 from Numeric import *                 # easy access to Numeric
 from Scientific.IO.NetCDF import *    # easy access to NetCDF
 from Scientific.IO.TextFile import TextFile
@@ -43,29 +44,29 @@ vu = lu / tu         # velocity unit of input in nm/ps
 # get command line arguments
 atom_types      = sys.argv[1].split(',')
 trajectory_file = sys.argv[2]
-output_file     = trajectory_file + '.nc'
+output_file     = trajectory_file.rstrip('.nmoldyn') + '.nc'
 
 # number of atoms and types
 try:
-   traj_file = TextFile(trajectory_file, 'r')
+   traj_file = open(trajectory_file, 'rb')
 except:
    print '\nCould not open file', trajectory_file,'\n'
    usage()
    sys.exit()
-line      = traj_file.readline()
-numtypes  = map( string.atoi, line.split())
-ntypes    = len(numtypes)
-natoms    = sum(numtypes)
-line      = traj_file.readline()
-box       = map( string.atof, line.split())
-have_box  = len(box) == 3
-if have_box:
+ntypes, have_box, have_vel = struct.unpack("3i", traj_file.read(12))
+numtypes = struct.unpack( str(ntypes)+"i", traj_file.read(4*ntypes))
+natoms = sum(numtypes)
+if have_box > 0:
+   box = struct.unpack("3f", traj_file.read(12))
    do_pbc = True
-   line   = traj_file.readline()
-line      = traj_file.readline()
-nitems    = len( line.split() )
-traj_file.close()
-if len(atom_types) != len(numtypes):
+else:
+   do_pbc = False
+if have_vel > 0:
+   nitems = 6
+else:
+   nitems = 3
+if len(atom_types) != ntypes:
+   traj_file.close()
    print 'Wrong number of atoms types.\n'
    usage()
    sys.exit()
@@ -101,35 +102,24 @@ else:
               actions=[TrajectoryOutput(trajectory,
               ['configuration','time'], 0, None, 1)])
 
-# open trajectory again
-traj_file = TextFile (trajectory_file, 'r')
-traj_file.readline()
-if have_box:
-   traj_file.readline()
-
 # convert trajectory
 finished = False
 while finished == False:
-   try:
-      line = traj_file.readline().split()
-   except IOError:
+   t = traj_file.read(4)
+   if len(t) == 0:
       finished = True
       break
-   if len(line) == 0:
-      finished = True
-      break
+   time = struct.unpack("f", t)[0] * tu
    if nitems == 6:   # with velocities
       for i in range(natoms):
-         lst = map(string.atof, traj_file.readline().split())
-         x, y, z, vx, vy, vz = lst
+         x, y, z, vx, vy, vz = struct.unpack("6f", traj_file.read(24) )
          atoms[i].setPosition( Vector( x*lu,   y*lu,  z*lu ) )
          vel[i] = Vector( vx*vu, vy*vu, vz*vu )
       universe.setVelocities(vel)
    else:             # without velocities
       for i in range(natoms):
-         x,y,z = map(string.atof, traj_file.readline().split())
+         x, y, z = struct.unpack("3f", traj_file.read(12) )
          atoms[i].setPosition( Vector( x*lu,   y*lu,  z*lu ) )
-   time = string.atof(line[0]) * tu
    snapshot(data={'time':time})
 
 # close files
