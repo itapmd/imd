@@ -126,6 +126,15 @@ int main(int argc, char **argv)
       argc -= 2;
       argv += 2;
     }
+    else if (strcasecmp(argv[1],"-h" )==0) { 
+      usage(progname);
+      exit(-1);
+    }
+    else {
+      printf("\n   Unknown option!\n");
+      usage(progname);
+      exit(-1);
+    }
   }
   if (argc<2) {
     printf("\n   Not enough arguments!\n");
