@@ -93,16 +93,7 @@ imd2ppm: imd2ppm.c
 
 #dynsf
 dynsf: dynsf.c
-	${CC} ${CFLAGS} -static -o ${BINDIR}/$@ dynsf.c -lfftw3 -lm
-
-#hccorr
-hccorr: hccorr.c
-	${CC} ${CFLAGS} -static -o ${BINDIR}/$@ hccorr.c -lfftw3 -lm
-
-#hccorr
-hctest: hctest.c
-	${CC} ${CFLAGS} -static -o ${BINDIR}/$@ hctest.c -lfftw3 -lm
-
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ dynsf.c -lfftw3 -lm
 #conf2conf
 conf2conf: conf2conf.c conf_tools.c conf_tools.h misc.c misc.h
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ misc.c conf_tools.c conf2conf.c -lm
