@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -24,6 +24,7 @@
 #include <string.h>
 #include <math.h>
 #include "misc.h"
+#include "util.h"
 #include "conf_tools.h"
 
 /******************************************************************************
@@ -124,6 +125,48 @@ int read_header(header_info_t *info, str255 infilename)
 
 /******************************************************************************
 *
+*  map vektor back into simulation box
+*
+******************************************************************************/
+
+vektor back_into_box(vektor pos)
+{
+  double i;
+
+  if (pbc_dirs.x==1) {
+    i = floor(SPROD(pos,tbox_x));
+    pos.x  -= i *  box_x.x;
+    pos.y  -= i *  box_x.y;
+#ifndef TWOD
+    pos.z  -= i *  box_x.z;
+#endif
+  }
+
+  if (pbc_dirs.y==1) {
+    i = floor(SPROD(pos,tbox_y));
+    pos.x  -= i *  box_y.x;
+    pos.y  -= i *  box_y.y;
+#ifndef TWOD
+    pos.z  -= i *  box_y.z;
+#endif
+  }
+
+#ifndef TWOD
+  if (pbc_dirs.z==1) {
+    i = floor(SPROD(pos,tbox_z));
+    pos.x  -= i *  box_z.x;
+    pos.y  -= i *  box_z.y;
+    pos.z  -= i *  box_z.z;
+  }
+#else
+  pos.z = 0.0;
+#endif
+  return pos;
+
+}
+
+/******************************************************************************
+*
 * read one atom from a config file
 *
 ******************************************************************************/
@@ -131,6 +174,7 @@ int read_header(header_info_t *info, str255 infilename)
 int read_atom(header_info_t *info, FILE *infile, atom_t *atom)
 {
   double m, d[MAX_ITEMS_CONFIG];
+  vektor pos;
   char buf[1024];
   int  p=0, n, s, i, k, is_big_endian = endian();
 
@@ -189,13 +233,15 @@ int read_atom(header_info_t *info, FILE *infile, atom_t *atom)
   k = 0;
   if (info->n_mass == 1) atom->mass = d[k++];
   if (info->n_pos == 2) {
-    atom->pos.x = d[k++];
-    atom->pos.y = d[k++];
+    pos.x = d[k++];
+    pos.y = d[k++];
+    atom->pos = back_into_box(pos);
   }
   else if (info->n_pos == 3) {
-    atom->pos.x = d[k++];
-    atom->pos.y = d[k++];
-    atom->pos.z = d[k++];
+    pos.x = d[k++];
+    pos.y = d[k++];
+    pos.z = d[k++];
+    atom->pos = back_into_box(pos);
   }
   if (info->n_vel == 2) {
     atom->vel.x = d[k++];
