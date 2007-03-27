@@ -2,7 +2,7 @@
 #
 # IMD -- The ITAP Molecular Dynamics Program
 #
-# Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+# Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 # University of Stuttgart, D-70550 Stuttgart
 #
 #
@@ -94,9 +94,10 @@ imd2ppm: imd2ppm.c
 #dynsf
 dynsf: dynsf.c
 	${CC} ${CFLAGS} -o ${BINDIR}/$@ dynsf.c -lfftw3 -lm
+
 #conf2conf
 conf2conf: conf2conf.c conf_tools.c conf_tools.h misc.c misc.h
-	${CC} ${CFLAGS} -o ${BINDIR}/$@ misc.c conf_tools.c conf2conf.c -lm
+	${CC} ${CFLAGS} -DC2C -o ${BINDIR}/$@ misc.c conf_tools.c conf2conf.c -lm
 
 
 ############################################################################

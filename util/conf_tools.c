@@ -129,6 +129,12 @@ int read_header(header_info_t *info, str255 infilename)
 *
 ******************************************************************************/
 
+#ifdef C2C
+
+#define back_into_box(pos) (pos)
+
+#else
+
 vektor back_into_box(vektor pos)
 {
   double i;
@@ -164,6 +170,8 @@ vektor back_into_box(vektor pos)
   return pos;
 
 }
+
+#endif
 
 /******************************************************************************
 *
