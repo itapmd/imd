@@ -183,8 +183,9 @@ EXTERN int dist_press_flag       INIT(0); /* write press dists? */
 EXTERN int dist_pressoff_flag    INIT(0); /* write press off diag dists? */
 EXTERN int dist_presstens_flag   INIT(0); /* write presstens dists? */
 EXTERN int dist_dens_flag   INIT(0); /* write density dists? */
-EXTERN int dist_vxavg_flag   INIT(0); /* write average sample velocity dists? */
+EXTERN int dist_vxavg_flag  INIT(0); /* write average sample velocity dists? */
 EXTERN int dist_int              INIT(0); /* Period of distribution writes */
+EXTERN int dist_chunk_size       INIT(2*1024*1024); /* size of dist reduct. */
 EXTERN ivektor dist_dim          INIT(einsivektor); /* resolution of dist */
 EXTERN vektor  dist_ur           INIT(nullvektor);  /* lower left  corner */
 EXTERN vektor  dist_ll           INIT(nullvektor);  /* upper right corner */

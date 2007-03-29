@@ -563,11 +563,10 @@ ifeq (bgl-cc,${IMDSYS})
   CC_SERIAL	= dummy
   CC_MPI	= blrts_xlc -DBGL -I${BGLSYS}/include
   BIN_DIR	= ${HOME}/bin/bgl
-  OPT_FLAGS	+= -O3 -qarch=440 -qtune=440 
-#  OPT_FLAGS	+= -O3 -qarch=440d -qtune=440 -qhot -qlist -qsource -qdebug=diagnostic
+  OPT_FLAGS	+= -O4 -qarch=440 -qtune=440  
   DEBUG_FLAGS	+= -g
   LIBS          += -L${BGLSYS}/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts 
-  LFLAGS        += 
+  LFLAGS        += -O4
 endif
 
 ###########################################################################

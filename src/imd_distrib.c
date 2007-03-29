@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -21,8 +21,9 @@
 
 #include "imd.h"
 
-float   *dat_1 = NULL, *dat_2 = NULL;
-integer *num_1 = NULL, *num_2 = NULL;
+float *dat_1 = NULL, *dat_2 = NULL;
+float *num_1 = NULL, *num_2 = NULL;
+int   dist_size;
 
 /******************************************************************************
 *
@@ -33,8 +34,7 @@ integer *num_1 = NULL, *num_2 = NULL;
 void write_distrib(int steps)
 {
   char contents[255];
-  dist_t dist;
-  int flag, fzhlr, size, n, i, j, k;
+  int fzhlr, n, i, j, k;
 
   /* backup if dist_ur is not set */
   if (0.0==dist_ur.x) {
@@ -45,18 +45,17 @@ void write_distrib(int steps)
 #endif
   }
 
-  dist.dim = dist_dim;
-  dist.ll  = dist_ll;
-  dist.ur  = dist_ur;
-  size     = dist.dim.x * dist.dim.y;
+  dist_size  = dist_dim.x * dist_dim.y;
 #ifndef TWOD
-  size    *= dist.dim.z;
+  dist_size *= dist_dim.z;
 #endif
-  dist.size = size;
 #ifdef BGL
   n = 1; /* here we write presstens components in separate files */
 #else
   n = dist_presstens_flag ? DIM*(DIM+1)/2 : 1; 
+#endif
+#ifndef MPI
+  dist_chunk_size = dist_size;
 #endif
 #if defined(BGL) && (defined(TIMING) || defined(DEBUG))
   if (myid==0) 
@@ -72,23 +71,18 @@ void write_distrib(int steps)
 
   /* allocate distribution arrays */
 #ifdef MPI2
-  MPI_Alloc_mem( n * size * sizeof(float),   MPI_INFO_NULL, &dat_1 );
-  MPI_Alloc_mem(     size * sizeof(integer), MPI_INFO_NULL, &num_1 );
-#ifndef BGL
-  MPI_Alloc_mem( n * size * sizeof(float),   MPI_INFO_NULL, &dat_2 );
-  MPI_Alloc_mem(     size * sizeof(integer), MPI_INFO_NULL, &num_2 );
-#else
-  dat_2 = dat_1;
-  num_2 = (integer *) dat_1;
-#endif
+  MPI_Alloc_mem( n *       dist_size * sizeof(float), MPI_INFO_NULL, &dat_1 );
+  MPI_Alloc_mem(           dist_size * sizeof(float), MPI_INFO_NULL, &num_1 );
+  MPI_Alloc_mem( n * dist_chunk_size * sizeof(float), MPI_INFO_NULL, &dat_2 );
+  num_2 = dat_1;
 #elif defined(MPI)
-  dat_1 = (float   *) malloc( n * size * sizeof(float  ) );
-  num_1 = (integer *) malloc(     size * sizeof(integer) );
-  dat_2 = (float   *) malloc( n * size * sizeof(float  ) );
-  num_2 = (integer *) malloc(     size * sizeof(integer) );
+  dat_1 = (float *) malloc( n *       dist_size * sizeof(float) );
+  num_1 = (float *) malloc(           dist_size * sizeof(float) );
+  dat_2 = (float *) malloc( n * dist_chunk_size * sizeof(float) );
+  num_2 = dat_1;
 #else
-  dat_1 = (float   *) malloc( n * size * sizeof(float  ) );
-  num_1 = (integer *) malloc(     size * sizeof(integer) );
+  dat_1 = (float *) malloc( n * dist_size * sizeof(float) );
+  num_1 = (float *) malloc(     dist_size * sizeof(float) );
   dat_2 = dat_1;
   num_2 = num_1;
 #endif
@@ -100,25 +94,24 @@ void write_distrib(int steps)
     printf("%d MB free after distribution allocation\n", get_free_mem());
 #endif
 
-  flag = 1;
   fzhlr = steps / dist_int;
 
+  /* make number density distribution */
+  make_distrib_density();
+
   if (dist_Ekin_flag) {
-    make_distrib_select( &dist, 1, &flag, dist_Ekin_fun);
-    if (myid==0) write_distrib_select( &dist, dist_Ekin_flag, 1, fzhlr, 
-                                       "Ekin", "Ekin");
+    make_write_distrib_select( 1, dist_Ekin_fun, 
+      dist_Ekin_flag, fzhlr, "Ekin", "Ekin");
   }
   if (dist_Epot_flag) {
-    make_distrib_select( &dist, 1, &flag, dist_Epot_fun);
-    if (myid==0) write_distrib_select( &dist, dist_Epot_flag, 1, fzhlr, 
-                                       "Epot", "Epot");
+    make_write_distrib_select( 1, dist_Epot_fun, 
+      dist_Epot_flag, fzhlr, "Epot", "Epot");
   }
 
 #ifdef STRESS_TENS
   if (dist_press_flag) {
-    make_distrib_select( &dist, 1, &flag, dist_press_fun);
-    if (myid==0) write_distrib_select( &dist, dist_press_flag, 1, fzhlr, 
-                                       "press", "press");
+    make_write_distrib_select( 1, dist_press_fun, 
+      dist_press_flag, fzhlr, "press", "press");
   }
   if (dist_presstens_flag) {
 #ifdef TWOD
@@ -128,107 +121,76 @@ void write_distrib(int steps)
 #endif
 #ifdef BGL
     /* to save memory, we write each componend in separate file */
-    make_distrib_select( &dist, 1, &flag, dist_presstens_xx_fun);
-    if (myid==0) write_distrib_select( &dist, dist_presstens_flag, 
-                       1, fzhlr, "presstens_xx", "presstens_xx" );
-    make_distrib_select( &dist, 1, &flag, dist_presstens_yy_fun);
-    if (myid==0) write_distrib_select( &dist, dist_presstens_flag, 
-                       1, fzhlr, "presstens_yy", "presstens_yy" );
+    make_write_distrib_select( 1, dist_presstens_xx_fun, 
+      dist_presstens_flag, fzhlr, "presstens_xx", "presstens_xx" );
+    make_write_distrib_select( 1, dist_presstens_yy_fun,
+      dist_presstens_flag, fzhlr, "presstens_yy", "presstens_yy" );
 #ifndef TWOD
-    make_distrib_select( &dist, 1, &flag, dist_presstens_zz_fun);
-    if (myid==0) write_distrib_select( &dist, dist_presstens_flag, 
-                       1, fzhlr, "presstens_zz", "presstens_zz" );
-    make_distrib_select( &dist, 1, &flag, dist_presstens_yz_fun);
-    if (myid==0) write_distrib_select( &dist, dist_presstens_flag, 
-                       1, fzhlr, "presstens_yz", "presstens_yz" );
-    make_distrib_select( &dist, 1, &flag, dist_presstens_zx_fun);
-    if (myid==0) write_distrib_select( &dist, dist_presstens_flag, 
-                       1, fzhlr, "presstens_zx", "presstens_zx" );
+    make_write_distrib_select( 1, dist_presstens_zz_fun,
+      dist_presstens_flag, fzhlr, "presstens_zz", "presstens_zz" );
+    make_write_distrib_select( 1, dist_presstens_yz_fun,
+      dist_presstens_flag, fzhlr, "presstens_yz", "presstens_yz" );
+    make_write_distrib_select( 1, dist_presstens_zx_fun,
+      dist_presstens_flag, fzhlr, "presstens_zx", "presstens_zx" );
 #endif
-    make_distrib_select( &dist, 1, &flag, dist_presstens_xy_fun);
-    if (myid==0) write_distrib_select( &dist, dist_presstens_flag, 
-                       1, fzhlr, "presstens_xy", "presstens_xy" );
+    make_write_distrib_select( 1, dist_presstens_xy_fun,
+      dist_presstens_flag, fzhlr, "presstens_xy", "presstens_xy" );
 #else
-    make_distrib_select( &dist, DIM*(DIM+1)/2, &flag, dist_presstens_fun);
-    if (myid==0) write_distrib_select( &dist, dist_presstens_flag, 
-                              DIM*(DIM+1)/2, fzhlr, "presstens", contents);
+    make_write_distrib_select( DIM*(DIM+1)/2, dist_presstens_fun,
+      dist_presstens_flag, fzhlr, "presstens", contents);
 #endif /* BGL */
   }
 #endif /* STRESS_TENS */
 
 #ifdef SHOCK
   if (dist_vxavg_flag) {
-    make_distrib_select( &dist, 1, &flag, dist_vxavg_fun);
-    if (myid==0) write_distrib_select( &dist, dist_vxavg_flag, 1, fzhlr, 
-                                       "vxavg", "vxavg");
+    make_write_distrib_select( 1, dist_vxavg_fun,
+      dist_vxavg_flag, fzhlr, "vxavg", "vxavg");
   }
   if (dist_Ekin_long_flag) {
-    make_distrib_select( &dist, 1, &flag, dist_Ekin_long_fun);
-    if (myid==0) write_distrib_select( &dist, dist_Ekin_long_flag, 1, fzhlr, 
-                                       "Ekin_long", "Ekin_long");
+    make_write_distrib_select( 1, dist_Ekin_long_fun,
+      dist_Ekin_long_flag, fzhlr, "Ekin_long", "Ekin_long");
   }
   if (dist_Ekin_trans_flag) {
-    make_distrib_select( &dist, 1, &flag, dist_Ekin_trans_fun);
-    if (myid==0) write_distrib_select( &dist, dist_Ekin_trans_flag, 1, fzhlr, 
-                                       "Ekin_trans", "Ekin_trans");
+    make_write_distrib_select( 1, dist_Ekin_trans_fun,
+      dist_Ekin_trans_flag, fzhlr, "Ekin_trans", "Ekin_trans");
   }
   if (dist_Ekin_comp_flag) {
-    make_distrib_select( &dist, 1, &flag, dist_Ekin_comp_fun);
-    if (myid==0) write_distrib_select( &dist, dist_Ekin_comp_flag, 1, fzhlr, 
-                                       "Ekin_comp", "Ekin_comp");
+    make_write_distrib_select( 1, dist_Ekin_comp_fun,
+      dist_Ekin_comp_flag, fzhlr, "Ekin_comp", "Ekin_comp");
   }
   if (dist_shock_shear_flag) {
-    make_distrib_select( &dist, 1, &flag, dist_shock_shear_fun);
-    if (myid==0) write_distrib_select( &dist, dist_shock_shear_flag, 1, fzhlr, 
-                                       "shock_shear", "shock_shear");
+    make_write_distrib_select( 1, dist_shock_shear_fun,
+      dist_shock_shear_flag, fzhlr, "shock_shear", "shock_shear");
   }
   if (dist_shear_aniso_flag) {
-    make_distrib_select( &dist, 1, &flag, dist_shear_aniso_fun);
-    if (myid==0) write_distrib_select( &dist, dist_shear_aniso_flag, 1, fzhlr, 
-                                       "shear_aniso", "shear_aniso");
+    make_write_distrib_select( 1, dist_shear_aniso_fun,
+      dist_shear_aniso_flag, fzhlr, "shear_aniso", "shear_aniso");
   }
   if (dist_pressoff_flag) {
-    make_distrib_select( &dist, 1, &flag, dist_pressxy_fun);
-    if (myid==0) write_distrib_select( &dist, dist_pressoff_flag, 1, fzhlr, 
-				       "pressxy", "pressxy");
-    make_distrib_select( &dist, 1, &flag, dist_pressyz_fun);
-    if (myid==0) write_distrib_select( &dist, dist_pressoff_flag, 1, fzhlr, 
-				       "pressyz", "pressyz");
-    make_distrib_select( &dist, 1, &flag, dist_presszx_fun);
-    if (myid==0) write_distrib_select( &dist, dist_pressoff_flag, 1, fzhlr, 
-				       "presszx", "presszx");
+    make_write_distrib_select( 1, dist_pressxy_fun,
+      dist_pressoff_flag, fzhlr, "pressxy", "pressxy");
+    make_write_distrib_select( 1, dist_pressyz_fun,
+      dist_pressoff_flag, fzhlr, "pressyz", "pressyz");
+    make_write_distrib_select( 1, dist_presszx_fun,
+      dist_pressoff_flag, fzhlr, "presszx", "presszx");
   }
 #endif /* SHOCK */
 
-  if (dist_dens_flag) {
-    /* if we haven't filled dist.num yet */
-    if (flag) make_distrib_select( &dist, 1, &flag, dist_Epot_fun);
-    if (myid==0) {
-      real fac = size / volume;
-      dist.max[0] = 0.0;
-      dist.min[0] = 1e10;
-      for (i=0; i<size; i++) { 
-        dist.dat[i] = dist.num[i] * fac;
-        dist.max[0] = MAX( dist.max[0], dist.dat[i] );
-        dist.min[0] = MIN( dist.min[0], dist.dat[i] );
-      }
-      write_distrib_select( &dist, dist_dens_flag, 1, fzhlr, "dens", "dens");
-    }
+  /* write density distribution */
+  if ((myid==0) && (dist_dens_flag)) {
+    write_distrib_density(dist_dens_flag, fzhlr);
   }
 
   /* free distribution arrays */
 #ifdef MPI2
   MPI_Free_mem(dat_1);
   MPI_Free_mem(num_1);
-#ifndef BGL
   MPI_Free_mem(dat_2);
-  MPI_Free_mem(num_2);
-#endif
 #elif defined(MPI)
   free(dat_1);
   free(num_1);
   free(dat_2);
-  free(num_2);
 #else
   free(dat_1);
   free(num_1);
@@ -398,184 +360,250 @@ void dist_vxavg_fun(float *dat, cell *p, int i)
 
 #endif /* SHOCK */
 
-
 /******************************************************************************
 *
-*  make distribution of selected variables
+*  make density distribution
 *
 ******************************************************************************/
 
-void make_distrib_select(dist_t *dist, int n, int *flag, 
-                         void (*fun)(float*, cell*, int))
+void make_distrib_density(void)
 {
   cell *p;
-  real scalex, scaley, scalez, Ekin, tmp;
-  int  num, numx, numy, numz, size;
-  int  i, j, k;
+  real scalex, scaley, scalez;
+  int  num, numx, numy, numz;
+  int  i, j, k, m, chunk_size;
 
   /* the bins are orthogonal boxes in space */
-  scalex = dist->dim.x / (dist->ur.x - dist->ll.x);
-  scaley = dist->dim.y / (dist->ur.y - dist->ll.y);
+  scalex = dist_dim.x / (dist_ur.x - dist_ll.x);
+  scaley = dist_dim.y / (dist_ur.y - dist_ll.y);
 #ifndef TWOD
-  scalez = dist->dim.z / (dist->ur.z - dist->ll.z);
+  scalez = dist_dim.z / (dist_ur.z - dist_ll.z);
 #endif
-  size   = dist->size;
-
-  dist->num = num_1;
-  dist->dat = dat_1;
-
-  /* compute number density, if necessary */
-  if (*flag) {
-
-    /* clear distribution */
-    for (i=0; i<size; i++) num_2[i] = 0;
-
-    /* loop over all atoms */
-    for (k=0; k<NCELLS; ++k) {
-      p = CELLPTR(k);
-      for (i=0; i<p->n; ++i) {
-        /* which bin? */
-        numx = scalex * (ORT(p,i,X) - dist->ll.x);
-        if ((numx < 0) || (numx >= dist->dim.x)) continue;
-        numy = scaley * (ORT(p,i,Y) - dist->ll.y);
-        if ((numy < 0) || (numy >= dist->dim.y)) continue;
-        num = numx * dist->dim.y + numy;
-#ifndef TWOD
-        numz = scalez * (ORT(p,i,Z) - dist->ll.z);
-        if ((numz < 0) || (numz >= dist->dim.z)) continue;
-        num = num * dist->dim.z + numz;
-#endif
-        num_2[num]++;
-      }
-    }
-
-    /* add up results form different CPUs */
-#ifdef MPI  
-    MPI_Reduce( num_2, num_1, size, INTEGER, MPI_SUM, 0, cpugrid);
-#endif
-    *flag = 0;
-  }
 
   /* clear distribution */
-  for (i=0; i<n*size; i++) dat_2[i] = 0.0;
+  for (i=0; i<dist_size; i++) num_2[i] = 0.0;
 
   /* loop over all atoms */
   for (k=0; k<NCELLS; ++k) {
     p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
       /* which bin? */
-      numx = scalex * (ORT(p,i,X) - dist->ll.x);
-      if ((numx < 0) || (numx >= dist->dim.x)) continue;
-      numy = scaley * (ORT(p,i,Y) - dist->ll.y);
-      if ((numy < 0) || (numy >= dist->dim.y)) continue;
-      num = numx * dist->dim.y + numy;
+      numx = scalex * (ORT(p,i,X) - dist_ll.x);
+      if ((numx < 0) || (numx >= dist_dim.x)) continue;
+      numy = scaley * (ORT(p,i,Y) - dist_ll.y);
+      if ((numy < 0) || (numy >= dist_dim.y)) continue;
+      num = numx * dist_dim.y + numy;
 #ifndef TWOD
-      numz = scalez * (ORT(p,i,Z) - dist->ll.z);
-      if ((numz < 0) || (numz >= dist->dim.z)) continue;
-      num = num * dist->dim.z + numz;
+      numz = scalez * (ORT(p,i,Z) - dist_ll.z);
+      if ((numz < 0) || (numz >= dist_dim.z)) continue;
+      num = num * dist_dim.z + numz;
 #endif
-      (*fun)(dat_2 + n * num, p, i);
+      num_2[num] += 1.0;
     }
   }
 
   /* add up results form different CPUs */
-#ifdef BGL  /* here, we do an in-place reduction */
-  if (0==myid) {
-    MPI_Reduce( MPI_IN_PLACE, dat_2, n * size, MPI_FLOAT, MPI_SUM, 0, cpugrid);
-  } else {
-    MPI_Reduce( dat_2, NULL, n * size, MPI_FLOAT, MPI_SUM, 0, cpugrid);
-  }
-#elif defined(MPI)
-  MPI_Reduce( dat_2, dat_1, n * size, MPI_FLOAT, MPI_SUM, 0, cpugrid);
-#endif
-
-  /* normalize distributions */
-  if (myid==0) {
-    for (i=0; i < size; i++) {
-      if (dist->num[i] > 0) {
+#ifdef MPI
 #ifdef BGL
-        dist->dat[i] /= dist->num[i];
+  /* doing it in several chunks saves memory */
+  for (m = 0; m < dist_size; m += dist_chunk_size) { 
+    chunk_size = MIN( dist_size - m, dist_chunk_size );
+    MPI_Reduce(num_2+m, num_1+m, chunk_size, MPI_FLOAT, MPI_SUM, 0, cpugrid);
+  }
 #else
-        for (j=0; j<n; j++) dist->dat[n*i+j] /= dist->num[i];
+  MPI_Reduce( num_2, num_1, dist_size, MPI_FLOAT, MPI_SUM, 0, cpugrid);
 #endif
-      }
-    }
-  }
-
-  /* compute minima and maxima of distributions */
-  if (myid==0) {
-    j=0;
-    while (dist->num[j]==0) j++;
-    for (k=0; k<n; k++) {
-      dist->min[k] = dist->dat[n*j+k];
-      dist->max[k] = dist->dat[n*j+k];
-    }
-    for (i=j+1; i<size; i++) {
-      if (dist->num[i]>0) {
-        for (k=0; k<n; k++) {
-          dist->min[k]  = MIN( dist->min[k],  dist->dat[n*i+k] );
-          dist->max[k]  = MAX( dist->max[k],  dist->dat[n*i+k] );
-	}
-      }
-    }
-  }
+#endif
 
 }
 
 /******************************************************************************
 *
-*  write distribution of selected variables
+*  write density distribution
 *
 ******************************************************************************/
 
-void write_distrib_select( dist_t *dist, int mode, int n, int fzhlr,
-                           char *suffix, char *cont)
+void write_distrib_density(int mode, int fzhlr)
 {
-  FILE *outfile;
-  char fname[255];
-  int i, j, count, r, s, t;
-
-  /* write minmax */
-  sprintf(fname, "%s.minmax.%s", outfilename, suffix);
-  outfile = fopen(fname, "a");
-  if (NULL == outfile) error("Cannot open minmax file.");
-  fprintf( outfile, "%d ", fzhlr );
-  for (i=0; i<n; i++) fprintf(outfile, " %e %e", dist->min[i], dist->max[i]);
-  fprintf(outfile, "\n");
-  fclose(outfile);
+  FILE  *outfile;
+  char  fname[255], max=0.0, min=1e10;
+  float fac;
+  int   i, j, count, r, s, t;
 
   /* open distribution file, write header */
-  sprintf(fname, "%s.%u.%s", outfilename, fzhlr, suffix);
+  sprintf(fname, "%s.%u.%s", outfilename, fzhlr, "dens");
   outfile = fopen(fname, "w");
   if (NULL == outfile) error("Cannot open distribution file.");
-  write_distrib_header(outfile, dist, mode, n, cont);
+  write_distrib_header(outfile, mode, 1, "dens");
+
+  /* compute density, minima and maxima */
+  fac = dist_size / volume;
+  for (i=0; i<dist_size; i++) { 
+    dat_1[i] = num_1[i] * fac;
+    max = MAX( max, dat_1[i] );
+    min = MIN( min, dat_1[i] );
+  }
 
   /* write distribution */
   if (mode==DIST_FORMAT_BINARY) {
-    count = fwrite(dist->dat, sizeof(float), n*dist->size, outfile); 
-    if (count != n*dist->size) warning("distribution write incomplete!");
+    count = fwrite(dat_1, sizeof(float), dist_size, outfile); 
+    if (count != dist_size) warning("distribution write incomplete!");
   } 
   else if ((mode==DIST_FORMAT_ASCII) || (mode==DIST_FORMAT_ASCII_COORD)) {
     i=0;
-    for (r=0; r<dist->dim.x; r++)
-      for (s=0; s<dist->dim.y; s++)
+    for (r=0; r<dist_dim.x; r++)
+      for (s=0; s<dist_dim.y; s++)
 #ifndef TWOD
-        for (t=0; t<dist->dim.z; t++)
+        for (t=0; t<dist_dim.z; t++)
 #endif
 	{
 	  if (mode==DIST_FORMAT_ASCII_COORD) {
 #ifdef TWOD
-            fprintf(outfile, "%d %d", r, s);
+            fprintf(outfile, "%d %d ", r, s);
 #else
-            fprintf(outfile, "%d %d %d", r, s, t);
+            fprintf(outfile, "%d %d %d ", r, s, t);
 #endif
           }
-          for (j=0; j<n; j++) fprintf(outfile," %e", dist->dat[i++]);
-          fprintf(outfile, "\n");
+          fprintf(outfile,"%e\n", dat_1[i++]);
         }
   }
   else error("unknown distribution output format");
   fclose(outfile);
+
+  /* write minmax */
+  sprintf(fname, "%s.minmax.%s", outfilename, "dens");
+  outfile = fopen(fname, "a");
+  if (NULL == outfile) error("Cannot open minmax file.");
+  fprintf(outfile, "%d %e %e\n", fzhlr, min, max);
+  fclose(outfile);
+
+}
+
+/******************************************************************************
+*
+*  make and write distribution of selected variables
+*
+******************************************************************************/
+
+void make_write_distrib_select(int n, void (*fun)(float*, cell*, int),
+                               int mode, int fzhlr, char *suffix, char *cont)
+{
+  cell  *p;
+  real  scalex, scaley, scalez;
+  int   num, numx, numy, numz;
+  int   i, j, k, count, r, s, t, m, chunk_size;
+  float max[6], min[6];
+  FILE  *outfile;
+  char  fname[255];
+
+  /* the bins are orthogonal boxes in space */
+  scalex = dist_dim.x / (dist_ur.x - dist_ll.x);
+  scaley = dist_dim.y / (dist_ur.y - dist_ll.y);
+#ifndef TWOD
+  scalez = dist_dim.z / (dist_ur.z - dist_ll.z);
+#endif
+
+  /* clear distribution */
+  for (i=0; i<n*dist_size; i++) dat_1[i] = 0.0;
+
+  /* loop over all atoms */
+  for (k=0; k<NCELLS; ++k) {
+    p = CELLPTR(k);
+    for (i=0; i<p->n; ++i) {
+      /* which bin? */
+      numx = scalex * (ORT(p,i,X) - dist_ll.x);
+      if ((numx < 0) || (numx >= dist_dim.x)) continue;
+      numy = scaley * (ORT(p,i,Y) - dist_ll.y);
+      if ((numy < 0) || (numy >= dist_dim.y)) continue;
+      num = numx * dist_dim.y + numy;
+#ifndef TWOD
+      numz = scalez * (ORT(p,i,Z) - dist_ll.z);
+      if ((numz < 0) || (numz >= dist_dim.z)) continue;
+      num = num * dist_dim.z + numz;
+#endif
+      (*fun)(dat_1 + n * num, p, i);
+    }
+  }
+
+  /* open distribution file, write header */
+  if (myid==0) {
+    sprintf(fname, "%s.%u.%s", outfilename, fzhlr, suffix);
+    outfile = fopen(fname, "w");
+    if (NULL == outfile) error("Cannot open distribution file.");
+    write_distrib_header(outfile, mode, n, cont);
+    for (k=0; k<n; k++) {
+      min[k] =  1e+10;
+      max[k] = -1e+10;
+    }
+  }
+
+  /* collect and write data in handy chunks */
+  r = s = t = 0;
+  for (m = 0; m < dist_size; m += dist_chunk_size) { 
+
+    chunk_size = MIN( dist_size - m, dist_chunk_size );
+
+    /* add up results form different CPUs */
+#ifdef MPI
+    MPI_Reduce(dat_1+n*m, dat_2, n*chunk_size, MPI_FLOAT, MPI_SUM, 0, cpugrid);
+#endif
+
+    if (myid==0) {
+
+      /* normalize distribution, compute minima and maxima */
+      for (i=0; i<chunk_size; i++) {
+        if (num_1[m+i] > 0.0) {
+          for (k=0; k<n; k++) {
+            dat_2[n*i+k] /= num_1[m+i];
+            min[k] = MIN( min[k], dat_2[n*i+k] );
+            max[k] = MAX( max[k], dat_2[n*i+k] );
+          }
+        }
+      }
+
+      /* write distribution */
+      if (mode==DIST_FORMAT_BINARY) {
+        count = fwrite(dat_2, sizeof(float), n*chunk_size, outfile); 
+        if (count != n*chunk_size) warning("distribution write incomplete!");
+      } 
+      else if ((mode==DIST_FORMAT_ASCII) || (mode==DIST_FORMAT_ASCII_COORD)) {
+	for (i=0; i<chunk_size; i++) {
+          if (mode==DIST_FORMAT_ASCII_COORD) {
+#ifdef TWOD
+            fprintf(outfile, "%d %d", r, s++);
+            if (s==dist_dim.y) { s=0; r++; }
+#else
+            fprintf(outfile, "%d %d %d", r, s, t++);
+            if (t==dist_dim.z) { t=0; s++; }
+            if (s==dist_dim.y) { s=0; r++; }
+#endif
+          }
+#ifdef BGL
+          fprintf(outfile," %e\n", dat_2[i]);
+#else
+          for (k=0; k<n; k++) fprintf(outfile," %e", dat_2[n*i+k]);
+          fprintf(outfile, "\n");
+#endif
+        }
+      }
+      else error("unknown distribution output format");
+    }
+  }
+
+  /* close distribution file */
+  if (myid==0) fclose(outfile);
+
+  /* write minmax */
+  if (myid==0) {
+    sprintf(fname, "%s.minmax.%s", outfilename, suffix);
+    outfile = fopen(fname, "a");
+    if (NULL == outfile) error("Cannot open minmax file.");
+    fprintf( outfile, "%d ", fzhlr );
+    for (i=0; i<n; i++) fprintf(outfile, " %e %e", min[i], max[i]);
+    fprintf(outfile, "\n");
+    fclose(outfile);
+  }
+
 }
 
 /******************************************************************************
@@ -584,7 +612,7 @@ void write_distrib_select( dist_t *dist, int mode, int n, int fzhlr,
 *
 ******************************************************************************/
 
-void write_distrib_header(FILE *out, dist_t *dist, int mode, int n, char *cont)
+void write_distrib_header(FILE *out, int mode, int n, char *cont)
 {
   char c;
   int  n_coord;
@@ -611,18 +639,18 @@ void write_distrib_header(FILE *out, dist_t *dist, int mode, int n, char *cont)
 
   /* dimension line */
 #ifdef TWOD
-  fprintf(out, "#D %d %d\n",    dist->dim.x, dist->dim.y);
+  fprintf(out, "#D %d %d\n",    dist_dim.x, dist_dim.y);
 #else
-  fprintf(out, "#D %d %d %d\n", dist->dim.x, dist->dim.y, dist->dim.z);
+  fprintf(out, "#D %d %d %d\n", dist_dim.x, dist_dim.y, dist_dim.z);
 #endif
 
   /* bin size line */
-  s.x = (dist->ur.x - dist->ll.x) / dist->dim.x;
-  s.y = (dist->ur.y - dist->ll.y) / dist->dim.y;
+  s.x = (dist_ur.x - dist_ll.x) / dist_dim.x;
+  s.y = (dist_ur.y - dist_ll.y) / dist_dim.y;
 #ifdef TWOD
   fprintf(out, "#S %e %e\n",    s.x, s.y);
 #else
-  s.z = (dist->ur.z - dist->ll.z) / dist->dim.z;
+  s.z = (dist_ur.z - dist_ll.z) / dist_dim.z;
   fprintf(out, "#S %e %e %e\n", s.x, s.y, s.z);
 #endif
 

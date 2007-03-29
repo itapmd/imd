@@ -370,10 +370,11 @@ void vis_restart_simulation(void);
 #endif
 
 /* write distributions - file imd_distrib.c */
-void make_distrib_select(dist_t*, int, int*, 
-                         void (*fun)(float*, cell*, int));
-void write_distrib_select(dist_t*, int, int, int, char*, char*);
-void write_distrib_header(FILE*, dist_t*, int, int, char*);
+void make_distrib_density(void); 
+void write_distrib_density(int, int);
+void make_write_distrib_select(int, void (*fun)(float*, cell*, int), 
+			       int, int, char*, char*);
+void write_distrib_header(FILE*, int, int, char*);
 void write_distrib(int);
 void dist_Ekin_fun       (float*, cell*, int);
 void dist_Epot_fun       (float*, cell*, int);

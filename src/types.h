@@ -286,15 +286,6 @@ typedef struct {
 } lin_pot_table_t;
 #endif
 
-/* data structure for distributions */
-typedef struct {
-  float   *dat, min[6], max[6];
-  integer *num;
-  int     size;
-  ivektor dim;
-  vektor  ll, ur;
-} dist_t;
-
 /* data structure for timers */
 typedef struct {
 #ifdef MPI                  /* with MPI_Wtime */

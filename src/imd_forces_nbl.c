@@ -42,7 +42,7 @@
 
 ******************************************************************************/
 
-int  *tl=NULL, *tb=NULL, *cl_off=NULL, *cl_num=NULL;
+int  *tl=NULL, *tb=NULL, *cl_off=NULL, *cl_num=NULL, nb_max=0;
 
 /******************************************************************************
 *
@@ -52,6 +52,11 @@ int  *tl=NULL, *tb=NULL, *cl_off=NULL, *cl_num=NULL;
 
 void deallocate_nblist(void)
 {
+#if defined(DEBUG) || defined(TIMING)
+  if (myid==0)
+    printf("Size of neighbor table: %d MB\n", 
+           nb_max * sizeof(int) / SQR(1024) );
+#endif
   if (tb) free(tb);
   tb = NULL;
   have_valid_nbl = 0;
@@ -124,7 +129,7 @@ int estimate_nblist_size(void)
 
 void make_nblist(void)
 {
-  static int at_max=0, nb_max=0, pa_max=0, ncell_max=0;
+  static int at_max=0, pa_max=0, ncell_max=0;
   int  c, i, k, n, tn, at, cc;
 
   /* update reference positions */
