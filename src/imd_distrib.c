@@ -426,8 +426,8 @@ void make_distrib_density(void)
 void write_distrib_density(int mode, int fzhlr)
 {
   FILE  *outfile;
-  char  fname[255], max=0.0, min=1e10;
-  float fac;
+  char  fname[255];
+  float fac, max=0.0, min=1e10;
   int   i, j, count, r, s, t;
 
   /* open distribution file, write header */
