@@ -215,7 +215,7 @@ typedef struct { real c11, c12, c13, c14, c15, c16, c22, c23, c24,
 #ifdef COVALENT
 /* Neighbor table for Tersoff potential */
 typedef struct {
-#ifndef RING
+#if !defined(RING) && !defined(CNA)
   real        *dist;
 #endif
   short       *typ;

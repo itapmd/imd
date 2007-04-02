@@ -351,7 +351,7 @@ void alloc_cell(cell *cl, int count)
 
      neigh->n     = 0;
      neigh->n_max = neigh_len;
-#ifndef RING
+#if !defined(RING) && !defined(CNA)
      neigh->dist  = (real *)  malloc( neigh_len * 3 * sizeof(real) );
 #endif
      neigh->typ   = (short *) malloc( neigh_len * sizeof(short) );
@@ -359,7 +359,7 @@ void alloc_cell(cell *cl, int count)
      neigh->num   = (int *)   malloc( neigh_len * sizeof(int) );
 
      if (
-#ifndef RING
+#if !defined(RING) && !defined(CNA)
        (neigh->dist==NULL) || 
 #endif
        (neigh->typ==NULL) || 

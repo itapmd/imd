@@ -24,7 +24,7 @@ int main( int argc, char **argv )
 
   /* write as ascii to stdout */
 
-  /* fist the header */
+  /* first the header */
   printf("#F A %d %d %d\n", fl.dim, fl.dim, fl.n);
   printf("#C");
   for (i=0; i<fl.n; i++) printf(" %s", fl.cont[i]);
