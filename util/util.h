@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -215,7 +215,7 @@ typedef struct { real c11, c12, c13, c14, c15, c16, c22, c23, c24,
 #ifdef COVALENT
 /* Neighbor table for Tersoff potential */
 typedef struct {
-#if !defined(RING) && !defined(CNA)
+#if !defined(RING) && !defined(CNA) && !defined(PS)
   real        *dist;
 #endif
   short       *typ;

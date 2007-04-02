@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -351,7 +351,7 @@ void alloc_cell(cell *cl, int count)
 
      neigh->n     = 0;
      neigh->n_max = neigh_len;
-#if !defined(RING) && !defined(CNA)
+#if !defined(RING) && !defined(CNA) &&!defined(PS)
      neigh->dist  = (real *)  malloc( neigh_len * 3 * sizeof(real) );
 #endif
      neigh->typ   = (short *) malloc( neigh_len * sizeof(short) );
@@ -359,16 +359,16 @@ void alloc_cell(cell *cl, int count)
      neigh->num   = (int *)   malloc( neigh_len * sizeof(int) );
 
      if (
-#if !defined(RING) && !defined(CNA)
+#if !defined(RING) && !defined(CNA) &&!defined(PS)
        (neigh->dist==NULL) || 
 #endif
-       (neigh->typ==NULL) || 
+       (neigh->typ ==NULL) || 
        (neigh->cl  ==NULL) || (neigh->num==NULL) )
        error("Cannot allocate memory for neighbor table");
    }
 #endif
 #ifdef RING
-  cl->perm_neightab_array = (neightab *) realloc( cl->perm_neightab_array, 
+   cl->perm_neightab_array = (neightab *) realloc( cl->perm_neightab_array, 
 					      count * sizeof(neightab));
    if (NULL == cl->perm_neightab_array) 
       error("Cannot allocate permanent neighbor tables");
@@ -383,8 +383,7 @@ void alloc_cell(cell *cl, int count)
      neigh->cl    = (void **) malloc( neigh_len * sizeof(cellptr) );
      neigh->num   = (int *)   malloc( neigh_len * sizeof(int) );
 
-     if ((neigh->typ==NULL) || (neigh->cl  ==NULL) || 
-	 (neigh->num==NULL) )
+     if ((neigh->typ==NULL) || (neigh->cl==NULL) || (neigh->num==NULL) )
        error("Cannot allocate memory for permanent neighbor table");
    }
 #endif
