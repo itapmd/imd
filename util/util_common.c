@@ -340,52 +340,73 @@ void alloc_cell(cell *cl, int count)
   cl->enc     = (real   *) realloc(cl->enc,     count * sizeof(real) ); 
 #endif
 #ifdef COVALENT
+  /* if cell shrinks, deallocate neighbor tables before shrinking the array */
+  if (count < cl->n_max) {
+    for (i = count; i < cl->n_max; ++i) {
+      neigh = cl->neightab_array + i;
+#if !defined(RING) && !defined(CNA) && !defined(PS)
+      free(neigh->dist);
+#endif
+      free(neigh->typ);
+      free(neigh->cl );
+      free(neigh->num);
+    }
+  }
   cl->neightab_array = (neightab *) realloc( cl->neightab_array, 
 					      count * sizeof(neightab));
-   if (NULL == cl->neightab_array) 
-      error("Cannot allocate neighbor tables");
+  if (NULL == cl->neightab_array)
+    error("Cannot allocate neighbor tables");
 
-   /* Allocate memory for neighbour tables */
-   for (i = cl->n_max; i < count; ++i) {
-     neigh = cl->neightab_array + i;
+  /* Allocate memory for neighbour tables */
+  for (i = cl->n_max; i < count; ++i) {
+    neigh = cl->neightab_array + i;
 
-     neigh->n     = 0;
-     neigh->n_max = neigh_len;
-#if !defined(RING) && !defined(CNA) &&!defined(PS)
-     neigh->dist  = (real *)  malloc( neigh_len * 3 * sizeof(real) );
+    neigh->n     = 0;
+    neigh->n_max = neigh_len;
+#if !defined(RING) && !defined(CNA) && !defined(PS)
+    neigh->dist  = (real *)  malloc( neigh_len * 3 * sizeof(real) );
 #endif
-     neigh->typ   = (short *) malloc( neigh_len * sizeof(short) );
-     neigh->cl    = (void **) malloc( neigh_len * sizeof(cellptr) );
-     neigh->num   = (int *)   malloc( neigh_len * sizeof(int) );
+    neigh->typ   = (short *) malloc( neigh_len * sizeof(short) );
+    neigh->cl    = (void **) malloc( neigh_len * sizeof(cellptr) );
+    neigh->num   = (int *)   malloc( neigh_len * sizeof(int) );
 
-     if (
-#if !defined(RING) && !defined(CNA) &&!defined(PS)
-       (neigh->dist==NULL) || 
+    if (
+#if !defined(RING) && !defined(CNA) && !defined(PS)
+      (neigh->dist==NULL) || 
 #endif
-       (neigh->typ ==NULL) || 
-       (neigh->cl  ==NULL) || (neigh->num==NULL) )
-       error("Cannot allocate memory for neighbor table");
-   }
+      (neigh->typ ==NULL) || 
+      (neigh->cl  ==NULL) || (neigh->num==NULL) )
+      error("Cannot allocate memory for neighbor table");
+  }
 #endif
 #ifdef RING
-   cl->perm_neightab_array = (neightab *) realloc( cl->perm_neightab_array, 
+  /* if cell shrinks, deallocate neighbor tables before shrinking the array */
+  if (count < cl->n_max) {
+    for (i = count; i < cl->n_max; ++i) {
+      neigh = cl->perm_neightab_array + i;
+      free(neigh->typ);
+      free(neigh->cl );
+      free(neigh->num);
+    }
+  }
+  cl->perm_neightab_array = (neightab *) realloc( cl->perm_neightab_array, 
 					      count * sizeof(neightab));
-   if (NULL == cl->perm_neightab_array) 
-      error("Cannot allocate permanent neighbor tables");
+  if (NULL == cl->perm_neightab_array) 
+    error("Cannot allocate permanent neighbor tables");
 
-   /* Allocate memory for permanent neighbour tables */
-   for (i = cl->n_max; i < count; ++i) {
-     neigh = cl->perm_neightab_array + i;
+  /* Allocate memory for permanent neighbour tables */
+  for (i = cl->n_max; i < count; ++i) {
+    neigh = cl->perm_neightab_array + i;
 
-     neigh->n     = 0;
-     neigh->n_max = neigh_len;
-     neigh->typ   = (short *) malloc( neigh_len * sizeof(short) );
-     neigh->cl    = (void **) malloc( neigh_len * sizeof(cellptr) );
-     neigh->num   = (int *)   malloc( neigh_len * sizeof(int) );
+    neigh->n     = 0;
+    neigh->n_max = neigh_len;
+    neigh->typ   = (short *) malloc( neigh_len * sizeof(short) );
+    neigh->cl    = (void **) malloc( neigh_len * sizeof(cellptr) );
+    neigh->num   = (int *)   malloc( neigh_len * sizeof(int) );
 
-     if ((neigh->typ==NULL) || (neigh->cl==NULL) || (neigh->num==NULL) )
-       error("Cannot allocate memory for permanent neighbor table");
-   }
+    if ((neigh->typ==NULL) || (neigh->cl==NULL) || (neigh->num==NULL) )
+      error("Cannot allocate memory for permanent neighbor table");
+  }
 #endif
 
   /* check if it worked */
