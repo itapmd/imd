@@ -137,7 +137,7 @@ void init_cubic(void)
   fprintf(outfile, "#C number type mass x y z\n");
   fprintf(outfile, "#X %f %f %f\n", box_x.x, box_x.y, box_x.z);
   fprintf(outfile, "#Y %f %f %f\n", box_y.x, box_y.y, box_y.z);
-  fprintf(outfile, "#Y %f %f %f\n", box_z.x, box_z.y, box_z.z);
+  fprintf(outfile, "#Z %f %f %f\n", box_z.x, box_z.y, box_z.z);
   fprintf(outfile, "#E\n");
 }
 
