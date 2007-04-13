@@ -195,8 +195,9 @@ printf( "Laser irradiates from direction (%d, %d)\n", laser_dir.x,
 #endif
 
 #ifdef STRESS_TENS
-    do_press_calc = (((eng_int  > 0) && (0 == steps % eng_int )) ||
-                     ((dist_int > 0) && (0 == steps % dist_int)) ||
+    do_press_calc = (((eng_int   > 0) && (0 == steps % eng_int  )) ||
+                     ((press_int > 0) && (0 == steps % press_int)) ||
+                     ((dist_int  > 0) && (0 == steps % dist_int )) ||
                      (relax_rate > 0.0) );
 #endif
 
@@ -608,6 +609,7 @@ do_laser_rescale();
 
 #ifdef STRESS_TENS
     if ((press_int > 0) && (0 == steps % press_int)) {
+      if (!do_press_calc) error("pressure tensor incomplete");
        write_config_select( steps/press_int, "press",
                             write_atoms_press, write_header_press);
     }
@@ -868,6 +870,7 @@ void calc_tot_presstens(void)
 
   real tmp_presstens1[6], tmp_presstens2[6];
 
+  if (!do_press_calc) error("pressure tensor incomplete");
   tot_presstens.xx = 0.0; 
   tot_presstens.yy = 0.0; 
   tot_presstens.xy = 0.0;
