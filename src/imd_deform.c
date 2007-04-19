@@ -288,18 +288,18 @@ void relax_pressure()
 #else  /* not STRESS_TENS */
 
   /* here, we support only relaxation to scalar pressure zero */
-  dx.x = pressure / bulk_module;
-  dy.y = pressure / bulk_module;
+  dx.x = pressure / bulk_module * relax_dirs.x;
+  dy.y = pressure / bulk_module * relax_dirs.y;
 #ifndef TWOD
-  dz.z = pressure / bulk_module;
+  dz.z = pressure / bulk_module * relax_dirs.z;
 #endif
 
 #endif /* not STRESS_TENS */
 
 #ifdef TWOD
-  lin_deform(dx * relax_dirs.x, dy * relax_dirs.y,     relax_rate);
+  lin_deform(dx , dy ,     relax_rate);
 #else
-  lin_deform(dx * relax_dirs.x, dy * relax_dirs.y, dz *relax_dirs.z, relax_rate);
+  lin_deform(dx , dy , dz , relax_rate);
 #endif
 }
 
