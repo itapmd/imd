@@ -1262,6 +1262,10 @@ void getparamfile(char *paramfname, int sim)
       else if (strcasecmp(tmpstr,"iso"  )==0) relax_mode = RELAX_ISO;
       else    error_str("Unknown relax_mode %s", tmpstr);
     }
+    else if (strcasecmp(token,"relax_dirs")==0) {
+      /* box lengths which should be relaxed */
+      getparam("relax_dirs",&relax_dirs,PARAM_INT,DIM,DIM);
+    }
 #endif
 #ifdef GLOK
     else if (strcasecmp(token,"glok_ekin_threshold")==0) {
@@ -3153,6 +3157,7 @@ void broadcast_params() {
   MPI_Bcast( &bulk_module,     1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &relax_rate,      1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &relax_mode,      1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &relax_dirs    , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef SHOCK

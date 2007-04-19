@@ -297,9 +297,9 @@ void relax_pressure()
 #endif /* not STRESS_TENS */
 
 #ifdef TWOD
-  lin_deform(dx, dy,     relax_rate);
+  lin_deform(dx * relax_dirs.x, dy * relax_dirs.y,     relax_rate);
 #else
-  lin_deform(dx, dy, dz, relax_rate);
+  lin_deform(dx * relax_dirs.x, dy * relax_dirs.y, dz *relax_dirs.z, relax_rate);
 #endif
 }
 
