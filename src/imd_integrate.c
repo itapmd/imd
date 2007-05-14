@@ -456,6 +456,163 @@ void move_atoms_nve(void)
 
 /*****************************************************************************
 *
+* Basic NVE Integrator with TTM (two temperature model), stripped of most other options
+*
+*****************************************************************************/
+
+#if defined(TTM)
+
+void move_atoms_ttm(void)
+{
+  int k;
+/*  static int count = 0;*/
+  real tmpvec1[8], tmpvec2[8];
+
+  tot_kin_energy = 0.0;
+#ifdef DEBUG
+  E_ph_auf_local = 0.0;
+#endif /*DEBUG*/
+  omega_E = 0.0;
+
+  /* loop over all cells */
+#ifdef _OPENMP
+#pragma omp parallel for reduction(+:tot_kin_energy,omega_E)
+#endif
+  for (k=0; k<NCELLS; ++k) { /* loop over all cells */
+
+    int  i,j, sort;
+    int fd_i, fd_j, fd_k;
+    double fd_xi;
+    cell *p;
+    real kin_energie_1, kin_energie_2, tmp;
+
+    p = CELLPTR(k);
+
+    
+    fd_i=p->fd_cell_idx.x;
+    fd_j=p->fd_cell_idx.y;
+    fd_k=p->fd_cell_idx.z;
+
+    /* get coupling constant, if fd cell is inactive, no coupling */
+    fd_xi=(l1[fd_i][fd_j][fd_k].natoms>=fd_min_atoms)?(l1[fd_i][fd_j][fd_k].xi):(0.0);
+    
+    for (i=0; i<p->n; ++i) { /* loop over all atoms in the cell */
+#ifdef DEBUG
+      double delta_E_atom;
+#endif
+
+      kin_energie_1 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+      sort = VSORTE(p,i);
+
+
+#if defined(FBC)    /* give virtual particles their extra force */
+      KRAFT(p,i,X) += (fbc_forces + sort)->x;
+      KRAFT(p,i,Y) += (fbc_forces + sort)->y;
+#ifndef TWOD
+      KRAFT(p,i,Z) += (fbc_forces + sort)->z;
+#endif
+#endif
+
+      /* and set their force (->momentum) in restricted directions to 0 */
+      KRAFT(p,i,X) *= (restrictions + sort)->x;
+      KRAFT(p,i,Y) *= (restrictions + sort)->y;
+#ifndef TWOD
+      KRAFT(p,i,Z) *= (restrictions + sort)->z;
+#endif
+
+#ifdef EINSTEIN
+      omega_E += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) ) / MASSE(p,i);
+#endif
+
+#ifdef DEBUG
+      /* dE = dt * v * F(el->ph)
+       * mit F(el->ph) = xi*m*v_therm
+       * ******************************* */
+      delta_E_atom = 1/MASSE(p,i) * timestep
+	             * (  IMPULS(p,i,X) * fd_xi * MASSE(p,i) * ( IMPULS(p,i,X)/MASSE(p,i) - l1[fd_i][fd_j][fd_k].v_com.x)
+			+ IMPULS(p,i,Y) * fd_xi * MASSE(p,i) * ( IMPULS(p,i,Y)/MASSE(p,i) - l1[fd_i][fd_j][fd_k].v_com.y)
+#ifndef TWOD
+			+ IMPULS(p,i,Z) * fd_xi * MASSE(p,i) * ( IMPULS(p,i,Z)/MASSE(p,i) - l1[fd_i][fd_j][fd_k].v_com.z)
+#endif /*TWOD*/
+		       );
+      E_ph_auf_local += delta_E_atom;
+#endif /*DEBUG*/
+
+
+      /* TTM: p += (F + xi*m*v_therm) * dt  
+       * ********************************** */
+      
+      IMPULS(p,i,X) += timestep * ( KRAFT(p,i,X) + fd_xi * MASSE(p,i) * ( IMPULS(p,i,X)/MASSE(p,i) - l1[fd_i][fd_j][fd_k].v_com.x) );
+      IMPULS(p,i,Y) += timestep * ( KRAFT(p,i,Y) + fd_xi * MASSE(p,i) * ( IMPULS(p,i,Y)/MASSE(p,i) - l1[fd_i][fd_j][fd_k].v_com.y) );
+#ifndef TWOD
+      IMPULS(p,i,Z) += timestep * ( KRAFT(p,i,Z) + fd_xi * MASSE(p,i) * ( IMPULS(p,i,Z)/MASSE(p,i) - l1[fd_i][fd_j][fd_k].v_com.z) );
+#endif
+
+
+      kin_energie_2 = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+
+      tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4 * MASSE(p,i));
+
+
+      /* new positions */
+      tmp = timestep / MASSE(p,i);
+      ORT(p,i,X) += tmp * IMPULS(p,i,X);
+      ORT(p,i,Y) += tmp * IMPULS(p,i,Y);
+#ifndef TWOD
+      ORT(p,i,Z) += tmp * IMPULS(p,i,Z);
+#endif
+
+#ifdef STRESS_TENS
+      if (do_press_calc) {
+        PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
+        PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
+#ifndef TWOD
+        PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
+#endif
+        PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
+      }
+#endif /* STRESS_TENS */
+    }
+  }
+
+#ifdef MPI
+  /* add up results from different CPUs */
+  tmpvec1[0] = tot_kin_energy;
+  tmpvec1[3] = omega_E;
+#ifdef DEBUG
+  tmpvec1[7] = E_ph_auf_local;
+#endif /*DEBUG*/
+
+  /*  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid); */
+  MPI_Allreduce( tmpvec1, tmpvec2, 8, REAL, MPI_SUM, cpugrid); 
+
+
+  tot_kin_energy = tmpvec2[0];
+  omega_E        = tmpvec2[3];
+#ifdef DEBUG
+  E_ph_auf      += tmpvec2[7];
+#endif /*DEBUG*/
+
+#endif /* MPI */
+
+
+}
+
+#else
+
+void move_atoms_ttm(void) 
+{
+  if (myid==0)
+  error("the chosen ensemble TTM is not supported by this binary");
+}
+
+#endif
+
+
+/*****************************************************************************
+*
 *  NVE Integrator with microconvergence relaxation
 *
 *****************************************************************************/

@@ -99,6 +99,7 @@ void maxwell(real temp)
 		 + laser_dir.z * ORT(p,i,Z)
 #endif
 	 ;
+	 depth -= laser_offset;
          if (depth < 0) depth=0; // we don't want to exceed laser_delta_temp
 	 
 	 TEMP =  laser_delta_temp * exp(-laser_mu * depth);

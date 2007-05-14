@@ -39,6 +39,8 @@ void flush_outbuf(FILE *out, int *len, int tag)
 #ifdef BGL
     MPI_Status status;
     int tmp=*len+1;
+
+    
     /* tell CPU 0 that we have something (and how much) */
     MPI_Send( &tmp, 1, MPI_INT, my_out_id, ANNOUNCE_TAG, cpugrid );
     /* wait until CPU 0 is ready */
@@ -1611,6 +1613,12 @@ void write_eng_file_header()
     fprintf(fl, "Press_yz Press_xz Press_xy");
 #endif    
 #endif
+#ifdef TTM
+    fprintf(fl, " E_el E_new");
+#ifdef DEBUG
+    fprintf(fl, " E_el_ab E_ph_auf");
+#endif /*DEBUG*/
+#endif /*TTM*/
     putc('\n',fl);
 
     fclose(fl);
@@ -1794,6 +1802,12 @@ void write_eng_file(int steps)
 	  (double) Press_yz, (double) Press_zx, (double) Press_xy);
 #endif    
 #endif
+#ifdef TTM
+  fprintf(eng_file, " %e %e", ttm_eng, E_new);
+#ifdef DEBUG
+  fprintf(eng_file, " %e %e", E_el_ab, E_ph_auf);
+#endif /*DEBUG*/
+#endif /*TTM*/
   putc('\n',eng_file);
   flush_count++;
 

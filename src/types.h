@@ -183,6 +183,9 @@ typedef struct {
 #ifdef VEC
   int         n_buf;
 #endif
+#ifdef TTM
+  ivektor fd_cell_idx;
+#endif
 } cell;
 
 typedef cell* cellptr;
@@ -257,6 +260,27 @@ typedef struct {
 
 /* String used for Filenames etc. */
 typedef char str255[255];
+
+#ifdef TTM
+
+#define FE_VACUUM 0
+#define FE_MATTER 1
+
+/* structure for FD lattice elements */
+typedef struct
+{
+  int natoms; /* number of atoms in encompassed MD cells */
+  cellptr * md_cellptrs; /* array of pointers to MD cells */
+  real temp; /* electron temperature */
+  real xi; /* damping parameter for coupling to MD system */
+  real md_temp; /* avg. temperature of the MD cells */
+  real source; /* thermal power to be coupled into electronic system;
+  source term for pdeq, needs to be updated every timestep if time-dependent
+  source is desired (for example, look at laser_rescale_ttm() in imd_laser.c) */
+  vektor3d v_com; /* velocity of the center of mass of MD cells */
+} ttm_Element;
+
+#endif /*TTM*/
 
 /* data structure to store a potential table or a function table */ 
 typedef struct {

@@ -41,6 +41,7 @@
 /* Machine specific headers */
 #ifdef MPI
 #include <mpi.h>
+#include <mpe.h>
 #endif
 #ifdef OMP
 #include <omp.h>

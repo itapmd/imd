@@ -34,7 +34,7 @@
 /******************************************************************************
 *
 *  compute box transformation matrix;
-*  initialize or revise the cell array if nessessary
+*  initialize or revise the cell array if necessary
 *
 ******************************************************************************/
 

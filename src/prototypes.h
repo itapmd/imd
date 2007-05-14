@@ -257,6 +257,7 @@ void move_atoms_msd(void);
 void move_atoms_stm(void);
 void move_atoms_ftg(void);
 void move_atoms_finnis(void);
+void move_atoms_ttm(void);
 #ifdef SHOCK
 void calc_pxavg(void);
 #endif
@@ -526,11 +527,30 @@ void write_dsf(void);
 
 /* Laser heating - file imd_laser.c */
 #ifdef LASER
+void init_laser(void);
 real laser_calc_depth(cell *, int);
 void laser_rescale_dummy(void);
 void laser_rescale_1(void);
 void laser_rescale_2(void);
 void laser_rescale_3(void);
+#ifdef TTM
+real ttm_calc_depth(int,int,int);
+void laser_rescale_ttm(void);
+#endif /*TTM*/
+#endif /*LASER*/
+
+#ifdef TTM
+/* Two temperature model TTM - file imd_ttm.c */
+void init_ttm(void);
+void ttm_create_mpi_datatypes(void);
+void ttm_fill_ghost_layers(void);
+void ttm_writeout(int);
+void calc_ttm(void);
+void update_fd(void);
+/* TODO allow variable K */
+void ttm_overwrite(void);
+
+
 #endif
 
 #ifdef BGL

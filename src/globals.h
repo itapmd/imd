@@ -92,6 +92,13 @@
 #define INIT(data)
 #endif
 
+#ifdef MPELOG
+/* For logging of MPI calls etc */
+EXTERN int mpe_calc1, mpe_calc2, mpe_forces1, mpe_forces2,
+       mpe_calc_ttm1, mpe_calc_ttm2, mpe_update_fd1, mpe_update_fd2,
+       mpe_ttm_fgl1, mpe_ttm_fgl2, mpe_init1, mpe_init2;
+#endif
+
 /* Where all the data lives */
 EXTERN minicell *cell_array INIT(NULL);  /* array of cells */
 #ifdef VEC
@@ -694,12 +701,64 @@ EXTERN int  tran_interval INIT(0);     /* Intervals of temperature recording.*/
 EXTERN int  tran_nlayers  INIT(0);     /* number of layers*/
 #endif
 
+#ifdef TTM /* two temperature model */
+  /* These will point to the calculation net in a nice 3D array fashion */
+EXTERN  ttm_Element *** l1, *** l2, *** l3;
+  /* These will be used to allocate and free the nets in bulk */
+EXTERN  ttm_Element * lattice1, * lattice2;
+EXTERN real fd_k INIT(1.0); /* electronic thermal conductivity */
+EXTERN real fd_c INIT(0.0); /* electronic thermal capacity */
+EXTERN real fd_gamma INIT(0.0); /* fd_c / T_e, proport. const. */
+EXTERN real fd_g INIT(1.0);        /* electron-phonon coupling constant */
+EXTERN int fd_n_timesteps INIT(1); /* how many FD steps to a MD timestep? */
+EXTERN int fd_update_steps INIT(1);/* how often are FD cells updated
+				      by averaging over atoms ? */
+EXTERN int fd_min_atoms INIT(1);   /* minimum number of atoms needed in a
+				      FD cell for it to be active */
+EXTERN int ttm_int INIT(0); /* How many steps before ttm writeouts? */
+EXTERN real ttm_eng INIT(0.0); /* Electronic heat energy per atom for .eng file*/
+EXTERN str255 fd_one_d_str INIT("\0"); /* string for param file input */
+EXTERN int fd_one_d	  INIT(0); /* FD lattice is one dimensional in direction 1,2,3 (x,y,z), else 3D */
+EXTERN ivektor fd_ext	  INIT(einsivektor); /* how many MD cells in x,y,z per FE cell
+                            (two of the values will be ignored if fd_one_d != 0)*/
+EXTERN int n_md_cells     INIT(1); /* number of MD cells in one FD cell */
+EXTERN int natoms_local INIT(0); /* number of atoms in this process */
+EXTERN real init_t_el INIT(0.0); /* temperature to initialize electron system
+				    to, for simple relaxation simulations.
+				    Use lattice temp if ==0 */
+EXTERN int fix_t_el INIT(0); /* fix electron temperature to init_t_el? */
+EXTERN vektor fd_h	  INIT(nullvektor); /* lattice constants in coordinate directions of FE part */
+EXTERN ivektor global_fd_dim INIT(nullivektor); /* global FD dimensions, w/o BC cells */
+EXTERN ivektor local_fd_dim INIT(nullivektor); /* local FD dimensions incl. 2 ghost layers in every direction */
+#ifdef MPI
+/* MPI Datatypes for parts of the 3d Array.
+ *  mpi_*_block are the ones to be used,
+ * the others are intermediate and used to build other types */
+EXTERN MPI_Datatype  mpi_element, mpi_element2,
+	             mpi_zrow, mpi_zrow_block,
+		     mpi_xplane, mpi_xplane_block,
+		     mpi_yplane, mpi_yplane_block,
+		     mpi_yrow, mpi_yrow_block,
+		     mpi_zplane, mpi_zplane_block;
+EXTERN MPI_Status stati[6]; 
+#endif /*MPI*/
+EXTERN double E_new INIT(0.0); /* Energy of newly created FD cells */
+EXTERN double E_new_local INIT(0.0);
+#ifdef DEBUG /* for debugging (duh) */
+EXTERN double E_el_ab INIT(0.0);  /* Energy taken from electrons */
+EXTERN double E_el_ab_local INIT(0.0);
+EXTERN double E_ph_auf INIT(0.0); /* Energy put into lattice */
+EXTERN double E_ph_auf_local INIT(0.0);
+#endif /*DEBUG*/
+#endif /*TTM*/
+
 #ifdef LASER /* Laser parameters */
 
 EXTERN real laser_delta_temp INIT(0.0);   /* maximum Temperature added
 				             (at surface of the sample)      */
 EXTERN real laser_mu	  INIT(0.0);   /* absorption coefficient             */
 EXTERN ivektor laser_dir  INIT(xivektor); /* direction of laser incidence    */
+EXTERN real laser_offset INIT(0.0);     /* how much "space" between 0 and the surface of sample */
 EXTERN real laser_sigma_e INIT(0.0);   /* area density of pulse energy (for rescaling method) */
 EXTERN real laser_sigma_t INIT(0.5);   /* half pulse duration (sigma of gaussian pulse) (rescaling) */
 EXTERN real laser_sigma_t_squared INIT(0.25); /* same, squared */

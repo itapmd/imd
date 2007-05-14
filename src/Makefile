@@ -125,8 +125,10 @@ MPI_FLAGS	+= -DMPI
 OMP_FLAGS	+= -DOMP
 OMPI_FLAGS	+= -DMPI -DOMP
 PACX_FLAGS	+= -DMPI -DPACX
-DEBUG_FLAGS	+= -DDEBUG
+DEBUG_FLAGS	+= -DDEBUG # -Wall # very noisy
 
+MPELOG_LIBS     = -lmpe -llmpe -L/user/chris/mpich2/lib
+MPELOG_FLAGS    = -DMPELOG -I/user/chris/mpich2/include
 
 ###########################################################################
 #
@@ -625,6 +627,12 @@ CFLAGS += ${PROF_FLAGS}
 LIBS   += ${PROF_LIBS}
 endif
 
+# mpe logging
+ifneq (,$(strip $(findstring mpelog,${MAKETARGET})))
+CFLAGS += ${MPELOG_FLAGS}
+LIBS += ${MPELOG_LIBS}
+endif
+
 
 ###########################################################################
 #
@@ -676,6 +684,8 @@ CORRSOURCES     = imd_correl.c
 TRANSSOURCES    = imd_transport.c
 
 LASERSOURCES	= imd_laser.c
+
+TTMSOURCES	= imd_ttm.c
 
 
 #########################################################
@@ -822,10 +832,16 @@ CFLAGS  += -DKEATING
 FORCESOURCES += ${COVALENTSOURCES}
 endif
 
-#LASER
+# LASER
 ifneq (,$(strip $(findstring laser,${MAKETARGET})))
 CFLAGS += -DLASER
 SOURCES += ${LASERSOURCES}
+endif
+
+# TWO TEMPERATURE MODEL TTM
+ifneq (,$(strip $(findstring ttm,${MAKETARGET})))
+CFLAGS += -DTTM
+SOURCES += ${TTMSOURCES}
 endif
 
 # UNIAX

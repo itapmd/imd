@@ -53,6 +53,12 @@ void init_mpi(int *argc_pointer, char **argv)
 void shutdown_mpi(void)
 {
   MPI_Barrier(MPI_COMM_WORLD);   /* Wait for all processes to arrive */
+#ifdef MPELOG
+  MPE_Log_sync_clocks();
+#ifdef NO_LLMPE
+  MPE_Finish_log( progname );
+#endif
+#endif
   MPI_Finalize();                /* Shutdown */
 }
 

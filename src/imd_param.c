@@ -415,7 +415,11 @@ void getparamfile(char *paramfname, int sim)
       else if (strcasecmp(tmpstr,"cg")==0) {
         ensemble = ENS_CG;
       }
-      else {
+      else if (strcasecmp(tmpstr,"ttm")==0) {
+        ensemble = ENS_TTM;
+	move_atoms = move_atoms_ttm;
+      }
+    else {
         error("unknown ensemble");
       }
     }
@@ -1612,6 +1616,52 @@ void getparamfile(char *paramfname, int sim)
       getparam("tran_interval", &tran_interval, PARAM_INT, 1,1);
     }
 #endif
+#ifdef TTM
+    else if (strcasecmp(token, "fd_g")==0){
+      /* electron phonon coupling constant  */
+      getparam("fd_g", &fd_g, PARAM_REAL, 1, 1);
+    }
+    else if (strcasecmp(token, "fd_update_steps")==0){
+      /* how many steps before averaging over atoms to update FD cells  */
+      getparam("fd_update_steps", &fd_update_steps, PARAM_INT, 1, 1);
+    }
+     else if (strcasecmp(token, "fd_ext")==0){
+      /* how many MD cells in x,y,z-direction to one FD cell  */
+      getparam("fd_ext", &fd_ext, PARAM_INT, DIM, DIM);
+    }
+    else if (strcasecmp(token, "fd_one_d")==0){
+      /* FD lattice one dimensional in x or y or z if this is given  */
+      getparam("fd_one_d", &fd_one_d_str, PARAM_STR, 1, 255);
+    }
+    else if (strcasecmp(token, "fd_k")==0){
+      /* FD electronic heat conductivity  */
+      getparam("fd_k", &fd_k, PARAM_REAL, 1, 1);
+    }
+    else if (strcasecmp(token, "fd_c")==0){
+      /* FD electronic heat capacity  */
+      getparam("fd_c", &fd_c, PARAM_REAL, 1, 1);
+    }  
+    else if (strcasecmp(token, "fd_gamma")==0){
+      /* FD electronic heat capacity / T_e (proport. const.) */
+      getparam("fd_gamma", &fd_gamma, PARAM_REAL, 1, 1);
+    }
+    else if (strcasecmp(token, "fd_n_timesteps")==0){
+      /* How many FD time steps to one MD time step?  */
+      getparam("fd_n_timesteps", &fd_n_timesteps, PARAM_INT, 1, 1);
+    }
+    else if (strcasecmp(token, "ttm_int")==0){
+      /* How many time steps between ttm writeouts?  */
+      getparam("ttm_int", &ttm_int, PARAM_INT, 1, 1);
+    }
+    else if (strcasecmp(token, "init_t_el")==0){
+      /* Initialize T_el to what temperature? */
+      getparam("init_t_el", &init_t_el, PARAM_REAL, 1, 1);
+    }
+    else if (strcasecmp(token, "fix_t_el")==0){
+      /* fix T_el to init_t_el? */
+      getparam("fix_t_el", &fix_t_el, PARAM_INT, 1, 1);
+    }
+#endif
 #ifdef LASER
 else if (strcasecmp(token, "laser_delta_temp")==0){
       /* maximum heat added by laser (at the surface) (in maxwell routine) */
@@ -1621,6 +1671,11 @@ else if (strcasecmp(token, "laser_mu")==0){
       /* absorption coefficient (always needed)*/
       getparam("laser_mu", &laser_mu, PARAM_REAL, 1,1);
     }
+else if (strcasecmp(token, "laser_offset")==0){
+      /* offset of sample from origin */
+      getparam("laser_offset", &laser_offset, PARAM_REAL, 1,1);
+    }
+
 else if (strcasecmp(token, "laser_dir")==0){
       /* direction of incidence of laser
        ( for now only along coordinate axes ) (always needed)*/
@@ -1658,12 +1713,21 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
         case 3 :
           do_laser_rescale = laser_rescale_3;
           break;
+        case 4 :
+#ifdef TTM
+          do_laser_rescale = laser_rescale_ttm; 
+	  /* change electron temperature source terms, not atom velocities */
+#else
+	  error("Please compile with TTM if you want to use this laser rescale mode.\n");
+#endif
+          break;
         default :
           error("Illegal value for parameter laser_rescale_mode.\n");
           break;
       } /* switch */      
     }
 #endif
+
 #ifdef STRESS_TENS
      else if (strcasecmp(token, "press_int")==0){
       /* number of steps between pressure writes  */
@@ -2486,10 +2550,42 @@ void check_parameters_complete()
         else{
           error("Please give the direction of laser incidence (option laser_dir in the parameter file).\n");
         }
-	if ( (laser_rescale_mode < 0) || (laser_rescale_mode > 3) ) {
-          error("Parameter laser_rescale_mode must be a positive integer <4!");
+	if ( (laser_rescale_mode < 0) || (laser_rescale_mode > 4) ) {
+          error("Parameter laser_rescale_mode must be a positive integer < 5 !");
 	}
-#endif //LASER
+#endif /*LASER*/
+#ifdef TTM
+	if (fd_update_steps <= 0)
+	{
+	  warning("Ignoring illegal value of fd_update_steps, using 1\n");
+	  fd_update_steps=1;
+	}
+	if (init_t_el<0)
+	{
+	  warning("Ignoring illegal value of init_t_el, using lattice temp\n");
+	  init_t_el=0.0;
+	}
+	if (fix_t_el!=0 && init_t_el==0.0)
+	  error("You need to specify init_t_el for enabled fix_t_el!\n");
+
+	if (strcasecmp(fd_one_d_str,"x")==0 || strcasecmp(fd_one_d_str,"1")==0)
+	{
+	  fd_one_d=1;
+	} else if (strcasecmp(fd_one_d_str,"y")==0 || strcasecmp(fd_one_d_str,"2")==0)
+	{
+	  fd_one_d=2;
+	} else if (strcasecmp(fd_one_d_str,"z")==0 || strcasecmp(fd_one_d_str,"3")==0)
+	{
+	  fd_one_d=3;
+	} else if (strcasecmp(fd_one_d_str,"")!=0)
+	{
+	  warning("Ignoring unknown value of fe_one_d\n");
+	}
+	if ((fd_gamma==0.0 && fd_c==0.0)||(fd_gamma!=0.0 && fd_c!=0.0))
+	{
+	  error ("You must specify either fd_gamma or fd_c for TTM simulations.\n");
+	}
+#endif /*TTM*/
 #ifdef MPI
         {
 #ifdef TWOD
@@ -2703,6 +2799,7 @@ void broadcast_params() {
   vektor nullv = {0,0,0};
 #endif
 
+  
   MPI_Bcast( &finished    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &ensemble    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &simulation  , 1, MPI_INT,  0, MPI_COMM_WORLD); 
@@ -3018,6 +3115,7 @@ void broadcast_params() {
   MPI_Bcast( &tran_interval, 1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 #ifdef LASER
+  MPI_Bcast( &laser_offset,     1, REAL,  0, MPI_COMM_WORLD);
   MPI_Bcast( &laser_rescale_mode,1,MPI_INT,0,MPI_COMM_WORLD);
   MPI_Bcast( &laser_dir,  DIM , MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &laser_mu,         1, REAL,  0, MPI_COMM_WORLD);
@@ -3027,6 +3125,19 @@ void broadcast_params() {
   MPI_Bcast( &laser_t_0,        1, REAL,  0, MPI_COMM_WORLD);
   MPI_Bcast( &laser_atom_vol,   1, REAL,  0, MPI_COMM_WORLD);
 #endif
+#ifdef TTM
+  MPI_Bcast( &fd_g,     1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fd_update_steps,1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &fd_ext,       DIM, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &fd_one_d,       1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &fd_c,           1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fd_gamma,	      1, REAL,	  0, MPI_COMM_WORLD);
+  MPI_Bcast( &fd_k,           1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fd_n_timesteps, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &ttm_int,        1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &init_t_el,      1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fix_t_el,	      1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif /* TTM */
 #ifdef STRESS_TENS
   MPI_Bcast( &press_int    , 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &presstens_ext, DIM*(DIM+1)/2, REAL, 0, MPI_COMM_WORLD);  
@@ -3343,8 +3454,11 @@ void broadcast_params() {
 
   /* broadcast integrator to other CPUs */
 
+
+  
   switch (ensemble) {
     case ENS_NVE:       move_atoms = move_atoms_nve;       break;
+    case ENS_TTM:       move_atoms = move_atoms_ttm;       break;
     case ENS_MIK:       move_atoms = move_atoms_mik;       break;
     case ENS_NVT:       move_atoms = move_atoms_nvt;       break;
     case ENS_NPT_ISO:   move_atoms = move_atoms_npt_iso;   break;
@@ -3368,6 +3482,9 @@ void broadcast_params() {
     case 1:       do_laser_rescale = laser_rescale_1;   break;
     case 2:       do_laser_rescale = laser_rescale_2;   break;
     case 3:       do_laser_rescale = laser_rescale_3;   break;
+#ifdef TTM
+    case 4:       do_laser_rescale = laser_rescale_ttm; break;
+#endif
     default: if (0==myid) error("unknown laser rescaling mode in broadcast"); break;
   }
 #endif /* LASER */

@@ -316,27 +316,27 @@ inline static real SQR(real x)
 #define SPRODX(a,b)        SPRODX3D(a,b)
 #endif
 
-/* Dynamically allocated 3D arrray -- sort of */
+/* Dynamically allocated 3D array -- sort of */
 #define PTR_3D(var,i,j,k,dim_i,dim_j,dim_k) \
   (((var) + ((i)*(dim_j)*(dim_k)) + ((j)*(dim_k)) + (k)))
 
-/* Dynamically allocated 3D arrray -- half vector version */
+/* Dynamically allocated 3D array -- half vector version */
 #define PTR_3D_V(var,i,j,k,dim) \
   (((var) + ((i)*(dim.y)*(dim.z)) + ((j)*(dim.z)) + (k)))
 
-/* Dynamically allocated 3D arrray -- full vector version */
+/* Dynamically allocated 3D array -- full vector version */
 #define PTR_3D_VV(var,coord,dim) \
   (((var) + ((coord.x)*(dim.y)*(dim.z)) + ((coord.y)*(dim.z)) + (coord.z)))
 
-/* Dynamically allocated 2D arrray -- sort of */
+/* Dynamically allocated 2D array -- sort of */
 #define PTR_2D(var,i,j,dim_i,dim_j) \
   (((var) + ((i)*(dim_j)) + (j)))
 
-/* Dynamically allocated 2D arrray -- half vector version */
+/* Dynamically allocated 2D array -- half vector version */
 #define PTR_2D_V(var,i,j,dim) \
   (((var) + ((i)*(dim.y)) + (j)))
 
-/* Dynamically allocated 2D arrray -- full vector version */
+/* Dynamically allocated 2D array -- full vector version */
 #define PTR_2D_VV(var,coord,dim) \
   (((var) + ((coord.x)*(dim.y)) + (coord.y)))
 
@@ -365,6 +365,7 @@ inline static real SQR(real x)
 #define ENS_FTG      14
 #define ENS_CG       15
 #define ENS_FINNIS   16
+#define ENS_TTM	     17
 
 /* output formats for distributions */
 #define DIST_FORMAT_BINARY       1
@@ -376,6 +377,7 @@ inline static real SQR(real x)
 #define FALSE        0
 
 /* Some constants for Message passing, should all have unique values */
+/* Note: Numbers starting with 7 may be used by TTM deq solver */
 #define CELL_TAG   100
 #define BUFFER_TAG 200
 #define OUTBUF_TAG 300

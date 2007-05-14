@@ -73,6 +73,13 @@ void main_loop(void)
     /* initialize temperature, if necessary */
     if (do_maxwell) maxwell(temperature);
     do_maxwell=0;
+#ifdef TTM
+   /* let the electron system know about the new temperatures */
+   update_fd();
+   ttm_overwrite();
+   ttm_fill_ghost_layers();
+#endif
+
   }
 #ifdef LASER
 if (0==myid) {
@@ -94,9 +101,13 @@ printf( "Laser irradiates from direction (%d, %d)\n", laser_dir.x,
       printf( "Laser energy density is %1.10f\n", laser_sigma_e);
       printf( "Laser pulse duration (sigma) is %1.10f\n", laser_sigma_t);
       printf( "Time t_0 of laser pulse is %1.10f (%1.10f time steps after start of simulation)\n\n", laser_t_0, laser_t_0/timestep);
+#ifdef TTM
+      printf( "Using Two Temperature Model TTM\n");
+#endif /*TTM*/
   }
 #endif /*LASER*/
 
+      
 #if defined(FRAC) || defined(FTG) 
   if (0==myid) {
       printf( "Strain rate is  %1.10f\n", dotepsilon0 );
@@ -104,7 +115,7 @@ printf( "Laser irradiates from direction (%d, %d)\n", laser_dir.x,
       printf( "Damping prefactor is %1.10f\n\n", gamma_bar );
   }
 #endif
-
+  
   if (0==myid) printf( "Starting simulation %d\n", simulation );
 
 #if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
@@ -306,9 +317,7 @@ printf( "Laser irradiates from direction (%d, %d)\n", laser_dir.x,
       if (ensemble == ENS_CG) acg_step(steps);
       else
 #endif
-
-    calc_forces(steps);
-
+	calc_forces(steps);
 #ifdef RIGID
     /* total force on superparticles (for each cpu) */
     for(k=0; k<ncells; k++) {
@@ -481,11 +490,16 @@ printf( "Laser irradiates from direction (%d, %d)\n", laser_dir.x,
 
 #ifdef LASER
 
-/* do rescaling of atom velocities to simulate absorption of laser pulse*/
-do_laser_rescale();
-
+/* do rescaling of atom velocities/electron temperature source terms
+ *  to simulate absorption of laser pulse */
+    do_laser_rescale();
+    
 #endif /* LASER */
-
+    
+#ifdef TTM
+    calc_ttm();
+#endif /*TTM*/
+			
     if (ensemble != ENS_CG) move_atoms(); /* here PxF is recalculated */
 
 #ifdef EPITAX
@@ -563,6 +577,9 @@ do_laser_rescale();
     if ((dist_int > 0) && (0 == steps % dist_int)) write_distrib(steps);
     if ((pic_int  > 0) && (0 == steps % pic_int )) write_pictures(steps);
 
+#ifdef TTM
+    if ((ttm_int > 0) && (0 == steps % ttm_int)) ttm_writeout(steps/ttm_int);
+#endif
 #ifdef EFILTER  /* just print atoms if in an energy-window */ 
     if ((ef_checkpt_int > 0) && (0 == steps % ef_checkpt_int)) 
        write_config_select( steps/ef_checkpt_int, "ef",

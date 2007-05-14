@@ -197,6 +197,14 @@ void init_cells( void )
     printf("Global cell array dimensions: %d %d %d\n",
       global_cell_dim.x,global_cell_dim.y,global_cell_dim.z);
 
+#ifdef TTM
+  /* set distances of FD lattice points in x,y,z-direction */
+  /*      (fd_ext.?) * (MD cell size in ? direction) */
+  fd_h.x = fd_ext.x * box_x.x * cell_scale.x;
+  fd_h.y = fd_ext.y * box_y.y * cell_scale.y;
+  fd_h.z = fd_ext.z * box_z.z * cell_scale.z;
+#endif
+  
   /* keep a copy of cell_dim, so that we can redistribute the atoms */
   cell_dim_old = cell_dim;
 

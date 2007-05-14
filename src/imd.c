@@ -32,12 +32,45 @@ int main(int argc, char **argv)
   float rtime, ptime, mflops;
   long_long flpins;
 #endif
-  
+
 #ifdef MPI
+  
   init_mpi(&argc,argv);
 #ifdef MPI2
   if (myid==0) printf("Using MPI2\n");
 #endif
+  
+#ifdef MPELOG 
+  MPI_Pcontrol( 0 );
+
+  /* MPE_Init_log() & MPE_Finish_log() are NOT needed when
+     liblmpe.a is linked with this program.  In that case,
+     MPI_Init() would have called MPE_Init_log() already.  */
+#if defined ( NO_LLMPE )    
+  MPE_Init_log();
+#endif
+MPE_Log_get_state_eventIDs( &mpe_calc1, &mpe_calc2 );
+MPE_Log_get_state_eventIDs( &mpe_forces1, &mpe_forces2 );
+MPE_Log_get_state_eventIDs( &mpe_calc_ttm1, &mpe_calc_ttm2 );
+MPE_Log_get_state_eventIDs( &mpe_update_fd1, &mpe_update_fd2 );
+MPE_Log_get_state_eventIDs( &mpe_ttm_fgl1, &mpe_ttm_fgl2 );
+MPE_Log_get_state_eventIDs( &mpe_init1, &mpe_init2 );
+
+if (myid==0)
+    {
+      MPE_Describe_state(mpe_calc1, mpe_calc2,"Calculate", "gray");
+      MPE_Describe_state(mpe_forces1, mpe_forces2,"Forces", "red");
+      MPE_Describe_state(mpe_calc_ttm1, mpe_calc_ttm2,"Calc TTM", "orange");
+      MPE_Describe_state(mpe_update_fd1,mpe_update_fd2,"Update FD","blue");
+      MPE_Describe_state(mpe_ttm_fgl1, mpe_ttm_fgl2,"Fill GhostL", "green");
+      MPE_Describe_state(mpe_init1, mpe_init2, "Init", "yellow");
+    }
+    MPI_Barrier ( MPI_COMM_WORLD );
+    MPI_Pcontrol( 1 );
+    
+    MPE_Log_event( mpe_init1, 0, NULL);
+#endif
+
 #endif
 
   is_big_endian = endian();
@@ -173,6 +206,10 @@ int main(int argc, char **argv)
   /* write .eng file header */
   if ((imdrestart==0) && (eng_int>0)) write_eng_file_header();
 
+#ifdef TTM
+  init_ttm();
+#endif
+
   imd_stop_timer(&time_setup);
   imd_start_timer(&time_main);
 #ifdef PAPI
@@ -188,18 +225,18 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef LASER
-  //init_laser(); /*maybe later*/
-
-  // peak power density (at surface and t_0)
-  laser_p_peak=laser_mu*laser_sigma_e/laser_sigma_t/sqrt(M_PI);
-
-  laser_sigma_t_squared=laser_sigma_t*laser_sigma_t;
-
+    init_laser(); 
 #endif
-
+#ifdef MPELOG
+  MPE_Log_event( mpe_init2, 0, NULL);
+  MPE_Log_event( mpe_calc1, 0, NULL);
+#endif
   /* first phase of the simulation */
   if (steps_min <= steps_max) main_loop();
-
+#ifdef MPELOG
+  MPE_Log_event( mpe_calc2, 0, NULL);
+  MPE_Log_event( mpe_init1, 0, NULL);
+#endif
   /* execute further phases of the simulation */
   while (finished==0) {
     int tmp;
@@ -215,6 +252,10 @@ int main(int argc, char **argv)
     broadcast_params();
 #endif
 
+#ifdef TTM
+      init_ttm();
+#endif
+
 #ifdef KEATING
     init_keating();
 #endif
@@ -225,9 +266,18 @@ int main(int argc, char **argv)
     init_tersoff();
 #endif
 
+#ifdef MPELOG
+    MPE_Log_event( mpe_init2,0, NULL);
+#endif
     if (steps_min <= steps_max) {
+#ifdef MPELOG
+      MPE_Log_event( mpe_calc1,0,NULL);
+#endif
       make_box();  /* make sure the box size is still ok */
       main_loop();
+#ifdef MPELOG
+      MPE_Log_event( mpe_calc2,0, NULL);
+#endif
     }
   }
 
@@ -236,7 +286,6 @@ int main(int argc, char **argv)
 #ifdef PAPI
   PAPI_flops(&rtime,&ptime,&flpins,&mflops);
 #endif
-
   /* write execution time summary */
   if (0 == myid) {
     if (NULL!= eng_file) fclose( eng_file);
@@ -298,7 +347,7 @@ int main(int argc, char **argv)
     printf("Input  time:   %e seconds or %.1f %% of main loop\n",
            time_inp.total,100*time_inp.total/time_main.total);
 #endif
-  
+
      fflush(stdout);
      fflush(stderr);
   }
