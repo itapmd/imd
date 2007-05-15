@@ -164,8 +164,6 @@ vektor back_into_box(vektor pos)
     pos.y  -= i *  box_z.y;
     pos.z  -= i *  box_z.z;
   }
-#else
-  pos.z = 0.0;
 #endif
   return pos;
 
@@ -245,21 +243,25 @@ int read_atom(header_info_t *info, FILE *infile, atom_t *atom)
     pos.y = d[k++];
     atom->pos = back_into_box(pos);
   }
+#ifndef TWOD
   else if (info->n_pos == 3) {
     pos.x = d[k++];
     pos.y = d[k++];
     pos.z = d[k++];
     atom->pos = back_into_box(pos);
   }
+#endif
   if (info->n_vel == 2) {
     atom->vel.x = d[k++];
     atom->vel.y = d[k++];
   }
+#ifndef TWOD
   else if (info->n_vel == 3) {
     atom->vel.x = d[k++];
     atom->vel.y = d[k++];
     atom->vel.z = d[k++];
   }
+#endif
   for (i=0; i<info->n_data; i++)
     atom->data[i] = d[k++];
 

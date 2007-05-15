@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -25,15 +25,19 @@
 
 #ifndef UTIL_H
 
+/* if util.h is not read, do some of the declarations here */
+
 #ifdef TWOD
 #define DIM 2
+typedef struct {
+  double x, y;
+} vektor;
 #else
 #define DIM 3
-#endif
-
 typedef struct {
   double x, y, z;
 } vektor;
+#endif
 
 typedef char str255[255];
 
