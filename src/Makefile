@@ -571,6 +571,17 @@ ifeq (bgl-cc,${IMDSYS})
   LFLAGS        += -O4
 endif
 
+# Cell Broad Band Engine
+ifeq (cbe-gcc,${IMDSYS})
+  CC_SERIAL	= gcc
+  CC_MPI	= mpicc
+  BIN_DIR	= ${HOME}/bin/cbe
+  OPT_FLAGS	+= -O 
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -g3 -pg
+  LFLAGS        += 
+endif
+
 ###########################################################################
 #
 #  Parallelization method
@@ -752,7 +763,12 @@ ifneq (,$(strip $(findstring vec,${MAKETARGET})))
   FORCESOURCES = imd_main_vec_3d.c
 else
   ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
-    FORCESOURCES = imd_forces_nbl.c
+    ifneq (,$(strip $(findstring cbe,${MAKETARGET})))
+      FORCESOURCES = imd_forces_cbe.c # imd_forces_spu.c
+      CFLAGS += -DCBE
+    else
+      FORCESOURCES = imd_forces_nbl.c
+    endif
   else
     FORCESOURCES = ${PAIRSOURCES}
   endif
@@ -1168,8 +1184,8 @@ imd_forces.o: imd_forces.c
 imd_forces_nbl.o: imd_forces_nbl.c
 	${CC} ${CFLAGS} ${RCD_FLAGS} ${NOALIAS} -c imd_forces_nbl.c
 
-imd_main_nbl_3d.o: imd_main_nbl_3d.c
-	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_main_nbl_3d.c
+# imd_forces_cbe.o: imd_forces_cbe.c
+# rule to make imd_forces_cbe.o
 
 imd_forces_eam2.o: imd_forces_eam2.c
 	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_forces_eam2.c

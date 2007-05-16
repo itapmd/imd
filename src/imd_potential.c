@@ -691,6 +691,10 @@ void init_pre_pot(void) {
     }
 #endif
 
+#ifdef CBE
+  mk_pt();
+#endif
+
 }
 
 #endif

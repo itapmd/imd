@@ -557,3 +557,6 @@ void ttm_overwrite(void);
 int get_free_mem(void);
 #endif
 
+#ifdef CBE
+void mk_pt(void);
+#endif
