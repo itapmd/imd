@@ -61,12 +61,12 @@ void mk_pt(void)
     for (j=0; j<ntypes; j++) {
       col = i*ntypes + j;
       for (k=0; k<4; k++) { /* make vectors: 4 copies of each value */
-        pt.r2cut  [4*col+k] = (flt) SQR(r_cut_lin   [col]);
-        pt.lj_sig [4*col+k] = (flt) SQR(lj_sigma_lin[col]);
-        pt.lj_eps [4*col+k] = (flt) lj_epsilon_lin  [col] ;
+        pt.r2cut  [4*col+k] = (flt) r2_cut      [i][j];
+        pt.lj_sig [4*col+k] = (flt) SQR(lj_sigma[i][j]);
+        pt.lj_eps [4*col+k] = (flt) lj_epsilon  [i][j] ;
         r2 = pt.lj_sig[4*col+k] / pt.r2cut[4*col+k];
         r6 = r2 * r2 * r2;
-        pt.lj_shift[4*col+k] = -pt.lj_eps[4*col+k] * r6 * (r6 - 2.0);
+        pt.lj_shift[4*col+k] = pt.lj_eps[4*col+k] * r6 * (r6 - 2.0);
       }
     }
 }
@@ -384,7 +384,7 @@ void calc_wp(wp_t *wp, int *is_short)
           tmp2 = pt.lj_sig[4*col] / r2;
           tmp6 = tmp2 * tmp2 * tmp2;
           pot  = pt.lj_eps[4*col] * tmp6 * (tmp6 - 2.0) - pt.lj_shift[4*col];
-          grad = - 12.0 * pt.lj_eps[col] * tmp6 * (tmp6 - 1.0) / r2;
+          grad = - 12.0 * pt.lj_eps[4*col] * tmp6 * (tmp6 - 1.0) / r2;
 
           //PAIR_INT(pot, grad, pair_pot, col, inc, r2, *is_short)
 
