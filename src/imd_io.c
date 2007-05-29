@@ -1545,7 +1545,7 @@ void write_eng_file_header()
 #ifndef ACG
     fprintf(fl, "timestep ");
 #else
- fprintf(fl, "alpha ");
+    fprintf(fl, "alpha ");
 #endif
 #else
     fprintf(fl, "# time ");

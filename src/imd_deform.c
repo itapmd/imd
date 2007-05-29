@@ -296,18 +296,17 @@ void relax_pressure()
 
 #endif /* not STRESS_TENS */
 
-if (relax_mode == RELAX_AXIAL)
- {
-   dx.x *= relax_dirs.x;
-   dy.y *= relax_dirs.y;
+  if (relax_mode == RELAX_AXIAL) {
+    dx.x *= relax_dirs.x;
+    dy.y *= relax_dirs.y;
 #ifndef TWOD
-   dz.z *= relax_dirs.z;
+    dz.z *= relax_dirs.z;
 #endif
- }
+  }
 #ifdef TWOD
-  lin_deform(dx , dy ,     relax_rate);
+  lin_deform(dx, dy,     relax_rate);
 #else
-  lin_deform(dx , dy , dz , relax_rate);
+  lin_deform(dx, dy, dz, relax_rate);
 #endif
 }
 
