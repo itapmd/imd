@@ -127,9 +127,6 @@ OMPI_FLAGS	+= -DMPI -DOMP
 PACX_FLAGS	+= -DMPI -DPACX
 DEBUG_FLAGS	+= -DDEBUG # -Wall # very noisy
 
-MPELOG_LIBS     = -lmpe -llmpe -L/user/chris/mpich2/lib
-MPELOG_FLAGS    = -DMPELOG -I/user/chris/mpich2/include
-
 ###########################################################################
 #
 #  flags for IA32-Linux
@@ -638,12 +635,17 @@ CFLAGS += ${PROF_FLAGS}
 LIBS   += ${PROF_LIBS}
 endif
 
-# mpe logging
-ifneq (,$(strip $(findstring mpelog,${MAKETARGET})))
-CFLAGS += ${MPELOG_FLAGS}
-LIBS += ${MPELOG_LIBS}
+# MPE logging
+ifneq (,$(findstring mpel,${MAKETARGET}))
+CFLAGS   += -DMPE
+MPI_LIBS += -llmpe -lmpe
 endif
 
+# MPE tracing
+ifneq (,$(findstring mpet,${MAKETARGET}))
+CFLAGS   += -DMPE
+MPI_LIBS += -ltmpe -lmpe
+endif
 
 ###########################################################################
 #

@@ -2,7 +2,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -23,7 +23,6 @@
 #include <assert.h>
 #endif
 
-#ifdef TTM
 #ifdef BUFCELLS
 #define NBUFFC 2
 #else
@@ -41,9 +40,6 @@ void update_fd()
 {
   int i,j,k;
 
-#ifdef MPELOG
-  MPE_Log_event( mpe_update_fd1,0,NULL );
-#endif
   natoms_local=0;
   for (i=1; i<local_fd_dim.x-1; ++i)
   { 
@@ -141,7 +137,8 @@ void update_fd()
 #ifdef DEBUG
 	  warning("New FD cell activated\n");
 #endif
-	  /*Freshly activated cell. Gets avg. electron energy of active neighbor cells, the created energy is added to E_new_local*/
+	  /* Freshly activated cell. Gets avg. electron energy of active 
+             neighbor cells, the created energy is added to E_new_local */
 	  int n_neighbors=0;
 	  double E_el_neighbors=0.0;
 	  /* 6 indices: -x,x,-y,y,-z,z */
@@ -226,9 +223,6 @@ void update_fd()
 
   E_new_local=0.0;
 
-#ifdef MPELOG
-  MPE_Log_event( mpe_update_fd2,0,NULL );
-#endif
 }
 
 
@@ -444,9 +438,6 @@ void calc_ttm()
   int xmin, xmax, /* these are neighboring indices           */
       ymin, ymax, /* (to account for bc & deactivated cells) */
       zmin, zmax;
-#ifdef MPELOG
-  MPE_Log_event( mpe_calc_ttm1,0,NULL );
-#endif
 
   if(fix_t_el==0) /* T_el is not fixed, otherwise no big calculations needed */
   {
@@ -622,9 +613,6 @@ void calc_ttm()
       }
     }
   }
-#ifdef MPELOG
-  MPE_Log_event( mpe_calc_ttm2, 0, NULL);
-#endif
 }
 
 
@@ -985,10 +973,6 @@ void ttm_fill_ghost_layers(void)
    * *************/
   int i,j,k;
 
-#ifdef MPELOG
-  MPE_Log_event( mpe_ttm_fgl1, 0, NULL );
-#endif
-
   /* x direction */
   if(pbc_dirs.x==1 || (my_coord.x != 0 && my_coord.x != cpu_dim.x-1) )
   {
@@ -1175,12 +1159,10 @@ void ttm_fill_ghost_layers(void)
 	}
       } else { error("This should be logically impossible.\n");}
 
-#ifdef MPELOG
-    MPE_Log_event( mpe_ttm_fgl2, 0, NULL );
-#endif
-
 }
+
 #else
+
 /* Serial version */
 void ttm_fill_ghost_layers(void)
 {
@@ -1242,6 +1224,4 @@ void ttm_fill_ghost_layers(void)
 
 }
 #endif /*MPI*/
-
-#endif /* TTM */
 

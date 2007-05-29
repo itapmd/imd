@@ -92,6 +92,7 @@ void error_str_str(char *msg, char *str1, char *str2);
 void warning(char *);
 void warning_str(char *, char *);
 void warning_str_str(char *, char *, char *);
+void imd_init_timer(imd_timer *timer, int flag, char *desc, char *color);
 void imd_start_timer(imd_timer *timer);
 void imd_stop_timer(imd_timer *timer);
 void maxwell(real TEMP);

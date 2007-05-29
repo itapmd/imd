@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -34,44 +34,20 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef MPI
-  
   init_mpi(&argc,argv);
 #ifdef MPI2
   if (myid==0) printf("Using MPI2\n");
 #endif
-  
-#ifdef MPELOG 
-  MPI_Pcontrol( 0 );
-
-  /* MPE_Init_log() & MPE_Finish_log() are NOT needed when
-     liblmpe.a is linked with this program.  In that case,
-     MPI_Init() would have called MPE_Init_log() already.  */
-#if defined ( NO_LLMPE )    
-  MPE_Init_log();
-#endif
-MPE_Log_get_state_eventIDs( &mpe_calc1, &mpe_calc2 );
-MPE_Log_get_state_eventIDs( &mpe_forces1, &mpe_forces2 );
-MPE_Log_get_state_eventIDs( &mpe_calc_ttm1, &mpe_calc_ttm2 );
-MPE_Log_get_state_eventIDs( &mpe_update_fd1, &mpe_update_fd2 );
-MPE_Log_get_state_eventIDs( &mpe_ttm_fgl1, &mpe_ttm_fgl2 );
-MPE_Log_get_state_eventIDs( &mpe_init1, &mpe_init2 );
-
-if (myid==0)
-    {
-      MPE_Describe_state(mpe_calc1, mpe_calc2,"Calculate", "gray");
-      MPE_Describe_state(mpe_forces1, mpe_forces2,"Forces", "red");
-      MPE_Describe_state(mpe_calc_ttm1, mpe_calc_ttm2,"Calc TTM", "orange");
-      MPE_Describe_state(mpe_update_fd1,mpe_update_fd2,"Update FD","blue");
-      MPE_Describe_state(mpe_ttm_fgl1, mpe_ttm_fgl2,"Fill GhostL", "green");
-      MPE_Describe_state(mpe_init1, mpe_init2, "Init", "yellow");
-    }
-    MPI_Barrier ( MPI_COMM_WORLD );
-    MPI_Pcontrol( 1 );
-    
-    MPE_Log_event( mpe_init1, 0, NULL);
 #endif
 
-#endif
+  /* initialize timers */
+  imd_init_timer( &time_total,      0, NULL,        NULL    );
+  imd_init_timer( &time_setup,      1, "setup",     "white" );
+  imd_init_timer( &time_main,       0, NULL,        NULL    );
+  imd_init_timer( &time_output,     1, "output",    "cyan"  );
+  imd_init_timer( &time_input,      1, "input",     "orange");
+  imd_init_timer( &time_integrate,  1, "integrate", "green" );
+  imd_init_timer( &time_forces,     1, "forces",    "yellow");
 
   is_big_endian = endian();
   read_command_line(argc,argv);
@@ -81,12 +57,6 @@ if (myid==0)
 
   time(&tstart);
 
-  /* reset timers */
-  time_total.total = 0.0;
-  time_setup.total = 0.0;
-  time_main.total  = 0.0;
-  time_io.total    = 0.0;
-  time_inp.total   = 0.0;
 
   /* start some timers (after starting MPI!) */
   imd_start_timer(&time_total);
@@ -161,7 +131,7 @@ if (myid==0)
 #endif
 
 #ifdef TIMING
-  imd_start_timer(&time_inp);
+  imd_start_timer(&time_input);
 #endif
   /* filenames starting with _ denote internal 
      generation of the intitial configuration */
@@ -181,7 +151,7 @@ if (myid==0)
   }
   if (0 == myid) printf("Done reading atoms.\n");
 #ifdef TIMING
-  imd_stop_timer(&time_inp);
+  imd_stop_timer(&time_input);
 #endif
 
 #ifdef EPITAX
@@ -206,10 +176,6 @@ if (myid==0)
   /* write .eng file header */
   if ((imdrestart==0) && (eng_int>0)) write_eng_file_header();
 
-#ifdef TTM
-  init_ttm();
-#endif
-
   imd_stop_timer(&time_setup);
   imd_start_timer(&time_main);
 #ifdef PAPI
@@ -225,18 +191,15 @@ if (myid==0)
 #endif
 
 #ifdef LASER
-    init_laser(); 
+  init_laser(); 
 #endif
-#ifdef MPELOG
-  MPE_Log_event( mpe_init2, 0, NULL);
-  MPE_Log_event( mpe_calc1, 0, NULL);
+
+#ifdef TTM
+  init_ttm();
 #endif
+
   /* first phase of the simulation */
   if (steps_min <= steps_max) main_loop();
-#ifdef MPELOG
-  MPE_Log_event( mpe_calc2, 0, NULL);
-  MPE_Log_event( mpe_init1, 0, NULL);
-#endif
   /* execute further phases of the simulation */
   while (finished==0) {
     int tmp;
@@ -252,8 +215,12 @@ if (myid==0)
     broadcast_params();
 #endif
 
+#ifdef LASER
+  init_laser(); 
+#endif
+
 #ifdef TTM
-      init_ttm();
+    init_ttm();
 #endif
 
 #ifdef KEATING
@@ -266,18 +233,9 @@ if (myid==0)
     init_tersoff();
 #endif
 
-#ifdef MPELOG
-    MPE_Log_event( mpe_init2,0, NULL);
-#endif
     if (steps_min <= steps_max) {
-#ifdef MPELOG
-      MPE_Log_event( mpe_calc1,0,NULL);
-#endif
       make_box();  /* make sure the box size is still ok */
       main_loop();
-#ifdef MPELOG
-      MPE_Log_event( mpe_calc2,0, NULL);
-#endif
     }
   }
 
@@ -343,9 +301,9 @@ if (myid==0)
 
 #ifdef TIMING
     printf("Output time:   %e seconds or %.1f %% of main loop\n",
-           time_io.total, 100*time_io.total /time_main.total);
+           time_output.total, 100*time_output.total /time_main.total);
     printf("Input  time:   %e seconds or %.1f %% of main loop\n",
-           time_inp.total,100*time_inp.total/time_main.total);
+           time_input.total,100*time_input.total/time_main.total);
 #endif
 
      fflush(stdout);

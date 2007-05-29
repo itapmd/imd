@@ -876,8 +876,8 @@ void init_diffpat()
 #endif
 
 #ifdef TIMING
-  time_fft.total      = 0.0;
-  time_fft_plan.total = 0.0;
+  imd_init_timer( &time_fft,      0, NULL, NULL );
+  imd_init_timer( &time_fft_plan, 0, NULL, NULL );
 #endif
 
   /* compute array size */

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -313,6 +313,11 @@ typedef struct {
 /* data structure for timers */
 typedef struct {
 #ifdef MPI                  /* with MPI_Wtime */
+#ifdef MPE
+  int mpe_id_begin;         /* MPE event id (begin) */
+  int mpe_id_end;           /* MPE event id (end) */
+  int mpe_flag;             /* whether to do MPE logging */
+#endif
   double start;             /* time when timer was started */
 #elif defined(USE_WALLTIME) /* with gettimeofday */
   struct timeval start;     /* time when timer was started */

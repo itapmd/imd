@@ -258,10 +258,6 @@ void calc_forces(int steps)
   int  i, b, k, n=0, is_short=0, idummy=0;
   real tmpvec1[8], tmpvec2[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
-#ifdef MPELOG
-  MPE_Log_event( mpe_forces1, 0, NULL );
-#endif
-  
   if (0==have_valid_nbl) {
 #ifdef MPI
     /* check message buffer size */
@@ -1002,9 +998,7 @@ void calc_forces(int steps)
 
   /* add forces back to original cells/cpus */
   send_forces(add_forces,pack_forces,unpack_forces);
-#ifdef MPELOG
-  MPE_Log_event( mpe_forces2, 0, NULL );
-#endif
+
 }
 
 /******************************************************************************

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -41,14 +41,16 @@
 /* Machine specific headers */
 #ifdef MPI
 #include <mpi.h>
+#ifdef MPE
 #include <mpe.h>
+#endif
 #endif
 #ifdef OMP
 #include <omp.h>
 #endif
 
 /* FFT for diffraction patterns */
-#if defined(DIFFPAT) || defined(CISF)
+#ifdef DIFFPAT
 #include <fftw3.h>
 #endif
 

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -90,13 +90,6 @@
 #else
 #define EXTERN extern /* declare them extern otherwise */
 #define INIT(data)
-#endif
-
-#ifdef MPELOG
-/* For logging of MPI calls etc */
-EXTERN int mpe_calc1, mpe_calc2, mpe_forces1, mpe_forces2,
-       mpe_calc_ttm1, mpe_calc_ttm2, mpe_update_fd1, mpe_update_fd2,
-       mpe_ttm_fgl1, mpe_ttm_fgl2, mpe_init1, mpe_init2;
 #endif
 
 /* Where all the data lives */
@@ -370,10 +363,12 @@ EXTERN int nbunw, nbuws, nbuse, nbuen,                     /* Corners */
 EXTERN imd_timer time_total;
 EXTERN imd_timer time_setup;
 EXTERN imd_timer time_main;
-EXTERN imd_timer time_io;
+EXTERN imd_timer time_output;
 EXTERN imd_timer time_fft;
 EXTERN imd_timer time_fft_plan;
-EXTERN imd_timer time_inp;
+EXTERN imd_timer time_input;
+EXTERN imd_timer time_integrate;
+EXTERN imd_timer time_forces;
 
 /* Parameters for the various ensembles */
 

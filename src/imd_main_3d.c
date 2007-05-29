@@ -317,7 +317,15 @@ printf( "Laser irradiates from direction (%d, %d)\n", laser_dir.x,
       if (ensemble == ENS_CG) acg_step(steps);
       else
 #endif
-	calc_forces(steps);
+
+#ifdef TIMING
+    imd_start_timer(&time_forces);
+#endif
+    calc_forces(steps);
+#ifdef TIMING
+    imd_stop_timer(&time_forces);
+#endif
+
 #ifdef RIGID
     /* total force on superparticles (for each cpu) */
     for(k=0; k<ncells; k++) {
@@ -489,18 +497,21 @@ printf( "Laser irradiates from direction (%d, %d)\n", laser_dir.x,
 #endif
 
 #ifdef LASER
-
-/* do rescaling of atom velocities/electron temperature source terms
- *  to simulate absorption of laser pulse */
+    /* do rescaling of atom velocities/electron temperature source terms */
+    /*  to simulate absorption of laser pulse */
     do_laser_rescale();
-    
 #endif /* LASER */
-    
 #ifdef TTM
     calc_ttm();
-#endif /*TTM*/
-			
+#endif
+
+#ifdef TIMING
+    imd_start_timer(&time_integrate);
+#endif
     if (ensemble != ENS_CG) move_atoms(); /* here PxF is recalculated */
+#ifdef TIMING
+    imd_stop_timer(&time_integrate);
+#endif
 
 #ifdef EPITAX
     /* beam atoms are always integrated by NVE */
@@ -569,7 +580,7 @@ printf( "Laser irradiates from direction (%d, %d)\n", laser_dir.x,
 
     /* Periodic I/O */
 #ifdef TIMING
-    imd_start_timer(&time_io);
+    imd_start_timer(&time_output);
 #endif
     if ((checkpt_int > 0) && (0 == steps % checkpt_int)) 
        write_config( steps/checkpt_int, steps);
@@ -643,7 +654,7 @@ printf( "Laser irradiates from direction (%d, %d)\n", laser_dir.x,
 #endif
 
 #ifdef TIMING
-    imd_stop_timer(&time_io);
+    imd_stop_timer(&time_output);
 #endif
 
 #ifdef HOMDEF
