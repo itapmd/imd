@@ -13,7 +13,7 @@ Currently, each integrator to be used must be enabled at compile time.</p>
 There are integrators simulating different <a href="#ensembles">
 thermodynamic ensembles</a>, integrators used for <a href="#relaxation">
 relaxation simulations</a>, and some <a href="#specialint"> special
-purpose integrators</a> for the simulation of fracture, shear flow, 
+purpose integrators</a> for the simulation of fracture, shear flow, separate electronic temperature (TTM) 
 or heat conduction.</p>
 
 <p>
@@ -277,6 +277,57 @@ tensor. In 3D two vectors with three components, shear_rate and
 shear_rate2 must be specified. The components of shear_rate specify
 its yz-, the zx-, and its xy-component. The components of shear_rate2
 specify its zy-, the xz-, and its yx-component.</p></dd>
+
+<dt><a id="ttm" name="ttm"><b>ttm</b></a></dt>
+<dd>
+<p>
+Basic nve integrator that has been enhanced for metallic samples far from thermal equilibrium, as they occur for example in simulations of laser ablation with ultrashort pulses. This has been achieved by implementing a hybrid method for the Two Temperature Model (TTM), which assigns separate temperatures to the subsystem of the conduction electrons (T_e)and to the lattice (T_p).
+</p><p>
+The differential equation for the electronic temperature is solved in a continuum ansatz on a discretised lattice with a finite difference (FD) method. Every node/cell of this FD-lattice corresponds to a cuboid in simulation space comprised of a number of MD cells. The local lattice temperature is derived by averaging over the atoms in said space, and the energetic coupling between the two systems is made possible by a damping term in the integrator proportional to the local temperature difference (see D. S. Ivanov, L. V. Zhigilei, Phys. Rev. B <b>68</b>, 064114 (2003) for details).
+</p><p>
+This integrator is still a little awkward to use, and subject to limitations: At the moment it only compiles with MPI, a purely serial version is not possible. All materials parameters are constants (except for the electronic heat capacity c_e, which can be made proportional to the electronic temperature by use of the parameter fd_gamma). Aborted simulations cannot be restarted from snapshots but only from the beginning.
+</p>
+<p>
+Necessary Parameters: fd_k, fd_c or fd_gamma, fd_g, fd_n_timesteps, fd_ext.
+Optional Parameters: fd_update_steps, ttm_int, init_t_el, fix_t_el.
+</p>
+<p>
+The subdivision of the simulation volume into FD cells is not yet automated and depends on the dimensions of the automatically generated MD cell arrays. In the case of local cell array dimensions that are prime numbers, an acceptable subdivision may not even be possible. Then the geometry of the sample may have to be changed. To obtain the MD cell array dimensions, one short test run with the input checkpoint file and the desired cpu_dim is needed. Example: A test run with two processes yields the following output:
+</p>
+<code>
+Reading atoms.
+Minimal cell size:
+         ( 5.960000 0.000000 0.000000 )
+         ( 0.000000 5.960000 0.000000 )
+         ( 0.000000 0.000000 5.960000 )
+Actual cell size:
+         ( 5.969499 0.000000 0.000000 )
+         ( 0.000000 6.752167 0.000000 )
+         ( 0.000000 0.000000 6.752167 )
+Global cell array dimensions: 1018 6 6
+Local cell array dimensions (incl buffer): 511 8 8
+MPI process array dimensions: 2 1 1
+Read structure with 600000 atoms.
+...
+maximal cell occupancy: 27
+Done reading atoms.
+</code>
+<p>
+Subtract the 2 buffer cell layers from the local array dimensions to obtain the values 509 6 6. Here 509 is a prime number, allowing only 509 or 1 MD cells per FD cell in x direction, because all FD cells must be of the same size. In y and z direction values of 1, 2, 3 or 6 are possible. For a quasi-1D simulation this is acceptably, as one would probably use a FD cell size of 1x6x6 MD cells, that means a line like
+</p>
+<code>
+fd_ext      1 6 6
+</code>
+<p>
+in the parameter file.
+</p>
+<p>
+For reasons of numerical stability, the timestep of the MD part and of the FD part of the simulation differ. In general, the FD timestep is smaller by a factor fd_n_timesteps, which must be given as a parameter. It has to fulfill the <a id="ttm_criterion" name="ttm_criterion">stability criterion</a>
+n&gt;2*timestep*fd_k/(h*min(c_e)),
+with h the minimum thickness of the FD cells (1*5.969499 in the example, because it is smaller than 6*6.752167) and min(c_e) the minimum electronic heat capacity to expect in the whole course of the simulation (i.e. fd_c, or alternatively fd_gamma multiplied by the lowest expected electron temperature).
+
+</p>
+</dd>
 
 <dt><a id="nvx" name="nvx"><b>nvx</b></a></dt>
 <dd>

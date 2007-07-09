@@ -248,7 +248,7 @@ strainrate       # with this strainrate
 gamma_bar        # damping coefficent
 dampingmode      # O: viscous damping (default) 1: Nose-Hover
 
-# parameters for <a href="options.html#ttm">TTM</a> option
+# parameters for <a href="ensembles.html#ttm">TTM</a> ensemble
 
 # materials parameters:
 fd_k		 # electronic thermal conductivity
@@ -259,17 +259,17 @@ fd_gamma         # proportionality constant of electronic heat capacity
                  # c_e=fd_gamma*T_e 
 fd_g		 # electron-phonon coupling constant
 
-# numerical <a href="options.html#ttm">TTM</a> parameters:
+# numerical <a href="ensembles.html#ttm">TTM</a> parameters:
 fd_n_timesteps   # how many FD timesteps to one MD timestep? Note:
 		 # this must be set to fulfill a numerical
-		 # <a href="options.html#ttm_criterion">stability criterion</a>
+		 # <a href="ensembles.html#ttm_criterion">stability criterion</a>
 fd_update_steps  # how often are FD cells updated by averaging over atoms?
                  # Default is 1 for updates after every MD time step.
 fd_ext		 # How many MD cells per FE cell in x,y and z direction?
                  # (You probably need a test run to see how your sample is
                  # getting divided into MD cells first)
 
-# miscellaneous <a href="options.html#ttm">TTM</a> parameters:
+# miscellaneous <a href="ensembles.html#ttm">TTM</a> parameters:
 ttm_int		 # how many MD time steps between writeouts of TTM data
 		 # Default is 0 for no writeouts
 init_t_el	 # Temperature the electronic subsystem gets initialized to.
