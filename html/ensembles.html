@@ -281,7 +281,7 @@ specify its zy-, the xz-, and its yx-component.</p></dd>
 <dt><a id="ttm" name="ttm"><b>ttm</b></a></dt>
 <dd>
 <p>
-Basic nve integrator that has been enhanced for metallic samples far from thermal equilibrium, as they occur for example in simulations of laser ablation with ultrashort pulses. This has been achieved by implementing a hybrid method for the Two Temperature Model (TTM), which assigns separate temperatures to the subsystem of the conduction electrons (T_e)and to the lattice (T_p).
+Basic nve integrator that has been enhanced for metallic samples far from thermal equilibrium, as they occur for example in simulations of laser ablation with ultrashort pulses. This has been achieved by implementing a hybrid method for the Two Temperature Model (TTM), which assigns separate temperatures to the subsystem of the conduction electrons (T_e) and to the lattice (T_p).
 </p><p>
 The differential equation for the electronic temperature is solved in a continuum ansatz on a discretised lattice with a finite difference (FD) method. Every node/cell of this FD-lattice corresponds to a cuboid in simulation space comprised of a number of MD cells. The local lattice temperature is derived by averaging over the atoms in said space, and the energetic coupling between the two systems is made possible by a damping term in the integrator proportional to the local temperature difference (see D. S. Ivanov, L. V. Zhigilei, Phys. Rev. B <b>68</b>, 064114 (2003) for details).
 </p><p>
@@ -294,6 +294,7 @@ Optional Parameters: fd_update_steps, ttm_int, init_t_el, fix_t_el.
 <p>
 The subdivision of the simulation volume into FD cells is not yet automated and depends on the dimensions of the automatically generated MD cell arrays. In the case of local cell array dimensions that are prime numbers, an acceptable subdivision may not even be possible. Then the geometry of the sample may have to be changed. To obtain the MD cell array dimensions, one short test run with the input checkpoint file and the desired cpu_dim is needed. Example: A test run with two processes yields the following output:
 </p>
+<pre>
 <code>
 Reading atoms.
 Minimal cell size:
@@ -312,8 +313,9 @@ Read structure with 600000 atoms.
 maximal cell occupancy: 27
 Done reading atoms.
 </code>
+</pre>
 <p>
-Subtract the 2 buffer cell layers from the local array dimensions to obtain the values 509 6 6. Here 509 is a prime number, allowing only 509 or 1 MD cells per FD cell in x direction, because all FD cells must be of the same size. In y and z direction values of 1, 2, 3 or 6 are possible. For a quasi-1D simulation this is acceptably, as one would probably use a FD cell size of 1x6x6 MD cells, that means a line like
+Subtract the 2 buffer cell layers from the local array dimensions to obtain the values 509 6 6. Here 509 is a prime number, allowing only 509 or 1 MD cells per FD cell in x direction, because all FD cells must be of the same size. In y and z direction values of 1, 2, 3 or 6 are possible. For a quasi-1D simulation this is acceptable, as one would probably use a FD cell size of 1x6x6 MD cells, that means a line like
 </p>
 <code>
 fd_ext      1 6 6
