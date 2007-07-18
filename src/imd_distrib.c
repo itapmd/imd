@@ -429,6 +429,7 @@ void write_distrib_density(int mode, int fzhlr)
   char  fname[255];
   float fac, max=0.0, min=1e10;
   int   i, j, count, r, s, t;
+  real  vol;
 
   /* open distribution file, write header */
   sprintf(fname, "%s.%u.%s", outfilename, fzhlr, "dens");
@@ -437,7 +438,11 @@ void write_distrib_density(int mode, int fzhlr)
   write_distrib_header(outfile, mode, 1, "dens");
 
   /* compute density, minima and maxima */
-  fac = dist_size / volume;
+  vol = (dist_ur.x - dist_ll.x) * (dist_ur.y - dist_ll.y);
+#ifndef TWOD
+  vol *= (dist_ur.z - dist_ll.z);
+#endif
+  fac = dist_size / vol;
   for (i=0; i<dist_size; i++) { 
     dat_1[i] = num_1[i] * fac;
     max = MAX( max, dat_1[i] );
