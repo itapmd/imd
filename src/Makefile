@@ -573,10 +573,14 @@ ifeq (cbe-gcc,${IMDSYS})
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
   BIN_DIR	= ${HOME}/bin/cbe
-  OPT_FLAGS	+= -O 
+#
+#  OPT_FLAGS	+= -O 
+  OPT_FLAGS     += -O -funroll-loops
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
   LFLAGS        += 
+# Added by F.P.
+  LIBS          += -lspe2
 endif
 
 ###########################################################################
@@ -766,7 +770,7 @@ ifneq (,$(strip $(findstring vec,${MAKETARGET})))
 else
   ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
     ifneq (,$(strip $(findstring cbe,${MAKETARGET})))
-      FORCESOURCES = imd_forces_cbe.c # imd_forces_spu.c
+      FORCESOURCES = imd_forces_cbe.c  # imd_forces_spu.c
       CFLAGS += -DCBE
     else
       FORCESOURCES = imd_forces_nbl.c
@@ -1165,8 +1169,15 @@ CFLAGS += -DPAPI ${PAPI_INC}
 LIBS   += ${PAPI_LIBS}
 endif
 
+# Added by Frank Pister
+ifneq (,$(findstring cbe,${MAKETARGET}))
+SOURCES += spu.c imd_cbe_calc.c imd_cbe_util.c
+endif
+
 # Substitute .o for .c to get the names of the object files
 OBJECTS := $(subst .c,.o,${SOURCES})
+
+
 
 
 ###########################################################################
@@ -1186,7 +1197,10 @@ imd_forces.o: imd_forces.c
 imd_forces_nbl.o: imd_forces_nbl.c
 	${CC} ${CFLAGS} ${RCD_FLAGS} ${NOALIAS} -c imd_forces_nbl.c
 
-# imd_forces_cbe.o: imd_forces_cbe.c
+# Uncommented by Frank Pister
+imd_forces_cbe.o: imd_forces_cbe.c
+	${CC}   ${CFLAGS} ${RCD_FLAGS}  -c imd_forces_cbe.c
+
 # rule to make imd_forces_cbe.o
 
 imd_forces_eam2.o: imd_forces_eam2.c
@@ -1232,11 +1246,52 @@ endif
 #
 ###########################################################################
 
+# Modified by Frank Pister: Also remove spu related files
 clean:
-	rm -f *.o *.u *~ \#* *.V *.T *.O *.il
+	rm -f *.o *.u *~ \#* *.V *.T *.O *.il    spu.o spu.s spu
 
 help:
 	@echo "Usage: gmake imd[_<parallel>][_<option>[_<option>...]]"
 
 socktest:
 	gcc -o ${BINDIR}/socktest sockutil.c socktest.c
+
+
+
+
+
+
+
+
+
+# Added by Frank Pister: SPU specific targets for CBE
+
+# The variables SPUCXX, SPUCC must be set to the SPU C++ and C compilers
+# e.g. to spu-c++ and spu-cc respectively.
+# SPUCXXFLAGS and SPUCFLAGS are the corresponding flags passed to the
+# compiler which may contain optimization or warning flags, for instance.
+# SPUCXX and SPUCC may also be set to use the IBM  compilers.
+# EMBEDSPU must contain the name of the ppu-embedspu executable which
+# generates object files containing code for the SPU and which may
+# be linked with the main program.
+
+
+
+# The SPU binary containing the main program as well as some tools
+# and an spu version of calc_wp
+# The SPU object file which is linked to the main programm
+spu.o: spu
+	${EMBEDSPU} -m32 h spu spu.o
+
+spu: spu.c imd_cbe.h imd_cbe_util_spu.o calc_wp_spu.o
+	${SPUCC} -o spu  ${SPUCXXFLAGS} spu.c imd_cbe_util_spu.o calc_wp_spu.o
+
+# calc_wp object code for the SPU
+calc_wp_spu.o: imd_cbe_calc.c imd_cbe.h
+	${SPUCC} -o calc_wp_spu.o  ${SPUCFLAGS}  -c imd_cbe_calc.c
+
+# Some tools needed on the SPU for the exchange of data
+imd_cbe_util_spu.o: imd_cbe_util.c imd_cbe.h
+	${SPUCC} -o imd_cbe_util_spu.o  ${SPUCFLAGS}  -c imd_cbe_util.c
+
+

@@ -21,23 +21,13 @@
 
 #include "imd.h"
 
-typedef float flt;
+/* CBE declarations */
+#include "imd_cbe.h"
 
-typedef struct {
-  int   k, n1, n1_max, n2, n2_max, len, len_max;
-  flt   totpot, virial;
-  flt   *pos, *force;
-  int   *typ, *tb, *ta, *te;
-} wp_t;
-
-typedef struct {
-  int ntypes;
-  flt *r2cut, *lj_sig, *lj_eps, *lj_shift;
-} pt_t;
-
-int  *ta=NULL, *te=NULL, *tb=NULL, *tb_off=NULL, *at_off=NULL, nb_max=0;
-wp_t *wp=NULL;
-pt_t pt;
+int   *ti=NULL, *tb_off=NULL, *at_off=NULL, nb_max=0;
+short *tb=NULL;
+wp_t  *wp=NULL;
+pt_t  pt;
 
 /******************************************************************************
 *
@@ -50,11 +40,41 @@ void mk_pt(void)
   int i, j, k, col;
   flt r2, r6;
 
+  /* Allocation size common to all mallocs */
+  size_t const nelem = 4*ntypes*ntypes;
+  size_t const asze  = nelem*(sizeof (flt));
+
+  /* Set ntypes */
   pt.ntypes   = ntypes;
-  pt.r2cut    = (flt *) malloc( 4 * ntypes * ntypes * sizeof(flt) );
-  pt.lj_sig   = (flt *) malloc( 4 * ntypes * ntypes * sizeof(flt) );
-  pt.lj_eps   = (flt *) malloc( 4 * ntypes * ntypes * sizeof(flt) );
-  pt.lj_shift = (flt *) malloc( 4 * ntypes * ntypes * sizeof(flt) );
+
+  /* Allocation modified by Frank Pister */
+  /*
+  pt.r2cut    = (flt *) malloc_aligned(asze, 16);
+  pt.lj_sig   = (flt *) malloc_aligned(asze, 16);
+  pt.lj_eps   = (flt *) malloc_aligned(asze, 16);
+  pt.lj_shift = (flt *) malloc_aligned(asze, 16);
+  */
+
+  /* Allocate one array which is 4 times the size of every single array.
+     As every individual array contains a number of items (nelem, see above)
+     which is dividable by 4, the large array's number of elements is 
+     dividable by 16.
+     So its size is a multiple of 16bytes which is required for DMA.
+     Besides that, we only need one call the memory allocation routine.
+
+     In the DMAs it is assumed that pt.r2cut point to a block of memory
+     aligned appropriatly and the the remaining pointers in pt_t point to
+     some location inside that block.
+
+     Note that, using this allocation scheme, lj_xxx must not be free'd!
+   */
+  pt.r2cut    = (flt*)(malloc_aligned(4*asze, 16,16));
+  pt.lj_sig   = pt.r2cut  + nelem;
+  pt.lj_eps   = pt.lj_sig + nelem;
+  pt.lj_shift = pt.lj_eps + nelem;
+  
+
+
   if ((NULL==pt.r2cut) || (NULL==pt.lj_sig) || (NULL==pt.lj_eps) || 
       (NULL==pt.lj_shift)) error("cannot allocate potential package");
   for (i=0; i<ntypes; i++)
@@ -69,6 +89,9 @@ void mk_pt(void)
         pt.lj_shift[4*col+k] = pt.lj_eps[4*col+k] * r6 * (r6 - 2.0);
       }
     }
+
+
+
 }
 
 /******************************************************************************
@@ -82,7 +105,7 @@ void deallocate_nblist(void)
 #if defined(DEBUG) || defined(TIMING)
   if (myid==0)
     printf("Size of neighbor table: %d MB\n", 
-           nb_max * sizeof(int) / SQR(1024) );
+           (int)(nb_max * sizeof(int) / SQR(1024)) );
 #endif
   if (tb) free(tb);
   tb = NULL;
@@ -97,7 +120,8 @@ void deallocate_nblist(void)
 
 int estimate_nblist_size(void)
 {
-  int  c, tn=1;
+  int c, tn=1;
+  int inc_short = 128 / sizeof(short);
 
   /* for all cells */
   for (c=0; c<ncells2; c++) {
@@ -135,6 +159,8 @@ int estimate_nblist_size(void)
           if (r2 < cellsz) tn++;
         }
       }
+      /* enlarge tn to next 128 byte boundary */
+      tn = ((tn + inc_short - 1) / inc_short) * inc_short; 
     }
   }
   return tn;
@@ -148,9 +174,10 @@ int estimate_nblist_size(void)
 
 void make_nblist(void)
 {
-  static int at_max=0, pa_max=0, ncell_max=0, tn_max=0, cl_max=0;
-  static int *nb=NULL, *ty=NULL;
-  int  c, i, k, n, tn, at, cc, atm, l, t, j, nn;
+  static int at_max=0, pa_max=0, ncell_max=0, cl_max=0;
+  int  c, i, k, n, nn, at, cc, atm, l, t, j;
+  int inc_int   = 128 / sizeof(int);
+  int inc_short = 128 / sizeof(short);
 
   /* update reference positions */
   for (k=0; k<ncells; k++) {
@@ -174,54 +201,46 @@ void make_nblist(void)
   }
 
   /* count atom numbers */
-  at=0; atm=0;
+  at=0;
   for (k=0; k<ncells; k++) {
     cell *p = CELLPTR(k);
     at_off[k] = at;
-    at += p->n * ntypes;
-    atm = MAX( atm, p->n );
+    /* next block on 128 byte boundary */
+    at += ((2*p->n + inc_int - 1) / inc_int) * inc_int;
   }
-
-  /* allocate intermediate neighbor array */
-  if (15*atm > tn_max) {
-    free(nb);
-    free(ty);
-    tn_max = 16*atm;
-    nb = (int *) malloc( tn_max * sizeof(int) );
-    ty = (int *) malloc( tn_max * sizeof(int) );
-    if ((NULL==nb) || (NULL==ty)) error("cannot allocate neighbor table");
-  }
+  at_off[ncells] = at;
 
   /* (re-)allocate neighbor table */
   if (at >= at_max) {
-    free(ta);
-    free(te);
+    free(ti);
     at_max = (int) (1.1 * at);
-    ta = (int *) malloc(at_max * sizeof(int));
-    te = (int *) malloc(at_max * sizeof(int));
+    ti = (int *) malloc_aligned(at_max * sizeof(int), 128,16);
   }
   if (NULL==tb) {
     if (0==last_nbl_len) nb_max = (int) (nbl_size * estimate_nblist_size());
     else                 nb_max = (int) (nbl_size * last_nbl_len);
-    tb = (int *) malloc(nb_max * sizeof(int));
+    tb = (short *) malloc_aligned(nb_max* sizeof(short), 0,0);
   }
   else if (last_nbl_len * sqrt(nbl_size) > nb_max) {
     free(tb);
-    nb_max = (int  ) (nbl_size * last_nbl_len);
-    tb     = (int *) malloc(nb_max * sizeof(int));
+    nb_max = (int    ) (nbl_size * last_nbl_len);
+    tb     = (short *) malloc_aligned(nb_max* sizeof(short), 0,0);
   }
-  if ((ta==NULL) || (te==NULL) || (tb==NULL)) 
+  if ((ti==NULL) || (tb==NULL)) 
     error("cannot allocate neighbor table");
 
   /* for all cells */
-  n=0; l=0;
+  nn=0;
   for (c=0; c<ncells; c++) {
 
-    int  c1 = cnbrs[c].np;
-    cell *p = cell_array + c1;
+    int   c1 = cnbrs[c].np;
+    short *ttb;
+    cell  *p = cell_array + c1;
 
-    at_off[c] = l;
-    tb_off[c] = n;
+    l = at_off[c];
+    tb_off[c] = nn;
+    ttb = tb + nn;
+    n = 0;
 
     /* for each atom in cell */
     for (i=0; i<p->n; i++) {
@@ -234,7 +253,8 @@ void make_nblist(void)
       d1.z = ORT(p,i,Z);
 
       /* for each neighboring atom */
-      off = 0; tn = 0;
+      off = 0;
+      ti[l] = n;
       for (m=0; m<14; m++) {   /* this is not TWOD ready! */
         int  c2, jstart, j;
         cell *q;
@@ -249,34 +269,24 @@ void make_nblist(void)
           d.y = ORT(q,j,Y) - d1.y;
           d.z = ORT(q,j,Z) - d1.z;
           r2  = SPROD(d,d);
-          if (r2 < cellsz) {
-            nb[tn  ] = off + j;
-            ty[tn++] = SORTE(q,j);
-            if (tn>tn_max) error("tn overflow");
-          }
+          if (r2 < cellsz) ttb[n++] = off + j;
         }
         off += q->n;
       }
-      for (t=0; t<ntypes; t++) {
-        ta[l] = n - tb_off[c];
-        for (j=0; j<tn; j++) 
-          if (t==ty[j]) tb[n++] = nb[j];
-        te[l] = n - tb_off[c];
-        /* enlarge n to next multiple of 4 */
-        nn = n % 4;
-        n = nn ? n + 4 - nn : n;
-        pa_max = MAX(pa_max,te[l]-ta[l]);
-        if (n > nb_max-2*pa_max) {
-          error("neighbor table full - increase nbl_size");
-        }
-        l++;
-      }
+      ti[l+1] = n - ti[l];
+      l += 2;
+      /* enlarge n to next 128 byte boundary */
+      n = ((n + inc_short - 1) / inc_short) * inc_short; 
     }
-    
+    pa_max = MAX(pa_max,n);
+    if (n + nn + 2*pa_max > nb_max) {
+      error("neighbor table full - increase nbl_size");
+    }
+    nn += n;
   }
 
-  tb_off[ncells] = n;
-  last_nbl_len   = n;
+  tb_off[ncells] = nn;
+  last_nbl_len   = nn;
   have_valid_nbl = 1;
   nbl_count++;
 }
@@ -311,9 +321,9 @@ void make_wp(int k, wp_t *wp)
       free(wp->typ);
     }
     wp->n2_max = wp->n2 + 50;
-    wp->pos    = (flt *) malloc( 4 * wp->n2_max * sizeof(flt) );
-    wp->force  = (flt *) malloc( 4 * wp->n2_max * sizeof(flt) );
-    wp->typ    = (int *) malloc(     wp->n2_max * sizeof(int) );
+    wp->pos    = (flt *) malloc_aligned(4 * wp->n2_max * sizeof(flt), 0,0);
+    wp->force  = (flt *) malloc_aligned(4 * wp->n2_max * sizeof(flt), 0,0);
+    wp->typ    = (int *) malloc_aligned(    wp->n2_max * sizeof(int), 0,0);
     if ((NULL==wp->pos) || (NULL==wp->force) || (NULL==wp->typ))
       error("cannot allocate workpackage");
   }
@@ -336,83 +346,17 @@ void make_wp(int k, wp_t *wp)
   }
   
   /* set pointers to neighbor tables */
-  wp->ta  = ta + at_off[k];
-  wp->te  = te + at_off[k];
+  wp->ti  = ti + at_off[k];
   wp->tb  = tb + tb_off[k];
   wp->len = tb_off[k+1] - tb_off[k];
-
+  wp->n1_max  = 0;  /* max size for ti - nothing allocated here */
+  wp->len_max = 0;  /* max size for tb - nothing allocated here */
 }
 
-/******************************************************************************
-*
-*  calc_wp
-*
-******************************************************************************/
 
-void calc_wp(wp_t *wp, int *is_short)
-{
-  flt d[4], f[4], r2, *pi, *pj, *fi, *fj, pot, grad;
-  int i, l, c1, t, col, inc=pt.ntypes * pt.ntypes, n, j;
 
-  wp->totpot = 0.0;
-  wp->virial = 0.0;
-  for (i=0; i<4*wp->n2; i++) wp->force[i] = 0.0;
 
-  l = 0;
-  for (i=0; i<wp->n1; i++) {
 
-    c1 = pt.ntypes * wp->typ[i];
-    fi = wp->force + 4*i;
-    pi = wp->pos   + 4*i;
-
-    for (t=0; t<pt.ntypes; t++) {
-
-      col = c1 + t;
-
-      for (n=wp->ta[l]; n<wp->te[l]; n++) {
-
-        j    = wp->tb[n];
-        pj   = wp->pos + 4*j;
-        d[0] = pj[0] - pi[0];
-        d[1] = pj[1] - pi[1];
-        d[2] = pj[2] - pi[2];
-        r2   = d[0]*d[0] + d[1]*d[1] + d[2]*d[2];
-
-        if (r2 <= pt.r2cut[4*col]) {
-
-          flt tmp2, tmp6;
-          tmp2 = pt.lj_sig[4*col] / r2;
-          tmp6 = tmp2 * tmp2 * tmp2;
-          pot  = pt.lj_eps[4*col] * tmp6 * (tmp6 - 2.0) - pt.lj_shift[4*col];
-          grad = - 12.0 * pt.lj_eps[4*col] * tmp6 * (tmp6 - 1.0) / r2;
-
-          //PAIR_INT(pot, grad, pair_pot, col, inc, r2, *is_short)
-
-          wp->totpot += pot;
-          pot        *= 0.5;   /* avoid double counting */
-          wp->virial -= r2  * grad;
-
-          f[0] = d[0] * grad;
-          f[1] = d[1] * grad;
-          f[2] = d[2] * grad;
-
-          fi[0] += f[0];
-          fi[1] += f[1];
-          fi[2] += f[2];
-          fi[3] += pot;
-
-          fj = wp->force + 4*j;
-          fj[0] -= f[0];
-          fj[1] -= f[1];
-          fj[2] -= f[2];
-          fj[3] += pot;
-
-	}
-      }
-      l++;
-    }
-  }
-}
 
 /******************************************************************************
 *
@@ -448,7 +392,7 @@ void store_wp(wp_t *wp)
 
 void calc_forces(int steps)
 {
-  int  k, i, off, is_short=0;
+  int  k, i, off;
   real tmpvec1[2], tmpvec2[2] = {0.0, 0.0};
 
   if (0==have_valid_nbl) {
@@ -491,11 +435,20 @@ void calc_forces(int steps)
 
   /* compute interactions */
   for (k=0; k<ncells; k++) {
+
     make_wp(k, wp);
-    calc_wp(wp, &is_short);
+
+    /* Debugging output */
+    /* printf("wp on PPU after make_wp:\n");  wp_out(printf, wp); */
+
+    /* calc_wp(wp); */
+    schedtospu(wp); 
+
+    /* Debugging output */
+    /* printf("wp on PPU before store_wp:\n");  wp_out(printf, wp); */
+
     store_wp(wp);
   }
-  if (is_short) printf("short distance!\n");
 
 #ifdef MPI
   /* sum up results of different CPUs */

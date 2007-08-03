@@ -1,4 +1,3 @@
-
 /******************************************************************************
 *
 * IMD -- The ITAP Molecular Dynamics Program
@@ -71,4 +70,3 @@
 
 /* Global Variables */
 #include "globals.h"
-

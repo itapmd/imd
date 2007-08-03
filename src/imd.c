@@ -21,6 +21,10 @@
 #include <papi.h>
 #endif
 
+#if defined(CBE)
+#include "imd_cbe.h"
+#endif
+
 /* Main module of the IMD Package;
    Various versions are built by conditional compilation */
 
@@ -31,6 +35,11 @@ int main(int argc, char **argv)
 #ifdef PAPI
   float rtime, ptime, mflops;
   long_long flpins;
+#endif
+
+/* Added by Frank Pister */
+#if defined(CBE)
+   cbe_init();
 #endif
 
 #ifdef MPI
@@ -356,6 +365,11 @@ int main(int argc, char **argv)
   shutdown_mpi();
 #endif
 
-  exit(0);
+/* Added by Frank Pister */
+#if defined(CBE)
+   cbe_shutdown();
+#endif
 
+  /* Modified by F.P.:  We return, we don't exit :-) */
+  return 0;
 }
