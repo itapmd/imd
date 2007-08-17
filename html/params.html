@@ -270,8 +270,12 @@ fd_ext		 # How many MD cells per FE cell in x,y and z direction?
                  # getting divided into MD cells first)
 
 # miscellaneous <a href="ensembles.html#ttm">TTM</a> parameters:
-ttm_int		 # how many MD time steps between writeouts of TTM data
-		 # Default is 0 for no writeouts
+ttm_int		 # how many MD time steps between writeouts of TTM data?
+		 # This writes out files with extension .ttm, containing
+		 # indices, local electron/lattice temperatures, coupling
+                 # variable, and velocity of the center of mass of every
+                 # FD cell.
+		 # Default is 0 for no writeouts.
 init_t_el	 # Temperature the electronic subsystem gets initialized to.
                  # Default is 0.0 for a relaxed system (lattice temperature).
 fix_t_el	 # Fix electron temperature at start value? Default is 0.

@@ -324,10 +324,16 @@ fd_ext      1 6 6
 in the parameter file.
 </p>
 <p>
+The ttm code adds a column to the .eng file with the average electronic energy per atom E_el. Note that this is _not_ the electronic temperature and will likely differ from the average lattice temperature in the same file even for a relaxed sample. In order to look at electron temperatures, assign a non-zero value to the parameter ttm_int and use the information from the *.ttm files. When compiled with the debug option, there will be some more columns in the .eng file that will be useless if the code runs correctly.
+</p>
+<p>
 For reasons of numerical stability, the timestep of the MD part and of the FD part of the simulation differ. In general, the FD timestep is smaller by a factor fd_n_timesteps, which must be given as a parameter. It has to fulfill the <a id="ttm_criterion" name="ttm_criterion">stability criterion</a>
 n&gt;2*timestep*fd_k/(h*min(c_e)),
 with h the minimum thickness of the FD cells (1*5.969499 in the example, because it is smaller than 6*6.752167) and min(c_e) the minimum electronic heat capacity to expect in the whole course of the simulation (i.e. fd_c, or alternatively fd_gamma multiplied by the lowest expected electron temperature).
 
+</p>
+<p>
+If you choose a wrong (i.e., too small) value for fd_n_timesteps, bad things may happen, including periodic temperature fluctuations, growing exponentially in time, and negative electron temperatures.
 </p>
 </dd>
 
