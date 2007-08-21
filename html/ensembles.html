@@ -285,7 +285,7 @@ Basic nve integrator that has been enhanced for metallic samples far from therma
 </p><p>
 The differential equation for the electronic temperature is solved in a continuum ansatz on a discretised lattice with a finite difference (FD) method. Every node/cell of this FD-lattice corresponds to a cuboid in simulation space comprised of a number of MD cells. The local lattice temperature is derived by averaging over the atoms in said space, and the energetic coupling between the two systems is made possible by a damping term in the integrator proportional to the local temperature difference (see D. S. Ivanov, L. V. Zhigilei, Phys. Rev. B <b>68</b>, 064114 (2003) for details).
 </p><p>
-This integrator is still a little awkward to use, and subject to limitations: At the moment it only compiles with MPI, a purely serial version is not possible. All materials parameters are constants (except for the electronic heat capacity c_e, which can be made proportional to the electronic temperature by use of the parameter fd_gamma). Aborted simulations cannot be restarted from snapshots but only from the beginning.
+This integrator is still a little awkward to use, and subject to limitations: All materials parameters are constants (except for the electronic heat capacity c_e, which can be made proportional to the electronic temperature by use of the parameter fd_gamma). Aborted simulations cannot be restarted from snapshots but only from the beginning.
 </p>
 <p>
 Necessary Parameters: fd_k, fd_c or fd_gamma, fd_g, fd_n_timesteps, fd_ext.
