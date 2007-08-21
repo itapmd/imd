@@ -640,9 +640,11 @@ void ttm_writeout(int number)
     for (j=1; j<local_fd_dim.y-1; ++j)
     {
       for (k=1; k<local_fd_dim.z-1; ++k)
-      {
-	llocal[(i-1)*(local_fd_dim.y-2)*(local_fd_dim.z-2)
-	  +(j-1)*(local_fd_dim.z-2) + k-1] = l1[i][j][k];
+      { /* all the "-1" and "-2" because we don't store ghost layers
+           and don't want to waste the space in llocal */
+	llocal[ (i-1)*(local_fd_dim.y-2)*(local_fd_dim.z-2)
+	       +(j-1)*(local_fd_dim.z-2)
+	       + k-1 ] = l1[i][j][k];
       }
     }
   }
@@ -682,16 +684,26 @@ void ttm_writeout(int number)
       {
 	for (k=0;k<global_fd_dim.z;++k)
 	{
+	  int index;
+
+#ifdef MPI
 	  ivektor from_process; /* we need to look in the data from
 				   the process with these grid coords */
-	  int index;
 	  /* data from the processes is sorted by rank. */
 	  from_process.x=i/(local_fd_dim.x-2);
 	  from_process.y=j/(local_fd_dim.y-2);
 	  from_process.z=k/(local_fd_dim.z-2);
 	  index=cpu_grid_coord(from_process)*nlocal + 
 	    (i%(local_fd_dim.x-2))*(local_fd_dim.y-2)*(local_fd_dim.z-2) +
-	    (j%(local_fd_dim.y-2))*(local_fd_dim.z-2) + (k%(local_fd_dim.z-2));
+	    (j%(local_fd_dim.y-2))*(local_fd_dim.z-2) +
+	    (k%(local_fd_dim.z-2));
+#else /* no MPI */
+	  index=
+	    i*(local_fd_dim.y-2)*(local_fd_dim.z-2) +
+	    j*(local_fd_dim.z-2) +
+	    k;
+#endif /* MPI*/
+
 	  fprintf(outfile, "%d %d %d %d %e %e %e %e %e %e %e\n",
 	      i,j,k,lglobal[index].natoms,lglobal[index].temp,
 	      lglobal[index].md_temp, lglobal[index].xi,
