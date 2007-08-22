@@ -292,7 +292,10 @@ Necessary Parameters: fd_k, fd_c or fd_gamma, fd_g, fd_n_timesteps, fd_ext.
 Optional Parameters: fd_update_steps, ttm_int, init_t_el, fix_t_el.
 </p>
 <p>
-The subdivision of the simulation volume into FD cells is not yet automated and depends on the dimensions of the automatically generated MD cell arrays. In the case of local cell array dimensions that are prime numbers, an acceptable subdivision may not even be possible. Then the geometry of the sample may have to be changed. To obtain the MD cell array dimensions, one short test run with the input checkpoint file and the desired cpu_dim is needed. Example: A test run with two processes yields the following output:
+The subdivision of the simulation volume into FD cells has to be supplied by the user and depends on the dimensions of the automatically generated MD cell arrays. This must be done with the parameter fd_ext, which takes a vector of integers that give the number of MD cells per FD cell in the coordinate directions of the simulation space. If one of these values is selected too large, so the resulting MD cells would be smaller than the minimal cell size (cutoff radius of the potential, IMD will issue an error and exit. Otherwise, the global MD cell size is automatically set such that the simulation space of a single process can be completely filled by tiling FD cells of size fd_ext, i.e. global_cell_dim.x%(cpu_dim.x*fd_ext.x)==0.
+</p>
+<p>
+To obtain the MD cell array dimensions, one short test run with the input checkpoint file and the desired cpu_dim can be done. Example: A test run with two processes (without ttm code) yields the following output:
 </p>
 <pre>
 <code>
@@ -315,13 +318,8 @@ Done reading atoms.
 </code>
 </pre>
 <p>
-Subtract the 2 buffer cell layers from the local array dimensions to obtain the values 509 6 6. Here 509 is a prime number, allowing only 509 or 1 MD cells per FD cell in x direction, because all FD cells must be of the same size. In y and z direction values of 1, 2, 3 or 6 are possible. For a quasi-1D simulation this is acceptable, as one would probably use a FD cell size of 1x6x6 MD cells, that means a line like
-</p>
-<code>
-fd_ext      1 6 6
-</code>
-<p>
-in the parameter file.
+Here, the sample has a size of 5.969499*1018 x 6.752167*6 x 6.752167*6 or 6076.95 x 40.513 x 40.513 Angstroms. The minimal cell size is 5.96 Angstroms (the cutoff radius of the used potential). Because there are two processes, which are aligned in x direction, the maximum values for fd_ext are 509 6 6. Note that choosing large (albeit allowed) values without considering the minimal cell size may result in MD cells that are larger than necessary, which may slow down the force computation loops, as they scale quadratically with the number of atoms per MD cell.
+
 </p>
 <p>
 The ttm code adds a column to the .eng file with the average electronic energy per atom E_el. Note that this is _not_ the electronic temperature and will likely differ from the average lattice temperature in the same file even for a relaxed sample. In order to look at electron temperatures, assign a non-zero value to the parameter ttm_int and use the information from the *.ttm files. When compiled with the debug option, there will be some more columns in the .eng file that will be useless if the code runs correctly.
