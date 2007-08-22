@@ -318,7 +318,7 @@ Done reading atoms.
 </code>
 </pre>
 <p>
-Here, the sample has a size of 5.969499*1018 x 6.752167*6 x 6.752167*6 or 6076.95 x 40.513 x 40.513 Angstroms. The minimal cell size is 5.96 Angstroms (the cutoff radius of the used potential). Because there are two processes, which are aligned in x direction, the maximum values for fd_ext are 509 6 6. Note that choosing large (albeit allowed) values without considering the minimal cell size may result in MD cells that are larger than necessary, which may slow down the force computation loops, as they scale quadratically with the number of atoms per MD cell.
+Here, the sample has a size of 5.969499*1018 x 6.752167*6 x 6.752167*6 or 6076.95 x 40.513 x 40.513 Angstroms. The minimal cell size is 5.96 Angstroms (the cutoff radius of the used potential). Because there are two processes, which are aligned in x direction, the maximum values for fd_ext are 509 6 6 (which happens to be the local cell array dimensions, without buffer cells). Note that choosing large (albeit allowed) values without considering the minimal cell size may result in MD cells that are larger than necessary, which may slow down the force computation loops, as they scale quadratically with the number of atoms per MD cell.
 
 </p>
 <p>
