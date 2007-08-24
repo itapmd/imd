@@ -163,7 +163,7 @@ static void start_create_wp(void** a, unsigned* nrem, unsigned const ausze,
 
 #    define DMAMEMB(member,nn) DMA64(wp->member,sze[nn], exch->member, tag, MFC_GET_CMD)
 
-     ALLOCMEMB(pos, flt,   4*exch->n2)
+     ALLOCMEMB(pos, vector float, exch->n2)
      DMAMEMB(pos, 0);
      ALLOCMEMB(typ, int,     exch->n2)
      DMAMEMB(typ, 1);
@@ -180,7 +180,7 @@ static void start_create_wp(void** a, unsigned* nrem, unsigned const ausze,
 
 
      /* Also allocate LS memory for force, copying its ea and alloction size */
-     wp->force = (flt*)(alloc(4*exch->n2, (sizeof (flt)),
+     wp->force = (vector float *)(alloc(exch->n2, (sizeof (vector float)),
                               a,nrem,ausze, exch->force, &pres_ea, &pres_sze
                              )
                        );
@@ -215,9 +215,9 @@ static void start_create_pt(void** a, unsigned* nrem, unsigned const ausze,
         Every pointer in env points to nelem items of type flt, so
         there are 4*nelem itmes to be DMAed in total
      */
-     unsigned const nelem   = 4*(env->ntypes)*(env->ntypes);
+     unsigned const nelem   = (env->ntypes)*(env->ntypes);
      /* Total number of bytes/allocation units needed */
-     unsigned const nszetot = 4*nelem*(sizeof (flt));
+     unsigned const nszetot = 4*nelem*(sizeof (vector float));
      unsigned const nau = nalloc_block(nszetot, ausze);
 
      /* Enough memory available? */
@@ -230,7 +230,10 @@ static void start_create_pt(void** a, unsigned* nrem, unsigned const ausze,
         /* Set the pointers in the resulting pt_t (see modified allocation scheme
            in mk_pt)
 	*/
-        p->lj_shift=(p->lj_eps=(p->lj_sig=(p->r2cut=((flt*)(*a))) + nelem) + nelem) + nelem;
+        p->r2cut    = ((vector float *)(*a));
+        p->lj_sig   = p->r2cut  + nelem;
+        p->lj_eps   = p->lj_sig + nelem;
+        p->lj_shift = p->lj_eps + nelem;
 
 	/* Copy the scalar member */
         p->ntypes   = env->ntypes;

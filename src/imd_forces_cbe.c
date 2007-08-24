@@ -31,7 +31,6 @@ static int *at_off=NULL;
 static int nb_max=0;
 static short *tb=NULL;
 
-
 /* Potential which is need by calc_wp */
 pt_t  pt;
 
@@ -43,63 +42,36 @@ pt_t  pt;
 
 void mk_pt(void)
 {
-  int i, j, k;
+  int i, j, k, col;
   flt r2, r6;
 
   /* Allocation size common to all mallocs */
   size_t const nelem = 4*ntypes*ntypes;
+  size_t const asze  = nelem*(sizeof (flt));
 
   /* Set ntypes */
   pt.ntypes   = ntypes;
 
-  /* Allocation modified by Frank Pister */
-  /*
-  pt.r2cut    = (flt *) malloc_aligned(asze, 16);
-  pt.lj_sig   = (flt *) malloc_aligned(asze, 16);
-  pt.lj_eps   = (flt *) malloc_aligned(asze, 16);
-  pt.lj_shift = (flt *) malloc_aligned(asze, 16);
-  */
-
-  /* Allocate one array which is 4 times the size of every single array.
-     As every individual array contains a number of items (nelem, see above)
-     which is dividable by 4, the large array's number of elements is 
-     dividable by 16.
-     So its size is a multiple of 16bytes which is required for DMA.
-     Besides that, we only need one call the memory allocation routine.
-
-     In the DMAs it is assumed that pt.r2cut points to a block of memory
-     aligned appropriatly and the the remaining pointers in pt_t point to
-     some location inside that block.
-
-     Note that, using this allocation scheme, lj_xxx must not be free'd,
-     except r2_cut
-   */
-  if ( (pt.r2cut = (flt*)(malloc_aligned(4*nelem*(sizeof (flt)), 128,128))) ) {
-      /* Memory alloceted, now set the remaining pointers */
-      pt.lj_shift = (pt.lj_eps = (pt.lj_sig = pt.r2cut+nelem)+nelem)+nelem;
-  }
-  else  {
-       error("cannot allocate potential package");
-  }
-
-
-  /* Set values for potential */
-  for (  i=0;   i<ntypes;   i++ )
-    for (  j=0;    j<ntypes;   j++ ) {
-      int const col4 = (i*ntypes+j) * 4;
-      for (  k=0;   k<4;   k++  ) { /* make vectors: 4 copies of each value */
-        int const col4k = col4+k;
-        pt.r2cut  [col4k] = (flt) r2_cut      [i][j];
-        pt.lj_sig [col4k] = (flt) SQR(lj_sigma[i][j]);
-        pt.lj_eps [col4k] = (flt) lj_epsilon  [i][j] ;
-        r2 = pt.lj_sig[col4k] / pt.r2cut[col4k];
+  /* Allocate one array which is 4 times the size of a single array */
+  pt.r2cut    = (flt*)(malloc_aligned(4*asze, 16, 16));
+  pt.lj_sig   = pt.r2cut  + nelem;
+  pt.lj_eps   = pt.lj_sig + nelem;
+  pt.lj_shift = pt.lj_eps + nelem;
+  
+  if ((NULL==pt.r2cut) || (NULL==pt.lj_sig) || (NULL==pt.lj_eps) || 
+      (NULL==pt.lj_shift)) error("cannot allocate potential package");
+  for (i=0; i<ntypes; i++)
+    for (j=0; j<ntypes; j++) {
+      col = i*ntypes + j;
+      for (k=0; k<4; k++) { /* make vectors: 4 copies of each value */
+        pt.r2cut  [4*col+k] = (flt) r2_cut      [i][j];
+        pt.lj_sig [4*col+k] = (flt) SQR(lj_sigma[i][j]);
+        pt.lj_eps [4*col+k] = (flt) lj_epsilon  [i][j] ;
+        r2 = pt.lj_sig[4*col+k] / pt.r2cut[4*col+k];
         r6 = r2 * r2 * r2;
-        pt.lj_shift[col4k] = pt.lj_eps[col4k] * r6 * (r6 - 2.0);
+        pt.lj_shift[4*col+k] = pt.lj_eps[4*col+k] * r6 * (r6 - 2.0);
       }
     }
-
-
-
 }
 
 /******************************************************************************
@@ -253,7 +225,7 @@ void make_nblist(void)
     /* for each atom in cell */
     for (i=0; i<p->n; i++) {
 
-      int    m, off;
+      int    m, off, rr;
       vektor d1;
 
       d1.x = ORT(p,i,X);
@@ -283,8 +255,14 @@ void make_nblist(void)
       }
       ti[l+1] = n - ti[l];
       l += 2;
+
+      /* if n is not divisible by 4, pad with copies of i */
+      rr = n % 4;
+      if (rr>0) for (j=rr; j<4; j++) ttb[n++] = i;
+
       /* enlarge n to next 128 byte boundary */
       n = ((n + inc_short - 1) / inc_short) * inc_short; 
+
     }
     pa_max = MAX(pa_max,n);
     if (n + nn + 2*pa_max > nb_max) {

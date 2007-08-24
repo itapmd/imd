@@ -26,9 +26,13 @@
 #include <time.h>
 #include <unistd.h>
 
+#ifdef CBE
+#define USE_WALLTIME
+#endif
+
 /* support for timers */
 #ifndef MPI
-#ifdef USE_RUSAGE
+#if defined(USE_RUSAGE) || defined(USE_WALLTIME)
 #include <sys/time.h>
 #include <sys/resource.h>
 #else

@@ -193,7 +193,11 @@ typedef struct {
   int   k, n1, n2, len;           /* package number and actual sizes  */
   int   n1_max, n2_max, len_max;  /* allocated size (not transferred) */
   flt   totpot, virial;
+#ifdef __SPU__
+  vector float *pos, *force;      /* length: n2, n2 */
+#else
   flt   *pos, *force;             /* length: 4*n2, 4*n2 */
+#endif
   int   *typ, *ti;                /* length: n2, 2*n2   */
   short *tb;                      /* length: len        */
 } wp_t;
@@ -225,7 +229,11 @@ typedef struct exch {
 /* The potential type */
 typedef struct {
   int ntypes;
+#ifdef __SPU__
+  vector float *r2cut, *lj_sig, *lj_eps, *lj_shift;
+#else
   flt *r2cut, *lj_sig, *lj_eps, *lj_shift;
+#endif
 } pt_t;
 
 /* This should be defined in spu.c or imd_force_cbe */

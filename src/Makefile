@@ -575,14 +575,15 @@ ifeq (cbe-gcc,${IMDSYS})
   # The ordinary gcc does not set this macro
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
+  SPUCC         = spu-cc
+  EMBEDSPU      = ppu-embedspu
   BIN_DIR	= ${HOME}/bin/cbe
-#
-#  OPT_FLAGS	+= -O 
-  OPT_FLAGS     += -O -funroll-loops -fomit-frame-pointer
+  OPT_FLAGS     += -O3 -funroll-loops -pipe -Wall -Wno-unused
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
+  PROF_LIBS	+= -g3 -pg
+  SPUCFLAGS = -pipe -O3 -funroll-loops -ansi -pedantic -Wall -Wunused -Wshadow -Wno-long-long
   LFLAGS        += 
-# Added by F.P.
   LIBS          += -lspe2
 endif
 
@@ -773,7 +774,7 @@ ifneq (,$(strip $(findstring vec,${MAKETARGET})))
 else
   ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
     ifneq (,$(strip $(findstring cbe,${MAKETARGET})))
-      FORCESOURCES = imd_forces_cbe.c  # imd_forces_spu.c
+      FORCESOURCES = imd_forces_cbe.c
       CFLAGS += -DCBE -D__PPU__ -maltivec
     else
       FORCESOURCES = imd_forces_nbl.c
@@ -1202,7 +1203,7 @@ imd_forces_nbl.o: imd_forces_nbl.c
 
 # Uncommented by Frank Pister
 imd_forces_cbe.o: imd_forces_cbe.c
-	${CC}   ${CFLAGS} ${RCD_FLAGS}  -c imd_forces_cbe.c
+	${CC}   ${CFLAGS} -c imd_forces_cbe.c
 
 # rule to make imd_forces_cbe.o
 
@@ -1251,7 +1252,7 @@ endif
 
 # Modified by Frank Pister: Also remove spu related files
 clean:
-	rm -f *.o *.u *~ \#* *.V *.T *.O *.il    spu.o spu.s spu  imd_cbe_calc_spu.s imd_cbe_calc_spu.o
+	rm -f *.o *.u *~ \#* *.V *.T *.O *.il *.s spu
 
 help:
 	@echo "Usage: gmake imd[_<parallel>][_<option>[_<option>...]]"
@@ -1287,7 +1288,7 @@ spu.o: spu
 	${EMBEDSPU} -m32 hndle_cbe_calc spu spu.o 
 
 spu:  spu.c  imd_cbe.h  imd_cbe_util_spu.o  imd_cbe_calc_spu.s
-	${SPUCC} -o spu  ${SPUCXXFLAGS}   spu.c  imd_cbe_calc_spu.s  imd_cbe_util_spu.o
+	${SPUCC} -o spu ${SPUCFLAGS} spu.c  imd_cbe_calc_spu.s  imd_cbe_util_spu.o
 
 
 # Assembler code (instead of object code) for calc_wp on the SPU

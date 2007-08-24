@@ -498,7 +498,7 @@ void make_write_distrib_select(int n, void (*fun)(float*, cell*, int),
   int   num, numx, numy, numz;
   int   i, j, k, count, r, s, t, m, chunk_size;
   float max[6], min[6];
-  FILE  *outfile;
+  FILE  *outfile=NULL;
   char  fname[255];
 
   /* the bins are orthogonal boxes in space */
