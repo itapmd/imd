@@ -11,14 +11,22 @@
 /* Local/program specific headers */
 #include "imd_cbe.h"
 
-/* SPU (local) copy of pt which is initialized via DMA and is 
-   needed by calc_wp
+
+
+
+
+/* SPU (local) copy of pt which is initialized (once) via DMA and
+   is needed by calc_wp
 */
 pt_t pt;
 
+
+
+
 /* Type of effective address used */
-typedef unsigned long long  Tui64;
+/* typedef unsigned long long  Tui64; 
 typedef ea_t                Tea;
+*/
 
 /* Number of allocation units of size ausze needed for a block of size sze */
 unsigned nalloc_block(unsigned const sze, unsigned const ausze)
@@ -30,6 +38,7 @@ unsigned nalloc_block(unsigned const sze, unsigned const ausze)
     return (((nau*ausze) == sze) ?  nau : (1u+nau));
 }
 
+
 /* Number of allocation units of size "ausze" needed for 
    nelem items of size itmsze
 */
@@ -39,27 +48,45 @@ unsigned nalloc_items(unsigned const nelem, unsigned const itmsze,
      return nalloc_block(itmsze*nelem, ausze);
 }
 
+
+
+
+
+
+
+
+#define DMA64(p,sze,ea,tag,cmd) spu_mfcdma64((p), (ea)[0], (ea)[1],  (sze), (tag), (cmd))
+
 /* DMA sze bytes between LS addr. p and effective address ea in main mem */
 void (DMA64)(void* const p, unsigned const sze,
              unsigned const* const ea,
              unsigned const tag, unsigned const cmd)
 {
-     spu_mfcdma64(p, ea[0], ea[1],  sze, tag, cmd);
+     /* Just call the macro */
+     DMA64(p, sze,ea, tag, cmd);
 }
 
+
+
+
 /* List DMA with a list as returned by eas2les */
+enum { LDMAelemsze = (sizeof (unsigned)) << 1u };
+
+#define LDMA64(p, list, Nelem, tag, cmd)                         \
+    (spu_mfcdma64((p),(list)[(Nelem)<<1u], ((unsigned)(list)),   \
+                  (Nelem)*LDMAelemsze,     (tag), (cmd)          \
+                 )                                               \
+    )
+
 void (LDMA64)(void* const p, unsigned const* const list, unsigned const Nelem,
               unsigned const tag, unsigned const cmd)
 {
-    /* Size (in bytes) of one list element */
-    enum { elemsze = 2u*(sizeof (unsigned)) };
-
-    /*Call LDMA64 defined above with common high part of EAs taken
-      from the usual position in the array
-    */
-    spu_mfcdma64(p, list[Nelem<<1u], ((unsigned)(list)), (Nelem*elemsze),
-                 tag,cmd);
+     /* Just call the macro */
+     LDMA64(p, list, Nelem,  tag,cmd);
 }
+
+
+
 
 
 /* Allocate n items of size itmsze copying EAs
@@ -101,6 +128,8 @@ void* (alloc)(unsigned const n,  unsigned const itmsze,
      /* Error */
      return 0;
 }
+
+
 
 /* Given an exch_t build the corresponding wp_t, that is:
    Copy the scalar members
@@ -201,10 +230,7 @@ void start_create_pt(void** a, unsigned* nrem, unsigned const ausze,
         /* Set the pointers in the resulting pt_t (see modified allocation scheme
            in mk_pt)
 	*/
-        p->r2cut    = ((flt*)(*a));
-        p->lj_sig   = p->r2cut  + nelem;
-        p->lj_eps   = p->lj_sig + nelem;
-        p->lj_shift = p->lj_eps + nelem;
+        p->lj_shift=(p->lj_eps=(p->lj_sig=(p->r2cut=((flt*)(*a))) + nelem) + nelem) + nelem;
 
 	/* Copy the scalar member */
         p->ntypes   = env->ntypes;
@@ -236,73 +262,107 @@ void start_DMA_results(unsigned const* const exch_ea, unsigned const tag,
      DMA64(exch, (sizeof (*exch)), exch_ea, tag, MFC_PUT_CMD);
 }
 
-/* Argument type for main function */
+
+
+/* Argument types for main function */
+typedef unsigned long long ui64_t;
+
 typedef union {
-    unsigned long long ea64;
-    unsigned           ea32[2];
+    ui64_t   ea64;
+    unsigned ea32[(sizeof (ui64_t)) / (sizeof (unsigned))];
 } Targ, Tenv;
 
 
-int main(Tui64 const id, Targ const argp, Tenv const envp)
+
+
+
+int main(ui64_t const id, Targ const argp, Tenv const envp)
 {
     /* Unsigned integer constant, e.g. needed for tags/masks */
     typedef unsigned const Tuc;
 
-    /* Some tags and masks */
+    /* Some tags and the correspondning masks */
     static Tuc intag[]  = {      1u,       2u  };
     static Tuc inmsk[]  = { (1u<<1u), (1u<<2u) };
     static Tuc outtag[] = {      3u,       4u  };
     static Tuc outmsk[] = { (1u<<3u), (1u<<4u) };
 
-
-    /* Local copies of work packages on the SPU */
-    wp_t wp[1];
-
-    /* Controllblocks used for DMA */
-    env_t  ALIGNED_(16, env);
-    exch_t ALIGNED_(16, exch[1]);
-
-
-
-    /* Local memory for DMAs */
+ 
+    /* Local memory for DMAs (allocated "dynamically" on the stack) */
     enum { allocsize=16u };
-    unsigned char ALIGNED_(16, DMAmem[50u*1024u]);
+    unsigned char ALIGNED_(16, DMAmem[90u*1024u]);
+ 
     /* Number of alloction units remaining, current point of allocation */
-    unsigned DMArem = ASIZE(DMAmem);
-    void* DMAloc = AFRST(DMAmem);
+    unsigned DMArem=sizeof(DMAmem), DMArem0;
+    void    *DMAloc=DMAmem,        *DMAloc0;
 
-    /* EAs & sizes of the results, which at the moment is 
-       the force vector only */
-    enum { Nres=1u };
-    unsigned res_ea[Nres<<1u], res_sze[Nres];
 
-    /* printf("SPU main started\n"); */
 
-    /* Fetch env and start creating the corresponding pt_t */
+    /* Set decrementer to max. value */
+    spu_writech(SPU_WrDec, (~(0u)));
+
+
+    /* Fetch env and start creating the corresponding pt_t (Using DMA) */
+    {
+    env_t ALIGNED_(16, env);
     DMA64(&env, (sizeof env), envp.ea32,  5u, MFC_GET_CMD);
     spu_writech(MFC_WrTagMask, (1u<<5u));
     spu_mfcstat(MFC_TAG_UPDATE_ALL);
     start_create_pt(&DMAloc,&DMArem, allocsize,  &env,&pt,  intag[0]);
+    }
 
-    /* printf("Starting work loop on SPU\n"); */
+
+
+    /* Store allocation status after pt has been allocated on the stack */
+    DMAloc0 = DMAloc;
+    DMArem0 = DMArem;
+
+
+    /* fprintf(stdout, "Starting work loop on SPU\n"); fflush(stdout); */
 
     /* Work loop */
     for(;;) {
+        /* Local copies of work packages on the SPU & the exch control block */
+        wp_t wp[1];
+        exch_t ALIGNED_(16, exch[1]);
+
+        /* EAs & sizes of the results, which at the moment is 
+          the force vector only */
+        enum { Nres=1u };
+        unsigned res_ea[Nres<<1u], res_sze[Nres];
+
+
+
+        /* Wait for signal from PPU */
+        if ( EXPECT_FALSE(SPUEXIT==spu_read_in_mbox()) ) {
+  	    return 0;
+        }
+
         /* Fetch exch controll block: Start DMA & wait for it to complete */
         DMA64(&(exch[0]), (sizeof exch[0]), argp.ea32, 5u, MFC_GET_CMD);
         spu_writech(MFC_WrTagMask,  (1u<<5u));
         spu_mfcstat(MFC_TAG_UPDATE_ALL);
 
+
+        /* fprintf(stdout, "Got control block\n"); fflush(stdout); */
+
+
+
         /* Start the creation (via DMA) of a wp_t using the exch_t  & 
            wait for it to finish 
 	*/
+        DMAloc=DMAloc0;
+        DMArem=DMArem0;
+
         start_create_wp(&DMAloc,&DMArem, allocsize, &(exch[0]),&(wp[0]),  intag[0],
                         res_ea,res_sze);
         spu_writech(MFC_WrTagMask,  inmsk[0]);
         spu_mfcstat(MFC_TAG_UPDATE_ALL);
 
+
         /* The main work to be done */
         calc_wp(&(wp[0]));
+
 
         /* DMA results back to main memory & wait for it to complete */
         start_DMA_results(argp.ea32, outtag[0], &(wp[0]), &(exch[0]), res_sze);
@@ -310,9 +370,11 @@ int main(Tui64 const id, Targ const argp, Tenv const envp)
         spu_mfcstat(MFC_TAG_UPDATE_ALL);
 
 
-        /* At the moment, just stop working here */
-        break;
+        /* Done calculating & transferring wp */
+        spu_write_out_mbox(WPDONE1);
     }
 
-    return 0;
+    /* We should not arrive here as we only leave the main program if
+       SPUEXIT is passed via mbox */
+    return 1;
 }

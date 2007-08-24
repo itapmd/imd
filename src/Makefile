@@ -570,12 +570,15 @@ endif
 
 # Cell Broad Band Engine
 ifeq (cbe-gcc,${IMDSYS})
+  # Use the PPU compiler as defined by the PPUCC env. var. (ppu-gcc)
+  # as main compiler as it defines the __PPU__ macro 
+  # The ordinary gcc does not set this macro
   CC_SERIAL	= gcc
   CC_MPI	= mpicc
   BIN_DIR	= ${HOME}/bin/cbe
 #
 #  OPT_FLAGS	+= -O 
-  OPT_FLAGS     += -O -funroll-loops
+  OPT_FLAGS     += -O -funroll-loops -fomit-frame-pointer
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
   LFLAGS        += 
@@ -771,7 +774,7 @@ else
   ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
     ifneq (,$(strip $(findstring cbe,${MAKETARGET})))
       FORCESOURCES = imd_forces_cbe.c  # imd_forces_spu.c
-      CFLAGS += -DCBE
+      CFLAGS += -DCBE -D__PPU__ -maltivec
     else
       FORCESOURCES = imd_forces_nbl.c
     endif
@@ -1248,7 +1251,7 @@ endif
 
 # Modified by Frank Pister: Also remove spu related files
 clean:
-	rm -f *.o *.u *~ \#* *.V *.T *.O *.il    spu.o spu.s spu
+	rm -f *.o *.u *~ \#* *.V *.T *.O *.il    spu.o spu.s spu  imd_cbe_calc_spu.s imd_cbe_calc_spu.o
 
 help:
 	@echo "Usage: gmake imd[_<parallel>][_<option>[_<option>...]]"
@@ -1281,17 +1284,21 @@ socktest:
 # and an spu version of calc_wp
 # The SPU object file which is linked to the main programm
 spu.o: spu
-	${EMBEDSPU} -m32 h spu spu.o
+	${EMBEDSPU} -m32 hndle_cbe_calc spu spu.o 
 
-spu: spu.c imd_cbe.h imd_cbe_util_spu.o calc_wp_spu.o
-	${SPUCC} -o spu  ${SPUCXXFLAGS} spu.c imd_cbe_util_spu.o calc_wp_spu.o
+spu:  spu.c  imd_cbe.h  imd_cbe_util_spu.o  imd_cbe_calc_spu.s
+	${SPUCC} -o spu  ${SPUCXXFLAGS}   spu.c  imd_cbe_calc_spu.s  imd_cbe_util_spu.o
 
-# calc_wp object code for the SPU
-calc_wp_spu.o: imd_cbe_calc.c imd_cbe.h
-	${SPUCC} -o calc_wp_spu.o  ${SPUCFLAGS}  -c imd_cbe_calc.c
+
+# Assembler code (instead of object code) for calc_wp on the SPU
+# This assembler code may be analyzed using the spu-timing tool
+imd_cbe_calc_spu.s: imd_cbe_calc.c imd_cbe.h
+	${SPUCC} -o imd_cbe_calc_spu.s  ${SPUCFLAGS}   -S imd_cbe_calc.c
+
+
 
 # Some tools needed on the SPU for the exchange of data
 imd_cbe_util_spu.o: imd_cbe_util.c imd_cbe.h
-	${SPUCC} -o imd_cbe_util_spu.o  ${SPUCFLAGS}  -c imd_cbe_util.c
+	${SPUCC} -o imd_cbe_util_spu.o  ${SPUCFLAGS}    -c imd_cbe_util.c
 
 

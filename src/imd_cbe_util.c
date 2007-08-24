@@ -333,9 +333,11 @@ void (wp_out)(int (*of)(char const[],...), wp_t const* const e)
 
 
 
-/************** SPU part ************/
-#if defined(__SPU__)
-  /* Empty */
+
+#if defined(__SPU__)  /************** SPU part ************/
+/* 
+  Empty
+*/
 #endif /* SPU part */
 
 
@@ -360,8 +362,8 @@ void (wp_out)(int (*of)(char const[],...), wp_t const* const e)
 
 
 
-/************ PPU part **************/
-#if ! defined(__SPU__)
+
+#if defined(__PPU__)   /************ PPU part **************/
 
 /* ISO C std. headers */
 #include <limits.h>
@@ -378,244 +380,14 @@ void (wp_out)(int (*of)(char const[],...), wp_t const* const e)
 
 
 
-/* Some local abreviations for two libspe2 data types
-   which are often used here */
-typedef spe_program_handle_t Thndl;
-typedef spe_context_ptr_t    Tctxt;
-/* The same for the pthread type */
-typedef pthread_t            Tthr;
-
-
-
-
-
-/* Number of SPU threads to be used  */
-enum {
-   N_SPU_THREADS_MAX = 
-      (unsigned)
-#if defined (SPU_THREADS_MAX)
-      (SPU_THREADS_MAX) /* Use the #defined value */
-#else
-      (6) /* Use default which is also OK for the PS3 */
-#endif
-};
-
-
-/* Check k */
-static int (chkk)(int const k) {
-    return ((k>=0) && (k<N_SPU_THREADS_MAX));
-}
-
-/* Implemented as a macro, in which k appears twice */
-/* #define chkk(k) ((k>=0) && (k<N_SPU_THREADS_MAX)) */
-
-
-
-
-/* Get wp for SPU k */
-static wp_t wp[N_SPU_THREADS_MAX];
-
-/* Get a buffer for the work package */
-wp_t* cbe_get_wp(int const k)
-{
-    return ((chkk(k))  ?  (wp+k)  :  0);
-}
-
-
-
-/* Get exch_t for SPU k */
-exch_t* cbe_get_argp(int const k, wp_t const* const pwp)
-{
-    /* Ptr to buffer for SPU k */
-    exch_t* res;
-
-    if ( chkk(k) ) {
-        /* This must be aligned to 16byte boundary */
-        static exch_t ALIGNED_(16, exch[N_SPU_THREADS_MAX]);
-        res=exch+k;
-    }
-    else {
-        res=0;
-    }
-
-    /* Init result with data from pwp (if supplied) */
-    if ( pwp ) {
-        if ( res ) {
-            (void)(create_exch(pwp,res));
-            /* fprintf(stdout, "exch_t created.\n"); */
-        }
-    }
-    return res;
-}
-
-
-/* Get env_t for SPU k */
-env_t* cbe_get_envp(int const k, pt_t const* const ppt)
-{
-    /* Ptr to buffer for SPU k */
-    env_t* res;
-
-    if ( chkk(k) ) {
-         /* This must be aligned to 16byte boundary */
-         static env_t ALIGNED_(16, env[N_SPU_THREADS_MAX]);
-         res=env+k;
-    }
-    else {
-        res=0;
-    }
-
-    /* Init result with data from ppt (if supplied) */
-    if ( ppt ) {
-        if ( res ) {
-            (void)(create_env(ppt,res));
-            /* fprintf(stdout, "env_t created.\n"); */
-        }
-    }
-    return res;
-}
-
-
-/* Get instruction pointer for SPU k */
-
-static unsigned spuentry[N_SPU_THREADS_MAX] = { SPE_DEFAULT_ENTRY };
-
-unsigned* cbe_get_spuentry(int const k, unsigned const entry0)
-{
-    /* Instr. pointer for SPU k */
-    unsigned* const res = ((chkk(k)) ? (spuentry+k) : 0);
-    
-    /* Init result with entry0 */
-    if ( res ) {
-       (*res) = entry0;
-    }
-    return res;
-}
-
-/* Same as spuentry but with instruction counter set to default start value */
-unsigned* cbe_get_spustart(int const k)
-{
-     return cbe_get_spuentry(k, SPE_DEFAULT_ENTRY);
-}
-
-
-
-/* Get stop info buffer for SPU k */
-spe_stop_info_t* cbe_get_stopinfop(int const k)
-{
-    /* Global stopinfo buffers */
-    if ( chkk(k) ) {
-        static spe_stop_info_t sinfo[N_SPU_THREADS_MAX];
-        return sinfo+k;
-    }
-
-    return 0;
-}
-
-
-
-
-/* Program handle to be used. Returns NULL if valid handle can't be found */
-static Thndl* cbe_get_handle(int const k)
-{
-    /* The same handle for all SPU as they are all supposed to do the same. */
-    if ( chkk(k) ) {
-        extern spe_program_handle_t h;
-        return &h;
-    }
-
-
-    /* Error: Index out of range */
-    return 0;
-}
-
-
-
-
-
-/* ...for the SPU pthreads */
-static Tthr  t[N_SPU_THREADS_MAX];
-static Tctxt c[N_SPU_THREADS_MAX];
-
-
-/* My NULL-ptrs */
-#define CTXT0 ((Tctxt)(0))
-#define HNDL0 ((Thndl*)(0))
-
-/* Get context k */
-spe_context_ptr_t cbe_get_context(int const k)
-{
-    return (chkk(k)) ? (c[k]) : (CTXT0);
-}
-
-
-
-
-/* CBE specfic initialization.
-   This function must be called prior to using any other function or
-   object from imd_cbe_util.h if not stated other wise
-  */
-void cbe_init(void)
-{
-     /* Indices, iterators */
-     int i;
-     Tctxt* pctxt;
-
-
-
-     /* Debugging message */
-     /* fprintf(stdout, "cbe_init()\n"); */
-
-     for ( i=0, pctxt=c;      i<N_SPU_THREADS_MAX;      ++i, ++pctxt ) {
-          /* Set wp fields to zero, set instruction counters */
-          wp[i].n2_max=0;
-          spuentry[i]=SPE_DEFAULT_ENTRY;
-
-          /* Create a new context */
-          if (  CTXT0 != (*pctxt = spe_context_create(0,0))  ) {
-  	       /* Context created! Now, get the corresponding handle */
-  	       spe_program_handle_t* const hndl = cbe_get_handle(i);
-               if ( HNDL0 != hndl ) {
-		   /* Got handle. Now load the program into context,
-                      then move on to
-                      next context */
-		   if ( 0 == spe_program_load(*pctxt,hndl) ) {
-		       continue;
-                   }
-               }
-               /* Could not get handle or could not load program into ctxt */
-  	       spe_context_destroy(*pctxt);
-               *pctxt=CTXT0;
-          }
-     }
-}
-
-/* CBE specific cleanup */
-void cbe_shutdown(void)
-{
-     /* Indices, iterators */
-     int i;
-     spe_context_ptr_t* pctxt;
-
-#if DBGOUT
-     /* Debugging message */
-     fprintf(stdout, "cbe_shutdown()\n");
-#endif
-
-     /* Destroy contexts */
-     for ( i=N_SPU_THREADS_MAX, pctxt=c;     i>0;     --i, ++pctxt ) {
-          spe_context_destroy(*pctxt);
-          *pctxt=CTXT0;
-     }
-}
-
-#undef CTXT0
-#undef HNDL0
-
-
-
-
-
-
+/* Secure version of strcpy/strcat for array A as dst. argument
+   Those can't be implemented as functions. Even thoug A appears twice
+   in the macro, the second occurrance is as an argument to the sizeof operator
+ */
+#define STRACPY(A,ct) strncpy((A), ct, sizeof(A))
+#define STRACAT(A,ct) strncat((A), ct, sizeof(A))
+/* Macro version of fget which deduces the size of the buffer from the argument*/
+#define FGETA(A,f) fgets(A, (sizeof (A)), f)
 
 
 
@@ -632,16 +404,6 @@ static char const* (strchk)(char const s[], char const dflt[])
     return strchk(s,dflt);
 }
 
-
-
-/* Secure version of strcpy/strcat for array A as dst. argument
-   Those can't be implemented as functions. Even thoug A appears twice
-   in the macro, the second occurrance is as an argument to the sizeof operator
- */
-#define STRACPY(A,ct) strncpy((A), ct, sizeof(A))
-#define STRACAT(A,ct) strncat((A), ct, sizeof(A))
-/* Macro version of fget which deduces the size of the buffer from the argument*/
-#define FGETA(A,f) fgets(A, (sizeof (A)), f)
 
 
 /* The default timebase line in cpuinfo */
@@ -699,6 +461,9 @@ static timebase_t timebase_file_close(FILE* const f, char const line[])
   }
   return res;
 }
+
+
+
 
 /* Path to cpuinfo */
 static char const cipath[] = "/proc/cpuinfo";
@@ -790,64 +555,74 @@ void* (calloc_aligned)(size_t const nelem, size_t const elsze,
 
 
 
+/* Some local abreviations for two libspe2 data types
+   which are often used here */
+typedef spe_program_handle_t Thndl;
+typedef spe_context_ptr_t    Tctxt;
+/* The same for the pthread type */
+typedef pthread_t            Tthr;
 
 
 
 
-/* Schedule workpackage to SPU */
+
+
+
+
+
+
+
+
+
+
+
+
+/* Work packages */
+static wp_t w[N_SPU_THREADS_MAX * N_BUFLEV];
+wp_t* const cbe_wp = w;
+
+
+/* DMA exchange buffers, aligned 16byte boundary */
+static exch_t ALIGNED_(16, exch[N_SPU_THREADS_MAX * N_BUFLEV]);
+exch_t* const cbe_exch = exch;
+
+
+/* DMA env. buffer, aligned to 16byte boundary */
+static env_t ALIGNED_(16, env[1]);
+env_t* const cbe_env = env;
+
+
+
+/* Stop info for the SPU threads */
+static spe_stop_info_t sinfo[N_SPU_THREADS_MAX];
+spe_stop_info_t const* const cbe_stopinfo = sinfo; 
+
+
+
+/* SPU contexts.
+   Those must be available to the client code as they will be needed for
+   mailbox communication */
+static spe_context_ptr_t c[N_SPU_THREADS_MAX];
+spe_context_ptr_t const* const cbe_spucontext = c;
+
+
+
+
+
+/* Control areas */
+static spe_spu_control_area_p contrarea[N_SPU_THREADS_MAX];
+spe_spu_control_area_p* const cbe_spucontrolarea = contrarea;
+
+
+
+
+
 
 
 /* Schedule work (package) to SPU  */
 void schedtospu(wp_t* const pwp)
 {
-     /* The SPU to be used */
-     int const spunr = 0;
-
-     /* Location of "controlblocks" for DMA */
-     exch_t* const parg = cbe_get_argp(spunr, pwp);
-     env_t* const  penv = cbe_get_envp(spunr, &pt);
-
-     if ( ! (parg && penv) ) {
-         fprintf(stderr, "Could not get buffers for argument/environment!\n");
-         exit(2);
-     }
-
-     /* Create the control blocks & make sure the EAs contained therein
-        are aligned */
-     if ( !  exch_aligned(parg, 16) ) {
-        fprintf(stderr, "Effective address in wp is not aligned appropriatly.\n");
-        exit(2);
-     }
-     /* Debugging output */
-     /* exch_out(printf, parg); */
-
-     if ( ! env_aligned(penv, 16) ) {
-        fprintf(stderr, "Effective address in pt is not aligned appropriatly.\n");
-        exit(2);
-     }
-     /* Debugging output */
-     /* env_out(printf, penv); */
-
-
-     /* Debugging output */
-     /* fprintf(stdout, "Switching to SPU context in calc_wp_on_SPU\n"); fflush(stdout); */
-
-     /* Change to SPU context passing the addresses of the control blocks
-       as argp & envp. */
-     spe_context_run(cbe_get_context(spunr),  cbe_get_spustart(spunr),
-                     0, parg, penv, cbe_get_stopinfop(spunr)
-                    );
-
-     /* Debugging output */
-     /* fprintf(stdout, "Back from SPU context\n");  fflush(stdout); */
-
-
-
-     /* To update wp in main mem, only the componenet totpot & virial 
-        have to be copied from the exch_t, as the force has been DMAed
-        directly */
-     pwp->totpot = parg->totpot;
-     pwp->virial = parg->virial;
+     calc_wp(pwp);
 }
 
 
@@ -874,7 +649,7 @@ static unsigned* cpyea(void const* const ptr, unsigned* dstfrst, unsigned* dstla
     }
     /* Zero fill */
     while ( dstfrst != dstlast ) {
-         *(--dstlast)=0;
+         *(--dstlast)=0u;
     }
 
 
@@ -948,6 +723,210 @@ exch_t* (create_exch)(wp_t const* const wp, exch_t* const e)
 #undef CPYGLB
 #undef CPYGLOBPTR
 
+
+
+
+
+
+
+/* Minimum of m or the number of usable SPEs */
+int min_usable_spes(int const m, int const cpu_node) {
+    /* Get number of usable SPEs from OS */
+    int const u = spe_cpu_info_get(SPE_COUNT_USABLE_SPES, cpu_node);
+
+    if ( -1 == u ) {
+        /* Error getting number */
+        return -1;
+    }
+
+    /* Now return the minum */
+    return ((m<u) ? m : u);
+}
+
+
+
+
+
+
+
+
+/* Argument struct for the pthreads which pass control to the SPU */
+typedef struct spu_pthr_arg {
+     /* Argument & environment passed to the SPU thread*/
+     void *spu_arg;
+     void *spu_env;
+
+     /* Context to switch to */
+     spe_context_ptr_t spu_ctxt;
+
+     /* Entry point for SPU code */
+     /* unsigned spu_entry; */
+
+     /* Location of stop info */
+     spe_stop_info_t* spu_stopinfo_loc;
+} spu_pthr_arg_t;
+
+
+
+
+
+
+/* Trivial pthread function which just switches to SPU context and
+   return a pointer to the SPU programs stop info. */
+static void* spu_pthr(void* p0)
+{
+    /* Check the argument ptr. and use it in case it's valid */
+    if ( p0 ) {
+        /* SPU instruction counter, initialized to start of SPU program */
+        unsigned spu_entry = SPE_DEFAULT_ENTRY;
+
+        /* Get the (constant) argument pointed to be ptr */
+        spu_pthr_arg_t const* const p = p0;
+
+
+        /* The last message from PPU */
+        /* fprintf(stdout, "About to switch to SPU context\n");  fflush(stdout); */
+
+        if ( spe_context_run(p->spu_ctxt,  &spu_entry, 0u,
+                             p->spu_arg, p->spu_env,
+                             p->spu_stopinfo_loc
+                            ) 
+           ) {
+    	      return p->spu_stopinfo_loc;
+        }
+    }
+
+    /* Error */
+    return 0;
+}
+
+
+
+/* Number of threads initialized */
+static unsigned nspus=0;
+
+/* Get number of threads initialized */
+unsigned cbe_get_nspus() {
+    return nspus;
+}
+
+
+/* SPU multithreading: */
+/* IDs of the POSIX threads */
+static Tthr  t[N_SPU_THREADS_MAX];
+
+
+/* Init stuff for calc_threads. Try to start SPU threads
+   This function may only be called once. It's not thread safe
+   The minimum of nspu_req and the number of SPUs available (according
+   cpu_node) specifys the number of threads actually started.
+   The number of threas started is returned.
+*/
+unsigned cbe_init(unsigned const nspu_req, int const cpu_node)
+{
+    /* Arguments for the SPU threads */
+    static spu_pthr_arg_t pthrargs[N_SPU_THREADS_MAX];
+
+    /* Number of threads started */
+    unsigned nstrt=0;
+
+    /* Number of SPUs which may be initialized */
+    int const imax = min_usable_spes(((nspu_req < N_SPU_THREADS_MAX) ? nspu_req : N_SPU_THREADS_MAX), cpu_node);
+
+    /* Some indices/iterators */
+    int i;
+    Tctxt* pctxt;
+    spu_pthr_arg_t* parg;
+
+
+    /* No SPUs available */
+    if ( imax <1 ) {
+        return nspus=0;
+    }
+
+
+    /* Copy pt to env_t
+       It is assumend, that pt has been setup before we arrve here */
+    create_env(&pt, cbe_env+0);
+
+
+    /* Set "ground state" for some publically accessible values */
+    for ( i=0;   i<(N_SPU_THREADS_MAX * N_BUFLEV);  ++i  ) {
+        w[i].n2_max = 0;
+        c[i]=0;
+        contrarea[i]=0;
+    }
+
+    for ( i=0, pctxt=c, parg=pthrargs;    (i<imax);   )  {
+        /* Set the arguments for the pthread */ 
+        /* SPU thread arguments, also set wp fields to initial value
+           such that the wp gets allocated upon first call to make_wp */
+        parg->spu_arg=cbe_exch + (i*N_BUFLEV);
+
+        /* Environment */
+        parg->spu_env=cbe_env+0;
+
+        /* Stop info of SPU program is written here */
+        parg->spu_stopinfo_loc=sinfo+i;
+
+        /* Create context & load program into it */
+        if ( 0 != ((*pctxt) = (parg->spu_ctxt) = spe_context_create(SPE_MAP_PS,0)) ) {
+   	    /* This handle must be defined somewhere else and the program
+               must contain the calc_wp code. */
+            extern spe_program_handle_t hndle_cbe_calc;
+
+            /* Get control area for the context just created */
+            contrarea[i] = spe_ps_area_get((*pctxt), SPE_CONTROL_AREA);
+            /*  fprintf(stdout, "Control area %i at %p\n", i, contrarea[i]); fflush(stdout);  */
+
+            if ( 0 == spe_program_load((*pctxt), &hndle_cbe_calc)  ) {
+                /* Now start the a pthread */
+                if ( 0 == pthread_create((t+i), NULL, &spu_pthr, parg)  ) {
+		    /* (Another) thread started successfully */
+  		    ++nstrt;
+
+                    /* Move on to next thread */
+                    ++i;
+                    ++parg;
+                    ++pctxt;
+
+                    /* fprintf(stdout, "pthread %u started!\n", nstrt); */
+                }
+                else {
+		    /* Could not start thread, so destroy the (unused!)
+                       SPU context */
+		    spe_context_destroy(*pctxt);
+                    (*pctxt)=0;
+                    contrarea[i]=0;
+                    fprintf(stderr, "Could not create pthread\n");
+                }
+   	    } else {
+   	         fprintf(stderr, "Could not load handle\n");
+                 exit(1);
+            }
+        }
+        else {
+      	   fprintf(stderr, "Could not create context\n");
+        }
+    }
+
+
+    /* Return & store the number of threads actually started */
+    return nspus=nstrt;
+}
+
+
+
+void cbe_shutdown(void) {
+    unsigned i;
+    spe_context_ptr_t* pctxt;
+
+    for ( i=0, pctxt=c;    i<N_SPU_THREADS_MAX;    ++i, ++pctxt ) {
+        spe_context_destroy(*pctxt);
+        (*pctxt)=0;
+        contrarea[i]=0;
+    }
+}
 
 
 

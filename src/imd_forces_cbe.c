@@ -24,9 +24,15 @@
 /* CBE declarations */
 #include "imd_cbe.h"
 
-int   *ti=NULL, *tb_off=NULL, *at_off=NULL, nb_max=0;
-short *tb=NULL;
-wp_t  *wp=NULL;
+/* Global variables only needed in this file */
+static int *ti=NULL;
+static int *tb_off=NULL;
+static int *at_off=NULL;
+static int nb_max=0;
+static short *tb=NULL;
+
+
+/* Potential which is need by calc_wp */
 pt_t  pt;
 
 /******************************************************************************
@@ -37,12 +43,11 @@ pt_t  pt;
 
 void mk_pt(void)
 {
-  int i, j, k, col;
+  int i, j, k;
   flt r2, r6;
 
   /* Allocation size common to all mallocs */
   size_t const nelem = 4*ntypes*ntypes;
-  size_t const asze  = nelem*(sizeof (flt));
 
   /* Set ntypes */
   pt.ntypes   = ntypes;
@@ -62,31 +67,34 @@ void mk_pt(void)
      So its size is a multiple of 16bytes which is required for DMA.
      Besides that, we only need one call the memory allocation routine.
 
-     In the DMAs it is assumed that pt.r2cut point to a block of memory
+     In the DMAs it is assumed that pt.r2cut points to a block of memory
      aligned appropriatly and the the remaining pointers in pt_t point to
      some location inside that block.
 
-     Note that, using this allocation scheme, lj_xxx must not be free'd!
+     Note that, using this allocation scheme, lj_xxx must not be free'd,
+     except r2_cut
    */
-  pt.r2cut    = (flt*)(malloc_aligned(4*asze, 16,16));
-  pt.lj_sig   = pt.r2cut  + nelem;
-  pt.lj_eps   = pt.lj_sig + nelem;
-  pt.lj_shift = pt.lj_eps + nelem;
-  
+  if ( (pt.r2cut = (flt*)(malloc_aligned(4*nelem*(sizeof (flt)), 128,128))) ) {
+      /* Memory alloceted, now set the remaining pointers */
+      pt.lj_shift = (pt.lj_eps = (pt.lj_sig = pt.r2cut+nelem)+nelem)+nelem;
+  }
+  else  {
+       error("cannot allocate potential package");
+  }
 
 
-  if ((NULL==pt.r2cut) || (NULL==pt.lj_sig) || (NULL==pt.lj_eps) || 
-      (NULL==pt.lj_shift)) error("cannot allocate potential package");
-  for (i=0; i<ntypes; i++)
-    for (j=0; j<ntypes; j++) {
-      col = i*ntypes + j;
-      for (k=0; k<4; k++) { /* make vectors: 4 copies of each value */
-        pt.r2cut  [4*col+k] = (flt) r2_cut      [i][j];
-        pt.lj_sig [4*col+k] = (flt) SQR(lj_sigma[i][j]);
-        pt.lj_eps [4*col+k] = (flt) lj_epsilon  [i][j] ;
-        r2 = pt.lj_sig[4*col+k] / pt.r2cut[4*col+k];
+  /* Set values for potential */
+  for (  i=0;   i<ntypes;   i++ )
+    for (  j=0;    j<ntypes;   j++ ) {
+      int const col4 = (i*ntypes+j) * 4;
+      for (  k=0;   k<4;   k++  ) { /* make vectors: 4 copies of each value */
+        int const col4k = col4+k;
+        pt.r2cut  [col4k] = (flt) r2_cut      [i][j];
+        pt.lj_sig [col4k] = (flt) SQR(lj_sigma[i][j]);
+        pt.lj_eps [col4k] = (flt) lj_epsilon  [i][j] ;
+        r2 = pt.lj_sig[col4k] / pt.r2cut[col4k];
         r6 = r2 * r2 * r2;
-        pt.lj_shift[4*col+k] = pt.lj_eps[4*col+k] * r6 * (r6 - 2.0);
+        pt.lj_shift[col4k] = pt.lj_eps[col4k] * r6 * (r6 - 2.0);
       }
     }
 
@@ -297,7 +305,7 @@ void make_nblist(void)
 *
 ******************************************************************************/
 
-void make_wp(int k, wp_t *wp)
+static wp_t* make_wp(int k, wp_t *wp)
 {
   cell_nbrs_t *c = cnbrs + k;
   int   m, j, i, n, l, t, min;
@@ -351,6 +359,9 @@ void make_wp(int k, wp_t *wp)
   wp->len = tb_off[k+1] - tb_off[k];
   wp->n1_max  = 0;  /* max size for ti - nothing allocated here */
   wp->len_max = 0;  /* max size for tb - nothing allocated here */
+
+  /* Return ptr to the wp just created */
+  return wp;
 }
 
 
@@ -364,9 +375,13 @@ void make_wp(int k, wp_t *wp)
 *
 ******************************************************************************/
 
-void store_wp(wp_t *wp)
+static void store_wp(wp_t const* const wp)
 {
+  /* Some indices */
   int m, j, i, n=0;
+
+  /* Deref. pointer */
+  flt const* const force = wp->force;
 
   /* copy force and potential energy to cell array */
   for (m=0; m<14; m++) {
@@ -374,15 +389,19 @@ void store_wp(wp_t *wp)
     if (j == -1) continue;
     cell *q = cell_array + j;
     for (i=0; i<q->n; i++) {
-      KRAFT (q,i,X) += wp->force[n++];
-      KRAFT (q,i,Y) += wp->force[n++];
-      KRAFT (q,i,Z) += wp->force[n++];
-      POTENG(q,i  ) += wp->force[n++];
+      KRAFT (q,i,X) += force[n++];
+      KRAFT (q,i,Y) += force[n++];
+      KRAFT (q,i,Z) += force[n++];
+      POTENG(q,i  ) += force[n++];
     }
   }
   tot_pot_energy += wp->totpot;
   virial         += wp->virial;
 }
+
+
+
+
 
 /******************************************************************************
 *
@@ -390,10 +409,16 @@ void store_wp(wp_t *wp)
 *
 ******************************************************************************/
 
-void calc_forces(int steps)
+
+static void calc_forces_ppu(int const steps)
 {
   int  k, i, off;
   real tmpvec1[2], tmpvec2[2] = {0.0, 0.0};
+
+
+  /* (Global) work package */
+  wp_t* const wp = cbe_wp;
+
 
   if (0==have_valid_nbl) {
 #ifdef MPI
@@ -416,7 +441,7 @@ void calc_forces(int steps)
   nfc++;
 
   /* clear per atom accumulation variables */
-  for (k=0; k<nallcells; k++) {
+  for (  k=0;    k<nallcells;  ++k ) {
     cell *p = cell_array + k;
     for (i=0; i<p->n; i++) {
       KRAFT(p,i,X) = 0.0;
@@ -426,23 +451,17 @@ void calc_forces(int steps)
     }
   }
 
-  /* allocate wp if necessary */
-  if (NULL==wp) {
-    wp = (wp_t *) malloc( sizeof(wp_t) );
-    if (NULL==wp) error("cannot allocate workpackage");
-    wp->n2_max = 0;
-  }
+
 
   /* compute interactions */
-  for (k=0; k<ncells; k++) {
-
-    make_wp(k, wp);
+  for (  k=0;   k<ncells;   ++k ) {
+    /* Create work package  */
+     make_wp(k, wp);
 
     /* Debugging output */
     /* printf("wp on PPU after make_wp:\n");  wp_out(printf, wp); */
 
-    /* calc_wp(wp); */
-    schedtospu(wp); 
+    calc_wp(wp);
 
     /* Debugging output */
     /* printf("wp on PPU before store_wp:\n");  wp_out(printf, wp); */
@@ -462,6 +481,203 @@ void calc_forces(int steps)
   /* add forces back to original cells/cpus */
   send_forces(add_forces,pack_forces,unpack_forces);
 }
+
+
+
+static void calc_forces_spu(int const steps, int const ispumax)
+{
+  /* The following code uses mailboxes to synchronize between PPU & SPUs.
+     To do so, it uses direct (memory mapped) access to the control area
+     of the SPUs.
+     Writing/reading to the members of the control block struct assume
+     that writes and reads to unsigneds are atomic.
+  */
+  /* Furthermore, we need the following bit masks: */
+  enum { OUTMBX_CNT_MASK  = 0x000000ffu,
+         INMBX_CNT_MASK   = 0x0000ff00u,
+         OUTMBX_CNT_SHIFT = 0u,
+         INMBX_CNT_SHIFT  = 8u
+       };
+
+
+
+  /* Some indices */
+  int  k, kdone, i, off, ispu;
+
+
+  /* The following array keeps track of the states of the SPUs */
+  typedef enum { IDLE=0u, WORKING=1u } Tspustate;
+  Tspustate spustate[N_SPU_THREADS_MAX];
+
+  /* Some statistics: spuload[k] contains the number of wps which have
+     been sheduled to SPU k  */
+  unsigned spuload[N_SPU_THREADS_MAX];
+
+
+  /* Assume that all SPUs are idle and are awaiting a mailbox message 
+     when entering this routine */
+  for ( ispu=0;    (ispu<ispumax);   ++ispu ) {
+      spustate[ispu]=IDLE;
+      spuload[ispu]=0;
+  }
+
+  if (0==have_valid_nbl) {
+#ifdef MPI
+    /* check message buffer size */
+    if (0 == nbl_count % BUFSTEP) {
+         setup_buffers();
+    }
+#endif /* MPI */
+    /* update cell decomposition */
+    fix_cells();
+  }
+
+  /* fill the buffer cells */
+  send_cells(copy_cell,pack_cell,unpack_cell);
+
+  /* make new neighbor lists */
+  if ( 0 == have_valid_nbl ) { 
+     make_nblist();
+  }
+
+  /* clear global accumulation variables */
+  tot_pot_energy = virial = 0;
+  nfc++;
+
+  /* clear per atom accumulation variables */
+  for ( k=0;   k<nallcells;   ++k ) {
+      cell* const p = cell_array + k;
+      for ( i=0;   i<(p->n);   ++i ) {
+          KRAFT(p,i,X) = KRAFT(p,i,Y) = KRAFT(p,i,Z) = POTENG(p,i)  = 0;
+      }
+  }
+
+
+  /* fprintf(stdout, "nallcells=%i  ncells=%i\n", nallcells, ncells); fflush(stdout); */
+
+  /* While there is still work to be scheduled or there are still 
+     results to be picked up. */
+  for (  k=kdone=0;       (kdone<ncells) || (k<ncells);      )  {
+
+      /* fprintf(stdout, "k=%u  kdone=%u\n", k,kdone); */
+
+      /* Index for wp/exch */
+      unsigned iwp1;
+      for (  ispu=iwp1=0;     (ispu<ispumax);     ++ispu, iwp1+=N_BUFLEV  ) {
+
+           /* Control area used to access the mailbox and ptr. to state */
+  	   spe_spu_control_area_p const pctl = cbe_spucontrolarea[ispu];
+           Tspustate* const pstat = spustate+ispu;
+
+           /* Location of wp/exch */
+           wp_t* const pwp = cbe_wp+iwp1;
+           exch_t* const pexch = cbe_exch+iwp1;
+
+           /* fprintf(stdout, "SPU %u is %s\n", ispu, ((WORKING==*pstat) ? "working" : "notworking"));  */
+ 
+
+           /* Idle SPU and still work to schedule */
+           if (  (IDLE==*pstat) && (k<ncells)  ) {
+	       /* Create wp_t and exch_t */
+	       create_exch(make_wp(k, pwp),  pexch);
+ 
+               /* Signal SPU by writing to its mailbox when space is available */
+               while ( 0u == ((pctl->SPU_Mbox_Stat) & INMBX_CNT_MASK) ) {}
+               pctl->SPU_In_Mbox = WPSTRT1;
+
+	       /* Mark SPU as working */
+	       ++k;
+  	       *pstat=WORKING;
+
+               /* Update statistics */
+               ++(spuload[ispu]);
+
+               /* This SPU is working, so we can move on to the next one */
+               continue;
+           }
+
+
+           /* Has some wp been scheduled to current SPU and are there
+              still results to be picked up? */
+           if (  (WORKING==*pstat) && (kdone<ncells) ) {
+
+	        /* Check wether SPU has finished by reading its mailbox */
+	        if ( 0u != ((pctl->SPU_Mbox_Stat) & OUTMBX_CNT_MASK) ) {
+
+		    /* Data available, so read it */
+		    unsigned const spumsg = pctl->SPU_Out_Mbox;
+
+                    /* fprintf(stdout, "%u from spu %u\n", spumsg, ispu); */
+
+                    if ( WPDONE1 == spumsg ) {
+		        /* Copy results and store to wp */
+		        pwp->totpot = pexch->totpot;
+                        pwp->virial = pexch->virial;
+                        store_wp(pwp);
+  		        /* SPU's done with its work, so it's idle again 
+                           and one more wp is finished */
+                        ++kdone;
+		        *pstat=IDLE;                      
+                    }
+                }
+                else {
+		   /* This SPU is working and has not yet finished, so move
+                      on to the next one */
+ 		   continue;
+                }
+           }
+
+
+      }
+  }
+
+
+  /* Print SPU summary */
+  /*
+  for (  ispu=0;   (ispu<ispumax);    ++ispu  ) {
+      fprintf(stdout, "%u  ", (unsigned)(spustate[ispu]));
+  }
+  fputc('\n',stdout);
+  for (  ispu=0;   (ispu<ispumax);    ++ispu ) {
+      fprintf(stdout, "%u  ", spuload[ispu]);
+  }
+  fputc('\n',stdout);
+  */
+
+
+#ifdef MPI
+  {
+  /* sum up results of different CPUs */
+  real tmpvec1[2], tmpvec2[2] = {0.0, 0.0};
+  tmpvec1[0]     = tot_pot_energy;
+  tmpvec1[1]     = virial;
+  MPI_Allreduce( tmpvec1, tmpvec2, 2, REAL, MPI_SUM, cpugrid); 
+  tot_pot_energy = tmpvec2[0];
+  virial         = tmpvec2[1];
+  }
+#endif  /* MPI */
+
+  /* add forces back to original cells/cpus */
+  send_forces(add_forces,pack_forces,unpack_forces);
+}
+
+
+
+
+
+
+/* This is now just a "dispatch function" which chooses PPU or SPU (parallel)
+   version */
+void calc_forces(int steps) {
+    /* Number of SPU threads available (defined in imd.c) */
+    extern unsigned const cbe_nspus;
+
+    /* calc_forces_ppu(steps); */
+
+    calc_forces_spu(steps, cbe_nspus);
+}
+
+
 
 /******************************************************************************
 *

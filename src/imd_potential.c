@@ -691,9 +691,9 @@ void init_pre_pot(void) {
     }
 #endif
 
-#ifdef CBE
+#if defined(CBE)
   mk_pt();
-#endif
+#endif  /* CBE */
 
 }
 

@@ -28,6 +28,13 @@
 /* Main module of the IMD Package;
    Various versions are built by conditional compilation */
 
+
+/* CBE version stores the number of SPU threads available in this global
+   variable */
+#if defined(CBE)
+unsigned cbe_nspus;
+#endif
+
 int main(int argc, char **argv)
 {
   int start, num_threads, i;
@@ -37,10 +44,7 @@ int main(int argc, char **argv)
   long_long flpins;
 #endif
 
-/* Added by Frank Pister */
-#if defined(CBE)
-   cbe_init();
-#endif
+
 
 #ifdef MPI
   init_mpi(&argc,argv);
@@ -91,6 +95,23 @@ int main(int argc, char **argv)
   make_lin_pot_table(pair_pot, &pair_pot_lin);
 #endif
 #endif
+
+
+/* CBE initialization must follow the initialitzation of the analytically
+   defined potentials which have been initialized above, as the SPUs might
+   DMA the potential package to their LS right after startup.
+*/
+#if defined(CBE)
+    if ( (cbe_nspus=cbe_init(6, -1)) < 1 ) {
+        fprintf(stderr, "Could not initialized enough SPU threads!\n");
+        return 1;
+    }
+    else {
+        fprintf(stdout, "CBE info: %u SPUs are used.\n", cbe_nspus);
+    }
+#endif  /* CBE */
+
+
 
 #ifdef TTBP
   /* read TTBP smoothing potential file */

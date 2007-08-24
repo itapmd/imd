@@ -9,6 +9,18 @@ extern "C" {
 #endif
 
 
+#if ! defined(INLINE_)
+#    if defined(__cplusplus)
+#         define INLINE_ inline
+#    else
+#        if defined (__GNUC__)
+#             define INLINE_ __inline
+#        else
+#             define INLINE_
+#        endif /* GNUC */
+#    endif  /* C++  */
+#endif /* INLINE_ */
+
 /* The ALIGNED_(b,v) macro is used to align
    varibale v to a boundary specified by b.
    E.g. Use it to specify 16-byte alignment (which is needed for DMA)
@@ -155,6 +167,11 @@ typedef struct {
 /* This should be defined in spu.c or imd_force_cbe */
 extern pt_t pt;
 
+
+
+
+
+
 /* ptr<->ea_t mapping is similar to wp_t */
 /* This type is supposed to be passed as envirnoment pointer */
 typedef struct env {
@@ -170,6 +187,14 @@ typedef struct env {
     /* Padding */
     unsigned char pad[12];
 } env_t;
+
+
+/* Tokens used to synchronize between PPU / SPU */
+typedef enum sync_token { MBXNONE=0u,
+                          WPCREA1=1u, WPDONE1=2u, WPSTRT1=4u,
+                          SPUEXIT } sync_token_t;
+
+
 
 
 /* The main calculation routine */
@@ -283,7 +308,7 @@ extern "C" {
 
 
 /************ PPU part **************/
-#if ! defined(__SPU__)
+#if defined(__PPU__)
 
 /* SPU runtime management */
 #include <libspe2.h>
@@ -292,36 +317,71 @@ extern "C" {
 extern "C" {
 #endif
 
-/* Get a buffer for the work package */
-wp_t* cbe_get_wp(int const k);
 
-/* Get exch_t for SPU k */
-exch_t* cbe_get_argp(int const k, wp_t const* const pwp);
-
-/* Get env_t for SPU k */
-env_t* cbe_get_envp(int const k, pt_t const* const ppt);
-
-/* Get instruction pointer for SPU k */
-unsigned* cbe_get_spuentry(int const k, unsigned const entry0);
-
-/* Same as spuentry but with instruction counter set to default start value */
-unsigned* cbe_get_spustart(int const k);
-
-/* Get stop info buffer for SPU k */
-spe_stop_info_t* cbe_get_stopinfop(int const k);
-
-/* Get context k */
-spe_context_ptr_t cbe_get_context(int const k);
+/* Max. number of SPU threads which may be managed by the
+   following utility functions   */
+enum {
+   N_SPU_THREADS_MAX = 
+      (unsigned)
+#if defined (SPU_THREADS_MAX)
+      (SPU_THREADS_MAX) /* Use the #defined value */
+#else
+      (32) /* Use a default which should be large enough */
+#endif
+};
 
 
-/* CBE specfic initialization.
-   This function must be called prior to using any other function or
-   object from imd_cbe_util.h if not stated other wise
-  */
-void cbe_init(void);
+/* Number of buffer levels, that is number of exch_t/wp_t buffers
+   per SPU thread
+ */
+enum { N_BUFLEV=2u };
+
+
+/* Will be passed as arguments to SPU programs there are at least 
+   N_BUFLEV * N_SPU_THREADS_MAX elements in the array.
+   cbe_exch+0*N_BUFLEV is passed to SPU 0, cbe_exch+1*N_BUFLEV is passed to
+   SPU 1,   cbe_exch+k*N_BUFLEV is passed to SPU k...
+*/
+extern exch_t* const cbe_exch;
+
+/* Work packages */
+extern wp_t* const cbe_wp;
+
+/* To be passed as environment to SPU programs there is at least
+   one element in the array */
+extern env_t* const cbe_env;
+
+
+/* Stop info buffer for SPU k (readonly) */
+extern spe_stop_info_t const* const cbe_stopinfo;
+
+/* Context for SPU k (readonly) */
+extern spe_context_ptr_t const* const cbe_spucontext;
+
+
+/* Pointers to control areas the SPUs */
+typedef spe_spu_control_area_t volatile*  spe_spu_control_area_p;
+extern spe_spu_control_area_p* const cbe_spucontrolarea;
+
+
+
+/* Get number of threads initialized by cbe_init */
+unsigned cbe_get_nspus();
+
+
+/* Init stuff for calc_threads. Try to start SPU threads
+   This function may only be called once. It's not thread safe
+   The minimum of nspu_req and the number of SPUs available (according
+   cpu_node) specifys the number of threads actually started.
+   The number of threas started is returned.
+*/
+unsigned cbe_init(unsigned const nspu_req, int const cpu_node);
+
+
 
 /* CBE specific cleanup */
 void cbe_shutdown(void);
+
 
 
 
@@ -362,8 +422,7 @@ void* (calloc_aligned)(size_t const nelem, size_t const elsze,
 
 
 
-/* Schedule work (package) to SPU  */
-void schedtospu(wp_t* const pwp);
+
 
 
 
