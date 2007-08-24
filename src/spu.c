@@ -29,7 +29,7 @@ typedef ea_t                Tea;
 */
 
 /* Number of allocation units of size ausze needed for a block of size sze */
-unsigned nalloc_block(unsigned const sze, unsigned const ausze)
+static INLINE_ unsigned nalloc_block(unsigned const sze, unsigned const ausze)
 {   
     /* Number of units */
     unsigned const nau = sze/ausze;
@@ -42,8 +42,8 @@ unsigned nalloc_block(unsigned const sze, unsigned const ausze)
 /* Number of allocation units of size "ausze" needed for 
    nelem items of size itmsze
 */
-unsigned nalloc_items(unsigned const nelem, unsigned const itmsze,
-                      unsigned const ausze)
+static INLINE_ unsigned nalloc_items(unsigned const nelem, unsigned const itmsze,
+                             unsigned const ausze)
 {
      return nalloc_block(itmsze*nelem, ausze);
 }
@@ -78,7 +78,7 @@ enum { LDMAelemsze = (sizeof (unsigned)) << 1u };
                  )                                               \
     )
 
-void (LDMA64)(void* const p, unsigned const* const list, unsigned const Nelem,
+static INLINE_ void (LDMA64)(void* const p, unsigned const* const list, unsigned const Nelem,
               unsigned const tag, unsigned const cmd)
 {
      /* Just call the macro */
@@ -93,9 +93,9 @@ void (LDMA64)(void* const p, unsigned const* const list, unsigned const Nelem,
    The number of bytes actually allocated (which is a multiple of sizeof(Tau))
    is written to *isze.
 */
-void* (alloc)(unsigned const n,  unsigned const itmsze,
-              void** a, unsigned* const nrem,  unsigned const ausze,
-              unsigned const* ieasrc,  unsigned** ieadst,  unsigned** isze)
+static void* (alloc)(unsigned const n,  unsigned const itmsze,
+                     void** a, unsigned* const nrem,  unsigned const ausze,
+                     unsigned const* ieasrc,  unsigned** ieadst,  unsigned** isze)
 {
      /* Number of allocation units/bytes needed */
      unsigned const nalloc = nalloc_items(n,itmsze, ausze);
@@ -131,15 +131,18 @@ void* (alloc)(unsigned const n,  unsigned const itmsze,
 
 
 
+
+
+
 /* Given an exch_t build the corresponding wp_t, that is:
    Copy the scalar members
    Allocate memory for all the array members (using memory pointed to by a).
    Fetch all the input array data to LS using DMA (possibly a list DMA) with
    the specified tag
 */
-void start_create_wp(void** a, unsigned* nrem, unsigned const ausze,
-                     exch_t const* const exch, wp_t* const wp,  unsigned const tag,
-                     unsigned* pres_ea, unsigned* pres_sze)
+static void start_create_wp(void** a, unsigned* nrem, unsigned const ausze,
+                            exch_t const* const exch, wp_t* const wp,  unsigned const tag,
+                            unsigned* pres_ea, unsigned* pres_sze)
 {
      /* We need 4 EAs/sizes for the DMA + one high part of the EAs
         as well as some iterators over the EA/size arrays
@@ -149,36 +152,30 @@ void start_create_wp(void** a, unsigned* nrem, unsigned const ausze,
      unsigned *pea=ea, *psze=sze;
 
 
-     /* Get pointers to LS memory allocated from a, writing the size (in
-        bytes to psze), copying the corresponding effective addresses to
-        ea buffer
-     */
-     void* const astart=(*a);
-#define ALLOCMEMB(mb,ty,nele)                                               \
+
+
+
+     /* Macros to allocate and to DMA members */
+#    define ALLOCMEMB(mb,ty,nele)                                         \
    if ( EXPECT_FALSE(0 == ((wp->mb)=(ty*)alloc((nele), (sizeof (ty)), a,nrem, ausze, (exch->mb), &pea, &psze))) ) {   \
-        return;                                                             \
+        return;                       \
    }
+
+#    define DMAMEMB(member,nn) DMA64(wp->member,sze[nn], exch->member, tag, MFC_GET_CMD)
+
      ALLOCMEMB(pos, flt,   4*exch->n2)
+     DMAMEMB(pos, 0);
      ALLOCMEMB(typ, int,     exch->n2)
+     DMAMEMB(typ, 1);
      ALLOCMEMB(ti,  int,   2*exch->n2)
+     DMAMEMB(ti,  2);
      ALLOCMEMB(tb,  short,   exch->len)
+     DMAMEMB(tb,  3);
+
+#undef DMAMEMB
 #undef ALLOCMEMB
 
 
-     /* Start DMA to fetch the arrays */
-     if ( EXPECT_TRUE(0 != eas2les(ea,sze,Nea)) ) {
-         /* List DMA, using the list just built */
-         LDMA64(astart, ea,Nea, tag, MFC_GETL_CMD);
-     }
-     else {
-         /* 4 single DMAs for the 4 members */
-#define DMAMEMB(member,nn) DMA64(wp->member,sze[nn], exch->member, tag, MFC_GET_CMD)
-         DMAMEMB(pos, 0);
-         DMAMEMB(typ, 1);
-         DMAMEMB(ti,  2);
-         DMAMEMB(tb,  3);
-#undef DMAMEMB
-     }
      
 
 
@@ -208,8 +205,11 @@ void start_create_wp(void** a, unsigned* nrem, unsigned const ausze,
 
 
 
-void start_create_pt(void** a, unsigned* nrem, unsigned const ausze,
-                     env_t const* const env, pt_t* const p,  unsigned const tag)
+
+
+static void start_create_pt(void** a, unsigned* nrem, unsigned const ausze,
+                            env_t const* const env, pt_t* const p,
+                            unsigned const tag)
 {
      /* There are 4 pointers/EAs in pt_t/env_t
         Every pointer in env points to nelem items of type flt, so
@@ -242,11 +242,27 @@ void start_create_pt(void** a, unsigned* nrem, unsigned const ausze,
 }
 
 
+static void start_init(void** a, unsigned* nrem, unsigned const ausze,
+                       unsigned const envea[],
+                       pt_t* const ppt, unsigned const tag)
+{
+    /* First DMA env which is only neede here */
+    env_t ALIGNED_(16, env);
+    DMA64(&env, (sizeof env), envea,  5u, MFC_GET_CMD);
+    spu_writech(MFC_WrTagMask, (1u<<5u));
+    spu_mfcstat(MFC_TAG_UPDATE_ALL);
+
+    /* Start DMA of pt */
+    start_create_pt(a,nrem, ausze,  &env, ppt,  tag);
+}
+
+
+
 /* DMA forces back to main memory */
-void start_DMA_results(unsigned const* const exch_ea, unsigned const tag,
-                       wp_t const* const wp, exch_t* const exch,
-                       unsigned const* const res_sze
-                      )
+static void start_DMA_results(unsigned const* const exch_ea, unsigned const tag,
+                              wp_t const* const wp, exch_t* const exch,
+                              unsigned const* const res_sze
+                             )
 {
      /* First DMA the force array directly back to main memory... */
      DMA64(wp->force, res_sze[0],  exch->force,  tag, MFC_PUT_CMD);
@@ -303,15 +319,7 @@ int main(ui64_t const id, Targ const argp, Tenv const envp)
 
 
     /* Fetch env and start creating the corresponding pt_t (Using DMA) */
-    {
-    env_t ALIGNED_(16, env);
-    DMA64(&env, (sizeof env), envp.ea32,  5u, MFC_GET_CMD);
-    spu_writech(MFC_WrTagMask, (1u<<5u));
-    spu_mfcstat(MFC_TAG_UPDATE_ALL);
-    start_create_pt(&DMAloc,&DMArem, allocsize,  &env,&pt,  intag[0]);
-    }
-
-
+    start_init(&DMAloc, &DMArem, allocsize, envp.ea32,  &pt, intag[0]);
 
     /* Store allocation status after pt has been allocated on the stack */
     DMAloc0 = DMAloc;

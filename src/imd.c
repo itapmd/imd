@@ -102,6 +102,7 @@ int main(int argc, char **argv)
    DMA the potential package to their LS right after startup.
 */
 #if defined(CBE)
+    /* 1st arg: #of SPUs to be used */
     if ( (cbe_nspus=cbe_init(6, -1)) < 1 ) {
         fprintf(stderr, "Could not initialized enough SPU threads!\n");
         return 1;
