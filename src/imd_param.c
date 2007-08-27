@@ -2403,6 +2403,12 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       cellsz = MAX(cellsz,uniax_r2_cut);
     }
 #endif 
+#ifdef CBE
+    else if (strcasecmp(token,"num_spus")==0) {
+      /* number of SPUs to be used */
+      getparam(token,&num_spus,PARAM_INT,1,1);
+    }
+#endif
     else if (strcasecmp(token,"use_header")==0) {
 	/* shall a header be used */
       getparam("use_header",&use_header,PARAM_INT,1,1);
@@ -3450,6 +3456,10 @@ void broadcast_params() {
   MPI_Bcast( &epitax_speed,        1, REAL, 0, MPI_COMM_WORLD);
 #endif
   
+#ifdef CBE
+  MPI_Bcast( &num_spus, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
+
   MPI_Bcast(&use_header,1, MPI_INT, 0, MPI_COMM_WORLD);
 
   /* broadcast integrator to other CPUs */
@@ -3488,6 +3498,7 @@ void broadcast_params() {
     default: if (0==myid) error("unknown laser rescaling mode in broadcast"); break;
   }
 #endif /* LASER */
+
 }
 
 #endif /* MPI */

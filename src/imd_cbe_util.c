@@ -822,7 +822,7 @@ static Tthr  t[N_SPU_THREADS_MAX];
    cpu_node) specifys the number of threads actually started.
    The number of threas started is returned.
 */
-unsigned cbe_init(unsigned const nspu_req, int const cpu_node)
+int cbe_init(int const nspu_req, int const cpu_node)
 {
     /* Arguments for the SPU threads */
     static spu_pthr_arg_t pthrargs[N_SPU_THREADS_MAX];

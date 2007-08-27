@@ -647,12 +647,9 @@ static void calc_forces_spu(int const steps, int const ispumax)
 /* This is now just a "dispatch function" which chooses PPU or SPU (parallel)
    version */
 void calc_forces(int steps) {
-    /* Number of SPU threads available (defined in imd.c) */
-    extern unsigned const cbe_nspus;
-
     /* calc_forces_ppu(steps); */
 
-    calc_forces_spu(steps, cbe_nspus);
+    calc_forces_spu(steps, num_spus);
 }
 
 

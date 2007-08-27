@@ -1084,3 +1084,7 @@ EXTERN int  *dsf_kdir   INIT(NULL);
 EXTERN int  *dsf_kmax   INIT(NULL);
 EXTERN real *dsf_weight INIT(NULL);
 #endif
+
+#ifdef CBE
+EXTERN int num_spus INIT(6);
+#endif
