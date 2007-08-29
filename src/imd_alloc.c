@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -145,16 +145,14 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
 #ifdef EAM2
   to->eam_rho[i] = from->eam_rho[j]; 
   to->eam_dF [i] = from->eam_dF [j]; 
+#endif
 #ifdef EEAM
   to->eeam_p_h[i] = from->eeam_p_h[j]; 
   to->eeam_dM [i] = from->eeam_dM [j]; 
 #endif
-#endif
-
 #ifdef DAMP
   to->damp_f[i] = from->damp_f[j];
 #endif
-
 #ifdef ADP
   to->adp_mu   X(i)    = from->adp_mu   X(j); 
   to->adp_mu   Y(i)    = from->adp_mu   Y(j); 
@@ -320,509 +318,168 @@ void increase_neightab(neightab *neigh, int count)
 
 /******************************************************************************
 *
-*  Allocate memory for a cell. 
+*  Allocate memory with prescribed alignment 
+*
+*  This routine can replace malloc, calloc, realloc, free.
+*
+*  The parameters are:
+*
+*    p:      on entry, address of pointer to old memory block
+*            on exit, address of pointer to new memory block
+*    count:  size of new memory (number of items)
+*            if zero, old memory is just deallocated
+*    size:   size of one item (in bytes)
+*    align:  memory is aligned at <align> byte boundaries
+*            must be a multiple of the pointer size
+*    ncopy:  number of items to copy from old to new memory
+*            if non-zero, array at old location is deallocated afterwards
+*            if negative, nothing is copied, but old memory is deallocated
+*            if zero, there is no old memory to deallocate or copy
+*    clear:  if non-zero, new memory is zeroed
+*    name:   name of memory block (for error messages)
 *
 ******************************************************************************/
 
-void alloc_cell(cell *thecell, int count)
+void memalloc(void *p, int count, int size, int align, int ncopy, int clear,
+              char *name)
 {
-  void *space;
-  cell newcell;
-  int i, ncopy;
-  real *tmp;
-  int newcellsize;
+  void *new, **old = (void **)p;
+  int  ret, len, a = align - 1;
 
-  /* cell is freed */
-  if (0==count) {
-    thecell->n = 0;
-#ifdef VEC
-    thecell->n_buf = 0;
-#endif
-    newcell.ort = NULL;
-    newcell.impuls = NULL;
-    newcell.kraft = NULL;
-#ifndef MONOLJ
-    newcell.nummer = NULL;
-    newcell.sorte  = NULL;
-    newcell.vsorte = NULL;
-    newcell.masse  = NULL;
-    newcell.pot_eng= NULL;
-#ifdef EAM2
-    newcell.eam_rho = NULL;
-    newcell.eam_dF  = NULL;
-#ifdef EEAM
-    newcell.eeam_p_h = NULL;
-    newcell.eeam_dM  = NULL;
-#endif
-#endif
-#ifdef DAMP
-    newcell.damp_f = NULL;
-#endif
-#ifdef ADP
-    newcell.adp_mu     = NULL;
-    newcell.adp_lambda = NULL;
-#endif
-#ifdef CG
-    newcell.h = NULL;
-    newcell.g = NULL;
-    newcell.old_ort = NULL;
-#endif
-#ifdef NNBR
-    newcell.nbanz = NULL;
-#endif
-#ifdef DISLOC
-    newcell.Epot_ref = NULL;
-    newcell.ort_ref = NULL;
-#endif
-#ifdef CNA
-    newcell.mark = NULL;
-#endif
-#ifdef AVPOS
-    newcell.av_epot = NULL;
-    newcell.avpos   = NULL;
-    newcell.sheet   = NULL;
-#endif
-#ifdef REFPOS
-    newcell.refpos = NULL;
-#endif
-#ifdef NVX
-    newcell.heatcond = NULL;
-#endif
-#ifdef STRESS_TENS
-    newcell.presstens = NULL;
-#endif
-#ifdef SHOCK
-    newcell.pxavg = NULL;
-#endif
-#ifdef COVALENT
-    newcell.neigh  = NULL;
-#endif
-#ifdef NBLIST
-    newcell.nbl_pos  = NULL;
-#endif
-#ifdef UNIAX
-    newcell.achse = NULL;
-    newcell.dreh_impuls = NULL;
-    newcell.dreh_moment = NULL;
-#endif
-#if defined(VEC) && defined(MPI)
-    newcell.ind = NULL;
-#endif
-#endif /* not MONOLJ */
+  if (count>0) {  /* allocate count * size bytes */
+    len = (count * size + a) & (~a);  /* enlarge to multiple of align */
+    ret = posix_memalign(&new, align, len);
+    if (ret==EINVAL) { /* align must be a multiple of the pointer size */
+      error("invalid alignment request in memory allocation");
+    }
+    else if (ret==ENOMEM) { /* out of memory */
+      error_str("Cannot allocate memory for %s", name);
+    }
+    else {  /* allocation succeded */
+      if (clear  ) memset(new, 0, len);              /* zero new memory */
+      if (ncopy>0) memcpy(new, *old, ncopy * size);  /* copy old data */
+      if (ncopy  ) free(*old);                       /* deallocate old data */
+      *old = new;
+    }
   }
-  else {
-        /* Cell IS allocated */
-    
-    /* Calulate newcell size */
-#ifdef UNIAX
-    newcellsize = count *
-        ( DIM * sizeof(real) + /* ort */
-          DIM * sizeof(real) + /* achse */
-          DIM * sizeof(real) + /* impuls */
-          DIM * sizeof(real) + /* drehimpuls */
-          DIM * sizeof(real) + /* kraft */
-          DIM * sizeof(real) ); /* drehmoment */
-#else
-    newcellsize = count *
-        ( DIM * sizeof(real) + /* ort */
-          DIM * sizeof(real) + /* impuls */
-          DIM * sizeof(real)   /* kraft */ 
-#ifdef CG
-	  + DIM * sizeof(real) /* h */
-	  + DIM * sizeof(real) /* g */
-	  + DIM * sizeof(real) /* old_ort */
-#endif
-	    ); 
-#endif  
+  else {  /* deallocate */
+    free(*old);
+    *old = NULL;
+  }
+}
 
-    /* Get some space */
-    space = malloc(newcellsize);
+/******************************************************************************
+*
+*  Allocate memory for a cell
+*
+******************************************************************************/
 
-    /* Calculate Pointers */
-    tmp = (real *) space;
-    newcell.ort = tmp; tmp += DIM * count;
-    newcell.impuls = tmp; tmp += DIM * count;
-    newcell.kraft  = tmp; tmp += DIM * count;
-#ifdef CG
-    newcell.h = tmp; tmp += DIM * count;
-    newcell.g = tmp; tmp += DIM * count;
-    newcell.old_ort = tmp; tmp += DIM * count;
+void alloc_cell(cell *p, int n)
+{
+  int i, ncopy, al=8;
+
+  /* cells are either deallocated or increased; they never shrink */
+  if ((n>0) && (n < p->n_max)) error("cells cannot shrink");
+
+  /* cell is to be deallocated or has just been initialized -> no valid data */
+  if ((0==n) || (0==p->n_max)) {
+    p->n = 0;
+#ifdef VEC
+    p->n_buf = 0;
 #endif
-#ifdef UNIAX
-    newcell.achse = tmp; tmp += DIM * count;
-    newcell.dreh_impuls = tmp; tmp += DIM * count;
-    newcell.dreh_moment = tmp; tmp += DIM * count;
-#endif
-#ifndef MONOLJ
-    /* Allocate rest of variables */
-    newcell.nummer = (integer * ) malloc(count * sizeof(integer) );
-    newcell.sorte  = (shortint* ) malloc(count * sizeof(shortint));
-    newcell.vsorte = (shortint* ) malloc(count * sizeof(shortint));
-    newcell.masse  = (real    * ) malloc(count * sizeof(real)    );
-    newcell.pot_eng= (real    * ) malloc(count * sizeof(real)    );
-#ifdef EAM2
-    newcell.eam_rho = (real *) malloc(count * sizeof(real));
-    newcell.eam_dF  = (real *) malloc(count * sizeof(real));
-#ifdef EEAM
-    newcell.eeam_p_h = (real *) malloc(count * sizeof(real));
-    newcell.eeam_dM  = (real *) malloc(count * sizeof(real));
-#endif
-#endif
-#ifdef DAMP
-    newcell.damp_f = (real *) malloc(count * sizeof(real));
-#endif
-#ifdef ADP
-    newcell.adp_mu     = (real       *) malloc(count * DIM * sizeof(real));
-    newcell.adp_lambda = (sym_tensor *) malloc(count * sizeof(sym_tensor));
-#endif
-#ifdef NNBR
-    newcell.nbanz = (shortint *) malloc(count * sizeof(shortint));
-#endif
-#ifdef DISLOC
-    newcell.Epot_ref = (real *) calloc(count,sizeof(real));
-    newcell.ort_ref = (real *) calloc(count*DIM, sizeof(real));
-#endif
-#ifdef CNA
-    newcell.mark = (shortint *) calloc(count,sizeof(shortint));
-#endif
-#ifdef AVPOS
-    newcell.av_epot = (real *) calloc(count,     sizeof(real));
-    newcell.avpos   = (real *) calloc(count*DIM, sizeof(real));
-    newcell.sheet   = (real *) malloc(count * DIM * sizeof(real));
-#endif
-#ifdef REFPOS
-    newcell.refpos = (real *) malloc(count*DIM*sizeof(real));
-#endif
-#ifdef NVX
-    newcell.heatcond = (real *) malloc(count*sizeof(real));
-#endif
-#ifdef STRESS_TENS
-    newcell.presstens = (sym_tensor *) malloc(count*sizeof(sym_tensor));
-#endif
-#ifdef SHOCK
-    newcell.pxavg = (real *) malloc(count*sizeof(real));
-#endif
+  }
+
 #if (defined(COVALENT) && !defined(TWOD))
-    newcell.neigh = (neightab **) malloc( count * sizeof(neighptr) );
-    if (NULL == newcell.neigh) {
-      error("COVALENT: cannot allocate neighbor tables");
-    }
-    for (i=0; i<thecell->n_max; ++i) {
-      newcell.neigh[i] = thecell->neigh[i];
-    }
-    for (i=thecell->n_max; i<count; ++i) {
-      newcell.neigh[i] = alloc_neightab(newcell.neigh[i], neigh_len);
-    }
-#endif
-#ifdef NBLIST
-    newcell.nbl_pos = (real *) malloc(count*DIM*sizeof(real));
-#endif
-#if defined(VEC) && defined(MPI)
-    newcell.ind = (integer *) malloc(count * sizeof(integer));
-#endif
-#endif /* not MONOLJ */
-
-    if ((NULL == space)
-#ifndef MONOLJ
-        || (NULL == newcell.nummer)
-        || (NULL == newcell.sorte)
-        || (NULL == newcell.vsorte)
-        || (NULL == newcell.masse)
-        || (NULL == newcell.pot_eng)
-#ifdef EAM2
-	|| (NULL == newcell.eam_rho)
-	|| (NULL == newcell.eam_dF)
-#ifdef EEAM
-	|| (NULL == newcell.eeam_p_h)
-	|| (NULL == newcell.eeam_dM)
-#endif
-#endif
-#ifdef DAMP
-        || (NULL == newcell.damp_f)
-#endif
-#ifdef ADP
-	|| (NULL == newcell.adp_mu)
-	|| (NULL == newcell.adp_lambda)
-#endif
-#ifdef NNBR
-	|| (NULL == newcell.nbanz)
-#endif
-#ifdef DISLOC
-        || (NULL == newcell.Epot_ref)
-        || (NULL == newcell.ort_ref)
-#endif
-#ifdef CNA
-        || (NULL == newcell.mark)
-#endif
-#ifdef AVPOS
-	|| (NULL == newcell.av_epot)
-        || (NULL == newcell.avpos)
-        || (NULL == newcell.sheet)
-#endif
-#ifdef REFPOS
-        || (NULL == newcell.refpos)
-#endif
-#ifdef NVX
-        || (NULL == newcell.heatcond)
-#endif
-#ifdef STRESS_TENS
-        || (NULL == newcell.presstens)
-#endif
-#ifdef SHOCK
-        || (NULL == newcell.pxavg)
-#endif
-#ifdef NBLIST
-        || (NULL == newcell.nbl_pos)
-#endif
-#if defined(VEC) && defined(MPI)
-        || (NULL == newcell.ind)
-#endif
-#endif /* not MONOLJ */
-        ) {
-      printf("Want %d bytes.\n",newcellsize);
-#ifdef CRAY
-      malloc_stats(0);
-#endif
-      printf("Have %ld atoms.\n",natoms);
-      error("Cannot allocate memory for cell.");
+  /* if cell is to be deallocated, begin with neighbor tables */
+  if (0==n) {
+    for (i=0; i<p->n_max; ++i) {
+      p->neigh[i] = alloc_neightab(p->neigh[i], 0);
     }
   }
-  
-  if (0 == thecell->n_max) {
-    /* cell is just initialized */
-    thecell->n = 0;
-#ifdef VEC
-    thecell->n_buf = 0;
 #endif
-  } else {
 
-    if (count < thecell->n_max) { /* cell shrinks, data is invalidated */
-      thecell->n = 0;
+  /* if there are valid particles in cell, copy them to new storage */
 #ifdef VEC
-      thecell->n_buf = 0;
-#endif
-#if (defined(COVALENT) && !defined(TWOD))
-      /* deallocate all neighbor tables */
-      for (i=0; i<thecell->n_max; ++i) {
-        thecell->neigh[i] = alloc_neightab(thecell->neigh[i],0);
-      }
-      /* free(thecell->neigh); is freed later again */
-#endif
-    }
-
-    /* if there are valid particles in cell, copy them to new cell */
-#ifdef VEC
-    ncopy = MAX(thecell->n,thecell->n_buf);
+  ncopy = (0==p->n_max) ? -1 : MAX(p->n,p->n_buf);
 #else
-    ncopy = thecell->n;
+  ncopy = (0==p->n_max) ? -1 : p->n;
 #endif
-    if (ncopy > 0) {
-      /* cell is enlarged, copy data from old to newcell location */
-      memcpy(newcell.ort,     thecell->ort,     ncopy * DIM * sizeof(real));
-      memcpy(newcell.impuls,  thecell->impuls,  ncopy * DIM * sizeof(real));
-      memcpy(newcell.kraft,   thecell->kraft,   ncopy * DIM * sizeof(real));
-#ifdef CG
-      memcpy(newcell.h,       thecell->h,       ncopy * DIM * sizeof(real));
-      memcpy(newcell.g,       thecell->g,       ncopy * DIM * sizeof(real));
-      memcpy(newcell.old_ort, thecell->old_ort, ncopy * DIM * sizeof(real));
-#endif
-#ifndef MONOLJ
-      memcpy(newcell.nummer,  thecell->nummer,  ncopy * sizeof(integer));
-      memcpy(newcell.sorte,   thecell->sorte,   ncopy * sizeof(shortint));
-      memcpy(newcell.vsorte,  thecell->vsorte,  ncopy * sizeof(shortint));
-      memcpy(newcell.masse,   thecell->masse,   ncopy * sizeof(real));
-      memcpy(newcell.pot_eng, thecell->pot_eng, ncopy * sizeof(real));
-#ifdef EAM2
-      memcpy(newcell.eam_rho, thecell->eam_rho, ncopy * sizeof(real));
-      memcpy(newcell.eam_dF,  thecell->eam_dF,  ncopy * sizeof(real));
-#ifdef EEAM
-      memcpy(newcell.eeam_p_h, thecell->eeam_p_h, ncopy * sizeof(real));
-      memcpy(newcell.eeam_dM,  thecell->eeam_dM,  ncopy * sizeof(real));
-#endif
-#endif
-#ifdef DAMP
-      memcpy(newcell.damp_f, thecell->damp_f, ncopy * sizeof(real));
-#endif
-#ifdef ADP
-      memcpy(newcell.adp_mu,     thecell->adp_mu,  ncopy * DIM * sizeof(real));
-      memcpy(newcell.adp_lambda, thecell->adp_lambda,ncopy*sizeof(sym_tensor));
-#endif
-#ifdef NNBR
-      memcpy(newcell.nbanz, thecell->nbanz, ncopy * sizeof(shortint));
-#endif
-#ifdef DISLOC
-      memcpy(newcell.Epot_ref, thecell->Epot_ref, ncopy * sizeof(real));
-      memcpy(newcell.ort_ref,  thecell->ort_ref,  ncopy * DIM * sizeof(real));
-#endif
-#ifdef CNA
-      memcpy(newcell.mark, thecell->mark, ncopy * sizeof(shortint));
-#endif
-#ifdef AVPOS
-      memcpy(newcell.av_epot, thecell->av_epot, ncopy * sizeof(real));
-      memcpy(newcell.avpos,   thecell->avpos, ncopy * DIM * sizeof(real));
-      memcpy(newcell.sheet,   thecell->sheet, ncopy * DIM * sizeof(real));
-#endif
-#ifdef REFPOS
-      memcpy(newcell.refpos, thecell->refpos, ncopy * DIM * sizeof(real));
-#endif
-#ifdef NVX
-      memcpy(newcell.heatcond,  thecell->heatcond,  ncopy * sizeof(real));
-#endif
-#ifdef STRESS_TENS
-      memcpy(newcell.presstens, thecell->presstens, ncopy*sizeof(sym_tensor));
-#endif
-#ifdef SHOCK
-      memcpy(newcell.pxavg,  thecell->pxavg,  ncopy * sizeof(real));
-#endif
-#ifdef NBLIST
-      memcpy(newcell.nbl_pos,  thecell->nbl_pos,  ncopy * sizeof(real));
-#endif
-#ifdef UNIAX
-      memcpy(newcell.achse ,   thecell->achse,    ncopy * DIM * sizeof(real));
-      memcpy(newcell.dreh_impuls, thecell->dreh_impuls,ncopy*DIM*sizeof(real));
-      memcpy(newcell.dreh_moment, thecell->dreh_moment,ncopy*DIM*sizeof(real));
-#endif
-#if defined(VEC) && defined(MPI)
-      memcpy(newcell.ind, thecell->ind, ncopy * sizeof(integer));
-#endif
-#endif /* not MONOLJ */
-    }
 
-    /* deallocate old cell */
-    free(thecell->ort);
+  /* allocate memory */
+  memalloc( &p->ort,      n*DIM, sizeof(real), al, ncopy*DIM, 0, "ort" );
+  memalloc( &p->impuls,   n*DIM, sizeof(real), al, ncopy*DIM, 0, "impuls" );
+  memalloc( &p->kraft,    n*DIM, sizeof(real), al, ncopy*DIM, 0, "kraft" );
 #ifndef MONOLJ
-    free(thecell->nummer);
-    free(thecell->sorte);
-    free(thecell->vsorte);
-    free(thecell->masse);
-    free(thecell->pot_eng);
-#ifdef EAM2
-    free(thecell->eam_rho);
-    free(thecell->eam_dF);
-#ifdef EEAM
-    free(thecell->eeam_p_h);
-    free(thecell->eeam_dM);
+  memalloc( &p->nummer,   n, sizeof(integer),  al, ncopy, 0, "nummer" );
+  memalloc( &p->sorte,    n, sizeof(shortint), al, ncopy, 0, "sorte" );
+  memalloc( &p->vsorte,   n, sizeof(shortint), al, ncopy, 0, "vsorte" );
+  memalloc( &p->masse,    n, sizeof(real),     al, ncopy, 0, "masse" );
+  memalloc( &p->pot_eng,  n, sizeof(real),     al, ncopy, 0, "pot_eng" );
 #endif
+#ifdef EAM2
+  memalloc( &p->eam_rho,  n, sizeof(real),     al, ncopy, 0, "eam_rho" );
+  memalloc( &p->eam_dF,   n, sizeof(real),     al, ncopy, 0, "eam_dF" );
+#endif
+#ifdef EEAM
+  memalloc( &p->eeam_p_h, n, sizeof(real),     al, ncopy, 0, "eeam_p_h" );
+  memalloc( &p->eeam_dM,  n, sizeof(real),     al, ncopy, 0, "eeam_dM" );
 #endif
 #ifdef DAMP
-    free(thecell->damp_f);
+  memalloc( &p->damp_f,   n, sizeof(real),     al, ncopy, 0, "damp_f" );
 #endif
 #ifdef ADP
-    free(thecell->adp_mu);
-    free(thecell->adp_lambda);
+  memalloc( &p->adp_mu,     n*DIM, sizeof(real),   al, ncopy*DIM, 0, "adp_mu");
+  memalloc( &p->adp_lambda, n, sizeof(sym_tensor), al, ncopy, 0, "adp_lambda");
+#endif
+#ifdef CG
+  memalloc( &p->h,        n*DIM, sizeof(real), al, ncopy*DIM, 0, "h" );
+  memalloc( &p->g,        n*DIM, sizeof(real), al, ncopy*DIM, 0, "g" );
+  memalloc( &p->old_ort,  n*DIM, sizeof(real), al, ncopy*DIM, 0, "old_ort" );
 #endif
 #ifdef NNBR
-    free(thecell->nbanz);
+  memalloc( &p->nbanz,    n, sizeof(shortint), al, ncopy, 0, "nbanz" );
 #endif
 #ifdef DISLOC
-    free(thecell->Epot_ref);
-    free(thecell->ort_ref);
+  memalloc( &p->Epot_ref, n,     sizeof(real), al, ncopy    , 1, "Epot_ref" );
+  memalloc( &p->ort_ref,  n*DIM, sizeof(real), al, ncopy*DIM, 1, "ort_ref" );
 #endif
 #ifdef CNA
-    free(thecell->mark);
+  memalloc( &p->mark,     n, sizeof(shortint), al, ncopy, 1, "mark" );
 #endif
 #ifdef AVPOS
-    free(thecell->av_epot);
-    free(thecell->avpos);
-    free(thecell->sheet);
+  memalloc( &p->av_epot,  n,     sizeof(real), al, ncopy    , 1, "av_epot" );
+  memalloc( &p->avpos,    n*DIM, sizeof(real), al, ncopy*DIM, 1, "avpos" );
+  memalloc( &p->sheet,    n*DIM, sizeof(real), al, ncopy*DIM, 0, "sheet" );
 #endif
 #ifdef REFPOS
-    free(thecell->refpos);
+  memalloc( &p->refpos,   n*DIM, sizeof(real), al, ncopy*DIM, 1, "refpos" );
 #endif
 #ifdef NVX
-    free(thecell->heatcond);
+  memalloc( &p->heatcond, n,     sizeof(real), al, ncopy    , 0, "heatcond" );
 #endif
 #ifdef STRESS_TENS
-    free(thecell->presstens);
+  memalloc( &p->presstens, n, sizeof(sym_tensor), al, ncopy, 0, "presstens" );
 #endif
 #ifdef SHOCK
-    free(thecell->pxavg);
+  memalloc( &p->pxavg, n, sizeof(real), al, ncopy, 1, "pxavg" );
 #endif
 #ifdef COVALENT
-    free(thecell->neigh);
-#endif
-#ifdef NBLIST
-    free(thecell->nbl_pos);
-#endif
-#if defined(VEC) && defined(MPI)
-    free(thecell->ind);
-#endif
-#endif /* not MONOLJ */
+  memalloc( &p->neigh, n, sizeof(neighptr), al, p->n_max, 0, "neigh" );
+  for (i=p->n_max; i<n; ++i) {
+    p->neigh[i] = alloc_neightab(p->neigh[i], neigh_len);
   }
-
-  /* set pointers accordingly */
-  thecell->ort    = newcell.ort;
-  thecell->impuls = newcell.impuls;
-  thecell->kraft  = newcell.kraft;
-#ifdef CG
-  thecell->h    = newcell.h;
-  thecell->g    = newcell.g;
-  thecell->old_ort    = newcell.old_ort;
-#endif
-#ifndef MONOLJ
-  thecell->nummer   = newcell.nummer;
-  thecell->sorte    = newcell.sorte;
-  thecell->vsorte   = newcell.vsorte;
-  thecell->masse    = newcell.masse;
-  thecell->pot_eng  = newcell.pot_eng;
-#ifdef EAM2
-  thecell->eam_rho = newcell.eam_rho;
-  thecell->eam_dF  = newcell.eam_dF;
-#ifdef EEAM
-  thecell->eeam_p_h = newcell.eeam_p_h;
-  thecell->eeam_dM  = newcell.eeam_dM;
-#endif
-#endif
-#ifdef DAMP
-  thecell->damp_f = newcell.damp_f;
-#endif
-#ifdef ADP
-  thecell->adp_mu     = newcell.adp_mu;
-  thecell->adp_lambda = newcell.adp_lambda;
-#endif
-#ifdef NNBR
-  thecell->nbanz = newcell.nbanz;
-#endif
-#ifdef DISLOC
-  thecell->Epot_ref = newcell.Epot_ref;
-  thecell->ort_ref  = newcell.ort_ref;
-#endif
-#ifdef CNA
-  thecell->mark = newcell.mark;
-#endif
-#ifdef AVPOS
-  thecell->av_epot = newcell.av_epot;
-  thecell->avpos   = newcell.avpos;
-  thecell->sheet   = newcell.sheet;
-#endif
-#ifdef REFPOS
-  thecell->refpos = newcell.refpos;
-#endif
-#ifdef NVX
-  thecell->heatcond = newcell.heatcond;
-#endif
-#ifdef STRESS_TENS
-  thecell->presstens = newcell.presstens;
-#endif
-#ifdef SHOCK
-  thecell->pxavg = newcell.pxavg;
-#endif
-#ifdef COVALENT
-  thecell->neigh = newcell.neigh;
 #endif
 #ifdef NBLIST
-  thecell->nbl_pos = newcell.nbl_pos;
+  memalloc( &p->nbl_pos, n*DIM, sizeof(real), al, ncopy*DIM, 0, "nbl_pos" );
 #endif
 #ifdef UNIAX
-  thecell->achse  = newcell.achse;
-  thecell->dreh_impuls = newcell.dreh_impuls;
-  thecell->dreh_moment = newcell.dreh_moment;
+  memalloc( &p->achse,       n*DIM, sizeof(real), al, ncopy*DIM, 0, "avpos" );
+  memalloc( &p->dreh_impuls, n*DIM, sizeof(real), al, ncopy*DIM, 0, "sheet" );
+  memalloc( &p->dreh_moment, n*DIM, sizeof(real), al, ncopy*DIM, 0, "sheet" );
 #endif
 #if defined(VEC) && defined(MPI)
-  thecell->ind = newcell.ind;
+  memalloc( &p->ind, n, sizeof(integer), al, ncopy, 0, "ind" );
 #endif
-#endif /* not MONOLJ */
-
-  thecell->n_max = count;
-
+ 
+  p->n_max = n;
 }

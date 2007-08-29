@@ -213,7 +213,7 @@ ifeq (P4-icc,${IMDSYS})
   MPICH_CLINKER = icc
   OMPI_MPICC    = icc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
-  OPT_FLAGS	+= -O -ip -tpp7
+  OPT_FLAGS	+= -O -ip
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp
   DEBUG_FLAGS	+= -g

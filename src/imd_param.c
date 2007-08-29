@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -19,22 +19,9 @@
 
 #include "imd.h"
 
-/* the following are needed for gettimeofday */
+/* the following is needed for gettimeofday */
 #include <sys/time.h>
-#include <unistd.h>
 
-#if defined(__GNUC__) && defined(__STRICT_ANSI__)
-extern char *strdup(char *);
-#endif
-
-#ifdef __WATCOMC__
-#define strcasecmp strcmpi
-#endif
-
-/* To do yet: improve checking of bad input files ! */
-/* e.g. for forgotten starttemp/endtemp              */
-/* clean up prototypes.h 
-                           */
 typedef enum ParamType {
   PARAM_STR, PARAM_STRPTR,
   PARAM_INT, PARAM_INT_COPY,
@@ -285,8 +272,7 @@ void getparamfile(char *paramfname, int sim)
   /* this will be superseded by a fixed value from the parameter file */
   { 
     struct timeval tv;
-    struct timezone tz;
-    gettimeofday(&tv,&tz);
+    gettimeofday(&tv,NULL);
     seed = (long) -tv.tv_sec;
   }
 

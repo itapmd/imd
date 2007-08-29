@@ -142,6 +142,7 @@ void move_atom_mini(minicell *, minicell *, int);
 void insert_atom(minicell *, cell *, int);
 void alloc_minicell(minicell *, int);
 #endif
+void memalloc(void *, int, int, int, int, int, char *);
 void alloc_cell(cell *thecell, int count);
 #ifdef TWOD
 ivektor cell_coord(real x, real y);

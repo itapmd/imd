@@ -19,12 +19,15 @@
 ******************************************************************************/
 
 /* C stuff */
+#define  _XOPEN_SOURCE 600
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include <strings.h>
 #include <time.h>
 #include <unistd.h>
+#include <errno.h>
 
 #ifdef CBE
 #define USE_WALLTIME
