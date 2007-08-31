@@ -399,11 +399,16 @@ void alloc_cell(cell *p, int n)
 #endif
 
   /* if there are valid particles in cell, copy them to new storage */
+  if (0==p->n_max) {
+    ncopy = 0;
+  }
+  else {
 #ifdef VEC
-  ncopy = (0==p->n_max) ? -1 : MAX(p->n,p->n_buf);
+    ncopy = ( (0==n) || (0==MAX(p->n,p->n_buf) ) ? -1 : MAX(p->n,p->n_buf);
 #else
-  ncopy = (0==p->n_max) ? -1 : p->n;
+    ncopy = ( (0==n) || (0==p->n)              ) ? -1 : p->n;
 #endif
+  }
 
   /* allocate memory */
   memalloc( &p->ort,      n*DIM, sizeof(real), al, ncopy*DIM, 0, "ort" );

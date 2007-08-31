@@ -573,10 +573,10 @@ ifeq (cbe-gcc,${IMDSYS})
   # Use the PPU compiler as defined by the PPUCC env. var. (ppu-gcc)
   # as main compiler as it defines the __PPU__ macro 
   # The ordinary gcc does not set this macro
-  CC_SERIAL	= gcc
+  CC_SERIAL	= ppu-gcc -m64
   CC_MPI	= mpicc
   SPUCC         = spu-cc
-  EMBEDSPU      = ppu-embedspu
+  EMBEDSPU      = ppu-embedspu -m64
   BIN_DIR	= ${HOME}/bin/cbe
   OPT_FLAGS     += -O3 -funroll-loops -pipe -Wall -Wno-unused
   DEBUG_FLAGS	+= -g
@@ -1285,7 +1285,7 @@ socktest:
 # and an spu version of calc_wp
 # The SPU object file which is linked to the main programm
 spu.o: spu
-	${EMBEDSPU} -m32 hndle_cbe_calc spu spu.o 
+	${EMBEDSPU} hndle_cbe_calc spu spu.o 
 
 spu:  spu.c  imd_cbe.h  imd_cbe_util_spu.o  imd_cbe_calc_spu.s
 	${SPUCC} -o spu ${SPUCFLAGS} spu.c  imd_cbe_calc_spu.s  imd_cbe_util_spu.o
