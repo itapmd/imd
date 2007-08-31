@@ -22,6 +22,7 @@
 #include "imd.h"
 
 /* CBE declarations */
+#include <ppu_intrinsics.h>
 #include "imd_cbe.h"
 
 /* Global variables only needed in this file */
@@ -343,10 +344,6 @@ static wp_t* make_wp(int k, wp_t *wp)
 }
 
 
-
-
-
-
 /******************************************************************************
 *
 *  store_wp
@@ -378,7 +375,160 @@ static void store_wp(wp_t const* const wp)
 }
 
 
+/******************************************************************************
+*
+*  calc_forces_spu
+*
+******************************************************************************/
 
+static void calc_forces_spu(int const steps)
+{
+  /* The following code uses mailboxes to synchronize between PPU & SPUs.
+     To do so, it uses direct (memory mapped) access to the control area
+     of the SPUs.
+     Writing/reading to the members of the control block struct assume
+     that writes and reads to unsigneds are atomic.
+  */
+  /* Furthermore, we need the following bit masks: */
+  enum { OUTMBX_CNT_MASK  = 0x000000ffu,
+         INMBX_CNT_MASK   = 0x0000ff00u,
+         OUTMBX_CNT_SHIFT = 0u,
+         INMBX_CNT_SHIFT  = 8u
+       };
+
+  /* Some indices */
+  int k, kdone, i, ispu;
+  int ispumax = num_spus;
+
+  /* The following array keeps track of the states of the SPUs */
+  typedef enum { IDLE=0u, WORKING=1u } Tspustate;
+  Tspustate spustate[N_SPU_THREADS_MAX];
+
+  /* Some statistics: spuload[k] contains the number of wps which have
+     been sheduled to SPU k  */
+  unsigned spuload[N_SPU_THREADS_MAX];
+
+
+  /* Assume that all SPUs are idle and are awaiting a mailbox message 
+     when entering this routine */
+  for ( ispu=0;    (ispu<ispumax);   ++ispu ) {
+      spustate[ispu]=IDLE;
+      spuload[ispu]=0;
+  }
+
+  /* fprintf(stdout, "nallcells=%i  ncells=%i\n", nallcells, ncells); fflush(stdout); */
+
+  /* While there is still work to be scheduled or there are still 
+     results to be picked up. */
+  for (  k=kdone=0;       (kdone<ncells) || (k<ncells);      )  {
+
+      /* fprintf(stdout, "k=%u  kdone=%u\n", k,kdone); */
+
+      /* Index for wp/exch */
+      unsigned iwp1;
+      for (  ispu=iwp1=0;     (ispu<ispumax);     ++ispu, iwp1+=N_BUFLEV  ) {
+
+           /* Control area used to access the mailbox and ptr. to state */
+  	   spe_spu_control_area_p const pctl = cbe_spucontrolarea[ispu];
+           Tspustate* const pstat = spustate+ispu;
+
+           /* Location of wp/exch */
+           wp_t* const pwp = cbe_wp+iwp1;
+           exch_t* const pexch = cbe_exch+iwp1;
+
+           /* fprintf(stdout, "SPU %u is %s\n", ispu, ((WORKING==*pstat) ? "working" : "notworking"));  */
+ 
+
+           /* Idle SPU and still work to schedule */
+           if (  (IDLE==*pstat) && (k<ncells)  ) {
+	       /* Create wp_t and exch_t */
+	       create_exch(make_wp(k, pwp),  pexch);
+ 
+               /* Signal SPU by writing to its mailbox when space is available */
+               __lwsync();  /* synchronize memory before releasing it */
+
+               while ( 0u == ((pctl->SPU_Mbox_Stat) & INMBX_CNT_MASK) ) {}
+               pctl->SPU_In_Mbox = WPSTRT1;
+
+	       /* Mark SPU as working */
+	       ++k;
+  	       *pstat=WORKING;
+
+               /* Update statistics */
+               ++(spuload[ispu]);
+
+               /* This SPU is working, so we can move on to the next one */
+               continue;
+           }
+
+
+           /* Has some wp been scheduled to current SPU and are there
+              still results to be picked up? */
+           if (  (WORKING==*pstat) && (kdone<ncells) ) {
+
+	        /* Check wether SPU has finished by reading its mailbox */
+	        if ( 0u != ((pctl->SPU_Mbox_Stat) & OUTMBX_CNT_MASK) ) {
+
+		    /* Data available, so read it */
+		    unsigned const spumsg = pctl->SPU_Out_Mbox;
+
+                    /* fprintf(stdout, "%u from spu %u\n", spumsg, ispu); */
+
+                    __lwsync();  /* synchronize memory before accessing it */
+
+                    if ( WPDONE1 == spumsg ) {
+		        /* Copy results and store to wp */
+		        pwp->totpot = pexch->totpot;
+                        pwp->virial = pexch->virial;
+                        store_wp(pwp);
+  		        /* SPU's done with its work, so it's idle again 
+                           and one more wp is finished */
+                        ++kdone;
+		        *pstat=IDLE;                      
+                    }
+                }
+                else {
+		   /* This SPU is working and has not yet finished, so move
+                      on to the next one */
+ 		   continue;
+                }
+           }
+      }
+  }
+
+  /* Print SPU summary */
+  /*
+  for (  ispu=0;   (ispu<ispumax);    ++ispu  ) {
+      fprintf(stdout, "%u  ", (unsigned)(spustate[ispu]));
+  }
+  fputc('\n',stdout);
+  for (  ispu=0;   (ispu<ispumax);    ++ispu ) {
+      fprintf(stdout, "%u  ", spuload[ispu]);
+  }
+  fputc('\n',stdout);
+  */
+}
+
+
+/******************************************************************************
+*
+*  calc_forces_ppu
+*
+******************************************************************************/
+
+static void calc_forces_ppu(int const steps)
+{
+  /* (Global) work package */
+  wp_t* const wp = cbe_wp;
+  int k;
+
+  /* compute interactions */
+  for (k=0; k<ncells; ++k ) {
+    make_wp(k, wp);
+    calc_wp(wp);
+    store_wp(wp);
+  }
+}
 
 
 /******************************************************************************
@@ -387,16 +537,10 @@ static void store_wp(wp_t const* const wp)
 *
 ******************************************************************************/
 
-
-static void calc_forces_ppu(int const steps)
+void calc_forces(int const steps)
 {
-  int  k, i, off;
+  int  k, i;
   real tmpvec1[2], tmpvec2[2] = {0.0, 0.0};
-
-
-  /* (Global) work package */
-  wp_t* const wp = cbe_wp;
-
 
   if (0==have_valid_nbl) {
 #ifdef MPI
@@ -429,23 +573,12 @@ static void calc_forces_ppu(int const steps)
     }
   }
 
-
-
-  /* compute interactions */
-  for (  k=0;   k<ncells;   ++k ) {
-    /* Create work package  */
-     make_wp(k, wp);
-
-    /* Debugging output */
-    /* printf("wp on PPU after make_wp:\n");  wp_out(printf, wp); */
-
-    calc_wp(wp);
-
-    /* Debugging output */
-    /* printf("wp on PPU before store_wp:\n");  wp_out(printf, wp); */
-
-    store_wp(wp);
-  }
+  /* compute the forces - either on PPU or on SPUs*/
+#ifdef ON_PPU
+  calc_forces_ppu(steps); 
+#else
+  calc_forces_spu(steps);
+#endif
 
 #ifdef MPI
   /* sum up results of different CPUs */
@@ -459,199 +592,6 @@ static void calc_forces_ppu(int const steps)
   /* add forces back to original cells/cpus */
   send_forces(add_forces,pack_forces,unpack_forces);
 }
-
-
-
-static void calc_forces_spu(int const steps, int const ispumax)
-{
-  /* The following code uses mailboxes to synchronize between PPU & SPUs.
-     To do so, it uses direct (memory mapped) access to the control area
-     of the SPUs.
-     Writing/reading to the members of the control block struct assume
-     that writes and reads to unsigneds are atomic.
-  */
-  /* Furthermore, we need the following bit masks: */
-  enum { OUTMBX_CNT_MASK  = 0x000000ffu,
-         INMBX_CNT_MASK   = 0x0000ff00u,
-         OUTMBX_CNT_SHIFT = 0u,
-         INMBX_CNT_SHIFT  = 8u
-       };
-
-
-
-  /* Some indices */
-  int  k, kdone, i, off, ispu;
-
-
-  /* The following array keeps track of the states of the SPUs */
-  typedef enum { IDLE=0u, WORKING=1u } Tspustate;
-  Tspustate spustate[N_SPU_THREADS_MAX];
-
-  /* Some statistics: spuload[k] contains the number of wps which have
-     been sheduled to SPU k  */
-  unsigned spuload[N_SPU_THREADS_MAX];
-
-
-  /* Assume that all SPUs are idle and are awaiting a mailbox message 
-     when entering this routine */
-  for ( ispu=0;    (ispu<ispumax);   ++ispu ) {
-      spustate[ispu]=IDLE;
-      spuload[ispu]=0;
-  }
-
-  if (0==have_valid_nbl) {
-#ifdef MPI
-    /* check message buffer size */
-    if (0 == nbl_count % BUFSTEP) {
-         setup_buffers();
-    }
-#endif /* MPI */
-    /* update cell decomposition */
-    fix_cells();
-  }
-
-  /* fill the buffer cells */
-  send_cells(copy_cell,pack_cell,unpack_cell);
-
-  /* make new neighbor lists */
-  if ( 0 == have_valid_nbl ) { 
-     make_nblist();
-  }
-
-  /* clear global accumulation variables */
-  tot_pot_energy = virial = 0;
-  nfc++;
-
-  /* clear per atom accumulation variables */
-  for ( k=0;   k<nallcells;   ++k ) {
-      cell* const p = cell_array + k;
-      for ( i=0;   i<(p->n);   ++i ) {
-          KRAFT(p,i,X) = KRAFT(p,i,Y) = KRAFT(p,i,Z) = POTENG(p,i)  = 0;
-      }
-  }
-
-
-  /* fprintf(stdout, "nallcells=%i  ncells=%i\n", nallcells, ncells); fflush(stdout); */
-
-  /* While there is still work to be scheduled or there are still 
-     results to be picked up. */
-  for (  k=kdone=0;       (kdone<ncells) || (k<ncells);      )  {
-
-      /* fprintf(stdout, "k=%u  kdone=%u\n", k,kdone); */
-
-      /* Index for wp/exch */
-      unsigned iwp1;
-      for (  ispu=iwp1=0;     (ispu<ispumax);     ++ispu, iwp1+=N_BUFLEV  ) {
-
-           /* Control area used to access the mailbox and ptr. to state */
-  	   spe_spu_control_area_p const pctl = cbe_spucontrolarea[ispu];
-           Tspustate* const pstat = spustate+ispu;
-
-           /* Location of wp/exch */
-           wp_t* const pwp = cbe_wp+iwp1;
-           exch_t* const pexch = cbe_exch+iwp1;
-
-           /* fprintf(stdout, "SPU %u is %s\n", ispu, ((WORKING==*pstat) ? "working" : "notworking"));  */
- 
-
-           /* Idle SPU and still work to schedule */
-           if (  (IDLE==*pstat) && (k<ncells)  ) {
-	       /* Create wp_t and exch_t */
-	       create_exch(make_wp(k, pwp),  pexch);
- 
-               /* Signal SPU by writing to its mailbox when space is available */
-               while ( 0u == ((pctl->SPU_Mbox_Stat) & INMBX_CNT_MASK) ) {}
-               pctl->SPU_In_Mbox = WPSTRT1;
-
-	       /* Mark SPU as working */
-	       ++k;
-  	       *pstat=WORKING;
-
-               /* Update statistics */
-               ++(spuload[ispu]);
-
-               /* This SPU is working, so we can move on to the next one */
-               continue;
-           }
-
-
-           /* Has some wp been scheduled to current SPU and are there
-              still results to be picked up? */
-           if (  (WORKING==*pstat) && (kdone<ncells) ) {
-
-	        /* Check wether SPU has finished by reading its mailbox */
-	        if ( 0u != ((pctl->SPU_Mbox_Stat) & OUTMBX_CNT_MASK) ) {
-
-		    /* Data available, so read it */
-		    unsigned const spumsg = pctl->SPU_Out_Mbox;
-
-                    /* fprintf(stdout, "%u from spu %u\n", spumsg, ispu); */
-
-                    if ( WPDONE1 == spumsg ) {
-		        /* Copy results and store to wp */
-		        pwp->totpot = pexch->totpot;
-                        pwp->virial = pexch->virial;
-                        store_wp(pwp);
-  		        /* SPU's done with its work, so it's idle again 
-                           and one more wp is finished */
-                        ++kdone;
-		        *pstat=IDLE;                      
-                    }
-                }
-                else {
-		   /* This SPU is working and has not yet finished, so move
-                      on to the next one */
- 		   continue;
-                }
-           }
-
-
-      }
-  }
-
-
-  /* Print SPU summary */
-  /*
-  for (  ispu=0;   (ispu<ispumax);    ++ispu  ) {
-      fprintf(stdout, "%u  ", (unsigned)(spustate[ispu]));
-  }
-  fputc('\n',stdout);
-  for (  ispu=0;   (ispu<ispumax);    ++ispu ) {
-      fprintf(stdout, "%u  ", spuload[ispu]);
-  }
-  fputc('\n',stdout);
-  */
-
-
-#ifdef MPI
-  {
-  /* sum up results of different CPUs */
-  real tmpvec1[2], tmpvec2[2] = {0.0, 0.0};
-  tmpvec1[0]     = tot_pot_energy;
-  tmpvec1[1]     = virial;
-  MPI_Allreduce( tmpvec1, tmpvec2, 2, REAL, MPI_SUM, cpugrid); 
-  tot_pot_energy = tmpvec2[0];
-  virial         = tmpvec2[1];
-  }
-#endif  /* MPI */
-
-  /* add forces back to original cells/cpus */
-  send_forces(add_forces,pack_forces,unpack_forces);
-}
-
-
-
-
-
-
-/* This is now just a "dispatch function" which chooses PPU or SPU (parallel)
-   version */
-void calc_forces(int steps) {
-    /* calc_forces_ppu(steps); */
-
-    calc_forces_spu(steps, num_spus);
-}
-
 
 
 /******************************************************************************
