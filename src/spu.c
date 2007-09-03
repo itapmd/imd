@@ -1,9 +1,8 @@
 /* ISO C std. headers */
-#include <stdio.h>
+/* #include <stddef.h> */
+/* #include <stdio.h> */
 
-#if ! defined __SPU__
-#include <stddef.h>
-#endif
+
 
 /* SPU headers */
 #include <spu_mfcio.h>
@@ -13,6 +12,8 @@
 
 
 
+/* Is often needed */
+typedef vector float  vecflt;
 
 
 /* SPU (local) copy of pt which is initialized (once) via DMA and
@@ -55,35 +56,7 @@ static INLINE_ unsigned nalloc_items(unsigned const nelem, unsigned const itmsze
 
 
 
-#define DMA64(p,sze,ea,tag,cmd) spu_mfcdma64((p), (ea)[0], (ea)[1],  (sze), (tag), (cmd))
 
-/* DMA sze bytes between LS addr. p and effective address ea in main mem */
-void (DMA64)(void* const p, unsigned const sze,
-             unsigned const* const ea,
-             unsigned const tag, unsigned const cmd)
-{
-     /* Just call the macro */
-     DMA64(p, sze,ea, tag, cmd);
-}
-
-
-
-
-/* List DMA with a list as returned by eas2les */
-enum { LDMAelemsze = (sizeof (unsigned)) << 1u };
-
-#define LDMA64(p, list, Nelem, tag, cmd)                         \
-    (spu_mfcdma64((p),(list)[(Nelem)<<1u], ((unsigned)(list)),   \
-                  (Nelem)*LDMAelemsze,     (tag), (cmd)          \
-                 )                                               \
-    )
-
-static INLINE_ void (LDMA64)(void* const p, unsigned const* const list, unsigned const Nelem,
-              unsigned const tag, unsigned const cmd)
-{
-     /* Just call the macro */
-     LDMA64(p, list, Nelem,  tag,cmd);
-}
 
 
 
@@ -161,9 +134,11 @@ static void start_create_wp(void** a, unsigned* nrem, unsigned const ausze,
         return;                       \
    }
 
-#    define DMAMEMB(member,nn) DMA64(wp->member,sze[nn], exch->member, tag, MFC_GET_CMD)
+     /* #    define DMAMEMB(member,nn) DMA64(wp->member,sze[nn], exch->member, tag, MFC_GET_CMD)
+      */
+#define DMAMEMB(member,nn)   spu_mfcdma64(wp->member, (exch->member)[0], (exch->member)[1],  sze[nn],  tag,  MFC_GET_CMD)
 
-     ALLOCMEMB(pos, vector float, exch->n2)
+     ALLOCMEMB(pos, vecflt,  exch->n2)
      DMAMEMB(pos, 0);
      ALLOCMEMB(typ, int,     exch->n2)
      DMAMEMB(typ, 1);
@@ -180,10 +155,10 @@ static void start_create_wp(void** a, unsigned* nrem, unsigned const ausze,
 
 
      /* Also allocate LS memory for force, copying its ea and alloction size */
-     wp->force = (vector float *)(alloc(exch->n2, (sizeof (vector float)),
-                              a,nrem,ausze, exch->force, &pres_ea, &pres_sze
-                             )
-                       );
+     wp->force = (vecflt*)(alloc(exch->n2, (sizeof (vecflt)),
+                                 a,nrem,ausze, exch->force, &pres_ea, &pres_sze
+                                )
+                          );
 
 
      /* Now copy the scalar members from exch to wp */
@@ -217,7 +192,7 @@ static void start_create_pt(void** a, unsigned* nrem, unsigned const ausze,
      */
      unsigned const nelem   = (env->ntypes)*(env->ntypes);
      /* Total number of bytes/allocation units needed */
-     unsigned const nszetot = 4*nelem*(sizeof (vector float));
+     unsigned const nszetot = 4*nelem*(sizeof (vecflt));
      unsigned const nau = nalloc_block(nszetot, ausze);
 
      /* Enough memory available? */
@@ -225,12 +200,13 @@ static void start_create_pt(void** a, unsigned* nrem, unsigned const ausze,
          /* Start DMAing the memory pointed to by pt.r2cut to LS, also getting data
             for lj_sig,... which follows after that in main mem. */
  
-        DMA64((*a), nszetot, env->r2cut,  tag, MFC_GET_CMD);
+        /* DMA64((*a), nszetot, env->r2cut,  tag, MFC_GET_CMD); */
+        spu_mfcdma64(*a, (env->r2cut)[0], (env->r2cut)[1], nszetot, tag, MFC_GET_CMD);
 
         /* Set the pointers in the resulting pt_t (see modified allocation scheme
            in mk_pt)
 	*/
-        p->r2cut    = ((vector float *)(*a));
+        p->r2cut    = ((vecflt *)(*a));
         p->lj_sig   = p->r2cut  + nelem;
         p->lj_eps   = p->lj_sig + nelem;
         p->lj_shift = p->lj_eps + nelem;
@@ -251,7 +227,7 @@ static void start_init(void** a, unsigned* nrem, unsigned const ausze,
 {
     /* First DMA env which is only neede here */
     env_t ALIGNED_(16, env);
-    DMA64(&env, (sizeof env), envea,  5u, MFC_GET_CMD);
+    spu_mfcdma64(&env,  envea[0],envea[1], (sizeof env),  5u, MFC_GET_CMD);
     spu_writech(MFC_WrTagMask, (1u<<5u));
     spu_mfcstat(MFC_TAG_UPDATE_ALL);
 
@@ -268,7 +244,8 @@ static void start_DMA_results(unsigned const* const exch_ea, unsigned const tag,
                              )
 {
      /* First DMA the force array directly back to main memory... */
-     DMA64(wp->force, res_sze[0],  exch->force,  tag, MFC_PUT_CMD);
+     /* DMA64(wp->force, res_sze[0],  exch->force,  tag, MFC_PUT_CMD); */
+     spu_mfcdma64(wp->force, (exch->force)[0], (exch->force)[1],  res_sze[0],  tag, MFC_PUT_CMD);
 
      /* In the meantime:
         Copy the scalars which have been updated in wp back to exch
@@ -278,7 +255,8 @@ static void start_DMA_results(unsigned const* const exch_ea, unsigned const tag,
      exch->virial = wp->virial;
 
      /* ...then DMA the updated exch_t */
-     DMA64(exch, (sizeof (*exch)), exch_ea, tag, MFC_PUT_CMD);
+     /* DMA64(exch, (sizeof (*exch)), exch_ea, tag, MFC_PUT_CMD); */
+     spu_mfcdma64(exch, exch_ea[0], exch_ea[1],  (sizeof (*exch)),  tag, MFC_PUT_CMD);
 }
 
 
@@ -350,7 +328,8 @@ int main(ui64_t const id, Targ const argp, Tenv const envp)
         }
 
         /* Fetch exch controll block: Start DMA & wait for it to complete */
-        DMA64(&(exch[0]), (sizeof exch[0]), argp.ea32, 5u, MFC_GET_CMD);
+        /* DMA64(&(exch[0]), (sizeof exch[0]), argp.ea32, 5u, MFC_GET_CMD); */
+        spu_mfcdma64(&(exch[0]),  (argp.ea32)[0],(argp.ea32)[1],   (sizeof (exch[0])), 5u,  MFC_GET_CMD);
         spu_writech(MFC_WrTagMask,  (1u<<5u));
         spu_mfcstat(MFC_TAG_UPDATE_ALL);
 

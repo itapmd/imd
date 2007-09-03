@@ -400,6 +400,7 @@ static void calc_forces_spu(int const steps)
   int k, kdone, i, ispu;
   int ispumax = num_spus;
 
+
   /* The following array keeps track of the states of the SPUs */
   typedef enum { IDLE=0u, WORKING=1u } Tspustate;
   Tspustate spustate[N_SPU_THREADS_MAX];
