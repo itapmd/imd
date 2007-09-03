@@ -775,7 +775,7 @@ else
   ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
     ifneq (,$(strip $(findstring cbe,${MAKETARGET})))
       FORCESOURCES = imd_forces_cbe.c
-      CFLAGS += -DCBE -D__PPU__ -maltivec
+      CFLAGS += -DCBE
     else
       FORCESOURCES = imd_forces_nbl.c
     endif

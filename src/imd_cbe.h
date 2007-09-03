@@ -1,5 +1,5 @@
-#ifndef IMD_CBE_UTIL_H__
-#define IMD_CBE_UTIL_H__
+#ifndef IMD_CBE_H__
+#define IMD_CBE_H__
 
 
 /********* Common (SPU & PPU) part +++++++++*/
@@ -7,68 +7,6 @@
 #if defined (__cplusplus)
 extern "C" {
 #endif
-
-
-
-
-
-
-
-/* Vector type in general */
-#define VEC(ty) __vector ty
-
-/* The 4 component floating point vector
-   This vector type must match the flt type declared in imd_cbe.h
-   The FLTVEC macro is needed for syntactical reasons when
-   vector literals are used.  Whenever possible, the real typedef fltvec
-   should be preferrd over the macro FLTVEC
-   */
-#define VECFLT VEC(float)
-typedef VECFLT vecflt;
-
-
-/* Mask vector type */
-#define VECMSK  VEC(unsigned)
-typedef VECMSK  vecmsk;
-
-
-
-/* Initializer list for some vector literals */
-#if defined(__GNUC__)
-#   /* Unfortantly, gcc does not support the AltiVec list format */
-#   /* but used curly braces instead */
-#   define VECINIT2(a,b)     {a,b}
-#   define VECINIT4(a,b,c,d) {a,b,c,d}
-#else
-#   define VECINIT2(a,b)     (a,b)
-#   define VECINIT4(a,b,c,d) (a,b,c,d)
-#endif
-
-
-
-
-
-
-
-
-
-
-/* Apparently, vector types can't be initialized using the AltiVec syntax
-   as the initializer expression in fact do generate instructions which
-   just set the vector components to some value. So we initialize vector
-   using the following union which contains on array member of the same size
-   as the vector (in terms of elements). Note that the array member is
-   written to at initialization time, but subsequently the vector member
-   is used. Strictly speaking, this is undefined according to the ISO C
-   standard, but is one way to initialize a vector according to the
-   AltiVec API.
-   Please also note that we can use the usual array syntax for initialization.
-*/
-#define VECUNION(ty) union {                         \
-    ty      arr[(sizeof(VEC(ty))) / (sizeof(ty))];   \
-    VEC(ty) vec;                                     \
-}
-
 
 
 
@@ -349,11 +287,66 @@ void (wp_out)(int (*of)(char const[],...), wp_t const* const e);
 
 /************** SPU part ************/
 #if defined(__SPU__)
-#endif /* SPU part */
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
+
+
+/* Vectors will be used on the SPU only */
+
+/* Vector type in general */
+#define VEC(ty) __vector ty
+
+/* The 4 component floating point vector
+   This vector type must match the flt type declared in imd_cbe.h
+   The FLTVEC macro is needed for syntactical reasons when
+   vector literals are used.  Whenever possible, the real typedef fltvec
+   should be preferrd over the macro FLTVEC
+   */
+#define VECFLT VEC(float)
+typedef VECFLT vecflt;
+
+
+/* Mask vector type */
+#define VECMSK  VEC(unsigned)
+typedef VECMSK  vecmsk;
+
+
+
+/* Initializer list for some vector literals */
+#if defined(__GNUC__)
+#   /* Unfortantly, gcc does not support the AltiVec list format */
+#   /* but used curly braces instead */
+#   define VECINIT2(a,b)     {a,b}
+#   define VECINIT4(a,b,c,d) {a,b,c,d}
+#else
+#   define VECINIT2(a,b)     (a,b)
+#   define VECINIT4(a,b,c,d) (a,b,c,d)
+#endif
+
+
+
+
+
+
+/* Apparently, vector types can't be initialized using the AltiVec syntax
+   as the initializer expression in fact do generate instructions which
+   just set the vector components to some value. So we initialize vector
+   using the following union which contains on array member of the same size
+   as the vector (in terms of elements). Note that the array member is
+   written to at initialization time, but subsequently the vector member
+   is used. Strictly speaking, this is undefined according to the ISO C
+   standard, but is one way to initialize a vector according to the
+   AltiVec API.
+   Please also note that we can use the usual array syntax for initialization.
+*/
+#define VECUNION(ty) union {                         \
+    ty      arr[(sizeof(VEC(ty))) / (sizeof(ty))];   \
+    VEC(ty) vec;                                     \
+}
+
+
 
 #if defined (__cplusplus)
 }
@@ -513,3 +506,6 @@ exch_t* (create_exch)(wp_t const* const wp, exch_t* const e);
 
 
 #endif /* PPU part */
+
+
+#endif /* IMD_CBE_H */
