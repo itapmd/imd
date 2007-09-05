@@ -140,7 +140,9 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
   to->sorte  [i] = from->sorte  [j]; 
   to->vsorte [i] = from->vsorte [j]; 
   to->masse  [i] = from->masse  [j]; 
+#ifndef CBE_DIRECT
   to->pot_eng[i] = from->pot_eng[j];
+#endif
 #endif
 #ifdef EAM2
   to->eam_rho[i] = from->eam_rho[j]; 
@@ -239,6 +241,9 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
 #ifndef TWOD
   to->kraft Z(i) = from->kraft Z(j); 
 #endif
+#ifdef CBE_DIRECT
+  to->kraft W(i) = from->kraft W(j); 
+#endif
 #ifdef COVALENT
   /* neighbor table is not copied */
 #endif
@@ -281,7 +286,7 @@ neightab *alloc_neightab(neightab *neigh, int count)
     }
     neigh->n     = 0;
     neigh->n_max = count;
-    neigh->dist  = (real *)     malloc( count * DIM * sizeof(real) );
+    neigh->dist  = (real *)     malloc( count * SDIM * sizeof(real) );
     neigh->typ   = (shortint *) malloc( count * sizeof(shortint) );
     neigh->cl    = (void **)    malloc( count * sizeof(cellptr) );
     neigh->num   = (integer *)  malloc( count * sizeof(integer) );
@@ -301,7 +306,7 @@ neightab *alloc_neightab(neightab *neigh, int count)
 
 void increase_neightab(neightab *neigh, int count)
 {
-  neigh->dist = (real *)     realloc( neigh->dist, count * DIM * sizeof(real));
+  neigh->dist = (real *) realloc( neigh->dist, count * SDIM * sizeof(real));
   neigh->typ  = (shortint *) realloc( neigh->typ,  count * sizeof(shortint) );
   neigh->cl   = (void **)    realloc( neigh->cl,   count * sizeof(cellptr) );
   neigh->num  = (integer *)  realloc( neigh->num,  count * sizeof(integer) );
@@ -376,7 +381,12 @@ void memalloc(void *p, int count, int size, int align, int ncopy, int clear,
 
 void alloc_cell(cell *p, int n)
 {
-  int i, ncopy, al=8;
+  int i, ncopy;
+#ifdef CBE_DIRECT
+  int al=128;
+#else
+  int al=8;
+#endif
 
   /* cells are either deallocated or increased; they never shrink */
   if ((n>0) && (n < p->n_max)) error("cells cannot shrink");
@@ -411,15 +421,17 @@ void alloc_cell(cell *p, int n)
   }
 
   /* allocate memory */
-  memalloc( &p->ort,      n*DIM, sizeof(real), al, ncopy*DIM, 0, "ort" );
-  memalloc( &p->impuls,   n*DIM, sizeof(real), al, ncopy*DIM, 0, "impuls" );
-  memalloc( &p->kraft,    n*DIM, sizeof(real), al, ncopy*DIM, 0, "kraft" );
+  memalloc( &p->ort,      n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "ort" );
+  memalloc( &p->impuls,   n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "impuls" );
+  memalloc( &p->kraft,    n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "kraft" );
 #ifndef MONOLJ
   memalloc( &p->nummer,   n, sizeof(integer),  al, ncopy, 0, "nummer" );
   memalloc( &p->sorte,    n, sizeof(shortint), al, ncopy, 0, "sorte" );
   memalloc( &p->vsorte,   n, sizeof(shortint), al, ncopy, 0, "vsorte" );
   memalloc( &p->masse,    n, sizeof(real),     al, ncopy, 0, "masse" );
+#ifndef CBE_DIRECT
   memalloc( &p->pot_eng,  n, sizeof(real),     al, ncopy, 0, "pot_eng" );
+#endif
 #endif
 #ifdef EAM2
   memalloc( &p->eam_rho,  n, sizeof(real),     al, ncopy, 0, "eam_rho" );
@@ -433,34 +445,34 @@ void alloc_cell(cell *p, int n)
   memalloc( &p->damp_f,   n, sizeof(real),     al, ncopy, 0, "damp_f" );
 #endif
 #ifdef ADP
-  memalloc( &p->adp_mu,     n*DIM, sizeof(real),   al, ncopy*DIM, 0, "adp_mu");
+  memalloc( &p->adp_mu,   n*SDIM, sizeof(real),   al, ncopy*SDIM, 0, "adp_mu");
   memalloc( &p->adp_lambda, n, sizeof(sym_tensor), al, ncopy, 0, "adp_lambda");
 #endif
 #ifdef CG
-  memalloc( &p->h,        n*DIM, sizeof(real), al, ncopy*DIM, 0, "h" );
-  memalloc( &p->g,        n*DIM, sizeof(real), al, ncopy*DIM, 0, "g" );
-  memalloc( &p->old_ort,  n*DIM, sizeof(real), al, ncopy*DIM, 0, "old_ort" );
+  memalloc( &p->h,        n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "h" );
+  memalloc( &p->g,        n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "g" );
+  memalloc( &p->old_ort,  n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "old_ort" );
 #endif
 #ifdef NNBR
   memalloc( &p->nbanz,    n, sizeof(shortint), al, ncopy, 0, "nbanz" );
 #endif
 #ifdef DISLOC
-  memalloc( &p->Epot_ref, n,     sizeof(real), al, ncopy    , 1, "Epot_ref" );
-  memalloc( &p->ort_ref,  n*DIM, sizeof(real), al, ncopy*DIM, 1, "ort_ref" );
+  memalloc( &p->Epot_ref, n,      sizeof(real), al, ncopy,      1,"Epot_ref" );
+  memalloc( &p->ort_ref,  n*SDIM, sizeof(real), al, ncopy*SDIM, 1, "ort_ref" );
 #endif
 #ifdef CNA
   memalloc( &p->mark,     n, sizeof(shortint), al, ncopy, 1, "mark" );
 #endif
 #ifdef AVPOS
-  memalloc( &p->av_epot,  n,     sizeof(real), al, ncopy    , 1, "av_epot" );
-  memalloc( &p->avpos,    n*DIM, sizeof(real), al, ncopy*DIM, 1, "avpos" );
-  memalloc( &p->sheet,    n*DIM, sizeof(real), al, ncopy*DIM, 0, "sheet" );
+  memalloc( &p->av_epot,  n,      sizeof(real), al, ncopy,      1, "av_epot" );
+  memalloc( &p->avpos,    n*SDIM, sizeof(real), al, ncopy*SDIM, 1, "avpos"  );
+  memalloc( &p->sheet,    n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "sheet"  );
 #endif
 #ifdef REFPOS
-  memalloc( &p->refpos,   n*DIM, sizeof(real), al, ncopy*DIM, 1, "refpos" );
+  memalloc( &p->refpos,   n*SDIM, sizeof(real), al, ncopy*SDIM, 1, "refpos" );
 #endif
 #ifdef NVX
-  memalloc( &p->heatcond, n,     sizeof(real), al, ncopy    , 0, "heatcond" );
+  memalloc( &p->heatcond, n,      sizeof(real), al, ncopy,      0, "heatcond");
 #endif
 #ifdef STRESS_TENS
   memalloc( &p->presstens, n, sizeof(sym_tensor), al, ncopy, 0, "presstens" );
@@ -475,12 +487,12 @@ void alloc_cell(cell *p, int n)
   }
 #endif
 #ifdef NBLIST
-  memalloc( &p->nbl_pos, n*DIM, sizeof(real), al, ncopy*DIM, 0, "nbl_pos" );
+  memalloc( &p->nbl_pos,  n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "nbl_pos" );
 #endif
 #ifdef UNIAX
-  memalloc( &p->achse,       n*DIM, sizeof(real), al, ncopy*DIM, 0, "avpos" );
-  memalloc( &p->dreh_impuls, n*DIM, sizeof(real), al, ncopy*DIM, 0, "sheet" );
-  memalloc( &p->dreh_moment, n*DIM, sizeof(real), al, ncopy*DIM, 0, "sheet" );
+  memalloc( &p->achse,       n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "avpos");
+  memalloc( &p->dreh_impuls, n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "sheet");
+  memalloc( &p->dreh_moment, n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "sheet");
 #endif
 #if defined(VEC) && defined(MPI)
   memalloc( &p->ind, n, sizeof(integer), al, ncopy, 0, "ind" );

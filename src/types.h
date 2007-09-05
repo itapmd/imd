@@ -247,7 +247,7 @@ typedef struct {
 
 #ifdef NBLIST
 typedef struct {
-  integer np, nq[14];
+  integer np, nq[NNBCELL];
 } cell_nbrs_t;
 #endif
 

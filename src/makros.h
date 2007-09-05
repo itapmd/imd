@@ -44,9 +44,10 @@ INLINE static int MOD(shortint p, int q)
 #endif
 
 /* Sometimes we use array where we should use vectors but... */
-#define X(i) [DIM*(i)  ]
-#define Y(i) [DIM*(i)+1]
-#define Z(i) [DIM*(i)+2]
+#define X(i) [SDIM*(i)  ]
+#define Y(i) [SDIM*(i)+1]
+#define Z(i) [SDIM*(i)+2]
+#define W(i) [SDIM*(i)+3]
 
 #if defined(VEC) && defined(INDEXED_ACCESS)
 
@@ -160,7 +161,11 @@ INLINE static int MOD(shortint p, int q)
 #define VSORTE(cell,i)          ((cell)->vsorte[i])
 #define NUMMER(cell,i)          ((cell)->nummer[i])
 #define MASSE(cell,i)           ((cell)->masse[i])
+#ifdef CBE_DIRECT
+#define POTENG(cell,i)          ((cell)->kraft W(i))
+#else
 #define POTENG(cell,i)          ((cell)->pot_eng[i])
+#endif
 
 #endif
 
@@ -280,9 +285,14 @@ inline static real SQR(real x)
 
 /* How many dimension are there? */
 #ifdef TWOD
-#define DIM 2
+#define SDIM 2
+#define  DIM 2
+#elif defined(CBE_DIRECT)
+#define SDIM 4
+#define  DIM 3
 #else
-#define DIM 3
+#define SDIM 3
+#define  DIM 3
 #endif
 
 #ifdef MEAM

@@ -1175,7 +1175,21 @@ endif
 
 # Added by Frank Pister
 ifneq (,$(findstring cbe,${MAKETARGET}))
-SOURCES += spu.c imd_cbe_calc.c imd_cbe_util.c
+SOURCES += spu.c imd_cbe_calc_ppu.c imd_cbe_util.c
+endif
+
+ifneq (,$(findstring cbe2,${MAKETARGET}))
+CFLAGS    += -DCBE2
+SPUCFLAGS += -DCBE2 -DNBL
+endif
+
+ifneq (,$(findstring cbe3,${MAKETARGET}))
+CFLAGS    += -DCBE3
+SPUCFLAGS += -DCBE3 -DNBL
+endif
+
+ifneq (,$(findstring ppu,${MAKETARGET}))
+CFLAGS += -DON_PPU
 endif
 
 # Substitute .o for .c to get the names of the object files
@@ -1293,8 +1307,8 @@ spu:  spu.c  imd_cbe.h  imd_cbe_util_spu.o  imd_cbe_calc_spu.s
 
 # Assembler code (instead of object code) for calc_wp on the SPU
 # This assembler code may be analyzed using the spu-timing tool
-imd_cbe_calc_spu.s: imd_cbe_calc.c imd_cbe.h
-	${SPUCC} -o imd_cbe_calc_spu.s  ${SPUCFLAGS}   -S imd_cbe_calc.c
+imd_cbe_calc_spu.s: imd_cbe_calc_spu.c imd_cbe.h
+	${SPUCC} -o imd_cbe_calc_spu.s  ${SPUCFLAGS}   -S imd_cbe_calc_spu.c
 
 
 

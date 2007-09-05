@@ -626,18 +626,27 @@ void make_cell_lists(void)
       for (k=cellmin.z; k<cellmax.z; ++k) {
 
         CN->np = i * cell_dim.y * cell_dim.z + j * cell_dim.z + k;
-        nn = 0;
+        CN->nq[0] = CN->np;
+        nn = 1;
 
+#ifdef AR
 	/* For half of the neighbours of this cell */
 	for (l=0; l <= 1; ++l)
 	  for (m=-l; m <= 1; ++m)
-	    for (n=(l==0 ? -m  : -l ); n <= 1; ++n) { 
-
+	    for (n=(l==0 ? -m  : -l ); n <= 1; ++n)
+#else
+	/* For all neighbours of this cell */
+	for (l=-1; l <= 1; ++l)
+	  for (m=-1; m <= 1; ++m)
+	    for (n=-1; n <= 1; ++n) 
+#endif
+	    {
               r = i+l;
               s = j+m;
               t = k+n;
 
               qq = r * cell_dim.y * cell_dim.z + s * cell_dim.z + t;
+              if (qq==CN->np) continue;
 
               /* apply periodic boundaries */
               r += -1 + my_coord.x * (cell_dim.x - 2);
@@ -680,8 +689,7 @@ void make_cell_lists(void)
 	/* for the other half of the neighbours of this cell */
 	for (l=0; l <= 1; ++l)
 	  for (m=-l; m <= 1; ++m)
-	    for (n=(l==0 ? -m  : -l ); n <= 1; ++n) { 
-
+	    for (n=(l==0 ? -m  : -l ); n <= 1; ++n) {
               r = i-l;
               s = j-m;
               t = k-n;

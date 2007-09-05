@@ -31,6 +31,14 @@ static int *tb_off=NULL;
 static int *at_off=NULL;
 static int nb_max=0;
 static short *tb=NULL;
+#ifdef CBE_DIRECT
+static int n_max=0, len_max=0;
+#ifdef ON_PPU
+static cell_dta_t *cell_dta=NULL;
+#else
+static cell_ea_t  *cell_dta=NULL;
+#endif
+#endif
 
 /* Potential which is need by calc_wp */
 pt_t  pt;
@@ -93,6 +101,8 @@ void deallocate_nblist(void)
   have_valid_nbl = 0;
 }
 
+#ifdef CBE_DIRECT
+
 /******************************************************************************
 *
 *  estimate_nblist_size
@@ -102,10 +112,294 @@ void deallocate_nblist(void)
 int estimate_nblist_size(void)
 {
   int c, tn=1;
-  int inc_short = 128 / sizeof(short);
+  int const inc_short = 128 / sizeof(short) - 1;
 
   /* for all cells */
-  for (c=0; c<ncells2; c++) {
+  for (c=0; c<ncells; c++) {
+
+    int m, c1 = cnbrs[c].np, tn2 = 1, i;
+    cell *p   = cell_array + c1;
+
+    /* for each neighboring cell */
+    for (m=0; m<NNBCELL; m++) {
+
+      /* for each atom in first cell */
+      for (i=0; i<p->n; i++) {
+
+        int    c2, jstart, j;
+        real   r2;
+        cell   *q;
+        vektor d1;
+
+        d1.x = ORT(p,i,X);
+        d1.y = ORT(p,i,Y);
+        d1.z = ORT(p,i,Z);
+
+        c2 = cnbrs[c].nq[m];
+        if (c2<0) continue;
+#ifdef AR
+        jstart = (c2==c1) ? i+1: 0;
+#else
+        jstart = 0;
+#endif
+        q = cell_array + c2;
+
+        /* for each atom in neighbor cell */
+        for (j=jstart; j<q->n; j++) {
+          vektor d;
+          d.x = ORT(q,j,X) - d1.x;
+          d.y = ORT(q,j,Y) - d1.y;
+          d.z = ORT(q,j,Z) - d1.z;
+          r2  = SPROD(d,d);
+          if (r2 < cellsz) tn2++;
+        }
+        /* enlarge tn2 to next value divisible by 4 */
+        tn2 = (tn2 + 3) & (~3); 
+      }
+      /* enlarge tn to next 128 byte boundary */
+      tn2 = (tn2 + inc_short) & (~inc_short); 
+    }
+    tn  = MAX(tn2,tn);
+  }
+  return tn;
+}
+
+
+/******************************************************************************
+*
+*  make_nblist
+*
+******************************************************************************/
+
+void make_nblist(void)
+{
+  static int at_max=0, pa_max=0, ncell_max=0, cl_max=0;
+  int c, k, nn, at, i;
+  int inc_int   = 128 / sizeof(int)   - 1;
+  int inc_short = 128 / sizeof(short) - 1;
+
+  /* update reference positions */
+  for (k=0; k<ncells; k++) {
+    cell *p = cell_array + cnbrs[k].np;
+    for (i=0; i<p->n; i++) {
+      NBL_POS(p,i,X) = ORT(p,i,X);
+      NBL_POS(p,i,Y) = ORT(p,i,Y);
+      NBL_POS(p,i,Z) = ORT(p,i,Z);
+    }
+  }
+
+  /* (re-)allocate offsets */
+  if (ncells > cl_max) {
+    free(at_off);
+    free(tb_off);
+    free(cell_dta);
+    cl_max   = ncells;
+#ifdef ON_PPU
+    cell_dta = (cell_dta_t *) malloc( (nallcells+1) * sizeof(cell_dta_t) );
+#else
+    cell_dta = (cell_ea_t  *) malloc( (nallcells+1) * sizeof(cell_ea_t)  );
+#endif
+    at_off = (int *) malloc( (cl_max+1)           * sizeof(int) );
+    tb_off = (int *) malloc( (cl_max+1) * NNBCELL * sizeof(int) );
+    if ((NULL==at_off) || (NULL==tb_off) || (NULL==cell_dta))
+      error("cannot allocate neighbor table");
+  }
+
+  /* initialize cell_dta */
+  for (k=0; k<nallcells; k++) {
+    cell *p = cell_array + k;
+#ifdef ON_PPU
+    cell_dta[k].n     = p->n;
+    cell_dta[k].pos   = p->ort;
+    cell_dta[k].force = p->kraft;
+    cell_dta[k].typ   = p->sorte;
+    cell_dta[k].ti    = NULL;
+    cell_dta[k].tb    = NULL;
+#else
+    cell_dta[k].n = p->n;
+    PTR2EA( p->ort,   cell_dta[k].pos_ea   );
+    PTR2EA( p->kraft, cell_dta[k].force_ea );
+    PTR2EA( p->sorte, cell_dta[k].typ_ea   );
+    PTR2EA( NULL,     cell_dta[k].ti_ea    );
+    PTR2EA( NULL,     cell_dta[k].tb_ea    );
+#endif
+  }
+
+  /* count atom numbers */
+  at=0; n_max=0;
+  for (k=0; k<ncells; k++) {
+    cell *p = CELLPTR(k);
+    at_off[k] = at;
+    /* next block on 128 byte boundary */
+    at += ((2*p->n + inc_int) & (~inc_int)) * NNBCELL;
+    n_max = MAX(n_max,p->n);
+  }
+  at_off[ncells] = at;
+  n_max++;
+
+  /* (re-)allocate neighbor table */
+  if (at >= at_max) {
+    free(ti);
+    at_max = (int) (1.1 * at * NNBCELL);
+    ti = (int *) malloc_aligned(at_max * sizeof(int), 128, 16);
+  }
+  if (NULL==tb) {
+    if (0==last_nbl_len) 
+      nb_max = (int) (nbl_size * ncells * estimate_nblist_size());
+    else                 
+      nb_max = (int) (nbl_size * last_nbl_len);
+    tb = (short *) malloc_aligned( nb_max * sizeof(short), 0, 0);
+  }
+  else if (last_nbl_len * sqrt(nbl_size) > nb_max) {
+    free(tb);
+    nb_max = (int    ) (nbl_size * last_nbl_len);
+    tb     = (short *) malloc_aligned( nb_max * sizeof(short), 0, 0);
+  }
+  if ((ti==NULL) || (tb==NULL)) 
+    error("cannot allocate neighbor table");
+
+  /* for all cells */
+  nn=0; len_max=0;
+  for (c=0; c<ncells; c++) {
+
+    int   c1 = cnbrs[c].np, m;
+    cell  *p = cell_array + c1;
+    int   at_inc = (2*p->n + inc_int) & (~inc_int);
+
+    /* for each neighbor cell */
+    for (m=0; m<NNBCELL; m++) {
+
+      int   c2 = cnbrs[c].nq[m];
+      int   l  = at_off[c] + m * at_inc, n = 0, i;
+      cell  *q;
+      short *ttb = tb + nn;
+
+      tb_off[c*NNBCELL+m] = nn;
+
+      c2 = cnbrs[c].nq[m];
+      if (c2<0) continue;
+      q = cell_array + c2;
+
+      /* for each atom in cell */
+      for (i=0; i<p->n; i++) {
+
+        int    jstart, j, rr;
+        vektor d1;
+
+        d1.x = ORT(p,i,X);
+        d1.y = ORT(p,i,Y);
+        d1.z = ORT(p,i,Z);
+
+        /* for each neighboring atom */
+        ti[l] = n;
+#ifdef AR
+        jstart = (m==0) ? i+1 : 0;
+#else
+        jstart = 0;
+#endif
+        for (j=jstart; j<q->n; j++) {
+          vektor d;
+          real   r2;
+#ifndef AR
+          if ((m==0) && (i==j)) continue;
+#endif
+          d.x = ORT(q,j,X) - d1.x;
+          d.y = ORT(q,j,Y) - d1.y;
+          d.z = ORT(q,j,Z) - d1.z;
+          r2  = SPROD(d,d);
+          if (r2 < cellsz) ttb[n++] = j;
+        }
+        ti[l+1] = n - ti[l];
+        l += 2;
+
+        /* if n is not divisible by 4, pad with copies of q->n */
+        rr = n % 4;
+        if (rr>0) for (j=rr; j<4; j++) ttb[n++] = q->n;
+      }
+
+      /* enlarge n to next 128 byte boundary */
+      n = (n + inc_short) & (~inc_short); 
+
+      nn += n;
+      pa_max = MAX(pa_max,n);
+      if (nn + 2*pa_max > nb_max) {
+        error("neighbor table full - increase nbl_size");
+      }
+    }
+    len_max = MAX( len_max, nn - tb_off[c*NNBCELL] );
+  }
+
+  tb_off[ncells*NNBCELL] = nn;
+  last_nbl_len   = nn;
+  have_valid_nbl = 1;
+  nbl_count++;
+}
+
+
+/******************************************************************************
+*
+*  make_wp
+*
+******************************************************************************/
+
+static wp_t* make_wp(int k, wp_t *wp)
+{
+  cell_nbrs_t *c = cnbrs + k;
+  cell *p = CELLPTR(k);
+  int  inc_int = 128 / sizeof(int) - 1, m, n;
+  int  at_inc  = (2*p->n + inc_int) & (~inc_int);
+
+  wp->k = k;
+  wp->n_max = n_max;      /* allocate for this many atoms     */
+  wp->len_max = len_max;  /* allocate for this many neighbors */
+  for (m=0; m<NNBCELL; m++) {
+    n = c->nq[m];
+    if (n<0) {
+      wp->cell_dta[m].n = 0;
+      continue;
+    }
+    wp->cell_dta[m] = cell_dta[n];
+#ifdef ON_PPU
+    wp->cell_dta[m].ti = ti + at_off[k] + m * at_inc;
+    wp->cell_dta[m].tb = tb + tb_off[k * NNBCELL + m];
+#else
+    wp->cell_dta[m].len = tb_off[(k+1)*NNBCELL] - tb_off[k*NNBCELL];
+    PTR2EA( ti + at_off[k] + m * at_inc,  wp->cell_dta[m].ti_ea );
+    PTR2EA( tb + tb_off[k * NNBCELL + m], wp->cell_dta[m].tb_ea );
+#endif
+  }
+  return wp;
+}
+
+
+/******************************************************************************
+*
+*  store_wp
+*
+******************************************************************************/
+
+static void store_wp(wp_t const* const wp)
+{
+  tot_pot_energy += wp->totpot;
+  virial         += wp->virial;
+}
+
+
+#else  /* not CBE_DIRECT */
+
+/******************************************************************************
+*
+*  estimate_nblist_size
+*
+******************************************************************************/
+
+int estimate_nblist_size(void)
+{
+  int c, tn=1;
+  int inc_short = 128 / sizeof(short) - 1;
+
+  /* for all cells */
+  for (c=0; c<ncells; c++) {
 
     int i, c1 = cnbrs[c].np;
     cell *p   = cell_array + c1;
@@ -141,11 +435,12 @@ int estimate_nblist_size(void)
         }
       }
       /* enlarge tn to next 128 byte boundary */
-      tn = ((tn + inc_short - 1) / inc_short) * inc_short; 
+      tn = (tn + inc_short) & (~inc_short); 
     }
   }
   return tn;
 }
+
 
 /******************************************************************************
 *
@@ -156,9 +451,9 @@ int estimate_nblist_size(void)
 void make_nblist(void)
 {
   static int at_max=0, pa_max=0, ncell_max=0, cl_max=0;
-  int  c, i, k, n, nn, at, cc, atm, l, t, j;
-  int inc_int   = 128 / sizeof(int);
-  int inc_short = 128 / sizeof(short);
+  int  c, i, k, n, nn, at, l, t, j;
+  int inc_int   = 128 / sizeof(int)   - 1;
+  int inc_short = 128 / sizeof(short) - 1;
 
   /* update reference positions */
   for (k=0; k<ncells; k++) {
@@ -187,7 +482,7 @@ void make_nblist(void)
     cell *p = CELLPTR(k);
     at_off[k] = at;
     /* next block on 128 byte boundary */
-    at += ((2*p->n + inc_int - 1) / inc_int) * inc_int;
+    at += (2*p->n + inc_int) & (~inc_int);
   }
   at_off[ncells] = at;
 
@@ -198,14 +493,16 @@ void make_nblist(void)
     ti = (int *) malloc_aligned(at_max * sizeof(int), 128,16);
   }
   if (NULL==tb) {
-    if (0==last_nbl_len) nb_max = (int) (nbl_size * estimate_nblist_size());
-    else                 nb_max = (int) (nbl_size * last_nbl_len);
+    if (0==last_nbl_len) 
+      nb_max = (int) (nbl_size * ncells * estimate_nblist_size());
+    else                 
+      nb_max = (int) (nbl_size * last_nbl_len);
     tb = (short *) malloc_aligned(nb_max* sizeof(short), 0,0);
   }
   else if (last_nbl_len * sqrt(nbl_size) > nb_max) {
     free(tb);
     nb_max = (int    ) (nbl_size * last_nbl_len);
-    tb     = (short *) malloc_aligned(nb_max* sizeof(short), 0,0);
+    tb     = (short *) malloc_aligned( nb_max * sizeof(short), 0, 0);
   }
   if ((ti==NULL) || (tb==NULL)) 
     error("cannot allocate neighbor table");
@@ -262,7 +559,7 @@ void make_nblist(void)
       if (rr>0) for (j=rr; j<4; j++) ttb[n++] = i;
 
       /* enlarge n to next 128 byte boundary */
-      n = ((n + inc_short - 1) / inc_short) * inc_short; 
+      n = (n + inc_short) & (~inc_short); 
 
     }
     pa_max = MAX(pa_max,n);
@@ -277,6 +574,7 @@ void make_nblist(void)
   have_valid_nbl = 1;
   nbl_count++;
 }
+
 
 /******************************************************************************
 *
@@ -373,6 +671,8 @@ static void store_wp(wp_t const* const wp)
   tot_pot_energy += wp->totpot;
   virial         += wp->virial;
 }
+
+#endif  /* CBE_DIRECT */
 
 
 /******************************************************************************
@@ -590,8 +890,11 @@ void calc_forces(int const steps)
   virial         = tmpvec2[1];
 #endif
 
+#ifdef AR
   /* add forces back to original cells/cpus */
   send_forces(add_forces,pack_forces,unpack_forces);
+#endif
+
 }
 
 

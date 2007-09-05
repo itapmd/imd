@@ -10,7 +10,7 @@
 
 /******************************************************************************
 *
-* imd_cbe_calc.c
+* imd_cbe_calc_spu.c  -- calc_wp on SPU
 *
 ******************************************************************************/
 
@@ -20,15 +20,156 @@
 ******************************************************************************/
 
 #include <stdio.h>
+#include <spu_intrinsics.h>
+#include "config.h"
 #include "imd_cbe.h"
 
-#ifdef __SPU__
-
-#include <spu_intrinsics.h>
+#ifdef ON_PPU
 
 /******************************************************************************
 *
-*  Lennard-Jones interaction work package for the SPU
+*  Lennard-Jones interactions on SPU - dummy routine, real one runs on PPU
+*
+******************************************************************************/
+
+void calc_wp(wp_t *wp) {}
+
+#else  /* not ON_PPU */
+
+#ifdef CBE_DIRECT
+
+/******************************************************************************
+*
+*  Lennard-Jones interactions on SPU - CBE_DIRECT version
+*
+******************************************************************************/
+
+/* to be implemented */
+void allocate_buf( cell_dta_t *buf, int n_max, int len_max) {}
+void init_fetch( cell_dta_t *buf, cell_ea_t *addr) {}
+void wait_fetch( cell_dta_t *buf) {}
+void return_forces( cell_dta_t *buf, cell_ea_t *addr) {}
+
+/* Macro for the calculation of the Lennard-Jones potential */
+#define LJ(pot,grad,r2)  {                                               \
+   int   const col4 = col*4;                                             \
+   float const tmp2 = lj_sig[col4] / r2;                                 \
+   float const tmp6 = tmp2 * tmp2 * tmp2;                                \
+   pot  = lj_eps[col4] * tmp6 * (tmp6 - 2.0) - lj_shift[col4];           \
+   grad = - 12.0 * lj_eps[col4] * tmp6 * (tmp6 - 1.0) / r2;              \
+}
+
+void calc_wp(wp_t *wp)
+{
+  cell_dta_t buf[3], *p, *q, *next_q, *old_q;
+  float d[4], f[4]; 
+  float r2, *pi, *pj, *fi, pot, grad;
+  float *r2cut, *lj_sig, *lj_eps, *lj_shift;
+  int   i, c1, col, n, j, m;
+#ifdef AR
+  float *fj;
+#endif
+
+  r2cut    = (float *) pt.r2cut;
+  lj_sig   = (float *) pt.lj_sig;
+  lj_eps   = (float *) pt.lj_eps;
+  lj_shift = (float *) pt.lj_shift;
+
+  /* allocate the three buffers with at least the following sizes:
+     *pos, *force:  wp->n_max * 4 * sizeof(float)
+     *typ, *ti:     wp->n_max * sizeof(int), wp->n_max * 2 * sizeof(int)
+     *tb:           wp->len_max * sizeof(short)
+  */
+  allocate_buf( buf,   wp->n_max, wp->len_max);
+  allocate_buf( buf+1, wp->n_max, wp->len_max);
+  allocate_buf( buf+2, wp->n_max, wp->len_max);
+
+  p = q = buf; next_q = buf + 1;
+  init_fetch(q, wp->cell_dta);
+  
+  wp->totpot = wp->virial = 0.0;
+
+  m = 0;
+  do {
+
+    wait_fetch(q);
+
+    do {
+      m++;
+    } while ((wp->cell_dta[m].n==0) && (m<NNBCELL));
+    if (wp->cell_dta[m].n==0) m++;
+
+    if (m<NNBCELL) init_fetch( next_q, wp->cell_dta + m );
+
+    for (i=0; i<p->n; i++) {
+
+      short *ttb = q->tb + q->ti[2*i];
+
+      c1 = pt.ntypes * p->typ[i];
+      fi = p->force + 4*i;
+      pi = p->pos   + 4*i;
+
+      for (n=0; n<q->ti[2*i+1]; n++) {
+
+        j    = ttb[n];
+        pj   = q->pos + 4*j;
+        d[0] = pj[0] - pi[0];
+        d[1] = pj[1] - pi[1];
+        d[2] = pj[2] - pi[2];
+        r2   = d[0]*d[0] + d[1]*d[1] + d[2]*d[2];
+        col  = c1 + q->typ[j];
+
+        if (r2 <= r2cut[4*col]) {
+
+    	  /* Calculation of potential has been moved to a macro */
+   	  LJ(pot,grad,r2)
+
+#ifdef AR
+          wp->totpot += pot;
+          pot        *= 0.5;   /* avoid double counting */
+          wp->virial -= r2  * grad;
+#else
+          pot        *= 0.5;   /* avoid double counting */
+          wp->totpot += pot;
+          wp->virial -= r2  * grad * 0.5;
+#endif
+
+          f[0] = d[0] * grad;
+          f[1] = d[1] * grad;
+          f[2] = d[2] * grad;
+
+          fi[0] += f[0];
+          fi[1] += f[1];
+          fi[2] += f[2];
+          fi[3] += pot;
+#ifdef AR
+          fj = q->force + 4*j;
+          fj[0] -= f[0];
+          fj[1] -= f[1];
+          fj[2] -= f[2];
+          fj[3] += pot;
+#endif
+	}
+      }
+    }
+#ifdef AR
+    /* write back forces in *q - locking required! */
+#endif
+
+    old_q = (m==0) ? q : buf + 2; 
+    q = next_q;
+    next_q = old_q;
+
+  } while (m<NNBCELL);
+
+  return_forces( p, wp->cell_dta );
+}
+
+#else  /* not CBE_DIRECT */
+
+/******************************************************************************
+*
+*  Lennard-Jones interactions on SPU - indirect version
 *
 ******************************************************************************/
 
@@ -210,87 +351,6 @@ void calc_wp(wp_t *wp)
 
 }
 
-#else
+#endif  /* not CBE_DIRECT */
 
-/******************************************************************************
-*
-*  Lennard-Jones interaction work package for the PPU
-*
-******************************************************************************/
-
-/* Macro for the calculation of the Lennard-Jones potential */
-#define LJ(pot,grad,r2)  {                                               \
-   int const col4 = col*4;                                               \
-   flt const tmp2 = pt.lj_sig[col4] / r2;                                \
-   flt const tmp6 = tmp2 * tmp2 * tmp2;                                  \
-   pot  = pt.lj_eps[col4] * tmp6 * (tmp6 - 2.0) - pt.lj_shift[col4];     \
-   grad = - 12.0 * pt.lj_eps[col4] * tmp6 * (tmp6 - 1.0) / r2;           \
-}
-
-void calc_wp(wp_t *wp)
-{
-  typedef flt fltvec[4];
-  fltvec d, f; 
-  flt r2, *pi, *pj, *fi, *fj, pot, grad;
-  int i, c1, col, inc=pt.ntypes * pt.ntypes, n, j;
-
-  wp->totpot = wp->virial = 0.0;
-  for (i=0; i<4*wp->n2; i++) { 
-      wp->force[i] = 0.0;
-  }
-
-  /* fetch sizes and pointers */
-  /* fetch data at wp->pos, wp->typ, wp->ti */
-
-  for (i=0; i<wp->n1; i++) {
-
-    short *ttb;
-
-    /* fetch data at wp->tb + wp->ti[2*i] */
-    ttb = wp->tb + wp->ti[2*i];
-
-    c1 = pt.ntypes * wp->typ[i];
-    fi = wp->force + 4*i;
-    pi = wp->pos   + 4*i;
-
-    for (n=0; n<wp->ti[2*i+1]; n++) {
-
-      j    = ttb[n];
-      pj   = wp->pos + 4*j;
-      d[0] = pj[0] - pi[0];
-      d[1] = pj[1] - pi[1];
-      d[2] = pj[2] - pi[2];
-      r2   = d[0]*d[0] + d[1]*d[1] + d[2]*d[2];
-      col  = c1 + wp->typ[j];
-
-      if (r2 <= pt.r2cut[4*col]) {
-
-  	  /* Calculation of potential has been moved to a macro */
-   	  LJ(pot,grad,r2)
-
-          wp->totpot += pot;
-          pot        *= 0.5;   /* avoid double counting */
-          wp->virial -= r2  * grad;
-
-          f[0] = d[0] * grad;
-          f[1] = d[1] * grad;
-          f[2] = d[2] * grad;
-
-          fi[0] += f[0];
-          fi[1] += f[1];
-          fi[2] += f[2];
-          fi[3] += pot;
-
-          fj = wp->force + 4*j;
-          fj[0] -= f[0];
-          fj[1] -= f[1];
-          fj[2] -= f[2];
-          fj[3] += pot;
-
-      }
-    }
-  }
-  /* return wp->force, wp->totpot, wp->virial */
-}
-
-#endif
+#endif  /* not ON_PPU */

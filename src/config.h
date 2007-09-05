@@ -25,10 +25,16 @@
 *
 ******************************************************************************/
 
+#if defined(CBE2) || defined(CBE3)
+#define CBE_DIRECT
+#define SINGLE
+#endif
+
 /* double precision is the default */
 #ifndef SINGLE
 #define DOUBLE
 #endif
+
 /* the world record switch */
 #ifdef MONOLJ
 #define NODBG_DIST
@@ -97,7 +103,15 @@
 #ifdef BUFCELLS
 
 /* AR is the default. We could make the default machine dependent */
-#define AR  
+#ifndef CBE3
+#define AR 
+#endif 
+
+#ifdef AR
+#  define NNBCELL 14
+#else
+#  define NNBCELL 27
+#endif
 
 /* for COVALENT, AR *must* be set */
 #ifdef COVALENT

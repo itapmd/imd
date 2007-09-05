@@ -1,6 +1,7 @@
 #ifndef IMD_CBE_H__
 #define IMD_CBE_H__
 
+#include <limits.h>
 
 /********* Common (SPU & PPU) part +++++++++*/
 
@@ -118,6 +119,13 @@ extern "C" {
    ea_t[1] (the second component) is the low part
  */
 
+/* PTR2EA converts a pointer to an effective address, and places it at ea */
+typedef unsigned long ulong;
+#if __WORDSIZE == 64
+#  define PTR2EA(ptr,ea) { ulong *p_ = (ulong *)(ea); *p_ = (ulong)(ptr); }
+#else
+#  define PTR2EA(ptr,ea) { (ea)[0] = 0; (ea)[1] = (unsigned)(ptr); }
+#endif
 
 /* The floating point type */
 typedef float flt;
@@ -125,6 +133,34 @@ typedef float flt;
 typedef unsigned ea_t[2];
 typedef ea_t ea32array_t;
 
+#ifdef CBE_DIRECT
+
+/* Cell data within a work package - with pointers */
+typedef struct {
+  int   n;
+  float *pos, *force;
+  int   *typ, *ti;
+  short *tb;
+} cell_dta_t;
+
+/* Cell data within a work package - with EAs */
+typedef struct {
+  int  n, len;
+  ea_t pos_ea, force_ea, typ_ea, ti_ea, tb_ea;
+} cell_ea_t;
+
+/* The work package type */
+typedef struct {
+  int   k, n_max, len_max, dummy;
+  float totpot, virial, f1, f2;
+#ifdef ON_PPU
+  cell_dta_t cell_dta[NNBCELL];
+#else
+  cell_ea_t  cell_dta[NNBCELL];
+#endif
+} wp_t;
+
+#else
 
 /* The work package type */
 typedef struct {
@@ -139,6 +175,8 @@ typedef struct {
   int   *typ, *ti;                /* length: n2, 2*n2   */
   short *tb;                      /* length: len        */
 } wp_t;
+
+#endif
 
 /* Basically the same structure as the wp_t but with ptrs. replaced
    by effective addresses and aligned to 16 or even 128-bytes boundary */
@@ -161,8 +199,6 @@ typedef struct exch {
     /* Padding */
     unsigned char pad[4];
 } exch_t;
-
-
 
 /* The potential type */
 typedef struct {
