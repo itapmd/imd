@@ -137,10 +137,10 @@ typedef ea_t ea32array_t;
 
 /* Cell data within a work package - with pointers */
 typedef struct {
-  int   n;
-  float *pos, *force;
-  int   *typ, *ti;
-  short *tb;
+  int   n;            /* allocate at least: */
+  float *pos, *force; /* n_max * 4 * sizeof(float) */
+  int   *typ, *ti;    /* n_max * sizeof(float), n_max * 2 * sizeof(float) */
+  short *tb;          /* len_max * sizeof(short) */
 } cell_dta_t;
 
 /* Cell data within a work package - with EAs */
@@ -151,8 +151,8 @@ typedef struct {
 
 /* The work package type */
 typedef struct {
-  int   k, n_max, len_max, dummy;
   float totpot, virial, f1, f2;
+  int   k, n_max, len_max, dummy;
 #ifdef ON_PPU
   cell_dta_t cell_dta[NNBCELL];
 #else
