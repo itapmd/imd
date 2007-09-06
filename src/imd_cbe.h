@@ -135,24 +135,35 @@ typedef ea_t ea32array_t;
 
 #ifdef CBE_DIRECT
 
-/* Cell data within a work package - with pointers */
+/* Cell data within a work package;
+   On SPU, allocate for n_max atoms and len_max neighbor indices,
+   namely 4*n_max floats (pos, force), n_max ints (typ), 2*n_max ints (ti), 
+   and len_max shorts (tb), all rounded up to 128 bytes.
+   n_max and len_max are taken from wp_t; 
+   n is set to the actual n from cell_ea_t. */
 typedef struct {
-  int   n;            /* allocate at least: */
-  float *pos, *force; /* n_max * 4 * sizeof(float) */
-  int   *typ, *ti;    /* n_max * sizeof(float), n_max * 2 * sizeof(float) */
-  short *tb;          /* len_max * sizeof(short) */
+  int   n;  /* actual number of atoms */
+  float *pos, *force;
+  int   *typ, *ti;
+  short *tb;
 } cell_dta_t;
 
-/* Cell data within a work package - with EAs */
+/* Effective addresses of cell data within a work package;
+   The cell contains n atoms and len neighbor indices;
+   Transfer 4*n floats (pos, force), n ints (typ), 2*n ints (ti),
+   and len shorts (tb), all rounded up to 128 bytes */
 typedef struct {
   int  n, len;
   ea_t pos_ea, force_ea, typ_ea, ti_ea, tb_ea;
 } cell_ea_t;
 
-/* The work package type */
+/* The work package type; essentially consists of a list of cells. 
+   k       = package number, 
+   n_max   = upper bound on number of atoms in a cell,
+   len_max = upper bound on number of neighbor indices in a cell */
 typedef struct {
   float totpot, virial, f1, f2;
-  int   k, n_max, len_max, dummy;
+  int   k, n_max, len_max, dummy; 
 #ifdef ON_PPU
   cell_dta_t cell_dta[NNBCELL];
 #else
