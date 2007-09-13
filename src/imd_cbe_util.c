@@ -636,7 +636,19 @@ void schedtospu(wp_t* const pwp)
 
 
 /* Helper function which converts pointers to EAs */
-static unsigned* cpyea(void const* const ptr, unsigned* dstfrst, unsigned* dstlast)
+
+#if defined(PTR2EA)
+static INLINE_ unsigned* cpyea(void const* const ptr,
+                               unsigned* const dfirst, unsigned* const dlast
+                              )
+{
+    PTR2EA(ptr,dfirst);
+    return dfirst;
+}
+#else
+static unsigned* cpyea(void const* const ptr,
+                       unsigned* dstfrst, unsigned* dstlast
+                      )
 {
     /* Last unsigned in ptr. representation */
     unsigned const* const srcfrst = (unsigned const*)(&ptr);
@@ -656,6 +668,7 @@ static unsigned* cpyea(void const* const ptr, unsigned* dstfrst, unsigned* dstla
     /* Return ptr. to beginning of buffer */
     return dstlast;
 }
+#endif
 
 
 

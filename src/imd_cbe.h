@@ -1,7 +1,7 @@
 #ifndef IMD_CBE_H__
 #define IMD_CBE_H__
 
-#include <limits.h>
+
 
 /********* Common (SPU & PPU) part +++++++++*/
 
@@ -111,27 +111,25 @@ extern "C" {
 #define AFRST(a) (&(a[0]))
 #define ALAST(a) ((a)+ASIZE(a))
 
-/* Warning: Do not use pointers as arguments */
 
 
 /* An effective address is just an array of unsigneds 
    ea_t[0] (the first component) is the high part
    ea_t[1] (the second component) is the low part
  */
+typedef unsigned  ea_t[2];
 
-/* PTR2EA converts a pointer to an effective address, and places it at ea */
-typedef unsigned long ulong;
-#if __WORDSIZE == 64
-#  define PTR2EA(ptr,ea) { ulong *p_ = (ulong *)(ea); *p_ = (ulong)(ptr); }
-#else
-#  define PTR2EA(ptr,ea) { (ea)[0] = 0; (ea)[1] = (unsigned)(ptr); }
-#endif
+
 
 /* The floating point type */
 typedef float flt;
 
-typedef unsigned ea_t[2];
-typedef ea_t ea32array_t;
+
+
+
+
+
+
 
 #ifdef CBE_DIRECT
 
@@ -197,14 +195,14 @@ typedef struct exch {
     int   n1_max, n2_max, len_max;  /* allocated size (not transferred) */
     flt   totpot, virial;
 
-    ea32array_t   pos, force;             /* length: 4*n2, 4*n2 */
+    ea_t   pos, force;             /* length: 4*n2, 4*n2 */
 
     /* "Pointers" to integer arrays
         typ "points" to an array of n2 items of type int
         tb "points" to len items of type short
      */
-    ea32array_t  typ, ti;                /* length: n2, 2*n2   */
-    ea32array_t  tb;                     /* length: len        */
+    ea_t  typ, ti;                /* length: n2, 2*n2   */
+    ea_t  tb;                     /* length: len        */
 
 
     /* Padding */
@@ -237,7 +235,7 @@ typedef struct env {
 
     /* Each of the following "points" to arrays with
        4*ntypes*ntypes items of type flt */
-    ea32array_t r2cut, lj_sig, lj_eps, lj_shift; 
+    ea_t r2cut, lj_sig, lj_eps, lj_shift; 
 
 
 
@@ -368,12 +366,49 @@ extern "C" {
 /************ PPU part **************/
 #if defined(__PPU__)
 
+/* WORDSIZE & size_t */
+#include <limits.h>
+#include <stddef.h>
+
+
 /* SPU runtime management */
 #include <libspe2.h>
+
+
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
+
+
+
+
+
+/* PTR2EA converts ptr to an effective address, and places it at *ea */
+
+/* Assuming a pointer is 32 bits wide only:
+   Copy ptr to lower part, setting higher part to zero
+   ea must point to an array of (at least) 2 objects which are (at least)
+   32 bits wide each.
+   The 1st component is set to zero, the pointer is copied to the second one
+*/
+#if 32 == __WORDSIZE
+#  /* Warning: ea is used twice inside the macro! */
+#  define PTR2EA(ptr,ea) { *(ea)=0;  *((void const**)((ea)+1)) = (void const*)(ptr); }
+#endif
+
+/* Assuming a pointer is 64 bits wide:
+   ea must point to an object which is (at least) 64 bits wide
+   The pointer is just copied there.
+*/
+#if 64 == __WORDSIZE
+#  define PTR2EA(ptr,ea) {  *((void const**)(ea)) = (void const*)(ptr); }
+#endif
+
+
+
+
+
 
 
 /* Max. number of SPU threads which may be managed by the

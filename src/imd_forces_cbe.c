@@ -19,10 +19,13 @@
 * $Date$
 ******************************************************************************/
 
-#include "imd.h"
 
-/* CBE declarations */
+/* PPU intrinsics */
 #include <ppu_intrinsics.h>
+
+/* IMD declarations */
+#include "imd.h"
+/* CBE declarations */
 #include "imd_cbe.h"
 
 /* Global variables only needed in this file */
@@ -62,7 +65,7 @@ void mk_pt(void)
   pt.ntypes   = ntypes;
 
   /* Allocate one array which is 4 times the size of a single array */
-  pt.r2cut    = (flt*)(malloc_aligned(4*asze, 16, 16));
+  pt.r2cut    = (flt*)(malloc_aligned(4*asze, 128, 16));
   pt.lj_sig   = pt.r2cut  + nelem;
   pt.lj_eps   = pt.lj_sig + nelem;
   pt.lj_shift = pt.lj_eps + nelem;

@@ -578,11 +578,12 @@ ifeq (cbe-gcc,${IMDSYS})
   SPUCC         = spu-cc
   EMBEDSPU      = ppu-embedspu -m64
   BIN_DIR	= ${HOME}/bin/cbe
-  OPT_FLAGS     += -O3 -funroll-loops -pipe -Wall -Wno-unused
+  OPT_FLAGS     += -pipe  -O3 -funroll-loops   -Wall -Wno-unused
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
   PROF_LIBS	+= -g3 -pg
-  SPUCFLAGS = -pipe -O3 -funroll-loops -ansi -pedantic -Wall -Wunused -Wshadow -Wno-long-long
+  SPUCFLAGS = -pipe  -ansi -pedantic  -O3 -funroll-loops  -Wall -Wunused -Wshadow -Wno-long-long
+  SPULDFLAGS    +=
   LFLAGS        += 
   LIBS          += -lspe2
 endif
@@ -1302,7 +1303,7 @@ spu.o: spu
 	${EMBEDSPU} hndle_cbe_calc spu spu.o 
 
 spu:  spu.c  imd_cbe.h  imd_cbe_util_spu.o  imd_cbe_calc_spu.s
-	${SPUCC} -o spu ${SPUCFLAGS} spu.c  imd_cbe_calc_spu.s  imd_cbe_util_spu.o
+	${SPUCC} -o spu ${SPUCFLAGS}  ${SPULDFLAGS}  -Wl,-Map,spu.map    spu.c  imd_cbe_calc_spu.s  imd_cbe_util_spu.o
 
 
 # Assembler code (instead of object code) for calc_wp on the SPU
