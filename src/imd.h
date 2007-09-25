@@ -19,7 +19,9 @@
 ******************************************************************************/
 
 /* C stuff */
+#ifdef MEMALIGN
 #define  _XOPEN_SOURCE 600
+#endif
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>

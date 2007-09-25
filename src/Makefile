@@ -388,6 +388,21 @@ endif
 #
 ###########################################################################
 
+# UltraSparc VI, cc
+ifeq (USparc4-cc,${IMDSYS})
+  CC_SERIAL	= cc
+  CC_OMP	= cc
+  CC_MPI	= mpcc
+  BIN_DIR	= ${HOME}/bin/sparc
+  MPI_LIBS	+= -lmpi
+  OPT_FLAGS	+= -fast -xarch=sparcvis2 # -m64
+  OMP_FLAGS	+= -xopenmp
+  OMPI_FLAGS	+= -xopenmp
+  PROF_FLAGS	+= -p
+  DEBUG_FLAGS	+= -g -xO3
+  LFLAGS        += -fast -xarch=sparcvis2 # -m64
+endif
+
 # UltraSparc III, cc
 ifeq (USparc3-cc,${IMDSYS})
   CC_SERIAL	= cc
@@ -395,12 +410,21 @@ ifeq (USparc3-cc,${IMDSYS})
   CC_MPI	= mpcc
   BIN_DIR	= ${HOME}/bin/sparc
   MPI_LIBS	+= -lmpi
-  OPT_FLAGS	+= -fast -xtarget=ultra3 -xarch=v9b
+  OPT_FLAGS	+= -fast -xarch=sparcvis2 # -m64
   OMP_FLAGS	+= -xopenmp
   OMPI_FLAGS	+= -xopenmp
   PROF_FLAGS	+= -p
   DEBUG_FLAGS	+= -g -xO3
-  LFLAGS        += -fast -xtarget=ultra3 -xarch=v9b
+  LFLAGS        += -fast -xarch=sparcvis2 # -m64
+endif
+
+# sparc, gcc3 - slow!
+ifeq (sparc-gcc3,${IMDSYS})
+  CC_SERIAL	= gcc
+  BIN_DIR	= ${HOME}/bin/sparc
+  OPT_FLAGS	+= -O
+  PROF_FLAGS	+= -g3 -pg
+  DEBUG_FLAGS	+= -g
 endif
 
 # sparc, gcc2 - slow!

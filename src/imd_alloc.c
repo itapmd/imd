@@ -353,6 +353,7 @@ void memalloc(void *p, int count, int size, int align, int ncopy, int clear,
 
   if (count>0) {  /* allocate count * size bytes */
     len = (count * size + a) & (~a);  /* enlarge to multiple of align */
+#ifdef MEMALIGN
     ret = posix_memalign(&new, align, len);
     if (ret==EINVAL) { /* align must be a multiple of the pointer size */
       error("invalid alignment request in memory allocation");
@@ -360,6 +361,12 @@ void memalloc(void *p, int count, int size, int align, int ncopy, int clear,
     else if (ret==ENOMEM) { /* out of memory */
       error_str("Cannot allocate memory for %s", name);
     }
+#else
+    new = malloc( len );
+    if (NULL==new) { /* out of memory */
+      error_str("Cannot allocate memory for %s", name);
+    }
+#endif
     else {  /* allocation succeded */
       if (clear  ) memset(new, 0, len);              /* zero new memory */
       if (ncopy>0) memcpy(new, *old, ncopy * size);  /* copy old data */

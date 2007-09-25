@@ -28,6 +28,7 @@
 #if defined(CBE2) || defined(CBE3)
 #define CBE_DIRECT
 #define SINGLE
+#define MEMALIGN
 #endif
 
 /* double precision is the default */
