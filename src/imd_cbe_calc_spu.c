@@ -330,54 +330,68 @@ void calc_wp(wp_t *wp)
   enum { btag0=0u, btag1=1u, btag2=2u };
 
   /* Tags for the buffer ptrs.  */
-  unsigned ptag, qtag, next_qtag, old_qtag;
-
+  unsigned qtag, next_qtag, old_qtag;
   cell_dta_t buf[3], *p, *q, *next_q, *old_q;
-  float d[4], f[4]; 
-  float r2, *fi, pot, grad;
-  float const *pi;
-  float const *pj;
 
-  /* Local copies of ptrs. to potential (maybe cast from/to vector/scalar type) */
-  typedef float const*  Pfltc;
-  Pfltc const r2cut    = (Pfltc)pt.r2cut;
-  Pfltc const lj_sig   = (Pfltc)pt.lj_sig;
-  Pfltc const lj_eps   = (Pfltc)pt.lj_eps;
-  Pfltc const lj_shift = (Pfltc)pt.lj_shift;
-  int   i, c1, col, n, j, m;
-
-  vector float const fzero = { 0.0f, 0.0f, 0.0f, 0.0f };
-
+  vector float f00  = spu_splats( (float)   0.0  );
+  vector float f001 = spu_splats( (float)   0.001);
 #ifdef AR
-  float *fj;
+  vector float f05n = spu_splats( (float)  -0.5  );
+  vector float f05l = {0.0, 0.0, 0.0, 0.5};
+#else
+  vector float f05  = spu_splats( (float)   0.5  );
+  vector float f1l  = {0.0, 0.0, 0.0, 1.0};
 #endif
-
+  vector float f10  = spu_splats( (float)   1.0  );
+  vector float f20  = spu_splats( (float)   2.0  );
+  vector float f12  = spu_splats( (float) -12.0  );
+  vector float vir  = spu_splats( (float)   0.0  );
+  vector float r2cut   = pt.r2cut   [0];
+  vector float ljsig   = pt.lj_sig  [0];
+  vector float ljeps   = pt.lj_eps  [0];
+  vector float ljshift = pt.lj_shift[0];
+  vector signed   int  i00 = spu_splats( (int) 0 );
+#ifdef AR
+  vector unsigned char s0  = {0,1,2,3,4,5,6,7,8,9,10,11,16,17,18,19};
+  vector unsigned char s1  = {0,1,2,3,4,5,6,7,8,9,10,11,20,21,22,23};
+  vector unsigned char s2  = {0,1,2,3,4,5,6,7,8,9,10,11,24,25,26,27};
+  vector unsigned char s3  = {0,1,2,3,4,5,6,7,8,9,10,11,28,29,30,31};
+#endif
+  vector unsigned char ss0 = {0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3};
+  vector unsigned char ss1 = {4,5,6,7,4,5,6,7,4,5,6,7,4,5,6,7};
+  vector unsigned char ss2 = {8,9,10,11,8,9,10,11,8,9,10,11,8,9,10,11};
+  vector unsigned char ss3 = {12,13,14,15,12,13,14,15,12,13,14,15,12,13,14,15};
+  vector float d0, d1, d2, d3, d20, d21, d22, d23, r2, r2i;
+  vector float tmp2, tmp3, tmp4, tmp6, tmp7, pot;
+  vector float grad, pots, ff0, ff1, ff2, ff3;
+  vector float d2a, d2b, ffa, ffb, dummy=f00, ff0s, ff1s, ff2s, ff3s;
+  vector float *pi, *fi, *qpos;
+#ifdef AR
+  vector float *qforce;
+#endif
+  vector unsigned int ms, ms1, ms2, ms3;
+  vector signed int tj;
+  int    i, c1, n, m, j0, j1, j2, j3;
 
   /* fprintf(stdout, "calc_wp (DIRECT) starts on SPU\n");  fflush(stdout); */
 
-
-
   /* The initial fetch to buffer q */
-  allocate_buf(&buf[0], wp->n_max, wp->len_max,  &fzero);
-  q    = &(buf[0]);
-  qtag = btag0;
+  allocate_buf(&buf[0], wp->n_max, wp->len_max, &f00);
+  q = p = &(buf[0]);
+  qtag  = btag0;
   init_fetch(q, wp->ti_len, wp->cell_dta, qtag);
 
   /* Allocate the remaining buffers... */
-  allocate_buf(&buf[1], wp->n_max, wp->len_max,  &fzero);
-  allocate_buf(&buf[2], wp->n_max, wp->len_max,  &fzero);
+  allocate_buf(&buf[1], wp->n_max, wp->len_max, NULL);
+  allocate_buf(&buf[2], wp->n_max, wp->len_max, NULL);
 
   /* ...and set pointers to them */
-  p    = q;
-  ptag = qtag;
-
   next_q      = &(buf[1]);
   next_qtag   = btag1;
 
-
-
   /* Set scalars to zero */
-  wp->totpot = wp->virial = 0.0;
+  wp->totpot = 0.0;
+  wp->virial = 0.0;
 
   m = 0;
   do {
@@ -388,79 +402,167 @@ void calc_wp(wp_t *wp)
       m++;
     } while ((wp->cell_dta[m].n==0) && (m<NNBCELL));
 
-    if (wp->cell_dta[m].n==0) { 
-        m++;
+    if (m<NNBCELL) {
+      init_fetch( next_q, wp->ti_len, wp->cell_dta + m, next_qtag );
     }
 
-    if (m<NNBCELL) {
-        init_fetch( next_q, wp->ti_len, wp->cell_dta + m, next_qtag );
-    }
+    /* positions in q as vector float */
+    qpos = (vector float *) q->pos;
 
     for (i=0; i<p->n; i++) {
 
       short const * const ttb = q->tb + q->ti[2*i];
 
-      c1 = pt.ntypes * p->typ[i];
-      fi = p->force + 4*i;
-      pi = p->pos   + 4*i;
+#ifndef MONO
+      c1 = 2 * p->typ[i];
+#endif
 
-      for (n=0; n<q->ti[2*i+1]; n++) {
+      fi = ((vector float *) p->force) + i;
+      pi = ((vector float *) p->pos)   + i;
 
-        j    = ttb[n];
-        pj   = q->pos + 4*j;
-        d[0] = pj[0] - pi[0];
-        d[1] = pj[1] - pi[1];
-        d[2] = pj[2] - pi[2];
-        r2   = d[0]*d[0] + d[1]*d[1] + d[2]*d[2];
-        col  = c1 + q->typ[j];
+      /* clear accumulation variables */
+      pots = f00;  ff0s = f00;  ff1s = f00;  ff2s = f00;  ff3s = f00;
 
-        if (r2 <= r2cut[4*col]) {
+      /* we treat four neighbors at a time, so that we can vectorize */
+      /* ttb is padded with copies of i, which have to be masked     */
+      qpos[q->n] = *pi;      /* needed for the padding values in ttb */
+      for (n=0; n<q->ti[2*i+1]; n+=4) {
 
-    	  /* Calculation of potential has been moved to a macro */
-   	  LJ(pot,grad,r2)
+        /* indices of neighbors */
+        j0  = ttb[n  ];
+        j1  = ttb[n+1];
+        j2  = ttb[n+2];
+        j3  = ttb[n+3];
+
+#ifndef MONO
+        /* if not MONO, we assume up to two atom types */
+        /* mask for type dependent selections */
+        tj = spu_promote( q->typ[j0],     0 );
+        tj = spu_insert ( q->typ[j1], tj, 1 );
+        tj = spu_insert ( q->typ[j2], tj, 2 );
+        tj = spu_insert ( q->typ[j3], tj, 3 );
+        ms = spu_cmpeq( tj, i00 );
+        r2cut   = spu_sel( pt.r2cut   [c1+1], pt.r2cut   [c1], ms );
+        ljsig   = spu_sel( pt.lj_sig  [c1+1], pt.lj_sig  [c1], ms );
+        ljeps   = spu_sel( pt.lj_eps  [c1+1], pt.lj_eps  [c1], ms );
+        ljshift = spu_sel( pt.lj_shift[c1+1], pt.lj_shift[c1], ms );
+#endif
+
+        /* distance vectors */
+        d0  = spu_sub( qpos[j0], *pi );
+        d1  = spu_sub( qpos[j1], *pi );
+        d2  = spu_sub( qpos[j2], *pi );
+        d3  = spu_sub( qpos[j3], *pi );
+
+        /* clear the 4th component */
+        d0 = spu_sel( d0, f00, spu_maskw(1) );
+        d1 = spu_sel( d1, f00, spu_maskw(1) );
+        d2 = spu_sel( d2, f00, spu_maskw(1) );
+        d3 = spu_sel( d3, f00, spu_maskw(1) );
+
+        d20 = spu_mul( d0, d0 );
+        d21 = spu_mul( d1, d1 );
+        d22 = spu_mul( d2, d2 );
+        d23 = spu_mul( d3, d3 );
+
+        d20 = spu_add( d20, spu_rlqwbyte( d20, 8 ) );
+        d21 = spu_add( d21, spu_rlqwbyte( d21, 8 ) );
+        d22 = spu_add( d22, spu_rlqwbyte( d22, 8 ) );
+        d23 = spu_add( d23, spu_rlqwbyte( d23, 8 ) );
+
+        d20 = spu_add( d20, spu_rlqwbyte( d20, 4 ) );
+        d21 = spu_add( d21, spu_rlqwbyte( d21, 4 ) );
+        d22 = spu_add( d22, spu_rlqwbyte( d22, 4 ) );
+        d23 = spu_add( d23, spu_rlqwbyte( d23, 4 ) );
+
+        d2a = spu_sel( d20, d21, spu_maskw(7) );
+        d2b = spu_sel( d22, d23, spu_maskw(1) );
+        r2  = spu_sel( d2a, d2b, spu_maskw(3) );
+
+        /* compute inverses of r2 */
+        ms1 = spu_cmpgt( r2cut, r2 );  /* cutoff mask */
+        ms2 = spu_cmpgt( r2, f001 );   /* mask zeros */
+        r2  = spu_sel( f10, r2, ms2  );
+        /* first estimate inverse, then sharpen it */
+        r2i = spu_re( r2 ); 
+        r2i = spu_mul( r2i, spu_sub( f20, spu_mul( r2i, r2 ) ) ); 
+
+        /* mask unwanted values */
+        ms3 = spu_and( ms1, ms2 );
+        r2  = spu_sel( f00, r2,  ms3 );
+        r2i = spu_sel( f00, r2i, ms3 );
+
+        /* compute LJ interaction */
+        tmp2 = spu_mul( r2i,  ljsig );
+        tmp3 = spu_mul( tmp2, ljeps );
+        tmp4 = spu_mul( tmp2, tmp2 );
+        tmp6 = spu_mul( tmp4, tmp2 );
+        tmp7 = spu_mul( tmp4, tmp3 );
+        pot  = spu_msub( tmp7, spu_sub(tmp6, f20), spu_sel(f00, ljshift, ms3));
+        grad = spu_mul( spu_msub(tmp7, tmp6, tmp7), spu_mul(f12, r2i) );
 
 #ifdef AR
-          wp->totpot += pot;
-          pot        *= 0.5;   /* avoid double counting */
-          wp->virial -= r2  * grad;
+        /* add up potential energy */
+        pots = spu_add( pots, pot );
+        pot  = spu_mul( pot,  f05n );  /* avoid double counting */
 #else
-          pot        *= 0.5;   /* avoid double counting */
-          wp->totpot += pot;
-          wp->virial -= r2  * grad * 0.5;
+        /* add up potential energy */
+        pots = spu_madd( pot, f05, pots );  /* avoid double counting */
 #endif
+        /* add to total virial */
+        vir  = spu_madd( r2, grad, vir );
 
-          f[0] = d[0] * grad;
-          f[1] = d[1] * grad;
-          f[2] = d[2] * grad;
+        /* the forces */
+        ff0  = spu_mul( d0, spu_shuffle( grad, dummy, ss0 ) );
+        ff1  = spu_mul( d1, spu_shuffle( grad, dummy, ss1 ) );
+        ff2  = spu_mul( d2, spu_shuffle( grad, dummy, ss2 ) );
+        ff3  = spu_mul( d3, spu_shuffle( grad, dummy, ss3 ) );
 
-          fi[0] += f[0];
-          fi[1] += f[1];
-          fi[2] += f[2];
-          fi[3] += pot;
+        /* add forces and potential on first particle */
+        ff0s = spu_add( ff0s, ff0 );
+        ff1s = spu_add( ff1s, ff1 );
+        ff2s = spu_add( ff2s, ff2 );
+        ff3s = spu_add( ff3s, ff3 );
+
 #ifdef AR
-          fj = q->force + 4*j;
-          fj[0] -= f[0];
-          fj[1] -= f[1];
-          fj[2] -= f[2];
-          fj[3] += pot;
+        /* add forces and potential on second particle */
+        qforce = (vector float *) q->force;
+        qforce[j0] = spu_sub( qforce[j0], spu_shuffle( ff0, pot, s0 ) ); 
+        qforce[j1] = spu_sub( qforce[j1], spu_shuffle( ff1, pot, s1 ) ); 
+        qforce[j2] = spu_sub( qforce[j2], spu_shuffle( ff2, pot, s2 ) ); 
+        qforce[j3] = spu_sub( qforce[j3], spu_shuffle( ff3, pot, s3 ) );
 #endif
-	}
       }
+
+      /* add contribution to total poteng */
+      pots = spu_add( pots, spu_rlqwbyte( pots, 8 ) );
+      pots = spu_add( pots, spu_rlqwbyte( pots, 4 ) );
+      wp->totpot += spu_extract( pots, 0 );
+
+      /* add force of first particle */
+      ffa = spu_add( ff0s, ff1s );
+      ffb = spu_add( ff2s, ff3s );
+      *fi = spu_add( *fi,  ffa  );
+      *fi = spu_add( *fi,  ffb  );
+
+      /* add potential of first particle */
+#ifdef AR
+      *fi = spu_madd( pots, f05l, *fi );
+#else
+      *fi = spu_madd( pots, f1l, *fi );
+#endif
     }
+
 #ifdef AR
     /* write back forces in *q - locking required! */
 #endif
 
     /*
-    if (0==wp->k) {
-      printf("m=%d np=%d nq=%d\n", m, p->n, q->n ); 
-      if (NNBCELL==m) {
-        for (i=0; i<p->n; i++)
-          printf("%d %d %e %e %e %e %e %e %e\n", 
-                 i, p->typ[i], p->pos[4*i], p->pos[4*i+1], p->pos[4*i+2],
-                 p->force[3*i], p->force[4*i+1], 
-                 p->force[4*i+2], p->force[4*i+3] );
-      }
+    if ((0==wp->k) && (NNBCELL==m)) {
+      for (i=0; i<p->n; i++)
+        printf("%d %d %e %e %e %e %e %e %e\n", 
+          i, p->typ[i], p->pos[4*i], p->pos[4*i+1], p->pos[4*i+2],
+          p->force[4*i], p->force[4*i+1], p->force[4*i+2], p->force[4*i+3]);
     }
     */
 
@@ -480,6 +582,14 @@ void calc_wp(wp_t *wp)
     next_qtag = old_qtag;
 
   } while (m<NNBCELL);
+
+  /* set contribution to total virial */
+#ifndef AR
+  vir = spu_mul( vir, f05 );  /* avoid double counting */
+#endif
+  vir = spu_add( vir, spu_rlqwbyte( vir, 8 ) );
+  vir = spu_add( vir, spu_rlqwbyte( vir, 4 ) );
+  wp->virial = - spu_extract( vir, 0 );
 
   /* Init DMA back to main memory. No need to wait for it to complete here,
      as we will do that in the main (work) loop. */
