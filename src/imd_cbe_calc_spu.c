@@ -1,4 +1,3 @@
-
 /******************************************************************************
 *
 * IMD -- The ITAP Molecular Dynamics Program
@@ -19,10 +18,30 @@
 * $Date$
 ******************************************************************************/
 
+/* ISO C std. headers */
 #include <stdio.h>
+/* SPU functions/macrso, DMA */
 #include <spu_intrinsics.h>
+#include <spu_mfcio.h>
+
+/* The IMD configuration (macro CBE_DIRECT) */
 #include "config.h"
+/* DMA typedefs...*/
 #include "imd_cbe.h"
+
+
+
+
+static INLINE_ int iceil128(int const x) {
+    return (x+127) & (~127);
+}
+
+static INLINE_ int iceil16(int const x) {
+    return (x+15) & (~15);
+}
+
+
+
 
 #ifdef ON_PPU
 
@@ -44,11 +63,250 @@ void calc_wp(wp_t *wp) {}
 *
 ******************************************************************************/
 
-/* to be implemented */
-void allocate_buf( cell_dta_t *buf, int n_max, int len_max) {}
-void init_fetch( cell_dta_t *buf, cell_ea_t *addr) {}
-void wait_fetch( cell_dta_t *buf) {}
-void return_forces( cell_dta_t *buf, cell_ea_t *addr) {}
+
+
+
+
+/* Helper routine to set all elements in [p,p+k) to x */
+static INLINE_ void fvecset(register vector float* p, register int k,
+                            register vector float const x)
+{
+     for (   ; (k>0);    --k, ++p ) {
+         (*p) = x;
+     }
+}
+
+
+/*  Allocates Pointers inside *buf with at least the following sizes:
+      *pos, *force:  wp->n_max * 4 * sizeof(float)
+      *typ, *ti:     wp->n_max * sizeof(int), wp->n_max * 2 * sizeof(int)
+      *tb:           wp->len_max * sizeof(short)
+
+      If pf0 is non-NULL the force array is filled with *pf0
+*/
+static void allocate_buf(cell_dta_t* const buf,
+                         int const n_max, int const len_max,
+                         vector float const* const pf0
+                        )
+{
+    /* Current length of workspace */
+    extern unsigned wrkspc_len;
+
+    /* pos & force have the same size */
+    int const spos = iceil128(  n_max *     sizeof(flt[4]));
+    /* Sizes of the othe members */
+    int const styp = iceil128(  n_max *     sizeof(int));
+    int const sti  = iceil128(  n_max * 2 * sizeof(int));
+    int const stb  = iceil128(len_max *     sizeof(short));
+
+    /* Total number of bytes needed */
+    int const stot = spos + spos + styp + sti + stb;
+
+
+    /* Enough (work) space? */
+    if ( EXPECT_TRUE(wrkspc_len>=stot) ) {
+        /* Type "pointer to byte" & "raw memory pointer"
+           (used for buffer mgmt) */
+        typedef unsigned char* Pbyt;
+        typedef void*          Praw;
+
+        /* Current address of workspace */
+        extern void*  wrkspc_adr;
+
+        /* Set pointers */
+        buf->pos   = (Praw)(wrkspc_adr);
+        buf->force = (Praw)(((Pbyt)(buf->pos))   + spos);
+        buf->typ   = (Praw)(((Pbyt)(buf->force)) + spos);
+        buf->ti    = (Praw)(((Pbyt)(buf->typ))   + styp);
+        buf->tb    = (Praw)(((Pbyt)(buf->ti))    + sti);
+
+        /* Update */
+        wrkspc_adr  = ((Pbyt)(wrkspc_adr)) + stot;
+        wrkspc_len -= stot;
+
+        /* Set forces to zero? */
+        if ( pf0 ) {
+	    fvecset((vector float*)(buf->force), n_max,  *pf0);
+	}
+    }
+    else {
+       fprintf(stderr, "Could not allocate %d bytes in allocate_buf (only %u bytes available)\n", stot, wrkspc_len);
+
+       buf->pos   = 0;
+       buf->force = 0;
+       buf->typ   = 0;
+       buf->ti    = 0;
+       buf->tb    = 0;
+    }
+}
+
+
+
+
+
+
+static void mdma64_rec(register unsigned char* const p,
+                       register unsigned long long const lea, register unsigned const sze,
+                       register unsigned const tag, register unsigned const cmd)
+{
+    /* Maxium transfer size possible */
+    enum { maxsze  = (unsigned)(16*1024)          };
+    enum { maxstep = (unsigned long long)(maxsze) };
+
+    /* High/Low part of EA */
+    register unsigned const hi = (unsigned)(lea>>32u);
+    register unsigned const lo = (unsigned)lea;
+
+    /* Only one DMA needed? End recusrion */
+    if ( sze<=maxsze ) {
+        spu_mfcdma64(p, hi,lo, sze,  tag,cmd);
+        return;
+    }
+
+    /* Start a DMA */
+    spu_mfcdma64(p, hi,lo, maxsze,  tag,cmd);
+    /* Tail recursive call... */
+    mdma64_rec(p+maxsze,  lea+maxstep,  sze-maxsze,  tag,cmd);
+}
+
+
+
+
+
+
+
+
+
+/* DMA more than 16k using multiple DMAs with the same tag */
+void mdma64_iter(register unsigned char* p,
+                 register unsigned long long lea, register unsigned remsze,
+                 register unsigned const tag, register unsigned const cmd)
+{
+    /* Maximum number of bytes per DMA (which is a multiple of 16) */
+    enum { maxsze  = (unsigned)(16*1024)        };
+    enum { maxstep = (unsigned long long)maxsze };
+
+    for(;;) {
+        /* Split EA into low & hi part */
+        register unsigned const hi = (unsigned)(lea>>32u);
+        register unsigned const lo = (unsigned)lea;
+
+        /* We're done if not more than maxsze bytes are to be xfered */
+        if ( remsze<=maxsze ) {
+  	   spu_mfcdma64(p, hi,lo,  remsze, tag, cmd);
+ 	   return;
+        }
+
+        /* Xfer one chunk of maximum size  */
+        spu_mfcdma64(p,  hi,lo,  maxsze, tag, cmd);
+
+        /* Update addresses and number of bytes */
+        remsze -= maxsze;
+        p      += maxsze;
+        lea    += maxstep;
+    }
+}
+
+
+
+/* DMA more than 16K using multiple DMAs */
+INLINE_ void mdma64(void* const p,
+                    unsigned const* const ea, unsigned const size,
+                    unsigned const tag, unsigned const cmd
+                   )
+{
+    typedef unsigned long long  T64;
+
+    /* Debugging output */
+    /*
+    fprintf(stdout, "DMAing %u bytes between %p and (0x%x,0x%x) with tag %u\n", 
+            size, p,  ea[0], ea[1],  tag);
+    fflush(stdout);
+    */
+
+    mdma64_iter(p, (((T64)(ea[0]))<<32u)+((T64)(ea[1])), size,  tag, cmd);
+}
+
+
+/* One DMA only (added for syntactical reasons only) */
+INLINE_ void dma64(void* const p,
+                   unsigned const* const ea, unsigned const size,
+                   unsigned const tag, unsigned const cmd
+                  )
+{
+    spu_mfcdma64(p,  ea[0],ea[1],  size, tag,cmd);
+}
+
+
+  
+
+
+/* Init a DMA get from the EAs specified in *addr to the LS addresses
+   specified ton buf.
+ */
+static INLINE_ 
+  void init_fetch(cell_dta_t* const buf, const int ti_len, 
+                  cell_ea_t const* const addr, unsigned const tag)
+{
+    /* Start 4 seperate DMAs (each of which may be larger than 16K as 
+       mdma64 is used).
+       Note that list DMA is not possible here, as the ptr. members of *buf
+       are aligned to 128-byte boundary, but in list DMA, LS addresses are
+       automatically rounded up to the next 16-byte boundary.
+     */
+    mdma64(buf->pos, addr->pos_ea, iceil16(addr->n*sizeof(flt[4])),
+           tag, MFC_GET_CMD);
+
+    mdma64(buf->typ, addr->typ_ea, iceil16(addr->n*sizeof(int)),
+           tag, MFC_GET_CMD);
+  
+    mdma64(buf->ti,  addr->ti_ea,  iceil16(ti_len*sizeof(int)),
+           tag, MFC_GET_CMD);
+
+    mdma64(buf->tb,  addr->tb_ea,  iceil16(addr->len*sizeof(short)),
+           tag, MFC_GET_CMD);
+
+
+    /* Do we really have to DMA the force?
+    mdma64(buf->force, addr->force_ea, iceil16(addr->n*sizeof(flt[4])),
+           tag, MFC_GET_CMD);
+    */
+
+
+    /* Also copy n */
+    buf->n = addr->n;
+}
+
+
+
+
+/* void wait_fetch( cell_dta_t *buf) {} */
+static INLINE_ void wait_fetch(unsigned const tag) {
+    spu_writech(MFC_WrTagMask, (1u<<tag));
+    spu_mfcstat(MFC_TAG_UPDATE_ALL);
+}
+
+
+
+
+
+/* Start a DMA back to main memory without waiting for it */
+static INLINE_
+  void return_forces(cell_dta_t const* const buf, cell_ea_t const* const addr)
+{
+    /* Contains some tag which may be used in return_forces */
+    extern unsigned const forces_tag;
+
+    /* Debugging output */
+    /* fprintf(stdout, "DMAing back forces with tag %u\n", forces_tag); fflush(stdout); */
+
+    mdma64(buf->force, addr->force_ea, iceil16(addr->n*sizeof(flt[4])),
+           forces_tag, MFC_PUT_CMD);
+}
+
+
+
+
 
 /* Macro for the calculation of the Lennard-Jones potential */
 #define LJ(pot,grad,r2)  {                                               \
@@ -59,51 +317,88 @@ void return_forces( cell_dta_t *buf, cell_ea_t *addr) {}
    grad = - 12.0 * lj_eps[col4] * tmp6 * (tmp6 - 1.0) / r2;              \
 }
 
+
+
+
+
+
 void calc_wp(wp_t *wp)
 {
+  /* Some DMA tag constants for the 3 buf's 
+     btagx is the tag for DMAs to buf[x]
+   */
+  enum { btag0=0u, btag1=1u, btag2=2u };
+
+  /* Tags for the buffer ptrs.  */
+  unsigned ptag, qtag, next_qtag, old_qtag;
+
   cell_dta_t buf[3], *p, *q, *next_q, *old_q;
   float d[4], f[4]; 
-  float r2, *pi, *pj, *fi, pot, grad;
-  float *r2cut, *lj_sig, *lj_eps, *lj_shift;
+  float r2, *fi, pot, grad;
+  float const *pi;
+  float const *pj;
+
+  /* Local copies of ptrs. to potential (maybe cast from/to vector/scalar type) */
+  typedef float const*  Pfltc;
+  Pfltc const r2cut    = (Pfltc)pt.r2cut;
+  Pfltc const lj_sig   = (Pfltc)pt.lj_sig;
+  Pfltc const lj_eps   = (Pfltc)pt.lj_eps;
+  Pfltc const lj_shift = (Pfltc)pt.lj_shift;
   int   i, c1, col, n, j, m;
+
+  vector float const fzero = { 0.0f, 0.0f, 0.0f, 0.0f };
+
 #ifdef AR
   float *fj;
 #endif
 
-  r2cut    = (float *) pt.r2cut;
-  lj_sig   = (float *) pt.lj_sig;
-  lj_eps   = (float *) pt.lj_eps;
-  lj_shift = (float *) pt.lj_shift;
 
-  /* allocate the three buffers with at least the following sizes:
-     *pos, *force:  wp->n_max * 4 * sizeof(float)
-     *typ, *ti:     wp->n_max * sizeof(int), wp->n_max * 2 * sizeof(int)
-     *tb:           wp->len_max * sizeof(short)
-  */
-  allocate_buf( buf,   wp->n_max, wp->len_max);
-  allocate_buf( buf+1, wp->n_max, wp->len_max);
-  allocate_buf( buf+2, wp->n_max, wp->len_max);
+  /* fprintf(stdout, "calc_wp (DIRECT) starts on SPU\n");  fflush(stdout); */
 
-  p = q = buf; next_q = buf + 1;
-  init_fetch(q, wp->cell_dta);
-  
+
+
+  /* The initial fetch to buffer q */
+  allocate_buf(&buf[0], wp->n_max, wp->len_max,  &fzero);
+  q    = &(buf[0]);
+  qtag = btag0;
+  init_fetch(q, wp->ti_len, wp->cell_dta, qtag);
+
+  /* Allocate the remaining buffers... */
+  allocate_buf(&buf[1], wp->n_max, wp->len_max,  &fzero);
+  allocate_buf(&buf[2], wp->n_max, wp->len_max,  &fzero);
+
+  /* ...and set pointers to them */
+  p    = q;
+  ptag = qtag;
+
+  next_q      = &(buf[1]);
+  next_qtag   = btag1;
+
+
+
+  /* Set scalars to zero */
   wp->totpot = wp->virial = 0.0;
 
   m = 0;
   do {
 
-    wait_fetch(q);
+    wait_fetch(qtag);
 
     do {
       m++;
     } while ((wp->cell_dta[m].n==0) && (m<NNBCELL));
-    if (wp->cell_dta[m].n==0) m++;
 
-    if (m<NNBCELL) init_fetch( next_q, wp->cell_dta + m );
+    if (wp->cell_dta[m].n==0) { 
+        m++;
+    }
+
+    if (m<NNBCELL) {
+        init_fetch( next_q, wp->ti_len, wp->cell_dta + m, next_qtag );
+    }
 
     for (i=0; i<p->n; i++) {
 
-      short *ttb = q->tb + q->ti[2*i];
+      short const * const ttb = q->tb + q->ti[2*i];
 
       c1 = pt.ntypes * p->typ[i];
       fi = p->force + 4*i;
@@ -156,13 +451,39 @@ void calc_wp(wp_t *wp)
     /* write back forces in *q - locking required! */
 #endif
 
-    old_q = (m==0) ? q : buf + 2; 
-    q = next_q;
-    next_q = old_q;
+    /*
+    if (0==wp->k) {
+      printf("m=%d np=%d nq=%d\n", m, p->n, q->n ); 
+      if (NNBCELL==m) {
+        for (i=0; i<p->n; i++)
+          printf("%d %d %e %e %e %e %e %e %e\n", 
+                 i, p->typ[i], p->pos[4*i], p->pos[4*i+1], p->pos[4*i+2],
+                 p->force[3*i], p->force[4*i+1], 
+                 p->force[4*i+2], p->force[4*i+3] );
+      }
+    }
+    */
+
+    if (q == p) {  
+       old_q    = &(buf[2]);
+       old_qtag = btag2;
+    }
+    else {
+       old_q    = q;
+       old_qtag = qtag;
+    }
+ 
+    q    = next_q;
+    qtag = next_qtag;
+
+    next_q    = old_q;
+    next_qtag = old_qtag;
 
   } while (m<NNBCELL);
 
-  return_forces( p, wp->cell_dta );
+  /* Init DMA back to main memory. No need to wait for it to complete here,
+     as we will do that in the main (work) loop. */
+  return_forces(p, wp->cell_dta);
 }
 
 #else  /* not CBE_DIRECT */
@@ -199,7 +520,8 @@ void calc_wp(wp_t *wp)
   vector float d0, d1, d2, d3, d20, d21, d22, d23, r2, r2i;
   vector float tmp2, tmp3, tmp4, tmp6, tmp7, pot;
   vector float grad, pots, ff0, ff1, ff2, ff3;
-  vector float d2a, d2b, ffa, ffb, dummy=f00, *pi, *fi, ff0s, ff1s, ff2s, ff3s;
+  vector float d2a, d2b, ffa, ffb, dummy=f00, *fi, ff0s, ff1s, ff2s, ff3s;
+  vector float const* pi;
   vector unsigned int ms, ms1, ms2, ms3;
   vector signed int tj;
   int    i, c1, n, j0, j1, j2, j3;
@@ -213,7 +535,7 @@ void calc_wp(wp_t *wp)
      fetch data at wp->pos, wp->typ, wp->ti */
   for (i=0; i<wp->n1; i++) {
 
-    short *ttb;
+    short const *ttb;
 
     /* fetch data at wp->tb + wp->ti[2*i] */
     ttb = wp->tb + wp->ti[2*i];

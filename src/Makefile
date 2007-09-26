@@ -1291,7 +1291,7 @@ endif
 
 # Modified by Frank Pister: Also remove spu related files
 clean:
-	rm -f *.o *.u *~ \#* *.V *.T *.O *.il *.s spu
+	rm -f *.o *.u *~ \#* *.V *.T *.O *.il *.s spu spu.map
 
 help:
 	@echo "Usage: gmake imd[_<parallel>][_<option>[_<option>...]]"

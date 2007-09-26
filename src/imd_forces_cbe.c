@@ -328,8 +328,8 @@ void make_nblist(void)
       if (nn + 2*pa_max > nb_max) {
         error("neighbor table full - increase nbl_size");
       }
+      len_max = MAX( len_max, nn - tb_off[c*NNBCELL+m] );
     }
-    len_max = MAX( len_max, nn - tb_off[c*NNBCELL] );
   }
 
   tb_off[ncells*NNBCELL] = nn;
@@ -355,6 +355,7 @@ static wp_t* make_wp(int k, wp_t *wp)
   wp->k = k;
   wp->n_max = n_max;      /* allocate for this many atoms     */
   wp->len_max = len_max;  /* allocate for this many neighbors */
+  wp->ti_len = at_inc;
   for (m=0; m<NNBCELL; m++) {
     n = c->nq[m];
     if (n<0) {
@@ -366,11 +367,20 @@ static wp_t* make_wp(int k, wp_t *wp)
     wp->cell_dta[m].ti = ti + at_off[k] + m * at_inc;
     wp->cell_dta[m].tb = tb + tb_off[k * NNBCELL + m];
 #else
-    wp->cell_dta[m].len = tb_off[(k+1)*NNBCELL] - tb_off[k*NNBCELL];
+    wp->cell_dta[m].len = tb_off[k*NNBCELL+m+1] - tb_off[k*NNBCELL+m];
     PTR2EA( ti + at_off[k] + m * at_inc,  wp->cell_dta[m].ti_ea );
     PTR2EA( tb + tb_off[k * NNBCELL + m], wp->cell_dta[m].tb_ea );
 #endif
   }
+
+
+  /* Debugging output */
+  /*
+  fprintf(stdout, "wp k=%d created for CBE_DIRECT with n_max=%d, len_max=%d\n",
+          k, wp->n_max, wp->len_max);
+  fflush(stdout);
+  */
+
   return wp;
 }
 
@@ -381,7 +391,7 @@ static wp_t* make_wp(int k, wp_t *wp)
 *
 ******************************************************************************/
 
-static void store_wp(wp_t const* const wp)
+static INLINE_ void store_wp(wp_t const* const wp)
 {
   tot_pot_energy += wp->totpot;
   virial         += wp->virial;
@@ -736,17 +746,26 @@ static void calc_forces_spu(int const steps)
   	   spe_spu_control_area_p const pctl = cbe_spucontrolarea[ispu];
            Tspustate* const pstat = spustate+ispu;
 
-           /* Location of wp/exch */
+           /* Work package */
            wp_t* const pwp = cbe_wp+iwp1;
+#if ! defined(CBE_DIRECT)
+           /* Exchange buffer needed if no direct access enabled */
            exch_t* const pexch = cbe_exch+iwp1;
+#endif
+
 
            /* fprintf(stdout, "SPU %u is %s\n", ispu, ((WORKING==*pstat) ? "working" : "notworking"));  */
  
 
            /* Idle SPU and still work to schedule */
            if (  (IDLE==*pstat) && (k<ncells)  ) {
-	       /* Create wp_t and exch_t */
-	       create_exch(make_wp(k, pwp),  pexch);
+   	       /* Create a work package... */
+   	       make_wp(k, pwp);
+#if ! defined (CBE_DIRECT)
+               /* ...and also create an exch buffer */
+               create_exch(pwp, pexch);
+#endif
+
  
                /* Signal SPU by writing to its mailbox when space is available */
                __lwsync();  /* synchronize memory before releasing it */
@@ -781,10 +800,15 @@ static void calc_forces_spu(int const steps)
                     __lwsync();  /* synchronize memory before accessing it */
 
                     if ( WPDONE1 == spumsg ) {
-		        /* Copy results and store to wp */
+		        /* Copy results from exch buffer */
+#if ! defined(CBE_DIRECT)
 		        pwp->totpot = pexch->totpot;
                         pwp->virial = pexch->virial;
+#endif
+
+                        /* Store the wp */
                         store_wp(pwp);
+
   		        /* SPU's done with its work, so it's idle again 
                            and one more wp is finished */
                         ++kdone;
@@ -866,6 +890,7 @@ void calc_forces(int const steps)
   virial = 0.0;
   nfc++;
 
+#if defined(ON_PPU) || defined(AR)
   /* clear per atom accumulation variables */
   for (  k=0;    k<nallcells;  ++k ) {
     cell *p = cell_array + k;
@@ -876,6 +901,7 @@ void calc_forces(int const steps)
       POTENG(p,i)  = 0.0;
     }
   }
+#endif
 
   /* compute the forces - either on PPU or on SPUs*/
 #ifdef ON_PPU

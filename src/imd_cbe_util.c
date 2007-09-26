@@ -1,4 +1,6 @@
-/* The header file containing the declarations */
+/* IMD config (e.g. CBE_DIRECT macro) */
+#include "config.h"
+/* CBE specific stuff */
 #include "imd_cbe.h"
 
 
@@ -47,6 +49,102 @@ unsigned* eas2les(unsigned ea_pairs[], unsigned const sizes[], unsigned const N)
 
 
 
+/* Print sizes of some types */
+int sizeinfo(int (* const of)(char const[],...)) {
+    return
+      of("sizeof(wp_t)       = %u\n"
+         "sizeof(exch_t)     = %u\n"
+#if defined(CBE_DIRECT)
+         "sizeof(cell_dta_t) = %u\n"
+         "sizeof(cell_ea_t)  = %u\n"
+#endif
+         ,
+
+         (unsigned)(sizeof(wp_t)),
+         (unsigned)(sizeof(exch_t))
+#if defined(CBE_DIRECT)
+         ,
+         (unsigned)(sizeof(cell_dta_t)),
+         (unsigned)(sizeof(cell_ea_t))
+#endif
+	);
+}
+
+
+
+
+/* Print vector */
+int vecout(int (* const of)(char const[],...),   /* General output function*/
+           int (* const elemout)(int (* const of2)(char const[],...), void const*), /* Perelement output function using general function */
+           void const* (* const nxt)(void const*),  /* Get next element */
+           void const* s, unsigned n, /* n elements starting at s */
+           char const sep[]
+           )
+{
+    /* The result: number of characters written */
+    int res=0;
+
+    if ( n ) {
+       /* 0=!n that is: There are some elements to be printed */
+       /* Iterate over elements */
+       for( ;  s;  s=nxt(s) ) {
+           if ( --n ) {
+   	       /* Print element followed be a separator */
+ 	       int rc;
+   	       if ( (rc=elemout(of,s)) < 0 ) {
+		   return rc;
+               }
+               if ( (rc=of("%s", sep)) < 0 ) {
+		   return rc;
+               }
+           }
+           else {
+	      /* Last element */
+   	      int rc;
+  	      if ( (rc=elemout(of,s)) < 0 ) {
+	  	  return rc;
+              }
+              break;
+           }
+       }
+    }
+
+    /* Return total number of characters written */
+    return res;
+}
+
+
+
+/* Helper output functors for various types */
+static void const* fltnxt(void const* p) {
+     return ((flt const*)p)+1;
+}
+
+static int fltout(int (*of)(char const[],...), void const* pflt) {
+     return of("%f", *((flt const*)pflt));
+}
+
+
+static void const* intnxt(void const* p) {
+     return ((int const*)p)+1;
+}
+
+static int intout(int (*of)(char const[],...), void const* pint) {
+     return of("%d", *((int const*)pint));
+}
+
+
+/* Advance iterators */
+static void const* shtnxt(void const* p) {
+     return ((short const*)p)+1;
+}
+
+static int shtout(int (*of)(char const[],...), void const* pshrt) {
+     return of("%hd", *((short const*)pshrt));
+}
+
+
+
 
 
 /* Check wether effective address a is aligned to boundary specified by b.
@@ -57,7 +155,7 @@ unsigned* eas2les(unsigned ea_pairs[], unsigned const sizes[], unsigned const N)
    If needed, this macro might be moved to the .h header in order to make
    it availably to client code.
  */
-#define EA_ALIGNED(e,b) (0 == e[((sizeof e)/(sizeof e[0]))-1] % (b))
+#define EA_ALIGNED(e,b) (0 == e[((sizeof (e))/(sizeof (e)[0]))-1] % (b))
 
 /* Return if p is not aligned to 16 byte boundary which is the minimum
    requirement for DMAs  */
@@ -72,11 +170,25 @@ int (exch_aligned)(exch_t const* const p, unsigned const a) {
     }
 
     /* Check all EA members */
-    RET(p->pos,a);
-    RET(p->force,a);
-    RET(p->typ,a);
-    RET(p->ti,a);
-    RET(p->tb,a);
+#if defined(CBE_DIRECT)
+    {
+    int i=0;
+    cell_ea_t const* pdta = p->cell_dta;
+    for (  ;   (i<NNBCELL);    ++i, ++pdta ) {
+        RET(pdta->pos_ea,   a);
+        RET(pdta->force_ea, a);
+        RET(pdta->typ_ea,   a);
+        RET(pdta->ti_ea,    a);
+        RET(pdta->tb_ea,    a);
+    }
+    }
+#else
+    RET(p->pos,   a);
+    RET(p->force, a);
+    RET(p->typ,   a);
+    RET(p->ti,    a);
+    RET(p->tb,    a);
+#endif
 
     /* All EAs we checked are valid if we arrive here. */
     return 1;
@@ -115,6 +227,8 @@ int (env_aligned)(env_t const* const p, unsigned const a) {
 
 
 
+
+
 /* Needed in the output of effective addresses  */
 #define EA(ptr) (*(ptr)), (*((ptr)+1))
 #define EAFMT "(0x%x,0x%x)"
@@ -133,6 +247,67 @@ int (env_out)(int (*of)(char const[],...), env_t const* const e)
         (e->ntypes),
         EA(e->r2cut), EA(e->lj_sig), EA(e->lj_eps), EA(e->lj_shift)
       );
+}
+
+
+
+
+#if defined(CBE_DIRECT)   /* "Direct " */
+
+/* exch_t & wp_t are the same */
+int (wp_out)(int (*of)(char const[],...), exch_t const* const w) {
+    /* To be done */
+    return -1;
+}
+
+int (exch_out)(int (*of)(char const[],...), exch_t const* const e) {
+    return wp_out(of,e);
+}
+
+#else  /* "Indirect" */
+
+/* Output of work package wp using printf-like functions of */
+int (wp_out)(int (*of)(char const[],...), wp_t const* const e)
+{
+   /* Seperator */
+   static char const sep[] = " ";
+
+   /* The result */
+   int res=0;
+
+   /* Scalars */
+   res += of("k       = %d\n", e->k);
+   res += of("n1      = %d\n", e->n1);
+   res += of("n1_max  = %d\n", e->n1_max);
+   res += of("n2      = %d\n", e->n2);
+   res += of("n2_max  = %d\n", e->n2_max);
+   res += of("len     = %d\n", e->len);
+   res += of("len_max = %d\n", e->len_max);
+   res += of("totpot  = %f\n", e->totpot);
+   res += of("virial  = %f\n", e->virial);
+
+   res += of("pos     = ");
+   res += vecout(of, fltout, fltnxt,  e->pos,    4*(e->n2), sep);
+   res += of("\n");
+
+   
+   res += of("force   = ");
+   res += vecout(of, fltout, fltnxt,  e->force,  4*(e->n2), sep);
+   res += of("\n");
+
+   res += of("typ     = ");
+   res += vecout(of, intout, intnxt, e->typ,    (e->n2),   sep);
+   res += of("\n");
+
+   res += of("tb      = ");
+   res += vecout(of, shtout, shtnxt, e->tb,      (e->len),  sep);
+   res += of("\n");
+
+   res += of("ti      = ");
+   res += vecout(of, intout, intnxt, e->ti,      2*(e->n2), sep);
+   res += of("\n");
+
+   return res;
 }
 
 /* Output of *e unsing printf-like function of */
@@ -161,6 +336,10 @@ int (exch_out)(int (*of)(char const[],...), exch_t const* const e)
      );
 }
 
+#endif  /* CBE_DIRECT */
+
+
+
 #undef EA
 #undef EAFMT
 
@@ -168,79 +347,15 @@ int (exch_out)(int (*of)(char const[],...), exch_t const* const e)
 
 
 
-/* Print vector */
-int vecout(int (*of)(char const[],...),   /* General output function*/
-           int (*elemout)(int (*of2)(char const[],...), void const*), /* Perelement output function using general function */
-           void const* (*nxt)(void const*),  /* Get next element */
-           void const* s, unsigned n, /* n elements starting at s */
-           char const sep[]
-           )
-{
-    /* The result: number of characters written */
-    int res=0;
-
-    if ( n ) {
-       /* 0=!n that is: There are some elements to be printed */
-       /* Iterate over elements */
-       for( ;  s;  s=nxt(s) ) {
-           if ( --n ) {
-   	       /* Print element followed be a separator */
- 	       int rc;
-   	       if ( (rc=elemout(of,s)) < 0 ) {
-		   return rc;
-               }
-               if ( (rc=of("%s", sep)) < 0 ) {
-		   return rc;
-               }
-           }
-           else {
-	      /* Last element */
-   	      int rc;
-  	      if ( (rc=elemout(of,s)) < 0 ) {
-	  	  return rc;
-              }
-              break;
-           }
-       }
-    }
-
-    /* Return total number of characters written */
-    return res;
-}
-
-
-static void const* fltnxt(void const* p) {
-     return ((flt const*)p)+1;
-}
-
-static int fltout(int (*of)(char const[],...), void const* pflt) {
-     return of("%f", *((flt const*)pflt));
-}
-
-
-static void const* intnxt(void const* p) {
-     return ((int const*)p)+1;
-}
-
-static int intout(int (*of)(char const[],...), void const* pint) {
-     return of("%d", *((int const*)pint));
-}
 
 
 
-static void const* shtnxt(void const* p) {
-     return ((short const*)p)+1;
-}
-
-static int shtout(int (*of)(char const[],...), void const* pshrt) {
-     return of("%hd", *((short const*)pshrt));
-}
 
 
 
 
 /* Output of pt_t *e using  printf-like function of */
-void (pt_out)(int (*of)(char const[],...), pt_t const* const e)
+int (pt_out)(int (*of)(char const[],...), pt_t const* const e)
 {
      /* Sepeartor */
      static char const sep[]=" ";
@@ -248,65 +363,33 @@ void (pt_out)(int (*of)(char const[],...), pt_t const* const e)
      /* Number of elements in each array */
      unsigned const nout = 4*(e->ntypes)*(e->ntypes);
 
+     /* The result */
+     int res=0;
+
      /* Scalar */
-     of("ntypes   = %d\n", (e->ntypes));
+     res += of("ntypes   = %d\n", (e->ntypes));
 
      /* Arrays */
-     of("r2cut   = ");
-     vecout(of, fltout,fltnxt, e->r2cut,    nout, sep);
-     of("\n");
+     res += of("r2cut   = ");
+     res += vecout(of, fltout,fltnxt, e->r2cut,    nout, sep);
+     res += of("\n");
 
-     of("lj_sig   = ");
-     vecout(of, fltout,fltnxt, e->lj_sig,   nout, sep);
-     of("\n");
+     res += of("lj_sig   = ");
+     res += vecout(of, fltout,fltnxt, e->lj_sig,   nout, sep);
+     res += of("\n");
 
-     of("lj_eps   = ");
-     vecout(of, fltout,fltnxt, e->lj_eps,   nout, sep);
-     of("\n");
+     res += of("lj_eps   = ");
+     res += vecout(of, fltout,fltnxt, e->lj_eps,   nout, sep);
+     res += of("\n");
 
-     of("lj_shift = ");
-     vecout(of, fltout,fltnxt, e->lj_shift, nout, sep);
-     of("\n");
+     res += of("lj_shift = ");
+     res += vecout(of, fltout,fltnxt, e->lj_shift, nout, sep);
+     res += of("\n");
+
+     return res;
 }
 
-/* Output of work package wp using printf-like functions of */
-void (wp_out)(int (*of)(char const[],...), wp_t const* const e)
-{
-   /* Seperator */
-   static char const sep[] = " ";
 
-   /* Scalars */
-   of("k       = %d\n", e->k);
-   of("n1      = %d\n", e->n1);
-   of("n1_max  = %d\n", e->n1_max);
-   of("n2      = %d\n", e->n2);
-   of("n2_max  = %d\n", e->n2_max);
-   of("len     = %d\n", e->len);
-   of("len_max = %d\n", e->len_max);
-   of("totpot  = %f\n", e->totpot);
-   of("virial  = %f\n", e->virial);
-
-   of("pos     = ");
-   vecout(of, fltout, fltnxt,  e->pos,    4*(e->n2), sep);
-   of("\n");
-
-   
-   of("force   = ");
-   vecout(of, fltout, fltnxt,  e->force,  4*(e->n2), sep);
-   of("\n");
-
-   of("typ     = ");
-   vecout(of, intout, intnxt, e->typ,    (e->n2),   sep);
-   of("\n");
-
-   of("tb      = ");
-   vecout(of, shtout, shtnxt, e->tb,      (e->len),  sep);
-   of("\n");
-
-   of("ti      = ");
-   vecout(of, intout, intnxt, e->ti,      2*(e->n2), sep);
-   of("\n");
-}
 
 
 
@@ -575,16 +658,24 @@ typedef pthread_t            Tthr;
 
 
 
+/* DMA (exchange) buffers, aligned 16byte boundary */
+
+/* Work package buffer, which is needed in both "direct case" and
+   "indirect case", so it has to be aligned.
+*/
+static wp_t ALIGNED_(16, wbuf[N_SPU_THREADS_MAX * N_BUFLEV]);
+wp_t* const cbe_wp = wbuf;
 
 
-/* Work packages */
-static wp_t w[N_SPU_THREADS_MAX * N_BUFLEV];
-wp_t* const cbe_wp = w;
-
-
-/* DMA exchange buffers, aligned 16byte boundary */
-static exch_t ALIGNED_(16, exch[N_SPU_THREADS_MAX * N_BUFLEV]);
-exch_t* const cbe_exch = exch;
+#if defined(CBE_DIRECT)
+   /* WPs may be used for DMA directly */
+   /* Simply use the work package buffer as exchange buffer */
+   exch_t* const cbe_exch = wbuf;
+#else
+   /* A second buffer is need for the exchnage of data */
+   static exch_t ALIGNED_(16, exchbuf[N_SPU_THREADS_MAX * N_BUFLEV]);
+   exch_t* const cbe_exch = exchbuf;
+#endif /* CBE_DIRECT */
 
 
 /* DMA env. buffer, aligned to 16byte boundary */
@@ -615,15 +706,6 @@ spe_spu_control_area_p* const cbe_spucontrolarea = contrarea;
 
 
 
-
-
-
-
-/* Schedule work (package) to SPU  */
-void schedtospu(wp_t* const pwp)
-{
-     calc_wp(pwp);
-}
 
 
 
@@ -703,6 +785,11 @@ env_t* (create_env)(pt_t const* const p, env_t* const e)
 /* Create exch_t *e from wp_t *wp  */
 exch_t* (create_exch)(wp_t const* const wp, exch_t* const e)
 {
+#if defined(CBE_DIRECT)
+    /* "Direct case", that is wp_t==exch_t, such that we can just
+        copy/assign the members */
+   (*e) = (*wp);
+#else
     /* Some types may be copied 1:1 */
     CPY(*wp,*e, k);
     CPY(*wp,*e, n1);
@@ -711,9 +798,11 @@ exch_t* (create_exch)(wp_t const* const wp, exch_t* const e)
     CPY(*wp,*e, n2_max);
     CPY(*wp,*e, len);
     CPY(*wp,*e, len_max);
+
+    /*
     CPY(*wp,*e, totpot);
     CPY(*wp,*e, virial);
-
+    */
 
     /* Pointers have to be cast to integers (ea_t), asserting that they
        are aligned (at least) to a byte boundary  */
@@ -722,7 +811,7 @@ exch_t* (create_exch)(wp_t const* const wp, exch_t* const e)
     CPYMEMBPTR(*wp,*e, typ);
     CPYMEMBPTR(*wp,*e, ti);
     CPYMEMBPTR(*wp,*e, tb);
-
+#endif
     /* Return ptr. to the exch_t */
     return e;
 }
@@ -844,7 +933,9 @@ int cbe_init(int const nspu_req, int const cpu_node)
     unsigned nstrt=0;
 
     /* Number of SPUs which may be initialized */
-    int const imax = min_usable_spes(((nspu_req < N_SPU_THREADS_MAX) ? nspu_req : N_SPU_THREADS_MAX), cpu_node);
+    int const imax = min_usable_spes(((nspu_req<N_SPU_THREADS_MAX) ?
+                                     nspu_req : N_SPU_THREADS_MAX), cpu_node
+                                    );
 
     /* Some indices/iterators */
     int i;
@@ -853,7 +944,7 @@ int cbe_init(int const nspu_req, int const cpu_node)
 
 
     /* No SPUs available */
-    if ( imax <1 ) {
+    if ( imax < 1 ) {
         return nspus=0;
     }
 
@@ -865,7 +956,14 @@ int cbe_init(int const nspu_req, int const cpu_node)
 
     /* Set "ground state" for some publically accessible values */
     for ( i=0;   i<(N_SPU_THREADS_MAX * N_BUFLEV);  ++i  ) {
-        w[i].n2_max = 0;
+        /* wp specific stuff */
+#if ! defined(CBE_DIRECT)
+        /* Also have to set size to zero to force allocation
+           in "indirect" case. */
+        wbuf[i].n2_max = 0;
+#endif /* CBE_DIRECT */
+
+        /* context & control area */
         c[i]=0;
         contrarea[i]=0;
     }

@@ -1,6 +1,9 @@
 #ifndef IMD_CBE_H__
 #define IMD_CBE_H__
 
+/* We need config here, as we have to test the CBE_DIRECT in the 
+   DMA typedefs */
+#include "config.h"
 
 
 /********* Common (SPU & PPU) part +++++++++*/
@@ -11,6 +14,17 @@ extern "C" {
 
 
 
+/* Specify wether a (member) variable is to be const on PPU or SPU side
+   (but not neccessarily on the other side)  */
+#if defined(__SPU__)
+#define ppu_const
+#define spu_const const
+#endif
+
+#if defined(__PPU__)
+#define ppu_const const
+#define spu_const
+#endif
 
 #if ! defined(INLINE_)
 #    if defined(__cplusplus)
@@ -131,7 +145,7 @@ typedef float flt;
 
 
 
-#ifdef CBE_DIRECT
+#ifdef CBE_DIRECT  /* "Direct " */
 
 /* Cell data within a work package;
    On SPU, allocate for n_max atoms and len_max neighbor indices,
@@ -141,10 +155,17 @@ typedef float flt;
    n is set to the actual n from cell_ea_t. */
 typedef struct {
   int   n;  /* actual number of atoms */
-  float *pos, *force;
-  int   *typ, *ti;
-  short *tb;
+
+  /* "Output data" on SPU */
+  float  *force;
+
+  /* "Input data" on SPU */
+  float  *pos;
+  int    *typ;
+  int    *ti;
+  short  *tb;
 } cell_dta_t;
+
 
 /* Effective addresses of cell data within a work package;
    The cell contains n atoms and len neighbor indices;
@@ -155,67 +176,117 @@ typedef struct {
   ea_t pos_ea, force_ea, typ_ea, ti_ea, tb_ea;
 } cell_ea_t;
 
+
 /* The work package type; essentially consists of a list of cells. 
    k       = package number, 
    n_max   = upper bound on number of atoms in a cell,
    len_max = upper bound on number of neighbor indices in a cell */
-typedef struct {
-  float totpot, virial, f1, f2;
-  int   k, n_max, len_max, dummy; 
+typedef struct wp {
+  float totpot;
+  float virial;
+
+  float f1, f2;
+
+  int k;
+  int n_max;
+  int len_max;
+  int ti_len; 
+
 #ifdef ON_PPU
   cell_dta_t cell_dta[NNBCELL];
 #else
+  /* Control blocks (not to be changed on SPU after DMA) */
   cell_ea_t  cell_dta[NNBCELL];
 #endif
+
 } wp_t;
 
-#else
+
+/* The wp_t may be used in DMAs directly */
+typedef wp_t exch_t;
+
+
+#else  /* "Indirect" */
+
 
 /* The work package type */
-typedef struct {
+typedef struct wp {
   int   k, n1, n2, len;           /* package number and actual sizes  */
   int   n1_max, n2_max, len_max;  /* allocated size (not transferred) */
+
   flt   totpot, virial;
-#ifdef __SPU__
-  vector float *pos, *force;      /* length: n2, n2 */
+
+#if defined(__SPU__)
+  vector float const *pos;      /* length: n2 */
+  vector float       *force;    /*         n2 */
 #else
-  flt   *pos, *force;             /* length: 4*n2, 4*n2 */
+  flt       *pos;             /* length: 4*n2 */ 
+  flt const *force;	      /*         4*n2 */
 #endif
-  int   *typ, *ti;                /* length: n2, 2*n2   */
-  short *tb;                      /* length: len        */
+
+  int    *typ;  /* length: n2, 2*n2   */
+  int    *ti;                
+  short  *tb;   /* length: len        */
 } wp_t;
 
-#endif
+
+
 
 /* Basically the same structure as the wp_t but with ptrs. replaced
-   by effective addresses and aligned to 16 or even 128-bytes boundary */
+   by effective addresses and aligned to 16 or even 128-bytes boundary
+*/
 typedef struct exch {
     /* Non-ptr. variables which may be passed "as is" */
-    int   k, n1, n2, len;           /* package number and actual sizes  */
-    int   n1_max, n2_max, len_max;  /* allocated size (not transferred) */
-    flt   totpot, virial;
+    int k;
+    int n1;
+    int n2;
+    int len;           /* package number and actual sizes  */
+    int n1_max;
+    int n2_max;
+    int len_max;  /* allocated size (not transferred) */
 
-    ea_t   pos, force;             /* length: 4*n2, 4*n2 */
+    flt totpot;
+    flt virial;
+
+    ea_t pos;
+    ea_t force;       /* length: 4*n2, 4*n2 */
 
     /* "Pointers" to integer arrays
         typ "points" to an array of n2 items of type int
         tb "points" to len items of type short
      */
-    ea_t  typ, ti;                /* length: n2, 2*n2   */
-    ea_t  tb;                     /* length: len        */
+    ea_t typ;
+    ea_t ti;            /* length: n2, 2*n2   */
+    ea_t tb;            /* length: len        */
 
 
     /* Padding */
     unsigned char pad[4];
 } exch_t;
 
+
+
+#endif   /* CBE_DIRECT */
+
+
+
+
+
+
+
 /* The potential type */
 typedef struct {
   int ntypes;
-#ifdef __SPU__
-  vector float *r2cut, *lj_sig, *lj_eps, *lj_shift;
+#if defined(__SPU__)
+  vector float const* r2cut;
+  vector float const* lj_sig;
+  vector float const* lj_eps;
+  vector float const* lj_shift;
 #else
-  flt *r2cut, *lj_sig, *lj_eps, *lj_shift;
+  flt* r2cut;
+  flt* lj_sig;
+  flt* lj_eps;
+  flt* lj_shift;
 #endif
 } pt_t;
 
@@ -255,6 +326,9 @@ typedef enum sync_token { MBXNONE=0u,
 /* The main calculation routine */
 void calc_wp(wp_t *wp);
 
+
+
+
 /* Transform effective address pairs to DMA list elements:
 
    The hi part of effective addresses is written to ea_pairs[2*N] if
@@ -282,33 +356,34 @@ unsigned* eas2les(unsigned ea_pairs[], unsigned const sizes[], unsigned const N)
 /* Check wether all EAs in *p are aligned to boundary specified by a*/
 int (exch_aligned)(exch_t const* const p, unsigned const a);
 
-/* Check wether all EAs in *p are aligned to boundary specified by a*/
-int (env_aligned)(env_t const* const p, unsigned const a);
-
-
-
-
-/* Output of env_t *e using printf-like function of */
-int (env_out)(int (*of)(char const[],...), env_t const* const e);
-
 /* Output of *e unsing printf-like function of */
 int (exch_out)(int (*of)(char const[],...), exch_t const* const e);
 
 
+
+/* Check wether all EAs in *p are aligned to boundary specified by a*/
+int (env_aligned)(env_t const* const p, unsigned const a);
+
+/* Output of env_t *e using printf-like function of */
+int (env_out)(int (*of)(char const[],...), env_t const* const e);
+
+
+
+
 /* Print vector */
-int vecout(int (*of)(char const[],...),   /* General output function*/
-           int (*elemout)(int (*of2)(char const[],...), void const*), /* Perelement output function using general function */
-           void const* (*nxt)(void const*),  /* Get next element */
+int vecout(int (* const of)(char const[],...),   /* General output function*/
+           int (* const elemout)(int (* const of2)(char const[],...), void const*), /* Perelement output function using general function */
+           void const* (* const nxt)(void const*),  /* Get next element */
            void const* s, unsigned n, /* n elements starting at s */
            char const sep[]
            );
 
 
 /* Output of pt_t *e using  printf-like function of */
-void (pt_out)(int (*of)(char const[],...), pt_t const* const e);
+int (pt_out)(int (*of)(char const[],...), pt_t const* const e);
 
 /* Output of work package wp using printf-like functions of */
-void (wp_out)(int (*of)(char const[],...), wp_t const* const e);
+int (wp_out)(int (*of)(char const[],...), wp_t const* const e);
 
 
 #if defined (__cplusplus)
@@ -411,6 +486,7 @@ extern "C" {
 
 
 
+
 /* Max. number of SPU threads which may be managed by the
    following utility functions   */
 enum {
@@ -422,6 +498,7 @@ enum {
       (32) /* Use a default which should be large enough */
 #endif
 };
+
 
 
 /* Number of buffer levels, that is number of exch_t/wp_t buffers
@@ -528,12 +605,16 @@ exch_t* (create_exch)(wp_t const* const wp, exch_t* const e);
 
 
 
+
+
+
 #if defined (__cplusplus)
 }
 #endif
 
 
 #endif /* PPU part */
+
 
 
 #endif /* IMD_CBE_H */
