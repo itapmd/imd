@@ -418,9 +418,71 @@ int (pt_out)(int (*of)(char const[],...), pt_t const* const e)
 
 
 #if defined(__SPU__)  /************** SPU part ************/
-/* 
-  Empty
-*/
+
+/* SPU headers */
+#include <spu_mfcio.h>
+
+
+/* 16k are maximum which may be DMAed in one call to spu_mfc... */
+enum { DMAMAX    = (unsigned)(16*1024)         };
+enum { DMAMAXull = (unsigned long long )DMAMAX };
+
+/* 64 bit EA type of SPU */
+typedef unsigned long long  T64;
+
+void mdma64_rec(register unsigned char* const p,
+                register T64 lea, register unsigned const sze,
+                register unsigned const tag, register unsigned const cmd)
+{
+    /* High/Low part of EA */
+    register unsigned const hi = (unsigned)(lea>>32u);
+    register unsigned const lo = (unsigned)lea;
+
+    /* Only one DMA needed? End recusrion */
+    if ( EXPECT_TRUE(sze<=DMAMAX) ) {
+        spu_mfcdma64(p, hi,lo, sze,  tag,cmd);
+        return;
+    }
+
+    /* Start a DMA */
+    spu_mfcdma64(p, hi,lo, DMAMAX,  tag,cmd);
+    /* Tail recursive call... */
+    mdma64_rec(p+DMAMAX,  lea+DMAMAXull,  sze-DMAMAX,  tag,cmd);
+}
+
+
+
+
+
+
+
+/* DMA more than 16k using multiple DMAs with the same tag */
+void mdma64_iter(register unsigned char* p,
+                 register T64 lea, register unsigned remsze,
+                 register unsigned const tag, register unsigned const cmd)
+{
+    for(;;) {
+        /* Split EA into low & hi part */
+        register unsigned const hi = (unsigned)(lea>>32u);
+        register unsigned const lo = (unsigned)lea;
+
+        /* We're done if not more than maxsze bytes are to be xfered */
+        if ( EXPECT_TRUE(remsze<=DMAMAX) ) {
+  	   spu_mfcdma64(p, hi,lo,  remsze, tag, cmd);
+ 	   return;
+        }
+
+        /* Xfer one chunk of maximum size  */
+        spu_mfcdma64(p,  hi,lo,  DMAMAX, tag, cmd);
+
+        /* Update addresses and number of bytes */
+        remsze -= DMAMAX;
+        p      += DMAMAX;
+        lea    += DMAMAXull;
+    }
+}
+
+
 #endif /* SPU part */
 
 

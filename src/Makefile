@@ -599,14 +599,14 @@ ifeq (cbe-gcc,${IMDSYS})
   # The ordinary gcc does not set this macro
   CC_SERIAL	= ppu-gcc -m64
   CC_MPI	= mpicc
-  SPUCC         = spu-cc
+  SPUCC         = spu-gcc
   EMBEDSPU      = ppu-embedspu -m64
   BIN_DIR	= ${HOME}/bin/cbe
   OPT_FLAGS     += -pipe  -O3 -funroll-loops   -Wall -Wno-unused
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
   PROF_LIBS	+= -g3 -pg
-  SPUCFLAGS = -pipe  -ansi -pedantic  -O3 -funroll-loops  -Wall -Wunused -Wshadow -Wno-long-long
+  SPUCFLAGS = -pipe  -ansi -pedantic  -O2 -funroll-loops  -Wall -Wunused -Wshadow -Wcast-qual -Wno-long-long
   SPULDFLAGS    +=
   LFLAGS        += 
   LIBS          += -lspe2

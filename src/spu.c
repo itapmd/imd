@@ -15,45 +15,9 @@
 
 
 
-/* COMMON/calcwpdata/ pt,wrkspc_adr,  :-)  */
-
-/* The following objects defined here  will be needed/used
-   by calc_wp, where they are just declared.
-
-   (These objects might be passed to calc_wp somehow, but that would
-   require changing its prototyp in imd_cbe.h)
-*/
-
-/* SPU (local) copy of pt which is initialized (once) via DMA and */
-pt_t pt;
-
-/* "Work space" for calc_wp allocator routines */
-void*    wrkspc_adr=0;
-unsigned wrkspc_len=0;
-
-
-/* The tag to be used by return_forces */
-unsigned forces_tag=5;
 
 
 
-
-
-
-
-
-
-/* Generic macro for rounding up vector components */
-#define CEILV(x,r) spu_andc(spu_add(r,x), r)
-
-
-static INLINE_ unsigned uiceil16(unsigned const x) {
-   return (x+15u) & (~15u);
-}
-
-static INLINE_ unsigned uiceil127(unsigned const x) {
-   return (x+127u) & (~127u);
-}
 
 
 
@@ -66,16 +30,19 @@ static INLINE_ unsigned uiceil127(unsigned const x) {
    Fetch all the input array data to LS using DMA (possibly a list DMA) with
    the specified tag
 */
-static void start_create_wp(void* const pbuf, unsigned const sizebuf,
-                            exch_t const* const exch, wp_t* const wp,  unsigned const tag,
+static void start_create_wp(exch_t const* const exch,
+                            void* const tmpbuf, unsigned const tmplen,
+                            void* const resbuf, unsigned const reslen,
+                            unsigned const tag,
+                            wp_t* const wp,
                             unsigned* pres_ea, unsigned* pres_sze)
 {
      /* Number of bytes needed for the pos/force vectors */
-     unsigned const nvecbytes = exch->n2 * sizeof(flt[4]);
+     unsigned const nvecbytes = (exch->n2) * sizeof(flt[4]);
 
      /* Number of bytes remaining */
-     unsigned       nrem = sizebuf;
-     unsigned char* apos = pbuf;
+     unsigned       nrem;
+     unsigned char* apos;
 
      /* Boundaries used for rounding up */
      register vector unsigned const bndv = { 15,127,  0,0 };
@@ -89,70 +56,72 @@ static void start_create_wp(void* const pbuf, unsigned const sizebuf,
 #define ADV(v)  spu_extract((v),1)
 #define XFR(v)  spu_extract((v),0)
  
-     /* Number of bytes to advance/allocte in LS */
+     /* Number of bytes to advance/allocate in LS */
      register unsigned nadv;
 
 
 
+     /* First allocate temp. mem. */
+     nrem=tmplen;
+     apos=tmpbuf;
 
      /* pos */
      nadv=ADV(szev=CEILV(nvecbytes, bndv));
      if ( EXPECT_TRUE(nrem>=nadv)  ) {
-         spu_mfcdma64(apos,  (exch->pos)[0], (exch->pos)[1],
-                      XFR(szev),  tag, MFC_GET_CMD
-		     );
+         mdma64(apos,  exch->pos, XFR(szev),  tag, MFC_GET_CMD);
          wp->pos = (void*)apos;
          nrem-=nadv;
          apos+=nadv;
      }
      else {
+         fprintf(stderr, "Could not allocate %u bytes for pos\n", nadv);
          wp->pos = 0;
      }
 
      /* typ */
      nadv=ADV(szev=CEILV(exch->n2*sizeof(int),  bndv));
      if ( EXPECT_TRUE(nrem>=nadv) ) {
-         spu_mfcdma64(apos,  (exch->typ)[0], (exch->typ)[1],
-                      XFR(szev),  tag, MFC_GET_CMD
-                     );
+         mdma64(apos,  exch->typ, XFR(szev),  tag, MFC_GET_CMD);
          wp->typ=(void*)apos;
          nrem-=nadv;
          apos+=nadv;
      }
      else {
+         fprintf(stderr, "Could not allocate %u bytes for typ\n", nadv);
          wp->typ = 0;
      }
 
      /* ti */
      nadv = ADV(szev=CEILV(2*exch->n2*sizeof(int), bndv));
      if ( EXPECT_TRUE(nrem>=nadv) ) {
-         spu_mfcdma64(apos,  (exch->ti)[0], (exch->ti)[1],
-                      XFR(szev),   tag, MFC_GET_CMD
-                     );
+         mdma64(apos,  exch->ti, XFR(szev),  tag, MFC_GET_CMD);
          wp->ti=(void*)apos;
          nrem-=nadv;
          apos+=nadv;
      }
      else {
+         fprintf(stderr, "Could not allocate %u bytes for ti\n", nadv);
          wp->ti = 0;
      }
 
      /* tb */
      nadv=ADV(szev=CEILV(exch->len*sizeof(short), bndv));
      if ( EXPECT_TRUE(nrem>=nadv) ) {
-         spu_mfcdma64(apos, (exch->tb)[0], (exch->tb)[1],
-                      XFR(szev),   tag, MFC_GET_CMD
-                      );
+         mdma64(apos, exch->tb,  XFR(szev),   tag, MFC_GET_CMD);
          wp->tb=(void*)apos;
          nrem-=nadv;
          apos+=nadv;
      }
      else {
+         fprintf(stderr, "Could not allocate %u bytes for tb\n", nadv);
          wp->tb = 0;
      }
 
 
 
+     /* Now, allocate result buffer */
+     nrem = reslen;
+     apos = resbuf;
 
      /* force (no DMA needed) */
      nadv=ADV(szev=CEILV(nvecbytes, bndv));
@@ -167,6 +136,7 @@ static void start_create_wp(void* const pbuf, unsigned const sizebuf,
           pres_sze[0] = XFR(szev);
      }
      else {
+         fprintf(stderr, "Could not allocate %u bytes for forces\n", nadv);
          pres_ea[0] = pres_ea[1]  =  pres_sze[0]=0;
          wp->force=0;
      }
@@ -188,6 +158,8 @@ static void start_create_wp(void* const pbuf, unsigned const sizebuf,
 }
 
 
+
+
 /* DMA forces back to main memory */
 static void start_DMA_results(unsigned const* const exch_ea, unsigned const tag,
                               wp_t const* const wp, exch_t* const exch,
@@ -196,8 +168,7 @@ static void start_DMA_results(unsigned const* const exch_ea, unsigned const tag,
 {
      /* First DMA the force array directly back to main memory... */
      /* DMA64(wp->force, res_sze[0],  exch->force,  tag, MFC_PUT_CMD); */
-     spu_mfcdma64(wp->force, (exch->force)[0], (exch->force)[1],  res_sze[0],
-                  tag, MFC_PUT_CMD);
+     mdma64(wp->force, exch->force,  res_sze[0], tag, MFC_PUT_CMD);
 
      /* In the meantime:
         Copy the scalars which have been updated in wp back to exch
@@ -208,12 +179,13 @@ static void start_DMA_results(unsigned const* const exch_ea, unsigned const tag,
 
      /* ...then DMA the updated exch_t */
      /* DMA64(exch, (sizeof (*exch)), exch_ea, tag, MFC_PUT_CMD); */
-     spu_mfcdma64(exch, exch_ea[0], exch_ea[1],  (sizeof *exch),
-                  tag, MFC_PUT_CMD);
+     mdma64(exch, exch_ea,  (sizeof *exch),  tag, MFC_PUT_CMD);
 }
 
 
 #endif /* CBE_DIRECT */
+
+
 
 
 
@@ -236,8 +208,7 @@ static void start_create_pt(void* const pbuf, unsigned const szebuf,
          /* Start DMAing the memory pointed to by pt.r2cut to LS, also getting data
             for lj_sig,... which follows after that in main mem. */
 
-        spu_mfcdma64(pbuf, (env->r2cut)[0], (env->r2cut)[1], nszetot,
-                     tag, MFC_GET_CMD);
+        mdma64(pbuf, env->r2cut, nszetot,  tag, MFC_GET_CMD);
 
         /* Set the pointers in the resulting pt_t (see modified allocation
            scheme in mk_pt)  & copy scalar member while DMA is running
@@ -257,6 +228,9 @@ static void start_create_pt(void* const pbuf, unsigned const szebuf,
      }
 }
 
+
+
+
 /* Start initialization (pt only, at the moment) */
 static void start_init(unsigned const* const envea,
                        unsigned const tag, unsigned const cbtag)
@@ -268,7 +242,7 @@ static void start_init(unsigned const* const envea,
     env_t ALIGNED_(16, env);
 
     /* 1st, DMA the control block containing the pointers */
-    spu_mfcdma64(&env,  envea[0],envea[1], (sizeof env),  cbtag, MFC_GET_CMD);
+    mdma64(&env,  envea, (sizeof env),  cbtag, MFC_GET_CMD);
     spu_writech(MFC_WrTagMask, (1u<<cbtag));
     spu_mfcstat(MFC_TAG_UPDATE_ALL);
 
@@ -298,11 +272,7 @@ static unsigned wp_result_size(wp_t const* const pwp) {
              );
 }
 
-/* Assuming that the function above does not depend on the actual wp... */
-static INLINE_ unsigned result_size(void) {
-    wp_t const dummy;
-    return wp_result_size(&dummy);
-}
+
 
 
 
@@ -335,29 +305,38 @@ int main(ui64_t const id, arg_ea_t const argp0, env_ea_t const envp)
     arg_ea_t const argp1 = advance_arg_ea(argp0, sizeof (exch_t));
 
 
-    /* Some tags and the correspondning masks */
-    enum { itag0=1u, itag1=2u,
-           otag0=3u, otag1=4u,
-           cbtag=5u };
+    /* Some tags used in the main routine to DMA workpackages/control blocks
+       Tags > 2 will be used in order not to interfer with DMAs initiated
+       in calc_wp_direct
+     */
+
+    /* Input tags */
+    enum { itag0=3u,    itag1=4u    };
+    /* Output tags are the same as input tags */
+    enum { otag0=itag0, otag1=itag1 };
+    /* Control block tag */
+    enum { cbtag=5u };
+
+    /* The corresponding masks */
     enum { imsk0=1u<<itag0, imsk1=1u<<itag1,
            omsk0=1u<<otag0, omsk1=1u<<otag1,
            cbmsk=1u<<cbtag };
 
-
-    /* Buffer memory for DMAs (allocated "dynamically" from the following
-       array) */
-    unsigned char ALIGNED_(128, dmabuf0[90*1024]); 
+    /* Suffix (kilobyte) */
+    enum { Ki=1024u };
 
     /* The workpackages */
     wp_t ALIGNED_(128, wp0), ALIGNED_(128, wp1);
+    /* Buffers for the results */
+    unsigned char ALIGNED_(128,resbuf0[17*Ki]), ALIGNED_(128, resbuf1[1*Ki]);
 
 
 
 #if defined(CBE_DIRECT)
     /* Minimum number of bytes to be DMAed back per wp (to make sure that
        totpot & virial get DMAed back) */ 
-    /* unsigned const wp_res_sze = result_size(); */
-    unsigned const wp_res_sze = sizeof(wp_t);
+    unsigned const wp_res_sze0 = wp_result_size(&wp0);
+    unsigned const wp_res_sze1 = wp_result_size(&wp1);
 #endif
 
     /* Some type info */
@@ -379,6 +358,9 @@ int main(ui64_t const id, arg_ea_t const argp0, env_ea_t const envp)
 
     /* Work loop */
     for(;;) {
+       /* Buffer memory for DMAs (allocated "dynamically" from the following
+          array) initiated by calc_wp */
+       unsigned char ALIGNED_(128, calc_temp[90*Ki]); 
 
 
 #if ! defined(CBE_DIRECT)
@@ -403,22 +385,19 @@ int main(ui64_t const id, arg_ea_t const argp0, env_ea_t const envp)
 
 #if defined(CBE_DIRECT)
         /* DMA the wp_t directly */
-        spu_mfcdma64(&wp0, (argp0.ea32)[0], (argp0.ea32)[1], (sizeof wp0),
-                     itag0, MFC_GET_CMD);
-	/* Set the global data to be used by the subsequent call to calc_wp */
-        forces_tag = otag0;
-        wrkspc_adr = dmabuf0;
-        wrkspc_len = sizeof(dmabuf0);
+        mdma64(&wp0, argp0.ea32, (sizeof wp0),  itag0, MFC_GET_CMD);
 #else
         /* Fetch exch controll block via DMA & wait for it to complete */
-        spu_mfcdma64(&exch0,  (argp0.ea32)[0],(argp0.ea32)[1], (sizeof exch0),
-                     cbtag,  MFC_GET_CMD);
+        mdma64(&exch0, argp0.ea32, (sizeof exch0),  cbtag,  MFC_GET_CMD);
         spu_writech(MFC_WrTagMask,  cbmsk);
         spu_mfcstat(MFC_TAG_UPDATE_ALL);
 
         /* Now, given the exch, start DMAing the array memebers in wp */
-        start_create_wp(dmabuf0, (sizeof dmabuf0), &exch0, &wp0,
-                        itag0,  res_ea,res_sze);
+        start_create_wp(&exch0,
+                        calc_temp, (sizeof calc_temp),
+                        resbuf0,   (sizeof resbuf0),
+                        itag0,
+                        &wp0,  res_ea, res_sze);
 #endif
 
 
@@ -433,14 +412,19 @@ int main(ui64_t const id, arg_ea_t const argp0, env_ea_t const envp)
         /* fprintf(stdout, "Got wp k=%d\n", wp0.k);  fflush(stdout); */
 
         /* The main work to be done. */
+#if defined(CBE_DIRECT)
+        calc_wp_direct(&wp0,
+                       calc_temp,(sizeof calc_temp), resbuf0,(sizeof resbuf0),
+                       otag0);
+#else
         calc_wp(&wp0);
+#endif
 
 
 #if defined(CBE_DIRECT)
         /* Forecs are DMAed back in calc_wp in "direct case", so here, we just
            DMA back the controll block containing virial & energy */
-        spu_mfcdma64(&wp0, (argp0.ea32)[0], (argp0.ea32)[1], wp_res_sze,
-                     otag0, MFC_PUT_CMD);
+        mdma64(&wp0, argp0.ea32, wp_res_sze0,  otag0, MFC_PUT_CMD);
 #else
         /* DMA results back to main memory  */
         start_DMA_results(argp0.ea32, otag0, &wp0, &exch0, res_sze);
@@ -463,3 +447,8 @@ int main(ui64_t const id, arg_ea_t const argp0, env_ea_t const envp)
     return 1;
 }
 
+
+
+
+/* SPU (local) copy of pt which is initialized (once) via DMA */
+pt_t pt;

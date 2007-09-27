@@ -14,6 +14,10 @@ extern "C" {
 
 
 
+
+
+
+
 /* Specify wether a (member) variable is to be const on PPU or SPU side
    (but not neccessarily on the other side)  */
 #if defined(__SPU__)
@@ -34,7 +38,7 @@ extern "C" {
 #             define INLINE_ __inline
 #        else
 #             define INLINE_
-#        endif /* GNUC */
+#        endif /* __GNUC__ */
 #    endif  /* C++  */
 #endif /* INLINE_ */
 
@@ -117,13 +121,16 @@ extern "C" {
 
 /* Some utility "functions" for arrays defined as macros  */
 /* Number of elements in array a (May be evaluated at compile time) */
-#define ASIZE(a) ((sizeof (a))/(sizeof (a[0])))
+#define ASIZE(a) ((sizeof (a))/(sizeof ((a)[0])))
 
 /* Get pointer (itartor) to first element and the 
    past-the-end-iterator of the array a
  */
-#define AFRST(a) (&(a[0]))
+#define AFRST(a) (&((a)[0]))
 #define ALAST(a) ((a)+ASIZE(a))
+
+
+
 
 
 
@@ -291,7 +298,7 @@ typedef struct {
 } pt_t;
 
 /* This should be defined in spu.c or imd_force_cbe */
-extern pt_t pt;
+extern  pt_t pt;
 
 
 
@@ -316,15 +323,24 @@ typedef struct env {
 
 
 /* Tokens used to synchronize between PPU / SPU */
-typedef enum sync_token { MBXNONE=0u,
-                          WPCREA1=1u, WPDONE1=2u, WPSTRT1=4u,
-                          SPUEXIT } sync_token_t;
+enum {
+  MBXNONE=0u,
+  WPCREA1=1u, WPDONE1=2u, WPSTRT1=4u,
+  SPUEXIT
+};
 
 
 
 
-/* The main calculation routine */
+/* The main calculation routine(s) */
 void calc_wp(wp_t *wp);
+
+#if defined(CBE_DIRECT)
+void calc_wp_direct(wp_t*,
+                    void* const, unsigned const, void* const, unsigned const,
+                    unsigned const otag);
+
+#endif
 
 
 
@@ -372,7 +388,7 @@ int (env_out)(int (*of)(char const[],...), env_t const* const e);
 
 /* Print vector */
 int vecout(int (* const of)(char const[],...),   /* General output function*/
-           int (* const elemout)(int (* const of2)(char const[],...), void const*), /* Perelement output function using general function */
+           int (* const elemout)(int (* const of2)(char const[],...), void const*), /* Per element output function using general function */
            void const* (* const nxt)(void const*),  /* Get next element */
            void const* s, unsigned n, /* n elements starting at s */
            char const sep[]
@@ -405,12 +421,75 @@ int (wp_out)(int (*of)(char const[],...), wp_t const* const e);
 
 
 
-/************** SPU part ************/
-#if defined(__SPU__)
+
+#if defined(__SPU__)          /************** SPU part ************/
+
+
+/* SPU specific headers */
+#include <spu_mfcio.h>
+#include <spu_intrinsics.h>
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
+
+
+/* DMA more than 16K using multiple DMAs */
+static INLINE_ void mdma64(void* const p,
+                           unsigned const* const ea, unsigned const size,
+                           unsigned const tag, unsigned const cmd
+                          )
+{
+    /* 64 bit effective address */
+    typedef unsigned long long  T64;
+
+    /* Defined somwhere in imd_cbe_util.c */
+    extern void mdma64_rec(register unsigned char* const p, register T64 const,
+                           register unsigned const,
+                           register unsigned const, register unsigned const);
+    extern void mdma64_iter(register unsigned char*,  register T64,
+                            register unsigned,
+                            register unsigned const, register unsigned const);
+
+
+
+    mdma64_iter((unsigned char*)p, (((T64)(ea[0]))<<32u)+((T64)(ea[1])),
+                size,  tag, cmd);
+}
+
+
+
+/* (Just a) wrapper for DMA with less than 16K
+   This has the same signature as the function above
+ */
+static INLINE_ void dma64(void* const p,
+                          unsigned const* const ea, unsigned const size,
+                          unsigned const tag, unsigned const cmd
+                  )
+{
+    spu_mfcdma64(p,  ea[0],ea[1],  size, tag,cmd);
+}
+
+
+
+
+
+
+
+/* Generic macro for rounding up vector components in terms of
+   SPU vector commands.
+   On the SPU, x may be a scalar which is converted to a vector first
+ */
+#define CEILV(x,r) spu_andc(spu_add((r),(x)), (r))
+
+
+static INLINE_
+vector unsigned uiceilv(vector unsigned const v, vector unsigned const m)
+{
+     return CEILV(v,m);
+}
+
+
 
 
 
@@ -438,8 +517,8 @@ extern "C" {
 
 
 
-/************ PPU part **************/
-#if defined(__PPU__)
+
+#if defined(__PPU__)           /************ PPU part **************/
 
 /* WORDSIZE & size_t */
 #include <limits.h>
@@ -456,6 +535,10 @@ extern "C" {
 #endif
 
 
+
+/* Map some vector commands */
+#define spu_andc  vec_andc
+#define spu_add   vec_add
 
 
 
@@ -614,6 +697,44 @@ exch_t* (create_exch)(wp_t const* const wp, exch_t* const e);
 
 
 #endif /* PPU part */
+
+
+
+
+
+
+
+
+
+
+/* Common part again. 
+   "Generic" declarations follow which need declarations from PPU/SPU parts
+ */
+
+
+
+
+
+
+
+/* Some rounding functions */
+static INLINE_ int iceil128(int const x) {
+    return (x+127) & (~127);
+}
+
+static INLINE_ int iceil16(int const x) {
+    return (x+15) & (~15);
+}
+
+
+static INLINE_ unsigned uiceil128(unsigned const x) {
+    return (x+127u) & (~127u);
+}
+
+static INLINE_ unsigned uiceil16(unsigned const x) {
+    return (x+15u) & (~15u);
+}
+
 
 
 
