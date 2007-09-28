@@ -698,6 +698,10 @@ void* (calloc_aligned)(size_t const nelem, size_t const elsze,
 
 
 
+/* Swaps intger variables a and b (of same type)*/
+#define SWAP(a,b) { (a)^=(b); (b)^=(a); }
+/* Sets x to zero without even mentioning zero :-) */
+#define CLEAR(x)  ((x)^=(x))
 
 
 /* Some local abreviations for two libspe2 data types
@@ -715,34 +719,30 @@ typedef pthread_t            Tthr;
 
 
 
+/* Arrays of buffers:  */
+
+/* Environment */
+static envbuf_t ALIGNED_(128, ebuf[N_ENVBUF]);
+/* cbe_env_begin is passed as environment address to every SPU thread */
+envbuf_t* const cbe_env_begin = ebuf;
+
+
+/* Arguments */
+static argbuf_t ALIGNED_(128, abuf[N_SPU_THREADS_MAX * N_ARGBUF]);
+/* cbe_arg_begin + N_ARGBUF*k is passed as argument address to SPU thread k */
+argbuf_t* const cbe_arg_begin = abuf;
+
+
+/* Additional workpackage buffer */
+static wp_t wbuf[N_SPU_THREADS_MAX * N_ARGBUF]; 
+wp_t* const cbe_wp_begin = wbuf;
 
 
 
 
 
-/* DMA (exchange) buffers, aligned 16byte boundary */
-
-/* Work package buffer, which is needed in both "direct case" and
-   "indirect case", so it has to be aligned.
-*/
-static wp_t ALIGNED_(16, wbuf[N_SPU_THREADS_MAX * N_BUFLEV]);
-wp_t* const cbe_wp = wbuf;
 
 
-#if defined(CBE_DIRECT)
-   /* WPs may be used for DMA directly */
-   /* Simply use the work package buffer as exchange buffer */
-   exch_t* const cbe_exch = wbuf;
-#else
-   /* A second buffer is need for the exchnage of data */
-   static exch_t ALIGNED_(16, exchbuf[N_SPU_THREADS_MAX * N_BUFLEV]);
-   exch_t* const cbe_exch = exchbuf;
-#endif /* CBE_DIRECT */
-
-
-/* DMA env. buffer, aligned to 16byte boundary */
-static env_t ALIGNED_(16, env[1]);
-env_t* const cbe_env = env;
 
 
 
@@ -757,8 +757,6 @@ spe_stop_info_t const* const cbe_stopinfo = sinfo;
    mailbox communication */
 static spe_context_ptr_t c[N_SPU_THREADS_MAX];
 spe_context_ptr_t const* const cbe_spucontext = c;
-
-
 
 
 
@@ -975,8 +973,7 @@ unsigned cbe_get_nspus() {
 }
 
 
-/* SPU multithreading: */
-/* IDs of the POSIX threads */
+/* SPU multithreading:  IDs of the POSIX threads */
 static Tthr  t[N_SPU_THREADS_MAX];
 
 
@@ -1013,18 +1010,17 @@ int cbe_init(int const nspu_req, int const cpu_node)
 
     /* Copy pt to env_t
        It is assumend, that pt has been setup before we arrve here */
-    create_env(&pt, cbe_env+0);
+    create_env(&pt, ((env_t*)cbe_env_begin));
 
+
+#if ! defined(CBE_DIRECT)
+    for ( i=0;  i<(N_SPU_THREADS_MAX * N_ARGBUF);  ++i ) {
+       wbuf[i].n2_max = 0;
+    }
+#endif
 
     /* Set "ground state" for some publically accessible values */
-    for ( i=0;   i<(N_SPU_THREADS_MAX * N_BUFLEV);  ++i  ) {
-        /* wp specific stuff */
-#if ! defined(CBE_DIRECT)
-        /* Also have to set size to zero to force allocation
-           in "indirect" case. */
-        wbuf[i].n2_max = 0;
-#endif /* CBE_DIRECT */
-
+    for ( i=0;   i<N_SPU_THREADS_MAX ;  ++i  ) {
         /* context & control area */
         c[i]=0;
         contrarea[i]=0;
@@ -1034,10 +1030,10 @@ int cbe_init(int const nspu_req, int const cpu_node)
         /* Set the arguments for the pthread */ 
         /* SPU thread arguments, also set wp fields to initial value
            such that the wp gets allocated upon first call to make_wp */
-        parg->spu_arg=cbe_exch + (i*N_BUFLEV);
+        parg->spu_arg = cbe_arg_begin + i*N_ARGBUF;
 
         /* Environment */
-        parg->spu_env=cbe_env+0;
+        parg->spu_env = cbe_env_begin;
 
         /* Stop info of SPU program is written here */
         parg->spu_stopinfo_loc=sinfo+i;

@@ -402,6 +402,26 @@ int (pt_out)(int (*of)(char const[],...), pt_t const* const e);
 int (wp_out)(int (*of)(char const[],...), wp_t const* const e);
 
 
+
+
+/* There shall be N_ARGBUF arguement buffers for each SPU thread.
+   All SPU threads shall receive a private argument address which does
+   not equal an argument address passed to an other SPU.
+
+   There shall be N_ENVBUF environment buffers which are shared by all
+   SPU threads. All SPU shall receive the same environment address
+ */
+enum { N_ARGBUF=2, N_ENVBUF=2 };
+
+/* Buffer padding (must be a multiple of 16, should be 128) */
+enum { BUFPAD  = 128u };
+enum { BUFPAD1 = BUFPAD-1u };
+
+/* The types used as buffers for arguments and environment */
+typedef unsigned char argbuf_t[(sizeof(exch_t)+ BUFPAD1) & (~BUFPAD1)];
+typedef unsigned char envbuf_t[(sizeof(env_t) + BUFPAD1) & (~BUFPAD1)];
+
+
 #if defined (__cplusplus)
 }
 #endif
@@ -553,6 +573,7 @@ extern "C" {
 #if 32 == __WORDSIZE
 #  /* Warning: ea is used twice inside the macro! */
 #  define PTR2EA(ptr,ea) { *(ea)=0;  *((void const**)((ea)+1)) = (void const*)(ptr); }
+#  define EA2PTR(ea)     (*((void**)((ea)+1)))
 #endif
 
 /* Assuming a pointer is 64 bits wide:
@@ -561,6 +582,7 @@ extern "C" {
 */
 #if 64 == __WORDSIZE
 #  define PTR2EA(ptr,ea) {  *((void const**)(ea)) = (void const*)(ptr); }
+#  define EA2PTR(ea)     (*((void**)(ea)))
 #endif
 
 
@@ -584,25 +606,23 @@ enum {
 
 
 
-/* Number of buffer levels, that is number of exch_t/wp_t buffers
-   per SPU thread
- */
-enum { N_BUFLEV=2u };
 
 
-/* Will be passed as arguments to SPU programs there are at least 
-   N_BUFLEV * N_SPU_THREADS_MAX elements in the array.
-   cbe_exch+0*N_BUFLEV is passed to SPU 0, cbe_exch+1*N_BUFLEV is passed to
-   SPU 1,   cbe_exch+k*N_BUFLEV is passed to SPU k...
-*/
-extern exch_t* const cbe_exch;
 
-/* Work packages */
-extern wp_t* const cbe_wp;
+/* Pointers to the begining of the arrays of buffer
+   (to make the static arrays defined above publically available) */
 
-/* To be passed as environment to SPU programs there is at least
-   one element in the array */
-extern env_t* const cbe_env;
+/* cbe_env_begin is passed as environment address to every SPU thread */
+extern envbuf_t* const cbe_env_begin;
+/* cbe_arg_begin + N_ARGBUF*k is passed as argument address to SPU thread k */
+extern argbuf_t* const cbe_arg_begin;
+
+
+/* Additional work package buffer */
+extern wp_t* const cbe_wp_begin;
+
+
+
 
 
 /* Stop info buffer for SPU k (readonly) */
@@ -612,9 +632,11 @@ extern spe_stop_info_t const* const cbe_stopinfo;
 extern spe_context_ptr_t const* const cbe_spucontext;
 
 
+
 /* Pointers to control areas the SPUs */
 typedef spe_spu_control_area_t volatile*  spe_spu_control_area_p;
 extern spe_spu_control_area_p* const cbe_spucontrolarea;
+
 
 
 

@@ -740,17 +740,18 @@ static void calc_forces_spu(int const steps)
 
       /* Index for wp/exch */
       unsigned iwp1;
-      for (  ispu=iwp1=0;     (ispu<ispumax);     ++ispu, iwp1+=N_BUFLEV  ) {
+      for (  ispu=iwp1=0;     (ispu<ispumax);     ++ispu, iwp1+=N_ARGBUF  ) {
 
            /* Control area used to access the mailbox and ptr. to state */
-  	   spe_spu_control_area_p const pctl = cbe_spucontrolarea[ispu];
-           Tspustate* const pstat = spustate+ispu;
+  	   spe_spu_control_area_p const pctl  = cbe_spucontrolarea[ispu];
+           Tspustate*             const pstat = spustate+ispu;
 
-           /* Work package */
-           wp_t* const pwp = cbe_wp+iwp1;
-#if ! defined(CBE_DIRECT)
+#if defined(CBE_DIRECT)
            /* Exchange buffer needed if no direct access enabled */
-           exch_t* const pexch = cbe_exch+iwp1;
+           wp_t*   const pwp   = ((wp_t*)(cbe_arg_begin+iwp1));
+#else
+           exch_t* const pexch = ((exch_t*)(cbe_arg_begin+iwp1));
+           wp_t*   const pwp   = cbe_wp_begin+iwp1;
 #endif
 
 
@@ -847,7 +848,7 @@ static void calc_forces_spu(int const steps)
 static void calc_forces_ppu(int const steps)
 {
   /* (Global) work package */
-  wp_t* const wp = cbe_wp;
+  wp_t* const wp = cbe_wp_begin;
   int k;
 
   /* compute interactions */

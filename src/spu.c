@@ -161,14 +161,16 @@ static void start_create_wp(exch_t const* const exch,
 
 
 /* DMA forces back to main memory */
-static void start_DMA_results(unsigned const* const exch_ea, unsigned const tag,
+static void start_DMA_results(unsigned const* const exch_ea,
+                              unsigned const exch_out_sze,
                               wp_t const* const wp, exch_t* const exch,
-                              unsigned const* const res_sze
+                              unsigned const force_sze,
+                              unsigned const tag
                              )
 {
      /* First DMA the force array directly back to main memory... */
      /* DMA64(wp->force, res_sze[0],  exch->force,  tag, MFC_PUT_CMD); */
-     mdma64(wp->force, exch->force,  res_sze[0], tag, MFC_PUT_CMD);
+     mdma64(wp->force, exch->force,  force_sze, tag, MFC_PUT_CMD);
 
      /* In the meantime:
         Copy the scalars which have been updated in wp back to exch
@@ -179,7 +181,7 @@ static void start_DMA_results(unsigned const* const exch_ea, unsigned const tag,
 
      /* ...then DMA the updated exch_t */
      /* DMA64(exch, (sizeof (*exch)), exch_ea, tag, MFC_PUT_CMD); */
-     mdma64(exch, exch_ea,  (sizeof *exch),  tag, MFC_PUT_CMD);
+     mdma64(exch, exch_ea,  exch_out_sze,  tag, MFC_PUT_CMD);
 }
 
 
@@ -236,18 +238,18 @@ static void start_init(unsigned const* const envea,
                        unsigned const tag, unsigned const cbtag)
 {
     /* Buffer for env. data */
-    static unsigned char ALIGNED_(16, envbuf[300]);
+    static unsigned char ALIGNED_(16, envdata[300]);
 
-    /* env controll block  */
-    env_t ALIGNED_(16, env);
+    /* env control block  */
+    envbuf_t ALIGNED_(16, envbuf);
 
     /* 1st, DMA the control block containing the pointers */
-    mdma64(&env,  envea, (sizeof env),  cbtag, MFC_GET_CMD);
+    mdma64(&envbuf,  envea, (sizeof envbuf),  cbtag, MFC_GET_CMD);
     spu_writech(MFC_WrTagMask, (1u<<cbtag));
     spu_mfcstat(MFC_TAG_UPDATE_ALL);
 
     /* Start DMA of pt */
-    start_create_pt(envbuf, (sizeof envbuf),  &env, &pt,  tag);
+    start_create_pt(envdata, (sizeof envdata), ((env_t*)envbuf), &pt,  tag);
 }
 
 
@@ -255,25 +257,15 @@ static void start_init(unsigned const* const envea,
 
 
 
-/* Number of bytes needed to be DMAed back (totpot & virial) */
-static unsigned wp_result_size(wp_t const* const pwp) {
-    /* Ptr to byte */
-    typedef unsigned char const* Pbyt;
-
-    /* "Distances" (in bytes) from to beginning of the struct */
-    unsigned const dtotpot = ((Pbyt)(&(pwp->totpot))) - ((Pbyt)pwp);
-    unsigned const dvirial = ((Pbyt)(&(pwp->virial))) - ((Pbyt)pwp);
-
-  
-    return
-     uiceil16((dtotpot>dvirial) ?
-                 (dtotpot+(sizeof (pwp->totpot))) :
-                 (dvirial+(sizeof (pwp->virial)))
-             );
-}
 
 
 
+/* First/past the end byte position of member m in structur object s */
+#define MEMB_FRST_POS(s,m) (((unsigned char const*)&((s).m)) - ((unsigned char const*)&(s)))
+#define MEMB_LAST_POS(s,m) (MEMB_FRST_POS((s),m) + (sizeof ((s).m)))
+
+/* Maximum */
+#define MAX(a,b) ((a)>(b) ? (a) : (b))
 
 
 
@@ -302,7 +294,7 @@ static INLINE_ arg_ea_t advance_arg_ea(arg_ea_t a, ui64_t const n) {
 int main(ui64_t const id, arg_ea_t const argp0, env_ea_t const envp)
 {
     /* EA of 2nd buffer  */
-    arg_ea_t const argp1 = advance_arg_ea(argp0, sizeof (exch_t));
+    arg_ea_t const argp1 = advance_arg_ea(argp0, sizeof (argbuf_t));
 
 
     /* Some tags used in the main routine to DMA workpackages/control blocks
@@ -325,19 +317,24 @@ int main(ui64_t const id, arg_ea_t const argp0, env_ea_t const envp)
     /* Suffix (kilobyte) */
     enum { Ki=1024u };
 
-    /* The workpackages */
-    wp_t ALIGNED_(128, wp0), ALIGNED_(128, wp1);
+    /* wp_t or exch_t are buffered here */
+    argbuf_t ALIGNED_(128, argbuf0), ALIGNED_(128, argbuf1);
+
     /* Buffers for the results */
     unsigned char ALIGNED_(128,resbuf0[17*Ki]), ALIGNED_(128, resbuf1[1*Ki]);
 
 
 
-#if defined(CBE_DIRECT)
-    /* Minimum number of bytes to be DMAed back per wp (to make sure that
-       totpot & virial get DMAed back) */ 
-    unsigned const wp_res_sze0 = wp_result_size(&wp0);
-    unsigned const wp_res_sze1 = wp_result_size(&wp1);
-#endif
+    /* Number of argument bytes which must be DMAed in.. */
+    unsigned const arg_in_sze = (sizeof argbuf0);
+    /* ..and out */
+    unsigned const arg_out_sze = uiceil16(
+                                 MAX(MEMB_LAST_POS(*((exch_t*)argbuf0), totpot),
+                                     MEMB_LAST_POS(*((exch_t*)argbuf0), virial)
+				    )
+                                 );
+
+
 
     /* Some type info */
     /* printf("Sizes on SPU:\n");  sizeinfo(printf);   fflush(stdout); */
@@ -364,8 +361,9 @@ int main(ui64_t const id, arg_ea_t const argp0, env_ea_t const envp)
 
 
 #if ! defined(CBE_DIRECT)
-        /* Extra control blocks */
-        exch_t ALIGNED_(16, exch0), ALIGNED_(16, exch1);
+        /* Extra wp's are needed as only exch_t are passed which are
+           not usable directly */
+        wp_t wp0, wp1;
 
         /* EAs & sizes of the results, which at the moment is 
           the force vector only */
@@ -385,15 +383,15 @@ int main(ui64_t const id, arg_ea_t const argp0, env_ea_t const envp)
 
 #if defined(CBE_DIRECT)
         /* DMA the wp_t directly */
-        mdma64(&wp0, argp0.ea32, (sizeof wp0),  itag0, MFC_GET_CMD);
+        mdma64(argbuf0, argp0.ea32, arg_in_sze,  itag0, MFC_GET_CMD);
 #else
         /* Fetch exch controll block via DMA & wait for it to complete */
-        mdma64(&exch0, argp0.ea32, (sizeof exch0),  cbtag,  MFC_GET_CMD);
+        mdma64(argbuf0, argp0.ea32, arg_in_sze,  cbtag,  MFC_GET_CMD);
         spu_writech(MFC_WrTagMask,  cbmsk);
         spu_mfcstat(MFC_TAG_UPDATE_ALL);
 
         /* Now, given the exch, start DMAing the array memebers in wp */
-        start_create_wp(&exch0,
+        start_create_wp(((exch_t const*)argbuf0),
                         calc_temp, (sizeof calc_temp),
                         resbuf0,   (sizeof resbuf0),
                         itag0,
@@ -413,7 +411,7 @@ int main(ui64_t const id, arg_ea_t const argp0, env_ea_t const envp)
 
         /* The main work to be done. */
 #if defined(CBE_DIRECT)
-        calc_wp_direct(&wp0,
+        calc_wp_direct(((wp_t*)argbuf0),
                        calc_temp,(sizeof calc_temp), resbuf0,(sizeof resbuf0),
                        otag0);
 #else
@@ -424,10 +422,14 @@ int main(ui64_t const id, arg_ea_t const argp0, env_ea_t const envp)
 #if defined(CBE_DIRECT)
         /* Forecs are DMAed back in calc_wp in "direct case", so here, we just
            DMA back the controll block containing virial & energy */
-        mdma64(&wp0, argp0.ea32, wp_res_sze0,  otag0, MFC_PUT_CMD);
+        mdma64(argbuf0, argp0.ea32, arg_out_sze,  otag0, MFC_PUT_CMD);
 #else
         /* DMA results back to main memory  */
-        start_DMA_results(argp0.ea32, otag0, &wp0, &exch0, res_sze);
+        start_DMA_results(argp0.ea32, arg_out_sze,
+                          &wp0, ((exch_t*)argbuf0),
+                          res_sze[0],
+                          otag0
+                         );
 #endif  /* CBE_DIRECT */
 
 
