@@ -1341,28 +1341,29 @@ void write_header_force(FILE *out)
 #endif
 
   /* number of atoms */
-  fprintf(out, "%d\n", natoms);
+  fprintf(out, "#N %ld 1\n", natoms);
   
   /* box lines */
 #ifdef TWOD
-  fprintf(out, "%.16e %.16e\n", box_x.x, box_x.y );
-  fprintf(out, "%.16e %.16e\n", box_y.x, box_y.y );
+  fprintf(out, "#X %.16e %.16e\n", box_x.x, box_x.y );
+  fprintf(out, "#Y %.16e %.16e\n", box_y.x, box_y.y );
 #else
-  fprintf(out, "%.16e %.16e %.16e\n", box_x.x, box_x.y, box_x.z );
-  fprintf(out, "%.16e %.16e %.16e\n", box_y.x, box_y.y, box_y.z );
-  fprintf(out, "%.16e %.16e %.16e\n", box_z.x, box_z.y, box_z.z );
+  fprintf(out, "#X %.16e %.16e %.16e\n", box_x.x, box_x.y, box_x.z );
+  fprintf(out, "#Y %.16e %.16e %.16e\n", box_y.x, box_y.y, box_y.z );
+  fprintf(out, "#Z %.16e %.16e %.16e\n", box_z.x, box_z.y, box_z.z );
 #endif
 
   /* cohesive energy */
-  fprintf(out, "%.16e\n",tot_pot_energy / natoms);
+  fprintf(out, "#E %.16e\n",tot_pot_energy / natoms);
   
 #ifdef STRESS_TENS
   /* stress */
-  fprintf(out, "%.8e %.8e %.8e %.8e %.8e %.8e\n",tot_presstens.xx/volume,
+  fprintf(out, "#S %.8e %.8e %.8e %.8e %.8e %.8e\n",tot_presstens.xx/volume,
 	  tot_presstens.yy/volume,tot_presstens.zz/volume,
 	  tot_presstens.xy/volume,tot_presstens.yz/volume,
 	  tot_presstens.zx/volume);
 #endif
+  fprintf(out,"#F\n");
 }
 
 /******************************************************************************
