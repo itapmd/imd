@@ -30,12 +30,6 @@
 #include "imd_cbe.h"
 
 
-
-
-
-
-
-
 #ifdef ON_PPU
 
 /******************************************************************************
@@ -45,6 +39,14 @@
 ******************************************************************************/
 
 void calc_wp(wp_t *wp) {}
+
+/******************************************************************************
+*
+*  Neighbor tables on SPU - dummy routine, real one runs on PPU
+*
+******************************************************************************/
+
+void calc_tb(wp_t *wp) {}
 
 #else  /* not ON_PPU */
 
@@ -56,11 +58,6 @@ void calc_wp(wp_t *wp) {}
 *
 ******************************************************************************/
 
-
-
-
-
-
 /* Allocate memory for 3 buffers pointed to by pbuf:
    Allocates pointers inside *pbuf with at least the following sizes:
       *pos, *force:  wp->n_max * 4 * sizeof(float)
@@ -70,6 +67,7 @@ void calc_wp(wp_t *wp) {}
    Only pbuf[0]->force is allocated (and its components set to zero)
    pbuf[1]->force & pbuf[2]->force are set to NULL as they won't be needed
  */
+
 static void set_buffers(cell_dta_t* const pbuf,
                         int const n_max, int const len_max,
                         void* const tmpbuf, unsigned const tmpbuf_len,
@@ -138,23 +136,11 @@ static void set_buffers(cell_dta_t* const pbuf,
         loc+=stb;
     }
     else {
-        fprintf(stderr, "Could not allocate %d bytes for temp buffers\n", stottmp);
+        fprintf(stderr, "Could not allocate %d bytes for temp buffers\n", 
+                stottmp);
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
-  
 
 
 /* Init a DMA get from the EAs specified in *addr to the LS addresses
@@ -173,32 +159,39 @@ static INLINE_
     mdma64(buf->pos, addr->pos_ea, iceil16(addr->n*sizeof(flt[4])),
            tag, MFC_GET_CMD);
 
+#ifndef MONO
     mdma64(buf->typ, addr->typ_ea, iceil16(addr->n*sizeof(int)),
            tag, MFC_GET_CMD);
-  
+#endif
+
     mdma64(buf->ti,  addr->ti_ea,  iceil16(ti_len*sizeof(int)),
            tag, MFC_GET_CMD);
 
     mdma64(buf->tb,  addr->tb_ea,  iceil16(addr->len*sizeof(short)),
            tag, MFC_GET_CMD);
 
+    /* Also copy n */
+    buf->n = addr->n;
+}
 
+
+static INLINE_ 
+  void init_fetch_tb(cell_dta_t* const buf, 
+                  cell_ea_t const* const addr, unsigned const tag)
+{
+    /* we need only the positions here */
+    mdma64(buf->pos, addr->pos_ea, iceil16(addr->n*sizeof(flt[4])),
+           tag, MFC_GET_CMD);
 
     /* Also copy n */
     buf->n = addr->n;
 }
 
 
-
-
-
 static INLINE_ void wait_dma(unsigned const tag) {
     spu_writech(MFC_WrTagMask, (1u<<tag));
     spu_mfcstat(MFC_TAG_UPDATE_ALL);
 }
-
-
-
 
 
 /* Start a DMA back to main memory without waiting for it */
@@ -209,27 +202,24 @@ static INLINE_
     /* Debugging output */
     /*
     fprintf(stdout, "DMAing back forces from %p to (0x%x,0x%x) with tag %u\n",
-            (void const*)(buf->force), addr->force_ea[0], addr->force_ea[1], tag);
+         (void const*)(buf->force), addr->force_ea[0], addr->force_ea[1], tag);
     fflush(stdout);
     */
 
     mdma64(buf->force, addr->force_ea, iceil16(addr->n*sizeof(flt[4])),
            tag, MFC_PUT_CMD);
+
 }
 
 
-
-
-/* Macro for the calculation of the Lennard-Jones potential */
-#define LJ(pot,grad,r2)  {                                               \
-   int   const col4 = col*4;                                             \
-   float const tmp2 = lj_sig[col4] / r2;                                 \
-   float const tmp6 = tmp2 * tmp2 * tmp2;                                \
-   pot  = lj_eps[col4] * tmp6 * (tmp6 - 2.0) - lj_shift[col4];           \
-   grad = - 12.0 * lj_eps[col4] * tmp6 * (tmp6 - 1.0) / r2;              \
+/* Start a DMA back to main memory without waiting for it */
+static INLINE_
+  void init_return_tb(cell_dta_t const* const buf, cell_ea_t const* const addr,
+                      int const ti_len, int const tb_len, unsigned const tag)
+{
+  mdma64(buf->ti, addr->ti_ea, iceil16(ti_len*sizeof(int)  ), tag,MFC_PUT_CMD);
+  mdma64(buf->tb, addr->tb_ea, iceil16(tb_len*sizeof(short)), tag,MFC_PUT_CMD);
 }
-
-
 
 
 /* This routine will use tags 0,1,2 for DMA as well as otag */
@@ -238,10 +228,7 @@ void calc_wp_direct(wp_t *wp,
                     void* const resbuf,  unsigned const resbuf_len,
                     unsigned const otag)
 {
-  /* Tags for the buffer ptrs.  */
-  enum { btag0=0u, btag1=1u, btag2=2u };
-  unsigned ptag, qtag, next_qtag, old_qtag;
-
+  unsigned tag=0u;  /* tag for incoming data  */
 
   cell_dta_t buf[3], *p, *q, *next_q, *old_q;
 
@@ -286,8 +273,6 @@ void calc_wp_direct(wp_t *wp,
   int    i, c1, n, m, j0, j1, j2, j3;
 
 
-
-
   /* fprintf(stdout, "calc_wp (DIRECT) starts on SPU\n");  fflush(stdout); */
 
 
@@ -295,25 +280,17 @@ void calc_wp_direct(wp_t *wp,
   set_buffers(buf,   wp->n_max, wp->len_max,
               tempbuf, tempbuf_len,   resbuf, resbuf_len);
 
-
   /* The initial fetch to buffer q */
-  q    = &(buf[0]);
-  qtag = btag0;
-  init_fetch(q,  wp->ti_len,  wp->cell_dta, qtag);
+  p = q = &(buf[0]);
+  init_fetch(q, wp->ti_len, wp->cell_dta, tag);
 
   /* Set pointers to the remaining buffers */
-  p    = q;
-  ptag = qtag;
-
-  next_q    = &(buf[1]);
-  next_qtag = btag1;
-
+  next_q = &(buf[1]);
 
   /* Set forces to zero using qpos to iterate over elements */
-  for( qpos=((vector float*)(buf[0].force)), i=(wp->n_max);   (i>0);   --i, ++qpos ) {
-      (*qpos) = f00;
+  for ( qpos=(vector float*)(buf[0].force), i=wp->n_max; i>0; --i, ++qpos ) {
+    (*qpos) = f00;
   }
-
 
   /* Set scalars to zero */
   wp->totpot =  wp->virial  = 0;
@@ -321,14 +298,14 @@ void calc_wp_direct(wp_t *wp,
   m = 0;
   do {
 
-    wait_dma(qtag);
+    wait_dma(tag);
 
     do {
       m++;
     } while ((wp->cell_dta[m].n==0) && (m<NNBCELL));
 
     if (m<NNBCELL) {
-      init_fetch(next_q,  wp->ti_len, wp->cell_dta + m,  next_qtag);
+      init_fetch(next_q, wp->ti_len, wp->cell_dta + m, tag);
     }
 
     /* positions in q as vector float */
@@ -344,7 +321,6 @@ void calc_wp_direct(wp_t *wp,
 #ifndef MONO
       c1 = 2 * p->typ[i];
 #endif
-
 
       /* clear accumulation variables */
       pots = f00;  ff0s = f00;  ff1s = f00;  ff2s = f00;  ff3s = f00;
@@ -379,12 +355,6 @@ void calc_wp_direct(wp_t *wp,
         d1  = spu_sub( qpos[j1], *pi );
         d2  = spu_sub( qpos[j2], *pi );
         d3  = spu_sub( qpos[j3], *pi );
-
-        /* clear the 4th component */
-        d0 = spu_sel( d0, f00, spu_maskw(1) );
-        d1 = spu_sel( d1, f00, spu_maskw(1) );
-        d2 = spu_sel( d2, f00, spu_maskw(1) );
-        d3 = spu_sel( d3, f00, spu_maskw(1) );
 
         d20 = spu_mul( d0, d0 );
         d21 = spu_mul( d1, d1 );
@@ -483,29 +453,9 @@ void calc_wp_direct(wp_t *wp,
     /* write back forces in *q - locking required! */
 #endif
 
-    /*
-    if ((0==wp->k) && (NNBCELL==m)) {
-      for (i=0; i<p->n; i++)
-        printf("%d %d %e %e %e %e %e %e %e\n", 
-          i, p->typ[i], p->pos[4*i], p->pos[4*i+1], p->pos[4*i+2],
-          p->force[4*i], p->force[4*i+1], p->force[4*i+2], p->force[4*i+3]);
-    }
-    */
-
-    if (q == p) {  
-       old_q    = &(buf[2]);
-       old_qtag = btag2;
-    }
-    else {
-       old_q    = q;
-       old_qtag = qtag;
-    }
- 
-    q    = next_q;
-    qtag = next_qtag;
-
-    next_q    = old_q;
-    next_qtag = old_qtag;
+    old_q  = (q == p) ? &(buf[2]) : q;
+    q      = next_q;
+    next_q = old_q;
 
   } while (m<NNBCELL);
 
@@ -521,6 +471,117 @@ void calc_wp_direct(wp_t *wp,
      as we will do that in the main (work) loop. */
   init_return(p, wp->cell_dta, otag);
 }
+
+
+/******************************************************************************
+*
+*  calc_tb: Neighbor tables on SPU -- CBE_DIRECT version
+*
+******************************************************************************/
+
+void calc_tb_direct(wp_t *wp,
+                    void* const tempbuf, unsigned const tempbuf_len,
+                    void* const resbuf,  unsigned const resbuf_len,
+                    unsigned const otag)
+{
+  vector float d, *qpos;
+  float cellsz = wp->totpot;
+  int inc_short = 128 / sizeof(short) - 1;
+  int m, next_m, nn=0;
+
+  cell_dta_t buf[3], *p, *q, *next_q, *old_q;
+
+  /* Allocate 3 buffers */
+  set_buffers(buf, wp->n_max, wp->len_max,
+              tempbuf, tempbuf_len, resbuf, resbuf_len);
+
+  /* The initial fetch to buffer q */
+  p = q = &(buf[0]);
+  init_fetch_tb(q, wp->cell_dta, otag);
+
+  /* Set pointers to the remaining buffers */
+  next_q    = &(buf[1]);
+
+  /* for each neighbor cell */
+  m = 0;
+  do {
+
+    int l=0, n=0, i;
+
+    wait_dma(otag);
+
+    wp->cell_dta[m].tb_ea[1] = wp->cell_dta[0].tb_ea[1] + nn * sizeof(short); 
+
+    next_m = m;
+    do {
+      next_m++;
+      if (m<NNBCELL) {
+        wp->cell_dta[next_m].tb_ea[0] = wp->cell_dta[next_m-1].tb_ea[0]; 
+        wp->cell_dta[next_m].tb_ea[1] = wp->cell_dta[next_m-1].tb_ea[1]; 
+      }
+    } while ((wp->cell_dta[next_m].n==0) && (next_m<NNBCELL));
+
+    if (next_m<NNBCELL) {
+      init_fetch_tb(next_q, wp->cell_dta + next_m, otag);
+    }
+
+    /* positions in q as vector float */
+    qpos = (vector float *) q->pos;
+
+    /* for each atom in cell */
+    for (i=0; i<p->n; i++) {
+
+      vector float* const pi = ((vector float *) p->pos) + i;
+      int    jstart, j, rr;
+
+      /* for each neighboring atom */
+      q->ti[l] = n;
+#ifdef AR
+      jstart = (m==0) ? i+1 : 0;
+#else
+      jstart = 0;
+#endif
+      for (j=jstart; j<q->n; j++) {
+        float r2;
+#ifndef AR
+        if ((m==0) && (i==j)) continue;
+#endif
+        d  = spu_sub( qpos[j], *pi );
+        d  = spu_mul( d, d );
+        r2 = spu_extract(d,0) + spu_extract(d,1) + spu_extract(d,2); 
+        if (r2 < cellsz) q->tb[n++] = j;
+      }
+      q->ti[l+1] = n - q->ti[l];
+      l += 2;
+
+      /* if n is not divisible by 4, pad with copies of q->n */
+      rr = n % 4;
+      if (rr>0) for (j=rr; j<4; j++) q->tb[n++] = q->n;
+    }
+
+    /* enlarge n to next 128 byte boundary */
+    n = (n + inc_short) & (~inc_short); 
+
+    nn += n;
+    if (nn > wp->nb_max) {
+      wp->flag = -1;
+      printf("nb_max = %d, nn = %d\n", wp->nb_max, nn);
+      return;
+    }
+
+    init_return_tb(q, wp->cell_dta + m, wp->ti_len, n, otag);
+
+    m      = next_m;
+    old_q  = (q == p) ? &(buf[2]) : q;
+    q      = next_q;
+    next_q = old_q;
+
+  } while (m<NNBCELL);
+
+  wp->flag = nn;
+
+}
+
 
 #else  /* not CBE_DIRECT */
 

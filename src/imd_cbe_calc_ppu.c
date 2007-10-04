@@ -39,7 +39,16 @@
 *
 ******************************************************************************/
 
-void calc_wp(wp_t *wp) {}
+void calc_wp(wp_t * const wp) {}
+
+/******************************************************************************
+*
+*  Neighbor tables on PPU - dummy routine, real one runs on SPU
+*
+******************************************************************************/
+
+void calc_tb(wp_t * const wp) {}
+
 
 #else  /* ON_PPU */
 
@@ -119,6 +128,83 @@ void calc_wp(wp_t *wp)
     }
   }
 }
+
+
+/******************************************************************************
+*
+*  calc_tb: Neighbor tables on PPU -- CBE_DIRECT version
+*
+******************************************************************************/
+
+static void calc_tb(wp_t * const wp) {
+
+  cell_dta_t *p = wp->cell_dta;
+  float cellsz = wp->totpot;
+  int inc_int   = 128 / sizeof(int  ) - 1;
+  int inc_short = 128 / sizeof(short) - 1;
+  int at_inc = (2*p->n + inc_int) & (~inc_int);
+  int m, nn=0;
+
+  /* for each neighbor cell */
+  for (m=0; m<NNBCELL; m++) {
+
+    cell_dta_t *q = wp->cell_dta + m;
+
+    int l=0, n=0, i;
+
+    q->tb = p->tb + nn;
+
+    if (0==q->n) continue;
+
+    /* for each atom in cell */
+    for (i=0; i<p->n; i++) {
+
+      int    jstart, j, rr;
+      vektor d1;
+
+      d1.x = p->pos[4*i  ];
+      d1.y = p->pos[4*i+1];
+      d1.z = p->pos[4*i+2];
+
+      /* for each neighboring atom */
+      q->ti[l] = n;
+#ifdef AR
+      jstart = (m==0) ? i+1 : 0;
+#else
+      jstart = 0;
+#endif
+      for (j=jstart; j<q->n; j++) {
+        vektor d;
+        real   r2;
+#ifndef AR
+        if ((m==0) && (i==j)) continue;
+#endif
+        d.x = q->pos[4*j  ] - d1.x;
+        d.y = q->pos[4*j+1] - d1.y;
+        d.z = q->pos[4*j+2] - d1.z;
+        r2  = SPROD(d,d);
+        if (r2 < cellsz) q->tb[n++] = j;
+      }
+      q->ti[l+1] = n - q->ti[l];
+      l += 2;
+
+      /* if n is not divisible by 4, pad with copies of q->n */
+      rr = n % 4;
+      if (rr>0) for (j=rr; j<4; j++) q->tb[n++] = q->n;
+    }
+
+    /* enlarge n to next 128 byte boundary */
+    n = (n + inc_short) & (~inc_short); 
+
+    nn += n;
+    if (nn > nb_max) {
+      wp->flag = -1;
+      return;
+    }
+  }
+  wp->flag = nn;
+}
+
 
 #else  /* not CBE_DIRECT */
 

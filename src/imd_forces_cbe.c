@@ -170,14 +170,122 @@ int estimate_nblist_size(void)
 
 /******************************************************************************
 *
+*  make_tb
+*
+******************************************************************************/
+
+static void make_tb(int k, wp_t *wp)
+{
+  cell_nbrs_t *c = cnbrs + k;
+  cell *p = CELLPTR(k);
+  int  inc_int = 128 / sizeof(int) - 1, m, n;
+  int  at_inc  = (2*p->n + inc_int) & (~inc_int);
+
+  wp->totpot = cellsz;          /* we abuse totpot for cellsz here */
+  wp->nb_max = nb_max;
+  wp->k = k;
+  wp->n_max = n_max;            /* allocate for this many atoms     */
+  wp->len_max = n_max * n_max;  /* allocate for this many neighbors */
+  wp->ti_len = at_inc;
+  for (m=0; m<NNBCELL; m++) {
+    n = c->nq[m];
+    if (n<0) {
+      wp->cell_dta[m].n = 0;
+      continue;
+    }
+    wp->cell_dta[m] = cell_dta[n];
+#ifdef ON_PPU
+    wp->cell_dta[m].ti = ti + at_off[k] + m * at_inc;
+#else
+    PTR2EA( ti + at_off[k] + m * at_inc,  wp->cell_dta[m].ti_ea );
+#endif
+  }
+#ifdef ON_PPU
+  wp->cell_dta[0].tb = tb + tb_off[k * NNBCELL];
+#else
+  PTR2EA( tb + tb_off[k * NNBCELL], wp->cell_dta[0].tb_ea );
+#endif
+}
+
+
+/******************************************************************************
+*
+*  store_tb
+*
+******************************************************************************/
+
+static void store_tb(wp_t const* const wp)
+{
+  int off, off2=0, m, k = wp->k;
+
+  if (wp->flag<0) error("error flag in store_tb");
+
+  for (m=1; m<NNBCELL; m++) {
+#ifdef ON_PPU
+    off = (int) (wp->cell_dta[m].tb       - wp->cell_dta[m-1].tb      );
+#else
+    off = (int) (wp->cell_dta[m].tb_ea[1] - wp->cell_dta[m-1].tb_ea[1]);
+    off = off / sizeof(short);
+#endif
+    tb_off[k*NNBCELL+m] = tb_off[k*NNBCELL+m-1] + off; 
+    len_max = MAX( len_max, off ); 
+    off2 += off;
+  }
+  len_max = MAX( len_max, wp->flag - off2 ); 
+  last_nbl_len = MAX( last_nbl_len, wp->flag );
+}
+
+
+/******************************************************************************
+*
+*  calc_tb_ppu
+*
+******************************************************************************/
+
+static void calc_tb_ppu(void)
+{
+  /* (Global) work package */
+  wp_t* const wp = cbe_wp_begin;
+  int k;
+
+  len_max = 0;
+  last_nbl_len = 0;
+
+  /* compute neighbor tables */
+  for (k=0; k<ncells; ++k ) {
+    make_tb(k, wp);
+    calc_tb(wp);
+    store_tb(wp);
+  }
+}
+
+
+/******************************************************************************
+*
+*  calc_tb_spu
+*
+******************************************************************************/
+
+static void calc_tb_spu(void)
+{
+  len_max = 0;
+  last_nbl_len = 0;
+
+  /* flag == 1: compute neighbor tables */
+  do_work_spu(1);
+}
+
+
+/******************************************************************************
+*
 *  make_nblist
 *
 ******************************************************************************/
 
 void make_nblist(void)
 {
-  static int at_max=0, pa_max=0, ncell_max=0, cl_max=0;
-  int c, k, nn, at, i;
+  static int at_max=0, cl_max=0;
+  int c, k, at, i;
   int inc_int   = 128 / sizeof(int)   - 1;
   int inc_short = 128 / sizeof(short) - 1;
 
@@ -188,6 +296,7 @@ void make_nblist(void)
       NBL_POS(p,i,X) = ORT(p,i,X);
       NBL_POS(p,i,Y) = ORT(p,i,Y);
       NBL_POS(p,i,Z) = ORT(p,i,Z);
+      ORT    (p,i,W) = 0.0;
     }
   }
 
@@ -248,26 +357,40 @@ void make_nblist(void)
   }
   if (NULL==tb) {
     if (0==last_nbl_len) 
-      nb_max = (int) (nbl_size * ncells * estimate_nblist_size());
+      nb_max = (int) (nbl_size * estimate_nblist_size());
     else                 
       nb_max = (int) (nbl_size * last_nbl_len);
-    tb = (short *) malloc_aligned( nb_max * sizeof(short), 0, 0);
+    nb_max = (nb_max + inc_short) & (~inc_short);
+    tb = (short *) malloc_aligned( nb_max * (cl_max+1) * sizeof(short), 0, 0);
   }
   else if (last_nbl_len * sqrt(nbl_size) > nb_max) {
     free(tb);
-    nb_max = (int    ) (nbl_size * last_nbl_len);
-    tb     = (short *) malloc_aligned( nb_max * sizeof(short), 0, 0);
+    nb_max = (int) (nbl_size * last_nbl_len);
+    nb_max = (nb_max + inc_short) & (~inc_short);
+    tb = (short *) malloc_aligned( nb_max * (cl_max+1) * sizeof(short), 0, 0);
   }
   if ((ti==NULL) || (tb==NULL)) 
     error("cannot allocate neighbor table");
+  for (c=0; c<=ncells; c++) tb_off[c*NNBCELL] = c * nb_max; 
+
+#ifndef NBL_ON_PPU
+
+#ifdef ON_PPU
+  calc_tb_ppu();
+#else
+  calc_tb_spu();
+#endif
+
+#else
 
   /* for all cells */
-  nn=0; len_max=0;
+  last_nbl_len = 0; len_max=0;
   for (c=0; c<ncells; c++) {
 
     int   c1 = cnbrs[c].np, m;
     cell  *p = cell_array + c1;
     int   at_inc = (2*p->n + inc_int) & (~inc_int);
+    int   nn = tb_off[c*NNBCELL];
 
     /* for each neighbor cell */
     for (m=0; m<NNBCELL; m++) {
@@ -324,16 +447,16 @@ void make_nblist(void)
       n = (n + inc_short) & (~inc_short); 
 
       nn += n;
-      pa_max = MAX(pa_max,n);
-      if (nn + 2*pa_max > nb_max) {
+      if (nn - tb_off[c*NNBCELL] > nb_max) {
         error("neighbor table full - increase nbl_size");
       }
       len_max = MAX( len_max, nn - tb_off[c*NNBCELL+m] );
     }
+    last_nbl_len = MAX( last_nbl_len, nn - tb_off[c*NNBCELL] );
   }
 
-  tb_off[ncells*NNBCELL] = nn;
-  last_nbl_len   = nn;
+#endif  /* NBL_ON_PPU */
+
   have_valid_nbl = 1;
   nbl_count++;
 }
@@ -345,11 +468,11 @@ void make_nblist(void)
 *
 ******************************************************************************/
 
-static wp_t* make_wp(int k, wp_t *wp)
+static void make_wp(int k, wp_t *wp)
 {
   cell_nbrs_t *c = cnbrs + k;
   cell *p = CELLPTR(k);
-  int  inc_int = 128 / sizeof(int) - 1, m, n;
+  int  inc_int = 128 / sizeof(int) - 1, m, n, len;
   int  at_inc  = (2*p->n + inc_int) & (~inc_int);
 
   wp->k = k;
@@ -372,16 +495,7 @@ static wp_t* make_wp(int k, wp_t *wp)
     PTR2EA( tb + tb_off[k * NNBCELL + m], wp->cell_dta[m].tb_ea );
 #endif
   }
-
-
-  /* Debugging output */
-  /*
-  fprintf(stdout, "wp k=%d created for CBE_DIRECT with n_max=%d, len_max=%d\n",
-          k, wp->n_max, wp->len_max);
-  fflush(stdout);
-  */
-
-  return wp;
+  wp->cell_dta[NNBCELL-1].len = len_max;  /* this is not optimal... */
 }
 
 
@@ -463,7 +577,7 @@ int estimate_nblist_size(void)
 
 void make_nblist(void)
 {
-  static int at_max=0, pa_max=0, ncell_max=0, cl_max=0;
+  static int at_max=0, pa_max=0, cl_max=0;
   int  c, i, k, n, nn, at, l, t, j;
   int inc_int   = 128 / sizeof(int)   - 1;
   int inc_short = 128 / sizeof(short) - 1;
@@ -595,7 +709,7 @@ void make_nblist(void)
 *
 ******************************************************************************/
 
-static wp_t* make_wp(int k, wp_t *wp)
+static void make_wp(int k, wp_t *wp)
 {
   cell_nbrs_t *c = cnbrs + k;
   int   m, j, i, n, l, t, min;
@@ -649,9 +763,6 @@ static wp_t* make_wp(int k, wp_t *wp)
   wp->len = tb_off[k+1] - tb_off[k];
   wp->n1_max  = 0;  /* max size for ti - nothing allocated here */
   wp->len_max = 0;  /* max size for tb - nothing allocated here */
-
-  /* Return ptr to the wp just created */
-  return wp;
 }
 
 
@@ -694,7 +805,7 @@ static void store_wp(wp_t const* const wp)
 *
 ******************************************************************************/
 
-static void calc_forces_spu(int const steps)
+void do_work_spu(unsigned const flag)
 {
   /* The following code uses mailboxes to synchronize between PPU & SPUs.
      To do so, it uses direct (memory mapped) access to the control area
@@ -761,7 +872,11 @@ static void calc_forces_spu(int const steps)
            /* Idle SPU and still work to schedule */
            if (  (IDLE==*pstat) && (k<ncells)  ) {
    	       /* Create a work package... */
-   	       make_wp(k, pwp);
+	       switch (flag) {
+	         case 1: make_tb(k, pwp); break;  /* neighbor tables */
+	         case 2: make_wp(k, pwp); break;  /* force calc */
+	         default: error("unknown flag in do_work_spu");
+               }
 #if ! defined (CBE_DIRECT)
                /* ...and also create an exch buffer */
                create_exch(pwp, pexch);
@@ -772,7 +887,8 @@ static void calc_forces_spu(int const steps)
                __lwsync();  /* synchronize memory before releasing it */
 
                while ( 0u == ((pctl->SPU_Mbox_Stat) & INMBX_CNT_MASK) ) {}
-               pctl->SPU_In_Mbox = WPSTRT1;
+               /* pctl->SPU_In_Mbox = WPSTRT1; */
+               pctl->SPU_In_Mbox = flag;
 
 	       /* Mark SPU as working */
 	       ++k;
@@ -808,7 +924,11 @@ static void calc_forces_spu(int const steps)
 #endif
 
                         /* Store the wp */
-                        store_wp(pwp);
+   	                switch (flag) {
+	                  case 1: store_tb(pwp); break; /* neighbor tab */
+	                  case 2: store_wp(pwp); break; /* force calc */
+	                  default: error("unknown flag in do_work_spu");
+                        }
 
   		        /* SPU's done with its work, so it's idle again 
                            and one more wp is finished */
@@ -908,7 +1028,7 @@ void calc_forces(int const steps)
 #ifdef ON_PPU
   calc_forces_ppu(steps); 
 #else
-  calc_forces_spu(steps);
+  do_work_spu(2);
 #endif
 
 #ifdef MPI

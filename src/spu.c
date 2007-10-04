@@ -94,36 +94,40 @@ static void workloop(unsigned const* const ea) {
        /* result from inbox (command or number of wps to be processed) */
        unsigned ibx;
 
-
-
         /* Wait for message from PPU */
         if ( EXPECT_FALSE(0 == (ibx = spu_read_in_mbox())) ) {
-  	    return 0;
+  	    return;
         }
 
         /* DMA the wp_t directly */
         mdma64(argbuf0, ea, arg_in_sze,  itag0, MFC_GET_CMD);
 
-
-
-
         /* Wait for for inbound DMA */
         spu_writech(MFC_WrTagMask,  imsk0);
         spu_mfcstat(MFC_TAG_UPDATE_ALL);
-
 
         /* Debugging output */
         /* fprintf(stdout, "Got wp k=%d\n", wp0.k);  fflush(stdout); */
 
         /* The main work to be done. */
-        calc_wp_direct(((wp_t*)&argbuf0),
-                       calc_temp,(sizeof calc_temp), resbuf0,(sizeof resbuf0),
-                       otag0);
+        switch (ibx) {
+  	  case 1:
+            calc_tb_direct(((wp_t *)argbuf0), calc_temp, (sizeof calc_temp), 
+                           resbuf0, (sizeof resbuf0), otag0);
+            break;
+          case 2:
+            calc_wp_direct(((wp_t *)argbuf0), calc_temp, (sizeof calc_temp),
+                           resbuf0, (sizeof resbuf0), otag0);
+            break;
+	  default: printf("unknown SPU task: %u\n", ibx);
+            break;
+	}
 
 
         /* Forecs are DMAed back in calc_wp in "direct case", so here, we just
            DMA back the controll block containing virial & energy */
-        mdma64(argbuf0, ea, arg_out_sze,  otag0, MFC_PUT_CMD);
+        /* mdma64(argbuf0, ea, arg_in_sze,  otag0, MFC_PUT_CMD); */
+        mdma64(argbuf0, ea, arg_in_sze,  otag0, MFC_PUT_CMD);
 
 
         /* Wait for outbound DMA (including the DMA of the forces initiated
@@ -136,7 +140,6 @@ static void workloop(unsigned const* const ea) {
         spu_write_out_mbox(WPDONE1);
     }
 
-    return 1;
 }
 
 
@@ -438,9 +441,6 @@ static int workloop(unsigned const* const ea) {
 
 
 
-
-
-
 /* Create potential data by DMA */
 static void start_create_pt(void* const pbuf, unsigned const szebuf,
                             env_t const* const env, pt_t* const p,
@@ -529,7 +529,6 @@ typedef union argea {
 } argea_t;
 
 
-
 /* argp "points" to an array of lengt N_ARGBUF of argbuf_t */
 int main(ui64_t const id, argea_t const argp, argea_t const envp)
 {
@@ -552,9 +551,6 @@ int main(ui64_t const id, argea_t const argp, argea_t const envp)
 
     /* fprintf(stdout, "Starting work loop on SPU\n"); fflush(stdout); */
     workloop(argp.ea32);
-
-
-
 
     /* We should not arrive here as we only leave the main program if
        SPUEXIT is passed via mbox */

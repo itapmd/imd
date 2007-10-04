@@ -597,10 +597,10 @@ ifeq (cbe-gcc,${IMDSYS})
   # Use the PPU compiler as defined by the PPUCC env. var. (ppu-gcc)
   # as main compiler as it defines the __PPU__ macro 
   # The ordinary gcc does not set this macro
-  CC_SERIAL	= ppu-gcc -m64
+  CC_SERIAL	= ppu-gcc 
   CC_MPI	= mpicc
   SPUCC         = spu-gcc
-  EMBEDSPU      = ppu-embedspu -m64
+  EMBEDSPU      = ppu-embedspu 
   BIN_DIR	= ${HOME}/bin/cbe
   OPT_FLAGS     += -pipe  -O3 -funroll-loops   -Wall -Wno-unused
   DEBUG_FLAGS	+= -g

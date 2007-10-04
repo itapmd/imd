@@ -192,7 +192,8 @@ typedef struct wp {
   float totpot;
   float virial;
 
-  float f1, f2;
+  int nb_max;
+  int flag;
 
   int k;
   int n_max;
@@ -333,10 +334,17 @@ enum {
 
 
 /* The main calculation routine(s) */
+void do_work_spu(unsigned const flag);
 void calc_wp(wp_t *wp);
+void calc_tb(wp_t *wp);
+
 
 #if defined(CBE_DIRECT)
 void calc_wp_direct(wp_t*,
+                    void* const, unsigned const, void* const, unsigned const,
+                    unsigned const otag);
+
+void calc_tb_direct(wp_t*,
                     void* const, unsigned const, void* const, unsigned const,
                     unsigned const otag);
 
