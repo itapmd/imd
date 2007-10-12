@@ -73,7 +73,7 @@ static void workloop(unsigned const* const ea) {
     argbuf_t ALIGNED_(128, argbuf0), ALIGNED_(128, argbuf1);
 
     /* Buffers for the results */
-    unsigned char ALIGNED_(128,resbuf0[17*Ki]), ALIGNED_(128, resbuf1[17*Ki]);
+    unsigned char ALIGNED_(128,resbuf0[4*Ki]), ALIGNED_(128, resbuf1[4*Ki]);
 
 
     /* Number of argument bytes which must be DMAed in.. */
@@ -93,6 +93,7 @@ static void workloop(unsigned const* const ea) {
 
        /* result from inbox (command or number of wps to be processed) */
        unsigned ibx;
+       int flag;
 
         /* Wait for message from PPU */
         if ( EXPECT_FALSE(0 == (ibx = spu_read_in_mbox())) ) {
@@ -106,11 +107,13 @@ static void workloop(unsigned const* const ea) {
         spu_writech(MFC_WrTagMask,  imsk0);
         spu_mfcstat(MFC_TAG_UPDATE_ALL);
 
+        flag = ((wp_t *)argbuf0)->flag;
+
         /* Debugging output */
         /* fprintf(stdout, "Got wp k=%d\n", wp0.k);  fflush(stdout); */
 
         /* The main work to be done. */
-        switch (ibx) {
+        switch (flag) {
   	  case 1:
             calc_tb_direct(((wp_t *)argbuf0), calc_temp, (sizeof calc_temp), 
                            resbuf0, (sizeof resbuf0), otag0);
@@ -119,7 +122,7 @@ static void workloop(unsigned const* const ea) {
             calc_wp_direct(((wp_t *)argbuf0), calc_temp, (sizeof calc_temp),
                            resbuf0, (sizeof resbuf0), otag0);
             break;
-	  default: printf("unknown SPU task: %u\n", ibx);
+	  default: printf("unknown SPU task: %d\n", flag);
             break;
 	}
 

@@ -35,7 +35,7 @@ static int *at_off=NULL;
 static int nb_max=0;
 static short *tb=NULL;
 #ifdef CBE_DIRECT
-static int n_max=0, len_max=0;
+static int n_max=0, len_max=0, len_max2=0;
 #ifdef ON_PPU
 static cell_dta_t *cell_dta=NULL;
 #else
@@ -187,6 +187,7 @@ static void make_tb(int k, wp_t *wp)
   wp->n_max = n_max;            /* allocate for this many atoms     */
   wp->len_max = n_max * n_max;  /* allocate for this many neighbors */
   wp->ti_len = at_inc;
+  wp->flag = 1;
   for (m=0; m<NNBCELL; m++) {
     n = c->nq[m];
     if (n<0) {
@@ -229,6 +230,7 @@ static void store_tb(wp_t const* const wp)
 #endif
     tb_off[k*NNBCELL+m] = tb_off[k*NNBCELL+m-1] + off; 
     len_max = MAX( len_max, off ); 
+    if (m>1) len_max2 = MAX( len_max2, off );
     off2 += off;
   }
   len_max = MAX( len_max, wp->flag - off2 ); 
@@ -269,10 +271,14 @@ static void calc_tb_ppu(void)
 static void calc_tb_spu(void)
 {
   len_max = 0;
+  len_max2 = 0;
   last_nbl_len = 0;
 
-  /* flag == 1: compute neighbor tables */
-  do_work_spu(1);
+  do_work_spu(1);  /* flag 1: calculate neighbor tables */
+  /*
+  printf("n_max = %d, len_max = %d, len_max2 = %d\n", 
+         n_max, len_max, len_max2);
+  */
 }
 
 
@@ -479,6 +485,7 @@ static void make_wp(int k, wp_t *wp)
   wp->n_max = n_max;      /* allocate for this many atoms     */
   wp->len_max = len_max;  /* allocate for this many neighbors */
   wp->ti_len = at_inc;
+  wp->flag = 2;
   for (m=0; m<NNBCELL; m++) {
     n = c->nq[m];
     if (n<0) {
@@ -495,7 +502,7 @@ static void make_wp(int k, wp_t *wp)
     PTR2EA( tb + tb_off[k * NNBCELL + m], wp->cell_dta[m].tb_ea );
 #endif
   }
-  wp->cell_dta[NNBCELL-1].len = len_max;  /* this is not optimal... */
+  wp->cell_dta[NNBCELL-1].len = len_max2;  /* this is not optimal... */
 }
 
 
@@ -805,7 +812,7 @@ static void store_wp(wp_t const* const wp)
 *
 ******************************************************************************/
 
-void do_work_spu(unsigned const flag)
+void do_work_spu(int const flag)
 {
   /* The following code uses mailboxes to synchronize between PPU & SPUs.
      To do so, it uses direct (memory mapped) access to the control area
@@ -887,8 +894,7 @@ void do_work_spu(unsigned const flag)
                __lwsync();  /* synchronize memory before releasing it */
 
                while ( 0u == ((pctl->SPU_Mbox_Stat) & INMBX_CNT_MASK) ) {}
-               /* pctl->SPU_In_Mbox = WPSTRT1; */
-               pctl->SPU_In_Mbox = flag;
+               pctl->SPU_In_Mbox = WPSTRT1;
 
 	       /* Mark SPU as working */
 	       ++k;
@@ -1028,7 +1034,7 @@ void calc_forces(int const steps)
 #ifdef ON_PPU
   calc_forces_ppu(steps); 
 #else
-  do_work_spu(2);
+  do_work_spu(2);  /* flag 2: calculate pair forces */
 #endif
 
 #ifdef MPI

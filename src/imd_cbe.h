@@ -334,7 +334,7 @@ enum {
 
 
 /* The main calculation routine(s) */
-void do_work_spu(unsigned const flag);
+void do_work_spu(int const flag);
 void calc_wp(wp_t *wp);
 void calc_tb(wp_t *wp);
 

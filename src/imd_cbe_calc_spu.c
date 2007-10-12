@@ -74,14 +74,15 @@ static void set_buffers(cell_dta_t* const pbuf,
                         void* const resbuf, unsigned const resbuf_len)
 {
     /* Vector quantities (pos&force) have the same size */
-    int const svec = iceil128(  n_max *     sizeof(flt[4]));
+    int const svec = iceil128(  n_max *     sizeof(vector float));
     /* Sizes of the scalar members */
     int const styp = iceil128(  n_max *     sizeof(int));
     int const sti  = iceil128(  n_max * 2 * sizeof(int));
     int const stb  = iceil128(len_max *     sizeof(short));
+    int const stb2 = iceil128(len_max/2 *   sizeof(short));
 
     /* Total number of bytes needed for temp. storage */
-    int const stottmp = 3*(svec+styp+sti+stb);
+    int const stottmp = 3*(svec+styp)+2*(sti+stb);
 
 
     /* forces arrays will only be used for pbuf[0] */
@@ -124,16 +125,14 @@ static void set_buffers(cell_dta_t* const pbuf,
         loc+=sti;
         pbuf[1].ti  = (int*)loc;
         loc+=sti;
-        pbuf[2].ti  = (int*)loc;
-        loc+=sti;
+        pbuf[2].ti  = pbuf[0].ti;
 
         /* tb arrays */
         pbuf[0].tb  = (short*)loc;
         loc+=stb;
         pbuf[1].tb  = (short*)loc;
-        loc+=stb;
-        pbuf[2].tb  = (short*)loc;
-        loc+=stb;
+        loc+=stb2;  /* this one can be smaller */
+        pbuf[2].tb  = pbuf[0].tb;
     }
     else {
         fprintf(stderr, "Could not allocate %d bytes for temp buffers\n", 
@@ -156,17 +155,18 @@ static INLINE_
        are aligned to 128-byte boundary, but in list DMA, LS addresses are
        automatically rounded up to the next 16-byte boundary.
      */
-    mdma64(buf->pos, addr->pos_ea, iceil16(addr->n*sizeof(flt[4])),
+    dma64(buf->pos, addr->pos_ea, iceil16(addr->n*sizeof(vector float)),
            tag, MFC_GET_CMD);
 
 #ifndef MONO
-    mdma64(buf->typ, addr->typ_ea, iceil16(addr->n*sizeof(int)),
+    dma64(buf->typ, addr->typ_ea, iceil16(addr->n*sizeof(int)),
            tag, MFC_GET_CMD);
 #endif
 
-    mdma64(buf->ti,  addr->ti_ea,  iceil16(ti_len*sizeof(int)),
+    dma64(buf->ti,  addr->ti_ea,  iceil16(ti_len*sizeof(int)),
            tag, MFC_GET_CMD);
 
+    /* here we possibly need a multiple DMA */
     mdma64(buf->tb,  addr->tb_ea,  iceil16(addr->len*sizeof(short)),
            tag, MFC_GET_CMD);
 
@@ -180,7 +180,7 @@ static INLINE_
                   cell_ea_t const* const addr, unsigned const tag)
 {
     /* we need only the positions here */
-    mdma64(buf->pos, addr->pos_ea, iceil16(addr->n*sizeof(flt[4])),
+    dma64(buf->pos, addr->pos_ea, iceil16(addr->n*sizeof(vector float)),
            tag, MFC_GET_CMD);
 
     /* Also copy n */
@@ -206,7 +206,7 @@ static INLINE_
     fflush(stdout);
     */
 
-    mdma64(buf->force, addr->force_ea, iceil16(addr->n*sizeof(flt[4])),
+    dma64(buf->force, addr->force_ea, iceil16(addr->n*sizeof(vector float)),
            tag, MFC_PUT_CMD);
 
 }
@@ -217,7 +217,8 @@ static INLINE_
   void init_return_tb(cell_dta_t const* const buf, cell_ea_t const* const addr,
                       int const ti_len, int const tb_len, unsigned const tag)
 {
-  mdma64(buf->ti, addr->ti_ea, iceil16(ti_len*sizeof(int)  ), tag,MFC_PUT_CMD);
+  dma64 (buf->ti, addr->ti_ea, iceil16(ti_len*sizeof(int)  ), tag,MFC_PUT_CMD);
+  /* here we possibly need a multiple DMA */
   mdma64(buf->tb, addr->tb_ea, iceil16(tb_len*sizeof(short)), tag,MFC_PUT_CMD);
 }
 
