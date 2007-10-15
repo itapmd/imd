@@ -592,25 +592,59 @@ ifeq (bgl-cc,${IMDSYS})
   LFLAGS        += -O4
 endif
 
-# Cell Broad Band Engine
-ifeq (cbe-gcc,${IMDSYS})
-  # Use the PPU compiler as defined by the PPUCC env. var. (ppu-gcc)
-  # as main compiler as it defines the __PPU__ macro 
-  # The ordinary gcc does not set this macro
-  CC_SERIAL	= ppu-gcc 
-  CC_MPI	= mpicc
-  SPUCC         = spu-gcc
-  EMBEDSPU      = ppu-embedspu 
+
+
+
+
+# Cell Broad Band Engine with IBM XLC compiler (assuming that the XLC
+# compilers are in the $PATH)
+ifeq (cbe-xlc,${IMDSYS})
+  SPUCC       = spuxlc -qlanglvl=extc89 -qflag=w:w -qproto
+  CC_SERIAL   = ppuxlc -qlanglvl=stdc89 -qflag=w:w -qproto -qro  -q32
+  OPT_FLAGS   +=  -O2 -qstrict  -qreport  -qinline -qunroll=yes
+  SPUCFLAGS   =   -O2 -qstrict  -qreport  -qinline -qinline-dma64:mdma64:wait_dma
+  EMBEDSPU      = ppu-embedspu -m32
+
   BIN_DIR	= ${HOME}/bin/cbe
-  OPT_FLAGS     += -pipe  -O3 -funroll-loops   -Wall -Wno-unused
+
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
   PROF_LIBS	+= -g3 -pg
-  SPUCFLAGS = -pipe  -ansi -pedantic  -O2 -funroll-loops  -Wall -Wunused -Wshadow -Wcast-qual -Wno-long-long
+
   SPULDFLAGS    +=
   LFLAGS        += 
   LIBS          += -lspe2
 endif
+
+
+# Cell Broad Band Engine with GCC
+ifeq (cbe-gcc,${IMDSYS})
+  # Use the PPU compiler (ppu-gcc)
+  # as main compiler as it defines the __PPU__ macro 
+  # The ordinary gcc does not set this macro
+
+  # -- GCC --
+  CC_SERIAL   = ppu-gcc -m32
+  CC_MP       = mpicc
+  SPUCC       = spu-gcc
+  OPT_FLAGS   += -pipe  -O3 -funroll-loops   -Wall -Wno-unused
+  SPUCFLAGS   = -pipe  -ansi -pedantic  -O2 -funroll-loops  -Wall -Wunused -Wshadow -Wcast-qual -Wno-long-long
+  EMBEDSPU    = ppu-embedspu  -m32
+
+
+  BIN_DIR	= ${HOME}/bin/cbe
+
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -g3 -pg
+  PROF_LIBS	+= -g3 -pg
+
+  SPULDFLAGS    +=
+  LFLAGS        += 
+  LIBS          += -lspe2
+endif
+
+
+
 
 ###########################################################################
 #
@@ -1327,7 +1361,7 @@ spu.o: spu
 	${EMBEDSPU} hndle_cbe_calc spu spu.o 
 
 spu:  spu.c  imd_cbe.h  imd_cbe_util_spu.o  imd_cbe_calc_spu.s
-	${SPUCC} -o spu ${SPUCFLAGS}  ${SPULDFLAGS}  -Wl,-Map,spu.map    spu.c  imd_cbe_calc_spu.s  imd_cbe_util_spu.o
+	${SPUCC} -o spu ${SPUCFLAGS}  ${SPULDFLAGS}     spu.c  imd_cbe_calc_spu.s  imd_cbe_util_spu.o
 
 
 # Assembler code (instead of object code) for calc_wp on the SPU

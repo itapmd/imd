@@ -100,7 +100,9 @@ void maxwell(real temp)
 #endif
 	 ;
 	 depth -= laser_offset;
-         if (depth < 0) depth=0; // we don't want to exceed laser_delta_temp
+         if (depth < 0) {
+	   depth=0; /* we don't want to exceed laser_delta_temp */
+         }
 	 
 	 TEMP =  laser_delta_temp * exp(-laser_mu * depth);
          TEMP += temperature; /* add base temperature of sample */

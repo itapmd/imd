@@ -37,7 +37,7 @@ extern "C" {
 #        if defined (__GNUC__)
 #             define INLINE_ __inline
 #        else
-#             define INLINE_
+#             define INLINE_ __inline__
 #        endif /* __GNUC__ */
 #    endif  /* C++  */
 #endif /* INLINE_ */
@@ -512,7 +512,7 @@ static INLINE_ void dma64(void* const p,
 
 
 static INLINE_
-vector unsigned uiceilv(vector unsigned const v, vector unsigned const m)
+vector unsigned int uiceilv(vector unsigned int const v, vector unsigned int const m)
 {
      return CEILV(v,m);
 }
