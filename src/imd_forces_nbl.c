@@ -423,15 +423,19 @@ void calc_forces(int steps)
 #if defined(PAIR) || defined(KEATING)
         /* PAIR and KEATING are mutually exclusive */
 #if defined(PAIR)
-        if (r2 <= pair_pot.end[col]) {
+        if (r2 <= pair_pot.end[col])
+#elif defined(KEATING)
+        if (r2 < keat_r2_cut[it][jt]) 
+#endif
+	{
+#if defined(PAIR)
 #ifdef LINPOT
-          PAIR_INT_LIN(pot, grad, pair_pot_lin, col, inc, r2, is_short)
+          PAIR_INT_LIN(pot, grad, pair_pot_lin, col, inc, r2, is_short);
 #else
-          PAIR_INT(pot, grad, pair_pot, col, inc, r2, is_short)
+	  PAIR_INT(pot, grad, pair_pot, col, inc, r2, is_short);
 #endif
 #elif defined(KEATING)
-        if (r2 < keat_r2_cut[it][jt]) {
-          PAIR_INT_KEATING(pot, grad, it, jt, r2)
+          PAIR_INT_KEATING(pot, grad, it, jt, r2);
 #endif
 
           tot_pot_energy += pot;
