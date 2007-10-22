@@ -89,18 +89,32 @@ static void set_buffers(cell_dta_t* const pbuf,
     pbuf[1].force=pbuf[2].force=0;
 
 
+    /*
+    fprintf(stdout,
+            "set_buffers:\n"
+            "len_max = %d\n"
+            "svec    = %d\n"
+            "styp    = %d\n"
+            "sti     = %d\n"
+            "stb     = %d\n",
+            len_max, svec,styp,sti,stb 
+	   );
+    fflush(stdout);
+    */
+
+
     /* Storage for results (non-temp. storage) */
-    if ( EXPECT_TRUE(resbuf_len >= svec) ) {
+    if ( EXPECT_TRUE_(resbuf_len >= svec) ) {
         /* At the moment, only pbuf[0].forces will store results */
         pbuf[0].force = (float*)resbuf;
     }
     else {
-        fprintf(stderr, "Could not allocate %d bytes for result buffers\n", svec);
+        fprintf(stderr, "set_buffers: Can not allocate %d bytes for result buffers\n", svec);
     }
 
 
     /* Enoug temp space available? */
-    if ( EXPECT_TRUE(tmpbuf_len >= stottmp) ) {
+    if ( EXPECT_TRUE_(tmpbuf_len >= stottmp) ) {
         /* Allocation starts here */
         register unsigned char* loc = (unsigned char*)tmpbuf;
 
@@ -135,7 +149,7 @@ static void set_buffers(cell_dta_t* const pbuf,
         pbuf[2].tb  = pbuf[0].tb;
     }
     else {
-        fprintf(stderr, "Could not allocate %d bytes for temp buffers\n", 
+        fprintf(stderr, "set_buffers: Can not allocate %d bytes for temp buffers\n", 
                 stottmp);
     }
 
@@ -177,7 +191,7 @@ static INLINE_
 
 static INLINE_ 
   void init_fetch_tb(cell_dta_t* const buf, 
-                  cell_ea_t const* const addr, unsigned const tag)
+                     cell_ea_t const* const addr, unsigned const tag)
 {
     /* we need only the positions here */
     dma64(buf->pos, addr->pos_ea, iceil16(addr->n*sizeof(vector float)),
@@ -188,9 +202,8 @@ static INLINE_
 }
 
 
-static INLINE_ void wait_dma(unsigned const tag) {
-    spu_writech(MFC_WrTagMask, (1u<<tag));
-    spu_mfcstat(MFC_TAG_UPDATE_ALL);
+static void wait_tag(unsigned const tag) {
+    wait_dma((1u<<tag),  MFC_TAG_UPDATE_ALL);
 }
 
 
@@ -274,7 +287,15 @@ void calc_wp_direct(wp_t *wp,
   int    i, c1, n, m, j0, j1, j2, j3;
 
 
-  /* fprintf(stdout, "calc_wp (DIRECT) starts on SPU\n");  fflush(stdout); */
+  /*
+  fprintf(stdout,
+          "calc_wp_direct:\n"
+          "k       = %d\n"
+          "flag    = %d\n"
+          "len_max = %d\n",
+           wp->k, wp->flag);
+  fflush(stdout);
+  */
 
 
   /* Allocate 3 buffers */
@@ -299,7 +320,7 @@ void calc_wp_direct(wp_t *wp,
   m = 0;
   do {
 
-    wait_dma(tag);
+    wait_tag(tag);
 
     do {
       m++;
@@ -509,7 +530,7 @@ void calc_tb_direct(wp_t *wp,
 
     int l=0, n=0, i;
 
-    wait_dma(otag);
+    wait_tag(otag);
 
     wp->cell_dta[m].tb_ea[1] = wp->cell_dta[0].tb_ea[1] + nn * sizeof(short); 
 

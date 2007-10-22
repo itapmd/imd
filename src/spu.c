@@ -49,101 +49,96 @@ static INLINE_ unsigned uimax(unsigned const a, unsigned const b) {
 
 #if defined(CBE_DIRECT)  /* "Direct" case */
 
-
-
-static void workloop(unsigned const* const ea) {
-
-    /* Some tags used in the main routine to DMA workpackages/control blocks
-       Tags > 2 will be used in order not to interfer with DMAs initiated
-       in calc_wp_direct
-     */
-
-    /* Input tags */
-    enum { itag0=3u,    itag1=4u    };
-    /* Output tags are the same as input tags */
-    enum { otag0=itag0, otag1=itag1 };
-
-    /* The corresponding masks */
-    enum { imsk0=1u<<itag0, imsk1=1u<<itag1,
-           omsk0=1u<<otag0, omsk1=1u<<otag1  };
+/* Size of ouputbuffer */
+enum { DIRECT_OBUFSZE=((unsigned)(30*Ki)) };
 
 
 
-    /* wp_t or exch_t are buffered here */
-    argbuf_t ALIGNED_(128, argbuf0), ALIGNED_(128, argbuf1);
-
-    /* Buffers for the results */
-    unsigned char ALIGNED_(128,resbuf0[4*Ki]), ALIGNED_(128, resbuf1[4*Ki]);
-
-
-    /* Number of argument bytes which must be DMAed in.. */
-    unsigned const arg_in_sze = uiceil128(sizeof (wp_t));
-    /* ..and out */
-    unsigned const arg_out_sze = uiceil128(
-                                     uimax(MEMB_LAST_POS(*((wp_t*)&argbuf0), totpot),
-                                           MEMB_LAST_POS(*((wp_t*)&argbuf0), virial)
-				      )
-                                 );
-
-    for(;;) {
-
-       /* Buffer memory for DMAs (allocated "dynamically" from the following
-          array) initiated by calc_wp */
-       unsigned char ALIGNED_(128, calc_temp[90*Ki]); 
-
-       /* result from inbox (command or number of wps to be processed) */
-       unsigned ibx;
-       int flag;
-
-        /* Wait for message from PPU */
-        if ( EXPECT_FALSE(0 == (ibx = spu_read_in_mbox())) ) {
-  	    return;
-        }
-
-        /* DMA the wp_t directly */
-        mdma64(argbuf0, ea, arg_in_sze,  itag0, MFC_GET_CMD);
-
-        /* Wait for for inbound DMA */
-        spu_writech(MFC_WrTagMask,  imsk0);
-        spu_mfcstat(MFC_TAG_UPDATE_ALL);
-
-        flag = ((wp_t *)argbuf0)->flag;
-
-        /* Debugging output */
-        /* fprintf(stdout, "Got wp k=%d\n", wp0.k);  fflush(stdout); */
-
-        /* The main work to be done. */
-        switch (flag) {
-  	  case 1:
-            calc_tb_direct(((wp_t *)argbuf0), calc_temp, (sizeof calc_temp), 
-                           resbuf0, (sizeof resbuf0), otag0);
-            break;
-          case 2:
-            calc_wp_direct(((wp_t *)argbuf0), calc_temp, (sizeof calc_temp),
-                           resbuf0, (sizeof resbuf0), otag0);
-            break;
-	  default: printf("unknown SPU task: %d\n", flag);
-            break;
-	}
-
-
-        /* Forecs are DMAed back in calc_wp in "direct case", so here, we just
-           DMA back the controll block containing virial & energy */
-        /* mdma64(argbuf0, ea, arg_in_sze,  otag0, MFC_PUT_CMD); */
-        mdma64(argbuf0, ea, arg_in_sze,  otag0, MFC_PUT_CMD);
-
-
-        /* Wait for outbound DMA (including the DMA of the forces initiated
-           in calc_wp) */
-        spu_writech(MFC_WrTagMask, omsk0);
-        spu_mfcstat(MFC_TAG_UPDATE_ALL);
-
-
-        /* Done calculating & transferring wp */
-        spu_write_out_mbox(WPDONE1);
-    }
-
+/**/
+static void init_get_direct(void* ibuf, void* obuf,
+                            unsigned const* iea, unsigned const itag)
+{
+    /* Start DMA to input buffer */
+    dma64(ibuf, iea,  (sizeof (argbuf_t)),  itag,  MFC_GET_CMD);
 }
+
+static void init_put_direct(void* obuf,
+                            unsigned const* oea,  unsigned otag)
+{
+    /* Results are now in xfer buffer, so transfer it (at least partially) */
+    dma64(obuf, oea,  (sizeof (argbuf_t)),  otag, MFC_PUT_CMD);
+}
+
+
+static INLINE_ void vmemcpy(void const* const psrc0, void* const pdst0, unsigned const n0)
+{
+    typedef vector unsigned char Tv;
+    register Tv const *psrc = (Tv const*)psrc0;
+    register Tv       *pdst = (Tv*)pdst;
+    register unsigned  nv   = n0/(sizeof (Tv));
+
+    for (  ;   (nv>0u);    --nv, ++pdst, ++psrc ) {
+        *pdst = *psrc;
+    }
+}
+
+static void wrk_direct(void* i, void* o,  unsigned otag)
+{
+    /* Temp buffer */
+    static unsigned char ALIGNED_(128, tmp[90*Ki]);
+
+    /* Input work package */
+    wp_t* const pwp  = (wp_t*)i;
+
+    /* Output work package... */
+    wp_t* const pout = (wp_t*)o;
+    /* followed by some memory fore forces which are also stored in 
+       output buffer */
+    void*       pres = ((argbuf_t*)o)+1;
+
+    /* Number of bytes remaining in result buffer */
+    enum { RESSZE = (unsigned)(DIRECT_OBUFSZE-(sizeof (argbuf_t))) };
+
+
+    /* fprintf(stdout, "wrk_direct: %u bytes remaining for results\n",  ressze); fflush(stdout);  */
+
+
+    /* The main work to be done: Calc. the input WP */
+    switch ( pwp->flag ) {
+   	   case 1: {
+ 	       /* NBL */
+   	       calc_tb_direct(pwp,  &tmp, (sizeof tmp),  pres, RESSZE, otag);
+
+               /* Copy the entire WP */
+               (*pout) = (*pwp);
+
+               break;
+	   }
+   	   case 2: {
+               /* Forces, virial & energy */
+  	       calc_wp_direct(pwp,  &tmp, (sizeof tmp),  pres, RESSZE, otag);
+
+               /* Copy some scalar to output WP */
+               pout->k    = pwp->k;
+               pout->flag = pwp->flag;
+
+               pout->virial = pwp->virial;
+               pout->totpot = pwp->totpot;
+
+               break;
+           }
+ 	   default: {
+	       /* Error */
+               fprintf(stderr, "unknown SPU task: \n");
+               break;
+          }
+    }
+}
+
+
+
+
+
 
 
 
@@ -154,7 +149,6 @@ static void workloop(unsigned const* const ea) {
 
 
 
-
 /* Given an exch_t, build the corresponding wp_t, that is:
    Copy the scalar members
    Allocate memory for all the array members (using memory pointed to by a).
@@ -162,14 +156,13 @@ static void workloop(unsigned const* const ea) {
    the specified tag
 */
 static void start_create_wp(exch_t const* const exch,
-                            void* const tmpbuf, unsigned const tmplen,
-                            void* const resbuf, unsigned const reslen,
-                            unsigned const tag,
-                            wp_t* const wp,
-                            unsigned* pres_ea, unsigned* pres_sze)
+                            void* const ibuf, unsigned const ibufsze,
+                            void* const obuf, unsigned const obufsze,
+                            unsigned const itag,
+                            wp_t* const wp)
 {
      /* Number of bytes needed for the pos/force vectors */
-     unsigned const nvecbytes = (exch->n2) * sizeof(flt[4]);
+     unsigned const nvecbytes = (exch->n2) * sizeof(float[4]);
 
      /* Number of bytes remaining */
      unsigned       nrem;
@@ -192,14 +185,14 @@ static void start_create_wp(exch_t const* const exch,
 
 
 
-     /* First allocate temp. mem. */
-     nrem=tmplen;
-     apos=tmpbuf;
+     /* First allocate input buffers */
+     nrem=ibuflen;
+     apos=ibuf;
 
      /* pos */
      nadv=ADV(szev=CEILV(nvecbytes, bndv));
-     if ( EXPECT_TRUE(nrem>=nadv)  ) {
-         mdma64(apos,  exch->pos, XFR(szev),  tag, MFC_GET_CMD);
+     if ( EXPECT_TRUE_(nrem>=nadv)  ) {
+         mdma64(apos,  exch->pos, XFR(szev),  itag, MFC_GET_CMD);
          wp->pos = (void*)apos;
          nrem-=nadv;
          apos+=nadv;
@@ -211,8 +204,8 @@ static void start_create_wp(exch_t const* const exch,
 
      /* typ */
      nadv=ADV(szev=CEILV(exch->n2*sizeof(int),  bndv));
-     if ( EXPECT_TRUE(nrem>=nadv) ) {
-         mdma64(apos,  exch->typ, XFR(szev),  tag, MFC_GET_CMD);
+     if ( EXPECT_TRUE_(nrem>=nadv) ) {
+         mdma64(apos,  exch->typ, XFR(szev),  itag, MFC_GET_CMD);
          wp->typ=(void*)apos;
          nrem-=nadv;
          apos+=nadv;
@@ -224,8 +217,8 @@ static void start_create_wp(exch_t const* const exch,
 
      /* ti */
      nadv = ADV(szev=CEILV(2*exch->n2*sizeof(int), bndv));
-     if ( EXPECT_TRUE(nrem>=nadv) ) {
-         mdma64(apos,  exch->ti, XFR(szev),  tag, MFC_GET_CMD);
+     if ( EXPECT_TRUE_(nrem>=nadv) ) {
+         mdma64(apos,  exch->ti, XFR(szev),  itag, MFC_GET_CMD);
          wp->ti=(void*)apos;
          nrem-=nadv;
          apos+=nadv;
@@ -237,8 +230,8 @@ static void start_create_wp(exch_t const* const exch,
 
      /* tb */
      nadv=ADV(szev=CEILV(exch->len*sizeof(short), bndv));
-     if ( EXPECT_TRUE(nrem>=nadv) ) {
-         mdma64(apos, exch->tb,  XFR(szev),   tag, MFC_GET_CMD);
+     if ( EXPECT_TRUE_(nrem>=nadv) ) {
+         mdma64(apos, exch->tb,  XFR(szev),   itag, MFC_GET_CMD);
          wp->tb=(void*)apos;
          nrem-=nadv;
          apos+=nadv;
@@ -249,22 +242,17 @@ static void start_create_wp(exch_t const* const exch,
      }
 
 
-
-     /* Now, allocate result buffer */
-     nrem = reslen;
-     apos = resbuf;
+     /* Now allocate output buffers */
+     nrem = obuflen;
+     apos = obuf;
 
      /* force (no DMA needed) */
      nadv=ADV(szev=CEILV(nvecbytes, bndv));
-     if ( EXPECT_TRUE(nrem>=nadv) ) {
+     if ( EXPECT_TRUE_(nrem>=nadv) ) {
           wp->force = (void*)apos;
           nrem -= nadv;
           apos += nadv;
 
-          /* Output EA and size for force */
-          pres_ea[0] = exch->force[0];
-          pres_ea[1] = exch->force[1];
-          pres_sze[0] = XFR(szev);
      }
      else {
          fprintf(stderr, "Could not allocate %u bytes for forces\n", nadv);
@@ -280,10 +268,13 @@ static void start_create_wp(exch_t const* const exch,
 
      /* Now copy all scalar members (but totpot & virial) from exch to wp */
      wp->k       = exch->k;
+
      wp->n1      = exch->n1;
      wp->n1_max  = exch->n1_max;
+
      wp->n2      = exch->n2;
-     wp->n2_max  = exch->n2;
+     wp->n2_max  = exch->n2_max;
+
      wp->len     = exch->len;
      wp->len_max = exch->len_max;
 }
@@ -291,156 +282,245 @@ static void start_create_wp(exch_t const* const exch,
 
 
 
+/**/
+enum { IBUFSZE=((unsigned)(70*Ki)), OBUFSZE=((unsigned)(16*Ki)) };
 
-
-
-/* DMA forces back to main memory */
-static void start_DMA_results(unsigned const* const exch_ea,
-                              unsigned const exch_out_sze,
-                              wp_t const* const wp, exch_t* const exch,
-                              unsigned const force_sze,
-                              unsigned const tag
-                             )
+static void init_get(void* ibuf, void* obuf, 
+                     unsigned const* iea,  unsigned const itag)
 {
-     /* First DMA the force array directly back to main memory... */
-     /* DMA64(wp->force, res_sze[0],  exch->force,  tag, MFC_PUT_CMD); */
-     mdma64(wp->force, exch->force,  force_sze, tag, MFC_PUT_CMD);
+    /* Input exch_t & wp_t are DMAed in and are placed in the input buffer */
+    exch_t* const pexchin = (exch_t*)ibuf;
+    wp_t*   const pwp     = (wp_t)(((argbuf_t*)ibuf)+1);
+    
 
-     /* In the meantime:
-        Copy the scalars which have been updated in wp back to exch
-        Leaving all the other scalar members unchanged
-     */
-     exch->totpot = wp->totpot;
-     exch->virial = wp->virial;
+    /* Number of bytes remaining in the input/output buffers */
+    enum { IREM=IBUFSZE-(sizeof (argbuf_t[2])),
+           OREM=OBUFSZE-(sizeof (argbuf_t[1]))   };
 
-     /* ...then DMA the updated exch_t */
-     /* DMA64(exch, (sizeof (*exch)), exch_ea, tag, MFC_PUT_CMD); */
-     mdma64(exch, exch_ea,  exch_out_sze,  tag, MFC_PUT_CMD);
+    /* Tag/mask for short DMA of controlblock (exch_t) */
+    enum { cbtag=(unsigned)5          };
+    enum { cbmsk=(unsigned)(1<<cbtag) };
+
+    /* First get the controll block (exch_t) from ea */
+    dma64(exchin, ea,  (sizeof (argbuf_t)),  cbtag, MFC_GET_CMD)
+    wait_dma(cbmsk,  MFC_STATUS_UPDATE_ALL);
+
+    /* Now start creating the work package */
+    start_create_wp(pexchin,
+                    ((argbuf_t*)ibuf)+2, IREM,  ((argbuf_t*)obuf)+1, OREM,
+                    itag, pwp);
 }
 
 
 
 
-static int workloop(unsigned const* const ea) {
+static void init_put(void* obuf,  unsigned const* oea, unsigned otag)
+{
+    /* The exch to be DMAed out is the first element of output buffer */
+    exch_t* pexchout = (exch_t*)obuf;
 
-    /* Some tags used in the main routine to DMA workpackages/control blocks
-       Tags > 2 will be used in order not to interfer with DMAs initiated
-       in calc_wp_direct
-     */
+    /* DMA back the force (LS address is stored in exch.pos_ea[0]) */
+    mdma64((void*)(pexchout->pos_ea[0]), pexchout->force_ea,
+           uiceil16((pexchout->n2) * sizeof(float[4])),
+           otag, MFC_PUT_CMD
+          );
 
-    /* Input tags */
-    enum { itag0=3u,    itag1=4u    };
-    /* Output tags are the same as input tags */
-    enum { otag0=itag0, otag1=itag1 };
-    /* Control block tag */
-    enum { cbtag=5u };
-
-    /* The corresponding masks */
-    enum { imsk0=1u<<itag0, imsk1=1u<<itag1,
-           omsk0=1u<<otag0, omsk1=1u<<otag1,
-           cbmsk=1u<<cbtag };
-
-
-
-    /* wp_t or exch_t are buffered here */
-    argbuf_t ALIGNED_(128, argbuf0), ALIGNED_(128, argbuf1);
-
-    /* Buffers for the results */
-    unsigned char ALIGNED_(128,resbuf0[17*Ki]), ALIGNED_(128, resbuf1[1*Ki]);
-
-
-    /* Number of argument bytes which must be DMAed in.. */
-    unsigned const arg_in_sze = uiceil128(sizeof (exch_t));
-    /* ..and out */
-    unsigned const arg_out_sze = uiceil128(
-                                    uimax(MEMB_LAST_POS(*((exch_t*)&argbuf0), totpot),
-                                          MEMB_LAST_POS(*((exch_t*)&argbuf0), virial)
-				      )
-                                 );
-
-
-    for(;;) {
-
-       /* Buffer memory for DMAs (allocated "dynamically" from the following
-          array) initiated by calc_wp */
-       unsigned char ALIGNED_(128, calc_temp[90*Ki]); 
-
-       /* Command (read form inbox) */
-       unsigned mbcmd;
-
-        /* Extra wp's are needed as only exch_t are passed which are
-           not usable directly */
-        wp_t wp0, wp1;
-
-        /* EAs & sizes of the results, which at the moment is 
-          the force vector only */
-        enum { Nres=1u };
-        unsigned res_ea[Nres<<1u], res_sze[Nres];
-
-
-
-
-
-        /* Wait for signal from PPU */
-        if ( EXPECT_FALSE(SPUEXIT == (mbcmd = spu_read_in_mbox())) ) {
-  	    return 0;
-        }
-
-
-
-
-        /* Fetch exch controll block via DMA & wait for it to complete */
-        mdma64(argbuf0, ea, arg_in_sze,  cbtag,  MFC_GET_CMD);
-        spu_writech(MFC_WrTagMask,  cbmsk);
-        spu_mfcstat(MFC_TAG_UPDATE_ALL);
-
-        /* Now, given the exch, start DMAing the array memebers in wp */
-        start_create_wp(((exch_t const*)argbuf0),
-                        calc_temp, (sizeof calc_temp),
-                        resbuf0,   (sizeof resbuf0),
-                        itag0,
-                        &wp0,  res_ea, res_sze);
-
-
-
-
-        /* Wait for for inbound DMA */
-        spu_writech(MFC_WrTagMask,  imsk0);
-        spu_mfcstat(MFC_TAG_UPDATE_ALL);
-
-
-        /* Debugging output */
-        /* fprintf(stdout, "Got wp k=%d\n", wp0.k);  fflush(stdout); */
-
-        /* The main work to be done. */
-        calc_wp(&wp0);
-
-
-        /* DMA results back to main memory  */
-        start_DMA_results(ea, arg_out_sze,  &wp0, ((exch_t*)&argbuf0),
-                          res_sze[0],  otag0
-                         );
-
-
-        /* Wait for outbound DMA (including the DMA of the forces initiated
-           in calc_wp) */
-        spu_writech(MFC_WrTagMask, omsk0);
-        spu_mfcstat(MFC_TAG_UPDATE_ALL);
-
-
-        /* Done calculating & transferring wp */
-        spu_write_out_mbox(WPDONE1);
-
-    }
-
-
-    return 1;
+    /* DMA back the exch_t containing virial & energy */
+    dma64(pexchout, oea,  (sizeof (argbuf_t)),  otag, MFC_PUT_CMD);
 }
 
+
+
+static void wrk(void* ibuf, void* obuf,  unsigned otag)
+{
+   /* The workpackage is located in input buffer followed by the input exch */
+   wp_t*         const pwp = (wp_t*)ibuf;
+   exch_t const* const pin = (exch_t*)(((argbuf_t)ibuf)+1);
+
+   /* Output exch_t is the first element in output buffer 
+      (followed by the forces)                      */
+   exch_t*       const pout = (exch_t*)obuf;
+
+
+
+   /* The main work to be done */
+   calc_wp(pwp);
+
+
+   /* Copy some members from input buffers (exch & wp) */
+   /* The scalars calculated by calc_wp */
+   pout->totpot = wp->totpot;
+   pout->virial = wp->virial;
+
+   /* Serial number */
+   pout->k      = wp->k;
+
+   /* n2 is also needed as it determines the length of the force array 
+      to be DMAed back */
+   pout->n2     = wp->n2;
+
+   /* Also copy EA of force */
+   pout->force_ea[0] = pin->force_ea[0];
+   pout->force_ea[1] = pin->force_ea[1];
+
+   /* Store LS pointer to force as unsigned in exch.pos_ea[0] */
+   pout->pos_ea[0] = (unsigned)(wp->force);
+}
 
 
 
 #endif /* CBE_DIRECT */
+
+
+
+
+
+/* Double bufferd workloop for list of given eas */
+static int workloop_ea(/* List of n input & output EAs */
+                       unsigned const* const ineas,
+                       unsigned const* const outeas,
+                       unsigned const n,
+                       /* Input/output buffers */
+                       void* const ib0, void* const ib1,
+                       void* const ob0, void* const ob1,
+                       /* Functions to get, to process and to write back data */
+                       void (* const getf)(void* ibuf, void* obuf,
+                                           unsigned const* iea, unsigned it),
+                       void (* const wrkf)(void* ibuf, void* obuf, unsigned ot),
+                       void (* const putf)(void* obuf, unsigned const* oea, unsigned ot)
+		      )
+{
+    /* DMA Tags/masks */
+    enum { t0=(unsigned)0,       t1=(unsigned)1       };
+    enum { m0=(unsigned)(1<<t0), m1=(unsigned)(1<<t1) };
+    enum { m01=(unsigned)(m0|m1) };
+
+
+
+    /* Number of WPs remaining to be DMAed in, number of WPs done */
+    register unsigned nrem  = n;
+    register unsigned ndone = 0;
+
+    /* Pointer to eff. addr. pairs */
+    register unsigned const* iea0 = ineas;
+    register unsigned const* iea1 = iea0+2;
+    register unsigned const* oea0 = outeas;
+    register unsigned const* oea1 = oea0+2;
+
+    /* As we use b0 & b1 for DMA, we may assume that they are (at least)
+       16-byte aligned. */
+
+
+    /* Initial DMA to buffer 0 (if there are WPs remaining) */
+    if ( EXPECT_TRUE_(nrem>0) ) {
+        getf(ib0,ob0,  iea0,t0);
+        --nrem;
+    }
+    else {
+        /* Return right now, if there are no WPs at all */
+        return 0;
+    }
+
+    for(;;) {
+        /* Stride for walking thru EA list  */
+        enum { eastride=((unsigned)(2*2)) };
+
+
+        /* Init DMA to buffer 1, if there are WPs remaining */
+        if ( EXPECT_TRUE_(nrem>0) ) {
+           getf(ib1,ob1, iea1,t1);
+           --nrem;
+        }
+
+        /* Wait for input and ouput buffers 0 to be available */
+        wait_dma(m0, MFC_TAG_UPDATE_ALL);
+        wrkf(ib0,ob0,        t0);
+        putf(ob0,      oea0, t0);
+
+        /* All WPs done? */
+        if ( EXPECT_FALSE_(++ndone == n) ) {
+            break;
+        }
+
+        /* Next EAs for buffer 0 */
+  	iea0+=eastride;
+        oea0+=eastride;
+
+        /* Again, init DMA to buffer 0, if there are WPs remaining
+         */
+        if ( EXPECT_TRUE_(nrem>0) ) {
+  	    getf(ib0,ob0, iea0,t0);
+            --nrem;
+        }
+
+        /* Wait for, process & start DMAing back buffer 1*/
+        wait_dma(m1, MFC_TAG_UPDATE_ALL);
+        wrkf(ib1,ob1,       t1);
+        putf(ob1,     oea1, t1);
+
+        /* All WPs done? */
+        if ( EXPECT_FALSE_(++ndone == n) ) {
+  	   break;
+        }
+
+        /* Next EA for buffer 1 */
+        iea1+=eastride;
+        oea1+=eastride;
+    }
+
+    /* There may be still some (outbound) DMA which is not yet completed */
+    wait_dma(m01, MFC_TAG_UPDATE_ALL);
+
+    return 0;
+}
+
+
+
+
+static int workloop(unsigned const* const ea0,
+                    void* const b, unsigned const bsze,
+                    void (* const getf)(void* buf, unsigned sze,
+                                        unsigned const* ea, unsigned it),
+                    void (* const wrkf)(void* buf, unsigned sze,
+                                        unsigned it, unsigned ot),
+                    void (* const putf)(void* buf, unsigned sze,
+                                        unsigned const* ea, unsigned ot)
+     )
+{
+    /**/
+    for (;;) {
+        /* Tag & mask */
+        enum { itag=((unsigned)0),          otag=((unsigned)1) };
+        enum { imsk=((unsigned)(1u<<itag)), omsk=((unsigned)(1u<<otag)) };
+
+        /* result from inbox (command or number of wps to be processed) */
+        unsigned ibx;
+
+        /* Wait for message from PPU */
+        if ( EXPECT_FALSE_(SPUEXIT == (ibx = spu_read_in_mbox())) ) {
+  	    break;
+        }
+
+        getf(b,bsze,  ea0, itag);
+        wait_dma(imsk, MFC_TAG_UPDATE_ALL);
+
+        wrkf(b,bsze, itag,otag);
+
+        putf(b,bsze, ea0, otag);
+	wait_dma(omsk, MFC_TAG_UPDATE_ALL);
+
+        /* Done calculating & transferring wp */
+        spu_write_out_mbox(WPDONE1);
+    }
+
+    return 0;
+}
+
+
+
+
+
+
 
 
 
@@ -458,7 +538,7 @@ static void start_create_pt(void* const pbuf, unsigned const szebuf,
      unsigned const nszetot = 4 * nelem * (sizeof (flt[4]));
 
      /* Enough memory available? */
-     if ( EXPECT_TRUE(szebuf>=nszetot) ) {
+     if ( EXPECT_TRUE_(szebuf>=nszetot) ) {
          /* Start DMAing the memory pointed to by pt.r2cut to LS, also getting data
             for lj_sig,... which follows after that in main mem. */
 
@@ -486,8 +566,7 @@ static void start_create_pt(void* const pbuf, unsigned const szebuf,
 
 
 /* Start initialization (pt only, at the moment) */
-static void start_init(unsigned const* const envea,
-                       unsigned const tag, unsigned const cbtag)
+static void start_init(unsigned const* const envea, unsigned const itag)
 {
     /* Buffer for env. data */
     static unsigned char ALIGNED_(16, envdata[300]);
@@ -496,12 +575,11 @@ static void start_init(unsigned const* const envea,
     envbuf_t ALIGNED_(16, envbuf);
 
     /* 1st, DMA the control block containing the pointers */
-    mdma64(&envbuf,  envea, (sizeof envbuf),  cbtag, MFC_GET_CMD);
-    spu_writech(MFC_WrTagMask, (1u<<cbtag));
-    spu_mfcstat(MFC_TAG_UPDATE_ALL);
+    mdma64(&envbuf,  envea, (sizeof envbuf),  itag, MFC_GET_CMD);
+    (void)wait_dma((1u<<itag), MFC_TAG_UPDATE_ALL);
 
     /* Start DMA of pt */
-    start_create_pt(envdata, (sizeof envdata), ((env_t*)&envbuf), &pt,  tag);
+    start_create_pt(envdata, (sizeof envdata), ((env_t*)&envbuf), &pt,  itag);
 }
 
 
@@ -514,51 +592,112 @@ static void start_init(unsigned const* const envea,
 
 
 
+/* Make EA list in eas (npairs elements),
+   with initial value eastart
+*/
+static void arg_eas(unsigned const* const eastart,
+                    unsigned long long const stride64,
+                    unsigned* eas, unsigned const npairs)
+{
+    /* Number of pairs remaining */
+    register unsigned k=npairs;
+  
+    /* Treat 32-bit pairs as 64bit words */
+    typedef unsigned long long T64;
+    register T64 cur64 = *((T64 const*)eastart);
+    register T64* p64 = (T64*)eas;
+
+    /**/
+    for (  ;      (k>0);     --k, ++p64, cur64+=stride64  ) {
+        (*p64)=cur64;
+    }
+}
 
 
 
 
 
 
-
-
-
-
-
-/* Type used for main argument/env EA */
+/* Type of effective address of argument */
 typedef union argea {
-    ui64_t   ea64;
     unsigned ea32[2];
+    ui64_t   ea64;
 } argea_t;
 
 
 /* argp "points" to an array of lengt N_ARGBUF of argbuf_t */
 int main(ui64_t const id, argea_t const argp, argea_t const envp)
 {
-    /* Some tags for init DMA */
-    enum { cbtag=5u, datatag=0u };
+    /* (Working) buffer memory */
+    static argbuf_t ALIGNED_(128, ibuf0);
+    static argbuf_t ALIGNED_(128, ibuf1);
+    static unsigned char ALIGNED_(128, obuf0[DIRECT_OBUFSZE]);
+    static unsigned char ALIGNED_(128, obuf1[DIRECT_OBUFSZE]);
 
-    /* Some type info */
-    /* fprintf(stdout, "Sizes on SPU:\n");  sizeinfo(printf);   fflush(stdout);  */
+    /* Buffer effective addresses: An even number (at least N_ARGBUF) of pairs
+       of unsigneds */
+    unsigned int ALIGNED_(8, eabuf[N_ARGBUF<<1u]);
 
 
-    /* Set decrementer to max. value */
+
+    /* Set decrementer to max. value for timing */
     spu_writech(SPU_WrDec, (~(0u)));
 
 
-    /* Fetch env and start creating the corresponding pt_t (Using DMA) */
-    start_init(envp.ea32, datatag, cbtag);
-    spu_writech(MFC_WrTagMask,  1u<<datatag);
-    spu_mfcstat(MFC_TAG_UPDATE_ALL);
 
+
+    /* Fetch env and start creating the corresponding pt_t (Using DMA) */
+    start_init(envp.ea32, 0);
+
+    /* Set EAs of the buffers in main memory */
+    arg_eas(argp.ea32,  (sizeof(argbuf_t)), eabuf,N_ARGBUF);
+
+    /* Wait for init. DMA */
+    (void)wait_dma((1u<<0u), MFC_TAG_UPDATE_ALL);
 
     /* fprintf(stdout, "Starting work loop on SPU\n"); fflush(stdout); */
-    workloop(argp.ea32);
+
+    /*
+    workloop(argp.ea32,  &buf0, (sizeof buf0),
+#if defined(CBE_DIRECT)
+             init_get_direct, wrk_direct, init_put_direct
+#else
+             init_get,        wrk,        init_put
+#endif
+            );
+    */
+
+
+    for (;;) {
+        /* Read mailbox */
+        unsigned const offs = spu_read_in_mbox();
+        unsigned const narg = spu_read_in_mbox();
+
+        /* Use the EAs staring at offs*2 for input/output */
+        unsigned const* const eas = eabuf + (offs<<1u);
+
+        /* fprintf(stdout, "SPU %u: %u arguments at offset %u\n", ((unsigned)id), narg, offs); fflush(stdout); */
+
+        workloop_ea(eas,eas, narg,
+                    &ibuf0, &ibuf1,    &obuf0, &obuf1,
+#if defined(CBE_DIRECT)
+             init_get_direct, wrk_direct, init_put_direct
+#else
+             init_get,        wrk,        init_put
+#endif
+                   );
+
+	spu_write_out_mbox(offs);
+    }
+
+
 
     /* We should not arrive here as we only leave the main program if
        SPUEXIT is passed via mbox */
     return 1;
 }
+
+
 
 
 

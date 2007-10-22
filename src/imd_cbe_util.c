@@ -423,6 +423,8 @@ int (pt_out)(int (*of)(char const[],...), pt_t const* const e)
 #include <spu_mfcio.h>
 
 
+
+
 /* 16k are maximum which may be DMAed in one call to spu_mfc... */
 enum { DMAMAX    = (unsigned)(16*1024)         };
 enum { DMAMAXull = (unsigned long long )DMAMAX };
@@ -439,7 +441,7 @@ void mdma64_rec(register unsigned char* const p,
     register unsigned const lo = (unsigned)lea;
 
     /* Only one DMA needed? End recusrion */
-    if ( EXPECT_TRUE(sze<=DMAMAX) ) {
+    if ( EXPECT_TRUE_(sze<=DMAMAX) ) {
         spu_mfcdma64(p, hi,lo, sze,  tag,cmd);
         return;
     }
@@ -467,7 +469,7 @@ void mdma64_iter(register unsigned char* p,
         register unsigned const lo = (unsigned)lea;
 
         /* We're done if not more than maxsze bytes are to be xfered */
-        if ( EXPECT_TRUE(remsze<=DMAMAX) ) {
+        if ( EXPECT_TRUE_(remsze<=DMAMAX) ) {
   	   spu_mfcdma64(p, hi,lo,  remsze, tag, cmd);
  	   return;
         }
@@ -777,64 +779,56 @@ spe_spu_control_area_p* const cbe_spucontrolarea = contrarea;
 
 
 
-/* Helper function which converts pointers to EAs */
 
-#if defined(PTR2EA)
-static INLINE_ unsigned* cpyea(void const* const ptr,
-                               unsigned* const dfirst, unsigned* const dlast
-                              )
-{
-    PTR2EA(ptr,dfirst);
-    return dfirst;
-}
+
+
+
+
+
+
+static INLINE_ void ptr2ea(register void const* const ptr,
+                           register unsigned* const ea) {
+    /* Pointer type used */
+    typedef void const* Tptr;
+
+#if   (32 == PPU_PTRBITS_)
+    *ea=0u;
+    *((Tptr*)(ea+1)) = ptr;
+#elif (64 == PPU_PTRBITS_)
+    *((Tptr*)ea) = ptr;
 #else
-static unsigned* cpyea(void const* const ptr,
-                       unsigned* dstfrst, unsigned* dstlast
-                      )
-{
-    /* Last unsigned in ptr. representation */
-    unsigned const* const srcfrst = (unsigned const*)(&ptr);
-    unsigned const*       srclast = srcfrst + ((sizeof ptr)/(sizeof *dstfrst));
-
-
-    /* Copy from source */
-    while (  (dstfrst!=dstlast)  &&   (srcfrst!=srclast) ) {
-        *(--dstlast)=*(--srclast);
-    }
-    /* Zero fill */
-    while ( dstfrst != dstlast ) {
-         *(--dstlast)=0u;
-    }
-
-
-    /* Return ptr. to beginning of buffer */
-    return dstlast;
-}
+    /* Could not convert */
+    ea[0]=ea[1]=0;
 #endif
+}
 
-
-
-
-/* Copy pointer and non-pointer members as well as global variables */
-/* In the following dst must be something link structure. or pointer-> 
-   member must be the name of a member of the corresponding struct. */
-#define CPY(src,dst,member)         ((dst).member)=((src).member)
-#define CPYMEMBPTR(src,dst,member)  (cpyea(((src).member), AFRST((dst).member), ALAST((dst).member)))
-#define CPYGLB(dst,global)          (((dst).global)=global)
-#define CPYGLOBPTR(dst, global)     (cpyea(global, AFRST((dst).global),ALAST((dst).global)))
+/**/
+static INLINE_ void* ea2ptr(unsigned const* const ea) {
+    typedef void* Tptr;
+#if   (32 == PPU_PTRBITS_)
+    return *((Tptr*)(ea+1));
+#elif (64 == PPU_PTRBITS_)
+    return *((Tptr*)ea);
+#else
+    /* Could not convert */
+    return 0;
+#endif
+}
 
 
 /* Create env_t from pt_t */
 env_t* (create_env)(pt_t const* const p, env_t* const e)
 {
      /* The int member may just be copied */
-     CPY(*p,*e, ntypes);
+     e->ntypes = p->ntypes;
+
 
      /* The ptrs have to be cast to effective addresses */
-     CPYMEMBPTR(*p,*e, r2cut); 
-     CPYMEMBPTR(*p,*e, lj_sig);
-     CPYMEMBPTR(*p,*e, lj_eps);
-     CPYMEMBPTR(*p,*e, lj_shift);
+     ptr2ea(p->r2cut,    e->r2cut);
+     ptr2ea(p->lj_sig,   e->lj_sig);
+     ptr2ea(p->lj_eps,   e->lj_eps);
+     ptr2ea(p->lj_shift, e->lj_shift);
+
 
      /* Return ptr. to the env_t */
      return e;
@@ -845,45 +839,40 @@ env_t* (create_env)(pt_t const* const p, env_t* const e)
 /* Create exch_t *e from wp_t *wp  */
 exch_t* (create_exch)(wp_t const* const wp, exch_t* const e)
 {
-#if defined(CBE_DIRECT)
+#if defined(CBE_DIRECT)  /* "Direct" */
     /* "Direct case", that is wp_t==exch_t, such that we can just
         copy/assign the members */
    (*e) = (*wp);
-#else
+#else /* "Indirect" */
     /* Some types may be copied 1:1 */
-    CPY(*wp,*e, k);
-    CPY(*wp,*e, n1);
-    CPY(*wp,*e, n1_max);
-    CPY(*wp,*e, n2);
-    CPY(*wp,*e, n2_max);
-    CPY(*wp,*e, len);
-    CPY(*wp,*e, len_max);
+    e->k       = wp->k;
 
-    /*
-    CPY(*wp,*e, totpot);
-    CPY(*wp,*e, virial);
-    */
+    e->n1      = wp->n1;
+    e->n1_max  = wp->n1_max;
+
+    e->n2      = wp->n2;
+    e->n2_max  = wp->n2_max;
+
+    e->len     = wp->len;
+    e->len_max = wp->len_max;
+
+    /* Do not copy totpot & virial */
 
     /* Pointers have to be cast to integers (ea_t), asserting that they
        are aligned (at least) to a byte boundary  */
-    CPYMEMBPTR(*wp,*e, pos);
-    CPYMEMBPTR(*wp,*e, force);
-    CPYMEMBPTR(*wp,*e, typ);
-    CPYMEMBPTR(*wp,*e, ti);
-    CPYMEMBPTR(*wp,*e, tb);
+    ptr2ea(wp->pos,    e->pos)
+    ptr2ea(wp->force,  e->force)
+    ptr2ea(wp->typ,    e->typ);
+    ptr2ea(wp->ti,     e->ti);
+    ptr2ea(wp->tb,     e->tb);
+
 #endif
     /* Return ptr. to the exch_t */
     return e;
 }
 
 
-/* Copy pointer and non-pointer members as well as global variables */
-/* In the following dst must be something link structure. or pointer-> 
-   member must be the name of a member of the corresponding struct. */
-#undef CPY
-#undef CPYMEMBPTR
-#undef CPYGLB
-#undef CPYGLOBPTR
+
 
 
 

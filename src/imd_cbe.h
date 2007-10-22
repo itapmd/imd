@@ -30,104 +30,67 @@ extern "C" {
 #define spu_const
 #endif
 
-#if ! defined(INLINE_)
-#    if defined(__cplusplus)
-#         define INLINE_ inline
-#    else
-#        if defined (__GNUC__)
-#             define INLINE_ __inline
+
+
+
+
+/* Inlining */
+#if defined(__cplusplus)  /* C++ */
+#    define INLINE_ inline
+#else                     /* C */
+#    if defined (__GNUC__) /* gcc */
+#        define INLINE_ __inline
+#    elif (defined(__IBMC__) || defined(__IBMCPP__)) /* xlc */
+#        if defined(__IBM_GCC_INLINE)
+#            define INLINE_ __inline__
 #        else
-#             define INLINE_ __inline__
-#        endif /* __GNUC__ */
-#    endif  /* C++  */
-#endif /* INLINE_ */
+#            define INLINE_ __inline
+#        endif
+#    else
+#        error "INLINE_ macro empty"
+#        define INLINE_
+#    endif
+#endif
+
 
 /* The ALIGNED_(b,v) macro is used to align
    varibale v to a boundary specified by b.
    E.g. Use it to specify 16-byte alignment (which is needed for DMA)
    as follows:   buffer_type ALIGNED_(16, buf);
  */
-
-/* __attribute__ is define on both PPU & SPU if gcc is used */
-#if defined(__GNUC__)
-#    define HAVE_ATTRIBUTE_ALIGNED
-#endif
-
-/* Some attributes used to specify alignment */
-#if defined(HAVE_ATTRIBUTE_ALIGNED)
-#   /* Define ALIGNED to used the gcc attribute if it is not already defined */
-#   if ! defined(ALIGNED_)
-#       define ALIGNED_(alg, var) var __attribute__((aligned(alg)))
-#   endif
+#if defined(__GNUC__)  /* gcc */
+#   define ALIGNED_(alg,var) var __attribute__((aligned(alg)))  
+#elif (defined(__IBMC__) || defined(__IBMCPP__))  /* xlc */
+#   define ALIGNED_(alg,var) var __attribute__((aligned(alg)))
 #else
-#  /* Just define ALIGNED to be the variable */
-#  /* a NOOP */
-#  define ALIGNED_(alg, var) var
+#   /* Just define ALIGNED to be the variable */
+#   /* a NOOP */
+#   error "ALIGNED_ macro was defined, but may not align objects."
+#   define ALIGNED_(alg,var) var
 #endif
 
 
 
 
 /* Some branch prediction macros */
-
-/* spu-gcc has __builtin_expect */
-#if defined(__SPU__)
-#     define HAVE_BUILTIN_EXPECT
-#endif
-
-/* Define EXPECT_TRUE & EXPECT_FALSE if they have not yet been */
-/* defined somewhere else */
-
-/* Use the following macros in if-statements */
-#if defined(HAVE_BUILTIN_EXPECT)
-#   if ! defined(EXPECT)
-#       define EXPECT(x,v)   __builtin_expect((x),(v))
-#   endif
+#if defined (__GNUC__) /* gcc */
+#    define EXPECT_(x,v)  __builtin_expect((x), (v))
+#elif (defined(__IBMC__) || defined(__IBMCPP__) )  /* xlc */
+#    define EXPECT_(x,v)  __builtin_expect((x), (v))
 #else
-#   /* The macros are just replicate the argument if __builtin_expect */
-#   /*  is not available */
-#   if ! defined(EXPECT)
-#        define EXPECT(x,v)  (x)
-#   endif
-#endif
-
-/* Define EXPECT_TRUE/FALSE in terms of EXPECT defined above */
-# if ! defined(EXPECT_TRUE)
-#    define EXPECT_TRUE(x)   EXPECT((x), 1)
-#endif
-#if ! defined(EXPECT_FALSE)
-#    define EXPECT_FALSE(x)  EXPECT((x), 0)
+#    error "EXPECT macro was defined but will not have branch predicting effect"
+#    define EXPECT_(x,v)  (x)
 #endif
 
 
-
-
-
-/* Some casts (as macros).  Use with care and use sparingly!
-   CAST(t,x) casts expression x to type t.
-   ACAST(t,x) casts the address of x to a pointer to t (that is t*)
- */
-#if defined (__cplusplus)
-#    define  CAST(typ, expr)  (reinterpret_cast<typ> (  expr))
-#    define ACAST(typ, expr)  (reinterpret_cast<typ*>(&(expr)))
-#else
-#    define  CAST(typ, expr)  ((typ )  (expr))
-#    define ACAST(typ, expr)  ((typ*)(&(expr)))
-#endif
+#define EXPECT_TRUE_(x)   EXPECT_((x), 1)
+#define EXPECT_FALSE_(x)  EXPECT_((x), 0)
 
 
 
 
 
-/* Some utility "functions" for arrays defined as macros  */
-/* Number of elements in array a (May be evaluated at compile time) */
-#define ASIZE(a) ((sizeof (a))/(sizeof ((a)[0])))
 
-/* Get pointer (itartor) to first element and the 
-   past-the-end-iterator of the array a
- */
-#define AFRST(a) (&((a)[0]))
-#define ALAST(a) ((a)+ASIZE(a))
 
 
 
@@ -315,11 +278,6 @@ typedef struct env {
     /* Each of the following "points" to arrays with
        4*ntypes*ntypes items of type flt */
     ea_t r2cut, lj_sig, lj_eps, lj_shift; 
-
-
-
-    /* Padding */
-    unsigned char pad[12];
 } env_t;
 
 
@@ -333,11 +291,25 @@ enum {
 
 
 
-/* The main calculation routine(s) */
+/* The SPU work scheduling routines */
 void do_work_spu(int const flag);
+
+
+#if defined(CBE_DIRECT)
+/*
+   mkf is either make_wp or make_tb
+   stf is either store_wp or store_tb
+ */
+void do_work_spu_mbuf(void (* const mkf)(int nr, wp_t* pwp),
+                      void (* const stf)(wp_t const* const pwp));
+#endif
+
+
+
+
+/* The main calculation routine(s) */
 void calc_wp(wp_t *wp);
 void calc_tb(wp_t *wp);
-
 
 #if defined(CBE_DIRECT)
 void calc_wp_direct(wp_t*,
@@ -419,15 +391,33 @@ int (wp_out)(int (*of)(char const[],...), wp_t const* const e);
    There shall be N_ENVBUF environment buffers which are shared by all
    SPU threads. All SPU shall receive the same environment address
  */
-enum { N_ARGBUF=2, N_ENVBUF=2 };
+enum { N_ARGBUF=32u, N_ENVBUF=2u };
 
-/* Buffer padding (must be a multiple of 16, should be 128) */
-enum { BUFPAD  = 128u };
-enum { BUFPAD1 = BUFPAD-1u };
+/* Buffer padding (must be a multiple of 16, should be a multiple 128) */
+enum { BUFPAD = 128u };
 
-/* The types used as buffers for arguments and environment */
-typedef unsigned char argbuf_t[(sizeof(exch_t)+ BUFPAD1) & (~BUFPAD1)];
-typedef unsigned char envbuf_t[(sizeof(env_t) + BUFPAD1) & (~BUFPAD1)];
+
+
+/* Large enough for t1 or t2 */
+#define U(t1,t2)    union { t1 data1; t2 data2; }
+
+/* Large enough for type t but at least s byte large */
+#define Umin(t1,s)  union { t1 data1; unsigned char padding[(s)]; }
+
+
+/* Large enough for type t, size rounded up to next boundary of p (padding)
+   p must be a multiple of 2
+ */
+#define Upad(t1,p)  union { t1 data1; unsigned char padding[((sizeof(t1)) + ((p)-1)) & (~((p)-1))]; }
+
+
+
+typedef Upad(Umin(U(wp_t, exch_t), BUFPAD),  BUFPAD)  argbuf_t;
+typedef Upad(Umin(U(pt_t, env_t),  BUFPAD),  BUFPAD)  envbuf_t;
+
+#undef U
+#undef Umin
+#undef Upad
 
 
 #if defined (__cplusplus)
@@ -460,6 +450,15 @@ typedef unsigned char envbuf_t[(sizeof(env_t) + BUFPAD1) & (~BUFPAD1)];
 #if defined (__cplusplus)
 extern "C" {
 #endif
+
+
+
+/* Wait for DMA specified by mask m using type for update */
+static INLINE_ unsigned wait_dma(unsigned const m, unsigned const type) {
+    spu_writech(MFC_WrTagMask,   m);
+    spu_writech(MFC_WrTagUpdate, type);
+    return spu_readch(MFC_RdTagStat);
+}
 
 
 /* DMA more than 16K using multiple DMAs */
@@ -570,6 +569,32 @@ extern "C" {
 
 
 
+/* Pointer size in bits (defined as a macro such that it may be
+   used further down in an #if directive) */
+#if defined(__GNUC__)  /* gcc */
+#   if (64 == __WORDSIZE)
+#       define PPU_PTRBITS_ 64
+#   elif (32 == __WORDSIZE)
+#      define PPU_PTRBITS_ 32
+#   else
+#      error "Can't determine pointer size"
+#   endif
+#elif (defined(__IBMC__) || defined(__IBMCPP__))  /* xlc */
+#   if defined(__64bit__)
+#        define PPU_PTRBITS_ (8*8) 
+#   else
+#        define PPU_PTRBITS_ (4*8)
+#   endif
+#else
+#    error "Can't determine pointer size"
+#endif
+
+/* The same value as above as a compile time constant */
+enum { PPU_PTRBITS = (unsigned)(PPU_PTRBITS_) };
+
+
+
+
 /* PTR2EA converts ptr to an effective address, and places it at *ea */
 
 /* Assuming a pointer is 32 bits wide only:
@@ -578,7 +603,7 @@ extern "C" {
    32 bits wide each.
    The 1st component is set to zero, the pointer is copied to the second one
 */
-#if 32 == __WORDSIZE
+#if (32 == PPU_PTRBITS_)
 #  /* Warning: ea is used twice inside the macro! */
 #  define PTR2EA(ptr,ea) { *(ea)=0;  *((void const**)((ea)+1)) = (void const*)(ptr); }
 #  define EA2PTR(ea)     (*((void**)((ea)+1)))
@@ -588,7 +613,7 @@ extern "C" {
    ea must point to an object which is (at least) 64 bits wide
    The pointer is just copied there.
 */
-#if 64 == __WORDSIZE
+#if (64 == PPU_PTRBITS_)
 #  define PTR2EA(ptr,ea) {  *((void const**)(ea)) = (void const*)(ptr); }
 #  define EA2PTR(ea)     (*((void**)(ea)))
 #endif

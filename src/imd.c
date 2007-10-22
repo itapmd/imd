@@ -100,6 +100,8 @@ int main(int argc, char **argv)
   else {
     fprintf(stdout, "CBE info: %d SPUs are used.\n", num_spus);
   }
+
+  fprintf(stdout, "CBE info: Pointers on PPU are %u bits wide\n", ((unsigned)PPU_PTRBITS));
 #endif  /* CBE */
 
 #ifdef TTBP

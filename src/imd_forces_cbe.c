@@ -221,6 +221,17 @@ static void store_tb(wp_t const* const wp)
 
   if (wp->flag<0) error("error flag in store_tb");
 
+
+  /*
+  fprintf(stdout,
+          "store_tb:\n"
+          "flag = %d\n"
+          "k    = %d\n",
+  	     wp->flag, wp->k
+         );
+  fflush(stdout);
+  */
+
   for (m=1; m<NNBCELL; m++) {
 #ifdef ON_PPU
     off = (int) (wp->cell_dta[m].tb       - wp->cell_dta[m-1].tb      );
@@ -274,10 +285,16 @@ static void calc_tb_spu(void)
   len_max2 = 0;
   last_nbl_len = 0;
 
-  do_work_spu(1);  /* flag 1: calculate neighbor tables */
+  do_work_spu_mbuf(make_tb, store_tb);
+
+  /* flag 1: calculate neighbor tables */
+  /* do_work_spu(1);  */
+
   /*
-  printf("n_max = %d, len_max = %d, len_max2 = %d\n", 
+  fprintf(stdout,
+         "calc_tb_spu: n_max = %d, len_max = %d, len_max2 = %d\n", 
          n_max, len_max, len_max2);
+  fflush(stdout);
   */
 }
 
@@ -481,11 +498,24 @@ static void make_wp(int k, wp_t *wp)
   int  inc_int = 128 / sizeof(int) - 1, m, n, len;
   int  at_inc  = (2*p->n + inc_int) & (~inc_int);
 
+
   wp->k = k;
   wp->n_max = n_max;      /* allocate for this many atoms     */
   wp->len_max = len_max;  /* allocate for this many neighbors */
   wp->ti_len = at_inc;
   wp->flag = 2;
+
+
+  /*
+  fprintf(stdout,
+          "make_wp (CBE_DIRECT)\n"
+          "k       =  %d\n"
+          "len_max =  %d\n",
+          wp->k, wp->len_max
+         );
+  fflush(stdout);
+  */
+
   for (m=0; m<NNBCELL; m++) {
     n = c->nq[m];
     if (n<0) {
@@ -808,9 +838,189 @@ static void store_wp(wp_t const* const wp)
 
 /******************************************************************************
 *
-*  calc_forces_spu
+*  do_forces_spu
 *
 ******************************************************************************/
+
+/* We need the following masks and shift constants to access the mailbox: */
+enum { OUTMBX_CNT_MASK  = 0x000000ffu,
+       INMBX_CNT_MASK   = 0x0000ff00u,
+       OUTMBX_CNT_SHIFT = 0u,
+       INMBX_CNT_SHIFT  = 8u
+     };
+
+
+
+
+
+static INLINE_ void save_work_buffer(void (* const stf)(wp_t const* const pwp),
+                                     argbuf_t* parg, unsigned n
+                                    )
+{
+     for (  ;   n>0u;   --n, ++parg  ) {
+          (stf)((wp_t const*)parg);
+     }
+}
+
+
+/* "Fill buffer with WPs for the SPU" */
+static INLINE_ unsigned fill_work_buffer(void (* const mkf)(int nr, wp_t* pwp),
+                                         unsigned const nrem, int k,
+                                         argbuf_t* parg, unsigned const bufsze
+                                        )
+{
+    /* Number of WPs to be created */
+    unsigned const ncrea = ((bufsze<nrem) ? bufsze : nrem);
+
+    /* Index */
+    unsigned i=ncrea;
+
+
+    /* Debugging output */
+    /* fprintf(stdout, "Creating %u WPs with k starting at %d\n", ncrea,k);  fflush(stdout);  */
+
+
+    /* Create WPs in buffer */
+    for ( ;       (i>0);      ++parg, --i, ++k ) {
+        mkf(k, ((wp_t*)parg));
+    }
+
+    /* Return number of WPs created */
+    return ncrea;
+}
+
+
+
+
+/* (Slightly generalize) multibuffered version */
+void do_work_spu_mbuf(void (* const mkf)(int nr, wp_t* pwp),
+                      void (* const stf)(wp_t const* const pwp))
+ {
+    /* Half the number of arguments buffers per SPU */
+    enum { NHALF = N_ARGBUF>>1u };
+    enum { NARG_LO=((unsigned)NHALF), NARG_HI=((unsigned)(N_ARGBUF-NHALF)) };
+    enum { OFFS_LO=0u, OFFS_HI=NARG_LO };
+
+    /* Number of elements in "low buffer" (starting at 0) and
+       number of elements in "high buffer" (starting at NHALF) */
+    unsigned  nlo[N_SPU_THREADS_MAX], nhi[N_SPU_THREADS_MAX];
+
+    /* Number of SPUs, indices */
+    register int const ispumax=num_spus;
+    register int ispu, iarg;
+
+    /* Workpackage index (== number of workpackages scheduled) */
+    register int k=0;
+
+    /* Number of WPs done & number of WPs remaining to be scheduled
+       nwp is the initial number of WPs
+     */
+    register unsigned const nwp=ncells;
+    register unsigned ndone=0u, nrem=nwp;
+
+
+
+    /* Initially, all buffers are available, no work has been scheduled to SPUs */
+    for ( ispu=0;   (ispu<ispumax);   ++ispu ) {
+        nlo[ispu]=nhi[ispu]=0u;
+    }
+
+
+
+
+    /* While not all WPs have been completed yet */
+    while ( ndone<nwp ) {
+
+        /* Iterate over all SPUs */
+        for ( ispu=iarg=0;      (ispu<ispumax);     ++ispu, iarg+=N_ARGBUF ) {
+
+            /* Pointers to SPU argument buffers / WP buffers */
+            argbuf_t* const parg = cbe_arg_begin + iarg;
+   
+  	    /* Control area for current SPU, used for mailboxing */
+   	    spe_spu_control_area_p const pctl  = cbe_spucontrolarea[ispu];
+
+
+            /* If there is still work to be scheduled, use current SPU
+               in case it has a free buffer.
+             */
+           
+  	    /* Use lower buffer? */
+   	    if ( (nrem>0u) && (0u==nlo[ispu]) ) {
+ 	        unsigned const ncrea = fill_work_buffer(mkf, nrem,k, parg+OFFS_LO, NARG_LO);
+
+                /* Tell SPU to start working on ncrea WPs at offset 0 */
+                __lwsync();
+                pctl->SPU_In_Mbox = OFFS_LO;
+                pctl->SPU_In_Mbox = ncrea;
+
+                /* Mark low buffer as being filled with ncrea elements */
+                nlo[ispu]=ncrea;
+
+                /* Update */
+                nrem -= ncrea;
+                k    += ncrea;
+
+                /* fprintf(stdout, "Lower buffer for SPU %i filled with %u elements\n", ispu,  ncrea);  fflush(stdout); */
+            }
+
+
+            /* Use higher buffer? */
+            if ( (nrem>0u) && (0u==nhi[ispu]) ) {
+  	        unsigned const ncrea = fill_work_buffer(mkf, nrem,k, parg+OFFS_HI,  NARG_HI);
+
+
+                /* Tell SPU to start working on ncrea WPs at offset NHALF */
+                __lwsync();
+                pctl->SPU_In_Mbox = OFFS_HI;
+                pctl->SPU_In_Mbox = ncrea;
+
+
+		/* Mark high buffer as being filled with ncrea elements */
+		nhi[ispu]=ncrea;
+
+		/* Update */
+		nrem -= ncrea;
+                k    += ncrea;
+
+                /* fprintf(stdout, "Higher buffer for SPU %i filled with %u elements\n", ispu,  ncrea);  fflush(stdout); */
+            }
+
+
+
+	    /* Can we read from Mbox?
+               That is: has SPU finished working on some WP? */
+            if ( 0u != ((pctl->SPU_Mbox_Stat) & OUTMBX_CNT_MASK) ) {
+		/* Read Mbox message which is just the offset */
+                unsigned const spumsg = pctl->SPU_Out_Mbox;
+
+                __lwsync();
+                /*fprintf(stdout, "SPU %d finished buffer at %u\n", ispu,spumsg); fflush(stdout); */
+
+                /* WP in "lower buffer?" */
+                if ( OFFS_LO == spumsg ) {
+		    save_work_buffer(stf, parg+OFFS_LO,  nlo[ispu]);
+		    /* WPs done */
+  		    ndone+=nlo[ispu];
+                    /* Low buffer is free again */
+                    nlo[ispu]=0u;
+                }
+
+                /* WP in "higher buffer"? */
+                if ( OFFS_HI == spumsg ) {
+		   save_work_buffer(stf, parg+OFFS_HI, nhi[ispu]);
+		   /* WPs done */
+  		   ndone+=nhi[ispu];
+                   /* High buffer is free again */
+                   nhi[ispu]=0u;
+                }
+           }
+           
+        }
+    }
+
+}
+
 
 void do_work_spu(int const flag)
 {
@@ -820,16 +1030,11 @@ void do_work_spu(int const flag)
      Writing/reading to the members of the control block struct assume
      that writes and reads to unsigneds are atomic.
   */
-  /* Furthermore, we need the following bit masks: */
-  enum { OUTMBX_CNT_MASK  = 0x000000ffu,
-         INMBX_CNT_MASK   = 0x0000ff00u,
-         OUTMBX_CNT_SHIFT = 0u,
-         INMBX_CNT_SHIFT  = 8u
-       };
 
   /* Some indices */
   int k, kdone, i, ispu;
   int ispumax = num_spus;
+
 
 
   /* The following array keeps track of the states of the SPUs */
@@ -1034,7 +1239,9 @@ void calc_forces(int const steps)
 #ifdef ON_PPU
   calc_forces_ppu(steps); 
 #else
-  do_work_spu(2);  /* flag 2: calculate pair forces */
+  /* flag 2: calculate pair forces */
+  /* do_work_spu(2);   */
+  do_work_spu_mbuf(make_wp, store_wp);
 #endif
 
 #ifdef MPI

@@ -599,9 +599,13 @@ endif
 # Cell Broad Band Engine with IBM XLC compiler (assuming that the XLC
 # compilers are in the $PATH)
 ifeq (cbe-xlc,${IMDSYS})
+  # The spu-timing utility provided by the Cell SDK
+  SPUTIMING=/opt/ibm/cell-sdk/prototype/bin/spu_timing
+
+
   SPUCC       = spuxlc -qlanglvl=extc89 -qflag=w:w -qproto
-  CC_SERIAL   = ppuxlc -qlanglvl=stdc89 -qflag=w:w -qproto -qro  -q32
-  OPT_FLAGS   +=  -O2 -qstrict  -qreport  -qinline -qunroll=yes
+  CC_SERIAL   = ppuxlc -qlanglvl=stdc89 -qflag=w:w -qproto -qro  -qwarn64  -q32
+  OPT_FLAGS   +=  -O2 -qstrict  -qreport  -qinline -qunroll=yes -qlibansi -qipa=noobject
   SPUCFLAGS   =   -O2 -qstrict  -qreport  -qinline -qinline-dma64:mdma64:wait_dma
   EMBEDSPU      = ppu-embedspu -m32
 
@@ -612,13 +616,16 @@ ifeq (cbe-xlc,${IMDSYS})
   PROF_LIBS	+= -g3 -pg
 
   SPULDFLAGS    +=
-  LFLAGS        += 
-  LIBS          += -lspe2
+  LFLAGS        += -qlibansi -qipa
+  LIBS          += -lspe2 -lpthread
 endif
 
 
 # Cell Broad Band Engine with GCC
 ifeq (cbe-gcc,${IMDSYS})
+  # The spu-timing utility provided by the Cell SDK
+  SPUTIMING=/opt/ibm/cell-sdk/prototype/bin/spu_timing
+
   # Use the PPU compiler (ppu-gcc)
   # as main compiler as it defines the __PPU__ macro 
   # The ordinary gcc does not set this macro
@@ -1323,9 +1330,15 @@ endif
 #
 ###########################################################################
 
-# Modified by Frank Pister: Also remove spu related files
 clean:
-	rm -f *.o *.u *~ \#* *.V *.T *.O *.il *.s spu spu.map
+	rm -f *.o *.u *~ \#* *.V *.T *.O *.il
+
+# Remove SPU-related temp. files (e.g. assembler/timing files)
+clean_spu:
+	rm -f spu spu.map spu.s   imd_cbe_util_spu.s  imd_cbe_calc_spu.s   spu.s.timing   imd_cbe_util_spu.s.timing  imd_cbe_calc_spu.s.timing
+
+clean_all: clean clean_spu
+
 
 help:
 	@echo "Usage: gmake imd[_<parallel>][_<option>[_<option>...]]"
@@ -1341,8 +1354,7 @@ socktest:
 
 
 
-# Added by Frank Pister: SPU specific targets for CBE
-
+# SPU specific targets for CBE
 # The variables SPUCXX, SPUCC must be set to the SPU C++ and C compilers
 # e.g. to spu-c++ and spu-cc respectively.
 # SPUCXXFLAGS and SPUCFLAGS are the corresponding flags passed to the
@@ -1360,19 +1372,26 @@ socktest:
 spu.o: spu
 	${EMBEDSPU} hndle_cbe_calc spu spu.o 
 
-spu:  spu.c  imd_cbe.h  imd_cbe_util_spu.o  imd_cbe_calc_spu.s
-	${SPUCC} -o spu ${SPUCFLAGS}  ${SPULDFLAGS}     spu.c  imd_cbe_calc_spu.s  imd_cbe_util_spu.o
+spu:  spu.s  imd_cbe_util_spu.s  imd_cbe_calc_spu.s
+	${SPUCC} -o spu ${SPUCFLAGS}  ${SPULDFLAGS}     spu.s  imd_cbe_calc_spu.s  imd_cbe_util_spu.s
 
 
-# Assembler code (instead of object code) for calc_wp on the SPU
+
+
+
+# Generate sssembler code for some SPU sources
 # This assembler code may be analyzed using the spu-timing tool
 imd_cbe_calc_spu.s: imd_cbe_calc_spu.c imd_cbe.h
 	${SPUCC} -o imd_cbe_calc_spu.s  ${SPUCFLAGS}   -S imd_cbe_calc_spu.c
 
+imd_cbe_util_spu.s: imd_cbe_util.c imd_cbe.h
+	${SPUCC} -o imd_cbe_util_spu.s  ${SPUCFLAGS}    -S imd_cbe_util.c
 
+spu.s: spu.c imd_cbe.h
+	${SPUCC} -o spu.s ${SPUCFLAGS}  -S  spu.c
 
-# Some tools needed on the SPU for the exchange of data
-imd_cbe_util_spu.o: imd_cbe_util.c imd_cbe.h
-	${SPUCC} -o imd_cbe_util_spu.o  ${SPUCFLAGS}    -c imd_cbe_util.c
-
-
+# Timing of SPU assembly code (for profiling purposes)
+spu_timing: spu.s imd_cbe_calc_spu.s imd_cbe_util_spu.s
+	${SPUTIMING} spu.s
+	${SPUTIMING} imd_cbe_calc_spu.s
+	${SPUTIMING} imd_cbe_util_spu.s
