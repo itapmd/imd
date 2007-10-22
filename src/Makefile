@@ -606,7 +606,7 @@ ifeq (cbe-xlc,${IMDSYS})
   SPUCC       = spuxlc -qlanglvl=extc89 -qflag=w:w -qproto
   CC_SERIAL   = ppuxlc -qlanglvl=stdc89 -qflag=w:w -qproto -qro  -qwarn64  -q32
   OPT_FLAGS   +=  -O2 -qstrict  -qreport  -qinline -qunroll=yes -qlibansi -qipa=noobject
-  SPUCFLAGS   =   -O2 -qstrict  -qreport  -qinline -qinline-dma64:mdma64:wait_dma
+  SPUCFLAGS   +=   -O2 -qstrict  -qreport  -qinline -qinline-dma64:mdma64:wait_dma
   EMBEDSPU      = ppu-embedspu -m32
 
   BIN_DIR	= ${HOME}/bin/cbe
@@ -635,7 +635,7 @@ ifeq (cbe-gcc,${IMDSYS})
   CC_MP       = mpicc
   SPUCC       = spu-gcc
   OPT_FLAGS   += -pipe  -O3 -funroll-loops   -Wall -Wno-unused
-  SPUCFLAGS   = -pipe  -ansi -pedantic  -O2 -funroll-loops  -Wall -Wunused -Wshadow -Wcast-qual -Wno-long-long
+  SPUCFLAGS   += -pipe  -ansi -pedantic  -O2 -funroll-loops  -Wall -Wunused -Wshadow -Wcast-qual -Wno-long-long
   EMBEDSPU    = ppu-embedspu  -m32
 
 

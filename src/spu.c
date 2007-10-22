@@ -169,7 +169,7 @@ static void start_create_wp(exch_t const* const exch,
      unsigned char* apos;
 
      /* Boundaries used for rounding up */
-     register vector unsigned const bndv = { 15,127,  0,0 };
+     register vector unsigned int const bndv = { 15,127,  0,0 };
      
      /* Vector of sizes:
         szev[0]=to be transferd, szev[1]=to be allocated (remaing components
@@ -406,6 +406,8 @@ static int workloop_ea(/* List of n input & output EAs */
     register unsigned const* iea1 = iea0+2;
     register unsigned const* oea0 = outeas;
     register unsigned const* oea1 = oea0+2;
+
+
 
     /* As we use b0 & b1 for DMA, we may assume that they are (at least)
        16-byte aligned. */
