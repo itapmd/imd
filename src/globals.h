@@ -1024,7 +1024,7 @@ EXTERN real     *sinkz;
 EXTERN real     *coskr;
 EXTERN real     *sinkr;
 EXTERN real     ew_vorf;
-EXTERN real     ew_eps INIT(14.38); /* this is e^2/(4*pi*epsilon_0) in eV A */
+EXTERN real     ew_eps INIT(14.40); /* this is e^2/(4*pi*epsilon_0) in eV A */
 EXTERN real     twopi;
 #endif
 
