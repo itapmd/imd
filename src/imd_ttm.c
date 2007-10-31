@@ -388,6 +388,11 @@ void init_ttm()
 
   if (myid==0)
   {
+    printf("Global FD cell array dimensions: %d %d %d\n",
+	global_fd_dim.x, global_fd_dim.y, global_fd_dim.z);
+    printf("Local FD cell array dimensions: %d %d %d\n",
+	local_fd_dim.x, local_fd_dim.y, local_fd_dim.z);
+
     printf("Volume of one FD cell: %e [cubic Angstroms]\n",
            fd_h.x*fd_h.y*fd_h.z );
     printf("Volume of whole sample: %e [cubic Angstroms]\n",
@@ -395,12 +400,9 @@ void init_ttm()
            global_fd_dim.x*global_fd_dim.y*global_fd_dim.z );
   }
 #ifdef DEBUG
-  if (myid==0)
-  {
     printf(
-      "Found %d atoms initializing FD lattice in this (first) IMD process.\n",
-           natoms_local );
-  }
+      "Found %d atoms initializing FD lattice in process number %d.\n",
+           natoms_local, myid );
 #endif
 
   update_fd(); /* get md_temp and v_com etc. */
@@ -745,22 +747,28 @@ void ttm_create_mpi_datatypes(void)
      *                             md_cellptrs, xi, md_temp, v_com, source */
 
     /* elements to be sent:        natoms (to determine if cell is active)
-     *                             temp (electron temperature). */
+     *                             temp (electron temperature).
+     *                             (MPI_UB to set upper bound and skip the rest) */
 
     ttm_Element tmpelement;
+    ttm_Element * tmpelement_pointer;
+    tmpelement_pointer=&tmpelement;
     MPI_Aint tmpaddr;
-    int blockcounts[2]={1,1};
-    MPI_Datatype types[2]={MPI_INT, MPI_DOUBLE};
-    MPI_Aint displs[2];  
+    int blockcounts[3]={1,1,1};
+    MPI_Datatype types[3]={MPI_INT, MPI_DOUBLE, MPI_UB};
+    MPI_Aint displs[3];  
 
-    MPI_Address(&tmpelement, &tmpaddr);
+    MPI_Address(tmpelement_pointer, &tmpaddr);
     MPI_Address(&tmpelement.natoms, &displs[0]);
     MPI_Address(&tmpelement.temp, &displs[1]);
+    tmpelement_pointer++;
+    MPI_Address(tmpelement_pointer, &displs[2]);
 
+    displs[2]-=tmpaddr;
     displs[1]-=tmpaddr;
     displs[0]-=tmpaddr;
 
-    MPI_Type_struct(2,blockcounts,displs,types,&mpi_element);
+    MPI_Type_struct(3,blockcounts,displs,types,&mpi_element);
     MPI_Type_commit(&mpi_element);
   }
   { /* type for our basic struct, used for ttm file output */
@@ -770,13 +778,16 @@ void ttm_create_mpi_datatypes(void)
 
     /* elements to be sent:        natoms, temp,
      *                             xi, md_temp, v_com, source. */
+
     int i;
     ttm_Element tmpelement;
+    ttm_Element * tmpelement_pointer;
+    tmpelement_pointer=&tmpelement;
     MPI_Aint tmpaddr;
-    int blockcounts[8]={1,1,1,1,1,1,1,1};
-    MPI_Datatype types[8]={MPI_INT,
+    int blockcounts[9]={1,1,1,1,1,1,1,1,1};
+    MPI_Datatype types[9]={MPI_INT,
                            MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
-                           MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE};
+                           MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_UB};
     MPI_Aint displs[8];  
 
     MPI_Address(&tmpelement, &tmpaddr);
@@ -788,13 +799,15 @@ void ttm_create_mpi_datatypes(void)
     MPI_Address(&tmpelement.v_com.x, &displs[5]);
     MPI_Address(&tmpelement.v_com.y, &displs[6]);
     MPI_Address(&tmpelement.v_com.z, &displs[7]);
+    tmpelement_pointer++;
+    MPI_Address(tmpelement_pointer, &displs[8]);
 
-    for (i=0; i<8; ++i)
+    for (i=0; i<9; ++i)
     {
       displs[i]-=tmpaddr;
     }
 
-    MPI_Type_struct(8,blockcounts,displs,types,&mpi_element2);
+    MPI_Type_struct(9,blockcounts,displs,types,&mpi_element2);
     MPI_Type_commit(&mpi_element2);
   }
 

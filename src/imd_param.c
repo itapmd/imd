@@ -291,6 +291,11 @@ void getparamfile(char *paramfname, int sim)
       getparam("simulation",&tmp,PARAM_INT,1,1);
       if (sim < tmp) break;
     }
+#ifdef DEBUG
+    else if (strcasecmp(token,"force_celldim_divisor")==0) {
+	getparam(token,&force_celldim_divisor,PARAM_INT,3,3);
+	  }
+#endif
     else if (strcasecmp(token,"maxwalltime")==0) {
       /* maximal walltime limit */
       getparam(token,&maxwalltime,PARAM_REAL,1,1);
@@ -2809,6 +2814,10 @@ void broadcast_params() {
   MPI_Bcast( &eng_int     , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &flush_int   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &pic_int     , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+
+#ifdef DEBUG
+  MPI_Bcast( &force_celldim_divisor, 3, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
 
   MPI_Bcast( &dist_int,              1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &dist_dim,            DIM, MPI_INT, 0, MPI_COMM_WORLD);

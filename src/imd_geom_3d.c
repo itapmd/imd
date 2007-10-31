@@ -150,6 +150,11 @@ void init_cells( void )
   cd.y = cpu_dim.y;
   cd.z = cpu_dim.z;
 #endif /*TTM*/
+#ifdef DEBUG
+  if (cd.x % force_celldim_divisor.x != 0) cd.x *= force_celldim_divisor.x;
+  if (cd.y % force_celldim_divisor.y != 0) cd.y *= force_celldim_divisor.y;
+  if (cd.z % force_celldim_divisor.z != 0) cd.z *= force_celldim_divisor.z;
+#endif /*DEBUG*/
 #endif /*OMP*/
   if (0 != (global_cell_dim.x % cd.x))
      global_cell_dim.x = ((int)(global_cell_dim.x / cd.x)) * cd.x;

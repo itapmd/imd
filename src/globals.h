@@ -695,7 +695,13 @@ EXTERN int  exch_interval INIT(0);     /* interval between particle exchange */
 EXTERN int  tran_interval INIT(0);     /* Intervals of temperature recording.*/
 EXTERN int  tran_nlayers  INIT(0);     /* number of layers*/
 #endif
-
+#ifdef DEBUG
+EXTERN ivektor force_celldim_divisor INIT(einsivektor); /* if you want cell dimensions to be
+							   divisible by certain numbers, this is your
+							   parameter. Useful for comparing
+							   serial and parallel simulations if
+							   cell dimensions make a difference */
+#endif /* DEBUG*/
 #ifdef TTM /* two temperature model */
   /* These will point to the calculation net in a nice 3D array fashion */
 EXTERN  ttm_Element *** l1, *** l2, *** l3;

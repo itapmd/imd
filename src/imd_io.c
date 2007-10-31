@@ -1864,21 +1864,17 @@ void write_msqd(int steps)
   /* write the mean square displacements */
   fprintf(msqd_file, "%10.4e", (double)(steps * timestep));
   if (msqd_ntypes) {
-    for (i=0; i<ntypes; i++) {
-      real *v = msqd_global + i * SDIM;
+    for (i=0; i<ntypes; i++) 
       for (j=0; j<DIM; j++) {
-        fprintf(msqd_file," %10.4e", (v[j] / num_sort[i]));
+        fprintf(msqd_file," %10.4e", (double)(msqd_global[i*DIM+j] / num_sort[i]));
       }
-    }
   }
   if (msqd_vtypes) {
-    for (i=0; i<vtypes; i++) {
-      real *v = msqdv_global + i * SDIM;
+    for (i=0; i<vtypes; i++) 
       for (j=0; j<DIM; j++) {
         fprintf(msqd_file," %10.4e", 
-          (num_vsort[i]==0 ? 0.0 : (v[j] / num_vsort[i])));
+           (num_vsort[i]==0 ? 0 : (double)(msqdv_global[i*DIM+j] / num_vsort[i])));
       }
-    }
   }
   putc('\n',msqd_file);
   flush_count++;
@@ -2157,21 +2153,6 @@ void read_box(str255 infilename)
 {
   FILE   *infile;
   str255 line, fname;
-  char   *format;
-
-#ifdef TWOD
-#ifdef DOUBLE
-  format = "%lf %lf"; 
-#else
-  format = "%f %f"; 
-#endif
-#else
-#ifdef DOUBLE
-  format = "%lf %lf %lf"; 
-#else
-  format = "%f %f %f"; 
-#endif
-#endif
 
   if (myid==0) {
 #ifdef MPI
@@ -2187,16 +2168,16 @@ void read_box(str255 infilename)
     while (line[0]=='#') {
 #ifdef TWOD
       if      (line[1]=='X') 
-        sscanf(line+2, format, &box_x.x, &box_x.y);
+        sscanf(line+2, "%lf %lf", &box_x.x, &box_x.y);
       else if (line[1]=='Y') 
-        sscanf(line+2, format, &box_y.x, &box_y.y);
+        sscanf(line+2, "%lf %lf", &box_y.x, &box_y.y);
 #else
       if      (line[1]=='X') 
-        sscanf(line+2, format, &box_x.x, &box_x.y, &box_x.z);
+        sscanf(line+2, "%lf %lf %lf", &box_x.x, &box_x.y, &box_x.z);
       else if (line[1]=='Y') 
-        sscanf(line+2, format, &box_y.x, &box_y.y, &box_y.z);
+        sscanf(line+2, "%lf %lf %lf", &box_y.x, &box_y.y, &box_y.z);
       else if (line[1]=='Z') 
-        sscanf(line+2, format, &box_z.x, &box_z.y, &box_z.z);
+        sscanf(line+2, "%lf %lf %lf", &box_z.x, &box_z.y, &box_z.z);
 #endif
       fgets(line, 255, infile);
       if (feof(infile)) break;
