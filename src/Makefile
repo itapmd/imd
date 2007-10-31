@@ -600,7 +600,7 @@ endif
 # compilers are in the $PATH)
 ifeq (cbe-xlc,${IMDSYS})
   # The spu-timing utility provided by the Cell SDK
-  SPUTIMING=/opt/ibm/cell-sdk/prototype/bin/spu_timing
+  SPUTIMING=/opt/ibm/cell-sdk/prototype/bin/spu_timing -running-count
 
 
   SPUCC       = spuxlc -qlanglvl=extc89 -qflag=w:w -qproto
@@ -612,8 +612,8 @@ ifeq (cbe-xlc,${IMDSYS})
   BIN_DIR	= ${HOME}/bin/cbe
 
   DEBUG_FLAGS	+= -g
-  PROF_FLAGS	+= -g3 -pg
-  PROF_LIBS	+= -g3 -pg
+  PROF_FLAGS	+= -pg
+  PROF_LIBS	+= -pg
 
   SPULDFLAGS    +=
   LFLAGS        += -qlibansi -qipa
@@ -624,7 +624,7 @@ endif
 # Cell Broad Band Engine with GCC
 ifeq (cbe-gcc,${IMDSYS})
   # The spu-timing utility provided by the Cell SDK
-  SPUTIMING=/opt/ibm/cell-sdk/prototype/bin/spu_timing
+  SPUTIMING=/opt/ibm/cell-sdk/prototype/bin/spu_timing -running-count
 
   # Use the PPU compiler (ppu-gcc)
   # as main compiler as it defines the __PPU__ macro 
@@ -1330,14 +1330,13 @@ endif
 #
 ###########################################################################
 
-clean:
+clean: clean_spu
 	rm -f *.o *.u *~ \#* *.V *.T *.O *.il
 
 # Remove SPU-related temp. files (e.g. assembler/timing files)
 clean_spu:
 	rm -f spu spu.map spu.s   imd_cbe_util_spu.s  imd_cbe_calc_spu.s   spu.s.timing   imd_cbe_util_spu.s.timing  imd_cbe_calc_spu.s.timing
 
-clean_all: clean clean_spu
 
 
 help:

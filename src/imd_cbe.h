@@ -117,6 +117,9 @@ typedef float flt;
 
 #ifdef CBE_DIRECT  /* "Direct " */
 
+/* Symbolic constants for the flag field */
+enum { DOTB=(int)1, DOWP=(int)(2) };
+
 /* Cell data within a work package;
    On SPU, allocate for n_max atoms and len_max neighbor indices,
    namely 4*n_max floats (pos, force), n_max ints (typ), 2*n_max ints (ti), 
@@ -281,12 +284,47 @@ typedef struct env {
 } env_t;
 
 
-/* Tokens used to synchronize between PPU / SPU */
-enum {
-  MBXNONE=0u,
-  WPCREA1=1u, WPDONE1=2u, WPSTRT1=4u,
-  SPUEXIT
-};
+
+
+
+/* Constants passed via mailbox */
+enum { WPDONE1=(unsigned)0, WPSTRT1=(unsigned)1, SPUEXIT=(unsigned)2 };
+
+
+/* There shall be N_ARGBUF arguement buffers for each SPU thread.
+   All SPU threads shall receive a private argument address which does
+   not equal an argument address passed to an other SPU.
+
+   There shall be N_ENVBUF environment buffers which are shared by all
+   SPU threads. All SPU shall receive the same environment address
+ */
+enum { N_ARGBUF=32u, N_ENVBUF=2u };
+
+/* Buffer padding (must be a multiple of 16, should be a multiple 128) */
+enum { BUFPAD = 128u };
+
+
+
+/* Large enough for t1 or t2 */
+#define U(t1,t2)    union { t1 data1; t2 data2; }
+
+/* Large enough for type t but at least s byte large */
+#define Umin(t1,s)  union { t1 data1; unsigned char padding[(s)]; }
+
+
+/* Large enough for type t, size rounded up to next boundary of p (padding)
+   p must be a multiple of 2
+ */
+#define Upad(t1,p)  union { t1 data1; unsigned char padding[((sizeof(t1)) + ((p)-1)) & (~((p)-1))]; }
+
+
+
+typedef Upad(Umin(U(wp_t, exch_t), BUFPAD),  BUFPAD)  argbuf_t;
+typedef Upad(Umin(U(pt_t, env_t),  BUFPAD),  BUFPAD)  envbuf_t;
+
+#undef U
+#undef Umin
+#undef Upad
 
 
 
@@ -296,13 +334,19 @@ void do_work_spu(int const flag);
 
 
 #if defined(CBE_DIRECT)
-/*
-   mkf is either make_wp or make_tb
-   stf is either store_wp or store_tb
- */
-void do_work_spu_mbuf(void (* const mkf)(int nr, wp_t* pwp),
-                      void (* const stf)(wp_t const* const pwp));
+/* Multibuffered version of do_work_spu */
+void do_work_spu_mbuf(unsigned (* const mkf)(argbuf_t*, unsigned, unsigned, int),
+                      void     (* const stf)(argbuf_t*, unsigned)
+                     );
 #endif
+
+
+
+
+
+
+
+
 
 
 
@@ -382,42 +426,6 @@ int (pt_out)(int (*of)(char const[],...), pt_t const* const e);
 int (wp_out)(int (*of)(char const[],...), wp_t const* const e);
 
 
-
-
-/* There shall be N_ARGBUF arguement buffers for each SPU thread.
-   All SPU threads shall receive a private argument address which does
-   not equal an argument address passed to an other SPU.
-
-   There shall be N_ENVBUF environment buffers which are shared by all
-   SPU threads. All SPU shall receive the same environment address
- */
-enum { N_ARGBUF=32u, N_ENVBUF=2u };
-
-/* Buffer padding (must be a multiple of 16, should be a multiple 128) */
-enum { BUFPAD = 128u };
-
-
-
-/* Large enough for t1 or t2 */
-#define U(t1,t2)    union { t1 data1; t2 data2; }
-
-/* Large enough for type t but at least s byte large */
-#define Umin(t1,s)  union { t1 data1; unsigned char padding[(s)]; }
-
-
-/* Large enough for type t, size rounded up to next boundary of p (padding)
-   p must be a multiple of 2
- */
-#define Upad(t1,p)  union { t1 data1; unsigned char padding[((sizeof(t1)) + ((p)-1)) & (~((p)-1))]; }
-
-
-
-typedef Upad(Umin(U(wp_t, exch_t), BUFPAD),  BUFPAD)  argbuf_t;
-typedef Upad(Umin(U(pt_t, env_t),  BUFPAD),  BUFPAD)  envbuf_t;
-
-#undef U
-#undef Umin
-#undef Upad
 
 
 #if defined (__cplusplus)

@@ -860,8 +860,8 @@ exch_t* (create_exch)(wp_t const* const wp, exch_t* const e)
 
     /* Pointers have to be cast to integers (ea_t), asserting that they
        are aligned (at least) to a byte boundary  */
-    ptr2ea(wp->pos,    e->pos)
-    ptr2ea(wp->force,  e->force)
+    ptr2ea(wp->pos,    e->pos);
+    ptr2ea(wp->force,  e->force);
     ptr2ea(wp->typ,    e->typ);
     ptr2ea(wp->ti,     e->ti);
     ptr2ea(wp->tb,     e->tb);

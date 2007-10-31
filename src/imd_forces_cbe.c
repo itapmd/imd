@@ -28,6 +28,8 @@
 /* CBE declarations */
 #include "imd_cbe.h"
 
+
+
 /* Global variables only needed in this file */
 static int *ti=NULL;
 static int *tb_off=NULL;
@@ -43,8 +45,144 @@ static cell_ea_t  *cell_dta=NULL;
 #endif
 #endif
 
+
+
+
+
+
+
+
+/* Constants to access the SPU mailboxes */
+
+/* Shifts */
+enum MBXSHIFT {
+    OUTMBX_CNT_SHIFT = (unsigned)0,  /* outbox */
+    INMBX_CNT_SHIFT  = (unsigned)8   /* inbox  */
+};
+
+/* Masks */
+enum MBXMASK { 
+    OUTMBX_CNT_MASK  = (unsigned)0x000000ff,  /* outbox */
+    INMBX_CNT_MASK   = (unsigned)0x0000ff00   /* inbox */
+};
+
+
+/* Read Nvpmbx values per mbox */
+static void mboxes2tuples(spe_spu_control_area_p const* const cfrst, unsigned const Nmbx, unsigned const Nvpmbx,
+                          unsigned* const res,
+                          unsigned* const cnt)
+{
+    /* Iterators */
+    register unsigned* icnt;
+    register spe_spu_control_area_p const* ic;
+    register unsigned* ires;
+    /* Mailbox index, #of reads remaining */
+    register unsigned imbx;
+    register unsigned nrem;
+
+    for ( icnt=cnt, imbx=Nmbx;   (imbx>0u);    ++icnt, --imbx ) {
+        (*icnt)=0u;
+    }
+
+    for ( nrem=Nmbx*Nvpmbx;    (nrem>0u);    ) {
+        for ( ic=cfrst, icnt=cnt, ires=res, imbx=Nmbx;    (imbx>0u);    ++ic, ires+=Nvpmbx,  ++icnt, --imbx ) {
+	   /* Have to read? */
+	   if ( (*icnt)<Nvpmbx ) {
+	       /* Mask */
+	       enum { OMSK = (unsigned)0x000000ff };
+
+	       /* Can read from mbox ? */
+	       if ( 0u != (((*ic)->SPU_Mbox_Stat) & OMSK)  ) {
+ 		   *(ires+(*icnt)) = (*ic)->SPU_Out_Mbox;
+                   ++(*icnt);
+                   --nrem;
+               }
+           }
+        }
+    }
+}
+
+
+
+static void value2mboxes(spe_spu_control_area_p const* const cfrst, unsigned const Nmbx,
+                        unsigned const v,
+                        unsigned* const cnt)
+{
+    /* Iterators */
+    register unsigned* icnt;
+    register spe_spu_control_area_p const* ic;
+    /* Mailbox index, #of writes remaining */
+    register unsigned imbx;
+    register unsigned nrem;
+
+    for ( imbx=Nmbx, icnt=cnt;     (imbx>0u);      ++icnt, --imbx  ) {
+        (*icnt) = 1u;
+    }
+
+    for ( nrem=Nmbx;    (nrem>0u);    ) {
+        for ( ic=cfrst, icnt=cnt, imbx=Nmbx;     (imbx>0u);    ++ic, ++icnt, --imbx ) {
+	   /* Have to write? */
+	   if ( 1u == (*icnt) ) {
+	       /* Mask */
+	       enum { IMSK = (unsigned)0x0000ff00 };
+
+	       /* Can write to mbox ? */
+	       if ( 0u != (((*ic)->SPU_Mbox_Stat) & IMSK)  ) {
+		   (*ic)->SPU_In_Mbox =  v;
+                   *icnt = 0u;
+                   --nrem;
+               }
+           }
+        }
+    }
+}
+
+
+static void tuples2mboxes(spe_spu_control_area_p const* const cfrst, unsigned const Nmbx, unsigned const Nvpmbx,
+                          unsigned const* const val,
+                          unsigned      * const cnt)
+{
+    /* Iterators */
+    register unsigned* icnt;
+    register spe_spu_control_area_p const* ic;
+    register unsigned const* ival = val;
+    /* Mailbox index, #of writes remaining */
+    register unsigned imbx;
+    register unsigned nrem;
+
+    for ( icnt=cnt, imbx=Nmbx;   (imbx>0u);    ++icnt, --imbx ) {
+        (*icnt)=0u;
+    }
+
+    for ( nrem=Nmbx*Nvpmbx;    (nrem>0u);    ) {
+        for ( ic=cfrst, ival=val, icnt=cnt, imbx=Nmbx;     (imbx>0u);    ++ic, ival+=Nvpmbx, ++icnt, --imbx ) {
+	   /* Have to write? */
+	   if ( (*icnt)<Nvpmbx ) {
+	       /* Mask */
+	       enum { IMSK = (unsigned)0x0000ff00 };
+
+	       /* Can write to mbox ? */
+	       if ( 0u != (((*ic)->SPU_Mbox_Stat) & IMSK)  ) {
+		   (*ic)->SPU_In_Mbox =  *(ival+(*icnt));
+                   ++(*icnt);
+                   --nrem;
+               }
+           }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
 /* Potential which is need by calc_wp */
 pt_t  pt;
+
 
 /******************************************************************************
 *
@@ -86,6 +224,8 @@ void mk_pt(void)
     }
 }
 
+
+
 /******************************************************************************
 *
 *  deallocate (largest part of) neighbor list
@@ -105,6 +245,7 @@ void deallocate_nblist(void)
 }
 
 #ifdef CBE_DIRECT
+
 
 /******************************************************************************
 *
@@ -168,6 +309,9 @@ int estimate_nblist_size(void)
 }
 
 
+
+
+
 /******************************************************************************
 *
 *  make_tb
@@ -207,6 +351,26 @@ static void make_tb(int k, wp_t *wp)
   PTR2EA( tb + tb_off[k * NNBCELL], wp->cell_dta[0].tb_ea );
 #endif
 }
+
+
+static unsigned make_tb_args(argbuf_t* parg, unsigned bufsze,
+                             unsigned narg, int k)
+{
+     unsigned const ncrea = (bufsze<narg) ? bufsze : narg;
+     register unsigned  i = ncrea;
+
+     for ( ;   (i>0u);    ++parg, ++k, --i ) {
+         make_tb(k, (wp_t*)parg);
+     }
+
+     __lwsync();
+     return ncrea;
+}
+
+
+
+
+
 
 
 /******************************************************************************
@@ -249,6 +413,23 @@ static void store_tb(wp_t const* const wp)
 }
 
 
+static void store_tb_args(argbuf_t* parg, unsigned narg)
+{
+     __lwsync();
+     for (  ;      (narg>0u);      ++parg, --narg ) {
+         store_tb((wp_t const*)parg);
+     }
+}
+
+
+
+
+
+
+
+
+
+
 /******************************************************************************
 *
 *  calc_tb_ppu
@@ -273,6 +454,8 @@ static void calc_tb_ppu(void)
 }
 
 
+
+
 /******************************************************************************
 *
 *  calc_tb_spu
@@ -281,14 +464,33 @@ static void calc_tb_ppu(void)
 
 static void calc_tb_spu(void)
 {
+  /* Needed for SPU mailboxes reading/writing */
+  unsigned tmpcnt[N_SPU_THREADS_MAX], mbxval[N_SPU_THREADS_MAX*2];
+  unsigned ival;
+  unsigned const num_spus2 = num_spus << 1u;
+
+
   len_max = 0;
   len_max2 = 0;
   last_nbl_len = 0;
 
-  do_work_spu_mbuf(make_tb, store_tb);
+
 
   /* flag 1: calculate neighbor tables */
-  /* do_work_spu(1);  */
+  /* do_work_spu(DOTB);  */
+
+
+  value2mboxes(cbe_spucontrolarea, num_spus, DOTB,   tmpcnt);
+
+  do_work_spu_mbuf(make_tb_args, store_tb_args);
+
+  value2mboxes(cbe_spucontrolarea, num_spus, 0u,  tmpcnt);
+
+
+  /* Get respones from SPUs */
+  /* fprintf(stdout, "Getting result locations from SPUs\n"); fflush(stdout); */
+  mboxes2tuples(cbe_spucontrolarea, num_spus, 1,  mbxval,  tmpcnt);
+
 
   /*
   fprintf(stdout,
@@ -485,6 +687,9 @@ void make_nblist(void)
 }
 
 
+
+
+
 /******************************************************************************
 *
 *  make_wp
@@ -536,6 +741,33 @@ static void make_wp(int k, wp_t *wp)
 }
 
 
+/* Create narg (or argbufsze if it is less) wp in buffer starting
+   at parg, with serial number starting k
+ */
+static unsigned make_wp_args(argbuf_t* parg, unsigned bufsze,
+                             unsigned narg, int k)
+{
+     /* Number of WPs created (may be less than the number requested
+        by narg if buffer size buzsze is less) */
+     unsigned const ncrea = (bufsze<narg) ? bufsze : narg;
+     register unsigned  i = ncrea;
+
+     for ( ;    (i>0u);      ++parg, ++k, --i ) {
+         make_wp(k, (wp_t*)parg);
+     }
+
+     __lwsync();
+
+     /* Return number of WPs actually created */
+     return ncrea;
+}
+
+
+
+
+
+
+
 /******************************************************************************
 *
 *  store_wp
@@ -544,9 +776,28 @@ static void make_wp(int k, wp_t *wp)
 
 static INLINE_ void store_wp(wp_t const* const wp)
 {
-  tot_pot_energy += wp->totpot;
-  virial         += wp->virial;
+    tot_pot_energy += wp->totpot;
+    virial         += wp->virial;
 }
+
+static void store_wp_args(argbuf_t* parg, unsigned narg)
+{
+     __lwsync();
+
+     for (  ;    (narg>0u);     ++parg, --narg ) {
+#if defined(CBE_DIRECT)
+         tot_pot_energy += ((wp_t const*)parg)->totpot;
+         virial         += ((wp_t const*)parg)->virial;
+#else
+         store_wp((wp_t const*)parg)
+#endif
+     }
+}
+
+/* Dummy function: Do not store anyting at all */
+static void store_wp_none(argbuf_t* unused1, unsigned unused2)
+{}
+
 
 
 #else  /* not CBE_DIRECT */
@@ -604,6 +855,9 @@ int estimate_nblist_size(void)
   }
   return tn;
 }
+
+
+
 
 
 /******************************************************************************
@@ -740,6 +994,8 @@ void make_nblist(void)
 }
 
 
+
+
 /******************************************************************************
 *
 *  make_wp
@@ -803,6 +1059,8 @@ static void make_wp(int k, wp_t *wp)
 }
 
 
+
+
 /******************************************************************************
 *
 *  store_wp
@@ -842,64 +1100,18 @@ static void store_wp(wp_t const* const wp)
 *
 ******************************************************************************/
 
-/* We need the following masks and shift constants to access the mailbox: */
-enum { OUTMBX_CNT_MASK  = 0x000000ffu,
-       INMBX_CNT_MASK   = 0x0000ff00u,
-       OUTMBX_CNT_SHIFT = 0u,
-       INMBX_CNT_SHIFT  = 8u
-     };
 
 
 
-
-
-static INLINE_ void save_work_buffer(void (* const stf)(wp_t const* const pwp),
-                                     argbuf_t* parg, unsigned n
-                                    )
-{
-     for (  ;   n>0u;   --n, ++parg  ) {
-          (stf)((wp_t const*)parg);
-     }
-}
-
-
-/* "Fill buffer with WPs for the SPU" */
-static INLINE_ unsigned fill_work_buffer(void (* const mkf)(int nr, wp_t* pwp),
-                                         unsigned const nrem, int k,
-                                         argbuf_t* parg, unsigned const bufsze
-                                        )
-{
-    /* Number of WPs to be created */
-    unsigned const ncrea = ((bufsze<nrem) ? bufsze : nrem);
-
-    /* Index */
-    unsigned i=ncrea;
-
-
-    /* Debugging output */
-    /* fprintf(stdout, "Creating %u WPs with k starting at %d\n", ncrea,k);  fflush(stdout);  */
-
-
-    /* Create WPs in buffer */
-    for ( ;       (i>0);      ++parg, --i, ++k ) {
-        mkf(k, ((wp_t*)parg));
-    }
-
-    /* Return number of WPs created */
-    return ncrea;
-}
-
-
-
-
-/* (Slightly generalize) multibuffered version */
-void do_work_spu_mbuf(void (* const mkf)(int nr, wp_t* pwp),
-                      void (* const stf)(wp_t const* const pwp))
+/* (Slightly generalized) multibuffered version */
+void do_work_spu_mbuf(unsigned (* const mkargs)(argbuf_t*, unsigned, unsigned, int),
+                      void (* const stargs)(argbuf_t*, unsigned)
+                     )
  {
     /* Half the number of arguments buffers per SPU */
-    enum { NHALF = N_ARGBUF>>1u };
+    enum { NHALF = (unsigned)(N_ARGBUF>>1u) };
     enum { NARG_LO=((unsigned)NHALF), NARG_HI=((unsigned)(N_ARGBUF-NHALF)) };
-    enum { OFFS_LO=0u, OFFS_HI=NARG_LO };
+    enum { OFFS_LO=(unsigned)0, OFFS_HI=(unsigned)NARG_LO };
 
     /* Number of elements in "low buffer" (starting at 0) and
        number of elements in "high buffer" (starting at NHALF) */
@@ -920,9 +1132,13 @@ void do_work_spu_mbuf(void (* const mkf)(int nr, wp_t* pwp),
 
 
 
-    /* Initially, all buffers are available, no work has been scheduled to SPUs */
+    /* Initialization */
     for ( ispu=0;   (ispu<ispumax);   ++ispu ) {
+        /* Scheduling: No work has been scheduled yet */
         nlo[ispu]=nhi[ispu]=0u;
+
+        /* Send the start message to all SPUs  */
+        /* (cbe_spucontrolarea[ispu])->SPU_In_Mbox = startmsg; */
     }
 
 
@@ -947,12 +1163,13 @@ void do_work_spu_mbuf(void (* const mkf)(int nr, wp_t* pwp),
            
   	    /* Use lower buffer? */
    	    if ( (nrem>0u) && (0u==nlo[ispu]) ) {
- 	        unsigned const ncrea = fill_work_buffer(mkf, nrem,k, parg+OFFS_LO, NARG_LO);
+ 	        unsigned const ncrea = mkargs(parg+OFFS_LO, NARG_LO, nrem, k);
 
                 /* Tell SPU to start working on ncrea WPs at offset 0 */
-                __lwsync();
-                pctl->SPU_In_Mbox = OFFS_LO;
+                /* __lwsync(); */
                 pctl->SPU_In_Mbox = ncrea;
+                pctl->SPU_In_Mbox = OFFS_LO;
+
 
                 /* Mark low buffer as being filled with ncrea elements */
                 nlo[ispu]=ncrea;
@@ -960,6 +1177,7 @@ void do_work_spu_mbuf(void (* const mkf)(int nr, wp_t* pwp),
                 /* Update */
                 nrem -= ncrea;
                 k    += ncrea;
+                
 
                 /* fprintf(stdout, "Lower buffer for SPU %i filled with %u elements\n", ispu,  ncrea);  fflush(stdout); */
             }
@@ -967,13 +1185,13 @@ void do_work_spu_mbuf(void (* const mkf)(int nr, wp_t* pwp),
 
             /* Use higher buffer? */
             if ( (nrem>0u) && (0u==nhi[ispu]) ) {
-  	        unsigned const ncrea = fill_work_buffer(mkf, nrem,k, parg+OFFS_HI,  NARG_HI);
+  	        unsigned const ncrea = mkargs(parg+OFFS_HI, NARG_HI, nrem, k);
 
 
                 /* Tell SPU to start working on ncrea WPs at offset NHALF */
-                __lwsync();
-                pctl->SPU_In_Mbox = OFFS_HI;
+                /* __lwsync(); */
                 pctl->SPU_In_Mbox = ncrea;
+                pctl->SPU_In_Mbox = OFFS_HI;
 
 
 		/* Mark high buffer as being filled with ncrea elements */
@@ -994,12 +1212,12 @@ void do_work_spu_mbuf(void (* const mkf)(int nr, wp_t* pwp),
 		/* Read Mbox message which is just the offset */
                 unsigned const spumsg = pctl->SPU_Out_Mbox;
 
-                __lwsync();
+                /* __lwsync(); */
                 /*fprintf(stdout, "SPU %d finished buffer at %u\n", ispu,spumsg); fflush(stdout); */
 
                 /* WP in "lower buffer?" */
                 if ( OFFS_LO == spumsg ) {
-		    save_work_buffer(stf, parg+OFFS_LO,  nlo[ispu]);
+		    stargs(parg+OFFS_LO,  nlo[ispu]);
 		    /* WPs done */
   		    ndone+=nlo[ispu];
                     /* Low buffer is free again */
@@ -1008,16 +1226,17 @@ void do_work_spu_mbuf(void (* const mkf)(int nr, wp_t* pwp),
 
                 /* WP in "higher buffer"? */
                 if ( OFFS_HI == spumsg ) {
-		   save_work_buffer(stf, parg+OFFS_HI, nhi[ispu]);
-		   /* WPs done */
-  		   ndone+=nhi[ispu];
-                   /* High buffer is free again */
-                   nhi[ispu]=0u;
+		    stargs(parg+OFFS_HI, nhi[ispu]);
+		    /* WPs done */
+  		    ndone+=nhi[ispu];
+                    /* High buffer is free again */
+                    nhi[ispu]=0u;
                 }
            }
            
         }
     }
+
 
 }
 
@@ -1085,8 +1304,8 @@ void do_work_spu(int const flag)
            if (  (IDLE==*pstat) && (k<ncells)  ) {
    	       /* Create a work package... */
 	       switch (flag) {
-	         case 1: make_tb(k, pwp); break;  /* neighbor tables */
-	         case 2: make_wp(k, pwp); break;  /* force calc */
+	         case DOTB: make_tb(k, pwp); break;  /* neighbor tables */
+	         case DOWP: make_wp(k, pwp); break;  /* force calc */
 	         default: error("unknown flag in do_work_spu");
                }
 #if ! defined (CBE_DIRECT)
@@ -1136,8 +1355,8 @@ void do_work_spu(int const flag)
 
                         /* Store the wp */
    	                switch (flag) {
-	                  case 1: store_tb(pwp); break; /* neighbor tab */
-	                  case 2: store_wp(pwp); break; /* force calc */
+	                  case DOTB: store_tb(pwp); break; /* neighbor tab */
+	                  case DOWP: store_wp(pwp); break; /* force calc */
 	                  default: error("unknown flag in do_work_spu");
                         }
 
@@ -1199,6 +1418,10 @@ static void calc_forces_ppu(int const steps)
 
 void calc_forces(int const steps)
 {
+  unsigned tmpcnt[N_SPU_THREADS_MAX], mbxval[N_SPU_THREADS_MAX*2];
+  unsigned ival;
+  unsigned const num_spus2 = num_spus << 1u;
+
   int  k, i;
   real tmpvec1[2], tmpvec2[2] = {0.0, 0.0};
 
@@ -1235,14 +1458,44 @@ void calc_forces(int const steps)
   }
 #endif
 
+
   /* compute the forces - either on PPU or on SPUs*/
 #ifdef ON_PPU
   calc_forces_ppu(steps); 
 #else
   /* flag 2: calculate pair forces */
-  /* do_work_spu(2);   */
-  do_work_spu_mbuf(make_wp, store_wp);
+  /* do_work_spu(DOWP);   */
+
+
+  /* Tell all SPUs to go to "mode WP" */
+  value2mboxes(cbe_spucontrolarea, num_spus,  DOWP,  tmpcnt);
+
+  /* Distribute work */
+  do_work_spu_mbuf(make_wp_args, store_wp_none);
+
+  /* Tell SPUs to stop processing WPs */
+  value2mboxes(cbe_spucontrolarea, num_spus, 0u,    tmpcnt);
+
+
+
+  /* Get responses from SPU mailboxes */
+  /* fprintf(stdout, "Getting result locations from SPUs\n");  fflush(stdout);  */
+  mboxes2tuples(cbe_spucontrolarea, num_spus, 1,  mbxval,  tmpcnt);
+
+
+  /* Sum up energies */
+  __lwsync();
+  for ( ival=0u;   ival<num_spus;    ++ival ) {
+      /* Energy/virial WP is located at offset mbxval[ival] 
+         in argument buffer of SPU # ival. */
+      wp_t const* const pwp = (wp_t const*)(cbe_arg_begin + (ival*N_ARGBUF) + mbxval[ival]);
+      tot_pot_energy += pwp->totpot;
+      virial         += pwp->virial;
+  }
+
 #endif
+
+
 
 #ifdef MPI
   /* sum up results of different CPUs */
@@ -1259,6 +1512,8 @@ void calc_forces(int const steps)
 #endif
 
 }
+
+
 
 
 /******************************************************************************
