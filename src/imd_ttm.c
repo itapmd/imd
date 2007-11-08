@@ -788,7 +788,7 @@ void ttm_create_mpi_datatypes(void)
     MPI_Datatype types[9]={MPI_INT,
                            MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, 
                            MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_UB};
-    MPI_Aint displs[8];  
+    MPI_Aint displs[9];  
 
     MPI_Address(&tmpelement, &tmpaddr);
     MPI_Address(&tmpelement.natoms, &displs[0]);
