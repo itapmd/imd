@@ -532,14 +532,18 @@ void calc_tb_direct(wp_t *wp,
 
     wait_tag(otag);
 
-    wp->cell_dta[m].tb_ea[1] = wp->cell_dta[0].tb_ea[1] + nn * sizeof(short); 
+    wp->cell_dta[m].tb_ea = wp->cell_dta[0].tb_ea + nn * sizeof(short); 
+    /* wp->cell_dta[m].tb_ea[1] = wp->cell_dta[0].tb_ea[1] + nn * sizeof(short);  */
 
     next_m = m;
     do {
       next_m++;
       if (m<NNBCELL) {
+        wp->cell_dta[next_m].tb_ea = wp->cell_dta[next_m-1].tb_ea; 
+        /*
         wp->cell_dta[next_m].tb_ea[0] = wp->cell_dta[next_m-1].tb_ea[0]; 
         wp->cell_dta[next_m].tb_ea[1] = wp->cell_dta[next_m-1].tb_ea[1]; 
+        */
       }
     } while ((wp->cell_dta[next_m].n==0) && (next_m<NNBCELL));
 

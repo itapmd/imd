@@ -97,11 +97,10 @@ extern "C" {
 
 
 
-/* An effective address is just an array of unsigneds 
-   ea_t[0] (the first component) is the high part
-   ea_t[1] (the second component) is the low part
- */
-typedef unsigned  ea_t[2];
+/* Effective address type: unsigned long long is 64 bits wide on both
+   PPU & SPU. */
+typedef unsigned long long int  ea_t;
+/*  typedef unsigned int ea_t[2]; */
 
 
 
@@ -469,41 +468,57 @@ static INLINE_ unsigned wait_dma(unsigned const m, unsigned const type) {
 }
 
 
+
+
+
+
+
+
+/* (Just a) wrapper for DMA with less than 16K */
+static INLINE_ void (dma64)(register void* const p,
+                            register ea_t const ea, register unsigned int const size,
+                            register unsigned int const tag, register unsigned int const cmd
+                  )
+{
+    si_wrch(MFC_EAH,   si_from_uint((unsigned int)(ea>>32u)));
+    si_wrch(MFC_EAL,   si_from_uint((unsigned int)ea));
+    si_wrch(MFC_LSA,   si_from_ptr(p));
+    si_wrch(MFC_Size,  si_from_uint(size));
+    si_wrch(MFC_TagID, si_from_uint(tag));
+    si_wrch(MFC_Cmd,   si_from_uint(cmd));
+}
+
+
+
+
+
+
+
+
+
+
 /* DMA more than 16K using multiple DMAs */
-static INLINE_ void mdma64(void* const p,
-                           unsigned const* const ea, unsigned const size,
+static INLINE_ void mdma64(void* const p, ea_t const ea, unsigned const size,
                            unsigned const tag, unsigned const cmd
                           )
 {
-    /* 64 bit effective address */
-    typedef unsigned long long  T64;
+    /* Byte type */
+    typedef unsigned char    Tbyte;
 
     /* Defined somwhere in imd_cbe_util.c */
-    extern void mdma64_rec(register unsigned char* const p, register T64 const,
-                           register unsigned const,
+    extern void mdma64_rec(register Tbyte* const, register ea_t const, register unsigned const,
                            register unsigned const, register unsigned const);
-    extern void mdma64_iter(register unsigned char*,  register T64,
-                            register unsigned,
+    extern void mdma64_iter(register Tbyte*,  register ea_t, register unsigned,
                             register unsigned const, register unsigned const);
 
 
 
-    mdma64_iter((unsigned char*)p, (((T64)(ea[0]))<<32u)+((T64)(ea[1])),
-                size,  tag, cmd);
+    mdma64_iter(((Tbyte*)p),  ea, size,  tag,cmd);
 }
 
 
 
-/* (Just a) wrapper for DMA with less than 16K
-   This has the same signature as the function above
- */
-static INLINE_ void dma64(void* const p,
-                          unsigned const* const ea, unsigned const size,
-                          unsigned const tag, unsigned const cmd
-                  )
-{
-    spu_mfcdma64(p,  ea[0],ea[1],  size, tag,cmd);
-}
+
 
 
 
@@ -603,32 +618,14 @@ enum { PPU_PTRBITS = (unsigned)(PPU_PTRBITS_) };
 
 
 
-/* PTR2EA converts ptr to an effective address, and places it at *ea */
 
-/* Assuming a pointer is 32 bits wide only:
-   Copy ptr to lower part, setting higher part to zero
-   ea must point to an array of (at least) 2 objects which are (at least)
-   32 bits wide each.
-   The 1st component is set to zero, the pointer is copied to the second one
-*/
+
+/* Conversion from pointer to effective address is just a cast */
 #if (32 == PPU_PTRBITS_)
-#  /* Warning: ea is used twice inside the macro! */
-#  define PTR2EA(ptr,ea) { *(ea)=0;  *((void const**)((ea)+1)) = (void const*)(ptr); }
-#  define EA2PTR(ea)     (*((void**)((ea)+1)))
+#   define PTR2EA(ptr,ea)  { (void)((ea)=(unsigned)(ptr));  }
+#elif  (64 == PPU_PTRBITS_)
+#   define PTR2EA(ptr,ea)  { (void)((ea)=(ea_t)(ptr));  }
 #endif
-
-/* Assuming a pointer is 64 bits wide:
-   ea must point to an object which is (at least) 64 bits wide
-   The pointer is just copied there.
-*/
-#if (64 == PPU_PTRBITS_)
-#  define PTR2EA(ptr,ea) {  *((void const**)(ea)) = (void const*)(ptr); }
-#  define EA2PTR(ea)     (*((void**)(ea)))
-#endif
-
-
-
-
 
 
 

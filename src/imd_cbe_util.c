@@ -155,7 +155,9 @@ static int shtout(int (*of)(char const[],...), void const* pshrt) {
    If needed, this macro might be moved to the .h header in order to make
    it availably to client code.
  */
-#define EA_ALIGNED(e,b) (0 == e[((sizeof (e))/(sizeof (e)[0]))-1] % (b))
+/* #define EA_ALIGNED(e,b) (0 == e[((sizeof (e))/(sizeof (e)[0]))-1] % (b)) */
+#define EA_ALIGNED(e,b) (0 == ((e)%(b)) )
+
 
 /* Return if p is not aligned to 16 byte boundary which is the minimum
    requirement for DMAs  */
@@ -230,7 +232,8 @@ int (env_aligned)(env_t const* const p, unsigned const a) {
 
 
 /* Needed in the output of effective addresses  */
-#define EA(ptr) (*(ptr)), (*((ptr)+1))
+/* #define EA(ptr) (*(ptr)), (*((ptr)+1)) */
+#define EA(ea)   ((unsigned)(((ea_t)(ea))>>32u)),  ((unsigned)((ea_t)(ea)))
 #define EAFMT "(0x%x,0x%x)"
 
 /* Output of env_t *e using printf-like function of */
@@ -426,32 +429,26 @@ int (pt_out)(int (*of)(char const[],...), pt_t const* const e)
 
 
 /* 16k are maximum which may be DMAed in one call to spu_mfc... */
-enum { DMAMAX    = (unsigned)(16*1024)         };
-enum { DMAMAXull = (unsigned long long )DMAMAX };
+enum { DMAMAX   = ((unsigned)(16*1024)) };
+enum { DMAMAXea = ((ea_t)DMAMAX)        };
 
-/* 64 bit EA type of SPU */
-typedef unsigned long long  T64;
+
 
 void mdma64_rec(register unsigned char* const p,
-                register T64 lea, register unsigned const sze,
+                register ea_t const lea, register unsigned const sze,
                 register unsigned const tag, register unsigned const cmd)
 {
-    /* High/Low part of EA */
-    register unsigned const hi = (unsigned)(lea>>32u);
-    register unsigned const lo = (unsigned)lea;
-
     /* Only one DMA needed? End recusrion */
     if ( EXPECT_TRUE_(sze<=DMAMAX) ) {
-        spu_mfcdma64(p, hi,lo, sze,  tag,cmd);
+        dma64(p, lea, sze,  tag,cmd);
         return;
     }
 
     /* Start a DMA */
-    spu_mfcdma64(p, hi,lo, DMAMAX,  tag,cmd);
+    dma64(p, lea,  DMAMAX,  tag,cmd);
     /* Tail recursive call... */
-    mdma64_rec(p+DMAMAX,  lea+DMAMAXull,  sze-DMAMAX,  tag,cmd);
+    mdma64_rec(p+DMAMAX,  lea+DMAMAX,  sze-DMAMAX,  tag,cmd);
 }
-
 
 
 
@@ -460,27 +457,23 @@ void mdma64_rec(register unsigned char* const p,
 
 /* DMA more than 16k using multiple DMAs with the same tag */
 void mdma64_iter(register unsigned char* p,
-                 register T64 lea, register unsigned remsze,
+                 register ea_t lea, register unsigned remsze,
                  register unsigned const tag, register unsigned const cmd)
 {
     for(;;) {
-        /* Split EA into low & hi part */
-        register unsigned const hi = (unsigned)(lea>>32u);
-        register unsigned const lo = (unsigned)lea;
-
         /* We're done if not more than maxsze bytes are to be xfered */
         if ( EXPECT_TRUE_(remsze<=DMAMAX) ) {
-  	   spu_mfcdma64(p, hi,lo,  remsze, tag, cmd);
+  	   dma64(p, lea,  remsze, tag, cmd);
  	   return;
         }
 
         /* Xfer one chunk of maximum size  */
-        spu_mfcdma64(p,  hi,lo,  DMAMAX, tag, cmd);
+        dma64(p,  lea,  DMAMAX, tag, cmd);
 
         /* Update addresses and number of bytes */
         remsze -= DMAMAX;
         p      += DMAMAX;
-        lea    += DMAMAXull;
+        lea    += DMAMAX;
     }
 }
 
@@ -786,34 +779,8 @@ spe_spu_control_area_p* const cbe_spucontrolarea = contrarea;
 
 
 
-static INLINE_ void ptr2ea(register void const* const ptr,
-                           register unsigned* const ea) {
-    /* Pointer type used */
-    typedef void const* Tptr;
 
-#if   (32 == PPU_PTRBITS_)
-    *ea=0u;
-    *((Tptr*)(ea+1)) = ptr;
-#elif (64 == PPU_PTRBITS_)
-    *((Tptr*)ea) = ptr;
-#else
-    /* Could not convert */
-    ea[0]=ea[1]=0;
-#endif
-}
 
-/**/
-static INLINE_ void* ea2ptr(unsigned const* const ea) {
-    typedef void* Tptr;
-#if   (32 == PPU_PTRBITS_)
-    return *((Tptr*)(ea+1));
-#elif (64 == PPU_PTRBITS_)
-    return *((Tptr*)ea);
-#else
-    /* Could not convert */
-    return 0;
-#endif
-}
 
 
 /* Create env_t from pt_t */
@@ -824,10 +791,10 @@ env_t* (create_env)(pt_t const* const p, env_t* const e)
 
 
      /* The ptrs have to be cast to effective addresses */
-     ptr2ea(p->r2cut,    e->r2cut);
-     ptr2ea(p->lj_sig,   e->lj_sig);
-     ptr2ea(p->lj_eps,   e->lj_eps);
-     ptr2ea(p->lj_shift, e->lj_shift);
+     PTR2EA(p->r2cut,    e->r2cut);
+     PTR2EA(p->lj_sig,   e->lj_sig);
+     PTR2EA(p->lj_eps,   e->lj_eps);
+     PTR2EA(p->lj_shift, e->lj_shift);
 
 
      /* Return ptr. to the env_t */
@@ -860,11 +827,11 @@ exch_t* (create_exch)(wp_t const* const wp, exch_t* const e)
 
     /* Pointers have to be cast to integers (ea_t), asserting that they
        are aligned (at least) to a byte boundary  */
-    ptr2ea(wp->pos,    e->pos);
-    ptr2ea(wp->force,  e->force);
-    ptr2ea(wp->typ,    e->typ);
-    ptr2ea(wp->ti,     e->ti);
-    ptr2ea(wp->tb,     e->tb);
+    PTR2EA(wp->pos,    e->pos);
+    PTR2EA(wp->force,  e->force);
+    PTR2EA(wp->typ,    e->typ);
+    PTR2EA(wp->ti,     e->ti);
+    PTR2EA(wp->tb,     e->tb);
 
 #endif
     /* Return ptr. to the exch_t */

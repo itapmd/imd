@@ -400,8 +400,11 @@ static void store_tb(wp_t const* const wp)
 #ifdef ON_PPU
     off = (int) (wp->cell_dta[m].tb       - wp->cell_dta[m-1].tb      );
 #else
-    off = (int) (wp->cell_dta[m].tb_ea[1] - wp->cell_dta[m-1].tb_ea[1]);
-    off = off / sizeof(short);
+    /* off = (int) (wp->cell_dta[m].tb_ea[1] - wp->cell_dta[m-1].tb_ea[1]);
+       off = off / sizeof(short);
+     */
+    off = (int)((wp->cell_dta[m].tb_ea - wp->cell_dta[m-1].tb_ea) / (sizeof (short)));
+    
 #endif
     tb_off[k*NNBCELL+m] = tb_off[k*NNBCELL+m-1] + off; 
     len_max = MAX( len_max, off ); 
