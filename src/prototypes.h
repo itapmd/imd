@@ -20,19 +20,19 @@
 ******************************************************************************/
 
 
-/* the main routines - files imd.c, imd_main_2/3d.c */
+/* the main routines - files imd.c, imd_main_3d.c */
 int  main(int argc, char **argv);
-void main_loop(void);
-void init(void);
+int  main_loop(int simulation);
 
 /* read parameters - file imd_param.c */
 void read_command_line(int argc, char **argv);
-void read_parameters(void);
-void getparamfile(char *paramfname, int sim);
+int  read_parameters(char *paramfname, int phase);
+int  getparamfile(char *paramfname, int phase);
 void check_parameters_complete(void);
 void broadcast_params(void);
 
 /* read and access potential tables - file imd_potential.c */
+void setup_potentials( void );
 void read_pot_table ( pot_table_t*, char*, int, int );
 void read_pot_table1( pot_table_t*, int, char*, FILE*, int );
 void read_pot_table2( pot_table_t*, int, char*, FILE*, int );
@@ -86,7 +86,7 @@ void generate_qc(void);
 
 /* miscellaneous routines - files imd_misc.c, imd_time.c, imd_maxwell.c */
 void usage(void);
-void error(char *msg);
+void imderror(char *msg);
 void error_str(char *msg, char *str);
 void error_str_str(char *msg, char *str1, char *str2);
 void warning(char *);
@@ -103,7 +103,7 @@ double  SwappedDouble (double );
 
 /* start and stop MPI - files imd_mpi_util.c, imd_geom_mpi_*.c */
 #ifdef MPI
-void init_mpi(int *argc_pointer, char **argv);
+void init_mpi(void);
 void shutdown_mpi(void);
 void alloc_msgbuf(msgbuf*, int);
 void realloc_msgbuf(msgbuf*, int);
@@ -302,8 +302,10 @@ void write_header_pos(FILE *out);
 #ifdef DISLOC
 void write_atoms_dem(FILE *out);
 void write_header_dem(FILE *out);
+void write_config_dem(int nr);
 void write_atoms_dsp(FILE *out);
 void write_header_dsp(FILE *out);
+void write_config_dsp(int nr);
 #endif
 #ifdef CNA
 void do_cna(void);
@@ -318,19 +320,23 @@ void sort_pair_types(void);
 #ifdef EFILTER
 void write_atoms_ef(FILE *out);
 void write_header_ef(FILE *out);
+void write_config_ef(int nr);
 #endif
 #ifdef NNBR
 void write_atoms_nb(FILE *out);
 void write_header_nb(FILE *out);
+void write_config_nb(int nr);
 #endif
 #ifdef WRITEF
 void write_atoms_wf(FILE *out);
 void write_header_wf(FILE *out);
+void write_config_wf(int nr);
 #endif
 #ifdef STRESS_TENS
 void write_atoms_press(FILE *out);
 void write_header_press(FILE *out);
 void calc_tot_presstens(void);
+void write_config_press(int nr);
 #endif
 #ifdef REFPOS
 void init_refpos(void);
@@ -339,14 +345,17 @@ void init_refpos(void);
 void write_atoms_avp(FILE *out);
 void write_header_avp(FILE *out);
 void write_avpos_itr_file(int fzhlr, int steps);
+void write_config_avpos(int nr);
 #endif
 #ifdef FORCE
 void write_atoms_force(FILE *out);
 void write_header_force(FILE *out);
+void write_config_force(int nr);
 #endif
 #ifdef MSQD
 void write_atoms_sqd(FILE *out);
 void write_header_sqd(FILE *out);
+void write_config_sqd(int nr);
 #endif
 void reduce_displacement(vektor *d);
 #ifdef MPI
@@ -408,6 +417,7 @@ void update_atdist(void);
 void  write_atdist(void);
 void write_atoms_atdist_pos(FILE*);
 void write_header_atdist_pos(FILE*);
+void write_config_atdist_pos(int nr);
 #endif
 
 #ifdef DIFFPAT
@@ -479,7 +489,6 @@ void add_positions(void);
 /* support for correlation functions - file imd_correl.c */
 #if defined(CORRELATE) || defined(MSQD)
 void init_correl(int, int);
-void alloc_correl(int, int);
 void correlate(int istep, int refstep, unsigned seqnum);
 void write_msqd(int);
 #endif
@@ -515,6 +524,10 @@ int brent(real ax, real bx, real cx, real fa, real fb, real fc,real *alphamin);
 #ifdef ACG
 void acg_step(int steps);
 int findalpha();
+#endif
+
+#ifdef GLOK
+void update_glok(void);
 #endif
 
 #ifdef NMOLDYN
@@ -562,3 +575,30 @@ int get_free_mem(void);
 #ifdef CBE
 void mk_pt(void);
 #endif
+
+real RealGetElm( real *p, int i);
+void RealSetElm( real *p, int i, real val); 
+int  IntGetElm( int *p, int i);
+void IntSetElm( int *p, int i, int val);
+
+#ifdef FBC
+void init_fbc(void);
+void update_fbc();
+#endif
+
+#ifdef RIGID
+void calc_superforces(void);
+#endif
+
+#ifdef RELAX
+void check_relaxed(void);
+#endif
+
+#ifdef TEMPCONTROL
+void increment_temperature(void);
+#endif
+
+void check_write(void);
+int  check_stop(void);
+int  check_walltime(void);
+void close_files(void);

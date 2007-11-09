@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -227,7 +227,7 @@ void write_temp_dist(int steps)
 #ifdef RNEMD
     /* write heat current density determined from heat transfer */
     /* heat flows away in two directions -> twice the cross section */
-    heat_transfer /= 2 * box_y.y * tran_interval * timestep;
+    heat_transfer /= 2 * box_y.y * tran_int * timestep;
 #ifndef TWOD
     heat_transfer /= box_z.z;
 #endif
@@ -241,7 +241,7 @@ void write_temp_dist(int steps)
 #else
     vol = box_x.x * box_y.y * box_z.z * (tran_nlayers-2) / tran_nlayers;
 #endif
-    heat_cond /= (vol * tran_interval);
+    heat_cond /= (vol * tran_int);
     /* write heat current density determined by Gillan-Evans-Algorithm */
     fprintf(outtemp," %10.4e", heat_cond);
     heat_cond = 0.0;

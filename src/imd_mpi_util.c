@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -31,16 +31,17 @@
 *
 ******************************************************************************/
 
-void init_mpi(int *argc_pointer, char **argv)
+void init_mpi(void)
 {
   /* Initialize MPI */
-  MPI_Init(argc_pointer, &argv);
   MPI_Comm_size(MPI_COMM_WORLD,&num_cpus);
   MPI_Comm_rank(MPI_COMM_WORLD,&myid);
 
   if (0 == myid) { 
-    printf("%s\n", argv[0]);
     printf("Starting up MPI with %d processes.\n", num_cpus);
+#ifdef MPI2
+    printf("Using MPI2\n");
+#endif
   }
 }
 

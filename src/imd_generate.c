@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -55,6 +55,10 @@ void generate_atoms(str255 mode)
   MPI_Status status;
 #endif
 
+  if (0 == myid) { 
+    printf("Generating atoms: %s.\n", infilename);fflush(stdout);
+  }
+
   if ((num_sort = (long *) calloc(ntypes,sizeof(long)))==NULL) {
       error("cannot allocate memory for num_sort\n");
   }
@@ -62,11 +66,17 @@ void generate_atoms(str255 mode)
       error("cannot allocate memory for num_vsort\n");
   }
 
+  if (natoms > 0) {
+    /* empty all cells */
+    for (k=0; k<nallcells; k++) cell_array[k].n = 0;
+  }
+
 #ifdef DISLOC
   calc_Epot_ref=1;
 #endif
 
   /* We always have to initialize the velocities on generated structures */
+  srand48(seed); /* initialize random number generator */
   do_maxwell=1;
 
 #ifdef TWOD
@@ -168,8 +178,11 @@ void generate_atoms(str255 mode)
 #else
   maxc2 = maxc1;
 #endif
-  if (myid==0) printf("maximal cell occupancy: %d\n", maxc2);
-  
+
+  if (0 == myid) { 
+    printf("maximal cell occupancy: %d\n", maxc2);
+    fflush(stdout);  
+  }
 }
 
 

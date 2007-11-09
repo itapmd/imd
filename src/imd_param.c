@@ -229,14 +229,14 @@ static int getparam(char *param_name, void *param, PARAMTYPE ptype,
 *
 *****************************************************************************/
 
-void getparamfile(char *paramfname, int sim)
+int getparamfile(char *paramfname, int phase)
 {
   FILE *pf;
   char buffer[1024];
   char *token;
   char *res;
   str255 tmpstr;
-  int tmp;
+  int tmp, finished = 0;
   real rtmp;
 
 #ifdef TWOD
@@ -263,8 +263,7 @@ void getparamfile(char *paramfname, int sim)
   curline = 0;
   pf = fopen(paramfname,"r");
   if (NULL == pf) {
-    sprintf(tmpstr,"Could not open parameter file with name %s\n",paramfname);
-    error(tmpstr);
+    error_str("Could not open parameter file %s", paramfname);
   }
 
   /* set the random number generator seed to the */
@@ -288,8 +287,8 @@ void getparamfile(char *paramfname, int sim)
 
     if (strcasecmp(token,"simulation")==0) {
       /* get number of the simulation phase */
-      getparam("simulation",&tmp,PARAM_INT,1,1);
-      if (sim < tmp) break;
+      getparam(token,&tmp,PARAM_INT,1,1);
+      if (phase < tmp) break;
     }
 #ifdef DEBUG
     else if (strcasecmp(token,"force_celldim_divisor")==0) {
@@ -603,6 +602,11 @@ void getparamfile(char *paramfname, int sim)
 	  error("Cannot allocate memory for fbc_endforces\n");
         for (k=0; k<vtypes; k++)
           fbc_endforces[k] = nullv;
+        fbc_df = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==fbc_df)
+	  error("Cannot allocate memory for fbc_df\n");
+        for (k=0; k<vtypes; k++)
+          fbc_df[k] = nullv;
 #endif
 #endif /*FBC*/
 #ifdef RIGID
@@ -906,10 +910,10 @@ void getparamfile(char *paramfname, int sim)
       /* set imposed temperature to current system temperature */
       use_curr_temp = 1;
     }
-#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)|| defined(FINNIS)
+#ifdef TEMPCONTROL
     else if (strcasecmp(token,"endtemp")==0) {
       /* temperature at end of sim. */
-      getparam("endtemp",&end_temp,PARAM_REAL,1,1);
+      getparam(token,&end_temp,PARAM_REAL,1,1);
     }
 #endif
 #if defined(STM) || defined(FRAC) || defined(FTG)
@@ -1197,27 +1201,9 @@ void getparamfile(char *paramfname, int sim)
 #endif
 #endif
 #ifdef HOMDEF
-    else if (strcasecmp(token,"exp_interval")==0) {
-      /* period of expansion intervals */
-      getparam(token,&exp_interval,PARAM_INT,1,1);
-      warning_str("Parameter %s is deprecated, please consult manual!",token);
-    }
-    else if (strcasecmp(token,"expansion")==0) {
-      /* expansion */
-      getparam(token,&expansion,PARAM_REAL,DIM,DIM);
-    }
-    else if (strcasecmp(token,"hom_interval")==0) {
-      /* period of homshear intervals */
-      getparam(token,&hom_interval,PARAM_INT,1,1);
-      warning_str("Parameter %s is deprecated, please consult manual!",token);
-    }
-    else if (strcasecmp(token,"shear_factor")==0) {
-      /* maximum shear */
-      getparam(token,&shear_factor,PARAM_REAL,2,2);
-    }
     else if (strcasecmp(token,"lindef_interval")==0) {
       /* period of linear deformation intervals */
-      getparam(token,&lindef_interval,PARAM_INT,1,1);
+      getparam(token,&lindef_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"lindef_size")==0) { 
       /* scale factor for deformation */
@@ -1594,7 +1580,7 @@ void getparamfile(char *paramfname, int sim)
 #ifdef RNEMD
     else if (strcasecmp(token, "exch_interval")==0){
       /* interval for particle exchange */
-      getparam("exch_interval", &exch_interval, PARAM_INT, 1,1);
+      getparam(token, &exch_int, PARAM_INT, 1,1);
     }
 #endif
 #ifdef TRANSPORT
@@ -1604,7 +1590,7 @@ void getparamfile(char *paramfname, int sim)
     }
      else if (strcasecmp(token, "tran_interval")==0){
       /* number of steps between temp. writes  */
-      getparam("tran_interval", &tran_interval, PARAM_INT, 1,1);
+      getparam(token, &tran_int, PARAM_INT, 1,1);
     }
 #endif
 #ifdef TTM
@@ -2413,6 +2399,8 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
   if (feof(pf)) finished=1;
   fclose(pf);
 
+  return finished;
+
 } /* getparamfile */
 
 
@@ -2463,12 +2451,10 @@ void check_parameters_complete()
   if ((have_potfile==0) && (have_pre_pot==0))
     error("You must specify a pair interaction!");
 #endif
-#if defined(NPT) || defined(NVT) || defined(FRAC) || defined(FINNIS)
+#ifdef TEMPCONTROL
   if (temperature == 0) {
     error("starttemp is missing or zero.");
   }
-#endif
-#if defined(NPT) || defined(NVT) || defined(FRAC) || defined(FINNIS)
   if (end_temp == 0) {
     end_temp = temperature;
   }
@@ -2490,110 +2476,105 @@ void check_parameters_complete()
   }
 #endif
 #ifdef NVX
-  	if (dTemp_start == 0){
-		error ("dTemp_start is missing or zero.");
-	}
-	if (dTemp_end == 0){
-		error ("dTemp_end is missing or zero.");
-	}
-	if (tran_interval == 0){
-		error ("tran_interval is zero.");
-	}
-	if (tran_nlayers == 0){
-		error ("tran_nlayers is zero.");
-        }
+  if (dTemp_start == 0){
+    error ("dTemp_start is missing or zero.");
+  }
+  if (dTemp_end == 0){
+    error ("dTemp_end is missing or zero.");
+  }
+  if (tran_int == 0){
+    error ("tran_int is zero.");
+  }
+  if (tran_nlayers == 0){
+    error ("tran_nlayers is zero.");
+  }
 #endif
 #ifdef RNEMD
-	if (tran_interval == 0){
-		error ("tran_interval is zero.");
-	}
-	if (tran_nlayers == 0){
-		error ("tran_nlayers is zero.");
-        }
+  if (tran_int == 0){
+    error ("tran_int is zero.");
+  }
+  if (tran_nlayers == 0){
+    error ("tran_nlayers is zero.");
+  }
 #endif
 #ifdef FTG
-	if (nslices < 2){
-	  error ("nslices is missing or less than 2.");
-	}
-	if (Tleft == 0 ){
-	  error ("Tleft is missing or zero.");
-	}
-	if (Tright == 0 ){
-	  error ("Tright is missing or zero.");
-	}
+  if (nslices < 2){
+    error ("nslices is missing or less than 2.");
+  }
+  if (Tleft == 0 ){
+    error ("Tleft is missing or zero.");
+  }
+  if (Tright == 0 ){
+    error ("Tright is missing or zero.");
+  }
 #endif
-#ifdef LASER
-        if (laser_dir.x!=0){
-	  laser_dir.x=1;
-          if (laser_dir.y!=0
-#ifndef TWOD
-	      || laser_dir.z!=0
-#endif
-              ){
-            error("Sorry: Laser incidence only along a single coordinate axis (for the moment).\n");
-          }
-        }   
-        else if (laser_dir.y!=0){
-          laser_dir.y=1;
-#ifndef TWOD
-          if (laser_dir.z!=0){
-            error("Sorry: Laser incidence only along a single coordinate axis (for the moment).\n");
-          }
-        }
-        else if (laser_dir.z!=0){
-          laser_dir.z=1;
-#endif
-        }
-        else{
-          error("Please give the direction of laser incidence (option laser_dir in the parameter file).\n");
-        }
-	if ( (laser_rescale_mode < 0) || (laser_rescale_mode > 4) ) {
-          error("Parameter laser_rescale_mode must be a positive integer < 5 !");
-	}
-#endif /*LASER*/
-#ifdef TTM
-	if (fd_update_steps <= 0)
-	{
-	  warning("Ignoring illegal value of fd_update_steps, using 1\n");
-	  fd_update_steps=1;
-	}
-	if (init_t_el<0)
-	{
-	  warning("Ignoring illegal value of init_t_el, using lattice temp\n");
-	  init_t_el=0.0;
-	}
-	if (fix_t_el!=0 && init_t_el==0.0)
-	  error("You need to specify init_t_el for enabled fix_t_el!\n");
 
-	if (strcasecmp(fd_one_d_str,"x")==0 || strcasecmp(fd_one_d_str,"1")==0)
-	{
-	  fd_one_d=1;
-	} else if (strcasecmp(fd_one_d_str,"y")==0 || strcasecmp(fd_one_d_str,"2")==0)
-	{
-	  fd_one_d=2;
-	} else if (strcasecmp(fd_one_d_str,"z")==0 || strcasecmp(fd_one_d_str,"3")==0)
-	{
-	  fd_one_d=3;
-	} else if (strcasecmp(fd_one_d_str,"")!=0)
-	{
-	  warning("Ignoring unknown value of fe_one_d\n");
-	}
-	if ((fd_gamma==0.0 && fd_c==0.0)||(fd_gamma!=0.0 && fd_c!=0.0))
-	{
-	  error ("You must specify either fd_gamma or fd_c for TTM simulations.\n");
-	}
-#endif /*TTM*/
-#ifdef MPI
-        {
-#ifdef TWOD
-          int want_cpus = cpu_dim.x * cpu_dim.y;
-#else
-          int want_cpus = cpu_dim.x * cpu_dim.y * cpu_dim.z;
+#ifdef LASER
+  if (laser_dir.x!=0) {
+    laser_dir.x=1;
+    if (laser_dir.y!=0
+#ifndef TWOD
+      || laser_dir.z!=0
 #endif
-          if ( want_cpus != num_cpus) calc_cpu_dim();
-          if ((want_cpus != num_cpus) && (want_cpus != 1)) 
-            warning("cpu_dim incompatible with available CPUs, using default");
-        }
+    ) error("Sorry: Laser incidence only along one coordinate axis.");
+  }   
+  else if (laser_dir.y!=0) {
+    laser_dir.y=1;
+#ifndef TWOD
+    if (laser_dir.z!=0){
+      error("Sorry: Laser incidence only along one coordinate axis.");
+    }
+  }
+  else if (laser_dir.z!=0) {
+    laser_dir.z=1;
+#endif
+  }
+  else {
+    error("Parameter laser_dir (laser incidence direction) missing.")
+  }
+  if ( (laser_rescale_mode < 0) || (laser_rescale_mode > 4) ) {
+    error("Parameter laser_rescale_mode must be a positive integer < 5 !");
+  }
+#endif /* LASER */
+#ifdef TTM
+  if (fd_update_steps <= 0) {
+    warning("Ignoring illegal value of fd_update_steps, using 1\n");
+    fd_update_steps=1;
+  }
+  if (init_t_el<0) {
+    warning("Ignoring illegal value of init_t_el, using lattice temp\n");
+    init_t_el=0.0;
+  }
+  if (fix_t_el!=0 && init_t_el==0.0)
+    error("You need to specify init_t_el for enabled fix_t_el!\n");
+
+  if (strcasecmp(fd_one_d_str,"x")==0 || strcasecmp(fd_one_d_str,"1")==0) {
+    fd_one_d=1;
+  } 
+  else if (strcasecmp(fd_one_d_str,"y")==0 || strcasecmp(fd_one_d_str,"2")==0){
+    fd_one_d=2;
+  } 
+  else if (strcasecmp(fd_one_d_str,"z")==0 || strcasecmp(fd_one_d_str,"3")==0){
+    fd_one_d=3;
+  } 
+  else if (strcasecmp(fd_one_d_str,"")!=0) {
+    warning("Ignoring unknown value of fe_one_d\n");
+  }
+  if ((fd_gamma==0.0 && fd_c==0.0)||(fd_gamma!=0.0 && fd_c!=0.0)) {
+    error ("You must specify either fd_gamma or fd_c for TTM simulations.");
+  }
+#endif /* TTM */
+#ifdef MPI
+  {
+#ifdef TWOD
+    int want_cpus = cpu_dim.x * cpu_dim.y;
+#else
+    int want_cpus = cpu_dim.x * cpu_dim.y * cpu_dim.z;
+#endif
+    if ( want_cpus != num_cpus) calc_cpu_dim();
+    if ((want_cpus != num_cpus) && (want_cpus != 1)) 
+      warning("cpu_dim incompatible with available CPUs, using default");
+  }
 #endif
 #ifdef SOCKET_IO
   if ((!server_socket) && (display_host[0]=='\0')) {
@@ -2698,49 +2679,71 @@ void read_command_line(int argc,char **argv)
 
 /*****************************************************************
 *
-*  read parameters for the first simulation phase
+*  read parameters
 *
 ******************************************************************/
 
-void read_parameters(void)
+int read_parameters(char *paramfname, int phase)
 {
-  int i;
+  int i, finished = 0;
   str255 fname;
   FILE *testfile;
 
   if (0==myid) {
-    getparamfile(paramfilename,1);
+
+    /* write itr-file for the next phase */
+    if (phase > 1) write_itr_file(-1, steps_max,"");
+    finished = getparamfile(paramfname, phase);
     /* read initial itr-file (if there is any), but keep steps_min value */
-    if (0 < strlen(itrfilename)) {
-      int tmp_steps = steps_min, tmp_finished = finished;
-      getparamfile(itrfilename,1);
+    if ((phase == 1) && (0 < strlen(itrfilename))) {
+      int tmp_steps = steps_min;
+      getparamfile(itrfilename, 1);
       steps_min = tmp_steps;
-      finished  = tmp_finished;
+    }
+    /* read back itr-file for the next phase */
+    if (phase > 1) {
+      sprintf( itrfilename,"%s-final.itr", outfilename );
+      getparamfile(itrfilename, 1);
     }
     check_parameters_complete();
 
     /* Get restart parameters if restart */
     if (0 != imdrestart) {
-      int tmp = finished;
+
+      /* read itr-file */
       sprintf(fname,"%s.%d.itr",outfilename,imdrestart);
       testfile = fopen(fname,"r");
       if (NULL==testfile) { 
         sprintf(fname,"%s.%05d.itr",outfilename,imdrestart);
+        testfile = fopen(fname,"r");
+        if (NULL==testfile) { 
+          error_str("file %s not found", fname);
+        } else {
+          fclose(testfile);
+        }
       } else {
         fclose(testfile);
       }
+      getparamfile(fname,1);
+
+      /* get restart configuration */
       sprintf(infilename,"%s.%d.%s",outfilename,imdrestart,"chkpt");
       testfile = fopen(infilename,"r");
       if (NULL==testfile) { 
         sprintf(infilename,"%s.%05d.%s",outfilename,imdrestart,"chkpt");
+        testfile = fopen(infilename,"r");
+        if (NULL==testfile) { 
+          error_str("file %s not found", infilename);
+        } else {
+          fclose(testfile);
+        }
       } else {
         fclose(testfile);
       }
-      printf("Restarting from %s.\n",fname);
-      getparamfile(fname,1);
-      finished = tmp;
-    } else {
-      /* if not restart: delete files to which we append */
+      printf("Restarting from %s.\n",infilename);
+
+    } else if (phase == 1) {
+      /* if not restart and phase 1: delete files to which we append */
       sprintf(fname,"%s.eng",                 outfilename); unlink(fname);
       sprintf(fname,"%s.minmax.Ekin",         outfilename); unlink(fname);
       sprintf(fname,"%s.minmax.Epot",         outfilename); unlink(fname);
@@ -2773,11 +2776,11 @@ void read_parameters(void)
     }
   }
 #ifdef MPI
+  MPI_Bcast( &finished, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   broadcast_params();
 #endif
-
+  return finished;
 }
-
 
 #ifdef MPI
 
@@ -2796,10 +2799,7 @@ void broadcast_params() {
   vektor nullv = {0,0,0};
 #endif
 
-  
-  MPI_Bcast( &finished    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &ensemble    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &simulation  , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &maxwalltime , 1, REAL,     0, MPI_COMM_WORLD); 
   MPI_Bcast( &hyper_threads,1, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &watch_int   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
@@ -2888,6 +2888,11 @@ void broadcast_params() {
       error("Cannot allocate memory for fbc_endforces on client."); 
   }
   MPI_Bcast( fbc_endforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
+  if (NULL==fbc_df) {
+    fbc_df = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==fbc_df) 
+      error("Cannot allocate memory for fbc_df on client."); 
+  }
 #endif
 #endif
   if (NULL==restrictions) {
@@ -3018,7 +3023,7 @@ void broadcast_params() {
   MPI_Bcast( &have_embed_potfile,      1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 
-#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
+#ifdef TEMPCONTROL
   MPI_Bcast( &end_temp,        1, REAL,    0, MPI_COMM_WORLD); 
 #endif
   MPI_Bcast( &cellsz,          1, REAL,    0, MPI_COMM_WORLD); 
@@ -3109,11 +3114,11 @@ void broadcast_params() {
   MPI_Bcast( &dTemp_end,     1, REAL,   0, MPI_COMM_WORLD); 
 #endif
 #ifdef RNEMD
-  MPI_Bcast( &exch_interval, 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &exch_int,      1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 #ifdef TRANSPORT
   MPI_Bcast( &tran_nlayers,  1, MPI_INT,  0, MPI_COMM_WORLD);
-  MPI_Bcast( &tran_interval, 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &tran_int,      1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 #ifdef LASER
   MPI_Bcast( &laser_offset,     1, REAL,  0, MPI_COMM_WORLD);
@@ -3253,13 +3258,8 @@ void broadcast_params() {
 #endif
 
 #ifdef HOMDEF
-  MPI_Bcast( &hom_interval,    1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &shear_factor,    2, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &exp_interval,    1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &expansion,     DIM, REAL,    0, MPI_COMM_WORLD); 
-
   MPI_Bcast( &lindef_size,     1, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &lindef_interval, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &lindef_int     , 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &lindef_x,      DIM, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &lindef_y,      DIM, REAL,    0, MPI_COMM_WORLD); 
 #ifndef TWOD
@@ -3458,9 +3458,6 @@ void broadcast_params() {
   MPI_Bcast(&use_header,1, MPI_INT, 0, MPI_COMM_WORLD);
 
   /* broadcast integrator to other CPUs */
-
-
-  
   switch (ensemble) {
     case ENS_NVE:       move_atoms = move_atoms_nve;       break;
     case ENS_TTM:       move_atoms = move_atoms_ttm;       break;
@@ -3479,7 +3476,6 @@ void broadcast_params() {
     default: if (0==myid) error("unknown ensemble in broadcast"); break;
   }
 
-
 #ifdef LASER
   /* broadcast laser rescaling routine to other CPUs */
   switch (laser_rescale_mode) {
@@ -3490,7 +3486,8 @@ void broadcast_params() {
 #ifdef TTM
     case 4:       do_laser_rescale = laser_rescale_ttm; break;
 #endif
-    default: if (0==myid) error("unknown laser rescaling mode in broadcast"); break;
+    default: if (0==myid) 
+               error("unknown laser rescaling mode in broadcast"); break;
   }
 #endif /* LASER */
 

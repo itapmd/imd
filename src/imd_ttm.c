@@ -429,7 +429,8 @@ void init_ttm()
               fd_h.x * fd_h.y * fd_h.z / natoms;
   }
 
-  return;
+  if (myid==0) printf( "Using Two Temperature Model TTM\n");
+
 }
 
 /* solve heat diffusion equation for electronic system */

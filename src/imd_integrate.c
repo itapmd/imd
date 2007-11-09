@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -733,7 +733,6 @@ void move_atoms_mik(void)
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
 #endif
 #endif
-
         IMPULS(p,i,X) += timestep * KRAFT(p,i,X);
         IMPULS(p,i,Y) += timestep * KRAFT(p,i,Y);
 #ifndef TWOD
@@ -1420,6 +1419,12 @@ void move_atoms_npt_iso(void)
   real tmpvec1[4], tmpvec2[4], ttt;
   real reib, ireib;
   real tmp_f_max2=0.0;
+  static real d_pressure;
+
+  if (steps == steps_min) {
+    calc_dyn_pressure();
+    if (isq_tau_xi==0.0) xi.x = 0.0;
+  }
 
   fnorm    = 0.0;
   omega_E  = 0.0;
@@ -1613,6 +1618,17 @@ void move_atoms_npt_iso(void)
   box_z.z *= ttt;
 #endif  
   make_box();
+
+  /* increment external pressure */
+  if (steps == steps_min) {
+    if (use_curr_pressure==1) {
+      pressure_ext.x = pressure;
+      use_curr_pressure = 0;
+    }
+    d_pressure = (pressure_end.x - pressure_ext.x) / (steps_max - steps_min);
+  }
+  pressure_ext.x += d_pressure;
+
 }
 
 #else
@@ -1640,6 +1656,18 @@ void move_atoms_npt_axial(void)
   real tmp_f_max2=0.0;
   real Ekin_new = 0.0, ttt, tmpvec1[6], tmpvec2[6];
   vektor pfric, pifric, rfric, rifric, tvec;
+  static vektor d_pressure;
+
+  if (steps == steps_min) {
+    calc_dyn_pressure();
+    if (isq_tau_xi==0.0) {
+      xi.x = 0.0;
+      xi.y = 0.0;
+#ifndef TWOD
+      xi.z = 0.0;
+#endif
+    }
+  }
 
   fnorm    = 0.0;
   omega_E  = 0.0;
@@ -1793,6 +1821,29 @@ void move_atoms_npt_axial(void)
   box_z.z *= tvec.z;
 #endif
   make_box();
+
+  /* increment external pressure */
+  if (steps == steps_min) {
+    if (use_curr_pressure==1) {
+      pressure_ext.x = stress_x;
+      pressure_ext.y = stress_y;
+#ifndef TWOD
+      pressure_ext.z = stress_z;
+#endif
+      use_curr_pressure = 0;
+    }
+    d_pressure.x = (pressure_end.x-pressure_ext.x) / (steps_max-steps_min);
+    d_pressure.y = (pressure_end.y-pressure_ext.y) / (steps_max-steps_min);
+#ifndef TWOD
+    d_pressure.z = (pressure_end.z-pressure_ext.z) / (steps_max-steps_min);
+#endif
+  }
+  pressure_ext.x += d_pressure.x;
+  pressure_ext.y += d_pressure.y;
+#ifndef TWOD
+  pressure_ext.z += d_pressure.z;
+#endif
+
 }
 
 #else
@@ -2614,6 +2665,13 @@ void move_atoms_nvx(void)
   real scale, rescale, Rescale;
   vektor tot_impuls_left, tot_impuls_right, vectmp;
   real inv_mass_left=0.0, inv_mass_right=0.0;
+  static real dtemp;
+
+  if (steps == steps_min) {
+    dtemp = (dTemp_end - dTemp_start) / (steps_max - steps_min);
+    tran_Tleft  = temperature + dTemp_start;
+    tran_Tright = temperature - dTemp_start;
+  }
  
   tot_kin_energy = 0.0;
   tot_impuls_left.x  = 0.0;
@@ -2779,6 +2837,10 @@ void move_atoms_nvx(void)
   heat_transfer += tran_Tleft *natoms_left  * DIM/2 - Ekin_left/2;  /* hot  */ 
   heat_transfer -= tran_Tright*natoms_right * DIM/2 - Ekin_right/2; /* cold */
 #endif
+
+  /* increment temperature difference */
+  tran_Tleft   += dtemp;
+  tran_Tright  -= dtemp;
 }
 
 #else

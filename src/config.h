@@ -140,6 +140,10 @@
 #define RELAX
 #endif
 
+#if defined(AND) || defined(NVT) || defined(NPT) || defined(FRAC) || defined(FINNIS) || defined(STM)
+#define TEMPCONTROL
+#endif
+
 /* GLOK is NVE with additional features */
 #ifdef GLOK
 #ifndef NVE

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -33,6 +33,78 @@
 #define FORMAT1 "%f"
 #define FORMAT3 "%f %f %f"
 #endif
+
+/*****************************************************************************
+*
+*  setup_potential
+*
+*****************************************************************************/
+
+void setup_potentials( void )
+{
+#ifdef PAIR
+  /* read pair potential file - also used for TTBP, EAM2, TERSOFF, EWALD, .. */
+  if (have_potfile)
+    read_pot_table(&pair_pot,potfilename,ntypes*ntypes,1);
+  /* initialize analytically defined potentials */
+  if (have_pre_pot) init_pre_pot();
+#ifdef MULTIPOT
+  for (i=0; i<N_POT_TAB; i++)
+    copy_pot_table( pair_pot, &pair_pot_ar[i]);
+#endif
+#ifdef LINPOT
+  make_lin_pot_table(pair_pot, &pair_pot_lin);
+#endif
+#endif
+
+#ifdef TTBP
+  /* read TTBP smoothing potential file */
+  read_pot_table(&smooth_pot,ttbp_potfilename,ntypes*ntypes,1);
+#endif
+
+#ifdef EAM2
+  /* read the tabulated embedding energy function */
+  read_pot_table(&embed_pot,eam2_emb_E_filename,ntypes,0);
+  /* read the tabulated electron density function */
+  read_pot_table(&rho_h_tab,eam2_at_rho_filename,ntypes*ntypes,1);
+#ifdef EEAM
+  /* read the tabulated energy modification term */
+  read_pot_table(&emod_pot,eeam_mod_E_filename,ntypes,0);
+#endif
+#endif
+#ifdef ADP
+  /* read ADP dipole distortion file */
+  read_pot_table(&adp_upot,adp_upotfile,ntypes*ntypes,1);
+  /* read ADP quadrupole distortion file */
+  read_pot_table(&adp_wpot,adp_wpotfile,ntypes*ntypes,1);
+#endif
+
+#ifdef MEAM
+  if (have_potfile)
+    read_pot_table(&pair_pot,potfilename,ntypes*ntypes,1);
+  /* read the tabulated embedding energy function */
+  if (have_embed_potfile)
+    read_pot_table(&embed_pot,meam_emb_E_filename,ntypes,0);
+  /* read the tabulated electron density function */
+  if (have_eldensity_file)
+    read_pot_table(&el_density,meam_eldensity_filename,ntypes,1);    
+  init_meam();
+#endif
+
+#ifdef KEATING
+  init_keating();
+#endif
+#ifdef TTBP
+  init_ttbp();
+#endif
+#ifdef STIWEB
+  init_stiweb();
+#endif
+#ifdef TERSOFF
+  init_tersoff();
+#endif
+
+}
 
 /*****************************************************************************
 *

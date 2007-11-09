@@ -71,6 +71,9 @@
 /* Data types */
 #include "types.h"
 
+/* Some constants */
+#include "constants.h"
+
 /* Some makros */
 #include "makros.h"
 

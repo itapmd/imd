@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -67,6 +67,8 @@ void write_config_select(int fzhlr, char *suffix,
 {
   FILE *out=NULL;
   str255 fname;
+
+  is_big_endian = endian();
 
 #if defined(BGL) && defined(NBLIST)
   deallocate_nblist();
@@ -447,6 +449,18 @@ void write_atoms_ef(FILE *out)
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
 }
+
+/******************************************************************************
+*
+*  write_config_ef - writes an 'energy filtered' configuration
+*
+******************************************************************************/
+
+void write_config_ef(int nr)
+{
+  write_config_select( nr, "ef", write_atoms_ef, write_header_ef);
+}
+
 #endif /* EFILTER */
 
 
@@ -564,6 +578,19 @@ void write_atoms_nb(FILE *out)
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
 }
+
+/******************************************************************************
+*
+*  write_config_nb
+*  writes a 'neighbours filtered' configuration
+*
+******************************************************************************/
+
+void write_config_nb(int nr)
+{
+  write_config_select( nr, "nb", write_atoms_nb, write_header_nb);
+}
+
 #endif /* NNBR */
 
 #ifdef WRITEF
@@ -670,6 +697,19 @@ void write_atoms_wf(FILE *out)
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
 }
+
+/******************************************************************************
+*
+*  write_config_wf
+*  writes forces of boundary particles
+*
+******************************************************************************/
+
+void write_config_wf(int nr)
+{
+  write_config_select(nr, "wf", write_atoms_wf, write_header_wf);
+}
+
 #endif /* WRITEF */
 
 
@@ -779,6 +819,19 @@ void write_atoms_press(FILE *out)
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
 }
+
+/******************************************************************************
+*
+*  filter function for write_config_select
+*  writes pressure tensor for each atom to files *.nr.press
+*
+******************************************************************************/
+
+void write_config_press(int nr)
+{
+  write_config_select( nr, "press", write_atoms_press, write_header_press);
+}
+
 #endif /* STRESS_TENS */
 
 /******************************************************************************
@@ -879,7 +932,6 @@ void write_atoms_pic(FILE *out)
   flush_outbuf(out,&len,OUTBUF_TAG+1);
 }
 
-
 #ifdef DISLOC
 
 /******************************************************************************
@@ -973,6 +1025,18 @@ void write_atoms_dem(FILE *out)
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
+}
+
+/******************************************************************************
+*
+*  write_config_dem
+*  writes a differential energy map to files *.dem.x
+*
+******************************************************************************/
+
+void write_config_dem(int nr)
+{
+  write_config_select(nr, "dem", write_atoms_dem, write_header_dem);
 }
 
 /******************************************************************************
@@ -1077,6 +1141,17 @@ void write_atoms_dsp(FILE *out)
   flush_outbuf(out,&len,OUTBUF_TAG+1);
 }
 
+/******************************************************************************
+*
+*  write_config_dsp
+*  writes a differential displacement map to files *.dsp.x
+*
+******************************************************************************/
+
+void write_config_dsp(int nr)
+{
+  write_config_select(nr, "dsp", write_atoms_dsp, write_header_dsp);
+}
 
 /******************************************************************************
 *
@@ -1323,6 +1398,20 @@ void write_atoms_avp(FILE *out)
   flush_outbuf(out,&len,OUTBUF_TAG+1);
 }
 
+/******************************************************************************
+*
+*  write_config_avpos
+*  writes average position to files *.nr.avp
+*
+******************************************************************************/
+
+void write_config_avpos(int nr)
+{
+  write_config_select(nr, "avp", write_atoms_avp, write_header_avp);
+  write_avpos_itr_file(nr, steps);
+  update_avpos();
+}
+
 #endif /* AVPOS */
 
 #ifdef FORCE
@@ -1398,6 +1487,18 @@ void write_atoms_force(FILE *out)
   flush_outbuf(out,&len,OUTBUF_TAG+1);
 }
 
+/******************************************************************************
+*
+*  filter function for write_config_select
+*  writes forces to files *.nr.force
+*
+******************************************************************************/
+
+void write_config_force(int nr)
+{
+  write_config_select( nr, "force", write_atoms_force, write_header_force);
+}
+
 #endif /* FORCE */
 
 #ifdef ATDIST
@@ -1412,6 +1513,8 @@ void write_header_atdist_pos(FILE *out)
 {
   char c;
   time_t now;
+
+  is_big_endian = endian();
 
   /* format line */
   if (binary_output)
@@ -1518,6 +1621,18 @@ void write_atoms_atdist_pos(FILE *out)
 	  }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
+}
+
+/******************************************************************************
+*
+*  write_config_atdist_pos
+*  writes types and positions, with periodic extension
+*
+******************************************************************************/
+
+void write_config_atdist_pos(int nr)
+{
+  write_config_select(nr,"cpt",write_atoms_atdist_pos,write_header_atdist_pos);
 }
 
 #endif /* ATDIST */
@@ -1898,6 +2013,8 @@ void write_header_sqd(FILE *out)
   char c;
   time_t now;
 
+  is_big_endian = endian();
+
   /* format line */
   if (binary_output)
     c = is_big_endian ? 'b' : 'l';
@@ -1968,6 +2085,18 @@ void write_atoms_sqd(FILE *out)
     }
   }
   flush_outbuf(out,&len,OUTBUF_TAG+1);
+}
+
+/******************************************************************************
+*
+*  write_config_sqd
+*  writes average position to files *.sqd
+*
+******************************************************************************/
+
+void write_config_sqd(int nr)
+{
+  write_config_select(nr, "sqd", write_atoms_sqd, write_header_sqd);
 }
 
 #endif /* MSQD */

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -124,6 +124,8 @@ void init_correl(int ncorr_rmax, int ncorr_tmax)
     }
   }
 
+  /* initialize reference step */
+  correl_refstep = correl_start;
 }
 
 /******************************************************************************

@@ -31,6 +31,7 @@
 int main(int argc, char **argv)
 {
   int start, num_threads, i;
+  int simulation = 1, finished = 0;
   real tmp;
 #ifdef PAPI
   float rtime, ptime, mflops;
@@ -38,10 +39,8 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef MPI
-  init_mpi(&argc,argv);
-#ifdef MPI2
-  if (myid==0) printf("Using MPI2\n");
-#endif
+  MPI_Init(&argc, &argv);
+  init_mpi();
 #endif
 
   /* initialize timers */
@@ -53,7 +52,6 @@ int main(int argc, char **argv)
   imd_init_timer( &time_integrate,  1, "integrate", "green" );
   imd_init_timer( &time_forces,     1, "forces",    "yellow");
 
-  is_big_endian = endian();
   read_command_line(argc,argv);
 
   /* loop for online visualization */
@@ -67,110 +65,33 @@ int main(int argc, char **argv)
   imd_start_timer(&time_setup);
 
   /* read parameters for first simulation phase */
-  read_parameters();
+  finished = read_parameters(paramfilename, simulation);
 
-  /* initialize random number generator */
-  srand48(seed);
+  /* initialize all potentials */
+  setup_potentials();
 
-#ifdef PAIR
-  /* read pair potential file - also used for TTBP, EAM2, TERSOFF, EWALD, .. */
-  if (have_potfile)
-    read_pot_table(&pair_pot,potfilename,ntypes*ntypes,1);
-  /* initialize analytically defined potentials */
-  if (have_pre_pot) init_pre_pot();
-#ifdef MULTIPOT
-  for (i=0; i<N_POT_TAB; i++)
-    copy_pot_table( pair_pot, &pair_pot_ar[i]);
-#endif
-#ifdef LINPOT
-  make_lin_pot_table(pair_pot, &pair_pot_lin);
-#endif
-#endif
-
-
-/* CBE initialization must follow the initialitzation of the analytically
-   defined potentials which have been initialized above, as the SPUs might
-   DMA the potential package to their LS right after startup.
-*/
-#if defined(CBE)
-  /* 1st arg: #of SPUs to be used */
+#ifdef CBE
+  /* CBE initialization must be after potential setup */
   if ( num_spus != cbe_init(num_spus, -1) ) {
     error("Could not initialize enough SPU threads!\n");
   }
   else {
     fprintf(stdout, "CBE info: %d SPUs are used.\n", num_spus);
   }
-
-  fprintf(stdout, "CBE info: Pointers on PPU are %u bits wide\n", ((unsigned)PPU_PTRBITS));
+  fprintf(stdout, "CBE info: Pointers on PPU are %u bits wide\n", 
+                  (unsigned) PPU_PTRBITS );
 #endif  /* CBE */
-
-#ifdef TTBP
-  /* read TTBP smoothing potential file */
-  read_pot_table(&smooth_pot,ttbp_potfilename,ntypes*ntypes,1);
-#endif
-
-#ifdef EAM2
-  /* read the tabulated embedding energy function */
-  read_pot_table(&embed_pot,eam2_emb_E_filename,ntypes,0);
-  /* read the tabulated electron density function */
-  read_pot_table(&rho_h_tab,eam2_at_rho_filename,ntypes*ntypes,1);
-#ifdef EEAM
-  /* read the tabulated energy modification term */
-  read_pot_table(&emod_pot,eeam_mod_E_filename,ntypes,0);
-#endif
-#endif
-#ifdef ADP
-  /* read ADP dipole distortion file */
-  read_pot_table(&adp_upot,adp_upotfile,ntypes*ntypes,1);
-  /* read ADP quadrupole distortion file */
-  read_pot_table(&adp_wpot,adp_wpotfile,ntypes*ntypes,1);
-#endif
-
-#ifdef MEAM
-  if (have_potfile)
-    read_pot_table(&pair_pot,potfilename,ntypes*ntypes,1);
-  /* read the tabulated embedding energy function */
-  if (have_embed_potfile)
-    read_pot_table(&embed_pot,meam_emb_E_filename,ntypes,0);
-  /* read the tabulated electron density function */
-  if (have_eldensity_file)
-    read_pot_table(&el_density,meam_eldensity_filename,ntypes,1);    
-  init_meam();
-#endif
-
-#ifdef KEATING
-  init_keating();
-#endif
-#ifdef TTBP
-  init_ttbp();
-#endif
-#ifdef STIWEB
-  init_stiweb();
-#endif
-#ifdef TERSOFF
-  init_tersoff();
-#endif
 
 #ifdef TIMING
   imd_start_timer(&time_input);
 #endif
-  /* filenames starting with _ denote internal 
-     generation of the intitial configuration */
+  /* filenames starting with _ denote internal generation of configuration */
   if ('_' == infilename[0]) {
-    if (0 == myid) { 
-      printf("Generating atoms: %s.\n", infilename);fflush(stdout);
-    }
     generate_atoms(infilename);
   }
   else {
-    if (0 == myid) {
-      printf("Reading atoms.\n");fflush(stdout);
-    }
-    if (box_from_header == 1) read_box(infilename);
-    make_box();
     read_atoms(infilename);
   }
-  if (0 == myid) printf("Done reading atoms.\n");
 #ifdef TIMING
   imd_stop_timer(&time_input);
 #endif
@@ -220,43 +141,21 @@ int main(int argc, char **argv)
 #endif
 
   /* first phase of the simulation */
-  if (steps_min <= steps_max) main_loop();
+  if (steps_min <= steps_max) {
+    if (0==myid) printf("Starting simulation %d\n", simulation);
+    if (main_loop(simulation)) finished = 1;
+    if (0==myid) printf("Finished simulation %d\n", simulation);
+  }
+
   /* execute further phases of the simulation */
   while (finished==0) {
-    int tmp;
     simulation++;
-    if (0==myid) {
-      getparamfile( paramfilename, simulation );
-      sprintf( itrfilename,"%s-final.itr", outfilename );
-      tmp = finished;
-      getparamfile( itrfilename, 1 );
-      finished = tmp;
-    }
-#ifdef MPI
-    broadcast_params();
-#endif
-
-#ifdef LASER
-  init_laser(); 
-#endif
-
-#ifdef TTM
-    init_ttm();
-#endif
-
-#ifdef KEATING
-    init_keating();
-#endif
-#ifdef STIWEB
-    init_stiweb();
-#endif
-#ifdef TERSOFF
-    init_tersoff();
-#endif
-
+    finished = read_parameters(paramfilename, simulation);
     if (steps_min <= steps_max) {
       make_box();  /* make sure the box size is still ok */
-      main_loop();
+      if (0==myid) printf("Starting simulation %d\n", simulation);
+      if (main_loop(simulation)) finished = 1;
+      if (0==myid) printf("Finished simulation %d\n", simulation);
     }
   }
 
@@ -265,6 +164,7 @@ int main(int argc, char **argv)
 #ifdef PAPI
   PAPI_flops(&rtime,&ptime,&flpins,&mflops);
 #endif
+
   /* write execution time summary */
   if (0 == myid) {
     if (NULL!= eng_file) fclose( eng_file);

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -22,124 +22,6 @@
 #include "imd.h"
 
 #ifdef HOMDEF   /* homogeneous deformation with pbc */
-
-/*****************************************************************************
-*
-* expand_sample()
-*
-*****************************************************************************/
-
-void expand_sample(void)
-{
-  int k;
-  
-  /* Apply expansion */
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-  for (k=0; k<NCELLS; ++k) {
-    int i;
-    cell *p;
-    p = CELLPTR(k);
-    for (i=0; i<p->n; ++i) {
-      ORT(p,i,X) *= expansion.x;
-      ORT(p,i,Y) *= expansion.y;
-#ifndef TWOD
-      ORT(p,i,Z) *= expansion.z;
-#endif
-    }
-  }
-
-  /* new box size */
-#ifdef TWOD
-  box_x.x *= expansion.x;  box_y.x *= expansion.x;
-  box_x.y *= expansion.y;  box_y.y *= expansion.y;
-#else
-  box_x.x *= expansion.x;  box_x.y *= expansion.y;  box_x.z *= expansion.z;
-  box_y.x *= expansion.x;  box_y.y *= expansion.y;  box_y.z *= expansion.z;
-  box_z.x *= expansion.x;  box_z.y *= expansion.y;  box_z.z *= expansion.z;
-#endif
-  make_box();
-
-
-
-#ifdef DAMP /* deform the stadium correspondingly */
-#ifdef TWOD
-  center.x   *= expansion.x;  center.y   *= expansion.y;
-  stadium.x  *= expansion.x;  stadium.y  *= expansion.y;
-  stadium2.x *= expansion.x;  stadium2.y *= expansion.y;
-#else
-  center.x   *= expansion.x;  center.y   *= expansion.y;  center.z   *= expansion.z;
-  stadium.x  *= expansion.x;  stadium.y  *= expansion.y;  stadium.z  *= expansion.z;
-  stadium2.x *= expansion.x;  stadium2.y *= expansion.y;  stadium2.z *= expansion.z;
-#endif
-#endif
-
-} /* expand sample */
-
-
-/*****************************************************************************
-*
-* shear_sample()
-*
-*****************************************************************************/
-
-void shear_sample(void)
-{
-  int k;
-  real tmpbox;
-
-  /* Apply shear */
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-  for (k=0; k<NCELLS; ++k) {
-    int i;
-    cell *p;
-    real tmport[2];
-    p = CELLPTR(k);
-    for (i=0; i<p->n; ++i) {
-      tmport[0]   = shear_factor.x * ORT(p,i,Y);
-      tmport[1]   = shear_factor.y * ORT(p,i,X);
-      ORT(p,i,X) += tmport[0];
-      ORT(p,i,Y) += tmport[1];
-    }
-  }
-
-  /* new box size */
-  tmpbox = box_x.x;
-  box_x.x += shear_factor.x * box_x.y;
-  box_x.y += shear_factor.y * tmpbox;
-
-  tmpbox = box_y.x;
-  box_y.x += shear_factor.x * box_y.y;
-  box_y.y += shear_factor.y * tmpbox;
-
-#ifndef TWOD
-  tmpbox = box_z.x;
-  box_z.x += shear_factor.x * box_z.y;
-  box_z.y += shear_factor.y * tmpbox;
-#endif
-
-  make_box();
-
-#ifdef DAMP /* deform the stadium correspondingly */
-  tmpbox = center.x;
-  center.x += shear_factor.x * center.y;
-  center.y += shear_factor.y * tmpbox;
-
-  tmpbox = stadium.x;
-  stadium.x += shear_factor.x * stadium.y;
-  stadium.y += shear_factor.y * tmpbox;
-
-  tmpbox = stadium2.x;
-  stadium2.x += shear_factor.x * stadium2.y;
-  stadium2.y += shear_factor.y * tmpbox;
-
-#endif
-
-} /* shear sample */
-
 
 /*****************************************************************************
 * 

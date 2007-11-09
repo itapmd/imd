@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -57,6 +57,22 @@ void read_atoms(str255 infilename)
 #ifdef MPI
   msgbuf   *input_buf=NULL, *b;
 #endif
+
+  if (0 == myid) { 
+    printf("Reading atoms from %s.\n", infilename); 
+    fflush(stdout);
+  }
+
+  /* setup box and cell array; empty old cells, if there are any */
+  if (box_from_header == 1) read_box(infilename);
+  if (natoms > 0) {
+    for (k=0; k<nallcells; k++) cell_array[k].n = 0;
+  }
+  make_box();
+
+  /* initialize random number generator */
+  srand48(seed);
+  is_big_endian = endian();
 
   /* allocate num_sort and num_vsort on all CPUs */
   if ((num_sort = (long *) calloc(ntypes,sizeof(long)))==NULL)
@@ -595,8 +611,10 @@ void read_atoms_cleanup(void)
 #else
   maxc2 = maxc1;
 #endif
-  if (myid==0) printf("maximal cell occupancy: %d\n", maxc2);
-
+  if (0 == myid) { 
+    printf("maximal cell occupancy: %d\n", maxc2);
+    fflush(stdout);  
+  }
 }
 
 #ifdef MPI

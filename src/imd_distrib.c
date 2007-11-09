@@ -36,6 +36,8 @@ void write_distrib(int steps)
   char contents[255];
   int fzhlr, n, i, j, k;
 
+  is_big_endian = endian();
+
   /* backup if dist_ur is not set */
   if (0.0==dist_ur.x) {
     dist_ur.x = box_x.x;
@@ -831,6 +833,8 @@ void write_atdist()
   char c;
   str255 fname;
   FILE *out;
+
+  is_big_endian = endian();
 
   if (myid == 0) {
     sprintf(fname,"%s.atdist",outfilename);

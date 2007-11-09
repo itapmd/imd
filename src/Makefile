@@ -86,6 +86,9 @@
 # to which ${${PARALLEL}_LIBS} and possibly ${PROF_LIBS} (for profiling)
 # is appended.
 #
+# preprocessor flags controlling compile options of IMD are stored in the
+# variable ${PP_FLAGS}.
+#
 # You may have to change the setting for an existing value of IMDSYS.
 # or you have to add support for a new value of IMDSYS. The latter is
 # best done by using the folloing template for IMDSYS=sys-cc:
@@ -121,11 +124,11 @@
 
 MV		= mv      # program to move imd binary to ${BIN_DIR}
 LIBS		+= -lm
-MPI_FLAGS	+= -DMPI
-OMP_FLAGS	+= -DOMP
-OMPI_FLAGS	+= -DMPI -DOMP
-PACX_FLAGS	+= -DMPI -DPACX
-DEBUG_FLAGS	+= -DDEBUG # -Wall # very noisy
+MPI_FLAGS	+= #-DMPI
+OMP_FLAGS	+= #-DOMP
+OMPI_FLAGS	+= #-DMPI -DOMP
+PACX_FLAGS	+= #-DMPI -DPACX
+DEBUG_FLAGS	+= #-DDEBUG # -Wall # very noisy
 
 ###########################################################################
 #
@@ -164,7 +167,7 @@ ifeq (x86_64-icc,${IMDSYS})
   PROF_FLAGS	+= -prof_gen
   RCD_FLAGS	+= # -DRCD -rcd
   MPI_LIBS      += 
-  LFLAGS        += -i-static
+  LFLAGS        += # -i-static
   export        OMPI_MPICC MPICH_CC MPICH_CLINKER
 endif
 
@@ -664,18 +667,22 @@ PARALLEL = SERIAL
 # MPI
 ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
 PARALLEL = MPI
+PP_FLAGS = -DMPI
 endif
 # OpenMP
 ifneq (,$(strip $(findstring omp,${MAKETARGET})))
 PARALLEL = OMP
+PP_FLAGS = -DOMP
 endif
 # MPI + OpenMP
 ifneq (,$(strip $(findstring ompi,${MAKETARGET})))
 PARALLEL = OMPI
+PP_FLAGS = -DMPI -DOMPI
 endif
 # PACX
 ifneq (,$(strip $(findstring pacx,${MAKETARGET})))
 PARALLEL = PACX
+PP_FLAGS = -DMPI -DPACX
 endif
 
 
@@ -711,14 +718,18 @@ endif
 
 # MPE logging
 ifneq (,$(findstring mpel,${MAKETARGET}))
-CFLAGS   += -DMPE
+PP_FLAGS += -DMPE
 MPI_LIBS += -llmpe -lmpe
 endif
 
 # MPE tracing
 ifneq (,$(findstring mpet,${MAKETARGET}))
-CFLAGS   += -DMPE
+PP_FLAGS += -DMPE
 MPI_LIBS += -ltmpe -lmpe
+endif
+
+ifneq (,$(findstring debug,${MAKETARGET}))
+PP_FLAGS += -DDEBUG
 endif
 
 ###########################################################################
@@ -792,7 +803,7 @@ ifneq (,$(strip $(findstring 2d,${MAKETARGET})))
     else
     SOURCES	:= ${SOURCES2D} ${RISCSOURCES2D}
   endif
-  CFLAGS  += -DTWOD
+  PP_FLAGS  += -DTWOD
 
 else
 
@@ -825,12 +836,16 @@ else
   endif
 endif
 
-ifneq (,$(strip $(findstring jvis,${MAKETARGET})))
-  SOURCES += jvis_imd.c
-  CFLAGS  += -DNVE -DNVT -DNPT -DNPT_iso -DREFPOS
-else
-  SOURCES += imd.c
+SRCMAIN = imd.c
+ifneq (,$(strip $(findstring py,${MAKETARGET})))
+  SRCMAIN  = py_imd.c
+  CFLAGS  += -fPIC
 endif
+ifneq (,$(strip $(findstring jvis,${MAKETARGET})))
+  SRCMAIN   = jvis_imd.c
+  PP_FLAGS += -DNVE -DNVT -DNPT -DNPT_iso -DREFPOS
+endif
+SOURCES += ${SRCMAIN}
 
 ###  INTERACTION  #######################################
 
@@ -841,7 +856,7 @@ else
   ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
     ifneq (,$(strip $(findstring cbe,${MAKETARGET})))
       FORCESOURCES = imd_forces_cbe.c
-      CFLAGS += -DCBE
+      PP_FLAGS += -DCBE
     else
       FORCESOURCES = imd_forces_nbl.c
     endif
@@ -852,23 +867,23 @@ endif
 
 # PAIR
 ifneq (,$(strip $(findstring pair,${MAKETARGET})))
-  CFLAGS  += -DPAIR
+  PP_FLAGS  += -DPAIR
 endif
 
 # EAM2 or EAM  -  this is now the same
 ifneq (,$(strip $(findstring eam,${MAKETARGET})))
   # EEAM
   ifneq (,$(strip $(findstring eeam,${MAKETARGET})))
-    CFLAGS  += -DEEAM
+    PP_FLAGS  += -DEEAM
   endif
   # MEAM
   ifneq (,$(strip $(findstring meam,${MAKETARGET})))
-    CFLAGS  += -DMEAM
+    PP_FLAGS  += -DMEAM
     FORCESOURCES += ${MEAMSOURCES}
   else
-    CFLAGS  += -DEAM2
+    PP_FLAGS  += -DEAM2
     ifneq (,$(strip $(findstring asympot,${MAKETARGET})))
-      CFLAGS += -DASYMPOT
+      PP_FLAGS += -DASYMPOT
       FORCESOURCES += ${EAM2SOURCES}
     else
       ifeq (,$(strip $(findstring nbl,${MAKETARGET})))
@@ -882,75 +897,75 @@ endif
 
 # ADP
 ifneq (,$(strip $(findstring adp,${MAKETARGET})))
-CFLAGS  += -DADP
+PP_FLAGS  += -DADP
 endif
 
 # TTBP
 ifneq (,$(strip $(findstring ttbp,${MAKETARGET})))
-CFLAGS  += -DTTBP
+PP_FLAGS  += -DTTBP
 FORCESOURCES += ${COVALENTSOURCES}
 endif
 
 # TTBPXT
 ifneq (,$(strip $(findstring xt,${MAKETARGET})))
-CFLAGS  += -DTTBP -DXT
+PP_FLAGS  += -DTTBP -DXT
 FORCESOURCES += ${COVALENTSOURCES}
 endif
 
 # STIWEB
 ifneq (,$(strip $(findstring stiweb,${MAKETARGET})))
-CFLAGS  += -DSTIWEB
+PP_FLAGS  += -DSTIWEB
 FORCESOURCES += ${COVALENTSOURCES}
 endif
 
 # TERNBCC
 ifneq (,$(strip $(findstring ternbcc,${MAKETARGET})))
-CFLAGS  += -DSTIWEB -DTERNBCC
+PP_FLAGS  += -DSTIWEB -DTERNBCC
 FORCESOURCES += ${COVALENTSOURCES}
 endif
 
 # TERSOFF
 ifneq (,$(strip $(findstring tersoff,${MAKETARGET})))
-CFLAGS  += -DTERSOFF
+PP_FLAGS  += -DTERSOFF
 FORCESOURCES += ${COVALENTSOURCES}
 ifneq (,$(strip $(findstring tersoff2,${MAKETARGET})))
-CFLAGS  += -DTERSOFF2
+PP_FLAGS  += -DTERSOFF2
 endif
 endif
 
 # KEATING
 ifneq (,$(strip $(findstring keating,${MAKETARGET})))
-CFLAGS  += -DKEATING
+PP_FLAGS  += -DKEATING
 FORCESOURCES += ${COVALENTSOURCES}
 endif
 
 # LASER
 ifneq (,$(strip $(findstring laser,${MAKETARGET})))
-CFLAGS += -DLASER
+PP_FLAGS += -DLASER
 SOURCES += ${LASERSOURCES}
 endif
 
 # TWO TEMPERATURE MODEL TTM
 ifneq (,$(strip $(findstring ttm,${MAKETARGET})))
-CFLAGS += -DTTM
+PP_FLAGS += -DTTM
 SOURCES += ${TTMSOURCES}
 endif
 
 # UNIAX
 ifneq (,$(strip $(findstring uniax,${MAKETARGET})))
-CFLAGS  += -DUNIAX
+PP_FLAGS  += -DUNIAX
 FORCESOURCES = ${UNIAXSOURCES}
 endif
 
 # EWALD
 ifneq (,$(strip $(findstring ewald,${MAKETARGET})))
-CFLAGS  += -DEWALD
+PP_FLAGS  += -DEWALD
 FORCESOURCES  += ${EWALDSOURCES}
 endif
 
 # LJ - computed Lennard-Jones (for vector versions only)
 ifneq (,$(strip $(findstring lj,${MAKETARGET})))
-CFLAGS  += -DLJ
+PP_FLAGS  += -DLJ
 endif
 
 SOURCES += ${FORCESOURCES}
@@ -958,11 +973,11 @@ SOURCES += ${FORCESOURCES}
 ###  ENSEMBLES  #########################################
 
 ifneq (,$(findstring nve,${MAKETARGET}))
-CFLAGS += -DNVE
+PP_FLAGS += -DNVE
 endif
 
 ifneq (,$(findstring mik,${MAKETARGET}))
-CFLAGS += -DMIK
+PP_FLAGS += -DMIK
 endif
 
 
@@ -970,61 +985,61 @@ endif
 ifneq (,$(strip $(findstring cg,${MAKETARGET})))
 SOURCES += ${CGSOURCES}
 IMDHEADERS += cg_util.h  
-CFLAGS  += -DCG
+PP_FLAGS  += -DCG
 endif
 ifneq (,$(strip $(findstring acg,${MAKETARGET})))
-CFLAGS  += -DACG
+PP_FLAGS  += -DACG
 endif
 
 ifneq (,$(findstring nvt,${MAKETARGET}))
-CFLAGS += -DNVT
+PP_FLAGS += -DNVT
 endif
 
 ifneq (,$(findstring npt_iso,${MAKETARGET}))
-CFLAGS += -DNPT -DNPT_iso
+PP_FLAGS += -DNPT -DNPT_iso
 endif
 
 ifneq (,$(findstring npt_axial,${MAKETARGET}))
-CFLAGS += -DNPT -DNPT_axial
+PP_FLAGS += -DNPT -DNPT_axial
 endif
 
 ifneq (,$(findstring frac,${MAKETARGET}))
-CFLAGS += -DFRAC
+PP_FLAGS += -DFRAC
 # SOURCES += ${FRACSOURCES}
 endif
 
 ifneq (,$(findstring damp,${MAKETARGET}))
-CFLAGS += -DDAMP
+PP_FLAGS += -DDAMP
 endif
 
 ifneq (,$(findstring nvx,${MAKETARGET}))
-CFLAGS += -DNVX
+PP_FLAGS += -DNVX
 SOURCES += ${TRANSSOURCES}
 endif
 
 ifneq (,$(findstring ftg,${MAKETARGET}))
-CFLAGS += -DFTG
+PP_FLAGS += -DFTG
 endif
 
 ifneq (,$(findstring finnis,${MAKETARGET}))
-CFLAGS += -DFINNIS
+PP_FLAGS += -DFINNIS
 endif
 
 ifneq (,$(findstring stm,${MAKETARGET}))
-CFLAGS += -DSTM
+PP_FLAGS += -DSTM
 endif
 
 ###  OPTIONS  ############################################
 
 # vector mode
 ifneq (,$(findstring vec,${MAKETARGET}))
-CFLAGS += -DVEC
+PP_FLAGS += -DVEC
 
 ifneq (,$(findstring vec2,${MAKETARGET}))
-CFLAGS += -DVEC2
+PP_FLAGS += -DVEC2
 else
 ifneq (,$(findstring vec3,${MAKETARGET}))
-CFLAGS += -DVEC3
+PP_FLAGS += -DVEC3
 endif
 endif
 
@@ -1034,140 +1049,142 @@ endif
 ifneq (,$(findstring cna,${MAKETARGET}))
 SOURCES += ${CNASOURCES}
 SOURCES += ${COVALENTSOURCES}
-CFLAGS += -DCNA
+PP_FLAGS += -DCNA
 endif
 
 # with neighbor lists
 ifneq (,$(findstring nbl,${MAKETARGET}))
-CFLAGS += -DNBL
+PP_FLAGS += -DNBL
 endif
 
 # socket interface
 ifneq (,$(strip $(findstring sock,${MAKETARGET})))
 HEADERS += ${SOCKHEADERS}
 SOURCES += ${SOCKSOURCES}
-CFLAGS  += -DSOCKET_IO
+PP_FLAGS  += -DSOCKET_IO
 endif
 
 # timing
 ifneq (,$(findstring timing,${MAKETARGET}))
-CFLAGS += -DTIMING
+PP_FLAGS += -DTIMING
 endif
 
 ifneq (,$(findstring and,${MAKETARGET}))
-CFLAGS += -DAND
+PP_FLAGS += -DAND
 endif
 
 ifneq (,$(findstring fbc,${MAKETARGET}))
-CFLAGS += -DFBC
+PP_FLAGS += -DFBC
 endif
 
 ifneq (,$(findstring rigid,${MAKETARGET}))
-CFLAGS += -DRIGID
+PP_FLAGS += -DRIGID
 endif
 
 ifneq (,$(findstring sendrec,${MAKETARGET}))
-CFLAGS += -DSR
+PP_FLAGS += -DSR
 endif
 
 ifneq (,$(findstring einstein,${MAKETARGET}))
-CFLAGS += -DEINSTEIN
+PP_FLAGS += -DEINSTEIN
 endif
 
 ifneq (,$(findstring fnorm,${MAKETARGET}))
-CFLAGS += -DFNORM
+PP_FLAGS += -DFNORM
 endif
 
 ifneq (,$(findstring relaxinfo,${MAKETARGET}))
-CFLAGS += -DRELAXINFO
+PP_FLAGS += -DRELAXINFO
 endif
 
 ifneq (,$(findstring norhoh,${MAKETARGET}))
-CFLAGS += -DNORHOH
+PP_FLAGS += -DNORHOH
 endif
 
 ifneq (,$(findstring glok,${MAKETARGET}))
-CFLAGS += -DGLOK
+PP_FLAGS += -DGLOK
 endif
 
 ifneq (,$(findstring adaptglok,${MAKETARGET}))
-CFLAGS += -DADAPTGLOK
+PP_FLAGS += -DADAPTGLOK
 endif
 
 ifneq (,$(findstring mix,${MAKETARGET}))
-CFLAGS += -DMIX
+PP_FLAGS += -DMIX
 endif
 
 ifneq (,$(findstring efilter,${MAKETARGET}))
-CFLAGS += -DEFILTER
+PP_FLAGS += -DEFILTER
 endif
 
 ifneq (,$(findstring clone,${MAKETARGET}))
-CFLAGS += -DCLONE
+PP_FLAGS += -DCLONE
 endif
 
 ifneq (,$(findstring nnbr,${MAKETARGET}))
-CFLAGS += -DNNBR
+PP_FLAGS += -DNNBR
 endif
 
 ifneq (,$(findstring writef,${MAKETARGET}))
-CFLAGS += -DWRITEF
+PP_FLAGS += -DWRITEF
 endif
 
 ifneq (,$(findstring deform,${MAKETARGET}))
-CFLAGS += -DDEFORM
+PP_FLAGS += -DDEFORM
+ifeq (,$(findstring homdef,${MAKETARGET}))
 SOURCES += ${DEFORMSOURCES}
+endif
 endif
 
 ifneq (,$(findstring homdef,${MAKETARGET}))
-CFLAGS += -DHOMDEF
+PP_FLAGS += -DHOMDEF
 SOURCES += ${DEFORMSOURCES}
 endif
 
 ifneq (,$(findstring shock,${MAKETARGET}))
-CFLAGS += -DSHOCK
+PP_FLAGS += -DSHOCK
 endif
 
 ifneq (,$(findstring stress,${MAKETARGET}))
-CFLAGS += -DSTRESS_TENS
+PP_FLAGS += -DSTRESS_TENS
 endif
 
 ifneq (,$(findstring quasi,${MAKETARGET}))
-CFLAGS += -DQUASI
+PP_FLAGS += -DQUASI
 SOURCES += ${QUASISOURCES}
 endif
 
 ifneq (,$(findstring disloc,${MAKETARGET}))
-CFLAGS += -DDISLOC
+PP_FLAGS += -DDISLOC
 endif
 
 ifneq (,$(findstring sllod,${MAKETARGET}))
-CFLAGS += -DSLLOD -DNVT
+PP_FLAGS += -DSLLOD -DNVT
 endif
 
 ifneq (,$(findstring avpos,${MAKETARGET}))
-CFLAGS += -DAVPOS
+PP_FLAGS += -DAVPOS
 endif
 
 ifneq (,$(findstring force,${MAKETARGET}))
-CFLAGS += -DFORCE
+PP_FLAGS += -DFORCE
 endif
 
 ifneq (,$(findstring nmoldyn,${MAKETARGET}))
-CFLAGS += -DNMOLDYN
+PP_FLAGS += -DNMOLDYN
 endif
 
 ifneq (,$(findstring dsf,${MAKETARGET}))
-CFLAGS += -DDSF
+PP_FLAGS += -DDSF
 LFLAGS += -lfftw3
 endif
 
 ifneq (,$(findstring atdist,${MAKETARGET}))
-CFLAGS += -DATDIST
+PP_FLAGS += -DATDIST
 endif
 
 ifneq (,$(findstring diffpat,${MAKETARGET}))
-CFLAGS += -DDIFFPAT -I ${FFTW_DIR}/include
+PP_FLAGS += -DDIFFPAT -I ${FFTW_DIR}/include
 ifneq (,$(findstring omp,${MAKETARGET}))
 LIBS   += -L ${FFTW_DIR}/lib -lfftw3f_threads -lfftw3f
 else
@@ -1176,67 +1193,74 @@ endif
 endif
 
 ifneq (,$(findstring ordpar,${MAKETARGET}))
-CFLAGS += -DORDPAR
+PP_FLAGS += -DORDPAR
 endif
 
 # EPITAX
 ifneq (,$(strip $(findstring epitax,${MAKETARGET})))
-CFLAGS  += -DEPITAX
+PP_FLAGS  += -DEPITAX
 SOURCES += ${EPITAXSOURCES}
 endif
 
 # Correlation
 ifneq (,$(strip $(findstring corr,${MAKETARGET})))
-CFLAGS  += -DCORRELATE
+PP_FLAGS  += -DCORRELATE
 SOURCES += ${CORRSOURCES}
 endif
 
 # RNEMD heat transport
 ifneq (,$(strip $(findstring rnemd,${MAKETARGET})))
-CFLAGS  += -DRNEMD
+PP_FLAGS  += -DRNEMD
 SOURCES += ${TRANSSOURCES}
 endif
 
 # mean square displacement
 ifneq (,$(strip $(findstring msqd,${MAKETARGET})))
-CFLAGS  += -DMSQD
+PP_FLAGS  += -DMSQD
 SOURCES += ${CORRSOURCES}
 endif
 
 # MONOLJ Case
 ifneq (,$(findstring monolj,${MAKETARGET}))
-CFLAGS += -DMONOLJ
+PP_FLAGS += -DMONOLJ
 endif
 
 # Single precision
 ifneq (,$(findstring single,${MAKETARGET}))
-CFLAGS += -DSINGLE
+PP_FLAGS += -DSINGLE
 endif
 
 # monoatomic system (performance tweak)
 ifneq (,$(findstring mono,${MAKETARGET}))
-CFLAGS += -DMONO
+PP_FLAGS += -DMONO
 endif
 
 # high precision output (checkpoints)
 ifneq (,$(findstring hpo,${MAKETARGET}))
-CFLAGS += -DHPO
+PP_FLAGS += -DHPO
 endif
 
 # use 4-point-interpolation
 ifneq (,$(findstring 4point,${MAKETARGET}))
-CFLAGS += -DFOURPOINT
+PP_FLAGS += -DFOURPOINT
 endif
 
 # use spline interpolation
 ifneq (,$(findstring spline,${MAKETARGET}))
-CFLAGS += -DSPLINE
+PP_FLAGS += -DSPLINE
 endif
 
 # use papi
 ifneq (,$(findstring papi,${MAKETARGET}))
-CFLAGS += -DPAPI ${PAPI_INC} 
+PP_FLAGS += -DPAPI ${PAPI_INC} 
 LIBS   += ${PAPI_LIBS}
+endif
+
+# directory for python modules
+ifeq (,${IMDPYDIR})
+  PYDIR = ${HOME}/python/imd
+else
+  PYDIR = ${IMDPYDIR}
 endif
 
 # Added by Frank Pister
@@ -1245,23 +1269,21 @@ SOURCES += spu.c imd_cbe_calc_ppu.c imd_cbe_util.c
 endif
 
 ifneq (,$(findstring cbe2,${MAKETARGET}))
-CFLAGS    += -DCBE2
+PP_FLAGS  += -DCBE2
 SPUCFLAGS += -DCBE2 -DNBL
 endif
 
 ifneq (,$(findstring cbe3,${MAKETARGET}))
-CFLAGS    += -DCBE3
+PP_CFLAGS += -DCBE3
 SPUCFLAGS += -DCBE3 -DNBL
 endif
 
 ifneq (,$(findstring ppu,${MAKETARGET}))
-CFLAGS += -DON_PPU
+PP_FLAGS += -DON_PPU
 endif
 
 # Substitute .o for .c to get the names of the object files
 OBJECTS := $(subst .c,.o,${SOURCES})
-
-
 
 
 ###########################################################################
@@ -1276,10 +1298,10 @@ ${OBJECTS}: ${HEADERS}
 # How to compile *.c files
 # special rules for force computation
 imd_forces.o: imd_forces.c
-	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_forces.c
+	${CC} ${CFLAGS} ${PP_FLAGS} ${RCD_FLAGS} -c imd_forces.c
 
 imd_forces_nbl.o: imd_forces_nbl.c
-	${CC} ${CFLAGS} ${RCD_FLAGS} ${NOALIAS} -c imd_forces_nbl.c
+	${CC} ${CFLAGS} ${PP_FLAGS} ${RCD_FLAGS} ${NOALIAS} -c imd_forces_nbl.c
 
 # Uncommented by Frank Pister
 imd_forces_cbe.o: imd_forces_cbe.c
@@ -1288,24 +1310,34 @@ imd_forces_cbe.o: imd_forces_cbe.c
 # rule to make imd_forces_cbe.o
 
 imd_forces_eam2.o: imd_forces_eam2.c
-	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_forces_eam2.c
+	${CC} ${CFLAGS} ${PP_FLAGS} ${RCD_FLAGS} -c imd_forces_eam2.c
 
 imd_forces_covalent.o: imd_forces_covalent.c
-	${CC} ${CFLAGS} ${RCD_FLAGS} -c imd_forces_covalent.c
+	${CC} ${CFLAGS} ${PP_FLAGS} ${RCD_FLAGS} -c imd_forces_covalent.c
 
 # generic compilation rule
 .c.o:
-	${CC} ${CFLAGS} -c $<
+	${CC} ${CFLAGS} ${PP_FLAGS} -c $<
 
 # How to link
+ifneq (,$(strip $(findstring py,${MAKETARGET})))
+${MAKETARGET}: ${OBJECTS} 
+	@echo ${PYDIR} ${IMDPYDIR}
+	swig ${PP_FLAGS} -python -module $@ -outdir ${PYDIR} imd.i
+	${CC} ${CFLAGS} ${PP_FLAGS} -I/usr/include/python -c imd_wrap.c
+	${CC} ${LFLAGS} -fPIC -shared -o _$@.so ${OBJECTS} imd_wrap.o ${LIBS}
+	${MV} _$@.so ${PYDIR}; rm -f _$@.so
+else
 ${MAKETARGET}: ${OBJECTS} 
 	${CC} ${LFLAGS} -o $@ ${OBJECTS} ${LIBS}
 	${MV} $@ ${BIN_DIR}; rm -f $@
+endif
 
 # First recursion only set the MAKETARGET Variable
 .DEFAULT:
 ifneq (,${CC}) 
 	./version.sh
+	@echo \#define COMPILE_TARGET \"$@\" >> version.h
 	${MAKE} MAKETARGET='$@' STAGE2
 else
 ifneq (,${IMDSYS})

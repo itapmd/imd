@@ -19,7 +19,6 @@
 * $Date$
 ******************************************************************************/
 
-
 /* MAIN is defined only once in the main module */
 #ifdef MAIN 
 #define EXTERN        /* define Variables in main */
@@ -127,18 +126,23 @@ EXTERN vektor *restrictions INIT(NULL);  /* directions the atom is allowed to mo
 #ifdef RELAX
 EXTERN real ekin_threshold       INIT(0.0); /* threshold for Ekin */
 EXTERN real fnorm_threshold      INIT(0.0); /* threshold for force norm */
-EXTERN real f_max_threshold       INIT(-1.0); /* threshold for force maximum */
+EXTERN real f_max_threshold      INIT(-1.0);/* threshold for force maximum */
 EXTERN real delta_epot_threshold INIT(0.0); /* threshold for delta Epot */
+EXTERN int  is_relaxed           INIT(0);   /* sample is relaxed? */
 #endif
 
 #ifdef FBC                                 /* FBC uses virtual atom types, */
 EXTERN vektor *fbc_forces      INIT(NULL); /* each vtype has its force */
 EXTERN vektor *fbc_beginforces INIT(NULL); /* begin values for interpolation */
 EXTERN vektor *fbc_endforces   INIT(NULL); /* end values for interpolation */
+EXTERN vektor *fbc_df          INIT(NULL); /* computed force increment */
 #ifdef RELAX
 EXTERN vektor *fbc_dforces     INIT(NULL); /* force increment */
 EXTERN int    max_fbc_int      INIT(1);    /* max int for force increment */
+EXTERN int    fbc_int          INIT(0);    /* time since last FBC increase */
 #endif
+EXTERN int    have_fbc_incr    INIT(0);    /* fbc increment given */
+EXTERN int    do_fbc_incr      INIT(0);    /* whether to apply FBC increment */
 #endif /* FBC */
 
 /* Global bookkeeping */
@@ -165,6 +169,7 @@ EXTERN int checkpt_int INIT(0);  /* Period of checkpoints */
 EXTERN int eng_int INIT(0);      /* Period of data output */
 EXTERN int force_int INIT(0);    /* Period of force file writing */
 EXTERN str255 progname; /* Name of current executable argv[0] */
+EXTERN char *version_str;
 EXTERN ivektor cellmin; /* Minimum index of local cells (1 with BUFCELLS, 
                                                          0 otherwise) */
 EXTERN ivektor cellmax; /* Maximum index of local cells  */
@@ -411,6 +416,7 @@ EXTERN real end_temp INIT(0.0);        /* Temperature and at of simulation */
 #ifdef GLOK
 EXTERN real   glok_ekin_threshold INIT(100.0); /* threshold for ekin */  
 EXTERN int    glok_int       INIT(0);
+EXTERN int    glok_start     INIT(0);
 #endif
 #ifdef MIX
 EXTERN real mix              INIT(0.0); 
@@ -432,6 +438,7 @@ EXTERN real glok_fmaxcrit    INIT(10000);
 
 #ifdef DEFORM
 EXTERN int    max_deform_int INIT(0);   /* max. steps between 2 shear steps */
+EXTERN int    deform_int     INIT(0);   /* curr. step between 2 shear steps */
 EXTERN real   deform_size INIT(1.0);    /* scale factor for deformation */
 EXTERN vektor *deform_shift;            /* shift for each vtype */
 EXTERN vektor *deform_shear;            /* shear for each vtype */
@@ -440,7 +447,7 @@ EXTERN int    *shear_def;               /* shear flag for each vtype */
 #endif
 
 #ifdef HOMDEF
-EXTERN int    lindef_interval INIT(0);    /* period of linear deform. steps */
+EXTERN int    lindef_int INIT(0);         /* period of linear deform. steps */
 EXTERN real   lindef_size INIT(1.0);      /* scale factor of deformation */
 EXTERN vektor lindef_x INIT(nullvektor);  /* \               */
 EXTERN vektor lindef_y INIT(nullvektor);  /*  |  linear      */
@@ -451,11 +458,6 @@ EXTERN real shear_module INIT(1.0);       /* estimate of the shear module */
 EXTERN real bulk_module  INIT(1.0);       /* estimate of the bulk module */
 EXTERN int  relax_mode   INIT(-1);        /* pressure relaxation mode */
 EXTERN ivektor relax_dirs INIT(einsivektor); /* directions in which to relax pressure */
-/* the following four are deprecated */
-EXTERN int    exp_interval INIT(0);       /* period of expansion steps */
-EXTERN vektor expansion INIT(einsvektor); /* expansion factors in x/y/z-dir */
-EXTERN int    hom_interval INIT(0);       /* period of homshear steps */
-EXTERN vektor2d shear_factor INIT(nullvektor2d);/* shear factor in x,y-dir */
 #endif
 EXTERN real relax_rate   INIT(0.0);       /* pressure relaxation rate */
 
@@ -664,6 +666,7 @@ EXTERN int  msqd_ntypes INIT(1);     /* write msqd for real types */
 EXTERN int  msqd_vtypes INIT(0);     /* write msqd for virtual types */
 EXTERN int  correl_int INIT(0);      /* repeat interval for correlation */
 EXTERN int  correl_start INIT(0);    /* start time for correlation */
+EXTERN int  correl_refstep INIT(0);  /* reference step for correlation */
 EXTERN int  correl_end INIT(0);      /* end time for correlation */
 EXTERN int  correl_ts INIT(0);  /* sampling time interval for correlation */
 EXTERN int  ncorr_rmax INIT(0); /* dimension of histogram in r domain */
@@ -689,10 +692,10 @@ EXTERN real heat_cond     INIT(0.0);   /* heat conductivity */
 #endif
 #ifdef RNEMD
 EXTERN real heat_transfer INIT(0.0);   /* total (integrated) heat transfer */
-EXTERN int  exch_interval INIT(0);     /* interval between particle exchange */
+EXTERN int  exch_int      INIT(0);     /* interval between particle exchange */
 #endif
 #ifdef TRANSPORT
-EXTERN int  tran_interval INIT(0);     /* Intervals of temperature recording.*/
+EXTERN int  tran_int      INIT(0);     /* Intervals of temperature recording.*/
 EXTERN int  tran_nlayers  INIT(0);     /* number of layers*/
 #endif
 #ifdef DEBUG
@@ -1062,8 +1065,6 @@ EXTERN int shock_mode INIT(2);                   /* type of shock */
 #endif
 
 EXTERN int ensemble INIT(ENS_EMPTY);    /* active ensemble type */
-EXTERN int simulation INIT(1);          /* number of current simulation */
-EXTERN int finished INIT(0);            /* last phase of simulation? */
 EXTERN int loop INIT(0);                /* loop for online visualisation */
 EXTERN void (*move_atoms)(void);        /* active integrator routine */
 

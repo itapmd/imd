@@ -27,9 +27,9 @@
 *
 *****************************************************************************/
 
-void main_loop(void)
+int main_loop(int simulation)
 {
-  real tmp_pot_energy, tmp_kin_energy;
+  int  finished = 0;
   int  i, j, k, l;
   int  steps_diff = steps_max - steps_min;
   int  deform_int = 0, fbc_int = 0, do_fbc_incr = 0, is_relaxed = 0;
@@ -42,20 +42,7 @@ void main_loop(void)
   int glok_start = steps_min; 
 #endif
 #ifdef ACG
- acg_alpha = acg_init_alpha;
-#endif
-#ifdef TWOD
-  vektor nullv={0.0,0.0};
-#else
-  vektor nullv={0.0,0.0,0.0};
-#endif
-#if defined(CORRELATE) || defined(MSQD)
-  int ref_step = correl_start;
-#endif
-
-#ifdef FBC
-  fbc_df = (vektor *) malloc(vtypes*DIM*sizeof(real));
-  if (NULL==fbc_df) error("Cannot allocate memory for fbc_df");
+  acg_alpha = acg_init_alpha;
 #endif
 
 #ifdef SHOCK
@@ -74,13 +61,13 @@ void main_loop(void)
     if (do_maxwell) maxwell(temperature);
     do_maxwell=0;
 #ifdef TTM
-   /* let the electron system know about the new temperatures */
-   update_fd();
-   ttm_overwrite();
-   ttm_fill_ghost_layers();
+    /* let the electron system know about the new temperatures */
+    update_fd();
+    ttm_overwrite();
+    ttm_fill_ghost_layers();
 #endif
-
   }
+
 #ifdef LASER
   if (0==myid) {
     printf( "Parameter laser_rescale_mode is %d\n", laser_rescale_mode );
@@ -107,7 +94,6 @@ void main_loop(void)
   }
 #endif /*LASER*/
 
-      
 #if defined(FRAC) || defined(FTG) 
   if (0==myid) {
       printf( "Strain rate is  %1.10f\n", dotepsilon0 );
@@ -115,51 +101,9 @@ void main_loop(void)
       printf( "Damping prefactor is %1.10f\n\n", gamma_bar );
   }
 #endif
-  
-  if (0==myid) printf( "Starting simulation %d\n", simulation );
-
-#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC)
-  dtemp = (end_temp - temperature) / steps_diff;
-#endif
 
 #ifdef FBC
-#ifdef RELAX
-  for (l=0; l<vtypes; l++) {
-    if ((fbc_dforces+l)->x != 0.0) have_fbc_incr = 1;
-    if ((fbc_dforces+l)->y != 0.0) have_fbc_incr = 1;
-#ifndef TWOD
-    if ((fbc_dforces+l)->z != 0.0) have_fbc_incr = 1;
-#endif
-  }
-#else
-  /* dynamic loading, increment linearly at each timestep */
-  if ((ensemble!=ENS_MIK) && (ensemble!=ENS_GLOK) && (ensemble!=ENS_CG)) {
-    for (l=0;l<vtypes;l++){
-      (fbc_df+l)->x = ((fbc_endforces+l)->x-(fbc_beginforces+l)->x)/steps_diff;
-      (fbc_df+l)->y = ((fbc_endforces+l)->y-(fbc_beginforces+l)->y)/steps_diff;
-#ifndef TWOD
-      (fbc_df+l)->z = ((fbc_endforces+l)->z-(fbc_beginforces+l)->z)/steps_diff;
-#endif
-    }
-    do_fbc_incr = 1;
-  }
-#endif /* RELAX */
-#endif /* FBC */
-
-#ifdef NVX
-  dtemp = (dTemp_end - dTemp_start) / steps_diff;
-  tran_Tleft  = temperature + dTemp_start;
-  tran_Tright = temperature - dTemp_start;
-#endif
-
-#ifdef NPT
-  d_pressure.x = (pressure_end.x - pressure_ext.x) / steps_diff;
-  d_pressure.y = (pressure_end.y - pressure_ext.y) / steps_diff;
-#ifndef TWOD
-  d_pressure.z = (pressure_end.z - pressure_ext.z) / steps_diff;
-#endif
-  calc_dyn_pressure();
-  if (isq_tau_xi==0.0) xi = nullv;
+  init_fbc();
 #endif
 
 #if defined(CORRELATE) || defined(MSQD)
@@ -182,8 +126,8 @@ void main_loop(void)
   if (ensemble == ENS_CG) reset_cg();
 #endif
 
-#ifdef MIX
-  mix =glok_mix;
+#ifdef DEFORM
+  deform_int = 0; 
 #endif
 
   /* simulation loop */
@@ -226,26 +170,8 @@ void main_loop(void)
     }
 #endif
 
-#if defined(FBC) && defined(RELAX)
-    /* set fbc increment if necessary */
-    if ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) {
-      if ((is_relaxed) || (fbc_int > max_fbc_int)) { 
-        for (l=0; l<vtypes; l++) fbc_df[l] = fbc_dforces[l];
-        fbc_int = 0;
-        do_fbc_incr = 1;
-      }
-      else {
-        for (l=0; l<vtypes; l++) *(fbc_df+l) = nullv;
-        do_fbc_incr = 0;
-        fbc_int++;
-      }
-    }
-#endif
-
 #ifdef HOMDEF
-    if ((exp_interval > 0) && (0 == steps % exp_interval)) expand_sample();
-    if ((hom_interval > 0) && (0 == steps % hom_interval)) shear_sample();
-    if ((lindef_interval > 0) && (0 == steps % lindef_interval)) 
+    if ((lindef_int > 0) && (0 == steps % lindef_int)) 
 #ifdef TWOD
       lin_deform(lindef_x, lindef_y,           lindef_size);
 #else
@@ -294,80 +220,25 @@ void main_loop(void)
 #endif
 
 #ifdef FBC
-    /* apply fbc increment if necessary */
-    if (do_fbc_incr == 1) {
-      for (l=0; l<vtypes; l++){ 
-        (fbc_forces+l)->x += (fbc_df+l)->x;  
-        (fbc_forces+l)->y += (fbc_df+l)->y;
-#ifndef TWOD
-        (fbc_forces+l)->z += (fbc_df+l)->z;
-#endif
-      } 
-#ifdef CG
-      if (ensemble == ENS_CG) reset_cg();
-#endif
-    }
-#endif
-
-#if defined (CG)&& !defined(ACG)
-    if (ensemble == ENS_CG) cg_step(steps);
-    else
-#elif defined(ACG)
-     
-      if (ensemble == ENS_CG) acg_step(steps);
-      else
+    update_fbc();
 #endif
 
 #ifdef TIMING
     imd_start_timer(&time_forces);
 #endif
+#if defined (CG) && !defined(ACG)
+    if (ensemble == ENS_CG) cg_step(steps);
+    else
+#elif defined(ACG)
+    if (ensemble == ENS_CG) acg_step(steps);
+    else
+#endif
     calc_forces(steps);
+#ifdef RIGID
+    calc_superforces();
+#endif
 #ifdef TIMING
     imd_stop_timer(&time_forces);
-#endif
-
-#ifdef RIGID
-    /* total force on superparticles (for each cpu) */
-    for(k=0; k<ncells; k++) {
-      cell *p;
-      int sorte;
-      p = CELLPTR(k);
-      for(i=0; i<p->n; i++) {
-	sorte = VSORTE(p,i);
-	if ( superatom[sorte] > -1 ) {
-	  superforce[superatom[sorte]].x += KRAFT(p,i,X);
-	  superforce[superatom[sorte]].y += KRAFT(p,i,Y);
-#ifndef TWOD
-	  superforce[superatom[sorte]].z += KRAFT(p,i,Z);
-#endif
-
-#ifdef FBC
-	 superforce[superatom[sorte]].x += (fbc_forces+sorte)->x;
-	 superforce[superatom[sorte]].y += (fbc_forces+sorte)->y;
-#ifndef TWOD
-	 superforce[superatom[sorte]].z += (fbc_forces+sorte)->z;
-#endif
-#endif
-	}
-      }
-    }
-#ifdef MPI
-    /* total force on superparticles */
-    for(i=0; i<nsuperatoms; i++) {
-      tmpvec1[0] = superforce[i].x;
-      tmpvec1[1] = superforce[i].y;
-#ifndef TWOD
-      tmpvec1[2] = superforce[i].z;
-#endif
-      MPI_Allreduce( tmpvec1, tmpvec2, DIM, REAL, MPI_SUM, cpugrid); 
-
-      superforce[i].x = tmpvec2[0];
-      superforce[i].y = tmpvec2[1];
-#ifndef TWOD
-      superforce[i].z = tmpvec2[2];
-#endif
-    }
-#endif
 #endif
 
 #ifdef FORCE
@@ -422,85 +293,25 @@ void main_loop(void)
 #if defined(CORRELATE) || defined(MSQD)
     if ((steps >= correl_start) && ((steps < correl_end) || (correl_end==0))) {
       int istep = steps - correl_start;
-      if (istep % correl_ts == 0) correlate(steps,ref_step,istep/correl_ts);
-      if ((correl_int != 0) && (steps-ref_step+1 >= correl_int)) 
-        ref_step += correl_int;
+      if (istep % correl_ts == 0) 
+        correlate(steps, correl_refstep, istep/correl_ts);
+      if ((correl_int != 0) && (steps-correl_refstep+1 >= correl_int)) 
+        correl_refstep += correl_int;
     }
 #endif
 
 #ifdef GLOK 
     /* "global convergence": set momenta to 0 if P*F < 0 (global vectors) */
     if (ensemble == ENS_GLOK) {
-      glok_int   = steps - glok_start;
-
-      /* always start glok with new dynamics, not with old velocities */
-      if (glok_int ==0)	{
-        for (k=0; k<NCELLS; ++k) {
-          cell *p = CELLPTR(k);
-          for (i=0; i<p->n; ++i) {
-            IMPULS(p,i,X) = 0.0;
-            IMPULS(p,i,Y) = 0.0;
-#ifndef TWOD
-            IMPULS(p,i,Z) = 0.0;
-#endif
-          }
-        }
-      }
-#ifdef ADAPTGLOK
-      /* increase the timestep, but not immediately after P*F was < 0 */ 
-      if ( (nPxF>= min_nPxF)  && (glok_int > glok_minsteps)) {
-        timestep = (timestep * glok_incfac > glok_maxtimestep) ? 
-                   glok_maxtimestep : timestep * glok_incfac;
-#ifdef MIX
-        mix *= glok_mixdec;
-#endif
-      }
-#endif
-
-#ifdef MIX
-      if (fnorm >=1e-20) mixforcescalefac = SQRT(pnorm/fnorm);
-#endif
-      real ekin = 2 * tot_kin_energy / nactive;
-
-      if ((PxF < 0.0) || (ekin > glok_ekin_threshold)  || 
-          (sqrt(f_max2) >= glok_fmaxcrit) && steps >5) {
-
-#ifdef ADAPTGLOK
-	if (PxF < 0.0) nPxF++;
-        /* decrease timestep, but only when it has been increased before */
-        if (glok_int > glok_minsteps ) {
-          if (timestep > glok_maxtimestep/50.0) timestep *=glok_decfac;
-        }
-#endif
-
-#ifdef MIX
-        mix = glok_mix;
-#endif
-        for (k=0; k<NCELLS; ++k) {
-          cell *p = CELLPTR(k);
-          for (i=0; i<p->n; ++i) {
-            ORT(p,i,X) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,X);
-            ORT(p,i,Y) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,Y);
-#ifndef TWOD
-            ORT(p,i,Z) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,Z);
-#endif
-            IMPULS(p,i,X) = 0.0;
-            IMPULS(p,i,Y) = 0.0;
-#ifndef TWOD
-            IMPULS(p,i,Z) = 0.0;
-#endif
-          }
-        }
-        glok_start = steps;
-      }
+      update_glok();
     }
 #endif
 
 #ifdef LASER
     /* do rescaling of atom velocities/electron temperature source terms */
-    /*  to simulate absorption of laser pulse */
+    /* to simulate absorption of laser pulse */
     do_laser_rescale();
-#endif /* LASER */
+#endif
 #ifdef TTM
     calc_ttm();
 #endif
@@ -518,64 +329,8 @@ void main_loop(void)
     if (ensemble != ENS_NVE) move_atoms_nve();
 #endif
 
-#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC) || defined(FINNIS)
-    if ((steps==steps_min) && (use_curr_temp==1)) {
-#ifdef UNIAX
-      temperature = 2.0 * tot_kin_energy / (nactive + nactive_rot);
-#else
-      temperature = 2.0 * tot_kin_energy / nactive;
-#endif
-      dtemp = (end_temp - temperature) / steps_diff;
-      use_curr_temp = 0;
-    }
-#endif
-
-#ifdef NPT_iso
-    if ((steps==steps_min) && (ensemble==ENS_NPT_ISO) && 
-        (use_curr_pressure==1)) {
-      pressure_ext.x = pressure;
-      d_pressure.x = (pressure_end.x-pressure_ext.x) / steps_diff;
-      d_pressure.y = (pressure_end.y-pressure_ext.y) / steps_diff;
-#ifndef TWOD
-      d_pressure.z = (pressure_end.z-pressure_ext.z) / steps_diff;
-#endif
-      use_curr_pressure = 0;
-    }
-#endif
-
-#ifdef NPT_axial
-    if ((steps==steps_min) && (ensemble==ENS_NPT_AXIAL) && 
-        (use_curr_pressure==1)) {
-      pressure_ext.x = stress_x;
-      pressure_ext.y = stress_y;
-#ifndef TWOD
-      pressure_ext.z = stress_z;
-#endif
-      d_pressure.x = (pressure_end.x-pressure_ext.x) / steps_diff;
-      d_pressure.y = (pressure_end.y-pressure_ext.y) / steps_diff;
-#ifndef TWOD
-      d_pressure.z = (pressure_end.z-pressure_ext.z) / steps_diff;
-#endif
-      use_curr_pressure = 0;
-    }
-#endif
-
-#if defined(AND) || defined(NVT) || defined(NPT) || defined(STM) || defined(FRAC) || defined(FINNIS)
-    temperature += dtemp;
-#endif
-
-#ifdef NVX
-    tran_Tleft   += dtemp;
-    tran_Tright  -= dtemp;
-#endif
-
-
-#ifdef NPT
-    pressure_ext.x += d_pressure.x;
-    pressure_ext.y += d_pressure.y;
-#ifndef TWOD
-    pressure_ext.z += d_pressure.z;
-#endif
+#ifdef TEMPCONTROL 
+    increment_temperature();
 #endif
 
     /* Periodic I/O */
@@ -627,11 +382,11 @@ void main_loop(void)
     }
 #endif
 #ifdef TRANSPORT 
-    if ((tran_interval > 0) && (steps > 0) && (0 == steps%tran_interval)) 
+    if ((tran_int > 0) && (steps > 0) && (0 == steps%tran_int)) 
        write_temp_dist(steps);
 #endif
 #ifdef RNEMD
-    if ((exch_interval > 0) && (0 == steps%exch_interval)) 
+    if ((exch_int > 0) && (0 == steps%exch_int)) 
        rnemd_heat_exchange();
 #endif
 
@@ -662,42 +417,8 @@ void main_loop(void)
 #endif
 
 #ifdef RELAX
-    if ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) {
-
-      int stop = 0;
-      real fnorm2 = SQRT( fnorm / nactive );
-      real ekin   = 2 * tot_kin_energy / nactive;
-      real epot   = tot_pot_energy / natoms;
-      real delta_epot = old_epot - epot;
-      if (delta_epot < 0) delta_epot = -delta_epot;
-
-      if ((ekin  <  ekin_threshold) || (fnorm2 < fnorm_threshold) || 
-          (delta_epot < delta_epot_threshold)) is_relaxed = 1;
-      else is_relaxed = 0;
-
-      old_epot = epot;
-
-      if (is_relaxed) {
-        stop = 1;
-        write_eng_file(steps);
-        write_ssconfig(steps);
-
-        if (myid==0) {
-          printf("nfc = %d epot = %22.16f\n", nfc, epot );
-          printf("ekin = %e fnorm = %e f_max = %e delta_epot = %e\n", 
-                 ekin, fnorm2, f_max, delta_epot);
-        }
-      }
-
-#ifdef DEFORM
-      if (max_deform_int > 0) stop=0;
+    check_relaxed();
 #endif
-#ifdef FBC
-      if (have_fbc_incr) stop=0;
-#endif
-      if (stop) steps_max = steps;
-    }
-#endif /* RELAX */
 
 #ifdef NBLIST
     check_nblist();
@@ -718,62 +439,16 @@ void main_loop(void)
 #endif
 
     /* write checkpoint, if empty write file is found */
-    if ((watch_int > 0) && (0==steps%watch_int)) {
-      int write = 0;
-      if (0 == myid) {
-        FILE *testfile = fopen("write","r");
-        if (NULL!=testfile && fgetc(testfile)==EOF) { 
-          fclose(testfile);
-          remove("write");
-          write = 1;
-	}
-      }
-#ifdef MPI
-      MPI_Bcast( &write, 1, MPI_INT, 0, MPI_COMM_WORLD);
-#endif
-      if (write) {
-        if (myid == 0) printf("Write file found after %d steps\n", steps);
-        write_config(-2,steps);
-      }
-    }
+    if ((watch_int > 0) && (0==steps%watch_int)) check_write();
 
     /* finish, if stop file is found */
     if ((stop_int > 0) && (0==steps%stop_int)) {
-      int stop = 0;
-      if (0 == myid) {
-        FILE *testfile = fopen("stop","r");
-        if (NULL!=testfile) { 
-          fclose(testfile);
-          unlink("stop");
-          stop = 1;
-	}
-      }
-#ifdef MPI
-      MPI_Bcast( &stop, 1, MPI_INT, 0, MPI_COMM_WORLD);
-#endif
-      if (stop) {
-        if (myid == 0) printf("Stop file found after %d steps\n", steps);
-        write_config(-1,steps);
-        steps_max = steps;
-        finished = 1;
-        break;
-      }
+      if (finished = check_stop()) break;
     }
 
     /* finish, if maxwalltime is reached */
     if (maxwalltime > 0) {
-      double tdiff = difftime(time(&tend), tstart);
-#ifdef MPI
-      MPI_Bcast( &tdiff, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-#endif
-      if (tdiff > maxwalltime) {
-        if (myid == 0) 
-          printf("Maximal allowed walltime reached after %d steps\n", steps);
-        write_config(-1,steps);
-        steps_max = steps;
-        finished = 1;
-        break;
-      }
+      if (finished = check_walltime()) break;
     }
   }
 
@@ -783,8 +458,409 @@ void main_loop(void)
     write_itr_file(-1, steps_max,"");
     printf( "End of simulation %d\n", simulation );
   }  
+  return finished;
 }
 
+/*****************************************************************************
+*
+*  close .eng file and Co.
+*
+*****************************************************************************/
+
+void close_files(void)
+{
+  if (0 == myid) {
+    if (NULL!= eng_file) { fclose( eng_file); eng_file  = NULL; }
+    if (NULL!=msqd_file) { fclose(msqd_file); msqd_file = NULL; }
+  }
+}
+
+#ifdef GLOK
+
+/*****************************************************************************
+*
+*  update state of (adaptive) glok integrator
+*
+*****************************************************************************/
+
+void update_glok(void)
+{
+  if (steps == steps_min) {
+    glok_start = steps_min; 
+#ifdef MIX
+    mix = glok_mix;
+#endif
+  }
+  glok_int = steps - glok_start;
+
+  /* always start glok with new dynamics, not with old velocities */
+  if (glok_int == 0) {
+    for (k=0; k<NCELLS; ++k) {
+      cell *p = CELLPTR(k);
+      for (i=0; i<p->n; ++i) {
+        IMPULS(p,i,X) = 0.0;
+        IMPULS(p,i,Y) = 0.0;
+#ifndef TWOD
+        IMPULS(p,i,Z) = 0.0;
+#endif
+      }
+    }
+  }
+
+#ifdef ADAPTGLOK
+  /* increase the timestep, but not immediately after P*F was < 0 */ 
+  if ( (nPxF>= min_nPxF)  && (glok_int > glok_minsteps)) {
+    timestep = (timestep * glok_incfac > glok_maxtimestep) ? 
+               glok_maxtimestep : timestep * glok_incfac;
+#ifdef MIX
+    mix *= glok_mixdec;
+#endif
+  }
+#endif
+
+#ifdef MIX
+  if (fnorm >=1e-20) mixforcescalefac = SQRT(pnorm/fnorm);
+#endif
+  real ekin = 2 * tot_kin_energy / nactive;
+
+  if ((PxF < 0.0) || (ekin > glok_ekin_threshold)  || 
+      (sqrt(f_max2) >= glok_fmaxcrit) && steps >5) {
+#ifdef ADAPTGLOK
+    if (PxF < 0.0) nPxF++;
+    /* decrease timestep, but only when it has been increased before */
+    if (glok_int > glok_minsteps ) {
+      if (timestep > glok_maxtimestep/50.0) timestep *=glok_decfac;
+    }
+#endif
+
+#ifdef MIX
+    mix = glok_mix;
+#endif
+    for (k=0; k<NCELLS; ++k) {
+      cell *p = CELLPTR(k);
+      for (i=0; i<p->n; ++i) {
+        ORT(p,i,X) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,X);
+        ORT(p,i,Y) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,Y);
+#ifndef TWOD
+        ORT(p,i,Z) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,Z);
+#endif
+        IMPULS(p,i,X) = 0.0;
+        IMPULS(p,i,Y) = 0.0;
+#ifndef TWOD
+        IMPULS(p,i,Z) = 0.0;
+#endif
+      }
+    }
+    glok_start = steps;
+  }
+}
+
+#endif
+
+#ifdef TEMPCONTROL
+
+/*****************************************************************************
+*
+*  increment temperatue
+*
+*****************************************************************************/
+
+void increment_temperature(void)
+{
+  static real dtemp = 0.0;
+
+  if (steps==steps_min) {
+    if (use_curr_temp==1) {
+#ifdef UNIAX
+      temperature = 2.0 * tot_kin_energy / (nactive + nactive_rot);
+#else
+      temperature = 2.0 * tot_kin_energy / nactive;
+#endif
+      use_curr_temp = 0;
+    }
+    dtemp = (end_temp - temperature) / (steps_max - steps_min);
+  }
+  temperature += dtemp;
+}
+
+#endif
+
+#ifdef FBC
+
+/*****************************************************************************
+*
+*  initialize FBC
+*
+*****************************************************************************/
+
+void init_fbc(void)
+{
+  int l, steps_diff = steps_max - steps_min;
+
+  fbc_int = 0;
+  have_fbc_incr = 0;
+  do_fbc_incr = 0;
+
+#ifdef RELAX
+  for (l=0; l<vtypes; l++) {
+    if ((fbc_dforces+l)->x != 0.0) have_fbc_incr = 1;
+    if ((fbc_dforces+l)->y != 0.0) have_fbc_incr = 1;
+#ifndef TWOD
+    if ((fbc_dforces+l)->z != 0.0) have_fbc_incr = 1;
+#endif
+  }
+#else
+  /* dynamic loading, increment linearly at each timestep */
+  if ((ensemble!=ENS_MIK) && (ensemble!=ENS_GLOK) && (ensemble!=ENS_CG)) {
+    for (l=0;l<vtypes;l++){
+      (fbc_df+l)->x = ((fbc_endforces+l)->x-(fbc_beginforces+l)->x)/steps_diff;
+      (fbc_df+l)->y = ((fbc_endforces+l)->y-(fbc_beginforces+l)->y)/steps_diff;
+#ifndef TWOD
+      (fbc_df+l)->z = ((fbc_endforces+l)->z-(fbc_beginforces+l)->z)/steps_diff;
+#endif
+    }
+    do_fbc_incr = 1;
+  }
+#endif /* RELAX */
+
+}
+
+/*****************************************************************************
+*
+*  update FBC
+*
+*****************************************************************************/
+
+void update_fbc()
+{
+  int l;
+#ifdef TWOD
+  vektor nullv={0.0,0.0};
+#else
+  vektor nullv={0.0,0.0,0.0};
+#endif
+
+#ifdef RELAX
+  /* set fbc increment if necessary */
+  if ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) {
+    if ((is_relaxed) || (fbc_int > max_fbc_int)) { 
+      for (l=0; l<vtypes; l++) fbc_df[l] = fbc_dforces[l];
+      fbc_int = 0;
+      do_fbc_incr = 1;
+    }
+    else {
+      for (l=0; l<vtypes; l++) *(fbc_df+l) = nullv;
+      do_fbc_incr = 0;
+      fbc_int++;
+    }
+  }
+#endif
+
+  /* apply fbc increment if necessary */
+  if (do_fbc_incr == 1) {
+    for (l=0; l<vtypes; l++){ 
+      (fbc_forces+l)->x += (fbc_df+l)->x;  
+      (fbc_forces+l)->y += (fbc_df+l)->y;
+#ifndef TWOD
+      (fbc_forces+l)->z += (fbc_df+l)->z;
+#endif
+    } 
+#ifdef CG
+    if (ensemble == ENS_CG) reset_cg();
+#endif
+  }
+}
+
+#endif /* FBC */
+
+/*****************************************************************************
+*
+*  check if sample is relaxed
+*
+*****************************************************************************/
+
+#ifdef RELAX
+
+void check_relaxed(void)
+{
+  is_relaxed = 0;
+
+  if ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) {
+
+    int stop = 0;
+    real fnorm2 = SQRT( fnorm / nactive );
+    real ekin   = 2 * tot_kin_energy / nactive;
+    real epot   = tot_pot_energy / natoms;
+    real delta_epot = old_epot - epot;
+    if (delta_epot < 0) delta_epot = -delta_epot;
+
+    if ((ekin  <  ekin_threshold) || (fnorm2 < fnorm_threshold) || 
+        (delta_epot < delta_epot_threshold)) is_relaxed = 1;
+    else is_relaxed = 0;
+
+    old_epot = epot;
+
+    if (is_relaxed) {
+      stop = 1;
+      write_eng_file(steps);
+      write_ssconfig(steps);
+
+      if (myid==0) {
+        printf("nfc = %d epot = %22.16f\n", nfc, epot );
+        printf("ekin = %e fnorm = %e f_max = %e delta_epot = %e\n", 
+               ekin, fnorm2, f_max, delta_epot);
+      }
+    }
+
+#ifdef DEFORM
+    if (max_deform_int > 0) stop=0;
+#endif
+#ifdef FBC
+    if (have_fbc_incr) stop=0;
+#endif
+    if (stop) steps_max = steps;
+  }
+
+}
+
+#endif /* RELAX */
+
+
+#ifdef RIGID
+
+/*****************************************************************************
+*
+*  calculate force on superparticles
+*
+*****************************************************************************/
+
+void calc_superforces(void)
+{
+  int i, k;
+  real tmpvec1[DIM], tmpvec2[DIM];
+
+  /* total force on superparticles (for each cpu) */
+  for(k=0; k<ncells; k++) {
+    cell *p;
+    int sorte;
+    p = CELLPTR(k);
+    for (i=0; i<p->n; i++) {
+      sorte = VSORTE(p,i);
+      if ( superatom[sorte] > -1 ) {
+        superforce[superatom[sorte]].x += KRAFT(p,i,X);
+	superforce[superatom[sorte]].y += KRAFT(p,i,Y);
+#ifndef TWOD
+	superforce[superatom[sorte]].z += KRAFT(p,i,Z);
+#endif
+
+#ifdef FBC
+	superforce[superatom[sorte]].x += (fbc_forces+sorte)->x;
+	superforce[superatom[sorte]].y += (fbc_forces+sorte)->y;
+#ifndef TWOD
+	superforce[superatom[sorte]].z += (fbc_forces+sorte)->z;
+#endif
+#endif
+      }
+    }
+  }
+
+#ifdef MPI
+  /* total force on superparticles */
+  for (i=0; i<nsuperatoms; i++) {
+    tmpvec1[0] = superforce[i].x;
+    tmpvec1[1] = superforce[i].y;
+#ifndef TWOD
+    tmpvec1[2] = superforce[i].z;
+#endif
+    MPI_Allreduce( tmpvec1, tmpvec2, DIM, REAL, MPI_SUM, cpugrid); 
+    superforce[i].x = tmpvec2[0];
+    superforce[i].y = tmpvec2[1];
+#ifndef TWOD
+    superforce[i].z = tmpvec2[2];
+#endif
+  }
+#endif
+
+}
+
+#endif /* RIGID */
+
+/*****************************************************************************
+*
+*  check write file, and stop if present
+*
+*****************************************************************************/
+
+void check_write(void)
+{
+  int write = 0;
+  if (0 == myid) {
+    FILE *testfile = fopen("write","r");
+    if (NULL!=testfile && fgetc(testfile)==EOF) { 
+      fclose(testfile);
+      remove("write");
+      write = 1;
+    }
+  }
+#ifdef MPI
+  MPI_Bcast( &write, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
+  if (write) {
+    if (myid == 0) printf("Write file found after %d steps\n", steps);
+    write_config(-2,steps);
+  }
+}
+
+/*****************************************************************************
+*
+*  check stop file, and stop if present
+*
+*****************************************************************************/
+
+int check_stop(void)
+{
+  int stop = 0;
+  if (0 == myid) {
+    FILE *testfile = fopen("stop","r");
+    if (NULL!=testfile) { 
+      fclose(testfile);
+      unlink("stop");
+      stop = 1;
+    }
+  }
+#ifdef MPI
+  MPI_Bcast( &stop, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
+  if (stop) {
+    if (myid == 0) printf("Stop file found after %d steps\n", steps);
+    write_config(-1,steps);
+    steps_max = steps;
+  }
+  return stop;
+}
+
+/*****************************************************************************
+*
+*  check walltime, and stop if necessary
+*
+*****************************************************************************/
+
+int check_walltime(void)
+{
+  int stop = 0;
+  double tdiff = difftime(time(&tend), tstart);
+#ifdef MPI
+  MPI_Bcast( &tdiff, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+#endif
+  if (tdiff > maxwalltime) {
+    if (myid == 0) 
+      printf("Maximal allowed walltime reached after %d steps\n", steps);
+    write_config(-1,steps);
+    steps_max = steps;
+    stop = 1;
+  }
+  return stop;
+}
 
 /******************************************************************************
 *

@@ -75,7 +75,7 @@ void warning_str_str(char *msg, char *str1, char *str2)
 *
 ******************************************************************************/
 
-void error(char *msg)
+void imderror(char *msg)
 {
 #ifdef MPI
   fprintf(stderr,"Error on CPU %d: %s\n",myid,msg);
