@@ -485,6 +485,8 @@ void close_files(void)
 
 void update_glok(void)
 {
+  int i, k;
+
   if (steps == steps_min) {
     glok_start = steps_min; 
 #ifdef MIX

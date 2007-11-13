@@ -474,6 +474,7 @@ void create_pot_table(pot_table_t *pt)
           r2_invstep[i][j] = r2_invstep[j][i] = 1.0 / r2_step[i][j];
           len[i][j]        = len[j][i]        = pot_res[column];
 	}
+        else r2_end[i][j]  = r2_end[j][i] = 0.0;
         ++column;
       }
 

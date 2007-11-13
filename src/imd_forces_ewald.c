@@ -431,9 +431,9 @@ void init_ewald(void)
      and charges in units of the elementary charge e */
 
   /* ew_eps is already initialized to 14.38 in globals.h    */
-  /* this is e^2 / (2*pi*epsilon_0) in [eV A]               */
+  /* this is e^2 / (4*pi*epsilon_0) in [eV A]               */
   /* we need it earlier for analytically defined potentials */
-  /* ew_eps   = 14.38; */
+  /* ew_eps   = 14.40; */
   twopi    = 2.0 * M_PI;
   ew_vorf  = ew_kappa / SQRT( M_PI );
   vorf1    = twopi * ew_eps / volume;
