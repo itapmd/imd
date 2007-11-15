@@ -104,6 +104,9 @@ void setup_potentials( void )
   init_tersoff();
 #endif
 
+#ifdef NEB
+  MPI_Barrier(MPI_COMM_WORLD);
+#endif
 }
 
 /*****************************************************************************
@@ -292,7 +295,7 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename,
 
   r2_step = (r2 - r2_start) / (npot-1);
 
-  if (0==myid) {
+  if ((0==myid) && (0==myrank)) {
     if (ncols==ntypes) {
       printf("Read tabulated function %s for %d atoms types.\n",
              filename,ncols);
@@ -402,7 +405,7 @@ void read_pot_table2(pot_table_t *pt, int ncols, char *filename,
     }
   }
 
-  if (0==myid) {
+  if ((0==myid) && (0==myrank)) {
     if (ncols==ntypes) {
       printf("Read tabulated function %s for %d atoms types.\n",
              filename,ncols);

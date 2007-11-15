@@ -1095,3 +1095,13 @@ EXTERN real *dsf_weight INIT(NULL);
 #ifdef CBE
 EXTERN int num_spus INIT(6);
 #endif
+
+EXTERN int myrank   INIT(0);
+#ifdef NEB
+EXTERN int  neb_nrep INIT(0);
+EXTERN int  neb_eng_int INIT(0);
+EXTERN real neb_k INIT(1.0);                /* spring constant */
+EXTERN real neb_fnorm INIT(0.0);            /* total force norm */
+EXTERN char *neb_outfilename INIT(NULL);    /* name of NEB .eng file */
+EXTERN FILE *neb_eng_file INIT(NULL);       /* pointer to NEB .eng file */
+#endif

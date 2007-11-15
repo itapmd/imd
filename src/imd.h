@@ -47,7 +47,7 @@
 #endif
 
 /* Machine specific headers */
-#ifdef MPI
+#if defined(MPI) || defined(NEB)
 #include <mpi.h>
 #ifdef MPE
 #include <mpe.h>

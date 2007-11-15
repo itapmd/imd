@@ -1833,7 +1833,8 @@ void write_eng_file(int steps)
   if (NULL == eng_file) {
     sprintf(fname,"%s.eng",outfilename);
     eng_file = fopen(fname,"a");
-    if (NULL == eng_file) error("Cannot open properties file.");
+    if (NULL == eng_file) 
+      error_str("Cannot open properties file %s.eng", outfilename);
   }
 
 #ifdef RELAX
@@ -1873,14 +1874,13 @@ void write_eng_file(int steps)
 #ifdef FNORM
   fprintf(eng_file, format,   (double) SQRT( fnorm / nactive ) );
   fprintf(eng_file, format,   (double) SQRT( f_max2 ) );
- 
 #endif
 #ifdef RELAXINFO
-  fprintf(eng_file, " %.21e",   (double)  Epot - old_epot);
+  fprintf(eng_file, " %.21e", (double) Epot - old_epot);
   fprintf(eng_file, format,   (double) SQRT( xnorm / nactive ) );
   fprintf(eng_file, format,   (double) SQRT( x_max2 ) );
 #endif
-#if defined (GLOK) ||defined(MIX)
+#if defined (GLOK) || defined(MIX)
   fprintf(eng_file, format,   (double) PxF);
   fprintf(eng_file, format,   (double) mix);
 #endif

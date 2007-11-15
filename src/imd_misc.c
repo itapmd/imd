@@ -33,7 +33,7 @@ void usage(void)
     fprintf(stderr,"%s [-r<nnn>] [-p paramter-file]\n",progname); 
     fflush(stderr);
   }
-#ifdef MPI
+#if defined (MPI) || defined(NEB)
   MPI_Abort(MPI_COMM_WORLD, 1);
 #endif
   exit(1); 
@@ -87,7 +87,7 @@ void imderror(char *msg)
   fflush(stdout);
   if ((myid==0) && ( eng_file!=NULL)) fclose( eng_file);
   if ((myid==0) && (msqd_file!=NULL)) fclose(msqd_file);
-#ifdef MPI
+#if defined (MPI) || defined(NEB)
   MPI_Abort(MPI_COMM_WORLD, 1);
 #endif
 #ifdef SOCKET_IO

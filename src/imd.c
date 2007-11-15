@@ -38,7 +38,7 @@ int main(int argc, char **argv)
   long_long flpins;
 #endif
 
-#ifdef MPI
+#if defined(MPI) || defined(NEB)
   MPI_Init(&argc, &argv);
   init_mpi();
 #endif
@@ -85,6 +85,9 @@ int main(int argc, char **argv)
 #ifdef TIMING
   imd_start_timer(&time_input);
 #endif
+#ifdef NEB
+  read_atoms_neb(infilename);
+#else
   /* filenames starting with _ denote internal generation of configuration */
   if ('_' == infilename[0]) {
     generate_atoms(infilename);
@@ -92,6 +95,7 @@ int main(int argc, char **argv)
   else {
     read_atoms(infilename);
   }
+#endif
 #ifdef TIMING
   imd_stop_timer(&time_input);
 #endif
@@ -142,9 +146,9 @@ int main(int argc, char **argv)
 
   /* first phase of the simulation */
   if (steps_min <= steps_max) {
-    if (0==myid) printf("Starting simulation %d\n", simulation);
+    if ((0==myid) && (0==myrank))
+      printf("Starting simulation %d\n", simulation);
     if (main_loop(simulation)) finished = 1;
-    if (0==myid) printf("Finished simulation %d\n", simulation);
   }
 
   /* execute further phases of the simulation */
@@ -153,9 +157,9 @@ int main(int argc, char **argv)
     finished = read_parameters(paramfilename, simulation);
     if (steps_min <= steps_max) {
       make_box();  /* make sure the box size is still ok */
-      if (0==myid) printf("Starting simulation %d\n", simulation);
+      if ((0==myid) && (0==myrank))
+        printf("Starting simulation %d\n", simulation);
       if (main_loop(simulation)) finished = 1;
-      if (0==myid) printf("Finished simulation %d\n", simulation);
     }
   }
 
@@ -166,7 +170,7 @@ int main(int argc, char **argv)
 #endif
 
   /* write execution time summary */
-  if (0 == myid) {
+  if ((0 == myid) && (0 == myrank)){
     if (NULL!= eng_file) fclose( eng_file);
     if (NULL!=msqd_file) fclose(msqd_file);
     time(&tend);
@@ -273,7 +277,7 @@ int main(int argc, char **argv)
   } while (loop);
 
   /* kill MPI */
-#ifdef MPI
+#if defined(MPI) || defined(NEB)
   shutdown_mpi();
 #endif
 

@@ -58,7 +58,7 @@ void read_atoms(str255 infilename)
   msgbuf   *input_buf=NULL, *b;
 #endif
 
-  if (0 == myid) { 
+  if ((0 == myid) && (0==myrank)) { 
     printf("Reading atoms from %s.\n", infilename); 
     fflush(stdout);
   }
@@ -578,7 +578,7 @@ void read_atoms_cleanup(void)
 #endif /* RIGID */
 
   /* print number of atoms */
-  if (0==myid) {
+  if ((0==myid) && (0==myrank)) {
     printf("Read structure with %ld atoms.\n",natoms);
     tmp = num_sort[0];
     printf("num_sort = [ %ld",num_sort[0]);
@@ -611,7 +611,7 @@ void read_atoms_cleanup(void)
 #else
   maxc2 = maxc1;
 #endif
-  if (0 == myid) { 
+  if ((0 == myid) && (0==myrank)) { 
     printf("maximal cell occupancy: %d\n", maxc2);
     fflush(stdout);  
   }

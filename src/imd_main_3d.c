@@ -237,6 +237,9 @@ int main_loop(int simulation)
 #ifdef RIGID
     calc_superforces();
 #endif
+#ifdef NEB
+    calc_forces_neb();
+#endif
 #ifdef TIMING
     imd_stop_timer(&time_forces);
 #endif
@@ -420,6 +423,11 @@ int main_loop(int simulation)
     check_relaxed();
 #endif
 
+#ifdef NEB
+    if ((0==myrank) && (neb_eng_int > 0) && (0 == steps % neb_eng_int ))
+      write_neb_eng_file(steps);
+#endif
+
 #ifdef NBLIST
     check_nblist();
 #else
@@ -456,7 +464,7 @@ int main_loop(int simulation)
   imdrestart=0;
   if (0==myid) {
     write_itr_file(-1, steps_max,"");
-    printf( "End of simulation %d\n", simulation );
+    if (0==myrank) printf( "End of simulation %d\n", simulation );
   }  
   return finished;
 }
@@ -690,10 +698,17 @@ void check_relaxed(void)
   if ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) {
 
     int stop = 0;
-    real fnorm2 = SQRT( fnorm / nactive );
-    real ekin   = 2 * tot_kin_energy / nactive;
-    real epot   = tot_pot_energy / natoms;
-    real delta_epot = old_epot - epot;
+    real fnorm2, ekin, epot, delta_epot;
+#ifdef NEB
+    MPI_Allreduce( &fnorm, &neb_fnorm, 1, REAL, MPI_SUM, MPI_COMM_WORLD);
+    neb_fnorm = SQRT( neb_fnorm / (nactive * (neb_nrep-2)) );
+    if (neb_fnorm < fnorm_threshold) is_relaxed = 1;
+    else is_relaxed = 0;
+#else
+    fnorm2 = SQRT( fnorm / nactive );
+    ekin   = 2 * tot_kin_energy / nactive;
+    epot   = tot_pot_energy / natoms;
+    delta_epot = old_epot - epot;
     if (delta_epot < 0) delta_epot = -delta_epot;
 
     if ((ekin  <  ekin_threshold) || (fnorm2 < fnorm_threshold) || 
@@ -701,17 +716,21 @@ void check_relaxed(void)
     else is_relaxed = 0;
 
     old_epot = epot;
+#endif
 
     if (is_relaxed) {
       stop = 1;
       write_eng_file(steps);
       write_ssconfig(steps);
-
-      if (myid==0) {
+#ifdef NEB
+      if (0==myrank) write_neb_eng_file(steps);
+#else
+      if (0==myid) {
         printf("nfc = %d epot = %22.16f\n", nfc, epot );
         printf("ekin = %e fnorm = %e f_max = %e delta_epot = %e\n", 
                ekin, fnorm2, f_max, delta_epot);
       }
+#endif
     }
 
 #ifdef DEFORM

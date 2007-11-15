@@ -1045,6 +1045,13 @@ endif
 
 endif
 
+# nudged elastic band method
+ifneq (,$(findstring neb,${MAKETARGET}))
+SOURCES  += imd_neb.c
+PP_FLAGS += -DNEB
+CC        = ${CC_MPI}
+endif
+
 # common-neighbour analysis
 ifneq (,$(findstring cna,${MAKETARGET}))
 SOURCES += ${CNASOURCES}

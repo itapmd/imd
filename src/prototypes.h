@@ -102,9 +102,11 @@ float   SwappedFloat  (float  );
 double  SwappedDouble (double );
 
 /* start and stop MPI - files imd_mpi_util.c, imd_geom_mpi_*.c */
-#ifdef MPI
+#if defined(MPI) || defined(NEB)
 void init_mpi(void);
 void shutdown_mpi(void);
+#endif
+#ifdef MPI
 void alloc_msgbuf(msgbuf*, int);
 void realloc_msgbuf(msgbuf*, int);
 void free_msgbuf(msgbuf*);
@@ -602,3 +604,9 @@ void check_write(void);
 int  check_stop(void);
 int  check_walltime(void);
 void close_files(void);
+
+#ifdef NEB
+void read_atoms_neb(str255);
+void calc_forces_neb(void);
+void write_neb_eng_file(int);
+#endif

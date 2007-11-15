@@ -129,7 +129,7 @@ void init_cells( void )
   global_cell_dim.y = (int) ( 1.0 / cell_scale.y );
   global_cell_dim.z = (int) ( 1.0 / cell_scale.z );
 
-  if (0 == myid )
+  if ((0 == myid ) && (0 == myrank))
   printf("Minimal cell size: \n\t ( %f %f %f ) \n\t ( %f %f %f ) \n\t ( %f %f %f )\n",
     box_x.x * cell_scale.x, box_x.y * cell_scale.x, box_x.z * cell_scale.x,
     box_y.x * cell_scale.y, box_y.y * cell_scale.y, box_y.z * cell_scale.y,
@@ -198,13 +198,13 @@ void init_cells( void )
   cell_scale.y = 1.0 / global_cell_dim.y;
   cell_scale.z = 1.0 / global_cell_dim.z;
 
-  if (0==myid)
+  if ((0 == myid ) && (0 == myrank))
     printf("Actual cell size: \n\t ( %f %f %f ) \n\t ( %f %f %f ) \n\t ( %f %f %f )\n",
       box_x.x * cell_scale.x, box_x.y * cell_scale.x, box_x.z * cell_scale.x,
       box_y.x * cell_scale.y, box_y.y * cell_scale.y, box_y.z * cell_scale.y,
       box_z.x * cell_scale.z, box_z.y * cell_scale.z, box_z.z * cell_scale.z);
 
-  if (0==myid)
+  if ((0 == myid ) && (0 == myrank))
     printf("Global cell array dimensions: %d %d %d\n",
       global_cell_dim.x,global_cell_dim.y,global_cell_dim.z);
 
@@ -228,7 +228,7 @@ void init_cells( void )
   cellmin.y = 1;   cellmax.y = cell_dim.y - 1;
   cellmin.z = 1;   cellmax.z = cell_dim.z - 1;
 
-  if (0==myid) 
+  if ((0 == myid ) && (0 == myrank))
     printf("Local cell array dimensions (incl buffer): %d %d %d\n",
 	   cell_dim.x,cell_dim.y,cell_dim.z);
 #else

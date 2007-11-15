@@ -515,6 +515,23 @@ int getparamfile(char *paramfname, int phase)
       getparam(token,&nbl_size,PARAM_REAL,1,1);
     }
 #endif
+#ifdef NEB
+    else if (strcasecmp(token,"neb_nrep")==0) {
+      /* number of NEB replicas */
+      getparam(token,&neb_nrep,PARAM_INT,1,1);
+      if (0==myrank)
+        if (num_cpus != neb_nrep-2)
+          error("We need exactly neb_nrep-2 MPI processes");
+    }
+    else if (strcasecmp(token,"neb_eng_int")==0) {
+      /* interval of NEB energy writes */
+      getparam(token,&neb_eng_int,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"neb_k")==0) {
+      /* interval of NEB energy writes */
+      getparam(token,&neb_k,PARAM_REAL,1,1);
+    }
+#endif
 #ifdef VEC
     else if (strcasecmp(token,"atoms_per_cpu")==0) {
       /* maximal number of atoms per CPU */
@@ -2702,6 +2719,9 @@ int read_parameters(char *paramfname, int phase)
     }
     /* read back itr-file for the next phase */
     if (phase > 1) {
+#ifdef NEB
+      sprintf(outfilename, "%s.%02d", neb_outfilename, myrank+1);
+#endif
       sprintf( itrfilename,"%s-final.itr", outfilename );
       getparamfile(itrfilename, 1);
     }
