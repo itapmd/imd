@@ -24,6 +24,11 @@
 #include <rts.h>
 #include <bglpersonality.h>
 #endif
+#ifdef AFF
+#define __USE_GNU
+#include <sched.h>
+void set_affinity_mask();
+#endif
 
 /******************************************************************************
 *
@@ -39,6 +44,9 @@ void init_mpi(void)
 
   if (0 == myid) { 
     printf("Starting up MPI with %d processes.\n", num_cpus);
+#ifdef AFF
+    set_affinity_mask();
+#endif
 #ifdef MPI2
     printf("Using MPI2\n");
 #endif
@@ -832,3 +840,39 @@ void empty_mpi_buffers(void)
 
 }
 
+#ifdef AFF
+
+/******************************************************************************
+*
+* set processor affinity
+*
+******************************************************************************/
+
+void set_affinity_mask()
+{
+  int  n=0;
+  char *res, line[1024];
+  FILE *inp;
+
+  /* count number of CPUs */
+  inp = fopen("/proc/cpuinfo", "r");
+  if (NULL==inp) return;
+  while (!feof(inp)) {
+    res=fgets(line,1024,inp);
+    if (NULL==res) break;
+    line[9] = '\0';
+    if (strcmp(line,"processor") == 0) n++;
+  }
+  fclose(inp);
+
+  /* if hyperthreading, confine processes to even CPUs */
+  if (n==4) {
+    cpu_set_t my_cpu_mask;
+    CPU_ZERO(&my_cpu_mask);
+    CPU_SET(0,&my_cpu_mask);
+    CPU_SET(2,&my_cpu_mask);
+    sched_setaffinity(0,sizeof(cpu_set_t),&my_cpu_mask);
+  }
+}
+
+#endif
