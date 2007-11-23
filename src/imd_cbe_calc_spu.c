@@ -68,92 +68,10 @@ void calc_tb(wp_t *wp) {}
    pbuf[1]->force & pbuf[2]->force are set to NULL as they won't be needed
  */
 
-static void set_buffers(cell_dta_t* const pbuf,
-                        int const n_max, int const len_max,
-                        void* const tmpbuf, unsigned const tmpbuf_len,
-                        void* const resbuf, unsigned const resbuf_len)
-{
-    /* Vector quantities (pos&force) have the same size */
-    int const svec = iceil128(  n_max *     sizeof(vector float));
-    /* Sizes of the scalar members */
-    int const styp = iceil128(  n_max *     sizeof(int));
-    int const sti  = iceil128(  n_max * 2 * sizeof(int));
-    int const stb  = iceil128(len_max *     sizeof(short));
-    int const stb2 = iceil128(len_max/2 *   sizeof(short));
-
-    /* Total number of bytes needed for temp. storage */
-    int const stottmp = 3*(svec+styp)+2*(sti+stb);
 
 
-    /* forces arrays will only be used for pbuf[0] */
-    pbuf[1].force=pbuf[2].force=0;
 
 
-    /*
-    fprintf(stdout,
-            "set_buffers:\n"
-            "len_max = %d\n"
-            "svec    = %d\n"
-            "styp    = %d\n"
-            "sti     = %d\n"
-            "stb     = %d\n",
-            len_max, svec,styp,sti,stb 
-	   );
-    fflush(stdout);
-    */
-
-
-    /* Storage for results (non-temp. storage) */
-    if ( EXPECT_TRUE_(resbuf_len >= svec) ) {
-        /* At the moment, only pbuf[0].forces will store results */
-        pbuf[0].force = (float*)resbuf;
-    }
-    else {
-        fprintf(stderr, "set_buffers: Can not allocate %d bytes for result buffers\n", svec);
-    }
-
-
-    /* Enoug temp space available? */
-    if ( EXPECT_TRUE_(tmpbuf_len >= stottmp) ) {
-        /* Allocation starts here */
-        register unsigned char* loc = (unsigned char*)tmpbuf;
-
-        /* Pos arrays */
-        pbuf[0].pos = (float*)loc;
-        loc+=svec;
-        pbuf[1].pos = (float*)loc;
-        loc+=svec;
-        pbuf[2].pos = (float*)loc;
-        loc+=svec;
-
-        /* typ arrays */
-        pbuf[0].typ = (int*)loc;
-        loc+=styp;
-        pbuf[1].typ = (int*)loc;
-        loc+=styp;
-        pbuf[2].typ = (int*)loc;
-        loc+=styp;
-
-        /* ti arrays */
-        pbuf[0].ti  = (int*)loc;
-        loc+=sti;
-        pbuf[1].ti  = (int*)loc;
-        loc+=sti;
-        pbuf[2].ti  = pbuf[0].ti;
-
-        /* tb arrays */
-        pbuf[0].tb  = (short*)loc;
-        loc+=stb;
-        pbuf[1].tb  = (short*)loc;
-        loc+=stb2;  /* this one can be smaller */
-        pbuf[2].tb  = pbuf[0].tb;
-    }
-    else {
-        fprintf(stderr, "set_buffers: Can not allocate %d bytes for temp buffers\n", 
-                stottmp);
-    }
-
-}
 
 
 /* Init a DMA get from the EAs specified in *addr to the LS addresses
@@ -202,9 +120,12 @@ static INLINE_
 }
 
 
+
+
 static void wait_tag(unsigned const tag) {
     wait_dma((1u<<tag),  MFC_TAG_UPDATE_ALL);
 }
+
 
 
 /* Start a DMA back to main memory without waiting for it */
@@ -225,26 +146,34 @@ static INLINE_
 }
 
 
+
+
+
 /* Start a DMA back to main memory without waiting for it */
 static INLINE_
   void init_return_tb(cell_dta_t const* const buf, cell_ea_t const* const addr,
                       int const ti_len, int const tb_len, unsigned const tag)
 {
   dma64 (buf->ti, addr->ti_ea, iceil16(ti_len*sizeof(int)  ), tag,MFC_PUT_CMD);
-  /* here we possibly need a multiple DMA */
+  /* here we possibly need a multi-DMA */
   mdma64(buf->tb, addr->tb_ea, iceil16(tb_len*sizeof(short)), tag,MFC_PUT_CMD);
 }
 
 
 /* This routine will use tags 0,1,2 for DMA as well as otag */
 void calc_wp_direct(wp_t *wp,
+                    /*
                     void* const tempbuf, unsigned const tempbuf_len,
                     void* const resbuf,  unsigned const resbuf_len,
+                    */
+                    cell_dta_t* const buf,
                     unsigned const otag)
 {
   unsigned tag=0u;  /* tag for incoming data  */
 
-  cell_dta_t buf[3], *p, *q, *next_q, *old_q;
+  cell_dta_t  *p, *q, *next_q, *old_q;
+
+
 
   vector float const f00  = spu_splats( (float)   0.0  );
   vector float const f001 = spu_splats( (float)   0.001);
@@ -284,38 +213,25 @@ void calc_wp_direct(wp_t *wp,
 #endif
   vector unsigned int ms, ms1, ms2, ms3;
   vector signed int tj;
-  int    i, c1, n, m, j0, j1, j2, j3;
+  int    i, c1, n, m;
 
 
-  /*
-  fprintf(stdout,
-          "calc_wp_direct:\n"
-          "k       = %d\n"
-          "flag    = %d\n"
-          "len_max = %d\n",
-           wp->k, wp->flag);
-  fflush(stdout);
-  */
 
-
-  /* Allocate 3 buffers */
-  set_buffers(buf,   wp->n_max, wp->len_max,
-              tempbuf, tempbuf_len,   resbuf, resbuf_len);
 
   /* The initial fetch to buffer q */
-  p = q = &(buf[0]);
+  p = q = buf;
   init_fetch(q, wp->ti_len, wp->cell_dta, tag);
 
   /* Set pointers to the remaining buffers */
-  next_q = &(buf[1]);
+  next_q = buf+1;
 
   /* Set forces to zero using qpos to iterate over elements */
-  for ( qpos=(vector float*)(buf[0].force), i=wp->n_max; i>0; --i, ++qpos ) {
+  for ( qpos=(vector float*)(buf[0].force), i=wp->n_max;    EXPECT_TRUE_(i>0);   --i, ++qpos ) {
     (*qpos) = f00;
   }
 
   /* Set scalars to zero */
-  wp->totpot =  wp->virial  = 0;
+  wp->totpot = wp->virial = 0;
 
   m = 0;
   do {
@@ -323,17 +239,17 @@ void calc_wp_direct(wp_t *wp,
     wait_tag(tag);
 
     do {
-      m++;
+        ++m;
     } while ((wp->cell_dta[m].n==0) && (m<NNBCELL));
 
     if (m<NNBCELL) {
-      init_fetch(next_q, wp->ti_len, wp->cell_dta + m, tag);
+        init_fetch(next_q, wp->ti_len, wp->cell_dta + m, tag);
     }
 
     /* positions in q as vector float */
     qpos = (vector float *) q->pos;
 
-    for (i=0; i<p->n; i++) {
+    for ( i=0;     EXPECT_TRUE_(i<p->n);    ++i ) {
 
       vector float*       const fi = ((vector float *) p->force) + i;
       vector float const* const pi = ((vector float *) p->pos)   + i;
@@ -350,13 +266,21 @@ void calc_wp_direct(wp_t *wp,
       /* we treat four neighbors at a time, so that we can vectorize */
       /* ttb is padded with copies of i, which have to be masked     */
       qpos[q->n] = *pi;      /* needed for the padding values in ttb */
-      for (n=0; n<q->ti[2*i+1]; n+=4) {
+      for ( n=0;   EXPECT_TRUE_(n<q->ti[2*i+1]);   n+=4 ) {
+        register short int const* const ttbn = ttb+n;
+        
+        register int const j0 = ttbn[0];
+        register int const j1 = ttbn[1];
+        register int const j2 = ttbn[2];
+        register int const j3 = ttbn[3];
 
         /* indices of neighbors */
+        /*
         j0  = ttb[n  ];
         j1  = ttb[n+1];
         j2  = ttb[n+2];
         j3  = ttb[n+3];
+        */
 
 #ifndef MONO
         /* if not MONO, we assume up to two atom types */
@@ -479,7 +403,7 @@ void calc_wp_direct(wp_t *wp,
     q      = next_q;
     next_q = old_q;
 
-  } while (m<NNBCELL);
+  } while (EXPECT_TRUE_(m<NNBCELL));
 
   /* set contribution to total virial */
 #ifndef AR
@@ -495,6 +419,8 @@ void calc_wp_direct(wp_t *wp,
 }
 
 
+
+
 /******************************************************************************
 *
 *  calc_tb: Neighbor tables on SPU -- CBE_DIRECT version
@@ -502,27 +428,27 @@ void calc_wp_direct(wp_t *wp,
 ******************************************************************************/
 
 void calc_tb_direct(wp_t *wp,
+                    /*
                     void* const tempbuf, unsigned const tempbuf_len,
                     void* const resbuf,  unsigned const resbuf_len,
+                    */
+                    cell_dta_t* const buf,
                     unsigned const otag)
 {
   vector float d, *qpos;
-  float cellsz = wp->totpot;
-  int inc_short = 128 / sizeof(short) - 1;
+  float const cellsz = wp->totpot;
+  int const inc_short = 128 / sizeof(short) - 1;
   int m, next_m, nn=0;
 
-  cell_dta_t buf[3], *p, *q, *next_q, *old_q;
+  cell_dta_t *p, *q, *next_q, *old_q;
 
-  /* Allocate 3 buffers */
-  set_buffers(buf, wp->n_max, wp->len_max,
-              tempbuf, tempbuf_len, resbuf, resbuf_len);
 
   /* The initial fetch to buffer q */
-  p = q = &(buf[0]);
+  p = q = buf;
   init_fetch_tb(q, wp->cell_dta, otag);
 
   /* Set pointers to the remaining buffers */
-  next_q    = &(buf[1]);
+  next_q = buf+1;
 
   /* for each neighbor cell */
   m = 0;
@@ -555,7 +481,7 @@ void calc_tb_direct(wp_t *wp,
     qpos = (vector float *) q->pos;
 
     /* for each atom in cell */
-    for (i=0; i<p->n; i++) {
+    for ( i=0; EXPECT_TRUE_(i<p->n);  ++i ) {
 
       vector float* const pi = ((vector float *) p->pos) + i;
       int    jstart, j, rr;
@@ -567,7 +493,7 @@ void calc_tb_direct(wp_t *wp,
 #else
       jstart = 0;
 #endif
-      for (j=jstart; j<q->n; j++) {
+      for ( j=jstart;   EXPECT_TRUE_(j<q->n);   ++j ) {
         float r2;
 #ifndef AR
         if ((m==0) && (i==j)) continue;
@@ -589,7 +515,7 @@ void calc_tb_direct(wp_t *wp,
     n = (n + inc_short) & (~inc_short); 
 
     nn += n;
-    if (nn > wp->nb_max) {
+    if ( EXPECT_FALSE_(nn > wp->nb_max) ) {
       wp->flag = -1;
       printf("nb_max = %d, nn = %d\n", wp->nb_max, nn);
       return;
@@ -602,7 +528,7 @@ void calc_tb_direct(wp_t *wp,
     q      = next_q;
     next_q = old_q;
 
-  } while (m<NNBCELL);
+  } while (EXPECT_TRUE_(m<NNBCELL));
 
   wp->flag = nn;
 

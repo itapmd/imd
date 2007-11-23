@@ -104,6 +104,15 @@ typedef unsigned long long int  ea_t;
 
 
 
+/* A reservation granule is 128 bytes large on the CBE (which is also the PPE
+   cache line size).
+   According to the PowerPC architecture, this size is implementation dependent
+   but must be pow(2,n) with n>=4.
+   An array unsigned int[CBE_GRANULE_NUNSIGNED] is of that size.
+ */
+enum { CBE_GRANULE_NUNSIGNED = (unsigned)(128/(sizeof (unsigned int))) };
+
+
 /* The floating point type */
 typedef float flt;
 
@@ -297,7 +306,7 @@ enum { WPDONE1=(unsigned)0, WPSTRT1=(unsigned)1, SPUEXIT=(unsigned)2 };
    There shall be N_ENVBUF environment buffers which are shared by all
    SPU threads. All SPU shall receive the same environment address
  */
-enum { N_ARGBUF=32u, N_ENVBUF=2u };
+enum { N_ARGBUF=4u, N_ENVBUF=2u };
 
 /* Buffer padding (must be a multiple of 16, should be a multiple 128) */
 enum { BUFPAD = 128u };
@@ -334,8 +343,8 @@ void do_work_spu(int const flag);
 
 #if defined(CBE_DIRECT)
 /* Multibuffered version of do_work_spu */
-void do_work_spu_mbuf(unsigned (* const mkf)(argbuf_t*, unsigned, unsigned, int),
-                      void     (* const stf)(argbuf_t*, unsigned)
+void do_work_spu_mbuf(void (* const mkf)(argbuf_t*, unsigned, int),
+                      void (* const stf)(argbuf_t*, unsigned)
                      );
 #endif
 
@@ -356,11 +365,13 @@ void calc_tb(wp_t *wp);
 
 #if defined(CBE_DIRECT)
 void calc_wp_direct(wp_t*,
-                    void* const, unsigned const, void* const, unsigned const,
+                    /* void* const, unsigned const, void* const, unsigned const, */
+                    cell_dta_t* const pbuffers,
                     unsigned const otag);
 
 void calc_tb_direct(wp_t*,
-                    void* const, unsigned const, void* const, unsigned const,
+                    /* void* const, unsigned const, void* const, unsigned const, */
+                    cell_dta_t* const pbuffers,
                     unsigned const otag);
 
 #endif

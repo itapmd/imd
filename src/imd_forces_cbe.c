@@ -19,6 +19,11 @@
 * $Date$
 ******************************************************************************/
 
+/* POSIX headers */
+
+/* Needed for multithreaded "SPU driver" */
+#include <pthread.h>
+
 
 /* PPU intrinsics */
 #include <ppu_intrinsics.h>
@@ -30,12 +35,16 @@
 
 
 
+
+
+
+
 /* Global variables only needed in this file */
-static int *ti=NULL;
+static int *ti= NULL;
 static int *tb_off=NULL;
 static int *at_off=NULL;
-static int nb_max=0;
 static short *tb=NULL;
+static int nb_max=0;
 #ifdef CBE_DIRECT
 static int n_max=0, len_max=0, len_max2=0;
 #ifdef ON_PPU
@@ -320,10 +329,11 @@ int estimate_nblist_size(void)
 
 static void make_tb(int k, wp_t *wp)
 {
-  cell_nbrs_t *c = cnbrs + k;
-  cell *p = CELLPTR(k);
-  int  inc_int = 128 / sizeof(int) - 1, m, n;
-  int  at_inc  = (2*p->n + inc_int) & (~inc_int);
+  int m;
+  /* cell *p = CELLPTR(k); */
+  cell_nbrs_t const * const c = cnbrs + k;
+  int const inc_int = 128 / sizeof(int) - 1;
+  int const at_inc  = (2*(CELLPTR(k))->n + inc_int) & (~inc_int);
 
   wp->totpot = cellsz;          /* we abuse totpot for cellsz here */
   wp->nb_max = nb_max;
@@ -332,8 +342,10 @@ static void make_tb(int k, wp_t *wp)
   wp->len_max = n_max * n_max;  /* allocate for this many neighbors */
   wp->ti_len = at_inc;
   wp->flag = 1;
-  for (m=0; m<NNBCELL; m++) {
-    n = c->nq[m];
+
+
+  for (  m=0;    EXPECT_FALSE_(m<NNBCELL);  ++m ) {
+    int const n = c->nq[m];
     if (n<0) {
       wp->cell_dta[m].n = 0;
       continue;
@@ -353,18 +365,14 @@ static void make_tb(int k, wp_t *wp)
 }
 
 
-static unsigned make_tb_args(argbuf_t* parg, unsigned bufsze,
-                             unsigned narg, int k)
+static void make_tb_args(argbuf_t* parg, unsigned n, int k)
 {
-     unsigned const ncrea = (bufsze<narg) ? bufsze : narg;
-     register unsigned  i = ncrea;
-
-     for ( ;   (i>0u);    ++parg, ++k, --i ) {
-         make_tb(k, (wp_t*)parg);
+     for ( ;     n>0u;    ++parg, ++k, --n ) {
+         make_tb(k, ((wp_t*)parg));
      }
 
+     /* Sync memory */
      __lwsync();
-     return ncrea;
 }
 
 
@@ -381,9 +389,15 @@ static unsigned make_tb_args(argbuf_t* parg, unsigned bufsze,
 
 static void store_tb(wp_t const* const wp)
 {
-  int off, off2=0, m, k = wp->k;
+  register int off, off2=0, m;
+  int const k = wp->k;
 
-  if (wp->flag<0) error("error flag in store_tb");
+  /* Some "base" pointer */
+  register int* const tb_off_Nk = tb_off + NNBCELL*k;
+
+  if (wp->flag<0) {
+       error("error flag in store_tb");
+  }
 
 
   /*
@@ -396,7 +410,7 @@ static void store_tb(wp_t const* const wp)
   fflush(stdout);
   */
 
-  for (m=1; m<NNBCELL; m++) {
+  for ( m=1;  EXPECT_TRUE_(m<NNBCELL);   ++m ) {
 #ifdef ON_PPU
     off = (int) (wp->cell_dta[m].tb       - wp->cell_dta[m-1].tb      );
 #else
@@ -406,9 +420,12 @@ static void store_tb(wp_t const* const wp)
     off = (int)((wp->cell_dta[m].tb_ea - wp->cell_dta[m-1].tb_ea) / (sizeof (short)));
     
 #endif
-    tb_off[k*NNBCELL+m] = tb_off[k*NNBCELL+m-1] + off; 
+    /* tb_off[k*NNBCELL+m] = tb_off[k*NNBCELL+m-1] + off;  */
+    tb_off_Nk[m] = tb_off_Nk[m-1] + off;
     len_max = MAX( len_max, off ); 
-    if (m>1) len_max2 = MAX( len_max2, off );
+    if ( EXPECT_TRUE_(m>1) ) { 
+       len_max2 = MAX( len_max2, off );
+    }
     off2 += off;
   }
   len_max = MAX( len_max, wp->flag - off2 ); 
@@ -416,10 +433,10 @@ static void store_tb(wp_t const* const wp)
 }
 
 
-static void store_tb_args(argbuf_t* parg, unsigned narg)
+static void store_tb_args(argbuf_t* parg, unsigned n)
 {
      __lwsync();
-     for (  ;      (narg>0u);      ++parg, --narg ) {
+     for (  ;      n>0u;      ++parg, --n ) {
          store_tb((wp_t const*)parg);
      }
 }
@@ -567,7 +584,7 @@ void make_nblist(void)
 
   /* count atom numbers */
   at=0; n_max=0;
-  for (k=0; k<ncells; k++) {
+  for (  k=0; EXPECT_TRUE_(k<ncells);   ++k  ) {
     cell *p = CELLPTR(k);
     at_off[k] = at;
     /* next block on 128 byte boundary */
@@ -583,11 +600,12 @@ void make_nblist(void)
     at_max = (int) (1.1 * at * NNBCELL);
     ti = (int *) malloc_aligned(at_max * sizeof(int), 128, 16);
   }
-  if (NULL==tb) {
-    if (0==last_nbl_len) 
-      nb_max = (int) (nbl_size * estimate_nblist_size());
-    else                 
-      nb_max = (int) (nbl_size * last_nbl_len);
+  if ( EXPECT_FALSE_(NULL==tb) ) {
+    nb_max = 
+        (0==last_nbl_len)  ?
+            ((int)(nbl_size * estimate_nblist_size())) :
+	    ((int)(nbl_size * last_nbl_len));
+
     nb_max = (nb_max + inc_short) & (~inc_short);
     tb = (short *) malloc_aligned( nb_max * (cl_max+1) * sizeof(short), 0, 0);
   }
@@ -597,9 +615,11 @@ void make_nblist(void)
     nb_max = (nb_max + inc_short) & (~inc_short);
     tb = (short *) malloc_aligned( nb_max * (cl_max+1) * sizeof(short), 0, 0);
   }
-  if ((ti==NULL) || (tb==NULL)) 
+  if (  EXPECT_FALSE_((ti==NULL) || (tb==NULL)) ) 
     error("cannot allocate neighbor table");
-  for (c=0; c<=ncells; c++) tb_off[c*NNBCELL] = c * nb_max; 
+  for (  c=0; EXPECT_TRUE_(c<=ncells);   c++ /* What else? :-) */  ) {
+      tb_off[c*NNBCELL] = c * nb_max; 
+  }
 
 #ifndef NBL_ON_PPU
 
@@ -613,7 +633,7 @@ void make_nblist(void)
 
   /* for all cells */
   last_nbl_len = 0; len_max=0;
-  for (c=0; c<ncells; c++) {
+  for (  c=0;  EXPECT_TRUE_(c<ncells);   ++c ) {
 
     int   c1 = cnbrs[c].np, m;
     cell  *p = cell_array + c1;
@@ -621,7 +641,7 @@ void make_nblist(void)
     int   nn = tb_off[c*NNBCELL];
 
     /* for each neighbor cell */
-    for (m=0; m<NNBCELL; m++) {
+    for (  m=0; EXPECT_TRUE(m<NNBCELL);   ++m  ) {
 
       int   c2 = cnbrs[c].nq[m];
       int   l  = at_off[c] + m * at_inc, n = 0, i;
@@ -675,7 +695,7 @@ void make_nblist(void)
       n = (n + inc_short) & (~inc_short); 
 
       nn += n;
-      if (nn - tb_off[c*NNBCELL] > nb_max) {
+      if (  EXPECT_FALSE_(nn - tb_off[c*NNBCELL] > nb_max) ) {
         error("neighbor table full - increase nbl_size");
       }
       len_max = MAX( len_max, nn - tb_off[c*NNBCELL+m] );
@@ -699,12 +719,15 @@ void make_nblist(void)
 *
 ******************************************************************************/
 
+
+
 static void make_wp(int k, wp_t *wp)
 {
-  cell_nbrs_t *c = cnbrs + k;
-  cell *p = CELLPTR(k);
-  int  inc_int = 128 / sizeof(int) - 1, m, n, len;
-  int  at_inc  = (2*p->n + inc_int) & (~inc_int);
+  int m;
+  cell_nbrs_t const * const c = cnbrs + k;
+  /* cell *p = CELLPTR(k); */ /* Actually needed only once (below) */
+  int const inc_int = 128 / sizeof(int) - 1;
+  int const at_inc  = (2*(CELLPTR(k))->n + inc_int) & (~inc_int);
 
 
   wp->k = k;
@@ -724,8 +747,8 @@ static void make_wp(int k, wp_t *wp)
   fflush(stdout);
   */
 
-  for (m=0; m<NNBCELL; m++) {
-    n = c->nq[m];
+  for ( m=0;   EXPECT_FALSE_(m<NNBCELL);    ++m ) {
+    int const n = c->nq[m];
     if (n<0) {
       wp->cell_dta[m].n = 0;
       continue;
@@ -744,25 +767,19 @@ static void make_wp(int k, wp_t *wp)
 }
 
 
+
+
 /* Create narg (or argbufsze if it is less) wp in buffer starting
    at parg, with serial number starting k
  */
-static unsigned make_wp_args(argbuf_t* parg, unsigned bufsze,
-                             unsigned narg, int k)
+static void make_wp_args(argbuf_t* parg, unsigned n, int k)
 {
-     /* Number of WPs created (may be less than the number requested
-        by narg if buffer size buzsze is less) */
-     unsigned const ncrea = (bufsze<narg) ? bufsze : narg;
-     register unsigned  i = ncrea;
-
-     for ( ;    (i>0u);      ++parg, ++k, --i ) {
-         make_wp(k, (wp_t*)parg);
+     for ( ;    EXPECT_TRUE_(n>0u);      ++k, --n, ++parg ) {
+         make_wp(k, ((wp_t*)parg));
      }
 
+     /* Sync memory */
      __lwsync();
-
-     /* Return number of WPs actually created */
-     return ncrea;
 }
 
 
@@ -785,9 +802,10 @@ static INLINE_ void store_wp(wp_t const* const wp)
 
 static void store_wp_args(argbuf_t* parg, unsigned narg)
 {
+    /* Sync memory */
      __lwsync();
 
-     for (  ;    (narg>0u);     ++parg, --narg ) {
+     for (  ;     EXPECT_TRUE_(narg>0u);     ++parg, --narg ) {
 #if defined(CBE_DIRECT)
          tot_pot_energy += ((wp_t const*)parg)->totpot;
          virial         += ((wp_t const*)parg)->virial;
@@ -1103,59 +1121,307 @@ static void store_wp(wp_t const* const wp)
 *
 ******************************************************************************/
 
+/* SPU management thread function / data */
+typedef struct mgmt {
+    /* SPU indices  */
+    unsigned int nspus;
 
+    /* Index range, determines the number of WPs */
+    int kfrom, kto;
+
+    /* Book keeping arrays: at least nspus long */
+    unsigned int *plo, *phi;
+
+    /* Access to mailboxes: at least nspus long */
+    spe_spu_control_area_p* pctl;  
+
+    /* Argument buffers: at least nspus long */
+    argbuf_t* parg;
+
+    /* functions used to make/store WPs */
+    void (*mk)(argbuf_t* buf, unsigned int n, int k0);
+    void (*st)(argbuf_t* buf, unsigned int n);
+} mgmt_t;
+
+
+
+
+static void* mgmt_thread(void* parg0) {
+    /* Argument pointer */
+    register mgmt_t const* const pm = ((mgmt_t*)parg0);
+
+    /* "Functors" for creating/storing WPs */
+    register void (*const mk)(argbuf_t*, unsigned, int) = pm->mk;
+    register void (*const st)(argbuf_t*, unsigned)      = pm->st;
+
+    /* Number of elements in lower/higher buffer */
+    register unsigned int* const nlo=pm->plo;
+    register unsigned int* const nhi=pm->phi;
+
+    /* Pointer to control areas / argument buffers */
+    register spe_spu_control_area_p* const pctl = pm->pctl;
+
+    /* Indices */
+    register int k;
+    register unsigned int ispu;
+    register unsigned int const nspus = (pm->nspus);
+
+    /* Number of WPs to be sent to / received from SPUs  */
+    register unsigned int nto, nfrom;
+
+    for ( ispu=0;     ispu<nspus;     ++ispu ) {
+        nlo[ispu] = nhi[ispu] = 0u;
+    }
+
+
+
+    /* Set initial k and the number of WPs remaining to be scheduled */
+    for (  nto=nfrom = (pm->kto)-(k=pm->kfrom);;  ) {
+        /* Begin of argument array of SPU ispu */
+        register argbuf_t* spuargs;
+
+        /* Loop over all SPUs */
+        for ( ispu=0u, spuargs=pm->parg;    ispu<nspus;    ++ispu, spuargs+=N_ARGBUF ) {
+
+            /* Half the number of arguments buffers per SPU */
+            enum { NHALF = (unsigned)(N_ARGBUF>>1u) };
+            /* Number of arguments in low/high buffer */
+            enum { NARG_LO=((unsigned)NHALF),
+                   NARG_HI=((unsigned)(N_ARGBUF-NHALF)) };
+            /* Buffer offsets */
+            enum { OFFS_LO=(unsigned)0, OFFS_HI=(unsigned)NARG_LO };
+
+            /* Shifted constant (2) used when checking inbox */
+            enum { IBX2 = (unsigned)(2u << INMBX_CNT_SHIFT) };
+
+            /* Ptr to SPUs control area */
+            register spe_spu_control_area_p const pctl = (pm->pctl)[ispu];
+
+	    /* Number of arguments sent/returned */
+            register unsigned int nargs;
+	    
+
+	     /* Schedule to  SPU #ispu? */
+             /* Lower buffer */
+	     if ( EXPECT_TRUE_(nto>0u)  &&  (0u==nlo[ispu]) ) {
+	        /* Can we write at least 2 items to mailbox?
+                   (The SPU inbox is 4-way mbox ) */ 
+ 	        if ( (pctl->SPU_Mbox_Stat & INMBX_CNT_MASK) >= IBX2  ) {
+  		    /* 1st msg to SPU */
+		    pctl->SPU_In_Mbox = (nargs=((NARG_LO<nto) ? NARG_LO : nto));
+
+                    /* Create arguments & sync memory */
+                    mk(spuargs+OFFS_LO, nargs, k);
+
+                    /* 2nd. Msg. to SPU */
+                    pctl->SPU_In_Mbox = OFFS_LO;
+
+                    /* Update bookkeeping */
+                    k   += nargs;
+                    nto -= (nlo[ispu]=nargs);
+                }
+            }
+
+	    /* Higher buffer */
+            if ( EXPECT_TRUE_(nto>0u)  &&  (0u==nhi[ispu]) ) {
+	        /* Can we write at least 2 items to mailbox?
+                   (The SPU inbox is 4-way mbox) */ 
+ 	        if ( (pctl->SPU_Mbox_Stat & INMBX_CNT_MASK) >= IBX2  ) {
+		    /* 1st. msg to SPU contains number of arguments */
+		    pctl->SPU_In_Mbox = (nargs=((NARG_HI<nto) ? NARG_HI : nto));
+
+                    /* Create arguments and sync memory */
+                    mk(spuargs+OFFS_HI, nargs, k);
+
+                    /* 2nd. Msg. to SPU: Offset */
+                    pctl->SPU_In_Mbox = OFFS_HI;
+
+                    /* Update bookkeeping */
+                    k   += nargs;
+                    nto -= (nhi[ispu]=nargs);
+                }
+            }
+                
+
+            /* Can we pick up some results? */
+            if ( 0u != ((pctl->SPU_Mbox_Stat) & OUTMBX_CNT_MASK) ) {
+		/* Read Mbox message which is just the offset */
+                register unsigned int const offs = pctl->SPU_Out_Mbox;
+
+                /* Take argument from lower or from higher buffer */
+                register unsigned int* const pn   = ((0u==offs) ? nlo  : nhi);
+ 
+                /* Get number of WPs in buffer & Store results */
+                st(spuargs+offs, (nargs=pn[ispu]));
+
+
+                /* Buffer is free again */
+                pn[ispu]=0u;
+
+                /* Another nargs WPs have been calculated. Are we finished? */
+                if ( EXPECT_FALSE_(0u == (nfrom-=nargs)) ) {
+		   return 0;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+
+
+/**/
+void do_work_spu_mbuf_mt(void (* const mkargs)(argbuf_t*, unsigned n, int k0),
+                         void (* const stargs)(argbuf_t*, unsigned n)
+                        )
+{
+    /* Used by the Threads for book keeping */
+    unsigned int ncount[N_SPU_THREADS_MAX*2];
+
+    /* Thread IDs */
+    pthread_t tid[2];
+    /* Arguments for the management threads */
+    mgmt_t m[2];
+
+    /* Result of thread creation */
+    int rc;
+
+    /* PPU thread 0 */
+    /* Number of SPUs to be mamaged by the PPU thread */
+    m[0].nspus= num_spus/2;
+    /* Control areas / argument buffers */
+    m[0].pctl = cbe_spucontrolarea;
+    m[0].parg = cbe_arg_begin;
+
+    /* k range */
+    m[0].kfrom=0;
+    m[0].kto  =ncells/2;
+
+    /* Make/store "functors" */
+    m[0].mk = mkargs;
+    m[0].st = stargs;
+
+    /* Book keeping data may be stored here */
+    m[0].plo = ncount;
+    m[0].phi = ncount+N_SPU_THREADS_MAX;
+
+
+    /* PPU thread 1 */
+    /* The "remaining work" */
+    m[1].nspus = num_spus           - m[0].nspus;
+    m[1].pctl  = cbe_spucontrolarea + m[0].nspus;
+    m[1].parg  = cbe_arg_begin      + N_ARGBUF*m[0].nspus;
+    m[1].kfrom = m[0].kto;
+    m[1].kto   = ncells;
+    m[1].mk    = mkargs;
+    m[1].st    = stargs;
+    m[1].plo   = m[0].plo           + m[0].nspus;
+    m[1].phi   = m[0].phi           + m[0].nspus;
+
+    if ( 0 !=  (rc=pthread_create(&(tid[1]), NULL, mgmt_thread,  &(m[1]))) ) {
+        (void)(mgmt_thread(&(m[1])));
+    }
+
+    /* Run */
+    (void)(mgmt_thread(&(m[0])));
+
+    if ( 0 == rc ) {
+        pthread_join(tid[1], NULL);
+    }
+}
+
+
+void do_work_spu_mbuf_1pass(void (* const mkargs)(argbuf_t*, unsigned n, int k0),
+                            void (* const stargs)(argbuf_t*, unsigned n)
+                           )
+{
+    /* SPU index/max */
+    unsigned int const ispumax = num_spus;
+    register unsigned int ispu, iarg;
+
+    /* Number of Cells/WPs per SPU (possibly rounded down) */
+    unsigned int const ncpspu = ncells/ispumax;
+    /* Remainder */
+    unsigned int const ncrem  = ncells-ispumax*ncpspu;
+
+    /* WP index */
+    register int k;
+
+
+    /* Not enough WP buffers per SPU */
+    if ( (N_ARGBUF<ncpspu) || (N_ARGBUF<ncrem) ) {
+        do_work_spu_mbuf(mkargs,stargs);
+        return;
+    }
+
+    for ( ispu=iarg=0, k=0;     ispu<ispumax;      ++ispu, iarg+=N_ARGBUF, k+=ncpspu ) {
+        register spe_spu_control_area_p const pctl = cbe_spucontrolarea[ispu];
+
+        pctl->SPU_In_Mbox = ncpspu;
+        mkargs(cbe_arg_begin+iarg, ncpspu, k);
+        pctl->SPU_In_Mbox = 0u;
+    }
+
+
+    for ( ispu=iarg=0;   ispu<ispumax;  ++ispu ) {
+    }
+}
 
 
 /* (Slightly generalized) multibuffered version */
-void do_work_spu_mbuf(unsigned (* const mkargs)(argbuf_t*, unsigned, unsigned, int),
-                      void (* const stargs)(argbuf_t*, unsigned)
+void do_work_spu_mbuf(void (* const mkargs)(argbuf_t*, unsigned n, int k0),
+                      void (* const stargs)(argbuf_t*, unsigned n)
                      )
  {
-    /* Half the number of arguments buffers per SPU */
-    enum { NHALF = (unsigned)(N_ARGBUF>>1u) };
-    enum { NARG_LO=((unsigned)NHALF), NARG_HI=((unsigned)(N_ARGBUF-NHALF)) };
-    enum { OFFS_LO=(unsigned)0, OFFS_HI=(unsigned)NARG_LO };
 
     /* Number of elements in "low buffer" (starting at 0) and
        number of elements in "high buffer" (starting at NHALF) */
     unsigned  nlo[N_SPU_THREADS_MAX], nhi[N_SPU_THREADS_MAX];
 
     /* Number of SPUs, indices */
-    register int const ispumax=num_spus;
-    register int ispu, iarg;
+    register unsigned int const ispumax=num_spus;
+    register unsigned int ispu, iarg;
 
     /* Workpackage index (== number of workpackages scheduled) */
-    register int k=0;
+    register int k;
 
     /* Number of WPs done & number of WPs remaining to be scheduled
        nwp is the initial number of WPs
      */
-    register unsigned const nwp=ncells;
-    register unsigned ndone=0u, nrem=nwp;
+    register unsigned nfrom,nto;
 
 
 
     /* Initialization */
-    for ( ispu=0;   (ispu<ispumax);   ++ispu ) {
+    for ( ispu=0;   EXPECT_TRUE_(ispu<ispumax);   ++ispu ) {
         /* Scheduling: No work has been scheduled yet */
         nlo[ispu]=nhi[ispu]=0u;
-
-        /* Send the start message to all SPUs  */
-        /* (cbe_spucontrolarea[ispu])->SPU_In_Mbox = startmsg; */
     }
 
 
 
 
     /* While not all WPs have been completed yet */
-    while ( ndone<nwp ) {
+    for ( k=0, nto=nfrom=ncells;; ) {
 
         /* Iterate over all SPUs */
-        for ( ispu=iarg=0;      (ispu<ispumax);     ++ispu, iarg+=N_ARGBUF ) {
+        for ( ispu=iarg=0;   EXPECT_TRUE_(ispu<ispumax);    ++ispu, iarg+=N_ARGBUF ) {
+	    /* Constant two shifted to Inbox count position */
+  	    enum { IBX2=((unsigned)(2<<INMBX_CNT_SHIFT)) };
+
+
+            /* Half the number of arguments buffers per SPU */
+            enum { NHALF = (unsigned)(N_ARGBUF/2) };
+            enum { NARG_LO=((unsigned)NHALF), NARG_HI=((unsigned)(N_ARGBUF-NHALF)) };
+            enum { OFFS_LO=(unsigned)0, OFFS_HI=(unsigned)NARG_LO };
+
 
             /* Pointers to SPU argument buffers / WP buffers */
-            argbuf_t* const parg = cbe_arg_begin + iarg;
-   
+            register argbuf_t* const parg = cbe_arg_begin + iarg;
+            register unsigned int narg;
+          
+
   	    /* Control area for current SPU, used for mailboxing */
    	    spe_spu_control_area_p const pctl  = cbe_spucontrolarea[ispu];
 
@@ -1165,21 +1431,21 @@ void do_work_spu_mbuf(unsigned (* const mkargs)(argbuf_t*, unsigned, unsigned, i
              */
            
   	    /* Use lower buffer? */
-   	    if ( (nrem>0u) && (0u==nlo[ispu]) ) {
- 	        unsigned const ncrea = mkargs(parg+OFFS_LO, NARG_LO, nrem, k);
+   	    if ( EXPECT_TRUE_(nto>0u) && (0u==nlo[ispu]) &&
+                 (((pctl->SPU_Mbox_Stat) & INMBX_CNT_MASK) >= IBX2)  ) {
+                /* 1st msg. to SPU: number of arguments */
+                pctl->SPU_In_Mbox  =  (narg = (NARG_LO<nto ? NARG_LO : nto));
 
-                /* Tell SPU to start working on ncrea WPs at offset 0 */
-                /* __lwsync(); */
-                pctl->SPU_In_Mbox = ncrea;
+                /* Create arguments */
+                mkargs(parg+OFFS_LO, narg, k);
+
+                /* 2nd msg. to SPU: offset */
                 pctl->SPU_In_Mbox = OFFS_LO;
 
 
                 /* Mark low buffer as being filled with ncrea elements */
-                nlo[ispu]=ncrea;
-
-                /* Update */
-                nrem -= ncrea;
-                k    += ncrea;
+                nto -= (nlo[ispu]=narg);
+                k   += narg;
                 
 
                 /* fprintf(stdout, "Lower buffer for SPU %i filled with %u elements\n", ispu,  ncrea);  fflush(stdout); */
@@ -1187,22 +1453,21 @@ void do_work_spu_mbuf(unsigned (* const mkargs)(argbuf_t*, unsigned, unsigned, i
 
 
             /* Use higher buffer? */
-            if ( (nrem>0u) && (0u==nhi[ispu]) ) {
-  	        unsigned const ncrea = mkargs(parg+OFFS_HI, NARG_HI, nrem, k);
+            if ( EXPECT_TRUE_(nto>0u) && (0u==nhi[ispu]) &&
+                 (((pctl->SPU_Mbox_Stat) & INMBX_CNT_MASK) >= IBX2)   ) {
+                /* 1st msg. to SPU: number of arguments */
+                pctl->SPU_In_Mbox  =  (narg = (NARG_HI<nto ? NARG_HI : nto));
 
+                /* Create arguments */
+                mkargs(parg+OFFS_HI, narg, k);
 
-                /* Tell SPU to start working on ncrea WPs at offset NHALF */
-                /* __lwsync(); */
-                pctl->SPU_In_Mbox = ncrea;
+                /* 2nd msg. to SPU: offset */
                 pctl->SPU_In_Mbox = OFFS_HI;
 
 
 		/* Mark high buffer as being filled with ncrea elements */
-		nhi[ispu]=ncrea;
-
-		/* Update */
-		nrem -= ncrea;
-                k    += ncrea;
+		nto -= (nhi[ispu]=narg);
+                k   += narg;
 
                 /* fprintf(stdout, "Higher buffer for SPU %i filled with %u elements\n", ispu,  ncrea);  fflush(stdout); */
             }
@@ -1213,28 +1478,23 @@ void do_work_spu_mbuf(unsigned (* const mkargs)(argbuf_t*, unsigned, unsigned, i
                That is: has SPU finished working on some WP? */
             if ( 0u != ((pctl->SPU_Mbox_Stat) & OUTMBX_CNT_MASK) ) {
 		/* Read Mbox message which is just the offset */
-                unsigned const spumsg = pctl->SPU_Out_Mbox;
+                unsigned const offs = pctl->SPU_Out_Mbox;
 
-                /* __lwsync(); */
-                /*fprintf(stdout, "SPU %d finished buffer at %u\n", ispu,spumsg); fflush(stdout); */
+                /* Number of WPs / offset */
+                unsigned int* const pn = ((OFFS_LO==offs) ? nlo : nhi);
 
-                /* WP in "lower buffer?" */
-                if ( OFFS_LO == spumsg ) {
-		    stargs(parg+OFFS_LO,  nlo[ispu]);
-		    /* WPs done */
-  		    ndone+=nlo[ispu];
-                    /* Low buffer is free again */
-                    nlo[ispu]=0u;
+                /* Get number of arguments & store them back */
+                stargs(parg+offs,  (narg=pn[ispu]));
+
+
+                /* Update number of WPs to be fetched, leave loop
+                   if we are finished */
+                if ( EXPECT_FALSE_(0u == (nfrom-=narg)) ) {
+	  	    return;
                 }
 
-                /* WP in "higher buffer"? */
-                if ( OFFS_HI == spumsg ) {
-		    stargs(parg+OFFS_HI, nhi[ispu]);
-		    /* WPs done */
-  		    ndone+=nhi[ispu];
-                    /* High buffer is free again */
-                    nhi[ispu]=0u;
-                }
+                /* Buffer is free again */
+                pn[ispu]=0u;
            }
            
         }
@@ -1421,8 +1681,8 @@ static void calc_forces_ppu(int const steps)
 
 void calc_forces(int const steps)
 {
-  unsigned tmpcnt[N_SPU_THREADS_MAX], mbxval[N_SPU_THREADS_MAX*2];
-  unsigned ival;
+  unsigned int tmpcnt[N_SPU_THREADS_MAX], mbxval[N_SPU_THREADS_MAX*2];
+  unsigned int ival, iarg;
   unsigned const num_spus2 = num_spus << 1u;
 
   int  k, i;
@@ -1441,11 +1701,12 @@ void calc_forces(int const steps)
   send_cells(copy_cell,pack_cell,unpack_cell);
 
   /* make new neighbor lists */
-  if (0==have_valid_nbl) make_nblist();
+  if ( 0==have_valid_nbl ) { 
+      make_nblist();
+  }
 
   /* clear global accumulation variables */
-  tot_pot_energy = 0.0;
-  virial = 0.0;
+  tot_pot_energy = virial = 0.0;
   nfc++;
 
 #if defined(ON_PPU) || defined(AR)
@@ -1488,10 +1749,10 @@ void calc_forces(int const steps)
 
   /* Sum up energies */
   __lwsync();
-  for ( ival=0u;   ival<num_spus;    ++ival ) {
+  for ( ival=iarg=0u;  EXPECT_TRUE_(ival<num_spus);   ++ival, iarg+=N_ARGBUF ) {
       /* Energy/virial WP is located at offset mbxval[ival] 
          in argument buffer of SPU # ival. */
-      wp_t const* const pwp = (wp_t const*)(cbe_arg_begin + (ival*N_ARGBUF) + mbxval[ival]);
+      register wp_t const* const pwp = (wp_t const*)(cbe_arg_begin+iarg+mbxval[ival]);
       tot_pot_energy += pwp->totpot;
       virial         += pwp->virial;
   }

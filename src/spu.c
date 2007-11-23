@@ -50,13 +50,96 @@ static INLINE_ unsigned uimax(unsigned const a, unsigned const b) {
 #if defined(CBE_DIRECT)  /* "Direct" case */
 
 
+/* Set result buffer (force) */
+static INLINE_ void set_res_buffers(cell_dta_t* const pbuf, int const n_max,
+                                    void* const resbuf, unsigned const resbuf_len) {
+    /* Size of vector arrays (e.g. force) */
+    int const svec = iceil128(n_max * sizeof(vector float));
+
+    /* forces arrays will only be used for pbuf[0] */
+    /* pbuf[1].force=pbuf[2].force=0; */
+
+    if ( EXPECT_TRUE_(resbuf_len >= svec) ) {
+        /* At the moment, only pbuf[0].forces will store results */
+        pbuf[0].force = (float*)resbuf;
+    }
+    else {
+        /* fprintf(stderr, "set_buffers: Can not allocate %d bytes for result buffers\n", svec); */
+       pbuf[0].force = 0;
+    }
+
+}
+
+/* Set temp. buffer memory (which will be needed during calculation only) */
+static void set_tmp_buffers(cell_dta_t* const pbuf,
+                            int const n_max, int const len_max,
+                            void* const tmpbuf, unsigned const tmpbuf_len)
+{
+    /* Size of vector arrays (e.g. position) */
+    int const svec = iceil128(  n_max *     sizeof(vector float));
+    /* Sizes of the scalar members */
+    int const styp = iceil128(  n_max *     sizeof(int));
+    int const sti  = iceil128(  n_max * 2 * sizeof(int));
+    int const stb  = iceil128(len_max *     sizeof(short));
+    int const stb2 = iceil128(len_max/2 *   sizeof(short));
+
+    /* Total number of bytes needed for temp. storage */
+    int const stottmp = 3*(svec+styp)+2*(sti+stb);
+
+
+    /* fprintf(stdout, "set_tmp_buffers: n_max=%d, len_max=%d\n", n_max, len_max); fflush(stdout); */
+
+    /* Enoug temp space available? */
+    if ( EXPECT_TRUE_(tmpbuf_len >= stottmp) ) {
+        /* Allocation starts here */
+        register unsigned char* loc = (unsigned char*)tmpbuf;
+
+        /* Pos arrays */
+        pbuf[0].pos = (float*)loc;
+        loc+=svec;
+        pbuf[1].pos = (float*)loc;
+        loc+=svec;
+        pbuf[2].pos = (float*)loc;
+        loc+=svec;
+
+        /* typ arrays */
+        pbuf[0].typ = (int*)loc;
+        loc+=styp;
+        pbuf[1].typ = (int*)loc;
+        loc+=styp;
+        pbuf[2].typ = (int*)loc;
+        loc+=styp;
+
+        /* ti arrays */
+        pbuf[0].ti  = (int*)loc;
+        loc+=sti;
+        pbuf[1].ti  = (int*)loc;
+        loc+=sti;
+        pbuf[2].ti  = pbuf[0].ti;
+
+        /* tb arrays */
+        pbuf[0].tb  = (short*)loc;
+        loc+=stb;
+        pbuf[1].tb  = (short*)loc;
+        loc+=stb2;  /* this one can be smaller */
+        pbuf[2].tb  = pbuf[0].tb;
+    }
+    else {
+        fprintf(stderr, "set_buffers: Can not allocate %d bytes for temp buffers\n", 
+                stottmp);
+    }
+
+}
+
+
+
+
 
 /* Init get (always the same for wp & tb) */
 static void init_get(void* ibuf, void* obuf, ea_t iea, unsigned const itag)
 {
     /* Start DMA to input buffer usinga fence command, as the input buffer
        may have been used for a previous put command to system-memory */
-    /* dma64(ibuf, iea,  (sizeof (argbuf_t)),  itag,  MFC_GETF_CMD); */
     dma64(ibuf, iea, (sizeof (argbuf_t)), itag, MFC_GETF_CMD);
 }
 
@@ -65,8 +148,15 @@ static void init_get(void* ibuf, void* obuf, ea_t iea, unsigned const itag)
 /* Temp. DMA buffer */
 static unsigned char ALIGNED_(128, direct_tmp[80*Ki]);
 
+/* Buffer "control block" for calc_direct routines */
+static cell_dta_t direct_buf[3];
 
-/* Size of ouput buffers */
+/* Last parameters used to setup tmp. buffers in bufcb */
+static int last_n_max=0u;
+static int last_len_max=0u;
+
+
+/* Size of ouput buffers (used in main) */
 enum { DIRECT_OBUFSZE=((unsigned)(30*Ki)) };
 
 
@@ -74,16 +164,29 @@ enum { DIRECT_OBUFSZE=((unsigned)(30*Ki)) };
 static void wp_direct_spusum(void* i, void* o,  ea_t unused, unsigned otag)
 {
     /* Ptrs. to input/summatiuon workpackages */
-    wp_t* const pwp  = (wp_t*)i;
-    wp_t* const psum = (wp_t*)o;
+    register wp_t* const pwp  = (wp_t*)i;
+    register wp_t* const psum = (wp_t*)o;
+
+    /* Set length parameters from WP */
+    register int const n_max   = pwp->n_max;
+    register int const len_max = pwp->len_max;
+
+    /* Store ptr. to buffers in register */
+    register cell_dta_t* const B = direct_buf;
 
     /* Size of buffer for the results */
     enum { RESSZE=DIRECT_OBUFSZE-(sizeof (argbuf_t)) };
 
-    /* Calculate to forces */
-    calc_wp_direct(pwp,  &direct_tmp,(sizeof direct_tmp), 
-                   ((argbuf_t*)o)+1, RESSZE,
-                   otag);
+
+
+    /* Set buffers */
+    if ( EXPECT_FALSE_((n_max>last_n_max) || (len_max>last_len_max)) ) {
+       set_tmp_buffers(B, (last_n_max=n_max), (last_len_max=len_max),
+                       &direct_tmp, (sizeof direct_tmp));
+    }
+    set_res_buffers(B, n_max,  ((argbuf_t*)o)+1, RESSZE);
+    /* Calc. forces */
+    calc_wp_direct(pwp, B, otag);
 
 
     /* Add up forces/virial in result buffer */
@@ -91,12 +194,27 @@ static void wp_direct_spusum(void* i, void* o,  ea_t unused, unsigned otag)
     psum->totpot += pwp->totpot;
 }
 
+
 static void wp_direct(void* i, void* o, ea_t oea, unsigned otag)
 {
-    /* Calculate to forces */
-    calc_wp_direct(((wp_t*)i),  direct_tmp,(sizeof direct_tmp),
-                   o, DIRECT_OBUFSZE,
-                   otag);
+    /* Current work package */
+    register wp_t* const pwp = ((wp_t*)i);
+
+    /* Some length parameters from WP */
+    register int const n_max   = pwp->n_max;
+    register int const len_max = pwp->len_max;
+
+    /* Store ptr. to buffers in register */
+    register cell_dta_t* const B = direct_buf;
+
+    /* Set buffer */
+    if ( EXPECT_FALSE_((n_max>last_n_max) || (len_max>last_len_max)) ) {
+        set_tmp_buffers(B, (last_n_max=n_max), (last_len_max=len_max),
+                        direct_tmp,(sizeof direct_tmp));
+    }
+    set_res_buffers(B, n_max,  o, DIRECT_OBUFSZE);
+    /* Calc forces */
+    calc_wp_direct(pwp, B,   otag);
 
 
     /* Init outbound DMA: */
@@ -139,12 +257,25 @@ static void* vmemcpy(void* const dst, void const* const src, unsigned const nvec
 
 static void tb_direct(void* i, void* o, ea_t oea, unsigned otag)
 {
-    /* Calculate NBL */
-    calc_tb_direct(((wp_t*)i),  &direct_tmp,(sizeof direct_tmp),
-                   o, DIRECT_OBUFSZE,
-                   otag);
+    /* Current WP */
+    register wp_t* const pwp = ((wp_t*)i);
+    /* Some length parametrs form WP */
+    register int const n_max   = pwp->n_max;
+    register int const len_max = pwp->len_max;
 
-    /* We need a fence here */
+    /* Store ptr. to buffers in register */
+    register cell_dta_t* const B = direct_buf;
+
+    /* Set buffers  */
+    if ( EXPECT_FALSE_((n_max>last_n_max) || (len_max>last_len_max)) ) {
+        set_tmp_buffers(B,  (last_n_max=n_max), (last_len_max=len_max),
+                        &direct_tmp, (sizeof direct_tmp));
+    }
+    set_res_buffers(B,  n_max,  o, DIRECT_OBUFSZE);
+    /* Calc. NBL */
+    calc_tb_direct(pwp, B,  otag);
+
+    /* DMA WP back */
     dma64(i, oea,  (sizeof(argbuf_t)),  otag, MFC_PUT_CMD);
 }
 
@@ -297,7 +428,7 @@ static void start_create_wp(exch_t const* const exch,
 
 
 
-/**/
+/* Some buffer size for "Direct case" */
 enum { IBUFSZE=((unsigned)(70*Ki)), OBUFSZE=((unsigned)(16*Ki)) };
 
 static void init_get(void* ibuf, void* obuf, 
@@ -393,110 +524,7 @@ static void wrk(void* ibuf, void* obuf,  unsigned otag)
 
 
 
-/* Double bufferd workloop for list of given eas */
-/* After this function returns there might still be some
-   outbound DMAs pending. The unsigned returned by this function is
-   a bit mask of the tags of pending DMAs.
- */
-static unsigned workloop_ea_(
-   /* List of n input & output EAs */
-   ea_t const* const ineas, ea_t const* const outeas, unsigned const n,
-   /* Input/output buffers */
-   void* const* const ib,  void* const* const ob,
-   /* Tags */
-   unsigned const* const t,
-   /* Functions to get, to process and to write back data */
-   void (* const getf)(void* ibuf, void* obuf, ea_t const iea, unsigned it),
-   void (* const wrkf)(void* ibuf, void* obuf, ea_t const oea, unsigned ot)
-)
-{
-    /* Number of WPs remaining to be DMAed in, number of WPs done */
-    register unsigned nget = n;
-    register unsigned nwrk = n;
 
-    /* Pointer to eff. addr. pairs */
-    typedef ea_t const*  Pea;
-    Pea iea[2], oea[2];
-
-    /* Masks (qwords) */
-    unsigned m[2];
-
-    /* Set masks */
-    m[0]=1u<<t[0];
-    m[1]=1u<<t[1];
-
-    /* Set input/output EAs */
-    iea[1]=(iea[0]=ineas )+1;
-    oea[1]=(oea[0]=outeas)+1;
-
-    /* Initial DMA to buffer 0 (if there are WPs remaining) */
-    if ( EXPECT_TRUE_(nget>0u) ) {
-        getf(ib[0],ob[0],  *(iea[0]),t[0]);
-        --nget;
-    }
-    else {
-        /* Return right now, if there are no WPs at all.
-           Also, there's no outbound DMA to wait for */
-        return 0;
-    }
-
-
-
-
-    for(;;) {
-        /* Init DMA to buffer 1, if there are WPs remaining */
-        if ( EXPECT_TRUE_(nget>0u) ) {
-           getf(ib[1],ob[1],  *(iea[1]),t[1]);
-           --nget;
-        }
-
-        /* Wait for input and ouput buffers 0 to be available */
-        /* wait_dma(m0, MFC_TAG_UPDATE_ALL); */
-        spu_writech(MFC_WrTagMask,   m[0]);
-        spu_writech(MFC_WrTagUpdate, MFC_TAG_UPDATE_ALL);
-        spu_readch(MFC_RdTagStat);
-
-        wrkf(ib[0],ob[0],    *(oea[0]), t[0]);
-
-        /* All WPs done? */
-        if ( EXPECT_FALSE_(0u == --nwrk) ) {
-            break;
-        }
-
-        /* Next EAs for buffer 0 */
-  	iea[0]+=2;
-        oea[0]+=2;
-
-
-        /* Again, init DMA to buffer 0, if there are WPs remaining
-         */
-        if ( EXPECT_TRUE_(nget>0u) ) {
-  	    getf(ib[0],ob[0],  *(iea[0]),t[0]);
-            --nget;
-        }
-
-        /* Wait for, process & start DMAing back buffer 1*/
-        /* wait_dma(m1, MFC_TAG_UPDATE_ALL); */
-        spu_writech(MFC_WrTagMask,   m[1]);
-        spu_writech(MFC_WrTagUpdate, MFC_TAG_UPDATE_ALL);
-        spu_readch(MFC_RdTagStat);
-
-        wrkf(ib[1],ob[1],  *(oea[1]),t[1]);
-
-        /* All WPs done? */
-        if ( EXPECT_FALSE_(0u == --nwrk) ) {
-  	   break;
-        }
-
-        /* Next EA for buffer 1 */
-        iea[1]+=2;
-        oea[1]+=2;
-
-    }
-
-    /* Return the mask client code should wait for */
-    return (m[0]|m[1]);
-}
 
 
 
@@ -510,81 +538,60 @@ static unsigned workloop_ea_(
  */
 static unsigned workloop_ea(
    /* List of n input & output EAs */
-   ea_t const* const ieas, ea_t const* const oeas, unsigned const nea,
+   register ea_t const* const ieas, register ea_t const* const oeas, register unsigned int n,
    /* Input/output buffers */
-   void* const* const ib,  void* const* const ob,
-   /* Tags */
-   unsigned const* const t,
+   register void* const* const ib,  register void* const* const ob,
+   /* Tags & masks */
+   register unsigned int const* const t, register unsigned int const* const m,
    /* Functions to get, to process and to write back data */
-   void (* const getf)(void* ibuf, void* obuf, ea_t const iea, unsigned it),
-   void (* const wrkf)(void* ibuf, void* obuf, ea_t const oea, unsigned ot)
+   register void (* const getf)(void* ibuf, void* obuf, ea_t const iea, unsigned it),
+   register void (* const wrkf)(void* ibuf, void* obuf, ea_t const oea, unsigned ot)
 )
 {
-    /* Masks */
-    unsigned m[2];
+    /* Next buffer & EA indices */
+    register unsigned int nxtbf, nxtea;
+    /* Current buffer & EA indices */
+    register unsigned int curbf=0u, curea=0u;
 
-    /* Ptrs. to EA pairs / buffers */
-    typedef ea_t const* Pea;
-    Pea iea[2], oea[2];
-
-
-    /* Indices */
-    register unsigned cur = 0u;
-    register unsigned nxt = cur^1u;
-    register unsigned n   = nea;
-
-
-    /* Set masks */
-    m[cur]=1u<<t[cur];
-    m[nxt]=1u<<t[nxt];
-
-
-    /* Set EAs / buffers */
-    iea[nxt]=iea[cur]=ieas;
-    oea[nxt]=oea[cur]=oeas;
-
-    /* Get buffer 0 */
-    getf(ib[cur],ob[cur],  *(iea[cur]),t[cur]);
-
-
+    getf(ib[curbf],ob[curbf], ieas[curea], t[curbf]);
     for (;;) {
-        /* Are we done? */
+        /* Finsish work loop? */
         if ( EXPECT_FALSE_(0u == (--n)) ) {
   	    break;
         }
 
-        /* Next index: cur=0,1 -> nxt=1,0 */
-        nxt=cur^1u;   
-        /* Next EA pairs */    
-        iea[nxt] = iea[cur]+1;
-        oea[nxt] = oea[cur]+1;
+        /* Next buffer/EA indices: 0,1 -> 1,0 ("swap" 0 and 1) */
+        nxtbf=curbf^1u;   
+        nxtea=curea+1u;
+
         /* Get next buffer */
-        getf(ib[nxt],ob[nxt],   *(iea[nxt]), t[nxt]);
+        getf(ib[nxtbf],ob[nxtbf],   ieas[nxtea], t[nxtbf]);
 
          
         /* Wait for current input/output buffers to become available */
-        spu_writech(MFC_WrTagMask,   m[cur]);
+        spu_writech(MFC_WrTagMask,   m[curbf]);
         spu_writech(MFC_WrTagUpdate, MFC_TAG_UPDATE_ALL);
         (void)(spu_readch(MFC_RdTagStat));
 
         /* Work on current buffer */
-        wrkf(ib[cur],ob[cur],     *(oea[cur]), t[cur]);
+        wrkf(ib[curbf],ob[curbf],     oeas[curea], t[curbf]);
 
-        /* Move on to next buffer */
-        cur=nxt;
+        /* Move on to next buffer/EA */
+        curbf=nxtbf;
+        curea=nxtea;
     }
 
 
     /* Wait for last buffer to become available */
-    spu_writech(MFC_WrTagMask,   m[cur]);
+    spu_writech(MFC_WrTagMask,   m[curbf]);
     spu_writech(MFC_WrTagUpdate, MFC_TAG_UPDATE_ALL);
     (void)(spu_readch(MFC_RdTagStat));
 
     /* Work on buffer */
-    wrkf(ib[cur],ob[cur],  *(oea[cur]), t[cur]);
+    wrkf(ib[curbf],ob[curbf],  oeas[curea], t[curbf]);
 
     /* Return the mask client code should wait for */
-    return m[cur];
+    return m[curbf];
 }
 
 
@@ -666,17 +673,10 @@ static void start_init(ea_t const envea, unsigned const itag)
 /* Make EA list in eas (npairs elements),
    with initial value eastart
 */
-static void arg_eas(ea_t const eastart,
-                    ea_t const stride64,
-                    ea_t* eas, unsigned const neas)
+static INLINE_ void arg_eas(register ea_t cur64, register ea_t const stride64,
+                            register ea_t* p64, register unsigned int k)
 {
-    /* Number of pairs remaining */
-    register unsigned k=neas;
-  
-    register ea_t  cur64 = eastart;
-    register ea_t* p64 = eas;
-
-    for (  ;       (k>0);      --k,  ++p64, cur64+=stride64  ) {
+    for (  ;       EXPECT_TRUE_(k>0u);      --k,  ++p64, cur64+=stride64  ) {
         (*p64)=cur64;
     }
 }
@@ -686,39 +686,35 @@ static void arg_eas(ea_t const eastart,
 
 
 
-/* Type of effective address of argument */
-typedef union argea {
-    unsigned ea32[2];
-    ea_t     ea64;
-} argea_t;
 
 
 
 
 
 /* argp "points" to an array of lengt N_ARGBUF of argbuf_t */
-int main(ui64_t const id, argea_t const argp, argea_t const envp)
+int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
 {
     /* Effective addresses (pairs of unsigneds) of the arguments
        in main memory */
     ea_t ALIGNED_(8, eabuf[N_ARGBUF]);
 
-    /* Tags (as vectors) */
-    qword qwtag[2];
+    /* Some timing stuff */
+    register unsigned int t0_;
+    register unsigned int t1_;
+    unsigned int dt, dtsum;
+    unsigned int dtmin=-1, dtmax=0;
+
 
     /* Set decrementer to max. value for timing */
     spu_writech(SPU_WrDec, (~(0u)));
 
 
     /* Fetch env and start creating the corresponding pt_t (Using DMA) */
-    start_init(envp.ea64, 0);
+    start_init(envp, 0);
 
     /* Set EAs of the buffers in main memory */
-    arg_eas(argp.ea64,  (sizeof(argbuf_t)), eabuf,N_ARGBUF);
+    arg_eas(argp,  (sizeof(argbuf_t)), eabuf,N_ARGBUF);
 
-    /* Create tag qwords */
-    qwtag[0] = si_from_uint(0u);
-    qwtag[1] = si_from_uint(1u);
 
 
     /* Wait for init. DMA */
@@ -730,7 +726,7 @@ int main(ui64_t const id, argea_t const argp, argea_t const envp)
 
     for (;;) {
         /* Read work mode / flag */
-        unsigned const mode = spu_read_in_mbox();
+        unsigned int const mode = spu_read_in_mbox();
 
 	/* Output buffers */
         static unsigned char ALIGNED_(128, obuf0[DIRECT_OBUFSZE]);
@@ -739,13 +735,13 @@ int main(ui64_t const id, argea_t const argp, argea_t const envp)
 
 
         /* mode==0: No more work   */
-        if ( EXPECT_FALSE_(0==mode) ) {
- 	    return 0;
+        if ( EXPECT_FALSE_(0u==mode) ) {
+ 	    break;
         }
         else {
  	   /* "Functors passed to workloop" */
- 	   void (* getfunc)(void* i, void* o, ea_t iea, unsigned it);
-           void (* wrkfunc)(void* i, void* o, ea_t oea, unsigned ot);
+ 	   register void (* getfunc)(void* i, void* o, ea_t iea, unsigned it);
+           register void (* wrkfunc)(void* i, void* o, ea_t oea, unsigned ot);
 
            /* Input values from mailbox */
            unsigned offs,narg;
@@ -778,8 +774,9 @@ int main(ui64_t const id, argea_t const argp, argea_t const envp)
                /* Pointers to the beginning of the buffers */
                static void* const ib[] = { &ibuf0, &ibuf1 };
                
-               /* Tags to be used */
+               /* Tags & the corresponding masks to be used */
                static unsigned int const tags[] = { 0,1 };
+               static unsigned int const masks[] = { 1<<0, 1<<1 };
 
                /* Mask of pending DMAs */
                unsigned omsk;
@@ -788,7 +785,8 @@ int main(ui64_t const id, argea_t const argp, argea_t const envp)
                ea_t const* eas;
 
                /* Read #of WPs, if number is >0 also read offset */
-               if ( EXPECT_FALSE_(0 == (narg=spu_read_in_mbox())) ) {
+               narg=spu_read_in_mbox();
+               if ( EXPECT_FALSE_(0u==narg) ) {
 		  break;
                }
                offs=spu_read_in_mbox();
@@ -799,7 +797,7 @@ int main(ui64_t const id, argea_t const argp, argea_t const envp)
 
                /* Process the arguments */
                eas = eabuf+offs;
-               omsk = workloop_ea(eas,eas,narg, ib,ob, tags, getfunc,wrkfunc);
+               omsk = workloop_ea(eas,eas,narg, ib,ob, tags,masks, getfunc,wrkfunc);
 
 
                /* Wait for all outbound DMAs */
@@ -823,8 +821,7 @@ int main(ui64_t const id, argea_t const argp, argea_t const envp)
               ((wp_t*)&obuf0)->virial += ((wp_t const*)&obuf1)->virial;
 
               /* DMA results back */
-              dma64(&obuf0, eabuf[RESOFFS],  sizeof(argbuf_t),
-                    t, MFC_PUT_CMD);
+              dma64(&obuf0, eabuf[RESOFFS], sizeof(argbuf_t), t, MFC_PUT_CMD);
               wait_dma(m, MFC_TAG_UPDATE_ALL);
 
 
@@ -843,9 +840,7 @@ int main(ui64_t const id, argea_t const argp, argea_t const envp)
 
 
 
-    /* We should not arrive here as we only leave the main program if
-       SPUEXIT is passed via mbox */
-    return 1;
+    return 0;
 }
 
 
