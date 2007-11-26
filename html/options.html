@@ -226,6 +226,13 @@ subset. For this reason, IMD writes only atoms with virtual types
 smaller than <tt>ntypes</tt> to the trajectory file. By giving part
 of the atoms larges virtual types, excessively large trajectory
 files can be avoided.</p>
+
+<p>
+<strong>Note:</strong> With the nmoldyn option, the atoms must be
+numbered such, that with increasing number the virtual type does not
+decrease (i.e., smaller virtual types come first). Moreover, the
+numbering must start at zero, and must have no gaps.
+</p>
 </dd>
 
 <dt><a id="dsf" name="dsf"><b>dsf</b></a></dt>
