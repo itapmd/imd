@@ -1498,10 +1498,6 @@ int getparamfile(char *paramfname, int phase)
       /* dimension of histogram in t domain */
       getparam("correl_tmax",&ncorr_tmax,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"correl_int")==0) {
-      /* repeat interval for correlation */
-      getparam("correl_int",&correl_int,PARAM_INT,1,1);
-    }
     else if (strcasecmp(token,"correl_omode")==0) {
       /* repeat interval for correlation */
       getparam("correl_omode",&correl_omode,PARAM_INT,1,1);
@@ -1523,6 +1519,10 @@ int getparamfile(char *paramfname, int phase)
     else if (strcasecmp(token,"correl_ts")==0) {
       /* sampling time interval for correlation */
       getparam("correl_ts",&correl_ts,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"correl_int")==0) {
+      /* repeat interval for correlation */
+      getparam("correl_int",&correl_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"msqd_ntypes")==0) {
       /* write msqd for real types */
@@ -3091,7 +3091,6 @@ void broadcast_params() {
 
 #if defined(CORRELATE)
   MPI_Bcast( &correl_omode, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &correl_int,   1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &correl_tmax,  1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &correl_rmax,  1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
@@ -3100,6 +3099,7 @@ void broadcast_params() {
   MPI_Bcast( &correl_start, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &correl_end,   1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &correl_ts,    1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &correl_int,   1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &msqd_ntypes,  1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &msqd_vtypes,  1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
