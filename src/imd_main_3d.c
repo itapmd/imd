@@ -32,7 +32,7 @@ int main_loop(int simulation)
   int  finished = 0;
   int  i, j, k, l;
   int  steps_diff = steps_max - steps_min;
-  int  deform_int = 0, fbc_int = 0, do_fbc_incr = 0, is_relaxed = 0;
+  int  deform_int = 0, fbc_int = 0, do_fbc_incr = 0;
   int  have_fbc_incr = 0;
   real dtemp, dshock_speed;
   vektor d_pressure, *fbc_df;
@@ -43,6 +43,9 @@ int main_loop(int simulation)
 #endif
 #ifdef ACG
   acg_alpha = acg_init_alpha;
+#endif
+#ifdef RELAX
+  is_relaxed = 0;
 #endif
 
 #ifdef SHOCK
