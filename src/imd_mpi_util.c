@@ -850,8 +850,8 @@ void empty_mpi_buffers(void)
 
 void set_affinity_mask()
 {
-  int  n=0;
-  char *res, line[1024];
+  int  n=0, i, ht, ncores=1, siblings=1;
+  char *res, *str, line[1024];
   FILE *inp;
 
   /* count number of CPUs */
@@ -860,17 +860,24 @@ void set_affinity_mask()
   while (!feof(inp)) {
     res=fgets(line,1024,inp);
     if (NULL==res) break;
-    line[9] = '\0';
-    if (strcmp(line,"processor") == 0) n++;
+    if (strncmp(line, "processor", 9) == 0) n++;
+    if (strncmp(line, "cpu cores", 8) == 0) {
+      str = strstr(line,":") + 1;
+      sscanf(str, "%d", &ncores);
+    }
+    if (strncmp(line, "siblings", 8) == 0) {
+      str = strstr(line,":") + 1;
+      sscanf(str, "%d", &siblings);
+    }
   }
   fclose(inp);
 
   /* if hyperthreading, confine processes to even CPUs */
-  if (n==4) {
+  ht = siblings / ncores; 
+  if (ht > 1) {
     cpu_set_t my_cpu_mask;
     CPU_ZERO(&my_cpu_mask);
-    CPU_SET(0,&my_cpu_mask);
-    CPU_SET(2,&my_cpu_mask);
+    for (i=0; i<n; i+=ht) CPU_SET(i,&my_cpu_mask);
     sched_setaffinity(0,sizeof(cpu_set_t),&my_cpu_mask);
   }
 }
