@@ -1289,6 +1289,11 @@ ifneq (,$(findstring ppu,${MAKETARGET}))
 PP_FLAGS += -DON_PPU
 endif
 
+# processor affinity
+ifneq (,$(findstring aff,${MAKETARGET}))
+PP_FLAGS += -DAFF
+endif
+
 # Substitute .o for .c to get the names of the object files
 OBJECTS := $(subst .c,.o,${SOURCES})
 
