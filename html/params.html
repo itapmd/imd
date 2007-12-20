@@ -321,6 +321,10 @@ laser_rescale_mode # How to do the temperature rescaling. You probably don't
                  # with the source in imd_laser.c. The default is 1. If the
 		 # TTM make option was given, it is automatically set to 4,
 		 # to make it work with the Two-Temperature-Model code.
+laser_atom_vol   # Volume per particle (inverse density).
+		 # Needed to determine how much of the spacial energy density
+                 # goes into every atom.
+                 # Default is 16.6 Angstrom^3 (Al @ room temperature)
 
 
 # additional parameters for FTG
