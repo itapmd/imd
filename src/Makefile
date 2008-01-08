@@ -1281,7 +1281,7 @@ SPUCFLAGS += -DCBE2 -DNBL
 endif
 
 ifneq (,$(findstring cbe3,${MAKETARGET}))
-PP_CFLAGS += -DCBE3
+PP_FLAGS += -DCBE3
 SPUCFLAGS += -DCBE3 -DNBL
 endif
 
@@ -1317,7 +1317,7 @@ imd_forces_nbl.o: imd_forces_nbl.c
 
 # Uncommented by Frank Pister
 imd_forces_cbe.o: imd_forces_cbe.c
-	${CC}   ${CFLAGS} -c imd_forces_cbe.c
+	${CC}   ${CFLAGS} ${PP_FLAGS} -c imd_forces_cbe.c
 
 # rule to make imd_forces_cbe.o
 
