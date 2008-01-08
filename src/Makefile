@@ -602,14 +602,22 @@ endif
 # Cell Broad Band Engine with IBM XLC compiler (assuming that the XLC
 # compilers are in the $PATH)
 ifeq (cbe-xlc,${IMDSYS})
+  # Path to Cell SDK
+  CELLSDK=/opt/ibm/cell-sdk/prototype
+
+  # Headers for libsync
+  CELLSDKLIB=${CELLSDK}/src/lib
+
   # The spu-timing utility provided by the Cell SDK
-  SPUTIMING=/opt/ibm/cell-sdk/prototype/bin/spu_timing -running-count
+  SPUTIMING=${CELLSDK}/bin/spu_timing -running-count
 
 
-  SPUCC       = spuxlc -qlanglvl=extc89 -qflag=w:w -qproto
-  CC_SERIAL   = ppuxlc -qlanglvl=stdc89 -qflag=w:w -qproto -qro  -qwarn64  -q32
-  OPT_FLAGS   +=  -O2 -qstrict  -qreport  -qinline -qunroll=yes -qlibansi -qipa=noobject
-  SPUCFLAGS   +=   -O2 -qstrict  -qreport  -qinline -qinline-dma64:mdma64:wait_dma
+  SPUCC       = spuxlc
+  CC_SERIAL   = ppuxlc -q32
+
+  OPT_FLAGS   += -O2 -qstrict -qcpluscmt -qflag=w:w -qproto -qro -qwarn64   -qreport -qinline -qunroll=yes -qlibansi -qipa=noobject
+  SPUCFLAGS   += -O2 -qstrict -qcpluscmt -qflag=w:w  -qproto -qreport -qinline -qinline-dma64:mdma64:wait_dma -I${CELLSDKLIB}/sync/spu
+  PP_FLAGS    += -I${CELLSDKLIB}/sync
   EMBEDSPU      = ppu-embedspu -m32
 
   BIN_DIR	= ${HOME}/bin/cbe
@@ -626,19 +634,25 @@ endif
 
 # Cell Broad Band Engine with GCC
 ifeq (cbe-gcc,${IMDSYS})
+  # Path to Cell SDK
+  CELLSDK=/opt/ibm/cell-sdk/prototype
+
+  # Headers for libsync
+  CELLSDKLIB=${CELLSDK}/src/lib
+
   # The spu-timing utility provided by the Cell SDK
-  SPUTIMING=/opt/ibm/cell-sdk/prototype/bin/spu_timing -running-count
+  SPUTIMING=${CELLSDK}/bin/spu_timing -running-count
 
   # Use the PPU compiler (ppu-gcc)
   # as main compiler as it defines the __PPU__ macro 
   # The ordinary gcc does not set this macro
 
-  # -- GCC --
   CC_SERIAL   = ppu-gcc -m32
   CC_MP       = mpicc
   SPUCC       = spu-gcc
-  OPT_FLAGS   += -pipe  -O3 -funroll-loops   -Wall -Wno-unused
-  SPUCFLAGS   += -pipe  -ansi -pedantic  -O2 -funroll-loops  -Wall -Wunused -Wshadow -Wcast-qual -Wno-long-long
+  OPT_FLAGS   += -pipe  -std=gnu89 -pedantic -Wall -Wno-unused -Wcast-qual -Wno-long-long   -O3 -funroll-loops
+  PP_FLAGS    += -I${CELLSDKLIB}/sync
+  SPUCFLAGS   += -pipe  -std=gnu89 -pedantic -Wall -Wunused -Wshadow -Wcast-qual -Wno-long-long    -O2 -funroll-loops   -I${CELLSDKLIB}/sync/spu
   EMBEDSPU    = ppu-embedspu  -m32
 
 

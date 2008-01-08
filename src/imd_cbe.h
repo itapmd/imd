@@ -97,10 +97,9 @@ extern "C" {
 
 
 
-/* Effective address type: unsigned long long is 64 bits wide on both
-   PPU & SPU. */
+/* Effective address type: unsigned long long is 64 bits wide on
+   the SPU and on the PPU (both in 32bit & 64bit mode). */
 typedef unsigned long long int  ea_t;
-/*  typedef unsigned int ea_t[2]; */
 
 
 
@@ -108,9 +107,10 @@ typedef unsigned long long int  ea_t;
    cache line size).
    According to the PowerPC architecture, this size is implementation dependent
    but must be pow(2,n) with n>=4.
-   An array unsigned int[CBE_GRANULE_NUNSIGNED] is of that size.
+   An array unsigned/signed int[CBE_GRANULE_NINT] is of that size.
  */
-enum { CBE_GRANULE_NUNSIGNED = (unsigned)(128/(sizeof (unsigned int))) };
+enum { CBE_GRANULE_NBYTE = ((unsigned)128) };
+enum { CBE_GRANULE_NINT  = (unsigned)(CBE_GRANULE_NBYTE/(sizeof (int))) };
 
 
 /* The floating point type */
@@ -306,47 +306,54 @@ enum { WPDONE1=(unsigned)0, WPSTRT1=(unsigned)1, SPUEXIT=(unsigned)2 };
    There shall be N_ENVBUF environment buffers which are shared by all
    SPU threads. All SPU shall receive the same environment address
  */
-enum { N_ARGBUF=4u, N_ENVBUF=2u };
+enum { /* Max. number of argument buffers per SPU */
+       N_ARGBUF=((unsigned)32),
+       /* Max. number of env. buffers */
+       N_ENVBUF=((unsigned)2),
+       /* Max number of EAs in env. list */
+       N_ENVEA=(unsigned)(128u/(sizeof(ea_t)))
+};
 
 /* Buffer padding (must be a multiple of 16, should be a multiple 128) */
-enum { BUFPAD = 128u };
+enum { BUFPAD = ((unsigned)128) };
 
 
-
-/* Large enough for t1 or t2 */
-#define U(t1,t2)    union { t1 data1; t2 data2; }
-
-/* Large enough for type t but at least s byte large */
-#define Umin(t1,s)  union { t1 data1; unsigned char padding[(s)]; }
+/* x padded to the next boundary of p */
+#define CEILPOW2(x,p) (((x)+((p)-1)) & (~((p)-1)))
+/* Maximum size of types a & b */
+#define MAXSIZE2(a,b) (((sizeof(a))>(sizeof(b))) ? (sizeof(a)) : (sizeof(b)))
 
 
-/* Large enough for type t, size rounded up to next boundary of p (padding)
-   p must be a multiple of 2
- */
-#define Upad(t1,p)  union { t1 data1; unsigned char padding[((sizeof(t1)) + ((p)-1)) & (~((p)-1))]; }
+typedef union {
+    /* Dummy data */
+
+    /* Arguments/work packages */
+    wp_t   w;
+    exch_t e;
+
+    /* Or simply an EA list */
+    ea_t ea[(MAXSIZE2(wp_t,exch_t))/(sizeof (ea_t))];
+
+    /* Padding */
+    unsigned char pad[CEILPOW2(MAXSIZE2(wp_t,exch_t),BUFPAD)];
+} argbuf_t;
 
 
+typedef union {
+    /* Dummy data: */
 
-typedef Upad(Umin(U(wp_t, exch_t), BUFPAD),  BUFPAD)  argbuf_t;
-typedef Upad(Umin(U(pt_t, env_t),  BUFPAD),  BUFPAD)  envbuf_t;
+    /* Potential type */
+    pt_t  p;
+    env_t e;
 
-#undef U
-#undef Umin
-#undef Upad
+    /* Or simply an EA list */
+    ea_t ea[(MAXSIZE2(pt_t,env_t))/(sizeof (ea_t))];
 
-
-
-
-/* The SPU work scheduling routines */
-void do_work_spu(int const flag);
+    /* Padding */
+    unsigned char pad[CEILPOW2(MAXSIZE2(pt_t,env_t),BUFPAD)];
+} envbuf_t;
 
 
-#if defined(CBE_DIRECT)
-/* Multibuffered version of do_work_spu */
-void do_work_spu_mbuf(void (* const mkf)(argbuf_t*, unsigned, int),
-                      void (* const stf)(argbuf_t*, unsigned)
-                     );
-#endif
 
 
 
@@ -429,11 +436,7 @@ int vecout(int (* const of)(char const[],...),   /* General output function*/
            );
 
 
-/* Output of pt_t *e using  printf-like function of */
-int (pt_out)(int (*of)(char const[],...), pt_t const* const e);
 
-/* Output of work package wp using printf-like functions of */
-int (wp_out)(int (*of)(char const[],...), wp_t const* const e);
 
 
 
@@ -585,9 +588,12 @@ vector unsigned int uiceilv(vector unsigned int const v, vector unsigned int con
 #include <limits.h>
 #include <stddef.h>
 
+/* Some PPU macros are needed to implement other macros */
+#include <ppu_intrinsics.h>
 
 /* SPU runtime management */
 #include <libspe2.h>
+
 
 
 
@@ -633,11 +639,11 @@ enum { PPU_PTRBITS = (unsigned)(PPU_PTRBITS_) };
 
 /* Conversion from pointer to effective address is just a cast */
 #if (32 == PPU_PTRBITS_)
-#   define PTR2EA(ptr,ea)  { (void)((ea)=(unsigned)(ptr));  }
+#   define EA_CAST(ptr) ((unsigned)(ptr))
 #elif  (64 == PPU_PTRBITS_)
-#   define PTR2EA(ptr,ea)  { (void)((ea)=(ea_t)(ptr));  }
+#   define EA_CAST(ptr) ((ea_t)(ptr))
 #endif
-
+#define PTR2EA(ptr,ea) { (void)((ea)=EA_CAST(ptr)); }
 
 
 
@@ -662,7 +668,12 @@ enum {
    (to make the static arrays defined above publically available) */
 
 /* cbe_env_begin is passed as environment address to every SPU thread */
-extern envbuf_t* const cbe_env_begin;
+/* extern envbuf_t* const cbe_env_begin; */
+
+/* cbe_envea_begin is passed as environment address to every SPU thread 
+   and points to an array of EAs ("pointers") */
+extern ea_t* const cbe_envea_begin;
+
 /* cbe_arg_begin + N_ARGBUF*k is passed as argument address to SPU thread k */
 extern argbuf_t* const cbe_arg_begin;
 
@@ -697,7 +708,6 @@ unsigned cbe_get_nspus();
    This function may only be called once. It's not thread safe
    The minimum of nspu_req and the number of SPUs available (according
    cpu_node) specifys the number of threads actually started.
-   The number of threas started is returned.
 */
 int cbe_init(int const nspu_req, int const cpu_node);
 
@@ -714,17 +724,18 @@ void cbe_shutdown(void);
 
 /* CBE time base utilities */
 
-/* The used to represent the time base */
-typedef unsigned long timebase_t;
 
-/* Read timebase from open file */
-timebase_t timebase_file(FILE* const, char const line[]);
+/* Get timebase frequency from contents of cpuinfo file */
+unsigned long tbfreq_string(char const* const sfrst, char const* const slast);
 
-/* Read timebase from open file */
-timebase_t timebase_path(char const path[], char const line[]);
+/* Read cpuinfo from fd into buffer buf of length bufsze parse it and return
+   the timebase freqeuncy. */
+unsigned long tbfreq_fd(int const fd,  char* const buf, unsigned const bufsze);
 
-/* Just read the usual timebase entry from the usual file */
-timebase_t timebase_proc(void);
+/* Get time base frequency from OS (as suggested by the CBE programming handbook) */
+unsigned long tbfreq(void);
+
+
 
 
 
@@ -756,6 +767,30 @@ env_t* (create_env)(pt_t const* const p, env_t* const e);
 
 /* Create exch_t *e from wp_t *wp  */
 exch_t* (create_exch)(wp_t const* const wp, exch_t* const e);
+
+
+
+
+/* Output of pt_t *e using  printf-like function of */
+int (pt_out)(int (*of)(char const[],...), pt_t const* const e);
+
+/* Output of work package wp using printf-like functions of */
+int (wp_out)(int (*of)(char const[],...), wp_t const* const e);
+
+
+
+
+
+/* The SPU work scheduling routines */
+void do_work_spu(int const flag);
+
+
+#if defined(CBE_DIRECT)
+/* Multibuffered version of do_work_spu */
+void do_work_spu_mbuf(void (* const mkf)(argbuf_t*, unsigned, int),
+                      void (* const stf)(argbuf_t*, unsigned)
+                     );
+#endif
 
 
 
@@ -805,6 +840,29 @@ static INLINE_ unsigned uiceil128(unsigned const x) {
 static INLINE_ unsigned uiceil16(unsigned const x) {
     return (x+15u) & (~15u);
 }
+
+
+
+
+/* TICKS is a qunatity of tick_t, a type which may different on PPU and SPU.
+   TICKS changes at the same frequency on both the PPU and the SPU,
+   however it is unspecified wether they count upwards or downwords.
+   tick64_t is 64 bits wide on both the PPU and the SPU. A ticks_t may be
+   converted to a tick64_t, but not vice versa. Both types are
+   unsigned integer types.
+   TICK_DIFF(x,y) always returns the time (in ticks) elapsed between
+   the statements x=TICKS and a following y=TICKS.
+ */
+#if defined(__PPU__)
+#define ticks __mftb
+#define tick_diff(tfst,tsnd) ((tsnd)-(tfst))  /* tsnd>=tfist on PPU  */
+typedef unsigned long long  tick_t, tick64_t;
+#elif defined(__SPU__)   
+#define ticks()  (spu_readch(SPU_RdDec))
+#define tick_diff(tfst,tsnd) ((tfst)-(tsnd))  /* tsnd<=tfst on SPU (where time runs backwards) */
+typedef unsigned int       tick_t;
+typedef unsigned long long tick64_t;
+#endif
 
 
 

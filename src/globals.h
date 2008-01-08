@@ -773,10 +773,10 @@ EXTERN int  laser_rescale_mode INIT(1); /* Mode for laser velocity rescaling */
 
 EXTERN void (*do_laser_rescale)(void);  /* Function pointer for rescaling routine */
 
-//EXTERN int  laser_damp    INIT(0);     /* Use damping slope at other end?    */
-//EXTERN real laser_damp_depth INIT(0.0);/* Use slope from what depth?         */
-//EXTERN real laser_damp_width INIT(0.0);/* Transition width of damping funct. */
-//EXTERN int  laser_damp_smooth INIT(1); /* Smooth transition (sine)?	     */
+/* EXTERN int  laser_damp    INIT(0);      */  /* Use damping slope at other end?    */
+/* EXTERN real laser_damp_depth INIT(0.0); */  /* Use slope from what depth?         */
+/* EXTERN real laser_damp_width INIT(0.0); */  /* Transition width of damping funct. */
+/* EXTERN int  laser_damp_smooth INIT(1);  */  /* Smooth transition (sine)?	     */
 #endif
 
 #ifdef STRESS_TENS

@@ -1,7 +1,12 @@
 /* IMD config (e.g. CBE_DIRECT macro) */
 #include "config.h"
+
 /* CBE specific stuff */
 #include "imd_cbe.h"
+
+
+
+
 
 
 /********* Common (SPU && PPU) part +++++++++*/
@@ -49,26 +54,12 @@ unsigned* eas2les(unsigned ea_pairs[], unsigned const sizes[], unsigned const N)
 
 
 
-/* Print sizes of some types */
-int sizeinfo(int (* const of)(char const[],...)) {
-    return
-      of("sizeof(wp_t)       = %u\n"
-         "sizeof(exch_t)     = %u\n"
-#if defined(CBE_DIRECT)
-         "sizeof(cell_dta_t) = %u\n"
-         "sizeof(cell_ea_t)  = %u\n"
-#endif
-         ,
 
-         (unsigned)(sizeof(wp_t)),
-         (unsigned)(sizeof(exch_t))
-#if defined(CBE_DIRECT)
-         ,
-         (unsigned)(sizeof(cell_dta_t)),
-         (unsigned)(sizeof(cell_ea_t))
-#endif
-	);
-}
+
+
+
+
+
 
 
 
@@ -231,6 +222,387 @@ int (env_aligned)(env_t const* const p, unsigned const a) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Helper function for conversion functors */
+static unsigned int add_digit(unsigned int const n,
+                              unsigned int B, char const d)
+{
+    /* n shifted to the left by one position (in its base B representation) */
+    unsigned int const nB = B*n;
+
+    /* Append digit (if it is a valid one) */
+    if ( '0' == d ) { return nB;    }
+    if ( '1' == d ) { return nB+ 1; }
+    if ( '2' == d ) { return nB+ 2; }
+    if ( '3' == d ) { return nB+ 3; }
+    if ( '4' == d ) { return nB+ 4; }
+    if ( '5' == d ) { return nB+ 5; }
+    if ( '6' == d ) { return nB+ 6; }
+    if ( '7' == d ) { return nB+ 7; }
+    if ( '8' == d ) { return nB+ 8; }
+    if ( '9' == d ) { return nB+ 9; }
+    if ( 'a' == d ) { return nB+10; }
+    if ( 'b' == d ) { return nB+11; }
+    if ( 'c' == d ) { return nB+12; }
+    if ( 'd' == d ) { return nB+13; }
+    if ( 'e' == d ) { return nB+14; }
+    if ( 'f' == d ) { return nB+15; }
+
+    /* Invalid digit, so just return the original number */
+    return n;
+}
+
+/* dec,hex,bin,oct may be used as conversion functor U in str2ui */
+unsigned int dec(unsigned int n, char d) {
+    return add_digit(n, 10u, d);
+}
+
+unsigned int hex(unsigned int n, char d) {
+    return add_digit(n, 0x10u, d);
+}
+
+unsigned int bin(unsigned int n, char d) {
+    return add_digit(n,  2u, d);
+}
+
+unsigned int oct(unsigned int n, char d) {
+    return add_digit(n, 010u, d);
+}
+
+
+/* Convert digit string str to unsigned using conversion functor U */
+unsigned int addstr2ui(unsigned int n,
+                       char const* const sbeg, char const* const send,
+                       unsigned (* const U)(unsigned cur, char digit)
+                      )
+{
+    if ( (0!=sbeg) && (0!=send) ) {
+        register char const* p=sbeg;
+   
+        for(   ;   (send!=p);    ++p ) {
+            n = U(n,*p);
+        }
+    }
+
+    /* Return updated (increased) n  */
+    return n;
+}
+
+
+/* Find first subsequence [subfrst,sublast) in [tfrst,tlast)
+   returning a pointer to the start of that subsequence
+ */
+char const* strmatch(register char const* const tfrst, register char const* const tlast, 
+                     register char const* const subfrst, register char const* const sublast)
+{
+    /* Iterator over t range */
+    register char const* it=tfrst;
+    for (  ;  (tlast!=it);  ) {
+        if ( (*it) == (*subfrst)  ) {
+   	    /* Found 1st matching char. */
+  	    register char const* it2 = it;
+  	    register char const* isub2 = subfrst;
+            /* 1st character matched, so move on to next one */
+            ++it2;
+            ++isub2;
+
+            for ( ;   ((sublast!=isub2) && (tlast!=it2));   ++it2, ++isub2 ) {
+	        if ( ! ((*it2) == (*isub2)) ) {
+		   /* At least one character didn't match */
+		   goto next; /* We can't use break here. */
+                }
+            }
+            /* Found a matching sequence */
+            return it;
+        }
+        /* Just move on to next item in sequence t. */
+   	next:
+        ++it;
+    }
+
+    /* No match found */
+    return tlast;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(__SPU__)  /************** SPU part ************/
+
+/* SPU headers */
+#include <spu_mfcio.h>
+
+
+
+
+/* 16k are maximum which may be DMAed in one call to spu_mfc... */
+enum { DMAMAX   = ((unsigned)(16*1024)) };
+enum { DMAMAXea = ((ea_t)DMAMAX)        };
+
+
+
+void mdma64_rec(register unsigned char* const p,
+                register ea_t const lea, register unsigned const sze,
+                register unsigned const tag, register unsigned const cmd)
+{
+    /* Only one DMA needed? End recusrion */
+    if ( EXPECT_TRUE_(sze<=DMAMAX) ) {
+        dma64(p, lea, sze,  tag,cmd);
+        return;
+    }
+
+    /* Start a DMA */
+    dma64(p, lea,  DMAMAX,  tag,cmd);
+    /* Tail recursive call... */
+    mdma64_rec(p+DMAMAX,  lea+DMAMAX,  sze-DMAMAX,  tag,cmd);
+}
+
+
+
+
+
+
+/* DMA more than 16k using multiple DMAs with the same tag */
+void mdma64_iter(register unsigned char* p,
+                 register ea_t lea, register unsigned remsze,
+                 register unsigned const tag, register unsigned const cmd)
+{
+    for(;;) {
+        /* We're done if not more than maxsze bytes are to be xfered */
+        if ( EXPECT_TRUE_(remsze<=DMAMAX) ) {
+  	   dma64(p, lea,  remsze, tag, cmd);
+ 	   return;
+        }
+
+        /* Xfer one chunk of maximum size  */
+        dma64(p,  lea,  DMAMAX, tag, cmd);
+
+        /* Update addresses and number of bytes */
+        remsze -= DMAMAX;
+        p      += DMAMAX;
+        lea    += DMAMAX;
+    }
+}
+
+
+
+
+/* Vectorized version of memcpy:
+   copy nvec vectors from dst to src. Callers must make sure that the
+   objects pointed to be dst and src are aligned to a 16-byte boundary.
+ */
+static void* vmemcpy(void* const dst, void const* const src, unsigned const nvec)
+{
+    /* Vector type */
+    typedef __vector unsigned char  Tvec;
+    /* Iterators/number of vectors remaining */
+    register Tvec const* isrc = ((Tvec const*)src);
+    register Tvec      * idst = ((Tvec      *)dst);
+    register unsigned    nrem = nvec;
+
+    /* Until all vectors have been copied */
+    for (;;) {
+        /* Leave loop if there are no more vectors remaining
+           (which is quite unlikely) */
+        if ( EXPECT_FALSE_(0u==nrem) ) {
+  	    break;
+        }
+        /* Copy, update pointers and number of vectors */
+        (*(idst++)) = (*(isrc++));
+        --nrem;
+    }
+
+    /* Retrun address of destination buffer */
+    return dst;
+}
+
+
+
+#endif /* SPU part */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if defined(__PPU__)   /************ PPU part **************/
+
+/* ISO C std. headers */
+#include <limits.h>
+#include <stddef.h>
+/* Hosted */
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+/* POSIX std. headers */
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <pthread.h>
+
+/* CBE Headers */
+#include <libspe2.h>
+
+/* SDK Headers containing inline functions/macros */
+/* libsync */
+/* conditional variables */
+#include <cond_init.h>
+#include <cond_wait.h>
+#include <cond_signal.h>
+#include <cond_broadcast.h>
+/* Mutexes */
+#include <mutex_init.h>
+#include <mutex_lock.h>
+/* Atomic operations */
+#include <atomic_inc_return.h>
+#include <atomic_set.h>
+
+
+
+
+
+
+/* Print sizes of some types */
+int sizeinfo(int (* const of)(char const[],...)) {
+    return
+      of("sizeof(wp_t)       = %u\n"
+         "sizeof(exch_t)     = %u\n"
+#if defined(CBE_DIRECT)
+         "sizeof(cell_dta_t) = %u\n"
+         "sizeof(cell_ea_t)  = %u\n"
+#endif
+         ,
+
+         (unsigned)(sizeof(wp_t)),
+         (unsigned)(sizeof(exch_t))
+#if defined(CBE_DIRECT)
+         ,
+         (unsigned)(sizeof(cell_dta_t)),
+         (unsigned)(sizeof(cell_ea_t))
+#endif
+	);
+}
+
+
+
+
+
+/* Output of pt_t *e using  printf-like function of */
+int (pt_out)(int (*of)(char const[],...), pt_t const* const e)
+{
+     /* Sepeartor */
+     static char const sep[]=" ";
+
+     /* Number of elements in each array */
+     unsigned const nout = 4*(e->ntypes)*(e->ntypes);
+
+     /* The result */
+     int res=0;
+
+     /* Scalar */
+     res += of("ntypes   = %d\n", (e->ntypes));
+
+     /* Arrays */
+     res += of("r2cut   = ");
+     res += vecout(of, fltout,fltnxt, e->r2cut,    nout, sep);
+     res += of("\n");
+
+     res += of("lj_sig   = ");
+     res += vecout(of, fltout,fltnxt, e->lj_sig,   nout, sep);
+     res += of("\n");
+
+     res += of("lj_eps   = ");
+     res += vecout(of, fltout,fltnxt, e->lj_eps,   nout, sep);
+     res += of("\n");
+
+     res += of("lj_shift = ");
+     res += vecout(of, fltout,fltnxt, e->lj_shift, nout, sep);
+     res += of("\n");
+
+     return res;
+}
+
+
+
+
+
+
+
 /* Needed in the output of effective addresses  */
 /* #define EA(ptr) (*(ptr)), (*((ptr)+1)) */
 #define EA(ea)   ((unsigned)(((ea_t)(ea))>>32u)),  ((unsigned)((ea_t)(ea)))
@@ -357,281 +729,77 @@ int (exch_out)(int (*of)(char const[],...), exch_t const* const e)
 
 
 
-/* Output of pt_t *e using  printf-like function of */
-int (pt_out)(int (*of)(char const[],...), pt_t const* const e)
-{
-     /* Sepeartor */
-     static char const sep[]=" ";
-
-     /* Number of elements in each array */
-     unsigned const nout = 4*(e->ntypes)*(e->ntypes);
-
-     /* The result */
-     int res=0;
-
-     /* Scalar */
-     res += of("ntypes   = %d\n", (e->ntypes));
-
-     /* Arrays */
-     res += of("r2cut   = ");
-     res += vecout(of, fltout,fltnxt, e->r2cut,    nout, sep);
-     res += of("\n");
-
-     res += of("lj_sig   = ");
-     res += vecout(of, fltout,fltnxt, e->lj_sig,   nout, sep);
-     res += of("\n");
-
-     res += of("lj_eps   = ");
-     res += vecout(of, fltout,fltnxt, e->lj_eps,   nout, sep);
-     res += of("\n");
-
-     res += of("lj_shift = ");
-     res += vecout(of, fltout,fltnxt, e->lj_shift, nout, sep);
-     res += of("\n");
-
-     return res;
-}
+/* Get timebase frequency from contents of cpuinfo file */
+unsigned long tbfreq_string(char const* const sbeg, char const* const send) {
+    if ( (0!=sbeg) && (0!=send) ) {
+        /* (Pointers to) constant characters are often needed in this block,
+           so we introduce the following typedefs */
+        typedef char const Tuc, *Puc;
 
 
+        /* Patterns/strings to be searched for */
+        /*                  01234567  */
+        static Tuc key[] = "timebase";
+        Puc const keypos = strmatch(sbeg, send,  key, key+(sizeof(key)-1));
 
+        if ( keypos != send ) {
+            static Tuc col[] = ":";
+            Puc const colpos = strmatch(keypos+1, send,  col, col+(sizeof(col)-1));
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if defined(__SPU__)  /************** SPU part ************/
-
-/* SPU headers */
-#include <spu_mfcio.h>
-
-
-
-
-/* 16k are maximum which may be DMAed in one call to spu_mfc... */
-enum { DMAMAX   = ((unsigned)(16*1024)) };
-enum { DMAMAXea = ((ea_t)DMAMAX)        };
-
-
-
-void mdma64_rec(register unsigned char* const p,
-                register ea_t const lea, register unsigned const sze,
-                register unsigned const tag, register unsigned const cmd)
-{
-    /* Only one DMA needed? End recusrion */
-    if ( EXPECT_TRUE_(sze<=DMAMAX) ) {
-        dma64(p, lea, sze,  tag,cmd);
-        return;
+            if ( colpos != send ) {
+	        static Tuc eol[] = "\n";
+  	        Puc const eolpos = strmatch(colpos+1, send,  eol, eol+((sizeof(eol)-1)));
+                if ( send != eolpos ) {
+		    return addstr2ui(0u,  colpos, eolpos,  dec);
+	        }
+            }
+        }   
     }
 
-    /* Start a DMA */
-    dma64(p, lea,  DMAMAX,  tag,cmd);
-    /* Tail recursive call... */
-    mdma64_rec(p+DMAMAX,  lea+DMAMAX,  sze-DMAMAX,  tag,cmd);
+    /* Could not convert, return (non sense) frequency 0 */
+    return 0u;
 }
 
 
+/* Read cpuinfo from fd into buffer buf of length bufsze parse it and return
+   the timebase freqeuncy. */
+unsigned long tbfreq_fd(int const fd,  char* const buf, unsigned const bufsze) {    /* Got valid handle? */
+    if ( -1 != fd ) {
+       /* Read data from fd into the following buffer, storing the
+          number of characters read */
+       int const nread = read(fd, buf,bufsze);
 
-
-
-
-/* DMA more than 16k using multiple DMAs with the same tag */
-void mdma64_iter(register unsigned char* p,
-                 register ea_t lea, register unsigned remsze,
-                 register unsigned const tag, register unsigned const cmd)
-{
-    for(;;) {
-        /* We're done if not more than maxsze bytes are to be xfered */
-        if ( EXPECT_TRUE_(remsze<=DMAMAX) ) {
-  	   dma64(p, lea,  remsze, tag, cmd);
- 	   return;
-        }
-
-        /* Xfer one chunk of maximum size  */
-        dma64(p,  lea,  DMAMAX, tag, cmd);
-
-        /* Update addresses and number of bytes */
-        remsze -= DMAMAX;
-        p      += DMAMAX;
-        lea    += DMAMAX;
-    }
-}
-
-
-#endif /* SPU part */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if defined(__PPU__)   /************ PPU part **************/
-
-/* ISO C std. headers */
-#include <limits.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-/* POSIX std. headers */
-#include <unistd.h>
-#include <pthread.h>
-/* CBE Headers */
-#include <libspe2.h>
-
-
-
-
-/* Secure version of strcpy/strcat for array A as dst. argument
-   Those can't be implemented as functions. Even thoug A appears twice
-   in the macro, the second occurrance is as an argument to the sizeof operator
- */
-#define STRACPY(A,ct) strncpy((A), ct, sizeof(A))
-#define STRACAT(A,ct) strncat((A), ct, sizeof(A))
-/* Macro version of fget which deduces the size of the buffer from the argument*/
-#define FGETA(A,f) fgets(A, (sizeof (A)), f)
-
-
-
-/* Function to check a string:
-   return s if it points to an non-empty string, dflt is returned otherwise
- */
-
-/* Macro */
-#define strchk(s,dflt) (s ? (('\0' != (*s)) ? s : dflt) :  dflt)
-
-/* Real function using that macro */
-static char const* (strchk)(char const s[], char const dflt[])
-{
-    return strchk(s,dflt);
-}
-
-
-
-/* The default timebase line in cpuinfo */
-static char const tbase[] = "timebase";
-
-/* Read timebase from open file */
-timebase_t timebase_file(FILE* const f, char const grepval[])
-{
-    /* Only read from valid file */
-    if ( f ) {
-        char const* const tbkey = strchk(grepval, tbase);
-        /* Input line by line */
-        while ( ! feof(f) ) {
-   	    /* Key an separator are read first with the following formats */
-  	    char key[200];
-            static char const fmt1[] = "%200s%*s";
-
-    	    /* Read 1st part of line, which is key followed by a separator */
-            if (  EOF !=  fscanf(f, fmt1,  key) ) {
-  	          /* Get the rest of the line which is the value */
-	          char val[0x100];
-                  fgets(val, (sizeof val),  f);
-
-                  /* Found requested key? */
-                  if ( 0 == strcmp(key,tbkey) ) {
-		       /* The result */
-                       unsigned long const res=strtoul(val, NULL, 10);
-                       return ((ULONG_MAX!=res) ? res : 0);
-                  }
-	    }
-        }
+       /* Successfully read the entire file? */
+       if ( (-1!=nread) && (nread<=bufsze-1) ) {
+  	    /* Terminate string just read and pass it to the parsing function
+               to get the final result */
+     	    return tbfreq_string(buf, buf+nread);
+       }
     }
 
-    /* Error */
-    return 0;
+    /* Return 0 to indicate an error */
+    return 0u;
 }
 
 
-#undef STRACAT
-#undef STRACPY
-#undef FGETA
+/* Get time base frequency from OS (as suggested by the CBE programming handbook) */
+unsigned long tbfreq(void) {
+    /* Open cpuinfo file */
+    static char const cipath[] = "/proc/cpuinfo";
+    int const fd = open(cipath, O_RDONLY);
 
+    /* Input buffer (hopefully large enough ) */
+    char buf[4*1024];
 
+    /* Get timebase frequency reading fd. */
+    unsigned int const res = tbfreq_fd(fd, buf, (sizeof buf));
 
+    /* Close file before returning */
+    (void)(close(fd));
 
-
-/* CBE Time base functions  */
-
-/* Helper function which also closes the file f  */
-static timebase_t timebase_file_close(FILE* const f, char const line[])
-{
-  unsigned const res = timebase_file(f,line);
-  if ( f ) {
-      (void)(fclose(f));
-  }
-  return res;
+    /* Return the result */
+    return res;
 }
-
-
-
-
-/* Path to cpuinfo */
-static char const cipath[] = "/proc/cpuinfo";
-
-
-/* Read time base from path */
-timebase_t timebase_path(char const path[], char const line[])
-{
-     /* File to be opened for reading */
-     static char const mode[] = "r";
-     return timebase_file_close(fopen(strchk(path,cipath), mode), line);
-}
-
-
-
-#undef strchk
-
-
-/* Just read the usual timebase entry from the usual file */
-unsigned long timebase_proc(void)
-{
-    return timebase_path(cipath,tbase);
-}
-
-
-
-
-
 
 
 
@@ -717,9 +885,12 @@ typedef pthread_t            Tthr;
 /* Arrays of buffers:  */
 
 /* Environment */
-static envbuf_t ALIGNED_(128, ebuf[N_ENVBUF]);
+/* static envbuf_t ALIGNED_(128, ebuf[N_ENVBUF]); */
 /* cbe_env_begin is passed as environment address to every SPU thread */
-envbuf_t* const cbe_env_begin = ebuf;
+/* envbuf_t* const cbe_env_begin = ebuf; */
+
+static ea_t ALIGNED_(128, enveabuf[N_ENVEA]);
+ea_t* const cbe_envea_begin = enveabuf;
 
 
 /* Arguments */
@@ -764,9 +935,21 @@ spe_spu_control_area_p* const cbe_spucontrolarea = contrarea;
 
 
 
+/* Reservation granule type large enough to hold locks/mutexes, etc...
+   unsigned is used as base type as some libsync routines require the 
+   adresses to be 32bit aligned.
+ */
+typedef unsigned int uirgran_t[CBE_GRANULE_NINT];
 
+/* Mutexes/Condition variables used by libsync functions */
+static uirgran_t ALIGNED_(16, lsmutx[128/(sizeof (uirgran_t))]);
+static uirgran_t ALIGNED_(16, lscvar[128/(sizeof (uirgran_t))]);
 
-
+/* Number of mutexes/cond. vars. */
+enum {
+   NMUTX = (unsigned)((sizeof lsmutx)/(sizeof (lsmutx[0]))),
+   NCVAR = (unsigned)((sizeof lscvar)/(sizeof (lscvar[0])))
+};
 
 
 
@@ -890,7 +1073,7 @@ typedef struct spu_pthr_arg {
 
 
 /* Trivial pthread function which just switches to SPU context and
-   return a pointer to the SPU programs stop info. */
+   returns a pointer to the SPU program's stop info. */
 static void* spu_pthr(void* p0)
 {
     /* Check the argument ptr. and use it in case it's valid */
@@ -898,7 +1081,7 @@ static void* spu_pthr(void* p0)
         /* SPU instruction counter, initialized to start of SPU program */
         unsigned spu_entry = SPE_DEFAULT_ENTRY;
 
-        /* Get the (constant) argument pointed to be ptr */
+        /* Get the (constant) argument pointed to by p0 */
         spu_pthr_arg_t const* const p = p0;
 
 
@@ -921,7 +1104,7 @@ static void* spu_pthr(void* p0)
 
 
 /* Number of threads initialized */
-static unsigned nspus=0;
+static unsigned int nspus=0;
 
 /* Get number of threads initialized */
 unsigned cbe_get_nspus() {
@@ -933,19 +1116,19 @@ unsigned cbe_get_nspus() {
 static Tthr  t[N_SPU_THREADS_MAX];
 
 
-/* Init stuff for calc_threads. Try to start SPU threads
-   This function may only be called once. It's not thread safe
-   The minimum of nspu_req and the number of SPUs available (according
-   cpu_node) specifys the number of threads actually started.
-   The number of threas started is returned.
-*/
-int cbe_init(int const nspu_req, int const cpu_node)
+
+
+/* The "real" initialization routine perfomring the actual work */
+int cbe_init0(int const nspu_req, int const cpu_node)
 {
+    /* The env */
+    static env_t ALIGNED_(16,env);
+
     /* Arguments for the SPU threads */
     static spu_pthr_arg_t pthrargs[N_SPU_THREADS_MAX];
 
     /* Number of threads started */
-    unsigned nstrt=0;
+    unsigned int nstrt=0;
 
     /* Number of SPUs which may be initialized */
     int const imax = min_usable_spes(((nspu_req<N_SPU_THREADS_MAX) ?
@@ -960,13 +1143,33 @@ int cbe_init(int const nspu_req, int const cpu_node)
 
     /* No SPUs available */
     if ( imax < 1 ) {
-        return nspus=0;
+        nspus=0;
+        return -1;
     }
 
 
+    /* Set the environement EAs */
+    cbe_envea_begin[0] = EA_CAST(&env);
+    cbe_envea_begin[1] = EA_CAST(lscvar);
+    cbe_envea_begin[2] = EA_CAST(lsmutx);
+
+
+    /* init condition variable(s) / mutexes */
+    for ( i=0;  i<NCVAR;  ++i ) {
+        _cond_init(EA_CAST(lscvar+i));
+    }
+    for ( i=0;  i<NMUTX;  ++i ) {
+        _mutex_init(EA_CAST(lsmutx+i));
+    }
+    _mutex_lock(EA_CAST(lsmutx+0));
+
+
+
     /* Copy pt to env_t
-       It is assumend, that pt has been setup before we arrve here */
-    create_env(&pt, ((env_t*)cbe_env_begin));
+       It is assumend that pt has been setup before we arrive here */
+    create_env(&pt, &env);
+
+
 
 
 #if ! defined(CBE_DIRECT)
@@ -982,6 +1185,9 @@ int cbe_init(int const nspu_req, int const cpu_node)
         contrarea[i]=0;
     }
 
+    /* Sync memory before creating threads */
+    /* __lwsync(); */
+
     for ( i=0, pctxt=c, parg=pthrargs;    (i<imax);   )  {
         /* Set the arguments for the pthread */ 
         /* SPU thread arguments, also set wp fields to initial value
@@ -989,7 +1195,7 @@ int cbe_init(int const nspu_req, int const cpu_node)
         parg->spu_arg = cbe_arg_begin + i*N_ARGBUF;
 
         /* Environment */
-        parg->spu_env = cbe_env_begin;
+        parg->spu_env = cbe_envea_begin;
 
         /* Stop info of SPU program is written here */
         parg->spu_stopinfo_loc=sinfo+i;
@@ -1027,7 +1233,7 @@ int cbe_init(int const nspu_req, int const cpu_node)
                 }
    	    } else {
    	         fprintf(stderr, "Could not load handle\n");
-                 exit(1);
+                 return(-1);
             }
         }
         else {
@@ -1036,9 +1242,41 @@ int cbe_init(int const nspu_req, int const cpu_node)
     }
 
 
-    /* Return & store the number of threads actually started */
-    return nspus=nstrt;
+
+
+    /* Store the number of threads actually started */
+    nspus=nstrt;
+
+    /* OK, CBE initialized */
+    return 0;
 }
+
+
+
+/* Init stuff for calc_threads. Try to start SPU threads
+   This function may only be called once. It's not thread safe
+   The minimum of nspu_req and the number of SPUs available (according
+   cpu_node) specifys the number of threads actually started.
+   The number of threas started is returned.
+*/
+int cbe_init(int const nspu_req, int const cpu_node) {
+    /* Prevent init routine from being called more than once
+       using the following flag.
+     */
+    static int flag[CBE_GRANULE_NINT] = { 0 };
+    if ( 0 == _atomic_inc_return(EA_CAST(flag)) ) {
+        /* 1st. Init */
+        return cbe_init0(nspu_req,cpu_node);
+    }
+
+    /* Alread initialized */
+    _atomic_set(EA_CAST(flag), 1);
+    return 1;
+}
+
+
+
+
 
 
 

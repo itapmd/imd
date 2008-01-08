@@ -9,6 +9,13 @@
 #include <spu_mfcio.h>
 #include <spu_internals.h>
 
+/* SDK Headers containing inline functions/macros */
+/*
+#include <cond_init.h>
+#include <cond_wait.h>
+#include <cond_signal.h>
+*/
+
 /* Local/program specific headers */
 #include "imd_cbe.h"
 
@@ -20,10 +27,13 @@
 /* Suffix (kilobyte) */
 enum { Ki=1024u };
 
+/* Maximum decrementer value */
+/* static unsigned int const DecMax = -1; */
+#define DecMax ((unsigned int)(-1))
 
 
 /* Argument types for main function */
-typedef unsigned long long ui64_t;
+typedef unsigned long long  ui64_t;
 
 
 
@@ -163,28 +173,25 @@ enum { DIRECT_OBUFSZE=((unsigned)(30*Ki)) };
 
 static void wp_direct_spusum(void* i, void* o,  ea_t unused, unsigned otag)
 {
-    /* Ptrs. to input/summatiuon workpackages */
-    register wp_t* const pwp  = (wp_t*)i;
-    register wp_t* const psum = (wp_t*)o;
-
-    /* Set length parameters from WP */
-    register int const n_max   = pwp->n_max;
-    register int const len_max = pwp->len_max;
+    /* Size of buffer for the results */
+    enum { RESSZE=DIRECT_OBUFSZE-(sizeof (argbuf_t)) };
 
     /* Store ptr. to buffers in register */
     register cell_dta_t* const B = direct_buf;
 
-    /* Size of buffer for the results */
-    enum { RESSZE=DIRECT_OBUFSZE-(sizeof (argbuf_t)) };
+    /* Ptrs. to input/summatiuon workpackages */
+    register wp_t* const pwp  = (wp_t*)i;
+    register wp_t* const psum = (wp_t*)o;
 
+    /* Some length parameters from WP */
+    register int const n_max   = pwp->n_max;
+    register int const len_max = pwp->len_max;
 
 
     /* Set buffers */
-    if ( EXPECT_FALSE_((n_max>last_n_max) || (len_max>last_len_max)) ) {
-       set_tmp_buffers(B, (last_n_max=n_max), (last_len_max=len_max),
-                       &direct_tmp, (sizeof direct_tmp));
-    }
-    set_res_buffers(B, n_max,  ((argbuf_t*)o)+1, RESSZE);
+    set_tmp_buffers(B, n_max, len_max,  &direct_tmp,  (sizeof direct_tmp));
+    set_res_buffers(B, n_max,           ((argbuf_t*)o)+1, RESSZE);
+
     /* Calc. forces */
     calc_wp_direct(pwp, B, otag);
 
@@ -197,6 +204,9 @@ static void wp_direct_spusum(void* i, void* o,  ea_t unused, unsigned otag)
 
 static void wp_direct(void* i, void* o, ea_t oea, unsigned otag)
 {
+    /* Store ptr. to buffers in register */
+    register cell_dta_t* const B = direct_buf;
+
     /* Current work package */
     register wp_t* const pwp = ((wp_t*)i);
 
@@ -204,15 +214,13 @@ static void wp_direct(void* i, void* o, ea_t oea, unsigned otag)
     register int const n_max   = pwp->n_max;
     register int const len_max = pwp->len_max;
 
-    /* Store ptr. to buffers in register */
-    register cell_dta_t* const B = direct_buf;
 
-    /* Set buffer */
-    if ( EXPECT_FALSE_((n_max>last_n_max) || (len_max>last_len_max)) ) {
-        set_tmp_buffers(B, (last_n_max=n_max), (last_len_max=len_max),
-                        direct_tmp,(sizeof direct_tmp));
-    }
-    set_res_buffers(B, n_max,  o, DIRECT_OBUFSZE);
+
+
+    /* Set buffers  */
+    set_tmp_buffers(B, n_max, len_max,  &direct_tmp, (sizeof direct_tmp));
+    set_res_buffers(B, n_max,           o,           DIRECT_OBUFSZE);
+
     /* Calc forces */
     calc_wp_direct(pwp, B,   otag);
 
@@ -223,34 +231,7 @@ static void wp_direct(void* i, void* o, ea_t oea, unsigned otag)
 
 
 
-/* Vectorized version of memcpy:
-   copy nvec vectors from dst to src. Callers must make sure that the
-   objects pointed to be dst and src are aligned to a 16-byte boundary.
- */
-static void* vmemcpy(void* const dst, void const* const src, unsigned const nvec)
-{
-    /* Vector type */
-    typedef __vector unsigned char  Tvec;
-    /* Iterators/number of vectors remaining */
-    register Tvec const* isrc = ((Tvec const*)src);
-    register Tvec      * idst = ((Tvec      *)dst);
-    register unsigned    nrem = nvec;
 
-    /* Until all vectors have been copied */
-    for (;;) {
-        /* Leave loop if there are no more vectors remaining
-           (which is quite unlikely) */
-        if ( EXPECT_FALSE_(0u==nrem) ) {
-  	    break;
-        }
-        /* Copy, update pointers and number of vectors */
-        (*(idst++)) = (*(isrc++));
-        --nrem;
-    }
-
-    /* Retrun address of destination buffer */
-    return dst;
-}
 
 
 
@@ -259,19 +240,20 @@ static void tb_direct(void* i, void* o, ea_t oea, unsigned otag)
 {
     /* Current WP */
     register wp_t* const pwp = ((wp_t*)i);
-    /* Some length parametrs form WP */
-    register int const n_max   = pwp->n_max;
-    register int const len_max = pwp->len_max;
 
     /* Store ptr. to buffers in register */
     register cell_dta_t* const B = direct_buf;
 
+    /* Some length parametrs form WP */
+    register int const n_max   = pwp->n_max;
+    register int const len_max = pwp->len_max;
+
+
+
     /* Set buffers  */
-    if ( EXPECT_FALSE_((n_max>last_n_max) || (len_max>last_len_max)) ) {
-        set_tmp_buffers(B,  (last_n_max=n_max), (last_len_max=len_max),
-                        &direct_tmp, (sizeof direct_tmp));
-    }
-    set_res_buffers(B,  n_max,  o, DIRECT_OBUFSZE);
+    set_tmp_buffers(B,  n_max, len_max,  &direct_tmp, (sizeof direct_tmp));
+    set_res_buffers(B,  n_max,           o,           DIRECT_OBUFSZE);
+
     /* Calc. NBL */
     calc_tb_direct(pwp, B,  otag);
 
@@ -531,7 +513,7 @@ static void wrk(void* ibuf, void* obuf,  unsigned otag)
 
 /* C.f. Prog. Handbook p. 687  */
 
-/* Double bufferd workloop for list of given eas */
+/* Double bufferd workloop for a list of given eas */
 /* After this function returns there might still be some
    outbound DMAs pending. The unsigned returned by this function is
    a bit mask of the tags of pending DMAs.
@@ -643,21 +625,24 @@ static void start_create_pt(void* const pbuf, unsigned const szebuf,
 
 
 /* Start initialization (pt only, at the moment) */
-static void start_init(ea_t const envea, unsigned const itag)
+static void start_init(ea_t const envea, unsigned int const itag)
 {
-    /* Buffer for env. data, must be static potential data will be
-       accessed after pt has been created. */
-    static unsigned char ALIGNED_(16, envdata[300]);
+    /* Buffer for potential (pt) data */
+    static unsigned char ALIGNED_(16, ptdata[300]);
 
-    /* env control block  */
-    envbuf_t ALIGNED_(16, envbuf);
+    /* Controll block*/
+    envbuf_t ALIGNED_(16, ptcb);
 
-    /* 1st, DMA the control block containing the pointers */
-    mdma64(&envbuf,  envea, (sizeof envbuf),  itag, MFC_GET_CMD);
-    (void)wait_dma((1u<<itag), MFC_TAG_UPDATE_ALL);
+    /* Mask corresponding to the tag */
+    unsigned int const imsk = 1u<<itag;
+
+
+    /* Use 0th entry in the env EA list to get the pt controll block */
+    mdma64(&ptcb,  envea, (sizeof ptcb),  itag, MFC_GET_CMD);
+    (void)wait_dma(imsk, MFC_TAG_UPDATE_ALL);
 
     /* Start DMA of pt */
-    start_create_pt(envdata, (sizeof envdata), ((env_t*)&envbuf), &pt,  itag);
+    start_create_pt(ptdata, (sizeof ptdata), ((env_t*)&ptcb), &pt,  itag);
 }
 
 
@@ -694,9 +679,13 @@ static INLINE_ void arg_eas(register ea_t cur64, register ea_t const stride64,
 /* argp "points" to an array of lengt N_ARGBUF of argbuf_t */
 int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
 {
+    /* Some tags/mask used for. misc purposes */
+    enum { misctag = ((unsigned)1) };
+    enum { miscmsk = ((unsigned)(1u<<misctag)) };
+
     /* Effective addresses (pairs of unsigneds) of the arguments
        in main memory */
-    ea_t ALIGNED_(8, eabuf[N_ARGBUF]);
+    ea_t ALIGNED_(8, eabuf[N_ARGBUF]), ALIGNED_(16, env[N_ENVEA]);
 
     /* Some timing stuff */
     register unsigned int t0_;
@@ -705,24 +694,30 @@ int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
     unsigned int dtmin=-1, dtmax=0;
 
 
-    /* Set decrementer to max. value for timing */
-    spu_writech(SPU_WrDec, (~(0u)));
+    /* Get the environment list */
+    mdma64(env,  envp,  (sizeof (ea_t[N_ENVEA])),   misctag, MFC_GET_CMD);
+    (void)(wait_dma(miscmsk, MFC_TAG_UPDATE_ALL));
+
+
+
 
 
     /* Fetch env and start creating the corresponding pt_t (Using DMA) */
-    start_init(envp, 0);
+    start_init(env[0],  misctag);
 
     /* Set EAs of the buffers in main memory */
     arg_eas(argp,  (sizeof(argbuf_t)), eabuf,N_ARGBUF);
 
 
-
-    /* Wait for init. DMA */
-    (void)wait_dma((1u<<0u), MFC_TAG_UPDATE_ALL);
-
+    /* Wait for init. DMA to finish */
+    (void)(wait_dma(miscmsk, MFC_TAG_UPDATE_ALL));
 
 
+    /* _cond_wait(env[1], env[2]); */
 
+
+    /* Set decrementer to max. value for further timing */
+    spu_writech(SPU_WrDec, DecMax);
 
     for (;;) {
         /* Read work mode / flag */

@@ -38,6 +38,22 @@ int main(int argc, char **argv)
   long_long flpins;
 #endif
 
+
+#if defined(CBE)
+  /* Also measure time on PPU in terms of (PowerPC) time base ticks */
+  tick_t tick0, tick1, dticks;
+  /* Time base freqency */
+  unsigned long const tbf = tbfreq();
+  /* Multiplicative conversion factor ticks->seconds */
+  double const ticks2sec = ((0u!=tbf) ? (1.0/((double)tbf)) : 0.0);
+
+  /* Use the following streams for info & timing output */
+  FILE* const cbe_info   = stdout;
+  FILE* const cbe_timing = stdout;
+#endif
+
+
+
 #if defined(MPI) || defined(NEB)
   MPI_Init(&argc, &argv);
   init_mpi();
@@ -72,14 +88,21 @@ int main(int argc, char **argv)
 
 #ifdef CBE
   /* CBE initialization must be after potential setup */
-  if ( num_spus != cbe_init(num_spus, -1) ) {
-    error("Could not initialize enough SPU threads!\n");
+  if ( -1 == cbe_init(num_spus, -1) ) {
+      error("Could not initialize SPU threads!\n");
   }
   else {
-    fprintf(stdout, "CBE info: %d SPUs are used.\n", num_spus);
+  /* Some info: */
+  fprintf(cbe_info,
+          "CBE hardware: timebase frequency is (at the momenent!) %lu ticks per second\n"
+          "CBE mode: Pointers on PPU are %u bits wide.\n"
+          "CBE parameters: %d SPUs were requested, %u are used, argument buffer size %u bytes.\n",
+          tbf,
+          ((unsigned)PPU_PTRBITS),
+          num_spus, cbe_get_nspus(), ((unsigned)(sizeof (argbuf_t)))
+         );
   }
-  fprintf(stdout, "CBE info: Pointers on PPU are %u bits wide\n", 
-                  (unsigned) PPU_PTRBITS );
+
 #endif  /* CBE */
 
 #ifdef TIMING
