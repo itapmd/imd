@@ -612,12 +612,12 @@ ifeq (cbe-xlc,${IMDSYS})
   SPUTIMING=${CELLSDK}/bin/spu_timing -running-count
 
 
-  SPUCC       = spuxlc
-  CC_SERIAL   = ppuxlc -q32
+  SPUCC         = spuxlc
+  CC_SERIAL     = ppuxlc -q32
 
-  OPT_FLAGS   += -O2 -qstrict -qcpluscmt -qflag=w:w -qproto -qro -qwarn64   -qreport -qinline -qunroll=yes -qlibansi -qipa=noobject
-  SPUCFLAGS   += -O2 -qstrict -qcpluscmt -qflag=w:w  -qproto -qreport -qinline -qinline-dma64:mdma64:wait_dma -I${CELLSDKLIB}/sync/spu
-  PP_FLAGS    += -I${CELLSDKLIB}/sync
+  OPT_FLAGS     += -O2 -qstrict -qcpluscmt -qflag=w:w -qproto -qro -qwarn64   -qreport -qinline -qunroll=yes -qlibansi -qipa=noobject
+  SPUCFLAGS     += -O2 -qstrict -qcpluscmt -qflag=w:w  -qproto -qreport -qinline -qinline-dma64:mdma64:wait_dma -I${CELLSDKLIB}/sync/spu
+  PP_FLAGS      += -I${CELLSDKLIB}/sync
   EMBEDSPU      = ppu-embedspu -m32
 
   BIN_DIR	= ${HOME}/bin/cbe
@@ -647,13 +647,13 @@ ifeq (cbe-gcc,${IMDSYS})
   # as main compiler as it defines the __PPU__ macro 
   # The ordinary gcc does not set this macro
 
-  CC_SERIAL   = ppu-gcc -m32
-  CC_MP       = mpicc
-  SPUCC       = spu-gcc
-  OPT_FLAGS   += -pipe  -std=gnu89 -pedantic -Wall -Wno-unused -Wcast-qual -Wno-long-long   -O3 -funroll-loops
-  PP_FLAGS    += -I${CELLSDKLIB}/sync
-  SPUCFLAGS   += -pipe  -std=gnu89 -pedantic -Wall -Wunused -Wshadow -Wcast-qual -Wno-long-long    -O2 -funroll-loops   -I${CELLSDKLIB}/sync/spu
-  EMBEDSPU    = ppu-embedspu  -m32
+  CC_SERIAL     = ppu-gcc -m32
+  CC_MP         = mpicc
+  SPUCC         = spu-gcc
+  OPT_FLAGS     += -pipe  -std=gnu89 -pedantic -Wall -Wno-unused -Wcast-qual -Wno-long-long   -O3 -funroll-loops
+  PP_FLAGS      += -I${CELLSDKLIB}/sync
+  SPUCFLAGS     += -pipe  -std=gnu89 -pedantic -Wall -Wunused -Wshadow -Wcast-qual -Wno-long-long    -O2 -funroll-loops   -I${CELLSDKLIB}/sync/spu
+  EMBEDSPU      = ppu-embedspu  -m32
 
 
   BIN_DIR	= ${HOME}/bin/cbe

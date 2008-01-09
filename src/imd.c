@@ -67,6 +67,9 @@ int main(int argc, char **argv)
   imd_init_timer( &time_input,      1, "input",     "orange");
   imd_init_timer( &time_integrate,  1, "integrate", "green" );
   imd_init_timer( &time_forces,     1, "forces",    "yellow");
+#if defined(CBE)
+  tick0 = ticks();
+#endif
 
   read_command_line(argc,argv);
 
@@ -92,17 +95,18 @@ int main(int argc, char **argv)
       error("Could not initialize SPU threads!\n");
   }
   else {
-  /* Some info: */
-  fprintf(cbe_info,
-          "CBE hardware: timebase frequency is (at the momenent!) %lu ticks per second\n"
-          "CBE mode: Pointers on PPU are %u bits wide.\n"
-          "CBE parameters: %d SPUs were requested, %u are used, argument buffer size %u bytes.\n",
-          tbf,
-          ((unsigned)PPU_PTRBITS),
-          num_spus, cbe_get_nspus(), ((unsigned)(sizeof (argbuf_t)))
-         );
+      /* Some CBE specfic info after everything has been initialized: */
+      fprintf(cbe_info,
+              "CBE hardware: timebase frequency is %lu ticks per second (at the moment).\n"
+              "CBE mode: Pointers on PPU are %u bits wide.\n"
+              "CBE parameters: %d SPUs were requested, %u are used\n"
+              "                %d argument buffers per SPU, %u bytes each.\n",
+              ((unsigned long int)tbf),
+              ((unsigned)PPU_PTRBITS),
+              num_spus, cbe_get_nspus(),
+              num_bufs, ((unsigned)(sizeof (argbuf_t)))
+             );
   }
-
 #endif  /* CBE */
 
 #ifdef TIMING
@@ -145,6 +149,7 @@ int main(int argc, char **argv)
   /* write .eng file header */
   if ((imdrestart==0) && (eng_int>0)) write_eng_file_header();
 
+
   imd_stop_timer(&time_setup);
   imd_start_timer(&time_main);
 #ifdef PAPI
@@ -186,6 +191,10 @@ int main(int argc, char **argv)
     }
   }
 
+
+#if defined(CBE)
+  tick1=ticks();
+#endif
   imd_stop_timer(&time_main);
   imd_stop_timer(&time_total);
 #ifdef PAPI
@@ -240,6 +249,14 @@ int main(int argc, char **argv)
 #endif
 #endif
 
+#if defined(CBE)
+    dticks=tick_diff(tick0,tick1);
+    fprintf(cbe_timing,
+            "Used %llu time base register ticks (%f seconds) cputime.\n",
+             ((unsigned long long)dticks),  
+             (((double)dticks)*ticks2sec)
+          );
+#endif
     printf("Used %f seconds cputime,\n", time_total.total);
     printf("%f seconds excluding setup time,\n", time_main.total);
     tmp =  ((num_cpus * num_threads / hyper_threads) * time_main.total / 

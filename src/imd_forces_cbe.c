@@ -1121,252 +1121,7 @@ static void store_wp(wp_t const* const wp)
 *
 ******************************************************************************/
 
-/* SPU management thread function / data */
-typedef struct mgmt {
-    /* SPU indices  */
-    unsigned int nspus;
 
-    /* Index range, determines the number of WPs */
-    int kfrom, kto;
-
-    /* Book keeping arrays: at least nspus long */
-    unsigned int *plo, *phi;
-
-    /* Access to mailboxes: at least nspus long */
-    spe_spu_control_area_p* pctl;  
-
-    /* Argument buffers: at least nspus long */
-    argbuf_t* parg;
-
-    /* functions used to make/store WPs */
-    void (*mk)(argbuf_t* buf, unsigned int n, int k0);
-    void (*st)(argbuf_t* buf, unsigned int n);
-} mgmt_t;
-
-
-
-
-static void* mgmt_thread(void* parg0) {
-    /* Argument pointer */
-    register mgmt_t const* const pm = ((mgmt_t*)parg0);
-
-    /* "Functors" for creating/storing WPs */
-    register void (*const mk)(argbuf_t*, unsigned, int) = pm->mk;
-    register void (*const st)(argbuf_t*, unsigned)      = pm->st;
-
-    /* Number of elements in lower/higher buffer */
-    register unsigned int* const nlo=pm->plo;
-    register unsigned int* const nhi=pm->phi;
-
-    /* Pointer to control areas / argument buffers */
-    register spe_spu_control_area_p* const pctl = pm->pctl;
-
-    /* Indices */
-    register int k;
-    register unsigned int ispu;
-    register unsigned int const nspus = (pm->nspus);
-
-    /* Number of WPs to be sent to / received from SPUs  */
-    register unsigned int nto, nfrom;
-
-    for ( ispu=0;     ispu<nspus;     ++ispu ) {
-        nlo[ispu] = nhi[ispu] = 0u;
-    }
-
-
-
-    /* Set initial k and the number of WPs remaining to be scheduled */
-    for (  nto=nfrom = (pm->kto)-(k=pm->kfrom);;  ) {
-        /* Begin of argument array of SPU ispu */
-        register argbuf_t* spuargs;
-
-        /* Loop over all SPUs */
-        for ( ispu=0u, spuargs=pm->parg;    ispu<nspus;    ++ispu, spuargs+=N_ARGBUF ) {
-
-            /* Half the number of arguments buffers per SPU */
-            enum { NHALF = (unsigned)(N_ARGBUF>>1u) };
-            /* Number of arguments in low/high buffer */
-            enum { NARG_LO=((unsigned)NHALF),
-                   NARG_HI=((unsigned)(N_ARGBUF-NHALF)) };
-            /* Buffer offsets */
-            enum { OFFS_LO=(unsigned)0, OFFS_HI=(unsigned)NARG_LO };
-
-            /* Shifted constant (2) used when checking inbox */
-            enum { IBX2 = (unsigned)(2u << INMBX_CNT_SHIFT) };
-
-            /* Ptr to SPUs control area */
-            register spe_spu_control_area_p const pctl = (pm->pctl)[ispu];
-
-	    /* Number of arguments sent/returned */
-            register unsigned int nargs;
-	    
-
-	     /* Schedule to  SPU #ispu? */
-             /* Lower buffer */
-	     if ( EXPECT_TRUE_(nto>0u)  &&  (0u==nlo[ispu]) ) {
-	        /* Can we write at least 2 items to mailbox?
-                   (The SPU inbox is 4-way mbox ) */ 
- 	        if ( (pctl->SPU_Mbox_Stat & INMBX_CNT_MASK) >= IBX2  ) {
-  		    /* 1st msg to SPU */
-		    pctl->SPU_In_Mbox = (nargs=((NARG_LO<nto) ? NARG_LO : nto));
-
-                    /* Create arguments & sync memory */
-                    mk(spuargs+OFFS_LO, nargs, k);
-
-                    /* 2nd. Msg. to SPU */
-                    pctl->SPU_In_Mbox = OFFS_LO;
-
-                    /* Update bookkeeping */
-                    k   += nargs;
-                    nto -= (nlo[ispu]=nargs);
-                }
-            }
-
-	    /* Higher buffer */
-            if ( EXPECT_TRUE_(nto>0u)  &&  (0u==nhi[ispu]) ) {
-	        /* Can we write at least 2 items to mailbox?
-                   (The SPU inbox is 4-way mbox) */ 
- 	        if ( (pctl->SPU_Mbox_Stat & INMBX_CNT_MASK) >= IBX2  ) {
-		    /* 1st. msg to SPU contains number of arguments */
-		    pctl->SPU_In_Mbox = (nargs=((NARG_HI<nto) ? NARG_HI : nto));
-
-                    /* Create arguments and sync memory */
-                    mk(spuargs+OFFS_HI, nargs, k);
-
-                    /* 2nd. Msg. to SPU: Offset */
-                    pctl->SPU_In_Mbox = OFFS_HI;
-
-                    /* Update bookkeeping */
-                    k   += nargs;
-                    nto -= (nhi[ispu]=nargs);
-                }
-            }
-                
-
-            /* Can we pick up some results? */
-            if ( 0u != ((pctl->SPU_Mbox_Stat) & OUTMBX_CNT_MASK) ) {
-		/* Read Mbox message which is just the offset */
-                register unsigned int const offs = pctl->SPU_Out_Mbox;
-
-                /* Take argument from lower or from higher buffer */
-                register unsigned int* const pn   = ((0u==offs) ? nlo  : nhi);
- 
-                /* Get number of WPs in buffer & Store results */
-                st(spuargs+offs, (nargs=pn[ispu]));
-
-
-                /* Buffer is free again */
-                pn[ispu]=0u;
-
-                /* Another nargs WPs have been calculated. Are we finished? */
-                if ( EXPECT_FALSE_(0u == (nfrom-=nargs)) ) {
-		   return 0;
-                }
-            }
-        }
-    }
-
-    return 0;
-}
-
-
-
-/**/
-void do_work_spu_mbuf_mt(void (* const mkargs)(argbuf_t*, unsigned n, int k0),
-                         void (* const stargs)(argbuf_t*, unsigned n)
-                        )
-{
-    /* Used by the Threads for book keeping */
-    unsigned int ncount[N_SPU_THREADS_MAX*2];
-
-    /* Thread IDs */
-    pthread_t tid[2];
-    /* Arguments for the management threads */
-    mgmt_t m[2];
-
-    /* Result of thread creation */
-    int rc;
-
-    /* PPU thread 0 */
-    /* Number of SPUs to be mamaged by the PPU thread */
-    m[0].nspus= num_spus/2;
-    /* Control areas / argument buffers */
-    m[0].pctl = cbe_spucontrolarea;
-    m[0].parg = cbe_arg_begin;
-
-    /* k range */
-    m[0].kfrom=0;
-    m[0].kto  =ncells/2;
-
-    /* Make/store "functors" */
-    m[0].mk = mkargs;
-    m[0].st = stargs;
-
-    /* Book keeping data may be stored here */
-    m[0].plo = ncount;
-    m[0].phi = ncount+N_SPU_THREADS_MAX;
-
-
-    /* PPU thread 1 */
-    /* The "remaining work" */
-    m[1].nspus = num_spus           - m[0].nspus;
-    m[1].pctl  = cbe_spucontrolarea + m[0].nspus;
-    m[1].parg  = cbe_arg_begin      + N_ARGBUF*m[0].nspus;
-    m[1].kfrom = m[0].kto;
-    m[1].kto   = ncells;
-    m[1].mk    = mkargs;
-    m[1].st    = stargs;
-    m[1].plo   = m[0].plo           + m[0].nspus;
-    m[1].phi   = m[0].phi           + m[0].nspus;
-
-    if ( 0 !=  (rc=pthread_create(&(tid[1]), NULL, mgmt_thread,  &(m[1]))) ) {
-        (void)(mgmt_thread(&(m[1])));
-    }
-
-    /* Run */
-    (void)(mgmt_thread(&(m[0])));
-
-    if ( 0 == rc ) {
-        pthread_join(tid[1], NULL);
-    }
-}
-
-
-void do_work_spu_mbuf_1pass(void (* const mkargs)(argbuf_t*, unsigned n, int k0),
-                            void (* const stargs)(argbuf_t*, unsigned n)
-                           )
-{
-    /* SPU index/max */
-    unsigned int const ispumax = num_spus;
-    register unsigned int ispu, iarg;
-
-    /* Number of Cells/WPs per SPU (possibly rounded down) */
-    unsigned int const ncpspu = ncells/ispumax;
-    /* Remainder */
-    unsigned int const ncrem  = ncells-ispumax*ncpspu;
-
-    /* WP index */
-    register int k;
-
-
-    /* Not enough WP buffers per SPU */
-    if ( (N_ARGBUF<ncpspu) || (N_ARGBUF<ncrem) ) {
-        do_work_spu_mbuf(mkargs,stargs);
-        return;
-    }
-
-    for ( ispu=iarg=0, k=0;     ispu<ispumax;      ++ispu, iarg+=N_ARGBUF, k+=ncpspu ) {
-        register spe_spu_control_area_p const pctl = cbe_spucontrolarea[ispu];
-
-        pctl->SPU_In_Mbox = ncpspu;
-        mkargs(cbe_arg_begin+iarg, ncpspu, k);
-        pctl->SPU_In_Mbox = 0u;
-    }
-
-
-    for ( ispu=iarg=0;   ispu<ispumax;  ++ispu ) {
-    }
-}
 
 
 /* (Slightly generalized) multibuffered version */
@@ -1377,11 +1132,19 @@ void do_work_spu_mbuf(void (* const mkargs)(argbuf_t*, unsigned n, int k0),
 
     /* Number of elements in "low buffer" (starting at 0) and
        number of elements in "high buffer" (starting at NHALF) */
-    unsigned  nlo[N_SPU_THREADS_MAX], nhi[N_SPU_THREADS_MAX];
+    unsigned  int nlo[N_SPU_THREADS_MAX], nhi[N_SPU_THREADS_MAX];
 
     /* Number of SPUs, indices */
     register unsigned int const ispumax=num_spus;
     register unsigned int ispu, iarg;
+
+    /* Half the number of buffers (rounded down) */
+    unsigned int const nbuf_half = num_bufs/2;
+    /* Buffer sizes/offsets */
+    unsigned int const narg_lo = nbuf_half;
+    unsigned int const narg_hi = num_bufs-nbuf_half;
+    unsigned int const offs_lo = 0u;
+    unsigned int const offs_hi = nbuf_half;
 
     /* Workpackage index (== number of workpackages scheduled) */
     register int k;
@@ -1407,14 +1170,10 @@ void do_work_spu_mbuf(void (* const mkargs)(argbuf_t*, unsigned n, int k0),
 
         /* Iterate over all SPUs */
         for ( ispu=iarg=0;   EXPECT_TRUE_(ispu<ispumax);    ++ispu, iarg+=N_ARGBUF ) {
-	    /* Constant two shifted to Inbox count position */
-  	    enum { IBX2=((unsigned)(2<<INMBX_CNT_SHIFT)) };
-
-
-            /* Half the number of arguments buffers per SPU */
-            enum { NHALF = (unsigned)(N_ARGBUF/2) };
-            enum { NARG_LO=((unsigned)NHALF), NARG_HI=((unsigned)(N_ARGBUF-NHALF)) };
-            enum { OFFS_LO=(unsigned)0, OFFS_HI=(unsigned)NARG_LO };
+	    /* Number of slots which must be available in inbox... */
+	    enum { IBXCNT=2u };
+            /* ...shifted to inbox count position */
+  	    enum { IBX2=((unsigned)(IBXCNT<<INMBX_CNT_SHIFT)) };
 
 
             /* Pointers to SPU argument buffers / WP buffers */
@@ -1434,21 +1193,18 @@ void do_work_spu_mbuf(void (* const mkargs)(argbuf_t*, unsigned n, int k0),
    	    if ( EXPECT_TRUE_(nto>0u) && (0u==nlo[ispu]) &&
                  (((pctl->SPU_Mbox_Stat) & INMBX_CNT_MASK) >= IBX2)  ) {
                 /* 1st msg. to SPU: number of arguments */
-                pctl->SPU_In_Mbox  =  (narg = (NARG_LO<nto ? NARG_LO : nto));
+                pctl->SPU_In_Mbox = (narg = (narg_lo<nto ? narg_lo : nto));
 
                 /* Create arguments */
-                mkargs(parg+OFFS_LO, narg, k);
+                mkargs(parg+offs_lo, narg, k);
 
                 /* 2nd msg. to SPU: offset */
-                pctl->SPU_In_Mbox = OFFS_LO;
+                pctl->SPU_In_Mbox = offs_lo;
 
 
                 /* Mark low buffer as being filled with ncrea elements */
                 nto -= (nlo[ispu]=narg);
                 k   += narg;
-                
-
-                /* fprintf(stdout, "Lower buffer for SPU %i filled with %u elements\n", ispu,  ncrea);  fflush(stdout); */
             }
 
 
@@ -1456,20 +1212,18 @@ void do_work_spu_mbuf(void (* const mkargs)(argbuf_t*, unsigned n, int k0),
             if ( EXPECT_TRUE_(nto>0u) && (0u==nhi[ispu]) &&
                  (((pctl->SPU_Mbox_Stat) & INMBX_CNT_MASK) >= IBX2)   ) {
                 /* 1st msg. to SPU: number of arguments */
-                pctl->SPU_In_Mbox  =  (narg = (NARG_HI<nto ? NARG_HI : nto));
+                pctl->SPU_In_Mbox  =  (narg = (narg_hi<nto ? narg_hi : nto));
 
                 /* Create arguments */
-                mkargs(parg+OFFS_HI, narg, k);
+                mkargs(parg+offs_hi, narg, k);
 
                 /* 2nd msg. to SPU: offset */
-                pctl->SPU_In_Mbox = OFFS_HI;
+                pctl->SPU_In_Mbox = offs_hi;
 
 
 		/* Mark high buffer as being filled with ncrea elements */
 		nto -= (nhi[ispu]=narg);
                 k   += narg;
-
-                /* fprintf(stdout, "Higher buffer for SPU %i filled with %u elements\n", ispu,  ncrea);  fflush(stdout); */
             }
 
 
@@ -1481,7 +1235,7 @@ void do_work_spu_mbuf(void (* const mkargs)(argbuf_t*, unsigned n, int k0),
                 unsigned const offs = pctl->SPU_Out_Mbox;
 
                 /* Number of WPs / offset */
-                unsigned int* const pn = ((OFFS_LO==offs) ? nlo : nhi);
+                unsigned int* const pn = ((offs_lo==offs) ? nlo : nhi);
 
                 /* Get number of arguments & store them back */
                 stargs(parg+offs,  (narg=pn[ispu]));
@@ -1495,7 +1249,7 @@ void do_work_spu_mbuf(void (* const mkargs)(argbuf_t*, unsigned n, int k0),
 
                 /* Buffer is free again */
                 pn[ispu]=0u;
-           }
+            }
            
         }
     }

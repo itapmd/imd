@@ -17,10 +17,16 @@
 *
 ******************************************************************************/
 
-#include "imd.h"
 
 /* the following is needed for gettimeofday */
 #include <sys/time.h>
+
+#include "imd.h"
+
+#if defined(CBE)
+#include "imd_cbe.h"
+#endif
+
 
 typedef enum ParamType {
   PARAM_STR, PARAM_STRPTR,
@@ -2401,6 +2407,16 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"num_spus")==0) {
       /* number of SPUs to be used */
       getparam(token,&num_spus,PARAM_INT,1,1);
+      /* Make sure parameter just read is in a valid range */
+      if ( (num_spus<1) || (num_spus>N_SPU_THREADS_MAX) ) {
+	 num_spus=N_SPU_THREADS_MAX;
+      }
+    } else if (strcasecmp(token, "num_bufs")==0) {
+      /* Number of argument buffers per SPU */
+      getparam(token,&num_bufs,PARAM_INT,1,1);
+      if ( (num_bufs<1) || (num_bufs>N_ARGBUF) ) {
+	 num_bufs=N_ARGBUF;
+      }
     }
 #endif
     else if (strcasecmp(token,"use_header")==0) {
