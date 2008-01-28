@@ -184,7 +184,12 @@ int main_loop(int simulation)
 
 #ifdef DEFORM
     if (max_deform_int > 0) {
-      if ((is_relaxed) || (deform_int == max_deform_int)) {
+#ifdef RELAX
+      if ((is_relaxed) || (deform_int == max_deform_int))
+#else
+      if (deform_int == max_deform_int)
+#endif
+      {
         deform_sample();
         deform_int=0;
 #ifdef CG
