@@ -21,6 +21,14 @@
 
 #include "imd.h"
 
+#ifdef  DOUBLE
+#define FORMAT2 "%lf %lf"
+#define FORMAT3 "%lf %lf %lf"
+#else
+#define FORMAT2 "%f %f"
+#define FORMAT3 "%f %f %f"
+#endif
+
 /******************************************************************************
 *
 *  flush outbuf to disk, or send it to my output CPU
@@ -2297,16 +2305,16 @@ void read_box(str255 infilename)
     while (line[0]=='#') {
 #ifdef TWOD
       if      (line[1]=='X') 
-        sscanf(line+2, "%lf %lf", &box_x.x, &box_x.y);
+        sscanf(line+2, FORMAT2, &box_x.x, &box_x.y);
       else if (line[1]=='Y') 
-        sscanf(line+2, "%lf %lf", &box_y.x, &box_y.y);
+        sscanf(line+2, FORMAT2, &box_y.x, &box_y.y);
 #else
       if      (line[1]=='X') 
-        sscanf(line+2, "%lf %lf %lf", &box_x.x, &box_x.y, &box_x.z);
+        sscanf(line+2, FORMAT3, &box_x.x, &box_x.y, &box_x.z);
       else if (line[1]=='Y') 
-        sscanf(line+2, "%lf %lf %lf", &box_y.x, &box_y.y, &box_y.z);
+        sscanf(line+2, FORMAT3, &box_y.x, &box_y.y, &box_y.z);
       else if (line[1]=='Z') 
-        sscanf(line+2, "%lf %lf %lf", &box_z.x, &box_z.y, &box_z.z);
+        sscanf(line+2, FORMAT3, &box_z.x, &box_z.y, &box_z.z);
 #endif
       fgets(line, 255, infile);
       if (feof(infile)) break;
