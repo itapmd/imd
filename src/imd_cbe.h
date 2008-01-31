@@ -255,8 +255,9 @@ typedef struct wp {
   int    *ti;                
   short  *tb;   /* length: len        */
 
-  /* Some timing values */
-  tick_t timings[1];
+  /* Some timing values, which must be tick64_t in order to have the same
+     size on PPU & SPU, which might not be the case for tick_t  */
+  tick64_t timings[1];
 } wp_t;
 
 

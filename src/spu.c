@@ -651,6 +651,11 @@ static unsigned workloop_ea(
 
 
 
+
+
+
+
+
 /* Create potential data by DMA */
 static void start_create_pt(void* const pbuf, unsigned const szebuf,
                             env_t const* const env, pt_t* const p,
@@ -701,13 +706,9 @@ static void start_init(ea_t const envea, unsigned int const itag)
     /* Controll block*/
     envbuf_t ALIGNED_(16, ptcb);
 
-    /* Mask corresponding to the tag */
-    unsigned int const imsk = 1u<<itag;
-
-
-    /* Use 0th entry in the env EA list to get the pt controll block */
+    /* Get the pt controll block */
     mdma64(&ptcb,  envea, (sizeof ptcb),  itag, MFC_GET_CMD);
-    (void)wait_dma(imsk, MFC_TAG_UPDATE_ALL);
+    (void)wait_dma((1u<<itag), MFC_TAG_UPDATE_ALL);
 
     /* Start DMA of pt */
     start_create_pt(ptdata, (sizeof ptdata), ((env_t*)&ptcb), &pt,  itag);
@@ -751,16 +752,16 @@ int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
     enum { misctag = ((unsigned)1) };
     enum { miscmsk = ((unsigned)(1u<<misctag)) };
 
+    /* Stride in argbuf EA space */
+    enum { EAstride=((unsigned)(sizeof (argbuf_t))) };
+
     /* Effective addresses (pairs of unsigneds) of the arguments
        in main memory */
     ea_t ALIGNED_(8, eabuf[N_ARGBUF]), ALIGNED_(16, env[N_ENVEA]);
 
-    /* Some timing stuff
-    register unsigned int t0_;
-    register unsigned int t1_;
-    unsigned int dt, dtsum;
-    unsigned int dtmin=-1, dtmax=0;
-    */
+    /* Some timing stuff */
+    register tick_t t0, dt;
+
 
 
     /* Get the environment list */
@@ -775,7 +776,7 @@ int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
     start_init(env[0],  misctag);
 
     /* Set EAs of the buffers in main memory */
-    arg_eas(argp,  (sizeof(argbuf_t)), eabuf,N_ARGBUF);
+    arg_eas(argp,  EAstride, eabuf,N_ARGBUF);
 
 
     /* Wait for init. DMA to finish */
@@ -862,7 +863,6 @@ int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
                /* Process the arguments */
                eas = eabuf+offs;
                omsk = workloop_ea(eas,eas,narg, ib,ob, tags,masks, getfunc,wrkfunc);
-
 
                /* Wait for all outbound DMAs */
                wait_dma(omsk, MFC_TAG_UPDATE_ALL);
