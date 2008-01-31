@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 
   /* Use the following streams for info & timing output */
   FILE* const cbe_info   = stdout;
-  FILE* const cbe_timing = stdout;
+  FILE* const cbe_timing = stderr;
 #endif
 
 
@@ -250,12 +250,13 @@ int main(int argc, char **argv)
 #endif
 
 #if defined(CBE)
+    /*
     dticks=tick_diff(tick0,tick1);
-    fprintf(cbe_timing,
-            "Used %llu time base register ticks (%f seconds) cputime.\n",
-             ((unsigned long long)dticks),  
-             (((double)dticks)*ticks2sec)
-          );
+    fprintf(cbe_timing,  "%llu   %f\n",
+             ((unsigned long long)dticks),  (((double)dticks)*ticks2sec)
+           );
+    */
+    fprintf(cbe_timing, "%f\n", time_total.total);
 #endif
     printf("Used %f seconds cputime,\n", time_total.total);
     printf("%f seconds excluding setup time,\n", time_main.total);

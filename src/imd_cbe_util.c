@@ -384,6 +384,10 @@ char const* strmatch(register char const* const tfrst, register char const* cons
 
 #if defined(__SPU__)  /************** SPU part ************/
 
+
+/* ISO C std. headers, just in case... */
+/* #include <stdio.h> */
+
 /* SPU headers */
 #include <spu_mfcio.h>
 
@@ -431,6 +435,8 @@ void mdma64_iter(register unsigned char* p,
 
         /* Xfer one chunk of maximum size  */
         dma64(p,  lea,  DMAMAX, tag, cmd);
+
+        /* fputs(stdout,"More than one DMA needed in mdma64_iter\n"); */
 
         /* Update addresses and number of bytes */
         remsze -= DMAMAX;

@@ -1,6 +1,6 @@
 /* ISO C std. headers */
 /* #include <stddef.h> */
-#include <stdio.h>
+/* #include <stdio.h> */
 
 
 
@@ -40,10 +40,6 @@ typedef unsigned long long  ui64_t;
 
 
 
-
-/* First/past the end byte position of member m in structure like object s */
-#define MEMB_FRST_POS(s,m) (((unsigned char const*)&((s).m)) - ((unsigned char const*)&(s)))
-#define MEMB_LAST_POS(s,m) (MEMB_FRST_POS((s),m) + (sizeof ((s).m)))
 
 /* Maximum */
 #define MAX(a,b) ((a)>(b) ? (a) : (b))
@@ -135,8 +131,8 @@ static void set_tmp_buffers(cell_dta_t* const pbuf,
         pbuf[2].tb  = pbuf[0].tb;
     }
     else {
-        fprintf(stderr, "set_buffers: Can not allocate %d bytes for temp buffers\n", 
-                stottmp);
+        /*  fprintf(stderr, "set_buffers: Can not allocate %d bytes for temp buffers\n", 
+	    stottmp); */
     }
 
 }
@@ -518,6 +514,76 @@ static void wrk(void* ibuf, void* obuf,  unsigned otag)
    outbound DMAs pending. The unsigned returned by this function is
    a bit mask of the tags of pending DMAs.
  */
+static unsigned workloop_ea_stat(
+   /* List of n input & output EAs */
+   register ea_t const* const ieas, register ea_t const* const oeas, register unsigned int n,
+   /* Input/output buffers */
+   register void* const* const ib,  register void* const* const ob,
+   /* Tags & masks */
+   register unsigned int const* const t, register unsigned int const* const m,
+   /* Functions to get, to process and to write back data */
+   register void (* const getf)(void* ibuf, void* obuf, ea_t const iea, unsigned it),
+   register void (* const wrkf)(void* ibuf, void* obuf, ea_t const oea, unsigned ot, tick_t wtime)
+)
+{
+    /* Next buffer & EA indices */
+    register unsigned int nxtbf, nxtea;
+    /* Current buffer & EA indices */
+    register unsigned int curbf=0u, curea=0u;
+
+
+    /* Timing */
+    register tick_t dt=0, t0=0;
+    tick_t tstart[2], tend[2];
+
+    getf(ib[curbf],ob[curbf], ieas[curea], t[curbf]);
+    for (;;) {
+        /* Finsish work loop? */
+        if ( EXPECT_FALSE_(0u == (--n)) ) {
+  	    break;
+        }
+
+        /* Next buffer/EA indices: 0,1 -> 1,0 ("swap" 0 and 1) */
+        nxtbf=curbf^1u;   
+        nxtea=curea+1u;
+
+        /* Get next buffer */
+        getf(ib[nxtbf],ob[nxtbf],   ieas[nxtea], t[nxtbf]);
+
+         
+        /* Wait for current input/output buffers to become available */
+        TDIFF( {
+        spu_writech(MFC_WrTagMask,   m[curbf]);
+        spu_writech(MFC_WrTagUpdate, MFC_TAG_UPDATE_ALL);
+        (void)(spu_readch(MFC_RdTagStat));
+        }, t0,dt,  ticks, tick_diff
+        )
+
+        /* Work on current buffer */
+        wrkf(ib[curbf],ob[curbf],     oeas[curea], t[curbf], dt);
+
+        /* Move on to next buffer/EA */
+        curbf=nxtbf;
+        curea=nxtea;
+    }
+
+
+    /* Wait for last buffer to become available */
+    TDIFF( {
+    spu_writech(MFC_WrTagMask,   m[curbf]);
+    spu_writech(MFC_WrTagUpdate, MFC_TAG_UPDATE_ALL);
+    (void)(spu_readch(MFC_RdTagStat));
+    },  t0,dt,  ticks,tick_diff
+    )
+
+    /* Work on buffer */
+    wrkf(ib[curbf],ob[curbf],  oeas[curea], t[curbf], dt);
+
+    /* Return the mask client code should wait for */
+    return m[curbf];
+}
+
+
 static unsigned workloop_ea(
    /* List of n input & output EAs */
    register ea_t const* const ieas, register ea_t const* const oeas, register unsigned int n,
@@ -534,6 +600,10 @@ static unsigned workloop_ea(
     register unsigned int nxtbf, nxtea;
     /* Current buffer & EA indices */
     register unsigned int curbf=0u, curea=0u;
+
+
+    /* Timing */
+    register tick_t dt=0, t0=0;
 
     getf(ib[curbf],ob[curbf], ieas[curea], t[curbf]);
     for (;;) {
@@ -569,15 +639,13 @@ static unsigned workloop_ea(
     spu_writech(MFC_WrTagUpdate, MFC_TAG_UPDATE_ALL);
     (void)(spu_readch(MFC_RdTagStat));
 
+
     /* Work on buffer */
     wrkf(ib[curbf],ob[curbf],  oeas[curea], t[curbf]);
 
     /* Return the mask client code should wait for */
     return m[curbf];
 }
-
-
-
 
 
 
@@ -613,7 +681,7 @@ static void start_create_pt(void* const pbuf, unsigned const szebuf,
         p->ntypes   = env->ntypes;
      }
      else {
-        fprintf(stderr, "Could not allocate %u bytes for env.\n", nszetot);
+        /* fprintf(stderr, "Could not allocate %u bytes for env.\n", nszetot); */
         p->r2cut    = 0;
         p->lj_sig   = 0;
         p->lj_eps   = 0;
@@ -687,11 +755,12 @@ int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
        in main memory */
     ea_t ALIGNED_(8, eabuf[N_ARGBUF]), ALIGNED_(16, env[N_ENVEA]);
 
-    /* Some timing stuff */
+    /* Some timing stuff
     register unsigned int t0_;
     register unsigned int t1_;
     unsigned int dt, dtsum;
     unsigned int dtmin=-1, dtmax=0;
+    */
 
 
     /* Get the environment list */
@@ -824,7 +893,7 @@ int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
               spu_write_out_mbox(RESOFFS);
            }
            if ( DOTB==mode ) {
-	      enum { RESOFFS=(unsigned)1 };
+	      enum { RESOFFS=((unsigned)1) };
 	      /* Just acknoledge */
 	      spu_write_out_mbox(RESOFFS);
            }

@@ -14,21 +14,40 @@ extern "C" {
 
 
 
-
-
-
-
-/* Specify wether a (member) variable is to be const on PPU or SPU side
-   (but not neccessarily on the other side)  */
+/* ticks() is a qunatity of tick_t, a type which may different on PPU and SPU.
+   ticks() changes at the same frequency on both the PPU and the SPU,
+   however it is unspecified wether they count upwards or downwords.
+   tick64_t is 64 bits wide on both the PPU and the SPU. A ticks_t may be
+   converted to a tick64_t, but not vice versa. Both types are
+   unsigned integer types.
+   tick_diff(x,y) always returns the time (in ticks) elapsed between
+   the statements x=ticks() and a following y=ticks().
+ */
 #if defined(__SPU__)
-#define ppu_const
-#define spu_const const
+#define set_ticks(m) (spu_writech(SPU_WrDec, (m)))
+#define ticks() (spu_readch(SPU_RdDec))
+#define tick_diff(tfst,tsnd) ((tfst)-(tsnd))  /* tsnd<=tfst on SPU (where time ticks backwards) */
+typedef unsigned int       tick_t;
+typedef unsigned long long tick64_t;
+#endif
+#if defined(__PPU__)
+#define set_ticks(dummy) /* This is ignored on the SPU, where the tb req must not be written by user software */
+#define ticks __mftb
+#define tick_diff(tfst,tsnd) ((tsnd)-(tfst))  /* tsnd>=tfist on PPU  */
+typedef unsigned long long  tick_t, tick64_t;
 #endif
 
-#if defined(__PPU__)
-#define ppu_const const
-#define spu_const
-#endif
+
+/* Get start timestamp (t0), end timestamp (t1) of block cmd using
+   function T */
+#define TSTMPS(cmd, t0,t1, T) { (t0)=(T()); { cmd } (t1)=(T()); }
+
+/* Run command cmd as a block,
+   getting initial timestamp t0, and the time dt it took to execute.
+   Functor T returns current time, Functor D calculates time difference
+ */
+#define TDIFF(cmd, t0,dt,  T,D) { TSTMPS(cmd, t0,dt, T)  (dt)=(D(t0,dt)); }
+
 
 
 
@@ -91,6 +110,32 @@ extern "C" {
 
 
 
+/* Some rounding functions */
+static INLINE_ int iceil128(int const x) {
+    return (x+127) & (~127);
+}
+
+static INLINE_ int iceil16(int const x) {
+    return (x+15) & (~15);
+}
+
+
+static INLINE_ unsigned uiceil128(unsigned const x) {
+    return (x+127u) & (~127u);
+}
+
+static INLINE_ unsigned uiceil16(unsigned const x) {
+    return (x+15u) & (~15u);
+}
+
+
+
+
+
+
+
+
+
 
 
 
@@ -126,7 +171,7 @@ typedef float flt;
 #ifdef CBE_DIRECT  /* "Direct " */
 
 /* Symbolic constants for the flag field */
-enum { DOTB=(int)1, DOWP=(int)(2) };
+enum { DOTB=((int)1), DOWP=((int)2) };
 
 /* Cell data within a work package;
    On SPU, allocate for n_max atoms and len_max neighbor indices,
@@ -209,6 +254,9 @@ typedef struct wp {
   int    *typ;  /* length: n2, 2*n2   */
   int    *ti;                
   short  *tb;   /* length: len        */
+
+  /* Some timing values */
+  tick_t timings[1];
 } wp_t;
 
 
@@ -242,8 +290,8 @@ typedef struct exch {
     ea_t tb;            /* length: len        */
 
 
-    /* Padding */
-    unsigned char pad[4];
+    /* Padding, no longer needed */
+    /* unsigned char pad[4]; */
 } exch_t;
 
 
@@ -318,9 +366,17 @@ enum { /* Max. number of argument buffers per SPU */
 enum { BUFPAD = ((unsigned)128) };
 
 
-/* x padded to the next boundary of p */
-#define CEILPOW2(x,p) (((x)+((p)-1)) & (~((p)-1)))
-/* Maximum size of types a & b */
+
+/* x padded to the next boundary... */
+/* ...given a mask of some lower 1-bits */
+#define CEILONES(x,m) (((x)+(m)) & (~(m)))
+/* ...given a power of two */
+#define CEILPOW2(x,p) CEILONES((x), ((p)-1))
+/* ...given a bit postion e */
+#define CEILBPOS(x,e) CEILPOW2((x), (1<<(e)))
+
+
+/* Maximum size of the two types a and b */
 #define MAXSIZE2(a,b) (((sizeof(a))>(sizeof(b))) ? (sizeof(a)) : (sizeof(b)))
 
 
@@ -474,15 +530,18 @@ extern "C" {
 
 
 
+/* Unsigned integer type which may hold a pointer 
+  (and vice versa)*/
+typedef unsigned int  uintaddr_t;
+
+
+
 /* Wait for DMA specified by mask m using type for update */
 static INLINE_ unsigned wait_dma(unsigned const m, unsigned const type) {
     spu_writech(MFC_WrTagMask,   m);
     spu_writech(MFC_WrTagUpdate, type);
     return spu_readch(MFC_RdTagStat);
 }
-
-
-
 
 
 
@@ -637,21 +696,28 @@ enum { PPU_PTRBITS = (unsigned)(PPU_PTRBITS_) };
 
 
 
-/* Conversion from pointer to effective address is just a cast */
+/* Unsigned integer type which may used to represent a pointer
+   (and vice versa). This type is not larger than the ea_t.
+*/
+typedef
 #if (32 == PPU_PTRBITS_)
-#   define EA_CAST(ptr) ((unsigned)(ptr))
-#elif  (64 == PPU_PTRBITS_)
-#   define EA_CAST(ptr) ((ea_t)(ptr))
+    unsigned int
+#elif (64 == PPU_PTRBITS_)
+    ea_t
 #endif
+uintaddr_t;
+
+/* Conversion from pointer to effective address is just a cast */
+#define EA_CAST(ptr)   ((uintaddr_t)(ptr))
 #define PTR2EA(ptr,ea) { (void)((ea)=EA_CAST(ptr)); }
+
 
 
 
 /* Max. number of SPU threads which may be managed by the
    following utility functions   */
 enum {
-   N_SPU_THREADS_MAX = 
-      (unsigned)
+   N_SPU_THREADS_MAX =  (unsigned)
 #if defined (SPU_THREADS_MAX)
       (SPU_THREADS_MAX) /* Use the #defined value */
 #else
@@ -794,9 +860,6 @@ void do_work_spu_mbuf(void (* const mkf)(argbuf_t*, unsigned, int),
 
 
 
-
-
-
 #if defined (__cplusplus)
 }
 #endif
@@ -808,61 +871,12 @@ void do_work_spu_mbuf(void (* const mkf)(argbuf_t*, unsigned, int),
 
 
 
-
-
-
-
-
 /* Common part again. 
    "Generic" declarations follow which need declarations from PPU/SPU parts
  */
 
 
 
-
-
-
-
-/* Some rounding functions */
-static INLINE_ int iceil128(int const x) {
-    return (x+127) & (~127);
-}
-
-static INLINE_ int iceil16(int const x) {
-    return (x+15) & (~15);
-}
-
-
-static INLINE_ unsigned uiceil128(unsigned const x) {
-    return (x+127u) & (~127u);
-}
-
-static INLINE_ unsigned uiceil16(unsigned const x) {
-    return (x+15u) & (~15u);
-}
-
-
-
-
-/* TICKS is a qunatity of tick_t, a type which may different on PPU and SPU.
-   TICKS changes at the same frequency on both the PPU and the SPU,
-   however it is unspecified wether they count upwards or downwords.
-   tick64_t is 64 bits wide on both the PPU and the SPU. A ticks_t may be
-   converted to a tick64_t, but not vice versa. Both types are
-   unsigned integer types.
-   TICK_DIFF(x,y) always returns the time (in ticks) elapsed between
-   the statements x=TICKS and a following y=TICKS.
- */
-#if defined(__PPU__)
-#define ticks __mftb
-#define tick_diff(tfst,tsnd) ((tsnd)-(tfst))  /* tsnd>=tfist on PPU  */
-typedef unsigned long long  tick_t, tick64_t;
-#elif defined(__SPU__)   
-#define ticks()  (spu_readch(SPU_RdDec))
-#define tick_diff(tfst,tsnd) ((tfst)-(tsnd))  /* tsnd<=tfst on SPU (where time runs backwards) */
-typedef unsigned int       tick_t;
-typedef unsigned long long tick64_t;
-#endif
 
 
 

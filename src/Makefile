@@ -1,6 +1,6 @@
 ############################################################################
 #
-# IMD -- The ITAP Molecular Dynamics Program
+# Imd -- The ITAP Molecular Dynamics Program
 #
 # Copyright 1996-2007 Institute for Theoretical and Applied Physics,
 # University of Stuttgart, D-70550 Stuttgart
@@ -615,8 +615,8 @@ ifeq (cbe-xlc,${IMDSYS})
   SPUCC         = spuxlc
   CC_SERIAL     = ppuxlc -q32
 
-  OPT_FLAGS     += -O2 -qstrict -qcpluscmt -qflag=w:w -qproto -qro -qwarn64   -qreport -qinline -qunroll=yes -qlibansi -qipa=noobject
-  SPUCFLAGS     += -O2 -qstrict -qcpluscmt -qflag=w:w  -qproto -qreport -qinline -qinline-dma64:mdma64:wait_dma -I${CELLSDKLIB}/sync/spu
+  OPT_FLAGS     += -O3 -qstrict -qcpluscmt -qflag=w:w -qproto -qro -qwarn64  -qhot=level=1:simd  -qreport -qinline -qunroll=yes -qlibansi -qipa=level=1
+  SPUCFLAGS     += -O2 -qstrict -qcpluscmt -qflag=w:w -qhot=level=1 -qproto -qreport -qinline  -qinline-dma64:mdma64:wait_dma -I${CELLSDKLIB}/sync
   PP_FLAGS      += -I${CELLSDKLIB}/sync
   EMBEDSPU      = ppu-embedspu -m32
 
@@ -627,7 +627,7 @@ ifeq (cbe-xlc,${IMDSYS})
   PROF_LIBS	+= -pg
 
   SPULDFLAGS    +=
-  LFLAGS        += -qlibansi -qipa
+  LFLAGS        += -O3 -qlibansi -qipa=level=1
   LIBS          += -lspe2 -lpthread
 endif
 
@@ -1393,7 +1393,7 @@ clean: clean_spu
 
 # Remove SPU-related temp. files (e.g. assembler/timing files)
 clean_spu:
-	rm -f spu spu.map spu.s   imd_cbe_util_spu.s  imd_cbe_calc_spu.s   spu.s.timing   imd_cbe_util_spu.s.timing  imd_cbe_calc_spu.s.timing
+	rm -f  spu spu1 spu2   spu.map   spu.s  imd_cbe_util_spu.s imd_cbe_calc_spu.s     spu.s.timing imd_cbe_util_spu.s.timing imd_cbe_calc_spu.s.timing *.lst
 
 
 
@@ -1426,29 +1426,43 @@ socktest:
 # The SPU binary containing the main program as well as some tools
 # and an spu version of calc_wp
 # The SPU object file which is linked to the main programm
-spu.o: spu
-	${EMBEDSPU} hndle_cbe_calc spu spu.o 
-
-spu:  spu.s  imd_cbe_util_spu.s  imd_cbe_calc_spu.s
-	${SPUCC} -o spu ${SPUCFLAGS}  ${SPULDFLAGS}     spu.s  imd_cbe_calc_spu.s  imd_cbe_util_spu.s
+spu.o: spu1
+	${EMBEDSPU} hndle_cbe_calc spu1 spu.o 
 
 
 
+# 2 SPUlets created in a different manner
+
+# Compile first translate C to assembler, then compile assembler sources
+spu1:  spu.s  imd_cbe_util_spu.s  imd_cbe_calc_spu.s
+	${SPUCC} -o spu1   ${SPUCFLAGS} ${SPULDFLAGS}     spu.s  imd_cbe_calc_spu.s  imd_cbe_util_spu.s
+
+# Compile the C sources without generating assembler
+spu2: spu.c imd_cbe_util.c imd_cbe_calc_spu.c imd_cbe.h  config.h
+	${SPUCC} -o spu2 ${SPUCFLAGS} ${SPULDFLAGS} ${PP_FLAGS}   spu.c imd_cbe_util.c imd_cbe_calc_spu.c
 
 
 # Generate sssembler code for some SPU sources
 # This assembler code may be analyzed using the spu-timing tool
-imd_cbe_calc_spu.s: imd_cbe_calc_spu.c imd_cbe.h
-	${SPUCC} -o imd_cbe_calc_spu.s  ${SPUCFLAGS}   -S imd_cbe_calc_spu.c
+imd_cbe_calc_spu.s: imd_cbe_calc_spu.c imd_cbe.h  config.h
+	${SPUCC} -o imd_cbe_calc_spu.s  ${SPUCFLAGS} ${PP_FLAGS}   -S imd_cbe_calc_spu.c
 
-imd_cbe_util_spu.s: imd_cbe_util.c imd_cbe.h
-	${SPUCC} -o imd_cbe_util_spu.s  ${SPUCFLAGS}    -S imd_cbe_util.c
+imd_cbe_util_spu.s: imd_cbe_util.c imd_cbe.h  config.h
+	${SPUCC} -o imd_cbe_util_spu.s  ${SPUCFLAGS} ${PP_FLAGS}    -S imd_cbe_util.c
 
-spu.s: spu.c imd_cbe.h
-	${SPUCC} -o spu.s ${SPUCFLAGS}  -S  spu.c
+spu.s: spu.c imd_cbe.h  config.h
+	${SPUCC} -o spu.s ${SPUCFLAGS} ${PP_FLAGS}  -S  spu.c
+
 
 # Timing of SPU assembly code (for profiling purposes)
-spu_timing: spu.s imd_cbe_calc_spu.s imd_cbe_util_spu.s
+spu.s.timing: spu.s
 	${SPUTIMING} spu.s
+
+imd_cbe_calc_spu.s.timing: imd_cbe_calc_spu.s
 	${SPUTIMING} imd_cbe_calc_spu.s
+
+imd_cbe_util_spu.s.timing: imd_cbe_util_spu.s
 	${SPUTIMING} imd_cbe_util_spu.s
+
+
+spu_timing: spu.s.timing  imd_cbe_calc_spu.s.timing  imd_cbe_util_spu.s.timing
