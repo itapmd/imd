@@ -596,11 +596,13 @@ ifeq (bgl-cc,${IMDSYS})
 endif
 
 
+###########################################################################
+#
+#  Flags for Cell Broad Band Engine  
+#
+###########################################################################
 
-
-
-# Cell Broad Band Engine with IBM XLC compiler (assuming that the XLC
-# compilers are in the $PATH)
+# Cell Broad Band Engine with IBM XLC compiler
 ifeq (cbe-xlc,${IMDSYS})
   # Path to Cell SDK
   CELLSDK=/opt/ibm/cell-sdk/prototype
@@ -611,9 +613,9 @@ ifeq (cbe-xlc,${IMDSYS})
   # The spu-timing utility provided by the Cell SDK
   SPUTIMING=${CELLSDK}/bin/spu_timing -running-count
 
-
   SPUCC         = spuxlc
   CC_SERIAL     = ppuxlc -q32
+  CC_MPI        = mpicc  -q32
 
   OPT_FLAGS     += -O3 -qstrict -qcpluscmt -qflag=w:w -qproto -qro -qwarn64  -qhot=level=1:simd  -qreport -qinline -qunroll=yes -qlibansi -qipa=level=1
   SPUCFLAGS     += -O2 -qstrict -qcpluscmt -qflag=w:w -qhot=level=1 -qproto -qreport -qinline  -qinline-dma64:mdma64:wait_dma -I${CELLSDKLIB}/sync
@@ -643,18 +645,17 @@ ifeq (cbe-gcc,${IMDSYS})
   # The spu-timing utility provided by the Cell SDK
   SPUTIMING=${CELLSDK}/bin/spu_timing -running-count
 
-  # Use the PPU compiler (ppu-gcc)
+  # Use the PPU compiler ppu-gcc, also for MPI!  
   # as main compiler as it defines the __PPU__ macro 
   # The ordinary gcc does not set this macro
 
   CC_SERIAL     = ppu-gcc -m32
-  CC_MP         = mpicc
+  CC_MPI        = mpicc   -m32
   SPUCC         = spu-gcc
   OPT_FLAGS     += -pipe  -std=gnu89 -pedantic -Wall -Wno-unused -Wcast-qual -Wno-long-long   -O3 -funroll-loops
   PP_FLAGS      += -I${CELLSDKLIB}/sync
-  SPUCFLAGS     += -pipe  -std=gnu89 -pedantic -Wall -Wunused -Wshadow -Wcast-qual -Wno-long-long    -O2 -funroll-loops   -I${CELLSDKLIB}/sync/spu
-  EMBEDSPU      = ppu-embedspu  -m32
-
+  SPUCFLAGS     += -pipe  -std=gnu89 -pedantic -Wall -Wunused -Wshadow -Wcast-qual -Wno-long-long -O2 -funroll-loops  -I${CELLSDKLIB}/sync/spu
+  EMBEDSPU      = ppu-embedspu -m32
 
   BIN_DIR	= ${HOME}/bin/cbe
 
@@ -668,8 +669,6 @@ ifeq (cbe-gcc,${IMDSYS})
 endif
 
 
-
-
 ###########################################################################
 #
 #  Parallelization method
@@ -681,22 +680,22 @@ PARALLEL = SERIAL
 # MPI
 ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
 PARALLEL = MPI
-PP_FLAGS = -DMPI
+PP_FLAGS += -DMPI
 endif
 # OpenMP
 ifneq (,$(strip $(findstring omp,${MAKETARGET})))
 PARALLEL = OMP
-PP_FLAGS = -DOMP
+PP_FLAGS += -DOMP
 endif
 # MPI + OpenMP
 ifneq (,$(strip $(findstring ompi,${MAKETARGET})))
 PARALLEL = OMPI
-PP_FLAGS = -DMPI -DOMPI
+PP_FLAGS += -DMPI -DOMPI
 endif
 # PACX
 ifneq (,$(strip $(findstring pacx,${MAKETARGET})))
 PARALLEL = PACX
-PP_FLAGS = -DMPI -DPACX
+PP_FLAGS += -DMPI -DPACX
 endif
 
 
