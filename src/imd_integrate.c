@@ -1679,10 +1679,10 @@ void move_atoms_npt_axial(void)
 
   /* time evolution of xi */
   ttt  = timestep * volume * isq_tau_xi / nactive;
-  xi_old.x = xi.x;  xi.x += ttt * (stress_x - pressure_ext.x);
-  xi_old.y = xi.y;  xi.y += ttt * (stress_y - pressure_ext.y);
+  xi_old.x = xi.x;  xi.x += ttt * (stress_x - pressure_ext.x) * relax_dirs.x;
+  xi_old.y = xi.y;  xi.y += ttt * (stress_y - pressure_ext.y) * relax_dirs.y;
 #ifndef TWOD
-  xi_old.z = xi.z;  xi.z += ttt * (stress_z - pressure_ext.z);
+  xi_old.z = xi.z;  xi.z += ttt * (stress_z - pressure_ext.z) * relax_dirs.z;
 #endif
 
   /* some constants used later on */

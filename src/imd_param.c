@@ -1266,6 +1266,8 @@ int getparamfile(char *paramfname, int phase)
       else if (strcasecmp(tmpstr,"iso"  )==0) relax_mode = RELAX_ISO;
       else    error_str("Unknown relax_mode %s", tmpstr);
     }
+#endif
+#if defined(HOMDEF) || defined(NPT_axial)
     else if (strcasecmp(token,"relax_dirs")==0) {
       /* box lengths which should be relaxed */
       getparam("relax_dirs",&relax_dirs,PARAM_INT,DIM,DIM);
@@ -3305,7 +3307,9 @@ void broadcast_params() {
   MPI_Bcast( &bulk_module,     1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &relax_rate,      1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &relax_mode,      1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &relax_dirs    , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
+#endif
+#if defined(HOMDEF) || defined(NPT_axial)
+  MPI_Bcast( &relax_dirs,   DIM, MPI_INT,  0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef SHOCK

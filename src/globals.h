@@ -457,8 +457,8 @@ EXTERN vektor lindef_z INIT(nullvektor);  /*  |  matrix      */
 EXTERN real shear_module INIT(1.0);       /* estimate of the shear module */
 EXTERN real bulk_module  INIT(1.0);       /* estimate of the bulk module */
 EXTERN int  relax_mode   INIT(-1);        /* pressure relaxation mode */
-EXTERN ivektor relax_dirs INIT(einsivektor); /* directions in which to relax pressure */
 #endif
+EXTERN ivektor relax_dirs INIT(einsivektor); /* directions in which to relax pressure */
 EXTERN real relax_rate   INIT(0.0);       /* pressure relaxation rate */
 
 #ifdef RIGID
