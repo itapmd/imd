@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -2565,7 +2565,7 @@ void check_parameters_complete()
 #endif
   }
   else {
-    error("Parameter laser_dir (laser incidence direction) missing.")
+    error("Parameter laser_dir (laser incidence direction) missing.");
   }
   if ( (laser_rescale_mode < 0) || (laser_rescale_mode > 4) ) {
     error("Parameter laser_rescale_mode must be a positive integer < 5 !");

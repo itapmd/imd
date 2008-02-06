@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2005 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -132,17 +132,17 @@ void do_forces_ewald_fourier(void)
   for (c=0; c<ncells; c++) {
     cell *p = CELLPTR(c);
     for (i=0; i<p->n; i++) {
-      tmp = twopi * SPRODX(&ORT(p,i,X),tbox_x);
+      tmp = twopi * SPRODX(ORT,p,i,tbox_x);
       coskx[px+cnt] =  cos(tmp);
       coskx[mx+cnt] =  coskx[px+cnt];
       sinkx[px+cnt] =  sin(tmp);
       sinkx[mx+cnt] = -sinkx[px+cnt]; 
-      tmp = twopi * SPRODX(&ORT(p,i,X),tbox_y);
+      tmp = twopi * SPRODX(ORT,p,i,tbox_y);
       cosky[py+cnt] =  cos(tmp);
       cosky[my+cnt] =  cosky[py+cnt];
       sinky[py+cnt] =  sin(tmp);
       sinky[my+cnt] = -sinky[py+cnt];
-      tmp = twopi * SPRODX(&ORT(p,i,X),tbox_z);
+      tmp = twopi * SPRODX(ORT,p,i,tbox_z);
       coskz[pz+cnt] = cos(tmp);
       sinkz[pz+cnt] = sin(tmp);
       cnt++;
@@ -247,7 +247,7 @@ void do_forces_ewald_fourier(void)
         KRAFT(p,i,X) += ew_kvek[k].x * kforce;
         KRAFT(p,i,Y) += ew_kvek[k].y * kforce;
         KRAFT(p,i,Z) += ew_kvek[k].z * kforce;
-        tmp_virial   += kforce * SPRODX( &ORT(p,i,X), ew_kvek[k] );
+        tmp_virial   += kforce * SPRODX(ORT,p,i,ew_kvek[k]);
 	  
         cnt++;
       }

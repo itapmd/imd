@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -919,7 +919,7 @@ void do_boundaries(void)
     /* PBC in x direction */
     if (pbc_dirs.x==1)
     for (l=0; l<p->n; ++l) {
-      i = -FLOOR( SPRODX( &ORT(p,l,X), tbox_x) );
+      i = -FLOOR( SPRODX(ORT,p,l,tbox_x) );
       ORT(p,l,X)     += i * box_x.x;
       ORT(p,l,Y)     += i * box_x.y;
 #ifndef TWOD
@@ -944,7 +944,7 @@ void do_boundaries(void)
     /* PBC in y direction */
     if (pbc_dirs.y==1)
     for (l=0; l<p->n; ++l) {
-      i = -FLOOR( SPRODX( &ORT(p,l,X), tbox_y) );
+      i = -FLOOR( SPRODX(ORT,p,l,tbox_y) );
       ORT(p,l,X)     += i * box_y.x;
       ORT(p,l,Y)     += i * box_y.y;
 #ifndef TWOD
@@ -970,7 +970,7 @@ void do_boundaries(void)
     /* PBC in z direction */
     if (pbc_dirs.z==1)
     for (l=0; l<p->n; ++l) {
-      i = -FLOOR( SPRODX( &ORT(p,l,X), tbox_z) );
+      i = -FLOOR( SPRODX(ORT,p,l,tbox_z) );
       ORT(p,l,X)     += i * box_z.x;
       ORT(p,l,Y)     += i * box_z.y;
       ORT(p,l,Z)     += i * box_z.z;

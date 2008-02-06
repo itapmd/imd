@@ -2,7 +2,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -129,7 +129,7 @@ void laser_rescale_1()
 #endif
       real scale_p; /* Scale factor for atom momentum */
 
-      p_0_square = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+      p_0_square = SPRODN(IMPULS,p,i,IMPULS,p,i);
       depth = laser_calc_depth(p,i);
 
       de = exp(-laser_mu*depth) * exp_gauss_time_etc;
@@ -194,7 +194,7 @@ void laser_rescale_2()
 #endif
       real scale_p; /* Scale factor for atom momentum */
 
-      p_0_square = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) );
+      p_0_square = SPRODN(IMPULS,p,i,IMPULS,p,i);
       p_0=sqrt(p_0_square);
 
       depth = laser_calc_depth(p,i);
@@ -216,9 +216,8 @@ void laser_rescale_2()
       IMPULS(p,i,Z) += tmpz * dp;
 #endif
 
-     /* rescale present momentum to an absolute value of dp + p_0 */
-
-      scale_p = (p_0 + dp) / sqrt( SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) );
+      /* rescale present momentum to an absolute value of dp + p_0 */
+      scale_p = (p_0 + dp) / SQRT( SPRODN(IMPULS,p,i,IMPULS,p,i) );
       IMPULS(p,i,X) *= scale_p;
       IMPULS(p,i,Y) *= scale_p;
 #ifndef TWOD

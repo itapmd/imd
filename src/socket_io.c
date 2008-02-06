@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -231,7 +231,7 @@ void vis_init_atoms()
     cell *p;
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; i++) {
-      Ekin = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / (2 * MASSE(p,i));
+      Ekin = SPRODN(IMPULS,p,i,IMPULS,p,i) / (2 * MASSE(p,i));
       /* the first atom on this CPU; we hope there is at least one... */
       if (first) {
         min.sorte = VSORTE(p,i); 
@@ -439,7 +439,7 @@ void vis_write_atoms_fun()
     p = cell_array + CELLS(k);
     for (i=0; i<p->n; i++) {
 
-      Ekin = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / (2 * MASSE(p,i));
+      Ekin = SPRODN(IMPULS,p,i,IMPULS,p,i) / (2 * MASSE(p,i));
 
       /* skip atom if it does not satisfy all filters */
       if (at_filt_flags.sorte) {

@@ -2,7 +2,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -218,7 +218,7 @@ void maxwell(real temp)
 
         /* constrain the vector to be perpendicular to the molecule */
 
-        dot = SPRODN( &DREH_IMPULS(p,i,X), &ACHSE(p,i,X) );
+        dot = SPRODN(DREH_IMPULS,p,i,ACHSE,p,i);
 
         DREH_IMPULS(p,i,X) -= dot * ACHSE(p,i,X) ; 
         DREH_IMPULS(p,i,Y) -= dot * ACHSE(p,i,Y) ; 
@@ -226,8 +226,8 @@ void maxwell(real temp)
 
         /* renormalize vector */	   
 
-        osq = SPRODN( &DREH_IMPULS(p,i,X), &DREH_IMPULS(p,i,X) );
-        norm = sqrt( osq );
+        osq = SPRODN(DREH_IMPULS,p,i,DREH_IMPULS,p,i);
+        norm = SQRT( osq );
 
         DREH_IMPULS(p,i,X) /= norm ;
         DREH_IMPULS(p,i,Y) /= norm ;

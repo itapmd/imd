@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -194,7 +194,7 @@ void write_pictures_bitmap(int steps)
           (coord.y >= 0) && (coord.y < pic_res.y)) { 
 
         coord.y = pic_res.y - coord.y; /* in pic: from top to bottom */
-        val = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / (2*MASSE(p,i));
+        val = SPRODN(IMPULS,p,i,IMPULS,p,i) / (2*MASSE(p,i));
 
         /* Scale Value to [0..1]   */
         val = (val - ecut_kin.x) / (ecut_kin.y - ecut_kin.x);

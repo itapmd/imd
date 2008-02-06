@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -305,28 +305,26 @@ inline static real SQR(real x)
 #define IZ(a,b) [(((b)*(neigh_len)) + (a))].z
 #endif
 
-/* Skalarprodukt */
+/* Scalar products */
 /* Vectors */
 #define SPROD3D(a,b) (((a).x * (b).x) + ((a).y * (b).y) + ((a).z * (b).z))
 #define SPROD2D(a,b) (((a).x * (b).x) + ((a).y * (b).y))
 /* Arrays */
-#define SPRODN3D(a,b) \
-  (((a)[0] * (b)[0]) + ((a)[1] * (b)[1]) + ((a)[2] * (b)[2]))
-#define SPRODN2D(a,b) (((a)[0] * (b)[0]) + ((a)[1] * (b)[1]))
+#define SPRODN3D(a,p,i,b,q,j) \
+  (a(p,i,X)*b(q,j,X) + a(p,i,Y)*b(q,j,Y) + a(p,i,Z)*b(q,j,Z))
+#define SPRODN2D(a,p,i,b,q,j) (a(p,i,X)*b(q,j,X) + a(p,i,Y)*b(q,j,Y))
 /* Mixed Arrray, Vector */
-#define SPRODX3D(a,b) \
-   (((a)[0] * (b).x) + ((a)[1] * (b).y) + ((a)[2] * (b).z))
-#define SPRODX2D(a,b) (((a)[0] * (b).x) + ((a)[1] * (b).y))
+#define SPRODX3D(a,p,i,v) (a(p,i,X)*(v).x + a(p,i,Y)*(v).y + a(p,i,Z)*(v).z)
+#define SPRODX2D(a,p,i,v) (a(p,i,X)*(v).x + a(p,i,Y)*(v).y)
                            
-
 #ifdef TWOD
-#define SPROD(a,b)         SPROD2D(a,b)
-#define SPRODN(a,b)        SPRODN2D(a,b)
-#define SPRODX(a,b)        SPRODX2D(a,b)
+#define SPROD(a,b)           SPROD2D(a,b)
+#define SPRODN(a,p,i,b,q,j)  SPRODN2D(a,p,i,b,q,j)
+#define SPRODX(a,p,i,v)      SPRODX2D(a,p,i,v)
 #else
-#define SPROD(a,b)         SPROD3D(a,b)
-#define SPRODN(a,b)        SPRODN3D(a,b)
-#define SPRODX(a,b)        SPRODX3D(a,b)
+#define SPROD(a,b)           SPROD3D(a,b)
+#define SPRODN(a,p,i,b,q,j)  SPRODN3D(a,p,i,b,q,j)
+#define SPRODX(a,p,i,v)      SPRODX3D(a,p,i,v)
 #endif
 
 /* Dynamically allocated 3D array -- sort of */

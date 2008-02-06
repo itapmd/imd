@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -52,7 +52,7 @@ void rnemd_heat_exchange()
 
     for (i=0; i<p->n; ++i) {
 
-      tmp = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / (2*MASSE(p,i));
+      tmp = SPRODN(IMPULS,p,i,IMPULS,p,i) / (2*MASSE(p,i));
 
       /* which layer? */
       num = scale * ORT(p,i,X);
@@ -165,7 +165,7 @@ void write_temp_dist(int steps)
         num = tran_nlayers - num;
         xx  = box_x.x - xx + box_x.x / tran_nlayers; 
       }
-      temp = SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / (2*MASSE(p,i));
+      temp = SPRODN(IMPULS,p,i,IMPULS,p,i) / (2*MASSE(p,i));
       temp_hist_1[num] += temp;
       num_hist_1[num]++;
 

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -922,8 +922,7 @@ void write_atoms_pic(FILE *out)
 #ifndef TWOD
       data[n++].f = (float) ORT(p,i,Z);
 #endif
-      data[n++].f = (float) SPRODN( &IMPULS(p,i,X), &IMPULS(p,i,X) ) / 
-                                                            (2 * MASSE(p,i));
+      data[n++].f = (float) SPRODN(IMPULS,p,i,IMPULS,p,i) / (2 * MASSE(p,i));
 #ifdef DISLOC
       if (Epot_diff==1)
         data[n++].f = (float) (POTENG(p,i) - EPOT_REF(p,i));
@@ -2666,8 +2665,8 @@ void write_dsf()
       for (n=0; n<dsf_nk; n++) {
         double x, y, w, co, si, co_1, si_1, tt;
         int    m = 2 * koff[n];
-        x = SPRODX( &ORT(p,i,X), k0  [n] );
-        y = SPRODX( &ORT(p,i,X), kdir[n] );
+        x = SPRODX(ORT,p,i,k0  [n]);
+        y = SPRODX(ORT,p,i,kdir[n]);
         w = dsf_weight[SORTE(p,i)];
         co = cos(x) * w;  co_1 = cos(y);
         si = sin(x) * w;  si_1 = sin(y);

@@ -2,7 +2,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -359,7 +359,7 @@ void calc_fnorm(void)
       KRAFT(p,i,Z) *= (restrictions + sort)->z;
 #endif
 
-      tmp_fnorm +=  SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+      tmp_fnorm +=  SPRODN(KRAFT,p,i,KRAFT,p,i);
     }
   }
 
@@ -405,7 +405,7 @@ void calc_fnorm_g_h(void)
       KRAFT(p,i,Z) *= (restrictions + sort)->z;
 #endif
 
-      tmp_fnorm +=  SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+      tmp_fnorm +=  SPRODN(KRAFT,p,i,KRAFT,p,i);
       /* initialise old_ort */
       OLD_ORT(p,i,X) = ORT(p,i,X);
       OLD_ORT(p,i,Y) = ORT(p,i,Y);
@@ -466,11 +466,11 @@ void cg_calcgamma(void)
     for (i=0; i<p->n; ++i) {
 
       sort = VSORTE(p,i);
-      tmp_gg +=  SPRODN( &CG_G(p,i,X), &CG_G(p,i,X) );
+      tmp_gg +=  SPRODN(CG_G,p,i,CG_G,p,i);
 
       /* which method to construct the conjugated direction */
       if (cg_fr == 1) { /* Fletcher-Reeves */
-        tmp_dgg +=  SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+        tmp_dgg +=  SPRODN(KRAFT,p,i,KRAFT,p,i);
       }
       else { /* Polak-Ribiere */
         tmpvec.x = KRAFT(p,i,X) - CG_G(p,i,X);
@@ -478,7 +478,7 @@ void cg_calcgamma(void)
 #ifndef TWOD
         tmpvec.z = KRAFT(p,i,Z) - CG_G(p,i,Z);
 #endif
-        tmp_dgg += SPRODX( &KRAFT(p,i,X), tmpvec );
+        tmp_dgg += SPRODX(KRAFT,p,i,tmpvec);
       }
     }
   }
