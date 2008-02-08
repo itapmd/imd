@@ -1661,6 +1661,11 @@ void move_atoms_npt_axial(void)
       xi.z = 0.0;
 #endif
     }
+    xi.x *= relax_dirs.x;
+    xi.y *= relax_dirs.y;
+#ifndef TWOD
+    xi.z *= relax_dirs.z;
+#endif
   }
 
   fnorm    = 0.0;
