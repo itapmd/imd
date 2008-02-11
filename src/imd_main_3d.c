@@ -459,12 +459,12 @@ int main_loop(int simulation)
 
     /* finish, if stop file is found */
     if ((stop_int > 0) && (0==steps%stop_int)) {
-      if (finished = check_stop()) break;
+      if ((finished = check_stop())) break;
     }
 
     /* finish, if maxwalltime is reached */
     if (maxwalltime > 0) {
-      if (finished = check_walltime()) break;
+      if ((finished = check_walltime())) break;
     }
   }
 

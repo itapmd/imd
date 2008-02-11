@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -23,13 +23,45 @@
 #include "imd_cbe.h"
 
 /* Macro for the calculation of the Lennard-Jones potential */
-#define LJ(pot,grad,r2)  {                                               \
+#define LJ_INT(pot,grad,r2,col) {                                        \
    int   const col4 = col*4;                                             \
    float const tmp2 = pt.lj_sig[col4] / r2;                              \
    float const tmp6 = tmp2 * tmp2 * tmp2;                                \
    pot  = pt.lj_eps[col4] * tmp6 * (tmp6 - 2.0) - pt.lj_shift[col4];     \
    grad = - 12.0 * pt.lj_eps[col4] * tmp6 * (tmp6 - 1.0) / r2;           \
 }
+
+/* Macro for the calculation of a tabulated pair potential */
+#define PAIR_INT(pot,grad,r2,col)  {                                         \
+                                                                             \
+  float r2a, a, b, a2, b2, istep, step, st6, p1, p2, d21, d22, *y;           \
+  int k, col4=col*4;                                                         \
+                                                                             \
+  /* indices into potential table */                                         \
+  istep = pt.invstep[col4];                                                  \
+  step  = pt.step[col4];                                                     \
+  r2a   = MIN(r2,pt.r2cut[col4]);                                            \
+  r2a   = r2a * istep;                                                       \
+  r2a   = MAX(0.0,r2a - pt.begin[col4]);                                     \
+  k     = (int) r2a;                                                         \
+  b     = r2a - k;                                                           \
+  a     = 1.0 - b;                                                           \
+                                                                             \
+  /* intermediate values */                                                  \
+  y     = pt.tab[col];                                                       \
+  p1    = y[k  ];                                                            \
+  d21   = y[k+1];                                                            \
+  p2    = y[k+2];                                                            \
+  d22   = y[k+3];                                                            \
+  a2    = a * a - 1;                                                         \
+  b2    = b * b - 1;                                                         \
+  st6   = step / 6;                                                          \
+                                                                             \
+  /* potential and twice the derivative */                                   \
+  pot  = a * p1 + b * p2 + (a * a2 * d21 + b * b2 * d22) * st6 * step;       \
+  grad = 2*((p2 - p1) * istep + ((3*b2 + 2) * d22 - (3*a2 + 2) * d21) * st6);\
+}
+
 
 #ifndef ON_PPU
 
@@ -96,7 +128,11 @@ void calc_wp(wp_t *wp)
         if (r2 <= pt.r2cut[4*col]) {
 
     	  /* Calculation of potential has been moved to a macro */
-   	  LJ(pot,grad,r2)
+#ifdef LJ
+   	  LJ_INT(pot,grad,r2,col)
+#else
+          PAIR_INT(pot,grad,r2,col)
+#endif
 
 #ifdef AR
           wp->totpot += pot;
@@ -136,7 +172,7 @@ void calc_wp(wp_t *wp)
 *
 ******************************************************************************/
 
-static void calc_tb(wp_t * const wp) {
+void calc_tb(wp_t * const wp) {
 
   cell_dta_t *p = wp->cell_dta;
   float cellsz = wp->totpot;
@@ -197,7 +233,7 @@ static void calc_tb(wp_t * const wp) {
     n = (n + inc_short) & (~inc_short); 
 
     nn += n;
-    if (nn > nb_max) {
+    if (nn > wp->nb_max) {
       wp->flag = -1;
       return;
     }
@@ -216,9 +252,8 @@ static void calc_tb(wp_t * const wp) {
 
 void calc_wp(wp_t *wp)
 {
-  typedef flt fltvec[4];
-  fltvec d, f; 
-  flt r2, *pi, *pj, *fi, *fj, pot, grad;
+  float d[4], f[4]; 
+  float r2, *pi, *pj, *fi, *fj, pot, grad;
   int i, c1, col, inc=pt.ntypes * pt.ntypes, n, j;
 
   wp->totpot = wp->virial = 0.0;

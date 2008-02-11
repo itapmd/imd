@@ -1,16 +1,83 @@
+
+/******************************************************************************
+*
+* IMD -- The ITAP Molecular Dynamics Program
+*
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+* University of Stuttgart, D-70550 Stuttgart
+*
+******************************************************************************/
+
+/******************************************************************************
+*
+* imd_cbe_util.c -- utility functions for CBE
+*
+******************************************************************************/
+
+/******************************************************************************
+* $Revision$
+* $Date$
+******************************************************************************/
+
 /* IMD config (e.g. CBE_DIRECT macro) */
 #include "config.h"
 
 /* CBE specific stuff */
 #include "imd_cbe.h"
 
+/* Headers for SPU */
+#if defined(__SPU__)
+
+#include <spu_mfcio.h>
+
+#endif
+
+/* Headers for PPU */
+
+#if defined(__PPU__) 
+
+/* ISO C std. headers */
+#include <limits.h>
+#include <stddef.h>
+/* Hosted */
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+
+/* POSIX std. headers */
+#include <sys/stat.h>
+#include <sys/mman.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <pthread.h>
+
+/* CBE Headers */
+#include <libspe2.h>
+
+/* SDK Headers containing inline functions/macros */
+/* libsync */
+/* conditional variables */
+#include <cond_init.h>
+#include <cond_wait.h>
+#include <cond_signal.h>
+#include <cond_broadcast.h>
+/* Mutexes */
+#include <mutex_init.h>
+#include <mutex_lock.h>
+/* Atomic operations */
+#include <atomic_inc_return.h>
+#include <atomic_set.h>
+
+#endif
 
 
+/******************************************************************************
+*
+*  Functions common to PPU and SPU
+*
+******************************************************************************/
 
-
-
-/********* Common (SPU && PPU) part +++++++++*/
-
+#ifdef OBSOLETE
 
 unsigned* eas2les(unsigned ea_pairs[], unsigned const sizes[], unsigned const N){
     /* Pointer/index */
@@ -38,30 +105,20 @@ unsigned* eas2les(unsigned ea_pairs[], unsigned const sizes[], unsigned const N)
 
     /* All hi parts are the same (their value has been save in hi),
        such that they can now be overwritten by the size arguments */
-    for ( psrc=sizes, pdst=ea_pairs,  k=N;         k>0;    pdst+=2, ++psrc, --k ) {
+    for ( psrc=sizes, pdst=ea_pairs,  k=N; k>0;    pdst+=2, ++psrc, --k ) {
         /* Copy 16 bits of the size argument, leaving the "Reserved" part
            untouched. Also, the stall-notify bit will not be set  */
         enum { msk=(1u<<17u)-1u };
         (*pdst) = (*psrc);
         (*pdst) &= msk;
 
-        /* DBGPRINTF(stdout, "DMA-List element: %u bytes @ (0x%x,0x%x)\n",  (*pdst), (*phi), *(pdst+1)); */
+        /* DBGPRINTF(stdout, "DMA-List element: %u bytes @ (0x%x,0x%x)\n",
+           (*pdst), (*phi), *(pdst+1)); */
     }
 
     /* Everything went OK */
     return ea_pairs;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 /* Print vector */
@@ -105,14 +162,13 @@ int vecout(int (* const of)(char const[],...),   /* General output function*/
 }
 
 
-
 /* Helper output functors for various types */
 static void const* fltnxt(void const* p) {
-     return ((flt const*)p)+1;
+     return ((float const*)p)+1;
 }
 
 static int fltout(int (*of)(char const[],...), void const* pflt) {
-     return of("%f", *((flt const*)pflt));
+     return of("%f", *((float const*)pflt));
 }
 
 
@@ -133,9 +189,6 @@ static void const* shtnxt(void const* p) {
 static int shtout(int (*of)(char const[],...), void const* pshrt) {
      return of("%hd", *((short const*)pshrt));
 }
-
-
-
 
 
 /* Check wether effective address a is aligned to boundary specified by b.
@@ -209,56 +262,334 @@ int (env_aligned)(env_t const* const p, unsigned const a) {
 #undef RET
 #undef EA_ALIGNED
 
+#endif  /* OBSOLETE */
+
+
+/******************************************************************************
+*
+*  SPU specific part
+*
+******************************************************************************/
+
+#if defined(__SPU__)
+
+
+/* 16k are maximum which may be DMAed in one call to spu_mfc... */
+enum { DMAMAX   = ((unsigned)(16*1024)) };
+enum { DMAMAXea = ((ea_t)DMAMAX)        };
+
+
+void mdma64_rec(register unsigned char* const p,
+                register ea_t const lea, register unsigned const sze,
+                register unsigned const tag, register unsigned const cmd)
+{
+    /* Only one DMA needed? End recusrion */
+    if ( EXPECT_TRUE_(sze<=DMAMAX) ) {
+        dma64(p, lea, sze,  tag,cmd);
+        return;
+    }
+
+    /* Start a DMA */
+    dma64(p, lea,  DMAMAX,  tag,cmd);
+    /* Tail recursive call... */
+    mdma64_rec(p+DMAMAX,  lea+DMAMAX,  sze-DMAMAX,  tag,cmd);
+}
+
+
+/* DMA more than 16k using multiple DMAs with the same tag */
+void mdma64_iter(register unsigned char* p,
+                 register ea_t lea, register unsigned remsze,
+                 register unsigned const tag, register unsigned const cmd)
+{
+    for(;;) {
+        /* We're done if not more than maxsze bytes are to be xfered */
+        if ( EXPECT_TRUE_(remsze<=DMAMAX) ) {
+  	   dma64(p, lea,  remsze, tag, cmd);
+ 	   return;
+        }
+
+        /* Xfer one chunk of maximum size  */
+        dma64(p,  lea,  DMAMAX, tag, cmd);
+
+        /* fputs(stdout,"More than one DMA needed in mdma64_iter\n"); */
+
+        /* Update addresses and number of bytes */
+        remsze -= DMAMAX;
+        p      += DMAMAX;
+        lea    += DMAMAX;
+    }
+}
+
+
+/* Wait for DMA specified by mask m using type for update */
+INLINE_ unsigned wait_dma(unsigned const m, unsigned const type) {
+    spu_writech(MFC_WrTagMask,   m);
+    spu_writech(MFC_WrTagUpdate, type);
+    return spu_readch(MFC_RdTagStat);
+}
+
+
+/* (Just a) wrapper for DMA with less than 16K */
+INLINE_ void (dma64)(register void* const p,
+                            register ea_t const ea, register unsigned int const size,
+                            register unsigned int const tag, register unsigned int const cmd
+                  )
+{
+    si_wrch(MFC_EAH,   si_from_uint((unsigned int)(ea>>32u)));
+    si_wrch(MFC_EAL,   si_from_uint((unsigned int)ea));
+    si_wrch(MFC_LSA,   si_from_ptr(p));
+    si_wrch(MFC_Size,  si_from_uint(size));
+    si_wrch(MFC_TagID, si_from_uint(tag));
+    si_wrch(MFC_Cmd,   si_from_uint(cmd));
+}
+
+
+/* DMA more than 16K using multiple DMAs */
+INLINE_ void mdma64(void* const p, ea_t const ea, unsigned const size,
+                           unsigned const tag, unsigned const cmd
+                          )
+{
+    /* Byte type */
+    typedef unsigned char    Tbyte;
+
+    /* Defined somwhere in imd_cbe_util.c */
+    extern void mdma64_rec(register Tbyte* const, register ea_t const, register unsigned const,
+                           register unsigned const, register unsigned const);
+    extern void mdma64_iter(register Tbyte*,  register ea_t, register unsigned,
+                            register unsigned const, register unsigned const);
 
 
 
+    mdma64_iter(((Tbyte*)p),  ea, size,  tag,cmd);
+}
+
+
+#ifdef OBSOLETE
+
+/* Vectorized version of memcpy:  NEVER USED!
+   copy nvec vectors from dst to src. Callers must make sure that the
+   objects pointed to be dst and src are aligned to a 16-byte boundary.
+ */
+static void* vmemcpy(void* const dst, void const* const src, 
+                     unsigned const nvec)
+{
+    /* Vector type */
+    typedef __vector unsigned char  Tvec;
+    /* Iterators/number of vectors remaining */
+    register Tvec const* isrc = ((Tvec const*)src);
+    register Tvec      * idst = ((Tvec      *)dst);
+    register unsigned    nrem = nvec;
+
+    /* Until all vectors have been copied */
+    for (;;) {
+        /* Leave loop if there are no more vectors remaining
+           (which is quite unlikely) */
+        if ( EXPECT_FALSE_(0u==nrem) ) {
+  	    break;
+        }
+        /* Copy, update pointers and number of vectors */
+        (*(idst++)) = (*(isrc++));
+        --nrem;
+    }
+
+    /* Retrun address of destination buffer */
+    return dst;
+}
+
+#endif  /* OBSOLETE */
+
+#endif /* SPU specific part */
+
+
+/******************************************************************************
+*
+*  PPU specific part
+*
+******************************************************************************/
+
+#if defined(__PPU__)
+
+#ifdef OBSOLETE
+
+/* Print sizes of some types */
+int sizeinfo(int (* const of)(char const[],...)) {
+    return
+      of("sizeof(wp_t)       = %u\n"
+         "sizeof(exch_t)     = %u\n"
+#if defined(CBE_DIRECT)
+         "sizeof(cell_dta_t) = %u\n"
+         "sizeof(cell_ea_t)  = %u\n"
+#endif
+         ,
+
+         (unsigned)(sizeof(wp_t)),
+         (unsigned)(sizeof(exch_t))
+#if defined(CBE_DIRECT)
+         ,
+         (unsigned)(sizeof(cell_dta_t)),
+         (unsigned)(sizeof(cell_ea_t))
+#endif
+	);
+}
+
+
+/* Output of pt_t *e using  printf-like function of */
+int (pt_out)(int (*of)(char const[],...), pt_t const* const e)
+{
+     /* Sepeartor */
+     static char const sep[]=" ";
+
+     /* Number of elements in each array */
+     unsigned const nout = 4*(e->ntypes)*(e->ntypes);
+
+     /* The result */
+     int res=0;
+
+     /* Scalar */
+     res += of("ntypes   = %d\n", (e->ntypes));
+
+     /* Arrays */
+     res += of("r2cut   = ");
+     res += vecout(of, fltout,fltnxt, e->r2cut,    nout, sep);
+     res += of("\n");
+
+     res += of("lj_sig   = ");
+     res += vecout(of, fltout,fltnxt, e->lj_sig,   nout, sep);
+     res += of("\n");
+
+     res += of("lj_eps   = ");
+     res += vecout(of, fltout,fltnxt, e->lj_eps,   nout, sep);
+     res += of("\n");
+
+     res += of("lj_shift = ");
+     res += vecout(of, fltout,fltnxt, e->lj_shift, nout, sep);
+     res += of("\n");
+
+     return res;
+}
+
+
+/* Needed in the output of effective addresses  */
+/* #define EA(ptr) (*(ptr)), (*((ptr)+1)) */
+#define EA(ea)   ((unsigned)(((ea_t)(ea))>>32u)),  ((unsigned)((ea_t)(ea)))
+#define EAFMT "(0x%x,0x%x)"
+
+/* Output of env_t *e using printf-like function of */
+int (env_out)(int (*of)(char const[],...), env_t const* const e)
+{
+    return
+    of("ntypes   = %d\n"
+       "r2cut    = " EAFMT "\n"
+       "lj_sig   = " EAFMT "\n"
+       "lj_eps   = " EAFMT "\n"
+       "lj_shift = " EAFMT "\n",
+
+
+        (e->ntypes),
+        EA(e->r2cut), EA(e->lj_sig), EA(e->lj_eps), EA(e->lj_shift)
+      );
+}
+
+
+#if defined(CBE_DIRECT)   /* "Direct " */
+
+/* exch_t & wp_t are the same */
+int (wp_out)(int (*of)(char const[],...), exch_t const* const w) {
+    /* To be done */
+    return -1;
+}
+
+int (exch_out)(int (*of)(char const[],...), exch_t const* const e) {
+    return wp_out(of,e);
+}
+
+#else  /* "Indirect" */
+
+/* Output of work package wp using printf-like functions of */
+int (wp_out)(int (*of)(char const[],...), wp_t const* const e)
+{
+   /* Seperator */
+   static char const sep[] = " ";
+
+   /* The result */
+   int res=0;
+
+   /* Scalars */
+   res += of("k       = %d\n", e->k);
+   res += of("n1      = %d\n", e->n1);
+   res += of("n1_max  = %d\n", e->n1_max);
+   res += of("n2      = %d\n", e->n2);
+   res += of("n2_max  = %d\n", e->n2_max);
+   res += of("len     = %d\n", e->len);
+   res += of("len_max = %d\n", e->len_max);
+   res += of("totpot  = %f\n", e->totpot);
+   res += of("virial  = %f\n", e->virial);
+
+   res += of("pos     = ");
+   res += vecout(of, fltout, fltnxt,  e->pos,    4*(e->n2), sep);
+   res += of("\n");
+
+   
+   res += of("force   = ");
+   res += vecout(of, fltout, fltnxt,  e->force,  4*(e->n2), sep);
+   res += of("\n");
+
+   res += of("typ     = ");
+   res += vecout(of, intout, intnxt, e->typ,    (e->n2),   sep);
+   res += of("\n");
+
+   res += of("tb      = ");
+   res += vecout(of, shtout, shtnxt, e->tb,      (e->len),  sep);
+   res += of("\n");
+
+   res += of("ti      = ");
+   res += vecout(of, intout, intnxt, e->ti,      2*(e->n2), sep);
+   res += of("\n");
+
+   return res;
+}
+
+/* Output of *e unsing printf-like function of */
+int (exch_out)(int (*of)(char const[],...), exch_t const* const e)
+{
+   return
+   of("k       = %d\n"
+      "n1      = %d\n"
+      "n1_max  = %d\n"
+      "n2      = %d\n"
+      "n2_max  = %d\n"
+      "len     = %d\n"
+      "len_max = %d\n"
+      "totpot  = %f\n"
+      "virial  = %f\n"
+      "pos     = " EAFMT "\n"
+      "force   = " EAFMT "\n"
+      "typ     = " EAFMT "\n"
+      "tb      = " EAFMT "\n"
+      "ti      = " EAFMT "\n",
+
+      e->k, e->n1, e->n1_max, e->n2, e->n2_max, e->len, e->len_max,
+      e->totpot, e->virial,
+      EA(e->pos), EA(e->force), EA(e->typ),
+      EA(e->tb), EA(e->ti)
+     );
+}
+
+#endif  /* CBE_DIRECT */
+
+
+#undef EA
+#undef EAFMT
+
+#endif  /* OBSOLETE */
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/******************************************************************************
+*
+*  Timer functions
+*
+******************************************************************************/
 
 /* Helper function for conversion functors */
 static unsigned int add_digit(unsigned int const n,
@@ -362,379 +693,6 @@ char const* strmatch(register char const* const tfrst, register char const* cons
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if defined(__SPU__)  /************** SPU part ************/
-
-
-/* ISO C std. headers, just in case... */
-/* #include <stdio.h> */
-
-/* SPU headers */
-#include <spu_mfcio.h>
-
-
-
-
-/* 16k are maximum which may be DMAed in one call to spu_mfc... */
-enum { DMAMAX   = ((unsigned)(16*1024)) };
-enum { DMAMAXea = ((ea_t)DMAMAX)        };
-
-
-
-void mdma64_rec(register unsigned char* const p,
-                register ea_t const lea, register unsigned const sze,
-                register unsigned const tag, register unsigned const cmd)
-{
-    /* Only one DMA needed? End recusrion */
-    if ( EXPECT_TRUE_(sze<=DMAMAX) ) {
-        dma64(p, lea, sze,  tag,cmd);
-        return;
-    }
-
-    /* Start a DMA */
-    dma64(p, lea,  DMAMAX,  tag,cmd);
-    /* Tail recursive call... */
-    mdma64_rec(p+DMAMAX,  lea+DMAMAX,  sze-DMAMAX,  tag,cmd);
-}
-
-
-
-
-
-
-/* DMA more than 16k using multiple DMAs with the same tag */
-void mdma64_iter(register unsigned char* p,
-                 register ea_t lea, register unsigned remsze,
-                 register unsigned const tag, register unsigned const cmd)
-{
-    for(;;) {
-        /* We're done if not more than maxsze bytes are to be xfered */
-        if ( EXPECT_TRUE_(remsze<=DMAMAX) ) {
-  	   dma64(p, lea,  remsze, tag, cmd);
- 	   return;
-        }
-
-        /* Xfer one chunk of maximum size  */
-        dma64(p,  lea,  DMAMAX, tag, cmd);
-
-        /* fputs(stdout,"More than one DMA needed in mdma64_iter\n"); */
-
-        /* Update addresses and number of bytes */
-        remsze -= DMAMAX;
-        p      += DMAMAX;
-        lea    += DMAMAX;
-    }
-}
-
-
-
-
-/* Vectorized version of memcpy:
-   copy nvec vectors from dst to src. Callers must make sure that the
-   objects pointed to be dst and src are aligned to a 16-byte boundary.
- */
-static void* vmemcpy(void* const dst, void const* const src, unsigned const nvec)
-{
-    /* Vector type */
-    typedef __vector unsigned char  Tvec;
-    /* Iterators/number of vectors remaining */
-    register Tvec const* isrc = ((Tvec const*)src);
-    register Tvec      * idst = ((Tvec      *)dst);
-    register unsigned    nrem = nvec;
-
-    /* Until all vectors have been copied */
-    for (;;) {
-        /* Leave loop if there are no more vectors remaining
-           (which is quite unlikely) */
-        if ( EXPECT_FALSE_(0u==nrem) ) {
-  	    break;
-        }
-        /* Copy, update pointers and number of vectors */
-        (*(idst++)) = (*(isrc++));
-        --nrem;
-    }
-
-    /* Retrun address of destination buffer */
-    return dst;
-}
-
-
-
-#endif /* SPU part */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if defined(__PPU__)   /************ PPU part **************/
-
-/* ISO C std. headers */
-#include <limits.h>
-#include <stddef.h>
-/* Hosted */
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-/* POSIX std. headers */
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <pthread.h>
-
-/* CBE Headers */
-#include <libspe2.h>
-
-/* SDK Headers containing inline functions/macros */
-/* libsync */
-/* conditional variables */
-#include <cond_init.h>
-#include <cond_wait.h>
-#include <cond_signal.h>
-#include <cond_broadcast.h>
-/* Mutexes */
-#include <mutex_init.h>
-#include <mutex_lock.h>
-/* Atomic operations */
-#include <atomic_inc_return.h>
-#include <atomic_set.h>
-
-
-
-
-
-
-/* Print sizes of some types */
-int sizeinfo(int (* const of)(char const[],...)) {
-    return
-      of("sizeof(wp_t)       = %u\n"
-         "sizeof(exch_t)     = %u\n"
-#if defined(CBE_DIRECT)
-         "sizeof(cell_dta_t) = %u\n"
-         "sizeof(cell_ea_t)  = %u\n"
-#endif
-         ,
-
-         (unsigned)(sizeof(wp_t)),
-         (unsigned)(sizeof(exch_t))
-#if defined(CBE_DIRECT)
-         ,
-         (unsigned)(sizeof(cell_dta_t)),
-         (unsigned)(sizeof(cell_ea_t))
-#endif
-	);
-}
-
-
-
-
-
-/* Output of pt_t *e using  printf-like function of */
-int (pt_out)(int (*of)(char const[],...), pt_t const* const e)
-{
-     /* Sepeartor */
-     static char const sep[]=" ";
-
-     /* Number of elements in each array */
-     unsigned const nout = 4*(e->ntypes)*(e->ntypes);
-
-     /* The result */
-     int res=0;
-
-     /* Scalar */
-     res += of("ntypes   = %d\n", (e->ntypes));
-
-     /* Arrays */
-     res += of("r2cut   = ");
-     res += vecout(of, fltout,fltnxt, e->r2cut,    nout, sep);
-     res += of("\n");
-
-     res += of("lj_sig   = ");
-     res += vecout(of, fltout,fltnxt, e->lj_sig,   nout, sep);
-     res += of("\n");
-
-     res += of("lj_eps   = ");
-     res += vecout(of, fltout,fltnxt, e->lj_eps,   nout, sep);
-     res += of("\n");
-
-     res += of("lj_shift = ");
-     res += vecout(of, fltout,fltnxt, e->lj_shift, nout, sep);
-     res += of("\n");
-
-     return res;
-}
-
-
-
-
-
-
-
-/* Needed in the output of effective addresses  */
-/* #define EA(ptr) (*(ptr)), (*((ptr)+1)) */
-#define EA(ea)   ((unsigned)(((ea_t)(ea))>>32u)),  ((unsigned)((ea_t)(ea)))
-#define EAFMT "(0x%x,0x%x)"
-
-/* Output of env_t *e using printf-like function of */
-int (env_out)(int (*of)(char const[],...), env_t const* const e)
-{
-    return
-    of("ntypes   = %d\n"
-       "r2cut    = " EAFMT "\n"
-       "lj_sig   = " EAFMT "\n"
-       "lj_eps   = " EAFMT "\n"
-       "lj_shift = " EAFMT "\n",
-
-
-        (e->ntypes),
-        EA(e->r2cut), EA(e->lj_sig), EA(e->lj_eps), EA(e->lj_shift)
-      );
-}
-
-
-
-
-#if defined(CBE_DIRECT)   /* "Direct " */
-
-/* exch_t & wp_t are the same */
-int (wp_out)(int (*of)(char const[],...), exch_t const* const w) {
-    /* To be done */
-    return -1;
-}
-
-int (exch_out)(int (*of)(char const[],...), exch_t const* const e) {
-    return wp_out(of,e);
-}
-
-#else  /* "Indirect" */
-
-/* Output of work package wp using printf-like functions of */
-int (wp_out)(int (*of)(char const[],...), wp_t const* const e)
-{
-   /* Seperator */
-   static char const sep[] = " ";
-
-   /* The result */
-   int res=0;
-
-   /* Scalars */
-   res += of("k       = %d\n", e->k);
-   res += of("n1      = %d\n", e->n1);
-   res += of("n1_max  = %d\n", e->n1_max);
-   res += of("n2      = %d\n", e->n2);
-   res += of("n2_max  = %d\n", e->n2_max);
-   res += of("len     = %d\n", e->len);
-   res += of("len_max = %d\n", e->len_max);
-   res += of("totpot  = %f\n", e->totpot);
-   res += of("virial  = %f\n", e->virial);
-
-   res += of("pos     = ");
-   res += vecout(of, fltout, fltnxt,  e->pos,    4*(e->n2), sep);
-   res += of("\n");
-
-   
-   res += of("force   = ");
-   res += vecout(of, fltout, fltnxt,  e->force,  4*(e->n2), sep);
-   res += of("\n");
-
-   res += of("typ     = ");
-   res += vecout(of, intout, intnxt, e->typ,    (e->n2),   sep);
-   res += of("\n");
-
-   res += of("tb      = ");
-   res += vecout(of, shtout, shtnxt, e->tb,      (e->len),  sep);
-   res += of("\n");
-
-   res += of("ti      = ");
-   res += vecout(of, intout, intnxt, e->ti,      2*(e->n2), sep);
-   res += of("\n");
-
-   return res;
-}
-
-/* Output of *e unsing printf-like function of */
-int (exch_out)(int (*of)(char const[],...), exch_t const* const e)
-{
-   return
-   of("k       = %d\n"
-      "n1      = %d\n"
-      "n1_max  = %d\n"
-      "n2      = %d\n"
-      "n2_max  = %d\n"
-      "len     = %d\n"
-      "len_max = %d\n"
-      "totpot  = %f\n"
-      "virial  = %f\n"
-      "pos     = " EAFMT "\n"
-      "force   = " EAFMT "\n"
-      "typ     = " EAFMT "\n"
-      "tb      = " EAFMT "\n"
-      "ti      = " EAFMT "\n",
-
-      e->k, e->n1, e->n1_max, e->n2, e->n2_max, e->len, e->len_max,
-      e->totpot, e->virial,
-      EA(e->pos), EA(e->force), EA(e->typ),
-      EA(e->tb), EA(e->ti)
-     );
-}
-
-#endif  /* CBE_DIRECT */
-
-
-
-#undef EA
-#undef EAFMT
-
-
-
-
-
-
-
-
-
-
-
-
 /* Get timebase frequency from contents of cpuinfo file */
 unsigned long tbfreq_string(char const* const sbeg, char const* const send) {
     if ( (0!=sbeg) && (0!=send) ) {
@@ -750,11 +708,13 @@ unsigned long tbfreq_string(char const* const sbeg, char const* const send) {
 
         if ( keypos != send ) {
             static Tuc col[] = ":";
-            Puc const colpos = strmatch(keypos+1, send,  col, col+(sizeof(col)-1));
+            Puc const colpos = strmatch(keypos+1, send, col, 
+                                        col+(sizeof(col)-1));
 
             if ( colpos != send ) {
 	        static Tuc eol[] = "\n";
-  	        Puc const eolpos = strmatch(colpos+1, send,  eol, eol+((sizeof(eol)-1)));
+  	        Puc const eolpos = strmatch(colpos+1, send, eol, 
+                                            eol+((sizeof(eol)-1)));
                 if ( send != eolpos ) {
 		    return addstr2ui(0u,  colpos, eolpos,  dec);
 	        }
@@ -769,7 +729,8 @@ unsigned long tbfreq_string(char const* const sbeg, char const* const send) {
 
 /* Read cpuinfo from fd into buffer buf of length bufsze parse it and return
    the timebase freqeuncy. */
-unsigned long tbfreq_fd(int const fd,  char* const buf, unsigned const bufsze) {    /* Got valid handle? */
+unsigned long tbfreq_fd(int const fd, char* const buf, unsigned const bufsze) {
+    /* Got valid handle? */
     if ( -1 != fd ) {
        /* Read data from fd into the following buffer, storing the
           number of characters read */
@@ -788,7 +749,8 @@ unsigned long tbfreq_fd(int const fd,  char* const buf, unsigned const bufsze) {
 }
 
 
-/* Get time base frequency from OS (as suggested by the CBE programming handbook) */
+/* Get time base frequency from OS (as suggested by the 
+   CBE programming handbook) */
 unsigned long tbfreq(void) {
     /* Open cpuinfo file */
     static char const cipath[] = "/proc/cpuinfo";
@@ -808,10 +770,11 @@ unsigned long tbfreq(void) {
 }
 
 
-
-
-
-/* Allocation of aligned memory */
+/******************************************************************************
+*
+*  Memory management
+*
+******************************************************************************/
 
 /* Return the page size */
 size_t pagesize(void)
@@ -864,8 +827,11 @@ void* (calloc_aligned)(size_t const nelem, size_t const elsze,
 }
 
 
-
-
+/******************************************************************************
+*
+*  Various declarations
+*
+******************************************************************************/
 
 /* Swaps intger variables a and b (of same type)*/
 #define SWAP(a,b) { (a)^=(b); (b)^=(a); }
@@ -879,13 +845,6 @@ typedef spe_program_handle_t Thndl;
 typedef spe_context_ptr_t    Tctxt;
 /* The same for the pthread type */
 typedef pthread_t            Tthr;
-
-
-
-
-
-
-
 
 
 /* Arrays of buffers:  */
@@ -910,18 +869,9 @@ static wp_t wbuf[N_SPU_THREADS_MAX * N_ARGBUF];
 wp_t* const cbe_wp_begin = wbuf;
 
 
-
-
-
-
-
-
-
-
 /* Stop info for the SPU threads */
 static spe_stop_info_t sinfo[N_SPU_THREADS_MAX];
 spe_stop_info_t const* const cbe_stopinfo = sinfo; 
-
 
 
 /* SPU contexts.
@@ -935,10 +885,6 @@ spe_context_ptr_t const* const cbe_spucontext = c;
 /* Control areas */
 static spe_spu_control_area_p contrarea[N_SPU_THREADS_MAX];
 spe_spu_control_area_p* const cbe_spucontrolarea = contrarea;
-
-
-
-
 
 
 /* Reservation granule type large enough to hold locks/mutexes, etc...
@@ -956,39 +902,6 @@ enum {
    NMUTX = (unsigned)((sizeof lsmutx)/(sizeof (lsmutx[0]))),
    NCVAR = (unsigned)((sizeof lscvar)/(sizeof (lscvar[0])))
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* Create env_t from pt_t */
-env_t* (create_env)(pt_t const* const p, env_t* const e)
-{
-     /* The int member may just be copied */
-     e->ntypes = p->ntypes;
-
-
-     /* The ptrs have to be cast to effective addresses */
-     PTR2EA(p->r2cut,    e->r2cut);
-     PTR2EA(p->lj_sig,   e->lj_sig);
-     PTR2EA(p->lj_eps,   e->lj_eps);
-     PTR2EA(p->lj_shift, e->lj_shift);
-
-
-     /* Return ptr. to the env_t */
-     return e;
-}
 
 
 
@@ -1028,14 +941,6 @@ exch_t* (create_exch)(wp_t const* const wp, exch_t* const e)
 }
 
 
-
-
-
-
-
-
-
-
 /* Minimum of m or the number of usable SPEs */
 int min_usable_spes(int const m, int const cpu_node) {
     /* Get number of usable SPEs from OS */
@@ -1049,12 +954,6 @@ int min_usable_spes(int const m, int const cpu_node) {
     /* Now return the minum */
     return ((m<u) ? m : u);
 }
-
-
-
-
-
-
 
 
 /* Argument struct for the pthreads which pass control to the SPU */
@@ -1075,9 +974,6 @@ typedef struct spu_pthr_arg {
 
 
 
-
-
-
 /* Trivial pthread function which just switches to SPU context and
    returns a pointer to the SPU program's stop info. */
 static void* spu_pthr(void* p0)
@@ -1092,7 +988,8 @@ static void* spu_pthr(void* p0)
 
 
         /* The last message from PPU */
-        /* fprintf(stdout, "About to switch to SPU context\n");  fflush(stdout); */
+        /* fprintf(stdout, "About to switch to SPU context\n");  
+           fflush(stdout); */
 
         if ( spe_context_run(p->spu_ctxt,  &spu_entry, 0u,
                              p->spu_arg, p->spu_env,
@@ -1122,13 +1019,11 @@ unsigned cbe_get_nspus() {
 static Tthr  t[N_SPU_THREADS_MAX];
 
 
-
-
-/* The "real" initialization routine perfomring the actual work */
+/* The "real" initialization routine performing the actual work */
 int cbe_init0(int const nspu_req, int const cpu_node)
 {
-    /* The env */
-    static env_t ALIGNED_(16,env);
+    /* The env - obsolete */
+    /* static env_t ALIGNED_(16,env); */
 
     /* Arguments for the SPU threads */
     static spu_pthr_arg_t pthrargs[N_SPU_THREADS_MAX];
@@ -1155,7 +1050,7 @@ int cbe_init0(int const nspu_req, int const cpu_node)
 
 
     /* Set the environement EAs */
-    cbe_envea_begin[0] = EA_CAST(&env);
+    cbe_envea_begin[0] = EA_CAST(&pt);
     cbe_envea_begin[1] = EA_CAST(lscvar);
     cbe_envea_begin[2] = EA_CAST(lsmutx);
 
@@ -1168,14 +1063,6 @@ int cbe_init0(int const nspu_req, int const cpu_node)
         _mutex_init(EA_CAST(lsmutx+i));
     }
     _mutex_lock(EA_CAST(lsmutx+0));
-
-
-
-    /* Copy pt to env_t
-       It is assumend that pt has been setup before we arrive here */
-    create_env(&pt, &env);
-
-
 
 
 #if ! defined(CBE_DIRECT)
@@ -1207,14 +1094,16 @@ int cbe_init0(int const nspu_req, int const cpu_node)
         parg->spu_stopinfo_loc=sinfo+i;
 
         /* Create context & load program into it */
-        if ( 0 != ((*pctxt) = (parg->spu_ctxt) = spe_context_create(SPE_MAP_PS,0)) ) {
+        if ( 0 != ((*pctxt) = (parg->spu_ctxt) = 
+               spe_context_create(SPE_MAP_PS,0)) ) {
    	    /* This handle must be defined somewhere else and the program
                must contain the calc_wp code. */
             extern spe_program_handle_t hndle_cbe_calc;
 
             /* Get control area for the context just created */
             contrarea[i] = spe_ps_area_get((*pctxt), SPE_CONTROL_AREA);
-            /*  fprintf(stdout, "Control area %i at %p\n", i, contrarea[i]); fflush(stdout);  */
+            /*  fprintf(stdout, "Control area %i at %p\n", i, contrarea[i]);
+                fflush(stdout);  */
 
             if ( 0 == spe_program_load((*pctxt), &hndle_cbe_calc)  ) {
                 /* Now start the a pthread */
@@ -1248,15 +1137,12 @@ int cbe_init0(int const nspu_req, int const cpu_node)
     }
 
 
-
-
     /* Store the number of threads actually started */
     nspus=nstrt;
 
     /* OK, CBE initialized */
     return 0;
 }
-
 
 
 /* Init stuff for calc_threads. Try to start SPU threads
@@ -1281,11 +1167,6 @@ int cbe_init(int const nspu_req, int const cpu_node) {
 }
 
 
-
-
-
-
-
 void cbe_shutdown(void) {
     unsigned i;
     spe_context_ptr_t* pctxt;
@@ -1298,7 +1179,4 @@ void cbe_shutdown(void) {
 }
 
 
-
-
-
-#endif /* PPU part */
+#endif /* PPU specific part */

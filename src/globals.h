@@ -1095,6 +1095,7 @@ EXTERN real *dsf_weight INIT(NULL);
 #ifdef CBE
 EXTERN int num_spus INIT(6);
 EXTERN int num_bufs INIT(32);
+EXTERN int cbe_pot_steps INIT(100);
 #endif
 
 EXTERN int myrank   INIT(0);

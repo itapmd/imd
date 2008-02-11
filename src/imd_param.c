@@ -2413,12 +2413,17 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       if ( (num_spus<1) || (num_spus>N_SPU_THREADS_MAX) ) {
 	 num_spus=N_SPU_THREADS_MAX;
       }
-    } else if (strcasecmp(token, "num_bufs")==0) {
+    } 
+    else if (strcasecmp(token, "num_bufs")==0) {
       /* Number of argument buffers per SPU */
       getparam(token,&num_bufs,PARAM_INT,1,1);
       if ( (num_bufs<1) || (num_bufs>N_ARGBUF) ) {
 	 num_bufs=N_ARGBUF;
       }
+    }
+    else if (strcasecmp(token, "cbe_pot_steps")==0) {
+      /* number of tabulation steps in potential table */
+      getparam(token,&cbe_pot_steps,PARAM_INT,1,1);
     }
 #endif
     else if (strcasecmp(token,"use_header")==0) {
@@ -3492,7 +3497,9 @@ void broadcast_params() {
 #endif
   
 #ifdef CBE
-  MPI_Bcast( &num_spus, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &num_spus,      1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &num_bufs,      1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &cbe_pot_steps, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
   MPI_Bcast(&use_header,1, MPI_INT, 0, MPI_COMM_WORLD);

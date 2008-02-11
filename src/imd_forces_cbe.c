@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -19,11 +19,8 @@
 * $Date$
 ******************************************************************************/
 
-/* POSIX headers */
-
 /* Needed for multithreaded "SPU driver" */
 #include <pthread.h>
-
 
 /* PPU intrinsics */
 #include <ppu_intrinsics.h>
@@ -33,11 +30,8 @@
 /* CBE declarations */
 #include "imd_cbe.h"
 
-
-
-
-
-
+/* Potential data structure */
+pt_t ALIGNED_(16,pt);
 
 /* Global variables only needed in this file */
 static int *ti= NULL;
@@ -55,20 +49,12 @@ static cell_ea_t  *cell_dta=NULL;
 #endif
 
 
-
-
-
-
-
-
 /* Constants to access the SPU mailboxes */
-
 /* Shifts */
 enum MBXSHIFT {
     OUTMBX_CNT_SHIFT = (unsigned)0,  /* outbox */
     INMBX_CNT_SHIFT  = (unsigned)8   /* inbox  */
 };
-
 /* Masks */
 enum MBXMASK { 
     OUTMBX_CNT_MASK  = (unsigned)0x000000ff,  /* outbox */
@@ -77,7 +63,8 @@ enum MBXMASK {
 
 
 /* Read Nvpmbx values per mbox */
-static void mboxes2tuples(spe_spu_control_area_p const* const cfrst, unsigned const Nmbx, unsigned const Nvpmbx,
+static void mboxes2tuples(spe_spu_control_area_p const* const cfrst, 
+                          unsigned const Nmbx, unsigned const Nvpmbx,
                           unsigned* const res,
                           unsigned* const cnt)
 {
@@ -94,7 +81,8 @@ static void mboxes2tuples(spe_spu_control_area_p const* const cfrst, unsigned co
     }
 
     for ( nrem=Nmbx*Nvpmbx;    (nrem>0u);    ) {
-        for ( ic=cfrst, icnt=cnt, ires=res, imbx=Nmbx;    (imbx>0u);    ++ic, ires+=Nvpmbx,  ++icnt, --imbx ) {
+        for ( ic=cfrst, icnt=cnt, ires=res, imbx=Nmbx; (imbx>0u); 
+              ++ic, ires+=Nvpmbx,  ++icnt, --imbx ) {
 	   /* Have to read? */
 	   if ( (*icnt)<Nvpmbx ) {
 	       /* Mask */
@@ -112,10 +100,10 @@ static void mboxes2tuples(spe_spu_control_area_p const* const cfrst, unsigned co
 }
 
 
-
-static void value2mboxes(spe_spu_control_area_p const* const cfrst, unsigned const Nmbx,
-                        unsigned const v,
-                        unsigned* const cnt)
+static void value2mboxes(spe_spu_control_area_p const* const cfrst, 
+                         unsigned const Nmbx,
+                         unsigned const v,
+                         unsigned* const cnt)
 {
     /* Iterators */
     register unsigned* icnt;
@@ -129,7 +117,7 @@ static void value2mboxes(spe_spu_control_area_p const* const cfrst, unsigned con
     }
 
     for ( nrem=Nmbx;    (nrem>0u);    ) {
-        for ( ic=cfrst, icnt=cnt, imbx=Nmbx;     (imbx>0u);    ++ic, ++icnt, --imbx ) {
+        for (ic=cfrst, icnt=cnt, imbx=Nmbx; (imbx>0u); ++ic, ++icnt, --imbx) {
 	   /* Have to write? */
 	   if ( 1u == (*icnt) ) {
 	       /* Mask */
@@ -147,7 +135,8 @@ static void value2mboxes(spe_spu_control_area_p const* const cfrst, unsigned con
 }
 
 
-static void tuples2mboxes(spe_spu_control_area_p const* const cfrst, unsigned const Nmbx, unsigned const Nvpmbx,
+static void tuples2mboxes(spe_spu_control_area_p const* const cfrst, 
+                          unsigned const Nmbx, unsigned const Nvpmbx,
                           unsigned const* const val,
                           unsigned      * const cnt)
 {
@@ -182,50 +171,41 @@ static void tuples2mboxes(spe_spu_control_area_p const* const cfrst, unsigned co
 }
 
 
-
-
-
-
-
-
-
-/* Potential which is need by calc_wp */
-pt_t  pt;
-
-
 /******************************************************************************
 *
 *  collect potential data for SPE
 *
 ******************************************************************************/
 
+#ifdef LJ
+
 void mk_pt(void)
 {
-  int i, j, k, col;
-  flt r2, r6;
+  int   i, j, k, col;
+  float r2, r6;
 
   /* Allocation size common to all mallocs */
   size_t const nelem = 4*ntypes*ntypes;
-  size_t const asze  = nelem*(sizeof (flt));
+  size_t const asze  = nelem*(sizeof(float));
 
   /* Set ntypes */
   pt.ntypes   = ntypes;
 
   /* Allocate one array which is 4 times the size of a single array */
-  pt.r2cut    = (flt*)(malloc_aligned(4*asze, 128, 16));
+  pt.r2cut    = (float *) malloc_aligned(4*asze, 128, 16);
   pt.lj_sig   = pt.r2cut  + nelem;
   pt.lj_eps   = pt.lj_sig + nelem;
   pt.lj_shift = pt.lj_eps + nelem;
+  PTR2EA( pt.r2cut, pt.ea );
   
-  if ((NULL==pt.r2cut) || (NULL==pt.lj_sig) || (NULL==pt.lj_eps) || 
-      (NULL==pt.lj_shift)) error("cannot allocate potential package");
+  if (NULL==pt.r2cut) error("cannot allocate potential package");
   for (i=0; i<ntypes; i++)
     for (j=0; j<ntypes; j++) {
       col = i*ntypes + j;
       for (k=0; k<4; k++) { /* make vectors: 4 copies of each value */
-        pt.r2cut  [4*col+k] = (flt) r2_cut      [i][j];
-        pt.lj_sig [4*col+k] = (flt) SQR(lj_sigma[i][j]);
-        pt.lj_eps [4*col+k] = (flt) lj_epsilon  [i][j] ;
+        pt.r2cut  [4*col+k] = (float) r2_cut      [i][j];
+        pt.lj_sig [4*col+k] = (float) SQR(lj_sigma[i][j]);
+        pt.lj_eps [4*col+k] = (float) lj_epsilon  [i][j] ;
         r2 = pt.lj_sig[4*col+k] / pt.r2cut[4*col+k];
         r6 = r2 * r2 * r2;
         pt.lj_shift[4*col+k] = pt.lj_eps[4*col+k] * r6 * (r6 - 2.0);
@@ -233,7 +213,95 @@ void mk_pt(void)
     }
 }
 
+#else
 
+void mk_pt(void)
+{
+  float *u    = NULL;
+  int   n     = cbe_pot_steps, off = 0, i, j, k;
+  int   hsize = 4 * ntypes * ntypes;
+  int   psize = 2 * (n+1) + ntypes * (ntypes+1);
+  int   tsize = hsize + psize;
+
+  /* allocate data */
+  pt.data = (float *) malloc_aligned( tsize * sizeof(float), 128, 16 );
+  u       = (float *) malloc( (n+1) * sizeof(float) );
+  if ((NULL==pt.data) || (NULL==u)) error("cannot allocate potential package");
+
+  /* fill in header of potential table */
+  PTR2EA( pt.data, pt.ea );
+  pt.ntypes  = ntypes;
+  pt.nsteps  = n;
+  pt.begin   = pt.data + off;  off += hsize;
+  pt.r2cut   = pt.data + off;  off += hsize;
+  pt.step    = pt.data + off;  off += hsize;
+  pt.invstep = pt.data + off;  off += hsize;
+  for (i=0; i<ntypes; i++)
+    for (j=i; j<ntypes; j++) {
+      pt.tab[i*ntypes+j] = pt.tab[j*ntypes+i] = pt.data + off;  
+      off += 4*(n+1);
+    }
+  for (k=0; k<ntypes*ntypes; k++)
+    for (i=0; i<4; i++) {
+      int col = 4*k+i;
+      pt.r2cut  [col] = pair_pot.end[k];
+      pt.step   [col] = (pt.r2cut[col] - pair_pot.begin[k]) / n;
+      pt.invstep[col] = 1.0 / pt.step[col];
+      pt.begin  [col] = pair_pot.begin[k] * pt.invstep[col];
+    }
+
+  /* loop over columns */
+  for (i=0; i<ntypes; i++)
+    for (j=i; j<ntypes; j++) {
+
+      int   col  = i*ntypes + j;
+      float *y   = pt.tab[col], *y2 = y + 1;
+      float step = pt.step[col];
+      float p, qn, un;
+
+      /* fill in the potential values */
+      for (k=0; k<n; k++) {
+        int   inc = ntypes * ntypes, idummy;
+        float r2  = pt.begin[col] + k * step, fdummy;
+	pair_int2(y+4*k, &fdummy, &idummy, &pair_pot, col, inc, r2);
+      }
+      y[4*n] = 0.0;  /* last potential value is zero */
+
+      /* at the left end, we take natural splines */
+      y2[0] = u[0] = 0.0;
+
+      for (k=1; k<n; k++) {
+        p = 0.5 * y2[4*(k-1)] + 2.0;
+        y2[4*k] = -0.5 / p;
+        u[k] = (y[4*(k+1)] - 2*y[4*k] + y[4*(k-1)]) / step; 
+        u[k] = (6.0 * u[k] / (2*step) - 0.5 * u[k-1]) / p;
+      }
+
+      /* first derivative zero at right end for radial functions */
+      qn = 0.5;
+      un = (3.0 / step) * (y[4*(n-2)] - y[4*(n-1)]) / step;
+
+      y2[4*n] = (un - qn * u[n-1]) / (qn * y2[4*(n-1)] + 1.0);
+      for (k=n-1; k>=0; k--) 
+        y2[4*k] = y2[4*k] * y2[4*(k+1)] + u[k];
+
+      /* fill in second copies of y and y2 */
+      for (k=0; k<=4*(n-1); k+=4) {
+        y [k+2] = y [k+4];
+        y2[k+2] = y2[k+4];
+      }
+
+      /* for security, we continue the last interpolation polynomial */
+      y [4*n+2] = 2*y [4*(n-1)]-y [4*(n-2)]+SQR(step)*y2[4*(n-1)];
+      y2[4*n+2] = 2*y2[4*(n-1)]-y2[4*(n-2)];
+
+    }
+
+  free(u);
+
+}
+
+#endif
 
 /******************************************************************************
 *
@@ -318,9 +386,6 @@ int estimate_nblist_size(void)
 }
 
 
-
-
-
 /******************************************************************************
 *
 *  make_tb
@@ -374,11 +439,6 @@ static void make_tb_args(argbuf_t* parg, unsigned n, int k)
      /* Sync memory */
      __lwsync();
 }
-
-
-
-
-
 
 
 /******************************************************************************
@@ -442,14 +502,6 @@ static void store_tb_args(argbuf_t* parg, unsigned n)
 }
 
 
-
-
-
-
-
-
-
-
 /******************************************************************************
 *
 *  calc_tb_ppu
@@ -472,8 +524,6 @@ static void calc_tb_ppu(void)
     store_tb(wp);
   }
 }
-
-
 
 
 /******************************************************************************
@@ -710,42 +760,24 @@ void make_nblist(void)
 }
 
 
-
-
-
 /******************************************************************************
 *
 *  make_wp
 *
 ******************************************************************************/
 
-
-
 static void make_wp(int k, wp_t *wp)
 {
   int m;
   cell_nbrs_t const * const c = cnbrs + k;
-  /* cell *p = CELLPTR(k); */ /* Actually needed only once (below) */
   int const inc_int = 128 / sizeof(int) - 1;
   int const at_inc  = (2*(CELLPTR(k))->n + inc_int) & (~inc_int);
-
 
   wp->k = k;
   wp->n_max = n_max;      /* allocate for this many atoms     */
   wp->len_max = len_max;  /* allocate for this many neighbors */
   wp->ti_len = at_inc;
   wp->flag = 2;
-
-
-  /*
-  fprintf(stdout,
-          "make_wp (CBE_DIRECT)\n"
-          "k       =  %d\n"
-          "len_max =  %d\n",
-          wp->k, wp->len_max
-         );
-  fflush(stdout);
-  */
 
   for ( m=0;   EXPECT_FALSE_(m<NNBCELL);    ++m ) {
     int const n = c->nq[m];
@@ -763,10 +795,10 @@ static void make_wp(int k, wp_t *wp)
     PTR2EA( tb + tb_off[k * NNBCELL + m], wp->cell_dta[m].tb_ea );
 #endif
   }
+#ifndef ON_PPU
   wp->cell_dta[NNBCELL-1].len = len_max2;  /* this is not optimal... */
+#endif
 }
-
-
 
 
 /* Create narg (or argbufsze if it is less) wp in buffer starting
@@ -781,11 +813,6 @@ static void make_wp_args(argbuf_t* parg, unsigned n, int k)
      /* Sync memory */
      __lwsync();
 }
-
-
-
-
-
 
 
 /******************************************************************************
@@ -818,8 +845,6 @@ static void store_wp_args(argbuf_t* parg, unsigned narg)
 /* Dummy function: Do not store anyting at all */
 static void store_wp_none(argbuf_t* unused1, unsigned unused2)
 {}
-
-
 
 #else  /* not CBE_DIRECT */
 
@@ -876,9 +901,6 @@ int estimate_nblist_size(void)
   }
   return tn;
 }
-
-
-
 
 
 /******************************************************************************
@@ -1015,8 +1037,6 @@ void make_nblist(void)
 }
 
 
-
-
 /******************************************************************************
 *
 *  make_wp
@@ -1027,7 +1047,7 @@ static void make_wp(int k, wp_t *wp)
 {
   cell_nbrs_t *c = cnbrs + k;
   int   m, j, i, n, l, t, min;
-  flt   *pp;
+  float *pp;
   int   *tt;
 
   /* store dimensions */
@@ -1047,9 +1067,9 @@ static void make_wp(int k, wp_t *wp)
       free(wp->typ);
     }
     wp->n2_max = wp->n2 + 50;
-    wp->pos    = (flt *) malloc_aligned(4 * wp->n2_max * sizeof(flt), 0,0);
-    wp->force  = (flt *) malloc_aligned(4 * wp->n2_max * sizeof(flt), 0,0);
-    wp->typ    = (int *) malloc_aligned(    wp->n2_max * sizeof(int), 0,0);
+    wp->pos    = (float *) malloc_aligned(4 * wp->n2_max * sizeof(float),0,0);
+    wp->force  = (float *) malloc_aligned(4 * wp->n2_max * sizeof(float),0,0);
+    wp->typ    = (int *) malloc_aligned(    wp->n2_max * sizeof(int),0,0);
     if ((NULL==wp->pos) || (NULL==wp->force) || (NULL==wp->typ))
       error("cannot allocate workpackage");
   }
@@ -1063,10 +1083,10 @@ static void make_wp(int k, wp_t *wp)
     if (j == -1) continue;
     cell  *q = cell_array + j;
     for (i=0; i<q->n; i++) {
-      pp[l++] = (flt) ORT(q,i,X);
-      pp[l++] = (flt) ORT(q,i,Y);
-      pp[l++] = (flt) ORT(q,i,Z);
-      pp[l++] = (flt) 0.0;
+      pp[l++] = (float) ORT(q,i,X);
+      pp[l++] = (float) ORT(q,i,Y);
+      pp[l++] = (float) ORT(q,i,Z);
+      pp[l++] = (float) 0.0;
       tt[n++] = SORTE(q,i);
     }
   }
@@ -1078,8 +1098,6 @@ static void make_wp(int k, wp_t *wp)
   wp->n1_max  = 0;  /* max size for ti - nothing allocated here */
   wp->len_max = 0;  /* max size for tb - nothing allocated here */
 }
-
-
 
 
 /******************************************************************************
@@ -1094,7 +1112,7 @@ static void store_wp(wp_t const* const wp)
   int m, j, i, n=0;
 
   /* Deref. pointer */
-  flt const* const force = wp->force;
+  float const* const force = wp->force;
 
   /* copy force and potential energy to cell array */
   for (m=0; m<14; m++) {
@@ -1120,9 +1138,6 @@ static void store_wp(wp_t const* const wp)
 *  do_forces_spu
 *
 ******************************************************************************/
-
-
-
 
 /* (Slightly generalized) multibuffered version */
 void do_work_spu_mbuf(void (* const mkargs)(argbuf_t*, unsigned n, int k0),
@@ -1154,33 +1169,26 @@ void do_work_spu_mbuf(void (* const mkargs)(argbuf_t*, unsigned n, int k0),
      */
     register unsigned nfrom,nto;
 
-
-
     /* Initialization */
     for ( ispu=0;   EXPECT_TRUE_(ispu<ispumax);   ++ispu ) {
         /* Scheduling: No work has been scheduled yet */
         nlo[ispu]=nhi[ispu]=0u;
     }
 
-
-
-
     /* While not all WPs have been completed yet */
     for ( k=0, nto=nfrom=ncells;; ) {
 
         /* Iterate over all SPUs */
-        for ( ispu=iarg=0;   EXPECT_TRUE_(ispu<ispumax);    ++ispu, iarg+=N_ARGBUF ) {
+        for (ispu=iarg=0; EXPECT_TRUE_(ispu<ispumax); ++ispu, iarg+=N_ARGBUF) {
 	    /* Number of slots which must be available in inbox... */
 	    enum { IBXCNT=2u };
             /* ...shifted to inbox count position */
   	    enum { IBX2=((unsigned)(IBXCNT<<INMBX_CNT_SHIFT)) };
 
-
             /* Pointers to SPU argument buffers / WP buffers */
             register argbuf_t* const parg = cbe_arg_begin + iarg;
             register unsigned int narg;
           
-
   	    /* Control area for current SPU, used for mailboxing */
    	    spe_spu_control_area_p const pctl  = cbe_spucontrolarea[ispu];
 
@@ -1207,7 +1215,6 @@ void do_work_spu_mbuf(void (* const mkargs)(argbuf_t*, unsigned n, int k0),
                 k   += narg;
             }
 
-
             /* Use higher buffer? */
             if ( EXPECT_TRUE_(nto>0u) && (0u==nhi[ispu]) &&
                  (((pctl->SPU_Mbox_Stat) & INMBX_CNT_MASK) >= IBX2)   ) {
@@ -1220,13 +1227,10 @@ void do_work_spu_mbuf(void (* const mkargs)(argbuf_t*, unsigned n, int k0),
                 /* 2nd msg. to SPU: offset */
                 pctl->SPU_In_Mbox = offs_hi;
 
-
 		/* Mark high buffer as being filled with ncrea elements */
 		nto -= (nhi[ispu]=narg);
                 k   += narg;
             }
-
-
 
 	    /* Can we read from Mbox?
                That is: has SPU finished working on some WP? */
@@ -1254,7 +1258,6 @@ void do_work_spu_mbuf(void (* const mkargs)(argbuf_t*, unsigned n, int k0),
         }
     }
 
-
 }
 
 
@@ -1270,8 +1273,6 @@ void do_work_spu(int const flag)
   /* Some indices */
   int k, kdone, i, ispu;
   int ispumax = num_spus;
-
-
 
   /* The following array keeps track of the states of the SPUs */
   typedef enum { IDLE=0u, WORKING=1u } Tspustate;
@@ -1289,7 +1290,8 @@ void do_work_spu(int const flag)
       spuload[ispu]=0;
   }
 
-  /* fprintf(stdout, "nallcells=%i  ncells=%i\n", nallcells, ncells); fflush(stdout); */
+  /* fprintf(stdout, "nallcells=%i  ncells=%i\n", nallcells, ncells); 
+     fflush(stdout); */
 
   /* While there is still work to be scheduled or there are still 
      results to be picked up. */
@@ -1313,10 +1315,9 @@ void do_work_spu(int const flag)
            wp_t*   const pwp   = cbe_wp_begin+iwp1;
 #endif
 
-
-           /* fprintf(stdout, "SPU %u is %s\n", ispu, ((WORKING==*pstat) ? "working" : "notworking"));  */
+           /* fprintf(stdout, "SPU %u is %s\n", ispu, 
+                      ((WORKING==*pstat) ? "working" : "notworking"));  */
  
-
            /* Idle SPU and still work to schedule */
            if (  (IDLE==*pstat) && (k<ncells)  ) {
    	       /* Create a work package... */
@@ -1331,7 +1332,8 @@ void do_work_spu(int const flag)
 #endif
 
  
-               /* Signal SPU by writing to its mailbox when space is available */
+               /* Signal SPU by writing to its mailbox when space 
+                  is available */
                __lwsync();  /* synchronize memory before releasing it */
 
                while ( 0u == ((pctl->SPU_Mbox_Stat) & INMBX_CNT_MASK) ) {}
@@ -1347,7 +1349,6 @@ void do_work_spu(int const flag)
                /* This SPU is working, so we can move on to the next one */
                continue;
            }
-
 
            /* Has some wp been scheduled to current SPU and are there
               still results to be picked up? */
@@ -1484,7 +1485,6 @@ void calc_forces(int const steps)
   /* flag 2: calculate pair forces */
   /* do_work_spu(DOWP);   */
 
-
   /* Tell all SPUs to go to "mode WP" */
   value2mboxes(cbe_spucontrolarea, num_spus,  DOWP,  tmpcnt);
 
@@ -1494,25 +1494,22 @@ void calc_forces(int const steps)
   /* Tell SPUs to stop processing WPs */
   value2mboxes(cbe_spucontrolarea, num_spus, 0u,    tmpcnt);
 
-
-
   /* Get responses from SPU mailboxes */
-  /* fprintf(stdout, "Getting result locations from SPUs\n");  fflush(stdout);  */
+  /* fprintf(stdout, "Getting result locations from SPUs\n"); fflush(stdout);*/
   mboxes2tuples(cbe_spucontrolarea, num_spus, 1,  mbxval,  tmpcnt);
-
 
   /* Sum up energies */
   __lwsync();
-  for ( ival=iarg=0u;  EXPECT_TRUE_(ival<num_spus);   ++ival, iarg+=N_ARGBUF ) {
+  for ( ival=iarg=0u;  EXPECT_TRUE_(ival<num_spus);  ++ival, iarg+=N_ARGBUF ) {
       /* Energy/virial WP is located at offset mbxval[ival] 
          in argument buffer of SPU # ival. */
-      register wp_t const* const pwp = (wp_t const*)(cbe_arg_begin+iarg+mbxval[ival]);
+      register wp_t const* const pwp = 
+         (wp_t const*)(cbe_arg_begin+iarg+mbxval[ival]);
       tot_pot_energy += pwp->totpot;
       virial         += pwp->virial;
   }
 
 #endif
-
 
 
 #ifdef MPI
@@ -1530,8 +1527,6 @@ void calc_forces(int const steps)
 #endif
 
 }
-
-
 
 
 /******************************************************************************

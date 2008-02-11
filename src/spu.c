@@ -1,9 +1,26 @@
+/******************************************************************************
+*
+* IMD -- The ITAP Molecular Dynamics Program
+*
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+* University of Stuttgart, D-70550 Stuttgart
+*
+******************************************************************************/
+
+/******************************************************************************
+*
+* spu.c -- main program on SPU
+*
+******************************************************************************/
+
+/******************************************************************************
+* $Revision$
+* $Date$
+******************************************************************************/
+
 /* ISO C std. headers */
 /* #include <stddef.h> */
-/* #include <stdio.h> */
-
-
-
+#include <stdio.h>
 
 /* SPU headers */
 #include <spu_mfcio.h>
@@ -19,9 +36,8 @@
 /* Local/program specific headers */
 #include "imd_cbe.h"
 
-
-
-
+/* potential data structure */
+pt_t ALIGNED_(16,pt);
 
 
 /* Suffix (kilobyte) */
@@ -36,21 +52,12 @@ enum { Ki=1024u };
 typedef unsigned long long  ui64_t;
 
 
-
-
-
-
-
 /* Maximum */
 #define MAX(a,b) ((a)>(b) ? (a) : (b))
 
 static INLINE_ unsigned uimax(unsigned const a, unsigned const b) {
     return MAX(a,b);
 }
-
-
-
-
 
 
 #if defined(CBE_DIRECT)  /* "Direct" case */
@@ -648,79 +655,53 @@ static unsigned workloop_ea(
 }
 
 
-
-
-
-
-
-
-
-
-/* Create potential data by DMA */
-static void start_create_pt(void* const pbuf, unsigned const szebuf,
-                            env_t const* const env, pt_t* const p,
-                            unsigned const tag)
-{
-     /* There are 4 pointers/EAs in pt_t/env_t
-        Every pointer in env points to nelem items of type flt, so
-        there are 4*nelem itmes to be DMAed in total
-     */
-     unsigned const nelem   = (env->ntypes)*(env->ntypes);
-     /* Total number of bytes/allocation units needed */
-     unsigned const nszetot = 4 * nelem * (sizeof (flt[4]));
-
-     /* Enough memory available? */
-     if ( EXPECT_TRUE_(szebuf>=nszetot) ) {
-         /* Start DMAing the memory pointed to by pt.r2cut to LS, also getting data
-            for lj_sig,... which follows after that in main mem. */
-
-        mdma64(pbuf, env->r2cut, nszetot,  tag, MFC_GET_CMD);
-
-        /* Set the pointers in the resulting pt_t (see modified allocation
-           scheme in mk_pt)  & copy scalar member while DMA is running
-	*/
-        p->r2cut    = ((vector float *)pbuf);
-        p->lj_sig   = p->r2cut  + nelem;
-        p->lj_eps   = p->lj_sig + nelem;
-        p->lj_shift = p->lj_eps + nelem;
-        p->ntypes   = env->ntypes;
-     }
-     else {
-        /* fprintf(stderr, "Could not allocate %u bytes for env.\n", nszetot); */
-        p->r2cut    = 0;
-        p->lj_sig   = 0;
-        p->lj_eps   = 0;
-        p->lj_shift = 0;
-     }
-}
-
-
-
-
 /* Start initialization (pt only, at the moment) */
 static void start_init(ea_t const envea, unsigned int const itag)
 {
-    /* Buffer for potential (pt) data */
-    static unsigned char ALIGNED_(16, ptdata[300]);
+  /* Buffer for potential data */
+#ifdef LJ
+  enum { memsize=16u };   /* for ntypes <= 2 */
+#else
+  enum { memsize=384u };  /* for ntypes <= 2 and <= 120 potential lines */
+  int i, j;
+#endif
+  static vector float ALIGNED_(128, pbuf[memsize]);
+  unsigned int off=0, inc;
 
-    /* Controll block*/
-    envbuf_t ALIGNED_(16, ptcb);
+  /* Get the potential control block - 16 bytes is enough */
+  dma64( &pt, envea, 16, itag, MFC_GET_CMD);
+  wait_dma((1u<<itag), MFC_TAG_UPDATE_ALL);
 
-    /* Get the pt controll block */
-    mdma64(&ptcb,  envea, (sizeof ptcb),  itag, MFC_GET_CMD);
-    (void)wait_dma((1u<<itag), MFC_TAG_UPDATE_ALL);
+  /* Get the potential data */
+  dma64(pbuf, pt.ea, sizeof(pbuf), itag, MFC_GET_CMD);
 
-    /* Start DMA of pt */
-    start_create_pt(ptdata, (sizeof ptdata), ((env_t*)&ptcb), &pt,  itag);
+  /* Set some pointers to the data */
+#ifdef LJ
+  inc = pt.ntypes * pt.ntypes;
+  pt.r2cut    = pbuf;            off += inc;
+  pt.lj_sig   = pt.r2cut + off;  off += inc;
+  pt.lj_eps   = pt.r2cut + off;  off += inc;
+  pt.lj_shift = pt.r2cut + off;  off += inc;
+#else
+  inc = pt.ntypes * pt.ntypes;
+  pt.data    = pbuf;
+  pt.begin   = pt.data + off;  off += inc;
+  pt.r2cut   = pt.data + off;  off += inc;
+  pt.step    = pt.data + off;  off += inc;
+  pt.invstep = pt.data + off;  off += inc;
+  for (i=0; i<pt.ntypes; i++)
+    for (j=i; j<pt.ntypes; j++) {
+      pt.tab[i*pt.ntypes+j] = spu_splats( off );
+      pt.tab[j*pt.ntypes+i] = spu_splats( off );
+      off += pt.nsteps + 1;
+    }
+#endif
+
+  if ( EXPECT_FALSE_(off > memsize) ) {
+    printf("memory overflow in potential data\n");
+  }
+
 }
-
-
-
-
-
-
-
-
 
 
 
@@ -734,14 +715,6 @@ static INLINE_ void arg_eas(register ea_t cur64, register ea_t const stride64,
         (*p64)=cur64;
     }
 }
-
-
-
-
-
-
-
-
 
 
 
@@ -762,15 +735,9 @@ int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
     /* Some timing stuff */
     register tick_t t0, dt;
 
-
-
     /* Get the environment list */
     mdma64(env,  envp,  (sizeof (ea_t[N_ENVEA])),   misctag, MFC_GET_CMD);
     (void)(wait_dma(miscmsk, MFC_TAG_UPDATE_ALL));
-
-
-
-
 
     /* Fetch env and start creating the corresponding pt_t (Using DMA) */
     start_init(env[0],  misctag);
@@ -858,11 +825,13 @@ int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
 
 
                /* Debugging output */
-               /* fprintf(stdout, "%u WPs at offset %u in mode %u\n", narg,offs,mode); fflush(stdout); */
+               /* fprintf(stdout, "%u WPs at offset %u in mode %u\n", 
+                  narg,offs,mode); fflush(stdout); */
 
                /* Process the arguments */
                eas = eabuf+offs;
-               omsk = workloop_ea(eas,eas,narg, ib,ob, tags,masks, getfunc,wrkfunc);
+               omsk = workloop_ea(eas,eas,narg, ib,ob, tags,masks, 
+                                  getfunc,wrkfunc);
 
                /* Wait for all outbound DMAs */
                wait_dma(omsk, MFC_TAG_UPDATE_ALL);
@@ -900,19 +869,5 @@ int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
         }
     }
 
-
-
-
-
     return 0;
 }
-
-
-
-
-
-
-
-
-/* SPU (local) copy of pt which is initialized (once) via DMA */
-pt_t pt;

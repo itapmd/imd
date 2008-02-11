@@ -1,3 +1,23 @@
+/******************************************************************************
+*
+* IMD -- The ITAP Molecular Dynamics Program
+*
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+* University of Stuttgart, D-70550 Stuttgart
+*
+******************************************************************************/
+
+/******************************************************************************
+*
+* imd_cbe.h -- header file for CBE
+*
+******************************************************************************/
+
+/******************************************************************************
+* $Revision$
+* $Date$
+******************************************************************************/
+
 #ifndef IMD_CBE_H__
 #define IMD_CBE_H__
 
@@ -6,12 +26,35 @@
 #include "config.h"
 
 
-/********* Common (SPU & PPU) part +++++++++*/
+#ifdef __SPU__
+
+/* SPU specific headers */
+#include <spu_mfcio.h>
+#include <spu_intrinsics.h>
+
+#endif
+
+#ifdef __PPU__
+
+/* WORDSIZE & size_t */
+#include <limits.h>
+#include <stddef.h>
+
+/* Some PPU macros are needed to implement other macros */
+#include <ppu_intrinsics.h>
+
+/* SPU runtime management */
+#include <libspe2.h>
+
+#endif
+
 
 #if defined (__cplusplus)
 extern "C" {
 #endif
 
+
+/********* Common (SPU & PPU) part +++++++++*/
 
 
 /* ticks() is a qunatity of tick_t, a type which may different on PPU and SPU.
@@ -158,14 +201,6 @@ enum { CBE_GRANULE_NBYTE = ((unsigned)128) };
 enum { CBE_GRANULE_NINT  = (unsigned)(CBE_GRANULE_NBYTE/(sizeof (int))) };
 
 
-/* The floating point type */
-typedef float flt;
-
-
-
-
-
-
 
 
 #ifdef CBE_DIRECT  /* "Direct " */
@@ -241,14 +276,14 @@ typedef struct wp {
   int   k, n1, n2, len;           /* package number and actual sizes  */
   int   n1_max, n2_max, len_max;  /* allocated size (not transferred) */
 
-  flt   totpot, virial;
+  float totpot, virial;
 
 #if defined(__SPU__)
   vector float const *pos;      /* length: n2 */
   vector float       *force;    /*         n2 */
 #else
-  flt       *pos;             /* length: 4*n2 */ 
-  flt const *force;	      /*         4*n2 */
+  float       *pos;             /* length: 4*n2 */ 
+  float const *force;           /*         4*n2 */
 #endif
 
   int    *typ;  /* length: n2, 2*n2   */
@@ -276,8 +311,8 @@ typedef struct exch {
     int n2_max;
     int len_max;  /* allocated size (not transferred) */
 
-    flt totpot;
-    flt virial;
+    float totpot;
+    float virial;
 
     ea_t pos;
     ea_t force;       /* length: 4*n2, 4*n2 */
@@ -303,28 +338,53 @@ typedef struct exch {
 
 
 
+#ifdef LJ
 
-
-/* The potential type */
+/* potential type for Lennard-Jones */
 typedef struct {
   int ntypes;
+  ea_t ea;
 #if defined(__SPU__)
   vector float const* r2cut;
   vector float const* lj_sig;
   vector float const* lj_eps;
   vector float const* lj_shift;
 #else
-  flt* r2cut;
-  flt* lj_sig;
-  flt* lj_eps;
-  flt* lj_shift;
+  float *r2cut;
+  float *lj_sig;
+  float *lj_eps;
+  float *lj_shift;
 #endif
 } pt_t;
 
-/* This should be defined in spu.c or imd_force_cbe */
+#else
+
+/* potential type for tabulated pair potentials */
+typedef struct {
+  int   ntypes;      /* number of atom types */
+  int   nsteps;      /* number of tabulations steps */
+  ea_t  ea;          /* effective address of data section */
+#ifdef __SPU__
+  vector float const *begin;    /* first value in the table */
+  vector float const *r2cut;    /* last value in the table */
+  vector float const *step;     /* table increment */
+  vector float const *invstep;  /* inverse of increment */
+  vector float const *data;     /* the actual data */
+  vector unsigned int tab[4];   /* where columns start (max. 2x2 columns) */
+#else
+  float *begin;      /* first value in the table */
+  float *r2cut;      /* last value in the table */
+  float *step;       /* table increment */
+  float *invstep;    /* inverse of increment */
+  float *data;       /* the actual data */
+  float *tab[4];     /* pointers to tabulation data (max. 2x2 columns) */
+#endif
+} pt_t;
+
+#endif
+
+/* This is defined in spu.c and imd_forces_cbe.c */
 extern  pt_t pt;
-
-
 
 
 
@@ -336,10 +396,9 @@ typedef struct env {
     int ntypes;
 
     /* Each of the following "points" to arrays with
-       4*ntypes*ntypes items of type flt */
+       4*ntypes*ntypes items of type float */
     ea_t r2cut, lj_sig, lj_eps, lj_shift; 
 } env_t;
-
 
 
 
@@ -409,14 +468,6 @@ typedef union {
     /* Padding */
     unsigned char pad[CEILPOW2(MAXSIZE2(pt_t,env_t),BUFPAD)];
 } envbuf_t;
-
-
-
-
-
-
-
-
 
 
 
@@ -496,109 +547,18 @@ int vecout(int (* const of)(char const[],...),   /* General output function*/
 
 
 
-
-
-#if defined (__cplusplus)
-}
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #if defined(__SPU__)          /************** SPU part ************/
-
-
-/* SPU specific headers */
-#include <spu_mfcio.h>
-#include <spu_intrinsics.h>
-
-#if defined (__cplusplus)
-extern "C" {
-#endif
-
-
 
 /* Unsigned integer type which may hold a pointer 
   (and vice versa)*/
 typedef unsigned int  uintaddr_t;
 
-
-
-/* Wait for DMA specified by mask m using type for update */
-static INLINE_ unsigned wait_dma(unsigned const m, unsigned const type) {
-    spu_writech(MFC_WrTagMask,   m);
-    spu_writech(MFC_WrTagUpdate, type);
-    return spu_readch(MFC_RdTagStat);
-}
-
-
-
-
-
-/* (Just a) wrapper for DMA with less than 16K */
-static INLINE_ void (dma64)(register void* const p,
-                            register ea_t const ea, register unsigned int const size,
-                            register unsigned int const tag, register unsigned int const cmd
-                  )
-{
-    si_wrch(MFC_EAH,   si_from_uint((unsigned int)(ea>>32u)));
-    si_wrch(MFC_EAL,   si_from_uint((unsigned int)ea));
-    si_wrch(MFC_LSA,   si_from_ptr(p));
-    si_wrch(MFC_Size,  si_from_uint(size));
-    si_wrch(MFC_TagID, si_from_uint(tag));
-    si_wrch(MFC_Cmd,   si_from_uint(cmd));
-}
-
-
-
-
-
-
-
-
-
-
-/* DMA more than 16K using multiple DMAs */
-static INLINE_ void mdma64(void* const p, ea_t const ea, unsigned const size,
-                           unsigned const tag, unsigned const cmd
-                          )
-{
-    /* Byte type */
-    typedef unsigned char    Tbyte;
-
-    /* Defined somwhere in imd_cbe_util.c */
-    extern void mdma64_rec(register Tbyte* const, register ea_t const, register unsigned const,
-                           register unsigned const, register unsigned const);
-    extern void mdma64_iter(register Tbyte*,  register ea_t, register unsigned,
-                            register unsigned const, register unsigned const);
-
-
-
-    mdma64_iter(((Tbyte*)p),  ea, size,  tag,cmd);
-}
-
-
-
-
-
-
-
-
-
-
+INLINE_ unsigned wait_dma(unsigned const m, unsigned const type);
+INLINE_ void dma64(register void* const p,
+    register ea_t const ea, register unsigned int const size,
+    register unsigned int const tag, register unsigned int const cmd);
+INLINE_ void mdma64(void* const p, ea_t const ea, unsigned const size,
+                           unsigned const tag, unsigned const cmd);
 
 /* Generic macro for rounding up vector components in terms of
    SPU vector commands.
@@ -606,6 +566,7 @@ static INLINE_ void mdma64(void* const p, ea_t const ea, unsigned const size,
  */
 #define CEILV(x,r) spu_andc(spu_add((r),(x)), (r))
 
+#ifdef OBSOLETE
 
 static INLINE_
 vector unsigned int uiceilv(vector unsigned int const v, vector unsigned int const m)
@@ -613,13 +574,7 @@ vector unsigned int uiceilv(vector unsigned int const v, vector unsigned int con
      return CEILV(v,m);
 }
 
-
-
-
-
-#if defined (__cplusplus)
-}
-#endif
+#endif /* OBSOLETE */
 
 #endif /* SPU */
 
@@ -627,40 +582,7 @@ vector unsigned int uiceilv(vector unsigned int const v, vector unsigned int con
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 #if defined(__PPU__)           /************ PPU part **************/
-
-/* WORDSIZE & size_t */
-#include <limits.h>
-#include <stddef.h>
-
-/* Some PPU macros are needed to implement other macros */
-#include <ppu_intrinsics.h>
-
-/* SPU runtime management */
-#include <libspe2.h>
-
-
-
-
-#if defined (__cplusplus)
-extern "C" {
-#endif
-
 
 
 /* Map some vector commands */
@@ -694,10 +616,7 @@ enum { PPU_PTRBITS = (unsigned)(PPU_PTRBITS_) };
 
 
 
-
-
-
-/* Unsigned integer type which may used to represent a pointer
+/* Unsigned integer type which may be used to represent a pointer
    (and vice versa). This type is not larger than the ea_t.
 */
 typedef
@@ -785,10 +704,6 @@ void cbe_shutdown(void);
 
 
 
-
-
-
-
 /* CBE time base utilities */
 
 
@@ -801,8 +716,6 @@ unsigned long tbfreq_fd(int const fd,  char* const buf, unsigned const bufsze);
 
 /* Get time base frequency from OS (as suggested by the CBE programming handbook) */
 unsigned long tbfreq(void);
-
-
 
 
 
@@ -824,19 +737,11 @@ void* (calloc_aligned)(size_t const nelem, size_t const elsze,
 
 
 
-
-
-
-
-
-/* Create env_t from pt_t */
-env_t* (create_env)(pt_t const* const p, env_t* const e);
-
 /* Create exch_t *e from wp_t *wp  */
 exch_t* (create_exch)(wp_t const* const wp, exch_t* const e);
 
 
-
+#ifdef OBSOLETE
 
 /* Output of pt_t *e using  printf-like function of */
 int (pt_out)(int (*of)(char const[],...), pt_t const* const e);
@@ -844,7 +749,7 @@ int (pt_out)(int (*of)(char const[],...), pt_t const* const e);
 /* Output of work package wp using printf-like functions of */
 int (wp_out)(int (*of)(char const[],...), wp_t const* const e);
 
-
+#endif
 
 
 
@@ -860,26 +765,12 @@ void do_work_spu_mbuf(void (* const mkf)(argbuf_t*, unsigned, int),
 #endif
 
 
+#endif /* PPU part */
+
 
 #if defined (__cplusplus)
 }
 #endif
-
-
-#endif /* PPU part */
-
-
-
-
-
-/* Common part again. 
-   "Generic" declarations follow which need declarations from PPU/SPU parts
- */
-
-
-
-
-
 
 
 #endif /* IMD_CBE_H */
