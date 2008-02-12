@@ -155,6 +155,9 @@ int main_loop(int simulation)
 #ifdef STRESS_TENS
     do_press_calc = (((eng_int   > 0) && (0 == steps % eng_int  )) ||
                      ((press_int > 0) && (0 == steps % press_int)) ||
+#ifdef FORCE
+		     ((force_int  > 0) && (0 == steps % force_int )) ||
+#endif /* FORCE */
                      ((dist_int  > 0) && (0 == steps % dist_int )) ||
                      (relax_rate > 0.0) );
 #endif
