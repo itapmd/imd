@@ -48,6 +48,9 @@ void setup_potentials( void )
     read_pot_table(&pair_pot,potfilename,ntypes*ntypes,1);
   /* initialize analytically defined potentials */
   if (have_pre_pot) init_pre_pot();
+#ifdef DIPOLE
+  create_dipole_tables();
+#endif /* DIPOLE */
 #ifdef MULTIPOT
   for (i=0; i<N_POT_TAB; i++)
     copy_pot_table( pair_pot, &pair_pot_ar[i]);
@@ -429,7 +432,7 @@ void create_pot_table(pot_table_t *pt)
 {
     int maxres = 0, tablesize;
     int ncols = ntypes * ntypes;
-    int i, j, n, column;
+    int i, j, n, column,col;
     real r2_begin[10][10], r2_end[10][10], r2_step[10][10], r2_invstep[10][10];
     int len[10][10];
     real pot, grad, r2, val;
@@ -510,7 +513,9 @@ void create_pot_table(pot_table_t *pt)
       for (j=0; j<ntypes; j++) {
 
         if (r2_end[i][j]>0) {
-
+	  col= (i<j) ? 		
+	    i*ntypes - (i*(i+1))/2 + j : 
+	    j*ntypes - (j*(j+1))/2 + i;
           for (n=0; n<len[i][j]; n++) {
             val = 0.0;
             r2 = r2_begin[i][j] + n * r2_step[i][j];
@@ -570,6 +575,16 @@ void create_pot_table(pot_table_t *pt)
               }
 	    }
 #endif
+#ifdef DIPOLE
+            /* Morse-Stretch potential for dipole */
+            if ((ew_r2_cut > 0)) {
+              if (r2 < ew_r2_cut) {
+                pair_int_mstr(&pot, &grad, i, j, r2);
+                val += pot - ms_shift[col];
+                val -= SQRT(r2)*ms_fshift[col]*(SQRT(r2)-SQRT(ew_r2_cut));
+              }
+	    }
+#endif
             *PTR_2D(pt->table, n, column, pt->maxsteps, ncols) = val;
           }
 	}
@@ -598,9 +613,15 @@ void create_pot_table(pot_table_t *pt)
 
 void init_pre_pot(void) {
 
-  int  i, j, k, m, n;
+  int  i, j, k, m, n,col;
   real tmp = 0.0;
 
+#ifdef DIPOLE
+  ms_shift = (real *) malloc (ntypepairs * sizeof(real));
+  ms_fshift = (real *) malloc (ntypepairs * sizeof(real));
+  if (( NULL == ms_shift ) || ( NULL == ms_fshift ))
+    error("cannot allocate Morse-Stretch shift");
+#endif
   n=0; m=0;
   for (i=0; i<ntypes; i++) 
     for (j=i; j<ntypes; j++) {
@@ -692,6 +713,9 @@ void init_pre_pot(void) {
 #ifdef EWALD
   if (ew_nmax < 0) tmp = MAX(tmp,ew_r2_cut);
 #endif
+#if DIPOLE
+  tmp = MAX(tmp,ew_r2_cut);
+#endif
   cellsz = MAX(cellsz,tmp);
 
   /* Shift of potentials */
@@ -730,7 +754,7 @@ void init_pre_pot(void) {
           if (myid==0)
             printf("Buckingham potential %1d %1d shifted by %f\n", 
 	           i, j, -buck_shift[i][j]);
-	}
+	} 
         else buck_shift[i][j] = 0.0;
       } 
       else {
@@ -750,6 +774,19 @@ void init_pre_pot(void) {
         else {
           ew_shift [i][j] = 0.0;
           ew_fshift[i][j] = 0.0;
+	}
+      }
+#endif
+#ifdef DIPOLE
+      /* Morse-Stretch for Dipole */
+      if (i<=j) {
+	if (ew_r2_cut > 0)  {
+	  col= i*ntypes - (i*(i+1))/2 + j;
+	  pair_int_mstr( &ms_shift[col], &ms_fshift[col], i, j, ew_r2_cut);
+          if (myid==0) {
+            printf("Morse-Stretch pot %1d %1d (col %1d) shifted by %g,\n", 
+	           i, j, col, -ms_shift[col]);
+	  }
 	}
       }
 #endif
@@ -774,6 +811,107 @@ void init_pre_pot(void) {
 }
 
 #endif
+
+#ifdef DIPOLE
+/******************************************************************************
+*
+*  create_dipole_tables -- tables for induced dipoles
+*
+******************************************************************************/
+
+void create_dipole_tables()
+{
+  int i,j,tablesize;
+  real r2,pot,grad,tmp,pot2;
+  /* Preliminary work */
+  int ncols=3; 			/* only one column each */
+  int cou_col=0;		/* coulomb potential */
+  int sco_col=1;		/* smooth cutoff column: 2 */
+  int shr_col=2;		/* short range dipole interaction */
+  pot_table_t *pt;
+
+  if (dp_res==0) dp_res=1000;
+  if (dp_begin<=0.) dp_begin=0.2; /* prevent singularity at r=0 */
+  
+  pt=&dipole_table;
+  
+  pt->ncols    = ncols;			/* three columns */
+  pt->maxsteps = dp_res;
+  tablesize    = ncols * (pt->maxsteps+2);
+  pt->begin    = (real *) malloc(ncols*sizeof(real));
+  pt->end      = (real *) malloc(ncols*sizeof(real));
+  pt->step     = (real *) malloc(ncols*sizeof(real));
+  pt->invstep  = (real *) malloc(ncols*sizeof(real));
+  pt->len      = (int  *) malloc(ncols*sizeof(int ));
+  if ((pt->begin   == NULL) || (pt->end == NULL) || (pt->step == NULL) || 
+      (pt->invstep == NULL) || (pt->len == NULL)) 
+    error("Cannot allocate info block for dipole function table.");
+  pt->table = (real *) malloc(tablesize * sizeof(real));
+  if (NULL==pt->table) 
+    error("Cannot allocate memory for dipole function table.");
+  
+  for (i=0;i<ncols;i++) {
+    pt->begin[i]   = SQR(dp_begin);
+    pt->end[i]     = ew_r2_cut;
+    pt->step[i]    = (ew_r2_cut-pt->begin[i])/(dp_res-1.);
+    pt->invstep[i] = 1.0 / pt->step[i];
+    pt->len[i]     = dp_res;
+  }
+  /* First table: Coulomb potential */
+
+ /* Calculate shifts */
+  pair_int_coulomb(&coul_shift, &coul_fshift, ew_r2_cut);
+  if (myid==0) {
+    printf("Coulomb potential shifted by %g + %g *r,\n", 
+	    -coul_shift, coul_fshift);
+  }
+
+  for (i=0;i<dp_res;i++) {
+    r2 = pt->begin[cou_col] + i * pt->step[cou_col];
+    pair_int_coulomb(&pot,&grad,r2);
+    pot -= coul_shift;
+    pot -= SQRT(r2)*coul_fshift*(SQRT(r2)-SQRT(ew_r2_cut));
+    *PTR_2D(pt->table,i,cou_col,pt->maxsteps,ncols)=pot;
+  }
+    
+  if ( (pt->begin[sco_col] != pt->begin[shr_col] ) ||
+       (pt->step[sco_col] != pt->step[shr_col] ))
+    error("Error in sampling for dipole cutoff and short-range interaction");
+  
+  for (i=0;i<dp_res;i++) {
+  /* Second table: Smooth cutoff fn for dipoles*/
+    r2 = pt->begin[sco_col] + i * pt->step[sco_col];
+    tmp=SQRT(r2);
+    pot = 1.0/(tmp*r2);		 /* r^{-3} */
+    pot += 3.0*tmp/SQR(ew_r2_cut); /* 3*r/rc^4 */
+    pot -= 4.0/(ew_r2_cut*SQRT(ew_r2_cut)); /* -4/rc^3 */
+    *PTR_2D(pt->table,i,sco_col,pt->maxsteps,ncols)=pot;
+  /* Third table: Short-range dipole fn */
+
+    tmp=dp_b*SQRT(r2);
+    pot2=1.;
+    for (j=4;j>=1;j--) {
+      pot2 *= tmp/((real) j);
+      pot2 += 1.;
+    }
+    pot2 *= dp_c*exp(-tmp)* pot;
+    *PTR_2D(pt->table,i,shr_col,pt->maxsteps,ncols)=pot2;
+
+  }
+
+  /* Finish up */
+#if   defined(FOURPOINT)
+  init_fourpoint(pt, ncols);
+#elif defined(SPLINE)
+  if (have_potfile==0) pt->table2 = NULL;
+  init_spline(pt, ncols, 1);
+#else
+  init_threepoint(pt, ncols);
+#endif
+  if ((0==myid) && (debug_potential)) test_potential(*pt, "dipole", ncols);
+
+}  
+#endif /* DIPOLE */
 
 #if defined(FOURPOINT)
 
@@ -1109,6 +1247,51 @@ void pair_int_ewald(real *pot, real *grad, int p_typ, int q_typ, real r2)
 
 #endif /* EWALD */
 
+#ifdef DIPOLE
+
+/*****************************************************************************
+*
+*  Evaluate Coulomb potential for DIPOLE
+*
+******************************************************************************/
+
+void pair_int_coulomb(real *pot, real *grad, real r2)
+{
+  real  r, chg, fac;
+  r     = SQRT(r2);
+  chg   = ew_eps;
+  fac   = chg * 2.0 * ew_kappa / sqrt( M_PI );
+  *pot  = chg * erfc1(ew_kappa * r) / r;
+  /* return (1/r)*dV/dr as derivative */
+  *grad = - (*pot + fac * exp( -SQR(ew_kappa)*r2 ) ) / r2; 
+}
+
+/*****************************************************************************
+*
+*  Evaluate Morse-Stretch potential for DIPOLE
+*
+******************************************************************************/
+
+void pair_int_mstr(real *pot, real *grad, int p_typ, int q_typ, real r2)
+{
+  real rred,fac,tpot,tgrad,r;
+  int col;
+  col=(p_typ<q_typ) ? p_typ*ntypes - (p_typ*(p_typ+1))/2 + q_typ
+    : q_typ*ntypes - (q_typ*(q_typ+1))/2 + p_typ;
+  r     = SQRT(r2);
+  rred  = 1.-r/ms_r0[col];
+  fac   = tpot =exp(ms_gamma[col]*rred);
+  tgrad = -fac;
+  fac   = exp(0.5*ms_gamma[col]*rred);
+  tpot -= 2.*fac;
+  tgrad+= fac;
+  *pot  = tpot*ms_D[col];
+  *grad = tgrad*ms_D[col]*ms_gamma[col]/(r*ms_r0[col]);
+}
+
+
+#endif /* DIPOLE */
+
 #endif /* PAIR */
 
 #ifdef STIWEB
@@ -1425,3 +1608,37 @@ void deriv_func3(real *grad, int *is_short, pot_table_t *pt,
   /* twice the derivative */
   *grad = 2 * istep * (dfac0 * p0 + dfac1 * p1 + dfac2 * p2 + dfac3 * p3);
 }
+
+#if defined(DIPOLE)||defined(EWALD)
+
+/******************************************************************************
+*
+*  erfc1
+*
+*  Approximation of erfc() 
+*
+******************************************************************************/
+
+real erfc1(real x)
+{
+
+#define A_1 0.254829592
+#define A_2 -0.284496736
+#define A_3 1.421413741
+#define A_4 -1.453152027
+#define A_5 1.061405429
+#define P   0.3275911
+
+  real t, xsq, tp;
+
+  t = 1.0 / ( 1.0 + P * x );
+
+  xsq = x * x;
+
+  tp = t * ( A_1 + t * ( A_2 + t * ( A_3 + t * ( A_4 + t * A_5 ) ) ) );
+  
+  return ( tp * exp( -xsq ) );
+
+} 
+
+#endif

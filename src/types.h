@@ -127,6 +127,15 @@ typedef struct {
   real        *adp_mu;
   sym_tensor  *adp_lambda;
 #endif
+#ifdef DIPOLE
+  real        *dp_E_stat; /* electric field at atom location */	     
+  real        *dp_E_ind; /* induced field at atom location */
+  real        *dp_E_old_1; 	/* old field from previous steps */
+  real        *dp_E_old_2; 	/* old field from previous steps */
+  real        *dp_E_old_3; 	/* old field from previous steps */
+  real        *dp_p_stat; /* static dipoles from Short-Range interaction */ 
+  real        *dp_p_ind; /* induced dipoles */                              
+#endif /* DIPOLE */
 #ifdef CG                   
   real        *h;           /* Conjugated Gradient: search vektor */
   real        *g;           /* Conjugated Gradient: old forces */

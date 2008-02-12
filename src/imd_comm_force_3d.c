@@ -754,6 +754,12 @@ void copy_cell( int k, int l, int m, int r, int s, int t, vektor v )
     ACHSE(to,i,Y) = ACHSE(from,i,Y);
     ACHSE(to,i,Z) = ACHSE(from,i,Z);
 #endif
+#ifdef DIPOLE
+    NUMMER(to,i)     = NUMMER(from,i);
+/*     DP_E_IND(to,i,X) = DP_E_IND(from,i,X); */
+/*     DP_E_IND(to,i,Y) = DP_E_IND(from,i,Y); */
+/*     DP_E_IND(to,i,Z) = DP_E_IND(from,i,Z); */
+#endif
   }
 #ifdef VEC
   atoms.n_buf = count;
@@ -789,6 +795,12 @@ void pack_cell( msgbuf *b, int k, int l, int m, vektor v )
     b->data[ j++ ] = ACHSE(from,i,X);
     b->data[ j++ ] = ACHSE(from,i,Y);
     b->data[ j++ ] = ACHSE(from,i,Z);
+#endif
+#ifdef DIPOLE
+    b->data[ j++ ] = NUMMER(from,i);
+/*     b->data[ j++ ] = DP_E_IND(from,i,X); */
+/*     b->data[ j++ ] = DP_E_IND(from,i,Y); */
+/*     b->data[ j++ ] = DP_E_IND(from,i,Z); */
 #endif
   }
   b->n = j;
@@ -843,6 +855,12 @@ void unpack_cell( msgbuf *b, int k, int l, int m )
     ACHSE(to,i,X) = b->data[ j++ ];
     ACHSE(to,i,Y) = b->data[ j++ ];
     ACHSE(to,i,Z) = b->data[ j++ ];
+#endif
+#ifdef DIPOLE
+    NUMMER(to,i)     = b->data[ j++ ];
+/*     DP_E_IND(to,i,X) = b->data[ j++ ]; */
+/*     DP_E_IND(to,i,Y) = b->data[ j++ ]; */
+/*     DP_E_IND(to,i,Z) = b->data[ j++ ]; */
 #endif
   }
 #ifdef VEC
@@ -1224,6 +1242,324 @@ void unpack_add_rho( msgbuf *b, int k, int l, int m )
 }
 
 #endif /* EAM2 */
+
+#ifdef DIPOLE
+
+/******************************************************************************
+*
+*  copy dp_p_ind of one cell to another cell
+*
+******************************************************************************/
+
+void copy_pind( int k, int l, int m, int r, int s, int t, vektor v )
+{
+  int i;
+  minicell *from, *to;
+
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+  to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
+
+#ifdef VEC
+#pragma cdir nodep
+#endif
+  for (i=0; i<to->n; ++i) {
+    DP_P_IND(to,i,X) = DP_P_IND(from,i,X);
+    DP_P_IND(to,i,X) = DP_P_IND(from,i,X);
+    DP_P_IND(to,i,X) = DP_P_IND(from,i,X);
+  }
+}
+
+/******************************************************************************
+*
+*  copy dp_E_ind of one cell to another cell
+*
+******************************************************************************/
+
+void copy_Eind( int k, int l, int m, int r, int s, int t, vektor v )
+{
+  int i;
+  minicell *from, *to;
+
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+  to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
+
+#ifdef VEC
+#pragma cdir nodep
+#endif
+  for (i=0; i<to->n; ++i) {
+    DP_E_IND(to,i,X) = DP_E_IND(from,i,X);
+    DP_E_IND(to,i,X) = DP_E_IND(from,i,X);
+    DP_E_IND(to,i,X) = DP_E_IND(from,i,X);
+  }
+}
+
+/******************************************************************************
+*
+*  add dp_E_stat of one cell to another cell
+*  add dp_p_stat of one cell to another cell
+*
+******************************************************************************/
+
+void add_dipole( int k, int l, int m, int r, int s, int t )
+{
+  int i;
+  minicell *from, *to;
+
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+  to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
+
+#ifdef VEC
+#pragma cdir nodep
+#endif
+  for (i=0; i<to->n; ++i) {
+    DP_E_STAT (to,i,X)  += DP_E_STAT (from,i,X);
+    DP_E_STAT (to,i,Y)  += DP_E_STAT (from,i,Y);
+    DP_E_STAT (to,i,Z)  += DP_E_STAT (from,i,Z);
+    DP_P_STAT (to,i,X)  += DP_P_STAT (from,i,X);
+    DP_P_STAT (to,i,Y)  += DP_P_STAT (from,i,Y);
+    DP_P_STAT (to,i,Z)  += DP_P_STAT (from,i,Z);
+  }
+}
+
+/******************************************************************************
+*
+*  add dp_E_ind of one cell to another cell
+*
+******************************************************************************/
+
+void add_field( int k, int l, int m, int r, int s, int t )
+{
+  int i;
+  minicell *from, *to;
+
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+  to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
+
+#ifdef VEC
+#pragma cdir nodep
+#endif
+  for (i=0; i<to->n; ++i) {
+    DP_E_IND  (to,i,X)  += DP_E_IND  (from,i,X);
+    DP_E_IND  (to,i,Y)  += DP_E_IND  (from,i,Y);
+    DP_E_IND  (to,i,Z)  += DP_E_IND  (from,i,Z);
+  }
+}
+
+/******************************************************************************
+*
+*  pack dp_p_ind into MPI buffer
+*
+******************************************************************************/
+
+void pack_pind( msgbuf *b, int k, int l, int m, vektor v )
+{
+  int i, j = b->n;
+  minicell *from;
+    
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+#ifdef VEC
+#pragma cdir nodep
+#endif
+  for (i=0; i<from->n; ++i) {
+    b->data[ j++ ] = DP_P_IND(from,i,X);
+    b->data[ j++ ] = DP_P_IND(from,i,Y);
+    b->data[ j++ ] = DP_P_IND(from,i,Z);
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in pack_dF - increase msgbuf_size");
+}
+
+/******************************************************************************
+*
+*  pack dp_E_stat into MPI buffer
+*  pack dp_p_stat into MPI buffer
+*
+******************************************************************************/
+
+void pack_dipole( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *from;
+    
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+#ifdef VEC
+#pragma cdir nodep
+#endif
+  for (i=0; i<from->n; ++i) {
+    b->data[ j++ ] = DP_E_STAT (from,i,X);
+    b->data[ j++ ] = DP_E_STAT (from,i,Y);
+    b->data[ j++ ] = DP_E_STAT (from,i,Z);
+    b->data[ j++ ] = DP_P_STAT (from,i,X);
+    b->data[ j++ ] = DP_P_STAT (from,i,Y);
+    b->data[ j++ ] = DP_P_STAT (from,i,Z);
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in pack_dipole - increase msgbuf_size");
+}
+/******************************************************************************
+*
+*  pack dp_E_ind into MPI buffer
+*
+******************************************************************************/
+
+void pack_field( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *from;
+    
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+#ifdef VEC
+#pragma cdir nodep
+#endif
+  for (i=0; i<from->n; ++i) {
+    b->data[ j++ ] = DP_E_IND (from,i,X);
+    b->data[ j++ ] = DP_E_IND (from,i,Y);
+    b->data[ j++ ] = DP_E_IND (from,i,Z);
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in pack_field - increase msgbuf_size");
+}
+
+/******************************************************************************
+*
+*  pack dp_E_ind into MPI buffer
+*
+******************************************************************************/
+
+void pack_Eind( msgbuf *b, int k, int l, int m, vektor v )
+{
+  int i, j = b->n;
+  minicell *from;
+    
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+#ifdef VEC
+#pragma cdir nodep
+#endif
+  for (i=0; i<from->n; ++i) {
+    b->data[ j++ ] = DP_E_IND (from,i,X);
+    b->data[ j++ ] = DP_E_IND (from,i,Y);
+    b->data[ j++ ] = DP_E_IND (from,i,Z);
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in pack_field - increase msgbuf_size");
+}
+
+/******************************************************************************
+*
+*  unpack dp_p_ind from MPI buffer into cell
+*
+******************************************************************************/
+
+void unpack_pind( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *to;
+
+  to = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+#ifdef VEC
+#pragma cdir nodep
+#endif
+  for (i=0; i<to->n; ++i) {
+    DP_P_IND  (to,i,X)  = b->data[ j++ ];
+    DP_P_IND  (to,i,Y)  = b->data[ j++ ];
+    DP_P_IND  (to,i,Z)  = b->data[ j++ ];
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in unpack_pind - increase msgbuf_size");
+}
+
+/******************************************************************************
+*
+*  unpack dp_E_ind from MPI buffer into cell
+*
+******************************************************************************/
+
+void unpack_Eind( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *to;
+
+  to = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+#ifdef VEC
+#pragma cdir nodep
+#endif
+  for (i=0; i<to->n; ++i) {
+    DP_E_IND  (to,i,X)  = b->data[ j++ ];
+    DP_E_IND  (to,i,Y)  = b->data[ j++ ];
+    DP_E_IND  (to,i,Z)  = b->data[ j++ ];
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in unpack_Eind - increase msgbuf_size");
+}
+
+/******************************************************************************
+*
+*  unpack and add dp_E_stat eam_rho from MPI buffer into cell
+*  unpack and add dp_p_stat eeam_p_h from MPI buffer into cell
+*
+******************************************************************************/
+
+void unpack_add_dipole( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *to;
+
+  to = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+#ifdef VEC
+#pragma cdir nodep
+#endif
+  for (i=0; i<to->n; ++i) {
+    DP_E_STAT (to,i,X)  += b->data[ j++ ];
+    DP_E_STAT (to,i,Y)  += b->data[ j++ ];
+    DP_E_STAT (to,i,Z)  += b->data[ j++ ];
+    DP_P_STAT (to,i,X)  += b->data[ j++ ];
+    DP_P_STAT (to,i,Y)  += b->data[ j++ ];
+    DP_P_STAT (to,i,Z)  += b->data[ j++ ];
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in unpack_add_dipole - increase msgbuf_size");
+}
+/******************************************************************************
+*
+*  unpack and add dp_E_ind eam_rho from MPI buffer into cell
+*
+******************************************************************************/
+
+void unpack_add_field( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *to;
+
+  to = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+#ifdef VEC
+#pragma cdir nodep
+#endif
+  for (i=0; i<to->n; ++i) {
+    DP_E_IND (to,i,X)  += b->data[ j++ ];
+    DP_E_IND (to,i,Y)  += b->data[ j++ ];
+    DP_E_IND (to,i,Z)  += b->data[ j++ ];
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in unpack_add_field - increase msgbuf_size");
+}
+
+#endif /* DIPOLE */
 
 #ifdef CNA
 

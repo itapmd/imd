@@ -1007,7 +1007,7 @@ EXTERN real epitax_speed INIT(1.0);
 #endif
 
 EXTERN real     ew_r2_cut INIT(0.0);     /* EWALD r-space cutoff */
-#ifdef EWALD
+#if defined(EWALD) || defined(DIPOLE)
 EXTERN imd_timer ewald_time;
 EXTERN real     charge[10] INIT(zero10); /* Charge of atoms */
 EXTERN real     ew_kappa;                /* Parameter kappa */
@@ -1035,7 +1035,29 @@ EXTERN real     *sinkr;
 EXTERN real     ew_vorf;
 EXTERN real     ew_eps INIT(14.40); /* this is e^2/(4*pi*epsilon_0) in eV A */
 EXTERN real     twopi;
-#endif
+#endif /* EWALD or DIPOLE */
+#ifdef DIPOLE
+EXTERN real     dp_mix     INIT(0.8); /* dipole field mixing parameter */
+EXTERN real     dp_self;    	/* dipole self field factor */
+EXTERN real     dp_res     INIT(0); /* function table resolution */
+EXTERN real     dp_begin   INIT(0.2); /* start of function table */
+EXTERN real     dp_b;		/* in eV A / e^2 */
+EXTERN real     dp_c;		/* in 1/A */
+EXTERN real     *dp_alpha  INIT(NULL); /* in e^2 A^2 / eV^2 */
+EXTERN real     *ms_D      INIT(NULL); /* in eV */
+EXTERN real     *ms_gamma  INIT(NULL);
+EXTERN real     *ms_r0     INIT(NULL); /* in A */
+EXTERN pot_table_t dipole_table; /* one table to hold them all */
+/* EXTERN pot_table_t coulomb_pot;    /\* coulomb potential      *\/ */
+/* EXTERN pot_table_t dp_cutoff_fn; /\* smooth cutoff for dipoles *\/ */
+/* EXTERN pot_table_t dp_shortr_fn; /\* short-range dipole function  *\/ */
+EXTERN real     coul_shift; 
+EXTERN real     coul_fshift;
+EXTERN real *ms_shift     INIT(NULL);
+EXTERN real *ms_fshift    INIT(NULL);
+
+
+#endif /* DIPOLE */
 
 /* generate quasicrystal */
 #ifdef QUASI

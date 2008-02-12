@@ -94,6 +94,16 @@ INLINE static int MOD(shortint p, int q)
 #define ADP_LAMBDA(cell,i,sub)  (atoms.adp_lambda[(cell)->ind[i]].sub)
 #endif
 
+#ifdef DIPOLE
+#define DP_E_STAT(cell,i,sub)   (atoms.dp_E_stat sub((cell)->ind[i]))
+#define DP_E_IND(cell,i,sub)    (atoms.dp_E_ind  sub((cell)->ind[i]))
+#define DP_E_OLD_1(cell,i,sub)  (atoms.dp_E_old_1  sub((cell)->ind[i]))
+#define DP_E_OLD_2(cell,i,sub)  (atoms.dp_E_old_2  sub((cell)->ind[i]))
+#define DP_E_OLD_3(cell,i,sub)  (atoms.dp_E_old_3  sub((cell)->ind[i]))
+#define DP_P_STAT(cell,i,sub)   (atoms.dp_p_stat sub((cell)->ind[i]))
+#define DP_P_IND(cell,i,sub)    (atoms.dp_p_ind  sub((cell)->ind[i]))
+#endif /* DIPOLE */
+
 #ifdef CG
 #define CG_G(cell,i,sub)        (atoms.g       sub((cell)->ind[i]))
 #define CG_H(cell,i,sub)        (atoms.h       sub((cell)->ind[i]))
@@ -193,6 +203,16 @@ INLINE static int MOD(shortint p, int q)
 #define ADP_MU(cell,i,sub)      ((cell)->adp_mu sub(i))
 #define ADP_LAMBDA(cell,i,sub)  ((cell)->adp_lambda[i].sub)
 #endif
+
+#ifdef DIPOLE
+#define DP_E_STAT(cell,i,sub)   ((cell)->dp_E_stat sub(i))
+#define DP_E_IND(cell,i,sub)    ((cell)->dp_E_ind  sub(i))
+#define DP_E_OLD_1(cell,i,sub)  ((cell)->dp_E_old_1 sub(i))
+#define DP_E_OLD_2(cell,i,sub)  ((cell)->dp_E_old_2  sub(i))
+#define DP_E_OLD_3(cell,i,sub)  ((cell)->dp_E_old_3  sub(i))
+#define DP_P_STAT(cell,i,sub)   ((cell)->dp_p_stat sub(i))
+#define DP_P_IND(cell,i,sub)    ((cell)->dp_p_ind  sub(i))
+#endif /* DIPOLE */
 
 #ifdef CG
 #define CG_G(cell,i,sub)        ((cell)->g sub(i))

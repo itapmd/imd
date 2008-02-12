@@ -166,6 +166,20 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
   to->adp_lambda[i].zx = from->adp_lambda[j].zx;   
   to->adp_lambda[i].xy = from->adp_lambda[j].xy;   
 #endif
+#ifdef DIPOLE
+  to->dp_p_ind  X(i)   = from->dp_p_ind X(j);
+  to->dp_p_ind  Y(i)   = from->dp_p_ind Y(j);
+  to->dp_p_ind  Z(i)   = from->dp_p_ind Z(j);
+  to->dp_E_old_1 X(i)  = from->dp_E_old_1 X(j);
+  to->dp_E_old_1 Y(i)  = from->dp_E_old_1 Y(j);
+  to->dp_E_old_1 Z(i)  = from->dp_E_old_1 Z(j);
+  to->dp_E_old_2 X(i)  = from->dp_E_old_2 X(j);
+  to->dp_E_old_2 Y(i)  = from->dp_E_old_2 Y(j);
+  to->dp_E_old_2 Z(i)  = from->dp_E_old_2 Z(j);
+  to->dp_E_old_3 X(i)  = from->dp_E_old_3 X(j);
+  to->dp_E_old_3 Y(i)  = from->dp_E_old_3 Y(j);
+  to->dp_E_old_3 Z(i)  = from->dp_E_old_3 Z(j);
+#endif /* Dipole */
 #ifdef CG
   to->h  X(i) = from->h X(j); 
   to->h  Y(i) = from->h Y(j); 
@@ -454,6 +468,15 @@ void alloc_cell(cell *p, int n)
 #ifdef ADP
   memalloc( &p->adp_mu,   n*SDIM, sizeof(real),   al, ncopy*SDIM, 0, "adp_mu");
   memalloc( &p->adp_lambda, n, sizeof(sym_tensor), al, ncopy, 0, "adp_lambda");
+#endif
+#ifdef DIPOLE
+  memalloc( &p->dp_E_stat, n*DIM, sizeof(real), al, ncopy*DIM, 0, "dp_E_stat");
+  memalloc( &p->dp_E_ind,  n*DIM, sizeof(real), al, ncopy*DIM, 0, "dp_E_ind");
+  memalloc( &p->dp_E_old_1,n*DIM, sizeof(real), al, ncopy*DIM, 1,"dp_E_old_1");
+  memalloc( &p->dp_E_old_2,n*DIM, sizeof(real), al, ncopy*DIM, 1,"dp_E_old_2");
+  memalloc( &p->dp_E_old_3,n*DIM, sizeof(real), al, ncopy*DIM, 1,"dp_E_old_3");
+  memalloc( &p->dp_p_stat, n*DIM, sizeof(real), al, ncopy*DIM, 0, "dp_p_stat");
+  memalloc( &p->dp_p_ind , n*DIM, sizeof(real), al, ncopy*DIM, 1, "dp_p_ind");
 #endif
 #ifdef CG
   memalloc( &p->h,        n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "h" );

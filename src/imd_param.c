@@ -2321,7 +2321,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
                ntypes*ntypepairs, ntypes*ntypepairs);
     }
 #endif
-#ifdef EWALD
+#if defined(EWALD) || defined(DIPOLE)
     /* charges */
     else if (strcasecmp(token,"charge")==0) {
       if (ntypes==0) error("specify parameter ntypes before charge");
@@ -2339,6 +2339,9 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"ew_rcut")==0) {
       getparam(token,&rtmp,PARAM_REAL,1,1);
       ew_r2_cut = SQR(rtmp);
+#ifdef DIPOLE
+      dp_self=2./(3.*rtmp*ew_r2_cut*sqrt(2.*M_PI));
+#endif /* DIPOLE */
       have_pre_pot = 1;
     }
     /* number of image boxes */
@@ -2349,7 +2352,58 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"ew_test")==0) {
       getparam(token,&ew_test,PARAM_INT,1,1);
     }
-#endif
+#endif /* EWALD or DIPOLE */
+#ifdef DIPOLE
+    /* dipole field mixing param */
+    else if (strcasecmp(token,"dp_mix")==0) {
+      getparam(token,&dp_res,PARAM_REAL,1,1);
+    }
+    /* potential table resolution */
+    else if (strcasecmp(token,"dp_res")==0) {
+      getparam(token,&dp_res,PARAM_REAL,1,1);
+    }
+    /* potential table resolution */
+    else if (strcasecmp(token,"dp_begin")==0) {
+      getparam(token,&dp_begin,PARAM_REAL,1,1);
+    }
+    /* short-range dipole parameter b */
+    else if (strcasecmp(token,"dp_b")==0) {
+      getparam(token,&dp_b,PARAM_REAL,1,1);
+    }
+    /* short-range dipole parameter c */
+    else if (strcasecmp(token,"dp_c")==0) {
+      getparam(token,&dp_c,PARAM_REAL,1,1);
+    }
+    /* polarisability */
+    else if (strcasecmp(token,"dp_alpha")==0) {
+      if (ntypes==0) error("specify parameter ntypes before dp_alpha");
+      dp_alpha = (real *) malloc( ntypes*sizeof(real));
+      if (NULL==dp_alpha) error("cannot allocate dp_alpha");
+      getparam(token,dp_alpha,PARAM_REAL,ntypes,ntypes);
+    }
+    /* Morse-Stretch parameter D */
+    else if (strcasecmp(token,"ms_D")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ms_D");
+      ms_D = (real *) malloc( ntypepairs*sizeof(real));
+      if (NULL==ms_D) error("cannot allocate ms_D");
+      getparam(token,ms_D,PARAM_REAL,ntypepairs,ntypepairs);
+    }
+    /* Morse-Stretch parameter gamma */
+    else if (strcasecmp(token,"ms_gamma")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ms_gamma");
+      ms_gamma = (real *) malloc( ntypepairs*sizeof(real));
+      if (NULL==ms_gamma) error("cannot allocate ms_gamma");
+      getparam(token,ms_gamma,PARAM_REAL,ntypepairs,ntypepairs);
+    }
+    /* Morse-Stretch parameter r0 */
+    else if (strcasecmp(token,"ms_r0")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ms_r0");
+      ms_r0 = (real *) malloc( ntypepairs*sizeof(real));
+      if (NULL==ms_r0) error("cannot allocate ms_r0");
+      getparam(token,ms_r0,PARAM_REAL,ntypepairs,ntypepairs);
+    }
+
+#endif /* DIPOLE */
 #ifdef EPITAX
     /* Parameters for option epitax */
     else if (strcasecmp(token,"epitax_rate")==0) {
@@ -3483,6 +3537,18 @@ void broadcast_params() {
   MPI_Bcast( keating_d,           ntypepairs, REAL, 0,MPI_COMM_WORLD);
   MPI_Bcast( keating_beta, ntypes*ntypepairs, REAL, 0,MPI_COMM_WORLD);
 #endif
+
+#ifdef DIPOLE
+  MPI_Bcast( charge,              ntypes, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &ew_kappa,           1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &ew_r2_cut,          1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &ew_test,            1,      MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dp_b,               1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &dp_c,               1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( ms_D,            ntypepairs, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( ms_gamma,        ntypepairs, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( ms_r0,           ntypepairs, REAL,    0, MPI_COMM_WORLD);
+#endif /* DIPOLE */
 
 #ifdef EPITAX
   MPI_Bcast( epitax_rate,     ntypes, REAL, 0, MPI_COMM_WORLD);

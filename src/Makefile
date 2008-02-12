@@ -976,6 +976,11 @@ PP_FLAGS  += -DEWALD
 FORCESOURCES  += ${EWALDSOURCES}
 endif
 
+#DIPOLE
+ifneq (,$(strip $(findstring dipole,${MAKETARGET})))
+CFLAGS  += -DDIPOLE
+endif
+
 # LJ - computed Lennard-Jones (for vector versions only)
 ifneq (,$(strip $(findstring lj,${MAKETARGET})))
 PP_FLAGS  += -DLJ
