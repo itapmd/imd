@@ -793,7 +793,7 @@ unsigned long tbfreq(void) {
     if (NULL==str) break;
     if (strncmp(line, "timebase", 8) == 0) {
       str = strstr(line,":") + 1;
-      sscanf(str, "%ul", &timebase);
+      sscanf(str, "%lu", &timebase);
     }
   }
   fclose(inp);

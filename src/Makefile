@@ -618,7 +618,7 @@ ifeq (cbe-xlc,${IMDSYS})
   CC_MPI        = mpicc  -q32
 
   OPT_FLAGS     += -O3 -qstrict -qcpluscmt -qflag=w:w -qproto -qro -qwarn64  -qhot=level=1:simd  -qreport -qinline -qunroll=yes -qlibansi -qipa=level=1
-  SPUCFLAGS     += -O2 -qstrict -qcpluscmt -qflag=w:w -qhot=level=1 -qproto -qreport -qinline  -qinline-dma64:mdma64:wait_dma -I${CELLSDKLIB}/sync
+  SPUCFLAGS     += -O3 -qstrict -qcpluscmt -qflag=w:w -qhot=level=1 -qproto -qreport -qinline  -qinline-dma64:mdma64:wait_dma -I${CELLSDKLIB}/sync
   PP_FLAGS      += -I${CELLSDKLIB}/sync
   EMBEDSPU      = ppu-embedspu -m32
 
@@ -830,7 +830,7 @@ else
 
   else
 
-    ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
+    ifneq (,$(strip $(findstring cbe,${MAKETARGET})))
 
       SOURCES	:= ${SOURCES3D} ${NBLSOURCES3D}
       ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
@@ -839,12 +839,22 @@ else
 
     else
 
-      ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
-        SOURCES	:= ${SOURCES3D} ${MPISOURCES3D}
-      else
-        SOURCES	:= ${SOURCES3D} ${RISCSOURCES3D}
-      endif
+      ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
 
+        SOURCES	:= ${SOURCES3D} ${NBLSOURCES3D}
+        ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
+          SOURCES += ${MPISOURCES}
+        endif
+
+      else
+
+        ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
+          SOURCES := ${SOURCES3D} ${MPISOURCES3D}
+        else
+          SOURCES := ${SOURCES3D} ${RISCSOURCES3D}
+        endif
+
+      endif
     endif
   endif
 endif
@@ -866,15 +876,16 @@ SOURCES += ${SRCMAIN}
 ifneq (,$(strip $(findstring vec,${MAKETARGET})))
   FORCESOURCES = imd_main_vec_3d.c
 else
-  ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
-    ifneq (,$(strip $(findstring cbe,${MAKETARGET})))
-      FORCESOURCES = imd_forces_cbe.c
-      PP_FLAGS += -DCBE
-    else
-      FORCESOURCES = imd_forces_nbl.c
-    endif
+  ifneq (,$(strip $(findstring cbe,${MAKETARGET})))
+    FORCESOURCES = imd_forces_cbe.c
+    PP_FLAGS += -DCBE
   else
-    FORCESOURCES = ${PAIRSOURCES}
+    ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
+      FORCESOURCES = imd_forces_nbl.c
+      PP_FLAGS += -DNBL
+    else
+      FORCESOURCES = ${PAIRSOURCES}
+    endif
   endif
 endif
 
@@ -1075,11 +1086,6 @@ ifneq (,$(findstring cna,${MAKETARGET}))
 SOURCES += ${CNASOURCES}
 SOURCES += ${COVALENTSOURCES}
 PP_FLAGS += -DCNA
-endif
-
-# with neighbor lists
-ifneq (,$(findstring nbl,${MAKETARGET}))
-PP_FLAGS += -DNBL
 endif
 
 # socket interface
@@ -1295,12 +1301,6 @@ endif
 
 ifneq (,$(findstring cbe2,${MAKETARGET}))
 PP_FLAGS  += -DCBE2
-SPUCFLAGS += -DCBE2 -DNBL
-endif
-
-ifneq (,$(findstring cbe3,${MAKETARGET}))
-PP_FLAGS += -DCBE3
-SPUCFLAGS += -DCBE3 -DNBL
 endif
 
 ifneq (,$(findstring ppu,${MAKETARGET}))

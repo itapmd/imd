@@ -34,6 +34,7 @@
 */
 
 /* Local/program specific headers */
+#include "config.h"
 #include "imd_cbe.h"
 
 /* potential data structure */

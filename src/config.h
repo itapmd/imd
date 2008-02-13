@@ -25,7 +25,8 @@
 *
 ******************************************************************************/
 
-#if defined(CBE2) || defined(CBE3)
+#ifdef CBE
+#define NBL
 #define CBE_DIRECT
 #define SINGLE
 #define MEMALIGN
@@ -104,7 +105,7 @@
 #ifdef BUFCELLS
 
 /* AR is the default. We could make the default machine dependent */
-#ifndef CBE3
+#if !defined(CBE) || defined(CBE2)
 #define AR 
 #endif 
 
