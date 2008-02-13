@@ -215,13 +215,39 @@ void mk_pt(void)
 
 #else
 
+/* cubic spline interpolation */
+#define PAIR_INT(pot,grad,r2,col)  {                                         \
+                                                                             \
+  float r2a, a, b, a2, b2, istep, step, st6, *y;                             \
+  int   k, col4=col*4;                                                       \
+                                                                             \
+  /* indices into potential table */                                         \
+  istep = pt.invstep[col4];                                                  \
+  step  = pt.step[col4];                                                     \
+  r2a   = MIN(r2,pt.r2cut[col4]);                                            \
+  r2a   = r2a * istep;                                                       \
+  r2a   = r2a - pt.begin[col4];                                              \
+  k     = MAX(0,(int) r2a);                                                  \
+  b     = r2a - k;                                                           \
+  a     = 1.0 - b;                                                           \
+  a2    = a * a - 1;                                                         \
+  b2    = b * b - 1;                                                         \
+  st6   = step / 6;                                                          \
+  y     = pt.tab[col] + 4 * k;                                               \
+                                                                             \
+  /* potential and twice the derivative */                                   \
+  pot  = a * y[0] + b * y[2] + (a * a2 * y[1] + b * b2 * y[3]) * st6 * step; \
+  grad = 2*((y[2] - y[0])*istep + ((3*b2+2) * y[3] - (3*a2+2) * y[1])* st6); \
+}
+
 void mk_pt(void)
 {
-  float *u    = NULL;
-  int   n     = cbe_pot_steps, off = 0, i, j, k;
+  float *u    = NULL, r2;
+  int   n     = cbe_pot_steps, off = 0, i, j, k, m;
+  int   inc   = ntypes * ntypes;
   int   hsize = 4 * ntypes * ntypes;
-  int   psize = 2 * (n+1) + ntypes * (ntypes+1);
-  int   tsize = hsize + psize;
+  int   psize = 2 * (n+1) * ntypes * (ntypes+1);
+  int   tsize = 4 * hsize + psize;
 
   /* allocate data */
   pt.data = (float *) malloc_aligned( tsize * sizeof(float), 128, 16 );
@@ -241,34 +267,44 @@ void mk_pt(void)
       pt.tab[i*ntypes+j] = pt.tab[j*ntypes+i] = pt.data + off;  
       off += 4*(n+1);
     }
-  for (k=0; k<ntypes*ntypes; k++)
+  for (k=0; k<ntypes*ntypes; k++) {
+
+    /* determine where to start tabulation */
+    m = 0;
+    while (pair_pot.table[m*inc+k] > cbe_pot_max) m++;
+    r2 = pair_pot.begin[k] + m * pair_pot.step[k];
+
+    /* fill in potential table header */
     for (i=0; i<4; i++) {
       int col = 4*k+i;
       pt.r2cut  [col] = pair_pot.end[k];
-      pt.step   [col] = (pt.r2cut[col] - pair_pot.begin[k]) / n;
+      pt.step   [col] = (pt.r2cut[col] - r2) / n;
       pt.invstep[col] = 1.0 / pt.step[col];
-      pt.begin  [col] = pair_pot.begin[k] * pt.invstep[col];
+      pt.begin  [col] = r2 * pt.invstep[col];
     }
+  }
 
   /* loop over columns */
   for (i=0; i<ntypes; i++)
     for (j=i; j<ntypes; j++) {
 
-      int   col  = i*ntypes + j;
+      int   col  = i*ntypes + j, idummy;
       float *y   = pt.tab[col], *y2 = y + 1;
       float step = pt.step[col];
-      float p, qn, un;
+      float r2, p, qn, un, q0, fdummy;
 
       /* fill in the potential values */
       for (k=0; k<n; k++) {
-        int   inc = ntypes * ntypes, idummy;
-        float r2  = pt.begin[col] + k * step, fdummy;
+        r2 = (pt.begin[col] + k) * step;
 	pair_int2(y+4*k, &fdummy, &idummy, &pair_pot, col, inc, r2);
       }
       y[4*n] = 0.0;  /* last potential value is zero */
 
-      /* at the left end, we take natural splines */
-      y2[0] = u[0] = 0.0;
+      /* set first derivative at the left end correctly */
+      y2[0] = -0.5;
+      r2    = pt.begin[col] * step; 
+      pair_int2( &fdummy, &q0, &idummy, &pair_pot, col, inc, r2);
+      u[0]  = (3.0 / step) * ( (y[4]-y[0]) / step - q0 * 0.5 );
 
       for (k=1; k<n; k++) {
         p = 0.5 * y2[4*(k-1)] + 2.0;
@@ -277,9 +313,9 @@ void mk_pt(void)
         u[k] = (6.0 * u[k] / (2*step) - 0.5 * u[k-1]) / p;
       }
 
-      /* first derivative zero at right end for radial functions */
+      /* set first derivative zero at right end */
       qn = 0.5;
-      un = (3.0 / step) * (y[4*(n-2)] - y[4*(n-1)]) / step;
+      un = (3.0 / step) * (y[4*(n-1)] - y[4*n]) / step;
 
       y2[4*n] = (un - qn * u[n-1]) / (qn * y2[4*(n-1)] + 1.0);
       for (k=n-1; k>=0; k--) 
@@ -292,13 +328,47 @@ void mk_pt(void)
       }
 
       /* for security, we continue the last interpolation polynomial */
-      y [4*n+2] = 2*y [4*(n-1)]-y [4*(n-2)]+SQR(step)*y2[4*(n-1)];
-      y2[4*n+2] = 2*y2[4*(n-1)]-y2[4*(n-2)];
+      y [4*n+2] = 2*y [4*n]-y [4*(n-1)]+SQR(step)*y2[4*n];
+      y2[4*n+2] = 2*y2[4*n]-y2[4*(n-1)];
 
     }
 
   free(u);
 
+  if (1==debug_potential) {
+
+    /* potential as interpolated from SPU potential table */
+    for (i=0; i<ntypes*ntypes; i++) {
+      FILE *out;
+      char fname[128];
+      float r2, pot, grad;
+      float start = pt.begin[4*i] * pt.step[4*i];
+      float dr2 = (pt.r2cut[4*i] - start) / 10000;
+      sprintf(fname, "cbe_pot.%d", i);
+      out = fopen(fname,"w");
+      for (k=0; k<=10000; k++) {
+        r2 = start + k * dr2;
+        PAIR_INT(pot,grad,r2,i);
+        fprintf(out,"%f %f %f\n", r2, pot, grad);
+      }
+      fclose(out);
+    }
+
+    /* SPU potential table */
+    for (i=0; i<ntypes*ntypes; i++) {
+      FILE *out;
+      char fname[128];
+      float r2, pot, grad, *f = pt.tab[i];
+      sprintf(fname, "pt.%d", i);
+      out = fopen(fname,"w");
+      for (k=0; k<=pt.nsteps; k++) {
+        r2 = (pt.begin[4*i] + k) * pt.step[4*i];
+        fprintf(out,"%f %f %f %f %f\n",r2,f[4*k],f[4*k+1],f[4*k+2],f[4*k+3]);
+      }
+      fclose(out);
+    }
+
+  }
 }
 
 #endif

@@ -34,32 +34,26 @@
 /* Macro for the calculation of a tabulated pair potential */
 #define PAIR_INT(pot,grad,r2,col)  {                                         \
                                                                              \
-  float r2a, a, b, a2, b2, istep, step, st6, p1, p2, d21, d22, *y;           \
-  int k, col4=col*4;                                                         \
+  float r2a, a, b, a2, b2, istep, step, st6, *y;                             \
+  int   k, col4=col*4;                                                       \
                                                                              \
   /* indices into potential table */                                         \
   istep = pt.invstep[col4];                                                  \
   step  = pt.step[col4];                                                     \
   r2a   = MIN(r2,pt.r2cut[col4]);                                            \
   r2a   = r2a * istep;                                                       \
-  r2a   = MAX(0.0,r2a - pt.begin[col4]);                                     \
-  k     = (int) r2a;                                                         \
+  r2a   = r2a - pt.begin[col4];                                              \
+  k     = MAX(0,(int) r2a);                                                  \
   b     = r2a - k;                                                           \
   a     = 1.0 - b;                                                           \
-                                                                             \
-  /* intermediate values */                                                  \
-  y     = pt.tab[col];                                                       \
-  p1    = y[k  ];                                                            \
-  d21   = y[k+1];                                                            \
-  p2    = y[k+2];                                                            \
-  d22   = y[k+3];                                                            \
   a2    = a * a - 1;                                                         \
   b2    = b * b - 1;                                                         \
   st6   = step / 6;                                                          \
+  y     = pt.tab[col] + 4 * k;                                               \
                                                                              \
   /* potential and twice the derivative */                                   \
-  pot  = a * p1 + b * p2 + (a * a2 * d21 + b * b2 * d22) * st6 * step;       \
-  grad = 2*((p2 - p1) * istep + ((3*b2 + 2) * d22 - (3*a2 + 2) * d21) * st6);\
+  pot  = a * y[0] + b * y[2] + (a * a2 * y[1] + b * b2 * y[3]) * st6 * step; \
+  grad = 2*((y[2] - y[0])*istep + ((3*b2+2) * y[3] - (3*a2+2) * y[1])* st6); \
 }
 
 
@@ -88,7 +82,7 @@ void calc_tb(wp_t * const wp) {}
 
 /******************************************************************************
 *
-*  Lennard-Jones interactions on PPU - CBE_DIRECT version
+*  Pair interactions on PPU - CBE_DIRECT version
 *
 ******************************************************************************/
 
@@ -97,7 +91,7 @@ void calc_wp(wp_t *wp)
   cell_dta_t *p, *q;
   float d[4], f[4]; 
   float r2, *pi, *pj, *fi, *fj, pot, grad;
-  int   i, c1, col, inc=pt.ntypes * pt.ntypes, n, j, m;
+  int   i, c1, col, n, j, m;
 
   wp->totpot = wp->virial = 0.0;
   p = wp->cell_dta;
@@ -127,7 +121,6 @@ void calc_wp(wp_t *wp)
 
         if (r2 <= pt.r2cut[4*col]) {
 
-    	  /* Calculation of potential has been moved to a macro */
 #ifdef LJ
    	  LJ_INT(pot,grad,r2,col)
 #else
@@ -288,7 +281,7 @@ void calc_wp(wp_t *wp)
       if (r2 <= pt.r2cut[4*col]) {
 
   	  /* Calculation of potential has been moved to a macro */
-   	  LJ(pot,grad,r2)
+   	  LJ(pot,grad,r2,col)
 
           wp->totpot += pot;
           pot        *= 0.5;   /* avoid double counting */

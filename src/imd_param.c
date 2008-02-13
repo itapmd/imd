@@ -2479,6 +2479,10 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       /* number of tabulation steps in potential table */
       getparam(token,&cbe_pot_steps,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token, "cbe_pot_max")==0) {
+      /* maximum value in potential table */
+      getparam(token,&cbe_pot_max,PARAM_REAL,1,1);
+    }
 #endif
     else if (strcasecmp(token,"use_header")==0) {
 	/* shall a header be used */
@@ -3566,6 +3570,7 @@ void broadcast_params() {
   MPI_Bcast( &num_spus,      1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &num_bufs,      1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &cbe_pot_steps, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &cbe_pot_max,   1, REAL,    0, MPI_COMM_WORLD);
 #endif
 
   MPI_Bcast(&use_header,1, MPI_INT, 0, MPI_COMM_WORLD);
