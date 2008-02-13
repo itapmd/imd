@@ -591,6 +591,8 @@ int (exch_out)(int (*of)(char const[],...), exch_t const* const e)
 *
 ******************************************************************************/
 
+#ifdef OBSOLETE
+
 /* Helper function for conversion functors */
 static unsigned int add_digit(unsigned int const n,
                               unsigned int B, char const d)
@@ -748,10 +750,10 @@ unsigned long tbfreq_fd(int const fd, char* const buf, unsigned const bufsze) {
     return 0u;
 }
 
-
 /* Get time base frequency from OS (as suggested by the 
    CBE programming handbook) */
 unsigned long tbfreq(void) {
+
     /* Open cpuinfo file */
     static char const cipath[] = "/proc/cpuinfo";
     int const fd = open(cipath, O_RDONLY);
@@ -767,6 +769,35 @@ unsigned long tbfreq(void) {
 
     /* Return the result */
     return res;
+
+}
+
+#endif
+
+/******************************************************************************
+*
+*  Get time base from /proc/cpuinfo
+*
+******************************************************************************/
+
+unsigned long tbfreq(void) {
+
+  char *str, line[128];
+  FILE *inp;
+  unsigned long timebase = 0u;
+
+  inp = fopen("/proc/cpuinfo", "r");
+  if (NULL==inp) return 0u;
+  while (!feof(inp)) {
+    str=fgets(line,1024,inp);
+    if (NULL==str) break;
+    if (strncmp(line, "timebase", 8) == 0) {
+      str = strstr(line,":") + 1;
+      sscanf(str, "%ul", &timebase);
+    }
+  }
+  fclose(inp);
+  return timebase;
 }
 
 
