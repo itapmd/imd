@@ -789,7 +789,7 @@ unsigned long tbfreq(void) {
   inp = fopen("/proc/cpuinfo", "r");
   if (NULL==inp) return 0u;
   while (!feof(inp)) {
-    str=fgets(line,1024,inp);
+    str=fgets(line,128,inp);
     if (NULL==str) break;
     if (strncmp(line, "timebase", 8) == 0) {
       str = strstr(line,":") + 1;
