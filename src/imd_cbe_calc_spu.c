@@ -410,7 +410,7 @@ void calc_wp_direct(wp_t *wp,
         b2  = spu_msub( b, b, f10 );
         a3  = spu_mul( a, a2 );
         b3  = spu_mul( b, b2 );
-        st6 = spu_mul( ptistep, f6i ) ;
+        st6 = spu_mul( ptstep, f6i ) ;
 
         kk  = spu_add( kk, ptcol );
         pt0 = pt.data[spu_extract(kk,0)];
