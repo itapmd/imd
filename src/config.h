@@ -27,7 +27,6 @@
 
 #ifdef CBE
 #define NBL
-#define CBE_DIRECT
 #define SINGLE
 #define MEMALIGN
 #endif

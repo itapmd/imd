@@ -21,10 +21,7 @@
 #ifndef IMD_CBE_H__
 #define IMD_CBE_H__
 
-/* We need config here, as we have to test the CBE_DIRECT in the 
-   DMA typedefs */
 #include "config.h"
-
 
 #ifdef __SPU__
 
@@ -175,16 +172,6 @@ static INLINE_ unsigned uiceil16(unsigned const x) {
 
 
 
-
-
-
-
-
-
-
-
-
-
 /* Effective address type: unsigned long long is 64 bits wide on
    the SPU and on the PPU (both in 32bit & 64bit mode). */
 typedef unsigned long long int  ea_t;
@@ -201,9 +188,6 @@ enum { CBE_GRANULE_NBYTE = ((unsigned)128) };
 enum { CBE_GRANULE_NINT  = (unsigned)(CBE_GRANULE_NBYTE/(sizeof (int))) };
 
 
-
-
-#ifdef CBE_DIRECT  /* "Direct " */
 
 /* Symbolic constants for the flag field */
 enum { DOTB=((int)1), DOWP=((int)2) };
@@ -264,79 +248,6 @@ typedef struct wp {
 } wp_t;
 
 
-/* The wp_t may be used in DMAs directly */
-typedef wp_t exch_t;
-
-
-#else  /* "Indirect" */
-
-
-/* The work package type */
-typedef struct wp {
-  int   k, n1, n2, len;           /* package number and actual sizes  */
-  int   n1_max, n2_max, len_max;  /* allocated size (not transferred) */
-
-  float totpot, virial;
-
-#if defined(__SPU__)
-  vector float const *pos;      /* length: n2 */
-  vector float       *force;    /*         n2 */
-#else
-  float       *pos;             /* length: 4*n2 */ 
-  float const *force;           /*         4*n2 */
-#endif
-
-  int    *typ;  /* length: n2, 2*n2   */
-  int    *ti;                
-  short  *tb;   /* length: len        */
-
-  /* Some timing values, which must be tick64_t in order to have the same
-     size on PPU & SPU, which might not be the case for tick_t  */
-  tick64_t timings[1];
-} wp_t;
-
-
-
-
-/* Basically the same structure as the wp_t but with ptrs. replaced
-   by effective addresses and aligned to 16 or even 128-bytes boundary
-*/
-typedef struct exch {
-    /* Non-ptr. variables which may be passed "as is" */
-    int k;
-    int n1;
-    int n2;
-    int len;           /* package number and actual sizes  */
-    int n1_max;
-    int n2_max;
-    int len_max;  /* allocated size (not transferred) */
-
-    float totpot;
-    float virial;
-
-    ea_t pos;
-    ea_t force;       /* length: 4*n2, 4*n2 */
-
-    /* "Pointers" to integer arrays
-        typ "points" to an array of n2 items of type int
-        tb "points" to len items of type short
-     */
-    ea_t typ;
-    ea_t ti;            /* length: n2, 2*n2   */
-    ea_t tb;            /* length: len        */
-
-
-    /* Padding, no longer needed */
-    /* unsigned char pad[4]; */
-} exch_t;
-
-
-
-#endif   /* CBE_DIRECT */
-
-
-
-
 
 #ifdef LJ
 
@@ -388,21 +299,6 @@ extern  pt_t pt;
 
 
 
-
-/* ptr<->ea_t mapping is similar to wp_t */
-/* This type is supposed to be passed as envirnoment pointer */
-typedef struct env {
-    /* Copy of ntypes */
-    int ntypes;
-
-    /* Each of the following "points" to arrays with
-       4*ntypes*ntypes items of type float */
-    ea_t r2cut, lj_sig, lj_eps, lj_shift; 
-} env_t;
-
-
-
-
 /* Constants passed via mailbox */
 enum { WPDONE1=(unsigned)0, WPSTRT1=(unsigned)1, SPUEXIT=(unsigned)2 };
 
@@ -445,32 +341,13 @@ typedef union {
 
     /* Arguments/work packages */
     wp_t   w;
-    exch_t e;
 
     /* Or simply an EA list */
-    ea_t ea[(MAXSIZE2(wp_t,exch_t))/(sizeof (ea_t))];
+    ea_t ea[sizeof(wp_t)/sizeof(ea_t)];
 
     /* Padding */
-    unsigned char pad[CEILPOW2(MAXSIZE2(wp_t,exch_t),BUFPAD)];
+    unsigned char pad[CEILPOW2(sizeof(wp_t),BUFPAD)];
 } argbuf_t;
-
-
-typedef union {
-    /* Dummy data: */
-
-    /* Potential type */
-    pt_t  p;
-    env_t e;
-
-    /* Or simply an EA list */
-    ea_t ea[(MAXSIZE2(pt_t,env_t))/(sizeof (ea_t))];
-
-    /* Padding */
-    unsigned char pad[CEILPOW2(MAXSIZE2(pt_t,env_t),BUFPAD)];
-} envbuf_t;
-
-
-
 
 
 
@@ -478,7 +355,6 @@ typedef union {
 void calc_wp(wp_t *wp);
 void calc_tb(wp_t *wp);
 
-#if defined(CBE_DIRECT)
 void calc_wp_direct(wp_t*,
                     /* void* const, unsigned const, void* const, unsigned const, */
                     cell_dta_t* const pbuffers,
@@ -488,62 +364,6 @@ void calc_tb_direct(wp_t*,
                     /* void* const, unsigned const, void* const, unsigned const, */
                     cell_dta_t* const pbuffers,
                     unsigned const otag);
-
-#endif
-
-
-
-
-/* Transform effective address pairs to DMA list elements:
-
-   The hi part of effective addresses is written to ea_pairs[2*N] if
-   all hi parts in ea_pairs are the same. In this case the hi parts will be
-   overwritten with the corresponding sizes. This way, eas[0]...eas[2*N-1] may
-   be used as list in list DMAs.
-
-   NULL is returned to indicate that there are some hi parts which differ and 
-   thus list DMA is not possible.
-
-   Otherwise, a ptr. to the  beginning of the list (that is ea_pairs)
-   is returned.
-
-   eas_pairs[2*N] is written to in any case.
-  
-
-   This function may cause undefined behaviour if N<1
- */
-unsigned* eas2les(unsigned ea_pairs[], unsigned const sizes[], unsigned const N);
-
-
-
-
-
-/* Check wether all EAs in *p are aligned to boundary specified by a*/
-int (exch_aligned)(exch_t const* const p, unsigned const a);
-
-/* Output of *e unsing printf-like function of */
-int (exch_out)(int (*of)(char const[],...), exch_t const* const e);
-
-
-
-/* Check wether all EAs in *p are aligned to boundary specified by a*/
-int (env_aligned)(env_t const* const p, unsigned const a);
-
-/* Output of env_t *e using printf-like function of */
-int (env_out)(int (*of)(char const[],...), env_t const* const e);
-
-
-
-
-/* Print vector */
-int vecout(int (* const of)(char const[],...),   /* General output function*/
-           int (* const elemout)(int (* const of2)(char const[],...), void const*), /* Per element output function using general function */
-           void const* (* const nxt)(void const*),  /* Get next element */
-           void const* s, unsigned n, /* n elements starting at s */
-           char const sep[]
-           );
-
-
 
 
 
@@ -565,16 +385,6 @@ INLINE_ void mdma64(void* const p, ea_t const ea, unsigned const size,
    On the SPU, x may be a scalar which is converted to a vector first
  */
 #define CEILV(x,r) spu_andc(spu_add((r),(x)), (r))
-
-#ifdef OBSOLETE
-
-static INLINE_
-vector unsigned int uiceilv(vector unsigned int const v, vector unsigned int const m)
-{
-     return CEILV(v,m);
-}
-
-#endif /* OBSOLETE */
 
 #endif /* SPU */
 
@@ -653,16 +463,12 @@ enum {
 /* Pointers to the begining of the arrays of buffer
    (to make the static arrays defined above publically available) */
 
-/* cbe_env_begin is passed as environment address to every SPU thread */
-/* extern envbuf_t* const cbe_env_begin; */
-
 /* cbe_envea_begin is passed as environment address to every SPU thread 
    and points to an array of EAs ("pointers") */
 extern ea_t* const cbe_envea_begin;
 
 /* cbe_arg_begin + N_ARGBUF*k is passed as argument address to SPU thread k */
 extern argbuf_t* const cbe_arg_begin;
-
 
 /* Additional work package buffer */
 extern wp_t* const cbe_wp_begin;
@@ -705,16 +511,7 @@ void cbe_shutdown(void);
 
 
 /* CBE time base utilities */
-
-
-/* Get timebase frequency from contents of cpuinfo file */
-unsigned long tbfreq_string(char const* const sfrst, char const* const slast);
-
-/* Read cpuinfo from fd into buffer buf of length bufsze parse it and return
-   the timebase freqeuncy. */
-unsigned long tbfreq_fd(int const fd,  char* const buf, unsigned const bufsze);
-
-/* Get time base frequency from OS (as suggested by the CBE programming handbook) */
+/* Get time base frequency from OS (see CBE programming handbook) */
 unsigned long tbfreq(void);
 
 
@@ -735,34 +532,14 @@ void* (calloc_aligned)(size_t const nelem, size_t const elsze,
                        size_t const alig0, size_t const mult0);
 
 
-
-
-/* Create exch_t *e from wp_t *wp  */
-exch_t* (create_exch)(wp_t const* const wp, exch_t* const e);
-
-
-#ifdef OBSOLETE
-
-/* Output of pt_t *e using  printf-like function of */
-int (pt_out)(int (*of)(char const[],...), pt_t const* const e);
-
-/* Output of work package wp using printf-like functions of */
-int (wp_out)(int (*of)(char const[],...), wp_t const* const e);
-
-#endif
-
-
-
 /* The SPU work scheduling routines */
 void do_work_spu(int const flag);
 
 
-#if defined(CBE_DIRECT)
 /* Multibuffered version of do_work_spu */
 void do_work_spu_mbuf(void (* const mkf)(argbuf_t*, unsigned, int),
                       void (* const stf)(argbuf_t*, unsigned)
                      );
-#endif
 
 
 #endif /* PPU part */

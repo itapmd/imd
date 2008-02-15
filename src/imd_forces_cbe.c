@@ -39,13 +39,11 @@ static int *tb_off=NULL;
 static int *at_off=NULL;
 static short *tb=NULL;
 static int nb_max=0;
-#ifdef CBE_DIRECT
 static int n_max=0, len_max=0, len_max2=0;
 #ifdef ON_PPU
 static cell_dta_t *cell_dta=NULL;
 #else
 static cell_ea_t  *cell_dta=NULL;
-#endif
 #endif
 
 
@@ -391,8 +389,6 @@ void deallocate_nblist(void)
   have_valid_nbl = 0;
 }
 
-#ifdef CBE_DIRECT
-
 
 /******************************************************************************
 *
@@ -528,17 +524,6 @@ static void store_tb(wp_t const* const wp)
   if (wp->flag<0) {
        error("error flag in store_tb");
   }
-
-
-  /*
-  fprintf(stdout,
-          "store_tb:\n"
-          "flag = %d\n"
-          "k    = %d\n",
-  	     wp->flag, wp->k
-         );
-  fflush(stdout);
-  */
 
   for ( m=1;  EXPECT_TRUE_(m<NNBCELL);   ++m ) {
 #ifdef ON_PPU
@@ -903,304 +888,14 @@ static void store_wp_args(argbuf_t* parg, unsigned narg)
      __lwsync();
 
      for (  ;     EXPECT_TRUE_(narg>0u);     ++parg, --narg ) {
-#if defined(CBE_DIRECT)
          tot_pot_energy += ((wp_t const*)parg)->totpot;
          virial         += ((wp_t const*)parg)->virial;
-#else
-         store_wp((wp_t const*)parg)
-#endif
      }
 }
 
 /* Dummy function: Do not store anyting at all */
 static void store_wp_none(argbuf_t* unused1, unsigned unused2)
 {}
-
-#else  /* not CBE_DIRECT */
-
-/******************************************************************************
-*
-*  estimate_nblist_size
-*
-******************************************************************************/
-
-int estimate_nblist_size(void)
-{
-  int c, tn=1;
-  int inc_short = 128 / sizeof(short) - 1;
-
-  /* for all cells */
-  for (c=0; c<ncells; c++) {
-
-    int i, c1 = cnbrs[c].np;
-    cell *p   = cell_array + c1;
-
-    /* for each atom in cell */
-    for (i=0; i<p->n; i++) {
-
-      int    m;
-      vektor d1;
-
-      d1.x = ORT(p,i,X);
-      d1.y = ORT(p,i,Y);
-      d1.z = ORT(p,i,Z);
-
-      /* for each neighboring atom */
-      for (m=0; m<14; m++) {   /* this is not TWOD ready! */
-
-        int    c2, jstart, j;
-        real   r2;
-        cell   *q;
-
-        c2 = cnbrs[c].nq[m];
-        if (c2<0) continue;
-        jstart = (c2==c1) ? i+1: 0;
-        q = cell_array + c2;
-        for (j=jstart; j<q->n; j++) {
-          vektor d;
-          d.x = ORT(q,j,X) - d1.x;
-          d.y = ORT(q,j,Y) - d1.y;
-          d.z = ORT(q,j,Z) - d1.z;
-          r2  = SPROD(d,d);
-          if (r2 < cellsz) tn++;
-        }
-      }
-      /* enlarge tn to next 128 byte boundary */
-      tn = (tn + inc_short) & (~inc_short); 
-    }
-  }
-  return tn;
-}
-
-
-/******************************************************************************
-*
-*  make_nblist
-*
-******************************************************************************/
-
-void make_nblist(void)
-{
-  static int at_max=0, pa_max=0, cl_max=0;
-  int  c, i, k, n, nn, at, l, t, j;
-  int inc_int   = 128 / sizeof(int)   - 1;
-  int inc_short = 128 / sizeof(short) - 1;
-
-  /* update reference positions */
-  for (k=0; k<ncells; k++) {
-    cell *p = cell_array + cnbrs[k].np;
-    for (i=0; i<p->n; i++) {
-      NBL_POS(p,i,X) = ORT(p,i,X);
-      NBL_POS(p,i,Y) = ORT(p,i,Y);
-      NBL_POS(p,i,Z) = ORT(p,i,Z);
-    }
-  }
-
-  /* (re-)allocate offsets */
-  if (ncells > cl_max) {
-    free(at_off);
-    free(tb_off);
-    cl_max = ncells;
-    at_off = (int *) malloc( (cl_max+1) * sizeof(int) );
-    tb_off = (int *) malloc( (cl_max+1) * sizeof(int) );
-    if ((NULL==at_off) || (NULL==tb_off))
-      error("cannot allocate neighbor table");
-  }
-
-  /* count atom numbers */
-  at=0;
-  for (k=0; k<ncells; k++) {
-    cell *p = CELLPTR(k);
-    at_off[k] = at;
-    /* next block on 128 byte boundary */
-    at += (2*p->n + inc_int) & (~inc_int);
-  }
-  at_off[ncells] = at;
-
-  /* (re-)allocate neighbor table */
-  if (at >= at_max) {
-    free(ti);
-    at_max = (int) (1.1 * at);
-    ti = (int *) malloc_aligned(at_max * sizeof(int), 128,16);
-  }
-  if (NULL==tb) {
-    if (0==last_nbl_len) 
-      nb_max = (int) (nbl_size * ncells * estimate_nblist_size());
-    else                 
-      nb_max = (int) (nbl_size * last_nbl_len);
-    tb = (short *) malloc_aligned(nb_max* sizeof(short), 0,0);
-  }
-  else if (last_nbl_len * sqrt(nbl_size) > nb_max) {
-    free(tb);
-    nb_max = (int    ) (nbl_size * last_nbl_len);
-    tb     = (short *) malloc_aligned( nb_max * sizeof(short), 0, 0);
-  }
-  if ((ti==NULL) || (tb==NULL)) 
-    error("cannot allocate neighbor table");
-
-  /* for all cells */
-  nn=0;
-  for (c=0; c<ncells; c++) {
-
-    int   c1 = cnbrs[c].np;
-    short *ttb;
-    cell  *p = cell_array + c1;
-
-    l = at_off[c];
-    tb_off[c] = nn;
-    ttb = tb + nn;
-    n = 0;
-
-    /* for each atom in cell */
-    for (i=0; i<p->n; i++) {
-
-      int    m, off, rr;
-      vektor d1;
-
-      d1.x = ORT(p,i,X);
-      d1.y = ORT(p,i,Y);
-      d1.z = ORT(p,i,Z);
-
-      /* for each neighboring atom */
-      off = 0;
-      ti[l] = n;
-      for (m=0; m<14; m++) {   /* this is not TWOD ready! */
-        int  c2, jstart, j;
-        cell *q;
-        c2 = cnbrs[c].nq[m];
-        if (c2<0) continue;
-        jstart = (c2==c1) ? i+1 : 0;
-        q = cell_array + c2;
-        for (j=jstart; j<q->n; j++) {
-          vektor d;
-          real   r2;
-          d.x = ORT(q,j,X) - d1.x;
-          d.y = ORT(q,j,Y) - d1.y;
-          d.z = ORT(q,j,Z) - d1.z;
-          r2  = SPROD(d,d);
-          if (r2 < cellsz) ttb[n++] = off + j;
-        }
-        off += q->n;
-      }
-      ti[l+1] = n - ti[l];
-      l += 2;
-
-      /* if n is not divisible by 4, pad with copies of i */
-      rr = n % 4;
-      if (rr>0) for (j=rr; j<4; j++) ttb[n++] = i;
-
-      /* enlarge n to next 128 byte boundary */
-      n = (n + inc_short) & (~inc_short); 
-
-    }
-    pa_max = MAX(pa_max,n);
-    if (n + nn + 2*pa_max > nb_max) {
-      error("neighbor table full - increase nbl_size");
-    }
-    nn += n;
-  }
-
-  tb_off[ncells] = nn;
-  last_nbl_len   = nn;
-  have_valid_nbl = 1;
-  nbl_count++;
-}
-
-
-/******************************************************************************
-*
-*  make_wp
-*
-******************************************************************************/
-
-static void make_wp(int k, wp_t *wp)
-{
-  cell_nbrs_t *c = cnbrs + k;
-  int   m, j, i, n, l, t, min;
-  float *pp;
-  int   *tt;
-
-  /* store dimensions */
-  wp->k  = k;
-  wp->n1 = cell_array[c->np].n;
-  wp->n2 = 0;
-  for (m=0; m<14; m++) {
-    j = c->nq[m];
-    if (j > -1) wp->n2 += cell_array[j].n;
-  }
-
-  /* allocate or enlarge wp */
-  if (wp->n2 > wp->n2_max) {
-    if (wp->n2_max > 0) {
-      free(wp->pos);
-      free(wp->force);
-      free(wp->typ);
-    }
-    wp->n2_max = wp->n2 + 50;
-    wp->pos    = (float *) malloc_aligned(4 * wp->n2_max * sizeof(float),0,0);
-    wp->force  = (float *) malloc_aligned(4 * wp->n2_max * sizeof(float),0,0);
-    wp->typ    = (int *) malloc_aligned(    wp->n2_max * sizeof(int),0,0);
-    if ((NULL==wp->pos) || (NULL==wp->force) || (NULL==wp->typ))
-      error("cannot allocate workpackage");
-  }
-
-  /* copy position and type */
-  pp = wp->pos;
-  tt = wp->typ;
-  n = 0; l = 0;
-  for (m=0; m<14; m++) {
-    j = c->nq[m];
-    if (j == -1) continue;
-    cell  *q = cell_array + j;
-    for (i=0; i<q->n; i++) {
-      pp[l++] = (float) ORT(q,i,X);
-      pp[l++] = (float) ORT(q,i,Y);
-      pp[l++] = (float) ORT(q,i,Z);
-      pp[l++] = (float) 0.0;
-      tt[n++] = SORTE(q,i);
-    }
-  }
-  
-  /* set pointers to neighbor tables */
-  wp->ti  = ti + at_off[k];
-  wp->tb  = tb + tb_off[k];
-  wp->len = tb_off[k+1] - tb_off[k];
-  wp->n1_max  = 0;  /* max size for ti - nothing allocated here */
-  wp->len_max = 0;  /* max size for tb - nothing allocated here */
-}
-
-
-/******************************************************************************
-*
-*  store_wp
-*
-******************************************************************************/
-
-static void store_wp(wp_t const* const wp)
-{
-  /* Some indices */
-  int m, j, i, n=0;
-
-  /* Deref. pointer */
-  float const* const force = wp->force;
-
-  /* copy force and potential energy to cell array */
-  for (m=0; m<14; m++) {
-    j = cnbrs[wp->k].nq[m];
-    if (j == -1) continue;
-    cell *q = cell_array + j;
-    for (i=0; i<q->n; i++) {
-      KRAFT (q,i,X) += force[n++];
-      KRAFT (q,i,Y) += force[n++];
-      KRAFT (q,i,Z) += force[n++];
-      POTENG(q,i  ) += force[n++];
-    }
-  }
-  tot_pot_energy += wp->totpot;
-  virial         += wp->virial;
-}
-
-#endif  /* CBE_DIRECT */
 
 
 /******************************************************************************
@@ -1369,7 +1064,7 @@ void do_work_spu(int const flag)
 
       /* fprintf(stdout, "k=%u  kdone=%u\n", k,kdone); */
 
-      /* Index for wp/exch */
+      /* Index for wp */
       unsigned iwp1;
       for (  ispu=iwp1=0;     (ispu<ispumax);     ++ispu, iwp1+=N_ARGBUF  ) {
 
@@ -1377,13 +1072,7 @@ void do_work_spu(int const flag)
   	   spe_spu_control_area_p const pctl  = cbe_spucontrolarea[ispu];
            Tspustate*             const pstat = spustate+ispu;
 
-#if defined(CBE_DIRECT)
-           /* Exchange buffer needed if no direct access enabled */
            wp_t*   const pwp   = ((wp_t*)(cbe_arg_begin+iwp1));
-#else
-           exch_t* const pexch = ((exch_t*)(cbe_arg_begin+iwp1));
-           wp_t*   const pwp   = cbe_wp_begin+iwp1;
-#endif
 
            /* fprintf(stdout, "SPU %u is %s\n", ispu, 
                       ((WORKING==*pstat) ? "working" : "notworking"));  */
@@ -1396,11 +1085,6 @@ void do_work_spu(int const flag)
 	         case DOWP: make_wp(k, pwp); break;  /* force calc */
 	         default: error("unknown flag in do_work_spu");
                }
-#if ! defined (CBE_DIRECT)
-               /* ...and also create an exch buffer */
-               create_exch(pwp, pexch);
-#endif
-
  
                /* Signal SPU by writing to its mailbox when space 
                   is available */
@@ -1436,10 +1120,6 @@ void do_work_spu(int const flag)
 
                     if ( WPDONE1 == spumsg ) {
 		        /* Copy results from exch buffer */
-#if ! defined(CBE_DIRECT)
-		        pwp->totpot = pexch->totpot;
-                        pwp->virial = pexch->virial;
-#endif
 
                         /* Store the wp */
    	                switch (flag) {

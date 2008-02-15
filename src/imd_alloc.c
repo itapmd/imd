@@ -140,7 +140,7 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
   to->sorte  [i] = from->sorte  [j]; 
   to->vsorte [i] = from->vsorte [j]; 
   to->masse  [i] = from->masse  [j]; 
-#ifndef CBE_DIRECT
+#ifndef CBE
   to->pot_eng[i] = from->pot_eng[j];
 #endif
 #endif
@@ -255,7 +255,7 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
 #ifndef TWOD
   to->kraft Z(i) = from->kraft Z(j); 
 #endif
-#ifdef CBE_DIRECT
+#ifdef CBE
   to->kraft W(i) = from->kraft W(j); 
 #endif
 #ifdef COVALENT
@@ -403,7 +403,7 @@ void memalloc(void *p, int count, int size, int align, int ncopy, int clear,
 void alloc_cell(cell *p, int n)
 {
   int i, ncopy;
-#ifdef CBE_DIRECT
+#ifdef CBE
   int al=128;
 #else
   int al=8;
@@ -450,7 +450,7 @@ void alloc_cell(cell *p, int n)
   memalloc( &p->sorte,    n, sizeof(shortint), al, ncopy, 0, "sorte" );
   memalloc( &p->vsorte,   n, sizeof(shortint), al, ncopy, 0, "vsorte" );
   memalloc( &p->masse,    n, sizeof(real),     al, ncopy, 0, "masse" );
-#ifndef CBE_DIRECT
+#ifndef CBE
   memalloc( &p->pot_eng,  n, sizeof(real),     al, ncopy, 0, "pot_eng" );
 #endif
 #endif
