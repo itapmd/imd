@@ -28,6 +28,9 @@
 #include <spu_internals.h>
 
 /* SDK Headers containing inline functions/macros */
+#include <malloc_align.h>
+#include <free_align.h>
+
 /*
 #include <cond_init.h>
 #include <cond_wait.h>
@@ -86,7 +89,7 @@ static INLINE_ void set_res_buffers(cell_dta_t* const pbuf, int const n_max,
 /* Set temp. buffer memory (which will be needed during calculation only) */
 static void set_tmp_buffers(cell_dta_t* const pbuf,
                             int const n_max, int const len_max,
-                            void* const tmpbuf, unsigned const tmpbuf_len)
+                            mem_buf_t *tmpbuf)
 {
     /* Size of vector arrays (e.g. position) */
     int const svec = iceil128(  n_max *     sizeof(vector float));
@@ -99,13 +102,23 @@ static void set_tmp_buffers(cell_dta_t* const pbuf,
     /* Total number of bytes needed for temp. storage */
     int const stottmp = 3*(svec+styp)+2*(sti+stb);
 
+    /* (re-)allocate tmpbuf */
+    if ( EXPECT_FALSE_(tmpbuf->len < stottmp) ) {
+      _free_align(tmpbuf->data);
+      tmpbuf->data = (unsigned char *) _malloc_align( stottmp, 7 );
+      if ( EXPECT_TRUE_((int)tmpbuf->data) ) {
+        tmpbuf->len = stottmp;
+      }
+      else {
+        printf("tmpbuf allocation failed, %d bytes requested\n", stottmp);
+        tmpbuf->len = 0;
+      }
+    }
 
-    /* fprintf(stdout, "set_tmp_buffers: n_max=%d, len_max=%d\n", n_max, len_max); fflush(stdout); */
-
-    /* Enoug temp space available? */
-    if ( EXPECT_TRUE_(tmpbuf_len >= stottmp) ) {
+    /* Enough temp space available? */
+    if ( EXPECT_TRUE_(tmpbuf->len >= stottmp) ) {
         /* Allocation starts here */
-        register unsigned char* loc = (unsigned char*)tmpbuf;
+        register unsigned char* loc = (unsigned char *) tmpbuf->data;
 
         /* Pos arrays */
         pbuf[0].pos = (float*)loc;
@@ -137,11 +150,6 @@ static void set_tmp_buffers(cell_dta_t* const pbuf,
         loc+=stb2;  /* this one can be smaller */
         pbuf[2].tb  = pbuf[0].tb;
     }
-    else {
-        /*  fprintf(stderr, "set_buffers: Can not allocate %d bytes for temp buffers\n", 
-	    stottmp); */
-    }
-
 }
 
 
@@ -159,7 +167,7 @@ static void init_get(void* ibuf, void* obuf, ea_t iea, unsigned const itag)
 
 
 /* Temp. DMA buffer */
-static unsigned char ALIGNED_(128, direct_tmp[80*Ki]);
+static mem_buf_t tmpbuf = {NULL, 0};
 
 /* Buffer "control block" for calc_direct routines */
 static cell_dta_t direct_buf[3];
@@ -170,7 +178,7 @@ static int last_len_max=0u;
 
 
 /* Size of ouput buffers (used in main) */
-enum { DIRECT_OBUFSZE=((unsigned)(30*Ki)) };
+enum { DIRECT_OBUFSZE=((unsigned)(5*Ki)) };
 
 
 
@@ -192,8 +200,8 @@ static void wp_direct_spusum(void* i, void* o,  ea_t unused, unsigned otag)
 
 
     /* Set buffers */
-    set_tmp_buffers(B, n_max, len_max,  &direct_tmp,  (sizeof direct_tmp));
-    set_res_buffers(B, n_max,           ((argbuf_t*)o)+1, RESSZE);
+    set_tmp_buffers(B, n_max, len_max, &tmpbuf );
+    set_res_buffers(B, n_max, ((argbuf_t*)o)+1, RESSZE);
 
     /* Calc. forces */
     calc_wp_direct(pwp, B, otag);
@@ -221,8 +229,8 @@ static void wp_direct(void* i, void* o, ea_t oea, unsigned otag)
 
 
     /* Set buffers  */
-    set_tmp_buffers(B, n_max, len_max,  &direct_tmp, (sizeof direct_tmp));
-    set_res_buffers(B, n_max,           o,           DIRECT_OBUFSZE);
+    set_tmp_buffers(B, n_max, len_max, &tmpbuf );
+    set_res_buffers(B, n_max, o, DIRECT_OBUFSZE);
 
     /* Calc forces */
     calc_wp_direct(pwp, B,   otag);
@@ -248,8 +256,8 @@ static void tb_direct(void* i, void* o, ea_t oea, unsigned otag)
 
 
     /* Set buffers  */
-    set_tmp_buffers(B,  n_max, len_max,  &direct_tmp, (sizeof direct_tmp));
-    set_res_buffers(B,  n_max,           o,           DIRECT_OBUFSZE);
+    set_tmp_buffers(B, n_max, len_max, &tmpbuf );
+    set_res_buffers(B, n_max, o, DIRECT_OBUFSZE);
 
     /* Calc. NBL */
     calc_tb_direct(pwp, B,  otag);

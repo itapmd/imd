@@ -350,6 +350,12 @@ typedef union {
 } argbuf_t;
 
 
+/* data structure for memory buffer */
+typedef struct {
+  unsigned int  len;      /* size of buffer in bytes */
+  unsigned char *data;    /* data section of buffer  */
+} mem_buf_t;
+
 
 /* The main calculation routine(s) */
 void calc_wp(wp_t *wp);

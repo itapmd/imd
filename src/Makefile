@@ -618,7 +618,7 @@ ifeq (cbe-xlc,${IMDSYS})
   CC_MPI        = mpicc  -q32
 
   OPT_FLAGS     += -O3 -qstrict -qcpluscmt -qflag=w:w -qproto -qro -qwarn64  -qhot=level=1:simd  -qreport -qinline -qunroll=yes -qlibansi -qipa=level=1
-  SPUCFLAGS     += -O3 -qstrict -qcpluscmt -qflag=w:w -qhot=level=1 -qproto -qreport -qinline  -qinline-dma64:mdma64:wait_dma -I${CELLSDKLIB}/sync
+  SPUCFLAGS     += -O3 -qstrict -qcpluscmt -qflag=w:w -qhot=level=1 -qproto -qreport -qinline  -qinline-dma64:mdma64:wait_dma -I${CELLSDKLIB}/sync -I${CELLSDKLIB}/misc
   PP_FLAGS      += -I${CELLSDKLIB}/sync
   EMBEDSPU      = ppu-embedspu -m32
 
@@ -654,7 +654,7 @@ ifeq (cbe-gcc,${IMDSYS})
   SPUCC         = spu-gcc
   OPT_FLAGS     += -pipe  -std=gnu89 -pedantic -Wall -Wno-unused -Wcast-qual -Wno-long-long   -O3 -funroll-loops
   PP_FLAGS      += -I${CELLSDKLIB}/sync
-  SPUCFLAGS     += -pipe  -std=gnu89 -pedantic -Wall -Wunused -Wshadow -Wcast-qual -Wno-long-long -O2 -funroll-loops  -I${CELLSDKLIB}/sync/spu
+  SPUCFLAGS     += -pipe  -std=gnu89 -pedantic -Wall -Wunused -Wshadow -Wcast-qual -Wno-long-long -O2 -funroll-loops  -I${CELLSDKLIB}/sync/spu -I${CELLSDKLIB}/misc
   EMBEDSPU      = ppu-embedspu -m32
 
   BIN_DIR	= ${HOME}/bin/cbe
