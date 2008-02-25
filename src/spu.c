@@ -65,25 +65,31 @@ static INLINE_ unsigned uimax(unsigned const a, unsigned const b) {
 }
 
 
-
 /* Set result buffer (force) */
 static INLINE_ void set_res_buffers(cell_dta_t* const pbuf, int const n_max,
-                                    void* const resbuf, unsigned const resbuf_len) {
+                                    mem_buf_t *membuf) 
+{
     /* Size of vector arrays (e.g. force) */
     int const svec = iceil128(n_max * sizeof(vector float));
+    int const stot = svec;
 
-    /* forces arrays will only be used for pbuf[0] */
-    /* pbuf[1].force=pbuf[2].force=0; */
-
-    if ( EXPECT_TRUE_(resbuf_len >= svec) ) {
-        /* At the moment, only pbuf[0].forces will store results */
-        pbuf[0].force = (float*)resbuf;
+    /* (re-)allocate membuf */
+    if ( EXPECT_FALSE_(membuf->len < stot) ) {
+      _free_align(membuf->data);
+      membuf->data = (unsigned char *) _malloc_align( stot, 7 );
+      if ( EXPECT_TRUE_((int)membuf->data) ) {
+        membuf->len = stot;
+      }
+      else {
+        printf("membuf allocation failed, %d bytes requested\n", stot);
+        membuf->len = 0;
+      }
     }
-    else {
-        /* fprintf(stderr, "set_buffers: Can not allocate %d bytes for result buffers\n", svec); */
-       pbuf[0].force = 0;
-    }
 
+    /* Enough space available? */
+    if ( EXPECT_TRUE_(membuf->len >= stot) ) {
+        pbuf[0].force = (float *) membuf->data;
+    }
 }
 
 /* Set temp. buffer memory (which will be needed during calculation only) */
@@ -153,9 +159,6 @@ static void set_tmp_buffers(cell_dta_t* const pbuf,
 }
 
 
-
-
-
 /* Init get (always the same for wp & tb) */
 static void init_get(void* ibuf, void* obuf, ea_t iea, unsigned const itag)
 {
@@ -177,15 +180,15 @@ static int last_n_max=0u;
 static int last_len_max=0u;
 
 
-/* Size of ouput buffers (used in main) */
-enum { DIRECT_OBUFSZE=((unsigned)(5*Ki)) };
+/* Size of output buffers (used in main) */
+/* enum { DIRECT_OBUFSZE=((unsigned)(5*Ki)) }; */
 
 
 
 static void wp_direct_spusum(void* i, void* o,  ea_t unused, unsigned otag)
 {
     /* Size of buffer for the results */
-    enum { RESSZE=DIRECT_OBUFSZE-(sizeof (argbuf_t)) };
+    /* enum { RESSZE=DIRECT_OBUFSZE-(sizeof (argbuf_t)) }; */
 
     /* Store ptr. to buffers in register */
     register cell_dta_t* const B = direct_buf;
@@ -198,14 +201,14 @@ static void wp_direct_spusum(void* i, void* o,  ea_t unused, unsigned otag)
     register int const n_max   = pwp->n_max;
     register int const len_max = pwp->len_max;
 
+    register argbuf_t *argb = (((argbuf_t *)o)+1);
 
     /* Set buffers */
     set_tmp_buffers(B, n_max, len_max, &tmpbuf );
-    set_res_buffers(B, n_max, ((argbuf_t*)o)+1, RESSZE);
+    set_res_buffers(B, n_max, &(argb->mb));
 
     /* Calc. forces */
     calc_wp_direct(pwp, B, otag);
-
 
     /* Add up forces/virial in result buffer */
     psum->virial += pwp->virial;
@@ -225,16 +228,14 @@ static void wp_direct(void* i, void* o, ea_t oea, unsigned otag)
     register int const n_max   = pwp->n_max;
     register int const len_max = pwp->len_max;
 
-
-
+    register argbuf_t *argb = (((argbuf_t *)o)+1);
 
     /* Set buffers  */
     set_tmp_buffers(B, n_max, len_max, &tmpbuf );
-    set_res_buffers(B, n_max, o, DIRECT_OBUFSZE);
+    set_res_buffers(B, n_max, &(argb->mb));
 
     /* Calc forces */
     calc_wp_direct(pwp, B,   otag);
-
 
     /* Init outbound DMA: */
     dma64(i,  oea,  (sizeof (argbuf_t)),  otag, MFC_PUT_CMD);
@@ -253,11 +254,11 @@ static void tb_direct(void* i, void* o, ea_t oea, unsigned otag)
     register int const n_max   = pwp->n_max;
     register int const len_max = pwp->len_max;
 
-
+    register argbuf_t *argb = (((argbuf_t *)o)+1);
 
     /* Set buffers  */
     set_tmp_buffers(B, n_max, len_max, &tmpbuf );
-    set_res_buffers(B, n_max, o, DIRECT_OBUFSZE);
+    set_res_buffers(B, n_max, &(argb->mb));
 
     /* Calc. NBL */
     calc_tb_direct(pwp, B,  otag);
@@ -488,6 +489,24 @@ int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
     /* Some timing stuff */
     register tick_t t0, dt;
 
+    /* Input buffers */
+    static argbuf_t ALIGNED_(128, ibuf0);
+    static argbuf_t ALIGNED_(128, ibuf1);
+    /* Pointers to the beginning of the buffers */
+    static void* const ib[] = { &ibuf0, &ibuf1 };
+
+    /* Output buffers */
+    static argbuf_t ALIGNED_(128, obuf0[2]);
+    static argbuf_t ALIGNED_(128, obuf1[2]);
+    /* Pointers to the beginning of the buffers */
+    static void* const ob[] = { &obuf0, &obuf1 };
+
+    /* initialize memory buffer in obuf0/obuf1 */
+    obuf0[1].mb.data = NULL;
+    obuf1[1].mb.data = NULL;
+    obuf0[1].mb.len  = 0;
+    obuf1[1].mb.len  = 0;
+
     /* Get the environment list */
     mdma64(env,  envp,  (sizeof (ea_t[N_ENVEA])),   misctag, MFC_GET_CMD);
     (void)(wait_dma(miscmsk, MFC_TAG_UPDATE_ALL));
@@ -512,12 +531,6 @@ int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
     for (;;) {
         /* Read work mode / flag */
         unsigned int const mode = spu_read_in_mbox();
-
-	/* Output buffers */
-        static unsigned char ALIGNED_(128, obuf0[DIRECT_OBUFSZE]);
-        static unsigned char ALIGNED_(128, obuf1[DIRECT_OBUFSZE]);
-        static void* const ob[] = { &obuf0, &obuf1 };
-
 
         /* mode==0: No more work   */
         if ( EXPECT_FALSE_(0u==mode) ) {
@@ -553,11 +566,6 @@ int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
            };
 
   	   for(;;) {
-               /* Input buffers */
-               static argbuf_t ALIGNED_(128, ibuf0);
-               static argbuf_t ALIGNED_(128, ibuf1);
-               /* Pointers to the beginning of the buffers */
-               static void* const ib[] = { &ibuf0, &ibuf1 };
                
                /* Tags & the corresponding masks to be used */
                static unsigned int const tags[] = { 0,1 };

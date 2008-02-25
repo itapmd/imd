@@ -336,6 +336,13 @@ enum { BUFPAD = ((unsigned)128) };
 #define MAXSIZE2(a,b) (((sizeof(a))>(sizeof(b))) ? (sizeof(a)) : (sizeof(b)))
 
 
+/* data structure for memory buffer */
+typedef struct {
+  unsigned int  len;      /* size of buffer in bytes */
+  unsigned char *data;    /* data section of buffer  */
+} mem_buf_t;
+
+
 typedef union {
     /* Dummy data */
 
@@ -347,14 +354,11 @@ typedef union {
 
     /* Padding */
     unsigned char pad[CEILPOW2(sizeof(wp_t),BUFPAD)];
+
+  /* memory buffer */
+    mem_buf_t mb; 
+
 } argbuf_t;
-
-
-/* data structure for memory buffer */
-typedef struct {
-  unsigned int  len;      /* size of buffer in bytes */
-  unsigned char *data;    /* data section of buffer  */
-} mem_buf_t;
 
 
 /* The main calculation routine(s) */
