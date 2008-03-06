@@ -194,18 +194,17 @@ enum { DOTB=((int)1), DOWP=((int)2) };
 
 /* Cell data within a work package;
    On SPU, allocate for n_max atoms and len_max neighbor indices,
-   namely 4*n_max floats (pos, force), n_max ints (typ), 2*n_max ints (ti), 
-   and len_max shorts (tb), all rounded up to 128 bytes.
+   namely 4*n_max floats (pos, force, imp), n_max ints (typ), 
+   2*n_max ints (ti), and len_max shorts (tb), all rounded up to 128 bytes.
    n_max and len_max are taken from wp_t; 
    n is set to the actual n from cell_ea_t. */
 typedef struct {
   int   n;  /* actual number of atoms */
-
-  /* "Output data" on SPU */
   float  *force;
-
-  /* "Input data" on SPU */
   float  *pos;
+#ifdef SPU_INT
+  float  *imp;
+#endif
   int    *typ;
   int    *ti;
   short  *tb;
@@ -219,6 +218,9 @@ typedef struct {
 typedef struct {
   int  n, len;
   ea_t pos_ea, force_ea, typ_ea, ti_ea, tb_ea;
+#ifdef SPU_INT
+  ea_t imp_ea;
+#endif
 } cell_ea_t;
 
 
@@ -229,7 +231,18 @@ typedef struct {
 typedef struct wp {
   float totpot;
   float virial;
-
+#ifdef SPU_INT
+  float totkin;
+#ifdef NVT
+  float E_kin_2;
+#endif
+#ifdef FNORM
+  float fnorm;
+#endif
+#ifdef GLOK
+  float PxF, pnorm;
+#endif
+#endif
   int nb_max;
   int flag;
 
@@ -255,6 +268,9 @@ typedef struct wp {
 typedef struct {
   int ntypes;
   ea_t ea;
+#ifdef SPU_INT
+  ea_t mv_ea;
+#endif
 #if defined(__SPU__)
   vector float const* r2cut;
   vector float const* lj_sig;
@@ -275,6 +291,9 @@ typedef struct {
   int   ntypes;      /* number of atom types */
   int   nsteps;      /* number of tabulations steps */
   ea_t  ea;          /* effective address of data section */
+#ifdef SPU_INT
+  ea_t  mv_ea;       /* address of extra data for integrator */
+#endif
 #ifdef __SPU__
   vector float const *begin;    /* first value in the table */
   vector float const *r2cut;    /* last value in the table */
@@ -297,7 +316,25 @@ typedef struct {
 /* This is defined in spu.c and imd_forces_cbe.c */
 extern  pt_t pt;
 
+#ifdef SPU_INT
 
+/* extra data for integrator on SPU */
+/* we assume here ntypes <= 2 and total_types <= 6 */
+typedef struct {
+#ifdef __SPU__
+  vector float ts, fac1, fac2, mikmask, imass[2], restr[6], fbc_f[6];
+#else
+  float ts[4], fac1[4], fac2[4], mikmask[4], imass[8], restr[24], fbc_f[24];
+#endif
+} mv_t;
+
+/* This is defined in spu.c and imd_forces_cbe.c */
+extern  mv_t mv;
+
+#endif
+
+/* summation WP */
+extern wp_t psum;
 
 /* Constants passed via mailbox */
 enum { WPDONE1=(unsigned)0, WPSTRT1=(unsigned)1, SPUEXIT=(unsigned)2 };
@@ -354,9 +391,6 @@ typedef union {
 
     /* Padding */
     unsigned char pad[CEILPOW2(sizeof(wp_t),BUFPAD)];
-
-  /* memory buffer */
-    mem_buf_t mb; 
 
 } argbuf_t;
 

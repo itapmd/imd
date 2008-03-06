@@ -28,8 +28,8 @@
 #include <spu_internals.h>
 
 /* SDK Headers containing inline functions/macros */
-#include <malloc_align.h>
-#include <free_align.h>
+#include <misc/malloc_align.h>
+#include <misc/free_align.h>
 
 /*
 #include <cond_init.h>
@@ -44,6 +44,13 @@
 /* potential data structure */
 pt_t ALIGNED_(16,pt);
 
+/* extra data for integrator on SPU */
+#ifdef SPU_INT
+mv_t ALIGNED_(16,mv);
+#endif
+
+/* summation WP */
+wp_t ALIGNED_(16,psum);
 
 /* Suffix (kilobyte) */
 enum { Ki=1024u };
@@ -71,7 +78,11 @@ static INLINE_ void set_res_buffers(cell_dta_t* const pbuf, int const n_max,
 {
     /* Size of vector arrays (e.g. force) */
     int const svec = iceil128(n_max * sizeof(vector float));
+#ifdef SPU_INT
+    int const stot = 3*svec;
+#else
     int const stot = svec;
+#endif
 
     /* (re-)allocate membuf */
     if ( EXPECT_FALSE_(membuf->len < stot) ) {
@@ -88,7 +99,14 @@ static INLINE_ void set_res_buffers(cell_dta_t* const pbuf, int const n_max,
 
     /* Enough space available? */
     if ( EXPECT_TRUE_(membuf->len >= stot) ) {
-        pbuf[0].force = (float *) membuf->data;
+        register unsigned char* loc = (unsigned char *) membuf->data;
+        pbuf[0].force = (float *) loc;
+#ifdef SPU_INT
+        loc += svec;
+        pbuf[0].pos   = (float *) loc;
+        loc += svec;
+        pbuf[0].imp   = (float *) loc;
+#endif
     }
 }
 
@@ -106,7 +124,11 @@ static void set_tmp_buffers(cell_dta_t* const pbuf,
     int const stb2 = iceil128(len_max/2 *   sizeof(short));
 
     /* Total number of bytes needed for temp. storage */
+#ifdef SPU_INT
+    int const stottmp = 3*(svec+styp)+2*(sti+stb)-svec;
+#else
     int const stottmp = 3*(svec+styp)+2*(sti+stb);
+#endif
 
     /* (re-)allocate tmpbuf */
     if ( EXPECT_FALSE_(tmpbuf->len < stottmp) ) {
@@ -127,8 +149,10 @@ static void set_tmp_buffers(cell_dta_t* const pbuf,
         register unsigned char* loc = (unsigned char *) tmpbuf->data;
 
         /* Pos arrays */
+#ifndef SPU_INT
         pbuf[0].pos = (float*)loc;
         loc+=svec;
+#endif
         pbuf[1].pos = (float*)loc;
         loc+=svec;
         pbuf[2].pos = (float*)loc;
@@ -170,7 +194,7 @@ static void init_get(void* ibuf, void* obuf, ea_t iea, unsigned const itag)
 
 
 /* Temp. DMA buffer */
-static mem_buf_t tmpbuf = {NULL, 0};
+static mem_buf_t tmpbuf = {0, NULL};
 
 /* Buffer "control block" for calc_direct routines */
 static cell_dta_t direct_buf[3];
@@ -179,42 +203,31 @@ static cell_dta_t direct_buf[3];
 static int last_n_max=0u;
 static int last_len_max=0u;
 
-
-/* Size of output buffers (used in main) */
-/* enum { DIRECT_OBUFSZE=((unsigned)(5*Ki)) }; */
-
-
+#ifdef OBSOLETE
 
 static void wp_direct_spusum(void* i, void* o,  ea_t unused, unsigned otag)
 {
-    /* Size of buffer for the results */
-    /* enum { RESSZE=DIRECT_OBUFSZE-(sizeof (argbuf_t)) }; */
-
     /* Store ptr. to buffers in register */
     register cell_dta_t* const B = direct_buf;
 
     /* Ptrs. to input/summatiuon workpackages */
     register wp_t* const pwp  = (wp_t*)i;
-    register wp_t* const psum = (wp_t*)o;
 
     /* Some length parameters from WP */
     register int const n_max   = pwp->n_max;
     register int const len_max = pwp->len_max;
 
-    register argbuf_t *argb = (((argbuf_t *)o)+1);
+    register mem_buf_t *mb = (mem_buf_t *)o;
 
     /* Set buffers */
+    set_res_buffers(B, n_max, mb);
     set_tmp_buffers(B, n_max, len_max, &tmpbuf );
-    set_res_buffers(B, n_max, &(argb->mb));
 
     /* Calc. forces */
     calc_wp_direct(pwp, B, otag);
-
-    /* Add up forces/virial in result buffer */
-    psum->virial += pwp->virial;
-    psum->totpot += pwp->totpot;
 }
 
+#endif
 
 static void wp_direct(void* i, void* o, ea_t oea, unsigned otag)
 {
@@ -228,17 +241,20 @@ static void wp_direct(void* i, void* o, ea_t oea, unsigned otag)
     register int const n_max   = pwp->n_max;
     register int const len_max = pwp->len_max;
 
-    register argbuf_t *argb = (((argbuf_t *)o)+1);
+    register mem_buf_t *mb = (mem_buf_t *)o;
 
     /* Set buffers  */
+    set_res_buffers(B, n_max, mb);
     set_tmp_buffers(B, n_max, len_max, &tmpbuf );
-    set_res_buffers(B, n_max, &(argb->mb));
 
     /* Calc forces */
     calc_wp_direct(pwp, B,   otag);
 
+#ifdef PPUSUM
     /* Init outbound DMA: */
     dma64(i,  oea,  (sizeof (argbuf_t)),  otag, MFC_PUT_CMD);
+#endif
+
 }
 
 
@@ -254,11 +270,11 @@ static void tb_direct(void* i, void* o, ea_t oea, unsigned otag)
     register int const n_max   = pwp->n_max;
     register int const len_max = pwp->len_max;
 
-    register argbuf_t *argb = (((argbuf_t *)o)+1);
+    register mem_buf_t *mb = (mem_buf_t *)o;
 
     /* Set buffers  */
+    set_res_buffers(B, n_max, mb);
     set_tmp_buffers(B, n_max, len_max, &tmpbuf );
-    set_res_buffers(B, n_max, &(argb->mb));
 
     /* Calc. NBL */
     calc_tb_direct(pwp, B,  otag);
@@ -422,8 +438,8 @@ static void start_init(ea_t const envea, unsigned int const itag)
   static vector float ALIGNED_(128, pbuf[memsize]);
   unsigned int off=0, inc;
 
-  /* Get the potential control block - 16 bytes is enough */
-  dma64( &pt, envea, 16, itag, MFC_GET_CMD);
+  /* Get the potential control block - 32 bytes is enough */
+  dma64( &pt, envea, 32, itag, MFC_GET_CMD);
   wait_dma((1u<<itag), MFC_TAG_UPDATE_ALL);
 
   /* Get the potential data */
@@ -470,8 +486,6 @@ static INLINE_ void arg_eas(register ea_t cur64, register ea_t const stride64,
     }
 }
 
-
-
 /* argp "points" to an array of lengt N_ARGBUF of argbuf_t */
 int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
 {
@@ -495,17 +509,17 @@ int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
     /* Pointers to the beginning of the buffers */
     static void* const ib[] = { &ibuf0, &ibuf1 };
 
-    /* Output buffers */
-    static argbuf_t ALIGNED_(128, obuf0[2]);
-    static argbuf_t ALIGNED_(128, obuf1[2]);
+    /* Output memory buffers */
+    static mem_buf_t ALIGNED_(128, obuf0);
+    static mem_buf_t ALIGNED_(128, obuf1);
     /* Pointers to the beginning of the buffers */
     static void* const ob[] = { &obuf0, &obuf1 };
 
     /* initialize memory buffer in obuf0/obuf1 */
-    obuf0[1].mb.data = NULL;
-    obuf1[1].mb.data = NULL;
-    obuf0[1].mb.len  = 0;
-    obuf1[1].mb.len  = 0;
+    obuf0.data = NULL;
+    obuf1.data = NULL;
+    obuf0.len  = 0;
+    obuf1.len  = 0;
 
     /* Get the environment list */
     mdma64(env,  envp,  (sizeof (ea_t[N_ENVEA])),   misctag, MFC_GET_CMD);
@@ -544,15 +558,36 @@ int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
            /* Input values from mailbox */
            unsigned offs,narg;
 
-
            /* Mode dependent setup */
            switch (mode) {
 	       case DOWP : {
 		  getfunc=init_get;
-                  wrkfunc=wp_direct_spusum;
+                  /*wrkfunc=wp_direct_spusum; */
+                  wrkfunc=wp_direct;
+#ifndef PPUSUM
                   /* Set accumulation variables */
-                  ((wp_t*)&obuf0)->virial = ((wp_t*)&obuf1)->virial =
-		  ((wp_t*)&obuf0)->totpot = ((wp_t*)&obuf1)->totpot = 0.0f;
+                  psum.virial  = 0.0f;
+		  psum.totpot  = 0.0f;
+#ifdef SPU_INT
+                  psum.totkin  = 0.0f;
+#ifdef NVT
+                  psum.E_kin_2 = 0.0f;
+#endif
+#ifdef FNORM
+                  psum.fnorm   = 0.0f;
+#endif
+#ifdef GLOK
+                  psum.PxF     = 0.0f;
+                  psum.pnorm   = 0.0f;
+#endif
+#endif 
+#endif  /* PPUSUM  */
+
+#ifdef SPU_INT
+                  /* fetch extra data for integrator */
+                  dma64(&mv, pt.mv_ea, sizeof(mv_t), misctag, MFC_GET_CMD);
+                  wait_dma(miscmsk, MFC_TAG_UPDATE_ALL);
+#endif
                   break;
                }
 	       case DOTB : {
@@ -610,14 +645,9 @@ int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
               /* Offset of result buffer */
               enum { RESOFFS  = (unsigned)0 };
 
-	      /* Total energy/virial in obuf0 */
-	      ((wp_t*)&obuf0)->totpot += ((wp_t const*)&obuf1)->totpot;
-              ((wp_t*)&obuf0)->virial += ((wp_t const*)&obuf1)->virial;
-
               /* DMA results back */
-              dma64(&obuf0, eabuf[RESOFFS], sizeof(argbuf_t), t, MFC_PUT_CMD);
+              dma64(&psum, eabuf[RESOFFS], sizeof(wp_t), t, MFC_PUT_CMD);
               wait_dma(m, MFC_TAG_UPDATE_ALL);
-
 
               /* Tell PPU where to pick up accu */
               spu_write_out_mbox(RESOFFS);
@@ -627,6 +657,16 @@ int main(ui64_t const id, ui64_t const argp, ui64_t const envp)
 	      /* Just acknoledge */
 	      spu_write_out_mbox(RESOFFS);
            }
+           /* free memory buffers to avoid fragmentation */
+           _free_align(tmpbuf.data);
+           tmpbuf.data = NULL;
+           tmpbuf.len  = 0;
+           _free_align(obuf0.data);
+           obuf0.data = NULL;
+           obuf0.len  = 0;
+           _free_align(obuf1.data);
+           obuf1.data = NULL;
+           obuf1.len  = 0;
         }
     }
 

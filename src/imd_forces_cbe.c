@@ -33,6 +33,11 @@
 /* Potential data structure */
 pt_t ALIGNED_(16,pt);
 
+/* extra data for integrator on SPU */
+#ifdef SPU_INT
+mv_t ALIGNED_(16,mv);
+#endif
+
 /* Global variables only needed in this file */
 static int *ti= NULL;
 static int *tb_off=NULL;
@@ -195,7 +200,10 @@ void mk_pt(void)
   pt.lj_eps   = pt.lj_sig + nelem;
   pt.lj_shift = pt.lj_eps + nelem;
   PTR2EA( pt.r2cut, pt.ea );
-  
+#ifdef SPU_INT
+  PTR2EA( &mv, pt.mv_ea );
+#endif
+
   if (NULL==pt.r2cut) error("cannot allocate potential package");
   for (i=0; i<ntypes; i++)
     for (j=0; j<ntypes; j++) {
@@ -254,6 +262,9 @@ void mk_pt(void)
 
   /* fill in header of potential table */
   PTR2EA( pt.data, pt.ea );
+#ifdef SPU_INT
+  PTR2EA( &mv, pt.mv_ea );
+#endif
   pt.ntypes  = ntypes;
   pt.nsteps  = n;
   pt.begin   = pt.data + off;  off += hsize;
@@ -368,6 +379,56 @@ void mk_pt(void)
 
   }
 }
+
+#endif
+
+
+/******************************************************************************
+*
+*  prepare extra data for integrator on SPU
+*
+******************************************************************************/
+
+#ifdef SPU_INT
+
+void mk_mv(void)
+{
+  int i, t;
+#ifndef NVT
+  float eta=0.0;
+#endif
+
+  float fric  =        1.0 - eta * timestep / 2.0;
+  float ifric = 1.0 / (1.0 + eta * timestep / 2.0);
+  float fac1  = fric * ifric;
+  float fac2  = timestep * ifric;
+
+  mv.ts  [0] = mv.ts  [1] = mv.ts  [2] = timestep; mv.ts  [3] = 0.0;
+  mv.fac1[0] = mv.fac1[1] = mv.fac1[2] = fac1;     mv.fac1[3] = 0.0;
+  mv.fac2[0] = mv.fac2[1] = mv.fac2[2] = fac2;     mv.fac2[3] = 0.0;
+#ifdef MIK
+  if (ensemble == ENS_MIK) 
+    mv.mikmask[0] = mv.mikmask[1] = mv.mikmask[2] = 0.0;  mv.mikmask[3] = 0.0;
+  else
+    mv.mikmask[0] = mv.mikmask[1] = mv.mikmask[2] = 1e10; mv.mikmask[3] = 0.0;
+#endif
+  for (i=0; i<4; i++) {
+    for (t=0; t<ntypes; t++) mv.imass[4*t+i] = 1.0 / masses[t];
+  }
+  for (t=0; t<vtypes; t++) {
+    mv.restr[4*t  ] = restrictions[t].x;
+    mv.restr[4*t+1] = restrictions[t].y;
+    mv.restr[4*t+2] = restrictions[t].z;
+    mv.restr[4*t+3] = 1.0;  /* here, the energy is stored! */
+#ifdef FBC
+    mv.fbc_f[4*t  ] = fbc_forces[t].x;
+    mv.fbc_f[4*t+1] = fbc_forces[t].y;
+    mv.fbc_f[4*t+2] = fbc_forces[t].z;
+    mv.fbc_f[4*t+3] = 0.0;  /* here, the energy is stored! */
+#endif
+  }
+}
+
 
 #endif
 
@@ -682,6 +743,9 @@ void make_nblist(void)
     PTR2EA( p->ort,   cell_dta[k].pos_ea   );
     PTR2EA( p->kraft, cell_dta[k].force_ea );
     PTR2EA( p->sorte, cell_dta[k].typ_ea   );
+#ifdef SPU_INT
+    PTR2EA( p->impuls,cell_dta[k].imp_ea   );
+#endif
     PTR2EA( NULL,     cell_dta[k].ti_ea    );
     PTR2EA( NULL,     cell_dta[k].tb_ea    );
 #endif
@@ -746,7 +810,7 @@ void make_nblist(void)
     int   nn = tb_off[c*NNBCELL];
 
     /* for each neighbor cell */
-    for (  m=0; EXPECT_TRUE(m<NNBCELL);   ++m  ) {
+    for (  m=0; EXPECT_TRUE_(m<NNBCELL);   ++m  ) {
 
       int   c2 = cnbrs[c].nq[m];
       int   l  = at_off[c] + m * at_inc, n = 0, i;
@@ -1191,7 +1255,7 @@ void calc_forces(int const steps)
   unsigned const num_spus2 = num_spus << 1u;
 
   int  k, i;
-  real tmpvec1[2], tmpvec2[2] = {0.0, 0.0};
+  float tmpvec1[7], tmpvec2[7] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
   if (0==have_valid_nbl) {
 #ifdef MPI
@@ -1211,7 +1275,16 @@ void calc_forces(int const steps)
   }
 
   /* clear global accumulation variables */
-  tot_pot_energy = virial = 0.0;
+  tot_pot_energy = virial = tot_kin_energy = 0.0;
+#ifdef NVT
+  E_kin_2 = 0.0;
+#endif
+#ifdef FNORM
+  fnorm = 0.0;
+#endif
+#ifdef GLOK
+  PxF = pnorm = 0.0;
+#endif
   nfc++;
 
 #if defined(ON_PPU) || defined(AR)
@@ -1227,6 +1300,10 @@ void calc_forces(int const steps)
   }
 #endif
 
+#ifdef SPU_INT
+  /* prepare extra data for integrator on SPU */
+  mk_mv();
+#endif
 
   /* compute the forces - either on PPU or on SPUs*/
 #ifdef ON_PPU
@@ -1248,6 +1325,9 @@ void calc_forces(int const steps)
   /* fprintf(stdout, "Getting result locations from SPUs\n"); fflush(stdout);*/
   mboxes2tuples(cbe_spucontrolarea, num_spus, 1,  mbxval,  tmpcnt);
 
+
+#ifndef PPUSUM
+
   /* Sum up energies */
   __lwsync();
   for ( ival=iarg=0u;  EXPECT_TRUE_(ival<num_spus);  ++ival, iarg+=N_ARGBUF ) {
@@ -1257,7 +1337,22 @@ void calc_forces(int const steps)
          (wp_t const*)(cbe_arg_begin+iarg+mbxval[ival]);
       tot_pot_energy += pwp->totpot;
       virial         += pwp->virial;
+#ifdef SPU_INT
+      tot_kin_energy += pwp->totkin;
+#ifdef NVT
+      E_kin_2        += pwp->E_kin_2;
+#endif
+#ifdef FNORM
+      fnorm          += pwp->fnorm;
+#endif
+#ifdef GLOK
+      PxF            += pwp->PxF;
+      pnorm          += pwp->pnorm;
+#endif
+#endif  /* SPU_INT */
   }
+
+#endif
 
 #endif
 
@@ -1266,14 +1361,38 @@ void calc_forces(int const steps)
   /* sum up results of different CPUs */
   tmpvec1[0]     = tot_pot_energy;
   tmpvec1[1]     = virial;
-  MPI_Allreduce( tmpvec1, tmpvec2, 2, REAL, MPI_SUM, cpugrid); 
+  tmpvec1[2]     = tot_kin_energy;
+  tmpvec1[3]     = E_kin_2;
+  tmpvec1[4]     = fnorm;
+  tmpvec1[5]     = PxF;
+  tmpvec1[6]     = pnorm;
+
+  MPI_Allreduce( tmpvec1, tmpvec2, 7, MPI_FLOAT, MPI_SUM, cpugrid);
+
   tot_pot_energy = tmpvec2[0];
   virial         = tmpvec2[1];
+  tot_kin_energy = tmpvec2[2];
+  E_kin_2        = tmpvec2[3];
+  fnorm          = tmpvec2[4];
+  PxF            = tmpvec2[5];
+  pnorm          = tmpvec2[6];
 #endif
 
 #ifdef AR
   /* add forces back to original cells/cpus */
   send_forces(add_forces,pack_forces,unpack_forces);
+#endif
+
+#ifdef NVT
+  /* time evolution of constraints */
+  if (ensemble == ENS_NVT) {
+    float ttt = nactive * temperature;
+    eta += timestep * (E_kin_2 / ttt - 1.0) * isq_tau_eta;
+  }
+#endif
+
+#ifdef GLOK
+  PxF /= (sqrtf(fnorm) * sqrtf(pnorm));
 #endif
 
 }

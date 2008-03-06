@@ -333,7 +333,9 @@ int main_loop(int simulation)
 #ifdef TIMING
     imd_start_timer(&time_integrate);
 #endif
+#if !defined(CBE) || !defined(SPU_INT)
     if (ensemble != ENS_CG) move_atoms(); /* here PxF is recalculated */
+#endif
 #ifdef TIMING
     imd_stop_timer(&time_integrate);
 #endif

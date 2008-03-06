@@ -24,7 +24,9 @@
 /* SPU functions/macrso, DMA */
 #include <spu_intrinsics.h>
 #include <spu_mfcio.h>
-
+#ifdef SPU_INT
+#include <vector/sum_across_float3.h>
+#endif
 #include "config.h"
 #include "imd_cbe.h"
 
@@ -33,7 +35,7 @@
 
 /******************************************************************************
 *
-*  Lennard-Jones interactions on SPU - dummy routine, real one runs on PPU
+*  Pair interactions on SPU - dummy routine, real one runs on PPU
 *
 ******************************************************************************/
 
@@ -49,12 +51,6 @@ void calc_tb_direct(wp_t *wp, cell_dta_t* const buf, unsigned const otag) {}
 
 #else  /* not ON_PPU */
 
-
-/******************************************************************************
-*
-*  Lennard-Jones interactions on SPU
-*
-******************************************************************************/
 
 /* Allocate memory for 3 buffers pointed to by pbuf:
    Allocates pointers inside *pbuf with at least the following sizes:
@@ -72,11 +68,11 @@ void calc_tb_direct(wp_t *wp, cell_dta_t* const buf, unsigned const otag) {}
    specified ton buf.
  */
 static INLINE_ 
-  void init_fetch(cell_dta_t* const buf, const int ti_len, 
-                  cell_ea_t const* const addr, unsigned const tag)
+  void init_fetch_wp(cell_dta_t* const buf, const int ti_len, 
+                  cell_ea_t const* const addr, unsigned const tag, 
+                  int const flag)
 {
-    /* Start 4 seperate DMAs (each of which may be larger than 16K as 
-       mdma64 is used).
+    /* Start 4 seperate DMAs.
        Note that list DMA is not possible here, as the ptr. members of *buf
        are aligned to 128-byte boundary, but in list DMA, LS addresses are
        automatically rounded up to the next 16-byte boundary.
@@ -92,9 +88,15 @@ static INLINE_
     dma64(buf->ti,  addr->ti_ea,  iceil16(ti_len*sizeof(int)),
            tag, MFC_GET_CMD);
 
-    /* here we possibly need a multiple DMA */
+    /* here we possibly need a multi-DMA */
     mdma64(buf->tb,  addr->tb_ea,  iceil16(addr->len*sizeof(short)),
            tag, MFC_GET_CMD);
+
+#ifdef SPU_INT
+    if ( EXPECT_FALSE_(flag) )
+      dma64(buf->imp, addr->imp_ea, iceil16(addr->n*sizeof(vector float)),
+            tag, MFC_GET_CMD);
+#endif
 
     /* Also copy n */
     buf->n = addr->n;
@@ -116,7 +118,6 @@ static INLINE_
 
 
 
-
 static void wait_tag(unsigned const tag) {
     wait_dma((1u<<tag),  MFC_TAG_UPDATE_ALL);
 }
@@ -128,20 +129,15 @@ static INLINE_
   void init_return(cell_dta_t const* const buf, cell_ea_t const* const addr,
                    unsigned const tag)
 {
-    /* Debugging output */
-    /*
-    fprintf(stdout, "DMAing back forces from %p to (0x%x,0x%x) with tag %u\n",
-         (void const*)(buf->force), addr->force_ea[0], addr->force_ea[1], tag);
-    fflush(stdout);
-    */
-
     dma64(buf->force, addr->force_ea, iceil16(addr->n*sizeof(vector float)),
            tag, MFC_PUT_CMD);
-
+#ifdef SPU_INT
+    dma64(buf->pos,   addr->pos_ea,   iceil16(addr->n*sizeof(vector float)),
+           tag, MFC_PUT_CMD);
+    dma64(buf->imp,   addr->imp_ea,   iceil16(addr->n*sizeof(vector float)),
+           tag, MFC_PUT_CMD);
+#endif
 }
-
-
-
 
 
 /* Start a DMA back to main memory without waiting for it */
@@ -154,6 +150,127 @@ static INLINE_
   mdma64(buf->tb, addr->tb_ea, iceil16(tb_len*sizeof(short)), tag,MFC_PUT_CMD);
 }
 
+
+/******************************************************************************
+*
+*  Integrator for SPU -- can do NVE, NVT, MIK, GLOK
+*
+******************************************************************************/
+
+#ifdef SPU_INT
+
+void vecprint(char *str, vector float v)
+{
+  printf("%s %f %f %f %f\n", str, spu_extract(v,0), spu_extract(v,1),
+         spu_extract(v,2), spu_extract(v,3) );
+  fflush(stdout);
+}
+
+void move_atoms_spu(wp_t *wp, cell_dta_t *p)
+{
+  int i;
+  vector float tmp;
+  vector float Ekin1 = spu_splats( (float)0.0 );
+  vector float Ekin2 = spu_splats( (float)0.0 );
+#ifdef FNORM
+  vector float fnorm = spu_splats( (float)0.0 );
+#endif
+#ifdef GLOK
+  vector float PxF   = spu_splats( (float)0.0 );
+  vector float pnorm = spu_splats( (float)0.0 );
+#endif
+
+  for (i=0; EXPECT_TRUE_(i<p->n); ++i) {
+
+    vector float * const fce = ((vector float *) p->force) + i;
+    vector float * const pos = ((vector float *) p->pos)   + i;
+    vector float * const imp = ((vector float *) p->imp)   + i;
+    int sort = p->typ[i];
+
+#ifdef FBC
+    *fce = spu_add( *fce, mv.fbc_f[sort] ); /* external fbc force */
+#endif
+    *fce = spu_mul( *fce, mv.restr[sort] ); /* restrictions */
+
+#ifdef FNORM
+    fnorm = spu_madd( *fce, *fce, fnorm);   /* add to force norm */
+#endif
+
+    /* 2 x old kinetic energy */
+    Ekin1 = spu_madd( spu_mul( *imp, *imp ), mv.imass[sort], Ekin1 );
+#ifdef NVT
+    tmp   = spu_mul( *imp, mv.fac1 );
+    *imp  = spu_madd( *fce, mv.fac2, tmp );  /* updated momentum */
+#else
+    *imp  = spu_madd( *fce, mv.ts, *imp );   /* updated momentum */
+#endif
+
+#ifdef MIK
+    tmp = spu_splats( _dot_product3( *imp, *fce ) );
+    /* for MIK, mikmask is 0.0, else +infinity */
+    msk  = spu_cmpgt( mv.mikmask, tmp );
+    *imp = spu_sel( *imp, spu_splats( (float)0.0 ), msk );
+#endif
+
+#ifdef GLOK
+    tmp   = spu_mul( *imp, mv.imass[sort] );
+    PxF   = spu_madd( tmp, *fce, PxF );
+    pnorm = spu_madd( tmp, tmp, pnorm );
+#endif
+
+    /* 2 x new kinetic energy */
+    Ekin2 = spu_madd( spu_mul( *imp, *imp ), mv.imass[sort], Ekin2 );
+
+    tmp  = spu_mul( mv.ts, mv.imass[sort] );
+    *pos = spu_madd( tmp, *imp, *pos );          /* new position */
+
+  } 
+
+  /* set accumulation variables */
+  Ekin2 = spu_mul( Ekin2, spu_splats((float)0.5) );
+  Ekin1 = spu_madd( Ekin1, spu_splats((float)0.5), Ekin2 );
+  Ekin1 = spu_mul( Ekin1, spu_splats((float)0.5) );
+
+#ifdef PPUSUM
+
+  wp->totkin    = _sum_across_float3( Ekin1 );
+#ifdef NVT
+  wp->E_kin_2   = _sum_across_float3( Ekin2 );  /* this is needed for NVT */
+#endif
+#ifdef FNORM
+  wp->fnorm     = _sum_across_float3( fnorm );
+#endif
+#ifdef GLOK
+  wp->PxF       = _sum_across_float3( PxF   );
+  wp->pnorm     = _sum_across_float3( pnorm );
+#endif
+
+#else  /* not PPUSUM */
+
+  psum.totkin  += _sum_across_float3( Ekin1 );
+#ifdef NVT
+  psum.E_kin_2 += _sum_across_float3( Ekin2 );  /* this is needed for NVT */
+#endif
+#ifdef FNORM
+  psum.fnorm   += _sum_across_float3( fnorm );
+#endif
+#ifdef GLOK
+  psum.PxF     += _sum_across_float3( PxF   );
+  psum.pnorm   += _sum_across_float3( pnorm );
+#endif
+
+#endif  /* PPUSUM */
+
+}
+
+#endif
+
+
+/******************************************************************************
+*
+*  Pair interactions -- Lennard-Jones or tabulated
+*
+******************************************************************************/
 
 /* This routine will use tags 0,1,2 for DMA as well as otag */
 void calc_wp_direct(wp_t *wp,
@@ -187,6 +304,7 @@ void calc_wp_direct(wp_t *wp,
   vector float const f6i  = spu_splats( (float) (1.0/6.0) );
 #endif
   vector float vir  = f00;
+  vector float pott = f00;
 #ifdef LJ
   vector float r2cut   = pt.r2cut   [0];
   vector float ljsig   = pt.lj_sig  [0];
@@ -259,7 +377,7 @@ void calc_wp_direct(wp_t *wp,
 
   /* The initial fetch to buffer q */
   p = q = buf;
-  init_fetch(q, wp->ti_len, wp->cell_dta, tag);
+  init_fetch_wp(q, wp->ti_len, wp->cell_dta, tag, 1);
 
   /* Set pointers to the remaining buffers */
   next_q = buf+1;
@@ -268,21 +386,20 @@ void calc_wp_direct(wp_t *wp,
   for ( qpos=(vector float*)(buf[0].force), i=wp->n_max;    EXPECT_TRUE_(i>0);   --i, ++qpos ) {
     (*qpos) = f00;
   }
-
+#ifdef OLD
   /* Set scalars to zero */
   wp->totpot = wp->virial = 0;
-
+#endif
   m = 0;
   do {
 
     wait_tag(tag);
-
     do {
         ++m;
     } while ((wp->cell_dta[m].n==0) && (m<NNBCELL));
 
     if (m<NNBCELL) {
-        init_fetch(next_q, wp->ti_len, wp->cell_dta + m, tag);
+        init_fetch_wp(next_q, wp->ti_len, wp->cell_dta + m, tag, 0);
     }
 
     /* positions in q as vector float */
@@ -462,8 +579,7 @@ void calc_wp_direct(wp_t *wp,
       /* add contribution to total poteng */
       pots = spu_add( pots, spu_rlqwbyte( pots, 8 ) );
       pots = spu_add( pots, spu_rlqwbyte( pots, 4 ) );
-      wp->totpot += spu_extract( pots, 0 );
-
+      pott = spu_add( pots, pott );
       /* add force of first particle */
       ffa = spu_add( ff0s, ff1s );
       ffb = spu_add( ff2s, ff3s );
@@ -494,7 +610,18 @@ void calc_wp_direct(wp_t *wp,
 #endif
   vir = spu_add( vir, spu_rlqwbyte( vir, 8 ) );
   vir = spu_add( vir, spu_rlqwbyte( vir, 4 ) );
-  wp->virial = - spu_extract( vir, 0 );
+
+#ifdef PPUSUM
+  wp->virial   = -spu_extract( vir,  0 );
+  wp->totpot   =  spu_extract( pott, 0 );
+#else
+  psum.virial -=  spu_extract( vir,  0 );
+  psum.totpot +=  spu_extract( pott, 0 );
+#endif
+
+#ifdef SPU_INT
+  move_atoms_spu(wp, p);
+#endif
 
   /* Init DMA back to main memory. No need to wait for it to complete here,
      as we will do that in the main (work) loop. */
