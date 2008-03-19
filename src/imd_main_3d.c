@@ -32,7 +32,7 @@ int main_loop(int simulation)
   int  finished = 0;
   int  i, j, k, l;
   int  steps_diff = steps_max - steps_min;
-  int  deform_int = 0, fbc_int = 0, do_fbc_incr = 0;
+  int  deform_int = 0, do_fbc_incr = 0;
   int  have_fbc_incr = 0;
   real dtemp, dshock_speed;
   vektor d_pressure, *fbc_df;
@@ -620,11 +620,11 @@ void init_fbc(void)
 {
   int l, steps_diff = steps_max - steps_min;
 
-  fbc_int = 0;
   have_fbc_incr = 0;
   do_fbc_incr = 0;
 
 #ifdef RELAX
+  fbc_int = 0;
   for (l=0; l<vtypes; l++) {
     if ((fbc_dforces+l)->x != 0.0) have_fbc_incr = 1;
     if ((fbc_dforces+l)->y != 0.0) have_fbc_incr = 1;
