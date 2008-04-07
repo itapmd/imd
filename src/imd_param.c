@@ -1831,10 +1831,16 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       getparam("avpos_int",&avpos_int,PARAM_INT,1,1);
     }
 #endif
-#ifdef FORCE
+#if defined(FORCE) || defined(WRITEF)
     else if (strcasecmp(token,"force_int")==0) {
-      /* number of steps between average position writes */
-      getparam("force_int",&force_int,PARAM_INT,1,1);
+      /* number of steps between force writes */
+      getparam(token,&force_int,PARAM_INT,1,1);
+    }
+#endif
+#ifdef WRITEF
+    else if (strcasecmp(token,"force_all")==0) {
+      /* write all forces, or only those of atoms with virtual type */
+      getparam(token,&force_all,PARAM_INT,1,1);
     }
 #endif
 #ifdef ATDIST
@@ -2915,6 +2921,12 @@ void broadcast_params() {
   MPI_Bcast( &eng_int     , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &flush_int   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &pic_int     , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+#if defined(FORCE) || defined(WRITEF)
+  MPI_Bcast( &force_int   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+#endif
+#ifdef WRITEF
+  MPI_Bcast( &force_all   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+#endif
 
 #ifdef DEBUG
   MPI_Bcast( &force_celldim_divisor, 3, MPI_INT, 0, MPI_COMM_WORLD);

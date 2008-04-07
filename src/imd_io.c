@@ -662,7 +662,7 @@ void write_atoms_wf(FILE *out)
     cell *p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
 
-      if (SORTE(p,i) == VSORTE(p,i)) continue;
+      if ((SORTE(p,i) == VSORTE(p,i)) && (force_all == 0)) continue;
 
       /* binary output */
       if (binary_output) {

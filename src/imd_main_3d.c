@@ -263,7 +263,9 @@ int main_loop(int simulation)
 #endif
 
 #ifdef WRITEF /* can be used as tool for postprocessing */
-    write_config_select(steps, "wf",write_atoms_wf, write_header_wf);
+    if ((force_int > 0) && (0 == steps % force_int)) 
+      write_config_select( steps/force_int, "wf", 
+                           write_atoms_wf, write_header_wf);
 #endif
 
 #ifdef EPITAX

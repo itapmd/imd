@@ -197,6 +197,9 @@ EXTERN vektor  dist_ll           INIT(nullvektor);  /* upper right corner */
 
 EXTERN int binary_output INIT(0);  /* write binary atoms data? */
 
+#ifdef WRITEF
+EXTERN int force_all INIT(0); /* write all forces, or only of virtual types */
+#endif
 #ifdef EFILTER
 EXTERN int  ef_checkpt_int INIT(0);  /* Period of ef writes */
 EXTERN real *lower_e_pot INIT(NULL); /* lower end of energy window */
