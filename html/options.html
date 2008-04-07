@@ -715,9 +715,12 @@ ef_checkpt_int step. </p>
 <dt><a id="writef" name="writef"><b>writef</b></a></dt>
 <dd>
 <p>
-Writes the forces on atoms of virtual types into
-<tt>&lt;outfile&gt;.wf.&lt;n&gt;</tt>, where <tt>&lt;n&gt;</tt> is
-a running number. </p>
+If <tt>force_int &gt; 0</tt>, the forces on atoms are written 
+every <tt>force_int</tt> steps into the file 
+<tt>&lt;outfile&gt;.wf.&lt;n&gt;</tt>, where <tt>&lt;n&gt;</tt> 
+is a running number. If <tt>force_all = 0</tt>, only the forces of 
+atoms whose virtual type differs from the real type are written 
+(default); otherwise, the forces of all atoms are written. </p>
 </dd>
 
 <dt><a id="avpos" name="avpos"><b>avpos</b></a></dt>
