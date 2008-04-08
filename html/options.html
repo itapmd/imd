@@ -102,17 +102,59 @@ This option enables IMD to perform the <b>Common-Neighbour
 Analysis</b> (CNA) during a simulation. The CNA is done in the same
 way as in the utility program <a
 href="util_config.html#imd_cna">imd_cna</a>.
+</p>
 
+<p>
 The CNA starts at step <tt>cna_start</tt> (default: 0) and ends at
 <tt>cna_end</tt> (default: <tt>maxsteps</tt>). The CNA is performed
 every <tt>cna_int</tt> steps. The nearest neighbour distance for
 common neighbours must be given by the parameter <tt>cna_rcut</tt>.
-Using the parameter <tt>cna_write</tt> a list of (up to eight)
+Using the parameter <tt>cna_write</tt>, a list of (up to eight)
 four-digit pair types
 <i>ijkl</i> can be given. Atoms belonging to these pair types are
 written to the files
 <tt>&lt;outfiles&gt;.&lt;n&gt;.&lt;<i>ijkl</i>&gt;.cna</tt>.
 </p>
+
+<p>
+For fcc-like crystal structures, the option <b>cna</b> enables IMD to 
+write atoms belonging to a specific crystallinity into files 
+<tt>&lt;outfiles&gt;.&lt;n&gt;.crist</tt> which are written every 
+<tt>cna_int</tt> steps. Four types of crystallinity can be selected:<br/>
+
+<p>
+<table border=0 cellpadding=4>
+<tr>
+<td>0</td>
+<td>atoms belonging to the fcc structure</td>
+</tr>
+<tr>
+<td>1</td>
+<td>atoms belonging to the hcp structure</td>
+</tr>
+<tr>
+<td>2</td>
+<td>12-fold coordinated atoms not belonging to the fcc or hcp structure</td>
+</tr>
+<tr>
+<td>3</td>
+<td>not 12-fold coordinated atoms</td>
+</tr>
+</table>
+</p>
+
+<p>
+Using the parameter <tt>cna_crist</tt>, a list of up to four types of 
+crystallinity can be given. The format of the .crist files is the one
+of IMD configuration files where the 10th column represents the type of 
+crystallinity.
+</p>
+
+<p>
+<b>Note:</b> The writing of .cna files is disabled when the parameter
+<tt>cna_crist</tt> is used.
+</p>
+
 </dd>
 
 <dt><a id="rigid" name="rigid"><b>rigid</b></a></dt> 
