@@ -1761,6 +1761,10 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       /* pair type to be written out */
       cna_write_n = getparam("cna_write",cna_writev,PARAM_INT,1,8);
     }
+    else if (strcasecmp(token,"cna_crist")==0) {
+      /* determine crystallinity of atoms */
+      cna_crist_n = getparam("cna_crist",cna_cristv,PARAM_INT,1,4);
+    }
     else if (strcasecmp(token,"cna_ll")==0) { 
       /* lower left corner of partial box */
       getparam("cna_ll", &cna_ll,PARAM_REAL,DIM,DIM);
@@ -3406,6 +3410,8 @@ void broadcast_params() {
   MPI_Bcast( &cna_writev,      8, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &cna_write_n,     1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &cna_write_statistics, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &cna_cristv,      4, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &cna_crist_n,     1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef DISLOC

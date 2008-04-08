@@ -1578,7 +1578,10 @@ void add_mark( int k, int l, int m, int r, int s, int t )
   to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
 
   for (i=0; i<to->n; ++i) {
-    MARK(to,i) = MARK(to,i) | MARK(from,i);
+    if ( cna_crist > 0 )
+      MARK(to,i) = MARK(to,i) + MARK(from,i);
+    else
+      MARK(to,i) = MARK(to,i) | MARK(from,i);
   }
 }
 

@@ -341,6 +341,137 @@ void write_atoms_cna(FILE *out)
 
 }
 
+/******************************************************************************
+*
+*  writes header for crist-file
+*
+******************************************************************************/
+
+void write_header_crist(FILE *out)
+{
+  char c;
+  time_t now;
+
+  /* format line */
+  if (binary_output)
+    c = is_big_endian ? 'b' : 'l';
+  else
+    c = 'A';
+  fprintf(out, "#F %c 1 1 1 %d %d 1\n", c, DIM, DIM);
+  
+  /* contents line */
+#ifdef TWOD
+  fprintf(out, "#C number type mass x y vx vy crist\n");
+#else
+  fprintf(out, "#C number type mass x y z vx vy vz crist\n");
+#endif
+
+  /* box lines */
+#ifdef TWOD
+  fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
+  fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
+#else
+  fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
+  fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
+  fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
+#endif
+
+  /* generation date and endheader line */
+  time(&now);
+  fprintf(out, "## Generated on %s", ctime(&now) ); 
+  fprintf(out, "## by %s (version of %s)\n", progname, DATE);
+  fprintf(out, "#E\n");
+
+}
+
+/******************************************************************************
+*
+*  filter function for write_config_select
+*  writes a crist configuration
+*
+******************************************************************************/
+
+void write_atoms_crist(FILE *out)
+{
+  int i, k, n, len=0;
+  i_or_f *data;
+  int crist, nn, nn_other, nn_1421, nn_1422;
+
+  for (k=0; k<NCELLS; k++) {
+    cell *p = CELLPTR(k);
+    for (i=0; i<p->n; i++) {
+
+      if ( cna_ur.x != (real)0 ) /* if cna_ur.x still 0, write everything */
+        if ((ORT(p,i,X) < cna_ll.x) || (ORT(p,i,X) > cna_ur.x) ||
+#ifndef TWOD
+            (ORT(p,i,Z) < cna_ll.z) || (ORT(p,i,Z) > cna_ur.z) || 
+#endif
+            (ORT(p,i,Y) < cna_ll.y) || (ORT(p,i,Y) > cna_ur.y)) continue;
+
+      nn_other = MARK(p,i) % 100; 
+      nn_1422  = ( MARK(p,i) / 100 ) % 100;
+      nn_1421  = ( MARK(p,i) / 10000 ) % 100;
+      nn       = nn_1421 + nn_1422 + nn_other;
+      
+      /* fcc */
+      if ( nn == 12 && nn_1421 == 12 )
+	crist = 0;
+      /* hcp */
+      else if ( nn == 12 && nn_1421 == 6 && nn_1422 == 6 )
+	crist = 1;
+      /* other 12 */
+      else if ( nn == 12 )
+	crist = 2;
+      /* other */
+      else
+	crist = 3;
+      
+      if ( ( cna_crist & ( 1 << crist ) ) == 0 )
+	continue;
+
+      /* binary output */
+      if (binary_output) {
+        n = 0;
+        data = (i_or_f *) (outbuf+len);
+        data[n++].i = (integer) NUMMER(p,i);
+        data[n++].i = (integer) VSORTE(p,i);
+        data[n++].f = (float)   MASSE (p,i);
+        data[n++].f = (float)   ORT (p,i,X);
+        data[n++].f = (float)   ORT (p,i,Y);
+#ifndef TWOD
+        data[n++].f = (float)   ORT (p,i,Z);
+#endif
+        data[n++].f = (float)   IMPULS(p,i,X) / MASSE(p,i);
+        data[n++].f = (float)   IMPULS(p,i,Y) / MASSE(p,i);
+#ifndef TWOD
+        data[n++].f = (float)   IMPULS(p,i,Z) / MASSE(p,i);
+#endif
+        data[n++].i = (integer) crist;
+        len += n * sizeof(i_or_f);
+      }
+      /* ASCII output */
+      else {
+#ifdef TWOD
+        len += sprintf( outbuf+len,
+          "%d %d %12f %12f %12f %12f %12f %d\n",
+          NUMMER(p,i), VSORTE(p,i), MASSE(p,i), ORT(p,i,X), ORT(p,i,Y),
+          IMPULS(p,i,X) / MASSE(p,i), IMPULS(p,i,Y) / MASSE(p,i), crist);
+#else
+        len += sprintf( outbuf+len,
+          "%d %d %12f %12f %12f %12f %12f %12f %12f %d\n",
+          NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
+          ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), IMPULS(p,i,X) / MASSE(p,i), 
+          IMPULS(p,i,Y) / MASSE(p,i), IMPULS(p,i,Z) / MASSE(p,i), crist);
+#endif
+      }
+      /* flush or send outbuf if it is full */
+      if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
+    }
+  }
+  flush_outbuf(out,&len,OUTBUF_TAG+1);
+
+}
+
 #endif /* CNA */
 
 #ifdef EFILTER

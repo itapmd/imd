@@ -149,7 +149,7 @@ typedef struct {
   real        *ort_ref;
 #endif
 #ifdef CNA
-  shortint    *mark;
+  long        *mark;
 #endif
 #ifdef AVPOS
   real        *sheet;

@@ -334,6 +334,8 @@ void do_cna_func(cell *p, cell* q, vektor pbc);
 void domino(int start, int end, int listlength, int *max_chain, int *chain);
 void write_atoms_cna(FILE *out);
 void write_header_cna(FILE *out);
+void write_atoms_crist(FILE *out);
+void write_header_crist(FILE *out);
 void init_cna(void);
 void write_statistics(void);
 void sort_pair_types(void);

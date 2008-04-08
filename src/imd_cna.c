@@ -229,6 +229,22 @@ void do_cna_func(cell *p, cell *q, vektor pbc) {
 	  else
 	    pair_index = -1;
 
+	  /* count pair types according to crystallinity */
+	  if ( cna_crist > 0 ) {
+	    if ( pair_index == 1421 ) {
+	      MARK(p,i) += 10000;
+	      MARK(q,j) += 10000;
+	    }
+	    else if ( pair_index == 1422 ) {
+	      MARK(p,i) += 100;
+	      MARK(q,j) += 100;
+	    }
+	    else {
+	      ++MARK(p,i);
+	      ++MARK(q,j);
+	    }
+	  }
+
 	  /* Mark atoms to be written out */
 	  if ( cna_write_n > 0 ) {
 	    l = 1;
@@ -348,6 +364,13 @@ void init_cna(void)
   for(k=0; k<ntypes*ntypes; k++)
     neightab_r2cut[k] = -1.0;
 
+  /* binary encoding of types of crystallinity to be written out */
+  for(k=0; k<cna_crist_n; k++)
+    cna_crist += ( 1 << cna_cristv[k] );
+
+  /* if crystallinity is studied do not write out cna pairs */
+  if ( cna_crist > 0 )
+    cna_write_n = 0;
 }
 
 /******************************************************************************

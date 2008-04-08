@@ -303,6 +303,9 @@ int main_loop(int simulation)
 			    write_atoms_cna, write_header_cna);
 	cna_writec *= 2;
       }
+      if( cna_crist > 0 )
+	write_config_select(steps/cna_int, "crist",
+			    write_atoms_crist, write_header_crist);
     }
 #endif
 
