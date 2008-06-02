@@ -368,8 +368,10 @@ void do_forces2(cell *p, real *Epot, real *Virial,
       /* the local electron density */
       rho = rho_0 * g; 
 
-      if ( have_embed_potfile )
+      if ( have_embed_potfile ) {
 	PAIR_INT(f, df, embed_pot, p_typ, ntypes, rho, idummy);
+	df *= 0.5;
+      }
       if ( have_pre_embed_pot ) {
 	/* compute embedding function analytically */
 	tmp1 = rho * invmeam_rho0[p_typ];
