@@ -491,7 +491,7 @@ void alloc_cell(cell *p, int n)
   memalloc( &p->ort_ref,  n*SDIM, sizeof(real), al, ncopy*SDIM, 1, "ort_ref" );
 #endif
 #ifdef CNA
-  memalloc( &p->mark,     n, sizeof(shortint), al, ncopy, 1, "mark" );
+  memalloc( &p->mark,     n, sizeof(long), al, ncopy, 1, "mark" );
 #endif
 #ifdef AVPOS
   memalloc( &p->av_epot,  n,      sizeof(real), al, ncopy,      1, "av_epot" );
