@@ -389,7 +389,7 @@ void memalloc(void *p, int count, int size, int align, int ncopy, int clear,
     }
   }
   else {  /* deallocate */
-    free(*old);
+    if (ncopy) free(*old);
     *old = NULL;
   }
 }
@@ -472,9 +472,9 @@ void alloc_cell(cell *p, int n)
 #ifdef DIPOLE
   memalloc( &p->dp_E_stat, n*DIM, sizeof(real), al, ncopy*DIM, 0, "dp_E_stat");
   memalloc( &p->dp_E_ind,  n*DIM, sizeof(real), al, ncopy*DIM, 0, "dp_E_ind");
-  memalloc( &p->dp_E_old_1,n*DIM, sizeof(real), al, ncopy*DIM, 1,"dp_E_old_1");
-  memalloc( &p->dp_E_old_2,n*DIM, sizeof(real), al, ncopy*DIM, 1,"dp_E_old_2");
-  memalloc( &p->dp_E_old_3,n*DIM, sizeof(real), al, ncopy*DIM, 1,"dp_E_old_3");
+  memalloc( &p->dp_E_old_1,n*DIM, sizeof(real), al, ncopy*DIM, 1, "dp_E_old_1");
+  memalloc( &p->dp_E_old_2,n*DIM, sizeof(real), al, ncopy*DIM, 1, "dp_E_old_2");
+  memalloc( &p->dp_E_old_3,n*DIM, sizeof(real), al, ncopy*DIM, 1, "dp_E_old_3");
   memalloc( &p->dp_p_stat, n*DIM, sizeof(real), al, ncopy*DIM, 0, "dp_p_stat");
   memalloc( &p->dp_p_ind , n*DIM, sizeof(real), al, ncopy*DIM, 1, "dp_p_ind");
 #endif
@@ -520,9 +520,9 @@ void alloc_cell(cell *p, int n)
   memalloc( &p->nbl_pos,  n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "nbl_pos" );
 #endif
 #ifdef UNIAX
-  memalloc( &p->achse,       n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "avpos");
-  memalloc( &p->dreh_impuls, n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "sheet");
-  memalloc( &p->dreh_moment, n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "sheet");
+  memalloc( &p->achse,       n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "achse");
+  memalloc( &p->dreh_impuls, n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "dreh_impuls");
+  memalloc( &p->dreh_moment, n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "dreh_moment");
 #endif
 #if defined(VEC) && defined(MPI)
   memalloc( &p->ind, n, sizeof(integer), al, ncopy, 0, "ind" );
