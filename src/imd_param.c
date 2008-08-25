@@ -2366,7 +2366,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
 #ifdef DIPOLE
     /* dipole field mixing param */
     else if (strcasecmp(token,"dp_mix")==0) {
-      getparam(token,&dp_res,PARAM_REAL,1,1);
+      getparam(token,&dp_mix,PARAM_REAL,1,1);
     }
     /* potential table resolution */
     else if (strcasecmp(token,"dp_res")==0) {
