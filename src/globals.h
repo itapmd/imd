@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -1043,27 +1043,26 @@ EXTERN real     ew_eps INIT(14.40); /* this is e^2/(4*pi*epsilon_0) in eV A */
 EXTERN real     twopi;
 #endif /* EWALD or DIPOLE */
 #ifdef DIPOLE
+EXTERN int      dp_fix     INIT(0); /* Keep dipoles fixed? */
 EXTERN real     dp_mix     INIT(0.8); /* dipole field mixing parameter */
+EXTERN real     dp_tol     INIT(1.e-7); /* dipole iteration precision */
 EXTERN real     dp_self;    	/* dipole self field factor */
-EXTERN real     dp_res     INIT(0); /* function table resolution */
+EXTERN int      dp_res     INIT(0); /* function table resolution */
 EXTERN real     dp_begin   INIT(0.2); /* start of function table */
-EXTERN real     dp_b;		/* in eV A / e^2 */
-EXTERN real     dp_c;		/* in 1/A */
+EXTERN real     *dp_b      INIT(NULL);		/* in eV A / e^2 */
+EXTERN real     *dp_c      INIT(NULL);		/* in 1/A */
+EXTERN pot_table_t dipole_table; /* one table to hold them all */
+EXTERN real     coul_shift; 
+EXTERN real     coul_fshift;
+#endif
+#if defined(DIPOLE)|| defined(MORSE)
 EXTERN real     *dp_alpha  INIT(NULL); /* in e^2 A^2 / eV^2 */
 EXTERN real     *ms_D      INIT(NULL); /* in eV */
 EXTERN real     *ms_gamma  INIT(NULL);
 EXTERN real     *ms_r0     INIT(NULL); /* in A */
-EXTERN pot_table_t dipole_table; /* one table to hold them all */
-/* EXTERN pot_table_t coulomb_pot;    /\* coulomb potential      *\/ */
-/* EXTERN pot_table_t dp_cutoff_fn; /\* smooth cutoff for dipoles *\/ */
-/* EXTERN pot_table_t dp_shortr_fn; /\* short-range dipole function  *\/ */
-EXTERN real     coul_shift; 
-EXTERN real     coul_fshift;
 EXTERN real *ms_shift     INIT(NULL);
 EXTERN real *ms_fshift    INIT(NULL);
-
-
-#endif /* DIPOLE */
+#endif /* DIPOLE or MORSE */
 
 /* generate quasicrystal */
 #ifdef QUASI

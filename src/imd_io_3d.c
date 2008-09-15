@@ -358,6 +358,11 @@ void read_atoms(str255 infilename)
 #ifndef TWOD
       KRAFT(input,0,Z) = 0;
 #endif
+#ifdef DIPOLE 			/* only 3D */
+      DP_P_IND(input,0,X) = d[count++];
+      DP_P_IND(input,0,Y) = d[count++];
+      DP_P_IND(input,0,Z) = d[count++];
+#endif /* DIPOLE */
 #ifdef REFPOS
       if (info.n_refpos_x > 0) {
         REF_POS(input,0,X) = d[info.n_refpos_x-2];

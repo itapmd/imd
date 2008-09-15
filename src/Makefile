@@ -2,7 +2,7 @@
 #
 # Imd -- The ITAP Molecular Dynamics Program
 #
-# Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+# Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 # University of Stuttgart, D-70550 Stuttgart
 #
 # $Revision$
@@ -990,7 +990,12 @@ endif
 
 #DIPOLE
 ifneq (,$(strip $(findstring dipole,${MAKETARGET})))
-CFLAGS  += -DDIPOLE
+CFLAGS  += -DDIPOLE -DMORSE
+endif
+
+#MORSE
+ifneq (,$(strip $(findstring morse,${MAKETARGET})))
+CFLAGS  += -DMORSE
 endif
 
 # LJ - computed Lennard-Jones (for vector versions only)

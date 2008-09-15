@@ -44,12 +44,12 @@ void make_lin_pot_table( pot_table_t, lin_pot_table_t* );
 void pair_int_lj(real *pot, real *grad, int p_typ, int q_typ, real r2);
 void pair_int_morse(real *pot, real *grad, int p_typ, int q_typ, real r2);
 void pair_int_buck(real *pot, real *grad, int p_typ, int q_typ, real r2);
+void pair_int_mstr(real *pot, real *grad, int p_typ, int q_typ, real r2);
 #ifdef EWALD
 void pair_int_ewald(real *pot, real *grad, int p_typ, int q_typ, real r2);
 #endif
 #ifdef DIPOLE
 void create_dipole_tables(void);
-void pair_int_mstr(real *pot, real *grad, int p_typ, int q_typ, real r2);
 void pair_int_coulomb(real *pot, real *grad, real r2);
 #endif /* DIPOLE */
 #endif

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -1264,8 +1264,12 @@ void copy_pind( int k, int l, int m, int r, int s, int t, vektor v )
 #endif
   for (i=0; i<to->n; ++i) {
     DP_P_IND(to,i,X) = DP_P_IND(from,i,X);
-    DP_P_IND(to,i,X) = DP_P_IND(from,i,X);
-    DP_P_IND(to,i,X) = DP_P_IND(from,i,X);
+    DP_P_IND(to,i,Y) = DP_P_IND(from,i,Y);
+    DP_P_IND(to,i,Z) = DP_P_IND(from,i,Z);
+    /* reset DP_E_IND in boundary cells*/
+    DP_E_IND(to,i,X) = 0.0;
+    DP_E_IND(to,i,Y) = 0.0;
+    DP_E_IND(to,i,Z) = 0.0;
   }
 }
 
@@ -1288,8 +1292,8 @@ void copy_Eind( int k, int l, int m, int r, int s, int t, vektor v )
 #endif
   for (i=0; i<to->n; ++i) {
     DP_E_IND(to,i,X) = DP_E_IND(from,i,X);
-    DP_E_IND(to,i,X) = DP_E_IND(from,i,X);
-    DP_E_IND(to,i,X) = DP_E_IND(from,i,X);
+    DP_E_IND(to,i,Y) = DP_E_IND(from,i,Y);
+    DP_E_IND(to,i,Z) = DP_E_IND(from,i,Z);
   }
 }
 
@@ -1472,6 +1476,10 @@ void unpack_pind( msgbuf *b, int k, int l, int m )
     DP_P_IND  (to,i,X)  = b->data[ j++ ];
     DP_P_IND  (to,i,Y)  = b->data[ j++ ];
     DP_P_IND  (to,i,Z)  = b->data[ j++ ];
+    /* reset DP_E_IND in boundary cells*/
+    DP_E_IND  (to,i,X)  = 0.0;
+    DP_E_IND  (to,i,Y)  = 0.0;
+    DP_E_IND  (to,i,Z)  = 0.0;
   }
   b->n = j;
   if (b->n_max < b->n) 

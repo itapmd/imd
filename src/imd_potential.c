@@ -575,7 +575,7 @@ void create_pot_table(pot_table_t *pt)
               }
 	    }
 #endif
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(MORSE)
             /* Morse-Stretch potential for dipole */
             if ((ew_r2_cut > 0)) {
               if (r2 < ew_r2_cut) {
@@ -584,7 +584,7 @@ void create_pot_table(pot_table_t *pt)
                 val -= SQRT(r2)*ms_fshift[col]*(SQRT(r2)-SQRT(ew_r2_cut));
               }
 	    }
-#endif
+#endif /* DIPOLE or MORSE */
             *PTR_2D(pt->table, n, column, pt->maxsteps, ncols) = val;
           }
 	}
@@ -616,7 +616,7 @@ void init_pre_pot(void) {
   int  i, j, k, m, n,col;
   real tmp = 0.0;
 
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(MORSE)
   ms_shift = (real *) malloc (ntypepairs * sizeof(real));
   ms_fshift = (real *) malloc (ntypepairs * sizeof(real));
   if (( NULL == ms_shift ) || ( NULL == ms_fshift ))
@@ -713,7 +713,7 @@ void init_pre_pot(void) {
 #ifdef EWALD
   if (ew_nmax < 0) tmp = MAX(tmp,ew_r2_cut);
 #endif
-#if DIPOLE
+#ifdef DIPOLE
   tmp = MAX(tmp,ew_r2_cut);
 #endif
   cellsz = MAX(cellsz,tmp);
@@ -777,7 +777,7 @@ void init_pre_pot(void) {
 	}
       }
 #endif
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(MORSE)
       /* Morse-Stretch for Dipole */
       if (i<=j) {
 	if (ew_r2_cut > 0)  {
@@ -821,10 +821,11 @@ void init_pre_pot(void) {
 
 void create_dipole_tables()
 {
-  int i,j,tablesize;
-  real r2,pot,grad,tmp,pot2;
+  int i,j,k,tablesize;
+  real r2,pot,grad,tmp,pot2,dipshift,dipfshift;
+  real coulf2shift;
   /* Preliminary work */
-  int ncols=3; 			/* only one column each */
+  int ncols=2+ntypepairs; 	/* 1 column for each pair + 2 add coln. */
   int cou_col=0;		/* coulomb potential */
   int sco_col=1;		/* smooth cutoff column: 2 */
   int shr_col=2;		/* short range dipole interaction */
@@ -849,11 +850,12 @@ void create_dipole_tables()
   pt->table = (real *) malloc(tablesize * sizeof(real));
   if (NULL==pt->table) 
     error("Cannot allocate memory for dipole function table.");
-  
+
+  /* Sampling identical for all functions */
   for (i=0;i<ncols;i++) {
     pt->begin[i]   = SQR(dp_begin);
     pt->end[i]     = ew_r2_cut;
-    pt->step[i]    = (ew_r2_cut-pt->begin[i])/(dp_res-1.);
+    pt->step[i]    = (ew_r2_cut-pt->begin[i])/((real) dp_res-1.);
     pt->invstep[i] = 1.0 / pt->step[i];
     pt->len[i]     = dp_res;
   }
@@ -861,9 +863,13 @@ void create_dipole_tables()
 
  /* Calculate shifts */
   pair_int_coulomb(&coul_shift, &coul_fshift, ew_r2_cut);
+  coulf2shift = ew_eps*ew_kappa*SQR(ew_kappa)*exp(-SQR(ew_kappa)*ew_r2_cut);
+  coulf2shift /= sqrt(M_PI);
+  coulf2shift -= coul_fshift;
+  coulf2shift *= 4.0/ew_r2_cut;
   if (myid==0) {
-    printf("Coulomb potential shifted by %g + %g *r,\n", 
-	    -coul_shift, coul_fshift);
+    printf("Coulomb potential shifting parameters: %g , %g , %g\n", 
+	    coul_shift, coul_fshift, coulf2shift);
   }
 
   for (i=0;i<dp_res;i++) {
@@ -871,33 +877,27 @@ void create_dipole_tables()
     pair_int_coulomb(&pot,&grad,r2);
     pot -= coul_shift;
     pot -= SQRT(r2)*coul_fshift*(SQRT(r2)-SQRT(ew_r2_cut));
+    pot -= ((0.25*r2 - SQRT(r2)*SQRT(ew_r2_cut)/3.0 )*r2 + 
+	    SQR(ew_r2_cut)/12.0)* coulf2shift;
     *PTR_2D(pt->table,i,cou_col,pt->maxsteps,ncols)=pot;
+    /* 1/r^3 equiv. deriv of 1/r */
+    grad -= coul_fshift*(2.0-SQRT(ew_r2_cut)/SQRT(r2));
+    grad -= SQRT(r2)*coulf2shift*(SQRT(r2)-SQRT(ew_r2_cut));
+    grad /= -ew_eps;
+    *PTR_2D(pt->table,i,sco_col,pt->maxsteps,ncols)=grad;
+  /* Other tables: Short-range dipole fn */
+    for(k=0;k<ntypepairs;k++){
+      tmp=dp_b[k]*SQRT(r2);
+      pot2=1.;
+      for (j=4;j>=1;j--) {
+	pot2 *= tmp/((real) j);
+	pot2 += 1.;
+      }
+      pot2 *= dp_c[k]*exp(-tmp)* grad;
+      *PTR_2D(pt->table,i,shr_col+k,pt->maxsteps,ncols)=pot2;
+    }
   }
     
-  if ( (pt->begin[sco_col] != pt->begin[shr_col] ) ||
-       (pt->step[sco_col] != pt->step[shr_col] ))
-    error("Error in sampling for dipole cutoff and short-range interaction");
-  
-  for (i=0;i<dp_res;i++) {
-  /* Second table: Smooth cutoff fn for dipoles*/
-    r2 = pt->begin[sco_col] + i * pt->step[sco_col];
-    tmp=SQRT(r2);
-    pot = 1.0/(tmp*r2);		 /* r^{-3} */
-    pot += 3.0*tmp/SQR(ew_r2_cut); /* 3*r/rc^4 */
-    pot -= 4.0/(ew_r2_cut*SQRT(ew_r2_cut)); /* -4/rc^3 */
-    *PTR_2D(pt->table,i,sco_col,pt->maxsteps,ncols)=pot;
-  /* Third table: Short-range dipole fn */
-
-    tmp=dp_b*SQRT(r2);
-    pot2=1.;
-    for (j=4;j>=1;j--) {
-      pot2 *= tmp/((real) j);
-      pot2 += 1.;
-    }
-    pot2 *= dp_c*exp(-tmp)* pot;
-    *PTR_2D(pt->table,i,shr_col,pt->maxsteps,ncols)=pot2;
-
-  }
 
   /* Finish up */
 #if   defined(FOURPOINT)
@@ -1266,6 +1266,9 @@ void pair_int_coulomb(real *pot, real *grad, real r2)
   *grad = - (*pot + fac * exp( -SQR(ew_kappa)*r2 ) ) / r2; 
 }
 
+#endif DIPOLE
+
+#if defined(DIPOLE) || defined(MORSE)
 /*****************************************************************************
 *
 *  Evaluate Morse-Stretch potential for DIPOLE
@@ -1290,7 +1293,7 @@ void pair_int_mstr(real *pot, real *grad, int p_typ, int q_typ, real r2)
 }
 
 
-#endif /* DIPOLE */
+#endif /* DIPOLE or MORSE*/
 
 #endif /* PAIR */
 

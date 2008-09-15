@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -260,13 +260,15 @@ void calc_forces(int steps)
 
 #ifdef DIPOLE
   static int dp_E_calc=0; 	/* Number of field iterations */
+  int dp_it=0;			/* Number of dipole iterations */
+  int dp_p_calc=0;		/* Calculate dipoles or keep them */
   /* TODO: Communicate! */
   int dp_converged=0;
   real dp_sum_old, dp_sum=1.;
-  /* TODO: Parameter */
-  real dp_tol=1.e-3;
   real max_diff=10.;
   real *dp_E_shift;
+  dp_p_calc = ((dp_fix-1 + dp_fix*dp_E_calc)>0 ) ? 0 : 1;
+
 #endif
 
   if (0==have_valid_nbl) {
@@ -353,6 +355,14 @@ void calc_forces(int steps)
       DP_P_STAT(p,i,X) = 0.0;
       DP_P_STAT(p,i,Y) = 0.0;
       DP_P_STAT(p,i,Z) = 0.0;
+      DP_E_IND(p,i,X)  = 0.0;
+      DP_E_IND(p,i,Y)  = 0.0;
+      DP_E_IND(p,i,Z)  = 0.0;
+      if ( dp_p_calc ) {
+	DP_P_IND(p,i,X)  = 0.0;
+	DP_P_IND(p,i,Y)  = 0.0;
+	DP_P_IND(p,i,Z)  = 0.0;
+      }
 #endif /* dipole */
 #ifdef NVX
       HEATCOND(p,i) = 0.0;
@@ -591,7 +601,7 @@ void calc_forces(int steps)
 	  if (SQR(chg)>0.) {
 	    /* Constant electric field from charges */
 	    /* Use column 0 of 3, thats the coulomb potential */
-	    PAIR_INT(phi, grphi, dipole_table, 0, 3, r2, is_short);
+	    PAIR_INT(phi, grphi, dipole_table, 0, 2+ntypepairs, r2, is_short);
 	    /* Coulomb Energy */
 	    pot     = chg * phi;
 	    grad    = chg * grphi;
@@ -642,33 +652,37 @@ void calc_forces(int steps)
 	    HEATCOND(q,j) += pot - r2 * grad;
 #endif
 	    /* Field for Dipole calculation */
-
-	    Estat.x += d.x * grphi * charge[jt];
-	    Estat.y += d.y * grphi * charge[jt];
-	    Estat.z += d.z * grphi * charge[jt];
-	    DP_E_STAT(q,j,X) -= d.x * grphi * charge[it];
-	    DP_E_STAT(q,j,Y) -= d.y * grphi * charge[it];
-	    DP_E_STAT(q,j,Z) -= d.z * grphi * charge[it];
-	    
+	    if (dp_p_calc) {
+	      Estat.x += d.x * grphi * charge[jt];
+	      Estat.y += d.y * grphi * charge[jt];
+	      Estat.z += d.z * grphi * charge[jt];
+	      DP_E_STAT(q,j,X) -= d.x * grphi * charge[it];
+	      DP_E_STAT(q,j,Y) -= d.y * grphi * charge[it];
+	      DP_E_STAT(q,j,Z) -= d.z * grphi * charge[it];
+	    }
 	  }
 
 	  /* calculate short-range dipoles field */
 	  /* short-range fn.: 3rd column */
-	  VAL_FUNC(pot,dipole_table,2, 3, r2, is_short);
-	  tmp = pot*charge[jt]*dp_alpha[it];
-	  if (SQR(tmp)>0) {
-	    pstat.x += tmp * d.x;
-	    pstat.y += tmp * d.y;
-	    pstat.z += tmp * d.z;
-	  }
-	  tmp = pot*charge[it]*dp_alpha[jt];
-	  if (SQR(tmp)){
-	    DP_P_STAT(q,j,X) -= tmp * d.x;
-	    DP_P_STAT(q,j,Y) -= tmp * d.y;
-	    DP_P_STAT(q,j,Z) -= tmp * d.z;
+	  if (dp_p_calc) {
+	    col=(it <= jt) ?
+	      it * ntypes + jt - ((it * (it + 1))/2)
+	      : jt * ntypes + it - ((jt * (jt + 1))/2);
+	    VAL_FUNC(pot,dipole_table,2+col, 2+ntypepairs, r2, is_short);
+	    tmp = pot*charge[jt]*dp_alpha[it];
+	    if (SQR(tmp)>0) {
+	      pstat.x -= tmp * d.x;
+	      pstat.y -= tmp * d.y;
+	      pstat.z -= tmp * d.z;
+	    }
+	    tmp = pot*charge[it]*dp_alpha[jt];
+	    if (SQR(tmp)>0){
+	      DP_P_STAT(q,j,X) += tmp * d.x;
+	      DP_P_STAT(q,j,Y) += tmp * d.y;
+	      DP_P_STAT(q,j,Z) += tmp * d.z;
+	    }
 	  }
 	}
-	
 #endif /* DIPOLE */
 
 #ifdef COVALENT
@@ -730,27 +744,29 @@ void calc_forces(int steps)
       ADP_LAMBDA(p,i,xy) += la.xy;
 #endif
 #ifdef DIPOLE
-      DP_E_STAT(p,i,X)   += Estat.x;
-      DP_E_STAT(p,i,Y)   += Estat.y;
-      DP_E_STAT(p,i,Z)   += Estat.z;
-      DP_P_STAT(p,i,X)   += pstat.x;
-      DP_P_STAT(p,i,Y)   += pstat.y;
-      DP_P_STAT(p,i,Z)   += pstat.z;
-      /* Field Extrapolation */
-      if (dp_E_calc>1) {
-	DP_E_IND(p,i,X) = 3.*DP_E_OLD_1(p,i,X) - 3.*DP_E_OLD_2(p,i,X) +
-	  DP_E_OLD_3(p,i,X);
-	DP_E_IND(p,i,Y) = 3.*DP_E_OLD_1(p,i,Y) - 3.*DP_E_OLD_2(p,i,Y) +
-	  DP_E_OLD_3(p,i,Y);
-	DP_E_IND(p,i,Y) = 3.*DP_E_OLD_1(p,i,Y) - 3.*DP_E_OLD_2(p,i,Y) +
-	  DP_E_OLD_3(p,i,X);
-	DP_E_OLD_3(p,i,X) = 0.;
-	DP_E_OLD_3(p,i,Y) = 0.;
-	DP_E_OLD_3(p,i,Z) = 0.;
-      } else {
-	DP_E_IND(p,i,X) = DP_E_OLD_1(p,i,X);
-	DP_E_IND(p,i,Y) = DP_E_OLD_1(p,i,Y);
-	DP_E_IND(p,i,Z) = DP_E_OLD_1(p,i,Z);
+      if (dp_p_calc) {
+	DP_E_STAT(p,i,X)   += Estat.x;
+	DP_E_STAT(p,i,Y)   += Estat.y;
+	DP_E_STAT(p,i,Z)   += Estat.z;
+	DP_P_STAT(p,i,X)   += pstat.x;
+	DP_P_STAT(p,i,Y)   += pstat.y;
+	DP_P_STAT(p,i,Z)   += pstat.z;
+	/* Field Extrapolation */
+	if (dp_E_calc>2) {
+	  DP_E_IND(p,i,X) = 3.*DP_E_OLD_1(p,i,X) - 3.*DP_E_OLD_2(p,i,X) +
+	    DP_E_OLD_3(p,i,X);
+	  DP_E_IND(p,i,Y) = 3.*DP_E_OLD_1(p,i,Y) - 3.*DP_E_OLD_2(p,i,Y) +
+	    DP_E_OLD_3(p,i,Y);
+	  DP_E_IND(p,i,Z) = 3.*DP_E_OLD_1(p,i,Z) - 3.*DP_E_OLD_2(p,i,Z) +
+	    DP_E_OLD_3(p,i,Z);
+	  DP_E_OLD_3(p,i,X) = 0.;
+	  DP_E_OLD_3(p,i,Y) = 0.;
+	  DP_E_OLD_3(p,i,Z) = 0.;
+	} else {
+	  DP_E_IND(p,i,X) = DP_E_OLD_1(p,i,X);
+	  DP_E_IND(p,i,Y) = DP_E_OLD_1(p,i,Y);
+	  DP_E_IND(p,i,Z) = DP_E_OLD_1(p,i,Z);
+	}
       }
 #endif
 #ifdef STRESS_TENS
@@ -773,11 +789,13 @@ void calc_forces(int steps)
 #endif
       n++;
     }
-#ifdef DIPOLE    
-    dp_E_shift = p->dp_E_old_3;
-    p->dp_E_old_3 = p->dp_E_old_2;
-    p->dp_E_old_2 = p->dp_E_old_1;
-    p->dp_E_old_1 = dp_E_shift;
+#ifdef DIPOLE
+    if (dp_p_calc) {
+      dp_E_shift = p->dp_E_old_3;
+      p->dp_E_old_3 = p->dp_E_old_2;
+      p->dp_E_old_2 = p->dp_E_old_1;
+      p->dp_E_old_1 = dp_E_shift;
+    }
 #endif /* DIPOLE */
   }
   if (is_short) printf("short distance!\n");
@@ -970,7 +988,9 @@ void calc_forces(int steps)
         col1 = jt * ntypes + it;
         col2 = it * ntypes + jt;
 
-        if ((r2 < rho_h_tab.end[col1]) || (r2 < rho_h_tab.end[col2])) {
+        if ((r2 < rho_h_tab.end[col
+
+1]) || (r2 < rho_h_tab.end[col2])) {
 
           real pot, grad, rho_i_strich, rho_j_strich, rho_i, rho_j;
 
@@ -1119,165 +1139,152 @@ void calc_forces(int steps)
 
   /* collect constant electric fields and dipole moments */
   send_forces(add_dipole,pack_dipole,unpack_add_dipole);
-  /* distribute E_ind (extrapolated) */
-  send_cells(copy_Eind,pack_Eind,unpack_Eind);
-//  if (steps == 0) 
   
-  while (dp_converged==0) {
-    dp_sum_old=dp_sum;
-    dp_sum=0.0;
-    n=0;
-    /* Set field, dipoles */
-    for (k=0; k<ncells; k++) { 
-      cell *p = CELLPTR(k);
+  if (dp_p_calc) {
+    while (dp_converged==0) {
+      dp_sum_old=dp_sum;
+      dp_sum=0.0;
+      n=0;
+      /* Set field, dipoles */
+      for (k=0; k<ncells; k++) { 
+	cell *p = CELLPTR(k);
 #ifdef ia64 
 #pragma ivdep,swp
 #endif
-      for (i=0; i<p->n; i++) {
-	int it;
-	vektor Etot;
-	it   = SORTE(p,i);
-	if (SQR(dp_alpha[it])>0) {
-	  Etot.x = dp_mix * DP_E_IND(p,i,X)
-	    + (1-dp_mix) * DP_E_OLD_1(p,i,X)
-	    + DP_E_STAT(p,i,X);
-	  Etot.y = dp_mix * DP_E_IND(p,i,Y)
-	    + (1-dp_mix) * DP_E_OLD_1(p,i,Y)
-	    + DP_E_STAT(p,i,Y);
-	  Etot.z = dp_mix * DP_E_IND(p,i,Z)
-	    + (1-dp_mix) * DP_E_OLD_1(p,i,Z)
-	    + DP_E_STAT(p,i,Z);
-	  DP_P_IND(p,i,X) = Etot.x * dp_alpha[it] + DP_P_STAT(p,i,X);
-	  DP_P_IND(p,i,Y) = Etot.y * dp_alpha[it] + DP_P_STAT(p,i,Y);
-	  DP_P_IND(p,i,Z) = Etot.x * dp_alpha[it] + DP_P_STAT(p,i,Z);
-	  DP_E_OLD_1(p,i,X) = DP_E_IND(p,i,X);
-	  DP_E_OLD_1(p,i,Y) = DP_E_IND(p,i,Y);
-	  DP_E_OLD_1(p,i,Z) = DP_E_IND(p,i,Z);
-	  /* Self Term */
-/* 	  DP_E_IND(p,i,X) = DP_P_IND(p,i,X) * dp_self; */
-/* 	  DP_E_IND(p,i,Y) = DP_P_IND(p,i,Y) * dp_self; */
-/* 	  DP_E_IND(p,i,Z) = DP_P_IND(p,i,Z) * dp_self; */
-	  DP_E_IND(p,i,X) = 0.;
- 	  DP_E_IND(p,i,Y) = 0.;
- 	  DP_E_IND(p,i,Z) = 0.;
-	  
+	for (i=0; i<p->n; i++) {
+	  int it;
+	  vektor Etot;
+	  it   = SORTE(p,i);
+	  if (SQR(dp_alpha[it])>0) {
+	    if (dp_it) {
+	      Etot.x = dp_mix * DP_E_IND(p,i,X)
+		+ (1.-dp_mix) * DP_E_OLD_1(p,i,X)
+		+ DP_E_STAT(p,i,X);
+	      Etot.y = dp_mix * DP_E_IND(p,i,Y)
+		+ (1.-dp_mix) * DP_E_OLD_1(p,i,Y)
+		+ DP_E_STAT(p,i,Y);
+	      Etot.z = dp_mix * DP_E_IND(p,i,Z)
+		+ (1.-dp_mix) * DP_E_OLD_1(p,i,Z)
+		+ DP_E_STAT(p,i,Z);
+	    } else {
+	      Etot.x = DP_E_IND(p,i,X) + DP_E_STAT(p,i,X);
+	      Etot.y = DP_E_IND(p,i,Y) + DP_E_STAT(p,i,Y);
+	      Etot.z = DP_E_IND(p,i,Z) + DP_E_STAT(p,i,Z);
+	    }
+	    DP_P_IND(p,i,X) = Etot.x * dp_alpha[it] + DP_P_STAT(p,i,X);
+	    DP_P_IND(p,i,Y) = Etot.y * dp_alpha[it] + DP_P_STAT(p,i,Y);
+	    DP_P_IND(p,i,Z) = Etot.z * dp_alpha[it] + DP_P_STAT(p,i,Z);
+	    
+/* #ifdef DEBUG */
+/* 	    printf("%d\t%d\t%g\t%g\t%g\t", NUMMER(p,i),it,ORT(p,i,X), */
+/* 		   ORT(p,i,Y),ORT(p,i,Z)); */
+/* 	    printf("%10.6f\t%10.6f\t%10.6f\t",Etot.x,Etot.y,Etot.z); */
+/* 	    printf("%10.6f\t%10.6f\t%10.6f\t%10.6f\t%10.6f\t%10.6f\t", */
+/* 		   DP_E_IND(p,i,X), DP_E_IND(p,i,Y),DP_E_IND(p,i,Z), */
+/* 		   DP_P_IND(p,i,X), DP_P_IND(p,i,Y),DP_P_IND(p,i,Z)); */
+/* 	    printf("%10.6f\t%10.6f\t%10.6f\t%10.6f\t%10.6f\t%10.6f\n", */
+/* 		   DP_P_STAT(p,i,X), DP_P_STAT(p,i,Y),DP_P_STAT(p,i,Z), */
+/* 		   DP_E_STAT(p,i,X), DP_E_STAT(p,i,Y),DP_E_STAT(p,i,Z)); */
+/* 	  printf("%d\t1\t%10.6f\t%10.6f\t%10.6f\t%10.6f\n",NUMMER(p,i),Etot.x, */
+/* 		 DP_E_IND(p,i,X), DP_P_IND(p,i,X), DP_P_STAT(p,i,X)); */
+/* 	  printf("%d\t2\t%10.6f\t%10.6f\t%10.6f\t%10.6f\n",NUMMER(p,i),Etot.y, */
+/* 		 DP_E_IND(p,i,Y), DP_P_IND(p,i,Y), DP_P_STAT(p,i,Y)); */
+/* 	  printf("%d\t3\t%10.6f\t%10.6f\t%10.6f\t%10.6f\n",NUMMER(p,i),Etot.z, */
+/* 		 DP_E_IND(p,i,Z), DP_P_IND(p,i,Z), DP_P_STAT(p,i,Z)); */
+/* #endif */
+	    
+	    DP_E_OLD_1(p,i,X) = DP_E_IND(p,i,X);
+	    DP_E_OLD_1(p,i,Y) = DP_E_IND(p,i,Y);
+	    DP_E_OLD_1(p,i,Z) = DP_E_IND(p,i,Z);
+	    /* Self Term */
+/* 	    DP_E_IND(p,i,X) = DP_P_IND(p,i,X) * dp_self; */
+/* 	    DP_E_IND(p,i,Y) = DP_P_IND(p,i,Y) * dp_self; */
+/* 	    DP_E_IND(p,i,Z) = DP_P_IND(p,i,Z) * dp_self; */
+	    DP_E_IND(p,i,X) = 0.;
+	    DP_E_IND(p,i,Y) = 0.;
+	    DP_E_IND(p,i,Z) = 0.;
+	  }
 	}
       }
-    }
-    /* Distribute dipole moments */
-    send_cells(copy_pind,pack_pind,unpack_pind);
+      /* Distribute dipole moments */
+      send_cells(copy_pind,pack_pind,unpack_pind);
 
-    /* compute DIPOLE strength  */
-    for (k=0; k<ncells; k++) { 
-      cell *p = CELLPTR(k); 
+      /* compute DIPOLE strength  */
+      for (k=0; k<ncells; k++) { 
+	cell *p = CELLPTR(k); 
 #ifdef ia64 
 #pragma ivdep,swp
 #endif
-      for (i=0; i<p->n; i++) {
-	int    m, it, nb = 0;
-	vektor d1, pi, Eind={0.0,0.0,0.0};
-	it   = SORTE(p,i);
+	for (i=0; i<p->n; i++) {
+	  int    m, it, nb = 0;
+	  vektor d1, pi, Eind={0.0,0.0,0.0};
+	  it   = SORTE(p,i);
 
+	  if ( SQR(dp_alpha[it])>0) { 
 
-	d1.x = ORT(p,i,X);
-	d1.y = ORT(p,i,Y);
-	d1.z = ORT(p,i,Z);
+	    d1.x = ORT(p,i,X);
+	    d1.y = ORT(p,i,Y);
+	    d1.z = ORT(p,i,Z);
 
       
-	pi.x = DP_P_IND(p,i,X);
-	pi.y = DP_P_IND(p,i,Y);
-	pi.z = DP_P_IND(p,i,Z);
+	    pi.x = DP_P_IND(p,i,X);
+	    pi.y = DP_P_IND(p,i,Y);
+	    pi.z = DP_P_IND(p,i,Z);
       
 
-	if ( SQR(dp_alpha[it])>0) { 
-/* 	Eind.x += DP_E_STAT(p,i,X); */
-/* 	Eind.y += DP_E_STAT(p,i,Y); */
-/* 	Eind.z += DP_E_STAT(p,i,Z); */
-	  /* loop over neighbors */
+	    /* loop over neighbors */
 #ifdef ia64
 #pragma ivdep,swp
 #endif
-	  for (m=tl[n]; m<tl[n+1]; m++) {
+	    for (m=tl[n]; m<tl[n+1]; m++) {
 
-	    vektor d;
-	    real   r2;
-	    int    c, j, jt, col1, col2, inc = ntypes * ntypes, have_force=0;
-	    cell   *q;
+	      vektor d;
+	      real   r2;
+	      int    c, j, jt, col1, col2, inc = ntypes * ntypes, have_force=0;
+	      cell   *q;
 	  
-	    c = cl_num[ tb[m] ];
-	    j = tb[m] - cl_off[c];
-	    q = cell_array + c;
+	      c = cl_num[ tb[m] ];
+	      j = tb[m] - cl_off[c];
+	      q = cell_array + c;
 
-	    d.x  = ORT(q,j,X) - d1.x;
-	    d.y  = ORT(q,j,Y) - d1.y;
-	    d.z  = ORT(q,j,Z) - d1.z;
-	    r2   = SPROD(d,d);
-	    jt   = SORTE(q,j);
-	    col1 = jt * ntypes + it;
-	    col2 = it * ntypes + jt;
+	      d.x  = ORT(q,j,X) - d1.x;
+	      d.y  = ORT(q,j,Y) - d1.y;
+	      d.z  = ORT(q,j,Z) - d1.z;
+	      r2   = SPROD(d,d);
+	      jt   = SORTE(q,j);
+	      col1 = jt * ntypes + it;
+	      col2 = it * ntypes + jt;
 	  
 
-	    /* Dipole-Dipole */
-	    if ( (SQR(dp_alpha[jt])>0) && (r2 < ew_r2_cut )) {
-	      real pot,tmp;
-	      vektor pj;
-	      pj.x=DP_P_IND(q,j,X);
-	      pj.y=DP_P_IND(q,j,Y);
-	      pj.z=DP_P_IND(q,j,Z);
-	      /* smooth r^3 cutoff */
-	      VAL_FUNC(pot,dipole_table,1,3,r2,is_short);
-	      pot *= ew_eps;
-	      tmp=-SPROD(pj,d);
-	      Eind.x += pot* ((3.0/r2)*tmp*d.x - pj.x);
-	      Eind.y += pot* ((3.0/r2)*tmp*d.y - pj.y);
-	      Eind.z += pot* ((3.0/r2)*tmp*d.z - pj.z);
-	      tmp=SPROD(pi,d);
-	      DP_E_IND(q,j,X) += pot * ((3.0/r2)*tmp*d.x -pi.x);
-	      DP_E_IND(q,j,Y) += pot * ((3.0/r2)*tmp*d.y -pi.y);
-	      DP_E_IND(q,j,Z) += pot * ((3.0/r2)*tmp*d.z -pi.z);
-	    }	  
+	      /* Dipole-Dipole */
+	      if ( (SQR(dp_alpha[jt])>0) && (r2 < ew_r2_cut )) {
+		real pot,tmp;
+		vektor pj;
+		pj.x=DP_P_IND(q,j,X);
+		pj.y=DP_P_IND(q,j,Y);
+		pj.z=DP_P_IND(q,j,Z);
+		/* smooth r^3 cutoff */
+		VAL_FUNC(pot,dipole_table,1,2+ntypepairs,r2,is_short);
+		pot *= ew_eps;
+		tmp=SPROD(pj,d);
+		Eind.x += pot* ((3.0/r2)*tmp*d.x - pj.x);
+		Eind.y += pot* ((3.0/r2)*tmp*d.y - pj.y);
+		Eind.z += pot* ((3.0/r2)*tmp*d.z - pj.z);
+		tmp=SPROD(pi,d);
+		DP_E_IND(q,j,X) += pot * ((3.0/r2)*tmp*d.x -pi.x);
+		DP_E_IND(q,j,Y) += pot * ((3.0/r2)*tmp*d.y -pi.y);
+		DP_E_IND(q,j,Z) += pot * ((3.0/r2)*tmp*d.z -pi.z);
+	      }	  
+	    }
+	    DP_E_IND(p,i,X) += Eind.x;
+	    DP_E_IND(p,i,Y) += Eind.y;
+	    DP_E_IND(p,i,Z) += Eind.z;
 	  }
-	  DP_E_IND(p,i,X) += Eind.x;
-	  DP_E_IND(p,i,Y) += Eind.y;
-	  DP_E_IND(p,i,Z) += Eind.z;
+	  n++;
 	}
-	n++;
       }
-    }
-    /* Distribute Electric fields */
-    send_forces(add_field,pack_field,unpack_add_field);
-    n=0;
-    for (k=0; k<ncells; k++) {
-      cell *p = CELLPTR(k);
-      for (i=0; i<p->n; i++) {
-	int it;
-	real dp_tmp;
-	it   = SORTE(p,i);
-	if(SQR(dp_alpha[it])>0){
-/* 	dp_tmp  = dp_alpha[it]*DP_E_IND(p,i,X) + DP_P_STAT(p,i,X); */
-	  dp_sum += SQR(dp_alpha[it]*(DP_E_OLD_1(p,i,X)-DP_E_IND(p,i,X)));
-/* 	DP_P_IND(p,i,X) = dp_tmp; */
-/* 	dp_tmp  = dp_alpha[it]*DP_E_IND(p,i,Y) + DP_P_STAT(p,i,Y); */
-	  dp_sum += SQR(dp_alpha[it]*(DP_E_OLD_1(p,i,Y)-DP_E_IND(p,i,Y)));
-/* 	DP_P_IND(p,i,Y) = dp_tmp; */
-/* 	dp_tmp  = dp_alpha[it]*DP_E_IND(p,i,Z) + DP_P_STAT(p,i,Z); */
-	  dp_sum += SQR(dp_alpha[it]*(DP_E_OLD_1(p,i,Y)-DP_E_IND(p,i,Y)));
-/* 	DP_P_IND(p,i,Z) = dp_tmp; */
-	  /* Reset DP_E_IND */
-/* 	DP_E_IND(p,i,X) =0.0; */
-/* 	DP_E_IND(p,i,Y) =0.0; */
-/* 	DP_E_IND(p,i,Z) =0.0; */
-	}
-/*       n++; */
-      }
-    }
-    /* Distribute dipole moments */
-/*     send_cells(copy_pind,pack_pind,unpack_pind); */
-    dp_sum /= 3.0*natoms;
-    dp_sum=sqrt(dp_sum);
-    printf("#dipole deviation at step %d: %f\n",steps,dp_sum);
-    if (dp_sum > max_diff) { 
-      printf("CONVERGENCE ERROR - try again later\n");
+      /* Distribute Electric fields */
+      send_forces(add_field,pack_field,unpack_add_field);
       n=0;
       for (k=0; k<ncells; k++) {
 	cell *p = CELLPTR(k);
@@ -1286,26 +1293,53 @@ void calc_forces(int steps)
 	  real dp_tmp;
 	  it   = SORTE(p,i);
 	  if(SQR(dp_alpha[it])>0){
-	    DP_P_IND(p,i,X) = dp_alpha[it]*DP_E_STAT(p,i,X)+DP_P_STAT(p,i,X);
-	    DP_P_IND(p,i,Y) = dp_alpha[it]*DP_E_STAT(p,i,Y)+DP_P_STAT(p,i,Y);
-	    DP_P_IND(p,i,Z) = dp_alpha[it]*DP_E_STAT(p,i,Z)+DP_P_STAT(p,i,Z);;
-	    DP_E_IND(p,i,X) = DP_E_STAT(p,i,X);
-	    DP_E_IND(p,i,Y) = DP_E_STAT(p,i,Y);
-	    DP_E_IND(p,i,Z) = DP_E_STAT(p,i,Z);
+	    dp_sum += SQR(dp_alpha[it]*(DP_E_OLD_1(p,i,X)-DP_E_IND(p,i,X)));
+	    dp_sum += SQR(dp_alpha[it]*(DP_E_OLD_1(p,i,Y)-DP_E_IND(p,i,Y)));
+	    dp_sum += SQR(dp_alpha[it]*(DP_E_OLD_1(p,i,Y)-DP_E_IND(p,i,Y)));
 	  }
-	  n++;
 	}
       }
-      send_cells(copy_pind,pack_pind,unpack_pind);
-      send_cells(copy_Eind,pack_Eind,unpack_Eind);
-      dp_converged=1;
-      dp_sum=1.;
-    }
-    if (fabs(dp_sum-dp_sum_old) < dp_tol)
-      dp_converged=1;
+      dp_sum /= 3.0*natoms;
+      dp_sum=sqrt(dp_sum);
+#ifdef DEBUG
+      printf("#dipole deviation at step %d: %g\n",steps,dp_sum);
+#endif /*DEBUG */
+      if ((dp_sum > max_diff) || ( dp_it>50)) { 
+	printf("CONVERGENCE ERROR - try again later\n");
+	n=0;
+	for (k=0; k<ncells; k++) {
+	  cell *p = CELLPTR(k);
+	  for (i=0; i<p->n; i++) {
+	    int it;
+	    real dp_tmp;
+	    it   = SORTE(p,i);
+	    if(SQR(dp_alpha[it])>0){
+	      DP_P_IND(p,i,X) = dp_alpha[it]*DP_E_STAT(p,i,X)+DP_P_STAT(p,i,X);
+	      DP_P_IND(p,i,Y) = dp_alpha[it]*DP_E_STAT(p,i,Y)+DP_P_STAT(p,i,Y);
+	      DP_P_IND(p,i,Z) = dp_alpha[it]*DP_E_STAT(p,i,Z)+DP_P_STAT(p,i,Z);
+	      DP_E_IND(p,i,X) = DP_E_STAT(p,i,X);
+	      DP_E_IND(p,i,Y) = DP_E_STAT(p,i,Y);
+	      DP_E_IND(p,i,Z) = DP_E_STAT(p,i,Z);
+	    }
+	    n++;
+	  }
+	}
+	send_cells(copy_pind,pack_pind,unpack_pind);
+	dp_converged=1;
+	dp_sum=1.;
+      }
+      if  (fabs(dp_sum-dp_sum_old) < dp_tol)
+	dp_converged=1;
+      dp_it++;
 
-  } /* Dipole iteration */
+    } /* Dipole iteration */
+  }
 /*   DIPOLE interactions - for all atoms */
+
+#ifdef DEBUG
+/* Don't use this unless you are prepared for massive output */
+//  printf("No,type,pos,force,p_ind,E_ind,p_stat,E_stat\n");
+#endif
 
   n=0;
   for (k=0; k<ncells; k++) {
@@ -1317,15 +1351,13 @@ void calc_forces(int steps)
 #endif
       vektor d1, pi, ff = {0.0,0.0,0.0};
       real   ee = 0.0, hc = 0.0;
+      real   dp_energy = 0.0;
       int    m, it, nb = 0;
-
+       
       d1.x = ORT(p,i,X);
       d1.y = ORT(p,i,Y);
       d1.z = ORT(p,i,Z);
       it   = SORTE(p,i);
-#ifdef STRESS_TENS
-      sym_tensor pp = {0.0,0.0,0.0,0.0,0.0,0.0};
-#endif
 
       
       pi.x = DP_P_IND(p,i,X);
@@ -1357,8 +1389,8 @@ void calc_forces(int steps)
 	  
 	  if (r2 < ew_r2_cut ) {	
 	    /* XXX */
-	    real pot, grad, val, dval, pdotd, tmp, pdotp, proj_i, proj_j; 
-//	      pdotp=0.0, proj_i=0.0, proj_j=0.0;
+	    real pot, grad, val, dval, pdotd, tmp, pdotp, proj_i, proj_j;
+	    real valsr,dvalsr;
 	    vektor pj;
 
 	    pot=0.0; grad=0.0;
@@ -1366,20 +1398,30 @@ void calc_forces(int steps)
 	    pj.x=DP_P_IND(q,j,X);
 	    pj.y=DP_P_IND(q,j,Y);
 	    pj.z=DP_P_IND(q,j,Z);
-	    PAIR_INT(val, dval, dipole_table, 1, 3, r2, is_short);
-
+	    /* smooth cutoff function is 2nd in dipole_table */
+	    PAIR_INT(val, dval, dipole_table, 1, 2+ntypepairs, r2, is_short);
+	    
 	    val  *= ew_eps;
 	    dval *= ew_eps;
+	    /* short-range function is 3rd in dipole_table */
+	    col1=(it <= jt) ?
+	      it * ntypes + jt - ((it * (it + 1))/2)
+	      :jt * ntypes + it - ((jt * (jt + 1))/2);
+	    PAIR_INT(valsr,dvalsr,dipole_table,2+col1,2+ntypepairs,
+		     r2,is_short);
 	    /* Dipole at i -Charge at j interaction */
 	    if (SQR(dp_alpha[it])*SQR(charge[jt])>0) {
-	      /* smooth cutoff function is 2nd in dipole_table */
 
 	      pdotd=SPROD(pi,d);
-	      pot -= val*charge[jt]*pdotd;
-	      force.x -= charge[jt] * (dval * pdotd * d.x + val * pi.x);
-	      force.y -= charge[jt] * (dval * pdotd * d.y + val * pi.y);
-	      force.z -= charge[jt] * (dval * pdotd * d.z + val * pi.z);
-
+	      pot += val*charge[jt]*pdotd;
+	      force.x += charge[jt] * (dval * pdotd * d.x + val * pi.x);
+	      force.y += charge[jt] * (dval * pdotd * d.y + val * pi.y);
+	      force.z += charge[jt] * (dval * pdotd * d.z + val * pi.z);
+	      /* short range interaction */
+	      pot += charge[jt]*pdotd*valsr;
+	      force.x += charge[jt] * (dvalsr*pdotd *d.x +valsr*pi.x);
+	      force.y += charge[jt] * (dvalsr*pdotd *d.y +valsr*pi.y);
+	      force.z += charge[jt] * (dvalsr*pdotd *d.z +valsr*pi.z);
 	      have_force=1;
 	    }
 
@@ -1388,10 +1430,16 @@ void calc_forces(int steps)
 	      /* smooth cutoff function is 2nd in dipole_table */
 
 	      pdotd=SPROD(pj,d);
-	      pot += val*charge[it]*pdotd;
-	      force.x += charge[it] * (dval * pdotd * d.x + val * pj.x);
-	      force.y += charge[it] * (dval * pdotd * d.y + val * pj.y);
-	      force.z += charge[it] * (dval * pdotd * d.z + val * pj.z);
+	      pot -= val*charge[it]*pdotd;
+	      force.x -= charge[it] * (dval * pdotd * d.x + val * pj.x);
+	      force.y -= charge[it] * (dval * pdotd * d.y + val * pj.y);
+	      force.z -= charge[it] * (dval * pdotd * d.z + val * pj.z);
+
+	      /* short range interaction */
+	      pot -= charge[it]*pdotd*valsr;
+	      force.x -= charge[it] * (dvalsr*pdotd *d.x +valsr*pj.x);
+	      force.y -= charge[it] * (dvalsr*pdotd *d.y +valsr*pj.y);
+	      force.z -= charge[it] * (dvalsr*pdotd *d.z +valsr*pj.z);
 
 	      have_force=1;
 	    }
@@ -1415,15 +1463,9 @@ void calc_forces(int steps)
 			  - 3.0 / r2 * (proj_i * pj.z + proj_j * pi.z));
 	      have_force = 1;
 	    }
-
-//	    printf("#d dipl %f %f %f %f %f %f\n", sqrt(r2), pot, force.x, force.y, force.z, pj.x);   
-
-	    tot_pot_energy += pot;
 	    if (have_force) {
-	      if ((steps==114) || (steps==115) || (steps==116)){
-//		printf("#f %d %d %d %8f %8f %8f %8f %8f %8f\n",
-//		       steps,NUMMER(p,i),NUMMER(q,j),r2,pot,pdotd,pdotp,proj_i,proj_j);
-	      }
+	      tot_pot_energy += pot;
+
 	      KRAFT(q,j,X) -= force.x;
 	      KRAFT(q,j,Y) -= force.y;
 	      KRAFT(q,j,Z) -= force.z;
@@ -1464,7 +1506,12 @@ void calc_forces(int steps)
 #endif
 	    }
 	  }	  
-        }
+        }	
+        /* Dipole self energy */
+	dp_energy = (SQR(dp_alpha[it])>0)?0.5*SPROD(pi,pi)/dp_alpha[it]:0.;
+	tot_pot_energy += dp_energy; /* avoid double counting */
+	ee += 2*dp_energy;
+
 	POTENG(p,i) += ee;
 	KRAFT(p,i,X) += ff.x;
 	KRAFT(p,i,Y) += ff.y;
@@ -1481,6 +1528,20 @@ void calc_forces(int steps)
 #endif
       }
       n++;
+#ifdef DEBUG
+/* Don't use this unless you are prepared for massive output*/
+
+/*       printf("%d\t%d\t%10.6f\t%10.6f\t%10.6f\t",  */
+/* 	     NUMMER(p,i),it,d1.x,d1.y,d1.z); */
+/*       printf("%10.6f\t%10.6f\t%10.6f\t",  */
+/* 	     KRAFT(p,i,X),KRAFT(p,i,Y),KRAFT(p,i,Z)); */
+/*       printf("%10.6f\t%10.6f\t%10.6f\t%10.6f\t%10.6f\t%10.6f\t", */
+/* 	     pi.x,pi.y,pi.z,DP_E_IND(p,i,X),DP_E_IND(p,i,Y),DP_E_IND(p,i,Z)); */
+/*       printf("%10.6f\t%10.6f\t%10.6f\t%10.6f\t%10.6f\t%10.6f\n", */
+/* 		   DP_P_STAT(p,i,X), DP_P_STAT(p,i,Y),DP_P_STAT(p,i,Z), */
+/* 		   DP_E_STAT(p,i,X), DP_E_STAT(p,i,Y),DP_E_STAT(p,i,Z)); */
+
+#endif
     }
     /* Shift Field history */
     dp_E_shift = p->dp_E_old_1;
@@ -1490,7 +1551,6 @@ void calc_forces(int steps)
   }
   if (is_short) fprintf(stderr, "\n Short distance!\n");
   dp_E_calc++; 			/* increase field calc counter */
-
 #endif /* DIPOLE */
 
   /* EWALD is not parallelized */
