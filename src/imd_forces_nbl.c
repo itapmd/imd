@@ -988,9 +988,7 @@ void calc_forces(int steps)
         col1 = jt * ntypes + it;
         col2 = it * ntypes + jt;
 
-        if ((r2 < rho_h_tab.end[col
-
-1]) || (r2 < rho_h_tab.end[col2])) {
+        if ((r2 < rho_h_tab.end[col1]) || (r2 < rho_h_tab.end[col2])) {
 
           real pot, grad, rho_i_strich, rho_j_strich, rho_i, rho_j;
 

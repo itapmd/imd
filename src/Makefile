@@ -171,6 +171,44 @@ ifeq (x86_64-icc,${IMDSYS})
   export        OMPI_MPICC MPICH_CC MPICH_CLINKER
 endif
 
+# generic x86, gcc3 or gcc4
+ifeq (x86-gcc3,${IMDSYS})
+  CC_SERIAL	= gcc
+  CC_MPI	= mpicc
+  MPICH_CC      = gcc
+  OMPI_MPICC    = gcc
+#  MPICH_CLINKER = gcc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS	+= -O
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -g3 -pg
+  PAPI_INC      =  -I /opt/include
+  PAPI_LIBS     =  -L /opt/lib -lpapi -lperfctr
+  LFLAGS        += # -static
+  export        OMPI_MPICC MPICH_CC # MPICH_CLINKER
+endif
+
+# generic x86, icc
+ifeq (x86-icc,${IMDSYS})
+  CC_SERIAL	= icc
+  CC_OMP	= icc
+  CC_MPI	= mpicc
+  MPICH_CC      = icc
+  OMPI_MPICC    = icc
+  MPICH_CLINKER = icc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS	+= -O -ip
+  OMP_FLAGS	+= -openmp
+  OMPI_FLAGS	+= -openmp
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -prof_gen
+  PAPI_INC      =  -I /opt/include
+  PAPI_LIBS     =  -L /opt/lib -lpapi -lperfctr
+  RCD_FLAGS	+= -DRCD -rcd
+  LFLAGS        += # -static
+  export        OMPI_MPICC MPICH_CC MPICH_CLINKER
+endif
+
 # Athlon MP or XP, icc
 ifeq (AthlonMP-icc,${IMDSYS})
   CC_SERIAL	= icc
