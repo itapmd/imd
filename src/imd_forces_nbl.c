@@ -297,7 +297,7 @@ void calc_forces(int steps)
   vir_zx = 0.0;
   nfc++;
 
-  /* clear per atom accumulation variables */
+  /* clear per atom accumulation variables, also in buffer cells */
   for (k=0; k<nallcells; k++) {
     cell *p = cell_array + k;
 #ifdef ia64
@@ -1281,7 +1281,7 @@ void calc_forces(int steps)
 	  n++;
 	}
       }
-      /* Distribute Electric fields */
+      /* Collect Electric fields */
       send_forces(add_field,pack_field,unpack_add_field);
       n=0;
       for (k=0; k<ncells; k++) {
@@ -1326,7 +1326,7 @@ void calc_forces(int steps)
 	dp_converged=1;
 	dp_sum=1.;
       }
-      if  (fabs(dp_sum-dp_sum_old) < dp_tol)
+      if  (fabs(dp_sum-dp_sum_old) < dp_tol) /* reasonable? */
 	dp_converged=1;
       dp_it++;
 

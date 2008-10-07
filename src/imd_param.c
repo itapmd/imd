@@ -2380,7 +2380,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"dp_res")==0) {
       getparam(token,&dp_res,PARAM_INT,1,1);
     }
-    /* potential table resolution */
+    /* potential table minimal r */
     else if (strcasecmp(token,"dp_begin")==0) {
       getparam(token,&dp_begin,PARAM_REAL,1,1);
     }
@@ -3582,8 +3582,13 @@ void broadcast_params() {
   MPI_Bcast( &ew_kappa,           1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &ew_r2_cut,          1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &ew_test,            1,      MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dp_fix,             1,      MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dp_mix,             1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &dp_res,             1,      MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dp_begin,           1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( dp_b,            ntypepairs, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( dp_c,            ntypepairs, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( dp_alpha,            ntypes, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( ms_D,            ntypepairs, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( ms_gamma,        ntypepairs, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( ms_r0,           ntypepairs, REAL,    0, MPI_COMM_WORLD);

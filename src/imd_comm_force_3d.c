@@ -1266,10 +1266,10 @@ void copy_pind( int k, int l, int m, int r, int s, int t, vektor v )
     DP_P_IND(to,i,X) = DP_P_IND(from,i,X);
     DP_P_IND(to,i,Y) = DP_P_IND(from,i,Y);
     DP_P_IND(to,i,Z) = DP_P_IND(from,i,Z);
-    /* reset DP_E_IND in boundary cells*/
-    DP_E_IND(to,i,X) = 0.0;
-    DP_E_IND(to,i,Y) = 0.0;
-    DP_E_IND(to,i,Z) = 0.0;
+/*     /\* reset DP_E_IND in boundary cells*\/ */
+/*     DP_E_IND(to,i,X) = 0.0; */
+/*     DP_E_IND(to,i,Y) = 0.0; */
+/*     DP_E_IND(to,i,Z) = 0.0; */
   }
 }
 
@@ -1279,23 +1279,23 @@ void copy_pind( int k, int l, int m, int r, int s, int t, vektor v )
 *
 ******************************************************************************/
 
-void copy_Eind( int k, int l, int m, int r, int s, int t, vektor v )
-{
-  int i;
-  minicell *from, *to;
+/* void copy_Eind( int k, int l, int m, int r, int s, int t, vektor v ) */
+/* { */
+/*   int i; */
+/*   minicell *from, *to; */
 
-  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
-  to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
+/*   from = PTR_3D_V(cell_array, k, l, m, cell_dim); */
+/*   to   = PTR_3D_V(cell_array, r, s, t, cell_dim); */
 
-#ifdef VEC
-#pragma cdir nodep
-#endif
-  for (i=0; i<to->n; ++i) {
-    DP_E_IND(to,i,X) = DP_E_IND(from,i,X);
-    DP_E_IND(to,i,Y) = DP_E_IND(from,i,Y);
-    DP_E_IND(to,i,Z) = DP_E_IND(from,i,Z);
-  }
-}
+/* #ifdef VEC */
+/* #pragma cdir nodep */
+/* #endif */
+/*   for (i=0; i<to->n; ++i) { */
+/*     DP_E_IND(to,i,X) = DP_E_IND(from,i,X); */
+/*     DP_E_IND(to,i,Y) = DP_E_IND(from,i,Y); */
+/*     DP_E_IND(to,i,Z) = DP_E_IND(from,i,Z); */
+/*   } */
+/* } */
 
 /******************************************************************************
 *
@@ -1346,6 +1346,10 @@ void add_field( int k, int l, int m, int r, int s, int t )
     DP_E_IND  (to,i,X)  += DP_E_IND  (from,i,X);
     DP_E_IND  (to,i,Y)  += DP_E_IND  (from,i,Y);
     DP_E_IND  (to,i,Z)  += DP_E_IND  (from,i,Z);
+    /* reset DP_E_IND in buffer cells */
+    DP_E_IND(from,i,X) = 0;
+    DP_E_IND(from,i,Y) = 0;
+    DP_E_IND(from,i,Z) = 0;
   }
 }
 
@@ -1424,6 +1428,10 @@ void pack_field( msgbuf *b, int k, int l, int m )
     b->data[ j++ ] = DP_E_IND (from,i,X);
     b->data[ j++ ] = DP_E_IND (from,i,Y);
     b->data[ j++ ] = DP_E_IND (from,i,Z);
+    /* reset DP_E_IND in buffer cells */
+    DP_E_IND(from,i,X) = 0;
+    DP_E_IND(from,i,Y) = 0;
+    DP_E_IND(from,i,Z) = 0;
   }
   b->n = j;
   if (b->n_max < b->n) 
@@ -1476,10 +1484,10 @@ void unpack_pind( msgbuf *b, int k, int l, int m )
     DP_P_IND  (to,i,X)  = b->data[ j++ ];
     DP_P_IND  (to,i,Y)  = b->data[ j++ ];
     DP_P_IND  (to,i,Z)  = b->data[ j++ ];
-    /* reset DP_E_IND in boundary cells*/
-    DP_E_IND  (to,i,X)  = 0.0;
-    DP_E_IND  (to,i,Y)  = 0.0;
-    DP_E_IND  (to,i,Z)  = 0.0;
+/*     /\* reset DP_E_IND in boundary cells*\/ */
+/*     DP_E_IND  (to,i,X)  = 0.0; */
+/*     DP_E_IND  (to,i,Y)  = 0.0; */
+/*     DP_E_IND  (to,i,Z)  = 0.0; */
   }
   b->n = j;
   if (b->n_max < b->n) 
