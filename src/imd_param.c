@@ -262,7 +262,6 @@ int getparamfile(char *paramfname, int phase)
   vektor vek;
   vektor shift;
   vektor shear, base;
-  int nvalues;
   int k;
   int i;
 
@@ -2920,7 +2919,7 @@ int read_parameters(char *paramfname, int phase)
 
 void broadcast_params() {
 
-  int i, k, nvalues;
+  int i, k;
 #ifdef TWOD
   vektor nullv = {0,0};
 #else
