@@ -36,9 +36,10 @@ transformed with the utility program <a href="util_misc.html#imd_power">
 imd_power</a>, revealing the frequency spectrum of the fluctuations of
 the kinetic energy and other quantities. If the mode with the highest 
 essential frequency omega_max in that spectrum shall be tracked with, 
-say, 30 time steps, then the time step must satisfy 2*pi/30*omega_max. 
-If the initial time step was too small, this procedure should be 
-repeated.</p> 
+say, 30 time steps, then the time step must be roughly equal to
+2*pi/(30*omega_max). If the initial time step was too small, this 
+procedure should be repeated.
+</p> 
 
 <h3><a id="temp_control" name="temp_control">
 Time constant for temperature control</h3>
