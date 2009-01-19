@@ -1277,6 +1277,10 @@ int getparamfile(char *paramfname, int phase)
       /* threshold for ekin */
       getparam(token,&glok_ekin_threshold,PARAM_REAL,1,1);
     }
+    else if (strcasecmp(token,"fire_ekin_threshold")==0) {
+      /* threshold for ekin */
+      getparam(token,&glok_ekin_threshold,PARAM_REAL,1,1);
+    }
  
 #endif
 #ifdef MIX
@@ -1284,13 +1288,27 @@ int getparamfile(char *paramfname, int phase)
       /* factor to turn velocities more parallel to forces */
       getparam(token,&glok_mix,PARAM_REAL,1,1);
     }
+     else if (strcasecmp(token,"fire_mix")==0) {
+      /* factor to turn velocities more parallel to forces */
+      getparam(token,&glok_mix,PARAM_REAL,1,1);
+    }
     else if (strcasecmp(token,"glok_mixdec")==0) {
+      /*decrease factor to turn velocities more parallel to forces */
+      getparam(token,&glok_mixdec,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"fire_mixdec")==0) {
       /*decrease factor to turn velocities more parallel to forces */
       getparam(token,&glok_mixdec,PARAM_REAL,1,1);
     }
 #endif
 #ifdef ADAPTGLOK
-   else if (strcasecmp(token,"glok_minsteps")==0) {
+    /* FIRE = mixedadaptglok, for cosmetic reasons & backward compatibility now all parameters
+       can either be called glok_something or fire_something */    
+    else if (strcasecmp(token,"glok_minsteps")==0) {
+      /* minimum of steps before increasing the timestep */
+      getparam(token,&glok_minsteps,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"fire_minsteps")==0) {
       /* minimum of steps before increasing the timestep */
       getparam(token,&glok_minsteps,PARAM_INT,1,1);
     }
@@ -1302,7 +1320,15 @@ int getparamfile(char *paramfname, int phase)
       /* critical max. force component  */
       getparam(token,&glok_fmaxcrit,PARAM_REAL,1,1);
     }
+    else if (strcasecmp(token,"fire_fmaxcrit")==0) {
+      /* critical max. force component  */
+      getparam(token,&glok_fmaxcrit,PARAM_REAL,1,1);
+    }
     else if (strcasecmp(token,"glok_incfac")==0) {
+      /* factor to increase the timestep */
+      getparam(token,&glok_incfac,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"fire_incfac")==0) {
       /* factor to increase the timestep */
       getparam(token,&glok_incfac,PARAM_REAL,1,1);
     }
@@ -1310,11 +1336,23 @@ int getparamfile(char *paramfname, int phase)
       /* factor to decrease the timestep */
       getparam(token,&glok_decfac,PARAM_REAL,1,1);
     }
+    else if (strcasecmp(token,"fire_decfac")==0) {
+      /* factor to decrease the timestep */
+      getparam(token,&glok_decfac,PARAM_REAL,1,1);
+    }
    else if (strcasecmp(token,"glok_maxtimestep")==0) {
       /* max timestep */
       getparam(token,&glok_maxtimestep,PARAM_REAL,1,1);
     }
+   else if (strcasecmp(token,"fire_maxtimestep")==0) {
+      /* max timestep */
+      getparam(token,&glok_maxtimestep,PARAM_REAL,1,1);
+    }
    else if (strcasecmp(token,"glok_int")==0) {
+      /* only needed for restarting */
+      getparam(token,&glok_int,PARAM_INT,1,1);
+    }
+   else if (strcasecmp(token,"fire_int")==0) {
       /* only needed for restarting */
       getparam(token,&glok_int,PARAM_INT,1,1);
     }

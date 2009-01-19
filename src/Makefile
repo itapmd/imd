@@ -136,6 +136,43 @@ DEBUG_FLAGS	+= #-DDEBUG # -Wall # very noisy
 #
 ###########################################################################
 
+
+# intel core 2 duo gcc
+ifeq (x86_64-c2_gcc,${IMDSYS})
+  CC_SERIAL	= gcc
+  CC_MPI	= mpicc
+  MPICH_CC      = gcc
+#  MPICH_CLINKER = icc
+  OMPI_MPICC    = gcc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+#  OPT_FLAGS	+= -O -m64 -Wno-unused -march=core2   -mmmx -msse -ffast-math  -funroll-all-loops -fomit-frame-pointer
+  OPT_FLAGS	+= -O3  -march=core2     -funroll-all-loops -fomit-frame-pointer
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -g3 -pg
+  LFLAGS        +=  -static
+  export        OMPI_MPICC MPICH_CC # MPICH_CLINKER
+endif
+
+# intel core 2 duo, icc
+ifeq (x86_64-c2_icc,${IMDSYS})
+  CC_SERIAL	= icc
+  CC_MPI	= mpicc
+  MPICH_CC      = icc
+  MPICH_CLINKER = icc
+  OMPI_MPICC    = icc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS	+= -O3 -ip  -fno-builtin -axT -march=core2  -mtune=core2  # remove -axP for Opteron
+  MPI_FLAGS     += 
+  OMP_FLAGS	+= -openmp
+  OMPI_FLAGS	+= -openmp
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -prof_gen
+  RCD_FLAGS	+= # -DRCD -rcd
+  MPI_LIBS      += 
+  LFLAGS        += # -i-static
+  export        OMPI_MPICC MPICH_CC MPICH_CLINKER
+endif
+
 # AMD Opteron or Intel EM46T, gcc3
 ifeq (x86_64-gcc3,${IMDSYS})
   CC_SERIAL	= gcc
@@ -1186,6 +1223,15 @@ endif
 
 ifneq (,$(findstring mix,${MAKETARGET}))
 PP_FLAGS += -DMIX
+endif
+
+ifneq (,$(findstring fire,${MAKETARGET}))
+PP_FLAGS += -DMIK
+PP_FLAGS += -DMIX
+PP_FLAGS += -DADAPTGLOK
+PP_FLAGS += -DGLOK
+PP_FLAGS += -DRELAXINFO
+PP_FLAGS += -DFNORM
 endif
 
 ifneq (,$(findstring efilter,${MAKETARGET}))
