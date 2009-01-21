@@ -533,7 +533,7 @@ int getparamfile(char *paramfname, int phase)
       getparam(token,&neb_eng_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"neb_k")==0) {
-      /* interval of NEB energy writes */
+      /* spring constant of NEB -- ignored?? */
       getparam(token,&neb_k,PARAM_REAL,1,1);
     }
 #endif

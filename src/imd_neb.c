@@ -127,7 +127,7 @@ void read_atoms_neb(str255 infilename)
         pos_r Z(n) = ORT(p,i,Z);
       }
     }
-    /* compute and write energy of initial configuration */
+    /* compute and write energy of final configuration */
     calc_forces(0);
     sprintf(outfilename, "%s.%02d", neb_outfilename, neb_nrep-1);
     write_eng_file_header();
@@ -189,8 +189,8 @@ void neb_sendrecv_pos(void)
 
 void calc_forces_neb(void)
 {
-  real dl2=0.0, dr2=0.0, drl=0.0, d2=0.0, f2=0.0;
-  real tmp, cosphi, fphi, src[2], dest[2], *d=pos;
+  real dl2=0.0, dr2=0.0, drl=0.0, d2=0.0, f2=0.0, f2max=0.0, drlmax=0.0;
+  real tmp, cosphi, fphi, src[3], dest[3], *d=pos;
   int k, i;
 
   /* exchange positions with neighbor replicas */
@@ -257,7 +257,8 @@ void calc_forces_neb(void)
     dl2 += SPROD(dl,dl); 
     dr2 += SPROD(dr,dr); 
     drl += SPROD(dr,dl); 
-    d2  += SPRODN(d+i,d+i); 
+    d2  += SPRODA(d+i,d+i); 
+    drlmax = MAX(drlmax, fabs( SPROD(dr,dr) - SPROD(dl,dl) ) );
   }
 
   /* project internal force onto perpendicular direction */
@@ -276,10 +277,11 @@ void calc_forces_neb(void)
     cell *p = CELLPTR(k);
     for (i=0; i<p->n; i++) { 
       int n = NUMMER(p,i);
+      f2 += SPRODN( KRAFT,p,i,KRAFT,p,i );
+      f2max = MAX( f2max, SPRODN( KRAFT,p,i,KRAFT,p,i) );
       KRAFT(p,i,X) -= tmp * d X(n);
       KRAFT(p,i,Y) -= tmp * d Y(n);
       KRAFT(p,i,Z) -= tmp * d Z(n);
-      f2 += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
     }
   }
 
@@ -287,14 +289,33 @@ void calc_forces_neb(void)
   src[0] = sqrt(dr2);
   src[1] = sqrt(f2);
   if (0==myrank) src[0] += sqrt(dl2);
-  MPI_Allreduce( src, dest, 2, REAL, MPI_SUM, MPI_COMM_WORLD);
+  src[2] = sqrt(d2 * f2max) / MAX(drlmax, 1e-3);
+  MPI_Allreduce( src, dest, 3, REAL, MPI_SUM, MPI_COMM_WORLD);
   neb_k = dest[1] / dest[0];
+  neb_k = MAX(10,neb_k);
+  /*
+  if ((fabs(neb_k - tmp) / neb_k) > 0.1) neb_k = tmp;
+  neb_k = MAX(20,neb_k);
+  */
+  /*
+  if (0==myrank)
+    printf("%d %e %e %e %e\n", nfc, sqrt(f2), fabs(dr2 - dl2), neb_k,
+           dest[2]/9 );
+  neb_k = dest[2]/9;
+  */
+  /*
+  if (0==myrank) printf("%e %e\n", sqrt(d2 * f2), fabs(dr2 - dl2) );
+  src[0] = sqrt(d2 * f2) / MAX( fabs(dr2 - dl2), 1e-6 );
+  MPI_Allreduce( src, dest, 1, REAL, MPI_SUM, MPI_COMM_WORLD);
+  neb_k = dest[0] / (neb_nrep - 2);
+  */
 
   /* project spring force onto parallel direction */
   cosphi = drl / sqrt(dl2 * dr2);
   if (cosphi > 0.0) fphi = 0.5 * (1.0 + cos(M_PI * cosphi));
   else fphi = 1.0;
   tmp   = (1 - fphi) * (dr2 - dl2) * neb_k / d2;
+  /* if (neb_nrep / 2 == myrank + 1) tmp = -tmp; */
   fphi *= neb_k;
   for (k=0; k<NCELLS; k++) {
     cell *p = CELLPTR(k);
@@ -324,7 +345,7 @@ void write_neb_eng_file(int steps)
     neb_eng_file = fopen(fname,"a");
     if (NULL == neb_eng_file) 
       error_str("Cannot open properties file %s", fname);
-    fprintf(neb_eng_file, "# nfc fnorm\n");
+    fprintf(neb_eng_file, "# nfc fnorm neb_k\n");
   }
 
   /* open .eng file if not yet open */
@@ -335,7 +356,7 @@ void write_neb_eng_file(int steps)
       error_str("Cannot open properties file %s.eng", outfilename);
   }
 
-  fprintf(neb_eng_file, "%d %e\n", nfc, neb_fnorm);
+  fprintf(neb_eng_file, "%d %e %e\n", nfc, neb_fnorm, neb_k);
 
   /* flush .eng file every flush_int writes */
   if (flush_count++ > flush_int) {

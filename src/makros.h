@@ -329,6 +329,9 @@ inline static real SQR(real x)
 /* Vectors */
 #define SPROD3D(a,b) (((a).x * (b).x) + ((a).y * (b).y) + ((a).z * (b).z))
 #define SPROD2D(a,b) (((a).x * (b).x) + ((a).y * (b).y))
+/* Ordinary Arrays */
+#define SPRODA3D(a,b) ( (a)[0]*(b)[0] + (a)[1]*(b)[1] + (a)[2]*(b)[2] )
+#define SPRODA2D(a,b) ( (a)[0]*(b)[0] + (a)[1]*(b)[1] )
 /* Arrays */
 #define SPRODN3D(a,p,i,b,q,j) \
   (a(p,i,X)*b(q,j,X) + a(p,i,Y)*b(q,j,Y) + a(p,i,Z)*b(q,j,Z))
@@ -339,10 +342,12 @@ inline static real SQR(real x)
                            
 #ifdef TWOD
 #define SPROD(a,b)           SPROD2D(a,b)
+#define SPRODA(a,b)      SPRODA2D(a,b)
 #define SPRODN(a,p,i,b,q,j)  SPRODN2D(a,p,i,b,q,j)
 #define SPRODX(a,p,i,v)      SPRODX2D(a,p,i,v)
 #else
 #define SPROD(a,b)           SPROD3D(a,b)
+#define SPRODA(a,b)      SPRODA3D(a,b)
 #define SPRODN(a,p,i,b,q,j)  SPRODN3D(a,p,i,b,q,j)
 #define SPRODX(a,p,i,v)      SPRODX3D(a,p,i,v)
 #endif

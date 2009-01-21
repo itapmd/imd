@@ -36,6 +36,7 @@ void set_affinity_mask();
 *
 ******************************************************************************/
 
+#ifndef NEB
 void init_mpi(void)
 {
   /* Initialize MPI */
@@ -70,7 +71,7 @@ void shutdown_mpi(void)
 #endif
   MPI_Finalize();                /* Shutdown */
 }
-
+#endif /* NEB */
 /******************************************************************************
 *
 * initialize I/O parameters
