@@ -893,6 +893,11 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
   if (tempintv>0) fprintf(out, "starttemp \t%f\n", temperature);
 #endif
 
+#ifdef BER
+  /* with Berendsen thermostat, write external temperature */
+  if (tauber>0) fprintf(out, "starttemp \t%f\n", temperature);
+#endif
+
 #ifdef FBC
   for(n=0; n<vtypes;n++)
 #ifdef TWOD

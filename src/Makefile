@@ -137,6 +137,7 @@ DEBUG_FLAGS	+= #-DDEBUG # -Wall # very noisy
 ###########################################################################
 
 
+
 # intel core 2 duo gcc
 ifeq (x86_64-c2_gcc,${IMDSYS})
   CC_SERIAL	= gcc
@@ -150,6 +151,22 @@ ifeq (x86_64-c2_gcc,${IMDSYS})
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
   LFLAGS        +=  -static
+  export        OMPI_MPICC MPICH_CC # MPICH_CLINKER
+endif
+
+ifeq (x86_64-c2_gcc4,${IMDSYS})
+  CC_SERIAL	= gcc
+  CC_MPI	= mpicc
+  MPICH_CC      = gcc
+#  MPICH_CLINKER = icc
+  OMPI_MPICC    = gcc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+#  OPT_FLAGS	+= -O -m64 -Wno-unused -march=core2   -mmmx -msse -ffast-math  -funroll-all-loops -fomit-frame-pointer
+  OPT_FLAGS	+= -E2 -O3 -m64 -march=core2  -mtune=core2  -funroll-all-loops -fomit-frame-pointer -ffast-math 
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -g3 -pg
+# static seems to have problems with the mpi implemenation?
+#  LFLAGS        +=  -static
   export        OMPI_MPICC MPICH_CC # MPICH_CLINKER
 endif
 
@@ -172,6 +189,8 @@ ifeq (x86_64-c2_icc,${IMDSYS})
   LFLAGS        += # -i-static
   export        OMPI_MPICC MPICH_CC MPICH_CLINKER
 endif
+
+
 
 # AMD Opteron or Intel EM46T, gcc3
 ifeq (x86_64-gcc3,${IMDSYS})
@@ -1183,6 +1202,10 @@ endif
 
 ifneq (,$(findstring and,${MAKETARGET}))
 PP_FLAGS += -DAND
+endif
+
+ifneq (,$(findstring ber,${MAKETARGET}))
+PP_FLAGS += -DBER
 endif
 
 ifneq (,$(findstring fbc,${MAKETARGET}))

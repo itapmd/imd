@@ -40,7 +40,20 @@ void move_atoms_nve(void)
 #ifdef DAMP
   real tmp1, tmp2, tmp3, f, maxax, maxax2;
 #endif
+#ifdef BER
+  real cc;
+#endif
+#ifdef BER /* reproduce Ju Li's implementation of the Berendsen Thermostat */
+     cc = 1. - timestep/ tauber * ( ( 2.0 * tot_kin_energy / nactive+8.6174101569719990e-06) / (temperature+8.6174101569719990e-06) - 1. );
+     /* this would be the standard formula */ 
+   //cc = 1.+timestep/tauber*((temperature+8.6174101569719990e-06)/(2.0*tot_kin_energy/nactive+8.6174101569719990e-06)- 1. );
 
+   
+      if (cc < 0.5) cc = 0.5;
+      else if (cc > 2) cc = 2;
+      cc=sqrt(cc);
+#endif
+      
   /* epitax may call this routine for other ensembles,
      in which case we do not reset tot_kin_energy */
   if ((ensemble==ENS_NVE) || (ensemble==ENS_GLOK)) tot_kin_energy = 0.0;
@@ -59,6 +72,10 @@ void move_atoms_nve(void)
   if (do_press_calc) calc_pxavg();
 #endif
 
+
+
+
+  
   /* loop over all cells */
 #ifdef _OPENMP
 #pragma omp parallel for reduction(+:tot_kin_energy,fnorm,omega_E,PxF,pnorm)
@@ -300,6 +317,17 @@ void move_atoms_nve(void)
       tot_kin_energy += (rot_energie_1 + rot_energie_2) / (4 * uniax_inert);
 #endif	  
 
+#ifdef BER
+      //  if(steps%16==0)
+      {
+          IMPULS(p,i,X) *= cc;
+          IMPULS(p,i,Y) *= cc;
+#ifndef TWOD
+          IMPULS(p,i,Z) *= cc;
+#endif
+      }
+#endif
+      
       /* new positions */
       tmp = timestep / MASSE(p,i);
       ORT(p,i,X) += tmp * IMPULS(p,i,X);

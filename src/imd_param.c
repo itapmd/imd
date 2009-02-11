@@ -1005,6 +1005,12 @@ int getparamfile(char *paramfname, int phase)
       getparam("tempintv",&tempintv,PARAM_INT,1,1);
     }
 #endif
+#ifdef BER
+    else if (strcasecmp(token,"tau_berendsen")==0) {
+      /* temperature interval */
+      getparam("tau_berendsen",&tauber,PARAM_REAL,1,1);
+    }
+#endif
 #if defined(NVT) || defined(NPT) || defined(STM)
     else if (strcasecmp(token,"eta")==0) {
       /* eta variable for NVT or NPT thermostat */
@@ -3206,6 +3212,9 @@ void broadcast_params() {
 
 #ifdef AND
   MPI_Bcast( &tempintv, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+#endif
+#ifdef BER
+  MPI_Bcast( &tauber, 1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 
 #if defined(NVT) || defined(NPT) || defined(STM)

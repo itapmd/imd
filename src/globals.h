@@ -386,6 +386,12 @@ EXTERN int tempintv INIT(0);        /* Interval in which the thermostat */
                                     /* kicks (in timesteps) */
 #endif
 
+#ifdef BER
+EXTERN real tauber INIT(0);           /* Relaxation constant Berendsen Thermo */
+                                     /* (in timesteps) */
+#endif
+
+
 #if defined(NVT) || defined(NPT) || defined(STM)
 EXTERN real eta INIT(0.0);          /* Nose-Hoover heat bath variable */
 EXTERN real tau_eta INIT(0.0);      /* Nose-Hoover heat bath relax. time */

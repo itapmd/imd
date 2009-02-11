@@ -61,8 +61,8 @@ int main_loop(int simulation)
 
   if (0==imdrestart) {
     /* initialize temperature, if necessary */
-    if (do_maxwell) maxwell(temperature);
-    do_maxwell=0;
+      if (do_maxwell) maxwell(temperature);
+      do_maxwell=0;
 #ifdef TTM
     /* let the electron system know about the new temperatures */
     update_fd();
