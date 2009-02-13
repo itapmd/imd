@@ -435,9 +435,9 @@ void alloc_cell(cell *p, int n)
   }
   else {
 #ifdef VEC
-    ncopy = ( (0==n) || (0==MAX(p->n,p->n_buf) ) ? -1 : MAX(p->n,p->n_buf);
+      ncopy = ( (0==n) || (0==MAX(p->n,p->n_buf) )) ? -1 : MAX(p->n,p->n_buf);
 #else
-    ncopy = ( (0==n) || (0==p->n)              ) ? -1 : p->n;
+      ncopy = ( (0==n) || (0==p->n)              ) ? -1 : p->n;
 #endif
   }
 
