@@ -458,11 +458,9 @@ void move_atoms_nve(void)
 
 #endif /* MPI */
 
-
 #if defined (GLOK) || defined (MIX)
   PxF /= (SQRT(fnorm) * SQRT(pnorm));
 #endif
-
 
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
@@ -873,7 +871,6 @@ void move_atoms_nvt(void)
 #ifdef UNIAX
   real reibung_rot,  eins_d_reib_rot;
 #endif
-
   fnorm   = 0.0;
   omega_E = 0.0;
 
@@ -958,18 +955,20 @@ void move_atoms_nvt(void)
 #ifndef TWOD
 	KRAFT(p,i,Z) += (fbc_forces + sort)->z;
 #endif
-
 #endif
-	KRAFT(p,i,X) *= (restrictions + sort)->x;
-	KRAFT(p,i,Y) *= (restrictions + sort)->y;
+
+      KRAFT(p,i,X) *= (restrictions + sort)->x;
+      KRAFT(p,i,Y) *= (restrictions + sort)->y;
 #ifndef TWOD
-	KRAFT(p,i,Z) *= (restrictions + sort)->z;
+      KRAFT(p,i,Z) *= (restrictions + sort)->z;
 #endif
 #ifdef FNORM
+
 	fnorm   += SPRODN(KRAFT,p,i,KRAFT,p,i);
         /* determine the biggest force component */
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
+
 #ifndef TWOD
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
 #endif
@@ -1095,7 +1094,7 @@ void move_atoms_nvt(void)
 #ifdef RELAXINFO
   x_max2 = tmp_x_max2;
 #endif
-#endif
+#endif /* MPI */
 
   /* time evolution of constraints */
   ttt  = nactive * temperature;

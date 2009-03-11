@@ -58,13 +58,19 @@ void setup_potentials( void )
 #ifdef LINPOT
   make_lin_pot_table(pair_pot, &pair_pot_lin);
 #endif
+  
 #endif
 
+
+  
 #ifdef TTBP
   /* read TTBP smoothing potential file */
   read_pot_table(&smooth_pot,ttbp_potfilename,ntypes*ntypes,1);
 #endif
 
+ 
+  
+  
 #ifdef EAM2
   /* read the tabulated embedding energy function */
   read_pot_table(&embed_pot,eam2_emb_E_filename,ntypes,0);
@@ -133,7 +139,7 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols, int radial )
 
     /* open file */
     infile = fopen(filename,"r");
-    if (NULL == infile) error_str("Could not open file %s\n",filename);
+    if (NULL == infile) error_str("Could not open potential file %s\n",filename);
 
     /* read the header */
     do {
@@ -1266,7 +1272,7 @@ void pair_int_coulomb(real *pot, real *grad, real r2)
   *grad = - (*pot + fac * exp( -SQR(ew_kappa)*r2 ) ) / r2; 
 }
 
-#endif DIPOLE
+#endif /*DIPOLE*/
 
 #if defined(DIPOLE) || defined(MORSE)
 /*****************************************************************************

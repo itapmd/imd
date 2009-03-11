@@ -928,6 +928,14 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
   }
 #endif /* NPT */
 
+#ifdef EXTPOT
+  /* write positions of external potential */
+  for (n=0; n<ep_n; ++n) {
+    fprintf(out,"ep_pos    %d %.21g %.21g %.21g \n",
+            n+1, ep_pos[n].x, ep_pos[n].y, ep_pos[n].z);
+  }
+#endif
+
   fclose(out);
 }
 

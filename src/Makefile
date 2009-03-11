@@ -765,6 +765,29 @@ endif
 
 ###########################################################################
 #
+#  flags for generic version of IMD (slow)
+#
+###########################################################################
+
+ifeq (generic-gcc,${IMDSYS})
+  CC_SERIAL     = gcc
+#  BIN_DIR       = ../Run
+  BIN_DIR       = ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS     += -O
+  DEBUG_FLAGS   += -g
+endif
+
+ifeq (generic-cc,${IMDSYS})
+  CC_SERIAL     = cc
+#  BIN_DIR       = ../Run
+  BIN_DIR       = ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS     += -O
+  DEBUG_FLAGS   += -g
+endif
+
+
+###########################################################################
+#
 #  Parallelization method
 #
 ###########################################################################
@@ -1026,7 +1049,7 @@ FORCESOURCES += ${COVALENTSOURCES}
 endif
 
 # TTBPXT
-ifneq (,$(strip $(findstring xt,${MAKETARGET})))
+ifneq (,$(strip $(findstring ttbpxt,${MAKETARGET})))
 PP_FLAGS  += -DTTBP -DXT
 FORCESOURCES += ${COVALENTSOURCES}
 endif
@@ -1400,6 +1423,12 @@ PP_FLAGS += -DPAPI ${PAPI_INC}
 LIBS   += ${PAPI_LIBS}
 endif
 
+# use external potential for indenters
+ifneq (,$(findstring extpot,${MAKETARGET}))
+CFLAGS += -DEXTPOT
+SOURCES += imd_extpot.c
+endif
+
 # directory for python modules
 ifeq (,${IMDPYDIR})
   PYDIR = ${HOME}/python/imd
@@ -1424,6 +1453,7 @@ endif
 ifneq (,$(findstring aff,${MAKETARGET}))
 PP_FLAGS += -DAFF
 endif
+
 
 # Substitute .o for .c to get the names of the object files
 OBJECTS := $(subst .c,.o,${SOURCES})

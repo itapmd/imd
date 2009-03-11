@@ -163,6 +163,11 @@ int     cpu_grid_coord(ivektor cellc);
 
 /* force computation - files imd_main_*.c, imd_forces_*.c */
 void calc_forces(int steps);
+#ifdef EXTPOT
+void init_extpot(void);
+void calc_extpot(void);
+void move_extpot(real factor);
+#endif
 void do_forces(cell*, cell*, vektor, real*, real*, real*, real*, real*, real*, real*, real*);
 #ifdef COVALENT
 void do_forces2(cell*, real*, real*, real*, real*, real*, real*, real*, real*);
@@ -299,6 +304,10 @@ void send_atoms(void);
 /* write properties - file imd_io_*.c */
 void write_eng_file(int steps);
 void write_eng_file_header(void);
+#ifdef EXTPOT
+void write_fext(int steps);
+void write_fext_header(void);
+#endif
 
 /* write configurations - files imd_io.c, imd_io_*.c */
 void read_box(str255);
@@ -381,10 +390,6 @@ void write_header_sqd(FILE *out);
 void write_config_sqd(int nr);
 #endif
 void reduce_displacement(vektor *d);
-#ifdef MPI
-void recv_cell(minicell *p, int from_cpu, int tag);
-void send_cell(minicell *p, int to_cpu, int tag);
-#endif
 
 #ifdef SOCKET_IO
 void init_socket(void);

@@ -79,6 +79,10 @@ int main_loop(int simulation)
   }
 #endif
 
+#ifdef EXTPOT
+  init_extpot();
+#endif  
+  
 #ifdef FBC
   init_fbc();
 #endif
@@ -150,6 +154,25 @@ int main_loop(int simulation)
     }
 #endif
 
+#ifdef EXTPOT
+    /* update extpot position if necessary */
+#ifdef RELAX
+    if ( ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) &&
+         (ep_max_int > 0) ) {
+        if ((is_relaxed) || (ep_int > ep_max_int)) {
+            write_fext(steps); /* update .ind file */
+            move_extpot(1.0);
+            ep_int = 0;
+            is_relaxed = 0;
+        }
+        ep_int++;
+    }
+    else 
+#endif
+    move_extpot(timestep);
+#endif /* EXTPOT */
+
+    
 #ifdef HOMDEF
     if ((lindef_int > 0) && (0 == steps % lindef_int)) 
 #ifdef TWOD
@@ -218,10 +241,15 @@ int main_loop(int simulation)
     if (ensemble == ENS_CG) acg_step(steps);
     else
 #endif
+        
     calc_forces(steps);
+
+#ifdef EXTPOT
+    calc_extpot();
+#endif
 #ifdef RIGID
     calc_superforces();
-#endif
+#endif    
 #ifdef NEB
     calc_forces_neb();
 #endif
@@ -337,7 +365,13 @@ int main_loop(int simulation)
     if ((eng_int  > 0) && (0 == steps % eng_int )) write_eng_file(steps);
     if ((dist_int > 0) && (0 == steps % dist_int)) write_distrib(steps);
     if ((pic_int  > 0) && (0 == steps % pic_int )) write_pictures(steps);
-
+#ifdef EXTPOT
+#ifdef RELAX
+    if ( ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) &&
+         (ep_max_int <= 0) )
+#endif
+    if ((eng_int > 0) && (0 == steps % eng_int )) write_fext(steps);
+#endif
 #ifdef TTM
     if ((ttm_int > 0) && (0 == steps % ttm_int)) ttm_writeout(steps/ttm_int);
 #endif
@@ -730,6 +764,9 @@ void check_relaxed(void)
 #endif
 #ifdef FBC
     if (have_fbc_incr) stop=0;
+#endif
+#ifdef EXTPOT
+    if (ep_max_int > 0) stop = 0;
 #endif
     if (stop) steps_max = steps;
   }

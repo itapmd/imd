@@ -148,6 +148,9 @@ int main(int argc, char **argv)
 
   /* write .eng file header */
   if ((imdrestart==0) && (eng_int>0)) write_eng_file_header();
+#ifdef EXTPOT
+  if ((imdrestart==0) && (eng_int>0)) write_fext_header();
+#endif
 
 
   imd_stop_timer(&time_setup);

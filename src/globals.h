@@ -252,6 +252,9 @@ EXTERN FILE  *eng_file INIT(NULL);      /* pointer to .eng file  */
 EXTERN FILE *msqd_file INIT(NULL);      /* pointer to .msqd file */
 EXTERN int flush_int INIT(50);          /* flush .eng and .msqd files
                                            every flush_int writes */
+#ifdef EXTPOT
+EXTERN FILE *ind_file INIT(NULL);       /* pointer to .ind file */
+#endif
 
 /* Parameters for pictures */
 EXTERN int pic_int INIT(0);                 /* Period for picture output */
@@ -403,6 +406,19 @@ EXTERN real eta_rot INIT(0.0);
 /* heat bath relaxation time for rotational motion: */
 EXTERN real isq_tau_eta_rot INIT(0.0);  
 #endif
+#endif
+#ifdef EXTPOT
+EXTERN int ep_key INIT(0);
+EXTERN int ep_n INIT(0);
+EXTERN int ep_nind INIT(1);
+EXTERN int ep_int INIT(0), ep_max_int INIT(0);
+EXTERN real ep_rcut INIT(0.0), ep_a INIT(0.0);
+EXTERN real ep_fext[10];
+EXTERN real ep_xmin[10], ep_xmax[10], ep_ymin[10], ep_ymax[10];
+EXTERN vektor ep_pos[10];
+EXTERN vektor ep_vel[10];
+EXTERN vektor ep_dir[10];
+EXTERN long nactive_vect[3];
 #endif
 
 /* virial tensor */

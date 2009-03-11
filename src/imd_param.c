@@ -244,6 +244,9 @@ int getparamfile(char *paramfname, int phase)
   str255 tmpstr;
   int tmp, finished = 0;
   real rtmp;
+#ifdef EXTPOT
+  real rtmp4[4];
+#endif
 
 #ifdef TWOD
   vektor3d tempforce;
@@ -2529,6 +2532,72 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       cellsz = MAX(cellsz,uniax_r2_cut);
     }
 #endif 
+
+#ifdef EXTPOT
+    else if (strcasecmp(token,"ep_n")==0) {
+      /* EXTPOT: number of external potentials */
+      getparam(token,&ep_n,PARAM_INT,1,1);
+      if (1 > ep_n) error("At least one extpot must be defined (ep_n < 1)");
+      for (i=0; i<ep_n; i++) {
+        ep_pos[i] = nullv;
+        ep_vel[i] = nullv;
+        ep_dir[i] = nullv;
+      }
+    }
+    else if (strcasecmp(token,"ep_nind")==0) {
+      /* EXTPOT: number of indentors (remaining extpots are walls) */
+        getparam(token,&ep_nind,PARAM_INT,1,1);
+        if (ep_nind > ep_n)
+        error("Number of indeters exceeds ep_n");
+    }
+    else if (strcasecmp(token,"ep_key")==0) {
+        /* EXTPOT:  potential key : which potential type to use*/
+      getparam(token,&ep_key,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"ep_a")==0) {
+      /* EXTPOT: strength of external potential */
+      getparam(token,&ep_a,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"ep_max_int")==0) {
+      /* EXTPOT: maximal wait steps during relaxation */
+      getparam(token,&ep_max_int,PARAM_INT,1,1);
+      if ((ep_max_int > 1) && (ep_max_int < 10)) ep_max_int = 10;
+    }
+    else if (strcasecmp(token,"ep_rcut")==0) {
+      /* EXTPOT: cutoff radius of external potential */
+      getparam(token,&ep_rcut,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"ep_pos")==0) {
+      /* EXTPOT: position of external potential */
+      getparam(token,&rtmp4,PARAM_REAL,4,4);
+      i = (int) rtmp4[0];
+      if (i >= ep_n) error("Number of external potential exceeds ep_n");
+      ep_pos[i].x = rtmp4[1];
+      ep_pos[i].y = rtmp4[2];
+      ep_pos[i].z = rtmp4[3];
+    }
+    else if (strcasecmp(token,"ep_vel")==0) {
+      /* EXTPOT: velocity of external potential */
+      getparam(token,&rtmp4,PARAM_REAL,4,4);
+      i = (int) rtmp4[0];
+      if (i >= ep_n) error("Number of external potential exceeds ep_n");
+      ep_vel[i].x = rtmp4[1];
+      ep_vel[i].y = rtmp4[2];
+      ep_vel[i].z = rtmp4[3];
+    }
+    else if (strcasecmp(token,"ep_dir")==0) {
+      /* EXTPOT: direction of external potential */
+      getparam(token,&rtmp4,PARAM_REAL,4,4);
+      i = (int) rtmp4[0];
+      if (i >= ep_n) error("Number of external potential exceeds ep_n");
+      rtmp = SQRT( SQR(rtmp4[1]) + SQR(rtmp4[2]) + SQR(rtmp4[3]) );
+      if (rtmp < 1e-6) error("parameter ep_dir requires non-zero direction");
+      ep_dir[i].x = rtmp4[1] / rtmp;
+      ep_dir[i].y = rtmp4[2] / rtmp;
+      ep_dir[i].z = rtmp4[3] / rtmp;
+      
+    }
+#endif /* EXTPOT */
 #ifdef CBE
     else if (strcasecmp(token,"num_spus")==0) {
       /* number of SPUs to be used */
@@ -2554,9 +2623,10 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       getparam(token,&cbe_pot_max,PARAM_REAL,1,1);
     }
 #endif
+
     else if (strcasecmp(token,"use_header")==0) {
-	/* shall a header be used */
-      getparam("use_header",&use_header,PARAM_INT,1,1);
+      /* shall a header be used */
+        getparam("use_header",&use_header,PARAM_INT,1,1);
     }
     else {
       char msg[255];
@@ -3650,6 +3720,18 @@ void broadcast_params() {
   MPI_Bcast( &epitax_ctrl,         1, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &epitax_height,       1, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &epitax_speed,        1, REAL, 0, MPI_COMM_WORLD);
+#endif
+
+#ifdef EXTPOT
+  MPI_Bcast( &ep_n,               1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &ep_key,               1,    MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &ep_nind,           1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &ep_max_int,         1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ep_pos,         3*ep_n,    REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ep_vel,         3*ep_n,    REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ep_dir,         3*ep_n,    REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &ep_a,               1,    REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &ep_rcut,            1,    REAL, 0, MPI_COMM_WORLD);
 #endif
   
 #ifdef CBE
