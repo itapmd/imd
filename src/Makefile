@@ -162,7 +162,8 @@ ifeq (x86_64-c2_gcc4,${IMDSYS})
   OMPI_MPICC    = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
 #  OPT_FLAGS	+= -O -m64 -Wno-unused -march=core2   -mmmx -msse -ffast-math  -funroll-all-loops -fomit-frame-pointer
-  OPT_FLAGS	+= -E2 -O3 -m64 -march=core2  -mtune=core2  -funroll-all-loops -fomit-frame-pointer -ffast-math 
+#  OPT_FLAGS	+= -O3 -m64 -march=core2  -mtune=core2  -funroll-all-loops -fomit-frame-pointer -ffast-math 
+ OPT_FLAGS	+= -O -m64 -march=core2  -mtune=core2  -funroll-all-loops -fomit-frame-pointer -ffast-math 
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
 # static seems to have problems with the mpi implemenation?

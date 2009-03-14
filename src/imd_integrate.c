@@ -50,7 +50,7 @@ void move_atoms_nve(void)
 
    
       if (cc < 0.5) cc = 0.5;
-      else if (cc > 2) cc = 2;
+      else if (cc > 2.0) cc = 2.0;
       cc=sqrt(cc);
 #endif
       

@@ -2145,7 +2145,18 @@ void write_fext(int steps)
 
   /* add up results from different CPUs */
 #ifdef MPI
-  MPI_Allreduce( &ep_fext, &tmpvec, ep_n, REAL, MPI_SUM, cpugrid);
+  /* MPI_Allreduce( &ep_fext, &tmpvec, ep_n, REAL, MPI_SUM, cpugrid); */
+  /* for (i=0; i<ep_n; i++) ep_fext[i] = tmpvec[i]; */
+  /* MPI_Allreduce( &ep_xmax, &tmpvec, ep_nind, REAL, MPI_MAX, cpugrid); */
+  /* for (i=0; i<ep_nind; i++) ep_xmax[i] = tmpvec[i]; */
+  /* MPI_Allreduce( &ep_ymax, &tmpvec, ep_nind, REAL, MPI_MAX, cpugrid); */
+  /* for (i=0; i<ep_nind; i++) ep_ymax[i] = tmpvec[i]; */
+  /* MPI_Allreduce( &ep_xmin, &tmpvec, ep_nind, REAL, MPI_MIN, cpugrid); */
+  /* for (i=0; i<ep_nind; i++) ep_xmin[i] = tmpvec[i]; */
+  /* MPI_Allreduce( &ep_ymin, &tmpvec, ep_nind, REAL, MPI_MIN, cpugrid); */
+  /* for (i=0; i<ep_nind; i++) ep_ymin[i] = tmpvec[i]; */
+
+  MPI_Allreduce( ep_fext, tmpvec, ep_n, REAL, MPI_SUM, cpugrid);
   for (i=0; i<ep_n; i++) ep_fext[i] = tmpvec[i];
   MPI_Allreduce( &ep_xmax, &tmpvec, ep_nind, REAL, MPI_MAX, cpugrid);
   for (i=0; i<ep_nind; i++) ep_xmax[i] = tmpvec[i];
@@ -2155,6 +2166,8 @@ void write_fext(int steps)
   for (i=0; i<ep_nind; i++) ep_xmin[i] = tmpvec[i];
   MPI_Allreduce( &ep_ymin, &tmpvec, ep_nind, REAL, MPI_MIN, cpugrid);
   for (i=0; i<ep_nind; i++) ep_ymin[i] = tmpvec[i];
+
+  
 #endif
   for (i=0; i<ep_nind; i++) {
     if (ep_xmin[i] > 1.e6) ep_xmin[i] = 0.;

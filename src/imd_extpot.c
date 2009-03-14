@@ -33,7 +33,7 @@
 void calc_extpot(void)
 {
   int k, i, n;
-  real tmpvec1[3], tmpvec2[3];
+  real tmpvec1[4], tmpvec2[4];
   
   for (k=0; k<ep_n; k++) {
     ep_fext[k] = 0.0;
@@ -108,9 +108,9 @@ void calc_extpot(void)
                   if (n<ep_nind) {
                       vektor d;
                       real   dn;
-                      d.x = ep_pos[n].x - ORT(p,i,X); 
-                      d.y = ep_pos[n].y - ORT(p,i,Y); 
-                      d.z = ep_pos[n].z - ORT(p,i,Z); 
+                      d.x =   ORT(p,i,X)-ep_pos[n].x; 
+                      d.y =   ORT(p,i,Y)-ep_pos[n].y; 
+                      d.z =   ORT(p,i,Z)-ep_pos[n].z; 
                       dn  = SPROD(d,ep_dir[n]);
                       dd  = SPROD(d,d);
 
@@ -124,6 +124,8 @@ void calc_extpot(void)
                           
                           ddn= sqrt(dd);
                           cc = (ep_rcut - ddn)/ep_a;
+                          if (cc > UPPER_EXP) cc = UPPER_EXP;
+                          if (cc < LOWER_EXP) cc = LOWER_EXP;
                           ee = exp(cc - 1.0/cc);
 
                           tot_pot_energy += ee;
@@ -139,7 +141,7 @@ void calc_extpot(void)
                           totaddforce.y += ee * d.y;
                           totaddforce.z += ee * d.z; 
                           
-                          ep_fext[n]   -= ee * ABS(dn); /* normal force on indentor */
+                          ep_fext[n]   += ee * ABS(dn); /* normal force on indentor */
                           
                       }
 
@@ -153,7 +155,9 @@ void calc_extpot(void)
       tmpvec1[0] =  totaddforce.x ;
       tmpvec1[1] =  totaddforce.y ;
       tmpvec1[2] =  totaddforce.z ;
-      MPI_Allreduce( tmpvec1, tmpvec2, 3,REAL, MPI_SUM, cpugrid);
+      //    printf("before totaddforcereduce allreduce\n");fflush(stdout);
+      MPI_Allreduce( tmpvec1, tmpvec2, 4, REAL, MPI_SUM, cpugrid);
+      // printf("after totaddforce allreduce\n");fflush(stdout);
       totaddforce.x = tmpvec2[0];
       totaddforce.y = tmpvec2[1];
       totaddforce.z = tmpvec2[2];      
@@ -163,6 +167,7 @@ void calc_extpot(void)
       totaddforce.x *= 1.0/nactive_vect[0];
       totaddforce.y *= 1.0/nactive_vect[1];
       totaddforce.z *= 1.0/nactive_vect[2];
+      
       
        for (k=0; k<NCELLS; ++k) {
           cell *p = CELLPTR(k);
@@ -226,36 +231,40 @@ void init_extpot(void)
             printf("EXTPOT: ep_dir #%d   %.10g %.10g %.10g \n",
                    i, ep_dir[i].x, ep_dir[i].y, ep_dir[i].z);
         }
-        /* needed if the indenter impulse should be balanced */
-        /* might not work with 2D, epitax, clone, superatom  */
-        if(ep_key==1){
-            for (k=0; k<NCELLS; ++k) {
-                cell *p = CELLPTR(k);
-                for (i=0; i<p->n; ++i) {
-                    sort = VSORTE(p,i);
-                    nactive_vect[0] += (restrictions + sort)->x;
-                    nactive_vect[1] += (restrictions + sort)->y;
-                    nactive_vect[2] += (restrictions + sort)->z;
-                }
+    }
+    /* needed if the indenter impulse should be balanced */
+    /* might not work with 2D, epitax, clone, superatom  */
+    if(ep_key==1){
+        for (k=0; k<NCELLS; ++k) {
+            cell *p = CELLPTR(k);
+            for (i=0; i<p->n; ++i) {
+                sort = VSORTE(p,i);
+                nactive_vect[0] += (restrictions + sort)->x;
+                nactive_vect[1] += (restrictions + sort)->y;
+                nactive_vect[2] += (restrictions + sort)->z;
             }
+        }
 #ifdef MPI
-            tmpvec1[0] =  nactive_vect[0] ;
-            tmpvec1[1] =  nactive_vect[1] ;
-            tmpvec1[2] =  nactive_vect[2] ;
-            MPI_Allreduce( tmpvec1, tmpvec2, 3, MPI_LONG, MPI_SUM, cpugrid);
-            nactive_vect[0] = tmpvec2[0];
-            nactive_vect[1] = tmpvec2[1];
-            nactive_vect[2] = tmpvec2[2];      
+        tmpvec1[0] =  nactive_vect[0] ;
+        tmpvec1[1] =  nactive_vect[1] ;
+        tmpvec1[2] =  nactive_vect[2] ;
+        MPI_Allreduce( tmpvec1, tmpvec2, 3, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
+        nactive_vect[0] = tmpvec2[0];
+        nactive_vect[1] = tmpvec2[1];
+        nactive_vect[2] = tmpvec2[2];
 #endif
+        if (0==myid)
+        {
             if (nactive_vect[0] == 0 ||  nactive_vect[1] == 0 || nactive_vect[2] == 0)
                 error ("ep_key=1 requires atoms free to move in all directions\n");
+            printf("EXTPOT: active degrees of freedom: x %d y %d z %d\n",nactive_vect[0],nactive_vect[1],nactive_vect[2]);
         }
 #ifdef RELAX
         printf( "EXTPOT: max number of relaxation steps = %d\n", ep_max_int);
         printf( "EXTPOT: ekin_threshold = %f\n", glok_ekin_threshold);
         printf( "EXTPOT: fnorm_threshold = %f\n", fnorm_threshold);
 #endif
-
+        
         
     }
 }
