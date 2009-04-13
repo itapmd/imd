@@ -3284,7 +3284,7 @@ void broadcast_params() {
   MPI_Bcast( &tempintv, 1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 #ifdef BER
-  MPI_Bcast( &tauber, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &tauber, 1, REAL, 0, MPI_COMM_WORLD); 
 #endif
 
 #if defined(NVT) || defined(NPT) || defined(STM)
