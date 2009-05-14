@@ -244,3 +244,21 @@ void deform_sample(void)
 
 #endif /* DEFORM */
 
+#ifdef CYCLE
+void init_cycle(void)
+{
+    int i, n;
+    double T,A,a;
+    if (0==myid)
+    {
+        T=1.0/lindef_freq;
+        printf("CYCLE: cyclic deformation with frequency f = %f -> T = 1/f = %f\n",lindef_freq,T);
+        printf("CYCLE: desired strain amplitude: %f\n",lindef_size);
+        n = (int) (T/4/timestep);
+        printf("CYCLE: -> timesteps till max. strain:  %d\n",n);
+        if (n*timestep*4.0 != T)
+            error("CYCLE: 1/(4*lindef_freq) is not an integer value.");
+     
+    }
+}
+#endif

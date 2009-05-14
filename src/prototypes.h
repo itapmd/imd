@@ -584,6 +584,10 @@ void laser_rescale_ttm(void);
 #endif /*TTM*/
 #endif /*LASER*/
 
+#ifdef CYCLE
+void init_cycle(void);
+#endif 
+
 #ifdef TTM
 /* Two temperature model TTM - file imd_ttm.c */
 void init_ttm(void);

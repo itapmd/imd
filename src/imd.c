@@ -171,6 +171,10 @@ int main(int argc, char **argv)
   init_laser(); 
 #endif
 
+#ifdef CYCLE
+  init_cycle();
+#endif
+  
 #ifdef TTM
   init_ttm();
 #endif

@@ -471,7 +471,9 @@ EXTERN vektor *deform_shear;            /* shear for each vtype */
 EXTERN vektor *deform_base;             /* base point for shear deformation */
 EXTERN int    *shear_def;               /* shear flag for each vtype */
 #endif
-
+#ifdef CYCLE
+EXTERN real   lindef_freq INIT(0.0);      /* frequency for deformation */
+#endif
 #ifdef HOMDEF
 EXTERN int    lindef_int INIT(0);         /* period of linear deform. steps */
 EXTERN real   lindef_size INIT(1.0);      /* scale factor of deformation */

@@ -1304,6 +1304,11 @@ SOURCES += ${DEFORMSOURCES}
 endif
 endif
 
+ifneq (,$(findstring cycle,${MAKETARGET}))
+PP_FLAGS += -DCYCLE
+PP_FLAGS += -DHOMDEF
+SOURCES += ${DEFORMSOURCES}
+endif
 ifneq (,$(findstring homdef,${MAKETARGET}))
 PP_FLAGS += -DHOMDEF
 SOURCES += ${DEFORMSOURCES}

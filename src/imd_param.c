@@ -409,10 +409,13 @@ int getparamfile(char *paramfname, int phase)
       else if (strcasecmp(tmpstr,"stm")==0) {
         ensemble = ENS_STM;
         move_atoms = move_atoms_stm;
-      } 
+      }
+#ifdef CG
       else if (strcasecmp(tmpstr,"cg")==0) {
         ensemble = ENS_CG;
+        move_atoms = move_atoms_cg;
       }
+#endif
       else if (strcasecmp(tmpstr,"ttm")==0) {
         ensemble = ENS_TTM;
 	move_atoms = move_atoms_ttm;
@@ -1231,13 +1234,20 @@ int getparamfile(char *paramfname, int phase)
     }
 #endif
 #endif
+#ifdef CYCLE
+       else if (strcasecmp(token,"lindef_freq")==0) { 
+           /* frequency for deformation */
+      getparam(token,&lindef_freq,PARAM_REAL,1,1);
+    }
+#endif
 #ifdef HOMDEF
     else if (strcasecmp(token,"lindef_interval")==0) {
       /* period of linear deformation intervals */
       getparam(token,&lindef_int,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"lindef_size")==0) { 
-      /* scale factor for deformation */
+        /* scale factor for deformation */
+        /* in case of CYCLE this is the strain amplitude */
       getparam(token,&lindef_size,PARAM_REAL,1,1);
     }
     else if (strcasecmp(token,"lindef_x")==0) {
@@ -3506,7 +3516,9 @@ void broadcast_params() {
   }
   MPI_Bcast( deform_base, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
 #endif
-
+#ifdef CYCLE
+   MPI_Bcast( &lindef_freq,     1, REAL,    0, MPI_COMM_WORLD); 
+#endif
 #ifdef HOMDEF
   MPI_Bcast( &lindef_size,     1, REAL,    0, MPI_COMM_WORLD); 
   MPI_Bcast( &lindef_int     , 1, MPI_INT, 0, MPI_COMM_WORLD); 

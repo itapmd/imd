@@ -35,6 +35,7 @@ int main_loop(int simulation)
   int  deform_int = 0, do_fbc_incr = 0;
   int  have_fbc_incr = 0;
   real dtemp, dshock_speed;
+  real ri;
   vektor d_pressure, *fbc_df;
   real tmpvec1[DIM], tmpvec2[DIM];
   char tmp_str[9];
@@ -172,7 +173,20 @@ int main_loop(int simulation)
     move_extpot(timestep);
 #endif /* EXTPOT */
 
-    
+#if defined(HOMDEF) && defined(CYCLE)
+    if ((lindef_int > 0) && (0 == steps % lindef_int))
+    {
+        ri =( (lindef_size -1.0) * sin(2.0*3.141592653589793238*lindef_freq*timestep*(steps+1))+1.0 ) /
+            ( (lindef_size -1.0) * sin(2.0*3.141592653589793238*lindef_freq*timestep*steps)+1.0 ) - 1.0 ;
+        //     printf(" ri = %f box_x= %f\n",ri,box_x.x*(ri+1.0)); fflush(stdout);
+#ifdef TWOD
+    lin_deform(lindef_x, lindef_y,       ri);
+#else
+    lin_deform(lindef_x, lindef_y, lindef_z, ri);
+#endif
+    }
+#else
+ 
 #ifdef HOMDEF
     if ((lindef_int > 0) && (0 == steps % lindef_int)) 
 #ifdef TWOD
@@ -181,7 +195,9 @@ int main_loop(int simulation)
       lin_deform(lindef_x, lindef_y, lindef_z, lindef_size);
 #endif
 #endif
+#endif
 
+      
 #ifdef DEFORM
     if (max_deform_int > 0) {
 #ifdef RELAX
