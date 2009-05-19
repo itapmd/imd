@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2009 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -624,7 +624,7 @@ void init_meam(void) {
       else
 	  invmeam_r0[i] = 1.0 / meam_r0[i];
       
-      if (meam_r0[i]==0.0)
+      if (meam_rh0[i]==0.0)
 	  error("meam_rho0 is zero!");
       else
 	  invmeam_rho0[i] = 1.0 / meam_rho0[i];
