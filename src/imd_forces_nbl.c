@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2009 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -663,7 +663,7 @@ void calc_forces(int steps)
 	  }
 
 	  /* calculate short-range dipoles field */
-	  /* short-range fn.: 3rd column */
+	  /* short-range fn.: 3rd column ff. */
 	  if (dp_p_calc) {
 	    col=(it <= jt) ?
 	      it * ntypes + jt - ((it * (it + 1))/2)
@@ -798,7 +798,7 @@ void calc_forces(int steps)
     }
 #endif /* DIPOLE */
   }
-  if (is_short) printf("short distance!\n");
+  if (is_short) fprintf(stderr,"Short distance, pair, step %d!\n",steps);
 
 #ifdef EWALD
   if (steps==0) {
@@ -1129,7 +1129,7 @@ void calc_forces(int steps)
       n++;
     }
   }
-  if (is_short) fprintf(stderr, "\n Short distance!\n");
+  if (is_short) fprintf(stderr, "\n Short distance, EAM, step %d!\n",steps);
 
 #endif /* EAM2 */
 
@@ -1303,7 +1303,9 @@ void calc_forces(int steps)
       printf("#dipole deviation at step %d: %g\n",steps,dp_sum);
 #endif /*DEBUG */
       if ((dp_sum > max_diff) || ( dp_it>50)) { 
-	printf("CONVERGENCE ERROR - try again later\n");
+	fprintf(stderr, "\n Convergence Error, dipole, step %d: ", \
+			steps);
+	fprintf(stderr,"dp_sum = %g, dp_it=%d \n",dp_sum,dp_it);
 	n=0;
 	for (k=0; k<ncells; k++) {
 	  cell *p = CELLPTR(k);
@@ -1401,7 +1403,7 @@ void calc_forces(int steps)
 	    
 	    val  *= ew_eps;
 	    dval *= ew_eps;
-	    /* short-range function is 3rd in dipole_table */
+	    /* short-range function is no. 3 in dipole_table */
 	    col1=(it <= jt) ?
 	      it * ntypes + jt - ((it * (it + 1))/2)
 	      :jt * ntypes + it - ((jt * (jt + 1))/2);
@@ -1415,11 +1417,13 @@ void calc_forces(int steps)
 	      force.x += charge[jt] * (dval * pdotd * d.x + val * pi.x);
 	      force.y += charge[jt] * (dval * pdotd * d.y + val * pi.y);
 	      force.z += charge[jt] * (dval * pdotd * d.z + val * pi.z);
+	      
 	      /* short range interaction */
 	      pot += charge[jt]*pdotd*valsr;
 	      force.x += charge[jt] * (dvalsr*pdotd *d.x +valsr*pi.x);
 	      force.y += charge[jt] * (dvalsr*pdotd *d.y +valsr*pi.y);
 	      force.z += charge[jt] * (dvalsr*pdotd *d.z +valsr*pi.z);
+
 	      have_force=1;
 	    }
 
@@ -1547,7 +1551,8 @@ void calc_forces(int steps)
     p->dp_E_ind = dp_E_shift;
     
   }
-  if (is_short) fprintf(stderr, "\n Short distance!\n");
+  if (is_short) fprintf(stderr, "\n Short distance, dipole, step %d!\n",\
+			steps);
   dp_E_calc++; 			/* increase field calc counter */
 #endif /* DIPOLE */
 

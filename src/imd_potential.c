@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2009 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -157,8 +157,9 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols, int radial )
           if (2!=sscanf( (const char*)(buffer+2), "%d%d", &format, &size ))
             error_str("Corrupted format header line in file %s",filename);
           /* right number of columns? */
-          if (size!=ncols) 
-            error_str("Wrong number of data columns in file %s",filename);
+          if (size!=ncols) {
+	    sprintf(msg,"Wrong number of data columns in file %%s\nShould be %d, is %d",ncols,size);
+            error_str(msg,filename);}
           /* recognized format? */
           if ((format!=1) && (format!=2)) 
             error_str("Unrecognized format specified for file %s",filename);
@@ -842,7 +843,7 @@ void create_dipole_tables()
   
   pt=&dipole_table;
   
-  pt->ncols    = ncols;			/* three columns */
+  pt->ncols    = ncols;			/* 2+ntypepairs columns */
   pt->maxsteps = dp_res;
   tablesize    = ncols * (pt->maxsteps+2);
   pt->begin    = (real *) malloc(ncols*sizeof(real));
@@ -1278,24 +1279,37 @@ void pair_int_coulomb(real *pot, real *grad, real r2)
 /*****************************************************************************
 *
 *  Evaluate Morse-Stretch potential for DIPOLE
-*
+*  (+ repulsive core)
 ******************************************************************************/
 
 void pair_int_mstr(real *pot, real *grad, int p_typ, int q_typ, real r2)
 {
-  real rred,fac,tpot,tgrad,r;
+  real rred,fac,tpot,tgrad,r,r6,r12;
   int col;
+  sig_d_rad2  = lj_sigma[p_typ][q_typ] * lj_sigma[p_typ][q_typ] / r2;
+  sig_d_rad6  = sig_d_rad2 * sig_d_rad2 * sig_d_rad2;
+  sig_d_rad12 = sig_d_rad6 * sig_d_rad6;
+
+  *pot = lj_epsilon[p_typ][q_typ] * ( sig_d_rad12 - 2.0 * sig_d_rad6 );
+  /* return (1/r)*dV/dr as derivative */
+  *grad = -12.0 * lj_epsilon[p_typ][q_typ] / r2 
+    * ( sig_d_rad12 - sig_d_rad6 );  
+
   col=(p_typ<q_typ) ? p_typ*ntypes - (p_typ*(p_typ+1))/2 + q_typ
     : q_typ*ntypes - (q_typ*(q_typ+1))/2 + p_typ;
   r     = SQRT(r2);
+  s_r2   = ms_sigma[col] * ms_sigma[col] / r2;
+  s_r6   = s_r2 * s_r2 * s_r2;
+  s_r12  = s_r6 * s_r6 
   rred  = 1.-r/ms_r0[col];
   fac   = tpot =exp(ms_gamma[col]*rred);
   tgrad = -fac;
   fac   = exp(0.5*ms_gamma[col]*rred);
   tpot -= 2.*fac;
   tgrad+= fac;
-  *pot  = tpot*ms_D[col];
-  *grad = tgrad*ms_D[col]*ms_gamma[col]/(r*ms_r0[col]);
+  *pot  = tpot*ms_D[col] + ms_epsilon[col] * s_r12;
+  *grad = tgrad*ms_D[col]*ms_gamma[col]/(r*ms_r0[col]) 
+    - 12.0 * ms_epsilon[col]/r2 * s_r12;
 }
 
 
