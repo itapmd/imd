@@ -123,6 +123,7 @@ void lin_deform(vektor dx, vektor dy, vektor dz, real scale)
 
 void relax_pressure()
 {
+    real Epot, Temp, vol;
 #ifdef TWOD
   vektor dx = {0.0, 0.0}, dy = {0.0, 0.0};
 #else
@@ -168,7 +169,25 @@ void relax_pressure()
   }
 
 #else  /* not STRESS_TENS */
-
+  if (ensemble == ENS_CG) {
+      Temp = 0.0;
+  } else {
+#ifdef UNIAX
+      Temp = 2.0 * tot_kin_energy / (nactive + nactive_rot);
+#elif defined(DAMP)
+      Temp = 2.0 * tot_kin_energy / (nactive - n_damp);
+#else
+      Temp = 2.0 * tot_kin_energy / nactive;
+#endif
+  }
+  
+#ifdef STM 
+  Temp     = 2.0 * tot_kin_energy / (nactive - n_stadium);
+#endif 
+  
+  vol = volume / natoms;
+  pressure = Temp / vol + virial / (DIM * volume);
+  
   /* here, we support only relaxation to scalar pressure zero */
   dx.x = pressure / bulk_module ;
   dy.y = pressure / bulk_module ;
@@ -185,6 +204,7 @@ void relax_pressure()
     dz.z *= relax_dirs.z;
 #endif
   }
+  
 #ifdef TWOD
   lin_deform(dx, dy,     relax_rate);
 #else
