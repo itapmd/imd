@@ -2543,6 +2543,13 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     }
 #endif 
 
+#ifdef RELAX
+    else if (strcasecmp(token,"max_sscount")==0) {
+      /* max nr. of minimizations in quasistat sims */
+        getparam(token,&max_sscount,PARAM_INT,1,1);
+    }
+#endif
+    
 #ifdef EXTPOT
     else if (strcasecmp(token,"ep_n")==0) {
       /* EXTPOT: number of external potentials */
@@ -3734,6 +3741,9 @@ void broadcast_params() {
   MPI_Bcast( &epitax_speed,        1, REAL, 0, MPI_COMM_WORLD);
 #endif
 
+#ifdef RELAX
+  MPI_Bcast( &max_sscount,         1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
 #ifdef EXTPOT
   MPI_Bcast( &ep_n,               1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ep_key,               1,    MPI_INT, 0, MPI_COMM_WORLD);

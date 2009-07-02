@@ -111,7 +111,10 @@ int main_loop(int simulation)
 #ifdef DEFORM
   deform_int = 0; 
 #endif
-
+#if defined(HOMDEF) && defined(RELAX)
+    deform_int = 0; 
+#endif
+  
   /* simulation loop */
   for (steps=steps_min; steps <= steps_max; ++steps) {
 
@@ -161,7 +164,9 @@ int main_loop(int simulation)
     if ( ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) &&
          (ep_max_int > 0) ) {
         if ((is_relaxed) || (ep_int > ep_max_int)) {
-            write_fext(steps); /* update .ind file */
+            write_ssdef(steps);    /* write info for quasistat simulations */
+            write_fext(steps);     /* update .ind file */
+            write_ssconfig(steps); /* write config, even when not fully relaxed */
             move_extpot(1.0);
             ep_int = 0;
             is_relaxed = 0;
@@ -185,27 +190,60 @@ int main_loop(int simulation)
     lin_deform(lindef_x, lindef_y, lindef_z, ri);
 #endif
     }
+#endif
+    
+#if defined(HOMDEF) && defined(RELAX)
+    if ( (ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG) )
+    {
+        if(lindef_int >0)
+        {
+            //lindef_int now plays the role of  max_deform_int
+            // have to find something which plays the fole of deformint
+            if ((is_relaxed) ||  (0 == deform_int % lindef_int))
+            {
+           
+                write_ssdef(steps);
+                write_ssconfig(steps); /* write config, even when not fully relaxed */
+#ifdef TWOD
+               lin_deform(lindef_x, lindef_y,           lindef_size);
 #else
- 
-#ifdef HOMDEF
+               lin_deform(lindef_x, lindef_y, lindef_z, lindef_size);
+#endif
+               deform_int=0;
+               //   printf("DEFORMING SAMPLE\n\n");fflush(stdout);
+           }
+            deform_int++;
+        }
+    }
+#endif
+    
+#if defined(HOMDEF) && !defined(RELAX)
     if ((lindef_int > 0) && (0 == steps % lindef_int)) 
 #ifdef TWOD
       lin_deform(lindef_x, lindef_y,           lindef_size);
 #else
       lin_deform(lindef_x, lindef_y, lindef_z, lindef_size);
 #endif
-#endif
+
 #endif
 
+
+      
+
+      
       
 #ifdef DEFORM
     if (max_deform_int > 0) {
 #ifdef RELAX
       if ((is_relaxed) || (deform_int == max_deform_int))
+      {
+          write_ssdef(steps);
+          write_ssconfig(steps); /* write config, even when not fully relaxed */
 #else
       if (deform_int == max_deform_int)
-#endif
       {
+#endif
+      
         deform_sample();
         deform_int=0;
 #ifdef CG
@@ -496,6 +534,20 @@ int main_loop(int simulation)
       if ((finished = check_stop())) break;
     }
 
+      /* finish, if max deformation steps in quasistatic simulation are done */
+#ifdef RELAX
+#if defined (DEFORM) || defined (HOMDEF) || defined (EXTPOT) || defined (FBC)
+    if ( (ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG) ) {
+        if ( (max_sscount>0) && (sscount>max_sscount) ) {
+                 finished = 1 ;
+                 break;
+            }
+    }
+#endif
+#endif
+    
+
+    
     /* finish, if maxwalltime is reached */
     if (maxwalltime > 0) {
       if ((finished = check_walltime())) break;
@@ -695,10 +747,12 @@ void update_fbc()
 #ifdef RELAX
   /* set fbc increment if necessary */
   if ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) {
-    if ((is_relaxed) || (fbc_int > max_fbc_int)) { 
-      for (l=0; l<vtypes; l++) fbc_df[l] = fbc_dforces[l];
-      fbc_int = 0;
-      do_fbc_incr = 1;
+    if ((is_relaxed) || (fbc_int > max_fbc_int)) {
+        write_ssdef(steps);
+        write_ssconfig(steps); /* write config, even when not fully relaxed */
+        for (l=0; l<vtypes; l++) fbc_df[l] = fbc_dforces[l];
+        fbc_int = 0;
+        do_fbc_incr = 1;
     }
     else {
       for (l=0; l<vtypes; l++) *(fbc_df+l) = nullv;
@@ -735,48 +789,70 @@ void update_fbc()
 
 void check_relaxed(void)
 {
-  is_relaxed = 0;
+    int write_ss=1;
+    is_relaxed = 0;
 
-  if ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) {
-
-    int stop = 0;
-    real fnorm2, ekin, epot, delta_epot;
+    if ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) {
+        
+        int stop = 0;
+        real fnorm2, ekin, epot, delta_epot;
 #ifdef NEB
-    MPI_Allreduce( &fnorm, &neb_fnorm, 1, REAL, MPI_SUM, MPI_COMM_WORLD);
-    neb_fnorm = SQRT( neb_fnorm / (nactive * (neb_nrep-2)) );
-    if (neb_fnorm < fnorm_threshold) is_relaxed = 1;
-    else is_relaxed = 0;
+        MPI_Allreduce( &fnorm, &neb_fnorm, 1, REAL, MPI_SUM, MPI_COMM_WORLD);
+        neb_fnorm = SQRT( neb_fnorm / (nactive * (neb_nrep-2)) );
+        if (neb_fnorm < fnorm_threshold) is_relaxed = 1;
+        else is_relaxed = 0;
 #else
-    fnorm2 = SQRT( fnorm / nactive );
-    ekin   = 2 * tot_kin_energy / nactive;
-    epot   = tot_pot_energy / natoms;
-    delta_epot = old_epot - epot;
-    if (delta_epot < 0) delta_epot = -delta_epot;
-
-    if ((ekin  <  ekin_threshold) || (fnorm2 < fnorm_threshold) || 
-        (delta_epot < delta_epot_threshold)) is_relaxed = 1;
-    else is_relaxed = 0;
-
-    old_epot = epot;
+        fnorm2 = SQRT( fnorm / nactive );
+        ekin   = 2 * tot_kin_energy / nactive;
+        epot   = tot_pot_energy / natoms;
+        delta_epot = old_epot - epot;
+        if (delta_epot < 0) delta_epot = -delta_epot;
+        
+        if ((ekin  <  ekin_threshold) || (fnorm2 < fnorm_threshold) || 
+            (delta_epot < delta_epot_threshold)) is_relaxed = 1;
+        else is_relaxed = 0;
+        
+        old_epot = epot;
 #endif
 
-    if (is_relaxed) {
-      stop = 1;
-      write_eng_file(steps);
-      write_ssconfig(steps);
-#ifdef NEB
-      if (0==myrank) write_neb_eng_file(steps);
-#else
-      if (0==myid) {
-        printf("nfc = %d epot = %22.16f\n", nfc, epot );
-        printf("ekin = %e fnorm = %e f_max = %e delta_epot = %e\n", 
-               ekin, fnorm2, f_max, delta_epot);
-      }
+        if (is_relaxed) {
+            stop = 1;
+            write_eng_file(steps);
+            /* if we are doing quasistatic simulations, we write out     *
+             * in case the sample is relaxed or the max. nr of relaxation*
+             * steps has been reached. Here we are only writing out if   *
+             * the sample is truely relaxed */
+#ifdef DEFORM
+            if (max_deform_int > 0) write_ss=0; 
 #endif
-    }
-
+#ifdef HOMDEF
+            if (lindef_int > 0) write_ss=0;
+#endif
+#ifdef FBC
+            if (have_fbc_incr) write_ss=0;
+#endif
+#ifdef EXTPOT
+            if (ep_max_int > 0) write_ss=0;
+#endif
+            if(write_ss==1)
+                write_ssconfig(steps);
+            
+#ifdef NEB
+            if (0==myrank) write_neb_eng_file(steps);
+#else
+            if (0==myid) {
+                printf("nfc = %d epot = %22.16f\n", nfc, epot );
+                printf("ekin = %e fnorm = %e f_max = %e delta_epot = %e\n", 
+                       ekin, fnorm2, f_max, delta_epot);
+            }
+#endif
+        }
+        
 #ifdef DEFORM
     if (max_deform_int > 0) stop=0;
+#endif
+#ifdef HOMDEF
+    if (lindef_int > 0) stop=0;
 #endif
 #ifdef FBC
     if (have_fbc_incr) stop=0;

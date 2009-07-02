@@ -308,7 +308,10 @@ void write_eng_file_header(void);
 void write_fext(int steps);
 void write_fext_header(void);
 #endif
-
+#ifdef RELAX
+void write_ssdef(int steps);
+void write_ssdef_header(void);
+#endif
 /* write configurations - files imd_io.c, imd_io_*.c */
 void read_box(str255);
 int  read_header(header_info_t *, str255);

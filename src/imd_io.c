@@ -2073,6 +2073,227 @@ void write_eng_file(int steps)
 
 }
 
+
+#ifdef RELAX
+/******************************************************************************
+*
+* Writing out information necessary for analysing quasistatic simulations
+*
+******************************************************************************/
+
+/******************************************************************************
+*
+*  write header to ssdef file
+*
+******************************************************************************/
+
+void write_ssdef_header()
+{  
+  int n;
+  str255 fname;
+  FILE *out;
+
+  /* open .ssdef file if it is not yet open */
+  if (myid == 0) {
+
+    sprintf(fname,"%s.ssdef",outfilename);
+    out = fopen(fname,"w");
+    if (NULL == out) 
+      error_str("Cannot open file for quasistatic info %s.", fname);
+
+    fprintf(out, "#C step nfc Epot fnorm box_x.x box_y.y box_z.z ");
+
+#ifdef FBC
+    for(n=0; n<vtypes;n++)
+#ifdef TWOD
+        fprintf(out, "fbc_f[%d].x fbc_f[%d].y ",n,n);
+#else
+        fprintf(out, "fbc_f[%d].x fbc_f[%d].y fbc_f[%d].z ",n,n);
+#endif
+#endif /* FBC */
+    
+#ifdef STRESS_TENS
+    fprintf(out, "Press_xx Press_yy ");
+#ifdef TWOD
+    fprintf(out, "Press_xy ");
+#else 
+    fprintf(out, "Press_zz ");
+    fprintf(out, "Press_yz Press_xz Press_xy ");
+#endif    
+#endif /* STRESS_TENS */
+
+     for(n=0; n<vtypes;n++)
+     {
+         if( (restrictions+n)->x == 0)
+             fprintf(out, "tot_force[%d].x ",n);
+         if( (restrictions+n)->y == 0)
+             fprintf(out, "tot_force[%d].y ",n);
+#ifndef TWOD
+         if( (restrictions+n)->z == 0)
+             fprintf(out, "tot_force[%d].z ",n);
+#endif
+     }
+     fprintf(out, "\n");
+     fclose(out);
+  }
+}
+
+
+
+/******************************************************************************
+*
+*  write entry to ssdef file
+*
+******************************************************************************/
+void write_ssdef(int steps)
+{
+    str255 fname;
+    static int flush_count=0;
+    int n,k,i;
+    int restrictedatoms=0;
+    real Epot;
+    real tmpvec1[36],tmpvec2[36];
+    double totalforcex[12],totalforcey[12],totalforcez[12];
+    
+#ifdef STRESS_TENS
+  real Press_xx,Press_yy, Press_xy;
+#ifndef TWOD
+  real Press_zz,Press_yz, Press_zx;
+#endif
+  calc_tot_presstens();
+#endif
+
+  if(vtypes>12)
+      error("increase totalforcevecs size in  write_ssdef");
+  for(n=0; n<vtypes;n++)
+     {
+         totalforcex[n]=0.0;
+         totalforcey[n]=0.0;
+         totalforcez[n]=0.0;
+         
+         if( (restrictions+n)->x == 0)
+             restrictedatoms ++;
+         if( (restrictions+n)->y == 0)
+             restrictedatoms ++;
+#ifndef TWOD
+         if( (restrictions+n)->z == 0)
+             restrictedatoms ++;
+#endif
+     }
+
+  /* calculate total forces on the different atom types */
+  if(restrictedatoms >0)
+  {
+      /* loop over all cells */
+      /* not yet w. OPENMP */
+      for (k=0; k<NCELLS; ++k) {
+          int  i,j, sort;
+          cell *p;
+          
+          p = CELLPTR(k);
+          for (i=0; i<p->n; ++i) { /* loop over all atoms in the cell */
+              sort = VSORTE(p,i);
+              totalforcex[sort]+=KRAFT(p,i,X);
+              totalforcey[sort]+=KRAFT(p,i,Y);
+              totalforcez[sort]+=KRAFT(p,i,Z);
+          }
+      }
+#ifdef MPI
+      for(i=0;i<12;i++)
+      {
+          tmpvec1[i*3]=totalforcex[i];
+          tmpvec1[i*3+1]=totalforcey[i];
+          tmpvec1[i*3+2]=totalforcez[i];
+      }
+      MPI_Allreduce( tmpvec1, tmpvec2, 36, REAL, MPI_SUM, cpugrid);
+      for(i=0;i<12;i++)
+      {
+          totalforcex[i]=tmpvec2[i*3];
+          totalforcey[i]=tmpvec2[i*3+1];
+          totalforcez[i]=tmpvec2[i*3+2];
+      }
+#endif
+  }
+  
+  /******************************************************/
+  /* careful, from now om we do only things if mpi id=0 */
+  /******************************************************/
+  if(myid >0) return;
+
+  /* open .ssdef file if it is not yet open */
+  if (NULL == ssdef_file) {
+      sprintf(fname,"%s.ssdef",outfilename);
+      ssdef_file = fopen(fname,"a");
+      if (NULL == ssdef_file) 
+          error_str("Can not open ssdef file %s", fname);
+  }
+
+  /* calculate stuff we don't need to do on all processors */
+#ifdef STRESS_TENS
+  Press_xx = tot_presstens.xx / volume; 
+  Press_yy = tot_presstens.yy / volume; 
+#ifndef TWOD
+  Press_zz = tot_presstens.zz / volume;
+  Press_yz = tot_presstens.yz / volume; 
+  Press_zx = tot_presstens.zx / volume; 
+#endif
+  Press_xy = tot_presstens.xy / volume; 
+#endif
+
+  Epot =       tot_pot_energy / natoms;
+
+
+  /* and write out information depending on the options and simulation settings */
+  fprintf(ssdef_file, "%d %d %e %e ", sscount,nfc,(double) Epot,(double) SQRT( fnorm / nactive ) );
+  
+#ifdef TWOD
+    fprintf(ssdef_file," %e %e ", (double)  box_x.x, (double)  box_y.y );
+#else
+    fprintf(ssdef_file," %e %e %e ", 
+            (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
+#endif
+    
+#ifdef FBC
+    for(n=0; n<vtypes;n++)
+#ifdef TWOD
+        fprintf(ssdef_file, "%e %e ",(fbc_forces+n)->x,(fbc_forces+n)->y);
+#else
+    fprintf(ssdef_file, "%e %e %e",(fbc_forces+n)->x,(fbc_forces+n)->y,(fbc_forces+n)->z);
+#endif
+#endif /* FBC */
+
+#ifdef STRESS_TENS
+  fprintf(ssdef_file," %e %e ", (double) Press_xx, (double) Press_yy);
+#ifdef TWOD
+  fprintf(ssdef_file," %e ", (double) Press_xy);
+#else 
+  fprintf(ssdef_file," %e ", (double) Press_zz);
+  fprintf(ssdef_file," %e %e %e ",
+          (double) Press_yz, (double) Press_zx, (double) Press_xy);
+#endif    
+#endif /* STRESS_TENS */
+
+  if(restrictedatoms >0)
+  {
+      for(n=0; n<vtypes;n++)
+      {
+         if( (restrictions+n)->x == 0)
+             fprintf(ssdef_file, "%e ",totalforcex[n]);
+         if( (restrictions+n)->y == 0)
+             fprintf(ssdef_file, "%e ",totalforcey[n]);
+#ifndef TWOD
+         if( (restrictions+n)->z == 0)
+             fprintf(ssdef_file, "%e ",totalforcez[n]);
+#endif
+     }
+  }
+  fprintf(ssdef_file, "\n");fflush(ssdef_file);
+  
+}
+
+#endif /* RELAX */
+
+
 #ifdef EXTPOT
 
 /******************************************************************************

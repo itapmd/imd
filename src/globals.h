@@ -256,6 +256,11 @@ EXTERN int flush_int INIT(50);          /* flush .eng and .msqd files
 EXTERN FILE *ind_file INIT(NULL);       /* pointer to .ind file */
 #endif
 
+#ifdef RELAX
+EXTERN FILE *ssdef_file INIT(NULL);     /* pointer to .ssdef file */
+EXTERN int max_sscount INIT(0);         /* max  quasistat. simulation steps */
+#endif
+
 /* Parameters for pictures */
 EXTERN int pic_int INIT(0);                 /* Period for picture output */
 EXTERN vektor2d ecut_kin INIT(nullvektor2d);/* Kin. Energy interval for pictures */

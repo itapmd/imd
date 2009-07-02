@@ -151,6 +151,13 @@ int main(int argc, char **argv)
 #ifdef EXTPOT
   if ((imdrestart==0) && (eng_int>0)) write_fext_header();
 #endif
+#ifdef RELAX
+  if ((imdrestart==0) && (eng_int>0))
+  {
+      if ( (ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG) )
+          write_ssdef_header();
+  }
+#endif
 
 
   imd_stop_timer(&time_setup);
@@ -211,6 +218,12 @@ int main(int argc, char **argv)
   /* write execution time summary */
   if ((0 == myid) && (0 == myrank)){
     if (NULL!= eng_file) fclose( eng_file);
+#ifdef EXTPOT
+    if (NULL!= ind_file) fclose( ind_file);
+#endif
+#ifdef RELAX
+    if (NULL!= ssdef_file) fclose( ssdef_file);
+#endif
     if (NULL!=msqd_file) fclose(msqd_file);
     time(&tend);
     steps_max -= start;
