@@ -1852,10 +1852,23 @@ void write_eng_file_header()
 #ifdef NPT_axial
 #ifdef TWOD
     fprintf(fl, "stress_x stress_y ");
+#ifndef HOMDEF
     fprintf(fl, "box_x.x box_y.y ");
+#endif
 #else
     fprintf(fl, "stress_x stress_y stress_z ");
+#ifndef HOMDEF
     fprintf(fl, "box_x.x box_y.y box_z.z ");
+#endif
+#endif
+#endif
+#if defined(HOMDEF)
+    fprintf(fl, "box_x.x box_y.y ");
+#ifdef TWOD 
+    fprintf(fl, "box_x.y ");
+#else
+    fprintf(fl, "box_z.z ");
+    fprintf(fl, "box_y.z box_x.z  box_x.y ");
 #endif
 #endif
 #ifdef STRESS_TENS
@@ -2038,14 +2051,29 @@ void write_eng_file(int steps)
   if (ensemble==ENS_NPT_AXIAL) {
 #ifdef TWOD
     fprintf(eng_file," %e %e", (double) stress_x, (double) stress_y );
+#ifndef HOMDEF   
     fprintf(eng_file," %e %e", (double)  box_x.x, (double)  box_y.y );
+#endif
 #else
     fprintf(eng_file," %e %e %e", 
 	    (double) stress_x, (double) stress_y, (double) stress_z );
+#ifndef HOMDEF   
     fprintf(eng_file," %e %e %e", 
 	    (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
 #endif
+#endif
   }
+
+#if defined(HOMDEF)
+  fprintf(eng_file, "%e %e ",(double) box_x.x, (double) box_y.y);
+#ifdef TWOD 
+  fprintf(eng_file, "%e ",(double) box_x.y);
+#else
+  fprintf(eng_file, "%e ", (double) box_z.z);
+  fprintf(eng_file, "%e %e %e ",(double) box_y.z,(double) box_x.z,(double)  box_x.y);
+#endif
+#endif
+  
 #ifdef STRESS_TENS
   fprintf(eng_file," %e %e", (double) Press_xx, (double) Press_yy);
 #ifdef TWOD
@@ -2101,8 +2129,17 @@ void write_ssdef_header()
     if (NULL == out) 
       error_str("Cannot open file for quasistatic info %s.", fname);
 
-    fprintf(out, "#C step nfc Epot fnorm box_x.x box_y.y box_z.z ");
-
+    fprintf(out, "#C step nfc Epot fnorm box_x.x box_y.y ");
+#ifndef TWOD
+    fprintf(out, "box_z.z ");
+#endif
+#ifdef HOMDEF
+#ifndef TWOD
+    fprintf(out, "box_y.z box_z.x box_x.y ");
+#else
+    fprintf(out, "box_x.y ");
+#endif
+#endif
 #ifdef FBC
     for(n=0; n<vtypes;n++)
 #ifdef TWOD
@@ -2252,6 +2289,15 @@ void write_ssdef(int steps)
     fprintf(ssdef_file," %e %e %e ", 
             (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
 #endif
+#ifdef HOMDEF
+#ifndef TWOD
+    fprintf(ssdef_file,"%e %e %e ",
+            (double) box_y.z, (double) box_z.x, (double) box_x.y );
+#else
+    fprintf(ssdef_file, "%e ", (double) box_x.y);
+#endif
+#endif
+
     
 #ifdef FBC
     for(n=0; n<vtypes;n++)
