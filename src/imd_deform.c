@@ -143,7 +143,10 @@ void relax_pressure()
   pt.zz = tot_presstens.zz / volume - presstens_ext.zz;
   pt.yz = tot_presstens.yz / volume - presstens_ext.yz;
   pt.zx = tot_presstens.zx / volume - presstens_ext.zx;
-  pp = (pt.xx + pt.yy + pt.zz) / 3.0;
+  /* we want to relax stresses e.g. orthogonal to a strained direction */
+  /* pp = (pt.xx + pt.yy + pt.zz) / 3.0; */
+  pp = (pt.xx*relax_dirs.x + pt.yy*relax_dirs.y + pt.zz*relax_dirs.z) / (relax_dirs.x+ relax_dirs.y+relax_dirs.z);
+
 #else
   pp = (pt.xx + pt.yy) / 2.0;
 #endif
