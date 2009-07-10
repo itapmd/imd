@@ -2050,7 +2050,7 @@ void write_eng_file(int steps)
 
   if (ensemble==ENS_NPT_AXIAL) {
 #ifdef TWOD
-    fprintf(eng_file," %e %e", (double) stress_x, (double) stress_y );
+      fprintf(eng_file," %e %e", (double) stress_x, (double) stress_y );
 #ifndef HOMDEF   
     fprintf(eng_file," %e %e", (double)  box_x.x, (double)  box_y.y );
 #endif
@@ -2065,12 +2065,12 @@ void write_eng_file(int steps)
   }
 
 #if defined(HOMDEF)
-  fprintf(eng_file, "%e %e ",(double) box_x.x, (double) box_y.y);
+  fprintf(eng_file, " %e %e ",(double) box_x.x, (double) box_y.y);
 #ifdef TWOD 
-  fprintf(eng_file, "%e ",(double) box_x.y);
+  fprintf(eng_file, " %e ",(double) box_x.y);
 #else
-  fprintf(eng_file, "%e ", (double) box_z.z);
-  fprintf(eng_file, "%e %e %e ",(double) box_y.z,(double) box_x.z,(double)  box_x.y);
+  fprintf(eng_file, " %e ", (double) box_z.z);
+  fprintf(eng_file, " %e %e %e ",(double) box_y.z,(double) box_x.z,(double)  box_x.y);
 #endif
 #endif
   
