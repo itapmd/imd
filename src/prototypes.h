@@ -561,6 +561,7 @@ int findalpha();
 
 #ifdef GLOK
 void update_glok(void);
+void reset_glok(void);
 #endif
 
 #ifdef NMOLDYN

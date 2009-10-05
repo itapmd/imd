@@ -866,6 +866,9 @@ int getparamfile(char *paramfname, int phase)
     else if (strcasecmp(token,"timestep")==0) {
       /* size of timestep (in MD units) */
       getparam(token,&timestep,PARAM_REAL,1,1);
+#ifdef ADAPTGLOK
+      starttimestep = timestep;
+#endif
     }
     else if (strcasecmp(token,"ntypes")==0) {
       /* number of atom types */
@@ -3466,7 +3469,8 @@ void broadcast_params() {
   MPI_Bcast( &glok_fmaxcrit, 1, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &glok_incfac, 1, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &glok_decfac, 1, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &glok_maxtimestep, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &glok_maxtimestep, 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &starttimestep, 1, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &glok_minsteps, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &min_nPxF, 1, MPI_INT, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &glok_int, 1, MPI_INT, 0, MPI_COMM_WORLD); 

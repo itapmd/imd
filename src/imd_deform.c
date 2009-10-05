@@ -112,7 +112,7 @@ void lin_deform(vektor dx, vektor dy, vektor dz, real scale)
   tmpbox[2] = scale * SPROD(dz,center);
 #endif
 #endif
-
+  printf("DEFORMING SAMPLE\n\n");fflush(stdout);
 } /* lin_deform */
 
 /*****************************************************************************

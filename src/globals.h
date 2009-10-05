@@ -458,7 +458,8 @@ EXTERN real mixforcescalefac  INIT(0.0);
 #ifdef ADAPTGLOK
 EXTERN real glok_incfac      INIT(1.02);     
 EXTERN real glok_decfac      INIT(0.5);     
-EXTERN real glok_maxtimestep INIT(0.0);   
+EXTERN real glok_maxtimestep INIT(0.0);
+EXTERN real starttimestep    INIT(0.0);   
 EXTERN int  glok_minsteps    INIT(5); /* threshold for minsteps */  
 EXTERN int  nPxF             INIT(0);  
 EXTERN int  min_nPxF         INIT(0);  

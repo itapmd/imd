@@ -39,8 +39,13 @@ int main_loop(int simulation)
   vektor d_pressure, *fbc_df;
   real tmpvec1[DIM], tmpvec2[DIM];
   char tmp_str[9];
+
+  real fnorm2,ekin,epot,delta_epot;
+
+  
 #ifdef GLOK
-  int glok_start = steps_min; 
+  if(glok_start <=steps_min)
+      glok_start=steps_min; 
 #endif
 #ifdef ACG
   acg_alpha = acg_init_alpha;
@@ -168,8 +173,15 @@ int main_loop(int simulation)
             write_fext(steps);     /* update .ind file */
             write_ssconfig(steps); /* write config, even when not fully relaxed */
             move_extpot(1.0);
+            is_relaxed=0;
             ep_int = 0;
             is_relaxed = 0;
+#ifdef GLOK
+            if (ensemble==ENS_GLOK)
+            {
+                reset_glok();
+            }
+#endif
         }
         ep_int++;
     }
@@ -191,7 +203,7 @@ int main_loop(int simulation)
 #endif
     }
 #endif
-    
+
 #if defined(HOMDEF) && defined(RELAX)
     if ( (ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG) )
     {
@@ -199,18 +211,30 @@ int main_loop(int simulation)
         {
             //lindef_int now plays the role of  max_deform_int
             // have to find something which plays the fole of deformint
-            if ((is_relaxed) ||  (0 == deform_int % lindef_int))
+            if ( (is_relaxed && (steps-glok_start>=10)) ||  (0 == deform_int % lindef_int))
             {
-           
                 write_ssdef(steps);
                 write_ssconfig(steps); /* write config, even when not fully relaxed */
 #ifdef TWOD
-               lin_deform(lindef_x, lindef_y,           lindef_size);
+                lin_deform(lindef_x, lindef_y,           lindef_size);
 #else
-               lin_deform(lindef_x, lindef_y, lindef_z, lindef_size);
+                lin_deform(lindef_x, lindef_y, lindef_z, lindef_size);
 #endif
-               deform_int=0;
-               //   printf("DEFORMING SAMPLE\n\n");fflush(stdout);
+                deform_int=0;
+                is_relaxed=0;
+
+                make_box();
+#ifdef NBLIST
+                have_valid_nbl = 0;
+#endif
+                fix_cells();  
+
+#ifdef GLOK
+               if (ensemble==ENS_GLOK)
+               {
+                   reset_glok();
+               }
+#endif
            }
             deform_int++;
         }
@@ -239,13 +263,27 @@ int main_loop(int simulation)
       {
           write_ssdef(steps);
           write_ssconfig(steps); /* write config, even when not fully relaxed */
+#ifdef GLOK
+          if (ensemble==ENS_GLOK)
+          {
+              reset_glok();
+          }
+#endif
 #else
       if (deform_int == max_deform_int)
       {
 #endif
       
         deform_sample();
+        is_relaxed=0;
         deform_int=0;
+
+#ifdef NBLIST
+    check_nblist();
+#else
+    fix_cells();  
+#endif
+
 #ifdef CG
         if (ensemble == ENS_CG) reset_cg();
 #endif
@@ -295,8 +333,7 @@ int main_loop(int simulation)
     if (ensemble == ENS_CG) acg_step(steps);
     else
 #endif
-        
-    calc_forces(steps);
+        calc_forces(steps);
 
 #ifdef EXTPOT
     calc_extpot();
@@ -375,10 +412,10 @@ int main_loop(int simulation)
     }
 #endif
 
-#ifdef GLOK 
+#ifdef GLOK
     /* "global convergence": set momenta to 0 if P*F < 0 (global vectors) */
     if (ensemble == ENS_GLOK) {
-      update_glok();
+      update_glok();     
     }
 #endif
 
@@ -540,6 +577,7 @@ int main_loop(int simulation)
     if ( (ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG) ) {
         if ( (max_sscount>0) && (sscount>max_sscount) ) {
                  finished = 1 ;
+                 steps_max = steps;
                  break;
             }
     }
@@ -632,9 +670,9 @@ void update_glok(void)
 #ifdef ADAPTGLOK
     if (PxF < 0.0) nPxF++;
     /* decrease timestep, but only when it has been increased before */
-    if (glok_int > glok_minsteps ) {
+      if (glok_int > glok_minsteps ) {
       if (timestep > glok_maxtimestep/50.0) timestep *=glok_decfac;
-    }
+       }
 #endif
 
 #ifdef MIX
@@ -658,6 +696,59 @@ void update_glok(void)
     glok_start = steps;
   }
 }
+
+
+
+/*****************************************************************************
+*
+*  reset state of (adaptive) glok integrator, e.g. after deformation step
+*
+*****************************************************************************/
+
+void reset_glok(void)
+{
+
+    fnorm=9.99e99;
+    glok_start = steps;
+    // reset velocities
+    /* for (k=0; k<NCELLS; ++k) { */
+    /* cell *p = CELLPTR(k); */
+    /* for (i=0; i<p->n; ++i) { */
+    /* IMPULS(p,i,X) = 0.0; */
+    /* IMPULS(p,i,Y) = 0.0; */
+    /* #ifndef TWOD */
+    /* IMPULS(p,i,Z) = 0.0; */
+    /* #endif */
+    /* } */
+    /* } */
+    
+#ifdef MIX
+    mix = glok_mix;
+#endif
+    
+#ifdef ADAPTGLOK
+    timestep = starttimestep;
+    nPxF = 0;
+    glok_int = 0;
+#endif
+
+#ifdef MIX
+    mix = 0.0;
+#endif
+    maxwell(temperature);
+    move_atoms();
+#ifdef MIX
+    mix = glok_mix; 
+#endif  
+    
+    if (0 == myid)
+    {
+        printf("Reseting GLOK: T= %f, glok_start=%d, timestep =%f, mix=%f \n\n",temperature, glok_start,timestep,mix);fflush(stdout);
+    }
+}
+ 
+
+
 
 #endif
 
@@ -818,6 +909,10 @@ void check_relaxed(void)
         if (is_relaxed) {
             stop = 1;
             write_eng_file(steps);
+
+ 
+
+            
             /* if we are doing quasistatic simulations, we write out     *
              * in case the sample is relaxed or the max. nr of relaxation*
              * steps has been reached. Here we are only writing out if   *
@@ -846,6 +941,7 @@ void check_relaxed(void)
                        ekin, fnorm2, f_max, delta_epot);
             }
 #endif
+                       
         }
         
 #ifdef DEFORM
