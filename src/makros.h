@@ -328,6 +328,9 @@ inline static real SQR(real x)
 /* Scalar products */
 /* Vectors */
 #define SPROD3D(a,b) (((a).x * (b).x) + ((a).y * (b).y) + ((a).z * (b).z))
+#define CROSS3D(a,b,c)  ( (c).x = (a).y*(b).z - (a).z*(b).y, \
+  (c).y = (a).z*(b).x-(a).x*(b).z, (c).z = (a).x*(b).y-(a).y*(b).x )
+
 #define SPROD2D(a,b) (((a).x * (b).x) + ((a).y * (b).y))
 /* Ordinary Arrays */
 #define SPRODA3D(a,b) ( (a)[0]*(b)[0] + (a)[1]*(b)[1] + (a)[2]*(b)[2] )

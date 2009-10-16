@@ -376,6 +376,14 @@ void write_config_press(int nr);
 #ifdef REFPOS
 void init_refpos(void);
 #endif
+#ifdef ZAPP
+void init_zapp(void);
+void zapp(void);
+#endif
+#ifdef BEND
+void init_bend(void);
+void update_bend(void);
+#endif
 #ifdef AVPOS
 void write_atoms_avp(FILE *out);
 void write_header_avp(FILE *out);

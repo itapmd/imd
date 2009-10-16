@@ -145,6 +145,29 @@ EXTERN int    have_fbc_incr    INIT(0);    /* fbc increment given */
 EXTERN int    do_fbc_incr      INIT(0);    /* whether to apply FBC increment */
 #endif /* FBC */
 
+#ifdef BEND
+EXTERN int    bend_nmoments    INIT(0);    /* number of bending moments,
+                                              one moment for each vtype, e.g. in alloys  */
+EXTERN int    bend_natomsvtype_origin[6];         /* number of atoms for each vtype which is
+                                                     part of bending, to calc center of gravity */
+EXTERN int    bend_natomsvtype_force[6];         /* number of atoms for each vtype which is
+                                                     part of bending, to calc center of gravity */
+EXTERN int    bend_vtype_of_origin[6];     /* match origin of bendmoment to a vtype      */
+EXTERN int    bend_vtype_of_force[6];      /* match atoms with added force to a vtyp     */
+EXTERN vektor *bend_axis       INIT(NULL); /* axis of bending moment*/
+EXTERN vektor *bend_origin     INIT(NULL); /* origin of each moment */
+EXTERN vektor *bend_cog        INIT(NULL); /* center of grav of atoms w. added force     */
+EXTERN vektor *bend_vec        INIT(NULL); /* bend_cog - bend_origin    */
+EXTERN vektor *bend_forces      INIT(NULL);/* each vtype has its force according to fbc_forces
+                                              and the direction according to the bending moment*/
+
+#endif
+#ifdef ZAPP
+EXTERN real   zapp_threshold INIT(0); 
+EXTERN vektor nactive_vect   INIT(nullvektor);
+EXTERN vektor total_impuls   INIT(nullvektor);
+#endif
+
 /* Global bookkeeping */
 EXTERN time_t tstart, tend;
 EXTERN real maxwalltime INIT(0);  /* maximal allowed walltime */
@@ -425,6 +448,8 @@ EXTERN vektor ep_vel[10];
 EXTERN vektor ep_dir[10];
 EXTERN long nactive_vect[3];
 #endif
+
+
 
 /* virial tensor */
 EXTERN real vir_xx INIT(0.0), vir_yy INIT(0.0), vir_zz INIT(0.0);

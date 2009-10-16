@@ -36,7 +36,7 @@ int main_loop(int simulation)
   int  have_fbc_incr = 0;
   real dtemp, dshock_speed;
   real ri;
-  vektor d_pressure, *fbc_df;
+  vektor d_pressure;
   real tmpvec1[DIM], tmpvec2[DIM];
   char tmp_str[9];
 
@@ -447,6 +447,14 @@ int main_loop(int simulation)
     increment_temperature();
 #endif
 
+#ifdef ZAPP
+    zapp();
+#endif
+    
+#ifdef BEND
+    update_bend();
+#endif    
+
     /* Periodic I/O */
 #ifdef TIMING
     imd_start_timer(&time_output);
@@ -666,28 +674,34 @@ void update_glok(void)
   real ekin = 2 * tot_kin_energy / nactive;
 
   if ((PxF < 0.0) || (ekin > glok_ekin_threshold)  || 
-      (sqrt(f_max2) >= glok_fmaxcrit) && steps >5) {
+      (sqrt(f_max2) >= glok_fmaxcrit) && steps >glok_minsteps) {
 #ifdef ADAPTGLOK
-    if (PxF < 0.0) nPxF++;
+    if (PxF < 0.0)
+    {
+        nPxF++;
     /* decrease timestep, but only when it has been increased before */
-      if (glok_int > glok_minsteps ) {
+        //    if (glok_int > glok_minsteps ) {
       if (timestep > glok_maxtimestep/50.0) timestep *=glok_decfac;
-       }
+      // }
+    }
 #endif
 
-#ifdef MIX
-    mix = glok_mix;
+#ifdef ADAPTGLOK
+     if (glok_int > glok_minsteps)
+        mix = glok_mix;
+    else
+        //   mix=0.5;
 #endif
     for (k=0; k<NCELLS; ++k) {
       cell *p = CELLPTR(k);
       for (i=0; i<p->n; ++i) {
-        ORT(p,i,X) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,X);
-        ORT(p,i,Y) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,Y);
+          ORT(p,i,X) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,X);
+          ORT(p,i,Y) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,Y);
 #ifndef TWOD
-        ORT(p,i,Z) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,Z);
+          ORT(p,i,Z) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,Z);
 #endif
-        IMPULS(p,i,X) = 0.0;
-        IMPULS(p,i,Y) = 0.0;
+          IMPULS(p,i,X) = 0.0;
+          IMPULS(p,i,Y) = 0.0;
 #ifndef TWOD
         IMPULS(p,i,Z) = 0.0;
 #endif
@@ -711,20 +725,18 @@ void reset_glok(void)
     fnorm=9.99e99;
     glok_start = steps;
     // reset velocities
-    /* for (k=0; k<NCELLS; ++k) { */
-    /* cell *p = CELLPTR(k); */
-    /* for (i=0; i<p->n; ++i) { */
-    /* IMPULS(p,i,X) = 0.0; */
-    /* IMPULS(p,i,Y) = 0.0; */
-    /* #ifndef TWOD */
-    /* IMPULS(p,i,Z) = 0.0; */
-    /* #endif */
-    /* } */
-    /* } */
-    
-#ifdef MIX
-    mix = glok_mix;
+    int i,k;
+    for (k=0; k<NCELLS; ++k) {
+        cell *p = CELLPTR(k);
+        for (i=0; i<p->n; ++i) {
+            IMPULS(p,i,X) = 0.0;
+            IMPULS(p,i,Y) = 0.0;
+#ifndef TWOD
+            IMPULS(p,i,Z) = 0.0;
 #endif
+        }
+    }
+    
     
 #ifdef ADAPTGLOK
     timestep = starttimestep;
@@ -790,19 +802,30 @@ void increment_temperature(void)
 
 void init_fbc(void)
 {
-  int l, steps_diff = steps_max - steps_min;
+    int l, steps_diff;
 
+#ifdef TWOD
+  vektor nullv={0.0,0.0};
+#else
+  vektor nullv={0.0,0.0,0.0};
+#endif
+    
+#if !defined(RELAX)
+    steps_diff = steps_max - steps_min;
+#endif
   have_fbc_incr = 0;
   do_fbc_incr = 0;
-
 #ifdef RELAX
   fbc_int = 0;
   for (l=0; l<vtypes; l++) {
+      /* initialize fbc_df with 0*/
+      /* will be updated in fbc_update*/
+      *(fbc_df+l) = nullv;
     if ((fbc_dforces+l)->x != 0.0) have_fbc_incr = 1;
     if ((fbc_dforces+l)->y != 0.0) have_fbc_incr = 1;
 #ifndef TWOD
     if ((fbc_dforces+l)->z != 0.0) have_fbc_incr = 1;
-#endif
+#endif   
   }
 #else
   /* dynamic loading, increment linearly at each timestep */
@@ -828,13 +851,13 @@ void init_fbc(void)
 
 void update_fbc()
 {
+
   int l;
 #ifdef TWOD
   vektor nullv={0.0,0.0};
 #else
   vektor nullv={0.0,0.0,0.0};
 #endif
-
 #ifdef RELAX
   /* set fbc increment if necessary */
   if ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) {
@@ -844,6 +867,9 @@ void update_fbc()
         for (l=0; l<vtypes; l++) fbc_df[l] = fbc_dforces[l];
         fbc_int = 0;
         do_fbc_incr = 1;
+#ifdef CG
+    if (ensemble == ENS_CG) reset_cg();
+#endif
     }
     else {
       for (l=0; l<vtypes; l++) *(fbc_df+l) = nullv;
@@ -852,23 +878,400 @@ void update_fbc()
     }
   }
 #endif
-
   /* apply fbc increment if necessary */
   if (do_fbc_incr == 1) {
-    for (l=0; l<vtypes; l++){ 
+    for (l=0; l<vtypes; l++){     
       (fbc_forces+l)->x += (fbc_df+l)->x;  
       (fbc_forces+l)->y += (fbc_df+l)->y;
 #ifndef TWOD
       (fbc_forces+l)->z += (fbc_df+l)->z;
 #endif
     } 
-#ifdef CG
-    if (ensemble == ENS_CG) reset_cg();
+#ifdef GLOK
+    if (ensemble==ENS_GLOK)
+    {
+        reset_glok();
+    }
 #endif
   }
 }
 
 #endif /* FBC */
+
+
+#ifdef ZAPP
+void init_zapp(void)
+{
+    int         k;
+    vektor vectmp;
+    total_impuls.x = 0.0;   nactive_vect.x = 0.0;
+    total_impuls.y = 0.0;   nactive_vect.y = 0.0;
+#ifndef TWOD
+    total_impuls.z = 0.0;   nactive_vect.z = 0.0;
+#endif
+
+    /* calc total impuls */
+   for (k=0; k<NCELLS; ++k) {
+      int i;
+      cell *p;
+      vektor *rest;
+      p = CELLPTR(k);
+      for (i=0; i<p->n; ++i) {
+          rest = restrictions + VSORTE(p,i);
+          nactive_vect.x += (int) rest->x;
+          nactive_vect.y += (int) rest->y;
+#ifndef TWOD
+          nactive_vect.z += (int) rest->z;
+#endif
+          total_impuls.x += IMPULS(p,i,X);
+          total_impuls.y += IMPULS(p,i,Y);
+#ifndef TWOD
+          total_impuls.z += IMPULS(p,i,Z);
+#endif
+      }
+          
+   }
+#ifdef MPI
+   MPI_Allreduce( &total_impuls,&vectmp, DIM, REAL, MPI_SUM, cpugrid);
+   total_impuls = vectmp;
+   MPI_Allreduce( &nactive_vect,&vectmp, DIM, REAL, MPI_SUM, cpugrid);
+   nactive_vect = vectmp;
+#endif   
+    total_impuls.x = nactive_vect.x == 0 ? 0.0 : total_impuls.x / nactive_vect.x;
+    total_impuls.y = nactive_vect.y == 0 ? 0.0 : total_impuls.y / nactive_vect.y;
+#ifndef TWOD
+    total_impuls.z = nactive_vect.z == 0 ? 0.0 : total_impuls.z / nactive_vect.z;
+#endif
+
+    
+    if(SPROD(total_impuls,total_impuls)>=zapp_threshold*zapp_threshold)
+    {
+        for (k=0; k<NCELLS; ++k) {
+            int i;
+            cell *p;
+            vektor *rest;
+            p = CELLPTR(k);
+            for (i=0; i<p->n; ++i) {
+                rest = restrictions + VSORTE(p,i);
+                IMPULS(p,i,X) -= total_impuls.x * rest->x;
+                IMPULS(p,i,Y) -= total_impuls.y * rest->y;
+#ifndef TWOD
+                IMPULS(p,i,Z) -= total_impuls.z * rest->z;
+#endif
+            }
+        }
+    }
+}
+
+
+void zapp(void)
+{
+    int         k;
+    vektor vectmp;
+    total_impuls.x = 0.0;   
+    total_impuls.y = 0.0;   
+#ifndef TWOD
+    total_impuls.z = 0.0;   
+#endif
+
+    /* calc total impuls */
+   for (k=0; k<NCELLS; ++k) {
+      int i;
+      cell *p;
+      vektor *rest;
+      p = CELLPTR(k);
+      for (i=0; i<p->n; ++i) {
+          total_impuls.x += IMPULS(p,i,X);
+          total_impuls.y += IMPULS(p,i,Y);
+#ifndef TWOD
+          total_impuls.z += IMPULS(p,i,Z);
+#endif
+      }
+          
+   }
+#ifdef MPI
+   MPI_Allreduce( &total_impuls,&vectmp, DIM, REAL, MPI_SUM, cpugrid);
+   total_impuls = vectmp;
+#endif   
+    total_impuls.x = nactive_vect.x == 0 ? 0.0 : total_impuls.x / nactive_vect.x;
+    total_impuls.y = nactive_vect.y == 0 ? 0.0 : total_impuls.y / nactive_vect.y;
+#ifndef TWOD
+    total_impuls.z = nactive_vect.z == 0 ? 0.0 : total_impuls.z / nactive_vect.z;
+#endif
+    if(SPROD(total_impuls,total_impuls)>=zapp_threshold*zapp_threshold)
+    {
+        for (k=0; k<NCELLS; ++k) {
+            int i;
+            cell *p;
+            vektor *rest;
+            p = CELLPTR(k);
+            for (i=0; i<p->n; ++i) {
+                rest = restrictions + VSORTE(p,i);
+                IMPULS(p,i,X) -= total_impuls.x * rest->x;
+                IMPULS(p,i,Y) -= total_impuls.y * rest->y;
+#ifndef TWOD
+                IMPULS(p,i,Z) -= total_impuls.z * rest->z;
+#endif
+            }
+        }
+    }
+}
+#endif
+
+
+#ifdef BEND
+/******************************************************************************
+*
+* initialize centers of gravity etc of bending moments
+*
+******************************************************************************/
+
+void init_bend(void)
+{
+    int k,j,i;
+    real norm_bend_vec, norm_fbc_force;
+    int tmpivec1[12], tmpivec2[12];
+    real tmpvec1[6],tmpvec2[6];
+    vektor tmp_force,fbc_force, tmp_bend_vec,this_bend_axis;
+    int sort;
+    
+    for (j=0; j<bend_nmoments; j++){
+        (bend_origin + j)->x = 0.0;
+        (bend_origin + j)->y = 0.0;
+        (bend_origin + j)->z = 0.0;
+        bend_natomsvtype_origin[j]=0;
+
+        (bend_cog + j)->x = 0.0;
+        (bend_cog + j)->y = 0.0;
+        (bend_cog + j)->z = 0.0;
+        bend_natomsvtype_force[j]=0;
+    }
+    for (k=0; k<NCELLS; k++) {
+        int i;
+        cell* p;
+        p = CELLPTR(k);
+        for (i=0; i<p->n; i++) {
+            for (j=0; j<bend_nmoments; j++){
+                if(VSORTE(p,i)==bend_vtype_of_origin[j])
+                {
+                    (bend_origin + j)->x += ORT(p,i,X);
+                    (bend_origin + j)->y += ORT(p,i,Y);
+                    (bend_origin + j)->z += ORT(p,i,Z);
+                    bend_natomsvtype_origin[j]++;
+                }
+                else if(VSORTE(p,i)==bend_vtype_of_force[j])
+                {
+                    (bend_cog + j)->x += ORT(p,i,X);
+                    (bend_cog + j)->y += ORT(p,i,Y);
+                    (bend_cog + j)->z += ORT(p,i,Z);
+                    bend_natomsvtype_force[j]++;
+                }
+            }
+        }
+    }
+#ifdef MPI
+    for(i=0;i<6;i++)
+    {
+        tmpivec1[i]= bend_natomsvtype_origin[i];
+    }
+    for(i=0;i<6;i++)
+    {
+        tmpivec1[i+6]= bend_natomsvtype_force[i];
+    }
+    MPI_Allreduce( tmpivec1, tmpivec2,12, MPI_INT, MPI_SUM, cpugrid);
+    for(i=0;i<6;i++)
+    {
+        bend_natomsvtype_origin[i]=tmpivec2[i];
+        if(i<bend_nmoments && bend_natomsvtype_origin[i]==0)
+            error("bending moment defined without atoms at origin");
+    }
+    for(i=0;i<6;i++)
+    {
+        bend_natomsvtype_force[i]=tmpivec2[i+6];
+        if(i<bend_nmoments && bend_natomsvtype_origin[i]==0)
+            error("bending moment defined without atoms to apply force to");
+    }
+
+    for (j=0; j<bend_nmoments; j++){
+        tmpvec1[0]=(bend_origin + j)->x;
+        tmpvec1[1]=(bend_origin + j)->y;
+        tmpvec1[2]=(bend_origin + j)->z;
+        tmpvec1[3]=(bend_cog + j)->x;
+        tmpvec1[4]=(bend_cog + j)->y;
+        tmpvec1[5]=(bend_cog + j)->z;
+        MPI_Allreduce(tmpvec1 , tmpvec2, 6, MPI_REAL, MPI_SUM, cpugrid);
+        (bend_origin + j)->x = tmpvec2[0];
+        (bend_origin + j)->y = tmpvec2[1];
+        (bend_origin + j)->z = tmpvec2[2];
+        (bend_cog + j)->x    = tmpvec2[3];
+        (bend_cog + j)->y    = tmpvec2[4];
+        (bend_cog + j)->z    = tmpvec2[5];
+    }
+#endif /* MPI */
+    
+    for (j=0; j<bend_nmoments; j++){
+        (bend_origin + j)->x /= bend_natomsvtype_origin[j];
+        (bend_origin + j)->y /= bend_natomsvtype_origin[j];
+        (bend_origin + j)->z /= bend_natomsvtype_origin[j];
+
+        (bend_cog + j)->x /= bend_natomsvtype_force[j];
+        (bend_cog + j)->y /= bend_natomsvtype_force[j];
+        (bend_cog + j)->z /= bend_natomsvtype_force[j];
+
+        (bend_vec + j)->x  = (bend_cog + j)->x - (bend_origin + j)->x;
+        (bend_vec + j)->y  = (bend_cog + j)->y - (bend_origin + j)->y;
+        (bend_vec + j)->z  = (bend_cog + j)->z - (bend_origin + j)->z;
+
+        sort = bend_vtype_of_force[j];
+        fbc_force.x = (fbc_forces+sort)->x;
+        fbc_force.y = (fbc_forces+sort)->y;
+        fbc_force.z = (fbc_forces+sort)->z;
+
+        tmp_bend_vec.x = (bend_vec+j)->x;
+        tmp_bend_vec.y = (bend_vec+j)->y;
+        tmp_bend_vec.z = (bend_vec+j)->z;
+        
+        norm_bend_vec  = sqrt(SPROD(tmp_bend_vec,tmp_bend_vec));
+       
+        norm_fbc_force = sqrt(SPROD(fbc_force,fbc_force));
+
+        tmp_bend_vec.x /= norm_bend_vec;
+        tmp_bend_vec.y /= norm_bend_vec;
+        tmp_bend_vec.z /= norm_bend_vec;
+
+        this_bend_axis.x = (bend_axis + j)->x;
+        this_bend_axis.y = (bend_axis + j)->y;
+        this_bend_axis.z = (bend_axis + j)->z;
+        
+        CROSS3D(tmp_bend_vec,this_bend_axis,tmp_force);
+
+        (bend_forces + sort)->x = tmp_force.x * norm_fbc_force;
+        (bend_forces + sort)->y = tmp_force.y * norm_fbc_force;
+        (bend_forces + sort)->z = tmp_force.z * norm_fbc_force;
+
+        if (myid==0)
+        {
+            printf("Bending moment %d: bend_forces %d %lf %lf %lf compare to fbc_forces  %d %lf %lf %lf\n",
+                   j,sort,(bend_forces + sort)->x,(bend_forces + sort)->y,(bend_forces + sort)->z,
+                   sort,(fbc_forces + sort)->x,(fbc_forces + sort)->y,(fbc_forces + sort)->z);
+        }
+        
+    }
+    
+    
+}
+#endif /* BEND */
+
+#ifdef BEND
+/******************************************************************************
+*
+* update direction of bending forces
+*
+******************************************************************************/
+
+void update_bend(void)
+{ 
+    int k,j;
+    real norm_bend_vec, norm_fbc_force;
+    int tmpivec1[12], tmpivec2[12];
+    real tmpvec1[6],tmpvec2[6];
+    vektor tmp_force,fbc_force, tmp_bend_vec,this_bend_axis;
+    int sort;
+    
+    for (j=0; j<bend_nmoments; j++){
+        (bend_origin + j)->x = 0.0;
+        (bend_origin + j)->y = 0.0;
+        (bend_origin + j)->z = 0.0;
+        (bend_cog + j)->x = 0.0;
+        (bend_cog + j)->y = 0.0;
+        (bend_cog + j)->z = 0.0;
+     }
+    for (k=0; k<NCELLS; k++) {
+        int i;
+        cell* p;
+        p = CELLPTR(k);
+        for (i=0; i<p->n; i++) {
+            for (j=0; j<bend_nmoments; j++){
+                if(VSORTE(p,i)==bend_vtype_of_origin[j])
+                {
+                    (bend_origin + j)->x += ORT(p,i,X);
+                    (bend_origin + j)->y += ORT(p,i,Y);
+                    (bend_origin + j)->z += ORT(p,i,Z);
+                }
+                else if(VSORTE(p,i)==bend_vtype_of_force[j])
+                {
+                    (bend_cog + j)->x += ORT(p,i,X);
+                    (bend_cog + j)->y += ORT(p,i,Y);
+                    (bend_cog + j)->z += ORT(p,i,Z);
+                }
+            }
+        }
+    }
+#ifdef MPI
+    for (j=0; j<bend_nmoments; j++){
+        tmpvec1[0]=(bend_origin + j)->x;
+        tmpvec1[1]=(bend_origin + j)->y;
+        tmpvec1[2]=(bend_origin + j)->z;
+        tmpvec1[3]=(bend_cog + j)->x;
+        tmpvec1[4]=(bend_cog + j)->y;
+        tmpvec1[5]=(bend_cog + j)->z;
+        MPI_Allreduce(tmpvec1 , tmpvec2, 6, MPI_REAL, MPI_SUM, cpugrid);
+        (bend_origin + j)->x = tmpvec2[0];
+        (bend_origin + j)->y = tmpvec2[1];
+        (bend_origin + j)->z = tmpvec2[2];
+        (bend_cog + j)->x    = tmpvec2[3];
+        (bend_cog + j)->y    = tmpvec2[4];
+        (bend_cog + j)->z    = tmpvec2[5];
+    }
+#endif /* MPI */
+    
+    for (j=0; j<bend_nmoments; j++){
+        (bend_origin + j)->x /= bend_natomsvtype_origin[j];
+        (bend_origin + j)->y /= bend_natomsvtype_origin[j];
+        (bend_origin + j)->z /= bend_natomsvtype_origin[j];
+
+        (bend_cog + j)->x /= bend_natomsvtype_force[j];
+        (bend_cog + j)->y /= bend_natomsvtype_force[j];
+        (bend_cog + j)->z /= bend_natomsvtype_force[j];
+
+        (bend_vec + j)->x  = (bend_cog + j)->x - (bend_origin + j)->x;
+        (bend_vec + j)->y  = (bend_cog + j)->y - (bend_origin + j)->y;
+        (bend_vec + j)->z  = (bend_cog + j)->z - (bend_origin + j)->z;
+
+        sort = bend_vtype_of_force[j];
+        fbc_force.x = (fbc_forces+sort)->x;
+        fbc_force.y = (fbc_forces+sort)->y;
+        fbc_force.z = (fbc_forces+sort)->z;
+
+        tmp_bend_vec.x = (bend_vec+j)->x;
+        tmp_bend_vec.y = (bend_vec+j)->y;
+        tmp_bend_vec.z = (bend_vec+j)->z;
+        
+        norm_bend_vec  = sqrt(SPROD(tmp_bend_vec,tmp_bend_vec));
+       
+        norm_fbc_force = sqrt(SPROD(fbc_force,fbc_force));
+
+        tmp_bend_vec.x /= norm_bend_vec;
+        tmp_bend_vec.y /= norm_bend_vec;
+        tmp_bend_vec.z /= norm_bend_vec;
+
+        this_bend_axis.x = (bend_axis + j)->x;
+        this_bend_axis.y = (bend_axis + j)->y;
+        this_bend_axis.z = (bend_axis + j)->z;
+        
+        CROSS3D(tmp_bend_vec,this_bend_axis,tmp_force);
+
+        (bend_forces + sort)->x = tmp_force.x * norm_fbc_force;
+        (bend_forces + sort)->y = tmp_force.y * norm_fbc_force;
+        (bend_forces + sort)->z = tmp_force.z * norm_fbc_force;
+
+  
+    }
+    
+    
+}
+#endif /* BEND */
+
 
 /*****************************************************************************
 *

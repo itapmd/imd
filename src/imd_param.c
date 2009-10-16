@@ -268,6 +268,9 @@ int getparamfile(char *paramfname, int phase)
   int k;
   int i;
 
+  real norm_bend_axis;
+  ivektor2d tmp_ivec2d INIT(nullvektor2d);
+  
   curline = 0;
   pf = fopen(paramfname,"r");
   if (NULL == pf) {
@@ -611,8 +614,15 @@ int getparamfile(char *paramfname, int phase)
         if (NULL==fbc_forces)
 	  error("Cannot allocate memory for fbc_forces\n");
         for (k=0; k<vtypes; k++)
-          fbc_forces[k] = nullv;
-
+          fbc_forces[k] = nullv;        
+#ifdef BEND
+          /* Allocation & Initialisation of fbc_forces */
+        bend_forces = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==bend_forces)
+	  error("Cannot allocate memory for bend_forces\n");
+        for (k=0; k<vtypes; k++)
+          bend_forces[k] = nullv;
+#endif
         fbc_beginforces = (vektor *) malloc( vtypes * sizeof(vektor) );
         if (NULL==fbc_beginforces)
           error("Cannot allocate memory for fbc_beginforces\n");
@@ -630,12 +640,12 @@ int getparamfile(char *paramfname, int phase)
 	  error("Cannot allocate memory for fbc_endforces\n");
         for (k=0; k<vtypes; k++)
           fbc_endforces[k] = nullv;
-        fbc_df = (vektor *) malloc( vtypes * sizeof(vektor) );
+#endif
+         fbc_df = (vektor *) malloc( vtypes * sizeof(vektor) );
         if (NULL==fbc_df)
 	  error("Cannot allocate memory for fbc_df\n");
         for (k=0; k<vtypes; k++)
           fbc_df[k] = nullv;
-#endif
 #endif /*FBC*/
 #ifdef RIGID
         /* Allocation & Initialization of superatom */
@@ -810,6 +820,77 @@ int getparamfile(char *paramfname, int phase)
     }
 #endif
 #endif /* FBC */
+#ifdef ZAPP
+    else if (strcasecmp(token,"zapp_threshold")==0) {
+        getparam(token,&zapp_threshold,PARAM_REAL,1,1);
+    }
+#endif
+#ifdef BEND
+    else if (strcasecmp(token,"bend_nmoments")==0) {
+        /* nr of bending moments */
+      getparam(token,&bend_nmoments,PARAM_INT,1,1);
+      if (vtypes<bend_nmoments*2)
+          error("need vtypes>=2*bend_nmoments") ;     
+      /* now do some allocations and initialisations */
+      bend_axis = (vektor *) malloc( bend_nmoments * sizeof(vektor) );
+      if (NULL==bend_axis)
+          error("Cannot allocate memory for bend_axis vectors\n");
+      for (k=0; k<bend_nmoments; k++)
+      {bend_axis[k].x=0.0;bend_axis[k].y=0.0;bend_axis[k].z=0.0;}
+      bend_origin = (vektor *) malloc( bend_nmoments * sizeof(vektor) );
+      if (NULL==bend_origin)
+          error("Cannot allocate memory for bend_origin vectors\n");
+      for (k=0; k<bend_nmoments; k++)
+      {bend_origin[k].x=0.0;bend_origin[k].y=0.0;bend_origin[k].z=0.0;}
+      bend_cog = (vektor *) malloc( bend_nmoments * sizeof(vektor) );
+      if (NULL==bend_cog)
+          error("Cannot allocate memory for bend_cog vectors\n");
+      for (k=0; k<bend_nmoments; k++)
+      {bend_cog[k].x=0.0;bend_cog[k].y=0.0;bend_cog[k].z=0.0;}
+
+      bend_vec = (vektor *) malloc( bend_nmoments * sizeof(vektor) );
+      if (NULL==bend_vec)
+          error("Cannot allocate memory for bend_vec vectors\n");
+      for (k=0; k<bend_nmoments; k++)
+          {bend_vec[k].x=0.0;bend_vec[k].y=0.0;bend_vec[k].z=0.0;}
+
+    }
+    else if (strcasecmp(token,"bend_axis")==0) {
+      /* axis of all bending moments */
+      getparam("bend_axis",&tempforce,PARAM_REAL,DIM+1,DIM+1);
+      if (tempforce.x>bend_nmoments)
+          error("Bend axis defined for non existing bending moment\n");
+      force.x = tempforce.y;
+      force.y = tempforce.z;
+#ifndef TWOD
+      force.z = tempforce.z2;
+#endif
+      if(SPROD(force,force)!=1)
+      {
+          warning("axis of bending moment not of unit length");
+          norm_bend_axis = sqrt(SPROD(force,force));
+          force.x /= norm_bend_axis;
+          force.y /= norm_bend_axis;
+          force.z /= norm_bend_axis;          
+      }
+      bend_axis[(int)(tempforce.x)] = force;
+    }
+    else if (strcasecmp(token,"bend_vtype_of_origin")==0) {
+        /* vtype of origin of bendingmoment i */
+        /* format: bend_vtype_of_origin bendingmoment vtype */
+      getparam("bend_vtype_of_origin",&tmp_ivec2d,PARAM_INT,1,2);
+      bend_vtype_of_origin[tmp_ivec2d.x]=tmp_ivec2d.y;
+    }
+    else if (strcasecmp(token,"bend_vtype_of_force")==0) {
+        /* vtype of atoms to apply FBC of bendingmoment i */
+        /* format: bend_vtype_of_force bendingmoment vtype */
+      getparam("bend_vtype_of_force",&tmp_ivec2d,PARAM_INT,1,2);
+      bend_vtype_of_force[tmp_ivec2d.x]=tmp_ivec2d.y;
+    }
+
+
+#endif /* BEND */
+
     else if (strcasecmp(token,"restrictionvector")==0) {
       if (vtypes==0)
         error("specify parameter total_types before restrictionvector");
@@ -2671,13 +2752,15 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
 void check_parameters_complete()
 {
   real tmp;
+  real norm_bend_axis;
   int  k;
 #ifdef TWOD
   vektor einsv = {1.0,1.0};
 #else
   vektor einsv = {1.0,1.0,1.0};
 #endif
-  
+  vektor this_bend_axis;
+
   if (ensemble == 0) {
     error("missing or unknown ensemble parameter.");
   }
@@ -2690,6 +2773,41 @@ void check_parameters_complete()
     error("ntypes is missing or zero.");
   }
 
+#ifdef BEND
+  if(bend_nmoments >0)
+  {
+      if(bend_nmoments >6)
+          error("currently only 6 bending moments are supported");
+      
+      for (k=0;k<bend_nmoments;k++)
+      {
+          this_bend_axis.x = (bend_axis + k)->x;
+          this_bend_axis.y = (bend_axis + k)->y;
+          this_bend_axis.z = (bend_axis + k)->z;
+          if(SPROD(this_bend_axis,this_bend_axis)==0)
+          error("definition of bending moment without axis");
+     
+#ifdef RELAX
+          tmp=((fbc_dforces + (bend_vtype_of_force[k]))->x)*
+              ((fbc_dforces + (bend_vtype_of_force[k]))->x) +
+              ((fbc_dforces + (bend_vtype_of_force[k]))->y)*
+              ((fbc_dforces + (bend_vtype_of_force[k]))->y) +
+              ((fbc_dforces + (bend_vtype_of_force[k]))->z)*
+              ((fbc_dforces + (bend_vtype_of_force[k]))->z);
+#else
+          tmp=((fbc_forces + (bend_vtype_of_force[k]))->x)*
+              ((fbc_forces + (bend_vtype_of_force[k]))->x) +
+              ((fbc_forces + (bend_vtype_of_force[k]))->y)*
+              ((fbc_forces + (bend_vtype_of_force[k]))->y) +
+              ((fbc_forces + (bend_vtype_of_force[k]))->z)*
+              ((fbc_forces + (bend_vtype_of_force[k]))->z);
+#endif
+          if(tmp==0)
+              error("definition of bending moment without force");
+      }
+  }
+#endif
+  
 #if defined(FBC) || defined(RIGID) || defined(DEFORM)
   if (vtypes == 0)
     error("FBC, RIGID, and DEFORM require parameter total_types to be set");
@@ -3134,6 +3252,14 @@ void broadcast_params() {
       error("Cannot allocate memory for fbc_forces on client."); 
   }
   MPI_Bcast( fbc_forces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
+  
+#ifdef BEND
+ if (NULL==bend_forces) {
+    bend_forces = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==bend_forces) 
+      error("Cannot allocate memory for bend_forces on client."); 
+  }
+#endif
   if (NULL==fbc_beginforces) {
     fbc_beginforces = (vektor *) malloc( vtypes * sizeof(vektor) );
     if (NULL==fbc_beginforces) 
@@ -3155,13 +3281,46 @@ void broadcast_params() {
       error("Cannot allocate memory for fbc_endforces on client."); 
   }
   MPI_Bcast( fbc_endforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
-  if (NULL==fbc_df) {
+#endif
+ if (NULL==fbc_df) {
     fbc_df = (vektor *) malloc( vtypes * sizeof(vektor) );
     if (NULL==fbc_df) 
       error("Cannot allocate memory for fbc_df on client."); 
   }
 #endif
+#ifdef ZAPP
+  MPI_Bcast( &zapp_threshold,         1, REAL,  0, MPI_COMM_WORLD);
 #endif
+#ifdef BEND
+    MPI_Bcast( &bend_nmoments,         1, MPI_INT,  0, MPI_COMM_WORLD);
+    MPI_Bcast( &bend_vtype_of_origin,  6, MPI_INT,  0, MPI_COMM_WORLD);
+    MPI_Bcast( &bend_vtype_of_force,   6, MPI_INT,  0, MPI_COMM_WORLD);
+     if (NULL==bend_axis) {
+        bend_axis = (vektor *) malloc( bend_nmoments * sizeof(vektor) );
+    if (NULL==bend_axis)
+      error("Cannot allocate memory for bend_axis vector on client.\n");
+    }
+     MPI_Bcast( bend_axis, bend_nmoments * DIM, REAL, 0, MPI_COMM_WORLD); 
+     /* these variables will be calculated and do not need to be communicated here */
+    if (NULL==bend_origin) {
+        bend_origin = (vektor *) malloc( bend_nmoments * sizeof(vektor) );
+    if (NULL==bend_origin)
+      error("Cannot allocate memory for bend_origin vector on client.\n");
+    }
+    if (NULL==bend_cog) {
+        bend_cog = (vektor *) malloc( bend_nmoments * sizeof(vektor) );
+    if (NULL==bend_cog)
+      error("Cannot allocate memory for bend_cog vector on client.\n");
+    }
+    if (NULL==bend_vec) {
+        bend_vec = (vektor *) malloc( bend_nmoments * sizeof(vektor) );
+    if (NULL==bend_vec)
+      error("Cannot allocate memory for bend_vec vector on client.\n");
+    }    
+#endif /* BEND */
+
+
+  
   if (NULL==restrictions) {
     restrictions = (vektor *) malloc( vtypes * sizeof(vektor) );
     if (NULL==restrictions) 

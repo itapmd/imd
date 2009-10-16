@@ -1236,6 +1236,16 @@ ifneq (,$(findstring fbc,${MAKETARGET}))
 PP_FLAGS += -DFBC
 endif
 
+ifneq (,$(findstring bend,${MAKETARGET}))
+PP_FLAGS += -DBEND
+PP_FLAGS += -DFBC
+endif
+
+ifneq (,$(findstring zapp,${MAKETARGET}))
+PP_FLAGS += -DZAPP
+endif
+
+
 ifneq (,$(findstring rigid,${MAKETARGET}))
 PP_FLAGS += -DRIGID
 endif

@@ -86,6 +86,7 @@ int main(int argc, char **argv)
   /* read parameters for first simulation phase */
   finished = read_parameters(paramfilename, simulation);
 
+        
   /* initialize all potentials */
   setup_potentials();
 
@@ -170,6 +171,16 @@ int main(int argc, char **argv)
   init_refpos();
 #endif
 
+#ifdef BEND
+  init_bend();
+#endif
+  
+#ifdef ZAPP
+  init_zapp();
+#endif
+
+
+  
 #ifdef CNA
   init_cna();
 #endif

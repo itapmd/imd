@@ -1363,6 +1363,10 @@ void init_refpos(void)
 
 #endif
 
+
+
+
+
 #ifdef AVPOS
 
 /******************************************************************************
@@ -1786,7 +1790,7 @@ void write_eng_file_header()
   str255 fname;
   FILE *fl;
 
-  int i;
+  int i,n;
 
   if (myid == 0) {
 
@@ -1886,6 +1890,16 @@ void write_eng_file_header()
     fprintf(fl, " E_el_ab E_ph_auf");
 #endif /*DEBUG*/
 #endif /*TTM*/
+
+#ifdef BEND
+  for (n=0; n<bend_nmoments; n++){
+      fprintf(fl, "cog[%d].x cog[%d].y cog[%d].z ",n,n,n);
+  }
+#endif
+
+#ifdef ZAPP
+  fprintf(fl, "totimpuls.x totimpuls.y totimpuls.z ");
+#endif
     putc('\n',fl);
 
     fclose(fl);
@@ -1902,14 +1916,18 @@ void write_eng_file_header()
 void write_eng_file(int steps)
 {
   str255 fname;
-  int i;
+  int i,n;
   static int flush_count=0;
   real tmp;  
 
 #ifdef HPO
   char *format=" %.16e";
+  char *format2=" %.16e %.16e";
+  char *format3=" %.16e %.16e %.16e";
 #else
   char *format=" %e";
+  char *format2=" %e %e";
+  char *format3=" %e %e %e";
 #endif
 
   real Epot, Temp, vol;
@@ -2050,37 +2068,37 @@ void write_eng_file(int steps)
 
   if (ensemble==ENS_NPT_AXIAL) {
 #ifdef TWOD
-      fprintf(eng_file," %e %e", (double) stress_x, (double) stress_y );
+      fprintf(eng_file,format2, (double) stress_x, (double) stress_y );
 #ifndef HOMDEF   
-    fprintf(eng_file," %e %e", (double)  box_x.x, (double)  box_y.y );
+      fprintf(eng_file,format2, (double)  box_x.x, (double)  box_y.y );
 #endif
 #else
-    fprintf(eng_file," %e %e %e", 
+      fprintf(eng_file,format3, 
 	    (double) stress_x, (double) stress_y, (double) stress_z );
 #ifndef HOMDEF   
-    fprintf(eng_file," %e %e %e", 
+      fprintf(eng_file,format3, 
 	    (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
 #endif
 #endif
   }
 
 #if defined(HOMDEF)
-  fprintf(eng_file, " %e %e ",(double) box_x.x, (double) box_y.y);
+  fprintf(eng_file, format2,(double) box_x.x, (double) box_y.y);
 #ifdef TWOD 
-  fprintf(eng_file, " %e ",(double) box_x.y);
+  fprintf(eng_file, format,(double) box_x.y);
 #else
-  fprintf(eng_file, " %e ", (double) box_z.z);
-  fprintf(eng_file, " %e %e %e ",(double) box_y.z,(double) box_x.z,(double)  box_x.y);
+  fprintf(eng_file, format, (double) box_z.z);
+  fprintf(eng_file, format3,(double) box_y.z,(double) box_x.z,(double)  box_x.y);
 #endif
 #endif
   
 #ifdef STRESS_TENS
-  fprintf(eng_file," %e %e", (double) Press_xx, (double) Press_yy);
+  fprintf(eng_file,format2, (double) Press_xx, (double) Press_yy);
 #ifdef TWOD
-  fprintf(eng_file," %e", (double) Press_xy);
+  fprintf(eng_file,format, (double) Press_xy);
 #else 
-  fprintf(eng_file," %e", (double) Press_zz);
-  fprintf(eng_file," %e %e %e",
+  fprintf(eng_file,format2, (double) Press_zz);
+  fprintf(eng_file,format3,
 	  (double) Press_yz, (double) Press_zx, (double) Press_xy);
 #endif    
 #endif
@@ -2090,6 +2108,15 @@ void write_eng_file(int steps)
   fprintf(eng_file, " %e %e", E_el_ab, E_ph_auf);
 #endif /*DEBUG*/
 #endif /*TTM*/
+
+#ifdef BEND
+   for (n=0; n<bend_nmoments; n++){
+       fprintf(eng_file, " %e %e %e ",(bend_cog + n)->x,(bend_cog + n)->y,(bend_cog + n)->z);
+  }
+#endif
+#ifdef ZAPP
+   fprintf(eng_file, " %e %e %e ", total_impuls.x,total_impuls.y,total_impuls.z);
+#endif
   putc('\n',eng_file);
   flush_count++;
 
@@ -2145,7 +2172,7 @@ void write_ssdef_header()
 #ifdef TWOD
         fprintf(out, "fbc_f[%d].x fbc_f[%d].y ",n,n);
 #else
-        fprintf(out, "fbc_f[%d].x fbc_f[%d].y fbc_f[%d].z ",n,n);
+    fprintf(out, "fbc_f[%d].x fbc_f[%d].y fbc_f[%d].z ",n,n,n);
 #endif
 #endif /* FBC */
     
@@ -2170,6 +2197,11 @@ void write_ssdef_header()
              fprintf(out, "tot_force[%d].z ",n);
 #endif
      }
+#ifdef BEND
+  for (n=0; n<bend_nmoments; n++){
+      fprintf(out, "cog[%d].x cog[%d].y cog[%d].z ",n,n,n);
+  }
+#endif
      fprintf(out, "\n");
      fclose(out);
   }
@@ -2184,6 +2216,7 @@ void write_ssdef_header()
 ******************************************************************************/
 void write_ssdef(int steps)
 {
+
     str255 fname;
     static int flush_count=0;
     int n,k,i;
@@ -2191,6 +2224,8 @@ void write_ssdef(int steps)
     real Epot;
     real tmpvec1[36],tmpvec2[36];
     double totalforcex[12],totalforcey[12],totalforcez[12];
+
+  
     
 #ifdef STRESS_TENS
   real Press_xx,Press_yy, Press_xy;
@@ -2200,6 +2235,8 @@ void write_ssdef(int steps)
   calc_tot_presstens();
 #endif
 
+
+  
   if(vtypes>12)
       error("increase totalforcevecs size in  write_ssdef");
   for(n=0; n<vtypes;n++)
@@ -2333,6 +2370,11 @@ void write_ssdef(int steps)
 #endif
      }
   }
+#ifdef BEND
+   for (n=0; n<bend_nmoments; n++){
+       fprintf(ssdef_file, " %e %e %e ",(bend_cog + n)->x,(bend_cog + n)->y,(bend_cog + n)->z);
+  }
+#endif
   fprintf(ssdef_file, "\n");fflush(ssdef_file);
   
 }
