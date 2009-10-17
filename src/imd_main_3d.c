@@ -1069,6 +1069,7 @@ void init_bend(void)
             }
         }
     }
+   
 #ifdef MPI
     for(i=0;i<6;i++)
     {
@@ -1099,7 +1100,7 @@ void init_bend(void)
         tmpvec1[3]=(bend_cog + j)->x;
         tmpvec1[4]=(bend_cog + j)->y;
         tmpvec1[5]=(bend_cog + j)->z;
-        MPI_Allreduce(tmpvec1 , tmpvec2, 6, MPI_REAL, MPI_SUM, cpugrid);
+        MPI_Allreduce(tmpvec1 , tmpvec2, 6, REAL, MPI_SUM, cpugrid);
         (bend_origin + j)->x = tmpvec2[0];
         (bend_origin + j)->y = tmpvec2[1];
         (bend_origin + j)->z = tmpvec2[2];
@@ -1108,7 +1109,7 @@ void init_bend(void)
         (bend_cog + j)->z    = tmpvec2[5];
     }
 #endif /* MPI */
-    
+
     for (j=0; j<bend_nmoments; j++){
         (bend_origin + j)->x /= bend_natomsvtype_origin[j];
         (bend_origin + j)->y /= bend_natomsvtype_origin[j];
@@ -1207,24 +1208,25 @@ void update_bend(void)
             }
         }
     }
+  
 #ifdef MPI
-    for (j=0; j<bend_nmoments; j++){
+     for (j=0; j<bend_nmoments; j++){
+    
         tmpvec1[0]=(bend_origin + j)->x;
         tmpvec1[1]=(bend_origin + j)->y;
         tmpvec1[2]=(bend_origin + j)->z;
         tmpvec1[3]=(bend_cog + j)->x;
         tmpvec1[4]=(bend_cog + j)->y;
         tmpvec1[5]=(bend_cog + j)->z;
-        MPI_Allreduce(tmpvec1 , tmpvec2, 6, MPI_REAL, MPI_SUM, cpugrid);
+        MPI_Allreduce(tmpvec1 , tmpvec2, 6, REAL, MPI_SUM, cpugrid);
         (bend_origin + j)->x = tmpvec2[0];
         (bend_origin + j)->y = tmpvec2[1];
         (bend_origin + j)->z = tmpvec2[2];
         (bend_cog + j)->x    = tmpvec2[3];
         (bend_cog + j)->y    = tmpvec2[4];
         (bend_cog + j)->z    = tmpvec2[5];
-    }
+        }
 #endif /* MPI */
-    
     for (j=0; j<bend_nmoments; j++){
         (bend_origin + j)->x /= bend_natomsvtype_origin[j];
         (bend_origin + j)->y /= bend_natomsvtype_origin[j];
@@ -1234,6 +1236,8 @@ void update_bend(void)
         (bend_cog + j)->y /= bend_natomsvtype_force[j];
         (bend_cog + j)->z /= bend_natomsvtype_force[j];
 
+     
+        
         (bend_vec + j)->x  = (bend_cog + j)->x - (bend_origin + j)->x;
         (bend_vec + j)->y  = (bend_cog + j)->y - (bend_origin + j)->y;
         (bend_vec + j)->z  = (bend_cog + j)->z - (bend_origin + j)->z;
