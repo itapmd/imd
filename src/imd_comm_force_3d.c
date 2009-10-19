@@ -1637,7 +1637,10 @@ void unpack_add_mark( msgbuf *b, int k, int l, int m )
   to = PTR_3D_V(cell_array, k, l, m, cell_dim);
 
   for (i=0; i<to->n; ++i) {
-    MARK(to,i) = MARK(to,i) | ((long) b->data[j++]);
+    if ( cna_crist > 0 )
+      MARK(to,i) = MARK(to,i) + ((long) b->data[j++]);
+    else
+      MARK(to,i) = MARK(to,i) | ((long) b->data[j++]);
   }
   b->n = j;
   if (b->n_max < b->n) 
