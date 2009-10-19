@@ -275,7 +275,9 @@ int main_loop(int simulation)
 #endif
       
         deform_sample();
+#ifdef RELAX
         is_relaxed=0;
+#endif
         deform_int=0;
 
 #ifdef NBLIST
