@@ -2795,12 +2795,12 @@ void check_parameters_complete()
               ((fbc_dforces + (bend_vtype_of_force[k]))->z)*
               ((fbc_dforces + (bend_vtype_of_force[k]))->z);
 #else
-          tmp=((fbc_forces + (bend_vtype_of_force[k]))->x)*
-              ((fbc_forces + (bend_vtype_of_force[k]))->x) +
-              ((fbc_forces + (bend_vtype_of_force[k]))->y)*
-              ((fbc_forces + (bend_vtype_of_force[k]))->y) +
-              ((fbc_forces + (bend_vtype_of_force[k]))->z)*
-              ((fbc_forces + (bend_vtype_of_force[k]))->z);
+          tmp=((fbc_endforces + (bend_vtype_of_force[k]))->x)*
+              ((fbc_endforces + (bend_vtype_of_force[k]))->x) +
+              ((fbc_endforces + (bend_vtype_of_force[k]))->y)*
+              ((fbc_endforces + (bend_vtype_of_force[k]))->y) +
+              ((fbc_endforces + (bend_vtype_of_force[k]))->z)*
+              ((fbc_endforces + (bend_vtype_of_force[k]))->z);
 #endif
           if(tmp==0)
               error("definition of bending moment without force");
