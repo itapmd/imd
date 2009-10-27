@@ -1866,14 +1866,20 @@ void write_eng_file_header()
 #endif
 #endif
 #endif
-#if defined(HOMDEF)
-    fprintf(fl, "box_x.x box_y.y ");
-#ifdef TWOD 
-    fprintf(fl, "box_x.y ");
-#else
-    fprintf(fl, "box_z.z ");
-    fprintf(fl, "box_y.z box_x.z  box_x.y ");
-#endif
+#ifdef HOMDEF
+    fprintf(fl, "box_x.x box_y.y box_z.z ");
+    if(lindef_x.y!=0)
+        fprintf(fl, "box_y.x ");
+    if(lindef_x.z!=0)
+        fprintf(fl, "box_z.x ");
+    if(lindef_y.x!=0)
+        fprintf(fl, "box_x.y ");
+    if(lindef_y.z!=0)
+        fprintf(fl, "box_z.y ");
+    if(lindef_z.x!=0)
+        fprintf(fl, "box_x.z ");
+    if(lindef_z.y!=0)
+        fprintf(fl, "box_y.z ");
 #endif
 #ifdef STRESS_TENS
     fprintf(fl, "Press_xx Press_yy ");
@@ -2084,12 +2090,21 @@ void write_eng_file(int steps)
 
 #if defined(HOMDEF)
   fprintf(eng_file, format2,(double) box_x.x, (double) box_y.y);
-#ifdef TWOD 
-  fprintf(eng_file, format,(double) box_x.y);
-#else
+#ifndef TWOD 
   fprintf(eng_file, format, (double) box_z.z);
-  fprintf(eng_file, format3,(double) box_y.z,(double) box_x.z,(double)  box_x.y);
 #endif
+  if(lindef_x.y!=0)
+      fprintf(eng_file, format, (double) box_y.x );
+  if(lindef_x.z!=0)
+      fprintf(eng_file, format, (double) box_z.x );
+  if(lindef_y.x!=0)
+      fprintf(eng_file, format, (double) box_x.y );
+  if(lindef_y.z!=0)
+      fprintf(eng_file, format, (double) box_z.y );
+  if(lindef_z.x!=0)
+      fprintf(eng_file, format, (double) box_x.z );
+  if(lindef_z.y!=0)
+      fprintf(eng_file, format, (double) box_y.z );
 #endif
   
 #ifdef STRESS_TENS
@@ -2161,12 +2176,20 @@ void write_ssdef_header()
     fprintf(out, "box_z.z ");
 #endif
 #ifdef HOMDEF
-#ifndef TWOD
-    fprintf(out, "box_y.z box_z.x box_x.y ");
-#else
-    fprintf(out, "box_x.y ");
+    if(lindef_x.y!=0)
+        fprintf(out, "box_y.x ");
+    if(lindef_x.z!=0)
+        fprintf(out, "box_z.x ");
+    if(lindef_y.x!=0)
+        fprintf(out, "box_x.y ");
+    if(lindef_y.z!=0)
+        fprintf(out, "box_z.y ");
+    if(lindef_z.x!=0)
+        fprintf(out, "box_x.z ");
+    if(lindef_z.y!=0)
+        fprintf(out, "box_y.z ");
 #endif
-#endif
+    
 #ifdef FBC
     for(n=0; n<vtypes;n++)
 #ifdef TWOD
@@ -2327,14 +2350,19 @@ void write_ssdef(int steps)
             (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
 #endif
 #ifdef HOMDEF
-#ifndef TWOD
-    fprintf(ssdef_file,"%e %e %e ",
-            (double) box_y.z, (double) box_z.x, (double) box_x.y );
-#else
-    fprintf(ssdef_file, "%e ", (double) box_x.y);
+    if(lindef_x.y!=0)
+        fprintf(ssdef_file, "%e ",box_y.x );
+    if(lindef_x.z!=0)
+        fprintf(ssdef_file, "%e ",box_z.x );
+    if(lindef_y.x!=0)
+        fprintf(ssdef_file, "%e ",box_x.y );
+    if(lindef_y.z!=0)
+        fprintf(ssdef_file, "%e ",box_z.y );
+    if(lindef_z.x!=0)
+        fprintf(ssdef_file, "%e ",box_x.z );
+    if(lindef_z.y!=0)
+        fprintf(ssdef_file, "%e ",box_y.z );
 #endif
-#endif
-
     
 #ifdef FBC
     for(n=0; n<vtypes;n++)

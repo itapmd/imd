@@ -750,7 +750,7 @@ void reset_glok(void)
     mix = 0.0;
 #endif
     maxwell(temperature);
-    move_atoms();
+    // move_atoms();
 #ifdef MIX
     mix = glok_mix; 
 #endif  
