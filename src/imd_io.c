@@ -2812,6 +2812,9 @@ void write_header_config(FILE *out)
 #ifdef DISLOC
   atompar++;
 #endif
+#ifdef CNA
+  if (cna_crist>0) atompar++;
+#endif
   fprintf(out, "%d\n", atompar);
 #endif /* UNIAX */
 
@@ -2861,6 +2864,9 @@ void write_header_config(FILE *out)
 #endif
 #ifdef DAMP
   fprintf(out, " damp_f");
+#endif
+#ifdef CNA
+  if (cna_crist>0) fprintf(out, " crist");
 #endif
 #endif /* UNIAX */
   fprintf(out, "\n" );

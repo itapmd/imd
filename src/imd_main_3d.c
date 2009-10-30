@@ -296,7 +296,9 @@ int main_loop(int simulation)
 
 #ifdef CNA
     if (steps <= cna_end) {
-      if (0 == (steps - cna_start)%(cna_int)) {
+      if (0 == (steps - cna_start)%(cna_int)
+	  || ((cna_crist>0) && (checkpt_int > 0) 
+	      && (0 == steps % checkpt_int))) {
 	/* activate computation of neighbour tables */ 
 	for (i=0; i<ntypes*ntypes; i++)
 	  neightab_r2cut[i] = cna_rcut * cna_rcut;

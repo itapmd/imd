@@ -661,6 +661,9 @@ void write_atoms_config(FILE *out)
 {
   int i, k, n, len=0;
   i_or_r *data;
+#ifdef CNA
+  int crist, nn, nn_other, nn_1421, nn_1422;
+#endif
 
 #ifdef HPO
 #define RESOL1 " %12.16f"
@@ -676,6 +679,28 @@ void write_atoms_config(FILE *out)
     cell *p;
     p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
+
+#ifdef CNA
+      if (cna_crist>0) {
+	nn_other = MARK(p,i) % 100; 
+	nn_1422  = ( MARK(p,i) / 100 ) % 100;
+	nn_1421  = ( MARK(p,i) / 10000 ) % 100;
+	nn       = nn_1421 + nn_1422 + nn_other;
+	  
+	/* fcc */
+	if ( nn == 12 && nn_1421 == 12 )
+	  crist = 0;
+	/* hcp */
+	else if ( nn == 12 && nn_1421 == 6 && nn_1422 == 6 )
+	  crist = 1;
+	/* other 12 */
+	else if ( nn == 12 )
+	  crist = 2;
+	/* other */
+	else
+	  crist = 3;
+      }
+#endif
 
       if (binary_output) {
         n = 0;
@@ -737,6 +762,11 @@ void write_atoms_config(FILE *out)
 #endif
 #ifdef DAMP
         data[n++].r = DAMPF(p,i);
+#endif
+#ifdef CNA
+	if (cna_crist>0) {	  
+	  data[n++].r = (real) crist;
+	}
 #endif
         len += n * sizeof(i_or_r);
       }
@@ -803,6 +833,10 @@ void write_atoms_config(FILE *out)
 #endif
 #ifdef DAMP
         len += sprintf(outbuf+len, RESOL1, DAMPF(p,i));
+#endif
+#ifdef CNA
+	if (cna_crist>0) 
+	  len += sprintf(outbuf+len, " %d", crist);
 #endif
         len += sprintf(outbuf+len,"\n");
       }
