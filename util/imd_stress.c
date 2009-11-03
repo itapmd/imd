@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -58,9 +58,6 @@ int main(int argc, char **argv)
 
   /* Read Parameters from parameter file */
   read_parameters();
-
-  /* read box from file header */
-  if (box_from_header) read_box(infilename);
 
   /* Initialize cell data structures */
   init_cells();
@@ -139,6 +136,9 @@ void read_stress(str255 infilename)
       /* enlarge it if necessary */
       if (to->n >= to->n_max) alloc_cell(to,to->n_max+CSTEP);
       /* put the data */
+      to->nummer[to->n] = nr;
+      to->sorte[to->n] = typ;
+      to->masse[to->n] = mass;
       to->ort[to->n] = pos;
       to->stress[to->n] = sigma;
       to->stress_offdia[to->n] = sigma_offdia;
@@ -191,7 +191,7 @@ void write_stress(int restart)
 #ifdef TWOD
 		fprintf(out, "%10.4e %10.4e %10.4e %10.4e %10.4e %10.4e\n", p->ort[l].x, p->ort[l].y, p->stress[l].x*tmp, p->stress[l].y*tmp, p->stress_offdia[l].x*tmp, p->vol[l]);
 #else
-	      fprintf(out, "%.16f %.16f %.16f %.16f %.16f %.16f %.16f %.16f %.16f %.16f\n", p->ort[l].x, p->ort[l].y, p->ort[l].z, p->stress[l].x*tmp, p->stress[l].y*tmp, p->stress[l].z*tmp, p->stress_offdia[l].x*tmp, p->stress_offdia[l].y*tmp, p->stress_offdia[l].z*tmp, p->vol[l]);
+		fprintf(out, "%d %d %f %.16f %.16f %.16f %.16f %.16f %.16f %.16f %.16f %.16f %.16f\n",p->nummer[l],p->sorte[l],p->masse[l], p->ort[l].x, p->ort[l].y, p->ort[l].z, p->stress[l].x*tmp, p->stress[l].y*tmp, p->stress[l].z*tmp, p->stress_offdia[l].x*tmp, p->stress_offdia[l].y*tmp, p->stress_offdia[l].z*tmp, p->vol[l]);
 #endif
 	      }
 	  }

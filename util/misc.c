@@ -19,6 +19,9 @@
 *
 ******************************************************************************/
 
+#include <stdio.h>
+#include <stdlib.h>
+
 void error(char *msg)
 {
   printf("Error: %s\n",msg);

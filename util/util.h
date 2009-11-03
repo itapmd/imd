@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2004 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -26,7 +26,7 @@
 *
 ******************************************************************************/
 
-#define UTIL_H
+#define  UTIL_H 1
 
 /* number of slots in the histograms */
 #ifdef TWOD
@@ -123,9 +123,10 @@ INLINE static int MOD(int p, int q)
 #endif
 
 #ifdef CNA
-#define MAX_NEIGH 120
-#define MAX_BONDS 240
-#define MAX_TYPES 250
+#define MAX_NEIGH 12
+#define MAX_BONDS 24
+#define MAX_TYPES 25
+#define PI 3.1415927
 #endif
 
 /* Tolerance values for imd_stress */
@@ -215,7 +216,7 @@ typedef struct { real c11, c12, c13, c14, c15, c16, c22, c23, c24,
 #ifdef COVALENT
 /* Neighbor table for Tersoff potential */
 typedef struct {
-#if !defined(RING) && !defined(CNA) && !defined(PS)
+#ifndef RING
   real        *dist;
 #endif
   short       *typ;
@@ -231,6 +232,10 @@ typedef neightab* neighptr;
 /* Basic Data Type - The Cell */
 typedef struct { 
   vektor *ort;
+#ifdef SLIP
+    vektor *dsp;
+    vektor *slip;
+#endif
 #ifdef STRAIN
   vektor *dsp;
   vektor *strain;
@@ -240,6 +245,9 @@ typedef struct {
   vektor *stress;
   vektor *stress_offdia;
   real   *vol;
+  int    *sorte;
+  real   *masse;
+  int    *nummer;
 #else
   int    *sorte;
 #endif
@@ -247,11 +255,17 @@ typedef struct {
   int    *nummer;
 #endif
 #ifdef CNA
+ short  *cna;
   short  *mark;
   real   *masse;
+  real   *ppc;
 #endif
-#ifdef COORD
-  real    *coord;
+#ifdef OVEC
+  vektor *ovec;
+#endif
+#if defined(COORD) || defined(CNA)
+     real    *coord;
+    //short    *coord;
   real    *poteng;
 #endif
 #ifdef COVALENT
@@ -351,13 +365,10 @@ void read_arg_ivektor4d(int *argcptr, char ***argvptr, ivektor4d *parptr);
 void read_parameters(void);
 void getparamfile(char *infile);
 void read_atoms(str255 infilename);
-void read_box(str255);
 void usage(void);
 ivektor cell_coord(vektor pos);
 void init_cells(void);
 void error(char *mesg);
-void error_str(char *msg, char *str);
-void error_str_str(char *msg, char *str1, char *str2);
 void alloc_cell(cell *cl, int count);
 void do_work(void (*do_cell_pair)(cell *p, cell *q, vektor pbc));
 void do_cell_pair(cell *p, cell *q, vektor pbc);
@@ -370,7 +381,8 @@ void calc_angles(void);
 
 #ifdef CNA
 void init_cna(void);
-void do_cna(cell *p, cell *q, vektor pbc);
+void do_cna(void);
+//void do_cna(cell *p, cell *q, vektor pbc);
 void domino(int start, int end, int listlength, int *max_chain, int *chain);
 void sort_pair_types(void);
 void write_atoms(void);
@@ -539,7 +551,6 @@ EXTERN int use_vtypes INIT(0); /* flag for using virtual types */
 EXTERN str255 progname;        /* Name of current executable argv[0] */
 EXTERN int curline;            /* Number of current line for parameter reading */
 EXTERN str255 error_msg;       /* string for error message */
-EXTERN int box_from_header INIT(0); /* read box from config file header */
 /* The simulation box and its inverse */
 EXTERN vektor box_x, tbox_x;
 EXTERN vektor box_y, tbox_y;
@@ -561,6 +572,8 @@ EXTERN ivektor pbc_dirs INIT(nullivektor);
 EXTERN ivektor pbc_dirs INIT(einsivektor);  /* directions with pbc - default is PBC */
 #endif
 #endif
+
+EXTERN int box_from_header INIT(1);
 
 /* Filenames */
 EXTERN str255 infilename;    /* Input File */
@@ -600,6 +613,8 @@ EXTERN int type_sort[MAX_TYPES];
 EXTERN int type_list_length INIT(0);
 EXTERN int *rdf_tab[MAX_TYPES];
 EXTERN real rcut;
+//void do_cna(cell *p, cell *q, vektor pbc);
+EXTERN int  cna_stat[5] INIT({0});
 #endif
 
 #ifdef CNA
