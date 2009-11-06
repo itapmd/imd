@@ -678,16 +678,19 @@ void update_glok(void)
   real ekin = 2 * tot_kin_energy / nactive;
 
   if ((PxF < 0.0) || (ekin > glok_ekin_threshold)  || 
-      (sqrt(f_max2) >= glok_fmaxcrit) && steps >glok_minsteps) {
+      (sqrt(f_max2) >= glok_fmaxcrit))
+  {
 #ifdef ADAPTGLOK
-    if (PxF < 0.0)
-    {
-        nPxF++;
-    /* decrease timestep, but only when it has been increased before */
+      if(steps >glok_minsteps) {
+          if (PxF < 0.0)
+          {
+              nPxF++;
+              /* decrease timestep, but only when it has been increased before */
         //    if (glok_int > glok_minsteps ) {
-      if (timestep > glok_maxtimestep/50.0) timestep *=glok_decfac;
-      // }
-    }
+              if (timestep > glok_maxtimestep/50.0) timestep *=glok_decfac;
+              // }
+          }
+      }
 #endif
 
 #ifdef ADAPTGLOK
