@@ -1284,23 +1284,15 @@ void pair_int_coulomb(real *pot, real *grad, real r2)
 
 void pair_int_mstr(real *pot, real *grad, int p_typ, int q_typ, real r2)
 {
-  real rred,fac,tpot,tgrad,r,r6,r12;
+  real rred,fac,tpot,tgrad,r,s_r2,s_r6,s_r12;
   int col;
-  sig_d_rad2  = lj_sigma[p_typ][q_typ] * lj_sigma[p_typ][q_typ] / r2;
-  sig_d_rad6  = sig_d_rad2 * sig_d_rad2 * sig_d_rad2;
-  sig_d_rad12 = sig_d_rad6 * sig_d_rad6;
-
-  *pot = lj_epsilon[p_typ][q_typ] * ( sig_d_rad12 - 2.0 * sig_d_rad6 );
-  /* return (1/r)*dV/dr as derivative */
-  *grad = -12.0 * lj_epsilon[p_typ][q_typ] / r2 
-    * ( sig_d_rad12 - sig_d_rad6 );  
 
   col=(p_typ<q_typ) ? p_typ*ntypes - (p_typ*(p_typ+1))/2 + q_typ
     : q_typ*ntypes - (q_typ*(q_typ+1))/2 + p_typ;
   r     = SQRT(r2);
   s_r2   = ms_sigma[col] * ms_sigma[col] / r2;
   s_r6   = s_r2 * s_r2 * s_r2;
-  s_r12  = s_r6 * s_r6 
+  s_r12  = s_r6 * s_r6; 
   rred  = 1.-r/ms_r0[col];
   fac   = tpot =exp(ms_gamma[col]*rred);
   tgrad = -fac;

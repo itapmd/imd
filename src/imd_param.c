@@ -2569,6 +2569,20 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       if (NULL==ms_r0) error("cannot allocate ms_r0");
       getparam(token,ms_r0,PARAM_REAL,ntypepairs,ntypepairs);
     }
+    /* Morse-Stretch parameter sigma */
+    else if (strcasecmp(token,"ms_sigma")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ms_sigma");
+      ms_sigma = (real *) malloc( ntypepairs*sizeof(real));
+      if (NULL==ms_sigma) error("cannot allocate ms_sigma");
+      getparam(token,ms_sigma,PARAM_REAL,ntypepairs,ntypepairs);
+    }
+    /* Morse-Stretch parameter epsilon */
+    else if (strcasecmp(token,"ms_epsilon")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ms_epsilon");
+      ms_epsilon = (real *) malloc( ntypepairs*sizeof(real));
+      if (NULL==ms_epsilon) error("cannot allocate ms_epsilon");
+      getparam(token,ms_epsilon,PARAM_REAL,ntypepairs,ntypepairs);
+    }
 
 #endif /* DIPOLE or MORSE */
 #ifdef EPITAX
@@ -3889,6 +3903,8 @@ void broadcast_params() {
   MPI_Bcast( dp_alpha,            ntypes, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( ms_D,            ntypepairs, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( ms_gamma,        ntypepairs, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( ms_sigma,        ntypepairs, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( ms_epsilon,      ntypepairs, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( ms_r0,           ntypepairs, REAL,    0, MPI_COMM_WORLD);
 #endif /* DIPOLE */
 
