@@ -831,6 +831,10 @@ void write_atoms_config(FILE *out)
         len += sprintf(outbuf+len, RESOL1, EAM_P(p,i));
 #endif
 #endif
+#ifdef DIPOLE
+	len += sprintf(outbuf+len, RESOL3, 
+		       DP_P_IND(p,i,X), DP_P_IND(p,i,Y), DP_P_IND(p,i,Z)); 
+#endif	/* DIPOLE */
 #ifdef DAMP
         len += sprintf(outbuf+len, RESOL1, DAMPF(p,i));
 #endif
