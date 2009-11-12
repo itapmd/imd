@@ -872,7 +872,7 @@ void create_dipole_tables()
   pair_int_coulomb(&coul_shift, &coul_fshift, ew_r2_cut);
   coulf2shift = ew_eps*ew_kappa*SQR(ew_kappa)*exp(-SQR(ew_kappa)*ew_r2_cut);
   coulf2shift /= sqrt(M_PI);
-  coulf2shift -= coul_fshift;
+  coulf2shift -= 0.75*coul_fshift;
   coulf2shift *= 4.0/ew_r2_cut;
   if (myid==0) {
     printf("Coulomb potential shifting parameters: %g , %g , %g\n", 
@@ -883,13 +883,13 @@ void create_dipole_tables()
     r2 = pt->begin[cou_col] + i * pt->step[cou_col];
     pair_int_coulomb(&pot,&grad,r2);
     pot -= coul_shift;
-    pot -= SQRT(r2)*coul_fshift*(SQRT(r2)-SQRT(ew_r2_cut));
-    pot -= ((0.25*r2 - SQRT(r2)*SQRT(ew_r2_cut)/3.0 )*r2 + 
-	    SQR(ew_r2_cut)/12.0)* coulf2shift;
+    pot -= 0.5*coul_fshift*(r2-ew_r2_cut);
+    pot -= 0.125*coulf2shift*(SQR(r2)-2.*r2*ew_r2_cut + 
+			      SQR(ew_r2_cut));
     *PTR_2D(pt->table,i,cou_col,pt->maxsteps,ncols)=pot;
     /* 1/r^3 equiv. deriv of 1/r */
-    grad -= coul_fshift*(2.0-SQRT(ew_r2_cut)/SQRT(r2));
-    grad -= SQRT(r2)*coulf2shift*(SQRT(r2)-SQRT(ew_r2_cut));
+    grad -= coul_fshift;
+    grad -= 0.5*coulf2shift*(r2-ew_r2_cut);
     grad /= -ew_eps;
     *PTR_2D(pt->table,i,sco_col,pt->maxsteps,ncols)=grad;
   /* Other tables: Short-range dipole fn */
