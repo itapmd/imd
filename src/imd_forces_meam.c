@@ -624,7 +624,7 @@ void init_meam(void) {
       else
 	  invmeam_r0[i] = 1.0 / meam_r0[i];
       
-      if (meam_rh0[i]==0.0)
+      if (meam_rho0[i]==0.0)
 	  error("meam_rho0 is zero!");
       else
 	  invmeam_rho0[i] = 1.0 / meam_rho0[i];
