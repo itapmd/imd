@@ -1022,7 +1022,7 @@ ifneq (,$(strip $(findstring eam,${MAKETARGET})))
   # MEAM
   ifneq (,$(strip $(findstring meam,${MAKETARGET})))
     PP_FLAGS  += -DMEAM
-    FORCESOURCES += ${MEAMSOURCES}
+    FORCESOURCES += ${MEAMSOURCES}  ${COVALENTSOURCES}
   else
     PP_FLAGS  += -DEAM2
     ifneq (,$(strip $(findstring asympot,${MAKETARGET})))
