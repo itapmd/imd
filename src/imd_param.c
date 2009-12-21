@@ -2569,19 +2569,23 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       if (NULL==ms_r0) error("cannot allocate ms_r0");
       getparam(token,ms_r0,PARAM_REAL,ntypepairs,ntypepairs);
     }
-    /* Morse-Stretch parameter sigma */
-    else if (strcasecmp(token,"ms_sigma")==0) {
-      if (ntypes==0) error("specify parameter ntypes before ms_sigma");
-      ms_sigma = (real *) malloc( ntypepairs*sizeof(real));
-      if (NULL==ms_sigma) error("cannot allocate ms_sigma");
-      getparam(token,ms_sigma,PARAM_REAL,ntypepairs,ntypepairs);
+    /* Morse-Stretch spring constant ms_harm_c */
+    else if (strcasecmp(token,"ms_harm_c")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ms_harm_c");
+      ms_harm_c = (real *) malloc( ntypepairs*sizeof(real));
+      if (NULL==ms_harm_c) error("cannot allocate ms_harm_c");
+      getparam(token,ms_harm_c,PARAM_REAL,ntypepairs,ntypepairs);
     }
-    /* Morse-Stretch parameter epsilon */
-    else if (strcasecmp(token,"ms_epsilon")==0) {
-      if (ntypes==0) error("specify parameter ntypes before ms_epsilon");
-      ms_epsilon = (real *) malloc( ntypepairs*sizeof(real));
-      if (NULL==ms_epsilon) error("cannot allocate ms_epsilon");
-      getparam(token,ms_epsilon,PARAM_REAL,ntypepairs,ntypepairs);
+    /* Morse-Stretch minimum distance ms_rmin */
+    else if (strcasecmp(token,"ms_rmin")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ms_rmin");
+      ms_r2_min = (real *) malloc( ntypepairs*sizeof(real));
+      if (NULL==ms_r2_min) error("cannot allocate ms_r2_min");
+      getparam(token,ms_r2_min,PARAM_REAL,ntypepairs,ntypepairs);
+      for (i=0;i<ntypepairs;i++) {
+	rtmp = SQR(ms_r2_min[i]);
+	ms_r2_min[i] = rtmp;
+      }
     }
 
 #endif /* DIPOLE or MORSE */
@@ -3890,6 +3894,11 @@ void broadcast_params() {
 #endif
 
 #ifdef DIPOLE
+  if (NULL==charge) {
+    charge = (real *) malloc( ntypes * sizeof(real) );
+    if (NULL==charge) 
+      error("Cannot allocate memory for charge on client."); 
+  }
   MPI_Bcast( charge,              ntypes, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &ew_kappa,           1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &ew_r2_cut,          1,      REAL,    0, MPI_COMM_WORLD);
@@ -3898,13 +3907,53 @@ void broadcast_params() {
   MPI_Bcast( &dp_mix,             1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &dp_res,             1,      MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &dp_begin,           1,      REAL,    0, MPI_COMM_WORLD);
+  if (NULL==dp_b) {
+    dp_b = (real *) malloc( ntypepairs * sizeof(real) );
+    if (NULL==dp_b) 
+      error("Cannot allocate memory for dp_b on client."); 
+  }
   MPI_Bcast( dp_b,            ntypepairs, REAL,    0, MPI_COMM_WORLD);
+  if (NULL==dp_c) {
+    dp_c = (real *) malloc( ntypepairs * sizeof(real) );
+    if (NULL==dp_c) 
+      error("Cannot allocate memory for dp_c on client."); 
+  }
   MPI_Bcast( dp_c,            ntypepairs, REAL,    0, MPI_COMM_WORLD);
+  if (NULL==dp_alpha) {
+    dp_alpha = (real *) malloc( ntypes * sizeof(real) );
+    if (NULL==dp_alpha) 
+      error("Cannot allocate memory for dp_alpha on client."); 
+  }
   MPI_Bcast( dp_alpha,            ntypes, REAL,    0, MPI_COMM_WORLD);
+  if (NULL==ms_D) {
+    ms_D = (real *) malloc( ntypepairs * sizeof(real) );
+    if (NULL==ms_D) 
+      error("Cannot allocate memory for ms_D on client."); 
+  }
   MPI_Bcast( ms_D,            ntypepairs, REAL,    0, MPI_COMM_WORLD);
+  if (NULL==ms_gamma) {
+    ms_gamma = (real *) malloc( ntypepairs * sizeof(real) );
+    if (NULL==ms_gamma) 
+      error("Cannot allocate memory for ms_gamma on client."); 
+  }
   MPI_Bcast( ms_gamma,        ntypepairs, REAL,    0, MPI_COMM_WORLD);
-  MPI_Bcast( ms_sigma,        ntypepairs, REAL,    0, MPI_COMM_WORLD);
-  MPI_Bcast( ms_epsilon,      ntypepairs, REAL,    0, MPI_COMM_WORLD);
+  if (NULL==ms_harm_c) {
+    ms_harm_c = (real *) malloc( ntypepairs * sizeof(real) );
+    if (NULL==ms_harm_c) 
+      error("Cannot allocate memory for ms_harm_c on client."); 
+  }
+  MPI_Bcast( ms_harm_c,        ntypepairs, REAL,    0, MPI_COMM_WORLD);
+  if (NULL==ms_r2_min) {
+    ms_r2_min = (real *) malloc( ntypepairs * sizeof(real) );
+    if (NULL==ms_r2_min) 
+      error("Cannot allocate memory for ms_r2_min on client."); 
+  }
+  MPI_Bcast( ms_r2_min,      ntypepairs, REAL,    0, MPI_COMM_WORLD);
+  if (NULL==ms_r0) {
+    ms_r0 = (real *) malloc( ntypepairs * sizeof(real) );
+    if (NULL==ms_r0) 
+      error("Cannot allocate memory for ms_r0 on client."); 
+  }
   MPI_Bcast( ms_r0,           ntypepairs, REAL,    0, MPI_COMM_WORLD);
 #endif /* DIPOLE */
 

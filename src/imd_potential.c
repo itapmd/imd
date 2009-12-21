@@ -584,8 +584,13 @@ void create_pot_table(pot_table_t *pt)
 #endif
 #if defined(DIPOLE) || defined(MORSE)
             /* Morse-Stretch potential for dipole */
-            if ((ew_r2_cut > 0)) {
-              if (r2 < ew_r2_cut) {
+            if ((ew_r2_cut > 0)) { 
+	      /* harmonic spring */
+	      if (r2 < ms_r2_min[col]) {
+		val += ms_harm_c[col]*SQR(SQRT(r2)-ms_harm_a[col])
+		  + ms_harm_b[col];
+		  }
+              else if (r2 < ew_r2_cut) {
                 pair_int_mstr(&pot, &grad, i, j, r2);
                 val += pot - ms_shift[col];
                 val -= SQRT(r2)*ms_fshift[col]*(SQRT(r2)-SQRT(ew_r2_cut));
@@ -624,9 +629,13 @@ void init_pre_pot(void) {
   real tmp = 0.0;
 
 #if defined(DIPOLE) || defined(MORSE)
+  real pot,grad;
   ms_shift = (real *) malloc (ntypepairs * sizeof(real));
   ms_fshift = (real *) malloc (ntypepairs * sizeof(real));
-  if (( NULL == ms_shift ) || ( NULL == ms_fshift ))
+  ms_harm_a = (real *) malloc (ntypepairs * sizeof(real));
+  ms_harm_b = (real *) malloc (ntypepairs * sizeof(real));
+  if (( NULL == ms_shift ) || ( NULL == ms_fshift ) || 
+      ( NULL == ms_harm_a )|| ( NULL == ms_harm_b ))
     error("cannot allocate Morse-Stretch shift");
 #endif
   n=0; m=0;
@@ -787,13 +796,28 @@ void init_pre_pot(void) {
 #if defined(DIPOLE) || defined(MORSE)
       /* Morse-Stretch for Dipole */
       if (i<=j) {
+	col= i*ntypes - (i*(i+1))/2 + j;
 	if (ew_r2_cut > 0)  {
-	  col= i*ntypes - (i*(i+1))/2 + j;
 	  pair_int_mstr( &ms_shift[col], &ms_fshift[col], i, j, ew_r2_cut);
           if (myid==0) {
             printf("Morse-Stretch pot %1d %1d (col %1d) shifted by %g,\n", 
 	           i, j, col, -ms_shift[col]);
 	  }
+	}
+	else {
+	  ms_shift[col] = 0.;
+	  ms_fshift[col] = 0.;
+	}
+	/* short range: harmonic spring */
+	if (ms_r2_min[col] > 0)  {
+	  pair_int_mstr(&pot, &grad, i, j, ms_r2_min[col]);
+	  pot -= ms_shift[col];
+	  pot -= SQRT(ms_r2_min[col])*ms_fshift[col]*
+		       (SQRT(ms_r2_min[col])-SQRT(ew_r2_cut));
+	  grad -= ms_fshift[col]*(2.0-SQRT(ew_r2_cut)/SQRT(ms_r2_min[col]));
+	  ms_harm_a[col] = SQRT(ms_r2_min[col])-grad/(2.0*ms_harm_c[col]);
+	  ms_harm_b[col] = pot-ms_harm_c[col]*
+	    SQR(SQRT(ms_r2_min[col])-ms_harm_a[col]);
 	}
       }
 #endif
@@ -1284,24 +1308,21 @@ void pair_int_coulomb(real *pot, real *grad, real r2)
 
 void pair_int_mstr(real *pot, real *grad, int p_typ, int q_typ, real r2)
 {
-  real rred,fac,tpot,tgrad,r,s_r2,s_r6,s_r12;
+  real rred,fac,tpot,tgrad,r;
   int col;
 
   col=(p_typ<q_typ) ? p_typ*ntypes - (p_typ*(p_typ+1))/2 + q_typ
     : q_typ*ntypes - (q_typ*(q_typ+1))/2 + p_typ;
   r     = SQRT(r2);
-  s_r2   = ms_sigma[col] * ms_sigma[col] / r2;
-  s_r6   = s_r2 * s_r2 * s_r2;
-  s_r12  = s_r6 * s_r6; 
   rred  = 1.-r/ms_r0[col];
   fac   = tpot =exp(ms_gamma[col]*rred);
   tgrad = -fac;
   fac   = exp(0.5*ms_gamma[col]*rred);
   tpot -= 2.*fac;
   tgrad+= fac;
-  *pot  = tpot*ms_D[col] + ms_epsilon[col] * s_r12;
-  *grad = tgrad*ms_D[col]*ms_gamma[col]/(r*ms_r0[col]) 
-    - 12.0 * ms_epsilon[col]/r2 * s_r12;
+  *pot  = tpot*ms_D[col];
+  *grad = tgrad*ms_D[col]*ms_gamma[col]/(r*ms_r0[col]) ;
+
 }
 
 

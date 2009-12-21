@@ -1115,8 +1115,10 @@ EXTERN real     coul_fshift;
 EXTERN real     *dp_alpha  INIT(NULL); /* in e^2 A^2 / eV^2 */
 EXTERN real     *ms_D      INIT(NULL); /* in eV */
 EXTERN real     *ms_gamma  INIT(NULL);
-EXTERN real     *ms_sigma  INIT(NULL);
-EXTERN real     *ms_epsilon INIT(NULL);
+EXTERN real     *ms_harm_a  INIT(NULL);
+EXTERN real     *ms_harm_b  INIT(NULL);
+EXTERN real     *ms_harm_c  INIT(NULL);
+EXTERN real     *ms_r2_min INIT(NULL);
 EXTERN real     *ms_r0     INIT(NULL); /* in A */
 EXTERN real *ms_shift     INIT(NULL);
 EXTERN real *ms_fshift    INIT(NULL);
