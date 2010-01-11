@@ -1328,7 +1328,8 @@ void calc_forces(int steps)
 	dp_converged=1;
 	dp_sum=1.;
       }
-      if  (fabs(dp_sum-dp_sum_old) < dp_tol) /* reasonable? */
+/*       if  (fabs(dp_sum)-dp_sum_old) < dp_tol) /\* reasonable? *\/ */
+      if (dp_sum < dp_tol)
 	dp_converged=1;
       dp_it++;
 
