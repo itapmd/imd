@@ -113,13 +113,15 @@ void init_coord()
   /* Cutoff radii for contruction of neighbour tables */
   for (i=0; i<ntypes; i++) {
     for (j=i; j<ntypes; j++) {
-      if ( r_cut_vec[0] != -1.0 )
-	/* Cutoffs are given as parameter r_cut */
-	tmp = r_cut_vec[n];
-      else
-	/* If cutoffs are not given in the parameter file,
-	   take r_max specified by the option -e */
-	tmp = r_max;
+      /* imd_coord should behave as written on web site, i.e take cut off */
+      /* from command line, not parameter file */
+/*       if ( r_cut_vec[0] != -1.0 ) */
+/* 	/\* Cutoffs are given as parameter r_cut *\/ */
+/* 	tmp = r_cut_vec[n]; */
+/*       else */
+/* 	/\* If cutoffs are not given in the parameter file, */
+/* 	   take r_max specified by the option -e *\/ */
+      tmp = r_max;
 
       r_cut[i][j]  = r_cut[j][i]  = tmp;
       ++n;      
