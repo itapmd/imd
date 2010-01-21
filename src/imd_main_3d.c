@@ -211,7 +211,11 @@ int main_loop(int simulation)
         {
             //lindef_int now plays the role of  max_deform_int
             // have to find something which plays the fole of deformint
+#ifdef GLOK
             if ( (is_relaxed && (steps-glok_start>=10)) ||  (0 == deform_int % lindef_int))
+#else  /* GLOK */
+            if ( (is_relaxed ) ||  (0 == deform_int % lindef_int))
+#endif
             {
                 write_ssdef(steps);
                 write_ssconfig(steps); /* write config, even when not fully relaxed */
