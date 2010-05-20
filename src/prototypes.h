@@ -40,8 +40,15 @@ void free_pot_table ( pot_table_t*);
 #ifdef LINPOT
 void make_lin_pot_table( pot_table_t, lin_pot_table_t* );
 #endif
+
+#ifdef FEFL
+/* void atom_int_ec(real *pot, real *grad, int p_typ, real r2); */
+void calc_fefl(void);
+#endif
+
 #ifdef PAIR
 void pair_int_lj(real *pot, real *grad, int p_typ, int q_typ, real r2);
+void pair_int_ljg(real *pot, real *grad, int p_typ, int q_typ, real r2);
 void pair_int_morse(real *pot, real *grad, int p_typ, int q_typ, real r2);
 void pair_int_buck(real *pot, real *grad, int p_typ, int q_typ, real r2);
 void pair_int_mstr(real *pot, real *grad, int p_typ, int q_typ, real r2);

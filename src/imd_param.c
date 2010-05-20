@@ -2297,6 +2297,27 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       if (ntypes==0) error("specify parameter ntypes before lj_sigma");
       getparam(token, lj_sigma_lin, PARAM_REAL, ntypepairs, ntypepairs);
     }
+    /* Lennard-Jones-Gauss */
+    else if (strcasecmp(token,"lj_epsilon")==0) {
+      if (ntypes==0) error("specify parameter ntypes before lj_epsilon");
+      getparam(token ,lj_epsilon_lin, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+    else if (strcasecmp(token,"lj_sigma")==0) {
+      if (ntypes==0) error("specify parameter ntypes before lj_sigma");
+      getparam(token, lj_sigma_lin, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+    else if (strcasecmp(token,"ljg_eps")==0) {
+      if (ntypes==0) error("specify parameter ntypes before lj_sigma");
+      getparam(token, ljg_eps_lin, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+    else if (strcasecmp(token,"ljg_r0")==0) {
+      if (ntypes==0) error("specify parameter ntypes before lj_sigma");
+      getparam(token, ljg_r0_lin, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+    else if (strcasecmp(token,"ljg_sig")==0) {
+      if (ntypes==0) error("specify parameter ntypes before lj_sigma");
+      getparam(token, ljg_sig_lin, PARAM_REAL, ntypepairs, ntypepairs);
+    }
     /* Morse */
     else if (strcasecmp(token,"morse_epsilon")==0) {
       if (ntypes==0) error("specify parameter ntypes before morse_epsilon");
@@ -2328,6 +2349,18 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       if (ntypes==0) error("specify parameter ntypes before spring_const");
       getparam(token, spring_const, PARAM_REAL, 
                ntypepairs-ntypes, ntypepairs-ntypes);
+    }
+#endif
+#ifdef FEFL
+    /*harmonic potential for Einstein crystal */
+    else if (strcasecmp(token,"spring_rate")==0) {
+      if (ntypes==0) error("specify parameter ntypes before spring_rate");
+      getparam(token, spring_rate, PARAM_REAL, ntypes, ntypes);
+      have_pre_pot = 1;
+    }
+    else if (strcasecmp(token,"lambda")==0) {
+      /* parameter for potential switching */
+      getparam(token, &lambda, PARAM_REAL,1,1);
     }
 #endif
 #ifdef COVALENT
@@ -3827,6 +3860,12 @@ void broadcast_params() {
   /* Lennard-Jones */
   MPI_Bcast( lj_epsilon_lin, ntypepairs, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( lj_sigma_lin,   ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  /* Lennard-Jones-Gauss */
+  MPI_Bcast( lj_epsilon_lin, ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( lj_sigma_lin,   ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ljg_eps_lin, ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ljg_r0_lin,   ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ljg_sig_lin,   ntypepairs, REAL, 0, MPI_COMM_WORLD);
   /* Morse */
   MPI_Bcast( morse_epsilon_lin, ntypepairs, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( morse_sigma_lin,   ntypepairs, REAL, 0, MPI_COMM_WORLD);
@@ -3837,6 +3876,12 @@ void broadcast_params() {
   MPI_Bcast( buck_sigma_lin, ntypepairs, REAL, 0, MPI_COMM_WORLD);
   /* harmonic potential for shell model */
   MPI_Bcast( spring_const, ntypepairs-ntypes, REAL, 0, MPI_COMM_WORLD);
+#endif
+
+#ifdef FEFL
+  /* harmonic potential for Einstein crystal */
+  MPI_Bcast( spring_rate, ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &lambda, 1, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef COVALENT

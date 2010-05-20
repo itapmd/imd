@@ -183,6 +183,10 @@
 #define REFPOS
 #endif
 
+#ifdef FEFL
+#define REFPOS
+#endif
+
 /******************************************************************************
 *
 * Architectures

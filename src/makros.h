@@ -118,6 +118,7 @@ INLINE static int MOD(shortint p, int q)
 #define EPOT_REF(cell,i)        (atoms.Epot_ref   [(cell)->ind[i]])
 #define ORT_REF(cell,i,sub)     (atoms.ort_ref sub((cell)->ind[i]))
 #endif
+
 #ifdef CNA
 #define MARK(cell,i)            (atoms.mark[(cell)->ind[i]])
 #endif

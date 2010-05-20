@@ -45,6 +45,18 @@
 
 /*****************************************************************************
 *
+*  Evaluate harmonic crystal
+*
+******************************************************************************/
+
+#define ATOM_INT_EC(pot, grad, p_typ, r2)		        	\
+{									\
+  pot += 0.5 * spring_rate[p_typ] * r2;			        	\
+  grad += spring_rate[p_typ];				        	\
+}
+
+/*****************************************************************************
+*
 *  Evaluate Lennard-Jones potential
 *
 ******************************************************************************/
@@ -76,6 +88,30 @@
   pot  = lj_epsilon_vec[col] * (sig_d_rad12 - 2.0 * sig_d_rad6);           \
   grad = - 12.0 * lj_epsilon_vec[col] * (sig_d_rad12 - sig_d_rad6) / (r2); \
 }
+
+/*****************************************************************************
+*
+*  Evaluate Lennard-Jones potential
+*
+******************************************************************************/
+
+#define PAIR_INT_LJG(pot, grad, p_typ, q_typ, r2)			\
+{									\
+  real sig_d_rad2, sig_d_rad6, sig_d_rad12, expo, dr;			\
+									\
+  sig_d_rad2  = lj_sigma[p_typ][q_typ] * lj_sigma[p_typ][q_typ] / (r2);	\
+  sig_d_rad6  = sig_d_rad2 * sig_d_rad2 * sig_d_rad2;			\
+  sig_d_rad12 = sig_d_rad6 * sig_d_rad6;				\
+                                                                        \
+  dr = ( sqrt(r2)-ljg_r0[p_typ][q_typ] ) / ljg_sig[p_typ][q_typ];       \
+  expo = exp ( - 0.5 * dr * dr );					\
+									\
+  pot += lj_epsilon[p_typ][q_typ] * ( sig_d_rad12 - 2.0 * sig_d_rad6 )	\
+    - lj_shift[p_typ][q_typ]                                            \
+    - ljg_eps[p_typ][q_typ] * expo;					\
+  grad += - 12.0 * lj_epsilon[p_typ][q_typ] / (r2)			\
+    * ( sig_d_rad12 - sig_d_rad6 )                                      \ 
+    - ljg_eps[p_typ][q_typ] * dr * expo / ljg_sig[p_typ][q_typ];	\
 
 /*****************************************************************************
 *

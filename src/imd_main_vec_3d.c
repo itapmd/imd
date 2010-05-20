@@ -841,6 +841,7 @@ void calc_forces(int steps)
 
 #ifdef MPI
   /* sum up results of different CPUs */
+#ifndef FEFL
   tmpvec1[0] = tot_pot_energy;
   tmpvec1[1] = virial;
   tmpvec1[2] = vir_xx;
@@ -852,6 +853,7 @@ void calc_forces(int steps)
   vir_xx         = tmpvec2[2];
   vir_yy         = tmpvec2[3];
   vir_zz         = tmpvec2[4];
+#endif
 #endif
 
   /* add forces back to original cells/cpus */

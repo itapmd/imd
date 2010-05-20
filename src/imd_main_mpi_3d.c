@@ -264,6 +264,7 @@ void calc_forces(int steps)
 #endif /* EAM2 */
 
   /* sum up results of different CPUs */
+#ifndef FEFL
   tmpvec1[0] = tot_pot_energy;
   tmpvec1[1] = virial;
   tmpvec1[2] = vir_xx;
@@ -283,6 +284,7 @@ void calc_forces(int steps)
   vir_yz         = tmpvec2[5];
   vir_zx         = tmpvec2[6];
   vir_xy         = tmpvec2[7];
+#endif
 
 #ifdef AR
   send_forces(add_forces,pack_forces,unpack_forces);

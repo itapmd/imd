@@ -352,6 +352,9 @@ int main_loop(int simulation)
 #ifdef NEB
     calc_forces_neb();
 #endif
+#ifdef FEFL
+    calc_fefl();
+#endif
 #ifdef TIMING
     imd_stop_timer(&time_forces);
 #endif

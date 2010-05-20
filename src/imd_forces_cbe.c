@@ -1359,8 +1359,10 @@ void calc_forces(int const steps)
 
 #ifdef MPI
   /* sum up results of different CPUs */
+#ifndef FEFL
   tmpvec1[0]     = tot_pot_energy;
   tmpvec1[1]     = virial;
+#endif
   tmpvec1[2]     = tot_kin_energy;
   tmpvec1[3]     = E_kin_2;
   tmpvec1[4]     = fnorm;
@@ -1369,8 +1371,10 @@ void calc_forces(int const steps)
 
   MPI_Allreduce( tmpvec1, tmpvec2, 7, MPI_FLOAT, MPI_SUM, cpugrid);
 
+#ifndef FEFL
   tot_pot_energy = tmpvec2[0];
   virial         = tmpvec2[1];
+#endif
   tot_kin_energy = tmpvec2[2];
   E_kin_2        = tmpvec2[3];
   fnorm          = tmpvec2[4];

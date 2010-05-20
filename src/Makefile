@@ -902,6 +902,8 @@ CNASOURCES      = imd_cna.c
 
 EPITAXSOURCES   = imd_epitax.c
 
+FEFLSOURCES	= imd_fefl.c
+
 DEFORMSOURCES   = imd_deform.c
 
 SOCKHEADERS     = sockets.h sockutil.h socket_io.h
@@ -1383,6 +1385,12 @@ endif
 ifneq (,$(strip $(findstring epitax,${MAKETARGET})))
 PP_FLAGS  += -DEPITAX
 SOURCES += ${EPITAXSOURCES}
+endif
+
+# FEFL
+ifneq (,$(findstring fefl,${MAKETARGET}))
+PP_FLAGS += -DFEFL
+SOURCES += ${FEFLSOURCES}
 endif
 
 # Correlation

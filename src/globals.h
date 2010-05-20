@@ -880,6 +880,13 @@ EXTERN real lj_aaa  [10][10];
 EXTERN real lj_epsilon_vec[55] INIT(zero55);
 EXTERN real lj_sigma2_vec[55] INIT(zero55);
 #endif
+/* Lennard-Jones-Gauss */
+EXTERN real ljg_eps_lin[55] INIT(zero55);
+EXTERN real ljg_eps[10][10];
+EXTERN real ljg_sig_lin[55] INIT(zero55);
+EXTERN real ljg_sig[10][10];
+EXTERN real ljg_r0_lin[55] INIT(zero55);
+EXTERN real ljg_r0[10][10];
 /* Morse */
 EXTERN real morse_epsilon_lin[55] INIT(zero55);
 EXTERN real morse_epsilon[10][10];
@@ -905,6 +912,12 @@ EXTERN real spring_cst[10][10];
 EXTERN real ew_shift [10][10];
 EXTERN real ew_fshift[10][10];
 #endif
+#endif
+
+#ifdef FEFL
+EXTERN real spring_rate[10] INIT(zero10);
+/* EXTERN real spring_rt[10]; */
+EXTERN real lambda INIT(1.0);
 #endif
 
 #ifdef EAM2
