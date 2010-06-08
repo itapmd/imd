@@ -110,7 +110,7 @@
     - lj_shift[p_typ][q_typ]                                            \
     - ljg_eps[p_typ][q_typ] * expo;					\
   grad += - 12.0 * lj_epsilon[p_typ][q_typ] / (r2)			\
-    * ( sig_d_rad12 - sig_d_rad6 )                                      \ 
+    * ( sig_d_rad12 - sig_d_rad6 )                                      \
     - ljg_eps[p_typ][q_typ] * dr * expo / ljg_sig[p_typ][q_typ];	\
 
 /*****************************************************************************

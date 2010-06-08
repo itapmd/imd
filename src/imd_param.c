@@ -2297,15 +2297,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       if (ntypes==0) error("specify parameter ntypes before lj_sigma");
       getparam(token, lj_sigma_lin, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    /* Lennard-Jones-Gauss */
-    else if (strcasecmp(token,"lj_epsilon")==0) {
-      if (ntypes==0) error("specify parameter ntypes before lj_epsilon");
-      getparam(token ,lj_epsilon_lin, PARAM_REAL, ntypepairs, ntypepairs);
-    }
-    else if (strcasecmp(token,"lj_sigma")==0) {
-      if (ntypes==0) error("specify parameter ntypes before lj_sigma");
-      getparam(token, lj_sigma_lin, PARAM_REAL, ntypepairs, ntypepairs);
-    }
+    /* Gauss Part of Lennard-Jones-Gauss */
     else if (strcasecmp(token,"ljg_eps")==0) {
       if (ntypes==0) error("specify parameter ntypes before lj_sigma");
       getparam(token, ljg_eps_lin, PARAM_REAL, ntypepairs, ntypepairs);
@@ -3860,9 +3852,7 @@ void broadcast_params() {
   /* Lennard-Jones */
   MPI_Bcast( lj_epsilon_lin, ntypepairs, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( lj_sigma_lin,   ntypepairs, REAL, 0, MPI_COMM_WORLD);
-  /* Lennard-Jones-Gauss */
-  MPI_Bcast( lj_epsilon_lin, ntypepairs, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( lj_sigma_lin,   ntypepairs, REAL, 0, MPI_COMM_WORLD);
+  /* Gauss Part of Lennard-Jones-Gauss */
   MPI_Bcast( ljg_eps_lin, ntypepairs, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ljg_r0_lin,   ntypepairs, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ljg_sig_lin,   ntypepairs, REAL, 0, MPI_COMM_WORLD);

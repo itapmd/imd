@@ -526,20 +526,20 @@ void create_pot_table(pot_table_t *pt)
           for (n=0; n<len[i][j]; n++) {
             val = 0.0;
             r2 = r2_begin[i][j] + n * r2_step[i][j];
-            /* Lennard-Jones */
-            if (lj_epsilon[i][j]>0) {
+            /* Lennard-Jones-Gauss ... */
+            if (ljg_eps[i][j]>0) {
               if (r2 < (1.0 - POT_TAIL) * r2_cut[i][j]) {
-                pair_int_lj(&pot, &grad, i, j, r2);
+                pair_int_ljg(&pot, &grad, i, j, r2);
                 val += pot - lj_shift[i][j];
               }
               else if (r2 <= r2_cut[i][j]) {
                 val += lj_aaa[i][j] * SQR(r2_cut[i][j] - r2);
               }
-            }
-            /* Lennard-Jones-Gauss */
+            } else
+            /* ... or just Lennard-Jones */
             if (lj_epsilon[i][j]>0) {
               if (r2 < (1.0 - POT_TAIL) * r2_cut[i][j]) {
-                pair_int_ljg(&pot, &grad, i, j, r2);
+                pair_int_lj(&pot, &grad, i, j, r2);
                 val += pot - lj_shift[i][j];
               }
               else if (r2 <= r2_cut[i][j]) {
@@ -672,18 +672,12 @@ void init_pre_pot(void) {
           error("lj_sigma must be > 0 if lj_epsilon > 0");
       }
 
-      /* Lennard-Jones */
-      lj_epsilon[i][j] = lj_epsilon[j][i] = lj_epsilon_lin[n]; 
-      lj_sigma  [i][j] = lj_sigma  [j][i] = lj_sigma_lin  [n]; 
+      /* Lennard-Jones-Gauss */
       ljg_eps [i][j] = ljg_eps[j][i] = ljg_eps_lin[n]; 
-      ljg_r0  [i][j] = ljg_r0  [j][i] = ljg_r0_lin  [n]; 
-      ljg_sig  [i][j] = ljg_sig  [j][i] = ljg_sig_lin  [n]; 
-      if ((r_begin[n]==0) && (lj_epsilon_lin[n]>0)) {
-        if (lj_sigma_lin[n]>0) 
-          r_begin[n] = 0.1 * lj_sigma_lin[n];
-        else
-          error("lj_sigma must be > 0 if lj_epsilon > 0");
-      }
+      ljg_r0  [i][j] = ljg_r0 [j][i] = ljg_r0_lin [n]; 
+      ljg_sig [i][j] = ljg_sig[j][i] = ljg_sig_lin[n]; 
+      if ((ljg_eps_lin[n]>0) && ((ljg_sig_lin[n]<=0) || (ljg_r0_lin[n]<=0)))  
+        error("ljg_sig and ljg_r0 must be > 0, if ljg_eps > 0");
 
       /* Morse */
       morse_epsilon[i][j] = morse_epsilon[j][i] = morse_epsilon_lin[n]; 
@@ -762,26 +756,23 @@ void init_pre_pot(void) {
     for (j=0; j<ntypes; j++) {
 
       if (r2_cut[i][j] > 0.0) { 
-        /* Lennard-Jones */
+        /* Lennard-Jones(-Gauss) */
         if (lj_epsilon[i][j] > 0.0) {
-          pair_int_lj( &lj_shift[i][j],&tmp, i, j,
-                       (1.0 - POT_TAIL) * r2_cut[i][j]);
+          if (ljg_eps[i][j] > 0.0)
+            pair_int_ljg( &lj_shift[i][j],&tmp, i, j,
+                         (1.0 - POT_TAIL) * r2_cut[i][j]);
+          else
+            pair_int_lj( &lj_shift[i][j],&tmp, i, j,
+                         (1.0 - POT_TAIL) * r2_cut[i][j]);
           lj_shift[i][j] +=  0.25 * tmp *  POT_TAIL * r2_cut[i][j];
           lj_aaa  [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
           if (myid==0)
-            printf("Lennard-Jones potential %1d %1d shifted by %f\n", 
-	           i, j, -lj_shift[i][j]);
-	}
-        else lj_shift[i][j] = 0.0;
-        /* Lennard-Jones-Gauss */
-        if (lj_epsilon[i][j] > 0.0) {
-          pair_int_ljg( &lj_shift[i][j],&tmp, i, j,
-                       (1.0 - POT_TAIL) * r2_cut[i][j]);
-          lj_shift[i][j] +=  0.25 * tmp *  POT_TAIL * r2_cut[i][j];
-          lj_aaa  [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
-          if (myid==0)
-            printf("Lennard-Jones-Gauss potential %1d %1d shifted by %f\n", 
-	           i, j, -lj_shift[i][j]);
+            if (ljg_eps[i][j] > 0.0)
+              printf("Lennard-Jones-Gauss potential %1d %1d shifted by %f\n", 
+	              i, j, -lj_shift[i][j]);
+            else
+              printf("Lennard-Jones potential %1d %1d shifted by %f\n", 
+	              i, j, -lj_shift[i][j]);
 	}
         else lj_shift[i][j] = 0.0;
         /* Morse */
