@@ -92,9 +92,25 @@ The Lennard-Jones potential has the following form:
 </center><br />
 The parameters <i>epsilon</i> and <i>sigma</i> have to be given in the
 parameter file by the IMD parameters <tt>lj_epsilon</tt> and
-<tt>lj_sigma</tt> in the same format as the paramter <tt>r_cut</tt>. 
+<tt>lj_sigma</tt> in the same format as the parameter <tt>r_cut</tt>. 
 The Lennard-Jones potential is active for any pair of atom types
 for which <tt>r_cut</tt> and <tt>lj_epsilon</tt> are both positive. </p>
+
+<h2><a id="lj" name="lj">
+Lennard-Jones-Gauss Potential</a></h2>
+
+<p>
+The Lennard-Jones-Gauss potential has the following form:
+<center>
+<img src="ljg.png" alt="Lennard-Jones-Gauss potential">
+</center><br />
+The parameters <i>epsilon</i> and <i>sigma</i> have to be given in the
+parameter file by the IMD parameters <tt>lj_epsilon</tt> and
+<tt>lj_sigma</tt> as before for the pure Lennard-Jones potential in the same
+format as the parameter <tt>r_cut</tt>. The additional
+parameters <i>epsilon_G</i>, <i>r0_G</i> and <i>sigma_G</i> have to be given in
+the parameter file by the IMD parameters <tt>ljg_eps</tt>, <tt>ljg_r0</tt>
+and <tt>ljg_sig</tt>.
 
 <h2><a id="morse" name="morse">
 Morse Potential</a></h2>
