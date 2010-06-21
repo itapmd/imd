@@ -20,7 +20,7 @@ their purpose is and how they are used.</p>
 <td width="120"><a href="#atdist">atdist</a></td>
 <td width="120"><a href="#avpos">avpos</a></td>
 <td width="120"><a href="#cna">cna</a></td>
-<td width="120"><a href="#correl">correl</a></td>
+<td width="120"><a href="#corr">corr</a></td>
 </tr>
 
 <tr align="left">
@@ -79,7 +79,7 @@ their purpose is and how they are used.</p>
 
 <tr align="left">
 <td width="120"><a href="#timing">timing</a></td>
-<td width="120"><a href="#transport">transport</a></td>
+<td width="120"><a href="#transport">transport/nvx</a></td>
 <td width="120"><a href="#covalent">ttbp</a></td>
 <td width="120"><a href="#uniax">uniax</a></td>
 <td width="120"><a href="#writef">writef</a></td>
@@ -312,7 +312,7 @@ are given with respect to the reciprocal basis of the box vectors.
 <p>
 This option enables the computation of the <b>mean square
 displacements</b> (MSQDs) (for each atom type and each direction
-separately). It shares its parameters with the option correl. The
+separately). It shares its parameters with the option corr. The
 computation of the MSQDs is started at step <tt>correl_start</tt>,
 and ends at step <tt>correl_end</tt>. The reference positions are
 first stored at step <tt>correl_start</tt>, and then they are reset
@@ -339,7 +339,7 @@ be used to switch this option on and off during a multiphase
 simulation. </p>
 </dd>
 
-<dt><a id="correl" name="correl"><b>correl</b></a></dt>
+<dt><a id="corr" name="corr"><b>corr</b></a></dt>
 <dd>
 <p>
 This option enables the computation of the (spherically
@@ -692,7 +692,7 @@ The second heating mode works by continuous rescaling of the atomic velocities a
 The third heating mode works only in conjunction with the TTM-integrator for simulations with the Two-Temperature-Model. It is automatically activated if IMD was compiled with the ttm and laser make-options. It works with the same source term and parameters as the second mode (see above), but the energy is exclusively added to the electronic subsystem. Of course, some more parameters are required to configure the <a href="ensembles.html#ttm">ttm integrator</a>.
 </dd>
 
-<dt><a id="transport" name="transport"><b>transport</b></a></dt>
+<dt><a id="transport" name="transport"><b>transport (nvx)</b></a></dt>
 <dd>
 <p>
 This option enables IMD to compute the heat conductivity of a

@@ -1298,7 +1298,7 @@ int getparamfile(char *paramfname, int phase)
       /* number of pixels in x/y direction */
       getparam("pic_res", &pic_res,PARAM_INT,1,2);
     }
-    else if (strcasecmp(token,"numpix")==0) { 
+    else if (strcasecmp(token,"nsmear")==0) { 
       /* smearing radius in pixels */
       getparam("nsmear", &nsmear,PARAM_INT,1,1);
     }
@@ -3266,7 +3266,7 @@ void broadcast_params() {
   MPI_Bcast( &box_from_header,       1, MPI_INT, 0, MPI_COMM_WORLD); 
 
 #ifdef TWOD
-  MPI_Bcast( &pic_scale   , 2, REAL, 0, MPI_COMM_WORLD);
+  /*  MPI_Bcast( &pic_scale   , 2, REAL, 0, MPI_COMM_WORLD); */
   MPI_Bcast( &ecut_kin    , 2, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ecut_pot    , 2, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &pic_res     , 2, MPI_INT, 0, MPI_COMM_WORLD); 

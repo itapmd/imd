@@ -161,7 +161,6 @@ glok_ekin_threshold # set velocities to 0 if temperature above threshold (defaul
 # parameters for 2d pictures
 ecut_kin	# kinetic energy interval for pictures (min/max)
 ecut_pot	# potential energy interval for pictures (min/max)
-pic_scale	# picture scale (x y) 
 pic_ll		# lower left corner of picture
 pic_ur		# upper right corner of picture
 pic_res		# number of pixels in x/y direction
@@ -383,7 +382,6 @@ shock_speed_left  # for shock mode 4: speed of the left mirror
 shock_speed_right # for shock mode 4: speed of the right mirror
 
 # parameters for STRESS_TENS
-press_dim        # dimensions of pressure histogram
 press_int        # interval for pressure tensor writes
 presstens_ext    # components of external pressure tensor (for relaxation)
 
@@ -401,11 +399,6 @@ socket_mode     # socket mode of IMD: server or client
 display_host    # name visualization host - required in client mode
 server_port     # port number on server side - always required
 client_port     # port number on client side (in client mode, optional)
-
-# parameters for MONOLJ (record version)
-cell_size       # minimal size of link cells 
-                # (In ordinary IMD cell_size = r_cut + epsilon)
-initsize        # cells have space for initsize particles (needed for MONOLJ)
 
 # parameters for <a href="pairpot.html#analyt">analytic pair potentials</a> 
 r_cut           # potential cutoff radii
