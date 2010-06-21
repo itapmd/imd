@@ -409,7 +409,12 @@ pot_res		# numbers of tabulated potential values
 lj_epsilon
 lj_sigma
 
-# parameters for <a href="pairpot.html#morse">Morse</a> potential
+# parameters for <a href="ljg.html#lj">Lennard-Jones-Gauss</a> potential
+ljg_eps
+ljg_r0
+ljg_sig
+
+## parameters for <a href="pairpot.html#morse">Morse</a> potential
 morse_epsilon
 morse_sigma
 morse_alpha
@@ -426,6 +431,33 @@ spring_const    # spring constants for atoms of different type
 core_potential_file   # Core-core Pair Potential, tabulated in r**2 
 embedding_energy_file # Embedding Energy Function, tabulated in rho
 atomic_e-density_file # Electron Density, tabulated in r**2
+
+# parameters for <a href=adp.html>ADP</a> (angular dependent potentials)
+adp_upotfile      # ADP dipole distortion potential
+adp_wpotfile      # ADP quadrupole distortion potential
+
+# parameters for <a href=eeam.html>EEAM</a> (Extended Embedded Atom Method potentials)
+eeam_energy_file # tabulated energy modification term(p_h)
+
+# parameters for <a href=meam.html>MEAM</a> (Modified Embedded Atom Method potentials)
+el_density_file # tabulated electron density 
+meam_a
+meam_beta0
+meam_beta1
+meam_beta2
+meam_beta3
+meam_cmax
+meam_cmin
+meam_deltar
+meam_e
+meam_f0
+meam_r0
+meam_rcut
+meam_rho0
+meam_t1
+meam_t2
+meam_t3
+meam_t_average
 
 # parameters for <A href="covalent.html#keating">KEATING</A> (Keating potential)
 neigh_len       # maxmimum number of neighbors (for memory allocs)
