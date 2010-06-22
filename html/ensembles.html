@@ -65,6 +65,11 @@ external temperature, which is linearly interpolated between
 <tt>starttemp</tt> and <tt>endtemp</tt>. With the nve integrator, 
 this corresponds to an NVT ensemble with Anderson thermostat.</p></dd>
 
+<dt><b>ber</b></dt>
+<dd>
+<p>
+Use the Berendsen thermostat instead of Nose-Hoover.
+
 <dt><b>finnis</b></dt>
 <dd>
 <p>
@@ -136,6 +141,25 @@ kinetic energy per atom exceeds the value of the parameter
 <tt>glok_ekin_threshold</tt>. In some situations, glok relaxes 
 considerably faster than mik.</p></dd>
 
+<dt><b>adaptglok</b></dt>
+<dd>
+<p>
+The adaptive glok algorithm is an improvement of glok along the lines of fire.
+</p>
+<p>
+The parameters are given in the <a href="params.html">parameter</a> file.
+</p></dd>
+
+<dt><b>fire</b></dt>
+<dd>
+<p>
+The fire algorithm has been implemented by E. Bitzek, P. Koskinen,
+F. G&auml;hler, M. Moseler, and P. Gumbsch, see Phys. Rev. Lett. <b>97</b>
+(2006) 170201.</p>
+<p>
+The parameters are given in the <a href="params.html">parameter</a> file.
+</p></dd>
+
 <dt><b>cg</b></dt>
 <dd>
 <p>
@@ -151,7 +175,18 @@ minimization is used. <tt>cg_infolevel = 1</tt> enables some
 diagnostic messages. <tt>cg_fr = 1</tt> enables the Fletcher-Reeves 
 variant of cg; by default, the Polak-Ribiere variant is used. 
 If <tt>cg_reset_int</tt> (default 0) is positive, the cg history
-is reset every <tt>cg_reset_int</tt> steps.
+is reset every <tt>cg_reset_int</tt> steps.</p>
+<p>
+All parameters are given in the <a href="params.html">parameter</a> file.
+</p></dd>
+
+<dt><b>acg</b></dt>
+<dd>
+<p>
+Unknown version of cg
+</p>
+<p>
+The parameters are given in the <a href="params.html">parameter</a> file.
 </p></dd>
 
 <dt><b><a id="relaxcontrol" name="relaxcontrol">relaxation control</a></b></dt>

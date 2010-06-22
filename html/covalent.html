@@ -197,6 +197,22 @@ whereas the last two indices are expected like for the two-index
 parameters. </p>
 
 
+<h2><a id="ternbcc" name="ternbcc">
+Zhou-Wadley Potential (analytic)</a></h2>
+
+<p>
+The Zhou-Wadley potential (X. W. Zhou and H. N. G. Wadley, 
+monatomic in Comp. Mat. Sci. <b>39</b>, 340 (2007) and diatomic in
+Comp. Mat. Sci. <b>39</b>, 541 (2007)) is a generalization of the
+Stillinger-Weber potentials for bcc and zinkblende structures.
+The computation from its analytic  
+formula is enabled with the compilation option <b>ternbcc</b>.
+Note that there is is also the <a href="covalent.html#ttbpxt">
+possibility</a> to define potentials of this type by 
+<a href="potformat.html">tabulated parameter functions</a>, using the 
+compilation option <b>ttbp</b> together with <b>xt</b>.</p>
+<p>The parameters are the same as those for the Stillinger-Weber potential (analytic).</p>
+
 <h2><a id="ttbp" name="ttbp">
 Stillinger-Weber Potential (tabulated)</a></h2>
 
@@ -229,9 +245,20 @@ hybridization <i>sp<sup>h</sup></i> of the atoms. In the case
 The cutoff function <i>f<sub>c</sub> (r)</i> must be given in 
 <a href="potformat.html">tabulated form</a>, and is read from the
 file specified by the parameter <tt>ttbp_potfile</tt>. The
-paramter <tt>ttbp_constant</tt> specifies the force constant 
+parameter <tt>ttbp_constant</tt> specifies the force constant 
 <i>Z</i>, and the parameter <tt>ttbp_sp</tt> the hybridization
 constant <i>h</i>. </p>
+
+<h2><a id="ttbpxt" name="ttbpxt">
+Zhou-Wadley Potential (tabulated)</a></h2>
+
+<p>
+Using the compilation options <b>ttbp</b> and <b>xt</b> (<b>t</b>wo- and 
+<b>t</b>hree-<b>b</b>ody <b>p</b>otentials e<b>xt</b>ended), it is also
+possible to specify Zhou-Wadley type potentials with <a href="potformat.html">
+tabulated parameter functions</a>. </p>
+
+<p>The parameters are the same as those for the Stillinger-Weber potential (tabulated).</p>
 
 <h2><a id="keating" name="keating">
 Keating Potential</a></h2>

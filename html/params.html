@@ -17,6 +17,11 @@ outfiles	# basename for output files - use a name different from
                 # input file name, otherwise it will be overwritten
 potfile		# filename for pair potential data
 
+# file names - optional
+reffile         # filename for reference configuration 
+itrname         # file name for initial itr-file 
+use_header      # shall a header be used 
+
 # main control parameters - required (except startstep)
 simulation      # number of next simulation phase, whose parameters follow
 ensemble        # simulation ensemble (MD integrator) 
@@ -35,19 +40,24 @@ total_types     # TOTAL number of atom types (including virtual types)
 ntypes		# number of real atom types (types vary in [0..ntypes-1])
 masses          # masses for generated structures (default: 1.0)
 types		# types for generated structures (default: 0 1) 
+                #
 seed            # seed for random number generator in maxwell
 initsize        # initially allocated cells get space for initsize particles
 incrsize        # memory in cells is incremented by incrsize particles
 inbuf_size      # total input buffer size in MB for parallel input
 outbuf_size     # output buffer size in MB 
-restrictionvector    # format: typenr 1 1 0 
-                     # (i.e no movement in z-direction)
+cellsize        # minimal cell diameter 
+restrictionvector # format: typenr 1 1 0 
+                  # (i.e no movement in z-direction)
 
 # control parameters for parallel simulation
 cpu_dim		# CPU array dimension
 parallel_input  # parallel input (1, default, recommended) or serial (0) input
 parallel_output	# parallel output flag (0 == serial (default),
                 # 1 == parallel, 2 == serial, but parallel picture writes)
+msgbuf_size     # security factor of message buffer size 
+dist_chunk_size # size of MPI reduction in mega-floats 
+hyper_threads   # number of hyperthreads per CPU 
 
 # simulation box - required
 box_param       # box parameters for generated samples
@@ -59,11 +69,26 @@ box_from_header # if 1, box is read from header of config file
 pbc_dirs        # boundary condition type; vector with components 0 or 1 
                 # 1 means pbc, 0 means free bc in that direction
                 # default is pbc in all directions
+                #
+size_per_cpu    # box parameters are given per CPU 
 
 # intervals for data writes - default is 0
 checkpt_int	# number of steps between checkpoints
 eng_int		# number of steps between energy data writes
 pic_int		# number of steps between picture writes
+flush_int       # interval for flushing .eng file 
+
+# parameters for <a href="options.html#writef">writef</a>
+force_all      # write all forces, or only those of atoms with virtual type 
+force_int      # number of steps between force writes 
+
+# type of data write (binary 1)
+binary_output  # binary output flag 
+
+# writing two-dimensional pictures
+projection     # projection (0=orthogonal, 1=perspective) 
+view_dir       # view direction 
+view_pos       # view position 
 
 # writing distributions - general parameters
 dist_int	# number of steps between distribution writes
@@ -129,9 +154,12 @@ isq_tau_xi	     # 1/SQR(tau_xi). Can be zero, which corresponds
                      # to NVT or NVE
 cell_size_tol	     # relative tolerance for volume rescaling during 
                      # NPT simulation
+tau_berendsen        # temperature interval 
 delta_finnis         # viscous damping coefficient for FINNIS
 zeta_0               # factor to be compatible with timestep in FINNIS
- 
+eta_rot              # eta variable of rotational motion for NVT or NPT
+                     # thermostat  
+
 # <a href="options.html#nbl">neighbor lists</a>
 nbl_margin           # margin by which cutoff radius is increased when
                      # using neighbor lists (option nbl) 
@@ -143,6 +171,10 @@ extra_startforce     # start-/endforce for each virtual type
 extra_endforce       # format: typenr force vector
 extra_dforce         # force increment for each virtual type (for relaxation)
 max_fbc_int          # maximum interval between fbc increments
+                     #
+fbc_ekin_threshold   # epsilon criterium to increment extra force
+fbc_waitsteps        # max nr of steps between fbc increments
+
 
 # parameters to write selected atoms (efilter)
 ef_checkpt_int       # number of steps between output of selected atoms 
@@ -157,6 +189,47 @@ pic_ur		     # location of upper right corner,
 
 # parameters for <a href="ensembles.html#relaxation">glok</a>
 glok_ekin_threshold # set velocities to 0 if temperature above threshold (default 100)
+min_nPxF         # minimum gloks before increasing the timestep 
+
+# parameters for <a href="ensembles.html#relaxation">adaptglok</a>
+glok_decfac      # factor to decrease the timestep 
+glok_fmaxcrit    # critical max. force component  
+glok_incfac      # factor to increase the timestep 
+glok_int         # only needed for restarting 
+glok_maxtimestep # max timestep 
+glok_minsteps    # minimum of steps before increasing the timestep 
+glok_mixdec      #decrease factor to turn velocities more parallel to forces 
+glok_mix         # factor to turn velocities more parallel to forces 
+
+# parameters for <a href="ensembles.html#relaxation">fire</a>
+fire_decfac         # factor to decrease the timestep 
+fire_ekin_threshold # threshold for ekin 
+fire_fmaxcrit       # critical max. force component  
+fire_incfac         # factor to increase the timestep 
+fire_int            # only needed for restarting 
+fire_maxtimestep    # max timestep 
+fire_minsteps       # minimum of steps before increasing the timestep 
+fire_mixdec         # decrease factor to turn velocities more parallel to forces 
+fire_mix            # factor to turn velocities more parallel to forces 
+
+# parameters for <a href="ensembles.html#relaxation">cg</a>
+cg_fr         # Fletcher-Reeves mode or not
+cg_glimit     # limit in mnbrak 
+cg_infolevel  # cg_infolevel controls verbosity 
+cg_mode       # conjugate gradient mode - at present just the default one 
+cg_reset_int  # interval for resetting cg 
+cg_zeps       # in brent 
+
+lindef_freq     # frequency for deformation 
+linmin_dmax     # max. length of trial step in 1d minimum search 
+linmin_dmin     # max. length of trial step in 1d minimum search 
+linmin_maxsteps # max steps to find min in one direction 
+linmin_tol      # tolerance to stop min search in one direction 
+
+# parameters for  <a href="options.html#acg">cg</a>
+acg_alpha    # starting alpha 
+acg_decfac    # decrease alpha
+acg_incfac    # increase alpha
 
 # parameters for 2d pictures
 ecut_kin	# kinetic energy interval for pictures (min/max)
@@ -178,6 +251,10 @@ cna_rcut        # cutoff distance for definition of nearest neighbours
 cna_write       # pair types to be written out
 cna_ll          # lower left corner for output
 cna_ur          # upper right corner for output
+                #
+cna_crist       # determine crystallinity of atoms
+cna_stat        # write statistics
+
 
 # parameters for correlation functions and MSQD
 correl_start	# start time for correlation
@@ -208,6 +285,7 @@ reset_Epot_step # step at which to compute Epot_ref (if calc_Epot_ref==1)
 calc_Epot_ref   # read (0) or compute (1) reference potential energy
 Epot_diff       # whether to write the potential energy difference 
                 # (1, default), or the potential energy (0)
+update_ort_ref  # step number to compute ort_ref 
 
 # parameters for ORDPAR
 op_rcut         # cutoff radii for order parameter
@@ -246,6 +324,7 @@ expansionmode    # if 1 strain the sample in y direction
 strainrate       # with this strainrate
 gamma_bar        # damping coefficent
 dampingmode      # O: viscous damping (default) 1: Nose-Hover
+damptemp
 
 # parameters for <a href="ensembles.html#ttm">TTM</a> ensemble
 
@@ -267,6 +346,8 @@ fd_update_steps  # how often are FD cells updated by averaging over atoms?
 fd_ext		 # How many MD cells per FE cell in x,y and z direction?
                  # (You probably need a test run to see how your sample is
                  # getting divided into MD cells first)
+                 #
+fd_one_d         # FD lattice one dimensional in x or y or z if this is given
 
 # miscellaneous <a href="ensembles.html#ttm">TTM</a> parameters:
 ttm_int		 # how many MD time steps between writeouts of TTM data?
@@ -278,8 +359,6 @@ ttm_int		 # how many MD time steps between writeouts of TTM data?
 init_t_el	 # Temperature the electronic subsystem gets initialized to.
                  # Default is 0.0 for a relaxed system (lattice temperature).
 fix_t_el	 # Fix electron temperature at start value? Default is 0.
-
-
 
 # parameters for <a href="options.html#laser">LASER</a> option
 # general <a href="options.html#laser">LASER</a> options:
@@ -333,12 +412,14 @@ lambda           # parameter for switching between original interaction
 
 # additional parameters for FTG
 delta_ftg        # ???
-gamma_min
-Tleft
-Tright
-nslices
-nslices_Left
-nslices_Right
+gamma_damp       # ???
+gamma_ftg        # actual Damping factor for each slice
+gamma_min        # minimal damping prefactor gamma_bar
+Tleft            # damping mode for stadium geometry
+Tright           # damping mode for stadium geometry
+nslices          # number of slices
+nslices_Left     # number of slices with Tleft
+nslices_Right    # number of slices with Right
 
 # parameters for SLLOD (with periodic boundary conditions)
 shear_rate      # yz-, zx-, and xy-component of the deformation rate tensor
@@ -353,12 +434,18 @@ lindef_z        # third row vector of the deformation matrix (only 3d)
 bulk_module     # bulk module (used for pressure relaxation)
 shear_module    # shear module (used for pressure relaxation)
 relax_rate      # pressure relaxation rate
+relax_dirs      # box lengths which should be relaxed 
+relax_mode      # pressure relaxation mode 
 
 # parameters for <a href="ensembles.html#relaxcontrol">relaxations</a>
-ekin_threshold	# threshold for kinetic energy
-fnorm_threshold	# threshold for fnorm
-fmax_threshold  # threshold for maximum force component (not yet implemented)
-delta_epot_threshold  # threshold for potential energy change
+ekin_threshold	     # threshold for kinetic energy
+fnorm_threshold	     # threshold for fnorm
+f_max_threshold      # threshold for maximum force component 
+                     # (not yet implemented)
+delta_epot_threshold # threshold for potential energy change
+nfc                  # nfc counter, for restart 
+sscount              # snapshot counter, for restarting 
+max_sscount          # max nr. of minimizations in quasistat sims 
 
 # parameters for <a href="options.html#deform">deform</a>
 deform_shift    # type and shift vector, by which atoms of that type
@@ -366,6 +453,9 @@ deform_shift    # type and shift vector, by which atoms of that type
 deform_size     # additional scale factor of all shifts (default 1.0)
 max_deform_int  # deform if number of steps since last deformation is
                 # max_deform_int (default 0 - no deformation)
+                
+deform_base     # deform base for virtual types
+deform_shear    # deform shear for virtual types
 
 # parameters for <a href="options.html#rigid">rigid</a>
 rigid           # types and restrictions for definition of superatoms
@@ -399,6 +489,7 @@ socket_mode     # socket mode of IMD: server or client
 display_host    # name visualization host - required in client mode
 server_port     # port number on server side - always required
 client_port     # port number on client side (in client mode, optional)
+use_socket_window
 
 # parameters for <a href="pairpot.html#analyt">analytic pair potentials</a> 
 r_cut           # potential cutoff radii
@@ -406,16 +497,16 @@ r_begin		# potential start radii
 pot_res		# numbers of tabulated potential values
 
 # parameters for <a href="pairpot.html#lj">Lennard-Jones</a> potential
-lj_epsilon
-lj_sigma
+lj_epsilon      # depth of minimum
+lj_sigma        # radius at minimum
 
 # parameters for <a href="pairpot.html#ljg">Lennard-Jones-Gauss</a> potential
-ljg_eps
-ljg_r0
-ljg_sig
+ljg_eps         # strength of Gaussian
+ljg_r0          # position of Gaussian
+ljg_sig         # width of Gaussian
 
 ## parameters for <a href="pairpot.html#morse">Morse</a> potential
-morse_epsilon
+morse_epsilon   # depth of minimum
 morse_sigma
 morse_alpha
 
@@ -508,6 +599,16 @@ ew_kcut         # k-space cutoff
 ew_rcut         # real space cutoff, if ew_nmax < 0
 ew_test         # flag for testing purposes
 
+# parameters for <A HREF="ewald.html#dipole">dipole</A> (dipolar interactions)
+dp_alpha
+dp_b
+dp_begin
+dp_c
+dp_fix
+dp_mix
+dp_res
+dp_tol
+
 # parameters for <a href=uniax.html>UNIAX</a> 
 # (Gay-Berne potential for uniaxial molecules)
 uniax_inert     # moment of inertia perpendicular to molecule axis
@@ -546,6 +647,66 @@ nmoldyn_veloc   # include velocities in trajectory? (0/1)
 
 # parameters in debug option
 force_celldim_divisor # force the cell dimensions of x-, y- and z-direction to be divisible by these integer numbers (may be useful to compare serial and parallel computation results)
+
+# other parameters for debugging
+debug_potential    # write out interpolated potential 
+debug_pot_res      # resolution of test interpolation 
+
+# parameters for  <a href="options.html#ep">External Potential</a>
+ep_a        # strength of external potential 
+ep_dir      # direction of external potential 
+ep_key      # potential key : which potential type to use
+ep_max_int  # maximal wait steps during relaxation 
+ep_n        # number of external potentials 
+ep_nind     # number of indentors (remaining extpots are walls) 
+ep_pos      # position of external potential 
+ep_rcut     # cutoff radius of external potential 
+ep_vel      # velocity of external potential 
+
+# parameters for  <a href="options.html#neb">Nudge Elastic Band</a>
+neb_eng_int # interval of NEB energy writes 
+neb_k       # spring constant of NEB -- ignored?? 
+neb_nrep    # number of NEB replicas 
+
+# parameters for  <a href="compiling.html">Cell Processor</a><a id="cbe" name="cbe">
+cbe_pot_max        # maximum value in potential table 
+cbe_pot_steps      # number of tabulation steps in potential table 
+num_spus           # number of SPUs to be used 
+num_bufs           # Number of argument buffers per SPU 
+
+# parameters for  <a href="compiling.html">vec</a>tor cpus<a id="vec"name="vec"> 
+atoms_per_cpu      # maximal number of atoms per CPU 
+
+
+# parameters for  <a href="options.html#bend">Bend</a>
+
+bend_axis            # axis of all bending moments 
+bend_nmoments        # nr of bending moments 
+bend_vtype_of_force  # vtype of atoms to apply FBC of
+bendingmoment i 
+bend_vtype_of_origin # vtype of origin of bendingmoment i 
+
+# parameters for  <a href="options.html#ms">MS</a>
+ms_D
+ms_gamma
+ms_harm_c
+ms_r0
+ms_rmin
+
+# parameters for  <a href="options.html#dsf">DSF</a>
+dsf_int      # interval for dsf updates 
+dsf_k        # k-point series 
+dsf_nk       # number of k-point series 
+dsf_weight   # weights for dsf (usually coherent scattering length) 
+
+# parameters for  <a href="options.html#rnemd">RNEMD</a>
+exch_interval      # interval for particle exchange 
+
+# parameters for  <a href="options.html#zapp">ZAPP</a>
+zapp_threshold
+
+# parameters for  <a href="options.html#clone">CLONE</a>
+nclones      # number of clones to deal with
 
 </pre>
 
