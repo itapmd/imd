@@ -92,7 +92,7 @@ their purpose is and how they are used.</p>
 <td width="120"><a href="#neb">neb</a></td>
 <td width="120"><a href="#rnemd">rnemd</a></td>
 <td width="120"><a href="#zapp">zapp</a></td>
-<td width="120"><a href="#"></a></td>
+<td width="120"><a href="#ftg">ftg</a></td>
 </tr>
 
 <tr align="left">
@@ -776,9 +776,11 @@ ef_checkpt_int step. </p>
 <dt><a id="fefl" name="fefl"><b>fefl</b></a></dt> 
 <dd>
 <p>
+Option for free energy simulations using the Frenkel-Ladd method
+(J. Chem. Phys. <B>81</B> (1984) 3188).
 Runs a simulation where the native interaction (lambda=0) can be switched to an
 Einstein crystal (lambda=1) with harmonic springs between the initial and the
-current atom positions.
+current atom positions. Implemented by Johannes Roth. 
 
 </dd>
 
@@ -1034,6 +1036,16 @@ The purpose of this option is to work with a two-dimensional system with two
 degrees of freedom, but the computation runs in three-dimensions. The
 3*r_cut-condition for minimal cell size is establihed by "cloned" atoms which
 move exactly as their parents do. 
+</p>
+</dd>
+
+<dt><a id="ftg" name="ftg"><b>ftg</b></a></dt>
+<dd>
+<p>
+This options can be used for crack simulations at finite temperatures, where a
+crack moves from a cold part of the sample to the hot part and stops
+there. Implemented by Cristoph Rudhart.
+
 </p>
 </dd>
 
