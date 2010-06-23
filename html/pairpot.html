@@ -128,6 +128,21 @@ The Morse potential is active for any pair of atom types
 for which <tt>r_cut</tt> and <tt>morse_epsilon</tt> are both 
 positive. </p>
 
+<h2><a id="ms" name="ms">
+Morse-stretch Potential</a></h2>
+
+<p>
+The Morse-stretch potential has the following form:
+<center>
+<img src="morse-stretch.png" alt="Morse-stretch potential" >
+</center><br />
+
+The parameters <i>ms_D</i>, <i>ms_gamma</i> and <i>ms_r0</i> are the standard
+parameters of the Morse-stretch potential. A harmonic term is added to the
+potential if  r < <i>ms_rmin</i> to avoid unphysical
+crashes, <i>ms_harm_C</i> is the spring constant for the harmonic term.
+</p>
+
 <h2><a id="buck" name="buck">
 Buckingham Potential</a></h2>
 

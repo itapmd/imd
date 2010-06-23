@@ -118,7 +118,21 @@ interacting with the harmonic potential), and <tt>pot_res</tt>
 specifies the number of tabulated values of the potential table.
 </p>
 
-<h1>Tangney-Scandolo Potential</h1><a id="dipole" name="dipole">
+<h1>Dipolar Interactions</h1><a id="dipole" name="dipole">
+
+The parameters for dipolar interactions are:<br> 
+<tt>dp_alpha</tt>: polarizability, parameter in the short-range part of a
+dipole<br> <tt>dp_b</tt> and <tt>dp_c</tt>: parameters in the short-range part
+  of a dipole. In contrast to <TT>dp_alpha</TT> which depends only on
+  particle <i>i</i>, they also depend on particle <i>j</i>, i.e. <i>b_ij</i>
+  and <i>c_ij</i> vs. <i>alpha_i</i>.<br> <tt>dp_mix</tt>: parameter for mixing
+    the induced electric field with fields from previous timesteps (For
+    details see J. Chem. Phys. <b>132</b> (2010) 194109, eq. 19: (1-c) =
+    dp_mix).<br> <tt>dp_tol</tt>: convergence criterion for self-consistent
+      dipole determination. If the computation is terminated if the
+      deviation <tt>dp_sum</tt> to the previous step is below <tt>dp_tol</tt>.
+
+<h1>Tangney-Scandolo Potential</h1>
 <table summary="units in Tangney-Scandolo potential">
 <caption>Units used in Tangney-Scandolo potential compared to IMD set eV,
 &Aring;, amu</caption>
