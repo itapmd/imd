@@ -91,12 +91,13 @@ their purpose is and how they are used.</p>
 <td width="120"><a href="#ep">ep</a></td>
 <td width="120"><a href="#neb">neb</a></td>
 <td width="120"><a href="#bend">bend</a></td>
-<td width="120"><a href="#ms">ms</a></td>
 <td width="120"><a href="#rnemd">rnemd</a></td>
+<td width="120"><a href="#zapp">zapp</a></td>
 </tr>
 
 <tr align="left">
-<td width="120"><a href="#zapp">zapp</a></td>
+<td width="120"><a href="#"></a></td>
+<td width="120"><a href="#"></a></td>
 <td width="120"><a href="#"></a></td>
 <td width="120"><a href="#"></a></td>
 <td width="120"><a href="#"></a></td>
@@ -1014,14 +1015,7 @@ band method.
 <dt><a id="bend" name="bend"><b>bend</b></a></dt>
 <dd>
 <p>
-unknown option
-</p>
-</dd>
-
-<dt><a id="ms" name="ms"><b>ms</b></a></dt>
-<dd>
-<p>
-unknown option
+bending simulations, currently testing version only.
 </p>
 </dd>
 
@@ -1030,21 +1024,23 @@ unknown option
 <p>
 Option for computing transport properties by the M&uuml;ller-Plathe
 non-equilibrium exchange method, see
-J. Chem. Phys. <b>106</b> (1997) 6082
+J. Chem. Phys. <b>106</b> (1997) 6082.
 </p>
 </dd>
 
 <dt><a id="zapp" name="zapp"><b>zapp</b></a></dt>
 <dd>
 <p>
-unknown option
-</p>
+removes the net momentum, assuming equal masses.</p>
 </dd>
 
 <dt><a id="clone" name="clone"><b>clone</b></a></dt>
 <dd>
 <p>
-unknown option
+The purpose of this option is to work with a two-dimensional system with two
+degrees of freedom, but the computation runs in three-dimensions. The
+3*r_cut-condition for minimal cell size is establihed by "cloned" atoms which
+move exactly as their parents do. 
 </p>
 </dd>
 
