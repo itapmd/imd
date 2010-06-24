@@ -607,14 +607,16 @@ ew_rcut         # real space cutoff, if ew_nmax < 0
 ew_test         # flag for testing purposes
 
 # parameters for <A HREF="ewald.html#dipole">dipole</A> (dipolar interactions)
-dp_alpha
-dp_b
-dp_begin
-dp_c
-dp_fix
-dp_mix
-dp_res
-dp_tol
+dp_begin        # Minimal distance for dipole potential table
+dp_res          # Number of sampling points in dipole interaction table
+dp_alpha        # Polarizability (ntypes values)
+dp_b            # Short range interaction parameter (ntypepairs values)
+dp_c            # Short range interaction parameter (ntypepairs values)
+dp_fix          # 0: always converge dipoles, 1: converge once, then keep
+		#				  fixed, 2: keep fixed 
+dp_mix          # Mixing parameter: new dipoles contain this fraction from
+		#				  previous step.
+dp_tol          # Dipoles are converged, if rms change of dipoles is < dp_tol
 
 # parameters for <a href=uniax.html>UNIAX</a> 
 # (Gay-Berne potential for uniaxial molecules)
