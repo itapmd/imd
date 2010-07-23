@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -124,9 +124,10 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 	DREH_MOMENT(q,j,Y) += torque21.y;
 	DREH_MOMENT(q,j,Z) += torque21.z;
 
+        *Epot       += pot12;
+        pot12       *= 0.5;   /* avoid double counting */
 	POTENG(p,i) += pot12;
 	POTENG(q,j) += pot12;
-        *Epot       += pot12;
 
         tmp_vir_vect.x += r12.x * force12.x ;
         tmp_vir_vect.y += r12.y * force12.y ;

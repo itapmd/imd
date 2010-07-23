@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2009 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -407,11 +407,13 @@ void calc_forces(int steps)
       vektor     mu = {0.0,0.0,0.0};
       sym_tensor la = {0.0,0.0,0.0,0.0,0.0,0.0};
 #endif
+#ifdef COULOMB
+      real       phi, grphi, chg;
+#endif
 #ifdef DIPOLE
       real       tmp;
       vektor     Estat = {0.0,0.0,0.0};
       vektor     pstat = {0.0,0.0,0.0};
-      real       phi,grphi,chg;
 #endif
 #ifdef TWOD
       vektor d1, ff = {0.0,0.0};
@@ -491,9 +493,7 @@ void calc_forces(int steps)
 #endif
 
 #ifndef MONOLJ
-#ifdef EAM2
           pot *= 0.5;   /* avoid double counting */
-#endif
 #ifdef NNBR
           if (r2 < nb_r2_cut[col ]) nb++;
           if (r2 < nb_r2_cut[col2]) NBANZ(q,j)++;
@@ -595,13 +595,19 @@ void calc_forces(int steps)
         }
 #endif /* ADP */
 
-#ifdef DIPOLE
-	chg=charge[it]*charge[jt];
+#ifdef COULOMB
+#ifdef VARCHG
+        chg = CHARGE(p,i) * CHARGE(q,j);
+#else
+	chg = charge[it]  * charge[jt];
+#endif
 	if (r2 < ew_r2_cut) {	
 	  if (SQR(chg)>0.) {
 	    /* Constant electric field from charges */
-	    /* Use column 0 of 3, thats the coulomb potential */
-	    PAIR_INT(phi, grphi, dipole_table, 0, 2+ntypepairs, r2, is_short);
+	    /* Coulomb potential is in column 0 */
+            int incr = coul_table.ncols;
+	    PAIR_INT(phi, grphi, coul_table, 0, incr, r2, is_short);
+
 	    /* Coulomb Energy */
 	    pot     = chg * phi;
 	    grad    = chg * grphi;
@@ -617,8 +623,9 @@ void calc_forces(int steps)
 	    ff.x         += force.x;
 	    ff.y         += force.y;
 	    ff.z         += force.z;
-	    ee          += pot;
-	    POTENG(q,j) += pot;
+            pot          *= 0.5;   /* avoid double counting */
+	    ee           += pot;
+	    POTENG(q,j)  += pot;
 #ifdef P_AXIAL
 	    vir_xx -= d.x * force.x;
 	    vir_yy -= d.y * force.y;
@@ -651,6 +658,7 @@ void calc_forces(int steps)
 	    hc            += pot - r2 * grad;
 	    HEATCOND(q,j) += pot - r2 * grad;
 #endif
+#ifdef DIPOLE
 	    /* Field for Dipole calculation */
 	    if (dp_p_calc) {
 	      Estat.x += d.x * grphi * charge[jt];
@@ -660,15 +668,16 @@ void calc_forces(int steps)
 	      DP_E_STAT(q,j,Y) -= d.y * grphi * charge[it];
 	      DP_E_STAT(q,j,Z) -= d.z * grphi * charge[it];
 	    }
+#endif
 	  }
-
+#ifdef DIPOLE
 	  /* calculate short-range dipoles field */
 	  /* short-range fn.: 3rd column ff. */
 	  if (dp_p_calc) {
 	    col=(it <= jt) ?
 	      it * ntypes + jt - ((it * (it + 1))/2)
 	      : jt * ntypes + it - ((jt * (jt + 1))/2);
-	    VAL_FUNC(pot,dipole_table,2+col, 2+ntypepairs, r2, is_short);
+	    VAL_FUNC(pot,coul_table,2+col, 2+ntypepairs, r2, is_short);
 	    tmp = pot*charge[jt]*dp_alpha[it];
 	    if (SQR(tmp)>0) {
 	      pstat.x -= tmp * d.x;
@@ -682,8 +691,9 @@ void calc_forces(int steps)
 	      DP_P_STAT(q,j,Z) += tmp * d.z;
 	    }
 	  }
-	}
 #endif /* DIPOLE */
+	}
+#endif /* COULOMB */
 
 #ifdef COVALENT
         /* make neighbor tables for covalent systems */
@@ -1133,6 +1143,19 @@ void calc_forces(int steps)
 
 #endif /* EAM2 */
 
+#ifdef COULOMB
+  /* coulomb self energy part */
+  for (k=0; k<ncells; k++) {
+    cell *p = CELLPTR(k);
+    for (i=0; i<p->n; i++) {
+      real pot = ew_vorf * SQR( CHARGE(p,i) ) * ew_eps;
+      /* pot += ew_shift[n][n] * 0.5;   what's that??? */
+      tot_pot_energy -= pot;
+      POTENG(p,i)    -= pot;
+    }
+  }
+#endif
+
 #ifdef DIPOLE
 
   /* collect constant electric fields and dipole moments */
@@ -1253,7 +1276,6 @@ void calc_forces(int steps)
 	      col1 = jt * ntypes + it;
 	      col2 = it * ntypes + jt;
 	  
-
 	      /* Dipole-Dipole */
 	      if ( (SQR(dp_alpha[jt])>0) && (r2 < ew_r2_cut )) {
 		real pot,tmp;
@@ -1262,7 +1284,7 @@ void calc_forces(int steps)
 		pj.y=DP_P_IND(q,j,Y);
 		pj.z=DP_P_IND(q,j,Z);
 		/* smooth r^3 cutoff */
-		VAL_FUNC(pot,dipole_table,1,2+ntypepairs,r2,is_short);
+		VAL_FUNC(pot,coul_table,1,2+ntypepairs,r2,is_short);
 		pot *= ew_eps;
 		tmp=SPROD(pj,d);
 		Eind.x += pot* ((3.0/r2)*tmp*d.x - pj.x);
@@ -1399,16 +1421,17 @@ void calc_forces(int steps)
 	    pj.x=DP_P_IND(q,j,X);
 	    pj.y=DP_P_IND(q,j,Y);
 	    pj.z=DP_P_IND(q,j,Z);
-	    /* smooth cutoff function is 2nd in dipole_table */
-	    PAIR_INT(val, dval, dipole_table, 1, 2+ntypepairs, r2, is_short);
+
+	    /* smooth cutoff function is 2nd in coul_table */
+	    PAIR_INT(val, dval, coul_table, 1, 2+ntypepairs, r2, is_short);
 	    
 	    val  *= ew_eps;
 	    dval *= ew_eps;
-	    /* short-range function is no. 3 in dipole_table */
+	    /* short-range function is 3rd in coul_table */
 	    col1=(it <= jt) ?
 	      it * ntypes + jt - ((it * (it + 1))/2)
 	      :jt * ntypes + it - ((jt * (jt + 1))/2);
-	    PAIR_INT(valsr,dvalsr,dipole_table,2+col1,2+ntypepairs,
+	    PAIR_INT(valsr,dvalsr,coul_table,2+col1,2+ntypepairs,
 		     r2,is_short);
 	    /* Dipole at i -Charge at j interaction */
 	    if (SQR(dp_alpha[it])*SQR(charge[jt])>0) {
@@ -1430,7 +1453,7 @@ void calc_forces(int steps)
 
 	    /* Dipole at j -Charge at i interaction */
 	    if (SQR(dp_alpha[jt])*SQR(charge[it])>0) {
-	      /* smooth cutoff function is 2nd in dipole_table */
+	      /* smooth cutoff function is 2nd in coul_table */
 
 	      pdotd=SPROD(pj,d);
 	      pot -= val*charge[it]*pdotd;
@@ -1475,9 +1498,9 @@ void calc_forces(int steps)
 	      ff.x         += force.x;
 	      ff.y         += force.y;
 	      ff.z         += force.z;
-	      
-	      ee          += pot;
-	      POTENG(q,j) += pot;
+              pot          *= 0.5;   /* avoid double counting */
+	      ee           += pot;
+	      POTENG(q,j)  += pot;
 	      
 #ifdef P_AXIAL
 	      vir_xx -= d.x * force.x;
@@ -1513,9 +1536,9 @@ void calc_forces(int steps)
         /* Dipole self energy */
 	dp_energy = (SQR(dp_alpha[it])>0)?0.5*SPROD(pi,pi)/dp_alpha[it]:0.;
 	tot_pot_energy += dp_energy; /* avoid double counting */
-	ee += 2*dp_energy;
+	ee += dp_energy;
 
-	POTENG(p,i) += ee;
+	POTENG(p,i)  += ee;
 	KRAFT(p,i,X) += ff.x;
 	KRAFT(p,i,Y) += ff.y;
 	KRAFT(p,i,Z) += ff.z;

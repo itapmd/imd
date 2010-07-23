@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -1082,7 +1082,7 @@ EXTERN real epitax_speed INIT(1.0);
 #endif
 
 EXTERN real     ew_r2_cut INIT(0.0);     /* EWALD r-space cutoff */
-#if defined(EWALD) || defined(DIPOLE)
+#if defined(EWALD) || defined(COULOMB)
 EXTERN imd_timer ewald_time;
 EXTERN real     charge[10] INIT(zero10); /* Charge of atoms */
 EXTERN real     ew_kappa;                /* Parameter kappa */
@@ -1110,22 +1110,22 @@ EXTERN real     *sinkr;
 EXTERN real     ew_vorf;
 EXTERN real     ew_eps INIT(14.40); /* this is e^2/(4*pi*epsilon_0) in eV A */
 EXTERN real     twopi;
-#endif /* EWALD or DIPOLE */
+EXTERN pot_table_t coul_table; /* one table to hold all coul. and dipole fn */
+EXTERN real     coul_res   INIT(0); /* function table resolution */
+EXTERN real     coul_begin INIT(0.2); /* start of function table */
+EXTERN real     coul_shift; 
+EXTERN real     coul_fshift;
+#endif /* EWALD or COULOMB */
 #ifdef DIPOLE
 EXTERN int      dp_fix     INIT(0); /* Keep dipoles fixed? */
 EXTERN real     dp_mix     INIT(0.8); /* dipole field mixing parameter */
 EXTERN real     dp_tol     INIT(1.e-7); /* dipole iteration precision */
-EXTERN real     dp_self;    	/* dipole self field factor */
-EXTERN int      dp_res     INIT(0); /* function table resolution */
-EXTERN real     dp_begin   INIT(0.2); /* start of function table */
+EXTERN real     dp_self;     	        /* dipole self field factor */
+EXTERN real     *dp_alpha  INIT(NULL); /* in e^2 A^2 / eV^2 */
 EXTERN real     *dp_b      INIT(NULL);		/* in eV A / e^2 */
 EXTERN real     *dp_c      INIT(NULL);		/* in 1/A */
-EXTERN pot_table_t dipole_table; /* one table to hold them all */
-EXTERN real     coul_shift; 
-EXTERN real     coul_fshift;
 #endif
 #if defined(DIPOLE)|| defined(MORSE)
-EXTERN real     *dp_alpha  INIT(NULL); /* in e^2 A^2 / eV^2 */
 EXTERN real     *ms_D      INIT(NULL); /* in eV */
 EXTERN real     *ms_gamma  INIT(NULL);
 EXTERN real     *ms_harm_a  INIT(NULL);
@@ -1133,8 +1133,8 @@ EXTERN real     *ms_harm_b  INIT(NULL);
 EXTERN real     *ms_harm_c  INIT(NULL);
 EXTERN real     *ms_r2_min INIT(NULL);
 EXTERN real     *ms_r0     INIT(NULL); /* in A */
-EXTERN real *ms_shift     INIT(NULL);
-EXTERN real *ms_fshift    INIT(NULL);
+EXTERN real     *ms_shift  INIT(NULL);
+EXTERN real     *ms_fshift INIT(NULL);
 #endif /* DIPOLE or MORSE */
 
 /* generate quasicrystal */

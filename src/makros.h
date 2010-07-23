@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -92,6 +92,12 @@ INLINE static int MOD(shortint p, int q)
 #ifdef ADP
 #define ADP_MU(cell,i,sub)      (atoms.adp_mu sub((cell)->ind[i]))
 #define ADP_LAMBDA(cell,i,sub)  (atoms.adp_lambda[(cell)->ind[i]].sub)
+#endif
+
+#ifdef VARCHG
+#define CHARGE(cell,i)          (atoms.charge [(cell)->ind[i]])
+#else
+#define CHARGE(cell,i)          (charge[ SORTE(cell,i) ])
 #endif
 
 #ifdef DIPOLE
@@ -203,6 +209,12 @@ INLINE static int MOD(shortint p, int q)
 #ifdef ADP
 #define ADP_MU(cell,i,sub)      ((cell)->adp_mu sub(i))
 #define ADP_LAMBDA(cell,i,sub)  ((cell)->adp_lambda[i].sub)
+#endif
+
+#ifdef VARCHG
+#define CHARGE(cell,i)          ((cell)->charge[i])
+#else
+#define CHARGE(cell,i)          (charge[ SORTE(cell,i) ])
 #endif
 
 #ifdef DIPOLE

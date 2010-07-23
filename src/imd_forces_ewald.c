@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -66,8 +66,8 @@ real force_norm(void)
 
 void do_forces_ewald(int steps)
 {
-  int n;
-  real tot=0.0;
+  int n, k, i;
+  real tot=0.0, pot;
 
   /* real space part; if ew_nmax < 0, we do it with the other pair forces */
   if (ew_nmax >= 0) do_forces_ewald_real();
@@ -96,9 +96,14 @@ void do_forces_ewald(int steps)
   }
 
   /* self energy part */
-  for (n=0; n<ntypes; n++) {
-    tot_pot_energy -= ew_vorf * num_sort[n] * SQR( charge[n] ) * ew_eps;
-    tot_pot_energy -= num_sort[n] * ew_shift[n][n] * 0.5;
+  for (k=0; k<ncells; k++) {
+    cell *p = CELLPTR(k);
+    for (i=0; i<p->n; i++) {
+      pot  = ew_vorf * SQR( CHARGE(p,i) ) * ew_eps;
+      /* pot += ew_shift[n][n] * 0.5;   what's that??? */
+      tot_pot_energy -= pot;
+      POTENG(p,i)    -= pot;
+    }
   }
 
   if ((steps==0) && (ew_test)) {

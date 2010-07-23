@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -85,7 +85,8 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 	pot_zwi = 3.0 * keat_beta[p_typ][j_typ][k_typ] / ( 8.0 * tmp_d2 )
 	        * SQR( tmp_sp + tmp_d2 / 3.0 ); 
 
-        *Epot  += pot_zwi;
+        *Epot   += pot_zwi;
+        pot_zwi /= 3.0;  /* avoid triple counting */
 
         /* forces */
         tmp   = 3.0 * keat_beta[p_typ][j_typ][k_typ] / ( 4.0 * tmp_d2)
@@ -271,6 +272,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
         tmp_f2   = pot[j]  * pot[k];
         pot_zwi  = tmp_pot * tmp_f2;
         *Epot   += pot_zwi;
+        pot_zwi /= 3.0;  /* avoid triple counting */
 
         /* forces */
         tmp   = -tmp_f2 * tmp_grad / (r[j] * r[k]);
@@ -462,6 +464,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 
 	/* total potential */
 	*Epot   += pot_zwi;
+        pot_zwi /= 3.0;  /* avoid triple counting */
 
 	/* forces */
 #ifdef TERNBCC
@@ -836,6 +839,8 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 #endif 
       }
       
+      pot_zwi *= 0.5;  /* avoid double counting */
+
       /* update force on particle j */
       KRAFT(jcell,jnum,X) += force_j.x;
       KRAFT(jcell,jnum,Y) += force_j.y;

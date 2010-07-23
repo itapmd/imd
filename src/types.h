@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -127,6 +127,9 @@ typedef struct {
   real        *adp_mu;
   sym_tensor  *adp_lambda;
 #endif
+#ifdef VARCHG
+  real        *charge;      /* individual charge for each particle */
+#endif
 #ifdef DIPOLE
   real        *dp_E_stat; /* electric field at atom location */	     
   real        *dp_E_ind; /* induced field at atom location */
@@ -225,6 +228,9 @@ typedef struct {
 #ifdef DISLOC
   int  n_x_ref;
   int  n_Epot_ref;
+#endif
+#ifdef VARCHG
+  int  n_charge;
 #endif
 } header_info_t;
 

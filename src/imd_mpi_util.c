@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -345,6 +345,9 @@ void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *p, int ind )
 #ifdef ADP
   /* adp_mu and adp_lambda are not sent */
 #endif
+#ifdef VARCHG
+  to->data[ to->n++ ] = CHARGE(p,ind);
+#endif
 #ifdef DIPOLE 
   /* dp_E_stat, dp_E_ind and dp_p_stat are not sent */
 /*   to->data[ to->n++ ] = DP_P_STAT(p,ind,X); */
@@ -550,6 +553,9 @@ void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
 #ifdef ADP
   /* don't send adp_mu and adp_lambda */
 #endif
+#ifdef VARCHG
+  CHARGE(to,ind)     = b->data[j++];
+#endif
 #ifdef DIPOLE
   /* don't send p_stat, E_stat, E_ind */
   DP_P_IND(to,ind,X) = b->data[j++];
@@ -707,7 +713,7 @@ void setup_buffers(void)
   int size_east;
   int size_north;
   int size_up;
-  int binc1, binc2, binc3,binc4;
+  int binc1, binc2, binc3, binc4;
 
   /* determine buffer size per atom */
   if (binc==0) {
@@ -719,6 +725,9 @@ void setup_buffers(void)
 #endif
 #ifdef UNIAX
     binc1 += 3;      /* achse */
+#endif
+#ifdef VARCHG
+    binc1++;         /* charge */   
 #endif
 
     /* for communication from buffer cells */
@@ -756,7 +765,7 @@ void setup_buffers(void)
 #endif /* EAM2 */
     /* communication of induced dipoles etc */
 #ifdef DIPOLE
-    binc4 += 4*DIM; 		/* 4 vector fields */
+    binc4 = 4*DIM; 		/* 4 vector fields */
 #endif
 
     /* one way or two ways */

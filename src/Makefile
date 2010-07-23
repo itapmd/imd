@@ -2,7 +2,7 @@
 #
 # Imd -- The ITAP Molecular Dynamics Program
 #
-# Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+# Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 # University of Stuttgart, D-70550 Stuttgart
 #
 # $Revision$
@@ -1108,7 +1108,12 @@ PP_FLAGS  += -DEWALD
 FORCESOURCES  += ${EWALDSOURCES}
 endif
 
-#DIPOLE
+# VARCHG
+ifneq (,$(strip $(findstring varchg,${MAKETARGET})))
+CFLAGS  += -DVARCHG
+endif
+
+# DIPOLE
 ifneq (,$(strip $(findstring dipole,${MAKETARGET})))
 CFLAGS  += -DDIPOLE -DMORSE
 endif

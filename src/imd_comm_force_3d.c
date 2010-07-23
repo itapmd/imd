@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -754,6 +754,9 @@ void copy_cell( int k, int l, int m, int r, int s, int t, vektor v )
     ACHSE(to,i,Y) = ACHSE(from,i,Y);
     ACHSE(to,i,Z) = ACHSE(from,i,Z);
 #endif
+#ifdef VARCHG
+    CHARGE(to,i)  = CHARGE(from,i);
+#endif
 #ifdef DIPOLE
     NUMMER(to,i)     = NUMMER(from,i);
 /*     DP_E_IND(to,i,X) = DP_E_IND(from,i,X); */
@@ -795,6 +798,9 @@ void pack_cell( msgbuf *b, int k, int l, int m, vektor v )
     b->data[ j++ ] = ACHSE(from,i,X);
     b->data[ j++ ] = ACHSE(from,i,Y);
     b->data[ j++ ] = ACHSE(from,i,Z);
+#endif
+#ifdef VARCHG
+    b->data[ j++ ] = CHARGE(from,i);
 #endif
 #ifdef DIPOLE
     b->data[ j++ ] = NUMMER(from,i);
@@ -855,6 +861,9 @@ void unpack_cell( msgbuf *b, int k, int l, int m )
     ACHSE(to,i,X) = b->data[ j++ ];
     ACHSE(to,i,Y) = b->data[ j++ ];
     ACHSE(to,i,Z) = b->data[ j++ ];
+#endif
+#ifdef VARCHG
+    CHARGE(to,i)  = b->data[ j++ ];
 #endif
 #ifdef DIPOLE
     NUMMER(to,i)     = b->data[ j++ ];

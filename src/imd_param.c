@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -2496,7 +2496,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
                ntypes*ntypepairs, ntypes*ntypepairs);
     }
 #endif
-#if defined(EWALD) || defined(DIPOLE)
+#if defined(EWALD) || defined(COULOMB)
     /* charges */
     else if (strcasecmp(token,"charge")==0) {
       if (ntypes==0) error("specify parameter ntypes before charge");
@@ -2527,7 +2527,23 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"ew_test")==0) {
       getparam(token,&ew_test,PARAM_INT,1,1);
     }
-#endif /* EWALD or DIPOLE */
+    /* potential table resolution */
+    else if (strcasecmp(token,"coul_res")==0) {
+      getparam(token,&coul_res,PARAM_REAL,1,1);
+    }
+    /* potential table resolution - backwards compatibility */
+    else if (strcasecmp(token,"dp_res")==0) {
+      getparam(token,&coul_res,PARAM_REAL,1,1);
+    }
+    /* potential table resolution */
+    else if (strcasecmp(token,"coul_begin")==0) {
+      getparam(token,&coul_begin,PARAM_REAL,1,1);
+    }
+    /* potential table resolution - backwards compatibility */
+    else if (strcasecmp(token,"dp_begin")==0) {
+      getparam(token,&coul_begin,PARAM_REAL,1,1);
+    }
+#endif /* EWALD or COULOMB */
 #ifdef DIPOLE
     /* dipole fixed? */
     else if (strcasecmp(token,"dp_fix")==0) {
@@ -2541,13 +2557,12 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"dp_tol")==0) {
       getparam(token,&dp_tol,PARAM_REAL,1,1);
     }
-    /* potential table resolution */
-    else if (strcasecmp(token,"dp_res")==0) {
-      getparam(token,&dp_res,PARAM_INT,1,1);
-    }
-    /* potential table minimal r */
-    else if (strcasecmp(token,"dp_begin")==0) {
-      getparam(token,&dp_begin,PARAM_REAL,1,1);
+    /* polarisability */
+    else if (strcasecmp(token,"dp_alpha")==0) {
+      if (ntypes==0) error("specify parameter ntypes before dp_alpha");
+      dp_alpha = (real *) malloc( ntypes*sizeof(real));
+      if (NULL==dp_alpha) error("cannot allocate dp_alpha");
+      getparam(token,dp_alpha,PARAM_REAL,ntypes,ntypes);
     }
     /* short-range dipole parameter b */
     else if (strcasecmp(token,"dp_b")==0) {
@@ -2562,13 +2577,6 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       dp_c = (real *) malloc( ntypepairs*sizeof(real));
       if (NULL==dp_c) error("cannot allocate dp_c");
       getparam(token,dp_c,PARAM_REAL,ntypepairs,ntypepairs);
-    }
-    /* polarisability */
-    else if (strcasecmp(token,"dp_alpha")==0) {
-      if (ntypes==0) error("specify parameter ntypes before dp_alpha");
-      dp_alpha = (real *) malloc( ntypes*sizeof(real));
-      if (NULL==dp_alpha) error("cannot allocate dp_alpha");
-      getparam(token,dp_alpha,PARAM_REAL,ntypes,ntypes);
     }
 #endif /* DIPOLE */
 #if defined(DIPOLE) || defined(MORSE)
@@ -2612,8 +2620,8 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
 	ms_r2_min[i] = rtmp;
       }
     }
-
 #endif /* DIPOLE or MORSE */
+
 #ifdef EPITAX
     /* Parameters for option epitax */
     else if (strcasecmp(token,"epitax_rate")==0) {
@@ -3928,20 +3936,21 @@ void broadcast_params() {
   MPI_Bcast( keating_beta, ntypes*ntypepairs, REAL, 0,MPI_COMM_WORLD);
 #endif
 
-#ifdef DIPOLE
-  if (NULL==charge) {
-    charge = (real *) malloc( ntypes * sizeof(real) );
-    if (NULL==charge) 
-      error("Cannot allocate memory for charge on client."); 
-  }
+#if defined(EWALD) || defined(COULOMB)
   MPI_Bcast( charge,              ntypes, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &ew_kappa,           1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &ew_r2_cut,          1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &ew_kcut,            1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &ew_test,            1,      MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &ew_nmax,            1,      MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &coul_res,           1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &coul_begin,         1,      REAL,    0, MPI_COMM_WORLD);
+#endif
+#ifdef DIPOLE
   MPI_Bcast( &dp_fix,             1,      MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &dp_mix,             1,      REAL,    0, MPI_COMM_WORLD);
-  MPI_Bcast( &dp_res,             1,      MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &dp_begin,           1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &dp_tol,             1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &dp_self,            1,      REAL,    0, MPI_COMM_WORLD);
   if (NULL==dp_b) {
     dp_b = (real *) malloc( ntypepairs * sizeof(real) );
     if (NULL==dp_b) 
@@ -3960,6 +3969,8 @@ void broadcast_params() {
       error("Cannot allocate memory for dp_alpha on client."); 
   }
   MPI_Bcast( dp_alpha,            ntypes, REAL,    0, MPI_COMM_WORLD);
+#endif
+#if defined(DIPOLE) || defined(MORSE)
   if (NULL==ms_D) {
     ms_D = (real *) malloc( ntypepairs * sizeof(real) );
     if (NULL==ms_D) 
@@ -3990,7 +4001,7 @@ void broadcast_params() {
       error("Cannot allocate memory for ms_r0 on client."); 
   }
   MPI_Bcast( ms_r0,           ntypepairs, REAL,    0, MPI_COMM_WORLD);
-#endif /* DIPOLE */
+#endif
 
 #ifdef EPITAX
   MPI_Bcast( epitax_rate,     ntypes, REAL, 0, MPI_COMM_WORLD);

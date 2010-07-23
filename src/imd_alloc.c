@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -165,6 +165,9 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
   to->adp_lambda[i].yz = from->adp_lambda[j].yz;   
   to->adp_lambda[i].zx = from->adp_lambda[j].zx;   
   to->adp_lambda[i].xy = from->adp_lambda[j].xy;   
+#endif
+#ifdef VARCHG
+  to->charge[i] = from->charge[j];
 #endif
 #ifdef DIPOLE
   to->dp_p_ind  X(i)   = from->dp_p_ind X(j);
@@ -468,6 +471,9 @@ void alloc_cell(cell *p, int n)
 #ifdef ADP
   memalloc( &p->adp_mu,   n*SDIM, sizeof(real),   al, ncopy*SDIM, 0, "adp_mu");
   memalloc( &p->adp_lambda, n, sizeof(sym_tensor), al, ncopy, 0, "adp_lambda");
+#endif
+#ifdef VARCHG
+  memalloc( &p->charge,    n,     sizeof(real), al, ncopy, 0, "charge" );
 #endif
 #ifdef DIPOLE
   memalloc( &p->dp_E_stat, n*DIM, sizeof(real), al, ncopy*DIM, 0, "dp_E_stat");

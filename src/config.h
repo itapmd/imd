@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -74,6 +74,13 @@
 #if (defined(EAM2) || defined(TTBP))
 #ifndef PAIR
 #define PAIR 
+#endif
+#endif
+
+/* VARCHG and DIPOLE require COULOMB */
+#if (defined(VARCHG) || defined(DIPOLE))
+#ifndef COULOMB
+#define COULOMB
 #endif
 #endif
 

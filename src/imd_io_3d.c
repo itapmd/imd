@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -194,6 +194,9 @@ void read_atoms(str255 infilename)
     if ((calc_Epot_ref == 0) && (info.n_Epot_ref < 0))
       error("Reference energy requires configuration file with header");
 #endif
+#ifdef VARCHG
+    error("Option VARCHG requires configuration file with header");
+#endif
   }
 
   /* Set up 1 atom input cell */
@@ -382,6 +385,14 @@ void read_atoms(str255 infilename)
       }
       if (info.n_Epot_ref > 0) {
         EPOT_REF(input,0)  = d[info.n_Epot_ref-2];
+      }
+#endif
+#ifdef VARCHG
+      if (info.n_charge > 0) {
+        CHARGE(input,0)    = d[info.n_charge-2];
+      } 
+      else {
+        CHARGE(input,0)    = charge[ SORTE(input,0) ];
       }
 #endif
 
@@ -736,6 +747,9 @@ void write_atoms_config(FILE *out)
         data[n++].r = DREH_IMPULS(p,i,Z) / uniax_inert; 
 #endif
         data[n++].r = POTENG(p,i);
+#ifdef VARCHG
+        data[n++].r = CHARGE(p,i);
+#endif
 #ifdef NNBR
         data[n++].r = (real) NBANZ(p,i);
 #endif
@@ -803,6 +817,9 @@ void write_atoms_config(FILE *out)
           DREH_IMPULS(p,i,Z) / uniax_inert ); 
 #endif
         len += sprintf(outbuf+len, RESOL1, POTENG(p,i));
+#ifdef VARCHG
+        len += sprintf(outbuf+len, RESOL1, CHARGE(p,i));
+#endif
 #ifdef NNBR
         len += sprintf(outbuf+len, " %d",  NBANZ(p,i));
 #endif

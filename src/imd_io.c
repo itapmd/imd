@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2008 Institute for Theoretical and Applied Physics
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -2815,6 +2815,9 @@ void write_header_config(FILE *out)
 #ifdef DISLOC
   atompar++;
 #endif
+#ifdef VARCHG
+  atompar++;
+#endif
 #ifdef CNA
   if (cna_crist>0) atompar++;
 #endif
@@ -2841,6 +2844,9 @@ void write_header_config(FILE *out)
   fprintf(out, " ordpar" );
 #else
   fprintf(out, " Epot" );
+#endif
+#ifdef VARCHG
+  fprintf(out, " charge" );
 #endif
 #ifdef NNBR
   fprintf(out, " n_nbr" );
@@ -2975,6 +2981,9 @@ int read_header(header_info_t *info, str255 infilename)
   info->n_x_ref    = -1;
   info->n_Epot_ref = -1;
 #endif
+#ifdef VARCHG
+  info->n_charge   = -1;
+#endif
 
   fgets(line, 255, infile);
   while (line[0]=='#') {
@@ -3014,6 +3023,11 @@ int read_header(header_info_t *info, str255 infilename)
           info->n_Epot_ref = count;
         }
 #endif
+#ifdef VARCHG
+        if (strcmp(token, "charge")==0) {
+          info->n_charge = count;
+        }
+#endif
         count++;
         token = strtok(NULL, " \t\r\n");
       }
@@ -3043,6 +3057,12 @@ int read_header(header_info_t *info, str255 infilename)
                 infilename);
     if ((calc_Epot_ref == 0) && (info->n_Epot_ref < 0))
       error_str("Configuration file %s contains no Epot_ref",infilename);
+#endif
+#ifdef VARCHG
+    /* if there is no charge in file, take it from the charge parameter
+    if (info->n_charge < 0)
+      error_str("Configuration file %s contains no charge",infilename);
+    */
 #endif
   } 
 
@@ -3075,6 +3095,9 @@ void broadcast_header(header_info_t *info)
 #ifdef DISLOC
   MPI_Bcast( &(info->n_x_ref),    1, MPI_INT,  0, MPI_COMM_WORLD); 
   MPI_Bcast( &(info->n_Epot_ref), 1, MPI_INT,  0, MPI_COMM_WORLD); 
+#endif
+#ifdef VARCHG
+  MPI_Bcast( &(info->n_charge),   1, MPI_INT,  0, MPI_COMM_WORLD); 
 #endif
 }
 

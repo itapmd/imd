@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -55,10 +55,10 @@ void pair_int_mstr(real *pot, real *grad, int p_typ, int q_typ, real r2);
 #ifdef EWALD
 void pair_int_ewald(real *pot, real *grad, int p_typ, int q_typ, real r2);
 #endif
-#ifdef DIPOLE
-void create_dipole_tables(void);
+#ifdef COULOMB
+void create_coulomb_tables(void);
 void pair_int_coulomb(real *pot, real *grad, real r2);
-#endif /* DIPOLE */
+#endif
 #endif
 void pair_int2  (real*, real*, int*, pot_table_t*, int, int, real);
 void pair_int3  (real*, real*, int*, pot_table_t*, int, int, real);
@@ -508,7 +508,7 @@ void do_forces_ewald_real(void);
 void do_forces_ewald_fourier(void);
 void init_ewald(void);
 #endif
-#if defined(EWALD)||defined(DIPOLE)
+#if defined(EWALD) || defined(COULOMB)
 real erfc1(real x);
 #endif
 

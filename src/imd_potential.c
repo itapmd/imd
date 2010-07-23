@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2009 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -48,9 +48,9 @@ void setup_potentials( void )
     read_pot_table(&pair_pot,potfilename,ntypes*ntypes,1);
   /* initialize analytically defined potentials */
   if (have_pre_pot) init_pre_pot();
-#ifdef DIPOLE
-  create_dipole_tables();
-#endif /* DIPOLE */
+#ifdef COULOMB
+  create_coulomb_tables();
+#endif /* COULOMB */
 #ifdef MULTIPOT
   for (i=0; i<N_POT_TAB; i++)
     copy_pot_table( pair_pot, &pair_pot_ar[i]);
@@ -58,19 +58,11 @@ void setup_potentials( void )
 #ifdef LINPOT
   make_lin_pot_table(pair_pot, &pair_pot_lin);
 #endif
-  
 #endif
-
-
-  
 #ifdef TTBP
   /* read TTBP smoothing potential file */
   read_pot_table(&smooth_pot,ttbp_potfilename,ntypes*ntypes,1);
 #endif
-
- 
-  
-  
 #ifdef EAM2
   /* read the tabulated embedding energy function */
   read_pot_table(&embed_pot,eam2_emb_E_filename,ntypes,0);
@@ -478,7 +470,11 @@ void create_pot_table(pot_table_t *pt)
     column = 0;
     for (i=0; i<ntypes; i++) 
       for (j=i; j<ntypes; j++) {
-        if ((r_cut_lin[column]>0) || (ew_r2_cut>0)) {
+        if ((r_cut_lin[column]>0)
+#ifdef EWALD
+	    || ((ew_r2_cut>0) && (SQR(charge[i]*charge[j])>0))
+#endif
+          ) {
           r2_begin[i][j]   = r2_begin[j][i]   = SQR(r_begin[column]);
           r2_end[i][j]     = r2_end[j][i]     
                            = MAX( SQR(r_cut_lin[column]), ew_r2_cut);
@@ -588,7 +584,8 @@ void create_pot_table(pot_table_t *pt)
               if (r2 < ew_r2_cut) {
                 pair_int_ewald(&pot, &grad, i, j, r2);
                 val += pot - ew_shift[i][j];
-                val -= SQRT(r2)*ew_fshift[i][j]*(SQRT(r2)-SQRT(ew_r2_cut));
+                val -= 0.5*ew_fshift[i][j]*(r2-ew_r2_cut);
+                /*val -= SQRT(r2)*ew_fshift[i][j]*(SQRT(r2)-SQRT(ew_r2_cut));*/
               }
 	    }
 #endif
@@ -746,7 +743,7 @@ void init_pre_pot(void) {
 #ifdef EWALD
   if (ew_nmax < 0) tmp = MAX(tmp,ew_r2_cut);
 #endif
-#ifdef DIPOLE
+#ifdef COULOMB
   tmp = MAX(tmp,ew_r2_cut);
 #endif
   cellsz = MAX(cellsz,tmp);
@@ -868,32 +865,38 @@ void init_pre_pot(void) {
 
 #endif
 
-#ifdef DIPOLE
+#ifdef COULOMB
+
 /******************************************************************************
 *
-*  create_dipole_tables -- tables for induced dipoles
+*  create_coulomb_tables -- tables for coulomb potential and induced dipoles
 *
 ******************************************************************************/
 
-void create_dipole_tables()
+void create_coulomb_tables()
 {
   int i,j,k,tablesize;
   real r2,pot,grad,tmp,pot2,dipshift,dipfshift;
   real coulf2shift;
   /* Preliminary work */
+#ifdef DIPOLE
   int ncols=2+ntypepairs; 	/* 1 column for each pair + 2 add coln. */
+#else
+  int ncols=1; 			/* only one column */
+#endif
   int cou_col=0;		/* coulomb potential */
   int sco_col=1;		/* smooth cutoff column: 2 */
   int shr_col=2;		/* short range dipole interaction */
   pot_table_t *pt;
 
-  if (dp_res==0) dp_res=1000;
-  if (dp_begin<=0.) dp_begin=0.2; /* prevent singularity at r=0 */
+  ew_vorf  = ew_kappa / SQRT( M_PI ); /* needed for Coulomb self energy */
+  if (coul_res==0)    coul_res=1000;
+  if (coul_begin<=0.) coul_begin=0.2; /* prevent singularity at r=0 */
   
-  pt=&dipole_table;
+  pt=&coul_table;
   
-  pt->ncols    = ncols;			/* 2+ntypepairs columns */
-  pt->maxsteps = dp_res;
+  pt->ncols    = ncols;
+  pt->maxsteps = coul_res;
   tablesize    = ncols * (pt->maxsteps+2);
   pt->begin    = (real *) malloc(ncols*sizeof(real));
   pt->end      = (real *) malloc(ncols*sizeof(real));
@@ -909,15 +912,15 @@ void create_dipole_tables()
 
   /* Sampling identical for all functions */
   for (i=0;i<ncols;i++) {
-    pt->begin[i]   = SQR(dp_begin);
+    pt->begin[i]   = SQR(coul_begin);
     pt->end[i]     = ew_r2_cut;
-    pt->step[i]    = (ew_r2_cut-pt->begin[i])/((real) dp_res-1.);
+    pt->step[i]    = (ew_r2_cut-pt->begin[i])/(coul_res-1.);
     pt->invstep[i] = 1.0 / pt->step[i];
-    pt->len[i]     = dp_res;
+    pt->len[i]     = coul_res;
   }
-  /* First table: Coulomb potential */
 
- /* Calculate shifts */
+  /* First table: Coulomb potential */
+  /* Calculate shifts */
   pair_int_coulomb(&coul_shift, &coul_fshift, ew_r2_cut);
   coulf2shift = ew_eps*ew_kappa*SQR(ew_kappa)*exp(-SQR(ew_kappa)*ew_r2_cut);
   coulf2shift /= sqrt(M_PI);
@@ -928,20 +931,23 @@ void create_dipole_tables()
 	    coul_shift, coul_fshift, coulf2shift);
   }
 
-  for (i=0;i<dp_res;i++) {
+  for (i=0;i<coul_res;i++) {
     r2 = pt->begin[cou_col] + i * pt->step[cou_col];
     pair_int_coulomb(&pot,&grad,r2);
     pot -= coul_shift;
     pot -= 0.5*coul_fshift*(r2-ew_r2_cut);
+#ifdef DIPOLE
     pot -= 0.125*coulf2shift*(SQR(r2)-2.*r2*ew_r2_cut + 
 			      SQR(ew_r2_cut));
+#endif
     *PTR_2D(pt->table,i,cou_col,pt->maxsteps,ncols)=pot;
+#ifdef DIPOLE
     /* 1/r^3 equiv. deriv of 1/r */
     grad -= coul_fshift;
     grad -= 0.5*coulf2shift*(r2-ew_r2_cut);
     grad /= -ew_eps;
     *PTR_2D(pt->table,i,sco_col,pt->maxsteps,ncols)=grad;
-  /* Other tables: Short-range dipole fn */
+    /* Other tables: Short-range dipole fn */
     for(k=0;k<ntypepairs;k++){
       tmp=dp_b[k]*SQRT(r2);
       pot2=1.;
@@ -952,9 +958,9 @@ void create_dipole_tables()
       pot2 *= dp_c[k]*exp(-tmp)* grad;
       *PTR_2D(pt->table,i,shr_col+k,pt->maxsteps,ncols)=pot2;
     }
+#endif
   }
     
-
   /* Finish up */
 #if   defined(FOURPOINT)
   init_fourpoint(pt, ncols);
@@ -964,10 +970,10 @@ void create_dipole_tables()
 #else
   init_threepoint(pt, ncols);
 #endif
-  if ((0==myid) && (debug_potential)) test_potential(*pt, "dipole", ncols);
+  if ((0==myid) && (debug_potential)) test_potential(*pt, "coulomb", ncols);
 
 }  
-#endif /* DIPOLE */
+#endif /* COULOMB */
 
 #if defined(FOURPOINT)
 
@@ -1341,11 +1347,11 @@ void pair_int_ewald(real *pot, real *grad, int p_typ, int q_typ, real r2)
 
 #endif /* EWALD */
 
-#ifdef DIPOLE
+#ifdef COULOMB
 
 /*****************************************************************************
 *
-*  Evaluate Coulomb potential for DIPOLE
+*  Evaluate Coulomb potential for VARCHG and DIPOLE
 *
 ******************************************************************************/
 
@@ -1360,9 +1366,10 @@ void pair_int_coulomb(real *pot, real *grad, real r2)
   *grad = - (*pot + fac * exp( -SQR(ew_kappa)*r2 ) ) / r2; 
 }
 
-#endif /*DIPOLE*/
+#endif
 
 #if defined(DIPOLE) || defined(MORSE)
+
 /*****************************************************************************
 *
 *  Evaluate Morse-Stretch potential for DIPOLE
@@ -1708,7 +1715,7 @@ void deriv_func3(real *grad, int *is_short, pot_table_t *pt,
   *grad = 2 * istep * (dfac0 * p0 + dfac1 * p1 + dfac2 * p2 + dfac3 * p3);
 }
 
-#if defined(DIPOLE)||defined(EWALD)
+#if defined(COULOMB) || defined(EWALD)
 
 /******************************************************************************
 *

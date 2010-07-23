@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -133,9 +133,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
         *Epot      += pot_zwi;
 
 #ifndef MONOLJ
-#ifdef EAM2
         pot_zwi *= 0.5;   /* avoid double counting */
-#endif
 #ifdef NNBR
         if (r2 < nb_r2_cut[col ]) NBANZ(p,i)++;
         if (r2 < nb_r2_cut[col2]) NBANZ(q,j)++;
