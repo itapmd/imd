@@ -1580,8 +1580,12 @@ void calc_forces(int steps)
   dp_E_calc++; 			/* increase field calc counter */
 #endif /* DIPOLE */
 
-  /* EWALD is not parallelized */
-#if defined(EWALD) && !defined(MPI) 
+  /* EWALD is only partially parallelized */
+#ifdef EWALD 
+#ifdef MPI
+  if ((ew_nmax >= 0) || (ew_kcut > 0)) 
+    error("option EWALD is only partially parallelized");
+#endif
   do_forces_ewald(steps);
 #endif 
 
