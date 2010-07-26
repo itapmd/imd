@@ -800,9 +800,9 @@ void setup_buffers(void)
   size_north = largest_cell * cell_dim.x * cell_dim.z * binc;
   size_up    = largest_cell * cell_dim.x * cell_dim.y * binc;
 #ifdef DEBUG
-  if (0==myid) 
+  if (1==myid) 
      printf("Max. cell is %d size east %d size north %d size up %d.\n", 
-		      largest_cell,size_east,size_north,size_up);
+	    largest_cell,size_east,size_north,size_up);
 #endif
 #else
   size_east  = largest_cell * cell_dim.y * binc;

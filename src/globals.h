@@ -779,7 +779,7 @@ EXTERN real fd_g INIT(1.0);        /* electron-phonon coupling constant */
 EXTERN int fd_n_timesteps INIT(1); /* how many FD steps to a MD timestep? */
 EXTERN int fd_update_steps INIT(1);/* how often are FD cells updated
 				      by averaging over atoms ? */
-EXTERN int fd_min_atoms INIT(1);   /* minimum number of atoms needed in a
+EXTERN int fd_min_atoms INIT(3);   /* minimum number of atoms needed in a
 				      FD cell for it to be active */
 EXTERN int ttm_int INIT(0); /* How many steps before ttm writeouts? */
 EXTERN real ttm_eng INIT(0.0); /* Electronic heat energy per atom for .eng file*/

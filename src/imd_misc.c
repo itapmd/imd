@@ -48,7 +48,7 @@ void usage(void)
 void warning(char *msg)
 { 
   if (myid==0) {
-    fprintf(stderr,"WARNING: %s\n",msg);
+  fprintf(stderr,"WARNING: %s \n",msg);
     fflush(stderr);
   }
 }
