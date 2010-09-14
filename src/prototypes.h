@@ -660,4 +660,5 @@ void close_files(void);
 void read_atoms_neb(str255);
 void calc_forces_neb(void);
 void write_neb_eng_file(int);
+void constrain_move(void);
 #endif

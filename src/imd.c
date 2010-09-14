@@ -348,10 +348,35 @@ int main(int argc, char **argv)
 
   } while (loop);
 
+
+#ifdef NEB
+  real Emax=-999999;
+  real Emin=999999;
+  int maxi=0;
+  if (myrank==0)
+    {
+      printf ("NEB:\n # Image Epot\n");
+      for(i=0;i<neb_nrep;i++)
+	{
+	  if ( neb_epot_im[i] < Emin)
+	    Emin=neb_epot_im[i];
+	  if ( neb_epot_im[i] > Emax)
+	    {
+	      maxi=i;
+	      Emax=neb_epot_im[i];
+	    }
+	  printf(" %d %lf\n",i, neb_epot_im[i]);
+	}
+      printf ("Saddlepoint: %d Activation Energy: %lf \n",maxi,Emax-Emin);
+    }
+#endif 
+
   /* kill MPI */
 #if defined(MPI) || defined(NEB)
   shutdown_mpi();
 #endif
+
+
 
 /* Added by Frank Pister */
 #if defined(CBE)

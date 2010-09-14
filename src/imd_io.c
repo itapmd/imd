@@ -1906,6 +1906,10 @@ void write_eng_file_header()
 #ifdef ZAPP
   fprintf(fl, "totimpuls.x totimpuls.y totimpuls.z ");
 #endif
+
+#ifdef NEB
+  fprintf(fl, "phi_lr phi_dl phi_dr k ");
+#endif
     putc('\n',fl);
 
     fclose(fl);
@@ -2132,6 +2136,11 @@ void write_eng_file(int steps)
 #ifdef ZAPP
    fprintf(eng_file, " %e %e %e ", total_impuls.x,total_impuls.y,total_impuls.z);
 #endif
+
+#ifdef NEB
+   fprintf(eng_file, " %lf %lf %lf %e ",phi_lr,phi_dl,phi_dr,neb_k);
+#endif
+
   putc('\n',eng_file);
   flush_count++;
 

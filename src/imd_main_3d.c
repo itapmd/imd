@@ -458,6 +458,10 @@ int main_loop(int simulation)
     increment_temperature();
 #endif
 
+#ifdef NEB
+    constrain_move();
+#endif
+
 #ifdef ZAPP
     zapp();
 #endif
@@ -634,6 +638,69 @@ void close_files(void)
   }
 }
 
+#ifdef NEB
+/*****************************************************************************
+*
+*  globally constrain the max step size
+*
+*****************************************************************************/
+
+void constrain_move(void)
+{
+  int i, k;
+  real normp;
+  real newxnorm=0;
+  real tmp_x_max2=0.0;
+  if(neb_maxmove !=0.0)
+    {
+      if (SQRT(xnorm) >neb_maxmove)
+	{
+	  normp=sqrt(pnorm);
+	  printf("step %d myrank:%d xnorm = %lf maxmove = %lf  normp =%lf x_max =%lf \n",steps,myrank,SQRT(xnorm),neb_maxmove,normp,SQRT(x_max2));
+	 
+	  for (k=0; k<NCELLS; ++k) {
+	    cell *p = CELLPTR(k);
+	    for (i=0; i<p->n; ++i) {
+	      ORT(p,i,X) -= timestep / MASSE(p,i) * IMPULS(p,i,X);
+	      ORT(p,i,Y) -= timestep / MASSE(p,i) * IMPULS(p,i,Y);
+#ifndef TWOD
+	      ORT(p,i,Z) -= timestep / MASSE(p,i) * IMPULS(p,i,Z);
+#endif
+	      if(normp>0.0)
+		{
+		  ORT(p,i,X) += neb_maxmove * IMPULS(p,i,X)/normp;
+		  ORT(p,i,Y) += neb_maxmove * IMPULS(p,i,Y)/normp;
+#ifndef TWOD
+		  ORT(p,i,Z) += neb_maxmove * IMPULS(p,i,Z)/normp;
+#endif
+		  tmp_x_max2 =  MAX(SQR(neb_maxmove*IMPULS(p,i,X)/normp),tmp_x_max2);
+		  tmp_x_max2 =  MAX(SQR(neb_maxmove*IMPULS(p,i,Y)/normp),tmp_x_max2);
+		  tmp_x_max2 =  MAX(SQR(neb_maxmove*IMPULS(p,i,Z)/normp),tmp_x_max2);
+
+		  newxnorm += neb_maxmove * neb_maxmove / normp /normp * SPRODN(IMPULS,p,i,IMPULS,p,i);
+		}
+	  
+
+	      //IMPULS(p,i,X) = 0.0;
+		 // IMPULS(p,i,Y) = 0.0;
+#ifndef TWOD
+	      // IMPULS(p,i,Z) = 0.0;
+#endif
+	    }
+	  }
+	  printf("myrank:%d newxnorm = %lf new xmax %lf\n",myrank,SQRT(newxnorm),SQRT(tmp_x_max2));
+	  fflush(stdout);
+	  xnorm=newxnorm;
+	  x_max2 = tmp_x_max2;
+
+	}
+    }
+}
+ 
+
+#endif
+
+
 #ifdef GLOK
 
 /*****************************************************************************
@@ -714,6 +781,8 @@ void update_glok(void)
 #ifndef TWOD
           ORT(p,i,Z) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,Z);
 #endif
+
+
           IMPULS(p,i,X) = 0.0;
           IMPULS(p,i,Y) = 0.0;
 #ifndef TWOD

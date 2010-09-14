@@ -137,6 +137,21 @@ DEBUG_FLAGS	+= #-DDEBUG # -Wall # very noisy
 ###########################################################################
 
 
+# woody
+ifeq (woody,${IMDSYS})
+  CC_SERIAL	= icc
+  CC_MPI	= mpicc
+  MPICH_CC      = icc
+  MPICH_CLINKER = icc
+  OMPI_MPICC    = icc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS	+= -O -funroll-all-loops -fomit-frame-pointer -ipo -xT
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -g3 -pg
+#  LFLAGS        +=  -static
+#  export        OMPI_MPICC MPICH_CC # MPICH_CLINKER
+endif
+
 
 # intel core 2 duo gcc
 ifeq (x86_64-c2_gcc,${IMDSYS})

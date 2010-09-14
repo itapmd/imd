@@ -61,6 +61,11 @@
 #define zero55       {0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
  0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
  0,0,0,0,0}
+#define zero100       {0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+ 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
+}
 
 #define zero550      {0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
  0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0,\
@@ -1201,10 +1206,23 @@ EXTERN real cbe_pot_max INIT(20.0);
 
 EXTERN int myrank   INIT(0);
 #ifdef NEB
+#define NEB_MAXNREP 100
 EXTERN int  neb_nrep INIT(0);
+EXTERN int  neb_cineb_start INIT(99999999);
+EXTERN int  neb_climbing_image INIT(-1);
+EXTERN int  neb_vark_start INIT(99999999);
 EXTERN int  neb_eng_int INIT(0);
 EXTERN real neb_k INIT(1.0);                /* spring constant */
+EXTERN real neb_kmax INIT(0.0);             /* max spring constant for variable spring method*/
+EXTERN real neb_kmin INIT(0.0);             /* min constant for variable spring method*/
 EXTERN real neb_fnorm INIT(0.0);            /* total force norm */
 EXTERN char *neb_outfilename INIT(NULL);    /* name of NEB .eng file */
 EXTERN FILE *neb_eng_file INIT(NULL);       /* pointer to NEB .eng file */
+EXTERN real neb_image_energies[NEB_MAXNREP] INIT(zero100); /* energies of the individual images */
+EXTERN real neb_epot_im[NEB_MAXNREP] INIT(zero100);
+EXTERN real neb_ks[NEB_MAXNREP] INIT(zero100);
+EXTERN real phi_dl INIT(0.0);
+EXTERN real phi_dr INIT(0.0);
+EXTERN real phi_lr INIT(0.0);
+EXTERN real neb_maxmove INIT(0.0);
 #endif

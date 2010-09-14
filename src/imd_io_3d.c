@@ -58,7 +58,9 @@ void read_atoms(str255 infilename)
   msgbuf   *input_buf=NULL, *b;
 #endif
 
-  if ((0 == myid) && (0==myrank)) { 
+   if ((0 == myid) && (0==myrank)) 
+    { 
+      printf("myid: %d  myrank: %d\n", myid,myrank); 
     printf("Reading atoms from %s.\n", infilename); 
     fflush(stdout);
   }

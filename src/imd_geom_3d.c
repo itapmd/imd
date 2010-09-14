@@ -66,6 +66,8 @@ void make_box( void )
   tbox_y.x /= volume;  tbox_y.y /= volume;  tbox_y.z /= volume;
   tbox_z.x /= volume;  tbox_z.y /= volume;  tbox_z.z /= volume;
 
+  //  printf("tbox_x: %lf %lf %lf tbox_y: %lf %lf %lf tbox_z: %lf %lf %lf \n",tbox_x.x,tbox_x.y,tbox_x.z,tbox_y.x,tbox_y.y,tbox_y.z,tbox_z.x,tbox_z.y,tbox_z.z); fflush(stdout);
+
   /* squares of the box heights perpendicular to the faces */
   height.x = 1.0 / SPROD(tbox_x,tbox_x);
   height.y = 1.0 / SPROD(tbox_y,tbox_y);

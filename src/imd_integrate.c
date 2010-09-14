@@ -262,6 +262,7 @@ void move_atoms_nve(void)
 
         /* to account for restricted mobilities */
 	rampedtemp  = (tmp2 !=0) ? 
+
           (tmp2/3.0 * damptemp * (1.0 - DAMPF(p,i))) : 0.0;
 
         if(rampedtemp !=0.0) {
@@ -637,7 +638,6 @@ void move_atoms_ttm(void)
 
 
 }
-
 #else
 
 void move_atoms_ttm(void) 
@@ -665,6 +665,7 @@ void move_atoms_mik(void)
   real tmp_x_max2=0.0;
   real mass = 0.006084;
 
+
   static int count = 0;
  
 
@@ -674,7 +675,7 @@ void move_atoms_mik(void)
  tot_kin_energy = 0.0;
   fnorm   = 0.0;
   xnorm   = 0.0;
-
+  pnorm   = 0.0;
 
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
@@ -786,6 +787,7 @@ void move_atoms_mik(void)
 #endif
         } else { /* new positions */
           tmp = timestep / MASSE(p,i);
+
           ORT(p,i,X) += tmp * IMPULS(p,i,X);
           ORT(p,i,Y) += tmp * IMPULS(p,i,Y);
 #ifndef TWOD
@@ -793,6 +795,7 @@ void move_atoms_mik(void)
 #endif
         }
 #ifdef RELAXINFO
+	pnorm += SPRODN(IMPULS,p,i,IMPULS,p,i)/MASSE(p,i)/MASSE(p,i);
 	xnorm   += tmp * tmp* SPRODN(IMPULS,p,i,IMPULS,p,i);
         /* determine the biggest force component */
         tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,X)),tmp_x_max2);

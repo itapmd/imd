@@ -534,16 +534,44 @@ int getparamfile(char *paramfname, int phase)
       /* number of NEB replicas */
       getparam(token,&neb_nrep,PARAM_INT,1,1);
       if (0==myrank)
+	{
         if (num_cpus != neb_nrep-2)
           error("We need exactly neb_nrep-2 MPI processes");
+        if (neb_nrep>NEB_MAXNREP)
+          error("Too many images for NEB");
+	}
     }
     else if (strcasecmp(token,"neb_eng_int")==0) {
       /* interval of NEB energy writes */
       getparam(token,&neb_eng_int,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token,"neb_cineb_start")==0) {
+      /* when to change to CINEB */
+      getparam(token,&neb_cineb_start,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"neb_climbing_image")==0) {
+      /* which image should be climbing */
+      getparam(token,&neb_climbing_image,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"neb_vark_start")==0) {
+      /* when to change to variable ks */
+      getparam(token,&neb_vark_start,PARAM_INT,1,1);
+    }
     else if (strcasecmp(token,"neb_k")==0) {
-      /* spring constant of NEB -- ignored?? */
+      /* spring constant of NEB */
       getparam(token,&neb_k,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"neb_maxmove")==0) {
+      /* constrain relaxation steps */
+      getparam(token,&neb_maxmove,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"neb_kmax")==0) {
+      /* if >0 variable springs are used with  max. spring constant */
+      getparam(token,&neb_kmax,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"neb_kmin")==0) {
+      /* if >0 variable springs are used with  max. spring constant */
+      getparam(token,&neb_kmin,PARAM_REAL,1,1);
     }
 #endif
 #ifdef VEC
