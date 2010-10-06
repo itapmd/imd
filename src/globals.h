@@ -811,7 +811,8 @@ EXTERN MPI_Datatype  mpi_element, mpi_element2,
 		     mpi_yplane, mpi_yplane_block,
 		     mpi_yrow, mpi_yrow_block,
 		     mpi_zplane, mpi_zplane_block;
-EXTERN MPI_Status stati[6]; 
+EXTERN MPI_Status stati[6];
+EXTERN MPI_Request reque[6];
 #endif /*MPI*/
 EXTERN double E_new INIT(0.0); /* Energy of newly created FD cells */
 EXTERN double E_new_local INIT(0.0);
