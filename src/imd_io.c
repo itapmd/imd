@@ -1910,6 +1910,11 @@ void write_eng_file_header()
 #ifdef NEB
   fprintf(fl, "phi_lr phi_dl phi_dr k ");
 #endif
+
+#ifdef FEFL
+  fprintf(fl, "harm_eng ");
+#endif
+
     putc('\n',fl);
 
     fclose(fl);
@@ -2139,6 +2144,10 @@ void write_eng_file(int steps)
 
 #ifdef NEB
    fprintf(eng_file, " %lf %lf %lf %e ",phi_lr,phi_dl,phi_dr,neb_k);
+#endif
+
+#ifdef FEFL
+   fprintf(eng_file, " %e", (double) tot_harm_energy/natoms);
 #endif
 
   putc('\n',eng_file);

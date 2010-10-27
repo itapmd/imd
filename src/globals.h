@@ -924,6 +924,7 @@ EXTERN real ew_fshift[10][10];
 EXTERN real spring_rate[10] INIT(zero10);
 /* EXTERN real spring_rt[10]; */
 EXTERN real lambda INIT(1.0);
+EXTERN real tot_harm_energy INIT(0.0);
 #endif
 
 #ifdef EAM2
