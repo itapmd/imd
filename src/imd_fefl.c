@@ -69,6 +69,7 @@ void calc_fefl(void)
 #ifndef TWOD
       KRAFT(p,i,Z) = (1-lambda) * KRAFT(p,i,Z) + lambda * ff * d.z; 
 #endif      
+
     }
   }
 
