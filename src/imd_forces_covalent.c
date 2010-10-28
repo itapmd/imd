@@ -198,7 +198,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
   neightab *neigh;
   vektor force_j, force_k;
   cell   *jcell, *kcell;
-  int    i, j, k, p_typ, j_typ, knum, jnum, col, inc = ntypes * ntypes;
+  int    i, j, k, p_typ, j_typ, k_typ, knum, jnum, col, inc = ntypes * ntypes;
   int    is_short=0;
   real   *tmpptr;
   real   pot_zwi, tmp_pot, tmp_grad, tmp, tmp_j, tmp_k;
@@ -256,7 +256,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
     /* for each pair of neighbors */
     for (j=0; j<neigh->n-1; ++j)
       for (k=j+1; k<neigh->n; ++k) {
-
+	k_typ   = neigh->typ[k];
         /* FOURIER potential term */
         tmp_sp    = SPROD(d[j],d[k]);
         cos_theta = tmp_sp / (r[j] * r[k]);
@@ -265,8 +265,8 @@ void do_forces2(cell *p, real *Epot, real *Virial,
         tmp_pot   = ttbp_constant[p_typ] * g(cos_theta);
         tmp_grad  = ttbp_constant[p_typ] * dg(cos_theta);
 #else
-        tmp_pot   = ttbp_constant[p_typ] * tmp * tmp;
-        tmp_grad  = ttbp_constant[p_typ] * 2 * tmp;
+        tmp_pot   = B[j_typ][p_typ][k_typ] * ttbp_constant[p_typ] * tmp * tmp;
+        tmp_grad  = B[j_typ][p_typ][k_typ] * ttbp_constant[p_typ] * 2 * tmp;
 #endif
         /* smoothing potential, total potential */
         tmp_f2   = pot[j]  * pot[k];
@@ -1058,6 +1058,18 @@ void init_ttbp(void) {
   }
   for (i=0; i<ntypes*ntypes; i++)
     neightab_r2cut[i] = MAX( neightab_r2cut[i], smooth_pot.end[i] );
+  if (ttbp_vas == 0){
+    for (i=0; i<8; ++i)
+      ttbp_constant2[i] = 1.;
+  }
+  B[0][0][0] = ttbp_constant2[0];
+  B[0][0][1] = ttbp_constant2[1];
+  B[0][1][0] = ttbp_constant2[2];
+  B[0][1][1] = ttbp_constant2[3];
+  B[1][0][0] = ttbp_constant2[4];
+  B[1][0][1] = ttbp_constant2[5];
+  B[1][1][0] = ttbp_constant2[6];
+  B[1][1][1] = ttbp_constant2[7];
 }
 
 #endif /* TTBP */

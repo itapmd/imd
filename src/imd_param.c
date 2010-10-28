@@ -2395,6 +2395,12 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       if (ntypes==0) error("specify parameter ntypes before ttbp_constant");
       getparam(token, ttbp_constant, PARAM_REAL, ntypes, ntypes);
     }
+    else if (strcasecmp(token,"ttbp_constant2")==0) {
+      /* force constant for vashishta-potential */
+      getparam(token, ttbp_constant2, PARAM_REAL, 8, 8);
+      ttbp_vas = 1;
+      /* ntypes^3 values, vashishta-option only supported for ntypes = 2 */
+    }
     else if (strcasecmp(token,"ttbp_sp")==0) {
       /* hybridization of the element type */
       if (ntypes==0) error("specify parameter ntypes before ttbp_sp");
@@ -3916,6 +3922,7 @@ void broadcast_params() {
 
 #ifdef TTBP
   MPI_Bcast( ttbp_constant,  ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ttbp_constant2, 8,      REAL, 0, MPI_COMM_WORLD)
   MPI_Bcast( ttbp_sp,        ntypes, REAL, 0, MPI_COMM_WORLD);
 #endif
 
