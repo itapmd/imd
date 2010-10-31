@@ -675,7 +675,7 @@ void move_atoms_mik(void)
  tot_kin_energy = 0.0;
   fnorm   = 0.0;
   xnorm   = 0.0;
-  pnorm   = 0.0;
+  //  pnorm   = 0.0;
 
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
@@ -795,7 +795,7 @@ void move_atoms_mik(void)
 #endif
         }
 #ifdef RELAXINFO
-	pnorm += SPRODN(IMPULS,p,i,IMPULS,p,i)/MASSE(p,i)/MASSE(p,i);
+	//	pnorm += SPRODN(IMPULS,p,i,IMPULS,p,i)/MASSE(p,i)/MASSE(p,i);
 	xnorm   += tmp * tmp* SPRODN(IMPULS,p,i,IMPULS,p,i);
         /* determine the biggest force component */
         tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,X)),tmp_x_max2);
