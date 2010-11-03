@@ -1144,7 +1144,7 @@ void move_atoms_sllod(void)
 
 {
   int k;
-  real tmpvec1[5], tmpvec2[5], ttt;
+  real tmpvec1[4], tmpvec2[4], ttt;
   real E_kin_1 = 0.0, E_kin_2 = 0.0;
   vektor reibung, eins_d_reib;
   real E_rot_1 = 0.0, E_rot_2 = 0.0;
@@ -1910,7 +1910,7 @@ void move_atoms_npt_axial(void)
 void move_atoms_frac(void)
 {
   int  k;
-  real tmpvec1[7], tmpvec2[7], ttt;
+  real tmpvec1[6], tmpvec2[6], ttt;
   real tmp_f_max2=0.0;
   real E_kin_1        = 0.0, E_kin_2        = 0.0; 
   real E_kin_damp1    = 0.0, E_kin_damp2    = 0.0;
