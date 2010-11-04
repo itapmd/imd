@@ -63,7 +63,7 @@ void calc_fefl(void)
       tmp_tot_ein_ene += ee;
 
       /* Addition of pair forces and Einstein forces */      
-      ff  =   spring_rate[p_typ];
+      ff  =  -spring_rate[p_typ];
       KRAFT(p,i,X) = (1-lambda) * KRAFT(p,i,X) + lambda * ff * d.x; 
       KRAFT(p,i,Y) = (1-lambda) * KRAFT(p,i,Y) + lambda * ff * d.y; 
 #ifndef TWOD
