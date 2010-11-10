@@ -986,6 +986,7 @@ EXTERN pot_table_t smooth_pot;    /* TTBP smoothing potential */
 EXTERN real ttbp_constant[10];	  /* constants; less than 11 atom types! */
 EXTERN real ttbp_constant2[8];	  /* constants for Vashishta potential, only for two atom types! */
 EXTERN real ttbp_sp[10];          /* constants; less than 11 atom types! */
+EXTERN real ttbp_cut[1];          /* cutoff for smoothing part of vashishta potential */
 EXTERN int ttbp_vas INIT(0);      /* switch for vashishta potential */
 EXTERN real B[2][2][2];           /* factor B_ijk for vashishta potential */
 #endif

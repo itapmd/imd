@@ -2396,7 +2396,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       getparam(token, ttbp_constant, PARAM_REAL, ntypes, ntypes);
     }
     else if (strcasecmp(token,"ttbp_constant2")==0) {
-      /* force constant for vashishta-potential */
+      /* force constant for vashishta potential */
       getparam(token, ttbp_constant2, PARAM_REAL, 8, 8);
       ttbp_vas = 1;
       /* ntypes^3 values, vashishta-option only supported for ntypes = 2 */
@@ -2405,6 +2405,10 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       /* hybridization of the element type */
       if (ntypes==0) error("specify parameter ntypes before ttbp_sp");
       getparam(token, ttbp_sp, PARAM_REAL, ntypes, ntypes);
+    }
+    else if (strcasecmp(token,"ttbp_cut")==0) {
+      /* cutoff for smoothing part of vashishta potential */
+      getparam(token, ttbp_cut, PARAM_REAL, 1, 1);
     }
     else if (strcasecmp(token,"ttbp_potfile")==0) {
       /* filename for ttbp potential data */
@@ -3924,6 +3928,7 @@ void broadcast_params() {
   MPI_Bcast( ttbp_constant,  ntypes, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ttbp_constant2, 8,      REAL, 0, MPI_COMM_WORLD)
   MPI_Bcast( ttbp_sp,        ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ttbp_cut,       1,      REAL, 0, MPI_COMM_WORLD)
 #endif
 
 #ifdef SLLOD
