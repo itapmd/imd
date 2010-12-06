@@ -210,7 +210,7 @@ void update_fd()
 
   fd_min_atoms = natoms_local /
                  ((local_fd_dim.x-2)*(local_fd_dim.y-2)*(local_fd_dim.z-2)*10);
-  fd_min_atoms = MAX(fd_min_atoms,1);
+  fd_min_atoms = MAX(fd_min_atoms,10);
 #ifdef MPI
   {
     double E_new_reduced;
@@ -551,7 +551,7 @@ void calc_ttm()
       {
 	for (k=1; k<local_fd_dim.z-1; ++k)
 	{
-	  if(l1[i][j][k].natoms!=0)
+	  if(l1[i][j][k].natoms>=fd_min_atoms)
 	  {
 	    l1[i][j][k].xi *= fd_g * fd_h.x*fd_h.y*fd_h.z / 
 	      (fd_n_timesteps * l1[i][j][k].md_temp * 3 * l1[i][j][k].natoms);
@@ -934,22 +934,24 @@ void ttm_create_mpi_datatypes(void)
 #ifdef DEBUG
   if(myid==0)
   { /* output size/extent comparisons */
-    int size,extent;
+    int size;
+    MPI_Aint extent;
+
     MPI_Type_size(mpi_zrow, &size);
     MPI_Type_extent(mpi_zrow, &extent);
-    printf("Size / Extent of mpi_zrow: %d / %d\n", size, extent);
+    printf("Size / Extent of mpi_zrow: %d / %ld\n", size, (long)extent);
 
     MPI_Type_size(mpi_yrow, &size);
     MPI_Type_extent(mpi_yrow, &extent);
-    printf("Size / Extent of mpi_yrow: %d / %d\n", size, extent);
+    printf("Size / Extent of mpi_yrow: %d / %ld\n", size, (long)extent);
 
     MPI_Type_size(mpi_yrow_block, &size);
     MPI_Type_extent(mpi_yrow_block, &extent);
-    printf("Size / Extent of mpi_yrow_block: %d / %d\n", size, extent);
+    printf("Size / Extent of mpi_yrow_block: %d / %ld\n", size, (long)extent);
 
     MPI_Type_size(mpi_element, &size);
     MPI_Type_extent(mpi_element, &extent);
-    printf("Size / Extent of mpi_element: %d / %d\n", size, extent);
+    printf("Size / Extent of mpi_element: %d / %ld\n", size, (long)extent);
 
   }
 #endif /*DEBUG*/
