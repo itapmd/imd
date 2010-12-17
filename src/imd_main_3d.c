@@ -27,6 +27,10 @@
 *
 *****************************************************************************/
 
+/* if bond boost method is used, this main loop is the main loop for the
+   MD part. The relaxation is done in a copy of this main loop in imd_bboost.c
+   function bb_minimize. if you change something here, please also change in bb_minimize */
+
 int main_loop(int simulation)
 {
   int  finished = 0;
@@ -41,7 +45,11 @@ int main_loop(int simulation)
   char tmp_str[9];
 
   real fnorm2,ekin,epot,delta_epot;
-
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing here from checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout);
   
 #ifdef GLOK
   if(glok_start <=steps_min)
@@ -85,6 +93,7 @@ int main_loop(int simulation)
   }
 #endif
 
+#ifndef BBOOST /* in bond boost, these initializations are done in init_bboost */
 #ifdef EXTPOT
   init_extpot();
 #endif  
@@ -119,6 +128,8 @@ int main_loop(int simulation)
 #if defined(HOMDEF) && defined(RELAX)
     deform_int = 0; 
 #endif
+
+#endif /* not BBOOST */ 
   
   /* simulation loop */
   for (steps=steps_min; steps <= steps_max; ++steps) {
@@ -299,6 +310,11 @@ int main_loop(int simulation)
 #endif
 
 #ifdef CNA
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing "" cna "" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout);
     if (steps <= cna_end) {
       if (0 == (steps - cna_start)%(cna_int)
 	  || ((cna_crist>0) && (checkpt_int > 0) 
@@ -341,8 +357,13 @@ int main_loop(int simulation)
     if (ensemble == ENS_CG) acg_step(steps);
     else
 #endif
+
+        /* calculation of forces */
         calc_forces(steps);
 
+/* #ifdef BBOOST
+    calc_bondboost(steps);
+#endif */
 #ifdef EXTPOT
     calc_extpot();
 #endif
@@ -443,6 +464,7 @@ int main_loop(int simulation)
     imd_start_timer(&time_integrate);
 #endif
 #if !defined(CBE) || !defined(SPU_INT)
+    /* move atoms */
     if (ensemble != ENS_CG) move_atoms(); /* here PxF is recalculated */
 #endif
 #ifdef TIMING
@@ -468,7 +490,11 @@ int main_loop(int simulation)
     
 #ifdef BEND
     update_bend();
-#endif    
+#endif 
+
+/* #ifdef BBOOST
+    postpro_boost(steps);
+#endif  */
 
     /* Periodic I/O */
 #ifdef TIMING

@@ -130,11 +130,41 @@ void move_atom(cell *to, cell *from, int index)
 
 void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
 {
+    int k;
   to->ort X(i) = from->ort X(j); 
   to->ort Y(i) = from->ort Y(j); 
 #ifndef TWOD
   to->ort Z(i) = from->ort Z(j); 
 #endif
+
+#ifdef BBOOST
+  to->bb_refposone X(i) = from->bb_refposone X(j);
+  to->bb_refposone Y(i) = from->bb_refposone Y(j); 
+#ifndef TWOD
+  to->bb_refposone Z(i) = from->bb_refposone Z(j); 
+#endif
+  to->bb_refpostwo X(i) = from->bb_refpostwo X(j);
+  to->bb_refpostwo Y(i) = from->bb_refpostwo Y(j); 
+#ifndef TWOD
+  to->bb_refpostwo Z(i) = from->bb_refpostwo Z(j);
+#endif
+  to->bb_oldpos X(i) = from->bb_oldpos X(j);
+  to->bb_oldpos Y(i) = from->bb_oldpos Y(j); 
+#ifndef TWOD
+  to->bb_oldpos Z(i) = from->bb_oldpos Z(j); 
+#endif
+  to->bb_neigh[i]->nbondsref1 = from->bb_neigh[j]->nbondsref1;
+  to->bb_neigh[i]->nbondsref2 = from->bb_neigh[j]->nbondsref2;
+
+  for (k=0; k< BB_MAXNEIGH; ++k) {
+      to->bb_neigh[i]->distref1[k] =  from->bb_neigh[j]->distref1[k];
+      to->bb_neigh[i]->distref2[k] =  from->bb_neigh[j]->distref2[k];
+      to->bb_neigh[i]->numref1[k]  =  from->bb_neigh[j]->numref1[k];
+      to->bb_neigh[i]->numref2[k]  =  from->bb_neigh[j]->numref2[k];      
+    }
+  
+#endif /*BBOOST*/
+  
 #ifndef MONOLJ
   to->nummer [i] = from->nummer [j]; 
   to->sorte  [i] = from->sorte  [j]; 
@@ -315,6 +345,7 @@ neightab *alloc_neightab(neightab *neigh, int count)
   return(neigh);
 }
 
+
 /******************************************************************************
 *
 *  increase already existing neighbor table for one particle
@@ -336,6 +367,46 @@ void increase_neightab(neightab *neigh, int count)
   neigh_len = MAX( neigh_len, count );
 }
 #endif
+
+
+#ifdef BBOOST
+/******************************************************************************
+*
+*  allocate neighbor table for one particle
+*
+******************************************************************************/
+
+bb_neightab *alloc_bb_neightab(bb_neightab *bb_neigh, int count)
+{
+  if (0 == count) { /* deallocate */
+    free(bb_neigh->distref1);
+    free(bb_neigh->distref2);
+    free(bb_neigh->numref1);
+    free(bb_neigh->numref2);
+/*    free(bb_neigh->nbondsref1); 
+    free(bb_neigh->nbondsref2);  */
+    free(bb_neigh); /* should I add this line ? */
+  } else { /* allocate */
+    bb_neigh = (bb_neightab *) malloc(sizeof(bb_neightab));
+    if (bb_neigh==NULL) {
+      error("BBOOST: cannot allocate memory for neighbor table\n");
+    }
+    bb_neigh->nbondsref1     = 0;
+    bb_neigh->nbondsref2     = 0;
+    bb_neigh->distref1  = (real *)     malloc( count * SDIM * sizeof(real) );
+    bb_neigh->distref2  = (real *)     malloc( count * SDIM * sizeof(real) );
+    bb_neigh->numref1   = (integer *)  malloc( count * sizeof(integer) );
+    bb_neigh->numref2   = (integer *)  malloc( count * sizeof(integer) );
+    if ((bb_neigh->distref1==NULL) || (bb_neigh->distref2==NULL) ||
+        (bb_neigh->numref1==NULL)  || (bb_neigh->numref2==NULL) )
+    {
+      error("BBOOST: cannot allocate memory for neighbor table");
+    }
+  }
+  return(bb_neigh);
+}
+
+#endif /*BBOOST*/
 
 
 /******************************************************************************
@@ -432,6 +503,15 @@ void alloc_cell(cell *p, int n)
   }
 #endif
 
+#if (defined(BBOOST) && !defined(TWOD))
+  /* if cell is to be deallocated, begin with neighbor tables */
+  if (0==n) {
+    for (i=0; i< BB_MAXNEIGH; ++i) {
+      p->bb_neigh[i] = alloc_bb_neightab(p->bb_neigh[i], 0);
+    }
+  }
+#endif /*BBOOST*/
+
   /* if there are valid particles in cell, copy them to new storage */
   if (0==p->n_max) {
     ncopy = 0;
@@ -446,6 +526,18 @@ void alloc_cell(cell *p, int n)
 
   /* allocate memory */
   memalloc( &p->ort,      n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "ort" );
+#ifdef BBOOST
+  memalloc( &p->bb_refposone,      n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "bb_refposone" );
+  memalloc( &p->bb_refpostwo,      n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "bb_refpostwo" );
+  memalloc( &p->bb_oldpos,         n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "bb_oldpos" );
+
+  
+  memalloc( &p->bb_neigh, n, sizeof(bb_neighptr), al, BB_MAXNEIGH, 0, "bb_neigh" );
+  for (i=BB_MAXNEIGH; i<n; ++i) {
+    p->bb_neigh[i] = alloc_bb_neightab(p->bb_neigh[i], BB_MAXNEIGH);
+  }
+  
+#endif /*BBOOST*/
   memalloc( &p->impuls,   n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "impuls" );
   memalloc( &p->kraft,    n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "kraft" );
 #ifndef MONOLJ

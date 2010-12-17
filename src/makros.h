@@ -77,9 +77,18 @@ INLINE static int MOD(shortint p, int q)
 
 #endif
 
+
+
+
 #define ORT(cell,i,sub)         (atoms.ort    sub((cell)->ind[i]))
 #define KRAFT(cell,i,sub)       (atoms.kraft  sub((cell)->ind[i]))
 #define IMPULS(cell,i,sub)      (atoms.impuls sub((cell)->ind[i]))
+
+#ifdef BBOOST
+#define REFPOSONE(cell,i,sub)   (atoms.bb_refposone sub((cell)->ind[i]))
+#define REFPOSTWO(cell,i,sub)   (atoms.bb_refpostwo sub((cell)->ind[i]))
+#define OLDPOS(cell,i,sub)      (atoms.bb_oldpos    sub((cell)->ind[i]))
+#endif
 
 #ifdef EAM2
 #define EAM_RHO(cell,i)         (atoms.eam_rho[(cell)->ind[i]])
@@ -193,6 +202,12 @@ INLINE static int MOD(shortint p, int q)
 #define KRAFT(cell,i,sub)       ((cell)->kraft sub(i))
 #define IMPULS(cell,i,sub)      ((cell)->impuls sub(i))
 
+#ifdef BBOOST
+#define REFPOSONE(cell,i,sub)   ((cell)->bb_refposone sub(i))
+#define REFPOSTWO(cell,i,sub)   ((cell)->bb_refpostwo sub(i))
+#define OLDPOS(cell,i,sub)      ((cell)->bb_oldpos sub(i))
+#endif
+
 #ifdef EAM2
 #define EAM_RHO(cell,i)         ((cell)->eam_rho[i])
 #define EAM_DF(cell,i)          ((cell)->eam_dF [i])
@@ -264,6 +279,12 @@ INLINE static int MOD(shortint p, int q)
 #define NSORTE(neigh,i)         ((neigh)->typ[i])
 #define NZELLE(neigh,i)         ((cell *) (neigh)->cl[i])
 #define NNUMMER(neigh,i)        ((neigh)->num[i])
+#endif
+#ifdef BBOOST
+#define BBNEIGH(cell,i)           ((cell)->bb_neigh[i])
+/* #define BBNSORTE(bb_neigh,i)         ((bb_neigh)->typ[i]) */
+/* #define BBNZELLE(bb_neigh,i)         ((cell *) (bb_neigh)->cl[i]) */
+#define BBNNUMMER(bb_neigh,i)        ((bb_neigh)->num[i])
 #endif
 #ifdef NBLIST
 #define NBL_POS(cell,i,sub)     ((cell)->nbl_pos sub(i))

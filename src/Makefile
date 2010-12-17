@@ -178,7 +178,7 @@ ifeq (x86_64-c2_gcc4,${IMDSYS})
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
 #  OPT_FLAGS	+= -O -m64 -Wno-unused -march=core2   -mmmx -msse -ffast-math  -funroll-all-loops -fomit-frame-pointer
 #  OPT_FLAGS	+= -O3 -m64 -march=core2  -mtune=core2  -funroll-all-loops -fomit-frame-pointer -ffast-math 
- OPT_FLAGS	+= -O -m64 -march=core2  -mtune=core2  -funroll-all-loops -fomit-frame-pointer -ffast-math 
+  OPT_FLAGS	+= -O -m64 -march=core2  -mtune=core2  -funroll-all-loops -fomit-frame-pointer -ffast-math 
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
 # static seems to have problems with the mpi implemenation?
@@ -934,6 +934,8 @@ LASERSOURCES	= imd_laser.c
 
 TTMSOURCES	= imd_ttm.c
 
+BBOOSTSOURCES	= imd_bboost.c
+
 
 #########################################################
 #
@@ -1262,6 +1264,12 @@ ifneq (,$(findstring bend,${MAKETARGET}))
 PP_FLAGS += -DBEND
 PP_FLAGS += -DFBC
 endif
+
+ifneq (,$(findstring bboost,${MAKETARGET}))
+PP_FLAGS += -DBBOOST
+SOURCES += ${BBOOSTSOURCES}
+endif
+
 
 ifneq (,$(findstring zapp,${MAKETARGET}))
 PP_FLAGS += -DZAPP

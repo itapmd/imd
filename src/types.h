@@ -104,10 +104,33 @@ typedef struct {
 typedef neightab* neighptr;
 #endif
 
+
+#ifdef BBOOST
+/* per particle neighbor table for BBOOST */
+typedef struct {
+    real        *distref1;   /* array containg info on bondlength */
+    real        *distref2;
+    integer     *numref1;    /* array containg the neighbor info */
+    integer     *numref2;
+    int         nbondsref1;  /* number of bonds this atoms had in reference pos */
+    int         nbondsref2;
+} bb_neightab;
+
+typedef bb_neightab* bb_neighptr;
+#endif
+
+
+
 /* Basic Data Type - The Cell */
 
 typedef struct {
-  real        *ort;
+    real        *ort;
+#ifdef BBOOST
+    real        *bb_refposone; /* reference positions for bondboost */
+    real        *bb_refpostwo;
+    real        *bb_oldpos; /* position before boosting */
+    bb_neightab **bb_neigh;
+#endif
 #ifndef MONOLJ
   integer     *nummer;   
   shortint    *sorte;

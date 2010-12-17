@@ -427,6 +427,12 @@ void vis_change_params_deform(integer flag);
 void vis_restart_simulation(void);
 #endif
 
+#ifdef BBOOST
+void  init_bboost(void);
+int bb_minimize(int);
+#endif
+
+
 /* write distributions - file imd_distrib.c */
 void make_distrib_density(void); 
 void write_distrib_density(int, int);
@@ -499,6 +505,11 @@ void load_sample(void);
 void do_neightab(cell *p, cell *q, vektor pbc);
 neightab *alloc_neightab(neightab *neigh, int count);
 void increase_neightab(neightab *neigh, int count);
+#endif
+
+#ifdef BBOOST
+void do_bb_neightab(cell *p, cell *q, vektor pbc);
+bb_neightab *alloc_bb_neightab(bb_neightab *bb_neigh, int count);
 #endif
 
 #ifdef EWALD

@@ -171,6 +171,10 @@ int main(int argc, char **argv)
   init_refpos();
 #endif
 
+#ifdef BBOOST
+  init_bboost();
+#endif
+  
 #ifdef BEND
   init_bend();
 #endif

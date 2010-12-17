@@ -268,6 +268,8 @@ int getparamfile(char *paramfname, int phase)
   int k;
   int i;
 
+  vektor3d tempv3d;
+  
   real norm_bend_axis;
   ivektor2d tmp_ivec2d INIT(nullvektor2d);
   
@@ -573,6 +575,43 @@ int getparamfile(char *paramfname, int phase)
       /* if >0 variable springs are used with  max. spring constant */
       getparam(token,&neb_kmin,PARAM_REAL,1,1);
     }
+#endif
+#ifdef BBOOST
+    else if (strcasecmp(token,"bb_tot_bV")==0) {
+      /* magnitude of boost potential, unit according to potential */
+        getparam(token,&bb_tot_bV,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"p1_2")==0) {
+      /* curvature controller of the boost potential */
+        getparam(token,&p1_2,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"bb_relaxsteps_max")==0) {
+      /* max number of steps for the relaxation part of the bond boos method */
+        getparam(token,&bb_relaxsteps_max,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"bb_shdn_max")==0) {
+      /* max number of steps for the shutdown part of the bond boos method */
+        getparam(token,&bb_shdn_max,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"bb_under_max")==0) {
+      /* max number of steps for the under boosting part of the bond boos method */
+        getparam(token,&bb_under_max,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"bb_epscrit")==0) {
+      if (ntypes==0)
+          error("specify parameter ntypes before bb_epscrit");
+      /* critical fraction of bond length to consider a bond broken */
+      /* format: type1 type2 epscrit */
+      getparam(token,&tempv3d,PARAM_REAL,3,3);
+      if (tempv3d.x>ntypes-1 || tempv3d.y>ntypes-1 )
+          error("bb_epscrit defined for non existing type of bond\n");
+      bb_epscrit[(int)(tempv3d.x)][(int)(tempv3d.y)] = tempv3d.z;
+    }
+    else if (strcasecmp(token,"bb_rcut")==0) {
+      /* the cut off for the range of the bond boos method */
+        getparam(token,&bb_rcut,PARAM_INT,1,1);
+    }
+    
 #endif
 #ifdef VEC
     else if (strcasecmp(token,"atoms_per_cpu")==0) {

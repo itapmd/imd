@@ -1232,3 +1232,33 @@ EXTERN real phi_dr INIT(0.0);
 EXTERN real phi_lr INIT(0.0);
 EXTERN real neb_maxmove INIT(0.0);
 #endif
+
+
+#ifdef BBOOST
+#define BB_MAXNEIGH     30
+#define BB_MAXCOMPONENTS 5                 /* maximal number of alloying components  = ntypes */
+EXTERN real bb_btime INIT(0.0);            /* number of timestep * boostfactor during boost */
+EXTERN real bb_tot_bV INIT(0.0);           /* magnitude of boost potential */
+EXTERN real sum_bfcr INIT(0.0);           /* summation of boost factor */
+EXTERN real C_x INIT(0.0);		/* section of shut down function */
+EXTERN real C_x2 INIT(0.0);		/* section of shut down function */
+EXTERN real B_x INIT(0.0);		/* section of shut down function */
+EXTERN real B_x2 INIT(0.0);		/* section of shut down function */
+EXTERN real A_e_max INIT(0.0);		/* shut down function */
+EXTERN real p1_2 INIT(0.98);           	/* curvature controller of the boost potential */
+EXTERN real bb_rcut INIT(1.0);		/* the cut_off for the bb_neight */
+EXTERN real *bb_neightab_r2cut INIT(NULL);  /* the cut_off for the bb_neight */
+EXTERN real bb_epscrit[BB_MAXCOMPONENTS][BB_MAXCOMPONENTS]; /* largest fraction of bondlength to determine whether a bond is broken */
+EXTERN real bb_eps[BB_MAXCOMPONENTS][BB_MAXCOMPONENTS];
+EXTERN real bb_eps2[BB_MAXCOMPONENTS][BB_MAXCOMPONENTS];
+EXTERN real bb_epsold[BB_MAXCOMPONENTS][BB_MAXCOMPONENTS];
+EXTERN int bb_relaxsteps_max INIT(1000); /* maximal relaxed time for the beginning a boost activity */
+EXTERN int bb_relaxsteps INIT(0);	/* count the relaxed time */
+EXTERN int bb_shdn_max INIT(200);	/* maximal shutdown time that bond fraction/strain exceed bb_epscrit */
+EXTERN int bb_shdn INIT(0);		/* count for the bb_shdn_max */
+EXTERN int bb_under_max INIT(200);	/* maximal time under boosting that bond fraction/strain not-exceed the bb_epscrit */
+EXTERN int bb_under INIT(0);		/* count for the bb_under_max */
+EXTERN int bflag1 INIT(0);		/* flag to switch the boost method ( = 0 is non-boosting, = 1 is to launch the boosting) */
+EXTERN int bflag2 INIT(0);		/* flag to switch the testing mode or safe mode for a chosen bb_epscrit */
+EXTERN int bflag3 INIT(0);		/* flag for time windows used to apply minimization to boost MD */
+#endif 
