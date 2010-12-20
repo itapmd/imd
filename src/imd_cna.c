@@ -33,7 +33,11 @@ void do_cna(void)
 {
   vektor pbc = {0.0, 0.0, 0.0}; /* atoms in buffer cells have pbc applied */
   int c, c1, c2, m;
-
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing "" do_cna 1 start, without ipbc"" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout);
   for (c=0; c<ncells; c++) {
     c1 = cnbrs[c].np;
     for (m=0; m<14; m++) {
@@ -44,6 +48,12 @@ void do_cna(void)
   }
   /* collect mark variables */
   send_forces(add_mark,pack_mark,unpack_add_mark);
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing "" do_cna 1 end, without ipbc"" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout);
+
 }
 
 #else
@@ -52,7 +62,11 @@ void do_cna(void)
 {
   vektor pbc;
   int n, k;
-
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing "" do_cna 2 start, with ipbc"" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout); 
   for (n=0; n<nlists; ++n) {
     for (k=0; k<npairs[n]; ++k) {
       pair *P = pairs[n] + k;
@@ -66,6 +80,11 @@ void do_cna(void)
   /* collect mark variables */
   send_forces(add_mark,pack_mark,unpack_add_mark);
 #endif
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing "" do_cna 2 end, with ipbc"" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout); 
 }
 
 #endif
@@ -350,7 +369,11 @@ void domino(int start, int end, int listlength, int *max_chain, int *chain)
 void init_cna(void)
 {
   int k;
-
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing "" init_cna start"" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout); 
   /* default value of cna_end */
   if (0==cna_end) cna_end = steps_max;
   cna_r2cut = cna_rcut * cna_rcut;
@@ -371,6 +394,11 @@ void init_cna(void)
   /* if crystallinity is studied do not write out cna pairs */
   if ( cna_crist > 0 )
     cna_write_n = 0;
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing "" init_cna end"" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout); 
 }
 
 /******************************************************************************

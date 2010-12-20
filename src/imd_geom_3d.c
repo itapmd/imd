@@ -107,7 +107,7 @@ void init_cells( void )
   ivektor next_cell_dim, cell_dim_old, cd, cellc;
   minicell *p, *cell_array_old, *to;
   str255 msg;
-
+ 
 #ifdef NBLIST
   /* add neighbor list margin (only the first time) */
   if (NULL == cell_array)
@@ -314,12 +314,22 @@ void init_cells( void )
           ALLOC_MINICELL( p, 0 );  /* free old cell */
     }
     free(cell_array_old);
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing "" go into make_cell_lists A ! "" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout); 
     make_cell_lists();
     fix_cells();
 #ifdef MPI
     setup_buffers();
 #endif
   } else {
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing "" go into make_cell_lists B ! "" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout); 
     make_cell_lists();
   }
 }
@@ -340,7 +350,11 @@ void make_cell_lists(void)
   int i,j,k,l,m,n,r,s,t,nn,nnx,nny,nnz;
   ivektor ipbc, neigh;
   pair *P;
-
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing "" make_cell_lists 1 start!, with npairs "" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout); 
 #ifdef OMP
   nlists = 27;
 #else
@@ -563,7 +577,11 @@ void make_cell_lists(void)
 #ifdef OMP
     check_pairs();
 #endif
-
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing "" make_cell_lists 1 end!, with npairs"" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout); 
 }
 
 /******************************************************************************
@@ -611,7 +629,11 @@ void make_cell_lists(void)
   int i,j,k, l,m,n, r,s,t, nn, qq, flag, ncnbrs=0;
   cell_nbrs_t *CN;
   ivektor ipbc;
-
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing "" make_cell_lists 2 start!, without npairs "" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout); 
   nallcells = cell_dim.x * cell_dim.y * cell_dim.z;
   ncells = (cell_dim.x-2) * (cell_dim.y-2) * (cell_dim.z-2);
   /* make list of inner cell indices */
@@ -742,7 +764,11 @@ void make_cell_lists(void)
       }
 
 #endif /* COVALENT */
-
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing "" make_cell_lists 2 end!, without npairs "" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout); 
 }
 
 #endif

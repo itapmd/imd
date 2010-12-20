@@ -47,7 +47,7 @@ int main_loop(int simulation)
   real fnorm2,ekin,epot,delta_epot;
     printf("    ************************* \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
-    printf("passing here from checking by Lo! \n");fflush(stdout);
+    printf("passing main loop from checking by Lo! \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("    ************************* \n");fflush(stdout);
   
@@ -312,9 +312,9 @@ int main_loop(int simulation)
 #ifdef CNA
     printf("    ************************* \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
-    printf("passing "" cna "" checking by Lo! \n");fflush(stdout);
+    printf("passing "" input cna "" checking by Lo! \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
-    printf("    ************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout); 
     if (steps <= cna_end) {
       if (0 == (steps - cna_start)%(cna_int)
 	  || ((cna_crist>0) && (checkpt_int > 0) 
@@ -407,6 +407,11 @@ int main_loop(int simulation)
 
 #ifdef CNA
     if (cna) {
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing "" go into do_cna "" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout); 
       do_cna();
       if (0==myid && cna_write_statistics) {
 	/* works not correctly in parallel version */
