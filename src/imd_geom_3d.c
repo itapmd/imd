@@ -51,6 +51,9 @@ vektor vec_prod(vektor u, vektor v)
 
 void make_box( void )
 {
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("print "" make_box start "" checking by Lo! \n");fflush(stdout);
   /* compute tbox_j such that SPROD(box_i,tbox_j) == delta_ij */
   /* first unnormalized */
   tbox_x = vec_prod( box_y, box_z );
@@ -89,7 +92,9 @@ void make_box( void )
   } else {
     if ((myid==0) && (volume>8*volume_init)) error("system seems to explode!");
   }
-
+    printf("print "" make_box end "" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout);
 }
 
 
@@ -107,7 +112,7 @@ void init_cells( void )
   ivektor next_cell_dim, cell_dim_old, cd, cellc;
   minicell *p, *cell_array_old, *to;
   str255 msg;
- 
+
 #ifdef NBLIST
   /* add neighbor list margin (only the first time) */
   if (NULL == cell_array)
@@ -217,7 +222,7 @@ void init_cells( void )
   fd_h.y = fd_ext.y * box_y.y * cell_scale.y;
   fd_h.z = fd_ext.z * box_z.z * cell_scale.z;
 #endif
-  
+
   /* keep a copy of cell_dim, so that we can redistribute the atoms */
   cell_dim_old = cell_dim;
 
@@ -250,6 +255,7 @@ void init_cells( void )
   cell_array_old = cell_array;
   cell_array = (minicell *) malloc(
                cell_dim.x * cell_dim.y * cell_dim.z * sizeof(minicell));
+
   if (0==myid)
     if (NULL == cell_array) error("Cannot allocate memory for cells");
 
@@ -268,7 +274,13 @@ void init_cells( void )
             (j != cell_dim.y-1) &&
             (k != cell_dim.z-1))
 #endif
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("print "" check init_cells start "" checking by Lo! \n");fflush(stdout); 
             ALLOC_MINICELL(p, initsz);
+    printf("print "" check init_cells end "" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout);
   }
 
   /* on the first invocation we have to set up the MPI process topology */

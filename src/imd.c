@@ -38,7 +38,6 @@ int main(int argc, char **argv)
   long_long flpins;
 #endif
 
-
 #if defined(CBE)
   /* Also measure time on PPU in terms of (PowerPC) time base ticks */
   tick_t tick0, tick1, dticks;
@@ -116,14 +115,27 @@ int main(int argc, char **argv)
 #ifdef NEB
   read_atoms_neb(infilename);
 #else
+
   /* filenames starting with _ denote internal generation of configuration */
   if ('_' == infilename[0]) {
     generate_atoms(infilename);
   }
   else {
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("print ""hi 1 hi 1 hi 1"" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout);
     read_atoms(infilename);
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("print ""hi 2 hi 2 hi 2"" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout);
   }
+
 #endif
+
 #ifdef TIMING
   imd_stop_timer(&time_input);
 #endif

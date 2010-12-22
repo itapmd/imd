@@ -577,6 +577,7 @@ int getparamfile(char *paramfname, int phase)
     }
 #endif
 #ifdef BBOOST
+
     else if (strcasecmp(token,"bb_tot_bV")==0) {
       /* magnitude of boost potential, unit according to potential */
         getparam(token,&bb_tot_bV,PARAM_REAL,1,1);
@@ -609,7 +610,7 @@ int getparamfile(char *paramfname, int phase)
     }
     else if (strcasecmp(token,"bb_rcut")==0) {
       /* the cut off for the range of the bond boos method */
-        getparam(token,&bb_rcut,PARAM_INT,1,1);
+        getparam(token,&bb_rcut,PARAM_REAL,1,1);
     }
     
 #endif

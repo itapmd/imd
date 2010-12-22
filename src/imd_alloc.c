@@ -398,8 +398,7 @@ bb_neightab *alloc_bb_neightab(bb_neightab *bb_neigh, int count)
     bb_neigh->numref1   = (integer *)  malloc( count * sizeof(integer) );
     bb_neigh->numref2   = (integer *)  malloc( count * sizeof(integer) );
     if ((bb_neigh->distref1==NULL) || (bb_neigh->distref2==NULL) ||
-        (bb_neigh->numref1==NULL)  || (bb_neigh->numref2==NULL) )
-    {
+        (bb_neigh->numref1==NULL)  || (bb_neigh->numref2==NULL) ) {
       error("BBOOST: cannot allocate memory for neighbor table");
     }
   }
@@ -438,7 +437,7 @@ void memalloc(void *p, int count, int size, int align, int ncopy, int clear,
 {
   void *new, **old = (void **)p;
   int  ret, len, a = align - 1;
-
+    printf("print "" count = %d "" checking by Lo! \n", count);fflush(stdout);
   if (count>0) {  /* allocate count * size bytes */
     len = (count * size + a) & (~a);  /* enlarge to multiple of align */
 #ifdef MEMALIGN
@@ -450,15 +449,25 @@ void memalloc(void *p, int count, int size, int align, int ncopy, int clear,
       error_str("Cannot allocate memory for %s", name);
     }
 #else
+
     new = malloc( len );
+
     if (NULL==new) { /* out of memory */
       error_str("Cannot allocate memory for %s", name);
     }
 #endif
     else {  /* allocation succeded */
       if (clear  ) memset(new, 0, len);              /* zero new memory */
+/*    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("print "" check memcpy start "" checking by Lo! \n");fflush(stdout);
+    printf("print "" ncopy = %d "" checking by Lo! \n", ncopy);fflush(stdout); */
       if (ncopy>0) memcpy(new, *old, ncopy * size);  /* copy old data */
-      if (ncopy  ) free(*old);                       /* deallocate old data */
+/*    printf("print "" check memcpy end "" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout); */
+      if (ncopy  ) free(*old); 
+                      /* deallocate old data */
       *old = new;
     }
   }
@@ -466,6 +475,7 @@ void memalloc(void *p, int count, int size, int align, int ncopy, int clear,
     if (ncopy) free(*old);
     *old = NULL;
   }
+
 }
 
 /******************************************************************************
@@ -484,6 +494,7 @@ void alloc_cell(cell *p, int n)
 #endif
 
   /* cells are either deallocated or increased; they never shrink */
+
   if ((n>0) && (n < p->n_max)) error("cells cannot shrink");
 
   /* cell is to be deallocated or has just been initialized -> no valid data */
@@ -526,17 +537,22 @@ void alloc_cell(cell *p, int n)
 
   /* allocate memory */
   memalloc( &p->ort,      n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "ort" );
+
 #ifdef BBOOST
   memalloc( &p->bb_refposone,      n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "bb_refposone" );
   memalloc( &p->bb_refpostwo,      n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "bb_refpostwo" );
   memalloc( &p->bb_oldpos,         n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "bb_oldpos" );
-
-  
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("print "" check alloc_cell start "" checking by Lo! \n");fflush(stdout);  
   memalloc( &p->bb_neigh, n, sizeof(bb_neighptr), al, BB_MAXNEIGH, 0, "bb_neigh" );
+    printf("print "" check alloc_cell end "" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout);
   for (i=BB_MAXNEIGH; i<n; ++i) {
     p->bb_neigh[i] = alloc_bb_neightab(p->bb_neigh[i], BB_MAXNEIGH);
   }
-  
+ 
 #endif /*BBOOST*/
   memalloc( &p->impuls,   n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "impuls" );
   memalloc( &p->kraft,    n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "kraft" );
@@ -627,4 +643,5 @@ void alloc_cell(cell *p, int n)
 #endif
  
   p->n_max = n;
+
 }
