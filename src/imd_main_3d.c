@@ -45,11 +45,13 @@ int main_loop(int simulation)
   char tmp_str[9];
 
   real fnorm2,ekin,epot,delta_epot;
+#ifdef BBOOST
     printf("    ************************* \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("passing main loop from checking by Lo! \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("    ************************* \n");fflush(stdout);
+#endif
   
 #ifdef GLOK
   if(glok_start <=steps_min)

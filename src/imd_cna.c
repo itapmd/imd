@@ -33,11 +33,13 @@ void do_cna(void)
 {
   vektor pbc = {0.0, 0.0, 0.0}; /* atoms in buffer cells have pbc applied */
   int c, c1, c2, m;
+#ifdef BBOOST
     printf("    ************************* \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("passing "" do_cna 1 start, without ipbc"" checking by Lo! \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("    ************************* \n");fflush(stdout);
+#endif
   for (c=0; c<ncells; c++) {
     c1 = cnbrs[c].np;
     for (m=0; m<14; m++) {
@@ -48,11 +50,13 @@ void do_cna(void)
   }
   /* collect mark variables */
   send_forces(add_mark,pack_mark,unpack_add_mark);
+#ifdef BBOOST
     printf("    ************************* \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("passing "" do_cna 1 end, without ipbc"" checking by Lo! \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("    ************************* \n");fflush(stdout);
+#endif
 
 }
 

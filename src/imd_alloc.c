@@ -437,7 +437,9 @@ void memalloc(void *p, int count, int size, int align, int ncopy, int clear,
 {
   void *new, **old = (void **)p;
   int  ret, len, a = align - 1;
+#ifdef BBOOST
     printf("print "" count = %d "" checking by Lo! \n", count);fflush(stdout);
+#endif
   if (count>0) {  /* allocate count * size bytes */
     len = (count * size + a) & (~a);  /* enlarge to multiple of align */
 #ifdef MEMALIGN

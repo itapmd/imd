@@ -121,17 +121,22 @@ int main(int argc, char **argv)
     generate_atoms(infilename);
   }
   else {
+#ifdef BBOOST
     printf("    ************************* \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("print ""hi 1 hi 1 hi 1"" checking by Lo! \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("    ************************* \n");fflush(stdout);
+#endif
     read_atoms(infilename);
+#ifdef BBOOST
     printf("    ************************* \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("print ""hi 2 hi 2 hi 2"" checking by Lo! \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("    ************************* \n");fflush(stdout);
+#endif
+  
   }
 
 #endif

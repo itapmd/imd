@@ -70,17 +70,21 @@ void read_atoms(str255 infilename)
   if (natoms > 0) {
     for (k=0; k<nallcells; k++) cell_array[k].n = 0;
   }
+#ifdef BBOOST
     printf("    ************************* \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("print "" read_atoms start "" checking by Lo! \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("    ************************* \n");fflush(stdout);
+#endif
   make_box();
+#ifdef BBOOST
     printf("    ************************* \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("print "" read_atoms end "" checking by Lo! \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("    ************************* \n");fflush(stdout);
+#endif
   /* initialize random number generator */
   srand48(seed);
   is_big_endian = endian();
