@@ -582,7 +582,7 @@ int getparamfile(char *paramfname, int phase)
       /* magnitude of boost potential, unit according to potential */
         getparam(token,&bb_tot_bV,PARAM_REAL,1,1);
     }
-    else if (strcasecmp(token,"p1_2")==0) {
+    else if (strcasecmp(token,"bb_p1_2")==0) {
       /* curvature controller of the boost potential */
         getparam(token,&p1_2,PARAM_REAL,1,1);
     }

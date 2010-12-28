@@ -278,7 +278,7 @@ typedef union {
 
 typedef struct {
   integer np, nq;
-#ifndef NBLIST
+#if ! defined NBLIST || defined BBOOST
   signed char ipbc[4];
 #endif
 } pair;

@@ -45,7 +45,7 @@ int main_loop(int simulation)
   char tmp_str[9];
 
   real fnorm2,ekin,epot,delta_epot;
-#ifdef BBOOST
+#ifdef debugLo
     printf("    ************************* \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("passing main loop from checking by Lo! \n");fflush(stdout);
@@ -315,11 +315,13 @@ int main_loop(int simulation)
 #endif
 
 #ifdef CNA
+#ifdef debugLo
     printf("    ************************* \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("passing "" input cna "" checking by Lo! \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
-    printf("    ************************* \n");fflush(stdout); 
+    printf("    ************************* \n");fflush(stdout);
+#endif 
     if (steps <= cna_end) {
       if (0 == (steps - cna_start)%(cna_int)
 	  || ((cna_crist>0) && (checkpt_int > 0) 
@@ -415,11 +417,13 @@ int main_loop(int simulation)
 
 #ifdef CNA
     if (cna) {
+#ifdef debugLo
     printf("    ************************* \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
     printf("passing "" go into do_cna "" checking by Lo! \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
-    printf("    ************************* \n");fflush(stdout); 
+    printf("    ************************* \n");fflush(stdout);
+#endif 
       do_cna();
       if (0==myid && cna_write_statistics) {
 	/* works not correctly in parallel version */

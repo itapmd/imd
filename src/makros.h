@@ -284,7 +284,7 @@ INLINE static int MOD(shortint p, int q)
 #define BBNEIGH(cell,i)           ((cell)->bb_neigh[i])
 /* #define BBNSORTE(bb_neigh,i)         ((bb_neigh)->typ[i]) */
 /* #define BBNZELLE(bb_neigh,i)         ((cell *) (bb_neigh)->cl[i]) */
-#define BBNNUMMER(bb_neigh,i)        ((bb_neigh)->num[i])
+/*#define BBNNUMMER(bb_neigh,i)        ((bb_neigh)->numref1[i]) */
 #endif
 #ifdef NBLIST
 #define NBL_POS(cell,i,sub)     ((cell)->nbl_pos sub(i))

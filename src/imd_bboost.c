@@ -19,7 +19,11 @@
 void  init_bboost(void)
 {
     int n, k, i;
-
+#ifdef debugLo
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("print "" check init_bboost start "" checking by Lo! \n");fflush(stdout);
+#endif
     /* initializations usually done in main_loop */   
 #ifdef EXTPOT
     init_extpot();
@@ -83,21 +87,18 @@ void  init_bboost(void)
     if (NULL==bb_neightab_r2cut) 
        error("cannot allocate memory for bb_neightab_r2cut");
   }
-  /* deactivate computation of neighbour tables */
-  for (k=0; k<ntypes*ntypes; k++) {
-      bb_neightab_r2cut[k] = -1.0;
-  }
 
   for (i=0; i<ntypes*ntypes; i++) {
       bb_neightab_r2cut[i] = bb_rcut * bb_rcut;
   }
 
-#ifndef MPI // ???
-    for (n=0; n<nlists; ++n) {
+  /* loop over all pairs of cells */
+  for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
 #pragma omp parallel for schedule(runtime)
 #endif
-        for (k=npairs[n]; k<npairs2[n]; ++k) { //???
+
+        for (k=npairs[n]; k<npairs[n]; ++k) { //???
             vektor pbc;
             pair *P;
             P = pairs[n]+k;
@@ -107,7 +108,7 @@ void  init_bboost(void)
             do_bb_neightab(cell_array + P->np, cell_array + P->nq, pbc);
         }
     }
-#endif
+
 
 } /* end of init_bboost */
 
@@ -166,36 +167,14 @@ void do_bb_neightab(cell *p, cell *q, vektor pbc)
         }
 
       /* make neighbor tables for boost methods */
-        if (radius2 <= bb_neightab_r2cut[column]) { 
-      /*  if (radius2 <= neightab_r2cut[column]) {  */     
+        if (radius2 <= bb_neightab_r2cut[column]) {
            bb_neightab *bb_neigh;
            real  *tmp_ptr;
-
-        /* update neighbor table of particle i */
            bb_neigh = BBNEIGH(p,i);
-       
-           bb_neigh->numref1[bb_neigh->nbondsref1] = j;
-           tmp_ptr  = &bb_neigh->distref1[3*bb_neigh->nbondsref1];
-           *tmp_ptr = d.x; ++tmp_ptr; 
-           *tmp_ptr = d.y; ++tmp_ptr; 
-           *tmp_ptr = d.z;
+           bb_neigh->numref1[bb_neigh->nbondsref1] = NUMMER(q,i);
+           tmp_ptr  = &bb_neigh->distref1[bb_neigh->nbondsref1];
+           *tmp_ptr = radius2;
            bb_neigh->nbondsref1++;
-
-        /* update neighbor table of particle j */
-        /* we do not need a neighbor table in buffer cells
-        neigh = q->neigh[j];
-        if (neigh->n_max <= neigh->n) {
-          increase_neightab( neigh, neigh->n_max + NEIGH_LEN_INC );
-        }
-        neigh->typ[neigh->n] = p_typ;
-        neigh->cl [neigh->n] = p;
-        neigh->num[neigh->n] = i;
-        tmp_ptr  = &neigh->dist[3*neigh->n];
-        *tmp_ptr = -d.x; ++tmp_ptr; 
-        *tmp_ptr = -d.y; ++tmp_ptr; 
-        *tmp_ptr = -d.z;
-        neigh->n++;
-        */
         }
     } /* for j */
   } /* for i */

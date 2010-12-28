@@ -934,8 +934,8 @@ LASERSOURCES	= imd_laser.c
 
 TTMSOURCES	= imd_ttm.c
 
+#BBOOSTSOURCES	= imd_bboost.c imd_bb_core1.c imd_bb_core2.c
 BBOOSTSOURCES	= imd_bboost.c
-
 
 #########################################################
 #
@@ -1268,6 +1268,10 @@ endif
 ifneq (,$(findstring bboost,${MAKETARGET}))
 PP_FLAGS += -DBBOOST
 SOURCES += ${BBOOSTSOURCES}
+endif
+
+ifneq (,$(findstring debugLo,${MAKETARGET}))
+PP_FLAGS += -DdebugLo
 endif
 
 
