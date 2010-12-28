@@ -686,7 +686,7 @@ int getparamfile(char *paramfname, int phase)
 #ifdef BEND
         /* Allocation & Initialisation of fbc_bforces */
         fbc_bforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-        if (NULL==fbc_forces)
+        if (NULL==fbc_bforces)
 	  error("Cannot allocate memory for fbc_bforces\n");
         for (k=0; k<vtypes; k++)
             fbc_bforces[k] = nullv;
@@ -918,7 +918,7 @@ int getparamfile(char *paramfname, int phase)
 #endif
 #endif /* FBC */
 #ifdef BEND
-    else if (strcasecmp(token,"extra_bstartforce")==0) {
+    else if (strcasecmp(token,"extra_startbforce")==0) {
       if (vtypes==0)
         error("specify parameter total_types before extra_bstartforce");
       /* extra force for virtual types */
