@@ -888,6 +888,75 @@ int getparamfile(char *paramfname, int phase)
     }
 #endif
 #endif /* FBC */
+#ifdef BEND
+    else if (strcasecmp(token,"extra_bstartforce")==0) {
+      if (vtypes==0)
+        error("specify parameter total_types before extra_bstartforce");
+      /* extra force for virtual types */
+      /* format: type force.x force.y (force.z) */
+      getparam(token,&tempforce,PARAM_REAL,DIM+1,DIM+1);
+      if (tempforce.x>vtypes-1)
+        error("Force defined for non existing virtual atom type\n");
+      force.x = tempforce.y;
+      force.y = tempforce.z;
+#ifndef TWOD
+      force.z = tempforce.z2;
+#endif
+      fbc_beginbforces[(int)(tempforce.x)] = force;
+      fbc_bforces     [(int)(tempforce.x)] = force; 
+    }
+#ifdef RELAX
+    else if (strcasecmp(token,"fbc_ekin_threshold")==0) {
+      /* epsilon criterium to increment extra force*/
+      getparam(token,&ekin_threshold,PARAM_REAL,1,1);
+      warning("Parameter fbc_ekin_threshold replaced by ekin_threshold"); 
+    }
+    else if (strcasecmp(token,"max_bfbc_int")==0) {
+      /* max nr of steps between fbc increments */
+      getparam(token,&max_bfbc_int,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"bfbc_waitsteps")==0) {
+      /* max nr of steps between fbc increments */
+      getparam(token,&max_bfbc_int,PARAM_INT,1,1);
+      warning("Parameter bfbc_waitsteps replaced by max_fbc_int"); 
+    }
+    else if (strcasecmp(token,"extra_bdforce")==0) {
+      if (vtypes==0)
+        error("specify parameter total_types before extra_bdforce");
+      /* extra force increment for virtual types */
+      /* format: type force.x force.y (force.z)  */
+      getparam(token,&tempforce,PARAM_REAL,DIM+1,DIM+1);
+      if (tempforce.x>vtypes-1)
+        error("Force increment defined for non existing virtual atom type\n");
+      force.x = tempforce.y;
+      force.y = tempforce.z;
+#ifndef TWOD
+      force.z = tempforce.z2;
+#endif
+      fbc_bdforces[(int)(tempforce.x)] = force;
+    }
+#else
+    else if (strcasecmp(token,"extra_endbforce")==0) {
+      if (vtypes==0)
+        error("specify parameter total_types before extra_endforce");
+      /* extra force for virtual types */
+      /* format: type force.x force.y (force.z) */
+      getparam(token,&tempforce,PARAM_REAL,DIM+1,DIM+1);
+      if (tempforce.x>vtypes-1)
+        error("Force defined for non existing virtual atom type\n");
+      force.x = tempforce.y;
+      force.y = tempforce.z;
+#ifndef TWOD
+      force.z = tempforce.z2;
+#endif
+      fbc_endbforces[(int)(tempforce.x)] = force;
+    }
+#endif
+#endif /* BEND */
+
+
+
+    
 #ifdef ZAPP
     else if (strcasecmp(token,"zapp_threshold")==0) {
         getparam(token,&zapp_threshold,PARAM_REAL,1,1);

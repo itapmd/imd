@@ -151,6 +151,19 @@ EXTERN int    do_fbc_incr      INIT(0);    /* whether to apply FBC increment */
 #endif /* FBC */
 
 #ifdef BEND
+EXTERN vektor *fbc_bforces      INIT(NULL); /* each vtype has its force */
+EXTERN vektor *fbc_beginbforces INIT(NULL); /* begin values for interpolation */
+EXTERN vektor *fbc_endbforces   INIT(NULL); /* end values for interpolation */
+EXTERN vektor *fbc_bdf          INIT(NULL); /* computed force increment */
+#ifdef RELAX
+EXTERN vektor *fbc_bdforces     INIT(NULL); /* force increment */
+EXTERN int    max_bfbc_int      INIT(1);    /* max int for force increment */
+EXTERN int    bfbc_int          INIT(0);    /* time since last FBC increase */
+#endif
+EXTERN int    have_bfbc_incr    INIT(0);    /* fbc increment given */
+EXTERN int    do_bfbc_incr      INIT(0);    /* whether to apply FBC increment */
+
+
 EXTERN int    bend_nmoments    INIT(0);    /* number of bending moments,
                                               one moment for each vtype, e.g. in alloys  */
 EXTERN int    bend_natomsvtype_origin[6];         /* number of atoms for each vtype which is
@@ -165,8 +178,8 @@ EXTERN vektor *bend_cog        INIT(NULL); /* center of grav of atoms w. added f
 EXTERN vektor *bend_vec        INIT(NULL); /* bend_cog - bend_origin    */
 EXTERN vektor *bend_forces      INIT(NULL);/* each vtype has its force according to fbc_forces
                                               and the direction according to the bending moment*/
-
 #endif
+
 #ifdef ZAPP
 EXTERN real   zapp_threshold INIT(0); 
 EXTERN vektor nactive_vect   INIT(nullvektor);

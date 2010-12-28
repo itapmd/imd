@@ -102,6 +102,9 @@ int main_loop(int simulation)
   
 #ifdef FBC
   init_fbc();
+#ifdef BEND
+  init_bfbc();
+#endif
 #endif
 
 #if defined(CORRELATE) || defined(MSQD)
@@ -347,6 +350,9 @@ int main_loop(int simulation)
 
 #ifdef FBC
     update_fbc();
+#ifdef BEND
+    update_bfbc();
+#endif
 #endif
 
 #ifdef TIMING
@@ -1015,6 +1021,114 @@ void update_fbc()
 #endif /* FBC */
 
 
+#ifdef BEND
+
+/*****************************************************************************
+*
+*  initialize BFBC
+*
+*****************************************************************************/
+
+void init_bfbc(void)
+{
+    int l, steps_diff;
+
+#ifdef TWOD
+  vektor nullv={0.0,0.0};
+#else
+  vektor nullv={0.0,0.0,0.0};
+#endif
+    
+#if !defined(RELAX)
+    steps_diff = steps_max - steps_min;
+#endif
+  have_bfbc_incr = 0;
+  do_bfbc_incr = 0;
+#ifdef RELAX
+  bfbc_int = 0;
+  for (l=0; l<vtypes; l++) {
+      /* initialize fbc_df with 0*/
+      /* will be updated in fbc_update*/
+      *(fbc_bdf+l) = nullv;
+    if ((fbc_bdforces+l)->x != 0.0) have_bfbc_incr = 1;
+    if ((fbc_bdforces+l)->y != 0.0) have_bfbc_incr = 1;
+#ifndef TWOD
+    if ((fbc_bdforces+l)->z != 0.0) have_bfbc_incr = 1;
+#endif   
+  }
+#else
+  /* dynamic loading, increment linearly at each timestep */
+  if ((ensemble!=ENS_MIK) && (ensemble!=ENS_GLOK) && (ensemble!=ENS_CG)) {
+    for (l=0;l<vtypes;l++){
+      (fbc_bdf+l)->x = ((fbc_endbforces+l)->x-(fbc_beginbforces+l)->x)/steps_diff;
+      (fbc_bdf+l)->y = ((fbc_endbforces+l)->y-(fbc_beginbforces+l)->y)/steps_diff;
+#ifndef TWOD
+      (fbc_bdf+l)->z = ((fbc_endbforces+l)->z-(fbc_beginbforces+l)->z)/steps_diff;
+#endif
+    }
+    do_bfbc_incr = 1;
+  }
+#endif /* RELAX */
+
+}
+
+/*****************************************************************************
+*
+*  update BFBC
+*
+*****************************************************************************/
+
+void update_bfbc()
+{
+
+  int l;
+#ifdef TWOD
+  vektor nullv={0.0,0.0};
+#else
+  vektor nullv={0.0,0.0,0.0};
+#endif
+#ifdef RELAX
+  /* set fbc increment if necessary */
+  if ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) {
+    if ((is_relaxed) || (bfbc_int > max_fbc_int)) {
+        write_ssdef(steps);
+        write_ssconfig(steps); /* write config, even when not fully relaxed */
+        for (l=0; l<vtypes; l++) fbc_dbf[l] = fbc_dbforces[l];
+        bfbc_int = 0;
+        do_bfbc_incr = 1;
+#ifdef CG
+    if (ensemble == ENS_CG) reset_cg();
+#endif
+    }
+    else {
+      for (l=0; l<vtypes; l++) *(fbc_bdf+l) = nullv;
+      do_bfbc_incr = 0;
+      bfbc_int++;
+    }
+  }
+#endif
+  /* apply fbc increment if necessary */
+  if (do_fbc_incr == 1) {
+    for (l=0; l<vtypes; l++){     
+      (fbc_bforces+l)->x += (fbc_bdf+l)->x;  
+      (fbc_bforces+l)->y += (fbc_bdf+l)->y;
+#ifndef TWOD
+      (fbc_bforces+l)->z += (fbc_bdf+l)->z;
+#endif
+    } 
+#ifdef GLOK
+    if (ensemble==ENS_GLOK)
+    {
+        reset_glok();
+    }
+#endif
+  }
+}
+
+#endif /* BEND */
+
+
+
 #ifdef ZAPP
 void init_zapp(void)
 {
@@ -1145,10 +1259,10 @@ void zapp(void)
 void init_bend(void)
 {
     int k,j,i;
-    real norm_bend_vec, norm_fbc_force;
+    real norm_bend_vec, norm_fbc_bforce;
     int tmpivec1[12], tmpivec2[12];
     real tmpvec1[6],tmpvec2[6];
-    vektor tmp_force,fbc_force, tmp_bend_vec,this_bend_axis;
+    vektor tmp_force,fbc_bforce, tmp_bend_vec,this_bend_axis;
     int sort;
     
     for (j=0; j<bend_nmoments; j++){
@@ -1240,9 +1354,9 @@ void init_bend(void)
         (bend_vec + j)->z  = (bend_cog + j)->z - (bend_origin + j)->z;
 
         sort = bend_vtype_of_force[j];
-        fbc_force.x = (fbc_forces+sort)->x;
-        fbc_force.y = (fbc_forces+sort)->y;
-        fbc_force.z = (fbc_forces+sort)->z;
+        fbc_bforce.x = (fbc_bforces+sort)->x;
+        fbc_bforce.y = (fbc_bforces+sort)->y;
+        fbc_bforce.z = (fbc_bforces+sort)->z;
 
         tmp_bend_vec.x = (bend_vec+j)->x;
         tmp_bend_vec.y = (bend_vec+j)->y;
@@ -1250,7 +1364,7 @@ void init_bend(void)
         
         norm_bend_vec  = sqrt(SPROD(tmp_bend_vec,tmp_bend_vec));
        
-        norm_fbc_force = sqrt(SPROD(fbc_force,fbc_force));
+        norm_fbc_bforce = sqrt(SPROD(fbc_bforce,fbc_bforce));
 
         tmp_bend_vec.x /= norm_bend_vec;
         tmp_bend_vec.y /= norm_bend_vec;
@@ -1262,15 +1376,15 @@ void init_bend(void)
         
         CROSS3D(tmp_bend_vec,this_bend_axis,tmp_force);
 
-        (bend_forces + sort)->x = tmp_force.x * norm_fbc_force;
-        (bend_forces + sort)->y = tmp_force.y * norm_fbc_force;
-        (bend_forces + sort)->z = tmp_force.z * norm_fbc_force;
+        (bend_forces + sort)->x = tmp_force.x * norm_fbc_bforce;
+        (bend_forces + sort)->y = tmp_force.y * norm_fbc_bforce;
+        (bend_forces + sort)->z = tmp_force.z * norm_fbc_bforce;
 
         if (myid==0)
         {
-            printf("Bending moment %d: bend_forces %d %lf %lf %lf compare to fbc_forces  %d %lf %lf %lf\n",
+            printf("Bending moment %d: bend_forces %d %lf %lf %lf compare to fbc_bforces  %d %lf %lf %lf\n",
                    j,sort,(bend_forces + sort)->x,(bend_forces + sort)->y,(bend_forces + sort)->z,
-                   sort,(fbc_forces + sort)->x,(fbc_forces + sort)->y,(fbc_forces + sort)->z);
+                   sort,(fbc_bforces + sort)->x,(fbc_bforces + sort)->y,(fbc_bforces + sort)->z);
         }
         
     }
@@ -1289,10 +1403,10 @@ void init_bend(void)
 void update_bend(void)
 { 
     int k,j;
-    real norm_bend_vec, norm_fbc_force;
+    real norm_bend_vec, norm_fbc_bforce;
     int tmpivec1[12], tmpivec2[12];
     real tmpvec1[6],tmpvec2[6];
-    vektor tmp_force,fbc_force, tmp_bend_vec,this_bend_axis;
+    vektor tmp_force,fbc_bforce, tmp_bend_vec,this_bend_axis;
     int sort;
     
     for (j=0; j<bend_nmoments; j++){
@@ -1359,9 +1473,9 @@ void update_bend(void)
         (bend_vec + j)->z  = (bend_cog + j)->z - (bend_origin + j)->z;
 
         sort = bend_vtype_of_force[j];
-        fbc_force.x = (fbc_forces+sort)->x;
-        fbc_force.y = (fbc_forces+sort)->y;
-        fbc_force.z = (fbc_forces+sort)->z;
+        fbc_bforce.x = (fbc_bforces+sort)->x;
+        fbc_bforce.y = (fbc_bforces+sort)->y;
+        fbc_bforce.z = (fbc_bforces+sort)->z;
 
         tmp_bend_vec.x = (bend_vec+j)->x;
         tmp_bend_vec.y = (bend_vec+j)->y;
@@ -1369,7 +1483,7 @@ void update_bend(void)
         
         norm_bend_vec  = sqrt(SPROD(tmp_bend_vec,tmp_bend_vec));
        
-        norm_fbc_force = sqrt(SPROD(fbc_force,fbc_force));
+        norm_fbc_bforce = sqrt(SPROD(fbc_bforce,fbc_bforce));
 
         tmp_bend_vec.x /= norm_bend_vec;
         tmp_bend_vec.y /= norm_bend_vec;
@@ -1381,9 +1495,9 @@ void update_bend(void)
         
         CROSS3D(tmp_bend_vec,this_bend_axis,tmp_force);
 
-        (bend_forces + sort)->x = tmp_force.x * norm_fbc_force;
-        (bend_forces + sort)->y = tmp_force.y * norm_fbc_force;
-        (bend_forces + sort)->z = tmp_force.z * norm_fbc_force;
+        (bend_forces + sort)->x = tmp_force.x * norm_fbc_bforce;
+        (bend_forces + sort)->y = tmp_force.y * norm_fbc_bforce;
+        (bend_forces + sort)->z = tmp_force.z * norm_fbc_bforce;
 
   
     }

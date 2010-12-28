@@ -159,7 +159,7 @@ void move_atoms_nve(void)
       }
 #endif
 
-#if defined(FBC) && !defined(RIGID) && !defined(BEND)
+#if defined(FBC) && !defined(RIGID) 
       /* give virtual particles their extra force */
       KRAFT(p,i,X) += (fbc_forces + sort)->x;
       KRAFT(p,i,Y) += (fbc_forces + sort)->y;
@@ -552,6 +552,8 @@ void move_atoms_ttm(void)
 #endif
 #endif
 
+
+      
       /* and set their force (->momentum) in restricted directions to 0 */
       KRAFT(p,i,X) *= (restrictions + sort)->x;
       KRAFT(p,i,Y) *= (restrictions + sort)->y;
@@ -971,6 +973,16 @@ void move_atoms_nvt(void)
 	KRAFT(p,i,Z) += (fbc_forces + sort)->z;
 #endif
 #endif
+        
+#if defined(FBC) && defined(BEND)
+      /* give virtual particles their extra force */
+      KRAFT(p,i,X) += (bend_forces + sort)->x;
+      KRAFT(p,i,Y) += (bend_forces + sort)->y;
+#ifndef TWOD
+      KRAFT(p,i,Z) += (bend_forces + sort)->z;
+#endif
+#endif
+
 
       KRAFT(p,i,X) *= (restrictions + sort)->x;
       KRAFT(p,i,Y) *= (restrictions + sort)->y;

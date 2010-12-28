@@ -649,6 +649,10 @@ void IntSetElm( int *p, int i, int val);
 void init_fbc(void);
 void update_fbc();
 #endif
+#ifdef BEND
+void init_bfbc(void);
+void update_bfbc();
+#endif
 
 #ifdef RIGID
 void calc_superforces(void);
