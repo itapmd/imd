@@ -683,6 +683,30 @@ int getparamfile(char *paramfname, int phase)
 	  error("Cannot allocate memory for fbc_forces\n");
         for (k=0; k<vtypes; k++)
           fbc_forces[k] = nullv;        
+        fbc_beginforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==fbc_beginforces)
+          error("Cannot allocate memory for fbc_beginforces\n");
+        for (k=0; k<vtypes; k++)
+          fbc_beginforces[k] = nullv;
+#ifdef RELAX
+        fbc_dforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==fbc_dforces)
+	  error("Cannot allocate memory for fbc_dforces\n");
+        for (k=0; k<vtypes; k++)
+          fbc_dforces[k] = nullv; 
+#else
+        fbc_endforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==fbc_endforces)
+	  error("Cannot allocate memory for fbc_endforces\n");
+        for (k=0; k<vtypes; k++)
+          fbc_endforces[k] = nullv;
+#endif
+         fbc_df = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==fbc_df)
+	  error("Cannot allocate memory for fbc_df\n");
+        for (k=0; k<vtypes; k++)
+          fbc_df[k] = nullv;
+#endif /*FBC*/
 #ifdef BEND
         /* Allocation & Initialisation of fbc_bforces */
         fbc_bforces = (vektor *) malloc( vtypes * sizeof(vektor) );
@@ -720,30 +744,6 @@ int getparamfile(char *paramfname, int phase)
         for (k=0; k<vtypes; k++)
           fbc_bdf[k] = nullv;
 #endif /* BEND */
-        fbc_beginforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-        if (NULL==fbc_beginforces)
-          error("Cannot allocate memory for fbc_beginforces\n");
-        for (k=0; k<vtypes; k++)
-          fbc_beginforces[k] = nullv;
-#ifdef RELAX
-        fbc_dforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-        if (NULL==fbc_dforces)
-	  error("Cannot allocate memory for fbc_dforces\n");
-        for (k=0; k<vtypes; k++)
-          fbc_dforces[k] = nullv; 
-#else
-        fbc_endforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-        if (NULL==fbc_endforces)
-	  error("Cannot allocate memory for fbc_endforces\n");
-        for (k=0; k<vtypes; k++)
-          fbc_endforces[k] = nullv;
-#endif
-         fbc_df = (vektor *) malloc( vtypes * sizeof(vektor) );
-        if (NULL==fbc_df)
-	  error("Cannot allocate memory for fbc_df\n");
-        for (k=0; k<vtypes; k++)
-          fbc_df[k] = nullv;
-#endif /*FBC*/
 #ifdef RIGID
         /* Allocation & Initialization of superatom */
         superatom = (int *) malloc( vtypes * sizeof(int) );
@@ -935,11 +935,6 @@ int getparamfile(char *paramfname, int phase)
       fbc_bforces     [(int)(tempforce.x)] = force; 
     }
 #ifdef RELAX
-    else if (strcasecmp(token,"fbc_ekin_threshold")==0) {
-      /* epsilon criterium to increment extra force*/
-      getparam(token,&ekin_threshold,PARAM_REAL,1,1);
-      warning("Parameter fbc_ekin_threshold replaced by ekin_threshold"); 
-    }
     else if (strcasecmp(token,"max_bfbc_int")==0) {
       /* max nr of steps between fbc increments */
       getparam(token,&max_bfbc_int,PARAM_INT,1,1);
@@ -3015,19 +3010,19 @@ void check_parameters_complete()
           error("definition of bending moment without axis");
      
 #ifdef RELAX
-          tmp=((fbc_dforces + (bend_vtype_of_force[k]))->x)*
-              ((fbc_dforces + (bend_vtype_of_force[k]))->x) +
-              ((fbc_dforces + (bend_vtype_of_force[k]))->y)*
-              ((fbc_dforces + (bend_vtype_of_force[k]))->y) +
-              ((fbc_dforces + (bend_vtype_of_force[k]))->z)*
-              ((fbc_dforces + (bend_vtype_of_force[k]))->z);
+          tmp=((fbc_bdforces + (bend_vtype_of_force[k]))->x)*
+              ((fbc_bdforces + (bend_vtype_of_force[k]))->x) +
+              ((fbc_bdforces + (bend_vtype_of_force[k]))->y)*
+              ((fbc_bdforces + (bend_vtype_of_force[k]))->y) +
+              ((fbc_bdforces + (bend_vtype_of_force[k]))->z)*
+              ((fbc_bdforces + (bend_vtype_of_force[k]))->z);
 #else
-          tmp=((fbc_endforces + (bend_vtype_of_force[k]))->x)*
-              ((fbc_endforces + (bend_vtype_of_force[k]))->x) +
-              ((fbc_endforces + (bend_vtype_of_force[k]))->y)*
-              ((fbc_endforces + (bend_vtype_of_force[k]))->y) +
-              ((fbc_endforces + (bend_vtype_of_force[k]))->z)*
-              ((fbc_endforces + (bend_vtype_of_force[k]))->z);
+          tmp=((fbc_endbforces + (bend_vtype_of_force[k]))->x)*
+              ((fbc_endbforces + (bend_vtype_of_force[k]))->x) +
+              ((fbc_endbforces + (bend_vtype_of_force[k]))->y)*
+              ((fbc_endbforces + (bend_vtype_of_force[k]))->y) +
+              ((fbc_endbforces + (bend_vtype_of_force[k]))->z)*
+              ((fbc_endbforces + (bend_vtype_of_force[k]))->z);
 #endif
           if(tmp==0)
               error("definition of bending moment without force");
@@ -3479,48 +3474,6 @@ void broadcast_params() {
       error("Cannot allocate memory for fbc_forces on client."); 
   }
   MPI_Bcast( fbc_forces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
-  
-#ifdef BEND
-   if (NULL==fbc_bforces) {
-    fbc_forces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_bforces) 
-      error("Cannot allocate memory for fbc_bforces on client."); 
-  }
-  MPI_Bcast( fbc_bforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
-  
-  if (NULL==fbc_beginbforces) {
-      fbc_beginbforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_beginbforces) 
-      error("Cannot allocate memory for fbc_beginbforces on client."); 
-  }
-  MPI_Bcast( fbc_beginbforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
-#ifdef RELAX
-  MPI_Bcast( &max_bfbc_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  if (NULL==fbc_bdforces) {
-    fbc_bdforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_bdforces) 
-      error("Cannot allocate memory for fbc_bdforces on client."); 
-  }
-  MPI_Bcast( fbc_bdforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
-#else
-  if (NULL==fbc_endbforces) {
-    fbc_endforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_endbforces) 
-      error("Cannot allocate memory for fbc_endbforces on client."); 
-  }
-  MPI_Bcast( fbc_endbforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
-#endif
- if (NULL==fbc_bdf) {
-    fbc_bdf = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_bdf) 
-      error("Cannot allocate memory for fbc_bdf on client."); 
- }
- if (NULL==bend_forces) {
-    bend_forces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==bend_forces) 
-      error("Cannot allocate memory for bend_forces on client."); 
-  }
-#endif /* BEND */
   if (NULL==fbc_beginforces) {
     fbc_beginforces = (vektor *) malloc( vtypes * sizeof(vektor) );
     if (NULL==fbc_beginforces) 
@@ -3548,7 +3501,48 @@ void broadcast_params() {
     if (NULL==fbc_df) 
       error("Cannot allocate memory for fbc_df on client."); 
   }
+#endif /*FBC*/
+#ifdef BEND
+   if (NULL==fbc_bforces) {
+    fbc_bforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==fbc_bforces) 
+      error("Cannot allocate memory for fbc_bforces on client."); 
+  }
+  MPI_Bcast( fbc_bforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
+  
+  if (NULL==fbc_beginbforces) {
+      fbc_beginbforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==fbc_beginbforces) 
+      error("Cannot allocate memory for fbc_beginbforces on client."); 
+  }
+  MPI_Bcast( fbc_beginbforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
+#ifdef RELAX
+  MPI_Bcast( &max_bfbc_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  if (NULL==fbc_bdforces) {
+    fbc_bdforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==fbc_bdforces) 
+      error("Cannot allocate memory for fbc_bdforces on client."); 
+  }
+  MPI_Bcast( fbc_bdforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
+#else
+  if (NULL==fbc_endbforces) {
+    fbc_endbforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==fbc_endbforces) 
+      error("Cannot allocate memory for fbc_endbforces on client."); 
+  }
+  MPI_Bcast( fbc_endbforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
 #endif
+ if (NULL==fbc_bdf) {
+    fbc_bdf = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==fbc_bdf) 
+      error("Cannot allocate memory for fbc_bdf on client."); 
+ }
+ if (NULL==bend_forces) {
+    bend_forces = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==bend_forces) 
+      error("Cannot allocate memory for bend_forces on client."); 
+  }
+#endif /* BEND */
 #ifdef ZAPP
   MPI_Bcast( &zapp_threshold,         1, REAL,  0, MPI_COMM_WORLD);
 #endif

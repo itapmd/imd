@@ -468,6 +468,25 @@ int main_loop(int simulation)
     }
 #endif
 
+
+#ifdef GETSADDLE
+  if(last_PxF<0.0 && PxF>=0)
+  {
+      write_saddleconfig(steps);
+  }
+  last_PxF=PxF;
+#endif
+
+#ifdef GETMIN
+  if(last_PxF>=0.0 && PxF<0)
+  {
+      write_minconfig(steps);
+  }
+  last_PxF=PxF;
+#endif
+
+
+
 #ifdef LASER
     /* do rescaling of atom velocities/electron temperature source terms */
     /* to simulate absorption of laser pulse */
@@ -955,12 +974,14 @@ void init_fbc(void)
   }
 #else
   /* dynamic loading, increment linearly at each timestep */
+  if (0 == myid) printf("FBC: vtype  fbc_df.x fbc_df.y fbc_df.z\n");
   if ((ensemble!=ENS_MIK) && (ensemble!=ENS_GLOK) && (ensemble!=ENS_CG)) {
     for (l=0;l<vtypes;l++){
       (fbc_df+l)->x = ((fbc_endforces+l)->x-(fbc_beginforces+l)->x)/steps_diff;
       (fbc_df+l)->y = ((fbc_endforces+l)->y-(fbc_beginforces+l)->y)/steps_diff;
 #ifndef TWOD
       (fbc_df+l)->z = ((fbc_endforces+l)->z-(fbc_beginforces+l)->z)/steps_diff;
+      if (0 == myid) printf("     %d   %e   %e   %e\n",l,(fbc_df+l)->x,(fbc_df+l)->y,(fbc_df+l)->z);
 #endif
     }
     do_fbc_incr = 1;

@@ -978,6 +978,17 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
             n, (fbc_forces+n)->x, (fbc_forces+n)->y, (fbc_forces+n)->z);
 #endif
 #endif
+    
+#ifdef BEND
+  for(n=0; n<vtypes;n++)
+#ifdef TWOD
+    fprintf(out, "extra_startbforce %d %.21g %.21g\n",
+            n, (fbc_bforces+n)->x, (fbc_bforces+n)->y );
+#else
+    fprintf(out, "extra_startbforce %d %.21g %.21g %.21g \n",
+            n, (fbc_bforces+n)->x, (fbc_bforces+n)->y, (fbc_bforces+n)->z);
+#endif
+#endif
 
 #ifdef NPT
   /* if we have pressure control, write external pressure and xi */

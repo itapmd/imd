@@ -1296,6 +1296,14 @@ ifneq (,$(findstring fnorm,${MAKETARGET}))
 PP_FLAGS += -DFNORM
 endif
 
+ifneq (,$(findstring getsaddle,${MAKETARGET}))
+PP_FLAGS += -DGETSADDLE
+endif
+ifneq (,$(findstring getmin,${MAKETARGET}))
+PP_FLAGS += -DGETMIN
+endif
+
+
 ifneq (,$(findstring relaxinfo,${MAKETARGET}))
 PP_FLAGS += -DRELAXINFO
 endif

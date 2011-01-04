@@ -353,6 +353,7 @@ EXTERN real f_max INIT(0.0);
 EXTERN real f_max2 INIT(0.0);  
 /* scalar product of global force and momentum vectors */ 
 EXTERN real PxF INIT(0.0);
+EXTERN real last_PxF INIT(0.0);
 /* Einstein frequency is similar as fnorm, but divided by the masses */ 
 EXTERN real omega_E INIT(0.0);
 

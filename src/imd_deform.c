@@ -37,6 +37,8 @@ void lin_deform(vektor dx, vektor dy, vektor dz, real scale)
 {
    int k;
    real tmpbox[3];
+
+   printf("in lindef, myid: %d scale %lf dx %lf %lf %lf dy %lf %lf %lf dz %lf %lf %lf \n",myid,scale,dx.x,dx.y,dx.z,dy.x,dy.y,dy.z,dz.x,dz.y,dz.z);fflush(stdout);
    
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -207,7 +209,7 @@ void relax_pressure()
     dz.z *= relax_dirs.z;
 #endif
   }
-  
+
 #ifdef TWOD
   lin_deform(dx, dy,     relax_rate);
 #else

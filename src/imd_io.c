@@ -205,6 +205,69 @@ void write_ssconfig(int steps)
 }
 #endif
 
+
+#ifdef GETSADDLE
+/******************************************************************************
+*
+*  write_ssconfig writes a configuration to a numbered file,
+*  which can serve as a checkpoint; uses write_atoms
+*
+******************************************************************************/
+
+void write_saddleconfig(int steps)
+{
+    real Epot;
+    char namstr[20];
+    
+  /* first make sure that every atom is inside the box and on the right CPU */
+  if (1==parallel_output) fix_cells();
+
+
+   Epot =       tot_pot_energy / natoms;
+   sprintf(namstr,"saddle%.8f",Epot);
+  /* write checkpoint */
+  write_config_select(steps,namstr, write_atoms_config, write_header_config);
+
+  /* write iteration file */
+  // if (myid == 0) write_itr_file(steps, steps,"ss");
+
+ 
+
+}
+#endif
+#ifdef GETMIN
+/******************************************************************************
+*
+*  write_ssconfig writes a configuration to a numbered file,
+*  which can serve as a checkpoint; uses write_atoms
+*
+******************************************************************************/
+
+void write_minconfig(int steps)
+{
+    real Epot;
+    char namstr[20];
+    
+  /* first make sure that every atom is inside the box and on the right CPU */
+  if (1==parallel_output) fix_cells();
+
+
+   Epot =       tot_pot_energy / natoms;
+   sprintf(namstr,"min%.8f",Epot);
+  /* write checkpoint */
+  write_config_select(steps,namstr, write_atoms_config, write_header_config);
+
+  /* write iteration file */
+  // if (myid == 0) write_itr_file(steps, steps,"ss");
+
+ 
+
+}
+#endif
+
+
+
+
 #ifdef CG
 /******************************************************************************
 *

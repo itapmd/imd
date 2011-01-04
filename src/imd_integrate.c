@@ -475,6 +475,8 @@ void move_atoms_nve(void)
   PxF /= (SQRT(fnorm) * SQRT(pnorm));
 #endif
 
+
+  
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
   ++count;
@@ -1465,11 +1467,19 @@ void move_atoms_npt_iso(void)
 
   real Ekin_new = 0.0, Erot_new = 0.0;
   real pfric, pifric, rfric, rifric;
-  real tmpvec1[4], tmpvec2[4], ttt;
+  real tmpvec1[5], tmpvec2[5], ttt;
   real reib, ireib;
   real tmp_f_max2=0.0;
   static real d_pressure;
 
+  PxF     = 0.0;  
+#ifdef RELAXINFO
+  real tmp_x_max2=0.0;
+  real tmppnorm, tmpfnorm,tmportx,tmporty,tmportz;
+  xnorm   = 0.0;
+  pnorm   = 0.0;
+#endif
+  
   if (steps == steps_min) {
     calc_dyn_pressure();
     if (isq_tau_xi==0.0) xi.x = 0.0;
@@ -1542,6 +1552,10 @@ void move_atoms_npt_iso(void)
 #ifdef EINSTEIN
       omega_E += SPRODN(KRAFT,p,i,KRAFT,p,i) / MASSE(p,i);
 #endif
+#ifdef RELAXINFO
+      PxF   += SPRODN(IMPULS,p,i,KRAFT,p,i)/MASSE(p,i);
+      pnorm += SPRODN(IMPULS,p,i,IMPULS,p,i)/MASSE(p,i)/MASSE(p,i);
+#endif
 
       /* new momenta */
       IMPULS(p,i,X) = (pfric*IMPULS(p,i,X)+timestep*KRAFT(p,i,X))*pifric;
@@ -1568,6 +1582,11 @@ void move_atoms_npt_iso(void)
 #endif
 
       /* new positions */
+#ifdef RELAXINFO
+      tmportx=ORT(p,i,X);
+      tmporty=ORT(p,i,Y);
+      tmportz=ORT(p,i,Z);
+#endif
       tmp = timestep / MASSE(p,i);
       ORT(p,i,X) = (rfric * ORT(p,i,X) + IMPULS(p,i,X) * tmp) * rifric;
       ORT(p,i,Y) = (rfric * ORT(p,i,Y) + IMPULS(p,i,Y) * tmp) * rifric;
@@ -1575,6 +1594,16 @@ void move_atoms_npt_iso(void)
       ORT(p,i,Z) = (rfric * ORT(p,i,Z) + IMPULS(p,i,Z) * tmp) * rifric;
 #endif
 
+#ifdef RELAXINFO
+      xnorm +=  SQR(ORT(p,i,X)-tmportx) + SQR(ORT(p,i,Y)-tmporty)+SQR(ORT(p,i,Z)-tmportz);
+      /* determine the biggest displacement component */
+      tmp_x_max2 =  MAX( SQR(ORT(p,i,X)-tmportx),tmp_x_max2);
+      tmp_x_max2 =  MAX( SQR(ORT(p,i,Y)-tmporty),tmp_x_max2);
+#ifndef TWOD
+      tmp_x_max2 =  MAX( SQR(ORT(p,i,Z)-tmportz),tmp_x_max2);
+#endif
+#endif
+      
 #ifdef UNIAX
       /* new molecular axes */
       cross.x = DREH_IMPULS(p,i,Y) * ACHSE(p,i,Z)
@@ -1616,22 +1645,28 @@ void move_atoms_npt_iso(void)
   tmpvec1[1] = Erot_new;
   tmpvec1[2] = fnorm;
   tmpvec1[3] = omega_E;
+  tmpvec1[4] = PxF;
 
-  MPI_Allreduce( tmpvec1, tmpvec2, 4, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid);
 
   Ekin_new = tmpvec2[0];
   Erot_new = tmpvec2[1];
   fnorm    = tmpvec2[2];
   omega_E  = tmpvec2[3];
+  PxF      = tmpvec2[4];
 #ifdef FNORM
   MPI_Allreduce( &tmp_f_max2, &f_max2, 1, REAL, MPI_MAX, cpugrid);
 #endif
-
+#ifdef RELAXINFO  
+    MPI_Allreduce( &tmp_x_max2, &x_max2, 1, REAL, MPI_MAX, cpugrid);
+#endif
 #else
 #ifdef FNORM
   f_max2 = tmp_f_max2;
 #endif
-
+#ifdef RELAXINFO  
+  x_max2=tmp_x_max2;
+#endif
 
 #endif
 
