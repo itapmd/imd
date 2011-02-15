@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -1107,9 +1107,16 @@ EXTERN real epitax_speed INIT(1.0);
 #endif
 
 EXTERN real     ew_r2_cut INIT(0.0);     /* EWALD r-space cutoff */
+#if defined(EWALD) || defined(COULOMB) || defined(FCS)
+EXTERN real     charge[10] INIT(zero10); /* Charge of atoms */
+EXTERN real     coul_eng INIT(14.40);    /* this is e^2/(4*pi*epsilon_0) in eV A */
+#endif
+#ifdef FCS
+EXTERN real     fcs_pepc_eps   INIT(0.0);
+EXTERN real     fcs_pepc_theta INIT(0.3);
+#endif
 #if defined(EWALD) || defined(COULOMB)
 EXTERN imd_timer ewald_time;
-EXTERN real     charge[10] INIT(zero10); /* Charge of atoms */
 EXTERN real     ew_kappa;                /* Parameter kappa */
 EXTERN real     ew_kcut;                 /* k-space cutoff */
 EXTERN int      ew_nmax INIT(-1);        /* Number of image boxes */
@@ -1133,7 +1140,6 @@ EXTERN real     *sinkz;
 EXTERN real     *coskr;
 EXTERN real     *sinkr;
 EXTERN real     ew_vorf;
-EXTERN real     ew_eps INIT(14.40); /* this is e^2/(4*pi*epsilon_0) in eV A */
 EXTERN real     twopi;
 EXTERN pot_table_t coul_table; /* one table to hold all coul. and dipole fn */
 EXTERN real     coul_res   INIT(0); /* function table resolution */

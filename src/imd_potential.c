@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -922,7 +922,7 @@ void create_coulomb_tables()
   /* First table: Coulomb potential */
   /* Calculate shifts */
   pair_int_coulomb(&coul_shift, &coul_fshift, ew_r2_cut);
-  coulf2shift = ew_eps*ew_kappa*SQR(ew_kappa)*exp(-SQR(ew_kappa)*ew_r2_cut);
+  coulf2shift = coul_eng*ew_kappa*SQR(ew_kappa)*exp(-SQR(ew_kappa)*ew_r2_cut);
   coulf2shift /= sqrt(M_PI);
   coulf2shift -= 0.75*coul_fshift;
   coulf2shift *= 4.0/ew_r2_cut;
@@ -945,7 +945,7 @@ void create_coulomb_tables()
     /* 1/r^3 equiv. deriv of 1/r */
     grad -= coul_fshift;
     grad -= 0.5*coulf2shift*(r2-ew_r2_cut);
-    grad /= -ew_eps;
+    grad /= -coul_eng;
     *PTR_2D(pt->table,i,sco_col,pt->maxsteps,ncols)=grad;
     /* Other tables: Short-range dipole fn */
     for(k=0;k<ntypepairs;k++){
@@ -1338,7 +1338,7 @@ void pair_int_ewald(real *pot, real *grad, int p_typ, int q_typ, real r2)
 {
   real  r, chg, fac;
   r     = SQRT(r2);
-  chg   = charge[p_typ] * charge[q_typ] * ew_eps;
+  chg   = charge[p_typ] * charge[q_typ] * coul_eng;
   fac   = chg * 2.0 * ew_kappa / sqrt( M_PI );
   *pot  = chg * erfc1(ew_kappa * r) / r;
   /* return (1/r)*dV/dr as derivative */
@@ -1359,7 +1359,7 @@ void pair_int_coulomb(real *pot, real *grad, real r2)
 {
   real  r, chg, fac;
   r     = SQRT(r2);
-  chg   = ew_eps;
+  chg   = coul_eng;
   fac   = chg * 2.0 * ew_kappa / sqrt( M_PI );
   *pot  = chg * erfc1(ew_kappa * r) / r;
   /* return (1/r)*dV/dr as derivative */

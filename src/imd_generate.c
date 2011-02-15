@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -40,6 +40,7 @@
 * _zincblende -- generates zincblende structure
 * _lav        -- generates a cubic Laves structure C15 (MgCu2)
 * _tiqc       -- generates a truncated icosahedra quasicrystal
+* _sio2       -- generates a quartz crystal (SiO2)
 *
 * The lattice constant of the conventional unit cell of the crystal 
 * structures is box_unit.
@@ -121,6 +122,8 @@ void generate_atoms(str255 mode)
     init_qc();
     generate_qc();
 #endif
+  } else if (0 == strcmp(mode,"_sio2")) { /* SiO2 (quartz) */
+    generate_SiO2();
 #endif /* 3D */
   } else if (0==myid) error("Filename with _ specifies unknown structure.");
 
@@ -599,6 +602,113 @@ void generate_lav()
 #endif
         }
 } 
+
+/* generate hexagonal SiO2 crystal */
+void generate_SiO2(void)
+{
+  ivektor  cellc, lcellc;
+  vektor   min;
+  minicell *to;
+  cell     *input;
+  real     xx, yy, zz;
+  int      to_cpu, i, j, k, l, typ;
+  real     box_sz      [3] = {4.9134, 8.51025844, 5.4052};
+  int      SiO2_typ[18]    = {0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1};
+  real     SiO2_pos[18][3] = {
+    0.147893, 4.55513, 0.3,
+    2.60459,  0.3,     0.3,
+    1.1544,   2.29949, 2.10173,
+    3.6111,   6.55461, 2.10173,
+    1.1544,   6.81077, 3.90347,
+    3.6111,   2.55564, 3.90347,
+    3.5374,   7.66946, 0.941777,
+    1.0807,   3.41433, 0.941777,
+    1.67596,  0.92125, 1.45996,
+    4.13266,  5.17638, 1.45996,
+    4.61344,  2.06205, 2.74351,
+    2.15674,  6.31718, 2.74351,
+    2.15674,  2.79308, 3.26169,
+    4.61344,  7.04821, 3.26169,
+    1.67596,  8.18901, 4.54524,
+    4.13266,  3.93388, 4.54524,
+    1.0807,   5.69593, 5.06342,
+    3.5374,   1.4408,  5.06342};
+
+  if (size_per_cpu) {
+    box_param.x *= cpu_dim.x;
+    box_param.y *= cpu_dim.y;
+    box_param.z *= cpu_dim.z;
+  }
+  if ((box_param.x==0) || (box_param.y==0) || (box_param.z==0))
+    error("box_param not set!");
+  box_x.x = box_param.x * box_sz[0];  box_x.y = 0.0;  box_x.z = 0.0;
+  box_y.x = 0.0;  box_y.y = box_param.y * box_sz[1];  box_y.z = 0.0;
+  box_z.x = 0.0;  box_z.y = 0.0;  box_z.z = box_param.z * box_sz[2];
+  make_box();
+
+#ifdef MPI
+  if (myid==0)
+    if ((box_param.x % cpu_dim.x) || (box_param.y % cpu_dim.y) || 
+        (box_param.z % cpu_dim.z))
+      error("box_param must be commensurate with cpu_dim");
+#endif
+
+#ifdef BUFCELLS
+  min.x = my_coord.x * box_x.x / cpu_dim.x;
+  min.y = my_coord.y * box_y.y / cpu_dim.y;
+  min.z = my_coord.z * box_z.z / cpu_dim.z;
+#else
+  min.x = 0;
+  min.y = 0;
+  min.z = 0;
+#endif
+
+  /* Set up 1 atom input cell */
+  input = (cell *) malloc(sizeof(cell));
+  if (0==input) error("Cannot allocate input cell.");
+  input->n_max = 0;
+  alloc_cell(input,1);
+  natoms  = 0;
+  nactive = 0;
+
+  for (i = 0 ; i < box_param.x / cpu_dim.x; i++)
+    for (j = 0 ; j < box_param.y / cpu_dim.y; j++)
+      for (k = 0 ; k < box_param.z / cpu_dim.z; k++)
+        for (l = 0; l < 18; l++) {
+          typ  = SiO2_typ[l];
+          natoms++;
+          nactive += 3;
+          input->n = 1;
+          xx = min.x + i * box_sz[0] + SiO2_pos[l][0];
+          yy = min.y + j * box_sz[1] + SiO2_pos[l][1];
+          zz = min.z + k * box_sz[2] + SiO2_pos[l][2];
+          cellc = cell_coord( xx, yy, zz );
+          ORT(input,0,X) = xx;
+          ORT(input,0,Y) = yy;
+          ORT(input,0,Z) = zz;
+#ifndef MONOLJ
+          NUMMER(input,0) = natoms;
+          SORTE (input,0) = gtypes[typ];
+          VSORTE(input,0) = gtypes[typ];
+          MASSE (input,0) = masses[gtypes[typ]];
+#endif
+          CHARGE(input,0) = charge[typ];
+          num_sort[gtypes[typ]]++;
+
+#ifdef BUFCELLS
+          to_cpu = cpu_coord(cellc);
+          if (to_cpu==myid) {
+            lcellc = local_cell_coord( cellc );
+            to = PTR_VV(cell_array,lcellc,cell_dim);
+	    INSERT_ATOM(to, input, 0);
+	  }
+          else error("atom on wrong CPU");
+#else
+          to = PTR_VV(cell_array,cellc,cell_dim);
+          INSERT_ATOM(to, input, 0);
+#endif
+        }
+}
 
 #endif /* not TWOD */
 

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -99,7 +99,7 @@ void do_forces_ewald(int steps)
   for (k=0; k<ncells; k++) {
     cell *p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
-      pot  = ew_vorf * SQR( CHARGE(p,i) ) * ew_eps;
+      pot  = ew_vorf * SQR( CHARGE(p,i) ) * coul_eng;
       /* pot += ew_shift[n][n] * 0.5;   what's that??? */
       tot_pot_energy -= pot;
       POTENG(p,i)    -= pot;
@@ -355,7 +355,7 @@ void do_forces_ewald_real(void)
 	      
 		rpot = 0.0; rforce.x = 0.0; rforce.y = 0.0; rforce.z = 0.0;
 		
-		charge2 = charge[p_typ] * charge[q_typ] * ew_eps;
+		charge2 = charge[p_typ] * charge[q_typ] * coul_eng;
 
 		/* Include image boxes */
 		for( k=ew_nmax; k>=-ew_nmax; k--)
@@ -435,13 +435,13 @@ void init_ewald(void)
      measured in Angstrom [A], energies in electron volts [eV], 
      and charges in units of the elementary charge e */
 
-  /* ew_eps is already initialized to 14.38 in globals.h    */
+  /* coul_eng is already initialized to 14.40 in globals.h    */
   /* this is e^2 / (4*pi*epsilon_0) in [eV A]               */
   /* we need it earlier for analytically defined potentials */
-  /* ew_eps   = 14.40; */
+  /* coul_eng   = 14.40; */
   twopi    = 2.0 * M_PI;
   ew_vorf  = ew_kappa / SQRT( M_PI );
-  vorf1    = twopi * ew_eps / volume;
+  vorf1    = twopi * coul_eng / volume;
 
   ew_nx = (int) (ew_kcut * SQRT( SPROD(box_x,box_x) ) / twopi) + 1;
   ew_ny = (int) (ew_kcut * SQRT( SPROD(box_y,box_y) ) / twopi) + 1;

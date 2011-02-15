@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -2992,6 +2992,7 @@ void read_box(str255 infilename)
 {
   FILE   *infile;
   str255 line, fname;
+  char *s;
 
   if (myid==0) {
 #ifdef MPI
@@ -3003,7 +3004,7 @@ void read_box(str255 infilename)
 #endif
     infile = fopen(infilename,"r");
     if (NULL==infile) error_str("cannot open input file %s", infilename);
-    fgets(line, 255, infile);
+    s=fgets(line, 255, infile);
     while (line[0]=='#') {
 #ifdef TWOD
       if      (line[1]=='X') 
@@ -3018,7 +3019,7 @@ void read_box(str255 infilename)
       else if (line[1]=='Z') 
         sscanf(line+2, FORMAT3, &box_z.x, &box_z.y, &box_z.z);
 #endif
-      fgets(line, 255, infile);
+      s=fgets(line, 255, infile);
       if (feof(infile)) break;
     }
     fclose(infile);
@@ -3044,6 +3045,7 @@ int read_header(header_info_t *info, str255 infilename)
   str255 line, fname, str;
   int    have_format=0, have_header=0;
   int    p, n, t, m, np, nv, nd;
+  char   *s;
 
 #ifdef MPI
   if (1==parallel_input) {
@@ -3066,7 +3068,7 @@ int read_header(header_info_t *info, str255 infilename)
   info->n_charge   = -1;
 #endif
 
-  fgets(line, 255, infile);
+  s=fgets(line, 255, infile);
   while (line[0]=='#') {
     /* format line */
     if      (line[1]=='F') {
@@ -3117,7 +3119,7 @@ int read_header(header_info_t *info, str255 infilename)
     else if (line[1]=='E') {
       if (have_format) have_header = 1;
     }
-    fgets(line, 255, infile);
+    s=fgets(line, 255, infile);
     if (feof(infile)) break;
   }
   fclose(infile);

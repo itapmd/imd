@@ -91,6 +91,7 @@ void generate_fcc(int maxtyp);
 void generate_lav(void);
 void init_hex(void);
 void generate_hex(void);
+void generate_SiO2(void);
 #ifdef QUASI /* generate quasicrystal - file imd_qc.c */
 void init_qc(void);
 void generate_qc(void);

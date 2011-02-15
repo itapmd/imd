@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -2667,12 +2667,27 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
                ntypes*ntypepairs, ntypes*ntypepairs);
     }
 #endif
-#if defined(EWALD) || defined(COULOMB)
+#if defined(EWALD) || defined(COULOMB) || defined(FCS)
     /* charges */
     else if (strcasecmp(token,"charge")==0) {
       if (ntypes==0) error("specify parameter ntypes before charge");
       getparam(token,charge,PARAM_REAL,ntypes,ntypes);
     }
+    else if (strcasecmp(token,"coul_eng")==0) {
+      getparam(token,&coul_eng,PARAM_REAL,1,1);
+    }
+#endif
+#ifdef FCS
+    /* fcs_pepc_eps */
+    else if (strcasecmp(token,"fcs_pepc_eps")==0) {
+      getparam(token,&fcs_pepc_eps,PARAM_REAL,1,1);
+    }
+    /* fcs_pepc_theta */
+    else if (strcasecmp(token,"fcs_pepc_theta")==0) {
+      getparam(token,&fcs_pepc_theta,PARAM_REAL,1,1);
+    }
+#endif
+#if defined(EWALD) || defined(COULOMB)
     /* smoothing parameter */
     else if (strcasecmp(token,"ew_kappa")==0) {
       getparam(token,&ew_kappa,PARAM_REAL,1,1);
@@ -4142,8 +4157,15 @@ void broadcast_params() {
   MPI_Bcast( keating_beta, ntypes*ntypepairs, REAL, 0,MPI_COMM_WORLD);
 #endif
 
-#if defined(EWALD) || defined(COULOMB)
+#if defined(EWALD) || defined(COULOMB) || defined(FCS)
   MPI_Bcast( charge,              ntypes, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &coul_eng,           1,      REAL,    0, MPI_COMM_WORLD);
+#endif
+#ifdef FCS
+  MPI_Bcast( &fcs_pepc_eps,       1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_pepc_theta,     1,      REAL,    0, MPI_COMM_WORLD);
+#endif
+#if defined(EWALD) || defined(COULOMB)
   MPI_Bcast( &ew_kappa,           1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &ew_r2_cut,          1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &ew_kcut,            1,      REAL,    0, MPI_COMM_WORLD);

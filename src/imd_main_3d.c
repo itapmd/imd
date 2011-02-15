@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -29,7 +29,8 @@
 
 /* if bond boost method is used, this main loop is the main loop for the
    MD part. The relaxation is done in a copy of this main loop in imd_bboost.c
-   function bb_minimize. if you change something here, please also change in bb_minimize */
+   function bb_minimize. if you change something here, please also change in 
+   bb_minimize */
 
 int main_loop(int simulation)
 {
@@ -367,10 +368,18 @@ int main_loop(int simulation)
     if (ensemble == ENS_CG) acg_step(steps);
     else
 #endif
-
-        /* calculation of forces */
-        calc_forces(steps);
-
+#ifdef FCS
+#ifdef PAIR
+      calc_forces(steps);
+#endif
+#ifdef PEPC
+      calc_forces_pepc();
+#else
+      calc_forces_pp3mg();
+#endif
+#else
+      calc_forces(steps);
+#endif
 /* #ifdef BBOOST
     calc_bondboost(steps);
 #endif */
@@ -668,8 +677,6 @@ int main_loop(int simulation)
     }
 #endif
 #endif
-    
-
     
     /* finish, if maxwalltime is reached */
     if (maxwalltime > 0) {

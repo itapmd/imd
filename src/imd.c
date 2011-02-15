@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -274,7 +274,7 @@ int main(int argc, char **argv)
 
 #ifdef NBLIST
     printf("Neighbor list update every %d steps on average\n\n", 
-           steps_max / nbl_count);
+           steps_max / MAX(nbl_count,1));
 #endif
 
 #ifdef EPITAX

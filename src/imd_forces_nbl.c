@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -1148,7 +1148,7 @@ void calc_forces(int steps)
   for (k=0; k<ncells; k++) {
     cell *p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
-      real pot = ew_vorf * SQR( CHARGE(p,i) ) * ew_eps;
+      real pot = ew_vorf * SQR( CHARGE(p,i) ) * coul_eng;
       /* pot += ew_shift[n][n] * 0.5;   what's that??? */
       tot_pot_energy -= pot;
       POTENG(p,i)    -= pot;
@@ -1285,7 +1285,7 @@ void calc_forces(int steps)
 		pj.z=DP_P_IND(q,j,Z);
 		/* smooth r^3 cutoff */
 		VAL_FUNC(pot,coul_table,1,2+ntypepairs,r2,is_short);
-		pot *= ew_eps;
+		pot *= coul_eng;
 		tmp=SPROD(pj,d);
 		Eind.x += pot* ((3.0/r2)*tmp*d.x - pj.x);
 		Eind.y += pot* ((3.0/r2)*tmp*d.y - pj.y);
@@ -1425,8 +1425,8 @@ void calc_forces(int steps)
 	    /* smooth cutoff function is 2nd in coul_table */
 	    PAIR_INT(val, dval, coul_table, 1, 2+ntypepairs, r2, is_short);
 	    
-	    val  *= ew_eps;
-	    dval *= ew_eps;
+	    val  *= coul_eng;
+	    dval *= coul_eng;
 	    /* short-range function is 3rd in coul_table */
 	    col1=(it <= jt) ?
 	      it * ntypes + jt - ((it * (it + 1))/2)

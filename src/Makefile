@@ -2,7 +2,7 @@
 #
 # Imd -- The ITAP Molecular Dynamics Program
 #
-# Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+# Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 # University of Stuttgart, D-70550 Stuttgart
 #
 # $Revision$
@@ -934,6 +934,8 @@ LASERSOURCES	= imd_laser.c
 
 TTMSOURCES	= imd_ttm.c
 
+FCSSOURCES      = imd_forces_fcs.c
+
 #BBOOSTSOURCES	= imd_bboost.c imd_bb_core1.c imd_bb_core2.c
 BBOOSTSOURCES	= imd_bboost.c
 
@@ -1125,6 +1127,24 @@ PP_FLAGS  += -DEWALD
 FORCESOURCES  += ${EWALDSOURCES}
 endif
 
+# FCS
+ifneq (,$(strip $(findstring fcs,${MAKETARGET})))
+PP_FLAGS      += -DFCS 
+FORCESOURCES  += ${FCSSOURCES}
+LIBS          += $(shell pkg-config --libs scafacos-fcs)
+CFLAGS        += $(shell pkg-config --cflags scafacos-fcs)
+endif
+
+# PEPC
+ifneq (,$(strip $(findstring pepc,${MAKETARGET})))
+PP_FLAGS      += -DPEPC 
+endif
+
+# PP3MG
+ifneq (,$(strip $(findstring pp3mg,${MAKETARGET})))
+PP_FLAGS      += -DPP3MG 
+endif
+
 # VARCHG
 ifneq (,$(strip $(findstring varchg,${MAKETARGET})))
 CFLAGS  += -DVARCHG
@@ -1135,7 +1155,7 @@ ifneq (,$(strip $(findstring dipole,${MAKETARGET})))
 CFLAGS  += -DDIPOLE -DMORSE
 endif
 
-#MORSE
+# MORSE
 ifneq (,$(strip $(findstring morse,${MAKETARGET})))
 CFLAGS  += -DMORSE
 endif

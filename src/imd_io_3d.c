@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -229,7 +229,8 @@ void read_atoms(str255 infilename)
   /* read away header; if have_header==2, header is in separate file */
   if (have_header==1) {
     do {
-      fgets(buf,sizeof(buf),infile);
+      char *s;
+      s=fgets(buf,sizeof(buf),infile);
     } while (('#'!=buf[0]) || ('E'!=buf[1])); 
   }
 
