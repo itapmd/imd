@@ -1796,7 +1796,7 @@ void do_boundaries(void)
 #ifndef TWOD
       ORT(p,l,Z)     += i * box_x.z;
 #endif
-#if defined(MSQD) || defined(NMOLDYN)
+#if defined(MSQD) || defined(NMOLDYN) || defined(FEFL)
       REF_POS(p,l,X) += i * box_x.x;
       REF_POS(p,l,Y) += i * box_x.y;
 #ifndef TWOD
@@ -1845,7 +1845,7 @@ void do_boundaries(void)
       ORT(p,l,X)     += i * box_z.x;
       ORT(p,l,Y)     += i * box_z.y;
       ORT(p,l,Z)     += i * box_z.z;
-#if defined(MSQD) || defined(NMOLDYN)
+#if defined(MSQD) || defined(NMOLDYN) || defined(FEFL)
       REF_POS(p,l,X) += i * box_z.x;
       REF_POS(p,l,Y) += i * box_z.y;
       REF_POS(p,l,Z) += i * box_z.z;
