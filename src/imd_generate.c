@@ -122,8 +122,10 @@ void generate_atoms(str255 mode)
     init_qc();
     generate_qc();
 #endif
+#if defined(EWALD) || defined(COULOMB) || defined(FCS)
   } else if (0 == strcmp(mode,"_sio2")) { /* SiO2 (quartz) */
     generate_SiO2();
+#endif
 #endif /* 3D */
   } else if (0==myid) error("Filename with _ specifies unknown structure.");
 
@@ -603,6 +605,8 @@ void generate_lav()
         }
 } 
 
+#if defined(EWALD) || defined(COULOMB) || defined(FCS)
+
 /* generate hexagonal SiO2 crystal */
 void generate_SiO2(void)
 {
@@ -709,6 +713,8 @@ void generate_SiO2(void)
 #endif
         }
 }
+
+#endif
 
 #endif /* not TWOD */
 
