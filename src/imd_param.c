@@ -1893,30 +1893,34 @@ int getparamfile(char *paramfname, int phase)
       dsf_nk++;
     }
 #endif
+#if defined(HC) || defined(NVX) 
+    else if (strcasecmp(token, "hc_int")==0){
+      /* number of steps between heat current or profile writes  */
+      getparam(token, &hc_int, PARAM_INT, 1,1);
+    }
+    else if (strcasecmp(token, "hc_start")==0){
+      /* start step for heat current or profile measurement  */
+      getparam(token, &hc_start, PARAM_INT, 1,1);
+    }
+#endif
+#ifdef HC
+    else if (strcasecmp(token, "hc_av_start")==0){
+      /* start step for energy averaging  */
+      getparam(token, &hc_av_start, PARAM_INT, 1,1);
+    }
+#endif
 #ifdef NVX
-    else if (strcasecmp(token, "dTemp_start")==0){
-      /* temperature asymmetry at start */
-      getparam("dTemp_start", &dTemp_start, PARAM_REAL, 1,1);
-    }
-    else if (strcasecmp(token, "dTemp_end")==0){
-      /* temperature asymmetry at end */
-      getparam("dTemp_end", &dTemp_end, PARAM_REAL, 1,1);
-    }
-#endif
-#ifdef RNEMD
-    else if (strcasecmp(token, "exch_interval")==0){
-      /* interval for particle exchange */
-      getparam(token, &exch_int, PARAM_INT, 1,1);
-    }
-#endif
-#ifdef TRANSPORT
-    else if (strcasecmp(token, "tran_nlayers")==0){
+    else if (strcasecmp(token, "hc_nlayers")==0){
       /* number of layers */
-      getparam("tran_nlayers", &tran_nlayers, PARAM_INT, 1,1);
+      getparam(token, &hc_nlayers, PARAM_INT, 1,1);
     }
-     else if (strcasecmp(token, "tran_interval")==0){
-      /* number of steps between temp. writes  */
-      getparam(token, &tran_int, PARAM_INT, 1,1);
+    else if (strcasecmp(token, "hc_count")==0){
+      /* running index of temperature profile */
+      getparam(token, &hc_count, PARAM_INT, 1,1);
+    }
+    else if (strcasecmp(token, "hc_heatcurr")==0){
+      /* induced heat current density */
+      getparam(token, &hc_heatcurr, PARAM_REAL, 1,1);
     }
 #endif
 #ifdef TTM
@@ -3089,25 +3093,9 @@ void check_parameters_complete()
   }
 #endif
 #ifdef NVX
-  if (dTemp_start == 0){
-    error ("dTemp_start is missing or zero.");
-  }
-  if (dTemp_end == 0){
-    error ("dTemp_end is missing or zero.");
-  }
-  if (tran_int == 0){
-    error ("tran_int is zero.");
-  }
-  if (tran_nlayers == 0){
-    error ("tran_nlayers is zero.");
-  }
-#endif
-#ifdef RNEMD
-  if (tran_int == 0){
-    error ("tran_int is zero.");
-  }
-  if (tran_nlayers == 0){
-    error ("tran_nlayers is zero.");
+  if (ensemble==ENS_NVX) {
+    if (hc_int     == 0) error ("hc_int is zero.");
+    if (hc_nlayers == 0) error ("hc_nlayers is zero.");
   }
 #endif
 #ifdef FTG
@@ -3808,16 +3796,17 @@ void broadcast_params() {
   MPI_Bcast( dsf_kmax,     dsf_nk, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
+#if defined(HC) || defined(NVX)
+  MPI_Bcast( &hc_int,        1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &hc_start,      1, MPI_INT,  0, MPI_COMM_WORLD);
+#endif
+#ifdef HC
+  MPI_Bcast( &hc_av_start,   1, MPI_INT,  0, MPI_COMM_WORLD);
+#endif
 #ifdef NVX
-  MPI_Bcast( &dTemp_start,   1, REAL,   0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dTemp_end,     1, REAL,   0, MPI_COMM_WORLD); 
-#endif
-#ifdef RNEMD
-  MPI_Bcast( &exch_int,      1, MPI_INT,  0, MPI_COMM_WORLD);
-#endif
-#ifdef TRANSPORT
-  MPI_Bcast( &tran_nlayers,  1, MPI_INT,  0, MPI_COMM_WORLD);
-  MPI_Bcast( &tran_int,      1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &hc_nlayers,    1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &hc_count,      1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &hc_heatcurr,   1, REAL,     0, MPI_COMM_WORLD);
 #endif
 #ifdef LASER
   MPI_Bcast( &laser_offset,     1, REAL,  0, MPI_COMM_WORLD);

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -60,9 +60,6 @@ void calc_forces(int steps)
       DREH_MOMENT(p,i,Y) = 0.0;
       DREH_MOMENT(p,i,Z) = 0.0;
 #endif
-#ifdef NVX
-      HEATCOND(p,i) = 0.0;
-#endif     
 #ifdef STRESS_TENS
       PRESSTENS(p,i,xx) = 0.0;
       PRESSTENS(p,i,yy) = 0.0;

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -262,8 +262,8 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
   to->refpos Z(i) = from->refpos Z(j);
 #endif
 #endif /* REFPOS */
-#ifdef NVX
-  to->heatcond[i] = from->heatcond[j];   
+#ifdef HC
+  to->hcaveng[i]  = from->hcaveng[j];   
 #endif
 #ifdef STRESS_TENS
   to->presstens[i].xx = from->presstens[j].xx;   
@@ -614,8 +614,8 @@ void alloc_cell(cell *p, int n)
 #ifdef REFPOS
   memalloc( &p->refpos,   n*SDIM, sizeof(real), al, ncopy*SDIM, 1, "refpos" );
 #endif
-#ifdef NVX
-  memalloc( &p->heatcond, n,      sizeof(real), al, ncopy,      0, "heatcond");
+#ifdef HC
+  memalloc( &p->hcaveng,  n,      sizeof(real), al, ncopy,      0, "hcaveng");
 #endif
 #ifdef STRESS_TENS
   memalloc( &p->presstens, n, sizeof(sym_tensor), al, ncopy, 0, "presstens" );

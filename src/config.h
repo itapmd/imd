@@ -167,11 +167,10 @@
 #endif
 
 /* heat transport */
-#ifdef NVX
-#define RNEMD
+#ifdef HC
+#ifndef STRESS_TENS
+#define STRESS_TENS
 #endif
-#if defined(NVX) || defined(RNEMD)
-#define TRANSPORT
 #endif
 
 #ifdef MSQD

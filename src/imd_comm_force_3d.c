@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -904,9 +904,6 @@ void add_forces( int k, int l, int m, int r, int s, int t )
 #ifndef MONOLJ
     POTENG(to,i)   += POTENG(from,i);
 #endif
-#ifdef NVX
-    HEATCOND(to,i) += HEATCOND(from,i);
-#endif
 #ifdef STRESS_TENS
     PRESSTENS(to,i,xx) += PRESSTENS(from,i,xx);
     PRESSTENS(to,i,yy) += PRESSTENS(from,i,yy);
@@ -947,9 +944,6 @@ void pack_forces( msgbuf *b, int k, int l, int m)
     b->data[ j++ ] = KRAFT(from,i,Z);
 #ifndef MONOLJ
     b->data[ j++ ] = POTENG(from,i);
-#endif
-#ifdef NVX
-    b->data[ j++ ] = HEATCOND(from,i);
 #endif
 #ifdef STRESS_TENS
     b->data[ j++ ] = PRESSTENS(from,i,xx);
@@ -994,9 +988,6 @@ void unpack_forces( msgbuf *b, int k, int l, int m )
     KRAFT(to,i,Z)  += b->data[ j++ ];
 #ifndef MONOLJ
     POTENG(to,i)   += b->data[ j++ ];
-#endif
-#ifdef NVX
-    HEATCOND(to,i) += b->data[ j++ ];
 #endif
 #ifdef STRESS_TENS
     PRESSTENS(to,i,xx) += b->data[ j++ ];

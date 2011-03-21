@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -408,8 +408,8 @@ void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *p, int ind )
   to->data[ to->n++ ] = REF_POS(p,ind,Z);
 #endif
 #endif
-#ifdef NVX
-  to->data[ to->n++ ] = HEATCOND(p,ind);
+#ifdef HC
+  to->data[ to->n++ ] = HCAVENG(p,ind);
 #endif
 #ifdef STRESS_TENS
   to->data[ to->n++ ] = PRESSTENS(p,ind,xx);   
@@ -613,8 +613,8 @@ void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
   REF_POS(to,ind,Z)  = b->data[j++];
 #endif
 #endif
-#ifdef NVX
-  HEATCOND(to,ind)   = b->data[j++];
+#ifdef HC
+  HCAVENG(to,ind)    = b->data[j++];
 #endif
 #ifdef STRESS_TENS
   PRESSTENS(to,ind,xx) = b->data[j++];   
@@ -735,7 +735,7 @@ void setup_buffers(void)
 #ifndef MONOLJ
     binc2++;         /* pot_eng */
 #endif
-#ifdef NVX
+#ifdef HC
     binc2++;         /* heatcond */
 #endif
 #ifdef STRESS_TENS

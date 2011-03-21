@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -188,8 +188,8 @@ typedef struct {
 #ifdef REFPOS
   real        *refpos;
 #endif
-#ifdef NVX
-  real        *heatcond;
+#ifdef HC
+  real        *hcaveng;
 #endif
 #ifdef STRESS_TENS
   sym_tensor  *presstens;

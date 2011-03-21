@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -148,8 +148,8 @@ INLINE static int MOD(shortint p, int q)
 #ifdef REFPOS
 #define REF_POS(cell,i,sub)     (atoms.refpos sub((cell)->ind[i]))
 #endif
-#ifdef NVX
-#define HEATCOND(cell,i)        (atoms.heatcond[(cell)->ind[i]])
+#ifdef HC
+#define HCAVENG(cell,i)         (atoms.hcaveng[(cell)->ind[i]])
 #endif
 #ifdef STRESS_TENS
 #define PRESSTENS(cell,i,sub)   (atoms.presstens[(cell)->ind[i]].sub)
@@ -265,8 +265,8 @@ INLINE static int MOD(shortint p, int q)
 #ifdef REFPOS
 #define REF_POS(cell,i,sub)     ((cell)->refpos sub(i))
 #endif
-#ifdef NVX
-#define HEATCOND(cell,i)        ((cell)->heatcond[i])
+#ifdef HC
+#define HCAVENG(cell,i)         ((cell)->hcaveng[i])
 #endif
 #ifdef STRESS_TENS
 #define PRESSTENS(cell,i,sub)   ((cell)->presstens[i].sub)

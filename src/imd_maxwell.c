@@ -2,7 +2,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -76,12 +76,6 @@ void maxwell(real temp)
    tot_impuls.z = 0.0;   nactive_z = 0;
 #endif
 
-#ifdef NVX
-   nhalf = tran_nlayers / 2;
-   scale = tran_nlayers / box_x.x;
-#endif
-
-
    /* set temperature */
    for (k=0; k<NCELLS; ++k) {
 
@@ -109,26 +103,6 @@ void maxwell(real temp)
 
 #endif /* LASER */
 
-#ifdef NVX
-         /* which layer? */
-         num = scale * ORT(p,i,X);
-         if (num < 0)             num = 0;
-         if (num >= tran_nlayers) num = tran_nlayers-1;
-
-         if (num == 0) {
-            TEMP = tran_Tleft;
-         } else if (num == nhalf) {
-            TEMP = tran_Tright;
-         } else if (num < nhalf) {
-            xx = ORT(p,i,X) - box_x.x / tran_nlayers;
-            TEMP = tran_Tleft + (tran_Tright - tran_Tleft) * 
-                               xx * tran_nlayers / (box_x.x * (nhalf-1));
-         } else {
-            xx = box_x.x - ORT(p,i,X) - box_x.x / tran_nlayers;
-            TEMP = tran_Tleft + (tran_Tright - tran_Tleft) * 
-                               xx * tran_nlayers / (box_x.x * (nhalf-1));
-	 }
-#endif
 #ifdef DAMP
             /* Calculate stadium function f */
          maxax = MAX(MAX(stadium.x,stadium.y),stadium.z);

@@ -1209,11 +1209,6 @@ ifneq (,$(findstring damp,${MAKETARGET}))
 PP_FLAGS += -DDAMP
 endif
 
-ifneq (,$(findstring nvx,${MAKETARGET}))
-PP_FLAGS += -DNVX
-SOURCES += ${TRANSSOURCES}
-endif
-
 ifneq (,$(findstring ftg,${MAKETARGET}))
 PP_FLAGS += -DFTG
 endif
@@ -1459,10 +1454,15 @@ PP_FLAGS  += -DCORRELATE
 SOURCES += ${CORRSOURCES}
 endif
 
-# RNEMD heat transport
-ifneq (,$(strip $(findstring rnemd,${MAKETARGET})))
-PP_FLAGS  += -DRNEMD
-SOURCES += ${TRANSSOURCES}
+# heat transport
+ifneq (,$(findstring nvx,${MAKETARGET}))
+  PP_FLAGS += -DNVX
+  SOURCES  += ${TRANSSOURCES}
+else
+  ifneq (,$(strip $(findstring hc,${MAKETARGET})))
+    PP_FLAGS += -DHC
+    SOURCES  += ${TRANSSOURCES}
+  endif
 endif
 
 # mean square displacement

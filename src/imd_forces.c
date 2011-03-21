@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -180,11 +180,6 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
           PRESSTENS(q,j,zx) -= d.z * force.x;
 #endif
 	}
-#endif
-
-#ifdef NVX
-        HEATCOND(p,i) += pot_zwi - r2 * pot_grad;
-        HEATCOND(q,j) += pot_zwi - r2 * pot_grad;
 #endif
       }
 #endif /* PAIR || KEATING */

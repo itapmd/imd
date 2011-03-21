@@ -762,23 +762,23 @@ EXTERN int correl_omode INIT(1);   /* output mode for histogram */
 EXTERN integer ***GS INIT(NULL);   /* histogram array for self correlation */
 #endif
 
+/* data for heat conductivity measurements */
+#if defined(HC) || defined(NVX)
+EXTERN int hc_start INIT(2000);        /* heat current starting time */
+EXTERN int hc_int   INIT(0);           /* heat current writing interval */
+#endif
+#ifdef HC
+EXTERN int hc_av_start INIT(1000);     /* energy average starting time  */
+EXTERN vektor hc;                      /* heat current */
+EXTERN FILE *hc_file   INIT(NULL);     /* heat current file */
+EXTERN real heat_cond  INIT(0.0);      /* heat conductivity */
+#endif
 #ifdef NVX
-EXTERN real dTemp_start   INIT(0.0);   /* deviation of starting heat bath 
-                                          temperature from mean temp. */
-EXTERN real dTemp_end 	  INIT(0.0);   /* deviation of final heat bath 
-                                          temperature from mean temp. */ 
-EXTERN real tran_Tleft 	  INIT(0.0);   /* temperature of the left=hot wall */
-EXTERN real tran_Tright   INIT(0.0);   /* temperature of the right=cold  wall*/
-EXTERN real heat_cond     INIT(0.0);   /* heat conductivity */
+EXTERN int  hc_nlayers  INIT(0);       /* number of layers */
+EXTERN int  hc_count    INIT(0);       /* running index of temp. profile */
+EXTERN real hc_heatcurr INIT(0.0);     /* induced heat current density */
 #endif
-#ifdef RNEMD
-EXTERN real heat_transfer INIT(0.0);   /* total (integrated) heat transfer */
-EXTERN int  exch_int      INIT(0);     /* interval between particle exchange */
-#endif
-#ifdef TRANSPORT
-EXTERN int  tran_int      INIT(0);     /* Intervals of temperature recording.*/
-EXTERN int  tran_nlayers  INIT(0);     /* number of layers*/
-#endif
+
 #ifdef DEBUG
 EXTERN ivektor force_celldim_divisor INIT(einsivektor); /* if you want cell dimensions to be
 							   divisible by certain numbers, this is your
@@ -786,6 +786,7 @@ EXTERN ivektor force_celldim_divisor INIT(einsivektor); /* if you want cell dime
 							   serial and parallel simulations if
 							   cell dimensions make a difference */
 #endif /* DEBUG*/
+
 #ifdef TTM /* two temperature model */
   /* These will point to the calculation net in a nice 3D array fashion */
 EXTERN  ttm_Element *** l1, *** l2, *** l3;

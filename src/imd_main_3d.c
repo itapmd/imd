@@ -163,6 +163,10 @@ int main_loop(int simulation)
 		     ((force_int  > 0) && (0 == steps % force_int )) ||
 #endif /* FORCE */
                      ((dist_int  > 0) && (0 == steps % dist_int )) ||
+#ifdef HC
+                     ((hc_int > 0) && (steps >= hc_av_start) && 
+                      ((steps < hc_start) || ((steps-hc_start)%hc_int==0))) ||
+#endif
                      (relax_rate > 0.0) );
 #endif
 
@@ -505,6 +509,12 @@ int main_loop(int simulation)
     calc_ttm();
 #endif
 
+#ifdef HC
+    if ((hc_int > 0) && (steps >= hc_av_start) && 
+        ((steps < hc_start) || ((steps - hc_start) % hc_int == 0)))
+      do_heat_cond(steps);  
+#endif
+
 #ifdef TIMING
     imd_start_timer(&time_integrate);
 #endif
@@ -595,13 +605,9 @@ int main_loop(int simulation)
       }
     }
 #endif
-#ifdef TRANSPORT 
-    if ((tran_int > 0) && (steps > 0) && (0 == steps%tran_int)) 
-       write_temp_dist(steps);
-#endif
-#ifdef RNEMD
-    if ((exch_int > 0) && (0 == steps%exch_int)) 
-       rnemd_heat_exchange();
+#ifdef NVX 
+    if ((ensemble == ENS_NVX) && (hc_int > 0) && (steps > hc_start)) 
+       write_temp_dist(steps - hc_start);
 #endif
 
 #ifdef STRESS_TENS

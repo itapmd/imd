@@ -364,9 +364,6 @@ void calc_forces(int steps)
 	DP_P_IND(p,i,Z)  = 0.0;
       }
 #endif /* dipole */
-#ifdef NVX
-      HEATCOND(p,i) = 0.0;
-#endif     
     }
   }
 
@@ -420,7 +417,7 @@ void calc_forces(int steps)
 #else
       vektor d1, ff = {0.0,0.0,0.0};
 #endif
-      real   ee = 0.0, hc = 0.0;
+      real   ee = 0.0;
       real   eam_r = 0.0, eam_p = 0.0;
       int    m, it, nb = 0;
 
@@ -540,10 +537,6 @@ void calc_forces(int steps)
 #endif
 	  }
 #endif
-#ifdef NVX
-          hc            += pot - r2 * grad;
-          HEATCOND(q,j) += pot - r2 * grad;
-#endif
         }
 
 #endif /* PAIR || KEATING */
@@ -654,10 +647,7 @@ void calc_forces(int steps)
 	      PRESSTENS(q,j,zx) -= d.z * force.x;
 	    }
 #endif
-#ifdef NVX
-	    hc            += pot - r2 * grad;
-	    HEATCOND(q,j) += pot - r2 * grad;
-#endif
+
 #ifdef DIPOLE
 	    /* Field for Dipole calculation */
 	    if (dp_p_calc) {
@@ -793,9 +783,6 @@ void calc_forces(int steps)
 #endif
 #ifdef NNBR
       NBANZ(p,i)    += nb;
-#endif
-#ifdef NVX
-      HEATCOND(p,i) += hc;
 #endif
       n++;
     }
@@ -1357,7 +1344,7 @@ void calc_forces(int steps)
 
     } /* Dipole iteration */
   }
-/*   DIPOLE interactions - for all atoms */
+  /* DIPOLE interactions - for all atoms */
 
 #ifdef DEBUG
 /* Don't use this unless you are prepared for massive output */
@@ -1373,7 +1360,7 @@ void calc_forces(int steps)
       sym_tensor pp = {0.0,0.0,0.0,0.0,0.0,0.0};
 #endif
       vektor d1, pi, ff = {0.0,0.0,0.0};
-      real   ee = 0.0, hc = 0.0;
+      real   ee = 0.0;
       real   dp_energy = 0.0;
       int    m, it, nb = 0;
        

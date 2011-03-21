@@ -1003,7 +1003,6 @@ void write_atoms_press(FILE *out)
 #ifdef TWOD
         len += sprintf( outbuf+len, 
           "%d %d %f %.12f %.12f %.12f %.12f %.12f\n", 
-          "%10.4e %10.4e %10.4e %10.4e %10.4e\n", 
           NUMMER(p,i), VSORTE(p,i), MASSE(p,i), ORT(p,i,X),ORT(p,i,Y),
           PRESSTENS(p,i,xx), PRESSTENS(p,i,yy), PRESSTENS(p,i,xy) );
 #else
@@ -3465,6 +3464,51 @@ void write_dsf()
     fclose(out);
     count++;
   }
+}
+
+#endif
+
+#if defined(HC) && !defined(NVX)
+
+/******************************************************************************
+*
+* write heat current
+*
+******************************************************************************/
+
+void write_heat_current(int steps)
+{
+  str255 fname;
+  static int flush_count=0;
+
+  /* open .hc file if not yet open */
+  if (NULL == hc_file) {
+    sprintf(fname,"%s.hc",outfilename);
+    hc_file = fopen(fname,"a");
+    if (NULL == hc_file) error("Cannot open hc file.");
+#ifdef TWOD
+    fprintf(hc_file,"# time hcx hcy\n");
+#else
+    fprintf(hc_file,"# time hcx hcy hcz\n");
+#endif
+  }
+
+  /* write heat current */
+#ifdef TWOD
+  fprintf(hc_file, "%e %.12e %.12e\n",
+    (steps - hc_start) * timestep, hc.x, hc.y);
+#else
+  fprintf(hc_file, "%e %.12e %.12e %.12e\n",
+    (steps - hc_start) * timestep, hc.x, hc.y, hc.z);
+#endif
+  flush_count++;
+
+  /* flush .hc file every flush_int writes */
+  if (flush_count > flush_int){
+    fflush(hc_file);
+    flush_count=0;
+  }
+
 }
 
 #endif

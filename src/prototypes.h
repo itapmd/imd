@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -557,11 +557,12 @@ void write_add_corr(int it, int steps, unsigned seqnum);
 #endif
 
 /* support for heat transport - file imd_transport.c */
-#ifdef TRANSPORT
+#ifdef NVX
 void write_temp_dist(int steps);
 #endif
-#ifdef RNEMD
-void rnemd_heat_exchange();
+#ifdef HC
+void do_heat_cond(int steps);
+void write_heat_current(int steps);
 #endif
 
 #ifdef CG

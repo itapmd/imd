@@ -1010,6 +1010,10 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
   }
 #endif /* NPT */
 
+#ifdef NVX
+  fprintf(out, "hc_count \t%d\n", hc_count);
+#endif
+
 #ifdef EXTPOT
   /* write positions of external potential */
   for (n=0; n<ep_n; ++n) {
