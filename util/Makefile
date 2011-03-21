@@ -15,10 +15,8 @@
 
 # Compilers
 CFLAGS = ${FLAGS}
-ifneq (,$(strip $(findstring i386,${HOSTTYPE})))
-CC      = icc
-FLAGS  += -O # -static
-endif
+CC     = gcc
+FLAGS  = -O
 
 ifneq (,$(strip $(findstring alpha,${HOSTTYPE})))
 CC      = cc
@@ -99,6 +97,13 @@ dynsf: dynsf.c
 conf2conf: conf2conf.c conf_tools.c conf_tools.h misc.c misc.h
 	${CC} ${CFLAGS} -DC2C -o ${BINDIR}/$@ misc.c conf_tools.c conf2conf.c -lm
 
+#hccorr
+hccorr: hccorr.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ hccorr.c -lfftw3 -lm
+
+#hcprof
+hcprof: hcprof.c
+	${CC} ${CFLAGS} -o ${BINDIR}/$@ hcprof.c
 
 ############################################################################
 #

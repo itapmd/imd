@@ -71,7 +71,7 @@ if len(atom_types) != ntypes:
    usage()
    sys.exit()
 
-# build universe (periodic, of possible)
+# build universe (periodic, if possible)
 if do_pbc:
    box = ( box[0]*lu, box[1]*lu, box[2]*lu )
    universe = OrthorhombicPeriodicUniverse(box,None)

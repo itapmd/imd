@@ -154,7 +154,7 @@ void read_engfile()
   }
 
   /* read the first line */
-  buf[0] = (char) NULL;
+  buf[0] = '\0';
   fgets(buf,sizeof(buf),infile);
 
   /* eat comments */

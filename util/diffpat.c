@@ -21,7 +21,7 @@
 *
 *  Usage:
 *
-*    diffpat file 
+*    diffpat -i file 
 *
 *  projects the diffraction pattern onto the three axis, and writes these 
 *  1D histograms to the terminal. This helps to find out where the dense
@@ -362,7 +362,7 @@ void write_virvo_2d(char *outfile, char *pix, int dx, int dy,
   ui =  dy; copy_4_bytes(str,&ui);   str +=4;   /* dim_y */
   ui =   1; copy_4_bytes(str,&ui);   str +=4;   /* dim_z */
   ui =   1; copy_4_bytes(str,&ui);   str +=4;   /* number of frames */
-  uc =   8; (unsigned char) *str = uc; str++;   /* bits per voxel */
+  uc =   8; *str = uc;               str++;     /* bits per voxel */
   fl =  sx; copy_4_bytes(str,&fl);   str +=4;   /* x-length of voxel */
   fl =  sy; copy_4_bytes(str,&fl);   str +=4;   /* y-length of voxel */
   fl =  sz; copy_4_bytes(str,&fl);   str +=4;   /* z-length of voxel */
@@ -402,7 +402,7 @@ void write_virvo_2d_16bit(char *outfile, unsigned short *pix, int dx, int dy,
   ui =  dy; copy_4_bytes(str,&ui);   str +=4;   /* dim_y */
   ui =   1; copy_4_bytes(str,&ui);   str +=4;   /* dim_z */
   ui =   1; copy_4_bytes(str,&ui);   str +=4;   /* number of frames */
-  uc =  16; (unsigned char) *str = uc; str++;   /* bits per voxel */
+  uc =  16; *str = uc;               str++;     /* bits per voxel */
   fl =  sx; copy_4_bytes(str,&fl);   str +=4;   /* x-length of voxel */
   fl =  sy; copy_4_bytes(str,&fl);   str +=4;   /* y-length of voxel */
   fl =  sz; copy_4_bytes(str,&fl);   str +=4;   /* z-length of voxel */
@@ -668,7 +668,7 @@ void virvo_picture_3d(char *infile, int min_x, int min_y, int min_z,
   ui = dy; copy_4_bytes(str,&ui);   str +=4;   /* dim_y */
   ui = dz; copy_4_bytes(str,&ui);   str +=4;   /* dim_z */
   ui =  1; copy_4_bytes(str,&ui);   str +=4;   /* number of frames */
-  uc =  8; (unsigned char) *str = uc; str++;   /* bits per voxel */
+  uc =  8; *str = uc;               str++;     /* bits per voxel */
   fl = ddx; copy_4_bytes(str,&fl);  str +=4;   /* x-length of voxel */
   fl = ddy; copy_4_bytes(str,&fl);  str +=4;   /* y-length of voxel */
   fl = ddz; copy_4_bytes(str,&fl);  str +=4;   /* z-length of voxel */
