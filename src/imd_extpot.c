@@ -178,6 +178,98 @@ void calc_extpot(void)
           }
        }
   }
+
+  else if(ep_key == 2) /* Ju Li's spherical indenter made flat, see PRB 67, 104105 */
+    /* works only with indentation directions parallel to box vectors*/ 
+    {
+      vektor d,addforce,totaddforce;
+      real   dd,cc;
+      real   dn,ddn,ee;
+
+      totaddforce.x=0.0;
+      totaddforce.y=0.0;
+      totaddforce.z=0.0;
+
+
+      for (k=0; k<NCELLS; ++k) {
+          cell *p = CELLPTR(k);
+          for (i=0; i<p->n; ++i) {
+              for (n=0; n<ep_n; ++n) {
+              
+                
+                      vektor d;
+                      real   dn;
+                      d.x =  (ep_dir[n].x==0)  ? 0 : (ORT(p,i,X)-ep_pos[n].x) ; 
+                      d.y =   (ep_dir[n].y==0)  ? 0 : (ORT(p,i,Y)-ep_pos[n].y); 
+                      d.z =   (ep_dir[n].z==0)  ? 0 : (ORT(p,i,Z)-ep_pos[n].z); 
+                      dn  = SPROD(d,ep_dir[n]);
+                      dd  = SPROD(d,d);
+
+                      if ( dd < ep_rcut*ep_rcut)
+                      {
+                          /* for the determination of the contact area */
+                          ep_xmax[n] = MAX(ep_xmax[n], ORT(p,i,X) );    
+                          ep_ymax[n] = MAX(ep_ymax[n], ORT(p,i,Y) );    
+                          ep_xmin[n] = MIN(ep_xmin[n], ORT(p,i,X) );    
+                          ep_ymin[n] = MIN(ep_ymin[n], ORT(p,i,Y) );    
+                          
+                          ddn= sqrt(dd);
+                          cc = (ep_rcut - ddn)/ep_a;
+                          if (cc > UPPER_EXP) cc = UPPER_EXP;
+                          if (cc < LOWER_EXP) cc = LOWER_EXP;
+                          ee = exp(cc - 1.0/cc);
+
+                          tot_pot_energy += ee;
+                          POTENG(p,i) += ee;
+
+                          ee = ee / ep_a / ddn * (1.0 + 1.0 /(cc*cc));
+                          
+                          KRAFT(p,i,X) += ee * d.x; 
+                          KRAFT(p,i,Y) += ee * d.y; 
+                          KRAFT(p,i,Z) += ee * d.z;
+
+                          totaddforce.x += ee * d.x;
+                          totaddforce.y += ee * d.y;
+                          totaddforce.z += ee * d.z; 
+                          
+                          ep_fext[n]   += ee * ABS(dn); /* normal force on indentor */
+                          
+                      }
+
+                  } 
+
+              }
+          }
+
+
+#ifdef MPI
+      tmpvec1[0] =  totaddforce.x ;
+      tmpvec1[1] =  totaddforce.y ;
+      tmpvec1[2] =  totaddforce.z ;
+      //    printf("before totaddforcereduce allreduce\n");fflush(stdout);
+      MPI_Allreduce( tmpvec1, tmpvec2, 4, REAL, MPI_SUM, cpugrid);
+      // printf("after totaddforce allreduce\n");fflush(stdout);
+      totaddforce.x = tmpvec2[0];
+      totaddforce.y = tmpvec2[1];
+      totaddforce.z = tmpvec2[2];      
+#endif
+      /* no need for a wall as the total additional impuls is substracted */
+
+      totaddforce.x *= 1.0/nactive_vect[0];
+      totaddforce.y *= 1.0/nactive_vect[1];
+      totaddforce.z *= 1.0/nactive_vect[2];
+      
+      
+       for (k=0; k<NCELLS; ++k) {
+          cell *p = CELLPTR(k);
+          for (i=0; i<p->n; ++i) {
+              KRAFT(p,i,X) -= totaddforce.x;
+              KRAFT(p,i,Y) -= totaddforce.y;
+              KRAFT(p,i,Z) -= totaddforce.z;
+          }
+       }
+  }
+
   else
   {
       error("Error: external potential ep_key not defined.\n");
@@ -234,7 +326,7 @@ void init_extpot(void)
     }
     /* needed if the indenter impulse should be balanced */
     /* might not work with 2D, epitax, clone, superatom  */
-    if(ep_key==1){
+    if(ep_key==1 || ep_key==2  ){
         for (k=0; k<NCELLS; ++k) {
             cell *p = CELLPTR(k);
             for (i=0; i<p->n; ++i) {
@@ -257,7 +349,7 @@ void init_extpot(void)
         {
             if (nactive_vect[0] == 0 ||  nactive_vect[1] == 0 || nactive_vect[2] == 0)
                 error ("ep_key=1 requires atoms free to move in all directions\n");
-            printf("EXTPOT: active degrees of freedom: x %d y %d z %d\n",nactive_vect[0],nactive_vect[1],nactive_vect[2]);
+            printf("EXTPOT: active degrees of freedom: x %ld y %ld z %ld\n",nactive_vect[0],nactive_vect[1],nactive_vect[2]);
         }
 #ifdef RELAX
         printf( "EXTPOT: max number of relaxation steps = %d\n", ep_max_int);

@@ -336,6 +336,28 @@ ifeq (P4-icc,${IMDSYS})
   export        OMPI_MPICC MPICH_CC MPICH_CLINKER
 endif
 
+# woody
+ifeq (woody-icc,${IMDSYS})
+  CC_SERIAL	= icc
+  CC_OMP	= icc
+  CC_MPI	= mpicc 
+  CC_OMPI	= mpicc
+  MPICH_CC      = icc
+  MPICH_CLINKER = icc
+  OMPI_MPICC    = icc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+#  OPT_FLAGS	+= -O -ip -m64 -mkl  -msse2
+#  OPT_FLAGS	+= -O -ip   -O3 -xP
+  OPT_FLAGS	+= -O -ip  -msse2
+  OMP_FLAGS	+= -openmp
+  OMPI_FLAGS	+= -openmp
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -prof_gen
+  RCD_FLAGS	+= -DRCD -rcd
+  LFLAGS        += -i-static
+  export        OMPI_MPICC MPICH_CC MPICH_CLINKER
+endif
+
 # Pentium 4 or Xeon, gcc3
 ifeq (P4-gcc3,${IMDSYS})
   CC_SERIAL	= gcc
@@ -352,6 +374,24 @@ ifeq (P4-gcc3,${IMDSYS})
   LFLAGS        += # -static
   export        OMPI_MPICC MPICH_CC # MPICH_CLINKER
 endif
+
+# Pentium 4 or Xeon, gcc3
+ifeq (woody_gcc,${IMDSYS})
+  CC_SERIAL	= gcc
+  CC_MPI	= mpicc
+  MPICH_CC      = gcc
+  OMPI_MPICC    = gcc
+#  MPICH_CLINKER = gcc
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS	+= -O -march=nocona
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -g3 -pg
+  PAPI_INC      =  -I /opt/include
+  PAPI_LIBS     =  -L /opt/lib -lpapi -lperfctr
+  LFLAGS        += # -static
+  export        OMPI_MPICC MPICH_CC # MPICH_CLINKER
+endif
+
 
 # Pentium III, icc
 ifeq (P3-icc,${IMDSYS})

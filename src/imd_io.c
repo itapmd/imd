@@ -2183,7 +2183,7 @@ void write_eng_file(int steps)
 #ifdef TWOD
   fprintf(eng_file,format, (double) Press_xy);
 #else 
-  fprintf(eng_file,format, (double) Press_zz);
+  fprintf(eng_file,format2, (double) Press_zz);
   fprintf(eng_file,format3,
 	  (double) Press_yz, (double) Press_zx, (double) Press_xy);
 #endif    
@@ -2421,12 +2421,12 @@ void write_ssdef(int steps)
 
 
   /* and write out information depending on the options and simulation settings */
-  fprintf(ssdef_file, "%d %d %e %e ", sscount,nfc,(double) Epot,(double) SQRT( fnorm / nactive ) );
+  fprintf(ssdef_file, "%d %d %.18e %e ", sscount,nfc,(double) Epot,(double) SQRT( fnorm / nactive ) ); /* wolfram 24_06_10  Epot: %e to %.18e */
   
 #ifdef TWOD
     fprintf(ssdef_file," %e %e ", (double)  box_x.x, (double)  box_y.y );
 #else
-    fprintf(ssdef_file," %e %e %e ", 
+    fprintf(ssdef_file," %.16e %.16e %.16e ", 
             (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
 #endif
 #ifdef HOMDEF
@@ -2454,12 +2454,12 @@ void write_ssdef(int steps)
 #endif /* FBC */
 
 #ifdef STRESS_TENS
-  fprintf(ssdef_file," %e %e ", (double) Press_xx, (double) Press_yy);
+  fprintf(ssdef_file," %.16e %.16e ", (double) Press_xx, (double) Press_yy);
 #ifdef TWOD
   fprintf(ssdef_file," %e ", (double) Press_xy);
 #else 
-  fprintf(ssdef_file," %e ", (double) Press_zz);
-  fprintf(ssdef_file," %e %e %e ",
+  fprintf(ssdef_file," %.16e ", (double) Press_zz);
+  fprintf(ssdef_file," %.16e %.16e %.16e ",
           (double) Press_yz, (double) Press_zx, (double) Press_xy);
 #endif    
 #endif /* STRESS_TENS */
@@ -2610,7 +2610,7 @@ void write_fext(int steps)
       fprintf(ind_file, "%f %f %f %f %f ", ep_pos[i].x, ep_pos[i].y, ep_pos[i].z, ep_fext[i], ep_car[i] );
     }
     for (i=ep_nind; i<ep_n; i++) {
-      fprintf(ind_file, "%f %f %f %f %f %f ", ep_pos[i].x, ep_pos[i].y, ep_pos[i].z, ep_fext[i] );
+      fprintf(ind_file, "%f %f %f %f ", ep_pos[i].x, ep_pos[i].y, ep_pos[i].z, ep_fext[i] );
     }
     putc('\n',ind_file);
     flush_count++;
