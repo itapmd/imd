@@ -552,6 +552,7 @@ void create_pot_table(pot_table_t *pt)
                 val += morse_aaa[i][j] * SQR(r2_cut[i][j] - r2);
               }
             }
+#ifndef BUCK
             /* Buckingham */
             if (buck_sigma[i][j]>0) {
               if (r2 < (1.0 - POT_TAIL) * r2_cut[i][j]) {
@@ -562,6 +563,7 @@ void create_pot_table(pot_table_t *pt)
                 val += buck_aaa[i][j] * SQR(r2_cut[i][j] - r2);
               }
             }
+#endif
             /* harmonic potential for shell model */
             if (spring_cst[i][j]>0) {
 	      val = 0.5 * spring_cst[i][j] * r2;
@@ -589,7 +591,7 @@ void create_pot_table(pot_table_t *pt)
               }
 	    }
 #endif
-#if defined(DIPOLE) || defined(MORSE)
+#if ((defined(DIPOLE) || defined(MORSE)) && !defined(BUCK))
             /* Morse-Stretch potential for dipole */
             if ((ew_r2_cut > 0)) { 
 	      /* harmonic spring */
@@ -604,6 +606,16 @@ void create_pot_table(pot_table_t *pt)
               }
 	    }
 #endif /* DIPOLE or MORSE */
+#ifdef BUCK
+ /* Buckingham potential for dipole */
+            if ((ew_r2_cut > 0)) { 
+	      if (r2 < ew_r2_cut) {
+                pair_int_buck(&pot, &grad, i, j, r2);
+                val += pot - bk_shift[col];
+                val -= SQRT(r2)*bk_fshift[col]*(SQRT(r2)-SQRT(ew_r2_cut));
+              }
+	    }
+#endif /* BUCK */
             *PTR_2D(pt->table, n, column, pt->maxsteps, ncols) = val;
           }
 	}
@@ -635,7 +647,7 @@ void init_pre_pot(void) {
   int  i, j, k, m, n,col;
   real tmp = 0.0;
 
-#if defined(DIPOLE) || defined(MORSE)
+#if ((defined(DIPOLE) || defined(MORSE)) && !defined(BUCK))
   real pot,grad;
   ms_shift = (real *) malloc (ntypepairs * sizeof(real));
   ms_fshift = (real *) malloc (ntypepairs * sizeof(real));
@@ -644,6 +656,12 @@ void init_pre_pot(void) {
   if (( NULL == ms_shift ) || ( NULL == ms_fshift ) || 
       ( NULL == ms_harm_a )|| ( NULL == ms_harm_b ))
     error("cannot allocate Morse-Stretch shift");
+#endif
+#ifdef BUCK
+  bk_shift = (real *) malloc (ntypepairs * sizeof(real));
+  bk_fshift = (real *) malloc (ntypepairs * sizeof(real));
+  if (( NULL == bk_shift ) || ( NULL == bk_fshift ))
+    error("cannot allocate Buckingham shift");
 #endif
   n=0; m=0;
   for (i=0; i<ntypes; i++) 
@@ -752,6 +770,7 @@ void init_pre_pot(void) {
   for (i=0; i<ntypes; i++) 
     for (j=0; j<ntypes; j++) {
 
+#ifndef BUCK
       if (r2_cut[i][j] > 0.0) { 
         /* Lennard-Jones(-Gauss) */
         if (lj_epsilon[i][j] > 0.0) {
@@ -800,6 +819,7 @@ void init_pre_pot(void) {
         morse_shift[i][j] = 0.0;
         buck_shift [i][j] = 0.0;
       }
+#endif
 #ifdef EWALD
       /* Coulomb for Ewald */
       if ((ew_r2_cut > 0) && (ew_nmax < 0)) {
@@ -815,7 +835,7 @@ void init_pre_pot(void) {
 	}
       }
 #endif
-#if defined(DIPOLE) || defined(MORSE)
+#if ((defined(DIPOLE) || defined(MORSE)) && !defined(BUCK))
       /* Morse-Stretch for Dipole */
       if (i<=j) {
 	col= i*ntypes - (i*(i+1))/2 + j;
@@ -840,6 +860,23 @@ void init_pre_pot(void) {
 	  ms_harm_a[col] = SQRT(ms_r2_min[col])-grad/(2.0*ms_harm_c[col]);
 	  ms_harm_b[col] = pot-ms_harm_c[col]*
 	    SQR(SQRT(ms_r2_min[col])-ms_harm_a[col]);
+	}
+      }
+#endif
+#ifdef BUCK
+      /* Buckingham for Dipole */
+      if (i<=j) {
+	col= i*ntypes - (i*(i+1))/2 + j;
+	if (ew_r2_cut > 0)  {
+	  pair_int_buck( &bk_shift[col], &bk_fshift[col], i, j, ew_r2_cut);
+          if (myid==0) {
+            printf("Buckingham pot %1d %1d (col %1d) shifted by %g,\n", 
+	           i, j, col, -bk_shift[col]);
+	  }
+	}
+	else {
+	  bk_shift[col] = 0.;
+	  bk_fshift[col] = 0.;
 	}
       }
 #endif
@@ -1368,7 +1405,7 @@ void pair_int_coulomb(real *pot, real *grad, real r2)
 
 #endif
 
-#if defined(DIPOLE) || defined(MORSE)
+#if ((defined(DIPOLE) || defined(MORSE)) && !defined(BUCK))
 
 /*****************************************************************************
 *

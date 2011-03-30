@@ -1152,7 +1152,12 @@ endif
 
 # DIPOLE
 ifneq (,$(strip $(findstring dipole,${MAKETARGET})))
-CFLAGS  += -DDIPOLE -DMORSE
+CFLAGS  += -DDIPOLE
+endif
+
+# BUCK
+ifneq (,$(strip $(findstring buck,${MAKETARGET})))
+CFLAGS  += -DBUCK
 endif
 
 # MORSE

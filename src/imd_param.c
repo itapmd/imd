@@ -2550,7 +2550,6 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"ttbp_potfile")==0) {
       /* filename for ttbp potential data */
       getparam(token, ttbp_potfilename, PARAM_STR, 1, 255);
-      have_potfile = 1;
     }
 #endif
 #ifdef STIWEB
@@ -2769,7 +2768,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       getparam(token,dp_c,PARAM_REAL,ntypepairs,ntypepairs);
     }
 #endif /* DIPOLE */
-#if defined(DIPOLE) || defined(MORSE)
+#if ((defined(DIPOLE) || defined(MORSE)) && !defined(BUCK))
     /* Morse-Stretch parameter D */
     else if (strcasecmp(token,"ms_D")==0) {
       if (ntypes==0) error("specify parameter ntypes before ms_D");

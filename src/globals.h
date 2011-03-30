@@ -1168,6 +1168,10 @@ EXTERN real     *ms_r0     INIT(NULL); /* in A */
 EXTERN real     *ms_shift  INIT(NULL);
 EXTERN real     *ms_fshift INIT(NULL);
 #endif /* DIPOLE or MORSE */
+#if defined(BUCK)
+EXTERN real     *bk_shift  INIT(NULL);
+EXTERN real     *bk_fshift INIT(NULL);
+#endif /* BUCK */
 
 /* generate quasicrystal */
 #ifdef QUASI
