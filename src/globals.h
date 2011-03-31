@@ -862,6 +862,13 @@ EXTERN void (*do_laser_rescale)(void);  /* Function pointer for rescaling routin
 /* EXTERN int  laser_damp_smooth INIT(1);  */  /* Smooth transition (sine)?	     */
 #endif
 
+#ifdef SM
+EXTERN real chi_0[2]; /* Initial value of the electronegativity */ 
+EXTERN real z_es[2]; /* Initial value of the effecitve core charge */
+EXTERN real j_0[2]; /* atomic hardness or self-Coulomb repulsion */
+#endif
+
+
 #ifdef STRESS_TENS
 EXTERN sym_tensor tot_presstens INIT(nullsymtensor);/* global pressure tens. */
 EXTERN sym_tensor presstens_ext INIT(nullsymtensor);  /* ext. pressure tens. */
@@ -1108,6 +1115,14 @@ EXTERN real epitax_speed INIT(1.0);
 #endif
 
 EXTERN real     ew_r2_cut INIT(0.0);     /* EWALD r-space cutoff */
+#ifdef SM
+EXTERN real     ew_eps INIT(14.40);    /* this is e^2/(4*pi*epsilon_0) in eV A */
+EXTERN pot_table_t erfc_r_tab;         /* Andreas benennen */
+EXTERN pot_table_t cr_pot_tab;         /* Andreas benennen */
+EXTERN pot_table_t na_pot_tab;         /* Andreas benennen */
+
+
+#endif
 #if defined(EWALD) || defined(COULOMB) || defined(FCS)
 EXTERN real     charge[10] INIT(zero10); /* Charge of atoms */
 EXTERN real     coul_eng INIT(14.40);    /* this is e^2/(4*pi*epsilon_0) in eV A */

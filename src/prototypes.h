@@ -630,8 +630,14 @@ void calc_ttm(void);
 void update_fd(void);
 /* TODO allow variable K */
 void ttm_overwrite(void);
+#endif
 
-
+#ifdef SM
+/* Streitz and Mintmire model SM - file imd_sm.c */
+void do_electronegativity(void);
+void do_v_real(void);
+void do_cg(void);
+void do_charge_update(void);
 #endif
 
 #ifdef BGL

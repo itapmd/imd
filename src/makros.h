@@ -103,10 +103,25 @@ INLINE static int MOD(shortint p, int q)
 #define ADP_LAMBDA(cell,i,sub)  (atoms.adp_lambda[(cell)->ind[i]].sub)
 #endif
 
-#ifdef VARCHG
+#if defined(VARCHG) || defined(SM)
 #define CHARGE(cell,i)          (atoms.charge [(cell)->ind[i]])
 #else
 #define CHARGE(cell,i)          (charge[ SORTE(cell,i) ])
+#endif
+
+#ifdef SM
+#define  CHI_SM(cell,i)         (atoms.chi_sm [(cell)->ind[i]])
+#define Z_SM(cell,i)            (atoms.z_sm [(cell)->ind[i]])
+#define J_SM(cell,i)            (atoms.j_sm [(cell)->ind[i]])
+#define  V_SM(cell,i)           (atoms.v_sm [(cell)->ind[i]])
+#define V_k_SM(cell,i)          (atoms.v_k_sm [(cell)->ind[i]])
+
+#define B_SM(cell,i)         (atoms.b_sm [(cell)->ind[i]])
+#define X_SM(cell,i)         (atoms.x_sm [(cell)->ind[i]])
+#define R_SM(cell,i)         (atoms.r_sm [(cell)->ind[i]])
+#define D_SM(cell,i)         (atoms.d_sm [(cell)->ind[i]])
+#define S_SM(cell,i)         (atoms.s_sm [(cell)->ind[i]])
+#define Q_SM(cell,i)         (atoms.q_sm [(cell)->ind[i]])
 #endif
 
 #ifdef DIPOLE
@@ -226,10 +241,25 @@ INLINE static int MOD(shortint p, int q)
 #define ADP_LAMBDA(cell,i,sub)  ((cell)->adp_lambda[i].sub)
 #endif
 
-#ifdef VARCHG
+#if defined(VARCHG) || defined(SM)
 #define CHARGE(cell,i)          ((cell)->charge[i])
 #else
 #define CHARGE(cell,i)          (charge[ SORTE(cell,i) ])
+#endif
+
+#ifdef SM
+#define  CHI_SM(cell,i)         ((cell)->chi_sm[i])
+#define Z_SM(cell,i)            ((cell)->z_sm[i])
+#define J_SM(cell,i)            ((cell)->j_sm[i])
+#define  V_SM(cell,i)           ((cell)->v_sm[i])
+#define V_k_SM(cell,i)          ((cell)->v_k_sm[i])
+
+#define B_SM(cell,i)          ((cell)->b_sm[i])
+#define X_SM(cell,i)          ((cell)->x_sm[i])
+#define R_SM(cell,i)          ((cell)->r_sm[i])
+#define D_SM(cell,i)          ((cell)->d_sm[i])
+#define S_SM(cell,i)          ((cell)->s_sm[i])
+#define Q_SM(cell,i)          ((cell)->q_sm[i])
 #endif
 
 #ifdef DIPOLE

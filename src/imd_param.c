@@ -2508,6 +2508,23 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
                ntypepairs-ntypes, ntypepairs-ntypes);
     }
 #endif
+#ifdef SM
+    /* Initial value of the electronegativity */
+    else if (strcasecmp(token,"chi_0")==0) {
+      if (ntypes==0) error("specify parameter ntypes before chi_0");
+      getparam(token, chi_0, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+    /* Initial value of the effecitve core charge */
+    else if (strcasecmp(token,"z_es")==0) {
+      if (ntypes==0) error("specify parameter ntypes before z_es");
+      getparam(token, z_es, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+    /* atomic hardness or self-Coulomb repulsion */
+    else if (strcasecmp(token,"j_0")==0) {
+      if (ntypes==0) error("specify parameter ntypes before j_0");
+      getparam(token, j_0, PARAM_REAL, ntypepairs, ntypepairs);
+    }
+#endif /* SM */
 #ifdef FEFL
     /*harmonic potential for Einstein crystal */
     else if (strcasecmp(token,"spring_rate")==0) {
@@ -4154,6 +4171,9 @@ void broadcast_params() {
   MPI_Bcast( &fcs_pepc_theta,     1,      REAL,    0, MPI_COMM_WORLD);
 #endif
 #if defined(EWALD) || defined(COULOMB)
+#ifdef SM
+  MPI_Bcast( charge,              ntypes, REAL,    0, MPI_COMM_WORLD);
+  #endif
   MPI_Bcast( &ew_kappa,           1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &ew_r2_cut,          1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &ew_kcut,            1,      REAL,    0, MPI_COMM_WORLD);

@@ -84,6 +84,13 @@
 #endif
 #endif
 
+/* for SM we also need EWALD */
+#if defined SM
+#ifndef EWALD
+#define EWALD
+#endif
+#endif
+
 /* default short-range potential for DIPOLE is MORSE */
 #if (defined(DIPOLE) && !defined(BUCK))
 #define MORSE

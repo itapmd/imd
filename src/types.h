@@ -150,8 +150,23 @@ typedef struct {
   real        *adp_mu;
   sym_tensor  *adp_lambda;
 #endif
-#ifdef VARCHG
+#if defined(VARCHG) || defined(SM)
   real        *charge;      /* individual charge for each particle */
+#endif
+#ifdef SM
+  real *chi_sm;              /* electronegativity */
+  real *z_sm;                /* effective core charge */
+  real *j_sm;               /* repulsiveness parameter */
+  real *v_sm;                /* real part of integral */
+  real *v_k_sm;              /* reciprocal part of integral */
+
+  real *b_sm;                /* Ax=b */
+  real *x_sm;                /* Ax=b */
+  real *r_sm;                /* residuum Ax=b */
+  real *d_sm;                /* conjugate directions Ax=b */
+  real *s_sm;                /* auxiliary variable Ax=b */
+  real *q_sm;                /* initial value */
+
 #endif
 #ifdef DIPOLE
   real        *dp_E_stat; /* electric field at atom location */	     

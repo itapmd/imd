@@ -99,7 +99,11 @@ void do_forces_ewald(int steps)
   for (k=0; k<ncells; k++) {
     cell *p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
+#ifdef SM
+      pot  = ew_vorf * SQR( CHARGE(p,i) ) * ew_eps;
+#else
       pot  = ew_vorf * SQR( CHARGE(p,i) ) * coul_eng;
+#endif
       /* pot += ew_shift[n][n] * 0.5;   what's that??? */
       tot_pot_energy -= pot;
       POTENG(p,i)    -= pot;
@@ -128,6 +132,9 @@ void do_forces_ewald_fourier(void)
   int    px, py, pz, mx, my, mz;
   real   tmp, tmp_virial=0.0, sum_cos, sum_sin;
   real   kforce, kpot;
+#ifdef SM
+  real v_k, q_0;
+#endif
 
   /* Compute exp(ikr) recursively */
   px = (ew_nx+1) * natoms;  mx = (ew_nx-1) * natoms;
@@ -202,7 +209,9 @@ void do_forces_ewald_fourier(void)
     offz    = ew_ivek[k].z * natoms;
     sum_cos = 0.0;
     sum_sin = 0.0;
-
+#ifdef SM
+    v_k     = 0.0;
+#endif
     /* Compute exp(ikr) and sums thereof */
     for (c=0; c<ncells; c++) {
 
@@ -221,17 +230,25 @@ void do_forces_ewald_fourier(void)
                      + coskx[offx+cnt] * cosky[offy+cnt] * sinkz[offz+cnt];
 
         typ      = SORTE(p,i);
+#ifdef SM
+	CHARGE(p,i)= q_0;
+        sum_cos += CHARGE(p,i) * coskr[cnt];
+        sum_sin += CHARGE(p,i) * sinkr[cnt];
+#else
         sum_cos += charge[typ] * coskr[cnt];
         sum_sin += charge[typ] * sinkr[cnt];
-
+#endif
         cnt++;
       }
     }
 
+
+#ifndef SM
     /* update total potential energy */
     tot_pot_energy += ew_expk[k] * (SQR(sum_sin) + SQR(sum_cos));
+#endif
 
-    /* update energies and forces */
+    /* updates */
     cnt = 0;
     for (c=0; c<ncells; c++) {
 
@@ -241,6 +258,13 @@ void do_forces_ewald_fourier(void)
 
         typ    = SORTE(p,i);
 
+#ifdef SM
+	/* update fourier part of v_i */
+        v_k   = ew_expk[k] * (sinkr[cnt] * sum_sin + coskr[cnt] * sum_cos);
+        V_k_SM(p,i)  += v_k;   
+	/* the total vector v_i */
+	V_SM(p,i) += v_k;
+#else
         /* update potential energy */
         kpot   = charge[typ] * ew_expk[k]
 	         * (sinkr[cnt] * sum_sin + coskr[cnt] * sum_cos);
@@ -253,14 +277,17 @@ void do_forces_ewald_fourier(void)
         KRAFT(p,i,Y) += ew_kvek[k].y * kforce;
         KRAFT(p,i,Z) += ew_kvek[k].z * kforce;
         tmp_virial   += kforce * SPRODX(ORT,p,i,ew_kvek[k]);
-	  
+#endif
+
         cnt++;
       }
     }
 
   }  /* k */
 
+#ifndef SM
   virial += tmp_virial;
+#endif
 
 }
 
@@ -354,9 +381,11 @@ void do_forces_ewald_real(void)
 		  }
 	      
 		rpot = 0.0; rforce.x = 0.0; rforce.y = 0.0; rforce.z = 0.0;
-		
+#ifdef SM		
+		charge2 = charge[p_typ] * charge[q_typ] * ew_eps;
+#else
 		charge2 = charge[p_typ] * charge[q_typ] * coul_eng;
-
+#endif
 		/* Include image boxes */
 		for( k=ew_nmax; k>=-ew_nmax; k--)
 		  for( l=ew_nmax; l>=-ew_nmax; l--)
@@ -429,19 +458,27 @@ void do_forces_ewald_real(void)
 void init_ewald(void)
 {
   int    i, j, k, offx, offy, offz, count, num;
-  real   kvek2, vorf1;
+  real   kvek2, vorf1, fourpi;
 
   /* we implicitly assume a system of units, in which lengths are
      measured in Angstrom [A], energies in electron volts [eV], 
      and charges in units of the elementary charge e */
 
-  /* coul_eng is already initialized to 14.40 in globals.h    */
+  /* coul_eng or ew_eps are already initialized to 14.40 in globals.h    */
+  /* 14.38 ? */
   /* this is e^2 / (4*pi*epsilon_0) in [eV A]               */
   /* we need it earlier for analytically defined potentials */
-  /* coul_eng   = 14.40; */
+  /* coul_eng or ew_eps  = 14.40; */
+
+#ifdef SM
+  fourpi    = 4.0 * M_PI;
+  ew_vorf  = 2.0 * ew_kappa / SQRT( M_PI );
+  vorf1     = fourpi / volume;
+#else
   twopi    = 2.0 * M_PI;
   ew_vorf  = ew_kappa / SQRT( M_PI );
-  vorf1    = twopi * coul_eng / volume;
+  vorf1    = twopi * ew_eps / volume;
+#endif
 
   ew_nx = (int) (ew_kcut * SQRT( SPROD(box_x,box_x) ) / twopi) + 1;
   ew_ny = (int) (ew_kcut * SQRT( SPROD(box_y,box_y) ) / twopi) + 1;
