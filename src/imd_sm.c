@@ -312,6 +312,9 @@ void do_charge_update(void)
   
   do_cg();
   
+  /* Sum up for getting charges */
+  sum1=0.0;
+
   /* loop over all cells */
   for (k=0; k<NCELLS; ++k) {
     int  i, sort;
@@ -321,6 +324,7 @@ void do_charge_update(void)
     /* loop over all particles */
     for (i=0; i<p->n; ++i) {
       S_SM(p,i) = X_SM(p,i);
+      sum1 += S_SM(p,i);
     }
   }
   
@@ -344,8 +348,6 @@ void do_charge_update(void)
   do_cg();
   
   /* Sum up for getting charges */
-  
-  sum1=0.0;
   sum2=0.0;
   
   /* loop over all cells */
@@ -356,7 +358,6 @@ void do_charge_update(void)
     
     /* loop over all particles */
     for (i=0; i<p->n; ++i) {
-      sum1 += S_SM(p,i);
       sum2 += X_SM(p,i);
     }
   }
