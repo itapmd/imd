@@ -582,6 +582,18 @@ void alloc_cell(cell *p, int n)
 #ifdef VARCHG
   memalloc( &p->charge,    n,     sizeof(real), al, ncopy, 0, "charge" );
 #endif
+#ifdef SM
+  memalloc(&p->chi_sm,   n, sizeof(real),   al, ncopy, 0, "chi_sm");
+  memalloc(&p->z_sm,   n, sizeof(real),   al, ncopy, 0, "z_sm");
+  memalloc(&p->j_sm,   n, sizeof(real),   al, ncopy, 0, "j_sm");
+  memalloc(&p->v_sm,   n, sizeof(real),   al, ncopy, 0, "v_sm");
+  memalloc(&p->v_k_sm,   n, sizeof(real),   al, ncopy, 0, "v_k_sm");
+  memalloc(&p->b_sm,   n, sizeof(real),   al, ncopy, 0, "b_sm");
+  memalloc(&p->x_sm,   n, sizeof(real),   al, ncopy, 0, "x_sm");
+  memalloc(&p->r_sm,   n, sizeof(real),   al, ncopy, 0, "r_sm");
+  memalloc(&p->s_sm,   n, sizeof(real),   al, ncopy, 0, "s_sm");
+  memalloc(&p->q_sm,   n, sizeof(real),   al, ncopy, 0, "q_sm");
+#endif
 #ifdef DIPOLE
   memalloc( &p->dp_E_stat, n*DIM, sizeof(real), al, ncopy*DIM, 0, "dp_E_stat");
   memalloc( &p->dp_E_ind,  n*DIM, sizeof(real), al, ncopy*DIM, 0, "dp_E_ind");

@@ -84,10 +84,13 @@
 #endif
 #endif
 
-/* for SM we also need EWALD */
+/* for SM we also need EWALD and VARCHG*/
 #if defined SM
 #ifndef EWALD
 #define EWALD
+#endif
+#ifndef VARCHG
+#define VARCHG
 #endif
 #endif
 

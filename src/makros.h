@@ -103,17 +103,17 @@ INLINE static int MOD(shortint p, int q)
 #define ADP_LAMBDA(cell,i,sub)  (atoms.adp_lambda[(cell)->ind[i]].sub)
 #endif
 
-#if defined(VARCHG) || defined(SM)
+#ifdef VARCHG
 #define CHARGE(cell,i)          (atoms.charge [(cell)->ind[i]])
 #else
 #define CHARGE(cell,i)          (charge[ SORTE(cell,i) ])
 #endif
 
 #ifdef SM
-#define  CHI_SM(cell,i)         (atoms.chi_sm [(cell)->ind[i]])
+#define CHI_SM(cell,i)         (atoms.chi_sm [(cell)->ind[i]])
 #define Z_SM(cell,i)            (atoms.z_sm [(cell)->ind[i]])
 #define J_SM(cell,i)            (atoms.j_sm [(cell)->ind[i]])
-#define  V_SM(cell,i)           (atoms.v_sm [(cell)->ind[i]])
+#define V_SM(cell,i)           (atoms.v_sm [(cell)->ind[i]])
 #define V_k_SM(cell,i)          (atoms.v_k_sm [(cell)->ind[i]])
 
 #define B_SM(cell,i)         (atoms.b_sm [(cell)->ind[i]])
@@ -241,17 +241,17 @@ INLINE static int MOD(shortint p, int q)
 #define ADP_LAMBDA(cell,i,sub)  ((cell)->adp_lambda[i].sub)
 #endif
 
-#if defined(VARCHG) || defined(SM)
+#ifdef VARCHG
 #define CHARGE(cell,i)          ((cell)->charge[i])
 #else
 #define CHARGE(cell,i)          (charge[ SORTE(cell,i) ])
 #endif
 
 #ifdef SM
-#define  CHI_SM(cell,i)         ((cell)->chi_sm[i])
+#define CHI_SM(cell,i)         ((cell)->chi_sm[i])
 #define Z_SM(cell,i)            ((cell)->z_sm[i])
 #define J_SM(cell,i)            ((cell)->j_sm[i])
-#define  V_SM(cell,i)           ((cell)->v_sm[i])
+#define V_SM(cell,i)           ((cell)->v_sm[i])
 #define V_k_SM(cell,i)          ((cell)->v_k_sm[i])
 
 #define B_SM(cell,i)          ((cell)->b_sm[i])

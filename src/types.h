@@ -150,7 +150,7 @@ typedef struct {
   real        *adp_mu;
   sym_tensor  *adp_lambda;
 #endif
-#if defined(VARCHG) || defined(SM)
+#ifdef VARCHG
   real        *charge;      /* individual charge for each particle */
 #endif
 #ifdef SM
