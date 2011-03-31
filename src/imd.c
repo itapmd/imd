@@ -219,6 +219,10 @@ int main(int argc, char **argv)
   init_ttm();
 #endif
 
+#ifdef SM
+  /*  init_sm(); */
+#endif
+
   /* first phase of the simulation */
   if (steps_min <= steps_max) {
     if ((0==myid) && (0==myrank))

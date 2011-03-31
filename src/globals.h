@@ -866,6 +866,9 @@ EXTERN void (*do_laser_rescale)(void);  /* Function pointer for rescaling routin
 EXTERN real chi_0[2]; /* Initial value of the electronegativity */ 
 EXTERN real z_es[2]; /* Initial value of the effecitve core charge */
 EXTERN real j_0[2]; /* atomic hardness or self-Coulomb repulsion */
+EXTERN str255 na_pot INIT("\0");     /* nuclear attraction potential file   */
+EXTERN str255 cr_pot INIT("\0");     /* coulomb repulsive potential file   */
+EXTERN str255 erfc_r INIT("\0");     /* tabulated function erfc/r file   */
 #endif
 
 

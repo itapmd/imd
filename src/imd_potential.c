@@ -959,7 +959,11 @@ void create_coulomb_tables()
   /* First table: Coulomb potential */
   /* Calculate shifts */
   pair_int_coulomb(&coul_shift, &coul_fshift, ew_r2_cut);
+#ifdef SM
+  coulf2shift = ew_eps*ew_kappa*SQR(ew_kappa)*exp(-SQR(ew_kappa)*ew_r2_cut);
+#else
   coulf2shift = coul_eng*ew_kappa*SQR(ew_kappa)*exp(-SQR(ew_kappa)*ew_r2_cut);
+#endif
   coulf2shift /= sqrt(M_PI);
   coulf2shift -= 0.75*coul_fshift;
   coulf2shift *= 4.0/ew_r2_cut;
@@ -982,7 +986,11 @@ void create_coulomb_tables()
     /* 1/r^3 equiv. deriv of 1/r */
     grad -= coul_fshift;
     grad -= 0.5*coulf2shift*(r2-ew_r2_cut);
+#ifdef SM
+    grad /= -ew_eps;
+#else
     grad /= -coul_eng;
+#endif
     *PTR_2D(pt->table,i,sco_col,pt->maxsteps,ncols)=grad;
     /* Other tables: Short-range dipole fn */
     for(k=0;k<ntypepairs;k++){
@@ -1375,7 +1383,11 @@ void pair_int_ewald(real *pot, real *grad, int p_typ, int q_typ, real r2)
 {
   real  r, chg, fac;
   r     = SQRT(r2);
+#ifdef SM
+  chg   = charge[p_typ] * charge[q_typ] * ew_eps;
+#else
   chg   = charge[p_typ] * charge[q_typ] * coul_eng;
+#endif
   fac   = chg * 2.0 * ew_kappa / sqrt( M_PI );
   *pot  = chg * erfc1(ew_kappa * r) / r;
   /* return (1/r)*dV/dr as derivative */
@@ -1396,7 +1408,11 @@ void pair_int_coulomb(real *pot, real *grad, real r2)
 {
   real  r, chg, fac;
   r     = SQRT(r2);
+#ifdef SM
+  chg   = ew_eps;
+else
   chg   = coul_eng;
+#endif
   fac   = chg * 2.0 * ew_kappa / sqrt( M_PI );
   *pot  = chg * erfc1(ew_kappa * r) / r;
   /* return (1/r)*dV/dr as derivative */

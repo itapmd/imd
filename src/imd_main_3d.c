@@ -509,6 +509,10 @@ int main_loop(int simulation)
     calc_ttm();
 #endif
 
+#ifdef SM
+    do_charge_update();
+#endif
+
 #ifdef HC
     if ((hc_int > 0) && (steps >= hc_av_start) && 
         ((steps < hc_start) || ((steps - hc_start) % hc_int == 0)))
