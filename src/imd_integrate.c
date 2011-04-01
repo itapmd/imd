@@ -183,7 +183,7 @@ void move_atoms_nve(void)
 #endif
 
 #ifdef FNORM
-      fnorm += SPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
+      fnorm += SPRODN(KRAFT,p,i,KRAFT,p,i);
       /* determine the biggest force component */
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
