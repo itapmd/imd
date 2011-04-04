@@ -133,7 +133,7 @@ void do_forces_ewald_fourier(void)
   real   tmp, tmp_virial=0.0, sum_cos, sum_sin;
   real   kforce, kpot;
 #ifdef SM
-  real v_k, q_0;
+  real v_k;
 #endif
 
   /* Compute exp(ikr) recursively */
@@ -231,7 +231,7 @@ void do_forces_ewald_fourier(void)
 
         typ      = SORTE(p,i);
 #ifdef SM
-	CHARGE(p,i)= q_0;
+	CHARGE(p,i)= Q_SM(p,i);
         sum_cos += CHARGE(p,i) * coskr[cnt];
         sum_sin += CHARGE(p,i) * sinkr[cnt];
 #else

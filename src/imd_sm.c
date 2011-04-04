@@ -108,7 +108,7 @@ void do_v_real(void)
   int q_typ, p_typ;
   cell *p, *q;
   real erfc_r, cr_pot;
-  real q_0, j_sm, v_sm;
+  real j_sm, v_sm;
 
   /* Loop over all pairs of cells */
   for(r=0; r<ncells; ++r)
@@ -123,7 +123,7 @@ void do_v_real(void)
 	    p_typ   = SORTE(p,i);
 	    j_sm  = j_0[p_typ];
 	    /* Initial value of the charges */
-	    CHARGE(p,i)= q_0;
+	    CHARGE(p,i) = Q_SM(p,i);
 	    v_sm = CHARGE(p,i)*(j_sm-ew_vorf);
 
 	    /* For each atom in second cell */
@@ -138,7 +138,7 @@ void do_v_real(void)
 	      d.z = ORT(p,i,Z) - ORT(q,j,Z);
 	      
 	      q_typ = SORTE(q,j);
-	      CHARGE(q,j) = q_0;
+	      CHARGE(q,j) = Q_SM(q,j);
 	      r2    = SPROD(d,d);
 	      col1  = q_typ * ntypes + p_typ;
 	      col2  = p_typ * ntypes + q_typ;
