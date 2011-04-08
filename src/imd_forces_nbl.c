@@ -42,7 +42,11 @@
 
 ******************************************************************************/
 
+#define NBLMINLEN 100000
+
 int  *tl=NULL, *tb=NULL, *cl_off=NULL, *cl_num=NULL, nb_max=0;
+
+
 
 /******************************************************************************
 *
@@ -118,6 +122,9 @@ int estimate_nblist_size(void)
       }
     }
   }
+#ifdef MPI
+  // printf ("myid: %d nb-list size: %d\n",myid,tn);fflush(stdout);
+#endif
   return tn;
 }
 
@@ -171,7 +178,7 @@ void make_nblist(void)
     cl_num = (int *) malloc(at_max * sizeof(int));
   }
   if (NULL==tb) {
-    if (0==last_nbl_len) nb_max = (int) (nbl_size * estimate_nblist_size());
+    if (0==last_nbl_len) nb_max =( (int) (nbl_size * estimate_nblist_size())  > NBLMINLEN ) ?  ( (int) (nbl_size * estimate_nblist_size())) : NBLMINLEN;
     else                 nb_max = (int) (nbl_size * last_nbl_len);
     tb = (int *) malloc(nb_max * sizeof(int));
   }
