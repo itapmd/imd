@@ -2512,17 +2512,17 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     /* Initial value of the electronegativity */
     else if (strcasecmp(token,"chi_0")==0) {
       if (ntypes==0) error("specify parameter ntypes before chi_0");
-      getparam(token, chi_0, PARAM_REAL, ntypepairs, ntypepairs);
+      getparam(token, chi_0, PARAM_REAL, ntypes, ntypes);
     }
     /* Initial value of the effecitve core charge */
     else if (strcasecmp(token,"z_es")==0) {
       if (ntypes==0) error("specify parameter ntypes before z_es");
-      getparam(token, z_es, PARAM_REAL, ntypepairs, ntypepairs);
+      getparam(token, z_es, PARAM_REAL, ntypes, ntypes);
     }
     /* atomic hardness or self-Coulomb repulsion */
     else if (strcasecmp(token,"j_0")==0) {
       if (ntypes==0) error("specify parameter ntypes before j_0");
-      getparam(token, j_0, PARAM_REAL, ntypepairs, ntypepairs);
+      getparam(token, j_0, PARAM_REAL, ntypes, ntypes);
     }
     /* nuclear attraction potential */
     else if (strcasecmp(token,"na_pot")==0) {
