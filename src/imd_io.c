@@ -2421,7 +2421,7 @@ void write_ssdef(int steps)
 
 
   /* and write out information depending on the options and simulation settings */
-  fprintf(ssdef_file, "%d %d %.18e %e ", sscount,nfc,(double) Epot,(double) SQRT( fnorm / nactive ) ); /* wolfram 24_06_10  Epot: %e to %.18e */
+  fprintf(ssdef_file, "%d %d %.12e %e ", sscount,nfc,(double) Epot,(double) SQRT( fnorm / nactive ) ); 
   
 #ifdef TWOD
     fprintf(ssdef_file," %e %e ", (double)  box_x.x, (double)  box_y.y );
