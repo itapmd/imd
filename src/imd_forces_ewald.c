@@ -480,9 +480,15 @@ void init_ewald(void)
   vorf1    = twopi * ew_eps / volume;
 #endif
 
+#ifdef SM
+  ew_nx = (int) (ew_kcut * SQRT( SPROD(box_x,box_x) ) / fourpi) + 1;
+  ew_ny = (int) (ew_kcut * SQRT( SPROD(box_y,box_y) ) / fourpi) + 1;
+  ew_nz = (int) (ew_kcut * SQRT( SPROD(box_z,box_z) ) / fourpi) + 1;
+#else
   ew_nx = (int) (ew_kcut * SQRT( SPROD(box_x,box_x) ) / twopi) + 1;
   ew_ny = (int) (ew_kcut * SQRT( SPROD(box_y,box_y) ) / twopi) + 1;
   ew_nz = (int) (ew_kcut * SQRT( SPROD(box_z,box_z) ) / twopi) + 1;
+#endif
   printf("EWALD: nx = %d, ny = %d, nz = %d\n", ew_nx, ew_ny, ew_nz);
 
   /* Allocate memory for k-vectors */
