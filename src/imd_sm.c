@@ -194,7 +194,7 @@ void do_cg(void)
   /*  norm_b +=SPRODN(B,p,i,B,p,i); */
   norm_b=0.0;
   for (k=0; k<NCELLS; ++k) {
-    int  i, sort;
+    int  i;
     cell *p;
     p = CELLPTR(k);
     /* loop over all particles */
@@ -213,7 +213,7 @@ void do_cg(void)
   rho[kstep] = 0.0;
   /*  rho[kstep] += SPRODN(R,p,i,R,p,i); */
   for (k=0; k<NCELLS; ++k) {
-    int  i, sort;
+    int  i;
     cell *p;
     p = CELLPTR(k);
     /* loop over all particles */
@@ -228,7 +228,7 @@ void do_cg(void)
       
       if (kstep == 1)
 	for (k=0; k<NCELLS; ++k) {
-	  int  i, sort;
+	  int  i;
 	  cell *p;
 	  p = CELLPTR(k);
 	  /* loop over all particles */
@@ -240,7 +240,7 @@ void do_cg(void)
 	{
 	  beta = rho[kstep-1]/rho[kstep-2];	  
 	  for (k=0; k<NCELLS; ++k) {
-	    int  i, sort;
+	    int  i;
 	    cell *p;
 	    p = CELLPTR(k);
 	    /* loop over all particles */
@@ -253,7 +253,7 @@ void do_cg(void)
       dad = 0.0;
       /* dad += SPRODN(D,p,i,V,p,i); */
       for (k=0; k<NCELLS; ++k) {
-	int  i, sort;
+	int  i;
 	cell *p;
 	p = CELLPTR(k);
 	/* loop over all particles */
@@ -265,7 +265,7 @@ void do_cg(void)
       alpha = rho[kstep-1]/dad;
 
       for (k=0; k<NCELLS; ++k) {
-	int  i, sort;
+	int  i;
 	cell *p;
 	p = CELLPTR(k);
 	/* loop over all particles */
@@ -278,7 +278,7 @@ void do_cg(void)
       rho[kstep] = 0.0;
       /* rho[kstep]+= SPRODN(R,p,i,R,p,i); */
       for (k=0; k<NCELLS; ++k) {
-	int  i, sort;
+	int  i;
 	cell *p;
 	p = CELLPTR(k);
 	/* loop over all particles */
@@ -312,7 +312,7 @@ void do_charge_update(void)
   
   /* loop over all cells */
   for (k=0; k<NCELLS; ++k) {
-    int  i, sort;
+    int  i;
     cell *p;
     p = CELLPTR(k);
     
@@ -332,7 +332,7 @@ void do_charge_update(void)
 
   /* loop over all cells */
   for (k=0; k<NCELLS; ++k) {
-    int  i, sort;
+    int  i;
     cell *p;
     p = CELLPTR(k);
     
@@ -347,7 +347,7 @@ void do_charge_update(void)
 
   /* loop over all cells */
   for (k=0; k<NCELLS; ++k) {
-    int  i, sort;
+    int  i;
     cell *p;
     p = CELLPTR(k);
     
@@ -367,7 +367,7 @@ void do_charge_update(void)
   
   /* loop over all cells */
   for (k=0; k<NCELLS; ++k) {
-    int  i, sort;
+    int  i;
     cell *p;
     p = CELLPTR(k);
     
@@ -391,7 +391,7 @@ void do_charge_update(void)
 
   /* loop over all cells */
   for (k=0; k<NCELLS; ++k) {
-    int  i, sort;
+    int  i;
     cell *p;
     p = CELLPTR(k);
     
