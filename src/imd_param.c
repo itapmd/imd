@@ -2525,16 +2525,16 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       getparam(token, j_0, PARAM_REAL, ntypes, ntypes);
     }
     /* nuclear attraction potential */
-    else if (strcasecmp(token,"na_pot")==0) {
-      getparam(token,na_pot,PARAM_STR,1,255);
+    else if (strcasecmp(token,"na_pot_file")==0) {
+      getparam(token, na_pot_filename,PARAM_STR,1,255);
     }
     /* coulomb repulsive potential */
-    else if (strcasecmp(token,"cr_pot")==0) {
-      getparam(token,cr_pot,PARAM_STR,1,255);
+    else if (strcasecmp(token,"cr_pot_file")==0) {
+      getparam(token, cr_pot_filename,PARAM_STR,1,255);
     }
     /* tabulated function erfc/r */
-    else if (strcasecmp(token,"erfc_r")==0) {
-      getparam(token,erfc_r,PARAM_STR,1,255);
+    else if (strcasecmp(token,"erfc_file")==0) {
+      getparam(token, erfc_filename,PARAM_STR,1,255);
     }
 #endif /* SM */
 #ifdef FEFL

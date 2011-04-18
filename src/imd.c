@@ -220,7 +220,7 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef SM
-  /*  init_sm(); */
+  init_sm();
 #endif
 
   /* first phase of the simulation */
@@ -354,6 +354,11 @@ int main(int argc, char **argv)
 #ifdef EEAM
     free_pot_table(&emod_pot);
 #endif
+#endif
+#ifdef SM
+    free_pot_table(&na_pot_tab);
+    free_pot_table(&cr_pot_tab);
+    free_pot_table(&erfc_r_tab);
 #endif
 
     volume_init = 0.0;

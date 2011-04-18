@@ -24,6 +24,21 @@
 
 /*****************************************************************************
 *
+* Read in nuclear attraction potential, coulomb repulsive potential, and 
+* tabulated error function 
+*
+******************************************************************************/
+
+void init_sm(void)
+{
+  read_pot_table(&na_pot_tab,na_pot_filename,ntypes*ntypes,1);
+  read_pot_table(&cr_pot_tab,cr_pot_filename,ntypes*ntypes,1);
+  read_pot_table(&erfc_r_tab,erfc_filename,ntypes*ntypes,1);
+}
+
+
+/*****************************************************************************
+*
 * Compute the electronegativity
 *
 ******************************************************************************/
@@ -54,7 +69,7 @@ void do_electronegativity(void)
 	    chi_sm = chi_0[p_typ];
 	    
 	    /* For each atom in second cell */
-	    jstart = (p==q ? i : 0);
+	    jstart = (p==q ? i+1 : 0);
 	    
 	    for (j=jstart; j<q->n; ++j) {
 	      
@@ -71,7 +86,7 @@ void do_electronegativity(void)
 	      
 #ifdef DEBUG
 	      if (0==r2) { char msgbuf[256];
-		sprintf(msgbuf, "Distance is zero between particles %d and %d!\n",
+		sprintf(msgbuf, "Distance 1 is zero in module sm between particles %d and %d!\n",
 			NUMMER(p,i), NUMMER(q,j));
 		error(msgbuf);
 	      }
@@ -127,7 +142,7 @@ void do_v_real(void)
 	    v_sm = CHARGE(p,i)*(j_sm-ew_vorf);
 
 	    /* For each atom in second cell */
-	    jstart = (p==q ? i : 0);
+	    jstart = (p==q ? i+1 : 0);
 	    
 	    /* for each atom in neighbouring cell */
 	    for (j=jstart; j<q->n; ++j) {
@@ -145,7 +160,7 @@ void do_v_real(void)
 	      
 #ifdef DEBUG
 	      if (0==r2) { char msgbuf[256];
-		sprintf(msgbuf, "Distance is zero between particles %d and %d!\n",
+		sprintf(msgbuf, "Distance 2 is zero in module between particles sm %d and %d!\n",
 			NUMMER(p,i), NUMMER(q,j));
 		error(msgbuf);
 	      }
