@@ -338,8 +338,8 @@ void do_charge_update(void)
     
     /* loop over all particles */
     for (i=0; i<p->n; ++i) {
+      sum1 += X_SM(p,i);
       S_SM(p,i) = X_SM(p,i);
-      sum1 += S_SM(p,i);
     }
   }
   
@@ -418,8 +418,9 @@ void do_charge_update(void)
       q_O/n_O;
     }
   
-  printf("Total charge: qtot = %e", q_tot);
-  printf("Average charge of Al: qAl = %e", q_Al/n_Al);
-  printf("Average charge of O: qO = %e", q_O/n_O);
+  printf("Sums: sum1 = %e sum2 = %e\n", sum1, sum2);
+  printf("Total charge: qtot = %e\n", q_tot);
+  printf("Average charge of Al: qAl = %e %d\n", q_Al,n_Al);
+  printf("Average charge of O: qO = %e %d\n", q_O,n_O);
 }
 
