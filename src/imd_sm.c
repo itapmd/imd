@@ -53,7 +53,7 @@ void do_electronegativity(void)
   int q_typ, p_typ;
   cell *p, *q;
   real na_pot_p, na_pot_q, cr_pot;
-  real chi_sm_p, chi_sm_q, z_sm_p, z_sm_q;
+  real z_sm_p, z_sm_q;
 
   /* Initialization of all cells */
   for(r=0; r<ncells; ++r)
@@ -61,7 +61,6 @@ void do_electronegativity(void)
       p = CELLPTR(r);
       for (i=0; i<p->n; ++i) 
 	{ 
-	  chi_sm_p = 0;
 	  p_typ   = SORTE(p,i);
 	  CHI_SM(p,i) = chi_0[p_typ];
 	}
@@ -140,7 +139,7 @@ void do_v_real(void)
   int col1, col2, inc=ntypes*ntypes;
   int q_typ, p_typ;
   cell *p, *q;
-  real erfc_r, cr_pot;
+  real erfc_r=0, cr_pot=0;
   real j_sm_p, j_sm_q, v_sm_p, v_sm_q;
 
   /* Inititalisierung aller Zellen */
@@ -227,6 +226,7 @@ void do_v_kspace(void)
   px = (ew_nx+1) * natoms;  mx = (ew_nx-1) * natoms;
   py = (ew_ny+1) * natoms;  my = (ew_ny-1) * natoms;
   pz = (ew_nz+1) * natoms;  mz = (ew_nz-1) * natoms;
+
   cnt = 0;
   for (c=0; c<ncells; c++) {
     cell *p = CELLPTR(c);
@@ -331,13 +331,25 @@ void do_v_kspace(void)
 
 	/* update fourier part of v_i */
         v_k   = ew_expk[k] * (sinkr[cnt] * sum_sin + coskr[cnt] * sum_cos);
-        V_k_SM(p,i)  += v_k;   
 	/* the total vector v_i */
 	V_SM(p,i) += v_k;
         cnt++;
       }
     }
   }  /* k */
+
+  for (c=0; c<ncells; c++) {
+    
+    cell *p = CELLPTR(c);
+    
+    for (i=0; i<p->n; i++) {
+      printf("%d %d %e\n", c,i,V_SM(p,i));
+    }
+  }
+
+  char msgbuf[256];
+  error(msgbuf);
+	  
 }
 /*****************************************************************************
 *
@@ -351,7 +363,7 @@ void do_cg(void)
   real beta, alpha, rho[kstepmax];
   real dad, tolerance, tolerance2, norm_b, epsilon_cg=0.001;
   
-  /* compute V_SM and V_K_SM */
+  /* compute V_SM */
   do_v_real();
   do_v_kspace();
       
@@ -415,7 +427,7 @@ void do_cg(void)
 	  }
 	}
       
-      /* update V_SM and V_K_SM */
+      /* update V_SM */
       do_v_real();
       do_v_kspace();
       
@@ -568,7 +580,7 @@ void do_charge_update(void)
     for (i=0; i<p->n; ++i) {
       
       CHARGE(p,i) = S_SM(p,i)-potchem*X_SM(p,i);
-      q_tot += CHARGE(p,i);
+      q_tot += CHARGE(p,i); 
       typ = SORTE(p,i);
       if (typ == 0) {
 	q_Al += CHARGE(p,i);

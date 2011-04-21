@@ -157,8 +157,7 @@ typedef struct {
   real *chi_sm;              /* electronegativity */
   real *z_sm;                /* effective core charge */
   real *j_sm;               /* repulsiveness parameter */
-  real *v_sm;                /* real part of integral */
-  real *v_k_sm;              /* reciprocal part of integral */
+  real *v_sm;                /* integral */
 
   real *b_sm;                /* Ax=b */
   real *x_sm;                /* Ax=b */

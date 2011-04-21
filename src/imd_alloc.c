@@ -587,7 +587,7 @@ void alloc_cell(cell *p, int n)
   memalloc(&p->z_sm,   n, sizeof(real),   al, ncopy, 0, "z_sm");
   memalloc(&p->j_sm,   n, sizeof(real),   al, ncopy, 0, "j_sm");
   memalloc(&p->v_sm,   n, sizeof(real),   al, ncopy, 0, "v_sm");
-  memalloc(&p->v_k_sm,   n, sizeof(real),   al, ncopy, 0, "v_k_sm");
+
   memalloc(&p->b_sm,   n, sizeof(real),   al, ncopy, 0, "b_sm");
   memalloc(&p->x_sm,   n, sizeof(real),   al, ncopy, 0, "x_sm");
   memalloc(&p->r_sm,   n, sizeof(real),   al, ncopy, 0, "r_sm");

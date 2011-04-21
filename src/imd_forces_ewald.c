@@ -258,7 +258,6 @@ void do_forces_ewald_fourier(void)
 #ifdef SM
 	/* update fourier part of v_i */
         v_k   = ew_expk[k] * (sinkr[cnt] * sum_sin + coskr[cnt] * sum_cos);
-        V_k_SM(p,i)  += v_k;   
 	/* the total vector v_i */
 	V_SM(p,i) += v_k;
 #else
@@ -472,11 +471,11 @@ void init_ewald(void)
 #ifdef SM
   fourpi    = 4.0 * M_PI;
   ew_vorf  = 2.0 * ew_kappa / SQRT( M_PI );
-  vorf1     = fourpi / volume;
+  vorf1     = fourpi * ew_eps / volume;
 #else
   twopi    = 2.0 * M_PI;
   ew_vorf  = ew_kappa / SQRT( M_PI );
-  vorf1    = twopi * ew_eps / volume;
+  vorf1    = twopi * coul_eng / volume;
 #endif
 
 #ifdef SM
@@ -526,7 +525,7 @@ void init_ewald(void)
 
       }
 
-  printf("EWALD: %d k-vectors\n", ew_totk);
+  printf("EWALD: %d k-vectors\n", ew_totk); 
 
   /* Allocate memory for exp(ikr) */
   ew_dx = 2 * ew_nx + 1;
