@@ -55,11 +55,16 @@ void do_electronegativity(void)
   real na_pot_p, na_pot_q, cr_pot;
   real chi_sm_p, chi_sm_q, z_sm_p, z_sm_q;
 
-  /* Inititalisierung aller Zellen */
+  /* Initialization of all cells */
   for(r=0; r<ncells; ++r)
     {
       p = CELLPTR(r);
-      for (i=0; i<p->n; ++i) CHI_SM(p,i) = 0;
+      for (i=0; i<p->n; ++i) 
+	{ 
+	  chi_sm_p = 0;
+	  p_typ   = SORTE(p,i);
+	  CHI_SM(p,i) = chi_0[p_typ];
+	}
     }
 	  
   /* Loop over all pairs of cells */
@@ -73,7 +78,6 @@ void do_electronegativity(void)
 	for (i=0; i<p->n; ++i) 
 	  {
 	    p_typ   = SORTE(p,i);
-	    chi_sm_p = chi_0[p_typ];
 	    z_sm_p = z_es[p_typ];
 	    
 	    /* For each atom in second cell */
@@ -85,9 +89,10 @@ void do_electronegativity(void)
 	      d.x = ORT(p,i,X) - ORT(q,j,X);
 	      d.y = ORT(p,i,Y) - ORT(q,j,Y);
 	      d.z = ORT(p,i,Z) - ORT(q,j,Z);
+
+	      /* minimum image condition ? */
 	      
 	      q_typ = SORTE(q,j);
-	      chi_sm_q = chi_0[q_typ];
 	      z_sm_q = z_es[q_typ];
 
 	      r2    = SPROD(d,d);
@@ -103,20 +108,17 @@ void do_electronegativity(void)
 #endif
 	      
 	      /* compute electronegativity */
-	      if (r2 < na_pot_tab.end[col2]){
+	      if (r2 < na_pot_tab.end[col2]){  /* AABB */
 		VAL_FUNC(na_pot_p, na_pot_tab, col2, inc, r2, is_short);
 	      }
 	      if (r2 < na_pot_tab.end[col1]){
 		VAL_FUNC(na_pot_q, na_pot_tab, col1, inc, r2, is_short);
 	      }
-	      if (r2 < cr_pot_tab.end[col2]){
+	      if (r2 < cr_pot_tab.end[col2]){  /* ABBC */
 		VAL_FUNC(cr_pot, cr_pot_tab, col2, inc, r2, is_short);
 	      }
-	      chi_sm_p += z_sm_q*(na_pot_p-cr_pot);
-	      CHI_SM(p,i) += chi_sm_p;
-
-	      chi_sm_q += z_sm_p*(na_pot_q-cr_pot);
-	      CHI_SM(q,j) += chi_sm_q;
+	      CHI_SM(p,i) += z_sm_q*(na_pot_p-cr_pot);
+	      CHI_SM(q,j) += z_sm_p*(na_pot_q-cr_pot);
 	    }
 	  }
       }
@@ -145,7 +147,12 @@ void do_v_real(void)
   for(r=0; r<ncells; ++r)
     {
       p = CELLPTR(r);
-      for (i=0; i<p->n; ++i) V_SM(p,i) = 0;
+      for (i=0; i<p->n; ++i) 
+	{
+	  p_typ   = SORTE(p,i);
+	  j_sm_p  = j_0[p_typ];
+	  V_SM(p,i) = Q_SM(p,i)*(j_sm_p-ew_vorf);
+	}
     }
 	  
   /* Loop over all pairs of cells */
@@ -158,9 +165,6 @@ void do_v_real(void)
 	/* for each atom in first cell */
 	for (i=0; i<p->n; ++i) 
 	  {
-	    p_typ   = SORTE(p,i);
-	    j_sm_p  = j_0[p_typ];
-	    v_sm_p = Q_SM(p,i)*(j_sm_p-ew_vorf);
 
 	    /* For each atom in second cell */
 	    jstart = (p==q ? i+1 : 0);
@@ -175,12 +179,9 @@ void do_v_real(void)
 
 	      /* minimum image convention? */
 	      
-	      q_typ = SORTE(q,j);
-	      j_sm_q  = j_0[q_typ];
-	      v_sm_q = Q_SM(q,i)*(j_sm_q-ew_vorf);
-
 	      r2    = SPROD(d,d);
-	      col1  = q_typ * ntypes + p_typ;
+	      /* redundant due to symmetry p<->q
+		 col1  = q_typ * ntypes + p_typ; */
 	      col2  = p_typ * ntypes + q_typ;
 	      
 #ifdef DEBUG
@@ -192,17 +193,14 @@ void do_v_real(void)
 #endif
 	      
 	      /* compute real space term of v_i */
-	      if (r2 < erfc_r_tab.end[col2]){
+	      if (r2 < erfc_r_tab.end[col2]){ /* AAAA */
 		VAL_FUNC(erfc_r, erfc_r_tab, col2, inc, r2, is_short);
 	      }
-	      if (r2 < cr_pot_tab.end[col2]){
+	      if (r2 < cr_pot_tab.end[col2]){ /* ABBC */
 		VAL_FUNC(cr_pot, cr_pot_tab, col2, inc, r2, is_short);
 	      }
-	      v_sm_p += Q_SM(q,j)*(erfc_r+cr_pot);
-	      V_SM(p,i) += v_sm_p;
-
-	      v_sm_q += Q_SM(p,j)*(erfc_r+cr_pot);
-	      V_SM(q,j) += v_sm_q;
+	      V_SM(p,i) += Q_SM(q,j)*(erfc_r+cr_pot);
+	      V_SM(q,j) += Q_SM(p,j)*(erfc_r+cr_pot);
 	    }
 	  }
       }
@@ -583,20 +581,20 @@ void do_charge_update(void)
     }
   }
 
-  if ((n_Al != 0) || (n_O != 0))
+  /* if ((n_Al != 0) || (n_O != 0))
     {
       q_Al/n_Al;
       q_O/n_O;
-    }
+      } */
   
   printf("Sums: sum1 = %e sum2 = %e\n", sum1, sum2);
   printf("Total charge: qtot = %e\n", q_tot);
 #ifndef DEBUG
-  printf("Total charge and number of Al: qAl = %e\n", q_Al/n_Al);
-  printf("Total charge and number of O: qO = %e\n", q_O/n_O);
+  printf("Average charge of Al: qAl = %e\n", q_Al/n_Al);
+  printf("Average charge of O: qO = %e\n", q_O/n_O);
 #else
-  printf("Average charge of Al: qAl = %e %d\n", q_Al,n_Al);
-  printf("Average charge of O: qO = %e %d\n", q_O,n_O);
+  printf("Total charge and number of Al: qAl = %e %d\n", q_Al,n_Al);
+  printf("Total charge and number of O: qO = %e %d\n", q_O,n_O);
 #endif
 }
 
