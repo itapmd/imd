@@ -52,9 +52,16 @@ void do_electronegativity(void)
   int col1, col2, inc=ntypes*ntypes;
   int q_typ, p_typ;
   cell *p, *q;
-  real na_pot, cr_pot;
-  real chi_sm, z_sm;
+  real na_pot_p, na_pot_q, cr_pot;
+  real chi_sm_p, chi_sm_q, z_sm_p, z_sm_q;
 
+  /* Inititalisierung aller Zellen */
+  for(r=0; r<ncells; ++r)
+    {
+      p = CELLPTR(r);
+      for (i=0; i<p->n; ++i) CHI_SM(p,i) = 0;
+    }
+	  
   /* Loop over all pairs of cells */
   for(r=0; r<ncells; ++r)
     for(s=r; s<ncells; ++s)
@@ -66,7 +73,8 @@ void do_electronegativity(void)
 	for (i=0; i<p->n; ++i) 
 	  {
 	    p_typ   = SORTE(p,i);
-	    chi_sm = chi_0[p_typ];
+	    chi_sm_p = chi_0[p_typ];
+	    z_sm_p = z_es[p_typ];
 	    
 	    /* For each atom in second cell */
 	    jstart = (p==q ? i+1 : 0);
@@ -79,7 +87,9 @@ void do_electronegativity(void)
 	      d.z = ORT(p,i,Z) - ORT(q,j,Z);
 	      
 	      q_typ = SORTE(q,j);
-	      z_sm = z_es[q_typ];
+	      chi_sm_q = chi_0[q_typ];
+	      z_sm_q = z_es[q_typ];
+
 	      r2    = SPROD(d,d);
 	      col1  = q_typ * ntypes + p_typ;
 	      col2  = p_typ * ntypes + q_typ;
@@ -94,13 +104,19 @@ void do_electronegativity(void)
 	      
 	      /* compute electronegativity */
 	      if (r2 < na_pot_tab.end[col2]){
-		VAL_FUNC(na_pot, na_pot_tab, col2, inc, r2, is_short);
+		VAL_FUNC(na_pot_p, na_pot_tab, col2, inc, r2, is_short);
+	      }
+	      if (r2 < na_pot_tab.end[col1]){
+		VAL_FUNC(na_pot_q, na_pot_tab, col1, inc, r2, is_short);
 	      }
 	      if (r2 < cr_pot_tab.end[col2]){
 		VAL_FUNC(cr_pot, cr_pot_tab, col2, inc, r2, is_short);
 	      }
-	      chi_sm += z_sm*(na_pot-cr_pot);
-	      CHI_SM(p,i) = chi_sm;
+	      chi_sm_p += z_sm_q*(na_pot_p-cr_pot);
+	      CHI_SM(p,i) += chi_sm_p;
+
+	      chi_sm_q += z_sm_p*(na_pot_q-cr_pot);
+	      CHI_SM(q,j) += chi_sm_q;
 	    }
 	  }
       }
@@ -123,8 +139,15 @@ void do_v_real(void)
   int q_typ, p_typ;
   cell *p, *q;
   real erfc_r, cr_pot;
-  real j_sm, v_sm;
+  real j_sm_p, j_sm_q, v_sm_p, v_sm_q;
 
+  /* Inititalisierung aller Zellen */
+  for(r=0; r<ncells; ++r)
+    {
+      p = CELLPTR(r);
+      for (i=0; i<p->n; ++i) V_SM(p,i) = 0;
+    }
+	  
   /* Loop over all pairs of cells */
   for(r=0; r<ncells; ++r)
     for(s=r; s<ncells; ++s)
@@ -136,10 +159,10 @@ void do_v_real(void)
 	for (i=0; i<p->n; ++i) 
 	  {
 	    p_typ   = SORTE(p,i);
-	    j_sm  = j_0[p_typ];
+	    j_sm_p  = j_0[p_typ];
 	    /* Initial value of the charges */
 	    CHARGE(p,i) = Q_SM(p,i);
-	    v_sm = CHARGE(p,i)*(j_sm-ew_vorf);
+	    v_sm_p = CHARGE(p,i)*(j_sm_p-ew_vorf);
 
 	    /* For each atom in second cell */
 	    jstart = (p==q ? i+1 : 0);
@@ -151,9 +174,14 @@ void do_v_real(void)
 	      d.x = ORT(p,i,X) - ORT(q,j,X);
 	      d.y = ORT(p,i,Y) - ORT(q,j,Y);
 	      d.z = ORT(p,i,Z) - ORT(q,j,Z);
+
+	      /* minimum image convention? */
 	      
 	      q_typ = SORTE(q,j);
+	      j_sm_q  = j_0[q_typ];
 	      CHARGE(q,j) = Q_SM(q,j);
+	      v_sm_q = CHARGE(q,i)*(j_sm_q-ew_vorf);
+
 	      r2    = SPROD(d,d);
 	      col1  = q_typ * ntypes + p_typ;
 	      col2  = p_typ * ntypes + q_typ;
@@ -173,8 +201,11 @@ void do_v_real(void)
 	      if (r2 < cr_pot_tab.end[col2]){
 		VAL_FUNC(cr_pot, cr_pot_tab, col2, inc, r2, is_short);
 	      }
-	      v_sm += CHARGE(q,j)*(erfc_r+cr_pot);
-	      V_SM(p,i) = v_sm;
+	      v_sm_p += CHARGE(q,j)*(erfc_r+cr_pot);
+	      V_SM(p,i) += v_sm_p;
+
+	      v_sm_q += CHARGE(p,j)*(erfc_r+cr_pot);
+	      V_SM(q,j) += v_sm_q;
 	    }
 	  }
       }
@@ -225,7 +256,7 @@ void do_cg(void)
   while ((rho[kstep] > tolerance2) && (kstep < kstepmax))
     {
       kstep++;
-      
+
       if (kstep == 1)
 	for (k=0; k<NCELLS; ++k) {
 	  int  i;
@@ -233,7 +264,7 @@ void do_cg(void)
 	  p = CELLPTR(k);
 	  /* loop over all particles */
 	  for (i=0; i<p->n; ++i) {      
-	    D_SM(p,i) = R_SM(p,i);
+	    Q_SM(p,i) = D_SM(p,i) = R_SM(p,i);
 	  }
 	}
       else
@@ -245,10 +276,16 @@ void do_cg(void)
 	    p = CELLPTR(k);
 	    /* loop over all particles */
 	    for (i=0; i<p->n; ++i) {      
-	      D_SM(p,i) = R_SM(p,i) + beta* D_SM(p,i);
+	      Q_SM(p,i) = D_SM(p,i) = R_SM(p,i) + beta* D_SM(p,i);
+
 	    }
 	  }
 	}
+      
+      /* update von V_SM und V_K_SM */
+      
+      do_v_real();
+      do_forces_ewald_fourier();
       
       dad = 0.0;
       /* dad += SPRODN(D,p,i,V,p,i); */
@@ -304,9 +341,9 @@ void do_charge_update(void)
   real q_Al, q_O, q_tot;
   int n_O, n_Al;
   
-  /* Compute V_SM, V_k_SM */
-  do_v_real();
-  do_forces_ewald_fourier();
+  /* Update electronegativity since coordinates have changed */
+
+  do_electronegativity();
 
   /* Solving the first linear system V_ij s_j = -chi_i */
   
@@ -420,7 +457,12 @@ void do_charge_update(void)
   
   printf("Sums: sum1 = %e sum2 = %e\n", sum1, sum2);
   printf("Total charge: qtot = %e\n", q_tot);
+#ifndef DEBUG
+  printf("Total charge and number of Al: qAl = %e\n", q_Al/n_Al);
+  printf("Total charge and number of O: qO = %e\n", q_O/n_O);
+#else
   printf("Average charge of Al: qAl = %e %d\n", q_Al,n_Al);
   printf("Average charge of O: qO = %e %d\n", q_O,n_O);
+#endif
 }
 
