@@ -229,12 +229,11 @@ void do_forces_ewald_fourier(void)
                      + coskx[offx+cnt] * sinky[offy+cnt] * coskz[offz+cnt]
                      + coskx[offx+cnt] * cosky[offy+cnt] * sinkz[offz+cnt];
 
-        typ      = SORTE(p,i);
 #ifdef SM
-	CHARGE(p,i)= Q_SM(p,i);
-        sum_cos += CHARGE(p,i) * coskr[cnt];
-        sum_sin += CHARGE(p,i) * sinkr[cnt];
+        sum_cos += Q_SM(p,i) * coskr[cnt];
+        sum_sin += Q_SM(p,i) * sinkr[cnt];
 #else
+        typ      = SORTE(p,i);
         sum_cos += charge[typ] * coskr[cnt];
         sum_sin += charge[typ] * sinkr[cnt];
 #endif
@@ -256,8 +255,6 @@ void do_forces_ewald_fourier(void)
 
       for (i=0; i<p->n; i++) {
 
-        typ    = SORTE(p,i);
-
 #ifdef SM
 	/* update fourier part of v_i */
         v_k   = ew_expk[k] * (sinkr[cnt] * sum_sin + coskr[cnt] * sum_cos);
@@ -265,6 +262,8 @@ void do_forces_ewald_fourier(void)
 	/* the total vector v_i */
 	V_SM(p,i) += v_k;
 #else
+        typ    = SORTE(p,i);
+
         /* update potential energy */
         kpot   = charge[typ] * ew_expk[k]
 	         * (sinkr[cnt] * sum_sin + coskr[cnt] * sum_cos);
