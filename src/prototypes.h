@@ -637,7 +637,6 @@ void ttm_overwrite(void);
 void init_sm(void);
 void do_electronegativity(void);
 void do_v_real(void);
-void do_v_kspace(void);
 void do_cg(void);
 void do_charge_update(void);
 #endif

@@ -205,152 +205,6 @@ void do_v_real(void)
       }
 }
 
-/******************************************************************************
-*
-*  do_v_kspace
-*
-*  computes the fourier part of the Ewald sum
-*
-******************************************************************************/
-
-void do_v_kspace(void)
-{
-  int    i, j, k, l, m, n, c;
-  int    cnt, typ, offx, offy, offz;
-  int    px, py, pz, mx, my, mz;
-  real   tmp, tmp_virial=0.0, sum_cos, sum_sin;
-  real   kforce, kpot;
-  real v_k;
-
-  /* Compute exp(ikr) recursively */
-  px = (ew_nx+1) * natoms;  mx = (ew_nx-1) * natoms;
-  py = (ew_ny+1) * natoms;  my = (ew_ny-1) * natoms;
-  pz = (ew_nz+1) * natoms;  mz = (ew_nz-1) * natoms;
-
-  cnt = 0;
-  for (c=0; c<ncells; c++) {
-    cell *p = CELLPTR(c);
-    for (i=0; i<p->n; i++) {
-      tmp = twopi * SPRODX(ORT,p,i,tbox_x);
-      coskx[px+cnt] =  cos(tmp);
-      coskx[mx+cnt] =  coskx[px+cnt];
-      sinkx[px+cnt] =  sin(tmp);
-      sinkx[mx+cnt] = -sinkx[px+cnt]; 
-      tmp = twopi * SPRODX(ORT,p,i,tbox_y);
-      cosky[py+cnt] =  cos(tmp);
-      cosky[my+cnt] =  cosky[py+cnt];
-      sinky[py+cnt] =  sin(tmp);
-      sinky[my+cnt] = -sinky[py+cnt];
-      tmp = twopi * SPRODX(ORT,p,i,tbox_z);
-      coskz[pz+cnt] = cos(tmp);
-      sinkz[pz+cnt] = sin(tmp);
-      cnt++;
-    }
-  }
-
-  for (j=2; j<=ew_nx; j++) {
-    int pp, qq, mm, ee, i;
-    pp  = (ew_nx+j  ) * natoms;
-    qq  = (ew_nx+j-1) * natoms;
-    mm  = (ew_nx-j  ) * natoms;
-    ee  = (ew_nx  +1) * natoms;
-    for (i=0; i<natoms; i++) {
-      coskx[pp+i] =   coskx[qq+i] * coskx[ee+i] - sinkx[qq+i] * sinkx[ee+i];
-      coskx[mm+i] =   coskx[pp+i];
-      sinkx[pp+i] =   coskx[qq+i] * sinkx[ee+i] - sinkx[qq+i] * coskx[ee+i];
-      sinkx[mm+i] = - sinkx[pp+i];
-    }
-  }
-
-  for (j=2; j<=ew_ny; j++) {
-    int pp, qq, mm, ee, i;
-    pp  = (ew_ny+j  ) * natoms;
-    qq  = (ew_ny+j-1) * natoms;
-    mm  = (ew_ny-j  ) * natoms;
-    ee  = (ew_ny  +1) * natoms;
-    for (i=0; i<natoms; i++) {
-      cosky[pp+i] =   cosky[qq+i] * cosky[ee+i] - sinky[qq+i] * sinky[ee+i];
-      cosky[mm+i] =   cosky[pp+i];
-      sinky[pp+i] =   cosky[qq+i] * sinky[ee+i] - sinky[qq+i] * cosky[ee+i];
-      sinky[mm+i] = - sinky[pp+i];
-    }
-  }
-
-  for (j=2; j<=ew_nz; j++) {
-    int pp, qq, ee, i;
-    pp  = (ew_nz+j  ) * natoms;
-    qq  = (ew_nz+j-1) * natoms;
-    ee  = (ew_nz  +1) * natoms;
-    for (i=0; i<natoms; i++) {
-      coskz[pp+i] =   coskz[qq+i] * coskz[ee+i] - sinkz[qq+i] * sinkz[ee+i];
-      sinkz[pp+i] =   coskz[qq+i] * sinkz[ee+i] - sinkz[qq+i] * coskz[ee+i];
-    }
-  }
-
-  /* Loop over all reciprocal vectors */
-  for (k=0; k<ew_totk; k++) {
-
-    cnt     = 0; 
-    offx    = ew_ivek[k].x * natoms;
-    offy    = ew_ivek[k].y * natoms;
-    offz    = ew_ivek[k].z * natoms;
-    sum_cos = 0.0;
-    sum_sin = 0.0;
-    v_k     = 0.0;
-
-    /* Compute exp(ikr) and sums thereof */
-    for (c=0; c<ncells; c++) {
-
-      cell *p = CELLPTR(c);
-
-      for (i=0; i<p->n; i++) {
-
-        coskr[cnt] =   coskx[offx+cnt] * cosky[offy+cnt] * coskz[offz+cnt]
-                     - sinkx[offx+cnt] * sinky[offy+cnt] * coskz[offz+cnt]
-                     - sinkx[offx+cnt] * cosky[offy+cnt] * sinkz[offz+cnt] 
-                     - coskx[offx+cnt] * sinky[offy+cnt] * sinkz[offz+cnt];
-
-        sinkr[cnt] = - sinkx[offx+cnt] * sinky[offy+cnt] * sinkz[offz+cnt]
-                     + sinkx[offx+cnt] * cosky[offy+cnt] * coskz[offz+cnt]
-                     + coskx[offx+cnt] * sinky[offy+cnt] * coskz[offz+cnt]
-                     + coskx[offx+cnt] * cosky[offy+cnt] * sinkz[offz+cnt];
-
-        sum_cos += Q_SM(p,i) * coskr[cnt];
-        sum_sin += Q_SM(p,i) * sinkr[cnt];
-        cnt++;
-      }
-    }
-
-    /* updates */
-    cnt = 0;
-    for (c=0; c<ncells; c++) {
-
-      cell *p = CELLPTR(c);
-
-      for (i=0; i<p->n; i++) {
-
-	/* update fourier part of v_i */
-        v_k   = ew_expk[k] * (sinkr[cnt] * sum_sin + coskr[cnt] * sum_cos);
-	/* the total vector v_i */
-	V_SM(p,i) += v_k;
-        cnt++;
-      }
-    }
-  }  /* k */
-
-  for (c=0; c<ncells; c++) {
-    
-    cell *p = CELLPTR(c);
-    
-    for (i=0; i<p->n; i++) {
-      printf("%d %d %e\n", c,i,V_SM(p,i));
-    }
-  }
-
-  char msgbuf[256];
-  error(msgbuf);
-	  
-}
 /*****************************************************************************
 *
 * Conjugate gradient algorithm for solving the system Ax=b
@@ -365,7 +219,7 @@ void do_cg(void)
   
   /* compute V_SM */
   do_v_real();
-  do_v_kspace();
+  do_forces_ewald_fourier();
       
   /*  norm_b +=SPRODN(B,p,i,B,p,i); */
   norm_b=0.0;
@@ -429,7 +283,7 @@ void do_cg(void)
       
       /* update V_SM */
       do_v_real();
-      do_v_kspace();
+      do_forces_ewald_fourier();
       
       dad = 0.0;
       /* dad += SPRODN(D,p,i,V,p,i); */
