@@ -1145,10 +1145,20 @@ PP_FLAGS  += -DKEATING
 FORCESOURCES += ${COVALENTSOURCES}
 endif
 
-# LASER
-ifneq (,$(strip $(findstring laser,${MAKETARGET})))
-PP_FLAGS += -DLASER
-SOURCES += ${LASERSOURCES}
+# LASER & LASERYZ
+ifneq (,$(strip $(findstring laseryz,${MAKETARGET})))
+        ifneq (,$(strip $(findstring laser,${MAKETARGET})))
+		CFLAGS += -DLASERYZ -DLASER
+		SOURCES += ${LASERSOURCES}
+	else
+	       	CFLAGS += -DLASERYZ -DLASER
+		SOURCES += ${LASERSOURCES}	
+	endif
+else
+	ifneq (,$(strip $(findstring laser,${MAKETARGET})))
+		PP_FLAGS += -DLASER
+		SOURCES += ${LASERSOURCES}	
+	endif
 endif
 
 # TWO TEMPERATURE MODEL TTM
