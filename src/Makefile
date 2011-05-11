@@ -135,7 +135,6 @@ DEBUG_FLAGS	+= #-DDEBUG # -Wall # very noisy
 #  flags for IA32-Linux
 #
 ###########################################################################
-test
 
 # woody
 ifeq (woody,${IMDSYS})
