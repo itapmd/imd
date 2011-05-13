@@ -468,12 +468,13 @@ void init_ewald(void)
   /* we need it earlier for analytically defined potentials */
   /* coul_eng or ew_eps  = 14.40; */
 
+  twopi    = 2.0 * M_PI;
+
 #ifdef SM
   fourpi    = 4.0 * M_PI;
-  ew_vorf  = 2.0 * ew_kappa / SQRT( M_PI );
+  ew_vorf   = 2.0 * ew_kappa / SQRT( M_PI );
   vorf1     = fourpi / volume;
 #else
-  twopi    = 2.0 * M_PI;
   ew_vorf  = ew_kappa / SQRT( M_PI );
   vorf1    = twopi * coul_eng / volume;
 #endif
