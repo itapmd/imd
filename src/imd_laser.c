@@ -471,7 +471,7 @@ void laser_rescale_2()
 
   gauss_time_squared = timestep * steps - laser_t_0;
   gauss_time_squared *= gauss_time_squared;
-  exp_gauss_time_etc = exp(-gauss_time_squared/laser_sigma_t_squared)
+  exp_gauss_time_etc = exp(-gauss_time_squared/laser_sigma_t_squared/2.0)
                        * laser_p_peak * timestep * laser_atom_vol;
 
   for (k=0; k<NCELLS; k++) {
@@ -495,8 +495,18 @@ void laser_rescale_2()
 
       depth = laser_calc_depth(p,i);
 
+#ifdef LASERYZ  /* spacial dependence of laser beam */    
+    
+    
+      double x = ORT(p,i,X);
+      double y = ORT(p,i,Y);
+      double z = ORT(p,i,Z);
+      de = exp( -laser_mu*depth ) * exp_gauss_time_etc * laser_intensity_profile(x,y,z);   
+
+#else
       de = exp(-laser_mu*depth) * exp_gauss_time_etc;
     
+#endif
       dp = sqrt( p_0_square + 2*de*MASSE(p,i) ) - p_0;
     
 
