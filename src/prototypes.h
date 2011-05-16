@@ -610,6 +610,51 @@ void laser_rescale_dummy(void);
 void laser_rescale_1(void);
 void laser_rescale_2(void);
 void laser_rescale_3(void);
+double get_surface();
+double calc_laser_atom_vol(double, int, int, int *);
+#ifdef LASERYZ
+double laser_intensity_profile_laguerre_00(double, double, double);
+double laser_intensity_profile_laguerre_01(double, double, double);
+double laser_intensity_profile_laguerre_02(double, double, double);
+double laser_intensity_profile_laguerre_03(double, double, double);
+double laser_intensity_profile_laguerre_04(double, double, double);
+
+double laser_intensity_profile_laguerre_10(double, double, double);
+double laser_intensity_profile_laguerre_11(double, double, double);
+double laser_intensity_profile_laguerre_12(double, double, double);
+double laser_intensity_profile_laguerre_13(double, double, double);
+
+double laser_intensity_profile_laguerre_20(double, double, double);
+double laser_intensity_profile_laguerre_21(double, double, double);
+double laser_intensity_profile_laguerre_22(double, double, double);
+double laser_intensity_profile_laguerre_23(double, double, double);
+
+double laser_intensity_profile_laguerre_30(double, double, double);
+double laser_intensity_profile_laguerre_31(double, double, double);
+double laser_intensity_profile_laguerre_32(double, double, double);
+double laser_intensity_profile_laguerre_33(double, double, double);
+
+double laser_intensity_profile_hermite_00(double, double, double);
+double laser_intensity_profile_hermite_01(double, double, double);
+double laser_intensity_profile_hermite_02(double, double, double);
+double laser_intensity_profile_hermite_03(double, double, double);
+
+double laser_intensity_profile_hermite_10(double, double, double);
+double laser_intensity_profile_hermite_11(double, double, double);
+double laser_intensity_profile_hermite_12(double, double, double);
+double laser_intensity_profile_hermite_13(double, double, double);
+
+double laser_intensity_profile_hermite_20(double, double, double);
+double laser_intensity_profile_hermite_21(double, double, double);
+double laser_intensity_profile_hermite_22(double, double, double);
+double laser_intensity_profile_hermite_23(double, double, double);
+
+double laser_intensity_profile_hermite_30(double, double, double);
+double laser_intensity_profile_hermite_31(double, double, double);
+double laser_intensity_profile_hermite_32(double, double, double);
+double laser_intensity_profile_hermite_33(double, double, double);
+
+#endif
 #ifdef TTM
 real ttm_calc_depth(int,int,int);
 void laser_rescale_ttm(void);
