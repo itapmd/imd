@@ -1,4 +1,3 @@
-
 /******************************************************************************
 *
 * IMD -- The ITAP Molecular Dynamics Program
@@ -851,15 +850,20 @@ EXTERN real laser_sigma_t INIT(0.5);   /* half pulse duration (sigma of gaussian
 EXTERN real laser_sigma_t_squared INIT(0.25); /* same, squared */
 EXTERN real laser_t_0	  INIT(1.0);   /* time of maximum intensity of pulse (rescaling) */
 EXTERN real laser_p_peak  INIT(0.0);   /* Peak power density (calculated in imd.c from previous parameters)*/
-EXTERN real laser_atom_vol INIT(16.6);  /* Volume per particle (inverse density)*/
+EXTERN real laser_atom_vol INIT(16.6);  /* Volume per particle (inverse density) ATTENTION: THIS VALUE IS VOR ALUMINUM ONLY*/
+
 EXTERN int  laser_rescale_mode INIT(1); /* Mode for laser velocity rescaling */
 
-EXTERN void (*do_laser_rescale)(void);  /* Function pointer for rescaling routine */
+#ifdef LASERYZ 
+EXTERN real laser_sigma_w_y INIT(0.0); /* y-center of gaussian laser-pulse  */
+EXTERN real laser_sigma_w_z INIT(0.0); /* z-center of gaussian laser-pulse  */
+EXTERN real laser_sigma_w0 INIT(10.0); /* diameter of the laser beam at 1/e */
+EXTERN ivektor laser_tem_mode INIT(nullivektor); /* Defines the laser TEM_xy mode */
+#endif
 
-/* EXTERN int  laser_damp    INIT(0);      */  /* Use damping slope at other end?    */
-/* EXTERN real laser_damp_depth INIT(0.0); */  /* Use slope from what depth?         */
-/* EXTERN real laser_damp_width INIT(0.0); */  /* Transition width of damping funct. */
-/* EXTERN int  laser_damp_smooth INIT(1);  */  /* Smooth transition (sine)?	     */
+EXTERN void (*do_laser_rescale)(void);  /* Function pointer for rescaling routine */
+EXTERN double (*laser_intensity_profile)(double, double, double);
+
 #endif
 
 #ifdef SM

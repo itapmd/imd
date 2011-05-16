@@ -1988,6 +1988,128 @@ else if (strcasecmp(token, "laser_dir")==0){
        ( for now only along coordinate axes ) (always needed)*/
       getparam("laser_dir", &laser_dir, PARAM_INT, DIM, DIM);
     }
+#ifdef LASERYZ
+else if (strcasecmp(token, "laser_sigma_w_y")==0){
+      /* y-center of gaussian laser-pulse  */
+      getparam("laser_sigma_w_y", &laser_sigma_w_y, PARAM_REAL, 1,1);
+    }
+else if (strcasecmp(token, "laser_sigma_w_z")==0){
+      /* z-center of gaussian laser-pulse  */
+      getparam("laser_sigma_w_z", &laser_sigma_w_z, PARAM_REAL, 1,1);
+    }
+else if (strcasecmp(token, "laser_sigma_w0")==0){
+      /* sigma_0 of spacial laser fluence  */
+      getparam("laser_sigma_w0", &laser_sigma_w0, PARAM_REAL, 1,1);
+    }
+else if (strcasecmp(token,"laser_tem_mode")==0) {
+      /* TEM_xy laser mode */
+      getparam(token,&laser_tem_mode,PARAM_INT,3,3);
+      switch ( laser_tem_mode.x ) /* Gauss Laguerre = 0, Gauss Hermite = 1 */
+      {
+	  case 0: 
+	  {
+	    switch ( laser_tem_mode.y )
+	    {
+		case 0: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_00; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_01; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_laguerre_02; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_03; break;
+		  }
+		} break;
+
+		case 1: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_10; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_11; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_laguerre_12; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_13; break;
+		  }
+		} break;
+
+		case 2: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_20; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_21; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_laguerre_22; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_23; break;
+		  }
+		} break;
+
+		case 3:
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_30; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_31; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_laguerre_32; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_33; break;
+		  }
+		} break;
+		
+	    }	    
+	  } break;
+	  case 1:
+	  {
+	    switch ( laser_tem_mode.y )
+	    {
+		case 0: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_00; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_01; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_hermite_02; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_03; break;
+		  }
+		} break;
+		
+		case 1: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_10; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_11; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_hermite_12; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_13; break;
+		  }
+		} break;
+
+		case 2: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_20; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_21; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_hermite_22; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_23; break;
+		  }
+		} break;
+		
+		case 3: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_30; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_31; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_hermite_32; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_33; break;
+		  }
+		} break;
+
+	    }	    
+	  } break;
+      }
+}
+  
+#endif
 else if (strcasecmp(token, "laser_sigma_e")==0){
       /* area density of pulse energy (for rescaling method) */
       getparam("laser_sigma_e", &laser_sigma_e, PARAM_REAL, 1,1);
@@ -3165,6 +3287,27 @@ void check_parameters_complete()
     error("Parameter laser_rescale_mode must be a positive integer < 5 !");
   }
 #endif /* LASER */
+#ifdef LASERYZ
+	if ( (laser_sigma_w_y == 0.0 ) || (laser_sigma_w_z == 0.0) ){
+	  warning("laser_sigma_w_y and / or laser_sigma_w_z is set to 0.0 - this seems to be a nonsense value!\n");
+	}
+	if ( (laser_sigma_w_y < 0.0) || (laser_sigma_w_z < 0.0)){
+	  error("laser_sigma_w_y and / or laser_sigma_w_z is smaller than zero - this is nonsense!\n");
+	}
+	if ( laser_sigma_w0 <= 0.0){
+	  error("laser_sigma_w0 is equal or less than zero - which is nonsense or means zero energy density.");
+	}
+	
+	if ( (laser_tem_mode.x < 0 ) || (laser_tem_mode.x > 1 ) )
+	{
+	  error("Laser TEM Mode has to be either Gauss-Laguerre (0) or Gauss-Hermite (1).");
+	}
+	
+	if ( (laser_tem_mode.y < 0) || (laser_tem_mode.y > 3) || (laser_tem_mode.z < 0 ) || (laser_tem_mode.z > 3) )
+	{
+	  error("Only Laser TEM_xy modes for x=1...3 and y=1...3 are supported yet.");
+	}	     
+#endif
 #ifdef TTM
   if (fd_update_steps <= 0) {
     warning("Ignoring illegal value of fd_update_steps, using 1\n");
@@ -3837,7 +3980,6 @@ void broadcast_params() {
   MPI_Bcast( &hc_heatcurr,   1, REAL,     0, MPI_COMM_WORLD);
 #endif
 #ifdef LASER
-  MPI_Bcast( &laser_offset,     1, REAL,  0, MPI_COMM_WORLD);
   MPI_Bcast( &laser_rescale_mode,1,MPI_INT,0,MPI_COMM_WORLD);
   MPI_Bcast( &laser_dir,  DIM , MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &laser_mu,         1, REAL,  0, MPI_COMM_WORLD);
@@ -3845,7 +3987,12 @@ void broadcast_params() {
   MPI_Bcast( &laser_sigma_e,    1, REAL,  0, MPI_COMM_WORLD);
   MPI_Bcast( &laser_sigma_t,    1, REAL,  0, MPI_COMM_WORLD);
   MPI_Bcast( &laser_t_0,        1, REAL,  0, MPI_COMM_WORLD);
-  MPI_Bcast( &laser_atom_vol,   1, REAL,  0, MPI_COMM_WORLD);
+#ifdef LASERYZ
+  MPI_Bcast( &laser_sigma_w_y,    1,    REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &laser_sigma_w_z,    1,    REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &laser_sigma_w0,     1,    REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &laser_tem_mode,     3, MPI_INT,  0, MPI_COMM_WORLD);
+#endif
 #endif
 #ifdef TTM
   MPI_Bcast( &fd_g,     1, REAL,    0, MPI_COMM_WORLD);
@@ -4320,6 +4467,113 @@ void broadcast_params() {
     default: if (0==myid) 
                error("unknown laser rescaling mode in broadcast"); break;
   }
+
+#ifdef LASERYZ
+  switch ( laser_tem_mode.x ) /* Gauss Laguerre = 0, Hermite = 1 */
+      {
+	  case 0: 
+	  {
+	    switch ( laser_tem_mode.y )
+	    {
+		case 0: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_00; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_01; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_laguerre_02; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_03; break;
+		  }
+		} break;
+
+		case 1: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_10; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_11; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_laguerre_12; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_13; break;
+		  }
+		} break;
+
+		case 2: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_20; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_21; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_laguerre_22; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_23; break;
+		  }
+		} break;
+
+		case 3:
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_30; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_31; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_laguerre_32; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_33; break;
+		  }
+		} break;
+		
+	    }	    
+	  } break;
+	  case 1:
+	  {
+	    switch ( laser_tem_mode.y )
+	    {
+		case 0: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_00; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_01; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_hermite_02; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_03; break;
+		  }
+		} break;
+		
+		case 1: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_10; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_11; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_hermite_12; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_13; break;
+		  }
+		} break;
+
+		case 2: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_20; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_21; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_hermite_22; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_23; break;
+		  }
+		} break;
+		
+		case 3: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_30; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_31; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_hermite_32; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_33; break;
+		  }
+		} break;
+
+	    }	    
+	  } break;
+      }
+#endif /* LASERYZ */
+
 #endif /* LASER */
 
 }
