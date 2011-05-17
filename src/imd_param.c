@@ -4321,7 +4321,7 @@ void broadcast_params() {
   MPI_Bcast( keating_beta, ntypes*ntypepairs, REAL, 0,MPI_COMM_WORLD);
 #endif
 
-#if defined(EWALD) || defined(COULOMB) || defined(FCS)
+#if defined(EWALD) || defined(COULOMB) || defined(FCS) || defined(SM)
   MPI_Bcast( charge,              ntypes, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &coul_eng,           1,      REAL,    0, MPI_COMM_WORLD);
 #endif
@@ -4330,9 +4330,6 @@ void broadcast_params() {
   MPI_Bcast( &fcs_pepc_theta,     1,      REAL,    0, MPI_COMM_WORLD);
 #endif
 #if defined(EWALD) || defined(COULOMB)
-#ifdef SM
-  MPI_Bcast( charge,              ntypes, REAL,    0, MPI_COMM_WORLD);
-  #endif
   MPI_Bcast( &ew_kappa,           1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &ew_r2_cut,          1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &ew_kcut,            1,      REAL,    0, MPI_COMM_WORLD);
