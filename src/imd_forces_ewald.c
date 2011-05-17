@@ -99,11 +99,7 @@ void do_forces_ewald(int steps)
   for (k=0; k<ncells; k++) {
     cell *p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
-#ifdef SM
-      pot  = ew_vorf * SQR( CHARGE(p,i) ) * ew_eps;
-#else
       pot  = ew_vorf * SQR( CHARGE(p,i) ) * coul_eng;
-#endif
       /* pot += ew_shift[n][n] * 0.5;   what's that??? */
       tot_pot_energy -= pot;
       POTENG(p,i)    -= pot;
@@ -379,11 +375,8 @@ void do_forces_ewald_real(void)
 		  }
 	      
 		rpot = 0.0; rforce.x = 0.0; rforce.y = 0.0; rforce.z = 0.0;
-#ifdef SM		
-		charge2 = charge[p_typ] * charge[q_typ] * ew_eps;
-#else
 		charge2 = charge[p_typ] * charge[q_typ] * coul_eng;
-#endif
+
 		/* Include image boxes */
 		for( k=ew_nmax; k>=-ew_nmax; k--)
 		  for( l=ew_nmax; l>=-ew_nmax; l--)
@@ -462,11 +455,9 @@ void init_ewald(void)
      measured in Angstrom [A], energies in electron volts [eV], 
      and charges in units of the elementary charge e */
 
-  /* coul_eng or ew_eps are already initialized to 14.40 in globals.h    */
-  /* 14.38 ? */
+  /* coul_eng is already initialized to 14.40 in globals.h  */
   /* this is e^2 / (4*pi*epsilon_0) in [eV A]               */
   /* we need it earlier for analytically defined potentials */
-  /* coul_eng or ew_eps  = 14.40; */
 
   twopi    = 2.0 * M_PI;
 
@@ -553,4 +544,3 @@ void init_ewald(void)
     sinkz[offz+i] = 0.0;
   }
 }
-

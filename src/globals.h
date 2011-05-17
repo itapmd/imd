@@ -1123,13 +1123,12 @@ EXTERN real epitax_speed INIT(1.0);
 
 EXTERN real     ew_r2_cut INIT(0.0);     /* EWALD r-space cutoff */
 #ifdef SM
-EXTERN real     ew_eps INIT(14.40);    /* this is e^2/(4*pi*epsilon_0) in eV A */
-EXTERN pot_table_t erfc_r_tab;         /* tabulated function erfc/r */
-EXTERN pot_table_t cr_pot_tab;         /* tabulated coulomb repulsive potential*/
-EXTERN pot_table_t na_pot_tab;         /* tabulated nuclear attraction potential */
+EXTERN pot_table_t erfc_r_tab;    /* tabulated function erfc/r */
+EXTERN pot_table_t cr_pot_tab;    /* tabulated coulomb repulsive potential*/
+EXTERN pot_table_t na_pot_tab;    /* tabulated nuclear attraction potential */
 #endif
 
-#if defined(EWALD) || defined(COULOMB) || defined(FCS)
+#if defined(EWALD) || defined(COULOMB) || defined(FCS) || defined(SM)
 EXTERN real     charge[10] INIT(zero10); /* Charge of atoms */
 EXTERN real     coul_eng INIT(14.40);    /* this is e^2/(4*pi*epsilon_0) in eV A */
 #endif
