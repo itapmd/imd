@@ -462,9 +462,8 @@ void init_ewald(void)
   twopi    = 2.0 * M_PI;
 
 #ifdef SM
-  fourpi    = 4.0 * M_PI;
   ew_vorf   = 2.0 * ew_kappa / SQRT( M_PI );
-  vorf1     = fourpi / volume;
+  vorf1     = 2.0 * twopi / volume;
 #else
   ew_vorf  = ew_kappa / SQRT( M_PI );
   vorf1    = twopi * coul_eng / volume;

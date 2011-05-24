@@ -1140,7 +1140,11 @@ EXTERN real     fcs_pepc_theta INIT(0.3);
 EXTERN imd_timer ewald_time;
 EXTERN real     ew_kappa;                /* Parameter kappa */
 EXTERN real     ew_kcut;                 /* k-space cutoff */
+#ifndef SM
 EXTERN int      ew_nmax INIT(-1);        /* Number of image boxes */
+#else
+EXTERN int      ew_nmax INIT(0);        /* Number of image boxes */ 
+#endif
 EXTERN int      ew_totk;
 EXTERN int      ew_nx;
 EXTERN int      ew_ny;

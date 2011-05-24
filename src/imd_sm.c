@@ -31,9 +31,24 @@
 
 void init_sm(void)
 {
+#ifdef DEBUG
+  printf("init_sm\n");
+#endif
+
   read_pot_table(&na_pot_tab,na_pot_filename,ntypes*ntypes,1);
   read_pot_table(&cr_pot_tab,cr_pot_filename,ntypes*ntypes,1);
   read_pot_table(&erfc_r_tab,erfc_filename,ntypes*ntypes,1);
+
+#ifdef DEBUG
+#ifndef COULOMB
+  printf("COULOMB not defined\n");
+#elif
+  printf("COULOMB defined!!\n");
+#endif
+
+  printf("computing initial charges ew_nmax=%d\n",ew_nmax);
+#endif
+  do_charge_update();
 }
 
 
@@ -45,6 +60,9 @@ void init_sm(void)
 
 void do_electronegativity(void)
 {
+#ifdef DEBUG
+  printf("do_electronegativity\n");
+#endif
   int i, j, k, r, s, jstart;
   vektor d, tmp_d;
   real r2;
@@ -52,10 +70,11 @@ void do_electronegativity(void)
   int col1, col2, inc=ntypes*ntypes;
   int q_typ, p_typ;
   cell *p, *q;
+  real tmp_sprod, tmp_boxl;
   real na_pot_p, na_pot_q, cr_pot;
   real z_sm_p, z_sm_q;
 
-  /* Initialization of all cells */
+  /* Initialization of all cells and compuation of diagonal part */
   for(r=0; r<ncells; ++r)
     {
       p = CELLPTR(r);
@@ -89,7 +108,51 @@ void do_electronegativity(void)
 	      d.y = ORT(p,i,Y) - ORT(q,j,Y);
 	      d.z = ORT(p,i,Z) - ORT(q,j,Z);
 
-	      /* minimum image condition ? */
+	      /* Apply the minimum image convention ? */
+	      tmp_sprod = SPROD(d,box_x);
+	      tmp_boxl  = 0.5 * SPROD(box_x,box_x);
+	      if ( tmp_sprod > tmp_boxl )
+		{
+		  d.x -= box_x.x;
+		  d.y -= box_x.y;
+		  d.z -= box_x.z;
+		}
+	      if ( tmp_sprod < -tmp_boxl ) 
+		{
+		  d.x += box_x.x;
+		  d.y += box_x.y;
+		  d.z += box_x.z;
+		}
+	      
+	      tmp_sprod = SPROD(d,box_y);
+	      tmp_boxl  = 0.5 * SPROD(box_y,box_y);
+	      if ( tmp_sprod > tmp_boxl ) 
+		{
+		  d.x -= box_y.x;
+		  d.y -= box_y.y;
+		  d.z -= box_y.z;
+		}
+	      if ( tmp_sprod < -tmp_boxl ) 
+		{
+		  d.x += box_y.x;
+		  d.y += box_y.y;
+		  d.z += box_y.z;
+		}
+	      
+	      tmp_sprod = SPROD(d,box_z);
+	      tmp_boxl  = 0.5 * SPROD(box_z,box_z);
+	      if ( tmp_sprod > tmp_boxl ) 
+		{
+		  d.x -= box_z.x;
+		  d.y -= box_z.y;
+		  d.z -= box_z.z;
+		}
+	      if ( tmp_sprod < -tmp_boxl ) 
+		{
+		  d.x += box_z.x;
+		  d.y += box_z.y;
+		  d.z += box_z.z;
+		}
 	      
 	      q_typ = SORTE(q,j);
 	      z_sm_q = z_es[q_typ];
@@ -132,6 +195,10 @@ void do_electronegativity(void)
 void do_v_real(void)
 {
 
+#ifdef DEBUG
+  printf("do_v_real\n");
+#endif
+
   int i, j, k, r, s, jstart;
   vektor d, tmp_d;
   real r2;
@@ -139,10 +206,11 @@ void do_v_real(void)
   int col1, col2, inc=ntypes*ntypes;
   int q_typ, p_typ;
   cell *p, *q;
+  real tmp_sprod, tmp_boxl;
   real erfc_r=0, cr_pot=0;
   real j_sm_p, j_sm_q, v_sm_p, v_sm_q;
 
-  /* Inititalisierung aller Zellen */
+  /* Inititalisation of all cells and computation of diagonal part */
   for(r=0; r<ncells; ++r)
     {
       p = CELLPTR(r);
@@ -150,6 +218,7 @@ void do_v_real(void)
 	{
 	  p_typ   = SORTE(p,i);
 	  j_sm_p  = j_0[p_typ];
+	  /* definition */
 	  V_SM(p,i) = Q_SM(p,i)*(j_sm_p-ew_vorf);
 	}
     }
@@ -176,8 +245,52 @@ void do_v_real(void)
 	      d.y = ORT(p,i,Y) - ORT(q,j,Y);
 	      d.z = ORT(p,i,Z) - ORT(q,j,Z);
 
-	      /* minimum image convention? */
+	      /* Apply the minimum image convention ? */
+	      tmp_sprod = SPROD(d,box_x);
+	      tmp_boxl  = 0.5 * SPROD(box_x,box_x);
+	      if ( tmp_sprod > tmp_boxl )
+		{
+		  d.x -= box_x.x;
+		  d.y -= box_x.y;
+		  d.z -= box_x.z;
+		}
+	      if ( tmp_sprod < -tmp_boxl ) 
+		{
+		  d.x += box_x.x;
+		  d.y += box_x.y;
+		  d.z += box_x.z;
+		}
 	      
+	      tmp_sprod = SPROD(d,box_y);
+	      tmp_boxl  = 0.5 * SPROD(box_y,box_y);
+	      if ( tmp_sprod > tmp_boxl ) 
+		{
+		  d.x -= box_y.x;
+		  d.y -= box_y.y;
+		  d.z -= box_y.z;
+		}
+	      if ( tmp_sprod < -tmp_boxl ) 
+		{
+		  d.x += box_y.x;
+		  d.y += box_y.y;
+		  d.z += box_y.z;
+		}
+	      
+	      tmp_sprod = SPROD(d,box_z);
+	      tmp_boxl  = 0.5 * SPROD(box_z,box_z);
+	      if ( tmp_sprod > tmp_boxl ) 
+		{
+		  d.x -= box_z.x;
+		  d.y -= box_z.y;
+		  d.z -= box_z.z;
+		}
+	      if ( tmp_sprod < -tmp_boxl ) 
+		{
+		  d.x += box_z.x;
+		  d.y += box_z.y;
+		  d.z += box_z.z;
+		}
+
 	      r2    = SPROD(d,d);
 	      /* redundant due to symmetry p<->q
 		 col1  = q_typ * ntypes + p_typ; */
@@ -198,11 +311,149 @@ void do_v_real(void)
 	      if (r2 < cr_pot_tab.end[col2]){ /* ABBC */
 		VAL_FUNC(cr_pot, cr_pot_tab, col2, inc, r2, is_short);
 	      }
+	      /* definition */
 	      V_SM(p,i) += Q_SM(q,j)*(erfc_r+cr_pot);
 	      V_SM(q,j) += Q_SM(p,j)*(erfc_r+cr_pot);
 	    }
 	  }
       }
+}
+
+/******************************************************************************
+*
+*  do_v_kspace
+*
+*  computes the fourier part of the Ewald sum
+*
+******************************************************************************/
+
+void do_v_kspace(void)
+{
+#ifdef DEBUG
+  printf("do_v_kspace\n");
+#endif
+  int    i, j, k, l, m, n, c;
+  int    cnt, typ, offx, offy, offz;
+  int    px, py, pz, mx, my, mz;
+  real   tmp, tmp_virial=0.0, sum_cos, sum_sin;
+  real   kforce, kpot;
+  real v_k;
+
+  /* Compute exp(ikr) recursively */
+  px = (ew_nx+1) * natoms;  mx = (ew_nx-1) * natoms;
+  py = (ew_ny+1) * natoms;  my = (ew_ny-1) * natoms;
+  pz = (ew_nz+1) * natoms;  mz = (ew_nz-1) * natoms;
+
+  cnt = 0;
+  for (c=0; c<ncells; c++) {
+    cell *p = CELLPTR(c);
+    for (i=0; i<p->n; i++) {
+      tmp = twopi * SPRODX(ORT,p,i,tbox_x);
+      coskx[px+cnt] =  cos(tmp);
+      coskx[mx+cnt] =  coskx[px+cnt];
+      sinkx[px+cnt] =  sin(tmp);
+      sinkx[mx+cnt] = -sinkx[px+cnt]; 
+      tmp = twopi * SPRODX(ORT,p,i,tbox_y);
+      cosky[py+cnt] =  cos(tmp);
+      cosky[my+cnt] =  cosky[py+cnt];
+      sinky[py+cnt] =  sin(tmp);
+      sinky[my+cnt] = -sinky[py+cnt];
+      tmp = twopi * SPRODX(ORT,p,i,tbox_z);
+      coskz[pz+cnt] = cos(tmp);
+      sinkz[pz+cnt] = sin(tmp);
+      cnt++;
+    }
+  }
+
+  for (j=2; j<=ew_nx; j++) {
+    int pp, qq, mm, ee, i;
+    pp  = (ew_nx+j  ) * natoms;
+    qq  = (ew_nx+j-1) * natoms;
+    mm  = (ew_nx-j  ) * natoms;
+    ee  = (ew_nx  +1) * natoms;
+    for (i=0; i<natoms; i++) {
+      coskx[pp+i] =   coskx[qq+i] * coskx[ee+i] - sinkx[qq+i] * sinkx[ee+i];
+      coskx[mm+i] =   coskx[pp+i];
+      sinkx[pp+i] =   coskx[qq+i] * sinkx[ee+i] - sinkx[qq+i] * coskx[ee+i];
+      sinkx[mm+i] = - sinkx[pp+i];
+    }
+  }
+
+  for (j=2; j<=ew_ny; j++) {
+    int pp, qq, mm, ee, i;
+    pp  = (ew_ny+j  ) * natoms;
+    qq  = (ew_ny+j-1) * natoms;
+    mm  = (ew_ny-j  ) * natoms;
+    ee  = (ew_ny  +1) * natoms;
+    for (i=0; i<natoms; i++) {
+      cosky[pp+i] =   cosky[qq+i] * cosky[ee+i] - sinky[qq+i] * sinky[ee+i];
+      cosky[mm+i] =   cosky[pp+i];
+      sinky[pp+i] =   cosky[qq+i] * sinky[ee+i] - sinky[qq+i] * cosky[ee+i];
+      sinky[mm+i] = - sinky[pp+i];
+    }
+  }
+
+  for (j=2; j<=ew_nz; j++) {
+    int pp, qq, ee, i;
+    pp  = (ew_nz+j  ) * natoms;
+    qq  = (ew_nz+j-1) * natoms;
+    ee  = (ew_nz  +1) * natoms;
+    for (i=0; i<natoms; i++) {
+      coskz[pp+i] =   coskz[qq+i] * coskz[ee+i] - sinkz[qq+i] * sinkz[ee+i];
+      sinkz[pp+i] =   coskz[qq+i] * sinkz[ee+i] - sinkz[qq+i] * coskz[ee+i];
+    }
+  }
+
+  /* Loop over all reciprocal vectors */
+  for (k=0; k<ew_totk; k++) {
+
+    cnt     = 0; 
+    offx    = ew_ivek[k].x * natoms;
+    offy    = ew_ivek[k].y * natoms;
+    offz    = ew_ivek[k].z * natoms;
+    sum_cos = 0.0;
+    sum_sin = 0.0;
+    v_k     = 0.0;
+
+    /* Compute exp(ikr) and sums thereof */
+    for (c=0; c<ncells; c++) {
+
+      cell *p = CELLPTR(c);
+
+      for (i=0; i<p->n; i++) {
+
+        coskr[cnt] =   coskx[offx+cnt] * cosky[offy+cnt] * coskz[offz+cnt]
+                     - sinkx[offx+cnt] * sinky[offy+cnt] * coskz[offz+cnt]
+                     - sinkx[offx+cnt] * cosky[offy+cnt] * sinkz[offz+cnt] 
+                     - coskx[offx+cnt] * sinky[offy+cnt] * sinkz[offz+cnt];
+
+        sinkr[cnt] = - sinkx[offx+cnt] * sinky[offy+cnt] * sinkz[offz+cnt]
+                     + sinkx[offx+cnt] * cosky[offy+cnt] * coskz[offz+cnt]
+                     + coskx[offx+cnt] * sinky[offy+cnt] * coskz[offz+cnt]
+                     + coskx[offx+cnt] * cosky[offy+cnt] * sinkz[offz+cnt];
+
+        sum_cos += Q_SM(p,i) * coskr[cnt];
+        sum_sin += Q_SM(p,i) * sinkr[cnt];
+        cnt++;
+      }
+    }
+
+    /* updates */
+    cnt = 0;
+    for (c=0; c<ncells; c++) {
+
+      cell *p = CELLPTR(c);
+
+      for (i=0; i<p->n; i++) {
+
+	/* update fourier part of v_i */
+        v_k   = ew_expk[k] * (sinkr[cnt] * sum_sin + coskr[cnt] * sum_cos);
+	/* the total vector v_i */
+	V_SM(p,i) += v_k;
+        cnt++;
+      }
+    }
+  }  /* k */
 }
 
 /*****************************************************************************
@@ -216,14 +467,16 @@ void do_cg(void)
   int k, kstep=0, kstepmax=1000;
   real beta, alpha, rho[kstepmax];
   real dad, tolerance, tolerance2, norm_b, epsilon_cg=0.001;
+  real totpot;
   
-  /* compute V_SM */
+  /* update V_SM */
   do_v_real();
-  do_forces_ewald_fourier();
-      
+  do_v_kspace();
+
   /*  norm_b +=SPRODN(B,p,i,B,p,i); */
-  norm_b=0.0;
-  for (k=0; k<NCELLS; ++k) {
+  norm_b = 0.0;
+  totpot = 0.0;
+  for (k=0; k<ncells; ++k) {
     int  i;
     cell *p;
     p = CELLPTR(k);
@@ -234,6 +487,7 @@ void do_cg(void)
       /* initial values */
       X_SM(p,i) = Q_SM(p,i);
       R_SM(p,i) = B_SM(p,i)-V_SM(p,i);
+      totpot += V_SM(p,i);
     }
   }
   
@@ -242,7 +496,7 @@ void do_cg(void)
   
   rho[kstep] = 0.0;
   /*  rho[kstep] += SPRODN(R,p,i,R,p,i); */
-  for (k=0; k<NCELLS; ++k) {
+  for (k=0; k<ncells; ++k) {
     int  i;
     cell *p;
     p = CELLPTR(k);
@@ -252,12 +506,17 @@ void do_cg(void)
     }
   }
   
+#ifdef DEBUG
+      printf("tolerance after kstep %d: %e, %e, totpot: %e\n", kstep,tolerance,
+	     SQRT(rho[kstep])/SQRT(norm_b),totpot);
+#endif
+
   while ((rho[kstep] > tolerance2) && (kstep < kstepmax))
     {
       kstep++;
 
       if (kstep == 1)
-	for (k=0; k<NCELLS; ++k) {
+	for (k=0; k<ncells; ++k) {
 	  int  i;
 	  cell *p;
 	  p = CELLPTR(k);
@@ -269,7 +528,7 @@ void do_cg(void)
       else
 	{
 	  beta = rho[kstep-1]/rho[kstep-2];	  
-	  for (k=0; k<NCELLS; ++k) {
+	  for (k=0; k<ncells; ++k) {
 	    int  i;
 	    cell *p;
 	    p = CELLPTR(k);
@@ -283,23 +542,25 @@ void do_cg(void)
       
       /* update V_SM */
       do_v_real();
-      do_forces_ewald_fourier();
-      
+      do_v_kspace();
+
       dad = 0.0;
+      totpot = 0.0;
       /* dad += SPRODN(D,p,i,V,p,i); */
-      for (k=0; k<NCELLS; ++k) {
+      for (k=0; k<ncells; ++k) {
 	int  i;
 	cell *p;
 	p = CELLPTR(k);
 	/* loop over all particles */
 	for (i=0; i<p->n; ++i) {      
 	  dad += D_SM(p,i)*V_SM(p,i);
+	  totpot += V_SM(p,i);
 	}
       }
       
       alpha = rho[kstep-1]/dad;
 
-      for (k=0; k<NCELLS; ++k) {
+      for (k=0; k<ncells; ++k) {
 	int  i;
 	cell *p;
 	p = CELLPTR(k);
@@ -312,7 +573,7 @@ void do_cg(void)
 
       rho[kstep] = 0.0;
       /* rho[kstep]+= SPRODN(R,p,i,R,p,i); */
-      for (k=0; k<NCELLS; ++k) {
+      for (k=0; k<ncells; ++k) {
 	int  i;
 	cell *p;
 	p = CELLPTR(k);
@@ -321,6 +582,12 @@ void do_cg(void)
 	  rho[kstep] += R_SM(p,i)*R_SM(p,i);
 	}
       }
+      
+#ifdef DEBUG
+      printf("tolerance after kstep %d: %e, %e, totpot: %e\n", kstep,tolerance,
+	     SQRT(rho[kstep])/SQRT(norm_b),totpot);
+#endif
+
     }
 
 }
@@ -333,6 +600,9 @@ void do_cg(void)
 
 void do_charge_update(void)
 {
+#ifdef DEBUG
+  printf("do_charge_update\n");
+#endif
   
   int k, typ;
   real sum1, sum2, potchem;
@@ -346,7 +616,7 @@ void do_charge_update(void)
   /* Solving the first linear system V_ij s_j = -chi_i */
   
   /* loop over all cells */
-  for (k=0; k<NCELLS; ++k) {
+  for (k=0; k<ncells; ++k) {
     int  i;
     cell *p;
     p = CELLPTR(k);
@@ -360,13 +630,20 @@ void do_charge_update(void)
     }
   }
   
+  /* compute V_SM
+  do_v_real();
+  do_v_kspace(); */
+      
+#ifdef DEBUG
+  printf("do_cg %d\n",1);
+#endif
   do_cg();
   
   /* Sum up for getting charges */
   sum1=0.0;
 
   /* loop over all cells */
-  for (k=0; k<NCELLS; ++k) {
+  for (k=0; k<ncells; ++k) {
     int  i;
     cell *p;
     p = CELLPTR(k);
@@ -381,7 +658,7 @@ void do_charge_update(void)
   /* Solving the second linear system V_ij t_j = -1 */
 
   /* loop over all cells */
-  for (k=0; k<NCELLS; ++k) {
+  for (k=0; k<ncells; ++k) {
     int  i;
     cell *p;
     p = CELLPTR(k);
@@ -395,13 +672,20 @@ void do_charge_update(void)
     }
   }
 
+  /* compute V_SM
+  do_v_real();
+  do_v_kspace(); */
+      
+#ifdef DEBUG
+  printf("do_cg %d\n",2);
+#endif
   do_cg();
   
   /* Sum up for getting charges */
   sum2=0.0;
   
   /* loop over all cells */
-  for (k=0; k<NCELLS; ++k) {
+  for (k=0; k<ncells; ++k) {
     int  i;
     cell *p;
     p = CELLPTR(k);
@@ -425,7 +709,7 @@ void do_charge_update(void)
   n_O = 0;
 
   /* loop over all cells */
-  for (k=0; k<NCELLS; ++k) {
+  for (k=0; k<ncells; ++k) {
     int  i;
     cell *p;
     p = CELLPTR(k);
@@ -459,8 +743,8 @@ void do_charge_update(void)
   printf("Average charge of Al: qAl = %e\n", q_Al/n_Al);
   printf("Average charge of O: qO = %e\n", q_O/n_O);
 #else
-  printf("Total charge and number of Al: qAl = %e %d\n", q_Al,n_Al);
-  printf("Total charge and number of O: qO = %e %d\n", q_O,n_O);
+  printf("Total charge and number of Al: qAl = %e %d %e\n", q_Al,n_Al, q_Al/n_Al);
+  printf("Total charge and number of O: qO = %e %d %e\n", q_O,n_O, q_O/n_O);
 #endif
 }
 
