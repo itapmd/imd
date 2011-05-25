@@ -655,6 +655,7 @@ double laser_intensity_profile_hermite_32(double, double, double);
 double laser_intensity_profile_hermite_33(double, double, double);
 
 #endif
+
 #ifdef TTM
 real ttm_calc_depth(int,int,int);
 void laser_rescale_ttm(void);
