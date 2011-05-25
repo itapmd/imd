@@ -1648,3 +1648,193 @@ void unpack_add_mark( msgbuf *b, int k, int l, int m )
 }
 
 #endif /* CNA */
+
+#ifdef SM
+
+/******************************************************************************
+*
+*  copy SM charge of one cell to another cell
+*
+******************************************************************************/
+
+void copy_sm_charge( int k, int l, int m, int r, int s, int t, vektor v )
+{
+  int i;
+  minicell *from, *to;
+
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+  to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
+
+  for (i=0; i<to->n; ++i) {
+    Q_SM(to,i) = Q_SM(from,i);
+  }
+}
+
+/******************************************************************************
+*
+*  pack SM charge into MPI buffer
+*
+******************************************************************************/
+
+void pack_sm_charge( msgbuf *b, int k, int l, int m, vektor v )
+{
+  int i, j = b->n;
+  minicell *from;
+    
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+  for (i=0; i<from->n; ++i) {
+    b->data[j++] = Q_SM(from,i);
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in pack_sm_charge - increase msgbuf_size");
+}
+
+
+/******************************************************************************
+*
+*  unpack SM charge from MPI buffer into cell
+*
+******************************************************************************/
+
+void unpack_sm_charge( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *to;
+
+  to = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+  for (i=0; i<to->n; ++i) {
+    Q_SM(to,i) = b->data[j++];
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in unpack_sm_charge - increase msgbuf_size");
+}
+
+/******************************************************************************
+*
+*  add SM potential of one cell to another cell
+*
+******************************************************************************/
+
+void add_sm_pot( int k, int l, int m, int r, int s, int t )
+{
+  int i;
+  minicell *from, *to;
+
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+  to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
+
+  for (i=0; i<to->n; ++i) {
+    V_SM(to,i) += V_SM(from,i);
+  }
+}
+
+/******************************************************************************
+*
+*  pack SM potential into MPI buffer
+*
+******************************************************************************/
+
+void pack_sm_pot( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *from;
+    
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+  for (i=0; i<from->n; ++i) {
+    b->data[j++] = V_SM(from,i);
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in pack_sm_pot - increase msgbuf_size");
+}
+
+
+/******************************************************************************
+*
+*  unpack and add SM potential from MPI buffer into cell
+*
+******************************************************************************/
+
+void unpack_add_sm_pot( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *to;
+
+  to = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+  for (i=0; i<to->n; ++i) {
+    V_SM(to,i) += b->data[j++];
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in unpack_add_sm_pot - increase msgbuf_size");
+}
+
+/******************************************************************************
+*
+*  add SM chi of one cell to another cell
+*
+******************************************************************************/
+
+void add_sm_chi( int k, int l, int m, int r, int s, int t )
+{
+  int i;
+  minicell *from, *to;
+
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+  to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
+
+  for (i=0; i<to->n; ++i) {
+    CHI_SM(to,i) += CHI_SM(from,i);
+  }
+}
+
+/******************************************************************************
+*
+*  pack SM chi into MPI buffer
+*
+******************************************************************************/
+
+void pack_sm_chi( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *from;
+    
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+  for (i=0; i<from->n; ++i) {
+    b->data[j++] = CHI_SM(from,i);
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in pack_sm_chi - increase msgbuf_size");
+}
+
+
+/******************************************************************************
+*
+*  unpack and add SM chi from MPI buffer into cell
+*
+******************************************************************************/
+
+void unpack_add_sm_chi( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *to;
+
+  to = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+  for (i=0; i<to->n; ++i) {
+    CHI_SM(to,i) += b->data[j++];
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in unpack_add_sm_chi - increase msgbuf_size");
+}
+
+#endif /* SM */

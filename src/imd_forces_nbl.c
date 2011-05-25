@@ -47,7 +47,6 @@
 int  *tl=NULL, *tb=NULL, *cl_off=NULL, *cl_num=NULL, nb_max=0;
 
 
-
 /******************************************************************************
 *
 *  deallocate (largest part of) neighbor list
@@ -123,7 +122,7 @@ int estimate_nblist_size(void)
     }
   }
 #ifdef MPI
-  // printf ("myid: %d nb-list size: %d\n",myid,tn);fflush(stdout);
+  /* printf ("myid: %d nb-list size: %d\n",myid,tn);fflush(stdout); */
 #endif
   return tn;
 }
@@ -178,8 +177,10 @@ void make_nblist(void)
     cl_num = (int *) malloc(at_max * sizeof(int));
   }
   if (NULL==tb) {
-    if (0==last_nbl_len) nb_max =( (int) (nbl_size * estimate_nblist_size())  > NBLMINLEN ) ?  ( (int) (nbl_size * estimate_nblist_size())) : NBLMINLEN;
-    else                 nb_max = (int) (nbl_size * last_nbl_len);
+    if (0==last_nbl_len) 
+      nb_max = MAX(((int) (nbl_size * estimate_nblist_size())), (NBLMINLEN));
+    else
+      nb_max = (int) (nbl_size * last_nbl_len);
     tb = (int *) malloc(nb_max * sizeof(int));
   }
   else if (last_nbl_len * sqrt(nbl_size) > nb_max) {
@@ -1646,3 +1647,216 @@ void check_nblist()
 #endif
   if (max2 > SQR(0.5*nbl_margin)) have_valid_nbl = 0;
 }
+
+
+#ifdef SM
+
+/******************************************************************************
+*
+*  calc_sm_pot
+*
+******************************************************************************/
+
+void calc_sm_pot()
+{
+  int i, k, n=0, m, is_short=0, inc=ntypes*ntypes;
+
+  if (0==have_valid_nbl) {
+#ifdef MPI
+    /* check message buffer size */
+    if (0 == nbl_count % BUFSTEP) setup_buffers();
+#endif
+    /* update cell decomposition */
+    fix_cells();
+  }
+
+  /* fill the buffer cells */
+  send_cells(copy_sm_charge,pack_sm_charge,unpack_sm_charge);
+
+  /* make new neighbor lists */
+  if (0==have_valid_nbl) make_nblist();
+
+  /* clear per atom accumulation variables, also in buffer cells */
+  for (k=0; k<nallcells; k++) {
+    cell *p = cell_array + k;
+    for (i=0; i<p->n; i++) {
+      V_SM(p,i) = 0.0;
+    }
+  }
+
+  /* pair interactions - for all atoms */
+  n=0;
+  for (k=0; k<ncells; k++) {
+    cell *p = CELLPTR(k);
+    for (i=0; i<p->n; i++) {
+
+      vektor d1;
+      real   phi, ch_i, pot = 0.0;
+      int    p_typ;
+
+      d1.x  = ORT(p,i,X);
+      d1.y  = ORT(p,i,Y);
+      d1.z  = ORT(p,i,Z);
+      ch_i  = Q_SM(p,i)*coul_eng;
+      p_typ = SORTE(p,i);
+
+      /* loop over neighbors */
+      for (m=tl[n]; m<tl[n+1]; m++) {
+
+        vektor d;
+        real   r2, ch_j;
+        int    c  = cl_num[ tb[m] ];
+        int    j  = tb[m] - cl_off[c];
+        cell   *q = cell_array + c;
+        int    col2;
+
+        d.x  = ORT(q,j,X) - d1.x;
+        d.y  = ORT(q,j,Y) - d1.y;
+        d.z  = ORT(q,j,Z) - d1.z;
+        r2   = SPROD(d,d);
+        ch_j = Q_SM(q,j)*coul_eng;
+
+        if (SQR(ch_i * ch_j) > 0.0) {
+          if (r2 < ew_r2_cut) {	
+            /* Coulomb potential is in column 0 */
+            int incr = coul_table.ncols;
+            VAL_FUNC(phi, coul_table, 0, incr, r2, is_short);
+            pot        += phi * ch_j;
+            V_SM(q,j)  += phi * ch_i;
+          }
+          col2 = p_typ * ntypes + SORTE(q,j);
+          if (r2 < cr_pot_tab.end[col2]) {
+            VAL_FUNC(phi, cr_pot_tab, col2, inc, r2, is_short);
+            pot        += phi * ch_j;
+            V_SM(q,j)  += phi * ch_i;
+          }
+        }
+      }
+      V_SM(p,i) += pot;
+      n++;
+    }
+  }
+  if (is_short) fprintf(stderr,"Short distance in calc_sm_pot!\n");
+
+  /* contribution of coulomb self energy */
+  for (k=0; k<ncells; k++) {
+    real tmp = ew_vorf * coul_eng * 2;
+    //tmp = 0.0; /* Ewald self-energy term disturbs determination of charges */
+    cell *p  = CELLPTR(k);
+    for (i=0; i<p->n; i++) {
+      int typ = SORTE(p,i);
+      V_SM(p,i) -= (tmp - sm_J_0[typ]) * Q_SM(p,i);
+    }
+  }
+
+  /* add SM potentials back to original cells/cpus */
+  send_forces(add_sm_pot,pack_sm_pot,unpack_add_sm_pot);
+}
+
+/******************************************************************************
+*
+*  calc_sm_chi
+*
+******************************************************************************/
+
+void calc_sm_chi()
+{
+  int i, k, n=0, m, is_short=0;
+
+  if (0==have_valid_nbl) {
+#ifdef MPI
+    /* check message buffer size */
+    if (0 == nbl_count % BUFSTEP) setup_buffers();
+#endif
+    /* update cell decomposition */
+    fix_cells();
+  }
+
+  /* make new neighbor lists */
+  if (0==have_valid_nbl) make_nblist();
+
+  /* clear per atom accumulation variables, also in buffer cells */
+  for (k=0; k<nallcells; k++) {
+    cell *p = cell_array + k;
+    for (i=0; i<p->n; i++) {
+      CHI_SM(p,i) = 0.0;
+    }
+  }
+
+  /* pair interactions - for all atoms */
+  n=0;
+  for (k=0; k<ncells; k++) {
+    cell *p = CELLPTR(k);
+    for (i=0; i<p->n; i++) {
+
+      vektor d1;
+      real   z_sm_p, ch_i, chi_tmp = 0.0;
+      int    p_typ;
+
+      p_typ  = SORTE(p,i);
+      z_sm_p = sm_Z[p_typ]*coul_eng;
+
+      d1.x = ORT(p,i,X);
+      d1.y = ORT(p,i,Y);
+      d1.z = ORT(p,i,Z);
+      ch_i = CHARGE(p,i);
+
+      /* loop over neighbors */
+      for (m=tl[n]; m<tl[n+1]; m++) {
+
+        vektor d;
+        real   r2, z_sm_q, ch_j;
+        int    c  = cl_num[ tb[m] ];
+        int    j  = tb[m] - cl_off[c];
+        cell   *q = cell_array + c;
+        int    q_typ, col1, col2, inc=ntypes*ntypes;;
+
+        q_typ = SORTE(q,j);
+        z_sm_q = sm_Z[q_typ]*coul_eng;
+        col1  = q_typ * ntypes + p_typ;
+        col2  = p_typ * ntypes + q_typ;
+
+        d.x  = ORT(q,j,X) - d1.x;
+        d.y  = ORT(q,j,Y) - d1.y;
+        d.z  = ORT(q,j,Z) - d1.z;
+        r2   = SPROD(d,d);
+        ch_j = CHARGE(q,j);
+
+        /* compute electronegativity */
+        if (SQR(ch_i * ch_j) > 0.0) {
+          real na_pot_p, na_pot_q, cr_pot; 
+          na_pot_p = na_pot_q = cr_pot = 0.0; 
+          if (r2 < na_pot_tab.end[col2]) {
+            VAL_FUNC(na_pot_p, na_pot_tab, col2, inc, r2, is_short);
+          }
+          if (r2 < na_pot_tab.end[col1]) {
+            VAL_FUNC(na_pot_q, na_pot_tab, col1, inc, r2, is_short);
+          }
+          if (r2 < cr_pot_tab.end[col2]) {
+            VAL_FUNC(cr_pot, cr_pot_tab, col2, inc, r2, is_short);
+          }
+          chi_tmp     += z_sm_q * (na_pot_p - cr_pot);
+          CHI_SM(q,j) += z_sm_p * (na_pot_q - cr_pot);
+        }
+      }
+      CHI_SM(p,i) += chi_tmp;
+      n++;
+    }
+  }
+  if (is_short) fprintf(stderr,"Short distance in calc_sm_chi!\n");
+
+  /* add chi back to original cells/cpus */
+  send_forces(add_sm_chi,pack_sm_chi,unpack_add_sm_chi);
+
+  /* add sm_chi_0 */
+  for (k=0; k<ncells; k++) {
+    cell *p = CELLPTR(k);
+    for (i=0; i<p->n; i++) {
+      int t = SORTE(p,i);
+      CHI_SM(p,i) += sm_chi_0[t];
+    }
+  }
+
+}
+
+#endif  /* SM */

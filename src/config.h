@@ -84,9 +84,9 @@
 #endif
 #endif
 
-/* for SM we also need EWALD and VARCHG*/
+/* for SM we also need EWALD (unless we have NBL) and VARCHG */
 #if defined SM
-#ifndef EWALD
+#if !defined(EWALD) && !defined(NBL)
 #define EWALD
 #endif
 #ifndef VARCHG

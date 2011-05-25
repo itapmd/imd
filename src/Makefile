@@ -973,7 +973,7 @@ LASERSOURCES	= imd_laser.c
 
 TTMSOURCES	= imd_ttm.c
 
-SMSOURCES	= imd_sm.c imd_forces_ewald.c
+SMSOURCES	= imd_sm.c
 
 FCSSOURCES      = imd_forces_fcs.c
 
@@ -1168,8 +1168,11 @@ endif
 
 # STREITZ MINTMIRE MODEL SM
 ifneq (,$(strip $(findstring sm,${MAKETARGET})))
-PP_FLAGS += -DSM
-SOURCES += ${SMSOURCES}
+  PP_FLAGS += -DSM
+  SOURCES += ${SMSOURCES}
+  ifeq (,$(strip $(findstring nbl,${MAKETARGET})))
+    SOURCES += ${EWALDSOURCES}
+  endif
 endif
 
 # UNIAX

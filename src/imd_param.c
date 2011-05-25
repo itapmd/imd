@@ -2648,19 +2648,24 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
 #endif
 #ifdef SM
     /* Initial value of the electronegativity */
-    else if (strcasecmp(token,"chi_0")==0) {
-      if (ntypes==0) error("specify parameter ntypes before chi_0");
-      getparam(token, chi_0, PARAM_REAL, ntypes, ntypes);
+    else if (strcasecmp(token,"sm_chi_0")==0) {
+      if (ntypes==0) error("specify parameter ntypes before sm_chi_0");
+      getparam(token, sm_chi_0, PARAM_REAL, ntypes, ntypes);
     }
     /* Initial value of the effecitve core charge */
-    else if (strcasecmp(token,"z_es")==0) {
-      if (ntypes==0) error("specify parameter ntypes before z_es");
-      getparam(token, z_es, PARAM_REAL, ntypes, ntypes);
+    else if (strcasecmp(token,"sm_Z")==0) {
+      if (ntypes==0) error("specify parameter ntypes before sm_Z");
+      getparam(token, sm_Z, PARAM_REAL, ntypes, ntypes);
+    }
+    /* SM zeta */
+    else if (strcasecmp(token,"sm_zeta")==0) {
+      if (ntypes==0) error("specify parameter ntypes before sm_zeta");
+      getparam(token, sm_zeta, PARAM_REAL, ntypes, ntypes);
     }
     /* atomic hardness or self-Coulomb repulsion */
-    else if (strcasecmp(token,"j_0")==0) {
-      if (ntypes==0) error("specify parameter ntypes before j_0");
-      getparam(token, j_0, PARAM_REAL, ntypes, ntypes);
+    else if (strcasecmp(token,"sm_J_0")==0) {
+      if (ntypes==0) error("specify parameter ntypes before sm_J_0");
+      getparam(token, sm_J_0, PARAM_REAL, ntypes, ntypes);
     }
     /* nuclear attraction potential */
     else if (strcasecmp(token,"na_pot_file")==0) {
@@ -2670,10 +2675,12 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"cr_pot_file")==0) {
       getparam(token, cr_pot_filename,PARAM_STR,1,255);
     }
+#ifndef NBLIST
     /* tabulated function erfc/r */
     else if (strcasecmp(token,"erfc_file")==0) {
       getparam(token, erfc_filename,PARAM_STR,1,255);
     }
+#endif
 #endif /* SM */
 #ifdef FEFL
     /*harmonic potential for Einstein crystal */
@@ -4345,6 +4352,12 @@ void broadcast_params() {
 #if defined(EWALD) || defined(COULOMB) || defined(FCS) || defined(SM)
   MPI_Bcast( charge,              ntypes, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &coul_eng,           1,      REAL,    0, MPI_COMM_WORLD);
+#endif
+#ifdef SM
+  MPI_Bcast( sm_chi_0,            ntypes, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( sm_J_0,              ntypes, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( sm_Z,                ntypes, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( sm_zeta,             ntypes, REAL,    0, MPI_COMM_WORLD);
 #endif
 #ifdef FCS
   MPI_Bcast( &fcs_pepc_eps,       1,      REAL,    0, MPI_COMM_WORLD);

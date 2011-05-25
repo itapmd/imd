@@ -685,6 +685,17 @@ void do_electronegativity(void);
 void do_v_real(void);
 void do_cg(void);
 void do_charge_update(void);
+void calc_sm_pot(void);
+void calc_sm_chi(void);
+void copy_sm_charge(int, int, int, int, int, int, vektor);
+void pack_sm_charge(msgbuf *, int, int, int, vektor);
+void unpack_sm_charge( msgbuf *, int, int, int);
+void add_sm_pot(int, int, int, int, int, int);
+void pack_sm_pot(msgbuf *, int, int, int);
+void unpack_add_sm_pot(msgbuf *, int, int, int);
+void add_sm_chi(int, int, int, int, int, int);
+void pack_sm_chi(msgbuf *, int, int, int);
+void unpack_add_sm_chi(msgbuf *, int, int, int);
 #endif
 
 #ifdef BGL

@@ -874,9 +874,10 @@ EXTERN int pdecay_mode INIT (1);        /* which form of the damping function is
 #endif
 
 #ifdef SM
-EXTERN real chi_0[2]; /* Initial value of the electronegativity */ 
-EXTERN real z_es[2]; /* Initial value of the effecitve core charge */
-EXTERN real j_0[2]; /* atomic hardness or self-Coulomb repulsion */
+EXTERN real sm_chi_0[2]; /* Initial value of the electronegativity */ 
+EXTERN real sm_Z[2];     /* Initial value of the effecitve core charge */
+EXTERN real sm_J_0[2];   /* atomic hardness or self-Coulomb repulsion */
+EXTERN real sm_zeta[2];  
 EXTERN str255 na_pot_filename INIT("\0");     /* nuclear attraction potential file   */
 EXTERN str255 cr_pot_filename INIT("\0");     /* coulomb repulsive potential file   */
 EXTERN str255 erfc_filename INIT("\0");     /* tabulated function erfc/r file   */

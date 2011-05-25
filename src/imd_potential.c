@@ -51,6 +51,13 @@ void setup_potentials( void )
 #ifdef COULOMB
   create_coulomb_tables();
 #endif /* COULOMB */
+#ifdef SM
+  read_pot_table(&na_pot_tab,na_pot_filename,ntypes*ntypes,1);
+  read_pot_table(&cr_pot_tab,cr_pot_filename,ntypes*ntypes,1);
+#ifndef NBLIST
+  read_pot_table(&erfc_r_tab,erfc_filename,ntypes*ntypes,1);
+#endif
+#endif
 #ifdef MULTIPOT
   for (i=0; i<N_POT_TAB; i++)
     copy_pot_table( pair_pot, &pair_pot_ar[i]);

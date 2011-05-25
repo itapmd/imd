@@ -33,20 +33,20 @@ void init_sm(void)
 {
 #ifdef DEBUG
   printf("init_sm\n");
-#endif
-
-  read_pot_table(&na_pot_tab,na_pot_filename,ntypes*ntypes,1);
-  read_pot_table(&cr_pot_tab,cr_pot_filename,ntypes*ntypes,1);
-  read_pot_table(&erfc_r_tab,erfc_filename,ntypes*ntypes,1);
-
-#ifdef DEBUG
 #ifndef COULOMB
   printf("COULOMB not defined\n");
-#elif
+#else
   printf("COULOMB defined!!\n");
 #endif
-
   printf("computing initial charges ew_nmax=%d\n",ew_nmax);
+#endif
+
+#ifdef NBLIST
+#ifdef MPI
+  setup_buffers();  /* setup MPI buffers */
+#endif
+  /* fill the buffer cells for first charge update */
+  send_cells(copy_cell,pack_cell,unpack_cell);
 #endif
   do_charge_update();
 }
@@ -81,7 +81,7 @@ void do_electronegativity(void)
       for (i=0; i<p->n; ++i) 
 	{ 
 	  p_typ   = SORTE(p,i);
-	  CHI_SM(p,i) = chi_0[p_typ];
+	  CHI_SM(p,i) = sm_chi_0[p_typ];
 	}
     }
 	  
@@ -96,7 +96,7 @@ void do_electronegativity(void)
 	for (i=0; i<p->n; ++i) 
 	  {
 	    p_typ   = SORTE(p,i);
-	    z_sm_p = z_es[p_typ];
+	    z_sm_p = sm_Z[p_typ];
 	    
 	    /* For each atom in second cell */
 	    jstart = (p==q ? i+1 : 0);
@@ -155,7 +155,7 @@ void do_electronegativity(void)
 		}
 	      
 	      q_typ = SORTE(q,j);
-	      z_sm_q = z_es[q_typ];
+	      z_sm_q = sm_Z[q_typ];
 
 	      r2    = SPROD(d,d);
 	      col1  = q_typ * ntypes + p_typ;
@@ -217,7 +217,7 @@ void do_v_real(void)
       for (i=0; i<p->n; ++i) 
 	{
 	  p_typ   = SORTE(p,i);
-	  j_sm_p  = j_0[p_typ];
+	  j_sm_p  = sm_J_0[p_typ];
 	  /* definition */
 	  V_SM(p,i) = Q_SM(p,i)*(j_sm_p-ew_vorf);
 	}
@@ -467,129 +467,108 @@ void do_cg(void)
   int k, kstep=0, kstepmax=1000;
   real beta, alpha, rho[kstepmax];
   real dad, tolerance, tolerance2, norm_b, epsilon_cg=0.001;
-  real totpot;
-  
+  real totpot, tmp;
+
+  /* if (myid==0) printf("start do_cg\n"); */
+
   /* update V_SM */
+#ifdef NBLIST
+  calc_sm_pot();
+#else
   do_v_real();
   do_v_kspace();
+#endif
 
-  /*  norm_b +=SPRODN(B,p,i,B,p,i); */
-  norm_b = 0.0;
-  totpot = 0.0;
-  for (k=0; k<ncells; ++k) {
-    int  i;
-    cell *p;
-    p = CELLPTR(k);
-    /* loop over all particles */
-    for (i=0; i<p->n; ++i) {      
-      norm_b += B_SM(p,i)*B_SM(p,i);
-
-      /* initial values */
-      X_SM(p,i) = Q_SM(p,i);
-      R_SM(p,i) = B_SM(p,i)-V_SM(p,i);
-      totpot += V_SM(p,i);
-    }
-  }
-  
-  tolerance = epsilon_cg*SQRT(norm_b);
-  tolerance2 = SQR(tolerance);
-  
+  norm_b     = 0.0;
+  totpot     = 0.0;
   rho[kstep] = 0.0;
-  /*  rho[kstep] += SPRODN(R,p,i,R,p,i); */
   for (k=0; k<ncells; ++k) {
     int  i;
-    cell *p;
-    p = CELLPTR(k);
-    /* loop over all particles */
-    for (i=0; i<p->n; ++i) {      
+    cell *p = CELLPTR(k);
+    for (i=0; i<p->n; ++i) {
+      /* initial values */
+      X_SM(p,i)   = Q_SM(p,i);
+      R_SM(p,i)   = B_SM(p,i)-V_SM(p,i);
+      totpot     += V_SM(p,i);
+      norm_b     += B_SM(p,i)*B_SM(p,i);
       rho[kstep] += R_SM(p,i)*R_SM(p,i);
     }
   }
+#ifdef MPI
+  MPI_Allreduce(&norm_b,   &tmp, 1, REAL, MPI_SUM, cpugrid); norm_b=tmp;
+  MPI_Allreduce(&totpot,   &tmp, 1, REAL, MPI_SUM, cpugrid); totpot=tmp;
+  MPI_Allreduce(rho+kstep, &tmp, 1, REAL, MPI_SUM, cpugrid); rho[kstep]=tmp;
+#endif
   
+  tolerance = epsilon_cg*SQRT(norm_b);
+  tolerance2 = SQR(tolerance);
+
 #ifdef DEBUG
-      printf("tolerance after kstep %d: %e, %e, totpot: %e\n", kstep,tolerance,
-	     SQRT(rho[kstep])/SQRT(norm_b),totpot);
+  printf("tolerance after kstep %d: %e, %e, totpot: %e\n", 
+         kstep,tolerance,SQRT(rho[kstep])/SQRT(norm_b),totpot);
 #endif
+  /*
+  printf("a rank %d, kstep %d, tol %f\n", myid,kstep,rho[kstep]);
+  */
+  while ((rho[kstep] > tolerance2) && (kstep < kstepmax)) {
 
-  while ((rho[kstep] > tolerance2) && (kstep < kstepmax))
-    {
-      kstep++;
+    kstep++;
 
-      if (kstep == 1)
-	for (k=0; k<ncells; ++k) {
-	  int  i;
-	  cell *p;
-	  p = CELLPTR(k);
-	  /* loop over all particles */
-	  for (i=0; i<p->n; ++i) {      
-	    Q_SM(p,i) = D_SM(p,i) = R_SM(p,i);
-	  }
-	}
-      else
-	{
-	  beta = rho[kstep-1]/rho[kstep-2];	  
-	  for (k=0; k<ncells; ++k) {
-	    int  i;
-	    cell *p;
-	    p = CELLPTR(k);
-	    /* loop over all particles */
-	    for (i=0; i<p->n; ++i) {      
-	      Q_SM(p,i) = D_SM(p,i) = R_SM(p,i) + beta* D_SM(p,i);
-
-	    }
-	  }
-	}
-      
-      /* update V_SM */
-      do_v_real();
-      do_v_kspace();
-
-      dad = 0.0;
-      totpot = 0.0;
-      /* dad += SPRODN(D,p,i,V,p,i); */
-      for (k=0; k<ncells; ++k) {
-	int  i;
-	cell *p;
-	p = CELLPTR(k);
-	/* loop over all particles */
-	for (i=0; i<p->n; ++i) {      
-	  dad += D_SM(p,i)*V_SM(p,i);
-	  totpot += V_SM(p,i);
-	}
+    beta = (kstep == 1) ? 0.0 : rho[kstep-1]/rho[kstep-2];
+    for (k=0; k<ncells; ++k) {
+      int  i;
+      cell *p = CELLPTR(k);
+      for (i=0; i<p->n; ++i) {
+        Q_SM(p,i) = D_SM(p,i) = R_SM(p,i) + beta * D_SM(p,i);
       }
-      
-      alpha = rho[kstep-1]/dad;
-
-      for (k=0; k<ncells; ++k) {
-	int  i;
-	cell *p;
-	p = CELLPTR(k);
-	/* loop over all particles */
-	for (i=0; i<p->n; ++i) {      
-	  X_SM(p,i) += alpha*D_SM(p,i);
-	  R_SM(p,i) -= alpha*V_SM(p,i);
-	}
-      }	  
-
-      rho[kstep] = 0.0;
-      /* rho[kstep]+= SPRODN(R,p,i,R,p,i); */
-      for (k=0; k<ncells; ++k) {
-	int  i;
-	cell *p;
-	p = CELLPTR(k);
-	/* loop over all particles */
-	for (i=0; i<p->n; ++i) {      
-	  rho[kstep] += R_SM(p,i)*R_SM(p,i);
-	}
-      }
-      
-#ifdef DEBUG
-      printf("tolerance after kstep %d: %e, %e, totpot: %e\n", kstep,tolerance,
-	     SQRT(rho[kstep])/SQRT(norm_b),totpot);
-#endif
-
     }
 
+    /* update V_SM */
+#ifdef NBLIST
+    calc_sm_pot();
+#else
+    do_v_real();
+    do_v_kspace();
+#endif
+
+    dad = 0.0;
+    totpot = 0.0;
+    for (k=0; k<ncells; ++k) {
+      int  i;
+      cell *p = CELLPTR(k);
+      for (i=0; i<p->n; ++i) {
+        dad    += D_SM(p,i)*V_SM(p,i);
+        totpot += V_SM(p,i);
+      }
+    }
+#ifdef MPI
+    MPI_Allreduce(&dad,    &tmp, 1, REAL, MPI_SUM, cpugrid); dad   =tmp;
+    MPI_Allreduce(&totpot, &tmp, 1, REAL, MPI_SUM, cpugrid); totpot=tmp;
+#endif
+
+    alpha = rho[kstep-1]/dad;
+    rho[kstep] = 0.0;
+    for (k=0; k<ncells; ++k) {
+      int  i;
+      cell *p = CELLPTR(k);
+      for (i=0; i<p->n; ++i) {      
+        X_SM(p,i)  += alpha*D_SM(p,i);
+        R_SM(p,i)  -= alpha*V_SM(p,i);
+        rho[kstep] += R_SM(p,i)*R_SM(p,i);
+      }
+    }
+#ifdef MPI
+    MPI_Allreduce(rho+kstep, &tmp, 1, REAL, MPI_SUM, cpugrid); rho[kstep]=tmp;
+#endif
+      
+#ifdef DEBUG
+    printf("tolerance after kstep %d: %e, %e, totpot: %e\n", 
+           kstep,tolerance,SQRT(rho[kstep])/SQRT(norm_b),totpot);
+#endif
+    /*
+    printf("rank %d, kstep %d, tol %f\n", myid,kstep,rho[kstep]);
+    */
+  }
 }
 
 /*****************************************************************************
@@ -606,34 +585,27 @@ void do_charge_update(void)
   
   int k, typ;
   real sum1, sum2, potchem;
-  real q_Al, q_O, q_tot;
-  int n_O, n_Al;
+  real q_Al, q_O, q_tot, tmp;
   
   /* Update electronegativity since coordinates have changed */
-
+#ifdef NBLIST
+  calc_sm_chi();
+#else
   do_electronegativity();
+#endif
 
   /* Solving the first linear system V_ij s_j = -chi_i */
   
-  /* loop over all cells */
   for (k=0; k<ncells; ++k) {
     int  i;
-    cell *p;
-    p = CELLPTR(k);
-    
-    /* loop over all particles */
+    cell *p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
-      
       B_SM(p,i) = -CHI_SM(p,i);
       /* Initial value of the charges */
       Q_SM(p,i) = CHARGE(p,i);
     }
   }
   
-  /* compute V_SM
-  do_v_real();
-  do_v_kspace(); */
-      
 #ifdef DEBUG
   printf("do_cg %d\n",1);
 #endif
@@ -641,41 +613,27 @@ void do_charge_update(void)
   
   /* Sum up for getting charges */
   sum1=0.0;
-
-  /* loop over all cells */
   for (k=0; k<ncells; ++k) {
     int  i;
-    cell *p;
-    p = CELLPTR(k);
-    
-    /* loop over all particles */
+    cell *p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
-      sum1 += X_SM(p,i);
+      sum1     += X_SM(p,i);
       S_SM(p,i) = X_SM(p,i);
     }
   }
   
   /* Solving the second linear system V_ij t_j = -1 */
 
-  /* loop over all cells */
   for (k=0; k<ncells; ++k) {
     int  i;
-    cell *p;
-    p = CELLPTR(k);
-    
-    /* loop over all particles */
+    cell *p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
-      
       B_SM(p,i) = -1;
       /* Initial value of the charges */
       Q_SM(p,i) = 0.0;
     }
   }
 
-  /* compute V_SM
-  do_v_real();
-  do_v_kspace(); */
-      
 #ifdef DEBUG
   printf("do_cg %d\n",2);
 #endif
@@ -683,68 +641,53 @@ void do_charge_update(void)
   
   /* Sum up for getting charges */
   sum2=0.0;
-  
-  /* loop over all cells */
-  for (k=0; k<ncells; ++k) {
+    for (k=0; k<ncells; ++k) {
     int  i;
-    cell *p;
-    p = CELLPTR(k);
-    
-    /* loop over all particles */
+    cell *p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
       sum2 += X_SM(p,i);
     }
   }
   
   /* Calculate chemical potential */
-
   potchem = sum1/sum2;
       
   /* Calculate new charges of the atoms */
-
-  q_tot = 0.0;
-  q_Al = 0.0;
-  q_O = 0.0;
-  n_Al = 0;
-  n_O = 0;
-
-  /* loop over all cells */
+  q_tot = 0.0; q_Al = 0.0; q_O = 0.0;
   for (k=0; k<ncells; ++k) {
     int  i;
-    cell *p;
-    p = CELLPTR(k);
-    
-    /* loop over all particles */
+    cell *p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
-      
       CHARGE(p,i) = S_SM(p,i)-potchem*X_SM(p,i);
       q_tot += CHARGE(p,i); 
       typ = SORTE(p,i);
       if (typ == 0) {
 	q_Al += CHARGE(p,i);
-	n_Al++;
       }
       else {
 	q_O += CHARGE(p,i);
-	n_O++;
       }
     }
   }
-
-  /* if ((n_Al != 0) || (n_O != 0))
-    {
-      q_Al/n_Al;
-      q_O/n_O;
-      } */
-  
-  printf("Sums: sum1 = %e sum2 = %e\n", sum1, sum2);
-  printf("Total charge: qtot = %e\n", q_tot);
-#ifndef DEBUG
-  printf("Average charge of Al: qAl = %e\n", q_Al/n_Al);
-  printf("Average charge of O: qO = %e\n", q_O/n_O);
-#else
-  printf("Total charge and number of Al: qAl = %e %d %e\n", q_Al,n_Al, q_Al/n_Al);
-  printf("Total charge and number of O: qO = %e %d %e\n", q_O,n_O, q_O/n_O);
+#ifdef MPI
+  MPI_Allreduce(&sum1,  &tmp,  1, REAL,    MPI_SUM, cpugrid); sum1 =tmp;
+  MPI_Allreduce(&sum2,  &tmp,  1, REAL,    MPI_SUM, cpugrid); sum2 =tmp;
+  MPI_Allreduce(&q_tot, &tmp,  1, REAL,    MPI_SUM, cpugrid); q_tot=tmp;
+  MPI_Allreduce(&q_Al,  &tmp,  1, REAL,    MPI_SUM, cpugrid); q_Al =tmp;
+  MPI_Allreduce(&q_O,   &tmp,  1, REAL,    MPI_SUM, cpugrid); q_O  =tmp;
 #endif
+  
+  if (0==myid) {
+    printf("Sums: sum1 = %e sum2 = %e\n", sum1, sum2);
+    printf("Total charge: qtot = %e\n", q_tot);
+#ifndef DEBUG
+    printf("Average charge of Al: qAl = %e\n", q_Al/num_sort[0]);
+    printf("Average charge of O: qO = %e\n",   q_O /num_sort[1]);
+#else
+    printf("Total charge and number of Al: qAl = %e %d %e\n", 
+           q_Al, num_sort[0], q_Al/num_sort[0]);
+    printf("Total charge and number of O: qO = %e %d %e\n", 
+           q_O, num_sort[1], q_O/num_sort[1]);
+#endif
+  }
 }
-
