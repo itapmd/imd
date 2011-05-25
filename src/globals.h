@@ -851,7 +851,6 @@ EXTERN real laser_sigma_t_squared INIT(0.25); /* same, squared */
 EXTERN real laser_t_0	  INIT(1.0);   /* time of maximum intensity of pulse (rescaling) */
 EXTERN real laser_p_peak  INIT(0.0);   /* Peak power density (calculated in imd.c from previous parameters)*/
 EXTERN real laser_atom_vol INIT(16.6);  /* Volume per particle (inverse density) ATTENTION: THIS VALUE IS VOR ALUMINUM ONLY*/
-
 EXTERN int  laser_rescale_mode INIT(1); /* Mode for laser velocity rescaling */
 
 #ifdef LASERYZ 
