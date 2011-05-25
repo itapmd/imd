@@ -251,6 +251,20 @@ double get_surface()
   MPI_Bcast( &laser_atom_vol,     1, MPI_DOUBLE,  0, MPI_COMM_WORLD);
 #endif
 
+#ifdef PDECAY
+  double samplesize = (rightside - leftside)*deltax;
+    
+  ramp_start = (1.0 - ramp_fraction) * samplesize + (double)(leftside+0.5)*deltax;
+  ramp_end = (double)(rightside) * deltax;
+
+#ifdef MPI
+  MPI_Bcast( &ramp_start,   1, REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &ramp_end,     1, REAL,  0, MPI_COMM_WORLD);
+#endif
+
+#endif
+
+
   /* return the new actual surface x-coordiante (parameter laser_offset) */
   return (double)(leftside+0.5)*deltax;
   
@@ -326,6 +340,15 @@ void init_laser()
       printf( "Time t_0 of laser pulse is %1.10f\n",laser_t_0);
       printf( "(%1.10f time steps after start of simulation)\n", 
 	      laser_t_0/timestep);
+
+#ifdef PDECAY
+  if (0==myid) {
+    printf( "Parameter pdecay_mode is %i \n", pdecay_mode );
+    printf( "Parameter xipdecay is %f \n", xipdecay );
+    printf( "Parameter ramp_start is %f A \n", ramp_start );
+    printf( "Parameter ramp_end is %f A \n", ramp_end );
+  }
+#endif
       
   }
 }
@@ -412,6 +435,69 @@ void laser_rescale_1()
       p_0_square = SPRODN(IMPULS,p,i,IMPULS,p,i);
       depth = laser_calc_depth(p,i);
 
+#ifdef PDECAY
+	if( ORT(p,i,X) > ramp_start )
+	  {
+	    switch ( pdecay_mode){
+	    case 0:
+	      {
+		/* y= m * x + b */
+		double m = 1 / ( (ramp_end - ramp_start ) ) ;
+		double b = - ramp_start / ( ramp_end - ramp_start );
+		
+		double xia = ORT(p,i,X) *m + b ;
+	
+		IMPULS(p,i,X) *= 1.0 - ( ORT(p,i,X) *m + b)  ;
+		
+		if(steps==-1)
+		  printf(" %f %f \n",  ORT(p,i,X),1.0 - ( ORT(p,i,X) * m + b) );
+		break;
+	      }
+	    case 1:	      
+	      {
+		double a = 1.0 / ( ramp_start - ramp_end);
+		a *= a;
+	
+		IMPULS(p,i,X) *= a * ( ORT(p,i,X) - ramp_end ) * ( ORT(p,i,X) - ramp_end );
+
+		if(steps==-1)
+		  printf("%f %f \n",  ORT(p,i,X), a * ( ORT(p,i,X) - ramp_end ) * ( ORT(p,i,X) - ramp_end ));
+		break;
+	      }
+	      break;
+	    case 2:
+	      {
+		double m = 1 / ( (ramp_end - ramp_start ) ) ;
+		double b = - ramp_start / ( ramp_end - ramp_start );
+		
+		KRAFT(p,i,X) -=  ( IMPULS(p,i,X)/MASSE(p,i)) * ( ORT(p,i,X) *m + b  ) * xipdecay;
+		
+		
+		if(steps==-1)
+		  printf(" %f %f \n",  ORT(p,i,X),ORT(p,i,X) *m + b);
+		break;
+	      }
+	      break;
+	    case 3:
+	      {
+		double a = 1.0 / ( ramp_end - ramp_start);
+		a *= a;
+			
+		 KRAFT(p,i,X) -=  ( IMPULS(p,i,X)/MASSE(p,i)) * xipdecay * a * ( ORT(p,i,X) - ramp_start ) * ( ORT(p,i,X) - ramp_start );
+
+		if(steps==-1)
+		  printf("%f %f \n",  ORT(p,i,X), a * ( ORT(p,i,X) - ramp_start ) * ( ORT(p,i,X) - ramp_start ) );
+		break;
+	      }
+	      break;
+	    default:
+	      error("Illegal value for parameter pdecay_mode.\n");
+	      break;
+	    }
+	  }
+#endif 
+
+
 #ifdef LASERYZ  /* spacial dependence of laser beam */    
     
      
@@ -422,12 +508,12 @@ void laser_rescale_1()
       
      
       de = exp( -laser_mu*depth ) * exp_gauss_time_etc * laser_intensity_profile(x,y,z);     
-    
+  
     
 
 #else
       de = exp(-laser_mu*depth) * exp_gauss_time_etc;
-     
+       
 #endif         
 
        if ( p_0_square == 0.0 ) { /* we need a direction for the momentum. */
@@ -588,6 +674,77 @@ void laser_rescale_ttm()
       }
     }
   }
+
+#ifdef PDECAY
+
+  for (k=0; k<NCELLS; k++) {
+    cell *p;
+    p = CELLPTR(k);
+    int i;
+    for (i=0; i < p->n; i++) {
+	if( ORT(p,i,X) > ramp_start )
+	  {
+	    switch ( pdecay_mode){
+	    case 0:
+	      {
+		double m = 1 / ( (ramp_end - ramp_start ) ) ;
+		double b = - ramp_start / ( ramp_end - ramp_start );
+		
+		double xia = ORT(p,i,X) *m + b ;
+	
+		IMPULS(p,i,X) *= 1.0- ( ORT(p,i,X) *m + b)  ;
+		
+		if(steps==-1)
+		  printf(" %f %f \n",  ORT(p,i,X),1.0 - ( ORT(p,i,X) * m + b) );
+		break;
+	      }
+	    case 1:	      
+	      {
+		double a = 1.0 / ( ramp_start - ramp_end);
+		a *= a;
+	
+		IMPULS(p,i,X) *= a * ( ORT(p,i,X) - ramp_end ) * ( ORT(p,i,X) - ramp_end );
+
+		if(steps==-1)
+		  printf("%f %f \n",  ORT(p,i,X), a * ( ORT(p,i,X) - ramp_end ) * ( ORT(p,i,X) - ramp_end ));
+		break;
+	      }
+	      break;
+	    case 2:
+	      {
+		double m = 1 / ( (ramp_end - ramp_start ) ) ;
+		double b = - ramp_start / ( ramp_end - ramp_start );
+		
+		KRAFT(p,i,X) -=  ( IMPULS(p,i,X)/MASSE(p,i)) * ( ORT(p,i,X) *m + b  ) * xipdecay;
+		
+		
+		if(steps==-1)
+		  printf(" %f %f \n",  ORT(p,i,X),ORT(p,i,X) *m + b);
+		break;
+	      }
+	      break;
+	    case 3:
+	      {
+		double a = 1.0 / ( ramp_end - ramp_start);
+		a *= a;
+			
+		 KRAFT(p,i,X) -=  ( IMPULS(p,i,X)/MASSE(p,i)) * xipdecay * a * ( ORT(p,i,X) - ramp_start ) * ( ORT(p,i,X) - ramp_start );
+
+		if(steps==-1)
+		  printf("%f %f \n",  ORT(p,i,X), a * ( ORT(p,i,X) - ramp_start ) * ( ORT(p,i,X) - ramp_start ) );
+		break;
+	      }
+	      break;
+	    default:
+	      error("Illegal value for parameter pdecay_mode.\n");
+	      break;
+	    }
+	  }
+
+    }
+  }
+#endif 
+
 }
 #endif
 

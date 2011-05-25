@@ -1969,6 +1969,22 @@ int getparamfile(char *paramfname, int phase)
       getparam("fix_t_el", &fix_t_el, PARAM_INT, 1, 1);
     }
 #endif
+#ifdef PDECAY
+else if (strcasecmp(token, "xipdecay")==0){
+      /* value for the damping parameter added to the EQ's of motion */
+      getparam("xipdecay", &xipdecay, PARAM_REAL, 1,1);
+    }
+else if (strcasecmp(token, "ramp_fraction")==0){
+      /* fraction of the sample on which the damping ramp acts  */
+      getparam("ramp_fraction", &ramp_fraction, PARAM_REAL, 1,1);
+      if(ramp_fraction > 0.9 || ramp_fraction < 0.0)
+	error("Nonsense value for ramp_fraction detected, please check prameter file!");
+    }
+else if (strcasecmp(token, "pdecay_mode")==0){
+      /* mode for the damping function  */
+      getparam("pdecay_mode", &pdecay_mode, PARAM_INT, 1,1);
+    }
+#endif
 #ifdef LASER
 else if (strcasecmp(token, "laser_delta_temp")==0){
       /* maximum heat added by laser (at the surface) (in maxwell routine) */
@@ -3994,6 +4010,11 @@ void broadcast_params() {
   MPI_Bcast( &laser_tem_mode,     3, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 #endif
+#ifdef PDECAY
+  MPI_Bcast( &xipdecay,     1, REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &ramp_fraction,1, REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &pdecay_mode,  1, REAL,  0, MPI_COMM_WORLD);
+#endif 
 #ifdef TTM
   MPI_Bcast( &fd_g,     1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fd_update_steps,1, MPI_INT, 0, MPI_COMM_WORLD);

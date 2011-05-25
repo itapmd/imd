@@ -865,6 +865,14 @@ EXTERN double (*laser_intensity_profile)(double, double, double);
 
 #endif
 
+#ifdef PDECAY
+EXTERN real xipdecay INIT (0.0);        /* damping parameter */
+EXTERN real ramp_start INIT (0.9);      /* start of damping ramp in % of box_size */
+EXTERN real ramp_end INIT (1.0);        /* end of damping ramp */
+EXTERN real ramp_fraction INIT (0.2);   /* fraction of the sample (from right side) on which the damping ramp acts */
+EXTERN int pdecay_mode INIT (1);        /* which form of the damping function is used */
+#endif
+
 #ifdef SM
 EXTERN real chi_0[2]; /* Initial value of the electronegativity */ 
 EXTERN real z_es[2]; /* Initial value of the effecitve core charge */
