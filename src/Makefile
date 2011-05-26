@@ -1160,6 +1160,11 @@ else
 	endif
 endif
 
+# PDECAY
+ifneq (,$(findstring pdecay,${MAKETARGET}))
+PP_FLAGS += -DPDECAY
+endif
+
 # TWO TEMPERATURE MODEL TTM
 ifneq (,$(strip $(findstring ttm,${MAKETARGET})))
 PP_FLAGS += -DTTM
