@@ -1661,20 +1661,8 @@ void calc_sm_pot()
 {
   int i, k, n=0, m, is_short=0, inc=ntypes*ntypes;
 
-  if (0==have_valid_nbl) {
-#ifdef MPI
-    /* check message buffer size */
-    if (0 == nbl_count % BUFSTEP) setup_buffers();
-#endif
-    /* update cell decomposition */
-    fix_cells();
-  }
-
   /* fill the buffer cells */
   send_cells(copy_sm_charge,pack_sm_charge,unpack_sm_charge);
-
-  /* make new neighbor lists */
-  if (0==have_valid_nbl) make_nblist();
 
   /* clear per atom accumulation variables, also in buffer cells */
   for (k=0; k<nallcells; k++) {
@@ -1697,7 +1685,7 @@ void calc_sm_pot()
       d1.x  = ORT(p,i,X);
       d1.y  = ORT(p,i,Y);
       d1.z  = ORT(p,i,Z);
-      ch_i  = Q_SM(p,i)*coul_eng;
+      ch_i  = Q_SM(p,i);
       p_typ = SORTE(p,i);
 
       /* loop over neighbors */
@@ -1714,11 +1702,11 @@ void calc_sm_pot()
         d.y  = ORT(q,j,Y) - d1.y;
         d.z  = ORT(q,j,Z) - d1.z;
         r2   = SPROD(d,d);
-        ch_j = Q_SM(q,j)*coul_eng;
+        ch_j = Q_SM(q,j);
 
         if (SQR(ch_i * ch_j) > 0.0) {
           if (r2 < ew_r2_cut) {	
-            /* Coulomb potential is in column 0 */
+            /* Coulomb potential is in column 0, contains already coul_eng */
             int incr = coul_table.ncols;
             VAL_FUNC(phi, coul_table, 0, incr, r2, is_short);
             pot        += phi * ch_j;
@@ -1727,8 +1715,8 @@ void calc_sm_pot()
           col2 = p_typ * ntypes + SORTE(q,j);
           if (r2 < cr_pot_tab.end[col2]) {
             VAL_FUNC(phi, cr_pot_tab, col2, inc, r2, is_short);
-            pot        += phi * ch_j;
-            V_SM(q,j)  += phi * ch_i;
+            pot        += phi * ch_j * coul_eng;
+            V_SM(q,j)  += phi * ch_i * coul_eng;
           }
         }
       }
@@ -1740,12 +1728,11 @@ void calc_sm_pot()
 
   /* contribution of coulomb self energy */
   for (k=0; k<ncells; k++) {
-    real tmp = ew_vorf * coul_eng * 2;
-    //tmp = 0.0; /* Ewald self-energy term disturbs determination of charges */
+    real tmp = ew_vorf * 2;
     cell *p  = CELLPTR(k);
     for (i=0; i<p->n; i++) {
       int typ = SORTE(p,i);
-      V_SM(p,i) -= (tmp - sm_J_0[typ]) * Q_SM(p,i);
+      V_SM(p,i) -= (tmp - sm_J_0[typ]) * Q_SM(p,i) * coul_eng;
     }
   }
 
@@ -1853,7 +1840,7 @@ void calc_sm_chi()
     cell *p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
       int t = SORTE(p,i);
-      CHI_SM(p,i) += sm_chi_0[t];
+      CHI_SM(p,i) += sm_chi_0[t] * coul_eng;
     }
   }
 
