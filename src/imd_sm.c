@@ -47,8 +47,10 @@ void init_sm(void)
 #endif
   /* fill the buffer cells for first charge update */
   send_cells(copy_cell,pack_cell,unpack_cell);
-#endif
+  charge_update_sm();
+#else
   do_charge_update();
+#endif
 }
 
 
@@ -691,3 +693,155 @@ void do_charge_update(void)
 #endif
   }
 }
+
+/*****************************************************************************
+*
+* Charge update a la Elsener et al. (Mod. Sim. Mat. Sci. 16, 0250006 (2008))
+*
+*   We solve the linear system
+*
+*      [ V 1 ] [ Q_SM ] = [ -CHI_SM ]
+*      [ 1 0 ] [  Q_0 ]   [    0    ]
+*
+*   The matrix-vector product V*Q_SM ist stored in V_SM (by calc_sm_pot). 
+*   Q_SM stores the subsequent charge corrections (with Q_0 the negative
+*   of the chemical potential), R_SM the residuals of the system above.
+*
+******************************************************************************/
+
+void charge_update_sm(void) {
+
+  real tmpvec1[3], tmpvec2[3], *tmpvec;
+  real r_old, r_new, alpha, beta;
+  real Q_0, V_0, R_0, sm_tol = 1e-5;
+  int  i, k, itr=0, sm_max_itr = 10;
+
+#ifdef MPI
+  tmpvec = tmpvec2;
+#else
+  tmpvec = tmpvec1;
+#endif
+
+  /* assign initial charges */
+  for (k=0; k<ncells; ++k) {
+    cell *p = CELLPTR(k);
+    for (i=0; i<p->n; ++i) {
+      Q_SM(p,i) = CHARGE(p,i);
+    }
+  }
+#ifdef NBLIST
+  calc_sm_chi();
+  calc_sm_pot();
+#else
+  do_electronegativity();
+  do_v_real();
+  do_v_kspace();
+#endif
+
+  /* first residuals and first charge correction; we choose the 
+     initial chemical potential such that the residuals are minimal */
+  tmpvec1[0] = tmpvec1[1] = tmpvec1[2] = 0.0; 
+  for (k=0; k<ncells; ++k) {
+    cell *p = CELLPTR(k);
+    for (i=0; i<p->n; ++i) {
+      Q_SM(p,i) = R_SM(p,i) = -CHI_SM(p,i) - V_SM(p,i);
+      tmpvec1[0] += CHARGE(p,i);
+      tmpvec1[1] += R_SM(p,i);
+      tmpvec1[2] += SQR(R_SM(p,i));
+    }
+  }
+#ifdef MPI
+  MPI_Allreduce(tmpvec1, tmpvec2, 3, REAL, MPI_SUM, cpugrid);
+#endif
+  R_0 = Q_0 = -tmpvec[0];
+  tmpvec[1] /= natoms;
+  r_new = r_old = (tmpvec[2] + SQR(R_0)) / natoms - SQR(tmpvec[1]);
+  for (k=0; k<ncells; ++k) {
+    cell *p = CELLPTR(k);
+    for (i=0; i<p->n; ++i) {
+      Q_SM(p,i) -= tmpvec[1];
+      R_SM(p,i) -= tmpvec[1];
+    }
+  }
+
+  if (myid==0) printf("itr: %d, r_new: %f\n", itr, r_new);
+
+  /* now the iteration starts ... */
+  while ((r_new > sm_tol) && (itr++ < sm_max_itr)) {
+
+#ifdef NBLIST
+    calc_sm_pot();
+#else
+    do_v_real();
+    do_v_kspace();
+#endif
+
+    /* reduction loop for size of correction*/
+    tmpvec1[0] = tmpvec1[1] = 0.0; 
+    for (k=0; k<ncells; ++k) {
+      cell *p = CELLPTR(k);
+      for (i=0; i<p->n; ++i) {
+        V_SM(p,i)  += Q_0;
+        tmpvec1[0] += Q_SM(p,i);
+        tmpvec1[1] += Q_SM(p,i) * V_SM(p,i);
+      }
+    }
+#ifdef MPI
+    MPI_Allreduce(tmpvec1, tmpvec2, 2, REAL, MPI_SUM, cpugrid);
+#endif
+    V_0 = tmpvec[0];
+    alpha = natoms * r_old / (tmpvec[1] + V_0 * Q_0);
+
+    /* new residuals, corrected charge */
+    tmpvec1[0] = 0.0;
+    for (k=0; k<ncells; ++k) {
+      cell *p = CELLPTR(k);
+      for (i=0; i<p->n; ++i) {
+        CHARGE(p,i) += alpha * Q_SM(p,i);
+        R_SM(p,i)   -= alpha * V_SM(p,i);
+        tmpvec1[0]  += SQR(R_SM(p,i));
+      }
+    }
+#ifdef MPI
+    MPI_Allreduce(tmpvec1, tmpvec2, 1, REAL, MPI_SUM, cpugrid);
+#endif
+    R_0  -= alpha * V_0;
+    r_new = (tmpvec[0] + SQR(R_0)) / natoms;
+
+    if (myid==0) printf("itr: %d, r_new: %f\n", itr, r_new);
+
+    /* stop if already close enough */
+    if ((r_new < sm_tol) || (itr >= sm_max_itr)) break;
+
+    beta  = r_new / r_old; 
+    r_old = r_new;
+
+    /* preparation vor the next charge correction */
+    for (k=0; k<ncells; ++k) {
+      cell *p = CELLPTR(k);
+      for (i=0; i<p->n; ++i) {
+        Q_SM(p,i)  = R_SM(p,i) + beta * Q_SM(p,i);
+      }
+    }
+    Q_0 = R_0 + beta * Q_0;
+  }
+
+  /* print average charges for each atom type */
+  tmpvec1[0] = tmpvec1[1] = 0.0;
+  for (k=0; k<ncells; ++k) {
+    cell *p = CELLPTR(k);
+    for (i=0; i<p->n; ++i) {
+      tmpvec1[SORTE(p,i)] += CHARGE(p,i);
+    }
+  }
+#ifdef MPI
+  MPI_Allreduce( tmpvec1, tmpvec2, 2, REAL, MPI_SUM, cpugrid);
+#endif
+  if (0==myid) {
+    printf("Total charge:        qtot = %e\n", (tmpvec[0]+tmpvec[1])/natoms);
+    printf("Average charge of Al: qAl = %e\n", tmpvec[0] / num_sort[0]);
+    printf("Average charge of O:   qO = %e\n", tmpvec[1] / num_sort[1]);
+  }
+
+}
+

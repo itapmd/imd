@@ -685,6 +685,7 @@ void do_electronegativity(void);
 void do_v_real(void);
 void do_cg(void);
 void do_charge_update(void);
+void charge_update_sm(void);
 void calc_sm_pot(void);
 void calc_sm_chi(void);
 void copy_sm_charge(int, int, int, int, int, int, vektor);
