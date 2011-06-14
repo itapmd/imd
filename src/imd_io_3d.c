@@ -1022,6 +1022,9 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
   }
 #endif
 
+#ifdef AVPOS
+    fprintf(out,"avpos_nwrites \t%d\n",avpos_nwrites);
+#endif 
   fclose(out);
 }
 

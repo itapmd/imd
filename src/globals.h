@@ -690,6 +690,8 @@ EXTERN int avpos_start INIT(0);       /* Start time for avpos */
 EXTERN int avpos_end INIT(0);         /* End time for avpos */
 EXTERN int avpos_int INIT(0);         /* Period of avp output ==0 */
 EXTERN int avpos_res INIT(0);         /* Period of coordinate addition */
+EXTERN int avpos_steps INIT(0);       /* Number of steps to average over before position writes*/
+EXTERN int avpos_nwrites INIT(0);     /* Number of position writes performed */
 EXTERN int avpos_cnt INIT(0);         /* Number of positions added */
 #ifdef NPT
 EXTERN vektor av_box_x  INIT(nullvektor); /* Average of box vectors */

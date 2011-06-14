@@ -2277,6 +2277,14 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       /* number of steps between average position writes */
       getparam("avpos_int",&avpos_int,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token,"avpos_steps")==0) {
+      /* number of steps to average over before position writes */
+      getparam("avpos_steps",&avpos_steps,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"avpos_nwrites")==0) {
+      /* number of position writes, only for processing the itr file */
+      getparam("avpos_nwrites",&avpos_nwrites,PARAM_INT,1,1);
+    }
 #endif
 #if defined(FORCE) || defined(WRITEF)
     else if (strcasecmp(token,"force_int")==0) {
@@ -3391,7 +3399,8 @@ void check_parameters_complete()
 #ifdef AVPOS
   fprintf(stderr, "%d %d\n", avpos_start, imdrestart*checkpt_int);
   if (avpos_start <= imdrestart*checkpt_int)
-    avpos_start = imdrestart*checkpt_int+1; /* do not ask me why +1 ;-) */
+    //  avpos_start = imdrestart*checkpt_int+1; /* do not ask me why +1 ;-) */
+    avpos_start = imdrestart*checkpt_int; /* do not ask me why +1 ;-) */
   /* Default initialisation of end time */ 
   if (0==avpos_end) avpos_end = steps_max;
 #endif
@@ -4206,6 +4215,8 @@ void broadcast_params() {
   MPI_Bcast( &avpos_end,         1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &avpos_int,         1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &avpos_res,         1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &avpos_steps,       1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &avpos_nwrites,     1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef ATDIST

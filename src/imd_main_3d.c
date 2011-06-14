@@ -45,6 +45,8 @@ int main_loop(int simulation)
   real tmpvec1[DIM], tmpvec2[DIM];
   char tmp_str[9];
 
+  int tmpsteps;
+
   real fnorm2,ekin,epot,delta_epot;
 #ifdef debugLo
     printf("    ************************* \n");fflush(stdout);
@@ -597,16 +599,47 @@ int main_loop(int simulation)
        write_config_select(steps, "dsp", write_atoms_dsp, write_header_dsp);
 #endif
 #ifdef AVPOS
-    if ( steps <= avpos_end ){
-      if ((avpos_res > 0) && (0 == (steps - avpos_start) % avpos_res) && 
-          (steps > avpos_start)) add_positions();
-      if ((avpos_int > 0) && (0 == (steps - avpos_start) % avpos_int) && 
-          (steps > avpos_start)) {
-        write_config_select((steps - avpos_start) / avpos_int,"avp",
-                            write_atoms_avp,write_header_avp);
-        write_avpos_itr_file((steps - avpos_start) / avpos_int, steps);
-        update_avpos();
-      }
+    if ( steps <= avpos_end && steps > avpos_start ){
+      if( avpos_steps == 0)    /* default, for backwards compatibility */
+	{ 
+	  if ((avpos_res > 0) && (0 == (steps - avpos_start) % avpos_res) )
+	    add_positions();
+	  if ((avpos_int > 0) && (0 == (steps - avpos_start) % avpos_int) ) 
+	    {
+	      write_config_select((steps - avpos_start) / avpos_int,"avp",
+				  write_atoms_avp,write_header_avp);
+	      write_avpos_itr_file((steps - avpos_start) / avpos_int, steps);
+	      update_avpos();
+	    }
+	}
+      else
+	{
+	  if ( steps >= (avpos_nwrites+1)*avpos_int - avpos_res*avpos_steps)
+	    {
+	      tmpsteps = avpos_start + (avpos_nwrites+1)*avpos_int - steps;
+	      //      printf("steps = %d tmpsteps =%d\n",steps,tmpsteps);fflush(stdout); 
+	      if ( tmpsteps == avpos_res*avpos_steps)
+		{ 
+		  //	  printf("avpos_start = %d avpos_nwrites=%d avpos_int=%d avpos_steps=%d \n",avpos_start,avpos_nwrites, avpos_int,avpos_steps );fflush(stdout); 
+		  //	  printf("updating positions\n");fflush(stdout); 
+		  update_avpos();
+		}
+	      else if ( tmpsteps % (avpos_res) == 0)
+		{
+		  add_positions(); 
+		  //	  printf("adding positions\n");fflush(stdout); 
+		}
+	      if (tmpsteps == 0)
+		{
+		  avpos_nwrites++;
+		  write_config_select(avpos_nwrites,"avp",write_atoms_avp,write_header_avp);
+		  write_avpos_itr_file(avpos_nwrites, steps);
+		  //	  printf("writing out: %d\n",avpos_nwrites);fflush(stdout); 
+		}
+
+	    }
+	}
+    
     }
 #endif
 #ifdef NVX 
