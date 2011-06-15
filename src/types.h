@@ -207,6 +207,9 @@ typedef struct {
 #endif
 #ifdef STRESS_TENS
   sym_tensor  *presstens;
+#ifdef AVPOS
+  sym_tensor  *avpresstens;
+#endif
 #endif
 #ifdef SHOCK
   real        *pxavg;

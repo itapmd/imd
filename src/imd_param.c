@@ -2285,6 +2285,10 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       /* number of position writes, only for processing the itr file */
       getparam("avpos_nwrites",&avpos_nwrites,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token,"avpos_npwrites")==0) {
+      /* number of pressure writes, only for processing the itr file */
+      getparam("avpos_npwrites",&avpos_npwrites,PARAM_INT,1,1);
+    }
 #endif
 #if defined(FORCE) || defined(WRITEF)
     else if (strcasecmp(token,"force_int")==0) {
@@ -3403,6 +3407,10 @@ void check_parameters_complete()
     avpos_start = imdrestart*checkpt_int; /* do not ask me why +1 ;-) */
   /* Default initialisation of end time */ 
   if (0==avpos_end) avpos_end = steps_max;
+#ifdef STRESS_TENS
+  if (press_int % avpos_int !=0 || avpos_res % eng_int !=0)
+    error("For averaged pressure writes, press_int musst be an integer multiple of avpos_int and avpos_res must be an integer multiple of eng_int");
+#endif
 #endif
 
 #ifdef ATDIST
@@ -4217,6 +4225,7 @@ void broadcast_params() {
   MPI_Bcast( &avpos_res,         1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &avpos_steps,       1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &avpos_nwrites,     1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &avpos_npwrites,    1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef ATDIST

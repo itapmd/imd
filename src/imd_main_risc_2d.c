@@ -55,7 +55,7 @@ void calc_forces(int steps)
 #ifdef NNBR
       NBANZ(p,i) = 0;
 #endif
-#ifdef STRESS_TENS
+#if defined(STRESS_TENS)
       PRESSTENS(p,i,xx) = 0.0;
       PRESSTENS(p,i,yy) = 0.0;
       PRESSTENS(p,i,xy) = 0.0;

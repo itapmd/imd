@@ -167,6 +167,9 @@ INLINE static int MOD(shortint p, int q)
 #endif
 #ifdef STRESS_TENS
 #define PRESSTENS(cell,i,sub)   (atoms.presstens[(cell)->ind[i]].sub)
+#ifdef AVPOS
+#define AVPRESSTENS(cell,i,sub)   (atoms.avpresstens[(cell)->ind[i]].sub)
+#endif
 #endif
 #ifdef SHOCK
 #define PXAVG(cell,i)           (atoms.pxavg[(cell)->ind[i]])
@@ -298,6 +301,9 @@ INLINE static int MOD(shortint p, int q)
 #endif
 #ifdef STRESS_TENS
 #define PRESSTENS(cell,i,sub)   ((cell)->presstens[i].sub)
+#ifdef AVPOS
+#define AVPRESSTENS(cell,i,sub)   ((cell)->avpresstens[i].sub)
+#endif
 #endif
 #ifdef SHOCK
 #define PXAVG(cell,i)           ((cell)->pxavg[i])

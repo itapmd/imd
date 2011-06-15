@@ -80,7 +80,7 @@ void calc_forces(int steps)
       DREH_MOMENT(p,i,Y) = 0.0;
       DREH_MOMENT(p,i,Z) = 0.0;
 #endif
-#ifdef STRESS_TENS
+#if defined(STRESS_TENS)
       PRESSTENS(p,i,xx) = 0.0;
       PRESSTENS(p,i,yy) = 0.0;
       PRESSTENS(p,i,zz) = 0.0;

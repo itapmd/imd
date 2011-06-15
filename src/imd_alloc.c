@@ -274,6 +274,16 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
   to->presstens[i].yz = from->presstens[j].yz;   
   to->presstens[i].zx = from->presstens[j].zx;   
 #endif
+#ifdef AVPOS
+  to->avpresstens[i].xx = from->avpresstens[j].xx;   
+  to->avpresstens[i].yy = from->avpresstens[j].yy;   
+  to->avpresstens[i].xy = from->avpresstens[j].xy;   
+#ifndef TWOD
+  to->avpresstens[i].zz = from->avpresstens[j].zz;   
+  to->avpresstens[i].yz = from->avpresstens[j].yz;   
+  to->avpresstens[i].zx = from->avpresstens[j].zx;  
+#endif 
+#endif /* AVPOS */
 #endif /* STRESS_TENS */
 #ifdef SHOCK
   to->pxavg[i] = from->pxavg[j];   
@@ -632,6 +642,9 @@ void alloc_cell(cell *p, int n)
 #endif
 #ifdef STRESS_TENS
   memalloc( &p->presstens, n, sizeof(sym_tensor), al, ncopy, 0, "presstens" );
+#ifdef AVPOS
+  memalloc( &p->avpresstens, n, sizeof(sym_tensor), al, ncopy, 0, "avpresstens" );
+#endif
 #endif
 #ifdef SHOCK
   memalloc( &p->pxavg, n, sizeof(real), al, ncopy, 1, "pxavg" );

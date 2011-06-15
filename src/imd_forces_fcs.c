@@ -49,7 +49,7 @@ void clear_forces(void) {
       KRAFT(p,i,X) = 0.0;
       KRAFT(p,i,Y) = 0.0;
       KRAFT(p,i,Z) = 0.0;
-#ifdef STRESS_TENS
+#if defined (STRESS_TENS)
       PRESSTENS(p,i,xx) = 0.0;
       PRESSTENS(p,i,yy) = 0.0;
       PRESSTENS(p,i,xy) = 0.0;

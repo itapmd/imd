@@ -170,7 +170,7 @@ int main_loop(int simulation)
                       ((steps < hc_start) || ((steps-hc_start)%hc_int==0))) ||
 #endif
                      (relax_rate > 0.0) );
-#endif
+#endif /* STRESS_TENS */
 
 #ifdef EPITAX
     for (i=0; i<ntypes; ++i ) {
@@ -638,10 +638,34 @@ int main_loop(int simulation)
 		}
 
 	    }
+#ifdef STRESS_TENS
+	  if ( (press_int > 0) && (steps >= (avpos_npwrites+1)*press_int - avpos_res*avpos_steps))
+	    {
+	      tmpsteps = avpos_start + (avpos_npwrites+1)*press_int - steps;
+	      if ( tmpsteps == avpos_res*avpos_steps)
+		{ 		  
+		  update_avpress();
+		}
+	      else if ( tmpsteps % (avpos_res) == 0)
+		{
+		  add_presstensors();
+		}
+	      if (tmpsteps == 0)
+		{
+		  avpos_npwrites++;
+		  write_config_select(avpos_npwrites , "press",
+				       write_atoms_press, write_header_press);
+		  //	  printf("writing out: %d\n",avpos_npwrites);fflush(stdout); 
+		}
+
+	    }
+#endif /* STRESS_TENS */
+
 	}
     
     }
-#endif
+#endif /* AVPOS */
+
 #ifdef NVX 
     if ((ensemble == ENS_NVX) && (hc_int > 0) && (steps > hc_start)) 
        write_temp_dist(steps - hc_start);
@@ -649,7 +673,7 @@ int main_loop(int simulation)
 
 #ifdef STRESS_TENS
     if ((press_int > 0) && (0 == steps % press_int)) {
-      if (!do_press_calc) error("pressure tensor incomplete");
+      if (!do_press_calc) error("pressure tensor incomplete for writing .press file");
        write_config_select( steps/press_int, "press",
                             write_atoms_press, write_header_press);
     }
@@ -734,7 +758,7 @@ int main_loop(int simulation)
     if (0==myrank) printf( "End of simulation %d\n", simulation );
   }  
   return finished;
-}
+    }
 
 /*****************************************************************************
 *
@@ -1924,7 +1948,7 @@ void calc_tot_presstens(void)
 
   real tmp_presstens1[6], tmp_presstens2[6];
 
-  if (!do_press_calc) error("pressure tensor incomplete");
+  if (!do_press_calc) error("pressure tensor incomplete in calculation of total presstens");
   tot_presstens.xx = 0.0; 
   tot_presstens.yy = 0.0; 
   tot_presstens.xy = 0.0;

@@ -420,6 +420,16 @@ void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *p, int ind )
   to->data[ to->n++ ] = PRESSTENS(p,ind,yz);   
   to->data[ to->n++ ] = PRESSTENS(p,ind,zx);   
 #endif
+#ifdef AVPOS
+  to->data[ to->n++ ] = AVPRESSTENS(p,ind,xx);   
+  to->data[ to->n++ ] = AVPRESSTENS(p,ind,yy);   
+  to->data[ to->n++ ] = AVPRESSTENS(p,ind,xy);   
+#ifndef TWOD
+  to->data[ to->n++ ] = AVPRESSTENS(p,ind,zz);   
+  to->data[ to->n++ ] = AVPRESSTENS(p,ind,yz);   
+  to->data[ to->n++ ] = AVPRESSTENS(p,ind,zx);   
+#endif
+#endif
 #endif /* STRESS_TENS */
 #ifdef SHOCK
   to->data[ to->n++ ] = PXAVG(p,ind);
@@ -624,6 +634,16 @@ void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
   PRESSTENS(to,ind,zz) = b->data[j++];   
   PRESSTENS(to,ind,yz) = b->data[j++];   
   PRESSTENS(to,ind,zx) = b->data[j++];   
+#endif
+#ifdef AVPOS
+  AVPRESSTENS(to,ind,xx) = b->data[j++];   
+  AVPRESSTENS(to,ind,yy) = b->data[j++];   
+  AVPRESSTENS(to,ind,xy) = b->data[j++];   
+#ifndef TWOD
+  AVPRESSTENS(to,ind,zz) = b->data[j++];   
+  AVPRESSTENS(to,ind,yz) = b->data[j++];   
+  AVPRESSTENS(to,ind,zx) = b->data[j++];   
+#endif
 #endif
 #endif /* STRESS_TENS */
 #ifdef SHOCK

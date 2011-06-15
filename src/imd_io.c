@@ -927,6 +927,7 @@ void write_header_press(FILE *out)
 {
   char c;
   time_t now;
+  real tmp;
 
   /* format line */
   if (binary_output)
@@ -943,6 +944,20 @@ void write_header_press(FILE *out)
   fprintf(out, "#C number type mass x y z P_xx P_yy P_zz P_yz P_zx P_xy\n");
 #endif
 
+#if defined(AVPOS) && defined (NPT) 
+ tmp = (real) avpos_res / ( avpos_int + avpos_res );
+#ifdef TWOD
+  fprintf(out,"box_x \t%.16f %.16f\n", av_box_x.x * tmp, av_box_x.y * tmp);
+  fprintf(out,"box_y \t%.16f %.16f\n", av_box_y.x * tmp, av_box_y.y * tmp);
+#else
+  fprintf(out, "box_x \t%.16f %.16f %.16f\n",
+          av_box_x.x * tmp, av_box_x.y * tmp, av_box_x.z * tmp);
+  fprintf(out, "box_y \t%.16f %.16f %.16f\n",
+          av_box_y.x * tmp, av_box_y.y * tmp, av_box_y.z * tmp);
+  fprintf(out, "box_z \t%.16f %.16f %.16f\n",
+          av_box_z.x * tmp, av_box_z.y * tmp, av_box_z.z * tmp);
+#endif
+#else /* not AVPOS and NPT */
   /* box lines */
 #ifdef TWOD
   fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
@@ -952,10 +967,14 @@ void write_header_press(FILE *out)
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
 #endif
-
+#endif /*AVPOS */
   /* endheader line */
   time(&now);
+#ifdef AVPOS
+  fprintf(out, "## AVERAGED QUANTITIES! Generated on %s", ctime(&now) ); 
+#else
   fprintf(out, "## Generated on %s", ctime(&now) ); 
+#endif
   fprintf(out, "## by %s (version of %s)\n", progname, DATE);
   fprintf(out, "#E\n");
 
@@ -972,10 +991,50 @@ void write_atoms_press(FILE *out)
 {
   int i, k, n, len=0;
   i_or_f *data;
+#ifdef AVPOS
+  real x, y, z, tmp;
+  vektor avp_pos, coeff;
+
+  tmp = 1.0 / avpos_cnt;
+#endif
 
   for (k=0; k<NCELLS; k++) {
     cell *p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
+
+#ifdef AVPOS
+      /* Averaged coordinates of atoms */
+      avp_pos.x = AV_POS(p,i,X) * tmp;
+      avp_pos.y = AV_POS(p,i,Y) * tmp;
+#ifndef TWOD
+      avp_pos.z = AV_POS(p,i,Z) * tmp;
+#endif
+      /* Coefficients of coordinates with respect to box vectors */
+      coeff.x = SPROD( avp_pos, tbox_x );
+      coeff.y = SPROD( avp_pos, tbox_y );
+#ifndef TWOD
+      coeff.z = SPROD( avp_pos, tbox_z );
+#endif
+      /* For periodic boundary conditions map coordinates into box */
+      if( pbc_dirs.x == 1 ) 
+        coeff.x -= floor(coeff.x);
+      if( pbc_dirs.y == 1 )
+        coeff.y -= floor(coeff.y);
+#ifndef TWOD
+      if( pbc_dirs.z == 1 ) 
+         coeff.z -= floor(coeff.z);
+#endif
+#ifdef TWOD
+      x = coeff.x * box_x.x + coeff.y * box_y.x;
+      y = coeff.x * box_x.y + coeff.y * box_y.y;
+#else
+      x = coeff.x * box_x.x + coeff.y * box_y.x + coeff.z * box_z.x;
+      y = coeff.x * box_x.y + coeff.y * box_y.y + coeff.z * box_z.y;
+      z = coeff.x * box_x.z + coeff.y * box_y.z + coeff.z * box_z.z;
+#endif
+
+#endif /* AVPOS */
+
       /* binary output */
       if (binary_output) {
         n = 0;
@@ -983,6 +1042,22 @@ void write_atoms_press(FILE *out)
         data[n++].i = (integer) NUMMER(p,i);
         data[n++].i = (integer) VSORTE(p,i);
         data[n++].f = (float)   MASSE (p,i);
+#ifdef AVPOS
+	data[n++].f = (float)   x;
+        data[n++].f = (float)   y;
+#ifndef TWOD
+        data[n++].f = (float)   z;
+#endif
+	data[n++].f = (float)   AVPRESSTENS(p,i,xx)* tmp;
+        data[n++].f = (float)   AVPRESSTENS(p,i,yy)* tmp;
+#ifndef TWOD
+        data[n++].f = (float)   AVPRESSTENS(p,i,zz)* tmp;
+        data[n++].f = (float)   AVPRESSTENS(p,i,yz)* tmp;
+        data[n++].f = (float)   AVPRESSTENS(p,i,zx)* tmp;
+#endif
+        data[n++].f = (float)   AVPRESSTENS(p,i,xy)* tmp;
+
+#else
         data[n++].f = (float)   ORT (p,i,X);
         data[n++].f = (float)   ORT (p,i,Y);
 #ifndef TWOD
@@ -996,10 +1071,28 @@ void write_atoms_press(FILE *out)
         data[n++].f = (float)   PRESSTENS(p,i,zx);
 #endif
         data[n++].f = (float)   PRESSTENS(p,i,xy);
+#endif /* AVPOS */
         len += n * sizeof(i_or_f);
       }
       /* ASCII output */
       else {
+
+#ifdef AVPOS
+#ifdef TWOD
+        len += sprintf( outbuf+len, 
+          "%d %d %f %.12f %.12f %.12f %.12f %.12f\n", 
+          NUMMER(p,i), VSORTE(p,i), MASSE(p,i), x,y,
+          AVPRESSTENS(p,i,xx)* tmp, AVPRESSTENS(p,i,yy)* tmp, AVPRESSTENS(p,i,xy)* tmp );
+#else
+        len += sprintf( outbuf+len,
+          "%d %d %f %.12f %.12f %.12f %.12f %.12f %.12f %.12f %.12f %.12f\n", 
+          NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
+			x,y,z,
+			AVPRESSTENS(p,i,xx)* tmp, AVPRESSTENS(p,i,yy)* tmp, AVPRESSTENS(p,i,zz)* tmp,
+			AVPRESSTENS(p,i,yz)* tmp, AVPRESSTENS(p,i,zx)* tmp, AVPRESSTENS(p,i,xy)* tmp );
+#endif
+#else /* not AVPOS */
+
 #ifdef TWOD
         len += sprintf( outbuf+len, 
           "%d %d %f %.12f %.12f %.12f %.12f %.12f\n", 
@@ -1013,6 +1106,8 @@ void write_atoms_press(FILE *out)
           PRESSTENS(p,i,xx), PRESSTENS(p,i,yy), PRESSTENS(p,i,zz),
           PRESSTENS(p,i,yz), PRESSTENS(p,i,zx), PRESSTENS(p,i,xy) );
 #endif
+
+#endif /* AVPOS */
       }
       /* flush or send outbuf if it is full */
       if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -1472,6 +1567,36 @@ void update_avpos(void)
   avpos_cnt = 1;
 
 }
+
+# ifdef STRESS_TENS
+/******************************************************************************
+*
+* update_avpress resets the pressure tensor
+*
+******************************************************************************/
+
+void update_avpress(void)
+{ 
+  int k;
+  for (k=0; k<NCELLS; k++) {
+    int i;
+    cell* p;
+    p = CELLPTR(k);
+    for (i=0; i<p->n; i++) {
+      AVPRESSTENS(p,i,xx) = PRESSTENS(p,i,xx);
+      AVPRESSTENS(p,i,yy) = PRESSTENS(p,i,yy);
+      AVPRESSTENS(p,i,xy) = PRESSTENS(p,i,xy);
+#ifndef TWOD
+      AVPRESSTENS(p,i,zz) = PRESSTENS(p,i,zz);
+      AVPRESSTENS(p,i,yz) = PRESSTENS(p,i,yz);
+      AVPRESSTENS(p,i,zx) = PRESSTENS(p,i,zx);
+#endif
+    }
+  }
+
+
+}
+#endif
 
 /******************************************************************************
 *

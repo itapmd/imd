@@ -544,6 +544,10 @@ void update_ort_ref(void);
 #ifdef AVPOS
 void update_avpos(void);
 void add_positions(void);
+#ifdef STRESS_TENS
+void update_avpress(void);
+void add_presstensors(void);
+#endif
 #endif
 
 /* support for correlation functions - file imd_correl.c */
