@@ -47,55 +47,57 @@ their purpose is and how they are used.</p>
 <td width="120"><a href="#homdef">homdef</a></td>
 <td width="120"><a href="#covalent">keating</a></td>
 <td width="120"><a href="#laser">laser</a></td>
-<td width="120"><a href="#mono">mono</a></td>
+<td width="120"><a href="#laseryz">laseryz</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#mono">mono</a></td>
 <td width="120"><a href="#monolj">monolj</a></td>
 <td width="120"><a href="#msqd">msqd</a></td>
 <td width="120"><a href="#nbl">nbl</a></td>
 <td width="120"><a href="#nnbr">nnbr</a></td>
 <td width="120"><a href="#ordpar">ordpar</a></td>
-<td width="120"><a href="#nmoldyn">nmoldyn</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#pdecay">pdecay</a></td>
+<td width="120"><a href="#nmoldyn">nmoldyn</a></td>
 <td width="120"><a href="#pacx">pacx</a></td>
 <td width="120"><a href="#pair">pair</a></td>
 <td width="120"><a href="#prof">prof</a></td>
 <td width="120"><a href="#quasi">quasi</a></td>
-<td width="120"><a href="#rigid">rigid</a></td>
-<td width="120"><a href="#single">single</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#rigid">rigid</a></td>
+<td width="120"><a href="#single">single</a></td>
 <td width="120"><a href="#sock">sock</a></td>
 <td width="120"><a href="#shock">shock</a></td>
 <td width="120"><a href="#covalent">stiweb</a></td>
 <td width="120"><a href="#stress_tens">stress</a></td>
-<td width="120"><a href="#covalent">tersoff</a></td>
-<td width="120"><a href="#covalent">tersoff2</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#covalent">tersoff</a></td>
+<td width="120"><a href="#covalent">tersoff2</a></td>
 <td width="120"><a href="#timing">timing</a></td>
 <td width="120"><a href="#transport">transport/nvx</a></td>
 <td width="120"><a href="#covalent">ttbp</a></td>
 <td width="120"><a href="#uniax">uniax</a></td>
-<td width="120"><a href="#writef">writef</a></td>
-<td width="120"><a href="#fefl">fefl</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#writef">writef</a></td>
+<td width="120"><a href="#fefl">fefl</a></td>
 <td width="120"><a href="#clone">clone</a></td>
 <td width="120"><a href="#ep">ep</a></td>
 <td width="120"><a href="#neb">neb</a></td>
 <td width="120"><a href="#rnemd">rnemd</a></td>
-<td width="120"><a href="#zapp">zapp</a></td>
-<td width="120"><a href="#sm">sm</a></td>
 </tr>
 
 <tr align="left">
+<td width="120"><a href="#sm">sm</a></td>
+<td width="120"><a href="#zapp">zapp</a></td>
 <td width="120"><a href="#"></a></td>
 <td width="120"><a href="#"></a></td>
 <td width="120"><a href="#"></a></td>
@@ -707,7 +709,39 @@ with the atom number density <img align="middle" alt="rho_n" src="rho_n_formula.
 The second heating mode works by continuous rescaling of the atomic velocities after every IMD timestep. The energy gain in a single time step is proportional to the timestep itself and to a source term, which depends on time t and depth below the surface x like <img  align="middle" alt="S(x,t)=S_{peak}exp(-\mu x)exp(-(t-t_0)^2/(2\sigma_t^2))" src="S_of_x_and_t_formula.png"></img>, that is, an exponential decrease in depth with a gaussian time profile. This heating mode expects the fluence in the parameter laser_sigma_e, the time of maximum intensity and the width of the gaussian pulse in the parameters laser_t_0 and laser_sigma_t. To activate this mode, it is enough to assign a value larger than zero to laser_sigma_e. By integration over time and depth one receives the relationship <img  align="middle" alt="\sigma_e=S_{peak}sqrt(2\pi\sigma_t^2)/(1-R)\mu" src="sigma_e_rescaling_formula.png"></img>.
 </p>
 <p>
-The third heating mode works only in conjunction with the TTM-integrator for simulations with the Two-Temperature-Model. It is automatically activated if IMD was compiled with the ttm and laser make-options. It works with the same source term and parameters as the second mode (see above), but the energy is exclusively added to the electronic subsystem. Of course, some more parameters are required to configure the <a href="ensembles.html#ttm">ttm integrator</a>.
+The third heating mode works only in conjunction with the TTM-integrator for simulations with the Two-Temperature-Model. It is automatically activated if IMD was compiled with the ttm and laser make-options. It works with the same source term and parameters as the second mode (see above), but the energy is exclusively added to the electronic subsystem. Of course, some more parameters are required to configure the <a href="ensembles.html#ttm">ttm integrator</a>. To reduce the effects of reflected pressure waves, a damping module was implemented in IMD named <td width="120"><a href="#pdecay">pdecay</a></td>. 
+</dd>
+<dt><a id="laseryz" name="laseryz"><b>laseryz</b></a></dt>
+<dd>
+<p>
+This option is a modified version of the second heating mode from the <td width="120"><a href="#laser">laser</a></td> option. 
+In addition to rescaling the atomic velocities, an intensity profile is applied. 
+The intensity profiles are controlled by the parameter <tt>laser_tem_mode</tt>, which needs three numbers. 
+The first number specifies the intensity profile, 0 for Laguerre polynomials and 1 for Hermite polynomials. 
+The two following numbers define order and index of the polynomial. Example: <tt>laser_tem_mode 1 0 0</tt> gives a profile 
+with a Hermite polynomial (the one at the beginning), the two zeros define the shape of the TEM-mode  (Transversale Electro-Magnetic-Mode). 
+To adjust the laser beam relative to the y and z-axis, one has to specify the parameters <tt>laser_sigma_w_y</tt> and <tt>laser_sigma_w_z</tt>. 
+For arguments smaller than 1, the beam will be adjusted relative to the y and z-length of the irradiated sample (i.e. <tt>laser_sigma_w_y = 0.5</tt>, <tt>laser_sigma_w_z=0.5</tt> will center the beam). 
+Arguments larger than one will give absolute distances relative to the left and bottom edge. The last parameter which needs to be specified is <tt>laser_sigma_w0</tt>, the beam waist. 
+<p>
+laser_offset:
+<p>
+The density of the sample will be calculated automatically. In order to make this work, an offset from the laser needs to be introduced. This can be achieved e.g. with the following awk-script:
+<pre>#!/usr/bin/awk -f
+{
+if (FNR==3)
+	print  $1, $2+30., $3, $4, $5, $6, $7, $8, $9, $10, $11
+else if (FNR>8)
+	print $1, $2, $3, $4+15., $5, $6, $7, $8, $9, $10, $11
+else
+	print $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
+}
+</pre>  
+Usage: Copy this script in a script file <tt>offset.sh</tt> and make it executable (<tt>chmod a+x offset.sh</tt>). If you copy this script in the directory with a <tt>my_sample.chkpt</tt> file as your starting sample, then typing in a bash:
+<pre>
+ ./offset.sh my_sample.chkpt > offset_my_sample.chkpt
+</pre> will add 15 Å to the front and back of the sample. The sample for the simulation start should be now <tt>offset_my_sample.chkpt</tt>. The option: <pre> laser_offset 15 </pre> now needs to be placed in your 
+<a href="params.html">parameter file</a>. To reduce the effects of refelcted pressure waves, a damping module was implemented in IMD named <td width="120"><a href="#pdecay">pdecay</a></td>. 
 </dd>
 
 <dt><a id="sm" name="sm"><b>sm</b></a></dt>
@@ -923,6 +957,20 @@ all atoms will then have the same value of the order parameter
 in the ground state, and defects become visible through deviations 
 from this value. In three dimensions, such a simple relation usually 
 doesn't exist. 
+</p>
+</dd>
+<dt><a id="pdecay" name="pdecay"><b>pdecay</b></a></dt>
+<dd>
+<p>
+This option allows the damping of pressure waves, which are reflected at the back of the sample. It is usually used together with the <a href="#laser">laser</a> or 
+<a href="#laseryz">laseryz</a> modules.
+Four different modes exist. A mode is set via <tt>pdecay_mode</tt>, so that e.g. <tt>pdecay_mode 2</tt> sets mode 2. Mode 0 linearly scales down the momenta of the atoms, mode 1 is a quadratic scale down of the momenta. The modes 2 and 3 add a friction part to the forces. Mode 2 in a linear and mode 3 in a quadratic fashion. The value <tt>xipdecay</tt> is a constant friction parameter, that has to be specified for mode 2 and 3. The damping zone can be specified via the parameter <tt>ramp_fraction</tt>. The possible values for <tt>ramp_fraction</tt> are between <tt>0</tt> and <tt>0.9</tt>. They define the damping range relative to the sample size. A <tt>ramp_fraction</tt> of e.g. <tt>0.4</tt> will create a damping ramp with a size of 40% of the sample's length, starting at the back. 
+<pre>Usage example:
+ 
+xipdecay 4.0
+pdecay_mode 2
+ramp_fraction 0.4</pre>
+
 </p>
 </dd>
 

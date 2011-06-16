@@ -404,6 +404,19 @@ laser_atom_vol   # Volume per particle (inverse density).
                  # goes into every atom.
                  # Default is 16.6 Angstrom^3 (Al @ room temperature)
 
+# <a href="options.html#laseryz">LASERYZ</a> options for heating by continuous rescaling with intensity profile:
+
+laser_tem_mode	 # Intensity profile type (Laguerre or Hermite) followed by order and index of the polynomial.  
+laser_sigma_w_y	 # Y-Position of the laser beam. 
+laser_sigma_w_z	 # Z-Position of the laser beam.
+laser_sigma_w0	 # Beam waist of the laser beam.
+
+# <a href="options.html#pdecay">PDECAY</a> option for damping pressure waves, i.e. non reflecting boundaries at the back of samples.
+
+xipdecay	 # Friction factor for force damping.
+pdecay_mode	 # Damping modus 0,1,2 or 3. 
+ramp_fraction	 # Size of the damping ramp (between 0 and 0.9).
+
 # parameters for <a href="options.html#sm">SM</a>, computing charges with the
 model of Streitz and Mintmire
 
