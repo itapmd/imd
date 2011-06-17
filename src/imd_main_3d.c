@@ -512,7 +512,8 @@ int main_loop(int simulation)
 #endif
 
 #ifdef SM
-    do_charge_update();
+    if (!sm_fixed_charges)
+      do_charge_update();
 #endif
 
 #ifdef HC

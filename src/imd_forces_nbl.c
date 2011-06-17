@@ -604,6 +604,11 @@ void calc_forces(int steps)
 #endif
 	if (r2 < ew_r2_cut) {	
 	  if (SQR(chg)>0.) {
+#ifdef SM
+            real na_pot_p=0.0, na_pot_q=0.0, na_gr_p=0.0, na_gr_q=0.0;
+            real z_sm_p = sm_Z[it] * CHARGE(q,i) * coul_eng;
+            real z_sm_q = sm_Z[jt] * CHARGE(p,i) * coul_eng;
+#endif
 	    /* Constant electric field from charges */
 	    /* Coulomb potential is in column 0 */
             int incr = coul_table.ncols;
@@ -612,12 +617,34 @@ void calc_forces(int steps)
 	    /* Coulomb Energy */
 	    pot     = chg * phi;
 	    grad    = chg * grphi;
-
+#ifdef SM
+            /* Coulomb repulsion potential */
+            if (r2 < cr_pot_tab.end[col]) {
+              PAIR_INT(phi, grphi, cr_pot_tab, col, inc, r2, is_short);
+              pot  += phi   * (chg * coul_eng - z_sm_p - z_sm_q);
+              grad += grphi * (chg * coul_eng - z_sm_p - z_sm_q);
+            }
+            /* nuclear attraction potential */
+            if (r2 < na_pot_tab.end[col]) {
+              PAIR_INT(na_pot_p, na_gr_p, na_pot_tab, col, inc, r2, is_short);
+            }
+            if (col==col2) {
+              real tmp = (z_sm_q + z_sm_q);
+              pot  += na_pot_p * tmp;
+              grad += na_gr_p  * tmp;
+            } else {
+              if (r2 < na_pot_tab.end[col2]) {
+                PAIR_INT(na_pot_q, na_gr_q, na_pot_tab, col2, inc, r2,is_short);
+              }
+              pot  += z_sm_q * na_pot_p + z_sm_p * na_pot_q;
+              grad += z_sm_q * na_gr_p  + z_sm_p * na_gr_q;
+            }
+#endif
 	    tot_pot_energy += pot;
 	    force.x = d.x * grad;
 	    force.y = d.y * grad;
 	    force.z = d.z * grad;
-//	    printf("#d coul %f %f %f %f %f\n", sqrt(r2), pot, force.x, force.y, force.z);   
+
 	    KRAFT(q,j,X) -= force.x;
 	    KRAFT(q,j,Y) -= force.y;
 	    KRAFT(q,j,Z) -= force.z;
@@ -1143,8 +1170,13 @@ void calc_forces(int steps)
   for (k=0; k<ncells; k++) {
     cell *p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
-      real pot = ew_vorf * SQR( CHARGE(p,i) ) * coul_eng;
-      /* pot += ew_shift[n][n] * 0.5;   what's that??? */
+      real chg = CHARGE(p,i);
+#ifdef SM
+      int  t   = SORTE(p,i);
+      real pot = ((ew_vorf * coul_eng - sm_J_0[t]) * chg - sm_chi_0[t]) * chg;
+#else
+      real pot = ew_vorf * SQR(chg) * coul_eng;
+#endif
       tot_pot_energy -= pot;
       POTENG(p,i)    -= pot;
     }
@@ -1728,11 +1760,11 @@ void calc_sm_pot()
 
   /* contribution of coulomb self energy */
   for (k=0; k<ncells; k++) {
-    real tmp = ew_vorf * 2;
+    real tmp = ew_vorf * 2 * 0;
     cell *p  = CELLPTR(k);
     for (i=0; i<p->n; i++) {
       int typ = SORTE(p,i);
-      V_SM(p,i) -= (tmp - sm_J_0[typ]) * Q_SM(p,i) * coul_eng;
+      V_SM(p,i) -= (tmp*coul_eng - sm_J_0[typ]) * Q_SM(p,i);
     }
   }
 
@@ -1840,7 +1872,7 @@ void calc_sm_chi()
     cell *p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
       int t = SORTE(p,i);
-      CHI_SM(p,i) += sm_chi_0[t] * coul_eng;
+      CHI_SM(p,i) += sm_chi_0[t];
     }
   }
 

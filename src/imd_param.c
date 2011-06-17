@@ -2659,6 +2659,10 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     }
 #endif
 #ifdef SM
+    /* keep charges fixed? */
+    else if (strcasecmp(token,"sm_fixed_charges")==0) {
+      getparam(token, &sm_fixed_charges, PARAM_INT, 1, 1);
+    }
     /* Initial value of the electronegativity */
     else if (strcasecmp(token,"sm_chi_0")==0) {
       if (ntypes==0) error("specify parameter ntypes before sm_chi_0");
@@ -4374,6 +4378,7 @@ void broadcast_params() {
   MPI_Bcast( &coul_eng,           1,      REAL,    0, MPI_COMM_WORLD);
 #endif
 #ifdef SM
+  MPI_Bcast( &sm_fixed_charges,        1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( sm_chi_0,            ntypes, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( sm_J_0,              ntypes, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( sm_Z,                ntypes, REAL,    0, MPI_COMM_WORLD);

@@ -46,10 +46,13 @@ void init_sm(void)
   setup_buffers();  /* setup MPI buffers */
 #endif
   /* fill the buffer cells for first charge update */
-  send_cells(copy_cell,pack_cell,unpack_cell);
-  charge_update_sm();
+  if (!sm_fixed_charges) {
+    send_cells(copy_cell,pack_cell,unpack_cell);
+    charge_update_sm();
+  }
 #else
-  do_charge_update();
+  if (!sm_fixed_charges)
+    do_charge_update();
 #endif
 }
 

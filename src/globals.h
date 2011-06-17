@@ -877,6 +877,7 @@ EXTERN int pdecay_mode INIT (1);        /* which form of the damping function is
 #endif
 
 #ifdef SM
+EXTERN int  sm_fixed_charges INIT(0);    /* if 1, keep charges fixed */
 EXTERN real sm_chi_0[2]; /* Initial value of the electronegativity */ 
 EXTERN real sm_Z[2];     /* Initial value of the effecitve core charge */
 EXTERN real sm_J_0[2];   /* atomic hardness or self-Coulomb repulsion */
