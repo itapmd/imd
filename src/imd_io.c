@@ -1618,9 +1618,9 @@ void write_header_avp(FILE *out)
   
   /* contents line */
 #ifdef TWOD
-  fprintf(out, "#C number type mass x_av y_av Epot_av\n");
+  fprintf(out, "#C number type mass x y Epot_av\n");
 #else
-  fprintf(out, "#C number type mass x_av y_av z_av Epot_av\n");
+  fprintf(out, "#C number type mass x y z Epot_av\n");
 #endif
 
   /* box lines */
