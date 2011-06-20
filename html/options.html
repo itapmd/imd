@@ -742,55 +742,6 @@ damping module was implemented in IMD
 named <td width="120"><a href="#pdecay">pdecay</a></td>.</p>
 </dd>
 
-<dt><a id="laseryz" name="laseryz"><b>laseryz</b></a></dt>
-<dd>
-<p>
-This option is a modified version of the second heating mode from
-the <td width="120"><a href="#laser">laser</a></td> option.  
-In addition to rescaling the atomic velocities, an intensity profile is
-applied.  
-The intensity profiles are controlled by the parameter <tt>laser_tem_mode</tt>,
-which needs three numbers.  
-The first number specifies the intensity profile, 0 for Laguerre polynomials
-and 1 for Hermite polynomials.  
-The two following numbers define order and index of the
-polynomial. Example: <tt>laser_tem_mode 1 0 0</tt> gives a profile  
-with a Hermite polynomial (the one at the beginning), the two zeros define the
-shape of the TEM-mode  (Transversale Electro-Magnetic-Mode).  
-To adjust the laser beam relative to the y and z-axis, one has to specify the
-parameters <tt>laser_sigma_w_y</tt> and <tt>laser_sigma_w_z</tt>.  
-For arguments smaller than 1, the beam will be adjusted relative to the y and
-z-length of the irradiated sample (i.e. <tt>laser_sigma_w_y =
-    0.5</tt>, <tt>laser_sigma_w_z=0.5</tt> will center the beam).  
-Arguments larger than one will give absolute distances relative to the left and
-bottom edge. The last parameter which needs to be specified
-is <tt>laser_sigma_w0</tt>, the beam waist.  
-<p>
-laser_offset:
-<p>
-The density of the sample will be calculated automatically. In order to make
-this work, an offset from the laser needs to be introduced. This can be
-achieved e.g. with the following awk-script: 
-<pre>#!/usr/bin/awk -f
-{
-if (FNR==3)
-	print  $1, $2+30., $3, $4, $5, $6, $7, $8, $9, $10, $11
-else if (FNR>8)
-	print $1, $2, $3, $4+15., $5, $6, $7, $8, $9, $10, $11
-else
-	print $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
-}
-</pre>  
-Usage: Copy this script in a script file <tt>offset.sh</tt> and make it executable (<tt>chmod a+x offset.sh</tt>). If you copy this script in the directory with a <tt>my_sample.chkpt</tt> file as your starting sample, then typing in a bash:
-<pre> 
- ./offset.sh my_sample.chkpt > offset_my_sample.chkpt
-</pre> will add 15 Å to the front and back of the sample. The sample for the
-simulation start should be now <tt>offset_my_sample.chkpt</tt>. The
-option: <pre> laser_offset 15 </pre> now needs to be placed in your  
-<a href="params.html">parameter file</a>. To reduce the effects of refelcted
-pressure waves, a damping module was implemented in IMD
-named <td width="120"><a href="#pdecay">pdecay</a></td>.  
-</dd>
 
 <dt><a id="sm" name="sm"><b>sm</b></a></dt>
 <dd>
