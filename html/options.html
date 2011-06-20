@@ -700,33 +700,77 @@ The first mode is
 instantaneous heating at the beginning of the simulation, which is done by
 setting the particle velocity randomly according to a maxwell distribution.
 It can be activated by setting the parameter laser_delta_temp to a value greater
-than zero, which will be used as the maximum temperature increment at the surface.
+than zero, which will be used as the maximum temperature increment at the
+surface. 
 This is equivalent to using an infinitesimally short laser pulse with a fluence
-(surface energy density) of <img align="middle" alt="sigma_e=3/2*rho_n*laser_delta_temp/mu" src="sigma_e_formula.png"></img>,
-with the atom number density <img align="middle" alt="rho_n" src="rho_n_formula.png"></img> and the absorption constant <img align="middle" alt="mu" src="mu_formula.png"></img>. <img align="middle" alt="\Delta T" src="delta_t_formula.png"></img> corresponds to the parameter laser_delta_temp.
+(surface energy density) of <img align="middle"
+				 alt="sigma_e=3/2*rho_n*laser_delta_temp/mu"
+				 src="sigma_e_formula.png"></img>, 
+with the atom number density <img align="middle" alt="rho_n"
+				  src="rho_n_formula.png"></img> and the
+absorption constant <img align="middle" alt="mu"
+			 src="mu_formula.png"></img>. <img align="middle"
+							   alt="\Delta T"
+							   src="delta_t_formula.png"></img> 
+corresponds to the parameter laser_delta_temp. 
 </p>
 <p>
-The second heating mode works by continuous rescaling of the atomic velocities after every IMD timestep. The energy gain in a single time step is proportional to the timestep itself and to a source term, which depends on time t and depth below the surface x like <img  align="middle" alt="S(x,t)=S_{peak}exp(-\mu x)exp(-(t-t_0)^2/(2\sigma_t^2))" src="S_of_x_and_t_formula.png"></img>, that is, an exponential decrease in depth with a gaussian time profile. This heating mode expects the fluence in the parameter laser_sigma_e, the time of maximum intensity and the width of the gaussian pulse in the parameters laser_t_0 and laser_sigma_t. To activate this mode, it is enough to assign a value larger than zero to laser_sigma_e. By integration over time and depth one receives the relationship <img  align="middle" alt="\sigma_e=S_{peak}sqrt(2\pi\sigma_t^2)/(1-R)\mu" src="sigma_e_rescaling_formula.png"></img>.
+The second heating mode works by continuous rescaling of the atomic velocities
+after every IMD timestep. The energy gain in a single time step is proportional
+to the timestep itself and to a source term, which depends on time t and depth
+below the surface x like <img  align="middle" alt="S(x,t)=S_{peak}exp(-\mu
+						   x)exp(-(t-t_0)^2/(2\sigma_t^2))"
+			       src="S_of_x_and_t_formula.png"></img>, that is,
+an exponential decrease in depth with a gaussian time profile. This heating
+mode expects the fluence in the parameter laser_sigma_e, the time of maximum
+intensity and the width of the gaussian pulse in the parameters laser_t_0 and
+laser_sigma_t. To activate this mode, it is enough to assign a value larger
+than zero to laser_sigma_e. By integration over time and depth one receives the
+relationship <img  align="middle"
+		   alt="\sigma_e=S_{peak}sqrt(2\pi\sigma_t^2)/(1-R)\mu"
+		   src="sigma_e_rescaling_formula.png"></img>. 
 </p>
 <p>
-The third heating mode works only in conjunction with the TTM-integrator for simulations with the Two-Temperature-Model. It is automatically activated if IMD was compiled with the ttm and laser make-options. It works with the same source term and parameters as the second mode (see above), but the energy is exclusively added to the electronic subsystem. Of course, some more parameters are required to configure the <a href="ensembles.html#ttm">ttm integrator</a>. To reduce the effects of reflected pressure waves, a damping module was implemented in IMD named <td width="120"><a href="#pdecay">pdecay</a></td>. 
+The third heating mode works only in conjunction with the TTM-integrator for
+simulations with the Two-Temperature-Model. It is automatically activated if
+IMD was compiled with the ttm and laser make-options. It works with the same
+source term and parameters as the second mode (see above), but the energy is
+exclusively added to the electronic subsystem. Of course, some more parameters
+are required to configure the <a href="ensembles.html#ttm">ttm
+    integrator</a>. To reduce the effects of reflected pressure waves, a
+damping module was implemented in IMD
+named <td width="120"><a href="#pdecay">pdecay</a></td>.</p>
 </dd>
+
 <dt><a id="laseryz" name="laseryz"><b>laseryz</b></a></dt>
 <dd>
 <p>
-This option is a modified version of the second heating mode from the <td width="120"><a href="#laser">laser</a></td> option. 
-In addition to rescaling the atomic velocities, an intensity profile is applied. 
-The intensity profiles are controlled by the parameter <tt>laser_tem_mode</tt>, which needs three numbers. 
-The first number specifies the intensity profile, 0 for Laguerre polynomials and 1 for Hermite polynomials. 
-The two following numbers define order and index of the polynomial. Example: <tt>laser_tem_mode 1 0 0</tt> gives a profile 
-with a Hermite polynomial (the one at the beginning), the two zeros define the shape of the TEM-mode  (Transversale Electro-Magnetic-Mode). 
-To adjust the laser beam relative to the y and z-axis, one has to specify the parameters <tt>laser_sigma_w_y</tt> and <tt>laser_sigma_w_z</tt>. 
-For arguments smaller than 1, the beam will be adjusted relative to the y and z-length of the irradiated sample (i.e. <tt>laser_sigma_w_y = 0.5</tt>, <tt>laser_sigma_w_z=0.5</tt> will center the beam). 
-Arguments larger than one will give absolute distances relative to the left and bottom edge. The last parameter which needs to be specified is <tt>laser_sigma_w0</tt>, the beam waist. 
+This option is a modified version of the second heating mode from
+the <td width="120"><a href="#laser">laser</a></td> option.  
+In addition to rescaling the atomic velocities, an intensity profile is
+applied.  
+The intensity profiles are controlled by the parameter <tt>laser_tem_mode</tt>,
+which needs three numbers.  
+The first number specifies the intensity profile, 0 for Laguerre polynomials
+and 1 for Hermite polynomials.  
+The two following numbers define order and index of the
+polynomial. Example: <tt>laser_tem_mode 1 0 0</tt> gives a profile  
+with a Hermite polynomial (the one at the beginning), the two zeros define the
+shape of the TEM-mode  (Transversale Electro-Magnetic-Mode).  
+To adjust the laser beam relative to the y and z-axis, one has to specify the
+parameters <tt>laser_sigma_w_y</tt> and <tt>laser_sigma_w_z</tt>.  
+For arguments smaller than 1, the beam will be adjusted relative to the y and
+z-length of the irradiated sample (i.e. <tt>laser_sigma_w_y =
+    0.5</tt>, <tt>laser_sigma_w_z=0.5</tt> will center the beam).  
+Arguments larger than one will give absolute distances relative to the left and
+bottom edge. The last parameter which needs to be specified
+is <tt>laser_sigma_w0</tt>, the beam waist.  
 <p>
 laser_offset:
 <p>
-The density of the sample will be calculated automatically. In order to make this work, an offset from the laser needs to be introduced. This can be achieved e.g. with the following awk-script:
+The density of the sample will be calculated automatically. In order to make
+this work, an offset from the laser needs to be introduced. This can be
+achieved e.g. with the following awk-script: 
 <pre>#!/usr/bin/awk -f
 {
 if (FNR==3)
@@ -738,67 +782,94 @@ else
 }
 </pre>  
 Usage: Copy this script in a script file <tt>offset.sh</tt> and make it executable (<tt>chmod a+x offset.sh</tt>). If you copy this script in the directory with a <tt>my_sample.chkpt</tt> file as your starting sample, then typing in a bash:
-<pre>
+<pre> 
  ./offset.sh my_sample.chkpt > offset_my_sample.chkpt
-</pre> will add 15 Å to the front and back of the sample. The sample for the simulation start should be now <tt>offset_my_sample.chkpt</tt>. The option: <pre> laser_offset 15 </pre> now needs to be placed in your 
-<a href="params.html">parameter file</a>. To reduce the effects of refelcted pressure waves, a damping module was implemented in IMD named <td width="120"><a href="#pdecay">pdecay</a></td>. 
+</pre> will add 15 Å to the front and back of the sample. The sample for the
+simulation start should be now <tt>offset_my_sample.chkpt</tt>. The
+option: <pre> laser_offset 15 </pre> now needs to be placed in your  
+<a href="params.html">parameter file</a>. To reduce the effects of refelcted
+pressure waves, a damping module was implemented in IMD
+named <td width="120"><a href="#pdecay">pdecay</a></td>.  
 </dd>
 
 <dt><a id="sm" name="sm"><b>sm</b></a></dt>
 <dd>
 <p>
-This option based on the model of Streitz and Mintmire (Phys. Rev. B <B>50</B>, 11996
+This option based on the model of Streitz and Mintmire (Phys. Rev. B <B>50</B>,
+11996 
 (1994)) enables IMD to compute the charges of a metal/metal-oxide system.    
 The valencies are determined by minimization of the electrostatic energy, which
 is given by the expression 
 <center>
-<img  align="middle" alt="E_{\text{es}}=E_{0}+\sum_{i}^{N}\chi_{i}q_{i}+\frac{1}{2}\sum_{i,j}^{N}\widetilde{V}_{ij}q_{i}q_{j}" src="electrostatic_energy.png"></img>.
+<img  align="middle"
+      alt="E_{\text{es}}=E_{0}+\sum_{i}^{N}\chi_{i}q_{i}+\frac{1}{2}\sum_{i,j}^{N}\widetilde{V}_{ij}q_{i}q_{j}"
+      src="electrostatic_energy.png"></img>. 
 </center></p>
 <img align="middle" alt="E_{0}"
      src="E_0.png"></img> strictly depends on nuclear coordinates and is of no
 consequence for the minimization, while
 <center>
-<img  align="middle" alt="\chi_{i}=\chi^{0}_{i}+\sum_{\substack{j\neq i}}^{N} Z_{j}\big\lbrace\!\left[j|f_{i}\right]-\left[f_{i}|f_{j}\right]\!\big\rbrace" src="electronegativity.png"></img>
+<img  align="middle" alt="\chi_{i}=\chi^{0}_{i}+\sum_{\substack{j\neq i}}^{N}
+			  Z_{j}\big\lbrace\!\left[j|f_{i}\right]-\left[f_{i}|f_{j}\right]\!\big\rbrace"
+      src="electronegativity.png"></img> 
 </center></p>
-specifies the electronegativity of each atom <img  align="i" src="i.png"></img> and
+specifies the electronegativity of each atom <img  align="i" src="i.png"></img>
+and 
 <center>
-<img  align="middle" alt="\widetilde{V}_{ij}=\left\{\begin{array}{cl} J_{i}^{0}, & i=j \\ \left[f_{i}|f_{j}\right], & i
+<img  align="middle" alt="\widetilde{V}_{ij}=\left\{\begin{array}{cl}
+			  J_{i}^{0}, & i=j \\ \left[f_{i}|f_{j}\right], & i 
       \neq j\end{array}\right." src="electrostatic_matrix.png"></img>
 </center></p>
 the electrostatic interaction matrix with the atomic hardness or self-Coulomb
 repulsion <img align="middle" alt="J_{i}^{0}" src="J_0.png"></img>. The terms  
 <center>
-<img  align="middle" alt="\left[j|f_{i}\right]=\int\!\mathrm{d}^{3}r_{1}\,\frac{f_{i}\left(\ve{r}_{1}-\ve{r}_{i}\right)}{\left|\ve{r}_{1}-\ve{r}_{i}\right|}" src="na_pot.png"></img>
+<img  align="middle"
+      alt="\left[j|f_{i}\right]=\int\!\mathrm{d}^{3}r_{1}\,\frac{f_{i}\left(\ve{r}_{1}-\ve{r}_{i}\right)}{\left|\ve{r}_{1}-\ve{r}_{i}\right|}" 
+      src="na_pot.png"></img> 
 </center></p>
 and 
 <center>
-<img  align="middle" alt="\left[f_{i}|f_{j}\right]=\int\!\mathrm{d}^{3}r_{1}\!\int\!\mathrm{d}^{3}r_{2}\,\frac{f_{i}\left(\ve{r}_{1}-\ve{r}_{i}\right)f_{j}\left(\ve{r}_{2}-\ve{r}_{j}\right)}{r_{12}}" src="cr_pot.png"></img>
+<img  align="middle"
+      alt="\left[f_{i}|f_{j}\right]=\int\!\mathrm{d}^{3}r_{1}\!\int\!\mathrm{d}^{3}r_{2}\,\frac{f_{i}\left(\ve{r}_{1}-\ve{r}_{i}\right)f_{j}\left(\ve{r}_{2}-\ve{r}_{j}\right)}{r_{12}}"
+      src="cr_pot.png"></img> 
 </center></p>  
 are the nuclear attraction potential and the Coulomb repulsive potential,
 depending on the atomic-density distribution
 <img  align="middle"
       alt="f_{i}\left(\left|\ve{r}-\ve{r}_{i}\right|\right)=\frac{\zeta_{i}^{3}}{\pi}e^{-2\zeta_{i}\left|\ve{r}-\ve{r}_{i}\right|}"
       src="atomic_density_distrib.png"></img> (Slater 1s orbital). For a detail
-examination of such integrals see Roothaan ((J. Chem. Phys. <B>19</B>, 1445 (1951)). Both
+examination of such integrals see Roothaan ((J. Chem. Phys. <B>19</B>, 1445
+(1951)). Both 
 contain one <img  align="middle" alt="1/r" src="1_r.png"></img> long-range term,
-which is evaluated by the standard Ewald technique also included in IMD. The values of <img  align="middle" alt="q_i" src="q_i.png"></img>  are chosen
+which is evaluated by the standard Ewald technique also included in IMD. The
+values of <img  align="middle" alt="q_i" src="q_i.png"></img>  are chosen 
 as those that minimize <img  align="middle" alt="E_{\text{es}}"
-			     src="E_es.png"></img>. This is the equivalent of solving the system   
+			     src="E_es.png"></img>. This is the equivalent of
+solving the system    
 <center>
-<img  align="middle" alt="\sum_{j}^{N}\widetilde{V}_{ij}q_{j}=\mu-\chi_{i}" src="LGS.png"></img>,
+<img  align="middle" alt="\sum_{j}^{N}\widetilde{V}_{ij}q_{j}=\mu-\chi_{i}"
+      src="LGS.png"></img>, 
 </center></p>
 subject to the constraint of net-charge neutrality <img  align="middle"
-							 alt="\sum_{i}^{N}q_{i}=0"
-							 src="net_charge_neutrality.png"></img>. The
+							 alt="\sum_{i}^{N}q_{i}=0" 
+							 src="net_charge_neutrality.png"></img>. The 
 chemical potential <img  align="middle" alt="\mu=\mu_{i}\equiv\frac{\partial
-  E_{\text{es}}}{\partial q_{i}}" src="chemical_pot.png"></img> follows from the electronegativity equalization
+  E_{\text{es}}}{\partial q_{i}}" src="chemical_pot.png"></img> follows from
+the electronegativity equalization 
 condition. Above equation can be splitted into two systems of linear equations
 (Modelling Simul. Mater. Sci. Eng. <B>16</B>, 025006 (2008)):
 <center>
 <img  align="middle" alt="\sum_{j}^{N}\widetilde{V}_{ij}s_{j}=-\chi_{i}"
-      src="LGS_split_1.png"></img> and <img  align="middle" alt="\sum_{j}^{N}\widetilde{V}_{ij}t_{j}=-1" src="LGS_split_2.png"></img
+      src="LGS_split_1.png"></img> and <img  align="middle"
+					     alt="\sum_{j}^{N}\widetilde{V}_{ij}t_{j}=-1" 
+					     src="LGS_split_2.png"></img 
 </center></p>
-with <img  align="middle" alt="\mu=\frac{\sum_{i}^{N}s_{i}}{\sum_{i}^{N}t_{i}}" src="chemical_pot_2.png"></img> and <img  align="middle" alt="q_{i}=s_{i}-\mu t_{i}" src="charges.png"></img> . For solving this systems a conjugate gradient method is applied.
+with <img  align="middle" alt="\mu=\frac{\sum_{i}^{N}s_{i}}{\sum_{i}^{N}t_{i}}"
+	   src="chemical_pot_2.png"></img> and <img  align="middle"
+						     alt="q_{i}=s_{i}-\mu
+							  t_{i}"
+						     src="charges.png"></img>
+. For solving this systems a conjugate gradient method is applied. 
 </p>
 <p>
 Implemented by Andreas Chatzopoulos and Johannes Roth.     
@@ -962,10 +1033,22 @@ doesn't exist.
 <dt><a id="pdecay" name="pdecay"><b>pdecay</b></a></dt>
 <dd>
 <p>
-This option allows the damping of pressure waves, which are reflected at the back of the sample. It is usually used together with the <a href="#laser">laser</a> or 
+This option allows the damping of pressure waves, which are reflected at the
+back of the sample. It is usually used together with
+the <a href="#laser">laser</a> or  
 <a href="#laseryz">laseryz</a> modules.
-Four different modes exist. A mode is set via <tt>pdecay_mode</tt>, so that e.g. <tt>pdecay_mode 2</tt> sets mode 2. Mode 0 linearly scales down the momenta of the atoms, mode 1 is a quadratic scale down of the momenta. The modes 2 and 3 add a friction part to the forces. Mode 2 in a linear and mode 3 in a quadratic fashion. The value <tt>xipdecay</tt> is a constant friction parameter, that has to be specified for mode 2 and 3. The damping zone can be specified via the parameter <tt>ramp_fraction</tt>. The possible values for <tt>ramp_fraction</tt> are between <tt>0</tt> and <tt>0.9</tt>. They define the damping range relative to the sample size. A <tt>ramp_fraction</tt> of e.g. <tt>0.4</tt> will create a damping ramp with a size of 40% of the sample's length, starting at the back. 
-<pre>Usage example:
+Four different modes exist. A mode is set via <tt>pdecay_mode</tt>, so that
+e.g. <tt>pdecay_mode 2</tt> sets mode 2. Mode 0 linearly scales down the
+momenta of the atoms, mode 1 is a quadratic scale down of the momenta. The
+modes 2 and 3 add a friction part to the forces. Mode 2 in a linear and mode 3
+in a quadratic fashion. The value <tt>xipdecay</tt> is a constant friction
+parameter, that has to be specified for mode 2 and 3. The damping zone can be
+specified via the parameter <tt>ramp_fraction</tt>. The possible values
+for <tt>ramp_fraction</tt> are between <tt>0</tt> and <tt>0.9</tt>. They define
+the damping range relative to the sample size. A <tt>ramp_fraction</tt> of
+e.g. <tt>0.4</tt> will create a damping ramp with a size of 40% of the sample's
+length, starting at the back.  
+<pre>Usage example: 
  
 xipdecay 4.0
 pdecay_mode 2
