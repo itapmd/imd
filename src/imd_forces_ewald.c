@@ -108,10 +108,9 @@ void do_forces_ewald(int steps)
 #ifdef VARCHG
       pot  = ew_vorf * SQR( CHARGE(p,i) ) * coul_eng;
 #else
-      typ      = SORTE(p,i);
+      typ  = SORTE(p,i);
       pot  = ew_vorf * SQR( charge[typ] ) * coul_eng;
 #endif
-      /* pot += ew_shift[n][n] * 0.5;   what's that??? */
       tot_pot_energy -= pot;
       POTENG(p,i)    -= pot;
     }

@@ -20,24 +20,25 @@
 ******************************************************************************/
 
 #include "imd.h"
-#ifdef PEPC
-#include <fcs_pepc.h>
-#endif
-#ifdef PP3MG
-#include <fcs_pp3mg.h>
-#endif
+#include <fcs.h>
 
-double *fcs_pos=NULL, *fcs_chg=NULL, *fcs_force=NULL, *fcs_pot=NULL; 
-int loc_atoms_max=0;
+fcs_float *pos=NULL, *chg=NULL, *field=NULL, *pot=NULL; 
+int       nloc, nloc_max=0;
+FCS       handle=NULL;
+FCSOutput output=NULL;
+ 
+#define ASSERT_FCS(err) \
+  do { \
+    if(err) { \
+      fcsResult_printResult(err); MPI_Finalize(); exit(-1); \
+    } \
+  } while (0)
 
-void fcsAssert(FCSError err) {
-  if(fcsError_getErrorCode(err) != FCS_SUCCESS) {
-    fcsError_printError(err);
-    MPI_Finalize();
-    exit(-1);
-  }
-  fcsError_destroy(&err);
-}
+/******************************************************************************
+*
+* clear_forces
+*
+******************************************************************************/
 
 void clear_forces(void) {
   int k,i;
@@ -62,42 +63,27 @@ void clear_forces(void) {
   }
 }
 
-
 /******************************************************************************
 *
-* calc_forces_pepc
+* pack_fcs
 *
 ******************************************************************************/
 
-#ifdef PEPC
+void pack_fcs(void) {
 
-void calc_forces_pepc(void) {
-
-  FCSError err;
-  FCSInput input_handle;
-  FCSOutput output_handle;
-  FCSParameter param_handle = NULL;
-  FCSMethodProperties props_handle = NULL;
-  str255 paramstring;
-  double box_length[3] = { box_x.x,    box_y.y,    box_z.z    };
-  char   pbc_flags [3] = { pbc_dirs.x, pbc_dirs.y, pbc_dirs.z };
-  double e, pot1, pot2;
-  int loc_atoms, k, n, m, i;
-  cell *p;
-  FILE *out;
-  str255 fname;
-
-  sprintf(paramstring, "%s,%s", PEPC_THETA, PEPC_EPS);
+  int k, n, m, i;
 
   /* (re-)allocate data structures if necessary */ 
-  loc_atoms = 0;
-  for (k=0; k<NCELLS; ++k) loc_atoms += CELLPTR(k)->n;
-  if (loc_atoms_max < loc_atoms) {
-    loc_atoms_max = (int) (1.1 * loc_atoms);
-    free(fcs_pos); 
-    fcs_pos   = (double *) malloc( DIM * loc_atoms_max * sizeof(double) );
-    free(fcs_chg); 
-    fcs_chg   = (double *) malloc(       loc_atoms_max * sizeof(double) );
+  nloc = 0;
+  for (k=0; k<NCELLS; ++k) nloc += CELLPTR(k)->n;
+  if (nloc_max < nloc) {
+    nloc_max = (int) (1.1 * nloc);
+    free(pos);   pos   = (fcs_float*) malloc(DIM * nloc_max*sizeof(fcs_float));
+    free(chg);   chg   = (fcs_float*) malloc(      nloc_max*sizeof(fcs_float));
+    free(field); field = (fcs_float*) malloc(DIM * nloc_max*sizeof(fcs_float));
+    free(pot);   pot   = (fcs_float*) malloc(      nloc_max*sizeof(fcs_float));
+    if ((NULL==pos) || (NULL==chg) || (NULL==field) || (NULL==pot)) 
+      error("Could not allocate fcs data");
   }
 
   /* if we do only fcs, we have to clear forces and energies */
@@ -109,191 +95,182 @@ void calc_forces_pepc(void) {
   /* collect data from cell array */
   n=0; m=0;
   for (k=0; k<NCELLS; ++k) {
-    p = CELLPTR(k);
+    cell *p = CELLPTR(k);
     for (i=0; i<p->n; ++i) { 
-      fcs_pos[n++] = ORT(p,i,X); 
-      fcs_pos[n++] = ORT(p,i,Y); 
-      fcs_pos[n++] = ORT(p,i,Z); 
-      fcs_chg[m++] = CHARGE(p,i);
+      pos[n++] = ORT(p,i,X); 
+      pos[n++] = ORT(p,i,Y); 
+      pos[n++] = ORT(p,i,Z); 
+      chg[m++] = CHARGE(p,i);
     }
   }
+}
 
-  /* create parameter handle - move to init function */
-  /* we currently can't use loc_atoms_max */
-  fcsAssert(fcsParameter_create(&param_handle, natoms, loc_atoms, loc_atoms,
-                                DIM, box_length, pbc_flags, cpugrid, 1));
+/******************************************************************************
+*
+* unpack_fcs
+*
+******************************************************************************/
 
-  /* initialize pepc method - move to init function */
-  fcsAssert(fcsinit_pepc(param_handle, &props_handle));
+void unpack_fcs(FCSOutput output) {
 
+  fcs_float *vir;
+  real pot1, pot2, e, c, sum=0.0;
+  int n, m, k, i;
 
-  /* create fcs input structure */
-  fcsAssert(fcsInput_create( &input_handle, natoms, loc_atoms,
-                             fcs_pos, DIM, fcs_chg));
-
-  /* create fcs output structure */
-  fcsAssert(fcsOutput_create(&output_handle, loc_atoms, DIM));
-
-  /* run pepc via fcs interface */
-  fcsAssert(fcsrun_pepc_with_opt_param(props_handle,input_handle,output_handle, 
-                                   paramstring, fcs_pepc_theta, fcs_pepc_eps));
-            
   /* extract output and distribute it to cell array */
-  fcs_force = fcsOutput_getForces(output_handle);
-  fcs_pot   = fcsOutput_getPotentials(output_handle);
+  vir = fcsOutput_getVirial(output);
   n=0; m=0; pot1=0.0;
   for (k=0; k<NCELLS; ++k) {
-    p = CELLPTR(k);
+    cell *p = CELLPTR(k);
     for (i=0; i<p->n; ++i) { 
-      KRAFT(p,i,X) += fcs_force[n++] * coul_eng; 
-      KRAFT(p,i,Y) += fcs_force[n++] * coul_eng; 
-      KRAFT(p,i,Z) += fcs_force[n++] * coul_eng;
-      e = CHARGE(p,i) * fcs_pot[m++] * coul_eng * 0.5;
+      c = CHARGE(p,i) * coul_eng;
+      KRAFT(p,i,X) += field[n++] * c; 
+      KRAFT(p,i,Y) += field[n++] * c; 
+      KRAFT(p,i,Z) += field[n++] * c;
+      e = pot[m++] * c * 0.5;
       POTENG(p,i)  += e;
       pot1         += e;
     }
   }
-  fcsAssert(fcsInput_destroy(&input_handle));
-  fcsAssert(fcsOutput_destroy(&output_handle));
 
-  /* deallocate stuff */
-  fcsAssert(fcsfree_pepc());
-  fcsMethodProperties_destroy(&props_handle);
-  fcsParameter_destroy(&param_handle);
+  /* unpack virial */
+#ifdef P_AXIAL
+  vir_xx += vir[0];
+  vir_yy += vir[4];
+  vir_zz += vir[8];
+#else
+  virial += vir[0] + vir[4] + vir[8];
+#endif
+#ifdef STRESS_TENS
+  if (do_press_calc) {
+    /* distribute virial tensor evenly on all atoms */
+    sym_tensor pp;
+    pp.xx = vir[0] / natoms;
+    pp.yy = vir[4] / natoms;
+    pp.zz = vir[8] / natoms;
+    pp.yz = (vir[5]+vir[7]) / (2*natoms);
+    pp.zx = (vir[2]+vir[6]) / (2*natoms);
+    pp.xy = (vir[1]+vir[3]) / (2*natoms);
+    for (k=0; k<NCELLS; ++k) {
+      cell *p = CELLPTR(k);
+      for (i=0; i<p->n; ++i) { 
+        PRESSTENS(p,i,xx) += pp.xx;
+        PRESSTENS(p,i,yy) += pp.yy;
+        PRESSTENS(p,i,zz) += pp.zz;
+        PRESSTENS(p,i,yz) += pp.yz;
+        PRESSTENS(p,i,zx) += pp.zx;
+        PRESSTENS(p,i,xy) += pp.xy;
+      }
+    }
+  }
+#endif
 
+  /* sum up potential energy */
 #ifdef MPI
   MPI_Allreduce( &pot1, &pot2, 1, MPI_DOUBLE, MPI_SUM, cpugrid);
   tot_pot_energy += pot2;
 #else
   tot_pot_energy += pot1;
 #endif
-
 }
-
-#endif
 
 /******************************************************************************
 *
-* calc_forces_pp3mg
+* init_fcs
 *
 ******************************************************************************/
 
-#ifdef PP3MG
+void init_fcs(void) {
 
-void calc_forces_pp3mg(void) {
+  FCSResult result;
+  fcs_int srf = 1, cflag = 0;
+  char *method;
 
-  FCSError err;
-  FCSInput input_handle;
-  FCSOutput output_handle;
-  FCSParameter param_handle = NULL;
-  FCSMethodProperties props_handle = NULL;
-  str255 pp3mg_paramstring;
-  int pp3mg_ghosts  =   4;
-  int pp3mg_cells_x = 128;
-  int pp3mg_cells_y = 128;
-  int pp3mg_cells_z = 128;
-  int    mpi_dims  [3] = { cpu_dim.x,  cpu_dim.y,  cpu_dim.z  };
-  double box_length[3] = { box_x.x,    box_y.y,    box_z.z    };
-  char   pbc_flags [3] = { pbc_dirs.x, pbc_dirs.y, pbc_dirs.z };
-  double e, pot1, pot2;
-  int loc_atoms, k, n, m, i, max_part = 70000;
-  cell *p;
-  FILE *out;
-  str255 fname;
+  fcs_int   pbc [3] = { pbc_dirs.x, pbc_dirs.y, pbc_dirs.z };
+  fcs_float BoxX[3] = { box_x.x, box_x.y, box_x.z };
+  fcs_float BoxY[3] = { box_y.x, box_y.y, box_y.z };
+  fcs_float BoxZ[3] = { box_z.x, box_z.y, box_z.z };
 
-  /* further parameters:
-  PP3MG_PERIODIC periodic boundary conditions? (TRUE|FALSE)
-  PP3MG_DEGREE  Degree of the interpolation spline 
-  PP3MG_MAX_ITERATIONS Maximum number of iterations 
-  PP3MG_ERR_BOUND required accuracy (relative) */
-
-  /* parameters not passed are max_iterations, nu1, nu2, periodic, 
-     pol_degree, err_bound */
-  sprintf(pp3mg_paramstring, "%s,%s,%s,%s,%s,%s", 
-          PP3MG_MPI_DIMS, PP3MG_GHOST_CELLS, PP3MG_MAX_PARTICLES,
-          PP3MG_CELLS_X, PP3MG_CELLS_Y, PP3MG_CELLS_Z);
-
-  /* (re-)allocate data structures if necessary */ 
-  loc_atoms = 0;
-  for (k=0; k<NCELLS; ++k) loc_atoms += CELLPTR(k)->n;
-  if (loc_atoms_max < loc_atoms) {
-    loc_atoms_max = (int) (1.1 * loc_atoms);
-    free(fcs_pos); 
-    fcs_pos   = (double *) malloc( DIM * loc_atoms_max * sizeof(double) );
-    free(fcs_chg); 
-    fcs_chg   = (double *) malloc(       loc_atoms_max * sizeof(double) );
+  switch (fcs_method) {
+    case FCS_METH_PEPC:   method = "PEPC";   break;
+    case FCS_METH_FMM:    method = "FMM";    break;
+    case FCS_METH_PP3MG:  method = "PP3MG";  break;
+    case FCS_METH_VMG:    method = "VMG";    break;
+    case FCS_METH_P3M:    method = "P3M";    break;
+    case FCS_METH_MEMD:   method = "MEMD";   break;
+    case FCS_METH_NFFT:   method = "NFFT";   break;
+    case FCS_METH_DIRECT: method = "DIRECT"; break;
   }
 
-  /* if we do only fcs, we have to clear forces and energies */
-#ifdef PAIR
-  if (!have_potfile && !have_pre_pot) 
-#endif
-    clear_forces();
+  /* initialize handle and set common parameters */
+  result = fcs_init(&handle, method, cpugrid); 
+  ASSERT_FCS(result);
+  result = fcs_common_set(handle, srf, BoxX, BoxY, BoxZ, pbc, natoms, natoms);
+  ASSERT_FCS(result);
+  result = fcsOutput_create(&output);
+  ASSERT_FCS(result);
 
-  /* collect data from cell array */
-  n=0; m=0;
-  for (k=0; k<NCELLS; ++k) {
-    p = CELLPTR(k);
-    for (i=0; i<p->n; ++i) { 
-      fcs_pos[n++] = ORT(p,i,X); 
-      fcs_pos[n++] = ORT(p,i,Y); 
-      fcs_pos[n++] = ORT(p,i,Z); 
-      fcs_chg[m++] = CHARGE(p,i);
-    }
-  }
-
-  /* create parameter handle - move to init function */
-  fcsAssert(fcsParameter_create(&param_handle, natoms, loc_atoms, loc_atoms,
-                                DIM, box_length, pbc_flags, cpugrid, 1));
-
-  /* create fcs input structure */
-  fcsAssert(fcsInput_create(&input_handle,natoms,loc_atoms,fcs_pos,DIM,fcs_chg));
-
-  /* create fcs output structure */
-  fcsAssert(fcsOutput_create(&output_handle, loc_atoms, DIM));
-
-  /* initialize pp3mg method - move to init function? */
-  fcsAssert(fcsinit_pp3mg_with_opt_param(param_handle, &props_handle,
-                                         "PP3MG_MAX_PARTICLES", max_part));
-  /*
-    pp3mg_paramstring, mpi_dims, pp3mg_ghosts, max_part, 
-    pp3mg_cells_x, pp3mg_cells_y, pp3mg_cells_z);
+  /* do we need that? is 3D the default?
+  result = fcs_set_dimension(handle, DIM); 
+  ASSERT_FCS(result);
   */
 
-  /* run ppp3mg via fcs interface */
-  fcsAssert(err = fcsrun_pp3mg(props_handle, input_handle, output_handle));
-
-  /* extract output and distribute it to cell array */
-  fcs_force = fcsOutput_getForces(output_handle);
-  fcs_pot   = fcsOutput_getPotentials(output_handle);
-  n=0; m=0; pot1=0.0;
-  for (k=0; k<NCELLS; ++k) {
-    p = CELLPTR(k);
-    for (i=0; i<p->n; ++i) { 
-      KRAFT(p,i,X) += fcs_force[n++] * coul_eng; 
-      KRAFT(p,i,Y) += fcs_force[n++] * coul_eng; 
-      KRAFT(p,i,Z) += fcs_force[n++] * coul_eng;
-      e = CHARGE(p,i) * fcs_pot[m++] * coul_eng;
-      POTENG(p,i)  += e;
-      pot1         += e;
-    }
-  }
-  fcsAssert(fcsInput_destroy(&input_handle));
-  fcsAssert(fcsOutput_destroy(&output_handle));
-
-  /* deallocate stuff */
-  fcsAssert(fcsfree_pp3mg());
-  fcsAssert(fcsMethodProperties_destroy(&props_handle));
-  fcsAssert(fcsParameter_destroy(&param_handle));
-
-#ifdef MPI
-  MPI_Allreduce( &pot1, &pot2, 1, MPI_DOUBLE, MPI_SUM, cpugrid);
-  tot_pot_energy += pot2;
-#else
-  tot_pot_energy += pot1;
+  /* set method specific parameters */
+  switch (fcs_method) {
+#ifdef FCS_ENABLE_PEPC
+    case FCS_METH_PEPC:
+      result = fcs_setup_PEPC(handle, (fcs_float)fcs_pepc_eps, 
+           (fcs_float)fcs_pepc_theta, (fcs_int)fcs_debug_level );
+      ASSERT_FCS(result);
+      break;
 #endif
-
+#ifdef FCS_ENABLE_FMM
+    case FCS_METH_FMM:
+      result = fcs_setup_FMM(handle, (fcs_int)fcs_fmm_absrel, 
+           (fcs_float)fcs_fmm_deltaE, (fcs_int)fcs_fmm_dcorr);
+      ASSERT_FCS(result);
+      break;
+#endif
+#ifdef FCS_ENABLE_PP3MG_PMG
+      /* PP3MG */
+#endif
+#ifdef FCS_ENABLE_VMG
+      /* VMG */
+#endif
+#ifdef FCS_ENABLE_P3M
+      /* P3M */
+#endif
+#ifdef FCS_ENABLE_MEMD
+      /* MEMD */
+#endif
+#ifdef FCS_ENABLE_NFFT
+      /* NFFT */
+#endif
+#ifdef FCS_ENABLE_DIRECT
+    case FCS_METH_DIRECT:
+      /* no need to do anything */
+      break;
+#endif
+    default: 
+      error("FCS method unknown or not implemented"); 
+      break;
+  }
+  pack_fcs();
+  result = fcs_tune(handle, nloc, nloc_max, pos, chg, cflag);
+  ASSERT_FCS(result);
 }
 
-#endif
+/******************************************************************************
+*
+* calc_forces_fcs
+*
+******************************************************************************/
 
+void calc_forces_fcs(void) {
+  FCSResult result;
+  fcs_int flag=0;  /* component flag - what for? */
+  pack_fcs();
+  result = fcs_run(handle, nloc, nloc_max, pos, chg, field, pot, flag, output);
+  ASSERT_FCS(result);
+  unpack_fcs(output);
+}

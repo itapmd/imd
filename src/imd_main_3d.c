@@ -102,6 +102,10 @@ int main_loop(int simulation)
 #ifdef EXTPOT
   init_extpot();
 #endif  
+
+#ifdef USEFCS
+  init_fcs();
+#endif
   
 #ifdef FBC
   init_fbc();
@@ -374,15 +378,11 @@ int main_loop(int simulation)
     if (ensemble == ENS_CG) acg_step(steps);
     else
 #endif
-#ifdef FCS
+#ifdef USEFCS
 #ifdef PAIR
       calc_forces(steps);
 #endif
-#ifdef PEPC
-      calc_forces_pepc();
-#else
-      calc_forces_pp3mg();
-#endif
+      calc_forces_fcs();
 #else
       calc_forces(steps);
 #endif

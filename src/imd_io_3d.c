@@ -761,7 +761,7 @@ void write_atoms_config(FILE *out)
         data[n++].r = DREH_IMPULS(p,i,Z) / uniax_inert; 
 #endif
         data[n++].r = POTENG(p,i);
-#ifdef VARCHG
+#if defined(VARCHG) || defined(EWALD) || defined(USEFCS)
         data[n++].r = CHARGE(p,i);
 #endif
 #ifdef NNBR
@@ -831,7 +831,7 @@ void write_atoms_config(FILE *out)
           DREH_IMPULS(p,i,Z) / uniax_inert ); 
 #endif
         len += sprintf(outbuf+len, RESOL1, POTENG(p,i));
-#ifdef VARCHG
+#if defined(VARCHG) || defined(EWALD) || defined(FCS)
         len += sprintf(outbuf+len, RESOL1, CHARGE(p,i));
 #endif
 #ifdef NNBR

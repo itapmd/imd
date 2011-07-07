@@ -176,6 +176,10 @@ void init_extpot(void);
 void calc_extpot(void);
 void move_extpot(real factor);
 #endif
+#ifdef USEFCS
+void init_fcs(void);
+void calc_forces_fcs(void);
+#endif
 void do_forces(cell*, cell*, vektor, real*, real*, real*, real*, real*, real*, real*, real*);
 #ifdef COVALENT
 void do_forces2(cell*, real*, real*, real*, real*, real*, real*, real*, real*);

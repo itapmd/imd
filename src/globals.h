@@ -1140,13 +1140,18 @@ EXTERN pot_table_t cr_pot_tab;    /* tabulated coulomb repulsive potential*/
 EXTERN pot_table_t na_pot_tab;    /* tabulated nuclear attraction potential */
 #endif
 
-#if defined(EWALD) || defined(COULOMB) || defined(FCS) || defined(SM)
+#if defined(EWALD) || defined(COULOMB) || defined(USEFCS) || defined(SM)
 EXTERN real     charge[10] INIT(zero10); /* Charge of atoms */
 EXTERN real     coul_eng INIT(14.40);    /* this is e^2/(4*pi*epsilon_0) in eV A */
 #endif
-#ifdef FCS
-EXTERN real     fcs_pepc_eps   INIT(0.0);
-EXTERN real     fcs_pepc_theta INIT(0.3);
+#ifdef USEFCS
+EXTERN int      fcs_method      INIT(0);
+EXTERN int      fcs_debug_level INIT(0);
+EXTERN real     fcs_pepc_eps    INIT(0.0);
+EXTERN real     fcs_pepc_theta  INIT(0.3);
+EXTERN int      fcs_fmm_absrel  INIT(0);
+EXTERN real     fcs_fmm_deltaE  INIT(1e-3);
+EXTERN int      fcs_fmm_dcorr   INIT(0);
 #endif
 #if defined(EWALD) || defined(COULOMB)
 EXTERN imd_timer ewald_time;

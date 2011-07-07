@@ -59,7 +59,7 @@
 
 /* we always need PAIR, unless MEAM, KEATING, UNIAX, FCS, or EWALD */
 /* Note that PAIR is the default, if no interaction is specified */
-#if !(defined(MEAM) || defined(KEATING) || defined(UNIAX) || defined(FCS) || defined(EWALD))
+#if !(defined(MEAM) || defined(KEATING) || defined(UNIAX) || defined(USEFCS) || defined(EWALD))
 #ifndef PAIR
 #define PAIR
 #endif

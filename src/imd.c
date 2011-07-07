@@ -327,6 +327,8 @@ int main(int argc, char **argv)
            time_output.total, 100*time_output.total /time_main.total);
     printf("Input  time:   %e seconds or %.1f %% of main loop\n",
            time_input.total,100*time_input.total/time_main.total);
+    printf("Force  time:   %e seconds or %.1f %% of main loop\n",
+           time_forces.total,100*time_forces.total/time_main.total);
 #endif
 
      fflush(stdout);

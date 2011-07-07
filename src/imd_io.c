@@ -3020,7 +3020,7 @@ void write_header_config(FILE *out)
 #ifdef DISLOC
   atompar++;
 #endif
-#ifdef VARCHG
+#if defined(VARCHG) || defined(EWALD) || defined(USEFCS)
   atompar++;
 #endif
 #ifdef CNA
@@ -3050,7 +3050,7 @@ void write_header_config(FILE *out)
 #else
   fprintf(out, " Epot" );
 #endif
-#ifdef VARCHG
+#if defined(VARCHG) || defined(EWALD) || defined(FCS)
   fprintf(out, " charge" );
 #endif
 #ifdef NNBR

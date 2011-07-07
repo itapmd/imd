@@ -132,25 +132,26 @@ void generate_atoms(str255 mode)
 #ifdef MPI
 #ifndef MONOLJ
   /* Get numbering of atoms right even across CPUs */
-  ninc = 0;
-  if ((0==myid) && (num_cpus>1))
-     MPI_Send( &natoms, 1, MPI_LONG, myid + 1, 0, cpugrid );
-  else if ((0<myid) && (myid<(num_cpus-1))) {
-     MPI_Recv( &tmp,    1, MPI_LONG, myid - 1, 0, cpugrid, &status );
-     ninc = tmp;
-     tmp += natoms;
-     MPI_Send( &tmp,    1, MPI_LONG, myid + 1, 0, cpugrid );
-  }
-  else if (myid==(num_cpus-1)) {
-     MPI_Recv( &tmp,    1, MPI_LONG, myid - 1, 0, cpugrid, &status );
-     ninc = tmp;
-  }
-  /* loop over all atoms, fix numbers */
-  for (k=0; k<NCELLS; ++k) {
-    int i;
-    cell *p;
-    p = CELLPTR(k);
-    for (i=0; i<p->n; ++i) NUMMER(p,i) += ninc;
+  if (num_cpus>1) {
+    ninc = 0;
+    if (0==myid)
+       MPI_Send( &natoms, 1, MPI_LONG, myid + 1, 0, cpugrid );
+    else if (myid<(num_cpus-1)) {
+       MPI_Recv( &tmp,    1, MPI_LONG, myid - 1, 0, cpugrid, &status );
+       ninc = tmp;
+       tmp += natoms;
+       MPI_Send( &tmp,    1, MPI_LONG, myid + 1, 0, cpugrid );
+    }
+    else {
+       MPI_Recv( &tmp,    1, MPI_LONG, myid - 1, 0, cpugrid, &status );
+       ninc = tmp;
+    }
+    /* loop over all atoms, fix numbers */
+    for (k=0; k<NCELLS; ++k) {
+      int i;
+      cell *p = CELLPTR(k);
+      for (i=0; i<p->n; ++i) NUMMER(p,i) += ninc;
+    }
   }
 #endif /* MONOLJ */
 
@@ -619,24 +620,25 @@ void generate_SiO2(void)
   real     box_sz      [3] = {4.9134, 8.51025844, 5.4052};
   int      SiO2_typ[18]    = {0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1};
   real     SiO2_pos[18][3] = {
-    0.147893, 4.55513, 0.3,
-    2.60459,  0.3,     0.3,
-    1.1544,   2.29949, 2.10173,
-    3.6111,   6.55461, 2.10173,
-    1.1544,   6.81077, 3.90347,
-    3.6111,   2.55564, 3.90347,
-    3.5374,   7.66946, 0.941777,
-    1.0807,   3.41433, 0.941777,
-    1.67596,  0.92125, 1.45996,
-    4.13266,  5.17638, 1.45996,
-    4.61344,  2.06205, 2.74351,
-    2.15674,  6.31718, 2.74351,
-    2.15674,  2.79308, 3.26169,
-    4.61344,  7.04821, 3.26169,
-    1.67596,  8.18901, 4.54524,
-    4.13266,  3.93388, 4.54524,
-    1.0807,   5.69593, 5.06342,
-    3.5374,   1.4408,  5.06342};
+    0.677893, 5.145130, 0.900000,
+    3.134590, 0.890000, 0.900000,
+    1.684400, 2.889490, 2.701730,
+    4.141100, 7.144610, 2.701730,
+    1.684400, 7.400770, 4.503470,
+    4.141100, 3.145640, 4.503470,
+    4.067400, 8.259460, 1.541777,
+    1.610700, 4.004330, 1.541777,
+    2.205960, 1.511250, 2.059960,
+    4.662660, 5.766380, 2.059960,
+    0.230040, 2.652050, 3.343510,
+    2.686740, 6.907180, 3.343510,
+    2.686740, 3.383080, 3.861690,
+    0.230040, 7.638210, 3.861690,
+    2.205960, 0.268752, 5.145240,
+    4.662660, 4.523880, 5.145240,
+    1.610700, 6.285930, 0.258220,
+    4.067400, 2.030800, 0.258220
+  };
 
   if (size_per_cpu) {
     box_param.x *= cpu_dim.x;

@@ -2860,7 +2860,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
                ntypes*ntypepairs, ntypes*ntypepairs);
     }
 #endif
-#if defined(EWALD) || defined(COULOMB) || defined(FCS)
+#if defined(EWALD) || defined(COULOMB) || defined(USEFCS)
     /* charges */
     else if (strcasecmp(token,"charge")==0) {
       if (ntypes==0) error("specify parameter ntypes before charge");
@@ -2870,7 +2870,36 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       getparam(token,&coul_eng,PARAM_REAL,1,1);
     }
 #endif
-#ifdef FCS
+#ifdef USEFCS
+    else if (strcasecmp(token,"fcs_method")==0) {
+      /* FCS method */
+      getparam(token,tmpstr,PARAM_STR,1,255);
+      if      (strcasecmp(tmpstr,"pepc")==0) {
+        fcs_method = FCS_METH_PEPC;
+      }
+      else if (strcasecmp(tmpstr,"fmm")==0) {
+        fcs_method = FCS_METH_FMM;
+      }
+      else if (strcasecmp(tmpstr,"pp3mg")==0) {
+        fcs_method = FCS_METH_PP3MG;
+      }
+      else if (strcasecmp(tmpstr,"vmg")==0) {
+        fcs_method = FCS_METH_VMG;
+      }
+      else if (strcasecmp(tmpstr,"nfft")==0) {
+        fcs_method = FCS_METH_NFFT;
+      }
+      else if (strcasecmp(tmpstr,"p3m")==0) {
+        fcs_method = FCS_METH_P3M;
+      }
+      else if (strcasecmp(tmpstr,"direct")==0) {
+        fcs_method = FCS_METH_DIRECT;
+      }
+    }
+    /* fcs_debug_level */
+    else if (strcasecmp(token,"fcs_debug_level")==0) {
+      getparam(token,&fcs_debug_level,PARAM_INT,1,1);
+    }
     /* fcs_pepc_eps */
     else if (strcasecmp(token,"fcs_pepc_eps")==0) {
       getparam(token,&fcs_pepc_eps,PARAM_REAL,1,1);
@@ -2878,6 +2907,18 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     /* fcs_pepc_theta */
     else if (strcasecmp(token,"fcs_pepc_theta")==0) {
       getparam(token,&fcs_pepc_theta,PARAM_REAL,1,1);
+    }
+    /* fcs_fmm_absrel */
+    else if (strcasecmp(token,"fcs_fmm_absrel")==0) {
+      getparam(token,&fcs_fmm_absrel,PARAM_INT,1,1);
+    }
+    /* fcs_fmm_deltaE */
+    else if (strcasecmp(token,"fcs_fmm_deltaE")==0) {
+      getparam(token,&fcs_fmm_deltaE,PARAM_REAL,1,1);
+    }
+    /* fcs_fmm_dcorr */
+    else if (strcasecmp(token,"fcs_fmm_dcorr")==0) {
+      getparam(token,&fcs_fmm_dcorr,PARAM_INT,1,1);
     }
 #endif
 #if defined(EWALD) || defined(COULOMB)
@@ -2896,7 +2937,9 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
 #ifdef DIPOLE
       dp_self=2./(3.*rtmp*ew_r2_cut*sqrt(2.*M_PI));
 #endif /* DIPOLE */
+#ifndef VARCHG
       have_pre_pot = 1;
+#endif
     }
     /* number of image boxes */
     else if (strcasecmp(token,"ew_nmax")==0) {
@@ -3253,7 +3296,7 @@ void check_parameters_complete()
   if (vtypes < ntypes)
     error("total_types must not be smaller than ntypes");
 
-#ifdef PAIR
+#if defined(PAIR) && !defined(VARCHG)
   if ((have_potfile==0) && (have_pre_pot==0))
     error("You must specify a pair interaction!");
 #endif
@@ -4373,7 +4416,7 @@ void broadcast_params() {
   MPI_Bcast( keating_beta, ntypes*ntypepairs, REAL, 0,MPI_COMM_WORLD);
 #endif
 
-#if defined(EWALD) || defined(COULOMB) || defined(FCS) || defined(SM)
+#if defined(EWALD) || defined(COULOMB) || defined(USEFCS) || defined(SM)
   MPI_Bcast( charge,              ntypes, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &coul_eng,           1,      REAL,    0, MPI_COMM_WORLD);
 #endif
@@ -4384,9 +4427,13 @@ void broadcast_params() {
   MPI_Bcast( sm_Z,                ntypes, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( sm_zeta,             ntypes, REAL,    0, MPI_COMM_WORLD);
 #endif
-#ifdef FCS
+#ifdef USEFCS
+  MPI_Bcast( &fcs_method,         1,   MPI_INT,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_pepc_eps,       1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_pepc_theta,     1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_fmm_absrel,     1,   MPI_INT,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_fmm_deltaE,     1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_fmm_dcorr,      1,   MPI_INT,    0, MPI_COMM_WORLD);
 #endif
 #if defined(EWALD) || defined(COULOMB)
   MPI_Bcast( &ew_kappa,           1,      REAL,    0, MPI_COMM_WORLD);
