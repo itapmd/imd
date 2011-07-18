@@ -1760,7 +1760,7 @@ void calc_sm_pot()
 
   /* contribution of coulomb self energy */
   for (k=0; k<ncells; k++) {
-    real tmp = ew_vorf * 2 * 0;
+    real tmp = ew_vorf * 2;
     cell *p  = CELLPTR(k);
     for (i=0; i<p->n; i++) {
       int typ = SORTE(p,i);
