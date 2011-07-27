@@ -179,8 +179,6 @@ int main(int argc, char **argv)
 #endif
 
 
-  imd_stop_timer(&time_setup);
-  imd_start_timer(&time_main);
 #ifdef PAPI
   PAPI_flops(&rtime,&ptime,&flpins,&mflops);
 #endif
@@ -223,6 +221,8 @@ int main(int argc, char **argv)
   init_sm();
 #endif
 
+  imd_stop_timer(&time_setup);
+
   /* first phase of the simulation */
   if (steps_min <= steps_max) {
     if ((0==myid) && (0==myrank))
@@ -246,7 +246,6 @@ int main(int argc, char **argv)
 #if defined(CBE)
   tick1=ticks();
 #endif
-  imd_stop_timer(&time_main);
   imd_stop_timer(&time_total);
 #ifdef PAPI
   PAPI_flops(&rtime,&ptime,&flpins,&mflops);

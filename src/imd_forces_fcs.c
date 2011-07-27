@@ -196,7 +196,7 @@ void init_fcs(void) {
     case FCS_METH_FMM:    method = "FMM";    break;
     case FCS_METH_PP3MG:  method = "PP3MG";  break;
     case FCS_METH_VMG:    method = "VMG";    break;
-    case FCS_METH_P3M:    method = "P3M";    break;
+    case FCS_METH_P3M:    method = "P3M";    srf = fcs_rcut > 0 ? 0 : 1; break;
     case FCS_METH_MEMD:   method = "MEMD";   break;
     case FCS_METH_NFFT:   method = "NFFT";   break;
     case FCS_METH_DIRECT: method = "DIRECT"; break;
@@ -210,23 +210,18 @@ void init_fcs(void) {
   result = fcsOutput_create(&output);
   ASSERT_FCS(result);
 
-  /* do we need that? is 3D the default?
-  result = fcs_set_dimension(handle, DIM); 
-  ASSERT_FCS(result);
-  */
-
   /* set method specific parameters */
   switch (fcs_method) {
 #ifdef FCS_ENABLE_PEPC
     case FCS_METH_PEPC:
-      result = fcs_setup_PEPC(handle, (fcs_float)fcs_pepc_eps, 
+      result = fcs_PEPC_setup(handle, (fcs_float)fcs_pepc_eps, 
            (fcs_float)fcs_pepc_theta, (fcs_int)fcs_debug_level );
       ASSERT_FCS(result);
       break;
 #endif
 #ifdef FCS_ENABLE_FMM
     case FCS_METH_FMM:
-      result = fcs_setup_FMM(handle, (fcs_int)fcs_fmm_absrel, 
+      result = fcs_FMM_setup(handle, (fcs_int)fcs_fmm_absrel, 
            (fcs_float)fcs_fmm_deltaE, (fcs_int)fcs_fmm_dcorr);
       ASSERT_FCS(result);
       break;
@@ -238,7 +233,13 @@ void init_fcs(void) {
       /* VMG */
 #endif
 #ifdef FCS_ENABLE_P3M
-      /* P3M */
+    case FCS_METH_P3M:
+      fcs_P3M_set_r_cut(handle, (fcs_float)fcs_rcut);
+      fcs_P3M_set_required_accuracy(handle, (fcs_float)fcs_p3m_accuracy);
+      //fcs_P3M_set_mesh(handle, 64);
+      //fcs_P3M_set_cao(handle, 7);
+      //fcs_P3M_set_alpha(handle, 2.5);
+      break;
 #endif
 #ifdef FCS_ENABLE_MEMD
       /* MEMD */
@@ -258,6 +259,10 @@ void init_fcs(void) {
   pack_fcs();
   result = fcs_tune(handle, nloc, nloc_max, pos, chg, cflag);
   ASSERT_FCS(result);
+
+  /* add near-field potential, after fcs_tune */
+  if (0==srf) fcs_update_pottab();
+
 }
 
 /******************************************************************************
@@ -273,4 +278,57 @@ void calc_forces_fcs(void) {
   result = fcs_run(handle, nloc, nloc_max, pos, chg, field, pot, flag, output);
   ASSERT_FCS(result);
   unpack_fcs(output);
+}
+
+
+/******************************************************************************
+*
+* pair_int_fcs (near field)
+*
+******************************************************************************/
+
+void fcs_pair_int(real *pot, real *grad, real r2)
+{
+  fcs_float r, fcs_pot, fcs_grad;
+  FCSResult result;
+  r = SQRT(r2);
+  result = fcs_compute_near(handle, r, &fcs_pot, &fcs_grad);
+  ASSERT_FCS(result);
+  *pot  = fcs_pot;
+  /* return (1/r)*dV/dr as derivative */
+  *grad = fcs_grad / r; 
+}
+
+/******************************************************************************
+*
+* add FCS near-field to pair_pot
+*
+******************************************************************************/
+
+void fcs_update_pottab(void) {
+
+  int i, j, k, col;
+  real fcs_shift, fcs_fshift, r2, pot, grad, fcs_r2cut = SQR(fcs_rcut);
+  pot_table_t *pt = &pair_pot;
+
+  /* FCS near-field shifts */
+  fcs_pair_int(&fcs_shift, &fcs_fshift, fcs_r2cut);
+  if (0==myid) {
+    printf("FCS near-field shifted by: %g , %g\n", fcs_shift, fcs_fshift);
+  }
+
+  /* add near-field to potential table */
+  for (i=0; i<ntypes; i++)
+    for (j=0; j<ntypes; j++) {
+      col = i * ntypes + j;
+      for (k=0; k < pt->len[col]; k++) {
+        r2 = pt->begin[col] + k * pt->step[col];
+        if (r2 > fcs_r2cut) continue;
+        fcs_pair_int(&pot, &grad, r2);
+        pot -= fcs_shift;
+        pot -= 0.5 * fcs_fshift * (r2 - fcs_r2cut);
+        pot *= coul_eng * charge[i] * charge[j];
+        *PTR_2D(pt->table, k, col, pt->maxsteps, pt->ncols) = pot;
+      }
+    }
 }

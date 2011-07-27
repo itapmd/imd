@@ -1,4 +1,3 @@
-
 /******************************************************************************
 *
 * IMD -- The ITAP Molecular Dynamics Program
@@ -2900,6 +2899,13 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"fcs_debug_level")==0) {
       getparam(token,&fcs_debug_level,PARAM_INT,1,1);
     }
+#ifdef PAIR
+    /* fcs_rcut for near-field delegation */
+    else if (strcasecmp(token,"fcs_rcut")==0) {
+      getparam(token,&fcs_rcut,PARAM_REAL,1,1);
+      if (fcs_rcut > 0) have_pre_pot = 1;
+    }
+#endif
     /* fcs_pepc_eps */
     else if (strcasecmp(token,"fcs_pepc_eps")==0) {
       getparam(token,&fcs_pepc_eps,PARAM_REAL,1,1);
@@ -2919,6 +2925,10 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     /* fcs_fmm_dcorr */
     else if (strcasecmp(token,"fcs_fmm_dcorr")==0) {
       getparam(token,&fcs_fmm_dcorr,PARAM_INT,1,1);
+    }
+    /* fcs_p3m_accuracy */
+    else if (strcasecmp(token,"fcs_p3m_accuracy")==0) {
+      getparam(token,&fcs_p3m_accuracy,PARAM_REAL,1,1);
     }
 #endif
 #if defined(EWALD) || defined(COULOMB)
@@ -4429,11 +4439,15 @@ void broadcast_params() {
 #endif
 #ifdef USEFCS
   MPI_Bcast( &fcs_method,         1,   MPI_INT,    0, MPI_COMM_WORLD);
+#ifdef PAIR
+  MPI_Bcast( &fcs_rcut,           1,      REAL,    0, MPI_COMM_WORLD);
+#endif
   MPI_Bcast( &fcs_pepc_eps,       1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_pepc_theta,     1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_fmm_absrel,     1,   MPI_INT,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_fmm_deltaE,     1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_fmm_dcorr,      1,   MPI_INT,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_p3m_accuracy,   1,      REAL,    0, MPI_COMM_WORLD);
 #endif
 #if defined(EWALD) || defined(COULOMB)
   MPI_Bcast( &ew_kappa,           1,      REAL,    0, MPI_COMM_WORLD);

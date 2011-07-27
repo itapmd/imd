@@ -178,6 +178,7 @@ void move_extpot(real factor);
 #endif
 #ifdef USEFCS
 void init_fcs(void);
+void pair_int_fcs(real *, real *, real);
 void calc_forces_fcs(void);
 #endif
 void do_forces(cell*, cell*, vektor, real*, real*, real*, real*, real*, real*, real*, real*);

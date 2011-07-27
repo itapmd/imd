@@ -122,7 +122,7 @@ void generate_atoms(str255 mode)
     init_qc();
     generate_qc();
 #endif
-#if defined(EWALD) || defined(COULOMB) || defined(FCS)
+#if defined(EWALD) || defined(COULOMB) || defined(USEFCS)
   } else if (0 == strcmp(mode,"_sio2")) { /* SiO2 (quartz) */
     generate_SiO2();
 #endif
@@ -606,7 +606,7 @@ void generate_lav()
         }
 } 
 
-#if defined(EWALD) || defined(COULOMB) || defined(FCS)
+#if defined(EWALD) || defined(COULOMB) || defined(USEFCS)
 
 /* generate hexagonal SiO2 crystal */
 void generate_SiO2(void)

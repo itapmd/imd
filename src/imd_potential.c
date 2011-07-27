@@ -656,7 +656,7 @@ void init_pre_pot(void) {
 
 #if ((defined(DIPOLE) || defined(MORSE)) && !defined(BUCK))
   real pot,grad;
-  ms_shift = (real *) malloc (ntypepairs * sizeof(real));
+  ms_shift  = (real *) malloc (ntypepairs * sizeof(real));
   ms_fshift = (real *) malloc (ntypepairs * sizeof(real));
   ms_harm_a = (real *) malloc (ntypepairs * sizeof(real));
   ms_harm_b = (real *) malloc (ntypepairs * sizeof(real));
@@ -665,7 +665,7 @@ void init_pre_pot(void) {
     error("cannot allocate Morse-Stretch shift");
 #endif
 #ifdef BUCK
-  bk_shift = (real *) malloc (ntypepairs * sizeof(real));
+  bk_shift  = (real *) malloc (ntypepairs * sizeof(real));
   bk_fshift = (real *) malloc (ntypepairs * sizeof(real));
   if (( NULL == bk_shift ) || ( NULL == bk_fshift ))
     error("cannot allocate Buckingham shift");
@@ -674,6 +674,9 @@ void init_pre_pot(void) {
   for (i=0; i<ntypes; i++) 
     for (j=i; j<ntypes; j++) {
 
+#if defined(USEFCS) && !defined(VARCHG)
+      r_cut_lin[n] = MAX( r_cut_lin[n], fcs_rcut );
+#endif
 #ifdef STIWEB
       r_cut_lin[n] = MAX( r_cut_lin[n], stiweb_a1[n] );
 #endif
@@ -770,6 +773,9 @@ void init_pre_pot(void) {
 #endif
 #ifdef COULOMB
   tmp = MAX(tmp,ew_r2_cut);
+#endif
+#if defined(USEFCS) && !defined(VARCHG)
+  tmp = MAX(tmp,SQR(fcs_rcut));
 #endif
   cellsz = MAX(cellsz,tmp);
 

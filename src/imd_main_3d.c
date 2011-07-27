@@ -142,6 +142,8 @@ int main_loop(int simulation)
 #endif
 
 #endif /* not BBOOST */ 
+
+  imd_start_timer(&time_main);
   
   /* simulation loop */
   for (steps=steps_min; steps <= steps_max; ++steps) {
@@ -751,6 +753,8 @@ int main_loop(int simulation)
       if ((finished = check_walltime())) break;
     }
   }
+
+  imd_stop_timer(&time_main);
 
   /* clean up the current phase, and clear restart flag */
   imdrestart=0;

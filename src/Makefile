@@ -1196,19 +1196,9 @@ endif
 ifneq (,$(strip $(findstring fcs,${MAKETARGET})))
 PP_FLAGS      += -DUSEFCS 
 FORCESOURCES  += ${FCSSOURCES}
-LIBS          += $(shell pkg-config --libs scafacos-fcs)
+LIBS          += -lfftw3 $(shell pkg-config --libs scafacos-fcs)
 CFLAGS        += $(shell pkg-config --cflags scafacos-fcs)
 endif
-
-# PEPC
-#ifneq (,$(strip $(findstring pepc,${MAKETARGET})))
-#PP_FLAGS      += -DPEPC 
-#endif
-
-# PP3MG
-#ifneq (,$(strip $(findstring pp3mg,${MAKETARGET})))
-#PP_FLAGS      += -DPP3MG 
-#endif
 
 # VARCHG
 ifneq (,$(strip $(findstring varchg,${MAKETARGET})))
