@@ -2873,26 +2873,17 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"fcs_method")==0) {
       /* FCS method */
       getparam(token,tmpstr,PARAM_STR,1,255);
-      if      (strcasecmp(tmpstr,"pepc")==0) {
+      if (strcasecmp(tmpstr,"direct")==0) {
+        fcs_method = FCS_METH_DIRECT;
+      }
+      else if (strcasecmp(tmpstr,"pepc")==0) {
         fcs_method = FCS_METH_PEPC;
       }
       else if (strcasecmp(tmpstr,"fmm")==0) {
         fcs_method = FCS_METH_FMM;
       }
-      else if (strcasecmp(tmpstr,"pp3mg")==0) {
-        fcs_method = FCS_METH_PP3MG;
-      }
-      else if (strcasecmp(tmpstr,"vmg")==0) {
-        fcs_method = FCS_METH_VMG;
-      }
-      else if (strcasecmp(tmpstr,"nfft")==0) {
-        fcs_method = FCS_METH_NFFT;
-      }
       else if (strcasecmp(tmpstr,"p3m")==0) {
         fcs_method = FCS_METH_P3M;
-      }
-      else if (strcasecmp(tmpstr,"direct")==0) {
-        fcs_method = FCS_METH_DIRECT;
       }
     }
     /* fcs_debug_level */
@@ -2930,7 +2921,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"fcs_p3m_accuracy")==0) {
       getparam(token,&fcs_p3m_accuracy,PARAM_REAL,1,1);
     }
-#endif
+#endif /* USEFCS */
 #if defined(EWALD) || defined(COULOMB)
     /* smoothing parameter */
     else if (strcasecmp(token,"ew_kappa")==0) {

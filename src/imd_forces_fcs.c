@@ -25,7 +25,6 @@
 fcs_float *pos=NULL, *chg=NULL, *field=NULL, *pot=NULL; 
 int       nloc, nloc_max=0;
 FCS       handle=NULL;
-FCSOutput output=NULL;
  
 #define ASSERT_FCS(err) \
   do { \
@@ -111,14 +110,19 @@ void pack_fcs(void) {
 *
 ******************************************************************************/
 
-void unpack_fcs(FCSOutput output) {
+void unpack_fcs(void) {
 
-  fcs_float *vir;
-  real pot1, pot2, e, c, sum=0.0;
+  fcs_float vir[9] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+  FCSResult result;
+  real pot1, pot2, e, c, sum=0.0, fac=0.5;
   int n, m, k, i;
 
+  /* different potential normalisations */
+#ifdef FCS_ENABLE_P3M
+  //if (FCS_METH_P3M == fcs_method) fac=1.0;
+#endif
+
   /* extract output and distribute it to cell array */
-  vir = fcsOutput_getVirial(output);
   n=0; m=0; pot1=0.0;
   for (k=0; k<NCELLS; ++k) {
     cell *p = CELLPTR(k);
@@ -127,13 +131,42 @@ void unpack_fcs(FCSOutput output) {
       KRAFT(p,i,X) += field[n++] * c; 
       KRAFT(p,i,Y) += field[n++] * c; 
       KRAFT(p,i,Z) += field[n++] * c;
-      e = pot[m++] * c * 0.5;
+      e = pot[m++] * c * fac;
       POTENG(p,i)  += e;
       pot1         += e;
     }
   }
 
   /* unpack virial */
+  switch (fcs_method) {
+#ifdef FCS_ENABLE_DIRECT
+    case FCS_METH_DIRECT:
+      result = fcs_DIRECT_get_virial(handle, vir);
+      ASSERT_FCS(result);
+      break;
+#endif
+#ifdef FCS_ENABLE_PEPC
+    case FCS_METH_PEPC:
+      result = fcs_PEPC_get_virial(handle, vir);
+      ASSERT_FCS(result);
+      break;
+#endif
+#ifdef FCS_ENABLE_FMM
+    case FCS_METH_FMM:
+      result = fcs_FMM_get_virial(handle, vir);
+      ASSERT_FCS(result);
+      break;
+#endif
+#ifdef FCS_ENABLE_P3M
+    case FCS_METH_P3M:
+      result = fcs_P3M_get_virial(handle, vir);
+      ASSERT_FCS(result);
+      break;
+#endif
+    default: 
+      /* do nothing */
+      break;
+  }
 #ifdef P_AXIAL
   vir_xx += vir[0];
   vir_yy += vir[4];
@@ -183,7 +216,7 @@ void unpack_fcs(FCSOutput output) {
 void init_fcs(void) {
 
   FCSResult result;
-  fcs_int srf = 1, cflag = 0;
+  fcs_int srf = 1;
   char *method;
 
   fcs_int   pbc [3] = { pbc_dirs.x, pbc_dirs.y, pbc_dirs.z };
@@ -192,14 +225,10 @@ void init_fcs(void) {
   fcs_float BoxZ[3] = { box_z.x, box_z.y, box_z.z };
 
   switch (fcs_method) {
+    case FCS_METH_DIRECT: method = "DIRECT"; break;
     case FCS_METH_PEPC:   method = "PEPC";   break;
     case FCS_METH_FMM:    method = "FMM";    break;
-    case FCS_METH_PP3MG:  method = "PP3MG";  break;
-    case FCS_METH_VMG:    method = "VMG";    break;
     case FCS_METH_P3M:    method = "P3M";    srf = fcs_rcut > 0 ? 0 : 1; break;
-    case FCS_METH_MEMD:   method = "MEMD";   break;
-    case FCS_METH_NFFT:   method = "NFFT";   break;
-    case FCS_METH_DIRECT: method = "DIRECT"; break;
   }
 
   /* initialize handle and set common parameters */
@@ -207,15 +236,21 @@ void init_fcs(void) {
   ASSERT_FCS(result);
   result = fcs_common_set(handle, srf, BoxX, BoxY, BoxZ, pbc, natoms, natoms);
   ASSERT_FCS(result);
-  result = fcsOutput_create(&output);
-  ASSERT_FCS(result);
 
   /* set method specific parameters */
   switch (fcs_method) {
+#ifdef FCS_ENABLE_DIRECT
+    case FCS_METH_DIRECT:
+      result = fcs_DIRECT_require_virial(handle, 1);
+      ASSERT_FCS(result);
+      break;
+#endif
 #ifdef FCS_ENABLE_PEPC
     case FCS_METH_PEPC:
       result = fcs_PEPC_setup(handle, (fcs_float)fcs_pepc_eps, 
            (fcs_float)fcs_pepc_theta, (fcs_int)fcs_debug_level );
+      ASSERT_FCS(result);
+      result = fcs_PEPC_require_virial(handle, 1);
       ASSERT_FCS(result);
       break;
 #endif
@@ -224,32 +259,19 @@ void init_fcs(void) {
       result = fcs_FMM_setup(handle, (fcs_int)fcs_fmm_absrel, 
            (fcs_float)fcs_fmm_deltaE, (fcs_int)fcs_fmm_dcorr);
       ASSERT_FCS(result);
+      result = fcs_FMM_require_virial(handle, 1);
+      ASSERT_FCS(result);
       break;
-#endif
-#ifdef FCS_ENABLE_PP3MG_PMG
-      /* PP3MG */
-#endif
-#ifdef FCS_ENABLE_VMG
-      /* VMG */
 #endif
 #ifdef FCS_ENABLE_P3M
     case FCS_METH_P3M:
-      fcs_P3M_set_r_cut(handle, (fcs_float)fcs_rcut);
-      fcs_P3M_set_required_accuracy(handle, (fcs_float)fcs_p3m_accuracy);
-      //fcs_P3M_set_mesh(handle, 64);
-      //fcs_P3M_set_cao(handle, 7);
-      //fcs_P3M_set_alpha(handle, 2.5);
-      break;
-#endif
-#ifdef FCS_ENABLE_MEMD
-      /* MEMD */
-#endif
-#ifdef FCS_ENABLE_NFFT
-      /* NFFT */
-#endif
-#ifdef FCS_ENABLE_DIRECT
-    case FCS_METH_DIRECT:
-      /* no need to do anything */
+      result = fcs_P3M_set_r_cut(handle, (fcs_float)fcs_rcut);
+      ASSERT_FCS(result);
+      result = fcs_P3M_set_required_accuracy(handle, 
+           (fcs_float)fcs_p3m_accuracy);
+      ASSERT_FCS(result);
+      result = fcs_P3M_require_virial(handle, 1);
+      ASSERT_FCS(result);
       break;
 #endif
     default: 
@@ -257,7 +279,7 @@ void init_fcs(void) {
       break;
   }
   pack_fcs();
-  result = fcs_tune(handle, nloc, nloc_max, pos, chg, cflag);
+  result = fcs_tune(handle, nloc, nloc_max, pos, chg);
   ASSERT_FCS(result);
 
   /* add near-field potential, after fcs_tune */
@@ -273,11 +295,10 @@ void init_fcs(void) {
 
 void calc_forces_fcs(void) {
   FCSResult result;
-  fcs_int flag=0;  /* component flag - what for? */
   pack_fcs();
-  result = fcs_run(handle, nloc, nloc_max, pos, chg, field, pot, flag, output);
+  result = fcs_run(handle, nloc, nloc_max, pos, chg, field, pot);
   ASSERT_FCS(result);
-  unpack_fcs(output);
+  unpack_fcs();
 }
 
 

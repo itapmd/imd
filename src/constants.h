@@ -45,14 +45,10 @@
 
 /* FCS methods */
 #define FCS_METH_EMPTY  0
-#define FCS_METH_PEPC   1
-#define FCS_METH_FMM    2
-#define FCS_METH_PP3MG  3
-#define FCS_METH_VMG    4
-#define FCS_METH_P3M    5
-#define FCS_METH_MEMD   6
-#define FCS_METH_NFFT   7
-#define FCS_METH_DIRECT 8
+#define FCS_METH_DIRECT 1
+#define FCS_METH_PEPC   2
+#define FCS_METH_FMM    3
+#define FCS_METH_P3M    4
 
 /* output formats for distributions */
 #define DIST_FORMAT_BINARY       1
