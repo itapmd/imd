@@ -246,8 +246,13 @@ void alloc_cell(cell *cl, int count)
 #else
     cl->sorte         = NULL;
 #endif
-#if defined(CONN) || defined(ELCO) || defined(COORD) || defined(CNA)
+#if defined(CONN) || defined(ELCO) || defined(COORD) || defined(CNA) || defined(REMAT)
     cl->nummer        = NULL;
+#endif
+#ifdef REMAT
+    cl->masse         = NULL;
+    cl->nnn           = NULL;
+    cl->flag          = NULL;
 #endif
 #ifdef CNA
     cl->mark          = NULL;
@@ -306,6 +311,12 @@ void alloc_cell(cell *cl, int count)
 #endif
 #if defined(CONN) || defined(ELCO) || defined(COORD) || defined(CNA)
   cl->nummer = (int    *) realloc(cl->nummer, count * sizeof(int));
+#endif
+#ifdef REMAT
+  cl->nummer = (int    *) realloc(cl->nummer, count * sizeof(int));
+  cl->nnn = (int    *) realloc(cl->nnn, count * sizeof(int));
+  cl->flag = (int    *) realloc(cl->flag, count * sizeof(int));
+  cl->masse  = (real   *) realloc(cl->masse,  count * sizeof(real));
 #endif
 #ifdef CNA
   cl->mark   = (short  *) realloc(cl->mark,   count * sizeof(short));
@@ -426,6 +437,12 @@ void alloc_cell(cell *cl, int count)
 #if defined(CONN) || defined(ELCO) || defined(COORD) || defined(CNA)
     || (NULL==cl->nummer)
 #endif
+#ifdef REMAT
+       || (NULL==cl->nummer)
+       || (NULL==cl->nnn)
+       || (NULL==cl->masse)
+       || (NULL==cl->flag)
+#endif
 #ifdef CNA
     || (NULL==cl->mark)
     || (NULL==cl->masse)
@@ -541,6 +558,7 @@ void read_atoms(str255 infilename)
 
     if (p>0) {
 
+   
 #ifdef PS
       /* Determine bounding box before rotation */
       real_minl = minvektor(real_minl, atom.pos);
@@ -562,13 +580,27 @@ void read_atoms(str255 infilename)
       to = PTR_VV(cell_array,cellc,cell_dim);
       /* enlarge it if necessary */
       if (to->n >= to->n_max) alloc_cell(to,to->n_max+CSTEP);
+   
       /* put the data */
+
       to->ort   [to->n] = atom.pos;
+     
+
 #if (!defined(STRAIN) && !defined(STRESS))
       to->sorte [to->n] = MOD(atom.type,ntypes);
 #endif
+
 #if defined(CONN) || defined(ELCO) || defined(COORD) || defined(CNA)
       to->nummer[to->n] = atom.number;
+#endif
+
+#ifdef REMAT
+   
+      to->nummer[to->n] = atom.number;
+      to->masse[to->n] = atom.mass;
+      to->nnn[to->n] = 0;
+      to->flag[to->n] = 0;
+   
 #endif
 #ifdef CNA
       to->mark[to->n]  = 0;

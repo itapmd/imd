@@ -217,6 +217,11 @@ FLAGS += -DPAIR
 SOURCES += imd_pair.c
 endif
 
+ifneq (,$(strip $(findstring remove,${MAKETARGET})))
+FLAGS += -DREMAT
+SOURCES += imd_remove_atoms.c
+endif
+
 ifneq (,$(strip $(findstring ps,${MAKETARGET})))
 FLAGS += -DPS -DCOVALENT
 SOURCES += imd_ps.c imd_ps_main.c

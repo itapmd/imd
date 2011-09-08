@@ -251,8 +251,13 @@ typedef struct {
 #else
   int    *sorte;
 #endif
-#if defined(CONN) || defined(ELCO) || defined(COORD) || defined(CNA)
+#if defined(CONN) || defined(ELCO) || defined(COORD) || defined(CNA) ||defined(REMAT)
   int    *nummer;
+#endif
+#ifdef REMAT
+  real   *masse;
+  int *nnn;
+  int *flag;
 #endif
 #ifdef CNA
  short  *cna;
@@ -427,6 +432,11 @@ void write_elco(void);
 void write_elco_select(void);
 #endif
 
+#ifdef REMAT
+void calc_n_toclose_nn(int n_nnn_crit);
+void write_atoms(void);
+
+#endif 
 #ifdef PAIR_POT
 void init_pair(void);
 void read_pot_table( pot_table_t *pt, char *filename, int ncols );
@@ -884,4 +894,11 @@ EXTERN vektor unitv[3] INIT(unitvektor3d);
 #else
 EXTERN vektor unitv[2] INIT(unitvektor2d);
 #endif
+#endif
+
+#ifdef REMAT
+EXTERN int   n_nnn[12];
+EXTERN int   ndeletedatoms;
+EXTERN real  r_crit;
+
 #endif

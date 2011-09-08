@@ -60,7 +60,7 @@ void read_command_line(int argc, char **argv)
       read_arg_bool(&argc, &argv, &use_vtypes);
       break;
 
-#if defined(ANGLE) || defined(PAIR) || defined(COORD) || defined(CNA)
+#if defined(ANGLE) || defined(PAIR) || defined(COORD) || defined(CNA) ||defined(REMAT)
       /* a - minimum radius */
     case 'a':
       read_arg_real(&argc, &argv, &r_min);
@@ -750,6 +750,11 @@ void getparamfile(char *paramfname)
       r_cut = (real *) calloc(nn,sizeof(real));
       if (NULL == r_cut) error("cannot allocate r_cut");
       getparam("r_cut",r_cut,PARAM_REAL,nn,nn);
+    }
+#endif
+#ifdef REMAT
+ else if (strcasecmp(token,"r_crit")==0) {
+      getparam("r_crit",&r_crit,PARAM_REAL,1,1);
     }
 #endif
 #ifdef PAIR_POT
