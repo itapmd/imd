@@ -2308,7 +2308,7 @@ void write_eng_file(int steps)
 #ifdef TWOD
   fprintf(eng_file,format, (double) Press_xy);
 #else 
-  fprintf(eng_file,format2, (double) Press_zz);
+  fprintf(eng_file,format, (double) Press_zz);
   fprintf(eng_file,format3,
 	  (double) Press_yz, (double) Press_zx, (double) Press_xy);
 #endif    

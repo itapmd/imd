@@ -117,11 +117,6 @@ void unpack_fcs(void) {
   real pot1, pot2, e, c, sum=0.0, fac=0.5;
   int n, m, k, i;
 
-  /* different potential normalisations */
-#ifdef FCS_ENABLE_P3M
-  //if (FCS_METH_P3M == fcs_method) fac=1.0;
-#endif
-
   /* extract output and distribute it to cell array */
   n=0; m=0; pot1=0.0;
   for (k=0; k<NCELLS; ++k) {
@@ -138,35 +133,8 @@ void unpack_fcs(void) {
   }
 
   /* unpack virial */
-  switch (fcs_method) {
-#ifdef FCS_ENABLE_DIRECT
-    case FCS_METH_DIRECT:
-      result = fcs_DIRECT_get_virial(handle, vir);
-      ASSERT_FCS(result);
-      break;
-#endif
-#ifdef FCS_ENABLE_PEPC
-    case FCS_METH_PEPC:
-      result = fcs_PEPC_get_virial(handle, vir);
-      ASSERT_FCS(result);
-      break;
-#endif
-#ifdef FCS_ENABLE_FMM
-    case FCS_METH_FMM:
-      result = fcs_FMM_get_virial(handle, vir);
-      ASSERT_FCS(result);
-      break;
-#endif
-#ifdef FCS_ENABLE_P3M
-    case FCS_METH_P3M:
-      result = fcs_P3M_get_virial(handle, vir);
-      ASSERT_FCS(result);
-      break;
-#endif
-    default: 
-      /* do nothing */
-      break;
-  }
+  result = fcs_get_virial(handle, vir);
+  ASSERT_FCS(result);
 #ifdef P_AXIAL
   vir_xx += vir[0];
   vir_yy += vir[4];
@@ -236,13 +204,14 @@ void init_fcs(void) {
   ASSERT_FCS(result);
   result = fcs_common_set(handle, srf, BoxX, BoxY, BoxZ, pbc, natoms, natoms);
   ASSERT_FCS(result);
+  result = fcs_require_virial(handle, 1);
+  ASSERT_FCS(result);
 
   /* set method specific parameters */
   switch (fcs_method) {
 #ifdef FCS_ENABLE_DIRECT
     case FCS_METH_DIRECT:
-      result = fcs_DIRECT_require_virial(handle, 1);
-      ASSERT_FCS(result);
+      /* nothing to do */
       break;
 #endif
 #ifdef FCS_ENABLE_PEPC
@@ -250,16 +219,12 @@ void init_fcs(void) {
       result = fcs_PEPC_setup(handle, (fcs_float)fcs_pepc_eps, 
            (fcs_float)fcs_pepc_theta, (fcs_int)fcs_debug_level );
       ASSERT_FCS(result);
-      result = fcs_PEPC_require_virial(handle, 1);
-      ASSERT_FCS(result);
       break;
 #endif
 #ifdef FCS_ENABLE_FMM
     case FCS_METH_FMM:
       result = fcs_FMM_setup(handle, (fcs_int)fcs_fmm_absrel, 
            (fcs_float)fcs_fmm_deltaE, (fcs_int)fcs_fmm_dcorr);
-      ASSERT_FCS(result);
-      result = fcs_FMM_require_virial(handle, 1);
       ASSERT_FCS(result);
       break;
 #endif
@@ -269,8 +234,6 @@ void init_fcs(void) {
       ASSERT_FCS(result);
       result = fcs_P3M_set_required_accuracy(handle, 
            (fcs_float)fcs_p3m_accuracy);
-      ASSERT_FCS(result);
-      result = fcs_P3M_require_virial(handle, 1);
       ASSERT_FCS(result);
       break;
 #endif
