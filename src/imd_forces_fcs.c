@@ -256,8 +256,22 @@ void init_fcs(void) {
 *
 ******************************************************************************/
 
-void calc_forces_fcs(void) {
+void calc_forces_fcs(int steps) {
   FCSResult result;
+  fcs_float BoxX[3] = { box_x.x, box_x.y, box_x.z };
+  fcs_float BoxY[3] = { box_y.x, box_y.y, box_y.z };
+  fcs_float BoxZ[3] = { box_z.x, box_z.y, box_z.z };
+
+#ifdef HOMDEF
+  if ((lindef_int > 0) && (0 == steps % lindef_int)) {
+    result = fcs_set_box_a(handle, BoxX);
+    ASSERT_FCS(result);
+    result = fcs_set_box_b(handle, BoxY);
+    ASSERT_FCS(result);
+    result = fcs_set_box_c(handle, BoxZ);
+    ASSERT_FCS(result);
+  }
+#endif
   pack_fcs();
   result = fcs_run(handle, nloc, nloc_max, pos, chg, field, pot);
   ASSERT_FCS(result);

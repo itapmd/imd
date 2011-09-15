@@ -384,7 +384,7 @@ int main_loop(int simulation)
 #ifdef PAIR
       calc_forces(steps);
 #endif
-      calc_forces_fcs();
+      calc_forces_fcs(steps);
 #else
       calc_forces(steps);
 #endif
