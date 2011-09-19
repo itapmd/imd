@@ -326,7 +326,7 @@ void fcs_update_pottab(void) {
         pot -= fcs_shift;
         pot -= 0.5 * fcs_fshift * (r2 - fcs_r2cut);
         pot *= coul_eng * charge[i] * charge[j];
-        *PTR_2D(pt->table, k, col, pt->maxsteps, pt->ncols) = pot;
+        *PTR_2D(pt->table, k, col, pt->maxsteps, pt->ncols) += pot;
       }
     }
 }
