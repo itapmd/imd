@@ -481,7 +481,8 @@ void init_ewald(void)
   ew_ny = (int) (ew_kcut * SQRT( SPROD(box_y,box_y) ) / twopi) + 1;
   ew_nz = (int) (ew_kcut * SQRT( SPROD(box_z,box_z) ) / twopi) + 1;
 
-  printf("EWALD: nx = %d, ny = %d, nz = %d\n", ew_nx, ew_ny, ew_nz);
+  if (0==myid)
+    printf("EWALD: nx = %d, ny = %d, nz = %d\n", ew_nx, ew_ny, ew_nz);
 
   /* Allocate memory for k-vectors */
   num     = (2*ew_nx+1) * (2*ew_ny+1) * (ew_nz+1);
@@ -519,7 +520,8 @@ void init_ewald(void)
 
       }
 
-  printf("EWALD: %d k-vectors\n", ew_totk); 
+  if (0==myid)
+    printf("EWALD: %d k-vectors\n", ew_totk); 
 
   /* Allocate memory for exp(ikr) */
   ew_dx = 2 * ew_nx + 1;
