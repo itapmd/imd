@@ -202,7 +202,7 @@ void init_fcs(void) {
   /* initialize handle and set common parameters */
   result = fcs_init(&handle, method, cpugrid); 
   ASSERT_FCS(result);
-  result = fcs_common_set(handle, srf, BoxX, BoxY, BoxZ, pbc, natoms, natoms);
+  result = fcs_common_set(handle, srf, BoxX, BoxY, BoxZ, pbc, natoms);
   ASSERT_FCS(result);
   result = fcs_require_virial(handle, 1);
   ASSERT_FCS(result);
