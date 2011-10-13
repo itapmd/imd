@@ -536,8 +536,8 @@ int getparamfile(char *paramfname, int phase)
       getparam(token,&neb_nrep,PARAM_INT,1,1);
       if (0==myrank)
 	{
-        if (num_cpus != neb_nrep-2)
-          error("We need exactly neb_nrep-2 MPI processes");
+        if (num_cpus != neb_nrep)
+          error("We need exactly neb_nrep MPI processes");
         if (neb_nrep>NEB_MAXNREP)
           error("Too many images for NEB");
 	}
@@ -3563,7 +3563,7 @@ int read_parameters(char *paramfname, int phase)
     /* read back itr-file for the next phase */
     if (phase > 1) {
 #ifdef NEB
-      sprintf(outfilename, "%s.%02d", neb_outfilename, myrank+1);
+      sprintf(outfilename, "%s.%02d", neb_outfilename, myrank);
 #endif
       sprintf( itrfilename,"%s-final.itr", outfilename );
       getparamfile(itrfilename, 1);
