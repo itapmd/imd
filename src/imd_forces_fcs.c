@@ -191,6 +191,7 @@ void init_fcs(void) {
   fcs_float BoxX[3] = { box_x.x, box_x.y, box_x.z };
   fcs_float BoxY[3] = { box_y.x, box_y.y, box_y.z };
   fcs_float BoxZ[3] = { box_z.x, box_z.y, box_z.z };
+  fcs_float off [3] = { 0.0, 0.0, 0.0 };
 
   switch (fcs_method) {
     case FCS_METH_DIRECT: method = "DIRECT"; break;
@@ -202,7 +203,7 @@ void init_fcs(void) {
   /* initialize handle and set common parameters */
   result = fcs_init(&handle, method, cpugrid); 
   ASSERT_FCS(result);
-  result = fcs_common_set(handle, srf, BoxX, BoxY, BoxZ, pbc, natoms);
+  result = fcs_common_set(handle, srf, BoxX, BoxY, BoxZ, off, pbc, natoms);
   ASSERT_FCS(result);
   result = fcs_require_virial(handle, 1);
   ASSERT_FCS(result);
