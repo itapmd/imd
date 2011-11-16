@@ -49,6 +49,7 @@
 #define FCS_METH_PEPC   2
 #define FCS_METH_FMM    3
 #define FCS_METH_P3M    4
+#define FCS_METH_P2NFFT 5
 
 /* output formats for distributions */
 #define DIST_FORMAT_BINARY       1

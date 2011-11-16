@@ -2885,6 +2885,9 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       else if (strcasecmp(tmpstr,"p3m")==0) {
         fcs_method = FCS_METH_P3M;
       }
+      else if (strcasecmp(tmpstr,"p2nfft")==0) {
+        fcs_method = FCS_METH_P2NFFT;
+      }
     }
     /* fcs_debug_level */
     else if (strcasecmp(token,"fcs_debug_level")==0) {
@@ -2920,6 +2923,10 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     /* fcs_p3m_accuracy */
     else if (strcasecmp(token,"fcs_p3m_accuracy")==0) {
       getparam(token,&fcs_p3m_accuracy,PARAM_REAL,1,1);
+    }
+    /* fcs_p2nfft_accuracy */
+    else if (strcasecmp(token,"fcs_p2nfft_accuracy")==0) {
+      getparam(token,&fcs_p2nfft_accuracy,PARAM_REAL,1,1);
     }
 #endif /* USEFCS */
 #if defined(EWALD) || defined(COULOMB)
@@ -4439,6 +4446,7 @@ void broadcast_params() {
   MPI_Bcast( &fcs_fmm_deltaE,     1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_fmm_dcorr,      1,   MPI_INT,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_p3m_accuracy,   1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_p2nfft_accuracy,1,      REAL,    0, MPI_COMM_WORLD);
 #endif
 #if defined(EWALD) || defined(COULOMB)
   MPI_Bcast( &ew_kappa,           1,      REAL,    0, MPI_COMM_WORLD);

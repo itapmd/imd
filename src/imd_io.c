@@ -3050,7 +3050,7 @@ void write_header_config(FILE *out)
 #else
   fprintf(out, " Epot" );
 #endif
-#if defined(VARCHG) || defined(EWALD) || defined(FCS)
+#if defined(VARCHG) || defined(EWALD) || defined(USEFCS)
   fprintf(out, " charge" );
 #endif
 #ifdef NNBR

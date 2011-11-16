@@ -831,7 +831,7 @@ void write_atoms_config(FILE *out)
           DREH_IMPULS(p,i,Z) / uniax_inert ); 
 #endif
         len += sprintf(outbuf+len, RESOL1, POTENG(p,i));
-#if defined(VARCHG) || defined(EWALD) || defined(FCS)
+#if defined(VARCHG) || defined(EWALD) || defined(USEFCS)
         len += sprintf(outbuf+len, RESOL1, CHARGE(p,i));
 #endif
 #ifdef NNBR

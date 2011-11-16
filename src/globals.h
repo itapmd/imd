@@ -1154,6 +1154,7 @@ EXTERN int      fcs_fmm_absrel   INIT(2);
 EXTERN real     fcs_fmm_deltaE   INIT(1e-5);
 EXTERN int      fcs_fmm_dcorr    INIT(0);
 EXTERN real     fcs_p3m_accuracy INIT(0.0);
+EXTERN real     fcs_p2nfft_accuracy INIT(0.0);
 #endif
 #if defined(EWALD) || defined(COULOMB)
 EXTERN imd_timer ewald_time;

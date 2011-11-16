@@ -194,10 +194,11 @@ void init_fcs(void) {
   fcs_float off [3] = { 0.0, 0.0, 0.0 };
 
   switch (fcs_method) {
-    case FCS_METH_DIRECT: method = "DIRECT"; break;
-    case FCS_METH_PEPC:   method = "PEPC";   break;
-    case FCS_METH_FMM:    method = "FMM";    break;
-    case FCS_METH_P3M:    method = "P3M";    srf = fcs_rcut > 0 ? 0 : 1; break;
+    case FCS_METH_DIRECT: method = "direct"; break;
+    case FCS_METH_PEPC:   method = "pepc";   break;
+    case FCS_METH_FMM:    method = "fmm";    break;
+    case FCS_METH_P3M:    method = "p3m";    srf = fcs_rcut > 0 ? 0 : 1; break;
+    case FCS_METH_P2NFFT: method = "p2nfft"; break;
   }
 
   /* initialize handle and set common parameters */
@@ -231,10 +232,19 @@ void init_fcs(void) {
 #endif
 #ifdef FCS_ENABLE_P3M
     case FCS_METH_P3M:
-      result = fcs_P3M_set_r_cut(handle, (fcs_float)fcs_rcut);
-      ASSERT_FCS(result);
+      if (0==srf) {
+        result = fcs_P3M_set_r_cut(handle, (fcs_float)fcs_rcut);
+        ASSERT_FCS(result);
+      }
       result = fcs_P3M_set_required_accuracy(handle, 
            (fcs_float)fcs_p3m_accuracy);
+      ASSERT_FCS(result);
+      break;
+#endif
+#ifdef FCS_ENABLE_P2NFFT
+    case FCS_METH_P2NFFT:
+      result = fcs_P2NFFT_set_required_accuracy(handle, 
+           (fcs_float)fcs_p2nfft_accuracy);
       ASSERT_FCS(result);
       break;
 #endif

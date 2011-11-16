@@ -20,7 +20,7 @@
 
 #include "imd.h"
 
-real gaussian(const real);
+real imd_gaussian(const real);
 
 /*
 *
@@ -146,10 +146,10 @@ void maxwell(real temp)
 	 tmp  = sqrt(TEMP * MASSE(p,i));
          rest = restrictions + VSORTE(p,i);
 #ifndef RIGID
-         IMPULS(p,i,X) = gaussian(tmp) * rest->x;
-         IMPULS(p,i,Y) = gaussian(tmp) * rest->y;
+         IMPULS(p,i,X) = imd_gaussian(tmp) * rest->x;
+         IMPULS(p,i,Y) = imd_gaussian(tmp) * rest->y;
 #ifndef TWOD
-         IMPULS(p,i,Z) = gaussian(tmp) * rest->z;
+         IMPULS(p,i,Z) = imd_gaussian(tmp) * rest->z;
 #endif
 #else
 	 /* superatoms get velocity zero */
@@ -302,7 +302,7 @@ void maxwell(real temp)
 
 /* Polar (Box-Mueller) method; See Knuth v2, 3rd ed, p122 */
 
-real gaussian(const real sigma)
+real imd_gaussian(const real sigma)
 {
   double x, y, r2;
 
