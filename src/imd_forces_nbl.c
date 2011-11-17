@@ -606,7 +606,7 @@ void calc_forces(int steps)
 	  if (SQR(chg)>0.) {
 #ifdef SM
             real na_pot_p=0.0, na_pot_q=0.0, na_gr_p=0.0, na_gr_q=0.0;
-            real z_sm_p = sm_Z[it] * CHARGE(q,i) * coul_eng;
+            real z_sm_p = sm_Z[it] * CHARGE(q,j) * coul_eng;
             real z_sm_q = sm_Z[jt] * CHARGE(p,i) * coul_eng;
 #endif
 	    /* Constant electric field from charges */
@@ -1173,7 +1173,7 @@ void calc_forces(int steps)
       real chg = CHARGE(p,i);
 #ifdef SM
       int  t   = SORTE(p,i);
-      real pot = ((ew_vorf * coul_eng - sm_J_0[t]) * chg - sm_chi_0[t]) * chg;
+      real pot = (0.5*(2*ew_vorf * coul_eng - sm_J_0[t]) * chg - sm_chi_0[t]) * chg;
 #else
       real pot = ew_vorf * SQR(chg) * coul_eng;
 #endif
