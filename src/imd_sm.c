@@ -184,8 +184,8 @@ void do_electronegativity(void)
 	      if (r2 < cr_pot_tab.end[col2]){  /* ABBC */
 		VAL_FUNC(cr_pot, cr_pot_tab, col2, inc, r2, is_short);
 	      }
-	      CHI_SM(p,i) += z_sm_q*(na_pot_p-cr_pot);
-	      CHI_SM(q,j) += z_sm_p*(na_pot_q-cr_pot);
+	      CHI_SM(p,i) += z_sm_q*(na_pot_p-cr_pot)*coul_eng;
+	      CHI_SM(q,j) += z_sm_p*(na_pot_q-cr_pot)*coul_eng;
 	    }
 	  }
       }
@@ -224,7 +224,7 @@ void do_v_real(void)
 	  p_typ   = SORTE(p,i);
 	  j_sm_p  = sm_J_0[p_typ];
 	  /* definition */
-	  V_SM(p,i) = Q_SM(p,i)*(j_sm_p-ew_vorf);
+	  V_SM(p,i) = Q_SM(p,i)*(j_sm_p-2*ew_vorf*coul_eng);
 	}
     }
 	  
@@ -317,8 +317,8 @@ void do_v_real(void)
 		VAL_FUNC(cr_pot, cr_pot_tab, col2, inc, r2, is_short);
 	      }
 	      /* definition */
-	      V_SM(p,i) += Q_SM(q,j)*(erfc_r+cr_pot);
-	      V_SM(q,j) += Q_SM(p,j)*(erfc_r+cr_pot);
+	      V_SM(p,i) += Q_SM(q,j)*(erfc_r+cr_pot)*coul_eng;
+	      V_SM(q,j) += Q_SM(p,j)*(erfc_r+cr_pot)*coul_eng;
 	    }
 	  }
       }
