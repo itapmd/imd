@@ -2658,6 +2658,10 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     }
 #endif
 #ifdef SM
+/* no charge update after each step */
+    else if (strcasecmp(token,"charge_update_steps")==0) {
+      getparam(token, &charge_update_steps, PARAM_INT, 1, 1);
+    }
     /* keep charges fixed? */
     else if (strcasecmp(token,"sm_fixed_charges")==0) {
       getparam(token, &sm_fixed_charges, PARAM_INT, 1, 1);

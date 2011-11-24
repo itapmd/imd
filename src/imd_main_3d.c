@@ -514,8 +514,15 @@ int main_loop(int simulation)
 #endif
 
 #ifdef SM
-    if (!sm_fixed_charges)
+#ifdef NBLIST
+    if ((!sm_fixed_charges) && ((charge_update_steps > 0) && steps % charge_update_steps == 0)){
+      charge_update_sm();
+	}
+#else
+    if ((!sm_fixed_charges) && ((charge_update_steps > 0) && steps % charge_update_steps == 0)){
       do_charge_update();
+       }
+#endif
 #endif
 
 #ifdef HC
