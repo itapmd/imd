@@ -276,7 +276,6 @@ void calc_forces(int steps)
   real max_diff=10.;
   real *dp_E_shift;
   dp_p_calc = ((dp_fix-1 + dp_fix*dp_E_calc)>0 ) ? 0 : 1;
-
 #endif
 
   if (0==have_valid_nbl) {
@@ -645,6 +644,18 @@ void calc_forces(int steps)
 	    force.y = d.y * grad;
 	    force.z = d.z * grad;
 
+#ifdef EXTF
+	    real chg_single;
+#ifdef VARCHG
+	    chg_single = CHARGE(p,i);
+#else
+	    chg_single = charge[it];
+#endif
+	    force.x += chg_single * extf.x; 
+	    force.y += chg_single * extf.y; 
+	    force.z += chg_single * extf.z; 
+#endif /* EXTF */
+
 	    KRAFT(q,j,X) -= force.x;
 	    KRAFT(q,j,Y) -= force.y;
 	    KRAFT(q,j,Z) -= force.z;
@@ -682,7 +693,7 @@ void calc_forces(int steps)
 	      PRESSTENS(q,j,zx) -= d.z * force.x;
 	    }
 #endif
-
+	 
 #ifdef DIPOLE
 	    /* Field for Dipole calculation */
 	    if (dp_p_calc) {
@@ -692,9 +703,18 @@ void calc_forces(int steps)
 	      DP_E_STAT(q,j,X) -= d.x * grphi * charge[it];
 	      DP_E_STAT(q,j,Y) -= d.y * grphi * charge[it];
 	      DP_E_STAT(q,j,Z) -= d.z * grphi * charge[it];
+#ifdef EXTF
+	      Estat.x += extf.x;
+	      Estat.y += extf.y;
+	      Estat.z += extf.z;
+	      DP_E_STAT(q,j,X) += extf.x;
+	      DP_E_STAT(q,j,Y) += extf.y;
+	      DP_E_STAT(q,j,Z) += extf.z;
+#endif
 	    }
 #endif
 	  }
+
 #ifdef DIPOLE
 	  /* calculate short-range dipoles field */
 	  /* short-range fn.: 3rd column ff. */
@@ -708,12 +728,22 @@ void calc_forces(int steps)
 	      pstat.x -= tmp * d.x;
 	      pstat.y -= tmp * d.y;
 	      pstat.z -= tmp * d.z;
+#ifdef EXTF
+	      pstat.x += dp_alpha[it] * extf.x;
+	      pstat.y += dp_alpha[it] * extf.y;
+	      pstat.z += dp_alpha[it] * extf.z;
+#endif
 	    }
 	    tmp = pot*charge[it]*dp_alpha[jt];
 	    if (SQR(tmp)>0){
 	      DP_P_STAT(q,j,X) += tmp * d.x;
 	      DP_P_STAT(q,j,Y) += tmp * d.y;
 	      DP_P_STAT(q,j,Z) += tmp * d.z;
+#ifdef EXTF
+	      DP_P_STAT(q,j,X) += dp_alpha[jt] * extf.x;
+	      DP_P_STAT(q,j,Y) += dp_alpha[jt] * extf.y;
+	      DP_P_STAT(q,j,Z) += dp_alpha[jt] * extf.z;
+#endif
 	    }
 	  }
 #endif /* DIPOLE */
@@ -1495,10 +1525,9 @@ void calc_forces(int steps)
 	      force.z -= charge[it] * (dvalsr*pdotd *d.z +valsr*pj.z);
 
 	      have_force=1;
-	    }
-	    
-	    /* Dipole-Dipole interaction */
+	    }	    
 
+	    /* Dipole-Dipole interaction */
 	    if (SQR(dp_alpha[it])*SQR(dp_alpha[jt])>0) {
 	      pdotp=SPROD(pi,pj);
 	      proj_i=SPROD(pi,d);
@@ -1516,6 +1545,7 @@ void calc_forces(int steps)
 			  - 3.0 / r2 * (proj_i * pj.z + proj_j * pi.z));
 	      have_force = 1;
 	    }
+
 	    if (have_force) {
 	      tot_pot_energy += pot;
 
@@ -1602,6 +1632,7 @@ void calc_forces(int steps)
     p->dp_E_ind = dp_E_shift;
     
   }
+  
   if (is_short) fprintf(stderr, "\n Short distance, dipole, step %d!\n",\
 			steps);
   dp_E_calc++; 			/* increase field calc counter */

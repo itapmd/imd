@@ -1220,6 +1220,11 @@ ifneq (,$(strip $(findstring morse,${MAKETARGET})))
 CFLAGS  += -DMORSE
 endif
 
+# EXTF
+ifneq (,$(strip $(findstring extf,${MAKETARGET})))
+CFLAGS  += -DEXTF
+endif
+
 # LJ - computed Lennard-Jones (for vector versions only)
 ifneq (,$(strip $(findstring lj,${MAKETARGET})))
 PP_FLAGS  += -DLJ

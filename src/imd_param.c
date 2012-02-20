@@ -3056,6 +3056,13 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     }
 #endif /* DIPOLE or MORSE */
 
+#ifdef EXTF
+    /* external homogeneous electrostatic field */
+    else if (strcasecmp(token,"extf")==0) {
+      getparam(token,&extf,PARAM_REAL,DIM,DIM);
+    }
+#endif
+
 #ifdef EPITAX
     /* Parameters for option epitax */
     else if (strcasecmp(token,"epitax_rate")==0) {

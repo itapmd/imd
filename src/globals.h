@@ -1217,6 +1217,10 @@ EXTERN real     *ms_fshift INIT(NULL);
 EXTERN real     *bk_shift  INIT(NULL);
 EXTERN real     *bk_fshift INIT(NULL);
 #endif /* BUCK */
+#ifdef EXTF
+/* external homogeneous electrostatic field */
+EXTERN vektor extf INIT(nullvektor);    /* in e eV */
+#endif /* EXTF */
 
 /* generate quasicrystal */
 #ifdef QUASI
