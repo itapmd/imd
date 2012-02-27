@@ -633,7 +633,7 @@ void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
 #endif
     // communication of neighbor table
   // the reference neighbors need to be communicated
-  for(i=0;i<bb_maxneighi++)
+  for(i=0;i<bb_maxneigh;i++)
   {
       p->bb_neigh[ind]->distref1[i] = b->data[j++ ] ;
       p->bb_neigh[ind]->vectref1[i*SDIM] = b->data[j++ ] ;

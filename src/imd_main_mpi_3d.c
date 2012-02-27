@@ -126,8 +126,8 @@ void calc_forces(int steps)
   /* What follows is the standard one-cpu force 
      loop acting on our local data cells */
   timll++;
-  printf("myid=%d myrank: %d, timll = %d  !!!!!!!!!!!!!!!!!!!!!! \n",myid,myrank,timll);fflush(stdout);
-  printf("myid = %d : npairs[nlists] = %d, steps = %d \n",myid,npairs[nlists],steps);fflush(stdout);
+  //printf("myid=%d myrank: %d, timll = %d  !!!!!!!!!!!!!!!!!!!!!! \n",myid,myrank,timll);fflush(stdout);
+  // printf("myid = %d : npairs[nlists] = %d, steps = %d \n",myid,npairs[nlists],steps);fflush(stdout);
   /* compute forces for all pairs of cells */
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
