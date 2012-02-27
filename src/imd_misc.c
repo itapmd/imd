@@ -154,35 +154,8 @@ void add_positions(void)
   avpos_cnt++;
 
 }
-
-#ifdef STRESS_TENS
-/******************************************************************************
-*
-* add_stresstensors for computation of average stress tensor
-*
-******************************************************************************/
-
-void add_presstensors(void)
-{
-  int k;
-  for (k=0; k<NCELLS; k++) {
-    int i;
-    cell* p;
-    p = CELLPTR(k);
-    for (i=0; i<p->n; i++) {
-      AVPRESSTENS(p,i,xx) += PRESSTENS(p,i,xx);
-      AVPRESSTENS(p,i,yy) += PRESSTENS(p,i,yy);
-      AVPRESSTENS(p,i,xy) += PRESSTENS(p,i,xy);
-#ifndef TWOD
-      AVPRESSTENS(p,i,zz) += PRESSTENS(p,i,zz);
-      AVPRESSTENS(p,i,zx) += PRESSTENS(p,i,zx);
-      AVPRESSTENS(p,i,yz) += PRESSTENS(p,i,yz);
+  
 #endif
-    }
-  }
-}
-#endif /*stress_tens */  
-#endif /*AVPOS*/
 
 /******************************************************************************
 *

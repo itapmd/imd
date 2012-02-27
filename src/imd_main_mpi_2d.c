@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2006 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -73,7 +73,10 @@ void calc_forces(int steps)
 #ifdef NNBR
       NBANZ(p,i) = 0;
 #endif
-#if defined(STRESS_TENS)
+#ifdef NVX
+      HEATCOND(p,i) = 0.0;
+#endif      
+#ifdef STRESS_TENS
       PRESSTENS(p,i,xx) = 0.0;
       PRESSTENS(p,i,yy) = 0.0;
       PRESSTENS(p,i,xy) = 0.0;

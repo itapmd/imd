@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -109,14 +109,15 @@ typedef neightab* neighptr;
 /* per particle neighbor table for BBOOST */
 typedef struct {
     real        *distref1;   /* array containg info on bondlength */
-    real        *distref2;
+    real        *vectref1;   /* array containg info on bond vector */
     integer     *numref1;    /* array containg the neighbor info */
-    integer     *numref2;
     int         nbondsref1;  /* number of bonds this atoms had in reference pos */
-    int         nbondsref2;
 } bb_neightab;
 
 typedef bb_neightab* bb_neighptr;
+
+typedef real V3[3];
+typedef real M3[3][3];
 #endif
 
 
@@ -128,7 +129,12 @@ typedef struct {
 #ifdef BBOOST
     real        *bb_refposone; /* reference positions for bondboost */
     real        *bb_refpostwo;
+    real        *bb_bbproject;
     real        *bb_oldpos; /* position before boosting */
+    real        *bb_tmppos; /* position before boosting */
+    real        *bb_tmp2pos; /* position before boosting */
+    real        *bb_oldimpuls; /* impulse before boosting */
+    real        *bb_tmpkraft; /* impulse before boosting */
     bb_neightab **bb_neigh;
 #endif
 #ifndef MONOLJ
@@ -153,28 +159,14 @@ typedef struct {
 #ifdef VARCHG
   real        *charge;      /* individual charge for each particle */
 #endif
-#ifdef SM
-  real *chi_sm;              /* electronegativity */
-  real *z_sm;                /* effective core charge */
-  real *j_sm;               /* repulsiveness parameter */
-  real *v_sm;                /* integral */
-
-  real *b_sm;                /* Ax=b */
-  real *x_sm;                /* Ax=b */
-  real *r_sm;                /* residuum Ax=b */
-  real *d_sm;                /* conjugate directions Ax=b */
-  real *s_sm;                /* auxiliary variable Ax=b */
-  real *q_sm;                /* initial value */
-
-#endif
 #ifdef DIPOLE
-  real        *dp_E_stat;    /* electric field at atom location */	     
-  real        *dp_E_ind;     /* induced field at atom location */
-  real        *dp_E_old_1;   /* old field from previous steps */
-  real        *dp_E_old_2;   /* old field from previous steps */
-  real        *dp_E_old_3;   /* old field from previous steps */
-  real        *dp_p_stat;    /* static dipoles from Short-Range interaction */ 
-  real        *dp_p_ind;     /* induced dipoles */                              
+  real        *dp_E_stat; /* electric field at atom location */	     
+  real        *dp_E_ind; /* induced field at atom location */
+  real        *dp_E_old_1; 	/* old field from previous steps */
+  real        *dp_E_old_2; 	/* old field from previous steps */
+  real        *dp_E_old_3; 	/* old field from previous steps */
+  real        *dp_p_stat; /* static dipoles from Short-Range interaction */ 
+  real        *dp_p_ind; /* induced dipoles */                              
 #endif /* DIPOLE */
 #ifdef CG                   
   real        *h;           /* Conjugated Gradient: search vektor */
@@ -202,14 +194,11 @@ typedef struct {
 #ifdef REFPOS
   real        *refpos;
 #endif
-#ifdef HC
-  real        *hcaveng;
+#ifdef NVX
+  real        *heatcond;
 #endif
 #ifdef STRESS_TENS
   sym_tensor  *presstens;
-#ifdef AVPOS
-  sym_tensor  *avpresstens;
-#endif
 #endif
 #ifdef SHOCK
   real        *pxavg;

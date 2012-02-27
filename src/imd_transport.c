@@ -3,280 +3,268 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
 
 /******************************************************************************
 *
-* imd_transport.c -- heat transport
+* imd_transport.c -- heat transport (and pressure histograms)
 *
 ******************************************************************************/
 
-/******************************************************************************
+/***************************************************************************
 * $Revision$
 * $Date$
-******************************************************************************/
+***************************************************************************/
 
 #include "imd.h"
 
-#ifdef HC
 
 /******************************************************************************
 *
-*  add up microscopic heat current
+*  rnmend_heat_exchange -- exchange velocities of two particles
+*
+*  current limitation: one particle type, serial only
 *
 ******************************************************************************/
 
-void do_heat_cond(int steps)
+void rnemd_heat_exchange()
 {
-  int    i, k;
-  real   e, tmp;
-  vektor pp, vv, tmpv;
-  static real fac = 0.0;
+  int  k;
+  real swap;
 
-#ifdef TWOD
-  hc.x = 0.0; hc.y = 0.0;
-#else
-  hc.x = 0.0; hc.y = 0.0; hc.z = 0.0;
-#endif
+  cell *mincell, *maxcell;
+  int  minatom, maxatom;
+  real minEkin=tot_kin_energy, maxEkin=0.0;
 
-  for (k=0; k<NCELLS; ++k) { /* loop over all cells */
+  int  nhalf = tran_nlayers / 2;
+  real scale = tran_nlayers / box_x.x;
 
-    cell *p = CELLPTR(k);
+  /* find hot and cold particles to be swapped */
+  for (k=0; k<ncells; ++k) {
 
-    for (i=0; i<p->n; ++i) { /* loop over all atoms in the cell */
+    int  i,num;
+    cell *p;
+    real tmp;
+    p = cell_array + CELLS(k);
 
-      /* momenta at the time of the force computation */
-      pp.x = IMPULS(p,i,X) + 0.5 * timestep * KRAFT(p,i,X); 
-      pp.y = IMPULS(p,i,Y) + 0.5 * timestep * KRAFT(p,i,Y); 
-#ifndef TWOD
-      pp.z = IMPULS(p,i,Z) + 0.5 * timestep * KRAFT(p,i,Z); 
-#endif
-      /* current total energy */ 
-      e = SPROD(pp,pp) / (2*MASSE(p,i));
-      if (steps < hc_start) fac += e; /* add up kin. Energy for av. temp. */
-      e += POTENG(p,i);
+    for (i=0; i<p->n; ++i) {
 
-      /* average total energy of each atom */
-      if   (steps == hc_av_start) HCAVENG(p,i)  = e;
-      else if (steps <  hc_start) HCAVENG(p,i) += e;
-      else if (steps == hc_start) HCAVENG(p,i) /= (hc_start - hc_av_start);
+      tmp = SPRODN(IMPULS,p,i,IMPULS,p,i) / (2*MASSE(p,i));
 
-      /* add up microscopic heat conductivity */ 
-      /* at this point, PRESSTENS consists only of the virial part */
-      if (steps >= hc_start) {
-#ifdef TWOD
-        vv.x = PRESSTENS(p,i,xx) * pp.x + PRESSTENS(p,i,xy) * pp.y;
-        vv.y = PRESSTENS(p,i,xy) * pp.x + PRESSTENS(p,i,yy) * pp.y;
-#else
-        vv.x = PRESSTENS(p,i,xx) * pp.x + PRESSTENS(p,i,xy) * pp.y
-                                        + PRESSTENS(p,i,zx) * pp.z;
-        vv.y = PRESSTENS(p,i,xy) * pp.x + PRESSTENS(p,i,yy) * pp.y
-                                        + PRESSTENS(p,i,yz) * pp.z;
-        vv.z = PRESSTENS(p,i,zx) * pp.x + PRESSTENS(p,i,yz) * pp.y
-                                        + PRESSTENS(p,i,zz) * pp.z;
-#endif
-        e -= HCAVENG(p,i);  /* subtract average energy */
-        hc.x += (pp.x * e + 0.5 * vv.x) / MASSE(p,i);
-        hc.y += (pp.y * e + 0.5 * vv.y) / MASSE(p,i);
-#ifndef TWOD
-        hc.z += (pp.z * e + 0.5 * vv.z) / MASSE(p,i);
-#endif
+      /* which layer? */
+      num = scale * ORT(p,i,X);
+      if (num < 0)             num = 0;
+      if (num >= tran_nlayers) num = tran_nlayers-1;
+
+      /* minimum in hot layer */
+      if ((minEkin > tmp) && (num==0)) {
+        minEkin = tmp;
+        mincell = p;
+        minatom = i;
+      } 
+      /* maximum in cold layer */
+      if ((maxEkin < tmp) && (num==nhalf)) {
+        maxEkin = tmp;
+        maxcell = p;
+        maxatom = i;
       }
     }
   }
-#ifdef MPI
-  if (steps == hc_start) {
-    MPI_Allreduce( &fac, &tmp, 1, REAL, MPI_SUM, cpugrid);
-    fac = tmp;
-  }
-  MPI_Allreduce( &hc, &tmpv, DIM, REAL, MPI_SUM, cpugrid);
-  hc = tmpv;
+
+  /* swap the velocities */
+  swap = IMPULS(maxcell,maxatom,X);
+  IMPULS(maxcell,maxatom,X) = IMPULS(mincell,minatom,X);
+  IMPULS(mincell,minatom,X) = swap;
+  swap = IMPULS(maxcell,maxatom,Y);
+  IMPULS(maxcell,maxatom,Y) = IMPULS(mincell,minatom,Y);
+  IMPULS(mincell,minatom,Y) = swap;
+#ifndef TWOD
+  swap = IMPULS(maxcell,maxatom,Z);
+  IMPULS(maxcell,maxatom,Z) = IMPULS(mincell,minatom,Z);
+  IMPULS(mincell,minatom,Z) = swap;
 #endif
 
-  /* scaling factor: 1 / (sqrt(volume) * temperature) */
-  if (steps == hc_start) {
-    real temp = 2 * fac / (DIM * natoms * (hc_start - hc_av_start));
-    fac = 1.0 / (SQRT(volume) * temp);
-  }
-
-  if ((myid==0) && (hc_int > 0) && (steps >= hc_start) && 
-      ((steps - hc_start) % hc_int == 0)) {
-#ifdef TWOD
-    hc.x *= fac;  hc.y *= fac;
-#else
-    hc.x *= fac;  hc.y *= fac;  hc.z *= fac;
-#endif
-    write_heat_current(steps);
-  }
+  /* accumulate heat transfer */
+  heat_transfer += maxEkin - minEkin;
 
 }
 
-#endif /* HC */
-
-#ifdef NVX
 
 /******************************************************************************
 *
-*  update and write temperature profile
+* write_temp_dist
 *
 ******************************************************************************/
 
 void write_temp_dist(int steps)
 {
-  FILE   *outtemp;
-  str255 fnametemp;
-  real   scale;
-  int    i, k, nhalf;
-  static real    *temp_hist_1 = NULL, *temp_hist_2 = NULL;
-  static integer  *num_hist_1 = NULL,  *num_hist_2 = NULL;
-#ifdef MPI
-  static real grad_fit_1[5], grad_fit_2[5];
-#else
-  static real grad_fit_1[5], *grad_fit_2;
-#endif
+  FILE  *outtemp;
+  str255  fnametemp;
+  real scale, vol;
+  int  num, nlayer, k, i, nhalf;
+  static real    *temp_hist, *temp_hist_1 = NULL, *temp_hist_2 = NULL;
+  static integer *num_hist,   *num_hist_1 = NULL,  *num_hist_2 = NULL;
+  int numb = 0, numb_tmp;
+  real a, SxiTi=0.0, Sxi=0.0, STi=0.0, Sxisq=0.0, temp, xx, tmp;
   
   /* the temp bins are orthogonal boxes in space */
-  nhalf = hc_nlayers / 2;
-  scale = hc_nlayers / box_x.x;
+  nhalf = tran_nlayers / 2;
+  scale = tran_nlayers / box_x.x;
 
-  /* allocate and clear histogram arrays */
+  /* allocate histogram arrays */
   if (NULL==temp_hist_1) {
-    temp_hist_1 = (real    *) malloc( (nhalf+1) * sizeof(real   ) );
-     num_hist_1 = (integer *) malloc( (nhalf+1) * sizeof(integer) );
+    temp_hist_1 = (real *) malloc( (nhalf+1) * sizeof(real) );
+    if (NULL==temp_hist_1) 
+      error("Cannot allocate temperature  array.");
+  }  
+  if (NULL==num_hist_1) {
+    num_hist_1 = (integer *) malloc( (nhalf+1) * sizeof(integer) );
+    if (NULL==num_hist_1) 
+      error("Cannot allocate temperature  array.");
+  }
 #ifdef MPI
-    temp_hist_2 = (real    *) malloc( (nhalf+1) * sizeof(real   ) );
-     num_hist_2 = (integer *) malloc( (nhalf+1) * sizeof(integer) );
-#else
-    temp_hist_2 = temp_hist_1;
-     num_hist_2 =  num_hist_1;
-     grad_fit_2 =  grad_fit_1;
+  if (NULL==temp_hist_2) {
+    temp_hist_2 = (real *) malloc( (nhalf+1) * sizeof(real) );
+    if ((NULL==temp_hist_2) && (myid==0)) 
+      error("Cannot allocate temperature  array.");
+  }  
+  if (NULL==num_hist_2) {
+    num_hist_2 = (integer *) malloc( (nhalf+1) * sizeof(integer) );
+    if ((NULL==num_hist_2) && (myid==0)) 
+      error("Cannot allocate temperature  array.");
+  }
 #endif
-    if ( (NULL==temp_hist_1) || (NULL==num_hist_1) 
+
+  for (i = 0; i <= nhalf; i++) {
+    temp_hist_1[i] = 0.0;
+     num_hist_1[i] = 0;
 #ifdef MPI
-      || (NULL==temp_hist_2) || (NULL==num_hist_2)
+    temp_hist_2[i] = 0.0;
+     num_hist_2[i] = 0;
 #endif
-      ) error("Cannot allocate temperature array.");
-    for (i=0; i<=nhalf; i++) {
-      temp_hist_1[i] = 0.0;
-       num_hist_1[i] = 0;
-    }
-    for (i=0; i<5; i++) grad_fit_1[i] = 0.0;
-    /* write header of temperature gradient file */
-    if ((0==myid) && (0==imdrestart)) {
-      sprintf(fnametemp, "%s.hcgrad", outfilename);
-      outtemp = fopen(fnametemp, "w");
-      if (NULL == outtemp) error("Cannot open temperature gradient file.");
-      fprintf(outtemp, "# count gradT deltaT kappa kappa[W/mK]\n");
-      fclose(outtemp);
-    }
-    /* write header of temperature profile file */
-    if ((0==myid) && (0==imdrestart)) {
-      sprintf(fnametemp, "%s.hcprof", outfilename);
-      outtemp = fopen(fnametemp, "w");
-      if (NULL == outtemp) error("Cannot open temperature profile file.");
-      fprintf(outtemp, "# %d %14.4e\n", nhalf+1, hc_heatcurr);
-      fclose(outtemp);
-    }
   }
 
-  /* construct temperature profile */
-  for (k=0; k<NCELLS; ++k) {
+  /* loop over all atoms */
+  for (k=0; k<ncells; ++k) {
 
-    cell *p = CELLPTR(k);
+    int  i;
+    cell *p;
+    p = cell_array + CELLS(k);
 
     for (i=0; i<p->n; ++i) {
 
-      real xx, temp;
-      int  num;
-
       /* which layer? */
       xx = ORT(p,i,X);
-      if (xx<0.0) xx += box_x.x;
-      num = (int) (scale * xx);
-      if (num >= hc_nlayers) num -= hc_nlayers;
+      num = scale * xx;
+      if (num < 0)             num = 0;
+      if (num >= tran_nlayers) num = tran_nlayers-1;
       if (num > nhalf) {
-        num = hc_nlayers - num;
-        xx  = box_x.x - xx + box_x.x / hc_nlayers; 
+        num = tran_nlayers - num;
+        xx  = box_x.x - xx + box_x.x / tran_nlayers; 
       }
       temp = SPRODN(IMPULS,p,i,IMPULS,p,i) / (2*MASSE(p,i));
       temp_hist_1[num] += temp;
-       num_hist_1[num]++;
+      num_hist_1[num]++;
 
-      /* data for temperature gradient fitting */
-      if ((num>2) && (num<nhalf-2)) {
-        grad_fit_1[0] += xx;
-        grad_fit_1[1] += temp;
-        grad_fit_1[2] += temp * xx;
-        grad_fit_1[3] += xx * xx;
-        grad_fit_1[4] += 1.0;
+      /* fit temperature gradient */
+      if ((num!=0) && (num!=nhalf)) {
+        Sxi += xx;
+        STi += temp;
+        SxiTi += temp * xx;
+        Sxisq += xx * xx;
+        numb++;
       }
     }
   }
-
-  /* write temperature profile, and clear arrays afterwards */
-  if (0 == steps % hc_int) {
 
 #ifdef MPI
-    /* add up results form different CPUs */
-    MPI_Reduce(temp_hist_1, temp_hist_2, nhalf+1, REAL,    MPI_SUM,0,cpugrid);
-    MPI_Reduce(num_hist_1,  num_hist_2,  nhalf+1, INTEGER, MPI_SUM,0,cpugrid);
-    MPI_Reduce(grad_fit_1,  grad_fit_2,        5, REAL,    MPI_SUM,0,cpugrid);
+  /* add up results form different CPUs */
+#ifdef NVX
+  MPI_Allreduce( &heat_cond, &tmp, 1, REAL, MPI_SUM, cpugrid);
+  heat_cond = tmp;
+#endif
+  MPI_Reduce( temp_hist_1, temp_hist_2, 
+              nhalf+1, REAL, MPI_SUM, 0, cpugrid);
+  temp_hist = temp_hist_2;
+  MPI_Reduce( num_hist_1, num_hist_2, 
+              nhalf+1, INTEGER,  MPI_SUM, 0, cpugrid);
+  num_hist  = num_hist_2;
+  MPI_Reduce( &Sxi, &tmp, 1, REAL, MPI_SUM, 0, cpugrid );
+  Sxi = tmp;
+  MPI_Reduce( &STi, &tmp, 1, REAL, MPI_SUM, 0, cpugrid );
+  STi = tmp;
+  MPI_Reduce( &SxiTi, &tmp, 1, REAL, MPI_SUM, 0, cpugrid );
+  SxiTi = tmp;
+  MPI_Reduce( &Sxisq, &tmp, 1, REAL, MPI_SUM, 0, cpugrid );
+  Sxisq = tmp;
+  MPI_Reduce( &numb, &numb_tmp, 1, MPI_INT, MPI_SUM, 0, cpugrid );
+  numb = numb_tmp; 
+#else
+  temp_hist = temp_hist_1;
+  num_hist  = num_hist_1;
 #endif
 
-    /* write temperature profile */
-    if (myid==0) {
 
-      real Sxi, STi, SxiTi, Sxi2, a, fact, kappa;
+  /* write temperature distribution */
+  if (myid==0) {
 
-      /* get estimate of temperature gradient */
-      Sxi   = grad_fit_2[0] / grad_fit_2[4];
-      STi   = grad_fit_2[1] / grad_fit_2[4];
-      SxiTi = grad_fit_2[2] / grad_fit_2[4];
-      Sxi2  = grad_fit_2[3] / grad_fit_2[4];
-      a     = (SxiTi - Sxi * STi) / (Sxi2 - Sxi * Sxi);
+    Sxi /= numb;
+    STi /= numb;
+    SxiTi /= numb;
+    Sxisq /= numb;
+    a = - (SxiTi - Sxi * STi) / (Sxisq - Sxi * Sxi);
 
-      /* write temperature gradient file */
-      sprintf(fnametemp, "%s.hcgrad", outfilename);
-      outtemp = fopen(fnametemp, "a");
-      if (NULL == outtemp) error("Cannot open temperature gradient file.");
-      kappa = hc_heatcurr / a;
-      /* conversion factor of kappa to SI units */
-      fact  = 1.6022e-19 / (1.0179e-14 * 1e-10 * 11605);
-      fprintf(outtemp, "%d %10.4e %10.4e %10.4e %10.4e\n", 
-              hc_count++, a, 0.5*a*box_x.x, kappa, fact*kappa);
-      fclose(outtemp);
+    sprintf(fnametemp,"%s.tempdist",outfilename);
+    outtemp = fopen(fnametemp,"a");
+    if (NULL == outtemp) error("Cannot open temperatur file.");
 
-      /* open temperature profile file */
-      sprintf(fnametemp, "%s.hcprof", outfilename);
-      outtemp = fopen(fnametemp, "a");
-      if (NULL == outtemp) error("Cannot open temperature profile file.");
+    /* write current time */
+    fprintf(outtemp,"%10.4e", steps * timestep);
 
-      /* write temperature profile */
-      fprintf(outtemp, "\n");
-      for (i=0; i<=nhalf; i++) {
-        if (num_hist_2[i] > 0) temp_hist_2[i] /= num_hist_2[i];
+#ifdef RNEMD
+    /* write heat current density determined from heat transfer */
+    /* heat flows away in two directions -> twice the cross section */
+    heat_transfer /= 2 * box_y.y * tran_int * timestep;
 #ifndef TWOD
-        temp_hist_2[i] *= (2.0/DIM);
+    heat_transfer /= box_z.z;
 #endif
-        fprintf(outtemp, "%10.4e %10.4e\n", (i+0.5) / scale, temp_hist_2[i] );
-      }
+    fprintf(outtemp," %10.4e", heat_transfer);
+    heat_transfer = 0.0;
+#endif
 
-      /* close file */
-      fprintf(outtemp,"\n");
-      fclose(outtemp);
+#ifdef NVX
+#ifdef TWOD
+    vol = box_x.x * box_y.y           * (tran_nlayers-2) / tran_nlayers;
+#else
+    vol = box_x.x * box_y.y * box_z.z * (tran_nlayers-2) / tran_nlayers;
+#endif
+    heat_cond /= (vol * tran_int);
+    /* write heat current density determined by Gillan-Evans-Algorithm */
+    fprintf(outtemp," %10.4e", heat_cond);
+    heat_cond = 0.0;
+#endif
+
+    /* write measured temperature gradient */
+    fprintf(outtemp," %10.4e", a);
+
+#ifdef NVX
+    /* write nominal temperature gradient */
+    fprintf(outtemp," %10.4e", 2 * (tran_Tleft - tran_Tright) / box_x.x );
+#endif
+
+    /* write temperature histogram */
+    for (i = 0; i <= nhalf; i++) {
+      if (num_hist[i] > 0) temp_hist[i] /= num_hist[i];
+#ifndef TWOD
+      temp_hist[i] *= (2.0/DIM);
+#endif
+      fprintf(outtemp," %10.4e", temp_hist[i] );
     }
 
-    /* clear arrays */
-    for (i=0; i<=nhalf; i++) {
-      temp_hist_1[i] = 0.0;  
-       num_hist_1[i] = 0;
-    }
-    for (i=0; i<5; i++) grad_fit_1[i] = 0.0;
-
+    fprintf(outtemp,"\n");
+    fclose(outtemp);
   }
 }
-
-#endif /* NVX */

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -87,7 +87,12 @@ INLINE static int MOD(shortint p, int q)
 #ifdef BBOOST
 #define REFPOSONE(cell,i,sub)   (atoms.bb_refposone sub((cell)->ind[i]))
 #define REFPOSTWO(cell,i,sub)   (atoms.bb_refpostwo sub((cell)->ind[i]))
-#define OLDPOS(cell,i,sub)      (atoms.bb_oldpos    sub((cell)->ind[i]))
+#define BBPROJECT(cell,i,sub)   (atoms.bb_bbproject sub((cell)->ind[i]))
+#define OLDPOS(cell,i,sub)      (atoms.bb_oldpos sub((cell)->ind[i]))
+#define TMPPOS(cell,i,sub)      (atoms.bb_tmppos sub((cell)->ind[i]))
+#define OLDIMPULS(cell,i,sub)      (atoms.bb_oldimpuls sub((cell)->ind[i]))
+#define TMPKRAFT(cell,i,sub)      (atoms.bb_tmpkraft sub((cell)->ind[i]))
+#define TMP2POS(cell,i,sub)      (atoms.bb_tmp2pos sub((cell)->ind[i]))
 #endif
 
 #ifdef EAM2
@@ -107,20 +112,6 @@ INLINE static int MOD(shortint p, int q)
 #define CHARGE(cell,i)          (atoms.charge [(cell)->ind[i]])
 #else
 #define CHARGE(cell,i)          (charge[ SORTE(cell,i) ])
-#endif
-
-#ifdef SM
-#define CHI_SM(cell,i)         (atoms.chi_sm [(cell)->ind[i]])
-#define Z_SM(cell,i)            (atoms.z_sm [(cell)->ind[i]])
-#define J_SM(cell,i)            (atoms.j_sm [(cell)->ind[i]])
-#define V_SM(cell,i)           (atoms.v_sm [(cell)->ind[i]])
-
-#define B_SM(cell,i)         (atoms.b_sm [(cell)->ind[i]])
-#define X_SM(cell,i)         (atoms.x_sm [(cell)->ind[i]])
-#define R_SM(cell,i)         (atoms.r_sm [(cell)->ind[i]])
-#define D_SM(cell,i)         (atoms.d_sm [(cell)->ind[i]])
-#define S_SM(cell,i)         (atoms.s_sm [(cell)->ind[i]])
-#define Q_SM(cell,i)         (atoms.q_sm [(cell)->ind[i]])
 #endif
 
 #ifdef DIPOLE
@@ -162,14 +153,11 @@ INLINE static int MOD(shortint p, int q)
 #ifdef REFPOS
 #define REF_POS(cell,i,sub)     (atoms.refpos sub((cell)->ind[i]))
 #endif
-#ifdef HC
-#define HCAVENG(cell,i)         (atoms.hcaveng[(cell)->ind[i]])
+#ifdef NVX
+#define HEATCOND(cell,i)        (atoms.heatcond[(cell)->ind[i]])
 #endif
 #ifdef STRESS_TENS
 #define PRESSTENS(cell,i,sub)   (atoms.presstens[(cell)->ind[i]].sub)
-#ifdef AVPOS
-#define AVPRESSTENS(cell,i,sub)   (atoms.avpresstens[(cell)->ind[i]].sub)
-#endif
 #endif
 #ifdef SHOCK
 #define PXAVG(cell,i)           (atoms.pxavg[(cell)->ind[i]])
@@ -222,7 +210,12 @@ INLINE static int MOD(shortint p, int q)
 #ifdef BBOOST
 #define REFPOSONE(cell,i,sub)   ((cell)->bb_refposone sub(i))
 #define REFPOSTWO(cell,i,sub)   ((cell)->bb_refpostwo sub(i))
+#define BBPROJECT(cell,i,sub)   ((cell)->bb_bbproject sub(i))
 #define OLDPOS(cell,i,sub)      ((cell)->bb_oldpos sub(i))
+#define TMPPOS(cell,i,sub)      ((cell)->bb_tmppos sub(i))
+#define OLDIMPULS(cell,i,sub)      ((cell)->bb_oldimpuls sub(i))
+#define TMPKRAFT(cell,i,sub)      ((cell)->bb_tmpkraft sub(i))
+#define TMP2POS(cell,i,sub)      ((cell)->bb_tmp2pos sub(i))
 #endif
 
 #ifdef EAM2
@@ -247,20 +240,6 @@ INLINE static int MOD(shortint p, int q)
 #define CHARGE(cell,i)          ((cell)->charge[i])
 #else
 #define CHARGE(cell,i)          (charge[ SORTE(cell,i) ])
-#endif
-
-#ifdef SM
-#define CHI_SM(cell,i)         ((cell)->chi_sm[i])
-#define Z_SM(cell,i)            ((cell)->z_sm[i])
-#define J_SM(cell,i)            ((cell)->j_sm[i])
-#define V_SM(cell,i)           ((cell)->v_sm[i])
-
-#define B_SM(cell,i)          ((cell)->b_sm[i])
-#define X_SM(cell,i)          ((cell)->x_sm[i])
-#define R_SM(cell,i)          ((cell)->r_sm[i])
-#define D_SM(cell,i)          ((cell)->d_sm[i])
-#define S_SM(cell,i)          ((cell)->s_sm[i])
-#define Q_SM(cell,i)          ((cell)->q_sm[i])
 #endif
 
 #ifdef DIPOLE
@@ -296,14 +275,11 @@ INLINE static int MOD(shortint p, int q)
 #ifdef REFPOS
 #define REF_POS(cell,i,sub)     ((cell)->refpos sub(i))
 #endif
-#ifdef HC
-#define HCAVENG(cell,i)         ((cell)->hcaveng[i])
+#ifdef NVX
+#define HEATCOND(cell,i)        ((cell)->heatcond[i])
 #endif
 #ifdef STRESS_TENS
 #define PRESSTENS(cell,i,sub)   ((cell)->presstens[i].sub)
-#ifdef AVPOS
-#define AVPRESSTENS(cell,i,sub)   ((cell)->avpresstens[i].sub)
-#endif
 #endif
 #ifdef SHOCK
 #define PXAVG(cell,i)           ((cell)->pxavg[i])
@@ -470,4 +446,158 @@ inline static real SQR(real x)
 
 #ifndef M_PI
 #define M_PI (4.0*atan(1.0))
+#endif
+
+#ifdef BBOOST
+/* B[][] := A[][]' */
+#define M3TRANSPOSE(A,B) ( B[0][0] = A[0][0], B[0][1] = A[1][0], \
+  B[0][2] = A[2][0], B[1][0] = A[0][1], B[1][1] = A[1][1], \
+  B[1][2] = A[2][1], B[2][0] = A[0][2], B[2][1] = A[1][2], \
+  B[2][2] = A[2][2] )
+/* C[][] := a[]' * b[] */
+#define M3ASSIGNV3V3(a,b,C) ( \
+  (C)[0][0] = (a)[0] * (b)[0], \
+  (C)[0][1] = (a)[0] * (b)[1], \
+  (C)[0][2] = (a)[0] * (b)[2], \
+  (C)[1][0] = (a)[1] * (b)[0], \
+  (C)[1][1] = (a)[1] * (b)[1], \
+  (C)[1][2] = (a)[1] * (b)[2], \
+  (C)[2][0] = (a)[2] * (b)[0], \
+  (C)[2][1] = (a)[2] * (b)[1], \
+  (C)[2][2] = (a)[2] * (b)[2] )
+/* B[][] := A[][] + B[][] */
+#define M3AdD(A,B) ( B[0][0] += A[0][0], B[0][1] += A[0][1], \
+  B[0][2] += A[0][2], B[1][0] += A[1][0], B[1][1] += A[1][1], \
+  B[1][2] += A[1][2], B[2][0] += A[2][0], B[2][1] += A[2][1], \
+  B[2][2] += A[2][2] )
+
+/* b[] := a[] + b[]; then return b[] */
+#define V3AdD(a,b) ( (b)[0]+=(a)[0], (b)[1]+=(a)[1], (b)[2]+=(a)[2] )
+
+#define M3DETERMINANT(A) ( \
+  A[0][0]*(A[1][1]*A[2][2]-A[1][2]*A[2][1]) + \
+  A[0][1]*(A[1][2]*A[2][0]-A[1][0]*A[2][2]) + \
+  A[0][2]*(A[1][0]*A[2][1]-A[2][0]*A[1][1]) )
+#define M3VOLUME(A) fabs(M3DETERMINANT(A))
+/* calibrated to pure pressure */
+#define SymmetricM3HydroInvariant(A) (M3TR(A)/3)
+/* calibrated to single shear */
+#define SymmetricM3MisesInvariant(A) \
+  sqrt( SQUARE(A[0][1]) + SQUARE(A[0][2]) + SQUARE(A[1][2]) + \
+  (SQUARE(A[0][0]-A[1][1]) + SQUARE(A[0][0]-A[2][2]) + \
+  SQUARE(A[1][1]-A[2][2]))/6. )
+/* return the trace of A[][] */
+//double M3Tr (double A[3][3]);
+#define M3TR(A) (A[0][0]+A[1][1]+A[2][2])
+/* reallocate memory and set all zero: */
+#define REALLOC_ZERO(fun,ptr,n,type) { \
+  REALLOC(fun,ptr,n,type); bzero(VOIDP(ptr),(n)*sizeof(type)); }
+/* as accumulator, clear each time reallocated */
+#define REALLOC(fun,ptr,n,type) { \
+  if ((((ptr)=(type *)realloc((ptr),(n)*sizeof(type)))==NULL)&&((n)>0)) \
+  pe (__FILE__ ": line " STR(__LINE__) ":\n" \
+  STR(fun) ":REALLOC: error occurred when allocating %d bytes\n" \
+  "for pointer \"" STR(ptr) "\" of type \"" STR(type) "\".\n", \
+  (n)*sizeof(type)); }
+/* set >=n bits of Bitmap array b to 0: rounded to last Bitmap unit */
+#define BZERO(b,n) (memset((void *)(b),0,BITS_TO_BYTES(n)))
+/* n should be > 0, and the BYTES is rounded to be commensurate with Bmap */
+#define BITS_TO_BYTES(n)       (BITS_TO_BMAP_UNITS(n)*sizeof(Bmap))
+#define BITS_TO_BMAP_UNITS(n)  (bunit((n)-1)+1)  /* n should be > 0 */
+#define bunit(i)        ((i) >> 3)  /* which unit */
+#define ZeroM3     {{0.,0.,0.},{0.,0.,0.},{0.,0.,0.}}
+/* generate a zero matrix A[][] := 0 */
+#define M3ZERO(A) ( A[0][0]=0, A[0][1]=0, A[0][2]=0, A[1][0]=0, \
+  A[1][1]=0, A[1][2]=0, A[2][0]=0, A[2][1]=0, A[2][2]=0 )
+/* a[] := 0; return a[] */
+#define V3ZERO(a) ((a)[0]=0, (a)[1]=0, (a)[2]=0)
+/* generate an identity matrix A[][] := I[][] */
+#define M3IDENTITY(A) ( A[0][0]=1, A[0][1]=0, A[0][2]=0, \
+  A[1][0]=0, A[1][1]=1, A[1][2]=0, A[2][0]=0, A[2][1]=0, A[2][2]=1 )
+#define M3MUL(A,B,C) \
+( C[0][0] = A[0][0]*B[0][0] + A[0][1]*B[1][0] + A[0][2]*B[2][0], \
+  C[0][1] = A[0][0]*B[0][1] + A[0][1]*B[1][1] + A[0][2]*B[2][1], \
+  C[0][2] = A[0][0]*B[0][2] + A[0][1]*B[1][2] + A[0][2]*B[2][2], \
+  C[1][0] = A[1][0]*B[0][0] + A[1][1]*B[1][0] + A[1][2]*B[2][0], \
+  C[1][1] = A[1][0]*B[0][1] + A[1][1]*B[1][1] + A[1][2]*B[2][1], \
+  C[1][2] = A[1][0]*B[0][2] + A[1][1]*B[1][2] + A[1][2]*B[2][2], \
+  C[2][0] = A[2][0]*B[0][0] + A[2][1]*B[1][0] + A[2][2]*B[2][0], \
+  C[2][1] = A[2][0]*B[0][1] + A[2][1]*B[1][1] + A[2][2]*B[2][1], \
+  C[2][2] = A[2][0]*B[0][2] + A[2][1]*B[1][2] + A[2][2]*B[2][2] )
+/* C[][] := A[][] * A'[][] */
+#define M3MULT(A,C) \
+  (         C[0][0] = A[0][0]*A[0][0] + A[0][1]*A[0][1] + A[0][2]*A[0][2], \
+  C[1][0] = C[0][1] = A[0][0]*A[1][0] + A[0][1]*A[1][1] + A[0][2]*A[1][2], \
+  C[2][0] = C[0][2] = A[0][0]*A[2][0] + A[0][1]*A[2][1] + A[0][2]*A[2][2], \
+            C[1][1] = A[1][0]*A[1][0] + A[1][1]*A[1][1] + A[1][2]*A[1][2], \
+  C[2][1] = C[1][2] = A[1][0]*A[2][0] + A[1][1]*A[2][1] + A[1][2]*A[2][2], \
+            C[2][2] = A[2][0]*A[2][0] + A[2][1]*A[2][1] + A[2][2]*A[2][2] )
+/* C[][] := A[][] * B'[][] */
+#define M3MULT1(A,B,C) \
+  (         C[0][0] = A[0][0]*B[0][0] + A[0][1]*B[0][1] + A[0][2]*B[0][2], \
+            C[0][1] = A[0][0]*B[1][0] + A[0][1]*B[1][1] + A[0][2]*B[1][2], \
+            C[0][2] = A[0][0]*B[2][0] + A[0][1]*B[2][1] + A[0][2]*B[2][2], \
+            C[1][0] = A[1][0]*B[0][0] + A[1][1]*B[0][1] + A[1][2]*B[0][2], \
+            C[1][1] = A[1][0]*B[1][0] + A[1][1]*B[1][1] + A[1][2]*B[1][2], \
+            C[1][2] = A[1][0]*B[2][0] + A[1][1]*B[2][1] + A[1][2]*B[2][2], \
+            C[2][0] = A[2][0]*B[0][0] + A[2][1]*B[0][1] + A[2][2]*B[0][2], \
+            C[2][1] = A[2][0]*B[1][0] + A[2][1]*B[1][1] + A[2][2]*B[1][2], \
+            C[2][2] = A[2][0]*B[2][0] + A[2][1]*B[2][1] + A[2][2]*B[2][2] )
+/* A[][] := A[][] - a * I */
+#define M3SubdiaG(A,a) ( A[0][0] -= (a), A[1][1] -= (a), A[2][2] -= (a) )
+/* A[][] := A[][] / divisor */
+#define M3DividE(A,divisor) ( A[0][0] /= (divisor), A[0][1] /= (divisor), \
+  A[0][2] /= (divisor), A[1][0] /= (divisor), A[1][1] /= (divisor), \
+  A[1][2] /= (divisor), A[2][0] /= (divisor), A[2][1] /= (divisor), \
+  A[2][2] /= (divisor) )
+#define SQUARE(i)     ((i)*(i))
+/* generate a unit vector with: a[0] := -1, a[1] := -1; a[2] := -1 */
+#define V3ddji(a) ((a)[0]=-1,(a)[1]=-1,(a)[2]=-1)
+#define V9ToM3(i,a,A) ( \
+  (A)[0][0] = (a)[i*9], \
+  (A)[0][1] = (a)[i*9+1], \
+  (A)[0][2] = (a)[i*9+2], \
+  (A)[1][0] = (a)[i*9+3], \
+  (A)[1][1] = (a)[i*9+4], \
+  (A)[1][2] = (a)[i*9+5], \
+  (A)[2][0] = (a)[i*9+6], \
+  (A)[2][1] = (a)[i*9+7], \
+  (A)[2][2] = (a)[i*9+8] )
+
+#define M3ToV9(i,A,a) ( \
+  (a)[i*9]   = (A)[0][0], \
+  (a)[i*9+1] = (A)[0][1], \
+  (a)[i*9+2] = (A)[0][2], \
+  (a)[i*9+3] = (A)[1][0], \
+  (a)[i*9+4] = (A)[1][1], \
+  (a)[i*9+5] = (A)[1][2], \
+  (a)[i*9+6] = (A)[2][0], \
+  (a)[i*9+7] = (A)[2][1], \
+  (a)[i*9+8] = (A)[2][2] )
+
+#define M3decomposing(A,B,C,D) ( \
+        B[0][0] = A[0][0], \
+        B[1][0] = A[1][0], \
+        B[2][0] = A[2][0], \
+        C[0][1] = A[0][1], \
+        C[1][1] = A[1][1], \
+        C[2][1] = A[2][1], \
+        D[0][2] = A[0][2], \
+        D[1][2] = A[1][2], \
+        D[2][2] = A[2][2] )
+/* A[][] := A[][] + A'[][] */
+#define M3AdDT(A) \
+  (         A[0][0] = A[0][0] + A[0][0], \
+  A[1][0] = A[0][1] = A[1][0] + A[0][1], \
+  A[2][0] = A[0][2] = A[2][0] + A[0][2], \
+            A[1][1] = A[1][1] + A[1][1], \
+  A[2][1] = A[1][2] = A[2][1] + A[1][2], \
+            A[2][2] = A[2][2] + A[2][2] )
+/* calibrated to decomposition of single shear */
+#define DecompoM3MisesInvariant(A,B) \
+  (A[0][1]*B[0][1] + A[0][2]*B[0][2] + A[1][2]*B[1][2] + \
+  ((A[0][0] - A[1][1])*(B[0][0] - B[1][1]) + \
+   (A[0][0] - A[2][2])*(B[0][0] - B[2][2]) + \
+   (A[1][1] - A[2][2])*(B[1][1] - B[2][2]))/6. )
+
 #endif

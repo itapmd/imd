@@ -2,7 +2,7 @@
 #
 # Imd -- The ITAP Molecular Dynamics Program
 #
-# Copyright 1996-2011 Institute for Theoretical and Applied Physics,
+# Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 # University of Stuttgart, D-70550 Stuttgart
 #
 # $Revision$
@@ -135,6 +135,7 @@ DEBUG_FLAGS	+= #-DDEBUG # -Wall # very noisy
 #  flags for IA32-Linux
 #
 ###########################################################################
+
 
 # woody
 ifeq (woody,${IMDSYS})
@@ -335,28 +336,6 @@ ifeq (P4-icc,${IMDSYS})
   export        OMPI_MPICC MPICH_CC MPICH_CLINKER
 endif
 
-# woody
-ifeq (woody-icc,${IMDSYS})
-  CC_SERIAL	= icc
-  CC_OMP	= icc
-  CC_MPI	= mpicc 
-  CC_OMPI	= mpicc
-  MPICH_CC      = icc
-  MPICH_CLINKER = icc
-  OMPI_MPICC    = icc
-  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
-#  OPT_FLAGS	+= -O -ip -m64 -mkl  -msse2
-#  OPT_FLAGS	+= -O -ip   -O3 -xP
-  OPT_FLAGS	+= -O -ip  -msse2
-  OMP_FLAGS	+= -openmp
-  OMPI_FLAGS	+= -openmp
-  DEBUG_FLAGS	+= -g
-  PROF_FLAGS	+= -prof_gen
-  RCD_FLAGS	+= -DRCD -rcd
-  LFLAGS        += -i-static
-  export        OMPI_MPICC MPICH_CC MPICH_CLINKER
-endif
-
 # Pentium 4 or Xeon, gcc3
 ifeq (P4-gcc3,${IMDSYS})
   CC_SERIAL	= gcc
@@ -373,24 +352,6 @@ ifeq (P4-gcc3,${IMDSYS})
   LFLAGS        += # -static
   export        OMPI_MPICC MPICH_CC # MPICH_CLINKER
 endif
-
-# Pentium 4 or Xeon, gcc3
-ifeq (woody_gcc,${IMDSYS})
-  CC_SERIAL	= gcc
-  CC_MPI	= mpicc
-  MPICH_CC      = gcc
-  OMPI_MPICC    = gcc
-#  MPICH_CLINKER = gcc
-  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
-  OPT_FLAGS	+= -O -march=nocona
-  DEBUG_FLAGS	+= -g
-  PROF_FLAGS	+= -g3 -pg
-  PAPI_INC      =  -I /opt/include
-  PAPI_LIBS     =  -L /opt/lib -lpapi -lperfctr
-  LFLAGS        += # -static
-  export        OMPI_MPICC MPICH_CC # MPICH_CLINKER
-endif
-
 
 # Pentium III, icc
 ifeq (P3-icc,${IMDSYS})
@@ -973,10 +934,6 @@ LASERSOURCES	= imd_laser.c
 
 TTMSOURCES	= imd_ttm.c
 
-SMSOURCES	= imd_sm.c
-
-FCSSOURCES      = imd_forces_fcs.c
-
 #BBOOSTSOURCES	= imd_bboost.c imd_bb_core1.c imd_bb_core2.c
 BBOOSTSOURCES	= imd_bboost.c
 
@@ -1144,40 +1101,16 @@ PP_FLAGS  += -DKEATING
 FORCESOURCES += ${COVALENTSOURCES}
 endif
 
-# LASER & LASERYZ
-ifneq (,$(strip $(findstring laseryz,${MAKETARGET})))
-        ifneq (,$(strip $(findstring laser,${MAKETARGET})))
-		CFLAGS += -DLASERYZ -DLASER
-		SOURCES += ${LASERSOURCES}
-	else
-	       	CFLAGS += -DLASERYZ -DLASER
-		SOURCES += ${LASERSOURCES}	
-	endif
-else
-	ifneq (,$(strip $(findstring laser,${MAKETARGET})))
-		PP_FLAGS += -DLASER
-		SOURCES += ${LASERSOURCES}	
-	endif
-endif
-
-# PDECAY
-ifneq (,$(findstring pdecay,${MAKETARGET}))
-PP_FLAGS += -DPDECAY
+# LASER
+ifneq (,$(strip $(findstring laser,${MAKETARGET})))
+PP_FLAGS += -DLASER
+SOURCES += ${LASERSOURCES}
 endif
 
 # TWO TEMPERATURE MODEL TTM
 ifneq (,$(strip $(findstring ttm,${MAKETARGET})))
 PP_FLAGS += -DTTM
 SOURCES += ${TTMSOURCES}
-endif
-
-# STREITZ MINTMIRE MODEL SM
-ifneq (,$(strip $(findstring sm,${MAKETARGET})))
-  PP_FLAGS += -DSM
-  SOURCES += ${SMSOURCES}
-  ifeq (,$(strip $(findstring nbl,${MAKETARGET})))
-    SOURCES += ${EWALDSOURCES}
-  endif
 endif
 
 # UNIAX
@@ -1192,14 +1125,6 @@ PP_FLAGS  += -DEWALD
 FORCESOURCES  += ${EWALDSOURCES}
 endif
 
-# FCS
-ifneq (,$(strip $(findstring fcs,${MAKETARGET})))
-PP_FLAGS      += -DUSEFCS 
-FORCESOURCES  += ${FCSSOURCES}
-LIBS          += -lfftw3 $(shell pkg-config --libs scafacos-fcs)
-CFLAGS        += $(shell pkg-config --cflags scafacos-fcs)
-endif
-
 # VARCHG
 ifneq (,$(strip $(findstring varchg,${MAKETARGET})))
 CFLAGS  += -DVARCHG
@@ -1207,22 +1132,12 @@ endif
 
 # DIPOLE
 ifneq (,$(strip $(findstring dipole,${MAKETARGET})))
-CFLAGS  += -DDIPOLE
+CFLAGS  += -DDIPOLE -DMORSE
 endif
 
-# BUCK
-ifneq (,$(strip $(findstring buck,${MAKETARGET})))
-CFLAGS  += -DBUCK
-endif
-
-# MORSE
+#MORSE
 ifneq (,$(strip $(findstring morse,${MAKETARGET})))
 CFLAGS  += -DMORSE
-endif
-
-# EXTF
-ifneq (,$(strip $(findstring extf,${MAKETARGET})))
-CFLAGS  += -DEXTF
 endif
 
 # LJ - computed Lennard-Jones (for vector versions only)
@@ -1272,6 +1187,11 @@ endif
 
 ifneq (,$(findstring damp,${MAKETARGET}))
 PP_FLAGS += -DDAMP
+endif
+
+ifneq (,$(findstring nvx,${MAKETARGET}))
+PP_FLAGS += -DNVX
+SOURCES += ${TRANSSOURCES}
 endif
 
 ifneq (,$(findstring ftg,${MAKETARGET}))
@@ -1350,10 +1270,17 @@ PP_FLAGS += -DBBOOST
 SOURCES += ${BBOOSTSOURCES}
 endif
 
-ifneq (,$(findstring debugLo,${MAKETARGET}))
-PP_FLAGS += -DdebugLo
+ifneq (,$(findstring bbcheck,${MAKETARGET}))
+PP_FLAGS += -DBBCHECK
 endif
 
+ifneq (,$(findstring adaptive,${MAKETARGET}))
+PP_FLAGS += -DADAPTIVE
+endif
+
+ifneq (,$(findstring sboost,${MAKETARGET}))
+PP_FLAGS += -DSBOOST
+endif
 
 ifneq (,$(findstring zapp,${MAKETARGET}))
 PP_FLAGS += -DZAPP
@@ -1375,14 +1302,6 @@ endif
 ifneq (,$(findstring fnorm,${MAKETARGET}))
 PP_FLAGS += -DFNORM
 endif
-
-ifneq (,$(findstring getsaddle,${MAKETARGET}))
-PP_FLAGS += -DGETSADDLE
-endif
-ifneq (,$(findstring getmin,${MAKETARGET}))
-PP_FLAGS += -DGETMIN
-endif
-
 
 ifneq (,$(findstring relaxinfo,${MAKETARGET}))
 PP_FLAGS += -DRELAXINFO
@@ -1519,15 +1438,10 @@ PP_FLAGS  += -DCORRELATE
 SOURCES += ${CORRSOURCES}
 endif
 
-# heat transport
-ifneq (,$(findstring nvx,${MAKETARGET}))
-  PP_FLAGS += -DNVX
-  SOURCES  += ${TRANSSOURCES}
-else
-  ifneq (,$(strip $(findstring hc,${MAKETARGET})))
-    PP_FLAGS += -DHC
-    SOURCES  += ${TRANSSOURCES}
-  endif
+# RNEMD heat transport
+ifneq (,$(strip $(findstring rnemd,${MAKETARGET})))
+PP_FLAGS  += -DRNEMD
+SOURCES += ${TRANSSOURCES}
 endif
 
 # mean square displacement

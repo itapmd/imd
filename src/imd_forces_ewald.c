@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -22,7 +22,6 @@
 #include "imd.h"
 
 void clear_forces(void)
-
 {
   int k;
   for (k=0; k<nallcells; k++) {
@@ -39,10 +38,6 @@ void clear_forces(void)
 
 real force_norm(void)
 {
-#ifdef DEBUG
-  printf("force_norm\n");
-#endif
-
   int k;
   double norm = 0.0;
 
@@ -71,8 +66,7 @@ real force_norm(void)
 
 void do_forces_ewald(int steps)
 {
-
-  int n, k, i, typ;
+  int n, k, i;
   real tot=0.0, pot;
 
   /* real space part; if ew_nmax < 0, we do it with the other pair forces */
@@ -105,12 +99,8 @@ void do_forces_ewald(int steps)
   for (k=0; k<ncells; k++) {
     cell *p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
-#ifdef VARCHG
-      pot  = ew_vorf * SQR( CHARGE(p,i) ) * coul_eng;
-#else
-      typ  = SORTE(p,i);
-      pot  = ew_vorf * SQR( charge[typ] ) * coul_eng;
-#endif
+      pot  = ew_vorf * SQR( CHARGE(p,i) ) * ew_eps;
+      /* pot += ew_shift[n][n] * 0.5;   what's that??? */
       tot_pot_energy -= pot;
       POTENG(p,i)    -= pot;
     }
@@ -133,7 +123,6 @@ void do_forces_ewald(int steps)
 
 void do_forces_ewald_fourier(void)
 {
-
   int    i, j, k, l, m, n, c;
   int    cnt, typ, offx, offy, offz;
   int    px, py, pz, mx, my, mz;
@@ -231,14 +220,10 @@ void do_forces_ewald_fourier(void)
                      + coskx[offx+cnt] * sinky[offy+cnt] * coskz[offz+cnt]
                      + coskx[offx+cnt] * cosky[offy+cnt] * sinkz[offz+cnt];
 
-#ifdef VARCHG
-        sum_cos += CHARGE(p,i) * coskr[cnt];
-        sum_sin += CHARGE(p,i) * sinkr[cnt];
-#else
         typ      = SORTE(p,i);
         sum_cos += charge[typ] * coskr[cnt];
         sum_sin += charge[typ] * sinkr[cnt];
-#endif
+
         cnt++;
       }
     }
@@ -246,7 +231,7 @@ void do_forces_ewald_fourier(void)
     /* update total potential energy */
     tot_pot_energy += ew_expk[k] * (SQR(sum_sin) + SQR(sum_cos));
 
-    /* updates */
+    /* update energies and forces */
     cnt = 0;
     for (c=0; c<ncells; c++) {
 
@@ -254,30 +239,21 @@ void do_forces_ewald_fourier(void)
 
       for (i=0; i<p->n; i++) {
 
-        /* update potential energy */
-#ifdef VARCHG
-        kpot   = CHARGE(p,i) * ew_expk[k]
-	         * (sinkr[cnt] * sum_sin + coskr[cnt] * sum_cos);
-#else
         typ    = SORTE(p,i);
+
+        /* update potential energy */
         kpot   = charge[typ] * ew_expk[k]
 	         * (sinkr[cnt] * sum_sin + coskr[cnt] * sum_cos);
-#endif
         POTENG(p,i)  += kpot;
 
         /* update force */
-#ifdef VARCHG
-        kforce = CHARGE(p,i) * ew_expk[k] 
-                 * (sinkr[cnt] * sum_cos - coskr[cnt] * sum_sin);
-#else
         kforce = charge[typ] * ew_expk[k] 
                  * (sinkr[cnt] * sum_cos - coskr[cnt] * sum_sin);
-#endif
         KRAFT(p,i,X) += ew_kvek[k].x * kforce;
         KRAFT(p,i,Y) += ew_kvek[k].y * kforce;
         KRAFT(p,i,Z) += ew_kvek[k].z * kforce;
         tmp_virial   += kforce * SPRODX(ORT,p,i,ew_kvek[k]);
-
+	  
         cnt++;
       }
     }
@@ -298,7 +274,6 @@ void do_forces_ewald_fourier(void)
 
 void do_forces_ewald_real(void)
 {
-
   int i, j, k, l, m, r, s, jstart; 
   int p_typ, q_typ;
   cell *p, *q;
@@ -379,12 +354,9 @@ void do_forces_ewald_real(void)
 		  }
 	      
 		rpot = 0.0; rforce.x = 0.0; rforce.y = 0.0; rforce.z = 0.0;
+		
+		charge2 = charge[p_typ] * charge[q_typ] * ew_eps;
 
-#ifdef VARCHG
-		charge2 = CHARGE(p,i) * CHARGE(q,i) * coul_eng;
-#else
-		charge2 = charge[p_typ] * charge[q_typ] * coul_eng;
-#endif
 		/* Include image boxes */
 		for( k=ew_nmax; k>=-ew_nmax; k--)
 		  for( l=ew_nmax; l>=-ew_nmax; l--)
@@ -456,7 +428,6 @@ void do_forces_ewald_real(void)
 
 void init_ewald(void)
 {
-
   int    i, j, k, offx, offy, offz, count, num;
   real   kvek2, vorf1;
 
@@ -464,25 +435,18 @@ void init_ewald(void)
      measured in Angstrom [A], energies in electron volts [eV], 
      and charges in units of the elementary charge e */
 
-  /* coul_eng is already initialized to 14.40 in globals.h  */
+  /* ew_eps is already initialized to 14.38 in globals.h    */
   /* this is e^2 / (4*pi*epsilon_0) in [eV A]               */
   /* we need it earlier for analytically defined potentials */
-
+  /* ew_eps   = 14.40; */
   twopi    = 2.0 * M_PI;
-
   ew_vorf  = ew_kappa / SQRT( M_PI );
-  vorf1    = twopi * coul_eng / volume;
-
-  /* SM ?
-  ew_vorf  = 2.0 * ew_kappa / SQRT( M_PI );
-  vorf1    = 2.0 * twopi / volume; */
+  vorf1    = twopi * ew_eps / volume;
 
   ew_nx = (int) (ew_kcut * SQRT( SPROD(box_x,box_x) ) / twopi) + 1;
   ew_ny = (int) (ew_kcut * SQRT( SPROD(box_y,box_y) ) / twopi) + 1;
   ew_nz = (int) (ew_kcut * SQRT( SPROD(box_z,box_z) ) / twopi) + 1;
-
-  if (0==myid)
-    printf("EWALD: nx = %d, ny = %d, nz = %d\n", ew_nx, ew_ny, ew_nz);
+  printf("EWALD: nx = %d, ny = %d, nz = %d\n", ew_nx, ew_ny, ew_nz);
 
   /* Allocate memory for k-vectors */
   num     = (2*ew_nx+1) * (2*ew_ny+1) * (ew_nz+1);
@@ -520,8 +484,7 @@ void init_ewald(void)
 
       }
 
-  if (0==myid)
-    printf("EWALD: %d k-vectors\n", ew_totk); 
+  printf("EWALD: %d k-vectors\n", ew_totk);
 
   /* Allocate memory for exp(ikr) */
   ew_dx = 2 * ew_nx + 1;
@@ -553,3 +516,4 @@ void init_ewald(void)
     sinkz[offz+i] = 0.0;
   }
 }
+

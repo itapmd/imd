@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2001 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -512,6 +512,9 @@ void add_forces( int j, int k, int l, int m )
     KRAFT (to,i,X) += KRAFT (from,i,X);
     KRAFT (to,i,Y) += KRAFT (from,i,Y);
     POTENG(to,i)   += POTENG(from,i);
+#ifdef NVX
+    HEATCOND(to,i) += HEATCOND(from,i);
+#endif
 #ifdef STRESS_TENS
     PRESSTENS(to,i,xx) += PRESSTENS(from,i,xx);
     PRESSTENS(to,i,yy) += PRESSTENS(from,i,yy);
@@ -539,6 +542,9 @@ void pack_forces( msgbuf *b, int j, int k )
     b->data[ b->n++ ] = KRAFT(from,i,X);
     b->data[ b->n++ ] = KRAFT(from,i,Y);
     b->data[ b->n++ ] = POTENG(from,i);
+#ifdef NVX
+    b->data[ b->n++ ] = HEATCOND(from,i);
+#endif
 #ifdef STRESS_TENS
     b->data[ b->n++ ] = PRESSTENS(from,i,xx);
     b->data[ b->n++ ] = PRESSTENS(from,i,yy);
@@ -567,6 +573,9 @@ void unpack_forces( msgbuf *b, int j, int k )
     KRAFT (to,i,X) += b->data[ b->n++ ];
     KRAFT (to,i,Y) += b->data[ b->n++ ];
     POTENG(to,i)   += b->data[ b->n++ ];
+#ifdef NVX
+    HEATCOND(to,i) += b->data[ b->n++ ];
+#endif
 #ifdef STRESS_TENS
     PRESSTENS(to,i,xx) += b->data[ b->n++ ];
     PRESSTENS(to,i,yy) += b->data[ b->n++ ];

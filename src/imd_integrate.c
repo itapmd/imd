@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -33,8 +33,10 @@ void move_atoms_nve(void)
 {
   int k;
   static int count = 0;
+  real tmpvec1[8], tmpvec2[8];
   real tmp_f_max2=0.0;
   real tmp_x_max2=0.0;
+  real tmppnorm, tmpfnorm;
 #ifdef DAMP
   real tmp1, tmp2, tmp3, f, maxax, maxax2;
 #endif
@@ -121,6 +123,9 @@ void move_atoms_nve(void)
 
     for (i=0; i<p->n; ++i) { /* loop over all atoms in the cell */
 
+      tmppnorm=0.0;
+      tmpfnorm=0.0;
+
 #ifdef EPITAX 
       /* beam atoms are always integrated by NVE */
       if ( (ensemble != ENS_NVE) &&
@@ -183,7 +188,8 @@ void move_atoms_nve(void)
 #endif
 
 #ifdef FNORM
-      fnorm += SPRODN(KRAFT,p,i,KRAFT,p,i);
+      tmpfnorm= SPRODN(KRAFT,p,i,KRAFT,p,i);
+      fnorm   += tmpfnorm;
       /* determine the biggest force component */
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
@@ -421,40 +427,37 @@ void move_atoms_nve(void)
   }
 
 #ifdef MPI
-  { /* add up results from different CPUs */
-    int nc = 0;
-    double tmpvec1[8], tmpvec2[8];
+  /* add up results from different CPUs */
+  tmpvec1[0] = tot_kin_energy;
+  tmpvec1[1] = fnorm;
+  tmpvec1[2] = PxF;
+  tmpvec1[3] = omega_E;
+  tmpvec1[4] = pnorm;
+  tmpvec1[5] = xnorm;
 
-    tmpvec1[nc++] = tot_kin_energy;
-    tmpvec1[nc++] = fnorm;
-    tmpvec1[nc++] = PxF;
-    tmpvec1[nc++] = omega_E;
-    tmpvec1[nc++] = pnorm;
-    tmpvec1[nc++] = xnorm;
 #ifdef DAMP
-    tmpvec1[nc++] = tot_kin_energy_damp;
-    tmpvec1[nc++] = n_damp;
+  tmpvec1[6] = tot_kin_energy_damp;
+  tmpvec1[7] = n_damp;
+  MPI_Allreduce( tmpvec1, tmpvec2, 8, REAL, MPI_SUM, cpugrid);
+  tot_kin_energy_damp = tmpvec2[6];
+  n_damp =  tmpvec2[7];
+#else
+  /*  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid); */
+  MPI_Allreduce( tmpvec1, tmpvec2, 8, REAL, MPI_SUM, cpugrid); 
 #endif
 
-    MPI_Allreduce( tmpvec1, tmpvec2, nc, REAL, MPI_SUM, cpugrid);
+  tot_kin_energy = tmpvec2[0];
+  fnorm          = tmpvec2[1];
+  PxF            = tmpvec2[2];
+  omega_E        = tmpvec2[3];
+  pnorm          = tmpvec2[4];
+  xnorm          = tmpvec2[5];
 
-    nc = 0;
-    tot_kin_energy      = tmpvec2[nc++];
-    fnorm               = tmpvec2[nc++];
-    PxF                 = tmpvec2[nc++];
-    omega_E             = tmpvec2[nc++];
-    pnorm               = tmpvec2[nc++];
-    xnorm               = tmpvec2[nc++];
-#ifdef DAMP
-    tot_kin_energy_damp = tmpvec2[nc++];
-    n_damp              = tmpvec2[nc++];
-#endif
-  }
 #ifdef FNORM
   MPI_Allreduce( &tmp_f_max2, &f_max2, 1, REAL, MPI_MAX, cpugrid);
 #endif
 #ifdef RELAXINFO
-  MPI_Allreduce( &tmp_x_max2, &x_max2, 1, REAL, MPI_MAX, cpugrid);
+ MPI_Allreduce( &tmp_x_max2, &x_max2, 1, REAL, MPI_MAX, cpugrid);
 #endif
 
 #else /* not MPI */
@@ -472,8 +475,6 @@ void move_atoms_nve(void)
   PxF /= (SQRT(fnorm) * SQRT(pnorm));
 #endif
 
-
-  
 #ifdef AND
   /* Andersen Thermostat -- Initialize the velocities now and then */
   ++count;
@@ -1464,19 +1465,11 @@ void move_atoms_npt_iso(void)
 
   real Ekin_new = 0.0, Erot_new = 0.0;
   real pfric, pifric, rfric, rifric;
-  real tmpvec1[5], tmpvec2[5], ttt;
+  real tmpvec1[4], tmpvec2[4], ttt;
   real reib, ireib;
   real tmp_f_max2=0.0;
   static real d_pressure;
 
-  PxF     = 0.0;  
-#ifdef RELAXINFO
-  real tmp_x_max2=0.0;
-  real tmppnorm, tmpfnorm,tmportx,tmporty,tmportz;
-  xnorm   = 0.0;
-  pnorm   = 0.0;
-#endif
-  
   if (steps == steps_min) {
     calc_dyn_pressure();
     if (isq_tau_xi==0.0) xi.x = 0.0;
@@ -1549,10 +1542,6 @@ void move_atoms_npt_iso(void)
 #ifdef EINSTEIN
       omega_E += SPRODN(KRAFT,p,i,KRAFT,p,i) / MASSE(p,i);
 #endif
-#ifdef RELAXINFO
-      PxF   += SPRODN(IMPULS,p,i,KRAFT,p,i)/MASSE(p,i);
-      pnorm += SPRODN(IMPULS,p,i,IMPULS,p,i)/MASSE(p,i)/MASSE(p,i);
-#endif
 
       /* new momenta */
       IMPULS(p,i,X) = (pfric*IMPULS(p,i,X)+timestep*KRAFT(p,i,X))*pifric;
@@ -1579,11 +1568,6 @@ void move_atoms_npt_iso(void)
 #endif
 
       /* new positions */
-#ifdef RELAXINFO
-      tmportx=ORT(p,i,X);
-      tmporty=ORT(p,i,Y);
-      tmportz=ORT(p,i,Z);
-#endif
       tmp = timestep / MASSE(p,i);
       ORT(p,i,X) = (rfric * ORT(p,i,X) + IMPULS(p,i,X) * tmp) * rifric;
       ORT(p,i,Y) = (rfric * ORT(p,i,Y) + IMPULS(p,i,Y) * tmp) * rifric;
@@ -1591,16 +1575,6 @@ void move_atoms_npt_iso(void)
       ORT(p,i,Z) = (rfric * ORT(p,i,Z) + IMPULS(p,i,Z) * tmp) * rifric;
 #endif
 
-#ifdef RELAXINFO
-      xnorm +=  SQR(ORT(p,i,X)-tmportx) + SQR(ORT(p,i,Y)-tmporty)+SQR(ORT(p,i,Z)-tmportz);
-      /* determine the biggest displacement component */
-      tmp_x_max2 =  MAX( SQR(ORT(p,i,X)-tmportx),tmp_x_max2);
-      tmp_x_max2 =  MAX( SQR(ORT(p,i,Y)-tmporty),tmp_x_max2);
-#ifndef TWOD
-      tmp_x_max2 =  MAX( SQR(ORT(p,i,Z)-tmportz),tmp_x_max2);
-#endif
-#endif
-      
 #ifdef UNIAX
       /* new molecular axes */
       cross.x = DREH_IMPULS(p,i,Y) * ACHSE(p,i,Z)
@@ -1642,28 +1616,22 @@ void move_atoms_npt_iso(void)
   tmpvec1[1] = Erot_new;
   tmpvec1[2] = fnorm;
   tmpvec1[3] = omega_E;
-  tmpvec1[4] = PxF;
 
-  MPI_Allreduce( tmpvec1, tmpvec2, 5, REAL, MPI_SUM, cpugrid);
+  MPI_Allreduce( tmpvec1, tmpvec2, 4, REAL, MPI_SUM, cpugrid);
 
   Ekin_new = tmpvec2[0];
   Erot_new = tmpvec2[1];
   fnorm    = tmpvec2[2];
   omega_E  = tmpvec2[3];
-  PxF      = tmpvec2[4];
 #ifdef FNORM
   MPI_Allreduce( &tmp_f_max2, &f_max2, 1, REAL, MPI_MAX, cpugrid);
 #endif
-#ifdef RELAXINFO  
-    MPI_Allreduce( &tmp_x_max2, &x_max2, 1, REAL, MPI_MAX, cpugrid);
-#endif
+
 #else
 #ifdef FNORM
   f_max2 = tmp_f_max2;
 #endif
-#ifdef RELAXINFO  
-  x_max2=tmp_x_max2;
-#endif
+
 
 #endif
 
@@ -2728,7 +2696,7 @@ void move_atoms_stm(void)
 
 /******************************************************************************
 *
-*  NVX Integrator for heat conductivity (direct method)
+*  NVX Integrator for heat conductivity
 * 
 ******************************************************************************/
 
@@ -2737,28 +2705,47 @@ void move_atoms_stm(void)
 void move_atoms_nvx(void)
 
 {
-  int  k, num, nhalf;  
-  real Ekin_1, Ekin_2, Ekin_right, Ekin_left, delta_E, Evec1[3], Evec2[3];
-  real scale, xx, rescale_left, rescale_right;
+  int  k;
+  real Ekin_1, Ekin_2;
+  real Ekin_left = 0.0, Ekin_right = 0.0;
+  int  natoms_left = 0, natoms_right = 0;
+  real px, vol, real_tmp;
+  int  num, nhalf, int_tmp;  
+  real scale, rescale, Rescale;
+  vektor tot_impuls_left, tot_impuls_right, vectmp;
+  real inv_mass_left=0.0, inv_mass_right=0.0;
+  static real dtemp;
 
-  Evec1[0] = 0.0;
-  Evec1[1] = 0.0;
-  Evec1[2] = 0.0;
+  if (steps == steps_min) {
+    dtemp = (dTemp_end - dTemp_start) / (steps_max - steps_min);
+    tran_Tleft  = temperature + dTemp_start;
+    tran_Tright = temperature - dTemp_start;
+  }
+ 
+  tot_kin_energy = 0.0;
+  tot_impuls_left.x  = 0.0;
+  tot_impuls_right.x = 0.0;
+  tot_impuls_left.y  = 0.0;
+  tot_impuls_right.y = 0.0;
+#ifndef TWOD
+  tot_impuls_left.z  = 0.0;
+  tot_impuls_right.z = 0.0;
+#endif
 
-  nhalf   = hc_nlayers / 2;
-  scale   = hc_nlayers / box_x.x;
-  delta_E = hc_heatcurr * 2 * box_y.y * box_z.z * timestep;
+  nhalf = tran_nlayers / 2;
+  scale = tran_nlayers / box_x.x;
 
   /* loop over all atoms */
   for (k=0; k<NCELLS; ++k) {
 
     int i;
-    cell *p = CELLPTR(k);
+    cell *p;
+    p = CELLPTR(k);
 
     for (i=0; i<p->n; ++i) {
 
-      /* twice the old kinetic energy */ 
       Ekin_1 = SPRODN(IMPULS,p,i,IMPULS,p,i) / MASSE(p,i);
+      px = IMPULS(p,i,X);
 
       /* new momenta */
       IMPULS(p,i,X) += timestep * KRAFT(p,i,X); 
@@ -2769,6 +2756,7 @@ void move_atoms_nvx(void)
 
       /* twice the new kinetic energy */ 
       Ekin_2 = SPRODN(IMPULS,p,i,IMPULS,p,i) / MASSE(p,i);
+      px = (px + IMPULS(p,i,X)) / 2.0;
 
       /* new positions */
       ORT(p,i,X) += timestep * IMPULS(p,i,X) / MASSE(p,i);
@@ -2776,64 +2764,132 @@ void move_atoms_nvx(void)
 #ifndef TWOD
       ORT(p,i,Z) += timestep * IMPULS(p,i,Z) / MASSE(p,i);
 #endif
-      Evec1[0] += (Ekin_1 + Ekin_2) / 4.0;
 
-      /* kinetic energy of layers 0 and nhalf */
-      xx = ORT(p,i,X);
-      if (xx<0.0) xx += box_x.x;
-      num = (int) (scale * xx);
-      if      (num >= hc_nlayers) num -= hc_nlayers;
-      if      (num == 0    ) Evec1[1] += Ekin_2;
-      else if (num == nhalf) Evec1[2] += Ekin_2;
+      tot_kin_energy += (Ekin_1 + Ekin_2) / 4.0;
+
+      /* which layer */
+      num = scale * ORT(p,i,X);
+      if (num < 0)             num = 0;
+      if (num >= tran_nlayers) num = tran_nlayers-1;
+
+      /* temperature control and heat conductivity */
+      if (num == 0) {
+        Ekin_left += Ekin_2;
+        inv_mass_left     += 1/(MASSE(p,i));
+        tot_impuls_left.x += IMPULS(p,i,X);
+        tot_impuls_left.y += IMPULS(p,i,Y);
+#ifndef TWOD
+        tot_impuls_left.z += IMPULS(p,i,Z);
+#endif
+        natoms_left++;
+      } else if  (num == nhalf) {
+        Ekin_right += Ekin_2;
+        inv_mass_right     += 1/(MASSE(p,i));
+        tot_impuls_right.x += IMPULS(p,i,X);
+        tot_impuls_right.y += IMPULS(p,i,Y);
+#ifndef TWOD
+        tot_impuls_right.z += IMPULS(p,i,Z);
+#endif
+        natoms_right++;
+      } else if (num < nhalf) {
+        heat_cond += (HEATCOND(p,i) + (Ekin_1 + Ekin_2) / 2) * px / MASSE(p,i);
+      } else {
+        heat_cond -= (HEATCOND(p,i) + (Ekin_1 + Ekin_2) / 2) * px / MASSE(p,i);
+      }
     }
   }
 
 #ifdef MPI
   /* Add up results from all cpus */
-  MPI_Allreduce( Evec1, Evec2, 3, REAL, MPI_SUM, cpugrid);
-  tot_kin_energy = Evec2[0];
-  Ekin_left      = Evec2[1];
-  Ekin_right     = Evec2[2];
-#else
-  tot_kin_energy = Evec1[0];
-  Ekin_left      = Evec1[1];
-  Ekin_right     = Evec1[2];
+  MPI_Allreduce( &tot_kin_energy, &real_tmp, 1, REAL, MPI_SUM, cpugrid);
+  tot_kin_energy                 = real_tmp;
+  MPI_Allreduce( &Ekin_left,      &real_tmp, 1, REAL, MPI_SUM, cpugrid);
+  Ekin_left                      = real_tmp;
+  MPI_Allreduce( &Ekin_right,     &real_tmp, 1, REAL, MPI_SUM, cpugrid);
+  Ekin_right                     = real_tmp;
+  MPI_Allreduce( &inv_mass_left,  &real_tmp, 1, REAL, MPI_SUM, cpugrid);
+  inv_mass_left                  = real_tmp;
+  MPI_Allreduce( &inv_mass_right, &real_tmp, 1, REAL, MPI_SUM, cpugrid);
+  inv_mass_right                 = real_tmp;
+  MPI_Allreduce( &tot_impuls_left,&vectmp, DIM, REAL, MPI_SUM, cpugrid);
+  tot_impuls_left                = vectmp;
+  MPI_Allreduce(&tot_impuls_right,&vectmp, DIM, REAL, MPI_SUM, cpugrid);
+  tot_impuls_right               = vectmp;
+  MPI_Allreduce( &natoms_left,    &int_tmp,  1, MPI_INT,  MPI_SUM, cpugrid);
+  natoms_left                    = int_tmp;
+  MPI_Allreduce( &natoms_right,   &int_tmp,  1, MPI_INT,  MPI_SUM, cpugrid);
+  natoms_right                   = int_tmp;
+#endif
+
+  inv_mass_left      /= 2.0;
+  inv_mass_right     /= 2.0;
+  tot_impuls_left.x  /= natoms_left;
+  tot_impuls_right.x /= natoms_right;
+  tot_impuls_left.y  /= natoms_left;
+  tot_impuls_right.y /= natoms_right;
+#ifndef TWOD
+  tot_impuls_left.z  /= natoms_left;
+  tot_impuls_right.z /= natoms_right;
 #endif
 
   /* rescale factors for momenta */
-  rescale_left  = SQRT( 1.0 - delta_E / Ekin_left  );
-  rescale_right = SQRT( 1.0 + delta_E / Ekin_right );
+  real_tmp = Ekin_left
+             - inv_mass_left * SPROD(tot_impuls_left,tot_impuls_left);
+  rescale = sqrt( DIM * tran_Tleft * natoms_left / real_tmp  );
+  real_tmp = Ekin_right
+             - inv_mass_right * SPROD(tot_impuls_right,tot_impuls_right);
+  Rescale = sqrt( DIM * tran_Tright * natoms_right / real_tmp  );
 
-  /* rescale the momenta */
   for (k=0; k<NCELLS; ++k) {
 
     int i;
-    cell *p = CELLPTR(k);
+    cell *p;
+    p = CELLPTR(k);
 
     for (i=0; i<p->n; ++i) {
 	    
       /* which layer? */
-      xx = ORT(p,i,X);
-      if (xx<0.0) xx += box_x.x;
-      num = (int) (scale * xx);
-      if (num >= hc_nlayers) num -= hc_nlayers;
+      num = scale * ORT(p,i,X);
+      if (num < 0)             num = 0;
+      if (num >= tran_nlayers) num = tran_nlayers-1;
 
       /* rescale momenta */
       if (num == 0) {
-        IMPULS(p,i,X) *= rescale_left;
-        IMPULS(p,i,Y) *= rescale_left;
+        IMPULS(p,i,X) = (IMPULS(p,i,X) - tot_impuls_left.x) * rescale;
+        IMPULS(p,i,Y) = (IMPULS(p,i,Y) - tot_impuls_left.y) * rescale;
 #ifndef TWOD
-        IMPULS(p,i,Z) *= rescale_left;
+        IMPULS(p,i,Z) = (IMPULS(p,i,Z) - tot_impuls_left.z) * rescale;
 #endif
       } else if (num == nhalf) {
-        IMPULS(p,i,X) *= rescale_right;
-        IMPULS(p,i,Y) *= rescale_right;
+        IMPULS(p,i,X) = (IMPULS(p,i,X) - tot_impuls_right.x) * Rescale;
+        IMPULS(p,i,Y) = (IMPULS(p,i,Y) - tot_impuls_right.y) * Rescale;
 #ifndef TWOD
-        IMPULS(p,i,Z) *= rescale_right;
+        IMPULS(p,i,Z) = (IMPULS(p,i,Z) - tot_impuls_right.z) * Rescale;
 #endif
       }
+
+#ifdef STRESS_TENS
+      if (do_press_calc) {
+        PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
+        PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
+#ifndef TWOD
+        PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
+        PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
+#endif
+        PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
+      }
+#endif
     }
   }
+#ifdef RNEMD
+  heat_transfer += tran_Tleft *natoms_left  * DIM/2 - Ekin_left/2;  /* hot  */ 
+  heat_transfer -= tran_Tright*natoms_right * DIM/2 - Ekin_right/2; /* cold */
+#endif
+
+  /* increment temperature difference */
+  tran_Tleft   += dtemp;
+  tran_Tright  -= dtemp;
 }
 
 #else
@@ -2856,6 +2912,7 @@ void move_atoms_nvx(void)
 
 void move_atoms_cg(real alpha)
 {
+  
   int k;
   real tmp_x_max2 = 0.0;
   real tmpvec1[1], tmpvec2[1];

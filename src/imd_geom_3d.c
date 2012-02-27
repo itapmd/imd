@@ -52,11 +52,6 @@ vektor vec_prod(vektor u, vektor v)
 void make_box( void )
 {
 
-#ifdef debugLo
-    printf("    ************************* \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("print "" make_box start "" checking by Lo! \n");fflush(stdout);
-#endif
   /* compute tbox_j such that SPROD(box_i,tbox_j) == delta_ij */
   /* first unnormalized */
   tbox_x = vec_prod( box_y, box_z );
@@ -96,11 +91,6 @@ void make_box( void )
     if ((myid==0) && (volume>8*volume_init)) error("system seems to explode!");
   }
 
-#ifdef debugLo
-    printf("print "" make_box end "" checking by Lo! \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("    ************************* \n");fflush(stdout);
-#endif
 }
 
 
@@ -281,19 +271,8 @@ void init_cells( void )
             (k != cell_dim.z-1))
 #endif
 
-#ifdef debugLo
-    printf("    ************************* \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("print "" check init_cells start 111"" checking by Lo! \n");fflush(stdout);
-#endif 
-
             ALLOC_MINICELL(p, initsz);
 
-#ifdef debugLo
-            printf("print "" check init_cells end "" checking by Lo! \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("    ************************* \n");fflush(stdout);
-#endif
   }
 
   /* on the first invocation we have to set up the MPI process topology */
@@ -339,31 +318,13 @@ void init_cells( void )
           ALLOC_MINICELL( p, 0 );  /* free old cell */
     }
     free(cell_array_old);
-
-#ifdef debugLo
-
-    printf("    ************************* \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("passing "" go into make_cell_lists A ! "" checking by Lo! \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-
-#endif
-
     make_cell_lists();
     fix_cells();
 #ifdef MPI
     setup_buffers();
 #endif
   } else {
-
-#ifdef debugLo
-    printf("    ************************* \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("passing "" go into make_cell_lists B ! "" checking by Lo! \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("    ************************* \n");fflush(stdout);
-#endif
-    
+   
     make_cell_lists();
   }
 }
@@ -384,13 +345,6 @@ void make_cell_lists(void)
   int i,j,k,l,m,n,r,s,t,nn,nnx,nny,nnz;
   ivektor ipbc, neigh;
   pair *P;
-
-#ifdef debugLo
-    printf("    ************************* \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("passing "" make_cell_lists 1 start!, with npairs "" checking by Lo! \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-#endif
 
 #ifdef OMP
   nlists = 27;
@@ -615,15 +569,6 @@ void make_cell_lists(void)
     check_pairs();
 #endif
 
-
-#ifdef debugLo
-    printf("    ************************* \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("passing "" make_cell_lists 1 end!, with npairs"" checking by Lo! \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("    ************************* \n");fflush(stdout);
-#endif
-
 }
 
 /******************************************************************************
@@ -671,15 +616,6 @@ void make_cell_lists(void)
   int i,j,k, l,m,n, r,s,t, nn, qq, flag, ncnbrs=0;
   cell_nbrs_t *CN;
   ivektor ipbc;
-
-#ifdef debugLo
-
-    printf("    ************************* \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("passing "" make_cell_lists 2 start!, without npairs "" checking by Lo! \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("    ************************* \n");fflush(stdout);
-#endif
 
   nallcells = cell_dim.x * cell_dim.y * cell_dim.z;
   ncells = (cell_dim.x-2) * (cell_dim.y-2) * (cell_dim.z-2);
@@ -811,14 +747,6 @@ void make_cell_lists(void)
       }
 
 #endif /* COVALENT */
-
-#ifdef debugLo
-    printf("    ************************* \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("passing "" make_cell_lists 2 end!, without npairs "" checking by Lo! \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("    ************************* \n");fflush(stdout);
-#endif
 
 }
 

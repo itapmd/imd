@@ -54,7 +54,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
   tmp_vir_vect.y = 0.0;
   tmp_vir_vect.z = 0.0;
 #endif
-    
+
   /* for each atom in first cell */
   for (i=0; i<p->n; ++i) {
 
@@ -318,7 +318,10 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Virial,
       r2    = SPROD(d,d);
       col1  = q_typ * ntypes + p_typ;
       col2  = p_typ * ntypes + q_typ;
-
+      // if((NUMMER(p,i) == 655)&&(NUMMER(q,j)==769))
+      // printf("myid=%d myrank: %d, NUMMER(p,i) = %d, NUMMER(q,j) = %d, timll = %d in eam2 \n",myid,myrank, NUMMER(p,i), NUMMER(q,j),timll);fflush(stdout);
+      // if((NUMMER(p,i) == 769)&&(NUMMER(q,j)==655))
+      // printf("myid=%d myrank: %d, NUMMER(p,i) = %d, NUMMER(q,j) = %d, timll = %d in eam2 \n",myid,myrank, NUMMER(p,i), NUMMER(q,j),timll);fflush(stdout);   
       if ((r2 < rho_h_tab.end[col1]) || (r2 < rho_h_tab.end[col2])) {
 
         /* take care: particle i gets its rho from particle j.

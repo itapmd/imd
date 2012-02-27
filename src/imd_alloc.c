@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -148,19 +148,44 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
 #ifndef TWOD
   to->bb_refpostwo Z(i) = from->bb_refpostwo Z(j);
 #endif
+  to->bb_bbproject X(i) = from->bb_bbproject X(j);
+  to->bb_bbproject Y(i) = from->bb_bbproject Y(j); 
+#ifndef TWOD
+  to->bb_bbproject Z(i) = from->bb_bbproject Z(j); 
+#endif
   to->bb_oldpos X(i) = from->bb_oldpos X(j);
   to->bb_oldpos Y(i) = from->bb_oldpos Y(j); 
 #ifndef TWOD
   to->bb_oldpos Z(i) = from->bb_oldpos Z(j); 
 #endif
+  to->bb_tmppos X(i) = from->bb_tmppos X(j);
+  to->bb_tmppos Y(i) = from->bb_tmppos Y(j); 
+#ifndef TWOD
+  to->bb_tmppos Z(i) = from->bb_tmppos Z(j); 
+#endif
+  to->bb_tmp2pos X(i) = from->bb_tmp2pos X(j);
+  to->bb_tmp2pos Y(i) = from->bb_tmp2pos Y(j); 
+#ifndef TWOD
+  to->bb_tmp2pos Z(i) = from->bb_tmp2pos Z(j); 
+#endif
+  to->bb_tmpkraft X(i) = from->bb_tmpkraft X(j);
+  to->bb_tmpkraft Y(i) = from->bb_tmpkraft Y(j); 
+#ifndef TWOD
+  to->bb_tmpkraft Z(i) = from->bb_tmpkraft Z(j); 
+#endif
+  to->bb_oldimpuls X(i) = from->bb_oldimpuls X(j);
+  to->bb_oldimpuls Y(i) = from->bb_oldimpuls Y(j); 
+#ifndef TWOD
+  to->bb_oldimpuls Z(i) = from->bb_oldimpuls Z(j); 
+#endif  
   to->bb_neigh[i]->nbondsref1 = from->bb_neigh[j]->nbondsref1;
-  to->bb_neigh[i]->nbondsref2 = from->bb_neigh[j]->nbondsref2;
 
-  for (k=0; k< BB_MAXNEIGH; ++k) {
+  for (k=0; k< bb_maxneigh; ++k) {
       to->bb_neigh[i]->distref1[k] =  from->bb_neigh[j]->distref1[k];
-      to->bb_neigh[i]->distref2[k] =  from->bb_neigh[j]->distref2[k];
       to->bb_neigh[i]->numref1[k]  =  from->bb_neigh[j]->numref1[k];
-      to->bb_neigh[i]->numref2[k]  =  from->bb_neigh[j]->numref2[k];      
+      to->bb_neigh[i]->vectref1[k*SDIM]   =  from->bb_neigh[j]->vectref1[k*SDIM];
+      to->bb_neigh[i]->vectref1[k*SDIM+1] =  from->bb_neigh[j]->vectref1[k*SDIM+1];
+      to->bb_neigh[i]->vectref1[k*SDIM+2] =  from->bb_neigh[j]->vectref1[k*SDIM+2];
     }
   
 #endif /*BBOOST*/
@@ -262,8 +287,8 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
   to->refpos Z(i) = from->refpos Z(j);
 #endif
 #endif /* REFPOS */
-#ifdef HC
-  to->hcaveng[i]  = from->hcaveng[j];   
+#ifdef NVX
+  to->heatcond[i] = from->heatcond[j];   
 #endif
 #ifdef STRESS_TENS
   to->presstens[i].xx = from->presstens[j].xx;   
@@ -274,16 +299,6 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
   to->presstens[i].yz = from->presstens[j].yz;   
   to->presstens[i].zx = from->presstens[j].zx;   
 #endif
-#ifdef AVPOS
-  to->avpresstens[i].xx = from->avpresstens[j].xx;   
-  to->avpresstens[i].yy = from->avpresstens[j].yy;   
-  to->avpresstens[i].xy = from->avpresstens[j].xy;   
-#ifndef TWOD
-  to->avpresstens[i].zz = from->avpresstens[j].zz;   
-  to->avpresstens[i].yz = from->avpresstens[j].yz;   
-  to->avpresstens[i].zx = from->avpresstens[j].zx;  
-#endif 
-#endif /* AVPOS */
 #endif /* STRESS_TENS */
 #ifdef SHOCK
   to->pxavg[i] = from->pxavg[j];   
@@ -367,24 +382,20 @@ bb_neightab *alloc_bb_neightab(bb_neightab *bb_neigh, int count)
 {
   if (0 == count) { /* deallocate */
     free(bb_neigh->distref1);
-    free(bb_neigh->distref2);
+    free(bb_neigh->vectref1);
     free(bb_neigh->numref1);
-    free(bb_neigh->numref2);
-    free(bb_neigh); /* should I add this line ? */
+    free(bb_neigh); 
   } else { /* allocate */
     bb_neigh = (bb_neightab *) malloc(sizeof(bb_neightab));
     if (bb_neigh==NULL) {
       error("BBOOST: cannot allocate memory for neighbor table\n");
     }
     bb_neigh->nbondsref1     = 0;
-    bb_neigh->nbondsref2     = 0;
     /* careful: COVALENT uses dist to store in consecutive entries the vector between two atoms, we want only the distance */
     bb_neigh->distref1  = (real *)     malloc( count * sizeof(real) );
-    bb_neigh->distref2  = (real *)     malloc( count * sizeof(real) );
+    bb_neigh->vectref1  = (real *)     malloc( count * SDIM * sizeof(real) );
     bb_neigh->numref1   = (integer *)  malloc( count * sizeof(integer) );
-    bb_neigh->numref2   = (integer *)  malloc( count * sizeof(integer) );
-    if ((bb_neigh->distref1==NULL) || (bb_neigh->distref2==NULL) ||
-        (bb_neigh->numref1==NULL)  || (bb_neigh->numref2==NULL) ) {
+    if ((bb_neigh->distref1==NULL) || (bb_neigh->vectref1==NULL) || (bb_neigh->numref1==NULL)) {
       error("BBOOST: cannot allocate memory for neighbor table");
     }
   }
@@ -448,9 +459,6 @@ void memalloc(void *p, int count, int size, int align, int ncopy, int clear,
   void *new, **old = (void **)p;
   int  ret, len, a = align - 1;
 
-// #ifdef debugLo
-//     printf("print "" count = %d, size = %d, align = %d, ncopy = %d, clear = %d, name = %s "" checking by Lo! \n", count,size,align,ncopy,clear,name);fflush(stdout);
-// #endif
   if (count>0) {  /* allocate count * size bytes */
     len = (count * size + a) & (~a);  /* enlarge to multiple of align */
 #ifdef MEMALIGN
@@ -471,19 +479,7 @@ void memalloc(void *p, int count, int size, int align, int ncopy, int clear,
 #endif
     else {  /* allocation succeded */
       if (clear  ) memset(new, 0, len);              /* zero new memory */
-
-#ifdef debugLo
-  //   printf("    ************************* \n");fflush(stdout);
-//     printf("********************************* \n");fflush(stdout);
-//     printf("print "" check memcpy start "" checking by Lo! \n");fflush(stdout);
-//     printf("print "" ncopy = %d "" checking by Lo! \n", ncopy);fflush(stdout); 
-#endif
       if (ncopy>0) memcpy(new, *old, ncopy * size);  /* copy old data */
-#ifdef debugLo
- //   printf("print "" check memcpy end "" checking by Lo! \n");fflush(stdout);
-//     printf("********************************* \n");fflush(stdout);
-//     printf("    ************************* \n");fflush(stdout); 
-#endif
       if (ncopy  ) free(*old); 
                       /* deallocate old data */
       *old = new;
@@ -535,7 +531,7 @@ void alloc_cell(cell *p, int n)
 #if (defined(BBOOST) && !defined(TWOD))
   /* if cell is to be deallocated, begin with neighbor tables */
   if (0==n) {
-    for (i=0; i< BB_MAXNEIGH; ++i) {
+    for (i=0; i<p->n_max; ++i) {
       p->bb_neigh[i] = alloc_bb_neightab(p->bb_neigh[i], 0);
     }
   }
@@ -560,7 +556,12 @@ void alloc_cell(cell *p, int n)
 #ifdef BBOOST
   memalloc( &p->bb_refposone,      n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "bb_refposone" );
   memalloc( &p->bb_refpostwo,      n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "bb_refpostwo" );
+  memalloc( &p->bb_bbproject,      n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "bb_bbproject" );
   memalloc( &p->bb_oldpos,         n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "bb_oldpos" );
+  memalloc( &p->bb_tmppos,         n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "bb_tmppos" );
+  memalloc( &p->bb_tmp2pos,        n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "bb_tmp2pos" );
+  memalloc( &p->bb_tmpkraft,       n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "bb_tmpkraft" );
+  memalloc( &p->bb_oldimpuls,      n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "bb_oldimpuls" );
 #endif /*BBOOST*/
   
   memalloc( &p->impuls,   n*SDIM, sizeof(real), al, ncopy*SDIM, 0, "impuls" );
@@ -591,19 +592,6 @@ void alloc_cell(cell *p, int n)
 #endif
 #ifdef VARCHG
   memalloc( &p->charge,    n,     sizeof(real), al, ncopy, 0, "charge" );
-#endif
-#ifdef SM
-  memalloc(&p->chi_sm,   n, sizeof(real),   al, ncopy, 0, "chi_sm");
-  memalloc(&p->z_sm,   n, sizeof(real),   al, ncopy, 0, "z_sm");
-  memalloc(&p->j_sm,   n, sizeof(real),   al, ncopy, 0, "j_sm");
-  memalloc(&p->v_sm,   n, sizeof(real),   al, ncopy, 0, "v_sm");
-
-  memalloc(&p->b_sm,   n, sizeof(real),   al, ncopy, 0, "b_sm");
-  memalloc(&p->x_sm,   n, sizeof(real),   al, ncopy, 0, "x_sm");
-  memalloc(&p->r_sm,   n, sizeof(real),   al, ncopy, 0, "r_sm");
-  memalloc(&p->d_sm,   n, sizeof(real),   al, ncopy, 0, "d_sm");
-  memalloc(&p->s_sm,   n, sizeof(real),   al, ncopy, 0, "s_sm");
-  memalloc(&p->q_sm,   n, sizeof(real),   al, ncopy, 0, "q_sm");
 #endif
 #ifdef DIPOLE
   memalloc( &p->dp_E_stat, n*DIM, sizeof(real), al, ncopy*DIM, 0, "dp_E_stat");
@@ -637,14 +625,11 @@ void alloc_cell(cell *p, int n)
 #ifdef REFPOS
   memalloc( &p->refpos,   n*SDIM, sizeof(real), al, ncopy*SDIM, 1, "refpos" );
 #endif
-#ifdef HC
-  memalloc( &p->hcaveng,  n,      sizeof(real), al, ncopy,      0, "hcaveng");
+#ifdef NVX
+  memalloc( &p->heatcond, n,      sizeof(real), al, ncopy,      0, "heatcond");
 #endif
 #ifdef STRESS_TENS
   memalloc( &p->presstens, n, sizeof(sym_tensor), al, ncopy, 0, "presstens" );
-#ifdef AVPOS
-  memalloc( &p->avpresstens, n, sizeof(sym_tensor), al, ncopy, 0, "avpresstens" );
-#endif
 #endif
 #ifdef SHOCK
   memalloc( &p->pxavg, n, sizeof(real), al, ncopy, 1, "pxavg" );
@@ -656,22 +641,10 @@ void alloc_cell(cell *p, int n)
   }
 #endif
 #ifdef BBOOST
-// #ifdef debugLo
-//     printf("    ************************* \n");fflush(stdout);
-//     printf("********************************* \n");fflush(stdout);
-//     printf("print "" check alloc_cell start "" checking by Lo! \n");fflush(stdout);
-// #endif  
-
     memalloc( &p->bb_neigh, n, sizeof(bb_neighptr), al, p->n_max, 0, "bb_neigh" );
-
-// #ifdef debugLo
-//     printf("print "" check alloc_cell end "" checking by Lo! \n");fflush(stdout);
-//     printf("********************************* \n");fflush(stdout);
-//     printf("    ************************* \n");fflush(stdout);
-// #endif
     // for (i=BB_MAXNEIGH; i<n; ++i) {
      for (i=p->n_max; i<n; ++i) {
-    p->bb_neigh[i] = alloc_bb_neightab(p->bb_neigh[i], BB_MAXNEIGH);
+    p->bb_neigh[i] = alloc_bb_neightab(p->bb_neigh[i], bb_maxneigh);
   }
 #endif /* BBOOST */
   

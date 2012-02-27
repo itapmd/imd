@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -58,7 +58,9 @@ void read_atoms(str255 infilename)
   msgbuf   *input_buf=NULL, *b;
 #endif
 
-   if ((0 == myid) && (0==myrank)) {
+   if ((0 == myid) && (0==myrank)) 
+    { 
+        //  printf("myid: %d  myrank: %d\n", myid,myrank); 
     printf("Reading atoms from %s.\n", infilename); 
     fflush(stdout);
   }
@@ -68,21 +70,9 @@ void read_atoms(str255 infilename)
   if (natoms > 0) {
     for (k=0; k<nallcells; k++) cell_array[k].n = 0;
   }
-#ifdef BBOOST
-    printf("    ************************* \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("print "" read_atoms start "" checking by Lo! \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("    ************************* \n");fflush(stdout);
-#endif
+
   make_box();
-#ifdef BBOOST
-    printf("    ************************* \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("print "" read_atoms end "" checking by Lo! \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("    ************************* \n");fflush(stdout);
-#endif
+
   /* initialize random number generator */
   srand48(seed);
   is_big_endian = endian();
@@ -103,6 +93,7 @@ void read_atoms(str255 infilename)
       supermass[i] = 0.0;
   }
 #endif
+
 
 #ifdef VEC
   /* allocate the space for all atoms in one step */
@@ -227,8 +218,7 @@ void read_atoms(str255 infilename)
   /* read away header; if have_header==2, header is in separate file */
   if (have_header==1) {
     do {
-      char *s;
-      s=fgets(buf,sizeof(buf),infile);
+      fgets(buf,sizeof(buf),infile);
     } while (('#'!=buf[0]) || ('E'!=buf[1])); 
   }
 
@@ -761,7 +751,7 @@ void write_atoms_config(FILE *out)
         data[n++].r = DREH_IMPULS(p,i,Z) / uniax_inert; 
 #endif
         data[n++].r = POTENG(p,i);
-#if defined(VARCHG) || defined(EWALD) || defined(USEFCS)
+#ifdef VARCHG
         data[n++].r = CHARGE(p,i);
 #endif
 #ifdef NNBR
@@ -831,7 +821,7 @@ void write_atoms_config(FILE *out)
           DREH_IMPULS(p,i,Z) / uniax_inert ); 
 #endif
         len += sprintf(outbuf+len, RESOL1, POTENG(p,i));
-#if defined(VARCHG) || defined(EWALD) || defined(USEFCS)
+#ifdef VARCHG
         len += sprintf(outbuf+len, RESOL1, CHARGE(p,i));
 #endif
 #ifdef NNBR
@@ -862,6 +852,9 @@ void write_atoms_config(FILE *out)
         len += sprintf(outbuf+len, RESOL1, EAM_P(p,i));
 #endif
 #endif
+#ifdef SBOOST
+        len += sprintf(outbuf+len, RESOL1, Mises[NUMMER(p,i)]);
+#endif        
 #ifdef DIPOLE
 	len += sprintf(outbuf+len, RESOL3, 
 		       DP_P_IND(p,i,X), DP_P_IND(p,i,Y), DP_P_IND(p,i,Z)); 
@@ -977,17 +970,6 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
             n, (fbc_forces+n)->x, (fbc_forces+n)->y, (fbc_forces+n)->z);
 #endif
 #endif
-    
-#ifdef BEND
-  for(n=0; n<vtypes;n++)
-#ifdef TWOD
-    fprintf(out, "extra_startbforce %d %.21g %.21g\n",
-            n, (fbc_bforces+n)->x, (fbc_bforces+n)->y );
-#else
-    fprintf(out, "extra_startbforce %d %.21g %.21g %.21g \n",
-            n, (fbc_bforces+n)->x, (fbc_bforces+n)->y, (fbc_bforces+n)->z);
-#endif
-#endif
 
 #ifdef NPT
   /* if we have pressure control, write external pressure and xi */
@@ -1008,22 +990,14 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
   }
 #endif /* NPT */
 
-#ifdef NVX
-  fprintf(out, "hc_count \t%d\n", hc_count);
-#endif
-
 #ifdef EXTPOT
   /* write positions of external potential */
   for (n=0; n<ep_n; ++n) {
     fprintf(out,"ep_pos    %d %.21g %.21g %.21g \n",
-            n, ep_pos[n].x, ep_pos[n].y, ep_pos[n].z);
+            n+1, ep_pos[n].x, ep_pos[n].y, ep_pos[n].z);
   }
 #endif
 
-#ifdef AVPOS
-    fprintf(out,"avpos_nwrites \t%d\n",avpos_nwrites);
-    fprintf(out,"avpos_npwrites \t%d\n",avpos_npwrites);
-#endif 
   fclose(out);
 }
 
