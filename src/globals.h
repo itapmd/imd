@@ -2,7 +2,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2012 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -1146,16 +1146,22 @@ EXTERN real     charge[10] INIT(zero10); /* Charge of atoms */
 EXTERN real     coul_eng INIT(14.40);    /* this is e^2/(4*pi*epsilon_0) in eV A */
 #endif
 #ifdef USEFCS
-EXTERN int      fcs_method       INIT(0);
-EXTERN int      fcs_debug_level  INIT(0);
-EXTERN real     fcs_rcut         INIT(0.0);
-EXTERN real     fcs_pepc_eps     INIT(0.0);
-EXTERN real     fcs_pepc_theta   INIT(0.3);
-EXTERN int      fcs_fmm_absrel   INIT(2);
-EXTERN real     fcs_fmm_deltaE   INIT(1e-5);
-EXTERN int      fcs_fmm_dcorr    INIT(0);
-EXTERN real     fcs_p3m_accuracy INIT(0.0);
-EXTERN real     fcs_p2nfft_accuracy INIT(0.0);
+EXTERN int      fcs_method               INIT(0);
+EXTERN real     fcs_rcut                 INIT(0.0);
+EXTERN real     fcs_pepc_eps             INIT(0.0);
+EXTERN real     fcs_pepc_theta           INIT(0.3);
+EXTERN int      fcs_fmm_absrel           INIT(2);
+EXTERN real     fcs_fmm_deltaE           INIT(1e-5);
+EXTERN int      fcs_fmm_dcorr            INIT(0);
+EXTERN int      fcs_fmm_do_tune          INIT(0);
+EXTERN real     fcs_p3m_accuracy         INIT(0.0);
+EXTERN real     fcs_p2nfft_accuracy      INIT(0.0);
+EXTERN int      fcs_vmg_max_level        INIT(6);;
+EXTERN int      fcs_vmg_max_iter         INIT(20);
+EXTERN int      fcs_vmg_smooth_steps     INIT(3);
+EXTERN int      fcs_vmg_gamma            INIT(2);
+EXTERN real     fcs_vmg_accuracy         INIT(1e-3);
+EXTERN int      fcs_vmg_near_field_cells INIT(6);
 #endif
 #if defined(EWALD) || defined(COULOMB)
 EXTERN imd_timer ewald_time;

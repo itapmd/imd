@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2012 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -476,6 +476,8 @@ void init_ewald(void)
   /* SM ?
   ew_vorf  = 2.0 * ew_kappa / SQRT( M_PI );
   vorf1    = 2.0 * twopi / volume; */
+
+  if (ew_nmax < 0) return;
 
   ew_nx = (int) (ew_kcut * SQRT( SPROD(box_x,box_x) ) / twopi) + 1;
   ew_ny = (int) (ew_kcut * SQRT( SPROD(box_y,box_y) ) / twopi) + 1;

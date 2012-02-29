@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2012 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -50,6 +50,8 @@
 #define FCS_METH_FMM    3
 #define FCS_METH_P3M    4
 #define FCS_METH_P2NFFT 5
+#define FCS_METH_VMG    6
+#define FCS_METH_PP3MG  7
 
 /* output formats for distributions */
 #define DIST_FORMAT_BINARY       1

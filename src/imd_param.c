@@ -2,7 +2,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2012 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -2864,11 +2864,12 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     }
 #endif
 #if defined(EWALD) || defined(COULOMB) || defined(USEFCS)
-    /* charges */
+    /* charge */
     else if (strcasecmp(token,"charge")==0) {
       if (ntypes==0) error("specify parameter ntypes before charge");
       getparam(token,charge,PARAM_REAL,ntypes,ntypes);
     }
+    /* coul_eng */
     else if (strcasecmp(token,"coul_eng")==0) {
       getparam(token,&coul_eng,PARAM_REAL,1,1);
     }
@@ -2892,10 +2893,12 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       else if (strcasecmp(tmpstr,"p2nfft")==0) {
         fcs_method = FCS_METH_P2NFFT;
       }
-    }
-    /* fcs_debug_level */
-    else if (strcasecmp(token,"fcs_debug_level")==0) {
-      getparam(token,&fcs_debug_level,PARAM_INT,1,1);
+      else if (strcasecmp(tmpstr,"vmg")==0) {
+        fcs_method = FCS_METH_VMG;
+      }
+      else if (strcasecmp(tmpstr,"pp3mg")==0) {
+        fcs_method = FCS_METH_PP3MG;
+      }
     }
 #ifdef PAIR
     /* fcs_rcut for near-field delegation */
@@ -2924,6 +2927,10 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"fcs_fmm_dcorr")==0) {
       getparam(token,&fcs_fmm_dcorr,PARAM_INT,1,1);
     }
+    /* fcs_fmm_do_tune */
+    else if (strcasecmp(token,"fcs_fmm_do_tune")==0) {
+      getparam(token,&fcs_fmm_do_tune,PARAM_INT,1,1);
+    }
     /* fcs_p3m_accuracy */
     else if (strcasecmp(token,"fcs_p3m_accuracy")==0) {
       getparam(token,&fcs_p3m_accuracy,PARAM_REAL,1,1);
@@ -2931,6 +2938,30 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     /* fcs_p2nfft_accuracy */
     else if (strcasecmp(token,"fcs_p2nfft_accuracy")==0) {
       getparam(token,&fcs_p2nfft_accuracy,PARAM_REAL,1,1);
+    }
+    /* fcs_vmg_max_level */
+    else if (strcasecmp(token,"fcs_vmg_max_level")==0) {
+      getparam(token,&fcs_vmg_max_level,PARAM_INT,1,1);
+    }
+    /* fcs_vmg_max_iter */
+    else if (strcasecmp(token,"fcs_vmg_max_iter")==0) {
+      getparam(token,&fcs_vmg_max_iter,PARAM_INT,1,1);
+    }
+    /* fcs_vmg_smooth_steps */
+    else if (strcasecmp(token,"fcs_vmg_smooth_steps")==0) {
+      getparam(token,&fcs_vmg_smooth_steps,PARAM_INT,1,1);
+    }
+    /* fcs_vmg_gamma */
+    else if (strcasecmp(token,"fcs_vmg_gamma")==0) {
+      getparam(token,&fcs_vmg_gamma,PARAM_INT,1,1);
+    }
+    /* fcs_vmg_accuracy */
+    else if (strcasecmp(token,"fcs_vmg_accuracy")==0) {
+      getparam(token,&fcs_vmg_accuracy,PARAM_REAL,1,1);
+    }
+    /* fcs_vmg_near_field_cells */
+    else if (strcasecmp(token,"fcs_vmg_near_field_cells")==0) {
+      getparam(token,&fcs_vmg_near_field_cells,PARAM_INT,1,1);
     }
 #endif /* USEFCS */
 #if defined(EWALD) || defined(COULOMB)
@@ -4456,8 +4487,15 @@ void broadcast_params() {
   MPI_Bcast( &fcs_fmm_absrel,     1,   MPI_INT,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_fmm_deltaE,     1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_fmm_dcorr,      1,   MPI_INT,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_fmm_do_tune ,   1,   MPI_INT,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_p3m_accuracy,   1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_p2nfft_accuracy,1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_vmg_max_level,  1,   MPI_INT,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_vmg_max_iter,   1,   MPI_INT,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_vmg_smooth_steps,1,  MPI_INT,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_vmg_gamma,      1,   MPI_INT,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_vmg_accuracy,   1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_vmg_near_field_cells,1,MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 #if defined(EWALD) || defined(COULOMB)
   MPI_Bcast( &ew_kappa,           1,      REAL,    0, MPI_COMM_WORLD);

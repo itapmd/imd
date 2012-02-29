@@ -2,7 +2,7 @@
 #
 # Imd -- The ITAP Molecular Dynamics Program
 #
-# Copyright 1996-2011 Institute for Theoretical and Applied Physics,
+# Copyright 1996-2012 Institute for Theoretical and Applied Physics,
 # University of Stuttgart, D-70550 Stuttgart
 #
 # $Revision$
@@ -1196,7 +1196,7 @@ endif
 ifneq (,$(strip $(findstring fcs,${MAKETARGET})))
 PP_FLAGS      += -DUSEFCS 
 FORCESOURCES  += ${FCSSOURCES}
-LIBS          += -lfftw3 $(shell pkg-config --libs scafacos-fcs)
+LIBS          += $(shell pkg-config --libs scafacos-fcs)
 CFLAGS        += $(shell pkg-config --cflags scafacos-fcs)
 endif
 
