@@ -215,7 +215,7 @@ ifeq (x86_64-gcc3,${IMDSYS})
   MPICH_CC      = gcc
 #  MPICH_CLINKER = icc
   OMPI_MPICC    = gcc
-  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  BIN_DIR	= ${HOME}/bin/
   OPT_FLAGS	+= -O -m64 -Wno-unused
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
@@ -1123,6 +1123,14 @@ endif
 ifneq (,$(strip $(findstring ewald,${MAKETARGET})))
 PP_FLAGS  += -DEWALD
 FORCESOURCES  += ${EWALDSOURCES}
+endif
+
+# FCS
+ifneq (,$(strip $(findstring fcs,${MAKETARGET})))
+PP_FLAGS      += -DUSEFCS 
+FORCESOURCES  += ${FCSSOURCES}
+LIBS          += $(shell pkg-config --libs scafacos-fcs)
+CFLAGS        += $(shell pkg-config --cflags scafacos-fcs)
 endif
 
 # VARCHG
