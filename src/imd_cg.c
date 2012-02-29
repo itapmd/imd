@@ -29,9 +29,7 @@
 
 void reset_cg(void)
 {
-  /*  printf("In cg_step: steps = %d \n", steps);fflush(stdout); */
   /* initialisations: h, g, f_max */
-    //printf("myid=%d myrank: %d I am passing throgh reset_cg \n",myid,myrank);fflush(stdout);
   calc_forces(0);
   calc_fnorm_g_h();
   //cg_poteng = tot_pot_energy / natoms; calculate with larger numbers
@@ -47,7 +45,6 @@ void reset_cg(void)
 #if defined (CG)&& !defined(ACG)
 void cg_step(int steps)
 {
- /*   printf("In cg_step: steps = %d \n", steps);fflush(stdout); */
   /* minimization in one 'direction' */
   if (cg_reset_int>0) {
     if (0==steps%cg_reset_int) reset_cg();
@@ -56,7 +53,7 @@ void cg_step(int steps)
   old_cg_poteng = cg_poteng;
 
   //  if ((cg_infolevel>0) && (0==myid)) { printf("fnorm old = %e\n", SQRT( fnorm / nactive ) );}
-  // printf("myid=%d myrank: %d I am passing throgh cg_step \n",myid,myrank);fflush(stdout);
+  
   linmin();
   
   // if ((cg_infolevel>0) && (0==myid)) { printf("fnorm new = %e\n", SQRT( fnorm / nactive ) );}
@@ -110,7 +107,7 @@ int linmin()
 
   /* scaling: alpha_b should be 0.01 and alpha_c 0.02 */
   /* this can be achived by setting linmin_dmax to 0.001 */
-  //  printf("myid=%d myrank: %d I am passing throgh linmin \n",myid,myrank);fflush(stdout);
+
   if(f_max > 100*linmin_dmax) {
     alpha_b = linmin_dmax/f_max;
   }
@@ -297,7 +294,6 @@ int findalpha()
 /* sets the global variables epot,fnorm corresponding to alpha */
 real fonedim(real alpha)  
 {
-
   move_atoms_cg(alpha);
 #ifdef NBLIST
   check_nblist();

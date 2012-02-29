@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -42,7 +42,10 @@
 
 ******************************************************************************/
 
+#define NBLMINLEN 100000
+
 int  *tl=NULL, *tb=NULL, *cl_off=NULL, *cl_num=NULL, nb_max=0;
+
 
 /******************************************************************************
 *
@@ -118,6 +121,9 @@ int estimate_nblist_size(void)
       }
     }
   }
+#ifdef MPI
+  /* printf ("myid: %d nb-list size: %d\n",myid,tn);fflush(stdout); */
+#endif
   return tn;
 }
 
@@ -171,8 +177,10 @@ void make_nblist(void)
     cl_num = (int *) malloc(at_max * sizeof(int));
   }
   if (NULL==tb) {
-    if (0==last_nbl_len) nb_max = (int) (nbl_size * estimate_nblist_size());
-    else                 nb_max = (int) (nbl_size * last_nbl_len);
+    if (0==last_nbl_len) 
+      nb_max = MAX(((int) (nbl_size * estimate_nblist_size())), (NBLMINLEN));
+    else
+      nb_max = (int) (nbl_size * last_nbl_len);
     tb = (int *) malloc(nb_max * sizeof(int));
   }
   else if (last_nbl_len * sqrt(nbl_size) > nb_max) {
@@ -257,8 +265,7 @@ void calc_forces(int steps)
 {
   int  i, b, k, n=0, is_short=0, idummy=0;
   real tmpvec1[8], tmpvec2[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-  lll++;
-  //printf(" in imd_forces_nbl !!!!!!!!!!!!!!!, lll = %d \n", lll);fflush(stdout);
+
 #ifdef DIPOLE
   static int dp_E_calc=0; 	/* Number of field iterations */
   int dp_it=0;			/* Number of dipole iterations */
@@ -269,7 +276,6 @@ void calc_forces(int steps)
   real max_diff=10.;
   real *dp_E_shift;
   dp_p_calc = ((dp_fix-1 + dp_fix*dp_E_calc)>0 ) ? 0 : 1;
-
 #endif
 
   if (0==have_valid_nbl) {
@@ -310,7 +316,7 @@ void calc_forces(int steps)
 #ifndef TWOD
       KRAFT(p,i,Z) = 0.0;
 #endif
-#ifdef STRESS_TENS
+#if defined(STRESS_TENS)
       PRESSTENS(p,i,xx) = 0.0;
       PRESSTENS(p,i,yy) = 0.0;
       PRESSTENS(p,i,xy) = 0.0;
@@ -365,9 +371,6 @@ void calc_forces(int steps)
 	DP_P_IND(p,i,Z)  = 0.0;
       }
 #endif /* dipole */
-#ifdef NVX
-      HEATCOND(p,i) = 0.0;
-#endif     
     }
   }
 
@@ -421,7 +424,7 @@ void calc_forces(int steps)
 #else
       vektor d1, ff = {0.0,0.0,0.0};
 #endif
-      real   ee = 0.0, hc = 0.0;
+      real   ee = 0.0;
       real   eam_r = 0.0, eam_p = 0.0;
       int    m, it, nb = 0;
 
@@ -541,10 +544,6 @@ void calc_forces(int steps)
 #endif
 	  }
 #endif
-#ifdef NVX
-          hc            += pot - r2 * grad;
-          HEATCOND(q,j) += pot - r2 * grad;
-#endif
         }
 
 #endif /* PAIR || KEATING */
@@ -604,6 +603,11 @@ void calc_forces(int steps)
 #endif
 	if (r2 < ew_r2_cut) {	
 	  if (SQR(chg)>0.) {
+#ifdef SM
+            real na_pot_p=0.0, na_pot_q=0.0, na_gr_p=0.0, na_gr_q=0.0;
+            real z_sm_p = sm_Z[it] * CHARGE(q,j) * coul_eng;
+            real z_sm_q = sm_Z[jt] * CHARGE(p,i) * coul_eng;
+#endif
 	    /* Constant electric field from charges */
 	    /* Coulomb potential is in column 0 */
             int incr = coul_table.ncols;
@@ -612,12 +616,46 @@ void calc_forces(int steps)
 	    /* Coulomb Energy */
 	    pot     = chg * phi;
 	    grad    = chg * grphi;
-
+#ifdef SM
+            /* Coulomb repulsion potential */
+            if (r2 < cr_pot_tab.end[col]) {
+              PAIR_INT(phi, grphi, cr_pot_tab, col, inc, r2, is_short);
+              pot  += phi   * (chg * coul_eng - z_sm_p - z_sm_q);
+              grad += grphi * (chg * coul_eng - z_sm_p - z_sm_q);
+            }
+            /* nuclear attraction potential */
+            if (r2 < na_pot_tab.end[col]) {
+              PAIR_INT(na_pot_p, na_gr_p, na_pot_tab, col, inc, r2, is_short);
+            }
+            if (col==col2) {
+              real tmp = (z_sm_q + z_sm_q);
+              pot  += na_pot_p * tmp;
+              grad += na_gr_p  * tmp;
+            } else {
+              if (r2 < na_pot_tab.end[col2]) {
+                PAIR_INT(na_pot_q, na_gr_q, na_pot_tab, col2, inc, r2,is_short);
+              }
+              pot  += z_sm_q * na_pot_p + z_sm_p * na_pot_q;
+              grad += z_sm_q * na_gr_p  + z_sm_p * na_gr_q;
+            }
+#endif
 	    tot_pot_energy += pot;
 	    force.x = d.x * grad;
 	    force.y = d.y * grad;
 	    force.z = d.z * grad;
-//	    printf("#d coul %f %f %f %f %f\n", sqrt(r2), pot, force.x, force.y, force.z);   
+
+#ifdef EXTF
+	    real chg_single;
+#ifdef VARCHG
+	    chg_single = CHARGE(p,i);
+#else
+	    chg_single = charge[it];
+#endif
+	    force.x += chg_single * extf.x; 
+	    force.y += chg_single * extf.y; 
+	    force.z += chg_single * extf.z; 
+#endif /* EXTF */
+
 	    KRAFT(q,j,X) -= force.x;
 	    KRAFT(q,j,Y) -= force.y;
 	    KRAFT(q,j,Z) -= force.z;
@@ -655,10 +693,7 @@ void calc_forces(int steps)
 	      PRESSTENS(q,j,zx) -= d.z * force.x;
 	    }
 #endif
-#ifdef NVX
-	    hc            += pot - r2 * grad;
-	    HEATCOND(q,j) += pot - r2 * grad;
-#endif
+	 
 #ifdef DIPOLE
 	    /* Field for Dipole calculation */
 	    if (dp_p_calc) {
@@ -668,9 +703,18 @@ void calc_forces(int steps)
 	      DP_E_STAT(q,j,X) -= d.x * grphi * charge[it];
 	      DP_E_STAT(q,j,Y) -= d.y * grphi * charge[it];
 	      DP_E_STAT(q,j,Z) -= d.z * grphi * charge[it];
+#ifdef EXTF
+	      Estat.x += extf.x;
+	      Estat.y += extf.y;
+	      Estat.z += extf.z;
+	      DP_E_STAT(q,j,X) += extf.x;
+	      DP_E_STAT(q,j,Y) += extf.y;
+	      DP_E_STAT(q,j,Z) += extf.z;
+#endif
 	    }
 #endif
 	  }
+
 #ifdef DIPOLE
 	  /* calculate short-range dipoles field */
 	  /* short-range fn.: 3rd column ff. */
@@ -684,12 +728,22 @@ void calc_forces(int steps)
 	      pstat.x -= tmp * d.x;
 	      pstat.y -= tmp * d.y;
 	      pstat.z -= tmp * d.z;
+#ifdef EXTF
+	      pstat.x += dp_alpha[it] * extf.x;
+	      pstat.y += dp_alpha[it] * extf.y;
+	      pstat.z += dp_alpha[it] * extf.z;
+#endif
 	    }
 	    tmp = pot*charge[it]*dp_alpha[jt];
 	    if (SQR(tmp)>0){
 	      DP_P_STAT(q,j,X) += tmp * d.x;
 	      DP_P_STAT(q,j,Y) += tmp * d.y;
 	      DP_P_STAT(q,j,Z) += tmp * d.z;
+#ifdef EXTF
+	      DP_P_STAT(q,j,X) += dp_alpha[jt] * extf.x;
+	      DP_P_STAT(q,j,Y) += dp_alpha[jt] * extf.y;
+	      DP_P_STAT(q,j,Z) += dp_alpha[jt] * extf.z;
+#endif
 	    }
 	  }
 #endif /* DIPOLE */
@@ -794,9 +848,6 @@ void calc_forces(int steps)
 #endif
 #ifdef NNBR
       NBANZ(p,i)    += nb;
-#endif
-#ifdef NVX
-      HEATCOND(p,i) += hc;
 #endif
       n++;
     }
@@ -1149,8 +1200,13 @@ void calc_forces(int steps)
   for (k=0; k<ncells; k++) {
     cell *p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
-      real pot = ew_vorf * SQR( CHARGE(p,i) ) * ew_eps;
-      /* pot += ew_shift[n][n] * 0.5;   what's that??? */
+      real chg = CHARGE(p,i);
+#ifdef SM
+      int  t   = SORTE(p,i);
+      real pot = (0.5*(2*ew_vorf * coul_eng - sm_J_0[t]) * chg - sm_chi_0[t]) * chg;
+#else
+      real pot = ew_vorf * SQR(chg) * coul_eng;
+#endif
       tot_pot_energy -= pot;
       POTENG(p,i)    -= pot;
     }
@@ -1286,7 +1342,7 @@ void calc_forces(int steps)
 		pj.z=DP_P_IND(q,j,Z);
 		/* smooth r^3 cutoff */
 		VAL_FUNC(pot,coul_table,1,2+ntypepairs,r2,is_short);
-		pot *= ew_eps;
+		pot *= coul_eng;
 		tmp=SPROD(pj,d);
 		Eind.x += pot* ((3.0/r2)*tmp*d.x - pj.x);
 		Eind.y += pot* ((3.0/r2)*tmp*d.y - pj.y);
@@ -1358,7 +1414,7 @@ void calc_forces(int steps)
 
     } /* Dipole iteration */
   }
-/*   DIPOLE interactions - for all atoms */
+  /* DIPOLE interactions - for all atoms */
 
 #ifdef DEBUG
 /* Don't use this unless you are prepared for massive output */
@@ -1374,7 +1430,7 @@ void calc_forces(int steps)
       sym_tensor pp = {0.0,0.0,0.0,0.0,0.0,0.0};
 #endif
       vektor d1, pi, ff = {0.0,0.0,0.0};
-      real   ee = 0.0, hc = 0.0;
+      real   ee = 0.0;
       real   dp_energy = 0.0;
       int    m, it, nb = 0;
        
@@ -1426,8 +1482,8 @@ void calc_forces(int steps)
 	    /* smooth cutoff function is 2nd in coul_table */
 	    PAIR_INT(val, dval, coul_table, 1, 2+ntypepairs, r2, is_short);
 	    
-	    val  *= ew_eps;
-	    dval *= ew_eps;
+	    val  *= coul_eng;
+	    dval *= coul_eng;
 	    /* short-range function is 3rd in coul_table */
 	    col1=(it <= jt) ?
 	      it * ntypes + jt - ((it * (it + 1))/2)
@@ -1469,10 +1525,9 @@ void calc_forces(int steps)
 	      force.z -= charge[it] * (dvalsr*pdotd *d.z +valsr*pj.z);
 
 	      have_force=1;
-	    }
-	    
-	    /* Dipole-Dipole interaction */
+	    }	    
 
+	    /* Dipole-Dipole interaction */
 	    if (SQR(dp_alpha[it])*SQR(dp_alpha[jt])>0) {
 	      pdotp=SPROD(pi,pj);
 	      proj_i=SPROD(pi,d);
@@ -1490,6 +1545,7 @@ void calc_forces(int steps)
 			  - 3.0 / r2 * (proj_i * pj.z + proj_j * pi.z));
 	      have_force = 1;
 	    }
+
 	    if (have_force) {
 	      tot_pot_energy += pot;
 
@@ -1576,6 +1632,7 @@ void calc_forces(int steps)
     p->dp_E_ind = dp_E_shift;
     
   }
+  
   if (is_short) fprintf(stderr, "\n Short distance, dipole, step %d!\n",\
 			steps);
   dp_E_calc++; 			/* increase field calc counter */
@@ -1653,3 +1710,203 @@ void check_nblist()
 #endif
   if (max2 > SQR(0.5*nbl_margin)) have_valid_nbl = 0;
 }
+
+
+#ifdef SM
+
+/******************************************************************************
+*
+*  calc_sm_pot
+*
+******************************************************************************/
+
+void calc_sm_pot()
+{
+  int i, k, n=0, m, is_short=0, inc=ntypes*ntypes;
+
+  /* fill the buffer cells */
+  send_cells(copy_sm_charge,pack_sm_charge,unpack_sm_charge);
+
+  /* clear per atom accumulation variables, also in buffer cells */
+  for (k=0; k<nallcells; k++) {
+    cell *p = cell_array + k;
+    for (i=0; i<p->n; i++) {
+      V_SM(p,i) = 0.0;
+    }
+  }
+
+  /* pair interactions - for all atoms */
+  n=0;
+  for (k=0; k<ncells; k++) {
+    cell *p = CELLPTR(k);
+    for (i=0; i<p->n; i++) {
+
+      vektor d1;
+      real   phi, ch_i, pot = 0.0;
+      int    p_typ;
+
+      d1.x  = ORT(p,i,X);
+      d1.y  = ORT(p,i,Y);
+      d1.z  = ORT(p,i,Z);
+      ch_i  = Q_SM(p,i);
+      p_typ = SORTE(p,i);
+
+      /* loop over neighbors */
+      for (m=tl[n]; m<tl[n+1]; m++) {
+
+        vektor d;
+        real   r2, ch_j;
+        int    c  = cl_num[ tb[m] ];
+        int    j  = tb[m] - cl_off[c];
+        cell   *q = cell_array + c;
+        int    col2;
+
+        d.x  = ORT(q,j,X) - d1.x;
+        d.y  = ORT(q,j,Y) - d1.y;
+        d.z  = ORT(q,j,Z) - d1.z;
+        r2   = SPROD(d,d);
+        ch_j = Q_SM(q,j);
+
+        if (SQR(ch_i * ch_j) > 0.0) {
+          if (r2 < ew_r2_cut) {	
+            /* Coulomb potential is in column 0, contains already coul_eng */
+            int incr = coul_table.ncols;
+            VAL_FUNC(phi, coul_table, 0, incr, r2, is_short);
+            pot        += phi * ch_j;
+            V_SM(q,j)  += phi * ch_i;
+          }
+          col2 = p_typ * ntypes + SORTE(q,j);
+          if (r2 < cr_pot_tab.end[col2]) {
+            VAL_FUNC(phi, cr_pot_tab, col2, inc, r2, is_short);
+            pot        += phi * ch_j * coul_eng;
+            V_SM(q,j)  += phi * ch_i * coul_eng;
+          }
+        }
+      }
+      V_SM(p,i) += pot;
+      n++;
+    }
+  }
+  if (is_short) fprintf(stderr,"Short distance in calc_sm_pot!\n");
+
+  /* contribution of coulomb self energy */
+  for (k=0; k<ncells; k++) {
+    real tmp = ew_vorf * 2;
+    cell *p  = CELLPTR(k);
+    for (i=0; i<p->n; i++) {
+      int typ = SORTE(p,i);
+      V_SM(p,i) -= (tmp*coul_eng - sm_J_0[typ]) * Q_SM(p,i);
+    }
+  }
+
+  /* add SM potentials back to original cells/cpus */
+  send_forces(add_sm_pot,pack_sm_pot,unpack_add_sm_pot);
+}
+
+/******************************************************************************
+*
+*  calc_sm_chi
+*
+******************************************************************************/
+
+void calc_sm_chi()
+{
+  int i, k, n=0, m, is_short=0;
+
+  if (0==have_valid_nbl) {
+#ifdef MPI
+    /* check message buffer size */
+    if (0 == nbl_count % BUFSTEP) setup_buffers();
+#endif
+    /* update cell decomposition */
+    fix_cells();
+  }
+
+  /* make new neighbor lists */
+  if (0==have_valid_nbl) make_nblist();
+
+  /* clear per atom accumulation variables, also in buffer cells */
+  for (k=0; k<nallcells; k++) {
+    cell *p = cell_array + k;
+    for (i=0; i<p->n; i++) {
+      CHI_SM(p,i) = 0.0;
+    }
+  }
+
+  /* pair interactions - for all atoms */
+  n=0;
+  for (k=0; k<ncells; k++) {
+    cell *p = CELLPTR(k);
+    for (i=0; i<p->n; i++) {
+
+      vektor d1;
+      real   z_sm_p, ch_i, chi_tmp = 0.0;
+      int    p_typ;
+
+      p_typ  = SORTE(p,i);
+      z_sm_p = sm_Z[p_typ]*coul_eng;
+
+      d1.x = ORT(p,i,X);
+      d1.y = ORT(p,i,Y);
+      d1.z = ORT(p,i,Z);
+      ch_i = CHARGE(p,i);
+
+      /* loop over neighbors */
+      for (m=tl[n]; m<tl[n+1]; m++) {
+
+        vektor d;
+        real   r2, z_sm_q, ch_j;
+        int    c  = cl_num[ tb[m] ];
+        int    j  = tb[m] - cl_off[c];
+        cell   *q = cell_array + c;
+        int    q_typ, col1, col2, inc=ntypes*ntypes;;
+
+        q_typ = SORTE(q,j);
+        z_sm_q = sm_Z[q_typ]*coul_eng;
+        col1  = q_typ * ntypes + p_typ;
+        col2  = p_typ * ntypes + q_typ;
+
+        d.x  = ORT(q,j,X) - d1.x;
+        d.y  = ORT(q,j,Y) - d1.y;
+        d.z  = ORT(q,j,Z) - d1.z;
+        r2   = SPROD(d,d);
+        ch_j = CHARGE(q,j);
+
+        /* compute electronegativity */
+        if (SQR(ch_i * ch_j) > 0.0) {
+          real na_pot_p, na_pot_q, cr_pot; 
+          na_pot_p = na_pot_q = cr_pot = 0.0; 
+          if (r2 < na_pot_tab.end[col2]) {
+            VAL_FUNC(na_pot_p, na_pot_tab, col2, inc, r2, is_short);
+          }
+          if (r2 < na_pot_tab.end[col1]) {
+            VAL_FUNC(na_pot_q, na_pot_tab, col1, inc, r2, is_short);
+          }
+          if (r2 < cr_pot_tab.end[col2]) {
+            VAL_FUNC(cr_pot, cr_pot_tab, col2, inc, r2, is_short);
+          }
+          chi_tmp     += z_sm_q * (na_pot_p - cr_pot);
+          CHI_SM(q,j) += z_sm_p * (na_pot_q - cr_pot);
+        }
+      }
+      CHI_SM(p,i) += chi_tmp;
+      n++;
+    }
+  }
+  if (is_short) fprintf(stderr,"Short distance in calc_sm_chi!\n");
+
+  /* add chi back to original cells/cpus */
+  send_forces(add_sm_chi,pack_sm_chi,unpack_add_sm_chi);
+
+  /* add sm_chi_0 */
+  for (k=0; k<ncells; k++) {
+    cell *p = CELLPTR(k);
+    for (i=0; i<p->n; i++) {
+      int t = SORTE(p,i);
+      CHI_SM(p,i) += sm_chi_0[t];
+    }
+  }
+
+}
+
+#endif  /* SM */

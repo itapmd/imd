@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -304,7 +304,6 @@ int irecv_buf(msgbuf *b, int from, MPI_Request *req)
 
 void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *p, int ind )
 {
-    int i;
   /* Check the parameters */
   if ((0 > ind) || (ind >= p->n)) {
     printf("%d: i %d n %d\n", myid, ind, p->n);
@@ -325,60 +324,6 @@ void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *p, int ind )
 #ifndef TWOD
   to->data[ to->n++ ] = ORT(p,ind,Z); 
 #endif
-
-#ifdef BBOOST
-  to->data[ to->n++ ] = OLDPOS(p,ind,X); 
-  to->data[ to->n++ ] = OLDPOS(p,ind,Y); 
-#ifndef TWOD
-  to->data[ to->n++ ] = OLDPOS(p,ind,Z); 
-#endif
-  to->data[ to->n++ ] =  OLDIMPULS(p,ind,X); 
-  to->data[ to->n++ ] =  OLDIMPULS(p,ind,Y); 
-#ifndef TWOD
-  to->data[ to->n++ ] =  OLDIMPULS(p,ind,Z); 
-#endif
-  to->data[ to->n++ ] =  REFPOSONE(p,ind,X); 
-  to->data[ to->n++ ] =  REFPOSONE(p,ind,Y); 
-#ifndef TWOD
-  to->data[ to->n++ ] =  REFPOSONE(p,ind,Z); 
-#endif
-  to->data[ to->n++ ] =  REFPOSTWO(p,ind,X); 
-  to->data[ to->n++ ] =  REFPOSTWO(p,ind,Y); 
-#ifndef TWOD
-  to->data[ to->n++ ] =  REFPOSTWO(p,ind,Z); 
-#endif
-  to->data[ to->n++ ] =  BBPROJECT(p,ind,X); 
-  to->data[ to->n++ ] =  BBPROJECT(p,ind,Y); 
-#ifndef TWOD
-  to->data[ to->n++ ] =  BBPROJECT(p,ind,Z); 
-#endif
-  to->data[ to->n++ ] =  TMPPOS(p,ind,X); 
-  to->data[ to->n++ ] =  TMPPOS(p,ind,Y); 
-#ifndef TWOD
-  to->data[ to->n++ ] =  TMPPOS(p,ind,Z); 
-#endif
-  to->data[ to->n++ ] =  TMPKRAFT(p,ind,X); 
-  to->data[ to->n++ ] =  TMPKRAFT(p,ind,Y); 
-#ifndef TWOD
-  to->data[ to->n++ ] =  TMPKRAFT(p,ind,Z); 
-#endif 
-  to->data[ to->n++ ] =  TMP2POS(p,ind,X); 
-  to->data[ to->n++ ] =  TMP2POS(p,ind,Y); 
-#ifndef TWOD
-  to->data[ to->n++ ] =  TMP2POS(p,ind,Z); 
-#endif
-  // communication of neighbor table
-  // the reference neighbors need to be communicated
-  for(i=0;i<bb_maxneigh;i++)
-  {
-      to->data[ to->n++ ] =  p->bb_neigh[ind]->distref1[i];
-      to->data[ to->n++ ] =  p->bb_neigh[ind]->vectref1[i*SDIM];
-      to->data[ to->n++ ] =  p->bb_neigh[ind]->vectref1[i*SDIM+1];
-      to->data[ to->n++ ] =  p->bb_neigh[ind]->vectref1[i*SDIM+2];
-      to->data[ to->n++ ] =  p->bb_neigh[ind]->numref1[i];
-  }
-  to->data[ to->n++ ] =  p->bb_neigh[ind]->nbondsref1;  
-#endif  //BBOOST
 
 #ifndef MONOLJ
   to->data[ to->n++ ] = NUMMER(p,ind);
@@ -463,8 +408,8 @@ void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *p, int ind )
   to->data[ to->n++ ] = REF_POS(p,ind,Z);
 #endif
 #endif
-#ifdef NVX
-  to->data[ to->n++ ] = HEATCOND(p,ind);
+#ifdef HC
+  to->data[ to->n++ ] = HCAVENG(p,ind);
 #endif
 #ifdef STRESS_TENS
   to->data[ to->n++ ] = PRESSTENS(p,ind,xx);   
@@ -474,6 +419,16 @@ void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *p, int ind )
   to->data[ to->n++ ] = PRESSTENS(p,ind,zz);   
   to->data[ to->n++ ] = PRESSTENS(p,ind,yz);   
   to->data[ to->n++ ] = PRESSTENS(p,ind,zx);   
+#endif
+#ifdef AVPOS
+  to->data[ to->n++ ] = AVPRESSTENS(p,ind,xx);   
+  to->data[ to->n++ ] = AVPRESSTENS(p,ind,yy);   
+  to->data[ to->n++ ] = AVPRESSTENS(p,ind,xy);   
+#ifndef TWOD
+  to->data[ to->n++ ] = AVPRESSTENS(p,ind,zz);   
+  to->data[ to->n++ ] = AVPRESSTENS(p,ind,yz);   
+  to->data[ to->n++ ] = AVPRESSTENS(p,ind,zx);   
+#endif
 #endif
 #endif /* STRESS_TENS */
 #ifdef SHOCK
@@ -564,7 +519,6 @@ void copy_one_atom(msgbuf *to, int to_cpu, minicell *from, int index, int del)
 
 void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
 {
-    int i;  
   int  ind, j = start + 1;  /* the first entry is the CPU number */
   cell *to;
 
@@ -589,62 +543,6 @@ void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
 #ifndef TWOD
   ORT(to,ind,Z)  = b->data[j++];
 #endif
-
-#ifdef BBOOST
-  OLDPOS(p,ind,X) = b->data[j++]; 
-  OLDPOS(p,ind,Y) = b->data[j++]; 
-#ifndef TWOD
-  OLDPOS(p,ind,Z) = b->data[j++];
-#endif
-  OLDIMPULS(p,ind,X) = b->data[j++]; 
-  OLDIMPULS(p,ind,Y) = b->data[j++]; 
-#ifndef TWOD
-  OLDIMPULS(p,ind,Z) = b->data[j++];
-#endif
-  REFPOSONE(p,ind,X) = b->data[j++];
-  REFPOSONE(p,ind,Y) = b->data[j++];
-#ifndef TWOD
-  REFPOSONE(p,ind,Z) = b->data[j++];
-#endif
-  REFPOSTWO(p,ind,X) = b->data[j++];
-  REFPOSTWO(p,ind,Y) = b->data[j++];
-#ifndef TWOD
-  REFPOSTWO(p,ind,Z) = b->data[j++];
-#endif
-  BBPROJECT(p,ind,X) = b->data[j++];
-  BBPROJECT(p,ind,Y) = b->data[j++];
-#ifndef TWOD
-  BBPROJECT(p,ind,Z) = b->data[j++];
-#endif
-  TMPPOS(p,ind,X) = b->data[j++];
-  TMPPOS(p,ind,Y) = b->data[j++];
-#ifndef TWOD
-  TMPPOS(p,ind,Z) = b->data[j++];
-#endif
-  TMPKRAFT(p,ind,X) = b->data[j++];
-  TMPKRAFT(p,ind,Y) = b->data[j++];
-#ifndef TWOD
-  TMPKRAFT(p,ind,Z) = b->data[j++];
-#endif  
-  TMP2POS(p,ind,X) = b->data[j++];
-  TMP2POS(p,ind,Y) = b->data[j++];
-#ifndef TWOD
-  TMP2POS(p,ind,Z) = b->data[j++];
-#endif
-    // communication of neighbor table
-  // the reference neighbors need to be communicated
-  for(i=0;i<bb_maxneigh;i++)
-  {
-      p->bb_neigh[ind]->distref1[i] = b->data[j++ ] ;
-      p->bb_neigh[ind]->vectref1[i*SDIM] = b->data[j++ ] ;
-      p->bb_neigh[ind]->vectref1[i*SDIM+1] = b->data[j++ ] ;
-      p->bb_neigh[ind]->vectref1[i*SDIM+2] = b->data[j++ ] ;
-      p->bb_neigh[ind]->numref1[i]  = b->data[j++ ] ;
-  }
-  p->bb_neigh[ind]->nbondsref1 = b->data[j++ ] ;
-  
-#endif  // BBOOST
-  
 #ifndef MONOLJ
   NUMMER(to,ind) = b->data[j++];
 #ifndef MONO
@@ -725,8 +623,8 @@ void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
   REF_POS(to,ind,Z)  = b->data[j++];
 #endif
 #endif
-#ifdef NVX
-  HEATCOND(to,ind)   = b->data[j++];
+#ifdef HC
+  HCAVENG(to,ind)    = b->data[j++];
 #endif
 #ifdef STRESS_TENS
   PRESSTENS(to,ind,xx) = b->data[j++];   
@@ -736,6 +634,16 @@ void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
   PRESSTENS(to,ind,zz) = b->data[j++];   
   PRESSTENS(to,ind,yz) = b->data[j++];   
   PRESSTENS(to,ind,zx) = b->data[j++];   
+#endif
+#ifdef AVPOS
+  AVPRESSTENS(to,ind,xx) = b->data[j++];   
+  AVPRESSTENS(to,ind,yy) = b->data[j++];   
+  AVPRESSTENS(to,ind,xy) = b->data[j++];   
+#ifndef TWOD
+  AVPRESSTENS(to,ind,zz) = b->data[j++];   
+  AVPRESSTENS(to,ind,yz) = b->data[j++];   
+  AVPRESSTENS(to,ind,zx) = b->data[j++];   
+#endif
 #endif
 #endif /* STRESS_TENS */
 #ifdef SHOCK
@@ -847,7 +755,7 @@ void setup_buffers(void)
 #ifndef MONOLJ
     binc2++;         /* pot_eng */
 #endif
-#ifdef NVX
+#ifdef HC
     binc2++;         /* heatcond */
 #endif
 #ifdef STRESS_TENS

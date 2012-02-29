@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -47,9 +47,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
   int col, col2, is_short=0, inc = ntypes * ntypes;
   int jstart, q_typ, p_typ;
   real *qptr, *pfptr, *qfptr, *qpdptr, *ppdptr, *qpoptr, *ppoptr;
-
-  // if(timll==1)
-  //printf("myid=%d myrank: %d, I am passing throgh the imd_forces !!!!!!!!!!!!!!!!!!!!!! \n",myid,myrank);fflush(stdout);
+  
   tmp_virial     = 0.0;
 #ifdef P_AXIAL
   tmp_vir_vect.x = 0.0;
@@ -58,12 +56,10 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
   tmp_vir_vect.z = 0.0;
 #endif
 #endif
-  lll++;
-  //if(lll == 1)
-  // printf(" lll = %d !!!!!!!!!!!!!!! \n",lll);fflush(stdout);
-  //printf(" in imd_forces.c !!!!!!!!!!!!!!! \n");fflush(stdout);    
+    
   /* for each atom in first cell */
   for (i=0; i<p->n; ++i) {
+
     tmp_d.x = ORT(p,i,X) - pbc.x;
     tmp_d.y = ORT(p,i,Y) - pbc.y;
 #ifndef TWOD
@@ -92,29 +88,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
       col   = p_typ * ntypes + q_typ;
       col2  = q_typ * ntypes + p_typ;
       r2    = SPROD(d,d);
-  
-      //if((NUMMER(p,i) == 660)&&(NUMMER(q,j)==769))      
-      //printf("myid=%d myrank: %d, NUMMER(p,i) = %d, NUMMER(q,j) = %d, timll = %d \n",myid,myrank, NUMMER(p,i), NUMMER(q,j),timll);fflush(stdout);
-      //if((NUMMER(p,i) == 769)&&(NUMMER(q,j)==660))
-      //printf("myid=%d myrank: %d, NUMMER(p,i) = %d, NUMMER(q,j) = %d, timll = %d \n",myid,myrank, NUMMER(p,i), NUMMER(q,j),timll);fflush(stdout);
-      //if((NUMMER(p,i) == 659)&&(NUMMER(q,j)==769))
-      //printf("myid=%d myrank: %d, NUMMER(p,i) = %d, NUMMER(q,j) = %d, timll = %d \n",myid,myrank, NUMMER(p,i), NUMMER(q,j),timll);fflush(stdout);
-      //if((NUMMER(p,i) == 769)&&(NUMMER(q,j)==659))
-      //printf("myid=%d myrank: %d, NUMMER(p,i) = %d, NUMMER(q,j) = %d, timll = %d \n",myid,myrank, NUMMER(p,i), NUMMER(q,j),timll);fflush(stdout);      
-      //if((NUMMER(p,i) == 657)&&(NUMMER(q,j)==769))
-      //printf("myid=%d myrank: %d, NUMMER(p,i) = %d, NUMMER(q,j) = %d, timll = %d \n",myid,myrank, NUMMER(p,i), NUMMER(q,j),timll);fflush(stdout);
-      //if((NUMMER(p,i) == 769)&&(NUMMER(q,j)==657))
-      //printf("myid=%d myrank: %d, NUMMER(p,i) = %d, NUMMER(q,j) = %d, timll = %d \n",myid,myrank, NUMMER(p,i), NUMMER(q,j),timll);fflush(stdout);
-      //if((NUMMER(p,i) == 628)&&(NUMMER(q,j)==769))
-      //printf("myid=%d myrank: %d, NUMMER(p,i) = %d, NUMMER(q,j) = %d, timll = %d \n",myid,myrank, NUMMER(p,i), NUMMER(q,j),timll);fflush(stdout);
-      //if((NUMMER(p,i) == 769)&&(NUMMER(q,j)==628))
-      //printf("myid=%d myrank: %d, NUMMER(p,i) = %d, NUMMER(q,j) = %d, timll = %d \n",myid,myrank, NUMMER(p,i), NUMMER(q,j),timll);fflush(stdout);
-      //if((NUMMER(p,i) == 655)&&(NUMMER(q,j)==769))
-      //printf("myid=%d myrank: %d, NUMMER(p,i) = %d, NUMMER(q,j) = %d, timll = %d \n",myid,myrank, NUMMER(p,i), NUMMER(q,j),timll);fflush(stdout);
-      //if((NUMMER(p,i) == 769)&&(NUMMER(q,j)==655))
-      //printf("myid=%d myrank: %d, NUMMER(p,i) = %d, NUMMER(q,j) = %d, timll = %d \n",myid,myrank, NUMMER(p,i), NUMMER(q,j),timll);fflush(stdout);      
-      //if((timll==50)&&(NUMMER(q,j) == 769))
-      //  printf("myid=%d myrank: %d, NUMMER(p,i) = %d, NUMMER(q,j) = %d, timll = %d \n",myid,myrank, NUMMER(p,i), NUMMER(q,j),timll);fflush(stdout);      
+
 #ifdef DEBUG
       if (0==r2) { char msgbuf[256];
         sprintf(msgbuf, "Distance is zero between particles %d and %d!\n",
@@ -144,7 +118,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #ifndef TWOD
         force.z = d.z * pot_grad;
 #endif
- 
+
         /* accumulate forces */
         pfptr = &KRAFT(p,i,X);
         qfptr = &KRAFT(q,j,X);
@@ -207,11 +181,6 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #endif
 	}
 #endif
-
-#ifdef NVX
-        HEATCOND(p,i) += pot_zwi - r2 * pot_grad;
-        HEATCOND(q,j) += pot_zwi - r2 * pot_grad;
-#endif
       }
 #endif /* PAIR || KEATING */
 
@@ -244,7 +213,6 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #endif
 
 #ifdef COVALENT
-      //printf("myid=%d myrank: %d, I am passing throgh the imd_forces in covalent  !!!!!!!!!!!!!!!!!!!!!! \n",myid,myrank);fflush(stdout);
       /* make neighbor tables for covalent systems */
       if (r2 <= neightab_r2cut[col]) {
 

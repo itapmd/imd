@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -204,6 +204,69 @@ void write_ssconfig(int steps)
 
 }
 #endif
+
+
+#ifdef GETSADDLE
+/******************************************************************************
+*
+*  write_ssconfig writes a configuration to a numbered file,
+*  which can serve as a checkpoint; uses write_atoms
+*
+******************************************************************************/
+
+void write_saddleconfig(int steps)
+{
+    real Epot;
+    char namstr[20];
+    
+  /* first make sure that every atom is inside the box and on the right CPU */
+  if (1==parallel_output) fix_cells();
+
+
+   Epot =       tot_pot_energy / natoms;
+   sprintf(namstr,"saddle%.8f",Epot);
+  /* write checkpoint */
+  write_config_select(steps,namstr, write_atoms_config, write_header_config);
+
+  /* write iteration file */
+  // if (myid == 0) write_itr_file(steps, steps,"ss");
+
+ 
+
+}
+#endif
+#ifdef GETMIN
+/******************************************************************************
+*
+*  write_ssconfig writes a configuration to a numbered file,
+*  which can serve as a checkpoint; uses write_atoms
+*
+******************************************************************************/
+
+void write_minconfig(int steps)
+{
+    real Epot;
+    char namstr[20];
+    
+  /* first make sure that every atom is inside the box and on the right CPU */
+  if (1==parallel_output) fix_cells();
+
+
+   Epot =       tot_pot_energy / natoms;
+   sprintf(namstr,"min%.8f",Epot);
+  /* write checkpoint */
+  write_config_select(steps,namstr, write_atoms_config, write_header_config);
+
+  /* write iteration file */
+  // if (myid == 0) write_itr_file(steps, steps,"ss");
+
+ 
+
+}
+#endif
+
+
+
 
 #ifdef CG
 /******************************************************************************
@@ -732,138 +795,6 @@ void write_config_nb(int nr)
 
 #endif /* NNBR */
 
-#ifdef BBOOST
-
-/******************************************************************************
-*
-*  writes header for bb-file
-*
-******************************************************************************/
-
-void write_header_bb(FILE *out)
-{
-  char c;
-  time_t now;
- 
-  /* format line */
-  if (binary_output)
-    c = is_big_endian ? 'b' : 'l';
-  else
-    c = 'A';
-  fprintf(out, "#F %c 1 1 1 %d %d 1\n", c, DIM, DIM);
-  
-  /* contents line */
-#ifndef SBOOST
-#ifdef TWOD
-  fprintf(out, "#C number type mass x y vx vy Epot\n");
-#else
-  fprintf(out, "#C number type mass x y z vx vy vz Epot\n");
-#endif
-#else
-#ifdef TWOD
-  fprintf(out, "#C number type mass x y vx vy Epot Mises\n");
-#else
-  fprintf(out, "#C number type mass x y z vx vy vz Epot Mises\n");
-#endif
-#endif
-  /* box lines */
-#ifdef TWOD
-  fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
-  fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
-#else
-  fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
-  fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
-  fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
-#endif
-
-  /* generation date and endheader line */
-  time(&now);
-  fprintf(out, "## Generated on %s", ctime(&now) ); 
-  fprintf(out, "## by %s (version of %s)\n", progname, DATE);
-  fprintf(out, "#E\n");
-
-}
-/******************************************************************************
-*
-*  filter function for write_config_select
-*  writes a 'position output for bboost' configuration
-*
-******************************************************************************/
-
-void write_atoms_bb(FILE *out)
-{
-  int i, k, n, len=0;
-  i_or_f *data;
-
-  for (k=0; k<NCELLS; k++) {
-    cell *p = CELLPTR(k);
-    for (i=0; i<p->n; i++) {
-
-      /* binary output */
-      if (binary_output) {
-        n = 0;
-        data = (i_or_f *) (outbuf+len);
-        data[n++].i = (integer) NUMMER(p,i);
-        data[n++].i = (integer) VSORTE(p,i);
-        data[n++].f = (float)   MASSE (p,i);
-        data[n++].f = (float)   REFPOSTWO (p,i,X);
-        data[n++].f = (float)   REFPOSTWO (p,i,Y);
-#ifndef TWOD
-        data[n++].f = (float)   REFPOSTWO (p,i,Z);
-#endif
-        data[n++].f = (float)   IMPULS(p,i,X) / MASSE(p,i);
-        data[n++].f = (float)   IMPULS(p,i,Y) / MASSE(p,i);
-#ifndef TWOD
-        data[n++].f = (float)   IMPULS(p,i,Z) / MASSE(p,i);
-#endif
-        data[n++].f = (float)   POTENG(p,i);
-#ifdef SBOOST
-        data[n++].f = (float)   Mises[NUMMER(p,i)];
-#endif
-        len += n * sizeof(i_or_f);
-      }
-      /* ASCII output */
-      else {
-#ifndef SBOOST
-#ifdef TWOD
-        len += sprintf( outbuf+len,
-          "%d %d %12f %12f %12f %12f %12f %12f %12f\n",
-          NUMMER(p,i), VSORTE(p,i), MASSE (p,i), 
-          REFPOSTWO(p,i,X), REFPOSTWO(p,i,Y),
-          IMPULS(p,i,X) / MASSE(p,i), IMPULS(p,i,Y) / MASSE(p,i), POTENG(p,i));
-#else
-        len += sprintf( outbuf+len,
-          "%d %d %12f %12f %12f %12f %12f %12f %12f %12f\n",
-          NUMMER(p,i), VSORTE(p,i), MASSE (p,i), 
-          REFPOSTWO(p,i,X), REFPOSTWO(p,i,Y), REFPOSTWO(p,i,Z), IMPULS(p,i,X) / MASSE(p,i), 
-          IMPULS(p,i,Y) / MASSE(p,i), IMPULS(p,i,Z) / MASSE(p,i), POTENG(p,i));
-#endif
-#else
-#ifdef TWOD
-        len += sprintf( outbuf+len,
-          "%d %d %12f %12f %12f %12f %12f %12f %12f\n",
-          NUMMER(p,i), VSORTE(p,i), MASSE (p,i), 
-          REFPOSTWO(p,i,X), REFPOSTWO(p,i,Y),
-          IMPULS(p,i,X) / MASSE(p,i), IMPULS(p,i,Y) / MASSE(p,i), POTENG(p,i), Mises[NUMMER(p,i)]);
-#else
-        len += sprintf( outbuf+len,
-          "%d %d %12f %12f %12f %12f %12f %12f %12f %12f %12f\n",
-          NUMMER(p,i), VSORTE(p,i), MASSE (p,i), 
-          REFPOSTWO(p,i,X), REFPOSTWO(p,i,Y), REFPOSTWO(p,i,Z), IMPULS(p,i,X) / MASSE(p,i), 
-          IMPULS(p,i,Y) / MASSE(p,i), IMPULS(p,i,Z) / MASSE(p,i), POTENG(p,i), Mises[NUMMER(p,i)]);
-#endif
-#endif
-      }
-      /* flush or send outbuf if it is full */
-      if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
-    }
-  }
-  flush_outbuf(out,&len,OUTBUF_TAG+1);
-}
-
-#endif /*BBOOST*/
-
-
 #ifdef WRITEF
 
 /******************************************************************************
@@ -996,6 +927,7 @@ void write_header_press(FILE *out)
 {
   char c;
   time_t now;
+  real tmp;
 
   /* format line */
   if (binary_output)
@@ -1012,6 +944,20 @@ void write_header_press(FILE *out)
   fprintf(out, "#C number type mass x y z P_xx P_yy P_zz P_yz P_zx P_xy\n");
 #endif
 
+#if defined(AVPOS) && defined (NPT) 
+ tmp = (real) avpos_res / ( avpos_int + avpos_res );
+#ifdef TWOD
+  fprintf(out,"box_x \t%.16f %.16f\n", av_box_x.x * tmp, av_box_x.y * tmp);
+  fprintf(out,"box_y \t%.16f %.16f\n", av_box_y.x * tmp, av_box_y.y * tmp);
+#else
+  fprintf(out, "box_x \t%.16f %.16f %.16f\n",
+          av_box_x.x * tmp, av_box_x.y * tmp, av_box_x.z * tmp);
+  fprintf(out, "box_y \t%.16f %.16f %.16f\n",
+          av_box_y.x * tmp, av_box_y.y * tmp, av_box_y.z * tmp);
+  fprintf(out, "box_z \t%.16f %.16f %.16f\n",
+          av_box_z.x * tmp, av_box_z.y * tmp, av_box_z.z * tmp);
+#endif
+#else /* not AVPOS and NPT */
   /* box lines */
 #ifdef TWOD
   fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
@@ -1021,10 +967,14 @@ void write_header_press(FILE *out)
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
 #endif
-
+#endif /*AVPOS */
   /* endheader line */
   time(&now);
+#ifdef AVPOS
+  fprintf(out, "## AVERAGED QUANTITIES! Generated on %s", ctime(&now) ); 
+#else
   fprintf(out, "## Generated on %s", ctime(&now) ); 
+#endif
   fprintf(out, "## by %s (version of %s)\n", progname, DATE);
   fprintf(out, "#E\n");
 
@@ -1041,10 +991,50 @@ void write_atoms_press(FILE *out)
 {
   int i, k, n, len=0;
   i_or_f *data;
+#ifdef AVPOS
+  real x, y, z, tmp;
+  vektor avp_pos, coeff;
+
+  tmp = 1.0 / avpos_cnt;
+#endif
 
   for (k=0; k<NCELLS; k++) {
     cell *p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
+
+#ifdef AVPOS
+      /* Averaged coordinates of atoms */
+      avp_pos.x = AV_POS(p,i,X) * tmp;
+      avp_pos.y = AV_POS(p,i,Y) * tmp;
+#ifndef TWOD
+      avp_pos.z = AV_POS(p,i,Z) * tmp;
+#endif
+      /* Coefficients of coordinates with respect to box vectors */
+      coeff.x = SPROD( avp_pos, tbox_x );
+      coeff.y = SPROD( avp_pos, tbox_y );
+#ifndef TWOD
+      coeff.z = SPROD( avp_pos, tbox_z );
+#endif
+      /* For periodic boundary conditions map coordinates into box */
+      if( pbc_dirs.x == 1 ) 
+        coeff.x -= floor(coeff.x);
+      if( pbc_dirs.y == 1 )
+        coeff.y -= floor(coeff.y);
+#ifndef TWOD
+      if( pbc_dirs.z == 1 ) 
+         coeff.z -= floor(coeff.z);
+#endif
+#ifdef TWOD
+      x = coeff.x * box_x.x + coeff.y * box_y.x;
+      y = coeff.x * box_x.y + coeff.y * box_y.y;
+#else
+      x = coeff.x * box_x.x + coeff.y * box_y.x + coeff.z * box_z.x;
+      y = coeff.x * box_x.y + coeff.y * box_y.y + coeff.z * box_z.y;
+      z = coeff.x * box_x.z + coeff.y * box_y.z + coeff.z * box_z.z;
+#endif
+
+#endif /* AVPOS */
+
       /* binary output */
       if (binary_output) {
         n = 0;
@@ -1052,6 +1042,22 @@ void write_atoms_press(FILE *out)
         data[n++].i = (integer) NUMMER(p,i);
         data[n++].i = (integer) VSORTE(p,i);
         data[n++].f = (float)   MASSE (p,i);
+#ifdef AVPOS
+	data[n++].f = (float)   x;
+        data[n++].f = (float)   y;
+#ifndef TWOD
+        data[n++].f = (float)   z;
+#endif
+	data[n++].f = (float)   AVPRESSTENS(p,i,xx)* tmp;
+        data[n++].f = (float)   AVPRESSTENS(p,i,yy)* tmp;
+#ifndef TWOD
+        data[n++].f = (float)   AVPRESSTENS(p,i,zz)* tmp;
+        data[n++].f = (float)   AVPRESSTENS(p,i,yz)* tmp;
+        data[n++].f = (float)   AVPRESSTENS(p,i,zx)* tmp;
+#endif
+        data[n++].f = (float)   AVPRESSTENS(p,i,xy)* tmp;
+
+#else
         data[n++].f = (float)   ORT (p,i,X);
         data[n++].f = (float)   ORT (p,i,Y);
 #ifndef TWOD
@@ -1065,14 +1071,31 @@ void write_atoms_press(FILE *out)
         data[n++].f = (float)   PRESSTENS(p,i,zx);
 #endif
         data[n++].f = (float)   PRESSTENS(p,i,xy);
+#endif /* AVPOS */
         len += n * sizeof(i_or_f);
       }
       /* ASCII output */
       else {
+
+#ifdef AVPOS
 #ifdef TWOD
         len += sprintf( outbuf+len, 
           "%d %d %f %.12f %.12f %.12f %.12f %.12f\n", 
-          "%10.4e %10.4e %10.4e %10.4e %10.4e\n", 
+          NUMMER(p,i), VSORTE(p,i), MASSE(p,i), x,y,
+          AVPRESSTENS(p,i,xx)* tmp, AVPRESSTENS(p,i,yy)* tmp, AVPRESSTENS(p,i,xy)* tmp );
+#else
+        len += sprintf( outbuf+len,
+          "%d %d %f %.12f %.12f %.12f %.12f %.12f %.12f %.12f %.12f %.12f\n", 
+          NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
+			x,y,z,
+			AVPRESSTENS(p,i,xx)* tmp, AVPRESSTENS(p,i,yy)* tmp, AVPRESSTENS(p,i,zz)* tmp,
+			AVPRESSTENS(p,i,yz)* tmp, AVPRESSTENS(p,i,zx)* tmp, AVPRESSTENS(p,i,xy)* tmp );
+#endif
+#else /* not AVPOS */
+
+#ifdef TWOD
+        len += sprintf( outbuf+len, 
+          "%d %d %f %.12f %.12f %.12f %.12f %.12f\n", 
           NUMMER(p,i), VSORTE(p,i), MASSE(p,i), ORT(p,i,X),ORT(p,i,Y),
           PRESSTENS(p,i,xx), PRESSTENS(p,i,yy), PRESSTENS(p,i,xy) );
 #else
@@ -1083,6 +1106,8 @@ void write_atoms_press(FILE *out)
           PRESSTENS(p,i,xx), PRESSTENS(p,i,yy), PRESSTENS(p,i,zz),
           PRESSTENS(p,i,yz), PRESSTENS(p,i,zx), PRESSTENS(p,i,xy) );
 #endif
+
+#endif /* AVPOS */
       }
       /* flush or send outbuf if it is full */
       if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -1543,6 +1568,36 @@ void update_avpos(void)
 
 }
 
+# ifdef STRESS_TENS
+/******************************************************************************
+*
+* update_avpress resets the pressure tensor
+*
+******************************************************************************/
+
+void update_avpress(void)
+{ 
+  int k;
+  for (k=0; k<NCELLS; k++) {
+    int i;
+    cell* p;
+    p = CELLPTR(k);
+    for (i=0; i<p->n; i++) {
+      AVPRESSTENS(p,i,xx) = PRESSTENS(p,i,xx);
+      AVPRESSTENS(p,i,yy) = PRESSTENS(p,i,yy);
+      AVPRESSTENS(p,i,xy) = PRESSTENS(p,i,xy);
+#ifndef TWOD
+      AVPRESSTENS(p,i,zz) = PRESSTENS(p,i,zz);
+      AVPRESSTENS(p,i,yz) = PRESSTENS(p,i,yz);
+      AVPRESSTENS(p,i,zx) = PRESSTENS(p,i,zx);
+#endif
+    }
+  }
+
+
+}
+#endif
+
 /******************************************************************************
 *
 *  writes header for avp-file
@@ -1563,9 +1618,9 @@ void write_header_avp(FILE *out)
   
   /* contents line */
 #ifdef TWOD
-  fprintf(out, "#C number type mass x_av y_av Epot_av\n");
+  fprintf(out, "#C number type mass x y Epot_av\n");
 #else
-  fprintf(out, "#C number type mass x_av y_av z_av Epot_av\n");
+  fprintf(out, "#C number type mass x y z Epot_av\n");
 #endif
 
   /* box lines */
@@ -2294,1931 +2349,6 @@ void write_eng_file(int steps)
 }
 
 
-#ifdef BBOOST
-/******************************************************************************
-*
-*  write eng file header  - keep in sync with write_bbeng_file
-*
-******************************************************************************/
-
-void write_bbeng_file_header()
-{
-  str255 fname;
-  FILE *fl;
-
-  int i,n;
-
-  if (myid == 0) {
-
-    sprintf(fname,"%s.bbeng",outfilename);
-    fl = fopen(fname,"w");
-    if (NULL == fl) error("Cannot open bbproperties file.");
-
-#ifdef RELAX
-    fprintf(fl, "# nfc ");
-#ifndef ACG
-    fprintf(fl, "timestep ");
-#else
-    fprintf(fl, "alpha ");
-#endif
-#else
-    fprintf(fl, "# time ");
-#endif
-    fprintf(fl, "Epot temperature ");
-
-#if defined(STM) || defined(FRAC) 
-    fprintf(fl, "stadiontemp ");
-#endif
-
-#ifdef FRAC
-    fprintf(fl, "dampingtemp ");
-#endif
-
-#ifdef DAMP
-    fprintf(fl, "tempdamping ");
-    fprintf(fl, "n_damp ");
-#endif
-
-#ifdef FTG
-    for(i=0;i<nslices;i++)
-      fprintf(fl, "temp_%d ", i);
-#endif
-
-#ifdef FNORM
-    fprintf(fl, "fnorm ");
-    fprintf(fl, "fmax ");
-#endif
-#ifdef RELAXINFO
-    fprintf(fl, "delta_epot ");
-    fprintf(fl, "xnorm ");
-    fprintf(fl, "xmax ");
-#endif
-#if defined (GLOK) || defined(MIX)
-    fprintf(fl, "PxF ");
-    fprintf(fl, "mix ");
-#endif
-#ifdef EINSTEIN
-    fprintf(fl, "omega_E ");
-#endif
-    fprintf(fl, "pressure ");
-    fprintf(fl, "volume ");
-#if defined(NVT) || defined(NPT) || defined(STM) 
-    fprintf(fl, "eta * tau_eta ");
-#endif
-#ifdef FRAC  
-    fprintf(fl, "gamma_damp ");
-    fprintf(fl, "strainrate ");
-#endif
-#ifdef NPT_axial
-#ifdef TWOD
-    fprintf(fl, "stress_x stress_y ");
-#ifndef HOMDEF
-    fprintf(fl, "box_x.x box_y.y ");
-#endif
-#else
-    fprintf(fl, "stress_x stress_y stress_z ");
-#ifndef HOMDEF
-    fprintf(fl, "box_x.x box_y.y box_z.z ");
-#endif
-#endif
-#endif
-#ifdef HOMDEF
-    fprintf(fl, "box_x.x box_y.y box_z.z ");
-    if(lindef_x.y!=0)
-        fprintf(fl, "box_y.x ");
-    if(lindef_x.z!=0)
-        fprintf(fl, "box_z.x ");
-    if(lindef_y.x!=0)
-        fprintf(fl, "box_x.y ");
-    if(lindef_y.z!=0)
-        fprintf(fl, "box_z.y ");
-    if(lindef_z.x!=0)
-        fprintf(fl, "box_x.z ");
-    if(lindef_z.y!=0)
-        fprintf(fl, "box_y.z ");
-#endif
-#ifdef STRESS_TENS
-    fprintf(fl, "Press_xx Press_yy ");
-#ifdef TWOD
-    fprintf(fl, "Press_xy ");
-#else 
-    fprintf(fl, "Press_zz ");
-    fprintf(fl, "Press_yz Press_xz Press_xy");
-#endif    
-#endif
-#ifdef TTM
-    fprintf(fl, " E_el E_new");
-#ifdef DEBUG
-    fprintf(fl, " E_el_ab E_ph_auf");
-#endif /*DEBUG*/
-#endif /*TTM*/
-
-#ifdef BEND
-  for (n=0; n<bend_nmoments; n++){
-      fprintf(fl, "cog[%d].x cog[%d].y cog[%d].z ",n,n,n);
-  }
-#endif
-
-#ifdef ZAPP
-  fprintf(fl, "totimpuls.x totimpuls.y totimpuls.z ");
-#endif
-
-#ifdef NEB
-  fprintf(fl, "phi_lr phi_dl phi_dr k ");
-#endif
-
-#ifdef FEFL
-  fprintf(fl, "harm_eng ");
-#endif
-
-    putc('\n',fl);
-
-    fclose(fl);
-  }
-}
-
-/******************************************************************************
-*
-*  write selected properties to *.bbeng file
-*  keep in sync with write_bbeng_file_header
-*
-******************************************************************************/
-
-void write_bbeng_file(int steps)
-{
-  str255 fname;
-  int i,n;
-  static int flush_count=0;
-  real tmp;  
-
-#ifdef HPO
-  char *format=" %.16e";
-  char *format2=" %.16e %.16e";
-  char *format3=" %.16e %.16e %.16e";
-#else
-  char *format=" %e";
-  char *format2=" %e %e";
-  char *format3=" %e %e %e";
-#endif
-
-  real Epot, Temp, vol;
-
-#if defined(STM) || defined(FRAC)
-  real Temp_damp, Temp_stadium = 0.0;
-#endif
-#ifdef DAMP
- real Temp_stadium = 0.0;
-#endif
-
-#ifdef STRESS_TENS
-  real Press_xx,Press_yy, Press_xy;
-#ifndef TWOD
-  real Press_zz,Press_yz, Press_zx;
-#endif
-  calc_tot_presstens();
-#endif
-
-  /* write only on CPU 0; 
-     calc_tot_presstensor() above must be executed on all CPUs */
-  if (myid>0) return;
-
-#ifdef STRESS_TENS
-  Press_xx = tot_presstens.xx / volume; 
-  Press_yy = tot_presstens.yy / volume; 
-#ifndef TWOD
-  Press_zz = tot_presstens.zz / volume;
-  Press_yz = tot_presstens.yz / volume; 
-  Press_zx = tot_presstens.zx / volume; 
-#endif
-  Press_xy = tot_presstens.xy / volume; 
-#endif
-
-  Epot =       tot_pot_energy / natoms;
-
-  if (ensemble == ENS_CG) {
-    Temp = 0.0;
-  } else {
-#ifdef UNIAX
-    Temp = 2.0 * tot_kin_energy / (nactive + nactive_rot);
-#elif defined(DAMP)
-    Temp = 2.0 * tot_kin_energy / (nactive - n_damp);
-#else
-    Temp = 2.0 * tot_kin_energy / nactive;
-#endif
-  }
-
-#ifdef STM 
-  Temp     = 2.0 * tot_kin_energy / (nactive - n_stadium);
-#endif 
-
-#if defined(STM) || defined(FRAC)
-  if(n_stadium != 0)  Temp_stadium = 2.0 * E_kin_stadium / n_stadium;
-#endif
-
-#if defined(FRAC)
-  if(sum_f !=0){
-      Temp_damp = 2.0 * E_kin_damp / (sum_f * DIM);
-  } else {
-      Temp_damp = 0.0;
-  }
-#endif
-#ifdef DAMP
-  if(n_damp != 0)  Temp_stadium = 2.0 * tot_kin_energy_damp / n_damp;
-#endif
-
-  vol = volume / natoms;
-  pressure = Temp / vol + virial / (DIM * volume);
-
-  /* open .bbeng file if it is not yet open */
-  if (NULL == bbeng_file) {
-    sprintf(fname,"%s.bbeng",outfilename);
-    bbeng_file = fopen(fname,"a");
-    if (NULL == bbeng_file) 
-      error_str("Cannot open properties file %s.bbeng", outfilename);
-  }
-
-#ifdef RELAX
-  fprintf(bbeng_file, "%d",     nfc);
-#ifndef ACG
-  fprintf(bbeng_file, " %f",    timestep);
-#else
-  fprintf(bbeng_file, " %f",    acg_alpha);
-#endif
-#else
-  fprintf(bbeng_file, "%e",     (double) (steps * timestep));
-#endif
-  fprintf(bbeng_file, " %.18e", (double) Epot);
-  fprintf(bbeng_file, format,   (double) Temp);
-#if defined(STM) || defined(FRAC)
-  fprintf(bbeng_file, format,   (double) Temp_stadium);
-#endif
-
-#ifdef FRAC
-  fprintf(bbeng_file, format,   (double) Temp_damp);
-#endif
-
-#ifdef DAMP
-  fprintf(bbeng_file, " %.8e",   (double) Temp_stadium);
-  fprintf(bbeng_file, " %d",    n_damp);
-#endif
-
-#ifdef FTG
-  for(i=0;i<nslices;i++){
-    Temp =  0.0;
-    if (0 !=  *(ninslice + i))
-      Temp =  2.0* *(E_kin_ftg+i)/ *(ninslice + i);
-    fprintf(bbeng_file, format, Temp); 
-  }
-#endif
-
-#ifdef FNORM
-  fprintf(bbeng_file, format,   (double) SQRT( fnorm / nactive ) );
-  fprintf(bbeng_file, format,   (double) SQRT( f_max2 ) );
-#endif
-#ifdef RELAXINFO
-  fprintf(bbeng_file, " %.21e", (double) Epot - old_epot);
-  fprintf(bbeng_file, format,   (double) SQRT( xnorm / nactive ) );
-  fprintf(bbeng_file, format,   (double) SQRT( x_max2 ) );
-#endif
-#if defined (GLOK) || defined(MIX)
-  fprintf(bbeng_file, format,   (double) PxF);
-  fprintf(bbeng_file, format,   (double) mix);
-#endif
-#ifdef EINSTEIN
-  fprintf(bbeng_file, format,   SQRT( omega_E / (nactive * Temp) ));
-#endif
-  fprintf(bbeng_file," %e",     (double) pressure);
-  fprintf(bbeng_file," %e",     (double) vol);
-#if defined(NVT) || defined(NPT) || defined(STM)
-  fprintf(bbeng_file," %e",     (double) (eta * tau_eta) );
-#endif
-#ifdef FRAC 
-  fprintf(bbeng_file," %e",     (double) gamma_damp );
-  fprintf(bbeng_file," %e",     (double) dotepsilon );
-#endif
-
-  if (ensemble==ENS_NPT_AXIAL) {
-#ifdef TWOD
-      fprintf(bbeng_file,format2, (double) stress_x, (double) stress_y );
-#ifndef HOMDEF   
-      fprintf(bbeng_file,format2, (double)  box_x.x, (double)  box_y.y );
-#endif
-#else
-      fprintf(bbeng_file,format3, 
-	    (double) stress_x, (double) stress_y, (double) stress_z );
-#ifndef HOMDEF   
-      fprintf(bbeng_file,format3, 
-	    (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
-#endif
-#endif
-  }
-
-#if defined(HOMDEF)
-  fprintf(bbeng_file, format2,(double) box_x.x, (double) box_y.y);
-#ifndef TWOD 
-  fprintf(bbeng_file, format, (double) box_z.z);
-#endif
-  if(lindef_x.y!=0)
-      fprintf(bbeng_file, format, (double) box_y.x );
-  if(lindef_x.z!=0)
-      fprintf(bbeng_file, format, (double) box_z.x );
-  if(lindef_y.x!=0)
-      fprintf(bbeng_file, format, (double) box_x.y );
-  if(lindef_y.z!=0)
-      fprintf(bbeng_file, format, (double) box_z.y );
-  if(lindef_z.x!=0)
-      fprintf(bbeng_file, format, (double) box_x.z );
-  if(lindef_z.y!=0)
-      fprintf(bbeng_file, format, (double) box_y.z );
-#endif
-  
-#ifdef STRESS_TENS
-  fprintf(bbeng_file,format2, (double) Press_xx, (double) Press_yy);
-#ifdef TWOD
-  fprintf(bbeng_file,format, (double) Press_xy);
-#else 
-  fprintf(bbeng_file,format, (double) Press_zz);
-  fprintf(bbeng_file,format3,
-	  (double) Press_yz, (double) Press_zx, (double) Press_xy);
-#endif    
-#endif
-#ifdef TTM
-  fprintf(bbeng_file, " %e %e", ttm_eng, E_new);
-#ifdef DEBUG
-  fprintf(bbeng_file, " %e %e", E_el_ab, E_ph_auf);
-#endif /*DEBUG*/
-#endif /*TTM*/
-
-#ifdef BEND
-   for (n=0; n<bend_nmoments; n++){
-       fprintf(bbeng_file, " %e %e %e ",(bend_cog + n)->x,(bend_cog + n)->y,(bend_cog + n)->z);
-  }
-#endif
-#ifdef ZAPP
-   fprintf(bbeng_file, " %e %e %e ", total_impuls.x,total_impuls.y,total_impuls.z);
-#endif
-
-#ifdef NEB
-   fprintf(bbeng_file, " %lf %lf %lf %e ",phi_lr,phi_dl,phi_dr,neb_k);
-#endif
-
-#ifdef FEFL
-   fprintf(bbeng_file, " %e", (double) tot_harm_energy/natoms);
-#endif
-
-  putc('\n',bbeng_file);
-  flush_count++;
-
-  /* flush .eng file every flush_int writes */
-  if (flush_count > flush_int) {
-    fflush(bbeng_file);
-    flush_count=0;
-  }
-
-}
-/******************************************************************************
-*
-*  write eng file header  - keep in sync with write_bbtran_file
-*
-******************************************************************************/
-
-void write_bbtran_file_header()
-{
-  str255 fname;
-  FILE *fl;
-
-  int i,n;
-
-  if (myid == 0) {
-
-    sprintf(fname,"%s.bbtran",outfilename);
-    fl = fopen(fname,"w");
-    if (NULL == fl) error("Cannot open bbproperties file.");
-
-#ifdef RELAX
-    fprintf(fl, "# nfc ");
-#ifndef ACG
-    fprintf(fl, "timestep ");
-#else
-    fprintf(fl, "alpha ");
-#endif
-#else
-    fprintf(fl, "# time ");
-#endif
-    fprintf(fl, "Epot temperature ");
-
-#if defined(STM) || defined(FRAC) 
-    fprintf(fl, "stadiontemp ");
-#endif
-
-#ifdef FRAC
-    fprintf(fl, "dampingtemp ");
-#endif
-
-#ifdef DAMP
-    fprintf(fl, "tempdamping ");
-    fprintf(fl, "n_damp ");
-#endif
-
-#ifdef FTG
-    for(i=0;i<nslices;i++)
-      fprintf(fl, "temp_%d ", i);
-#endif
-
-
-    fprintf(fl, "bb_epsref1 ");
-    fprintf(fl, "bb_epsref2 ");
-
-#ifdef RELAXINFO
-    fprintf(fl, "delta_epot ");
-    fprintf(fl, "xnorm ");
-    fprintf(fl, "xmax ");
-#endif
-#if defined (GLOK) || defined(MIX)
-    fprintf(fl, "PxF ");
-    fprintf(fl, "mix ");
-#endif
-#ifdef EINSTEIN
-    fprintf(fl, "omega_E ");
-#endif
-    fprintf(fl, "bb_eps ");
-    fprintf(fl, "bb_tot_bV ");
-    fprintf(fl, "bb_ad_bV ");    
-#if defined(NVT) || defined(NPT) || defined(STM) 
-  /*  fprintf(fl, "eta * tau_eta "); */
-#endif
-#ifdef FRAC  
-    fprintf(fl, "gamma_damp ");
-    fprintf(fl, "strainrate ");
-#endif
-#ifdef NPT_axial
-#ifdef TWOD
-    fprintf(fl, "stress_x stress_y ");
-#ifndef HOMDEF
-    fprintf(fl, "box_x.x box_y.y ");
-#endif
-#else
-    fprintf(fl, "stress_x stress_y stress_z ");
-#ifndef HOMDEF
-    fprintf(fl, "box_x.x box_y.y box_z.z ");
-#endif
-#endif
-#endif
-#ifdef HOMDEF
-    fprintf(fl, "box_x.x box_y.y box_z.z ");
-    if(lindef_x.y!=0)
-        fprintf(fl, "box_y.x ");
-    if(lindef_x.z!=0)
-        fprintf(fl, "box_z.x ");
-    if(lindef_y.x!=0)
-        fprintf(fl, "box_x.y ");
-    if(lindef_y.z!=0)
-        fprintf(fl, "box_z.y ");
-    if(lindef_z.x!=0)
-        fprintf(fl, "box_x.z ");
-    if(lindef_z.y!=0)
-        fprintf(fl, "box_y.z ");
-#endif
-#ifdef STRESS_TENS
-    fprintf(fl, "Press_xx Press_yy ");
-#ifdef TWOD
-    fprintf(fl, "Press_xy ");
-#else 
-    fprintf(fl, "Press_zz ");
-    fprintf(fl, "Press_yz Press_xz Press_xy");
-#endif    
-#endif
-#ifdef TTM
-    fprintf(fl, " E_el E_new");
-#ifdef DEBUG
-    fprintf(fl, " E_el_ab E_ph_auf");
-#endif /*DEBUG*/
-#endif /*TTM*/
-
-#ifdef BEND
-  for (n=0; n<bend_nmoments; n++){
-      fprintf(fl, "cog[%d].x cog[%d].y cog[%d].z ",n,n,n);
-  }
-#endif
-
-#ifdef ZAPP
-  fprintf(fl, "totimpuls.x totimpuls.y totimpuls.z ");
-#endif
-
-#ifdef NEB
-  fprintf(fl, "phi_lr phi_dl phi_dr k ");
-#endif
-
-#ifdef FEFL
-  fprintf(fl, "harm_eng ");
-#endif
-
-    putc('\n',fl);
-
-    fclose(fl);
-  }
-}
-/******************************************************************************
-*
-*  write selected properties to *.bbtran file
-*  keep in sync with write_bbtran_file_header
-*
-******************************************************************************/
-
-void write_bbtran_file(int steps)
-{
-  str255 fname;
-  int i,n;
-  static int flush_count=0;
-  real tmp;  
-
-#ifdef HPO
-  char *format=" %.16e";
-  char *format2=" %.16e %.16e";
-  char *format3=" %.16e %.16e %.16e";
-#else
-  char *format=" %e";
-  char *format2=" %e %e";
-  char *format3=" %e %e %e";
-#endif
-
-  real Epot, Temp, vol;
-
-#if defined(STM) || defined(FRAC)
-  real Temp_damp, Temp_stadium = 0.0;
-#endif
-#ifdef DAMP
- real Temp_stadium = 0.0;
-#endif
-
-#ifdef STRESS_TENS
-  real Press_xx,Press_yy, Press_xy;
-#ifndef TWOD
-  real Press_zz,Press_yz, Press_zx;
-#endif
-  calc_tot_presstens();
-#endif
-
-  /* write only on CPU 0; 
-     calc_tot_presstensor() above must be executed on all CPUs */
-  if (myid>0) return;
-
-#ifdef STRESS_TENS
-  Press_xx = tot_presstens.xx / volume; 
-  Press_yy = tot_presstens.yy / volume; 
-#ifndef TWOD
-  Press_zz = tot_presstens.zz / volume;
-  Press_yz = tot_presstens.yz / volume; 
-  Press_zx = tot_presstens.zx / volume; 
-#endif
-  Press_xy = tot_presstens.xy / volume; 
-#endif
-
-  Epot =       tot_pot_energy / natoms;
-
-  if (ensemble == ENS_CG) {
-    Temp = 0.0;
-  } else {
-#ifdef UNIAX
-    Temp = 2.0 * tot_kin_energy / (nactive + nactive_rot);
-#elif defined(DAMP)
-    Temp = 2.0 * tot_kin_energy / (nactive - n_damp);
-#else
-    Temp = 2.0 * tot_kin_energy / nactive;
-#endif
-  }
-
-#ifdef STM 
-  Temp     = 2.0 * tot_kin_energy / (nactive - n_stadium);
-#endif 
-
-#if defined(STM) || defined(FRAC)
-  if(n_stadium != 0)  Temp_stadium = 2.0 * E_kin_stadium / n_stadium;
-#endif
-
-#if defined(FRAC)
-  if(sum_f !=0){
-      Temp_damp = 2.0 * E_kin_damp / (sum_f * DIM);
-  } else {
-      Temp_damp = 0.0;
-  }
-#endif
-#ifdef DAMP
-  if(n_damp != 0)  Temp_stadium = 2.0 * tot_kin_energy_damp / n_damp;
-#endif
-
-  vol = volume / natoms;
-  pressure = Temp / vol + virial / (DIM * volume);
-
-  /* open .bbtran file if it is not yet open */
-  if (NULL == bbtran_file) {
-    sprintf(fname,"%s.bbtran",outfilename);
-    bbtran_file = fopen(fname,"a");
-    if (NULL == bbtran_file) 
-      error_str("Cannot open properties file %s.bbtran", outfilename);
-  }
-
-#ifdef RELAX
-  fprintf(bbtran_file, "%d",     nfc);
-#ifndef ACG
-  fprintf(bbtran_file, " %f",    timestep);
-#else
-  fprintf(bbtran_file, " %f",    acg_alpha);
-#endif
-#else
-  fprintf(bbtran_file, "%e",     (double) (steps * timestep));
-#endif
-  fprintf(bbtran_file, " %.18e", (double) Epot);
-  fprintf(bbtran_file, format,   (double) Temp);
-#if defined(STM) || defined(FRAC)
-  fprintf(bbtran_file, format,   (double) Temp_stadium);
-#endif
-
-#ifdef FRAC
-  fprintf(bbtran_file, format,   (double) Temp_damp);
-#endif
-
-#ifdef DAMP
-  fprintf(bbtran_file, " %.8e",   (double) Temp_stadium);
-  fprintf(bbtran_file, " %d",    n_damp);
-#endif
-
-#ifdef FTG
-  for(i=0;i<nslices;i++){
-    Temp =  0.0;
-    if (0 !=  *(ninslice + i))
-      Temp =  2.0* *(E_kin_ftg+i)/ *(ninslice + i);
-    fprintf(bbtran_file, format, Temp); 
-  }
-#endif
-
-  fprintf(bbtran_file, format,   bb_ref1max );
-  fprintf(bbtran_file, format,   bb_ref2max );
-/*#ifdef FNORM
-  fprintf(bbtran_file, format,   (double) SQRT( fnorm / nactive ) );
-  fprintf(bbtran_file, format,   (double) SQRT( f_max2 ) );
-#endif*/
-#ifdef RELAXINFO
-  fprintf(bbtran_file, " %.21e", (double) Epot - old_epot);
-  fprintf(bbtran_file, format,   (double) SQRT( xnorm / nactive ) );
-  fprintf(bbtran_file, format,   (double) SQRT( x_max2 ) );
-#endif
-#if defined (GLOK) || defined(MIX)
-  fprintf(bbtran_file, format,   (double) PxF);
-  fprintf(bbtran_file, format,   (double) mix);
-#endif
-#ifdef EINSTEIN
-  fprintf(bbtran_file, format,   SQRT( omega_E / (nactive * Temp) ));
-#endif
-  fprintf(bbtran_file," %e",     bb_epscrit);
-  fprintf(bbtran_file," %e",     bb_tot_bV);
-  fprintf(bbtran_file," %e",     bb_ad_bV);
-#if defined(NVT) || defined(NPT) || defined(STM)
-/*  fprintf(bbtran_file," %e",     (double) (eta * tau_eta) ); */
-#endif
-#ifdef FRAC 
-  fprintf(bbtran_file," %e",     (double) gamma_damp );
-  fprintf(bbtran_file," %e",     (double) dotepsilon );
-#endif
-
-  if (ensemble==ENS_NPT_AXIAL) {
-#ifdef TWOD
-      fprintf(bbtran_file,format2, (double) stress_x, (double) stress_y );
-#ifndef HOMDEF   
-      fprintf(bbtran_file,format2, (double)  box_x.x, (double)  box_y.y );
-#endif
-#else
-      fprintf(bbtran_file,format3, 
-	    (double) stress_x, (double) stress_y, (double) stress_z );
-#ifndef HOMDEF   
-      fprintf(bbtran_file,format3, 
-	    (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
-#endif
-#endif
-  }
-
-#if defined(HOMDEF)
-  fprintf(bbtran_file, format2,(double) box_x.x, (double) box_y.y);
-#ifndef TWOD 
-  fprintf(bbtran_file, format, (double) box_z.z);
-#endif
-  if(lindef_x.y!=0)
-      fprintf(bbtran_file, format, (double) box_y.x );
-  if(lindef_x.z!=0)
-      fprintf(bbtran_file, format, (double) box_z.x );
-  if(lindef_y.x!=0)
-      fprintf(bbtran_file, format, (double) box_x.y );
-  if(lindef_y.z!=0)
-      fprintf(bbtran_file, format, (double) box_z.y );
-  if(lindef_z.x!=0)
-      fprintf(bbtran_file, format, (double) box_x.z );
-  if(lindef_z.y!=0)
-      fprintf(bbtran_file, format, (double) box_y.z );
-#endif
-  
-#ifdef STRESS_TENS
-  fprintf(bbtran_file,format2, (double) Press_xx, (double) Press_yy);
-#ifdef TWOD
-  fprintf(bbtran_file,format, (double) Press_xy);
-#else 
-  fprintf(bbtran_file,format, (double) Press_zz);
-  fprintf(bbtran_file,format3,
-	  (double) Press_yz, (double) Press_zx, (double) Press_xy);
-#endif    
-#endif
-#ifdef TTM
-  fprintf(bbtran_file, " %e %e", ttm_eng, E_new);
-#ifdef DEBUG
-  fprintf(bbtran_file, " %e %e", E_el_ab, E_ph_auf);
-#endif /*DEBUG*/
-#endif /*TTM*/
-
-#ifdef BEND
-   for (n=0; n<bend_nmoments; n++){
-       fprintf(bbtran_file, " %e %e %e ",(bend_cog + n)->x,(bend_cog + n)->y,(bend_cog + n)->z);
-  }
-#endif
-#ifdef ZAPP
-   fprintf(bbtran_file, " %e %e %e ", total_impuls.x,total_impuls.y,total_impuls.z);
-#endif
-
-#ifdef NEB
-   fprintf(bbtran_file, " %lf %lf %lf %e ",phi_lr,phi_dl,phi_dr,neb_k);
-#endif
-
-#ifdef FEFL
-   fprintf(bbtran_file, " %e", (double) tot_harm_energy/natoms);
-#endif
-
-  putc('\n',bbtran_file);
-  flush_count++;
-
-  /* flush .eng file every flush_int writes */
-  if (flush_count > flush_int) {
-    fflush(bbtran_file);
-    flush_count=0;
-  }
-
-}
-
-#endif
-
-#ifdef BBOOST
-/******************************************************************************
-*
-*  write eng file header  - keep in sync with write_bbdebug_file
-*
-******************************************************************************/
-
-void write_bbdebug_file_header()
-{
-  str255 fname;
-  FILE *fl;
-
-  int i,n;
-
-  if (myid == 0) {
-
-    sprintf(fname,"%s.bbdebug",outfilename);
-    fl = fopen(fname,"w");
-    if (NULL == fl) error("Cannot open bbproperties file.");
-
-#ifdef RELAX
-    fprintf(fl, "# dobbne ");
-#ifndef ACG
-    fprintf(fl, "steps ");
-#else
-    fprintf(fl, "alpha ");
-#endif
-#else
-    fprintf(fl, "# time ");
-#endif
-
-    fprintf(fl, "eci grad_bf ");
-
-#if defined(STM) || defined(FRAC) 
-    fprintf(fl, "stadiontemp ");
-#endif
-
-#ifdef FRAC
-    fprintf(fl, "dampingtemp ");
-#endif
-
-#ifdef DAMP
-    fprintf(fl, "tempdamping ");
-    fprintf(fl, "n_damp ");
-#endif
-
-#ifdef FTG
-    for(i=0;i<nslices;i++)
-      fprintf(fl, "temp_%d ", i);
-#endif
-
-    fprintf(fl, "inum ");
-    fprintf(fl, "jnum ");
-    //fprintf(fl, "bb_relaxsteps ");
-    //fprintf(fl, "bb_under ");
-
-#ifdef RELAXINFO
-    fprintf(fl, "delta_epot ");
-    fprintf(fl, "xnorm ");
-    fprintf(fl, "xmax ");
-#endif
-#if defined (GLOK) || defined(MIX)
-    fprintf(fl, "PxF ");
-    fprintf(fl, "mix ");
-#endif
-#ifdef EINSTEIN
-    fprintf(fl, "omega_E ");
-#endif
-    //fprintf(fl, "bb_shdn ");
-    // fprintf(fl, "bb_tot_bV ");
-#if defined(NVT) || defined(NPT) || defined(STM) 
-  /*  fprintf(fl, "eta * tau_eta "); */
-#endif
-#ifdef FRAC  
-    fprintf(fl, "gamma_damp ");
-    fprintf(fl, "strainrate ");
-#endif
-#ifdef NPT_axial
-#ifdef TWOD
-    fprintf(fl, "stress_x stress_y ");
-#ifndef HOMDEF
-    fprintf(fl, "box_x.x box_y.y ");
-#endif
-#else
-    fprintf(fl, "stress_x stress_y stress_z ");
-#ifndef HOMDEF
-    fprintf(fl, "box_x.x box_y.y box_z.z ");
-#endif
-#endif
-#endif
-#ifdef HOMDEF
-    fprintf(fl, "box_x.x box_y.y box_z.z ");
-    if(lindef_x.y!=0)
-        fprintf(fl, "box_y.x ");
-    if(lindef_x.z!=0)
-        fprintf(fl, "box_z.x ");
-    if(lindef_y.x!=0)
-        fprintf(fl, "box_x.y ");
-    if(lindef_y.z!=0)
-        fprintf(fl, "box_z.y ");
-    if(lindef_z.x!=0)
-        fprintf(fl, "box_x.z ");
-    if(lindef_z.y!=0)
-        fprintf(fl, "box_y.z ");
-#endif
-#ifdef STRESS_TENS
-    fprintf(fl, "Press_xx Press_yy ");
-#ifdef TWOD
-    fprintf(fl, "Press_xy ");
-#else 
-    fprintf(fl, "Press_zz ");
-    fprintf(fl, "Press_yz Press_xz Press_xy");
-#endif    
-#endif
-#ifdef TTM
-    fprintf(fl, " E_el E_new");
-#ifdef DEBUG
-    fprintf(fl, " E_el_ab E_ph_auf");
-#endif /*DEBUG*/
-#endif /*TTM*/
-
-#ifdef BEND
-  for (n=0; n<bend_nmoments; n++){
-      fprintf(fl, "cog[%d].x cog[%d].y cog[%d].z ",n,n,n);
-  }
-#endif
-
-#ifdef ZAPP
-  fprintf(fl, "totimpuls.x totimpuls.y totimpuls.z ");
-#endif
-
-#ifdef NEB
-  fprintf(fl, "phi_lr phi_dl phi_dr k ");
-#endif
-
-#ifdef FEFL
-  fprintf(fl, "harm_eng ");
-#endif
-
-    putc('\n',fl);
-
-    fclose(fl);
-  }
-}
-
-
-/******************************************************************************
-*
-*  write selected properties to *.bbdebug file
-*  keep in sync with write_bbdebug_file_header
-*
-******************************************************************************/
-
-void write_bbdebug_file(int steps, real eci, real grad_bf, int inum, int jnum)
-{
-  str255 fname;
-  int i,n;
-  static int flush_count=0;
-  real tmp;  
-
-#ifdef HPO
-  char *format=" %.16e";
-  char *format2=" %.16e %.16e";
-  char *format3=" %.16e %.16e %.16e";
-#else
-  char *format=" %e";
-  char *format2=" %e %e";
-  char *format3=" %e %e %e";
-#endif
-
-  real Epot, Temp, vol;
-
-#if defined(STM) || defined(FRAC)
-  real Temp_damp, Temp_stadium = 0.0;
-#endif
-#ifdef DAMP
- real Temp_stadium = 0.0;
-#endif
-
-#ifdef STRESS_TENS
-  real Press_xx,Press_yy, Press_xy;
-#ifndef TWOD
-  real Press_zz,Press_yz, Press_zx;
-#endif
-  calc_tot_presstens();
-#endif
-
-  /* write only on CPU 0; 
-     calc_tot_presstensor() above must be executed on all CPUs */
-  if (myid>0) return;
-
-#ifdef STRESS_TENS
-  Press_xx = tot_presstens.xx / volume; 
-  Press_yy = tot_presstens.yy / volume; 
-#ifndef TWOD
-  Press_zz = tot_presstens.zz / volume;
-  Press_yz = tot_presstens.yz / volume; 
-  Press_zx = tot_presstens.zx / volume; 
-#endif
-  Press_xy = tot_presstens.xy / volume; 
-#endif
-
-  Epot =       tot_pot_energy / natoms;
-
-  if (ensemble == ENS_CG) {
-    Temp = 0.0;
-  } else {
-#ifdef UNIAX
-    Temp = 2.0 * tot_kin_energy / (nactive + nactive_rot);
-#elif defined(DAMP)
-    Temp = 2.0 * tot_kin_energy / (nactive - n_damp);
-#else
-    Temp = 2.0 * tot_kin_energy / nactive;
-#endif
-  }
-
-#ifdef STM 
-  Temp     = 2.0 * tot_kin_energy / (nactive - n_stadium);
-#endif 
-
-#if defined(STM) || defined(FRAC)
-  if(n_stadium != 0)  Temp_stadium = 2.0 * E_kin_stadium / n_stadium;
-#endif
-
-#if defined(FRAC)
-  if(sum_f !=0){
-      Temp_damp = 2.0 * E_kin_damp / (sum_f * DIM);
-  } else {
-      Temp_damp = 0.0;
-  }
-#endif
-#ifdef DAMP
-  if(n_damp != 0)  Temp_stadium = 2.0 * tot_kin_energy_damp / n_damp;
-#endif
-
-  vol = volume / natoms;
-  pressure = Temp / vol + virial / (DIM * volume);
-
-  /* open .bbdebug file if it is not yet open */
-  if (NULL == bbdebug_file) {
-    sprintf(fname,"%s.bbdebug",outfilename);
-    bbdebug_file = fopen(fname,"a");
-    if (NULL == bbdebug_file) 
-      error_str("Cannot open properties file %s.bbdebug", outfilename);
-  }
-
-#ifdef RELAX
-  fprintf(bbdebug_file, "%d",     dobbne);
-#ifndef ACG
-  fprintf(bbdebug_file, " %d",    steps);
-#else
-  fprintf(bbdebug_file, " %f",    acg_alpha);
-#endif
-#else
-  fprintf(bbdebug_file, "%e",     (double) (steps * timestep));
-#endif
-  //printf(" eci = %f, grad_bf = %f\n", eci,grad_bf);fflush(stdout);
-  fprintf(bbdebug_file," %f",  eci);
-  fprintf(bbdebug_file," %f",   grad_bf);
-#if defined(STM) || defined(FRAC)
-  fprintf(bbdebug_file, format,   (double) Temp_stadium);
-#endif
-
-#ifdef FRAC
-  fprintf(bbdebug_file, format,   (double) Temp_damp);
-#endif
-
-#ifdef DAMP
-  fprintf(bbdebug_file, " %.8e",   (double) Temp_stadium);
-  fprintf(bbdebug_file, " %d",    n_damp);
-#endif
-
-#ifdef FTG
-  for(i=0;i<nslices;i++){
-    Temp =  0.0;
-    if (0 !=  *(ninslice + i))
-      Temp =  2.0* *(E_kin_ftg+i)/ *(ninslice + i);
-    fprintf(bbdebug_file, format, Temp); 
-  }
-#endif
-  fprintf(bbdebug_file," %d",   inum );
-  fprintf(bbdebug_file," %d",   jnum );
-  //fprintf(bbdebug_file," %d",   bb_relaxsteps );
-  //fprintf(bbdebug_file," %d",   bb_under );
-/*#ifdef FNORM
-  fprintf(bbdebug_file, format,   (double) SQRT( fnorm / nactive ) );
-  fprintf(bbdebug_file, format,   (double) SQRT( f_max2 ) );
-#endif*/
-#ifdef RELAXINFO
-  fprintf(bbdebug_file, " %.21e", (double) Epot - old_epot);
-  fprintf(bbdebug_file, format,   (double) SQRT( xnorm / nactive ) );
-  fprintf(bbdebug_file, format,   (double) SQRT( x_max2 ) );
-#endif
-#if defined (GLOK) || defined(MIX)
-  fprintf(bbdebug_file, format,   (double) PxF);
-  fprintf(bbdebug_file, format,   (double) mix);
-#endif
-#ifdef EINSTEIN
-  fprintf(bbdebug_file, format,   SQRT( omega_E / (nactive * Temp) ));
-#endif
-  //fprintf(bbdebug_file," %d",     bb_shdn);
-  //fprintf(bbdebug_file," %e",     bb_tot_bV);
-#if defined(NVT) || defined(NPT) || defined(STM)
-/*  fprintf(bbdebug_file," %e",     (double) (eta * tau_eta) ); */
-#endif
-#ifdef FRAC 
-  fprintf(bbdebug_file," %e",     (double) gamma_damp );
-  fprintf(bbdebug_file," %e",     (double) dotepsilon );
-#endif
-
-  if (ensemble==ENS_NPT_AXIAL) {
-#ifdef TWOD
-      fprintf(bbdebug_file,format2, (double) stress_x, (double) stress_y );
-#ifndef HOMDEF   
-      fprintf(bbdebug_file,format2, (double)  box_x.x, (double)  box_y.y );
-#endif
-#else
-      fprintf(bbdebug_file,format3, 
-	    (double) stress_x, (double) stress_y, (double) stress_z );
-#ifndef HOMDEF   
-      fprintf(bbdebug_file,format3, 
-	    (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
-#endif
-#endif
-  }
-
-#if defined(HOMDEF)
-  fprintf(bbdebug_file, format2,(double) box_x.x, (double) box_y.y);
-#ifndef TWOD 
-  fprintf(bbdebug_file, format, (double) box_z.z);
-#endif
-  if(lindef_x.y!=0)
-      fprintf(bbdebug_file, format, (double) box_y.x );
-  if(lindef_x.z!=0)
-      fprintf(bbdebug_file, format, (double) box_z.x );
-  if(lindef_y.x!=0)
-      fprintf(bbdebug_file, format, (double) box_x.y );
-  if(lindef_y.z!=0)
-      fprintf(bbdebug_file, format, (double) box_z.y );
-  if(lindef_z.x!=0)
-      fprintf(bbdebug_file, format, (double) box_x.z );
-  if(lindef_z.y!=0)
-      fprintf(bbdebug_file, format, (double) box_y.z );
-#endif
-  
-#ifdef STRESS_TENS
-  fprintf(bbdebug_file,format2, (double) Press_xx, (double) Press_yy);
-#ifdef TWOD
-  fprintf(bbdebug_file,format, (double) Press_xy);
-#else 
-  fprintf(bbdebug_file,format, (double) Press_zz);
-  fprintf(bbdebug_file,format3,
-	  (double) Press_yz, (double) Press_zx, (double) Press_xy);
-#endif    
-#endif
-#ifdef TTM
-  fprintf(bbdebug_file, " %e %e", ttm_eng, E_new);
-#ifdef DEBUG
-  fprintf(bbdebug_file, " %e %e", E_el_ab, E_ph_auf);
-#endif /*DEBUG*/
-#endif /*TTM*/
-
-#ifdef BEND
-   for (n=0; n<bend_nmoments; n++){
-       fprintf(bbdebug_file, " %e %e %e ",(bend_cog + n)->x,(bend_cog + n)->y,(bend_cog + n)->z);
-  }
-#endif
-#ifdef ZAPP
-   fprintf(bbdebug_file, " %e %e %e ", total_impuls.x,total_impuls.y,total_impuls.z);
-#endif
-
-#ifdef NEB
-   fprintf(bbdebug_file, " %lf %lf %lf %e ",phi_lr,phi_dl,phi_dr,neb_k);
-#endif
-
-#ifdef FEFL
-   fprintf(bbdebug_file, " %e", (double) tot_harm_energy/natoms);
-#endif
-
-  putc('\n',bbdebug_file);
-  flush_count++;
-
-  /* flush .eng file every flush_int writes */
-  if (flush_count > flush_int) {
-    fflush(bbdebug_file);
-    flush_count=0;
-  }
-
-}
-#endif
-
-#ifdef BBOOST
-/******************************************************************************
-*
-*  write eng file header  - keep in sync with write_bbcheck_file
-*
-******************************************************************************/
-/*
-void write_bbcheck_file_header()
-{
-  str255 fname;
-  FILE *fl;
-
-  int i,n;
-
-  if (myid == 0) {
-
-    sprintf(fname,"%s.bbcheck",outfilename);
-    fl = fopen(fname,"w");
-    if (NULL == fl) error("Cannot open bbproperties file.");
-
-#ifdef RELAX
-    fprintf(fl, "# nfc ");
-#ifndef ACG
-    fprintf(fl, "steps ");
-#else
-    fprintf(fl, "alpha ");
-#endif
-#else
-    fprintf(fl, "# time ");
-#endif
-    fprintf(fl, "bbcase bflag1 ");
-
-#if defined(STM) || defined(FRAC) 
-    fprintf(fl, "stadiontemp ");
-#endif
-
-#ifdef FRAC
-    fprintf(fl, "dampingtemp ");
-#endif
-
-#ifdef DAMP
-    fprintf(fl, "tempdamping ");
-    fprintf(fl, "n_damp ");
-#endif
-
-#ifdef FTG
-    for(i=0;i<nslices;i++)
-      fprintf(fl, "temp_%d ", i);
-#endif
-
-
-    fprintf(fl, "bflag2 ");
-    fprintf(fl, "bflag3 ");
-
-#ifdef RELAXINFO
-    fprintf(fl, "delta_epot ");
-    fprintf(fl, "xnorm ");
-    fprintf(fl, "xmax ");
-#endif
-#if defined (GLOK) || defined(MIX)
-    fprintf(fl, "PxF ");
-    fprintf(fl, "mix ");
-#endif
-#ifdef EINSTEIN
-    fprintf(fl, "omega_E ");
-#endif
-    fprintf(fl, "bb_under ");
-    fprintf(fl, "bb_shdn ");
-#if defined(NVT) || defined(NPT) || defined(STM) 
-  /*  fprintf(fl, "eta * tau_eta "); */
-/*#endif
-#ifdef FRAC  
-    fprintf(fl, "gamma_damp ");
-    fprintf(fl, "strainrate ");
-#endif
-#ifdef NPT_axial
-#ifdef TWOD
-    fprintf(fl, "stress_x stress_y ");
-#ifndef HOMDEF
-    fprintf(fl, "box_x.x box_y.y ");
-#endif
-#else
-    fprintf(fl, "stress_x stress_y stress_z ");
-#ifndef HOMDEF
-    fprintf(fl, "box_x.x box_y.y box_z.z ");
-#endif
-#endif
-#endif
-#ifdef HOMDEF
-    fprintf(fl, "box_x.x box_y.y box_z.z ");
-    if(lindef_x.y!=0)
-        fprintf(fl, "box_y.x ");
-    if(lindef_x.z!=0)
-        fprintf(fl, "box_z.x ");
-    if(lindef_y.x!=0)
-        fprintf(fl, "box_x.y ");
-    if(lindef_y.z!=0)
-        fprintf(fl, "box_z.y ");
-    if(lindef_z.x!=0)
-        fprintf(fl, "box_x.z ");
-    if(lindef_z.y!=0)
-        fprintf(fl, "box_y.z ");
-#endif
-#ifdef STRESS_TENS
-    fprintf(fl, "Press_xx Press_yy ");
-#ifdef TWOD
-    fprintf(fl, "Press_xy ");
-#else 
-    fprintf(fl, "Press_zz ");
-    fprintf(fl, "Press_yz Press_xz Press_xy");
-#endif    
-#endif
-#ifdef TTM
-    fprintf(fl, " E_el E_new");
-#ifdef DEBUG
-    fprintf(fl, " E_el_ab E_ph_auf");
-#endif /*DEBUG*/
-/*#endif /*TTM*/
-
-/*#ifdef BEND
-  for (n=0; n<bend_nmoments; n++){
-      fprintf(fl, "cog[%d].x cog[%d].y cog[%d].z ",n,n,n);
-  }
-#endif
-
-#ifdef ZAPP
-  fprintf(fl, "totimpuls.x totimpuls.y totimpuls.z ");
-#endif
-
-#ifdef NEB
-  fprintf(fl, "phi_lr phi_dl phi_dr k ");
-#endif
-
-#ifdef FEFL
-  fprintf(fl, "harm_eng ");
-#endif
-
-    putc('\n',fl);
-
-    fclose(fl);
-  }
-}  */
-
-/******************************************************************************/
-
-void write_bbcheck_file_header()
-{
-  str255 fname;
-  FILE *fl;
-
-  int i,n;
-
-  if (myid == 0) {
-
-    sprintf(fname,"%s.bbcheck",outfilename);
-    fl = fopen(fname,"w");
-    if (NULL == fl) error("Cannot open bbproperties file.");
-
-#ifdef RELAX
-    fprintf(fl, "# nfc ");
-#ifndef ACG
-    fprintf(fl, "steps ");
-#else
-    fprintf(fl, "alpha ");
-#endif
-#else
-    fprintf(fl, "# time ");
-#endif
-    fprintf(fl, "bb_epot temp ");
-    fprintf(fl, "boost_fcr hypertime ");
-#if defined(STM) || defined(FRAC) 
-    fprintf(fl, "stadiontemp ");
-#endif
-
-#ifdef FRAC
-    fprintf(fl, "dampingtemp ");
-#endif
-
-#ifdef DAMP
-    fprintf(fl, "tempdamping ");
-    fprintf(fl, "n_damp ");
-#endif
-
-#ifdef FTG
-    for(i=0;i<nslices;i++)
-      fprintf(fl, "temp_%d ", i);
-#endif
-
-
-//    fprintf(fl, "bflag2 ");
-//    fprintf(fl, "bflag3 ");
-
-#ifdef RELAXINFO
-    fprintf(fl, "delta_epot ");
-    fprintf(fl, "xnorm ");
-    fprintf(fl, "xmax ");
-#endif
-#if defined (GLOK) || defined(MIX)
-    fprintf(fl, "PxF ");
-    fprintf(fl, "mix ");
-#endif
-#ifdef EINSTEIN
-    fprintf(fl, "omega_E ");
-#endif
-//    fprintf(fl, "bb_under ");
-//    fprintf(fl, "bb_shdn ");
-#if defined(NVT) || defined(NPT) || defined(STM) 
-  /*  fprintf(fl, "eta * tau_eta "); */
-#endif
-#ifdef FRAC  
-    fprintf(fl, "gamma_damp ");
-    fprintf(fl, "strainrate ");
-#endif
-#ifdef NPT_axial
-#ifdef TWOD
-    fprintf(fl, "stress_x stress_y ");
-#ifndef HOMDEF
-    fprintf(fl, "box_x.x box_y.y ");
-#endif
-#else
-    fprintf(fl, "stress_x stress_y stress_z ");
-#ifndef HOMDEF
-    fprintf(fl, "box_x.x box_y.y box_z.z ");
-#endif
-#endif
-#endif
-#ifdef HOMDEF
-    fprintf(fl, "box_x.x box_y.y box_z.z ");
-    if(lindef_x.y!=0)
-        fprintf(fl, "box_y.x ");
-    if(lindef_x.z!=0)
-        fprintf(fl, "box_z.x ");
-    if(lindef_y.x!=0)
-        fprintf(fl, "box_x.y ");
-    if(lindef_y.z!=0)
-        fprintf(fl, "box_z.y ");
-    if(lindef_z.x!=0)
-        fprintf(fl, "box_x.z ");
-    if(lindef_z.y!=0)
-        fprintf(fl, "box_y.z ");
-#endif
-#ifdef STRESS_TENS
-    fprintf(fl, "Press_xx Press_yy ");
-#ifdef TWOD
-    fprintf(fl, "Press_xy ");
-#else 
-    fprintf(fl, "Press_zz ");
-    fprintf(fl, "Press_yz Press_xz Press_xy");
-#endif    
-#endif
-#ifdef TTM
-    fprintf(fl, " E_el E_new");
-#ifdef DEBUG
-    fprintf(fl, " E_el_ab E_ph_auf");
-#endif /*DEBUG*/
-#endif /*TTM*/
-
-#ifdef BEND
-  for (n=0; n<bend_nmoments; n++){
-      fprintf(fl, "cog[%d].x cog[%d].y cog[%d].z ",n,n,n);
-  }
-#endif
-
-#ifdef ZAPP
-  fprintf(fl, "totimpuls.x totimpuls.y totimpuls.z ");
-#endif
-
-#ifdef NEB
-  fprintf(fl, "phi_lr phi_dl phi_dr k ");
-#endif
-
-#ifdef FEFL
-  fprintf(fl, "harm_eng ");
-#endif
-
-    putc('\n',fl);
-
-    fclose(fl);
-  }
-}
-/******************************************************************************
-*
-*  write selected properties to *.bbcheck file
-*  keep in sync with write_bbcheck_file_header
-*
-******************************************************************************/
-/*
-void write_bbcheck_file(int steps)
-{
-  str255 fname;
-  int i,n;
-  static int flush_count=0;
-  real tmp;  
-
-#ifdef HPO
-  char *format=" %.16e";
-  char *format2=" %.16e %.16e";
-  char *format3=" %.16e %.16e %.16e";
-#else
-  char *format=" %e";
-  char *format2=" %e %e";
-  char *format3=" %e %e %e";
-#endif
-
-  real Epot, Temp, vol;
-
-#if defined(STM) || defined(FRAC)
-  real Temp_damp, Temp_stadium = 0.0;
-#endif
-#ifdef DAMP
- real Temp_stadium = 0.0;
-#endif
-
-#ifdef STRESS_TENS
-  real Press_xx,Press_yy, Press_xy;
-#ifndef TWOD
-  real Press_zz,Press_yz, Press_zx;
-#endif
-  calc_tot_presstens();
-#endif
-
-  /* write only on CPU 0; 
-     calc_tot_presstensor() above must be executed on all CPUs */
- /* if (myid>0) return;
-
-#ifdef STRESS_TENS
-  Press_xx = tot_presstens.xx / volume; 
-  Press_yy = tot_presstens.yy / volume; 
-#ifndef TWOD
-  Press_zz = tot_presstens.zz / volume;
-  Press_yz = tot_presstens.yz / volume; 
-  Press_zx = tot_presstens.zx / volume; 
-#endif
-  Press_xy = tot_presstens.xy / volume; 
-#endif
-
-  Epot =       tot_pot_energy / natoms;
-
-  if (ensemble == ENS_CG) {
-    Temp = 0.0;
-  } else {
-#ifdef UNIAX
-    Temp = 2.0 * tot_kin_energy / (nactive + nactive_rot);
-#elif defined(DAMP)
-    Temp = 2.0 * tot_kin_energy / (nactive - n_damp);
-#else
-    Temp = 2.0 * tot_kin_energy / nactive;
-#endif
-  }
-
-#ifdef STM 
-  Temp     = 2.0 * tot_kin_energy / (nactive - n_stadium);
-#endif 
-
-#if defined(STM) || defined(FRAC)
-  if(n_stadium != 0)  Temp_stadium = 2.0 * E_kin_stadium / n_stadium;
-#endif
-
-#if defined(FRAC)
-  if(sum_f !=0){
-      Temp_damp = 2.0 * E_kin_damp / (sum_f * DIM);
-  } else {
-      Temp_damp = 0.0;
-  }
-#endif
-#ifdef DAMP
-  if(n_damp != 0)  Temp_stadium = 2.0 * tot_kin_energy_damp / n_damp;
-#endif
-
-  vol = volume / natoms;
-  pressure = Temp / vol + virial / (DIM * volume);
-
-  /* open .bbcheck file if it is not yet open */
- /* if (NULL == bbcheck_file) {
-    sprintf(fname,"%s.bbcheck",outfilename);
-    bbcheck_file = fopen(fname,"a");
-    if (NULL == bbcheck_file) 
-      error_str("Cannot open properties file %s.bbcheck", outfilename);
-  }
-
-#ifdef RELAX
-  fprintf(bbcheck_file, "%d",     nfc);
-#ifndef ACG
-  fprintf(bbcheck_file, " %d",    steps);
-#else
-  fprintf(bbcheck_file, " %f",    acg_alpha);
-#endif
-#else
-  fprintf(bbcheck_file, "%e",     (double) (steps * timestep));
-#endif
-  fprintf(bbcheck_file, " %f",    bbcase);
-  fprintf(bbcheck_file, " %d",    bflag1);
-#if defined(STM) || defined(FRAC)
-  fprintf(bbcheck_file, format,   (double) Temp_stadium);
-#endif
-
-#ifdef FRAC
-  fprintf(bbcheck_file, format,   (double) Temp_damp);
-#endif
-
-#ifdef DAMP
-  fprintf(bbcheck_file, " %.8e",   (double) Temp_stadium);
-  fprintf(bbcheck_file, " %d",    n_damp);
-#endif
-
-#ifdef FTG
-  for(i=0;i<nslices;i++){
-    Temp =  0.0;
-    if (0 !=  *(ninslice + i))
-      Temp =  2.0* *(E_kin_ftg+i)/ *(ninslice + i);
-    fprintf(bbcheck_file, format, Temp); 
-  }
-#endif
-
-  fprintf(bbcheck_file, " %d",   bflag2 );
-  fprintf(bbcheck_file, " %d",   bflag3 );
-/*#ifdef FNORM
-  fprintf(bbcheck_file, format,   (double) SQRT( fnorm / nactive ) );
-  fprintf(bbcheck_file, format,   (double) SQRT( f_max2 ) );
-#endif*/
-/*#ifdef RELAXINFO
-  fprintf(bbcheck_file, " %.21e", (double) Epot - old_epot);
-  fprintf(bbcheck_file, format,   (double) SQRT( xnorm / nactive ) );
-  fprintf(bbcheck_file, format,   (double) SQRT( x_max2 ) );
-#endif
-#if defined (GLOK) || defined(MIX)
-  fprintf(bbcheck_file, format,   (double) PxF);
-  fprintf(bbcheck_file, format,   (double) mix);
-#endif
-#ifdef EINSTEIN
-  fprintf(bbcheck_file, format,   SQRT( omega_E / (nactive * Temp) ));
-#endif
-  fprintf(bbcheck_file," %d",     bb_under);
-  fprintf(bbcheck_file," %d",     bb_shdn);
-#if defined(NVT) || defined(NPT) || defined(STM)
-/*  fprintf(bbcheck_file," %e",     (double) (eta * tau_eta) ); */
-/*#endif
-#ifdef FRAC 
-  fprintf(bbcheck_file," %e",     (double) gamma_damp );
-  fprintf(bbcheck_file," %e",     (double) dotepsilon );
-#endif
-
-  if (ensemble==ENS_NPT_AXIAL) {
-#ifdef TWOD
-      fprintf(bbcheck_file,format2, (double) stress_x, (double) stress_y );
-#ifndef HOMDEF   
-      fprintf(bbcheck_file,format2, (double)  box_x.x, (double)  box_y.y );
-#endif
-#else
-      fprintf(bbcheck_file,format3, 
-	    (double) stress_x, (double) stress_y, (double) stress_z );
-#ifndef HOMDEF   
-      fprintf(bbcheck_file,format3, 
-	    (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
-#endif
-#endif
-  }
-
-#if defined(HOMDEF)
-  fprintf(bbcheck_file, format2,(double) box_x.x, (double) box_y.y);
-#ifndef TWOD 
-  fprintf(bbcheck_file, format, (double) box_z.z);
-#endif
-  if(lindef_x.y!=0)
-      fprintf(bbcheck_file, format, (double) box_y.x );
-  if(lindef_x.z!=0)
-      fprintf(bbcheck_file, format, (double) box_z.x );
-  if(lindef_y.x!=0)
-      fprintf(bbcheck_file, format, (double) box_x.y );
-  if(lindef_y.z!=0)
-      fprintf(bbcheck_file, format, (double) box_z.y );
-  if(lindef_z.x!=0)
-      fprintf(bbcheck_file, format, (double) box_x.z );
-  if(lindef_z.y!=0)
-      fprintf(bbcheck_file, format, (double) box_y.z );
-#endif
-  
-#ifdef STRESS_TENS
-  fprintf(bbcheck_file,format2, (double) Press_xx, (double) Press_yy);
-#ifdef TWOD
-  fprintf(bbcheck_file,format, (double) Press_xy);
-#else 
-  fprintf(bbcheck_file,format, (double) Press_zz);
-  fprintf(bbcheck_file,format3,
-	  (double) Press_yz, (double) Press_zx, (double) Press_xy);
-#endif    
-#endif
-#ifdef TTM
-  fprintf(bbcheck_file, " %e %e", ttm_eng, E_new);
-#ifdef DEBUG
-  fprintf(bbcheck_file, " %e %e", E_el_ab, E_ph_auf);
-#endif /*DEBUG*/
-/*#endif /*TTM*/
-
-/*#ifdef BEND
-   for (n=0; n<bend_nmoments; n++){
-       fprintf(bbcheck_file, " %e %e %e ",(bend_cog + n)->x,(bend_cog + n)->y,(bend_cog + n)->z);
-  }
-#endif
-#ifdef ZAPP
-   fprintf(bbcheck_file, " %e %e %e ", total_impuls.x,total_impuls.y,total_impuls.z);
-#endif
-
-#ifdef NEB
-   fprintf(bbcheck_file, " %lf %lf %lf %e ",phi_lr,phi_dl,phi_dr,neb_k);
-#endif
-
-#ifdef FEFL
-   fprintf(bbcheck_file, " %e", (double) tot_harm_energy/natoms);
-#endif
-
-  putc('\n',bbcheck_file);
-  flush_count++;
-
-  /* flush .eng file every flush_int writes */
-/*  if (flush_count > flush_int) {
-    fflush(bbcheck_file);
-    flush_count=0;
-  }
-
-} */
-
-/******************************************************************************/
-
-void write_bbcheck_file(int steps)
-{
-  str255 fname;
-  int i,n;
-  static int flush_count=0;
-  real tmp;  
-
-#ifdef HPO
-  char *format=" %.16e";
-  char *format2=" %.16e %.16e";
-  char *format3=" %.16e %.16e %.16e";
-#else
-  char *format=" %e";
-  char *format2=" %e %e";
-  char *format3=" %e %e %e";
-#endif
-
-  real Epot, Temp, vol;
-
-#if defined(STM) || defined(FRAC)
-  real Temp_damp, Temp_stadium = 0.0;
-#endif
-#ifdef DAMP
- real Temp_stadium = 0.0;
-#endif
-
-#ifdef STRESS_TENS
-  real Press_xx,Press_yy, Press_xy;
-#ifndef TWOD
-  real Press_zz,Press_yz, Press_zx;
-#endif
-  calc_tot_presstens();
-#endif
-
-  /* write only on CPU 0; 
-     calc_tot_presstensor() above must be executed on all CPUs */
-  if (myid>0) return;
-
-#ifdef STRESS_TENS
-  Press_xx = tot_presstens.xx / volume; 
-  Press_yy = tot_presstens.yy / volume; 
-#ifndef TWOD
-  Press_zz = tot_presstens.zz / volume;
-  Press_yz = tot_presstens.yz / volume; 
-  Press_zx = tot_presstens.zx / volume; 
-#endif
-  Press_xy = tot_presstens.xy / volume; 
-#endif
-
-  Epot =       tot_pot_energy / natoms;
-
-  if (ensemble == ENS_CG) {
-    Temp = 0.0;
-  } else {
-#ifdef UNIAX
-    Temp = 2.0 * tot_kin_energy / (nactive + nactive_rot);
-#elif defined(DAMP)
-    Temp = 2.0 * tot_kin_energy / (nactive - n_damp);
-#else
-    Temp = 2.0 * tot_kin_energy / nactive;
-#endif
-  }
-
-#ifdef STM 
-  Temp     = 2.0 * tot_kin_energy / (nactive - n_stadium);
-#endif 
-
-#if defined(STM) || defined(FRAC)
-  if(n_stadium != 0)  Temp_stadium = 2.0 * E_kin_stadium / n_stadium;
-#endif
-
-#if defined(FRAC)
-  if(sum_f !=0){
-      Temp_damp = 2.0 * E_kin_damp / (sum_f * DIM);
-  } else {
-      Temp_damp = 0.0;
-  }
-#endif
-#ifdef DAMP
-  if(n_damp != 0)  Temp_stadium = 2.0 * tot_kin_energy_damp / n_damp;
-#endif
-
-  vol = volume / natoms;
-  pressure = Temp / vol + virial / (DIM * volume);
-
-  /* open .bbcheck file if it is not yet open */
-  if (NULL == bbcheck_file) {
-    sprintf(fname,"%s.bbcheck",outfilename);
-    bbcheck_file = fopen(fname,"a");
-    if (NULL == bbcheck_file) 
-      error_str("Cannot open properties file %s.bbcheck", outfilename);
-  }
-
-#ifdef RELAX
-  fprintf(bbcheck_file, "%d",     nfc);
-#ifndef ACG
-  fprintf(bbcheck_file, " %d",    steps);
-#else
-  fprintf(bbcheck_file, " %f",    acg_alpha);
-#endif
-#else
-  fprintf(bbcheck_file, "%e",     (double) (steps * timestep));
-#endif
-  fprintf(bbcheck_file, " %f",    bb_epot);
-  fprintf(bbcheck_file, " %f",    Temp);
-  fprintf(bbcheck_file, " %f",    boost_fcr);
-  fprintf(bbcheck_file, " %e",    hypertime);
-#if defined(STM) || defined(FRAC)
-  fprintf(bbcheck_file, format,   (double) Temp_stadium);
-#endif
-
-#ifdef FRAC
-  fprintf(bbcheck_file, format,   (double) Temp_damp);
-#endif
-
-#ifdef DAMP
-  fprintf(bbcheck_file, " %.8e",   (double) Temp_stadium);
-  fprintf(bbcheck_file, " %d",    n_damp);
-#endif
-
-#ifdef FTG
-  for(i=0;i<nslices;i++){
-    Temp =  0.0;
-    if (0 !=  *(ninslice + i))
-      Temp =  2.0* *(E_kin_ftg+i)/ *(ninslice + i);
-    fprintf(bbcheck_file, format, Temp); 
-  }
-#endif
-
-  //fprintf(bbcheck_file, " %d",   bflag2 );
-  //fprintf(bbcheck_file, " %d",   bflag3 );
-/*#ifdef FNORM
-  fprintf(bbcheck_file, format,   (double) SQRT( fnorm / nactive ) );
-  fprintf(bbcheck_file, format,   (double) SQRT( f_max2 ) );
-#endif*/
-#ifdef RELAXINFO
-  fprintf(bbcheck_file, " %.21e", (double) Epot - old_epot);
-  fprintf(bbcheck_file, format,   (double) SQRT( xnorm / nactive ) );
-  fprintf(bbcheck_file, format,   (double) SQRT( x_max2 ) );
-#endif
-#if defined (GLOK) || defined(MIX)
-  fprintf(bbcheck_file, format,   (double) PxF);
-  fprintf(bbcheck_file, format,   (double) mix);
-#endif
-#ifdef EINSTEIN
-  fprintf(bbcheck_file, format,   SQRT( omega_E / (nactive * Temp) ));
-#endif
-  //fprintf(bbcheck_file," %d",     bb_under);
-  //fprintf(bbcheck_file," %d",     bb_shdn);
-#if defined(NVT) || defined(NPT) || defined(STM)
-/*  fprintf(bbcheck_file," %e",     (double) (eta * tau_eta) ); */
-#endif
-#ifdef FRAC 
-  fprintf(bbcheck_file," %e",     (double) gamma_damp );
-  fprintf(bbcheck_file," %e",     (double) dotepsilon );
-#endif
-
-  if (ensemble==ENS_NPT_AXIAL) {
-#ifdef TWOD
-      fprintf(bbcheck_file,format2, (double) stress_x, (double) stress_y );
-#ifndef HOMDEF   
-      fprintf(bbcheck_file,format2, (double)  box_x.x, (double)  box_y.y );
-#endif
-#else
-      fprintf(bbcheck_file,format3, 
-	    (double) stress_x, (double) stress_y, (double) stress_z );
-#ifndef HOMDEF   
-      fprintf(bbcheck_file,format3, 
-	    (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
-#endif
-#endif
-  }
-
-#if defined(HOMDEF)
-  fprintf(bbcheck_file, format2,(double) box_x.x, (double) box_y.y);
-#ifndef TWOD 
-  fprintf(bbcheck_file, format, (double) box_z.z);
-#endif
-  if(lindef_x.y!=0)
-      fprintf(bbcheck_file, format, (double) box_y.x );
-  if(lindef_x.z!=0)
-      fprintf(bbcheck_file, format, (double) box_z.x );
-  if(lindef_y.x!=0)
-      fprintf(bbcheck_file, format, (double) box_x.y );
-  if(lindef_y.z!=0)
-      fprintf(bbcheck_file, format, (double) box_z.y );
-  if(lindef_z.x!=0)
-      fprintf(bbcheck_file, format, (double) box_x.z );
-  if(lindef_z.y!=0)
-      fprintf(bbcheck_file, format, (double) box_y.z );
-#endif
-  
-#ifdef STRESS_TENS
-  fprintf(bbcheck_file,format2, (double) Press_xx, (double) Press_yy);
-#ifdef TWOD
-  fprintf(bbcheck_file,format, (double) Press_xy);
-#else 
-  fprintf(bbcheck_file,format, (double) Press_zz);
-  fprintf(bbcheck_file,format3,
-	  (double) Press_yz, (double) Press_zx, (double) Press_xy);
-#endif    
-#endif
-#ifdef TTM
-  fprintf(bbcheck_file, " %e %e", ttm_eng, E_new);
-#ifdef DEBUG
-  fprintf(bbcheck_file, " %e %e", E_el_ab, E_ph_auf);
-#endif /*DEBUG*/
-#endif /*TTM*/
-
-#ifdef BEND
-   for (n=0; n<bend_nmoments; n++){
-       fprintf(bbcheck_file, " %e %e %e ",(bend_cog + n)->x,(bend_cog + n)->y,(bend_cog + n)->z);
-  }
-#endif
-#ifdef ZAPP
-   fprintf(bbcheck_file, " %e %e %e ", total_impuls.x,total_impuls.y,total_impuls.z);
-#endif
-
-#ifdef NEB
-   fprintf(bbcheck_file, " %lf %lf %lf %e ",phi_lr,phi_dl,phi_dr,neb_k);
-#endif
-
-#ifdef FEFL
-   fprintf(bbcheck_file, " %e", (double) tot_harm_energy/natoms);
-#endif
-
-  putc('\n',bbcheck_file);
-  flush_count++;
-
-  /* flush .eng file every flush_int writes */
-  if (flush_count > flush_int) {
-    fflush(bbcheck_file);
-    flush_count=0;
-  }
-
-}
-
-
-#endif
-
-
 #ifdef RELAX
 /******************************************************************************
 *
@@ -4416,12 +2546,12 @@ void write_ssdef(int steps)
 
 
   /* and write out information depending on the options and simulation settings */
-  fprintf(ssdef_file, "%d %d %e %e ", sscount,nfc,(double) Epot,(double) SQRT( fnorm / nactive ) );
+  fprintf(ssdef_file, "%d %d %.12e %e ", sscount,nfc,(double) Epot,(double) SQRT( fnorm / nactive ) ); 
   
 #ifdef TWOD
     fprintf(ssdef_file," %e %e ", (double)  box_x.x, (double)  box_y.y );
 #else
-    fprintf(ssdef_file," %e %e %e ", 
+    fprintf(ssdef_file," %.16e %.16e %.16e ", 
             (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
 #endif
 #ifdef HOMDEF
@@ -4449,12 +2579,12 @@ void write_ssdef(int steps)
 #endif /* FBC */
 
 #ifdef STRESS_TENS
-  fprintf(ssdef_file," %e %e ", (double) Press_xx, (double) Press_yy);
+  fprintf(ssdef_file," %.16e %.16e ", (double) Press_xx, (double) Press_yy);
 #ifdef TWOD
   fprintf(ssdef_file," %e ", (double) Press_xy);
 #else 
-  fprintf(ssdef_file," %e ", (double) Press_zz);
-  fprintf(ssdef_file," %e %e %e ",
+  fprintf(ssdef_file," %.16e ", (double) Press_zz);
+  fprintf(ssdef_file," %.16e %.16e %.16e ",
           (double) Press_yz, (double) Press_zx, (double) Press_xy);
 #endif    
 #endif /* STRESS_TENS */
@@ -4605,7 +2735,7 @@ void write_fext(int steps)
       fprintf(ind_file, "%f %f %f %f %f ", ep_pos[i].x, ep_pos[i].y, ep_pos[i].z, ep_fext[i], ep_car[i] );
     }
     for (i=ep_nind; i<ep_n; i++) {
-      fprintf(ind_file, "%f %f %f %f %f %f ", ep_pos[i].x, ep_pos[i].y, ep_pos[i].z, ep_fext[i] );
+      fprintf(ind_file, "%f %f %f %f ", ep_pos[i].x, ep_pos[i].y, ep_pos[i].z, ep_fext[i] );
     }
     putc('\n',ind_file);
     flush_count++;
@@ -4890,7 +3020,7 @@ void write_header_config(FILE *out)
 #ifdef DISLOC
   atompar++;
 #endif
-#ifdef VARCHG
+#if defined(VARCHG) || defined(EWALD) || defined(USEFCS)
   atompar++;
 #endif
 #ifdef CNA
@@ -4920,7 +3050,7 @@ void write_header_config(FILE *out)
 #else
   fprintf(out, " Epot" );
 #endif
-#ifdef VARCHG
+#if defined(VARCHG) || defined(EWALD) || defined(USEFCS)
   fprintf(out, " charge" );
 #endif
 #ifdef NNBR
@@ -4946,9 +3076,6 @@ void write_header_config(FILE *out)
   fprintf(out, " eam_p");
 #endif
 #endif
-#ifdef SBOOST
-  fprintf(out, " Mises" );
-#endif  
 #ifdef DIPOLE
   fprintf(out, " dp_ind_x dp_ind_y dp_ind_z");
 #endif	/* DIPOLE */
@@ -4989,6 +3116,7 @@ void read_box(str255 infilename)
 {
   FILE   *infile;
   str255 line, fname;
+  char *s;
 
   if (myid==0) {
 #ifdef MPI
@@ -5000,7 +3128,7 @@ void read_box(str255 infilename)
 #endif
     infile = fopen(infilename,"r");
     if (NULL==infile) error_str("cannot open input file %s", infilename);
-    fgets(line, 255, infile);
+    s=fgets(line, 255, infile);
     while (line[0]=='#') {
 #ifdef TWOD
       if      (line[1]=='X') 
@@ -5015,7 +3143,7 @@ void read_box(str255 infilename)
       else if (line[1]=='Z') 
         sscanf(line+2, FORMAT3, &box_z.x, &box_z.y, &box_z.z);
 #endif
-      fgets(line, 255, infile);
+      s=fgets(line, 255, infile);
       if (feof(infile)) break;
     }
     fclose(infile);
@@ -5041,6 +3169,7 @@ int read_header(header_info_t *info, str255 infilename)
   str255 line, fname, str;
   int    have_format=0, have_header=0;
   int    p, n, t, m, np, nv, nd;
+  char   *s;
 
 #ifdef MPI
   if (1==parallel_input) {
@@ -5063,7 +3192,7 @@ int read_header(header_info_t *info, str255 infilename)
   info->n_charge   = -1;
 #endif
 
-  fgets(line, 255, infile);
+  s=fgets(line, 255, infile);
   while (line[0]=='#') {
     /* format line */
     if      (line[1]=='F') {
@@ -5114,7 +3243,7 @@ int read_header(header_info_t *info, str255 infilename)
     else if (line[1]=='E') {
       if (have_format) have_header = 1;
     }
-    fgets(line, 255, infile);
+    s=fgets(line, 255, infile);
     if (feof(infile)) break;
   }
   fclose(infile);
@@ -5460,6 +3589,51 @@ void write_dsf()
     fclose(out);
     count++;
   }
+}
+
+#endif
+
+#if defined(HC) && !defined(NVX)
+
+/******************************************************************************
+*
+* write heat current
+*
+******************************************************************************/
+
+void write_heat_current(int steps)
+{
+  str255 fname;
+  static int flush_count=0;
+
+  /* open .hc file if not yet open */
+  if (NULL == hc_file) {
+    sprintf(fname,"%s.hc",outfilename);
+    hc_file = fopen(fname,"a");
+    if (NULL == hc_file) error("Cannot open hc file.");
+#ifdef TWOD
+    fprintf(hc_file,"# time hcx hcy\n");
+#else
+    fprintf(hc_file,"# time hcx hcy hcz\n");
+#endif
+  }
+
+  /* write heat current */
+#ifdef TWOD
+  fprintf(hc_file, "%e %.12e %.12e\n",
+    (steps - hc_start) * timestep, hc.x, hc.y);
+#else
+  fprintf(hc_file, "%e %.12e %.12e %.12e\n",
+    (steps - hc_start) * timestep, hc.x, hc.y, hc.z);
+#endif
+  flush_count++;
+
+  /* flush .hc file every flush_int writes */
+  if (flush_count > flush_int){
+    fflush(hc_file);
+    flush_count=0;
+  }
+
 }
 
 #endif

@@ -1,9 +1,8 @@
-
 /******************************************************************************
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -136,10 +135,6 @@ EXTERN real delta_epot_threshold INIT(0.0); /* threshold for delta Epot */
 EXTERN int  is_relaxed           INIT(0);   /* sample is relaxed? */
 #endif
 
-#ifdef BBOOST
-EXTERN int *bb_boosttypes      INIT(NULL);  /* defines which virtual types will be boosted */
-#endif
-
 #ifdef FBC                                 /* FBC uses virtual atom types, */
 EXTERN vektor *fbc_forces      INIT(NULL); /* each vtype has its force */
 EXTERN vektor *fbc_beginforces INIT(NULL); /* begin values for interpolation */
@@ -210,12 +205,6 @@ EXTERN long *num_vsort INIT(NULL);/* number of atoms for each virtual type */
 EXTERN int steps INIT(0);        /* number of current MD step */
 EXTERN int steps_max INIT(0);    /* Maximum number of MD steps */
 EXTERN int steps_min INIT(0);    /* starting step nr for current phase */
-#ifdef BBOOST
-EXTERN int bbminsteps INIT(0);        /* number of current minimization step in Bondboost */
-EXTERN int bbminsteps_max INIT(0);    /* Maximum number of minimization steps in Bondboost */
-EXTERN int bbminsteps_min INIT(0);    /* starting step nr for current minimization in Bondboost */
-EXTERN int bbminsteps_tmp INIT(0);
-#endif
 EXTERN int imdrestart INIT(0);   /* file number for restart */
 EXTERN int checkpt_int INIT(0);  /* Period of checkpoints */
 EXTERN int eng_int INIT(0);      /* Period of data output */
@@ -303,16 +292,6 @@ EXTERN FILE  *eng_file INIT(NULL);      /* pointer to .eng file  */
 EXTERN FILE *msqd_file INIT(NULL);      /* pointer to .msqd file */
 EXTERN int flush_int INIT(50);          /* flush .eng and .msqd files
                                            every flush_int writes */
-#ifdef BBOOST
-EXTERN FILE  *bbeng_file INIT(NULL);      /* pointer to .bbeng file  */
-EXTERN FILE  *bbtran_file INIT(NULL);      /* pointer to .bbtran file  */
-#endif
-
-#ifdef BBOOST
-EXTERN FILE  *bbcheck_file INIT(NULL);      /* pointer to .bbtran file  */
-EXTERN FILE  *bbdebug_file INIT(NULL);      /* pointer to .bbtran file  */ 
-#endif
-
 #ifdef EXTPOT
 EXTERN FILE *ind_file INIT(NULL);       /* pointer to .ind file */
 #endif
@@ -373,6 +352,7 @@ EXTERN real f_max INIT(0.0);
 EXTERN real f_max2 INIT(0.0);  
 /* scalar product of global force and momentum vectors */ 
 EXTERN real PxF INIT(0.0);
+EXTERN real last_PxF INIT(0.0);
 /* Einstein frequency is similar as fnorm, but divided by the masses */ 
 EXTERN real omega_E INIT(0.0);
 
@@ -669,9 +649,7 @@ EXTERN real   acg_decfac        INIT(0.5);    /* Kai Nordlunds adaptive CG */
 EXTERN int sscount INIT(0);           /* snapshot counter */
 #endif
 EXTERN int nfc INIT(0);               /* counts force computations */
-#ifdef BBOOST
-EXTERN int bbnfc INIT(0);               /* counts force computations */
-#endif
+
 #ifdef CNA
 EXTERN int cna_start INIT(0);
 EXTERN int cna_end INIT(0);
@@ -712,6 +690,9 @@ EXTERN int avpos_start INIT(0);       /* Start time for avpos */
 EXTERN int avpos_end INIT(0);         /* End time for avpos */
 EXTERN int avpos_int INIT(0);         /* Period of avp output ==0 */
 EXTERN int avpos_res INIT(0);         /* Period of coordinate addition */
+EXTERN int avpos_steps INIT(0);       /* Number of steps to average over before position writes*/
+EXTERN int avpos_nwrites INIT(0);     /* Number of position writes performed */
+EXTERN int avpos_npwrites INIT(0);    /* Number of pressure writes performed */
 EXTERN int avpos_cnt INIT(0);         /* Number of positions added */
 #ifdef NPT
 EXTERN vektor av_box_x  INIT(nullvektor); /* Average of box vectors */
@@ -783,23 +764,23 @@ EXTERN int correl_omode INIT(1);   /* output mode for histogram */
 EXTERN integer ***GS INIT(NULL);   /* histogram array for self correlation */
 #endif
 
+/* data for heat conductivity measurements */
+#if defined(HC) || defined(NVX)
+EXTERN int hc_start INIT(2000);        /* heat current starting time */
+EXTERN int hc_int   INIT(0);           /* heat current writing interval */
+#endif
+#ifdef HC
+EXTERN int hc_av_start INIT(1000);     /* energy average starting time  */
+EXTERN vektor hc;                      /* heat current */
+EXTERN FILE *hc_file   INIT(NULL);     /* heat current file */
+EXTERN real heat_cond  INIT(0.0);      /* heat conductivity */
+#endif
 #ifdef NVX
-EXTERN real dTemp_start   INIT(0.0);   /* deviation of starting heat bath 
-                                          temperature from mean temp. */
-EXTERN real dTemp_end 	  INIT(0.0);   /* deviation of final heat bath 
-                                          temperature from mean temp. */ 
-EXTERN real tran_Tleft 	  INIT(0.0);   /* temperature of the left=hot wall */
-EXTERN real tran_Tright   INIT(0.0);   /* temperature of the right=cold  wall*/
-EXTERN real heat_cond     INIT(0.0);   /* heat conductivity */
+EXTERN int  hc_nlayers  INIT(0);       /* number of layers */
+EXTERN int  hc_count    INIT(0);       /* running index of temp. profile */
+EXTERN real hc_heatcurr INIT(0.0);     /* induced heat current density */
 #endif
-#ifdef RNEMD
-EXTERN real heat_transfer INIT(0.0);   /* total (integrated) heat transfer */
-EXTERN int  exch_int      INIT(0);     /* interval between particle exchange */
-#endif
-#ifdef TRANSPORT
-EXTERN int  tran_int      INIT(0);     /* Intervals of temperature recording.*/
-EXTERN int  tran_nlayers  INIT(0);     /* number of layers*/
-#endif
+
 #ifdef DEBUG
 EXTERN ivektor force_celldim_divisor INIT(einsivektor); /* if you want cell dimensions to be
 							   divisible by certain numbers, this is your
@@ -807,6 +788,7 @@ EXTERN ivektor force_celldim_divisor INIT(einsivektor); /* if you want cell dime
 							   serial and parallel simulations if
 							   cell dimensions make a difference */
 #endif /* DEBUG*/
+
 #ifdef TTM /* two temperature model */
   /* These will point to the calculation net in a nice 3D array fashion */
 EXTERN  ttm_Element *** l1, *** l2, *** l3;
@@ -871,22 +853,47 @@ EXTERN real laser_sigma_t INIT(0.5);   /* half pulse duration (sigma of gaussian
 EXTERN real laser_sigma_t_squared INIT(0.25); /* same, squared */
 EXTERN real laser_t_0	  INIT(1.0);   /* time of maximum intensity of pulse (rescaling) */
 EXTERN real laser_p_peak  INIT(0.0);   /* Peak power density (calculated in imd.c from previous parameters)*/
-EXTERN real laser_atom_vol INIT(16.6);  /* Volume per particle (inverse density)*/
+EXTERN real laser_atom_vol INIT(16.6);  /* Volume per particle (inverse density) ATTENTION: THIS VALUE IS VOR ALUMINUM ONLY*/
 EXTERN int  laser_rescale_mode INIT(1); /* Mode for laser velocity rescaling */
 
-EXTERN void (*do_laser_rescale)(void);  /* Function pointer for rescaling routine */
-
-/* EXTERN int  laser_damp    INIT(0);      */  /* Use damping slope at other end?    */
-/* EXTERN real laser_damp_depth INIT(0.0); */  /* Use slope from what depth?         */
-/* EXTERN real laser_damp_width INIT(0.0); */  /* Transition width of damping funct. */
-/* EXTERN int  laser_damp_smooth INIT(1);  */  /* Smooth transition (sine)?	     */
+#ifdef LASERYZ 
+EXTERN real laser_sigma_w_y INIT(0.0); /* y-center of gaussian laser-pulse  */
+EXTERN real laser_sigma_w_z INIT(0.0); /* z-center of gaussian laser-pulse  */
+EXTERN real laser_sigma_w0 INIT(10.0); /* diameter of the laser beam at 1/e */
+EXTERN ivektor laser_tem_mode INIT(nullivektor); /* Defines the laser TEM_xy mode */
 #endif
+
+EXTERN void (*do_laser_rescale)(void);  /* Function pointer for rescaling routine */
+EXTERN double (*laser_intensity_profile)(double, double, double);
+
+#endif
+
+#ifdef PDECAY
+EXTERN real xipdecay INIT (0.0);        /* damping parameter */
+EXTERN real ramp_start INIT (0.9);      /* start of damping ramp in % of box_size */
+EXTERN real ramp_end INIT (1.0);        /* end of damping ramp */
+EXTERN real ramp_fraction INIT (0.2);   /* fraction of the sample (from right side) on which the damping ramp acts */
+EXTERN int pdecay_mode INIT (1);        /* which form of the damping function is used */
+#endif
+
+#ifdef SM
+EXTERN int  charge_update_steps INIT(0); /* number of steps between charge updates */
+EXTERN int  sm_fixed_charges INIT(0);    /* if 1, keep charges fixed */
+EXTERN real sm_chi_0[2]; /* Initial value of the electronegativity */ 
+EXTERN real sm_Z[2];     /* Initial value of the effecitve core charge */
+EXTERN real sm_J_0[2];   /* atomic hardness or self-Coulomb repulsion */
+EXTERN real sm_zeta[2];  
+EXTERN str255 na_pot_filename INIT("\0");     /* nuclear attraction potential file   */
+EXTERN str255 cr_pot_filename INIT("\0");     /* coulomb repulsive potential file   */
+EXTERN str255 erfc_filename INIT("\0");     /* tabulated function erfc/r file   */
+#endif
+
 
 #ifdef STRESS_TENS
 EXTERN sym_tensor tot_presstens INIT(nullsymtensor);/* global pressure tens. */
 EXTERN sym_tensor presstens_ext INIT(nullsymtensor);  /* ext. pressure tens. */
 EXTERN int press_int INIT(0);    /* interval for writing the pressure tensor */
-EXTERN int do_press_calc INIT(0);           /* flag whether to do press calc */
+EXTERN int do_press_calc INIT(0);   /* flag whether to do press calc */
 #endif
 
 /* I/O via sockets */
@@ -1128,12 +1135,37 @@ EXTERN real epitax_speed INIT(1.0);
 #endif
 
 EXTERN real     ew_r2_cut INIT(0.0);     /* EWALD r-space cutoff */
+#ifdef SM
+EXTERN pot_table_t erfc_r_tab;    /* tabulated function erfc/r */
+EXTERN pot_table_t cr_pot_tab;    /* tabulated coulomb repulsive potential*/
+EXTERN pot_table_t na_pot_tab;    /* tabulated nuclear attraction potential */
+#endif
+
+#if defined(EWALD) || defined(COULOMB) || defined(USEFCS) || defined(SM)
+EXTERN real     charge[10] INIT(zero10); /* Charge of atoms */
+EXTERN real     coul_eng INIT(14.40);    /* this is e^2/(4*pi*epsilon_0) in eV A */
+#endif
+#ifdef USEFCS
+EXTERN int      fcs_method       INIT(0);
+EXTERN int      fcs_debug_level  INIT(0);
+EXTERN real     fcs_rcut         INIT(0.0);
+EXTERN real     fcs_pepc_eps     INIT(0.0);
+EXTERN real     fcs_pepc_theta   INIT(0.3);
+EXTERN int      fcs_fmm_absrel   INIT(2);
+EXTERN real     fcs_fmm_deltaE   INIT(1e-5);
+EXTERN int      fcs_fmm_dcorr    INIT(0);
+EXTERN real     fcs_p3m_accuracy INIT(0.0);
+EXTERN real     fcs_p2nfft_accuracy INIT(0.0);
+#endif
 #if defined(EWALD) || defined(COULOMB)
 EXTERN imd_timer ewald_time;
-EXTERN real     charge[10] INIT(zero10); /* Charge of atoms */
 EXTERN real     ew_kappa;                /* Parameter kappa */
 EXTERN real     ew_kcut;                 /* k-space cutoff */
+#ifndef SM
 EXTERN int      ew_nmax INIT(-1);        /* Number of image boxes */
+#else
+EXTERN int      ew_nmax INIT(0);        /* Number of image boxes */ 
+#endif
 EXTERN int      ew_totk;
 EXTERN int      ew_nx;
 EXTERN int      ew_ny;
@@ -1154,7 +1186,6 @@ EXTERN real     *sinkz;
 EXTERN real     *coskr;
 EXTERN real     *sinkr;
 EXTERN real     ew_vorf;
-EXTERN real     ew_eps INIT(14.40); /* this is e^2/(4*pi*epsilon_0) in eV A */
 EXTERN real     twopi;
 EXTERN pot_table_t coul_table; /* one table to hold all coul. and dipole fn */
 EXTERN real     coul_res   INIT(0); /* function table resolution */
@@ -1182,6 +1213,14 @@ EXTERN real     *ms_r0     INIT(NULL); /* in A */
 EXTERN real     *ms_shift  INIT(NULL);
 EXTERN real     *ms_fshift INIT(NULL);
 #endif /* DIPOLE or MORSE */
+#if defined(BUCK)
+EXTERN real     *bk_shift  INIT(NULL);
+EXTERN real     *bk_fshift INIT(NULL);
+#endif /* BUCK */
+#ifdef EXTF
+/* external homogeneous electrostatic field */
+EXTERN vektor extf INIT(nullvektor);    /* in e eV */
+#endif /* EXTF */
 
 /* generate quasicrystal */
 #ifdef QUASI
@@ -1211,10 +1250,6 @@ EXTERN int shock_mode INIT(2);                   /* type of shock */
 #endif
 
 EXTERN int ensemble INIT(ENS_EMPTY);    /* active ensemble type */
-#ifdef BBOOST
-EXTERN int bb_ensemble INIT(ENS_EMPTY);    /* ensemble used in bb_minimize */
-EXTERN void (*bb_move_atoms)(void);        /* active integrator in bb_minimize */
-#endif
 EXTERN int loop INIT(0);                /* loop for online visualisation */
 EXTERN void (*move_atoms)(void);        /* active integrator routine */
 
@@ -1274,42 +1309,25 @@ EXTERN real neb_maxmove INIT(0.0);
 
 
 #ifdef BBOOST
-
-extern int bb_maxneigh INIT(0);    /* max number of neighbors for boosting */
+#define BB_MAXNEIGH     30
 #define BB_MAXCOMPONENTS 5                 /* maximal number of alloying components  = ntypes */
 EXTERN real bb_btime INIT(0.0);            /* number of timestep * boostfactor during boost */
-EXTERN real hypertime INIT(0.0);
 EXTERN real bb_tot_bV INIT(0.0);           /* magnitude of boost potential */
 EXTERN real sum_bfcr INIT(0.0);           /* summation of boost factor */
-EXTERN real bb_sum_bV INIT(0.0);           /* summation of boost potential */
-EXTERN real bb_ref1max INIT(0.0);           /* the max value of bb_eci in ref1 */
-EXTERN real bb_ref2max INIT(0.0);           /* the max value of bb_eci in ref2 */
 EXTERN real C_x INIT(0.0);		/* section of shut down function */
 EXTERN real C_x2 INIT(0.0);		/* section of shut down function */
 EXTERN real B_x INIT(0.0);		/* section of shut down function */
 EXTERN real B_x2 INIT(0.0);		/* section of shut down function */
 EXTERN real A_e_max INIT(0.0);		/* shut down function */
-EXTERN real bbp1_2 INIT(0.98);           	/* curvature controller of the boost potential */
+EXTERN real p1_2 INIT(0.98);           	/* curvature controller of the boost potential */
 EXTERN real bb_rcut INIT(1.0);		/* the cut_off for the bb_neight */
-EXTERN real eci_ref1max INIT(0.0);    /* the max fractional change in bond length from reference 1 state */
-EXTERN real eci_ref2max INIT(0.0);    /* the max fractional change in bond length from reference 2 state */
 EXTERN real *bb_neightab_r2cut INIT(NULL);  /* the cut_off for the bb_neight */
-/*EXTERN real bb_epscrit[BB_MAXCOMPONENTS][BB_MAXCOMPONENTS]; /* largest fraction of bondlength to determine whether a bond is broken */
-/*EXTERN real bb_eps[BB_MAXCOMPONENTS][BB_MAXCOMPONENTS];
+EXTERN real bb_epscrit[BB_MAXCOMPONENTS][BB_MAXCOMPONENTS]; /* largest fraction of bondlength to determine whether a bond is broken */
+EXTERN real bb_eps[BB_MAXCOMPONENTS][BB_MAXCOMPONENTS];
 EXTERN real bb_eps2[BB_MAXCOMPONENTS][BB_MAXCOMPONENTS];
-EXTERN real bb_epsold[BB_MAXCOMPONENTS][BB_MAXCOMPONENTS]; */
-EXTERN real bb_epscrit INIT(0.0); /* largest fraction of bondlength to determine whether a bond is broken */
-EXTERN real delta_bb_epscrit INIT(0.0);
-EXTERN real bb_eps  INIT(0.0);
-EXTERN real bb_eps2  INIT(0.0);
-EXTERN real bb_epsold  INIT(0.0); 
-EXTERN real cons_V INIT(0.0);
-//EXTERN int bb_tmp INIT(0);  /* which vtypes to boost */
-EXTERN int bb_boost_type[BB_MAXCOMPONENTS];  /* which vtypes to boost */
+EXTERN real bb_epsold[BB_MAXCOMPONENTS][BB_MAXCOMPONENTS];
 EXTERN int bb_relaxsteps_max INIT(1000); /* maximal relaxed time for the beginning a boost activity */
 EXTERN int bb_relaxsteps INIT(0);	/* count the relaxed time */
-EXTERN int bb_maxwellrelax_max INIT(1000); /* maximal relaxed time for the beginning a boost activity */
-EXTERN int bb_maxwellrelax INIT(0);	/* count the relaxed time */
 EXTERN int bb_shdn_max INIT(200);	/* maximal shutdown time that bond fraction/strain exceed bb_epscrit */
 EXTERN int bb_shdn INIT(0);		/* count for the bb_shdn_max */
 EXTERN int bb_under_max INIT(200);	/* maximal time under boosting that bond fraction/strain not-exceed the bb_epscrit */
@@ -1317,67 +1335,4 @@ EXTERN int bb_under INIT(0);		/* count for the bb_under_max */
 EXTERN int bflag1 INIT(0);		/* flag to switch the boost method ( = 0 is non-boosting, = 1 is to launch the boosting) */
 EXTERN int bflag2 INIT(0);		/* flag to switch the testing mode or safe mode for a chosen bb_epscrit */
 EXTERN int bflag3 INIT(0);		/* flag for time windows used to apply minimization to boost MD */
-EXTERN int bflag4 INIT(0);		/* flag for time windows used to apply minimization to boost MD */
-EXTERN int bb_enflag INIT(0);		/* flag for time windows used to apply minimization to boost MD */
-EXTERN int bb_checkpt_int INIT(0);    /* Period of bb writes */
-EXTERN int bb_overbs INIT(0);    /* Period of bb writes */
-EXTERN int bb_evens INIT(0);    /* Period of bb writes */
-EXTERN int bb_index INIT(0);    /* Period of bb writes */
-EXTERN int bb_qsafety INIT(0);    /* Period of bb writes */
-EXTERN int bb_qsafety_max INIT(5);    /* specific max times of qsafety testing */
-
-/* temporily use here. once we can make sure the routine working, we have to change those to normal using. */
-EXTERN real Nb INIT(0.0);
-EXTERN real tmp_maxbond1 INIT(0.0);
-EXTERN real tmp_maxbond2 INIT(0.0);
-EXTERN real max_epot INIT(0.0);
-EXTERN real saddleta INIT(0.0);
-EXTERN real min_saddleta INIT(100.0);
-EXTERN real bb_bound_div INIT(0.0);
-EXTERN real bb_epot INIT(0.0);   /*have not been coded into pallel section in mpi*/
-EXTERN real min_epot INIT(0.0);   /*have not been coded into pallel section in mpi*/
-EXTERN real bb_ad_bV INIT(0.0);   /*have not been coded into pallel section in mpi*/
-EXTERN real bb_epscrit_old INIT(0.0);
-EXTERN real bb_btimeold INIT(0.0);            /* number of timestep * boostfactor during boost */
-EXTERN real sum_bfcrold INIT(0.0);           /* summation of boost factor */
-EXTERN real bb_tot_bVold INIT(0.0);           /* magnitude of boost potential */
-EXTERN real boost_fcr INIT(0.0);           /* magnitude of boost potential */
-EXTERN real bbcase INIT(0.0);
-EXTERN real *NOWPOS INIT(NULL);
-EXTERN real *REPOST INIT(NULL);
-EXTERN real *REACFJ INIT(NULL);
-EXTERN vektor bb_box_x INIT(nullvektor);
-EXTERN vektor bb_box_y INIT(nullvektor);
-#ifndef TWOD
-EXTERN vektor bb_box_z INIT(nullvektor);
-#endif
-EXTERN vektor ref2box_x INIT(nullvektor);
-EXTERN vektor ref2box_y INIT(nullvektor);
-#ifndef TWOD
-EXTERN vektor ref2box_z INIT(nullvektor);
-#endif
-EXTERN vektor tmp_box_x INIT(nullvektor);
-EXTERN vektor tmp_box_y INIT(nullvektor);
-#ifndef TWOD
-EXTERN vektor tmp_box_z INIT(nullvektor);
-#endif
-EXTERN vektor tmp2_box_x INIT(nullvektor);
-EXTERN vektor tmp2_box_y INIT(nullvektor);
-#ifndef TWOD
-EXTERN vektor tmp2_box_z INIT(nullvektor);
-#endif
-//EXTERN real eci INIT(0.0);           /* magnitude of boost potential */
-//EXTERN real grad_bf INIT(0.0);
-#ifndef SBOOST
-EXTERN int *bb_vtypej INIT(NULL);
-#else
-EXTERN real *VInv INIT(NULL);
-EXTERN real *M3eta INIT(NULL);
-EXTERN real *Mises INIT(NULL);
-EXTERN real *M3J INIT(NULL);
-//EXTERN real VInv[3][3][769];
-#endif
-#endif
-EXTERN int timll INIT(0); 
-EXTERN int dobbne INIT(0); 
-EXTERN int lll INIT(0);
+#endif 

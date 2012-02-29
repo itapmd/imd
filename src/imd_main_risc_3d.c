@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -31,7 +31,7 @@
 void calc_forces(int steps)
 {
   int n, k;
-  timll++;
+
   /* clear global accumulation variables */
   tot_pot_energy = 0.0;
   virial = 0.0;
@@ -42,7 +42,7 @@ void calc_forces(int steps)
   vir_zx = 0.0;
   vir_xy = 0.0;
   nfc++;
-  //printf("myid=%d myrank: %d, I am passing throgh the imd_main_risk_3d !!!!!!!!!!!!!!!!!!!!!! \n",myid,myrank);fflush(stdout);
+
   /* clear per atom accumulation variables */
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -60,10 +60,7 @@ void calc_forces(int steps)
       DREH_MOMENT(p,i,Y) = 0.0;
       DREH_MOMENT(p,i,Z) = 0.0;
 #endif
-#ifdef NVX
-      HEATCOND(p,i) = 0.0;
-#endif     
-#ifdef STRESS_TENS
+#if defined(STRESS_TENS)
       PRESSTENS(p,i,xx) = 0.0;
       PRESSTENS(p,i,yy) = 0.0;
       PRESSTENS(p,i,zz) = 0.0;
@@ -108,7 +105,7 @@ void calc_forces(int steps)
     imd_start_timer( &ewald_time );
   }
 #endif
-  // printf("myid = %d : npairs[n] = %d, steps = %d \n",myid,npairs[n],steps);fflush(stdout);  
+
   /* compute forces for all pairs of cells */
   for (n=0; n<nlists; ++n) {
 #ifdef _OPENMP
@@ -118,7 +115,6 @@ void calc_forces(int steps)
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
       pair *P;
-      //printf("myid=%d : k = %d, steps = %d \n",myid,k,steps);fflush(stdout);
       P = pairs[n]+k;
       pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
       pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
@@ -144,7 +140,6 @@ void calc_forces(int steps)
 #pragma omp parallel for schedule(runtime) \
   reduction(+:virial,vir_xx,vir_yy,vir_zz,vir_yz,vir_zx,vir_xy)
 #endif
-     
     for (k=0; k<npairs[n]; ++k) {
       vektor pbc;
       pair *P;

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -91,6 +91,7 @@ void generate_fcc(int maxtyp);
 void generate_lav(void);
 void init_hex(void);
 void generate_hex(void);
+void generate_SiO2(void);
 #ifdef QUASI /* generate quasicrystal - file imd_qc.c */
 void init_qc(void);
 void generate_qc(void);
@@ -175,6 +176,12 @@ void init_extpot(void);
 void calc_extpot(void);
 void move_extpot(real factor);
 #endif
+#ifdef USEFCS
+void init_fcs(void);
+void pair_int_fcs(real *, real *, real);
+void calc_forces_fcs(int);
+void fcs_update_pottab(void);
+#endif
 void do_forces(cell*, cell*, vektor, real*, real*, real*, real*, real*, real*, real*, real*);
 #ifdef COVALENT
 void do_forces2(cell*, real*, real*, real*, real*, real*, real*, real*, real*);
@@ -182,22 +189,6 @@ void do_forces2(cell*, real*, real*, real*, real*, real*, real*, real*, real*);
 #ifdef EAM2
 void do_forces_eam2(cell*, cell*, vektor, real*, real*, real*, real*, real*, real*, real*);
 void do_embedding_energy(void);
-#endif
-#ifdef BBOOST
-void calc_bondboost(int steps);
-void postpro_boost(int steps);
-/* void do_bb_pot(cell*, cell*, vektor, real*, real*, real*); */
-//void do_bb_pot(cell*, vektor []); 
-//void do_bb_forc(cell*, vektor [], vektor []);
-void do_bb_pot(cell*); 
-void do_bb_forc(cell*);
-void test_bb_neightab(cell*);
-#ifdef SBOOST
-void do_sbb_pot(cell*);
-void do_sbb_forc(cell*);
-/* A[][] := A[][]^-1; return original det(A) */
-double M3Inv (double A[3][3]);
-#endif
 #endif
 #ifdef NBLIST
 int  estimate_nblist_size(void);
@@ -327,18 +318,6 @@ void send_atoms(void);
 /* write properties - file imd_io_*.c */
 void write_eng_file(int steps);
 void write_eng_file_header(void);
-#ifdef BBOOST
-void write_bbeng_file(int steps);
-void write_bbeng_file_header(void);
-void write_bbtran_file(int steps);
-void write_bbtran_file_header(void);
-#endif
-#ifdef BBOOST
-void write_bbcheck_file(int steps);
-void write_bbcheck_file_header(void);
-void write_bbdebug_file(int steps, real eci, real grad_bf, int inum, int jnum);
-void write_bbdebug_file_header(void);
-#endif
 #ifdef EXTPOT
 void write_fext(int steps);
 void write_fext_header(void);
@@ -356,14 +335,11 @@ void broadcast_header(header_info_t *);
 void flush_outbuf(FILE *out, int *len, int tag);
 void write_itr_file(int fzhlr, int steps,char *suffix);
 void write_config(int fzhlr, int steps);
-#ifdef BBOOST
-void write_bbconfig(int fzhlr, int steps);
-#endif
 #ifdef RELAX
 void write_ssconfig(int steps);
 #endif
 void write_config_select(int fzhlr, char *suffix,
-void (*write_atoms_fun)(FILE *out), void (*write_header_fun)(FILE *out));
+  void (*write_atoms_fun)(FILE *out), void (*write_header_fun)(FILE *out));
 void write_atoms_config(FILE *out);
 void write_header_config(FILE *out);
 void write_atoms_pic(FILE *out); 
@@ -461,9 +437,6 @@ void vis_restart_simulation(void);
 #ifdef BBOOST
 void  init_bboost(void);
 int bb_minimize(int);
-void write_atoms_bb(FILE *out);
-void write_header_bb(FILE *out);
-void write_config_bb(int nr);
 #endif
 
 
@@ -577,6 +550,10 @@ void update_ort_ref(void);
 #ifdef AVPOS
 void update_avpos(void);
 void add_positions(void);
+#ifdef STRESS_TENS
+void update_avpress(void);
+void add_presstensors(void);
+#endif
 #endif
 
 /* support for correlation functions - file imd_correl.c */
@@ -590,11 +567,12 @@ void write_add_corr(int it, int steps, unsigned seqnum);
 #endif
 
 /* support for heat transport - file imd_transport.c */
-#ifdef TRANSPORT
+#ifdef NVX
 void write_temp_dist(int steps);
 #endif
-#ifdef RNEMD
-void rnemd_heat_exchange();
+#ifdef HC
+void do_heat_cond(int steps);
+void write_heat_current(int steps);
 #endif
 
 #ifdef CG
@@ -642,6 +620,52 @@ void laser_rescale_dummy(void);
 void laser_rescale_1(void);
 void laser_rescale_2(void);
 void laser_rescale_3(void);
+double get_surface();
+double calc_laser_atom_vol(double, int, int, int *);
+#ifdef LASERYZ
+double laser_intensity_profile_laguerre_00(double, double, double);
+double laser_intensity_profile_laguerre_01(double, double, double);
+double laser_intensity_profile_laguerre_02(double, double, double);
+double laser_intensity_profile_laguerre_03(double, double, double);
+double laser_intensity_profile_laguerre_04(double, double, double);
+
+double laser_intensity_profile_laguerre_10(double, double, double);
+double laser_intensity_profile_laguerre_11(double, double, double);
+double laser_intensity_profile_laguerre_12(double, double, double);
+double laser_intensity_profile_laguerre_13(double, double, double);
+
+double laser_intensity_profile_laguerre_20(double, double, double);
+double laser_intensity_profile_laguerre_21(double, double, double);
+double laser_intensity_profile_laguerre_22(double, double, double);
+double laser_intensity_profile_laguerre_23(double, double, double);
+
+double laser_intensity_profile_laguerre_30(double, double, double);
+double laser_intensity_profile_laguerre_31(double, double, double);
+double laser_intensity_profile_laguerre_32(double, double, double);
+double laser_intensity_profile_laguerre_33(double, double, double);
+
+double laser_intensity_profile_hermite_00(double, double, double);
+double laser_intensity_profile_hermite_01(double, double, double);
+double laser_intensity_profile_hermite_02(double, double, double);
+double laser_intensity_profile_hermite_03(double, double, double);
+
+double laser_intensity_profile_hermite_10(double, double, double);
+double laser_intensity_profile_hermite_11(double, double, double);
+double laser_intensity_profile_hermite_12(double, double, double);
+double laser_intensity_profile_hermite_13(double, double, double);
+
+double laser_intensity_profile_hermite_20(double, double, double);
+double laser_intensity_profile_hermite_21(double, double, double);
+double laser_intensity_profile_hermite_22(double, double, double);
+double laser_intensity_profile_hermite_23(double, double, double);
+
+double laser_intensity_profile_hermite_30(double, double, double);
+double laser_intensity_profile_hermite_31(double, double, double);
+double laser_intensity_profile_hermite_32(double, double, double);
+double laser_intensity_profile_hermite_33(double, double, double);
+
+#endif
+
 #ifdef TTM
 real ttm_calc_depth(int,int,int);
 void laser_rescale_ttm(void);
@@ -662,8 +686,27 @@ void calc_ttm(void);
 void update_fd(void);
 /* TODO allow variable K */
 void ttm_overwrite(void);
+#endif
 
-
+#ifdef SM
+/* Streitz and Mintmire model SM - file imd_sm.c */
+void init_sm(void);
+void do_electronegativity(void);
+void do_v_real(void);
+void do_cg(void);
+void do_charge_update(void);
+void charge_update_sm(void);
+void calc_sm_pot(void);
+void calc_sm_chi(void);
+void copy_sm_charge(int, int, int, int, int, int, vektor);
+void pack_sm_charge(msgbuf *, int, int, int, vektor);
+void unpack_sm_charge( msgbuf *, int, int, int);
+void add_sm_pot(int, int, int, int, int, int);
+void pack_sm_pot(msgbuf *, int, int, int);
+void unpack_add_sm_pot(msgbuf *, int, int, int);
+void add_sm_chi(int, int, int, int, int, int);
+void pack_sm_chi(msgbuf *, int, int, int);
+void unpack_add_sm_chi(msgbuf *, int, int, int);
 #endif
 
 #ifdef BGL
@@ -694,9 +737,6 @@ void calc_superforces(void);
 
 #ifdef RELAX
 void check_relaxed(void);
-#ifdef BBOOST
-void check_bbrelaxed(void);
-#endif
 #endif
 
 #ifdef TEMPCONTROL

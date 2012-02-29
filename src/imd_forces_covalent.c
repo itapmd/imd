@@ -256,7 +256,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
     /* for each pair of neighbors */
     for (j=0; j<neigh->n-1; ++j)
       for (k=j+1; k<neigh->n; ++k) {
-	if(ttbp_vas == 0 || (r[j] < ttbp_cut[0] && r[j] < ttbp_cut[0])) {
+	if(ttbp_vas == 0 || (r[j] < ttbp_cut[0] && r[k] < ttbp_cut[0])) {
 	k_typ   = neigh->typ[k];
         /* FOURIER potential term */
         tmp_sp    = SPROD(d[j],d[k]);
@@ -949,7 +949,7 @@ void do_neightab(cell *p, cell *q, vektor pbc)
       if (0==radius2) { char msgbuf[256];
         sprintf(msgbuf,
                 "Distance is zero: nrs=%d %d\norte: %f %f %f, %f %f %f\n",
-                NUMMER(p,i),NUMMER(q,j),
+                NUMMER(p,i),NUMMER(q,i),
                 ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z),
                 ORT(q,j,X), ORT(q,j,Y), ORT(q,j,Z) );
         error(msgbuf);

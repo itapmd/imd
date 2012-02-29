@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -757,10 +757,8 @@ void copy_cell( int k, int l, int m, int r, int s, int t, vektor v )
 #ifdef VARCHG
     CHARGE(to,i)  = CHARGE(from,i);
 #endif
-#if defined(DIPOLE) || defined(BBOOST)
+#ifdef DIPOLE
     NUMMER(to,i)     = NUMMER(from,i);
-#endif
-#if defined(DIPOLE)
 /*     DP_E_IND(to,i,X) = DP_E_IND(from,i,X); */
 /*     DP_E_IND(to,i,Y) = DP_E_IND(from,i,Y); */
 /*     DP_E_IND(to,i,Z) = DP_E_IND(from,i,Z); */
@@ -804,8 +802,7 @@ void pack_cell( msgbuf *b, int k, int l, int m, vektor v )
 #ifdef VARCHG
     b->data[ j++ ] = CHARGE(from,i);
 #endif
-#if defined(DIPOLE) || defined(BBOOST)
-    //#ifdef DIPOLE
+#ifdef DIPOLE
     b->data[ j++ ] = NUMMER(from,i);
 /*     b->data[ j++ ] = DP_E_IND(from,i,X); */
 /*     b->data[ j++ ] = DP_E_IND(from,i,Y); */
@@ -868,8 +865,7 @@ void unpack_cell( msgbuf *b, int k, int l, int m )
 #ifdef VARCHG
     CHARGE(to,i)  = b->data[ j++ ];
 #endif
-#if defined(DIPOLE) || defined(BBOOST)
-    //#ifdef DIPOLE
+#ifdef DIPOLE
     NUMMER(to,i)     = b->data[ j++ ];
 /*     DP_E_IND(to,i,X) = b->data[ j++ ]; */
 /*     DP_E_IND(to,i,Y) = b->data[ j++ ]; */
@@ -907,9 +903,6 @@ void add_forces( int k, int l, int m, int r, int s, int t )
     KRAFT(to,i,Z)  += KRAFT(from,i,Z);
 #ifndef MONOLJ
     POTENG(to,i)   += POTENG(from,i);
-#endif
-#ifdef NVX
-    HEATCOND(to,i) += HEATCOND(from,i);
 #endif
 #ifdef STRESS_TENS
     PRESSTENS(to,i,xx) += PRESSTENS(from,i,xx);
@@ -951,9 +944,6 @@ void pack_forces( msgbuf *b, int k, int l, int m)
     b->data[ j++ ] = KRAFT(from,i,Z);
 #ifndef MONOLJ
     b->data[ j++ ] = POTENG(from,i);
-#endif
-#ifdef NVX
-    b->data[ j++ ] = HEATCOND(from,i);
 #endif
 #ifdef STRESS_TENS
     b->data[ j++ ] = PRESSTENS(from,i,xx);
@@ -998,9 +988,6 @@ void unpack_forces( msgbuf *b, int k, int l, int m )
     KRAFT(to,i,Z)  += b->data[ j++ ];
 #ifndef MONOLJ
     POTENG(to,i)   += b->data[ j++ ];
-#endif
-#ifdef NVX
-    HEATCOND(to,i) += b->data[ j++ ];
 #endif
 #ifdef STRESS_TENS
     PRESSTENS(to,i,xx) += b->data[ j++ ];
@@ -1661,3 +1648,193 @@ void unpack_add_mark( msgbuf *b, int k, int l, int m )
 }
 
 #endif /* CNA */
+
+#ifdef SM
+
+/******************************************************************************
+*
+*  copy SM charge of one cell to another cell
+*
+******************************************************************************/
+
+void copy_sm_charge( int k, int l, int m, int r, int s, int t, vektor v )
+{
+  int i;
+  minicell *from, *to;
+
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+  to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
+
+  for (i=0; i<to->n; ++i) {
+    Q_SM(to,i) = Q_SM(from,i);
+  }
+}
+
+/******************************************************************************
+*
+*  pack SM charge into MPI buffer
+*
+******************************************************************************/
+
+void pack_sm_charge( msgbuf *b, int k, int l, int m, vektor v )
+{
+  int i, j = b->n;
+  minicell *from;
+    
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+  for (i=0; i<from->n; ++i) {
+    b->data[j++] = Q_SM(from,i);
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in pack_sm_charge - increase msgbuf_size");
+}
+
+
+/******************************************************************************
+*
+*  unpack SM charge from MPI buffer into cell
+*
+******************************************************************************/
+
+void unpack_sm_charge( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *to;
+
+  to = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+  for (i=0; i<to->n; ++i) {
+    Q_SM(to,i) = b->data[j++];
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in unpack_sm_charge - increase msgbuf_size");
+}
+
+/******************************************************************************
+*
+*  add SM potential of one cell to another cell
+*
+******************************************************************************/
+
+void add_sm_pot( int k, int l, int m, int r, int s, int t )
+{
+  int i;
+  minicell *from, *to;
+
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+  to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
+
+  for (i=0; i<to->n; ++i) {
+    V_SM(to,i) += V_SM(from,i);
+  }
+}
+
+/******************************************************************************
+*
+*  pack SM potential into MPI buffer
+*
+******************************************************************************/
+
+void pack_sm_pot( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *from;
+    
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+  for (i=0; i<from->n; ++i) {
+    b->data[j++] = V_SM(from,i);
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in pack_sm_pot - increase msgbuf_size");
+}
+
+
+/******************************************************************************
+*
+*  unpack and add SM potential from MPI buffer into cell
+*
+******************************************************************************/
+
+void unpack_add_sm_pot( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *to;
+
+  to = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+  for (i=0; i<to->n; ++i) {
+    V_SM(to,i) += b->data[j++];
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in unpack_add_sm_pot - increase msgbuf_size");
+}
+
+/******************************************************************************
+*
+*  add SM chi of one cell to another cell
+*
+******************************************************************************/
+
+void add_sm_chi( int k, int l, int m, int r, int s, int t )
+{
+  int i;
+  minicell *from, *to;
+
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+  to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
+
+  for (i=0; i<to->n; ++i) {
+    CHI_SM(to,i) += CHI_SM(from,i);
+  }
+}
+
+/******************************************************************************
+*
+*  pack SM chi into MPI buffer
+*
+******************************************************************************/
+
+void pack_sm_chi( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *from;
+    
+  from = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+  for (i=0; i<from->n; ++i) {
+    b->data[j++] = CHI_SM(from,i);
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in pack_sm_chi - increase msgbuf_size");
+}
+
+
+/******************************************************************************
+*
+*  unpack and add SM chi from MPI buffer into cell
+*
+******************************************************************************/
+
+void unpack_add_sm_chi( msgbuf *b, int k, int l, int m )
+{
+  int i, j = b->n;
+  minicell *to;
+
+  to = PTR_3D_V(cell_array, k, l, m, cell_dim);
+
+  for (i=0; i<to->n; ++i) {
+    CHI_SM(to,i) += b->data[j++];
+  }
+  b->n = j;
+  if (b->n_max < b->n) 
+    error("Buffer overflow in unpack_add_sm_chi - increase msgbuf_size");
+}
+
+#endif /* SM */

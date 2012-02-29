@@ -64,47 +64,6 @@ void clear_forces(void) {
 
 /******************************************************************************
 *
-* do_boundaries_fcs
-*
-******************************************************************************/
-
-#define SPRODFCS(a,b) (((a)[0] * (b).x) + ((a)[1] * (b).y) + ((a)[2] * (b).z))
-
-void do_boundaries_fcs(int nloc, fcs_float *pos)
-{
-  int l, i;
-
-  /* PBC in x direction */
-  if (1==pbc_dirs.x)
-    for (l=0; l<3*nloc; l+=3) {
-      i = -FLOOR( SPRODFCS(pos+l,tbox_x) );
-      pos[l  ] += i * box_x.x;
-      pos[l+1] += i * box_x.y;
-      pos[l+2] += i * box_x.z;
-    }
-
-  /* PBC in y direction */
-  if (1==pbc_dirs.y)
-    for (l=0; l<3*nloc; l+=3) {
-      i = -FLOOR( SPRODFCS(pos+l,tbox_y) );
-      pos[l  ] += i * box_y.x;
-      pos[l+1] += i * box_y.y;
-      pos[l+2] += i * box_y.z;
-    }
-
-  /* PBC in z direction */
-  if (1==pbc_dirs.z)
-    for (l=0; l<3*nloc; l+=3) {
-      i = -FLOOR( SPRODFCS(pos+l,tbox_z) );
-      pos[l  ] += i * box_z.x;
-      pos[l+1] += i * box_z.y;
-      pos[l+2] += i * box_z.z;
-    }
-
-}
-
-/******************************************************************************
-*
 * pack_fcs
 *
 ******************************************************************************/
@@ -143,9 +102,6 @@ void pack_fcs(void) {
       chg[m++] = CHARGE(p,i);
     }
   }
-
-  /* apply periodic boundaries */
-  do_boundaries_fcs(nloc, pos);
 }
 
 /******************************************************************************
@@ -242,7 +198,7 @@ void init_fcs(void) {
     case FCS_METH_PEPC:   method = "pepc";   break;
     case FCS_METH_FMM:    method = "fmm";    break;
     case FCS_METH_P3M:    method = "p3m";    srf = fcs_rcut > 0 ? 0 : 1; break;
-    case FCS_METH_P2NFFT: method = "p2nfft"; srf = fcs_rcut > 0 ? 0 : 1; break;
+    case FCS_METH_P2NFFT: method = "p2nfft"; break;
   }
 
   /* initialize handle and set common parameters */
@@ -262,14 +218,14 @@ void init_fcs(void) {
 #endif
 #ifdef FCS_ENABLE_PEPC
     case FCS_METH_PEPC:
-      result = fcs_pepc_setup(handle, (fcs_float)fcs_pepc_eps, 
-           (fcs_float)fcs_pepc_theta );
+      result = fcs_PEPC_setup(handle, (fcs_float)fcs_pepc_eps, 
+           (fcs_float)fcs_pepc_theta, (fcs_int)fcs_debug_level );
       ASSERT_FCS(result);
       break;
 #endif
 #ifdef FCS_ENABLE_FMM
     case FCS_METH_FMM:
-      result = fcs_fmm_setup(handle, (fcs_int)fcs_fmm_absrel, 
+      result = fcs_FMM_setup(handle, (fcs_int)fcs_fmm_absrel, 
            (fcs_float)fcs_fmm_deltaE, (fcs_int)fcs_fmm_dcorr);
       ASSERT_FCS(result);
       break;
@@ -277,21 +233,17 @@ void init_fcs(void) {
 #ifdef FCS_ENABLE_P3M
     case FCS_METH_P3M:
       if (0==srf) {
-        result = fcs_p3m_set_r_cut(handle, (fcs_float)fcs_rcut);
+        result = fcs_P3M_set_r_cut(handle, (fcs_float)fcs_rcut);
         ASSERT_FCS(result);
       }
-      result = fcs_p3m_set_required_accuracy(handle, 
+      result = fcs_P3M_set_required_accuracy(handle, 
            (fcs_float)fcs_p3m_accuracy);
       ASSERT_FCS(result);
       break;
 #endif
 #ifdef FCS_ENABLE_P2NFFT
     case FCS_METH_P2NFFT:
-      if (0==srf) {
-        result = fcs_p2nfft_set_r_cut(handle, (fcs_float)fcs_rcut);
-        ASSERT_FCS(result);
-      }
-      result = fcs_p2nfft_set_required_accuracy(handle, 
+      result = fcs_P2NFFT_set_required_accuracy(handle, 
            (fcs_float)fcs_p2nfft_accuracy);
       ASSERT_FCS(result);
       break;
@@ -303,43 +255,10 @@ void init_fcs(void) {
   pack_fcs();
   result = fcs_tune(handle, nloc, nloc_max, pos, chg);
   ASSERT_FCS(result);
-  /*
-  MPI_Barrier(cpugrid);
-  printf("rank %d tuned, srf=%d\n", myid, srf);
 
-  { fcs_float fcs_pot, fcs_grad;
-    result = fcs_compute_near(handle, (fcs_float)fcs_rcut, &fcs_pot, &fcs_grad);
-    ASSERT_FCS(result);
-    printf("rank = %d, pot@rcut = %e, grad@rcut = %e\n",myid,fcs_pot,fcs_grad); 
-  }
-  */
   /* add near-field potential, after fcs_tune */
   if (0==srf) fcs_update_pottab();
-  /*
-  MPI_Barrier(cpugrid);
-  printf("rank %d updated\n", myid);
-  */
-}
 
-/******************************************************************************
-*
-* dump_config_fcs -- dump the configuration handed over to ScaFaCoS library
-*
-******************************************************************************/
-
-void dump_config_fcs(fcs_float *pos,fcs_float *chg,int n,int step,int myid) {
-  FILE *out=NULL;
-  str255 fname;
-  int i;
-  sprintf(fname,"%s.%05d.xyzq.%u", outfilename, step, myid);
-  out = fopen(fname,"w");
-  if (NULL == out) error_str("Cannot open output file %s",fname);
-  fprintf(out, "%d\n", n);
-  for (i=0; i<n; i++) {
-    fprintf(out, "%g %g %g %g\n", pos[3*i], pos[3*i+1], pos[3*i+2], chg[i] );
-  }
-  fclose(out);
-  MPI_Barrier(cpugrid);
 }
 
 /******************************************************************************
@@ -365,7 +284,6 @@ void calc_forces_fcs(int steps) {
   }
 #endif
   pack_fcs();
-  // dump_config_fcs( pos, chg, nloc, steps, myid );
   result = fcs_run(handle, nloc, nloc_max, pos, chg, field, pot);
   ASSERT_FCS(result);
   unpack_fcs();

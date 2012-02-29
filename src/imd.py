@@ -4,7 +4,7 @@
 #
 # IMD -- The ITAP Molecular Dynamics Program
 #
-# Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+# Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 # University of Stuttgart, D-70550 Stuttgart
 #
 ##############################################################################
@@ -326,8 +326,7 @@ while simulation == 1 or not finished:
                     IMD.add_positions()
                 if G.avpos_int > 0 and 0 == stp % G.avpos_int:
                     IMD.write_config_avpos(stp / G.avpos_int)
-        # TRANSPORT omitted
-        # RNEMD omitted
+        # NVX omitted
         # write atoms with per-atom stress tensor
         if def_STRESS_TENS:
             if G.press_int > 0 and 0 == G.steps % G.press_int:

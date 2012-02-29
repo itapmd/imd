@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -29,7 +29,8 @@
 
 /* if bond boost method is used, this main loop is the main loop for the
    MD part. The relaxation is done in a copy of this main loop in imd_bboost.c
-   function bb_minimize. if you change something here, please also change in bb_minimize */
+   function bb_minimize. if you change something here, please also change in 
+   bb_minimize */
 
 int main_loop(int simulation)
 {
@@ -44,8 +45,17 @@ int main_loop(int simulation)
   real tmpvec1[DIM], tmpvec2[DIM];
   char tmp_str[9];
 
+  int tmpsteps;
+
   real fnorm2,ekin,epot,delta_epot;
-  //printf("myid=%d myrank: %d, I am passing throgh the imd_main_3d !!!!!!!!!!!!!!!!!!!!!! \n",myid,myrank);fflush(stdout);  
+#ifdef debugLo
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing main loop from checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout);
+#endif
+  
 #ifdef GLOK
   if(glok_start <=steps_min)
       glok_start=steps_min; 
@@ -92,6 +102,10 @@ int main_loop(int simulation)
 #ifdef EXTPOT
   init_extpot();
 #endif  
+
+#ifdef USEFCS
+  init_fcs();
+#endif
   
 #ifdef FBC
   init_fbc();
@@ -127,8 +141,10 @@ int main_loop(int simulation)
     deform_int = 0; 
 #endif
 
-#endif /* not BBOOST */
+#endif /* not BBOOST */ 
 
+  imd_start_timer(&time_main);
+  
   /* simulation loop */
   for (steps=steps_min; steps <= steps_max; ++steps) {
 
@@ -155,8 +171,12 @@ int main_loop(int simulation)
 		     ((force_int  > 0) && (0 == steps % force_int )) ||
 #endif /* FORCE */
                      ((dist_int  > 0) && (0 == steps % dist_int )) ||
-                     (relax_rate > 0.0) );
+#ifdef HC
+                     ((hc_int > 0) && (steps >= hc_av_start) && 
+                      ((steps < hc_start) || ((steps-hc_start)%hc_int==0))) ||
 #endif
+                     (relax_rate > 0.0) );
+#endif /* STRESS_TENS */
 
 #ifdef EPITAX
     for (i=0; i<ntypes; ++i ) {
@@ -308,6 +328,13 @@ int main_loop(int simulation)
 #endif
 
 #ifdef CNA
+#ifdef debugLo
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing "" input cna "" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout);
+#endif 
     if (steps <= cna_end) {
       if (0 == (steps - cna_start)%(cna_int)
 	  || ((cna_crist>0) && (checkpt_int > 0) 
@@ -353,13 +380,17 @@ int main_loop(int simulation)
     if (ensemble == ENS_CG) acg_step(steps);
     else
 #endif
-
-        /* calculation of forces */
-        calc_forces(steps);
-
-#ifdef BBOOST
-    calc_bondboost(steps);
+#ifdef USEFCS
+#ifdef PAIR
+      calc_forces(steps);
 #endif
+      calc_forces_fcs(steps);
+#else
+      calc_forces(steps);
+#endif
+/* #ifdef BBOOST
+    calc_bondboost(steps);
+#endif */
 #ifdef EXTPOT
     calc_extpot();
 #endif
@@ -403,6 +434,13 @@ int main_loop(int simulation)
 
 #ifdef CNA
     if (cna) {
+#ifdef debugLo
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("passing "" go into do_cna "" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout);
+#endif 
       do_cna();
       if (0==myid && cna_write_statistics) {
 	/* works not correctly in parallel version */
@@ -447,6 +485,25 @@ int main_loop(int simulation)
     }
 #endif
 
+
+#ifdef GETSADDLE
+  if(last_PxF<0.0 && PxF>=0)
+  {
+      write_saddleconfig(steps);
+  }
+  last_PxF=PxF;
+#endif
+
+#ifdef GETMIN
+  if(last_PxF>=0.0 && PxF<0)
+  {
+      write_minconfig(steps);
+  }
+  last_PxF=PxF;
+#endif
+
+
+
 #ifdef LASER
     /* do rescaling of atom velocities/electron temperature source terms */
     /* to simulate absorption of laser pulse */
@@ -456,12 +513,38 @@ int main_loop(int simulation)
     calc_ttm();
 #endif
 
+#ifdef SM
+#ifdef NBLIST
+    if ((!sm_fixed_charges) && ((charge_update_steps > 0) && steps % charge_update_steps == 0)){
+      charge_update_sm();
+	}
+#else
+    if ((!sm_fixed_charges) && ((charge_update_steps > 0) && steps % charge_update_steps == 0)){
+      do_charge_update();
+       }
+#endif
+#endif
+
+#ifdef HC
+    if ((hc_int > 0) && (steps >= hc_av_start) && 
+        ((steps < hc_start) || ((steps - hc_start) % hc_int == 0)))
+      do_heat_cond(steps);  
+#endif
+
 #ifdef TIMING
     imd_start_timer(&time_integrate);
 #endif
 #if !defined(CBE) || !defined(SPU_INT)
+#ifdef NEB
+    if(myrank != 0 && myrank != neb_nrep-1)
+    {
+#endif
     /* move atoms */
     if (ensemble != ENS_CG) move_atoms(); /* here PxF is recalculated */
+#ifdef NEB
+    }
+#endif
+    
 #endif
 #ifdef TIMING
     imd_stop_timer(&time_integrate);
@@ -477,7 +560,10 @@ int main_loop(int simulation)
 #endif
 
 #ifdef NEB
-    constrain_move();
+    if(myrank != 0 && myrank != neb_nrep-1)
+    {
+        constrain_move();
+    }
 #endif
 
 #ifdef ZAPP
@@ -488,11 +574,9 @@ int main_loop(int simulation)
     update_bend();
 #endif 
 
-
-#ifdef BBOOST
+/* #ifdef BBOOST
     postpro_boost(steps);
-#endif 
-
+#endif  */
 
     /* Periodic I/O */
 #ifdef TIMING
@@ -536,30 +620,81 @@ int main_loop(int simulation)
        write_config_select(steps, "dsp", write_atoms_dsp, write_header_dsp);
 #endif
 #ifdef AVPOS
-    if ( steps <= avpos_end ){
-      if ((avpos_res > 0) && (0 == (steps - avpos_start) % avpos_res) && 
-          (steps > avpos_start)) add_positions();
-      if ((avpos_int > 0) && (0 == (steps - avpos_start) % avpos_int) && 
-          (steps > avpos_start)) {
-        write_config_select((steps - avpos_start) / avpos_int,"avp",
-                            write_atoms_avp,write_header_avp);
-        write_avpos_itr_file((steps - avpos_start) / avpos_int, steps);
-        update_avpos();
-      }
+    if ( steps <= avpos_end && steps > avpos_start ){
+      if( avpos_steps == 0)    /* default, for backwards compatibility */
+	{ 
+	  if ((avpos_res > 0) && (0 == (steps - avpos_start) % avpos_res) )
+	    add_positions();
+	  if ((avpos_int > 0) && (0 == (steps - avpos_start) % avpos_int) ) 
+	    {
+	      write_config_select((steps - avpos_start) / avpos_int,"avp",
+				  write_atoms_avp,write_header_avp);
+	      write_avpos_itr_file((steps - avpos_start) / avpos_int, steps);
+	      update_avpos();
+	    }
+	}
+      else
+	{
+	  if ( steps >= (avpos_nwrites+1)*avpos_int - avpos_res*avpos_steps)
+	    {
+	      tmpsteps = avpos_start + (avpos_nwrites+1)*avpos_int - steps;
+	      //      printf("steps = %d tmpsteps =%d\n",steps,tmpsteps);fflush(stdout); 
+	      if ( tmpsteps == avpos_res*avpos_steps)
+		{ 
+		  //	  printf("avpos_start = %d avpos_nwrites=%d avpos_int=%d avpos_steps=%d \n",avpos_start,avpos_nwrites, avpos_int,avpos_steps );fflush(stdout); 
+		  //	  printf("updating positions\n");fflush(stdout); 
+		  update_avpos();
+		}
+	      else if ( tmpsteps % (avpos_res) == 0)
+		{
+		  add_positions(); 
+		  //	  printf("adding positions\n");fflush(stdout); 
+		}
+	      if (tmpsteps == 0)
+		{
+		  avpos_nwrites++;
+		  write_config_select(avpos_nwrites,"avp",write_atoms_avp,write_header_avp);
+		  write_avpos_itr_file(avpos_nwrites, steps);
+		  //	  printf("writing out: %d\n",avpos_nwrites);fflush(stdout); 
+		}
+
+	    }
+#ifdef STRESS_TENS
+	  if ( (press_int > 0) && (steps >= (avpos_npwrites+1)*press_int - avpos_res*avpos_steps))
+	    {
+	      tmpsteps = avpos_start + (avpos_npwrites+1)*press_int - steps;
+	      if ( tmpsteps == avpos_res*avpos_steps)
+		{ 		  
+		  update_avpress();
+		}
+	      else if ( tmpsteps % (avpos_res) == 0)
+		{
+		  add_presstensors();
+		}
+	      if (tmpsteps == 0)
+		{
+		  avpos_npwrites++;
+		  write_config_select(avpos_npwrites , "press",
+				       write_atoms_press, write_header_press);
+		  //	  printf("writing out: %d\n",avpos_npwrites);fflush(stdout); 
+		}
+
+	    }
+#endif /* STRESS_TENS */
+
+	}
+    
     }
-#endif
-#ifdef TRANSPORT 
-    if ((tran_int > 0) && (steps > 0) && (0 == steps%tran_int)) 
-       write_temp_dist(steps);
-#endif
-#ifdef RNEMD
-    if ((exch_int > 0) && (0 == steps%exch_int)) 
-       rnemd_heat_exchange();
+#endif /* AVPOS */
+
+#ifdef NVX 
+    if ((ensemble == ENS_NVX) && (hc_int > 0) && (steps > hc_start)) 
+       write_temp_dist(steps - hc_start);
 #endif
 
 #ifdef STRESS_TENS
     if ((press_int > 0) && (0 == steps % press_int)) {
-      if (!do_press_calc) error("pressure tensor incomplete");
+      if (!do_press_calc) error("pressure tensor incomplete for writing .press file");
        write_config_select( steps/press_int, "press",
                             write_atoms_press, write_header_press);
     }
@@ -631,13 +766,13 @@ int main_loop(int simulation)
 #endif
 #endif
     
-
-    
     /* finish, if maxwalltime is reached */
     if (maxwalltime > 0) {
       if ((finished = check_walltime())) break;
     }
   }
+
+  imd_stop_timer(&time_main);
 
   /* clean up the current phase, and clear restart flag */
   imdrestart=0;
@@ -646,7 +781,7 @@ int main_loop(int simulation)
     if (0==myrank) printf( "End of simulation %d\n", simulation );
   }  
   return finished;
-}
+    }
 
 /*****************************************************************************
 *
@@ -658,14 +793,6 @@ void close_files(void)
 {
   if (0 == myid) {
     if (NULL!= eng_file) { fclose( eng_file); eng_file  = NULL; }
-#ifdef BBOOST
-    if (NULL!= bbeng_file) { fclose( bbeng_file); bbeng_file  = NULL; }
-    if (NULL!= bbtran_file) { fclose( bbtran_file); bbtran_file  = NULL; }
-#endif
-#ifdef BBOOST
-    if (NULL!= bbdebug_file) { fclose( bbdebug_file); bbdebug_file  = NULL; }
-    if (NULL!= bbcheck_file) { fclose( bbcheck_file); bbcheck_file  = NULL; }
-#endif
     if (NULL!=msqd_file) { fclose(msqd_file); msqd_file = NULL; }
   }
 }
@@ -683,52 +810,53 @@ void constrain_move(void)
   real normp;
   real newxnorm=0;
   real tmp_x_max2=0.0;
-  if(neb_maxmove !=0.0)
-    {
-      if (SQRT(xnorm) >neb_maxmove)
-	{
-	  normp=sqrt(pnorm);
-	  printf("step %d myrank:%d xnorm = %lf maxmove = %lf  normp =%lf x_max =%lf \n",steps,myrank,SQRT(xnorm),neb_maxmove,normp,SQRT(x_max2));
+  
+      if(neb_maxmove !=0.0)
+      {
+          if (SQRT(xnorm) >neb_maxmove)
+          {
+              normp=sqrt(pnorm);
+              printf("step %d myrank:%d xnorm = %lf maxmove = %lf  normp =%lf x_max =%lf \n",steps,myrank,SQRT(xnorm),neb_maxmove,normp,SQRT(x_max2));
 	 
-	  for (k=0; k<NCELLS; ++k) {
-	    cell *p = CELLPTR(k);
-	    for (i=0; i<p->n; ++i) {
-	      ORT(p,i,X) -= timestep / MASSE(p,i) * IMPULS(p,i,X);
-	      ORT(p,i,Y) -= timestep / MASSE(p,i) * IMPULS(p,i,Y);
+              for (k=0; k<NCELLS; ++k) {
+                  cell *p = CELLPTR(k);
+                  for (i=0; i<p->n; ++i) {
+                      ORT(p,i,X) -= timestep / MASSE(p,i) * IMPULS(p,i,X);
+                      ORT(p,i,Y) -= timestep / MASSE(p,i) * IMPULS(p,i,Y);
 #ifndef TWOD
-	      ORT(p,i,Z) -= timestep / MASSE(p,i) * IMPULS(p,i,Z);
+                      ORT(p,i,Z) -= timestep / MASSE(p,i) * IMPULS(p,i,Z);
 #endif
-	      if(normp>0.0)
-		{
-		  ORT(p,i,X) += neb_maxmove * IMPULS(p,i,X)/normp;
-		  ORT(p,i,Y) += neb_maxmove * IMPULS(p,i,Y)/normp;
+                      if(normp>0.0)
+                      {
+                          ORT(p,i,X) += neb_maxmove * IMPULS(p,i,X)/normp;
+                          ORT(p,i,Y) += neb_maxmove * IMPULS(p,i,Y)/normp;
 #ifndef TWOD
-		  ORT(p,i,Z) += neb_maxmove * IMPULS(p,i,Z)/normp;
+                          ORT(p,i,Z) += neb_maxmove * IMPULS(p,i,Z)/normp;
 #endif
-		  tmp_x_max2 =  MAX(SQR(neb_maxmove*IMPULS(p,i,X)/normp),tmp_x_max2);
-		  tmp_x_max2 =  MAX(SQR(neb_maxmove*IMPULS(p,i,Y)/normp),tmp_x_max2);
-		  tmp_x_max2 =  MAX(SQR(neb_maxmove*IMPULS(p,i,Z)/normp),tmp_x_max2);
+                          tmp_x_max2 =  MAX(SQR(neb_maxmove*IMPULS(p,i,X)/normp),tmp_x_max2);
+                          tmp_x_max2 =  MAX(SQR(neb_maxmove*IMPULS(p,i,Y)/normp),tmp_x_max2);
+                          tmp_x_max2 =  MAX(SQR(neb_maxmove*IMPULS(p,i,Z)/normp),tmp_x_max2);
+                          
+                          newxnorm += neb_maxmove * neb_maxmove / normp /normp * SPRODN(IMPULS,p,i,IMPULS,p,i);
+                      }
+                      
 
-		  newxnorm += neb_maxmove * neb_maxmove / normp /normp * SPRODN(IMPULS,p,i,IMPULS,p,i);
-		}
-	  
-
-	      //IMPULS(p,i,X) = 0.0;
-		 // IMPULS(p,i,Y) = 0.0;
+                      //IMPULS(p,i,X) = 0.0;
+                      // IMPULS(p,i,Y) = 0.0;
 #ifndef TWOD
-	      // IMPULS(p,i,Z) = 0.0;
+                      // IMPULS(p,i,Z) = 0.0;
 #endif
-	    }
-	  }
-	  printf("myrank:%d newxnorm = %lf new xmax %lf\n",myrank,SQRT(newxnorm),SQRT(tmp_x_max2));
-	  fflush(stdout);
-	  xnorm=newxnorm;
-	  x_max2 = tmp_x_max2;
-
-	}
-    }
-}
- 
+                  }
+              }
+              printf("myrank:%d newxnorm = %lf new xmax %lf\n",myrank,SQRT(newxnorm),SQRT(tmp_x_max2));
+              fflush(stdout);
+              xnorm=newxnorm;
+              x_max2 = tmp_x_max2;
+              
+          }
+      }
+  }
+  
 
 #endif
 
@@ -944,12 +1072,14 @@ void init_fbc(void)
   }
 #else
   /* dynamic loading, increment linearly at each timestep */
+  if (0 == myid) printf("FBC: vtype  fbc_df.x fbc_df.y fbc_df.z\n");
   if ((ensemble!=ENS_MIK) && (ensemble!=ENS_GLOK) && (ensemble!=ENS_CG)) {
     for (l=0;l<vtypes;l++){
       (fbc_df+l)->x = ((fbc_endforces+l)->x-(fbc_beginforces+l)->x)/steps_diff;
       (fbc_df+l)->y = ((fbc_endforces+l)->y-(fbc_beginforces+l)->y)/steps_diff;
 #ifndef TWOD
       (fbc_df+l)->z = ((fbc_endforces+l)->z-(fbc_beginforces+l)->z)/steps_diff;
+      if (0 == myid) printf("     %d   %e   %e   %e\n",l,(fbc_df+l)->x,(fbc_df+l)->y,(fbc_df+l)->z);
 #endif
     }
     do_fbc_incr = 1;
@@ -1764,7 +1894,7 @@ void do_boundaries(void)
 #ifndef TWOD
       ORT(p,l,Z)     += i * box_x.z;
 #endif
-#if defined(MSQD) || defined(NMOLDYN)
+#if defined(MSQD) || defined(NMOLDYN) || defined(FEFL)
       REF_POS(p,l,X) += i * box_x.x;
       REF_POS(p,l,Y) += i * box_x.y;
 #ifndef TWOD
@@ -1789,7 +1919,7 @@ void do_boundaries(void)
 #ifndef TWOD
       ORT(p,l,Z)     += i * box_y.z;
 #endif
-#if defined(MSQD) || defined(NMOLDYN)
+#if defined(MSQD) || defined(NMOLDYN) || defined(FEFL)
       REF_POS(p,l,X) += i * box_y.x;
       REF_POS(p,l,Y) += i * box_y.y;
 #ifndef TWOD
@@ -1813,7 +1943,7 @@ void do_boundaries(void)
       ORT(p,l,X)     += i * box_z.x;
       ORT(p,l,Y)     += i * box_z.y;
       ORT(p,l,Z)     += i * box_z.z;
-#if defined(MSQD) || defined(NMOLDYN)
+#if defined(MSQD) || defined(NMOLDYN) || defined(FEFL)
       REF_POS(p,l,X) += i * box_z.x;
       REF_POS(p,l,Y) += i * box_z.y;
       REF_POS(p,l,Z) += i * box_z.z;
@@ -1842,7 +1972,7 @@ void calc_tot_presstens(void)
 
   real tmp_presstens1[6], tmp_presstens2[6];
 
-  if (!do_press_calc) error("pressure tensor incomplete");
+  if (!do_press_calc) error("pressure tensor incomplete in calculation of total presstens");
   tot_presstens.xx = 0.0; 
   tot_presstens.yy = 0.0; 
   tot_presstens.xy = 0.0;

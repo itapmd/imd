@@ -1,9 +1,8 @@
-
 /******************************************************************************
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -429,38 +428,6 @@ int getparamfile(char *paramfname, int phase)
         error("unknown ensemble");
       }
     }
-#ifdef BBOOST
-    else if (strcasecmp(token,"bb_min_method")==0) {
-        /* ensemble */
-        getparam(token,tmpstr,PARAM_STR,1,255);
-        if (strcasecmp(tmpstr,"mik")==0) {
-            bb_ensemble = ENS_MIK;
-            bb_move_atoms = move_atoms_mik;
-        }
-        else if (strcasecmp(tmpstr,"glok")==0) {
-            bb_ensemble = ENS_GLOK;
-            bb_move_atoms = move_atoms_nve;
-        }    
-#ifdef CG
-        else if (strcasecmp(tmpstr,"cg")==0) {
-            bb_ensemble = ENS_CG;
-            bb_move_atoms = move_atoms_cg;
-        }
-#endif    
-        else {
-            error("unknown minimization routine for BondBoost");
-        }
-    }
-    else if (strcasecmp(token,"bbminsteps_max")==0) {
-      /* number of steps for total simulation */
-      getparam("bbminsteps_max",&bbminsteps_max,PARAM_INT,1,1);
-    }
-    else if (strcasecmp(token,"bb_maxneigh")==0) {
-      /* number of neighbors for strain calculation */
-      getparam("bb_maxneigh",&bb_maxneigh,PARAM_INT,1,1);
-    }
-#endif
-    
     else if (strcasecmp(token,"maxsteps")==0) {
       /* number of steps for total simulation */
       getparam("maxsteps",&steps_max,PARAM_INT,1,1);
@@ -569,8 +536,8 @@ int getparamfile(char *paramfname, int phase)
       getparam(token,&neb_nrep,PARAM_INT,1,1);
       if (0==myrank)
 	{
-        if (num_cpus != neb_nrep-2)
-          error("We need exactly neb_nrep-2 MPI processes");
+        if (num_cpus != neb_nrep)
+          error("We need exactly neb_nrep MPI processes");
         if (neb_nrep>NEB_MAXNREP)
           error("Too many images for NEB");
 	}
@@ -609,95 +576,42 @@ int getparamfile(char *paramfname, int phase)
     }
 #endif
 #ifdef BBOOST
-    //  else if (strcasecmp(token,"bb_vtype2boost1")==0) {
-    //    for(k=0;k<BB_MAXCOMPONENTS;k++)
-    //        bb_boost_type[k]=-1;
-      /* virtual type which will be boosted */
-    //    getparam(token,&bb_tmp,PARAM_INT,1,1);
-    //    bb_boost_type[0]=bb_tmp;
-    // }
-    // else if (strcasecmp(token,"bb_vtype2boost2")==0) {
-      /* virtual type which will be boosted */
-    //    getparam(token,&bb_tmp,PARAM_INT,1,1);
-    //    bb_boost_type[1]=bb_tmp;
-    //   printf("pin!!!: bb_boost_type[%d] = %d \n", 1, bb_boost_type[1]);fflush(stdout);
-    // }
-    // else if (strcasecmp(token,"bb_vtype2boost3")==0) {
-      /* virtual type which will be boosted */
-    //   getparam(token,&bb_tmp,PARAM_INT,1,1);
-    //    bb_boost_type[2]=bb_tmp;
-    //   printf("pin!!!: bb_boost_type[%d] = %d \n", 2, bb_boost_type[2]);fflush(stdout);
-    //  }
-    //  else if (strcasecmp(token,"bb_vtype2boost4")==0) {
-      /* virtual type which will be boosted */
-    //   getparam(token,&bb_tmp,PARAM_INT,1,1);
-    //    bb_boost_type[3]=bb_tmp;
-    //   printf("pin!!!: bb_boost_type[%d] = %d \n", 3, bb_boost_type[3]);fflush(stdout);
-    // }
-    //  else if (strcasecmp(token,"bb_vtype2boost5")==0) {
-      /* virtual type which will be boosted */
-    //    getparam(token,&bb_tmp,PARAM_INT,1,1);
-    //    bb_boost_type[4]=bb_tmp;
-    //   printf("pin!!!: bb_boost_type[%d] = %d \n", 4, bb_boost_type[4]);fflush(stdout);
-    //   printf("************************************\n");fflush(stdout);
-    //}
+
     else if (strcasecmp(token,"bb_tot_bV")==0) {
       /* magnitude of boost potential, unit according to potential */
         getparam(token,&bb_tot_bV,PARAM_REAL,1,1);
     }
-    else if (strcasecmp(token,"bbp1_2")==0) {
+    else if (strcasecmp(token,"bb_p1_2")==0) {
       /* curvature controller of the boost potential */
-        getparam(token,&bbp1_2,PARAM_REAL,1,1);
+        getparam(token,&p1_2,PARAM_REAL,1,1);
     }
     else if (strcasecmp(token,"bb_relaxsteps_max")==0) {
       /* max number of steps for the relaxation part of the bond boos method */
         getparam(token,&bb_relaxsteps_max,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"bb_maxwellrelax_max")==0) {
-      /* max number of steps for the relaxation part of the bond boos method */
-        getparam(token,&bb_maxwellrelax_max,PARAM_INT,1,1);
-    }    
     else if (strcasecmp(token,"bb_shdn_max")==0) {
       /* max number of steps for the shutdown part of the bond boos method */
         getparam(token,&bb_shdn_max,PARAM_INT,1,1);
-    }
-    else if (strcasecmp(token,"bb_qsafety_max")==0) {
-      /* max number of steps for the shutdown part of the bond boos method */
-        getparam(token,&bb_qsafety_max,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"bb_under_max")==0) {
       /* max number of steps for the under boosting part of the bond boos method */
         getparam(token,&bb_under_max,PARAM_INT,1,1);
     }
     else if (strcasecmp(token,"bb_epscrit")==0) {
-    /*  if (ntypes==0)
+      if (ntypes==0)
           error("specify parameter ntypes before bb_epscrit");
       /* critical fraction of bond length to consider a bond broken */
       /* format: type1 type2 epscrit */
-    /*  getparam(token,&tempv3d,PARAM_REAL,3,3);
+      getparam(token,&tempv3d,PARAM_REAL,3,3);
       if (tempv3d.x>ntypes-1 || tempv3d.y>ntypes-1 )
           error("bb_epscrit defined for non existing type of bond\n");
-      bb_epscrit[(int)(tempv3d.x)][(int)(tempv3d.y)] = tempv3d.z; */
-        getparam(token,&bb_epscrit,PARAM_REAL,1,1);
+      bb_epscrit[(int)(tempv3d.x)][(int)(tempv3d.y)] = tempv3d.z;
     }
-    else if (strcasecmp(token,"delta_bb_epscrit")==0) {
-        getparam(token,&delta_bb_epscrit,PARAM_REAL,1,1);
-    }    
     else if (strcasecmp(token,"bb_rcut")==0) {
       /* the cut off for the range of the bond boos method */
         getparam(token,&bb_rcut,PARAM_REAL,1,1);
     }
-    else if (strcasecmp(token,"bb_bound_div")==0) {
-      /* curvature controller of the boost potential */
-        getparam(token,&bb_bound_div,PARAM_REAL,1,1);
-    }
-    else if (strcasecmp(token,"bb_checkpt_int")==0) {
-        getparam("bb_checkpt_int",&bb_checkpt_int,PARAM_INT,1,1);
-    }
-    else if (strcasecmp(token,"bb_qsafety")==0) {
-        getparam("bb_qsafety",&bb_qsafety,PARAM_INT,1,1);
-    }
-   
+    
 #endif
 #ifdef VEC
     else if (strcasecmp(token,"atoms_per_cpu")==0) {
@@ -761,15 +675,6 @@ int getparamfile(char *paramfname, int phase)
 	  error("Cannot allocate memory for restriction vectors\n");
         for (k=0; k<vtypes; k++)
           restrictions[k] = einsv;
-#ifdef BBOOST
-        /* Allocation & Initialisation of bb_boosttypes */
-        bb_boosttypes= (int *) malloc( vtypes * sizeof(int) );
-        if (NULL==bb_boosttypes)
-	  error("Cannot allocate memory for bb_boosttypes\n");
-        for (k=0; k<vtypes; k++)
-          bb_boosttypes[k] = 0;    
-#endif
-        
 #ifdef FBC
         /* Allocation & Initialisation of fbc_forces */
         fbc_forces = (vektor *) malloc( vtypes * sizeof(vektor) );
@@ -777,6 +682,30 @@ int getparamfile(char *paramfname, int phase)
 	  error("Cannot allocate memory for fbc_forces\n");
         for (k=0; k<vtypes; k++)
           fbc_forces[k] = nullv;        
+        fbc_beginforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==fbc_beginforces)
+          error("Cannot allocate memory for fbc_beginforces\n");
+        for (k=0; k<vtypes; k++)
+          fbc_beginforces[k] = nullv;
+#ifdef RELAX
+        fbc_dforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==fbc_dforces)
+	  error("Cannot allocate memory for fbc_dforces\n");
+        for (k=0; k<vtypes; k++)
+          fbc_dforces[k] = nullv; 
+#else
+        fbc_endforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==fbc_endforces)
+	  error("Cannot allocate memory for fbc_endforces\n");
+        for (k=0; k<vtypes; k++)
+          fbc_endforces[k] = nullv;
+#endif
+         fbc_df = (vektor *) malloc( vtypes * sizeof(vektor) );
+        if (NULL==fbc_df)
+	  error("Cannot allocate memory for fbc_df\n");
+        for (k=0; k<vtypes; k++)
+          fbc_df[k] = nullv;
+#endif /*FBC*/
 #ifdef BEND
         /* Allocation & Initialisation of fbc_bforces */
         fbc_bforces = (vektor *) malloc( vtypes * sizeof(vektor) );
@@ -814,30 +743,6 @@ int getparamfile(char *paramfname, int phase)
         for (k=0; k<vtypes; k++)
           fbc_bdf[k] = nullv;
 #endif /* BEND */
-        fbc_beginforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-        if (NULL==fbc_beginforces)
-          error("Cannot allocate memory for fbc_beginforces\n");
-        for (k=0; k<vtypes; k++)
-          fbc_beginforces[k] = nullv;
-#ifdef RELAX
-        fbc_dforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-        if (NULL==fbc_dforces)
-	  error("Cannot allocate memory for fbc_dforces\n");
-        for (k=0; k<vtypes; k++)
-          fbc_dforces[k] = nullv; 
-#else
-        fbc_endforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-        if (NULL==fbc_endforces)
-	  error("Cannot allocate memory for fbc_endforces\n");
-        for (k=0; k<vtypes; k++)
-          fbc_endforces[k] = nullv;
-#endif
-         fbc_df = (vektor *) malloc( vtypes * sizeof(vektor) );
-        if (NULL==fbc_df)
-	  error("Cannot allocate memory for fbc_df\n");
-        for (k=0; k<vtypes; k++)
-          fbc_df[k] = nullv;
-#endif /*FBC*/
 #ifdef RIGID
         /* Allocation & Initialization of superatom */
         superatom = (int *) malloc( vtypes * sizeof(int) );
@@ -946,19 +851,6 @@ int getparamfile(char *paramfname, int phase)
     }
 #endif
 
-#ifdef BBOOST
-    else if (strcasecmp(token,"bb_boosttype")==0) {
-      if (vtypes==0)
-        error("specify parameter total_types before bb_boosttype");
-      /* virtual types that will be boosted */
-      /* format: type 1 */
-      getparam(token,&tmp,PARAM_INT,1,1);
-      if (tmp>vtypes-1)
-        error("Boosting defined for non existing virtual atom type\n");
-      bb_boosttypes[tmp]=1;
-    }
-#endif
-    
 #ifdef FBC
     else if (strcasecmp(token,"extra_startforce")==0) {
       if (vtypes==0)
@@ -1042,11 +934,6 @@ int getparamfile(char *paramfname, int phase)
       fbc_bforces     [(int)(tempforce.x)] = force; 
     }
 #ifdef RELAX
-    else if (strcasecmp(token,"fbc_ekin_threshold")==0) {
-      /* epsilon criterium to increment extra force*/
-      getparam(token,&ekin_threshold,PARAM_REAL,1,1);
-      warning("Parameter fbc_ekin_threshold replaced by ekin_threshold"); 
-    }
     else if (strcasecmp(token,"max_bfbc_int")==0) {
       /* max nr of steps between fbc increments */
       getparam(token,&max_bfbc_int,PARAM_INT,1,1);
@@ -2005,30 +1892,34 @@ int getparamfile(char *paramfname, int phase)
       dsf_nk++;
     }
 #endif
+#if defined(HC) || defined(NVX) 
+    else if (strcasecmp(token, "hc_int")==0){
+      /* number of steps between heat current or profile writes  */
+      getparam(token, &hc_int, PARAM_INT, 1,1);
+    }
+    else if (strcasecmp(token, "hc_start")==0){
+      /* start step for heat current or profile measurement  */
+      getparam(token, &hc_start, PARAM_INT, 1,1);
+    }
+#endif
+#ifdef HC
+    else if (strcasecmp(token, "hc_av_start")==0){
+      /* start step for energy averaging  */
+      getparam(token, &hc_av_start, PARAM_INT, 1,1);
+    }
+#endif
 #ifdef NVX
-    else if (strcasecmp(token, "dTemp_start")==0){
-      /* temperature asymmetry at start */
-      getparam("dTemp_start", &dTemp_start, PARAM_REAL, 1,1);
-    }
-    else if (strcasecmp(token, "dTemp_end")==0){
-      /* temperature asymmetry at end */
-      getparam("dTemp_end", &dTemp_end, PARAM_REAL, 1,1);
-    }
-#endif
-#ifdef RNEMD
-    else if (strcasecmp(token, "exch_interval")==0){
-      /* interval for particle exchange */
-      getparam(token, &exch_int, PARAM_INT, 1,1);
-    }
-#endif
-#ifdef TRANSPORT
-    else if (strcasecmp(token, "tran_nlayers")==0){
+    else if (strcasecmp(token, "hc_nlayers")==0){
       /* number of layers */
-      getparam("tran_nlayers", &tran_nlayers, PARAM_INT, 1,1);
+      getparam(token, &hc_nlayers, PARAM_INT, 1,1);
     }
-     else if (strcasecmp(token, "tran_interval")==0){
-      /* number of steps between temp. writes  */
-      getparam(token, &tran_int, PARAM_INT, 1,1);
+    else if (strcasecmp(token, "hc_count")==0){
+      /* running index of temperature profile */
+      getparam(token, &hc_count, PARAM_INT, 1,1);
+    }
+    else if (strcasecmp(token, "hc_heatcurr")==0){
+      /* induced heat current density */
+      getparam(token, &hc_heatcurr, PARAM_REAL, 1,1);
     }
 #endif
 #ifdef TTM
@@ -2077,6 +1968,22 @@ int getparamfile(char *paramfname, int phase)
       getparam("fix_t_el", &fix_t_el, PARAM_INT, 1, 1);
     }
 #endif
+#ifdef PDECAY
+else if (strcasecmp(token, "xipdecay")==0){
+      /* value for the damping parameter added to the EQ's of motion */
+      getparam("xipdecay", &xipdecay, PARAM_REAL, 1,1);
+    }
+else if (strcasecmp(token, "ramp_fraction")==0){
+      /* fraction of the sample on which the damping ramp acts  */
+      getparam("ramp_fraction", &ramp_fraction, PARAM_REAL, 1,1);
+      if(ramp_fraction > 0.9 || ramp_fraction < 0.0)
+	error("Nonsense value for ramp_fraction detected, please check prameter file!");
+    }
+else if (strcasecmp(token, "pdecay_mode")==0){
+      /* mode for the damping function  */
+      getparam("pdecay_mode", &pdecay_mode, PARAM_INT, 1,1);
+    }
+#endif
 #ifdef LASER
 else if (strcasecmp(token, "laser_delta_temp")==0){
       /* maximum heat added by laser (at the surface) (in maxwell routine) */
@@ -2096,6 +2003,128 @@ else if (strcasecmp(token, "laser_dir")==0){
        ( for now only along coordinate axes ) (always needed)*/
       getparam("laser_dir", &laser_dir, PARAM_INT, DIM, DIM);
     }
+#ifdef LASERYZ
+else if (strcasecmp(token, "laser_sigma_w_y")==0){
+      /* y-center of gaussian laser-pulse  */
+      getparam("laser_sigma_w_y", &laser_sigma_w_y, PARAM_REAL, 1,1);
+    }
+else if (strcasecmp(token, "laser_sigma_w_z")==0){
+      /* z-center of gaussian laser-pulse  */
+      getparam("laser_sigma_w_z", &laser_sigma_w_z, PARAM_REAL, 1,1);
+    }
+else if (strcasecmp(token, "laser_sigma_w0")==0){
+      /* sigma_0 of spacial laser fluence  */
+      getparam("laser_sigma_w0", &laser_sigma_w0, PARAM_REAL, 1,1);
+    }
+else if (strcasecmp(token,"laser_tem_mode")==0) {
+      /* TEM_xy laser mode */
+      getparam(token,&laser_tem_mode,PARAM_INT,3,3);
+      switch ( laser_tem_mode.x ) /* Gauss Laguerre = 0, Gauss Hermite = 1 */
+      {
+	  case 0: 
+	  {
+	    switch ( laser_tem_mode.y )
+	    {
+		case 0: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_00; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_01; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_laguerre_02; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_03; break;
+		  }
+		} break;
+
+		case 1: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_10; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_11; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_laguerre_12; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_13; break;
+		  }
+		} break;
+
+		case 2: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_20; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_21; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_laguerre_22; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_23; break;
+		  }
+		} break;
+
+		case 3:
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_30; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_31; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_laguerre_32; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_33; break;
+		  }
+		} break;
+		
+	    }	    
+	  } break;
+	  case 1:
+	  {
+	    switch ( laser_tem_mode.y )
+	    {
+		case 0: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_00; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_01; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_hermite_02; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_03; break;
+		  }
+		} break;
+		
+		case 1: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_10; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_11; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_hermite_12; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_13; break;
+		  }
+		} break;
+
+		case 2: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_20; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_21; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_hermite_22; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_23; break;
+		  }
+		} break;
+		
+		case 3: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_30; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_31; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_hermite_32; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_33; break;
+		  }
+		} break;
+
+	    }	    
+	  } break;
+      }
+}
+  
+#endif
 else if (strcasecmp(token, "laser_sigma_e")==0){
       /* area density of pulse energy (for rescaling method) */
       getparam("laser_sigma_e", &laser_sigma_e, PARAM_REAL, 1,1);
@@ -2246,6 +2275,18 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"avpos_int")==0) {
       /* number of steps between average position writes */
       getparam("avpos_int",&avpos_int,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"avpos_steps")==0) {
+      /* number of steps to average over before position writes */
+      getparam("avpos_steps",&avpos_steps,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"avpos_nwrites")==0) {
+      /* number of position writes, only for processing the itr file */
+      getparam("avpos_nwrites",&avpos_nwrites,PARAM_INT,1,1);
+    }
+    else if (strcasecmp(token,"avpos_npwrites")==0) {
+      /* number of pressure writes, only for processing the itr file */
+      getparam("avpos_npwrites",&avpos_npwrites,PARAM_INT,1,1);
     }
 #endif
 #if defined(FORCE) || defined(WRITEF)
@@ -2616,6 +2657,50 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
                ntypepairs-ntypes, ntypepairs-ntypes);
     }
 #endif
+#ifdef SM
+/* no charge update after each step */
+    else if (strcasecmp(token,"charge_update_steps")==0) {
+      getparam(token, &charge_update_steps, PARAM_INT, 1, 1);
+    }
+    /* keep charges fixed? */
+    else if (strcasecmp(token,"sm_fixed_charges")==0) {
+      getparam(token, &sm_fixed_charges, PARAM_INT, 1, 1);
+    }
+    /* Initial value of the electronegativity */
+    else if (strcasecmp(token,"sm_chi_0")==0) {
+      if (ntypes==0) error("specify parameter ntypes before sm_chi_0");
+      getparam(token, sm_chi_0, PARAM_REAL, ntypes, ntypes);
+    }
+    /* Initial value of the effecitve core charge */
+    else if (strcasecmp(token,"sm_Z")==0) {
+      if (ntypes==0) error("specify parameter ntypes before sm_Z");
+      getparam(token, sm_Z, PARAM_REAL, ntypes, ntypes);
+    }
+    /* SM zeta */
+    else if (strcasecmp(token,"sm_zeta")==0) {
+      if (ntypes==0) error("specify parameter ntypes before sm_zeta");
+      getparam(token, sm_zeta, PARAM_REAL, ntypes, ntypes);
+    }
+    /* atomic hardness or self-Coulomb repulsion */
+    else if (strcasecmp(token,"sm_J_0")==0) {
+      if (ntypes==0) error("specify parameter ntypes before sm_J_0");
+      getparam(token, sm_J_0, PARAM_REAL, ntypes, ntypes);
+    }
+    /* nuclear attraction potential */
+    else if (strcasecmp(token,"na_pot_file")==0) {
+      getparam(token, na_pot_filename,PARAM_STR,1,255);
+    }
+    /* coulomb repulsive potential */
+    else if (strcasecmp(token,"cr_pot_file")==0) {
+      getparam(token, cr_pot_filename,PARAM_STR,1,255);
+    }
+#ifndef NBLIST
+    /* tabulated function erfc/r */
+    else if (strcasecmp(token,"erfc_file")==0) {
+      getparam(token, erfc_filename,PARAM_STR,1,255);
+    }
+#endif
+#endif /* SM */
 #ifdef FEFL
     /*harmonic potential for Einstein crystal */
     else if (strcasecmp(token,"spring_rate")==0) {
@@ -2658,7 +2743,6 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"ttbp_potfile")==0) {
       /* filename for ttbp potential data */
       getparam(token, ttbp_potfilename, PARAM_STR, 1, 255);
-      have_potfile = 1;
     }
 #endif
 #ifdef STIWEB
@@ -2779,12 +2863,77 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
                ntypes*ntypepairs, ntypes*ntypepairs);
     }
 #endif
-#if defined(EWALD) || defined(COULOMB)
+#if defined(EWALD) || defined(COULOMB) || defined(USEFCS)
     /* charges */
     else if (strcasecmp(token,"charge")==0) {
       if (ntypes==0) error("specify parameter ntypes before charge");
       getparam(token,charge,PARAM_REAL,ntypes,ntypes);
     }
+    else if (strcasecmp(token,"coul_eng")==0) {
+      getparam(token,&coul_eng,PARAM_REAL,1,1);
+    }
+#endif
+#ifdef USEFCS
+    else if (strcasecmp(token,"fcs_method")==0) {
+      /* FCS method */
+      getparam(token,tmpstr,PARAM_STR,1,255);
+      if (strcasecmp(tmpstr,"direct")==0) {
+        fcs_method = FCS_METH_DIRECT;
+      }
+      else if (strcasecmp(tmpstr,"pepc")==0) {
+        fcs_method = FCS_METH_PEPC;
+      }
+      else if (strcasecmp(tmpstr,"fmm")==0) {
+        fcs_method = FCS_METH_FMM;
+      }
+      else if (strcasecmp(tmpstr,"p3m")==0) {
+        fcs_method = FCS_METH_P3M;
+      }
+      else if (strcasecmp(tmpstr,"p2nfft")==0) {
+        fcs_method = FCS_METH_P2NFFT;
+      }
+    }
+    /* fcs_debug_level */
+    else if (strcasecmp(token,"fcs_debug_level")==0) {
+      getparam(token,&fcs_debug_level,PARAM_INT,1,1);
+    }
+#ifdef PAIR
+    /* fcs_rcut for near-field delegation */
+    else if (strcasecmp(token,"fcs_rcut")==0) {
+      getparam(token,&fcs_rcut,PARAM_REAL,1,1);
+      if (fcs_rcut > 0) have_pre_pot = 1;
+    }
+#endif
+    /* fcs_pepc_eps */
+    else if (strcasecmp(token,"fcs_pepc_eps")==0) {
+      getparam(token,&fcs_pepc_eps,PARAM_REAL,1,1);
+    }
+    /* fcs_pepc_theta */
+    else if (strcasecmp(token,"fcs_pepc_theta")==0) {
+      getparam(token,&fcs_pepc_theta,PARAM_REAL,1,1);
+    }
+    /* fcs_fmm_absrel */
+    else if (strcasecmp(token,"fcs_fmm_absrel")==0) {
+      getparam(token,&fcs_fmm_absrel,PARAM_INT,1,1);
+    }
+    /* fcs_fmm_deltaE */
+    else if (strcasecmp(token,"fcs_fmm_deltaE")==0) {
+      getparam(token,&fcs_fmm_deltaE,PARAM_REAL,1,1);
+    }
+    /* fcs_fmm_dcorr */
+    else if (strcasecmp(token,"fcs_fmm_dcorr")==0) {
+      getparam(token,&fcs_fmm_dcorr,PARAM_INT,1,1);
+    }
+    /* fcs_p3m_accuracy */
+    else if (strcasecmp(token,"fcs_p3m_accuracy")==0) {
+      getparam(token,&fcs_p3m_accuracy,PARAM_REAL,1,1);
+    }
+    /* fcs_p2nfft_accuracy */
+    else if (strcasecmp(token,"fcs_p2nfft_accuracy")==0) {
+      getparam(token,&fcs_p2nfft_accuracy,PARAM_REAL,1,1);
+    }
+#endif /* USEFCS */
+#if defined(EWALD) || defined(COULOMB)
     /* smoothing parameter */
     else if (strcasecmp(token,"ew_kappa")==0) {
       getparam(token,&ew_kappa,PARAM_REAL,1,1);
@@ -2800,7 +2949,9 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
 #ifdef DIPOLE
       dp_self=2./(3.*rtmp*ew_r2_cut*sqrt(2.*M_PI));
 #endif /* DIPOLE */
+#ifndef VARCHG
       have_pre_pot = 1;
+#endif
     }
     /* number of image boxes */
     else if (strcasecmp(token,"ew_nmax")==0) {
@@ -2862,7 +3013,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       getparam(token,dp_c,PARAM_REAL,ntypepairs,ntypepairs);
     }
 #endif /* DIPOLE */
-#if defined(DIPOLE) || defined(MORSE)
+#if ((defined(DIPOLE) || defined(MORSE)) && !defined(BUCK))
     /* Morse-Stretch parameter D */
     else if (strcasecmp(token,"ms_D")==0) {
       if (ntypes==0) error("specify parameter ntypes before ms_D");
@@ -2904,6 +3055,13 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       }
     }
 #endif /* DIPOLE or MORSE */
+
+#ifdef EXTF
+    /* external homogeneous electrostatic field */
+    else if (strcasecmp(token,"extf")==0) {
+      getparam(token,&extf,PARAM_REAL,DIM,DIM);
+    }
+#endif
 
 #ifdef EPITAX
     /* Parameters for option epitax */
@@ -3085,10 +3243,9 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
 
 void check_parameters_complete()
 {
-    real tmp;
-    int itmp;
-    real norm_bend_axis;
-    int  k;
+  real tmp;
+  real norm_bend_axis;
+  int  k;
 #ifdef TWOD
   vektor einsv = {1.0,1.0};
 #else
@@ -3107,18 +3264,7 @@ void check_parameters_complete()
   if (ntypes == 0) {
     error("ntypes is missing or zero.");
   }
-#ifdef BBOOST
-  itmp=0;
-  for (k=0;k<vtypes;k++)
-  {
-      itmp+=bb_boosttypes[k];
-  }
-  if (itmp==0)
-      error("no atoms are boosted");
 
-  if (bb_maxneigh <5)
-      error("bb_maxneigh too small!");
-#endif 
 #ifdef BEND
   if(bend_nmoments >0)
   {
@@ -3134,19 +3280,19 @@ void check_parameters_complete()
           error("definition of bending moment without axis");
      
 #ifdef RELAX
-          tmp=((fbc_dforces + (bend_vtype_of_force[k]))->x)*
-              ((fbc_dforces + (bend_vtype_of_force[k]))->x) +
-              ((fbc_dforces + (bend_vtype_of_force[k]))->y)*
-              ((fbc_dforces + (bend_vtype_of_force[k]))->y) +
-              ((fbc_dforces + (bend_vtype_of_force[k]))->z)*
-              ((fbc_dforces + (bend_vtype_of_force[k]))->z);
+          tmp=((fbc_bdforces + (bend_vtype_of_force[k]))->x)*
+              ((fbc_bdforces + (bend_vtype_of_force[k]))->x) +
+              ((fbc_bdforces + (bend_vtype_of_force[k]))->y)*
+              ((fbc_bdforces + (bend_vtype_of_force[k]))->y) +
+              ((fbc_bdforces + (bend_vtype_of_force[k]))->z)*
+              ((fbc_bdforces + (bend_vtype_of_force[k]))->z);
 #else
-          tmp=((fbc_endforces + (bend_vtype_of_force[k]))->x)*
-              ((fbc_endforces + (bend_vtype_of_force[k]))->x) +
-              ((fbc_endforces + (bend_vtype_of_force[k]))->y)*
-              ((fbc_endforces + (bend_vtype_of_force[k]))->y) +
-              ((fbc_endforces + (bend_vtype_of_force[k]))->z)*
-              ((fbc_endforces + (bend_vtype_of_force[k]))->z);
+          tmp=((fbc_endbforces + (bend_vtype_of_force[k]))->x)*
+              ((fbc_endbforces + (bend_vtype_of_force[k]))->x) +
+              ((fbc_endbforces + (bend_vtype_of_force[k]))->y)*
+              ((fbc_endbforces + (bend_vtype_of_force[k]))->y) +
+              ((fbc_endbforces + (bend_vtype_of_force[k]))->z)*
+              ((fbc_endbforces + (bend_vtype_of_force[k]))->z);
 #endif
           if(tmp==0)
               error("definition of bending moment without force");
@@ -3169,7 +3315,7 @@ void check_parameters_complete()
   if (vtypes < ntypes)
     error("total_types must not be smaller than ntypes");
 
-#ifdef PAIR
+#if defined(PAIR) && !defined(VARCHG)
   if ((have_potfile==0) && (have_pre_pot==0))
     error("You must specify a pair interaction!");
 #endif
@@ -3198,25 +3344,9 @@ void check_parameters_complete()
   }
 #endif
 #ifdef NVX
-  if (dTemp_start == 0){
-    error ("dTemp_start is missing or zero.");
-  }
-  if (dTemp_end == 0){
-    error ("dTemp_end is missing or zero.");
-  }
-  if (tran_int == 0){
-    error ("tran_int is zero.");
-  }
-  if (tran_nlayers == 0){
-    error ("tran_nlayers is zero.");
-  }
-#endif
-#ifdef RNEMD
-  if (tran_int == 0){
-    error ("tran_int is zero.");
-  }
-  if (tran_nlayers == 0){
-    error ("tran_nlayers is zero.");
+  if (ensemble==ENS_NVX) {
+    if (hc_int     == 0) error ("hc_int is zero.");
+    if (hc_nlayers == 0) error ("hc_nlayers is zero.");
   }
 #endif
 #ifdef FTG
@@ -3258,6 +3388,27 @@ void check_parameters_complete()
     error("Parameter laser_rescale_mode must be a positive integer < 5 !");
   }
 #endif /* LASER */
+#ifdef LASERYZ
+	if ( (laser_sigma_w_y == 0.0 ) || (laser_sigma_w_z == 0.0) ){
+	  warning("laser_sigma_w_y and / or laser_sigma_w_z is set to 0.0 - this seems to be a nonsense value!\n");
+	}
+	if ( (laser_sigma_w_y < 0.0) || (laser_sigma_w_z < 0.0)){
+	  error("laser_sigma_w_y and / or laser_sigma_w_z is smaller than zero - this is nonsense!\n");
+	}
+	if ( laser_sigma_w0 <= 0.0){
+	  error("laser_sigma_w0 is equal or less than zero - which is nonsense or means zero energy density.");
+	}
+	
+	if ( (laser_tem_mode.x < 0 ) || (laser_tem_mode.x > 1 ) )
+	{
+	  error("Laser TEM Mode has to be either Gauss-Laguerre (0) or Gauss-Hermite (1).");
+	}
+	
+	if ( (laser_tem_mode.y < 0) || (laser_tem_mode.y > 3) || (laser_tem_mode.z < 0 ) || (laser_tem_mode.z > 3) )
+	{
+	  error("Only Laser TEM_xy modes for x=1...3 and y=1...3 are supported yet.");
+	}	     
+#endif
 #ifdef TTM
   if (fd_update_steps <= 0) {
     warning("Ignoring illegal value of fd_update_steps, using 1\n");
@@ -3318,9 +3469,14 @@ void check_parameters_complete()
 #ifdef AVPOS
   fprintf(stderr, "%d %d\n", avpos_start, imdrestart*checkpt_int);
   if (avpos_start <= imdrestart*checkpt_int)
-    avpos_start = imdrestart*checkpt_int+1; /* do not ask me why +1 ;-) */
+    //  avpos_start = imdrestart*checkpt_int+1; /* do not ask me why +1 ;-) */
+    avpos_start = imdrestart*checkpt_int; /* do not ask me why +1 ;-) */
   /* Default initialisation of end time */ 
   if (0==avpos_end) avpos_end = steps_max;
+#ifdef STRESS_TENS
+  if (press_int % avpos_int !=0 || avpos_res % eng_int !=0)
+    error("For averaged pressure writes, press_int musst be an integer multiple of avpos_int and avpos_res must be an integer multiple of eng_int");
+#endif
 #endif
 
 #ifdef ATDIST
@@ -3425,7 +3581,7 @@ int read_parameters(char *paramfname, int phase)
     /* read back itr-file for the next phase */
     if (phase > 1) {
 #ifdef NEB
-      sprintf(outfilename, "%s.%02d", neb_outfilename, myrank+1);
+      sprintf(outfilename, "%s.%02d", neb_outfilename, myrank);
 #endif
       sprintf( itrfilename,"%s-final.itr", outfilename );
       getparamfile(itrfilename, 1);
@@ -3591,16 +3747,6 @@ void broadcast_params() {
   MPI_Bcast( &sscount,              1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &nfc,                  1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
-
-#ifdef BBOOST
-  if (NULL==bb_boosttypes) {
-    bb_boosttypes = (int *) malloc( vtypes * sizeof(int) );
-    if (NULL==bb_boosttypes) 
-      error("Cannot allocate memory for bb_boosttypes on client."); 
-  }
-  MPI_Bcast( bb_boosttypes, vtypes, MPI_INT, 0, MPI_COMM_WORLD);
-#endif
-  
 #ifdef FBC
   if (NULL==fbc_forces) {
     fbc_forces = (vektor *) malloc( vtypes * sizeof(vektor) );
@@ -3608,48 +3754,6 @@ void broadcast_params() {
       error("Cannot allocate memory for fbc_forces on client."); 
   }
   MPI_Bcast( fbc_forces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
-  
-#ifdef BEND
-   if (NULL==fbc_bforces) {
-    fbc_forces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_bforces) 
-      error("Cannot allocate memory for fbc_bforces on client."); 
-  }
-  MPI_Bcast( fbc_bforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
-  
-  if (NULL==fbc_beginbforces) {
-      fbc_beginbforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_beginbforces) 
-      error("Cannot allocate memory for fbc_beginbforces on client."); 
-  }
-  MPI_Bcast( fbc_beginbforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
-#ifdef RELAX
-  MPI_Bcast( &max_bfbc_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  if (NULL==fbc_bdforces) {
-    fbc_bdforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_bdforces) 
-      error("Cannot allocate memory for fbc_bdforces on client."); 
-  }
-  MPI_Bcast( fbc_bdforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
-#else
-  if (NULL==fbc_endbforces) {
-    fbc_endforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_endbforces) 
-      error("Cannot allocate memory for fbc_endbforces on client."); 
-  }
-  MPI_Bcast( fbc_endbforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
-#endif
- if (NULL==fbc_bdf) {
-    fbc_bdf = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_bdf) 
-      error("Cannot allocate memory for fbc_bdf on client."); 
- }
- if (NULL==bend_forces) {
-    bend_forces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==bend_forces) 
-      error("Cannot allocate memory for bend_forces on client."); 
-  }
-#endif /* BEND */
   if (NULL==fbc_beginforces) {
     fbc_beginforces = (vektor *) malloc( vtypes * sizeof(vektor) );
     if (NULL==fbc_beginforces) 
@@ -3677,7 +3781,48 @@ void broadcast_params() {
     if (NULL==fbc_df) 
       error("Cannot allocate memory for fbc_df on client."); 
   }
+#endif /*FBC*/
+#ifdef BEND
+   if (NULL==fbc_bforces) {
+    fbc_bforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==fbc_bforces) 
+      error("Cannot allocate memory for fbc_bforces on client."); 
+  }
+  MPI_Bcast( fbc_bforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
+  
+  if (NULL==fbc_beginbforces) {
+      fbc_beginbforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==fbc_beginbforces) 
+      error("Cannot allocate memory for fbc_beginbforces on client."); 
+  }
+  MPI_Bcast( fbc_beginbforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
+#ifdef RELAX
+  MPI_Bcast( &max_bfbc_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  if (NULL==fbc_bdforces) {
+    fbc_bdforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==fbc_bdforces) 
+      error("Cannot allocate memory for fbc_bdforces on client."); 
+  }
+  MPI_Bcast( fbc_bdforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
+#else
+  if (NULL==fbc_endbforces) {
+    fbc_endbforces = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==fbc_endbforces) 
+      error("Cannot allocate memory for fbc_endbforces on client."); 
+  }
+  MPI_Bcast( fbc_endbforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
 #endif
+ if (NULL==fbc_bdf) {
+    fbc_bdf = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==fbc_bdf) 
+      error("Cannot allocate memory for fbc_bdf on client."); 
+ }
+ if (NULL==bend_forces) {
+    bend_forces = (vektor *) malloc( vtypes * sizeof(vektor) );
+    if (NULL==bend_forces) 
+      error("Cannot allocate memory for bend_forces on client."); 
+  }
+#endif /* BEND */
 #ifdef ZAPP
   MPI_Bcast( &zapp_threshold,         1, REAL,  0, MPI_COMM_WORLD);
 #endif
@@ -3785,31 +3930,6 @@ void broadcast_params() {
   MPI_Bcast( upper_nb_cut,     ntypes, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( nb_r2_cut, ntypes*ntypes,    REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &nb_checkpt_int,       1, MPI_INT, 0, MPI_COMM_WORLD);
-#endif
-
-#ifdef BBOOST
-  MPI_Bcast( &bb_ensemble,         1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &bb_maxneigh,         1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &bb_checkpt_int,      1, MPI_INT, 0, MPI_COMM_WORLD);
-  // MPI_Bcast( &bflag1,              1, MPI_INT, 0, MPI_COMM_WORLD);
-  // MPI_Bcast( &bflag2,              1, MPI_INT, 0, MPI_COMM_WORLD);
-  // MPI_Bcast( &bflag3,              1, MPI_INT, 0, MPI_COMM_WORLD);
-  // MPI_Bcast( &bb_btime,            1, MPI_INT, 0, MPI_COMM_WORLD);
-  // MPI_Bcast( &bb_relaxsteps,       1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &bbminsteps_max,      1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &bb_tot_bV,           1, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &bbp1_2,              1, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &bb_rcut,             1, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &bb_relaxsteps_max,   1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &bb_maxwellrelax_max, 1, MPI_INT, 0, MPI_COMM_WORLD);  
-  MPI_Bcast( &bb_shdn_max,         1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &bb_qsafety_max,      1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &bb_under_max,        1, MPI_INT, 0, MPI_COMM_WORLD);
-  // MPI_Bcast( &bb_vtype2boost1,     1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &bb_epscrit,          1, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &delta_bb_epscrit,    1, REAL, 0, MPI_COMM_WORLD);  
-  MPI_Bcast( &bb_bound_div,        1, REAL, 0, MPI_COMM_WORLD);
-  
 #endif
 
   MPI_Bcast( &timestep    ,   1, REAL,     0, MPI_COMM_WORLD); 
@@ -3953,19 +4073,19 @@ void broadcast_params() {
   MPI_Bcast( dsf_kmax,     dsf_nk, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
+#if defined(HC) || defined(NVX)
+  MPI_Bcast( &hc_int,        1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &hc_start,      1, MPI_INT,  0, MPI_COMM_WORLD);
+#endif
+#ifdef HC
+  MPI_Bcast( &hc_av_start,   1, MPI_INT,  0, MPI_COMM_WORLD);
+#endif
 #ifdef NVX
-  MPI_Bcast( &dTemp_start,   1, REAL,   0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dTemp_end,     1, REAL,   0, MPI_COMM_WORLD); 
-#endif
-#ifdef RNEMD
-  MPI_Bcast( &exch_int,      1, MPI_INT,  0, MPI_COMM_WORLD);
-#endif
-#ifdef TRANSPORT
-  MPI_Bcast( &tran_nlayers,  1, MPI_INT,  0, MPI_COMM_WORLD);
-  MPI_Bcast( &tran_int,      1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &hc_nlayers,    1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &hc_count,      1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &hc_heatcurr,   1, REAL,     0, MPI_COMM_WORLD);
 #endif
 #ifdef LASER
-  MPI_Bcast( &laser_offset,     1, REAL,  0, MPI_COMM_WORLD);
   MPI_Bcast( &laser_rescale_mode,1,MPI_INT,0,MPI_COMM_WORLD);
   MPI_Bcast( &laser_dir,  DIM , MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &laser_mu,         1, REAL,  0, MPI_COMM_WORLD);
@@ -3973,8 +4093,18 @@ void broadcast_params() {
   MPI_Bcast( &laser_sigma_e,    1, REAL,  0, MPI_COMM_WORLD);
   MPI_Bcast( &laser_sigma_t,    1, REAL,  0, MPI_COMM_WORLD);
   MPI_Bcast( &laser_t_0,        1, REAL,  0, MPI_COMM_WORLD);
-  MPI_Bcast( &laser_atom_vol,   1, REAL,  0, MPI_COMM_WORLD);
+#ifdef LASERYZ
+  MPI_Bcast( &laser_sigma_w_y,    1,    REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &laser_sigma_w_z,    1,    REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &laser_sigma_w0,     1,    REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &laser_tem_mode,     3, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
+#endif
+#ifdef PDECAY
+  MPI_Bcast( &xipdecay,     1, REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &ramp_fraction,1, REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &pdecay_mode,  1, REAL,  0, MPI_COMM_WORLD);
+#endif 
 #ifdef TTM
   MPI_Bcast( &fd_g,     1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fd_update_steps,1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -4159,6 +4289,9 @@ void broadcast_params() {
   MPI_Bcast( &avpos_end,         1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &avpos_int,         1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &avpos_res,         1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &avpos_steps,       1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &avpos_nwrites,     1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &avpos_npwrites,    1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef ATDIST
@@ -4302,8 +4435,31 @@ void broadcast_params() {
   MPI_Bcast( keating_beta, ntypes*ntypepairs, REAL, 0,MPI_COMM_WORLD);
 #endif
 
-#if defined(EWALD) || defined(COULOMB)
+#if defined(EWALD) || defined(COULOMB) || defined(USEFCS) || defined(SM)
   MPI_Bcast( charge,              ntypes, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &coul_eng,           1,      REAL,    0, MPI_COMM_WORLD);
+#endif
+#ifdef SM
+  MPI_Bcast( &sm_fixed_charges,        1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( sm_chi_0,            ntypes, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( sm_J_0,              ntypes, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( sm_Z,                ntypes, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( sm_zeta,             ntypes, REAL,    0, MPI_COMM_WORLD);
+#endif
+#ifdef USEFCS
+  MPI_Bcast( &fcs_method,         1,   MPI_INT,    0, MPI_COMM_WORLD);
+#ifdef PAIR
+  MPI_Bcast( &fcs_rcut,           1,      REAL,    0, MPI_COMM_WORLD);
+#endif
+  MPI_Bcast( &fcs_pepc_eps,       1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_pepc_theta,     1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_fmm_absrel,     1,   MPI_INT,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_fmm_deltaE,     1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_fmm_dcorr,      1,   MPI_INT,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_p3m_accuracy,   1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_p2nfft_accuracy,1,      REAL,    0, MPI_COMM_WORLD);
+#endif
+#if defined(EWALD) || defined(COULOMB)
   MPI_Bcast( &ew_kappa,           1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &ew_r2_cut,          1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &ew_kcut,            1,      REAL,    0, MPI_COMM_WORLD);
@@ -4425,17 +4581,6 @@ void broadcast_params() {
     default: if (0==myid) error("unknown ensemble in broadcast"); break;
   }
 
-#ifdef BBOOST
- 
-  switch (bb_ensemble) {
-    case ENS_MIK:       bb_move_atoms = move_atoms_mik;       break;
-    case ENS_GLOK:      bb_move_atoms = move_atoms_nve;       break;
-    case ENS_CG:        bb_move_atoms = move_atoms_cg;      break;  
-    default: if (0==myid) error("unknown bb_ensemble in broadcast"); break;
-  }
-
-#endif
-  
 #ifdef LASER
   /* broadcast laser rescaling routine to other CPUs */
   switch (laser_rescale_mode) {
@@ -4449,6 +4594,113 @@ void broadcast_params() {
     default: if (0==myid) 
                error("unknown laser rescaling mode in broadcast"); break;
   }
+
+#ifdef LASERYZ
+  switch ( laser_tem_mode.x ) /* Gauss Laguerre = 0, Hermite = 1 */
+      {
+	  case 0: 
+	  {
+	    switch ( laser_tem_mode.y )
+	    {
+		case 0: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_00; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_01; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_laguerre_02; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_03; break;
+		  }
+		} break;
+
+		case 1: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_10; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_11; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_laguerre_12; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_13; break;
+		  }
+		} break;
+
+		case 2: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_20; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_21; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_laguerre_22; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_23; break;
+		  }
+		} break;
+
+		case 3:
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_30; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_31; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_laguerre_32; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_33; break;
+		  }
+		} break;
+		
+	    }	    
+	  } break;
+	  case 1:
+	  {
+	    switch ( laser_tem_mode.y )
+	    {
+		case 0: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_00; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_01; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_hermite_02; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_03; break;
+		  }
+		} break;
+		
+		case 1: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_10; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_11; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_hermite_12; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_13; break;
+		  }
+		} break;
+
+		case 2: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_20; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_21; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_hermite_22; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_23; break;
+		  }
+		} break;
+		
+		case 3: 
+		{
+		  switch ( laser_tem_mode.z ) 
+		  {
+		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_30; break;
+		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_31; break;
+		      case 2: laser_intensity_profile = laser_intensity_profile_hermite_32; break;
+		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_33; break;
+		  }
+		} break;
+
+	    }	    
+	  } break;
+      }
+#endif /* LASERYZ */
+
 #endif /* LASER */
 
 }

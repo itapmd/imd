@@ -28,7 +28,7 @@
 #endif
 
 /* auxiliary arrays */
-real *pos=NULL, *pos_l=NULL, *pos_r=NULL, *f=NULL;
+real *pos=NULL, *pos_l=NULL, *pos_r=NULL, *f=NULL, *tau=NULL, *dRleft=NULL, *dRright=NULL;
 
 /******************************************************************************
 *
@@ -76,7 +76,10 @@ void alloc_pos(void)
   pos_l = (real *) malloc( DIM * natoms * sizeof(real ) );
   pos_r = (real *) malloc( DIM * natoms * sizeof(real ) );
   f     = (real *) malloc( DIM * natoms * sizeof(real ) );
-  if ((NULL==pos) || (NULL==pos_l) || (NULL==pos_r) || (NULL==f))
+  tau   = (real *) malloc( DIM * natoms * sizeof(real ) );
+  dRleft= (real *) malloc( DIM * natoms * sizeof(real ) );
+  dRright= (real *) malloc( DIM * natoms * sizeof(real ) );
+  if ((NULL==pos) || (NULL==pos_l) || (NULL==pos_r) || (NULL==f)|| (NULL==tau)|| (NULL==dRleft) || (NULL==dRright))
     error("cannot allocate NEB position arrays");
 }
 
@@ -101,15 +104,7 @@ void read_atoms_neb(str255 infilename)
     read_atoms(fname);
     myrank = 0;
     alloc_pos();
-    for (k=0; k<NCELLS; k++) {
-      cell *p = CELLPTR(k);
-      for (i=0; i<p->n; i++) { 
-        n = NUMMER(p,i);
-        pos_l X(n) = ORT(p,i,X);
-        pos_l Y(n) = ORT(p,i,Y);
-        pos_l Z(n) = ORT(p,i,Z);
-      }
-    }
+
     /* compute and write energy of initial configuration */
     calc_forces(0);
     neb_image_energies[0]=tot_pot_energy;
@@ -121,19 +116,11 @@ void read_atoms_neb(str255 infilename)
   }
 
   /* read positions of final configuration */
-  if (neb_nrep-3==myrank) {
+  else if (neb_nrep-1==myrank) {
     sprintf(fname, "%s.%02d", infilename, neb_nrep-1);
     read_atoms(fname);
     if (NULL==pos) alloc_pos();
-    for (k=0; k<NCELLS; k++) {
-      cell *p = CELLPTR(k);
-      for (i=0; i<p->n; i++) { 
-        n = NUMMER(p,i);
-        pos_r X(n) = ORT(p,i,X);
-        pos_r Y(n) = ORT(p,i,Y);
-        pos_r Z(n) = ORT(p,i,Z);
-      }
-    }
+
     /* compute and write energy of initial configuration */
     calc_forces(0);
     neb_image_energies[ neb_nrep-1]=tot_pot_energy;
@@ -144,12 +131,15 @@ void read_atoms_neb(str255 infilename)
     eng_file = NULL;
   }
 
-  /* read positions of my configuration */
-  sprintf(fname, "%s.%02d", infilename, myrank+1);
-  read_atoms(fname);
-  if (NULL==pos) alloc_pos();
-  sprintf(outfilename, "%s.%02d", neb_outfilename, myrank+1);
-
+  else
+  {
+      /* read positions of my configuration */
+      sprintf(fname, "%s.%02d", infilename, myrank);
+      printf("rank: %d reading  %s.%02d\n",myrank, infilename, myrank);fflush(stdout);
+      read_atoms(fname);
+      if (NULL==pos) alloc_pos();
+      sprintf(outfilename, "%s.%02d", neb_outfilename, myrank);
+  }
 }
 
 /******************************************************************************
@@ -176,7 +166,7 @@ void neb_sendrecv_pos(void)
 
   /* ranks of left/right cpus */
   cpu_l = (0            == myrank) ? MPI_PROC_NULL : myrank - 1;
-  cpu_r = (neb_nrep - 3 == myrank) ? MPI_PROC_NULL : myrank + 1;
+  cpu_r = (neb_nrep - 1 == myrank) ? MPI_PROC_NULL : myrank + 1;
 
   /* send positions to right, receive from left */
   MPI_Sendrecv(pos,   DIM*natoms, REAL, cpu_r, BUFFER_TAG,
@@ -197,8 +187,8 @@ void neb_sendrecv_pos(void)
 
 void calc_forces_neb(void)
 {
-  real dl2=0.0, dr2=0.0, drl=0.0, d2=0.0, f2=0.0, f2max=0.0, drlmax=0.0;
-  real tmp, cosphi, fphi, src[3], dest[3], *d=pos;
+    real dl2=0.0, dr2=0.0, drl=0.0, d2=0.0, f2=0.0, f2max=0.0, drlmax=0.0,df=0.0;
+    real tmp,tmp1,tmp2, cosphi, fphi, src[3], dest[3], *d=pos;
   int k, i;
  
   int myimage,maximage;
@@ -210,7 +200,7 @@ void calc_forces_neb(void)
   real k_sum, k_diff;
   real tmp_neb_ks[NEB_MAXNREP] INIT(zero100);
 
-  myimage = myrank+1;
+  myimage = myrank;
   /* get info about the energies of the different images */
   neb_image_energies[ myimage]=tot_pot_energy;
   MPI_Allreduce(neb_image_energies , neb_epot_im, NEB_MAXNREP, REAL, MPI_SUM, MPI_COMM_WORLD);
@@ -257,7 +247,8 @@ void calc_forces_neb(void)
    
       neb_sendrecv_pos();
    
-  
+  if(myrank != 0 && myrank != neb_nrep-1)
+  { 
       dl2=0.0;d2=0.0;dr2=0.0;
   /* compute tangent of current NEB path */
       for (i=0; i<DIM*natoms; i+=DIM) {
@@ -272,34 +263,6 @@ void calc_forces_neb(void)
 	dr.y = pos_r[i+1] - pos  [i+1];
 	dr.z = pos_r[i+2] - pos  [i+2];
 	
-	
-	
-/* 	if(dl.x >= box_x.x/2.0) */
-/* 	  { dl.x =  pos  [i  ] - box_x.x - pos_l[i  ];} */
-/* 	else if(dl.x <= -box_x.x/2.0) */
-/* 	  { dl.x =  pos  [i  ] + box_x.x - pos_l[i  ];} */
-/* 	if(dl.y >= box_y.y/2.0) */
-/* 	  { dl.y =  pos  [i+1  ] - box_y.y - pos_l[i+1  ];} */
-/* 	else if(dl.y <= -box_y.y/2.0) */
-/* 	  { dl.y =  pos  [i+1  ] + box_y.y - pos_l[i+1  ];} */
-/* 	if(dl.z >= box_z.z/2.0) */
-/* 	  { dl.z =  pos  [i+2  ] - box_z.z - pos_l[i+2  ];} */
-/* 	else if(dl.z <= -box_z.z/2.0) */
-/* 	  { dl.z =  pos  [i+2  ] + box_z.z - pos_l[i+2  ];} */
- 
-/* 	if(dr.x >= box_x.x/2.0) */
-/* 	  { dr.x =  pos_r  [i  ] - box_x.x - pos[i  ];} */
-/* 	else if(dr.x <= -box_x.x/2.0) */
-/* 	  { dr.x =  pos_r  [i  ] + box_x.x - pos[i  ];} */
-/* 	if(dr.y >= box_y.y/2.0) */
-/* 	  { dr.y =  pos_r  [i+1  ] - box_y.y - pos[i+1  ];} */
-/* 	else if(dr.y <= -box_y.y/2.0) */
-/* 	  { dr.y =  pos_r  [i+1  ] + box_y.y - pos[i+1  ];} */
-/* 	if(dr.z >= box_z.z/2.0) */
-/* 	  { dr.z =  pos_r  [i+2  ] - box_z.z - pos[i+2  ];} */
-/* 	else if(dr.z <= -box_z.z/2.0) */
-/* 	  { dr.z =  pos_r  [i+2  ] + box_z.z - pos[i+2  ];} */
- 
 
 	/* apply periodic boundary conditions */
 	if (1==pbc_dirs.x) {
@@ -332,13 +295,16 @@ void calc_forces_neb(void)
 	  dr.y += x * box_z.y;
 	  dr.z += x * box_z.z;
     }
-	//	#define OLDTANGENT
+#define OLDTANGENT 1
 #ifdef OLDTANGENT
-	/* unnormalized tangent vector */
-	d[i  ] = dr.x + dl.x;
-	d[i+1] = dr.y + dl.y;
-	d[i+2] = dr.z + dl.z;
-	
+
+        dRleft[i]   = dl.x;
+        dRleft[i+1] = dl.y;
+        dRleft[i+2] = dl.z;
+
+        dRright[i]   = dr.x;
+        dRright[i+1] = dr.y;
+        dRright[i+2] = dr.z;
 
 	/* unmodified spring force */
 	f[i  ] = dr.x - dl.x; 
@@ -411,20 +377,6 @@ void calc_forces_neb(void)
 		  d[i+1] = dr.y + dl.y;
 		  d[i+2] = dr.z + dl.z;
 		}
-	    /*   if (myimage==5 && i==3) */
-/* 		{ */
-/* 		  printf("step %d rank %d Vprev %lf V act %lf Vnext %lf \n",steps,myrank, V_previous,V_actual,V_next); */
-/* 		  printf("step %d rank %d absnext %lf absprev %lf dVmax %lf dVmin %lf \n",steps,myrank, abs_next,abs_previous,deltaVmax,deltaVmin); */
-/* 		  printf("%le %le %le    ---    %le %le %le \n",d[i],d[i+1],d[i+2],dr.x + dl.x, dr.y + dl.y, dr.z + dl.z); */
-/* 		  fflush(stdout); */
-/* 		} */
-
-	  /*     if (myimage == neb_climbing_image) */
-/* 		{ */
-/* 		  d[i  ] = dr.x + dl.x; */
-/* 		  d[i+1] = dr.y + dl.y; */
-/* 		  d[i+2] = dr.z + dl.z; */
-/* 		} */
 
 	    }
 	}
@@ -434,9 +386,34 @@ void calc_forces_neb(void)
 	dl2 += SPROD(dl,dl); 
 	dr2 += SPROD(dr,dr); 
 	drl += SPROD(dr,dl); 
-	d2  += nebSPRODN(d+i,d+i); 
-	drlmax = MAX(drlmax, fabs( SPROD(dr,dr) - SPROD(dl,dl) ) ); 
+	d2  += nebSPRODN(d+i,d+i);
+        
+        df += nebSPRODN(d+i,f+i);
+
+        drlmax = MAX(drlmax, fabs( SPROD(dr,dr) - SPROD(dl,dl) ) ); 
       } // end loop over i
+
+
+  } // end  if(myrank != 0 && mrank != neb_nrep-1)
+
+#ifdef OLDTANGENT
+  // calculate tangent from both normalized tangent vectors
+  if(myrank != 0 && myrank != neb_nrep-1)
+      {
+          tmp1=1.0/sqrt(dl2);
+          tmp2=1.0/sqrt(dr2);
+          d2=0;df=0;
+          for (i=0; i<DIM*natoms; i+=DIM) {
+              
+              d[i]   = dRleft[i]*tmp1 + dRright[i]*tmp2;
+              d[i+1] = dRleft[i+1]*tmp1 + dRright[i+1]*tmp2;
+              d[i+2] = dRleft[i+2]*tmp1 + dRright[i+2]*tmp2;
+              d2 += d[i]*d[i] + d[i+1]*d[i+1] + d[i+2]*d[i+2];
+              df += f[i]*d[i] + f[i+1]*d[i+1] + f[i+2]*d[i+2];
+          }
+      }
+#endif
+  
   
   /* variable springs (jcp113 p. 9901) */
       if ( neb_kmax > 0 & neb_kmin >0 &&  steps > neb_vark_start)
@@ -447,9 +424,13 @@ void calc_forces_neb(void)
 	  delta_E = Emax - Emin;
 	  if (delta_E > 1.0e-32)
 	    {
-	      tmp_neb_ks[0] = 0.5*0.5 *(k_sum - k_diff * cos(3.141592653589793238*( neb_epot_im[0] - Emin )/delta_E ));
-	      tmp_neb_ks[neb_nrep-1] =0.5* 0.5 *(k_sum - k_diff * cos(3.141592653589793238*( neb_epot_im[neb_nrep-1] - Emin )/delta_E ));
-	      tmp_neb_ks[myimage] = 0.5 *(k_sum - k_diff * cos(3.141592653589793238*( neb_epot_im[myimage] - Emin )/delta_E ));
+                if(myrank != 0 && myrank != neb_nrep-1)
+                {
+                    tmp_neb_ks[0] = 0.5*0.5 *(k_sum - k_diff * cos(3.141592653589793238*( neb_epot_im[0] - Emin )/delta_E ));
+                    tmp_neb_ks[neb_nrep-1] =0.5* 0.5 *(k_sum - k_diff * cos(3.141592653589793238*( neb_epot_im[neb_nrep-1] - Emin )/delta_E ));
+                    
+                    tmp_neb_ks[myimage] = 0.5 *(k_sum - k_diff * cos(3.141592653589793238*( neb_epot_im[myimage] - Emin )/delta_E ));
+                }
 	    }
 	}
       else
@@ -462,7 +443,8 @@ void calc_forces_neb(void)
   
 
 
-
+ if(myrank != 0 && myrank != neb_nrep-1)
+  {
 
       /* project internal force onto perpendicular direction */
       tmp = 0.0;
@@ -475,8 +457,7 @@ void calc_forces_neb(void)
 	  tmp += d Z(n) * KRAFT(p,i,Z);
 	}
       }
-       tmp /= -d2; // should be the wrong sign, but seems to work???
-       //   tmp /= d2;
+      tmp /= -d2; // should be the wrong sign, but seems to work???
       for (k=0; k<NCELLS; k++) {
 	cell *p = CELLPTR(k);
 	for (i=0; i<p->n; i++) { 
@@ -497,35 +478,29 @@ void calc_forces_neb(void)
 	}
       }
       
-      /* estimate spring constant */
-      /*   src[0] = sqrt(dr2); */
-      /*   src[1] = sqrt(f2); */
-      /*   if (0==myrank) src[0] += sqrt(dl2); */
-      /*   src[2] = sqrt(d2 * f2max) / MAX(drlmax, 1e-3); */
-      /*   MPI_Allreduce( src, dest, 3, REAL, MPI_SUM, MPI_COMM_WORLD); */
-      /*   neb_k = dest[1] / dest[0]; */
-      /*   neb_k = MAX(10,neb_k); */
-      /*
-	if ((fabs(neb_k - tmp) / neb_k) > 0.1) neb_k = tmp;
-	neb_k = MAX(20,neb_k);
-      */
-      /*
-	if (0==myrank) 
-	printf("%d %e %e %e %e\n", nfc, sqrt(f2), fabs(dr2 - dl2), neb_k, 
-	dest[2]/9 ); 
-	neb_k = dest[2]/9;  
-      */
-      /*
-	if (0==myrank) printf("%e %e\n", sqrt(d2 * f2), fabs(dr2 - dl2) ); 
-	src[0] = sqrt(d2 * f2) / MAX( fabs(dr2 - dl2), 1e-6 );
-	MPI_Allreduce( src, dest, 1, REAL, MPI_SUM, MPI_COMM_WORLD);
-	neb_k = dest[0] / (neb_nrep - 2);
-      */
-      
-      
+    
       /* project spring force onto parallel direction */
 
 #ifdef OLDTANGENT
+      
+      // first implementation, no variable k,   
+  //     if(! ((steps >= neb_cineb_start) && (myimage == neb_climbing_image)))
+// 	{
+	  
+//             tmp = tmp_neb_ks[myimage] * df  /d2;
+//             for (k=0; k<NCELLS; k++) {
+//                 cell *p = CELLPTR(k);
+//                 for (i=0; i<p->n; i++) {
+                    
+//                     int n = NUMMER(p,i);
+//                     KRAFT(p,i,X) += tmp * d X(n);
+//                     KRAFT(p,i,Y) += tmp * d Y(n);
+//                     KRAFT(p,i,Z) += tmp * d Z(n);
+//                 }
+//             }
+// 	}
+      
+          
       if(! ((steps >= neb_cineb_start) && (myimage == neb_climbing_image)))
 	{
 	  cosphi = drl / sqrt(dl2 * dr2);
@@ -546,6 +521,8 @@ void calc_forces_neb(void)
 	    }
 	  }
 	}
+
+      
 #else
       if(! ((steps >= neb_cineb_start) && (myimage == neb_climbing_image)))
 	{
@@ -579,6 +556,8 @@ void calc_forces_neb(void)
 	}
       
 #endif
+  } //  if(myrank != 0 && mrank != neb_nrep-1)
+  
 }
 
 /******************************************************************************

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -40,6 +40,7 @@
 * _zincblende -- generates zincblende structure
 * _lav        -- generates a cubic Laves structure C15 (MgCu2)
 * _tiqc       -- generates a truncated icosahedra quasicrystal
+* _sio2       -- generates a quartz crystal (SiO2)
 *
 * The lattice constant of the conventional unit cell of the crystal 
 * structures is box_unit.
@@ -121,31 +122,36 @@ void generate_atoms(str255 mode)
     init_qc();
     generate_qc();
 #endif
+#if defined(EWALD) || defined(COULOMB) || defined(USEFCS)
+  } else if (0 == strcmp(mode,"_sio2")) { /* SiO2 (quartz) */
+    generate_SiO2();
+#endif
 #endif /* 3D */
   } else if (0==myid) error("Filename with _ specifies unknown structure.");
 
 #ifdef MPI
 #ifndef MONOLJ
   /* Get numbering of atoms right even across CPUs */
-  ninc = 0;
-  if ((0==myid) && (num_cpus>1))
-     MPI_Send( &natoms, 1, MPI_LONG, myid + 1, 0, cpugrid );
-  else if ((0<myid) && (myid<(num_cpus-1))) {
-     MPI_Recv( &tmp,    1, MPI_LONG, myid - 1, 0, cpugrid, &status );
-     ninc = tmp;
-     tmp += natoms;
-     MPI_Send( &tmp,    1, MPI_LONG, myid + 1, 0, cpugrid );
-  }
-  else if (myid==(num_cpus-1)) {
-     MPI_Recv( &tmp,    1, MPI_LONG, myid - 1, 0, cpugrid, &status );
-     ninc = tmp;
-  }
-  /* loop over all atoms, fix numbers */
-  for (k=0; k<NCELLS; ++k) {
-    int i;
-    cell *p;
-    p = CELLPTR(k);
-    for (i=0; i<p->n; ++i) NUMMER(p,i) += ninc;
+  if (num_cpus>1) {
+    ninc = 0;
+    if (0==myid)
+       MPI_Send( &natoms, 1, MPI_LONG, myid + 1, 0, cpugrid );
+    else if (myid<(num_cpus-1)) {
+       MPI_Recv( &tmp,    1, MPI_LONG, myid - 1, 0, cpugrid, &status );
+       ninc = tmp;
+       tmp += natoms;
+       MPI_Send( &tmp,    1, MPI_LONG, myid + 1, 0, cpugrid );
+    }
+    else {
+       MPI_Recv( &tmp,    1, MPI_LONG, myid - 1, 0, cpugrid, &status );
+       ninc = tmp;
+    }
+    /* loop over all atoms, fix numbers */
+    for (k=0; k<NCELLS; ++k) {
+      int i;
+      cell *p = CELLPTR(k);
+      for (i=0; i<p->n; ++i) NUMMER(p,i) += ninc;
+    }
   }
 #endif /* MONOLJ */
 
@@ -599,6 +605,118 @@ void generate_lav()
 #endif
         }
 } 
+
+#if defined(EWALD) || defined(COULOMB) || defined(USEFCS)
+
+/* generate hexagonal SiO2 crystal */
+void generate_SiO2(void)
+{
+  ivektor  cellc, lcellc;
+  vektor   min;
+  minicell *to;
+  cell     *input;
+  real     xx, yy, zz;
+  int      to_cpu, i, j, k, l, typ;
+  real     box_sz      [3] = {4.9134, 8.51025844, 5.4052};
+  int      SiO2_typ[18]    = {0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1,1,1};
+  real     SiO2_pos[18][3] = {
+    0.677893, 5.145130, 0.900000,
+    3.134590, 0.890000, 0.900000,
+    1.684400, 2.889490, 2.701730,
+    4.141100, 7.144610, 2.701730,
+    1.684400, 7.400770, 4.503470,
+    4.141100, 3.145640, 4.503470,
+    4.067400, 8.259460, 1.541777,
+    1.610700, 4.004330, 1.541777,
+    2.205960, 1.511250, 2.059960,
+    4.662660, 5.766380, 2.059960,
+    0.230040, 2.652050, 3.343510,
+    2.686740, 6.907180, 3.343510,
+    2.686740, 3.383080, 3.861690,
+    0.230040, 7.638210, 3.861690,
+    2.205960, 0.268752, 5.145240,
+    4.662660, 4.523880, 5.145240,
+    1.610700, 6.285930, 0.258220,
+    4.067400, 2.030800, 0.258220
+  };
+
+  if (size_per_cpu) {
+    box_param.x *= cpu_dim.x;
+    box_param.y *= cpu_dim.y;
+    box_param.z *= cpu_dim.z;
+  }
+  if ((box_param.x==0) || (box_param.y==0) || (box_param.z==0))
+    error("box_param not set!");
+  box_x.x = box_param.x * box_sz[0];  box_x.y = 0.0;  box_x.z = 0.0;
+  box_y.x = 0.0;  box_y.y = box_param.y * box_sz[1];  box_y.z = 0.0;
+  box_z.x = 0.0;  box_z.y = 0.0;  box_z.z = box_param.z * box_sz[2];
+  make_box();
+
+#ifdef MPI
+  if (myid==0)
+    if ((box_param.x % cpu_dim.x) || (box_param.y % cpu_dim.y) || 
+        (box_param.z % cpu_dim.z))
+      error("box_param must be commensurate with cpu_dim");
+#endif
+
+#ifdef BUFCELLS
+  min.x = my_coord.x * box_x.x / cpu_dim.x;
+  min.y = my_coord.y * box_y.y / cpu_dim.y;
+  min.z = my_coord.z * box_z.z / cpu_dim.z;
+#else
+  min.x = 0;
+  min.y = 0;
+  min.z = 0;
+#endif
+
+  /* Set up 1 atom input cell */
+  input = (cell *) malloc(sizeof(cell));
+  if (0==input) error("Cannot allocate input cell.");
+  input->n_max = 0;
+  alloc_cell(input,1);
+  natoms  = 0;
+  nactive = 0;
+
+  for (i = 0 ; i < box_param.x / cpu_dim.x; i++)
+    for (j = 0 ; j < box_param.y / cpu_dim.y; j++)
+      for (k = 0 ; k < box_param.z / cpu_dim.z; k++)
+        for (l = 0; l < 18; l++) {
+          typ  = SiO2_typ[l];
+          natoms++;
+          nactive += 3;
+          input->n = 1;
+          xx = min.x + i * box_sz[0] + SiO2_pos[l][0];
+          yy = min.y + j * box_sz[1] + SiO2_pos[l][1];
+          zz = min.z + k * box_sz[2] + SiO2_pos[l][2];
+          cellc = cell_coord( xx, yy, zz );
+          ORT(input,0,X) = xx;
+          ORT(input,0,Y) = yy;
+          ORT(input,0,Z) = zz;
+#ifndef MONOLJ
+          NUMMER(input,0) = natoms;
+          SORTE (input,0) = gtypes[typ];
+          VSORTE(input,0) = gtypes[typ];
+          MASSE (input,0) = masses[gtypes[typ]];
+#endif
+          CHARGE(input,0) = charge[typ];
+          num_sort[gtypes[typ]]++;
+
+#ifdef BUFCELLS
+          to_cpu = cpu_coord(cellc);
+          if (to_cpu==myid) {
+            lcellc = local_cell_coord( cellc );
+            to = PTR_VV(cell_array,lcellc,cell_dim);
+	    INSERT_ATOM(to, input, 0);
+	  }
+          else error("atom on wrong CPU");
+#else
+          to = PTR_VV(cell_array,cellc,cell_dim);
+          INSERT_ATOM(to, input, 0);
+#endif
+        }
+}
+
+#endif
 
 #endif /* not TWOD */
 

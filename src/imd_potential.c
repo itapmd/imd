@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -51,6 +51,13 @@ void setup_potentials( void )
 #ifdef COULOMB
   create_coulomb_tables();
 #endif /* COULOMB */
+#ifdef SM
+  read_pot_table(&na_pot_tab,na_pot_filename,ntypes*ntypes,1);
+  read_pot_table(&cr_pot_tab,cr_pot_filename,ntypes*ntypes,1);
+#ifndef NBLIST
+  read_pot_table(&erfc_r_tab,erfc_filename,ntypes*ntypes,1);
+#endif
+#endif
 #ifdef MULTIPOT
   for (i=0; i<N_POT_TAB; i++)
     copy_pot_table( pair_pot, &pair_pot_ar[i]);
@@ -552,6 +559,7 @@ void create_pot_table(pot_table_t *pt)
                 val += morse_aaa[i][j] * SQR(r2_cut[i][j] - r2);
               }
             }
+#ifndef BUCK
             /* Buckingham */
             if (buck_sigma[i][j]>0) {
               if (r2 < (1.0 - POT_TAIL) * r2_cut[i][j]) {
@@ -562,6 +570,7 @@ void create_pot_table(pot_table_t *pt)
                 val += buck_aaa[i][j] * SQR(r2_cut[i][j] - r2);
               }
             }
+#endif
             /* harmonic potential for shell model */
             if (spring_cst[i][j]>0) {
 	      val = 0.5 * spring_cst[i][j] * r2;
@@ -589,7 +598,7 @@ void create_pot_table(pot_table_t *pt)
               }
 	    }
 #endif
-#if defined(DIPOLE) || defined(MORSE)
+#if ((defined(DIPOLE) || defined(MORSE)) && !defined(BUCK))
             /* Morse-Stretch potential for dipole */
             if ((ew_r2_cut > 0)) { 
 	      /* harmonic spring */
@@ -604,6 +613,16 @@ void create_pot_table(pot_table_t *pt)
               }
 	    }
 #endif /* DIPOLE or MORSE */
+#ifdef BUCK
+ /* Buckingham potential for dipole */
+            if ((ew_r2_cut > 0)) { 
+	      if (r2 < ew_r2_cut) {
+                pair_int_buck(&pot, &grad, i, j, r2);
+                val += pot - bk_shift[col];
+                val -= SQRT(r2)*bk_fshift[col]*(SQRT(r2)-SQRT(ew_r2_cut));
+              }
+	    }
+#endif /* BUCK */
             *PTR_2D(pt->table, n, column, pt->maxsteps, ncols) = val;
           }
 	}
@@ -635,9 +654,9 @@ void init_pre_pot(void) {
   int  i, j, k, m, n,col;
   real tmp = 0.0;
 
-#if defined(DIPOLE) || defined(MORSE)
+#if ((defined(DIPOLE) || defined(MORSE)) && !defined(BUCK))
   real pot,grad;
-  ms_shift = (real *) malloc (ntypepairs * sizeof(real));
+  ms_shift  = (real *) malloc (ntypepairs * sizeof(real));
   ms_fshift = (real *) malloc (ntypepairs * sizeof(real));
   ms_harm_a = (real *) malloc (ntypepairs * sizeof(real));
   ms_harm_b = (real *) malloc (ntypepairs * sizeof(real));
@@ -645,10 +664,19 @@ void init_pre_pot(void) {
       ( NULL == ms_harm_a )|| ( NULL == ms_harm_b ))
     error("cannot allocate Morse-Stretch shift");
 #endif
+#ifdef BUCK
+  bk_shift  = (real *) malloc (ntypepairs * sizeof(real));
+  bk_fshift = (real *) malloc (ntypepairs * sizeof(real));
+  if (( NULL == bk_shift ) || ( NULL == bk_fshift ))
+    error("cannot allocate Buckingham shift");
+#endif
   n=0; m=0;
   for (i=0; i<ntypes; i++) 
     for (j=i; j<ntypes; j++) {
 
+#if defined(USEFCS) && !defined(VARCHG)
+      r_cut_lin[n] = MAX( r_cut_lin[n], fcs_rcut );
+#endif
 #ifdef STIWEB
       r_cut_lin[n] = MAX( r_cut_lin[n], stiweb_a1[n] );
 #endif
@@ -746,12 +774,16 @@ void init_pre_pot(void) {
 #ifdef COULOMB
   tmp = MAX(tmp,ew_r2_cut);
 #endif
+#if defined(USEFCS) && !defined(VARCHG)
+  tmp = MAX(tmp,SQR(fcs_rcut));
+#endif
   cellsz = MAX(cellsz,tmp);
 
   /* Shift of potentials */
   for (i=0; i<ntypes; i++) 
     for (j=0; j<ntypes; j++) {
 
+#ifndef BUCK
       if (r2_cut[i][j] > 0.0) { 
         /* Lennard-Jones(-Gauss) */
         if (lj_epsilon[i][j] > 0.0) {
@@ -800,6 +832,7 @@ void init_pre_pot(void) {
         morse_shift[i][j] = 0.0;
         buck_shift [i][j] = 0.0;
       }
+#endif
 #ifdef EWALD
       /* Coulomb for Ewald */
       if ((ew_r2_cut > 0) && (ew_nmax < 0)) {
@@ -815,7 +848,7 @@ void init_pre_pot(void) {
 	}
       }
 #endif
-#if defined(DIPOLE) || defined(MORSE)
+#if ((defined(DIPOLE) || defined(MORSE)) && !defined(BUCK))
       /* Morse-Stretch for Dipole */
       if (i<=j) {
 	col= i*ntypes - (i*(i+1))/2 + j;
@@ -840,6 +873,23 @@ void init_pre_pot(void) {
 	  ms_harm_a[col] = SQRT(ms_r2_min[col])-grad/(2.0*ms_harm_c[col]);
 	  ms_harm_b[col] = pot-ms_harm_c[col]*
 	    SQR(SQRT(ms_r2_min[col])-ms_harm_a[col]);
+	}
+      }
+#endif
+#ifdef BUCK
+      /* Buckingham for Dipole */
+      if (i<=j) {
+	col= i*ntypes - (i*(i+1))/2 + j;
+	if (ew_r2_cut > 0)  {
+	  pair_int_buck( &bk_shift[col], &bk_fshift[col], i, j, ew_r2_cut);
+          if (myid==0) {
+            printf("Buckingham pot %1d %1d (col %1d) shifted by %g,\n", 
+	           i, j, col, -bk_shift[col]);
+	  }
+	}
+	else {
+	  bk_shift[col] = 0.;
+	  bk_fshift[col] = 0.;
 	}
       }
 #endif
@@ -922,7 +972,7 @@ void create_coulomb_tables()
   /* First table: Coulomb potential */
   /* Calculate shifts */
   pair_int_coulomb(&coul_shift, &coul_fshift, ew_r2_cut);
-  coulf2shift = ew_eps*ew_kappa*SQR(ew_kappa)*exp(-SQR(ew_kappa)*ew_r2_cut);
+  coulf2shift = coul_eng*ew_kappa*SQR(ew_kappa)*exp(-SQR(ew_kappa)*ew_r2_cut);
   coulf2shift /= sqrt(M_PI);
   coulf2shift -= 0.75*coul_fshift;
   coulf2shift *= 4.0/ew_r2_cut;
@@ -945,7 +995,7 @@ void create_coulomb_tables()
     /* 1/r^3 equiv. deriv of 1/r */
     grad -= coul_fshift;
     grad -= 0.5*coulf2shift*(r2-ew_r2_cut);
-    grad /= -ew_eps;
+    grad /= -coul_eng;
     *PTR_2D(pt->table,i,sco_col,pt->maxsteps,ncols)=grad;
     /* Other tables: Short-range dipole fn */
     for(k=0;k<ntypepairs;k++){
@@ -1338,7 +1388,7 @@ void pair_int_ewald(real *pot, real *grad, int p_typ, int q_typ, real r2)
 {
   real  r, chg, fac;
   r     = SQRT(r2);
-  chg   = charge[p_typ] * charge[q_typ] * ew_eps;
+  chg   = charge[p_typ] * charge[q_typ] * coul_eng;
   fac   = chg * 2.0 * ew_kappa / sqrt( M_PI );
   *pot  = chg * erfc1(ew_kappa * r) / r;
   /* return (1/r)*dV/dr as derivative */
@@ -1359,7 +1409,7 @@ void pair_int_coulomb(real *pot, real *grad, real r2)
 {
   real  r, chg, fac;
   r     = SQRT(r2);
-  chg   = ew_eps;
+  chg   = coul_eng;
   fac   = chg * 2.0 * ew_kappa / sqrt( M_PI );
   *pot  = chg * erfc1(ew_kappa * r) / r;
   /* return (1/r)*dV/dr as derivative */
@@ -1368,7 +1418,7 @@ void pair_int_coulomb(real *pot, real *grad, real r2)
 
 #endif
 
-#if defined(DIPOLE) || defined(MORSE)
+#if ((defined(DIPOLE) || defined(MORSE)) && !defined(BUCK))
 
 /*****************************************************************************
 *

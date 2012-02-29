@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2007 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -121,7 +121,23 @@ int main(int argc, char **argv)
     generate_atoms(infilename);
   }
   else {
+#ifdef debugLo
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("print ""hi 1 hi 1 hi 1"" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout);
+#endif
     read_atoms(infilename);
+#ifdef debugLo
+    printf("    ************************* \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("print ""hi 2 hi 2 hi 2"" checking by Lo! \n");fflush(stdout);
+    printf("********************************* \n");fflush(stdout);
+    printf("    ************************* \n");fflush(stdout);
+
+#endif
+  
   }
 
 #endif
@@ -151,14 +167,6 @@ int main(int argc, char **argv)
 
   /* write .eng file header */
   if ((imdrestart==0) && (eng_int>0)) write_eng_file_header();
-#ifdef BBOOST
-  if ((imdrestart==0) && (eng_int>0)) write_bbeng_file_header();
-  if ((imdrestart==0) && (eng_int>0)) write_bbtran_file_header();
-#endif
-#ifdef BBOOST
-  if ((imdrestart==0) && (eng_int>0)) write_bbcheck_file_header();
-  if ((imdrestart==0) && (eng_int>0)) write_bbdebug_file_header();
-#endif
 #ifdef EXTPOT
   if ((imdrestart==0) && (eng_int>0)) write_fext_header();
 #endif
@@ -171,8 +179,6 @@ int main(int argc, char **argv)
 #endif
 
 
-  imd_stop_timer(&time_setup);
-  imd_start_timer(&time_main);
 #ifdef PAPI
   PAPI_flops(&rtime,&ptime,&flpins,&mflops);
 #endif
@@ -211,6 +217,12 @@ int main(int argc, char **argv)
   init_ttm();
 #endif
 
+#ifdef SM
+  init_sm();
+#endif
+
+  imd_stop_timer(&time_setup);
+
   /* first phase of the simulation */
   if (steps_min <= steps_max) {
     if ((0==myid) && (0==myrank))
@@ -234,7 +246,6 @@ int main(int argc, char **argv)
 #if defined(CBE)
   tick1=ticks();
 #endif
-  imd_stop_timer(&time_main);
   imd_stop_timer(&time_total);
 #ifdef PAPI
   PAPI_flops(&rtime,&ptime,&flpins,&mflops);
@@ -266,7 +277,7 @@ int main(int argc, char **argv)
 
 #ifdef NBLIST
     printf("Neighbor list update every %d steps on average\n\n", 
-           steps_max / nbl_count);
+           steps_max / MAX(nbl_count,1));
 #endif
 
 #ifdef EPITAX
@@ -315,6 +326,8 @@ int main(int argc, char **argv)
            time_output.total, 100*time_output.total /time_main.total);
     printf("Input  time:   %e seconds or %.1f %% of main loop\n",
            time_input.total,100*time_input.total/time_main.total);
+    printf("Force  time:   %e seconds or %.1f %% of main loop\n",
+           time_forces.total,100*time_forces.total/time_main.total);
 #endif
 
      fflush(stdout);
@@ -342,6 +355,11 @@ int main(int argc, char **argv)
 #ifdef EEAM
     free_pot_table(&emod_pot);
 #endif
+#endif
+#ifdef SM
+    free_pot_table(&na_pot_tab);
+    free_pot_table(&cr_pot_tab);
+    free_pot_table(&erfc_r_tab);
 #endif
 
     volume_init = 0.0;

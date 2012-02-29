@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2010 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -57,9 +57,9 @@
 #define DEFAULT_POTFILE_TYPE 1
 #endif
 
-/* we always need PAIR, unless MEAM, KEATING, UNIAX, or EWALD */
+/* we always need PAIR, unless MEAM, KEATING, UNIAX, FCS, or EWALD */
 /* Note that PAIR is the default, if no interaction is specified */
-#if !(defined(MEAM) || defined(KEATING) || defined(UNIAX) || defined(EWALD))
+#if !(defined(MEAM) || defined(KEATING) || defined(UNIAX) || defined(USEFCS) || defined(EWALD))
 #ifndef PAIR
 #define PAIR
 #endif
@@ -82,6 +82,21 @@
 #ifndef COULOMB
 #define COULOMB
 #endif
+#endif
+
+/* for SM we also need EWALD (unless we have NBL) and VARCHG */
+#if defined SM
+#if !defined(EWALD) && !defined(NBL)
+#define EWALD
+#endif
+#ifndef VARCHG
+#define VARCHG
+#endif
+#endif
+
+/* default short-range potential for DIPOLE is MORSE */
+#if (defined(DIPOLE) && !defined(BUCK))
+#define MORSE
 #endif
 
 /* shortcut for covalent interactions */
@@ -167,11 +182,10 @@
 #endif
 
 /* heat transport */
-#ifdef NVX
-#define RNEMD
+#ifdef HC
+#ifndef STRESS_TENS
+#define STRESS_TENS
 #endif
-#if defined(NVX) || defined(RNEMD)
-#define TRANSPORT
 #endif
 
 #ifdef MSQD
