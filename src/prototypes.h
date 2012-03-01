@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2012 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -709,7 +709,7 @@ void pack_sm_chi(msgbuf *, int, int, int);
 void unpack_add_sm_chi(msgbuf *, int, int, int);
 #endif
 
-#ifdef BGL
+#ifdef BG
 int get_free_mem(void);
 #endif
 

@@ -2963,6 +2963,30 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"fcs_vmg_near_field_cells")==0) {
       getparam(token,&fcs_vmg_near_field_cells,PARAM_INT,1,1);
     }
+    /* fcs_pp3mg_grid_dim */
+    else if (strcasecmp(token,"fcs_pp3mg_grid_dim")==0) {
+      getparam(token,&fcs_pp3mg_grid_dim,PARAM_INT,3,3);
+    }
+    /* fcs_pp3mg_ghosts */
+    else if (strcasecmp(token,"fcs_pp3mg_ghosts")==0) {
+      getparam(token,&fcs_pp3mg_ghosts,PARAM_INT,1,1);
+    }
+    /* fcs_pp3mg_degree */
+    else if (strcasecmp(token,"fcs_pp3mg_degree")==0) {
+      getparam(token,&fcs_pp3mg_degree,PARAM_INT,1,1);
+    }
+    /* fcs_pp3mg_max_part */
+    else if (strcasecmp(token,"fcs_pp3mg_max_part")==0) {
+      getparam(token,&fcs_pp3mg_max_part,PARAM_INT,1,1);
+    }
+    /* fcs_pp3mg_max_iter */
+    else if (strcasecmp(token,"fcs_pp3mg_max_iter")==0) {
+      getparam(token,&fcs_pp3mg_max_iter,PARAM_INT,1,1);
+    }
+    /* fcs_pp3mg_tol */
+    else if (strcasecmp(token,"fcs_pp3mg_tol")==0) {
+      getparam(token,&fcs_pp3mg_tol,PARAM_REAL,1,1);
+    }
 #endif /* USEFCS */
 #if defined(EWALD) || defined(COULOMB)
     /* smoothing parameter */
@@ -4496,6 +4520,12 @@ void broadcast_params() {
   MPI_Bcast( &fcs_vmg_gamma,      1,   MPI_INT,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_vmg_accuracy,   1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_vmg_near_field_cells,1,MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_pp3mg_grid_dim, 3,   MPI_INT,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_pp3mg_ghosts,   1,   MPI_INT,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_pp3mg_degree,   1,   MPI_INT,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_pp3mg_max_part, 1,   MPI_INT,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_pp3mg_max_iter, 1,   MPI_INT,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &fcs_pp3mg_tol,      1,      REAL,    0, MPI_COMM_WORLD);
 #endif
 #if defined(EWALD) || defined(COULOMB)
   MPI_Bcast( &ew_kappa,           1,      REAL,    0, MPI_COMM_WORLD);

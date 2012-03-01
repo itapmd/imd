@@ -227,7 +227,7 @@ void unpack_fcs(void) {
 
 void init_fcs(void) {
 
-  FCSResult result;
+  FCSResult res;
   fcs_int srf = 1;
   char *method;
 
@@ -248,12 +248,12 @@ void init_fcs(void) {
   }
 
   /* initialize handle and set common parameters */
-  result = fcs_init(&handle, method, cpugrid); 
-  ASSERT_FCS(result);
-  result = fcs_common_set(handle, srf, BoxX, BoxY, BoxZ, off, pbc, natoms);
-  ASSERT_FCS(result);
-  result = fcs_require_virial(handle, 1);
-  ASSERT_FCS(result);
+  res = fcs_init(&handle, method, cpugrid); 
+  ASSERT_FCS(res);
+  res = fcs_common_set(handle, srf, BoxX, BoxY, BoxZ, off, pbc, natoms);
+  ASSERT_FCS(res);
+  res = fcs_require_virial(handle, 1);
+  ASSERT_FCS(res);
 
   /* set method specific parameters */
   switch (fcs_method) {
@@ -264,49 +264,76 @@ void init_fcs(void) {
 #endif
 #ifdef FCS_ENABLE_PEPC
     case FCS_METH_PEPC:
-      result = fcs_pepc_setup(handle, (fcs_float)fcs_pepc_eps, 
-           (fcs_float)fcs_pepc_theta );
-      ASSERT_FCS(result);
+      res = fcs_pepc_setup(handle, (fcs_float)fcs_pepc_eps, 
+            (fcs_float)fcs_pepc_theta );
+      ASSERT_FCS(res);
       break;
 #endif
 #ifdef FCS_ENABLE_FMM
     case FCS_METH_FMM:
-      result = fcs_fmm_setup(handle, (fcs_int)fcs_fmm_absrel, 
-	   (fcs_float)fcs_fmm_deltaE, (fcs_int)fcs_fmm_dcorr, 
-	   (long long)fcs_fmm_do_tune );
-      ASSERT_FCS(result);
+      res = fcs_fmm_setup(handle, (fcs_int)fcs_fmm_absrel, 
+            (fcs_float)fcs_fmm_deltaE, (fcs_int)fcs_fmm_dcorr, 
+            (long long)fcs_fmm_do_tune );
+      ASSERT_FCS(res);
       break;
 #endif
 #ifdef FCS_ENABLE_P3M
     case FCS_METH_P3M:
       if (0==srf) {
-        result = fcs_p3m_set_r_cut(handle, (fcs_float)fcs_rcut);
-        ASSERT_FCS(result);
+        res = fcs_p3m_set_r_cut(handle, (fcs_float)fcs_rcut);
+        ASSERT_FCS(res);
       }
-      result = fcs_p3m_set_tolerance_field_abs(handle, 
-           (fcs_float)fcs_p3m_accuracy);
-      ASSERT_FCS(result);
+      res = fcs_p3m_set_tolerance_field_abs(handle, 
+            (fcs_float)fcs_p3m_accuracy);
+      ASSERT_FCS(res);
       break;
 #endif
 #ifdef FCS_ENABLE_P2NFFT
     case FCS_METH_P2NFFT:
-      result = fcs_p2nfft_set_required_accuracy(handle, 
-           (fcs_float)fcs_p2nfft_accuracy);
-      ASSERT_FCS(result);
+      if (0==srf) {
+        res = fcs_p2nfft_set_r_cut(handle, (fcs_float)fcs_rcut);
+        ASSERT_FCS(res);
+      }
+      res = fcs_p2nfft_set_required_accuracy(handle, 
+            (fcs_float)fcs_p2nfft_accuracy);
+      ASSERT_FCS(res);
       break;
 #endif
 #ifdef FCS_ENABLE_VMG
     case FCS_METH_VMG:
-      result = fcs_vmg_setup(handle, (fcs_int)fcs_vmg_max_level,
-          (fcs_int)fcs_vmg_max_iter, (fcs_int)fcs_vmg_smooth_steps,
-          (fcs_int)fcs_vmg_gamma, (fcs_float)fcs_vmg_accuracy, 
-	  (fcs_int)fcs_vmg_near_field_cells);
-      ASSERT_FCS(result);
+      res = fcs_vmg_setup(handle, (fcs_int)fcs_vmg_max_level,
+            (fcs_int)fcs_vmg_max_iter, (fcs_int)fcs_vmg_smooth_steps,
+            (fcs_int)fcs_vmg_gamma, (fcs_float)fcs_vmg_accuracy, 
+	    (fcs_int)fcs_vmg_near_field_cells);
+      ASSERT_FCS(res);
       break;
 #endif
 #ifdef FCS_ENABLE_PP3MG_PMG
     case FCS_METH_PP3MG:
-      /* use default values */
+      /* use default values, if not specified otherwise */
+      if (fcs_pp3mg_grid_dim.x) {
+        res = fcs_pp3mg_set_cells_x(handle, (fcs_int)fcs_pp3mg_grid_dim.x);
+        ASSERT_FCS(res);
+        res = fcs_pp3mg_set_cells_y(handle, (fcs_int)fcs_pp3mg_grid_dim.y);
+        ASSERT_FCS(res);
+        res = fcs_pp3mg_set_cells_z(handle, (fcs_int)fcs_pp3mg_grid_dim.z);
+        ASSERT_FCS(res);
+      }
+      if (fcs_pp3mg_ghosts) 
+        res = fcs_pp3mg_set_ghosts(handle, (fcs_int)fcs_pp3mg_ghosts);
+        ASSERT_FCS(res);
+      if (fcs_pp3mg_degree) 
+        res = fcs_pp3mg_set_degree(handle, (fcs_int)fcs_pp3mg_degree);
+        ASSERT_FCS(res);
+      if (fcs_pp3mg_max_part) 
+        res = fcs_pp3mg_set_max_particles(handle, (fcs_int)fcs_pp3mg_max_part);
+        ASSERT_FCS(res);
+      if (fcs_pp3mg_max_iter) 
+        res = fcs_pp3mg_set_max_iterations(handle,(fcs_int)fcs_pp3mg_max_iter);
+        ASSERT_FCS(res);
+      if (fcs_pp3mg_tol > 0)
+        res = fcs_pp3mg_set_tol(handle, (fcs_float)fcs_pp3mg_tol);
+        ASSERT_FCS(res);
       break;
 #endif
     default: 
@@ -314,12 +341,11 @@ void init_fcs(void) {
       break;
   }
   pack_fcs();
-  result = fcs_tune(handle, nloc, nloc_max, pos, chg);
-  ASSERT_FCS(result);
+  res = fcs_tune(handle, nloc, nloc_max, pos, chg);
+  ASSERT_FCS(res);
 
   /* add near-field potential, after fcs_tune */
   if (0==srf) fcs_update_pottab();
-
 }
 
 /******************************************************************************

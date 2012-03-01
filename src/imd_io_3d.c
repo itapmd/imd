@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2012 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -117,7 +117,7 @@ void read_atoms(str255 infilename)
   /* size of temporary input buffers */
   if (inp_grp_size > 1) inbuf_size /= (sizeof(real) * (inp_grp_size-1)); 
 
-#ifndef BGL
+#ifndef BG
   /* Try opening first a per cpu file - not supported on BlueGene/L */
   if (1==parallel_input) {
     sprintf(buf,"%s.%u",infilename,myid); 
@@ -160,7 +160,7 @@ void read_atoms(str255 infilename)
       input_buf[i].data  = NULL;
       input_buf[i].n     = 0;
       input_buf[i].n_max = 0;
-#ifdef BGL
+#ifdef BG
       if ((i != myid) && ((parallel_input==0) || (my_inp_grp == io_grps[i])))
 #else
       if (i != myid)

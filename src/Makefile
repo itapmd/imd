@@ -736,11 +736,23 @@ endif
 ifeq (bgl-cc,${IMDSYS})
   BGLSYS 	= /bgl/BlueLight/ppcfloor/bglsys
   CC_SERIAL	= dummy
-  CC_MPI	= blrts_xlc -DBGL -I${BGLSYS}/include
-  BIN_DIR	= ${HOME}/bin/bgl
+  CC_MPI	= blrts_xlc -DBG -DBGL -I${BGLSYS}/include
+  BIN_DIR	= ${HOME}/bin
   OPT_FLAGS	+= -O4 -qarch=440 -qtune=440  
   DEBUG_FLAGS	+= -g
   LIBS          += -L${BGLSYS}/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts 
+  LFLAGS        += -O4
+endif
+
+# IBM GlueGene/P
+ifeq (bgp-cc,${IMDSYS})
+  BGPSYS 	= /bgsys/drivers/ppcfloor/arch
+  CC_SERIAL	= dummy
+  CC_MPI	= mpixlc -DBG -DBGP -I${BGPSYS}/include
+  BIN_DIR	= ${HOME}/bin
+  OPT_FLAGS	+= -O4 -qarch=450 -qtune=450  
+  DEBUG_FLAGS	+= -g
+  LIBS          += # -L${BGPSYS}/lib  
   LFLAGS        += -O4
 endif
 

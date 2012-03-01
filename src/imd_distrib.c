@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2008 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2012 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -51,7 +51,7 @@ void write_distrib(int steps)
 #ifndef TWOD
   dist_size *= dist_dim.z;
 #endif
-#ifdef BGL
+#ifdef BG
   n = 1; /* here we write presstens components in separate files */
 #else
   n = dist_presstens_flag ? DIM*(DIM+1)/2 : 1; 
@@ -63,7 +63,7 @@ void write_distrib(int steps)
   if (myid==0) 
     printf("%d MB free before distribution allocation\n", get_free_mem());
 #endif
-#if defined(BGL) && defined(NBLIST)
+#if defined(BG) && defined(NBLIST)
   deallocate_nblist();
 #endif
 #if defined(BGL) && defined(NBLIST) && (defined(TIMING) || defined(DEBUG))
@@ -121,7 +121,7 @@ void write_distrib(int steps)
 #else
     sprintf(contents, "P_xx P_yy P_zz P_yz P_zx P_xy");
 #endif
-#ifdef BGL
+#ifdef BG
     /* to save memory, we write each componend in separate file */
     make_write_distrib_select( 1, dist_presstens_xx_fun, 
       dist_presstens_flag, fzhlr, "presstens_xx", "presstens_xx" );
@@ -140,7 +140,7 @@ void write_distrib(int steps)
 #else
     make_write_distrib_select( DIM*(DIM+1)/2, dist_presstens_fun,
       dist_presstens_flag, fzhlr, "presstens", contents);
-#endif /* BGL */
+#endif /* BG */
   }
 #endif /* STRESS_TENS */
 
@@ -406,7 +406,7 @@ void make_distrib_density(void)
 
   /* add up results form different CPUs */
 #ifdef MPI
-#ifdef BGL
+#ifdef BG
   /* doing it in several chunks saves memory */
   for (m = 0; m < dist_size; m += dist_chunk_size) { 
     chunk_size = MIN( dist_size - m, dist_chunk_size );
@@ -585,7 +585,7 @@ void make_write_distrib_select(int n, void (*fun)(float*, cell*, int),
             if (s==dist_dim.y) { s=0; r++; }
 #endif
           }
-#ifdef BGL
+#ifdef BG
           fprintf(outfile," %e\n", dat_2[i]);
 #else
           for (k=0; k<n; k++) fprintf(outfile," %e", dat_2[n*i+k]);

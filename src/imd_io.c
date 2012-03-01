@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2011 Institute for Theoretical and Applied Physics
+* Copyright 1996-2012 Institute for Theoretical and Applied Physics
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -44,11 +44,9 @@ void flush_outbuf(FILE *out, int *len, int tag)
   }
 #ifdef MPI
   else {
-#ifdef BGL
+#ifdef BG
     MPI_Status status;
     int tmp=*len+1;
-
-    
     /* tell CPU 0 that we have something (and how much) */
     MPI_Send( &tmp, 1, MPI_INT, my_out_id, ANNOUNCE_TAG, cpugrid );
     /* wait until CPU 0 is ready */
@@ -78,7 +76,7 @@ void write_config_select(int fzhlr, char *suffix,
 
   is_big_endian = endian();
 
-#if defined(BGL) && defined(NBLIST)
+#if defined(BG) && defined(NBLIST)
   deallocate_nblist();
 #endif
 
@@ -133,7 +131,7 @@ void write_config_select(int fzhlr, char *suffix,
     MPI_Status status;
     int m=1, len, source;
     while (m < out_grp_size) {
-#ifdef BGL
+#ifdef BG
       MPI_Recv(&len, 1, MPI_INT,MPI_ANY_SOURCE,ANNOUNCE_TAG, cpugrid, &status);
       source = status.MPI_SOURCE;
       MPI_Send(&len, 1, MPI_INT, source, ANNOUNCE_TAG, cpugrid);

@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2011 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2012 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -20,9 +20,17 @@
 ******************************************************************************/
 
 #include "imd.h"
+#ifdef BG
+#undef INIT
+#endif
 #ifdef BGL
 #include <rts.h>
 #include <bglpersonality.h>
+#endif
+#ifdef BGP
+#include <spi/kernel_interface.h>
+#include <common/bgp_personality.h>
+#include <common/bgp_personality_inlines.h>
 #endif
 #ifdef AFF
 #define __USE_GNU
@@ -82,28 +90,61 @@ void init_io(void)
 {
 
 #ifdef BGL
-  BGLPersonality personality;
-  int *tmp, i;
+#define   get_personality                rts_get_personality
+#define   get_processor_id               rts_get_processor_id
+#define   Personality                    BGLPersonality
+#define   Personality_getLocationString  BGLPersonality_getLocationString
+#define   Personality_numIONodes         BGLPersonality_numIONodes
+#define   Personality_numPsets           BGLPersonality_numPsets
+#define   Personality_numNodesInPset     BGLPersonality_numNodesInPset
+#define   Personality_rankInPset         BGLPersonality_rankInPset
+#define   Personality_psetNum            BGLPersonality_psetNum
+#endif
+
+#ifdef BGP
+#define   get_personality                Kernel_GetPersonality
+#define   get_processor_id               Kernel_PhysicalProcessorID
+#define   Personality                    _BGP_Personality_t
+#define   Personality_getLocationString  BGP_Personality_getLocationString
+#define   Personality_numPsets           BGP_Personality_numIONodes
+#define   Personality_numNodesInPset     BGP_Personality_psetSize
+#define   Personality_rankInPset         BGP_Personality_rankInPset
+#define   Personality_psetNum            BGP_Personality_psetNum
+#endif
+
+#ifdef BG
+  Personality personality;
+  int *tmp, i, node_config, mult=1;
 
   tmp     = (int *) malloc( num_cpus * sizeof(int) );
   io_grps = (int *) malloc( num_cpus * sizeof(int) );
   if ((NULL==tmp) || (NULL==io_grps)) 
     error("cannot allocate io_grps array");
 
-  rts_get_personality(&personality, sizeof(personality));
+  get_personality(&personality, sizeof(personality));
+#ifdef BGL
+  if (BGLPersonality_virtualNodeMode(&personality))    mult = 2;
+  else                                                 mult = 1;
+#endif
+#ifdef BGP
+  node_config = personality.Kernel_Config.ProcessConfig;
+  if      (node_config == _BGP_PERS_PROCESSCONFIG_VNM) mult = 4;
+  else if (node_config == _BGP_PERS_PROCESSCONFIG_2x2) mult = 2;
+  else                                                 mult = 1;
+#endif
 
   /* I/O group as a function of the rank */
   for (i=0; i<num_cpus; i++) tmp[i] = 0;
-  tmp[myid] = BGLPersonality_psetNum(&personality);
+  tmp[myid] = Personality_psetNum(&personality);
   MPI_Allreduce(tmp, io_grps, num_cpus, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
 
   /* input parameters */
   if (parallel_input==1) {
-    n_inp_grps   = BGLPersonality_numPsets(&personality);
-    my_inp_grp   = BGLPersonality_psetNum (&personality);
-    inp_grp_size = BGLPersonality_numNodesInPset(&personality);
-    if (BGLPersonality_virtualNodeMode(&personality)) inp_grp_size *= 2;
-    my_inp_id = 0;  while (my_inp_grp != io_grps[my_inp_id]) my_inp_id++;
+    n_inp_grps   = Personality_numPsets(&personality);
+    my_inp_grp   = Personality_psetNum (&personality);
+    inp_grp_size = Personality_numNodesInPset(&personality);
+    inp_grp_size*= mult;
+    my_inp_id    = 0;  while (my_inp_grp != io_grps[my_inp_id]) my_inp_id++;
   }
   else {
     n_inp_grps   = 1;
@@ -114,11 +155,11 @@ void init_io(void)
 
   /* output parameters */
   if (parallel_output==1) {
-    n_out_grps   = BGLPersonality_numPsets(&personality);
-    my_out_grp   = BGLPersonality_psetNum (&personality);
-    out_grp_size = BGLPersonality_numNodesInPset(&personality);
-    if (BGLPersonality_virtualNodeMode(&personality)) out_grp_size *= 2;
-    my_out_id = 0;  while (my_out_grp != io_grps[my_out_id]) my_out_id++;
+    n_out_grps   = Personality_numPsets(&personality);
+    my_out_grp   = Personality_psetNum (&personality);
+    out_grp_size = Personality_numNodesInPset(&personality);
+    out_grp_size*= mult;
+    my_out_id    = 0;  while (my_out_grp != io_grps[my_out_id]) my_out_id++;
   }
   else {
     n_out_grps   = 1;
@@ -150,7 +191,7 @@ void init_io(void)
 
   free(tmp);
 
-#else /* not BGL */
+#else /* not BG */
 
   /* input parameters */
   if (parallel_input==1) {

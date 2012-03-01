@@ -467,8 +467,6 @@ EXTERN vektor ep_dir[10];
 EXTERN long nactive_vect[3];
 #endif
 
-
-
 /* virial tensor */
 EXTERN real vir_xx INIT(0.0), vir_yy INIT(0.0), vir_zz INIT(0.0);
 EXTERN real vir_yz INIT(0.0), vir_zx INIT(0.0), vir_xy INIT(0.0);
@@ -1162,6 +1160,12 @@ EXTERN int      fcs_vmg_smooth_steps     INIT(3);
 EXTERN int      fcs_vmg_gamma            INIT(2);
 EXTERN real     fcs_vmg_accuracy         INIT(1e-3);
 EXTERN int      fcs_vmg_near_field_cells INIT(6);
+EXTERN ivektor  fcs_pp3mg_grid_dim       INIT(nullivektor);
+EXTERN int      fcs_pp3mg_ghosts         INIT(0);
+EXTERN int      fcs_pp3mg_degree         INIT(0);
+EXTERN int      fcs_pp3mg_max_part       INIT(0);
+EXTERN int      fcs_pp3mg_max_iter       INIT(0);
+EXTERN real     fcs_pp3mg_tol            INIT(0.0);
 #endif
 #if defined(EWALD) || defined(COULOMB)
 EXTERN imd_timer ewald_time;
