@@ -773,6 +773,9 @@ int main_loop(int simulation)
   }
 
   imd_stop_timer(&time_main);
+#ifdef USEFCS
+  fcs_cleanup();
+#endif
 
   /* clean up the current phase, and clear restart flag */
   imdrestart=0;

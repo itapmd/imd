@@ -283,8 +283,9 @@ void init_fcs(void) {
         res = fcs_p3m_set_r_cut(handle, (fcs_float)fcs_rcut);
         ASSERT_FCS(res);
       }
-      res = fcs_p3m_set_tolerance_field_abs(handle, 
-            (fcs_float)fcs_p3m_accuracy);
+      res = fcs_p3m_require_total_energy(handle, 1);
+      ASSERT_FCS(res);
+      res = fcs_p3m_set_tolerance_field(handle, (fcs_float)fcs_p3m_accuracy);
       ASSERT_FCS(res);
       break;
 #endif
@@ -449,4 +450,16 @@ void fcs_update_pottab(void) {
         *PTR_2D(pt->table, k, col, pt->maxsteps, pt->ncols) += pot;
       }
     }
+}
+
+/******************************************************************************
+*
+* clean up FCS
+*
+******************************************************************************/
+
+void fcs_cleanup(void) {
+  FCSResult result;
+  result = fcs_destroy(handle);
+  ASSERT_FCS(result);
 }
