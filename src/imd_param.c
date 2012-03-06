@@ -2907,6 +2907,10 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       if (fcs_rcut > 0) have_pre_pot = 1;
     }
 #endif
+    /* fcs_grid_dim */
+    else if (strcasecmp(token,"fcs_grid_dim")==0) {
+      getparam(token,&fcs_grid_dim,PARAM_INT,3,3);
+    }
     /* fcs_pepc_eps */
     else if (strcasecmp(token,"fcs_pepc_eps")==0) {
       getparam(token,&fcs_pepc_eps,PARAM_REAL,1,1);
@@ -2962,10 +2966,6 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     /* fcs_vmg_near_field_cells */
     else if (strcasecmp(token,"fcs_vmg_near_field_cells")==0) {
       getparam(token,&fcs_vmg_near_field_cells,PARAM_INT,1,1);
-    }
-    /* fcs_pp3mg_grid_dim */
-    else if (strcasecmp(token,"fcs_pp3mg_grid_dim")==0) {
-      getparam(token,&fcs_pp3mg_grid_dim,PARAM_INT,3,3);
     }
     /* fcs_pp3mg_ghosts */
     else if (strcasecmp(token,"fcs_pp3mg_ghosts")==0) {
@@ -4506,6 +4506,7 @@ void broadcast_params() {
 #ifdef PAIR
   MPI_Bcast( &fcs_rcut,           1,      REAL,    0, MPI_COMM_WORLD);
 #endif
+  MPI_Bcast( &fcs_grid_dim,       3,   MPI_INT,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_pepc_eps,       1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_pepc_theta,     1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_fmm_absrel,     1,   MPI_INT,    0, MPI_COMM_WORLD);
@@ -4520,7 +4521,6 @@ void broadcast_params() {
   MPI_Bcast( &fcs_vmg_gamma,      1,   MPI_INT,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_vmg_accuracy,   1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_vmg_near_field_cells,1,MPI_INT,  0, MPI_COMM_WORLD);
-  MPI_Bcast( &fcs_pp3mg_grid_dim, 3,   MPI_INT,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_pp3mg_ghosts,   1,   MPI_INT,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_pp3mg_degree,   1,   MPI_INT,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fcs_pp3mg_max_part, 1,   MPI_INT,    0, MPI_COMM_WORLD);

@@ -1146,6 +1146,7 @@ EXTERN real     coul_eng INIT(14.40);    /* this is e^2/(4*pi*epsilon_0) in eV A
 #ifdef USEFCS
 EXTERN int      fcs_method               INIT(0);
 EXTERN real     fcs_rcut                 INIT(0.0);
+EXTERN ivektor  fcs_grid_dim             INIT(nullivektor);
 EXTERN real     fcs_pepc_eps             INIT(0.0);
 EXTERN real     fcs_pepc_theta           INIT(0.3);
 EXTERN int      fcs_fmm_absrel           INIT(2);
@@ -1160,7 +1161,6 @@ EXTERN int      fcs_vmg_smooth_steps     INIT(3);
 EXTERN int      fcs_vmg_gamma            INIT(2);
 EXTERN real     fcs_vmg_accuracy         INIT(1e-3);
 EXTERN int      fcs_vmg_near_field_cells INIT(6);
-EXTERN ivektor  fcs_pp3mg_grid_dim       INIT(nullivektor);
 EXTERN int      fcs_pp3mg_ghosts         INIT(0);
 EXTERN int      fcs_pp3mg_degree         INIT(0);
 EXTERN int      fcs_pp3mg_max_part       INIT(0);

@@ -22,6 +22,9 @@
 #include "imd.h"
 #include <fcs.h>
 
+FCSResult fcs_p2nfft_get_gridsize(FCS, fcs_int*, fcs_int*, fcs_int*); 
+FCSResult fcs_p2nfft_set_gridsize(FCS, fcs_int,  fcs_int,  fcs_int ); 
+
 fcs_float *pos=NULL, *chg=NULL, *field=NULL, *pot=NULL; 
 int       nloc, nloc_max=0;
 FCS       handle=NULL;
@@ -298,6 +301,10 @@ void init_fcs(void) {
       res = fcs_p2nfft_set_required_accuracy(handle, 
             (fcs_float)fcs_p2nfft_accuracy);
       ASSERT_FCS(res);
+      if (fcs_grid_dim.x) 
+        res = fcs_p2nfft_set_gridsize(handle, (fcs_int)fcs_grid_dim.x,
+              (fcs_int)fcs_grid_dim.y, (fcs_int)fcs_grid_dim.z);
+      ASSERT_FCS(res);
       break;
 #endif
 #ifdef FCS_ENABLE_VMG
@@ -312,12 +319,12 @@ void init_fcs(void) {
 #ifdef FCS_ENABLE_PP3MG_PMG
     case FCS_METH_PP3MG:
       /* use default values, if not specified otherwise */
-      if (fcs_pp3mg_grid_dim.x) {
-        res = fcs_pp3mg_set_cells_x(handle, (fcs_int)fcs_pp3mg_grid_dim.x);
+      if (fcs_grid_dim.x) {
+        res = fcs_pp3mg_set_cells_x(handle, (fcs_int)fcs_grid_dim.x);
         ASSERT_FCS(res);
-        res = fcs_pp3mg_set_cells_y(handle, (fcs_int)fcs_pp3mg_grid_dim.y);
+        res = fcs_pp3mg_set_cells_y(handle, (fcs_int)fcs_grid_dim.y);
         ASSERT_FCS(res);
-        res = fcs_pp3mg_set_cells_z(handle, (fcs_int)fcs_pp3mg_grid_dim.z);
+        res = fcs_pp3mg_set_cells_z(handle, (fcs_int)fcs_grid_dim.z);
         ASSERT_FCS(res);
       }
       if (fcs_pp3mg_ghosts) 
@@ -344,6 +351,48 @@ void init_fcs(void) {
   pack_fcs();
   res = fcs_tune(handle, nloc, nloc_max, pos, chg);
   ASSERT_FCS(res);
+
+  /* inform about tuned parameters */
+  switch (fcs_method) {
+    fcs_int grid_dim[3];
+    fcs_float r_cut;
+#ifdef FCS_ENABLE_P3M
+    case FCS_METH_P3M:
+      /*
+      res = fcs_p3m_get_grid(handle, grid_dim);
+      ASSERT_FCS(res);
+      if (0==myid) 
+        printf("FCS: Tuned grid dimensions: %d %d %d\n",
+               grid_dim[0], grid_dim[1], grid_dim[2]);
+      */
+      break;
+#endif
+#ifdef FCS_ENABLE_P2NFFT
+    case FCS_METH_P2NFFT:
+      res = fcs_p2nfft_get_gridsize(handle, grid_dim, grid_dim+1, grid_dim+2);
+      ASSERT_FCS(res);
+      res = fcs_p2nfft_get_r_cut(handle, &r_cut);
+      if (0==myid) 
+        printf("FCS: Tuned grid dimensions, cutoff: %d %d %d, %f\n",
+               grid_dim[0], grid_dim[1], grid_dim[2], r_cut);
+      break;
+#endif
+#ifdef FCS_ENABLE_PP3MG_PMG
+    case FCS_METH_PP3MG:
+      res = fcs_pp3mg_get_cells_x(handle, grid_dim  );
+      ASSERT_FCS(res);
+      res = fcs_pp3mg_get_cells_y(handle, grid_dim+1);
+      ASSERT_FCS(res);
+      res = fcs_pp3mg_get_cells_z(handle, grid_dim+2);
+      if (0==myid) 
+        printf("FCS: Tuned grid dimensions: %d %d %d\n",
+               grid_dim[0], grid_dim[1], grid_dim[2]);
+      ASSERT_FCS(res);
+      break;
+#endif
+    default: 
+      break;
+  }
 
   /* add near-field potential, after fcs_tune */
   if (0==srf) fcs_update_pottab();
