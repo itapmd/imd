@@ -295,6 +295,9 @@ void calc_forces(int steps)
 
   /* clear global accumulation variables */
   tot_pot_energy = 0.0;
+#ifdef SM
+  tot_sm_es_energy = 0.0;
+#endif
   virial = 0.0;
   vir_xx = 0.0;
   vir_yy = 0.0;
@@ -552,7 +555,7 @@ void calc_forces(int steps)
         /* compute host electron density */
         if (r2 < rho_h_tab.end[col])  {
           VAL_FUNC(rho_h, rho_h_tab, col, inc, r2, is_short);
-          eam_r += rho_h; 
+          eam_r += rho_h;
 #ifdef EEAM
           eam_p += rho_h*rho_h; 
 #endif
@@ -604,7 +607,7 @@ void calc_forces(int steps)
 	if (r2 < ew_r2_cut) {	
 	  if (SQR(chg)>0.) {
 #ifdef SM
-            real na_pot_p=0.0, na_pot_q=0.0, na_gr_p=0.0, na_gr_q=0.0;
+            real cr_pot=0.0, cr_gr=0.0, na_pot_p=0.0, na_pot_q=0.0, na_gr_p=0.0, na_gr_q=0.0, sm_es_energy=0.0;
             real z_sm_p = sm_Z[it] * CHARGE(q,j) * coul_eng;
             real z_sm_q = sm_Z[jt] * CHARGE(p,i) * coul_eng;
 #endif
@@ -615,30 +618,35 @@ void calc_forces(int steps)
 
 	    /* Coulomb Energy */
 	    pot     = chg * phi;
+#ifdef SM
+	    sm_es_energy  = chg * phi;
+#endif
 	    grad    = chg * grphi;
 #ifdef SM
             /* Coulomb repulsion potential */
             if (r2 < cr_pot_tab.end[col]) {
-              PAIR_INT(phi, grphi, cr_pot_tab, col, inc, r2, is_short);
-              pot  += phi   * (chg * coul_eng - z_sm_p - z_sm_q);
-              grad += grphi * (chg * coul_eng - z_sm_p - z_sm_q);
+              PAIR_INT(cr_pot, cr_gr, cr_pot_tab, col, inc, r2, is_short);
+              pot  += cr_pot * (chg * coul_eng - z_sm_p - z_sm_q);
+	      sm_es_energy  += cr_pot * (chg * coul_eng - z_sm_p - z_sm_q);
+              grad += cr_gr * (chg * coul_eng - z_sm_p - z_sm_q);
             }
             /* nuclear attraction potential */
             if (r2 < na_pot_tab.end[col]) {
               PAIR_INT(na_pot_p, na_gr_p, na_pot_tab, col, inc, r2, is_short);
             }
-            if (col==col2) {
-              real tmp = (z_sm_q + z_sm_q);
-              pot  += na_pot_p * tmp;
-              grad += na_gr_p  * tmp;
-            } else {
-              if (r2 < na_pot_tab.end[col2]) {
-                PAIR_INT(na_pot_q, na_gr_q, na_pot_tab, col2, inc, r2,is_short);
-              }
-              pot  += z_sm_q * na_pot_p + z_sm_p * na_pot_q;
-              grad += z_sm_q * na_gr_p  + z_sm_p * na_gr_q;
+            if (r2 < na_pot_tab.end[col2]) {
+              PAIR_INT(na_pot_q, na_gr_q, na_pot_tab, col2, inc, r2,is_short);
             }
+              pot  += z_sm_q * na_pot_p + z_sm_p * na_pot_q;
+              sm_es_energy += z_sm_q * na_pot_p + z_sm_p * na_pot_q;
+              grad += z_sm_q * na_gr_p + z_sm_p * na_gr_q;
+
 #endif
+
+#ifdef SM
+	    tot_sm_es_energy += sm_es_energy;	
+#endif
+
 	    tot_pot_energy += pot;
 	    force.x = d.x * grad;
 	    force.y = d.y * grad;
@@ -693,8 +701,34 @@ void calc_forces(int steps)
 	      PRESSTENS(q,j,zx) -= d.z * force.x;
 	    }
 #endif
-	 
+
 #ifdef DIPOLE
+#ifdef VARCHG
+	    /* Field for Dipole calculation */
+	    if (dp_p_calc) {
+#ifdef SM
+	      Estat.x += d.x * grphi * CHARGE(q,j)
+		+ d.x * coul_eng * (CHARGE(q,j)-sm_Z[jt])*na_gr_q;
+	      Estat.y += d.y * grphi * CHARGE(q,j)
+		+ d.y * coul_eng * (CHARGE(q,j)-sm_Z[jt])*na_gr_q;
+	      Estat.z += d.z * grphi * CHARGE(q,j)
+		+ d.z * coul_eng * (CHARGE(q,j)-sm_Z[jt])*na_gr_q;
+	      DP_E_STAT(q,j,X) -= d.x * grphi * CHARGE(p,i)
+		+ d.x * coul_eng * (CHARGE(p,i)-sm_Z[it])*na_gr_p;
+	      DP_E_STAT(q,j,Y) -= d.y * grphi * CHARGE(p,i)
+		+ d.y * coul_eng * (CHARGE(p,i)-sm_Z[it])*na_gr_p;
+	      DP_E_STAT(q,j,Z) -= d.z * grphi * CHARGE(p,i)
+		+ d.z * coul_eng * (CHARGE(p,i)-sm_Z[it])*na_gr_p;
+#else
+	      Estat.x += d.x * grphi * CHARGE(q,j);
+	      Estat.y += d.y * grphi * CHARGE(q,j);
+	      Estat.z += d.z * grphi * CHARGE(q,j);
+	      DP_E_STAT(q,j,X) -= d.x * grphi * CHARGE(p,i);
+	      DP_E_STAT(q,j,Y) -= d.y * grphi * CHARGE(p,i);
+	      DP_E_STAT(q,j,Z) -= d.z * grphi * CHARGE(p,i);
+#endif
+            }
+#else
 	    /* Field for Dipole calculation */
 	    if (dp_p_calc) {
 	      Estat.x += d.x * grphi * charge[jt];
@@ -703,6 +737,7 @@ void calc_forces(int steps)
 	      DP_E_STAT(q,j,X) -= d.x * grphi * charge[it];
 	      DP_E_STAT(q,j,Y) -= d.y * grphi * charge[it];
 	      DP_E_STAT(q,j,Z) -= d.z * grphi * charge[it];
+	    
 #ifdef EXTF
 	      Estat.x += extf.x;
 	      Estat.y += extf.y;
@@ -713,9 +748,31 @@ void calc_forces(int steps)
 #endif
 	    }
 #endif
+#endif
 	  }
-
 #ifdef DIPOLE
+#ifdef VARCHG
+	  /* calculate short-range dipoles field */
+	  /* short-range fn.: 3rd column ff. */
+	  if (dp_p_calc) {
+	    col=(it <= jt) ?
+	      it * ntypes + jt - ((it * (it + 1))/2)
+	      : jt * ntypes + it - ((jt * (jt + 1))/2);
+	    VAL_FUNC(pot,coul_table,2+col, 2+ntypepairs, r2, is_short);
+	    tmp = pot*CHARGE(q,j)*dp_alpha[it];
+	    if (SQR(tmp)>0) {
+	      pstat.x -= tmp * d.x;
+	      pstat.y -= tmp * d.y;
+	      pstat.z -= tmp * d.z;
+	    }
+	    tmp = pot*CHARGE(p,i)*dp_alpha[jt];
+	    if (SQR(tmp)>0){
+	      DP_P_STAT(q,j,X) += tmp * d.x;
+	      DP_P_STAT(q,j,Y) += tmp * d.y;
+	      DP_P_STAT(q,j,Z) += tmp * d.z;
+	    }
+	  }
+#else
 	  /* calculate short-range dipoles field */
 	  /* short-range fn.: 3rd column ff. */
 	  if (dp_p_calc) {
@@ -746,6 +803,7 @@ void calc_forces(int steps)
 #endif
 	    }
 	  }
+#endif
 #endif /* DIPOLE */
 	}
 #endif /* COULOMB */
@@ -1207,6 +1265,9 @@ void calc_forces(int steps)
 #else
       real pot = ew_vorf * SQR(chg) * coul_eng;
 #endif
+#ifdef SM
+      tot_sm_es_energy -= pot;
+#endif
       tot_pot_energy -= pot;
       POTENG(p,i)    -= pot;
     }
@@ -1443,7 +1504,14 @@ void calc_forces(int steps)
       pi.x = DP_P_IND(p,i,X);
       pi.y = DP_P_IND(p,i,Y);
       pi.z = DP_P_IND(p,i,Z);
-      if (SQR(charge[it])+SQR(dp_alpha[it])>0 ) { 
+
+#ifdef VARCHG
+real pconst_i=SQR(CHARGE(p,i))+SQR(dp_alpha[it]);
+#else
+real pconst_i=SQR(charge[it])+SQR(dp_alpha[it]);
+#endif
+
+      if (pconst_i>0) { 
 	/* loop over neighbors */
 #ifdef ia64
 #pragma ivdep,swp
@@ -1491,6 +1559,24 @@ void calc_forces(int steps)
 	    PAIR_INT(valsr,dvalsr,coul_table,2+col1,2+ntypepairs,
 		     r2,is_short);
 	    /* Dipole at i -Charge at j interaction */
+#ifdef VARCHG
+	      if (SQR(dp_alpha[it])*SQR(CHARGE(q,j))>0) {
+
+	      pdotd=SPROD(pi,d);
+	      pot += val*CHARGE(q,j)*pdotd;
+	      force.x += CHARGE(q,j) * (dval * pdotd * d.x + val * pi.x);
+	      force.y += CHARGE(q,j) * (dval * pdotd * d.y + val * pi.y);
+	      force.z += CHARGE(q,j) * (dval * pdotd * d.z + val * pi.z);
+	      
+	      /* short range interaction */
+	      pot += CHARGE(q,j)*pdotd*valsr;
+	      force.x += CHARGE(q,j) * (dvalsr*pdotd *d.x +valsr*pi.x);
+	      force.y += CHARGE(q,j) * (dvalsr*pdotd *d.y +valsr*pi.y);
+	      force.z += CHARGE(q,j) * (dvalsr*pdotd *d.z +valsr*pi.z);
+
+	      have_force=1;
+	    }
+#else
 	    if (SQR(dp_alpha[it])*SQR(charge[jt])>0) {
 
 	      pdotd=SPROD(pi,d);
@@ -1507,8 +1593,27 @@ void calc_forces(int steps)
 
 	      have_force=1;
 	    }
-
+#endif
 	    /* Dipole at j -Charge at i interaction */
+#ifdef VARCHG
+	    if (SQR(dp_alpha[jt])*SQR(CHARGE(p,i))>0) {
+	      /* smooth cutoff function is 2nd in coul_table */
+
+	      pdotd=SPROD(pj,d);
+	      pot -= val*CHARGE(p,i)*pdotd;
+	      force.x -= CHARGE(p,i) * (dval * pdotd * d.x + val * pj.x);
+	      force.y -= CHARGE(p,i) * (dval * pdotd * d.y + val * pj.y);
+	      force.z -= CHARGE(p,i) * (dval * pdotd * d.z + val * pj.z);
+
+	      /* short range interaction */
+	      pot -= CHARGE(p,i)*pdotd*valsr;
+	      force.x -= CHARGE(p,i) * (dvalsr*pdotd *d.x +valsr*pj.x);
+	      force.y -= CHARGE(p,i) * (dvalsr*pdotd *d.y +valsr*pj.y);
+	      force.z -= CHARGE(p,i) * (dvalsr*pdotd *d.z +valsr*pj.z);
+
+	      have_force=1;
+	    }
+#else
 	    if (SQR(dp_alpha[jt])*SQR(charge[it])>0) {
 	      /* smooth cutoff function is 2nd in coul_table */
 
@@ -1525,8 +1630,8 @@ void calc_forces(int steps)
 	      force.z -= charge[it] * (dvalsr*pdotd *d.z +valsr*pj.z);
 
 	      have_force=1;
-	    }	    
-
+	    }
+#endif
 	    /* Dipole-Dipole interaction */
 	    if (SQR(dp_alpha[it])*SQR(dp_alpha[jt])>0) {
 	      pdotp=SPROD(pi,pj);
