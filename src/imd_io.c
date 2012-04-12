@@ -2100,6 +2100,10 @@ void write_eng_file_header()
   fprintf(fl, "harm_eng ");
 #endif
 
+#ifdef SM
+  fprintf(fl, " Ees" );
+#endif
+
     putc('\n',fl);
 
     fclose(fl);
@@ -2333,6 +2337,10 @@ void write_eng_file(int steps)
 
 #ifdef FEFL
    fprintf(eng_file, " %e", (double) tot_harm_energy/natoms);
+#endif
+
+#ifdef SM
+  fprintf(eng_file, " %e", (double) tot_sm_es_energy/natoms);
 #endif
 
   putc('\n',eng_file);

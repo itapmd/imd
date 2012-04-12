@@ -1137,6 +1137,7 @@ EXTERN real     ew_r2_cut INIT(0.0);     /* EWALD r-space cutoff */
 EXTERN pot_table_t erfc_r_tab;    /* tabulated function erfc/r */
 EXTERN pot_table_t cr_pot_tab;    /* tabulated coulomb repulsive potential*/
 EXTERN pot_table_t na_pot_tab;    /* tabulated nuclear attraction potential */
+EXTERN real tot_sm_es_energy INIT(0.0); /* electrostatic energy per atom for .eng file */
 #endif
 
 #if defined(EWALD) || defined(COULOMB) || defined(USEFCS) || defined(SM)
