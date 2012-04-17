@@ -836,10 +836,12 @@ depending on the atomic-density distribution
 <img  align="middle"
       alt="f_{i}\left(\left|\ve{r}-\ve{r}_{i}\right|\right)=\frac{\zeta_{i}^{3}}{\pi}e^{-2\zeta_{i}\left|\ve{r}-\ve{r}_{i}\right|}"
       src="atomic_density_distrib.png"></img> (Slater 1s orbital). For a detail
-examination of such integrals see Roothaan ((J. Chem. Phys. <B>19</B>, 1445
+examination of such integrals see Roothaan (J. Chem. Phys. <B>19</B>, 1445
 (1951)). Both 
 contain one <img  align="middle" alt="1/r" src="1_r.png"></img> long-range term,
-which is evaluated by the standard Ewald technique also included in IMD. The
+which is evaluated in the origin work by the standard Ewald technique. For the
+implementation in IMD also the Wolf summation method (J. Chem. Phys.,
+110(17):8254-8282, 1999) is applied. The
 values of <img  align="middle" alt="q_i" src="q_i.png"></img>  are chosen 
 as those that minimize <img  align="middle" alt="E_{\text{es}}"
 			     src="E_es.png"></img>. This is the equivalent of
@@ -867,10 +869,28 @@ with <img  align="middle" alt="\mu=\frac{\sum_{i}^{N}s_{i}}{\sum_{i}^{N}t_{i}}"
 						     alt="q_{i}=s_{i}-\mu
 							  t_{i}"
 						     src="charges.png"></img>
-. For solving this systems a conjugate gradient method is applied. 
+. Including the constraint of net-charge neutrality the above systems can be
+also combined as only one system of linear equations. This can be written via
+block matrix notation as:
+<center>
+<img  align="middle" alt="\begin{pmatrix} \mathbf{\widetilde{V}} & \ve{C} \\ 
+\ve{C}^{t} & 0\end{pmatrix}\begin{pmatrix}\ve{q}\\-\mu\end{pmatrix}=\begin{pmatrix}-\vegr{\chi}\\0\end{pmatrix}"
+      src="LGS_full.png"></img>, 
+</center></p>    
+where the block vector <img  align="middle" alt="\ve{C}"
+			     src="C_vector.png"></img> has all elements equal
+to unity. All this systems are solved by a conjugate gradient method. 
 </p>
+From the electrostatic energy <img  align="middle" alt="E_{\text{es}}"
+			     src="E_es.png"></img> additional force
+contributions result:
+ <center>
+<img  align="middle" alt="\ve{F}_{\text{es}}=-\nabla E_{\text{es}}"
+      src="Force_electrostatic.png"></img>. 
+</center></p>
 <p>
-Implemented by Andreas Chatzopoulos and Johannes Roth.     
+Implemented by Andreas Chatzopoulos, Johannes Roth and Franz Gähler.     
+</dd>
 
 <dt><a id="transport" name="transport"><b>transport (nvx)</b></a></dt>
 <dd>
