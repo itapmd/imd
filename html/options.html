@@ -808,10 +808,19 @@ is given by the expression
 <img align="middle" alt="E_{0}"
      src="E_0.png"></img> strictly depends on nuclear coordinates and is of no
 consequence for the minimization, while
-
+<center>
+<img  align="middle" 
+      alt="\chi_{i}=\chi^{0}_{i}+\sum_{\substack{j\neq i}}^{N} Z_{j}\big\lbrace\!\left[j|f_{i}\right]-\left[f_{i}|f_{j}\right]\!\big\rbrace"
+      src="electronegativity.png"></img>,
+</center></p>
 specifies the electronegativity of each atom <img  align="i" src="i.png"></img>
 and 
-
+<center>
+<img  align="middle" 
+      alt="\widetilde{V}_{ij}=\left\{\begin{array}{cl} J_{i}^{0}, & i=j \\ \left[f_{i}|f_{j}\right], & i
+      \neq j\end{array}\right." 
+      src="electrostatic_matrix.png"></img>,
+</center></p>
 the electrostatic interaction matrix with the atomic hardness or self-Coulomb
 repulsion <img align="middle" alt="J_{i}^{0}" src="J_0.png"></img>. The terms  
 <center>
@@ -867,9 +876,9 @@ or can be written via block matrix notation as
 <center>
 <img  align="middle" alt="\begin{pmatrix} \mathbf{\widetilde{V}} & \ve{C} \\ 
 \ve{C}^{t} & 0\end{pmatrix}\begin{pmatrix}\ve{q}\\-\mu\end{pmatrix}=\begin{pmatrix}-\vegr{\chi}\\0\end{pmatrix}"
-      src="LGS_full.png"></img>,  
+      src="LGS_full.png"></img>.  
 </center></p>    
-see Modelling Simul. Mater. Sci. Eng. <B>16</B>, 025006 (2008). The block vector <img  align="middle" alt="\ve{C}"
+See Modelling Simul. Mater. Sci. Eng. <B>16</B>, 025006 (2008). The block vector <img  align="middle" alt="\ve{C}"
 			     src="C_vector.png"></img> has all elements equal
 to unity. In IMD both versions are implemented and for both a conjugate
 gradient solver is applied. 
