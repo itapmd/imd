@@ -420,12 +420,14 @@ ramp_fraction	 # Size of the damping ramp (between 0 and 0.9).
 # parameters for <a href="options.html#sm">SM</a>, computing charges with the
 model of Streitz and Mintmire
 
-chi_0            # Initial value of the electronegativity
-z_es             # Initial value of the effecitve core charge
-j_0              # atomic hardness or self-Coulomb repulsion
-na_pot_file      # nuclear attraction potential, tabulated in r**2
-cr_pot_file      # Coulomb repulsive potential, tabulated in r**2
-erfc_file        # tabulated function erfc/r, tabulated in r**2
+sm_chi_0            # Initial value of the electronegativity
+sm_Z                # Initial value of the effecitve core charge
+sm_J_0              # Atomic hardness or self-Coulomb repulsion
+na_pot_file         # Nuclear attraction potential, tabulated in r**2
+cr_pot_file         # Coulomb repulsive potential, tabulated in r**2
+erfc_file           # Tabulated function erfc/r, tabulated in r**2 (only mandatory if no neighbor lists are used)
+sm_fixed_charges    # If 1, keep charges fixed
+charge_update_steps # Number of steps between charge updates
 
 
 # parameters for <a href="options.html#fefl">FEFL</a>, computing free energy with
