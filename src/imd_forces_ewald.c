@@ -477,7 +477,7 @@ void init_ewald(void)
   ew_vorf  = 2.0 * ew_kappa / SQRT( M_PI );
   vorf1    = 2.0 * twopi / volume; */
 
-  if (ew_nmax < 0) return;
+  if (!(ew_kcut > 0)) return;
 
   ew_nx = (int) (ew_kcut * SQRT( SPROD(box_x,box_x) ) / twopi) + 1;
   ew_ny = (int) (ew_kcut * SQRT( SPROD(box_y,box_y) ) / twopi) + 1;
