@@ -22,9 +22,6 @@
 #include "imd.h"
 #include <fcs.h>
 
-FCSResult fcs_p2nfft_get_gridsize(FCS, fcs_int*, fcs_int*, fcs_int*); 
-FCSResult fcs_p2nfft_set_gridsize(FCS, fcs_int,  fcs_int,  fcs_int ); 
-
 fcs_float *pos=NULL, *chg=NULL, *field=NULL, *pot=NULL; 
 int       nloc, nloc_max=0;
 FCS       handle=NULL;
@@ -274,10 +271,16 @@ void init_fcs(void) {
 #endif
 #ifdef FCS_ENABLE_FMM
     case FCS_METH_FMM:
+      res = fcs_fmm_set_absrel(handle, (fcs_int)fcs_fmm_absrel);
+      ASSERT_FCS(res);
+      res = fcs_fmm_set_deltaE(handle, (fcs_float)fcs_tolerance);
+      ASSERT_FCS(res);
+      /*
       res = fcs_fmm_setup(handle, (fcs_int)fcs_fmm_absrel, 
-            (fcs_float)fcs_fmm_deltaE, (fcs_int)fcs_fmm_dcorr, 
+            (fcs_float)fcs_tolerance, (fcs_int)fcs_fmm_dcorr, 
             (long long)fcs_fmm_do_tune );
       ASSERT_FCS(res);
+      */
       break;
 #endif
 #ifdef FCS_ENABLE_P3M
@@ -286,9 +289,11 @@ void init_fcs(void) {
         res = fcs_p3m_set_r_cut(handle, (fcs_float)fcs_rcut);
         ASSERT_FCS(res);
       }
-      res = fcs_p3m_require_total_energy(handle, 1);
+      res = fcs_set_tolerance(handle, FCS_TOLERANCE_TYPE_FIELD,
+                              (fcs_float)fcs_tolerance);
       ASSERT_FCS(res);
-      res = fcs_p3m_set_tolerance_field(handle, (fcs_float)fcs_p3m_accuracy);
+      if (fcs_grid_dim.x) 
+        res = fcs_p3m_set_grid(handle, (fcs_int)fcs_grid_dim.x);
       ASSERT_FCS(res);
       break;
 #endif
@@ -298,8 +303,8 @@ void init_fcs(void) {
         res = fcs_p2nfft_set_r_cut(handle, (fcs_float)fcs_rcut);
         ASSERT_FCS(res);
       }
-      res = fcs_p2nfft_set_required_accuracy(handle, 
-            (fcs_float)fcs_p2nfft_accuracy);
+      res = fcs_set_tolerance(handle, FCS_TOLERANCE_TYPE_FIELD,
+                              (fcs_float)fcs_tolerance);
       ASSERT_FCS(res);
       if (fcs_grid_dim.x) 
         res = fcs_p2nfft_set_gridsize(handle, (fcs_int)fcs_grid_dim.x,
@@ -311,8 +316,9 @@ void init_fcs(void) {
     case FCS_METH_VMG:
       res = fcs_vmg_setup(handle, (fcs_int)fcs_vmg_max_level,
             (fcs_int)fcs_vmg_max_iter, (fcs_int)fcs_vmg_smooth_steps,
-            (fcs_int)fcs_vmg_gamma, (fcs_float)fcs_vmg_accuracy, 
-	    (fcs_int)fcs_vmg_near_field_cells);
+            (fcs_int)fcs_vmg_gamma, (fcs_float)fcs_tolerance, 
+            (fcs_int)fcs_vmg_near_field_cells, 
+            (fcs_int)fcs_vmg_interpol_order, (fcs_int)fcs_vmg_discr_order);
       ASSERT_FCS(res);
       break;
 #endif
@@ -358,13 +364,13 @@ void init_fcs(void) {
     fcs_float r_cut;
 #ifdef FCS_ENABLE_P3M
     case FCS_METH_P3M:
-      /*
+      res = fcs_p3m_get_r_cut(handle, &r_cut);
+      ASSERT_FCS(res);
       res = fcs_p3m_get_grid(handle, grid_dim);
       ASSERT_FCS(res);
       if (0==myid) 
-        printf("FCS: Tuned grid dimensions: %d %d %d\n",
-               grid_dim[0], grid_dim[1], grid_dim[2]);
-      */
+        printf("FCS: Tuned grid dimensions, cutoff: %d %d %d, %f\n",
+               grid_dim[0], grid_dim[1], grid_dim[2], r_cut);
       break;
 #endif
 #ifdef FCS_ENABLE_P2NFFT
@@ -372,6 +378,7 @@ void init_fcs(void) {
       res = fcs_p2nfft_get_gridsize(handle, grid_dim, grid_dim+1, grid_dim+2);
       ASSERT_FCS(res);
       res = fcs_p2nfft_get_r_cut(handle, &r_cut);
+      ASSERT_FCS(res);
       if (0==myid) 
         printf("FCS: Tuned grid dimensions, cutoff: %d %d %d, %f\n",
                grid_dim[0], grid_dim[1], grid_dim[2], r_cut);
