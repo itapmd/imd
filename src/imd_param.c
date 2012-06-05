@@ -1127,11 +1127,10 @@ int getparamfile(char *paramfname, int phase)
 #endif
         ntypepairs = ((ntypes+1)*ntypes)/2;
         ntypetriples = ntypes * ntypepairs;
-#ifdef TERSOFF
-        nvalues = ntypes;
-#ifdef TERSOFF2
+#if defined(TERSOFF2) || defined(TERSOFFMOD2) 
         nvalues = ntypepairs;
-#endif
+#elif defined(TERSOFF) || defined(TERSOFFMOD)
+        nvalues = ntypes;
 #endif
         /* array of masses for generated structures */
         masses = (real *) malloc( ntypes * sizeof(real) );
@@ -2784,7 +2783,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       getparam(token, stiweb_la, PARAM_REAL, ntypepairs, ntypepairs);
     }
 #endif
-#ifdef TERSOFF
+#if defined(TERSOFF) || defined(TERSOFFMOD)
     /* Parameters for Tersoff potential */
     else if (strcasecmp(token,"ters_r_cut")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_r_cut");
@@ -2797,7 +2796,9 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"ters_a")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_a");
       getparam(token, ters_a, PARAM_REAL, ntypepairs, ntypepairs);
+#ifdef TERSOFF
       have_pre_pot = 1;
+#endif
     }
     else if (strcasecmp(token,"ters_b")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_b");
@@ -2811,6 +2812,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_mu");
       getparam(token, ters_mu, PARAM_REAL, ntypepairs, ntypepairs);
     }
+#ifdef TERSOFF
     else if (strcasecmp(token,"ters_chi")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_chi");
       getparam(token, ters_chi, PARAM_REAL, 
@@ -2821,7 +2823,8 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       getparam(token, ters_om, PARAM_REAL,
                ntypepairs-ntypes, ntypepairs-ntypes);
     }
-    /* nvalues is ntypes for TERSOFF and ntypepairs for TERSOFF2 */
+    /* nvalues is ntypes for TERSOFF or TERSOFFMOD 
+    and ntypepairs for TERSOFF2 or TERSOFFMOD2 */
     else if (strcasecmp(token,"ters_ga")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_ga");
       getparam(token, ters_ga, PARAM_REAL, nvalues, nvalues);
@@ -2838,6 +2841,44 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_d");
       getparam(token, ters_d, PARAM_REAL, nvalues, nvalues);
     }
+#else /* TERSOFFMOD */
+    else if (strcasecmp(token,"ters_eta")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_eta");
+      getparam(token, ters_eta, PARAM_REAL, nvalues, nvalues);
+    }
+    else if (strcasecmp(token,"ters_delta")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_delta");
+      getparam(token, ters_delta, PARAM_REAL, nvalues, nvalues);
+    }
+    else if (strcasecmp(token,"ters_alpha")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_alpha");
+      getparam(token, ters_alpha, PARAM_REAL, nvalues, nvalues);
+    }
+    else if (strcasecmp(token,"ters_beta")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_beta");
+      getparam(token, ters_beta, PARAM_REAL, nvalues, nvalues);
+    }
+    else if (strcasecmp(token,"ters_c1")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_c1");
+      getparam(token, ters_c1, PARAM_REAL, nvalues, nvalues);
+    }
+    else if (strcasecmp(token,"ters_c2")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_c2");
+      getparam(token, ters_c2, PARAM_REAL, nvalues, nvalues);
+    }
+    else if (strcasecmp(token,"ters_c3")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_c3");
+      getparam(token, ters_c3, PARAM_REAL, nvalues, nvalues);
+    }
+    else if (strcasecmp(token,"ters_c4")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_c4");
+      getparam(token, ters_c4, PARAM_REAL, nvalues, nvalues);
+    }
+    else if (strcasecmp(token,"ters_c5")==0) {
+      if (ntypes==0) error("specify parameter ntypes before ters_c5");
+      getparam(token, ters_c5, PARAM_REAL, nvalues, nvalues);
+    }
+#endif 
     else if (strcasecmp(token,"ters_h")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_h");
       getparam(token, ters_h, PARAM_REAL, nvalues, nvalues);
@@ -3366,7 +3407,7 @@ void check_parameters_complete()
   if (vtypes < ntypes)
     error("total_types must not be smaller than ntypes");
 
-#if defined(PAIR) && !defined(VARCHG)
+#if defined(PAIR) && !defined(VARCHG) && !defined(TERSOFFMOD)
   if ((have_potfile==0) && (have_pre_pot==0))
     error("You must specify a pair interaction!");
 #endif
@@ -4457,25 +4498,38 @@ void broadcast_params() {
   MPI_Bcast( stiweb_la, ntypes*ntypepairs, REAL, 0, MPI_COMM_WORLD);
 #endif
 
-#ifdef TERSOFF
+#if defined(TERSOFF) || defined(TERSOFFMOD)
+
+#if defined(TERSOFF2) || defined(TERSOFFMOD2) 
+  nvalues = ntypepairs;
+#else
+  nvalues = ntypes;
+#endif
   MPI_Bcast( ters_r_cut, ntypepairs,        REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_r0,    ntypepairs,        REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_a,     ntypepairs,        REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_b,     ntypepairs,        REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_la,    ntypepairs,        REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_mu,    ntypepairs,        REAL, 0, MPI_COMM_WORLD);
+#ifdef TERSOFF
   MPI_Bcast( ters_chi,   ntypepairs-ntypes, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_om,    ntypepairs-ntypes, REAL, 0, MPI_COMM_WORLD);
   /* nvalues is ntypes for TERSOFF and ntypepairs for TERSOFF2 */
-#ifdef TERSOFF2
-  nvalues = ntypepairs;
-#else
-  nvalues = ntypes;
-#endif
   MPI_Bcast( ters_ga,        nvalues,       REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_n,         nvalues,       REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_c,         nvalues,       REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_d,         nvalues,       REAL, 0, MPI_COMM_WORLD);
+#else /* TERSOFFMOD */
+  MPI_Bcast( ters_eta,       nvalues,       REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_delta,     nvalues,       REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_alpha,     nvalues,       REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_beta,      nvalues,       REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_c1,        nvalues,       REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_c2,        nvalues,       REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_c3,        nvalues,       REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_c4,        nvalues,       REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ters_c5,        nvalues,       REAL, 0, MPI_COMM_WORLD);
+#endif
   MPI_Bcast( ters_h,         nvalues,       REAL, 0, MPI_COMM_WORLD);
 #endif
 

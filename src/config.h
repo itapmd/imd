@@ -59,7 +59,7 @@
 
 /* we always need PAIR, unless MEAM, KEATING, UNIAX, FCS, or EWALD */
 /* Note that PAIR is the default, if no interaction is specified */
-#if !(defined(MEAM) || defined(KEATING) || defined(UNIAX) || defined(USEFCS) || defined(EWALD))
+#if !(defined(MEAM) || defined(KEATING) || defined(UNIAX) || defined(USEFCS) || defined(EWALD) || defined(TERSOFFMOD))
 #ifndef PAIR
 #define PAIR
 #endif
@@ -100,7 +100,7 @@
 #endif
 
 /* shortcut for covalent interactions */
-#if defined(MEAM) || defined(KEATING) || defined(TTBP) || defined(TERSOFF) || defined(STIWEB) || defined(TERNBCC) || defined(XT) || defined(CNA)
+#if defined(MEAM) || defined(KEATING) || defined(TTBP) || defined(TERSOFF) || defined(TERSOFFMOD) || defined(STIWEB) || defined(TERNBCC) || defined(XT) || defined(CNA)
 #define COVALENT
 #endif
 

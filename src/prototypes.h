@@ -214,6 +214,9 @@ void init_ttbp(void);
 void init_tersoff(void);
 void pair_int_tersoff(real *pot, int p_typ, int q_typ, real r2);
 #endif
+#ifdef TERSOFFMOD
+void init_tersoffmod(void);
+#endif
 
 #if defined (TERNBCC) || defined (XT)
 real g(real cos_theta);

@@ -1054,7 +1054,7 @@ EXTERN real stiweb_ga[55] INIT(zero55);
 EXTERN real sw_ga[10][10];
 #endif
 
-#ifdef TERSOFF
+#if defined(TERSOFF) || defined(TERSOFFMOD)
 /* Parameters for Tersoff potential  */
 /* Not more than 10 atom types!      */
 EXTERN real ters_r_cut[55] INIT(zero55);  /* cutoff^2 */
@@ -1070,6 +1070,7 @@ EXTERN real ters_la[55] INIT(zero55);
 EXTERN real ter_la[10][10];
 EXTERN real ters_mu[55] INIT(zero55);
 EXTERN real ter_mu[10][10];
+#ifdef TERSOFF
 EXTERN real ters_chi[45] INIT(one45);
 EXTERN real ters_om[45] INIT(one45);
 EXTERN real ter_om[10][10];
@@ -1095,6 +1096,41 @@ EXTERN real ters_d[10] INIT(zero10);
 EXTERN real ter_d2[10] INIT(zero10);
 EXTERN real ters_h[10] INIT(zero10);
 #endif
+#else  /* TERSOFFMOD */
+#ifdef TERSOFFMOD2
+EXTERN real ters_eta[55] INIT(zero55);
+EXTERN real ter_eta[10][10];
+EXTERN real ters_delta[55] INIT(zero55);
+EXTERN real ter_delta[10][10];
+EXTERN real ters_alpha[55] INIT(zero55);
+EXTERN real ter_alpha[10][10];
+EXTERN real ters_beta[55] INIT(zero55);
+EXTERN real ter_beta[10][10];
+EXTERN real ters_c1[55] INIT(zero55);
+EXTERN real ter_c1[10][10];
+EXTERN real ters_c2[55] INIT(zero55);
+EXTERN real ter_c2[10][10];
+EXTERN real ters_c3[55] INIT(zero55);
+EXTERN real ter_c3[10][10];
+EXTERN real ters_c4[55] INIT(zero55);
+EXTERN real ter_c4[10][10];
+EXTERN real ters_c5[55] INIT(zero55);
+EXTERN real ter_c5[10][10];
+EXTERN real ters_h[55] INIT(zero55);
+EXTERN real ter_h[10][10];
+#else
+EXTERN real ters_eta[10] INIT(zero10);
+EXTERN real ters_delta[10] INIT(zero10);
+EXTERN real ters_alpha[10] INIT(zero10);
+EXTERN real ters_beta[10] INIT(zero10);
+EXTERN real ters_c1[10] INIT(zero10);
+EXTERN real ters_c2[10] INIT(zero10);
+EXTERN real ters_c3[10] INIT(zero10);
+EXTERN real ters_c4[10] INIT(zero10);
+EXTERN real ters_c5[10] INIT(zero10);
+EXTERN real ters_h[10] INIT(zero10);
+#endif
+#endif 
 #endif
 
 #ifdef KEATING

@@ -111,7 +111,9 @@ void setup_potentials( void )
 #ifdef TERSOFF
   init_tersoff();
 #endif
-
+#ifdef TERSOFFMOD
+  init_tersoffmod();
+#endif
 #ifdef NEB
   MPI_Barrier(MPI_COMM_WORLD);
 #endif

@@ -1142,11 +1142,19 @@ FORCESOURCES += ${COVALENTSOURCES}
 endif
 
 # TERSOFF
+ifneq (,$(strip $(findstring tersoffmod,${MAKETARGET})))
+PP_FLAGS  += -DTERSOFFMOD
+FORCESOURCES += ${COVALENTSOURCES}
+ifneq (,$(strip $(findstring tersoffmod2,${MAKETARGET})))
+PP_FLAGS  += -DTERSOFFMOD2
+endif
+else
 ifneq (,$(strip $(findstring tersoff,${MAKETARGET})))
 PP_FLAGS  += -DTERSOFF
 FORCESOURCES += ${COVALENTSOURCES}
 ifneq (,$(strip $(findstring tersoff2,${MAKETARGET})))
 PP_FLAGS  += -DTERSOFF2
+endif
 endif
 endif
 
