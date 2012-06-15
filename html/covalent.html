@@ -139,6 +139,54 @@ absorbed into the parameters <tt>ters_b</tt>, in which case the
 default values for <tt>ters_chi</tt> can be used.<p>
 
 
+<h3><a id="tersoffmod" name="tersoffmod">
+Modified Tersoff Potential</a></h3>
+
+<p>The modified angular-dependent term <tt>b</tt> (T. Kumagai <i>et al</i>, Comput. Mater. Sci. <b>39</b>, 457
+(2006)) is enabled using the compilation option <b>tersoffmod</b> or <b>tersoffmod2</b>. The function form is as follows:</p>
+
+<p>
+<center>
+<img src="covalent_tersoffmod_1.png" alt="modified Tersoff potential formula 1" />
+</center><br /><br />
+<center>
+<img src="covalent_tersoffmod_2.png" alt="modified Tersoff potential formula 2" />
+</center><br /><br />
+<center>
+<img src="covalent_tersoffmod_3.png" alt="modified Tersoff potential formula 3" />
+</center><br /><br />
+<center>
+<img src="covalent_tersoffmod_4.png" alt="modified Tersoff potential formula 4" />
+</center><br />
+</p>
+
+The following IMD parameters are relevant for the modified Tersoff potential:<br /><br />
+<table align="center" border="1" cellpadding="5" cellspacing="5" bgcolor="#99ccff" width="40%">
+<tr><th>&nbsp;</th>
+	<th> <b>tersoffmod</b>  </th><th> <b>tersoffmod2</b>  </th></tr>
+<tr align="center"><td><tt> ters_a </tt></td>
+	<td colspan="2"><i> A_ij      </i></td></tr>
+<tr align="center"><td><tt> ters_b </tt></td>
+	<td colspan="2"><i> B_ij      </i></td></tr>
+<tr align="center"><td><tt> ters_la </tt></td>
+	<td colspan="2"><i> lambda_ij </i></td></tr>
+<tr align="center"><td><tt> ters_mu </tt></td>
+	<td colspan="2"><i> mu_ij     </i></td></tr>
+<tr align="center"><td><tt> ters_eta </tt></td><td><i> eta_i </i></td><td><i> eta_ij </i></td></tr>
+<tr align="center"><td><tt> ters_delta </tt></td><td><i> delta_i </i></td><td><i> delta_ij </i></td></tr>
+<tr align="center"><td><tt> ters_c1 </tt></td><td><i> c1_i </i></td><td><i> c1_ij </i></td></tr>
+<tr align="center"><td><tt> ters_c2 </tt></td><td><i> c2_i </i></td><td><i> c2_ij </i></td></tr>
+<tr align="center"><td><tt> ters_c3 </tt></td><td><i> c3_i </i></td><td><i> c3_ij </i></td></tr>
+<tr align="center"><td><tt> ters_c4 </tt></td><td><i> c4_i </i></td><td><i> c4_ij </i></td></tr>
+<tr align="center"><td><tt> ters_c5 </tt></td><td><i> c5_i </i></td><td><i> c5_ij </i></td></tr>
+<tr align="center"><td><tt> ters_h </tt></td><td><i> h_i </i></td><td><i> h_ij </i></td></tr>
+<tr align="center"><td><tt> ters_r_cut </tt></td>
+	<td colspan="2"><i> S_ij      </i></td></tr>
+<tr align="center"><td><tt> ters_r0 </tt></td>
+	<td colspan="2"><i> R_ij      </i></td></tr>
+</table>
+
+
 <h2><a id="stiweb" name="stiweb">
 Stillinger-Weber Potential (analytic)</a></h2>
 
