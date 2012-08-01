@@ -1202,6 +1202,8 @@ EXTERN int      fcs_pp3mg_degree         INIT(0);
 EXTERN int      fcs_pp3mg_max_part       INIT(0);
 EXTERN int      fcs_pp3mg_max_iter       INIT(0);
 EXTERN real     fcs_pp3mg_tol            INIT(0.0);
+EXTERN int      fcs_p2nfft_intpol_order  INIT(0);
+EXTERN real     fcs_p2nfft_epsI          INIT(0.0);
 #endif
 #if defined(EWALD) || defined(COULOMB)
 EXTERN imd_timer ewald_time;

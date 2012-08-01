@@ -121,6 +121,28 @@ void setup_potentials( void )
 
 /*****************************************************************************
 *
+*  fix BKS potential
+*
+*****************************************************************************/
+
+void fix_pottab_bks(void) {
+  pot_table_t *pt = &pair_pot;
+  int col, istep, k, i;
+  real r2a, pk, dp;
+  for (col=1; col<3; col++) {
+    r2a   = 1.6 - pt->begin[1];
+    istep = pt->invstep[col];
+    k     = (int) (r2a * istep);
+    pk = *PTR_2D(pt->table, k,   col, pt->maxsteps, pt->ncols);
+    dp = *PTR_2D(pt->table, k+1, col, pt->maxsteps, pt->ncols) - pk;
+    for (i=0; i<k; i++) 
+      *PTR_2D(pt->table, i, col, pt->maxsteps, pt->ncols) 
+        -= (i-k)*(i-k)*(i-k)*0.0004;
+  }
+}
+
+/*****************************************************************************
+*
 *  read potential table; choose format according to header
 *
 *****************************************************************************/
@@ -638,6 +660,10 @@ void create_pot_table(pot_table_t *pt)
   init_spline(pt, ncols, 1);
 #else
   init_threepoint(pt, ncols);
+#endif
+
+#ifdef FIXBKS
+  fix_pottab_bks();
 #endif
 
   /* test interpolation of potential */

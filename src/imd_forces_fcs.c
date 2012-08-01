@@ -248,7 +248,7 @@ void init_fcs(void) {
   }
 
   /* initialize handle and set common parameters */
-  res = fcs_init(&handle, method, cpugrid); 
+  res = fcs_init(&handle, method, MPI_COMM_WORLD); 
   ASSERT_FCS(res);
   res = fcs_common_set(handle, srf, BoxX, BoxY, BoxZ, off, pbc, natoms);
   ASSERT_FCS(res);
@@ -267,20 +267,16 @@ void init_fcs(void) {
       res = fcs_pepc_setup(handle, (fcs_float)fcs_pepc_eps, 
             (fcs_float)fcs_pepc_theta );
       ASSERT_FCS(res);
+      res = fcs_pepc_set_num_walk_threads( handle, (fcs_int)4 );
+      ASSERT_FCS(res);
       break;
 #endif
 #ifdef FCS_ENABLE_FMM
     case FCS_METH_FMM:
       res = fcs_fmm_set_absrel(handle, (fcs_int)fcs_fmm_absrel);
       ASSERT_FCS(res);
-      res = fcs_fmm_set_deltaE(handle, (fcs_float)fcs_tolerance);
+      res = fcs_fmm_set_tolerance_energy(handle, (fcs_float)fcs_tolerance);
       ASSERT_FCS(res);
-      /*
-      res = fcs_fmm_setup(handle, (fcs_int)fcs_fmm_absrel, 
-            (fcs_float)fcs_tolerance, (fcs_int)fcs_fmm_dcorr, 
-            (long long)fcs_fmm_do_tune );
-      ASSERT_FCS(res);
-      */
       break;
 #endif
 #ifdef FCS_ENABLE_P3M
@@ -306,19 +302,33 @@ void init_fcs(void) {
       res = fcs_set_tolerance(handle, FCS_TOLERANCE_TYPE_FIELD,
                               (fcs_float)fcs_tolerance);
       ASSERT_FCS(res);
-      if (fcs_grid_dim.x) 
+      if (fcs_grid_dim.x) { 
         res = fcs_p2nfft_set_gridsize(handle, (fcs_int)fcs_grid_dim.x,
               (fcs_int)fcs_grid_dim.y, (fcs_int)fcs_grid_dim.z);
+        ASSERT_FCS(res);
+      }
+      if (fcs_p2nfft_intpol_order) {
+        res = fcs_p2nfft_set_pnfft_interpolation_order(handle, 
+              (fcs_int)fcs_p2nfft_intpol_order);
+        ASSERT_FCS(res);
+      }
+      if (fcs_p2nfft_epsI) {
+        res = fcs_p2nfft_set_epsI(handle, (fcs_float)fcs_p2nfft_epsI);
+        ASSERT_FCS(res);
+      }
+      res = fcs_p2nfft_set_window_flag(handle, "bspline");
       ASSERT_FCS(res);
       break;
 #endif
 #ifdef FCS_ENABLE_VMG
     case FCS_METH_VMG:
-      res = fcs_vmg_setup(handle, (fcs_int)fcs_vmg_max_level,
-            (fcs_int)fcs_vmg_max_iter, (fcs_int)fcs_vmg_smooth_steps,
-            (fcs_int)fcs_vmg_gamma, (fcs_float)fcs_tolerance, 
-            (fcs_int)fcs_vmg_near_field_cells, 
-            (fcs_int)fcs_vmg_interpol_order, (fcs_int)fcs_vmg_discr_order);
+      res = fcs_vmg_set_near_field_cells(handle, (fcs_int)fcs_vmg_near_field_cells);
+      ASSERT_FCS(res);
+      res = fcs_vmg_set_interpolation_order(handle, (fcs_int)fcs_vmg_interpol_order);
+      ASSERT_FCS(res);
+      res = fcs_vmg_set_discretization_order(handle, (fcs_int)fcs_vmg_discr_order);
+      ASSERT_FCS(res);
+      res = fcs_vmg_set_precision(handle, (fcs_float)fcs_tolerance);
       ASSERT_FCS(res);
       break;
 #endif
