@@ -248,7 +248,7 @@ void init_fcs(void) {
   }
 
   /* initialize handle and set common parameters */
-  res = fcs_init(&handle, method, MPI_COMM_WORLD); 
+  res = fcs_init(&handle, method, cpugrid); 
   ASSERT_FCS(res);
   res = fcs_common_set(handle, srf, BoxX, BoxY, BoxZ, off, pbc, natoms);
   ASSERT_FCS(res);
