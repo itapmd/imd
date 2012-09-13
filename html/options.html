@@ -1145,13 +1145,83 @@ location must be configured in the Makefile.</p>
 <dt><a id="ada" name="ada"><b>ada</b></a></dt>
 <dd>
 
+<p>
+	This option enables IMD to perform the Angular-Deviation Analysis
+	(ADA) during a simulation. The ADA value is added in each chkpt-file
+	and every ada_write_int steps into a <outfiles>.<n>.ada file. The
+	cutoff radius to identify nearest neighbors is either given as
+	ada_nbr_rcut or by ada_latticeConst. The parameter
+	ada_crystal_structure offers three different characterization schemes 
+</p>
+
+<p>
+	ackland: Characterization according to Ackland & Jones Phys.Rev.B 73
+	054104 (2006), except that the nearest neighbor cutoff radius is
+	constant
+
+<p>
+<pre>
+	Types:  ada=0: bcc
+		ada=1: fcc (not written to .ada-files)
+		ada=2: hcp
+		ada=3: unassigned
+		ada=4: unknown (usually surface)
+</pre>
+<p>
+
+<pre>
+	fcc: Modified scheme to identify defects in fcc crystals (extended
+		pattern as published in Begau et al. Acta Materialia 59 (2011)
+		934–942) 
+		ada=0: bcc
+		ada=1: fcc (not written to .ada-files)
+		ada=2: hcp
+		ada=3: 12 neighbors, not fcc/hcp
+		ada=4: less than 12 neighbors
+		ada=5: more than 12 neighbors
+		ada=6: less than 10 neighbors
+		ada=7: more than 14 neighbors
+</pre>
+<p>
+<pre>
+
+	bcc: Modified scheme to identify defects in bcc crystals 
+		ada=0: bcc (not written to .ada-files)
+		ada=1: fcc
+		ada=2: hcp
+		ada=3: 14 neighbors, not bcc
+		ada=4: 12-13 neighbors
+		ada=5: 15 neighbors
+		ada=6: less than 11 neighbors
+		ada=7: unknown
+</pre>
+<p>
+
+
 </dd>
 
 
 <dt><a id="nye" name="nye"><b>nye</b></a></dt>
 
-
 <dd>
+
+	This option enables IMD to perform a Nye tensor analysis during a
+	simulation to numerically compute an approximation of he dislocation
+	Burgers vectors and the dislocation line-direction as published in
+	Begau et al. JMPS 60 (2012) 711–722. 
+	Atomatically ativates the option ada as well.
+	For each atom classified as a defect, a pair of a (resultant) Burgers
+	vector and a line direction/line sense vector is computed and added to
+	the .chkpt and .ada-files. 
+	Both vectors are outputted in cartesian coordinates and not in crystal
+	coordinates. The Nye tensor analysis only works correctly in single
+	crystals. 
+	In .ada-files a compressed output format is used. If no Burgers vector
+	exists at one atom the column "rbv_data" consists only of the value
+	"0", if a Burgers vector is found, the output value is "1" followed by
+	six values defining the line-direction and the resultant Burgers
+	vector. 
+	
 
 </dd>
 
