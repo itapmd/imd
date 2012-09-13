@@ -672,6 +672,19 @@ EXTERN int type_sort[MAX_TYPES];
 EXTERN int type_list_length INIT(0);
 #endif
 
+#ifdef ADA
+EXTERN real ada_nbr_r2cut INIT(0.0);		/* Squared nearest neighbor cutoff radius */
+EXTERN shortint ada_default_type INIT(127); /* Atom with matching ada-type are ignored in ada-files */
+EXTERN int ada_write_int INIT(0);		/* Interval to write ada-files*/
+EXTERN int ada_crystal_structure INIT(ADA_FCC_CONFIG);
+EXTERN real ada_latticeConst INIT(0.);
+#ifdef NYETENSOR
+EXTERN vektor nye_rotationAxis_x  INIT(nullvektor); /* Crystal orientation in x-direction e.g. 1 -1 0*/
+EXTERN vektor nye_rotationAxis_y  INIT(nullvektor); /* Crystal orientation in y-direction e.g. 0 0 1*/
+EXTERN vektor nye_rotationAxis_z  INIT(nullvektor); /* Crystal orientation in z-direction e.g. 1 1 0 */
+#endif
+#endif
+
 #ifdef DISLOC
 EXTERN int  dem_int INIT(0);          /* Period of dem output */
 EXTERN int  dsp_int INIT(0);          /* Period of dsp output */
@@ -1145,10 +1158,14 @@ EXTERN real keating_beta[550] INIT(zero550);
 EXTERN real keat_beta[10][10][10];
 #endif
 
-#ifdef COVALENT  
+#if defined(COVALENT) || defined(NNBR_TABLE)
 EXTERN int neigh_len INIT(NEIGH_LEN_INIT); /* initial neighbor table length */
 EXTERN real *neightab_r2cut INIT(NULL);    /* cutoff of neighbor table */
-#endif 
+#endif
+
+#ifdef NNBR_TABLE
+EXTERN int nnbr_done INIT(0);              /* Flag indicating if nearest neighbors are computed during this time step */
+#endif
 
 #ifdef EPITAX
 EXTERN int  epitax_rate[10] INIT(zero10);  /* creation rate of atoms */

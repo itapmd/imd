@@ -48,6 +48,12 @@ int main_loop(int simulation)
   int tmpsteps;
 
   real fnorm2,ekin,epot,delta_epot;
+#ifdef ADA
+  int adaDone;
+#endif
+#ifdef NYETENSOR
+int nyeDone;
+#endif
 #ifdef debugLo
     printf("    ************************* \n");fflush(stdout);
     printf("********************************* \n");fflush(stdout);
@@ -147,6 +153,16 @@ int main_loop(int simulation)
   
   /* simulation loop */
   for (steps=steps_min; steps <= steps_max; ++steps) {
+
+#ifdef NNBR_TABLE
+  nnbr_done = 0;
+#endif
+#ifdef ADA
+  adaDone = 0;
+#endif
+#ifdef NYETENSOR
+  nyeDone = 0;
+#endif
 
 #ifdef SHOCK
     /* accelerate blocks */
@@ -559,6 +575,26 @@ int main_loop(int simulation)
     increment_temperature();
 #endif
 
+#ifdef ADA
+		if ( ((checkpt_int > 0) && (0 == steps % checkpt_int)) ||
+				((ada_write_int > 0) && (0 == steps % ada_write_int)) ) {
+			if (adaDone==0){
+				do_ada();
+				adaDone = 1;
+			}
+#ifdef NYETENSOR
+			buildHopsToDefect();
+			calculateNyeTensorData();
+			nyeDone = 1;
+#endif
+		}
+
+		if ((ada_write_int > 0) && (0 == steps % ada_write_int)) {
+			write_config_select(steps/ada_write_int, "ada",
+					write_atoms_ada, write_header_ada);
+		}
+#endif
+
 #ifdef NEB
     if(myrank != 0 && myrank != neb_nrep-1)
     {
@@ -731,6 +767,11 @@ int main_loop(int simulation)
     check_nblist();
 #else
     fix_cells();  
+#endif
+
+#ifdef NYETENSOR
+    if (nyeDone == 1)
+    	removeNyeTensorData();
 #endif
 
 #ifdef ATDIST

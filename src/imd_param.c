@@ -2219,6 +2219,47 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       cna_write_statistics = 1;
     }
 #endif
+#ifdef ADA
+   else if (strcasecmp(token, "ada_nbr_rcut") == 0) {
+		/* cutoff radius for angle distribution analysis neighbor,*/
+		/* squared value is needed*/
+		getparam("ada_nbr_rcut", &ada_nbr_r2cut, PARAM_REAL, 1, 1);
+		ada_nbr_r2cut = ada_nbr_r2cut * ada_nbr_r2cut;
+	}
+    else if (strcasecmp(token, "ada_write_int") == 0) {
+   		/* write statistics interval*/
+       	getparam("ada_write_int",&ada_write_int,PARAM_INT,1,1);
+   	}
+    else if (strcasecmp(token, "ada_crystal_structure") == 0) {
+    	getparam(token,tmpstr,PARAM_STR,1,255);
+    	if (strcasecmp(tmpstr,"fcc") == 0) {
+    		ada_crystal_structure = ADA_FCC_CONFIG;
+    	} else if (strcasecmp(tmpstr,"bcc") == 0) {
+    		ada_crystal_structure = ADA_BCC_CONFIG;
+    	} else if (strcasecmp(tmpstr,"ackland") == 0) {
+    		ada_crystal_structure = ADA_ACKLAND_CONFIG;
+    	}
+    }
+    else if (strcasecmp(token, "ada_latticeConst") == 0) {
+      	/* lattice constant */
+       	getparam("ada_latticeConst",&ada_latticeConst,PARAM_REAL,1,1);
+    }
+#endif
+#ifdef NYETENSOR
+    else if (strcasecmp(token,"nye_rotationAxis_x")==0) {
+	  /* lattice orientation in x direction */
+	  getparam("nye_rotationAxis_x",&nye_rotationAxis_x,PARAM_REAL,3,3);
+	}
+	else if (strcasecmp(token,"nye_rotationAxis_y")==0) {
+	  /* lattice orientation in y direction */
+	  getparam("nye_rotationAxis_y",&nye_rotationAxis_y,PARAM_REAL,3,3);
+	}
+	else if (strcasecmp(token,"nye_rotationAxis_z")==0) {
+	  /* lattice orientation in z direction */
+	  getparam("nye_rotationAxis_z",&nye_rotationAxis_z,PARAM_REAL,3,3);
+	}
+#endif
+
 #ifdef DISLOC
      else if (strcasecmp(token,"reffile")==0) {
        /* filename for reference configuration */
@@ -2712,7 +2753,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       getparam(token, &lambda, PARAM_REAL,1,1);
     }
 #endif
-#ifdef COVALENT
+#if defined(COVALENT) || defined(NNBR_TABLE)
     else if (strcasecmp(token,"neigh_len")==0) {
       /* number of neighbors */
       getparam(token, &neigh_len, PARAM_INT, 1, 1);
@@ -3601,6 +3642,27 @@ void check_parameters_complete()
   error("Option DIFFPAT is not supported in 2D");
 #endif
 
+#if defined(ADA) && defined(TWOD)
+  error("Option ADA is not supported in 2D");
+#endif
+
+#ifdef ADA
+  if (ada_nbr_r2cut == 0. && ada_latticeConst == 0.){
+	  error("Nearest neighbor cutoff distance \"ada_nbr_rcut\" or lattice constant \"ada_latticeConst\" is missing or zero in the parameter file");
+  }
+#endif
+
+#ifdef NYETENSOR
+  if (ada_latticeConst == 0.){
+  	  error("Lattice constant \"ada_latticeConst\" is missing or zero in the parameter file");
+  }
+  if (SPROD(nye_rotationAxis_x, nye_rotationAxis_x) == 0.)
+	  error("Crystal orientation in x direction \"nye_rotationAxis_x\" is missing or zero in the parameter file");
+  if (SPROD(nye_rotationAxis_y, nye_rotationAxis_y) == 0.)
+  	  error("Crystal orientation in y direction \"nye_rotationAxis_y\" is missing or zero in the parameter file");
+  if (SPROD(nye_rotationAxis_z, nye_rotationAxis_z) == 0.)
+  	  error("Crystal orientation in x direction \"nye_rotationAxis_z\" is missing or zero in the parameter file");
+#endif
 }
 
 /*****************************************************************
@@ -4478,7 +4540,7 @@ void broadcast_params() {
   MPI_Bcast( &lambda, 1, REAL, 0, MPI_COMM_WORLD);
 #endif
 
-#ifdef COVALENT
+#if defined(COVALENT) || defined(NNBR_TABLE)
   MPI_Bcast( &neigh_len, 1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 
@@ -4829,6 +4891,18 @@ void broadcast_params() {
 
 #endif /* LASER */
 
+#ifdef ADA
+  MPI_Bcast( &ada_nbr_r2cut,       1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &ada_write_int,  1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &ada_crystal_structure,  1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &ada_default_type,  1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &ada_latticeConst,  1, REAL, 0, MPI_COMM_WORLD);
+#endif
+#ifdef NYETENSOR
+  MPI_Bcast( &nye_rotationAxis_x, 3, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &nye_rotationAxis_y, 3, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &nye_rotationAxis_z, 3, REAL, 0, MPI_COMM_WORLD);
+#endif
 }
 
 #endif /* MPI */

@@ -535,6 +535,117 @@ void write_atoms_crist(FILE *out)
 
 #endif /* CNA */
 
+#ifdef ADA
+
+/******************************************************************************
+*
+*  writes header for ada-file
+*
+******************************************************************************/
+
+void write_header_ada(FILE *out) {
+	char c;
+	time_t now;
+	int i, num;
+
+	/* format line */
+	if (binary_output)
+		c = is_big_endian ? 'b' : 'l';
+	else
+		c = 'A';
+
+	num = 1;
+#ifdef NYETENSOR
+	num+=6;
+#endif
+
+	fprintf(out, "#F %c 1 %d 1 %d\n", c, DIM, num);
+	fprintf(out, "#C number type x y z ada_type");
+
+	/* contents line */
+#ifdef NYETENSOR
+	/*rbv_data has always be at the end of the line*/
+	fprintf(out, " rbv_data");
+#endif
+	fprintf(out, "\n");
+
+	/* box lines */
+	fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x, box_x.y, box_x.z);
+	fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x, box_y.y, box_y.z);
+	fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x, box_z.y, box_z.z);
+
+	/* generation date and endheader line */
+	fprintf(out, "#E\n");
+}
+
+/************************************
+*  writes data for ada-file
+*************************************/
+void write_atoms_ada(FILE *out) {
+	int i, k, n, len = 0;
+	i_or_f *data;
+
+	for (k = 0; k < NCELLS; k++) {
+		cell *p = CELLPTR(k);
+		for (i = 0; i < p->n; i++) {
+			if (ADATYPE(p,i) != ada_default_type) {
+				if (binary_output) {
+					n = 0;
+					data = (i_or_f *) (outbuf + len);
+					data[n++].i = (int) NUMMER(p,i);
+					data[n++].i = (int) VSORTE(p,i);
+					data[n++].f = (float) ORT (p,i,X);
+					data[n++].f = (float) ORT (p,i,Y);
+					data[n++].f = (float) ORT (p,i,Z);
+					data[n++].i = (int) ADATYPE(p,i);
+#ifdef NYETENSOR
+					/*Packed format
+					 first entry = 0 -> no more data,
+					 first entry = 1 -> Line-sense vector + Burgers vector*/
+					nyeTensorInfo *info = NYE(p,i);
+					if (info != NULL){
+						data[n++].i	= 1;
+						data[n++].f = (float) info->ls[0];
+						data[n++].f = (float) info->ls[1];
+						data[n++].f = (float) info->ls[2];
+						data[n++].f = (float) info->bv[0];
+						data[n++].f = (float) info->bv[1];
+						data[n++].f = (float) info->bv[2];
+					} else {
+						data[n++].i	= 0;
+					}
+#endif
+					len += n * sizeof(i_or_f);
+				}
+				/* ASCII output */
+				else {
+					len += sprintf(outbuf + len, "%d %d %12f %12f %12f %d",
+							NUMMER(p,i), VSORTE(p,i), ORT(p,i,X), ORT(p,i,Y),
+							ORT(p,i,Z), ADATYPE(p,i));
+#ifdef NYETENSOR
+					nyeTensorInfo *info = NYE(p,i);
+					if (info != NULL) {
+						len += sprintf(outbuf + len,
+							" 1 %12f %12f %12f %12f %12f %12f",
+							info->ls[0], info->ls[1], info->ls[2],
+							info->bv[0], info->bv[1], info->bv[2]);
+					} else {
+						len += sprintf(outbuf + len," 0");
+					}
+#endif
+					len += sprintf(outbuf + len,"\n");
+				}
+				/* flush or send outbuf if it is full */
+				if (len > outbuf_size - 256)
+					flush_outbuf(out, &len, OUTBUF_TAG);
+			}
+		}
+	}
+	flush_outbuf(out, &len, OUTBUF_TAG + 1);
+}
+
+#endif /* ADA*/
+
 #ifdef EFILTER
 
 /******************************************************************************
@@ -3029,6 +3140,12 @@ void write_header_config(FILE *out)
 #if defined(VARCHG) || defined(EWALD) || defined(USEFCS)
   atompar++;
 #endif
+#ifdef ADA
+  atompar++;
+#endif
+#ifdef NYETENSOR
+  atompar+=6;
+#endif
 #ifdef CNA
   if (cna_crist>0) atompar++;
 #endif
@@ -3087,6 +3204,12 @@ void write_header_config(FILE *out)
 #endif	/* DIPOLE */
 #ifdef DAMP
   fprintf(out, " damp_f");
+#endif
+#ifdef ADA
+  fprintf(out, " ada_type" );
+#endif
+#ifdef NYETENSOR
+  fprintf(out, " ls_x ls_y ls_z rbv_x rbv_y rbv_z" );
 #endif
 #ifdef CNA
   if (cna_crist>0) fprintf(out, " crist");

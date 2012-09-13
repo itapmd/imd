@@ -308,7 +308,7 @@ INLINE static int MOD(shortint p, int q)
 #ifdef SHOCK
 #define PXAVG(cell,i)           ((cell)->pxavg[i])
 #endif
-#ifdef COVALENT
+#if defined(COVALENT) || defined(NNBR_TABLE)
 #define NEIGH(cell,i)           ((cell)->neigh[i])
 #define NSORTE(neigh,i)         ((neigh)->typ[i])
 #define NZELLE(neigh,i)         ((cell *) (neigh)->cl[i])
@@ -327,6 +327,13 @@ INLINE static int MOD(shortint p, int q)
 #define ACHSE(cell,i,sub)       ((cell)->achse sub(i))
 #define DREH_IMPULS(cell,i,sub) ((cell)->dreh_impuls sub(i))
 #define DREH_MOMENT(cell,i,sub) ((cell)->dreh_moment sub(i))
+#endif
+#ifdef ADA
+#define ADATYPE(cell,i)			 (((cell)->adaType[i]))
+#define HOPSTODEFECT(cell,i)     (((cell)->hopsToDefect[i]))
+#endif
+#ifdef NYETENSOR
+#define NYE(cell,i)		((cell)->nyeTens[i])
 #endif
 
 #endif /* VEC */

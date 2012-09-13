@@ -104,6 +104,16 @@
 #define COVALENT
 #endif
 
+/* Enabling creation of nearest neighbor tables, using the COVALENT tables */
+/* Combining covalent interaction with ADA or NYETENSOR may by risky*/
+#ifdef ADA
+#define NNBR_TABLE
+#define ADA_ACKLAND_CONFIG   0
+#define ADA_FCC_CONFIG 1
+#define ADA_BCC_CONFIG 2
+#endif
+
+
 /* percentage of r2_cut, in which generated potentials are corrected
    so that the forces go continuously to zero */
 #define POT_TAIL 0.05
@@ -233,7 +243,7 @@
 /* interval for checking MPI buffers */
 #define BUFSTEP 100
 
-#ifdef COVALENT
+#if defined(COVALENT) || defined(NNBR_TABLE)
 #ifdef MEAM
 #define NEIGH_LEN_INIT 12
 #else

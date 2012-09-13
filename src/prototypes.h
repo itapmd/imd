@@ -512,10 +512,44 @@ void load_sample(void);
 #endif
 
 /* support for neighbor tables - files imd_alloc.c, imd_forces_covalent.c */
-#ifdef COVALENT
+#if defined(COVALENT) || defined(NNBR_TABLE)
 void do_neightab(cell *p, cell *q, vektor pbc);
 neightab *alloc_neightab(neightab *neigh, int count);
 void increase_neightab(neightab *neigh, int count);
+#endif
+#ifdef NNBR_TABLE
+void do_neightab_complete();
+void do_neightab2(cell *p, cell *q, vektor pbc);
+#endif
+
+/*Angle distribution analysis imd_ada.c */
+#ifdef ADA
+void do_ada(void);
+void init_ada(void);
+void pack_hopsToDefect( msgbuf *b, int k, int l, int m);
+void unpack_hopsToDefect( msgbuf *b, int k, int l, int m );
+void copy_hopsToDefect( int k, int l, int m, int r, int s, int t);
+void pack_AdaAndNumber(msgbuf *b, int k, int l, int m);
+void unpack_AdaAndNumber(msgbuf *b, int k, int l, int m);
+void copy_AdaAndNumber(int k, int l, int m, int r, int s, int t);
+void buildHopsToDefect();
+void send_fromBufferToCells(void (*add_func)   (int, int, int, int, int, int),
+                 void (*pack_func)  (msgbuf*, int, int, int),
+                 void (*unpack_func)(msgbuf*, int, int, int));
+
+void send_fromCellsToBuffer(void (*add_func)   (int, int, int, int, int, int),
+                 void (*pack_func)  (msgbuf*, int, int, int),
+                 void (*unpack_func)(msgbuf*, int, int, int));
+/*Output for ada imd_io.c */
+void write_header_ada(FILE *out);
+void write_atoms_ada(FILE *out);
+#endif
+
+/* Nye Tensor Analysis imd_nyeTensorAnalysis_3d.c*/
+#ifdef NYETENSOR
+void init_NyeTensor();
+void removeNyeTensorData();
+void calculateNyeTensorData();
 #endif
 
 #ifdef BBOOST

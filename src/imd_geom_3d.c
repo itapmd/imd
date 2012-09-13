@@ -750,7 +750,7 @@ void make_cell_lists(void)
         CN++;
       }
 
-#ifdef COVALENT
+#if defined(COVALENT) || defined(NNBR_TABLE)
 
   /* for each cell */
   for (i=cellmin.x; i<cellmax.x; ++i)

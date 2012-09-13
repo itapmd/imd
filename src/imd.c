@@ -204,6 +204,12 @@ int main(int argc, char **argv)
 #ifdef CNA
   init_cna();
 #endif
+#ifdef ADA
+  init_ada();
+#endif
+#ifdef NYETENSOR
+  init_NyeTensor();
+#endif
 
 #ifdef LASER
   init_laser(); 

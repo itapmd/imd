@@ -1619,6 +1619,27 @@ ifneq (,$(findstring ppu,${MAKETARGET}))
 PP_FLAGS += -DON_PPU
 endif
 
+#Angle distribution & slip vector analysis
+ifneq (,$(findstring ada,${MAKETARGET}))
+PP_FLAGS += -DADA
+SOURCES += imd_ada.c
+ifeq (,$(findstring ${COVALENTSOURCES},${SOURCES}))
+	SOURCES += ${COVALENTSOURCES}
+endif
+endif
+
+ifneq (,$(findstring nye,${MAKETARGET}))
+PP_FLAGS += -DNYETENSOR
+SOURCES += imd_nyeTensorAnalysis_3d.c
+ifeq (,$(findstring ${COVALENTSOURCES},${SOURCES}))
+	SOURCES += ${COVALENTSOURCES}
+endif
+ifeq (,$(findstring imd_ada.c,${SOURCES}))
+	SOURCES += imd_ada.c
+	PP_FLAGS += -DADA
+endif
+endif
+
 # processor affinity
 ifneq (,$(findstring aff,${MAKETARGET}))
 PP_FLAGS += -DAFF

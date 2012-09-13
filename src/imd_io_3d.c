@@ -791,6 +791,27 @@ void write_atoms_config(FILE *out)
 #ifdef DAMP
         data[n++].r = DAMPF(p,i);
 #endif
+#ifdef ADA
+#ifdef DOUBLE
+        data[n++].i[0] = ADATYPE(p,i);
+#else
+        data[n++].i = ADATYPE(p,i);
+#endif
+#endif
+#ifdef NYETENSOR
+		nyeTensorInfo *info = NYE(p,i);
+		if (info != NULL){
+			data[n++].r = info->ls[0];
+			data[n++].r = info->ls[1];
+			data[n++].r = info->ls[2];
+			data[n++].r = info->bv[0];
+			data[n++].r = info->bv[1];
+			data[n++].r = info->bv[2];
+		} else {
+			data[n++].r	= 0.; data[n++].r = 0.; data[n++].r = 0.;
+			data[n++].r	= 0.; data[n++].r = 0.; data[n++].r = 0.;
+		}
+#endif
 #ifdef CNA
 	if (cna_crist>0) {	  
 	  data[n++].r = (real) crist;
@@ -868,6 +889,18 @@ void write_atoms_config(FILE *out)
 #endif	/* DIPOLE */
 #ifdef DAMP
         len += sprintf(outbuf+len, RESOL1, DAMPF(p,i));
+#endif
+#ifdef ADA
+        len += sprintf(outbuf+len, " %d", ADATYPE(p,i));
+#endif
+#ifdef NYETENSOR
+        nyeTensorInfo *info = NYE(p,i);
+       	if (info != NULL) {
+       		len += sprintf(outbuf+len, RESOL3, info->ls[0], info->ls[1], info->ls[2] );
+       		len += sprintf(outbuf+len, RESOL3, info->bv[0], info->bv[1], info->bv[2] );
+       	} else {
+       		len += sprintf(outbuf + len," 0. 0. 0. 0. 0. 0.");
+       	}
 #endif
 #ifdef CNA
 	if (cna_crist>0) 

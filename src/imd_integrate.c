@@ -1732,7 +1732,7 @@ void move_atoms_npt_iso(void)
 
 void move_atoms_npt_axial(void)
 {
-  int k;
+  int k, sort;
   real tmp_f_max2=0.0;
   real Ekin_new = 0.0, ttt, tmpvec1[6], tmpvec2[6];
   vektor pfric, pifric, rfric, rifric, tvec;
@@ -1792,7 +1792,7 @@ void move_atoms_npt_axial(void)
 #endif
   for (k=0; k<NCELLS; ++k) {
 
-    int i;
+    int i, sort;
     cell *p;
     real tmp;
     p = CELLPTR(k);
@@ -1835,6 +1835,16 @@ void move_atoms_npt_axial(void)
       IMPULS(p,i,Z) = (pfric.z * IMPULS(p,i,Z)
                                    + timestep * KRAFT(p,i,Z)) * pifric.z;
 #endif
+
+    sort = VSORTE(p,i);
+
+  	/* and set their force (->momentum) in restricted directions to 0 */
+    IMPULS(p,i,X) *= (restrictions + sort)->x;
+   	IMPULS(p,i,Y) *= (restrictions + sort)->y;
+#ifndef TWOD
+   	IMPULS(p,i,Z) *= (restrictions + sort)->z;
+#endif
+
 
       /* new stress tensor (dynamic part only) */
       dyn_stress_x += IMPULS(p,i,X) * IMPULS(p,i,X) * tmp;

@@ -52,7 +52,7 @@ void calc_extpot(void)
 	  
 	  isinx= ep_dir[n].x;                  
 	  isiny= ep_dir[n].y;                  
-	  isinz= ep_dir[n].x;                  
+	  isinz= ep_dir[n].z;                  
 	  
 	  vektor d;
 	  real   dn;

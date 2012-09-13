@@ -90,7 +90,7 @@ typedef vektor3d    vektor;
 typedef ivektor3d  ivektor;
 #endif
 
-#ifdef COVALENT
+#if defined(COVALENT) || defined(NNBR_TABLE)
 /* per particle neighbor table for COVALENT */
 typedef struct {
     real        *dist;
@@ -104,6 +104,17 @@ typedef struct {
 typedef neightab* neighptr;
 #endif
 
+#ifdef NYETENSOR
+typedef struct {
+	real lcm[3][3];		  /* Latticae corresponding matrix */
+	real nyeTensor[3][3]; /* Nye tensor */
+	real bv[3];			  /* Burgers vector */
+	real ls[3];           /* Line sense / Line direction of dislocation */
+} nyeTensorInfo;
+typedef struct {
+	real n[14][3];		  /* Reference nearest neighbors in perfect crystal */ 
+} neighPerfType;
+#endif
 
 #ifdef BBOOST
 /* per particle neighbor table for BBOOST */
@@ -216,7 +227,7 @@ typedef struct {
 #endif
   real        *impuls;
   real        *kraft;
-#ifdef COVALENT
+#if defined(COVALENT) || defined(NNBR_TABLE)
   neightab    **neigh;
 #endif
 #ifdef NBLIST
@@ -238,6 +249,14 @@ typedef struct {
 #ifdef TTM
   ivektor fd_cell_idx;
 #endif
+#ifdef ADA
+  char *adaType;
+  char *hopsToDefect;
+#endif
+#ifdef NYETENSOR
+  nyeTensorInfo **nyeTens;
+#endif
+
 } cell;
 
 typedef cell* cellptr;

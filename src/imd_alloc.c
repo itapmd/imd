@@ -241,6 +241,10 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
 #ifdef CNA
   to->mark[i] = from->mark[j];
 #endif
+#ifdef ADA
+  to->adaType[i] = from->adaType[j];
+  to->hopsToDefect[i] = from->hopsToDefect[j];
+#endif
 #ifdef AVPOS
   to->av_epot[i] = from->av_epot[j];
   to->avpos X(i) = from->avpos X(j);
@@ -321,7 +325,7 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
 
 }
 
-#ifdef COVALENT
+#if defined(COVALENT) || defined(NNBR_TABLE)
 /******************************************************************************
 *
 *  allocate neighbor table for one particle
@@ -393,7 +397,7 @@ bb_neightab *alloc_bb_neightab(bb_neightab *bb_neigh, int count)
 
 #endif /*BBOOST*/
 
-#ifdef COVALENT
+#if defined(COVALENT) || defined(NNBR_TABLE)
 /******************************************************************************
 *
 *  increase already existing neighbor table for one particle
@@ -523,7 +527,7 @@ void alloc_cell(cell *p, int n)
 #endif
   }
 
-#if (defined(COVALENT) && !defined(TWOD))
+#if (defined(COVALENT) || defined(NNBR_TABLE)) && !defined(TWOD)
   /* if cell is to be deallocated, begin with neighbor tables */
   if (0==n) {
     for (i=0; i<p->n_max; ++i) {
@@ -629,6 +633,13 @@ void alloc_cell(cell *p, int n)
 #ifdef CNA
   memalloc( &p->mark,     n, sizeof(long), al, ncopy, 1, "mark" );
 #endif
+#ifdef ADA
+  memalloc( &p->adaType,  n, sizeof(shortint), al, ncopy, 127, "adaType" );
+  memalloc( &p->hopsToDefect,  n, sizeof(shortint), al, ncopy, 127, "hopsToDefect" );
+#endif
+#ifdef NYETENSOR
+  memalloc( &p->nyeTens, n, sizeof(nyeTensorInfo*), al, ncopy, 1, "nyeTensorInfo" );
+#endif
 #ifdef AVPOS
   memalloc( &p->av_epot,  n,      sizeof(real), al, ncopy,      1, "av_epot" );
   memalloc( &p->avpos,    n*SDIM, sizeof(real), al, ncopy*SDIM, 1, "avpos"  );
@@ -649,7 +660,7 @@ void alloc_cell(cell *p, int n)
 #ifdef SHOCK
   memalloc( &p->pxavg, n, sizeof(real), al, ncopy, 1, "pxavg" );
 #endif
-#ifdef COVALENT
+#if defined(COVALENT) || defined(NNBR_TABLE)
   memalloc( &p->neigh, n, sizeof(neighptr), al, p->n_max, 0, "neigh" );
   for (i=p->n_max; i<n; ++i) {
     p->neigh[i] = alloc_neightab(p->neigh[i], neigh_len);

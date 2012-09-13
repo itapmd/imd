@@ -162,7 +162,7 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int, vektor),
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j) { 
         (*copy_func)( 1, i, j, cell_dim.x-1, i, j, evec );
-#if !defined(AR) || defined(COVALENT) 
+#if !defined(AR) || defined(COVALENT) || defined(NNBR_TABLE)
         (*copy_func)( cell_dim.x-2, i, j, 0, i, j, wvec );
 #endif
       }
@@ -183,7 +183,7 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int, vektor),
       for (j=0; j < cell_dim.z; ++j) 
         (*unpack_func)( &recv_buf_west, cell_dim.x-1, i, j );
 
-#if !defined(AR) || defined(COVALENT) 
+#if !defined(AR) || defined(COVALENT) || defined(NNBR_TABLE)
     /* copy west atoms into send buffer */
     for (i=0; i < cell_dim.y; ++i) 
       for (j=0; j < cell_dim.z; ++j) 
@@ -349,7 +349,7 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int, vektor),
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j) { 
         (*copy_func)( 1, i, j, cell_dim.x-1, i, j, evec );
-#if !defined(AR) || defined(COVALENT) 
+#if !defined(AR) || defined(COVALENT) || defined(NNBR_TABLE)
         (*copy_func)( cell_dim.x-2, i, j, 0, i, j, wvec );
 #endif
       }
@@ -363,7 +363,7 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int, vektor),
     irecv_buf( &recv_buf_west, nbwest, &reqwest[1] );
     isend_buf( &send_buf_east, nbeast, &reqwest[0] );
 
-#if !defined(AR) || defined(COVALENT) 
+#if !defined(AR) || defined(COVALENT) || defined(NNBR_TABLE)
     /* copy west atoms into send buffer, send west*/
     for (i=0; i < cell_dim.y; ++i) 
       for (j=0; j < cell_dim.z; ++j) 
@@ -379,7 +379,7 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int, vektor),
       for (j=0; j < cell_dim.z; ++j) 
         (*unpack_func)( &recv_buf_west, cell_dim.x-1, i, j );
 
-#if !defined(AR) || defined(COVALENT) 
+#if !defined(AR) || defined(COVALENT) || defined(NNBR_TABLE)
     /* wait for atoms from east, move them to buffer cells*/
     MPI_Waitall(2, reqeast, stateast);
     recv_buf_east.n = 0;
@@ -422,7 +422,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
     /* simply add east/west forces to original cells */
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j) { 
-#ifdef COVALENT 
+#if defined(COVALENT) || defined(NNBR_TABLE)
         (*add_func)( 0, i, j, cell_dim.x-2, i, j );
 #endif
         (*add_func)( cell_dim.x-1, i, j, 1, i, j );
@@ -430,7 +430,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
   }
 #ifdef MPI
   else {
-#ifdef COVALENT 
+#ifdef defined(COVALENT) || defined(NNBR_TABLE)
     /* copy east forces into send buffer */
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j)
@@ -581,7 +581,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
     /* simply add east/west forces to original cells */
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j) { 
-#ifdef COVALENT 
+#if defined(COVALENT) || defined(NNBR_TABLE)
         (*add_func)( 0, i, j, cell_dim.x-2, i, j );
 #endif
         (*add_func)( cell_dim.x-1, i, j, 1, i, j );
@@ -589,7 +589,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
   }
 #ifdef MPI
   else {
-#ifdef COVALENT 
+#if defined(COVALENT) || defined(NNBR_TABLE)
     /* copy east forces into send buffer, send east */
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j)
@@ -605,7 +605,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
     irecv_buf( &recv_buf_east, nbeast, &reqeast[1] );
     isend_buf( &send_buf_west, nbwest, &reqeast[0] );
 
-#ifdef COVALENT 
+#if defined(COVALENT) || defined(NNBR_TABLE)
     /* wait for forces from west, add them to original cells */
     MPI_Waitall(2, reqwest, statwest);
     recv_buf_west.n = 0;

@@ -1549,3 +1549,125 @@ void init_tersoffmod(void) {
 }
 
 #endif /* TERSOFFMOD */
+
+#ifdef NNBR_TABLE
+/**************************************************************/
+/* computing a complete nearest neighbor table                */
+/* which is used in processing steps (ADA, NYETENSOR, ..)     */
+/* if already computed by COVALENT, does nothing              */
+/* uses 'nbr_r2cut' as the threshold (constant for all atoms) */
+/**************************************************************/
+void do_neightab_complete() {
+#ifndef COVALENT
+	vektor pbc = {0.0, 0.0, 0.0}; /* atoms in buffer cells have pbc applied */
+	int c1, c2, i, k;
+	if (nnbr_done == 0) { /*Check if already computed in this step*/
+		/*null the old list*/
+		for (k = 0; k < nallcells; k++) {
+			cell *p = cell_array + k;
+			for (i = 0; i < p->n; i++) {
+				NEIGH(p, i)->n = 0;
+			}
+		}
+#ifdef NBLIST
+		for (k=0; k<nallcells; k++) {
+			c1 = cnbrs[k].np;
+			for (i=0; i<14; i++) {
+				c2 = cnbrs[k].nq[i];
+				if (c2<0) continue;
+				do_neightab2(cell_array + c1, cell_array + c2, pbc);
+			}
+		}
+#else
+		/* compute forces for all pairs of cells */
+		for (i=0; i<nlists; ++i) {
+			for (k=0; k<npairs2[i]; ++k) {
+				pair *P = pairs[i] + k;
+				pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
+				pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
+				pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
+				do_neightab2(cell_array + P->np, cell_array + P->nq, pbc);
+			}
+		}
+#endif /*NBLIST*/
+		nnbr_done = 1;
+	}
+#endif /*COVALENT*/
+}
+
+
+
+/********************************************************************/
+/* inserts neighboring atoms in the neighbor table of the two cells */
+/* called within do_neightab_complete()						    	*/
+/********************************************************************/
+void do_neightab2(cell *p, cell *q, vektor pbc)
+{
+  int i, j;
+  int jstart;
+  vektor d, tmp_d;
+  real *qptr, radius2;
+
+  /* For each atom in first cell */
+  for (i=0; i<p->n; ++i) {
+
+    tmp_d.x = ORT(p,i,X) - pbc.x;
+    tmp_d.y = ORT(p,i,Y) - pbc.y;
+    tmp_d.z = ORT(p,i,Z) - pbc.z;
+
+#ifdef TWOD
+    jstart = (((p==q) && (pbc.x==0) && (pbc.y==0))               ? i+1 : 0);
+#else
+    jstart = (((p==q) && (pbc.x==0) && (pbc.y==0) && (pbc.z==0)) ? i+1 : 0);
+#endif
+    qptr   = &ORT(q,jstart,X);
+
+    /* For each atom in neighboring cell */
+    for (j = jstart; j < q->n; ++j) {
+
+      /* Calculate distance  */
+      d.x = *qptr++ - tmp_d.x;
+      d.y = *qptr++ - tmp_d.y;
+      d.z = *qptr++ - tmp_d.z;
+
+      radius2 = SPROD(d,d);
+
+      /* make neighbor tables*/
+      if (radius2 <= ada_nbr_r2cut) {
+        neightab *neigh;
+        real  *tmp_ptr;
+
+        /* update neighbor table of particle i */
+        neigh = NEIGH(p,i);
+        if (neigh->n_max <= neigh->n) {
+          increase_neightab( neigh, neigh->n_max + NEIGH_LEN_INC );
+        }
+        neigh->typ[neigh->n] = 0;
+        neigh->cl [neigh->n] = q;
+        neigh->num[neigh->n] = j;
+        tmp_ptr  = &neigh->dist[3*neigh->n];
+        *tmp_ptr = d.x; ++tmp_ptr;
+        *tmp_ptr = d.y; ++tmp_ptr;
+        *tmp_ptr = d.z;
+        neigh->n++;
+
+        /* update neighbor table of particle j */
+        neigh = NEIGH(q,j);
+        if (neigh->n_max <= neigh->n) {
+          increase_neightab( neigh, neigh->n_max + NEIGH_LEN_INC );
+        }
+        neigh->typ[neigh->n] = 0;
+        neigh->cl [neigh->n] = p;
+        neigh->num[neigh->n] = i;
+        tmp_ptr  = &neigh->dist[3*neigh->n];
+        *tmp_ptr = -d.x; ++tmp_ptr;
+        *tmp_ptr = -d.y; ++tmp_ptr;
+        *tmp_ptr = -d.z;
+        neigh->n++;
+      }
+    } /* for j */
+  } /* for i */
+
+}
+
+#endif

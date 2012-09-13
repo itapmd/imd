@@ -841,6 +841,11 @@ void setup_buffers(void)
 #ifdef DIPOLE
     binc=MAX(binc,binc4);
 #endif
+#ifdef NYETENSOR
+/* Nye tensors are not included in standard communication, but are send independently in their own subroutine */
+/* Buffer must be large enough for this */
+    binc=MAX(binc,19); 
+#endif
   }
 
   /* Find largest cell */
