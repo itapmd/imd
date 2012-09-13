@@ -744,6 +744,17 @@ zapp_threshold
 # parameters for  <a href="options.html#clone">CLONE</a>
 nclones      # number of clones to deal with
 
+# parameter for <a href="options.html#ada">ADA</a>
+ada_write_int    # number of steps between ADA
+ada_nbr_rcut     # cutoff distance for definition of nearest neighbours
+ada_crystal_structure  # classification schemes for different crystals (fcc, bcc, ackland) 
+ada_latticeConst # lattice constant of the crystal, if given ada_nbr_rcut is not required
+
+# parameter for <a href="options.html#nye">NYE</a>
+nye_rotationAxis_x  #  crystal direction along the x axis e.g. 2 -1 -1
+nye_rotationAxis_y  #  crystal direction along the y axis e.g. 0  1 -1
+nye_rotationAxis_z  #  crystal direction along the z axis e.g. 1  1  1
+
 </pre>
 
 <!--#include virtual="imdfoot.html" -->
