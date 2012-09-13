@@ -3329,8 +3329,11 @@ void init_nmoldyn(void)
   FILE *out=NULL;
   str255 fname;
   int n, k, i, t, orth_box, binary_io = 1, *nt = NULL;
+#ifndef TWOD 
   float box[3] = { box_x.x, box_y.y, box_z.z };
-
+#else
+  float box[3] = { box_x.x, box_y.y, 0 };
+#endif
   /* initialize reference positions - used to unfold application of PBC */
   for (k=0; k<ncells; k++) {
     cell *p = CELLPTR(k); 
@@ -3344,9 +3347,14 @@ void init_nmoldyn(void)
   /* write header of .nmoldyn file */
   if (0==myid) {
     /* check whether box is orthorhombic and oriented along main axes */
+#ifndef TWOD
     orth_box = ( (FABS(box_x.y)<1e-6) && (FABS(box_y.z)<1e-6) && 
                  (FABS(box_z.x)<1e-6) && (FABS(box_y.x)<1e-6) && 
                  (FABS(box_z.y)<1e-6) && (FABS(box_x.z)<1e-6) );
+#else
+    orth_box = ( (FABS(box_x.y)<1e-6) && 
+                 (FABS(box_y.x)<1e-6) );
+#endif
     sprintf(fname,"%s.%s",outfilename,"nmoldyn");
     out = fopen(fname, "w");
     nt = (int *) malloc( ntypes * sizeof(int) );
@@ -3362,7 +3370,11 @@ void init_nmoldyn(void)
     else {
       for (k=0; k<ntypes; k++) fprintf(out, "%d ", nt[k]);
       fprintf(out, "\n");
+#ifndef TWOD
       if (orth_box) fprintf(out, "%f %f %f\n", box_x.x, box_y.y, box_z.z);
+#else
+      if (orth_box) fprintf(out, "%f %f %f\n", box_x.x, box_y.y, 0.0 );
+#endif
     }
     fclose(out);
     free(nt);

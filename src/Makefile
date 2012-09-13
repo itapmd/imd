@@ -365,7 +365,8 @@ ifeq (P4-gcc3,${IMDSYS})
   OMPI_MPICC    = gcc
 #  MPICH_CLINKER = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
-  OPT_FLAGS	+= -O -march=pentium4
+#  OPT_FLAGS	+= -O -march=pentium4
+  OPT_FLAGS += -mtune=native
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
   PAPI_INC      =  -I /opt/include
