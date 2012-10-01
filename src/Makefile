@@ -210,6 +210,7 @@ endif
 # AMD Opteron or Intel EM46T, gcc3
 ifeq (x86_64-gcc3,${IMDSYS})
   CC_SERIAL	= gcc
+  CC_OMP	= gcc
   CC_MPI	= mpicc
   MPICH_CC      = gcc
 #  MPICH_CLINKER = icc
@@ -225,6 +226,7 @@ endif
 # AMD Opteron or Intel EM64T, icc
 ifeq (x86_64-icc,${IMDSYS})
   CC_SERIAL	= icc
+  CC_OMP	= icc
   CC_MPI	= mpicc
   MPICH_CC      = icc
   MPICH_CLINKER = icc
@@ -1156,6 +1158,15 @@ FORCESOURCES += ${COVALENTSOURCES}
 ifneq (,$(strip $(findstring tersoff2,${MAKETARGET})))
 PP_FLAGS  += -DTERSOFF2
 endif
+endif
+endif
+
+# BRENNER
+ifneq (,$(strip $(findstring brenner,${MAKETARGET})))
+PP_FLAGS  += -DBRENNER
+FORCESOURCES += ${COVALENTSOURCES}
+ifneq (,$(strip $(findstring brenner2,${MAKETARGET})))
+PP_FLAGS  += -DBRENNER2
 endif
 endif
 

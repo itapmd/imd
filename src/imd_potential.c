@@ -114,6 +114,9 @@ void setup_potentials( void )
 #ifdef TERSOFFMOD
   init_tersoffmod();
 #endif
+#ifdef BRENNER
+  init_brenner();
+#endif
 #ifdef NEB
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -611,6 +614,12 @@ void create_pot_table(pot_table_t *pt)
               val += pot;
             }
 #endif
+#ifdef BRENNER
+            if ((ter_a[i][j] > 0) && (ter_r2_cut[i][j] > r2)) {
+              pair_int_brenner(&pot, i, j, r2);
+              val += pot;
+            }
+#endif
 #ifdef EWALD
             /* Coulomb potential for Ewald */
             if ((ew_r2_cut > 0) && (ew_nmax<0)) {
@@ -708,7 +717,7 @@ void init_pre_pot(void) {
 #ifdef STIWEB
       r_cut_lin[n] = MAX( r_cut_lin[n], stiweb_a1[n] );
 #endif
-#ifdef TERSOFF
+#if defined(TERSOFF) || defined (BRENNER)
       r_cut_lin[n] = MAX( r_cut_lin[n], ters_r_cut[n] );
 #endif
       r_cut [i][j] = r_cut [j][i] =     r_cut_lin[n];
@@ -764,7 +773,7 @@ void init_pre_pot(void) {
         r_begin[n] = 0.05 * stiweb_a1[n];
 #endif
 
-#ifdef TERSOFF
+#if defined(TERSOFF) || defined(BRENNER)
       /* Tersoff */
       ter_r_cut [i][j] = ter_r_cut [j][i] = ters_r_cut[n];
       ter_r2_cut[i][j] = ter_r2_cut[j][i] = SQR(ter_r_cut[i][j]);
@@ -1519,6 +1528,31 @@ void pair_int_stiweb(real *pot, real *grad, int p_typ, int q_typ, real r2)
 ******************************************************************************/
 
 void pair_int_tersoff(real *pot, int p_typ, int q_typ, real r2)
+{
+  real r, tmp, fc;
+
+  r   = sqrt(r2);
+  tmp = M_PI / ( ter_r_cut[p_typ][q_typ] - ter_r0[p_typ][q_typ] );
+  tmp = tmp * ( r - ter_r0[p_typ][q_typ] );
+
+  if      ( r < ter_r0   [p_typ][q_typ] ) fc = 1.0; 
+  else if ( r > ter_r_cut[p_typ][q_typ] ) fc = 0.0;
+  else    fc = 0.5 * ( 1.0 + cos( tmp ) );  
+
+  *pot = fc * ter_a[p_typ][q_typ] * exp( -ter_la[p_typ][q_typ] * r ); 
+}
+
+#endif
+
+#ifdef BRENNER
+
+/*****************************************************************************
+*
+*  Evaluate pair part of Brenner potential 
+*
+******************************************************************************/
+
+void pair_int_brenner(real *pot, int p_typ, int q_typ, real r2)
 {
   real r, tmp, fc;
 

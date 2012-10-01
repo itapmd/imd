@@ -217,6 +217,10 @@ void pair_int_tersoff(real *pot, int p_typ, int q_typ, real r2);
 #ifdef TERSOFFMOD
 void init_tersoffmod(void);
 #endif
+#ifdef BRENNER
+void init_brenner(void);
+void pair_int_brenner(real *pot, int p_typ, int q_typ, real r2);
+#endif
 
 #if defined (TERNBCC) || defined (XT)
 real g(real cos_theta);

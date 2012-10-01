@@ -1127,9 +1127,9 @@ int getparamfile(char *paramfname, int phase)
 #endif
         ntypepairs = ((ntypes+1)*ntypes)/2;
         ntypetriples = ntypes * ntypepairs;
-#if defined(TERSOFF2) || defined(TERSOFFMOD2) 
+#if defined(TERSOFF2) || defined(TERSOFFMOD2) || defined(BRENNER)
         nvalues = ntypepairs;
-#elif defined(TERSOFF) || defined(TERSOFFMOD)
+#elif defined(TERSOFF) || defined(TERSOFFMOD) || defined(BRENNER)
         nvalues = ntypes;
 #endif
         /* array of masses for generated structures */
@@ -2824,7 +2824,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       getparam(token, stiweb_la, PARAM_REAL, ntypepairs, ntypepairs);
     }
 #endif
-#if defined(TERSOFF) || defined(TERSOFFMOD)
+#if defined(TERSOFF) || defined(TERSOFFMOD) || defined(BRENNER)
     /* Parameters for Tersoff potential */
     else if (strcasecmp(token,"ters_r_cut")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_r_cut");
@@ -2837,7 +2837,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"ters_a")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_a");
       getparam(token, ters_a, PARAM_REAL, ntypepairs, ntypepairs);
-#ifdef TERSOFF
+#if defined(TERSOFF) || defined(BRENNER)
       have_pre_pot = 1;
 #endif
     }
@@ -2853,7 +2853,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_mu");
       getparam(token, ters_mu, PARAM_REAL, ntypepairs, ntypepairs);
     }
-#ifdef TERSOFF
+#if defined(TERSOFF) || defined(BRENNER)
     else if (strcasecmp(token,"ters_chi")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_chi");
       getparam(token, ters_chi, PARAM_REAL, 
@@ -2924,6 +2924,8 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_h");
       getparam(token, ters_h, PARAM_REAL, nvalues, nvalues);
     }
+#endif
+#ifdef BRENNER
 #endif
 #ifdef KEATING
     /* Parameters for Keating potential */
@@ -4567,9 +4569,9 @@ void broadcast_params() {
   MPI_Bcast( stiweb_la, ntypes*ntypepairs, REAL, 0, MPI_COMM_WORLD);
 #endif
 
-#if defined(TERSOFF) || defined(TERSOFFMOD)
+#if defined(TERSOFF) || defined(TERSOFFMOD) || defined(BRENNER)
 
-#if defined(TERSOFF2) || defined(TERSOFFMOD2) 
+#if defined(TERSOFF2) || defined(TERSOFFMOD2) || defined(BRENNER)
   nvalues = ntypepairs;
 #else
   nvalues = ntypes;
@@ -4580,7 +4582,7 @@ void broadcast_params() {
   MPI_Bcast( ters_b,     ntypepairs,        REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_la,    ntypepairs,        REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_mu,    ntypepairs,        REAL, 0, MPI_COMM_WORLD);
-#ifdef TERSOFF
+#if defined(TERSOFF) || defined(BRENNER) 
   MPI_Bcast( ters_chi,   ntypepairs-ntypes, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_om,    ntypepairs-ntypes, REAL, 0, MPI_COMM_WORLD);
   /* nvalues is ntypes for TERSOFF and ntypepairs for TERSOFF2 */
@@ -4600,6 +4602,8 @@ void broadcast_params() {
   MPI_Bcast( ters_c5,        nvalues,       REAL, 0, MPI_COMM_WORLD);
 #endif
   MPI_Bcast( ters_h,         nvalues,       REAL, 0, MPI_COMM_WORLD);
+#endif
+#ifdef BRENNER
 #endif
 
 #ifdef KEATING

@@ -1067,7 +1067,7 @@ EXTERN real stiweb_ga[55] INIT(zero55);
 EXTERN real sw_ga[10][10];
 #endif
 
-#if defined(TERSOFF) || defined(TERSOFFMOD)
+#if defined(TERSOFF) || defined(TERSOFFMOD) || defined(BRENNER)
 /* Parameters for Tersoff potential  */
 /* Not more than 10 atom types!      */
 EXTERN real ters_r_cut[55] INIT(zero55);  /* cutoff^2 */
@@ -1144,6 +1144,9 @@ EXTERN real ters_c5[10] INIT(zero10);
 EXTERN real ters_h[10] INIT(zero10);
 #endif
 #endif 
+#endif
+
+#ifdef BRENNER
 #endif
 
 #ifdef KEATING
