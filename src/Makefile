@@ -1523,7 +1523,7 @@ endif
 ifneq (,$(findstring diffpat,${MAKETARGET}))
 PP_FLAGS += -DDIFFPAT -I ${FFTW_DIR}/include
 ifneq (,$(findstring omp,${MAKETARGET}))
-LIBS   += -L ${FFTW_DIR}/lib -lfftw3f_threads -lfftw3f
+LIBS   += -L ${FFTW_DIR}/lib -lfftw3f_threads -lfftw3f -lgomp
 else
 LIBS   += -L ${FFTW_DIR}/lib -lfftw3f
 endif
