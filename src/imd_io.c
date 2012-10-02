@@ -2829,9 +2829,14 @@ void write_fext(int steps)
   
 #endif
   for (i=0; i<ep_nind; i++) {
+    /* ep_xmin and ep_ymin contain the max/min position in the plane,
+       independent if it is x,y,z, see imd_extpot.c */
     if (ep_xmin[i] > 1.e6) ep_xmin[i] = 0.;
     if (ep_ymin[i] > 1.e6) ep_ymin[i] = 0.;  /* in case of no contact */
-    ep_car[i] = 0.25*M_PI*(ep_xmax[i]-ep_xmin[i])*(ep_ymax[i]-ep_ymin[i]); 
+    if (ep_key <=1)
+      ep_car[i] = 0.25*M_PI*(ep_xmax[i]-ep_xmin[i])*(ep_ymax[i]-ep_ymin[i]); 
+    else
+      ep_car[i] = (ep_xmax[i]-ep_xmin[i])*(ep_ymax[i]-ep_ymin[i]); 
   }
 
   if (myid == 0) {
