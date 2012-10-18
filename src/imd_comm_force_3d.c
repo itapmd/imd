@@ -430,7 +430,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
   }
 #ifdef MPI
   else {
-#ifdef defined(COVALENT) || defined(NNBR_TABLE)
+#if defined(COVALENT) || defined(NNBR_TABLE)
     /* copy east forces into send buffer */
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j)
