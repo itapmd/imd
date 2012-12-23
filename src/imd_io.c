@@ -2753,7 +2753,7 @@ void write_fext_header()
     sprintf(fname,"%s.ind",outfilename);
     out = fopen(fname,"w");
     if (NULL == out) 
-      error_str("Cannot open external potential file %s.", fname);
+      error_str("Cannot open indenterdatafile %s.", fname);
 
   
 #ifdef RELAX
@@ -2764,10 +2764,10 @@ void write_fext_header()
 #endif
     fprintf(out, "#C time");
     for (i=0; i<ep_nind; i++) {
-      fprintf(out, " x%d y%d z%d f%d area%d", i,i,i,i,i); 
+      fprintf(out, " x%d y%d z%d f%d area%d atomsincontact%d", i,i,i,i,i,i); 
     }
     for (i=ep_nind; i<ep_n; i++) {
-      fprintf(out, " x%d y%d z%d f%d", i,i,i,i); 
+      fprintf(out, " x%d y%d z%d f%d atomsincontact%d", i,i,i,i,i); 
     }
     putc('\n',out);
 
@@ -2799,7 +2799,7 @@ void write_fext(int steps)
 {
   str255 fname;
   real tmp, tmpvec[10], ep_car[ep_nind];
-  int i;
+  int i,itmpvec[10];
   static int flush_count=0;
 
   /* add up results from different CPUs */
@@ -2815,6 +2815,9 @@ void write_fext(int steps)
   /* MPI_Allreduce( &ep_ymin, &tmpvec, ep_nind, REAL, MPI_MIN, cpugrid); */
   /* for (i=0; i<ep_nind; i++) ep_ymin[i] = tmpvec[i]; */
 
+  
+  MPI_Allreduce( &ep_atomsincontact, &tmpvec, ep_n, INT, MPI_SUM, cpugrid);
+  for (i=0; i<ep_n; i++) ep_atomsincontact[i] = tmpvec[i];
   MPI_Allreduce( ep_fext, tmpvec, ep_n, REAL, MPI_SUM, cpugrid);
   for (i=0; i<ep_n; i++) ep_fext[i] = tmpvec[i];
   MPI_Allreduce( &ep_xmax, &tmpvec, ep_nind, REAL, MPI_MAX, cpugrid);
@@ -2854,10 +2857,10 @@ void write_fext(int steps)
 #endif
     fprintf(ind_file, "%e ", (double) (steps * timestep));
     for (i=0; i<ep_nind; i++) {
-      fprintf(ind_file, "%f %f %f %f %f ", ep_pos[i].x, ep_pos[i].y, ep_pos[i].z, ep_fext[i], ep_car[i] );
+      fprintf(ind_file, "%f %f %f %f %f %d ", ep_pos[i].x, ep_pos[i].y, ep_pos[i].z, ep_fext[i], ep_car[i],ep_atomsincontact[i] );
     }
     for (i=ep_nind; i<ep_n; i++) {
-      fprintf(ind_file, "%f %f %f %f ", ep_pos[i].x, ep_pos[i].y, ep_pos[i].z, ep_fext[i] );
+      fprintf(ind_file, "%f %f %f %f %d ", ep_pos[i].x, ep_pos[i].y, ep_pos[i].z, ep_fext[i],ep_atomsincontact[i] );
     }
     putc('\n',ind_file);
     flush_count++;

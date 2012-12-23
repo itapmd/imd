@@ -42,6 +42,10 @@
 
 void setup_potentials( void )
 {
+#ifdef EXTPOT
+  if(have_extpotfile)
+  read_pot_table(&ext_pot,extpotfilename,ep_n,1);
+#endif
 #ifdef PAIR
   /* read pair potential file - also used for TTBP, EAM2, TERSOFF, EWALD, .. */
   if (have_potfile)
@@ -677,6 +681,7 @@ void create_pot_table(pot_table_t *pt)
 
   /* test interpolation of potential */
   if ((0==myid) && (debug_potential)) test_potential(*pt, "pair_pot", ncols);
+  if ((0==myid) && (debug_potential)) test_potential(*pt, "ext_pot", ncols);
 
 }
 

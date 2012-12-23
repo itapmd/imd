@@ -294,6 +294,7 @@ EXTERN int flush_int INIT(50);          /* flush .eng and .msqd files
                                            every flush_int writes */
 #ifdef EXTPOT
 EXTERN FILE *ind_file INIT(NULL);       /* pointer to .ind file */
+EXTERN str255 extpotfilename INIT("\0");   /* Potential */
 #endif
 
 #ifdef RELAX
@@ -358,6 +359,9 @@ EXTERN real omega_E INIT(0.0);
 
 /* Potential Table */
 EXTERN pot_table_t pair_pot;         /* potential data structure */
+#ifdef EXTPOT
+EXTERN pot_table_t ext_pot;         /* potential data structure */
+#endif
 #ifdef MULTIPOT
 EXTERN pot_table_t pair_pot_ar[N_POT_TAB]; /* array of potential tables */
 #endif
@@ -454,6 +458,7 @@ EXTERN real isq_tau_eta_rot INIT(0.0);
 #endif
 #endif
 #ifdef EXTPOT
+EXTERN int  have_extpotfile INIT(0); 
 EXTERN int ep_key INIT(0);
 EXTERN int ep_n INIT(0);
 EXTERN int ep_nind INIT(1);
@@ -465,6 +470,7 @@ EXTERN vektor ep_pos[10];
 EXTERN vektor ep_vel[10];
 EXTERN vektor ep_dir[10];
 EXTERN long nactive_vect[3];
+EXTERN int ep_atomsincontact[10];
 #endif
 
 /* virial tensor */

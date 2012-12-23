@@ -26,6 +26,7 @@
  * compute forces due to external potentials
  *
  ******************************************************************************/
+#include "potaccess.h"
 
 #define  UPPER_EXP (20.0)
 #define  LOWER_EXP (0.03)
@@ -35,11 +36,27 @@ void calc_extpot(void)
   int k, i, n;
   int isinx,isiny,isinz;
   real tmpvec1[4], tmpvec2[4];
+
+  vektor d,addforce,totaddforce;
+  real   dd,cc;
+  real   dn,ddn,ee;
+  
+  vektor force;
+  real tmp_virial;
+#ifdef P_AXIAL
+  vektor tmp_vir_vect;
+#endif
+      
+  real pot_zwi, pot_grad;
+  int col, is_short=0;
+  
+
   
   for (k=0; k<ep_n; k++) {
     ep_fext[k] = 0.0;
     ep_xmax[k] = 0.0;
     ep_ymax[k] = 0.0;
+    ep_atomsincontact[n]=0;
     ep_xmin[k] = 1.e8;
     ep_ymin[k] = 1.e8;
   }
@@ -50,12 +67,11 @@ void calc_extpot(void)
       for (i=0; i<p->n; ++i) {
 	for (n=0; n<ep_n; ++n) {
 	  
+	
 	  isinx= ep_dir[n].x;                  
 	  isiny= ep_dir[n].y;                  
 	  isinz= ep_dir[n].z;                  
-	  
-	  vektor d;
-	  real   dn;
+	
 	  d.x = ep_pos[n].x - ORT(p,i,X); 
 	  d.y = ep_pos[n].y - ORT(p,i,Y); 
 	  d.z = ep_pos[n].z - ORT(p,i,Z); 
@@ -66,14 +82,16 @@ void calc_extpot(void)
 	    if (dn > -ep_rcut) {
 	      real d2 = SPROD(d,d);
 	      real d1 = SQRT(d2);
-	      real dd = ep_rcut - d1;
+	      dd = ep_rcut - d1;
 	      if (dd > 0.0) {
 		real f = ep_a * dd * dd / d1;   /* force on atoms and indentor */
 		KRAFT(p,i,X) -= f * d.x; 
 		KRAFT(p,i,Y) -= f * d.y; 
 		KRAFT(p,i,Z) -= f * d.z;
 		ep_fext[n]   += f * ABS(dn); /* normal force on indentor */
-		
+
+		ep_atomsincontact[n]++;
+
 		/* for determination of contact area */
 		if(isinz)
 		  {				  
@@ -103,8 +121,9 @@ void calc_extpot(void)
 	  else {  
 	    if (dn*dn < ep_rcut*ep_rcut) {
 	      real d1 = (dn>0) ? dn : -1*dn ;
-	      real dd = ep_rcut - d1;
+	      dd = ep_rcut - d1;
 	      if (dd > 0.0) {
+		ep_atomsincontact[n]++;
 		real f = ep_a * dd * dd / d1;   /* force on atoms and indentor */
 		KRAFT(p,i,X) += f * ep_dir[n].x;
 		KRAFT(p,i,Y) += f * ep_dir[n].y;
@@ -119,10 +138,7 @@ void calc_extpot(void)
   }
   else if(ep_key == 1) /* Ju Li's spherical indenter, see PRB 67, 104105 */
     {
-      vektor d,addforce,totaddforce;
-      real   dd,cc;
-      real   dn,ddn,ee;
-      
+ 
       totaddforce.x=0.0;
       totaddforce.y=0.0;
       totaddforce.z=0.0;
@@ -132,13 +148,12 @@ void calc_extpot(void)
 	for (i=0; i<p->n; ++i) {
 	  for (n=0; n<ep_n; ++n) {
 	    
+	
 	    isinx= ep_dir[n].x;                  
 	    isiny= ep_dir[n].y;                  
 	    isinz= ep_dir[n].z;      
 	    
-	    if (n<ep_nind) {
-	      vektor d;
-	      real   dn;
+	    if (n<ep_nind) {	    
 	      d.x =   ORT(p,i,X)-ep_pos[n].x; 
 	      d.y =   ORT(p,i,Y)-ep_pos[n].y; 
 	      d.z =   ORT(p,i,Z)-ep_pos[n].z; 
@@ -147,6 +162,7 @@ void calc_extpot(void)
 	      
 	      if ( dd < ep_rcut*ep_rcut)
 		{
+		  ep_atomsincontact[n]++;
 		  /* for the determination of the contact area */
 		  if(isinz)
 		    {				  
@@ -170,27 +186,70 @@ void calc_extpot(void)
 		      ep_ymin[n] = MIN(ep_ymin[n], ORT(p,i,Z) );    
 		  }
 		  
-		  ddn= sqrt(dd);
-		  cc = (ep_rcut - ddn)/ep_a;
-		  if (cc > UPPER_EXP) cc = UPPER_EXP;
-		  if (cc < LOWER_EXP) cc = LOWER_EXP;
-		  ee = exp(cc - 1.0/cc);
-			
-		  tot_pot_energy += ee;
-		  POTENG(p,i) += ee;
-			
-		  ee = ee / ep_a / ddn * (1.0 + 1.0 /(cc*cc));
+		  if(have_extpotfile == 1){
+		    PAIR_INT3(pot_zwi, pot_grad, ext_pot, n, ep_nind, dd, is_short);
+		    tot_pot_energy += pot_zwi;
+		    force.x = -1.0* pot_grad * d.x; 
+		    force.y = -1.0* pot_grad * d.y; 
+		    force.z = -1.0* pot_grad * d.z; 
+		    KRAFT(p,i,X) += force.x;
+		    KRAFT(p,i,Y) += force.y;
+		    KRAFT(p,i,Z) += force.z;
+		      
+		    totaddforce.x += force.x;
+		    totaddforce.y += force.y;
+		    totaddforce.z += force.z;
+		    
+		    ep_fext[n]   += -pot_grad * ABS(dn); /* normal force on indentor */
+		    
+#ifdef P_AXIAL
+		    tmp_vir_vect.x -= d.x * force.x;
+		    tmp_vir_vect.y -= d.y * force.y;
+#ifndef TWOD
+		    tmp_vir_vect.z -= d.z * force.z;
+#endif
+#else
+		    tmp_virial     -= dd * pot_grad;
+#endif
+
+#ifdef STRESS_TENS
+		    if (do_press_calc) {
+		      PRESSTENS(p,i,xx) -= d.x * force.x;
+		      PRESSTENS(p,i,yy) -= d.y * force.y;
+		      PRESSTENS(p,i,xy) -= d.x * force.y;
+#ifndef TWOD
+		      PRESSTENS(p,i,zz) -= d.z * force.z;
+		      PRESSTENS(p,i,yz) -= d.y * force.z;
+		      PRESSTENS(p,i,zx) -= d.z * force.x;
+#endif
+		      }
+#endif
+		    }
+
+		   
+	      /* old version of extpot, kept for downwards compatibility */
+		  else{
+		    ddn= sqrt(dd);
+		    cc = (ep_rcut - ddn)/ep_a;
+		    if (cc > UPPER_EXP) cc = UPPER_EXP;
+		    if (cc < LOWER_EXP) cc = LOWER_EXP;
+		    ee = exp(cc - 1.0/cc);
+		    
+		    tot_pot_energy += ee;
+		    POTENG(p,i) += ee;
+		    
+		    ee = ee / ep_a / ddn * (1.0 + 1.0 /(cc*cc));
                         
-		  KRAFT(p,i,X) += ee * d.x; 
-		  KRAFT(p,i,Y) += ee * d.y; 
-		  KRAFT(p,i,Z) += ee * d.z;
-			
-		  totaddforce.x += ee * d.x;
-		  totaddforce.y += ee * d.y;
-		  totaddforce.z += ee * d.z; 
-                  
-		  ep_fext[n]   += ee * ABS(dn); /* normal force on indentor */
-		  
+		    KRAFT(p,i,X) += ee * d.x; 
+		    KRAFT(p,i,Y) += ee * d.y; 
+		    KRAFT(p,i,Z) += ee * d.z;
+		    
+		    totaddforce.x += ee * d.x;
+		    totaddforce.y += ee * d.y;
+		    totaddforce.z += ee * d.z; 
+		    
+		    ep_fext[n]   += ee * ABS(dn); /* normal force on indentor */
+		  }
 		}
 	    } 
 	  }
@@ -225,14 +284,15 @@ void calc_extpot(void)
       }
     }
   
+
   else if(ep_key == 2) 
     /* Ju Li's spherical indenter made flat, see PRB 67, 104105
        with subtraction of total additional impulse
        works only with indentation directions parallel to box vectors*/ 
     {
-      vektor d,addforce,totaddforce;
-      real   dd,cc;
-      real   dn,ddn,ee;
+      //      vektor d,addforce,totaddforce;
+      //real   dd,cc;
+      //real   dn,ddn,ee;
       
       totaddforce.x=0.0;
       totaddforce.y=0.0;
@@ -243,22 +303,23 @@ void calc_extpot(void)
 	cell *p = CELLPTR(k);
 	for (i=0; i<p->n; ++i) {
 	  for (n=0; n<ep_n; ++n) {
-	    
+
 	    isinx= ep_dir[n].x;                  
 	    isiny= ep_dir[n].y;                  
 	    isinz= ep_dir[n].z;      
 	    
-	    vektor d;
-	    real   dn;
-	    d.x =  (ep_dir[n].x==0)  ? 0 : (ORT(p,i,X)-ep_pos[n].x) ; 
-	    d.y =   (ep_dir[n].y==0)  ? 0 : (ORT(p,i,Y)-ep_pos[n].y); 
-	    d.z =   (ep_dir[n].z==0)  ? 0 : (ORT(p,i,Z)-ep_pos[n].z); 
+	    //  vektor d;
+	    // real   dn;
+	    d.x =  (ep_dir[n].x==0)  ? 0 : (ORT(p,i,X)-ep_pos[n].x); 
+	    d.y =  (ep_dir[n].y==0)  ? 0 : (ORT(p,i,Y)-ep_pos[n].y); 
+	    d.z =  (ep_dir[n].z==0)  ? 0 : (ORT(p,i,Z)-ep_pos[n].z); 
 	    dn  = SPROD(d,ep_dir[n]);
 	    dd  = SPROD(d,d);
 		
 	    if ( dd < ep_rcut*ep_rcut)
 	      {
 		/* for the determination of the contact area */
+		ep_atomsincontact[n]++;
 		if(isinz)
 		    {				  
 		      ep_xmax[n] = MAX(ep_xmax[n], ORT(p,i,X) );    
@@ -281,29 +342,74 @@ void calc_extpot(void)
 		      ep_ymin[n] = MIN(ep_ymin[n], ORT(p,i,Z) );    
 		    }
 
-		ddn= sqrt(dd);
-		cc = (ep_rcut - ddn)/ep_a;
-		if (cc > UPPER_EXP) cc = UPPER_EXP;
-		if (cc < LOWER_EXP) cc = LOWER_EXP;
-		ee = exp(cc - 1.0/cc);
-		    
-		tot_pot_energy += ee;
-		POTENG(p,i) += ee;
-		    
-		ee = ee / ep_a / ddn * (1.0 + 1.0 /(cc*cc));
-                    
-		KRAFT(p,i,X) += ee * d.x; 
-		KRAFT(p,i,Y) += ee * d.y; 
-		KRAFT(p,i,Z) += ee * d.z;
-		    
-		totaddforce.x += ee * d.x;
-		totaddforce.y += ee * d.y;
-		totaddforce.z += ee * d.z; 
-                    
-		ep_fext[n]   += ee * ABS(dn); /* normal force on indentor */
-                    
-	      }
+
+		  
+		if(have_extpotfile == 1){
+		  PAIR_INT3(pot_zwi, pot_grad, ext_pot, n, ep_nind, dd, is_short);
+		  tot_pot_energy += pot_zwi;
+		  force.x = -1.0* pot_grad * d.x; 
+		  force.y = -1.0* pot_grad * d.y; 
+		  force.z = -1.0* pot_grad * d.z; 
+		  KRAFT(p,i,X) += force.x;
+		  KRAFT(p,i,Y) += force.y;
+		  KRAFT(p,i,Z) += force.z;
+		  
+		  totaddforce.x += force.x;
+		  totaddforce.y += force.y;
+		  totaddforce.z += force.z;
+		  
+		  ep_fext[n]   += -pot_grad * ABS(dn); /* normal force on indentor */
+		  
+#ifdef P_AXIAL
+		  tmp_vir_vect.x -= d.x * force.x;
+		  tmp_vir_vect.y -= d.y * force.y;
+#ifndef TWOD
+		  tmp_vir_vect.z -= d.z * force.z;
+#endif
+#else
+		  tmp_virial     -= dd * pot_grad;
+#endif
+		  
+#ifdef STRESS_TENS
+		  if (do_press_calc) {
+		    PRESSTENS(p,i,xx) -= d.x * force.x;
+		    PRESSTENS(p,i,yy) -= d.y * force.y;
+		    PRESSTENS(p,i,xy) -= d.x * force.y;
+#ifndef TWOD
+		    PRESSTENS(p,i,zz) -= d.z * force.z;
+		    PRESSTENS(p,i,yz) -= d.y * force.z;
+		    PRESSTENS(p,i,zx) -= d.z * force.x;
+#endif
+		  }
+#endif
+		}
 		
+		   
+		/* old version of extpot, kept for downwards compatibility */
+		else{
+		  ddn= sqrt(dd);
+		  cc = (ep_rcut - ddn)/ep_a;
+		  if (cc > UPPER_EXP) cc = UPPER_EXP;
+		  if (cc < LOWER_EXP) cc = LOWER_EXP;
+		  ee = exp(cc - 1.0/cc);
+		    
+		  tot_pot_energy += ee;
+		  POTENG(p,i) += ee;
+		  
+		  ee = ee / ep_a / ddn * (1.0 + 1.0 /(cc*cc));
+		  
+		  KRAFT(p,i,X) += ee * d.x; 
+		  KRAFT(p,i,Y) += ee * d.y; 
+		  KRAFT(p,i,Z) += ee * d.z;
+		  
+		  totaddforce.x += ee * d.x;
+		  totaddforce.y += ee * d.y;
+		  totaddforce.z += ee * d.z; 
+                    
+		  ep_fext[n]   += ee * ABS(dn); /* normal force on indentor */
+                    
+		}
+	      }
 	  } 
 	      
 	}
@@ -343,9 +449,9 @@ void calc_extpot(void)
        without subtraction of the total additional impulse
        works only with indentation directions parallel to box vectors*/ 
     {
-      vektor d,addforce,totaddforce;
-      real   dd,cc;
-      real   dn,ddn,ee;
+      //    vektor d,addforce,totaddforce;
+      //      real   dd,cc;
+      //      real   dn,ddn,ee;
       
       totaddforce.x=0.0;
       totaddforce.y=0.0;
@@ -357,6 +463,7 @@ void calc_extpot(void)
 	for (i=0; i<p->n; ++i) {
 	  for (n=0; n<ep_n; ++n) {
 	    
+	 
 	    isinx= ep_dir[n].x;                  
 	    isiny= ep_dir[n].y;                  
 	    isinz= ep_dir[n].z;      
@@ -372,6 +479,7 @@ void calc_extpot(void)
 	    if ( dd < ep_rcut*ep_rcut)
 	      {
 		/* for the determination of the contact area */
+		ep_atomsincontact[n]++;
 		if(isinz)
 		    {				  
 		      ep_xmax[n] = MAX(ep_xmax[n], ORT(p,i,X) );    
@@ -394,6 +502,50 @@ void calc_extpot(void)
 		      ep_ymin[n] = MIN(ep_ymin[n], ORT(p,i,Z) );    
 		    }
 
+		  
+		if(have_extpotfile == 1){
+		  PAIR_INT3(pot_zwi, pot_grad, ext_pot, n, ep_nind, dd, is_short);
+		  tot_pot_energy += pot_zwi;
+		  force.x = - pot_grad * d.x; 
+		  force.y = - pot_grad * d.y; 
+		  force.z = - pot_grad * d.z; 
+		  KRAFT(p,i,X) += force.x;
+		  KRAFT(p,i,Y) += force.y;
+		  KRAFT(p,i,Z) += force.z;
+		  
+		  totaddforce.x += force.x;
+		  totaddforce.y += force.y;
+		  totaddforce.z += force.z;
+		  
+		  ep_fext[n]   += -pot_grad * ABS(dn); /* normal force on indentor */
+		  
+#ifdef P_AXIAL
+		  tmp_vir_vect.x -= d.x * force.x;
+		  tmp_vir_vect.y -= d.y * force.y;
+#ifndef TWOD
+		  tmp_vir_vect.z -= d.z * force.z;
+#endif
+#else
+		  tmp_virial     -= dd * pot_grad;
+#endif
+		  
+#ifdef STRESS_TENS
+		  if (do_press_calc) {
+		    PRESSTENS(p,i,xx) -= d.x * force.x;
+		    PRESSTENS(p,i,yy) -= d.y * force.y;
+		    PRESSTENS(p,i,xy) -= d.x * force.y;
+#ifndef TWOD
+		    PRESSTENS(p,i,zz) -= d.z * force.z;
+		    PRESSTENS(p,i,yz) -= d.y * force.z;
+		    PRESSTENS(p,i,zx) -= d.z * force.x;
+#endif
+		  }
+#endif
+		}
+		
+		   
+		/* old version of extpot, kept for downwards compatibility */
+		else{
 		ddn= sqrt(dd);
 		cc = (ep_rcut - ddn)/ep_a;
 		if (cc > UPPER_EXP) cc = UPPER_EXP;
@@ -409,6 +561,7 @@ void calc_extpot(void)
 		KRAFT(p,i,Y) += ee * d.y; 
 		KRAFT(p,i,Z) += ee * d.z;
 		ep_fext[n]   += ee * ABS(dn); /* normal force on indentor */
+		}
 	      }	    
 	  } 
 	}
@@ -419,6 +572,18 @@ void calc_extpot(void)
     {
       error("Error: external potential ep_key not defined.\n");
     }
+#ifdef P_AXIAL
+vir_xx += tmp_vir_vect.x;
+vir_yy += tmp_vir_vect.y;
+virial += tmp_vir_vect.x;
+virial += tmp_vir_vect.y;
+#ifndef TWOD
+vir_zz += tmp_vir_vect.z;
+virial += tmp_vir_vect.z;
+#endif
+#else
+virial += tmp_virial;
+#endif 
 }
 
 /******************************************************************************

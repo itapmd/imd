@@ -3293,6 +3293,13 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       /* EXTPOT: strength of external potential */
       getparam(token,&ep_a,PARAM_REAL,1,1);
     }
+    else if (strcasecmp(token,"extpot_file")==0) {
+      /* EXTPOT: Filename for the tabulated external potential (r^2) */
+      getparam("expot_file",extpotfilename,PARAM_STR,1,255);
+      if(ep_a!=0)
+	 error("either use expotfile or define ep_a");
+      have_extpotfile = 1;
+    }
     else if (strcasecmp(token,"ep_max_int")==0) {
       /* EXTPOT: maximal wait steps during relaxation */
       getparam(token,&ep_max_int,PARAM_INT,1,1);
@@ -3442,6 +3449,15 @@ void check_parameters_complete()
   }
 #endif
   
+#ifdef EXTPOT
+  if(ep_a !=0)
+    printf("Usage of ep_a is depreciated, use extpot_file instead\n");
+  if(ep_a !=0 && have_extpotfile==1)
+    error("use either ep_a or extpotfile");
+  if(ep_rcut <=0)
+    error("need a value for ep_rcut");
+#endif
+
 #if defined(FBC) || defined(RIGID) || defined(DEFORM)
   if (vtypes == 0)
     error("FBC, RIGID, and DEFORM require parameter total_types to be set");
@@ -4734,6 +4750,8 @@ void broadcast_params() {
   MPI_Bcast( &max_sscount,         1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 #ifdef EXTPOT
+  MPI_Bcast( &have_extpotfile,            1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( extpotfilename,            255, MPI_CHAR, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &ep_n,               1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ep_key,               1,    MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ep_nind,           1, MPI_INT, 0, MPI_COMM_WORLD);
