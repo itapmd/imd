@@ -1304,8 +1304,12 @@ used to simulate and indentor. See Ju Li, Phys. Rev. <B>B</B> 67 (2003) 104105
 <dt><a id="neb" name="neb"><b>neb</b></a></dt>
 <dd>
 <p>
-This method can be used to simulate reaction path ways by the nudge elastic
-band method.
+This method can be used to calculate reaction pathways by the nudge elastic
+band method (NEB). Currently, this option requires one CPU per image. The number of images is provided by the parameter 
+neb_nrep. The file names of the images are then coordname.0 - coordname.[neb_nrep-1]. NEB uses the minimization scheme provided by the ensemble, e.g. FIRE. NEB requires as further input parameter a spring constant neb_k. 
+The MEP should not depend on the value of neb_k, but the convergence behavior does. The neb_k should scale like one over the time step squared.
+Variable spring constants can be used by specifying neb_vark_start and neb_kmax and neb_kmin. Climbing image NEB is used when neb_cineb_start and 
+neb_climbing_image are specified.
 </p>
 </dd>
 

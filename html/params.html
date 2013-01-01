@@ -718,9 +718,14 @@ ep_rcut     # cutoff radius of external potential
 ep_vel      # velocity of external potential 
 
 # parameters for  <a href="options.html#neb">Nudge Elastic Band</a>
-neb_eng_int # interval of NEB energy writes 
-neb_k       # spring constant of NEB -- ignored?? 
 neb_nrep    # number of NEB replicas 
+neb_k       # spring constant for NEB
+neb_vark_start # time step from which on variable ks are used
+neb_kmax    # max. spring constant
+neb_kmin    # min. spring constant
+neb_cineb_start # time step from which on climbing images are used
+neb_climbing_image # assumed image at barrier
+neb_eng_int # interval of NEB energy writes 
 
 # parameters for  <a href="compiling.html">Cell Processor</a><a id="cbe" name="cbe">
 cbe_pot_max        # maximum value in potential table 
