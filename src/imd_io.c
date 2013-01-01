@@ -2204,7 +2204,8 @@ void write_eng_file_header()
 #endif
 
 #ifdef NEB
-  fprintf(fl, "phi_lr phi_dl phi_dr k ");
+  //  fprintf(fl, "phi_lr phi_dl phi_dr k ");
+  fprintf(fl, "k ");
 #endif
 
 #ifdef FEFL
@@ -2443,7 +2444,8 @@ void write_eng_file(int steps)
 #endif
 
 #ifdef NEB
-   fprintf(eng_file, " %lf %lf %lf %e ",phi_lr,phi_dl,phi_dr,neb_k);
+   //   fprintf(eng_file, " %lf %lf %lf %e ",phi_lr,phi_dl,phi_dr,neb_ks[myrank]);
+   fprintf(eng_file, " %e ",neb_ks[myrank]);
 #endif
 
 #ifdef FEFL

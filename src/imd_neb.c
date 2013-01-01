@@ -187,9 +187,11 @@ void neb_sendrecv_pos(void)
 
 void calc_forces_neb(void)
 {
-    real dl2=0.0, dr2=0.0, drl=0.0, d2=0.0, f2=0.0, f2max=0.0, drlmax=0.0,df=0.0;
-    real tmp,tmp1,tmp2, cosphi, fphi, src[3], dest[3], *d=pos;
+  real dl2=0.0, dr2=0.0, drl=0.0, d2=0.0, f2=0.0, f2max=0.0, drlmax=0.0,df=0.0;
+  real tmp,tmp1,tmp2, cosphi, fphi, src[3], dest[3], *d=pos;
+  real kr,kl;
   int k, i;
+  int var_k=0;
  
   int myimage,maximage;
   real V_previous, V_actual, V_next;
@@ -197,27 +199,29 @@ void calc_forces_neb(void)
   real normdr,normdl,inormd;
   real Eref,Emax,Emin,delta_E;
   real ratio_plus,ratio_minus,abs_next,abs_previous ;
-  real k_sum, k_diff;
+  real k_sum, k_diff,tmpl,tmpr;
   real tmp_neb_ks[NEB_MAXNREP] INIT(zero100);
+  real felastfact=0.0;
 
   myimage = myrank;
+
   /* get info about the energies of the different images */
   neb_image_energies[ myimage]=tot_pot_energy;
   MPI_Allreduce(neb_image_energies , neb_epot_im, NEB_MAXNREP, REAL, MPI_SUM, MPI_COMM_WORLD);
   Emax=-999999999999999;
   Emin=999999999999999;
   for(i=0;i<neb_nrep;i++)
+    {
+      if(neb_epot_im[i]>=Emax)
 	{
-	  if(neb_epot_im[i]>=Emax)
-	    {
-	      Emax=neb_epot_im[i];
-	      maximage=i;
-	    }
- 	  if(neb_epot_im[i]<=Emin)
-	    {
-	      Emin=neb_epot_im[i];
-	    }
+	  Emax=neb_epot_im[i];
+	  maximage=i;
 	}
+      if(neb_epot_im[i]<=Emin)
+	{
+	  Emin=neb_epot_im[i];
+	}
+    }
   if(steps == neb_cineb_start)
     {
       if(neb_climbing_image > 0)
@@ -242,320 +246,296 @@ void calc_forces_neb(void)
 
     }
 
+  /* determine variable spring constants (jcp113 p. 9901) */
+
+  tmp_neb_ks[myimage]=0;
+
+  if(myrank != 0 && myrank != neb_nrep-1)
+  { 
+
+    V_previous = neb_epot_im[myimage-1];
+    V_actual   = neb_epot_im[myimage];
+    V_next     = neb_epot_im[myimage+1];	
+
+    if ( neb_kmax > 0 & neb_kmin >0 &&  steps > neb_vark_start)
+      {
+	var_k=1;
+	k_sum  = neb_kmax + neb_kmin;
+	k_diff = neb_kmax - neb_kmin;    
+	delta_E = Emax - Emin;
+	if (delta_E > 1.0e-12)
+	  {
+	    tmp_neb_ks[myimage] = 0.5 *(k_sum - k_diff * cos(3.141592653589793238*( neb_epot_im[myimage] - Emin )/delta_E ));
+	  }
+      }
+    else
+      {
+	tmp_neb_ks[myimage] = neb_k;
+      }
+  }
+  MPI_Allreduce(tmp_neb_ks , neb_ks, NEB_MAXNREP, REAL, MPI_SUM, MPI_COMM_WORLD); 
+
   /* exchange positions with neighbor replicas */
-  
+  neb_sendrecv_pos();
    
-      neb_sendrecv_pos();
-   
+  /* determine tangent vector and the elastic spring force */
   if(myrank != 0 && myrank != neb_nrep-1)
   { 
       dl2=0.0;d2=0.0;dr2=0.0;
-  /* compute tangent of current NEB path */
-      for (i=0; i<DIM*natoms; i+=DIM) {
-	vektor dl, dr;
-	real x;
-	/* distance to left and right replica */
-	dl.x = pos  [i  ] - pos_l[i  ];
-	dl.y = pos  [i+1] - pos_l[i+1];
-	dl.z = pos  [i+2] - pos_l[i+2];
+      
+      kr = 0.5 * (neb_ks[myimage]+neb_ks[myimage+1]);
+      kl = 0.5 * (neb_ks[myimage]+neb_ks[myimage-1]);
 
-	dr.x = pos_r[i  ] - pos  [i  ];
-	dr.y = pos_r[i+1] - pos  [i+1];
-	dr.z = pos_r[i+2] - pos  [i+2];
-	
+      /* preparation: calculate distance to left and right immage */
+       for (i=0; i<DIM*natoms; i+=DIM) {
+	 vektor dr,dl;	
+	 real x;
+	 dl.x = pos  [i  ] - pos_l[i  ];
+	 dl.y = pos  [i+1] - pos_l[i+1];
+	 dl.z = pos  [i+2] - pos_l[i+2];
+	 dr.x = pos_r[i  ] - pos  [i  ];
+	 dr.y = pos_r[i+1] - pos  [i+1];
+	 dr.z = pos_r[i+2] - pos  [i+2];
+	 
+	    /* apply periodic boundary conditions */
+	 if (1==pbc_dirs.x) {
+	   x = - round( SPROD(dl,tbox_x) );
+	   dl.x += x * box_x.x;
+	   dl.y += x * box_x.y;
+	   dl.z += x * box_x.z;
+	   x = - round( SPROD(dr,tbox_x) );
+	   dr.x += x * box_x.x;
+	   dr.y += x * box_x.y;
+	   dr.z += x * box_x.z;
+	 }
+	 if (1==pbc_dirs.y) {
+	   x = - round( SPROD(dl,tbox_y) );
+	   dl.x += x * box_y.x;
+	   dl.y += x * box_y.y;
+	   dl.z += x * box_y.z;
+	   x = - round( SPROD(dr,tbox_y) );
+	   dr.x += x * box_y.x;
+	   dr.y += x * box_y.y;
+	   dr.z += x * box_y.z;
+	 }
+	 if (1==pbc_dirs.z) {
+	   x = - round( SPROD(dl,tbox_z) );
+	   dl.x += x * box_z.x;
+	   dl.y += x * box_z.y;
+	   dl.z += x * box_z.z;
+	   x = - round( SPROD(dr,tbox_z) );
+	   dr.x += x * box_z.x;
+	   dr.y += x * box_z.y;
+	   dr.z += x * box_z.z;
+	 }
+	 dRleft[i  ] = dl.x; 
+	 dRleft[i+1] = dl.y; 
+	 dRleft[i+2] = dl.z; 
+	 dRright[i  ] = dr.x; 
+	 dRright[i+1] = dr.y; 
+	 dRright[i+2] = dr.z; 
+ 	    
+       }
 
-	/* apply periodic boundary conditions */
-	if (1==pbc_dirs.x) {
-	  x = - round( SPROD(dl,tbox_x) );
-	  dl.x += x * box_x.x;
-	  dl.y += x * box_x.y;
-	  dl.z += x * box_x.z;
-	  x = - round( SPROD(dr,tbox_x) );
-	  dr.x += x * box_x.x;
-	  dr.y += x * box_x.y;
-	  dr.z += x * box_x.z;
-	}
-	if (1==pbc_dirs.y) {
-	  x = - round( SPROD(dl,tbox_y) );
-	  dl.x += x * box_y.x;
-	  dl.y += x * box_y.y;
-	  dl.z += x * box_y.z;
-	  x = - round( SPROD(dr,tbox_y) );
-	  dr.x += x * box_y.x;
-	  dr.y += x * box_y.y;
-	  dr.z += x * box_y.z;
-	}
-	if (1==pbc_dirs.z) {
-	  x = - round( SPROD(dl,tbox_z) );
-	  dl.x += x * box_z.x;
-	  dl.y += x * box_z.y;
-	  dl.z += x * box_z.z;
-	  x = - round( SPROD(dr,tbox_z) );
-	  dr.x += x * box_z.x;
-	  dr.y += x * box_z.y;
-	  dr.z += x * box_z.z;
-    }
-#define OLDTANGENT 1
-#ifdef OLDTANGENT
+      /* computation of the tangent requires 2 steps: determination of the direction and then normalization */
+      /* here we use only the improved tangent method */
 
-        dRleft[i]   = dl.x;
-        dRleft[i+1] = dl.y;
-        dRleft[i+2] = dl.z;
-
-        dRright[i]   = dr.x;
-        dRright[i+1] = dr.y;
-        dRright[i+2] = dr.z;
-
-	/* unmodified spring force */
-	f[i  ] = dr.x - dl.x; 
-	f[i+1] = dr.y - dl.y; 
-	f[i+2] = dr.z - dl.z; 
-	
-#else  /* now use improved tanget estimate (jcp 113 p9978) */
-
-
-	/* unmodified spring force */
-	f[i  ] = dr.x - dl.x; 
-	f[i+1] = dr.y - dl.y; 
-	f[i+2] = dr.z - dl.z; 
-	
-
-	V_previous = neb_epot_im[myimage-1];
-	V_actual   = neb_epot_im[myimage];
-	V_next     = neb_epot_im[myimage+1];
-	
-	
-	// added by erik, i'm not totally sure of that
-	/*   if(myimage==1) */
-/* 	       { */
-/* 		d[i  ] = dr.x ; */
-/* 		d[i+1] = dr.y ; */
-/* 		d[i+2] = dr.z ; */
-/* 	      } */
-/* 	    else if(myimage==neb_nrep-2) */
-/* 	      { */
-/* 		d[i  ] = dl.x ; */
-/* 		d[i+1] = dl.y ; */
-/* 		d[i+2] = dl.z ; */
-/* 	      } */
-/* 	    else */
+      if ( ( V_next > V_actual ) && ( V_actual > V_previous ) )
 	{
-	  if ( ( V_next > V_actual ) && ( V_actual > V_previous ) )
-	    {
-	      d[i  ] = dr.x ;
-	      d[i+1] = dr.y ;
-	      d[i+2] = dr.z ;
-	    }
-	  else if ( ( V_next < V_actual ) && ( V_actual < V_previous ) ) 
-	    {
-	      d[i  ] = dl.x ;
-	      d[i+1] = dl.y ;
-	      d[i+2] = dl.z ;
-	    }
-	  else
-	    {
-	     
-	      abs_next     = FABS( V_next     - V_actual );
-	      abs_previous = FABS( V_previous - V_actual );
-	      deltaVmax    = MAX( abs_next, abs_previous );
-	      deltaVmin    = MIN( abs_next, abs_previous );
-	      if (V_next > V_previous ) 
-		{
-		  d[i  ] = dr.x * deltaVmax + dl.x * deltaVmin ;
-		  d[i+1] = dr.y * deltaVmax + dl.y * deltaVmin;
-		  d[i+2] = dr.z * deltaVmax + dl.z * deltaVmin;
-		}
-	      else if ( V_next < V_previous ) 
-		{
-		  d[i  ] = dr.x * deltaVmin + dl.x * deltaVmax ;
-		  d[i+1] = dr.y * deltaVmin + dl.y * deltaVmax;
-		  d[i+2] = dr.z * deltaVmin + dl.z * deltaVmax;
-		}
-	      else
-		{
-		  d[i  ] = dr.x + dl.x;
-		  d[i+1] = dr.y + dl.y;
-		  d[i+2] = dr.z + dl.z;
-		}
 
-	    }
+	  for (i=0; i<DIM*natoms; i+=DIM) {
+	    tau[i  ] = dRright[i  ];
+	    tau[i+1] = dRright[i+1];
+	    tau[i+2] = dRright[i+2];
+	    d2  += dRright[i  ]*dRright[i  ];
+	    d2  += dRright[i+1]*dRright[i+1];
+	    d2  += dRright[i+2]*dRright[i+2];
+	  }
+	  
+	  tmp=1.0/sqrt(d2);
+	  for (i=0; i<DIM*natoms; i+=DIM) {
+	    tau[i  ] *= tmp;
+	    tau[i+1] *= tmp;
+	    tau[i+2] *= tmp;
+	    	 
+	    if (var_k==1)
+	      {
+		felastfact += tau[i  ] * ( -kr *dRright[i  ] + kl * dRleft[i  ]);
+		felastfact += tau[i+1] * ( -kr *dRright[i+1] + kl * dRleft[i+1]);
+		felastfact += tau[i+2] * ( -kr *dRright[i+2] + kl * dRleft[i+2]);
+	      }
+	    else 
+	      {
+		felastfact +=  tau[i  ] * ( - dRright[i  ] + dRleft[i  ]);
+		felastfact +=  tau[i+1] * ( - dRright[i+1] + dRleft[i+1]);
+		felastfact +=  tau[i+2] * ( - dRright[i+2] + dRleft[i+2]);
+	      }
+	  }
 	}
-#endif
-     
-      /* add up norms */
-	dl2 += SPROD(dl,dl); 
-	dr2 += SPROD(dr,dr); 
-	drl += SPROD(dr,dl); 
-	d2  += nebSPRODN(d+i,d+i);
-        
-        df += nebSPRODN(d+i,f+i);
-
-        drlmax = MAX(drlmax, fabs( SPROD(dr,dr) - SPROD(dl,dl) ) ); 
-      } // end loop over i
-
-
-  } // end  if(myrank != 0 && mrank != neb_nrep-1)
-
-#ifdef OLDTANGENT
-  // calculate tangent from both normalized tangent vectors
-  if(myrank != 0 && myrank != neb_nrep-1)
-      {
-          tmp1=1.0/sqrt(dl2);
-          tmp2=1.0/sqrt(dr2);
-          d2=0;df=0;
-          for (i=0; i<DIM*natoms; i+=DIM) {
-              
-              d[i]   = dRleft[i]*tmp1 + dRright[i]*tmp2;
-              d[i+1] = dRleft[i+1]*tmp1 + dRright[i+1]*tmp2;
-              d[i+2] = dRleft[i+2]*tmp1 + dRright[i+2]*tmp2;
-              d2 += d[i]*d[i] + d[i+1]*d[i+1] + d[i+2]*d[i+2];
-              df += f[i]*d[i] + f[i+1]*d[i+1] + f[i+2]*d[i+2];
-          }
-      }
-#endif
-  
-  
-  /* variable springs (jcp113 p. 9901) */
-      if ( neb_kmax > 0 & neb_kmin >0 &&  steps > neb_vark_start)
+      else if ( ( V_next < V_actual ) && ( V_actual < V_previous ) ) 
 	{
-	  k_sum  = neb_kmax + neb_kmin;
-	  k_diff = neb_kmax - neb_kmin;
-	  tmp_neb_ks[myimage]=neb_kmin;
-	  delta_E = Emax - Emin;
-	  if (delta_E > 1.0e-32)
-	    {
-                if(myrank != 0 && myrank != neb_nrep-1)
-                {
-                    tmp_neb_ks[0] = 0.5*0.5 *(k_sum - k_diff * cos(3.141592653589793238*( neb_epot_im[0] - Emin )/delta_E ));
-                    tmp_neb_ks[neb_nrep-1] =0.5* 0.5 *(k_sum - k_diff * cos(3.141592653589793238*( neb_epot_im[neb_nrep-1] - Emin )/delta_E ));
-                    
-                    tmp_neb_ks[myimage] = 0.5 *(k_sum - k_diff * cos(3.141592653589793238*( neb_epot_im[myimage] - Emin )/delta_E ));
-                }
-	    }
-	}
+	  for (i=0; i<DIM*natoms; i+=DIM) {
+	    tau[i  ] = dRleft[i  ];
+	    tau[i+1] = dRleft[i+1];
+	    tau[i+2] = dRleft[i+2];
+	    d2  += dRleft[i  ]*dRleft[i  ];
+	    d2  += dRleft[i+1]*dRleft[i+1];
+	    d2  += dRleft[i+2]*dRleft[i+2];
+	  }
+	  
+	  tmp=1.0/sqrt(d2);
+	  for (i=0; i<DIM*natoms; i+=DIM) {
+	    tau[i  ] *= tmp;
+	    tau[i+1] *= tmp;
+	    tau[i+2] *= tmp;
+	    	  
+
+	    if (var_k==1)
+	      {
+		felastfact += tau[i  ] * ( -kr *dRright[i  ] + kl * dRleft[i  ]);
+		felastfact += tau[i+1] * ( -kr *dRright[i+1] + kl * dRleft[i+1]);
+		felastfact += tau[i+2] * ( -kr *dRright[i+2] + kl * dRleft[i+2]);
+	      }
+	    else 
+	      {
+		felastfact +=  tau[i  ] * ( - dRright[i  ] + dRleft[i  ]);
+		felastfact +=  tau[i+1] * ( - dRright[i+1] + dRleft[i+1]);
+		felastfact +=  tau[i+2] * ( - dRright[i+2] + dRleft[i+2]);
+
+	
+	      }
+	  }
+	}      
       else
 	{
-	  tmp_neb_ks[myimage] = neb_k;
+	  abs_next     = FABS( V_next     - V_actual );
+	  abs_previous = FABS( V_previous - V_actual );
+	  deltaVmax    = MAX( abs_next, abs_previous );
+	  deltaVmin    = MIN( abs_next, abs_previous );
+
+	  for (i=0; i<DIM*natoms; i+=DIM) {
+	    dr2  += dRright[i  ]*dRright[i  ];
+	    dr2  += dRright[i+1]*dRright[i+1];
+	    dr2  += dRright[i+2]*dRright[i+2];
+	    dl2  += dRleft[i  ]*dRleft[i  ];
+	    dl2  += dRleft[i+1]*dRleft[i+1];
+	    dl2  += dRleft[i+2]*dRleft[i+2];
+	  }
+	  tmpl=1.0/sqrt(dl2);
+	  tmpr=1.0/sqrt(dr2);
+
+	  for (i=0; i<DIM*natoms; i+=DIM) {
+	    vektor dl, dr;
+	    dr.x =  dRright[i  ]*tmpr;
+	    dr.y =  dRright[i+1]*tmpr;
+	    dr.z =  dRright[i+2]*tmpr;
+
+	    dl.x =  dRleft[i  ]*tmpl;
+	    dl.y =  dRleft[i+1]*tmpl;
+	    dl.z =  dRleft[i+2]*tmpl;
+
+	    if (V_next > V_previous ) 
+	      {
+		tau[i  ] = dr.x * deltaVmax + dl.x * deltaVmin ;
+		tau[i+1] = dr.y * deltaVmax + dl.y * deltaVmin;
+		tau[i+2] = dr.z * deltaVmax + dl.z * deltaVmin;
+	      }
+	    else if ( V_next < V_previous ) 
+	      {
+		tau[i  ] = dr.x * deltaVmin + dl.x * deltaVmax ;
+		tau[i+1] = dr.y * deltaVmin + dl.y * deltaVmax;
+		tau[i+2] = dr.z * deltaVmin + dl.z * deltaVmax;
+	      }
+	    else
+	      {
+		tau[i  ] = dr.x + dl.x;
+		tau[i+1] = dr.y + dl.y;
+		tau[i+2] = dr.z + dl.z;
+	      }
+	    d2  += tau[i  ]*tau[i  ];
+	    d2  += tau[i+1]*tau[i+1];
+	    d2  += tau[i+2]*tau[i+2];
+	  }
+	  tmp=1.0/sqrt(d2);
+	  for (i=0; i<DIM*natoms; i+=DIM) {	 
+	    tau[i  ] *= tmp;
+	    tau[i+1] *= tmp;
+	    tau[i+2] *= tmp;
+	    	   
+	    if (var_k==1)
+	      {
+		felastfact += tau[i  ] * ( -kr *dRright[i  ] + kl * dRleft[i  ]);
+		felastfact += tau[i+1] * ( -kr *dRright[i+1] + kl * dRleft[i+1]);
+		felastfact += tau[i+2] * ( -kr *dRright[i+2] + kl * dRleft[i+2]);
+	      }
+	    else 
+	      {
+		felastfact +=  tau[i  ] * ( - dRright[i  ] + dRleft[i  ]);
+		felastfact +=  tau[i+1] * ( - dRright[i+1] + dRleft[i+1]);
+		felastfact +=  tau[i+2] * ( - dRright[i+2] + dRleft[i+2]);	
+	      }
+	    
+
+	  }
 	}
-      
-      MPI_Allreduce(tmp_neb_ks , neb_ks, NEB_MAXNREP, REAL, MPI_SUM, MPI_COMM_WORLD);
-      neb_ks[myimage] *= 0.5;
-  
+
+      /* finally construct the spring force */
+      for (i=0; i<DIM*natoms; i+=DIM) {
+	if (var_k==1)
+	  {
+	    f[i  ] = - tau[i  ] *felastfact;
+	    f[i+1] = - tau[i+1] *felastfact;
+	    f[i+2] = - tau[i+2] *felastfact;
+	  }
+	else
+	  {
+	    f[i  ] = - neb_k * tau[i  ] *felastfact;
+	    f[i+1] = - neb_k * tau[i+1] *felastfact;
+	    f[i+2] = - neb_k * tau[i+2] *felastfact;
+	  }
+      }
+  }// end  if(myrank != 0 && mrank != neb_nrep-1)
 
 
+  /* calculate the neb-force */
  if(myrank != 0 && myrank != neb_nrep-1)
   {
 
-      /* project internal force onto perpendicular direction */
+    // first scalar product of -force and tangent vector 
       tmp = 0.0;
       for (k=0; k<NCELLS; k++) {
 	cell *p = CELLPTR(k);
 	for (i=0; i<p->n; i++) { 
 	  int n = NUMMER(p,i);
-	  tmp += d X(n) * KRAFT(p,i,X);
-	  tmp += d Y(n) * KRAFT(p,i,Y);
-	  tmp += d Z(n) * KRAFT(p,i,Z);
+	  tmp -= tau X(n) * KRAFT(p,i,X);
+	  tmp -= tau Y(n) * KRAFT(p,i,Y);
+	  tmp -= tau Z(n) * KRAFT(p,i,Z);
 	}
       }
-      tmp /= -d2; // should be the wrong sign, but seems to work???
+     
+      // add tmp times the tangent vector
+      // and the spring force
       for (k=0; k<NCELLS; k++) {
 	cell *p = CELLPTR(k);
 	for (i=0; i<p->n; i++) { 
 	  int n = NUMMER(p,i);
-	  //	  f2 += nebSPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) );
-	  //      f2max = MAX( f2max, nebSPRODN( &KRAFT(p,i,X), &KRAFT(p,i,X) ) );
-	  KRAFT(p,i,X) -= tmp * d X(n);
-	  KRAFT(p,i,Y) -= tmp * d Y(n);
-	  KRAFT(p,i,Z) -= tmp * d Z(n);
-	  
 	  if(myimage == neb_climbing_image && (steps >= neb_cineb_start))
 	    {
-	      KRAFT(p,i,X) -= tmp * d X(n);
-	      KRAFT(p,i,Y) -= tmp * d Y(n);
-	      KRAFT(p,i,Z) -= tmp * d Z(n);
+	      KRAFT(p,i,X) += 2.0*tmp * tau X(n);
+	      KRAFT(p,i,Y) += 2.0*tmp * tau Y(n);
+	      KRAFT(p,i,Z) += 2.0*tmp * tau Z(n);
 	    }
+	  else
+	    {
+	      KRAFT(p,i,X) += tmp * tau X(n) + f X(n);
+	      KRAFT(p,i,Y) += tmp * tau Y(n) + f Y(n);
+	      KRAFT(p,i,Z) += tmp * tau Z(n) + f Z(n);
+	    }
+
 	  
 	}
       }
       
-    
-      /* project spring force onto parallel direction */
-
-#ifdef OLDTANGENT
-      
-      // first implementation, no variable k,   
-  //     if(! ((steps >= neb_cineb_start) && (myimage == neb_climbing_image)))
-// 	{
-	  
-//             tmp = tmp_neb_ks[myimage] * df  /d2;
-//             for (k=0; k<NCELLS; k++) {
-//                 cell *p = CELLPTR(k);
-//                 for (i=0; i<p->n; i++) {
-                    
-//                     int n = NUMMER(p,i);
-//                     KRAFT(p,i,X) += tmp * d X(n);
-//                     KRAFT(p,i,Y) += tmp * d Y(n);
-//                     KRAFT(p,i,Z) += tmp * d Z(n);
-//                 }
-//             }
-// 	}
-      
-          
-      if(! ((steps >= neb_cineb_start) && (myimage == neb_climbing_image)))
-	{
-	  cosphi = drl / sqrt(dl2 * dr2);
-	  if (cosphi > 0.0) fphi = 0.5 * (1.0 + cos(M_PI * cosphi));
-	  else fphi = 1.0;
-	  tmp   = (1 - fphi) * (dr2 - dl2) * neb_k / d2;
-	  /* if (neb_nrep / 2 == myrank + 1) tmp = -tmp; */
-	  
-	  //  fphi *= neb_k;
-	  fphi *= tmp_neb_ks[myimage];
-	  for (k=0; k<NCELLS; k++) {
-	    cell *p = CELLPTR(k);
-	    for (i=0; i<p->n; i++) { 
-	      int n = NUMMER(p,i);
-	      KRAFT(p,i,X) += tmp * d X(n) + fphi * f X(n);
-	      KRAFT(p,i,Y) += tmp * d Y(n) + fphi * f Y(n);
-	      KRAFT(p,i,Z) += tmp * d Z(n) + fphi * f Z(n);
-	    }
-	  }
-	}
-
-      
-#else
-      if(! ((steps >= neb_cineb_start) && (myimage == neb_climbing_image)))
-	{
-	  normdl = SQRT(dl2);
-	  normdr = SQRT(dr2);
-	   inormd = -1.0/sqrt(d2);// should be the wrong sign, but seems to work???
-	   // inormd = 1.0/sqrt(d2);// should be the wrong sign, but seems to work???
-
-	  for (i=0; i<DIM*natoms; i+=DIM) {
-	    f[i  ] = inormd *d[i]   * 0.5*( (neb_ks[myimage]+ neb_ks[myimage-1])*normdl - \
-					    (neb_ks[myimage]+ neb_ks[myimage+1])*normdr );
-	    f[i+1] = inormd *d[i+1] * 0.5*( (neb_ks[myimage]+ neb_ks[myimage-1])*normdl - \
-					    (neb_ks[myimage]+ neb_ks[myimage+1])*normdr );
-	    f[i+2] = inormd *d[i+2] * 0.5*( (neb_ks[myimage]+ neb_ks[myimage-1])*normdl - \
-					    (neb_ks[myimage]+ neb_ks[myimage+1])*normdr );
-	  }
-
-	  for (k=0; k<NCELLS; k++)
-	    {
-	      cell *p = CELLPTR(k);
-	      for (i=0; i<p->n; i++) 
-		{ 
-		  int n = NUMMER(p,i);
-		
-		  
-		  KRAFT(p,i,X) += f X(n);
-		  KRAFT(p,i,Y) += f Y(n);
-		  KRAFT(p,i,Z) += f Z(n);
-		}
-	    }
-	}
-      
-#endif
   } //  if(myrank != 0 && mrank != neb_nrep-1)
   
 }
