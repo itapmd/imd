@@ -2818,7 +2818,7 @@ void write_fext(int steps)
   /* for (i=0; i<ep_nind; i++) ep_ymin[i] = tmpvec[i]; */
 
   
-  MPI_Allreduce( &ep_atomsincontact, &tmpvec, ep_n, INT, MPI_SUM, cpugrid);
+  MPI_Allreduce( &ep_atomsincontact, &tmpvec, ep_n, MPI_INT, MPI_SUM, cpugrid);
   for (i=0; i<ep_n; i++) ep_atomsincontact[i] = tmpvec[i];
   MPI_Allreduce( ep_fext, tmpvec, ep_n, REAL, MPI_SUM, cpugrid);
   for (i=0; i<ep_n; i++) ep_fext[i] = tmpvec[i];
