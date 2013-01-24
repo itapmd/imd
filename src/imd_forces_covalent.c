@@ -1570,7 +1570,15 @@ void do_neightab_complete() {
 			}
 		}
 #ifdef NBLIST
-		for (k=0; k<nallcells; k++) {
+		for (k=0; k<ncells; k++) {
+			c1 = cnbrs[k].np;
+			for (i=0; i<14; i++) {
+				c2 = cnbrs[k].nq[i];
+				if (c2<0) continue;
+				do_neightab2(cell_array + c1, cell_array + c2, pbc);
+			}
+		}
+		for (k=ncells; k<ncells2; k++) {
 			c1 = cnbrs[k].np;
 			for (i=0; i<14; i++) {
 				c2 = cnbrs[k].nq[i];
@@ -1579,13 +1587,20 @@ void do_neightab_complete() {
 			}
 		}
 #else
-		/* compute forces for all pairs of cells */
+		/* compute neighbor lists for all pairs of cells */
 		for (i=0; i<nlists; ++i) {
-			for (k=0; k<npairs2[i]; ++k) {
+			for (k = 0; k < npairs[i]; ++k) {
 				pair *P = pairs[i] + k;
-				pbc.x = P->ipbc[0]*box_x.x + P->ipbc[1]*box_y.x + P->ipbc[2]*box_z.x;
-				pbc.y = P->ipbc[0]*box_x.y + P->ipbc[1]*box_y.y + P->ipbc[2]*box_z.y;
-				pbc.z = P->ipbc[0]*box_x.z + P->ipbc[1]*box_y.z + P->ipbc[2]*box_z.z;
+				pbc.x = P->ipbc[0] * box_x.x + P->ipbc[1] * box_y.x + P->ipbc[2] * box_z.x;
+				pbc.y = P->ipbc[0] * box_x.y + P->ipbc[1] * box_y.y + P->ipbc[2] * box_z.y;
+				pbc.z = P->ipbc[0] * box_x.z + P->ipbc[1] * box_y.z + P->ipbc[2] * box_z.z;
+				do_neightab2(cell_array + P->np, cell_array + P->nq, pbc);
+			}
+			for (k = npairs[i]; k < npairs2[i]; ++k) {
+				pair *P = pairs[i] + k;
+				pbc.x = P->ipbc[0] * box_x.x + P->ipbc[1] * box_y.x + P->ipbc[2] * box_z.x;
+				pbc.y = P->ipbc[0] * box_x.y + P->ipbc[1] * box_y.y + P->ipbc[2] * box_z.y;
+				pbc.z = P->ipbc[0] * box_x.z + P->ipbc[1] * box_y.z + P->ipbc[2] * box_z.z;
 				do_neightab2(cell_array + P->np, cell_array + P->nq, pbc);
 			}
 		}
@@ -1605,6 +1620,7 @@ void do_neightab2(cell *p, cell *q, vektor pbc)
 {
   int i, j;
   int jstart;
+  int q_typ, p_typ;
   vektor d, tmp_d;
   real *qptr, radius2;
 
@@ -1614,6 +1630,7 @@ void do_neightab2(cell *p, cell *q, vektor pbc)
     tmp_d.x = ORT(p,i,X) - pbc.x;
     tmp_d.y = ORT(p,i,Y) - pbc.y;
     tmp_d.z = ORT(p,i,Z) - pbc.z;
+	p_typ   = SORTE(p,i);
 
 #ifdef TWOD
     jstart = (((p==q) && (pbc.x==0) && (pbc.y==0))               ? i+1 : 0);
@@ -1625,6 +1642,8 @@ void do_neightab2(cell *p, cell *q, vektor pbc)
     /* For each atom in neighboring cell */
     for (j = jstart; j < q->n; ++j) {
 
+	  q_typ = SORTE(q,j);
+	  
       /* Calculate distance  */
       d.x = *qptr++ - tmp_d.x;
       d.y = *qptr++ - tmp_d.y;
@@ -1642,7 +1661,7 @@ void do_neightab2(cell *p, cell *q, vektor pbc)
         if (neigh->n_max <= neigh->n) {
           increase_neightab( neigh, neigh->n_max + NEIGH_LEN_INC );
         }
-        neigh->typ[neigh->n] = 0;
+        neigh->typ[neigh->n] = q_typ;
         neigh->cl [neigh->n] = q;
         neigh->num[neigh->n] = j;
         tmp_ptr  = &neigh->dist[3*neigh->n];
@@ -1656,7 +1675,7 @@ void do_neightab2(cell *p, cell *q, vektor pbc)
         if (neigh->n_max <= neigh->n) {
           increase_neightab( neigh, neigh->n_max + NEIGH_LEN_INC );
         }
-        neigh->typ[neigh->n] = 0;
+        neigh->typ[neigh->n] = p_typ;
         neigh->cl [neigh->n] = p;
         neigh->num[neigh->n] = i;
         tmp_ptr  = &neigh->dist[3*neigh->n];
