@@ -101,21 +101,16 @@ void do_ada(void) {
 					co_x2 = 0;
 
 					for (j = 0; j < nneigh; j++) {
-						cell *q = NEIGH(p, i)->cl[j];
-						ii = NEIGH(p, i)->num[j];
-
-						v1.x = ORT(p,i,X) - ORT(q,ii,X);
-						v1.y = ORT(p,i,Y) - ORT(q,ii,Y);
-						v1.z = ORT(p,i,Z) - ORT(q,ii,Z);
-						/*reduce_displacement(&v1);*/
+						real *tmp_ptr = &(NEIGH(p,i)->dist[3*j]);
+						v1.x = *tmp_ptr; tmp_ptr++;
+						v1.y = *tmp_ptr; tmp_ptr++;
+						v1.z = *tmp_ptr;
 						v1_length = sqrt(SPROD(v1,v1));
 						for (jj = 0; jj < j; jj++) {
-							q = NEIGH(p, i)->cl[jj];
-							ii = NEIGH(p, i)->num[jj];
-							v2.x = ORT(p,i,X) - ORT(q,ii,X);
-							v2.y = ORT(p,i,Y) - ORT(q,ii,Y);
-							v2.z = ORT(p,i,Z) - ORT(q,ii,Z);
-							/*reduce_displacement(&v2);*/
+							real *tmp_ptr  = &NEIGH(p,i)->dist[3*jj];
+							v2.x = *tmp_ptr; tmp_ptr++;
+							v2.y = *tmp_ptr; tmp_ptr++;
+							v2.z = *tmp_ptr;
 							v2_length = sqrt(SPROD(v2,v2));
 							angle = SPROD(v1,v2);
 							angle /= (v1_length * v2_length);
@@ -172,21 +167,16 @@ void do_ada(void) {
 					co_x4 = 0;
 
 					for (j = 0; j < nneigh; j++) {
-						cell *q = NEIGH(p, i)->cl[j];
-						ii = NEIGH(p, i)->num[j];
-
-						v1.x = ORT(p,i,X) - ORT(q,ii,X);
-						v1.y = ORT(p,i,Y) - ORT(q,ii,Y);
-						v1.z = ORT(p,i,Z) - ORT(q,ii,Z);
-						/*reduce_displacement(&v1);*/
+						real *tmp_ptr = &(NEIGH(p,i)->dist[3*j]);
+						v1.x = *tmp_ptr; tmp_ptr++;
+						v1.y = *tmp_ptr; tmp_ptr++;
+						v1.z = *tmp_ptr;
 						v1_length = sqrt(SPROD(v1,v1));
 						for (jj = 0; jj < j; jj++) {
-							q = NEIGH(p, i)->cl[jj];
-							ii = NEIGH(p, i)->num[jj];
-							v2.x = ORT(p,i,X) - ORT(q,ii,X);
-							v2.y = ORT(p,i,Y) - ORT(q,ii,Y);
-							v2.z = ORT(p,i,Z) - ORT(q,ii,Z);
-							/*reduce_displacement(&v2);*/
+							real *tmp_ptr  = &NEIGH(p,i)->dist[3*jj];
+							v2.x = *tmp_ptr; tmp_ptr++;
+							v2.y = *tmp_ptr; tmp_ptr++;
+							v2.z = *tmp_ptr;
 							v2_length = sqrt(SPROD(v2,v2));
 							angle = SPROD(v1,v2);
 							angle /= (v1_length * v2_length);
@@ -240,21 +230,16 @@ void do_ada(void) {
 				co_x7 = 0;
 
 				for (j = 0; j < nneigh; j++) {
-					cell *q = NEIGH(p, i)->cl[j];
-					ii = NEIGH(p, i)->num[j];
-
-					v1.x = ORT(p,i,X) - ORT(q,ii,X);
-					v1.y = ORT(p,i,Y) - ORT(q,ii,Y);
-					v1.z = ORT(p,i,Z) - ORT(q,ii,Z);
-					/*reduce_displacement(&v1);*/
+					real *tmp_ptr = &(NEIGH(p,i)->dist[3*j]);
+					v1.x = *tmp_ptr; tmp_ptr++;
+					v1.y = *tmp_ptr; tmp_ptr++;
+					v1.z = *tmp_ptr;
 					v1_length = sqrt(SPROD(v1,v1));
 					for (jj = 0; jj < j; jj++) {
-						q = NEIGH(p, i)->cl[jj];
-						ii = NEIGH(p, i)->num[jj];
-						v2.x = ORT(p,i,X) - ORT(q,ii,X);
-						v2.y = ORT(p,i,Y) - ORT(q,ii,Y);
-						v2.z = ORT(p,i,Z) - ORT(q,ii,Z);
-						/*reduce_displacement(&v2);*/
+						real *tmp_ptr  = &NEIGH(p,i)->dist[3*jj];
+						v2.x = *tmp_ptr; tmp_ptr++;
+						v2.y = *tmp_ptr; tmp_ptr++;
+						v2.z = *tmp_ptr;
 						v2_length = sqrt(SPROD(v2,v2));
 						angle = SPROD(v1,v2);
 						angle /= (v1_length * v2_length);
