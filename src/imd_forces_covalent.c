@@ -904,6 +904,8 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 
 #endif /* TERSOFF */
 
+
+
 #ifdef TERSOFFMOD
 
 /******************************************************************************
