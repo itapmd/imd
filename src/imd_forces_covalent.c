@@ -904,8 +904,6 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 
 #endif /* TERSOFF */
 
-
-
 #ifdef TERSOFFMOD
 
 /******************************************************************************
@@ -920,294 +918,315 @@ void do_forces2(cell *p, real *Epot, real *Virial,
                 real *Vir_yz, real *Vir_zx, real *Vir_xy)
 {
 
-	static real   *r = NULL, *fc = NULL, *dfc = NULL;
-	static vektor *er = NULL;
-	static int    curr_len = 0;
+  static real *r = NULL, *fc = NULL, *dfc = NULL;
+  static vektor *er = NULL;
+  static int curr_len = 0;
 
-	neightab *neigh;
-	cell   *jcell, *kcell;
+  neightab *neigh;
+  cell *jcell, *kcell;
 
-	real   *tmpptr;
-	real   tmp, tmp1, tmp2, tmp3, tmp4;
-	real cos_theta, tmp_g, tmp_dg_Cos, tmp_zeta, tmp_dZeta_cos, 
-			tmp_dZeta_ij, tmp_dZeta_ik, tmp_b, tmp_phi;
+  real *tmpptr;
+  real tmp, tmp1, tmp2, tmp3, tmp4;
+  real cos_theta, g, dg_cos, zeta, dzeta_cos, dzeta_ij, dzeta_ik, b, phi;
 
-	vektor dcos_j, dcos_k, tmpvec_i, tmpvec_j, force_j;
-	static vektor *tmpvec_k = NULL;
-	
-	real   tmp_virial = 0.0;
+  vektor dcos_j, dcos_k, gradi_zeta, gradj_zeta, force_j;
+  static vektor *gradk_zeta = NULL;
+  
+  real tmp_virial = 0.0;
 #ifdef P_AXIAL
-	vektor tmp_vir_vect = {0.0, 0.0, 0.0};
+  vektor tmp_vir_vect = {0.0, 0.0, 0.0};
 #endif
 
 
-	// memory allocation
-	if (curr_len < neigh_len) {
-	    er   = (vektor *) realloc( er,   neigh_len * sizeof(vektor) );
-	    r    = (real *)   realloc( r,    neigh_len * sizeof(real)   );
-	    fc   = (real *)   realloc( fc,   neigh_len * sizeof(real)   );
-	    dfc  = (real *)   realloc( dfc,  neigh_len * sizeof(real)   );
-	    tmpvec_k = (vektor *) realloc( tmpvec_k,  neigh_len * sizeof(vektor) );
-	    if ((er==NULL) || (r==NULL) || (fc==NULL) || (dfc==NULL) || (tmpvec_k==NULL))
-	    	error("cannot allocate memory for temporary neighbor data");
-	    curr_len = neigh_len;
-	}
+  // memory allocation
+  if (curr_len < neigh_len) {
+    er   = (vektor *) realloc( er,   neigh_len * sizeof(vektor) );
+    r    = (real *)   realloc( r,    neigh_len * sizeof(real)   );
+    fc   = (real *)   realloc( fc,   neigh_len * sizeof(real)   );
+    dfc  = (real *)   realloc( dfc,  neigh_len * sizeof(real)   );
+    gradk_zeta = (vektor *) realloc( gradk_zeta,  neigh_len * sizeof(vektor) );
+    if ((er==NULL) || (r==NULL) || (fc==NULL) || (dfc==NULL) || (gradk_zeta==NULL))
+      error("cannot allocate memory for temporary neighbor data");
+    curr_len = neigh_len;
+  }
 
-	int    i, j, k, p_typ, j_typ, k_typ, knum, jnum;
-	
-	/* For each atom in cell */
-	for (i=0; i<p->n; ++i) {
+  int i, j, k, p_typ, j_typ, k_typ, knum, jnum, i_id, j_id;
+  
+  /* For each atom in cell */
+  for (i=0; i<p->n; ++i) {
 
-		p_typ   = SORTE(p,i);
-    	neigh   = NEIGH(p,i);
+    p_typ   = SORTE(p,i);
+    neigh   = NEIGH(p,i);
+    i_id = NUMMER(p,i);
 
-	    /* construct some data for all neighbors */
-	    tmpptr = neigh->dist;
-	    for (j=0; j<neigh->n; ++j) {
+    /* construct some data for all neighbors */
+    tmpptr = neigh->dist;
 
-			/* type, distance vector, radii */
-			j_typ   = neigh->typ[j];
-			er[j].x  = *tmpptr++;
-			er[j].y  = *tmpptr++;
-			er[j].z  = *tmpptr++;
-			r[j]    = sqrt(SPROD(er[j],er[j]));
-			er[j].x /= r[j]; er[j].y /= r[j]; er[j].z /= r[j];
+    for (j=0; j<neigh->n; ++j) {
 
-			/* cutoff function */
-			tmp1   = M_PI / ( ter_r_cut[p_typ][j_typ] - ter_r0[p_typ][j_typ] );
-			tmp2   = tmp1 * ( r[j] - ter_r0[p_typ][j_typ] );
-			if ( r[j] < ter_r0[p_typ][j_typ] ) {
-				fc[j]   = 1.0; 
-				dfc[j]  = 0.0;
-			}else if ( r[j] > ter_r_cut[p_typ][j_typ] ) {
-				fc[j]   = 0.0;
-				dfc[j]  = 0.0;
-			}else {
-				//fc[j]   = 0.5 * ( 1.0 + cos( tmp2 ) );
-				//dfc[j]  = - 0.5 * tmp1 * sin( tmp2 );
-				fc[j]   = 0.5 * ( 1.0 + 1.125*cos(tmp2) - 0.125*cos(3.0*tmp2) );
-				dfc[j]  = - 0.5 * tmp1 * ( 1.125*sin(tmp2) - 0.375*sin(3.0*tmp2) );
-			}      
-		} /* j */
+      /* type, distance vector, radii */
+      j_typ   = neigh->typ[j];
+      er[j].x  = *tmpptr++;
+      er[j].y  = *tmpptr++;
+      er[j].z  = *tmpptr++;
+      r[j]    = sqrt(SPROD(er[j],er[j]));
+      er[j].x /= r[j]; er[j].y /= r[j]; er[j].z /= r[j];
 
-		/* for each neighbor of i */
-		for (j=0; j<neigh->n; ++j) {
+      /* cutoff function */
+      tmp1   = M_PI / ( ter_r_cut[p_typ][j_typ] - ter_r0[p_typ][j_typ] );
+      tmp2   = tmp1 * ( r[j] - ter_r0[p_typ][j_typ] );
+      if ( r[j] < ter_r0[p_typ][j_typ] ) {
+        fc[j]   = 1.0; 
+        dfc[j]  = 0.0;
+      }else if ( r[j] > ter_r_cut[p_typ][j_typ] ) {
+        fc[j]   = 0.0;
+        dfc[j]  = 0.0;
+      }else {
+        //fc[j]   = 0.5 * ( 1.0 + cos( tmp2 ) );
+        //dfc[j]  = - 0.5 * tmp1 * sin( tmp2 );
+        fc[j]   = 0.5 * ( 1.0 + 1.125*cos(tmp2) - 0.125*cos(3.0*tmp2) );
+        dfc[j]  = - 0.5 * tmp1 * ( 1.125*sin(tmp2) - 0.375*sin(3.0*tmp2) );
+      }
+    } /* j */
 
-			j_typ = neigh->typ[j];
+    /* for each neighbor of i */
+    for (j=0; j<neigh->n; ++j) {
 
-			/* shortcut for types without 3-body interactions */
-			if (ter_b[p_typ][j_typ] == 0.0) continue;
+      j_typ = neigh->typ[j];
 
-			jcell = (cell *) neigh->cl [j];
-			jnum  = neigh->num[j];
+      /* shortcut for types without 3-body interactions */
+      if (ter_b[p_typ][j_typ] == 0.0) continue;
 
-			tmp_zeta  = 0.0; tmp_dZeta_ij = 0.0;
-			tmpvec_i.x = 0.0; tmpvec_i.y = 0.0; tmpvec_i.z = 0.0;
-			tmpvec_j.x = 0.0; tmpvec_j.y = 0.0; tmpvec_j.z = 0.0;
+      jcell = (cell *) neigh->cl [j];
+      jnum  = neigh->num[j];
+      j_id = NUMMER(jcell,jnum);
 
-			/* for each neighbor of i other than j */
-			for (k=0; k<neigh->n; ++k) {
-                if (k==j) continue;
+      zeta  = 0.0; dzeta_ij = 0.0;
+      gradi_zeta.x = 0.0; gradi_zeta.y = 0.0; gradi_zeta.z = 0.0;
+      gradj_zeta.x = 0.0; gradj_zeta.y = 0.0; gradj_zeta.z = 0.0;
 
-				//k_typ = neigh->typ[k];
+      /* for each neighbor of i other than j */
+      for (k=0; k<neigh->n; ++k) {
+        if (k==j) continue;
 
-				cos_theta = SPROD(er[j],er[k]);
+        //k_typ = neigh->typ[k];
 
-				/* derivatives of cos(theta), 
-	   			note that dcos_i + dcos_j + dcos_k = 0 */
-				dcos_j.x = (er[k].x - er[j].x*cos_theta)/r[j]; 
-				dcos_j.y = (er[k].y - er[j].y*cos_theta)/r[j];
-				dcos_j.z = (er[k].z - er[j].z*cos_theta)/r[j];
+        cos_theta = SPROD(er[j],er[k]);
 
-				dcos_k.x = (er[j].x - er[k].x*cos_theta)/r[k];
-				dcos_k.y = (er[j].y - er[k].y*cos_theta)/r[k];
-				dcos_k.z = (er[j].z - er[k].z*cos_theta)/r[k];
-				/* -------------------------------------*/
+        /* derivatives of cos(theta), 
+          note that dcos_i + dcos_j + dcos_k = 0 */
+        dcos_j.x = (er[k].x - er[j].x*cos_theta)/r[j];
+        dcos_j.y = (er[k].y - er[j].y*cos_theta)/r[j];
+        dcos_j.z = (er[k].z - er[j].z*cos_theta)/r[j];
+
+        dcos_k.x = (er[j].x - er[k].x*cos_theta)/r[k];
+        dcos_k.y = (er[j].y - er[k].y*cos_theta)/r[k];
+        dcos_k.z = (er[j].z - er[k].z*cos_theta)/r[k];
+        /* -------------------------------------*/
 #ifdef TERSOFFMOD2
-				tmp1 = ter_h[p_typ][j_typ] - cos_theta;
 
-				tmp2 = ter_c4[p_typ][j_typ] * exp(-ter_c5[p_typ][j_typ]*tmp1*tmp1);
-				tmp3 = ter_c2[p_typ][j_typ]*tmp1*tmp1/(ter_c3[p_typ][j_typ]+tmp1*tmp1);
-				tmp_g= ter_c1[p_typ][j_typ] + tmp3*(1. + tmp2);
+        /* angular-dependent term g_jik and its derivative */
 
-				tmp4 = 2.*ter_c3[p_typ][j_typ]*tmp3*tmp3/(ter_c2[p_typ][j_typ]*tmp1*tmp1*tmp1);
-				tmp_dg_Cos = -tmp4 - tmp2*(tmp4 - 2.*ter_c5[p_typ][j_typ]*tmp1*tmp3);
+        /* argument */
+        tmp1 = ter_h[p_typ][j_typ] - cos_theta;
+        /* denominator */
+        tmp2 = 1.0/(ter_c3[p_typ][j_typ]+tmp1*tmp1);
+        /* exp. term */
+        tmp3 = ter_c4[p_typ][j_typ] * exp(-ter_c5[p_typ][j_typ]*tmp1*tmp1);
+        /* g_ijk */
+        g = ter_c1[p_typ][j_typ] + ter_c2[p_typ][j_typ]*tmp1*tmp1*tmp2*(1.0+tmp3);
+        /* dg/dcos */
+        dg_cos = 2.0*ter_c2[p_typ][j_typ]*tmp1*tmp2*
+              (ter_c5[p_typ][j_typ]*tmp1*tmp1*tmp3 - ter_c3[p_typ][j_typ]*tmp2*(1.0+tmp3));
 
 
-				tmp1 = r[j] - r[k];
-				tmp2 = pow(tmp1, ter_beta[p_typ][j_typ] - 1);
-				tmp3 = exp(ter_alpha[p_typ][j_typ] * pow(tmp1, ter_beta[p_typ][j_typ]));
+        /* zeta term and its derivatives */
 
-				tmp_dZeta_ik  = (dfc[k]-ter_alpha[p_typ][j_typ]*ter_beta[p_typ][j_typ]*fc[k]*tmp2)*tmp_g*tmp3;
-				
+        tmp1 = r[j] - r[k];
+        tmp2 = ter_alpha[p_typ][j_typ]*ter_beta[p_typ][j_typ]*pow(tmp1, ter_beta[p_typ][j_typ] - 1);
+        tmp3 = exp(ter_alpha[p_typ][j_typ] * pow(tmp1, ter_beta[p_typ][j_typ]));
+
+        dzeta_ik  = (dfc[k]-fc[k]*tmp2)*g*tmp3;
+        
 #else
-				tmp1 = ters_h[p_typ] - cos_theta;
 
-				tmp2 = ters_c4[p_typ] * exp(-ters_c5[p_typ]*tmp1*tmp1);
-				tmp3 = ters_c2[p_typ]*tmp1*tmp1/(ters_c3[p_typ]+tmp1*tmp1);
-				tmp_g= ters_c1[p_typ] + tmp3*(1. + tmp2);
+        /* angular-dependent term g_jik and its derivative */
 
-				tmp4 = 2.*ters_c3[p_typ]*tmp3*tmp3/(ters_c2[p_typ]*tmp1*tmp1*tmp1);
-				tmp_dg_Cos = -tmp4 - tmp2*(tmp4 - 2.*ters_c5[p_typ]*tmp1*tmp3);
+        /* argument */
+        tmp1 = ters_h[p_typ] - cos_theta;
+        /* denominator */
+        tmp2 = 1.0/(ters_c3[p_typ]+tmp1*tmp1);
+        /* exp. term */
+        tmp3 = ters_c4[p_typ] * exp(-ters_c5[p_typ]*tmp1*tmp1);
+        /* g_ijk */
+        g = ters_c1[p_typ] + ters_c2[p_typ]*tmp1*tmp1*tmp2*(1.0+tmp3);
+        /* dg/dcos */
+        dg_cos = 2.0*ters_c2[p_typ]*tmp1*tmp2*
+              (ters_c5[p_typ]*tmp1*tmp1*tmp3 - ters_c3[p_typ]*tmp2*(1.0+tmp3));
 
 
-				tmp1 = r[j] - r[k];
-				tmp2 = pow(tmp1, ters_beta[p_typ] - 1);
-				tmp3 = exp(ters_alpha[p_typ] * pow(tmp1, ters_beta[p_typ]));
+        /* zeta term and its derivatives */
 
-				tmp_dZeta_ik  = (dfc[k]-ters_alpha[p_typ]*ters_beta[p_typ]*fc[k]*tmp2)*tmp_g*tmp3;
+        tmp1 = r[j] - r[k];
+        tmp2 = ters_alpha[p_typ]*ters_beta[p_typ]*pow(tmp1, ters_beta[p_typ] - 1);
+        tmp3 = exp(ters_alpha[p_typ] * pow(tmp1, ters_beta[p_typ]));
+
+        dzeta_ik  = (dfc[k]-fc[k]*tmp2)*g*tmp3;
 #endif
-				tmp1 = fc[k]*tmp_g*tmp3;
-				tmp_zeta  += tmp1;
-				tmp_dZeta_ij += tmp1*tmp2;
-			
-				tmp_dZeta_cos = fc[k]*tmp3*tmp_dg_Cos;
+        tmp4 = fc[k]*g*tmp3;
 
-				tmpvec_k[k].x = tmp_dZeta_cos*dcos_k.x + tmp_dZeta_ik*er[k].x;
-				tmpvec_k[k].y = tmp_dZeta_cos*dcos_k.y + tmp_dZeta_ik*er[k].y;
-				tmpvec_k[k].z = tmp_dZeta_cos*dcos_k.z + tmp_dZeta_ik*er[k].z;
+        zeta  += tmp4;
+        dzeta_ij += tmp4*tmp2;
+        dzeta_cos = fc[k]*dg_cos*tmp3;
 
-				tmpvec_i.x   += -tmp_dZeta_ik*er[k].x  - tmp_dZeta_cos*(dcos_j.x+dcos_k.x);
-				tmpvec_i.y   += -tmp_dZeta_ik*er[k].y  - tmp_dZeta_cos*(dcos_j.y+dcos_k.y);
-				tmpvec_i.z   += -tmp_dZeta_ik*er[k].z  - tmp_dZeta_cos*(dcos_j.z+dcos_k.z);
+        gradk_zeta[k].x = dzeta_cos*dcos_k.x + dzeta_ik*er[k].x;
+        gradk_zeta[k].y = dzeta_cos*dcos_k.y + dzeta_ik*er[k].y;
+        gradk_zeta[k].z = dzeta_cos*dcos_k.z + dzeta_ik*er[k].z;
 
-				tmpvec_j.x   += tmp_dZeta_cos*dcos_j.x;
-				tmpvec_j.y   += tmp_dZeta_cos*dcos_j.y;
-				tmpvec_j.z   += tmp_dZeta_cos*dcos_j.z;
+        gradi_zeta.x   -= gradk_zeta[k].x;
+        gradi_zeta.y   -= gradk_zeta[k].y;
+        gradi_zeta.z   -= gradk_zeta[k].z;
+
+        gradj_zeta.x   += dzeta_cos*dcos_j.x;
+        gradj_zeta.y   += dzeta_cos*dcos_j.y;
+        gradj_zeta.z   += dzeta_cos*dcos_j.z;
  
-			}
+      }
+
+      gradj_zeta.x   += dzeta_ij*er[j].x;
+      gradj_zeta.y   += dzeta_ij*er[j].y;
+      gradj_zeta.z   += dzeta_ij*er[j].z;
+
 #ifdef TERSOFFMOD2
-			tmp_dZeta_ij *= ter_alpha[p_typ][j_typ]*ter_beta[p_typ][j_typ]; 
+      tmp1 = pow(zeta, ter_eta[p_typ][j_typ]);
+      b = pow(1. + tmp1, -ter_delta[p_typ][j_typ]);
 
-			tmp1 = pow(tmp_zeta, ter_eta[p_typ][j_typ]);
+      tmp2 = 0.5*b*ter_b[p_typ][j_typ]*exp(-ter_mu[p_typ][j_typ]*r[j]);
 
-			tmp_b = pow(1. + tmp1, -ter_delta[p_typ][j_typ]);
-
-			if ( tmp_zeta == 0.0 )   /* only one neighbor of i */
-				tmp3 = 0.0;
-			else
-				tmp3 = tmp2*fc[j]*ter_eta[p_typ][j_typ]*ter_delta[p_typ][j_typ]*tmp1/((1.+tmp1)*tmp_zeta*2.);
-
+      if ( zeta == 0.0 )   /* only one neighbor of i */
+        tmp3 = 0.0;
+      else
+        tmp3 = tmp2*fc[j]*ter_eta[p_typ][j_typ]*ter_delta[p_typ][j_typ]*tmp1/((1.+tmp1)*zeta);
 #else
-			tmp_dZeta_ij *= ters_alpha[p_typ]*ters_beta[p_typ]; 
+      tmp1 = pow(zeta, ters_eta[p_typ]);
+      b = pow(1. + tmp1, -ters_delta[p_typ]);
 
-			tmp1 = pow(tmp_zeta, ters_eta[p_typ]);
+      tmp2 = 0.5*b*ter_b[p_typ][j_typ]*exp(-ter_mu[p_typ][j_typ]*r[j]);
 
-			tmp_b = pow(1. + tmp1, -ters_delta[p_typ]);
-
-			if ( tmp_zeta == 0.0 )   /* only one neighbor of i */
-				tmp3 = 0.0;
-			else
-				tmp3 = tmp2*fc[j]*ters_eta[p_typ]*ters_delta[p_typ]*tmp1/((1.+tmp1)*tmp_zeta*2.);
-
+      if ( zeta == 0.0 )   /* only one neighbor of i */
+        tmp3 = 0.0;
+      else
+        tmp3 = tmp2*fc[j]*ters_eta[p_typ]*ters_delta[p_typ]*tmp1/((1.+tmp1)*zeta);
 #endif
 
-			tmp2 = tmp_b*ter_b[p_typ][j_typ]*exp(-ter_mu[p_typ][j_typ]*r[j]);
+      /* attractive part */
+      phi = -tmp2;
+      tmp4 = -tmp2*(dfc[j]-ter_mu[p_typ][j_typ]*fc[j]);
 
-			tmp1 = ter_a[p_typ][j_typ]*exp(-ter_la[p_typ][j_typ]*r[j])*(dfc[j]-ter_la[p_typ][j_typ]*fc[j])
-					- tmp2*(dfc[j]-ter_mu[p_typ][j_typ]*fc[j]);
+      /* repulsive part */
+      tmp1 = 0.5*ter_a[p_typ][j_typ]*exp(-ter_la[p_typ][j_typ]*r[j]);
+      phi += tmp1;
+      tmp4 += tmp1*(dfc[j]-ter_la[p_typ][j_typ]*fc[j]);
 
-			tmp_phi = fc[j]*(ter_a[p_typ][j_typ]*exp(-ter_la[p_typ][j_typ]*r[j]) - tmp2);
-			
-			*Epot   += 0.5*tmp_phi;
+      *Epot += fc[j] * phi;
+      phi *= 0.5;  /* avoid double counting */
 
-			force_j.x = -0.5*tmp1*er[j].x - tmp3*(tmp_dZeta_ij*er[j].x + tmpvec_j.x);
-			force_j.y = -0.5*tmp1*er[j].y - tmp3*(tmp_dZeta_ij*er[j].y + tmpvec_j.y);
-			force_j.z = -0.5*tmp1*er[j].z - tmp3*(tmp_dZeta_ij*er[j].z + tmpvec_j.z);
+      force_j.x = -tmp4*er[j].x - tmp3*gradj_zeta.x;
+      force_j.y = -tmp4*er[j].y - tmp3*gradj_zeta.y;
+      force_j.z = -tmp4*er[j].z - tmp3*gradj_zeta.z;
 
-			/* update force on particle j */
-			KRAFT(jcell,jnum,X) += force_j.x;
-			KRAFT(jcell,jnum,Y) += force_j.y;
-			KRAFT(jcell,jnum,Z) += force_j.z;
-			POTENG(jcell,jnum)  += 0.25*tmp_phi;
-
-			KRAFT(p,i,X) -= tmp3*(tmpvec_i.x + tmpvec_j.x) + force_j.x;
-			KRAFT(p,i,Y) -= tmp3*(tmpvec_i.y + tmpvec_j.y) + force_j.y;
-			KRAFT(p,i,Z) -= tmp3*(tmpvec_i.z + tmpvec_j.z) + force_j.z;
-			POTENG(p,i)  += 0.25*tmp_phi;
-			
+      /* update force on particle j */
+      KRAFT(jcell,jnum,X) += force_j.x;
+      KRAFT(jcell,jnum,Y) += force_j.y;
+      KRAFT(jcell,jnum,Z) += force_j.z;
+      POTENG(jcell,jnum)  += fc[j]*phi; 
+      /* update force on particle i */
+      KRAFT(p,i,X) -= tmp3*gradi_zeta.x + force_j.x;
+      KRAFT(p,i,Y) -= tmp3*gradi_zeta.y + force_j.y;
+      KRAFT(p,i,Z) -= tmp3*gradi_zeta.z + force_j.z;
+      POTENG(p,i)  += fc[j]*phi;
+      
 #ifdef P_AXIAL
-			tmp_vir_vect.x += r[j]*er[j].x * force_j.x;
-			tmp_vir_vect.y += r[j]*er[j].y * force_j.y;
-			tmp_vir_vect.z += r[j]*er[j].z * force_j.z;
+      tmp_vir_vect.x += r[j]*er[j].x * force_j.x;
+      tmp_vir_vect.y += r[j]*er[j].y * force_j.y;
+      tmp_vir_vect.z += r[j]*er[j].z * force_j.z;
 #else
-			tmp_virial     += r[j]*SPROD(er[j],force_j);
+      tmp_virial     += r[j]*SPROD(er[j],force_j);
 #endif
 #ifdef STRESS_TENS
-			if (do_press_calc) {
-				tmp = 0.5 * r[j]*er[j].x * force_j.x; 
-				PRESSTENS(p,i,xx)        -= tmp;
-				PRESSTENS(jcell,jnum,xx) -= tmp;
-				tmp = 0.5 * r[j]*er[j].y * force_j.y;
-				PRESSTENS(p,i,yy)        -= tmp;
-				PRESSTENS(jcell,jnum,yy) -= tmp;
-				tmp = 0.5 * r[j]*er[j].z * force_j.z;
-				PRESSTENS(p,i,zz)        -= tmp;
-				PRESSTENS(jcell,jnum,zz) -= tmp;
-				tmp = 0.25 * r[j]*( er[j].y * force_j.z + er[j].z*force_j.y );
-				PRESSTENS(p,i,yz)        -= tmp;
-				PRESSTENS(jcell,jnum,yz) -= tmp;
-				tmp = 0.25 * r[j]*( er[j].z * force_j.x + er[j].x*force_j.z );
-				PRESSTENS(p,i,zx)        -= tmp;
-				PRESSTENS(jcell,jnum,zx) -= tmp;
-				tmp = 0.25 * r[j]*( er[j].x * force_j.y + er[j].y*force_j.x );
-				PRESSTENS(p,i,xy)        -= tmp;
-				PRESSTENS(jcell,jnum,xy) -= tmp;
-			}
+      if (do_press_calc) {
+        tmp = 0.5 * r[j]*er[j].x * force_j.x; 
+        PRESSTENS(p,i,xx)        -= tmp;
+        PRESSTENS(jcell,jnum,xx) -= tmp;
+        tmp = 0.5 * r[j]*er[j].y * force_j.y;
+        PRESSTENS(p,i,yy)        -= tmp;
+        PRESSTENS(jcell,jnum,yy) -= tmp;
+        tmp = 0.5 * r[j]*er[j].z * force_j.z;
+        PRESSTENS(p,i,zz)        -= tmp;
+        PRESSTENS(jcell,jnum,zz) -= tmp;
+        tmp = 0.25 * r[j]*( er[j].y * force_j.z + er[j].z*force_j.y );
+        PRESSTENS(p,i,yz)        -= tmp;
+        PRESSTENS(jcell,jnum,yz) -= tmp;
+        tmp = 0.25 * r[j]*( er[j].z * force_j.x + er[j].x*force_j.z );
+        PRESSTENS(p,i,zx)        -= tmp;
+        PRESSTENS(jcell,jnum,zx) -= tmp;
+        tmp = 0.25 * r[j]*( er[j].x * force_j.y + er[j].y*force_j.x );
+        PRESSTENS(p,i,xy)        -= tmp;
+        PRESSTENS(jcell,jnum,xy) -= tmp;
+      }
 #endif
 
-			/* update force on particle k */
-			for (k=0; k<neigh->n; ++k) 
-				if (k!=j) {
-					kcell = (cell *) neigh->cl [k];
-					knum  = neigh->num[k];
-					KRAFT(kcell,knum,X) -= tmp3 * tmpvec_k[k].x;
-					KRAFT(kcell,knum,Y) -= tmp3 * tmpvec_k[k].y;
-					KRAFT(kcell,knum,Z) -= tmp3 * tmpvec_k[k].z;
+      /* update force on particle k */
+      for (k=0; k<neigh->n; ++k) 
+        if (k!=j) {
+          kcell = (cell *) neigh->cl [k];
+          knum  = neigh->num[k];
+          KRAFT(kcell,knum,X) -= tmp3 * gradk_zeta[k].x;
+          KRAFT(kcell,knum,Y) -= tmp3 * gradk_zeta[k].y;
+          KRAFT(kcell,knum,Z) -= tmp3 * gradk_zeta[k].z;
 
 #ifdef P_AXIAL
-					tmp_vir_vect.x -= tmp3 * r[k] * er[k].x * tmpvec_k[k].x;
-					tmp_vir_vect.y -= tmp3 * r[k] * er[k].y * tmpvec_k[k].y;
-					tmp_vir_vect.z -= tmp3 * r[k] * er[k].z * tmpvec_k[k].z;
+          tmp_vir_vect.x -= tmp3 * r[k] * er[k].x * gradk_zeta[k].x;
+          tmp_vir_vect.y -= tmp3 * r[k] * er[k].y * gradk_zeta[k].y;
+          tmp_vir_vect.z -= tmp3 * r[k] * er[k].z * gradk_zeta[k].z;
 #else
-					tmp_virial     -= tmp3 * r[k] * SPROD(er[k],tmpvec_k[k]);
+          tmp_virial     -= tmp3 * r[k] * SPROD(er[k],gradk_zeta[k]);
 #endif
 #ifdef STRESS_TENS
-					if (do_press_calc) {
-						tmp = 0.5 * r[k] * er[k].x * tmp3 * tmpvec_k[k].x;
-						PRESSTENS(p,i,xx)        += tmp;
-						PRESSTENS(jcell,jnum,xx) += tmp;
-						tmp = 0.5 * r[k] * er[k].y * tmp3 * tmpvec_k[k].y;
-						PRESSTENS(p,i,yy)        += tmp;
-						PRESSTENS(jcell,jnum,yy) += tmp;
-						tmp = 0.5 * r[k] * er[k].z * tmp3 * tmpvec_k[k].z;
-						PRESSTENS(p,i,zz)        += tmp;
-						PRESSTENS(jcell,jnum,zz) += tmp;
-						tmp = 0.25 *r[k]*tmp3*( er[k].y * tmpvec_k[k].z + er[k].z * tmpvec_k[k].y );
-						PRESSTENS(p,i,yz)        += tmp;
-						PRESSTENS(jcell,jnum,yz) += tmp;
-						tmp = 0.25 *r[k]*tmp3*( er[k].z * tmpvec_k[k].x + er[k].x * tmpvec_k[k].z );
-						PRESSTENS(p,i,zx)        += tmp;
-						PRESSTENS(jcell,jnum,zx) += tmp;	  
-						tmp = 0.25 *r[k]*tmp3*( er[k].x * tmpvec_k[k].y + er[k].y * tmpvec_k[k].x );
-						PRESSTENS(p,i,xy)        += tmp;
-						PRESSTENS(jcell,jnum,xy) += tmp;
-					}
+          if (do_press_calc) {
+            tmp = 0.5 * r[k] * er[k].x * tmp3 * gradk_zeta[k].x;
+            PRESSTENS(p,i,xx)        += tmp;
+            PRESSTENS(jcell,jnum,xx) += tmp;
+            tmp = 0.5 * r[k] * er[k].y * tmp3 * gradk_zeta[k].y;
+            PRESSTENS(p,i,yy)        += tmp;
+            PRESSTENS(jcell,jnum,yy) += tmp;
+            tmp = 0.5 * r[k] * er[k].z * tmp3 * gradk_zeta[k].z;
+            PRESSTENS(p,i,zz)        += tmp;
+            PRESSTENS(jcell,jnum,zz) += tmp;
+            tmp = 0.25 *r[k]*tmp3*( er[k].y * gradk_zeta[k].z + er[k].z * gradk_zeta[k].y );
+            PRESSTENS(p,i,yz)        += tmp;
+            PRESSTENS(jcell,jnum,yz) += tmp;
+            tmp = 0.25 *r[k]*tmp3*( er[k].z * gradk_zeta[k].x + er[k].x * gradk_zeta[k].z );
+            PRESSTENS(p,i,zx)        += tmp;
+            PRESSTENS(jcell,jnum,zx) += tmp;    
+            tmp = 0.25 *r[k]*tmp3*( er[k].x * gradk_zeta[k].y + er[k].y * gradk_zeta[k].x );
+            PRESSTENS(p,i,xy)        += tmp;
+            PRESSTENS(jcell,jnum,xy) += tmp;
+          }
 #endif 
-				}
-		}
-
-	}
+        }
+    }
+  }
 
 #ifdef P_AXIAL
-	*Vir_xx += tmp_vir_vect.x;
-	*Virial += tmp_vir_vect.x;
-	*Vir_yy += tmp_vir_vect.y;
-	*Virial += tmp_vir_vect.y;
-	*Vir_zz += tmp_vir_vect.z;
-	*Virial += tmp_vir_vect.z;
+  *Vir_xx += tmp_vir_vect.x;
+  *Virial += tmp_vir_vect.x;
+  *Vir_yy += tmp_vir_vect.y;
+  *Virial += tmp_vir_vect.y;
+  *Vir_zz += tmp_vir_vect.z;
+  *Virial += tmp_vir_vect.z;
 #else
-	*Virial += tmp_virial;
+  *Virial += tmp_virial;
 #endif
 
 }
