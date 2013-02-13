@@ -2,7 +2,7 @@
 #
 # script to convert IMD atom files to AtomEye extended cfg format
 #
-# Authors: Erik Bitzek, Franz Gähler
+# Authors: Erik Bitzek, Franz G?hler
 #
 # currently supports only 3D ASCII atom files having a correct header
 #
