@@ -2136,6 +2136,18 @@ else if (strcasecmp(token, "laser_t_0")==0){
       /* time of maximum pulse intensity */
       getparam("laser_t_0", &laser_t_0, PARAM_REAL, 1,1);
     }
+else if (strcasecmp(token, "laser_sigma_e1")==0){
+      /* area density of pulse energy (for rescaling method) */
+      getparam("laser_sigma_e1", &laser_sigma_e1, PARAM_REAL, 1,1);
+    }
+else if (strcasecmp(token, "laser_sigma_t1")==0){
+      /* Pulse duration ( power is 1/e*P_max at t=t_0 +/- sigma_t ) */
+      getparam("laser_sigma_t1", &laser_sigma_t1, PARAM_REAL, 1,1);
+    }
+else if (strcasecmp(token, "laser_t_1")==0){
+      /* time of maximum of second pulse intensity */
+      getparam("laser_t_1", &laser_t_1, PARAM_REAL, 1,1);
+    }
 else if (strcasecmp(token, "laser_atom_vol")==0){
       /* Volume per particle (inverse density) */
       getparam("laser_atom_vol", &laser_atom_vol, PARAM_REAL, 1,1);
@@ -4272,6 +4284,9 @@ void broadcast_params() {
   MPI_Bcast( &laser_sigma_e,    1, REAL,  0, MPI_COMM_WORLD);
   MPI_Bcast( &laser_sigma_t,    1, REAL,  0, MPI_COMM_WORLD);
   MPI_Bcast( &laser_t_0,        1, REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &laser_sigma_e1,    1, REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &laser_sigma_t1,    1, REAL,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &laser_t_1,        1, REAL,  0, MPI_COMM_WORLD);
 #ifdef LASERYZ
   MPI_Bcast( &laser_sigma_w_y,    1,    REAL,  0, MPI_COMM_WORLD);
   MPI_Bcast( &laser_sigma_w_z,    1,    REAL,  0, MPI_COMM_WORLD);

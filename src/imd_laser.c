@@ -278,13 +278,22 @@ void init_laser()
  int k;
 
 #ifdef LASERYZ
-  laser_p_peak=laser_mu*laser_sigma_e/laser_sigma_t/sqrt(2*M_PI);
+  laser_p_peak0=laser_mu*laser_sigma_e/laser_sigma_t/sqrt(2*M_PI);
   //printf("ppeak: %f mu: %f se: %f", laser_p_peak, laser_mu, laser_sigma_e);
 #else  
    laser_p_peak=laser_mu*laser_sigma_e/laser_sigma_t/sqrt(2*M_PI); 
 #endif
-
   laser_sigma_t_squared=laser_sigma_t*laser_sigma_t;
+
+  if (laser_t_1>0){
+#ifdef LASERYZ
+    laser_p_peak1=laser_mu*laser_sigma_e1/laser_sigma_t1/sqrt(2*M_PI);
+    //printf("ppeak: %f mu: %f se: %f", laser_p_peak, laser_mu, laser_sigma_e);
+#else  
+    laser_p_peak1=laser_mu*laser_sigma_e1/laser_sigma_t1/sqrt(2*M_PI); 
+#endif
+    laser_sigma_t1_squared=laser_sigma_t1*laser_sigma_t1;
+  }
 
 #ifdef LASERYZ
   laser_sigma_w0 = 1.0 / ( laser_sigma_w0 * laser_sigma_w0 );
@@ -340,6 +349,14 @@ void init_laser()
       printf( "Time t_0 of laser pulse is %1.10f\n",laser_t_0);
       printf( "(%1.10f time steps after start of simulation)\n", 
 	      laser_t_0/timestep);
+
+      if (laser_t_1>0) {
+      printf( "Laser energy density of the second pulse is %1.10f\n", laser_sigma_e1);
+      printf( "Laser pulse duration (sigma) of the second pulse is %1.10f\n", laser_sigma_t1);
+      printf( "Time t_1 of the second laser pulse is %1.10f\n",laser_t_1);
+      printf( "(%1.10f time steps after start of simulation)\n", 
+	      laser_t_1/timestep);
+      }
 
 #ifdef PDECAY
   if (0==myid) {
@@ -409,7 +426,7 @@ void laser_rescale_1()
      The direction of the momentum vectors remains unchanged, except for
      zero-velocity atoms, which will be given a random direction.*/
 
-  real exp_gauss_time_etc, gauss_time_squared;
+  real exp_gauss_time_etc, gauss_time_squared, gauss_time_squared1;
   int k;
   real cosph, sinph, theta, costh, sinth;
 
@@ -417,6 +434,13 @@ void laser_rescale_1()
   gauss_time_squared *= gauss_time_squared;
   exp_gauss_time_etc = exp(-gauss_time_squared/laser_sigma_t_squared/2.0)
                        * laser_p_peak * timestep * laser_atom_vol;
+  if (laser_t_1>0) {
+    gauss_time_squared1 = timestep * steps - laser_t_1;
+    gauss_time_squared1 *= gauss_time_squared1;
+    exp_gauss_time_etc += exp(-gauss_time_squared1/laser_sigma_t1_squared/2.0)
+                       * laser_p_peak1 * timestep * laser_atom_vol;
+  }
+
 
   for (k=0; k<NCELLS; k++) {
     cell *p;
@@ -552,13 +576,19 @@ void laser_rescale_2()
 */ 
 {
 
-  real exp_gauss_time_etc, gauss_time_squared;
+  real exp_gauss_time_etc, gauss_time_squared, gauss_time_squared1;
   int k;
 
   gauss_time_squared = timestep * steps - laser_t_0;
   gauss_time_squared *= gauss_time_squared;
   exp_gauss_time_etc = exp(-gauss_time_squared/laser_sigma_t_squared/2.0)
                        * laser_p_peak * timestep * laser_atom_vol;
+  if (laser_t_1>0) {
+    gauss_time_squared1 = timestep * steps - laser_t_1;
+    gauss_time_squared1 *= gauss_time_squared1;
+    exp_gauss_time_etc += exp(-gauss_time_squared1/laser_sigma_t1_squared/2.0)
+                       * laser_p_peak1 * timestep * laser_atom_vol;
+  }
 
   for (k=0; k<NCELLS; k++) {
     cell *p;
@@ -653,12 +683,18 @@ void laser_rescale_ttm()
    * in the numerical solution of the pdeq.                              */
 
   int i,j,k;
-  real exp_gauss_time_etc, gauss_time_squared, depth;
+  real exp_gauss_time_etc, gauss_time_squared, gauss_time_squared1, depth;
   
   gauss_time_squared = timestep * steps - laser_t_0;
   gauss_time_squared *= gauss_time_squared;
   exp_gauss_time_etc = exp(-gauss_time_squared/laser_sigma_t_squared/2.0)
     * laser_p_peak ;/*  * fd_h.x*fd_h.y*fd_h.z not needed */
+  if (laser_t_1>0) {
+    gauss_time_squared1 = timestep * steps - laser_t_1;
+    gauss_time_squared1 *= gauss_time_squared1;
+    exp_gauss_time_etc += exp(-gauss_time_squared1/laser_sigma_t1_squared/2.0)
+      * laser_p_peak1;/*  * fd_h.x*fd_h.y*fd_h.z not needed */
+  }
 
   /* loop over all FD cells, excluding ghost layers */
   

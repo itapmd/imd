@@ -869,7 +869,12 @@ EXTERN real laser_sigma_e INIT(0.0);   /* area density of pulse energy (for resc
 EXTERN real laser_sigma_t INIT(0.5);   /* half pulse duration (sigma of gaussian pulse) (rescaling) */
 EXTERN real laser_sigma_t_squared INIT(0.25); /* same, squared */
 EXTERN real laser_t_0	  INIT(1.0);   /* time of maximum intensity of pulse (rescaling) */
+EXTERN real laser_sigma_e1 INIT(0.0);   /* area density of second pulse energy (for rescaling method) */
+EXTERN real laser_sigma_t1 INIT(0.5);   /* half pulse duration of the second pulse (sigma of gaussian pulse) (rescaling) */
+EXTERN real laser_sigma_t1_squared INIT(0.25); /* same, squared */
+EXTERN real laser_t_1	  INIT(1.0);   /* time of maximum intensity of the second pulse (rescaling) */
 EXTERN real laser_p_peak  INIT(0.0);   /* Peak power density (calculated in imd.c from previous parameters)*/
+EXTERN real laser_p_peak1  INIT(0.0);   /* Peak power density (calculated in imd.c from previous parameters)*/
 EXTERN real laser_atom_vol INIT(16.6);  /* Volume per particle (inverse density) ATTENTION: THIS VALUE IS VOR ALUMINUM ONLY*/
 EXTERN int  laser_rescale_mode INIT(1); /* Mode for laser velocity rescaling */
 
