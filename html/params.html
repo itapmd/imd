@@ -394,6 +394,11 @@ laser_sigma_t	 # Half duration of the laser pulse (sigma of the gaussian).
                  # Default is 0.5 IMD units.
 laser_t_0   	 # Time of maximum intensity of pulse, from begin of the
                  # simulation. Default is 1.0 IMD units.
+laser_t_1   	 # Time of maximum intensity of the second pulse, from beginning of the
+                 # simulation. Default is 1.0 IMD units.
+laser_sigma_e1   # Area density of pulse energy (fluence) of the second pulse. Default is 0.
+laser_sigma_t1	 # Half duration of the second laser pulse (sigma of the gaussian).
+                 # Default is 0.5 IMD units.
 laser_rescale_mode # How to do the temperature rescaling. You probably don't
                  # have to worry about this, unless you want to play around
                  # with the source in imd_laser.c. The default is 1. If the
