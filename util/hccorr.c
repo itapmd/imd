@@ -16,7 +16,7 @@
 /*****************************************************************************
 *
 * Autocorrelation of heat current
-* 
+*
 ******************************************************************************/
 
 #include <stdlib.h>
@@ -107,7 +107,7 @@ int main(int argc, char **argv)
 
   progname = strdup(argv[0]);
   while ((argc > 1) && (argv[1][0] =='-')) {
-    if (strcasecmp(argv[1],"-c" )==0) { 
+    if (strcasecmp(argv[1],"-c" )==0) {
       if (argc<3) {
         printf("\n   Not enough arguments!\n");
         usage(progname);
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
       argc -= 2;
       argv += 2;
     }
-    else if (strcasecmp(argv[1],"-s" )==0) { 
+    else if (strcasecmp(argv[1],"-s" )==0) {
       if (argc<3) {
         printf("\n   Not enough arguments!\n");
         usage(progname);
@@ -127,7 +127,7 @@ int main(int argc, char **argv)
       argc -= 2;
       argv += 2;
     }
-    else if (strcasecmp(argv[1],"-e" )==0) { 
+    else if (strcasecmp(argv[1],"-e" )==0) {
       if (argc<3) {
         printf("\n   Not enough arguments!\n");
         usage(progname);
@@ -137,7 +137,7 @@ int main(int argc, char **argv)
       argc -= 2;
       argv += 2;
     }
-    else if (strcasecmp(argv[1],"-h" )==0) { 
+    else if (strcasecmp(argv[1],"-h" )==0) {
       usage(progname);
       exit(-1);
     }
@@ -174,7 +174,7 @@ int main(int argc, char **argv)
   x = (double *) malloc( 2 * n * sizeof(double) );
   y = (double *) malloc( 2 * n * sizeof(double) );
   z = (double *) malloc( 2 * n * sizeof(double) );
-  if ((t==NULL) || (x==NULL) || (y==NULL) || (z==NULL)) 
+  if ((t==NULL) || (x==NULL) || (y==NULL) || (z==NULL))
     error("cannot allocate data");
 
   /* get input */
@@ -196,7 +196,7 @@ int main(int argc, char **argv)
   /* transform data */
   auto_corr(e-s, x+s, x+s);
   auto_corr(e-s, y+s, y+s);
-  if (dim==3) 
+  if (dim==3)
     auto_corr(e-s, z+s, z+s);
 
   /* write output */
@@ -207,13 +207,13 @@ int main(int argc, char **argv)
   i = 0;
   if (dim==2) {
     while (t[i] < t_cut) {
-      fprintf(out, "%e %e %e\n", t[i]*t_unit, x[i+s], y[i+s]);
+      fprintf(out, "%e %e %e %e %e %e %e\n", t[i]*t_unit, x[i+s], y[i+s], (x[i+s]+y[i+s])/2., x[i+s]/x[s], y[i+s]/y[s], (x[i+s]/x[s]+y[i+s]/y[s])/2.);
       i++;
     }
   }
   else {
     while (t[i] < t_cut) {
-      fprintf(out, "%e %e %e %e\n", t[i]*t_unit, x[i+s], y[i+s], z[i+s]);
+      fprintf(out, "%e %e %e %e %e %e %e %e %e\n", t[i]*t_unit, x[i+s], y[i+s], z[i+s], (x[i+s]+y[i+s]+z[i+s])/3., x[i+s]/x[s], y[i+s]/y[s], z[i+s]/z[s], (x[i+s]/x[s]+y[i+s]/y[s]+z[i+s]/z[s])/3.);
       i++;
     }
   }
