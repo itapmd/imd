@@ -2216,6 +2216,10 @@ void write_eng_file_header()
   fprintf(fl, " Ees" );
 #endif
 
+#ifdef USEFCS
+  fprintf(fl, "TempCM ");
+#endif
+
     putc('\n',fl);
 
     fclose(fl);
@@ -2246,7 +2250,7 @@ void write_eng_file(int steps)
   char *format3=" %e %e %e";
 #endif
 
-  real Epot, Temp, vol;
+  real Epot, Temp, vol, TempCM;
 
 #if defined(STM) || defined(FRAC)
   real Temp_damp, Temp_stadium = 0.0;
@@ -2261,6 +2265,29 @@ void write_eng_file(int steps)
   real Press_zz,Press_yz, Press_zx;
 #endif
   calc_tot_presstens();
+#endif
+
+#ifdef USEFCS
+  { int i, k; real ptot[4], ptot_2[4];
+    ptot[0] = 0.0; ptot[1] = 0.0; ptot[2] = 0.0, ptot[3] = 0.0; 
+    for (k=0; k<NCELLS; ++k) { /* loop over all cells */
+      cell *p = CELLPTR(k);
+      for (i=0; i<p->n; i++) {
+        ptot[0] += IMPULS(p,i,X);
+        ptot[1] += IMPULS(p,i,Y);
+        ptot[2] += IMPULS(p,i,Z);
+        ptot[3] += MASSE(p,i);
+      }
+    }
+#ifdef MPI
+    MPI_Allreduce( ptot, ptot_2, 4, REAL, MPI_SUM, cpugrid);
+    ptot[0] = ptot_2[0];
+    ptot[1] = ptot_2[1]; 
+    ptot[2] = ptot_2[2]; 
+    ptot[3] = ptot_2[3]; 
+#endif
+    TempCM = (SQR(ptot[0])+SQR(ptot[1])+SQR(ptot[2]))/(3*ptot[3]*natoms);
+  }
 #endif
 
   /* write only on CPU 0; 
@@ -2454,6 +2481,10 @@ void write_eng_file(int steps)
 
 #ifdef SM
   fprintf(eng_file, " %e", (double) tot_sm_es_energy/natoms);
+#endif
+
+#ifdef USEFCS
+  fprintf(eng_file, " %e", TempCM);
 #endif
 
   putc('\n',eng_file);

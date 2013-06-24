@@ -3,7 +3,7 @@
 *
 * IMD -- The ITAP Molecular Dynamics Program
 *
-* Copyright 1996-2012 Institute for Theoretical and Applied Physics,
+* Copyright 1996-2013 Institute for Theoretical and Applied Physics,
 * University of Stuttgart, D-70550 Stuttgart
 *
 ******************************************************************************/
@@ -237,6 +237,39 @@ void init_fcs(void) {
   fcs_float BoxZ[3] = { box_z.x, box_z.y, box_z.z };
   fcs_float off [3] = { 0.0, 0.0, 0.0 };
 
+  /* subtract CM momentum */
+  if (0 == imdrestart) {
+    int i, k; real ptot[4], ptot_2[4], px, py, pz;
+    ptot[0] = 0.0; ptot[1] = 0.0; ptot[2] = 0.0, ptot[3] = 0.0; 
+    for (k=0; k<NCELLS; ++k) { /* loop over all cells */
+      cell *p = CELLPTR(k);
+      for (i=0; i<p->n; i++) {
+        ptot[0] += IMPULS(p,i,X);
+        ptot[1] += IMPULS(p,i,Y);
+        ptot[2] += IMPULS(p,i,Z);
+        ptot[3] += MASSE(p,i);
+      }
+    }
+#ifdef MPI
+    MPI_Allreduce( ptot, ptot_2, 4, REAL, MPI_SUM, cpugrid);
+    ptot[0] = ptot_2[0];
+    ptot[1] = ptot_2[1]; 
+    ptot[2] = ptot_2[2]; 
+    ptot[3] = ptot_2[3]; 
+#endif
+    px = ptot[0]/ptot[3];
+    py = ptot[1]/ptot[3];
+    pz = ptot[2]/ptot[3];
+    for (k=0; k<NCELLS; ++k) { /* loop over all cells */
+      cell *p = CELLPTR(k);
+      for (i=0; i<p->n; i++) {
+        IMPULS(p,i,X) -= px * MASSE(p,i);
+        IMPULS(p,i,Y) -= py * MASSE(p,i);
+        IMPULS(p,i,Z) -= pz * MASSE(p,i);
+      }
+    }
+  }
+
   switch (fcs_method) {
     case FCS_METH_DIRECT: method = "direct"; break;
     case FCS_METH_PEPC:   method = "pepc";   break;
@@ -250,7 +283,7 @@ void init_fcs(void) {
   /* initialize handle and set common parameters */
   res = fcs_init(&handle, method, cpugrid); 
   ASSERT_FCS(res);
-  res = fcs_common_set(handle, srf, BoxX, BoxY, BoxZ, off, pbc, natoms);
+  res = fcs_set_common(handle, srf, BoxX, BoxY, BoxZ, off, pbc, natoms);
   ASSERT_FCS(res);
   res = fcs_require_virial(handle, 1);
   ASSERT_FCS(res);
@@ -303,7 +336,7 @@ void init_fcs(void) {
                               (fcs_float)fcs_tolerance);
       ASSERT_FCS(res);
       if (fcs_grid_dim.x) { 
-        res = fcs_p2nfft_set_gridsize(handle, (fcs_int)fcs_grid_dim.x,
+        res = fcs_p2nfft_set_grid(handle, (fcs_int)fcs_grid_dim.x,
               (fcs_int)fcs_grid_dim.y, (fcs_int)fcs_grid_dim.z);
         ASSERT_FCS(res);
       }
@@ -316,8 +349,8 @@ void init_fcs(void) {
         res = fcs_p2nfft_set_epsI(handle, (fcs_float)fcs_p2nfft_epsI);
         ASSERT_FCS(res);
       }
-      res = fcs_p2nfft_set_window_flag(handle, "bspline");
-      ASSERT_FCS(res);
+      //res = fcs_p2nfft_set_pnfft_window_by_name(handle, "bspline");
+      //ASSERT_FCS(res);
       break;
 #endif
 #ifdef FCS_ENABLE_VMG
@@ -385,7 +418,7 @@ void init_fcs(void) {
 #endif
 #ifdef FCS_ENABLE_P2NFFT
     case FCS_METH_P2NFFT:
-      res = fcs_p2nfft_get_gridsize(handle, grid_dim, grid_dim+1, grid_dim+2);
+      res = fcs_p2nfft_get_grid(handle, grid_dim, grid_dim+1, grid_dim+2);
       ASSERT_FCS(res);
       res = fcs_p2nfft_get_r_cut(handle, &r_cut);
       ASSERT_FCS(res);
