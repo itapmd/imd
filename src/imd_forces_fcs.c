@@ -1,4 +1,3 @@
-
 /******************************************************************************
 *
 * IMD -- The ITAP Molecular Dynamics Program
@@ -274,8 +273,8 @@ void init_fcs(void) {
     case FCS_METH_DIRECT: method = "direct"; break;
     case FCS_METH_PEPC:   method = "pepc";   break;
     case FCS_METH_FMM:    method = "fmm";    break;
-    case FCS_METH_P3M:    method = "p3m";    srf = fcs_rcut > 0 ? 0 : 1; break;
-    case FCS_METH_P2NFFT: method = "p2nfft"; srf = fcs_rcut > 0 ? 0 : 1; break;
+    case FCS_METH_P3M:    method = "p3m";    srf = fcs_near_field_flag; break;
+    case FCS_METH_P2NFFT: method = "p2nfft"; srf = fcs_near_field_flag; break;
     case FCS_METH_VMG:    method = "vmg";    break;
     case FCS_METH_PP3MG:  method = "pp3mg";  break;
   }
@@ -300,7 +299,7 @@ void init_fcs(void) {
       res = fcs_pepc_setup(handle, (fcs_float)fcs_pepc_eps, 
             (fcs_float)fcs_pepc_theta );
       ASSERT_FCS(res);
-      res = fcs_pepc_set_num_walk_threads( handle, (fcs_int)4 );
+      res = fcs_pepc_set_num_walk_threads( handle, (fcs_int)fcs_pepc_nthreads );
       ASSERT_FCS(res);
       break;
 #endif
@@ -355,17 +354,25 @@ void init_fcs(void) {
 #endif
 #ifdef FCS_ENABLE_VMG
     case FCS_METH_VMG:
-      res = fcs_vmg_set_near_field_cells(handle, (fcs_int)fcs_vmg_near_field_cells);
-      ASSERT_FCS(res);
-      res = fcs_vmg_set_interpolation_order(handle, (fcs_int)fcs_vmg_interpol_order);
-      ASSERT_FCS(res);
-      res = fcs_vmg_set_discretization_order(handle, (fcs_int)fcs_vmg_discr_order);
-      ASSERT_FCS(res);
-      res = fcs_vmg_set_precision(handle, (fcs_float)fcs_tolerance);
-      ASSERT_FCS(res);
+      if (fcs_vmg_near_field_cells) {
+        res = fcs_vmg_set_near_field_cells(handle, (fcs_int)fcs_vmg_near_field_cells);
+        ASSERT_FCS(res);
+      }
+      if (fcs_vmg_interpol_order) {
+        res = fcs_vmg_set_interpolation_order(handle, (fcs_int)fcs_vmg_interpol_order);
+        ASSERT_FCS(res);
+      }
+      if (fcs_vmg_discr_order) {
+        res = fcs_vmg_set_discretization_order(handle, (fcs_int)fcs_vmg_discr_order);
+        ASSERT_FCS(res);
+      }
+      if (fcs_iter_tolerance > 0) {
+        res = fcs_vmg_set_precision(handle, (fcs_float)fcs_iter_tolerance);
+        ASSERT_FCS(res);
+      }
       break;
 #endif
-#ifdef FCS_ENABLE_PP3MG_PMG
+#ifdef FCS_ENABLE_PP3MG
     case FCS_METH_PP3MG:
       /* use default values, if not specified otherwise */
       if (fcs_grid_dim.x) {
@@ -376,22 +383,27 @@ void init_fcs(void) {
         res = fcs_pp3mg_set_cells_z(handle, (fcs_int)fcs_grid_dim.z);
         ASSERT_FCS(res);
       }
-      if (fcs_pp3mg_ghosts) 
+      if (fcs_pp3mg_ghosts) {
         res = fcs_pp3mg_set_ghosts(handle, (fcs_int)fcs_pp3mg_ghosts);
         ASSERT_FCS(res);
-      if (fcs_pp3mg_degree) 
+      }
+      if (fcs_pp3mg_degree) {
         res = fcs_pp3mg_set_degree(handle, (fcs_int)fcs_pp3mg_degree);
         ASSERT_FCS(res);
-      if (fcs_pp3mg_max_part) 
+      }
+      if (fcs_pp3mg_max_part) { 
         res = fcs_pp3mg_set_max_particles(handle, (fcs_int)fcs_pp3mg_max_part);
         ASSERT_FCS(res);
-      if (fcs_pp3mg_max_iter) 
-        res = fcs_pp3mg_set_max_iterations(handle,(fcs_int)fcs_pp3mg_max_iter);
+      }
+      if (fcs_max_iter) { 
+        res = fcs_pp3mg_set_max_iterations(handle,(fcs_int)fcs_max_iter);
         ASSERT_FCS(res);
-      if (fcs_pp3mg_tol > 0)
-        res = fcs_pp3mg_set_tol(handle, (fcs_float)fcs_pp3mg_tol);
+      }
+      if (fcs_iter_tolerance > 0) {
+        res = fcs_pp3mg_set_tol(handle, (fcs_float)fcs_iter_tolerance);
         ASSERT_FCS(res);
-      break;
+      }      
+break;
 #endif
     default: 
       error("FCS method unknown or not implemented"); 
@@ -427,7 +439,7 @@ void init_fcs(void) {
                grid_dim[0], grid_dim[1], grid_dim[2], r_cut);
       break;
 #endif
-#ifdef FCS_ENABLE_PP3MG_PMG
+#ifdef FCS_ENABLE_PP3MG
     case FCS_METH_PP3MG:
       res = fcs_pp3mg_get_cells_x(handle, grid_dim  );
       ASSERT_FCS(res);
