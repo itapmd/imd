@@ -2708,6 +2708,10 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       getparam(token, spring_const, PARAM_REAL, 
                ntypepairs-ntypes, ntypepairs-ntypes);
     }
+    else if (strcasecmp(token,"fix_bks")==0) {
+      /* fix bks potential */
+      getparam(token, &fix_bks, PARAM_INT, 1, 1);
+    }
 #endif
 #ifdef SM
 /* no charge update after each step */
@@ -4570,6 +4574,7 @@ void broadcast_params() {
   MPI_Bcast( buck_sigma_lin, ntypepairs, REAL, 0, MPI_COMM_WORLD);
   /* harmonic potential for shell model */
   MPI_Bcast( spring_const, ntypepairs-ntypes, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &fix_bks, 1, MPI_INT, 0, MPI_COMM_WORLD); 
 #endif
 
 #ifdef FEFL

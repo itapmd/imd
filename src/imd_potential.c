@@ -675,9 +675,7 @@ void create_pot_table(pot_table_t *pt)
   init_threepoint(pt, ncols);
 #endif
 
-#ifdef FIXBKS
-  fix_pottab_bks();
-#endif
+  if (fix_bks) fix_pottab_bks();
 
   /* test interpolation of potential */
   if ((0==myid) && (debug_potential)) test_potential(*pt, "pair_pot", ncols);

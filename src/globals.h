@@ -982,6 +982,7 @@ EXTERN real spring_cst[10][10];
 EXTERN real ew_shift [10][10];
 EXTERN real ew_fshift[10][10];
 #endif
+EXTERN int  fix_bks INIT(0); 
 #endif
 
 #ifdef FEFL
