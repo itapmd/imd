@@ -4589,9 +4589,10 @@ void broadcast_params() {
 
 #ifdef TTBP
   MPI_Bcast( ttbp_constant,  ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ttbp_constant2, 8,      REAL, 0, MPI_COMM_WORLD)
+  MPI_Bcast( ttbp_constant2, 8,      REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ttbp_sp,        ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( ttbp_cut,       1,      REAL, 0, MPI_COMM_WORLD)
+  MPI_Bcast( ttbp_cut,       1,      REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( ttbp_vas,       1,      MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef SLLOD
