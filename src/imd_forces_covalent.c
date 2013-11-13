@@ -997,7 +997,7 @@ void do_forces2(cell *p, real *Epot, real *Virial,
       j_typ = neigh->typ[j];
 
       /* shortcut for types without 3-body interactions */
-      if (ter_b[p_typ][j_typ] == 0.0) continue;
+      //if (ter_b[p_typ][j_typ] == 0.0) continue;
 
       jcell = (cell *) neigh->cl [j];
       jnum  = neigh->num[j];
@@ -1158,25 +1158,26 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 #ifdef STRESS_TENS
       if (do_press_calc) {
         tmp = 0.5 * r[j]*er[j].x * force_j.x; 
-        PRESSTENS(p,i,xx)        -= tmp;
-        PRESSTENS(jcell,jnum,xx) -= tmp;
+        PRESSTENS(p,i,xx)        += tmp;
+        PRESSTENS(jcell,jnum,xx) += tmp;
         tmp = 0.5 * r[j]*er[j].y * force_j.y;
-        PRESSTENS(p,i,yy)        -= tmp;
-        PRESSTENS(jcell,jnum,yy) -= tmp;
+        PRESSTENS(p,i,yy)        += tmp;
+        PRESSTENS(jcell,jnum,yy) += tmp;
         tmp = 0.5 * r[j]*er[j].z * force_j.z;
-        PRESSTENS(p,i,zz)        -= tmp;
-        PRESSTENS(jcell,jnum,zz) -= tmp;
+        PRESSTENS(p,i,zz)        += tmp;
+        PRESSTENS(jcell,jnum,zz) += tmp;
         tmp = 0.25 * r[j]*( er[j].y * force_j.z + er[j].z*force_j.y );
-        PRESSTENS(p,i,yz)        -= tmp;
-        PRESSTENS(jcell,jnum,yz) -= tmp;
+        PRESSTENS(p,i,yz)        += tmp;
+        PRESSTENS(jcell,jnum,yz) += tmp;
         tmp = 0.25 * r[j]*( er[j].z * force_j.x + er[j].x*force_j.z );
-        PRESSTENS(p,i,zx)        -= tmp;
-        PRESSTENS(jcell,jnum,zx) -= tmp;
+        PRESSTENS(p,i,zx)        += tmp;
+        PRESSTENS(jcell,jnum,zx) += tmp;
         tmp = 0.25 * r[j]*( er[j].x * force_j.y + er[j].y*force_j.x );
-        PRESSTENS(p,i,xy)        -= tmp;
-        PRESSTENS(jcell,jnum,xy) -= tmp;
+        PRESSTENS(p,i,xy)        += tmp;
+        PRESSTENS(jcell,jnum,xy) += tmp;
       }
 #endif
+
 
       /* update force on particle k */
       for (k=0; k<neigh->n; ++k) 
@@ -1197,23 +1198,23 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 #ifdef STRESS_TENS
           if (do_press_calc) {
             tmp = 0.5 * r[k] * er[k].x * tmp3 * gradk_zeta[k].x;
-            PRESSTENS(p,i,xx)        += tmp;
-            PRESSTENS(jcell,jnum,xx) += tmp;
+            PRESSTENS(p,i,xx)        -= tmp;
+            PRESSTENS(jcell,jnum,xx) -= tmp;
             tmp = 0.5 * r[k] * er[k].y * tmp3 * gradk_zeta[k].y;
-            PRESSTENS(p,i,yy)        += tmp;
-            PRESSTENS(jcell,jnum,yy) += tmp;
+            PRESSTENS(p,i,yy)        -= tmp;
+            PRESSTENS(jcell,jnum,yy) -= tmp;
             tmp = 0.5 * r[k] * er[k].z * tmp3 * gradk_zeta[k].z;
-            PRESSTENS(p,i,zz)        += tmp;
-            PRESSTENS(jcell,jnum,zz) += tmp;
+            PRESSTENS(p,i,zz)        -= tmp;
+            PRESSTENS(jcell,jnum,zz) -= tmp;
             tmp = 0.25 *r[k]*tmp3*( er[k].y * gradk_zeta[k].z + er[k].z * gradk_zeta[k].y );
-            PRESSTENS(p,i,yz)        += tmp;
-            PRESSTENS(jcell,jnum,yz) += tmp;
+            PRESSTENS(p,i,yz)        -= tmp;
+            PRESSTENS(jcell,jnum,yz) -= tmp;
             tmp = 0.25 *r[k]*tmp3*( er[k].z * gradk_zeta[k].x + er[k].x * gradk_zeta[k].z );
-            PRESSTENS(p,i,zx)        += tmp;
-            PRESSTENS(jcell,jnum,zx) += tmp;    
+            PRESSTENS(p,i,zx)        -= tmp;
+            PRESSTENS(jcell,jnum,zx) -= tmp;    
             tmp = 0.25 *r[k]*tmp3*( er[k].x * gradk_zeta[k].y + er[k].y * gradk_zeta[k].x );
-            PRESSTENS(p,i,xy)        += tmp;
-            PRESSTENS(jcell,jnum,xy) += tmp;
+            PRESSTENS(p,i,xy)        -= tmp;
+            PRESSTENS(jcell,jnum,xy) -= tmp;
           }
 #endif 
         }
