@@ -1,13 +1,13 @@
 /******************************************************************************
- *
- * imd_ada.c -- Routines for Bond angular distribution analysis
- *
- ******************************************************************************/
+*
+* imd_ada.c -- Routines for Bond angular distribution analysis
+*
+******************************************************************************/
 
 /******************************************************************************
- * $Revision$
- * $Date$
- ******************************************************************************/
+* $Revision$
+* $Date$
+******************************************************************************/
 
 #include "imd.h"
 
@@ -354,7 +354,7 @@ void buildHopsToDefect(){
 	}
 
 	send_fromBufferToCells(copy_hopsToDefect,pack_hopsToDefect,unpack_hopsToDefect);
-	
+
 	/* Mark third layer */
 	for (k = 0; k < ncells; k++) {
 		cell *p = CELLPTR(k);
