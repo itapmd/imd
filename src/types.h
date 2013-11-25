@@ -24,7 +24,7 @@
 #ifdef DOUBLE
 typedef double real;
 #define REAL MPI_DOUBLE
-#else 
+#else
 typedef float real;
 #define REAL MPI_FLOAT
 #endif
@@ -61,7 +61,7 @@ typedef struct {int x; int y; int z; } ivektor3d;
 
 /* 4d Vector real for temp. input */
 typedef struct {real x; real y; real z; real z2; } vektor4d;
-typedef struct {int x; int y; int z; int z2; } ivektor4d; 
+typedef struct {int x; int y; int z; int z2; } ivektor4d;
 
 #ifdef TWOD
 typedef struct {real xx, yy, xy; } sym_tensor;
@@ -112,9 +112,53 @@ typedef struct {
 	real ls[3];           /* Line sense / Line direction of dislocation */
 } nyeTensorInfo;
 typedef struct {
-	real n[14][3];		  /* Reference nearest neighbors in perfect crystal */ 
+	real n[14][3];		  /* Reference nearest neighbors in perfect crystal */
 } neighPerfType;
 #endif
+
+/* data structure for KIM */
+#ifdef KIM
+typedef struct {
+  /* pointer to the KIM_API object */
+  void *pkim;
+
+  /* values set in init_kim_info() */
+  int model_using_half;
+  int model_using_cluster;
+  int model_using_Rij;
+
+  /* values set in model_has_flags(), called by kim_init() */
+  int model_has_forces;
+  int model_has_energy;
+  int model_has_particleEnergy;
+  int model_has_process_dEdr;
+
+  /* values set in kim_init(), after call to string_init(_) */
+  int ind_coordinates;
+  int ind_numberOfParticles;
+  int ind_numberContributingParticles;
+  int ind_numberParticleTypes;
+  int ind_particleTypes;
+  int ind_get_neigh;
+  int ind_neighObject;
+  int ind_cutoff;
+  int ind_energy;
+  int ind_particleEnergy;
+  int ind_forces;
+  int ind_process_dEdr;
+
+  /* index of the current cell */
+  int cell_ind;
+  int *cell_list;
+  int *cell_offset;
+  int cell_atom_ind;
+  int *cell_index_atom;
+
+  /* pointer for the particle types mapping */
+  int *kim_particle_codes;
+  int iterator_position;
+} imd_kim_t;
+#endif /* KIM */
 
 #ifdef BBOOST
 /* per particle neighbor table for BBOOST */
@@ -143,7 +187,7 @@ typedef struct {
     bb_neightab **bb_neigh;
 #endif
 #ifndef MONOLJ
-  integer     *nummer;   
+  integer     *nummer;
   shortint    *sorte;
   shortint    *vsorte;
   real        *masse;
@@ -179,15 +223,15 @@ typedef struct {
 
 #endif
 #ifdef DIPOLE
-  real        *dp_E_stat;    /* electric field at atom location */	     
+  real        *dp_E_stat;    /* electric field at atom location */
   real        *dp_E_ind;     /* induced field at atom location */
   real        *dp_E_old_1;   /* old field from previous steps */
   real        *dp_E_old_2;   /* old field from previous steps */
   real        *dp_E_old_3;   /* old field from previous steps */
-  real        *dp_p_stat;    /* static dipoles from Short-Range interaction */ 
-  real        *dp_p_ind;     /* induced dipoles */                              
+  real        *dp_p_stat;    /* static dipoles from Short-Range interaction */
+  real        *dp_p_ind;     /* induced dipoles */
 #endif /* DIPOLE */
-#ifdef CG                   
+#ifdef CG
   real        *h;           /* Conjugated Gradient: search vektor */
   real        *g;           /* Conjugated Gradient: old forces */
   real        *old_ort;     /* CG: old locations, needed for linmin */
@@ -326,7 +370,7 @@ typedef struct {
 #endif
 
 /* Buffer for messages */
-typedef struct { 
+typedef struct {
   real *data;
   int  n;
   int  n_max;
@@ -356,7 +400,7 @@ typedef struct
 
 #endif /*TTM*/
 
-/* data structure to store a potential table or a function table */ 
+/* data structure to store a potential table or a function table */
 typedef struct {
   real *begin;      /* first value in the table */
   real *end;        /* last value in the table (followed by extra zeros) */
@@ -372,7 +416,7 @@ typedef struct {
 } pot_table_t;
 
 #ifdef LINPOT
-/* data structure to store a potential table or a function table */ 
+/* data structure to store a potential table or a function table */
 typedef struct {
   real *begin;      /* first value in the table */
   real *end;        /* last value in the table */
@@ -397,7 +441,7 @@ typedef struct {
   struct timeval start;     /* time when timer was started */
 #elif defined(OMP)          /* with omp_get_wtime */
   double start;             /* time when timer was started */
-#elif defined(USE_RUSAGE)   /* with getrusage */ 
+#elif defined(USE_RUSAGE)   /* with getrusage */
   struct rusage start;      /* time when timer was started */
 #else                       /* with times */
   struct tms start;         /* time when timer was started */

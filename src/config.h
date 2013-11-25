@@ -41,6 +41,11 @@
 #define NODBG_DIST
 #endif
 
+/* KIM only works with neighbor lists enabled */
+#ifdef KIM
+#define NBL
+#endif
+
 /* define USE_RUSAGE for using getrusage()-routines   */
 /* define USE_CLOCK to use clock() instead of times() */
 
@@ -73,7 +78,7 @@
 /* for EAM2 and TTBP, we also need PAIR */
 #if (defined(EAM2) || defined(TTBP))
 #ifndef PAIR
-#define PAIR 
+#define PAIR
 #endif
 #endif
 
@@ -137,8 +142,8 @@
 
 /* AR is the default. We could make the default machine dependent */
 #if !defined(CBE) || defined(CBE2)
-#define AR 
-#endif 
+#define AR
+#endif
 
 #ifdef AR
 #  define NNBCELL 14
@@ -154,6 +159,13 @@
 #endif
 
 #endif /* BUFCELLS */
+
+#ifdef KIM
+#undef PAIR
+#undef AR
+#undef NNBCELL
+#define NNBCELL 27
+#endif
 
 /******************************************************************************
 *

@@ -7,14 +7,14 @@
 #
 # $Revision$
 # $Date$
-# 
+#
 ############################################################################
 #
 # Beware: This Makefile works only with GNU make (gmake)!
 #
 # Usage:  gmake <target>
 #
-# <target> has the form 
+# <target> has the form
 #
 #    imd[_<parallel>][_<option>[_<option>...]]
 #
@@ -32,30 +32,30 @@
 #
 # Customizing this Makefile
 #
-# As IMD supports a large number of compile options, you will have to 
-# compile IMD freqently. Before doing so, however, you must check whether 
-# the settings in this Makefile fit your needs. You possibly have to 
-# customize these setttings. Before you can do that, we have to explain 
+# As IMD supports a large number of compile options, you will have to
+# compile IMD freqently. Before doing so, however, you must check whether
+# the settings in this Makefile fit your needs. You possibly have to
+# customize these setttings. Before you can do that, we have to explain
 # a bit how the compilation process works.
 #
-# The compilation process requires the environment variable IMDSYS to 
-# be set to a recognized value. It specifies what system you have, and 
-# what compiler you are using. The flags for the compiler and the linker 
-# are then selected as a function of this variable. It is also possible 
+# The compilation process requires the environment variable IMDSYS to
+# be set to a recognized value. It specifies what system you have, and
+# what compiler you are using. The flags for the compiler and the linker
+# are then selected as a function of this variable. It is also possible
 # to pass the value of IMDSYS on the command line, e.g.:
 #
-#   gmake IMDSYS=P4-icc imd_mpi_nve 
+#   gmake IMDSYS=P4-icc imd_mpi_nve
 #
 # Another important ingredient is the parallelization method, which is
 # determined from the make target. The parallelization method is stored
 # in the variable PARALLEL, which takes as value one of SERIAL, MPI,
-# OMP, OMPI, or PACX. 
+# OMP, OMPI, or PACX.
 #
 # Depending on the value of ${IMDSYS}, a number of variables must be
 # set, from which everything else is constructed.
 #
-# CC_${PARALLEL} defines the compiler to be used for parallelization 
-# method ${PARALLEL}. If not defined, the parallelization method 
+# CC_${PARALLEL} defines the compiler to be used for parallelization
+# method ${PARALLEL}. If not defined, the parallelization method
 # ${PARALLEL} is not available.
 #
 # BIN_DIR defines the directory where the IMD binary is put. Note that
@@ -66,14 +66,14 @@
 #
 # The compilation options are stored in the variable CFLAGS.
 # The initial value of CFLAGS is set to the variable FLAGS,
-# which can be given on the command line as explained above for 
+# which can be given on the command line as explained above for
 # IMDSYS, although this is usually not necessary.
 #
-# If the option debug was specified, ${DEBUG_FLAGS} is then appended 
-# to ${CFLAGS}, otherwise ${OPT_FLAGS}. If the option prof was specified 
-# (for profiling), ${PROF_FLAGS} is also appended to ${CFLAGS}. However, 
-# before appending ${OPT_FLAGS} or ${DEBUG_FLAGS} to ${CFLAGS}, some 
-# parallelization specific flags are appended to them: 
+# If the option debug was specified, ${DEBUG_FLAGS} is then appended
+# to ${CFLAGS}, otherwise ${OPT_FLAGS}. If the option prof was specified
+# (for profiling), ${PROF_FLAGS} is also appended to ${CFLAGS}. However,
+# before appending ${OPT_FLAGS} or ${DEBUG_FLAGS} to ${CFLAGS}, some
+# parallelization specific flags are appended to them:
 #
 #   OPT_FLAGS   += ${${PARALLEL}_FLAGS} ${OPT_${PARALLEL}_FLAGS}
 #   DEBUG_FLAGS += ${${PARALLEL}_FLAGS} ${DEBUG_${PARALLEL}_FLAGS}
@@ -130,6 +130,9 @@ OMPI_FLAGS	+= #-DMPI -DOMP
 PACX_FLAGS	+= #-DMPI -DPACX
 DEBUG_FLAGS	+= #-DDEBUG # -Wall # very noisy
 
+# directory of the openkim API
+KIM_DIR 	= /data/daniel/openkim/openkim-api
+
 ###########################################################################
 #
 #  flags for IA32-Linux
@@ -176,8 +179,8 @@ ifeq (x86_64-c2_gcc4,${IMDSYS})
   OMPI_MPICC    = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
 #  OPT_FLAGS	+= -O -m64 -Wno-unused -march=core2   -mmmx -msse -ffast-math  -funroll-all-loops -fomit-frame-pointer
-#  OPT_FLAGS	+= -O3 -m64 -march=core2  -mtune=core2  -funroll-all-loops -fomit-frame-pointer -ffast-math 
-  OPT_FLAGS	+= -O -m64 -march=core2  -mtune=core2  -funroll-all-loops -fomit-frame-pointer -ffast-math 
+#  OPT_FLAGS	+= -O3 -m64 -march=core2  -mtune=core2  -funroll-all-loops -fomit-frame-pointer -ffast-math
+  OPT_FLAGS	+= -O -m64 -march=core2  -mtune=core2  -funroll-all-loops -fomit-frame-pointer -ffast-math
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
 # static seems to have problems with the mpi implemenation?
@@ -194,13 +197,13 @@ ifeq (x86_64-c2_icc,${IMDSYS})
   OMPI_MPICC    = icc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   OPT_FLAGS	+= -O3 -ip  -fno-builtin -axT -march=core2  -mtune=core2  # remove -axP for Opteron
-  MPI_FLAGS     += 
+  MPI_FLAGS     +=
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -prof_gen
   RCD_FLAGS	+= # -DRCD -rcd
-  MPI_LIBS      += 
+  MPI_LIBS      +=
   LFLAGS        += # -i-static
   export        OMPI_MPICC MPICH_CC MPICH_CLINKER
 endif
@@ -233,13 +236,13 @@ ifeq (x86_64-icc,${IMDSYS})
   OMPI_MPICC    = icc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
   OPT_FLAGS	+= -O3 -ip # -fno-builtin # -axP # remove -axP for Opteron
-  MPI_FLAGS     += 
+  MPI_FLAGS     +=
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -prof_gen
   RCD_FLAGS	+= # -DRCD -rcd
-  MPI_LIBS      += 
+  MPI_LIBS      +=
   LFLAGS        += # -i-static
   export        OMPI_MPICC MPICH_CC MPICH_CLINKER
 endif
@@ -310,7 +313,7 @@ ifeq (AthlonMP-gcc3,${IMDSYS})
 #  MPICH_CLINKER = gcc
   OMPI_MPICC    = gcc
   BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
-  OPT_FLAGS	+= -O -march=athlon-mp 
+  OPT_FLAGS	+= -O -march=athlon-mp
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
   LFLAGS        += #-static
@@ -321,7 +324,7 @@ endif
 ifeq (P4-icc,${IMDSYS})
   CC_SERIAL	= icc
   CC_OMP	= icc
-  CC_MPI	= mpicc 
+  CC_MPI	= mpicc
   CC_OMPI	= mpicc
   MPICH_CC      = icc
   MPICH_CLINKER = icc
@@ -341,7 +344,7 @@ endif
 ifeq (woody-icc,${IMDSYS})
   CC_SERIAL	= icc
   CC_OMP	= icc
-  CC_MPI	= mpicc 
+  CC_MPI	= mpicc
   CC_OMPI	= mpicc
   MPICH_CC      = icc
   MPICH_CLINKER = icc
@@ -458,7 +461,7 @@ ifeq (ia64-icc,${IMDSYS})
   BIN_DIR	= ${HOME}/bin/ia64
   OPT_FLAGS	+= -O -ip -ivdep_parallel -wd1572 # remove -wd1572 for icc 8.0
   NOALIAS       = -fno-fnalias
-  MPI_FLAGS     += 
+  MPI_FLAGS     +=
   OMP_FLAGS	+= -openmp
   OMPI_FLAGS	+= -openmp -quiet
   PROF_FLAGS	+= -prof_gen
@@ -662,33 +665,33 @@ endif
 ifeq (SX8,${IMDSYS})
   CC_SERIAL             = sxcc
   CC_MPI		= sxmpicc
-#  CC_OMP		= 
-#  CC_OMPI		= 
+#  CC_OMP		=
+#  CC_OMPI		=
   BIN_DIR		= ${HOME}/bin/sx8
   OPT_FLAGS		+= -Xa -O -sx8 -C hopt -pi auto -pi file=imd_geom_3d.c:imd_geom_mpi_3d.c -pvctl fullmsg -w off=177:550 -O extendreorder # -gv
-#  OPT_MPI_FLAGS	+= 
-#  OPT_OMP_FLAGS	+= 
-#  OPT_OMPI_FLAGS	+= 
-  DEBUG_FLAGS		+= -Xa -sx8 -gv 
-#  DEBUG_OMP_FLAGS	+= 
-#  DEBUG_OMPI_FLAGS	+= 
+#  OPT_MPI_FLAGS	+=
+#  OPT_OMP_FLAGS	+=
+#  OPT_OMPI_FLAGS	+=
+  DEBUG_FLAGS		+= -Xa -sx8 -gv
+#  DEBUG_OMP_FLAGS	+=
+#  DEBUG_OMPI_FLAGS	+=
   PROF_FLAGS		+= -ftrace -DFTRACE
   PROF_LIBS		+= -lftrace
 endif
 
 ifeq (SX6,${IMDSYS})
   CC_SERIAL             = sxcc
-#  CC_MPI		= 
-#  CC_OMP		= 
-#  CC_OMPI		= 
+#  CC_MPI		=
+#  CC_OMP		=
+#  CC_OMPI		=
   BIN_DIR		= ${HOME}/bin/sx6
   OPT_FLAGS		+= -Xa -O -sx6 -C hopt -pi auto -pi file=imd_geom_3d.c:imd_geom_mpi_3d.c -pvctl fullmsg -w off=177:550 -O extendreorder # -gv
-#  OPT_MPI_FLAGS	+= 
-#  OPT_OMP_FLAGS	+= 
-#  OPT_OMPI_FLAGS	+= 
-  DEBUG_FLAGS		+= -Xa -sx6 -gv 
-#  DEBUG_OMP_FLAGS	+= 
-#  DEBUG_OMPI_FLAGS	+= 
+#  OPT_MPI_FLAGS	+=
+#  OPT_OMP_FLAGS	+=
+#  OPT_OMPI_FLAGS	+=
+  DEBUG_FLAGS		+= -Xa -sx6 -gv
+#  DEBUG_OMP_FLAGS	+=
+#  DEBUG_OMPI_FLAGS	+=
   PROF_FLAGS		+= -ftrace -DFTRACE
   PROF_LIBS		+= -lftrace
 endif
@@ -741,9 +744,9 @@ ifeq (bgl-cc,${IMDSYS})
   CC_SERIAL	= dummy
   CC_MPI	= blrts_xlc -DBG -DBGL -I${BGLSYS}/include
   BIN_DIR	= ${HOME}/bin
-  OPT_FLAGS	+= -O4 -qarch=440 -qtune=440  
+  OPT_FLAGS	+= -O4 -qarch=440 -qtune=440
   DEBUG_FLAGS	+= -g
-  LIBS          += -L${BGLSYS}/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts 
+  LIBS          += -L${BGLSYS}/lib -lmpich.rts -lmsglayer.rts -lrts.rts -ldevices.rts
   LFLAGS        += -O4
 endif
 
@@ -753,16 +756,16 @@ ifeq (bgp-cc,${IMDSYS})
   CC_SERIAL	= dummy
   CC_MPI	= mpixlc -DBG -DBGP -I${BGPSYS}/include
   BIN_DIR	= ${HOME}/bin
-  OPT_FLAGS	+= -O4 -qarch=450 -qtune=450  
+  OPT_FLAGS	+= -O4 -qarch=450 -qtune=450
   DEBUG_FLAGS	+= -g
-  LIBS          += # -L${BGPSYS}/lib  
+  LIBS          += # -L${BGPSYS}/lib
   LFLAGS        += -O4
 endif
 
 
 ###########################################################################
 #
-#  Flags for Cell Broad Band Engine  
+#  Flags for Cell Broad Band Engine
 #
 ###########################################################################
 
@@ -809,8 +812,8 @@ ifeq (cbe-gcc,${IMDSYS})
   # The spu-timing utility provided by the Cell SDK
   SPUTIMING=${CELLSDK}/bin/spu_timing -running-count
 
-  # Use the PPU compiler ppu-gcc, also for MPI!  
-  # as main compiler as it defines the __PPU__ macro 
+  # Use the PPU compiler ppu-gcc, also for MPI!
+  # as main compiler as it defines the __PPU__ macro
   # The ordinary gcc does not set this macro
 
   CC_SERIAL     = ppu-gcc -m32
@@ -828,7 +831,7 @@ ifeq (cbe-gcc,${IMDSYS})
   PROF_LIBS	+= -g3 -pg
 
   SPULDFLAGS    +=
-  LFLAGS        += 
+  LFLAGS        +=
   LIBS          += -lspe2
 endif
 
@@ -940,7 +943,7 @@ endif
 ###########################################################################
 
 IMDHEADERS      = config.h globals.h imd.h makros.h potaccess.h \
-                  prototypes.h types.h 
+                  prototypes.h types.h
 
 SOURCES         = imd_maxwell.c imd_integrate.c imd_misc.c \
 	          imd_param.c imd_alloc.c imd_io.c imd_io_3d.c \
@@ -1044,12 +1047,18 @@ else
 
       else
 
-        ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
-          SOURCES := ${SOURCES3D} ${MPISOURCES3D}
-        else
-          SOURCES := ${SOURCES3D} ${RISCSOURCES3D}
+	ifneq (,$(strip $(findstring kim, ${MAKETARGET})))
+	  SOURCES := ${SOURCES3D} ${NBLSOURCES3D}
+	  ifneq (,$(strip $(findstring mpi, ${MAKETARGET})))
+	    SOURCES += ${MPISOURCES}
+          endif
+	else
+          ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
+            SOURCES := ${SOURCES3D} ${MPISOURCES3D}
+          else
+            SOURCES := ${SOURCES3D} ${RISCSOURCES3D}
+          endif
         endif
-
       endif
     endif
   endif
@@ -1079,6 +1088,9 @@ else
     ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
       FORCESOURCES = imd_forces_nbl.c
       PP_FLAGS += -DNBL
+      ifneq (,$(strip $(findstring kim, ${MAKETARGET})))
+	ERROR = "KIM is not compatible with any NBL force routine"
+      endif
     else
       FORCESOURCES = ${PAIRSOURCES}
     endif
@@ -1087,11 +1099,17 @@ endif
 
 # PAIR
 ifneq (,$(strip $(findstring pair,${MAKETARGET})))
+  ifneq (,$(strip $(findstring kim,${MAKETARGET})))
+    ERROR = "KIM is not compatible with PAIR force routines"
+  endif
   PP_FLAGS  += -DPAIR
 endif
 
 # EAM2 or EAM  -  this is now the same
 ifneq (,$(strip $(findstring eam,${MAKETARGET})))
+  ifneq (,$(strip $(findstring kim,${MAKETARGET})))
+    ERROR = "KIM is not compatible with EAM force routines"
+  endif
   # EEAM
   ifneq (,$(strip $(findstring eeam,${MAKETARGET})))
     PP_FLAGS  += -DEEAM
@@ -1117,6 +1135,9 @@ endif
 
 # ADP
 ifneq (,$(strip $(findstring adp,${MAKETARGET})))
+  ifneq (,$(strip $(findstring kim,${MAKETARGET})))
+    ERROR = "KIM is not compatible with ADP force routines"
+  endif
 PP_FLAGS  += -DADP
 endif
 
@@ -1134,6 +1155,9 @@ endif
 
 # STIWEB
 ifneq (,$(strip $(findstring stiweb,${MAKETARGET})))
+  ifneq (,$(strip $(findstring kim,${MAKETARGET})))
+    ERROR = "KIM is not compatible with STIWEB force routines"
+  endif
 PP_FLAGS  += -DSTIWEB
 FORCESOURCES += ${COVALENTSOURCES}
 endif
@@ -1146,6 +1170,9 @@ endif
 
 # TERSOFF
 ifneq (,$(strip $(findstring tersoffmod,${MAKETARGET})))
+  ifneq (,$(strip $(findstring kim,${MAKETARGET})))
+    ERROR = "KIM is not compatible with TERSOFFMOD force routines"
+  endif
 PP_FLAGS  += -DTERSOFFMOD
 FORCESOURCES += ${COVALENTSOURCES}
 ifneq (,$(strip $(findstring tersoffmod2,${MAKETARGET})))
@@ -1153,6 +1180,9 @@ PP_FLAGS  += -DTERSOFFMOD2
 endif
 else
 ifneq (,$(strip $(findstring tersoff,${MAKETARGET})))
+  ifneq (,$(strip $(findstring kim,${MAKETARGET})))
+    ERROR = "KIM is not compatible with TERSOFF force routines"
+  endif
 PP_FLAGS  += -DTERSOFF
 FORCESOURCES += ${COVALENTSOURCES}
 ifneq (,$(strip $(findstring tersoff2,${MAKETARGET})))
@@ -1183,12 +1213,12 @@ ifneq (,$(strip $(findstring laseryz,${MAKETARGET})))
 		SOURCES += ${LASERSOURCES}
 	else
 	       	CFLAGS += -DLASERYZ -DLASER
-		SOURCES += ${LASERSOURCES}	
+		SOURCES += ${LASERSOURCES}
 	endif
 else
 	ifneq (,$(strip $(findstring laser,${MAKETARGET})))
 		PP_FLAGS += -DLASER
-		SOURCES += ${LASERSOURCES}	
+		SOURCES += ${LASERSOURCES}
 	endif
 endif
 
@@ -1226,7 +1256,7 @@ endif
 
 # FCS
 ifneq (,$(strip $(findstring fcs,${MAKETARGET})))
-PP_FLAGS      += -DUSEFCS 
+PP_FLAGS      += -DUSEFCS
 FORCESOURCES  += ${FCSSOURCES}
 LIBS          += $(shell pkg-config --libs scafacos-fcs)
 CFLAGS        += $(shell pkg-config --cflags scafacos-fcs)
@@ -1262,6 +1292,13 @@ ifneq (,$(strip $(findstring lj,${MAKETARGET})))
 PP_FLAGS  += -DLJ
 endif
 
+ifneq (,$(strip $(findstring kim,${MAKETARGET})))
+FORCESOURCES = imd_forces_kim.c
+PP_FLAGS += -DKIM
+LIBS          += -L${KIM_DIR}/KIM_API -lkim
+CFLAGS        += -I${KIM_DIR}/KIM_API
+endif
+
 SOURCES += ${FORCESOURCES}
 
 ###  ENSEMBLES  #########################################
@@ -1278,7 +1315,7 @@ endif
 # CG
 ifneq (,$(strip $(findstring cg,${MAKETARGET})))
 SOURCES += ${CGSOURCES}
-IMDHEADERS += cg_util.h  
+IMDHEADERS += cg_util.h
 PP_FLAGS  += -DCG
 endif
 ifneq (,$(strip $(findstring acg,${MAKETARGET})))
@@ -1600,7 +1637,7 @@ endif
 
 # use papi
 ifneq (,$(findstring papi,${MAKETARGET}))
-PP_FLAGS += -DPAPI ${PAPI_INC} 
+PP_FLAGS += -DPAPI ${PAPI_INC}
 LIBS   += ${PAPI_LIBS}
 endif
 
@@ -1696,21 +1733,21 @@ imd_forces_covalent.o: imd_forces_covalent.c
 
 # How to link
 ifneq (,$(strip $(findstring py,${MAKETARGET})))
-${MAKETARGET}: ${OBJECTS} 
+${MAKETARGET}: ${OBJECTS}
 	@echo ${PYDIR} ${IMDPYDIR}
 	swig ${PP_FLAGS} -python -module $@ -outdir ${PYDIR} imd.i
 	${CC} ${CFLAGS} ${PP_FLAGS} -I/usr/include/python -c imd_wrap.c
 	${CC} ${LFLAGS} -fPIC -shared -o _$@.so ${OBJECTS} imd_wrap.o ${LIBS}
 	${MV} _$@.so ${PYDIR}; rm -f _$@.so
 else
-${MAKETARGET}: ${OBJECTS} 
+${MAKETARGET}: ${OBJECTS}
 	${CC} ${LFLAGS} -o $@ ${OBJECTS} ${LIBS}
 	${MV} $@ ${BIN_DIR}; rm -f $@
 endif
 
 # First recursion only set the MAKETARGET Variable
 .DEFAULT:
-ifneq (,${CC}) 
+ifneq (,${CC})
 	./version.sh
 	@echo \#define COMPILE_TARGET \"$@\" >> version.h
 	${MAKE} MAKETARGET='$@' STAGE2
@@ -1725,10 +1762,14 @@ endif
 # Second recursion sets MAKETARGET variable and compiles
 # An empty MAKETARGET variable would create an infinite recursion, so we check
 STAGE2:
+ifneq (,${ERROR})
+	@echo -e "\nError: ${ERROR}\n"
+else
 ifneq (,${MAKETARGET})
 	${MAKE} MAKETARGET='${MAKETARGET}' ${MAKETARGET}
 else
 	@echo 'No TARGET specified.'
+endif
 endif
 
 ###########################################################################
@@ -1776,7 +1817,7 @@ socktest:
 # and an spu version of calc_wp
 # The SPU object file which is linked to the main programm
 spu.o: spu1
-	${EMBEDSPU} hndle_cbe_calc spu1 spu.o 
+	${EMBEDSPU} hndle_cbe_calc spu1 spu.o
 
 
 

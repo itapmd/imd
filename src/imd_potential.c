@@ -99,8 +99,12 @@ void setup_potentials( void )
     read_pot_table(&embed_pot,meam_emb_E_filename,ntypes,0);
   /* read the tabulated electron density function */
   if (have_eldensity_file)
-    read_pot_table(&el_density,meam_eldensity_filename,ntypes,1);    
+    read_pot_table(&el_density,meam_eldensity_filename,ntypes,1);
   init_meam();
+#endif
+
+#ifdef KIM
+  init_kim_info();
 #endif
 
 #ifdef KEATING
@@ -142,8 +146,8 @@ void fix_pottab_bks(void) {
     k     = (int) (r2a * istep);
     pk = *PTR_2D(pt->table, k,   col, pt->maxsteps, pt->ncols);
     dp = *PTR_2D(pt->table, k+1, col, pt->maxsteps, pt->ncols) - pk;
-    for (i=0; i<k; i++) 
-      *PTR_2D(pt->table, i, col, pt->maxsteps, pt->ncols) 
+    for (i=0; i<k; i++)
+      *PTR_2D(pt->table, i, col, pt->maxsteps, pt->ncols)
         -= (i-k)*(i-k)*(i-k)*0.0004;
   }
 }
@@ -191,11 +195,11 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols, int radial )
 	    sprintf(msg,"Wrong number of data columns in file %%s\nShould be %d, is %d",ncols,size);
             error_str(msg,filename);}
           /* recognized format? */
-          if ((format!=1) && (format!=2)) 
+          if ((format!=1) && (format!=2))
             error_str("Unrecognized format specified for file %s",filename);
           have_format=1;
 	}
-      } else if (have_header) { 
+      } else if (have_header) {
         /* header does not end properly */
         error_str("Corrupted header in file %s",filename);
       } else {
@@ -227,7 +231,7 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols, int radial )
   pt->step     = (real *) malloc(ncols*sizeof(real));
   pt->invstep  = (real *) malloc(ncols*sizeof(real));
   pt->len      = (int  *) malloc(ncols*sizeof(int ));
-  if ((pt->begin   == NULL) || (pt->end == NULL) || (pt->step == NULL) || 
+  if ((pt->begin   == NULL) || (pt->end == NULL) || (pt->step == NULL) ||
       (pt->invstep == NULL) || (pt->len == NULL))
     error_str("Cannot allocate info block for function table %s.",filename);
 
@@ -290,7 +294,7 @@ void read_pot_table( pot_table_t *pt, char *filename, int ncols, int radial )
 *
 ******************************************************************************/
 
-void read_pot_table1(pot_table_t *pt, int ncols, char *filename, 
+void read_pot_table1(pot_table_t *pt, int ncols, char *filename,
                      FILE *infile, int radial)
 {
   int i, k;
@@ -309,7 +313,7 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename,
   /* input loop */
   while (!feof(infile)) {
 
-    /* still some space left? */ 
+    /* still some space left? */
     if (((npot%PSTEP) == 0) && (npot>0)) {
       pt->maxsteps += PSTEP;
       tablesize = ncols * pt->maxsteps;
@@ -322,7 +326,7 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename,
     if (1 != fscanf(infile,FORMAT1,&r2)) break;
     if (npot==0) r2_start = r2;  /* catch first value */
     for (i=0; i<ncols; ++i) {
-      if ((1 != fscanf(infile,FORMAT1, &val)) && (myid==0)) 
+      if ((1 != fscanf(infile,FORMAT1, &val)) && (myid==0))
         error("Line incomplete in potential file.");
       *PTR_2D(pt->table,npot,i,pt->maxsteps,ncols) = val;
       if (val!=0.0) { /* catch last non-zero value */
@@ -374,12 +378,12 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename,
 
 /*****************************************************************************
 *
-*  read potential in second format: at the beginning <ncols> times 
+*  read potential in second format: at the beginning <ncols> times
 *  a line of the form
 *
 *  r_begin r_end r_step,
-*  
-*  then the values of the potential (one per line), first those 
+*
+*  then the values of the potential (one per line), first those
 *  for atom pair  00, then an empty line (for gnuplot), then 01 and so on.
 *  Analogously, if there is only one column per atom type.
 *
@@ -387,7 +391,7 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename,
 *
 ******************************************************************************/
 
-void read_pot_table2(pot_table_t *pt, int ncols, char *filename, 
+void read_pot_table2(pot_table_t *pt, int ncols, char *filename,
                      FILE *infile, int radial)
 {
   int i, k;
@@ -402,7 +406,7 @@ void read_pot_table2(pot_table_t *pt, int ncols, char *filename,
     if (radial) cellsz = MAX(cellsz,pt->end[i]);
     pt->invstep[i] = 1.0 / pt->step[i];
     numstep        = 1 + (pt->end[i] - pt->begin[i]) / pt->step[i];
-    pt->len[i]     = (int) (numstep+0.49);  
+    pt->len[i]     = (int) (numstep+0.49);
     pt->maxsteps   = MAX(pt->maxsteps, pt->len[i]);
 
     /* some security against rounding errors */
@@ -439,7 +443,7 @@ void read_pot_table2(pot_table_t *pt, int ncols, char *filename,
         if (0==myid)
           printf("Potential %1d%1d shifted by %f\n",
                  (i/ntypes),(i%ntypes),delta);
-        for (k=0; k<pt->len[i]; k++) 
+        for (k=0; k<pt->len[i]; k++)
           *PTR_2D(pt->table,k,i,pt->table,ncols) -= delta;
       }
     }
@@ -488,25 +492,25 @@ void create_pot_table(pot_table_t *pt)
       pt->step     = (real *) malloc(ncols*sizeof(real));
       pt->invstep  = (real *) malloc(ncols*sizeof(real));
       pt->len      = (int  *) malloc(ncols*sizeof(int ));
-      if ((pt->begin   == NULL) || (pt->end == NULL) || (pt->step == NULL) || 
-	  (pt->invstep == NULL) || (pt->len == NULL)) 
+      if ((pt->begin   == NULL) || (pt->end == NULL) || (pt->step == NULL) ||
+	  (pt->invstep == NULL) || (pt->len == NULL))
         error("Cannot allocate info block for potential table.");
       pt->table = (real *) malloc(tablesize * sizeof(real));
-      if (NULL==pt->table) 
+      if (NULL==pt->table)
         error("Cannot allocate memory for potential table.");
     } else {   /* we possibly have to extend potential table */
       if (maxres > pt->maxsteps) {
         pt->maxsteps = maxres;
         tablesize    = ncols * (pt->maxsteps + 2);
         pt->table    = (real *) realloc(pt->table, tablesize * sizeof(real));
-        if (NULL==pt->table) 
+        if (NULL==pt->table)
           error("Cannot extend memory for potential table.");
       }
     }
 
     /* Prepare header info */
     column = 0;
-    for (i=0; i<ntypes; i++) 
+    for (i=0; i<ntypes; i++)
       for (j=i; j<ntypes; j++) {
         if ((r_cut_lin[column]>0)
 #ifdef EWALD
@@ -514,9 +518,9 @@ void create_pot_table(pot_table_t *pt)
 #endif
           ) {
           r2_begin[i][j]   = r2_begin[j][i]   = SQR(r_begin[column]);
-          r2_end[i][j]     = r2_end[j][i]     
+          r2_end[i][j]     = r2_end[j][i]
                            = MAX( SQR(r_cut_lin[column]), ew_r2_cut);
-          r2_step[i][j]    = r2_step[j][i] 
+          r2_step[i][j]    = r2_step[j][i]
                            = (r2_end[i][j]-r2_begin[i][j])/(pot_res[column]-1);
           r2_invstep[i][j] = r2_invstep[j][i] = 1.0 / r2_step[i][j];
           len[i][j]        = len[j][i]        = pot_res[column];
@@ -528,7 +532,7 @@ void create_pot_table(pot_table_t *pt)
     /* Create or update info header */
     column = 0;
     for (i=0; i<ntypes; i++)
-      for (j=0; j<ntypes; j++) { 
+      for (j=0; j<ntypes; j++) {
         if (r2_end[i][j]>0) {
           pt->begin  [column] = r2_begin  [i][j];
           pt->end    [column] = r2_end    [i][j];
@@ -554,8 +558,8 @@ void create_pot_table(pot_table_t *pt)
       for (j=0; j<ntypes; j++) {
 
         if (r2_end[i][j]>0) {
-	  col= (i<j) ? 		
-	    i*ntypes - (i*(i+1))/2 + j : 
+	  col= (i<j) ?
+	    i*ntypes - (i*(i+1))/2 + j :
 	    j*ntypes - (j*(j+1))/2 + i;
           for (n=0; n<len[i][j]; n++) {
             val = 0.0;
@@ -637,7 +641,7 @@ void create_pot_table(pot_table_t *pt)
 #endif
 #if ((defined(DIPOLE) || defined(MORSE)) && !defined(BUCK))
             /* Morse-Stretch potential for dipole */
-            if ((ew_r2_cut > 0)) { 
+            if ((ew_r2_cut > 0)) {
 	      /* harmonic spring */
 	      if (r2 < ms_r2_min[col]) {
 		val += ms_harm_c[col]*SQR(SQRT(r2)-ms_harm_a[col])
@@ -652,7 +656,7 @@ void create_pot_table(pot_table_t *pt)
 #endif /* DIPOLE or MORSE */
 #ifdef BUCK
  /* Buckingham potential for dipole */
-            if ((ew_r2_cut > 0)) { 
+            if ((ew_r2_cut > 0)) {
 	      if (r2 < ew_r2_cut) {
                 pair_int_buck(&pot, &grad, i, j, r2);
                 val += pot - bk_shift[col];
@@ -700,7 +704,7 @@ void init_pre_pot(void) {
   ms_fshift = (real *) malloc (ntypepairs * sizeof(real));
   ms_harm_a = (real *) malloc (ntypepairs * sizeof(real));
   ms_harm_b = (real *) malloc (ntypepairs * sizeof(real));
-  if (( NULL == ms_shift ) || ( NULL == ms_fshift ) || 
+  if (( NULL == ms_shift ) || ( NULL == ms_fshift ) ||
       ( NULL == ms_harm_a )|| ( NULL == ms_harm_b ))
     error("cannot allocate Morse-Stretch shift");
 #endif
@@ -711,7 +715,7 @@ void init_pre_pot(void) {
     error("cannot allocate Buckingham shift");
 #endif
   n=0; m=0;
-  for (i=0; i<ntypes; i++) 
+  for (i=0; i<ntypes; i++)
     for (j=i; j<ntypes; j++) {
 
 #if defined(USEFCS) && !defined(VARCHG)
@@ -728,34 +732,34 @@ void init_pre_pot(void) {
       if (pot_res[n]==0) pot_res[n] = 1000;
 
       /* Lennard-Jones */
-      lj_epsilon[i][j] = lj_epsilon[j][i] = lj_epsilon_lin[n]; 
-      lj_sigma  [i][j] = lj_sigma  [j][i] = lj_sigma_lin  [n]; 
+      lj_epsilon[i][j] = lj_epsilon[j][i] = lj_epsilon_lin[n];
+      lj_sigma  [i][j] = lj_sigma  [j][i] = lj_sigma_lin  [n];
       if ((r_begin[n]==0) && (lj_epsilon_lin[n]>0)) {
-        if (lj_sigma_lin[n]>0) 
+        if (lj_sigma_lin[n]>0)
           r_begin[n] = 0.1 * lj_sigma_lin[n];
         else
           error("lj_sigma must be > 0 if lj_epsilon > 0");
       }
 
       /* Lennard-Jones-Gauss */
-      ljg_eps [i][j] = ljg_eps[j][i] = ljg_eps_lin[n]; 
-      ljg_r0  [i][j] = ljg_r0 [j][i] = ljg_r0_lin [n]; 
-      ljg_sig [i][j] = ljg_sig[j][i] = ljg_sig_lin[n]; 
-      if ((ljg_eps_lin[n]>0) && ((ljg_sig_lin[n]<=0) || (ljg_r0_lin[n]<=0)))  
+      ljg_eps [i][j] = ljg_eps[j][i] = ljg_eps_lin[n];
+      ljg_r0  [i][j] = ljg_r0 [j][i] = ljg_r0_lin [n];
+      ljg_sig [i][j] = ljg_sig[j][i] = ljg_sig_lin[n];
+      if ((ljg_eps_lin[n]>0) && ((ljg_sig_lin[n]<=0) || (ljg_r0_lin[n]<=0)))
         error("ljg_sig and ljg_r0 must be > 0, if ljg_eps > 0");
 
       /* Morse */
-      morse_epsilon[i][j] = morse_epsilon[j][i] = morse_epsilon_lin[n]; 
-      morse_sigma  [i][j] = morse_sigma  [j][i] = morse_sigma_lin  [n]; 
-      morse_alpha  [i][j] = morse_alpha  [j][i] = morse_alpha_lin  [n]; 
-      if ((morse_epsilon_lin[n]>0) && (morse_sigma_lin[n]==0)) 
+      morse_epsilon[i][j] = morse_epsilon[j][i] = morse_epsilon_lin[n];
+      morse_sigma  [i][j] = morse_sigma  [j][i] = morse_sigma_lin  [n];
+      morse_alpha  [i][j] = morse_alpha  [j][i] = morse_alpha_lin  [n];
+      if ((morse_epsilon_lin[n]>0) && (morse_sigma_lin[n]==0))
         error("morse_sigma must be > 0 if morse_epsilon > 0");
 
       /* Buckingham */
       buck_a    [i][j] = buck_a    [j][i] = buck_a_lin    [n];
       buck_c    [i][j] = buck_c    [j][i] = buck_c_lin    [n];
       buck_sigma[i][j] = buck_sigma[j][i] = buck_sigma_lin[n];
-      if ((r_begin[n]==0) && (buck_sigma_lin[n]>0)) 
+      if ((r_begin[n]==0) && (buck_sigma_lin[n]>0))
         r_begin[n] = 0.1 * buck_sigma_lin[n];
 
 #ifdef STIWEB
@@ -772,7 +776,7 @@ void init_pre_pot(void) {
 	sw_la[k][i][j] = sw_la[k][j][i] = stiweb_la[m];
 	m++;
       }
-      if ((r_begin[n]==0) && (stiweb_a1[n]>0)) 
+      if ((r_begin[n]==0) && (stiweb_a1[n]>0))
         r_begin[n] = 0.05 * stiweb_a1[n];
 #endif
 
@@ -787,7 +791,7 @@ void init_pre_pot(void) {
 
 #ifdef EWALD
       /* Coulomb for Ewald */
-      if ((ew_r2_cut > 0) && (ew_nmax < 0) && (r_begin[n]==0)) 
+      if ((ew_r2_cut > 0) && (ew_nmax < 0) && (r_begin[n]==0))
         r_begin[n] = 0.2;
 #endif
 
@@ -799,7 +803,7 @@ void init_pre_pot(void) {
   n=0;
   for (i=0; i<ntypes-1; i++)
     for (k=i+1; k<ntypes; k++) {
-      spring_cst[i][k] = spring_cst[k][i] = spring_const[n]; 
+      spring_cst[i][k] = spring_cst[k][i] = spring_const[n];
       if (spring_const[n]>0) r_begin[i*ntypes+k] = 0.0;
       n++;
     }
@@ -807,7 +811,7 @@ void init_pre_pot(void) {
   for (i=0; i<ntypes; ++i)
     for (j=0; j<ntypes; ++j)
       tmp = MAX( tmp, r2_cut[i][j] );
-  
+
 #ifdef EWALD
   if (ew_nmax < 0) tmp = MAX(tmp,ew_r2_cut);
 #endif
@@ -820,11 +824,11 @@ void init_pre_pot(void) {
   cellsz = MAX(cellsz,tmp);
 
   /* Shift of potentials */
-  for (i=0; i<ntypes; i++) 
+  for (i=0; i<ntypes; i++)
     for (j=0; j<ntypes; j++) {
 
 #ifndef BUCK
-      if (r2_cut[i][j] > 0.0) { 
+      if (r2_cut[i][j] > 0.0) {
         /* Lennard-Jones(-Gauss) */
         if (lj_epsilon[i][j] > 0.0) {
           if (ljg_eps[i][j] > 0.0)
@@ -837,10 +841,10 @@ void init_pre_pot(void) {
           lj_aaa  [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
           if (myid==0)
             if (ljg_eps[i][j] > 0.0)
-              printf("Lennard-Jones-Gauss potential %1d %1d shifted by %f\n", 
+              printf("Lennard-Jones-Gauss potential %1d %1d shifted by %f\n",
 	              i, j, -lj_shift[i][j]);
             else
-              printf("Lennard-Jones potential %1d %1d shifted by %f\n", 
+              printf("Lennard-Jones potential %1d %1d shifted by %f\n",
 	              i, j, -lj_shift[i][j]);
 	}
         else lj_shift[i][j] = 0.0;
@@ -851,22 +855,22 @@ void init_pre_pot(void) {
           morse_shift[i][j] +=  0.25 * tmp *  POT_TAIL * r2_cut[i][j];
           morse_aaa  [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
           if (myid==0)
-            printf("Morse potential %1d %1d shifted by %f\n", 
+            printf("Morse potential %1d %1d shifted by %f\n",
 	           i, j, -morse_shift[i][j]);
 	}
         else morse_shift[i][j] = 0.0;
         /* Buckingham */
         if (buck_sigma[i][j] > 0.0) {
-          pair_int_buck( &buck_shift[i][j], &tmp, i, j, 
+          pair_int_buck( &buck_shift[i][j], &tmp, i, j,
                          (1.0 - POT_TAIL) * r2_cut[i][j]);
           buck_shift[i][j] +=  0.25 * tmp *  POT_TAIL * r2_cut[i][j];
           buck_aaa  [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
           if (myid==0)
-            printf("Buckingham potential %1d %1d shifted by %f\n", 
+            printf("Buckingham potential %1d %1d shifted by %f\n",
 	           i, j, -buck_shift[i][j]);
-	} 
+	}
         else buck_shift[i][j] = 0.0;
-      } 
+      }
       else {
         lj_shift   [i][j] = 0.0;
         morse_shift[i][j] = 0.0;
@@ -879,9 +883,9 @@ void init_pre_pot(void) {
         if (SQR(charge[i]*charge[j]) > 0.0) {
           pair_int_ewald( &ew_shift[i][j], &ew_fshift[i][j], i, j, ew_r2_cut);
           if (myid==0)
-            printf("Coulomb potential %1d %1d shifted by %f\n", 
+            printf("Coulomb potential %1d %1d shifted by %f\n",
 	           i, j, -ew_shift[i][j]);
-        } 
+        }
         else {
           ew_shift [i][j] = 0.0;
           ew_fshift[i][j] = 0.0;
@@ -895,7 +899,7 @@ void init_pre_pot(void) {
 	if (ew_r2_cut > 0)  {
 	  pair_int_mstr( &ms_shift[col], &ms_fshift[col], i, j, ew_r2_cut);
           if (myid==0) {
-            printf("Morse-Stretch pot %1d %1d (col %1d) shifted by %g,\n", 
+            printf("Morse-Stretch pot %1d %1d (col %1d) shifted by %g,\n",
 	           i, j, col, -ms_shift[col]);
 	  }
 	}
@@ -923,7 +927,7 @@ void init_pre_pot(void) {
 	if (ew_r2_cut > 0)  {
 	  pair_int_buck( &bk_shift[col], &bk_fshift[col], i, j, ew_r2_cut);
           if (myid==0) {
-            printf("Buckingham pot %1d %1d (col %1d) shifted by %g,\n", 
+            printf("Buckingham pot %1d %1d (col %1d) shifted by %g,\n",
 	           i, j, col, -bk_shift[col]);
 	  }
 	}
@@ -982,9 +986,9 @@ void create_coulomb_tables()
   ew_vorf  = ew_kappa / SQRT( M_PI ); /* needed for Coulomb self energy */
   if (coul_res==0)    coul_res=1000;
   if (coul_begin<=0.) coul_begin=0.2; /* prevent singularity at r=0 */
-  
+
   pt=&coul_table;
-  
+
   pt->ncols    = ncols;
   pt->maxsteps = coul_res;
   tablesize    = ncols * (pt->maxsteps+2);
@@ -993,11 +997,11 @@ void create_coulomb_tables()
   pt->step     = (real *) malloc(ncols*sizeof(real));
   pt->invstep  = (real *) malloc(ncols*sizeof(real));
   pt->len      = (int  *) malloc(ncols*sizeof(int ));
-  if ((pt->begin   == NULL) || (pt->end == NULL) || (pt->step == NULL) || 
-      (pt->invstep == NULL) || (pt->len == NULL)) 
+  if ((pt->begin   == NULL) || (pt->end == NULL) || (pt->step == NULL) ||
+      (pt->invstep == NULL) || (pt->len == NULL))
     error("Cannot allocate info block for dipole function table.");
   pt->table = (real *) malloc(tablesize * sizeof(real));
-  if (NULL==pt->table) 
+  if (NULL==pt->table)
     error("Cannot allocate memory for dipole function table.");
 
   /* Sampling identical for all functions */
@@ -1017,7 +1021,7 @@ void create_coulomb_tables()
   coulf2shift -= 0.75*coul_fshift;
   coulf2shift *= 4.0/ew_r2_cut;
   if (myid==0) {
-    printf("Coulomb potential shifting parameters: %g , %g , %g\n", 
+    printf("Coulomb potential shifting parameters: %g , %g , %g\n",
 	    coul_shift, coul_fshift, coulf2shift);
   }
 
@@ -1027,7 +1031,7 @@ void create_coulomb_tables()
     pot -= coul_shift;
     pot -= 0.5*coul_fshift*(r2-ew_r2_cut);
 #ifdef DIPOLE
-    pot -= 0.125*coulf2shift*(SQR(r2)-2.*r2*ew_r2_cut + 
+    pot -= 0.125*coulf2shift*(SQR(r2)-2.*r2*ew_r2_cut +
 			      SQR(ew_r2_cut));
 #endif
     *PTR_2D(pt->table,i,cou_col,pt->maxsteps,ncols)=pot;
@@ -1050,7 +1054,7 @@ void create_coulomb_tables()
     }
 #endif
   }
-    
+
   /* Finish up */
 #if   defined(FOURPOINT)
   init_fourpoint(pt, ncols);
@@ -1062,7 +1066,7 @@ void create_coulomb_tables()
 #endif
   if ((0==myid) && (debug_potential)) test_potential(*pt, "coulomb", ncols);
 
-}  
+}
 #endif /* COULOMB */
 
 #if defined(FOURPOINT)
@@ -1125,7 +1129,7 @@ void init_spline( pot_table_t *pt, int ncols, int radial )
     for (i=1; i<n-1; i++) {
       p = 0.5 * y2[(i-1)*ncols] + 2.0;
       y2[i*ncols] = -0.5 / p;
-      u[i] = (y[(i+1)*ncols] - 2*y[i*ncols] + y[(i-1)*ncols]) / step; 
+      u[i] = (y[(i+1)*ncols] - 2*y[i*ncols] + y[(i-1)*ncols]) / step;
       u[i] = (6.0 * u[i] / (2*step) - 0.5 * u[i-1]) / p;
     }
 
@@ -1140,7 +1144,7 @@ void init_spline( pot_table_t *pt, int ncols, int radial )
     }
 
     y2[(n-1)*ncols] = (un - qn * u[n-2]) / (qn * y2[(n-2)*ncols] + 1.0);
-    for (k=n-2; k>=0; k--) 
+    for (k=n-2; k>=0; k--)
       y2[k*ncols] = y2[k*ncols] * y2[(k+1)*ncols] + u[k];
 
     /* for security, we continue the last interpolation polynomial */
@@ -1261,7 +1265,7 @@ void make_lin_pot_table( pot_table_t pt, lin_pot_table_t *lpt )
 
 /*****************************************************************************
 *
-*  Free potential table 
+*  Free potential table
 *
 ******************************************************************************/
 
@@ -1282,7 +1286,7 @@ void free_pot_table(pot_table_t *pt)
 
 /*****************************************************************************
 *
-*  copy potential table 
+*  copy potential table
 *
 ******************************************************************************/
 
@@ -1345,8 +1349,8 @@ void pair_int_lj(real *pot, real *grad, int p_typ, int q_typ, real r2)
 
   *pot = lj_epsilon[p_typ][q_typ] * ( sig_d_rad12 - 2.0 * sig_d_rad6 );
   /* return (1/r)*dV/dr as derivative */
-  *grad = -12.0 * lj_epsilon[p_typ][q_typ] / r2 
-    * ( sig_d_rad12 - sig_d_rad6 );  
+  *grad = -12.0 * lj_epsilon[p_typ][q_typ] / r2
+    * ( sig_d_rad12 - sig_d_rad6 );
 }
 
 /*****************************************************************************
@@ -1363,13 +1367,13 @@ void pair_int_ljg(real *pot, real *grad, int p_typ, int q_typ, real r2)
   sig_d_rad6  = sig_d_rad2 * sig_d_rad2 * sig_d_rad2;
   sig_d_rad12 = sig_d_rad6 * sig_d_rad6;
 
-  dr = ( sqrt(r2)-ljg_r0[p_typ][q_typ] ) / ljg_sig[p_typ][q_typ];       
-  expo = exp ( - 0.5 * dr * dr );					
-									
+  dr = ( sqrt(r2)-ljg_r0[p_typ][q_typ] ) / ljg_sig[p_typ][q_typ];
+  expo = exp ( - 0.5 * dr * dr );
+
   *pot = lj_epsilon[p_typ][q_typ] * ( sig_d_rad12 - 2.0 * sig_d_rad6 )
-    - ljg_eps[p_typ][q_typ] * expo;					
+    - ljg_eps[p_typ][q_typ] * expo;
    /* return (1/r)*dV/dr as derivative */
-  *grad = -12.0 * lj_epsilon[p_typ][q_typ] / r2 
+  *grad = -12.0 * lj_epsilon[p_typ][q_typ] / r2
     * ( sig_d_rad12 - sig_d_rad6 )
      - ljg_eps[p_typ][q_typ] * dr * expo / ljg_sig[p_typ][q_typ];
 }
@@ -1385,10 +1389,10 @@ void pair_int_morse(real *pot, real *grad, int p_typ, int q_typ, real r2)
   real r, exppot, cexppot;
 
   r       = sqrt(r2);
-  exppot  = exp( - morse_alpha[p_typ][q_typ] 
+  exppot  = exp( - morse_alpha[p_typ][q_typ]
 		 * ( r - morse_sigma[p_typ][q_typ] ) );
   cexppot = 1.0 - exppot;
- 
+
   *pot  = morse_epsilon[p_typ][q_typ] * ( cexppot * cexppot - 1.0 );
   /* return (1/r)*dV/dr as derivative */
   *grad = 2.0 * morse_alpha[p_typ][q_typ] * morse_epsilon[p_typ][q_typ] / r
@@ -1397,7 +1401,7 @@ void pair_int_morse(real *pot, real *grad, int p_typ, int q_typ, real r2)
 
 /*****************************************************************************
 *
-*  Evaluate Buckingham potential 
+*  Evaluate Buckingham potential
 *
 ******************************************************************************/
 
@@ -1420,7 +1424,7 @@ void pair_int_buck(real *pot, real *grad, int p_typ, int q_typ, real r2)
 
 /*****************************************************************************
 *
-*  Evaluate Coulomb potential for EWALD 
+*  Evaluate Coulomb potential for EWALD
 *
 ******************************************************************************/
 
@@ -1432,7 +1436,7 @@ void pair_int_ewald(real *pot, real *grad, int p_typ, int q_typ, real r2)
   fac   = chg * 2.0 * ew_kappa / sqrt( M_PI );
   *pot  = chg * erfc1(ew_kappa * r) / r;
   /* return (1/r)*dV/dr as derivative */
-  *grad = - (*pot + fac * exp( -SQR(ew_kappa)*r2 ) ) / r2; 
+  *grad = - (*pot + fac * exp( -SQR(ew_kappa)*r2 ) ) / r2;
 }
 
 #endif /* EWALD */
@@ -1453,7 +1457,7 @@ void pair_int_coulomb(real *pot, real *grad, real r2)
   fac   = chg * 2.0 * ew_kappa / sqrt( M_PI );
   *pot  = chg * erfc1(ew_kappa * r) / r;
   /* return (1/r)*dV/dr as derivative */
-  *grad = - (*pot + fac * exp( -SQR(ew_kappa)*r2 ) ) / r2; 
+  *grad = - (*pot + fac * exp( -SQR(ew_kappa)*r2 ) ) / r2;
 }
 
 #endif
@@ -1494,7 +1498,7 @@ void pair_int_mstr(real *pot, real *grad, int p_typ, int q_typ, real r2)
 
 /*****************************************************************************
 *
-*  Evaluate pair potential for Stillinger-Weber potential 
+*  Evaluate pair potential for Stillinger-Weber potential
 *
 ******************************************************************************/
 
@@ -1511,8 +1515,8 @@ void pair_int_stiweb(real *pot, real *grad, int p_typ, int q_typ, real r2)
     inv_r = 1.0 / radius;
     f_cut = exp( sw_de[p_typ][q_typ] * inv_c );
     *pot  = ( phi_r + phi_a ) * f_cut;
-    *grad = ( - *pot * sw_de[p_typ][q_typ] * inv_c * inv_c 
-	      - f_cut * inv_r * ( sw_p[p_typ][q_typ] * phi_r 
+    *grad = ( - *pot * sw_de[p_typ][q_typ] * inv_c * inv_c
+	      - f_cut * inv_r * ( sw_p[p_typ][q_typ] * phi_r
                                 + sw_q[p_typ][q_typ] * phi_a ) ) * inv_r;
   } else {
     *pot  = 0.0;
@@ -1526,7 +1530,7 @@ void pair_int_stiweb(real *pot, real *grad, int p_typ, int q_typ, real r2)
 
 /*****************************************************************************
 *
-*  Evaluate pair part of Tersoff potential 
+*  Evaluate pair part of Tersoff potential
 *
 ******************************************************************************/
 
@@ -1538,11 +1542,11 @@ void pair_int_tersoff(real *pot, int p_typ, int q_typ, real r2)
   tmp = M_PI / ( ter_r_cut[p_typ][q_typ] - ter_r0[p_typ][q_typ] );
   tmp = tmp * ( r - ter_r0[p_typ][q_typ] );
 
-  if      ( r < ter_r0   [p_typ][q_typ] ) fc = 1.0; 
+  if      ( r < ter_r0   [p_typ][q_typ] ) fc = 1.0;
   else if ( r > ter_r_cut[p_typ][q_typ] ) fc = 0.0;
-  else    fc = 0.5 * ( 1.0 + cos( tmp ) );  
+  else    fc = 0.5 * ( 1.0 + cos( tmp ) );
 
-  *pot = fc * ter_a[p_typ][q_typ] * exp( -ter_la[p_typ][q_typ] * r ); 
+  *pot = fc * ter_a[p_typ][q_typ] * exp( -ter_la[p_typ][q_typ] * r );
 }
 
 #endif
@@ -1551,7 +1555,7 @@ void pair_int_tersoff(real *pot, int p_typ, int q_typ, real r2)
 
 /*****************************************************************************
 *
-*  Evaluate pair part of Brenner potential 
+*  Evaluate pair part of Brenner potential
 *
 ******************************************************************************/
 
@@ -1563,25 +1567,25 @@ void pair_int_brenner(real *pot, int p_typ, int q_typ, real r2)
   tmp = M_PI / ( ter_r_cut[p_typ][q_typ] - ter_r0[p_typ][q_typ] );
   tmp = tmp * ( r - ter_r0[p_typ][q_typ] );
 
-  if      ( r < ter_r0   [p_typ][q_typ] ) fc = 1.0; 
+  if      ( r < ter_r0   [p_typ][q_typ] ) fc = 1.0;
   else if ( r > ter_r_cut[p_typ][q_typ] ) fc = 0.0;
-  else    fc = 0.5 * ( 1.0 + cos( tmp ) );  
+  else    fc = 0.5 * ( 1.0 + cos( tmp ) );
 
-  *pot = fc * ter_a[p_typ][q_typ] * exp( -ter_la[p_typ][q_typ] * r ); 
+  *pot = fc * ter_a[p_typ][q_typ] * exp( -ter_la[p_typ][q_typ] * r );
 }
 
 #endif
 
 /*****************************************************************************
 *
-*  Evaluate potential table with quadratic interpolation. 
+*  Evaluate potential table with quadratic interpolation.
 *  Returns the potential value and twice the derivative.
-*  Note: we need (1/r)(dV/dr) = 2 * dV/dr^2 --> use with equidistant r^2 
+*  Note: we need (1/r)(dV/dr) = 2 * dV/dr^2 --> use with equidistant r^2
 *  col is p_typ * ntypes + q_typ
 *
 ******************************************************************************/
 
-void pair_int2(real *pot, real *grad, int *is_short, pot_table_t *pt, 
+void pair_int2(real *pot, real *grad, int *is_short, pot_table_t *pt,
                int col, int inc, real r2)
 {
   real r2a, istep, chi, p0, p1, p2, dv, d2v, *ptr;
@@ -1615,14 +1619,14 @@ void pair_int2(real *pot, real *grad, int *is_short, pot_table_t *pt,
 
 /*****************************************************************************
 *
-*  Evaluate potential table with cubic interpolation. 
+*  Evaluate potential table with cubic interpolation.
 *  Returns the potential value and twice the derivative.
-*  Note: we need (1/r)(dV/dr) = 2 * dV/dr^2 --> use with equidistant r^2 
+*  Note: we need (1/r)(dV/dr) = 2 * dV/dr^2 --> use with equidistant r^2
 *  col is p_typ * ntypes + q_typ
 *
 ******************************************************************************/
 
-void pair_int3(real *pot, real *grad, int *is_short, pot_table_t *pt, 
+void pair_int3(real *pot, real *grad, int *is_short, pot_table_t *pt,
                int col, int inc, real r2)
 {
   real r2a, istep, chi, p0, p1, p2, p3, *ptr;
@@ -1661,7 +1665,7 @@ void pair_int3(real *pot, real *grad, int *is_short, pot_table_t *pt,
   p2  = *ptr; ptr += inc;
   p3  = *ptr;
 
-  /* potential energy */ 
+  /* potential energy */
   *pot = fac0 * p0 + fac1 * p1 + fac2 * p2 + fac3 * p3;
 
   /* twice the derivative */
@@ -1670,11 +1674,11 @@ void pair_int3(real *pot, real *grad, int *is_short, pot_table_t *pt,
 
 /*****************************************************************************
 *
-*  Evaluate tabulated function with quadratic interpolation. 
+*  Evaluate tabulated function with quadratic interpolation.
 *
 ******************************************************************************/
 
-void val_func2(real *val, int *is_short, pot_table_t *pt, 
+void val_func2(real *val, int *is_short, pot_table_t *pt,
                int col, int inc, real r2)
 {
   real r2a, istep, chi, p0, p1, p2, dv, d2v, *ptr;
@@ -1707,11 +1711,11 @@ void val_func2(real *val, int *is_short, pot_table_t *pt,
 
 /*****************************************************************************
 *
-*  Evaluate tabulated function with cubic interpolation. 
+*  Evaluate tabulated function with cubic interpolation.
 *
 ******************************************************************************/
 
-void val_func3(real *val, int *is_short, pot_table_t *pt, 
+void val_func3(real *val, int *is_short, pot_table_t *pt,
                int col, int inc, real r2)
 {
   real r2a, istep, chi, p0, p1, p2, p3;
@@ -1744,18 +1748,18 @@ void val_func3(real *val, int *is_short, pot_table_t *pt,
   p2  = *ptr; ptr += inc;
   p3  = *ptr;
 
-  /* the function value */ 
+  /* the function value */
   *val = fac0 * p0 + fac1 * p1 + fac2 * p2 + fac3 * p3;
 }
 
 /*****************************************************************************
 *
-*  Evaluate the derivative of a function with quadratic interpolation. 
+*  Evaluate the derivative of a function with quadratic interpolation.
 *  Returns *twice* the derivative.
 *
 ******************************************************************************/
 
-void deriv_func2(real *grad, int *is_short, pot_table_t *pt, 
+void deriv_func2(real *grad, int *is_short, pot_table_t *pt,
                  int col, int inc, real r2)
 {
   real r2a, istep, chi, p0, p1, p2, dv, d2v, *ptr;
@@ -1788,12 +1792,12 @@ void deriv_func2(real *grad, int *is_short, pot_table_t *pt,
 
 /*****************************************************************************
 *
-*  Evaluate the derivative of a function with cubic interpolation. 
+*  Evaluate the derivative of a function with cubic interpolation.
 *  Returns *twice* the derivative.
 *
 ******************************************************************************/
 
-void deriv_func3(real *grad, int *is_short, pot_table_t *pt, 
+void deriv_func3(real *grad, int *is_short, pot_table_t *pt,
                  int col, int inc, real r2)
 {
   real r2a, istep, chi, p0, p1, p2, p3, *ptr;
@@ -1836,7 +1840,7 @@ void deriv_func3(real *grad, int *is_short, pot_table_t *pt,
 *
 *  erfc1
 *
-*  Approximation of erfc() 
+*  Approximation of erfc()
 *
 ******************************************************************************/
 
@@ -1857,9 +1861,9 @@ real erfc1(real x)
   xsq = x * x;
 
   tp = t * ( A_1 + t * ( A_2 + t * ( A_3 + t * ( A_4 + t * A_5 ) ) ) );
-  
+
   return ( tp * exp( -xsq ) );
 
-} 
+}
 
 #endif

@@ -19,7 +19,7 @@
 ******************************************************************************/
 
 /* MAIN is defined only once in the main module */
-#ifdef MAIN 
+#ifdef MAIN
 #define EXTERN        /* define Variables in main */
 #define INIT(data) =data
 
@@ -103,13 +103,13 @@ EXTERN int  atoms_per_cpu INIT(150000);  /* estimated size of big cell */
 #endif
 EXTERN integer *cells INIT(NULL);        /* list if inner cell indices */
 #ifdef TWOD
-EXTERN pair *pairs[9];                   /* arrays of cell pairs */  
+EXTERN pair *pairs[9];                   /* arrays of cell pairs */
 EXTERN int  npairs[9], npairs2[9];       /* number of cell pairs */
 #else
-EXTERN pair *pairs[27];                  /* arrays of cell pairs */  
+EXTERN pair *pairs[27];                  /* arrays of cell pairs */
 EXTERN int  npairs[27], npairs2[27];     /* number of cell pairs */
 #if defined(VEC) || defined(NBLIST)
-EXTERN cell_nbrs_t *cnbrs INIT(NULL);    /* neighbors of each cell */ 
+EXTERN cell_nbrs_t *cnbrs INIT(NULL);    /* neighbors of each cell */
 #endif
 #endif
 EXTERN int ncells, nallcells INIT(0);    /* number of cells */
@@ -180,7 +180,7 @@ EXTERN vektor *bend_forces      INIT(NULL);/* each vtype has its force according
 #endif
 
 #ifdef ZAPP
-EXTERN real   zapp_threshold INIT(0); 
+EXTERN real   zapp_threshold INIT(0);
 EXTERN vektor nactive_vect   INIT(nullvektor);
 EXTERN vektor total_impuls   INIT(nullvektor);
 #endif
@@ -197,7 +197,7 @@ EXTERN long nactive_rot INIT(0);  /* number of rot. degrees of freedom */
 EXTERN int ntypes INIT(0);        /* number of real atom types */
 EXTERN int vtypes INIT(0);        /* number of virtual atom types */
 EXTERN int ntypepairs INIT(0);    /* Total number of different types pairs */
-EXTERN int ntypetriples INIT(0);  /* Total number of different types triples 
+EXTERN int ntypetriples INIT(0);  /* Total number of different types triples
 				     symmetric in the last two indices */
 EXTERN int nvalues INIT(0);       /* either ntypes or ntypepairs */
 EXTERN long *num_sort INIT(NULL); /* number of atoms for each real type */
@@ -211,7 +211,7 @@ EXTERN int eng_int INIT(0);      /* Period of data output */
 EXTERN int force_int INIT(0);    /* Period of force file writing */
 EXTERN str255 progname; /* Name of current executable argv[0] */
 EXTERN char *version_str;
-EXTERN ivektor cellmin; /* Minimum index of local cells (1 with BUFCELLS, 
+EXTERN ivektor cellmin; /* Minimum index of local cells (1 with BUFCELLS,
                                                          0 otherwise) */
 EXTERN ivektor cellmax; /* Maximum index of local cells  */
 EXTERN int use_header INIT(1);   /* shall a header be written */
@@ -305,7 +305,7 @@ EXTERN int max_sscount INIT(0);         /* max  quasistat. simulation steps */
 /* Parameters for pictures */
 EXTERN int pic_int INIT(0);                 /* Period for picture output */
 EXTERN vektor2d ecut_kin INIT(nullvektor2d);/* Kin. Energy interval for pictures */
-EXTERN vektor2d ecut_pot INIT(nullvektor2d);/* Pot. Energy interval for pictures */   
+EXTERN vektor2d ecut_pot INIT(nullvektor2d);/* Pot. Energy interval for pictures */
 EXTERN vektor pic_scale INIT(nullvektor);   /* Scale factor x/y for pictures     */
 EXTERN vektor pic_ll  INIT(nullvektor);     /* lower left (front) corner */
 EXTERN vektor pic_ur  INIT(nullvektor);     /* upper right (back) corner */
@@ -344,17 +344,17 @@ EXTERN int  last_nbl_len   INIT(0);
 /* quantities relevant for checking the relaxation process */
 /* square of global force vector f=(f1.x, f1.y,...,fn.z) */
 EXTERN real old_epot INIT(0.0);
-EXTERN real xnorm INIT(0.0);  
-EXTERN real x_max2 INIT(0.0);  
-EXTERN real fnorm INIT(0.0);  
-EXTERN real pnorm INIT(0.0);  
-EXTERN real fnorm_old INIT(0.0);  
-EXTERN real f_max INIT(0.0);  
-EXTERN real f_max2 INIT(0.0);  
-/* scalar product of global force and momentum vectors */ 
+EXTERN real xnorm INIT(0.0);
+EXTERN real x_max2 INIT(0.0);
+EXTERN real fnorm INIT(0.0);
+EXTERN real pnorm INIT(0.0);
+EXTERN real fnorm_old INIT(0.0);
+EXTERN real f_max INIT(0.0);
+EXTERN real f_max2 INIT(0.0);
+/* scalar product of global force and momentum vectors */
 EXTERN real PxF INIT(0.0);
 EXTERN real last_PxF INIT(0.0);
-/* Einstein frequency is similar as fnorm, but divided by the masses */ 
+/* Einstein frequency is similar as fnorm, but divided by the masses */
 EXTERN real omega_E INIT(0.0);
 
 /* Potential Table */
@@ -451,14 +451,14 @@ EXTERN real tau_eta INIT(0.0);      /* Nose-Hoover heat bath relax. time */
 EXTERN real isq_tau_eta INIT(0.0);  /* isq_tau_eta : inverse of tau_eta^2 */
 #ifdef UNIAX
 /* Nose-Hoover heat bath variable for rotational motion: */
-EXTERN real eta_rot INIT(0.0);      
+EXTERN real eta_rot INIT(0.0);
 /* inverse of tau_eta_rot^2, with tau_eta_rot the Nose-Hoover */
 /* heat bath relaxation time for rotational motion: */
-EXTERN real isq_tau_eta_rot INIT(0.0);  
+EXTERN real isq_tau_eta_rot INIT(0.0);
 #endif
 #endif
 #ifdef EXTPOT
-EXTERN int  have_extpotfile INIT(0); 
+EXTERN int  have_extpotfile INIT(0);
 EXTERN int ep_key INIT(0);
 EXTERN int ep_n INIT(0);
 EXTERN int ep_nind INIT(1);
@@ -492,25 +492,25 @@ EXTERN vektor xi INIT(nullvektor), xi_old INIT(nullvektor);
 EXTERN real end_temp INIT(0.0);        /* Temperature and at of simulation */
 
 #ifdef GLOK
-EXTERN real   glok_ekin_threshold INIT(100.0); /* threshold for ekin */  
+EXTERN real   glok_ekin_threshold INIT(100.0); /* threshold for ekin */
 EXTERN int    glok_int       INIT(0);
 EXTERN int    glok_start     INIT(0);
 #endif
 #ifdef MIX
-EXTERN real mix              INIT(0.0); 
-EXTERN real glok_mix         INIT(0.0); 
+EXTERN real mix              INIT(0.0);
+EXTERN real glok_mix         INIT(0.0);
 EXTERN real glok_mixdec      INIT(1.0);
-EXTERN real mixforcescalefac  INIT(0.0);  
+EXTERN real mixforcescalefac  INIT(0.0);
 #endif
 #ifdef ADAPTGLOK
-EXTERN real glok_incfac      INIT(1.02);     
-EXTERN real glok_decfac      INIT(0.5);     
+EXTERN real glok_incfac      INIT(1.02);
+EXTERN real glok_decfac      INIT(0.5);
 EXTERN real glok_maxtimestep INIT(0.0);
-EXTERN real starttimestep    INIT(0.0);   
-EXTERN int  glok_minsteps    INIT(5); /* threshold for minsteps */  
-EXTERN int  nPxF             INIT(0);  
-EXTERN int  min_nPxF         INIT(0);  
-#endif 
+EXTERN real starttimestep    INIT(0.0);
+EXTERN int  glok_minsteps    INIT(5); /* threshold for minsteps */
+EXTERN int  nPxF             INIT(0);
+EXTERN int  min_nPxF         INIT(0);
+#endif
 
 EXTERN real glok_fmaxcrit    INIT(10000);
 
@@ -558,27 +558,27 @@ EXTERN vektor shear_rate2  INIT(nullvektor); /* shear rate as a vector */
 #endif
 #endif
 
-#if defined(FRAC) || defined(STM) || defined(FTG) 
+#if defined(FRAC) || defined(STM) || defined(FTG)
 EXTERN vektor2d   center  INIT(nullvektor2d); /* center of stadium */
 EXTERN vektor2d  stadium  INIT(nullvektor2d); /* half axes of Damping stadium */
-EXTERN vektor2d  stadium2 INIT(nullvektor2d); /* half axes where the max. 
+EXTERN vektor2d  stadium2 INIT(nullvektor2d); /* half axes where the max.
 						damping factor  is reached  */
 #endif
 
-#if defined(FRAC) || defined(STM) 
+#if defined(FRAC) || defined(STM)
 EXTERN real   E_kin_stadium INIT(0.0);      /* kin energy of the stadium */
-EXTERN int    n_stadium INIT(0);            /* number of transl. degrees 
+EXTERN int    n_stadium INIT(0);            /* number of transl. degrees
 					       of freedom in the stadium */
 #endif
 
-#if defined(FRAC) || defined(FTG)  
+#if defined(FRAC) || defined(FTG)
 EXTERN real gamma_damp  INIT(0.0);        /* Damping factor */
 EXTERN real gamma_min  INIT(0.0);         /* minimal Damping factor */
 EXTERN real gamma_bar   INIT(0.0);        /* Damping prefactor */
 EXTERN int  dampingmode INIT(0);          /* damping mode  */
                                           /* 0: ramped viscous damping       */
                                           /* 1: Nose-Hoover           */
-EXTERN real delta_ftg   INIT(10.0);        /* free parameter in calculation 
+EXTERN real delta_ftg   INIT(10.0);        /* free parameter in calculation
 					    of local temperature */
 
 EXTERN real dotepsilon INIT(0.0);         /* strain rate for crack loading */
@@ -601,7 +601,7 @@ EXTERN int n_damp INIT(0);                 /* number of transl. degrees of  */
 #endif
 
 #ifdef FINNIS
-EXTERN real delta_finnis INIT(10.0);       /* time constant in finnis */ 
+EXTERN real delta_finnis INIT(10.0);       /* time constant in finnis */
 EXTERN real zeta_0       INIT(0.0);        /* prefactor for finnis */
 #endif
 
@@ -623,12 +623,12 @@ EXTERN real *E_kin_ftg;                  /* kin energy of the slices */
 
 #ifdef CG
 /* Parameters used by CG */
-EXTERN int    linmin_maxsteps  INIT(100);/* max number of linmin steps */    
+EXTERN int    linmin_maxsteps  INIT(100);/* max number of linmin steps */
 EXTERN real   linmin_tol  INIT(0.0002);  /* tolerance between 2 linmin steps */
-EXTERN real   linmin_dmax  INIT(0.01);   /* max. search steps in linmin  */ 
+EXTERN real   linmin_dmax  INIT(0.01);   /* max. search steps in linmin  */
 EXTERN real   linmin_dmin  INIT(0.001);  /* min. search steps in linmin  */
-EXTERN real   cg_glimit  INIT(100);   
-EXTERN real   cg_zeps  INIT(1e-10);   
+EXTERN real   cg_glimit  INIT(100);
+EXTERN real   cg_zeps  INIT(1e-10);
 EXTERN int    cg_infolevel INIT(0);     /* cg_infolevel controls verbosity */
 EXTERN int    cg_mode INIT(0);          /* CG mode */
 EXTERN int    cg_fr INIT(0);            /* Fletcher-Reeves mode or not */
@@ -636,10 +636,10 @@ EXTERN int    cg_reset_int INIT(0);     /* interval between cg resetting */
 
 /* Variables needed by CG */
 EXTERN real   cg_poteng     INIT(0.0);      /* potential energy per atom */
-EXTERN real   old_cg_poteng INIT(0.0);      /* old poteng value */ 
-EXTERN real   gg            INIT(0.0);      /* see Num. Rec. p.320 */       
-EXTERN real   dgg           INIT(0.0);      /* see Num. Rec. p.320 */    
-EXTERN real   cg_gamma      INIT(0.0);      /* see Num. Rec. p.320 */    
+EXTERN real   old_cg_poteng INIT(0.0);      /* old poteng value */
+EXTERN real   gg            INIT(0.0);      /* see Num. Rec. p.320 */
+EXTERN real   dgg           INIT(0.0);      /* see Num. Rec. p.320 */
+EXTERN real   cg_gamma      INIT(0.0);      /* see Num. Rec. p.320 */
 #endif
 
 #ifdef ACG
@@ -668,7 +668,7 @@ EXTERN int cna_writev[8];
 EXTERN int cna_writec INIT(0);
 EXTERN int cna_write_n INIT(0);
 EXTERN int cna_write_statistics INIT(0);
-EXTERN char cna_crist INIT(0);     
+EXTERN char cna_crist INIT(0);
 EXTERN int cna_cristv[4];
 EXTERN int cna_crist_n INIT(0);
 EXTERN int bondlist[MAX_BONDS][3];
@@ -713,7 +713,7 @@ EXTERN int avpos_npwrites INIT(0);    /* Number of pressure writes performed */
 EXTERN int avpos_cnt INIT(0);         /* Number of positions added */
 #ifdef NPT
 EXTERN vektor av_box_x  INIT(nullvektor); /* Average of box vectors */
-EXTERN vektor av_box_y  INIT(nullvektor); 
+EXTERN vektor av_box_y  INIT(nullvektor);
 #ifndef TWOD
 EXTERN vektor av_box_z  INIT(nullvektor);
 #endif
@@ -878,7 +878,7 @@ EXTERN real laser_p_peak1  INIT(0.0);   /* Peak power density (calculated in imd
 EXTERN real laser_atom_vol INIT(16.6);  /* Volume per particle (inverse density) ATTENTION: THIS VALUE IS VOR ALUMINUM ONLY*/
 EXTERN int  laser_rescale_mode INIT(1); /* Mode for laser velocity rescaling */
 
-#ifdef LASERYZ 
+#ifdef LASERYZ
 EXTERN real laser_sigma_w_y INIT(0.0); /* y-center of gaussian laser-pulse  */
 EXTERN real laser_sigma_w_z INIT(0.0); /* z-center of gaussian laser-pulse  */
 EXTERN real laser_sigma_w0 INIT(10.0); /* diameter of the laser beam at 1/e */
@@ -901,10 +901,10 @@ EXTERN int pdecay_mode INIT (1);        /* which form of the damping function is
 #ifdef SM
 EXTERN int  charge_update_steps INIT(0); /* number of steps between charge updates */
 EXTERN int  sm_fixed_charges INIT(0);    /* if 1, keep charges fixed */
-EXTERN real sm_chi_0[2]; /* Initial value of the electronegativity */ 
+EXTERN real sm_chi_0[2]; /* Initial value of the electronegativity */
 EXTERN real sm_Z[2];     /* Initial value of the effecitve core charge */
 EXTERN real sm_J_0[2];   /* atomic hardness or self-Coulomb repulsion */
-EXTERN real sm_zeta[2];  
+EXTERN real sm_zeta[2];
 EXTERN str255 na_pot_filename INIT("\0");     /* nuclear attraction potential file   */
 EXTERN str255 cr_pot_filename INIT("\0");     /* coulomb repulsive potential file   */
 EXTERN str255 erfc_filename INIT("\0");     /* tabulated function erfc/r file   */
@@ -930,15 +930,15 @@ EXTERN vektor socketwin_ll  INIT(nullvektor);  /* lower left (front) corner */
 EXTERN vektor socketwin_ur  INIT(nullvektor);  /* upper right (back) corner */
 #endif
 
-EXTERN int  have_potfile INIT(0); 
+EXTERN int  have_potfile INIT(0);
 #ifdef PAIR
 /* analytically defined pair potentials */
-EXTERN real r_cut_lin[55] INIT(zero55); 
-EXTERN real r_cut [10][10]; 
-EXTERN real r2_cut[10][10]; 
+EXTERN real r_cut_lin[55] INIT(zero55);
+EXTERN real r_cut [10][10];
+EXTERN real r2_cut[10][10];
 EXTERN real r_begin[55] INIT(zero55);
 EXTERN real pot_res[55] INIT(zero55);
-EXTERN int  have_pre_pot INIT(0); 
+EXTERN int  have_pre_pot INIT(0);
 /* Lennard-Jones */
 EXTERN real lj_epsilon_lin[55] INIT(zero55);
 EXTERN real lj_epsilon[10][10];
@@ -982,7 +982,7 @@ EXTERN real spring_cst[10][10];
 EXTERN real ew_shift [10][10];
 EXTERN real ew_fshift[10][10];
 #endif
-EXTERN int  fix_bks INIT(0); 
+EXTERN int  fix_bks INIT(0);
 #endif
 
 #ifdef FEFL
@@ -1059,7 +1059,7 @@ EXTERN real B[2][2][2];           /* factor B_ijk for vashishta potential */
 #ifdef STIWEB
 /* Parameters for Stillinger-Weber potential */
 /* Not more than 10 atom types!              */
-EXTERN real stiweb_a[55] INIT(zero55); 
+EXTERN real stiweb_a[55] INIT(zero55);
 EXTERN real sw_a[10][10];
 EXTERN real stiweb_b[55] INIT(zero55);
 EXTERN real sw_b[10][10];
@@ -1085,9 +1085,9 @@ EXTERN real sw_ga[10][10];
 EXTERN real ters_r_cut[55] INIT(zero55);  /* cutoff^2 */
 EXTERN real ter_r_cut[10][10];
 EXTERN real ter_r2_cut[10][10];
-EXTERN real ters_r0[55] INIT(zero55);        
+EXTERN real ters_r0[55] INIT(zero55);
 EXTERN real ter_r0[10][10];
-EXTERN real ters_a[55] INIT(zero55);       
+EXTERN real ters_a[55] INIT(zero55);
 EXTERN real ter_a[10][10];
 EXTERN real ters_b[55] INIT(zero55);
 EXTERN real ter_b[10][10];
@@ -1155,7 +1155,7 @@ EXTERN real ters_c4[10] INIT(zero10);
 EXTERN real ters_c5[10] INIT(zero10);
 EXTERN real ters_h[10] INIT(zero10);
 #endif
-#endif 
+#endif
 #endif
 
 #ifdef BRENNER
@@ -1187,10 +1187,10 @@ EXTERN int  epitax_rate[10] INIT(zero10);  /* creation rate of atoms */
 EXTERN int  epitax_type[10] INIT(zero10);  /* type of atom to be created */
 EXTERN real epitax_mass[10] INIT(zero10);  /* mass of atom to be created */
 EXTERN real epitax_temp[10] INIT(zero10);  /* temp. of atom to be created */
-EXTERN real epitax_cutoff INIT(0.0);  
+EXTERN real epitax_cutoff INIT(0.0);
 EXTERN int epitax_maxsteps;        /* number of timesteps with atom creation */
 EXTERN int epitax_startstep INIT(0);  /* timestep where cretion begins */
-EXTERN real epitax_ctrl INIT(1.0);    /* parameter for change NVE -> NVT */ 
+EXTERN real epitax_ctrl INIT(1.0);    /* parameter for change NVE -> NVT */
 EXTERN real epitax_height;
 EXTERN real epitax_level;
 EXTERN int epitax_number;
@@ -1245,7 +1245,7 @@ EXTERN real     ew_kcut;                 /* k-space cutoff */
 #ifndef SM
 EXTERN int      ew_nmax INIT(-1);        /* Number of image boxes */
 #else
-EXTERN int      ew_nmax INIT(0);        /* Number of image boxes */ 
+EXTERN int      ew_nmax INIT(0);        /* Number of image boxes */
 #endif
 EXTERN int      ew_totk;
 EXTERN int      ew_nx;
@@ -1271,7 +1271,7 @@ EXTERN real     twopi;
 EXTERN pot_table_t coul_table; /* one table to hold all coul. and dipole fn */
 EXTERN real     coul_res   INIT(0); /* function table resolution */
 EXTERN real     coul_begin INIT(0.2); /* start of function table */
-EXTERN real     coul_shift; 
+EXTERN real     coul_shift;
 EXTERN real     coul_fshift;
 #endif /* EWALD or COULOMB */
 #ifdef DIPOLE
@@ -1416,4 +1416,10 @@ EXTERN int bb_under INIT(0);		/* count for the bb_under_max */
 EXTERN int bflag1 INIT(0);		/* flag to switch the boost method ( = 0 is non-boosting, = 1 is to launch the boosting) */
 EXTERN int bflag2 INIT(0);		/* flag to switch the testing mode or safe mode for a chosen bb_epscrit */
 EXTERN int bflag3 INIT(0);		/* flag for time windows used to apply minimization to boost MD */
-#endif 
+#endif
+
+#ifdef KIM
+EXTERN str255 kim_model_name;
+EXTERN char **kim_el_names INIT(NULL);
+EXTERN imd_kim_t kim;
+#endif

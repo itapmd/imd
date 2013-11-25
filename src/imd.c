@@ -85,7 +85,7 @@ int main(int argc, char **argv)
   /* read parameters for first simulation phase */
   finished = read_parameters(paramfilename, simulation);
 
-        
+
   /* initialize all potentials */
   setup_potentials();
 
@@ -137,7 +137,7 @@ int main(int argc, char **argv)
     printf("    ************************* \n");fflush(stdout);
 
 #endif
-  
+
   }
 
 #endif
@@ -147,7 +147,7 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef EPITAX
-  if (0 == myid) 
+  if (0 == myid)
     printf("EPITAX: Largest substrate atom number: %d\n", epitax_sub_n);
   epitax_number = epitax_sub_n;
   epitax_level  = substrate_level();
@@ -190,17 +190,19 @@ int main(int argc, char **argv)
 #ifdef BBOOST
   init_bboost();
 #endif
-  
+
 #ifdef BEND
   init_bend();
 #endif
-  
+
 #ifdef ZAPP
   init_zapp();
 #endif
 
+#ifdef KIM
+  init_kim();
+#endif
 
-  
 #ifdef CNA
   init_cna();
 #endif
@@ -212,13 +214,13 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef LASER
-  init_laser(); 
+  init_laser();
 #endif
 
 #ifdef CYCLE
   init_cycle();
 #endif
-  
+
 #ifdef TTM
   init_ttm();
 #endif
@@ -282,7 +284,7 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef NBLIST
-    printf("Neighbor list update every %d steps on average\n\n", 
+    printf("Neighbor list update every %d steps on average\n\n",
            steps_max / MAX(nbl_count,1));
 #endif
 
@@ -297,14 +299,14 @@ int main(int argc, char **argv)
 #endif
 
 #ifdef MPI
-    printf("Did %d steps with %ld atoms on %d physical CPUs.\n", 
+    printf("Did %d steps with %ld atoms on %d physical CPUs.\n",
            steps_max+1, natoms, num_cpus * num_threads / hyper_threads);
 #ifdef OMP
     printf("Used %d processes with %d threads each.\n", num_cpus, num_threads);
 #endif
 #else
 #ifdef OMP
-    printf("Did %d steps with %ld atoms on %d physical CPUs.\n", 
+    printf("Did %d steps with %ld atoms on %d physical CPUs.\n",
            steps_max+1, natoms, num_threads / hyper_threads);
 #else
     printf("Did %d steps with %ld atoms.\n", steps_max+1, natoms);
@@ -322,7 +324,7 @@ int main(int argc, char **argv)
 #endif
     printf("Used %f seconds cputime,\n", time_total.total);
     printf("%f seconds excluding setup time,\n", time_main.total);
-    tmp =  ((num_cpus * num_threads / hyper_threads) * time_main.total / 
+    tmp =  ((num_cpus * num_threads / hyper_threads) * time_main.total /
            (steps_max+1)) / natoms;
     printf("%e cpuseconds per step and atom\n", tmp);
     printf("(inverse is %e).\n\n", 1.0/tmp);
@@ -367,6 +369,9 @@ int main(int argc, char **argv)
     free_pot_table(&cr_pot_tab);
     free_pot_table(&erfc_r_tab);
 #endif
+#ifdef KIM
+    destroy_kim();
+#endif
 
     volume_init = 0.0;
 
@@ -407,14 +412,16 @@ int main(int argc, char **argv)
 	}
       printf ("Saddlepoint: %d Activation Energy: %lf \n",maxi,Emax-Emin);
     }
-#endif 
+#endif
+
+#ifdef KIM
+  destroy_kim();
+#endif
 
   /* kill MPI */
 #if defined(MPI) || defined(NEB)
   shutdown_mpi();
 #endif
-
-
 
 /* Added by Frank Pister */
 #if defined(CBE)

@@ -10,7 +10,7 @@
 /*****************************************************************************
 *
 * read in parameter files (tag based)                               MH 260298
-* 
+*
 * $Revision$
 * $Date$
 *
@@ -28,7 +28,7 @@
 
 
 typedef enum ParamType {
-  PARAM_STR, PARAM_STRPTR,
+  PARAM_STR, PARAM_STRPTR, PARAM_CHARPTR,
   PARAM_INT, PARAM_INT_COPY,
   PARAM_INTEGER, PARAM_INTEGER_COPY,
   PARAM_REAL, PARAM_REAL_COPY
@@ -49,11 +49,12 @@ int curline; /* number of current line */
                   folgende Werte sind zulaessig:
                   PARAM_STR : String, deklariert als char[]
                   PARAM_STRPTR : String, deklariert als Zeiger auf char*
+		  PARAM_CHARPTR : String, deklariert als char**
                   PARAM_INT : Integer-Wert(e)
                   PARAM_INT_COPY : Integer-Wert(e), kopierend
                   PARAM_REAL : Real-Wert(e)
                   PARAM_REAL_COPY : Real-Wert(e), kopierend
-                  
+
    pnum_min ..... Minimale Anzahl der einzulesenden Werte
                   (Falls weniger Werte gelesen werden koennen als verlangt,
                   wird ein Fehler gemeldet).
@@ -68,7 +69,7 @@ int curline; /* number of current line */
                   Fehler, wenn mindestens pnum_min Werte abgesaettigt
                   wurden. Falls weniger als pnum_max Werte vorhanden sind,
                   werden die restlichen Werte mit Kopien des zuletzt gelesenen
-                  Werts aufgefuellt. 
+                  Werts aufgefuellt.
 
   Resultat:
   nichtkopierende Routinen: Die Anzahl der gelesenen Werte wird zurueckgegeben.
@@ -76,7 +77,7 @@ int curline; /* number of current line */
                        zurueckgegeben. Resultat = pnum_max - Anzahl der Kopien
 */
 
-static int getparam(char *param_name, void *param, PARAMTYPE ptype, 
+static int getparam(char *param_name, void *param, PARAMTYPE ptype,
 		    int pnum_min, int pnum_max)
 {
   static char errmsg[256];
@@ -104,6 +105,19 @@ static int getparam(char *param_name, void *param, PARAMTYPE ptype,
     }
     else *((char**)param) = strdup(str);
     numread++;
+  }
+  else if (ptype == PARAM_CHARPTR) {
+    i = 0;
+    str = strtok(NULL," =\t\r\n");
+    while (str != NULL && i < ntypes) {
+      strncpy(((char **)param)[i],str,strlen(str));
+      str = strtok(NULL," =\t\r\n");
+      i++;
+    };
+    if (i < ntypes) {
+      sprintf(errmsg, "parameter for %s missing in line %d\nlist of %d strings expected", param_name, curline, ntypes);
+      error(errmsg);
+    }
   }
   else if (ptype == PARAM_INT) {
     for (i=0; i<pnum_min; i++) {
@@ -253,7 +267,7 @@ int getparamfile(char *paramfname, int phase)
   vektor3d tempvek;
   vektor einsv={1.0,1.0};
   vektor3d tempshift;
-#else 
+#else
   vektor4d tempforce;
   vektor nullv={0.0,0.0,0.0};
   vektor4d tempvek;
@@ -268,10 +282,10 @@ int getparamfile(char *paramfname, int phase)
   int i;
 
   vektor3d tempv3d;
-  
+
   real norm_bend_axis;
   ivektor2d tmp_ivec2d INIT(nullvektor2d);
-  
+
   curline = 0;
   pf = fopen(paramfname,"r");
   if (NULL == pf) {
@@ -281,7 +295,7 @@ int getparamfile(char *paramfname, int phase)
   /* set the random number generator seed to the */
   /* negative of the current time in seconds */
   /* this will be superseded by a fixed value from the parameter file */
-  { 
+  {
     struct timeval tv;
     gettimeofday(&tv,NULL);
     seed = (long) -tv.tv_sec;
@@ -611,7 +625,7 @@ int getparamfile(char *paramfname, int phase)
       /* the cut off for the range of the bond boos method */
         getparam(token,&bb_rcut,PARAM_REAL,1,1);
     }
-    
+
 #endif
 #ifdef VEC
     else if (strcasecmp(token,"atoms_per_cpu")==0) {
@@ -681,7 +695,7 @@ int getparamfile(char *paramfname, int phase)
         if (NULL==fbc_forces)
 	  error("Cannot allocate memory for fbc_forces\n");
         for (k=0; k<vtypes; k++)
-          fbc_forces[k] = nullv;        
+          fbc_forces[k] = nullv;
         fbc_beginforces = (vektor *) malloc( vtypes * sizeof(vektor) );
         if (NULL==fbc_beginforces)
           error("Cannot allocate memory for fbc_beginforces\n");
@@ -692,7 +706,7 @@ int getparamfile(char *paramfname, int phase)
         if (NULL==fbc_dforces)
 	  error("Cannot allocate memory for fbc_dforces\n");
         for (k=0; k<vtypes; k++)
-          fbc_dforces[k] = nullv; 
+          fbc_dforces[k] = nullv;
 #else
         fbc_endforces = (vektor *) malloc( vtypes * sizeof(vektor) );
         if (NULL==fbc_endforces)
@@ -729,7 +743,7 @@ int getparamfile(char *paramfname, int phase)
         if (NULL==fbc_bdforces)
 	  error("Cannot allocate memory for fbc_bdforces\n");
         for (k=0; k<vtypes; k++)
-          fbc_bdforces[k] = nullv; 
+          fbc_bdforces[k] = nullv;
 #else
         fbc_endbforces = (vektor *) malloc( vtypes * sizeof(vektor) );
         if (NULL==fbc_endbforces)
@@ -791,7 +805,7 @@ int getparamfile(char *paramfname, int phase)
           error("Cannot allocate memory for deform_base\n");
         for (k=0; k<vtypes; k++)
           deform_base[k] = nullv;
-#endif 
+#endif
       }
     }
 #ifdef RIGID
@@ -804,7 +818,7 @@ int getparamfile(char *paramfname, int phase)
       /* determine number of types in superparticle */
       count = i - DIM;
       /* construct superatom vector */
-      tmp = superatom[rigidv[0]];  
+      tmp = superatom[rigidv[0]];
       for (i=0; i<count; i++) {
         if ( rigidv[i] > vtypes - 1 )
           error("Atom type in superparticle does not exist\n");
@@ -866,13 +880,13 @@ int getparamfile(char *paramfname, int phase)
       force.z = tempforce.z2;
 #endif
       fbc_beginforces[(int)(tempforce.x)] = force;
-      fbc_forces     [(int)(tempforce.x)] = force; 
+      fbc_forces     [(int)(tempforce.x)] = force;
     }
 #ifdef RELAX
     else if (strcasecmp(token,"fbc_ekin_threshold")==0) {
       /* epsilon criterium to increment extra force*/
       getparam(token,&ekin_threshold,PARAM_REAL,1,1);
-      warning("Parameter fbc_ekin_threshold replaced by ekin_threshold"); 
+      warning("Parameter fbc_ekin_threshold replaced by ekin_threshold");
     }
     else if (strcasecmp(token,"max_fbc_int")==0) {
       /* max nr of steps between fbc increments */
@@ -881,7 +895,7 @@ int getparamfile(char *paramfname, int phase)
     else if (strcasecmp(token,"fbc_waitsteps")==0) {
       /* max nr of steps between fbc increments */
       getparam(token,&max_fbc_int,PARAM_INT,1,1);
-      warning("Parameter fbc_waitsteps replaced by max_fbc_int"); 
+      warning("Parameter fbc_waitsteps replaced by max_fbc_int");
     }
     else if (strcasecmp(token,"extra_dforce")==0) {
       if (vtypes==0)
@@ -931,7 +945,7 @@ int getparamfile(char *paramfname, int phase)
       force.z = tempforce.z2;
 #endif
       fbc_beginbforces[(int)(tempforce.x)] = force;
-      fbc_bforces     [(int)(tempforce.x)] = force; 
+      fbc_bforces     [(int)(tempforce.x)] = force;
     }
 #ifdef RELAX
     else if (strcasecmp(token,"max_bfbc_int")==0) {
@@ -941,7 +955,7 @@ int getparamfile(char *paramfname, int phase)
     else if (strcasecmp(token,"bfbc_waitsteps")==0) {
       /* max nr of steps between fbc increments */
       getparam(token,&max_bfbc_int,PARAM_INT,1,1);
-      warning("Parameter bfbc_waitsteps replaced by max_fbc_int"); 
+      warning("Parameter bfbc_waitsteps replaced by max_fbc_int");
     }
     else if (strcasecmp(token,"extra_bdforce")==0) {
       if (vtypes==0)
@@ -979,7 +993,7 @@ int getparamfile(char *paramfname, int phase)
 
 
 
-    
+
 #ifdef ZAPP
     else if (strcasecmp(token,"zapp_threshold")==0) {
         getparam(token,&zapp_threshold,PARAM_REAL,1,1);
@@ -990,7 +1004,7 @@ int getparamfile(char *paramfname, int phase)
         /* nr of bending moments */
       getparam(token,&bend_nmoments,PARAM_INT,1,1);
       if (vtypes<bend_nmoments*2)
-          error("need vtypes>=2*bend_nmoments") ;     
+          error("need vtypes>=2*bend_nmoments") ;
       /* now do some allocations and initialisations */
       bend_axis = (vektor *) malloc( bend_nmoments * sizeof(vektor) );
       if (NULL==bend_axis)
@@ -1031,7 +1045,7 @@ int getparamfile(char *paramfname, int phase)
           norm_bend_axis = sqrt(SPROD(force,force));
           force.x /= norm_bend_axis;
           force.y /= norm_bend_axis;
-          force.z /= norm_bend_axis;          
+          force.z /= norm_bend_axis;
       }
       bend_axis[(int)(tempforce.x)] = force;
     }
@@ -1094,13 +1108,13 @@ int getparamfile(char *paramfname, int phase)
     }
     else if (strcasecmp(token,"masses")==0) {
       /* masses for generated structures */
-      if (ntypes==0) 
+      if (ntypes==0)
         error("specify parameter ntypes before parameter masses");
       getparam(token,masses,PARAM_REAL,ntypes,ntypes);
     }
     else if (strcasecmp(token,"types")==0) {
       /* types for generated structures */
-      if (ntypes==0) 
+      if (ntypes==0)
         error("specify parameter ntypes before parameter types");
       getparam(token,gtypes,PARAM_INT,1,ntypes);
     }
@@ -1122,7 +1136,7 @@ int getparamfile(char *paramfname, int phase)
       }
       if (init) {
 #ifdef MONO
-        if (ntypes!=1) 
+        if (ntypes!=1)
         error("this executable is for monoatomic systems only!");
 #endif
         ntypepairs = ((ntypes+1)*ntypes)/2;
@@ -1151,7 +1165,7 @@ int getparamfile(char *paramfname, int phase)
         upper_e_pot = (real *) calloc(ntypes, sizeof(real));
         if (NULL==upper_e_pot)
           error("Cannot allocate memory for upper_e_pot\n");
-#endif 
+#endif
 #ifdef NNBR
         lower_nb_cut = (int *) calloc(ntypes, sizeof(int));
         if (NULL==lower_nb_cut)
@@ -1162,7 +1176,7 @@ int getparamfile(char *paramfname, int phase)
         nb_r2_cut = (real *) calloc(ntypes*ntypes, sizeof(real));
         if (NULL==nb_r2_cut)
           error("Cannot allocate memory for nb_r2_cut");
-#endif 
+#endif
 #ifdef ORDPAR
         op_r2_cut = (real *) calloc(ntypes*ntypes, sizeof(real));
         if (NULL==op_r2_cut)
@@ -1170,6 +1184,19 @@ int getparamfile(char *paramfname, int phase)
         op_weight = (real *) calloc(ntypes*ntypes, sizeof(real));
         if (NULL==op_weight)
           error("Cannot allocate memory for op_weight");
+#endif
+#ifdef KIM
+	if (NULL == kim_el_names)
+	  kim_el_names = (char **)calloc(ntypes, sizeof(char *));
+	if (NULL == kim_el_names)
+	  error("Cannot allocate memory for kim_el_names\n");
+	for (i = 0;i<ntypes;i++) {
+	  /* allocate 12 characters for each species - should be more than enough */
+	  kim_el_names[i] = (char *)calloc(12, sizeof(char));
+	  if (NULL == kim_el_names[i])
+	    error("Cannot allocate memory for kim_el_names\n");
+	  sprintf(kim_el_names[i],'\0');
+	}
 #endif
       }
     }
@@ -1294,7 +1321,7 @@ int getparamfile(char *paramfname, int phase)
     else if (strcasecmp(token,"uniax_sig")==0) {
       /* nearest neighbor distances of potential in the three directions */
       getparam(token,&uniax_sig,PARAM_REAL,3,3);
-      if (uniax_sig.x != uniax_sig.y) 
+      if (uniax_sig.x != uniax_sig.y)
         error("UNIAX molecules must be uniaxial!");
     }
     else if (strcasecmp(token,"uniax_eps")==0) {
@@ -1326,7 +1353,7 @@ int getparamfile(char *paramfname, int phase)
     }
 #endif
 #endif
-#if defined(FRAC) || defined(FTG) 
+#if defined(FRAC) || defined(FTG)
     else if (strcasecmp(token,"strainrate")==0) {
 	/* strain rate for crack loading */
 	getparam("strainrate",&dotepsilon0,PARAM_REAL,1,1);
@@ -1336,11 +1363,11 @@ int getparamfile(char *paramfname, int phase)
 	/* strain mode for crack loading */
 	getparam("expansionmode",&expansionmode,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"gamma_bar")==0) { 
+    else if (strcasecmp(token,"gamma_bar")==0) {
        /* Damping prefactor gamma_bar */
 	getparam("gamma_bar",&gamma_bar,PARAM_REAL,1,1);
     }
-  
+
     else if (strcasecmp(token,"gamma_damp")==0) { /* actual Damping factor */
 	getparam("gamma_damp",&gamma_damp,PARAM_REAL,1,1);
     }
@@ -1348,14 +1375,14 @@ int getparamfile(char *paramfname, int phase)
 	/* damping mode for stadium geometry */
 	getparam("dampingmode",&dampingmode,PARAM_INT,1,1);
     }
-  
+
 #endif
 #ifdef FTG
     else if (strcasecmp(token,"delta_ftg")==0) {
       /* time constant delta for local temperature control  */
       getparam("delta_ftg",&delta_ftg,PARAM_REAL,1,1);
-    } 
-    else if (strcasecmp(token,"gamma_min")==0) { 
+    }
+    else if (strcasecmp(token,"gamma_min")==0) {
        /* minimal damping prefactor gamma_bar */
 	getparam("gamma_min",&gamma_min,PARAM_REAL,1,1);
     }
@@ -1412,19 +1439,19 @@ int getparamfile(char *paramfname, int phase)
       /* nuber of slices with Right */
       getparam(token,&nslices_Right,PARAM_INT,1,1);
     }
-#endif 
+#endif
 #ifdef FINNIS
     else if (strcasecmp(token,"delta_finnis")==0) {
       /* time constant delta for local temperature control  */
       getparam("delta_finnis",&delta_finnis,PARAM_REAL,1,1);
-    } 
+    }
     else if (strcasecmp(token,"zeta_0")==0) {
       /* time constant delta for local temperature control  */
       getparam("zeta_0",&zeta_0,PARAM_REAL,1,1);
-    } 
+    }
 #endif
 #ifndef TWOD
-    else if (strcasecmp(token,"view_pos")==0) { 
+    else if (strcasecmp(token,"view_pos")==0) {
       /* view position */
       getparam("view_pos",&view_pos,PARAM_REAL,DIM,DIM);
     }
@@ -1437,31 +1464,31 @@ int getparamfile(char *paramfname, int phase)
       getparam("projection",&projection,PARAM_INT,1,1);
     }
 #endif
-    else if (strcasecmp(token,"ecut_kin")==0) { 
+    else if (strcasecmp(token,"ecut_kin")==0) {
       /* kinetic energy interval for pictures (min/max) */
       getparam("ecut_kin",&ecut_kin,PARAM_REAL,DIM,DIM);
     }
-    else if (strcasecmp(token,"ecut_pot")==0) { 
+    else if (strcasecmp(token,"ecut_pot")==0) {
       /* potential energy interval for pictures (min/max) */
       getparam("ecut_pot",&ecut_pot,PARAM_REAL,DIM,DIM);
     }
-    else if (strcasecmp(token,"pic_ll")==0) { 
+    else if (strcasecmp(token,"pic_ll")==0) {
       /* lower left corner of picture */
       getparam("pic_ll", &pic_ll,PARAM_REAL,DIM,DIM);
     }
-    else if (strcasecmp(token,"pic_ur")==0) { 
+    else if (strcasecmp(token,"pic_ur")==0) {
       /* upper right corner of picture */
       getparam("pic_ur", &pic_ur,PARAM_REAL,DIM,DIM);
     }
-    else if (strcasecmp(token,"pic_res")==0) { 
+    else if (strcasecmp(token,"pic_res")==0) {
       /* number of pixels in x/y direction */
       getparam("pic_res", &pic_res,PARAM_INT,1,2);
     }
-    else if (strcasecmp(token,"nsmear")==0) { 
+    else if (strcasecmp(token,"nsmear")==0) {
       /* smearing radius in pixels */
       getparam("nsmear", &nsmear,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"pic_type")==0) { 
+    else if (strcasecmp(token,"pic_type")==0) {
       /* number of pixels in x/y direction */
       getparam("pic_type", &pic_type,PARAM_INT,1,1);
     }
@@ -1478,7 +1505,7 @@ int getparamfile(char *paramfname, int phase)
 #endif
 #endif
 #ifdef CYCLE
-       else if (strcasecmp(token,"lindef_freq")==0) { 
+       else if (strcasecmp(token,"lindef_freq")==0) {
            /* frequency for deformation */
       getparam(token,&lindef_freq,PARAM_REAL,1,1);
     }
@@ -1488,7 +1515,7 @@ int getparamfile(char *paramfname, int phase)
       /* period of linear deformation intervals */
       getparam(token,&lindef_int,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"lindef_size")==0) { 
+    else if (strcasecmp(token,"lindef_size")==0) {
         /* scale factor for deformation */
         /* in case of CYCLE this is the strain amplitude */
       getparam(token,&lindef_size,PARAM_REAL,1,1);
@@ -1507,19 +1534,19 @@ int getparamfile(char *paramfname, int phase)
       getparam(token,&lindef_z,PARAM_REAL,DIM,DIM);
     }
 #endif
-    else if (strcasecmp(token,"shear_module")==0) { 
+    else if (strcasecmp(token,"shear_module")==0) {
       /* estimate of shear module */
       getparam(token,&shear_module,PARAM_REAL,1,1);
     }
-    else if (strcasecmp(token,"bulk_module")==0) { 
+    else if (strcasecmp(token,"bulk_module")==0) {
       /* estimate of bulk module */
       getparam(token,&bulk_module,PARAM_REAL,1,1);
     }
-    else if (strcasecmp(token,"relax_rate")==0) { 
+    else if (strcasecmp(token,"relax_rate")==0) {
       /* pressure relaxation rate */
       getparam(token,&relax_rate,PARAM_REAL,1,1);
     }
-    else if (strcasecmp(token,"relax_mode")==0) { 
+    else if (strcasecmp(token,"relax_mode")==0) {
       /* pressure relaxation mode */
       getparam(token,tmpstr,PARAM_STR,1,255);
       if      (strcasecmp(tmpstr,"full" )==0) relax_mode = RELAX_FULL;
@@ -1543,7 +1570,7 @@ int getparamfile(char *paramfname, int phase)
       /* threshold for ekin */
       getparam(token,&glok_ekin_threshold,PARAM_REAL,1,1);
     }
- 
+
 #endif
 #ifdef MIX
     else if (strcasecmp(token,"glok_mix")==0) {
@@ -1565,7 +1592,7 @@ int getparamfile(char *paramfname, int phase)
 #endif
 #ifdef ADAPTGLOK
     /* FIRE = mixedadaptglok, for cosmetic reasons & backward compatibility now all parameters
-       can either be called glok_something or fire_something */    
+       can either be called glok_something or fire_something */
     else if (strcasecmp(token,"glok_minsteps")==0) {
       /* minimum of steps before increasing the timestep */
       getparam(token,&glok_minsteps,PARAM_INT,1,1);
@@ -1618,13 +1645,13 @@ int getparamfile(char *paramfname, int phase)
       /* only needed for restarting */
       getparam(token,&glok_int,PARAM_INT,1,1);
     }
-#endif 
+#endif
 #ifdef DEFORM
     else if (strcasecmp(token,"max_deform_int")==0) {
       /* max nr of steps between shears */
       getparam("max_deform_int",&max_deform_int,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"deform_size")==0) { 
+    else if (strcasecmp(token,"deform_size")==0) {
       /* scale factor for deformation */
       getparam("deform_size",&deform_size,PARAM_REAL,1,1);
     }
@@ -1641,7 +1668,7 @@ int getparamfile(char *paramfname, int phase)
 #ifndef TWOD
       shift.z = tempshift.z2;
 #endif
-      deform_shift[(int)(tempshift.x)] = shift; 
+      deform_shift[(int)(tempshift.x)] = shift;
     }
     else if (strcasecmp(token,"deform_shear")==0) {
       /* deform shear for virtual types */
@@ -1656,7 +1683,7 @@ int getparamfile(char *paramfname, int phase)
 #ifndef TWOD
       shear.z = tempshift.z2;
 #endif
-      deform_shear[(int)(tempshift.x)] = shear; 
+      deform_shear[(int)(tempshift.x)] = shear;
       shear_def   [(int)(tempshift.x)] = 1;
     }
     else if (strcasecmp(token,"deform_base")==0) {
@@ -1687,7 +1714,7 @@ int getparamfile(char *paramfname, int phase)
     else if (strcasecmp(token,"linmin_dmax")==0) {
       /* max. length of trial step in 1d minimum search */
       getparam("linmin_dmax",&linmin_dmax,PARAM_REAL,1,1);
-    } 
+    }
     else if (strcasecmp(token,"linmin_dmin")==0) {
       /* max. length of trial step in 1d minimum search */
       getparam("linmin_dmin",&linmin_dmin,PARAM_REAL,1,1);
@@ -1743,41 +1770,41 @@ int getparamfile(char *paramfname, int phase)
 #endif
 
 #ifdef SHOCK
-    else if (strcasecmp(token,"shock_strip")==0) { 
+    else if (strcasecmp(token,"shock_strip")==0) {
       /* shock strip width (in x dir.) */
       getparam("shock_strip",&shock_strip,PARAM_REAL,1,1);
     }
-    else if (strcasecmp(token,"shock_speed")==0) { 
+    else if (strcasecmp(token,"shock_speed")==0) {
       /* shock speed (in x dir.) */
-      getparam("shock_speed",&shock_speed,PARAM_REAL,1,1); 
+      getparam("shock_speed",&shock_speed,PARAM_REAL,1,1);
     }
-    else if (strcasecmp(token,"shock_speed_left")==0) { 
+    else if (strcasecmp(token,"shock_speed_left")==0) {
       /* shock speed (in x dir.) */
-      getparam("shock_speed_l",&shock_speed_l,PARAM_REAL,1,1); 
+      getparam("shock_speed_l",&shock_speed_l,PARAM_REAL,1,1);
     }
-    else if (strcasecmp(token,"shock_speed_right")==0) { 
+    else if (strcasecmp(token,"shock_speed_right")==0) {
       /* shock speed (in x dir.) */
-      getparam("shock_speed_r",&shock_speed_r,PARAM_REAL,1,1);       
+      getparam("shock_speed_r",&shock_speed_r,PARAM_REAL,1,1);
     }
-    else if (strcasecmp(token,"shock_incr")==0) { 
+    else if (strcasecmp(token,"shock_incr")==0) {
       /* steps to achieve full velocity */
-      getparam("shock_incr",&shock_incr,PARAM_INT,1,1); 
+      getparam("shock_incr",&shock_incr,PARAM_INT,1,1);
     }
-    else if (strcasecmp(token,"shock_mode")==0) { 
+    else if (strcasecmp(token,"shock_mode")==0) {
        /* shock type: plate or half */
-       getparam("shock_mode",&shock_mode,PARAM_INT,1,1); 
+       getparam("shock_mode",&shock_mode,PARAM_INT,1,1);
        if (shock_mode > 1) shock_strip = 0;
        /* compatibility with old input files */
        if (shock_mode < 2 && shock_mode > 4) shock_mode = 1;
        /* */
-       if (shock_mode == 4 && shock_speed_l ==0) shock_speed_l = shock_speed; 
-       if (shock_mode == 4 && shock_speed_r ==0) shock_speed_r = shock_speed; 
+       if (shock_mode == 4 && shock_speed_l ==0) shock_speed_l = shock_speed;
+       if (shock_mode == 4 && shock_speed_r ==0) shock_speed_r = shock_speed;
     }
 #endif
 #ifdef MPI
     else if (strcasecmp(token,"cpu_dim")==0) {
       /* CPU array dimension */
-      getparam(token,&cpu_dim,PARAM_INT,DIM,DIM);    
+      getparam(token,&cpu_dim,PARAM_INT,DIM,DIM);
     }
     else if (strcasecmp(token,"parallel_output")==0) {
       /* parallel output flag */
@@ -1874,7 +1901,7 @@ int getparamfile(char *paramfname, int phase)
     else if (strcasecmp(token,"dsf_k")==0) {
       /* k-point series */
       int i=0, tmp[2*DIM+1];
-      if (dsf_nk>=dsf_nkmax) 
+      if (dsf_nk>=dsf_nkmax)
         error("number of k-point series exceeds dsf_nkmax");
       getparam(token,tmp,PARAM_INT,2*DIM+1,2*DIM+1);
       dsf_k0  [DIM*dsf_nk  ] = tmp[i++];
@@ -1891,7 +1918,7 @@ int getparamfile(char *paramfname, int phase)
       dsf_nk++;
     }
 #endif
-#if defined(HC) || defined(NVX) 
+#if defined(HC) || defined(NVX)
     else if (strcasecmp(token, "hc_int")==0){
       /* number of steps between heat current or profile writes  */
       getparam(token, &hc_int, PARAM_INT, 1,1);
@@ -1945,7 +1972,7 @@ int getparamfile(char *paramfname, int phase)
     else if (strcasecmp(token, "fd_c")==0){
       /* FD electronic heat capacity  */
       getparam("fd_c", &fd_c, PARAM_REAL, 1, 1);
-    }  
+    }
     else if (strcasecmp(token, "fd_gamma")==0){
       /* FD electronic heat capacity / T_e (proport. const.) */
       getparam("fd_gamma", &fd_gamma, PARAM_REAL, 1, 1);
@@ -2020,13 +2047,13 @@ else if (strcasecmp(token,"laser_tem_mode")==0) {
       getparam(token,&laser_tem_mode,PARAM_INT,3,3);
       switch ( laser_tem_mode.x ) /* Gauss Laguerre = 0, Gauss Hermite = 1 */
       {
-	  case 0: 
+	  case 0:
 	  {
 	    switch ( laser_tem_mode.y )
 	    {
-		case 0: 
+		case 0:
 		{
-		  switch ( laser_tem_mode.z ) 
+		  switch ( laser_tem_mode.z )
 		  {
 		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_00; break;
 		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_01; break;
@@ -2035,9 +2062,9 @@ else if (strcasecmp(token,"laser_tem_mode")==0) {
 		  }
 		} break;
 
-		case 1: 
+		case 1:
 		{
-		  switch ( laser_tem_mode.z ) 
+		  switch ( laser_tem_mode.z )
 		  {
 		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_10; break;
 		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_11; break;
@@ -2046,9 +2073,9 @@ else if (strcasecmp(token,"laser_tem_mode")==0) {
 		  }
 		} break;
 
-		case 2: 
+		case 2:
 		{
-		  switch ( laser_tem_mode.z ) 
+		  switch ( laser_tem_mode.z )
 		  {
 		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_20; break;
 		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_21; break;
@@ -2059,7 +2086,7 @@ else if (strcasecmp(token,"laser_tem_mode")==0) {
 
 		case 3:
 		{
-		  switch ( laser_tem_mode.z ) 
+		  switch ( laser_tem_mode.z )
 		  {
 		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_30; break;
 		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_31; break;
@@ -2067,16 +2094,16 @@ else if (strcasecmp(token,"laser_tem_mode")==0) {
 		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_33; break;
 		  }
 		} break;
-		
-	    }	    
+
+	    }
 	  } break;
 	  case 1:
 	  {
 	    switch ( laser_tem_mode.y )
 	    {
-		case 0: 
+		case 0:
 		{
-		  switch ( laser_tem_mode.z ) 
+		  switch ( laser_tem_mode.z )
 		  {
 		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_00; break;
 		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_01; break;
@@ -2084,10 +2111,10 @@ else if (strcasecmp(token,"laser_tem_mode")==0) {
 		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_03; break;
 		  }
 		} break;
-		
-		case 1: 
+
+		case 1:
 		{
-		  switch ( laser_tem_mode.z ) 
+		  switch ( laser_tem_mode.z )
 		  {
 		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_10; break;
 		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_11; break;
@@ -2096,9 +2123,9 @@ else if (strcasecmp(token,"laser_tem_mode")==0) {
 		  }
 		} break;
 
-		case 2: 
+		case 2:
 		{
-		  switch ( laser_tem_mode.z ) 
+		  switch ( laser_tem_mode.z )
 		  {
 		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_20; break;
 		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_21; break;
@@ -2106,10 +2133,10 @@ else if (strcasecmp(token,"laser_tem_mode")==0) {
 		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_23; break;
 		  }
 		} break;
-		
-		case 3: 
+
+		case 3:
 		{
-		  switch ( laser_tem_mode.z ) 
+		  switch ( laser_tem_mode.z )
 		  {
 		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_30; break;
 		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_31; break;
@@ -2118,11 +2145,11 @@ else if (strcasecmp(token,"laser_tem_mode")==0) {
 		  }
 		} break;
 
-	    }	    
+	    }
 	  } break;
       }
 }
-  
+
 #endif
 else if (strcasecmp(token, "laser_sigma_e")==0){
       /* area density of pulse energy (for rescaling method) */
@@ -2170,7 +2197,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
           break;
         case 4 :
 #ifdef TTM
-          do_laser_rescale = laser_rescale_ttm; 
+          do_laser_rescale = laser_rescale_ttm;
 	  /* change electron temperature source terms, not atom velocities */
 #else
 	  error("Please compile with TTM if you want to use this laser rescale mode.\n");
@@ -2179,7 +2206,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
         default :
           error("Illegal value for parameter laser_rescale_mode.\n");
           break;
-      } /* switch */      
+      } /* switch */
     }
 #endif
 
@@ -2218,11 +2245,11 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       /* determine crystallinity of atoms */
       cna_crist_n = getparam("cna_crist",cna_cristv,PARAM_INT,1,4);
     }
-    else if (strcasecmp(token,"cna_ll")==0) { 
+    else if (strcasecmp(token,"cna_ll")==0) {
       /* lower left corner of partial box */
       getparam("cna_ll", &cna_ll,PARAM_REAL,DIM,DIM);
     }
-    else if (strcasecmp(token,"cna_ur")==0) { 
+    else if (strcasecmp(token,"cna_ur")==0) {
       /* upper right corner of partial box */
       getparam("cna_ur", &cna_ur,PARAM_REAL,DIM,DIM);
     }
@@ -2301,15 +2328,15 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"reset_Epot_step")==0) {
       /* step at which to compute Epot_ref (if calc_Epot_ref==1) */
       getparam(token,&reset_Epot_step,PARAM_INT,1,1);
-    }   
+    }
     else if (strcasecmp(token,"calc_Epot_ref")==0) {
       /* read (0) or compute (1) reference potential energy */
       getparam(token,&calc_Epot_ref,PARAM_INT,1,1);
-    }   
+    }
     else if (strcasecmp(token,"Epot_diff")==0) {
       /* write Epot (0) or Epot_diff (1) */
       getparam(token,&Epot_diff,PARAM_INT,1,1);
-    }   
+    }
 #endif
 #ifdef AVPOS
     else if (strcasecmp(token,"avpos_start")==0) {
@@ -2435,7 +2462,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       if (ntypes==0) error("specify parameter ntypes before op_rcut");
       getparam(token,op_r2_cut,PARAM_REAL,ntypes*ntypes,ntypes*ntypes);
       for (k=0; k<ntypes*ntypes; k++) op_r2_cut[k] = SQR(op_r2_cut[k]);
-    }   
+    }
     else if (strcasecmp(token,"op_weight")==0) {
       /* weights for order parameter */
       if (ntypes==0) error("specify parameter ntypes before op_weight");
@@ -2650,7 +2677,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       if (ntypes==0) error("specify parameter ntypes before r_begin");
       getparam(token, r_begin, PARAM_REAL, ntypepairs, ntypepairs);
     }
-    else if (strcasecmp(token,"pot_res")==0) {     
+    else if (strcasecmp(token,"pot_res")==0) {
       if (ntypes==0) error("specify parameter ntypes before pot_res");
       getparam(token, pot_res, PARAM_REAL, ntypepairs, ntypepairs);
     }
@@ -2705,7 +2732,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     /* harmonic potential for shell model */
     else if (strcasecmp(token,"spring_const")==0) {
       if (ntypes==0) error("specify parameter ntypes before spring_const");
-      getparam(token, spring_const, PARAM_REAL, 
+      getparam(token, spring_const, PARAM_REAL,
                ntypepairs-ntypes, ntypepairs-ntypes);
     }
     else if (strcasecmp(token,"fix_bks")==0) {
@@ -2872,7 +2899,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
 #if defined(TERSOFF) || defined(BRENNER)
     else if (strcasecmp(token,"ters_chi")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_chi");
-      getparam(token, ters_chi, PARAM_REAL, 
+      getparam(token, ters_chi, PARAM_REAL,
                ntypepairs-ntypes, ntypepairs-ntypes);
     }
     else if (strcasecmp(token,"ters_om")==0) {
@@ -2880,7 +2907,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       getparam(token, ters_om, PARAM_REAL,
                ntypepairs-ntypes, ntypepairs-ntypes);
     }
-    /* nvalues is ntypes for TERSOFF or TERSOFFMOD 
+    /* nvalues is ntypes for TERSOFF or TERSOFFMOD
     and ntypepairs for TERSOFF2 or TERSOFFMOD2 */
     else if (strcasecmp(token,"ters_ga")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_ga");
@@ -2935,7 +2962,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_c5");
       getparam(token, ters_c5, PARAM_REAL, nvalues, nvalues);
     }
-#endif 
+#endif
     else if (strcasecmp(token,"ters_h")==0) {
       if (ntypes==0) error("specify parameter ntypes before ters_h");
       getparam(token, ters_h, PARAM_REAL, nvalues, nvalues);
@@ -2959,7 +2986,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     }
     else if (strcasecmp(token,"keating_beta")==0) {
       if (ntypes==0) error("specify parameter ntypes before keating_beta");
-      getparam(token, keating_beta, PARAM_REAL, 
+      getparam(token, keating_beta, PARAM_REAL,
                ntypes*ntypepairs, ntypes*ntypepairs);
     }
 #endif
@@ -3242,7 +3269,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       /* mass of particles to be created */
       if (ntypes==0) error("specify parameter ntypes before epitax_mass");
       getparam("epitax_mass",epitax_mass,PARAM_REAL,ntypes,ntypes);
-    } 
+    }
     else if (strcasecmp(token,"epitax_temp")==0) {
       /* temperature of particles to be created */
       if (ntypes==0) error("specify parameter ntypes before epitax_temp");
@@ -3280,7 +3307,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       uniax_r2_cut = SQR(uniax_r_cut);
       cellsz = MAX(cellsz,uniax_r2_cut);
     }
-#endif 
+#endif
 
 #ifdef RELAX
     else if (strcasecmp(token,"max_sscount")==0) {
@@ -3288,7 +3315,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
         getparam(token,&max_sscount,PARAM_INT,1,1);
     }
 #endif
-    
+
 #ifdef EXTPOT
     else if (strcasecmp(token,"ep_n")==0) {
       /* EXTPOT: number of external potentials */
@@ -3358,7 +3385,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       ep_dir[i].x = rtmp4[1] / rtmp;
       ep_dir[i].y = rtmp4[2] / rtmp;
       ep_dir[i].z = rtmp4[3] / rtmp;
-      
+
     }
 #endif /* EXTPOT */
 #ifdef CBE
@@ -3369,7 +3396,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       if ( (num_spus<1) || (num_spus>N_SPU_THREADS_MAX) ) {
 	 num_spus=N_SPU_THREADS_MAX;
       }
-    } 
+    }
     else if (strcasecmp(token, "num_bufs")==0) {
       /* Number of argument buffers per SPU */
       getparam(token,&num_bufs,PARAM_INT,1,1);
@@ -3384,6 +3411,19 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token, "cbe_pot_max")==0) {
       /* maximum value in potential table */
       getparam(token,&cbe_pot_max,PARAM_REAL,1,1);
+    }
+#endif
+
+#ifdef KIM
+    else if (strcasecmp(token, "kim_model_name")==0) {
+      /* name of the KIM model for force calculation */
+      getparam(token, kim_model_name, PARAM_STR, 1, 255);
+      have_potfile = 1;
+    }
+    else if (strcasecmp(token, "kim_el_names")==0) {
+      /* element names, needed for the KIM matching process */
+      if (ntypes == 0) error ("specify parameter ntypes before kim_elements\n");
+      getparam(token, kim_el_names, PARAM_CHARPTR, ntypes, 4);
     }
 #endif
 
@@ -3426,7 +3466,7 @@ void check_parameters_complete()
   if (ensemble == 0) {
     error("missing or unknown ensemble parameter.");
   }
- 
+
   if (timestep == (real)0) {
     error("timestep is missing or zero.");
   }
@@ -3440,7 +3480,7 @@ void check_parameters_complete()
   {
       if(bend_nmoments >6)
           error("currently only 6 bending moments are supported");
-      
+
       for (k=0;k<bend_nmoments;k++)
       {
           this_bend_axis.x = (bend_axis + k)->x;
@@ -3448,7 +3488,7 @@ void check_parameters_complete()
           this_bend_axis.z = (bend_axis + k)->z;
           if(SPROD(this_bend_axis,this_bend_axis)==0)
           error("definition of bending moment without axis");
-     
+
 #ifdef RELAX
           tmp=((fbc_bdforces + (bend_vtype_of_force[k]))->x)*
               ((fbc_bdforces + (bend_vtype_of_force[k]))->x) +
@@ -3469,7 +3509,7 @@ void check_parameters_complete()
       }
   }
 #endif
-  
+
 #ifdef EXTPOT
   if(ep_a !=0)
     printf("Usage of ep_a is depreciated, use extpot_file instead\n");
@@ -3548,7 +3588,7 @@ void check_parameters_complete()
       || laser_dir.z!=0
 #endif
     ) error("Sorry: Laser incidence only along one coordinate axis.");
-  }   
+  }
   else if (laser_dir.y!=0) {
     laser_dir.y=1;
 #ifndef TWOD
@@ -3577,16 +3617,16 @@ void check_parameters_complete()
 	if ( laser_sigma_w0 <= 0.0){
 	  error("laser_sigma_w0 is equal or less than zero - which is nonsense or means zero energy density.");
 	}
-	
+
 	if ( (laser_tem_mode.x < 0 ) || (laser_tem_mode.x > 1 ) )
 	{
 	  error("Laser TEM Mode has to be either Gauss-Laguerre (0) or Gauss-Hermite (1).");
 	}
-	
+
 	if ( (laser_tem_mode.y < 0) || (laser_tem_mode.y > 3) || (laser_tem_mode.z < 0 ) || (laser_tem_mode.z > 3) )
 	{
 	  error("Only Laser TEM_xy modes for x=1...3 and y=1...3 are supported yet.");
-	}	     
+	}
 #endif
 #ifdef TTM
   if (fd_update_steps <= 0) {
@@ -3602,13 +3642,13 @@ void check_parameters_complete()
 
   if (strcasecmp(fd_one_d_str,"x")==0 || strcasecmp(fd_one_d_str,"1")==0) {
     fd_one_d=1;
-  } 
+  }
   else if (strcasecmp(fd_one_d_str,"y")==0 || strcasecmp(fd_one_d_str,"2")==0){
     fd_one_d=2;
-  } 
+  }
   else if (strcasecmp(fd_one_d_str,"z")==0 || strcasecmp(fd_one_d_str,"3")==0){
     fd_one_d=3;
-  } 
+  }
   else if (strcasecmp(fd_one_d_str,"")!=0) {
     warning("Ignoring unknown value of fe_one_d\n");
   }
@@ -3624,7 +3664,7 @@ void check_parameters_complete()
     int want_cpus = cpu_dim.x * cpu_dim.y * cpu_dim.z;
 #endif
     if ( want_cpus != num_cpus) calc_cpu_dim();
-    if ((want_cpus != num_cpus) && (want_cpus != 1)) 
+    if ((want_cpus != num_cpus) && (want_cpus != 1))
       warning("cpu_dim incompatible with available CPUs, using default");
   }
 #endif
@@ -3639,7 +3679,7 @@ void check_parameters_complete()
   }
 #endif
 
-#if defined(FRAC) || defined(FTG) 
+#if defined(FRAC) || defined(FTG)
   if (stadium2.x==0 && stadium2.y==0 ){
     stadium2.x = box_x.x/2.0;
     stadium2.y = box_y.y/2.0;
@@ -3650,7 +3690,7 @@ void check_parameters_complete()
   if (avpos_start <= imdrestart*checkpt_int)
     //  avpos_start = imdrestart*checkpt_int+1; /* do not ask me why +1 ;-) */
     avpos_start = imdrestart*checkpt_int; /* do not ask me why +1 ;-) */
-  /* Default initialisation of end time */ 
+  /* Default initialisation of end time */
   if (0==avpos_end) avpos_end = steps_max;
 #ifdef STRESS_TENS
   if (press_int % avpos_int !=0 || avpos_res % eng_int !=0)
@@ -3679,6 +3719,11 @@ void check_parameters_complete()
 #endif
 #if defined(DIFFPAT) && defined(TWOD)
   error("Option DIFFPAT is not supported in 2D");
+#endif
+
+#ifdef KIM
+  if (strcmp(kim_el_names[0],"\0")==0)
+    error("kim_el_names is not properly set in parameter file");
 #endif
 
 #if defined(ADA) && defined(TWOD)
@@ -3712,7 +3757,7 @@ void check_parameters_complete()
 
 void read_command_line(int argc,char **argv)
 {
-  if (0==myid) { 
+  if (0==myid) {
     /* check for restart, process options */
     strcpy(progname,argv[0]);
     while ((argc > 1) && (argv[1][0] =='-')) {
@@ -3749,9 +3794,9 @@ void read_command_line(int argc,char **argv)
   }
 #ifdef MPI
   /* broadcast everything */
-  MPI_Bcast( paramfilename, 255, MPI_CHAR, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( progname,      255, MPI_CHAR, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &imdrestart,     1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( paramfilename, 255, MPI_CHAR, 0, MPI_COMM_WORLD);
+  MPI_Bcast( progname,      255, MPI_CHAR, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &imdrestart,     1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 }
 
@@ -3794,10 +3839,10 @@ int read_parameters(char *paramfname, int phase)
       /* read itr-file */
       sprintf(fname,"%s.%d.itr",outfilename,imdrestart);
       testfile = fopen(fname,"r");
-      if (NULL==testfile) { 
+      if (NULL==testfile) {
         sprintf(fname,"%s.%05d.itr",outfilename,imdrestart);
         testfile = fopen(fname,"r");
-        if (NULL==testfile) { 
+        if (NULL==testfile) {
           error_str("file %s not found", fname);
         } else {
           fclose(testfile);
@@ -3810,10 +3855,10 @@ int read_parameters(char *paramfname, int phase)
       /* get restart configuration */
       sprintf(infilename,"%s.%d.%s",outfilename,imdrestart,"chkpt");
       testfile = fopen(infilename,"r");
-      if (NULL==testfile) { 
+      if (NULL==testfile) {
         sprintf(infilename,"%s.%05d.%s",outfilename,imdrestart,"chkpt");
         testfile = fopen(infilename,"r");
-        if (NULL==testfile) { 
+        if (NULL==testfile) {
           error_str("file %s not found", infilename);
         } else {
           fclose(testfile);
@@ -3857,7 +3902,7 @@ int read_parameters(char *paramfname, int phase)
     }
   }
 #ifdef MPI
-  MPI_Bcast( &finished, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &finished, 1, MPI_INT, 0, MPI_COMM_WORLD);
   broadcast_params();
 #endif
   return finished;
@@ -3867,7 +3912,7 @@ int read_parameters(char *paramfname, int phase)
 
 /****************************************************************************
 *
-*  Broadcast all parameters to other CPUs (MPI only) 
+*  Broadcast all parameters to other CPUs (MPI only)
 *
 *****************************************************************************/
 
@@ -3880,59 +3925,59 @@ void broadcast_params() {
   vektor nullv = {0,0,0};
 #endif
 
-  MPI_Bcast( &ensemble    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &maxwalltime , 1, REAL,     0, MPI_COMM_WORLD); 
+  MPI_Bcast( &ensemble    , 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &maxwalltime , 1, REAL,     0, MPI_COMM_WORLD);
   MPI_Bcast( &hyper_threads,1, MPI_INT,  0, MPI_COMM_WORLD);
-  MPI_Bcast( &watch_int   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &stop_int    , 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &loop        , 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &seed        , 1, MPI_LONG, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &do_maxwell  , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &watch_int   , 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &stop_int    , 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &loop        , 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &seed        , 1, MPI_LONG, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &do_maxwell  , 1, MPI_INT,  0, MPI_COMM_WORLD);
 
-  MPI_Bcast( &steps_max   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &steps_min   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &checkpt_int , 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &eng_int     , 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &flush_int   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &pic_int     , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &steps_max   , 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &steps_min   , 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &checkpt_int , 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &eng_int     , 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &flush_int   , 1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &pic_int     , 1, MPI_INT,  0, MPI_COMM_WORLD);
 #if defined(FORCE) || defined(WRITEF)
-  MPI_Bcast( &force_int   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &force_int   , 1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 #ifdef WRITEF
-  MPI_Bcast( &force_all   , 1, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &force_all   , 1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 
 #ifdef DEBUG
   MPI_Bcast( &force_celldim_divisor, 3, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
-  MPI_Bcast( &dist_int,              1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_int,              1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &dist_dim,            DIM, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &dist_ll,             DIM, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dist_ur,             DIM, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dist_Epot_flag,        1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dist_Ekin_flag,        1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dist_Ekin_long_flag,   1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dist_Ekin_trans_flag,  1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dist_Ekin_comp_flag,   1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dist_press_flag,       1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dist_pressoff_flag,    1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dist_presstens_flag,   1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dist_shock_shear_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dist_shear_aniso_flag, 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dist_dens_flag,        1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dist_vxavg_flag,       1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &box_from_header,       1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &dist_ll,             DIM, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &dist_ur,             DIM, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &dist_Epot_flag,        1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dist_Ekin_flag,        1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dist_Ekin_long_flag,   1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dist_Ekin_trans_flag,  1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dist_Ekin_comp_flag,   1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dist_press_flag,       1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dist_pressoff_flag,    1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dist_presstens_flag,   1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dist_shock_shear_flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dist_shear_aniso_flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dist_dens_flag,        1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dist_vxavg_flag,       1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &box_from_header,       1, MPI_INT, 0, MPI_COMM_WORLD);
 
 #ifdef TWOD
   /*  MPI_Bcast( &pic_scale   , 2, REAL, 0, MPI_COMM_WORLD); */
   MPI_Bcast( &ecut_kin    , 2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &ecut_pot    , 2, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &pic_res     , 2, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &pic_type    , 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &ecut_pot    , 2, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &pic_res     , 2, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &pic_type    , 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
-  MPI_Bcast( &pic_ll      , DIM, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &pic_ur      , DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &pic_ll      , DIM, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &pic_ur      , DIM, REAL, 0, MPI_COMM_WORLD);
 #ifdef CLONE
   MPI_Bcast( &nclones, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
@@ -3950,77 +3995,77 @@ void broadcast_params() {
 #ifdef FBC
   if (NULL==fbc_forces) {
     fbc_forces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_forces) 
-      error("Cannot allocate memory for fbc_forces on client."); 
+    if (NULL==fbc_forces)
+      error("Cannot allocate memory for fbc_forces on client.");
   }
   MPI_Bcast( fbc_forces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
   if (NULL==fbc_beginforces) {
     fbc_beginforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_beginforces) 
-      error("Cannot allocate memory for fbc_beginforces on client."); 
+    if (NULL==fbc_beginforces)
+      error("Cannot allocate memory for fbc_beginforces on client.");
   }
-  MPI_Bcast( fbc_beginforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( fbc_beginforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
 #ifdef RELAX
   MPI_Bcast( &max_fbc_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
   if (NULL==fbc_dforces) {
     fbc_dforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_dforces) 
-      error("Cannot allocate memory for fbc_dforces on client."); 
+    if (NULL==fbc_dforces)
+      error("Cannot allocate memory for fbc_dforces on client.");
   }
-  MPI_Bcast( fbc_dforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( fbc_dforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
 #else
   if (NULL==fbc_endforces) {
     fbc_endforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_endforces) 
-      error("Cannot allocate memory for fbc_endforces on client."); 
+    if (NULL==fbc_endforces)
+      error("Cannot allocate memory for fbc_endforces on client.");
   }
-  MPI_Bcast( fbc_endforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( fbc_endforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
 #endif
  if (NULL==fbc_df) {
     fbc_df = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_df) 
-      error("Cannot allocate memory for fbc_df on client."); 
+    if (NULL==fbc_df)
+      error("Cannot allocate memory for fbc_df on client.");
   }
 #endif /*FBC*/
 #ifdef BEND
    if (NULL==fbc_bforces) {
     fbc_bforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_bforces) 
-      error("Cannot allocate memory for fbc_bforces on client."); 
+    if (NULL==fbc_bforces)
+      error("Cannot allocate memory for fbc_bforces on client.");
   }
   MPI_Bcast( fbc_bforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
-  
+
   if (NULL==fbc_beginbforces) {
       fbc_beginbforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_beginbforces) 
-      error("Cannot allocate memory for fbc_beginbforces on client."); 
+    if (NULL==fbc_beginbforces)
+      error("Cannot allocate memory for fbc_beginbforces on client.");
   }
-  MPI_Bcast( fbc_beginbforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( fbc_beginbforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
 #ifdef RELAX
   MPI_Bcast( &max_bfbc_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
   if (NULL==fbc_bdforces) {
     fbc_bdforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_bdforces) 
-      error("Cannot allocate memory for fbc_bdforces on client."); 
+    if (NULL==fbc_bdforces)
+      error("Cannot allocate memory for fbc_bdforces on client.");
   }
-  MPI_Bcast( fbc_bdforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( fbc_bdforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
 #else
   if (NULL==fbc_endbforces) {
     fbc_endbforces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_endbforces) 
-      error("Cannot allocate memory for fbc_endbforces on client."); 
+    if (NULL==fbc_endbforces)
+      error("Cannot allocate memory for fbc_endbforces on client.");
   }
-  MPI_Bcast( fbc_endbforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( fbc_endbforces, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
 #endif
  if (NULL==fbc_bdf) {
     fbc_bdf = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==fbc_bdf) 
-      error("Cannot allocate memory for fbc_bdf on client."); 
+    if (NULL==fbc_bdf)
+      error("Cannot allocate memory for fbc_bdf on client.");
  }
  if (NULL==bend_forces) {
     bend_forces = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==bend_forces) 
-      error("Cannot allocate memory for bend_forces on client."); 
+    if (NULL==bend_forces)
+      error("Cannot allocate memory for bend_forces on client.");
   }
 #endif /* BEND */
 #ifdef ZAPP
@@ -4035,7 +4080,7 @@ void broadcast_params() {
     if (NULL==bend_axis)
       error("Cannot allocate memory for bend_axis vector on client.\n");
     }
-     MPI_Bcast( bend_axis, bend_nmoments * DIM, REAL, 0, MPI_COMM_WORLD); 
+     MPI_Bcast( bend_axis, bend_nmoments * DIM, REAL, 0, MPI_COMM_WORLD);
      /* these variables will be calculated and do not need to be communicated here */
     if (NULL==bend_origin) {
         bend_origin = (vektor *) malloc( bend_nmoments * sizeof(vektor) );
@@ -4051,42 +4096,42 @@ void broadcast_params() {
         bend_vec = (vektor *) malloc( bend_nmoments * sizeof(vektor) );
     if (NULL==bend_vec)
       error("Cannot allocate memory for bend_vec vector on client.\n");
-    }    
+    }
 #endif /* BEND */
 
 
-  
+
   if (NULL==restrictions) {
     restrictions = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==restrictions) 
-      error("Cannot allocate memory for restriction vectors on client."); 
+    if (NULL==restrictions)
+      error("Cannot allocate memory for restriction vectors on client.");
   }
-  MPI_Bcast( restrictions, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);  
+  MPI_Bcast( restrictions, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
 
-  MPI_Bcast( &pbc_dirs    , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &box_x       , DIM, REAL,     0, MPI_COMM_WORLD); 
+  MPI_Bcast( &pbc_dirs    , DIM, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &box_x       , DIM, REAL,     0, MPI_COMM_WORLD);
   MPI_Bcast( &box_y       , DIM, REAL,     0, MPI_COMM_WORLD);
 #ifndef TWOD
   MPI_Bcast( &box_z       , DIM, REAL,     0, MPI_COMM_WORLD);
-#endif 
-  MPI_Bcast( &box_param,    DIM, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &size_per_cpu,   1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &box_unit,       1, REAL,     0, MPI_COMM_WORLD); 
-  MPI_Bcast( &ntypes,         1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &ntypepairs,     1, MPI_INT,  0, MPI_COMM_WORLD); 
-  MPI_Bcast( &ntypetriples,   1, MPI_INT,  0, MPI_COMM_WORLD); 
+#endif
+  MPI_Bcast( &box_param,    DIM, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &size_per_cpu,   1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &box_unit,       1, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( &ntypes,         1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &ntypepairs,     1, MPI_INT,  0, MPI_COMM_WORLD);
+  MPI_Bcast( &ntypetriples,   1, MPI_INT,  0, MPI_COMM_WORLD);
   if (NULL==masses) {
     masses = (real *) malloc( ntypes * sizeof(real) );
-    if (NULL==masses) 
+    if (NULL==masses)
       error("Cannot allocate memory for masses array\n");
   }
-  MPI_Bcast( masses, ntypes, REAL,     0, MPI_COMM_WORLD); 
+  MPI_Bcast( masses, ntypes, REAL,     0, MPI_COMM_WORLD);
   if (NULL==gtypes) {
     gtypes = (int *) malloc( ntypes * sizeof(int) );
-    if (NULL==gtypes) 
+    if (NULL==gtypes)
       error("Cannot allocate memory for types array\n");
   }
-  MPI_Bcast( gtypes, ntypes, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( gtypes, ntypes, MPI_INT,  0, MPI_COMM_WORLD);
 #ifdef NBLIST
   MPI_Bcast( &nbl_margin,    1, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &nbl_size,      1, REAL, 0, MPI_COMM_WORLD);
@@ -4132,35 +4177,35 @@ void broadcast_params() {
   MPI_Bcast( &nb_checkpt_int,       1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
-  MPI_Bcast( &timestep    ,   1, REAL,     0, MPI_COMM_WORLD); 
-  MPI_Bcast( &temperature ,   1, REAL,     0, MPI_COMM_WORLD); 
+  MPI_Bcast( &timestep    ,   1, REAL,     0, MPI_COMM_WORLD);
+  MPI_Bcast( &temperature ,   1, REAL,     0, MPI_COMM_WORLD);
   MPI_Bcast( &use_curr_temp,  1, MPI_INT,  0, MPI_COMM_WORLD);
-  MPI_Bcast( &cpu_dim     , DIM, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &cpu_dim     , DIM, MPI_INT,  0, MPI_COMM_WORLD);
 
-  MPI_Bcast( &parallel_output, 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &parallel_input,  1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &msgbuf_size,     1, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &binary_output,   1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( outfilename,            255, MPI_CHAR, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( infilename,             255, MPI_CHAR, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( potfilename,            255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &parallel_output, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &parallel_input,  1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &msgbuf_size,     1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &binary_output,   1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( outfilename,            255, MPI_CHAR, 0, MPI_COMM_WORLD);
+  MPI_Bcast( infilename,             255, MPI_CHAR, 0, MPI_COMM_WORLD);
+  MPI_Bcast( potfilename,            255, MPI_CHAR, 0, MPI_COMM_WORLD);
 #ifdef TTBP
-  MPI_Bcast( ttbp_potfilename,       255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( ttbp_potfilename,       255, MPI_CHAR, 0, MPI_COMM_WORLD);
 #endif
 #ifdef EAM2
-  MPI_Bcast( eam2_emb_E_filename,    255, MPI_CHAR, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( eam2_at_rho_filename,   255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( eam2_emb_E_filename,    255, MPI_CHAR, 0, MPI_COMM_WORLD);
+  MPI_Bcast( eam2_at_rho_filename,   255, MPI_CHAR, 0, MPI_COMM_WORLD);
 #ifdef EEAM
-  MPI_Bcast( eeam_mod_E_filename,    255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( eeam_mod_E_filename,    255, MPI_CHAR, 0, MPI_COMM_WORLD);
 #endif
 #endif
 #ifdef ADP
-  MPI_Bcast( adp_upotfile,           255, MPI_CHAR, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( adp_wpotfile,           255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( adp_upotfile,           255, MPI_CHAR, 0, MPI_COMM_WORLD);
+  MPI_Bcast( adp_wpotfile,           255, MPI_CHAR, 0, MPI_COMM_WORLD);
 #endif
 #ifdef MEAM
-  MPI_Bcast( meam_emb_E_filename,    255, MPI_CHAR, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( meam_eldensity_filename,255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( meam_emb_E_filename,    255, MPI_CHAR, 0, MPI_COMM_WORLD);
+  MPI_Bcast( meam_eldensity_filename,255, MPI_CHAR, 0, MPI_COMM_WORLD);
   MPI_Bcast( meam_t1,             ntypes, REAL,     0, MPI_COMM_WORLD);
   MPI_Bcast( meam_t2,             ntypes, REAL,     0, MPI_COMM_WORLD);
   MPI_Bcast( meam_t3,             ntypes, REAL,     0, MPI_COMM_WORLD);
@@ -4185,9 +4230,9 @@ void broadcast_params() {
 #endif
 
 #ifdef TEMPCONTROL
-  MPI_Bcast( &end_temp,        1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &end_temp,        1, REAL,    0, MPI_COMM_WORLD);
 #endif
-  MPI_Bcast( &cellsz,          1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &cellsz,          1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &initsz,          1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &incrsz,          1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &outbuf_size,     1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -4195,25 +4240,25 @@ void broadcast_params() {
   MPI_Bcast( &dist_chunk_size, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
 #ifdef AND
-  MPI_Bcast( &tempintv, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &tempintv, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 #ifdef BER
-  MPI_Bcast( &tauber, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &tauber, 1, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #if defined(NVT) || defined(NPT) || defined(STM)
-  MPI_Bcast( &eta ,         1 , REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &isq_tau_eta , 1 , REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &eta ,         1 , REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &isq_tau_eta , 1 , REAL, 0, MPI_COMM_WORLD);
 #ifdef UNIAX
-  MPI_Bcast( &eta_rot ,         1 , REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &isq_tau_eta_rot , 1 , REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &eta_rot ,         1 , REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &isq_tau_eta_rot , 1 , REAL, 0, MPI_COMM_WORLD);
 #endif
 #endif
 
 #if defined(STM) || defined(FRAC) || defined(FTG)
-  MPI_Bcast( &stadium,          2 , REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &stadium2,         2 , REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &center,           2 , REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &stadium,          2 , REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &stadium2,         2 , REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &center,           2 , REAL, 0, MPI_COMM_WORLD);
 #endif
 #ifdef DAMP
   MPI_Bcast( &stadium,          3 , REAL, 0, MPI_COMM_WORLD);
@@ -4225,12 +4270,12 @@ void broadcast_params() {
 #endif
 
 #ifdef NPT
-  MPI_Bcast( &xi,                DIM, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &isq_tau_xi,          1, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &pressure_ext,      DIM, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &xi,                DIM, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &isq_tau_xi,          1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &pressure_ext,      DIM, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &use_curr_pressure,   1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &pressure_end,      DIM, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &cell_size_tolerance, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &pressure_end,      DIM, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &cell_size_tolerance, 1, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #if defined(CORRELATE)
@@ -4307,7 +4352,7 @@ void broadcast_params() {
   MPI_Bcast( &xipdecay,     1, REAL,  0, MPI_COMM_WORLD);
   MPI_Bcast( &ramp_fraction,1, REAL,  0, MPI_COMM_WORLD);
   MPI_Bcast( &pdecay_mode,  1, REAL,  0, MPI_COMM_WORLD);
-#endif 
+#endif
 #ifdef TTM
   MPI_Bcast( &fd_g,     1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &fd_update_steps,1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -4323,64 +4368,64 @@ void broadcast_params() {
 #endif /* TTM */
 #ifdef STRESS_TENS
   MPI_Bcast( &press_int    , 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &presstens_ext, DIM*(DIM+1)/2, REAL, 0, MPI_COMM_WORLD);  
+  MPI_Bcast( &presstens_ext, DIM*(DIM+1)/2, REAL, 0, MPI_COMM_WORLD);
 #endif
-#if defined(FRAC) || defined(FTG) 
-  MPI_Bcast( &dotepsilon0   , 1, REAL   , 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &expansionmode , 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &gamma_bar     , 1, REAL   , 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &gamma_min     , 1, REAL   , 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &gamma_damp    , 1, REAL   , 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &dampingmode   , 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &delta_ftg     , 1, REAL   , 0, MPI_COMM_WORLD); 
+#if defined(FRAC) || defined(FTG)
+  MPI_Bcast( &dotepsilon0   , 1, REAL   , 0, MPI_COMM_WORLD);
+  MPI_Bcast( &expansionmode , 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &gamma_bar     , 1, REAL   , 0, MPI_COMM_WORLD);
+  MPI_Bcast( &gamma_min     , 1, REAL   , 0, MPI_COMM_WORLD);
+  MPI_Bcast( &gamma_damp    , 1, REAL   , 0, MPI_COMM_WORLD);
+  MPI_Bcast( &dampingmode   , 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &delta_ftg     , 1, REAL   , 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef FTG
   MPI_Bcast( &Tleft,         1, REAL      , 0, MPI_COMM_WORLD);
   MPI_Bcast( &Tright,        1, REAL      , 0, MPI_COMM_WORLD);
-  MPI_Bcast( &nslices,       1, MPI_INT   , 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &nslices_Left,  1, MPI_INT   , 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &nslices_Right, 1, MPI_INT   , 0, MPI_COMM_WORLD); 
-  if (NULL==ninslice) { 
+  MPI_Bcast( &nslices,       1, MPI_INT   , 0, MPI_COMM_WORLD);
+  MPI_Bcast( &nslices_Left,  1, MPI_INT   , 0, MPI_COMM_WORLD);
+  MPI_Bcast( &nslices_Right, 1, MPI_INT   , 0, MPI_COMM_WORLD);
+  if (NULL==ninslice) {
     ninslice  = (int *) malloc(nslices*sizeof(int));
     if (NULL==ninslice)
       error("Cannot allocate memory for ninslice vector on client.\n");
-  }                   
-  if (NULL==E_kin_ftg) { 
+  }
+  if (NULL==E_kin_ftg) {
     E_kin_ftg = (real *) malloc(nslices*sizeof(real));
-    if (NULL==E_kin_ftg) 
+    if (NULL==E_kin_ftg)
       error("Cannot allocate memory for E_kin_ftg vector on client.\n");
   }
   if (NULL==gamma_ftg) {
     gamma_ftg = (real *) malloc(nslices*sizeof(real));
     if (NULL==gamma_ftg)
       error("Cannot allocate memory for gamma_ftg vector on client.\n");
-    for (i=0;i<nslices;i++) 
+    for (i=0;i<nslices;i++)
       gamma_ftg[i] = 0.0;
   }
   MPI_Bcast( gamma_ftg, nslices, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef FINNIS
-  MPI_Bcast( &delta_finnis     , 1, REAL   , 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &zeta_0           , 1, REAL   , 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &delta_finnis     , 1, REAL   , 0, MPI_COMM_WORLD);
+  MPI_Bcast( &zeta_0           , 1, REAL   , 0, MPI_COMM_WORLD);
 #endif
 #ifdef GLOK
-  MPI_Bcast( &glok_ekin_threshold, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &glok_ekin_threshold, 1, REAL, 0, MPI_COMM_WORLD);
 #endif
 #ifdef MIX
-  MPI_Bcast( &glok_mix, 1, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &glok_mixdec, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &glok_mix, 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &glok_mixdec, 1, REAL, 0, MPI_COMM_WORLD);
 #endif
 #ifdef ADAPTGLOK
-  MPI_Bcast( &glok_fmaxcrit, 1, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &glok_incfac, 1, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &glok_decfac, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &glok_fmaxcrit, 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &glok_incfac, 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &glok_decfac, 1, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &glok_maxtimestep, 1, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &starttimestep, 1, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &glok_minsteps, 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &min_nPxF, 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &glok_int, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &starttimestep, 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &glok_minsteps, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &min_nPxF, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &glok_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 #ifdef RIGID
   MPI_Bcast( &nsuperatoms, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -4396,71 +4441,71 @@ void broadcast_params() {
     superrestrictions = (vektor *) malloc( vtypes * sizeof(vektor) );
     if (NULL==superrestrictions)
       error("Cannot allocate memory for superrestrictions on client.");
-    else 
+    else
       for (k=0; k<vtypes; k++) superrestrictions[k] = nullv;
   }
   MPI_Bcast( superrestrictions, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
-  if (NULL==superforce) 
+  if (NULL==superforce)
     superforce = (vektor *) malloc( vtypes * sizeof(vektor) );
   if (NULL==superforce)
-    error("Cannot allocate memory for superforce on client.");  
+    error("Cannot allocate memory for superforce on client.");
 #endif
 #ifdef DEFORM
-  MPI_Bcast( &max_deform_int,  1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &deform_size,     1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &max_deform_int,  1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &deform_size,     1, REAL,    0, MPI_COMM_WORLD);
   if (NULL==deform_shift) {
     deform_shift = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==deform_shift) 
-      error("Cannot allocate memory for deform_shift on client."); 
+    if (NULL==deform_shift)
+      error("Cannot allocate memory for deform_shift on client.");
   }
   MPI_Bcast( deform_shift, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
   if (NULL==shear_def) {
     shear_def = (int *) malloc( vtypes * sizeof(int) );
-    if (NULL==shear_def) 
-      error("Cannot allocate memory for shear_def on client."); 
+    if (NULL==shear_def)
+      error("Cannot allocate memory for shear_def on client.");
     for (i=0; i<vtypes; i++) shear_def[i] = 0;
   }
   MPI_Bcast( shear_def, vtypes, MPI_INT, 0, MPI_COMM_WORLD);
   if (NULL==deform_shear) {
     deform_shear = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==deform_shear) 
-      error("Cannot allocate memory for deform_shear on client."); 
+    if (NULL==deform_shear)
+      error("Cannot allocate memory for deform_shear on client.");
   }
   MPI_Bcast( deform_shear, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
   if (NULL==deform_base) {
     deform_base = (vektor *) malloc( vtypes * sizeof(vektor) );
-    if (NULL==deform_base) 
-      error("Cannot allocate memory for deform_base on client."); 
+    if (NULL==deform_base)
+      error("Cannot allocate memory for deform_base on client.");
   }
   MPI_Bcast( deform_base, vtypes * DIM, REAL, 0, MPI_COMM_WORLD);
 #endif
 #ifdef CYCLE
-   MPI_Bcast( &lindef_freq,     1, REAL,    0, MPI_COMM_WORLD); 
+   MPI_Bcast( &lindef_freq,     1, REAL,    0, MPI_COMM_WORLD);
 #endif
 #ifdef HOMDEF
-  MPI_Bcast( &lindef_size,     1, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &lindef_int     , 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &lindef_x,      DIM, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &lindef_y,      DIM, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &lindef_size,     1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &lindef_int     , 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &lindef_x,      DIM, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &lindef_y,      DIM, REAL,    0, MPI_COMM_WORLD);
 #ifndef TWOD
-  MPI_Bcast( &lindef_z,      DIM, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &lindef_z,      DIM, REAL,    0, MPI_COMM_WORLD);
 #endif
-  MPI_Bcast( &shear_module,    1, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &bulk_module,     1, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &relax_rate,      1, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &relax_mode,      1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &shear_module,    1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &bulk_module,     1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &relax_rate,      1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &relax_mode,      1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 #if defined(HOMDEF) || defined(NPT_axial)
-  MPI_Bcast( &relax_dirs,   DIM, MPI_INT,  0, MPI_COMM_WORLD); 
+  MPI_Bcast( &relax_dirs,   DIM, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 
 #ifdef SHOCK
-  MPI_Bcast( &shock_strip, 1, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &shock_speed, 1, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &shock_speed_l, 1, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &shock_speed_r, 1, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &shock_incr, 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &shock_mode,  1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &shock_strip, 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &shock_speed, 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &shock_speed_l, 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &shock_speed_r, 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &shock_incr, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &shock_mode,  1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef CNA
@@ -4468,8 +4513,8 @@ void broadcast_params() {
   MPI_Bcast( &cna_end,         1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &cna_int,         1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &cna_rcut,        1, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &cna_ll,          3, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &cna_ur,          3, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &cna_ll,          3, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &cna_ur,          3, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &cna_writev,      8, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &cna_write_n,     1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &cna_write_statistics, 1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -4482,9 +4527,9 @@ void broadcast_params() {
   MPI_Bcast( &min_dsp2,        1, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &dem_int,         1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &dsp_int,         1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &calc_Epot_ref,   1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &reset_Epot_step, 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &Epot_diff,       1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &calc_Epot_ref,   1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &reset_Epot_step, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &Epot_diff,       1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef AVPOS
@@ -4523,37 +4568,37 @@ void broadcast_params() {
 #ifdef CG
   MPI_Bcast( &cg_fr,           1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &cg_reset_int,    1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &linmin_maxsteps, 1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &linmin_tol,      1, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &linmin_dmax,     1, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &linmin_dmin,     1, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &cg_glimit,       1, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &cg_zeps,         1, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &cg_infolevel,    1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &cg_mode,         1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &linmin_maxsteps, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &linmin_tol,      1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &linmin_dmax,     1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &linmin_dmin,     1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &cg_glimit,       1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &cg_zeps,         1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &cg_infolevel,    1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &cg_mode,         1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 #ifdef ACG
-  MPI_Bcast( &acg_init_alpha,      1, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &acg_decfac,     1, REAL,    0, MPI_COMM_WORLD); 
-  MPI_Bcast( &acg_incfac,     1, REAL,    0, MPI_COMM_WORLD); 
+  MPI_Bcast( &acg_init_alpha,      1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &acg_decfac,     1, REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &acg_incfac,     1, REAL,    0, MPI_COMM_WORLD);
 #endif
 
 #ifdef SOCKET_IO
-  MPI_Bcast( &socket_int, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &socket_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef UNIAX
-  MPI_Bcast( &uniax_inert,  1, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &uniax_sig,    3, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &uniax_eps,    3, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &uniax_r_cut,  1, REAL, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &uniax_r2_cut, 1, REAL, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &uniax_inert,  1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &uniax_sig,    3, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &uniax_eps,    3, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &uniax_r_cut,  1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &uniax_r2_cut, 1, REAL, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef PAIR
   /* analytically defined potentials */
-  MPI_Bcast( &have_pre_pot,   1, MPI_INT, 0, MPI_COMM_WORLD); 
-  MPI_Bcast( &have_potfile,   1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &have_pre_pot,   1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &have_potfile,   1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( r_cut_lin, ntypepairs, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( r_begin,   ntypepairs, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( pot_res,   ntypepairs, REAL, 0, MPI_COMM_WORLD);
@@ -4574,7 +4619,18 @@ void broadcast_params() {
   MPI_Bcast( buck_sigma_lin, ntypepairs, REAL, 0, MPI_COMM_WORLD);
   /* harmonic potential for shell model */
   MPI_Bcast( spring_const, ntypepairs-ntypes, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &fix_bks, 1, MPI_INT, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( &fix_bks, 1, MPI_INT, 0, MPI_COMM_WORLD);
+#endif
+
+#ifdef KIM
+  MPI_Bcast( kim_model_name, 255, MPI_CHAR, 0, MPI_COMM_WORLD);
+  if (NULL == kim_el_names)
+    kim_el_names = (char **)calloc(ntypes, sizeof(char *));
+  for (i=0;i<ntypes;i++) {
+    if (NULL==kim_el_names[i])
+      kim_el_names[i] = (char *)calloc(3, sizeof(char));
+    MPI_Bcast(kim_el_names[i], 3, MPI_CHAR, 0, MPI_COMM_WORLD);
+  }
 #endif
 
 #ifdef FEFL
@@ -4624,7 +4680,7 @@ void broadcast_params() {
   MPI_Bcast( ters_b,     ntypepairs,        REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_la,    ntypepairs,        REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_mu,    ntypepairs,        REAL, 0, MPI_COMM_WORLD);
-#if defined(TERSOFF) || defined(BRENNER) 
+#if defined(TERSOFF) || defined(BRENNER)
   MPI_Bcast( ters_chi,   ntypepairs-ntypes, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( ters_om,    ntypepairs-ntypes, REAL, 0, MPI_COMM_WORLD);
   /* nvalues is ntypes for TERSOFF and ntypepairs for TERSOFF2 */
@@ -4710,52 +4766,52 @@ void broadcast_params() {
   MPI_Bcast( &dp_self,            1,      REAL,    0, MPI_COMM_WORLD);
   if (NULL==dp_b) {
     dp_b = (real *) malloc( ntypepairs * sizeof(real) );
-    if (NULL==dp_b) 
-      error("Cannot allocate memory for dp_b on client."); 
+    if (NULL==dp_b)
+      error("Cannot allocate memory for dp_b on client.");
   }
   MPI_Bcast( dp_b,            ntypepairs, REAL,    0, MPI_COMM_WORLD);
   if (NULL==dp_c) {
     dp_c = (real *) malloc( ntypepairs * sizeof(real) );
-    if (NULL==dp_c) 
-      error("Cannot allocate memory for dp_c on client."); 
+    if (NULL==dp_c)
+      error("Cannot allocate memory for dp_c on client.");
   }
   MPI_Bcast( dp_c,            ntypepairs, REAL,    0, MPI_COMM_WORLD);
   if (NULL==dp_alpha) {
     dp_alpha = (real *) malloc( ntypes * sizeof(real) );
-    if (NULL==dp_alpha) 
-      error("Cannot allocate memory for dp_alpha on client."); 
+    if (NULL==dp_alpha)
+      error("Cannot allocate memory for dp_alpha on client.");
   }
   MPI_Bcast( dp_alpha,            ntypes, REAL,    0, MPI_COMM_WORLD);
 #endif
 #if defined(DIPOLE) || defined(MORSE)
   if (NULL==ms_D) {
     ms_D = (real *) malloc( ntypepairs * sizeof(real) );
-    if (NULL==ms_D) 
-      error("Cannot allocate memory for ms_D on client."); 
+    if (NULL==ms_D)
+      error("Cannot allocate memory for ms_D on client.");
   }
   MPI_Bcast( ms_D,            ntypepairs, REAL,    0, MPI_COMM_WORLD);
   if (NULL==ms_gamma) {
     ms_gamma = (real *) malloc( ntypepairs * sizeof(real) );
-    if (NULL==ms_gamma) 
-      error("Cannot allocate memory for ms_gamma on client."); 
+    if (NULL==ms_gamma)
+      error("Cannot allocate memory for ms_gamma on client.");
   }
   MPI_Bcast( ms_gamma,        ntypepairs, REAL,    0, MPI_COMM_WORLD);
   if (NULL==ms_harm_c) {
     ms_harm_c = (real *) malloc( ntypepairs * sizeof(real) );
-    if (NULL==ms_harm_c) 
-      error("Cannot allocate memory for ms_harm_c on client."); 
+    if (NULL==ms_harm_c)
+      error("Cannot allocate memory for ms_harm_c on client.");
   }
   MPI_Bcast( ms_harm_c,        ntypepairs, REAL,    0, MPI_COMM_WORLD);
   if (NULL==ms_r2_min) {
     ms_r2_min = (real *) malloc( ntypepairs * sizeof(real) );
-    if (NULL==ms_r2_min) 
-      error("Cannot allocate memory for ms_r2_min on client."); 
+    if (NULL==ms_r2_min)
+      error("Cannot allocate memory for ms_r2_min on client.");
   }
   MPI_Bcast( ms_r2_min,      ntypepairs, REAL,    0, MPI_COMM_WORLD);
   if (NULL==ms_r0) {
     ms_r0 = (real *) malloc( ntypepairs * sizeof(real) );
-    if (NULL==ms_r0) 
-      error("Cannot allocate memory for ms_r0 on client."); 
+    if (NULL==ms_r0)
+      error("Cannot allocate memory for ms_r0 on client.");
   }
   MPI_Bcast( ms_r0,           ntypepairs, REAL,    0, MPI_COMM_WORLD);
 #endif
@@ -4778,7 +4834,7 @@ void broadcast_params() {
 #endif
 #ifdef EXTPOT
   MPI_Bcast( &have_extpotfile,            1, MPI_INT,  0, MPI_COMM_WORLD);
-  MPI_Bcast( extpotfilename,            255, MPI_CHAR, 0, MPI_COMM_WORLD); 
+  MPI_Bcast( extpotfilename,            255, MPI_CHAR, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ep_n,               1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ep_key,               1,    MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ep_nind,           1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -4789,7 +4845,7 @@ void broadcast_params() {
   MPI_Bcast( &ep_a,               1,    REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ep_rcut,            1,    REAL, 0, MPI_COMM_WORLD);
 #endif
-  
+
 #ifdef CBE
   MPI_Bcast( &num_spus,      1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &num_bufs,      1, MPI_INT, 0, MPI_COMM_WORLD);
@@ -4811,10 +4867,10 @@ void broadcast_params() {
     case ENS_FRAC:      move_atoms = move_atoms_frac;      break;
     case ENS_SLLOD:     move_atoms = move_atoms_sllod;     break;
     case ENS_NVX:       move_atoms = move_atoms_nvx;       break;
-    case ENS_STM:       move_atoms = move_atoms_stm;       break;  
-    case ENS_FTG:       move_atoms = move_atoms_ftg;       break;  
-    case ENS_FINNIS:    move_atoms = move_atoms_finnis;    break;  
-    case ENS_CG:                                           break;  
+    case ENS_STM:       move_atoms = move_atoms_stm;       break;
+    case ENS_FTG:       move_atoms = move_atoms_ftg;       break;
+    case ENS_FINNIS:    move_atoms = move_atoms_finnis;    break;
+    case ENS_CG:                                           break;
     default: if (0==myid) error("unknown ensemble in broadcast"); break;
   }
 
@@ -4828,20 +4884,20 @@ void broadcast_params() {
 #ifdef TTM
     case 4:       do_laser_rescale = laser_rescale_ttm; break;
 #endif
-    default: if (0==myid) 
+    default: if (0==myid)
                error("unknown laser rescaling mode in broadcast"); break;
   }
 
 #ifdef LASERYZ
   switch ( laser_tem_mode.x ) /* Gauss Laguerre = 0, Hermite = 1 */
       {
-	  case 0: 
+	  case 0:
 	  {
 	    switch ( laser_tem_mode.y )
 	    {
-		case 0: 
+		case 0:
 		{
-		  switch ( laser_tem_mode.z ) 
+		  switch ( laser_tem_mode.z )
 		  {
 		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_00; break;
 		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_01; break;
@@ -4850,9 +4906,9 @@ void broadcast_params() {
 		  }
 		} break;
 
-		case 1: 
+		case 1:
 		{
-		  switch ( laser_tem_mode.z ) 
+		  switch ( laser_tem_mode.z )
 		  {
 		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_10; break;
 		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_11; break;
@@ -4861,9 +4917,9 @@ void broadcast_params() {
 		  }
 		} break;
 
-		case 2: 
+		case 2:
 		{
-		  switch ( laser_tem_mode.z ) 
+		  switch ( laser_tem_mode.z )
 		  {
 		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_20; break;
 		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_21; break;
@@ -4874,7 +4930,7 @@ void broadcast_params() {
 
 		case 3:
 		{
-		  switch ( laser_tem_mode.z ) 
+		  switch ( laser_tem_mode.z )
 		  {
 		      case 0: laser_intensity_profile = laser_intensity_profile_laguerre_30; break;
 		      case 1: laser_intensity_profile = laser_intensity_profile_laguerre_31; break;
@@ -4882,16 +4938,16 @@ void broadcast_params() {
 		      case 3: laser_intensity_profile = laser_intensity_profile_laguerre_33; break;
 		  }
 		} break;
-		
-	    }	    
+
+	    }
 	  } break;
 	  case 1:
 	  {
 	    switch ( laser_tem_mode.y )
 	    {
-		case 0: 
+		case 0:
 		{
-		  switch ( laser_tem_mode.z ) 
+		  switch ( laser_tem_mode.z )
 		  {
 		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_00; break;
 		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_01; break;
@@ -4899,10 +4955,10 @@ void broadcast_params() {
 		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_03; break;
 		  }
 		} break;
-		
-		case 1: 
+
+		case 1:
 		{
-		  switch ( laser_tem_mode.z ) 
+		  switch ( laser_tem_mode.z )
 		  {
 		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_10; break;
 		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_11; break;
@@ -4911,9 +4967,9 @@ void broadcast_params() {
 		  }
 		} break;
 
-		case 2: 
+		case 2:
 		{
-		  switch ( laser_tem_mode.z ) 
+		  switch ( laser_tem_mode.z )
 		  {
 		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_20; break;
 		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_21; break;
@@ -4921,10 +4977,10 @@ void broadcast_params() {
 		      case 3: laser_intensity_profile = laser_intensity_profile_hermite_23; break;
 		  }
 		} break;
-		
-		case 3: 
+
+		case 3:
 		{
-		  switch ( laser_tem_mode.z ) 
+		  switch ( laser_tem_mode.z )
 		  {
 		      case 0: laser_intensity_profile = laser_intensity_profile_hermite_30; break;
 		      case 1: laser_intensity_profile = laser_intensity_profile_hermite_31; break;
@@ -4933,7 +4989,7 @@ void broadcast_params() {
 		  }
 		} break;
 
-	    }	    
+	    }
 	  } break;
       }
 #endif /* LASERYZ */
