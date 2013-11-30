@@ -992,7 +992,11 @@ int getparamfile(char *paramfname, int phase)
 #endif /* BEND */
 
 
-
+#ifdef FLAGATOMS
+ else if (strcasecmp(token,"flagedatomstype")==0) {
+        getparam(token,&flagedatomstype,PARAM_INT,1,1);
+    }
+#endif
 
 #ifdef ZAPP
     else if (strcasecmp(token,"zapp_threshold")==0) {
@@ -4071,6 +4075,10 @@ void broadcast_params() {
 #ifdef ZAPP
   MPI_Bcast( &zapp_threshold,         1, REAL,  0, MPI_COMM_WORLD);
 #endif
+
+#ifdef FLAGEDATOMS
+ MPI_Bcast( &flagedatomstype,         1, MPI_INT,  0, MPI_COMM_WORLD);
+#endif 
 #ifdef BEND
     MPI_Bcast( &bend_nmoments,         1, MPI_INT,  0, MPI_COMM_WORLD);
     MPI_Bcast( &bend_vtype_of_origin,  6, MPI_INT,  0, MPI_COMM_WORLD);

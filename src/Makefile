@@ -1428,6 +1428,10 @@ ifneq (,$(findstring zapp,${MAKETARGET}))
 PP_FLAGS += -DZAPP
 endif
 
+ifneq (,$(findstring flagatoms,${MAKETARGET}))
+PP_FLAGS += -DFLAGEDATOMS
+endif
+
 
 ifneq (,$(findstring rigid,${MAKETARGET}))
 PP_FLAGS += -DRIGID

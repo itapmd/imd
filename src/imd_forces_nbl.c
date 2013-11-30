@@ -499,6 +499,15 @@ void calc_forces(int steps)
           ff.z         += force.z;
 #endif
 
+#ifdef FLAGEDATOMS
+	  if(VSORTE(q,j) == flagedatomstype && VSORTE(p,i) == flagedatomstype)
+	    {
+	      printf("Atom nr %d of type %d interacting with %d: Pair forces : %e %e %e\n",
+		     NUMMER(p,i),VSORTE(p,i),NUMMER(q,j),force.x,force.y,force.z);
+	      fflush(stdout);
+	    }
+#endif
+
 #ifndef MONOLJ
           pot *= 0.5;   /* avoid double counting */
 #ifdef NNBR
@@ -1193,6 +1202,14 @@ void calc_forces(int steps)
         }
 #endif
 
+#ifdef FLAGEDATOMS
+	  if(VSORTE(q,j) == flagedatomstype && VSORTE(p,i) == flagedatomstype)
+	    {
+	      printf("Atom nr %d of type %d interacting with %d: Embed forces : %e %e %e\n",
+		     NUMMER(p,i),VSORTE(p,i),NUMMER(q,j),force.x,force.y,force.z);
+	      fflush(stdout);
+	    }
+#endif
         /* accumulate forces */
         if (have_force) {
           KRAFT(q,j,X) -= force.x;

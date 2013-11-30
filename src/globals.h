@@ -185,6 +185,10 @@ EXTERN vektor nactive_vect   INIT(nullvektor);
 EXTERN vektor total_impuls   INIT(nullvektor);
 #endif
 
+#ifdef FLAGEDATOMS
+EXTERN int flagedatomstype INIT(666);
+#endif
+
 /* Global bookkeeping */
 EXTERN time_t tstart, tend;
 EXTERN real maxwalltime INIT(0);  /* maximal allowed walltime */
