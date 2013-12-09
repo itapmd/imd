@@ -992,7 +992,7 @@ int getparamfile(char *paramfname, int phase)
 #endif /* BEND */
 
 
-#ifdef FLAGATOMS
+#ifdef FLAGEDATOMS
  else if (strcasecmp(token,"flagedatomstype")==0) {
         getparam(token,&flagedatomstype,PARAM_INT,1,1);
     }

@@ -502,8 +502,9 @@ void calc_forces(int steps)
 #ifdef FLAGEDATOMS
 	  if(VSORTE(q,j) == flagedatomstype && VSORTE(p,i) == flagedatomstype)
 	    {
-	      printf("Atom nr %d of type %d interacting with %d: Pair forces : %e %e %e\n",
-		     NUMMER(p,i),VSORTE(p,i),NUMMER(q,j),force.x,force.y,force.z);
+	      //	      printf("Atom nr %d of type %d interacting with %d: Pair forces : %e %e %e\n",
+	      printf("%d %d %d %e %e %e %e %e %e\n",
+		     NUMMER(p,i),VSORTE(p,i),NUMMER(q,j),d.x, d.y, d.z, force.x,force.y,force.z);
 	      fflush(stdout);
 	    }
 #endif
@@ -1205,8 +1206,10 @@ void calc_forces(int steps)
 #ifdef FLAGEDATOMS
 	  if(VSORTE(q,j) == flagedatomstype && VSORTE(p,i) == flagedatomstype)
 	    {
-	      printf("Atom nr %d of type %d interacting with %d: Embed forces : %e %e %e\n",
-		     NUMMER(p,i),VSORTE(p,i),NUMMER(q,j),force.x,force.y,force.z);
+	      //	      printf("Atom nr %d of type %d interacting with %d: Embed forces : %e %e %e\n",
+	      //     NUMMER(p,i),VSORTE(p,i),NUMMER(q,j),force.x,force.y,force.z);
+	      printf("%d %d %d %e %e %e %e %e %e\n",
+		     NUMMER(p,i),VSORTE(p,i),NUMMER(q,j),d.x, d.y, d.z, force.x,force.y,force.z);
 	      fflush(stdout);
 	    }
 #endif
