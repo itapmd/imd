@@ -763,16 +763,13 @@ void make_nblist()
 
 void calc_forces(int steps)
 {
-  void *pkim;
+  void *pkim = kim.pkim;
   int   i, k, n = 0;
   int   kimerror = 0;
-  int   max_atoms = 0;
   test_buffer_t *buf;
 
-  pkim = kim.pkim;
-
   /* static arrays for data exchange with KIM */
-  buf = (test_buffer_t *) KIM_API_get_test_buffer(kim.pkim, &kimerror);
+  buf = (test_buffer_t *) KIM_API_get_test_buffer(pkim, &kimerror);
   if (KIM_STATUS_OK > kimerror) {
     KIM_API_report_error(__LINE__, __FILE__, "Could not get test buffer", kimerror);
     exit(EXIT_FAILURE);
@@ -832,7 +829,6 @@ void calc_forces(int steps)
 	MARK(p, i) = 0;
 #endif
     }
-    max_atoms += p->n;
   }
 
   if (n * 1.1 > (*buf).max_len)
@@ -840,13 +836,11 @@ void calc_forces(int steps)
 
   /* interactions for all atoms */
   n = 0;
-  int   maxind;
   kim.cell_atom_ind = 0;
   for (k = 0; k < ncells; k++) {
-    int   c2, size, ind = 0;
+    int   c2, ind = 0;
     cell *p = cell_array + cnbrs[k].np;
     cell *q;
-    pkim = kim.pkim;
 
     /* convert data into KIM format */
     for (n = 0; n < KIM_NBCELLS; n++) {
@@ -854,13 +848,12 @@ void calc_forces(int steps)
       kim.cell_list[c2] = n;
       kim.cell_offset[n] = ind;
       q = cell_array + c2;
-      size = q->n;
-      memcpy(buf->coords + 3 * ind, q->ort, 3 * size * sizeof(real));
-      for (i = 0; i < size; i++) {
+      memcpy(buf->coords + 3 * ind, q->ort, 3 * q->n * sizeof(real));
+      for (i = 0; i < q->n; i++) {
 	(buf->ptypes + ind)[i] = kim.kim_particle_codes[SORTE(q, i)];
 	kim.cell_index_atom[ind + i] = c2;
       }
-      ind += size;
+      ind += q->n;
     }
 
     /* set pointers to correct location */
@@ -873,7 +866,7 @@ void calc_forces(int steps)
       kim.ind_forces, 				3 * ind, 	(void *)buf->forces, 		kim.model_has_forces,
       kim.ind_energy, 				1, 		(void *)&pot, 			kim.model_has_energy,
       kim.ind_particleEnergy, 			ind, 		(void *)buf->penergy, 		kim.model_has_particleEnergy,
-      kim.ind_numberOfParticles, 		1, 		(void *)&max_atoms,		1,
+      kim.ind_numberOfParticles, 		1, 		(void *)&ind,			1,
       kim.ind_numberContributingParticles, 	1, 		(void *)&p->n,			1,
       kim.ind_numberParticleTypes, 		1, 		(void *)&ntypes, 		1,
       kim.ind_process_dEdr, 			1, 		(void *)imd_process_dEdr, 	kim.model_has_process_dEdr,
@@ -916,7 +909,6 @@ void calc_forces(int steps)
       }
       ind += q->n;
     }
-    maxind = ind;
     tot_pot_energy += pot;
     kim.cell_atom_ind += p->n;
   }
@@ -1174,16 +1166,17 @@ void kim_error(char *error)
 
 int imd_process_dEdr(void **km, double *grad, double *r, double **Rij, int *i, int *j)
 {
-  int jj = *j - kim.cell_offset[kim.cell_list[kim.cell_index_atom[*j]]];
   if (0.0 == *r)
     return KIM_STATUS_FAIL;
+#if defined P_AXIAL || defined STRESS_TENS
   double fx = (*Rij)[0] * *grad / *r;
   double fy = (*Rij)[1] * *grad / *r;
   double fz = (*Rij)[2] * *grad / *r;
 
   /* determine on which cell we are working */
-  cell *p = cell_array + kim.cell_index_atom[*i];
+  cell *p = cell_array + kim.cell_ind;
   cell *q = cell_array + kim.cell_index_atom[*j];
+#endif
 
 #ifdef P_AXIAL
   vir_xx -= (*Rij)[0] * fx;
@@ -1195,8 +1188,9 @@ int imd_process_dEdr(void **km, double *grad, double *r, double **Rij, int *i, i
   virial -= *r * *grad;
 #endif
 
-#if defined(STRESS_TENS)
+#ifdef STRESS_TENS
   if (do_press_calc) {
+    int jj = *j - kim.cell_offset[kim.cell_list[kim.cell_index_atom[*j]]];
     fx *= 0.5;
     fy *= 0.5;
     fz *= 0.5;
