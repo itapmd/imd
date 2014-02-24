@@ -1,0 +1,80 @@
+---
+title: Correlation Function Tools
+---
+
+{% include imdhead.html %}
+
+<h1>Correlation Function Tools</h1>
+
+<p>
+The following utility programs deal with correlation functions:</p>
+
+<table cellpadding="4" summary="table of correlation function utilities">
+<tr><td><a href="#imd2nc.py">imd2nc.py</a></td>
+    <td>convert <tt>.nmoldyn</tt> file to netCDF format</td></tr>
+<tr><td><a href="#dynsf">dynsf</a></td>
+    <td>compute dynamical structure factor from <tt>.dsf</tt> file</td></tr>
+</table>
+
+<h2><a id="imd2nc.py" name="imd2nc.py">imd2nc.py</a></h2>
+
+<p>
+This program converts a <tt>.moldyn</tt> trajectory file to the netCDF format 
+required by <a href="http://dirac.cnrs-orleans.fr/nMOLDYN/">nMoldyn</a>.</p>
+
+<pre>
+Usage: imd2nc.py &lt;types&gt; &lt;trajectory&gt;
+
+   &lt;types&gt;:       comma-separated list of chemical symbols
+
+   &lt;trajectory&gt;:  IMD trajectory file (*.nmoldyn)
+
+Example:  imd2nc.py Al,Ni trajectory.nmoldyn
+</pre>
+
+<p>
+imd2nc.py is a python program, and requires a number of further 
+packages, all of which are also required for nMoldyn. 
+We refer to the installation instructions of nMoldyn and 
+<a href="http://dirac.cnrs-orleans.fr/MMTK/index.html">MMTK</a>, 
+on which nMoldyn is based. In particular, for each atom type a file 
+with the coherent and incoherent scattering lengths (along with other
+data) must be installed in the directory
+<tt>$HOME/.mmtk/Database/Atoms/</tt>.</p>
+
+<h2><a id="dynsf" name="dynsf">dynsf</a></h2>
+
+<p>
+Computes the coherent part of the dynamical structure factor from an
+IMD <tt>.dsf</tt> file (see option dsf). </p> 
+
+<pre>
+   Usage: dynsf [options] &lt;file.dsf&gt;
+
+   Compute dynamical structure factor.
+
+   Options:  -w &lt;width&gt; Frequency smoothing width (FWHM)
+             -i &lt;int&gt;   Frequency writing interval
+             -c &lt;cut&gt;   Frequency cutoff
+             -e         Frequency and width in meV (default THz)
+             -s         Separate reords by two emtpy lines
+             -h         This help
+</pre>
+
+<p>
+For each k-point series <tt>i</tt>, a separat file <tt>*.i.plot</tt> 
+is produced, which can the be plotted with gnuplot. Each line is of 
+the form</p>
+<pre>
+   frequency  k-value  dsf
+</pre>
+<p>
+Blocks with different frequencies are separated by one or two empty
+lines. The latter is useful if single curves at fixed k-value along 
+the frequency direction shall be plotted. Note that a smooting value
+in frequency direction must be specified, which should not be too small
+(depending on the length of the time series), for otherwise artefacts
+will show up.</p>
+
+{% include imdfoot.html %}
+

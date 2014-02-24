@@ -1,0 +1,32 @@
+---
+title: Limitations
+---
+
+{% include imdhead.html %}
+
+<h1>Limitations of the current implemetation</h1>
+
+<p>
+The current implemetation of IMD has certain limitations, of which
+a user should be aware. Some of them are listed here, to avoid
+misunderstandings and errors. Most of them concern limited 
+multiphase simulation capabilities.</p>
+
+<p>
+Certain ensembles and options do some <b>initialization</b> during 
+startup. This is still the case for <b>shock</b> and <b>laser</b>. For a
+correct restart it may be necessary to change certain parameters.</p>
+
+<p>
+Atoms with negative numbers are not moved by certain integrators,
+but are rigidly moved when the sample is sheared or deformed
+in other ways. The set of atoms with negative numbers remains
+the same throughout the whole simulation.</p>
+
+<p>
+The type of <b>interaction</b> (pair potentials, EAM potentials, 
+two- and three-body potentials, Coulomb potential) is global 
+to an entire IMD executable. The potential tables can not be 
+changed during a simulation.</p>
+
+{% include imdfoot.html %}

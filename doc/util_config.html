@@ -1,0 +1,1518 @@
+---
+title: Configuration File Postprocessing
+---
+
+{% include imdhead.html %}
+
+<h1>Configuration File Postprocessing</h1>
+
+<p>For the postprocessing of IMD configuration files, IMD contains
+a group of utility programs with a common usage model:</p>
+
+<table cellpadding="4">
+<tr>
+<td><a href="#imd_angle">imd_angle</a></td>
+<td>compute angular distribution function</td>
+</tr>
+
+<tr>
+<td><a href="#imd_cna">imd_cna</a></td>
+<td>perform Common-Neighbour Analysis</td>
+</tr>
+
+<tr>
+<td><a href="#imd_conn">imd_conn</a></td>
+<td>compute connection matrix</td>
+</tr>
+
+<tr>
+<td><a href="#imd_coord">imd_coord</a></td>
+<td>compute coordination numbers</td>
+</tr>
+
+<tr>
+<td><a href="#imd_elco">imd_elco</a></td>
+<td>compute elastic moduli</td>
+</tr>
+
+<tr>
+<td><a href="#imd_pair">imd_pair</a></td>
+<td>compute pair distribution function</td>
+</tr>
+
+<tr>
+<td><a href="#imd_ps">imd_ps</a></td>
+<td>create PostScript picture</td>
+</tr>
+
+<tr>
+<td><a href="#imd_ring">imd_ring</a></td>
+<td>compute ring statistics</td>
+</tr>
+
+<tr>
+<td><a href="#imd_strain">imd_strain</a></td>
+<td>compute strain tensor from displacements</td>
+</tr>
+
+<tr>
+<td><a href="#imd_stress">imd_stress</a></td>
+<td>compute stress tensor from IMD stress output</td>
+</tr>
+
+<tr>
+<td><a href="#imd_torsion">imd_torsion</a></td>
+<td>compute torsion angle distribution function</td>
+</tr>
+</table>
+
+<p>These programs are compiled as follows:</p>
+
+<pre>
+   gmake imd_utility[_option][_2d]
+</pre>
+
+where <tt>utility</tt> is the name of the program. Some programs
+support further options which can be appended to the compilation
+target with the component <tt>_option</tt>. By default, a program
+for 3d is compiled. Most programs support 2d versions which can be
+compiled using the additional component <tt>_2d</tt> in the
+compilation target. 
+
+<p>The programs are run by giving the program name and one or more
+command line options. The following options are supported by
+<b>all</b> utility programs.</p>
+
+<table border="0" cellspacing="10" cellpadding="3">
+<tr>
+<th>Option</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-p</b></td>
+<td align="center"><tt>parameter_file</tt></td>
+<td align="center">-</td>
+<td>Specifies the IMD <u>parameter file</u>. This option is
+<b>mandatory</b>.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-r</b></td>
+<td align="center">integer &gt;= 0</td>
+<td align="center">-</td>
+<td>Specifies the <u>restart parameter</u>. The corresponding
+checkpoint file is chosen as input file and also the iteration file
+is read in. If this parameter is not present, the file specified by
+the IMD paramter <tt>coordname</tt> is taken as input file.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-A</b></td>
+<td align="center">integer &gt;= 0</td>
+<td align="center">-</td>
+<td>The corresponding avpos outfile is chosen as input file and
+also the avpos iteration file is read in.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-v</b></td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td>All virtual types are treated as being different. In this case,
+the number of types <tt>N</tt> is <tt>vtypes-1</tt>. If this option
+is not used, all atom types are taken modulo <tt>ntypes</tt>, the
+number of different real atom types, and <tt>N</tt> equals
+<tt>ntypes-1</tt>.</td>
+</tr>
+</table>
+
+<p>Most of the programs produce output files. The name of these
+output files are the names of the input files with program specific
+suffixes. If checkpoint files are used as input files, the suffix
+<tt>.chkpt</tt> is omitted.</p>
+
+<h2><a id="imd_angle" name="imd_angle">imd_angle</a></h2>
+
+<p>Computes angular distribution histograms of IMD configurations. </p>
+
+<p>The following special options can be used:</p>
+
+<table border="0" cellspacing="10" cellpadding="3">
+<tr>
+<th>Option</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-n</b></td>
+<td align="center">integer &gt; 0</td>
+<td align="center">1000</td>
+<td>Specifies the <u>number of slots</u> in the angular
+distribution histogram.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-e</b></td>
+<td align="center">real &gt; 0.0</td>
+<td align="center">1.0</td>
+<td>Specifies the <u>maximal radius</u> for which angles between
+neighbouring atoms are computed.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-a</b></td>
+<td align="center">real &gt;= 0.0</td>
+<td align="center">0.0</td>
+<td>Specifies the <u>minimal radius</u> for which angles between
+neighbouring atoms are computed.</td>
+</tr>
+</table>
+
+<p>The output file name of <b>imd_angle</b> has the suffix
+<tt>.angle</tt>. For every slot in the histogram, one line is
+written:</p>
+
+<pre>
+    phi g_000 g_001 ... g_00N g_011 ... g_01N ... g_0NN g_100 ... g_NNN
+</pre>
+
+The first entry <tt>phi</tt> is the angle with range [0,180], and
+the remaining entries are the histogram values for the different
+combinations of atom types. The histogram entry <tt>g_ijk</tt> is
+the normalized number of times the angle <tt>phi</tt> occurs
+between the atoms of type <tt>i</tt>, <tt>j</tt>, and <tt>k</tt>
+where the angle is centered at <tt>i</tt>. <tt>g_ijk</tt> is
+normalized with respect to the total number of angles computed. In
+the case of 2 types of particles, for example, the histogram has
+the following format: 
+
+<pre>
+    phi g_000 g_001 g_011 g_100 g_101 g_111
+</pre>
+
+<h2><a id="imd_cna" name="imd_cna">imd_cna</a></h2>
+
+<p>Performs the Common-Neighbour Analysis (CNA) for IMD configuration
+files. </p>
+
+<p>The CNA classifies pairs of atoms according to their local
+environment. (J.D.Honeycutt and H.C.Andersen, <i>J.Phys.Chem.</i>
+<b>91</b> (1987) 4950, A.S.Clarke and H.J&oacute;nsson,
+<i>Phys.Rev.</i> <b>E47</b> (1993) 3975)</p>
+
+<p>A set of four indices <i>ijkl</i> (pair type) is used to
+characterize a pair of atoms having common nearest neighbour atoms
+where nearest neighbour atoms are defined by a cutoff distance. The
+indices have the following meaning:</p>
+
+<table border="0" cellspacing="10" cellpadding="3">
+<tr>
+<td valign="top"><i>i</i></td>
+<td>1 if the atom pair consists of nearest neighbour atoms<br />
+ 2 otherwise</td>
+</tr>
+
+<tr>
+<td valign="top"><i>j</i></td>
+<td>number of common nearest neighbour atoms</td>
+</tr>
+
+<tr>
+<td valign="top"><i>k</i></td>
+<td>number of bonds between the common nearest neighbour atoms
+where bonded atoms are nearest neighbour atoms</td>
+</tr>
+
+<tr>
+<td valign="top"><i>l</i></td>
+<td>number of bonds in the longest continuous chain formed by the
+<i>k</i> bonds between common nearest neighbours</td>
+</tr>
+</table>
+
+<p>The cutoff distance can be given for all pairs of atom types by
+the parameter <tt>r_cut</tt> in the parameter file. Alternatively,
+a common cutoff distance for all types can be specified by the
+option <b>-e</b>.</p>
+
+<p><b>imd_cna</b> gives a list of the found pair types along with
+their occurrences to standard output in the following form:</p>
+
+<pre>
+  pair type   occurrence     relative occurrence
+--------------------------------------------------------
+   ijkl        n_ijkl              t_ijkl
+   ...          ...                 ...
+   ...          ...                 ...
+</pre>
+
+where <tt>n_ijkl</tt> is the number of times the pair type
+<tt>ijkl</tt> occurs and <tt>t_ijkl</tt> is <tt>n_ijkl</tt> divided
+by the total number of pairs. 
+
+<p>The following special options can be used:</p>
+
+<table border="0" cellspacing="10" cellpadding="3">
+<tr>
+<th>Option</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-a</b></td>
+<td align="center">real &gt;= 0.0</td>
+<td align="center">0.0</td>
+<td>Specifies the <u>minimal radius</u> in the histogram of the
+radial distribution function. Only works in conjunction with the
+option <b>-g</b>.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-e</b></td>
+<td align="center">real &gt; 0.0</td>
+<td align="center">1.0</td>
+<td>Specifies the <u>cutoff distance</u> for which atom pairs are
+considered as nearest neighbours. If the option <b>-g</b> is used,
+the maximal radius in the histogram of the radial distribution
+function is twice this value unless the option <b>-f</b> is
+set.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-f</b></td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td>Consider only pairs of atoms being nearest neighbour atoms,
+i.e., consider only pair types 1<i>jkl</i></td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-g</b></td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td>Write the decomposition of the radial distribution function
+(RDF) with respect to the pair types to a file with suffix
+<tt>.rdf</tt>. The output format of the histogram is 
+
+<pre>
+    r total_rdf t1 t2 ...
+   
+</pre>
+
+where <tt>r</tt> is the radius, <tt>total_rdf</tt> is the total
+RDF, and <tt>t1</tt>, <tt>t2</tt>, ... are the contributions to the
+RDF from the respective pair types (given in the header line of the
+<tt>.rdf</tt> file). All RDFs are normalized with respect to the
+number of pairs.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-l</b></td>
+<td align="center">real,&nbsp;real,&nbsp;(real)</td>
+<td align="center">-infty,&nbsp;-infty,&nbsp;(-infty)</td>
+<td>Use a <u>partial box</u> with lower coordinates given by three
+(two) numbers. Only pairs of atoms where at least one atom has
+larger coordinates are considered.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-n</b></td>
+<td align="center">integer &gt; 0</td>
+<td align="center">1000</td>
+<td>Specifies the <u>number of slots</u> in the histogram of the
+radial distribution function. Only works in conjunction with the
+option <b>-g</b></td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-w</b></td>
+<td align="center">integer ijkl</td>
+<td align="center">-</td>
+<td>Write all atoms belonging to pairs of type <i>ijkl</i> to a
+file with suffix <tt>.ijkl.cna</tt>. The output format is the
+standard format for IMD configurations.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-W</b></td>
+<td align="center">4 integers<br />
+i j k l</td>
+<td align="center">-</td>
+<td>Similar to option <b>-w</b>, but the pair type <i>ijkl</i> is
+given with spaces</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-u</b></td>
+<td align="center">real,&nbsp;real,&nbsp;(real)</td>
+<td align="center">infty,&nbsp;infty,&nbsp;(infty)</td>
+<td>Use a <u>partial box</u> with upper coordinates given by three
+(two) numbers. Only pairs of atoms where at least one atom has
+smaller coordinates are considered.</td>
+</tr>
+</table>
+
+<p><b>imd_cna</b> can be used to detect dislocations and stacking
+faults in crystalline structures. For example, fcc and hcp
+structures are characterized by the following pair types.</p>
+
+<table border="0" cellspacing="10" cellpadding="3" width="20%">
+<tr>
+<th>fcc</th>
+<th>hcp</th>
+</tr>
+
+<tr>
+<td valign="top" align="center">1421<br />
+2100<br />
+2211<br />
+2444</td>
+<td valign="top" align="center">1421<br />
+1422<br />
+2211<br />
+2333<br />
+2444</td>
+</tr>
+</table>
+
+<h2><a id="imd_conn" name="imd_conn">imd_conn</a></h2>
+
+<p>Computes the connection matrix. </p>
+
+<p>The following special option can be used:</p>
+
+<table border="0" cellspacing="10" cellpadding="3">
+<tr>
+<th>Option</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-n</b></td>
+<td align="center">integer &gt; 0</td>
+<td align="center">10</td>
+<td>Specifies the maximal number of neigbours.</td>
+</tr>
+</table>
+
+<h2><a id="imd_coord" name="imd_coord">imd_coord</a></h2>
+
+<p>
+Computes coordination numbers of IMD configurations.
+<b>imd_coord</b> needs the specification of cutoff radii for the
+atom types. If the component <b>_tersoff</b> is used in the
+compilation target, the cutoff radii for the Tersoff potential are
+taken from the parameter file and the coordination numbers are
+computed slightly differently (see below). </p>
+
+<p><b>imd_coord</b> writes two tables to standard output. The first
+table contains the relative occurrences <tt>c_ij</tt> of bonds
+between atoms of type <i>i</i> and <i>j</i>. It has the following
+format:</p>
+
+<pre>
+ Bond  Occurrence
+
+   00    c_00
+   01    c_01
+   
+      ...
+
+   0N    c_0N
+   10    c_10
+
+      ...
+
+   NN    c_NN
+</pre>
+
+<p>The second table contains the occurrences <tt>occ_i</tt> in
+percent of the coordination number <tt>i</tt> up to the
+coordination number <tt>cmax</tt>. It has the format</p>
+
+<pre>
+ Coordination  Occurrence
+
+      0          occ_0
+      1          occ_1
+
+           ...
+
+     cmax        occ_cmax
+</pre>
+
+<p>The following special options can be used:</p>
+
+<table border="0" cellspacing="10" cellpadding="3">
+<tr>
+<th>Option</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-e</b></td>
+<td align="center">real &gt; 0</td>
+<td align="center">1.0</td>
+<td>Cutoff radius. Specifies the <u>maximal distance</u> for which
+neighbouring atoms are taken into account.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-a</b></td>
+<td align="center">real&nbsp;&gt;=&nbsp;0</td>
+<td align="center">0.0</td>
+<td>Specifies the <u>minimal distance</u> for which neighbouring
+atoms are taken into account. Does not work if the Tersoff
+potential used.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-C</b></td>
+<td align="center">integer &gt; 0</td>
+<td align="center">10</td>
+<td>Specifies the <u>maximal coordination number</u> <tt>cmax</tt>
+the occurence of which is computed and written to standard
+output.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-g</b></td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td>Write the table of the occurrences of the coordination numbers
+into a file with suffix <tt>.gcoord</tt>.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-l</b></td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td>Write the local coordination numbers for each atom into a file
+with suffix <tt>.coord</tt>. The output format is 
+
+<pre>
+       n type x y (z) c_tot c_0 c_1 ... c_N
+  
+</pre>
+
+where <tt>n</tt> is the atom number, <tt>type</tt> is the type of
+the atom, <tt>x,y,(z)</tt> are the coordinates of the atom,
+<tt>c_tot</tt> is the total coordination number, and <tt>c_i</tt>
+is the coordination number corresponding to neighbour atoms of type
+<tt>i</tt>.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-E</b></td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td>Write the potential energy into the file <tt>.coord</tt>. This
+option works only in conjunction with the option <b>-l</b>. The
+output format is 
+
+<pre>
+       n type x y (z) c_tot c_0 c_1 ... c_N E_pot
+  
+</pre>
+</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-u</b></td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td>Set the cutoff function <i>f<sub>c</sub></i> of the Tersoff
+potential equal to unity within the cutoff radius (see below).</td>
+</tr>
+</table>
+
+<p>If <b>imd_coord</b> is compiled with the <b>_tersoff</b>
+component, the value of <tt>rmax</tt> is computed from the cutoff
+parameters of the Tersoff potential. Furthermore, the coordination
+numbers <i>N<sub>i</sub><sup>X</sup></i> are computed by default
+as</p>
+
+<center><img src="coord.gif" alt="coordination number" /></center>
+
+<p>where the sum is over all neighbour atoms <i>j</i> of atom
+<i>i</i> with type <i>X</i> and <i>f<sub>c</sub></i> is the cutoff
+function of the Tersoff potential.</p>
+
+<h2><a id="imd_elco" name="imd_elco">imd_elco</a></h2>
+
+<p>Computes the stress tensor, the tensor of the elastic moduli, and
+the pressure derivative of the bulk modulus of IMD configurations
+using the interatomic potentials. </p>
+
+<p>The following potentials are currently supported:</p>
+
+<ul>
+<li>Tabulated pair potentials. This is the default.</li>
+
+<li>EAM potentials. In this case, the component <b>_eam</b> has to
+be used in the compilation target.</li>
+
+<li>Many-body potentials. If the components <b>_tersoff</b>,
+<b>_stiweb</b>, or <b>_keating</b> are used in the compilation
+target, the Tersoff, the Stillinger-Weber, or the Keating potential
+are used, respectively. Many-body potentials only work in 3d.</li>
+</ul>
+
+<p>By default, <b>imd_elco</b> computes the global stress tensor
+<tt>sigma_ij</tt>, the global tensor of the elastic moduli
+<tt>C_ab</tt>, and the global pressure derivative of the bulk
+modulus <tt>B'</tt>. These values are written to standard output
+along with the atom number <tt>N</tt> , the total volume
+<tt>V</tt>, the volume per atom <tt>v</tt>, the potential energy
+<tt>E</tt>, the total bulk modulus <tt>B</tt> and the pressure
+<tt>p</tt>.</p>
+
+<p><b>imd_elco</b> assumes that eV and &Aring; are used as units of
+energy and length. The output data are written in these units and
+GPa for convenience. If other units are used, the units eV and
+&Aring; should be ignored.</p>
+
+<p>The following special options can be used:</p>
+
+<table border="0" cellspacing="10" cellpadding="3">
+<tr>
+<th>Option</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-s</b></td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td>Write the <u>local stress tensor</u> to a file with suffix
+<tt>.stress</tt>. The output format is 
+
+<pre>
+   number type x y (z) s_xx s_yy (s_zz s_yz s_zx) s_xy vol_voronoi  
+  
+</pre>
+
+where <tt>number</tt> is the atom number, <tt>type</tt> is the atom
+type, <tt>x,y(,z)</tt> are the coordinates of the atoms,
+<tt>s_ij</tt> are the components of the stress tensor, and
+<tt>vol_voronoi</tt> is the volume of the Voronoi cell. The stress
+tensor is normalized with the volume of the Voronoi cell of the
+corresponding atom.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-e</b></td>
+<td align="center">real &gt; 0</td>
+<td align="center">1.0</td>
+<td>Specifies the <u>maximal distance</u> for which neighbouring
+atoms are taken into account in the computation of the Voronoi
+cells. It should be larger than the potential cutoff. This option
+is only needed in conjunction with the options <b>-s</b>,
+<b>-m</b>, or <b>-M</b>.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-m</b></td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td>Write the local elastic moduli to a file with suffix
+<tt>.elco</tt>. The output format is 
+
+<pre>
+   number type x y (z) B C_11 C_12 (C_44)
+  
+</pre>
+
+The elastic moduli are normalized using the volumes of the Voronoi
+cells.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-M</b></td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td>Write the complete tensor of the local elastic moduli to a file
+with suffix <tt>.elco</tt>. The output format is 
+
+<pre>
+   number type x y z B C_11 C_12 C_13 C_22 C_23 C_33 C_44 C_45 \
+   C_46 C_55 C_56 C_66 C_14 C_15 C_16 C_24 C_25 C_26 C_34 C_35 C_36
+  
+</pre>
+</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-w</b></td>
+<td align="center">integer&nbsp;ab</td>
+<td align="center">-</td>
+<td>Write selective component C_ab (Voigt notation) of the tensor
+of the local elastic moduli to a file with suffix
+<tt>.c_ab.elco</tt>. The output format is 
+
+<pre>
+   number type x y (z) C_ab
+  
+</pre>
+</td>
+</tr>
+</table>
+
+<h2><a id="imd_pair" name="imd_pair">imd_pair</a></h2>
+
+<p>Computes radial distribution histograms of IMD configurations. </p>
+
+<p>The following special options can be used:</p>
+
+<table border="0" cellspacing="10" cellpadding="3">
+<tr>
+<th>Option</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td align="center"><b>-n</b></td>
+<td align="center">integer &gt; 0</td>
+<td align="center">1000</td>
+<td>Specifies the <u>number of slots</u> in the pair distribution
+histogram.</td>
+</tr>
+
+<tr>
+<td align="center"><b>-a</b></td>
+<td align="center">real &gt;= 0.0</td>
+<td align="center">0.0</td>
+<td>Specifies the <u>minimal radius</u> in the histogram.</td>
+</tr>
+
+<tr>
+<td align="center"><b>-e</b></td>
+<td align="center">real &gt; 0.0</td>
+<td align="center">5.0</td>
+<td>Specifies the <u>maximal radius</u> in the histogram.</td>
+</tr>
+</table>
+
+For every slot in the histogram, one line is written: 
+
+<pre>
+    r d_00 d_01 ... d_0N d_11 ... d_NN f_00 f_01 ... f_0N f_11 ... f_NN 
+</pre>
+
+The first entry <tt>r</tt> is the radius, the remaining entries are
+the histogram values for the different combinations of atom types.
+The histogram entry <tt>d_ij</tt> is the number of times the
+distance <tt>r</tt> occurs between atoms of types <tt>i</tt> and
+<tt>j</tt>, divided by the total number of atoms, and <tt>f_ij =
+d_ij/(4*pi*r^2)</tt> is a normalized radial distribution. 
+
+<h2><a id="imd_ps" name="imd_ps">imd_ps</a></h2>
+
+<p>Creates (vector) PostScript files from IMD configurations. </p>
+
+<p><b>imd_ps</b> produces ball and stick visualizations of IMD
+configuration files. For the drawing of the bonds, cutoff radii for
+all atom types have to be given in the parameter file by the
+parameters <tt>r_cut</tt> or <tt>ters_r_cut</tt>. Alternatively,
+the option <b>-e</b> can be used.</p>
+
+<p>The geometrical setup of the projection (3d) is shown in the
+following figure.</p>
+
+<center><img src="imd_ps.png" alt="projection" /></center>
+
+<p><b>imd_ps</b> allows many optional parameters affecting the
+visualization (Grey background means that the option is available
+only in the 3d version):</p>
+
+
+
+<table border="0" cellpadding="3" cellspacing="10">
+<tr>
+<th>Option</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-a</b></td>
+<td align="center">0,1</td>
+<td align="center">0</td>
+<td>Draw <u>coordinate axes</u>. The axes are drawn into the
+bounding box of the unrotated system (option&nbsp;<b>-u</b>) or the
+simulation box (option&nbsp;<b>-o</b>). The <i>x</i> axis is red,
+the <i>y</i> axis is yellow, and the <i>z</i> axis (3D only) is
+green.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-b</b></td>
+<td align="center">real, [-1,1]</td>
+<td align="center">-0.3</td>
+<td>Brightness of bond colors. Positive values mean bright colors
+and negative values mean dark colors.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-B</b></td>
+<td>real, &gt;= 0.0</td>
+<td align="center">estimated</td>
+<td>Radius of cylinders representing bonds in real (IMD) units. The
+value of <b>-B</b> must be smaller than the value of
+<b>-R</b>.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-c</b></td>
+<td>real, &gt;= 0.0</td>
+<td align="center">20</td>
+<td>Boundary strip around bounding box (in pt).</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-C</b></td>
+<td align="center">integer</td>
+<td align="center">1</td>
+<td>Color of atoms. Negative numbers produce greyscales. The value
+0 corresponds to white. <b>imd_ps</b> predefines 9 different colors
+represented by integers as follows:
+
+<table border="1" cellpadding="4">
+<tr>
+<td bgcolor="#FF0000" width="15" align="center">1</td>
+<td bgcolor="#FFFF00" width="15" align="center">2</td>
+<td bgcolor="#00FF00" width="15" align="center">3</td>
+<td bgcolor="#0000FF" width="15" align="center" class="white">4</td>
+<td bgcolor="#FF00FF" width="15" align="center">5</td>
+<td bgcolor="#00FFFF" width="15" align="center">6</td>
+<td bgcolor="#FFB333" width="15" align="center">7</td>
+<td bgcolor="#B3B3B3" width="15" align="center">8</td>
+<td bgcolor="#FFFFFF" width="15" align="center">9</td>
+</tr>
+</table>
+
+<p>The option <b>-C</b> allows positive integer values with up to 9
+figures which denote the colors of atom types 0,1,2,.... The
+default colors correspond to the value 123456789.<br />
+For negative values, the encoding is similar, where 9 greyscales
+are available with the values</p>
+
+<table border="1" cellpadding="4">
+<tr>
+<td bgcolor="#FFFFFF" width="15" align="center">1</td>
+<td bgcolor="#808080" width="15" align="center">2</td>
+<td bgcolor="#CDCDCD" width="15" align="center">3</td>
+<td bgcolor="#4D4D4D" width="15" align="center" class="white">4</td>
+<td bgcolor="#E6E6E6" width="15" align="center">5</td>
+<td bgcolor="#666666" width="15" align="center">6</td>
+<td bgcolor="#B3B3B3" width="15" align="center">7</td>
+<td bgcolor="#333333" width="15" align="center" class="white">8</td>
+<td bgcolor="#000000" width="15" align="center" class="white">9</td>
+</tr>
+</table>
+</td>
+</tr>
+
+<tr valign="top" bgcolor="#E0E0E0">
+<td align="center"><b>-d</b></td>
+<td>real, [0,1]</td>
+<td align="center">0</td>
+<td>Brightness of atom and bond colors with depth. 1 corresponds to
+black atoms and bonds in the background, 0 means the same colors
+for all atoms and bonds.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-D</b></td>
+<td align="center">integer, &gt;=0</td>
+<td align="center">0</td>
+<td>Represent types of atoms by different radii of the spheres. As
+in the case of the atom colors given by the parameter <b>-C</b>,
+the association of atom types with sphere radii is done by an
+integer with up to 9 figures. The encoding is given by the
+following table:
+
+<table border="1" cellpadding="4">
+<tr>
+<td width="15" align="center">1</td>
+<td width="15" align="center">2</td>
+<td width="15" align="center">3</td>
+<td width="15" align="center">4</td>
+<td width="15" align="center">5</td>
+<td width="15" align="center">6</td>
+<td width="15" align="center">7</td>
+<td width="15" align="center">8</td>
+<td width="15" align="center">9</td>
+</tr>
+
+<tr>
+<td width="15" align="center">1</td>
+<td width="15" align="center">1/2</td>
+<td width="15" align="center">3/4</td>
+<td width="15" align="center">1/4</td>
+<td width="15" align="center">5/8</td>
+<td width="15" align="center">3/8</td>
+<td width="15" align="center">7/8</td>
+<td width="15" align="center">1/8</td>
+<td width="15" align="center">0</td>
+</tr>
+</table>
+
+<p>The second row gives the radii of the atoms in units of the
+largest radius specified by the parameter <b>-R</b>. In the case of
+the number 9 corresponding to the radius 0, no atoms of the
+corresponding type are drawn and the bonds of this type are also
+omitted.</p>
+</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-e</b></td>
+<td align="center">real &gt; 0.0</td>
+<td align="center">1.0</td>
+<td>Specifies the maximal distance for which neighbouring atoms are
+taken into account in the drawing of bonds. Only works, if no
+cutoff length is given in the parameter file.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-E</b></td>
+<td>integer</td>
+<td align="center">-</td>
+<td>Color encoding of the potential energy as specified in the 10th
+column of an IMD configuration file. The value of <b>-E</b>
+determines the colors used in the encoding. Each figure of
+<b>-E</b> corresponds to a color as given in the following table:
+
+<table border="1" cellpadding="4">
+<tr>
+<td bgcolor="#4C4C4C" width="15" align="center" class="white">1</td>
+<td bgcolor="#FF0000" width="15" align="center">2</td>
+<td bgcolor="#00FF00" width="15" align="center">3</td>
+<td bgcolor="#0000FF" width="15" align="center" class="white">4</td>
+<td bgcolor="#00FFFF" width="15" align="center">5</td>
+<td bgcolor="#FF00FF" width="15" align="center">6</td>
+<td bgcolor="#FFFF00" width="15" align="center">7</td>
+<td bgcolor="#FFFFFF" width="15" align="center">8</td>
+</tr>
+</table>
+
+<p>The sequence of figures in <tt>E</tt> then corresponds to a path
+in the rgb cube which is used to color encode the potential energy
+from the lowest energy to the highest energy. If only one positive
+figure is given, a path with two colors is taken where the second
+color is white. Negative numbers correspond to preselected paths as
+follows:</p>
+
+<table border="1" cellpadding="4">
+<tr>
+<th>Value of <tt>E</tt></th>
+<th colspan="10">Color path</th>
+</tr>
+
+<tr>
+<td>-1</td>
+<td bgcolor="#FF0000" width="15" align="center">2</td>
+<td bgcolor="#FFFF00" width="15" align="center">7</td>
+<td bgcolor="#00FF00" width="15" align="center">3</td>
+<td bgcolor="#00FFFF" width="15" align="center">5</td>
+<td bgcolor="#0000FF" width="15" align="center" class="white">4</td>
+<td bgcolor="#FF00FF" width="15" align="center">6</td>
+</tr>
+
+<tr>
+<td>-2</td>
+<td bgcolor="#FF0000" width="15" align="center">2</td>
+<td bgcolor="#FFFF00" width="15" align="center">7</td>
+<td bgcolor="#FFFFFF" width="15" align="center">8</td>
+</tr>
+
+<tr>
+<td>-3</td>
+<td bgcolor="#FF0000" width="15" align="center">2</td>
+<td bgcolor="#FFFFFF" width="15" align="center">8</td>
+<td bgcolor="#00FFFF" width="15" align="center">5</td>
+<td bgcolor="#0000FF" width="15" align="center" class="white">4</td>
+</tr>
+
+<tr>
+<td>-4</td>
+<td bgcolor="#FF0000" width="15" align="center">2</td>
+<td bgcolor="#FFFFFF" width="15" align="center">8</td>
+<td bgcolor="#FFFF00" width="15" align="center">7</td>
+<td bgcolor="#00FF00" width="15" align="center">3</td>
+</tr>
+
+<tr>
+<td>-5</td>
+<td bgcolor="#FF0000" width="15" align="center">2</td>
+<td bgcolor="#FF00FF" width="15" align="center">6</td>
+<td bgcolor="#0000FF" width="15" align="center" class="white">4</td>
+</tr>
+
+<tr>
+<td>-6</td>
+<td bgcolor="#00FF00" width="15" align="center">3</td>
+<td bgcolor="#00FFFF" width="15" align="center">5</td>
+<td bgcolor="#0000FF" width="15" align="center" class="white">4</td>
+</tr>
+</table>
+
+<p>The spectrum of the used color encoding can be plotted with the
+additional option <b>-k</b>.</p>
+</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-f</b></td>
+<td align="center">integer</td>
+<td align="center">9</td>
+<td>Draw bounding box with linewidth given by the option <b>-F</b>.
+A negative value means no boundary box is drawn. Positive values
+correspond to colors according to the color scheme of the option
+<b>-C&lt;/&gt;.</b></td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-F</b></td>
+<td align="center">real</td>
+<td align="center">2.0</td>
+<td>Linewidth of bounding box (in pt). Negative values correspond
+to dashed lines.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-g</b></td>
+<td align="center">real,&nbsp;&gt;=-1.0</td>
+<td align="center">0.0</td>
+<td>Background color. White by default. Positive integer values
+correspond to colors according to the color scheme of parameter
+<b>-C</b>. Figures after the comma mean a shading of the
+corrresponding color. Negative values from -1 to 0 correspond to a
+shading from black to white.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-G</b></td>
+<td align="center">integer, &gt;0</td>
+<td align="center">-</td>
+<td>Draw color encoding of the 2nd data column (after positions and 
+velocities) of input file. Similar to the option <b>-E</b>.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-h</b></td>
+<td align="center">real, &gt;=0</td>
+<td align="center">-</td>
+<td>Produce eps files with the given height in cm.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-H</b></td>
+<td align="center">real, &gt;=0.0</td>
+<td align="center">0.1</td>
+<td>Linewidth used for borders of atoms, bonds, and bond separators
+(in pt). See also the options <b>-L</b>, <b>-l</b>, and <b>-P</b>
+for separate adjustments.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-i, -j</b></td>
+<td align="center">real</td>
+<td align="center">0, 0</td>
+<td>Translation in x and y direction.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-I</b></td>
+<td align="center">real, &gt;0</td>
+<td align="center">1.0</td>
+<td>Brightness of shading of atoms.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-J</b></td>
+<td align="center">real, [-1,1]</td>
+<td align="center">0</td>
+<td>Brightness of atom colors. Positive values mean bright colors
+and negative values mean dark colors.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-k</b></td>
+<td align="center">real</td>
+<td align="center">-</td>
+<td>Draw a spectrum of the colors belonging to the different color
+encodings. The spectrum is placed below the bounding box, separated
+by a line. The Linethickness is given by the value of the option
+<b>-K</b> (in pt).</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-K</b></td>
+<td align="center">-</td>
+<td align="center">-</td>
+<td>Write a file with all settings of the options. The filename is
+the output filename with the extension .eps.opt. The .eps.opt file
+contains the complete command to run <b>imd_ps</b> with the current
+options.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-l</b></td>
+<td align="center">real, &gt;=0.0</td>
+<td align="center">0.1</td>
+<td>Linewidth used for bond borders (in pt).</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-L</b></td>
+<td align="center">real, &gt;=0</td>
+<td align="center">0.1</td>
+<td>Linewidth used for atom borders (in pt).</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-m</b></td>
+<td align="center">real, &gt;=0</td>
+<td align="center">1</td>
+<td>Zoom.</td>
+</tr>
+
+<tr valign="top" bgcolor="#E0E0E0">
+<td align="center"><b>-M</b></td>
+<td align="center">real, &gt;=0</td>
+<td align="center">1</td>
+<td>Parameter to enhance the shrinking of atoms and bonds with
+depth.</td>
+</tr>
+
+<tr valign="top" bgcolor="#E0E0E0">
+<td align="center"><b>-n</b></td>
+<td align="center">real &gt;=0</td>
+<td align="center">-</td>
+<td>Draw lightshadow. <b>n</b> determines the linewidth (in
+pt).</td>
+</tr>
+
+<tr valign="top" bgcolor="#E0E0E0">
+<td align="center"><b>-N</b></td>
+<td align="center">real, [0,1]</td>
+<td align="center">1</td>
+<td>Draw bonds as needles.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-o</b></td>
+<td align="center">integer</td>
+<td align="center">-1</td>
+<td>Draw simulation box with linewidth given by the option
+<b>-O</b>. A negative value means no simulation box is drawn.
+Positive values correspond to colors according to the color scheme
+of the option <b>-C</b>.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-O</b></td>
+<td align="center">real</td>
+<td align="center">1.0</td>
+<td>Linewidth used for simulation box (in pt). Negative values
+correspond to dashed lines.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-P</b></td>
+<td align="center">real &gt;=0</td>
+<td align="center">0.1</td>
+<td>Linewidth used for bond separator (in pt).</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-q</b></td>
+<td align="center">integer</td>
+<td align="center">-1</td>
+<td>Draw border to boxes with linewidth specified by the option
+<b>-Q</b>. A negative value means no border is drawn. Positive
+values correspond to colors according to the color scheme of
+parameter <b>-C</b>.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-Q</b></td>
+<td align="center">real</td>
+<td align="center">1.0</td>
+<td>Linewidth used for border of boxes (in pt). Negative values
+correspond to dashed lines.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-R</b></td>
+<td>real, &gt;= 0.0</td>
+<td align="center">estimated</td>
+<td>Radius of spheres representing atoms in real (IMD) units.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-s</b></td>
+<td align="center">real, &gt;=0</td>
+<td align="center">1</td>
+<td>Scaling of the picture. In contrast to the zoom <b>-m</b>, the
+size of the entire picture is also scaled.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-S</b></td>
+<td align="center">real, &gt;=0</td>
+<td align="center">45</td>
+<td>Shading of atoms. The value of <b>-S</b> corresponds to the
+angle of the light position.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-t</b></td>
+<td align="center">integer</td>
+<td align="center">-</td>
+<td>Draw color encoding of kinetic energy. Similar to the option
+<b>-E</b>.</td>
+</tr>
+
+<tr valign="top" bgcolor="#E0E0E0">
+<td align="center"><b>-T</b></td>
+<td align="center">real, &gt;= 0.0</td>
+<td align="center">estimated</td>
+<td>z-coordinate of projection plane (in real (IMD) units). The
+value of <b>-T</b> must be smaller than the value of
+<b>-Z</b>.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-u</b></td>
+<td align="center">integer</td>
+<td align="center">-1</td>
+<td>Draw bounding box of unrotated sytem with linewidth <tt>U</tt>.
+A negative value means no simulation box is drawn. Positive values
+correspond to colors according to the color scheme of the option
+<b>-C</b>.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-U</b></td>
+<td align="center">real</td>
+<td align="center">1.0</td>
+<td>Linewidth used for bounding box of unrotated system (in pt).
+Negative values correspond to dashed lines.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-V</b></td>
+<td align="center">integer</td>
+<td align="center">0</td>
+<td>Color of bonds. The value 0 means the bonds are colored like
+the atoms. Other values correspond to colors according to the color
+scheme of the option <b>-C</b>.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-w</b></td>
+<td align="center">real, &gt;=0</td>
+<td align="center">-</td>
+<td>Produce eps files with the given width in cm.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-W</b></td>
+<td align="center">real, &gt;=0</td>
+<td align="center">-</td>
+<td>Produce wireframes with the specified line width (in real (IMD)
+units). If the atom radius given by the option <b>-R</b> is larger
+than the value of <b>-W</b>, atoms are drawn as specified by the
+corresponding options.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-x, -y, -z</b></td>
+<td align="center">real, real, real</td>
+<td align="center">0, 0, 0</td>
+<td>Rotation angles about <i>x</i>, <i>y</i>, and <i>z</i> axis
+(only <i>z</i> axis in 2D version) of IMD configuration in
+degrees.</td>
+</tr>
+
+<tr valign="top" bgcolor="#E0E0E0">
+<td align="center"><b>-X,&nbsp;-Y,&nbsp;-Z</b></td>
+<td align="center">real, real, &gt;0</td>
+<td align="center">0, 0, estimated</td>
+<td>Location of focal point of perspective projection (in real
+(IMD) units).</td>
+</tr>
+</table>
+
+<h2><a id="imd_ring" name="imd_ring">imd_ring</a></h2>
+
+<p>Computes ring statistics of IMD configurations. </p>
+
+<p><b>imd_ring</b> searches all shortest closed paths in a
+configuration and gives a statistics. It only works with open
+boundary conditions.</p>
+
+<p>The following special options can be used:</p>
+
+<table border="0" cellspacing="10" cellpadding="3">
+<tr>
+<th>Option</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-e</b></td>
+<td align="center">real &gt; 0.0</td>
+<td align="center">1.0</td>
+<td>Specifies the <u>maximal distance</u> for which neighbouring
+atoms are taken into account. If the component <b>_tersoff</b> is
+given in the compilation target, the cutoff radii of the Tersoff
+potential are employed.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-l</b></td>
+<td align="center">integer &gt; 0</td>
+<td align="center">10</td>
+<td>Specifies the <u>maximal length</u> <tt>lmax</tt> of rings that
+are computed.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-n</b></td>
+<td align="center">integer &gt; 0</td>
+<td align="center">6</td>
+<td>Specifies the <u>maximal number of neighbours</u> for which
+memory of neighbour tables is allocated. In the case of the Tersoff
+potential, this value is taken from the parameter file.</td>
+</tr>
+</table>
+
+<p><b>imd_ring</b> writes a table to standard output with the
+following format:</p>
+
+<pre>
+     Ring length   Total occurrence  Relative occurrence
+          3              n_3                p_3
+      4      n_4            p_4
+      
+      .               .                  .
+      .       .          .
+      .       .          .
+      
+      lmax           n_lmax             p_lmax
+</pre>
+
+where <tt>n_i</tt> is the number of rings of length <tt>i</tt> and
+<tt>p_i</tt> is <tt>n_i</tt> divided by the total number of rings
+up to the length <tt>lmax</tt>. <b>imd_ring</b> writes the table of
+the relative occurrences of the ring lengths into a file with
+suffix <tt>.ring</tt>. 
+
+<h2><a id="imd_strain" name="imd_strain">imd_strain</a></h2>
+
+<p>Computes the strain tensor from the atomic displacements. </p>
+
+<p>The displacements must be given in a file with the following
+format:</p>
+
+<pre>
+    x y (z) dx dy (dz)
+</pre>
+
+where <tt>x</tt>, <tt>y</tt>, <tt>z</tt> are the positions of the
+atoms and <tt>dx</tt>, <tt>dy</tt>, <tt>dz</tt> are the
+displacements. The displacement file must have the name
+<tt>&lt;outfiles&gt;.dsp</tt>. Alternatively, the displacement file
+can be created using the IMD option <b>disloc</b>. Then the restart
+parameter <b>-r</b><tt>&lt;nn&gt;</tt> should be given where
+<tt>&lt;nn&gt;</tt> is the number of steps corresponding to the
+displacement file. 
+
+<p>The following special options can be used:</p>
+
+<table border="0" cellspacing="10" cellpadding="3">
+<tr>
+<th>Option</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-e</b></td>
+<td align="center">real &gt; 0.0</td>
+<td align="center">1.0</td>
+<td>Specifies the <u>maximal distance</u> <tt>rmax</tt> for which
+neighbouring atoms are taken into account in the computation of the
+derivatives of the displacements.</td>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-c</b></td>
+<td align="center">real &gt; 0.0</td>
+<td align="center"><tt>rmax</tt></td>
+<td>Specifies the <u>width of the cells</u> in the cell
+decomposition used in the computation. For very large systems, it
+is advisable to use a value larger than <tt>rmax</tt></td>
+</tr>
+</table>
+
+The output file name of <b>imd_strain</b> is the displacement file
+name with the suffix <tt>.strain</tt>. 
+
+<p>The output file has the following format:</p>
+
+<pre>
+    n x y (z) e_xx e_yy (e_zz) (e_yz) (e_zx) e_xy
+</pre>
+
+where n is a number (not the IMD atom number), <tt>x</tt>,
+<tt>y</tt>, <tt>z</tt> are the coordinates, and <tt>e_ij</tt> are
+the components of the strain tensor. 
+
+<p><b>imd_strain</b> only computes the strain tensor if an atom
+possesses more than two neighbours. Atoms with less than three
+neighbours are omitted from the outfile.</p>
+
+<h2><a id="imd_stress" name="imd_stress">imd_stress</a></h2>
+
+<p>Computes the stress tensor from an IMD <tt>.press</tt> file. </p>
+
+<p>IMD determines the (raw) stress tensor by evaluating the virial
+corresponding to the atomic forces. <b>imd_stress</b> computes the
+true stress tensor by dividing the raw stress tensor of each atom
+by the volume of the Voronoi cell of the respective atom. The raw
+stress tensor must be given in a file with the following
+format:</p>
+
+<pre>
+    x y (z) s_xx s_yy (s_zz) (s_yz) (s_zx) s_xy
+</pre>
+
+where <tt>x</tt>, <tt>y</tt>, <tt>z</tt> are the positions of the
+atoms and <tt>s_ij</tt> are the components of the raw stress
+tensor. The stress file name must have the suffix <tt>.press</tt>.
+Alternatively, the raw stress file can be created using the IMD
+option <b>stress</b> (with the parameter vector <tt>press_dim</tt>
+set equal to zero). Then the restart parameter <b>-r</b>
+<tt>&lt;nn&gt;</tt> should be given where <tt>&lt;nn&gt;</tt> is
+the number of steps corresponding to the stress file. 
+
+<p>The following special option can be used:</p>
+
+<table border="0" cellspacing="10" cellpadding="3">
+<tr>
+<th>Option</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+
+<tr valign="top">
+<td align="center"><b>-e</b></td>
+<td align="center">real &gt; 0.0</td>
+<td align="center">1.0</td>
+<td>Specifies the <u>maximal distance</u> for which neighbouring
+atoms are taken into account in the computation of the Voronoi
+cells.</td>
+</tr>
+</table>
+
+The output file name of <b>imd_stress</b> is the raw stress file
+name with the suffix <tt>.stress</tt>. 
+
+<p>The output file has the following format:</p>
+
+<pre>
+    x y (z) s_xx s_yy (s_zz) (s_yz) (s_zx) s_xy v
+</pre>
+
+where <tt>s_ij</tt> are the components of the true stress tensor of
+the atom with coordinates <tt>x</tt>, <tt>y</tt>, <tt>z</tt> and
+<tt>v</tt> is the volume of the corresponding Voronoi cell. 
+
+<p><b>imd_stress</b> only computes the stress tensor if the Euler
+relation for a Voronoi cell is fullfilled. Otherwise, atoms are
+removed from the outfile.</p>
+
+<h2><a id="imd_torsion" name="imd_torsion">imd_torsion</a></h2>
+
+<p>Computes torsion distribution histograms of IMD configurations. </p>
+
+<p>The following special options can be used:</p>
+
+<table border="0" cellspacing="10" cellpadding="3">
+<tr>
+<th>Option</th>
+<th>Values</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+
+<tr>
+<td><b>-n</b></td>
+<td>integer &gt; 0</td>
+<td>1000</td>
+<td>Specifies the <u>number of slots</u> in the torsion
+distribution histogram.</td>
+</tr>
+
+<tr>
+<td><b>-e</b></td>
+<td>real &gt; 0.0</td>
+<td>1.0</td>
+<td>Specifies the <u>maximal radius</u> for which torsion angles
+between neighbouring atoms are computed.</td>
+</tr>
+</table>
+
+<p>The output file name of <b>imd_torsion</b> has the suffix
+<tt>.torsion</tt>.</p>
+
+<p>For every slot in the histogram, one line is written:</p>
+
+<pre>
+    phi g_0000 g_0001 ... g_000N g_0011 ... g_001N ... g_00NN g_0100 ... g_NNNN
+</pre>
+
+The first entry <tt>phi</tt> is the angle with range [0,180], the
+remaining entries are the histogram values for the different
+combinations of atom types. The histogram entry <tt>g_ijkl</tt> is
+the normalized number of times the torsion angle <tt>phi</tt>
+occurs between the atoms of type <tt>i</tt>, <tt>j</tt>,
+<tt>k</tt>, and <tt>l</tt>. 
+
+<center><img src="torsion.gif" width="300" /></center>
+
+<p><tt>g_ijkl</tt> is normalized with respect to the total number
+of torsion angles computed. In the case of 2 types of particles,
+for example, the histogram has the following format:</p>
+
+<pre>
+  phi g_0000 g_0001 g_0011 g_0100 g_0101 g_0110 g_0111 g_1100 g_1101 g_1111
+</pre>
+
+{% include imdfoot.html %}
+

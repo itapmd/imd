@@ -1,0 +1,49 @@
+---
+title: OpenKIM.org Interface
+---
+
+{% include imdhead.html %}
+
+<h1><a id="kim" name="kim">OpenKIM.org interface (option kim)</a></h1>
+
+<p>The KIM interface is the implementation of
+the <a href="https://openkim.org">Knowledge Base for Interatomic
+Models (KIM)</a> in IMD.
+</p>
+
+<p>In KIM lingo, a potential is a "model" and a model contains both
+the analytic formulas that define the potential as well as the
+parameters needed to run it for one or more materials, including
+coefficients and cutoffs.</p>
+
+<p>In order to use the KIM library it has to be downloaded
+from <a href="https://openkim.org">https://openkim.org</a> and
+installed manually. There are detailed instructions available on their
+homepage for this procedure.</p>
+
+<b>Setting up the IMD source code</b>
+
+<p>The location of the KIM library needs to be set in the IMD
+Makefile. On line 134 the variable <tt>KIM_DIR</tt> has to point to
+the base directory of the KIM installation. If this is not the case
+there will be compiling and/or linking errors.</p>
+
+<b>Running simulations with the KIM framework</b>
+
+<p>If IMD is compiled with the kim option, two kim-specific paramters
+need to be set in the parameter file. They are <tt>kim_model_name</tt>
+and <tt>kim_el_names</tt>.</p>
+
+<ul>
+  <li>
+    <tt>kim_model_name</tt> expects a valid KIM model name 
+  </li>
+  <li>
+    <tt>kim_el_names</tt> expects the names of the elements 
+    (in the same order as they appear in the config file)
+  </li>
+</ul>
+
+<p>The KIM interface in IMD has been implemented by Daniel Schopf.</p>
+
+{% include imdfoot.html %}

@@ -1,0 +1,256 @@
+---
+title: Configuration
+---
+
+{% include imdhead.html %}
+
+<h1>Configurations</h1>
+
+<p>
+The starting configuration of an IMD simulation is usually read from 
+a configuration file, whose format is <a href="config.html#config">
+described below</a>. Also, at every checkpoint IMD writes the current 
+configuration to a file in the same format, so that it can be used to 
+restart the simulation, or as a starting configuration for a different 
+simulation. There is a <a href="util_misc.html#makeconf">utility 
+program</a> to generate configuration files for several simple crystal
+structures. Certain types of configuration can also be 
+<a href="#generated">generated</a> directly by IMD. Note that there 
+are some issues with <a href="#boundary">boundary conditions</a> 
+to be considered.</p>
+
+<h2><a id="config" name="config">
+Configuration Files</a></h2>
+
+<p>
+An IMD configuration file is an ASCII file, which starts with the
+appropriate <a href="header.html#atomheader">header</a> for atom
+files. Following the header, there is one line for each atom. 
+The format of each line, described also in the header, is
+as follows:</p>
+
+<table>
+<tr><td>in 2d: </td><td> number type mass x y [vx vy]       </td></tr>
+<tr><td>in 3d: </td><td> number type mass x y z [vx vy vz]  </td></tr>
+</table>
+
+<p>
+These items stand for:</p>
+
+<table>
+<tr><td>number	 </td><td> number of the atom; should be unique  </td></tr>
+<tr><td>type     </td><td> type of the atom; must be in the range [0..total_types-1]
+                                                                </td></tr>
+<tr><td>mass     </td><td> mass of the atom; must be positive    </td></tr>
+<tr><td>x y z    </td><td> coordinates of the atom               </td></tr>
+<tr><td>vx vy vz </td><td> velocity components of the atom       </td></tr>
+</table>
+
+<p>
+Note that:</p>
+<ul>
+<li> In all directions in which <a href="#boundary">periodic boundary 
+     conditions</a> are used, the sample must have a size of at least 
+     the potential cutoff distance. This distance is measured
+     perpendicular to the corresponding face.</li>
+<li> If <a href="#boundary">free boundary conditions</a> are used,
+     it is the user's responsibility that the system fits into the
+     simulation box (spanned by the box vectors starting at the
+     origin). With <a href="#boundary">periodic boundary conditions</a>, 
+     atoms outside the box are mapped back into the box.</li>
+<li> If there are atoms with missing velocities in the input file,
+     the initial velocities are set to some random Maxwell
+     distribution with the desired temperature.</li>
+</ul>
+
+<a id="uniax" name="uniax">
+<h2>Configuration Files for UNIAX</h2>
+</a>
+
+<p>
+In case that the option <a href=uniax.html>UNIAX</a> is switched on
+(uniaxial molecules interacting via the Gay-Berne pair potential),
+the data structure of the IMD configuration file is enlarged. 
+Again, the ASCII file consists of a <a href="header.html#atomheader">
+header</a>, followed by one line for each atom. The format of a 
+line now is:</p>
+
+<p>
+number type mass rx ry rz ux uy uz [vx vy vz wx wy wz]</p>
+
+<p>
+These items stand for:</p>
+
+<table>
+<tr><td>number	 </td><td> number of the molecule; should be unique </td></tr>
+<tr><td>type     </td><td> type of the molecule; must be set equal 
+                           to 1                                     </td></tr>
+<tr><td>mass     </td><td> mass of the molecule; must be positive   </td></tr>
+<tr><td>rx ry rz </td><td> coordinates of the center of mass of the 
+                           molecule                                 </td></tr>
+<tr><td>ux uy uz </td><td> cartesian components of the unit vector
+                           pointing along the main axis of the 
+                           molecule                                 </td></tr>
+<tr><td>vx vy vz </td><td> velocity components of the molecule      </td></tr>
+<tr><td>wx wy wz </td><td> angular velocity components of the 
+                           molecule                                 </td></tr>
+</table>
+
+<p>
+Note that:</p>
+
+<ul>
+<li> Only the 3D version of the Gay-Berne model is implemented.</li>
+<li> If <a href="#boundary">free boundary conditions</a> are used,
+     it is the user's responsibility that the system fits into the
+     simulation box (spanned by the box vectors starting at the
+     origin). With <a href="#boundary">periodic boundary conditions</a>, 
+     atoms outside the box are mapped back into the box.</li>
+<li> If there are atoms with missing velocities and angular velocities
+     in the input file, the initial velocities and angular velocities
+     are set according to a Maxwell-Boltzmann
+     distribution with the desired temperature.</li>
+</ul>
+
+<h2><a id="makeconfig" name="makeconfig"> 
+Making Configurations Files</a></h2>
+
+<p>
+The utility program <a href="util_misc.html#makeconf">make_config</a> 
+allows to generate configuration files for several simple crystal 
+structures, notably 2D hexagonal crystals, and 3d cubic FCC, BCC, 
+B2 (CsCL), NaCl, diamond, zincblende, and C15 Laves type structures. 
+These are essentially the same configurations as those 
+<a href="config.html#generated">generated online</a> by IMD. </p>
+
+<h2><a id="generated" name="generated"> 
+Generated Configurations</a></h2>
+
+<p>
+If the input configuration file name (parameter <tt>coordname</tt>) starts
+with a underscore, IMD tries to interpret it and computes the initial atom
+positions, rather than reading them in. The following generated structures
+are supported:</p>
+
+<table>
+<tr><td>_hex        </td><td> hexagonal crystal (2D)                 </td></tr>
+<tr><td>_fcc        </td><td> fcc crystal (3D)                       </td></tr>
+<tr><td>_bcc        </td><td> bcc crystal (3D)                       </td></tr>
+<tr><td>_nacl       </td><td> NaCl crystal structure (3D)            </td></tr>
+<tr><td>_b2         </td><td> crystal with B2 (CsCl) structure (3D)  </td></tr>
+<tr><td>_l12        </td><td> L1<sub>2</sub> structure 
+			      (Cu<sub>3</sub>Au) (3D)                </td></tr>
+<tr><td>_l10        </td><td> L1<sub>0</sub> structure 
+			      (CuAu) (3D)                            </td></tr>
+<tr><td>_d03        </td><td> D0<sub>3</sub> structure 
+                              (AlFe<sub>3</sub>) (3D)                </td></tr>
+<tr><td>_diamond    </td><td> cubic diamond structure (3D)           </td></tr>
+<tr><td>_zincblende </td><td> zincblende structure (3D)              </td></tr>
+<tr><td>_lav        </td><td> C15 Laves structure (3D)               </td></tr>
+<tr><td>_tiqc       </td><td> truncated icosahedra quasicrystal (3D) 
+                              - requires <b>option quasi</b>         </td></tr>
+</table>
+
+<p>
+The size of the configuration is specified with the parameter
+<tt>box_param</tt>, an integer vector, and an optional scale
+parameter <tt>box_unit</tt>. For all generated structures,
+the masses of the different atoms types can be specified with
+the parameter <tt>masses</tt>, which requires <tt>ntypes</tt>
+real values.</p>
+
+<p> For the cubic crystal structures _fcc, _bcc, _nacl, _b2, _l12,
+_l10, _d03, _diamond, _zincblende, and _lav, the three components of
+the parameter <tt>box_param</tt> specify the number of conventional
+cubic unit cells in each direction. The size of such a cubic unit cell
+is given by the parameter <tt>box_unit</tt>, which defaults to
+<tt>1.0</tt>. So, in order to obtain an FCC crystal with nearest
+neighbor distance <tt>sqrt(2)</tt>, <tt>box_unit</tt> must be set to
+<tt>2.0</tt>.</p>
+
+<p>
+For the C15 Laves structure _lav, the three box parameters 
+must be multiples of the corresponding components of <tt>cpu_dim</tt>
+in the parallel version, so that each CPU contains a block of 
+complete unit cells (each with 24 atoms). Here, in order to obtain a 
+nearest neighbor distance <tt>d</tt> of small atoms (type 0), 
+<tt>box_unit</tt> must be set to <tt>d*2*sqrt(2)</tt>.</p>
+
+<p>
+For the 2D hexagonal _hex structure, <tt>box_param</tt> specifies
+the number of rectangular unit cells in each direction. In units of
+<tt>box_unit</tt>, the size of a unit cell is <tt>sqrt(3)</tt> in the
+x-direction, and <tt>1.0</tt> in the y-direction. <tt>box_unit</tt>, 
+which defaults to <tt>1.0</tt>, is also equal to the nearest neighbor 
+distance.</p>
+
+<p>By default, the atoms of the elemental structures _hex, _fcc, _bcc,
+and _diamond get the type number 0 while the atoms of the binary
+structures _nacl, _b2, _l12, _l10, _d03, and _zincblende get the type
+numbers 0 and 1. With the IMD parameter <tt>types</tt>, these type
+numbers can be changed by specifying a single integer (&lt;
+<tt>ntypes</tt>) in the case of the elemental structures and two
+integers in the case of the binary structures. The masses used in the
+generated structures correspond to the types in the original order
+(0, 1, ..., <tt>ntypes</tt>-1).</p>
+
+<p>
+For the quasicrystalline _tiqc phase, an approximant with a
+rectangular box is created. The three parameters are the orders
+of the Fibonacci approximant in the three directions. For the
+_tiqc structure, scaling by <tt>box_unit</tt> is not yet supported.
+The <tt>_tiqc</tt> structure is an approximant of a truncated
+icosahedra quasicrystals (tiqc, truncated icosahedra clusters are also
+known as Bergman clusters). It requires the component <tt>quasi</tt> 
+to be contained in the <a href="compiling.html">compilation target</a>.
+The tiqc are simple decorations of the standard rhombohedra
+icosahedral quasicrystals in three dimensions. Every vertex and every 
+edge center is occupied by an atom of type A (small atom). Every long 
+diagonal of the prolate rhombohedron is decorated with two atoms of 
+type B (large atoms). The diagonal is divided in the ratio 1:tau:1, 
+where tau is the golden mean.</p>
+
+<p>
+Only the simplest case is implemented here. It is needed only if
+the number of particles to be simulated is so large that the 
+configuration cannot be stored on disk. For practical simulations 
+this will rarely be the case. For all other cases, a more versatile, 
+stand-alone program for the generation of quasicrystals should be
+used. </p>
+
+<h2><a id="boundary" name="boundary"> 
+</a>Boundary Conditions</h2>
+
+<p>
+IMD uses <b>periodic boundary conditions</b> by default. Whenever 
+particles leave the simulation box, or if they are outside the 
+simulation box when they are read from a configuration file, they 
+are mapped back into the simulation box. In the computation of the 
+forces, the minimal image convention is used.</p>
+
+<p>
+Periodic boundary conditions can be <b>switched off</b> in one or 
+several directions by reading in the parameter <tt>pbc_dirs</tt>,
+which is a vector. A value of 1 means periodic boundary condition
+in that direction, a value of 0 means free boundary condition.
+Certain ensembles and options may not work for properly for all
+kind of boundary conditions. If periodic boundary conditions are
+switched off, it is the user's responsibility that the sample fits 
+into the box. This is necessary in order that particles are evenly 
+distributed into cells. As a particle is put into the nearest cell, 
+samples much bigger than the simulation box will result in overfull 
+border cells, which means serious performance degradation. Apart 
+from that, there is no further problem. Likewise, if the sample is 
+much smaller than the simulation box, there will be empty or almost 
+empty cells, which will lead to load balancing problems in the
+parallel version (but not in the serial version). It is
+therefore wise to choose the box so that it is exactly filled by 
+the sample. There is no harm if a few atoms then leave the box during 
+the  simulation.</p>
+
+<p>
+Note that the option <b>shock</b> needs <b>periodic</b> boundary 
+conditions in y and z direction, but <b>free</b> boundary conditions 
+in x direction.</p>
+
+{% include imdfoot.html %}

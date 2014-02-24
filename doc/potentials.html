@@ -1,0 +1,68 @@
+---
+title: Interactions
+---
+
+{% include imdhead.html %}
+
+<h1>Interactions</h1>
+
+<p>
+IMD supports a large variety of different (mostly short range)
+effective potentials. Some of these potentials are defined by tabulated
+functions read from a <a href="potformat.html">potential file</a>,
+others are defined analytically by parameters read from the
+<a href="paramfile.html">parameter file</a>. The potentials
+supported include <a href="pairpot.html">central pair potentials</a>,
+<a href="eam.html">Embedded Atom Method (EAM)</a> potentials for 
+metals, <a href="meam.html">Modified EAM (MEAM)</a> potentials,
+different <a href="covalent.html">covalent potentials</a>,
+notably <a href="covalent.html#tersoff">Tersoff</a>,
+Stillinger-Weber (<a href="covalent.html#stiweb">analytic</a>
+and <a href="covalent.html#ttbp">tabulated</a>), Zhou-Wadley
+(<a href="covalent.html#ternbcc">analytic</a>
+and <a href="covalent.html#ttbpxt">tabulated</a>), and 
+<a href="covalent.html#keating">Keating</a> potentials,
+<a href="ewald.html">Coulomb</a> and <a href="ewald.html#shell">shell 
+model</a> potentials for ionic solids, and
+<a href="uniax.html">Gay-Berne</a> potentials for nematic
+liquid crystals.</p>
+
+<p>
+Since the computation of the forces is the most time-critical part
+of a molecular dynamics simulation, support for each type of
+interaction has to be enabled explicitly by a compilation option.
+If no interaction type is specified, central pair potentials
+are assumed by default. Different interaction types can be
+combined with each other, by enabling more than one type
+of interaction. Their contributions are then just added. This is 
+still somewhat experimental, and there are some restrictions.
+Here are some guidelines:
+<ul>
+<li>At most <b>one</b> of the <a href="covalent.html">covalent  
+    potentials</a> (including <a href="meam.html">MEAM</a>, which
+    is algorithmically similar) can be used at a time.</li>
+<li>Central <a href="pairpot.html">pair potentials</a>, 
+    <a href="eam.html">EAM potentials</a>, and one of 
+    <a href="covalent.html#tersoff">Tersoff</a> or Stillinger-Weber
+    potentials (<a href="covalent.html#ttbp">tabulated</a>
+    or <a href="covalent.html#stiweb">analytic</a>) 
+    <b>can be combined</b> with each other. 
+    The central pair potential part contained in these interactions 
+    is <b>shared</b>.</li>
+<li>The option <b>pair</b> can be used to enable a (short range)
+    <a href="pairpot.html">pair potential</a> part together with 
+    <a href="ewald.html">Coulomb</a> potentials.
+    The same option is also used to enable the harmonic potential
+    used for the <a href="ewald.html#shell">shell model</a> in 
+    combination with <a href="ewald.html">Coulomb interactions</a>.</li> 
+<li><a href="ewald.html">Coulomb potentials</a> can be combined with 
+    almost everything else, whether or not this makes sense.</li>
+<li><a href="covalent.html#keating">Keating</a> and 
+    <a href="uniax.html">Gay-Berne</a> potentials <b>cannot</b> be 
+    combined with anything else.</li>
+<li>On vector machines, add the option "lj" for computed Lennard-Jones
+  interactions.
+</ul>
+</p>
+
+{% include imdfoot.html %}

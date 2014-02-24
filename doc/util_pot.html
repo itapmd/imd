@@ -1,0 +1,114 @@
+---
+title: Potential File Tools
+---
+
+{% include imdhead.html %}
+
+<h1>Potential File Tools</h1>
+
+<p>
+The following utility programs deal with 
+<a href="potentials.html#POTFORMAT">IMD potential files</a>:</p>
+
+<table cellpadding="4">
+<tr><td><a href="#cutpot">cutpot</a></td>
+    <td>truncate a potential file smoothly</td></tr>
+<tr><td><a href="#imd_mklj">imd_mklj</a></td>
+    <td>compute a Lennard-Jones potential file</td></tr>
+</table>
+
+<h2><a id= "cutpot" name="cutpot">cutpot</a></h2>
+
+<p>
+Cutpot can be used to shorten pair potentials. For each 
+data column, a cutoff radius (or radius squared) must be specified. 
+Up to this radius, the returned potential is equal to the input 
+potential, but beyond thes radius it is replaced by a function which 
+tends smoothly to zero. The resulting potential is continuous and has 
+a continuous first derivative.</p>
+
+<p>
+Each line of the input potential starts either with a radius or a squared
+radius, which is followed by the corresponding potential values. The
+radii or squared radii, whichever are used, must be equally spaced.
+For the output potential, only equally spaced, squared radii are used.
+This format is required by IMD. The cutoff values must be given in the
+same scale as the input potential, i.e., as radii for linear spacing,
+and as squared radii for quadratic spacing.</p>
+
+<p>
+There are two tail functions possible, a quadratic polynomial b(a-x)^2,
+and an exponential function b*exp(-c/(a-x)). In the latter case, for
+each column a further parameter, the steepness, can be specified, which
+controls how fast the potential goes to zero. The default steepness
+value is 2.0.</p>
+
+<p>
+Cutpot requires the following parameters (here with example values), 
+which must be given in the parameter file:</p>
+
+<pre>
+  ncols      4                  # number of data (potential) columns
+  nsteps     2000               # number of lines in output potential
+  infile     input.pot          # input potential file
+  outfile    output.pot         # output potential file
+  spacing    lin                # spacing of input potential; lin or sqr
+  tailtype   sqr                # type of tail function; sqr or exp
+  rcut       1.4 1.6 1.6 1.6    # cutoff values, where tail function starts
+  steepness  1.5 1.5 1.5 1.5    # steepness of exponential tail function
+</pre>
+
+<p>
+Compilation:
+<pre>
+  gmake cutpot
+</pre>
+Usage:
+<pre>
+  cutpot &lt;paramfile&gt;
+</pre>
+</p>
+
+
+<h2><a id="imd_mklj" name="imd_mklj">imd_mklj</a></h2>
+
+<p>
+Computes a Lennard-Jones-potential table for configurations containing
+two types of atoms. Very simple hack!</p>
+
+<p>
+Compilation:
+<pre>
+  gmake imd_mklj
+</pre>
+It prompts for the following input parameters:</p>
+
+<table cellpadding="4">
+<tr><td><b>Ausgabedatei: </b></td>
+    <td>Name of potential table file</td></tr>
+<tr><td><b>Radius Anfang:</b></td>
+    <td>Lowest value of atomic distance</td></tr>
+<tr><td><b>Radius Ende:  </b></td>
+    <td>Largest value of atomic distance</td></tr>
+<tr><td><b>Zahl Schritte:</b></td>
+    <td>Number of steps in table</td></tr>
+<tr><td><b>Exponent p:   </b></td>
+    <td>Exponent of the repulsive part</td></tr>
+<tr><td><b>Exponent q:   </b></td>
+    <td>Exponent of the attractive part</td></tr>
+<tr><td><b>Energie11:    </b></td>
+    <td>Energy between particle of type 1 and type 1</td></tr>
+<tr><td><b>Energie22:    </b></td>
+    <td>Energy between type 2 and type 2</td></tr>
+<tr><td><b>Energie12:    </b></td>
+    <td>Energy between type 1 and type 2</td></tr>
+<tr><td><b>Sigma11:      </b></td>
+    <td>Nearest-Neighbour-distance between type 1 and type 1</td></tr>
+<tr><td><b>Sigma22:      </b></td>
+    <td>Nearest-Neighbour-distance between type 2 and type 2</td></tr>
+<tr><td><b>Sigma21:      </b></td>
+    <td>Nearest-Neighbour-distance between type 1 and type 2</td></tr>
+</table>
+
+{% include imdfoot.html %}
+

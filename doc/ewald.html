@@ -1,0 +1,199 @@
+---
+title: Coulomb Potentials
+---
+
+{% include imdhead.html %}
+
+<h1>Coulomb Potentials for Ionic Solids</h1>
+
+<p>
+Due to their long range nature, Coulomb potentials require a special
+treatment. They are enabled with the compilation option <b>ewald</b>,
+which refers to the fact that the current implementation uses the 
+<b>Ewald summation technique</b>. Coulomb potentials can be combined 
+with many other potentials. In particular, an additional short range 
+<a href="pairpot.html">two-body potential</a> can be enabled with the 
+compilation option <b>pair</b>. In order to allow for
+polarizability of the atoms, the <a href="ewald.html#shell">shell 
+model</a> is often used together with Coulomb potentials.
+The shell model is activated with the option <b>shell</b>.</p> 
+
+<p>
+Due to the Ewald summation technique, only three dimensional 
+systems with periodic boundary conditions in all directions are 
+supported, and the implementation is currently not parallelized.</p>
+
+<p>
+The following form of the Ewald sum for a system of <i>N</i> charged 
+atoms is implemented:</p>
+<center>
+  <img src="ewald_trans.gif" />
+</center></p>
+Here, <i>q<sub>i</sub></i> is the charge of atom <i>i</i>, 
+<b>r</b><i><sub>ij</sub></i>
+is the distance vector between atoms <i>i</i> and <i>j</i>, 
+<b>n</b> are linear combinations of the box vectors, and the
+prime means that <i>i=j</i> is excluded if <b>n</b>=<b>0</b>.
+<i>kappa</i> is a real parameter and erfc(x) is the 
+complementary error function.
+The sum over <b>k</b> extends over linear combinations of 
+the reciprocal vectors of the simulation box.
+</p>
+
+<p>
+Coulomb potentials can be combined with many other potentials.
+In particular, an additional short range <a href="pairpot.html">
+two-body potential</a> can be enabled with the compilation option 
+<b>pair</b>.</p>
+
+<p>
+For the Ewald sum, the following <b>parameters</b> have to be
+specified in the <a href="params.html#ewald">parameter file</a>.
+The parameter <tt>charge</tt> specifies the charges of all atom 
+types (all on one line). The value of <i>kappa</i> is given with
+the parameter <tt>ew_kappa</tt>. In the k-space sum, all k-vectors 
+within a ball of radius <tt>ew_kcut</tt> are included. 
+The parameter <tt>ew_nmax</tt>, whose value is an integer, determines 
+the number of image simulation boxes taken into account in computing 
+the real space sum. The same number of boxes is included in all three 
+directions. If <tt>ew_nmax</tt> is zero, the usual minimum image 
+convention is applied. For large systems, the desired real space
+cutoff is often smaller than the simulation box. In this case, one
+can specify a negative value of <tt>ew_nmax</tt>, which has a special 
+meaning: the real space sum then is evaluated together with the other 
+pair interactions, up to a cutoff radius <tt>ew_rcut</tt>, which
+applies to all pairs of atom types, and which must not be larger than 
+the simulation box.
+</p>
+
+<p>
+<b>Note:</b> The current implemenation assumes that energies are 
+measured in electron volt, lengths in Angstrom, and charges in
+units of the elementary charge. Unlike for other interactions,
+it is not possible to chose a system of units.
+</p>
+
+<h1><a id="shell" name="shell">
+The Shell Model</a></h1>
+
+<p>
+The shell model of Dick and Overhauser (Phys. Rev. <b>112</b>, 90 (1958))
+is often used to add polarizability to the atoms of a Coulombic system.
+For this purpose, an atom is split into two parts, a charged ionic
+core, and a massless, charged shell around the core. By displacing 
+the shell with respect to the core, the atom is polarized. Shells 
+and cores are treated as separate particles. They all interact with 
+<a href="ewald.html">Coulomb interactions</a>. In addition to that,
+nearby shells interact with a short range <a href="pairpot.html">pair 
+potential</a>, usually of the form of a <a href="pairpot.html#buck">
+Buckingham potential</a>, and a harmonic potential (with minimum at
+distance zero) acts against the displacement of the core and its 
+associated shell. If used together with the option <a href="ewald.html">
+ewald</a>, these short range pair potentials have to be enabled
+with the compilation option <b>pair</b>.</p>
+
+<p>
+The shell is assumed massless, because the (fast moving) electrons 
+are expected to be always in their instantaneous ground state. 
+This poses a problem in treating the shells as normal particles. 
+In principle, the shell positions would have to be fully relaxed 
+at each time step, which is very expensive. A way out is to assign 
+a very small mass to the shells, so that they move much faster than 
+the ionic cores. This requires, however, a correspondingly small 
+time step.</p>
+
+<p>
+The harmonic potential of the shell model is specified by the
+parameter <tt>spring_const</tt>, which requires 
+<tt>ntypes*(ntypes-1)/2</tt> values (only particles of different 
+types (shells and cores) can interact with this potential).
+For type combinations which do not correspond to cores and the
+associated shells, the spring constant must be zero. The parameter 
+specifying the cutoff radius, <tt>r_cut</tt>, is shared with the 
+other <a href="pairpot.html#analyt">analytically defined</a> 
+pair potentials. This is no restriction, since shells and cores
+are expected to interact only with the harmonic potential.
+Similarly, the parameters <tt>r_begin</tt> and <tt>pot_res</tt>
+are shared with the <a href="pairpot.html#analyt">analytically defined</a> 
+pair potentials. <tt>r_begin</tt> specifies the starting value in
+the potential table (which must be zero for type combinations 
+interacting with the harmonic potential), and <tt>pot_res</tt>
+specifies the number of tabulated values of the potential table.
+</p>
+
+<h1>Tangney-Scandolo Potential</h1>
+<table summary="units in Tangney-Scandolo potential">
+<caption>Units used in Tangney-Scandolo potential compared to IMD set eV,
+&Aring;, amu</caption>
+<tr>
+<th>Parameter</th>
+<th>SI Unit</th>
+<th>Tangney-Scandolo</th>
+<th>IMD</th>
+<th>Comment</th>
+</tr>
+<tr>
+<td>Electrostatic force constant ew_eps</td>
+<td>1/(4&pi;&epsilon;<sub>0</sub>)</td>
+<td>k<sub>e</sub>=1</td>
+<td>k<sub>e</sub>=14.4</td>
+</tr>
+<tr>
+<td>charge</td>
+<td>Coulomb</td>
+<td>e</td>
+<td>1 e</td>
+</tr>
+<tr>
+<td>dipole</td>
+<td>C&middot;m</td>
+<td>e&middot;a<sub>0</sub></td>
+<td>0.529177 e&middot;&Aring;</td>
+</tr>
+<tr>
+<td>Polarisability dp_alpha</td>
+<td>C&middot;m<sup>2</sup>&middot;V<sup>-1</sup> = 
+A<sup>2</sup>&middot;s<sup>4</sup>&middot;kg<sup>-1</sup></td>
+<td>a<sub>0</sub><sup>3</sup>/k<sub>e</sub></td>
+<td>0.010291 &Aring;<sup>3</sup>/k<sub>e</sub></td>
+</tr>
+<tr>
+<td>dp_b</td>
+<td>(Distance)<sup>-1</sup></td>
+<td>a<sub>0</sub><sup>-1</sup></td>
+<td>1.889727 &Aring;<sup>-1</sup> </td>
+</tr>
+<tr>
+<td>dp_c</td>
+<td>1/(4&pi;&epsilon;<sub>0</sub>)</td>
+<td>k<sub>e</sub>=1</td>
+<td>k<sub>e</sub>=14.4</td>
+</tr>
+<tr>
+<td>Field</td>
+<td>V/m</td>
+<td>a<sub>0</sub><sup>-2</sup></td>
+<td>51,4233 &Aring;<sup>-2</sup></td>
+</tr>
+</table>
+
+<h1>Dipolar Interactions</h1><a id="dipole" name="dipole">
+
+<p>Implements a variety of the Tangney-Scandolo polarizable oxygen potential
+(Brommer et al., <a href="http://link.aip.org/link/?JCP/132/194109">J. Chem. Phys. <b>132</b>, 194109 (2010)</a>). Long-range components treated by Wolf
+  summation.</p>
+
+<p>The parameters for dipolar interactions are:<br> 
+<tt>dp_alpha</tt>: polarizability, parameter in the short-range part of a
+dipole<br> <tt>dp_b</tt> and <tt>dp_c</tt>: parameters in the short-range part
+  of a dipole. In contrast to <TT>dp_alpha</TT> which depends only on
+  particle <i>i</i>, they also depend on particle <i>j</i>, i.e. <i>b_ij</i>
+  and <i>c_ij</i> vs. <i>alpha_i</i>.<br> <tt>dp_mix</tt>: parameter for mixing
+    the induced electric field with fields from previous timesteps (For
+    details see J. Chem. Phys. <b>132</b> (2010) 194109, eq. 19: (1-c) =
+    dp_mix).<br> <tt>dp_tol</tt>: convergence criterion for self-consistent
+      dipole determination. If the computation is terminated if the
+      deviation <tt>dp_sum</tt> to the previous step is below <tt>dp_tol</tt>.
+</p>
+
+{% include imdfoot.html %}
