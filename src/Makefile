@@ -139,6 +139,20 @@ KIM_DIR 	= /data/daniel/openkim/openkim-api
 #
 ###########################################################################
 
+# lima
+ifeq (lima,${IMDSYS})
+  CC_SERIAL     = icc
+  CC_MPI        = mpicc
+  MPICH_CC      = icc
+  MPICH_CLINKER = icc
+  OMPI_MPICC    = icc
+  BIN_DIR       = ${HOME}/bin/${HOSTTYPE}
+#  OPT_FLAGS     += -Ofast -xHost -ipo                # second best performance, but worse than current "deprecated" binaries
+  OPT_FLAGS     += -Ofast -xHost -ipo -fno-alias     # best performance - only applicable if no pointer aliases are used!!!
+  DEBUG_FLAGS   += -g
+  PROF_FLAGS    += -g3 -pg
+endif
+
 # woody
 ifeq (woody,${IMDSYS})
   CC_SERIAL	= icc
