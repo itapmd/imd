@@ -359,7 +359,7 @@ void read_pot_table1(pot_table_t *pt, int ncols, char *filename,
     if (radial) {
       if (delta!=0.0) {
         if (0==myid)
-          printf("Potential %1d%1d shifted by %f\n",
+          printf("Potential %1d%1d shifted by %e\n",
                  (i/ntypes),(i%ntypes),delta);
         for (k=0; k<npot; ++k) *PTR_2D(pt->table,k,i,pt->table,ncols) -= delta;
       }
@@ -441,7 +441,7 @@ void read_pot_table2(pot_table_t *pt, int ncols, char *filename,
       delta = *PTR_2D(pt->table,pt->len[i]-1,i,pt->maxsteps,ncols);
       if (delta!=0.0) {
         if (0==myid)
-          printf("Potential %1d%1d shifted by %f\n",
+          printf("Potential %1d%1d shifted by %e\n",
                  (i/ntypes),(i%ntypes),delta);
         for (k=0; k<pt->len[i]; k++)
           *PTR_2D(pt->table,k,i,pt->table,ncols) -= delta;
@@ -841,10 +841,10 @@ void init_pre_pot(void) {
           lj_aaa  [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
           if (myid==0)
             if (ljg_eps[i][j] > 0.0)
-              printf("Lennard-Jones-Gauss potential %1d %1d shifted by %f\n",
+              printf("Lennard-Jones-Gauss potential %1d %1d shifted by %e\n",
 	              i, j, -lj_shift[i][j]);
             else
-              printf("Lennard-Jones potential %1d %1d shifted by %f\n",
+              printf("Lennard-Jones potential %1d %1d shifted by %e\n",
 	              i, j, -lj_shift[i][j]);
 	}
         else lj_shift[i][j] = 0.0;
@@ -855,7 +855,7 @@ void init_pre_pot(void) {
           morse_shift[i][j] +=  0.25 * tmp *  POT_TAIL * r2_cut[i][j];
           morse_aaa  [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
           if (myid==0)
-            printf("Morse potential %1d %1d shifted by %f\n",
+            printf("Morse potential %1d %1d shifted by %e\n",
 	           i, j, -morse_shift[i][j]);
 	}
         else morse_shift[i][j] = 0.0;
@@ -866,7 +866,7 @@ void init_pre_pot(void) {
           buck_shift[i][j] +=  0.25 * tmp *  POT_TAIL * r2_cut[i][j];
           buck_aaa  [i][j]  = -0.25 * tmp / (POT_TAIL * r2_cut[i][j]);
           if (myid==0)
-            printf("Buckingham potential %1d %1d shifted by %f\n",
+            printf("Buckingham potential %1d %1d shifted by %e\n",
 	           i, j, -buck_shift[i][j]);
 	}
         else buck_shift[i][j] = 0.0;
@@ -883,7 +883,7 @@ void init_pre_pot(void) {
         if (SQR(charge[i]*charge[j]) > 0.0) {
           pair_int_ewald( &ew_shift[i][j], &ew_fshift[i][j], i, j, ew_r2_cut);
           if (myid==0)
-            printf("Coulomb potential %1d %1d shifted by %f\n",
+            printf("Coulomb potential %1d %1d shifted by %e\n",
 	           i, j, -ew_shift[i][j]);
         }
         else {

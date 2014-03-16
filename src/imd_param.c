@@ -2366,10 +2366,12 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"avpos_nwrites")==0) {
       /* number of position writes, only for processing the itr file */
       getparam("avpos_nwrites",&avpos_nwrites,PARAM_INT,1,1);
+      printf("avpos_nwrites: %d\n",avpos_nwrites);fflush(stdout); 
     }
     else if (strcasecmp(token,"avpos_npwrites")==0) {
       /* number of pressure writes, only for processing the itr file */
       getparam("avpos_npwrites",&avpos_npwrites,PARAM_INT,1,1);
+      printf("avpos_npwrites: %d\n",avpos_npwrites);fflush(stdout); 
     }
 #endif
 #if defined(FORCE) || defined(WRITEF)
@@ -3690,10 +3692,10 @@ void check_parameters_complete()
   }
 #endif
 #ifdef AVPOS
-  fprintf(stderr, "%d %d\n", avpos_start, imdrestart*checkpt_int);
-  if (avpos_start <= imdrestart*checkpt_int)
+  fprintf(stdout, "avpos_start: %d imdrestart*checkpt_int: %d\n", avpos_start, imdrestart*checkpt_int);
+  // if (avpos_start <= imdrestart*checkpt_int)
     //  avpos_start = imdrestart*checkpt_int+1; /* do not ask me why +1 ;-) */
-    avpos_start = imdrestart*checkpt_int; /* do not ask me why +1 ;-) */
+    //  avpos_start = imdrestart*checkpt_int; 
   /* Default initialisation of end time */
   if (0==avpos_end) avpos_end = steps_max;
 #ifdef STRESS_TENS
