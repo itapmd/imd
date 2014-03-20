@@ -618,6 +618,75 @@ int nyeDone;
 #ifdef TIMING
     imd_start_timer(&time_output);
 #endif
+
+#ifdef AVPOS
+    if ( steps <= avpos_end && steps > avpos_start ){
+      if( avpos_steps == 0)    /* default, for backwards compatibility */
+	{ 
+	  if ((avpos_res > 0) && (0 == (steps - avpos_start) % avpos_res) )
+	    add_positions();
+	  if ((avpos_int > 0) && (0 == (steps - avpos_start) % avpos_int) ) 
+	    {
+	      write_config_select((steps - avpos_start) / avpos_int,"avp",
+				  write_atoms_avp,write_header_avp);
+	      write_avpos_itr_file((steps - avpos_start) / avpos_int, steps);
+	      update_avpos();
+	    }
+	}
+      else
+	{
+	  if ( steps >= avpos_start + (avpos_nwrites+1)*avpos_int - avpos_res*avpos_steps)
+	    {
+	      tmpsteps = avpos_start + (avpos_nwrites+1)*avpos_int - steps;
+	      //  printf("steps = %d tmpsteps =%d\n",steps,tmpsteps);fflush(stdout); 
+	      if ( tmpsteps == avpos_res*avpos_steps)
+		{ 
+		  //  	  printf("avpos_start = %d avpos_nwrites=%d avpos_int=%d avpos_steps=%d \n",avpos_start,avpos_nwrites, avpos_int,avpos_steps );fflush(stdout); 
+		  //	  printf("updating positions\n");fflush(stdout); 
+		  update_avpos();
+		}
+	      else if ( tmpsteps % (avpos_res) == 0)
+		{
+		  add_positions(); 
+		  //	  printf("adding positions\n");fflush(stdout); 
+		}
+	      if (tmpsteps == 0)
+		{
+		  avpos_nwrites++;
+		  write_config_select(avpos_nwrites,"avp",write_atoms_avp,write_header_avp);
+		  write_avpos_itr_file(avpos_nwrites, steps); /* I don't think that this is needed? */
+		  //	  printf("writing out: %d\n",avpos_nwrites);fflush(stdout); 
+		}
+
+	    }
+#ifdef STRESS_TENS
+	  if ( (press_int > 0) && (steps >= (avpos_npwrites+1)*press_int - avpos_res*avpos_steps))
+	    {
+	      tmpsteps = avpos_start + (avpos_npwrites+1)*press_int - steps;
+	      if ( tmpsteps == avpos_res*avpos_steps)
+		{ 		  
+		  update_avpress();
+		}
+	      else if ( tmpsteps % (avpos_res) == 0)
+		{
+		  add_presstensors();
+		}
+	      if (tmpsteps == 0)
+		{
+		  avpos_npwrites++;
+		  write_config_select(avpos_npwrites , "press",
+				       write_atoms_press, write_header_press);
+		  //	  printf("writing out: %d\n",avpos_npwrites);fflush(stdout); 
+		}
+
+	    }
+#endif /* STRESS_TENS */
+
+	}
+    
+    }
+#endif /* AVPOS, has to be before write_config so that the correct avpos_nwrites is in the itr file */
+
     if ((checkpt_int > 0) && (0 == steps % checkpt_int)) 
        write_config( steps/checkpt_int, steps);
     if ((eng_int  > 0) && (0 == steps % eng_int )) write_eng_file(steps);
@@ -655,73 +724,6 @@ int nyeDone;
     if ((dsp_int > 0) && (steps > up_ort_ref) && (0 == steps % dsp_int)) 
        write_config_select(steps, "dsp", write_atoms_dsp, write_header_dsp);
 #endif
-#ifdef AVPOS
-    if ( steps <= avpos_end && steps > avpos_start ){
-      if( avpos_steps == 0)    /* default, for backwards compatibility */
-	{ 
-	  if ((avpos_res > 0) && (0 == (steps - avpos_start) % avpos_res) )
-	    add_positions();
-	  if ((avpos_int > 0) && (0 == (steps - avpos_start) % avpos_int) ) 
-	    {
-	      write_config_select((steps - avpos_start) / avpos_int,"avp",
-				  write_atoms_avp,write_header_avp);
-	      write_avpos_itr_file((steps - avpos_start) / avpos_int, steps);
-	      update_avpos();
-	    }
-	}
-      else
-	{
-	  if ( steps >= (avpos_nwrites+1)*avpos_int - avpos_res*avpos_steps)
-	    {
-	      tmpsteps = avpos_start + (avpos_nwrites+1)*avpos_int - steps;
-	      //      printf("steps = %d tmpsteps =%d\n",steps,tmpsteps);fflush(stdout); 
-	      if ( tmpsteps == avpos_res*avpos_steps)
-		{ 
-		  //	  printf("avpos_start = %d avpos_nwrites=%d avpos_int=%d avpos_steps=%d \n",avpos_start,avpos_nwrites, avpos_int,avpos_steps );fflush(stdout); 
-		  //	  printf("updating positions\n");fflush(stdout); 
-		  update_avpos();
-		}
-	      else if ( tmpsteps % (avpos_res) == 0)
-		{
-		  add_positions(); 
-		  //	  printf("adding positions\n");fflush(stdout); 
-		}
-	      if (tmpsteps == 0)
-		{
-		  avpos_nwrites++;
-		  write_config_select(avpos_nwrites,"avp",write_atoms_avp,write_header_avp);
-		  write_avpos_itr_file(avpos_nwrites, steps);
-		  //	  printf("writing out: %d\n",avpos_nwrites);fflush(stdout); 
-		}
-
-	    }
-#ifdef STRESS_TENS
-	  if ( (press_int > 0) && (steps >= (avpos_npwrites+1)*press_int - avpos_res*avpos_steps))
-	    {
-	      tmpsteps = avpos_start + (avpos_npwrites+1)*press_int - steps;
-	      if ( tmpsteps == avpos_res*avpos_steps)
-		{ 		  
-		  update_avpress();
-		}
-	      else if ( tmpsteps % (avpos_res) == 0)
-		{
-		  add_presstensors();
-		}
-	      if (tmpsteps == 0)
-		{
-		  avpos_npwrites++;
-		  write_config_select(avpos_npwrites , "press",
-				       write_atoms_press, write_header_press);
-		  //	  printf("writing out: %d\n",avpos_npwrites);fflush(stdout); 
-		}
-
-	    }
-#endif /* STRESS_TENS */
-
-	}
-    
-    }
-#endif /* AVPOS */
 
 #ifdef NVX 
     if ((ensemble == ENS_NVX) && (hc_int > 0) && (steps > hc_start)) 

@@ -1819,12 +1819,12 @@ void write_atoms_avp(FILE *out)
       else {
 #ifdef TWOD
 	len += sprintf( outbuf+len,
-                        "%d %d %12.16f %12.16f %12.16f %12.16f\n",
+                        "%d %d %12.6f %12.6f %12.6f %12.6f\n",
                         NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
                         x, y, AV_EPOT(p,i) * tmp);
 #else
 	len += sprintf( outbuf+len,
-                        "%d %d %12.16f %12.16f %12.16f %12.16f %12.16f\n",
+                        "%d %d %12.6f %12.6f %12.6f %12.6f %12.6f\n",
                         NUMMER(p,i), VSORTE(p,i), MASSE(p,i), 
                         x, y, z, AV_EPOT(p,i) * tmp);
 #endif
