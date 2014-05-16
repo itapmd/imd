@@ -757,7 +757,7 @@ void copy_cell( int k, int l, int m, int r, int s, int t, vektor v )
 #ifdef VARCHG
     CHARGE(to,i)  = CHARGE(from,i);
 #endif
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
     NUMMER(to,i)     = NUMMER(from,i);
 /*     DP_E_IND(to,i,X) = DP_E_IND(from,i,X); */
 /*     DP_E_IND(to,i,Y) = DP_E_IND(from,i,Y); */
@@ -802,7 +802,7 @@ void pack_cell( msgbuf *b, int k, int l, int m, vektor v )
 #ifdef VARCHG
     b->data[ j++ ] = CHARGE(from,i);
 #endif
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
     b->data[ j++ ] = NUMMER(from,i);
 /*     b->data[ j++ ] = DP_E_IND(from,i,X); */
 /*     b->data[ j++ ] = DP_E_IND(from,i,Y); */
@@ -865,7 +865,7 @@ void unpack_cell( msgbuf *b, int k, int l, int m )
 #ifdef VARCHG
     CHARGE(to,i)  = b->data[ j++ ];
 #endif
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
     NUMMER(to,i)     = b->data[ j++ ];
 /*     DP_E_IND(to,i,X) = b->data[ j++ ]; */
 /*     DP_E_IND(to,i,Y) = b->data[ j++ ]; */
@@ -1243,7 +1243,7 @@ void unpack_add_rho( msgbuf *b, int k, int l, int m )
 
 #endif /* EAM2 */
 
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
 
 /******************************************************************************
 *

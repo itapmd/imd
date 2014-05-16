@@ -375,7 +375,7 @@ void read_atoms(str255 infilename)
 #ifndef TWOD
       KRAFT(input,0,Z) = 0;
 #endif
-#ifdef DIPOLE 			/* only 3D */
+#if defined(DIPOLE) || defined(KERMODE) 		/* only 3D */
       DP_P_IND(input,0,X) = d[count++];
       DP_P_IND(input,0,Y) = d[count++];
       DP_P_IND(input,0,Z) = d[count++];
@@ -883,7 +883,7 @@ void write_atoms_config(FILE *out)
         len += sprintf(outbuf+len, RESOL1, EAM_P(p,i));
 #endif
 #endif
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
 	len += sprintf(outbuf+len, RESOL3, 
 		       DP_P_IND(p,i,X), DP_P_IND(p,i,Y), DP_P_IND(p,i,Z)); 
 #endif	/* DIPOLE */

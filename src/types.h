@@ -222,7 +222,7 @@ typedef struct {
   real *q_sm;                /* initial value */
 
 #endif
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
   real        *dp_E_stat;    /* electric field at atom location */
   real        *dp_E_ind;     /* induced field at atom location */
   real        *dp_E_old_1;   /* old field from previous steps */

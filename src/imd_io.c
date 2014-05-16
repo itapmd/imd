@@ -3163,7 +3163,7 @@ void write_header_config(FILE *out)
   atompar++;
 #endif
 #endif
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
   atompar +=3;
 #endif  /* DIPOLE */
 #ifdef DAMP
@@ -3240,7 +3240,7 @@ void write_header_config(FILE *out)
   fprintf(out, " eam_p");
 #endif
 #endif
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
   fprintf(out, " dp_ind_x dp_ind_y dp_ind_z");
 #endif	/* DIPOLE */
 #ifdef DAMP

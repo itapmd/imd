@@ -123,7 +123,7 @@ INLINE static int MOD(shortint p, int q)
 #define Q_SM(cell,i)         (atoms.q_sm [(cell)->ind[i]])
 #endif
 
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
 #define DP_E_STAT(cell,i,sub)   (atoms.dp_E_stat sub((cell)->ind[i]))
 #define DP_E_IND(cell,i,sub)    (atoms.dp_E_ind  sub((cell)->ind[i]))
 #define DP_E_OLD_1(cell,i,sub)  (atoms.dp_E_old_1  sub((cell)->ind[i]))
@@ -263,7 +263,7 @@ INLINE static int MOD(shortint p, int q)
 #define Q_SM(cell,i)          ((cell)->q_sm[i])
 #endif
 
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
 #define DP_E_STAT(cell,i,sub)   ((cell)->dp_E_stat sub(i))
 #define DP_E_IND(cell,i,sub)    ((cell)->dp_E_ind  sub(i))
 #define DP_E_OLD_1(cell,i,sub)  ((cell)->dp_E_old_1 sub(i))
