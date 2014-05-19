@@ -265,7 +265,8 @@ void calc_forces(int steps)
 {
   int  i, b, k, n=0, is_short=0, idummy=0;
   real tmpvec1[8], tmpvec2[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
-
+ // printf("Sudheer-> ke_rcut = %.17lf, ke_r2cut = %.17lf\n",ke_rcut,ke_r2cut);
+ // printf("Sudheer-> ke_tot_rcut = %.17lf, ke_tot_r2cut = %.17lf\n",ke_tot_rcut,ke_tot_r2cut);
 #if defined(DIPOLE) || defined(KERMODE)
   static int dp_E_calc=0; 	/* Number of field iterations */
   int dp_it=0;			/* Number of dipole iterations */
@@ -273,7 +274,7 @@ void calc_forces(int steps)
   /* TODO: Communicate! */
   int dp_converged=0;
   real dp_sum_old, dp_sum=1.;
-  real pot1,pot2;
+  real pot1=0.0,pot2=0.0;
 #ifndef KERMODE
   real max_diff=10.;
 #endif
@@ -1438,6 +1439,7 @@ void calc_forces(int steps)
 	      real   r2;
 	      int    c, j, jt, col1, col2, inc = ntypes * ntypes, have_force=0;
 	      cell   *q;
+              real inv_r2,temp1; // Sudheer
 	  
 	      c = cl_num[ tb[m] ];
 	      j = tb[m] - cl_off[c];
@@ -1469,9 +1471,23 @@ void calc_forces(int steps)
 		pot *= coul_eng;
 #endif
 #ifdef KERMODE
-                VAL_FUNC(pot,coul_table,0, 2+ntypepairs, r2, is_short);
-                pot /=r2;
+                inv_r2 = 1.0/r2;
+                VAL_FUNC(pot1,coul_table,0, 2+ntypepairs, r2, is_short);
+                pot1 *=inv_r2;
+                tmp=SPROD(pj,d);
+                temp1 = tmp*inv_r2;
+                //original eq is Eind.x += yuk_expfactorfc* ((3.0/r2)*tmp*d.x - pj.x)/rij3;
+                // i.e (3/r2*(pj.d)*d.x - pj.x)*exp(-br)*fc/r3
+                Eind.x += pot1* (3.0*temp1*d.x - pj.x);
+                Eind.y += pot1* (3.0*temp1*d.y - pj.y);
+                Eind.z += pot1* (3.0*temp1*d.z - pj.z);
+                tmp=SPROD(pi,d);
+                temp1 = tmp*inv_r2;
+                DP_E_IND(q,j,X) += pot1 * (3.0*temp1*d.x -pi.x);
+                DP_E_IND(q,j,Y) += pot1 * (3.0*temp1*d.y -pi.y);
+                DP_E_IND(q,j,Z) += pot1 * (3.0*temp1*d.z -pi.z);
 #endif
+#ifndef KERMODE
 		tmp=SPROD(pj,d);
 		Eind.x += pot* ((3.0/r2)*tmp*d.x - pj.x);
 		Eind.y += pot* ((3.0/r2)*tmp*d.y - pj.y);
@@ -1480,6 +1496,7 @@ void calc_forces(int steps)
 		DP_E_IND(q,j,X) += pot * ((3.0/r2)*tmp*d.x -pi.x);
 		DP_E_IND(q,j,Y) += pot * ((3.0/r2)*tmp*d.y -pi.y);
 		DP_E_IND(q,j,Z) += pot * ((3.0/r2)*tmp*d.z -pi.z);
+#endif
 	      }	  
 	    }
 	    DP_E_IND(p,i,X) += Eind.x;
@@ -1505,7 +1522,7 @@ void calc_forces(int steps)
 	    dp_sum += SQR(dp_alpha[it]*(DP_E_OLD_1(p,i,Y)-DP_E_IND(p,i,Y)));
 #endif
 #ifdef KERMODE
-            dp_sum += SQR(dp_alpha[it]*(DP_E_OLD_1(p,i,Y)-DP_E_IND(p,i,Z)));
+            dp_sum += SQR(dp_alpha[it]*(DP_E_OLD_1(p,i,Z)-DP_E_IND(p,i,Z)));
 #endif
 	  }
 	}
@@ -1552,6 +1569,7 @@ void calc_forces(int steps)
 	dp_sum=1.;
       }
 /*       if  (fabs(dp_sum)-dp_sum_old) < dp_tol) /\* reasonable? *\/ */
+      //printf("Sudheer-> dp_sum = %.17lf, dp_it=%d \n",dp_sum,dp_it);
       if (dp_sum < dp_tol)
 	dp_converged=1;
       dp_it++;
