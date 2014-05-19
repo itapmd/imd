@@ -399,6 +399,9 @@ EXTERN int n_out_grps   INIT(1);    /* number of output groups */
 #ifdef MPI
 EXTERN MPI_Comm cpugrid;                  /* Cartesian MPI communicator */
 
+EXTERN int outputgrpsize INIT(1); /* group size to be read in param */
+
+
 /* Send and Receive buffers */
 EXTERN msgbuf send_buf_east  INIT(nullbuffer);
 EXTERN msgbuf send_buf_west  INIT(nullbuffer);

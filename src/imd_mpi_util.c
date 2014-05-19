@@ -209,10 +209,12 @@ void init_io(void)
 
   /* output parameters */
   if (parallel_output==1) {
-    n_out_grps = num_cpus;
-    my_out_grp = myid;
-    my_out_id  = myid;
-    out_grp_size = 1;
+    n_out_grps = num_cpus/outputgrpsize;
+    if (num_cpus%outputgrpsize != 0)
+      n_out_grps++;
+    my_out_grp = (int) (myid/outputgrpsize);
+    my_out_id  = (int) (myid/outputgrpsize)*outputgrpsize;
+    out_grp_size = outputgrpsize;
   }
   else {
     n_out_grps   = 1;

@@ -1814,6 +1814,12 @@ int getparamfile(char *paramfname, int phase)
       /* parallel output flag */
       getparam(token,&parallel_output,PARAM_INT,1,1);
     }
+    else if (strcasecmp(token,"outputgrpsize")==0) {
+      /* parallel output flag */
+      getparam(token,&outputgrpsize,PARAM_INT,1,1);
+    }
+
+
     else if (strcasecmp(token,"parallel_input")==0) {
       /* parallel input flag */
       getparam(token,&parallel_input,PARAM_INT,1,1);
@@ -4193,6 +4199,7 @@ void broadcast_params() {
   MPI_Bcast( &cpu_dim     , DIM, MPI_INT,  0, MPI_COMM_WORLD);
 
   MPI_Bcast( &parallel_output, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &outputgrpsize, 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &parallel_input,  1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &msgbuf_size,     1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &binary_output,   1, MPI_INT, 0, MPI_COMM_WORLD);
