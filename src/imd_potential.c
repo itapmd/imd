@@ -921,7 +921,6 @@ void init_pre_pot(void) {
 #ifdef KERMODE
         if (r2_cut[i][j] > 0) {
           pair_int_mstr( &ms_shift[col], &ms_fshift[col], i, j, r2_cut[i][j]);
-          printf("Sudheer-> MS:sqrt(r2_cut)=%.6lf, shift in au=%.17lf, col=%d\n",sqrt(r2_cut[i][j]),ms_shift[col],col);
 #endif
           if (myid==0) {
             printf("Morse-Stretch pot %1d %1d (col %1d) shifted by %g,\n",
@@ -1114,7 +1113,7 @@ void create_coulomb_tables()
         pot2 += 1.;
       }
       pot2 *=dp_c[k]*exp(-tmp);
-      // {gij} --> coul_table.2,coul_table.3,  coul_table.4
+      // {gij} --> coul_table.2,coul_table.3,coul_table.4
       *PTR_2D(pt->table,i,2+k,pt->maxsteps,ncols)=pot2;
     }
 

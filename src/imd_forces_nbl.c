@@ -265,8 +265,7 @@ void calc_forces(int steps)
 {
   int  i, b, k, n=0, is_short=0, idummy=0;
   real tmpvec1[8], tmpvec2[8] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
- // printf("Sudheer-> ke_rcut = %.17lf, ke_r2cut = %.17lf\n",ke_rcut,ke_r2cut);
- // printf("Sudheer-> ke_tot_rcut = %.17lf, ke_tot_r2cut = %.17lf\n",ke_tot_rcut,ke_tot_r2cut);
+
 #if defined(DIPOLE) || defined(KERMODE)
   static int dp_E_calc=0; 	/* Number of field iterations */
   int dp_it=0;			/* Number of dipole iterations */
@@ -274,11 +273,11 @@ void calc_forces(int steps)
   /* TODO: Communicate! */
   int dp_converged=0;
   real dp_sum_old, dp_sum=1.;
-  real pot1=0.0,pot2=0.0;
 #ifndef KERMODE
   real max_diff=10.;
 #endif
 #ifdef KERMODE
+  real pot1,pot2;
   real max_diff=500.;
 #endif
   real *dp_E_shift;
@@ -488,11 +487,9 @@ void calc_forces(int steps)
 #elif defined(KEATING)
           PAIR_INT_KEATING(pot, grad, it, jt, r2);
 #endif
-          //printf("Sudheer-> 1. MS Energy = %.17lf\n",pot);
           tot_pot_energy += pot;
           force.x = d.x * grad;
           force.y = d.y * grad;
-          //printf("Sudheer-> 1. MS Force = %.17lf\n",d.x * grad);
 #ifndef TWOD
           force.z = d.z * grad;
 #endif
@@ -641,7 +638,6 @@ void calc_forces(int steps)
 
 	    /* Coulomb Energy */
 	    pot     = chg * phi;
-            //printf("Sudheer-> 2. Coulomb Energy = %.17lf\n",pot);
 #ifdef SM
 	    sm_es_energy  = chg * phi;
 #endif
@@ -675,7 +671,6 @@ void calc_forces(int steps)
 	    force.x = d.x * grad;
 	    force.y = d.y * grad;
 	    force.z = d.z * grad;
-            //printf("Sudheer-> 2. Coulomb Force = %.17lf\n",d.x * grad);
 
 #ifdef EXTF
 	    real chg_single;
@@ -688,6 +683,7 @@ void calc_forces(int steps)
 	    force.y += chg_single * extf.y; 
 	    force.z += chg_single * extf.z; 
 #endif /* EXTF */
+            
 	    KRAFT(q,j,X) -= force.x;
 	    KRAFT(q,j,Y) -= force.y;
 	    KRAFT(q,j,Z) -= force.z;
@@ -764,15 +760,15 @@ void calc_forces(int steps)
 	      DP_E_STAT(q,j,Z) -= d.z * grphi * charge[it];
 #endif
 #ifdef KERMODE
-	      //caling 2nd coul_table i.e {-1/r3*exp(-br)*fc}
+	      //{1/r*exp(-br)*fc}
               VAL_FUNC(pot1,coul_table,0, 2+ntypepairs, r2, is_short);
-              pot1 *=1.0/r2;
-              Estat.x += -1.0*d.x * pot1 * charge[jt];
-              Estat.y += -1.0*d.y * pot1 * charge[jt];
-              Estat.z += -1.0*d.z * pot1 * charge[jt];
-              DP_E_STAT(q,j,X) -= -1.0*d.x * pot1 * charge[it];
-              DP_E_STAT(q,j,Y) -= -1.0*d.y * pot1 * charge[it];
-              DP_E_STAT(q,j,Z) -= -1.0*d.z * pot1 * charge[it];    
+              pot1 /=r2;
+              Estat.x -= d.x * pot1 * charge[jt];
+              Estat.y -= d.y * pot1 * charge[jt];
+              Estat.z -= d.z * pot1 * charge[jt];
+              DP_E_STAT(q,j,X) += d.x * pot1 * charge[it];
+              DP_E_STAT(q,j,Y) += d.y * pot1 * charge[it];
+              DP_E_STAT(q,j,Z) += d.z * pot1 * charge[it];    
 #endif
 #ifdef EXTF
 	      Estat.x += extf.x;
@@ -820,6 +816,7 @@ void calc_forces(int steps)
 	    tmp = pot*charge[jt]*dp_alpha[it];
 #endif
 #ifdef KERMODE
+            //{gij}
             VAL_FUNC(pot2,coul_table,2+col, 2+ntypepairs, r2, is_short);
             tmp = pot2*charge[jt]*dp_alpha[it]*pot1;     
 #endif
@@ -1472,6 +1469,7 @@ void calc_forces(int steps)
 #endif
 #ifdef KERMODE
                 inv_r2 = 1.0/r2;
+                //{1/r*exp(-br)*fc}
                 VAL_FUNC(pot1,coul_table,0, 2+ntypepairs, r2, is_short);
                 pot1 *=inv_r2;
                 tmp=SPROD(pj,d);
@@ -1726,7 +1724,6 @@ real pconst_i=SQR(charge[it])+SQR(dp_alpha[it]);
 #ifdef KERMODE
               proj_i=charge[jt]*pdotd;
               pot += proj_i*pot1;
-              //printf("Sudheer-> 3. dq Long Range Energy =%.17lf\n",proj_i*pot1);
               temp2 = temp_dqfact1*proj_i*pot1;
               temp3 = charge[jt]*pot1;
               
@@ -1737,16 +1734,15 @@ real pconst_i=SQR(charge[it])+SQR(dp_alpha[it]);
               force.x +=temp_dqf1.x;
               force.y +=temp_dqf1.y;
               force.z +=temp_dqf1.z;
-              //printf("Sudheer-> 3. dq Long Range Force =%.17lf\n",temp_dqf1.x);
+
 // Short Range Dipole Charge
               pot += proj_i*pot2*pot1;
-              //printf("Sudheer-> 4. dq Short Range Energy =%.17lf\n",proj_i*pot2*pot1);
               temp4 = yuk_dgdr*proj_i*pot1*inv_rij;
             
               force.x += temp_dqf1.x*pot2 + temp4 * d.x;
               force.y += temp_dqf1.y*pot2 + temp4 * d.y;
               force.z += temp_dqf1.z*pot2 + temp4 * d.z;
-              //printf("Sudheer-> 4. dq Short Range Force =%.17lf\n",temp_dqf1.x*pot2 + temp4 * d.x);
+
 #endif
 	      have_force=1;
 	    }
@@ -1789,7 +1785,6 @@ real pconst_i=SQR(charge[it])+SQR(dp_alpha[it]);
 #ifdef KERMODE
               proj_j=charge[it]*pdotd;
               pot -= proj_j*pot1;
-              //printf("Sudheer-> 5. dq Long Range Energy =%.17lf\n",proj_j*pot1);
               temp5 = temp_dqfact1*proj_j*pot1;
               temp6 = charge[it]*pot1;
               
@@ -1801,16 +1796,15 @@ real pconst_i=SQR(charge[it])+SQR(dp_alpha[it]);
               force.x -=temp_dqf2.x;
               force.y -=temp_dqf2.y;
               force.z -=temp_dqf2.z;
-              //printf("Sudheer-> 5. dq Long Range Force =%.17lf\n",temp_dqf2.x);
+              
 //Short Range Dipole-Charge
               pot -=proj_j*pot2*pot1;
-              //printf("Sudheer-> 6. dq Short Range Energy =%.17lf\n",proj_j*pot2*pot1);
               temp7 = yuk_dgdr*proj_j*pot1*inv_rij;
                             
               force.x -= temp_dqf2.x*pot2 + temp7*d.x;
               force.y -= temp_dqf2.y*pot2 + temp7*d.y;
               force.z -= temp_dqf2.z*pot2 + temp7*d.z;
-              //printf("Sudheer-> 6. dq Short Range Force =%.17lf\n",temp_dqf2.x*pot2 + temp7*d.x);
+
 #endif
 	      have_force=1;
 	    }
@@ -1836,14 +1830,14 @@ real pconst_i=SQR(charge[it])+SQR(dp_alpha[it]);
 #ifdef KERMODE
               temp_dd = tmp*pot1;
               pot +=temp_dd;
-              //printf("Sudheer-> 7. dd Energy =%.17lf\n",temp_dd);
+              
               temp8 = temp_dd*temp_dqfact1;
               temp9 = 6.0*inv_r2*proj_i*proj_j;
               
               force.x += temp8*d.x + (temp9*d.x - 3.0*(pi.x*proj_j+pj.x*proj_i))*inv_r2*pot1;
               force.y += temp8*d.y + (temp9*d.y - 3.0*(pi.y*proj_j+pj.y*proj_i))*inv_r2*pot1;
               force.z += temp8*d.z + (temp9*d.z - 3.0*(pi.z*proj_j+pj.z*proj_i))*inv_r2*pot1;
-              //printf("Sudheer-> 7. dd Force =%.17lf\n",temp8*d.x + (temp9*d.x - 3.0*(pi.x*proj_j+pj.x*proj_i))*inv_r2*pot1);
+
 #endif
 	      have_force = 1;
 	    }
@@ -1901,8 +1895,7 @@ real pconst_i=SQR(charge[it])+SQR(dp_alpha[it]);
 	KRAFT(p,i,X) += ff.x;
 	KRAFT(p,i,Y) += ff.y;
 	KRAFT(p,i,Z) += ff.z;
-        //printf("Sudheer-> Final Energy=%.17lf\n",tot_pot_energy);
-        //printf("Sudheer-> Final Force =%.17lf\n",KRAFT(p,i,X));
+
 #ifdef STRESS_TENS
 	if (do_press_calc) {
 	  PRESSTENS(p,i,xx) += pp.xx;
