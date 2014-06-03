@@ -578,3 +578,184 @@ void unpack_forces( msgbuf *b, int j, int k )
   }
   if (b->n_max < b->n) error("Buffer overflow in unpack_forces.");
 }
+
+#ifdef SR
+
+/******************************************************************************
+*
+*  Synchronize cells into buffer cells on neighboring CPUs.
+*  What exactly is sent is determined by the parameter functions.
+*  We use Steve Plimptons communication scheme: we send only along
+*  the main axis of the system, so that corner cells travel twice.
+*
+******************************************************************************/
+
+void sync_cells(void (*copy_func)  (int, int, int, int),
+                void (*pack_func)  (msgbuf*, int, int),
+                void (*unpack_func)(msgbuf*, int, int))
+{
+  int i;
+  MPI_Status  stat;
+
+  empty_mpi_buffers();
+
+  /* exchange north/south */
+  if (cpu_dim.y==1) {
+    /* simply copy north/south atoms to buffer cells */
+    for (i=1; i<cell_dim.x-1; ++i) {
+      (*copy_func)( i, 1, i, cell_dim.y-1 );
+      (*copy_func)( i, cell_dim.y-2, i, 0 );
+    }
+  } else {
+    /* copy north atoms into send buffer */
+    for (i=1; i<cell_dim.x-1; ++i)
+      (*pack_func)( &send_buf_north, i, 1 );
+
+    /* send north, receive south */
+    sendrecv_buf( &send_buf_north, nbnorth, &recv_buf_south, nbsouth, &stat);
+
+    /* move atoms from south to buffer cells */
+    recv_buf_south.n = 0;
+    for (i=1; i<cell_dim.x-1; ++i)
+      (*unpack_func)( &recv_buf_south, i, cell_dim.y-1 );
+
+    /* copy south atoms into send buffer */
+    for (i=1; i<cell_dim.x-1; ++i)
+      (*pack_func)( &send_buf_south, i, cell_dim.y-2 );
+
+    /* send south, receive north */
+    sendrecv_buf( &send_buf_south, nbsouth, &recv_buf_north, nbnorth, &stat);
+
+    /* move atoms from north to buffer cells */
+    recv_buf_north.n = 0;
+    for (i=1; i<cell_dim.x-1; ++i)
+      (*unpack_func)( &recv_buf_north, i, 0 );
+  }
+
+  /* exchange east/west */
+  if (cpu_dim.x==1) {
+    /* simply copy east/west atoms to buffer cells */
+    for (i=0; i<cell_dim.y; ++i) {
+      (*copy_func)( 1, i, cell_dim.x-1, i );
+      (*copy_func)( cell_dim.x-2, i, 0, i );
+    }
+  } else {
+    /* copy east atoms into send buffer */
+    for (i=0; i<cell_dim.y; ++i)
+      (*pack_func)( &send_buf_east, 1, i );
+
+    /* send east, receive west */
+    sendrecv_buf( &send_buf_east, nbeast, &recv_buf_west, nbwest, &stat );
+
+    /* move atoms from west to buffer cells */
+    recv_buf_west.n = 0;
+    for (i=0; i<cell_dim.y; ++i)
+      (*unpack_func)( &recv_buf_west, cell_dim.x-1, i );
+
+    /* copy west atoms into send buffer */
+    for (i=0; i<cell_dim.y; ++i)
+      (*pack_func)( &send_buf_west, cell_dim.x-2, i );
+
+    /* send west, receive east */
+    sendrecv_buf( &send_buf_west, nbwest, &recv_buf_east, nbeast, &stat);
+
+    /* move atoms from east to buffer cells */
+    recv_buf_east.n = 0;
+    for (i=0; i<cell_dim.y; ++i)
+      (*unpack_func)( &recv_buf_east, 0, i );
+  }
+}
+
+#else /* not SR */
+
+/******************************************************************************
+*
+*  Synchronize cells into buffer cells on neighboring CPUs .
+*  What exactly is sent is determined by the parameter functions.
+*  We use Steve Plimptons communication scheme: we send only along
+*  the main axis of the system, so that corner cells travel twice.
+*
+******************************************************************************/
+
+void sync_cells(void (*copy_func)  (int, int, int, int),
+                void (*pack_func)  (msgbuf*, int, int),
+                void (*unpack_func)(msgbuf*, int, int))
+{
+  int i;
+
+  MPI_Status  stateast[2],  statwest[2];
+  MPI_Status statnorth[2], statsouth[2];
+
+  MPI_Request  reqeast[2],   reqwest[2];
+  MPI_Request reqnorth[2],  reqsouth[2];
+
+  empty_mpi_buffers();
+
+  /* exchange north/south */
+  if (cpu_dim.y==1) {
+    /* simply copy north/south atoms to buffer cells */
+    for (i=1; i<cell_dim.x-1; ++i) {
+      (*copy_func)( i, 1, i, cell_dim.y-1 );
+      (*copy_func)( i, cell_dim.y-2, i, 0 );
+    }
+  } else {
+    /* copy north atoms into send buffer, send north */
+    for (i=1; i<cell_dim.x-1; ++i)
+      (*pack_func)( &send_buf_north, i, 1 );
+    irecv_buf( &recv_buf_south, nbsouth, &reqsouth[1] );
+    isend_buf( &send_buf_north, nbnorth, &reqsouth[0] );
+
+    /* copy south atoms into send buffer, send south */
+    for (i=1; i<cell_dim.x-1; ++i)
+      (*pack_func)( &send_buf_south, i, cell_dim.y-2 );
+    irecv_buf( &recv_buf_north, nbnorth, &reqnorth[1] );
+    isend_buf( &send_buf_south, nbsouth, &reqnorth[0] );
+
+    /* wait for atoms from south, move them to buffer cells */
+    MPI_Waitall(2, reqsouth, statsouth);
+    recv_buf_south.n = 0;
+    for (i=1; i<cell_dim.x-1; ++i)
+      (*unpack_func)( &recv_buf_south, i, cell_dim.y-1 );
+
+    /* Wait for atoms from north, move them to buffer cells */
+    MPI_Waitall(2, reqnorth, statnorth);
+    recv_buf_north.n = 0;
+    for (i=1; i<cell_dim.x-1; ++i)
+      (*unpack_func)( &recv_buf_north, i, 0 );
+  }
+
+  /* exchange east/west */
+  if (cpu_dim.x==1) {
+    /* simply copy east/west atoms to buffer cells */
+    for (i=0; i<cell_dim.y; ++i) {
+      (*copy_func)( 1, i, cell_dim.x-1, i );
+      (*copy_func)( cell_dim.x-2, i, 0, i );
+    }
+  } else {
+    /* copy east atoms into send buffer, send east */
+    for (i=0; i<cell_dim.y; ++i)
+      (*pack_func)( &send_buf_east, 1, i );
+    irecv_buf( &recv_buf_west, nbwest, &reqwest[1] );
+    isend_buf( &send_buf_east, nbeast, &reqwest[0] );
+
+    /* copy west atoms into send buffer, send west */
+    for (i=0; i<cell_dim.y; ++i)
+      (*pack_func)( &send_buf_west, cell_dim.x-2, i );
+    irecv_buf( &recv_buf_east, nbeast, &reqeast[1] );
+    isend_buf( &send_buf_west, nbwest, &reqeast[0] );
+
+    /* Wait for atoms from west, move them to buffer cells */
+    MPI_Waitall(2, reqwest, statwest);
+    recv_buf_west.n = 0;
+    for (i=0; i<cell_dim.y; ++i)
+      (*unpack_func)( &recv_buf_west, cell_dim.x-1, i );
+
+    /* Wait for atoms from east, move them to buffer cells */
+    MPI_Waitall(2, reqeast, stateast);
+    recv_buf_east.n = 0;
+    for (i=0; i<cell_dim.y; ++i)
+      (*unpack_func)( &recv_buf_east, 0, i );
+  }
+}
+
+#endif /* not SR */

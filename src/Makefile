@@ -1706,6 +1706,14 @@ ifeq (,$(findstring imd_ada.c,${SOURCES}))
 endif
 endif
 
+#Load Balancer, only works for MPI
+ifneq (,$(findstring loadbalance,${MAKETARGET}))
+ifneq (,$(findstring mpi,${MAKETARGET}))
+	PP_FLAGS += -DLOADBALANCE
+	SOURCES += imd_loadBalance.c imd_loadBalance_direct.c
+endif
+endif
+
 # processor affinity
 ifneq (,$(findstring aff,${MAKETARGET}))
 PP_FLAGS += -DAFF

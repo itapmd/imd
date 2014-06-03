@@ -35,7 +35,7 @@
 
 void fix_cells(void)
 {
-  int i,j,k,l,clone,to_cpu;
+  int i,j,k,l,clone,to_cpu, ii;
   minicell *p, *q;
   ivektor coord, lcoord;
   msgbuf *buf;
@@ -53,7 +53,10 @@ void fix_cells(void)
       for (k=cellmin.z; k < cellmax.z; ++k) {
 
 	p = PTR_3D_V(cell_array, i, j, k, cell_dim);
-
+#ifdef LOADBALANCE
+	/* Only check content in real cells */
+	if (p->lb_cell_type != LB_REAL_CELL) continue;
+#endif
 	/* loop over atoms in cell */
 	l=0;
 	while( l<p->n ) {
@@ -61,13 +64,39 @@ void fix_cells(void)
           coord  = cell_coord( ORT(p,l,X), ORT(p,l,Y), ORT(p,l,Z) );
 	  lcoord = local_cell_coord( coord );
 
+#ifdef LOADBALANCE
+  	/* Wrap around pbcs if necessary to get the correct index using the loadbalance scheme*/
+   if (cpu_dim.x >= 2 && pbc_dirs.x == 1) {
+		if (lcoord.x >= global_cell_dim.x) lcoord.x -= global_cell_dim.x;
+		if (lcoord.x < 0) lcoord.x += global_cell_dim.x;
+	}
+	if (cpu_dim.y >= 2 && pbc_dirs.y == 1) {
+		if (lcoord.y >= global_cell_dim.y) lcoord.y -= global_cell_dim.y;
+		if (lcoord.y < 0) lcoord.y += global_cell_dim.y;
+	}
+	if (cpu_dim.z >= 2 && pbc_dirs.z == 1) {
+		if (lcoord.z >= global_cell_dim.z) lcoord.z -= global_cell_dim.z;
+		if (lcoord.z < 0) lcoord.z += global_cell_dim.z;
+	}
+#endif
+
  	  /* see if atom is in wrong cell */
 	  if ((lcoord.x == i) && (lcoord.y == j) && (lcoord.z == k)) {
             l++;
           } 
           else {
 
+#ifdef LOADBALANCE
+        	  if (lcoord.x< 0 || lcoord.x >= cell_dim.x ||
+        			  lcoord.y < 0 || lcoord.y >= cell_dim.y ||
+        			  lcoord.z < 0 || lcoord.z >= cell_dim.z ||
+        			  (PTR_VV(cell_array,lcoord,cell_dim))->lb_cell_type == LB_EMPTY_CELL) {
+        		  error("LB: Illegal cell accessed, Atom jumped multiple CPUs");
+        	  }
+        	  to_cpu = (PTR_VV(cell_array,lcoord,cell_dim))->lb_cpu_affinity;
+#else
             to_cpu = cpu_coord(coord);
+#endif
             buf    = NULL;
 
             /* atom is on my cpu */
@@ -84,6 +113,11 @@ void fix_cells(void)
 #endif
             }
 #ifdef MPI
+#ifdef LOADBALANCE
+	    else {
+			buf = &lb_send_buf[(PTR_VV(cell_array,lcoord,cell_dim))->lb_neighbor_index];
+	    }
+#else
             /* west */
             else if ((cpu_dim.x>1) && 
                ((to_cpu==nbwest) || (to_cpu==nbnw)  || (to_cpu==nbws) ||
@@ -136,6 +170,7 @@ void fix_cells(void)
               error("Atom jumped multiple CPUs");
 #endif
 	    }
+#endif /* not LOADBALANCE*/
 
             if (buf != NULL) {
               copy_one_atom( buf, to_cpu, p, l, 1);
@@ -166,6 +201,38 @@ void fix_cells(void)
 }
 
 #ifdef MPI
+
+#ifdef LOADBALANCE
+void send_atoms()
+{
+	int i;
+	MPI_Status stat;
+
+	for (i = 0; i < lb_nTotalComms; ++i) {
+		/*Send data away*/
+		isend_buf(&lb_send_buf[i], lb_commIndexToCpu[i], &lb_req_send[i]);
+		lb_requests[2*i] = lb_req_send[i];
+		lb_request_indices[2*i] = -1; /* Indicates no processing required */
+		/*Start receiving data*/
+		irecv_buf(&lb_recv_buf[i], lb_commIndexToCpu[i], &lb_req_recv[i]);
+		lb_requests[2*i+1] = lb_req_recv[i];
+		lb_request_indices[2*i+1] = i;
+	}
+
+	/*Receive and process data as soon as something is available*/
+	for (i = 2*lb_nTotalComms; i>0; i--){
+		int finished;
+		MPI_Waitany(i, lb_requests, &finished, &stat);
+		int ind = lb_request_indices[finished];
+		if (ind != -1){
+			MPI_Get_count(&stat, REAL, &lb_recv_buf[ind].n);
+			process_buffer( &lb_recv_buf[ind]);
+		}
+		lb_requests[finished] = lb_requests[i-1];
+		lb_request_indices[finished] = lb_request_indices[i-1];
+	}
+}
+#else
 
 #ifdef SR
 
@@ -370,5 +437,7 @@ void send_atoms()
 }
 
 #endif /* not SR */
+
+#endif /* not LOADBALANCE*/
 
 #endif /* MPI */

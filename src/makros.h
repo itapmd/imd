@@ -380,6 +380,7 @@ inline static real SQR(real x)
 
 /* Abs berechnet den Betrag einer Zahl */
 #define ABS(a) ((a) >0 ? (a) : -(a))
+#define SIGNUM(a) (a > 0) ? 1 : ((a < 0) ? -1 : 0)
 
 /* How many dimension are there? */
 #ifdef TWOD
