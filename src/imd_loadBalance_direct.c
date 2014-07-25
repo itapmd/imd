@@ -1067,21 +1067,13 @@ int lb_isGeometryValid(lb_domainInfo *dom){
 	 */
 		/* Tetrahedral subvolumes in the domain must be positively oriented */
 		/* Self-intersecting cubes are bad, very bad*/
+		/* Test all four permutations of how the cube can be split into tetrahedrons*/
 		if (lb_getTetraederVolumeIndexed(0, 5, 4, 7, &lb_domain) <= 0) return 0;
 		if (lb_getTetraederVolumeIndexed(0, 3, 1, 7, &lb_domain) <= 0) return 0;
 		if (lb_getTetraederVolumeIndexed(0, 1, 5, 7, &lb_domain) <= 0) return 0;
 		if (lb_getTetraederVolumeIndexed(0, 4, 6, 7, &lb_domain) <= 0) return 0;
 		if (lb_getTetraederVolumeIndexed(0, 6, 2, 7, &lb_domain) <= 0) return 0;
 		if (lb_getTetraederVolumeIndexed(0, 2, 3, 7, &lb_domain) <= 0) return 0;
-
-		if (lb_getTetraederVolumeIndexed(0, 1, 4, 2, &lb_domain) < 0) return 0;
-		if (lb_getTetraederVolumeIndexed(1, 5, 4, 7, &lb_domain) < 0) return 0;
-		if (lb_getTetraederVolumeIndexed(2, 4, 6, 7, &lb_domain) < 0) return 0;
-		if (lb_getTetraederVolumeIndexed(2, 7, 3, 1, &lb_domain) < 0) return 0;
-		if (lb_getTetraederVolumeIndexed(0, 4, 6, 5, &lb_domain) < 0) return 0;
-		if (lb_getTetraederVolumeIndexed(0, 1, 5, 3, &lb_domain) < 0) return 0;
-		if (lb_getTetraederVolumeIndexed(0, 6, 2, 3, &lb_domain) < 0) return 0;
-		if (lb_getTetraederVolumeIndexed(5, 3, 7, 6, &lb_domain) < 0) return 0;
 
 		if (lb_getTetraederVolumeIndexed(1, 7, 5, 6, &lb_domain) <= 0) return 0;
 		if (lb_getTetraederVolumeIndexed(1, 2, 3, 6, &lb_domain) <= 0) return 0;
@@ -1103,74 +1095,150 @@ int lb_isGeometryValid(lb_domainInfo *dom){
 		if (lb_getTetraederVolumeIndexed(3, 7, 5, 4, &lb_domain) <= 0) return 0;
 		if (lb_getTetraederVolumeIndexed(3, 5, 1, 4, &lb_domain) <= 0) return 0;
 		if (lb_getTetraederVolumeIndexed(3, 1, 0, 4, &lb_domain) <= 0) return 0;
+
+		//Additionally prevent the collapse of the corners in the domain
+		//This would yield a topological different domain geometry
+		if (lb_getTetraederVolumeIndexed(0, 1, 4, 2, &lb_domain) < 0) return 0;
+		if (lb_getTetraederVolumeIndexed(1, 5, 4, 7, &lb_domain) < 0) return 0;
+		if (lb_getTetraederVolumeIndexed(2, 4, 6, 7, &lb_domain) < 0) return 0;
+		if (lb_getTetraederVolumeIndexed(2, 7, 3, 1, &lb_domain) < 0) return 0;
+		if (lb_getTetraederVolumeIndexed(0, 4, 6, 5, &lb_domain) < 0) return 0;
+		if (lb_getTetraederVolumeIndexed(0, 1, 5, 3, &lb_domain) < 0) return 0;
+		if (lb_getTetraederVolumeIndexed(0, 6, 2, 3, &lb_domain) < 0) return 0;
+		if (lb_getTetraederVolumeIndexed(5, 3, 7, 6, &lb_domain) < 0) return 0;
+
 	} else if (lb_balancingType==0) {
-		/* rules that enforce communication with nearest
-		 * neighbors only in >>almost<< any case        */
+		/* rules that enforce communication with nearest neigbors*/
 		const real minCellSize = MIN(MIN(lb_cell_size.x, lb_cell_size.y), lb_cell_size.z);
 		const real minDistanceFromDividingPlane = minCellSize * 1.733;
-		const real minAngle = cos(22.5 * 3.141592654/180.);
-		const real warpMax =  sin(15 * 3.141592654/180.);
-		real a;
 
-		/*Check minimum distance from a corner to opposite faces*/
-		if (lb_getDistanceToPlane(0, 4, 1, 3, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(0, 1, 2, 6, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(0, 2, 4, 5, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(1, 0, 5, 7, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(1, 5, 3, 2, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(1, 3, 0, 4, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(2, 0, 3, 7, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(2, 3, 6, 4, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(2, 6, 0, 1, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(3, 1, 7, 6, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(3, 7, 2, 0, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(3, 2, 1, 5, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(4, 6, 5, 1, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(4, 5, 0, 2, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(4, 0, 6, 7, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(5, 1, 4, 6, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(5, 4, 7, 3, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(5, 7, 1, 0, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(6, 4, 2, 3, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(6, 2, 7, 5, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(6, 7, 4, 0, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(7, 5, 6, 2, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(7, 6, 3, 1, dom) < minDistanceFromDividingPlane) return 0;
-		if (lb_getDistanceToPlane(7, 3, 5, 4, dom) < minDistanceFromDividingPlane) return 0;
-		/* Check all 24 angles at all six faces, must not be smaller than the threshold to avoid
-		 * illegal geometries */
-		a = lb_angleCos(4, 0, 2, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(4, 0, 1, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(2, 0, 1, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(5, 1, 3, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(3, 1, 0, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(5, 1, 0, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(1, 3, 7, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(7, 3, 2, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(2, 3, 1, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(6, 2, 0, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(0, 2, 3, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(3, 2, 6, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(6, 4, 0, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(0, 4, 5, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(5, 4, 6, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(4, 5, 7, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(7, 5, 1, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(1, 5 ,4, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(6, 7, 5, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(5, 7, 3, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(3, 7, 6, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(7, 6, 4, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(2, 6, 7, dom); if (a>minAngle) return 0;
-		a = lb_angleCos(4, 6, 2, dom); if (a>minAngle) return 0;
+		//Prevent the collapse of the corners in the domain
+		//This would yield a topological different domain geometry
+		if (lb_getTetraederVolumeIndexed(0, 1, 4, 2, &lb_domain) < 0) return 0;
+		if (lb_getTetraederVolumeIndexed(1, 5, 4, 7, &lb_domain) < 0) return 0;
+		if (lb_getTetraederVolumeIndexed(2, 4, 6, 7, &lb_domain) < 0) return 0;
+		if (lb_getTetraederVolumeIndexed(2, 7, 3, 1, &lb_domain) < 0) return 0;
+		if (lb_getTetraederVolumeIndexed(0, 4, 6, 5, &lb_domain) < 0) return 0;
+		if (lb_getTetraederVolumeIndexed(0, 1, 5, 3, &lb_domain) < 0) return 0;
+		if (lb_getTetraederVolumeIndexed(0, 6, 2, 3, &lb_domain) < 0) return 0;
+		if (lb_getTetraederVolumeIndexed(5, 3, 7, 6, &lb_domain) < 0) return 0;
 
-		/*Check the warpage on the six faces*/
-		if (lb_computeWarpage(1, 0, 5, 4, dom) > warpMax) return 0;
-		if (lb_computeWarpage(3, 1, 7, 5, dom) > warpMax) return 0;
-		if (lb_computeWarpage(3, 2, 7, 6, dom) > warpMax) return 0;
-		if (lb_computeWarpage(2, 6, 0, 4, dom) > warpMax) return 0;
-		if (lb_computeWarpage(6, 4, 7, 5, dom) > warpMax) return 0;
-		if (lb_computeWarpage(2, 0, 3, 1, dom) > warpMax) return 0;
+		/*From each corner, six planes (the three faces on the original cube,
+		  eachsplit into two triangles) must have a minimum distance
+		  that guarantees that at least one cell is in between.*/
+		if (lb_getDistanceToPlane(0, 4, 6, 7, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(0, 4, 5, 7, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(0, 2, 3, 7, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(0, 2, 6, 7, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(0, 1, 3, 7, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(0, 1, 5, 7, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(1, 2, 7, 3, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(1, 7, 2, 6, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(1, 0, 6, 2, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(1, 0, 4, 6, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(1, 4, 6, 7, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(1, 4, 7, 5, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(2, 1, 3, 7, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(2, 1, 7, 5, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(2, 0, 1, 5, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(2, 0, 5, 4, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(2, 4, 5, 7, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(2, 4, 7, 6, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(3, 2, 0, 6, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(3, 0, 6, 4, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(3, 4, 7, 5, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(3, 4, 7, 6, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(3, 0, 1, 5, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(3, 0, 4, 5, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(4, 0, 1, 3, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(4, 0, 3, 2, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(4, 7, 6, 2, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(4, 7, 3, 2, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(4, 3, 1, 7, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(4, 1, 7, 5, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(5, 2, 3, 7, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(5, 2, 7, 6, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(5, 0, 6, 4, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(5, 0, 2, 6, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(5, 1, 0, 3, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(5, 3, 2, 0, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(6, 4, 5, 0, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(6, 0, 1, 5, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(6, 1, 7, 3, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(6, 1, 7, 5, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(6, 0, 2, 3, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(6, 3, 1, 0, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(7, 0, 3, 1, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(7, 0, 3, 2, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(7, 0, 6, 4, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(7, 0, 2, 6, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(7, 0, 1, 5, dom) < minDistanceFromDividingPlane) return 0;
+		if (lb_getDistanceToPlane(7, 0, 4, 5, dom) < minDistanceFromDividingPlane) return 0;
+
+
+//		const real minAngle = cos(22.5 * 3.141592654/180.);
+//		const real warpMax =  sin(15 * 3.141592654/180.);
+//		real a;
+//
+//		/*Check minimum distance from a corner to opposite faces*/
+//		if (lb_getDistanceToPlane(0, 4, 1, 3, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(0, 1, 2, 6, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(0, 2, 4, 5, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(1, 0, 5, 7, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(1, 5, 3, 2, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(1, 3, 0, 4, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(2, 0, 3, 7, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(2, 3, 6, 4, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(2, 6, 0, 1, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(3, 1, 7, 6, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(3, 7, 2, 0, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(3, 2, 1, 5, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(4, 6, 5, 1, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(4, 5, 0, 2, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(4, 0, 6, 7, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(5, 1, 4, 6, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(5, 4, 7, 3, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(5, 7, 1, 0, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(6, 4, 2, 3, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(6, 2, 7, 5, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(6, 7, 4, 0, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(7, 5, 6, 2, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(7, 6, 3, 1, dom) < minDistanceFromDividingPlane) return 0;
+//		if (lb_getDistanceToPlane(7, 3, 5, 4, dom) < minDistanceFromDividingPlane) return 0;
+//		/* Check all 24 angles at all six faces, must not be smaller than the threshold to avoid
+//		 * illegal geometries */
+//		a = lb_angleCos(4, 0, 2, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(4, 0, 1, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(2, 0, 1, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(5, 1, 3, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(3, 1, 0, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(5, 1, 0, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(1, 3, 7, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(7, 3, 2, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(2, 3, 1, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(6, 2, 0, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(0, 2, 3, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(3, 2, 6, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(6, 4, 0, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(0, 4, 5, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(5, 4, 6, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(4, 5, 7, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(7, 5, 1, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(1, 5 ,4, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(6, 7, 5, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(5, 7, 3, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(3, 7, 6, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(7, 6, 4, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(2, 6, 7, dom); if (a>minAngle) return 0;
+//		a = lb_angleCos(4, 6, 2, dom); if (a>minAngle) return 0;
+//
+//		/*Check the warpage on the six faces*/
+//		if (lb_computeWarpage(1, 0, 5, 4, dom) > warpMax) return 0;
+//		if (lb_computeWarpage(3, 1, 7, 5, dom) > warpMax) return 0;
+//		if (lb_computeWarpage(3, 2, 7, 6, dom) > warpMax) return 0;
+//		if (lb_computeWarpage(2, 6, 0, 4, dom) > warpMax) return 0;
+//		if (lb_computeWarpage(6, 4, 7, 5, dom) > warpMax) return 0;
+//		if (lb_computeWarpage(2, 0, 3, 1, dom) > warpMax) return 0;
 	}
 	return 1;
 }
