@@ -563,16 +563,11 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 	      KRAFT(p,i,Z) -= force_k.z;
 
 #ifdef P_AXIAL
-/*        tmp_vir_vect.x += d[k].x * force_k.x;
-        tmp_vir_vect.y += d[k].y * force_k.y;
-        tmp_vir_vect.z += d[k].z * force_k.z;
-*/
         tmp_vir_vect.x += d[k].x * force_k.x;
         tmp_vir_vect.y += d[k].y * force_k.y;
         tmp_vir_vect.z += d[k].z * force_k.z;
 
 #else
-/*        tmp_virial     += SPROD(d[k],force_k); */
         tmp_virial     += SPROD(d[k],force_k);
 #endif
 
