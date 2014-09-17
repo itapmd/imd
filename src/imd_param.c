@@ -4879,7 +4879,13 @@ void broadcast_params() {
   }
   MPI_Bcast( ms_r0,           ntypepairs, REAL,    0, MPI_COMM_WORLD);
 #endif
-
+  
+#ifdef KERMODE
+  MPI_Bcast( &yuk_beta,          1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &yuk_smoothlength,          1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &ke_rcut,          1,      REAL,    0, MPI_COMM_WORLD);
+#endif
+  
 #ifdef EPITAX
   MPI_Bcast( epitax_rate,     ntypes, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( epitax_type,     ntypes, REAL, 0, MPI_COMM_WORLD);

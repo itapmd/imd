@@ -289,7 +289,7 @@ void calc_forces(int steps)
   int dp_p_calc=0;		/* Calculate dipoles or keep them */
   /* TODO: Communicate! */
   int dp_converged=0;
-  real dp_sum_old, dp_sum=1.;
+  real dp_sum_old, dp_sum=1.,dp_sum_global=1.0;
 #ifndef KERMODE
   real max_diff=10.;
 #endif
@@ -1350,11 +1350,14 @@ void calc_forces(int steps)
 
   /* collect constant electric fields and dipole moments */
   send_forces(add_dipole,pack_dipole,unpack_add_dipole);
+ 
+ /*********************************  Dipole convergence starts here **************************** */ 
   
   if (dp_p_calc) {
     while (dp_converged==0) {
       dp_sum_old=dp_sum;
       dp_sum=0.0;
+      dp_sum_global=0.0;      
       n=0;
       /* Set field, dipoles */
       for (k=0; k<ncells; k++) { 
@@ -1542,21 +1545,26 @@ void calc_forces(int steps)
 	  }
 	}
       }
+#ifdef MPI
+      MPI_Allreduce(&dp_sum, &dp_sum_global, 1, REAL, MPI_SUM, MPI_COMM_WORLD);
+#else
+      dp_sum_global = dp_sum;
+#endif      
 #ifndef KERMODE
-      dp_sum /= 3.0*natoms;
+      dp_sum_global /= 3.0*natoms;
 #endif
 #ifdef KERMODE
-      dp_sum /= natoms;
+      dp_sum_global /= natoms;
 #endif
-      dp_sum=sqrt(dp_sum);
+      dp_sum_global=sqrt(dp_sum_global);
 #ifdef DEBUG
       printf("#dipole deviation at step %d: %g\n",steps,dp_sum);
 #endif /*DEBUG */
 #ifndef KERMODE
-      if ((dp_sum > max_diff) || ( dp_it>50)) { 
+      if ((dp_sum_global > max_diff) || ( dp_it>50)) { 
 #endif
 #ifdef KERMODE
-      if ((dp_sum > max_diff) || ( dp_it>60)) { 
+      if ((dp_sum_global > max_diff) || ( dp_it>60)) { 
 #endif
 	fprintf(stderr, "\n Convergence Error, dipole, step %d: ", \
 			steps);
@@ -1581,17 +1589,19 @@ void calc_forces(int steps)
 	}
 	send_cells(copy_pind,pack_pind,unpack_pind);
 	dp_converged=1;
-	dp_sum=1.;
+	dp_sum_global=1.;
       }
 /*       if  (fabs(dp_sum)-dp_sum_old) < dp_tol) /\* reasonable? *\/ */
       //printf("Sudheer-> dp_sum = %.17lf, dp_it=%d \n",dp_sum,dp_it);
-      if (dp_sum < dp_tol)
+      if (dp_sum_global < dp_tol)
 	dp_converged=1;
       dp_it++;
 
     } /* Dipole iteration */
   }
   /* DIPOLE interactions - for all atoms */
+  
+  /********************************  Dipole convergence ends here **************************** */ 
 
 #ifdef DEBUG
 /* Don't use this unless you are prepared for massive output */
