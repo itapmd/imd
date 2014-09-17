@@ -217,6 +217,12 @@ void init_cells( void )
       box_y.x * cell_scale.y, box_y.y * cell_scale.y, box_y.z * cell_scale.y,
       box_z.x * cell_scale.z, box_z.y * cell_scale.z, box_z.z * cell_scale.z);
 
+#ifdef LOADBALANCE
+  lb_cell_size.x = box_x.x * cell_scale.x + box_x.y * cell_scale.x + box_x.z * cell_scale.x;
+  lb_cell_size.y = box_y.x * cell_scale.y + box_y.y * cell_scale.y + box_y.z * cell_scale.y;
+  lb_cell_size.z = box_z.x * cell_scale.z + box_z.y * cell_scale.z + box_z.z * cell_scale.z;
+#endif
+
   if ((0 == myid ) && (0 == myrank))
     printf("Global cell array dimensions: %d %d %d\n",
       global_cell_dim.x,global_cell_dim.y,global_cell_dim.z);
@@ -306,6 +312,44 @@ void init_cells( void )
     printf("Computing with %d thread(s) per process.\n",omp_get_max_threads());
 #endif
 
+#ifdef LOADBALANCE
+  /* init the configuration of cells used in loadbalancing */
+	lb_cell_offset.x = my_coord.x * global_cell_dim.x / cpu_dim.x - 1;
+	lb_cell_offset.y = my_coord.y * global_cell_dim.y / cpu_dim.y - 1;
+	lb_cell_offset.z = my_coord.z * global_cell_dim.z / cpu_dim.z - 1;
+
+	for (i = 0; i < cell_dim.x; ++i) {
+		for (j = 0; j < cell_dim.y; ++j) {
+			for (k = 0; k < cell_dim.z; ++k) {
+				p = PTR_3D_V(cell_array, i, j, k, cell_dim);
+				p->lb_cell_type = LB_EMPTY_CELL;
+				p->lb_neighbor_index = -LB_EMPTY_CELL;
+				p->lb_cpu_affinity = -1;
+
+				if (i != 0 && j != 0 && k != 0 && i != cell_dim.x - 1
+						&& j != cell_dim.y - 1 && k != cell_dim.z - 1) {
+					p->lb_cell_type = LB_REAL_CELL;
+					p->lb_cpu_affinity = myid;
+					p->lb_neighbor_index = -LB_REAL_CELL;
+				} else {
+					if ( (pbc_dirs.x == 0 && my_coord.x == 0 && i == 0) ||
+							(pbc_dirs.x == 0 && my_coord.x == cpu_dim.x-1 && i == cell_dim.x - 1) ||
+							(pbc_dirs.y == 0 && my_coord.y == 0 && j == 0) ||
+							(pbc_dirs.y == 0 && my_coord.y == cpu_dim.y-1 && j == cell_dim.y - 1) ||
+							(pbc_dirs.z == 0 && my_coord.z == 0 && k == 0) ||
+							(pbc_dirs.z == 0 && my_coord.z == cpu_dim.z-1 && k == cell_dim.z - 1)){
+						p->lb_cell_type = LB_NON_PBC_BUFFER_CELL;
+						p->lb_neighbor_index = -LB_NON_PBC_BUFFER_CELL;
+						p->lb_cpu_affinity = myid;
+					} else {
+						p->lb_cell_type = LB_BUFFER_CELL;
+						p->lb_neighbor_index = -LB_BUFFER_CELL;
+					}
+				}
+			}
+		}
+	}
+#endif
   /* redistribute atoms */
   if (cell_array_old != NULL) {
     for (j=0; j < cell_dim_old.x; j++)
@@ -349,9 +393,11 @@ void init_cells( void )
 
 #endif
 
+#ifndef LOADBALANCE
     make_cell_lists();
     fix_cells();
-#ifdef MPI
+#endif
+#if defined(MPI) && !defined(LOADBALANCE)
     setup_buffers();
 #endif
   } else {
@@ -363,9 +409,20 @@ void init_cells( void )
     printf("********************************* \n");fflush(stdout);
     printf("    ************************* \n");fflush(stdout);
 #endif
-    
+#ifndef LOADBALANCE
     make_cell_lists();
+#endif    
   }
+#ifdef LOADBALANCE
+	setup_buffers();
+	init_loadBalance();
+	/* Create an inital list, interaction will be wrong, but cell list must exist before sync */
+	make_cell_lists();
+	lb_syncBufferCellAffinity();
+	make_cell_lists(); /*Now create the proper interactions */
+	setup_buffers();
+	fix_cells();
+#endif
 }
 
 
@@ -403,6 +460,29 @@ void make_cell_lists(void)
 
   nallcells = cell_dim.x * cell_dim.y * cell_dim.z;
 #ifdef BUFCELLS
+#ifdef LOADBALANCE
+  /* count real cells */
+  ncells = 0;
+  for (i=0; i<cell_dim.x; ++i)
+  	for (j=0; j<cell_dim.y; ++j)
+    	for (k=0; k<cell_dim.z; ++k){
+  			cell *c = PTR_3D_V(cell_array, i, j, k, cell_dim);
+  			if (c->lb_cell_type == LB_REAL_CELL)
+  				ncells++;
+  }
+
+  /* make list of inner cell indices */
+  cells  = (integer*) realloc( cells, ncells * sizeof(integer) );
+  l = 0;
+  for (i=cellmin.x; i<cellmax.x; ++i)
+    for (j=cellmin.y; j<cellmax.y; ++j)
+      for (k=cellmin.z; k<cellmax.z; ++k) {
+    	  cell *c = PTR_3D_V(cell_array, i, j, k, cell_dim);
+    	  if (c->lb_cell_type == LB_REAL_CELL)
+    	    cells[l++] = i * cell_dim.y * cell_dim.z + j * cell_dim.z + k;
+  }
+
+#else
   ncells = (cell_dim.x-2) * (cell_dim.y-2) * (cell_dim.z-2);
   /* make list of inner cell indices */
   cells  = (integer*) realloc( cells, ncells * sizeof(integer) );
@@ -411,6 +491,7 @@ void make_cell_lists(void)
     for (j=cellmin.y; j<cellmax.y; ++j)
       for (k=cellmin.z; k<cellmax.z; ++k)
         cells[l++] = i * cell_dim.y * cell_dim.z + j * cell_dim.z + k;
+#endif
 #else
   ncells = cell_dim.x * cell_dim.y * cell_dim.z;
 #endif
@@ -460,17 +541,26 @@ void make_cell_lists(void)
     for (j=cellmin.y; j<cellmax.y; ++j)
       for (k=cellmin.z; k<cellmax.z; ++k) {
 
+#ifdef LOADBALANCE
+    	cell *c = PTR_3D_V(cell_array, i, j, k, cell_dim);
+    	if (c->lb_cell_type != LB_REAL_CELL) continue;
+#endif
+
 #ifdef OMP
         if (i % 2 == 0) nnx =  9; else nnx = 10;
         if (j % 2 == 0) nny =  3; else nny =  4;
         if (k % 2 == 0) nnz =  1; else nnz =  2;
 #endif
-
+#ifdef LOADBALANCE
+	for (l=-1; l <= 1; ++l)
+	  for (m=-1; m <= 1; ++m)
+		for (n=-1; n <= 1; ++n) {
+#else
 	/* For half of the neighbours of this cell */
 	for (l=0; l <= 1; ++l)
 	  for (m=-l; m <= 1; ++m)
 	    for (n=(l==0 ? -m  : -l ); n <= 1; ++n) { 
-
+#endif
 #ifdef OMP
               /* array where to put the pairs */
               if (l==0) {
@@ -484,9 +574,34 @@ void make_cell_lists(void)
 #endif
 
 #ifdef BUFCELLS
+#ifdef LOADBALANCE
+              r = i+l + lb_cell_offset.x;
+              s = j+m + lb_cell_offset.y;
+              t = k+n + lb_cell_offset.z;
+
+              cell *c2 = PTR_3D_V(cell_array, i+l, j+m, k+n, cell_dim);
+              if (c2->lb_cell_type == LB_REAL_CELL){
+        		  if (l==-1 || (l==0 && m==-1) || (l==0 && m==0 && n==-1)) continue;
+        	  }
+              else if (c2->lb_cell_type == LB_BUFFER_CELL && lb_halfspaceLUT[c2->lb_cpu_affinity] == LB_SEND_CELL)
+              	  continue;
+#ifdef OMP
+			  /* Split interaction into 27 disjunct groups */
+			  /* decide which group it is based on the position of the */
+			  /* primary cell (odd or even) and interaction direction */
+              nn = 0;
+			  if (n==1) nn += 9*(k%2+1);
+			  else if (n==-1) nn += 27-9*(k%2+1);
+			  if (m==1) nn += 3*(j%2+1);
+			  else if (m==-1) nn += 9-3*(j%2+1);
+			  if (l==1) nn += (i%2+1);
+			  else if (l==-1) nn += 3-(i%2+1);
+#endif
+#else
               r = i+l - 1 + my_coord.x * (cell_dim.x - 2);
               s = j+m - 1 + my_coord.y * (cell_dim.y - 2);
               t = k+n - 1 + my_coord.z * (cell_dim.z - 2);
+#endif
 #else
               r = i+l;
               s = j+m;
@@ -547,17 +662,26 @@ void make_cell_lists(void)
     for (j=cellmin.y; j<cellmax.y; ++j)
       for (k=cellmin.z; k<cellmax.z; ++k) {
 
+#ifdef LOADBALANCE
+    	cell *c = PTR_3D_V(cell_array, i, j, k, cell_dim);
+    	if (c->lb_cell_type != LB_REAL_CELL) continue;
+#endif
+
 #ifdef OMP
         if (i % 2 == 0) nnx =  9; else nnx = 10;
         if (j % 2 == 0) nny =  3; else nny =  4;
         if (k % 2 == 0) nnz =  1; else nnz =  2;
 #endif
-
+#ifdef LOADBALANCE
+	for (l=-1; l <= 1; ++l)
+	  for (m=-1; m <= 1; ++m)
+		for (n=-1; n <= 1; ++n) {
+#else
 	/* for the other half of the neighbours of this cell */
 	for (l=0; l <= 1; ++l)
 	  for (m=-l; m <= 1; ++m)
 	    for (n=(l==0 ? -m  : -l ); n <= 1; ++n) { 
-
+#endif
               neigh.x = i-l;
               neigh.y = j-m;
               neigh.z = k-n;
@@ -574,12 +698,41 @@ void make_cell_lists(void)
               nn = 0;
 #endif
 
-              /* if second cell is a buffer cell */
-              if ((neigh.x == 0) || (neigh.x == cell_dim.x-1) || 
-                  (neigh.y == 0) || (neigh.y == cell_dim.y-1) ||
-                  (neigh.z == 0) || (neigh.z == cell_dim.z-1)) 
-              {
+
+#ifdef LOADBALANCE
+               /* if second cell is a buffer cell */
+              cell *c2 = PTR_3D_V(cell_array,  neigh.x, neigh.y, neigh.z, cell_dim);
+
+#ifdef OMP
+              nn = 0;
+			  if (n==-1) nn += 9*(k%2+1);
+			  else if (n==1) nn += 27-9*(k%2+1);
+			  if (m==-1) nn += 3*(j%2+1);
+			  else if (m==1) nn += 9-3*(j%2+1);
+			  if (l==-1) nn += (i%2+1);
+			  else if (l==1) nn += 3-(i%2+1);
+#endif
+
+              if (c2->lb_cell_type == LB_BUFFER_CELL && lb_halfspaceLUT[c2->lb_cpu_affinity] == LB_SEND_CELL ) {
                 /* Apply periodic boundaries */
+			    ipbc.x = 0; r = neigh.x + lb_cell_offset.x;
+			    if (r<0) ipbc.x--; else if (r>global_cell_dim.x-1) ipbc.x++;
+			    r = neigh.x;
+
+			    ipbc.y = 0; s = neigh.y + lb_cell_offset.y;
+			    if (s<0) ipbc.y--; else if (s>global_cell_dim.y-1) ipbc.y++;
+			    s = neigh.y;
+
+			    ipbc.z = 0; t = neigh.z + lb_cell_offset.z;
+			    if (t<0) ipbc.z--; else if (t>global_cell_dim.z-1) ipbc.z++;
+			    t = neigh.z;
+#else
+			    /* if second cell is a buffer cell */
+			    if ((neigh.x == 0) || (neigh.x == cell_dim.x-1) ||
+				    (neigh.y == 0) || (neigh.y == cell_dim.y-1) ||
+				    (neigh.z == 0) || (neigh.z == cell_dim.z-1))
+			    {
+				/* Apply periodic boundaries */
                 ipbc.x = 0; r = neigh.x - 1 + my_coord.x * (cell_dim.x - 2);
                 if (r<0) ipbc.x--; else if (r>global_cell_dim.x-1) ipbc.x++;
                 r = neigh.x;
@@ -591,6 +744,7 @@ void make_cell_lists(void)
                 ipbc.z = 0; t = neigh.z - 1 + my_coord.z * (cell_dim.z - 2);
                 if (t<0) ipbc.z--; else if (t>global_cell_dim.z-1) ipbc.z++;
                 t = neigh.z;
+#endif
 
                 if (((pbc_dirs.x==1) || (pbc_dirs.x==ipbc.x)) &&
                     ((pbc_dirs.y==1) || (pbc_dirs.y==ipbc.y)) &&
@@ -683,13 +837,34 @@ void make_cell_lists(void)
 
   nallcells = cell_dim.x * cell_dim.y * cell_dim.z;
   ncells = (cell_dim.x-2) * (cell_dim.y-2) * (cell_dim.z-2);
+
+#ifdef LOADBALANCE
+  /* count real cells */
+  ncells = 0;
+  for (i=0; i<cell_dim.x; ++i)
+	  for (j=0; j<cell_dim.y; ++j)
+		  for (k=0; k<cell_dim.z; ++k){
+			  cell *c = PTR_3D_V(cell_array, i, j, k, cell_dim);
+			  if (c->lb_cell_type == LB_REAL_CELL)
+				  ncells++;
+		  }
+#endif
+
   /* make list of inner cell indices */
   cells  = (integer*) realloc( cells, ncells * sizeof(integer) );
   l = 0;
   for (i=cellmin.x; i<cellmax.x; ++i)
     for (j=cellmin.y; j<cellmax.y; ++j)
       for (k=cellmin.z; k<cellmax.z; ++k)
+#ifdef LOADBALANCE
+    	{
+    	  cell *c = PTR_3D_V(cell_array, i, j, k, cell_dim);
+    	  if (c->lb_cell_type == LB_REAL_CELL)
+    	    cells[l++] = i * cell_dim.y * cell_dim.z + j * cell_dim.z + k;
+    	}
+#else
         cells[l++] = i * cell_dim.y * cell_dim.z + j * cell_dim.z + k;
+#endif
 
   ncells2 = ncells;
   cnbrs = (cell_nbrs_t *) realloc( cnbrs, nallcells * sizeof(cell_nbrs_t) );
@@ -700,11 +875,23 @@ void make_cell_lists(void)
   for (i=cellmin.x; i<cellmax.x; ++i)
     for (j=cellmin.y; j<cellmax.y; ++j)
       for (k=cellmin.z; k<cellmax.z; ++k) {
+#ifdef LOADBALANCE
+    	cell *c = PTR_3D_V(cell_array, i, j, k, cell_dim);
+    	if (c->lb_cell_type != LB_REAL_CELL) continue;
 
+    	for (nn=1; nn < NNBCELL; ++nn) CN->nq[nn] = -1;
+#endif
         CN->np = i * cell_dim.y * cell_dim.z + j * cell_dim.z + k;
         CN->nq[0] = CN->np;
         nn = 1;
 
+#ifdef LOADBALANCE
+    CN->nq[nn] = -1;
+    
+    for (l=-1; l <= 1; ++l)
+      for (m=-1; m <= 1; ++m)
+        for (n=-1; n <= 1; ++n)
+#else
 #ifdef AR
 	/* For half of the neighbours of this cell */
 	for (l=0; l <= 1; ++l)
@@ -716,6 +903,7 @@ void make_cell_lists(void)
 	  for (m=-1; m <= 1; ++m)
 	    for (n=-1; n <= 1; ++n) 
 #endif
+#endif
 	    {
               r = i+l;
               s = j+m;
@@ -724,11 +912,25 @@ void make_cell_lists(void)
               qq = r * cell_dim.y * cell_dim.z + s * cell_dim.z + t;
               if (qq==CN->np) continue;
 
+#ifdef LOADBALANCE
+              cell *c2 = PTR_3D_V(cell_array, r, s, t, cell_dim);
+			  if (c2->lb_cell_type == LB_REAL_CELL){
+				  if (l==-1 || (l==0 && m==-1) || (l==0 && m==0 && n==-1)) continue;
+			  }
+			  else if (c2->lb_cell_type == LB_BUFFER_CELL){
+				  if (lb_halfspaceLUT[c2->lb_cpu_affinity] != LB_SEND_FORCE) continue;
+			  }
+
+              /* apply periodic boundaries */
+              r += lb_cell_offset.x;
+              s += lb_cell_offset.y;
+              t += lb_cell_offset.z;
+#else
               /* apply periodic boundaries */
               r += -1 + my_coord.x * (cell_dim.x - 2);
               s += -1 + my_coord.y * (cell_dim.y - 2);
               t += -1 + my_coord.z * (cell_dim.z - 2);
-
+#endif
               ipbc.x = 0;
               if (r<0) ipbc.x--; else if (r>global_cell_dim.x-1) ipbc.x++;
 
@@ -756,32 +958,51 @@ void make_cell_lists(void)
   for (i=cellmin.x; i<cellmax.x; ++i)
     for (j=cellmin.y; j<cellmax.y; ++j)
       for (k=cellmin.z; k<cellmax.z; ++k) {
-
+#ifdef LOADBALANCE
+    	cell *c = PTR_3D_V(cell_array, i, j, k, cell_dim);
+    	if (c->lb_cell_type != LB_REAL_CELL) continue;
+#endif
         CN->np = i * cell_dim.y * cell_dim.z + j * cell_dim.z + k;
-        for (nn=0; nn<14; nn++) CN->nq[nn] = -1;
+        for (nn=0; nn<NNBCELL; nn++) CN->nq[nn] = -1;
         flag = 0;
         nn   = 0;
 
 	/* for the other half of the neighbours of this cell */
+#ifdef LOADBALANCE
+    for (l=-1; l <= 1; ++l)
+      for (m=-1; m <= 1; ++m)
+        for (n=-1; n <= 1; ++n) {
+#else
 	for (l=0; l <= 1; ++l)
 	  for (m=-l; m <= 1; ++m)
 	    for (n=(l==0 ? -m  : -l ); n <= 1; ++n) {
+#endif
               r = i-l;
               s = j-m;
               t = k-n;
 
+#ifdef LOADBALANCE
+              cell *c2 = PTR_3D_V(cell_array, r, s, t, cell_dim);
+              if (c2->lb_cell_type == LB_BUFFER_CELL && lb_halfspaceLUT[c2->lb_cpu_affinity] != LB_SEND_FORCE) {
+#else
               /* if second cell is a buffer cell */
               if ((r == 0) || (r == cell_dim.x-1) || 
                   (s == 0) || (s == cell_dim.y-1) ||
                   (t == 0) || (t == cell_dim.z-1)) {
-
+#endif
                 qq = r * cell_dim.y * cell_dim.z + s * cell_dim.z + t;
               
+#ifdef LOADBALANCE
+              /* apply periodic boundaries */
+              r += lb_cell_offset.x;
+              s += lb_cell_offset.y;
+              t += lb_cell_offset.z;
+#else
                 /* apply periodic boundaries */
                 r += -1 + my_coord.x * (cell_dim.x - 2);
                 s += -1 + my_coord.y * (cell_dim.y - 2);
                 t += -1 + my_coord.z * (cell_dim.z - 2);
-
+#endif
                 ipbc.x = 0;
                 if (r<0) ipbc.x--; else if (r>global_cell_dim.x-1) ipbc.x++;
 

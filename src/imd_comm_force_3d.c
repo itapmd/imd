@@ -22,6 +22,10 @@
 #define INDEXED_ACCESS
 #include "imd.h"
 
+#ifdef LOADBALANCE
+/* send_cells is located in imd_loadBalance_direct.c*/
+#else
+
 #ifdef SR
 
 /******************************************************************************
@@ -162,7 +166,7 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int, vektor),
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j) {
         (*copy_func)( 1, i, j, cell_dim.x-1, i, j, evec );
-#if !defined(AR) || defined(COVALENT) || defined(NNBR_TABLE)
+#if !defined(AR) || defined(COVALENT)
         (*copy_func)( cell_dim.x-2, i, j, 0, i, j, wvec );
 #endif
       }
@@ -183,7 +187,7 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int, vektor),
       for (j=0; j < cell_dim.z; ++j)
         (*unpack_func)( &recv_buf_west, cell_dim.x-1, i, j );
 
-#if !defined(AR) || defined(COVALENT) || defined(NNBR_TABLE)
+#if !defined(AR) || defined(COVALENT)
     /* copy west atoms into send buffer */
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j)
@@ -349,7 +353,7 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int, vektor),
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j) {
         (*copy_func)( 1, i, j, cell_dim.x-1, i, j, evec );
-#if !defined(AR) || defined(COVALENT) || defined(NNBR_TABLE)
+#if !defined(AR) || defined(COVALENT)
         (*copy_func)( cell_dim.x-2, i, j, 0, i, j, wvec );
 #endif
       }
@@ -363,7 +367,7 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int, vektor),
     irecv_buf( &recv_buf_west, nbwest, &reqwest[1] );
     isend_buf( &send_buf_east, nbeast, &reqwest[0] );
 
-#if !defined(AR) || defined(COVALENT) || defined(NNBR_TABLE)
+#if !defined(AR) || defined(COVALENT)
     /* copy west atoms into send buffer, send west*/
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j)
@@ -379,7 +383,7 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int, vektor),
       for (j=0; j < cell_dim.z; ++j)
         (*unpack_func)( &recv_buf_west, cell_dim.x-1, i, j );
 
-#if !defined(AR) || defined(COVALENT) || defined(NNBR_TABLE)
+#if !defined(AR) || defined(COVALENT)
     /* wait for atoms from east, move them to buffer cells*/
     MPI_Waitall(2, reqeast, stateast);
     recv_buf_east.n = 0;
@@ -392,7 +396,11 @@ void send_cells(void (*copy_func)  (int, int, int, int, int, int, vektor),
 }
 
 #endif /* not SR */
+#endif /*not LOADBALANCE*/
 
+#ifdef LOADBALANCE
+/* send_forces is located in imd_loadBalance_direct.c*/
+#else
 #ifdef SR
 
 /******************************************************************************
@@ -421,8 +429,8 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
   if (cpu_dim.x==1) {
     /* simply add east/west forces to original cells */
     for (i=0; i < cell_dim.y; ++i)
-      for (j=0; j < cell_dim.z; ++j) {
-#if defined(COVALENT) || defined(NNBR_TABLE)
+      for (j=0; j < cell_dim.z; ++j) { 
+#if defined(COVALENT)
         (*add_func)( 0, i, j, cell_dim.x-2, i, j );
 #endif
         (*add_func)( cell_dim.x-1, i, j, 1, i, j );
@@ -430,7 +438,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
   }
 #ifdef MPI
   else {
-#if defined(COVALENT) || defined(NNBR_TABLE)
+#if defined(COVALENT)
     /* copy east forces into send buffer */
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j)
@@ -581,7 +589,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
     /* simply add east/west forces to original cells */
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j) {
-#if defined(COVALENT) || defined(NNBR_TABLE) || defined KIM
+#if defined(COVALENT) || defined KIM
         (*add_func)( 0, i, j, cell_dim.x-2, i, j );
 #endif
         (*add_func)( cell_dim.x-1, i, j, 1, i, j );
@@ -589,7 +597,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
   }
 #ifdef MPI
   else {
-#if defined(COVALENT) || defined(NNBR_TABLE) || defined KIM
+#if defined(COVALENT) || defined KIM
     /* copy east forces into send buffer, send east */
     for (i=0; i < cell_dim.y; ++i)
       for (j=0; j < cell_dim.z; ++j)
@@ -605,7 +613,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
     irecv_buf( &recv_buf_east, nbeast, &reqeast[1] );
     isend_buf( &send_buf_west, nbwest, &reqeast[0] );
 
-#if defined(COVALENT) || defined(NNBR_TABLE) || defined KIM
+#if defined(COVALENT) || defined KIM
     /* wait for forces from west, add them to original cells */
     MPI_Waitall(2, reqwest, statwest);
     recv_buf_west.n = 0;
@@ -707,6 +715,7 @@ void send_forces(void (*add_func)   (int, int, int, int, int, int),
 }
 
 #endif /* not SR */
+#endif /*not LOADBALANCE*/
 
 /******************************************************************************
 *
@@ -718,7 +727,6 @@ void copy_cell( int k, int l, int m, int r, int s, int t, vektor v )
 {
   int i, count;
   minicell *from, *to;
-
   from = PTR_3D_V(cell_array, k, l, m, cell_dim);
   to   = PTR_3D_V(cell_array, r, s, t, cell_dim);
 
@@ -1838,3 +1846,369 @@ void unpack_add_sm_chi( msgbuf *b, int k, int l, int m )
 }
 
 #endif /* SM */
+
+#ifdef LOADBALANCE
+
+/* sync_cells is located in imd_loadBalance_direct.c*/
+
+#else
+#ifdef SR
+
+/******************************************************************************
+*
+*  Syncronize cells into buffer cells on neighboring CPUs.
+*  What exactly is sent is determined by the parameter functions.
+*  We use Steve Plimptons communication scheme: we send only along
+*  the main axis of the system, so that edge cells travel twice,
+*  and corner cells three times.
+*
+******************************************************************************/
+
+void sync_cells(void (*copy_func)  (int, int, int, int, int, int, vektor),
+                void (*pack_func)  (msgbuf*, int, int, int, vektor),
+                void (*unpack_func)(msgbuf*, int, int, int))
+{
+  int i,j;
+
+  vektor uvec={0,0,0}, dvec={0,0,0};
+  vektor nvec={0,0,0}, svec={0,0,0};
+  vektor evec={0,0,0}, wvec={0,0,0};
+
+#ifdef MPI
+  MPI_Status  stat;
+  empty_mpi_buffers();
+#endif
+
+#ifdef VEC
+  atoms.n_buf = atoms.n;
+#endif
+#ifdef NBLIST
+  if (pbc_dirs.x==1) {
+    if (my_coord.x==0) evec = box_x;
+    if (my_coord.x==cpu_dim.x-1) {
+      wvec.x = -box_x.x; wvec.y = -box_x.y; wvec.z = -box_x.z;
+    }
+  }
+  if (pbc_dirs.y==1) {
+    if (my_coord.y==0) nvec = box_y;
+    if (my_coord.y==cpu_dim.y-1) {
+      svec.x = -box_y.x; svec.y = -box_y.y; svec.z = -box_y.z;
+    }
+  }
+  if (pbc_dirs.z==1) {
+    if (my_coord.z==0) uvec = box_z;
+    if (my_coord.z==cpu_dim.z-1) {
+      dvec.x = -box_z.x; dvec.y = -box_z.y; dvec.z = -box_z.z;
+    }
+  }
+#endif
+
+  /* exchange up/down */
+  if (cpu_dim.z==1) {
+    /* simply copy up/down atoms to buffer cells */
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=1; j < cell_dim.y-1; ++j) {
+        (*copy_func)( i, j, 1, i, j, cell_dim.z-1, uvec );
+        (*copy_func)( i, j, cell_dim.z-2, i, j, 0, dvec );
+      }
+  }
+#ifdef MPI
+  else {
+    /* copy up atoms into send buffer */
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=1; j < cell_dim.y-1; ++j)
+        (*pack_func)( &send_buf_up, i, j, 1, uvec );
+
+    /* send up, receive down */
+    sendrecv_buf(&send_buf_up, nbup, &recv_buf_down, nbdown, &stat);
+
+    /* upack atoms from down */
+    recv_buf_down.n = 0;
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=1; j < cell_dim.y-1; ++j)
+        (*unpack_func)( &recv_buf_down, i, j, cell_dim.z-1 );
+
+    /* copy down atoms into send buffer */
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=1; j < cell_dim.y-1; ++j)
+        (*pack_func)( &send_buf_down, i, j, cell_dim.z-2, dvec );
+
+    /* send down, receive up */
+    sendrecv_buf(&send_buf_down, nbdown, &recv_buf_up, nbup, &stat);
+
+    /* unpack atoms from up */
+    recv_buf_up.n = 0;
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=1; j < cell_dim.y-1; ++j)
+        (*unpack_func)( &recv_buf_up, i, j, 0 );
+  }
+#endif
+
+  /* exchange north/south */
+  if (cpu_dim.y==1) {
+    /* simply copy north/south atoms to buffer cells */
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=0; j < cell_dim.z; ++j) {
+        (*copy_func)( i, 1, j, i, cell_dim.y-1, j, nvec );
+        (*copy_func)( i, cell_dim.y-2, j, i, 0, j, svec );
+      }
+  }
+#ifdef MPI
+  else {
+    /* copy north atoms into send buffer */
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=0; j < cell_dim.z; ++j)
+        (*pack_func)( &send_buf_north, i, 1, j, nvec );
+
+    /* send north, receive south */
+    sendrecv_buf(&send_buf_north, nbnorth, &recv_buf_south, nbsouth, &stat);
+
+    /* unpack atoms from south */
+    recv_buf_south.n = 0;
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=0; j < cell_dim.z; ++j)
+        (*unpack_func)( &recv_buf_south, i, cell_dim.y-1, j );
+
+    /* copy south atoms into send buffer */
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=0; j < cell_dim.z; ++j)
+        (*pack_func)( &send_buf_south, i, cell_dim.y-2, j, svec );
+
+    /* send south, receive north */
+    sendrecv_buf(&send_buf_south, nbsouth, &recv_buf_north, nbnorth, &stat);
+
+    /* unpack atoms from north */
+    recv_buf_north.n = 0;
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=0; j < cell_dim.z; ++j)
+        (*unpack_func)( &recv_buf_north, i, 0, j );
+  }
+#endif
+
+  /* exchange east/west */
+  if (cpu_dim.x==1) {
+    /* simply copy east/west atoms to buffer cells */
+    for (i=0; i < cell_dim.y; ++i)
+      for (j=0; j < cell_dim.z; ++j) {
+        (*copy_func)( 1, i, j, cell_dim.x-1, i, j, evec );
+        (*copy_func)( cell_dim.x-2, i, j, 0, i, j, wvec );
+      }
+  }
+#ifdef MPI
+  else {
+    /* copy east atoms into send buffer */
+    for (i=0; i < cell_dim.y; ++i)
+      for (j=0; j < cell_dim.z; ++j)
+        (*pack_func)( &send_buf_east, 1, i, j, evec );
+
+    /* send east, receive west */
+    sendrecv_buf(&send_buf_east, nbeast, &recv_buf_west, nbwest, &stat);
+
+    /* unpack atoms from west */
+    recv_buf_west.n = 0;
+    for (i=0; i < cell_dim.y; ++i)
+      for (j=0; j < cell_dim.z; ++j)
+        (*unpack_func)( &recv_buf_west, cell_dim.x-1, i, j );
+
+    /* copy west atoms into send buffer */
+    for (i=0; i < cell_dim.y; ++i)
+      for (j=0; j < cell_dim.z; ++j)
+        (*pack_func)( &send_buf_west, cell_dim.x-2, i, j, wvec );
+
+    /* send west, receive east */
+    sendrecv_buf(&send_buf_west, nbwest, &recv_buf_east, nbeast, &stat);
+
+    /* unpack atoms from east */
+    recv_buf_east.n = 0;
+    for (i=0; i < cell_dim.y; ++i)
+      for (j=0; j < cell_dim.z; ++j)
+        (*unpack_func)( &recv_buf_east, 0, i, j );
+  }
+#endif
+}
+
+
+#else /* not SR */
+
+/******************************************************************************
+*
+*  Syncronize cells into buffer cells on neighboring CPUs.
+*  What exactly is sent is determined by the parameter functions.
+*  We use Steve Plimptons communication scheme: we send only along
+*  the main axis of the system, so that edge cells travel twice,
+*  and corner cells three times.
+*
+******************************************************************************/
+
+void sync_cells(void (*copy_func)  (int, int, int, int, int, int, vektor),
+                void (*pack_func)  (msgbuf*, int, int, int, vektor),
+                void (*unpack_func)(msgbuf*, int, int, int))
+{
+  int i,j;
+
+  vektor uvec={0,0,0}, dvec={0,0,0};
+  vektor nvec={0,0,0}, svec={0,0,0};
+  vektor evec={0,0,0}, wvec={0,0,0};
+
+#ifdef MPI
+  MPI_Status  stateast[2],  statwest[2];
+  MPI_Status statnorth[2], statsouth[2];
+  MPI_Status    statup[2],  statdown[2];
+
+  MPI_Request  reqeast[2],   reqwest[2];
+  MPI_Request reqnorth[2],  reqsouth[2];
+  MPI_Request    requp[2],   reqdown[2];
+
+  empty_mpi_buffers();
+#endif
+
+#ifdef VEC
+  atoms.n_buf = atoms.n;
+#endif
+#ifdef NBLIST
+  if (pbc_dirs.x==1) {
+    if (my_coord.x==0) evec = box_x;
+    if (my_coord.x==cpu_dim.x-1) {
+      wvec.x = -box_x.x; wvec.y = -box_x.y; wvec.z = -box_x.z;
+    }
+  }
+  if (pbc_dirs.y==1) {
+    if (my_coord.y==0) nvec = box_y;
+    if (my_coord.y==cpu_dim.y-1) {
+      svec.x = -box_y.x; svec.y = -box_y.y; svec.z = -box_y.z;
+    }
+  }
+  if (pbc_dirs.z==1) {
+    if (my_coord.z==0) uvec = box_z;
+    if (my_coord.z==cpu_dim.z-1) {
+      dvec.x = -box_z.x; dvec.y = -box_z.y; dvec.z = -box_z.z;
+    }
+  }
+#endif
+
+  /* exchange up/down */
+  if (cpu_dim.z==1) {
+    /* simply copy up/down atoms to buffer cells*/
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=1; j < cell_dim.y-1; ++j) {
+        (*copy_func)( i, j, 1, i, j, cell_dim.z-1, uvec );
+        (*copy_func)( i, j, cell_dim.z-2, i, j, 0, dvec );
+      }
+  }
+#ifdef MPI
+  else {
+    /* copy up atoms into send buffer, send up */
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=1; j < cell_dim.y-1; ++j)
+        (*pack_func)( &send_buf_up, i, j, 1, uvec );
+    irecv_buf( &recv_buf_down , nbdown, &reqdown[1]);
+    isend_buf( &send_buf_up   , nbup  , &reqdown[0]);
+
+    /* copy down atoms into send buffer, send down */
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=1; j < cell_dim.y-1; ++j)
+        (*pack_func)( &send_buf_down, i, j, cell_dim.z-2, dvec );
+    irecv_buf( &recv_buf_up  , nbup  , &requp[1] );
+    isend_buf( &send_buf_down, nbdown, &requp[0] );
+
+    /* wait for atoms from down, move them to buffer cells */
+    MPI_Waitall(2, reqdown, statdown);
+    recv_buf_down.n = 0;
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=1; j < cell_dim.y-1; ++j)
+        (*unpack_func)( &recv_buf_down, i, j, cell_dim.z-1 );
+
+    /* wait for atoms from up, move them to buffer cells*/
+    MPI_Waitall(2, requp, statup);
+    recv_buf_up.n = 0;
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=1; j < cell_dim.y-1; ++j)
+        (*unpack_func)( &recv_buf_up, i, j, 0 );
+  }
+#endif
+
+  /* exchange north/south */
+  if (cpu_dim.y==1) {
+    /* simply copy north/south atoms to buffer cells */
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=0; j < cell_dim.z; ++j) {
+        (*copy_func)( i, 1, j, i, cell_dim.y-1, j, nvec );
+        (*copy_func)( i, cell_dim.y-2, j, i, 0, j, svec );
+      }
+  }
+#ifdef MPI
+  else {
+    /* copy north atoms into send buffer, send north */
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=0; j < cell_dim.z; ++j)
+        (*pack_func)( &send_buf_north, i, 1, j, nvec );
+    irecv_buf( &recv_buf_south, nbsouth, &reqsouth[1] );
+    isend_buf( &send_buf_north, nbnorth, &reqsouth[0] );
+
+    /* copy south atoms into send buffer, send south*/
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=0; j < cell_dim.z; ++j)
+        (*pack_func)( &send_buf_south, i, cell_dim.y-2, j, svec );
+    irecv_buf( &recv_buf_north, nbnorth, &reqnorth[1] );
+    isend_buf( &send_buf_south, nbsouth, &reqnorth[0] );
+
+    /* wait for atoms from south, move them to buffer cells */
+    MPI_Waitall(2, reqsouth, statsouth);
+    recv_buf_south.n = 0;
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=0; j < cell_dim.z; ++j)
+        (*unpack_func)( &recv_buf_south, i, cell_dim.y-1, j );
+
+    /* wait for atoms from north, move them to buffer cells*/
+    MPI_Waitall(2, reqnorth, statnorth);
+    recv_buf_north.n = 0;
+    for (i=1; i < cell_dim.x-1; ++i)
+      for (j=0; j < cell_dim.z; ++j)
+        (*unpack_func)( &recv_buf_north, i, 0, j );
+  }
+#endif
+
+  /* exchange east/west*/
+  if (cpu_dim.x==1) {
+  /* simply copy east/west atoms to buffer cells*/
+    for (i=0; i < cell_dim.y; ++i)
+      for (j=0; j < cell_dim.z; ++j) {
+        (*copy_func)( 1, i, j, cell_dim.x-1, i, j, evec );
+        (*copy_func)( cell_dim.x-2, i, j, 0, i, j, wvec );
+      }
+  }
+#ifdef MPI
+  else {
+  /* copy east atoms into send buffer, send east*/
+    for (i=0; i < cell_dim.y; ++i)
+      for (j=0; j < cell_dim.z; ++j)
+        (*pack_func)( &send_buf_east, 1, i, j, evec );
+    irecv_buf( &recv_buf_west, nbwest, &reqwest[1] );
+    isend_buf( &send_buf_east, nbeast, &reqwest[0] );
+
+    /* copy west atoms into send buffer, send west*/
+    for (i=0; i < cell_dim.y; ++i)
+      for (j=0; j < cell_dim.z; ++j)
+        (*pack_func)( &send_buf_west, cell_dim.x-2, i, j, wvec );
+    irecv_buf( &recv_buf_east, nbeast, &reqeast[1] );
+    isend_buf( &send_buf_west, nbwest, &reqeast[0] );
+
+    /* wait for atoms from west, move them to buffer cells*/
+    MPI_Waitall(2, reqwest, statwest);
+    recv_buf_west.n = 0;
+    for (i=0; i < cell_dim.y; ++i)
+      for (j=0; j < cell_dim.z; ++j)
+        (*unpack_func)( &recv_buf_west, cell_dim.x-1, i, j );
+
+    /* wait for atoms from east, move them to buffer cells*/
+    MPI_Waitall(2, reqeast, stateast);
+    recv_buf_east.n = 0;
+    for (i=0; i < cell_dim.y; ++i)
+      for (j=0; j < cell_dim.z; ++j)
+        (*unpack_func)( &recv_buf_east, 0, i, j );
+  }
+#endif
+}
+#endif
+
+#endif /*not LOADBALANCE*/

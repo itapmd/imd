@@ -73,3 +73,16 @@
 /* Definition of the value that should be minimized */
 #define CGE  0 /* completely based on energy, no use of gradient information */
 #define CGEF 1 /* minimization of epot, but uses gradient information */
+
+#ifdef LOADBALANCE
+#define LB_REAL_CELL 1
+#define LB_BUFFER_CELL 2
+#define LB_EMPTY_CELL 3
+#define LB_NON_PBC_BUFFER_CELL 4
+#define LB_CELL_SUBLEVELS 11 /*each cell is divided into sublevels for finer approximations of cpu domains*/
+
+#define LB_SEND_FORCE   1
+#define LB_SEND_CELL    2
+#define LB_DONT_SEND    0
+
+#endif

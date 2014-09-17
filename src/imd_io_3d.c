@@ -562,6 +562,10 @@ void read_atoms_cleanup(void)
     }
 #ifdef MPI
     MPI_Bcast( num_ssort, nsuperatoms, MPI_LONG, 0, MPI_COMM_WORLD);
+    if (!parallel_input){
+      	// distribute masses of superatoms if input is not read in parallel
+     	MPI_Bcast( supermass, nsuperatoms, REAL, 0 , MPI_COMM_WORLD);
+    }
 #endif
 
     if (0==myid) {
@@ -817,6 +821,10 @@ void write_atoms_config(FILE *out)
 	  data[n++].r = (real) crist;
 	}
 #endif
+#ifdef LOADBALANCE
+	if (lb_writeStatus)
+	  data[n++].r = (real) myid;
+#endif
         len += n * sizeof(i_or_r);
       }
       else {
@@ -905,6 +913,10 @@ void write_atoms_config(FILE *out)
 #ifdef CNA
 	if (cna_crist>0) 
 	  len += sprintf(outbuf+len, " %d", crist);
+#endif
+#ifdef LOADBALANCE
+	if (lb_writeStatus)
+		len += sprintf(outbuf+len, " %i", myid);
 #endif
         len += sprintf(outbuf+len,"\n");
       }

@@ -1582,51 +1582,98 @@ void init_tersoffmod(void) {
 void do_neightab_complete() {
 #ifndef COVALENT
 	vektor pbc = {0.0, 0.0, 0.0}; /* atoms in buffer cells have pbc applied */
-	int c1, c2, i, k;
+	int i, k, x,y,z;
+	minicell *cell;
 	if (nnbr_done == 0) { /*Check if already computed in this step*/
+#ifdef MPI
+	if (1==parallel_output) fix_cells();
+#endif
 		/*null the old list*/
 		for (k = 0; k < nallcells; k++) {
-			cell *p = cell_array + k;
+			minicell *p = cell_array + k;
 			for (i = 0; i < p->n; i++) {
 				NEIGH(p, i)->n = 0;
 			}
 		}
-#ifdef NBLIST
-		for (k=0; k<ncells; k++) {
-			c1 = cnbrs[k].np;
-			for (i=0; i<14; i++) {
-				c2 = cnbrs[k].nq[i];
-				if (c2<0) continue;
-				do_neightab2(cell_array + c1, cell_array + c2, pbc);
+
+		sync_cells(copy_cell,pack_cell,unpack_cell);
+
+		/*
+		 * constant cell offset to 14 neighbors
+		 * the complete neighbor builder creates even neighbor-lists
+		 * between two buffers cells to ensure correctness for
+		 * neighbors of neighbors (provided the is cutoff chosen large enough)
+		 */
+		int cOff[14][3];
+		cOff[0][0]  = 0;	cOff[0][1]  =  0;	cOff[0][2]  =  0;
+		cOff[1][0]  = 0;	cOff[1][1]  =  0;	cOff[1][2]  =  1;
+		cOff[2][0]  = 0;	cOff[2][1]  =  1;	cOff[2][2]  = -1;
+		cOff[3][0]  = 0;	cOff[3][1]  =  1;	cOff[3][2]  =  0;
+		cOff[4][0]  = 0;	cOff[4][1]  =  1;	cOff[4][2]  =  1;
+		cOff[5][0]  = 1;	cOff[5][1]  = -1;	cOff[5][2]  = -1;
+		cOff[6][0]  = 1;	cOff[6][1]  = -1;	cOff[6][2]  =  0;
+		cOff[7][0]  = 1;	cOff[7][1]  = -1;	cOff[7][2]  =  1;
+		cOff[8][0]  = 1;	cOff[8][1]  =  0;	cOff[8][2]  = -1;
+		cOff[9][0]  = 1;	cOff[9][1]  =  0;	cOff[9][2]  =  0;
+		cOff[10][0] = 1;	cOff[10][1] =  0;	cOff[10][2] =  1;
+		cOff[11][0] = 1;	cOff[11][1] =  1;	cOff[11][2] = -1;
+		cOff[12][0] = 1;	cOff[12][1] =  1;	cOff[12][2] =  0;
+		cOff[13][0] = 1;	cOff[13][1] =  1;	cOff[13][2] =  1;
+
+		for (x=0;x<cell_dim.x; x++){
+			for (y=0;y<cell_dim.y; y++){
+				for (z=0;z<cell_dim.z; z++){
+					cell = PTR_3D_V(cell_array, x, y, z, cell_dim);
+					for (i=0; i<14; i++){
+						int x2, y2, z2;
+						x2 = x + cOff[i][0];
+						y2 = y + cOff[i][1];
+						z2 = z + cOff[i][2];
+
+						if (x2 >= 0 && x2 < cell_dim.x && y2 >= 0 && y2 < cell_dim.y && z2 >= 0 && z2 < cell_dim.z){
+#ifndef NBLIST
+							/*PBC handling at the cell along periodic boundaries*/
+							pbc.x = 0.0; pbc.y = 0.0; pbc.z = 0.0;
+
+							if (pbc_dirs.x) {
+								if (my_coord.x==0 && x==1 && x2==0)
+									pbc.x = -(box_x.x + box_y.x + box_z.x);
+								else if (my_coord.x==0 && x==0 && x2==1)
+									pbc.x = +(box_x.x + box_y.x + box_z.x);
+								else if (my_coord.x==cpu_dim.x-1 && x==cell_dim.x-1 && x2==cell_dim.x-2)
+									pbc.x = -(box_x.x + box_y.x + box_z.x);
+								else if (my_coord.x==cpu_dim.x-1 && x==cell_dim.x-2 && x2==cell_dim.x-1)
+									pbc.x = +(box_x.x + box_y.x + box_z.x);
+							}
+
+							if (pbc_dirs.y) {
+								if (my_coord.y==0 && y==1 && y2==0)
+									pbc.y = -(box_x.y + box_y.y + box_z.y);
+								else if (my_coord.y==0 && y==0 && y2==1)
+									pbc.y = +(box_x.y + box_y.y + box_z.y);
+								else if (my_coord.y==cpu_dim.y-1 && y==cell_dim.y-1 && y2==cell_dim.y-2)
+									pbc.y = -(box_x.y + box_y.y + box_z.y);
+								else if (my_coord.y==cpu_dim.y-1 && y==cell_dim.y-2 && y2==cell_dim.y-1)
+									pbc.y = +(box_x.y + box_y.y + box_z.y);
+							}
+
+							if (pbc_dirs.z) {
+								if (my_coord.z==0 && z==1 && z2==0)
+									pbc.z = -(box_x.z + box_y.z + box_z.z);
+								else if (my_coord.z ==0 && z==0 && z2==1)
+									pbc.z = +(box_x.z + box_y.z + box_z.z);
+								else if (my_coord.z==cpu_dim.z-1 && z==cell_dim.z-1 && z2==cell_dim.z-2)
+									pbc.z = -(box_x.z + box_y.z + box_z.z);
+								else if (my_coord.z==cpu_dim.z-1 && z==cell_dim.z-2 && z2==cell_dim.z-1)
+									pbc.z = +(box_x.z + box_y.z + box_z.z);
+							}
+#endif
+							do_neightab2(cell, PTR_3D_V(cell_array, x2, y2, z2, cell_dim), pbc);
+						}
+					}
+				}
 			}
 		}
-		for (k=ncells; k<ncells2; k++) {
-			c1 = cnbrs[k].np;
-			for (i=0; i<14; i++) {
-				c2 = cnbrs[k].nq[i];
-				if (c2<0) continue;
-				do_neightab2(cell_array + c1, cell_array + c2, pbc);
-			}
-		}
-#else
-		/* compute neighbor lists for all pairs of cells */
-		for (i=0; i<nlists; ++i) {
-			for (k = 0; k < npairs[i]; ++k) {
-				pair *P = pairs[i] + k;
-				pbc.x = P->ipbc[0] * box_x.x + P->ipbc[1] * box_y.x + P->ipbc[2] * box_z.x;
-				pbc.y = P->ipbc[0] * box_x.y + P->ipbc[1] * box_y.y + P->ipbc[2] * box_z.y;
-				pbc.z = P->ipbc[0] * box_x.z + P->ipbc[1] * box_y.z + P->ipbc[2] * box_z.z;
-				do_neightab2(cell_array + P->np, cell_array + P->nq, pbc);
-			}
-			for (k = npairs[i]; k < npairs2[i]; ++k) {
-				pair *P = pairs[i] + k;
-				pbc.x = P->ipbc[0] * box_x.x + P->ipbc[1] * box_y.x + P->ipbc[2] * box_z.x;
-				pbc.y = P->ipbc[0] * box_x.y + P->ipbc[1] * box_y.y + P->ipbc[2] * box_z.y;
-				pbc.z = P->ipbc[0] * box_x.z + P->ipbc[1] * box_y.z + P->ipbc[2] * box_z.z;
-				do_neightab2(cell_array + P->np, cell_array + P->nq, pbc);
-			}
-		}
-#endif /*NBLIST*/
 		nnbr_done = 1;
 	}
 #endif /*COVALENT*/
@@ -1654,18 +1701,11 @@ void do_neightab2(cell *p, cell *q, vektor pbc)
     tmp_d.z = ORT(p,i,Z) - pbc.z;
 	p_typ   = SORTE(p,i);
 
-#ifdef TWOD
-    jstart = (((p==q) && (pbc.x==0) && (pbc.y==0))               ? i+1 : 0);
-#else
     jstart = (((p==q) && (pbc.x==0) && (pbc.y==0) && (pbc.z==0)) ? i+1 : 0);
-#endif
     qptr   = &ORT(q,jstart,X);
 
     /* For each atom in neighboring cell */
     for (j = jstart; j < q->n; ++j) {
-
-	  q_typ = SORTE(q,j);
-	  
       /* Calculate distance  */
       d.x = *qptr++ - tmp_d.x;
       d.y = *qptr++ - tmp_d.y;
@@ -1683,10 +1723,10 @@ void do_neightab2(cell *p, cell *q, vektor pbc)
         if (neigh->n_max <= neigh->n) {
           increase_neightab( neigh, neigh->n_max + NEIGH_LEN_INC );
         }
-        neigh->typ[neigh->n] = q_typ;
+        neigh->typ[neigh->n] = SORTE(q,j);
         neigh->cl [neigh->n] = q;
         neigh->num[neigh->n] = j;
-        tmp_ptr  = &neigh->dist[3*neigh->n];
+        tmp_ptr  = &neigh->dist[DIM*neigh->n];
         *tmp_ptr = d.x; ++tmp_ptr;
         *tmp_ptr = d.y; ++tmp_ptr;
         *tmp_ptr = d.z;
@@ -1700,7 +1740,7 @@ void do_neightab2(cell *p, cell *q, vektor pbc)
         neigh->typ[neigh->n] = p_typ;
         neigh->cl [neigh->n] = p;
         neigh->num[neigh->n] = i;
-        tmp_ptr  = &neigh->dist[3*neigh->n];
+        tmp_ptr  = &neigh->dist[DIM*neigh->n];
         *tmp_ptr = -d.x; ++tmp_ptr;
         *tmp_ptr = -d.y; ++tmp_ptr;
         *tmp_ptr = -d.z;

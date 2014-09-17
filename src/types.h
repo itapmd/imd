@@ -300,7 +300,13 @@ typedef struct {
 #ifdef NYETENSOR
   nyeTensorInfo **nyeTens;
 #endif
-
+#ifdef LOADBALANCE
+  int lb_cell_type;
+  int lb_cpu_affinity;		/* the content of a cell is stored on the CPU with this id */
+  int lb_neighbor_index;	/* indicates the neighboring CPU in cartesian space,
+  	  	  	  	  	  	  	 * required to distinguish different direction in case of less than
+  	  	  	  	  	  	  	 * three CPUs in one direction */
+#endif
 } cell;
 
 typedef cell* cellptr;
@@ -449,3 +455,20 @@ typedef struct {
   double total;             /* accumulation of (stop_time - start_time) */
 } imd_timer;
 
+#ifdef LOADBALANCE
+typedef struct {
+	 vektor p;
+	 ivektor index;
+	 vektor discretizedP;
+	 ivektor fixed;
+	 vektor ref;
+} lb_domainCornerInfo;
+
+typedef struct {
+	lb_domainCornerInfo corners[8];
+	ivektor normals[12];	/* Cache for normal vektors on the CPU boundary faces,
+								each face is decomposed into two triangles*/
+	int faceConvexity[6];	/* Cache for storing "the volume" of a face, if positive the face (=two triangles) on the domain
+								is convex, if negative concave, or 0 if it is a plane*/
+} lb_domainInfo;
+#endif

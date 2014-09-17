@@ -235,40 +235,11 @@ int matrixInverse(real m[3][3]){
  * match the local configuration of nearest neighbor bonds to a reference structure
  */
 void calculateLcm(cell *p, int n) {
-	int i, j, ii, invertible, best;
+	int i, j, invertible, best;
 	real l, bestAngle, angle;
 	int nneigh = NEIGH(p, n)->n;
-	real neigh[nneigh][3];
 	nyeTensorInfo *nti;
 	real *nei;
-
-	for (i = 0; i < nneigh; i++) {
-		cell *q = NEIGH(p, n)->cl[i];
-		ii = NEIGH(p, n)->num[i];
-
-		neigh[i][0] = ORT(q,ii,X) - ORT(p,n,X);
-		neigh[i][1] = ORT(q,ii,Y) - ORT(p,n,Y);
-		neigh[i][2] = ORT(q,ii,Z) - ORT(p,n,Z);
-
-		if (pbc_dirs.x) {
-			if (neigh[i][0] < -box_x.x * 0.5)
-				neigh[i][0] += box_x.x;
-			else if (neigh[i][0] > box_x.x * 0.5)
-				neigh[i][0] -= box_x.x;
-		}
-		if (pbc_dirs.y) {
-			if (neigh[i][1] < -box_y.y * 0.5)
-				neigh[i][1] += box_y.y;
-			else if (neigh[i][1] > box_y.y * 0.5)
-				neigh[i][1] -= box_y.y;
-		}
-		if (pbc_dirs.z) {
-			if (neigh[i][2] < -box_z.z * 0.5)
-				neigh[i][2] += box_z.z;
-			else if (neigh[i][2] > box_z.z * 0.5)
-				neigh[i][2] -= box_z.z;
-		}
-	}
 
 	real a[3][3] = {{0.,0.,0.},{0.,0.,0.},{0.,0.,0.}};
 	real b[3][3] = {{0.,0.,0.},{0.,0.,0.},{0.,0.,0.}};
@@ -276,7 +247,7 @@ void calculateLcm(cell *p, int n) {
 	for (i = 0; i < nneigh; i++) {
 		bestAngle = -1.;
 		best = 0;
-		nei = neigh[i];
+		nei = &(NEIGH(p,n)->dist[3*i]);
 		l = SQRT(SPRODA3D(nei,nei));
 		for (j = 0; j < neighPerfLength; j++) {
 			angle = SPRODA3D(nei, neighPerf[j]) / (l*neighPerfDistance[j]);
@@ -329,7 +300,6 @@ void calculateLcm(cell *p, int n) {
 void calculateNye(cell *p, int n){
 	int i, j, ii, k;
 	int nneigh = NEIGH(p, n)->n;
-	real neigh[nneigh][3];
 	real neighT[nneigh][3][3];
 	real grd[3][3][3];
 	nyeTensorInfo *nti, *ntiNeigh;
@@ -338,45 +308,19 @@ void calculateNye(cell *p, int n){
 	nti = NYE(p,n);
 
 	for (i = 0; i < nneigh; i++) {
-		cell *q = NEIGH(p, n)->cl[i];
-		ii = NEIGH(p, n)->num[i];
+		real *ptr = &(NEIGH(p,n)->dist[3*i]);
 
-		neigh[i][0] = ORT(q,ii,X) - ORT(p,n,X);
-		neigh[i][1] = ORT(q,ii,Y) - ORT(p,n,Y);
-		neigh[i][2] = ORT(q,ii,Z) - ORT(p,n,Z);
+		neighT[i][0][0] = ptr[0] * ptr[0];
+		neighT[i][0][1] = ptr[0] * ptr[1];
+		neighT[i][0][2] = ptr[0] * ptr[2];
 
-		if (pbc_dirs.x) {
-			if (neigh[i][0] < -box_x.x * 0.5)
-				neigh[i][0] += box_x.x;
-			else if (neigh[i][0] > box_x.x * 0.5)
-				neigh[i][0] -= box_x.x;
-		}
-		if (pbc_dirs.y) {
-			if (neigh[i][1] < -box_y.y * 0.5)
-				neigh[i][1] += box_y.y;
-			else if (neigh[i][1] > box_y.y * 0.5)
-				neigh[i][1] -= box_y.y;
-		}
-		if (pbc_dirs.z) {
-			if (neigh[i][2] < -box_z.z * 0.5)
-				neigh[i][2] += box_z.z;
-			else if (neigh[i][2] > box_z.z * 0.5)
-				neigh[i][2] -= box_z.z;
-		}
-	}
+		neighT[i][1][0] = ptr[1] * ptr[0];
+		neighT[i][1][1] = ptr[1] * ptr[1];
+		neighT[i][1][2] = ptr[1] * ptr[2];
 
-	for (i = 0; i < nneigh; i++) {
-		neighT[i][0][0] = neigh[i][0] * neigh[i][0];
-		neighT[i][0][1] = neigh[i][0] * neigh[i][1];
-		neighT[i][0][2] = neigh[i][0] * neigh[i][2];
-
-		neighT[i][1][0] = neigh[i][1] * neigh[i][0];
-		neighT[i][1][1] = neigh[i][1] * neigh[i][1];
-		neighT[i][1][2] = neigh[i][1] * neigh[i][2];
-
-		neighT[i][2][0] = neigh[i][2] * neigh[i][0];
-		neighT[i][2][1] = neigh[i][2] * neigh[i][1];
-		neighT[i][2][2] = neigh[i][2] * neigh[i][2];
+		neighT[i][2][0] = ptr[2] * ptr[0];
+		neighT[i][2][1] = ptr[2] * ptr[1];
+		neighT[i][2][2] = ptr[2] * ptr[2];
 	}
 
 	for (i = 0; i < 3; i++) {
@@ -403,9 +347,11 @@ void calculateNye(cell *p, int n){
 
 				de = ntiNeigh->lcm[i][j] - e0;
 
-				c[0] += neigh[k][0] * de;
-				c[1] += neigh[k][1] * de;
-				c[2] += neigh[k][2] * de;
+				real *ptr = &(NEIGH(p,n)->dist[3*k]);
+
+				c[0] += ptr[0] * de;
+				c[1] += ptr[1] * de;
+				c[2] += ptr[2] * de;
 			}
 
 			matrixInverse(a);
@@ -696,7 +642,7 @@ void calculateBurgersVector(real nnDist, cell *central, int centralInd, cell **n
 /******************************************************************************
 *  pack nyeTensorInfo from buffer cell into MPI buffer
 ******************************************************************************/
-void pack_nyeTensorInfo(msgbuf *b, int k, int l, int m) {
+void pack_nyeTensorInfo(msgbuf *b, int k, int l, int m, vektor v) {
 	int i, j = b->n;
 	minicell *from;
 
@@ -785,7 +731,7 @@ void unpack_nyeTensorInfo(msgbuf *b, int k, int l, int m) {
 		error("Buffer overflow in unpack_nyeTensorInfo - increase msgbuf_size");
 }
 
-void copy_nyeTensorInfo(int k, int l, int m, int r, int s, int t) {
+void copy_nyeTensorInfo(int k, int l, int m, int r, int s, int t, vektor v) {
 	int i;
 	minicell *from, *to;
 
@@ -822,12 +768,7 @@ void copy_nyeTensorInfo(int k, int l, int m, int r, int s, int t) {
 }
 
 void calculateNyeTensorData(){
-	int k,i,j,ii,l,iii,m;
-
-	cell *neiCells[100];
-	int neighIndices[100];
-	int numNeighs;
-	int ok, nneigh1, nneigh2;
+	int k;
 	int dir1[3];
 	int dir2[3];
 	int dir3[3];
@@ -845,7 +786,7 @@ void calculateNyeTensorData(){
 	 */
 	for (k = 0; k < ncells; k++) {
 		cell *p = CELLPTR(k);
-
+		int i;
 		for (i = 0; i < p->n; i++) {
 			if (HOPSTODEFECT(p,i) <= 3)
 			{
@@ -856,13 +797,14 @@ void calculateNyeTensorData(){
 	}
 
 	/*Exchange LCM between cells*/
-	send_fromCellsToBuffer(copy_nyeTensorInfo,pack_nyeTensorInfo,unpack_nyeTensorInfo);
+	sync_cells(copy_nyeTensorInfo,pack_nyeTensorInfo,unpack_nyeTensorInfo);
 
 	/**
 	 * Calculate the nye tensor
 	 */
 	for (k = 0; k < ncells; k++) {
 		cell *p = CELLPTR(k);
+		int i;
 		for (i = 0; i < p->n; i++) {
 			if (HOPSTODEFECT(p, i) <= 2)
 			{
@@ -872,10 +814,15 @@ void calculateNyeTensorData(){
 	}
 
 	/*Exchange nye tensor between cells*/
-	send_fromCellsToBuffer(copy_nyeTensorInfo,pack_nyeTensorInfo,unpack_nyeTensorInfo);
+	sync_cells(copy_nyeTensorInfo,pack_nyeTensorInfo,unpack_nyeTensorInfo);
 
 	/*Calculate lineSense and burgers vectors for defects*/
 	for (k = 0; k < ncells; k++) {
+		cell *neiCells[14*14];
+		int neighIndices[14*14];
+		int ok, nneigh1, nneigh2;
+		int i,j;
+
 		cell *p = CELLPTR(k);
 		for (i = 0; i < p->n; i++) {
 			if ( ADATYPE(p, i) != ada_default_type &&
@@ -884,7 +831,7 @@ void calculateNyeTensorData(){
 				{
 				nyeTensorInfo *info = NYE(p,i);
 				/*Copy the central atom, its nearest neighbors and their nearest neighbors into a list*/
-				numNeighs = 0;
+				int numNeighs = 0;
 				/*Add the central atom*/
 				neiCells[numNeighs] = p;
 				neighIndices[numNeighs] = i;
@@ -894,9 +841,8 @@ void calculateNyeTensorData(){
 				nneigh1 = NEIGH(p, i)->n;
 				for (j = 0; j < nneigh1; j++) {
 					cell *q = NEIGH(p, i)->cl[j];
-					ii = NEIGH(p, i)->num[j];
 					neiCells[numNeighs] = q;
-					neighIndices[numNeighs] = ii;
+					neighIndices[numNeighs] = NEIGH(p, i)->num[j];
 					numNeighs++;
 				}
 
@@ -904,13 +850,15 @@ void calculateNyeTensorData(){
 				nneigh1 = NEIGH(p, i)->n;
 				for (j = 0; j < nneigh1; j++) {
 					cell *q = NEIGH(p, i)->cl[j];
-					ii = NEIGH(p, i)->num[j];
+					int ii = NEIGH(p, i)->num[j];
 					nneigh2 = NEIGH(q, ii)->n;
+					int l;
 					for (l = 0; l < nneigh2; l++) {
 						cell *r = NEIGH(q, ii)->cl[l];
-						iii = NEIGH(q, ii)->num[l];
+						int iii = NEIGH(q, ii)->num[l];
 						/*Test if this atom is already inserted in the list*/
 						ok = 1;
+						int m;
 						for (m=0; m<numNeighs;m++){
 							if (neiCells[m] == r && neighIndices[m] == iii){
 								ok = 0;
@@ -918,7 +866,7 @@ void calculateNyeTensorData(){
 							}
 						}
 						/*If not insert it too*/
-						if (ok){
+						if (ok && NYE(r,iii) != NULL){
 							neiCells[numNeighs] = r;
 							neighIndices[numNeighs] = iii;
 							numNeighs++;
@@ -953,7 +901,7 @@ void calculateNyeTensorData(){
 	/*Remove rbv with an insignificant burgers vector*/
 	for (k = 0; k < ncells; k++) {
 			cell *p = CELLPTR(k);
-
+			int i;
 			for (i = 0; i < p->n; i++) {
 				nyeTensorInfo *info = NYE(p,i);
 				if (info != NULL){
