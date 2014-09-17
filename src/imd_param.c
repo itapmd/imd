@@ -4847,7 +4847,7 @@ void broadcast_params() {
   }
   MPI_Bcast( dp_alpha,            ntypes, REAL,    0, MPI_COMM_WORLD);
 #endif
-#if defined(DIPOLE) || defined(DIPOLE) || defined(MORSE)
+#if defined(DIPOLE) || defined(KERMODE) || defined(MORSE)
   if (NULL==ms_D) {
     ms_D = (real *) malloc( ntypepairs * sizeof(real) );
     if (NULL==ms_D)
