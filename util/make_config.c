@@ -18,6 +18,9 @@
 * $Date$
 ******************************************************************************/
 
+/* Make compiler happy */
+char *strdup(const char* s);
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -58,10 +61,12 @@ void usage()
   printf("    - nacl       NaCl structure\n");
   printf("    - diamond    cubic diamond structure\n");
   printf("    - zincblende zincblende structure\n");
-  printf("    - lav        cubic C15 Laves structure (MgCu2)\n\n");
-  printf("   Options:  -s <sx> <sy> [<sz>]  size in unit cells (default 1)\n");
-  printf("             -a <a>               lattice constant (default 1.0)\n");
-  printf("             -m <m0> [<m1>]       mass(es)         (default 1.0)\n");
+  printf("    - lav        cubic C15 Laves structure (MgCu2)\n");
+  printf("    - random     random structure\n\n");
+  printf("   Options:  -s <sx> <sy> [<sz>]  size in unit cells                   (default 1)\n");
+  printf("             -a <a>               lattice constant                     (default 1.0)\n");
+  printf("             -m <m0> [<m1>]       mass(es)                             (default 1.0)\n");
+  printf("             -n <natoms>          number of atoms for random structure (default 0)\n");
   printf("\n");
   exit(1);
 }
@@ -268,7 +273,7 @@ void generate_random()
   int i,j;
   real x,y,z;
   real pos[natoms][3];
-  real skin = (box_x.x * box_y.y * box_z.z / natoms)*(box_x.x * box_y.y * box_z.z / natoms);
+  real skin = pow(box_x.x * box_y.y * box_z.z / natoms,2);
   
   /* Initialize RNG */
   srand(time(NULL));
@@ -289,7 +294,7 @@ void generate_random()
     pos[i][1] = y;
     pos[i][2] = z;
     fprintf(outfile, "%d %d %f %f %f %f\n", 
-	    i, 0, 1.0, x, y, z);
+	    i, 0, masses[0], x, y, z);
   }
 }
 
@@ -298,7 +303,7 @@ int main( int argc, char **argv )
   char *modestr;
 
   if (argc<3) usage(); 
-  modestr = strdup(argv[1]);
+  modestr     = strdup(argv[1]);
   outfilename = strdup(argv[2]);
 
   if      (0 == strcmp(modestr, "hex"))        mode = MODE_HEX; 
