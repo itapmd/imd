@@ -460,6 +460,26 @@ ifeq (ia32-gcc2,${IMDSYS})
   export        MPICH_CC # MPICH_CLINKER
 endif
 
+ifeq (x86_64-llvm,${IMDSYS})
+  CC_SERIAL	= clang
+  CC_OMP	= clang # OpenMP is not supported but will compile
+  CC_OMPI	= clang # OpenMP is not supported but will compile
+  CC_MPI	= mpicc
+  MPICH_CC      = clang
+  MPICH_CLINKER = clang
+  OMPI_CC       = clang
+  OMPI_MPICC    = clang
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS	+= -O3 # -fno-builtin # -axP # remove -axP for Opteron
+  MPI_FLAGS     +=
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -prof_gen
+  RCD_FLAGS	+= # -DRCD -rcd
+  MPI_LIBS      +=
+  LFLAGS        += # -i-static
+  export        OMPI_MPICC MPICH_CC MPICH_CLINKER
+endif
+
 ###########################################################################
 #
 #  flags for IA64-Linux
@@ -867,6 +887,13 @@ endif
 ifeq (generic-cc,${IMDSYS})
   CC_SERIAL     = cc
 #  BIN_DIR       = ../Run
+  BIN_DIR       = ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS     += -O
+  DEBUG_FLAGS   += -g
+endif
+
+ifeq (generic-llvm,${IMDSYS})
+  CC_SERIAL     = clang
   BIN_DIR       = ${HOME}/bin/${HOSTTYPE}
   OPT_FLAGS     += -O
   DEBUG_FLAGS   += -g
