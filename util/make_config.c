@@ -1,4 +1,3 @@
-
 /******************************************************************************
 *
 * IMD -- The ITAP Molecular Dynamics Program
@@ -23,6 +22,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include <time.h>
 
 #define MODE_HEX         1
 #define MODE_FCC         2
@@ -32,6 +32,7 @@
 #define MODE_DIAMOND     6
 #define MODE_ZINCBLENDE  7
 #define MODE_LAV         8
+#define MODE_RANDOM      9
 
 typedef double real;
 typedef struct { real x; real y; real z; }  vektor;
@@ -262,6 +263,36 @@ void generate_lav()
         }
 } 
 
+void generate_random()
+{
+  int i,j;
+  real x,y,z;
+  real pos[natoms][3];
+  real skin = (box_x.x * box_y.y * box_z.z / natoms)*(box_x.x * box_y.y * box_z.z / natoms);
+  
+  /* Initialize RNG */
+  srand(time(NULL));
+
+  for (i = 0; i < natoms; i++) {
+    printf("Generating particle %d\r", i);
+    x = (1.0 * rand())/RAND_MAX * box_x.x;
+    y = (1.0 * rand())/RAND_MAX * box_y.y;
+    z = (1.0 * rand())/RAND_MAX * box_z.z;
+    for (j = 0; j < i; j++) {
+      while ( (x-pos[j][0])*(x-pos[j][0]) + (y-pos[j][1])*(y-pos[j][1]) + (z-pos[j][2])*(z-pos[j][2]) < skin ) {
+	x = (1.0 * rand())/RAND_MAX * box_x.x;
+	y = (1.0 * rand())/RAND_MAX * box_y.y;
+	z = (1.0 * rand())/RAND_MAX * box_z.z;
+      }
+    }
+    pos[i][0] = x;
+    pos[i][1] = y;
+    pos[i][2] = z;
+    fprintf(outfile, "%d %d %f %f %f %f\n", 
+	    i, 0, 1.0, x, y, z);
+  }
+}
+
 int main( int argc, char **argv ) 
 {
   char *modestr;
@@ -278,6 +309,7 @@ int main( int argc, char **argv )
   else if (0 == strcmp(modestr, "diamond"))    mode = MODE_DIAMOND;
   else if (0 == strcmp(modestr, "zincblende")) mode = MODE_ZINCBLENDE;
   else if (0 == strcmp(modestr, "lav"))        mode = MODE_LAV;
+  else if (0 == strcmp(modestr, "random"))     mode = MODE_RANDOM;
   else error("Unknown structure type!");
   argc -= 2;
   argv += 2;
@@ -324,6 +356,15 @@ int main( int argc, char **argv )
         argc -= 2;
         argv += 2;
       }
+    }
+    else if (argv[1][1]=='n') {
+      if (mode != MODE_RANDOM)
+	error("Specifying particle number only works with random distribution!");
+      if ((argc<3) || (argv[2][0] == '-'))
+	error("Not enough parameters!");
+      natoms = atoi(argv[2]);
+      argc -= 2;
+      argv += 2;
     }
     else error("Unknown option!\n");
   }
@@ -374,6 +415,10 @@ int main( int argc, char **argv )
       init_cubic();
       generate_lav();
       break;
+    case MODE_RANDOM:
+      /* Random distribution of particles throughout the box */
+      init_cubic();
+      generate_random();
   }
   fclose(outfile);
 
