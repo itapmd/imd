@@ -1568,7 +1568,7 @@ void calc_forces(int steps)
 #endif
 	fprintf(stderr, "\n Convergence Error, dipole, step %d: ", \
 			steps);
-	fprintf(stderr,"dp_sum = %g, dp_it=%d \n",dp_sum,dp_it);
+	fprintf(stderr,"dp_sum_global = %g, dp_it=%d \n",dp_sum_global,dp_it);
 	n=0;
 	for (k=0; k<ncells; k++) {
 	  cell *p = CELLPTR(k);
