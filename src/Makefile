@@ -139,6 +139,22 @@ KIM_DIR 	= /data/daniel/openkim/openkim-api
 #
 ###########################################################################
 
+# emmy
+ifeq (emmy,${IMDSYS})
+  CC_SERIAL     = icc
+  CC_MPI        = mpicc
+  MPICH_CC      = icc
+  MPICH_CLINKER = icc
+  OMPI_MPICC    = icc
+  BIN_DIR       = ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS     += -Ofast -axCORE-AVX-I,avx,avx-core-2,sse4.2 -msse3 -fno-alias -ipo -pc64 -unroll -funroll-loops
+  DEBUG_FLAGS   += -g
+  PROF_FLAGS    += -g3 -pg
+#  LFLAGS        +=  -static
+#  export        OMPI_MPICC MPICH_CC # MPICH_CLINKER
+endif
+
+
 # lima
 ifeq (lima,${IMDSYS})
   CC_SERIAL     = icc
