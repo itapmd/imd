@@ -1414,10 +1414,11 @@ void calc_forces(int steps)
 /* 	    DP_E_IND(p,i,X) = DP_P_IND(p,i,X) * dp_self; */
 /* 	    DP_E_IND(p,i,Y) = DP_P_IND(p,i,Y) * dp_self; */
 /* 	    DP_E_IND(p,i,Z) = DP_P_IND(p,i,Z) * dp_self; */
-	    DP_E_IND(p,i,X) = 0.;
-	    DP_E_IND(p,i,Y) = 0.;
-	    DP_E_IND(p,i,Z) = 0.;
+
 	  }
+          DP_E_IND(p,i,X) = 0.;
+          DP_E_IND(p,i,Y) = 0.;
+          DP_E_IND(p,i,Z) = 0.;
 	}
       }
       /* Distribute dipole moments */
