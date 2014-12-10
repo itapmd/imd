@@ -813,6 +813,60 @@ int nyeDone;
     if (maxwalltime > 0) {
       if ((finished = check_walltime())) break;
     }
+
+
+#ifdef LOADBALANCE
+    if (lb_frequency != 0 && steps % lb_frequency == 0 ) {
+    	lb_computeVariance();
+    	
+    	int balanced = 0;
+    	fix_cells();
+
+    	/* Find largest cell, required to recreate send/receive buffers */
+		int largest_local_cell = 0;
+		for (k = 0; k < ncells; ++k) {
+			int n = (cell_array + CELLS(k))->n;
+			if (largest_local_cell < n)
+					largest_local_cell = n;
+		}
+		MPI_Allreduce(&largest_local_cell, &lb_largest_cell, 1, MPI_INT, MPI_MAX, cpugrid);
+		
+		if (lb_minStepsBetweenReset!=0){
+    		/*Check if reset is required*/
+    		if (lb_maxLoad > lb_maxLoadToleranceFactorForReset
+    				&& lb_stepsSinceReset>=lb_minStepsBetweenReset){
+				for  (i=0; i<lb_iterationsPerReset; i++){
+					int success = balanceLoad(lb_getLoad, lb_getCenterOfGravity, 1, 0);	/*Reset*/
+					if (!success) break;
+				}
+				for  (i=0; i<((int)(lb_iterationsPerReset*1.5)); i++){
+					int success = balanceLoad(lb_getLoad, lb_getCenterOfGravity, 0, 0);
+					if (!success) break;
+				}
+
+				lb_stepsSinceReset = 0;
+				balanced = 2;
+			}
+		}
+		
+    	/*Check if simple load balancing step is required*/
+    	if (lb_maxLoad > lb_maxLoadTolerance){
+    		balanceLoad(lb_getLoad, lb_getCenterOfGravity, 0, 0);
+    		lb_computeVariance();
+    		
+			/*Write output of new geometry*/
+			if (lb_writeStatus){
+				write_lb_status(steps/lb_frequency);
+			}
+			if (balanced == 0) balanced =1;
+    	}
+
+    	write_lb_file(steps, balanced);
+
+    	lb_stepsSinceReset++;
+    }
+#endif
+
   }
 
   imd_stop_timer(&time_main);

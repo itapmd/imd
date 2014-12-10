@@ -94,7 +94,7 @@ int estimate_nblist_size(void)
 #endif
 
       /* for each neighboring atom */
-      for (m=0; m<14; m++) {   /* this is not TWOD ready! */
+      for (m=0; m<NNBCELL; m++) {   /* this is not TWOD ready! */
 
         int    c2, jstart, j;
         real   r2;
@@ -172,7 +172,7 @@ void make_nblist(void)
   if (at >= at_max) {
     free(tl);
     free(cl_num);
-    at_max = (int) (1.1 * at);
+    at_max = (int) (nbl_size * at);
     tl     = (int *) malloc(at_max * sizeof(int));
     cl_num = (int *) malloc(at_max * sizeof(int));
   }
@@ -188,6 +188,23 @@ void make_nblist(void)
     nb_max = (int  ) (nbl_size * last_nbl_len);
     tb     = (int *) malloc(nb_max * sizeof(int));
   }
+
+#ifdef LOADBALANCE
+  if (lb_need_nbl_update == 1){
+	free(tl);
+	free(cl_num);
+	at_max = (int) (nbl_size * 2 * at);
+	tl     = (int *) malloc(at_max * sizeof(int));
+	cl_num = (int *) malloc(at_max * sizeof(int));
+
+	free(tb);
+	lb_need_nbl_update = 0;
+	int reqSize = (int)(nbl_size * estimate_nblist_size());
+	nb_max = MAX(reqSize, NBLMINLEN);
+	tb = (int *) malloc(nb_max * sizeof(int));
+  }
+#endif
+
   if ((tl==NULL) || (tb==NULL) || (cl_num==NULL)) 
     error("cannot allocate neighbor table");
 
@@ -218,7 +235,7 @@ void make_nblist(void)
 #endif
 
       /* for each neighboring atom */
-      for (m=0; m<14; m++) {   /* this is not TWOD ready! */
+      for (m=0; m<NNBCELL; m++) {   /* this is not TWOD ready! */
         int  c2, jstart, j;
         cell *q;
         c2 = cnbrs[c].nq[m];
@@ -245,7 +262,7 @@ void make_nblist(void)
       }
       pa_max = MAX(pa_max,tn-tl[n]);
       tl[++n] = tn;
-      if (tn > nb_max-2*pa_max) {
+      if (tn > nb_max-2*pa_max || n>at_max) {
         error("neighbor table full - increase nbl_size");
       }
     }

@@ -56,7 +56,7 @@ void calc_extpot(void)
     ep_fext[k] = 0.0;
     ep_xmax[k] = 0.0;
     ep_ymax[k] = 0.0;
-    ep_atomsincontact[n]=0;
+    ep_atomsincontact[k]=0;
     ep_xmin[k] = 1.e8;
     ep_ymin[k] = 1.e8;
   }

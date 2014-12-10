@@ -240,6 +240,9 @@ void gay_berne ( vektor r12, vektor e1, vektor e2,
 void send_cells (void (*copy_func)  (int, int, int, int),
                  void (*pack_func)  (msgbuf*, int, int),
                  void (*unpack_func)(msgbuf*, int, int));
+void sync_cells (void (*copy_func)  (int, int, int, int),
+                 void (*pack_func)  (msgbuf*, int, int),
+                 void (*unpack_func)(msgbuf*, int, int));
 void send_forces(void (*add_func)   (int, int, int, int),
                  void (*pack_func)  (msgbuf*, int, int),
                  void (*unpack_func)(msgbuf*, int, int));
@@ -251,6 +254,9 @@ void pack_forces  ( msgbuf *b, int j, int k );
 void unpack_forces( msgbuf *b, int j, int k );
 #else  /* 3D */
 void send_cells (void (*copy_func)  (int, int, int, int, int, int, vektor),
+                 void (*pack_func)  (msgbuf*, int, int, int, vektor),
+                 void (*unpack_func)(msgbuf*, int, int, int));
+void sync_cells (void (*copy_func)  (int, int, int, int, int, int, vektor),
                  void (*pack_func)  (msgbuf*, int, int, int, vektor),
                  void (*unpack_func)(msgbuf*, int, int, int));
 void send_forces(void (*copy_func)  (int, int, int, int, int, int),
@@ -530,20 +536,15 @@ void do_neightab2(cell *p, cell *q, vektor pbc);
 #ifdef ADA
 void do_ada(void);
 void init_ada(void);
-void pack_hopsToDefect( msgbuf *b, int k, int l, int m);
+void pack_hopsToDefect( msgbuf *b, int k, int l, int m, vektor v);
 void unpack_hopsToDefect( msgbuf *b, int k, int l, int m );
-void copy_hopsToDefect( int k, int l, int m, int r, int s, int t);
-void pack_AdaAndNumber(msgbuf *b, int k, int l, int m);
+void copy_hopsToDefect( int k, int l, int m, int r, int s, int t, vektor v);
+void pack_AdaAndNumber(msgbuf *b, int k, int l, int m, vektor v);
 void unpack_AdaAndNumber(msgbuf *b, int k, int l, int m);
-void copy_AdaAndNumber(int k, int l, int m, int r, int s, int t);
+void copy_AdaAndNumber(int k, int l, int m, int r, int s, int t, vektor v);
 void buildHopsToDefect();
-void send_fromBufferToCells(void (*add_func)   (int, int, int, int, int, int),
-                 void (*pack_func)  (msgbuf*, int, int, int),
-                 void (*unpack_func)(msgbuf*, int, int, int));
+void filterSurface();
 
-void send_fromCellsToBuffer(void (*add_func)   (int, int, int, int, int, int),
-                 void (*pack_func)  (msgbuf*, int, int, int),
-                 void (*unpack_func)(msgbuf*, int, int, int));
 /*Output for ada imd_io.c */
 void write_header_ada(FILE *out);
 void write_atoms_ada(FILE *out);
@@ -554,6 +555,66 @@ void write_atoms_ada(FILE *out);
 void init_NyeTensor();
 void removeNyeTensorData();
 void calculateNyeTensorData();
+#endif
+
+#ifdef LOADBALANCE
+/* Communication routines for direct communication scheme*/
+void lb_copyCellDataToSend(msgbuf*, ivektor*, int,
+		void (*pack_func)(msgbuf*, int, int, int, vektor), int);
+void lb_copyForcesDataToSend(msgbuf*, ivektor*, int,
+		void (*pack_func)(msgbuf*, int, int, int));
+void sync_cells_direct (void (*copy_func)  (int, int, int, int, int, int, vektor),
+                 void (*pack_func)  (msgbuf*, int, int, int, vektor),
+                 void (*unpack_func)(msgbuf*, int, int, int), int);
+void lb_unpackCellDataFromBuffer(msgbuf*, int originCPU, void (*unpack_func)(msgbuf*, int, int, int));
+void lb_unpackForcesDataFromBuffer(msgbuf*, void (*unpack_func)(msgbuf*, int, int, int));
+void lb_initDirect(void);
+
+void init_loadBalance(void);
+cell* lb_accessCell(cell*, int, int, int, ivektor);
+
+int balanceLoad(real (*getLoad)(void), vektor (*getCog)(void), int, int);
+real lb_getLoad(void);
+real lb_getVolume(void);
+int lb_identifyCellType(int, int, int);
+int lb_syncBufferCellAffinity(void);
+void lb_relocateParticles(ivektor, ivektor, cell*);
+
+void lb_makeNormal(int, int, int, int, lb_domainInfo*);
+int lb_getTetraederVolumeIndexed(int, int, int, int, lb_domainInfo*);
+real lb_getTetrahedronVolume(int, int, int, int, lb_domainInfo*);
+void lb_makeNormals(lb_domainInfo*);
+real lb_computeWarpage(int, int, int, int, lb_domainInfo*);
+real lb_getDistanceToPlane(int, int, int, int, lb_domainInfo*);
+int lb_isPointInDomain(vektor, lb_domainInfo*);
+real lb_angleCos(int, int, int, lb_domainInfo*);
+vektor lb_getCellCenter(int, int, int);
+vektor lb_getCenterOfGravity();
+void lb_updateDomain(lb_domainInfo*);
+void lb_moveCorner(int, real, real, real);
+void lb_moveAllCorners(real*, int);
+int lb_isGeometryChangeValid(void);
+int lb_isGeometryValid(lb_domainInfo*);
+
+void write_lb_status(int);
+void write_config_lb(FILE*);
+void write_header_lb(FILE*);
+void write_lb_file(int, int);
+
+int lb_countAtoms(void);
+void lb_computeVariance(void);
+
+void lb_processCellDataBuffer(msgbuf*,
+		void (*copy_func)(int, int, int, int, int, int, vektor),
+		void (*unpack_func)(msgbuf*, int, int, int), int, int);
+void lb_processForceDataBuffer(msgbuf*,
+		void (*unpack_func)(msgbuf*, int, int, int), int);
+
+void lb_moveCornersReset(real*, int iteration);
+
+void lb_balanceOneAxisOrthogonal(int, int, int*, int*);
+void balanceOrtho(void);
+
 #endif
 
 #ifdef BBOOST

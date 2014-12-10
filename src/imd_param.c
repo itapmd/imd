@@ -2303,6 +2303,45 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
 	}
 #endif
 
+#ifdef LOADBALANCE
+	else if (strcasecmp(token, "lb_contractionRate") == 0) {
+	  /* load balance contraction rate */
+	  getparam("lb_contractionRate",&lb_contractionRate,PARAM_REAL,1,1);
+	}
+	else if (strcasecmp(token, "lb_frequency") == 0) {
+	  /* load balance contraction rate */
+	  getparam("lb_frequency",&lb_frequency,PARAM_INT,1,1);
+	}
+	else if (strcasecmp(token, "lb_writeStatus") == 0) {
+	  /* load balance contraction rate */
+	  getparam("lb_writeStatus",&lb_writeStatus,PARAM_INT,1,1);
+	}
+	else if (strcasecmp(token, "lb_maxLoadTolerance") == 0) {
+	  /* tolerated load imbalance between cpus */
+	  getparam("lb_maxLoadTolerance",&lb_maxLoadTolerance,PARAM_REAL,1,1);
+	}
+	else if (strcasecmp(token, "lb_maxLoadToleranceFactorForReset") == 0) {
+	  /* tolerated load imbalance between cpus for reset */
+	  getparam("lb_maxLoadToleranceFactorForReset",&lb_maxLoadToleranceFactorForReset,PARAM_REAL,1,1);
+	}
+	else if (strcasecmp(token, "lb_preRuns") == 0) {
+	  /*  load balance runs before simulation starts*/
+	  getparam("lb_preRuns",&lb_preRuns,PARAM_INT,1,1);
+	}
+	else if (strcasecmp(token, "lb_balancingType") == 0) {
+	  /* Load balancing strategy*/
+	  getparam("lb_balancingType",&lb_balancingType,PARAM_INT,1,1);
+	}
+	else if (strcasecmp(token, "lb_iterationsPerReset") == 0) {
+	  /*  load balance minimum iteration between resets*/
+	  getparam("lb_iterationsPerReset",&lb_iterationsPerReset,PARAM_INT,1,1);
+	}
+	else if (strcasecmp(token, "lb_minStepsBetweenReset") == 0) {
+		  /*  load balance minimum lb steps between resets*/
+	  getparam("lb_minStepsBetweenReset",&lb_minStepsBetweenReset,PARAM_INT,1,1);
+	}
+#endif
+
 #ifdef DISLOC
      else if (strcasecmp(token,"reffile")==0) {
        /* filename for reference configuration */
@@ -5017,6 +5056,17 @@ void broadcast_params() {
   MPI_Bcast( &nye_rotationAxis_x, 3, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &nye_rotationAxis_y, 3, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &nye_rotationAxis_z, 3, REAL, 0, MPI_COMM_WORLD);
+#endif
+#ifdef LOADBALANCE
+  MPI_Bcast( &lb_contractionRate, 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &lb_frequency, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &lb_writeStatus, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &lb_maxLoadTolerance, 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &lb_maxLoadToleranceFactorForReset, 1, REAL, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &lb_preRuns, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &lb_iterationsPerReset, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &lb_minStepsBetweenReset, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  MPI_Bcast( &lb_balancingType, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 }
 

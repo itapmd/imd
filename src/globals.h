@@ -118,6 +118,82 @@ EXTERN int nlists;                       /* number of cell pair lists */
 EXTERN ivektor cell_dim;                 /* dimension of cell array (per cpu)*/
 EXTERN ivektor global_cell_dim;          /* dimension of cell array */
 
+#ifdef LOADBALANCE
+
+EXTERN int *lb_halfspaceLUT;
+EXTERN ivektor *lb_pbcFlag;
+
+EXTERN ivektor **lb_sendCells;              /* list of cell indices that need to be send to neighboring CPU*/
+EXTERN int *lb_nSendCells;				    /* size of list of cell indices*/
+EXTERN ivektor **lb_sendForces;
+EXTERN int *lb_nSendForces;
+
+EXTERN int *lb_commIndexToCpu;
+EXTERN int lb_nForceComms INIT(0);
+EXTERN int lb_nAllocatedCommBuffers INIT(0);
+EXTERN int lb_nTotalComms INIT(0);		    /* number of communications partners in total, in case of Actio=reactio */
+											/* first half is used to send cells, second half to send forces			*/
+											/* In syncCells and fixCells all comm partners are used 				*/
+EXTERN msgbuf *lb_send_buf;
+EXTERN msgbuf *lb_recv_buf;
+
+EXTERN MPI_Request *lb_req_recv;		/* Arrays storing information about MPI requests*/
+EXTERN MPI_Request *lb_req_send;
+EXTERN MPI_Request *lb_requests;
+EXTERN int *lb_request_indices;
+
+EXTERN int lb_largest_cell INIT(0);
+
+/*Standard paramters*/
+EXTERN int lb_balancingType INIT(0);		   /* 0: communication limited to 26 neighbors */
+											   /* 1: communication with any neighbor */
+											   /* 2: only axis parallel movements */
+EXTERN ivektor lb_cell_offset;                 /* offset of cell array (per cpu), required for local to global mapping*/
+
+EXTERN real lb_contractionRate INIT(-1);		/*Parameters that control load balancing*/
+EXTERN int lb_frequency INIT(0);
+EXTERN int lb_writeStatus INIT(0);
+/* Advanced parameters, control reset if balancing if balancer is stuck in local minimum*/
+EXTERN int lb_stepsSinceReset INIT(0);			/* count load balancing steps since last reset */
+EXTERN int lb_iterationsPerReset INIT(10);		/* number of steps is reset is performed */
+EXTERN int lb_minStepsBetweenReset INIT(0);	/* Minimum number of standard balanced between resets*/
+EXTERN real lb_maxLoadToleranceFactorForReset INIT(1.4); /* Imbalance to perform reset */
+
+EXTERN vektor lb_cell_size;						/* The dimension of one cell */
+
+EXTERN FILE *lblog_file INIT(NULL);       /* pointer to .lblog file */
+EXTERN int lb_init INIT(0);
+EXTERN int lb_cellsInitialized INIT(0);
+EXTERN int lb_disabledAtThisCPU INIT(0);
+#ifdef NBLIST
+EXTERN int lb_need_nbl_update INIT(0);
+#endif
+
+EXTERN real lb_maxLoad INIT(0.);	/* storage for global statistics*/
+EXTERN real lb_minLoad INIT(0.);
+EXTERN real lb_loadVariance INIT(0.);
+EXTERN real lb_maxLoadTolerance INIT(1.1);
+EXTERN int lb_maxLoadOnCPU INIT(0);
+EXTERN int lb_preRuns INIT(0);
+
+EXTERN lb_domainInfo lb_domain;
+/* Storing the local communication partners
+   Using a MPI Communicator is an alternative, but some
+   MPI implementation support only a few thousand of them
+   Each CPU can be part in up to eight groups, first value is the size
+   second the own rank, the rest the CPU IDs of the group.*/
+EXTERN int lb_localCommPartners[8][11];
+
+EXTERN ivektor lb_pbcCorrection[26];
+EXTERN int lb_randomNumberGeneratorState INIT(42);
+
+EXTERN int *x_bounds;	/* Spacings for CPU in orthogonal */
+EXTERN int *y_bounds;	/* load-balancings */
+EXTERN int *z_bounds;
+
+#endif /*LOADBALANCE*/
+
+
 /* Boundary Conditions */
 #ifdef EPITAX
 EXTERN ivektor pbc_dirs INIT(parteinsivektor);

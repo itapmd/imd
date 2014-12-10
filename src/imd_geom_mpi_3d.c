@@ -104,7 +104,18 @@ void setup_mpi_topology(void)
 *  local_cell_coord computes the local cell coordinates of a position
 *
 ******************************************************************************/
+#ifdef LOADBALANCE
+ivektor local_cell_coord(ivektor global_coord)
+{
+  ivektor cellc;
 
+  cellc.x = global_coord.x - lb_cell_offset.x;
+  cellc.y = global_coord.y - lb_cell_offset.y;
+  cellc.z = global_coord.z - lb_cell_offset.z;
+
+  return cellc;
+}
+#else
 ivektor local_cell_coord(ivektor global_coord)
 {
   ivektor cellc;
@@ -115,6 +126,7 @@ ivektor local_cell_coord(ivektor global_coord)
 
   return cellc;
 }
+#endif
 
 
 /******************************************************************************
