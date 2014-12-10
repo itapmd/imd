@@ -84,7 +84,11 @@ int main(int argc, char **argv)
 
   /* read parameters for first simulation phase */
   finished = read_parameters(paramfilename, simulation);
-
+#ifdef KERMODE
+  ke_r2cut=ew_r2_cut;
+  ke_tot_rcut = (ke_rcut+yuk_smoothlength); /* kermode total coulomb and dipole cut off */
+  ke_tot_r2cut= SQR(ke_tot_rcut);
+#endif
 
   /* initialize all potentials */
   setup_potentials();

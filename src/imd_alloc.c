@@ -199,7 +199,7 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
 #ifdef VARCHG
   to->charge[i] = from->charge[j];
 #endif
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE) 
   to->dp_p_ind  X(i)   = from->dp_p_ind X(j);
   to->dp_p_ind  Y(i)   = from->dp_p_ind Y(j);
   to->dp_p_ind  Z(i)   = from->dp_p_ind Z(j);
@@ -212,7 +212,7 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
   to->dp_E_old_3 X(i)  = from->dp_E_old_3 X(j);
   to->dp_E_old_3 Y(i)  = from->dp_E_old_3 Y(j);
   to->dp_E_old_3 Z(i)  = from->dp_E_old_3 Z(j);
-#endif /* Dipole */
+#endif /* Dipole or kermode */
 #ifdef CG
   to->h  X(i) = from->h X(j); 
   to->h  Y(i) = from->h Y(j); 
@@ -609,7 +609,7 @@ void alloc_cell(cell *p, int n)
   memalloc(&p->s_sm,   n, sizeof(real),   al, ncopy, 0, "s_sm");
   memalloc(&p->q_sm,   n, sizeof(real),   al, ncopy, 0, "q_sm");
 #endif
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
   memalloc( &p->dp_E_stat, n*DIM, sizeof(real), al, ncopy*DIM, 0, "dp_E_stat");
   memalloc( &p->dp_E_ind,  n*DIM, sizeof(real), al, ncopy*DIM, 0, "dp_E_ind");
   memalloc( &p->dp_E_old_1,n*DIM, sizeof(real), al, ncopy*DIM, 1, "dp_E_old_1");

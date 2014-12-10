@@ -494,12 +494,12 @@ void do_forces2(cell *p, real *Epot, real *Virial,
 
 #ifdef STRESS_TENS
         if (do_press_calc) {
-          PRESSTENS(p,i,xx) -= d[j].x * force_j.x;
-          PRESSTENS(p,i,yy) -= d[j].y * force_j.y;
-          PRESSTENS(p,i,zz) -= d[j].z * force_j.z;
-          PRESSTENS(p,i,yz) -= d[j].y * force_j.z;
-          PRESSTENS(p,i,zx) -= d[j].z * force_j.x;
-          PRESSTENS(p,i,xy) -= d[j].x * force_j.y;
+          PRESSTENS(p,i,xx) += d[j].x * force_j.x;
+          PRESSTENS(p,i,yy) += d[j].y * force_j.y;
+          PRESSTENS(p,i,zz) += d[j].z * force_j.z;
+          PRESSTENS(p,i,yz) += d[j].y * force_j.z;
+          PRESSTENS(p,i,zx) += d[j].z * force_j.x;
+          PRESSTENS(p,i,xy) += d[j].x * force_j.y;
 	}
 #endif
 
@@ -566,18 +566,19 @@ void do_forces2(cell *p, real *Epot, real *Virial,
         tmp_vir_vect.x += d[k].x * force_k.x;
         tmp_vir_vect.y += d[k].y * force_k.y;
         tmp_vir_vect.z += d[k].z * force_k.z;
+
 #else
         tmp_virial     += SPROD(d[k],force_k);
 #endif
 
 #ifdef STRESS_TENS
         if (do_press_calc) {
-          PRESSTENS(p,i,xx) -= d[k].x * force_k.x;
-          PRESSTENS(p,i,yy) -= d[k].y * force_k.y;
-          PRESSTENS(p,i,zz) -= d[k].z * force_k.z;
-          PRESSTENS(p,i,yz) -= d[k].y * force_k.z;
-          PRESSTENS(p,i,zx) -= d[k].z * force_k.x;
-          PRESSTENS(p,i,xy) -= d[k].x * force_k.y;
+          PRESSTENS(p,i,xx) += d[k].x * force_k.x;
+          PRESSTENS(p,i,yy) += d[k].y * force_k.y;
+          PRESSTENS(p,i,zz) += d[k].z * force_k.z;
+          PRESSTENS(p,i,yz) += d[k].y * force_k.z;
+          PRESSTENS(p,i,zx) += d[k].z * force_k.x;
+          PRESSTENS(p,i,xy) += d[k].x * force_k.y;
 	}
 #endif
 	    } /* k */

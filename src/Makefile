@@ -1329,6 +1329,10 @@ ifneq (,$(strip $(findstring dipole,${MAKETARGET})))
 CFLAGS  += -DDIPOLE
 endif
 
+ifneq (,$(strip $(findstring kermode,${MAKETARGET})))
+CFLAGS  += -DKERMODE
+endif
+
 # BUCK
 ifneq (,$(strip $(findstring buck,${MAKETARGET})))
 CFLAGS  += -DBUCK

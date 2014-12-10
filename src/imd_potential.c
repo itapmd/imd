@@ -518,8 +518,13 @@ void create_pot_table(pot_table_t *pt)
 #endif
           ) {
           r2_begin[i][j]   = r2_begin[j][i]   = SQR(r_begin[column]);
+#ifndef KERMODE
           r2_end[i][j]     = r2_end[j][i]
                            = MAX( SQR(r_cut_lin[column]), ew_r2_cut);
+#endif
+#ifdef KERMODE
+          r2_end[i][j]     = r2_end[j][i]    = SQR(r_cut_lin[column]);
+#endif
           r2_step[i][j]    = r2_step[j][i]
                            = (r2_end[i][j]-r2_begin[i][j])/(pot_res[column]-1);
           r2_invstep[i][j] = r2_invstep[j][i] = 1.0 / r2_step[i][j];
@@ -639,7 +644,7 @@ void create_pot_table(pot_table_t *pt)
               }
 	    }
 #endif
-#if ((defined(DIPOLE) || defined(MORSE)) && !defined(BUCK))
+#if ((defined(DIPOLE) || defined(KERMODE) || defined(MORSE)) && !defined(BUCK))
             /* Morse-Stretch potential for dipole */
             if ((ew_r2_cut > 0)) {
 	      /* harmonic spring */
@@ -647,11 +652,19 @@ void create_pot_table(pot_table_t *pt)
 		val += ms_harm_c[col]*SQR(SQRT(r2)-ms_harm_a[col])
 		  + ms_harm_b[col];
 		  }
+#ifndef KERMODE
               else if (r2 < ew_r2_cut) {
                 pair_int_mstr(&pot, &grad, i, j, r2);
                 val += pot - ms_shift[col];
                 val -= SQRT(r2)*ms_fshift[col]*(SQRT(r2)-SQRT(ew_r2_cut));
               }
+#endif
+#ifdef KERMODE
+              else if (r2 < r2_cut[i][j]) {
+                pair_int_mstr(&pot, &grad, i, j, r2);
+                val += (pot - ms_shift[col]);
+              }
+#endif
 	    }
 #endif /* DIPOLE or MORSE */
 #ifdef BUCK
@@ -698,7 +711,7 @@ void init_pre_pot(void) {
   int  i, j, k, m, n,col;
   real tmp = 0.0;
 
-#if ((defined(DIPOLE) || defined(MORSE)) && !defined(BUCK))
+#if ((defined(DIPOLE) || defined(KERMODE) || defined(MORSE)) && !defined(BUCK))
   real pot,grad;
   ms_shift  = (real *) malloc (ntypepairs * sizeof(real));
   ms_fshift = (real *) malloc (ntypepairs * sizeof(real));
@@ -816,7 +829,12 @@ void init_pre_pot(void) {
   if (ew_nmax < 0) tmp = MAX(tmp,ew_r2_cut);
 #endif
 #ifdef COULOMB
+#ifndef KERMODE
   tmp = MAX(tmp,ew_r2_cut);
+#endif
+#ifdef KERMODE
+     tmp = MAX(tmp,ke_tot_r2cut);
+#endif 
 #endif
 #if defined(USEFCS) && !defined(VARCHG)
   tmp = MAX(tmp,SQR(fcs_rcut));
@@ -892,12 +910,18 @@ void init_pre_pot(void) {
 	}
       }
 #endif
-#if ((defined(DIPOLE) || defined(MORSE)) && !defined(BUCK))
+#if ((defined(DIPOLE) || defined(KERMODE) || defined(MORSE)) && !defined(BUCK))
       /* Morse-Stretch for Dipole */
       if (i<=j) {
 	col= i*ntypes - (i*(i+1))/2 + j;
+#ifndef KERMODE
 	if (ew_r2_cut > 0)  {
 	  pair_int_mstr( &ms_shift[col], &ms_fshift[col], i, j, ew_r2_cut);
+#endif
+#ifdef KERMODE
+        if (r2_cut[i][j] > 0) {
+          pair_int_mstr( &ms_shift[col], &ms_fshift[col], i, j, r2_cut[i][j]);
+#endif
           if (myid==0) {
             printf("Morse-Stretch pot %1d %1d (col %1d) shifted by %g,\n",
 	           i, j, col, -ms_shift[col]);
@@ -972,8 +996,11 @@ void create_coulomb_tables()
   int i,j,k,tablesize;
   real r2,pot,grad,tmp,pot2,dipshift,dipfshift;
   real coulf2shift;
+#ifdef KERMODE
+  real rij,inv_rij,yuk_exp,yuk_expfc,coul_pot;
+#endif
   /* Preliminary work */
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
   int ncols=2+ntypepairs; 	/* 1 column for each pair + 2 add coln. */
 #else
   int ncols=1; 			/* only one column */
@@ -1007,12 +1034,18 @@ void create_coulomb_tables()
   /* Sampling identical for all functions */
   for (i=0;i<ncols;i++) {
     pt->begin[i]   = SQR(coul_begin);
+#ifndef KERMODE
     pt->end[i]     = ew_r2_cut;
     pt->step[i]    = (ew_r2_cut-pt->begin[i])/(coul_res-1.);
+#endif
+#ifdef KERMODE
+    pt->end[i]     = ke_tot_r2cut;
+    pt->step[i]    = (pt->end[i]-pt->begin[i])/(coul_res-1.);
+#endif
     pt->invstep[i] = 1.0 / pt->step[i];
     pt->len[i]     = coul_res;
   }
-
+#ifndef KERMODE
   /* First table: Coulomb potential */
   /* Calculate shifts */
   pair_int_coulomb(&coul_shift, &coul_fshift, ew_r2_cut);
@@ -1054,7 +1087,39 @@ void create_coulomb_tables()
     }
 #endif
   }
+#endif /* If not define Kermode */
+#ifdef KERMODE
+  for (i=0;i<coul_res;i++) 
+  {
+    r2 = pt->begin[cou_col] + i * pt->step[cou_col];
+    rij = SQRT(r2);
+    yukawa_smooth_function(rij,ke_rcut,yuk_smoothlength,&yuk_fc,&yuk_dfc);
+    yuk_exp=exp(-1.0*yuk_beta*rij);
+    yuk_expfc=yuk_exp*yuk_fc;
+    inv_rij = 1.0/rij;
+    coul_pot=inv_rij*yuk_expfc;
+    // {1/r*exp(-br)*fc} --> coul_table.0
+    *PTR_2D(pt->table,i,0,pt->maxsteps,ncols)=coul_pot;
+    // {fc}              --> coul_table.1 
+    *PTR_2D(pt->table,i,1,pt->maxsteps,ncols)=yuk_fc;
 
+    for(k=0;k<ntypepairs;k++)
+    {
+      tmp=dp_b[k]*rij;
+      pot2=1.;
+      for (j=4;j>=1;j--) 
+      {
+        pot2 *= tmp/((real) j);
+        pot2 += 1.;
+      }
+      pot2 *=dp_c[k]*exp(-tmp);
+      // {gij} --> coul_table.2,coul_table.3,coul_table.4
+      *PTR_2D(pt->table,i,2+k,pt->maxsteps,ncols)=pot2;
+    }
+
+  }
+
+#endif
   /* Finish up */
 #if   defined(FOURPOINT)
   init_fourpoint(pt, ncols);
@@ -1068,6 +1133,32 @@ void create_coulomb_tables()
 
 }
 #endif /* COULOMB */
+
+#ifdef KERMODE
+/******************************************************************************
+ *  
+ * Yukawa screening function for KERMODE Potential
+ * 
+ * ***************************************************************************/
+void yukawa_smooth_function(real ke_r,real rcut, real dcut,real *fc,real *dfc)
+{
+  if(ke_r < rcut-dcut)
+  {
+    *fc=1.0;
+   // *dfc=0.0;
+  }
+  else if (ke_r > rcut+dcut)
+  {
+    *fc=0.0;
+   // *dfc=0.0;
+  }
+  else
+  {
+    *fc=1.0-((ke_r-rcut+dcut)/(2.0*dcut))+((1.0/(2.0*M_PI))*sin(M_PI*(ke_r-rcut+dcut)/dcut));
+   // *dfc= 1.0/(2.0*dcut)*(cos((M_PI/dcut)*(ke_r-rcut+dcut))-1.0);
+  }
+}
+#endif
 
 #if defined(FOURPOINT)
 
@@ -1462,7 +1553,7 @@ void pair_int_coulomb(real *pot, real *grad, real r2)
 
 #endif
 
-#if ((defined(DIPOLE) || defined(MORSE)) && !defined(BUCK))
+#if ((defined(DIPOLE) || defined(KERMODE) || defined(MORSE)) && !defined(BUCK))
 
 /*****************************************************************************
 *
@@ -1485,12 +1576,17 @@ void pair_int_mstr(real *pot, real *grad, int p_typ, int q_typ, real r2)
   tpot -= 2.*fac;
   tgrad+= fac;
   *pot  = tpot*ms_D[col];
+#ifdef DIPOLE
   *grad = tgrad*ms_D[col]*ms_gamma[col]/(r*ms_r0[col]) ;
+#endif
+#ifdef KERMODE
+  *grad = tgrad*ms_D[col]*ms_gamma[col]/(ms_r0[col]) ;
+#endif
 
 }
 
 
-#endif /* DIPOLE or MORSE*/
+#endif /* DIPOLE or KERMODE or MORSE*/
 
 #endif /* PAIR */
 

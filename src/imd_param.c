@@ -3187,6 +3187,9 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
     else if (strcasecmp(token,"ew_rcut")==0) {
       getparam(token,&rtmp,PARAM_REAL,1,1);
       ew_r2_cut = SQR(rtmp);
+#ifdef KERMODE
+      ke_rcut = rtmp;
+#endif
 #ifdef DIPOLE
       dp_self=2./(3.*rtmp*ew_r2_cut*sqrt(2.*M_PI));
 #endif /* DIPOLE */
@@ -3219,7 +3222,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       getparam(token,&coul_begin,PARAM_REAL,1,1);
     }
 #endif /* EWALD or COULOMB */
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
     /* dipole fixed? */
     else if (strcasecmp(token,"dp_fix")==0) {
       getparam(token,&dp_fix,PARAM_INT,1,1);
@@ -3254,7 +3257,19 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       getparam(token,dp_c,PARAM_REAL,ntypepairs,ntypepairs);
     }
 #endif /* DIPOLE */
-#if ((defined(DIPOLE) || defined(MORSE)) && !defined(BUCK))
+#ifdef KERMODE
+    /* Yukava screening factor 'beta' in KERMODE potential for silica */
+    else if (strcasecmp(token,"yuk_beta")==0) {
+      getparam(token,&yuk_beta,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"yuk_smoothlength")==0) {
+      getparam(token,&yuk_smoothlength,PARAM_REAL,1,1);
+    }
+    else if (strcasecmp(token,"smoothlength_ms")==0) {
+      getparam(token,&smoothlength_ms,PARAM_REAL,1,1);
+    }
+#endif
+#if ((defined(DIPOLE) || defined(KERMODE) || defined(MORSE)) && !defined(BUCK))
     /* Morse-Stretch parameter D */
     else if (strcasecmp(token,"ms_D")==0) {
       if (ntypes==0) error("specify parameter ntypes before ms_D");
@@ -4815,7 +4830,7 @@ void broadcast_params() {
   MPI_Bcast( &coul_res,           1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &coul_begin,         1,      REAL,    0, MPI_COMM_WORLD);
 #endif
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
   MPI_Bcast( &dp_fix,             1,      MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &dp_mix,             1,      REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &dp_tol,             1,      REAL,    0, MPI_COMM_WORLD);
@@ -4839,7 +4854,7 @@ void broadcast_params() {
   }
   MPI_Bcast( dp_alpha,            ntypes, REAL,    0, MPI_COMM_WORLD);
 #endif
-#if defined(DIPOLE) || defined(MORSE)
+#if defined(DIPOLE) || defined(KERMODE) || defined(MORSE)
   if (NULL==ms_D) {
     ms_D = (real *) malloc( ntypepairs * sizeof(real) );
     if (NULL==ms_D)
@@ -4871,7 +4886,13 @@ void broadcast_params() {
   }
   MPI_Bcast( ms_r0,           ntypepairs, REAL,    0, MPI_COMM_WORLD);
 #endif
-
+  
+#ifdef KERMODE
+  MPI_Bcast( &yuk_beta,          1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &yuk_smoothlength,          1,      REAL,    0, MPI_COMM_WORLD);
+  MPI_Bcast( &ke_rcut,          1,      REAL,    0, MPI_COMM_WORLD);
+#endif
+  
 #ifdef EPITAX
   MPI_Bcast( epitax_rate,     ntypes, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( epitax_type,     ntypes, REAL, 0, MPI_COMM_WORLD);
