@@ -125,6 +125,7 @@ void write_config_select(int fzhlr, char *suffix,
 
   /* write or send own data */
   (*write_atoms_fun)(out);
+
 #ifdef MPI
   /* if not fully parallel output, receive and write foreign data */
   if ((myid == my_out_id) && (out_grp_size > 1)) {
@@ -3152,7 +3153,7 @@ void write_header_config(FILE *out)
   atompar++;
 #endif
 #endif
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
   atompar +=3;
 #endif  /* DIPOLE */
 #ifdef DAMP
@@ -3234,7 +3235,7 @@ void write_header_config(FILE *out)
   fprintf(out, " eam_p");
 #endif
 #endif
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
   fprintf(out, " dp_ind_x dp_ind_y dp_ind_z");
 #endif	/* DIPOLE */
 #ifdef DAMP

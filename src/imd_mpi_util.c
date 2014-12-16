@@ -209,10 +209,12 @@ void init_io(void)
 
   /* output parameters */
   if (parallel_output==1) {
-    n_out_grps = num_cpus;
-    my_out_grp = myid;
-    my_out_id  = myid;
-    out_grp_size = 1;
+    n_out_grps = num_cpus/outputgrpsize;
+    if (num_cpus%outputgrpsize != 0)
+      n_out_grps++;
+    my_out_grp = (int) (myid/outputgrpsize);
+    my_out_id  = (int) (myid/outputgrpsize)*outputgrpsize;
+    out_grp_size = outputgrpsize;
   }
   else {
     n_out_grps   = 1;
@@ -389,7 +391,7 @@ void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *p, int ind )
 #ifdef VARCHG
   to->data[ to->n++ ] = CHARGE(p,ind);
 #endif
-#ifdef DIPOLE 
+#if defined(DIPOLE) || defined(KERMODE) 
   /* dp_E_stat, dp_E_ind and dp_p_stat are not sent */
 /*   to->data[ to->n++ ] = DP_P_STAT(p,ind,X); */
 /*   to->data[ to->n++ ] = DP_P_STAT(p,ind,Y); */
@@ -607,7 +609,7 @@ void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
 #ifdef VARCHG
   CHARGE(to,ind)     = b->data[j++];
 #endif
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
   /* don't send p_stat, E_stat, E_ind */
   DP_P_IND(to,ind,X) = b->data[j++];
   DP_P_IND(to,ind,Y) = b->data[j++];
@@ -840,7 +842,7 @@ void setup_buffers(void)
 #endif
 #endif /* EAM2 */
     /* communication of induced dipoles etc */
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
     binc4 = 4*DIM; 		/* 4 vector fields */
 #endif
 
@@ -853,7 +855,7 @@ void setup_buffers(void)
 #ifdef EAM2
     binc=MAX(binc,binc3);
 #endif
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
     binc=MAX(binc,binc4);
 #endif
 #ifdef NYETENSOR

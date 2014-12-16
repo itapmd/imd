@@ -276,7 +276,7 @@ void pack_rho      ( msgbuf *b, int k, int l, int m );
 void unpack_dF     ( msgbuf *b, int k, int l, int m );
 void unpack_add_rho( msgbuf *b, int k, int l, int m );
 #endif
-#ifdef DIPOLE
+#if defined(DIPOLE) || defined(KERMODE)
 void copy_pind     ( int k, int l, int m, int r, int s, int t, vektor );
 void copy_Eind     ( int k, int l, int m, int r, int s, int t, vektor );
 void add_dipole    ( int k, int l, int m, int r, int s, int t );
@@ -289,6 +289,9 @@ void unpack_pind   ( msgbuf *b, int k, int l, int m );
 void unpack_Eind   ( msgbuf *b, int k, int l, int m );
 void unpack_add_dipole( msgbuf *b, int k, int l, int m );
 void unpack_add_field( msgbuf *b, int k, int l, int m );
+#endif
+#ifdef KERMODE
+void yukawa_smooth_function(real ke_r,real rcut, real dcut,real *fc,real *dfc);
 #endif
 #ifdef CNA
 void add_mark       ( int k, int l, int m, int r, int s, int t );

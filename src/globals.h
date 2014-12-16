@@ -475,6 +475,9 @@ EXTERN int n_out_grps   INIT(1);    /* number of output groups */
 #ifdef MPI
 EXTERN MPI_Comm cpugrid;                  /* Cartesian MPI communicator */
 
+EXTERN int outputgrpsize INIT(1); /* group size to be read in param */
+
+
 /* Send and Receive buffers */
 EXTERN msgbuf send_buf_east  INIT(nullbuffer);
 EXTERN msgbuf send_buf_west  INIT(nullbuffer);
@@ -1363,7 +1366,31 @@ EXTERN real     *dp_alpha  INIT(NULL); /* in e^2 A^2 / eV^2 */
 EXTERN real     *dp_b      INIT(NULL);		/* in eV A / e^2 */
 EXTERN real     *dp_c      INIT(NULL);		/* in 1/A */
 #endif
-#if defined(DIPOLE)|| defined(MORSE)
+#ifdef KERMODE
+EXTERN int      dp_fix     INIT(0);     /* Keep dipoles fixed? */
+EXTERN real     dp_mix     INIT(0.75);  /* dipole field mixing parameter added by Sudheer */
+EXTERN real     dp_tol     INIT(1.e-7); /* dipole iteration precision */
+EXTERN real     dp_self;                /* dipole self field factor */
+EXTERN real     *dp_alpha  INIT(NULL);  /* in e^2 A^2 / eV^2 */
+EXTERN real     *dp_b      INIT(NULL);          /* in eV A / e^2 */
+EXTERN real     *dp_c      INIT(NULL);          /* in 1/A */
+EXTERN real     yuk_beta                INIT(0.0); /* Yukava screening factor beta for KEARMODE potential for Silica */
+EXTERN real     yuk_smoothlength        INIT(0.0); /* Yukava smooth length to screen coulomb interaction */
+EXTERN real     ke_rcut                 INIT(0.0); /* yuk_r_cut is nothing but ew_rcut i.e cutoff for dipole and coulomb */
+EXTERN real     ke_r2cut                INIT(0.0); 
+EXTERN real     yuk_fc                  INIT(0.0);
+EXTERN real     yuk_dfc                 INIT(0.0);
+EXTERN real     ke_tot_rcut             INIT(0.0); /* Kermode total cut off i.e (ew_rcut + yuk_smoothlength) */
+EXTERN real     ke_tot_r2cut            INIT(0.0);
+EXTERN real     smoothlength_ms         INIT(0.0);
+EXTERN real     ms_fc                   INIT(0.0);
+EXTERN real     ms_dfc                  INIT(0.0);
+EXTERN real     ke_coul_phi             INIT(0.0);
+EXTERN real     ke_coul_grphi           INIT(0.0);
+EXTERN real     HARTREE                 INIT(27.2113961); /* Conversion factor from hartree (atomic units) to eV */
+EXTERN real     BOHR                    INIT(0.529177249); /* Conversion factor from bohr (atomic units) to A */
+#endif
+#if defined(DIPOLE)|| defined(KERMODE) || defined(MORSE)
 EXTERN real     *ms_D      INIT(NULL); /* in eV */
 EXTERN real     *ms_gamma  INIT(NULL);
 EXTERN real     *ms_harm_a  INIT(NULL);

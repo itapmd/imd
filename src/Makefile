@@ -139,6 +139,22 @@ KIM_DIR 	= /data/daniel/openkim/openkim-api
 #
 ###########################################################################
 
+# emmy
+ifeq (emmy,${IMDSYS})
+  CC_SERIAL     = icc
+  CC_MPI        = mpicc
+  MPICH_CC      = icc
+  MPICH_CLINKER = icc
+  OMPI_MPICC    = icc
+  BIN_DIR       = ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS     += -Ofast -axCORE-AVX-I,avx,avx-core-2,sse4.2 -msse3 -fno-alias -ipo -pc64 -unroll -funroll-loops
+  DEBUG_FLAGS   += -g
+  PROF_FLAGS    += -g3 -pg
+#  LFLAGS        +=  -static
+#  export        OMPI_MPICC MPICH_CC # MPICH_CLINKER
+endif
+
+
 # lima
 ifeq (lima,${IMDSYS})
   CC_SERIAL     = icc
@@ -458,6 +474,26 @@ ifeq (ia32-gcc2,${IMDSYS})
   DEBUG_FLAGS	+= -g
   PROF_FLAGS	+= -g3 -pg
   export        MPICH_CC # MPICH_CLINKER
+endif
+
+ifeq (x86_64-llvm,${IMDSYS})
+  CC_SERIAL	= clang
+  CC_OMP	= clang # OpenMP is not supported but will compile
+  CC_OMPI	= clang # OpenMP is not supported but will compile
+  CC_MPI	= mpicc
+  MPICH_CC      = clang
+  MPICH_CLINKER = clang
+  OMPI_CC       = clang
+  OMPI_MPICC    = clang
+  BIN_DIR	= ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS	+= -O3 # -fno-builtin # -axP # remove -axP for Opteron
+  MPI_FLAGS     +=
+  DEBUG_FLAGS	+= -g
+  PROF_FLAGS	+= -prof_gen
+  RCD_FLAGS	+= # -DRCD -rcd
+  MPI_LIBS      +=
+  LFLAGS        += # -i-static
+  export        OMPI_MPICC MPICH_CC MPICH_CLINKER
 endif
 
 ###########################################################################
@@ -867,6 +903,13 @@ endif
 ifeq (generic-cc,${IMDSYS})
   CC_SERIAL     = cc
 #  BIN_DIR       = ../Run
+  BIN_DIR       = ${HOME}/bin/${HOSTTYPE}
+  OPT_FLAGS     += -O
+  DEBUG_FLAGS   += -g
+endif
+
+ifeq (generic-llvm,${IMDSYS})
+  CC_SERIAL     = clang
   BIN_DIR       = ${HOME}/bin/${HOSTTYPE}
   OPT_FLAGS     += -O
   DEBUG_FLAGS   += -g
@@ -1284,6 +1327,10 @@ endif
 # DIPOLE
 ifneq (,$(strip $(findstring dipole,${MAKETARGET})))
 CFLAGS  += -DDIPOLE
+endif
+
+ifneq (,$(strip $(findstring kermode,${MAKETARGET})))
+CFLAGS  += -DKERMODE
 endif
 
 # BUCK
