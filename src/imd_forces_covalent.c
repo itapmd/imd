@@ -1632,42 +1632,55 @@ void do_neightab_complete() {
 
 						if (x2 >= 0 && x2 < cell_dim.x && y2 >= 0 && y2 < cell_dim.y && z2 >= 0 && z2 < cell_dim.z){
 #ifndef NBLIST
-							/*PBC handling at the cell along periodic boundaries*/
+							ivektor offset;
+#ifdef LOADBALANCE
+							offset = lb_cell_offset;
+							offset.x+=1;
+							offset.y+=1;
+							offset.z+=1;
+#else
+							offset.x = (cell_dim.x-2) * my_coord.x;
+							offset.y = (cell_dim.y-2) * my_coord.y;
+							offset.z = (cell_dim.z-2) * my_coord.z;
+#endif
+							/*Handling of the cells along periodic boundaries*/
+							/*Test if the absolute cell index is along the boundaries*/
 							pbc.x = 0.0; pbc.y = 0.0; pbc.z = 0.0;
 
 							if (pbc_dirs.x) {
-								if (my_coord.x==0 && x==1 && x2==0)
+								if (x+offset.x==1 && x2+offset.x==0)
 									pbc.x = -(box_x.x + box_y.x + box_z.x);
-								else if (my_coord.x==0 && x==0 && x2==1)
+								else if (x+offset.x==0 && x2+offset.x==1)
 									pbc.x = +(box_x.x + box_y.x + box_z.x);
-								else if (my_coord.x==cpu_dim.x-1 && x==cell_dim.x-1 && x2==cell_dim.x-2)
+								else if (x+offset.x==global_cell_dim.x+1 && x2+offset.x==global_cell_dim.x)
 									pbc.x = -(box_x.x + box_y.x + box_z.x);
-								else if (my_coord.x==cpu_dim.x-1 && x==cell_dim.x-2 && x2==cell_dim.x-1)
+								else if (x+offset.x==global_cell_dim.x && x2+offset.x==global_cell_dim.x+1)
 									pbc.x = +(box_x.x + box_y.x + box_z.x);
 							}
 
 							if (pbc_dirs.y) {
-								if (my_coord.y==0 && y==1 && y2==0)
+								if (y+offset.y==1 && y2+offset.y==0)
 									pbc.y = -(box_x.y + box_y.y + box_z.y);
-								else if (my_coord.y==0 && y==0 && y2==1)
+								else if (y+offset.y==0 && y2+offset.y==1)
 									pbc.y = +(box_x.y + box_y.y + box_z.y);
-								else if (my_coord.y==cpu_dim.y-1 && y==cell_dim.y-1 && y2==cell_dim.y-2)
+								else if (y+offset.y==global_cell_dim.y+1 && y2+offset.y==global_cell_dim.y)
 									pbc.y = -(box_x.y + box_y.y + box_z.y);
-								else if (my_coord.y==cpu_dim.y-1 && y==cell_dim.y-2 && y2==cell_dim.y-1)
+								else if (y+offset.y==global_cell_dim.y && y2+offset.y==global_cell_dim.y+1)
 									pbc.y = +(box_x.y + box_y.y + box_z.y);
 							}
 
 							if (pbc_dirs.z) {
-								if (my_coord.z==0 && z==1 && z2==0)
+								if (z+offset.z==1 && z2+offset.z==0)
 									pbc.z = -(box_x.z + box_y.z + box_z.z);
-								else if (my_coord.z ==0 && z==0 && z2==1)
+								else if (z+offset.z==0 && z2+offset.z==1)
 									pbc.z = +(box_x.z + box_y.z + box_z.z);
-								else if (my_coord.z==cpu_dim.z-1 && z==cell_dim.z-1 && z2==cell_dim.z-2)
+								else if (z+offset.z==global_cell_dim.z+1 && z2+offset.z==global_cell_dim.z)
 									pbc.z = -(box_x.z + box_y.z + box_z.z);
-								else if (my_coord.z==cpu_dim.z-1 && z==cell_dim.z-2 && z2==cell_dim.z-1)
+								else if (z+offset.z==global_cell_dim.z && z2+offset.z==global_cell_dim.z+1)
 									pbc.z = +(box_x.z + box_y.z + box_z.z);
 							}
 #endif
+
 							do_neightab2(cell, PTR_3D_V(cell_array, x2, y2, z2, cell_dim), pbc);
 						}
 					}
