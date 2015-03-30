@@ -1,0 +1,5 @@
+# Compiled object files
+src/*.o
+
+# Version header file
+src/version.h
