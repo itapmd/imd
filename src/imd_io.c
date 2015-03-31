@@ -320,10 +320,12 @@ void write_header_cna(FILE *out)
 #ifdef TWOD
   fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
   fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
+  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
 #else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
+  fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
 #endif
 
   /* generation date and endheader line */
@@ -432,10 +434,12 @@ void write_header_crist(FILE *out)
 #ifdef TWOD
   fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
   fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
+  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
 #else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
+  fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
 #endif
 
   /* generation date and endheader line */
@@ -574,6 +578,7 @@ void write_header_ada(FILE *out) {
 	fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x, box_x.y, box_x.z);
 	fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x, box_y.y, box_y.z);
 	fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x, box_z.y, box_z.z);
+	fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
 
 	/* generation date and endheader line */
 	fprintf(out, "#E\n");
@@ -678,10 +683,12 @@ void write_header_ef(FILE *out)
 #ifdef TWOD
   fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
   fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
+  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
 #else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
+  fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
 #endif
 
   /* generation date and endheader line */
@@ -807,10 +814,12 @@ void write_header_nb(FILE *out)
 #ifdef TWOD
   fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
   fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
+  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
 #else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
+  fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
 #endif
 
   /* generation date and endheader line */
@@ -936,10 +945,12 @@ void write_header_wf(FILE *out)
 #ifdef TWOD
   fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
   fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
+  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
 #else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
+  fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
 #endif
 
   /* generation date and endheader line */
@@ -1072,10 +1083,12 @@ void write_header_press(FILE *out)
 #ifdef TWOD
   fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
   fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
+  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
 #else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
+  fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
 #endif
 #endif /*AVPOS */
   /* endheader line */
@@ -1276,10 +1289,12 @@ void write_header_pic(FILE *out)
 #ifdef TWOD
   fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
   fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
+  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
 #else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
+  fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
 #endif
 
   /* endheader line */
@@ -1368,10 +1383,12 @@ void write_header_dem(FILE *out)
 #ifdef TWOD
   fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
   fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
+  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
 #else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
+  fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
 #endif
 
   /* endheader line */
@@ -1473,10 +1490,12 @@ void write_header_dsp(FILE *out)
 #ifdef TWOD
   fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
   fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
+  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
 #else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
+  fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
 #endif
 
   /* endheader line */
@@ -1737,10 +1756,12 @@ void write_header_avp(FILE *out)
 #ifdef TWOD
   fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
   fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
+  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
 #else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
+  fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
 #endif
 
   /* endheader line */
@@ -1875,10 +1896,12 @@ void write_header_force(FILE *out)
 #ifdef TWOD
   fprintf(out, "#X %.16e %.16e\n", box_x.x, box_x.y );
   fprintf(out, "#Y %.16e %.16e\n", box_y.x, box_y.y );
+  fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y);
 #else
   fprintf(out, "#X %.16e %.16e %.16e\n", box_x.x, box_x.y, box_x.z );
   fprintf(out, "#Y %.16e %.16e %.16e\n", box_y.x, box_y.y, box_y.z );
   fprintf(out, "#Z %.16e %.16e %.16e\n", box_z.x, box_z.y, box_z.z );
+  fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
 #endif
 
   /* cohesive energy */
@@ -1973,10 +1996,12 @@ void write_header_atdist_pos(FILE *out)
 #ifdef TWOD
   fprintf(out, "#X %e 0.0\n", pic_ur.x - pic_ll.x);
   fprintf(out, "#Y 0.0 %e\n", pic_ur.y - pic_ll.y);
+  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
 #else
   fprintf(out, "#X %e 0.0 0.0\n", pic_ur.x - pic_ll.x);
   fprintf(out, "#Y 0.0 %e 0.0\n", pic_ur.y - pic_ll.y);
   fprintf(out, "#Z 0.0 0.0 %e\n", pic_ur.z - pic_ll.z);
+  fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
 #endif
 
   /* endheader line */
@@ -3262,10 +3287,12 @@ void write_header_config(FILE *out)
 #ifdef TWOD
   fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
   fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
+  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
 #else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
+  fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
 #endif
 
   /* generation data and endheader line */
@@ -3863,6 +3890,7 @@ void write_header_lb(FILE *out)
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
   fprintf(out, "#max_load %f min_load %f variance %f\n", lb_maxLoad, lb_minLoad, lb_loadVariance);
   fprintf(out, "#timestep %i \n", steps);
+  fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
 }
 
 void write_config_lb(FILE *out) {
