@@ -409,6 +409,13 @@ void read_atoms(str255 infilename)
         CHARGE(input,0)    = charge[ SORTE(input,0) ];
       }
 #endif
+#ifdef VISCOUS
+      if (info.n_viscfriction > 0) {
+    	  VISCOUS_FRICTION(input,0)    = d[info.n_viscfriction-2];
+      } else {
+    	  VISCOUS_FRICTION(input,0)    = viscous_friction;
+      }
+#endif
 
 #ifdef EPITAX
       /* determine largest atom number of substrate atoms */
@@ -825,6 +832,9 @@ void write_atoms_config(FILE *out)
 	if (lb_writeStatus)
 	  data[n++].r = (real) myid;
 #endif
+#ifdef VISCOUS
+	 data[n++].r = p->viscous_friction[i];
+#endif
         len += n * sizeof(i_or_r);
       }
       else {
@@ -917,6 +927,9 @@ void write_atoms_config(FILE *out)
 #ifdef LOADBALANCE
 	if (lb_writeStatus)
 		len += sprintf(outbuf+len, " %i", myid);
+#endif
+#ifdef VISCOUS
+		len += sprintf(outbuf+len, RESOL1, p->viscous_friction[i]);
 #endif
         len += sprintf(outbuf+len,"\n");
       }

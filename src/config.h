@@ -184,7 +184,8 @@
 #define RELAX
 #endif
 
-#if defined(AND) || defined(NVT) || defined(NPT) || defined(FRAC) || defined(FINNIS) || defined(STM) ||defined(BER)
+#if defined(AND) || defined(NVT) || defined(NPT) || defined(FRAC) || \
+	defined(FINNIS) || defined(STM) ||defined(BER) ||defined(LANGEVIN)
 
 #define TEMPCONTROL
 #endif

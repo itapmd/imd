@@ -502,7 +502,9 @@ void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *p, int ind )
 #ifdef VEC
   /* ind is not sent */
 #endif
-
+#ifdef VISCOUS
+  to->data[ to->n++ ] = VISCOUS_FRICTION(p,ind);
+#endif
 }
 
 /******************************************************************************
@@ -713,7 +715,9 @@ void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
   DREH_IMPULS(to,ind,Z) = b->data[j++];
   /* don't send dreh_moment */
 #endif
-
+#ifdef VISCOUS
+  VISCOUS_FRICTION(to,ind) = b->data[j++];
+#endif
 }
 
 /******************************************************************************

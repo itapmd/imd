@@ -322,7 +322,9 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
   to->dreh_moment Y(i) = from->dreh_moment Y(j); 
   to->dreh_moment Z(i) = from->dreh_moment Z(j); 
 #endif
-
+#ifdef VISCOUS
+  to->viscous_friction[i] = from->viscous_friction[j];
+#endif
 }
 
 #if defined(COVALENT) || defined(NNBR_TABLE)
@@ -697,7 +699,9 @@ void alloc_cell(cell *p, int n)
 #if defined(VEC) && defined(MPI)
   memalloc( &p->ind, n, sizeof(integer), al, ncopy, 0, "ind" );
 #endif
- 
+#ifdef VISCOUS
+  memalloc( &p->viscous_friction,  n, sizeof(real), al, ncopy, 0, "viscous_friction" );
+#endif
   p->n_max = n;
 
 }

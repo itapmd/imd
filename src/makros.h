@@ -335,6 +335,9 @@ INLINE static int MOD(shortint p, int q)
 #ifdef NYETENSOR
 #define NYE(cell,i)		((cell)->nyeTens[i])
 #endif
+#ifdef VISCOUS
+#define VISCOUS_FRICTION(cell, i)	(((cell)->viscous_friction[i]))
+#endif
 
 #endif /* VEC */
 
