@@ -174,7 +174,7 @@ void move_atoms_nve(void)
 
 #ifdef LANGEVIN
 	  if (VISCOUS_FRICTION(p,i)>1e-12){ 	  //Langevin Thermostat, also uses the viscous daming part
-		  real sigma = sqrt(24.*temperature * (VISCOUS_FRICTION(p,i)/timestep)/timestep * p->masse[i]);
+		  real sigma = sqrt(24. * temperature * (VISCOUS_FRICTION(p,i)/timestep)/timestep * MASSE(p,i));
 		  KRAFT(p,i,X) += ((drand48()-0.5)*sigma);
 		  KRAFT(p,i,Y) += ((drand48()-0.5)*sigma);
 		  KRAFT(p,i,Z) += ((drand48()-0.5)*sigma);
