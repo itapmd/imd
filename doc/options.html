@@ -104,8 +104,8 @@ their purpose is and how they are used.</p>
 
 <tr align="left">
 <td width="120"><a href="#sm">sm</a></td>
+<td width="120"><a href="#viscous">viscous</a></td>
 <td width="120"><a href="#zapp">zapp</a></td>
-<td width="120"><a href="#"></a></td>
 <td width="120"><a href="#"></a></td>
 <td width="120"><a href="#"></a></td>
 <td width="120"><a href="#"></a></td>
@@ -1440,6 +1440,19 @@ neb_climbing_image are specified.
 Option for computing transport properties by the M&uuml;ller-Plathe
 non-equilibrium exchange method, see
 J. Chem. Phys. <b>106</b> (1997) 6082.
+</p>
+</dd>
+
+
+<dt><a id="viscous" name="viscous"><b>viscous</b></a></dt>
+<dd>
+<p>
+Enables viscous damping. Every timestep the velocities are reduced proportional to a friction coefficient.
+This friction coefficient can be defined either equally for all atoms by the parameter <tt>viscous_friction</tt>.
+Alternatively, the value can be defined per atom in a column <tt>viscous_fric</tt>.
+The value of this coefficient determines how fast the velocities are reduced, e.g. a value of 1 would eliminate an initial velocity in one unit of simulation time completely.
+Currently this option is only available as an option for NVE and MIK/GLOK and this option is automatically activated if the Langevin thermostat is used.
+If no other thermostat (Berendsen or Anderson) is activated, this option will continuously reduce the temperature of the system. Thus it could be used to minimize energies as well.
 </p>
 </dd>
 
