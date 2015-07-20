@@ -1741,6 +1741,15 @@ ifeq (,$(findstring ${COVALENTSOURCES},${SOURCES}))
 endif
 endif
 
+#Viscous damping
+ifneq (,$(findstring viscous,${MAKETARGET}))
+PP_FLAGS += -DVISCOUS
+endif
+#Langevin thermostat
+ifneq (,$(findstring langevin,${MAKETARGET}))
+PP_FLAGS += -DLANGEVIN -DVISCOUS
+endif
+
 ifneq (,$(findstring nye,${MAKETARGET}))
 PP_FLAGS += -DNYETENSOR
 SOURCES += imd_nyeTensorAnalysis_3d.c

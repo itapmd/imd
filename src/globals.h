@@ -192,7 +192,9 @@ EXTERN int *y_bounds;	/* load-balancings */
 EXTERN int *z_bounds;
 
 #endif /*LOADBALANCE*/
-
+#ifdef VISCOUS
+EXTERN real viscous_friction INIT(0.0);
+#endif
 
 /* Boundary Conditions */
 #ifdef EPITAX

@@ -172,8 +172,22 @@ void move_atoms_nve(void)
 #endif
 #endif
 
-
-      
+#ifdef LANGEVIN
+	  if (VISCOUS_FRICTION(p,i)>1e-12){ 	  //Langevin Thermostat, also uses the viscous daming part
+		  real sigma = sqrt(24. * temperature * (VISCOUS_FRICTION(p,i)/timestep)/timestep * MASSE(p,i));
+		  KRAFT(p,i,X) += ((drand48()-0.5)*sigma);
+		  KRAFT(p,i,Y) += ((drand48()-0.5)*sigma);
+		  KRAFT(p,i,Z) += ((drand48()-0.5)*sigma);
+	  }
+#endif
+#ifdef VISCOUS
+		if (VISCOUS_FRICTION(p,i)>1e-12){ 		//Viscous damping
+		  real sfric = VISCOUS_FRICTION(p,i)/timestep;
+		  KRAFT(p,i,X) -= IMPULS(p,i,X)*sfric;
+		  KRAFT(p,i,Y) -= IMPULS(p,i,Y)*sfric;
+		  KRAFT(p,i,Z) -= IMPULS(p,i,Z)*sfric;
+		}
+#endif      
 
       /* and set their force (->momentum) in restricted directions to 0 */
       KRAFT(p,i,X) *= (restrictions + sort)->x;

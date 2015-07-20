@@ -307,6 +307,9 @@ typedef struct {
   	  	  	  	  	  	  	 * required to distinguish different direction in case of less than
   	  	  	  	  	  	  	 * three CPUs in one direction */
 #endif
+#ifdef VISCOUS
+  real *viscous_friction;	//Viscous friction coefficient per atom
+#endif
 } cell;
 
 typedef cell* cellptr;
@@ -340,6 +343,9 @@ typedef struct {
 #endif
 #ifdef VARCHG
   int  n_charge;
+#endif
+#ifdef VISCOUS
+  int  n_viscfriction;
 #endif
 } header_info_t;
 

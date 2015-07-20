@@ -2308,6 +2308,11 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
 	  getparam("nye_rotationAxis_z",&nye_rotationAxis_z,PARAM_REAL,3,3);
 	}
 #endif
+#ifdef VISCOUS
+    else if (strcasecmp(token,"viscous_friction")==0) {
+      getparam("viscous_friction",&viscous_friction,PARAM_REAL,1,1);
+    }
+#endif
 
 #ifdef LOADBALANCE
 	else if (strcasecmp(token, "lb_contractionRate") == 0) {
@@ -4316,7 +4321,9 @@ void broadcast_params() {
 #ifdef BER
   MPI_Bcast( &tauber, 1, REAL, 0, MPI_COMM_WORLD);
 #endif
-
+#ifdef VISCOUS
+  MPI_Bcast( &viscous_friction, 1, REAL, 0, MPI_COMM_WORLD);
+#endif
 #if defined(NVT) || defined(NPT) || defined(STM)
   MPI_Bcast( &eta ,         1 , REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &isq_tau_eta , 1 , REAL, 0, MPI_COMM_WORLD);

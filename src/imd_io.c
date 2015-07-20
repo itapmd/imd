@@ -2209,7 +2209,7 @@ void write_eng_file_header()
     fprintf(fl, "Press_xy ");
 #else 
     fprintf(fl, "Press_zz ");
-    fprintf(fl, "Press_yz Press_xz Press_xy");
+    fprintf(fl, "Press_yz Press_xz Press_xy ");
 #endif    
 #endif
 #ifdef TTM
@@ -3202,6 +3202,9 @@ void write_header_config(FILE *out)
 #ifdef NYETENSOR
   atompar+=6;
 #endif
+#ifdef VISCOUS
+    atompar++;
+#endif
 #ifdef CNA
   if (cna_crist>0) atompar++;
 #endif
@@ -3278,6 +3281,9 @@ void write_header_config(FILE *out)
 #ifdef LOADBALANCE
   if (lb_writeStatus)
   fprintf(out, " on_CPU");
+#endif
+#ifdef VISCOUS
+  fprintf(out, " viscous_fric");
 #endif
 
 #endif /* UNIAX */
@@ -3388,6 +3394,9 @@ int read_header(header_info_t *info, str255 infilename)
 #ifdef VARCHG
   info->n_charge   = -1;
 #endif
+#ifdef VISCOUS
+  info->n_viscfriction = -1;
+#endif
 
   s=fgets(line, 255, infile);
   while (line[0]=='#') {
@@ -3430,6 +3439,11 @@ int read_header(header_info_t *info, str255 infilename)
 #ifdef VARCHG
         if (strcmp(token, "charge")==0) {
           info->n_charge = count;
+        }
+#endif
+#ifdef VISCOUS
+        if (strcmp(token, "viscous_fric")==0) {
+          info->n_viscfriction = count;
         }
 #endif
         count++;
@@ -3502,6 +3516,9 @@ void broadcast_header(header_info_t *info)
 #endif
 #ifdef VARCHG
   MPI_Bcast( &(info->n_charge),   1, MPI_INT,  0, MPI_COMM_WORLD); 
+#endif
+#ifdef VARCHG
+  MPI_Bcast( &(info->n_friction),   1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 }
 
