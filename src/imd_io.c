@@ -3517,7 +3517,7 @@ void broadcast_header(header_info_t *info)
 #ifdef VARCHG
   MPI_Bcast( &(info->n_charge),   1, MPI_INT,  0, MPI_COMM_WORLD); 
 #endif
-#ifdef VARCHG
+#ifdef VISCOUS
   MPI_Bcast( &(info->n_friction),   1, MPI_INT,  0, MPI_COMM_WORLD);
 #endif
 }
