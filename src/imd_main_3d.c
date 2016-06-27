@@ -550,7 +550,7 @@ int nyeDone;
 #ifdef TIMING
     imd_start_timer(&time_integrate);
 #endif
-#if !defined(CBE) || !defined(SPU_INT)
+
 #ifdef NEB
     if(myrank != 0 && myrank != neb_nrep-1)
     {
@@ -561,7 +561,6 @@ int nyeDone;
     }
 #endif
     
-#endif
 #ifdef TIMING
     imd_stop_timer(&time_integrate);
 #endif

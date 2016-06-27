@@ -1467,13 +1467,6 @@ EXTERN int  *dsf_kmax   INIT(NULL);
 EXTERN real *dsf_weight INIT(NULL);
 #endif
 
-#ifdef CBE
-EXTERN int num_spus INIT(6);
-EXTERN int num_bufs INIT(2);
-EXTERN int cbe_pot_steps INIT(100);
-EXTERN real cbe_pot_max INIT(20.0);
-#endif
-
 EXTERN int myrank   INIT(0);
 #ifdef NEB
 #define NEB_MAXNREP 100

@@ -812,80 +812,6 @@ ifeq (bgp-cc,${IMDSYS})
   LFLAGS        += -O4
 endif
 
-
-###########################################################################
-#
-#  Flags for Cell Broad Band Engine
-#
-###########################################################################
-
-# Cell Broad Band Engine with IBM XLC compiler
-ifeq (cbe-xlc,${IMDSYS})
-  # Path to Cell SDK
-  CELLSDK=/opt/ibm/cell-sdk/prototype
-
-  # Headers for libsync
-  CELLSDKLIB=${CELLSDK}/src/lib
-
-  # The spu-timing utility provided by the Cell SDK
-  SPUTIMING=${CELLSDK}/bin/spu_timing -running-count
-
-  SPUCC         = spuxlc
-  CC_SERIAL     = ppuxlc -q32
-  CC_MPI        = mpicc  -q32
-
-  OPT_FLAGS     += -O3 -qstrict -qcpluscmt -qflag=w:w -qproto -qro -qwarn64  -qhot=level=1:simd  -qreport -qinline -qunroll=yes -qlibansi -qipa=level=1
-  SPUCFLAGS     += -O3 -qstrict -qcpluscmt -qflag=w:w -qhot=level=1 -qproto -qreport -qinline  -qinline-dma64:mdma64:wait_dma -I${CELLSDKLIB}/sync -I${CELLSDKLIB}
-  PP_FLAGS      += -I${CELLSDKLIB}/sync
-  EMBEDSPU      = ppu-embedspu -m32
-
-  BIN_DIR	= ${HOME}/bin/cbe
-
-  DEBUG_FLAGS	+= -g
-  PROF_FLAGS	+= -pg
-  PROF_LIBS	+= -pg
-
-  SPULDFLAGS    +=
-  LFLAGS        += -O3 -qlibansi -qipa=level=1
-  LIBS          += -lspe2 -lpthread
-endif
-
-
-# Cell Broad Band Engine with GCC
-ifeq (cbe-gcc,${IMDSYS})
-  # Path to Cell SDK
-  CELLSDK=/opt/ibm/cell-sdk/prototype
-
-  # Headers for libsync
-  CELLSDKLIB=${CELLSDK}/src/lib
-
-  # The spu-timing utility provided by the Cell SDK
-  SPUTIMING=${CELLSDK}/bin/spu_timing -running-count
-
-  # Use the PPU compiler ppu-gcc, also for MPI!
-  # as main compiler as it defines the __PPU__ macro
-  # The ordinary gcc does not set this macro
-
-  CC_SERIAL     = ppu-gcc -m32
-  CC_MPI        = mpicc   -m32
-  SPUCC         = spu-gcc
-  OPT_FLAGS     += -pipe  -std=gnu89 -pedantic -Wall -Wno-unused -Wcast-qual -Wno-long-long   -O3 -funroll-loops
-  PP_FLAGS      += -I${CELLSDKLIB}/sync
-  SPUCFLAGS     += -pipe  -std=gnu89 -pedantic -Wall -Wunused -Wshadow -Wcast-qual -Wno-long-long -O2 -funroll-loops  -I${CELLSDKLIB}/sync/spu -I${CELLSDKLIB}
-  EMBEDSPU      = ppu-embedspu -m32
-
-  BIN_DIR	= ${HOME}/bin/cbe
-
-  DEBUG_FLAGS	+= -g
-  PROF_FLAGS	+= -g3 -pg
-  PROF_LIBS	+= -g3 -pg
-
-  SPULDFLAGS    +=
-  LFLAGS        +=
-  LIBS          += -lspe2
-endif
-
-
 ###########################################################################
 #
 #  flags for generic version of IMD (slow)
@@ -1086,15 +1012,6 @@ else
 
   else
 
-    ifneq (,$(strip $(findstring cbe,${MAKETARGET})))
-
-      SOURCES	:= ${SOURCES3D} ${NBLSOURCES3D}
-      ifneq (,$(strip $(findstring mpi,${MAKETARGET})))
-        SOURCES	+= ${MPISOURCES}
-      endif
-
-    else
-
       ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
 
         SOURCES	:= ${SOURCES3D} ${NBLSOURCES3D}
@@ -1117,7 +1034,6 @@ else
           endif
         endif
       endif
-    endif
   endif
 endif
 
@@ -1138,10 +1054,6 @@ SOURCES += ${SRCMAIN}
 ifneq (,$(strip $(findstring vec,${MAKETARGET})))
   FORCESOURCES = imd_main_vec_3d.c
 else
-  ifneq (,$(strip $(findstring cbe,${MAKETARGET})))
-    FORCESOURCES = imd_forces_cbe.c
-    PP_FLAGS += -DCBE
-  else
     ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
       FORCESOURCES = imd_forces_nbl.c
       PP_FLAGS += -DNBL
@@ -1151,7 +1063,6 @@ else
     else
       FORCESOURCES = ${PAIRSOURCES}
     endif
-  endif
 endif
 
 # PAIR
@@ -1719,15 +1630,6 @@ else
   PYDIR = ${IMDPYDIR}
 endif
 
-# Added by Frank Pister
-ifneq (,$(findstring cbe,${MAKETARGET}))
-SOURCES += spu.c imd_cbe_calc_ppu.c imd_cbe_util.c
-endif
-
-ifneq (,$(findstring cbe2,${MAKETARGET}))
-PP_FLAGS  += -DCBE2
-endif
-
 ifneq (,$(findstring ppu,${MAKETARGET}))
 PP_FLAGS += -DON_PPU
 endif
@@ -1797,12 +1699,6 @@ imd_forces.o: imd_forces.c
 imd_forces_nbl.o: imd_forces_nbl.c
 	${CC} ${CFLAGS} ${PP_FLAGS} ${RCD_FLAGS} ${NOALIAS} -c imd_forces_nbl.c
 
-# Uncommented by Frank Pister
-imd_forces_cbe.o: imd_forces_cbe.c
-	${CC}   ${CFLAGS} ${PP_FLAGS} -c imd_forces_cbe.c
-
-# rule to make imd_forces_cbe.o
-
 imd_forces_eam2.o: imd_forces_eam2.c
 	${CC} ${CFLAGS} ${PP_FLAGS} ${RCD_FLAGS} -c imd_forces_eam2.c
 
@@ -1860,81 +1756,11 @@ endif
 #
 ###########################################################################
 
-clean: clean_spu
+clean:
 	rm -f *.o *.u *~ \#* *.V *.T *.O *.il
-
-# Remove SPU-related temp. files (e.g. assembler/timing files)
-clean_spu:
-	rm -f  spu spu1 spu2   spu.map   spu.s  imd_cbe_util_spu.s imd_cbe_calc_spu.s     spu.s.timing imd_cbe_util_spu.s.timing imd_cbe_calc_spu.s.timing *.lst
-
-
 
 help:
 	@echo "Usage: gmake imd[_<parallel>][_<option>[_<option>...]]"
 
 socktest:
 	gcc -o ${BINDIR}/socktest sockutil.c socktest.c
-
-
-
-
-
-
-
-
-
-# SPU specific targets for CBE
-# The variables SPUCXX, SPUCC must be set to the SPU C++ and C compilers
-# e.g. to spu-c++ and spu-cc respectively.
-# SPUCXXFLAGS and SPUCFLAGS are the corresponding flags passed to the
-# compiler which may contain optimization or warning flags, for instance.
-# SPUCXX and SPUCC may also be set to use the IBM  compilers.
-# EMBEDSPU must contain the name of the ppu-embedspu executable which
-# generates object files containing code for the SPU and which may
-# be linked with the main program.
-
-
-
-# The SPU binary containing the main program as well as some tools
-# and an spu version of calc_wp
-# The SPU object file which is linked to the main programm
-spu.o: spu1
-	${EMBEDSPU} hndle_cbe_calc spu1 spu.o
-
-
-
-# 2 SPUlets created in a different manner
-
-# Compile first translate C to assembler, then compile assembler sources
-spu1:  spu.s  imd_cbe_util_spu.s  imd_cbe_calc_spu.s
-	${SPUCC} -o spu1   ${SPUCFLAGS} ${SPULDFLAGS}     spu.s  imd_cbe_calc_spu.s  imd_cbe_util_spu.s
-
-# Compile the C sources without generating assembler
-spu2: spu.c imd_cbe_util.c imd_cbe_calc_spu.c imd_cbe.h  config.h
-	${SPUCC} -o spu2 ${SPUCFLAGS} ${SPULDFLAGS} ${PP_FLAGS}   spu.c imd_cbe_util.c imd_cbe_calc_spu.c
-
-
-# Generate sssembler code for some SPU sources
-# This assembler code may be analyzed using the spu-timing tool
-imd_cbe_calc_spu.s: imd_cbe_calc_spu.c imd_cbe.h  config.h
-	${SPUCC} -o imd_cbe_calc_spu.s  ${SPUCFLAGS} ${PP_FLAGS}   -S imd_cbe_calc_spu.c
-
-imd_cbe_util_spu.s: imd_cbe_util.c imd_cbe.h  config.h
-	${SPUCC} -o imd_cbe_util_spu.s  ${SPUCFLAGS} ${PP_FLAGS}    -S imd_cbe_util.c
-
-spu.s: spu.c imd_cbe.h  config.h
-	${SPUCC} -o spu.s ${SPUCFLAGS} ${PP_FLAGS}  -S  spu.c
-
-
-# Timing of SPU assembly code (for profiling purposes)
-spu.s.timing: spu.s
-	${SPUTIMING} spu.s
-
-imd_cbe_calc_spu.s.timing: imd_cbe_calc_spu.s
-	${SPUTIMING} imd_cbe_calc_spu.s
-
-imd_cbe_util_spu.s.timing: imd_cbe_util_spu.s
-	${SPUTIMING} imd_cbe_util_spu.s
-
-
-spu_timing: spu.s.timing  imd_cbe_calc_spu.s.timing  imd_cbe_util_spu.s.timing

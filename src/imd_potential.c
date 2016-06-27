@@ -975,10 +975,6 @@ void init_pre_pot(void) {
     }
 #endif
 
-#if defined(CBE)
-  mk_pt();
-#endif  /* CBE */
-
 }
 
 #endif

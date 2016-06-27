@@ -126,7 +126,6 @@ else:
     IMD.read_atoms(G.infilename)
 
 # initializations done once
-# CBE omitted
 # EPITAX omitted
 if def_EWALD:
     IMD.init_ewald()

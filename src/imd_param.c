@@ -22,11 +22,6 @@
 
 #include "imd.h"
 
-#if defined(CBE)
-#include "imd_cbe.h"
-#endif
-
-
 typedef enum ParamType {
   PARAM_STR, PARAM_STRPTR, PARAM_CHARPTR,
   PARAM_INT, PARAM_INT_COPY,
@@ -3459,31 +3454,6 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
 
     }
 #endif /* EXTPOT */
-#ifdef CBE
-    else if (strcasecmp(token,"num_spus")==0) {
-      /* number of SPUs to be used */
-      getparam(token,&num_spus,PARAM_INT,1,1);
-      /* Make sure parameter just read is in a valid range */
-      if ( (num_spus<1) || (num_spus>N_SPU_THREADS_MAX) ) {
-	 num_spus=N_SPU_THREADS_MAX;
-      }
-    }
-    else if (strcasecmp(token, "num_bufs")==0) {
-      /* Number of argument buffers per SPU */
-      getparam(token,&num_bufs,PARAM_INT,1,1);
-      if ( (num_bufs<1) || (num_bufs>N_ARGBUF) ) {
-	 num_bufs=N_ARGBUF;
-      }
-    }
-    else if (strcasecmp(token, "cbe_pot_steps")==0) {
-      /* number of tabulation steps in potential table */
-      getparam(token,&cbe_pot_steps,PARAM_INT,1,1);
-    }
-    else if (strcasecmp(token, "cbe_pot_max")==0) {
-      /* maximum value in potential table */
-      getparam(token,&cbe_pot_max,PARAM_REAL,1,1);
-    }
-#endif
 
 #ifdef KIM
     else if (strcasecmp(token, "kim_model_name")==0) {
@@ -4928,13 +4898,6 @@ void broadcast_params() {
   MPI_Bcast( ep_dir,         3*ep_n,    REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ep_a,               1,    REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &ep_rcut,            1,    REAL, 0, MPI_COMM_WORLD);
-#endif
-
-#ifdef CBE
-  MPI_Bcast( &num_spus,      1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &num_bufs,      1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &cbe_pot_steps, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &cbe_pot_max,   1, REAL,    0, MPI_COMM_WORLD);
 #endif
 
   MPI_Bcast(&use_header,1, MPI_INT, 0, MPI_COMM_WORLD);

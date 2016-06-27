@@ -25,12 +25,6 @@
 *
 ******************************************************************************/
 
-#ifdef CBE
-#define NBL
-#define SINGLE
-#define MEMALIGN
-#endif
-
 /* double precision is the default */
 #ifndef SINGLE
 #define DOUBLE
@@ -141,9 +135,7 @@
 #ifdef BUFCELLS
 
 /* AR is the default. We could make the default machine dependent */
-#if !defined(CBE) || defined(CBE2)
 #define AR
-#endif
 
 #if defined(AR) && !defined(LOADBALANCE)
 #  define NNBCELL 14

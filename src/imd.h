@@ -31,10 +31,6 @@
 #include <unistd.h>
 #include <errno.h>
 
-#ifdef CBE
-#define USE_WALLTIME
-#endif
-
 /* support for timers */
 #ifndef MPI
 #if defined(USE_RUSAGE) || defined(USE_WALLTIME)

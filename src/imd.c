@@ -17,12 +17,10 @@
 
 /* include file also declares global variables and has function prototypes */
 #include "imd.h"
+
+/* Performance Application Programming Interface */
 #ifdef PAPI
 #include <papi.h>
-#endif
-
-#if defined(CBE)
-#include "imd_cbe.h"
 #endif
 
 /* Main module of the IMD Package;
@@ -33,25 +31,11 @@ int main(int argc, char **argv)
   int start, num_threads, i;
   int simulation = 1, finished = 0;
   real tmp;
+
 #ifdef PAPI
   float rtime, ptime, mflops;
   long_long flpins;
 #endif
-
-#if defined(CBE)
-  /* Also measure time on PPU in terms of (PowerPC) time base ticks */
-  tick_t tick0, tick1, dticks;
-  /* Time base freqency */
-  unsigned long const tbf = tbfreq();
-  /* Multiplicative conversion factor ticks->seconds */
-  double const ticks2sec = ((0u!=tbf) ? (1.0/((double)tbf)) : 0.0);
-
-  /* Use the following streams for info & timing output */
-  FILE* const cbe_info   = stdout;
-  FILE* const cbe_timing = stderr;
-#endif
-
-
 
 #if defined(MPI) || defined(NEB)
   MPI_Init(&argc, &argv);
@@ -66,9 +50,6 @@ int main(int argc, char **argv)
   imd_init_timer( &time_input,      1, "input",     "orange");
   imd_init_timer( &time_integrate,  1, "integrate", "green" );
   imd_init_timer( &time_forces,     1, "forces",    "yellow");
-#if defined(CBE)
-  tick0 = ticks();
-#endif
 
   read_command_line(argc,argv);
 
@@ -76,7 +57,6 @@ int main(int argc, char **argv)
   do {
 
   time(&tstart);
-
 
   /* start some timers (after starting MPI!) */
   imd_start_timer(&time_total);
@@ -92,26 +72,6 @@ int main(int argc, char **argv)
 
   /* initialize all potentials */
   setup_potentials();
-
-#ifdef CBE
-  /* CBE initialization must be after potential setup */
-  if ( -1 == cbe_init(num_spus, -1) ) {
-      error("Could not initialize SPU threads!\n");
-  }
-  else {
-      /* Some CBE specfic info after everything has been initialized: */
-      fprintf(cbe_info,
-              "CBE hardware: timebase frequency is %lu ticks per second (at the moment).\n"
-              "CBE mode: Pointers on PPU are %u bits wide.\n"
-              "CBE parameters: %d SPUs were requested, %u are used\n"
-              "                %d argument buffers per SPU, %u bytes each.\n",
-              ((unsigned long int)tbf),
-              ((unsigned)PPU_PTRBITS),
-              num_spus, cbe_get_nspus(),
-              num_bufs, ((unsigned)(sizeof (argbuf_t)))
-             );
-  }
-#endif  /* CBE */
 
 #ifdef TIMING
   imd_start_timer(&time_input);
@@ -281,10 +241,6 @@ int main(int argc, char **argv)
     }
   }
 
-
-#if defined(CBE)
-  tick1=ticks();
-#endif
   imd_stop_timer(&time_total);
 #ifdef PAPI
   PAPI_flops(&rtime,&ptime,&flpins,&mflops);
@@ -347,15 +303,6 @@ int main(int argc, char **argv)
 #endif
 #endif
 
-#if defined(CBE)
-    /*
-    dticks=tick_diff(tick0,tick1);
-    fprintf(cbe_timing,  "%llu   %f\n",
-             ((unsigned long long)dticks),  (((double)dticks)*ticks2sec)
-           );
-    */
-    fprintf(cbe_timing, "%f\n", time_total.total);
-#endif
     printf("Used %f seconds cputime,\n", time_total.total);
     printf("%f seconds excluding setup time,\n", time_main.total);
     tmp =  ((num_cpus * num_threads / hyper_threads) * time_main.total /
@@ -455,11 +402,6 @@ int main(int argc, char **argv)
   /* kill MPI */
 #if defined(MPI) || defined(NEB)
   shutdown_mpi();
-#endif
-
-/* Added by Frank Pister */
-#if defined(CBE)
-   cbe_shutdown();
 #endif
 
   /* Modified by F.P.:  We return, we don't exit :-) */

@@ -819,10 +819,6 @@ void unpack_add_sm_chi(msgbuf *, int, int, int);
 int get_free_mem(void);
 #endif
 
-#ifdef CBE
-void mk_pt(void);
-#endif
-
 real RealGetElm( real *p, int i);
 void RealSetElm( real *p, int i, real val); 
 int  IntGetElm( int *p, int i);

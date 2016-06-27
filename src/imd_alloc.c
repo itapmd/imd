@@ -170,9 +170,7 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
   to->sorte  [i] = from->sorte  [j]; 
   to->vsorte [i] = from->vsorte [j]; 
   to->masse  [i] = from->masse  [j]; 
-#ifndef CBE
   to->pot_eng[i] = from->pot_eng[j];
-#endif
 #endif
 #ifdef EAM2
   to->eam_rho[i] = from->eam_rho[j]; 
@@ -302,9 +300,7 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
 #ifndef TWOD
   to->kraft Z(i) = from->kraft Z(j); 
 #endif
-#ifdef CBE
-  to->kraft W(i) = from->kraft W(j); 
-#endif
+
 #ifdef COVALENT
   /* neighbor table is not copied */
 #endif
@@ -511,11 +507,7 @@ void memalloc(void *p, int count, int size, int align, int ncopy, int clear,
 void alloc_cell(cell *p, int n)
 {
   int i, ncopy;
-#ifdef CBE
-  int al=128;
-#else
   int al=8;
-#endif
 
   /* cells are either deallocated or increased; they never shrink */
 
@@ -576,9 +568,7 @@ void alloc_cell(cell *p, int n)
   memalloc( &p->sorte,    n, sizeof(shortint), al, ncopy, 0, "sorte" );
   memalloc( &p->vsorte,   n, sizeof(shortint), al, ncopy, 0, "vsorte" );
   memalloc( &p->masse,    n, sizeof(real),     al, ncopy, 0, "masse" );
-#ifndef CBE
   memalloc( &p->pot_eng,  n, sizeof(real),     al, ncopy, 0, "pot_eng" );
-#endif
 #endif
 #ifdef EAM2
   memalloc( &p->eam_rho,  n, sizeof(real),     al, ncopy, 0, "eam_rho" );

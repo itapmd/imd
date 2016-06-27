@@ -355,10 +355,10 @@ int bb_minimize(int simulation)
 #ifdef TIMING
     imd_start_timer(&time_integrate);
 #endif
-#if !defined(CBE) || !defined(SPU_INT)
-    /* move atoms */
-    if (ensemble != ENS_CG) move_atoms(); /* here PxF is recalculated */
-#endif
+
+/* move atoms */
+if (ensemble != ENS_CG) move_atoms(); /* here PxF is recalculated */
+
 #ifdef TIMING
     imd_stop_timer(&time_integrate);
 #endif

@@ -207,11 +207,7 @@ INLINE static int MOD(shortint p, int q)
 #define VSORTE(cell,i)          ((cell)->vsorte[i])
 #define NUMMER(cell,i)          ((cell)->nummer[i])
 #define MASSE(cell,i)           ((cell)->masse[i])
-#ifdef CBE
-#define POTENG(cell,i)          ((cell)->kraft W(i))
-#else
 #define POTENG(cell,i)          ((cell)->pot_eng[i])
-#endif
 
 #endif
 
@@ -389,9 +385,6 @@ inline static real SQR(real x)
 #ifdef TWOD
 #define SDIM 2
 #define  DIM 2
-#elif defined(CBE)
-#define SDIM 4
-#define  DIM 3
 #else
 #define SDIM 3
 #define  DIM 3
