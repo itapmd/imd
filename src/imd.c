@@ -28,7 +28,7 @@
 
 int main(int argc, char **argv)
 {
-  int start, i;
+  int start;
   int simulation = 1, finished = 0;
   real tmp;
 
