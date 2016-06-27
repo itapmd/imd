@@ -23,6 +23,10 @@
 /* the main routines - files imd.c, imd_main_3d.c */
 int  main(int argc, char **argv);
 int  main_loop(int simulation);
+void main_write_eng_headers(void);
+void main_init_modules(void);
+void main_print_summary(void);
+void main_cleanup(void);
 
 /* read parameters - file imd_param.c */
 void read_command_line(int argc, char **argv);
@@ -432,24 +436,6 @@ void write_header_sqd(FILE *out);
 void write_config_sqd(int nr);
 #endif
 void reduce_displacement(vektor *d);
-
-#ifdef SOCKET_IO
-void init_socket(void);
-int  connect_visualization(void);
-void close_socket(void);
-void check_socket(void);
-void vis_init(void);
-void vis_write_config_quit(void);
-void vis_send_msg(char *msg);
-void vis_check_atoms_flags(void);
-void vis_write_atoms_buf(int *len, int tag);
-void vis_write_atoms_fun(void);
-void vis_init_atoms(void);
-void vis_write_atoms(void);
-void vis_change_params(void);
-void vis_change_params_deform(integer flag);
-void vis_restart_simulation(void);
-#endif
 
 #ifdef BBOOST
 void  init_bboost(void);

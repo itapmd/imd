@@ -90,9 +90,6 @@ void imderror(char *msg)
 #if defined (MPI) || defined(NEB)
   MPI_Abort(MPI_COMM_WORLD, 1);
 #endif
-#ifdef SOCKET_IO
-  close_socket();
-#endif
   exit(2);
 }
 

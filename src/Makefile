@@ -961,9 +961,6 @@ FEFLSOURCES	= imd_fefl.c
 
 DEFORMSOURCES   = imd_deform.c
 
-SOCKHEADERS     = sockets.h sockutil.h socket_io.h
-SOCKSOURCES     = socket_io.c sockutil.c
-
 QUASISOURCES    = imd_qc.c
 
 CORRSOURCES     = imd_correl.c
@@ -1355,13 +1352,6 @@ ifneq (,$(findstring cna,${MAKETARGET}))
 SOURCES += ${CNASOURCES}
 SOURCES += ${COVALENTSOURCES}
 PP_FLAGS += -DCNA
-endif
-
-# socket interface
-ifneq (,$(strip $(findstring sock,${MAKETARGET})))
-HEADERS += ${SOCKHEADERS}
-SOURCES += ${SOCKSOURCES}
-PP_FLAGS  += -DSOCKET_IO
 endif
 
 # timing
@@ -1762,5 +1752,3 @@ clean:
 help:
 	@echo "Usage: gmake imd[_<parallel>][_<option>[_<option>...]]"
 
-socktest:
-	gcc -o ${BINDIR}/socktest sockutil.c socktest.c

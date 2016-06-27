@@ -2520,40 +2520,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       getparam(token,op_weight,PARAM_REAL,ntypes*ntypes,ntypes*ntypes);
     }
 #endif
-#ifdef SOCKET_IO
-    else if (strcasecmp(token,"socket_mode")==0) {
-      /* socket mode: client or server */
-      getparam(token,tmpstr,PARAM_STR,1,255);
-      if (strcasecmp(tmpstr,"client")==0) {
-	server_socket = 0;
-      }
-      else if (strcasecmp(tmpstr,"server")==0) {
-	server_socket = 1;
-      }
-      else {
-        char msg[255];
-        sprintf(msg,"****** Unknown socket mode %s ignored ******",tmpstr);
-        warning(msg);
-      }
-    }
-    else if (strcasecmp(token,"socket_int")==0) {
-      getparam("socket_int",&socket_int,PARAM_INT,1,1);
-    }
-    else if (strcasecmp(token,"display_host")==0) {
-      getparam("display_host",display_host,PARAM_STR,1,255);
-    }
-    else if (strcasecmp(token,"server_port")==0) { int tmp;
-      getparam(token,&tmp,PARAM_INT,1,1);
-      server_port = tmp; /* conversion to unsigned short */
-    }
-    else if (strcasecmp(token,"client_port")==0) { int tmp;
-      getparam(token,&tmp,PARAM_INT,1,1);
-      client_port = tmp; /* conversion to unsigned short */
-    }
-    else if (strcasecmp(token,"use_socket_window")==0) {
-      getparam("use_socket_window",&use_socket_window,PARAM_INT,1,1);
-    }
-#endif
+
 #ifdef NPT
     else if (strcasecmp(token,"xi")==0) {
       /* xi variable for NPT thermostat */
@@ -3709,11 +3676,6 @@ void check_parameters_complete()
       warning("cpu_dim incompatible with available CPUs, using default");
   }
 #endif
-#ifdef SOCKET_IO
-  if ((!server_socket) && (display_host[0]=='\0')) {
-    error("display_host name or IP address missing.");
-  }
-#endif
 #ifdef UNIAX
   if (uniax_r_cut == 0) {
     error("uniax_r_cut is missing or zero.");
@@ -4629,10 +4591,6 @@ void broadcast_params() {
   MPI_Bcast( &acg_init_alpha,      1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &acg_decfac,     1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &acg_incfac,     1, REAL,    0, MPI_COMM_WORLD);
-#endif
-
-#ifdef SOCKET_IO
-  MPI_Bcast( &socket_int, 1, MPI_INT, 0, MPI_COMM_WORLD);
 #endif
 
 #ifdef UNIAX

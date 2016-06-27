@@ -28,7 +28,7 @@
 
 int main(int argc, char **argv)
 {
-  int start, num_threads, i;
+  int start, i;
   int simulation = 1, finished = 0;
   real tmp;
 
@@ -53,9 +53,6 @@ int main(int argc, char **argv)
 
   read_command_line(argc,argv);
 
-  /* loop for online visualization */
-  do {
-
   time(&tstart);
 
   /* start some timers (after starting MPI!) */
@@ -64,6 +61,7 @@ int main(int argc, char **argv)
 
   /* read parameters for first simulation phase */
   finished = read_parameters(paramfilename, simulation);
+
 #ifdef KERMODE
   ke_r2cut=ew_r2_cut;
   ke_tot_rcut = (ke_rcut+yuk_smoothlength); /* kermode total coulomb and dipole cut off */
@@ -76,148 +74,33 @@ int main(int argc, char **argv)
 #ifdef TIMING
   imd_start_timer(&time_input);
 #endif
+  
 #ifdef NEB
   read_atoms_neb(infilename);
 #else
-
   /* filenames starting with _ denote internal generation of configuration */
   if ('_' == infilename[0]) {
     generate_atoms(infilename);
   }
   else {
-#ifdef debugLo
-    printf("    ************************* \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("print ""hi 1 hi 1 hi 1"" checking by Lo! \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("    ************************* \n");fflush(stdout);
-#endif
     read_atoms(infilename);
-#ifdef debugLo
-    printf("    ************************* \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("print ""hi 2 hi 2 hi 2"" checking by Lo! \n");fflush(stdout);
-    printf("********************************* \n");fflush(stdout);
-    printf("    ************************* \n");fflush(stdout);
-
-#endif
-
   }
-
 #endif
 
 #ifdef TIMING
   imd_stop_timer(&time_input);
 #endif
 
-#ifdef EPITAX
-  if (0 == myid)
-    printf("EPITAX: Largest substrate atom number: %d\n", epitax_sub_n);
-  epitax_number = epitax_sub_n;
-  epitax_level  = substrate_level();
-  check_boxheight();
-#endif
-
-#ifdef EWALD
-  init_ewald();
-#endif
-
-  /* initialize socket I/O */
-#ifdef SOCKET_IO
-  if ((myid == 0) && (socket_int > 0)) init_socket();
-#endif
-
   start = steps_min;  /* keep starting step number */
 
   /* write .eng file header */
-  if ((imdrestart==0) && (eng_int>0)) write_eng_file_header();
-#ifdef EXTPOT
-  if ((imdrestart==0) && (eng_int>0)) write_fext_header();
-#endif
-#ifdef RELAX
-  if ((imdrestart==0) && (eng_int>0))
-  {
-      if ( (ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG) )
-          write_ssdef_header();
-  }
-#endif
-
+  main_write_eng_headers();
+  
+  /* initialize modules */
+  main_init_modules();
 
 #ifdef PAPI
   PAPI_flops(&rtime,&ptime,&flpins,&mflops);
-#endif
-
-#ifdef REFPOS
-  init_refpos();
-#endif
-
-#ifdef BBOOST
-  init_bboost();
-#endif
-
-#ifdef BEND
-  init_bend();
-#endif
-
-#ifdef ZAPP
-  init_zapp();
-#endif
-
-#ifdef KIM
-  init_kim();
-#endif
-
-#ifdef CNA
-  init_cna();
-#endif
-#ifdef ADA
-  init_ada();
-#endif
-#ifdef NYETENSOR
-  init_NyeTensor();
-#endif
-
-#ifdef LASER
-  init_laser();
-#endif
-
-#ifdef CYCLE
-  init_cycle();
-#endif
-
-#ifdef TTM
-  init_ttm();
-#endif
-
-#ifdef SM
-  init_sm();
-#endif
-
-#ifdef LOADBALANCE
-  lb_computeVariance();
-  if (myid == 0 && (0==myrank)){
-	printf("LOAD BALANCING: Initial max_load %f\n", lb_maxLoad);
-	printf("LOAD BALANCING: Initial min_load %f\n", lb_minLoad);
-	printf("LOAD BALANCING: Initial variance %f\n",  lb_loadVariance);
-  }
-
-  if (lb_preRuns > 0){
-	  fix_cells();
-	  setup_buffers();
-	  for (i=0; i<lb_preRuns;i++){
-		  int success = balanceLoad(lb_getLoad, lb_getCenterOfGravity, 0, 0);
-		  lb_computeVariance();
-		  write_lb_file(-lb_preRuns+i, 1);
-		  if (!success) break;
-	  }
-	  if (lb_writeStatus)
-	  	  	write_lb_status(0);
-	  if (myid == 0 && (0==myrank)){
-	  	printf("LOAD BALANCING: After initial runs max_load %f\n", lb_maxLoad);
-	  	printf("LOAD BALANCING: After initial runs min_load %f\n", lb_minLoad);
-	  	printf("LOAD BALANCING: After initial runs variance %f\n", lb_loadVariance);
-	  }
-  }
 #endif
 
   imd_stop_timer(&time_setup);
@@ -242,23 +125,16 @@ int main(int argc, char **argv)
   }
 
   imd_stop_timer(&time_total);
+
 #ifdef PAPI
   PAPI_flops(&rtime,&ptime,&flpins,&mflops);
 #endif
 
   /* write execution time summary */
   if ((0 == myid) && (0 == myrank)){
-    if (NULL!= eng_file) fclose( eng_file);
-#ifdef EXTPOT
-    if (NULL!= ind_file) fclose( ind_file);
-#endif
-#ifdef LOADBALANCE
-    if (NULL!= lblog_file) fclose(lblog_file);
-#endif
-#ifdef RELAX
-    if (NULL!= ssdef_file) fclose( ssdef_file);
-#endif
-    if (NULL!=msqd_file) fclose(msqd_file);
+
+    main_cleanup();
+    
     time(&tend);
     steps_max -= start;
     if (steps_max < 0)
@@ -272,132 +148,9 @@ int main(int argc, char **argv)
 #ifdef PAPI
     printf("Achieved %f megaflops per CPU\n\n", mflops);
 #endif
-
-#ifdef NBLIST
-    printf("Neighbor list update every %d steps on average\n\n",
-           steps_max / MAX(nbl_count,1));
-#endif
-
-#ifdef EPITAX
-    if (0 == myid) printf("EPITAX: %d atoms created.\n", nepitax);
-#endif
-
-#ifdef OMP
-    num_threads = omp_get_max_threads();
-#else
-    num_threads = 1;
-#endif
-
-#ifdef MPI
-    printf("Did %d steps with %ld atoms on %d physical CPUs.\n",
-           steps_max+1, natoms, num_cpus * num_threads / hyper_threads);
-#ifdef OMP
-    printf("Used %d processes with %d threads each.\n", num_cpus, num_threads);
-#endif
-#else
-#ifdef OMP
-    printf("Did %d steps with %ld atoms on %d physical CPUs.\n",
-           steps_max+1, natoms, num_threads / hyper_threads);
-#else
-    printf("Did %d steps with %ld atoms.\n", steps_max+1, natoms);
-#endif
-#endif
-
-    printf("Used %f seconds cputime,\n", time_total.total);
-    printf("%f seconds excluding setup time,\n", time_main.total);
-    tmp =  ((num_cpus * num_threads / hyper_threads) * time_main.total /
-           (steps_max+1)) / natoms;
-    printf("%e cpuseconds per step and atom\n", tmp);
-    printf("(inverse is %e).\n\n", 1.0/tmp);
-
-#ifdef TIMING
-    printf("Output time:   %e seconds or %.1f %% of main loop\n",
-           time_output.total, 100*time_output.total /time_main.total);
-    printf("Input  time:   %e seconds or %.1f %% of main loop\n",
-           time_input.total,100*time_input.total/time_main.total);
-    printf("Force  time:   %e seconds or %.1f %% of main loop\n",
-           time_forces.total,100*time_forces.total/time_main.total);
-#endif
-
-     fflush(stdout);
-     fflush(stderr);
+    
+    main_print_summary();
   }
-
-  /* if looping, clean up old simulation */
-  if (loop) {
-
-    int k;
-
-    /* empty all cells */
-    for (k=0; k<nallcells; k++) cell_array[k].n = 0;
-
-    /* free potential tables */
-#if defined(PAIR)
-    free_pot_table(&pair_pot);
-#endif
-#ifdef TTBP
-    free_pot_table(&smooth_pot);
-#endif
-#ifdef EAM2
-    free_pot_table(&embed_pot);
-    free_pot_table(&rho_h_tab);
-#ifdef EEAM
-    free_pot_table(&emod_pot);
-#endif
-#endif
-#ifdef SM
-    free_pot_table(&na_pot_tab);
-    free_pot_table(&cr_pot_tab);
-    free_pot_table(&erfc_r_tab);
-#endif
-#ifdef KIM
-    destroy_kim();
-#endif
-
-    volume_init = 0.0;
-
-    /* force init_cells */
-    max_height.x = 0.0;
-    max_height.y = 0.0;
-#ifndef TWOD
-    max_height.z = 0.0;
-#endif
-
-    /* close open files */
-    if (myid==0) {
-      if ( eng_file!=NULL) fclose( eng_file);  eng_file=NULL;
-      if (msqd_file!=NULL) fclose(msqd_file); msqd_file=NULL;
-    }
-  }
-
-  } while (loop);
-
-
-#ifdef NEB
-  real Emax=-999999;
-  real Emin=999999;
-  int maxi=0;
-  if (myrank==0)
-    {
-      printf ("NEB:\n # Image Epot\n");
-      for(i=0;i<neb_nrep;i++)
-	{
-	  if ( neb_epot_im[i] < Emin)
-	    Emin=neb_epot_im[i];
-	  if ( neb_epot_im[i] > Emax)
-	    {
-	      maxi=i;
-	      Emax=neb_epot_im[i];
-	    }
-	  printf(" %d %lf\n",i, neb_epot_im[i]);
-	}
-      printf ("Saddlepoint: %d Activation Energy: %lf \n",maxi,Emax-Emin);
-    }
-#endif
-
-#ifdef KIM
-  destroy_kim();
-#endif
 
   /* kill MPI */
 #if defined(MPI) || defined(NEB)
@@ -406,4 +159,235 @@ int main(int argc, char **argv)
 
   /* Modified by F.P.:  We return, we don't exit :-) */
   return 0;
+}
+
+void main_write_eng_headers( void )
+{
+  if ((imdrestart==0) && (eng_int>0)) write_eng_file_header();
+#ifdef EXTPOT
+  if ((imdrestart==0) && (eng_int>0)) write_fext_header();
+#endif
+#ifdef RELAX
+  if ((imdrestart==0) && (eng_int>0))
+  {
+      if ( (ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG) )
+          write_ssdef_header();
+  }
+#endif
+}
+
+void main_init_modules( void )
+{
+
+#ifdef EPITAX
+  if (0 == myid)
+    printf("EPITAX: Largest substrate atom number: %d\n", epitax_sub_n);
+  epitax_number = epitax_sub_n;
+  epitax_level  = substrate_level();
+  check_boxheight();
+#endif
+
+#ifdef EWALD
+  init_ewald();
+#endif
+
+#ifdef REFPOS
+  init_refpos();
+#endif
+
+#ifdef BBOOST
+  init_bboost();
+#endif
+  
+#ifdef BEND
+  init_bend();
+#endif
+
+#ifdef ZAPP
+  init_zapp();
+#endif
+
+#ifdef KIM
+  init_kim();
+#endif
+  
+#ifdef CNA
+  init_cna();
+#endif
+
+#ifdef ADA
+  init_ada();
+#endif
+
+#ifdef NYETENSOR
+  init_NyeTensor();
+#endif
+
+#ifdef LASER
+  init_laser();
+#endif
+
+#ifdef CYCLE
+  init_cycle();
+#endif
+
+#ifdef TTM
+  init_ttm();
+#endif
+
+#ifdef SM
+  init_sm();
+#endif
+
+#ifdef LOADBALANCE
+  lb_computeVariance();
+  if (myid == 0 && (0==myrank)){
+    printf("LOAD BALANCING: Initial max_load %f\n", lb_maxLoad);
+    printf("LOAD BALANCING: Initial min_load %f\n", lb_minLoad);
+    printf("LOAD BALANCING: Initial variance %f\n",  lb_loadVariance);
+  }
+
+  if (lb_preRuns > 0){
+      fix_cells();
+      setup_buffers();
+      for (i=0; i<lb_preRuns;i++){
+          int success = balanceLoad(lb_getLoad, lb_getCenterOfGravity, 0, 0);
+          lb_computeVariance();
+          write_lb_file(-lb_preRuns+i, 1);
+          if (!success) break;
+      }
+      if (lb_writeStatus)
+            write_lb_status(0);
+      if (myid == 0 && (0==myrank)){
+        printf("LOAD BALANCING: After initial runs max_load %f\n", lb_maxLoad);
+        printf("LOAD BALANCING: After initial runs min_load %f\n", lb_minLoad);
+        printf("LOAD BALANCING: After initial runs variance %f\n", lb_loadVariance);
+      }
+  }
+#endif
+  
+}
+
+void main_cleanup( void )
+{
+
+  /* close open files */
+  if (NULL!= eng_file) fclose( eng_file);
+
+#ifdef EXTPOT
+  if (NULL!= ind_file) fclose( ind_file);
+#endif
+
+#ifdef LOADBALANCE
+    if (NULL!= lblog_file) fclose(lblog_file);
+#endif
+  
+#ifdef RELAX
+  if (NULL!= ssdef_file) fclose( ssdef_file);
+#endif
+
+  if (NULL!=msqd_file) fclose(msqd_file);
+  
+  /* empty all cells */
+  int k;
+  for (k=0; k<nallcells; k++) cell_array[k].n = 0;
+
+  /* free potential tables */
+#if defined(PAIR)
+  free_pot_table(&pair_pot);
+#endif
+#ifdef TTBP
+  free_pot_table(&smooth_pot);
+#endif
+#ifdef EAM2
+  free_pot_table(&embed_pot);
+  free_pot_table(&rho_h_tab);
+#ifdef EEAM
+  free_pot_table(&emod_pot);
+#endif
+#endif
+#ifdef SM
+  free_pot_table(&na_pot_tab);
+  free_pot_table(&cr_pot_tab);
+  free_pot_table(&erfc_r_tab);
+#endif
+#ifdef KIM
+  destroy_kim();
+#endif
+
+}
+
+void main_print_summary( void )
+{
+
+#ifdef NBLIST
+  printf("Neighbor list update every %d steps on average\n\n",
+         steps_max / MAX(nbl_count,1));
+#endif
+
+#ifdef EPITAX
+    if (0 == myid) printf("EPITAX: %d atoms created.\n", nepitax);
+#endif
+    
+#ifdef NEB
+  real Emax=-999999;
+  real Emin=999999;
+  int maxi=0;
+  if (myrank==0)
+    {
+      printf ("NEB:\n # Image Epot\n");
+      for(i=0;i<neb_nrep;i++)
+    {
+      if ( neb_epot_im[i] < Emin)
+        Emin=neb_epot_im[i];
+      if ( neb_epot_im[i] > Emax)
+        {
+          maxi=i;
+          Emax=neb_epot_im[i];
+        }
+      printf(" %d %lf\n",i, neb_epot_im[i]);
+    }
+      printf ("Saddlepoint: %d Activation Energy: %lf \n",maxi,Emax-Emin);
+    }
+#endif
+  
+  int num_threads = 1;
+#ifdef OMP
+  int num_threads = omp_get_max_threads();
+#endif
+
+#ifdef MPI
+  printf("Did %d steps with %ld atoms on %d physical CPUs.\n",
+         steps_max+1, natoms, num_cpus * num_threads / hyper_threads);
+#ifdef OMP
+  printf("Used %d processes with %d threads each.\n", num_cpus, num_threads);
+#endif
+#else
+#ifdef OMP
+  printf("Did %d steps with %ld atoms on %d physical CPUs.\n",
+         steps_max+1, natoms, num_threads / hyper_threads);
+#else
+  printf("Did %d steps with %ld atoms.\n", steps_max+1, natoms);
+#endif
+#endif
+
+  printf("Used %f seconds cputime,\n", time_total.total);
+  printf("%f seconds excluding setup time,\n", time_main.total);
+  real tmp =  ((num_cpus * num_threads / hyper_threads) * time_main.total /
+               (steps_max+1)) / natoms;
+  printf("%e cpuseconds per step and atom\n", tmp);
+  printf("(inverse is %e).\n\n", 1.0/tmp);
+
+#ifdef TIMING
+  printf("Output time:   %e seconds or %.1f %% of main loop\n",
+         time_output.total, 100*time_output.total /time_main.total);
+  printf("Input  time:   %e seconds or %.1f %% of main loop\n",
+         time_input.total,100*time_input.total/time_main.total);
+  printf("Force  time:   %e seconds or %.1f %% of main loop\n",
+         time_forces.total,100*time_forces.total/time_main.total);
+#endif
+  
+  fflush(stdout);
+  fflush(stderr);
+
 }

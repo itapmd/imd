@@ -193,12 +193,6 @@ void init_fbc(void);
 void update_fbc();
 #endif
 
-#ifdef SOCKET_IO
-void init_socket(void);
-void check_socket(void);
-int  socket_int;
-#endif
-
 #ifdef EWALD
 void init_ewald(void);
 #endif

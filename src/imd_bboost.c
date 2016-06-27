@@ -418,10 +418,6 @@ if (ensemble != ENS_CG) move_atoms(); /* here PxF is recalculated */
     if ((dsf_int > 0) && (0 == steps % dsf_int)) write_dsf();
 #endif
 
-#ifdef SOCKET_IO
-    if ((socket_int > 0) && (0 == steps % socket_int)) check_socket();
-#endif
-
 #ifdef TIMING
     imd_stop_timer(&time_output);
 #endif

@@ -83,7 +83,6 @@ def_NMOLDYN     = 'write_nmoldyn'         in funcs
 def_HOMDEF      = 'lin_deform'            in funcs
 def_DEFORM      = 'deform_sample'         in funcs
 def_FBC         = 'init_fbc'              in funcs
-def_SOCKET_IO   = 'init_socket'           in funcs
 def_EWALD       = 'init_ewald'            in funcs
 def_REFPOS      = 'init_refpos'           in funcs
 def_CG          = 'cg_step'               in funcs
@@ -129,10 +128,6 @@ else:
 # EPITAX omitted
 if def_EWALD:
     IMD.init_ewald()
-
-if def_SOCKET_IO:
-    if G.myid == 0 and G.socket_int > 0:
-        IMD.init_socket()
 
 if G.imdrestart == 0 and G.eng_int > 0:
     IMD.write_eng_file_header()
@@ -335,10 +330,6 @@ while simulation == 1 or not finished:
             if G.nmoldyn_int > 0 and 0 == G.steps % G.nmoldyn_int:
                 IMD.write_nmoldyn(G.steps)
         # DSF omitted
-        # check for request on socket
-        if def_SOCKET_IO:
-            if G.socket_int > 0 and 0 == G.steps % G.socket_int:
-                IMD.check_socket()
         # change box to relax pressure
         if def_HOMDEF:
             if G.relax_rate > 0.0:
