@@ -89,12 +89,10 @@ int estimate_nblist_size(void)
 
       d1.x = ORT(p,i,X);
       d1.y = ORT(p,i,Y);
-#ifndef TWOD
       d1.z = ORT(p,i,Z);
-#endif
 
       /* for each neighboring atom */
-      for (m=0; m<NNBCELL; m++) {   /* this is not TWOD ready! */
+      for (m=0; m<NNBCELL; m++) {
 
         int    c2, jstart, j;
         real   r2;
@@ -112,9 +110,7 @@ int estimate_nblist_size(void)
           vektor d;
           d.x = ORT(q,j,X) - d1.x;
           d.y = ORT(q,j,Y) - d1.y;
-#ifndef TWOD
           d.z = ORT(q,j,Z) - d1.z;
-#endif
           r2  = SPROD(d,d);
           if (r2 < cellsz) tn++;
         }
@@ -147,9 +143,7 @@ void make_nblist(void)
     for (i=0; i<p->n; i++) {
       NBL_POS(p,i,X) = ORT(p,i,X);
       NBL_POS(p,i,Y) = ORT(p,i,Y);
-#ifndef TWOD
       NBL_POS(p,i,Z) = ORT(p,i,Z);
-#endif
     }
   }
 
@@ -230,12 +224,10 @@ void make_nblist(void)
 
       d1.x = ORT(p,i,X);
       d1.y = ORT(p,i,Y);
-#ifndef TWOD
       d1.z = ORT(p,i,Z);
-#endif
 
       /* for each neighboring atom */
-      for (m=0; m<NNBCELL; m++) {   /* this is not TWOD ready! */
+      for (m=0; m<NNBCELL; m++) {
         int  c2, jstart, j;
         cell *q;
         c2 = cnbrs[c].nq[m];
@@ -251,9 +243,7 @@ void make_nblist(void)
           real   r2;
           d.x = ORT(q,j,X) - d1.x;
           d.y = ORT(q,j,Y) - d1.y;
-#ifndef TWOD
           d.z = ORT(q,j,Z) - d1.z;
-#endif
           r2  = SPROD(d,d);
           if (r2 < cellsz) {
             tb[tn++] = cl_off[c2] + j;
@@ -339,18 +329,14 @@ void calc_forces(int steps)
     for (i=0; i<p->n; i++) {
       KRAFT(p,i,X) = 0.0;
       KRAFT(p,i,Y) = 0.0;
-#ifndef TWOD
       KRAFT(p,i,Z) = 0.0;
-#endif
 #if defined(STRESS_TENS)
       PRESSTENS(p,i,xx) = 0.0;
       PRESSTENS(p,i,yy) = 0.0;
       PRESSTENS(p,i,xy) = 0.0;
-#ifndef TWOD
       PRESSTENS(p,i,zz) = 0.0;
       PRESSTENS(p,i,yz) = 0.0;
       PRESSTENS(p,i,zx) = 0.0;
-#endif
 #endif     
 #ifndef MONOLJ
       POTENG(p,i) = 0.0;
@@ -406,9 +392,7 @@ void calc_forces(int steps)
     for(i=0; i<nsuperatoms; i++) {
       superforce[i].x = 0.0;
       superforce[i].y = 0.0;
-#ifndef TWOD
       superforce[i].z = 0.0;
-#endif
     }
 #endif
 
@@ -426,11 +410,7 @@ void calc_forces(int steps)
     for (i=0; i<p->n; i++) {
 
 #ifdef STRESS_TENS
-#ifdef TWOD
-      sym_tensor pp = {0.0,0.0,0.0};
-#else
       sym_tensor pp = {0.0,0.0,0.0,0.0,0.0,0.0};
-#endif
 #endif
 #ifdef ADP
       real       tmp;
@@ -445,20 +425,14 @@ void calc_forces(int steps)
       vektor     Estat = {0.0,0.0,0.0};
       vektor     pstat = {0.0,0.0,0.0};
 #endif
-#ifdef TWOD
-      vektor d1, ff = {0.0,0.0};
-#else
       vektor d1, ff = {0.0,0.0,0.0};
-#endif
       real   ee = 0.0;
       real   eam_r = 0.0, eam_p = 0.0;
       int    m, it, nb = 0;
 
       d1.x = ORT(p,i,X);
       d1.y = ORT(p,i,Y);
-#ifndef TWOD
       d1.z = ORT(p,i,Z);
-#endif
       it   = SORTE(p,i);
 
       /* loop over neighbors */
@@ -478,9 +452,7 @@ void calc_forces(int steps)
 
         d.x = ORT(q,j,X) - d1.x;
         d.y = ORT(q,j,Y) - d1.y;
-#ifndef TWOD
         d.z = ORT(q,j,Z) - d1.z;
-#endif
         r2  = SPROD(d,d);
         jt  = SORTE(q,j);
         col = it * ntypes + jt;
@@ -507,19 +479,13 @@ void calc_forces(int steps)
           tot_pot_energy += pot;
           force.x = d.x * grad;
           force.y = d.y * grad;
-#ifndef TWOD
           force.z = d.z * grad;
-#endif
           KRAFT(q,j,X) -= force.x;
           KRAFT(q,j,Y) -= force.y;
-#ifndef TWOD
           KRAFT(q,j,Z) -= force.z;
-#endif
           ff.x         += force.x;
           ff.y         += force.y;
-#ifndef TWOD
           ff.z         += force.z;
-#endif
 
 #ifdef FLAGEDATOMS
 	  if(VSORTE(q,j) == flagedatomstype && VSORTE(p,i) == flagedatomstype)
@@ -548,9 +514,7 @@ void calc_forces(int steps)
 #ifdef P_AXIAL
           vir_xx -= d.x * force.x;
           vir_yy -= d.y * force.y;
-#ifndef TWOD
           vir_zz -= d.z * force.z;
-#endif
 #else
           virial -= r2  * grad;
 #endif
@@ -560,23 +524,19 @@ void calc_forces(int steps)
             /* avoid double counting of the virial */
             force.x *= 0.5;
             force.y *= 0.5;
-#ifndef TWOD
             force.z *= 0.5;
-#endif
             pp.xx             -= d.x * force.x;
             PRESSTENS(q,j,xx) -= d.x * force.x;
             pp.yy             -= d.y * force.y;
             PRESSTENS(q,j,yy) -= d.y * force.y;
             pp.xy             -= d.x * force.y;
             PRESSTENS(q,j,xy) -= d.x * force.y;
-#ifndef TWOD
             pp.zz             -= d.z * force.z;
             PRESSTENS(q,j,zz) -= d.z * force.z;
             pp.yz             -= d.y * force.z;
             PRESSTENS(q,j,yz) -= d.y * force.z;
             pp.zx             -= d.z * force.x;
             PRESSTENS(q,j,zx) -= d.z * force.x;
-#endif
 	  }
 #endif
         }
@@ -958,11 +918,9 @@ void calc_forces(int steps)
         PRESSTENS(p,i,xx) += pp.xx;
         PRESSTENS(p,i,yy) += pp.yy;
         PRESSTENS(p,i,xy) += pp.xy;
-#ifndef TWOD
         PRESSTENS(p,i,zz) += pp.zz;
         PRESSTENS(p,i,yz) += pp.yz;
         PRESSTENS(p,i,zx) += pp.zx;
-#endif
       }
 #endif
 #ifdef NNBR
@@ -2020,9 +1978,7 @@ void check_nblist()
     for (i=0; i<p->n; i++) {
       d.x = ORT(p,i,X) - NBL_POS(p,i,X);
       d.y = ORT(p,i,Y) - NBL_POS(p,i,Y);
-#ifndef TWOD
       d.z = ORT(p,i,Z) - NBL_POS(p,i,Z);
-#endif
       r2 = SPROD(d,d);
       if (r2 > max1) max1 = r2;
     }

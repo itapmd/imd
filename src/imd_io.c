@@ -310,23 +310,13 @@ void write_header_cna(FILE *out)
   fprintf(out, "#F %c 1 1 1 %d %d 1\n", c, DIM, DIM);
   
   /* contents line */
-#ifdef TWOD
-  fprintf(out, "#C number type mass x y vx vy Epot\n");
-#else
   fprintf(out, "#C number type mass x y z vx vy vz Epot\n");
-#endif
 
   /* box lines */
-#ifdef TWOD
-  fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
-  fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
-  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
-#else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
   fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
-#endif
 
   /* generation date and endheader line */
   time(&now);
@@ -354,9 +344,7 @@ void write_atoms_cna(FILE *out)
 
       if ( cna_ur.x != (real)0 ) /* if cna_ur.x still 0, write everything */
         if ((ORT(p,i,X) < cna_ll.x) || (ORT(p,i,X) > cna_ur.x) ||
-#ifndef TWOD
             (ORT(p,i,Z) < cna_ll.z) || (ORT(p,i,Z) > cna_ur.z) || 
-#endif
             (ORT(p,i,Y) < cna_ll.y) || (ORT(p,i,Y) > cna_ur.y)) continue;
 
       /*  if ( (SORTE(p,i) != VSORTE(p,i)) || */
@@ -371,31 +359,20 @@ void write_atoms_cna(FILE *out)
         data[n++].f = (float)   MASSE (p,i);
         data[n++].f = (float)   ORT (p,i,X);
         data[n++].f = (float)   ORT (p,i,Y);
-#ifndef TWOD
         data[n++].f = (float)   ORT (p,i,Z);
-#endif
         data[n++].f = (float)   IMPULS(p,i,X) / MASSE(p,i);
         data[n++].f = (float)   IMPULS(p,i,Y) / MASSE(p,i);
-#ifndef TWOD
         data[n++].f = (float)   IMPULS(p,i,Z) / MASSE(p,i);
-#endif
         data[n++].f = (float)   POTENG(p,i);
         len += n * sizeof(i_or_f);
       }
       /* ASCII output */
       else {
-#ifdef TWOD
-        len += sprintf( outbuf+len,
-          "%d %d %12f %12f %12f %12f %12f %12f\n",
-          NUMMER(p,i), VSORTE(p,i), MASSE(p,i), ORT(p,i,X), ORT(p,i,Y),
-          IMPULS(p,i,X) / MASSE(p,i), IMPULS(p,i,Y) / MASSE(p,i), POTENG(p,i));
-#else
         len += sprintf( outbuf+len,
           "%d %d %12f %12f %12f %12f %12f %12f %12f %12f\n",
           NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
           ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), IMPULS(p,i,X) / MASSE(p,i), 
           IMPULS(p,i,Y) / MASSE(p,i), IMPULS(p,i,Z) / MASSE(p,i), POTENG(p,i));
-#endif
       }
       /* flush or send outbuf if it is full */
       if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -424,23 +401,13 @@ void write_header_crist(FILE *out)
   fprintf(out, "#F %c 1 1 1 %d %d 1\n", c, DIM, DIM);
   
   /* contents line */
-#ifdef TWOD
-  fprintf(out, "#C number type mass x y vx vy crist\n");
-#else
   fprintf(out, "#C number type mass x y z vx vy vz crist\n");
-#endif
 
   /* box lines */
-#ifdef TWOD
-  fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
-  fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
-  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
-#else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
   fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
-#endif
 
   /* generation date and endheader line */
   time(&now);
@@ -469,9 +436,7 @@ void write_atoms_crist(FILE *out)
 
       if ( cna_ur.x != (real)0 ) /* if cna_ur.x still 0, write everything */
         if ((ORT(p,i,X) < cna_ll.x) || (ORT(p,i,X) > cna_ur.x) ||
-#ifndef TWOD
             (ORT(p,i,Z) < cna_ll.z) || (ORT(p,i,Z) > cna_ur.z) || 
-#endif
             (ORT(p,i,Y) < cna_ll.y) || (ORT(p,i,Y) > cna_ur.y)) continue;
 
       nn_other = MARK(p,i) % 100; 
@@ -504,31 +469,20 @@ void write_atoms_crist(FILE *out)
         data[n++].f = (float)   MASSE (p,i);
         data[n++].f = (float)   ORT (p,i,X);
         data[n++].f = (float)   ORT (p,i,Y);
-#ifndef TWOD
         data[n++].f = (float)   ORT (p,i,Z);
-#endif
         data[n++].f = (float)   IMPULS(p,i,X) / MASSE(p,i);
         data[n++].f = (float)   IMPULS(p,i,Y) / MASSE(p,i);
-#ifndef TWOD
         data[n++].f = (float)   IMPULS(p,i,Z) / MASSE(p,i);
-#endif
         data[n++].i = (integer) crist;
         len += n * sizeof(i_or_f);
       }
       /* ASCII output */
       else {
-#ifdef TWOD
-        len += sprintf( outbuf+len,
-          "%d %d %12f %12f %12f %12f %12f %d\n",
-          NUMMER(p,i), VSORTE(p,i), MASSE(p,i), ORT(p,i,X), ORT(p,i,Y),
-          IMPULS(p,i,X) / MASSE(p,i), IMPULS(p,i,Y) / MASSE(p,i), crist);
-#else
         len += sprintf( outbuf+len,
           "%d %d %12f %12f %12f %12f %12f %12f %12f %d\n",
           NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
           ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), IMPULS(p,i,X) / MASSE(p,i), 
           IMPULS(p,i,Y) / MASSE(p,i), IMPULS(p,i,Z) / MASSE(p,i), crist);
-#endif
       }
       /* flush or send outbuf if it is full */
       if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -673,23 +627,13 @@ void write_header_ef(FILE *out)
   fprintf(out, "#F %c 1 1 1 %d %d 1\n", c, DIM, DIM);
   
   /* contents line */
-#ifdef TWOD
-  fprintf(out, "#C number type mass x y vx vy Epot\n");
-#else
   fprintf(out, "#C number type mass x y z vx vy vz Epot\n");
-#endif
 
   /* box lines */
-#ifdef TWOD
-  fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
-  fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
-  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
-#else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
   fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
-#endif
 
   /* generation date and endheader line */
   time(&now);
@@ -717,9 +661,7 @@ void write_atoms_ef(FILE *out)
 
       if ( pic_ur.x != (real)0 ) /* if pic_ur.x still 0, write everything */
         if ((ORT(p,i,X) < pic_ll.x) || (ORT(p,i,X) > pic_ur.x) ||
-#ifndef TWOD
             (ORT(p,i,Z) < pic_ll.z) || (ORT(p,i,Z) > pic_ur.z) || 
-#endif
             (ORT(p,i,Y) < pic_ll.y) || (ORT(p,i,Y) > pic_ur.y)) continue;
 
       /*  if ( (SORTE(p,i) != VSORTE(p,i)) || */
@@ -736,31 +678,20 @@ void write_atoms_ef(FILE *out)
         data[n++].f = (float)   MASSE (p,i);
         data[n++].f = (float)   ORT (p,i,X);
         data[n++].f = (float)   ORT (p,i,Y);
-#ifndef TWOD
         data[n++].f = (float)   ORT (p,i,Z);
-#endif
         data[n++].f = (float)   IMPULS(p,i,X) / MASSE(p,i);
         data[n++].f = (float)   IMPULS(p,i,Y) / MASSE(p,i);
-#ifndef TWOD
         data[n++].f = (float)   IMPULS(p,i,Z) / MASSE(p,i);
-#endif
         data[n++].f = (float)   POTENG(p,i);
         len += n * sizeof(i_or_f);
       }
       /* ASCII output */
       else {
-#ifdef TWOD
-        len += sprintf( outbuf+len,
-          "%d %d %12f %12f %12f %12f %12f %12f\n",
-          NUMMER(p,i), VSORTE(p,i), MASSE(p,i), ORT(p,i,X), ORT(p,i,Y),
-          IMPULS(p,i,X) / MASSE(p,i), IMPULS(p,i,Y) / MASSE(p,i), POTENG(p,i));
-#else
         len += sprintf( outbuf+len,
           "%d %d %12f %12f %12f %12f %12f %12f %12f %12f\n",
           NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
           ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), IMPULS(p,i,X) / MASSE(p,i), 
           IMPULS(p,i,Y) / MASSE(p,i), IMPULS(p,i,Z) / MASSE(p,i), POTENG(p,i));
-#endif
       }
       /* flush or send outbuf if it is full */
       if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -804,23 +735,13 @@ void write_header_nb(FILE *out)
   fprintf(out, "#F %c 1 1 1 %d %d 1\n", c, DIM, DIM);
   
   /* contents line */
-#ifdef TWOD
-  fprintf(out, "#C number type x y vx vy Epot\n");
-#else
   fprintf(out, "#C number type x y z vx vy vz Epot\n");
-#endif
 
   /* box lines */
-#ifdef TWOD
-  fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
-  fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
-  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
-#else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
   fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
-#endif
 
   /* generation date and endheader line */
   time(&now);
@@ -848,9 +769,7 @@ void write_atoms_nb(FILE *out)
 
       if ( pic_ur.x != (real)0 ) /* if pic_ur.x still 0, write everything */
         if ((ORT(p,i,X) < pic_ll.x) || (ORT(p,i,X) > pic_ur.x) ||
-#ifndef TWOD
             (ORT(p,i,Z) < pic_ll.z) || (ORT(p,i,Z) > pic_ur.z) || 
-#endif
             (ORT(p,i,Y) < pic_ll.y) || (ORT(p,i,Y) > pic_ur.y)) continue;
 
       if ( (SORTE(p,i) != VSORTE(p,i)) || 
@@ -866,32 +785,20 @@ void write_atoms_nb(FILE *out)
         data[n++].f = (float)   MASSE (p,i);
         data[n++].f = (float)   ORT (p,i,X);
         data[n++].f = (float)   ORT (p,i,Y);
-#ifndef TWOD
         data[n++].f = (float)   ORT (p,i,Z);
-#endif
         data[n++].f = (float)   IMPULS(p,i,X) / MASSE(p,i);
         data[n++].f = (float)   IMPULS(p,i,Y) / MASSE(p,i);
-#ifndef TWOD
         data[n++].f = (float)   IMPULS(p,i,Z) / MASSE(p,i);
-#endif
         data[n++].f = (float)   POTENG(p,i);
         len += n * sizeof(i_or_f);
       }
       /* ASCII output */
       else {
-#ifdef TWOD
-        len += sprintf( outbuf+len,
-          "%d %d %12f %12f %12f %12f %12f %12f\n",
-          NUMMER(p,i), VSORTE(p,i), MASSE (p,i), 
-          ORT(p,i,X), ORT(p,i,Y),
-          IMPULS(p,i,X) / MASSE(p,i), IMPULS(p,i,Y) / MASSE(p,i), POTENG(p,i));
-#else
         len += sprintf( outbuf+len,
           "%d %d %12f %12f %12f %12f %12f %12f %12f %12f\n",
           NUMMER(p,i), VSORTE(p,i), MASSE (p,i), 
           ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), IMPULS(p,i,X) / MASSE(p,i), 
           IMPULS(p,i,Y) / MASSE(p,i), IMPULS(p,i,X) / MASSE(p,i), POTENG(p,i));
-#endif
       }
       /* flush or send outbuf if it is full */
       if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -935,23 +842,13 @@ void write_header_wf(FILE *out)
   fprintf(out, "#F %c 1 1 1 %d %d 1\n", c, DIM, DIM);
   
   /* contents line */
-#ifdef TWOD
-  fprintf(out, "#C number type mass x y fx fy Epot\n");
-#else
   fprintf(out, "#C number type mass x y z fx fy fz Epot\n");
-#endif
 
   /* box lines */
-#ifdef TWOD
-  fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
-  fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
-  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
-#else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
   fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
-#endif
 
   /* generation date and endheader line */
   time(&now);
@@ -988,31 +885,20 @@ void write_atoms_wf(FILE *out)
         data[n++].f = (float)   MASSE (p,i);
         data[n++].f = (float)   ORT(p,i,X);
         data[n++].f = (float)   ORT(p,i,Y);
-#ifndef TWOD
         data[n++].f = (float)   ORT(p,i,Z);
-#endif
         data[n++].f = (float)   KRAFT(p,i,X);
         data[n++].f = (float)   KRAFT(p,i,Y);
-#ifndef TWOD
         data[n++].f = (float)   KRAFT(p,i,Z);
-#endif
         data[n++].f = (float)   POTENG(p,i);
         len += n * sizeof(i_or_f);
       }
       /* ASCII output */
       else {
-#ifdef TWOD
-        len += sprintf( outbuf+len,
-          "%d %d %12f %12f %12f %12g %12g %12f\n",
-          NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
-          ORT(p,i,X), ORT(p,i,Y), KRAFT(p,i,X), KRAFT(p,i,Y), POTENG(p,i));
-#else
         len += sprintf( outbuf+len,
           "%d %d %12f %12f %12f %12f %12e %12e %12e %12f\n",
           NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
           ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z),
           KRAFT(p,i,X), KRAFT(p,i,Y), KRAFT(p,i,Z), POTENG(p,i));
-#endif
       }
       /* flush or send outbuf if it is full */
       if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -1057,39 +943,23 @@ void write_header_press(FILE *out)
     c = 'A';
   
   /* format and contents lines */
-#ifdef TWOD
-  fprintf(out, "#F %c 1 1 1 2 0 3\n", c);
-  fprintf(out, "#C number type mass x y P_xx P_yy P_xy\n");
-#else
   fprintf(out, "#F %c 1 1 1 3 0 6\n", c);
   fprintf(out, "#C number type mass x y z P_xx P_yy P_zz P_yz P_zx P_xy\n");
-#endif
 
 #if defined(AVPOS) && defined (NPT) 
  tmp = (real) avpos_res / ( avpos_int + avpos_res );
-#ifdef TWOD
-  fprintf(out,"box_x \t%.16f %.16f\n", av_box_x.x * tmp, av_box_x.y * tmp);
-  fprintf(out,"box_y \t%.16f %.16f\n", av_box_y.x * tmp, av_box_y.y * tmp);
-#else
   fprintf(out, "box_x \t%.16f %.16f %.16f\n",
           av_box_x.x * tmp, av_box_x.y * tmp, av_box_x.z * tmp);
   fprintf(out, "box_y \t%.16f %.16f %.16f\n",
           av_box_y.x * tmp, av_box_y.y * tmp, av_box_y.z * tmp);
   fprintf(out, "box_z \t%.16f %.16f %.16f\n",
           av_box_z.x * tmp, av_box_z.y * tmp, av_box_z.z * tmp);
-#endif
 #else /* not AVPOS and NPT */
   /* box lines */
-#ifdef TWOD
-  fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
-  fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
-  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
-#else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
   fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
-#endif
 #endif /*AVPOS */
   /* endheader line */
   time(&now);
@@ -1129,32 +999,22 @@ void write_atoms_press(FILE *out)
       /* Averaged coordinates of atoms */
       avp_pos.x = AV_POS(p,i,X) * tmp;
       avp_pos.y = AV_POS(p,i,Y) * tmp;
-#ifndef TWOD
       avp_pos.z = AV_POS(p,i,Z) * tmp;
-#endif
       /* Coefficients of coordinates with respect to box vectors */
       coeff.x = SPROD( avp_pos, tbox_x );
       coeff.y = SPROD( avp_pos, tbox_y );
-#ifndef TWOD
       coeff.z = SPROD( avp_pos, tbox_z );
-#endif
       /* For periodic boundary conditions map coordinates into box */
       if( pbc_dirs.x == 1 ) 
         coeff.x -= floor(coeff.x);
       if( pbc_dirs.y == 1 )
         coeff.y -= floor(coeff.y);
-#ifndef TWOD
       if( pbc_dirs.z == 1 ) 
          coeff.z -= floor(coeff.z);
-#endif
-#ifdef TWOD
-      x = coeff.x * box_x.x + coeff.y * box_y.x;
-      y = coeff.x * box_x.y + coeff.y * box_y.y;
-#else
+
       x = coeff.x * box_x.x + coeff.y * box_y.x + coeff.z * box_z.x;
       y = coeff.x * box_x.y + coeff.y * box_y.y + coeff.z * box_z.y;
       z = coeff.x * box_x.z + coeff.y * box_y.z + coeff.z * box_z.z;
-#endif
 
 #endif /* AVPOS */
 
@@ -1166,33 +1026,24 @@ void write_atoms_press(FILE *out)
         data[n++].i = (integer) VSORTE(p,i);
         data[n++].f = (float)   MASSE (p,i);
 #ifdef AVPOS
-	data[n++].f = (float)   x;
+        data[n++].f = (float)   x;
         data[n++].f = (float)   y;
-#ifndef TWOD
         data[n++].f = (float)   z;
-#endif
-	data[n++].f = (float)   AVPRESSTENS(p,i,xx)* tmp;
+        data[n++].f = (float)   AVPRESSTENS(p,i,xx)* tmp;
         data[n++].f = (float)   AVPRESSTENS(p,i,yy)* tmp;
-#ifndef TWOD
         data[n++].f = (float)   AVPRESSTENS(p,i,zz)* tmp;
         data[n++].f = (float)   AVPRESSTENS(p,i,yz)* tmp;
         data[n++].f = (float)   AVPRESSTENS(p,i,zx)* tmp;
-#endif
         data[n++].f = (float)   AVPRESSTENS(p,i,xy)* tmp;
-
 #else
         data[n++].f = (float)   ORT (p,i,X);
         data[n++].f = (float)   ORT (p,i,Y);
-#ifndef TWOD
         data[n++].f = (float)   ORT (p,i,Z);
-#endif
         data[n++].f = (float)   PRESSTENS(p,i,xx);
         data[n++].f = (float)   PRESSTENS(p,i,yy);
-#ifndef TWOD
         data[n++].f = (float)   PRESSTENS(p,i,zz);
         data[n++].f = (float)   PRESSTENS(p,i,yz);
         data[n++].f = (float)   PRESSTENS(p,i,zx);
-#endif
         data[n++].f = (float)   PRESSTENS(p,i,xy);
 #endif /* AVPOS */
         len += n * sizeof(i_or_f);
@@ -1201,34 +1052,20 @@ void write_atoms_press(FILE *out)
       else {
 
 #ifdef AVPOS
-#ifdef TWOD
-        len += sprintf( outbuf+len, 
-          "%d %d %f %.12f %.12f %.12f %.12f %.12f\n", 
-          NUMMER(p,i), VSORTE(p,i), MASSE(p,i), x,y,
-          AVPRESSTENS(p,i,xx)* tmp, AVPRESSTENS(p,i,yy)* tmp, AVPRESSTENS(p,i,xy)* tmp );
-#else
         len += sprintf( outbuf+len,
           "%d %d %f %.12f %.12f %.12f %.12f %.12f %.12f %.12f %.12f %.12f\n", 
           NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
 			x,y,z,
 			AVPRESSTENS(p,i,xx)* tmp, AVPRESSTENS(p,i,yy)* tmp, AVPRESSTENS(p,i,zz)* tmp,
 			AVPRESSTENS(p,i,yz)* tmp, AVPRESSTENS(p,i,zx)* tmp, AVPRESSTENS(p,i,xy)* tmp );
-#endif
 #else /* not AVPOS */
 
-#ifdef TWOD
-        len += sprintf( outbuf+len, 
-          "%d %d %f %.12f %.12f %.12f %.12f %.12f\n", 
-          NUMMER(p,i), VSORTE(p,i), MASSE(p,i), ORT(p,i,X),ORT(p,i,Y),
-          PRESSTENS(p,i,xx), PRESSTENS(p,i,yy), PRESSTENS(p,i,xy) );
-#else
         len += sprintf( outbuf+len,
           "%d %d %f %.12f %.12f %.12f %.12f %.12f %.12f %.12f %.12f %.12f\n", 
           NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
           ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z),
           PRESSTENS(p,i,xx), PRESSTENS(p,i,yy), PRESSTENS(p,i,zz),
           PRESSTENS(p,i,yz), PRESSTENS(p,i,zx), PRESSTENS(p,i,xy) );
-#endif
 
 #endif /* AVPOS */
       }
@@ -1269,11 +1106,7 @@ void write_header_pic(FILE *out)
   fprintf(out, "#F %c 0 0 0 %d 0 3\n", c, DIM);
 
   /* contents line */
-#ifdef TWOD
-  fprintf(out, "#C x y Ekin");
-#else
   fprintf(out, "#C x y z Ekin");
-#endif
 #ifdef DISLOC
   if (Epot_diff==1)
     fprintf(out, " delta_Epot type\n");
@@ -1286,16 +1119,10 @@ void write_header_pic(FILE *out)
 #endif
 
   /* box lines */
-#ifdef TWOD
-  fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
-  fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
-  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
-#else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
   fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
-#endif
 
   /* endheader line */
   time(&now);
@@ -1323,18 +1150,14 @@ void write_atoms_pic(FILE *out)
 
       if ( pic_ur.x != (real)0 ) /* if pic_ur still 0, write everything */
       if ( (ORT(p,i,X) < pic_ll.x) || (ORT(p,i,X) > pic_ur.x) ||
-#ifndef TWOD
            (ORT(p,i,Z) < pic_ll.z) || (ORT(p,i,Z) > pic_ur.z) ||
-#endif
            (ORT(p,i,Y) < pic_ll.y) || (ORT(p,i,Y) > pic_ur.y) ) continue;
 
       n = 0;
       data = (i_or_f *) (outbuf+len);
       data[n++].f = (float) ORT(p,i,X);
       data[n++].f = (float) ORT(p,i,Y);
-#ifndef TWOD
       data[n++].f = (float) ORT(p,i,Z);
-#endif
       data[n++].f = (float) SPRODN(IMPULS,p,i,IMPULS,p,i) / (2 * MASSE(p,i));
 #ifdef DISLOC
       if (Epot_diff==1)
@@ -1373,23 +1196,13 @@ void write_header_dem(FILE *out)
   fprintf(out, "#F %c 0 1 0 %d 0 1\n", c, DIM);
   
   /* contents line */
-#ifdef TWOD
-  fprintf(out, "#C type x y dpot\n");
-#else
   fprintf(out, "#C type x y z dpot\n");
-#endif
 
   /* box lines */
-#ifdef TWOD
-  fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
-  fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
-  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
-#else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
   fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
-#endif
 
   /* endheader line */
   time(&now);
@@ -1426,21 +1239,14 @@ void write_atoms_dem(FILE *out)
         data[n++].i = (integer) VSORTE(p,i);
         data[n++].f = (float)   ORT (p,i,X);
         data[n++].f = (float)   ORT (p,i,Y);
-#ifndef TWOD
         data[n++].f = (float)   ORT (p,i,Z);
-#endif
         data[n++].f = (float)   dpot;
         len += n * sizeof(i_or_f);
       }
       /* ASCII output */
       else {
-#ifdef TWOD
-        len += sprintf( outbuf+len, "%d %e %e %e\n",
-                        VSORTE(p,i), ORT(p,i,X), ORT(p,i,Y), dpot);
-#else
         len += sprintf( outbuf+len, "%d %e %e %e %e\n",
                         VSORTE(p,i), ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), dpot);
-#endif
       }
       /* flush or send outbuf if it is full */
       if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -1480,23 +1286,13 @@ void write_header_dsp(FILE *out)
   fprintf(out, "#F %c 0 1 0 %d 0 %d\n", c, DIM, DIM);
   
   /* contents line */
-#ifdef TWOD
-  fprintf(out, "#C type x y dx dy\n");
-#else
   fprintf(out, "#C type x y z dx dy dz\n");
-#endif
 
   /* box lines */
-#ifdef TWOD
-  fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
-  fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
-  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
-#else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
   fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
-#endif
 
   /* endheader line */
   time(&now);
@@ -1525,9 +1321,7 @@ void write_atoms_dsp(FILE *out)
 
       d.x = ORT(p,i,X) - ORT_REF(p,i,X);
       d.y = ORT(p,i,Y) - ORT_REF(p,i,Y);
-#ifndef TWOD 
       d.z = ORT(p,i,Z) - ORT_REF(p,i,Z);
-#endif
       reduce_displacement(&d);
       if (SPROD(d,d) <= min_dsp2) continue;
 
@@ -1538,25 +1332,16 @@ void write_atoms_dsp(FILE *out)
         data[n++].i = (integer) VSORTE(p,i);
         data[n++].f = (float)   ORT (p,i,X);
         data[n++].f = (float)   ORT (p,i,Y);
-#ifndef TWOD
         data[n++].f = (float)   ORT (p,i,Z);
-#endif
         data[n++].f = (float)   d.x;
         data[n++].f = (float)   d.y;
-#ifndef TWOD
         data[n++].f = (float)   d.z;
-#endif
         len += n * sizeof(i_or_f);
       }
       /* ASCII output */
       else {
-#ifdef TWOD
-        len += sprintf( outbuf+len, "%d %e %e %e %e\n",
-          VSORTE(p,i), ORT(p,i,X), ORT(p,i,Y), d.x, d.y);
-#else
         len += sprintf( outbuf+len, "%d %e %e %e %e %e %e\n",
           VSORTE(p,i), ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z), d.x, d.y, d.z);
-#endif
       }
       /* flush or send outbuf if it is full */
       if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -1613,9 +1398,7 @@ void update_ort_ref(void)
     for (i=0; i<p->n; i++) {
       ORT_REF(p,i,X) = ORT(p,i,X);
       ORT_REF(p,i,Y) = ORT(p,i,Y);
-#ifndef TWOD
       ORT_REF(p,i,Z) = ORT(p,i,Z);
-#endif
     }
   }
 }
@@ -1640,9 +1423,7 @@ void init_refpos(void)
     for (i=0; i<p->n; i++) {
       REF_POS(p,i,X) = ORT(p,i,X);
       REF_POS(p,i,Y) = ORT(p,i,Y);
-#ifndef TWOD
       REF_POS(p,i,Z) = ORT(p,i,Z);
-#endif
     }
   }
 }
@@ -1674,10 +1455,8 @@ void update_avpos(void)
       AV_POS(p,i,Y) = ORT(p,i,Y);
       SHEET(p,i,X)  = 0.0;
       SHEET(p,i,Y)  = 0.0;
-#ifndef TWOD
       AV_POS(p,i,Z) = ORT(p,i,Z);
       SHEET(p,i,Z)  = 0.0;
-#endif
     }
   }
 #ifdef NPT
@@ -1685,13 +1464,11 @@ void update_avpos(void)
   av_box_x.y = box_x.y;
   av_box_y.x = box_y.x;
   av_box_y.y = box_y.y;
-#ifndef TWOD
   av_box_x.z = box_x.z;
   av_box_y.z = box_y.z;
   av_box_z.x = box_z.x;
   av_box_z.y = box_z.y;
   av_box_z.z = box_z.z;
-#endif
 #endif
   avpos_cnt = 1;
 
@@ -1715,11 +1492,9 @@ void update_avpress(void)
       AVPRESSTENS(p,i,xx) = PRESSTENS(p,i,xx);
       AVPRESSTENS(p,i,yy) = PRESSTENS(p,i,yy);
       AVPRESSTENS(p,i,xy) = PRESSTENS(p,i,xy);
-#ifndef TWOD
       AVPRESSTENS(p,i,zz) = PRESSTENS(p,i,zz);
       AVPRESSTENS(p,i,yz) = PRESSTENS(p,i,yz);
       AVPRESSTENS(p,i,zx) = PRESSTENS(p,i,zx);
-#endif
     }
   }
 
@@ -1746,23 +1521,13 @@ void write_header_avp(FILE *out)
   fprintf(out, "#F %c 1 1 1 %d 0 1\n", c, DIM);
   
   /* contents line */
-#ifdef TWOD
-  fprintf(out, "#C number type mass x y Epot_av\n");
-#else
   fprintf(out, "#C number type mass x y z Epot_av\n");
-#endif
 
   /* box lines */
-#ifdef TWOD
-  fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
-  fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
-  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
-#else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
   fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
-#endif
 
   /* endheader line */
   time(&now);
@@ -1795,32 +1560,22 @@ void write_atoms_avp(FILE *out)
       /* Averaged coordinates of atoms */
       avp_pos.x = AV_POS(p,i,X) * tmp;
       avp_pos.y = AV_POS(p,i,Y) * tmp;
-#ifndef TWOD
       avp_pos.z = AV_POS(p,i,Z) * tmp;
-#endif
       /* Coefficients of coordinates with respect to box vectors */
       coeff.x = SPROD( avp_pos, tbox_x );
       coeff.y = SPROD( avp_pos, tbox_y );
-#ifndef TWOD
       coeff.z = SPROD( avp_pos, tbox_z );
-#endif
       /* For periodic boundary conditions map coordinates into box */
       if( pbc_dirs.x == 1 ) 
         coeff.x -= floor(coeff.x);
       if( pbc_dirs.y == 1 )
         coeff.y -= floor(coeff.y);
-#ifndef TWOD
       if( pbc_dirs.z == 1 ) 
          coeff.z -= floor(coeff.z);
-#endif
-#ifdef TWOD
-      x = coeff.x * box_x.x + coeff.y * box_y.x;
-      y = coeff.x * box_x.y + coeff.y * box_y.y;
-#else
+
       x = coeff.x * box_x.x + coeff.y * box_y.x + coeff.z * box_z.x;
       y = coeff.x * box_x.y + coeff.y * box_y.y + coeff.z * box_z.y;
       z = coeff.x * box_x.z + coeff.y * box_y.z + coeff.z * box_z.z;
-#endif
 
       /* binary output */
       if (binary_output) {
@@ -1831,25 +1586,17 @@ void write_atoms_avp(FILE *out)
         data[n++].f = (float)   MASSE (p,i);
         data[n++].f = (float)   x;
         data[n++].f = (float)   y;
-#ifndef TWOD
         data[n++].f = (float)   z;
-#endif
         data[n++].f = (float)   AV_EPOT(p,i) * tmp;
         len += n * sizeof(i_or_f);
       }
       /* ASCII output */
       else {
-#ifdef TWOD
-	len += sprintf( outbuf+len,
-                        "%d %d %12.6f %12.6f %12.6f %12.6f\n",
-                        NUMMER(p,i), VSORTE(p,i), MASSE(p,i),
-                        x, y, AV_EPOT(p,i) * tmp);
-#else
+
 	len += sprintf( outbuf+len,
                         "%d %d %12.6f %12.6f %12.6f %12.6f %12.6f\n",
                         NUMMER(p,i), VSORTE(p,i), MASSE(p,i), 
                         x, y, z, AV_EPOT(p,i) * tmp);
-#endif
       }
       /* flush or send outbuf if it is full */
       if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -1893,16 +1640,10 @@ void write_header_force(FILE *out)
   fprintf(out, "#N %ld 1\n", natoms);
   
   /* box lines */
-#ifdef TWOD
-  fprintf(out, "#X %.16e %.16e\n", box_x.x, box_x.y );
-  fprintf(out, "#Y %.16e %.16e\n", box_y.x, box_y.y );
-  fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y);
-#else
   fprintf(out, "#X %.16e %.16e %.16e\n", box_x.x, box_x.y, box_x.z );
   fprintf(out, "#Y %.16e %.16e %.16e\n", box_y.x, box_y.y, box_y.z );
   fprintf(out, "#Z %.16e %.16e %.16e\n", box_z.x, box_z.y, box_z.z );
   fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
-#endif
 
   /* cohesive energy */
   fprintf(out, "#E %.16e\n",tot_pot_energy / natoms);
@@ -1933,15 +1674,9 @@ void write_atoms_force(FILE *out)
     int i;
     p = CELLPTR(k);
     for (i=0; i<p->n; i++) {
-#ifdef TWOD
-      len += sprintf( outbuf+len, "%d %.16e %.16e %.16e %.16e\n",
-                      SORTE(p,i), ORT(p,i,X), ORT(p,i,Y),
-                      KRAFT(p,i,X), KRAFT(p,i,Y) );
-#else
       len += sprintf( outbuf+len, "%d %.16e %.16e %.16e %.16e %.16e %.16e\n",
                       SORTE(p,i), ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z),
                       KRAFT(p,i,X), KRAFT(p,i,Y), KRAFT(p,i,Z) );
-#endif
       /* flush or send outbuf if it is full */
       if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
     }
@@ -1986,23 +1721,13 @@ void write_header_atdist_pos(FILE *out)
   fprintf(out, "#F %c 0 1 0 %d 0 0\n", c, DIM);
   
   /* contents line */
-#ifdef TWOD
-  fprintf(out, "#C type x y\n");
-#else
   fprintf(out, "#C type x y z\n");
-#endif
 
   /* box lines */
-#ifdef TWOD
-  fprintf(out, "#X %e 0.0\n", pic_ur.x - pic_ll.x);
-  fprintf(out, "#Y 0.0 %e\n", pic_ur.y - pic_ll.y);
-  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
-#else
   fprintf(out, "#X %e 0.0 0.0\n", pic_ur.x - pic_ll.x);
   fprintf(out, "#Y 0.0 %e 0.0\n", pic_ur.y - pic_ll.y);
   fprintf(out, "#Z 0.0 0.0 %e\n", pic_ur.z - pic_ll.z);
   fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
-#endif
 
   /* endheader line */
   time(&now);
@@ -2035,27 +1760,18 @@ void write_atoms_atdist_pos(FILE *out)
 
       /* periodic continuation */
       for (ix=atdist_per_ll.x; ix<=atdist_per_ur.x; ix++)
-#ifndef TWOD
         for (iz=atdist_per_ll.z; iz<=atdist_per_ur.z; iz++)
-#endif
           for (iy=atdist_per_ll.y; iy<=atdist_per_ur.y; iy++) {
-#ifdef TWOD
-            x = ORT(p,i,X) + ix * box_x.x + iy * box_y.x;
-            y = ORT(p,i,Y) + ix * box_x.y + iy * box_y.y;
-#else
             x = ORT(p,i,X) + ix * box_x.x + iy * box_y.x + iz * box_z.x;
             y = ORT(p,i,Y) + ix * box_x.y + iy * box_y.y + iz * box_z.y;
             z = ORT(p,i,Z) + ix * box_x.z + iy * box_y.z + iz * box_z.y;
-#endif
             t =  co * x + si * y;
             y = -si * x + co * y;
             x = t;
 
             /* continue if atom is not inside selected box */
             if ((x < pic_ll.x) || (x > pic_ur.x) ||
-#ifndef TWOD
                 (z < pic_ll.z) || (z > pic_ur.z) || 
-#endif
                 (y < pic_ll.y) || (y > pic_ur.y)) continue;
 
             /* binary output */
@@ -2065,20 +1781,13 @@ void write_atoms_atdist_pos(FILE *out)
               data[n++].i = (integer) SORTE(p,i);
               data[n++].f = (float)   x - pic_ll.x;
               data[n++].f = (float)   y - pic_ll.y;
-#ifndef TWOD
               data[n++].f = (float)   z - pic_ll.z;
-#endif
               len += n * sizeof(i_or_f);
             }
             /* ASCII output */
             else {
-#ifdef TWOD
-              len += sprintf( outbuf+len, "%d %e %e\n", SORTE(p,i), 
-                              x - pic_ll.x, y - pic_ll.y );
-#else
               len += sprintf( outbuf+len, "%d %e %e %e\n", SORTE(p,i), 
                               x - pic_ll.x, y - pic_ll.y, z - pic_ll.z );
-#endif
             }
             /* flush or send outbuf if it is full */
             if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -2176,16 +1885,9 @@ void write_eng_file_header()
     fprintf(fl, "strainrate ");
 #endif
 #ifdef NPT_axial
-#ifdef TWOD
-    fprintf(fl, "stress_x stress_y ");
-#ifndef HOMDEF
-    fprintf(fl, "box_x.x box_y.y ");
-#endif
-#else
     fprintf(fl, "stress_x stress_y stress_z ");
 #ifndef HOMDEF
     fprintf(fl, "box_x.x box_y.y box_z.z ");
-#endif
 #endif
 #endif
 #ifdef HOMDEF
@@ -2205,12 +1907,8 @@ void write_eng_file_header()
 #endif
 #ifdef STRESS_TENS
     fprintf(fl, "Press_xx Press_yy ");
-#ifdef TWOD
-    fprintf(fl, "Press_xy ");
-#else 
     fprintf(fl, "Press_zz ");
-    fprintf(fl, "Press_yz Press_xz Press_xy ");
-#endif    
+    fprintf(fl, "Press_yz Press_xz Press_xy ");   
 #endif
 #ifdef TTM
     fprintf(fl, " E_el E_new");
@@ -2287,9 +1985,7 @@ void write_eng_file(int steps)
 
 #ifdef STRESS_TENS
   real Press_xx,Press_yy, Press_xy;
-#ifndef TWOD
   real Press_zz,Press_yz, Press_zx;
-#endif
   calc_tot_presstens();
 #endif
 
@@ -2323,11 +2019,9 @@ void write_eng_file(int steps)
 #ifdef STRESS_TENS
   Press_xx = tot_presstens.xx / volume; 
   Press_yy = tot_presstens.yy / volume; 
-#ifndef TWOD
   Press_zz = tot_presstens.zz / volume;
   Press_yz = tot_presstens.yz / volume; 
   Press_zx = tot_presstens.zx / volume; 
-#endif
   Press_xy = tot_presstens.xy / volume; 
 #endif
 
@@ -2436,26 +2130,17 @@ void write_eng_file(int steps)
 #endif
 
   if (ensemble==ENS_NPT_AXIAL) {
-#ifdef TWOD
-      fprintf(eng_file,format2, (double) stress_x, (double) stress_y );
-#ifndef HOMDEF   
-      fprintf(eng_file,format2, (double)  box_x.x, (double)  box_y.y );
-#endif
-#else
       fprintf(eng_file,format3, 
 	    (double) stress_x, (double) stress_y, (double) stress_z );
 #ifndef HOMDEF   
       fprintf(eng_file,format3, 
 	    (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
 #endif
-#endif
   }
 
 #if defined(HOMDEF)
   fprintf(eng_file, format2,(double) box_x.x, (double) box_y.y);
-#ifndef TWOD 
   fprintf(eng_file, format, (double) box_z.z);
-#endif
   if(lindef_x.y!=0)
       fprintf(eng_file, format, (double) box_y.x );
   if(lindef_x.z!=0)
@@ -2472,13 +2157,9 @@ void write_eng_file(int steps)
   
 #ifdef STRESS_TENS
   fprintf(eng_file,format2, (double) Press_xx, (double) Press_yy);
-#ifdef TWOD
-  fprintf(eng_file,format, (double) Press_xy);
-#else 
   fprintf(eng_file,format, (double) Press_zz);
   fprintf(eng_file,format3,
-	  (double) Press_yz, (double) Press_zx, (double) Press_xy);
-#endif    
+	  (double) Press_yz, (double) Press_zx, (double) Press_xy);   
 #endif
 #ifdef TTM
   fprintf(eng_file, " %e %e", ttm_eng, E_new);
@@ -2553,9 +2234,7 @@ void write_ssdef_header()
       error_str("Cannot open file for quasistatic info %s.", fname);
 
     fprintf(out, "#C step nfc Epot fnorm box_x.x box_y.y ");
-#ifndef TWOD
     fprintf(out, "box_z.z ");
-#endif
 #ifdef HOMDEF
     if(lindef_x.y!=0)
         fprintf(out, "box_y.x ");
@@ -2573,21 +2252,13 @@ void write_ssdef_header()
     
 #ifdef FBC
     for(n=0; n<vtypes;n++)
-#ifdef TWOD
-        fprintf(out, "fbc_f[%d].x fbc_f[%d].y ",n,n);
-#else
-    fprintf(out, "fbc_f[%d].x fbc_f[%d].y fbc_f[%d].z ",n,n,n);
-#endif
+        fprintf(out, "fbc_f[%d].x fbc_f[%d].y fbc_f[%d].z ",n,n,n);
 #endif /* FBC */
     
 #ifdef STRESS_TENS
     fprintf(out, "Press_xx Press_yy ");
-#ifdef TWOD
-    fprintf(out, "Press_xy ");
-#else 
     fprintf(out, "Press_zz ");
-    fprintf(out, "Press_yz Press_xz Press_xy ");
-#endif    
+    fprintf(out, "Press_yz Press_xz Press_xy ");  
 #endif /* STRESS_TENS */
 
      for(n=0; n<vtypes;n++)
@@ -2596,10 +2267,8 @@ void write_ssdef_header()
              fprintf(out, "tot_force[%d].x ",n);
          if( (restrictions+n)->y == 0)
              fprintf(out, "tot_force[%d].y ",n);
-#ifndef TWOD
          if( (restrictions+n)->z == 0)
              fprintf(out, "tot_force[%d].z ",n);
-#endif
      }
 #ifdef BEND
   for (n=0; n<bend_nmoments; n++){
@@ -2633,9 +2302,7 @@ void write_ssdef(int steps)
     
 #ifdef STRESS_TENS
   real Press_xx,Press_yy, Press_xy;
-#ifndef TWOD
   real Press_zz,Press_yz, Press_zx;
-#endif
   calc_tot_presstens();
 #endif
 
@@ -2653,10 +2320,8 @@ void write_ssdef(int steps)
              restrictedatoms ++;
          if( (restrictions+n)->y == 0)
              restrictedatoms ++;
-#ifndef TWOD
          if( (restrictions+n)->z == 0)
              restrictedatoms ++;
-#endif
      }
 
   /* calculate total forces on the different atom types */
@@ -2710,11 +2375,9 @@ void write_ssdef(int steps)
 #ifdef STRESS_TENS
   Press_xx = tot_presstens.xx / volume; 
   Press_yy = tot_presstens.yy / volume; 
-#ifndef TWOD
   Press_zz = tot_presstens.zz / volume;
   Press_yz = tot_presstens.yz / volume; 
   Press_zx = tot_presstens.zx / volume; 
-#endif
   Press_xy = tot_presstens.xy / volume; 
 #endif
 
@@ -2724,12 +2387,8 @@ void write_ssdef(int steps)
   /* and write out information depending on the options and simulation settings */
   fprintf(ssdef_file, "%d %d %.12e %e ", sscount,nfc,(double) Epot,(double) SQRT( fnorm / nactive ) ); 
   
-#ifdef TWOD
-    fprintf(ssdef_file," %e %e ", (double)  box_x.x, (double)  box_y.y );
-#else
-    fprintf(ssdef_file," %.16e %.16e %.16e ", 
+  fprintf(ssdef_file," %.16e %.16e %.16e ",
             (double)  box_x.x, (double)  box_y.y, (double)  box_z.z );
-#endif
 #ifdef HOMDEF
     if(lindef_x.y!=0)
         fprintf(ssdef_file, "%e ",box_y.x );
@@ -2747,22 +2406,14 @@ void write_ssdef(int steps)
     
 #ifdef FBC
     for(n=0; n<vtypes;n++)
-#ifdef TWOD
-        fprintf(ssdef_file, "%e %e ",(fbc_forces+n)->x,(fbc_forces+n)->y);
-#else
     fprintf(ssdef_file, "%e %e %e",(fbc_forces+n)->x,(fbc_forces+n)->y,(fbc_forces+n)->z);
-#endif
 #endif /* FBC */
 
 #ifdef STRESS_TENS
   fprintf(ssdef_file," %.16e %.16e ", (double) Press_xx, (double) Press_yy);
-#ifdef TWOD
-  fprintf(ssdef_file," %e ", (double) Press_xy);
-#else 
   fprintf(ssdef_file," %.16e ", (double) Press_zz);
   fprintf(ssdef_file," %.16e %.16e %.16e ",
-          (double) Press_yz, (double) Press_zx, (double) Press_xy);
-#endif    
+          (double) Press_yz, (double) Press_zx, (double) Press_xy);    
 #endif /* STRESS_TENS */
 
   if(restrictedatoms >0)
@@ -2773,10 +2424,8 @@ void write_ssdef(int steps)
              fprintf(ssdef_file, "%e ",totalforcex[n]);
          if( (restrictions+n)->y == 0)
              fprintf(ssdef_file, "%e ",totalforcey[n]);
-#ifndef TWOD
          if( (restrictions+n)->z == 0)
              fprintf(ssdef_file, "%e ",totalforcez[n]);
-#endif
      }
   }
 #ifdef BEND
@@ -2831,14 +2480,9 @@ void write_fext_header()
     putc('\n',out);
 
     /* box lines */
-#ifdef TWOD
-    fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
-    fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
-#else
     fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
     fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
     fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
-#endif
 
     /* endheader line */
     time(&now);
@@ -2947,18 +2591,14 @@ void write_msqd(int steps)
       for (i=0; i<ntypes; i++) {
          fprintf(msqd_file,"realtype%d_x ",i);
          fprintf(msqd_file,"realtype%d_y ",i);
-#ifndef TWOD
          fprintf(msqd_file,"realtype%d_z ",i);
-#endif
       }
     }
     if (msqd_vtypes) {
       for (i=0; i<vtypes; i++) {
          fprintf(msqd_file,"virttype%d_x ",i);
          fprintf(msqd_file,"virttype%d_y ",i);
-#ifndef TWOD
          fprintf(msqd_file,"virttype%d_z ",i);
-#endif
       }
     }
     fprintf(msqd_file,"\n");
@@ -3011,11 +2651,7 @@ void write_header_sqd(FILE *out)
   fprintf(out, "#F %c 0 1 0 0 0 %d\n", c, DIM);
   
   /* contents line */
-#ifdef TWOD
-  fprintf(out, "#C type d^2_x d^2_y\n");
-#else
   fprintf(out, "#C type d^2_x d^2_y d^2_z\n");
-#endif
 
   /* endheader line */
   time(&now);
@@ -3044,9 +2680,7 @@ void write_atoms_sqd(FILE *out)
 
       d.x = SQR( ORT(p,i,X) - REF_POS(p,i,X) );
       d.y = SQR( ORT(p,i,Y) - REF_POS(p,i,Y) );
-#ifndef TWOD
       d.z = SQR( ORT(p,i,Z) - REF_POS(p,i,Z) );
-#endif
 
       /* binary output */
       if (binary_output) {
@@ -3055,18 +2689,12 @@ void write_atoms_sqd(FILE *out)
         data[n++].i = (integer) VSORTE(p,i);
         data[n++].f = (float)   d.x;
         data[n++].f = (float)   d.y;
-#ifndef TWOD
         data[n++].f = (float)   d.z;
-#endif
         len += n * sizeof(i_or_f);
       }
       /* ASCII output */
       else {
-#ifdef TWOD
-        len += sprintf(outbuf+len,"%d %e %e\n",    VSORTE(p,i), d.x, d.y     );
-#else
         len += sprintf(outbuf+len,"%d %e %e %e\n", VSORTE(p,i), d.x, d.y, d.z);
-#endif
       }
       /* flush or send outbuf if it is full */
       if (len > outbuf_size - 256) flush_outbuf(out,&len,OUTBUF_TAG);
@@ -3103,32 +2731,23 @@ void reduce_displacement(vektor *dist)
   while (SPROD(d,tbox_x) > 0.5) {
     d.x -= box_x.x;
     d.y -= box_x.y;
-#ifndef TWOD
     d.z -= box_x.z;
-#endif
   }
   while (SPROD(d,tbox_x) < -0.5) {
     d.x += box_x.x;
     d.y += box_x.y;
-#ifndef TWOD
     d.z += box_x.z;
-#endif
   }
   while (SPROD(d,tbox_y) > 0.5) {
     d.x -= box_y.x;
     d.y -= box_y.y;
-#ifndef TWOD
     d.z -= box_y.z;
-#endif
   }
   while (SPROD(d,tbox_y) < -0.5) {
     d.x += box_y.x;
     d.y += box_y.y;
-#ifndef TWOD
     d.z += box_y.z;
-#endif
   }
-#ifndef TWOD
   while (SPROD(d,tbox_z) > 0.5) {
     d.x -= box_z.x;
     d.y -= box_z.y;
@@ -3139,7 +2758,6 @@ void reduce_displacement(vektor *dist)
     d.y += box_z.y;
     d.z += box_z.z;
   }
-#endif
   *dist = d;
 }
 
@@ -3217,21 +2835,13 @@ void write_header_config(FILE *out)
 #endif /* UNIAX */
 
   /* contents line */
-#ifdef TWOD
-  fprintf(out, "#C number type mass x y");
-#else
   fprintf(out, "#C number type mass x y z");
-#endif
 
 #ifdef UNIAX
   fprintf(out, " axe_x axe_y axe_z vx vy vz omega_x omega_y omega_z Epot\n");
 #else
   if (ensemble != ENS_CG) 
-#ifdef TWOD
-    fprintf(out, " vx vy");
-#else
     fprintf(out, " vx vy vz");
-#endif
 #ifdef ORDPAR
   fprintf(out, " ordpar" );
 #else
@@ -3244,18 +2854,10 @@ void write_header_config(FILE *out)
   fprintf(out, " n_nbr" );
 #endif
 #ifdef REFPOS 
-#ifdef TWOD
-  fprintf(out, " refpos_x refpos_y" );
-#else
   fprintf(out, " refpos_x refpos_y refpos_z" );
 #endif
-#endif
 #ifdef DISLOC
-#ifdef TWOD
-  fprintf(out, " x_ref y_ref Epot_ref" );
-#else
   fprintf(out, " x_ref y_ref z_ref Epot_ref" );
-#endif
 #endif
 #if defined(EAM2) && !defined(NORHOH)
   fprintf(out, " eam_rho" );
@@ -3290,16 +2892,10 @@ void write_header_config(FILE *out)
   fprintf(out, "\n" );
 
   /* box lines */
-#ifdef TWOD
-  fprintf(out, "#X \t%.16e %.16e\n", box_x.x , box_x.y);
-  fprintf(out, "#Y \t%.16e %.16e\n", box_y.x , box_y.y);
-  fprintf(out, "##PBC %d %d\n", pbc_dirs.x, pbc_dirs.y);
-#else
   fprintf(out, "#X \t%.16e %.16e %.16e\n", box_x.x , box_x.y , box_x.z);
   fprintf(out, "#Y \t%.16e %.16e %.16e\n", box_y.x , box_y.y , box_y.z);
   fprintf(out, "#Z \t%.16e %.16e %.16e\n", box_z.x , box_z.y , box_z.z);
   fprintf(out, "##PBC %d %d %d\n", pbc_dirs.x, pbc_dirs.y, pbc_dirs.z);
-#endif
 
   /* generation data and endheader line */
   time(&now);
@@ -3333,19 +2929,12 @@ void read_box(str255 infilename)
     if (NULL==infile) error_str("cannot open input file %s", infilename);
     s=fgets(line, 255, infile);
     while (line[0]=='#') {
-#ifdef TWOD
-      if      (line[1]=='X') 
-        sscanf(line+2, FORMAT2, &box_x.x, &box_x.y);
-      else if (line[1]=='Y') 
-        sscanf(line+2, FORMAT2, &box_y.x, &box_y.y);
-#else
       if      (line[1]=='X') 
         sscanf(line+2, FORMAT3, &box_x.x, &box_x.y, &box_x.z);
       else if (line[1]=='Y') 
         sscanf(line+2, FORMAT3, &box_y.x, &box_y.y, &box_y.z);
       else if (line[1]=='Z') 
         sscanf(line+2, FORMAT3, &box_z.x, &box_z.y, &box_z.z);
-#endif
       s=fgets(line, 255, infile);
       if (feof(infile)) break;
     }
@@ -3354,9 +2943,7 @@ void read_box(str255 infilename)
 #ifdef MPI
   MPI_Bcast( &box_x, DIM, REAL, 0, MPI_COMM_WORLD); 
   MPI_Bcast( &box_y, DIM, REAL, 0, MPI_COMM_WORLD);
-#ifndef TWOD
   MPI_Bcast( &box_z, DIM, REAL, 0, MPI_COMM_WORLD);
-#endif 
 #endif
 }
 
@@ -3537,11 +3124,7 @@ void init_nmoldyn(void)
   FILE *out=NULL;
   str255 fname;
   int n, k, i, t, orth_box, binary_io = 1, *nt = NULL;
-#ifndef TWOD 
   float box[3] = { box_x.x, box_y.y, box_z.z };
-#else
-  float box[3] = { box_x.x, box_y.y, 0 };
-#endif
   /* initialize reference positions - used to unfold application of PBC */
   for (k=0; k<ncells; k++) {
     cell *p = CELLPTR(k); 
@@ -3555,14 +3138,10 @@ void init_nmoldyn(void)
   /* write header of .nmoldyn file */
   if (0==myid) {
     /* check whether box is orthorhombic and oriented along main axes */
-#ifndef TWOD
     orth_box = ( (FABS(box_x.y)<1e-6) && (FABS(box_y.z)<1e-6) && 
                  (FABS(box_z.x)<1e-6) && (FABS(box_y.x)<1e-6) && 
                  (FABS(box_z.y)<1e-6) && (FABS(box_x.z)<1e-6) );
-#else
-    orth_box = ( (FABS(box_x.y)<1e-6) && 
-                 (FABS(box_y.x)<1e-6) );
-#endif
+
     sprintf(fname,"%s.%s",outfilename,"nmoldyn");
     out = fopen(fname, "w");
     nt = (int *) malloc( ntypes * sizeof(int) );
@@ -3578,11 +3157,7 @@ void init_nmoldyn(void)
     else {
       for (k=0; k<ntypes; k++) fprintf(out, "%d ", nt[k]);
       fprintf(out, "\n");
-#ifndef TWOD
       if (orth_box) fprintf(out, "%f %f %f\n", box_x.x, box_y.y, box_z.z);
-#else
-      if (orth_box) fprintf(out, "%f %f %f\n", box_x.x, box_y.y, 0.0 );
-#endif
     }
     fclose(out);
     free(nt);
@@ -3694,12 +3269,7 @@ void write_dsf()
     for (i=0; i<dsf_nk; i++) {
       koff[i] = nk;
       nk += dsf_kmax[i] + 1;
-#ifdef TWOD
-      k0  [i].x = (dsf_k0  [2*i]*tbox_x.x + dsf_k0  [2*i+1]*tbox_y.x)*twopi;
-      k0  [i].y = (dsf_k0  [2*i]*tbox_x.y + dsf_k0  [2*i+1]*tbox_y.y)*twopi;
-      kdir[i].x = (dsf_kdir[2*i]*tbox_x.x + dsf_kdir[2*i+1]*tbox_y.x)*twopi;
-      kdir[i].y = (dsf_kdir[2*i]*tbox_x.y + dsf_kdir[2*i+1]*tbox_y.y)*twopi;
-#else
+
       k0  [i].x = (dsf_k0  [3*i  ] * tbox_x.x + dsf_k0  [3*i+1] * tbox_y.x +
                    dsf_k0  [3*i+2] * tbox_z.x) * twopi;
       k0  [i].y = (dsf_k0  [3*i  ] * tbox_x.y + dsf_k0  [3*i+1] * tbox_y.y +
@@ -3712,7 +3282,6 @@ void write_dsf()
                    dsf_kdir[3*i+2] * tbox_z.y) * twopi;
       kdir[i].z = (dsf_kdir[3*i  ] * tbox_x.z + dsf_kdir[3*i+1] * tbox_y.z +
                    dsf_kdir[3*i+2] * tbox_z.z) * twopi;
-#endif
     }
     data  = (double *) malloc( 2 * nk * sizeof(real) );
     if (NULL==data) error("cannot allocate dsf array");
@@ -3782,27 +3351,17 @@ void write_dsf()
     if (0==count) {
       fprintf(out, "#F %c %d %d\n", is_big_endian?'B':'L', DIM, dsf_nk); 
       fprintf(out, "#T %e\n", dsf_int * timestep);
-#ifdef TWOD
-      fprintf(out, "#X %e %e\n", twopi * tbox_x.x, twopi * tbox_x.y);
-      fprintf(out, "#Y %e %e\n", twopi * tbox_y.x, twopi * tbox_y.y);
-#else
       fprintf(out, "#X %e %e %e\n", 
               twopi * tbox_x.x, twopi * tbox_x.y, twopi * tbox_x.z);
       fprintf(out, "#Y %e %e %e\n", 
               twopi * tbox_y.x, twopi * tbox_y.y, twopi * tbox_y.z);
       fprintf(out, "#Z %e %e %e\n", 
               twopi * tbox_z.x, twopi * tbox_z.y, twopi * tbox_z.z);
-#endif
       for (n=0; n<dsf_nk; n++) {
         int j = DIM * n;
-#ifdef TWOD
-        fprintf(out, "#K %d %d   %d %d   %d\n", dsf_k0[j], dsf_k0[j+1], 
-                dsf_kdir[j], dsf_kdir[j+1], dsf_kmax[n]);
-#else
         fprintf(out, "#K %d %d %d   %d %d %d  %d\n", 
                 dsf_k0  [j], dsf_k0  [j+1], dsf_k0  [j+2],
                 dsf_kdir[j], dsf_kdir[j+1], dsf_kdir[j+2], dsf_kmax[n]);
-#endif
       }
       time(&now);
       fprintf(out, "## Generated on %s", ctime(&now) ); 
@@ -3837,21 +3396,12 @@ void write_heat_current(int steps)
     sprintf(fname,"%s.hc",outfilename);
     hc_file = fopen(fname,"a");
     if (NULL == hc_file) error("Cannot open hc file.");
-#ifdef TWOD
-    fprintf(hc_file,"# time hcx hcy\n");
-#else
     fprintf(hc_file,"# time hcx hcy hcz\n");
-#endif
   }
 
-  /* write heat current */
-#ifdef TWOD
-  fprintf(hc_file, "%e %.12e %.12e\n",
-    (steps - hc_start) * timestep, hc.x, hc.y);
-#else
+  /* write heat current *
   fprintf(hc_file, "%e %.12e %.12e %.12e\n",
     (steps - hc_start) * timestep, hc.x, hc.y, hc.z);
-#endif
   flush_count++;
 
   /* flush .hc file every flush_int writes */

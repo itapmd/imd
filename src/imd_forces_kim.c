@@ -566,9 +566,7 @@ int estimate_nblist_size()
 
       d1.x = ORT(p, i, X);
       d1.y = ORT(p, i, Y);
-#ifndef TWOD
       d1.z = ORT(p, i, Z);
-#endif
 
       /* for each neighboring atom */
       for (m = 0; m < KIM_NBCELLS; m++) {
@@ -590,9 +588,7 @@ int estimate_nblist_size()
 	  vektor d;
 	  d.x = ORT(q, j, X) - d1.x;
 	  d.y = ORT(q, j, Y) - d1.y;
-#ifndef TWOD
 	  d.z = ORT(q, j, Z) - d1.z;
-#endif
 	  r2 = SPROD(d, d);
 	  if (r2 < cellsz)
 	    tn++;
@@ -624,9 +620,7 @@ void make_nblist()
     for (i = 0; i < p->n; i++) {
       NBL_POS(p, i, X) = ORT(p, i, X);
       NBL_POS(p, i, Y) = ORT(p, i, Y);
-#ifndef TWOD
       NBL_POS(p, i, Z) = ORT(p, i, Z);
-#endif
     }
   }
 
@@ -702,9 +696,7 @@ void make_nblist()
 
       d1.x = ORT(p, i, X);
       d1.y = ORT(p, i, Y);
-#ifndef TWOD
       d1.z = ORT(p, i, Z);
-#endif
 
       /* for each neighboring atom */
       for (m = 0; m < KIM_NBCELLS; m++) {
@@ -730,9 +722,7 @@ void make_nblist()
 	    real  r2;
 	    d.x = ORT(q, j, X) - d1.x;
 	    d.y = ORT(q, j, Y) - d1.y;
-#ifndef TWOD
 	    d.z = ORT(q, j, Z) - d1.z;
-#endif
 	    r2 = SPROD(d, d);
 	    if (r2 < cellsz) {
 	      tb[tn++] = cl_off[c2] + j;
@@ -939,9 +929,7 @@ void check_nblist()
     for (i = 0; i < p->n; i++) {
       d.x = ORT(p, i, X) - NBL_POS(p, i, X);
       d.y = ORT(p, i, Y) - NBL_POS(p, i, Y);
-#ifndef TWOD
       d.z = ORT(p, i, Z) - NBL_POS(p, i, Z);
-#endif
       r2 = SPROD(d, d);
       if (r2 > max1)
 	max1 = r2;
@@ -1181,9 +1169,7 @@ int imd_process_dEdr(void **km, double *grad, double *r, double **Rij, int *i, i
 #ifdef P_AXIAL
   vir_xx -= (*Rij)[0] * fx;
   vir_yy -= (*Rij)[1] * fy;
-#ifndef TWOD
   vir_zz -= (*Rij)[2] * fz;
-#endif
 #else
   virial -= *r * *grad;
 #endif

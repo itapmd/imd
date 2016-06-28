@@ -29,11 +29,7 @@
 *
 *****************************************************************************/
 
-#ifdef TWOD
-void lin_deform(vektor dx, vektor dy,            real scale)
-#else
 void lin_deform(vektor dx, vektor dy, vektor dz, real scale)
-#endif
 {
    int k;
    real tmpbox[3];
@@ -51,50 +47,34 @@ void lin_deform(vektor dx, vektor dy, vektor dz, real scale)
     p = CELLPTR(k);
     for (i=0; i<p->n; ++i) {
       /* transform atom positions */
-#ifdef TWOD
-      tmport[0] = dx.x * ORT(p,i,X) + dx.y * ORT(p,i,Y);
-      tmport[1] = dy.x * ORT(p,i,X) + dy.y * ORT(p,i,Y);
-#else
       tmport[0] = dx.x * ORT(p,i,X) + dx.y * ORT(p,i,Y) + dx.z * ORT(p,i,Z);
       tmport[1] = dy.x * ORT(p,i,X) + dy.y * ORT(p,i,Y) + dy.z * ORT(p,i,Z);
       tmport[2] = dz.x * ORT(p,i,X) + dz.y * ORT(p,i,Y) + dz.z * ORT(p,i,Z);
-#endif
       ORT(p,i,X) += scale * tmport[0];
       ORT(p,i,Y) += scale * tmport[1];
-#ifndef TWOD
       ORT(p,i,Z) += scale * tmport[2];
-#endif
     }
   }
 
   /* transform first box vector */
   tmpbox[0] = scale * SPROD(dx,box_x);
   tmpbox[1] = scale * SPROD(dy,box_x);
-#ifndef TWOD
   tmpbox[2] = scale * SPROD(dz,box_x);
-#endif
 
   box_x.x += tmpbox[0];
   box_x.y += tmpbox[1];
-#ifndef TWOD
   box_x.z += tmpbox[2];
-#endif
   
   /* transform second box vector */
   tmpbox[0] = scale * SPROD(dx,box_y);
   tmpbox[1] = scale * SPROD(dy,box_y);
-#ifndef TWOD
   tmpbox[2] = scale * SPROD(dz,box_y);
-#endif
 
   box_y.x += tmpbox[0];
   box_y.y += tmpbox[1];
-#ifndef TWOD
   box_y.z += tmpbox[2];
-#endif
 
   /* transform third box vector */
-#ifndef TWOD
   tmpbox[0] = scale * SPROD(dx,box_z);
   tmpbox[1] = scale * SPROD(dy,box_z);
   tmpbox[2] = scale * SPROD(dz,box_z);
@@ -102,7 +82,6 @@ void lin_deform(vektor dx, vektor dy, vektor dz, real scale)
   box_z.x += tmpbox[0];
   box_z.y += tmpbox[1];
   box_z.z += tmpbox[2];
-#endif
  
   /* apply box changes */
   make_box();
@@ -111,9 +90,7 @@ void lin_deform(vektor dx, vektor dy, vektor dz, real scale)
 
   tmpbox[0] = scale * SPROD(dx,center);
   tmpbox[1] = scale * SPROD(dy,center);
-#ifndef TWOD
   tmpbox[2] = scale * SPROD(dz,center);
-#endif
 #endif
 
 } /* lin_deform */
@@ -126,12 +103,8 @@ void lin_deform(vektor dx, vektor dy, vektor dz, real scale)
 
 void relax_pressure()
 {
-    real Epot, Temp, vol;
-#ifdef TWOD
-  vektor dx = {0.0, 0.0}, dy = {0.0, 0.0};
-#else
+  real Epot, Temp, vol;
   vektor dx = {0.0, 0.0, 0.0}, dy = {0.0, 0.0, 0.0}, dz = {0.0, 0.0, 0.0};
-#endif
   sym_tensor pt;
   real pp;
 
@@ -142,7 +115,6 @@ void relax_pressure()
   pt.xx = tot_presstens.xx / volume - presstens_ext.xx;
   pt.yy = tot_presstens.yy / volume - presstens_ext.yy;
   pt.xy = tot_presstens.xy / volume - presstens_ext.xy;
-#ifndef TWOD
   pt.zz = tot_presstens.zz / volume - presstens_ext.zz;
   pt.yz = tot_presstens.yz / volume - presstens_ext.yz;
   pt.zx = tot_presstens.zx / volume - presstens_ext.zx;
@@ -150,28 +122,19 @@ void relax_pressure()
   /* pp = (pt.xx + pt.yy + pt.zz) / 3.0; */
   pp = (pt.xx*relax_dirs.x + pt.yy*relax_dirs.y + pt.zz*relax_dirs.z) / (relax_dirs.x+ relax_dirs.y+relax_dirs.z);
 
-#else
-  pp = (pt.xx + pt.yy) / 2.0;
-#endif
   if ((relax_mode == RELAX_FULL) || (relax_mode == RELAX_AXIAL)) {
     dx.x = pp / bulk_module + (pt.xx - pp) / shear_module;
     dy.y = pp / bulk_module + (pt.yy - pp) / shear_module;
-#ifndef TWOD
     dz.z = pp / bulk_module + (pt.zz - pp) / shear_module;
-#endif
   } else {
     dx.x = pp / bulk_module;
     dy.y = pp / bulk_module;
-#ifndef TWOD
     dz.z = pp / bulk_module;
-#endif
   }
   if (relax_mode == RELAX_FULL) {
     dx.y  = dy.x = pt.xy / shear_module;
-#ifndef TWOD
     dy.z  = dz.y = pt.yz / shear_module;
     dz.x  = dx.z = pt.zx / shear_module;
-#endif
   }
 
 #else  /* not STRESS_TENS */
@@ -197,25 +160,17 @@ void relax_pressure()
   /* here, we support only relaxation to scalar pressure zero */
   dx.x = pressure / bulk_module ;
   dy.y = pressure / bulk_module ;
-#ifndef TWOD
   dz.z = pressure / bulk_module ;
-#endif
 
 #endif /* not STRESS_TENS */
 
   if (relax_mode == RELAX_AXIAL) {
     dx.x *= relax_dirs.x;
     dy.y *= relax_dirs.y;
-#ifndef TWOD
     dz.z *= relax_dirs.z;
-#endif
   }
 
-#ifdef TWOD
-  lin_deform(dx, dy,     relax_rate);
-#else
   lin_deform(dx, dy, dz, relax_rate);
-#endif
 }
 
 #endif /* HOMDEF */
@@ -250,9 +205,7 @@ void deform_sample(void)
       if ( *(shear_def + sort) == 1 ) {
 	  ort.x = ORT(p,i,X) - (deform_base + sort)->x;
 	  ort.y = ORT(p,i,Y) - (deform_base + sort)->y;
-#ifndef TWOD
 	  ort.z = ORT(p,i,Z) - (deform_base + sort)->z;
-#endif
 	  shear = SPROD( *(deform_shear + sort), ort);
 	}
       else
@@ -261,9 +214,7 @@ void deform_sample(void)
       /* move particles with virtual types  */
       ORT(p,i,X) += shear * deform_size * (deform_shift + sort)->x;
       ORT(p,i,Y) += shear * deform_size * (deform_shift + sort)->y;
-#ifndef TWOD
       ORT(p,i,Z) += shear * deform_size * (deform_shift + sort)->z;
-#endif
     }
   }
 }

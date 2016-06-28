@@ -128,9 +128,7 @@ void add_positions(void)
     for (i=0; i<p->n; i++) {
         AV_POS(p,i,X) += ORT(p,i,X) + SHEET(p,i,X);
         AV_POS(p,i,Y) += ORT(p,i,Y) + SHEET(p,i,Y);
-#ifndef TWOD
         AV_POS(p,i,Z) += ORT(p,i,Z) + SHEET(p,i,Z);
-#endif
         AV_EPOT(p,i)  += POTENG(p,i);
     }
   }
@@ -140,13 +138,11 @@ void add_positions(void)
   av_box_x.y += box_x.y;
   av_box_y.x += box_y.x;
   av_box_y.y += box_y.y;
-#ifndef TWOD
   av_box_x.z += box_x.z;  
   av_box_y.z += box_y.z;
   av_box_z.x += box_z.x;
   av_box_z.y += box_z.y;  
   av_box_z.z += box_z.z;  
-#endif
 #endif
   avpos_cnt++;
 
@@ -170,11 +166,9 @@ void add_presstensors(void)
       AVPRESSTENS(p,i,xx) += PRESSTENS(p,i,xx);
       AVPRESSTENS(p,i,yy) += PRESSTENS(p,i,yy);
       AVPRESSTENS(p,i,xy) += PRESSTENS(p,i,xy);
-#ifndef TWOD
       AVPRESSTENS(p,i,zz) += PRESSTENS(p,i,zz);
       AVPRESSTENS(p,i,zx) += PRESSTENS(p,i,zx);
       AVPRESSTENS(p,i,yz) += PRESSTENS(p,i,yz);
-#endif
     }
   }
 }

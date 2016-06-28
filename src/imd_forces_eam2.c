@@ -63,11 +63,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
     tmp_d.z = ORT(p,i,Z) - pbc.z;
 
     p_typ  = SORTE(p,i);
-#ifdef TWOD
-    jstart = (((p==q) && (pbc.x==0) && (pbc.y==0))               ? i+1 : 0);
-#else
     jstart = (((p==q) && (pbc.x==0) && (pbc.y==0) && (pbc.z==0)) ? i+1 : 0);
-#endif
     qptr   = &ORT(q,jstart,X);
 
     /* for each atom in neighbouring cell */
@@ -213,10 +209,8 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
   *Vir_yy += tmp_vir_vect.y;
   *Virial += tmp_vir_vect.x;
   *Virial += tmp_vir_vect.y;
-#ifndef TWOD
   *Vir_zz += tmp_vir_vect.z;
   *Virial += tmp_vir_vect.z;
-#endif
 #else
   *Virial += tmp_virial;
 #endif 
@@ -297,11 +291,7 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Virial,
 
     p_typ   = SORTE(p,i);
 
-#ifdef TWOD
-    same_cell = ((p==q) && (pbc.x==0) && (pbc.y==0));
-#else
     same_cell = ((p==q) && (pbc.x==0) && (pbc.y==0) && (pbc.z==0));
-#endif
 
     jstart = (same_cell ? i+1 : 0);
     qptr   = &ORT(q,jstart,X);
@@ -414,10 +404,8 @@ void do_forces_eam2(cell *p, cell *q, vektor pbc, real *Virial,
   *Vir_yy += tmp_vir_vect.y;
   *Virial += tmp_vir_vect.x;
   *Virial += tmp_vir_vect.y;
-#ifndef TWOD
   *Vir_zz += tmp_vir_vect.z;
   *Virial += tmp_vir_vect.z;
-#endif
 #else
   *Virial += tmp_virial;
 #endif 

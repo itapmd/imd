@@ -49,12 +49,8 @@ void calc_fefl(void)
       /* Elongation from reference position */
       d.x =   ORT(p,i,X)-REF_POS(p,i,X); 
       d.y =   ORT(p,i,Y)-REF_POS(p,i,Y);
-#ifndef TWOD
       d.z =   ORT(p,i,Z)-REF_POS(p,i,Z);
       dd  =   SPROD(d,d);
-#else
-      dd  =   SPROD2D(d,d);
-#endif
       
       p_typ = SORTE(p,i);
 
@@ -66,9 +62,7 @@ void calc_fefl(void)
       ff  =  -spring_rate[p_typ];
       KRAFT(p,i,X) = (1-lambda) * KRAFT(p,i,X) + lambda * ff * d.x; 
       KRAFT(p,i,Y) = (1-lambda) * KRAFT(p,i,Y) + lambda * ff * d.y; 
-#ifndef TWOD
       KRAFT(p,i,Z) = (1-lambda) * KRAFT(p,i,Z) + lambda * ff * d.z; 
-#endif      
     }
   }
 

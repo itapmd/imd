@@ -347,17 +347,13 @@ void calc_fnorm(void)
       /* give virtual particles their extra force */
       KRAFT(p,i,X) += (fbc_forces + sort)->x;
       KRAFT(p,i,Y) += (fbc_forces + sort)->y;
-#ifndef TWOD
       KRAFT(p,i,Z) += (fbc_forces + sort)->z;
-#endif
 #endif
 
       /* and set their force in restricted directions to 0 */ 
       KRAFT(p,i,X) *= (restrictions + sort)->x;
       KRAFT(p,i,Y) *= (restrictions + sort)->y;
-#ifndef TWOD
       KRAFT(p,i,Z) *= (restrictions + sort)->z;
-#endif
 
       tmp_fnorm +=  SPRODN(KRAFT,p,i,KRAFT,p,i);
     }
@@ -393,45 +389,33 @@ void calc_fnorm_g_h(void)
       /* give virtual particles their extra force */
       KRAFT(p,i,X) += (fbc_forces + sort)->x;
       KRAFT(p,i,Y) += (fbc_forces + sort)->y;
-#ifndef TWOD
       KRAFT(p,i,Z) += (fbc_forces + sort)->z;
-#endif
 #endif
 
       /* and set their force (->momentum) in restricted directions to 0 */ 
       KRAFT(p,i,X) *= (restrictions + sort)->x;
       KRAFT(p,i,Y) *= (restrictions + sort)->y;
-#ifndef TWOD
       KRAFT(p,i,Z) *= (restrictions + sort)->z;
-#endif
 
       tmp_fnorm +=  SPRODN(KRAFT,p,i,KRAFT,p,i);
       /* initialise old_ort */
       OLD_ORT(p,i,X) = ORT(p,i,X);
       OLD_ORT(p,i,Y) = ORT(p,i,Y);
-#ifndef TWOD
       OLD_ORT(p,i,Z) = ORT(p,i,Z);
-#endif
 
       /* initialise search vectors */
       CG_H(p,i,X) = KRAFT(p,i,X);
       CG_H(p,i,Y) = KRAFT(p,i,Y);
-#ifndef TWOD
       CG_H(p,i,Z) = KRAFT(p,i,Z);
-#endif
 
       CG_G(p,i,X) = KRAFT(p,i,X);
       CG_G(p,i,Y) = KRAFT(p,i,Y);
-#ifndef TWOD
       CG_G(p,i,Z) = KRAFT(p,i,Z);
-#endif
 
       /* determine the biggest force component */
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
-#ifndef TWOD
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
-#endif
     }
   }
 
@@ -475,9 +459,7 @@ void cg_calcgamma(void)
       else { /* Polak-Ribiere */
         tmpvec.x = KRAFT(p,i,X) - CG_G(p,i,X);
         tmpvec.y = KRAFT(p,i,Y) - CG_G(p,i,Y);
-#ifndef TWOD
         tmpvec.z = KRAFT(p,i,Z) - CG_G(p,i,Z);
-#endif
         tmp_dgg += SPRODX(KRAFT,p,i,tmpvec);
       }
     }
@@ -514,25 +496,17 @@ void set_hg(void)
 
       OLD_ORT(p,i,X) = ORT(p,i,X);
       OLD_ORT(p,i,Y) = ORT(p,i,Y);
-#ifndef TWOD
       OLD_ORT(p,i,Z) = ORT(p,i,Z);
-#endif
       CG_G(p,i,X) = KRAFT(p,i,X);
       CG_G(p,i,Y) = KRAFT(p,i,Y);
-#ifndef TWOD
       CG_G(p,i,Z) = KRAFT(p,i,Z);
-#endif
       CG_H(p,i,X) = KRAFT(p,i,X) + cg_gamma * CG_H(p,i,X);
       CG_H(p,i,Y) = KRAFT(p,i,Y) + cg_gamma * CG_H(p,i,Y);
-#ifndef TWOD
       CG_H(p,i,Z) = KRAFT(p,i,Z) + cg_gamma * CG_H(p,i,Z);
-#endif
       /* determine the biggest force component*/
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
-#ifndef TWOD
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
-#endif
     }
   }
 

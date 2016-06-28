@@ -33,9 +33,7 @@ void init_loadBalance() {
 #ifndef AR
 	error("actio=reactio condition must be fulfilled for Load Balancing");
 #endif
-#ifdef TWOD
-	error("2D not supported by Load Balancing");
-#endif
+
 #if defined(NPT_AXIAL) || defined(NPT_ISO) || defined(NPT_FULL) || defined(DEFORM) || defined(HOMDEF)
 	error("options causing the volume/geometry of the box to be changed are currently not supported using load balancing");
 #endif

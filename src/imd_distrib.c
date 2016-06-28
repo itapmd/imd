@@ -42,15 +42,10 @@ void write_distrib(int steps)
   if (0.0==dist_ur.x) {
     dist_ur.x = box_x.x;
     dist_ur.y = box_y.y;
-#ifndef TWOD
     dist_ur.z = box_z.z;
-#endif
   }
 
-  dist_size  = dist_dim.x * dist_dim.y;
-#ifndef TWOD
-  dist_size *= dist_dim.z;
-#endif
+  dist_size  = dist_dim.x * dist_dim.y * dist_dim.z;
 #ifdef BG
   n = 1; /* here we write presstens components in separate files */
 #else
@@ -116,25 +111,19 @@ void write_distrib(int steps)
       dist_press_flag, fzhlr, "press", "press");
   }
   if (dist_presstens_flag) {
-#ifdef TWOD
-    sprintf(contents, "P_xx P_yy P_xy");
-#else
     sprintf(contents, "P_xx P_yy P_zz P_yz P_zx P_xy");
-#endif
 #ifdef BG
     /* to save memory, we write each componend in separate file */
     make_write_distrib_select( 1, dist_presstens_xx_fun, 
       dist_presstens_flag, fzhlr, "presstens_xx", "presstens_xx" );
     make_write_distrib_select( 1, dist_presstens_yy_fun,
       dist_presstens_flag, fzhlr, "presstens_yy", "presstens_yy" );
-#ifndef TWOD
     make_write_distrib_select( 1, dist_presstens_zz_fun,
       dist_presstens_flag, fzhlr, "presstens_zz", "presstens_zz" );
     make_write_distrib_select( 1, dist_presstens_yz_fun,
       dist_presstens_flag, fzhlr, "presstens_yz", "presstens_yz" );
     make_write_distrib_select( 1, dist_presstens_zx_fun,
       dist_presstens_flag, fzhlr, "presstens_zx", "presstens_zx" );
-#endif
     make_write_distrib_select( 1, dist_presstens_xy_fun,
       dist_presstens_flag, fzhlr, "presstens_xy", "presstens_xy" );
 #else
@@ -242,11 +231,7 @@ void dist_Epot_fun(float *dat, cell *p, int i)
 
 void dist_press_fun(float *dat, cell *p, int i)
 {
-#ifdef TWOD
-  *dat += (PRESSTENS(p,i,xx) + PRESSTENS(p,i,yy)) / 2.0;
-#else
   *dat += (PRESSTENS(p,i,xx) + PRESSTENS(p,i,yy) + PRESSTENS(p,i,zz)) / 3.0;
-#endif
 }
 
 /******************************************************************************
@@ -260,11 +245,9 @@ void dist_presstens_fun(float *dat, cell *p, int i)
   int k=0;
   dat[k++] += PRESSTENS(p,i,xx);
   dat[k++] += PRESSTENS(p,i,yy);
-#ifndef TWOD
   dat[k++] += PRESSTENS(p,i,zz);
   dat[k++] += PRESSTENS(p,i,yz);
   dat[k++] += PRESSTENS(p,i,zx);
-#endif
   dat[k++] += PRESSTENS(p,i,xy);
 }
 
@@ -277,8 +260,6 @@ void dist_presstens_yy_fun(float *dat, cell *p, int i)
 {
   *dat += PRESSTENS(p,i,yy);
 }
-
-#ifndef TWOD
 
 void dist_presstens_zz_fun(float *dat, cell *p, int i)
 {
@@ -294,8 +275,6 @@ void dist_presstens_zx_fun(float *dat, cell *p, int i)
 {
   *dat += PRESSTENS(p,i,zx);
 }
-
-#endif
 
 void dist_presstens_xy_fun(float *dat, cell *p, int i)
 {
@@ -378,9 +357,7 @@ void make_distrib_density(void)
   /* the bins are orthogonal boxes in space */
   scalex = dist_dim.x / (dist_ur.x - dist_ll.x);
   scaley = dist_dim.y / (dist_ur.y - dist_ll.y);
-#ifndef TWOD
   scalez = dist_dim.z / (dist_ur.z - dist_ll.z);
-#endif
 
   /* clear distribution */
   for (i=0; i<dist_size; i++) num_2[i] = 0.0;
@@ -395,11 +372,9 @@ void make_distrib_density(void)
       numy = scaley * (ORT(p,i,Y) - dist_ll.y);
       if ((numy < 0) || (numy >= dist_dim.y)) continue;
       num = numx * dist_dim.y + numy;
-#ifndef TWOD
       numz = scalez * (ORT(p,i,Z) - dist_ll.z);
       if ((numz < 0) || (numz >= dist_dim.z)) continue;
       num = num * dist_dim.z + numz;
-#endif
       num_2[num] += 1.0;
     }
   }
@@ -441,9 +416,7 @@ void write_distrib_density(int mode, int fzhlr)
 
   /* compute density, minima and maxima */
   vol = (dist_ur.x - dist_ll.x) * (dist_ur.y - dist_ll.y);
-#ifndef TWOD
   vol *= (dist_ur.z - dist_ll.z);
-#endif
   fac = dist_size / vol;
   for (i=0; i<dist_size; i++) { 
     dat_1[i] = num_1[i] * fac;
@@ -460,16 +433,10 @@ void write_distrib_density(int mode, int fzhlr)
     i=0;
     for (r=0; r<dist_dim.x; r++)
       for (s=0; s<dist_dim.y; s++)
-#ifndef TWOD
         for (t=0; t<dist_dim.z; t++)
-#endif
 	{
 	  if (mode==DIST_FORMAT_ASCII_COORD) {
-#ifdef TWOD
-            fprintf(outfile, "%d %d ", r, s);
-#else
             fprintf(outfile, "%d %d %d ", r, s, t);
-#endif
           }
           fprintf(outfile,"%e\n", dat_1[i++]);
         }
@@ -506,9 +473,7 @@ void make_write_distrib_select(int n, void (*fun)(float*, cell*, int),
   /* the bins are orthogonal boxes in space */
   scalex = dist_dim.x / (dist_ur.x - dist_ll.x);
   scaley = dist_dim.y / (dist_ur.y - dist_ll.y);
-#ifndef TWOD
   scalez = dist_dim.z / (dist_ur.z - dist_ll.z);
-#endif
 
   /* clear distribution */
   for (i=0; i<n*dist_size; i++) dat_1[i] = 0.0;
@@ -523,11 +488,9 @@ void make_write_distrib_select(int n, void (*fun)(float*, cell*, int),
       numy = scaley * (ORT(p,i,Y) - dist_ll.y);
       if ((numy < 0) || (numy >= dist_dim.y)) continue;
       num = numx * dist_dim.y + numy;
-#ifndef TWOD
       numz = scalez * (ORT(p,i,Z) - dist_ll.z);
       if ((numz < 0) || (numz >= dist_dim.z)) continue;
       num = num * dist_dim.z + numz;
-#endif
       (*fun)(dat_1 + n * num, p, i);
     }
   }
@@ -576,14 +539,9 @@ void make_write_distrib_select(int n, void (*fun)(float*, cell*, int),
       else if ((mode==DIST_FORMAT_ASCII) || (mode==DIST_FORMAT_ASCII_COORD)) {
 	for (i=0; i<chunk_size; i++) {
           if (mode==DIST_FORMAT_ASCII_COORD) {
-#ifdef TWOD
-            fprintf(outfile, "%d %d", r, s++);
-            if (s==dist_dim.y) { s=0; r++; }
-#else
             fprintf(outfile, "%d %d %d", r, s, t++);
             if (t==dist_dim.z) { t=0; s++; }
             if (s==dist_dim.y) { s=0; r++; }
-#endif
           }
 #ifdef BG
           fprintf(outfile," %e\n", dat_2[i]);
@@ -645,21 +603,13 @@ void write_distrib_header(FILE *out, int mode, int n, char *cont)
     fprintf(out, "#C %s\n",       cont);
 
   /* dimension line */
-#ifdef TWOD
-  fprintf(out, "#D %d %d\n",    dist_dim.x, dist_dim.y);
-#else
   fprintf(out, "#D %d %d %d\n", dist_dim.x, dist_dim.y, dist_dim.z);
-#endif
 
   /* bin size line */
   s.x = (dist_ur.x - dist_ll.x) / dist_dim.x;
   s.y = (dist_ur.y - dist_ll.y) / dist_dim.y;
-#ifdef TWOD
-  fprintf(out, "#S %e %e\n",    s.x, s.y);
-#else
   s.z = (dist_ur.z - dist_ll.z) / dist_dim.z;
   fprintf(out, "#S %e %e %e\n", s.x, s.y, s.z);
-#endif
 
   /* endheader line */
   time(&now);
@@ -682,10 +632,7 @@ void init_atdist()
   int size, i;
 
   /* compute array size */
-  atdist_size  = atdist_dim.x * atdist_dim.y;
-#ifndef TWOD
-  atdist_size *= atdist_dim.z;
-#endif
+  atdist_size  = atdist_dim.x * atdist_dim.y * atdist_dim.z;
   size = atdist_size * ntypes;
 
   /* atdist_ll and atdist_ur must be set */
@@ -696,9 +643,7 @@ void init_atdist()
   /* the bins are orthogonal boxes in space */
   atdist_scale.x = atdist_dim.x / (atdist_ur.x - atdist_ll.x);
   atdist_scale.y = atdist_dim.y / (atdist_ur.y - atdist_ll.y);
-#ifndef TWOD
   atdist_scale.z = atdist_dim.z / (atdist_ur.z - atdist_ll.z);
-#endif
 
   /* allocate distribution array */
   if (NULL==atdist) {
@@ -777,27 +722,18 @@ void update_atdist()
 
       /* periodic continuation */
       for (ix=atdist_per_ll.x; ix<=atdist_per_ur.x; ix++)
-#ifndef TWOD
         for (iz=atdist_per_ll.z; iz<=atdist_per_ur.z; iz++)
-#endif
           for (iy=atdist_per_ll.y; iy<=atdist_per_ur.y; iy++) {
-#ifdef TWOD
-            x = ORT(p,i,X) + ix * box_x.x + iy * box_y.x;
-            y = ORT(p,i,Y) + ix * box_x.y + iy * box_y.y;
-#else
             x = ORT(p,i,X) + ix * box_x.x + iy * box_y.x + iz * box_z.x;
             y = ORT(p,i,Y) + ix * box_x.y + iy * box_y.y + iz * box_z.y;
             z = ORT(p,i,Z) + ix * box_x.z + iy * box_y.z + iz * box_z.z;
-#endif
             t =  co * x + si * y;
             y = -si * x + co * y;
             x = t;
 
             /* continue if atom is not inside selected box */
             if ((x < atdist_ll.x) || (x > atdist_ur.x) ||
-#ifndef TWOD
                 (z < atdist_ll.z) || (z > atdist_ur.z) || 
-#endif
                 (y < atdist_ll.y) || (y > atdist_ur.y)) continue;
 
             /* which bin? */
@@ -808,12 +744,10 @@ void update_atdist()
             if (numy < 0)                   numy = 0;
             if (numy >= atdist_dim.y)   numy = atdist_dim.y-1;
             num = numx * atdist_dim.y + numy;
-#ifndef TWOD
             numz = atdist_scale.z * (z - atdist_ll.z);
             if (numz < 0)                   numz = 0;
             if (numz >= atdist_dim.z)   numz = atdist_dim.z-1;
             num = num  * atdist_dim.z + numz;
-#endif
             num = SORTE(p,i) * atdist_size + num;
             atdist[num] += 1.0;
 	  }
@@ -846,15 +780,10 @@ void write_atdist()
     fprintf(out,"#C");
     for (i=0; i<ntypes; i++) fprintf(out," density_%d",i);
     fprintf(out,"\n");
-#ifdef TWOD
-    fprintf(out,"#D %d %d\n", atdist_dim.x, atdist_dim.y);
-    fprintf(out,"#S %f %f\n", 1.0 / atdist_scale.x, 1.0 / atdist_scale.y);
-#else
     fprintf(out,"#D %d %d %d\n",
       atdist_dim.x, atdist_dim.y, atdist_dim.z);
     fprintf(out,"#S %f %f %f\n", 
       1.0 / atdist_scale.x, 1.0 / atdist_scale.y, 1.0 / atdist_scale.z);
-#endif
     fprintf(out,"#E\n");
 
     size = atdist_size * ntypes;

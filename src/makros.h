@@ -382,13 +382,8 @@ inline static real SQR(real x)
 #define SIGNUM(a) (a > 0) ? 1 : ((a < 0) ? -1 : 0)
 
 /* How many dimension are there? */
-#ifdef TWOD
-#define SDIM 2
-#define  DIM 2
-#else
 #define SDIM 3
 #define  DIM 3
-#endif
 
 #ifdef MEAM
 #define  I(a,b) [(((b)*(neigh_len)) + (a))] 
@@ -415,17 +410,10 @@ inline static real SQR(real x)
 #define SPRODX3D(a,p,i,v) (a(p,i,X)*(v).x + a(p,i,Y)*(v).y + a(p,i,Z)*(v).z)
 #define SPRODX2D(a,p,i,v) (a(p,i,X)*(v).x + a(p,i,Y)*(v).y)
                            
-#ifdef TWOD
-#define SPROD(a,b)           SPROD2D(a,b)
-#define SPRODA(a,b)      SPRODA2D(a,b)
-#define SPRODN(a,p,i,b,q,j)  SPRODN2D(a,p,i,b,q,j)
-#define SPRODX(a,p,i,v)      SPRODX2D(a,p,i,v)
-#else
 #define SPROD(a,b)           SPROD3D(a,b)
 #define SPRODA(a,b)      SPRODA3D(a,b)
 #define SPRODN(a,p,i,b,q,j)  SPRODN3D(a,p,i,b,q,j)
 #define SPRODX(a,p,i,v)      SPRODX3D(a,p,i,v)
-#endif
 
 /* Dynamically allocated 3D array -- sort of */
 #define PTR_3D(var,i,j,k,dim_i,dim_j,dim_k) \
@@ -451,15 +439,9 @@ inline static real SQR(real x)
 #define PTR_2D_VV(var,coord,dim) \
   (((var) + ((coord.x)*(dim.y)) + (coord.y)))
 
-#ifdef TWOD
-#define PTR     PTR_2D
-#define PTR_V   PTR_2D_V
-#define PTR_VV  PTR_2D_VV
-#else
 #define PTR     PTR_3D
 #define PTR_V   PTR_3D_V
 #define PTR_VV  PTR_3D_VV
-#endif
 
 /* different versions of math functions for float and double */
 #ifdef DOUBLE

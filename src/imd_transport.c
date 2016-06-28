@@ -36,11 +36,7 @@ void do_heat_cond(int steps)
   vektor pp, vv, tmpv;
   static real fac = 0.0;
 
-#ifdef TWOD
-  hc.x = 0.0; hc.y = 0.0;
-#else
   hc.x = 0.0; hc.y = 0.0; hc.z = 0.0;
-#endif
 
   for (k=0; k<NCELLS; ++k) { /* loop over all cells */
 
@@ -51,9 +47,7 @@ void do_heat_cond(int steps)
       /* momenta at the time of the force computation */
       pp.x = IMPULS(p,i,X) + 0.5 * timestep * KRAFT(p,i,X); 
       pp.y = IMPULS(p,i,Y) + 0.5 * timestep * KRAFT(p,i,Y); 
-#ifndef TWOD
       pp.z = IMPULS(p,i,Z) + 0.5 * timestep * KRAFT(p,i,Z); 
-#endif
       /* current total energy */ 
       e = SPROD(pp,pp) / (2*MASSE(p,i));
       if (steps < hc_start) fac += e; /* add up kin. Energy for av. temp. */
@@ -67,23 +61,17 @@ void do_heat_cond(int steps)
       /* add up microscopic heat conductivity */ 
       /* at this point, PRESSTENS consists only of the virial part */
       if (steps >= hc_start) {
-#ifdef TWOD
-        vv.x = PRESSTENS(p,i,xx) * pp.x + PRESSTENS(p,i,xy) * pp.y;
-        vv.y = PRESSTENS(p,i,xy) * pp.x + PRESSTENS(p,i,yy) * pp.y;
-#else
+
         vv.x = PRESSTENS(p,i,xx) * pp.x + PRESSTENS(p,i,xy) * pp.y
                                         + PRESSTENS(p,i,zx) * pp.z;
         vv.y = PRESSTENS(p,i,xy) * pp.x + PRESSTENS(p,i,yy) * pp.y
                                         + PRESSTENS(p,i,yz) * pp.z;
         vv.z = PRESSTENS(p,i,zx) * pp.x + PRESSTENS(p,i,yz) * pp.y
                                         + PRESSTENS(p,i,zz) * pp.z;
-#endif
         e -= HCAVENG(p,i);  /* subtract average energy */
         hc.x += (pp.x * e + 0.5 * vv.x) / MASSE(p,i);
         hc.y += (pp.y * e + 0.5 * vv.y) / MASSE(p,i);
-#ifndef TWOD
         hc.z += (pp.z * e + 0.5 * vv.z) / MASSE(p,i);
-#endif
       }
     }
   }
@@ -104,11 +92,9 @@ void do_heat_cond(int steps)
 
   if ((myid==0) && (hc_int > 0) && (steps >= hc_start) && 
       ((steps - hc_start) % hc_int == 0)) {
-#ifdef TWOD
-    hc.x *= fac;  hc.y *= fac;
-#else
+
     hc.x *= fac;  hc.y *= fac;  hc.z *= fac;
-#endif
+
     write_heat_current(steps);
   }
 
@@ -258,9 +244,7 @@ void write_temp_dist(int steps)
       fprintf(outtemp, "\n");
       for (i=0; i<=nhalf; i++) {
         if (num_hist_2[i] > 0) temp_hist_2[i] /= num_hist_2[i];
-#ifndef TWOD
         temp_hist_2[i] *= (2.0/DIM);
-#endif
         fprintf(outtemp, "%10.4e %10.4e\n", (i+0.5) / scale, temp_hist_2[i] );
       }
 

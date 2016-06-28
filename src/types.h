@@ -63,12 +63,7 @@ typedef struct {int x; int y; int z; } ivektor3d;
 typedef struct {real x; real y; real z; real z2; } vektor4d;
 typedef struct {int x; int y; int z; int z2; } ivektor4d;
 
-#ifdef TWOD
-typedef struct {real xx, yy, xy; } sym_tensor;
-#else
 typedef struct {real xx, yy, zz, yz, zx, xy; } sym_tensor;
-#endif
-
 typedef struct {real yz, zx, xy; } off_tensor;
 
 /*
@@ -82,13 +77,8 @@ possible to avoid confusion.
 
 */
 
-#ifdef TWOD
-typedef vektor2d    vektor;
-typedef ivektor2d  ivektor;
-#else
 typedef vektor3d    vektor;
 typedef ivektor3d  ivektor;
-#endif
 
 #if defined(COVALENT) || defined(NNBR_TABLE)
 /* per particle neighbor table for COVALENT */

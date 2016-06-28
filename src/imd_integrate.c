@@ -104,14 +104,10 @@ void move_atoms_nve(void)
       for (j=1; j<nclones; j++) {
         KRAFT(p,i+j,X)  = KRAFT(p,i,X);
         KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
-#ifndef TWOD
         KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
-#endif
         IMPULS(p,i+j,X) = IMPULS(p,i,X);
         IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
-#ifndef TWOD
         IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
-#endif
       }
 #endif /* CLONE */
 
@@ -147,10 +143,8 @@ void move_atoms_nve(void)
           KRAFT(p,i,X) = superforce[satom].x * relmass; 
         if ( (superrestrictions + satom)->y )
           KRAFT(p,i,Y) = superforce[satom].y * relmass;
-#ifndef TWOD
         if ( (superrestrictions + satom)->z )
           KRAFT(p,i,Z) = superforce[satom].z * relmass;
-#endif
       }
 #endif
 
@@ -158,18 +152,14 @@ void move_atoms_nve(void)
       /* give virtual particles their extra force */
       KRAFT(p,i,X) += (fbc_forces + sort)->x;
       KRAFT(p,i,Y) += (fbc_forces + sort)->y;
-#ifndef TWOD
       KRAFT(p,i,Z) += (fbc_forces + sort)->z;
-#endif
 #endif
 
 #if defined(FBC) && defined(BEND)
       /* give virtual particles their extra force */
       KRAFT(p,i,X) += (bend_forces + sort)->x;
       KRAFT(p,i,Y) += (bend_forces + sort)->y;
-#ifndef TWOD
       KRAFT(p,i,Z) += (bend_forces + sort)->z;
-#endif
 #endif
 
 #ifdef LANGEVIN
@@ -192,18 +182,14 @@ void move_atoms_nve(void)
       /* and set their force (->momentum) in restricted directions to 0 */
       KRAFT(p,i,X) *= (restrictions + sort)->x;
       KRAFT(p,i,Y) *= (restrictions + sort)->y;
-#ifndef TWOD
       KRAFT(p,i,Z) *= (restrictions + sort)->z;
-#endif
 
 #ifdef FNORM
       fnorm += SPRODN(KRAFT,p,i,KRAFT,p,i);
       /* determine the biggest force component */
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
-#ifndef TWOD
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
-#endif
 #endif
 #ifdef EINSTEIN
       omega_E += SPRODN(KRAFT,p,i,KRAFT,p,i) / MASSE(p,i);
@@ -212,9 +198,7 @@ void move_atoms_nve(void)
 #ifndef DAMP /*  Normal NVE */
       IMPULS(p,i,X) += timestep * KRAFT(p,i,X);
       IMPULS(p,i,Y) += timestep * KRAFT(p,i,Y);
-#ifndef TWOD
       IMPULS(p,i,Z) += timestep * KRAFT(p,i,Z);
-#endif
 #else  /* Damping layers */
 
       /* use a local thermostat: Finnis
@@ -250,9 +234,7 @@ void move_atoms_nve(void)
 
         IMPULS(p,i,X) += timestep * KRAFT(p,i,X);
         IMPULS(p,i,Y) += timestep * KRAFT(p,i,Y);
-#ifndef TWOD
         IMPULS(p,i,Z) += timestep * KRAFT(p,i,Z);
-#endif
         kin_energie_2 = SPRODN(IMPULS,p,i,IMPULS,p,i);
         tot_kin_energy += (kin_energie_1 + kin_energie_2) / (4 * MASSE(p,i));
       }
@@ -261,9 +243,7 @@ void move_atoms_nve(void)
 
         tmp   = kin_energie_damp_1 / MASSE(p,i); /* local temp */
         tmp2  = (restrictions + sort)->x + (restrictions + sort)->y;
-#ifndef TWOD
         tmp2 += (restrictions + sort)->z;
-#endif
         n_damp += tmp2;
 
         if (tmp2 != 0) tmp /= tmp2;
@@ -284,10 +264,8 @@ void move_atoms_nve(void)
                          * timestep * (restrictions + sort)->x ;
         IMPULS(p,i,Y) += (-1.0*IMPULS(p,i,Y) * zeta_finnis + KRAFT(p,i,Y)) 
                          * timestep * (restrictions + sort)->y;
-#ifndef TWOD
         IMPULS(p,i,Z) += (-1.0*IMPULS(p,i,Z) * zeta_finnis + KRAFT(p,i,Z)) 
                          * timestep * (restrictions + sort)->z;
-#endif
         kin_energie_damp_2 =  SPRODN(IMPULS,p,i,IMPULS,p,i);
         tot_kin_energy_damp += (kin_energie_damp_1 + kin_energie_damp_2) 
                                / (4.0 * MASSE(p,i)) ;
@@ -343,9 +321,7 @@ void move_atoms_nve(void)
       {
           IMPULS(p,i,X) *= cc;
           IMPULS(p,i,Y) *= cc;
-#ifndef TWOD
           IMPULS(p,i,Z) *= cc;
-#endif
       }
 #endif
       
@@ -353,18 +329,14 @@ void move_atoms_nve(void)
       tmp = timestep / MASSE(p,i);
       ORT(p,i,X) += tmp * IMPULS(p,i,X);
       ORT(p,i,Y) += tmp * IMPULS(p,i,Y);
-#ifndef TWOD
       ORT(p,i,Z) += tmp * IMPULS(p,i,Z);
-#endif
 
 #ifdef RELAXINFO
       xnorm += tmp * tmp * SPRODN(IMPULS,p,i,IMPULS,p,i);
       /* determine the biggest force component */
       tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,X)),tmp_x_max2);
       tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,Y)),tmp_x_max2);
-#ifndef TWOD
       tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,Z)),tmp_x_max2);
-#endif
 #endif
 
 #ifdef SHOCK
@@ -422,11 +394,9 @@ void move_atoms_nve(void)
 #else /* not SHOCK */
         PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
         PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
-#ifndef TWOD
         PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
         PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
         PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
-#endif
         PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 #endif /* SHOCK */
       }
@@ -560,19 +530,13 @@ void move_atoms_ttm(void)
 #if defined(FBC)    /* give virtual particles their extra force */
       KRAFT(p,i,X) += (fbc_forces + sort)->x;
       KRAFT(p,i,Y) += (fbc_forces + sort)->y;
-#ifndef TWOD
       KRAFT(p,i,Z) += (fbc_forces + sort)->z;
 #endif
-#endif
 
-
-      
       /* and set their force (->momentum) in restricted directions to 0 */
       KRAFT(p,i,X) *= (restrictions + sort)->x;
       KRAFT(p,i,Y) *= (restrictions + sort)->y;
-#ifndef TWOD
       KRAFT(p,i,Z) *= (restrictions + sort)->z;
-#endif
 
 #ifdef EINSTEIN
       omega_E += SPRODN(KRAFT,p,i,KRAFT,p,i) / MASSE(p,i);
@@ -585,9 +549,7 @@ void move_atoms_ttm(void)
       delta_E_atom = 1/MASSE(p,i) * timestep
 	             * (  IMPULS(p,i,X) * fd_xi * MASSE(p,i) * ( IMPULS(p,i,X)/MASSE(p,i) - l1[fd_i][fd_j][fd_k].v_com.x)
 			+ IMPULS(p,i,Y) * fd_xi * MASSE(p,i) * ( IMPULS(p,i,Y)/MASSE(p,i) - l1[fd_i][fd_j][fd_k].v_com.y)
-#ifndef TWOD
 			+ IMPULS(p,i,Z) * fd_xi * MASSE(p,i) * ( IMPULS(p,i,Z)/MASSE(p,i) - l1[fd_i][fd_j][fd_k].v_com.z)
-#endif /*TWOD*/
 		       );
       E_ph_auf_local += delta_E_atom;
 #endif /*DEBUG*/
@@ -598,10 +560,7 @@ void move_atoms_ttm(void)
       
       IMPULS(p,i,X) += timestep * ( KRAFT(p,i,X) + fd_xi * MASSE(p,i) * ( IMPULS(p,i,X)/MASSE(p,i) - l1[fd_i][fd_j][fd_k].v_com.x) );
       IMPULS(p,i,Y) += timestep * ( KRAFT(p,i,Y) + fd_xi * MASSE(p,i) * ( IMPULS(p,i,Y)/MASSE(p,i) - l1[fd_i][fd_j][fd_k].v_com.y) );
-#ifndef TWOD
       IMPULS(p,i,Z) += timestep * ( KRAFT(p,i,Z) + fd_xi * MASSE(p,i) * ( IMPULS(p,i,Z)/MASSE(p,i) - l1[fd_i][fd_j][fd_k].v_com.z) );
-#endif
-
 
       kin_energie_2 = SPRODN(IMPULS,p,i,IMPULS,p,i);
 
@@ -612,19 +571,15 @@ void move_atoms_ttm(void)
       tmp = timestep / MASSE(p,i);
       ORT(p,i,X) += tmp * IMPULS(p,i,X);
       ORT(p,i,Y) += tmp * IMPULS(p,i,Y);
-#ifndef TWOD
       ORT(p,i,Z) += tmp * IMPULS(p,i,Z);
-#endif
 
 #ifdef STRESS_TENS
       if (do_press_calc) {
         PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
         PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
-#ifndef TWOD
         PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
         PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
         PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
-#endif
         PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
       }
 #endif /* STRESS_TENS */
@@ -719,14 +674,10 @@ void move_atoms_mik(void)
       for (j=1; j<nclones; j++) {
         KRAFT(p,i+j,X)  = KRAFT(p,i,X);
         KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
-#ifndef TWOD
         KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
-#endif
         IMPULS(p,i+j,X) = IMPULS(p,i,X);
         IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
-#ifndef TWOD
         IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
-#endif
       }
 #endif /* CLONE */
 
@@ -755,10 +706,8 @@ void move_atoms_mik(void)
 	    KRAFT(p,i,X) = superforce[satom].x * relmass; 
 	  if ( (superrestrictions + satom)->y )
 	    KRAFT(p,i,Y) = superforce[satom].y * relmass;
-#ifndef TWOD
 	  if ( (superrestrictions + satom)->z )
 	    KRAFT(p,i,Z) = superforce[satom].z * relmass;
-#endif
 	}
 #endif
 
@@ -766,48 +715,36 @@ void move_atoms_mik(void)
         /* give virtual particles their extra force */
 	KRAFT(p,i,X) += (fbc_forces + sort)->x;
 	KRAFT(p,i,Y) += (fbc_forces + sort)->y;
-#ifndef TWOD
 	KRAFT(p,i,Z) += (fbc_forces + sort)->z;
-#endif
 #endif /* FBC */
 
 	/* and set their force (->momentum) in restricted directions to 0 */
 	KRAFT(p,i,X) *= (restrictions + sort)->x;
 	KRAFT(p,i,Y) *= (restrictions + sort)->y;
-#ifndef TWOD
 	KRAFT(p,i,Z) *= (restrictions + sort)->z;
-#endif
 	
 #ifdef FNORM
 	fnorm += SPRODN(KRAFT,p,i,KRAFT,p,i);
         /* determine the biggest force component */
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
-#ifndef TWOD
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
-#endif
 #endif
         IMPULS(p,i,X) += timestep * KRAFT(p,i,X);
         IMPULS(p,i,Y) += timestep * KRAFT(p,i,Y);
-#ifndef TWOD
         IMPULS(p,i,Z) += timestep * KRAFT(p,i,Z);
-#endif
 
 	/* Mikroconvergence Algorithm - set velocity zero if a*v < 0 */
 	if (0.0 > SPRODN(IMPULS,p,i,KRAFT,p,i) ) {
           IMPULS(p,i,X) = 0.0;
           IMPULS(p,i,Y) = 0.0;
-#ifndef TWOD
           IMPULS(p,i,Z) = 0.0;
-#endif
         } else { /* new positions */
           tmp = timestep / MASSE(p,i);
 
           ORT(p,i,X) += tmp * IMPULS(p,i,X);
           ORT(p,i,Y) += tmp * IMPULS(p,i,Y);
-#ifndef TWOD
           ORT(p,i,Z) += tmp * IMPULS(p,i,Z);
-#endif
         }
 #ifdef RELAXINFO
 	//	pnorm += SPRODN(IMPULS,p,i,IMPULS,p,i)/MASSE(p,i)/MASSE(p,i);
@@ -815,9 +752,7 @@ void move_atoms_mik(void)
         /* determine the biggest force component */
         tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,X)),tmp_x_max2);
         tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,Y)),tmp_x_max2);
-#ifndef TWOD
         tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,Z)),tmp_x_max2);
-#endif
 #endif
         kin_energie_2 = SPRODN(IMPULS,p,i,IMPULS,p,i);
 
@@ -828,11 +763,9 @@ void move_atoms_mik(void)
         if (do_press_calc) {
           PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
           PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
-#ifndef TWOD
           PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
           PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
           PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
-#endif
           PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
         }
 #endif
@@ -935,14 +868,10 @@ void move_atoms_nvt(void)
       for (j=1; j<nclones; j++) {
         KRAFT(p,i+j,X)  = KRAFT(p,i,X);
         KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
-#ifndef TWOD
         KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
-#endif
         IMPULS(p,i+j,X) = IMPULS(p,i,X);
         IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
-#ifndef TWOD
         IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
-#endif
       }
 #endif /* CLONE */
 
@@ -972,46 +901,33 @@ void move_atoms_nvt(void)
 	    KRAFT(p,i,X) = superforce[satom].x * relmass; 
 	  if ( (superrestrictions + satom)->y )
 	    KRAFT(p,i,Y) = superforce[satom].y * relmass;
-#ifndef TWOD
 	  if ( (superrestrictions + satom)->z )
 	    KRAFT(p,i,Z) = superforce[satom].z * relmass;
-#endif
 	}
 #endif
 #if defined(FBC) && !defined(RIGID)
         /* give virtual particles their extra force */
 	KRAFT(p,i,X) += (fbc_forces + sort)->x;
 	KRAFT(p,i,Y) += (fbc_forces + sort)->y;
-#ifndef TWOD
 	KRAFT(p,i,Z) += (fbc_forces + sort)->z;
-#endif
 #endif
         
 #if defined(FBC) && defined(BEND)
       /* give virtual particles their extra force */
       KRAFT(p,i,X) += (bend_forces + sort)->x;
       KRAFT(p,i,Y) += (bend_forces + sort)->y;
-#ifndef TWOD
       KRAFT(p,i,Z) += (bend_forces + sort)->z;
 #endif
-#endif
-
-
       KRAFT(p,i,X) *= (restrictions + sort)->x;
       KRAFT(p,i,Y) *= (restrictions + sort)->y;
-#ifndef TWOD
       KRAFT(p,i,Z) *= (restrictions + sort)->z;
-#endif
 #ifdef FNORM
 
 	fnorm   += SPRODN(KRAFT,p,i,KRAFT,p,i);
         /* determine the biggest force component */
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
-
-#ifndef TWOD
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
-#endif
 #endif
 #ifdef EINSTEIN
 	omega_E += SPRODN(KRAFT,p,i,KRAFT,p,i) / MASSE(p,i);
@@ -1021,11 +937,8 @@ void move_atoms_nvt(void)
                            * eins_d_reib * (restrictions + sort)->x;
         IMPULS(p,i,Y) = (IMPULS(p,i,Y) * reibung + timestep * KRAFT(p,i,Y)) 
                            * eins_d_reib * (restrictions + sort)->y;
-#ifndef TWOD
         IMPULS(p,i,Z) = (IMPULS(p,i,Z) * reibung + timestep * KRAFT(p,i,Z)) 
                            * eins_d_reib * (restrictions + sort)->z;
-#endif
-
 #ifdef UNIAX
         /* new angular momenta */
         dot = 2.0 * SPRODN(DREH_IMPULS,p,i,ACHSE,p,i);
@@ -1051,17 +964,13 @@ void move_atoms_nvt(void)
         tmp = timestep / MASSE(p,i);
         ORT(p,i,X) += tmp * IMPULS(p,i,X);
         ORT(p,i,Y) += tmp * IMPULS(p,i,Y);
-#ifndef TWOD
         ORT(p,i,Z) += tmp * IMPULS(p,i,Z);
-#endif
 #ifdef RELAXINFO
 	xnorm   += tmp * tmp* SPRODN(IMPULS,p,i,IMPULS,p,i);
         /* determine the biggest force component */
         tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,X)),tmp_x_max2);
         tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,Y)),tmp_x_max2);
-#ifndef TWOD
         tmp_x_max2 =  MAX(SQR(tmp*IMPULS(p,i,Z)),tmp_x_max2);
-#endif
 #endif
 #ifdef UNIAX
         cross.x = DREH_IMPULS(p,i,Y) * ACHSE(p,i,Z)
@@ -1086,11 +995,9 @@ void move_atoms_nvt(void)
         if (do_press_calc) {
           PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
           PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
-#ifndef TWOD
           PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
           PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
           PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
-#endif
           PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 	}
 #endif
@@ -1179,19 +1086,13 @@ void move_atoms_sllod(void)
 #endif
   fnorm   = 0.0;
 
-#ifdef TWOD
-  reibung.x         =        1.0 - (eta+shear_rate.x) * timestep / 2.0;
-  eins_d_reib.x     = 1.0 / (1.0 + (eta+shear_rate.x) * timestep / 2.0);
-  reibung.y         =        1.0 - (eta+shear_rate.y) * timestep / 2.0;
-  eins_d_reib.y     = 1.0 / (1.0 + (eta+shear_rate.y) * timestep / 2.0);
-#else
   reibung.x         =        1.0 - (eta+shear_rate.z+shear_rate2.y) * timestep / 2.0;
   eins_d_reib.x     = 1.0 / (1.0 + (eta+shear_rate.z+shear_rate2.y) * timestep / 2.0);
   reibung.y         =        1.0 - (eta+shear_rate.x+shear_rate2.z) * timestep / 2.0;
   eins_d_reib.y     = 1.0 / (1.0 + (eta+shear_rate.x+shear_rate2.z) * timestep / 2.0);
   reibung.z         =        1.0 - (eta+shear_rate.y+shear_rate2.x) * timestep / 2.0;
   eins_d_reib.z     = 1.0 / (1.0 + (eta+shear_rate.y+shear_rate2.x) * timestep / 2.0);
-#endif
+
 #ifdef UNIAX
   reibung_rot     =        1.0 - eta_rot * timestep / 2.0;
   eins_d_reib_rot = 1.0 / (1.0 + eta_rot * timestep / 2.0);
@@ -1225,34 +1126,26 @@ void move_atoms_sllod(void)
         /* give virtual particles their extra force */
 	KRAFT(p,i,X) += (fbc_forces + sort)->x;
 	KRAFT(p,i,Y) += (fbc_forces + sort)->y;
-#ifndef TWOD
 	KRAFT(p,i,Z) += (fbc_forces + sort)->z;
-#endif
 
 #endif
 	KRAFT(p,i,X) *= (restrictions + sort)->x;
 	KRAFT(p,i,Y) *= (restrictions + sort)->y;
-#ifndef TWOD
 	KRAFT(p,i,Z) *= (restrictions + sort)->z;
-#endif
 #ifdef FNORM
 	fnorm += SPRODN(KRAFT,p,i,KRAFT,p,i);
         /* determine the biggest force component */
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
-#ifndef TWOD
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
-#endif
 #endif
 
 	IMPULS(p,i,X) = (IMPULS(p,i,X) * reibung.x + timestep * KRAFT(p,i,X)) 
                            * eins_d_reib.x * (restrictions + sort)->x;
         IMPULS(p,i,Y) = (IMPULS(p,i,Y) * reibung.y + timestep * KRAFT(p,i,Y)) 
                            * eins_d_reib.y * (restrictions + sort)->y;
-#ifndef TWOD
         IMPULS(p,i,Z) = (IMPULS(p,i,Z) * reibung.z + timestep * KRAFT(p,i,Z)) 
                            * eins_d_reib.z * (restrictions + sort)->z;
-#endif
 
 #ifdef UNIAX
         /* new angular momenta */
@@ -1279,7 +1172,6 @@ void move_atoms_sllod(void)
         tmp = timestep / MASSE(p,i);
         ORT(p,i,X) += tmp * IMPULS(p,i,X);
         ORT(p,i,Y) += tmp * IMPULS(p,i,Y);
-#ifndef TWOD
         ORT(p,i,Z) += tmp * IMPULS(p,i,Z);
 	/* sllod specific */
         ORT(p,i,X) += shear_rate.z  * ORT(p,i,Y);
@@ -1288,10 +1180,7 @@ void move_atoms_sllod(void)
         ORT(p,i,Y) += shear_rate2.z * ORT(p,i,X);
         ORT(p,i,Z) += shear_rate.y  * ORT(p,i,X);
         ORT(p,i,Z) += shear_rate2.x * ORT(p,i,Y);
-#else
-        ORT(p,i,X) += shear_rate.x * ORT(p,i,Y);
-        ORT(p,i,Y) += shear_rate.y * ORT(p,i,X);
-#endif
+
 #ifdef UNIAX
         cross.x = DREH_IMPULS(p,i,Y) * ACHSE(p,i,Z)
                 - DREH_IMPULS(p,i,Z) * ACHSE(p,i,Y);
@@ -1315,11 +1204,9 @@ void move_atoms_sllod(void)
         if (do_press_calc) {
           PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
           PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
-#ifndef TWOD
           PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
           PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
           PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
-#endif
           PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 	}
 #endif
@@ -1358,17 +1245,12 @@ void move_atoms_sllod(void)
 #endif
 
   /* adjusting the box */
-#ifdef TWOD
-  box_x.y += shear_rate.y*box_y.y;
-  box_y.x += shear_rate.x*box_x.x;
-#else
   box_y.x += shear_rate.z  * box_y.y;
   box_z.x += shear_rate2.y * box_z.z;
   box_z.y += shear_rate.x  * box_z.z;
   box_x.y += shear_rate2.z * box_x.x;
   box_x.z += shear_rate.y  * box_x.x;
   box_y.z += shear_rate2.x * box_y.y;
-#endif
   make_box();
 
   /* time evolution of constraints */
@@ -1428,9 +1310,7 @@ void calc_dyn_pressure(void)
       tmp = 1.0 / MASSE(p,i);
       dyn_stress_x += IMPULS(p,i,X) * IMPULS(p,i,X) * tmp;
       dyn_stress_y += IMPULS(p,i,Y) * IMPULS(p,i,Y) * tmp;
-#ifndef TWOD
       dyn_stress_z += IMPULS(p,i,Z) * IMPULS(p,i,Z) * tmp;
-#endif
 #ifdef UNIAX
       Erot_old += SPRODN(DREH_IMPULS,p,i,DREH_IMPULS,p,i) / uniax_inert;
 #endif
@@ -1439,9 +1319,7 @@ void calc_dyn_pressure(void)
 
   /* twice the kinetic energy */
   Ekin_old  = dyn_stress_x + dyn_stress_y;
-#ifndef TWOD
   Ekin_old += dyn_stress_z;
-#endif
 
 #ifdef MPI
   /* add up results from different CPUs */
@@ -1538,14 +1416,10 @@ void move_atoms_npt_iso(void)
       for (j=1; j<nclones; j++) {
         KRAFT(p,i+j,X)  = KRAFT(p,i,X);
         KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
-#ifndef TWOD
         KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
-#endif
         IMPULS(p,i+j,X) = IMPULS(p,i,X);
         IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
-#ifndef TWOD
         IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
-#endif
       }
 #endif /* CLONE */
 
@@ -1556,9 +1430,7 @@ void move_atoms_npt_iso(void)
      /* determine the biggest force component */
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
-#ifndef TWOD
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
-#endif
 #endif
 #ifdef EINSTEIN
       omega_E += SPRODN(KRAFT,p,i,KRAFT,p,i) / MASSE(p,i);
@@ -1571,9 +1443,7 @@ void move_atoms_npt_iso(void)
       /* new momenta */
       IMPULS(p,i,X) = (pfric*IMPULS(p,i,X)+timestep*KRAFT(p,i,X))*pifric;
       IMPULS(p,i,Y) = (pfric*IMPULS(p,i,Y)+timestep*KRAFT(p,i,Y))*pifric;
-#ifndef TWOD
       IMPULS(p,i,Z) = (pfric*IMPULS(p,i,Z)+timestep*KRAFT(p,i,Z))*pifric;
-#endif
 
 #ifdef UNIAX
       /* new angular momenta */
@@ -1601,18 +1471,14 @@ void move_atoms_npt_iso(void)
       tmp = timestep / MASSE(p,i);
       ORT(p,i,X) = (rfric * ORT(p,i,X) + IMPULS(p,i,X) * tmp) * rifric;
       ORT(p,i,Y) = (rfric * ORT(p,i,Y) + IMPULS(p,i,Y) * tmp) * rifric;
-#ifndef TWOD
       ORT(p,i,Z) = (rfric * ORT(p,i,Z) + IMPULS(p,i,Z) * tmp) * rifric;
-#endif
 
 #ifdef RELAXINFO
       xnorm +=  SQR(ORT(p,i,X)-tmportx) + SQR(ORT(p,i,Y)-tmporty)+SQR(ORT(p,i,Z)-tmportz);
       /* determine the biggest displacement component */
       tmp_x_max2 =  MAX( SQR(ORT(p,i,X)-tmportx),tmp_x_max2);
       tmp_x_max2 =  MAX( SQR(ORT(p,i,Y)-tmporty),tmp_x_max2);
-#ifndef TWOD
       tmp_x_max2 =  MAX( SQR(ORT(p,i,Z)-tmportz),tmp_x_max2);
-#endif
 #endif
       
 #ifdef UNIAX
@@ -1639,11 +1505,9 @@ void move_atoms_npt_iso(void)
       if (do_press_calc) {
         PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
         PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
-#ifndef TWOD
         PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
         PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
         PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
-#endif
         PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
       }
 #endif
@@ -1704,13 +1568,11 @@ void move_atoms_npt_iso(void)
   box_x.y *= ttt;
   box_y.x *= ttt;
   box_y.y *= ttt;
-#ifndef TWOD
   box_x.z *= ttt;
   box_y.z *= ttt;
   box_z.x *= ttt;
   box_z.y *= ttt;
   box_z.z *= ttt;
-#endif  
   make_box();
 
   /* increment external pressure */
@@ -1757,32 +1619,24 @@ void move_atoms_npt_axial(void)
     if (isq_tau_xi==0.0) {
       xi.x = 0.0;
       xi.y = 0.0;
-#ifndef TWOD
       xi.z = 0.0;
-#endif
     }
     xi.x *= relax_dirs.x;
     xi.y *= relax_dirs.y;
-#ifndef TWOD
     xi.z *= relax_dirs.z;
-#endif
   }
 
   fnorm    = 0.0;
   omega_E  = 0.0;
   stress_x = (dyn_stress_x + vir_xx) / volume;  dyn_stress_x = 0.0;
   stress_y = (dyn_stress_y + vir_yy) / volume;  dyn_stress_y = 0.0;
-#ifndef TWOD
   stress_z = (dyn_stress_z + vir_zz) / volume;  dyn_stress_z = 0.0;
-#endif
 
   /* time evolution of xi */
   ttt  = timestep * volume * isq_tau_xi / nactive;
   xi_old.x = xi.x;  xi.x += ttt * (stress_x - pressure_ext.x) * relax_dirs.x;
   xi_old.y = xi.y;  xi.y += ttt * (stress_y - pressure_ext.y) * relax_dirs.y;
-#ifndef TWOD
   xi_old.z = xi.z;  xi.z += ttt * (stress_z - pressure_ext.z) * relax_dirs.z;
-#endif
 
   /* some constants used later on */
   pfric.x  =        1.0 - (xi_old.x + eta) * timestep / 2.0;
@@ -1793,12 +1647,10 @@ void move_atoms_npt_axial(void)
   pifric.y = 1.0 / (1.0 + (xi.y     + eta) * timestep / 2.0);
   rfric.y  =        1.0 + (xi.y          ) * timestep / 2.0;
   rifric.y = 1.0 / (1.0 - (xi.y          ) * timestep / 2.0);
-#ifndef TWOD
   pfric.z  =        1.0 - (xi_old.z + eta) * timestep / 2.0;
   pifric.z = 1.0 / (1.0 + (xi.z     + eta) * timestep / 2.0);
   rfric.z  =        1.0 + (xi.z          ) * timestep / 2.0;
   rifric.z = 1.0 / (1.0 - (xi.z          ) * timestep / 2.0);
-#endif
 
   /* loop over all cells */
 #ifdef _OPENMP
@@ -1820,9 +1672,7 @@ void move_atoms_npt_axial(void)
      /* determine the biggest force component */
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
-#ifndef TWOD
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
-#endif
 #endif
 #ifdef EINSTEIN
       omega_E += SPRODN(KRAFT,p,i,KRAFT,p,i) * tmp;
@@ -1831,11 +1681,9 @@ void move_atoms_npt_axial(void)
       if (do_press_calc) {
         PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) * tmp;
         PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) * tmp;
-#ifndef TWOD
         PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) * tmp;
         PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) * tmp;
         PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) * tmp;
-#endif
         PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) * tmp;
       }
 #endif
@@ -1845,27 +1693,20 @@ void move_atoms_npt_axial(void)
                                    + timestep * KRAFT(p,i,X)) * pifric.x;
       IMPULS(p,i,Y) = (pfric.y * IMPULS(p,i,Y)
                                    + timestep * KRAFT(p,i,Y)) * pifric.y;
-#ifndef TWOD
       IMPULS(p,i,Z) = (pfric.z * IMPULS(p,i,Z)
                                    + timestep * KRAFT(p,i,Z)) * pifric.z;
-#endif
 
     sort = VSORTE(p,i);
 
   	/* and set their force (->momentum) in restricted directions to 0 */
     IMPULS(p,i,X) *= (restrictions + sort)->x;
    	IMPULS(p,i,Y) *= (restrictions + sort)->y;
-#ifndef TWOD
    	IMPULS(p,i,Z) *= (restrictions + sort)->z;
-#endif
-
 
       /* new stress tensor (dynamic part only) */
       dyn_stress_x += IMPULS(p,i,X) * IMPULS(p,i,X) * tmp;
       dyn_stress_y += IMPULS(p,i,Y) * IMPULS(p,i,Y) * tmp;
-#ifndef TWOD
       dyn_stress_z += IMPULS(p,i,Z) * IMPULS(p,i,Z) * tmp;
-#endif
 
       /* twice the new kinetic energy */ 
       Ekin_new += SPRODN(IMPULS,p,i,IMPULS,p,i) * tmp;
@@ -1874,9 +1715,7 @@ void move_atoms_npt_axial(void)
       tmp *= timestep;
       ORT(p,i,X) = (rfric.x * ORT(p,i,X) + IMPULS(p,i,X) * tmp) * rifric.x;
       ORT(p,i,Y) = (rfric.y * ORT(p,i,Y) + IMPULS(p,i,Y) * tmp) * rifric.y;
-#ifndef TWOD
       ORT(p,i,Z) = (rfric.z * ORT(p,i,Z) + IMPULS(p,i,Z) * tmp) * rifric.z;
-#endif
     }
   }
 
@@ -1920,7 +1759,6 @@ void move_atoms_npt_axial(void)
   box_x.y *= tvec.x;
   box_y.x *= tvec.y;
   box_y.y *= tvec.y;
-#ifndef TWOD
   tvec.z = (1.0 + xi.z * timestep / 2.0) / (1.0 - xi.z * timestep / 2.0);
   if (tvec.z<0) error("box size has become negative!");
   box_x.z *= tvec.x;
@@ -1928,7 +1766,6 @@ void move_atoms_npt_axial(void)
   box_z.x *= tvec.z;
   box_z.y *= tvec.z;
   box_z.z *= tvec.z;
-#endif
   make_box();
 
   /* increment external pressure */
@@ -1936,22 +1773,16 @@ void move_atoms_npt_axial(void)
     if (use_curr_pressure==1) {
       pressure_ext.x = stress_x;
       pressure_ext.y = stress_y;
-#ifndef TWOD
       pressure_ext.z = stress_z;
-#endif
       use_curr_pressure = 0;
     }
     d_pressure.x = (pressure_end.x-pressure_ext.x) / (steps_max-steps_min);
     d_pressure.y = (pressure_end.y-pressure_ext.y) / (steps_max-steps_min);
-#ifndef TWOD
     d_pressure.z = (pressure_end.z-pressure_ext.z) / (steps_max-steps_min);
-#endif
   }
   pressure_ext.x += d_pressure.x;
   pressure_ext.y += d_pressure.y;
-#ifndef TWOD
   pressure_ext.z += d_pressure.z;
-#endif
 
 }
 
@@ -2012,14 +1843,10 @@ void move_atoms_frac(void)
       for (j=1; j<nclones; j++) {
         KRAFT(p,i+j,X)  = KRAFT(p,i,X);
         KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
-#ifndef TWOD
         KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
-#endif
         IMPULS(p,i+j,X) = IMPULS(p,i,X);
         IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
-#ifndef TWOD
         IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
-#endif
       }
 #endif /* CLONE */
 
@@ -2049,14 +1876,9 @@ void move_atoms_frac(void)
 
 	sort = VSORTE(p,i);
         /* add up f considering the restriction vector  */
-#ifdef TWOD
-	sum_f+= f * ( (restrictions + sort)->x + 
-		      (restrictions + sort)->y   )/2.0;
-#else
 	sum_f+= f * ( (restrictions + sort)->x + 
 		      (restrictions + sort)->y +  
 		      (restrictions + sort)->z  )/3.0;
-#endif
 	
        	/* twice the old kinetic energy */
         tmp = SPRODN(IMPULS,p,i,IMPULS,p,i) / MASSE(p,i);
@@ -2068,25 +1890,19 @@ void move_atoms_frac(void)
         /* give virtual particles their extra force */
 	KRAFT(p,i,X) += (fbc_forces + sort)->x;
 	KRAFT(p,i,Y) += (fbc_forces + sort)->y;
-#ifndef TWOD
 	KRAFT(p,i,Z) += (fbc_forces + sort)->z;
-#endif
 #endif
 
 	KRAFT(p,i,X) *= (restrictions + sort)->x;
 	KRAFT(p,i,Y) *= (restrictions + sort)->y;
-#ifndef TWOD
 	KRAFT(p,i,Z) *= (restrictions + sort)->z;
-#endif
 
 #ifdef FNORM
         fnorm   += SPRODN(KRAFT,p,i,KRAFT,p,i);
         /* determine the biggest force component */
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
-#ifndef TWOD
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
-#endif
 #endif
 
 	reibung       =        1.0 -  gamma_damp * f * timestep / 2.0;
@@ -2101,10 +1917,8 @@ void move_atoms_frac(void)
                            * eins_d_reib   * (restrictions + sort)->x;
         IMPULS(p,i,Y) = (IMPULS(p,i,Y)  * reibung_y + timestep * KRAFT(p,i,Y))
                            * eins_d_reib_y * (restrictions + sort)->y;
-#ifndef TWOD
         IMPULS(p,i,Z) = (IMPULS(p,i,Z)  * reibung   + timestep * KRAFT(p,i,Z))
                            * eins_d_reib   * (restrictions + sort)->z;
-#endif                  
 
 	/* twice the new kinetic energy */
         tmp = SPRODN(IMPULS,p,i,IMPULS,p,i) / MASSE(p,i);
@@ -2120,19 +1934,15 @@ void move_atoms_frac(void)
         ORT(p,i,X) +=  tmp * IMPULS(p,i,X);
         ORT(p,i,Y)  = (tmp * IMPULS(p,i,Y) + epsilontmp * ORT(p,i,Y))
 	                * eins_d_epsilontmp;
-#ifndef TWOD
         ORT(p,i,Z) +=  tmp * IMPULS(p,i,Z);
-#endif
 
 #ifdef STRESS_TENS
         if (do_press_calc) {
           PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
           PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
-#ifndef TWOD
           PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
           PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
           PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
-#endif
           PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 	}
 #endif
@@ -2274,14 +2084,10 @@ void move_atoms_ftg(void)
       for (j=1; j<nclones; j++) {
         KRAFT(p,i+j,X)  = KRAFT(p,i,X);
         KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
-#ifndef TWOD
         KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
-#endif
         IMPULS(p,i+j,X) = IMPULS(p,i,X);
         IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
-#ifndef TWOD
         IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
-#endif
       }
 #endif /* CLONE */
 
@@ -2307,14 +2113,9 @@ void move_atoms_ftg(void)
 	
 	/* calc kinetic "temperature" for actual atom */
 	tmp  = SPRODN(IMPULS,p,i,IMPULS,p,i) / MASSE(p,i);
-#ifdef TWOD
-	tmp2 = ( (restrictions + sort)->x + 
-		 (restrictions + sort)->y   );
-#else
 	tmp2 = ( (restrictions + sort)->x + 
 		 (restrictions + sort)->y +  
 		 (restrictions + sort)->z  );
-#endif
 	if(tmp2!=0) tmp /= (real)tmp2;
 	
 	/* calc damping factor form position */
@@ -2334,14 +2135,9 @@ void move_atoms_ftg(void)
       } 
 
       /* add up degrees of freedom  considering restriction vector  */
-#ifdef TWOD
-      *(ninslice + slice) += ( (restrictions + sort)->x + 
-			       (restrictions + sort)->y   );
-#else
       *(ninslice + slice) += ( (restrictions + sort)->x + 
 			       (restrictions + sort)->y +  
 			       (restrictions + sort)->z  );
-#endif
       
       /* twice the old kinetic energy */
       *(E_kin_1 + slice) += SPRODN(IMPULS,p,i,IMPULS,p,i) / MASSE(p,i);
@@ -2350,25 +2146,19 @@ void move_atoms_ftg(void)
         /* give virtual particles their extra force */
 	KRAFT(p,i,X) += (fbc_forces + sort)->x;
 	KRAFT(p,i,Y) += (fbc_forces + sort)->y;
-#ifndef TWOD
 	KRAFT(p,i,Z) += (fbc_forces + sort)->z;
-#endif
 #endif
 
 	KRAFT(p,i,X) *= (restrictions + sort)->x;
 	KRAFT(p,i,Y) *= (restrictions + sort)->y;
-#ifndef TWOD
 	KRAFT(p,i,Z) *= (restrictions + sort)->z;
-#endif
 
 #ifdef FNORM
         fnorm   += SPRODN(KRAFT,p,i,KRAFT,p,i);
         /* determine the biggest force component */
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
-#ifndef TWOD
         tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
-#endif
 #endif
 
 	reibung       =        1.0 -  *(gamma_ftg + slice) * timestep / 2.0;
@@ -2383,10 +2173,8 @@ void move_atoms_ftg(void)
                            * eins_d_reib   * (restrictions + sort)->x;
         IMPULS(p,i,Y) = (IMPULS(p,i,Y)  * reibung_y + timestep * KRAFT(p,i,Y))
                            * eins_d_reib_y * (restrictions + sort)->y;
-#ifndef TWOD
         IMPULS(p,i,Z) = (IMPULS(p,i,Z)  * reibung   + timestep * KRAFT(p,i,Z))
                            * eins_d_reib   * (restrictions + sort)->z;
-#endif                  
 
 	/* twice the new kinetic energy */ 
 	*(E_kin_2 + slice) +=  SPRODN(IMPULS,p,i,IMPULS,p,i) / MASSE(p,i);
@@ -2399,20 +2187,15 @@ void move_atoms_ftg(void)
         ORT(p,i,X) +=  tmp * IMPULS(p,i,X);
         ORT(p,i,Y)  = (tmp * IMPULS(p,i,Y) + epsilontmp * ORT(p,i,Y))
 	                * eins_d_epsilontmp;
-
-#ifndef TWOD
         ORT(p,i,Z) +=  tmp * IMPULS(p,i,Z);
-#endif
 
 #ifdef STRESS_TENS
         if (do_press_calc) {
           PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
           PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
-#ifndef TWOD
           PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
           PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
           PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
-#endif
           PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
 	}
 #endif
@@ -2528,14 +2311,10 @@ void move_atoms_finnis(void)
       for (j=1; j<nclones; j++) {
         KRAFT(p,i+j,X)  = KRAFT(p,i,X);
         KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
-#ifndef TWOD
         KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
-#endif
         IMPULS(p,i+j,X) = IMPULS(p,i,X);
         IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
-#ifndef TWOD
         IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
-#endif
       }
 #endif /* CLONE */
 
@@ -2547,11 +2326,8 @@ void move_atoms_finnis(void)
 
       /* calc kinetic "temperature" for actual atom */
       tmp  = SPRODN(IMPULS,p,i,IMPULS,p,i) / MASSE(p,i);
-#ifdef TWOD
-      tmp2 = rest->x + rest->y;
-#else
       tmp2 = rest->x + rest->y + rest->z;
-#endif
+
       if (tmp2 != 0) tmp /= tmp2;
       /* to account for restricted mobilities and to avoid singularities */
       temperature_at = (tmp2 !=0) ? (tmp2/3.0 * temperature) : (1e-10); 
@@ -2568,25 +2344,19 @@ void move_atoms_finnis(void)
       /* give virtual particles their extra force */
       KRAFT(p,i,X) += (fbc_forces + sort)->x;
       KRAFT(p,i,Y) += (fbc_forces + sort)->y;
-#ifndef TWOD
       KRAFT(p,i,Z) += (fbc_forces + sort)->z;
-#endif
 #endif
 
       KRAFT(p,i,X) *= rest->x;
       KRAFT(p,i,Y) *= rest->y;
-#ifndef TWOD
       KRAFT(p,i,Z) *= rest->z;
-#endif
 
 #ifdef FNORM
       fnorm   += SPRODN(KRAFT,p,i,KRAFT,p,i);
       /* determine the biggest force component */
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,X)),tmp_f_max2);
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,Y)),tmp_f_max2);
-#ifndef TWOD
       tmp_f_max2 = MAX(SQR(KRAFT(p,i,Z)),tmp_f_max2);
-#endif
 #endif
 
       /* new momenta */
@@ -2594,10 +2364,8 @@ void move_atoms_finnis(void)
                        * rest->x;
       IMPULS(p,i,Y) += (-1.0*IMPULS(p,i,Y) * zeta_finnis + KRAFT(p,i,Y)) * timestep 
                        * rest->y;
-#ifndef TWOD
       IMPULS(p,i,Z) += (-1.0*IMPULS(p,i,Z) * zeta_finnis + KRAFT(p,i,Z)) * timestep 
                        * rest->z;
-#endif                  
 
       /* twice the new kinetic energy */ 
       E_kin_2 += SPRODN(IMPULS,p,i,IMPULS,p,i) / MASSE(p,i);
@@ -2606,19 +2374,15 @@ void move_atoms_finnis(void)
       tmp = timestep / MASSE(p,i);
       ORT(p,i,X) +=  tmp * IMPULS(p,i,X);
       ORT(p,i,Y) +=  tmp * IMPULS(p,i,Y);
-#ifndef TWOD
       ORT(p,i,Z) +=  tmp * IMPULS(p,i,Z);
-#endif
 
 #ifdef STRESS_TENS
       if (do_press_calc) {
         PRESSTENS(p,i,xx) += IMPULS(p,i,X) * IMPULS(p,i,X) / MASSE(p,i);
         PRESSTENS(p,i,yy) += IMPULS(p,i,Y) * IMPULS(p,i,Y) / MASSE(p,i);
-#ifndef TWOD
         PRESSTENS(p,i,zz) += IMPULS(p,i,Z) * IMPULS(p,i,Z) / MASSE(p,i);
         PRESSTENS(p,i,yz) += IMPULS(p,i,Y) * IMPULS(p,i,Z) / MASSE(p,i);
         PRESSTENS(p,i,zx) += IMPULS(p,i,Z) * IMPULS(p,i,X) / MASSE(p,i);
-#endif
         PRESSTENS(p,i,xy) += IMPULS(p,i,X) * IMPULS(p,i,Y) / MASSE(p,i);
       }
 #endif
@@ -2787,9 +2551,7 @@ void move_atoms_nvx(void)
       /* new momenta */
       IMPULS(p,i,X) += timestep * KRAFT(p,i,X); 
       IMPULS(p,i,Y) += timestep * KRAFT(p,i,Y); 
-#ifndef TWOD
       IMPULS(p,i,Z) += timestep * KRAFT(p,i,Z); 
-#endif
 
       /* twice the new kinetic energy */ 
       Ekin_2 = SPRODN(IMPULS,p,i,IMPULS,p,i) / MASSE(p,i);
@@ -2797,9 +2559,7 @@ void move_atoms_nvx(void)
       /* new positions */
       ORT(p,i,X) += timestep * IMPULS(p,i,X) / MASSE(p,i);
       ORT(p,i,Y) += timestep * IMPULS(p,i,Y) / MASSE(p,i);
-#ifndef TWOD
       ORT(p,i,Z) += timestep * IMPULS(p,i,Z) / MASSE(p,i);
-#endif
       Evec1[0] += (Ekin_1 + Ekin_2) / 4.0;
 
       /* kinetic energy of layers 0 and nhalf */
@@ -2846,15 +2606,11 @@ void move_atoms_nvx(void)
       if (num == 0) {
         IMPULS(p,i,X) *= rescale_left;
         IMPULS(p,i,Y) *= rescale_left;
-#ifndef TWOD
         IMPULS(p,i,Z) *= rescale_left;
-#endif
       } else if (num == nhalf) {
         IMPULS(p,i,X) *= rescale_right;
         IMPULS(p,i,Y) *= rescale_right;
-#ifndef TWOD
         IMPULS(p,i,Z) *= rescale_right;
-#endif
       }
     }
   }
@@ -2897,9 +2653,7 @@ void move_atoms_cg(real alpha)
       for (j=1; j<nclones; j++) {
         KRAFT(p,i+j,X)  = KRAFT(p,i,X);
         KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
-#ifndef TWOD
         KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
-#endif
       }
 #endif /* CLONE */
 
@@ -2907,18 +2661,14 @@ void move_atoms_cg(real alpha)
       /* CG:  move atoms in search direction for linmin */
       ORT(p,i,X) = OLD_ORT(p,i,X) + alpha * CG_H(p,i,X);
       ORT(p,i,Y) = OLD_ORT(p,i,Y) + alpha * CG_H(p,i,Y);
-#ifndef TWOD
       ORT(p,i,Z) = OLD_ORT(p,i,Z) + alpha * CG_H(p,i,Z);
-#endif
 
 #ifdef RELAXINFO
       xnorm   += alpha * alpha *  SPRODN(CG_H,p,i,CG_H,p,i);
       /* determine the biggest force component */
       tmp_x_max2 = MAX( alpha * alpha *SQR(CG_H(p,i,X)),tmp_x_max2);
       tmp_x_max2 = MAX( alpha * alpha *SQR(CG_H(p,i,Y)),tmp_x_max2);
-#ifndef TWOD
       tmp_x_max2 = MAX( alpha * alpha *SQR(CG_H(p,i,Z)),tmp_x_max2);
-#endif
 #endif
     }
   }
@@ -2976,9 +2726,7 @@ void move_atoms_sd(real alpha)
       for (j=1; j<nclones; j++) {
         KRAFT(p,i+j,X)  = KRAFT(p,i,X);
         KRAFT(p,i+j,Y)  = KRAFT(p,i,Y);
-#ifndef TWOD
         KRAFT(p,i+j,Z)  = KRAFT(p,i,Z);
-#endif
       }
 #endif /* CLONE */
 
@@ -2986,18 +2734,14 @@ void move_atoms_sd(real alpha)
       /* CG:  move atoms in force direction for linmin */
       ORT(p,i,X) = OLD_ORT(p,i,X) + alpha * KRAFT(p,i,X);
       ORT(p,i,Y) = OLD_ORT(p,i,Y) + alpha * KRAFT(p,i,Y);
-#ifndef TWOD
       ORT(p,i,Z) = OLD_ORT(p,i,Z) + alpha * KRAFT(p,i,Z);
-#endif
 
 #ifdef RELAXINFO
       xnorm   += alpha * alpha *  SPRODN(KRAFT,p,i,KRAFT,p,i);
      /* determine the biggest force component */
       tmp_x_max2 = MAX( alpha * alpha *SQR(KRAFT(p,i,X)),tmp_x_max2);
       tmp_x_max2 = MAX( alpha * alpha *SQR(KRAFT(p,i,Y)),tmp_x_max2);
-#ifndef TWOD
       tmp_x_max2 = MAX( alpha * alpha *SQR(KRAFT(p,i,Z)),tmp_x_max2);
-#endif
 
 #endif
 
@@ -3050,9 +2794,7 @@ void calc_pxavg(void)
   if (0.0==dist_ur.x) {
     dist_ur.x = box_x.x;
     dist_ur.y = box_y.y;
-#ifndef TWOD
     dist_ur.z = box_z.z;
-#endif
   }
 
 #ifdef MPI

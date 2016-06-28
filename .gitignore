@@ -1,5 +1,7 @@
 # Compiled object files
 src/*.o
 util/*.o
+src2d/*
+imd.*
 # Version header file
 src/version.h

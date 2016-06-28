@@ -595,10 +595,8 @@ void do_forces2(cell *p, real *Epot, real *Virial,
   *Vir_yy += tmp_vir_vect.y;
   *Virial += tmp_vir_vect.x;
   *Virial += tmp_vir_vect.y;
-#ifndef TWOD
   *Vir_zz += tmp_vir_vect.z;
   *Virial += tmp_vir_vect.z;
-#endif
 #else
   *Virial += tmp_virial;
 #endif 

@@ -255,20 +255,11 @@ int getparamfile(char *paramfname, int phase)
 #ifdef EXTPOT
   real rtmp4[4];
 #endif
-
-#ifdef TWOD
-  vektor3d tempforce;
-  vektor nullv={0.0,0.0};
-  vektor3d tempvek;
-  vektor einsv={1.0,1.0};
-  vektor3d tempshift;
-#else
   vektor4d tempforce;
   vektor nullv={0.0,0.0,0.0};
   vektor4d tempvek;
   vektor einsv={1.0,1.0,1.0};
   vektor4d tempshift;
-#endif
   vektor force;
   vektor vek;
   vektor shift;
@@ -825,9 +816,7 @@ int getparamfile(char *paramfname, int phase)
       if (tmp < 0) {
         superrestrictions[nsuperatoms].x = rigidv[count  ];
         superrestrictions[nsuperatoms].y = rigidv[count+1];
-#ifndef TWOD
         superrestrictions[nsuperatoms].z = rigidv[count+2];
-#endif
         nsuperatoms++;
       }
     }
@@ -871,9 +860,8 @@ int getparamfile(char *paramfname, int phase)
         error("Force defined for non existing virtual atom type\n");
       force.x = tempforce.y;
       force.y = tempforce.z;
-#ifndef TWOD
       force.z = tempforce.z2;
-#endif
+
       fbc_beginforces[(int)(tempforce.x)] = force;
       fbc_forces     [(int)(tempforce.x)] = force;
     }
@@ -902,9 +890,8 @@ int getparamfile(char *paramfname, int phase)
         error("Force increment defined for non existing virtual atom type\n");
       force.x = tempforce.y;
       force.y = tempforce.z;
-#ifndef TWOD
       force.z = tempforce.z2;
-#endif
+
       fbc_dforces[(int)(tempforce.x)] = force;
     }
 #else
@@ -918,9 +905,8 @@ int getparamfile(char *paramfname, int phase)
         error("Force defined for non existing virtual atom type\n");
       force.x = tempforce.y;
       force.y = tempforce.z;
-#ifndef TWOD
       force.z = tempforce.z2;
-#endif
+
       fbc_endforces[(int)(tempforce.x)] = force;
     }
 #endif
@@ -936,9 +922,8 @@ int getparamfile(char *paramfname, int phase)
         error("Force defined for non existing virtual atom type\n");
       force.x = tempforce.y;
       force.y = tempforce.z;
-#ifndef TWOD
       force.z = tempforce.z2;
-#endif
+
       fbc_beginbforces[(int)(tempforce.x)] = force;
       fbc_bforces     [(int)(tempforce.x)] = force;
     }
@@ -962,9 +947,8 @@ int getparamfile(char *paramfname, int phase)
         error("Force increment defined for non existing virtual atom type\n");
       force.x = tempforce.y;
       force.y = tempforce.z;
-#ifndef TWOD
       force.z = tempforce.z2;
-#endif
+
       fbc_bdforces[(int)(tempforce.x)] = force;
     }
 #else
@@ -978,9 +962,8 @@ int getparamfile(char *paramfname, int phase)
         error("Force defined for non existing virtual atom type\n");
       force.x = tempforce.y;
       force.y = tempforce.z;
-#ifndef TWOD
       force.z = tempforce.z2;
-#endif
+
       fbc_endbforces[(int)(tempforce.x)] = force;
     }
 #endif
@@ -1035,9 +1018,8 @@ int getparamfile(char *paramfname, int phase)
           error("Bend axis defined for non existing bending moment\n");
       force.x = tempforce.y;
       force.y = tempforce.z;
-#ifndef TWOD
       force.z = tempforce.z2;
-#endif
+
       if(SPROD(force,force)!=1)
       {
           warning("axis of bending moment not of unit length");
@@ -1074,9 +1056,8 @@ int getparamfile(char *paramfname, int phase)
         error("Restriction defined for non existing virtual atom type\n");
       vek.x = tempvek.y;
       vek.y = tempvek.z;
-#ifndef TWOD
       vek.z = tempvek.z2;
-#endif
+
       restrictions[(int)(tempvek.x)] = vek;
     }
     else if (strcasecmp(token,"box_x")==0) {
@@ -1087,12 +1068,10 @@ int getparamfile(char *paramfname, int phase)
       /* 'y' or second vector for box */
       getparam("box_y",&box_y,PARAM_REAL,DIM,DIM);
     }
-#ifndef TWOD
     else if (strcasecmp(token,"box_z")==0) {
       /* 'z' or third vector for box */
       getparam("box_z",&box_z,PARAM_REAL,DIM,DIM);
     }
-#endif
     else if (strcasecmp(token,"box_param")==0) {
       /* box parameters for generated structures */
       getparam(token,&box_param,PARAM_INT,DIM,DIM);
@@ -1449,7 +1428,6 @@ int getparamfile(char *paramfname, int phase)
       getparam("zeta_0",&zeta_0,PARAM_REAL,1,1);
     }
 #endif
-#ifndef TWOD
     else if (strcasecmp(token,"view_pos")==0) {
       /* view position */
       getparam("view_pos",&view_pos,PARAM_REAL,DIM,DIM);
@@ -1462,7 +1440,6 @@ int getparamfile(char *paramfname, int phase)
       /* projection (0=orthogonal, 1=perspective) */
       getparam("projection",&projection,PARAM_INT,1,1);
     }
-#endif
     else if (strcasecmp(token,"ecut_kin")==0) {
       /* kinetic energy interval for pictures (min/max) */
       getparam("ecut_kin",&ecut_kin,PARAM_REAL,DIM,DIM);
@@ -1496,12 +1473,10 @@ int getparamfile(char *paramfname, int phase)
       /* shear strength, corresponds to xy-like entries in strain tensor */
       getparam("shear_rate",&shear_rate,PARAM_REAL,DIM,DIM);
     }
-#ifndef TWOD
     else if (strcasecmp(token,"shear_rate2")==0) {
       /* shear strength, corresponds to yx-entry in strain tensor */
       getparam("shear_rate2",&shear_rate2,PARAM_REAL,DIM,DIM);
     }
-#endif
 #endif
 #ifdef CYCLE
        else if (strcasecmp(token,"lindef_freq")==0) {
@@ -1527,12 +1502,10 @@ int getparamfile(char *paramfname, int phase)
       /* second row of deformation matrix */
       getparam(token,&lindef_y,PARAM_REAL,DIM,DIM);
     }
-#ifndef TWOD
     else if (strcasecmp(token,"lindef_z")==0) {
       /* third row of deformation matrix */
       getparam(token,&lindef_z,PARAM_REAL,DIM,DIM);
     }
-#endif
     else if (strcasecmp(token,"shear_module")==0) {
       /* estimate of shear module */
       getparam(token,&shear_module,PARAM_REAL,1,1);
@@ -1664,9 +1637,7 @@ int getparamfile(char *paramfname, int phase)
         error("Shift defined for non existing virtual atom type\n");
       shift.x = tempshift.y;
       shift.y = tempshift.z;
-#ifndef TWOD
       shift.z = tempshift.z2;
-#endif
       deform_shift[(int)(tempshift.x)] = shift;
     }
     else if (strcasecmp(token,"deform_shear")==0) {
@@ -1679,9 +1650,7 @@ int getparamfile(char *paramfname, int phase)
         error("Shear defined for non existing virtual atom type\n");
       shear.x = tempshift.y;
       shear.y = tempshift.z;
-#ifndef TWOD
       shear.z = tempshift.z2;
-#endif
       deform_shear[(int)(tempshift.x)] = shear;
       shear_def   [(int)(tempshift.x)] = 1;
     }
@@ -1695,9 +1664,7 @@ int getparamfile(char *paramfname, int phase)
         error("Shear base defined for non existing virtual atom type\n");
       base.x = tempshift.y;
       base.y = tempshift.z;
-#ifndef TWOD
       base.z = tempshift.z2;
-#endif
       deform_base[(int)(tempshift.x)] = base;
     }
 #endif /* DEFORM */
@@ -1911,14 +1878,10 @@ int getparamfile(char *paramfname, int phase)
       getparam(token,tmp,PARAM_INT,2*DIM+1,2*DIM+1);
       dsf_k0  [DIM*dsf_nk  ] = tmp[i++];
       dsf_k0  [DIM*dsf_nk+1] = tmp[i++];
-#ifndef TWOD
       dsf_k0  [DIM*dsf_nk+2] = tmp[i++];
-#endif
       dsf_kdir[DIM*dsf_nk  ] = tmp[i++];
       dsf_kdir[DIM*dsf_nk+1] = tmp[i++];
-#ifndef TWOD
       dsf_kdir[DIM*dsf_nk+2] = tmp[i++];
-#endif
       dsf_kmax[    dsf_nk  ] = tmp[i++];
       dsf_nk++;
     }
@@ -3464,11 +3427,8 @@ void check_parameters_complete()
   real tmp;
   real norm_bend_axis;
   int  k;
-#ifdef TWOD
-  vektor einsv = {1.0,1.0};
-#else
+
   vektor einsv = {1.0,1.0,1.0};
-#endif
   vektor this_bend_axis;
 
   if (ensemble == 0) {
@@ -3591,22 +3551,17 @@ void check_parameters_complete()
 #ifdef LASER
   if (laser_dir.x!=0) {
     laser_dir.x=1;
-    if (laser_dir.y!=0
-#ifndef TWOD
-      || laser_dir.z!=0
-#endif
-    ) error("Sorry: Laser incidence only along one coordinate axis.");
+    if (laser_dir.y!=0 || laser_dir.z!=0)
+        error("Sorry: Laser incidence only along one coordinate axis.");
   }
   else if (laser_dir.y!=0) {
     laser_dir.y=1;
-#ifndef TWOD
     if (laser_dir.z!=0){
       error("Sorry: Laser incidence only along one coordinate axis.");
     }
   }
   else if (laser_dir.z!=0) {
     laser_dir.z=1;
-#endif
   }
   else {
     error("Parameter laser_dir (laser incidence direction) missing.");
@@ -3666,11 +3621,7 @@ void check_parameters_complete()
 #endif /* TTM */
 #ifdef MPI
   {
-#ifdef TWOD
-    int want_cpus = cpu_dim.x * cpu_dim.y;
-#else
     int want_cpus = cpu_dim.x * cpu_dim.y * cpu_dim.z;
-#endif
     if ( want_cpus != num_cpus) calc_cpu_dim();
     if ((want_cpus != num_cpus) && (want_cpus != 1))
       warning("cpu_dim incompatible with available CPUs, using default");
@@ -3720,17 +3671,10 @@ void check_parameters_complete()
 #endif
   }
 #endif
-#if defined(DIFFPAT) && defined(TWOD)
-  error("Option DIFFPAT is not supported in 2D");
-#endif
 
 #ifdef KIM
   if (strcmp(kim_el_names[0],"\0")==0)
     error("kim_el_names is not properly set in parameter file");
-#endif
-
-#if defined(ADA) && defined(TWOD)
-  error("Option ADA is not supported in 2D");
 #endif
 
 #ifdef ADA
@@ -3881,11 +3825,9 @@ int read_parameters(char *paramfname, int phase)
       sprintf(fname,"%s.minmax.presstens",    outfilename); unlink(fname);
       sprintf(fname,"%s.minmax.presstens_xx", outfilename); unlink(fname);
       sprintf(fname,"%s.minmax.presstens_yy", outfilename); unlink(fname);
-#ifndef TWOD
       sprintf(fname,"%s.minmax.presstens_zz", outfilename); unlink(fname);
       sprintf(fname,"%s.minmax.presstens_yz", outfilename); unlink(fname);
       sprintf(fname,"%s.minmax.presstens_zx", outfilename); unlink(fname);
-#endif
       sprintf(fname,"%s.minmax.presstens_xy", outfilename); unlink(fname);
 #endif /* STRESS_TENS */
 #ifdef SHOCK
@@ -3922,11 +3864,7 @@ int read_parameters(char *paramfname, int phase)
 void broadcast_params() {
 
   int i, k;
-#ifdef TWOD
-  vektor nullv = {0,0};
-#else
   vektor nullv = {0,0,0};
-#endif
 
   MPI_Bcast( &ensemble    , 1, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &maxwalltime , 1, REAL,     0, MPI_COMM_WORLD);
@@ -3971,14 +3909,6 @@ void broadcast_params() {
   MPI_Bcast( &dist_dens_flag,        1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &dist_vxavg_flag,       1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &box_from_header,       1, MPI_INT, 0, MPI_COMM_WORLD);
-
-#ifdef TWOD
-  /*  MPI_Bcast( &pic_scale   , 2, REAL, 0, MPI_COMM_WORLD); */
-  MPI_Bcast( &ecut_kin    , 2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &ecut_pot    , 2, REAL, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &pic_res     , 2, MPI_INT, 0, MPI_COMM_WORLD);
-  MPI_Bcast( &pic_type    , 1, MPI_INT, 0, MPI_COMM_WORLD);
-#endif
   MPI_Bcast( &pic_ll      , DIM, REAL, 0, MPI_COMM_WORLD);
   MPI_Bcast( &pic_ur      , DIM, REAL, 0, MPI_COMM_WORLD);
 #ifdef CLONE
@@ -4118,9 +4048,7 @@ void broadcast_params() {
   MPI_Bcast( &pbc_dirs    , DIM, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &box_x       , DIM, REAL,     0, MPI_COMM_WORLD);
   MPI_Bcast( &box_y       , DIM, REAL,     0, MPI_COMM_WORLD);
-#ifndef TWOD
   MPI_Bcast( &box_z       , DIM, REAL,     0, MPI_COMM_WORLD);
-#endif
   MPI_Bcast( &box_param,    DIM, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &size_per_cpu,   1, MPI_INT,  0, MPI_COMM_WORLD);
   MPI_Bcast( &box_unit,       1, REAL,     0, MPI_COMM_WORLD);
@@ -4497,9 +4425,7 @@ void broadcast_params() {
   MPI_Bcast( &lindef_int     , 1, MPI_INT, 0, MPI_COMM_WORLD);
   MPI_Bcast( &lindef_x,      DIM, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &lindef_y,      DIM, REAL,    0, MPI_COMM_WORLD);
-#ifndef TWOD
   MPI_Bcast( &lindef_z,      DIM, REAL,    0, MPI_COMM_WORLD);
-#endif
   MPI_Bcast( &shear_module,    1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &bulk_module,     1, REAL,    0, MPI_COMM_WORLD);
   MPI_Bcast( &relax_rate,      1, REAL,    0, MPI_COMM_WORLD);

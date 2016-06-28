@@ -1258,11 +1258,7 @@ void do_neightab(cell *p, cell *q, vektor pbc)
     tmp_d.z = ORT(p,i,Z) - pbc.z;
     p_typ   = SORTE(p,i);
 
-#ifdef TWOD
-    jstart = (((p==q) && (pbc.x==0) && (pbc.y==0))               ? i+1 : 0);
-#else
     jstart = (((p==q) && (pbc.x==0) && (pbc.y==0) && (pbc.z==0)) ? i+1 : 0);
-#endif
     qptr   = &ORT(q,jstart,X);
     
     /* For each atom in neighbouring cell */

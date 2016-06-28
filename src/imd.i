@@ -167,19 +167,13 @@ int  nmoldyn_int;
 #endif
 
 #ifdef HOMDEF
-#ifdef TWOD
-void lin_deform(vektor,vektor,real);
-#else
 void lin_deform(vektor,vektor,vektor,real);
-#endif
 void relax_pressure(void);
 int  lindef_int;
 real lindef_size;
 vektor lindef_x;
 vektor lindef_y;
-#ifndef TWOD
 vektor lindef_z;
-#endif
 #endif
 
 #ifdef DEFORM

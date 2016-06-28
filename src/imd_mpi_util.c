@@ -364,9 +364,7 @@ void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *p, int ind )
   to->data[ to->n++ ] = to_cpu; 
   to->data[ to->n++ ] = ORT(p,ind,X); 
   to->data[ to->n++ ] = ORT(p,ind,Y); 
-#ifndef TWOD
   to->data[ to->n++ ] = ORT(p,ind,Z); 
-#endif
 
 #ifndef MONOLJ
   to->data[ to->n++ ] = NUMMER(p,ind);
@@ -398,26 +396,18 @@ void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *p, int ind )
 /*   to->data[ to->n++ ] = DP_P_STAT(p,ind,Z); */
   to->data[ to->n++ ] = DP_P_IND(p,ind,X);
   to->data[ to->n++ ] = DP_P_IND(p,ind,Y);
-#ifndef TWOD
   to->data[ to->n++ ] = DP_P_IND(p,ind,Z);
-#endif
 #endif
 #ifdef CG
   to->data[ to->n++ ] = CG_H(p,ind,X); 
   to->data[ to->n++ ] = CG_H(p,ind,Y); 
-#ifndef TWOD
   to->data[ to->n++ ] = CG_H(p,ind,Z); 
-#endif
   to->data[ to->n++ ] = CG_G(p,ind,X); 
   to->data[ to->n++ ] = CG_G(p,ind,Y); 
-#ifndef TWOD
   to->data[ to->n++ ] = CG_G(p,ind,Z); 
-#endif
   to->data[ to->n++ ] = OLD_ORT(p,ind,X); 
   to->data[ to->n++ ] = OLD_ORT(p,ind,Y); 
-#ifndef TWOD
   to->data[ to->n++ ] = OLD_ORT(p,ind,Z); 
-#endif
 #endif /* CG */
 #ifdef DAMP
   to->data[ to->n++ ] = DAMPF(p,ind);
@@ -426,9 +416,7 @@ void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *p, int ind )
   to->data[ to->n++ ] = EPOT_REF(p,ind);
   to->data[ to->n++ ] = ORT_REF (p,ind,X); 
   to->data[ to->n++ ] = ORT_REF (p,ind,Y); 
-#ifndef TWOD
   to->data[ to->n++ ] = ORT_REF (p,ind,Z); 
-#endif
 #endif 
 #ifdef AVPOS
   to->data[ to->n++ ] = AV_EPOT(p,ind);
@@ -436,10 +424,8 @@ void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *p, int ind )
   to->data[ to->n++ ] = AV_POS (p,ind,Y);
   to->data[ to->n++ ] = SHEET  (p,ind,X);
   to->data[ to->n++ ] = SHEET  (p,ind,Y);
-#ifndef TWOD
   to->data[ to->n++ ] = AV_POS (p,ind,Z); 
   to->data[ to->n++ ] = SHEET  (p,ind,Z);
-#endif
 #endif
 #ifdef NNBR  
   to->data[ to->n++ ] = NBANZ(p,ind); 
@@ -447,9 +433,7 @@ void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *p, int ind )
 #ifdef REFPOS
   to->data[ to->n++ ] = REF_POS(p,ind,X);
   to->data[ to->n++ ] = REF_POS(p,ind,Y);
-#ifndef TWOD
   to->data[ to->n++ ] = REF_POS(p,ind,Z);
-#endif
 #endif
 #ifdef HC
   to->data[ to->n++ ] = HCAVENG(p,ind);
@@ -458,20 +442,16 @@ void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *p, int ind )
   to->data[ to->n++ ] = PRESSTENS(p,ind,xx);   
   to->data[ to->n++ ] = PRESSTENS(p,ind,yy);   
   to->data[ to->n++ ] = PRESSTENS(p,ind,xy);   
-#ifndef TWOD
   to->data[ to->n++ ] = PRESSTENS(p,ind,zz);   
   to->data[ to->n++ ] = PRESSTENS(p,ind,yz);   
   to->data[ to->n++ ] = PRESSTENS(p,ind,zx);   
-#endif
 #ifdef AVPOS
   to->data[ to->n++ ] = AVPRESSTENS(p,ind,xx);   
   to->data[ to->n++ ] = AVPRESSTENS(p,ind,yy);   
   to->data[ to->n++ ] = AVPRESSTENS(p,ind,xy);   
-#ifndef TWOD
   to->data[ to->n++ ] = AVPRESSTENS(p,ind,zz);   
   to->data[ to->n++ ] = AVPRESSTENS(p,ind,yz);   
   to->data[ to->n++ ] = AVPRESSTENS(p,ind,zx);   
-#endif
 #endif
 #endif /* STRESS_TENS */
 #ifdef SHOCK
@@ -479,9 +459,7 @@ void copy_atom_cell_buf(msgbuf *to, int to_cpu, cell *p, int ind )
 #endif
   to->data[ to->n++ ] = IMPULS(p,ind,X); 
   to->data[ to->n++ ] = IMPULS(p,ind,Y); 
-#ifndef TWOD
   to->data[ to->n++ ] = IMPULS(p,ind,Z); 
-#endif
 
   /* force is not sent */
 #ifdef COVALENT
@@ -585,9 +563,7 @@ void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
 
   ORT(to,ind,X)  = b->data[j++];
   ORT(to,ind,Y)  = b->data[j++];
-#ifndef TWOD
   ORT(to,ind,Z)  = b->data[j++];
-#endif
 #ifndef MONOLJ
   NUMMER(to,ind) = b->data[j++];
 #ifndef MONO
@@ -615,26 +591,18 @@ void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
   /* don't send p_stat, E_stat, E_ind */
   DP_P_IND(to,ind,X) = b->data[j++];
   DP_P_IND(to,ind,Y) = b->data[j++];
-#ifndef TWOD
   DP_P_IND(to,ind,Z) = b->data[j++];
-#endif
 #endif /* DIPOLE */
 #ifdef CG
   CG_H(to,ind,X) = b->data[j++];
   CG_H(to,ind,Y) = b->data[j++];
-#ifndef TWOD
   CG_H(to,ind,Z) = b->data[j++];
-#endif
   CG_G(to,ind,X) = b->data[j++];
   CG_G(to,ind,Y) = b->data[j++];
-#ifndef TWOD
   CG_G(to,ind,Z) = b->data[j++];
-#endif
   OLD_ORT(to,ind,X) = b->data[j++];
   OLD_ORT(to,ind,Y) = b->data[j++];
-#ifndef TWOD
   OLD_ORT(to,ind,Z) = b->data[j++];
-#endif
 #endif /* CG */
 #ifdef DAMP
   DAMPF(to,ind) = b->data[j++];
@@ -643,9 +611,7 @@ void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
   EPOT_REF(to,ind)   = b->data[j++];
   ORT_REF (to,ind,X) = b->data[j++];
   ORT_REF (to,ind,Y) = b->data[j++];
-#ifndef TWOD
   ORT_REF (to,ind,Z) = b->data[j++];
-#endif
 #endif
 #ifdef AVPOS
   AV_EPOT(to,ind)    = b->data[j++];
@@ -653,10 +619,8 @@ void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
   AV_POS (to,ind,Y)  = b->data[j++];
   SHEET  (to,ind,X)  = b->data[j++];
   SHEET  (to,ind,Y)  = b->data[j++];
-#ifndef TWOD
   AV_POS (to,ind,Z)  = b->data[j++];
   SHEET  (to,ind,Z)  = b->data[j++];
-#endif
 #endif
 #ifdef NNBR
   NBANZ(to,ind)      = b->data[j++];
@@ -664,9 +628,7 @@ void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
 #ifdef REFPOS
   REF_POS(to,ind,X)  = b->data[j++];
   REF_POS(to,ind,Y)  = b->data[j++];
-#ifndef TWOD
   REF_POS(to,ind,Z)  = b->data[j++];
-#endif
 #endif
 #ifdef HC
   HCAVENG(to,ind)    = b->data[j++];
@@ -675,20 +637,16 @@ void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
   PRESSTENS(to,ind,xx) = b->data[j++];   
   PRESSTENS(to,ind,yy) = b->data[j++];   
   PRESSTENS(to,ind,xy) = b->data[j++];   
-#ifndef TWOD
   PRESSTENS(to,ind,zz) = b->data[j++];   
   PRESSTENS(to,ind,yz) = b->data[j++];   
   PRESSTENS(to,ind,zx) = b->data[j++];   
-#endif
 #ifdef AVPOS
   AVPRESSTENS(to,ind,xx) = b->data[j++];   
   AVPRESSTENS(to,ind,yy) = b->data[j++];   
   AVPRESSTENS(to,ind,xy) = b->data[j++];   
-#ifndef TWOD
   AVPRESSTENS(to,ind,zz) = b->data[j++];   
   AVPRESSTENS(to,ind,yz) = b->data[j++];   
   AVPRESSTENS(to,ind,zx) = b->data[j++];   
-#endif
 #endif
 #endif /* STRESS_TENS */
 #ifdef SHOCK
@@ -696,9 +654,7 @@ void copy_atom_buf_cell(minicell *p, msgbuf *b, int start)
 #endif
   IMPULS(to,ind,X)     = b->data[j++];
   IMPULS(to,ind,Y)     = b->data[j++];
-#ifndef TWOD
   IMPULS(to,ind,Z)     = b->data[j++];
-#endif
   /* don't send force */
 #ifdef COVALENT
   /* don't send neighbor table */
@@ -741,11 +697,8 @@ void process_buffer(msgbuf *b)
 #else
     if (myid != (int) (b->data[i] + 0.1)) continue;
 #endif
-#ifdef TWOD
-    coord = cell_coord( b->data[i+1], b->data[i+2] );
-#else
     coord = cell_coord( b->data[i+1], b->data[i+2], b->data[i+3] );
-#endif
+
     coord = local_cell_coord( coord );
 #if defined(LOADBALANCE) && defined(DEBUG)
     if (coord.x < 0 || coord.x >= cell_dim.x ||
@@ -821,11 +774,7 @@ void setup_buffers(void)
     binc2++;         /* heatcond */
 #endif
 #ifdef STRESS_TENS
-#ifdef TWOD
-    binc2 += 3;      /* presstens */
-#else
     binc2 += 6;      /* presstens */
-#endif
 #endif
 #ifdef NNBR
     binc2++;         /* nbanz */
@@ -882,7 +831,6 @@ void setup_buffers(void)
   /* Add security */
   largest_cell = (int) largest_cell * msgbuf_size;
 
-#ifndef TWOD
   size_east  = largest_cell * cell_dim.y * cell_dim.z * binc;
   size_north = largest_cell * cell_dim.x * cell_dim.z * binc;
   size_up    = largest_cell * cell_dim.x * cell_dim.y * binc;
@@ -890,14 +838,6 @@ void setup_buffers(void)
   if (1==myid) 
      printf("Max. cell is %d size east %d size north %d size up %d.\n", 
 	    largest_cell,size_east,size_north,size_up);
-#endif
-#else
-  size_east  = largest_cell * cell_dim.y * binc;
-  size_north = largest_cell * cell_dim.x * binc;
-#ifdef DEBUG
-  if (0==myid) printf("Max. cell is %d size east %d size north %d.\n", 
-		      largest_cell,size_east,size_north);
-#endif
 #endif
 
 #ifndef LOADBALANCE
@@ -918,7 +858,6 @@ void setup_buffers(void)
     alloc_msgbuf(&recv_buf_south, size_north);
   }
 
-#ifndef TWOD
   /* Allocate up/down buffers */
   if (size_up > send_buf_up.n_max) {
     alloc_msgbuf(&send_buf_up,   size_up);
@@ -926,7 +865,7 @@ void setup_buffers(void)
     alloc_msgbuf(&recv_buf_up,   size_up);
     alloc_msgbuf(&recv_buf_down, size_up);
   }
-#endif
+
 #else /*LOADBALANCE*/
   /*Alloc buffer for direct communication*/
   /*Adjust the send/receive buffers*/
@@ -989,12 +928,10 @@ void empty_mpi_buffers(void)
   recv_buf_east.n  = 0;
   recv_buf_west.n  = 0;
 
-#ifndef TWOD
   recv_buf_down.n  = 0;
   recv_buf_up.n    = 0;
   send_buf_down.n  = 0;
   send_buf_up.n    = 0;
-#endif
 
 #endif
 }

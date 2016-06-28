@@ -12,8 +12,6 @@
 
 #include "imd.h"
 
-#ifndef TWOD
-
 /******************************************************************************
 *
 * create_atom(type,mass,temp), 3d version
@@ -613,8 +611,3 @@ ivektor cell_map(ivektor cellc)
 
   return cellc;
 }
-
-#endif
-
-
-

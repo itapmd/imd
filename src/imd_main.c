@@ -241,11 +241,7 @@ int nyeDone;
         ri =( (lindef_size -1.0) * sin(2.0*3.141592653589793238*lindef_freq*timestep*(steps+1))+1.0 ) /
             ( (lindef_size -1.0) * sin(2.0*3.141592653589793238*lindef_freq*timestep*steps)+1.0 ) - 1.0 ;
         //     printf(" ri = %f box_x= %f\n",ri,box_x.x*(ri+1.0)); fflush(stdout);
-#ifdef TWOD
-    lin_deform(lindef_x, lindef_y,       ri);
-#else
     lin_deform(lindef_x, lindef_y, lindef_z, ri);
-#endif
     }
 #endif
 
@@ -264,11 +260,7 @@ int nyeDone;
             {
                 write_ssdef(steps);
                 write_ssconfig(steps); /* write config, even when not fully relaxed */
-#ifdef TWOD
-                lin_deform(lindef_x, lindef_y,           lindef_size);
-#else
                 lin_deform(lindef_x, lindef_y, lindef_z, lindef_size);
-#endif
                 deform_int=0;
                 is_relaxed=0;
 
@@ -292,11 +284,7 @@ int nyeDone;
     
 #if defined(HOMDEF) && !defined(RELAX)
     if ((lindef_int > 0) && (0 == steps % lindef_int)) 
-#ifdef TWOD
-      lin_deform(lindef_x, lindef_y,           lindef_size);
-#else
       lin_deform(lindef_x, lindef_y, lindef_z, lindef_size);
-#endif
 
 #endif
 
@@ -918,16 +906,12 @@ void constrain_move(void)
                   for (i=0; i<p->n; ++i) {
                       ORT(p,i,X) -= timestep / MASSE(p,i) * IMPULS(p,i,X);
                       ORT(p,i,Y) -= timestep / MASSE(p,i) * IMPULS(p,i,Y);
-#ifndef TWOD
                       ORT(p,i,Z) -= timestep / MASSE(p,i) * IMPULS(p,i,Z);
-#endif
                       if(normp>0.0)
                       {
                           ORT(p,i,X) += neb_maxmove * IMPULS(p,i,X)/normp;
                           ORT(p,i,Y) += neb_maxmove * IMPULS(p,i,Y)/normp;
-#ifndef TWOD
                           ORT(p,i,Z) += neb_maxmove * IMPULS(p,i,Z)/normp;
-#endif
                           tmp_x_max2 =  MAX(SQR(neb_maxmove*IMPULS(p,i,X)/normp),tmp_x_max2);
                           tmp_x_max2 =  MAX(SQR(neb_maxmove*IMPULS(p,i,Y)/normp),tmp_x_max2);
                           tmp_x_max2 =  MAX(SQR(neb_maxmove*IMPULS(p,i,Z)/normp),tmp_x_max2);
@@ -938,9 +922,7 @@ void constrain_move(void)
 
                       //IMPULS(p,i,X) = 0.0;
                       // IMPULS(p,i,Y) = 0.0;
-#ifndef TWOD
                       // IMPULS(p,i,Z) = 0.0;
-#endif
                   }
               }
               printf("myrank:%d newxnorm = %lf new xmax %lf\n",myrank,SQRT(newxnorm),SQRT(tmp_x_max2));
@@ -983,9 +965,7 @@ void update_glok(void)
       for (i=0; i<p->n; ++i) {
         IMPULS(p,i,X) = 0.0;
         IMPULS(p,i,Y) = 0.0;
-#ifndef TWOD
         IMPULS(p,i,Z) = 0.0;
-#endif
       }
     }
   }
@@ -1033,16 +1013,11 @@ void update_glok(void)
       for (i=0; i<p->n; ++i) {
           ORT(p,i,X) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,X);
           ORT(p,i,Y) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,Y);
-#ifndef TWOD
           ORT(p,i,Z) -= 0.5* timestep / MASSE(p,i) * IMPULS(p,i,Z);
-#endif
-
 
           IMPULS(p,i,X) = 0.0;
           IMPULS(p,i,Y) = 0.0;
-#ifndef TWOD
-        IMPULS(p,i,Z) = 0.0;
-#endif
+          IMPULS(p,i,Z) = 0.0;
       }
     }
     glok_start = steps;
@@ -1069,9 +1044,7 @@ void reset_glok(void)
         for (i=0; i<p->n; ++i) {
             IMPULS(p,i,X) = 0.0;
             IMPULS(p,i,Y) = 0.0;
-#ifndef TWOD
             IMPULS(p,i,Z) = 0.0;
-#endif
         }
     }
     
@@ -1142,11 +1115,7 @@ void init_fbc(void)
 {
     int l, steps_diff;
 
-#ifdef TWOD
-  vektor nullv={0.0,0.0};
-#else
   vektor nullv={0.0,0.0,0.0};
-#endif
     
 #if !defined(RELAX)
     steps_diff = steps_max - steps_min;
@@ -1161,9 +1130,7 @@ void init_fbc(void)
       *(fbc_df+l) = nullv;
     if ((fbc_dforces+l)->x != 0.0) have_fbc_incr = 1;
     if ((fbc_dforces+l)->y != 0.0) have_fbc_incr = 1;
-#ifndef TWOD
     if ((fbc_dforces+l)->z != 0.0) have_fbc_incr = 1;
-#endif   
   }
 #else
   /* dynamic loading, increment linearly at each timestep */
@@ -1172,10 +1139,8 @@ void init_fbc(void)
     for (l=0;l<vtypes;l++){
       (fbc_df+l)->x = ((fbc_endforces+l)->x-(fbc_beginforces+l)->x)/steps_diff;
       (fbc_df+l)->y = ((fbc_endforces+l)->y-(fbc_beginforces+l)->y)/steps_diff;
-#ifndef TWOD
       (fbc_df+l)->z = ((fbc_endforces+l)->z-(fbc_beginforces+l)->z)/steps_diff;
       if (0 == myid) printf("     %d   %e   %e   %e\n",l,(fbc_df+l)->x,(fbc_df+l)->y,(fbc_df+l)->z);
-#endif
     }
     do_fbc_incr = 1;
   }
@@ -1193,11 +1158,8 @@ void update_fbc()
 {
 
   int l;
-#ifdef TWOD
-  vektor nullv={0.0,0.0};
-#else
   vektor nullv={0.0,0.0,0.0};
-#endif
+
 #ifdef RELAX
   /* set fbc increment if necessary */
   if ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) {
@@ -1223,9 +1185,7 @@ void update_fbc()
     for (l=0; l<vtypes; l++){     
       (fbc_forces+l)->x += (fbc_df+l)->x;  
       (fbc_forces+l)->y += (fbc_df+l)->y;
-#ifndef TWOD
       (fbc_forces+l)->z += (fbc_df+l)->z;
-#endif
     } 
 #ifdef GLOK
     if (ensemble==ENS_GLOK)
@@ -1250,12 +1210,7 @@ void update_fbc()
 void init_bfbc(void)
 {
     int l, steps_diff;
-
-#ifdef TWOD
-  vektor nullv={0.0,0.0};
-#else
-  vektor nullv={0.0,0.0,0.0};
-#endif
+    vektor nullv={0.0,0.0,0.0};
     
 #if !defined(RELAX)
     steps_diff = steps_max - steps_min;
@@ -1270,9 +1225,7 @@ void init_bfbc(void)
       *(fbc_bdf+l) = nullv;
     if ((fbc_bdforces+l)->x != 0.0) have_bfbc_incr = 1;
     if ((fbc_bdforces+l)->y != 0.0) have_bfbc_incr = 1;
-#ifndef TWOD
     if ((fbc_bdforces+l)->z != 0.0) have_bfbc_incr = 1;
-#endif   
   }
 #else
   /* dynamic loading, increment linearly at each timestep */
@@ -1280,9 +1233,7 @@ void init_bfbc(void)
     for (l=0;l<vtypes;l++){
       (fbc_bdf+l)->x = ((fbc_endbforces+l)->x-(fbc_beginbforces+l)->x)/steps_diff;
       (fbc_bdf+l)->y = ((fbc_endbforces+l)->y-(fbc_beginbforces+l)->y)/steps_diff;
-#ifndef TWOD
       (fbc_bdf+l)->z = ((fbc_endbforces+l)->z-(fbc_beginbforces+l)->z)/steps_diff;
-#endif
     }
     do_bfbc_incr = 1;
   }
@@ -1300,11 +1251,8 @@ void update_bfbc()
 {
 
   int l;
-#ifdef TWOD
-  vektor nullv={0.0,0.0};
-#else
   vektor nullv={0.0,0.0,0.0};
-#endif
+
 #ifdef RELAX
   /* set fbc increment if necessary */
   if ((ensemble==ENS_MIK) || (ensemble==ENS_GLOK) || (ensemble==ENS_CG)) {
@@ -1330,9 +1278,7 @@ void update_bfbc()
     for (l=0; l<vtypes; l++){     
       (fbc_bforces+l)->x += (fbc_bdf+l)->x;  
       (fbc_bforces+l)->y += (fbc_bdf+l)->y;
-#ifndef TWOD
       (fbc_bforces+l)->z += (fbc_bdf+l)->z;
-#endif
     } 
 #ifdef GLOK
     if (ensemble==ENS_GLOK)
@@ -1354,9 +1300,7 @@ void init_zapp(void)
     vektor vectmp;
     total_impuls.x = 0.0;   nactive_vect.x = 0.0;
     total_impuls.y = 0.0;   nactive_vect.y = 0.0;
-#ifndef TWOD
     total_impuls.z = 0.0;   nactive_vect.z = 0.0;
-#endif
 
     /* calc total impuls */
    for (k=0; k<NCELLS; ++k) {
@@ -1368,14 +1312,10 @@ void init_zapp(void)
           rest = restrictions + VSORTE(p,i);
           nactive_vect.x += (int) rest->x;
           nactive_vect.y += (int) rest->y;
-#ifndef TWOD
           nactive_vect.z += (int) rest->z;
-#endif
           total_impuls.x += IMPULS(p,i,X);
           total_impuls.y += IMPULS(p,i,Y);
-#ifndef TWOD
           total_impuls.z += IMPULS(p,i,Z);
-#endif
       }
           
    }
@@ -1387,11 +1327,8 @@ void init_zapp(void)
 #endif   
     total_impuls.x = nactive_vect.x == 0 ? 0.0 : total_impuls.x / nactive_vect.x;
     total_impuls.y = nactive_vect.y == 0 ? 0.0 : total_impuls.y / nactive_vect.y;
-#ifndef TWOD
     total_impuls.z = nactive_vect.z == 0 ? 0.0 : total_impuls.z / nactive_vect.z;
-#endif
 
-    
     if(SPROD(total_impuls,total_impuls)>=zapp_threshold*zapp_threshold)
     {
         for (k=0; k<NCELLS; ++k) {
@@ -1403,9 +1340,7 @@ void init_zapp(void)
                 rest = restrictions + VSORTE(p,i);
                 IMPULS(p,i,X) -= total_impuls.x * rest->x;
                 IMPULS(p,i,Y) -= total_impuls.y * rest->y;
-#ifndef TWOD
                 IMPULS(p,i,Z) -= total_impuls.z * rest->z;
-#endif
             }
         }
     }
@@ -1418,9 +1353,7 @@ void zapp(void)
     vektor vectmp;
     total_impuls.x = 0.0;   
     total_impuls.y = 0.0;   
-#ifndef TWOD
     total_impuls.z = 0.0;   
-#endif
 
     /* calc total impuls */
    for (k=0; k<NCELLS; ++k) {
@@ -1431,9 +1364,7 @@ void zapp(void)
       for (i=0; i<p->n; ++i) {
           total_impuls.x += IMPULS(p,i,X);
           total_impuls.y += IMPULS(p,i,Y);
-#ifndef TWOD
           total_impuls.z += IMPULS(p,i,Z);
-#endif
       }
           
    }
@@ -1443,9 +1374,7 @@ void zapp(void)
 #endif   
     total_impuls.x = nactive_vect.x == 0 ? 0.0 : total_impuls.x / nactive_vect.x;
     total_impuls.y = nactive_vect.y == 0 ? 0.0 : total_impuls.y / nactive_vect.y;
-#ifndef TWOD
     total_impuls.z = nactive_vect.z == 0 ? 0.0 : total_impuls.z / nactive_vect.z;
-#endif
     if(SPROD(total_impuls,total_impuls)>=zapp_threshold*zapp_threshold)
     {
         for (k=0; k<NCELLS; ++k) {
@@ -1457,9 +1386,7 @@ void zapp(void)
                 rest = restrictions + VSORTE(p,i);
                 IMPULS(p,i,X) -= total_impuls.x * rest->x;
                 IMPULS(p,i,Y) -= total_impuls.y * rest->y;
-#ifndef TWOD
                 IMPULS(p,i,Z) -= total_impuls.z * rest->z;
-#endif
             }
         }
     }
@@ -1842,16 +1769,12 @@ void calc_superforces(void)
       if ( superatom[sorte] > -1 ) {
         superforce[superatom[sorte]].x += KRAFT(p,i,X);
 	superforce[superatom[sorte]].y += KRAFT(p,i,Y);
-#ifndef TWOD
 	superforce[superatom[sorte]].z += KRAFT(p,i,Z);
-#endif
 
 #ifdef FBC
 	superforce[superatom[sorte]].x += (fbc_forces+sorte)->x;
 	superforce[superatom[sorte]].y += (fbc_forces+sorte)->y;
-#ifndef TWOD
 	superforce[superatom[sorte]].z += (fbc_forces+sorte)->z;
-#endif
 #endif
       }
     }
@@ -1862,15 +1785,11 @@ void calc_superforces(void)
   for (i=0; i<nsuperatoms; i++) {
     tmpvec1[0] = superforce[i].x;
     tmpvec1[1] = superforce[i].y;
-#ifndef TWOD
     tmpvec1[2] = superforce[i].z;
-#endif
     MPI_Allreduce( tmpvec1, tmpvec2, DIM, REAL, MPI_SUM, cpugrid); 
     superforce[i].x = tmpvec2[0];
     superforce[i].y = tmpvec2[1];
-#ifndef TWOD
     superforce[i].z = tmpvec2[2];
-#endif
   }
 #endif
 
@@ -1986,22 +1905,16 @@ void do_boundaries(void)
       i = -FLOOR( SPRODX(ORT,p,l,tbox_x) );
       ORT(p,l,X)     += i * box_x.x;
       ORT(p,l,Y)     += i * box_x.y;
-#ifndef TWOD
       ORT(p,l,Z)     += i * box_x.z;
-#endif
 #if defined(MSQD) || defined(NMOLDYN) || defined(FEFL)
       REF_POS(p,l,X) += i * box_x.x;
       REF_POS(p,l,Y) += i * box_x.y;
-#ifndef TWOD
       REF_POS(p,l,Z) += i * box_x.z;
-#endif
 #endif
 #ifdef AVPOS
       SHEET(p,l,X)   -= i * box_x.x;
       SHEET(p,l,Y)   -= i * box_x.y;
-#ifndef TWOD
       SHEET(p,l,Z)   -= i * box_x.z;
-#endif
 #endif
     }
 
@@ -2011,26 +1924,19 @@ void do_boundaries(void)
       i = -FLOOR( SPRODX(ORT,p,l,tbox_y) );
       ORT(p,l,X)     += i * box_y.x;
       ORT(p,l,Y)     += i * box_y.y;
-#ifndef TWOD
       ORT(p,l,Z)     += i * box_y.z;
-#endif
 #if defined(MSQD) || defined(NMOLDYN) || defined(FEFL)
       REF_POS(p,l,X) += i * box_y.x;
       REF_POS(p,l,Y) += i * box_y.y;
-#ifndef TWOD
       REF_POS(p,l,Z) += i * box_y.z;
-#endif
 #endif
 #ifdef AVPOS
       SHEET(p,l,X)   -= i * box_y.x;
       SHEET(p,l,Y)   -= i * box_y.y;
-#ifndef TWOD
       SHEET(p,l,Z)   -= i * box_y.z;
-#endif
 #endif
     }
 
-#ifndef TWOD
     /* PBC in z direction */
     if (pbc_dirs.z==1)
     for (l=0; l<p->n; ++l) {
@@ -2049,7 +1955,6 @@ void do_boundaries(void)
       SHEET(p,l,Z)   -= i * box_z.z;
 #endif
     }
-#endif
   }
 }
 
@@ -2071,11 +1976,9 @@ void calc_tot_presstens(void)
   tot_presstens.xx = 0.0; 
   tot_presstens.yy = 0.0; 
   tot_presstens.xy = 0.0;
-#ifndef TWOD
   tot_presstens.zz = 0.0; 
   tot_presstens.yz = 0.0;
   tot_presstens.zx = 0.0;
-#endif
 
   /* sum up total pressure tensor */
   for (i=0; i<NCELLS; ++i) {
@@ -2086,11 +1989,9 @@ void calc_tot_presstens(void)
       tot_presstens.xx += PRESSTENS(p,j,xx);
       tot_presstens.yy += PRESSTENS(p,j,yy);
       tot_presstens.xy += PRESSTENS(p,j,xy);  
-#ifndef TWOD
       tot_presstens.zz += PRESSTENS(p,j,zz);
       tot_presstens.yz += PRESSTENS(p,j,yz);  
       tot_presstens.zx += PRESSTENS(p,j,zx);  
-#endif
     }
   }
 
@@ -2099,26 +2000,18 @@ void calc_tot_presstens(void)
   tmp_presstens1[0] = tot_presstens.xx; 
   tmp_presstens1[1] = tot_presstens.yy; 
   tmp_presstens1[2] = tot_presstens.xy;
-#ifndef TWOD
   tmp_presstens1[3] = tot_presstens.zz; 
   tmp_presstens1[4] = tot_presstens.yz;
   tmp_presstens1[5] = tot_presstens.zx;
-#endif
 
-#ifdef TWOD
-  MPI_Allreduce( tmp_presstens1, tmp_presstens2, 3, REAL, MPI_SUM, cpugrid);
-#else
   MPI_Allreduce( tmp_presstens1, tmp_presstens2, 6, REAL, MPI_SUM, cpugrid);
-#endif
 
   tot_presstens.xx  = tmp_presstens2[0];
   tot_presstens.yy  = tmp_presstens2[1]; 
   tot_presstens.xy  = tmp_presstens2[2]; 
-#ifndef TWOD
   tot_presstens.zz  = tmp_presstens2[3];
   tot_presstens.yz  = tmp_presstens2[4]; 
   tot_presstens.zx  = tmp_presstens2[5]; 
-#endif
 
 #endif /* MPI */
 

@@ -324,13 +324,8 @@ void init_laser()
     
     printf( "Parameter laser_rescale_mode is %d\n", laser_rescale_mode );
     printf( "Parameter laser_delta_temp is  %1.10f\n", laser_delta_temp );
-#ifndef TWOD
     printf( "Laser irradiates from direction (%d, %d, %d)\n", laser_dir.x,
 	    laser_dir.y, laser_dir.z);
-#else
-    printf( "Laser irradiates from direction (%d, %d)\n", laser_dir.x,
-	      laser_dir.y);
-#endif /*TWOD*/
 
       if (laser_mu==0.0) {
 	printf( "Absorption length is infinite.\n" );
@@ -408,10 +403,7 @@ real laser_calc_depth( cell *p, int i )
   real depth;
   depth = laser_dir.x * ORT(p,i,X)
         + laser_dir.y * ORT(p,i,Y)
-#ifndef TWOD
-        + laser_dir.z * ORT(p,i,Z)
-#endif
-        ;
+        + laser_dir.z * ORT(p,i,Z);
   depth -= laser_offset;
 
   if (depth < 0.0) depth=0.0; /* we don't want negative depths */
@@ -451,9 +443,7 @@ void laser_rescale_1()
       real de; /* Kinetic energy to be added to the atom */
       real depth; /* Distance from origin along laser_dir */
       real tmpx, tmpy, tmpsqr;
-#ifndef TWOD
       real tmpz;
-#endif
       real scale_p; /* Scale factor for atom momentum */
 
       p_0_square = SPRODN(IMPULS,p,i,IMPULS,p,i);
@@ -541,28 +531,20 @@ void laser_rescale_1()
 #endif         
 
        if ( p_0_square == 0.0 ) { /* we need a direction for the momentum. */
-#ifndef TWOD
+
         /* find random 3d unit vector */
         rand_uvec_3d(&tmpx, &tmpy, &tmpz);
-#else
-        /* find random 2d unit vector */
-        rand_uvec_2d(&tmpx, &tmpy);      
-#endif
+
         scale_p = sqrt( de * 2.0 * MASSE(p,i) );
         IMPULS(p,i,X) = tmpx * scale_p;
         IMPULS(p,i,Y) = tmpy * scale_p;
-#ifndef TWOD
         IMPULS(p,i,Z) = tmpz * scale_p;
-#endif
       } else { /* rescale present momentum */
 
         scale_p = sqrt( de * 2.0 * MASSE(p,i) / p_0_square + 1.0 );
         IMPULS(p,i,X) *= scale_p;
         IMPULS(p,i,Y) *= scale_p;
-#ifndef TWOD
         IMPULS(p,i,Z) *= scale_p;
-#endif
-
       }
     }
   }
@@ -601,9 +583,7 @@ void laser_rescale_2()
       real dp;
       real depth; /* Distance from origin along laser_dir */
       real tmpx, tmpy, tmpsqr;
-#ifndef TWOD
       real tmpz;
-#endif
       real scale_p; /* Scale factor for atom momentum */
 
       p_0_square = SPRODN(IMPULS,p,i,IMPULS,p,i);
@@ -627,24 +607,18 @@ void laser_rescale_2()
     
 
       /* Momentum increment is to point in a random direction... */
-#ifndef TWOD
+
       rand_uvec_3d(&tmpx, &tmpy, &tmpz);
-#else
-      rand_uvec_2d(&tmpx, &tmpy);
-#endif
+
       IMPULS(p,i,X) += tmpx * dp;
       IMPULS(p,i,Y) += tmpy * dp;
-#ifndef TWOD
       IMPULS(p,i,Z) += tmpz * dp;
-#endif
 
       /* rescale present momentum to an absolute value of dp + p_0 */
       scale_p = (p_0 + dp) / SQRT( SPRODN(IMPULS,p,i,IMPULS,p,i) );
       IMPULS(p,i,X) *= scale_p;
       IMPULS(p,i,Y) *= scale_p;
-#ifndef TWOD
       IMPULS(p,i,Z) *= scale_p;
-#endif
     
     }
   }

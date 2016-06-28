@@ -163,11 +163,8 @@ void alloc_minicell(minicell *, int);
 #endif
 void memalloc(void *, int, int, int, int, int, char *);
 void alloc_cell(cell *thecell, int count);
-#ifdef TWOD
-ivektor cell_coord(real x, real y);
-#else
+
 ivektor cell_coord(real x, real y, real z);
-#endif
 ivektor local_cell_coord(ivektor cellc);
 int     cpu_coord(ivektor cellc);
 ivektor cpu_coord_v(ivektor cellc);
@@ -240,23 +237,7 @@ void gay_berne ( vektor r12, vektor e1, vektor e2,
 
 /* communication for force computation - files imd_comm_force_2/3d.c */
 #if defined(MPI) || defined(NBLIST)
-#ifdef TWOD
-void send_cells (void (*copy_func)  (int, int, int, int),
-                 void (*pack_func)  (msgbuf*, int, int),
-                 void (*unpack_func)(msgbuf*, int, int));
-void sync_cells (void (*copy_func)  (int, int, int, int),
-                 void (*pack_func)  (msgbuf*, int, int),
-                 void (*unpack_func)(msgbuf*, int, int));
-void send_forces(void (*add_func)   (int, int, int, int),
-                 void (*pack_func)  (msgbuf*, int, int),
-                 void (*unpack_func)(msgbuf*, int, int));
-void copy_cell    ( int j, int k, int l, int m );
-void pack_cell    ( msgbuf *b, int j, int k );
-void unpack_cell  ( msgbuf *b, int j, int k );
-void add_forces   ( int j, int k, int l, int m );
-void pack_forces  ( msgbuf *b, int j, int k );
-void unpack_forces( msgbuf *b, int j, int k );
-#else  /* 3D */
+
 void send_cells (void (*copy_func)  (int, int, int, int, int, int, vektor),
                  void (*pack_func)  (msgbuf*, int, int, int, vektor),
                  void (*unpack_func)(msgbuf*, int, int, int));
@@ -302,7 +283,6 @@ void add_mark       ( int k, int l, int m, int r, int s, int t );
 void pack_mark      ( msgbuf *b, int k, int l, int m );
 void unpack_add_mark( msgbuf *b, int k, int l, int m );
 #endif
-#endif /* 3D  */
 #endif /* MPI or NBLIST */
 
 /* integrators - file imd_integrate.c */
@@ -461,11 +441,9 @@ void dist_press_fun      (float*, cell*, int);
 void dist_presstens_fun  (float*, cell*, int);
 void dist_presstens_xx_fun  (float*, cell*, int);
 void dist_presstens_yy_fun  (float*, cell*, int);
-#ifndef TWOD
 void dist_presstens_zz_fun  (float*, cell*, int);
 void dist_presstens_yz_fun  (float*, cell*, int);
 void dist_presstens_zx_fun  (float*, cell*, int);
-#endif
 void dist_presstens_xy_fun  (float*, cell*, int);
 void dist_pressoff_fun   (float*, cell*, int);
 void dist_pressxy_fun   (float*, cell*, int);
@@ -496,11 +474,7 @@ void write_pictures_bitmap(int steps);
 #ifdef HOMDEF
 void shear_sample(void);
 void expand_sample(void);
-#ifdef TWOD
-void lin_deform(vektor,vektor,real);
-#else
 void lin_deform(vektor,vektor,vektor,real);
-#endif
 void relax_pressure(void);
 #endif
 #ifdef DEFORM

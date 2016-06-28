@@ -23,15 +23,6 @@
 #define EXTERN        /* define Variables in main */
 #define INIT(data) =data
 
-#ifdef TWOD
-#define nullvektor  { 0.0, 0.0 }
-#define nullivektor { 0, 0 }
-#define einsvektor  { 1.0, 1.0 }
-#define einsivektor { 1, 1 }
-#define parteinsivektor { 1, 0 }
-#define xivektor    { 1, 0 }
-#define nullsymtensor { 0.0, 0.0, 0.0 }
-#else
 #define nullvektor  { 0.0, 0.0, 0.0 }
 #define nullivektor { 0, 0, 0 }
 #define einsvektor  { 1.0, 1.0, 1.0 }
@@ -39,7 +30,6 @@
 #define parteinsivektor { 1, 1, 0 }
 #define xivektor    { 1, 0, 0 }
 #define nullsymtensor { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
-#endif
 
 #define nullvektor2d { 0.0, 0.0 }
 #define nullivektor2d { 0, 0 }
@@ -102,15 +92,10 @@ EXTERN cell atoms;                       /* big cell in vector mode */
 EXTERN int  atoms_per_cpu INIT(150000);  /* estimated size of big cell */
 #endif
 EXTERN integer *cells INIT(NULL);        /* list if inner cell indices */
-#ifdef TWOD
-EXTERN pair *pairs[9];                   /* arrays of cell pairs */
-EXTERN int  npairs[9], npairs2[9];       /* number of cell pairs */
-#else
 EXTERN pair *pairs[27];                  /* arrays of cell pairs */
 EXTERN int  npairs[27], npairs2[27];     /* number of cell pairs */
 #if defined(VEC) || defined(NBLIST)
 EXTERN cell_nbrs_t *cnbrs INIT(NULL);    /* neighbors of each cell */
-#endif
 #endif
 EXTERN int ncells, nallcells INIT(0);    /* number of cells */
 EXTERN int ncells2;                      /* cells on lower bondary (for nbl) */
@@ -347,14 +332,10 @@ EXTERN int  *gtypes INIT(NULL);              /* types */
 /* The simulation box and its inverse */
 EXTERN vektor box_x  INIT(nullvektor);
 EXTERN vektor box_y  INIT(nullvektor);
-#ifndef TWOD
 EXTERN vektor box_z  INIT(nullvektor);
-#endif
 EXTERN vektor tbox_x INIT(nullvektor);
 EXTERN vektor tbox_y INIT(nullvektor);
-#ifndef TWOD
 EXTERN vektor tbox_z INIT(nullvektor);
-#endif
 EXTERN vektor     height INIT(nullvektor);
 EXTERN vektor max_height INIT(nullvektor);
 EXTERN vektor min_height INIT(nullvektor);
@@ -394,11 +375,9 @@ EXTERN vektor pic_ur  INIT(nullvektor);     /* upper right (back) corner */
 EXTERN ivektor   pic_res INIT(nullivektor); /* number of pixels in x/y dir.*/
 EXTERN int       pic_type INIT(0);          /* picture type 0/1 */
 EXTERN int       nsmear   INIT(5);          /* smearing radius in pixels */
-#ifndef TWOD
 EXTERN vektor3d view_dir INIT(nullvektor);  /* view direction */
 EXTERN vektor3d view_pos INIT(nullvektor);  /* view position */
 EXTERN int      projection INIT(0);         /* projection type 0/1 */
-#endif
 
 /* MD Stuff */
 EXTERN real timestep INIT(0.0);
@@ -617,9 +596,7 @@ EXTERN int    lindef_int INIT(0);         /* period of linear deform. steps */
 EXTERN real   lindef_size INIT(1.0);      /* scale factor of deformation */
 EXTERN vektor lindef_x INIT(nullvektor);  /* \               */
 EXTERN vektor lindef_y INIT(nullvektor);  /*  |  linear      */
-#ifndef TWOD                              /*   > deformation */
 EXTERN vektor lindef_z INIT(nullvektor);  /*  |  matrix      */
-#endif                                    /* /               */
 EXTERN real shear_module INIT(1.0);       /* estimate of the shear module */
 EXTERN real bulk_module  INIT(1.0);       /* estimate of the bulk module */
 EXTERN int  relax_mode   INIT(-1);        /* pressure relaxation mode */
@@ -638,9 +615,7 @@ EXTERN int  *num_ssort INIT(NULL);   /* number of atoms for each superatom */
 
 #ifdef SLLOD
 EXTERN vektor shear_rate   INIT(nullvektor); /* shear rate as a vector */
-#ifndef TWOD
 EXTERN vektor shear_rate2  INIT(nullvektor); /* shear rate as a vector */
-#endif
 #endif
 
 #if defined(FRAC) || defined(STM) || defined(FTG)
@@ -799,9 +774,7 @@ EXTERN int avpos_cnt INIT(0);         /* Number of positions added */
 #ifdef NPT
 EXTERN vektor av_box_x  INIT(nullvektor); /* Average of box vectors */
 EXTERN vektor av_box_y  INIT(nullvektor);
-#ifndef TWOD
 EXTERN vektor av_box_z  INIT(nullvektor);
-#endif
 #endif
 #endif
 

@@ -78,12 +78,8 @@ void init_correl(int ncorr_rmax, int ncorr_tmax)
       }
     }
   }
-#ifdef TWOD
-  diagonal = sqrt(SQR(box_x.x+box_y.x)+SQR(box_x.y+box_y.y));
-#else
   diagonal = sqrt(SQR(box_x.x+box_y.x+box_z.x)+SQR(box_x.y+box_y.y+box_z.y)+
                   SQR(box_x.z+box_y.z+box_z.z));
-#endif
   /* Limit histogram size in r domain to ncorr_rmax entries */
   inv_dr = (real)ncorr_rmax/diagonal;
   if ((filename = malloc(256))==NULL) {
@@ -118,9 +114,7 @@ void init_correl(int ncorr_rmax, int ncorr_tmax)
     for (i=0; i<p->n; ++i) {
       REF_POS(p,i,X) = ORT(p,i,X);
       REF_POS(p,i,Y) = ORT(p,i,Y);
-#ifndef TWOD
       REF_POS(p,i,Z) = ORT(p,i,Z);
-#endif
     }
   }
 
@@ -157,9 +151,7 @@ void correlate(int step, int ref_step, unsigned seqnum)
       for (i=0; i<p->n; ++i) {
         REF_POS(p,i,X) = ORT(p,i,X);
         REF_POS(p,i,Y) = ORT(p,i,Y);
-#ifndef TWOD
         REF_POS(p,i,Z) = ORT(p,i,Z);
-#endif
       }
     }
   } 
@@ -198,21 +190,15 @@ void correlate(int step, int ref_step, unsigned seqnum)
         /* calculate distance between atom i at t=tau (ort) and t=0 (refpos) */
         dist.x = ORT(p,i,X) - REF_POS(p,i,X);
         dist.y = ORT(p,i,Y) - REF_POS(p,i,Y);
-#ifndef TWOD
         dist.z = ORT(p,i,Z) - REF_POS(p,i,Z);
-#endif
 
         /* mean square displacement with PBC applied */
         msqd X(SORTE(p,i)) += dist.x * dist.x;
         msqd Y(SORTE(p,i)) += dist.y * dist.y;
-#ifndef TWOD
         msqd Z(SORTE(p,i)) += dist.z * dist.z;
-#endif
         msqdv X(VSORTE(p,i)) += dist.x * dist.x;
         msqdv Y(VSORTE(p,i)) += dist.y * dist.y;
-#ifndef TWOD
         msqdv Z(VSORTE(p,i)) += dist.z * dist.z;
-#endif
 
 #ifdef CORRELATE
         /* unlike in the MSQD part, we explicitly assume here that

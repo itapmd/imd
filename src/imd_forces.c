@@ -52,9 +52,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #ifdef P_AXIAL
   tmp_vir_vect.x = 0.0;
   tmp_vir_vect.y = 0.0;
-#ifndef TWOD
   tmp_vir_vect.z = 0.0;
-#endif
 #endif
     
   /* for each atom in first cell */
@@ -62,16 +60,10 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 
     tmp_d.x = ORT(p,i,X) - pbc.x;
     tmp_d.y = ORT(p,i,Y) - pbc.y;
-#ifndef TWOD
     tmp_d.z = ORT(p,i,Z) - pbc.z;
-#endif
 
     p_typ  = SORTE(p,i);
-#ifdef TWOD
-    jstart = (((p==q) && (pbc.x==0) && (pbc.y==0))               ? i+1 : 0);
-#else
     jstart = (((p==q) && (pbc.x==0) && (pbc.y==0) && (pbc.z==0)) ? i+1 : 0);
-#endif
     qptr   = &ORT(q,jstart,X);
 
     /* for each atom in neighbouring cell */
@@ -80,9 +72,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
       /* calculate distance */
       d.x = *qptr - tmp_d.x; ++qptr;
       d.y = *qptr - tmp_d.y; ++qptr;
-#ifndef TWOD
       d.z = *qptr - tmp_d.z; ++qptr;
-#endif
 
       q_typ = SORTE(q,j);
       col   = p_typ * ntypes + q_typ;
@@ -115,9 +105,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
         /* store force in temporary variable */
         force.x = d.x * pot_grad;
         force.y = d.y * pot_grad;
-#ifndef TWOD
         force.z = d.z * pot_grad;
-#endif
 
         /* accumulate forces */
         pfptr = &KRAFT(p,i,X);
@@ -126,10 +114,8 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
         *qfptr     -= force.x; 
         *(++pfptr) += force.y; 
         *(++qfptr) -= force.y; 
-#ifndef TWOD
         *(++pfptr) += force.z; 
         *(++qfptr) -= force.z; 
-#endif
         *Epot      += pot_zwi;
 
 #ifndef MONOLJ
@@ -150,9 +136,7 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
 #ifdef P_AXIAL
         tmp_vir_vect.x -= d.x * force.x;
         tmp_vir_vect.y -= d.y * force.y;
-#ifndef TWOD
         tmp_vir_vect.z -= d.z * force.z;
-#endif
 #else
         tmp_virial     -= r2 * pot_grad;
 #endif
@@ -162,23 +146,19 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
           /* avoid double counting of the virial */
           force.x *= 0.5;
           force.y *= 0.5;
-#ifndef TWOD
           force.z *= 0.5;
-#endif
           PRESSTENS(p,i,xx) -= d.x * force.x;
           PRESSTENS(q,j,xx) -= d.x * force.x;
           PRESSTENS(p,i,yy) -= d.y * force.y;
           PRESSTENS(q,j,yy) -= d.y * force.y;
           PRESSTENS(p,i,xy) -= d.x * force.y;
           PRESSTENS(q,j,xy) -= d.x * force.y;
-#ifndef TWOD
           PRESSTENS(p,i,zz) -= d.z * force.z;
           PRESSTENS(q,j,zz) -= d.z * force.z;
           PRESSTENS(p,i,yz) -= d.y * force.z;
           PRESSTENS(q,j,yz) -= d.y * force.z;
           PRESSTENS(p,i,zx) -= d.z * force.x;
           PRESSTENS(q,j,zx) -= d.z * force.x;
-#endif
 	}
 #endif
       }
@@ -260,10 +240,8 @@ void do_forces(cell *p, cell *q, vektor pbc, real *Epot, real *Virial,
   *Vir_yy += tmp_vir_vect.y;
   *Virial += tmp_vir_vect.x;
   *Virial += tmp_vir_vect.y;
-#ifndef TWOD
   *Vir_zz += tmp_vir_vect.z;
   *Virial += tmp_vir_vect.z;
-#endif
 #else
   *Virial += tmp_virial;
 #endif 

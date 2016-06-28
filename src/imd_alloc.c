@@ -133,26 +133,18 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
     int k;
   to->ort X(i) = from->ort X(j); 
   to->ort Y(i) = from->ort Y(j); 
-#ifndef TWOD
   to->ort Z(i) = from->ort Z(j); 
-#endif
 
 #ifdef BBOOST
   to->bb_refposone X(i) = from->bb_refposone X(j);
   to->bb_refposone Y(i) = from->bb_refposone Y(j); 
-#ifndef TWOD
   to->bb_refposone Z(i) = from->bb_refposone Z(j); 
-#endif
   to->bb_refpostwo X(i) = from->bb_refpostwo X(j);
   to->bb_refpostwo Y(i) = from->bb_refpostwo Y(j); 
-#ifndef TWOD
   to->bb_refpostwo Z(i) = from->bb_refpostwo Z(j);
-#endif
   to->bb_oldpos X(i) = from->bb_oldpos X(j);
   to->bb_oldpos Y(i) = from->bb_oldpos Y(j); 
-#ifndef TWOD
   to->bb_oldpos Z(i) = from->bb_oldpos Z(j); 
-#endif
   to->bb_neigh[i]->nbondsref1 = from->bb_neigh[j]->nbondsref1;
   to->bb_neigh[i]->nbondsref2 = from->bb_neigh[j]->nbondsref2;
 
@@ -214,27 +206,19 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
 #ifdef CG
   to->h  X(i) = from->h X(j); 
   to->h  Y(i) = from->h Y(j); 
-#ifndef TWOD
   to->h  Z(i) = from->h Z(j);
-#endif 
   to->g  X(i) = from->g X(j); 
   to->g  Y(i) = from->g Y(j); 
-#ifndef TWOD
   to->g  Z(i) = from->g Z(j);
-#endif  
   to->old_ort  X(i) = from->old_ort X(j); 
   to->old_ort  Y(i) = from->old_ort Y(j); 
-#ifndef TWOD
   to->old_ort  Z(i) = from->old_ort Z(j); 
-#endif
 #endif
 #ifdef DISLOC
   to->Epot_ref  [i] = from->Epot_ref[j];
   to->ort_ref X (i) = from->ort_ref X(j);
   to->ort_ref Y (i) = from->ort_ref Y(j);
-#ifndef TWOD
   to->ort_ref Z (i) = from->ort_ref Z(j);
-#endif
 #endif /* DISLOC */
 #ifdef CNA
   to->mark[i] = from->mark[j];
@@ -249,10 +233,8 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
   to->avpos Y(i) = from->avpos Y(j);
   to->sheet X(i) = from->sheet X(j);
   to->sheet Y(i) = from->sheet Y(j);
-#ifndef TWOD
   to->avpos Z(i) = from->avpos Z(j);
   to->sheet Z(i) = from->sheet Z(j);
-#endif
 #endif /* AVPOS */
 #ifdef NNBR
   to->nbanz[i] = from->nbanz[j]; 
@@ -260,9 +242,7 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
 #ifdef REFPOS
   to->refpos X(i) = from->refpos X(j);
   to->refpos Y(i) = from->refpos Y(j);
-#ifndef TWOD
   to->refpos Z(i) = from->refpos Z(j);
-#endif
 #endif /* REFPOS */
 #ifdef HC
   to->hcaveng[i]  = from->hcaveng[j];   
@@ -271,20 +251,16 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
   to->presstens[i].xx = from->presstens[j].xx;   
   to->presstens[i].yy = from->presstens[j].yy;   
   to->presstens[i].xy = from->presstens[j].xy;   
-#ifndef TWOD
   to->presstens[i].zz = from->presstens[j].zz;   
   to->presstens[i].yz = from->presstens[j].yz;   
   to->presstens[i].zx = from->presstens[j].zx;   
-#endif
 #ifdef AVPOS
   to->avpresstens[i].xx = from->avpresstens[j].xx;   
   to->avpresstens[i].yy = from->avpresstens[j].yy;   
   to->avpresstens[i].xy = from->avpresstens[j].xy;   
-#ifndef TWOD
   to->avpresstens[i].zz = from->avpresstens[j].zz;   
   to->avpresstens[i].yz = from->avpresstens[j].yz;   
   to->avpresstens[i].zx = from->avpresstens[j].zx;  
-#endif 
 #endif /* AVPOS */
 #endif /* STRESS_TENS */
 #ifdef SHOCK
@@ -292,14 +268,10 @@ void copy_atom_cell_cell(cell *to, int i, cell *from, int j)
 #endif
   to->impuls X(i) = from->impuls X(j); 
   to->impuls Y(i) = from->impuls Y(j); 
-#ifndef TWOD
   to->impuls Z(i) = from->impuls Z(j); 
-#endif
   to->kraft X(i) = from->kraft X(j); 
   to->kraft Y(i) = from->kraft Y(j); 
-#ifndef TWOD
   to->kraft Z(i) = from->kraft Z(j); 
-#endif
 
 #ifdef COVALENT
   /* neighbor table is not copied */
@@ -521,7 +493,7 @@ void alloc_cell(cell *p, int n)
 #endif
   }
 
-#if (defined(COVALENT) || defined(NNBR_TABLE)) && !defined(TWOD)
+#if (defined(COVALENT) || defined(NNBR_TABLE))
   /* if cell is to be deallocated, begin with neighbor tables */
   if (0==n) {
     for (i=0; i<p->n_max; ++i) {
@@ -530,7 +502,7 @@ void alloc_cell(cell *p, int n)
   }
 #endif
 
-#if (defined(BBOOST) && !defined(TWOD))
+#ifdef BBOOST
   /* if cell is to be deallocated, begin with neighbor tables */
   if (0==n) {
     for (i=0; i< BB_MAXNEIGH; ++i) {

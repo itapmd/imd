@@ -205,9 +205,7 @@ void calc_extpot(void)
 #ifdef P_AXIAL
 		    tmp_vir_vect.x -= d.x * force.x;
 		    tmp_vir_vect.y -= d.y * force.y;
-#ifndef TWOD
 		    tmp_vir_vect.z -= d.z * force.z;
-#endif
 #else
 		    tmp_virial     -= dd * pot_grad;
 #endif
@@ -217,11 +215,9 @@ void calc_extpot(void)
 		      PRESSTENS(p,i,xx) -= d.x * force.x;
 		      PRESSTENS(p,i,yy) -= d.y * force.y;
 		      PRESSTENS(p,i,xy) -= d.x * force.y;
-#ifndef TWOD
 		      PRESSTENS(p,i,zz) -= d.z * force.z;
 		      PRESSTENS(p,i,yz) -= d.y * force.z;
 		      PRESSTENS(p,i,zx) -= d.z * force.x;
-#endif
 		      }
 #endif
 		    }
@@ -363,9 +359,7 @@ void calc_extpot(void)
 #ifdef P_AXIAL
 		  tmp_vir_vect.x -= d.x * force.x;
 		  tmp_vir_vect.y -= d.y * force.y;
-#ifndef TWOD
 		  tmp_vir_vect.z -= d.z * force.z;
-#endif
 #else
 		  tmp_virial     -= dd * pot_grad;
 #endif
@@ -375,11 +369,9 @@ void calc_extpot(void)
 		    PRESSTENS(p,i,xx) -= d.x * force.x;
 		    PRESSTENS(p,i,yy) -= d.y * force.y;
 		    PRESSTENS(p,i,xy) -= d.x * force.y;
-#ifndef TWOD
 		    PRESSTENS(p,i,zz) -= d.z * force.z;
 		    PRESSTENS(p,i,yz) -= d.y * force.z;
 		    PRESSTENS(p,i,zx) -= d.z * force.x;
-#endif
 		  }
 #endif
 		}
@@ -522,9 +514,7 @@ void calc_extpot(void)
 #ifdef P_AXIAL
 		  tmp_vir_vect.x -= d.x * force.x;
 		  tmp_vir_vect.y -= d.y * force.y;
-#ifndef TWOD
 		  tmp_vir_vect.z -= d.z * force.z;
-#endif
 #else
 		  tmp_virial     -= dd * pot_grad;
 #endif
@@ -534,11 +524,9 @@ void calc_extpot(void)
 		    PRESSTENS(p,i,xx) -= d.x * force.x;
 		    PRESSTENS(p,i,yy) -= d.y * force.y;
 		    PRESSTENS(p,i,xy) -= d.x * force.y;
-#ifndef TWOD
 		    PRESSTENS(p,i,zz) -= d.z * force.z;
 		    PRESSTENS(p,i,yz) -= d.y * force.z;
 		    PRESSTENS(p,i,zx) -= d.z * force.x;
-#endif
 		  }
 #endif
 		}
@@ -577,10 +565,8 @@ vir_xx += tmp_vir_vect.x;
 vir_yy += tmp_vir_vect.y;
 virial += tmp_vir_vect.x;
 virial += tmp_vir_vect.y;
-#ifndef TWOD
 vir_zz += tmp_vir_vect.z;
 virial += tmp_vir_vect.z;
-#endif
 #else
 virial += tmp_virial;
 #endif 

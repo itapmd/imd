@@ -21,11 +21,7 @@
 
 #include "imd.h"
 
-#ifdef TWOD
-#define nebSPRODN(x,y) ( (x)[0]*(y)[0] + (x)[1]*(y)[1] )
-#else
 #define nebSPRODN(x,y) ( (x)[0]*(y)[0] + (x)[1]*(y)[1] + (x)[2]*(y)[2] )
-#endif
 
 /* auxiliary arrays */
 real *pos=NULL, *pos_l=NULL, *pos_r=NULL, *f=NULL, *tau=NULL, *dRleft=NULL, *dRright=NULL;

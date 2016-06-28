@@ -718,7 +718,7 @@ ifeq (SX8,${IMDSYS})
 #  CC_OMP		=
 #  CC_OMPI		=
   BIN_DIR		= ${HOME}/bin/sx8
-  OPT_FLAGS		+= -Xa -O -sx8 -C hopt -pi auto -pi file=imd_geom_3d.c:imd_geom_mpi_3d.c -pvctl fullmsg -w off=177:550 -O extendreorder # -gv
+  OPT_FLAGS		+= -Xa -O -sx8 -C hopt -pi auto -pi file=imd_geom.c:imd_geom_mpi.c -pvctl fullmsg -w off=177:550 -O extendreorder # -gv
 #  OPT_MPI_FLAGS	+=
 #  OPT_OMP_FLAGS	+=
 #  OPT_OMPI_FLAGS	+=
@@ -735,7 +735,7 @@ ifeq (SX6,${IMDSYS})
 #  CC_OMP		=
 #  CC_OMPI		=
   BIN_DIR		= ${HOME}/bin/sx6
-  OPT_FLAGS		+= -Xa -O -sx6 -C hopt -pi auto -pi file=imd_geom_3d.c:imd_geom_mpi_3d.c -pvctl fullmsg -w off=177:550 -O extendreorder # -gv
+  OPT_FLAGS		+= -Xa -O -sx6 -C hopt -pi auto -pi file=imd_geom.c:imd_geom_mpi.c -pvctl fullmsg -w off=177:550 -O extendreorder # -gv
 #  OPT_MPI_FLAGS	+=
 #  OPT_OMP_FLAGS	+=
 #  OPT_OMPI_FLAGS	+=
@@ -929,21 +929,17 @@ IMDHEADERS      = config.h globals.h imd.h makros.h potaccess.h \
                   prototypes.h types.h
 
 SOURCES         = imd_maxwell.c imd_integrate.c imd_misc.c \
-	          imd_param.c imd_alloc.c imd_io.c imd_io_3d.c \
+	          imd_param.c imd_alloc.c imd_io.c imd_io_atoms.c \
                   imd_potential.c imd_time.c imd_generate.c \
-                  imd_distrib.c imd_main_3d.c
-SOURCES2D       = ${SOURCES} imd_geom_2d.c imd_pictures_2d.c
-SOURCES3D       = ${SOURCES} imd_geom_3d.c imd_pictures_3d.c
-RISCSOURCES2D   = imd_main_risc_2d.c
-RISCSOURCES3D   = imd_main_risc_3d.c
+                  imd_distrib.c imd_main.c
+SOURCES3D       = ${SOURCES} imd_geom.c imd_pictures.c
+RISCSOURCES3D   = imd_main_risc.c
 
 MPISOURCES      = imd_mpi_util.c
-MPISOURCES2D    = ${MPISOURCES} imd_main_mpi_2d.c imd_geom_mpi_2d.c \
-		  imd_comm_force_2d.c
-MPISOURCES3D    = ${MPISOURCES} imd_main_mpi_3d.c imd_geom_mpi_3d.c \
-		  imd_comm_force_3d.c imd_fix_cells_3d.c
+MPISOURCES3D    = ${MPISOURCES} imd_main_mpi.c imd_geom_mpi.c \
+		  imd_comm_force.c imd_fix_cells.c
 
-NBLSOURCES3D    = imd_geom_mpi_3d.c imd_comm_force_3d.c imd_fix_cells_3d.c
+NBLSOURCES3D    = imd_geom_mpi.c imd_comm_force.c imd_fix_cells.c
 
 PAIRSOURCES     = imd_forces.c
 EAM2SOURCES     = imd_forces_eam2.c
@@ -1049,7 +1045,7 @@ SOURCES += ${SRCMAIN}
 
 # pair interaction is the default
 ifneq (,$(strip $(findstring vec,${MAKETARGET})))
-  FORCESOURCES = imd_main_vec_3d.c
+  FORCESOURCES = imd_main_vec.c
 else
     ifneq (,$(strip $(findstring nbl,${MAKETARGET})))
       FORCESOURCES = imd_forces_nbl.c
@@ -1644,7 +1640,7 @@ endif
 
 ifneq (,$(findstring nye,${MAKETARGET}))
 PP_FLAGS += -DNYETENSOR
-SOURCES += imd_nyeTensorAnalysis_3d.c
+SOURCES += imd_nyeTensorAnalysis.c
 ifeq (,$(findstring ${COVALENTSOURCES},${SOURCES}))
 	SOURCES += ${COVALENTSOURCES}
 endif

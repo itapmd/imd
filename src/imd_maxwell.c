@@ -72,9 +72,7 @@ void maxwell(real temp)
    TEMP = temp;
    tot_impuls.x = 0.0;   nactive_x = 0;
    tot_impuls.y = 0.0;   nactive_y = 0;
-#ifndef TWOD
    tot_impuls.z = 0.0;   nactive_z = 0;
-#endif
 
    /* set temperature */
    for (k=0; k<NCELLS; ++k) {
@@ -89,9 +87,7 @@ void maxwell(real temp)
 #ifdef LASER
 	 depth =   laser_dir.x * ORT(p,i,X)
 		 + laser_dir.y * ORT(p,i,Y)
-#ifndef TWOD
 		 + laser_dir.z * ORT(p,i,Z)
-#endif
 	 ;
 	 depth -= laser_offset;
          if (depth < 0) {
@@ -148,29 +144,21 @@ void maxwell(real temp)
 #ifndef RIGID
          IMPULS(p,i,X) = imd_gaussian(tmp) * rest->x;
          IMPULS(p,i,Y) = imd_gaussian(tmp) * rest->y;
-#ifndef TWOD
          IMPULS(p,i,Z) = imd_gaussian(tmp) * rest->z;
-#endif
 #else
 	 /* superatoms get velocity zero */
 	 if (superatom[VSORTE(p,i)]>-1) {
 	   IMPULS(p,i,X) = 0.0;
 	   IMPULS(p,i,Y) = 0.0;
-#ifndef TWOD
 	   IMPULS(p,i,Z) = 0.0;
-#endif
 	 }
 #endif
          nactive_x += (int) rest->x;
          nactive_y += (int) rest->y;
-#ifndef TWOD
          nactive_z += (int) rest->z;
-#endif
          tot_impuls.x += IMPULS(p,i,X);
          tot_impuls.y += IMPULS(p,i,Y);
-#ifndef TWOD
          tot_impuls.z += IMPULS(p,i,Z);
-#endif
 
 #ifdef UNIAX
 
@@ -242,9 +230,7 @@ void maxwell(real temp)
    /* compute the total momentum afresh */
    tot_impuls.x = 0.0;
    tot_impuls.y = 0.0;
-#ifndef TWOD
    tot_impuls.z = 0.0;
-#endif
 
    /* set velocities of clones equal */
    for (k=0; k<NCELLS; k++) {
@@ -257,15 +243,11 @@ void maxwell(real temp)
 
         tot_impuls.x += nclones * IMPULS(p,i,X);
         tot_impuls.y += nclones * IMPULS(p,i,Y);
-#ifndef TWOD
         tot_impuls.z += nclones * IMPULS(p,i,Z);
-#endif
 	for (j=1; j<nclones; j++) {
           IMPULS(p,i+j,X) = IMPULS(p,i,X);
           IMPULS(p,i+j,Y) = IMPULS(p,i,Y);
-#ifndef TWOD
           IMPULS(p,i+j,Z) = IMPULS(p,i,Z);
-#endif
         }
       }
    }
@@ -274,9 +256,7 @@ void maxwell(real temp)
 
    tot_impuls.x = nactive_x == 0 ? 0.0 : tot_impuls.x / nactive_x;
    tot_impuls.y = nactive_y == 0 ? 0.0 : tot_impuls.y / nactive_y;
-#ifndef TWOD
    tot_impuls.z = nactive_z == 0 ? 0.0 : tot_impuls.z / nactive_z;
-#endif
 
    /* correct center of mass momentum */
    for (k=0; k<NCELLS; ++k) {
@@ -288,9 +268,7 @@ void maxwell(real temp)
          rest = restrictions + VSORTE(p,i);
          IMPULS(p,i,X) -= tot_impuls.x * rest->x;
          IMPULS(p,i,Y) -= tot_impuls.y * rest->y;
-#ifndef TWOD
          IMPULS(p,i,Z) -= tot_impuls.z * rest->z;
-#endif
       }
    }
 

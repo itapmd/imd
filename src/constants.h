@@ -20,11 +20,7 @@
 ******************************************************************************/
 
 /* How many dimension are there? */
-#ifdef TWOD
-#define DIM 2
-#else
 #define DIM 3
-#endif
 
 /* simulation ensembles */
 #define ENS_EMPTY     0

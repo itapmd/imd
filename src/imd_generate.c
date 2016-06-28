@@ -80,11 +80,6 @@ void generate_atoms(str255 mode)
   srand48(seed); /* initialize random number generator */
   do_maxwell=1;
 
-#ifdef TWOD
-  if (0 == strcmp(mode,"_hex")) {          /* 2D hexagonal crystal */
-    init_hex();
-    generate_hex();
-#else /* 3D */
   if (0 == strcmp(mode,"_fcc")) {          /* FCC */
     init_cubic();
     generate_fcc(0);
@@ -126,7 +121,6 @@ void generate_atoms(str255 mode)
   } else if (0 == strcmp(mode,"_sio2")) { /* SiO2 (quartz) */
     generate_SiO2();
 #endif
-#endif /* 3D */
   } else if (0==myid) error("Filename with _ specifies unknown structure.");
 
 #ifdef MPI
@@ -190,101 +184,6 @@ void generate_atoms(str255 mode)
     fflush(stdout);  
   }
 }
-
-
-#ifdef TWOD
-
-/* initialize for hexagonal crystal */
-void init_hex(void)
-{
-  if (size_per_cpu) {
-    box_param.x *= cpu_dim.x;
-    box_param.y *= cpu_dim.y;
-  }
-  if ((box_param.x==0) || (box_param.y==0)) error("box_param not set!");
-  box_x.x = box_param.x * sqrt(3.0) * box_unit;
-  box_x.y = 0.0;
-  box_y.x = 0.0;
-  box_y.y = box_param.y * box_unit;
-  make_box();
-}
-
-/* generate hexagonal crystal */
-void generate_hex()
-{
-  cell    *input, *to;
-  ivektor min, max, cellc, lcellc;
-  int     to_cpu;
-  int     i, j, typ;
-  real    x, y;
-
-#ifdef MPI
-  if (myid==0)
-    if ((box_param.x % cpu_dim.x) || (box_param.y % cpu_dim.y))
-      error("box_param must be commensurate with cpu_dim");
-#endif
-
-#ifdef MPI
-  min.x =  my_coord.x      * 2 * box_param.x / cpu_dim.x;
-  max.x = (my_coord.x + 1) * 2 * box_param.x / cpu_dim.x;
-  min.y =  my_coord.y      * 2 * box_param.y / cpu_dim.y;
-  max.y = (my_coord.y + 1) * 2 * box_param.y / cpu_dim.y;
-#else
-  min.x = 0; max.x = 2 * box_param.x;
-  min.y = 0; max.y = 2 * box_param.y;
-#endif
-
-  /* Set up 1 atom input cell */
-  input = (cell *) malloc(sizeof(cell));
-  if (0==input) error("Cannot allocate input cell");
-  input->n_max = 0;
-  alloc_cell(input,1);
-
-  natoms  = 0;
-  nactive = 0;
-
-  for (i=min.x ; i<max.x; i++)
-    for (j=min.y; j<max.y; j++) {
-
-      typ  = (i+j) % 2;
-      if (typ > 0) continue;
-
-      x = (i+0.5) * sqrt(3.0) * 0.5 * box_unit;
-      y = (j+0.5) * 0.5 * box_unit;
-
-      natoms++;
-      nactive += 2;
-
-      input->n = 1;
-      ORT(input,0,X)  = x;
-      ORT(input,0,Y)  = y;
-      NUMMER(input,0) = natoms;
-#ifndef MONO
-      SORTE (input,0) = gtypes[typ];
-#endif
-      VSORTE(input,0) = gtypes[typ];
-      MASSE(input,0)  = masses[gtypes[typ]];
-      num_sort[gtypes[typ]]++;
-      cellc = cell_coord(x,y);
-#ifdef MPI
-      to_cpu = cpu_coord(cellc);
-      if (to_cpu==myid) {
-        lcellc = local_cell_coord(cellc);
-        to = PTR_VV(cell_array,lcellc,cell_dim);
-        INSERT_ATOM(to, input, 0);
-      }
-      else error("imd_generate: atom on wrong CPU");
-#else
-      to = PTR_VV(cell_array,cellc,cell_dim);
-      INSERT_ATOM(to, input, 0);
-#endif
-  }
-} 
-
-#endif /* TWOD */
-
-
-#ifndef TWOD
 
 /* initialize for cubic crystals */
 void init_cubic(void)
@@ -718,5 +617,4 @@ void generate_SiO2(void)
 
 #endif
 
-#endif /* not TWOD */
 

@@ -319,16 +319,12 @@ void read_atoms(str255 infilename)
 #endif
       pos.x = d[count++];
       pos.y = d[count++];
-#ifndef TWOD
       pos.z = d[count++];
-#endif
       /* with per CPU input files, avoid back_into_box */
       if (0==addnumber) pos = back_into_box(pos);
       ORT(input,0,X) = pos.x;
       ORT(input,0,Y) = pos.y;
-#ifndef TWOD
       ORT(input,0,Z) = pos.z;
-#endif
 #ifdef UNIAX
       ACHSE(input,0,X) = axe.x = d[count++];
       ACHSE(input,0,Y) = axe.y = d[count++];
@@ -359,22 +355,16 @@ void read_atoms(str255 infilename)
         do_maxwell=1;
         IMPULS(input,0,X) = 0;
         IMPULS(input,0,Y) = 0;
-#ifndef TWOD
         IMPULS(input,0,Z) = 0;
-#endif
       } else {
         IMPULS(input,0,X) = d[count++] * m * (restrictions+s)->x;
         IMPULS(input,0,Y) = d[count++] * m * (restrictions+s)->y;
-#ifndef TWOD
         IMPULS(input,0,Z) = d[count++] * m * (restrictions+s)->z;
-#endif
       }
 #endif /* UNIAX or not UNIAX */
       KRAFT(input,0,X) = 0;
       KRAFT(input,0,Y) = 0;
-#ifndef TWOD
       KRAFT(input,0,Z) = 0;
-#endif
 #if defined(DIPOLE) || defined(KERMODE) 		/* only 3D */
       DP_P_IND(input,0,X) = d[count++];
       DP_P_IND(input,0,Y) = d[count++];
@@ -384,18 +374,14 @@ void read_atoms(str255 infilename)
       if (info.n_refpos_x > 0) {
         REF_POS(input,0,X) = d[info.n_refpos_x-2];
         REF_POS(input,0,Y) = d[info.n_refpos_x-1];
-#ifndef TWOD
         REF_POS(input,0,Z) = d[info.n_refpos_x  ];
-#endif
       }
 #endif
 #ifdef DISLOC
       if (info.n_x_ref > 0) {
         ORT_REF(input,0,X) = d[info.n_x_ref-2];
         ORT_REF(input,0,Y) = d[info.n_x_ref-1];
-#ifndef TWOD
         ORT_REF(input,0,Z) = d[info.n_x_ref  ];
-#endif
       }
       if (info.n_Epot_ref > 0) {
         EPOT_REF(input,0)  = d[info.n_Epot_ref-2];
@@ -422,11 +408,7 @@ void read_atoms(str255 infilename)
       epitax_sub_n = MAX( n, epitax_sub_n );
 #endif
 
-#ifdef TWOD
-      cellc = cell_coord(pos.x,pos.y);
-#else
       cellc = cell_coord(pos.x,pos.y,pos.z);
-#endif
 
 #ifdef BUFCELLS
 
@@ -477,9 +459,7 @@ void read_atoms(str255 infilename)
         } else {
           nactive += (long) (restrictions+s)->x;
           nactive += (long) (restrictions+s)->y;
-#ifndef TWOD
           nactive += (long) (restrictions+s)->z;
-#endif
         }
         num_sort [ SORTE(input,0)]++;
         num_vsort[VSORTE(input,0)]++;
@@ -584,10 +564,8 @@ void read_atoms_cleanup(void)
 	  nactive += num_vsort[i] * (long) (restrictions+i)->x;
 	if (superatom[i]==-1 || ((superrestrictions+superatom[i])->y)==0 )
 	  nactive += num_vsort[i] * (long) (restrictions+i)->y;
-#ifndef TWOD
 	if (superatom[i]==-1 || ((superrestrictions+superatom[i])->z)==0 )
 	  nactive += num_vsort[i] * (long) (restrictions+i)->z;
-#endif
       }
       for (s=0; s<nsuperatoms; s++) {
 	/* check whether superatom s is mobile */
@@ -598,17 +576,13 @@ void read_atoms_cleanup(void)
 	      mobile.x = 0;
 	    if ((restrictions+i)->y == 0)
 	      mobile.y = 0;
-#ifndef TWOD
 	    if ((restrictions+i)->z == 0)
 	      mobile.z = 0;
-#endif
 	  }
 	/* translational degrees of freedom of rigid vtypes */
 	nactive += (superrestrictions+s)->x * mobile.x
                 +  (superrestrictions+s)->y * mobile.y;
-#ifndef TWOD
         nactive += (superrestrictions+s)->z * mobile.z;
-#endif
       }
     }
   }
@@ -751,9 +725,7 @@ void write_atoms_config(FILE *out)
         data[n++].r = MASSE(p,i);
         data[n++].r = ORT(p,i,X);
         data[n++].r = ORT(p,i,Y);
-#ifndef TWOD
         data[n++].r = ORT(p,i,Z);
-#endif
 #ifdef UNIAX
         data[n++].r = ACHSE(p,i,X);
         data[n++].r = ACHSE(p,i,Y);
@@ -762,9 +734,7 @@ void write_atoms_config(FILE *out)
         if (ensemble != ENS_CG) {
           data[n++].r = (IMPULS(p,i,X) / MASSE(p,i));
           data[n++].r = (IMPULS(p,i,Y) / MASSE(p,i));
-#ifndef TWOD
           data[n++].r = (IMPULS(p,i,Z) / MASSE(p,i));
-#endif
 	}
 #ifdef UNIAX
         data[n++].r = DREH_IMPULS(p,i,X) / uniax_inert;
@@ -781,16 +751,12 @@ void write_atoms_config(FILE *out)
 #ifdef REFPOS
         data[n++].r = REF_POS(p,i,X);
         data[n++].r = REF_POS(p,i,Y);
-#ifndef TWOD
         data[n++].r = REF_POS(p,i,Z);
-#endif
 #endif
 #ifdef DISLOC
         data[n++].r = ORT_REF(p,i,X);
         data[n++].r = ORT_REF(p,i,Y);
-#ifndef TWOD
         data[n++].r = ORT_REF(p,i,Z);
-#endif
         data[n++].r = EPOT_REF(p,i);
 #endif
 #if defined(EAM2) && !defined(NORHOH)
@@ -840,29 +806,16 @@ void write_atoms_config(FILE *out)
       else {
         len += sprintf(outbuf+len, "%d %d", NUMMER(p,i), VSORTE(p,i));
         len += sprintf(outbuf+len, RESOL1, MASSE(p,i));
-#ifdef TWOD
-        len += sprintf(outbuf+len, 
-          RESOL2, ORT(p,i,X), ORT(p,i,Y) );
-#else
-        len += sprintf(outbuf+len, 
-          RESOL3, ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z) );
-#endif
+        len += sprintf(outbuf+len, RESOL3, ORT(p,i,X), ORT(p,i,Y), ORT(p,i,Z) );
 #ifdef UNIAX
         len += sprintf(outbuf+len, 
           RESOL3, ACHSE(p,i,X), ACHSE(p,i,Y), ACHSE(p,i,Z) );
 #endif
-#ifdef TWOD
-        if (ensemble != ENS_CG)
-          len += sprintf(outbuf+len, RESOL2,
-            IMPULS(p,i,X) / MASSE(p,i), 
-            IMPULS(p,i,Y) / MASSE(p,i) );
-#else
         if (ensemble != ENS_CG)
           len += sprintf(outbuf+len, RESOL3,
             IMPULS(p,i,X) / MASSE(p,i), 
             IMPULS(p,i,Y) / MASSE(p,i), 
             IMPULS(p,i,Z) / MASSE(p,i) );
-#endif
 #ifdef UNIAX
         len += sprintf(outbuf+len, RESOL3,
           DREH_IMPULS(p,i,X) / uniax_inert,
@@ -877,22 +830,12 @@ void write_atoms_config(FILE *out)
         len += sprintf(outbuf+len, " %d",  NBANZ(p,i));
 #endif
 #ifdef REFPOS
-#ifdef TWOD
-        len += sprintf(outbuf+len, 
-          RESOL2, REF_POS(p,i,X), REF_POS(p,i,Y));
-#else
         len += sprintf(outbuf+len, 
           RESOL3, REF_POS(p,i,X), REF_POS(p,i,Y), REF_POS(p,i,Z));
 #endif
-#endif
 #ifdef DISLOC
-#ifdef TWOD
-        len += sprintf(outbuf+len, 
-          RESOL2, ORT_REF(p,i,X), ORT_REF(p,i,Y));
-#else
         len += sprintf(outbuf+len, 
           RESOL3, ORT_REF(p,i,X), ORT_REF(p,i,Y), ORT_REF(p,i,Z));
-#endif
         len += sprintf(outbuf+len, RESOL1, EPOT_REF(p,i));
 #endif
 #if defined(EAM2) && !defined(NORHOH)
@@ -972,14 +915,9 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
   fprintf(out, "nfc \t%d\n", nfc);
 #endif
 
-#ifdef TWOD
-  fprintf(out, "box_x \t%.16f %.16f\n", box_x.x, box_x.y);
-  fprintf(out, "box_y \t%.16f %.16f\n", box_y.x, box_y.y);
-#else
   fprintf(out, "box_x \t%.16f %.16f %.16f\n", box_x.x, box_x.y, box_x.z);
   fprintf(out, "box_y \t%.16f %.16f %.16f\n", box_y.x, box_y.y, box_y.z);
   fprintf(out, "box_z \t%.16f %.16f %.16f\n", box_z.x, box_z.y, box_z.z);
-#endif
 
 #if defined(NVT) || defined(NPT) 
   /* if we have temperature control, write external temperature and eta */
@@ -1000,14 +938,9 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
 #endif
 
 #ifdef DAMP
-#ifdef TWOD
-  fprintf(out, "center   \t%f %f\n", center.x,   center.y  );
-  fprintf(out, "stadium  \t%f %f\n", stadium.x,  stadium.y );
-#else
   fprintf(out, "center   \t%f %f %f\n", center.x,   center.y,   center.z  );
   fprintf(out, "stadium  \t%f %f %f\n", stadium.x,  stadium.y,  stadium.z );
   fprintf(out, "stadium2 \t%f %f %f\n", stadium2.x, stadium2.y, stadium2.z);
-#endif
 #endif
 
 #ifdef FTG
@@ -1027,24 +960,14 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
 
 #ifdef FBC
   for(n=0; n<vtypes;n++)
-#ifdef TWOD
-    fprintf(out, "extra_startforce %d %.21g %.21g\n",
-            n, (fbc_forces+n)->x, (fbc_forces+n)->y );
-#else
     fprintf(out, "extra_startforce %d %.21g %.21g %.21g \n",
             n, (fbc_forces+n)->x, (fbc_forces+n)->y, (fbc_forces+n)->z);
-#endif
 #endif
     
 #ifdef BEND
   for(n=0; n<vtypes;n++)
-#ifdef TWOD
-    fprintf(out, "extra_startbforce %d %.21g %.21g\n",
-            n, (fbc_bforces+n)->x, (fbc_bforces+n)->y );
-#else
     fprintf(out, "extra_startbforce %d %.21g %.21g %.21g \n",
             n, (fbc_bforces+n)->x, (fbc_bforces+n)->y, (fbc_bforces+n)->z);
-#endif
 #endif
 
 #ifdef NPT
@@ -1054,15 +977,9 @@ void write_itr_file(int fzhlr, int steps, char *suffix)
     fprintf(out, "xi \t%f\n", xi.x);
   }
   if ((ensemble==ENS_NPT_AXIAL) && (isq_tau_xi>0)) {
-#ifdef TWOD
-    fprintf(out, "pressure_start \t%f %f\n",
-            pressure_ext.x, pressure_ext.y);
-    fprintf(out,"xi \t%f %f\n", xi.x, xi.y);
-#else
     fprintf(out, "pressure_start \t%f %f %f\n",
             pressure_ext.x, pressure_ext.y, pressure_ext.z);
     fprintf(out,"xi \t%f %f %f\n", xi.x, xi.y, xi.z);
-#endif
   }
 #endif /* NPT */
 
@@ -1112,28 +1029,17 @@ void write_avpos_itr_file(int fzhlr, int steps)
 
   /* Take average of box vectors */
   tmp = (real) avpos_res / ( avpos_int + avpos_res );
-#ifdef TWOD
-  fprintf(out,"box_x \t%.16f %.16f\n", av_box_x.x * tmp, av_box_x.y * tmp);
-  fprintf(out,"box_y \t%.16f %.16f\n", av_box_y.x * tmp, av_box_y.y * tmp);
-#else
   fprintf(out, "box_x \t%.16f %.16f %.16f\n",
           av_box_x.x * tmp, av_box_x.y * tmp, av_box_x.z * tmp);
   fprintf(out, "box_y \t%.16f %.16f %.16f\n",
           av_box_y.x * tmp, av_box_y.y * tmp, av_box_y.z * tmp);
   fprintf(out, "box_z \t%.16f %.16f %.16f\n",
           av_box_z.x * tmp, av_box_z.y * tmp, av_box_z.z * tmp);
-#endif
-
 #else 
 
-#ifdef TWOD
-  fprintf(out, "box_x \t%.16f %.16f\n", box_x.x, box_x.y);
-  fprintf(out, "box_y \t%.16f %.16f\n", box_y.x, box_y.y);
-#else
   fprintf(out, "box_x \t%.16f %.16f %.16f\n", box_x.x, box_x.y, box_x.z);
   fprintf(out, "box_y \t%.16f %.16f %.16f\n", box_y.x, box_y.y, box_y.z);
   fprintf(out, "box_z \t%.16f %.16f %.16f\n", box_z.x, box_z.y, box_z.z);
-#endif
 
 #endif
 
