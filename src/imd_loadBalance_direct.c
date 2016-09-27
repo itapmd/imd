@@ -206,7 +206,7 @@ int lb_syncBufferCellAffinity() {
 	MPI_Alloc_mem(8*3*num_cpus * sizeof *allCorners, MPI_INFO_NULL, &allCorners);
 #else
 	corners = malloc(8*3*sizeof *corners);
-	allCallCorners = malloc(8*3*num_cpus * sizeof *allCorners);
+	allCorners = malloc(8*3*num_cpus * sizeof *allCorners);
 #endif
 
 	for (i = 0; i<8; i++){
