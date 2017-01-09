@@ -23,6 +23,11 @@
 #include <papi.h>
 #endif
 
+void imd_write_eng_headers();
+void imd_init_modules();
+void imd_cleanup();
+void imd_print_summary();
+
 /* Main module of the IMD Package;
    Various versions are built by conditional compilation */
 
@@ -155,7 +160,7 @@ int main(int argc, char **argv)
 
 /*****************************************************************************/
 
-void imd_write_eng_headers( void )
+void imd_write_eng_headers()
 {
   if ((imdrestart==0) && (eng_int>0)) write_eng_file_header();
 #ifdef EXTPOT
@@ -168,9 +173,10 @@ void imd_write_eng_headers( void )
           write_ssdef_header();
   }
 #endif
+
 }
 
-void imd_init_modules( void )
+void imd_init_modules()
 {
 
 #ifdef EPITAX
@@ -258,7 +264,7 @@ void imd_init_modules( void )
   
 }
 
-void imd_cleanup( void )
+void imd_cleanup()
 {
 
   /* close open files */
@@ -307,7 +313,7 @@ void imd_cleanup( void )
 
 }
 
-void imd_print_summary( void )
+void imd_print_summary()
 {
 
 #ifdef NBLIST
