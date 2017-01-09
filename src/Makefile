@@ -1096,6 +1096,9 @@ endif
 
 # ADP
 ifneq (,$(strip $(findstring adp,${MAKETARGET})))
+  ifeq (,$(strip $(findstring nbl,${MAKETARGET})))
+    ERROR = "NBL is required for ADP"
+  endif
   ifneq (,$(strip $(findstring kim,${MAKETARGET})))
     ERROR = "KIM is not compatible with ADP force routines"
   endif
