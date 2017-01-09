@@ -103,6 +103,15 @@ void setup_potentials( void )
   init_meam();
 #endif
 
+#ifdef EWALD
+  init_ewald();
+#endif
+
+#ifdef KERMODE
+  ke_tot_rcut = (ke_rcut+yuk_smoothlength); /* kermode total coulomb and dipole cut off */
+  ke_tot_r2cut= SQR(ke_tot_rcut);
+#endif
+  
 #ifdef KIM
   init_kim_info();
 #endif

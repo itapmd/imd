@@ -3119,6 +3119,7 @@ else if (strcasecmp(token,"laser_rescale_mode")==0) {
       ew_r2_cut = SQR(rtmp);
 #ifdef KERMODE
       ke_rcut = rtmp;
+      ke_r2cut=ew_r2_cut;
 #endif
 #ifdef DIPOLE
       dp_self=2./(3.*rtmp*ew_r2_cut*sqrt(2.*M_PI));

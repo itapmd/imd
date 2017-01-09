@@ -113,8 +113,6 @@ void  init_bboost(void)
 } /* end of init_bboost */
 
 
-
-
 /******************************************************************************
 *
 *  do_bb_neightab - compute neighbor table
@@ -176,10 +174,6 @@ void do_bb_neightab(cell *p, cell *q, vektor pbc)
   } /* for i */
 
 }  /* the end of do_bb_neightab */
-
-
-
-
 
 
 /* this is the minimization part of the bond boost method */

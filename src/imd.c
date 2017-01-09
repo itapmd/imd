@@ -30,7 +30,6 @@ int main(int argc, char **argv)
 {
   int start;
   int simulation = 1, finished = 0;
-  real tmp;
 
 #ifdef PAPI
   float rtime, ptime, mflops;
@@ -62,12 +61,6 @@ int main(int argc, char **argv)
   /* read parameters for first simulation phase */
   finished = read_parameters(paramfilename, simulation);
 
-#ifdef KERMODE
-  ke_r2cut=ew_r2_cut;
-  ke_tot_rcut = (ke_rcut+yuk_smoothlength); /* kermode total coulomb and dipole cut off */
-  ke_tot_r2cut= SQR(ke_tot_rcut);
-#endif
-
   /* initialize all potentials */
   setup_potentials();
 
@@ -94,10 +87,10 @@ int main(int argc, char **argv)
   start = steps_min;  /* keep starting step number */
 
   /* write .eng file header */
-  main_write_eng_headers();
+  imd_write_eng_headers();
   
   /* initialize modules */
-  main_init_modules();
+  imd_init_modules();
 
 #ifdef PAPI
   PAPI_flops(&rtime,&ptime,&flpins,&mflops);
@@ -133,8 +126,6 @@ int main(int argc, char **argv)
   /* write execution time summary */
   if ((0 == myid) && (0 == myrank)){
 
-    main_cleanup();
-    
     time(&tend);
     steps_max -= start;
     if (steps_max < 0)
@@ -149,19 +140,22 @@ int main(int argc, char **argv)
     printf("Achieved %f megaflops per CPU\n\n", mflops);
 #endif
     
-    main_print_summary();
+    imd_print_summary();
   }
+
+  imd_cleanup();
 
   /* kill MPI */
 #if defined(MPI) || defined(NEB)
   shutdown_mpi();
 #endif
 
-  /* Modified by F.P.:  We return, we don't exit :-) */
   return 0;
 }
 
-void main_write_eng_headers( void )
+/*****************************************************************************/
+
+void imd_write_eng_headers( void )
 {
   if ((imdrestart==0) && (eng_int>0)) write_eng_file_header();
 #ifdef EXTPOT
@@ -176,7 +170,7 @@ void main_write_eng_headers( void )
 #endif
 }
 
-void main_init_modules( void )
+void imd_init_modules( void )
 {
 
 #ifdef EPITAX
@@ -185,10 +179,6 @@ void main_init_modules( void )
   epitax_number = epitax_sub_n;
   epitax_level  = substrate_level();
   check_boxheight();
-#endif
-
-#ifdef EWALD
-  init_ewald();
 #endif
 
 #ifdef REFPOS
@@ -268,22 +258,22 @@ void main_init_modules( void )
   
 }
 
-void main_cleanup( void )
+void imd_cleanup( void )
 {
 
   /* close open files */
-  if (NULL!= eng_file) fclose( eng_file);
+  if (NULL!= eng_file) fclose(eng_file);
 
 #ifdef EXTPOT
-  if (NULL!= ind_file) fclose( ind_file);
+  if (NULL!= ind_file) fclose(ind_file);
 #endif
 
 #ifdef LOADBALANCE
-    if (NULL!= lblog_file) fclose(lblog_file);
+  if (NULL!= lblog_file) fclose(lblog_file);
 #endif
   
 #ifdef RELAX
-  if (NULL!= ssdef_file) fclose( ssdef_file);
+  if (NULL!= ssdef_file) fclose(ssdef_file);
 #endif
 
   if (NULL!=msqd_file) fclose(msqd_file);
@@ -317,7 +307,7 @@ void main_cleanup( void )
 
 }
 
-void main_print_summary( void )
+void imd_print_summary( void )
 {
 
 #ifdef NBLIST
@@ -326,29 +316,25 @@ void main_print_summary( void )
 #endif
 
 #ifdef EPITAX
-    if (0 == myid) printf("EPITAX: %d atoms created.\n", nepitax);
+  printf("EPITAX: %d atoms created.\n", nepitax);
 #endif
     
 #ifdef NEB
   real Emax=-999999;
   real Emin=999999;
   int maxi=0;
-  if (myrank==0)
-    {
-      printf ("NEB:\n # Image Epot\n");
-      for(i=0;i<neb_nrep;i++)
-    {
+
+  printf ("NEB:\n # Image Epot\n");
+  for(i=0;i<neb_nrep;i++){
       if ( neb_epot_im[i] < Emin)
-        Emin=neb_epot_im[i];
-      if ( neb_epot_im[i] > Emax)
-        {
+          Emin=neb_epot_im[i];
+      if ( neb_epot_im[i] > Emax){
           maxi=i;
           Emax=neb_epot_im[i];
-        }
+      }
       printf(" %d %lf\n",i, neb_epot_im[i]);
-    }
-      printf ("Saddlepoint: %d Activation Energy: %lf \n",maxi,Emax-Emin);
-    }
+  }
+  printf ("Saddlepoint: %d Activation Energy: %lf \n",maxi,Emax-Emin);
 #endif
   
   int num_threads = 1;
