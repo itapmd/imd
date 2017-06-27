@@ -1,0 +1,53 @@
+====== Coulomb Potentials for Ionic Solids ======
+
+Due to their long range nature, Coulomb potentials require a special treatment. They are enabled with the compilation option **ewald**, which refers to the fact that the current implementation uses the **Ewald summation technique**. Coulomb potentials can be combined with many other potentials. In particular, an additional short range [[guide_interactions:pair_potentials|two-body potential]] can be enabled with the compilation option **pair**. In order to allow for polarizability of the atoms, the [[ewald.html#shell|shell model]] is often used together with Coulomb potentials. The shell model is activated with the option **shell**.
+
+Due to the Ewald summation technique, only three dimensional systems with periodic boundary conditions in all directions are supported, and the implementation is currently not parallelized.
+
+The following form of the Ewald sum for a system of //N// charged atoms is implemented:
+
+\begin{eqnarray}
+E &=& \frac{1}{2}\sum_{i,j=1}^N\sideset{}{'}\sum_{\left|\mathbf{n}\right|=0}^{\infty} \frac{q_i q_j}{4\pi\epsilon_0} \frac{\mathrm{erfc}(\kappa\left|\mathbf{r}_{ij}+\mathbf{n}\right|)}{\left|\mathbf{r}_{ij}+\mathbf{n}\right|} \\
+  &+& \sum_{i,j=1}^N\frac{2\pi}{V}\frac{q_i q_j}{4\pi\epsilon_0}\sum_{\mathbf{k}\neq 0}\frac{\exp(-k^2/4\kappa^2)}{k^2}\cos(\mathbf{k}\cdot\mathbf{r}_{ij}) \\
+  &-& \frac{\kappa}{\sqrt{\pi}}\sum_{i=1}^N\frac{q_i^2}{4\pi\epsilon_0}
+\end{eqnarray}
+
+Here, $q_i$ is the charge of atom //i//, $\mathbf{r}_{ij}$ is the distance vector between atoms //i// and //j//, $\mathbf{n}$ are linear combinations of the box vectors, and the prime means that //i=j// is excluded if $\mathbf{n}=\mathbf{0}$. $\kappa$ is a real parameter and $\mathrm{erfc}(x)$ is the complementary error function. The sum over **k** extends over linear combinations of the reciprocal vectors of the simulation box.
+
+Coulomb potentials can be combined with many other potentials. In particular, an additional short range [[guide_interactions:pair_potentials|two-body potential]] can be enabled with the compilation option **pair**.
+
+For the Ewald sum, the following **parameters** have to be specified in the [[params.html#ewald|parameter file]]. The parameter ''%%charge%%'' specifies the charges of all atom types (all on one line). The value of $\kappa$ is given with the parameter ''%%ew_kappa%%''. In the k-space sum, all k-vectors within a ball of radius ''%%ew_kcut%%'' are included. The parameter ''%%ew_nmax%%'', whose value is an integer, determines the number of image simulation boxes taken into account in computing the real space sum. The same number of boxes is included in all three directions. If ''%%ew_nmax%%'' is zero, the usual minimum image convention is applied. For large systems, the desired real space cutoff is often smaller than the simulation box. In this case, one can specify a negative value of ''%%ew_nmax%%'', which has a special meaning: the real space sum then is evaluated together with the other pair interactions, up to a cutoff radius ''%%ew_rcut%%'', which applies to all pairs of atom types, and which must not be larger than the simulation box.
+
+**Note:** The current implementation assumes that energies are measured in electron volt, lengths in Angstrom, and charges in units of the elementary charge. Unlike for other interactions, it is not possible to chose a system of units.
+
+====== The Shell Model ======
+
+The shell model of Dick and Overhauser (Phys. Rev. **112**, 90 (1958)) is often used to add polarizability to the atoms of a Coulombic system. For this purpose, an atom is split into two parts, a charged ionic core, and a massless, charged shell around the core. By displacing the shell with respect to the core, the atom is polarized. Shells and cores are treated as separate particles. They all interact with [[ewald.html|Coulomb interactions]]. In addition to that, nearby shells interact with a short range [[pairpot.html|pair potential]], usually of the form of a [[pairpot.html#buck|Buckingham potential]], and a harmonic potential (with minimum at distance zero) acts against the displacement of the core and its associated shell. If used together with the option [[ewald.html|ewald]], these short range pair potentials have to be enabled with the compilation option **pair**.
+
+The shell is assumed massless, because the (fast moving) electrons are expected to be always in their instantaneous ground state. This poses a problem in treating the shells as normal particles. In principle, the shell positions would have to be fully relaxed at each time step, which is very expensive. A way out is to assign a very small mass to the shells, so that they move much faster than the ionic cores. This requires, however, a correspondingly small time step.
+
+The harmonic potential of the shell model is specified by the parameter ''%%spring_const%%'', which requires ''%%ntypes*(ntypes-1)/2%%'' values (only particles of different types (shells and cores) can interact with this potential). For type combinations which do not correspond to cores and the associated shells, the spring constant must be zero. The parameter specifying the cutoff radius, ''%%r_cut%%'', is shared with the other [[pairpot.html#analyt|analytically defined]] pair potentials. This is no restriction, since shells and cores are expected to interact only with the harmonic potential. Similarly, the parameters ''%%r_begin%%'' and ''%%pot_res%%'' are shared with the [[pairpot.html#analyt|analytically defined]] pair potentials. ''%%r_begin%%'' specifies the starting value in the potential table (which must be zero for type combinations interacting with the harmonic potential), and ''%%pot_res%%'' specifies the number of tabulated values of the potential table.
+
+====== Tangney-Scandolo Potential ======
+
+Units used in Tangney-Scandolo potential compared to IMD set eV, Å, amu
+
+^Parameter     ^SI Unit       ^Tangney-Scandolo          ^IMD ^
+|Electrostatic force constant ew_eps |1/(4πε<sub>0</sub>) |k<sub>e</sub>=1 |k<sub>e</sub>=14.4 |
+|charge |Coulomb |e |1 e |
+|dipole |C·m |e·a<sub>0</sub> |0.529177 e·Å |
+|Polarisability dp_alpha |C·m<sup>2</sup>·V<sup>-1</sup> = A<sup>2</sup>·s<sup>4</sup>·kg<sup>-1</sup> |a<sub>0</sub><sup>3</sup>/k<sub>e</sub> |0.010291 Å<sup>3</sup>/k<sub>e</sub> |
+|dp_b |(Distance)<sup>-1</sup> |a<sub>0</sub><sup>-1</sup> |1.889727 Å<sup>-1</sup> |
+|dp_c |1/(4πε<sub>0</sub>) |k<sub>e</sub>=1 |k<sub>e</sub>=14.4 |
+|Field |V/m |a<sub>0</sub><sup>-2</sup> |51,4233 Å<sup>-2</sup> |
+
+====== Dipolar Interactions ======
+
+Implements a variety of the Tangney-Scandolo polarizable oxygen potential (Brommer et al., [[http://link.aip.org/link/?JCP/132/194109|J. Chem. Phys. **132**, 194109 (2010)]]). Long-range components treated by Wolf summation.
+
+The parameters for dipolar interactions are:\\
+''%%dp_alpha%%'': polarizability, parameter in the short-range part of a dipole\\
+''%%dp_b%%'' and ''%%dp_c%%'': parameters in the short-range part of a dipole. In contrast to ''%%dp_alpha%%'' which depends only on particle //i//, they also depend on particle //j//, i.e. $b_{ij}$ and $c_{ij}$ vs. $\alpha_{i}$.\\
+''%%dp_mix%%'': parameter for mixing the induced electric field with fields from previous timesteps (For details see J. Chem. Phys. **132** (2010) 194109, eq. 19: (1-c) = dp_mix).\\
+''%%dp_tol%%'': convergence criterion for self-consistent dipole determination. If the computation is terminated if the deviation ''%%dp_sum%%'' to the previous step is below ''%%dp_tol%%''.
+

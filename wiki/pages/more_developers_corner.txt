@@ -1,0 +1,33 @@
+====== Developer's Corner ======
+
+Here we give some hints on how to extend IMD. In particular, we list some common pitfalls that are to be avoided.
+
+Introducing new parameters
+
+Before a new parameter can be used, it must be
+
+declared and initialized to default value (in file globals.h)
+read into IMD (routine getparamfile() in file imd_param.c)
+possibly checked for nonsense values (routine check_parameters_complete() in file imd_param.c)
+broadcast to the other CPUs (routine broadcast_params() in file imd_param.c)
+Extending the particle data structure
+
+Each particle in IMD carries a number of data items with it. If a is particle moved to a different cell, or even a different CPU, these data must be moved as well. They always remain with the particle.
+
+In order to extend the particle data structure, the following must be done:
+
+the declaration of the type cell must be extended with the new data item (in file types.h)
+the allocation routine alloc_cell() for the particle data must be extended (file imd_alloc.c)
+in order that the particle data move together with the particle from one cell to another cell within the same CPU, the routine move_atom() in file imd_alloc.c must be extended
+in order that the particle data move together with the particle from one CPU to another CPU, the routines copy_one_atom() und process_buffer() in file imd_mpi_util.c must be extended. These routines pack/unpack selected atoms with their data into/from a communications buffer.
+If the force computation requires further data besides the atom types and positions (like the direction of a non-pointlike particle), these must be sent to the buffer cells. For this purpose, the routines copy_cell, pack_cell and unpack_cell in files imd_comm_force_2d.c and imd_comm_force_3d.c must be extended. These routines move the atom data needed for the force computation from cells to communication buffers, from communication buffers to buffer cells, or directly from cells to buffer cells, if these are on the same CPU. The size of the communication buffers computed in setup_buffers() in file imd_mpi_util.c must be adjusted.
+If AR is defined, the forces in the buffer cells must be added to the forces in the corresponding original cells. Besides the usual forces, this concerns also generalized forces like momenta in the case of non-isotropic molecules, and all quantities that are computed in do_forces and depend on a particle and its neighbors, like, e.g., the stress tensor. These properties are added back to the original cells with the routines add_forces, pack_forces, and unpack_forces in files imd_comm_force_2d.c and imd_comm_force_3d.c, which must be extended. In order to avoid this complication, one can switch to the non-AR case by undefining the preprocessor symbol AR in config.h. The size of the communication buffers as computed in setup_buffers() in file imd_mpi_util.c must be adjusted.
+Examples for such extensions of the particle data structure can be found by looking for the preprocessor flags REFPOS or DISLOC in the files mentioned.
+
+Naming conventions for files
+
+Source files are all named with lower case letters
+Dimension specific files have the dimension in their name (e.g. imd_geom_2d.c)
+Names for architecture specific files contain the architecture in their name (e.g. imd_main_risc.c, imd_main_mpi.c)
+Non-source files in the source directory begin with a capital letter (e.g. Makefile, README, INSTALL)
+Documentation should be written, in English and in HTML.

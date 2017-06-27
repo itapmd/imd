@@ -1,0 +1,29 @@
+~~NOTOC~~
+====== Downloading IMD ======
+----
+//IMD// is released under the GNU General Public Licence Version 2. 
+By downloading the source code you agree to the conditions of that [[License|license]].
+
+<html>
+  <div style="
+    background: none repeat scroll 0 0 #8799A9;
+    border-radius: 2em 2em 2em 2em;
+    float: none;
+    margin-bottom: 5px;
+    position: relative;
+    text-align: center;
+    top: 6px;
+    width: 20em;
+    margin-left:auto;
+    margin-right:auto;">
+    <a title="Download" href="https://github.com/itapmd/imd/archive/master.zip" style="font-size:20pt;color:white;">Download</a>
+  </div>
+</html>
+
+=== Anonymous git access (read-only) ===
+
+You can download the current version via anonymous git access at [[https://github.com/itapmd/imd]] with
+
+=== git clone git://github.com/itapmd/imd ===
+
+If you want to send us your changes, you can send as a pull request on github.

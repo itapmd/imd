@@ -1,0 +1,14 @@
+====== General Remarks ======
+
+Here we describe some general features of //IMD//.
+
+===== Virtual types =====
+
+It is sometimes necessary to distinguish between certain classes of particles, even if their chemical species und thus their interaction is the same. For this purpose, the notion of virtual types is used. Particles in //IMD// can have virtual types running from 0 to ''total_types''-1, where ''total_types'' is a parameter. The number of real types can run from 0 to ''ntypes''-1, where the parameter ''ntypes'' is a divisor of ''total_types''. Particles whose virtuals type differ by a multiple of ''ntypes'' have the same interaction.
+
+===== Restricted mobility =====
+
+One application of virtual types is the restriction of the mobility of certain particles. For each virtual type v, a restriction vector can be read from the paramter file, with components 0 or 1. Particles of type v will be mobile only in those directions for which the restriction vector has value 1. Default is mobility in all directions. Example:
+
+<code>restrictionvector  2  1 1 0</code>
+restricts the mobility of particles of type 2 to the xy-plane. Note that the parameter ''total_types'' must be read before any restriction vectors.

@@ -1,0 +1,8 @@
+====== ADP Potentials (option adp) ======
+
+ADP potentials are an extension of the scalar embedding energy of ordinary EAM potentials by a vector (dipole) and tensor (quadrupole) part. In principle they are equivalent to MEAM potentials but should work much better. ADP potentials have been invented by Mishin et al. For references see Acta Mat **53** (2005) 4029, and Acta Mat **54** (2006) 5013.
+
+The new parameters are called ''%%adp_upotfile%%'' for the dipole part and ''%%adp_wpotfile%%'' for the quadrupole part. The tabellation works as for the EAM potentials.
+
+The ADP potentials have been implemented by Franz Gähler.
+

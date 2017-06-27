@@ -1,0 +1,89 @@
+====== MEAM Potentials (option meam) ======
+
+The Modified Embedded Atom Method was formulated by Baskes (M.I.Baskes, //Phys.Rev.//B **46** (1992) 2727, M.I.Baskes, //Mater.Chem.Phys.// **50** (1997) 152). It consists of a generalization of the EAM potentials by including angular terms.
+
+The total energy for the MEAM potentials have a form similar to the EAM potentials:
+
+$$E = \sum_i \left[ F_i(\rho_i) + \frac{1}{2} \sum_{j\neq i} S_{ij}\phi_{ij}(r_{ij})\right]$$
+
+Here $F_i$ is the embedding energy function, $\rho_i$ is the electron density at the position of atom //i//, $\phi_{ij}$ is a pair potential, and $S_{ij}$ is the screening function defined below.
+
+For MEAM potentials, the electron density is given by
+
+$$\rho_i = \frac{2\rho_i^{(0)}}{1+\exp\left[ -\sum_{s=1}^3 t_i^{(s)}\left(\rho_i^{(s)}/\rho_i^{(0)}\right)^2\right]}$$
+
+where the parameters $t_i^{(s)}$ are weight factors and the quantities $\rho_i^{(s)}$, //s//=0,...,3, are partial electron densities defined by
+
+$$\left(\rho_i^{(s)}\right)^2 = \sum_{j,k\neq i} \rho_j^{a(s)}(r_{ij})\rho_k^{a(s)}(r_{ik})L^{(s)}(\cos\theta_{jik})$$
+
+The functions $L^{(s)}(z)$ are Legendre polynomials, $L^{(0)}(z)=1$, $L^{(1)}(z)=z$, $L^{(2)}(z)=z^2 -1/3$, $L^{(3)}(z)=z^3-3/5z$. The atomic electron density functions from atom //j// at a distance $r_{ij}$ from atom //i// are
+
+$$\rho_j^{a(s)}(r_{ij}) = S_{ij} f_c(r_{ij})f_j^0 e^{-\beta_j^{(s)}(r_{ij}/r_j^0 -1)}$$
+
+Here, $f_i^0$, $r_i^0$, and \beta_i^{(s)} are parameters, $f_c$ is a cutoff function, and $S_{ij}$ is the screening function.
+
+The many-body screening function $S_{ij}$ between atoms //i// and //j// is defined as the product of the screening factors $S_{kij}$ due to all other neighbour atoms //k// of //i// and //j//,
+
+$$S_{ij} = \prod_{k\neq i,j} S_{kij}$$
+
+$S_{kij}$ is given by
+
+$$S_{kij} = g_c\left( \frac{C_{kij} - C_{kij}^0}{C_{kij}^1 - C_{kij}^0} \right)$$
+
+$$C_{kij} = \frac{2(X_{ik}+X_{jk})-(X_{ik}-X_{jk})^2 - 1}{1 - (X_{ik}-X_{jk})^2}$$
+
+$$X_{ik} = (r_{ik}/r_{jk})^2, \quad X_{jk} = (r_{jk}/r_{ij})^2$$
+
+where $C_{kij}^1$ and $C_{kij}^0$ are parameters and the function $g_c$ is defined as
+
+\begin{equation}
+   g_c(x) =
+   \begin{cases}
+     1 & x \ge 1 \\
+     \left[ 1-(1-x)^4 \right]^2 & 0 < x < 1 \\
+     0 & x \leq 0 
+   \end{cases}
+\end{equation}
+
+The cutoff function $f_c$ used in the atomic electron density functions is given by
+
+$$f_c(r_{ij}) = g_c\left( \frac{r_{ij}^c - r_{ij}}{\Delta r_{ij}} \right)$$
+
+where $r_{ij}^c$ is a cutoff length and $\Delta r_{ij}$ is the width of the cutoff region.
+
+The indices of the parameters refer to the atom types involved. The following IMD parameters correspond to the MEAM potential parameters:
+
+|''%%meam_cmin            %%''                         |$C_{kij}^0$   |
+|''%%meam_cmax        %%''                             |$C_{kij}^1$   |
+|''%%meam_t1      %%''                                 |$t_{i}^{(1)}$ |
+|''%%meam_t2      %%''                                 |$t_{i}^{(2)}$ |
+|''%%meam_t3      %%''                                 |$t_{i}^{(3)}$ |
+|''%%meam_f0      %%''                                 |$f_{i}^{0}$   |
+|''%%meam_r0      %%''                                 |$r_{i}^{0}$   |
+|''%%meam_beta0       %%''                             |$\beta_{i}^{(0)}$|
+|''%%meam_beta1       %%''                             |$\beta_{i}^{(1)}$|
+|''%%meam_beta2       %%''                             |$\beta_{i}^{(2)}$|
+|''%%meam_beta3       %%''                             |$\beta_{i}^{(3)}$|
+|''%%meam_deltar                                   %%''|$\Delta r_{ij}$ |
+|''%%meam_rcut        %%''                             |$r_{ij}^c$    |
+
+The pair potential $\phi_{ij}$ has to be given as a potential table. The corresponding IMD parameter is ''%%core_potential_file%%''.
+
+The embedding energy function $F_i$ can be read in as a potential table using the IMD parameter ''%%embedding_energy_file%%''. Alternatively, IMD computes the embedding energy analytically according to
+
+$$F_i(\rho) = A_i E_{ci}\frac{\rho}{\rho_i^0}\ln\frac{\rho}{\rho_i^0}$$
+
+In this case, the parameters have to be specified using the following IMD parameters:
+
+|''%%meam_a           %%''    |$A_i$     |
+|''%%meam_e           %%''    |$E_{ci}$  |
+|''%%meam_rho0        %%''    |$\rho_i^0$ |
+
+The atomic electron density functions $\rho^{a(s)}_{i}(r)$ are computed analytically. The function $\rho^{a(0)}_{i}(r)$, however, can be read in as a potential table using the IMD parameter ''%%el_density_file%%''.
+
+The many-body interactions of the MEAM potential are computed using neighbour tables. In constrast to the covalent potentials the IMD parameter ''%%neigh_len%%'' has the default value 12.
+
+If more than one atom type are used, common values of the parameters ''%%meam_cmin%%'' and ''%%meam_cmax%%'' for all atom types can be chosen by specifying only one value for each parameter.
+
+The screening function $S_{ij}$ can be switched off (that is, set to unity) by choosing the parameters ''%%meam_cmin%%'' and ''%%meam_cmax%%'' to be equal.
+

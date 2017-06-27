@@ -1,0 +1,59 @@
+====== Output Files ======
+
+===== Checkpoints =====
+
+IMD writes checkpoints in step intervals given by the parameter ''%%checkpt_int%%''. A checkpoint is a complete [[config.html|configuration file]], whose name has the form ''%%<outfiles>.<n>.chkpt%%'', where ''%%<n>%%'' is a running number. Together with every checkpoint file, an iteration file ''%%<outfiles>.<n>.itr%%'' is written, which contains the current values of certain parameters, such as the current stepnumber, box size, external temperature and external pressure. A simulation can be [[usage.html|restarted]] from every checkpoint. If ''%%checkpt_int%%'' is zero, no checkpoints are written. A [[header.html|header]] is prepended to the checkpoint file. Each header line begins with a ''%%#%%'' so that IMD or gnuplot will not have any problems reading such files. In the case of more than one processor and ''%%parallel_output%%'' is one the header is written to the separate file ''%%<outfiles>.<n>.head%%''. A single file can be generated with ''%%catfiles.sh%%'' or ''%%catfiles.csh%%'' from the [[utilities.html|utilities]].
+
+===== Properties File =====
+
+In intervals of ''%%eng_int%%'' steps, IMD writes certain properties to a file ''%%<outfiles>.eng%%'', one line each time. The properties written are, in this order, the current simulation time, the potential energy per atom, the kinetic energy per atom (which is normalized such that it is identical to the actual system temperature), the pressure and the volume. If the simulation ensemble is npt_axial, and the preprocessor flag PAXTEST is set, this is followed by the axial pressures and box dimensions.
+
+===== Distributions =====
+
+IMD can be directed to write out distributions of several quantities. To compute the distribution of the kinetic energy, say, the system (or part of it) is divided into an array of rectangular boxes, called bins. For each such bin, the average value of the kinetic energy of the atoms it contains is computed. The whole array of values for all bins constitutes the distribution, and is written to a file. For other quantities, one proceeds analogously. The writing of the distributions of all supported quantities is controlled by the following common parameters:
+
+|dist_int|interval for distribution writing|
+|dist_dim|dimensions of distribution array |
+|dist_ll |lower left corner in user coords |
+|dist_ur |upper right corner in user coords|
+
+Distributions are written every ''%%dist_int%%'' timestep, they have dimensions ''%%dist_dim%%'', and only atoms within a rectangular box between the lower left corner ''%%dist_ll%%'' and the upper right corner ''%%dist_ur%%'' are considered. If the latter two parameters are missing, the default is to take the whole system, but this works only for rectangular simulation boxes. It is stronly recommended to always specify these parameters.
+
+In addition to these parameters, the writing of the distribution of each supported quantity can individually be switched on and off with a flag, which also specifies the format in which the distribution is written. If the flag is 0, the distribution is not written (default). If the flag is 1, the distribution is written in binary floats, which is the recommended format. A flag value of 2 means writing the distribution in ASCII with bin coordinates, and 3 in ASCII without bin coordinates.
+
+Currently, distributions of the following quantities are are supported:
+
+^Flag name            ^Quantity                                                   ^
+|dist_Epot_flag       |potential energy                                           |
+|dist_Ekin_flag       |kinetic energy                                             |
+|dist_presstens_flag  |pressure tensor (option stress, all components in one file)|
+|dist_Ekin_long_flag  |longitudinal kinetic energy (shock wave simulation)        |
+|dist_Ekin_trans_flag |transversal kinetic energy (shock wave simulation)         |
+|dist_Ekin_comp_flag  |transversal kinetic energy difference between              |
+|                     |transverse directions for anisotropic samples              |
+|                     |(shock wave simulation)                                    |
+|dist_press_flag      |scalar pressure (requires option stress)                   |
+|dist_pressoff_flag   |off-diagonal entries of the pressure tensor (shock         |
+|                     |wave simulation)                                           |
+|dist_shock_shear_flag|shear stress (shock wave simulation)                       |
+|dist_shear_aniso_flag|shear stress difference between transverse directions      |
+|                     |for anisotopic samples (shock wave simulation)             |
+|dist_dens_flag       |local density (shock wave simulation)                      |
+|dist_vxavg_flag      |local sample velocity                                      |
+
+===== Writing Selected Atoms =====
+
+The option ''%%disloc%%'' allows to selectively write certain particles to special files. These files are useful to see dislocations.
+
+A differential energy map (DEM) file consists of all particles for which the difference of the potential energy and a (particle specific) [[options.html#disloc|reference potential energy]] exceeds a certain threshold ''%%min_dpot%%''. These particles are written the file ''%%<outfile>.dem.<n>%%'' containing lines of the form
+
+<code>
+     type x y z dE_pot.
+</code>
+A displacement map (DSP) file shows the displacement of each atom in relation to a reference configuration. Every ''%%dsp_int%%''<sup>th</sup> step the atoms are written to a file ''%%<outfile>.dsp.<n>%%'', containing lines of the form
+
+<code>
+     type x y z dx dy dz.
+</code>
+where ''%%dx%%'', ''%%dy%%'' and ''%%dz%%'' denote the displacement. At the step ''%%update_ort_ref%%'' (default 0), the current configuration is copied into the reference configuration. This overwrites the reference configuration read from the reference file, which can be avoided if ''%%update_ort_ref%%'' is set to a negative value. In any case, a reference file is always read. It must be specified in the parameter ''%%reffile%%''. Each line of the reference file must describe the same atom as the corresponding line in the configuration file. This is checked using the atom number.
+

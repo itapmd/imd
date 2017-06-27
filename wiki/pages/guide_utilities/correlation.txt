@@ -1,0 +1,45 @@
+====== Correlation Function Tools ======
+
+The following utility programs deal with correlation functions:
+
+|[[#imd2nc.py|imd2nc.py]]|convert ''%%.nmoldyn%%'' file to netCDF format           |
+|[[#dynsf|dynsf]]        |compute dynamical structure factor from ''%%.dsf%%'' file|
+
+===== imd2nc.py =====
+
+This program converts a ''%%.moldyn%%'' trajectory file to the netCDF format required by [[http://dirac.cnrs-orleans.fr/nMOLDYN/|nMoldyn]].
+
+<code>
+Usage: imd2nc.py <types> <trajectory>
+
+   <types>:       comma-separated list of chemical symbols
+
+   <trajectory>:  IMD trajectory file (*.nmoldyn)
+
+Example:  imd2nc.py Al,Ni trajectory.nmoldyn
+</code>
+imd2nc.py is a python program, and requires a number of further packages, all of which are also required for nMoldyn. We refer to the installation instructions of nMoldyn and [[http://dirac.cnrs-orleans.fr/MMTK/index.html|MMTK]], on which nMoldyn is based. In particular, for each atom type a file with the coherent and incoherent scattering lengths (along with other data) must be installed in the directory ''%%$HOME/.mmtk/Database/Atoms/%%''.
+
+===== dynsf =====
+
+Computes the coherent part of the dynamical structure factor from an IMD ''%%.dsf%%'' file (see option dsf).
+
+<code>
+   Usage: dynsf [options] <file.dsf>
+
+   Compute dynamical structure factor.
+
+   Options:  -w <width> Frequency smoothing width (FWHM)
+             -i <int>   Frequency writing interval
+             -c <cut>   Frequency cutoff
+             -e         Frequency and width in meV (default THz)
+             -s         Separate reords by two emtpy lines
+             -h         This help
+</code>
+For each k-point series ''%%i%%'', a separat file ''%%*.i.plot%%'' is produced, which can the be plotted with gnuplot. Each line is of the form
+
+<code>
+   frequency  k-value  dsf
+</code>
+Blocks with different frequencies are separated by one or two empty lines. The latter is useful if single curves at fixed k-value along the frequency direction shall be plotted. Note that a smooting value in frequency direction must be specified, which should not be too small (depending on the length of the time series), for otherwise artefacts will show up.
+

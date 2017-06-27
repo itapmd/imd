@@ -1,0 +1,133 @@
+====== Distribution File Tools ======
+
+The following utility programs deal with [[output.html#distributions|IMD distribution files]]:
+
+|[[#dist2volume|dist2volume]]  |convert distribution to volume file             |
+|[[#dist2ppm|dist2ppm]]        |convert 2D distribution to PPM file             |
+|[[#dist2ascii|dist2ascii]]    |convert binary distribution file to ASCII format|
+|[[#dist2hist|dist2hist]]      |compute histogram of a distribution             |
+|[[#dist_extract|dist_extract]]|extract one data slot from a distribution       |
+|[[#atdist|atdist]]            |analyse and convert atoms distributions         |
+|[[#diffpat|diffpat]]          |analyse and convert diffraction patterns        |
+
+===== dist2volume =====
+
+Converts IMD [[output.html#distributions|distribution files]] to volume data files in various formats. Also movies can be created.
+
+<code>
+   Compilation: gmake dist2volume
+
+   Usage: dist2volume [options] <infilebase> <suffix> 
+
+   Options:  -l <llx> <lly> <llz>  lower left  corner
+             -u <urx> <ury> <urz>  upper right corner
+             -i <min> <max>        data cutuff interval
+             -f <min> <max>        range of time steps
+             -v <speed>            speed (seconds/frame)
+             -s <int>              time step interval
+             -t uv8|uv12|rvf|xvf   output format
+             -n <n>                index of data slot
+             -h                    this help
+</code>
+Currently supported output formats are ''%%uv8%%'' and ''%%uv12%%'' (8 and 12 bit per voxel, respectively) for the [[http://www.hpl.hp.com/ultravis|UltraVis renderer]], and the ''%%rvf%%'' and ''%%xvf%%'' formats for the [[http://www.hlrs.de/organization/vis/people/schulze/virvo|Virvo renderer]].
+
+===== dist2ppm =====
+
+Converts a two-dimensional IMD [[output.html#distributions|distribution file]] to color PPM format.
+
+<code>
+   Compilation: gmake dist2ppm
+
+   Usage: dist2ppm [options] <infile>
+
+   Options:  -l <llx> <lly>   lower left  corner
+             -u <urx> <ury>   upper right corner
+             -i <min> <max>   data cutuff interval
+             -n <n>           index of data slot
+             -h               this help
+</code>
+===== dist2ascii =====
+
+Writes a binary IMD [[output.html#distributions|distribution file]] in ASCII format to standard output, for easier inspection.
+
+<code>
+   Compilation: gmake dist2ascii
+
+   Usage: dist2ascii <infile>
+</code>
+===== dist2hist =====
+
+Writes a histogram of the selected data slot ''%%n%%'' in an IMD [[output.html#distributions|distribution file]] to standard output.
+
+<code>
+   Compilation: gmake dist2hist
+
+   Usage: dist2hist <infile> <n>
+</code>
+===== dist_extract =====
+
+Extracts the distribution of data slot ''%%n%%'' of an IMD [[output.html#distributions|distribution file]] into a separate distribution file. The file extension is chosen according to the file contents.
+
+<code>
+   Compilation: gmake dist_extract
+
+   Usage: dist_extract <infile> <n>
+</code>
+===== sample2dist =====
+
+Computes the distribution of the potential and the kinetic energy from an IMD [[output.html#configuration|checkpoint]].
+
+<code>
+   Compilation: gmake sample2dist
+
+   Usage: sample2dist <dimx> <dimy> <dimz> <chkpt-file> [--normalize]
+</code>
+dimx, dimy, and dimz are the dimensions of the distribution to be computed. If the flag --normalize is used, the distribution of the energy per atom is written, otherwise the distribution of the total energy. sample2dist creates two distribution files, ''%%<chkpt-file>.pot.dist%%'' and ''%%<chkpt-file>.kin.dist%%''.
+
+===== atdist =====
+
+atdist is a utility program to analyse/convert atoms distribution files.
+
+For 2D distributions,
+
+<code>
+    atdist file
+</code>
+writes a pgm file for each atom type if there are more than tree atoms types, and a ppm file otherwise. The atoms types are then encoded in red, green, and blue.
+
+For 3D distributions,
+
+<code>
+    atdist file
+</code>
+projects the distribution onto the three axis, and writes these 1D histograms to the terminal. This helps to find out where the dense planes in the distribution are.
+
+<code>
+    atdist file dir min max
+</code>
+adds the slices from ''%%min%%'' to ''%%max%%'' perpendicular to ''%%dir%%'', and writes a pgm file for each atom type if there are more than tree atoms types, and a ppm file otherwise. The atoms types are then encoded in red, green, and blue.
+
+<code>
+    atdist file xmin ymin zmin xmax ymax zmax
+</code>
+cuts a rectangular block from the volume and writes it in virvo xvf (RGBA) format. This mode works only with up to three atoms types, which are encoded in red, green, and blue.
+
+===== diffpat =====
+
+diffpat is a utility program to analyse/convert 3D diffraction patterns.
+
+<code>
+    diffpat file 
+</code>
+projects the diffraction pattern onto the three axis, and writes these 1D histograms to the terminal. This helps to find out where the dense planes are.
+
+<code>
+    diffpat [-v] [-c fmax] [-l dyn] file dir min max
+</code>
+adds the slices ''%%min..max-1%%'' perpendicular to ''%%dir%%'', and writes a pgm file, or a virvo file if option ''%%-v%%'' is given. If ''%%fmax%%'' is given, the intensity is cut at ''%%fmax%%''. By default, the intensities are mapped linearly to the gray values. If the option ''%%-l%%'' is given, the intensities are mapped logarithmically to the gray values, and intensities more than a factor ''%%dyn%%'' smaller than the maximum are set to zero.
+
+<code>
+    diffpat [-c fmax] [-l dyn] file xmin ymin zmin xmax ymax zmax
+</code>
+cuts a rectangular block from the volume and writes it in virvo xvf format. If ''%%fmax%%'' is given, the intensity is cut at ''%%fmax%%''. By default, the intensities are mapped linearly to the gray values. If the option ''%%-l%%'' is given, the intensities are mapped logarithmically to the gray values, and intensities more than a factor ''%%dyn%%'' smaller than the maximum are set to zero.
+

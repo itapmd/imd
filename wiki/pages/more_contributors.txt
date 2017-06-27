@@ -1,0 +1,9 @@
+====== Authors ======
+
+IMD was originally developed by the late Jörg Stadler in the framework of Project C14 "Molekulardynamik von Quasikristallen" of the Collaborative Research Centre 382 "Verfahren und Algorithmen zur Simulation physikalischer Prozesse auf Hochleistungsrechnern".
+
+Jörg Stadler left the ITAP in summer 1997. Further contributors have been Philipp Beck, Erik Bitzek, Marco Brunelli, Dietmar Bunz, Christian Dilger, Peter Gumbsch, Jutta Hahn, Adham Hashibon, Martin Hohl, Christof Horn, Jutta Kaiser, Johannes Karlin, Uli Koschella, Christopher Kohler, Felix Krul, Yu Chieh Lo, Yuri Mishin, Ralf Mikulla, Matthias Müller, Frank Pister, Dennis Rapp, Christoph Rudhart, Gunther Schaaf, Daniel Schopf, Steffen Sonntag, Christian Ulrich, Dieter Wolfangel, and Gabi Zeger.
+
+The development of IMD is continued by a team including Andreas Chatzopoulos, Christoph Begau, Erik Bitzek, Peter Brommer, Franz Gähler, Sudheer Ganisetti, Alexander Kiselev, Johannes Möller, Arun Prakash, Johannes Roth, Godehard Sutmann. Funding is now provided through the Collaborative Research Centre 716 ("Dynamic simulation of systems with large numbers of particles"), subproject B5.
+
+The program is also used at MPI for Intelligent Systems Stuttgart, the MPA Stuttgart, and at the University of Karlsruhe, Friedrich-Alexander University of Erlangen-Nürnberg, Ruhr-University Bochum, MPI for Solid State Chemistry in Dresden and various institutes around the world.

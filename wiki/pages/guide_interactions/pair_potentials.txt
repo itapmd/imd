@@ -1,0 +1,74 @@
+====== Central Pair Potentials ======
+
+Short range pair potentials are active by default in IMD, if no other interactions have been specified with a compilation option. Pair potentials can also be explicitly switched on with the compilation option **pair**, for instance in combination with [[covalent.html#tersoff|Tersoff]] or [[ewald.html|Coulomb]] potentials.
+
+Pair potentials are either given in [[#pottab|tabulated form]], read from a [[potformat.html|potential file]], or by [[pairpot.html#analyt|analytic formulae]], whose parameters are read from the [[paramfile.html|parameter file]]. From these analytic formulae, the potential tables are then computed at the beginning of the simulation. If both a potential table and analytic potentials are specified in the parameter file, the potential table is first read in, and then the columns of those atom type pairs, for which analytic potentials are active, are overwritten. It is recommended to use only one kind of pair potential for each combination of atom types.
+
+===== Tabulated Pair Potentials =====
+
+The most flexible, though not necessarily the most convenient, way to specify pair potentials is by giving them in tabulated form in a potential file. The potential file containing the potential table can have two possible [[potformat.html|formats]], and is specified with the parameter ''%%potfile%%''. It is essential that the potential is tabulated equidistant in the **square** of the atom distance. Note that if the potential does not extend down to r^2=0, it is extrapolated linearly.
+
+===== Analytically Defined Pair Potentials =====
+
+Besides tabulated pair potentials read from potential files, IMD also supports some pair potentials given by analytic formulae. From these, the potential tables are then computed at the beginning of the simulation. Currently supported are [[pairpot.html#lj|Lennard-Jones]] potentials, [[pairpot.html#morse|Morse]] potentials, [[pairpot.html#buck|Buckingham]] potentials, and [[pairpot.html#harmonic|harmonic potentials]] to be used in the [[ewald.html#shell|shell model]] together with [[ewald.html|Coulomb potentials]].
+
+All analytically defined pair potentials share common cutoff radii //r<sub>cij</sub>//, which have to be specified in the parameter file with the IMD parameter ''%%r_cut%%'' in the format
+
+''%%r_cut%%''   //r<sub>c00</sub>// //r<sub>c01</sub>// //r<sub>c02</sub>// ... //r<sub>c0(N-1)</sub>// //r<sub>c11</sub>// //r<sub>c12</sub>// ... //r<sub>c(N-1)(N-1)</sub>//,
+
+\\
+where //N// is the number of atom types. If //r<sub>cij</sub>// is zero for a combination //ij// of atom types, analytic pair potentials are not active for this combination. The potential is suitably shifted, so that it vanishes at the cutoff radius (except for the [[pairpot.html#harmonic|harmonic potential]]). In the same format as for ''%%r_cut%%'', a starting radius for the tabulation can be specified for each pair of types, with the parameter ''%%r_begin%%''. If this parameter is missing or zero, suitable defaults are chosen (1/10 of the nearest neighbor distance, or zero for the [[pairpot.html#morse|Morse potential]] and the [[pairpot.html#harmonic|harmonic potential]]). Also in the same format, the number of values in the potential table can be given for each atom type pair, with the parameter ''%%pot_res%%''. As well as ''%%r_cut%%'', the parameters ''%%r_begin%%'' and ''%%pot_res%%'' are commen to all analytic potentials. Except for the [[pairpot.html#harmonic|harmonic potential]], all analytically defined potentials can be combined, even for the same atom type pair.
+
+===== Lennard-Jones Potential =====
+
+The Lennard-Jones potential has the following form:
+
+$$ V(r_{ij}) = \epsilon_{ij} \left[ \left( \frac{\sigma_{ij}}{r_{ij}} \right)^{12} - 2 \left( \frac{\sigma_{ij}}{r_{ij}} \right)^{6}\right] $$
+
+\\
+The parameters $\epsilon$ and $\sigma$ have to be given in the parameter file by the IMD parameters ''%%lj_epsilon%%'' and ''%%lj_sigma%%'' in the same format as the parameter ''%%r_cut%%''. The Lennard-Jones potential is active for any pair of atom types for which ''%%r_cut%%'' and ''%%lj_epsilon%%'' are both positive.
+
+===== Lennard-Jones-Gauss Potential =====
+
+The Lennard-Jones-Gauss potential has the following form:
+
+$$ V(r_{ij}) = \epsilon_{ij} \left[ \left( \frac{\sigma_{ij}}{r_{ij}} \right)^{12} - 2 \left( \frac{\sigma_{ij}}{r_{ij}} \right)^{6}\right] - \epsilon_{Gij} \exp\left(- \frac{(r_{ij} - r_{G0})^2}{2\sigma^2_{Gij}}\right) $$
+
+\\
+The parameters $\epsilon$ and $\sigma$ have to be given in the parameter file by the IMD parameters ''%%lj_epsilon%%'' and ''%%lj_sigma%%'' as before for the pure Lennard-Jones potential in the same format as the parameter ''%%r_cut%%''. The additional parameters $\epsilon_{G}$, $r_{G0}$ and $\sigma_{G}$ have to be given in the parameter file by the IMD parameters ''%%ljg_eps%%'', ''%%ljg_r0%%'' and ''%%ljg_sig%%''.
+
+===== Morse Potential =====
+
+The Morse potential has the following form:
+
+$$ V(r_{ij}) = \epsilon_{ij} \left[ \left( 1 - \exp(-\alpha_{ij}(r_{ij} - \sigma_{ij})) \right)^{2} - 1 \right] $$
+
+\\
+The parameters $\epsilon$, $\sigma$, and $\alpha$ have to be given in the parameter file with the IMD parameters ''%%morse_epsilon%%'', ''%%morse_sigma%%'', and ''%%morse_alpha%%'' in the same format as the paramter ''%%r_cut%%''.
+
+The Morse potential is active for any pair of atom types for which ''%%r_cut%%'' and ''%%morse_epsilon%%'' are both positive.
+
+===== Morse-stretch Potential =====
+
+The Morse-stretch potential has the following form:
+
+$$ V(r_{ij}) = msD_{ij} \left[ \exp(ms\gamma_{ij}(1 - r_{ij}/msr0_{ij})) - 2\exp\left(\frac{ms\gamma_{ij}}{2(1 - r_{ij}/msr0_{ij})}\right) \right] $$
+
+\\
+The parameters $msD$, $ms\gamma$ and $msr0$ are the standard parameters of the Morse-stretch potential. A harmonic term is added to the potential if $r$ < ''%%ms_rmin%%'' to avoid unphysical crashes, ''%%ms_harm_C%%'' is the spring constant for the harmonic term.
+
+===== Buckingham Potential =====
+
+The Buckingham potential has the following form:
+
+$$ V(r_{ij}) = A_{ij} \exp\left( -\frac{r_{ij}}{\sigma_{ij}} \right)- C_{ij} \left( \frac{\sigma_{ij}}{r_{ij}} \right)^{6} $$
+
+\\
+The parameters $A$, $C$, and $\sigma$ have to be given in the parameter file with the IMD parameters ''%%buck_a%%'', ''%%buck_c%%'', and ''%%buck_sigma%%'' in the same format as the paramter ''%%r_cut%%''.
+
+The Buckingham potential is active for any pair of atom types for which ''%%r_cut%%'' and ''%%buck_sigma%%'' are both positive.
+
+===== Harmonic Potential =====
+
+To be used in the [[ewald.html#shell|shell model]], a harmonic potential between the ion core and its valence shell can be defined. The nearest neighbor distance is zero, so that only the spring constant has to be specified with the parameter ''%%spring_const%%''. As only shells and cores interact with this potential, only the spring constants for atom type pairs //ij// with //i// different from //j// have to be specified. For //i=j//, the spring constant is assumed to be zero. The harmonic potential is active for any pair of atom types for which ''%%r_cut%%'' and ''%%spring_const%%'' are both positive. It then replaces any other pair potential that might be active.
+

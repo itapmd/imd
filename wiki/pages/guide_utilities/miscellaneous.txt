@@ -1,0 +1,219 @@
+====== Miscellaneous Tools ======
+
+|[[#conf2conf|conf2conf]]      |converter between different configuration file formats     |
+|[[#imd2cfg.perl|imd2cfg.perl]]|perl script to convert IMD atom files to AtomEye cfg format|
+|[[#rav|rav]]                  |running averages                                           |
+|[[#makeconf|make_config]]     |configuration file generator                               |
+|[[#imd2imd|imd2imd]]          |create multiple copies of a unit cell                      |
+|[[#atcon|atcon]]              |configuration file converter (not up-to-date)              |
+|[[#procdata|procdata]]        |configuration file converter (not up-to-date)              |
+|[[#imd2ppm|imd2ppm]]          |image of 2d binary tiling quasicrystal                     |
+
+===== conf2conf =====
+
+Converts IMD configuration files and atom data files between different formats, and possibly strips off unwanted data.
+
+<code>
+   Compilation: gmake conf2conf
+
+   Usage: conf2conf [options] <infile> <outfile>
+
+   Options:  -f <F>     Output format; <F> can be:
+
+                          - A for ASCII (default)
+                          - l for single precision binary (little endian)
+                          - b for single precision binary (big endian)
+                          - L for double precision binary (little endian)
+                          - B for double precision binary (big endian)
+
+             -v         Include velocities in output
+
+             -m         Include mass in output
+
+             -k         Compute Ekin from mass and velocities, and append it
+
+             -d <cols>  Comma separated indices of data columns to be
+                        included in output, like 0,2
+
+             -h         This help
+</code>
+===== imd_power =====
+
+Computes the power spectrum of an IMD properties file (''%%.eng%%'' file).
+
+Compilation:
+
+<code>
+    gmake imd_power
+</code>
+Usage:
+
+<code>
+    imd_power <n1> <n2> <engfile>[.eng]
+</code>
+imd_power reads lines ''%%n1%%'' through ''%%n2%%'' (inclusive) from the given ''%%.eng%%'' file (disregarding comment lines), and computes the fast Fourier transform (FFT) of columns ''%%2%%'' to ''%%n%%'', using the time variable from column ''%%1%%''. At present, a maximum of ''%%16%%'' columns is supported. If ''%%n2-n1+1%%'' is not a power of ''%%2%%'', the remaining entries are filled with zeros (FFT requires that the number of data items is a power of ''%%2%%''). The output is written to file ''%%<engfile>.fft%%''. The first column of the output file contains the angular frequency, and the remaining columns the squared Fourier amplitudes for this frequency.
+
+===== imd2cfg.perl =====
+
+perl script to convert IMD atom files to AtomEye extended cfg format
+
+Usage:
+
+<code>
+    imd2cfg.perl -i <infile> -t <types> <options>
+</code>
+<types> is a space separated list of atom types, like: ''%%-t Ni Al%%''. Sufficiently many atom types must be specified.
+
+Supported options are:
+
+<code>
+   -v           include also velocities, if available (default: no velocities)
+   -s           sort according to atom types (default: no sort)
+   -Lx   first  box vector (default: read from header)
+   -Ly   second box vector (default: read from header)
+   -Lz   third  box vector (default: read from header)
+</code>
+The preferred system of [[units.html|units]] used in the input file must be specified at the beginning of the script (examples are given). Otherwise, AtomEye will give wrong information on units, but the atoms are displayed anyway.
+
+===== rav =====
+
+**rav** is an awk script that computes the running average of a histogram. Usage is as follows:
+
+<code>
+     rav [n=<n>] <datafile> > <newdatafile>
+</code>
+The running average of a set of data points //f<sub>i</sub>// is given by
+
+{{:rav.gif}}
+
+where the value of //n// can be given as an optional parameter (10 by default).
+
+**rav** can be used directly in gnuplot as in the following example:
+
+<code>
+     plot "<rav [n=<n>] datafile" using 1:2
+</code>
+===== make_config =====
+
+The make_config utility program can be used to generate configuration files for some simple crystal structures.
+
+Compilation:
+
+<code>
+   gmake make_config
+</code>
+The online help of make_config says:
+
+<code>
+   Usage: make_config <type> <outfile> [options] 
+
+   <type> must be one of:
+
+    - hex        2D hexagonal crystal
+    - fcc        fcc structure
+    - bcc        bcc structure
+    - b2         B2 structure
+    - nacl       NaCl structure
+    - diamond    cubic diamond structure
+    - zincblende zincblende structure
+    - lav        cubic C15 Laves structure (MgCu2)
+
+   Options:  -s <sx> <sy> [<sz>]  size in unit cells (default 1)
+             -a <a>               lattice constant (default 1.0)
+             -m <m0> [<m1>]       mass(es)         (default 1.0)
+</code>
+For the 3D cubic crystal structures, the size parameters ''%%sx%%'', ''%%sy%%'', and ''%%sz%%'' specify the number of cubic conventional unit cells in each direction, and the lattice parameter ''%%a%%'' the size of this unit cell. For 2D hexagonal crystals, the unit cell has size ''%%a*sqrt(3)%%''times ''%%a%%'', with a nearest neighbor atom distance ''%%a%%''. If the option ''%%-m%%'' is used for a binary structure (b2, nacl, zincblende, lav), the masses of both atom types must be given.
+
+===== imd2imd =====
+
+**imd2imd** is a shell script. It creates multiple periodic copies of a starting configuration.
+
+Usage:
+
+<code>
+   imd2imd <infile> <outfile> <i> <j> <k>
+</code>
+All parameters are required parameters. <infile> and <outfile> are checkpoint files, and <i>, <j> and <k> are positive integers. The box vectors and atom locations from <infile> are read, and <i>×<j>×<k> adjacent copies (<i> along the first box vector, <j> along the second box vector and <k> along the third box vector) are written to <outfile>.
+
+===== atcon =====
+
+Atcon is configuration file constructor/converter.
+
+Compilation:
+
+<code>
+  gmake atcon
+</code>
+The online help of atcon says:
+
+<code>
+Usage: atcon <in_format>:lt;out_format> \
+       [-2d] [-bi] [-bo] [-help] [-i] <infile> [-o] <outfile>
+
+Supported input formats:
+TEE,IMD,MOP
+Supported output formats:
+TEE,IMD,MOP,POS,VRM,PDB
+
+TEE: < x y z t >, the first line contains the box
+IMD: < nr t m x y z (vx vy vz) (prop) >
+MOP:
+POS: postscript
+VRM: vrml
+PDB: proteine database format (rasmol)
+</code>
+===== procdata =====
+
+Procdata converts configuration files between different formats. It can also be used to cut out parts of a configuration, rotate a configuration, or to stack configurations periodically.
+
+Compilation:
+
+<code>
+  gmake procdata
+</code>
+The online help of procdata says:
+
+<code>
+Usage: procdata [-i{format}] [-f{format}] inputfile outputfile
+
+-i0 reads IMD or VVMD data format (default)
+-i1 reads modifti.f/tiunmodif.f output format
+-f0 converts to MOLPIC format (for molgraph, default)
+-f1 converts to PDB format (for rasmol)
+-f2 converts to IMD format
+-k keeps previous numbers (default: sort and begin from 1
+-fRDF calculates radial distribution function
+-Cxmin limit   cuts off atoms with x<limit
+-Cxmax limit   cuts off atoms with x>limit
+-Cymin limit   cuts off atoms with y<limit
+-Cymax limit   cuts off atoms with y>limit
+-Czmin limit   cuts off atoms with z<limit
+-Czmax limit   cuts off atoms with z>limit
+-Sz zincr n    stacks the structure in z-direction n times 
+               with increment zinc (used for generation of 
+               2D-quasiperiodic structures)
+-Rx phi   rotate by angle phi around x-axis
+-Ry phi   rotate by angle phi around y-axis
+-Rz phi   rotate by angle phi around z-axis
+very special options are: (see source code)
+-RAlCuCo -CAlCuCo  rotates AlCuCo approximant
+and cuts out a rectangular piece (for approx2.inp)
+</code>
+===== imd2ppm =====
+
+imd2ppm converts [[config.html|IMD configuration files]] or special ''%%.pic%%'' files of 2D binary tiling quasicrystals into ppm bitmaps, where each atom is drawn as a disk of appropriate radius.
+
+Compilation:
+
+<code>
+   gmake imd2ppm
+</code>
+Usage:
+
+<code>
+   imd2ppm [-p] [-a] infile E_min E_max x0 y0 width height width_pix height_pix
+</code>
+If the flag ''%%-p%%'' is used, the coloring is according to the potential energy of each atom, rather than the kinetic energy. If the flag ''%%-a%%'' is used, imd2ppm expects a [[config.html|IMD configuration files]] as input, otherwise the special, binary ''%%.pic%%'' files.
+
+The remaining parameters are, in this order, the input file, the lower and upper energy treshold for the coloring, x and y coordinates of the lower left corner of the image, width and height of the image in user coordinates, and width and height of the image in pixels (resolution). The output files are called ''%%<infile>.kin.ppm%%'' or ''%%<infile>.pot.ppm%%'', depending on whether the flag ''%%-p%%'' was used or not.
+

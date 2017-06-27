@@ -1,0 +1,802 @@
+===== Basic Articles on IMD =====
+
+J. Roth, F. Gähler, and H.-R. Trebin,\\
+**A molecular dynamics run with 5.180.116.000 particles**,\\
+Int. J. Mod. Phys. C 11, 317-22 (2000). {{:publications:s0129183100000298.pdf|(184k)}}
+
+J. Stadler, R. Mikulla, and H.-R. Trebin,\\
+**IMD: A Software Package for Molecular Dynamics Studies on Parallel Computers**,\\
+Int. J. Mod. Phys. C 8, 1131-1140 (1997). {{:publications:imd_paper.ps.gz|(690k)}}
+,{{:publications:stadler.pdf|(325k)}}
+
+J. Roth,\\
+**IMD: A Typical Massively Parallel Molecular Dynamics Code for Classical Simulations - Structure, Applications, Latest Developments**\\
+//[[http://link.springer.com/book/10.1007%2F978-3-319-01439-5|Sustained Simulation Performance 2013]]//,\\
+eds. M. M. Resch, W. Bez, E. Forcht, H. Kobayashi, Y. Kovalenko,\\
+Springer, Heidelberg 2013, pp. 63-76.
+
+===== Presentations of IMD at Conferences =====
+
+J. Roth,\\
+**IMD - A Molecular Dynamics Program and Applications**,\\
+in //Proceedings of the Workshop on Molecular Dynamics on Parallel Computers//,\\
+eds. R. Esser, P. Grassberger, J. Grotendorst, and M. Lawerenz, \\
+World Scientific, Singapore, p. 83 (2000). {{:publications:juel22.ps.gz|(380k)}}
+,{{:publications:roth00_7.pdf|(430k)}}
+
+J. Roth, J. Stadler, M. Brunelli, F. Gähler, J. Hahn, M. Hohl, C. Horn, R. Mikulla, G. Schaaf, and H.-R. Trebin,\\
+**Molecular Dynamics Simulations with IMD**,\\
+in //Computer Simulation Studies in Condensed Matter Physics XII//,\\
+eds. D.P. Landau, S.P. Lewis, and H.B. Schüttler, \\
+Springer, Heidelberg, pp. 169-73 (2000). {{:publications:athen1.ps.gz|(70k)}}
+,{{:publications:roth00_6.pdf|(132k)}}
+
+===== Progress Reports to the High-Performance Computing-Centre Stuttgart (HLRS) =====
+
+Daniel J. Förster, Stefan Scharring, Johannes Roth, and Hans-Albert Eckel\\
+**Molecular Dynamics Simulations with Long-Range Interactions**\\
+//High Performance Computing in Science and Engineering ’14//,\\
+eds. W. E. Nagel, D. B. Kröner, M. M. Resch, Springer, Heidelberg 2014\\
+[[http://www.springer.com/mathematics/computational+science+%26+engineering/book/978-3-319-10809-4|Link]]
+
+J. Roth, P. Beck, P. Brommer, A. Chatzopoulos, F. Gähler, S. Hocker, S. Schmauder, and H.-R. Trebin\\
+**Molecular Dynamics Simulations with Long-Range Interactions**\\
+//High Performance Computing in Science and Engineering ’13//,\\
+eds. W. E. Nagel, D. B. Kröner, M. M. Resch, Springer, Heidelberg 2013\\
+[[http://www.springer.com/mathematics/computational+science+%26+engineering/book/978-3-319-02164-5|Link]]
+
+J. Roth, J. Karlin, M. Sartison, A. Krauß, H.-R. Trebin\\
+**Molecular Dynamics Simulations of Laser Ablation in Metals: Parameter Dependence, Extended Models and Double Pulses**\\
+//High Performance Computing in Science and Engineering ’12//,\\
+eds. W. E. Nagel, D. B. Kröner, M. M. Resch, Springer, Heidelberg 2013, pp. 105-117.\\
+[[http://www.springer.com/mathematics/computational+science+%26+engineering/book/978-3-642-33373-6|Link]]
+
+J. Roth, J. Karlin, C. Ulrich, H.-R. Trebin, and S. Sonntag\\
+**Laser Ablation of Aluminium: Drops and Voids**\\
+//High Performance Computing in Science and Engineering ’11//,\\
+eds. W. E. Nagel, D. B. Kröner, M. M. Resch, Springer, Heidelberg 2012, pp. 93-104.
+
+J. Roth, C. Trichet, H.-R. Trebin, and S. Sonntag\\
+**Laser Ablation of Metals**\\
+in //High Performance Computing in Science and Engineering ’10//,\\
+eds. W. E. Nagel, D. B. Kröner, M. M. Resch, Springer, Heidelberg 2010, pp. 159-168.
+
+E. Bitzek, P. Gumbsch\\
+**Atomistic Simulations of Dislocation—Crack Interaction**,\\
+in //High Performance Computing in Science and Engineering’06,//\\
+E. Krause, W. Jäger, and M. Resch (eds.), Springer, Heidelberg, pp. 127-135 (2006).\\
+
+
+Ch. Rudhart, F. Rösch, F. Gähler, J. Roth, and H.-R. Trebin,\\
+**Crack Propagation in Icosahedral Model Quasicrystals**,\\
+in //High Performance Computing in Science and Engineering 2003,//\\
+E. Krause, W. Jäger, and M. Resch (eds.), Springer, Heidelberg, pp. 107-116 (2003).\\
+{{:publications:imd-2003.ps.gz|(1070k)}} {{:publications:imd-2003.pdf|(374k)}}
+
+
+F. Gähler, C. Kohler, J. Roth, and H.R. Trebin,\\
+**Computation of Strain Distributions in Quantum Dot Nanostructures by Means of Atomistic Simulations**,\\
+in //High Performance Computing in Science and Engineering 2002,//\\
+eds. E. Krause and W. Jäger, Springer, Heidelberg, pp. 3-14 (2002).\\
+{{:publications:hlrsrep2002.ps.gz|(4642k)}}
+
+G. Schaaf, F. Gähler, C. Kohler, U. Koschella, N. Resta, J. Roth, C. Rudhart, and H.-R. Trebin,\\
+**Simulation of dislocations in icosahedral quasicrystals with IMD,**\\
+in //High Performance Computing in Science and Engineering 2001,//\\
+eds. E. Krause and W. Jäger, Springer, Heidelberg, pp. 3-11 (2002).\\
+{{:publications:hlrsrep2001.ps.gz|(474k)}}
+
+E. Bitzek, F. Gähler, J. Hahn, C. Kohler, G. Krdzalic, J. Roth, C. Rudhart, G. Schaaf, J. Stadler, and H.-R. Trebin,\\
+**Recent developments in IMD: Interactions for covalent and metallic systems**,\\
+in //High Performance Computing in Science and Engineering ’2000//,\\
+eds. E. Krause and W. Jäger, Springer, Heidelberg, pp. 37-47 (2001).\\
+{{:publications:hlrs00.ps.gz|(650k)}}
+
+J. Roth, J. Stadler, M. Brunelli, D. Bunz, F. Gähler, J. Hahn, M. Hohl, C. Horn, J. Kaiser, R. Mikulla, G. Schaaf, J. Stelzer, H.-R. Trebin,\\
+**IMD - A Massively Parallel Molecular Dynamics Package for Classical Simulations in Condensed Matter Physics,**\\
+in //High Performance Computing in Science and Engineering ’99//,\\
+eds. E. Krause and W. Jäger, Springer, Heidelberg, pp. 72-81 (2000).\\
+{{:publications:hlrs99.ps.gz|(650k)}} {{:publications:hlrs99.pdf|(157k)}}
+
+J. Hahn and H.-R. Trebin,\\
+**Molecular Dynamics of Covalent Crystals,**\\
+in //High Performance Computing in Science and Engineering ’99//,\\
+eds. E. Krause and W. Jäger, Springer, Heidelberg, pp. 92-99 (2000).\\
+{{:publications:hlrs99a.ps.gz|(600k)}} {{:publications:hlrs99a.pdf|(309k)}}
+
+===== Publications of Applications involving IMD Simulations =====
+
+==== 2016 ====
+
+Johannes Roth, Alexander Kiselev, and Hans-Rainer Trebin\\
+**Studying laser ablation with molecular dynamics simulations: from metals to covalent materials**\\
+//2016 Progress in Electromagnetic Research Symposium (PIERS)//, accepted for publication\\
+
+Alexander Kiselev, Johannes Roth, and Hans-Rainer Trebin\\
+**Molecular Dynamics Simulations of Silicon: the Influence of Electron-Temperature dependent Interactions**\\
+//High Performance Computing in Science and Engineering ’16//,\\
+eds. W. E. Nagel, D. B. Kröner, M. M. Resch, accepted for publication\\
+
+Johannes Roth, Hans-Rainer Trebin, Alexander Kiselev, Dennis-Michael Rapp\\
+**Laser Ablation of Al-Ni Alloys and Multilayers**\\
+Applied Physics A **122**, 500 (2016).\\
+
+Andreas Chatzopoulos, Philipp Beck, Johannes Roth, Hans-Rainer Trebin\\
+**Atomistic modeling of flexoelectricity in periclase**\\
+Physical Review B **93**, 024105 (2016).\\
+[[http://journals.aps.org/prb/abstract/10.1103/PhysRevB.93.024105|Abstract]]
+
+==== 2015 ====
+
+Peter Brommer, Alexander Kiselev, Daniel Schopf, Philipp Beck, Johannes Roth, and Hans-Rainer Trebin\\
+**Classical interaction potentials for diverse materials from ab initio data: a review of potfit**\\
+Materials Simulations in Science and Engineering, **23**, 074002 (2015).\\
+[[http://iopscience.iop.org/article/10.1088/0965-0393/23/7/074002|Abstract]]
+
+Daniel J. Förster, Stefan Scharring, Johannes Roth, and Hans-Albert Eckel\\
+**Molecular Dynamics Simulations of Laser Induced Ablation for Micro Propulsion**\\
+//High Performance Computing in Science and Engineering ’14//,\\
+eds. W. E. Nagel, D. B. Kröner, M. M. Resch, Springer, Heidelberg 2015, pp. 139-152.\\
+[[http://www.springer.com/mathematics/computational+science+%26+engineering/book/978-3-319-10809-4|Link]]
+
+T. Wang, C. Begau, G. Sutmann, A. Hartmaier\\
+**Large scale molecular dynamics simulation of microstructure formation during thermal spraying of pure copper**\\ 
+//Surface and Coatings Technology//, 280, 72-80, (2015)\\
+[[http://www.icams.de/content/publications/?detail=1791|Link]]
+
+J. Zhang, C. Begau, L. Geng, A. Hartmaier\\
+**Atomistic investigation of wear mechanisms of a copper bi-crystal**, \\
+//Wear//, 332-333, 941-948, (2015)\\
+[[http://www.icams.de/content/publications/?detail=1678|Link]]
+
+C. Begau, G. Sutmann\\
+**Adaptive dynamic load-balancing with irregular domain decomposition for particle simulations**,\\ //Computer Physics Communications//, 190, 51-61, (2015)\\
+[[http://www.icams.de/content/publications/?detail=1427|Link]]
+
+==== 2014 ====
+
+Johannes Roth, Armin Krauß, Jan Lotze, and Hans-Rainer Trebin\\
+**Simulation of laser ablation in aluminum: the effectivity of double pulses**\\
+Applied Physics A **117**, 2207 (2014). [[http://www.springer.com/home?SGWID=0-0-1003-0-0&aqId=2708104&download=1&checkval=78a05cb1b4bb77a7171bc93a6c242ca1|Article]]
+
+Daniel Schopf, Holger Euchner, and Hans-Rainer Trebin\\
+**Effective potentials for simulations of the thermal conductivity of type-I semiconductor clathrate systems**\\
+Phys. Rev. B. **89**, 214306 (2014).\\
+[[http://dx.doi.org/10.1103/PhysRevB.89.214306|Abstract]]
+
+S. Pailhès, H. Euchner, V. M. Giordano, R. Debord, A. Assy, S. Gomès, A. Bosak, D. Machon, S. Paschen, and M. de Boissieu\\
+**Localization of Propagative Phonons in a Perfectly Crystalline Solid**\\
+Phys. Rev. Lett. **113**, 025506 (2014).\\
+[[http://dx.doi.org/10.1103/PhysRevLett.113.025506|Abstract]]
+
+D. Antonov, T. Häußermann, A. Aird, J. Roth, H.-R. Trebin, C. Müller, L. McGuinness, F. Jelezko, T. Yamamoto, J. Isoya, S. Pezzagna, J. Meijer, and J. Wrachtrup\\
+**Statistical investigations on nitrogen-vacancy center creation**\\
+Appl. Phys. Lett. **104**, 012105 (2014).\\
+[[http://dx.doi.org/10.1063/1.4860997|Abstract]]
+
+H. Euchner, T. Yamada, S. Rols, T. Ishimasa, J. Ollivier, H. Schober, M. Mihalkovic, and M. de Boissieu\\
+**Lattice dynamics of the icosahedral quasicrystals i-ZnMgSc and i-ZnAgSc and the cubic 1/1-approximant Zn6Sc**\\
+J. Phys.: Condens. Matter **26**, 055402 (2014).\\
+[[http://dx.doi.org/10.1088/0953-8984/26/5/055402|Abstract]]
+
+S. Lee, J. Im, Y. Yoo, E. Bitzek, D. Kiener, G. Richter, B. Kim, S.H. Oh\\
+**Reversible cyclic deformation mechanism of gold nanowires by twinning–detwinning transition evidenced from in situ TEM**\\
+Nature communications **5** (2014).\\
+
+
+F. Niekiel, E. Bitzek, E. Spieker\\
+**Combining Atomistic Simulation and X-Ray Diffraction for the Characterization of Nanostructures: A Case Study on Five-Fold Twinned Nanowires**\\
+ACS nano (2014).\\
+
+
+J. Amodeo, C. Begau, E. Bitzek\\
+**Atomistic Simulations of Compression Tests on Ni3Al Nanocubes**\\
+Materials Research Letters pp. 1-6 (2014).\\
+
+
+D. Molnar, P. Binkele, A. Mora, R. Mukherjee, B. Nestler, S. Schmauder,\\
+**Molecular Dynamics virtual testing of thermally aged Fe-Cu microstructures obtained from multiscale simulations,**\\
+Computational Materials Science **81** (2014) 466-470.
+==== 2013 ====
+
+H. Euchner, T. Yamada, S. Rols, T. Ishimasa, Y. Kaneko, J. Ollivier, H. Schober, M. Mihalkovič, and M. de Boissieu\\
+**Tetrahedron dynamics in the icosahedral quasicrystals i-ZnMgSc and i-ZnAgSc and the cubic 1/1-approximant Zn<sub>6</sub>Sc**\\
+J. Phys.: Condens. Matter **25**, 115405 (2013).\\
+[[http://iopscience.iop.org/0953-8984/25/11/115405|Abstract]]
+
+H. Euchner, S. Pailhès, T. Yamada, R. Tamura, T. Ishimasa, S. Rols, H. Schober, M. Mihalkovič, H.-R. Trebin, D. Schopf, S. Paschen, A. Haghighirad, F. Ritter, W. Assmus, Y. Grin, L. Nguyen, and M. de Boissieu\\
+**Atomic Dynamics in Complex Metallic Alloys**\\
+MRS Proceedings **1517** (2013); doi:10.1557/opl.2013.38.\\
+[[http://dx.doi.org/10.1557/opl.2013.38|Abstract]]
+
+H. Euchner, T. Yamada, H. Schober, S. Rols, M. Mihalkovic, R. Tamura, T. Ishimasa, and M. de Boissieu\\
+**Dynamical Flexibility in the Periodic Zn<sub>6</sub>Sc 1/1-Approximant**\\
+//Aperiodic Crystals//,\\
+eds. S. Schmid, R. L. Withers, R. Lifshitz, Springer, 2013, pp. 253-260.\\
+[[http://www.springer.com/materials/structural+materials/book/978-94-007-6430-9|Book]]
+
+K. Scharnowski, M. Krone, F. Sadlo, P. Beck, J. Roth, H.-R. Trebin, and T. Ertl\\
+**Visualization of polarization domains in barium titanate** 2012 IEEE Visualization Contest Winner\\
+Computer Graphics and Applications, IEEE **33** 9-17\\
+[[http://dx.doi.org/10.1109/MCG.2013.68|Abstract]]
+
+T. Yamada, H. Euchner, C. P. Gómez, H. Takakura, R. Tamura, and M. de Boissieu\\
+**Short- and long-range ordering during the phase transition of the Zn<sub>6</sub>Sc 1/1 cubic approximant**\\
+J. Phys.: Condens. Matter **25**, 205405 (2013).\\
+[[http://iopscience.iop.org/0953-8984/25/20/205405/|Abstract]]
+
+J.J. Möller, A. Prakash, E. Bitzek\\
+**FE2AT—finite element informed atomistic simulations**\\
+Modelling and Simulation in Materials Science and Engineering **21** 055011 (2013)\\
+
+==== 2012 ====
+
+P. Beck, P. Brommer, J. Roth, and H.-R. Trebin\\
+**Influence of polarizability on metal oxide properties studied by molecular dynamics simulations**\\
+J. Phys.: Condens. Matter **24**, 485401 (2012), __included in__ [[http://Select.iop.org|IOPselect]].\\
+[[http://iopscience.iop.org/0953-8984/24/48/485401|Abstract]]
+
+H. Euchner, S. Pailhès, L. T. K. Nguyen, W. Assmus, F. Ritter, A. Haghighirad, Y. Grin, S. Paschen, and M. de Boissieu\\
+**Phononic filter effect of rattling phonons in the thermoelectric clathrate Ba<sub>8</sub>Ge<sub>40+x</sub>Ni<sub>6-x</sub>**\\
+Phys. Rev. B **86**, 224303 (2012).\\
+[[http://dx.doi.org/10.1103/PhysRevB.86.224303|Abstract]]
+
+H. Euchner, T. Yamada, H. Schober, S. Rols, M. Mihalkovič, R. Tamura, T. Ishimasa, and M. de Boissieu\\
+**Ordering and dynamics of the central tetrahedron in the 1/1 Zn<sub>6</sub>Sc periodic approximant to quasicrystal**\\
+J. Phys.: Condens. Matter **24**, 415403 (2012), __included in__ [[http://Select.iop.org|IOPselect]].\\
+[[http://iopscience.iop.org/0953-8984/24/41/415403|Abstract]]
+
+S. Grottel, P. Beck, C. Müller, G. Reina, J. Roth, H.-R. Trebin, and T. Ertl\\
+**Visualization of Electrostatic Dipoles in Molecular Dynamics of Metal Oxides**\\
+IEEE Transactions on Visualization and Computer Graphics **18**, 2061-2068 (2012).\\
+[[http://www.computer.org/csdl/trans/tg/2012/12/ttg2012122061-abs.html|Abstract]]
+
+S. Hocker, P. Beck, S. Schmauder, J. Roth, and H.-R. Trebin\\
+**Simulation of crack propagation in alumina with ab initio based polarizable force field**\\
+J. Chem. Phys. **136**, 084707 (2012).\\
+[[http://link.aip.org/link/?JCP/136/084707|Abstract]] {{:publications:hockerbeck_2012.pdf|PDF}}\\
+Copyright (2011) American Institute of Physics. This article may be downloaded for personal use only. Any other use requires prior permission of the author and the American Institute of Physics.
+
+J. Roth, S. Sonntag, J. Karlin, C. Trichet Paredes, M. Sartison, A. Krauß and H.-R. Trebin\\
+**Molecular dynamics simulations studies of laser ablation in metals**\\
+AIP Conf. Proc. **1464**, pp. 504-523 (2012).\\
+[[http://proceedings.aip.org/resource/2/apcpcs/1464/1/504_1|Article]]
+
+D. Schopf, P. Brommer, B. Frigan, and H.-R. Trebin\\
+**Embedded atom method potentials for Al-Pd-Mn phases**\\
+Phys. Rev. B **85**, 054201 (2012).\\
+[[http://link.aps.org/doi/10.1103/PhysRevB.85.054201|Abstract]]
+
+E. Bitzek\\
+**Atomistic Study of Twinning in Gold Nanowhiskers**\\
+Journal of Solid Mechanics and Materials Engineering **6**, pp. 99-105 (2012).\\
+
+
+A. Sedlmayr, E. Bitzek, D.S. Gianola, G. Richter, R. Mönig, O. Kraft\\
+**Existence of two twinning-mediated plastic deformation modes in Au nanowhiskers**\\
+Acta Materialia **60** pp. 3985-3993 (2012).\\
+
+
+E. Bitzek, P. Gumbsch\\
+**Mechanisms of dislocation multiplication at crack tips**\\
+Acta Materialia **61** pp. 1394-1403 (2012).\\
+
+
+D. Molnar, R. Mukherjee, A. Choudhury, A. Mora, P. Binkele, M. Selzer, B. Nestler, S. Schmauder,\\
+**Multiscale simulations on the coarsening of Cu-rich precipitates in α-Fe using kinetic Monte Carlo, Molecular Dynamics and Phase-Field simulations,**\\
+Acta Materialia **60** (2012) 6961-6971.\\
+
+
+D. Molnar, P. Binkele, S. Hocker, S. Schmauder,\\
+**Atomistic multiscale simulations on the anisotropic tensile behaviour of copper-alloyed α-iron at different stat es of thermal ageing,**\\
+Philosophical Magazine **92** (2012) 586-607.\\
+
+
+S. Brinckmann, D. Mahajan, A. Hartmaier,\\
+**Novel scheme to combine molecular dynamics and dislocation dynamics,**\\
+Modelling and Simulation in Materials Science and Engineering, **20**, 045001, 2012.\\
+==== 2011 ====
+
+P. Beck, P. Brommer, J. Roth, and H.-R. Trebin\\
+**Ab initio based polarizable force field generation and application to liquid silica and magnesia**\\
+J. Chem. Phys. **135**, 234512 (2011).\\
+[[http://link.aip.org/link/doi/10.1063/1.3668603|Abstract]] {{:publications:beck_2011.pdf|PDF}}\\
+Copyright (2011) American Institute of Physics. This article may be downloaded for personal use only. Any other use requires prior permission of the author and the American Institute of Physics.
+
+H. Euchner, M. Mihalkovič, F. Gähler, M. R. Johnson, H. Schober, S. Rols, E. Suard, A. Bosak, S. Ohhashi, A.-P. Tsai, S. Lidin, C. Pay Gomez, J. Custers, S. Paschen, and M. de Boissieu\\
+**Anomalous vibrational dynamics in the Mg<sub>2</sub>Zn<sub>11</sub>phase**\\
+Phys. Rev. B **83**, 144202 (2011).\\
+[[http://dx.doi.org/10.1103/PhysRevB.83.144202|Abstract]]
+
+B. Frigan, A. Santana, M. Engel, D. Schopf, H.-R. Trebin, and M. Mihalkovič\\
+**Low-temperature structure of ξ’-Al-Pd-Mn optimized by //ab initio// methods**\\
+Phys. Rev. B **84**, 184203 (2011), <html><font color="red"></html>Editors’ Suggestion<html></font></html>.\\
+[[http://link.aps.org/doi/10.1103/PhysRevB.84.184203|Abstract]]
+
+S. Sonntag, C. Trichet Paredes, J. Roth and H.-R. Trebin\\
+**Molecular Dynamics Simulations of Cluster Distribution from Femtosecond Laser Ablation in Aluminum**\\
+Applied Physics A **104** (2), pp. 559-565 (2011).\\
+[[http://dx.doi.org/10.1007/s00339-011-6460-7|Abstract]]
+
+S. Hocker, S. Schmauder, P. Kumar,\\
+**Molecular dynamics simulations of Ni/NiAl interfaces,**\\
+The European Physical Journal **B** 82 (2011) 133-141.\\
+
+
+S. Schmauder, Ch. Kohler,\\
+**Atomistic simulations of solid solution strengthening of α-iron,**\\
+Computational Materials Science **50** (2011) 1238-1243.\\
+
+
+A.-P. Prskalo, S. Schmauder, C. Ziebert, J. Ye, S. Ulrich,\\
+**Molecular dynamics simulations of the sputtering process of silicon and the homoepitaxial growth of a Si coating on silicon,**\\
+Computational Materials Science **50** (2011) 1320-1325.\\
+
+
+S. Brinckmann, R. Sivanesapillai, A. Hartmaier,\\
+**On the formation of vacancies by edge dislocation dipole annihilation in fatigued copper,**\\
+International Journal of Fatigue, **33**, pp. 1369-1375, 2011.\\
+
+
+Z. Chen, M. Mrovec, P. Gumbsch<html></br></html> **Dislocation-vacancy interactions in tungsten,**\\
+Modelling Simul. Mater. Sci. Eng. **19** 074002 (2011)\\
+==== 2010 ====
+
+P. Brommer, P. Beck, A. Chatzopoulos, F. Gähler, J. Roth, and H.-R. Trebin\\
+**Direct Wolf summation of a polarizable force field for silica**\\
+J. Chem. Phys. **132** (19), 194109 (2010).\\
+[[http://link.aip.org/link/?JCP/132/194109|Abstract]] {{:publications:brommer10_1.pdf|PDF}}\\
+Copyright (2010) American Institute of Physics. This article may be downloaded for personal use only. Any other use requires prior permission of the author and the American Institute of Physics.
+
+S. Sonntag, J. Roth, and H.-R. Trebin\\
+**Molecular dynamics simulations of laser induced surface melting in orthorhombic Al<sub>13</sub>Co<sub>4</sub>**\\
+Applied Physics A: Materials Science & Processing **101**(1), pp. 77-80 (2010).\\
+[[http://dx.doi.org/10.1007/s00339-010-5762-5|Abstract]]
+
+Y. Cheng, E. Bitzek, D. Weygand, P. Gumbsch\\
+**Atomistic simulation of dislocation–void interactions under cyclic – –loading**\\
+Modelling and Simulation in Materials Science and Engineering **18**, 025006 (2010).
+
+A.-P. Prskalo, S. Schmauder, C. Ziebert, J. Ye, S. Ulrich,\\
+**Molecular dynamics simulations of the sputtering of SiC and Si<sub>3</sub>N<sub>4</sub>,**\\
+Surface & Coatings Technology **204** (2010) 2081-2084<html></b></html>\\
+
+
+C. Ziebert, J. Ye, S. Ulrich, A.-P. Prskalo, S. Schmauder,\\
+**Sputter Deposition of Nanocrystalline β-SiC Films and Molecular Dynamics Simulations of the Sputter Process,**\\
+Journal of Nanoscience and Nanotechnology **10** (2010) 1120-1128<html></b></html>\\
+==== 2009 ====
+
+P. Brommer, M. de Boissieu, H. Euchner, S. Francoual, F. Gähler, M. Johnson, K. Parlinski, and K. Schmalzl\\
+**Vibrational properties of MgZn<sub>2</sub>**\\
+Z. Kristallogr. **224**(1-2), pp. 97-100 (2009).\\
+[[http://dx.doi.org/10.1524/zkri.2009.1085|Abstract]]
+
+F. Rösch and H.-R. Trebin\\
+**Crack front propagation by kink formation**\\
+EPL **87**, 66004 (2009).\\
+[[http://dx.doi.org/10.1209/0295-5075/87/66004|Abstract]] {{:publications:roesch09_2.pdf|PDF}}
+
+F. Rösch and H.-R. Trebin\\
+**Brittle fracture in a complex metallic compound from an atomistic viewpoint: NbCr<sub>2</sub>, a case study**\\
+EPL **85**, 56002 (2009).\\
+[[http://dx.doi.org/10.1209/0295-5075/85/56002|Abstract]] {{:publications:roesch09_1.pdf|PDF}}
+
+S. Sonntag, J. Roth, F. Gähler, and H.-R. Trebin\\
+**Femtosecond Laser Ablation of Aluminum**\\
+Applied Surface Science **255**(24), 9742 (2009).\\
+[[http://dx.doi.org/10.1016/j.apsusc.2009.04.062|Abstract]]
+
+H.-R. Trebin, P. Brommer, M. Engel, F. Gähler, S. Hocker, F. Rösch, and J. Roth\\
+**Simulating structure and physical properties of complex metallic alloys**\\
+in //Properties and applications of complex intermetallics//, ISBN: 978-981-4261-63-0\\
+E. Belin-Ferre (ed.), World Scientific, 2009, pp. 291-329.\\
+[[http://www.worldscibooks.com/materialsci/7228.html|Abstract]]
+
+E. Bitzek, C. brandl, D. Weygand, P.M. Derlet, H. Van Swygenhoven\\
+**Atomistic simulation of a dislocation shear loop interacting with grain boundaries in nanocrystalline aluminium**\\
+Modelling and Simulation in Materials Science and Engineering **17**, 055008 (2009).\\
+==== 2008 ====
+
+F. Rösch and H.-R. Trebin\\
+**Comment on ``Cleaved surface of i-AlPdMn quasicrystals: Influence of the local temperature elevation at the crack tip on the fracture surface roughness’’**\\
+Phys. Rev. B **78**, 216201 (2008).\\
+[[http://dx.doi.org/10.1103/PhysRevB.78.216201|Abstract]]
+
+E. Bitzek, P. Gumbsch\\
+**Atomistic Simulations of Dislocation-Crack Interaction**\\
+Journal of Solid Mechanics and Materials Engineering **2** pp. 1348-1359 (2008).\\
+
+
+Z. Chen, M. Mrovec, D. Weygand, P. Gumbsch,\\
+**Atomistic modeling of the interaction between dislocations and vacancy in tungsten**\\
+Proceeding of 4th Int. Conf. on Multiscale Materials Modeling, ISBN 9780615247816, 631 (2008).\\
+
+==== 2007 ====
+
+K. Benkert and F. Gähler\\
+**Molecular Dynamics on NEC Vector Systems**\\
+in //High Performance Computing on Vector Systems 2006//\\
+M. Resch et al. (eds.), Springer, Berlin 2007, pp. 145-152.\\
+{{:publications:benkert07_1.pdf|PDF}}
+
+M. de Boissieu, S. Francoual, M. Mihalkovič, K. Shibata, A.Q.R. Baron, Y. Sidis, T. Ishimasa, D. Wu, T. Lograsso, L.-P. Regnault,\\
+F. Gähler, S. Tsutsu, B. Hennion, P. Bastie, T.J. Sato, H. Takakura, R. Currat, and A.P. Tsai\\
+**Lattice dynamics of the Zn-Mg-Sc icosahedral quasicrystal and its Zn-Sc periodic 1/1 approximant**\\
+Nature Materials **6**(12), pp. 977-984 (2007).\\
+[[http://www.nature.com/nmat/journal/v6/n12/abs/nmat2044.html|Abstract]] {{:publications:deboissieu07_1.pdf|PDF}}
+
+P. Brommer, F. Gähler, and M. Mihalkovič\\
+**Ordering and correlation of cluster orientations in CaCd<sub>6</sub>**\\
+Phil. Mag. **87**(18-21), pp. 2671-2677 (2007).\\
+[[http://journalsonline.tandf.co.uk/openurl.asp?genre=article&eissn=1478-6443&volume=87&issue=18&spage=2671|Abstract]] {{:publications:brommer06_2.pdf|PDF}}
+
+J. Roth\\
+**The Relation between Solitons and Interactions in BCC Materials**\\
+AIP Conf. Proc. **955**, pp. 335-338 (2007).\\
+[[http://link.aip.org/link/?APCPCS/955/335/1|Abstract]]
+
+P. Kizler, S. Schmauder,\\
+**Simulation of the nanoindentation of hard metal carbide layer systems - the case of nanostructured ultra-hard carbide l ayer systems,**\\
+Computational Materials Science **39** (2007) 205-213\\
+
+
+Z. Chen, Z. Jin, H. Gao,\\
+**Repulsive force between screw dislocation and coherent twin boundary in aluminum and copper,**\\
+Physical Review B **75** 212104 (2007)\\
+==== 2006 ====
+
+F. Gähler and K. Benkert\\
+**Atomistic simulations on scalar and vector computers**\\
+in //High Performance Computing on Vector Systems//\\
+M. Resch et al. (eds.), Springer, Berlin 2006, pp. 173-186.\\
+{{:publications:gaehler06_1.pdf|PDF}}
+
+S. Hocker, F. Gähler, and P. Brommer\\
+**Molecular dynamics simulation of aluminium diffusion in decagonal quasicrystals**\\
+Phil. Mag. **86**(6-8), pp. 1051-1057 (2006).\\
+[[http://journalsonline.tandf.co.uk/openurl.asp?genre=article&eissn=1478-6443&volume=86&issue=6&spage=1051|Abstract]] {{:publications:hocker06_1.pdf|PDF}}
+
+F. Rösch, H.-R. Trebin, and P. Gumbsch\\
+**Interatomic potentials and the simulation of fracture: C15 NbCr<sub>2</sub>**\\
+Int. J. Fracture **139**(3-4), pp. 517-526 (2006).\\
+[[http://dx.doi.org/10.1007/s10704-006-0065-8|Abstract]] {{:publications:roesch06_2.pdf|PDF}}
+
+F. Rösch, H.-R. Trebin, and P. Gumbsch\\
+**Fracture of complex metallic alloys: An atomistic study of model systems**\\
+Phil. Mag. **86**(6-8), pp. 1015-1020 (2006).\\
+[[http://journalsonline.tandf.co.uk/openurl.asp?genre=article&eissn=1478-6443&volume=86&issue=6&spage=1015|Abstract]] {{:publications:roesch06_1.pdf|PDF}}
+
+E. Bitzek, P. Koskinen, F. Gähler, M. Moseler, and P. Gumbsch\\
+**Structural relaxation made simple**\\
+Phys. Rev. Lett. **97**, 170201 (2006).\\
+[[http://link.aps.org/abstract/PRL/v97/e170201|Abstract]] {{:publications:bitzek06_1.pdf|PDF}}
+
+J.H.A. Hagelaar, E. Bitzek, C.F.J. Flipse, P. Gumbsch\\
+**Atomistic simulations of the formation and destruction of nanoindentation contacts in tungsten**\\
+Physical Review B **73**, 045425 (2006).
+
+==== 2005 ====
+
+F. Rösch, Ch. Rudhart, J. Roth, H.-R. Trebin, and P. Gumbsch\\
+**Dynamic fracture of icosahedral model quasicrystals: A molecular dynamics study**\\
+Phys. Rev. B **72**, 014128 (2005).\\
+[[http://link.aps.org/abstract/PRB/v72/e014128|Abstract]] {{:publications:roesch05_1.pdf|PDF}}
+
+J. Roth\\
+**Shock waves in materials with Dzugutov-potential interactions**\\
+Phys. Rev. B **72**, 014125 (2005).\\
+[[http://link.aps.org/abstract/PRB/v72/e014125|Abstract]] {{:publications:roth05_2.pdf|PDF}}
+
+J. Roth\\
+**ω-phase and solitary waves induced by shock compression of bcc crystals**\\
+Phys. Rev. B **72**, 014126 (2005).\\
+[[http://link.aps.org/abstract/PRB/v72/e014126|Abstract]] {{:publications:roth05_3.pdf|PDF}}
+
+J. Roth\\
+**Shock waves in complex binary solids: Cubic Laves crystals, quasicrystals, and amorphous solids**\\
+Phys. Rev. B **71**, 064102 (2005).\\
+[[http://link.aps.org/abstract/PRB/v71/e064102|Abstract]] {{:publications:roth05_1.ps.gz|PS}}, {{:publications:roth05_1.pdf|PDF}}
+
+Ch. Rudhart, P. Gumbsch, and H.-R. Trebin\\
+**Temperature dependence of crack propagation in a two-dimensional model quasicrystal**\\
+Phil. Mag. **85**(28), pp. 3259-3272 (2005).\\
+[[http://taylorandfrancis.metapress.com/openurl.asp?genre=article&eissn=1478-6443&volume=85&issue=28&spage=3259|Abstract]]
+
+E. Bitzek, P. Gumbsch\\
+**Dynamic aspects of dislocation motion: atomistic simulations**\\
+Materials Science and Engineering: A **400**, 40-44 (2005).\\
+
+
+W. Sekkal, A. Zaoui, S. Schmauder,\\
+**Nanoindentation study of the superlattice hardening effect at TiC(110)/NbC(119) interfaces,**\\
+Applied Physics Letters **86** (2005) 163108 1-3\\
+
+
+Ch. Kohler, P. Kizler, S. Schmauder,\\
+**Atomistic simulation of the pinning of edge dislocations in Ni by Ni<sub>3</sub>Al precipitates,**\\
+Materials Science and Engineering A **400-401** (2005) 481-484\\
+
+
+U. Weber, P. Deimel, D. Saraev, E. Sattler, S. Schmauder, E. Soppa,\\
+**Influence of hydrogen on the deformation behaviour of a ferritic fine-grained low alloy steel,**\\
+Computational Materials Science **32** (2005) 577-587\\
+
+
+Ch. Kohler, P. Kizler, S. Schmauder,\\
+**Atomistic simulation of precipitation hardening in α-iron: influence of precipitate shape and chemical compositi on,**\\
+Modelling and Simulation in Materials Science and Engineering **13** (2005) 35-45\\
+
+G. Lasko, D. Saraev, S. Schmauder, P. Kizler,\\
+**Atomic-scale simulations of the interaction between a moving dislocation and a bcc/fcc phase boundary,**\\
+Computational Materials Science **32** (2005) 418-425\\
+==== 2004 ====
+
+F. Gähler and S. Hocker\\
+**Atomic Dynamics in Decagonal Al-Ni-Co Quasicrystals**\\
+J. Non-Cryst. Solids **334-335**, pp. 308-311 (2004).\\
+{{:publications:gaehler04_1.ps.gz|PS, 1.2MB}} {{:publications:gaehler04_1.pdf|PDF, 1.4MB}}
+
+F. Gähler and S. Hocker\\
+**Atomic Dynamics and Diffusion in Decagonal Quasicrystals**\\
+Ferroelectrics **305**, pp. 167-172 (2004).\\
+{{:publications:gaehler03_3.ps.gz|PS, 672kB}} {{:publications:gaehler03_3.pdf|PDF, 976kB}}
+
+S. Hocker and F. Gähler\\
+**Aluminium Diffusion in Decagonal Quasicrystals**\\
+Phys. Rev. Lett. **93**, 075901 (2004).\\
+{{:publications:hocker04_1.ps.gz|PS, 796kB}} {{:publications:hocker04_1.pdf|PDF, 1.3MB}}
+
+F. Rösch, Ch. Rudhart, P. Gumbsch, and H.-R. Trebin\\
+**Cleavage Planes of Icosahedral Quasicrystals: A Molecular Dynamics Study**\\
+Mat. Res. Soc. Symp. Proc. **805**, LL9.3 (2004).\\
+[[http://www.mrs.org/publications/epubs/proceedings/fall2003/ll/|MRS electronic library]] {{:publications:roesch04_1.pdf|PDF, 1.3MB}}
+
+J. Roth\\
+**Shock Waves and Solitary Waves in bcc Crystals**\\
+In //Shock Compression of Condensed Matter - 2003//\\
+AIP Conference Proceedings **706**, pp. 302-305 (2004).\\
+[[http://ojps.aip.org/journals/doc/APCPCS-home/confproceed/706.jsp|AIP Conf. Proc. 706]]
+
+Ch. Rudhart, P. Gumbsch, and H.-R. Trebin\\
+**From Crystalline to Glassy: Crack Propagation Modes in Decagonal Quasicrystals**\\
+Mat. Res. Soc. Symp. Proc. **805**, LL9.2 (2004).\\
+[[http://www.mrs.org/publications/epubs/proceedings/fall2003/ll/|MRS electronic library]]
+
+Ch. Rudhart, P. Gumbsch, and H.-R. Trebin\\
+**Crack Propagation in Perfectly Ordered and Random Tiling Quasicrystals**\\
+J. Non-Cryst. Solids **334-335**, pp. 453-456 (2004).\\
+{{:publications:rudhart03_1.ps.gz|PS, 504kB}} {{:publications:rudhart03_1.pdf|PDF, 1.3MB}}
+
+E. Bitzek, P. Gumbsch\\
+**Atomistic study of drag, surface and inertial effects on edge dislocations in face-centered cubic metals**\\
+Materials Science and Engineering: A **387**, pp. 11-15 (2004).
+
+E. Bitzek, D. Weygand, P. Gumbsch\\
+**Atomistic study of edge dislocations in fcc metals: drag and inertial effects**\\
+Kluwer Academic Publishers, Dordrecht (2004).
+==== 2003 ====
+
+C. Kohler\\
+**Atomistic Simulations of Strain Distributions in Quantum Dot Nanostructures**\\
+J. Phys.: Condens. Matter **15**, 133-146 (2003)\\
+[[http://www.iop.org/EJ/S/3/19/RLe1GTnkw8hqJ9kDS,YjZQ/abstract/0953-8984/15/2/313|J. Phys.: Condens. Matter]]
+
+N. Resta, C. Kohler, and H.-R. Trebin\\
+**Modelling the Crystal Growth of Cubic Silicon Carbide by Molecular Dynamics Simulations**\\
+Mat. Res. Soc. Symp. Proc. Vol. **742**, K5.3 (2003)\\
+eds. S. E. Saddow, D. J. Larkin, N. S. Saks, A. Schöner, M. Showronski\\
+[[http://www.mrs.org/s_mrs/sec_subscribe.asp?CID=2560&DID=118377&action=detail|Mat. Res. Soc. Symp. Proc.]]
+
+N. Resta, C. Kohler, and H.-R. Trebin\\
+**Molecular Dynamics Simulations of Amorphous Si-C-N Ceramics:\\
+Composition Dependence of the Atomic Structure**\\
+J. Am. Ceram. Soc. **86**(8), 1409-1414 (2003)\\
+[[http://www.blackwell-synergy.com/doi/abs/10.1111/j.1151-2916.2003.tb03484.x|Abstract]]
+
+Ch. Rudhart, P. Gumbsch, and H.-R. Trebin\\
+**Crack Propagation in Quasicrystals**\\
+In //Quasicrystals - Structure and Physical Properties,//\\
+H.-R. Trebin (ed.), VCH Wiley (2003), pp. 484-500.\\
+{{:publications:rudhart03_3.ps.gz|gzipped PS, 1.4MB}} {{:publications:rudhart03_3.pdf|PDF, 3.4MB}} [[http://www.wiley-vch.de/publish/en/books/highlights/3-527-40399-X|VCH Wiley]]
+
+G. Schaaf, J. Roth, and H.-R. Trebin\\
+**Dislocation Motion in Icosahedral Quasicrystals at\\
+Elevated Temperatures: Numerical Simulation**\\
+Phil. Mag. **83**(21), 2449-2465 (2003)\\
+[[http://taddeo.ingentaselect.com/vl=8402074/cl=12/nw=1/rpsv/cw/tandf/14786435/v83n21/s2/p2449|Abstract]]
+==== 2002 ====
+
+C. Kohler\\
+**Atomistic Modelling of Structures of Tilt Grain Boundaries and Antiphase Boundaries in beta-Silicon Carbide**\\
+Phys. stat. sol. (b) **234**, 522-540 (2002)\\
+[[http://www3.interscience.wiley.com/cgi-bin/abstract/99520481/START|Physica status solidi (b)]]
+
+J. Roth\\
+**Large-Scale Molecular Dynamics Simulations of Shock Waves in Laves Crystals and Icosahedral Quasicrystals**\\
+//Shock Compression of Condensed Matter 2001//, AIP Conf. Proc. **620**, 378-384 (2002)\\
+[[http://ojps.aip.org/journal_cgi/dbt?KEY=APCPCS&Volume=620&Issue=1|AIP Conf. Proc.]]
+
+==== 2001 ====
+
+G. Krdzalic, M. Brunelli and H.-R. Trebin\\
+**Temperature dependence of dislocation motion and crack propagation in a two-dimensional binary model quasicrystal**\\
+Mat. Res. Soc. Symp. Proc. Vol. **643**, K7.1 1-6 (2001)
+
+J. Roth\\
+**Shock Waves in Quasicrystals**\\
+Ferroelectics **250**, 365 (2001)\\
+(Proceedings of Aperiodic 2000, Nijmegen, July 2000)\\
+{{:publications:aper2000.1.ps.gz|PS, 394kB}} {{:publications:aper2000.1.pdf|PDF, 323kB}}
+
+==== 2000 ====
+
+D. Bunz, G. Zeger, J. Roth, M. Hohl, and H.-R. Trebin\\
+**Molecular Dynamic Studies of Atomic Jumps in //d//-AlCuCo**\\
+Mat. Sci. Eng. A **294-296**, 675-679 (2000)\\
+(Proceedings of the 7th International Conference on Quasicrystals)\\
+{{:publications:bunz_PD9V2.ps.gz|PS, 3.9MB}} {{:publications:bunz_PD9V2.pdf|PDF, 2.9MB}}
+
+M. Hohl, J. Roth, H.-R. Trebin\\
+**Correlation functions and the dynamical structure factor of quasicrystals**\\
+Eur. Phys. J. **B 17**, 595 (2000)\\
+[[http://www.springerlink.com/openurl.asp?genre=article&issn=1434-6028&volume=17&issue=4&spage=595|European Physical Journal B]]
+
+J. Roth\\
+**Shock Waves in Quasicrystals**\\
+Mat. Sci. Eng. A **294-296**, 753-756 (2000)\\
+(Proceedings of the 7th International Conference on Quasicrystals)\\
+{{:publications:roth_OE2V2.ps.gz|PS, 681kB}} {{:publications:roth_OE2V2.pdf|PDF, 394kB}}
+
+G. Schaaf, R. Mikulla, J. Roth, and H.-R. Trebin\\
+**Numerical Simulation of Dislocation Motion in an Icosahedral Quasicrystal**\\
+Mat. Sci. Eng. A **294-296**, 799-803 (2000)\\
+(Proceedings of the 7th International Conference on Quasicrystals)\\
+{{:publications:pmlpaper.ps.gz|PS, 1MB}} {{:publications:pmlpaper.pdf|PDF, 3.7MB}}
+
+G. Schaaf, R. Mikulla, J. Roth, and H.-R. Trebin\\
+**Numerical Simulation of Dislocation Motion in Three-Dimensional Icosahedral Quasicrystals**\\
+Phil. Mag. **A 80**(7), 1657-1668 (2000)\\
+[[http://nabucco.catchword.com/vl=-11826147/cl=9/nw=1/rpsv/wwwtemp/cl9tmp98.htm?/rpsv/0141-8610%2820000701%2980%3A7L.1657%3B1-|Philosophical Magazine A]]
+==== 1999 ====
+
+H.-R. Trebin\\
+**Numerical Simulations of Plasticity and Fracture in Quasicrystals**\\
+Mat. Res. Soc. Symp. Proc. Vol. **553**, 337-43 (1999)\\
+
+H.-R. Trebin, R. Mikulla, J. Stadler, G. Schaaf, and P. Gumbsch\\
+**Molecular Dynamics Simulations of Crack Propagation in Quasicrystals**\\
+Comp. Phys. Comm. **121-122**, 536-539 (1999)\\
+
+==== 1998 ====
+
+R. Mikulla, J. Stadler, P. Gumbsch, and H.-R. Trebin\\
+**Molecular Dynamics Simulations of Crack Propagation in Quasicrystals**\\
+in “Proceedings of the 6th International Conference on Quasicrystals”,\\
+eds. S. Takeuchi and T. Fujiwara,\\
+World Scientific Singapore 1998, p. 485-92
+
+R. Mikulla, P. Gumbsch, and H.-R. Trebin\\
+**Dislocations in Quasicrystals and their Interaction with Cluster-like Obstacles**\\
+Phil. Mag. Lett. **78**, 369-76 (1998)\\
+[[http://nabucco.catchword.com/vl=36279139/cl=35/nw=1/rpsv/catchword/tandf/09500839/v78n5/s5/p369|Philosophical Magazine Letters]]
+
+R. Mikulla, J. Stadler, F. Krul, H.-R. Trebin, and P. Gumbsch\\
+**Crack Propagation in Quasicrystals**\\
+Phys. Rev. Lett. **81**(15), 3163-3166 (1998)\\
+[[http://publish.aps.org/abstract/PRL/v81/p3163|Physical Review Letters]]
+
+H.-R. Trebin\\
+**Numerical simulations of dislocation motion and crack propagation in quasicrystals**\\
+in: Berichte aus den Arbeitskreisen der DGK Nr. 2,\\
+ed. J. Schreuer, p. 55-61 (1998)
+
+===== Other Publications related to IMD =====
+
+J. Roth, S. Sonntag, J. Karlin, and H.-R. Trebin\\
+**Laser Ablation of Metals: Generation of Drops and Bubbles**\\
+InSiDe (Innovatives Supercomputing in Deutschland) **10**(1), pp. 30-35 (2012).\\
+[[http://inside.hlrs.de/htm/Edition_01_12/article_15.html|Article]]
+
+S. Schmauder,\\
+**Simulation als Instrument der Werkstoffentwicklung,**\\
+Metall **63** (2009) 295-297
+
+P. Brommer and F. Gähler\\
+**Potfit: effective potentials from ab-initio data**\\
+Modelling Simul. Mater. Sci. Eng. **15**, pp. 295-304 (2007).\\
+[[http://stacks.iop.org/0965-0393/15/295|Abstract]] {{:publications:brommer07_1.pdf|PDF}}
+
+P. Brommer and F. Gähler\\
+**Effective potentials for quasicrystals from ab-initio data**\\
+Phil. Mag. **86**(6-8), pp. 753-758 (2006).\\
+[[http://journalsonline.tandf.co.uk/openurl.asp?genre=article&eissn=1478-6443&volume=86&issue=6&spage=753|Abstract]] {{:publications:brommer06_1.pdf|PDF}}
+
+H.-R. Trebin\\
+**Problems Cracked**\\
+Chemistry in Britain **39**(4), 53-55 (2003)
+
+H.-R. Trebin\\
+**Phasons, Dislocations, and Cracks**\\
+In //Quasicrystals, an introduction to structure, physical properties and application of quasicrystalline alloys//,\\
+eds. J.B. Suck, M. Schreiber, P. Häussler, ISBN 3-540-64224-2, Springer-Verlag (2002), pp. 251-61\\
+[[http://www.springer.de/cgi-bin/search_book.pl?isbn=3-540-64224-2|Springer-Verlag]]
+
+H.-R. Trebin\\
+**Mit Supercomputern ins Innerste der Materie blicken: Crash-Simulationen von Festkörpern auf atomarer Skala**\\
+In: “… und Er würfelt doch!”, Sammelband der Deutschen Physikalischen Gesellschaft zum Jahr der Physik, eds. H. Müller-Krumbhaar, H.-F. Wagner, Wiley-VCH, 417–24 (2001).
+
+H.-R. Trebin\\
+**Numerical Simulation of Defects in Quasicrystals**\\
+In “Computer Simulations of Defects in Liquid Crystals”, NATO ASI Book Series, eds. Lavrentovich OD, Pasini P, Zannoni C, Zumer S, Kluwer Academic Publishers (2001).
+===== Habilitation, Dissertations, Thesis =====
+
+Alen-Pilip Prskalo\\
+**Molecular Dynamics Simulations of Si, SiC and Si<sub>3</sub>N<sub>4</sub> Layered Systems,\\
+Molekulardynamische Simulationen von Si-, SiC- und Si<sub>3</sub>N<sub>4</sub>-Schichtsystemen**,\\
+Dissertation thesis, IMWF, University of Stuttgart (2013),\\
+[[http://elib.uni-stuttgart.de/opus/volltexte/2013/8354/|fulltext]]
+
+Daniel Schopf\\
+**Effective potentials for numerical investigations of complex intermetallic phases**,\\
+**Effektive Potenziale zur numerischen Untersuchung komplexer intermetallischer Phasen**,\\
+Dissertation thesis, ITAP, University of Stuttgart (2013),\\
+[[http://elib.uni-stuttgart.de/opus/volltexte/2013/8427/|fulltext]]
+
+Daniel Förster\\
+**Validation of the software package IMD for molecular dynamics simulations of laser induced ablation for micro propulsion**,\\
+Teachers thesis, ITAP, University of Stuttgart (2013),\\
+[[http://elib.uni-stuttgart.de/opus/volltexte/2013/8570/|fulltext]]
+
+Philipp Beck\\
+**Molecular dynamics of metal oxides with induced electrostatic dipole moments**,\\
+**Molekulardynamik von Metalloxiden mit induzierten elektrostatischen Dipolmomenten**,\\
+Dissertation thesis, ITAP, University of Stuttgart (2012),\\
+[[http://elib.uni-stuttgart.de/opus/volltexte/2013/8123/|fulltext]]
+
+Steffen Sonntag\\
+**Computer simulations of laser ablation from simple metals to complex metallic alloys**,\\
+**Computersimulationen der Laserablation von einfachen Metallen hin zu komplexen metallischen Phasen**,\\
+Dissertation thesis, ITAP, University of Stuttgart (2011),\\
+[[http://elib.uni-stuttgart.de/opus/volltexte/2011/6276/|fulltext]]
+
+Holger Euchner\\
+**Lattice dynamics of complex metallic alloy**,\\
+**Zur Gitterdynamik komplexer metallischer Phasen**,\\
+Dissertation thesis, ITAP, University of Stuttgart (2011),\\
+[[http://elib.uni-stuttgart.de/opus/volltexte/2011/6848/|fulltext]]
+
+Daniel Schopf\\
+**Effektive Potenziale für komplexe metallische Phasen**,\\
+**Effective potentials for complex metallic alloys**,\\
+Diploma thesis, ITAP, University of Stuttgart (2009),\\
+[[http://elib.uni-stuttgart.de/opus/volltexte/2009/4864/|fulltext]]
+
+Frohmut Rösch\\
+**Atomistic dynamics of crack propagation in complex metallic alloys**,\\
+**Atomistische Dynamik der Rissausbreitung in komplexen intermetallischen Verbindungen**,\\
+Dissertation thesis, ITAP, University of Stuttgart (2008),\\
+[[http://elib.uni-stuttgart.de/opus/volltexte/2008/3598/|fulltext]]
+
+Peter Brommer\\
+**Entwicklung und Test von Wechselwirkungspotenzialen in Quasikristallen**,\\
+**Development and test of interaction potentials in quasicrystals**,\\
+Diploma thesis, ITAP, University of Stuttgart (2003),\\
+[[http://elib.uni-stuttgart.de/opus/volltexte/2003/1570//|fulltext]]
+
+Gunther Schaaf\\
+**Numerical simulation of dislocation motion in icosahedral quasicrystals**,\\
+**Numerische Simulation der Versetzungsbewegung in ikosaedrischen Quasikristallen**,\\
+Dissertation thesis, ITAP, University of Stuttgart (2003),\\
+[[http://elib.uni-stuttgart.de/opus/volltexte/2003/1340/|fulltext]]
+
+Marco Brunelli\\
+**Crack propagation in quasicrystals at different temperatures**,\\
+**Temperaturabhängige Molekulardynamik-Simulationen der Rissausbreitung in Quasikristallen**,\\
+Dissertation thesis, ITAP, University of Stuttgart (2001),\\
+[[http://elib.uni-stuttgart.de/opus/volltexte/2001/798/|fulltext]]
+
+Gunther Schaaf\\
+**Numerische Simulation des mechanischen Verhaltens von Quasikristallen**,\\
+Diploma thesis, ITAP, University of Stuttgart (1999),\\
+[[http://elib.uni-stuttgart.de/opus/volltexte/1999/479/|fulltext]]

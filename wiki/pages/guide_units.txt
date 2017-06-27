@@ -1,0 +1,19 @@
+====== Units ======
+
+//IMD// does not need a particular system of units. It can work with any system. The units used by //IMD// are implicitly defined in the configuration and potential files, and possibly by certain parameters specifying the potential. The configuration file contains atom positions and atom masses, which implicitly defines a length unit and a mass unit, respectively. The interaction potential implicitly makes use of a length unit and an energy unit. Of course, this length unit must be the same as for the configuration file. The three units of length, mass, and energy determine all other units, which are derived from them. The temperature is always given in energy units.
+
+===== Example =====
+
+If the length unit is 1 Angstrom = 1e-10 m, the energy unit 1 eV = 1.6022e-19 J (which corresponds to 11605 K), and the mass unit is 1 amu = 1.6605e-27 kg, we have for the unit of time 1.018e-14 s = 10.18 fs. The unit of pressure then is 160.2 GPa = 1602 kbar.
+
+===== Time step =====
+
+For simulating a solid, a time step of 1 femtosecond is usually a good starting point. Whether a certain time step is a reasonable choice can be checked by making an NVE simulation for some 10000 time steps, with eng_int set to 1 (writing the energy at every time step). The resulting .eng file can then be Fourier transformed with the utility program imd_power, revealing the frequency spectrum of the fluctuations of the kinetic energy and other quantities. If the mode with the highest essential frequency omega_max in that spectrum shall be tracked with, say, 30 time steps, then the time step must be roughly equal to 2*pi/(30*omega_max). If the initial time step was too small, this procedure should be repeated.
+
+===== Time constant for temperature control =====
+
+The integrators ''nvt'', ''npt_iso'', and ''npt_axial'' offer a Nose-Hoover thermostat, which requires a time constant ''inv_tau_eta'' to be set appropriately. This time constant defines another frequency in the system; in order for the thermostat to work well, it must couple effectively to the native freqency spectrum of the system. A good estimate for a suitable value of ''inv_tau_eta'' can be obtained in an NVE simulation with the compile option einstein switched on. The Einstein frequency is then written to the .eng file, whose average (or two thirds thereof) can be used as an initial value of ''inv_tau_eta''. With that value, an NVT simulation should then be performed, and the frequency spectrum analysed with the utility program ''imd_power''. With a bad choice of ''inv_tau_eta'', an extra peak outside the native frequency spectrum is visible, whose position is proportional to ''inv_tau_eta'', which can then be corrected accordingly. For a good choice of ''inv_tau_eta'', the frequency spectrum is only slighly distorted. The optimal value of ''inv_tau_eta'' is usually not very critical, and changes only slowly with temperature and pressure.
+
+===== Time constant for pressure control =====
+
+Besides a time constant for temperature control (which should be determined first and then kept fixed), the ensembles ''npt_iso'' and ''npt_axial'' also require a time constant for pressure control, ''inv_tau_xi''. Its determination is analoguous to the determination of ''inv_tau_eta'', except that here one looks at pressure fluctuations. Also, there is no analogue of the Einstein frequency as initial guess, so that some experimentation is necessary. One usually obtains a very large and sharp peak in the fluctuation spectrum, which suggests how to change ''inv_tau_xi''. It is in fact not so easy to find a value for which there is no large extra peak in the spectrum. The value of ''inv_tau_xi'' needs to be determined much more precisely than ''inv_tau_eta''.

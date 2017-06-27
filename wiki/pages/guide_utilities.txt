@@ -1,0 +1,10 @@
+====== Utility Programs ======
+
+The **imd/util** directory contains a number of utility programs for the preparation of IMD input files and the postprocessing of IMD output files. They are grouped into different categories:
+
+|[[util_distrib.html|Distribution]]|Tools for dealing with distribution files              |
+|[[util_config.html|Configuration]]|Tools for postprocessing IMD configuration files       |
+|[[util_correl.html|Correlation]]  |Tools for postprocessing IMD correlation function files|
+|[[util_pot.html|Potential]]       |Tools for dealing with potential files                 |
+|[[util_misc.html|Miscellaneous]]  |Miscellaneous tools                                    |
+

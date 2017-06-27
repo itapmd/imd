@@ -1,0 +1,23 @@
+====== Mailing list ======
+
+<html>
+  <div style="
+    background: none repeat scroll 0 0 #8799A9;
+    border-radius: 2em 2em 2em 2em;
+    float: none;
+    margin-bottom: 5px;
+    position: relative;
+    text-align: center;
+    top: 6px;
+    width: 30em;
+    margin-left:auto;
+    margin-right:auto;">
+    <a title="Subscribe to IMD-Users" href="https://listserv.uni-stuttgart.de/mailman/listinfo/imd-users" style="font-size:20pt;color:white;">Subscribe to IMD-Users</a>
+  </div>
+</html>
+
+This mailing list is for general discussion on IMD. Here you can post your questions, discuss with other users, request new features or submit bug reports.
+
+Only members may post to that list or view the [[https://listserv.uni-stuttgart.de/mailman/private/imd-users/|Archive]].
+
+Subscribers to this mailing list can review their subscription settings [[https://listserv.uni-stuttgart.de/mailman/listinfo/imd-users|here]].

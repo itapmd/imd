@@ -1,0 +1,51 @@
+====== Features ======
+
+===== Interactions =====
+
+IMD supports the following types of short range interactions between atoms or molecules:
+
+  * Tabulated central pair potentials
+  * Embedded-Atom (EAM) potentials for metals
+  * Stillinger-Weber and Tersoff potentials for covalent systems
+  * Gay-Berne potentials for nematic liquid crystals
+  * Except for Gay-Berne potentials, the number of different atom types is not limited.
+
+===== Thermodynamic ensembles and other MD integrators =====
+
+There is a rich choice of thermodynamic ensembles available in IMD:
+
+  * Microcanonical NVE ensemble
+  * Canonical NVT ensemble using a Nosé-Hoover thermostat
+  * Canonical NVT ensemble using a simple Anderson thermostat
+  * Canonical NPT ensemble using a Nosé-Hoover thermostat for both the temperature and the pressure control; there are two variants, one for isotropic volume rescaling, and one which can scale the three axis independently.
+  * Several MD integrators for the relaxation of a structure
+
+IMD supports multi-phase simulations: it is possible to switch from one thermodynamic ensemble to another during a running simulation. It is also possible to vary the temperature or the external pressure tensor linearly during the simulation.
+
+===== Simulation options =====
+
+IMD supports a large variety of further simulation options, in particular ones that allow to:
+
+  * shear and deform a sample during the simulation
+  * apply extra forces on certain atoms
+  * fix or rigidly move certain atoms
+  * constrain the mobility of certain atoms
+  * simulate crack propagation
+  * simulate shock waves
+  * compute correlation functions
+  * calculate free energy
+
+
+===== Supported hardware architectures =====
+
+IMD runs on the following types of hardware architectures:
+
+  * Single processor workstations
+  * Workstation clusters with MPI parallelization
+  * Massively parallel supercomputers with MPI parallelization
+  * Multiprocessor SMP machines with OpenMP parallelization
+  * Supercomputers and clusters with several SMP nodes, with MPI parallelization between nodes, and OpenMP parallelization within a node
+
+IMD is actively used on Linux workstations, on HLRS Hornet (Cray XC40) and NIC Juqueen (IBM BlueGene/Q) supercomputers. IMD also ran successfully on many other workstation types (DEC, HP, SGI), as well as on the IBM SP2, the Intel Paragon, and the Hitachi SR2201, Cray T3E, Hitachi SR 8000 for example. It should be fairly easy to port it to further architectures.
+
+There was also a version for vector supercomputers, which ran on the NEC SX4 and the Cray C94. Since it did not perform very well it is no longer maintained. 

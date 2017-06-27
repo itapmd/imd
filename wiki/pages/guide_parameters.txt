@@ -1,0 +1,799 @@
+====== Valid Parameters ======
+
+Following is a complete list of //IMD// parameters, together with a short description of their meaning, and indications when they are needed. Floating point numbers should be given in decimal notation. Vectors are given as a list of components, separated by spaces or tabs (all on one line).
+
+===== File names =====
+
+<code io>
+# file names - required
+coordname	# file name for atom coordinate input data
+outfiles	# basename for output files - use a name different from
+                # input file name, otherwise it will be overwritten
+potfile		# filename for pair potential data
+
+# file names - optional
+reffile         # filename for reference configuration 
+itrname         # file name for initial itr-file 
+use_header      # shall a header be used 
+</code>
+
+===== Main control =====
+
+<code io>
+# main control parameters - required (except startstep)
+simulation      # number of next simulation phase, whose parameters follow
+ensemble        # simulation ensemble (MD integrator) 
+maxsteps	# step number at which simulation phase ends
+maxwalltime     # maximum allowed walltime in seconds; if exceeded (and > 0),
+                # IMD writes a checkpoint and stops
+watch_int	# if > 0, check every watch_int steps for the existence
+                # of an empty file "write". If found, write a checkpoint
+	        # and continue.
+stop_int        # if > 0, check every stop_int steps for the existence
+                # of a file "stop". If found, write a checkpoint and stop.
+startstep       # starting step number (default 0)
+timestep	# size of timestep (in MD units)
+total_types     # TOTAL number of atom types (including virtual types)
+                # total_types >= ntypes
+ntypes		# number of real atom types (types vary in [0..ntypes-1])
+masses          # masses for generated structures (default: 1.0)
+types		# types for generated structures (default: 0 1) 
+                #
+seed            # seed for random number generator in maxwell
+initsize        # initially allocated cells get space for initsize particles
+incrsize        # memory in cells is incremented by incrsize particles
+inbuf_size      # total input buffer size in MB for parallel input
+outbuf_size     # output buffer size in MB 
+cellsize        # minimal cell diameter 
+restrictionvector # format: typenr 1 1 0 
+                  # (i.e no movement in z-direction)
+</code>
+
+==== Simulation box ====
+
+<code io>
+# simulation box - required
+box_param       # box parameters for generated samples
+box_unit        # scale of generated structures (default: 1.0)
+box_x		# 'x' or first vector for box
+box_y		# 'y' or second vector for box
+box_z		# 'z' or third vector for box - only 3D
+box_from_header # if 1, box is read from header of config file
+pbc_dirs        # boundary condition type; vector with components 0 or 1 
+                # 1 means pbc, 0 means free bc in that direction
+                # default is pbc in all directions
+                #
+size_per_cpu    # box parameters are given per CPU 
+</code>
+
+==== Parallel simulation ====
+
+<code io>
+# control parameters for parallel simulation
+cpu_dim		# CPU array dimension
+parallel_input  # parallel input (1, default, recommended) or serial (0) input
+parallel_output	# parallel output flag (0 == serial (default),
+                # 1 == parallel, 2 == serial, but parallel picture writes)
+msgbuf_size     # security factor of message buffer size 
+dist_chunk_size # size of MPI reduction in mega-floats 
+hyper_threads   # number of hyperthreads per CPU 
+</code>
+
+=== Data writes ===
+table of contents
+<code io>
+# intervals for data writes - default is 0
+checkpt_int	# number of steps between checkpoints
+eng_int		# number of steps between energy data writes
+pic_int		# number of steps between picture writes
+flush_int       # interval for flushing .eng file 
+
+# parameters for writef
+force_all      # write all forces, or only those of atoms with virtual type 
+force_int      # number of steps between force writes 
+
+# type of data write (binary 1)
+binary_output  # binary output flag 
+
+# writing two-dimensional pictures
+projection     # projection (0=orthogonal, 1=perspective) 
+view_dir       # view direction 
+view_pos       # view position 
+</code>
+
+=== Distributions ===
+
+<code io>
+# writing distributions - general parameters
+dist_int	# number of steps between distribution writes
+dist_dim        # dimension of distribution 
+dist_ll         # lower left corner in user coords 
+dist_ur         # upper right corner in user coords
+
+# flags selecting the distributions: 
+# 0=no (default), 1=binary, 2=ASCII with bin coords, 3=ASCII no bin coords)
+dist_Epot_flag         # potential energy 
+dist_Ekin_flag         # kinetic energy 
+dist_presstens_flag    # pressure tensor (option stress, 
+                       # all components in one file) 
+dist_Ekin_long_flag    # longitudinal kinetic energy (shock wave simulation) 
+dist_Ekin_trans_flag   # transversal kinetic energy (shock wave simulation) 
+dist_Ekin_comp_flag    # transversal kinetic energy difference between
+                       # transverse directions for anisotopic samples (shock
+		       # wave simulation) 
+dist_press_flag        # scalar pressure (requires option stress) 
+dist_pressoff_flag     # off-diagonal entries of the pressure tensor (shock
+                       # wave simulation) 
+dist_shock_shear_flag  # shear stress (shock wave simulation)
+dist_shear_aniso_flag  # shear stress difference between transverse directions
+                       # for anisotopic samples (shock wave simulation)
+dist_dens_flag         # local density (shock wave simulation)
+dist_vxavg_flag        # local sample velocity
+</code>
+
+=== Temperature and pressure control ===
+
+<code io>
+# temperature, pressure, and related stuff
+# required if ensemble supports temperature or pressure control
+# in other ensembles, starttemp might be needed to initialize the velocities
+starttemp	     # Temperature at start of simulation phase. Also used to 
+                     # initialize the velocities, if these are not given.
+do_maxwell           # if 1, initialize velocities to Maxwell distribution
+use_current_temp     # (without arguments) Instructs IMD to set the starting
+                     # external temperature to the actual system temperature.
+                     # In this case, the velocities MUST be given.
+endtemp		     # Temperature at end of simulation phase.
+                     # If different from starttemp, and ensemble can
+		     # control the temperature, the temperature varies
+                     # linearly during the simulation phase
+tempintv	     # time interval for Anderson thermostat
+pressure_start	     # external starting pressure/stress for NPT
+use_current_pressure # (without arguments) Similar to use_current_temp.
+                     # Instructs IMD to use the current system pressure
+                     # as the starting external pressure.
+pressure_end	     # external end pressure/stress for NPT
+                     # if different from pressure_start, the pressure
+		     # varies linearly during the simulation
+eta                  # dynamic eta variable for NVT thermostat
+                     # to continue a simulation properly, the old
+		     # final value of eta should be used
+tau_eta		     # time constant for thermostat
+xi                   # dynamic xi variable for NPT ensemble
+                     # scalar for NPT_iso, vector for NPT_axial
+                     # to continue a simulation properly, the old
+		     # final value of xi should be used
+tau_xi		     # time constant for volume control in NPT simulation
+inv_tau_eta	     # 1/tau_eta. Can be zero, which corresponds to NVE
+isq_tau_eta	     # 1/SQR(tau_eta). Can be zero, which corresponds to NVE
+inv_tau_xi	     # 1/tau_xi. Can be zero, which corresponds
+                     # to NVT or NVE
+isq_tau_xi	     # 1/SQR(tau_xi). Can be zero, which corresponds
+                     # to NVT or NVE
+cell_size_tol	     # relative tolerance for volume rescaling during 
+                     # NPT simulation
+tau_berendsen        # temperature interval 
+delta_finnis         # viscous damping coefficient for FINNIS
+zeta_0               # factor to be compatible with timestep in FINNIS
+eta_rot              # eta variable of rotational motion for NVT or NPT
+                     # thermostat  
+</code>
+
+=== Neighbor lists ===
+
+<code io>
+# neighbor lists
+nbl_margin           # margin by which cutoff radius is increased when
+                     # using neighbor lists (option nbl) 
+nbl_size             # default 1.1; increase slightly in case of
+                     # neighbor table overflow
+</code>
+
+=== Force Boundary Conditions ===
+
+<code io>
+# Force Boundary Conditions (fbc)
+extra_startforce     # start-/endforce for each virtual type
+extra_endforce       # format: typenr force vector
+extra_dforce         # force increment for each virtual type (for relaxation)
+max_fbc_int          # maximum interval between fbc increments
+                     #
+fbc_ekin_threshold   # epsilon criterium to increment extra force
+fbc_waitsteps        # max nr of steps between fbc increments
+
+
+# parameters to write selected atoms (efilter)
+ef_checkpt_int       # number of steps between output of selected atoms 
+e_pot_lower          # vector with lower limits of potential energy
+e_pot_upper          # vector with upper limits of potential energy, 
+                     # only atoms (no virtual atoms) with pot. energy 
+                     # within this range are printed
+pic_ll		     # location (vector) of lower left corner
+pic_ur		     # location of upper right corner,
+                     # only atoms within this box are considered 
+		     # for output
+
+# parameters for glok
+glok_ekin_threshold # set velocities to 0 if temperature above threshold (default 100)
+min_nPxF         # minimum gloks before increasing the timestep 
+
+# parameters for adaptglok
+glok_decfac      # factor to decrease the timestep 
+glok_fmaxcrit    # critical max. force component  
+glok_incfac      # factor to increase the timestep 
+glok_int         # only needed for restarting 
+glok_maxtimestep # max timestep 
+glok_minsteps    # minimum of steps before increasing the timestep 
+glok_mixdec      #decrease factor to turn velocities more parallel to forces 
+glok_mix         # factor to turn velocities more parallel to forces 
+
+# parameters for fire
+fire_decfac         # factor to decrease the timestep 
+fire_ekin_threshold # threshold for ekin 
+fire_fmaxcrit       # critical max. force component  
+fire_incfac         # factor to increase the timestep 
+fire_int            # only needed for restarting 
+fire_maxtimestep    # max timestep 
+fire_minsteps       # minimum of steps before increasing the timestep 
+fire_mixdec         # decrease factor to turn velocities more parallel to forces 
+fire_mix            # factor to turn velocities more parallel to forces 
+
+# parameters for cg
+cg_fr         # Fletcher-Reeves mode or not
+cg_glimit     # limit in mnbrak 
+cg_infolevel  # cg_infolevel controls verbosity 
+cg_mode       # conjugate gradient mode - at present just the default one 
+cg_reset_int  # interval for resetting cg 
+cg_zeps       # in brent 
+
+lindef_freq     # frequency for deformation 
+linmin_dmax     # max. length of trial step in 1d minimum search 
+linmin_dmin     # max. length of trial step in 1d minimum search 
+linmin_maxsteps # max steps to find min in one direction 
+linmin_tol      # tolerance to stop min search in one direction 
+
+# parameters for  cg
+acg_alpha    # starting alpha 
+acg_decfac    # decrease alpha
+acg_incfac    # increase alpha
+
+# parameters for 2d pictures
+ecut_kin	# kinetic energy interval for pictures (min/max)
+ecut_pot	# potential energy interval for pictures (min/max)
+pic_ll		# lower left corner of picture
+pic_ur		# upper right corner of picture
+pic_res		# number of pixels in x/y direction
+pic_type	# type of picture: 0 (raw data), 1 (bins) 
+nsmear          # radius (in multiples of bin size) over which energy
+                # of atom is smeared out. Use with pic_tye=1. Default is 5.
+
+# parameters for particular modules
+
+# parameter for CNA
+cna_start       # start time for CNA
+cna_end         # end time for CNA
+cna_int         # number of steps between CNA
+cna_rcut        # cutoff distance for definition of nearest neighbours
+cna_write       # pair types to be written out
+cna_ll          # lower left corner for output
+cna_ur          # upper right corner for output
+                #
+cna_crist       # determine crystallinity of atoms
+cna_stat        # write statistics
+
+
+# parameters for correlation functions and MSQD
+correl_start	# start time for correlation
+correl_end	# end time for correlation
+correl_ts	# sampling time interval for correlation
+msqd_ntypes     # write msqd for real types (default 1)
+msqd_vtypes     # write msqd for virtual types (default 0)
+
+# parameters for correlation functions only
+correl_rmax	# dimension of histogram in r domain
+correl_tmax	# dimension of histogram in t domain
+correl_int	# repeat interval for correlation
+GS_rcut         # cutoff radius for correlation data writes
+correl_omode	# output mode for correlation data
+                # 1 for gnuplot files with 1 empty line between blocks
+                # 2 for gnuplot files with 2 empty lines between blocks
+                # 3 for large gnuplot files (fully occupied matrix)
+                #   with no empty lines
+                # 4 for short files (refer to source for documentation)
+                #   (writes only a short header followed by matrix elements)
+
+# parameters for DISLOC
+dem_int         # number of steps between DEM writes
+dsp_int		# number of steps between DSP writes
+min_dpot	# threshold for differential energy writes
+min_dsp2        # threshold for displacement writes
+reset_Epot_step # step at which to compute Epot_ref (if calc_Epot_ref==1)
+calc_Epot_ref   # read (0) or compute (1) reference potential energy
+Epot_diff       # whether to write the potential energy difference 
+                # (1, default), or the potential energy (0)
+update_ort_ref  # step number to compute ort_ref 
+
+# parameters for ORDPAR
+op_rcut         # cutoff radii for order parameter
+op_weight       # weights for order parameter
+
+# parameters for NNBR
+nb_rcut         # cutoff radii for coordination numbers
+nb_checkpt_int  # interval for coordination file writes
+nb_cut_lower    # particle with fewer neighbors are written 
+nb_cut_upper    # particle with more neighbors are written 
+
+# parameters for AVPOS
+avpos_start     # when to start writing average positions (default: 0)
+avpos_end       # when to end   writing average positions (default: maxsteps)
+avpos_int       # number of steps between AVP writes
+avpos_res       # number of steps between coordinate addition
+
+# parameters for EPITAX (simulation of vacuum deposition)
+epitax_startstep # start time for vacuum deposition (default: 0)
+epitax_maxsteps  # end time for vacuum deposition
+epitax_type      # types of atoms to be created
+epitax_mass      # mass of atoms to be created for each type
+epitax_rate      # rate of creation of atoms for each type
+epitax_temp      # temperature of atoms to be created for each type
+epitax_height    # z (2d: y) coordinate of atom creation at start time
+epitax_speed     # velocity of lifting the creation height
+epitax_cutoff	 # minimum distance between atoms in particle beam
+epitax_ctrl      # control parameter for switch of ensemble for
+                 # deposited atoms
+
+# parameters for FRAC
+center           # center of stadium function: x y
+stadium          # half axes of inner elipse: x y
+stadium2         # half axes of outer elipse: x y, default box.x,y/2
+expansionmode    # if 1 strain the sample in y direction
+strainrate       # with this strainrate
+gamma_bar        # damping coefficent
+dampingmode      # O: viscous damping (default) 1: Nose-Hover
+damptemp
+
+# parameters for TTM ensemble
+
+# materials parameters:
+fd_k		 # electronic thermal conductivity
+fd_c		 # electronic thermal capacity (note: unphysical,
+                 # better use fd_gamma for a capacity proportional
+                 # to the electronic temperature)
+fd_gamma         # proportionality constant of electronic heat capacity
+                 # c_e=fd_gamma*T_e 
+fd_g		 # electron-phonon coupling constant
+
+# numerical TTM parameters:
+fd_n_timesteps   # how many FD timesteps to one MD timestep? Note:
+		 # this must be set to fulfill a numerical
+		 # stability criterion
+fd_update_steps  # how often are FD cells updated by averaging over atoms?
+                 # Default is 1 for updates after every MD time step.
+fd_ext		 # How many MD cells per FE cell in x,y and z direction?
+                 # (You probably need a test run to see how your sample is
+                 # getting divided into MD cells first)
+                 #
+fd_one_d         # FD lattice one dimensional in x or y or z if this is given
+
+# miscellaneous TTM parameters:
+ttm_int		 # how many MD time steps between writeouts of TTM data?
+		 # This writes out files with extension .ttm, containing
+		 # indices, local electron/lattice temperatures, coupling
+                 # variable, and velocity of the center of mass of every
+                 # FD cell.
+		 # Default is 0 for no writeouts.
+init_t_el	 # Temperature the electronic subsystem gets initialized to.
+                 # Default is 0.0 for a relaxed system (lattice temperature).
+fix_t_el	 # Fix electron temperature at start value? Default is 0.
+
+# parameters for LASER option
+# general LASER options:
+
+laser_dir        # direction of incidence of laser, only along one
+                 # coordinate axis. ( Default: 1 0 0 for incidence along x )
+		 # The offset of the sample along this axis must be specified
+		 # by the laser_offset option.
+laser_offset     # Distance of the irradiated surface from the origin
+                 # along the laser_dir direction. Default is 0.
+                 # Example: If the sample begins at x=40 Angstroms, use
+                 # laser_offset 40
+laser_mu         # absorption coefficient, or inverse absorption length
+                 # for the exponential temperature gradient and the scaling
+                 # laser heating.
+                 # laser intensity will have fallen to 1/e after penetrating to
+		 # a depth of 1/laser_mu.
+
+# LASER options for instantaneous heating:
+
+laser_delta_temp # if != 0, modifies the effect of the do_maxwell option
+                 # to inscribe an exponential temperature profile along
+                 # laser_dir into the sample, starting at the specified
+		 # offset. This option specifies the maximum of the added
+		 # temperature (at the surface).
+		 # Don't forget to set
+                 # do_maxwell 1 if you intend to use this.
+
+# LASER options for heating by continuous rescaling:
+
+laser_sigma_e    # Area density of pulse energy (fluence). Default is 0.
+laser_sigma_t	 # Half duration of the laser pulse (sigma of the gaussian).
+                 # Default is 0.5 IMD units.
+laser_t_0   	 # Time of maximum intensity of pulse, from begin of the
+                 # simulation. Default is 1.0 IMD units.
+laser_t_1   	 # Time of maximum intensity of the second pulse, from beginning of the
+                 # simulation. Default is 1.0 IMD units.
+laser_sigma_e1   # Area density of pulse energy (fluence) of the second pulse. Default is 0.
+laser_sigma_t1	 # Half duration of the second laser pulse (sigma of the gaussian).
+                 # Default is 0.5 IMD units.
+laser_rescale_mode # How to do the temperature rescaling. You probably don't
+                 # have to worry about this, unless you want to play around
+                 # with the source in imd_laser.c. The default is 1. If the
+		 # TTM make option was given, it is automatically set to 4,
+		 # to make it work with the Two-Temperature-Model code.
+laser_atom_vol   # Volume per particle (inverse density).
+		 # Needed to determine how much of the spacial energy density
+                 # goes into every atom.
+                 # Default is 16.6 Angstrom^3 (Al @ room temperature)
+
+# LASERYZ options for heating by continuous rescaling with intensity profile:
+
+laser_tem_mode	 # Intensity profile type (Laguerre or Hermite) followed by order and index of the polynomial.  
+laser_sigma_w_y	 # Y-Position of the laser beam. 
+laser_sigma_w_z	 # Z-Position of the laser beam.
+laser_sigma_w0	 # Beam waist of the laser beam.
+
+# PDECAY option for damping pressure waves, i.e. non reflecting boundaries at the back of samples.
+
+xipdecay	 # Friction factor for force damping.
+pdecay_mode	 # Damping modus 0,1,2 or 3. 
+ramp_fraction	 # Size of the damping ramp (between 0 and 0.9).
+
+# parameters for SM, computing charges with the
+model of Streitz and Mintmire
+
+sm_chi_0            # Initial value of the electronegativity
+sm_Z                # Initial value of the effecitve core charge
+sm_J_0              # Atomic hardness or self-Coulomb repulsion
+na_pot_file         # Nuclear attraction potential, tabulated in r**2
+cr_pot_file         # Coulomb repulsive potential, tabulated in r**2
+erfc_file           # Tabulated function erfc/r, tabulated in r**2 (only mandatory if no neighbor lists are used)
+sm_fixed_charges    # If 1, keep charges fixed
+charge_update_steps # Number of steps between charge updates
+
+
+# parameters for FEFL, computing free energy with
+    the Frenkel-Ladd method
+spring_rate      # strength of harmonic springs
+lambda           # parameter for switching between original interaction
+                 # (lambda=0) and Einstein crystal (lambda=1)
+
+# additional parameters for FTG
+delta_ftg        # ???
+gamma_damp       # ???
+gamma_ftg        # actual Damping factor for each slice
+gamma_min        # minimal damping prefactor gamma_bar
+Tleft            # damping mode for stadium geometry
+Tright           # damping mode for stadium geometry
+nslices          # number of slices
+nslices_Left     # number of slices with Tleft
+nslices_Right    # number of slices with Right
+
+# parameters for SLLOD (with periodic boundary conditions)
+shear_rate      # yz-, zx-, and xy-component of the deformation rate tensor
+shear_rate2     # zy-, xz-, and yx-component of the deformation rate tensor
+
+# parameters for homdef
+lindef_interval # number of steps between linear deformation
+lindef_size     # size of linear deformation
+lindef_x        # first row vector of the deformation matrix
+lindef_y        # second row vector of the deformation matrix
+lindef_z        # third row vector of the deformation matrix (only 3d)
+bulk_module     # bulk module (used for pressure relaxation)
+shear_module    # shear module (used for pressure relaxation)
+relax_rate      # pressure relaxation rate
+relax_dirs      # box lengths which should be relaxed 
+relax_mode      # pressure relaxation mode 
+
+# parameters for relaxations
+ekin_threshold	     # threshold for kinetic energy
+fnorm_threshold	     # threshold for fnorm
+f_max_threshold      # threshold for maximum force component 
+                     # (not yet implemented)
+delta_epot_threshold # threshold for potential energy change
+nfc                  # nfc counter, for restart 
+sscount              # snapshot counter, for restarting 
+max_sscount          # max nr. of minimizations in quasistat sims 
+
+# parameters for deform
+deform_shift    # type and shift vector, by which atoms of that type
+                # are shifted in each deform step (default is no shift)
+deform_size     # additional scale factor of all shifts (default 1.0)
+max_deform_int  # deform if number of steps since last deformation is
+                # max_deform_int (default 0 - no deformation)
+                
+deform_base     # deform base for virtual types
+deform_shear    # deform shear for virtual types
+
+# parameters for rigid
+rigid           # types and restrictions for definition of superatoms
+
+# parameters for shock
+shock_strip       # shock strip width (in x dir.)
+shock_speed       # shock speed (in x dir.)
+shock_mode        # 1 left part is slammed into right part
+                  # 2 both parts are slammed into oneanother
+                  # 3 sample against fixed wall
+                  # 4 both parts are slammed into oneanother
+shock_incr        # for shock mode 3: linear acceleration of the piston
+shock_speed_left  # for shock mode 4: speed of the left mirror
+shock_speed_right # for shock mode 4: speed of the right mirror
+
+# parameters for STRESS_TENS
+press_int        # interval for pressure tensor writes
+presstens_ext    # components of external pressure tensor (for relaxation)
+
+# parameters for TRANSPORT
+dTemp_start     # temperature at one side
+dTemp_end       # temperature at the other side
+tran_nlayers    # number of layers for local temperature
+tran_interval   # interval for temperature distribution writes
+
+# parameters for SOCK (socket communication)
+loop            # 0 or 1; if 1, simulation is looping, which enables restart
+socket_int      # interval (in steps) between socket status checks
+                # if 0, socket communication is disabled
+socket_mode     # socket mode of IMD: server or client
+display_host    # name visualization host - required in client mode
+server_port     # port number on server side - always required
+client_port     # port number on client side (in client mode, optional)
+use_socket_window
+
+# parameters for analytic pair potentials 
+r_cut           # potential cutoff radii
+r_begin		# potential start radii
+pot_res		# numbers of tabulated potential values
+
+# parameters for Lennard-Jones potential
+lj_epsilon      # depth of minimum
+lj_sigma        # radius at minimum
+
+# parameters for Lennard-Jones-Gauss potential
+ljg_eps         # strength of Gaussian
+ljg_r0          # position of Gaussian
+ljg_sig         # width of Gaussian
+
+## parameters for Morse potential
+morse_epsilon   # depth of minimum
+morse_sigma
+morse_alpha
+
+# parameters for  Morse-stretch potential
+ms_D      
+ms_gamma
+ms_harm_c 
+ms_r0
+ms_rmin
+
+# parameters for Buckingham potential
+buck_a
+buck_c
+buck_sigma
+
+# parameters for harmonic potential (shell model)
+spring_const    # spring constants for atoms of different type
+
+# parameters for EAM (Embedded Atom Method potentials)
+core_potential_file   # Core-core Pair Potential, tabulated in r**2 
+embedding_energy_file # Embedding Energy Function, tabulated in rho
+atomic_e-density_file # Electron Density, tabulated in r**2
+
+# parameters for ADP (angular dependent potentials)
+adp_upotfile      # ADP dipole distortion potential
+adp_wpotfile      # ADP quadrupole distortion potential
+
+# parameters for EEAM (Extended Embedded Atom Method potentials)
+eeam_energy_file # tabulated energy modification term(p_h)
+
+# parameters for MEAM (Modified Embedded Atom Method potentials)
+el_density_file # tabulated electron density 
+meam_a
+meam_beta0
+meam_beta1
+meam_beta2
+meam_beta3
+meam_cmax
+meam_cmin
+meam_deltar
+meam_e
+meam_f0
+meam_r0
+meam_rcut
+meam_rho0
+meam_t1
+meam_t2
+meam_t3
+meam_t_average
+
+# parameters for KEATING (Keating potential)
+neigh_len       # maxmimum number of neighbors (for memory allocs)
+keating_alpha   # parameters for the Keating potential
+keating_beta    #   for all (i=0 ... (ntypes-1))
+keating_d
+keating_r_cut
+
+# parameters for TTBP (2 and 3 body potential)
+neigh_len       # maxmimum number of neighbors (for memory allocs)
+ttbp_constant   # force constants (for all i=0 ... (ntypes-1))
+ttbp_sp         # hybridization type (for all i=0 ... (ntypes-1))
+ttbp_potfile    # potential file for cutoff function
+
+# parameters for STIWEB (Stillinger-Weber potential)
+neigh_len       # maxmimum number of neighbors (for memory allocs)
+stiweb_a        # parameters for the Stillinger-Weber potential
+stiweb_b        # for all (i=0 ... (ntypes-1))
+stiweb_p
+stiweb_q
+stiweb_a1
+stiweb_de
+stiweb_a2
+stiweb_ga
+stiweb_la
+
+# parameters for TERSOFF (Tersoff potential)
+neigh_len       # maxmimum number of neighbors (for memory allocs)
+ters_a          # parameters for the Tersoff potential
+ters_b          #   for all (i=0 ... (ntypes-1))
+ters_la
+ters_mu
+ters_ga
+ters_n
+ters_c
+ters_d
+ters_h
+ters_r_cut
+ters_r0
+ters_chi
+ters_om
+
+# parameters for TERSOFFMOD (modified Tersoff potential)
+neigh_len       # maxmimum number of neighbors (for memory allocs)
+ters_a          # parameters for the Tersoff potential
+ters_b          #   for all (i=0 ... (ntypes-1))
+ters_la
+ters_mu
+ters_eta
+ters_delta
+ters_alpha
+ters_beta
+ters_c1
+ters_c2
+ters_c3
+ters_c4
+ters_c5
+ters_h
+ters_r_cut
+ters_r0
+
+# parameters for EWALD (Coulomb potentials with Ewald sum)
+charge          # atomic charges (for all i=0 ...  (ntypes-1))
+ew_kappa        # parameter kappa
+ew_nmax         # determines number of image simulation boxes
+ew_kcut         # k-space cutoff
+ew_rcut         # real space cutoff, if ew_nmax < 0
+ew_test         # flag for testing purposes
+
+# parameters for dipole (dipolar interactions)
+dp_begin        # Minimal distance for dipole potential table
+dp_res          # Number of sampling points in dipole interaction table
+dp_alpha        # Polarizability (ntypes values)
+dp_b            # Short range interaction parameter (ntypepairs values)
+dp_c            # Short range interaction parameter (ntypepairs values)
+dp_fix          # 0: always converge dipoles, 1: converge once, then keep
+		#				  fixed, 2: keep fixed 
+dp_mix          # Mixing parameter: new dipoles contain this fraction from
+		#				  previous step.
+dp_tol          # Dipoles are converged, if rms change of dipoles is < dp_tol
+
+# parameters for UNIAX 
+# (Gay-Berne potential for uniaxial molecules)
+uniax_inert     # moment of inertia perpendicular to molecule axis
+uniax_sig       # three molecule half-axis (first two equal)
+uniax_eps       # three potential depths (first two equal)
+uniax_r_cut     # cutoff radius for Gay-Berne potential 
+                # (4.0 for original version)
+tau_eta_rot	# time constant for thermostat of rotational motion
+inv_tau_eta_rot	# 1/tau_eta_rot
+isq_tau_eta_rot	# 1/SQR(tau_eta_rot)
+
+# parameters for KIM
+kim_model_name 	# KIM identifier of the model
+kim_el_names 	# list of element names as they appear in the config file
+
+# parameters for ATDIST
+atdist_dim      # dimension of atoms distribution array
+atdist_int      # interval between atoms distribution updates
+atdist_start    # step when recording atoms distribution is started
+atdist_end      # step when recording atoms distribution is stopped
+atdist_ll       # lower left  corner of atoms distribution
+atdist_ur       # upper right corner of atoms distribution
+atdist_per_ll   # lower left of periodic extension
+atdist_per_ur   # upper right of periodic extension
+atdist_phi      # rotation angle around z-axis
+atdist_pos_int  # interval between atom position writes
+
+# parameters for  DIFFPAT
+diffpat_dim     # dimension of atoms distribution array
+diffpat_int     # interval between diffraction pattern updates
+diffpat_start   # step when diffraction pattern recording is started
+diffpat_end     # step when diffraction pattern recording is stopped
+diffpat_ur      # upper right corner of atoms distribution
+diffpat_ll      # lower left  corner of atoms distribution
+diffpat_weight  # scattering strength of different atom types
+
+# parameters for option nmoldyn
+nmoldyn_int     # interval for nMoldyn trajectory writes
+nmoldyn_veloc   # include velocities in trajectory? (0/1)
+
+# parameters in debug option
+force_celldim_divisor # force the cell dimensions of x-, y- and z-direction to be divisible by these integer numbers (may be useful to compare serial and parallel computation results)
+
+# other parameters for debugging
+debug_potential    # write out interpolated potential 
+debug_pot_res      # resolution of test interpolation 
+
+# parameters for  External Potential
+ep_a        # strength of external potential 
+ep_dir      # direction of external potential 
+ep_key      # potential key : which potential type to use
+ep_max_int  # maximal wait steps during relaxation 
+ep_n        # number of external potentials 
+ep_nind     # number of indentors (remaining extpots are walls) 
+ep_pos      # position of external potential 
+ep_rcut     # cutoff radius of external potential 
+ep_vel      # velocity of external potential 
+
+# parameters for  Nudge Elastic Band
+neb_nrep    # number of NEB replicas 
+neb_k       # spring constant for NEB
+neb_vark_start # time step from which on variable ks are used
+neb_kmax    # max. spring constant
+neb_kmin    # min. spring constant
+neb_cineb_start # time step from which on climbing images are used
+neb_climbing_image # assumed image at barrier
+neb_eng_int # interval of NEB energy writes 
+
+# parameters for  Cell Processor
+cbe_pot_max        # maximum value in potential table 
+cbe_pot_steps      # number of tabulation steps in potential table 
+num_spus           # number of SPUs to be used 
+num_bufs           # Number of argument buffers per SPU 
+
+# parameters for  vector cpus 
+atoms_per_cpu      # maximal number of atoms per CPU 
+
+# parameters for  DSF
+dsf_int      # interval for dsf updates 
+dsf_k        # k-point series 
+dsf_nk       # number of k-point series 
+dsf_weight   # weights for dsf (usually coherent scattering length) 
+
+# parameters for  RNEMD
+exch_interval      # interval for particle exchange 
+
+# parameters for  ZAPP
+zapp_threshold
+
+# parameters for  CLONE
+nclones      # number of clones to deal with
+
+# parameter for ADA
+ada_write_int    # number of steps between ADA
+ada_nbr_rcut     # cutoff distance for definition of nearest neighbours
+ada_crystal_structure  # classification schemes for different crystals (fcc, bcc, ackland) 
+ada_latticeConst # lattice constant of the crystal, if given ada_nbr_rcut is not required
+
+# parameter for NYE
+nye_rotationAxis_x  #  crystal direction along the x axis e.g. 2 -1 -1
+nye_rotationAxis_y  #  crystal direction along the y axis e.g. 0  1 -1
+nye_rotationAxis_z  #  crystal direction along the z axis e.g. 1  1  1
+</code>
