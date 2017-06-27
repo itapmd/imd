@@ -1,6 +1,6 @@
 ====== General Remarks ======
 
-Here we describe some general features of //IMD//.
+Here, we describe some general features of //IMD//.
 
 ===== Virtual types =====
 
