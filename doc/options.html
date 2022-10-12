@@ -53,6 +53,7 @@ their purpose is and how they are used.</p>
 <td width="120"><a href="#covalent">keating</a></td>
 <td width="120"><a href="#laser">laser</a></td>
 <td width="120"><a href="#laseryz">laseryz</a></td>
+<td width="120"><a href="#loadbalance">loadbalance</a></td>
 </tr>
 
 <tr align="left">
@@ -103,8 +104,8 @@ their purpose is and how they are used.</p>
 
 <tr align="left">
 <td width="120"><a href="#sm">sm</a></td>
+<td width="120"><a href="#viscous">viscous</a></td>
 <td width="120"><a href="#zapp">zapp</a></td>
-<td width="120"><a href="#"></a></td>
 <td width="120"><a href="#"></a></td>
 <td width="120"><a href="#"></a></td>
 <td width="120"><a href="#"></a></td>
@@ -798,6 +799,122 @@ named <tt>pdecay</a></tt>.
 <p>
 </dd>
 
+<dt><a id="loadbalance" name="loadbalance"><b>loadbalance</b></a></dt>
+<dd>
+<p>
+This option enables adapative loadbalancing to improve efficiency and can drastically
+the simulation runtime of parallel simulations if particles are highly inhomogenous 
+distributed inside the simulation domain.
+It is based on a modified domain decomposition scheme in which domains do not need to be
+uniform nor orthogonal. The domains are adjusted dynamically to balance the computational
+load, e.g. the number of particles in a domain.
+Typically the loadbalancer is able to balance the load within a range of 5&#37; to 10&#37;,
+unless very inhomogeneous or dynamic simulations with a large number of CPUs are performed.
+Imbalance is measured as the fraction of number of particles in a domain by the average number
+of particles per domain. Thus values larger than one indicate domains with high loads. Typically it
+is possible to keep the maximum imbalance below 1.2 or 1.1 with loadbalancing enabled.
+A file with the ending .lblog will be created during the simulation, containing the history
+of the simulations' imbalance over time if the option is enabled.
+
+
+</p>
+<p>
+Parameters:
+</p>
+<p>
+The only parameter that needs to be set to enable loadbalancing is the value of <tt>lb_frequency</tt>. Other parameters are optional and their default values should work in most cases, but can be adjusted if needed.
+</p>
+<p>
+<tt>lb_balancingType</tt>
+</p>
+<p>
+The loadbalancer supports three different models</br>
+0 (default):	Domains are allowed to changes their size and shape, but the regular layout of neighboring domains is guaranteed to be unchanged. A domain will exchange information only to the same set of neighboring domains as if the loadbalancer is deactivated. This restriction may prevent optimal balance if each domains holds in average only a few thousand particles. This mode is the standard setting if loadbalancing is used.</br>
+1:	The shape of domains is allowed to be distorted more severly to accomodate highly inhomogeneous particle distributions. The number of communication partners is fully dynamic and if necessary, information is exchange with overnext neighbors. This features can improve the balancing in very complicated particle distributions, but causes a larger overhead.</br>
+2:	Restricts the load-balancer to use orthogonal domains. The domain interface are kept parellel to the simulation box. Usually this strategy is not recommended, since in many situations it is not able to evenly balance the load between domains.</br>
+
+</p>
+<p>
+<tt>lb_frequency</tt>
+</p>
+<p>
+Determines after how many simulation time steps the load-balancing is performed, but only 
+if the current imbalance is exceeding <tt>lb_maxLoadTolerance</tt>.
+This value should be choosen with the dynamic of the system in mind. In simulations where the
+particle distribution changes rapidly, it may be necessary to balance every hundred steps,
+where in other cases longer intervals may be sufficent.
+By default this value is 0 and balancing is disabled, however the modified communication routines are still used (see below)
+</p>
+<p>
+<tt>lb_maxLoadTolerance</tt>
+</p>
+<p>
+Loadbalancing is only performed if the gloabl load imbalance is larger than this tolerance threshold.
+The default value is 1.1.
+</p>
+<p>
+<tt>lb_preRuns</tt>
+</p>
+<p>
+Perform a number of load-balance steps before the actual simulation is started. Since this is usually computational inexpensive, a value of 100-200 is recommendable to start from a well balanced configuration.
+</p>
+<p>
+<tt>lb_contractionRate</tt>
+</p>
+<p>
+Controls how quickly the size of domains are adjusted. The default value is equal to the cell size and typically does not need to be modified.
+</p>
+<p>
+<tt>lb_maxLoadToleranceFactorForReset</tt>
+</p>
+<p>
+The loadbalancer may get stuck in a local minumum, resulting in a increasing local imbalance. If the standard balancing procedure cannot compensate this and the imbalance exceeds this second threshold, a more aggressive balancing is performed that partially resets the domain configuration. This can often overcome convergence in a local minimum. The default value is 1.4. In case <tt>lb_balancingType</tt> is set to 2, this value should be set very high.
+</p>
+<p>
+<tt>lb_iterationsPerReset</tt>
+</p>
+<p>
+Defines how many cycles are performed during a partial reset to overcome local convergence. The default is 10 cycles.
+</p>
+<p>
+<tt>lb_minStepsBetweenReset</tt>
+</p>
+<p>
+Defines how often the reset operation is executed. The number defines how many regular loadbalancing operations must be performed before another aggressive reset and balancing is performed.
+The default is 0.
+
+<tt>lb_writeStatus</tt></br>
+Provides additional information about the loadbalancer configuration.</br>
+0 (default): No information besides the .lblog-file is created.</br>
+1: After each iteration of loadbalancing a file with the ending .lb is created, describing the shape of all domains. Additionally, checkpoint files contain a value on which CPU the particle is located.</br>
+2: The .lb-file contains more information about its state (not recommended)</br>
+3: The .lb-file contains much much more information about its state (not recommended at all)
+</p>
+<p>
+Limitations:
+</p>
+<p>
+The loadbalancer is only applicable in three-dimensional MPI parallel simulations and the number of CPUs in
+periodic dimensions must be a multiple of two.
+Furthermore, it is currently not possible to combine the loadbalancer with features that 
+resize the simulation box, e.g. NPT or DEFORM. Simulations using non-orthognal boxes are 
+supported, but are not well tested. Mixed OpenMP/MPI have not been tested as well, but are supposed to work.
+</p>
+
+<p>
+Communications between domains during loadbalancing:
+</p>
+<p>
+The loadbalancer algorithm uses a different communication strategy to exchange information
+between CPUs. Instead of using the Plimpton-scheme, where messages are send only to six adjacent
+neighbor domains and forwarded over corners, messages are exchanged directly with all neighboring 
+domains if load-balancing is enabled. Depending on the bandwidth and latencies of the interconnection
+between computing nodes, this approach may or may not be faster than the Plimpton scheme.
+There is the possibility that simulations run slightly faster using the direct communication
+even if the balancing itself is disabled by setting <tt>lb_frequency</tt> to 0.
+</p>
+</dd>
+
 <dt><a id="sm" name="sm"><b>sm</b></a></dt>
 <dd>
 <p>
@@ -1176,7 +1293,7 @@ location must be configured in the Makefile.</p>
 <pre>
 	fcc: Modified scheme to identify defects in fcc crystals (extended
 		pattern as published in Begau et al. Acta Materialia 59 (2011)
-		934–942) 
+		934-942) 
 		ada=0: bcc
 		ada=1: fcc (not written to .ada-files)
 		ada=2: hcp
@@ -1213,7 +1330,7 @@ location must be configured in the Makefile.</p>
 	This option enables IMD to perform a Nye tensor analysis during a
 	simulation to numerically compute an approximation of he dislocation
 	Burgers vectors and the dislocation line-direction as published in
-	Begau et al. JMPS 60 (2012) 711–722. 
+	Begau et al. JMPS 60 (2012) 711-722. 
 	Atomatically ativates the option ada as well.
 	For each atom classified as a defect, a pair of a (resultant) Burgers
 	vector and a line direction/line sense vector is computed and added to
@@ -1323,6 +1440,19 @@ neb_climbing_image are specified.
 Option for computing transport properties by the M&uuml;ller-Plathe
 non-equilibrium exchange method, see
 J. Chem. Phys. <b>106</b> (1997) 6082.
+</p>
+</dd>
+
+
+<dt><a id="viscous" name="viscous"><b>viscous</b></a></dt>
+<dd>
+<p>
+Enables viscous damping. Every timestep the velocities are reduced proportional to a friction coefficient.
+This friction coefficient can be defined either equally for all atoms by the parameter <tt>viscous_friction</tt>.
+Alternatively, the value can be defined per atom in a column <tt>viscous_fric</tt>.
+The value of this coefficient determines how fast the velocities are reduced, e.g. a value of 1 would eliminate an initial velocity in one unit of simulation time completely.
+Currently this option is only available as an option for NVE and MIK/GLOK and this option is automatically activated if the Langevin thermostat is used.
+If no other thermostat (Berendsen or Anderson) is activated, this option will continuously reduce the temperature of the system. Thus it could be used to minimize energies as well.
 </p>
 </dd>
 

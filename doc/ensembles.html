@@ -68,6 +68,15 @@ external temperature, which is linearly interpolated between
 <tt>starttemp</tt> and <tt>endtemp</tt>. With the nve integrator, 
 this corresponds to an NVT ensemble with Anderson thermostat.</p></dd>
 
+<dt><b>langevin</b></dt>
+<dd>
+<p>
+Another option for nve and mik that enables the Langevin thermostat.
+Every timestep the velocities are reduced by viscous damping and random 
+forces are added to adjust the temperature. The required friction coefficient is
+the same as in the option <a href="options.html#viscous">viscous</a>.
+</p></dd>
+
 <dt><b>ber</b></dt>
 <dd>
 <p>
